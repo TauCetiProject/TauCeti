@@ -85,18 +85,19 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
   -- The cells: `σ ∩ C(τ)` for simplices `σ` of `K` and sign vectors `τ` whose open cell meets the
   -- open simplex of `σ`.
   let J := {p : K.faces × (ι → SignType) //
-    (intrinsicInterior ℝ (convexHull ℝ (p.1.1 : Set E)) ∩ TauCeti.Convex.signCell g p.2).Nonempty}
-  let P : J → Set E := fun p => convexHull ℝ (p.1.1.1 : Set E) ∩ TauCeti.Convex.weakSignCell g p.1.2
+    (intrinsicInterior ℝ (convexHull ℝ (p.1.val : Set E)) ∩ TauCeti.Convex.signCell g p.2).Nonempty}
+  let P : J → Set E := fun p => convexHull ℝ (p.val.1.val : Set E) ∩ TauCeti.Convex.weakSignCell g
+      p.val.2
   have hPv : ∀ p, Convex ℝ (P p) := fun p =>
     (convex_convexHull ℝ _).inter (TauCeti.Convex.convex_weakSignCell g _)
   have hPc : ∀ p, IsCompact (P p) := fun p =>
-    (p.1.1.1.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).inter_right
+    (p.val.1.val.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).inter_right
       (TauCeti.Convex.isClosed_weakSignCell g _)
   have hri : ∀ p, intrinsicInterior ℝ (P p) =
-      intrinsicInterior ℝ (convexHull ℝ (p.1.1.1 : Set E)) ∩
-        TauCeti.Convex.signCell g p.1.2 := fun p => by
-    obtain ⟨x, hxσ, hxτ⟩ := p.2
-    have hτ := TauCeti.Convex.intrinsicInterior_closure_signCell (g := g) (σ := p.1.2)
+      intrinsicInterior ℝ (convexHull ℝ (p.val.1.val : Set E)) ∩
+        TauCeti.Convex.signCell g p.val.2 := fun p => by
+    obtain ⟨x, hxσ, hxτ⟩ := p.property
+    have hτ := TauCeti.Convex.intrinsicInterior_closure_signCell (g := g) (σ := p.val.2)
     rw [TauCeti.Convex.closure_signCell ⟨x, hxτ⟩] at hτ
     rw [TauCeti.intrinsicInterior_inter (convex_convexHull ℝ _)
       (TauCeti.Convex.convex_weakSignCell g _)
@@ -115,7 +116,7 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
       (convexHull_mono (Finset.coe_subset.2 hσσ'))
       (TauCeti.Convex.weakSignCell_subset_of_specializes
         (TauCeti.Convex.mem_weakSignCell_iff_specializes.mp hxτ))⟩
-  have hPne : ∀ p, (P p).Nonempty := fun p => p.2.mono
+  have hPne : ∀ p, (P p).Nonempty := fun p => p.property.mono
     (inter_subset_inter intrinsicInterior_subset (TauCeti.Convex.signCell_subset_weakSignCell g _))
   have hdisj : Pairwise fun p q : J => Disjoint (intrinsicInterior ℝ (P p))
       (intrinsicInterior ℝ (P q)) := by
@@ -123,12 +124,12 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
     refine Set.disjoint_left.2 fun x hxp hxq => hpq ?_
     rw [hri] at hxp hxq
     refine Subtype.ext (Prod.ext
-      (Subtype.ext (eq_of_mem_intrinsicInterior p.1.1.2 q.1.1.2 hxp.1 hxq.1)) ?_)
+      (Subtype.ext (eq_of_mem_intrinsicInterior p.val.1.property q.val.1.property hxp.1 hxq.1)) ?_)
     funext i
     exact (TauCeti.Convex.mem_signCell.mp hxp.2 i).symm.trans
       (TauCeti.Convex.mem_signCell.mp hxq.2 i)
   have hfr := fun p => TauCeti.intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior p
-    (hPc p).isClosed fun x hx => hcell p.1.1.2 hx.1 hx.2
+    (hPc p).isClosed fun x hx => hcell p.val.1.property hx.1 hx.2
   obtain ⟨M, hMs, hMP, hMface, -⟩ := exists_subdivision P hPc hPv
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some)
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some_mem) (locallyFinite_of_finite P) hdisj hfr
@@ -137,7 +138,7 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
     obtain ⟨q, hxq, -⟩ := hcell hσ hxσ
       (TauCeti.Convex.signCell_subset_weakSignCell g _ (TauCeti.Convex.mem_signCell_sign g x))
     exact ⟨q, intrinsicInterior_subset hxq⟩
-  obtain ⟨hM, hMfin, hconv⟩ := isSubdivision_of_cells (fun p => p.1.1.2)
+  obtain ⟨hM, hMfin, hconv⟩ := isSubdivision_of_cells (fun p => p.val.1.property)
     (fun p => inter_subset_left) hPv hcov hMs (fun p => (hMP p).2)
     fun s hs => (hMface s hs).imp fun _ h => h.2
   refine ⟨M, hM, hMfin, fun s hs i => ?_⟩

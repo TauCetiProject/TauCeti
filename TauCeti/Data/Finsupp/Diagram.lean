@@ -271,7 +271,7 @@ theorem _root_.IsUpperSet.biUnion_Ici_diagramVertices {D : Set (σ →₀ ℕ)} 
 @[simp] theorem diagramVertices_univ : (Set.univ : Set (σ →₀ ℕ)).diagramVertices = {0} := by
   ext α; simp only [mem_diagramVertices_iff, Minimal, mem_univ, true_and, forall_true_left,
     Finset.mem_singleton]
-  exact ⟨fun h ↦ le_zero_iff.mp (h _root_.zero_le), fun h _ _ ↦ h ▸ _root_.zero_le⟩
+  exact ⟨fun h ↦ nonpos_iff_eq_zero.mp (h _root_.zero_le), fun h _ _ ↦ h ▸ _root_.zero_le⟩
 
 @[simp] theorem diagramVertices_Ici (α : σ →₀ ℕ) : (Set.Ici α).diagramVertices = {α} := by
   ext β; simp only [mem_diagramVertices_iff, Minimal, mem_Ici, Finset.mem_singleton]
@@ -404,9 +404,9 @@ theorem biUnion_diagramCell_eq {D : Set (σ →₀ ℕ)} (hD : IsUpperSet D) :
 /-- Every element of an upward-closed diagram `D` belongs to the division cell of a unique vertex
 of `D`. -/
 theorem existsUnique_mem_diagramCell_of_mem {D : Set (σ →₀ ℕ)} (hD : IsUpperSet D) {γ : σ →₀ ℕ}
-    (hγ : γ ∈ D) : ∃! v : D.diagramVertices, γ ∈ D.diagramCell v.1 := by
+    (hγ : γ ∈ D) : ∃! v : D.diagramVertices, γ ∈ D.diagramCell v.val := by
   obtain ⟨α, hα, hc⟩ := mem_iUnion₂.mp (biUnion_diagramCell_eq hD ▸ hγ)
-  exact ⟨⟨α, hα⟩, hc, fun v hv ↦ Subtype.ext (eq_of_mem_diagramCell v.2 hα hv hc)⟩
+  exact ⟨⟨α, hα⟩, hc, fun v hv ↦ Subtype.ext (eq_of_mem_diagramCell v.property hα hv hc)⟩
 
 /-- Quotient boxes pull back compatibly along `Finsupp.mapDomain f` for any strictly monotone index
 map `f`. -/

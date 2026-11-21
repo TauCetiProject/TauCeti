@@ -92,8 +92,8 @@ by the symmetry of the multiplicity under the Atkin–Lehner anti-involution. -/
 theorem commute_heckeSymbol_heckeSymbol
     (D₁ D₂ : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))) :
     Commute (heckeSymbol (R := R) (w := w) (Gamma1 N) (Gamma1 N) D₁
-        (Delta0_le_intEntries N D₁.out.2))
-      (heckeSymbol (Gamma1 N) (Gamma1 N) D₂ (Delta0_le_intEntries N D₂.out.2)) := by
+        (Delta0_le_intEntries N D₁.out.property))
+      (heckeSymbol (Gamma1 N) (Gamma1 N) D₂ (Delta0_le_intEntries N D₂.out.property)) := by
   classical
   -- the term of the double coset `D` in the composite `T_{E₁} ∘ T_{E₂}`
   let f (E₁ E₂ D : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ))
@@ -101,7 +101,7 @@ theorem commute_heckeSymbol_heckeSymbol
     multiplicity ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
         ((Gamma1 N).map (mapGL ℚ)) (E₂.out : GL (Fin 2) ℚ)⁻¹ (E₁.out : GL (Fin 2) ℚ)⁻¹
         (D.out : GL (Fin 2) ℚ)⁻¹ •
-      heckeSymbol (Gamma1 N) (Gamma1 N) D (Delta0_le_intEntries N D.out.2)
+      heckeSymbol (Gamma1 N) (Gamma1 N) D (Delta0_le_intEntries N D.out.property)
   -- a composite is the sum of its terms over any finset containing the double cosets it meets
   have hcomp (E₁ E₂ : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ))) (hE₁ : (E₁.out : GL (Fin 2) ℚ) ∈ intEntries 2)
@@ -113,7 +113,7 @@ theorem commute_heckeSymbol_heckeSymbol
     refine (Finset.sum_attach _ (f E₁ E₂)).trans (Finset.sum_subset hS fun D _ hD ↦ ?_)
     -- a double coset met by no pair of representatives has multiplicity zero
     have : IsEmpty (PairCosetFiber E₁ E₂ D (D.out : GL (Fin 2) ℚ)) :=
-      ⟨fun i ↦ hD (Finset.mem_image.mpr ⟨i.1.1, Finset.mem_univ _, i.1.2⟩)⟩
+      ⟨fun i ↦ hD (Finset.mem_image.mpr ⟨i.val.val, Finset.mem_univ _, i.val.property⟩)⟩
     simp only [f]
     rw [← card_pairs_pairCoset_rightCoset_eq_multiplicity (mem_doubleCoset_self _ _ _),
       Nat.card_of_isEmpty, zero_smul]
@@ -122,7 +122,7 @@ theorem commute_heckeSymbol_heckeSymbol
     hcomp D₂ D₁ _ _ _ Finset.subset_union_right]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
   simp only [f]
-  rw [multiplicity_inv_comm_Gamma1 N D₁.out.2 D₂.out.2 D.out.2]
+  rw [multiplicity_inv_comm_Gamma1 N D₁.out.property D₂.out.property D.out.property]
 
 /-- **The Hecke operators `T_m` and `T_n` on modular symbols commute**, for all positive indices
 `m` and `n`, with no condition relating them to each other or to the level. -/

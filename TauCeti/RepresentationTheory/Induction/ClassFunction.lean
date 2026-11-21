@@ -160,7 +160,7 @@ theorem indTerm_eq_of_mk_eq_of_conj (f : S → k)
   classical
   by_cases hx : x⁻¹ * g * x ∈ S
   · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∈ S := by
-      simpa [mul_assoc] using S.mul_mem (S.mul_mem (S.inv_mem s.2) hx) s.2
+      simpa [mul_assoc] using S.mul_mem (S.mul_mem (S.inv_mem s.property) hx) s.property
     rw [indTerm, dite_eq_left hx, indTerm, dite_eq_left hxs]
     have helem : (⟨(x * (s : G))⁻¹ * g * (x * s), hxs⟩ : S) =
         s⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s⁻¹⁻¹ := by
@@ -170,7 +170,8 @@ theorem indTerm_eq_of_mk_eq_of_conj (f : S → k)
     rw [helem, hf ⟨x⁻¹ * g * x, hx⟩ s⁻¹]
   · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∉ S := by
       intro h
-      exact hx (by simpa [mul_assoc] using S.mul_mem (S.mul_mem s.2 h) (S.inv_mem s.2))
+      exact hx (by
+          simpa [mul_assoc] using S.mul_mem (S.mul_mem s.property h) (S.inv_mem s.property))
     rw [indTerm, dite_eq_right hx, indTerm, dite_eq_right hxs]
 
 private theorem indTerm_zero (g x : G) :
@@ -395,7 +396,7 @@ theorem indClassFun_indClassFun_subgroupOf (L : Subgroup G) {T : Subgroup G}
       rw [Function.indTerm, dite_eq_right hx]
       refine (Finset.sum_eq_zero fun s _ => ?_).symm
       have hs : (x * (s.out : T))⁻¹ * g * (x * (s.out : T)) ∉ L := fun h => hx <| by
-        have := T.mul_mem (T.mul_mem (s.out : T).2 (hLT h)) (T.inv_mem (s.out : T).2)
+        have := T.mul_mem (T.mul_mem (s.out : T).property (hLT h)) (T.inv_mem (s.out : T).property)
         simpa [mul_assoc] using this
       rw [Function.indTerm, dite_eq_right hs]
   calc indClassFun T _ g
@@ -417,7 +418,7 @@ theorem indClassFun_mulEquiv (S : Subgroup G) [S.FiniteIndex] {G' : Type*} [Grou
     haveI : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
       (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
     Subgroup.indClassFun S' f' (φ g) =
-      Subgroup.indClassFun S (fun s => f' ⟨φ s, (hφ s).2 s.2⟩) g := by
+      Subgroup.indClassFun S (fun s => f' ⟨φ s, (hφ s).2 s.property⟩) g := by
   classical
   have hb := Subgroup.mk_mulEquiv_out_bijective φ hφ
   have : S'.FiniteIndex :=
@@ -528,14 +529,14 @@ end Projection
 `ClassFunction k S →ₗ[k] ClassFunction k G`. -/
 noncomputable def indClassFunction (S : Subgroup G) [S.FiniteIndex] :
     ClassFunction k S →ₗ[k] ClassFunction k G where
-  toFun f := ⟨indClassFun S f.1, indClassFun_mem_classFunction S f.2⟩
-  map_add' f₁ f₂ := Subtype.ext (indClassFun_add S f₁.1 f₂.1)
-  map_smul' c f := Subtype.ext (indClassFun_smul S c f.1)
+  toFun f := ⟨indClassFun S f.val, indClassFun_mem_classFunction S f.property⟩
+  map_add' f₁ f₂ := Subtype.ext (indClassFun_add S f₁.val f₂.val)
+  map_smul' c f := Subtype.ext (indClassFun_smul S c f.val)
 
 @[simp]
 theorem indClassFunction_apply (S : Subgroup G) [S.FiniteIndex]
     (f : ClassFunction k S) (g : G) :
-    (indClassFunction S f).1 g = indClassFun S f.1 g :=
+    (indClassFunction S f).val g = indClassFun S f.val g :=
   (rfl)
 
 end Subgroup

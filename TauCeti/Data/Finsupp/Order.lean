@@ -21,9 +21,11 @@ and every index in the support of `g` is at least `i`. This decomposition suppor
 ordered monomials by removing one occurrence of their least variable.
 
 It also contains the residual step of the staircase argument: two nonnegative finitely supported
-functions of equal mass lose their smaller matched weight, leaving smaller supports. Finally,
-reindexing along an equivalence (`Finsupp.equivMapDomain`) preserves and reflects the componentwise
-order (`Finsupp.equivMapDomain_le_iff`).
+functions of equal mass lose their smaller matched weight, leaving smaller supports; the
+support characterization `Finsupp.single_one_add_single_one_le_iff` of division by a squarefree
+quadratic monomial `single u 1 + single v 1` (`u ≠ v`); and reindexing along an equivalence
+(`Finsupp.equivMapDomain`), which preserves and reflects the componentwise order
+(`Finsupp.equivMapDomain_le_iff`).
 -/
 
 public section
@@ -36,6 +38,40 @@ theorem equivMapDomain_le_iff {α β M : Type*} [Zero M] [LE M] (e : α ≃ β) 
     equivMapDomain e x ≤ equivMapDomain e y ↔ x ≤ y := by
   simp only [le_def]
   exact e.forall_congr_right.symm.trans (forall_congr' fun a ↦ by simp)
+
+/-- For a natural-valued finitely supported function `f`, `single u 1 ≤ f` holds if and only if
+`u ∈ f.support`. -/
+theorem single_one_le_iff {σ : Type*} {f : σ →₀ ℕ} {u : σ} :
+    single u 1 ≤ f ↔ u ∈ f.support := by
+  rw [single_le_iff, Nat.one_le_iff_ne_zero, mem_support_iff]
+
+/-- For distinct indices `u ≠ v`, a natural-valued finitely supported function `f` bounds
+`single u 1 + single v 1` if and only if both `u` and `v` lie in `f.support`. -/
+theorem single_one_add_single_one_le_iff {σ : Type*} {f : σ →₀ ℕ} {u v : σ} (huv : u ≠ v) :
+    single u 1 + single v 1 ≤ f ↔ u ∈ f.support ∧ v ∈ f.support := by
+  refine ⟨fun h ↦ ⟨single_one_le_iff.1 (le_self_add.trans h),
+      single_one_le_iff.1 (le_add_self.trans h)⟩,
+    fun ⟨hu, hv⟩ w ↦ ?_⟩
+  classical
+  rcases eq_or_ne w u with rfl | hwu
+  · simpa [huv, huv.symm] using single_le_iff.1 (single_one_le_iff.2 hu)
+  rcases eq_or_ne w v with rfl | hwv
+  · simpa [huv, huv.symm] using single_le_iff.1 (single_one_le_iff.2 hv)
+  · simp [hwu, hwv]
+
+/-- Mapping values along a strictly monotone zero-preserving map reflects and preserves the
+pointwise `≤` order on finitely supported functions. -/
+theorem mapRange_le_mapRange_iff {ι α β : Type*} [Zero α] [Zero β] [LinearOrder α] [Preorder β]
+    {f : α → β} (hf : StrictMono f) (hf₀ : f 0 = 0) {g₁ g₂ : ι →₀ α} :
+    g₁.mapRange f hf₀ ≤ g₂.mapRange f hf₀ ↔ g₁ ≤ g₂ := by
+  simp [Finsupp.le_def, hf.le_iff_le]
+
+/-- Mapping values along a strictly monotone zero-preserving map reflects and preserves the
+pointwise `<` order on finitely supported functions. -/
+theorem mapRange_lt_mapRange_iff {ι α β : Type*} [Zero α] [Zero β] [LinearOrder α] [Preorder β]
+    {f : α → β} (hf : StrictMono f) (hf₀ : f 0 = 0) {g₁ g₂ : ι →₀ α} :
+    g₁.mapRange f hf₀ < g₂.mapRange f hf₀ ↔ g₁ < g₂ := by
+  simp [lt_iff_le_not_ge, mapRange_le_mapRange_iff hf hf₀]
 
 /-- If a finitely supported function into an ordered cancellative additive commutative monoid is
 nonnegative and its sum equals its value at `a`, then it vanishes away from `a`. -/

@@ -17,8 +17,8 @@ import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 Given a diagram `D : Set (σ →₀ ℕ)` on a finite linearly ordered variable set `σ`, a commutative
 semiring `A`, and homogeneous polynomials `H : D.diagramVertices → MvPolynomial σ A` of degrees
-`v.1.degree`, `D.diagramSpanSet H ℓ` is the degree-`ℓ` family of supported multiples
-`monomial β 1 * H v` (`β ∈ D.diagramBox v.1`, `v.1.degree + β.degree = ℓ`) and complementary
+`v.val.degree`, `D.diagramSpanSet H ℓ` is the degree-`ℓ` family of supported multiples
+`monomial β 1 * H v` (`β ∈ D.diagramBox v.val`, `v.val.degree + β.degree = ℓ`) and complementary
 monomials `monomial γ 1` (`γ ∉ D`, `γ.degree = ℓ`).
 
 **Theorem 8.1 (`Set.span_diagramSpanSet_eq_of_le`)** proves that over a commutative ring `A`, for
@@ -50,19 +50,19 @@ variable {σ A : Type*} [Finite σ] [LinearOrder σ] [CommSemiring A]
 def diagramSpanSet (D : Set (σ →₀ ℕ)) (H : D.diagramVertices → MvPolynomial σ A) (ℓ : ℕ) :
     Set (MvPolynomial σ A) :=
   {p | ∃ (v : D.diagramVertices) (β : σ →₀ ℕ),
-      β ∈ D.diagramBox v.1 ∧ v.1.degree + β.degree = ℓ ∧ p = monomial β 1 * H v} ∪
+      β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ ∧ p = monomial β 1 * H v} ∪
     {p | ∃ γ ∉ D, γ.degree = ℓ ∧ p = monomial γ 1}
 
 theorem mem_diagramSpanSet_iff {D : Set (σ →₀ ℕ)} {H : D.diagramVertices → MvPolynomial σ A}
     {ℓ : ℕ} {p : MvPolynomial σ A} :
     p ∈ D.diagramSpanSet H ℓ ↔
       (∃ (v : D.diagramVertices) (β : σ →₀ ℕ),
-        β ∈ D.diagramBox v.1 ∧ v.1.degree + β.degree = ℓ ∧ p = monomial β 1 * H v) ∨
+        β ∈ D.diagramBox v.val ∧ v.val.degree + β.degree = ℓ ∧ p = monomial β 1 * H v) ∨
       (∃ γ ∉ D, γ.degree = ℓ ∧ p = monomial γ 1) := Iff.rfl
 
 theorem monomial_mul_mem_diagramSpanSet {D : Set (σ →₀ ℕ)}
     {H : D.diagramVertices → MvPolynomial σ A} {ℓ : ℕ} (v : D.diagramVertices) {β : σ →₀ ℕ}
-    (hβ : β ∈ D.diagramBox v.1) (hdeg : v.1.degree + β.degree = ℓ) :
+    (hβ : β ∈ D.diagramBox v.val) (hdeg : v.val.degree + β.degree = ℓ) :
     monomial β 1 * H v ∈ D.diagramSpanSet H ℓ := Or.inl ⟨v, β, hβ, hdeg, rfl⟩
 
 theorem monomial_mem_diagramSpanSet {D : Set (σ →₀ ℕ)}
@@ -70,15 +70,15 @@ theorem monomial_mem_diagramSpanSet {D : Set (σ →₀ ℕ)}
     (hdeg : γ.degree = ℓ) : monomial γ 1 ∈ D.diagramSpanSet H ℓ := Or.inr ⟨γ, hγ, hdeg, rfl⟩
 
 theorem isHomogeneous_of_mem_diagramSpanSet {D : Set (σ →₀ ℕ)}
-    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.1.degree)
+    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     {ℓ : ℕ} {p : MvPolynomial σ A} (hp : p ∈ D.diagramSpanSet H ℓ) : p.IsHomogeneous ℓ := by
   rcases hp with ⟨v, β, _, rfl, rfl⟩ | ⟨γ, _, rfl, rfl⟩
-  · exact add_comm β.degree v.1.degree ▸
+  · exact add_comm β.degree v.val.degree ▸
       (isHomogeneous_monomial 1 (by simp [Finsupp.degree_apply])).mul (hH v)
   · exact isHomogeneous_monomial 1 (by simp [Finsupp.degree_apply])
 
 theorem span_diagramSpanSet_le_homogeneousSubmodule {D : Set (σ →₀ ℕ)}
-    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.1.degree)
+    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     (ℓ : ℕ) : Submodule.span A (D.diagramSpanSet H ℓ) ≤ homogeneousSubmodule σ A ℓ :=
   Submodule.span_le.mpr fun _ hp ↦
     (mem_homogeneousSubmodule ℓ _).mpr (isHomogeneous_of_mem_diagramSpanSet hH hp)
@@ -89,8 +89,8 @@ theorem image_renameEquiv_diagramSpanSet {τ : Type*} [Finite τ] [LinearOrder �
     (renameEquiv A e.toEquiv) ''
         ((Finsupp.equivMapDomain e.toEquiv ⁻¹' D).diagramSpanSet
           (fun v₀ ↦ (renameEquiv A e.toEquiv).symm
-            (H ⟨Finsupp.equivMapDomain e.toEquiv v₀.1,
-              (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mp v₀.2⟩)) ℓ) =
+            (H ⟨Finsupp.equivMapDomain e.toEquiv v₀.val,
+              (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mp v₀.property⟩)) ℓ) =
       D.diagramSpanSet H ℓ := by
   have hren (s : τ →₀ ℕ) : renameEquiv A e.toEquiv (monomial s (1 : A)) =
       monomial (Finsupp.equivMapDomain e.toEquiv s) 1 := by
@@ -121,7 +121,7 @@ theorem diagramSpanSet_of_forall_lt_degree {D : Set (σ →₀ ℕ)} {ℓ : ℕ}
     D.diagramSpanSet H ℓ = {p | ∃ γ : σ →₀ ℕ, γ.degree = ℓ ∧ p = monomial γ 1} := by
   ext p; simp only [mem_diagramSpanSet_iff, mem_ofPred]
   exact ⟨fun h ↦ h.elim (fun ⟨v, _, _, hdeg, _⟩ ↦
-      absurd (hD v.1 (D.diagramVertices_subset v.2)) (by omega)) (fun ⟨γ, _, h⟩ ↦ ⟨γ, h⟩),
+      absurd (hD v.val (D.diagramVertices_subset v.property)) (by omega)) (fun ⟨γ, _, h⟩ ↦ ⟨γ, h⟩),
     fun ⟨γ, hdeg, hp⟩ ↦ Or.inr ⟨γ, fun hm ↦ (hD γ hm).ne' hdeg, hdeg, hp⟩⟩
 
 /-- If every element of `D` has degree strictly greater than `ℓ`, then `D.diagramSpanSet H ℓ`
@@ -154,8 +154,9 @@ variable {A : Type*} [CommRing A]
 private noncomputable def sliceGenerators {n : ℕ} {D : Set (Fin (n + 1) →₀ ℕ)}
     (H : D.diagramVertices → MvPolynomial (Fin (n + 1)) A) :
     D.diagramSliceZero.diagramVertices → MvPolynomial (Fin n) A :=
-  fun v' ↦ (H ⟨Finsupp.cons 0 v'.1, mem_diagramVertices_diagramSliceZero_iff.mp v'.2⟩).killCompl
-    (Fin.succ_injective n)
+  fun v' ↦
+    (H ⟨Finsupp.cons 0 v'.val, mem_diagramVertices_diagramSliceZero_iff.mp v'.property⟩).killCompl
+      (Fin.succ_injective n)
 
 private theorem cons_zero_tail {n : ℕ} {α : Fin (n + 1) →₀ ℕ} (h : α 0 = 0) :
     Finsupp.cons 0 α.tail = α := by rw [← h, Finsupp.cons_tail]
@@ -197,17 +198,17 @@ private theorem killCompl_succ_mem_span_diagramSliceZero {n k : ℕ} {D : Set (F
     by_cases hβ0 : β 0 = 0
     · have hβ_eq := cons_zero_tail hβ0
       rw [← hβ_eq, ← Finsupp.mapDomain_finSucc, killCompl_monomial_mapDomain]
-      by_cases hv0 : v.1 0 = 0
+      by_cases hv0 : v.val 0 = 0
       · have hv_eq := cons_zero_tail hv0
-        have hv' := mem_diagramVertices_diagramSliceZero_iff.mpr (hv_eq.symm ▸ v.2)
+        have hv' := mem_diagramVertices_diagramSliceZero_iff.mpr (hv_eq.symm ▸ v.property)
         have hβ' := cons_zero_mem_diagramBox_iff.mp (hv_eq.symm ▸ hβ_eq.symm ▸ hβ)
-        have hdeg' : v.1.tail.degree + β.tail.degree = k := by
+        have hdeg' : v.val.tail.degree + β.tail.degree = k := by
           have := congrArg Finsupp.degree hv_eq; have := congrArg Finsupp.degree hβ_eq
           simp only [Finsupp.degree_cons, zero_add] at *; omega
-        exact (Subtype.ext hv_eq : (⟨Finsupp.cons 0 v.1.tail,
+        exact (Subtype.ext hv_eq : (⟨Finsupp.cons 0 v.val.tail,
             mem_diagramVertices_diagramSliceZero_iff.mp hv'⟩ : D.diagramVertices) = v) ▸
-          Submodule.subset_span (monomial_mul_mem_diagramSpanSet ⟨v.1.tail, hv'⟩ hβ' hdeg')
-      · exact absurd (degree_add_lt_diagramCutoff_of_mem_diagramBox hD_mono v.2
+          Submodule.subset_span (monomial_mul_mem_diagramSpanSet ⟨v.val.tail, hv'⟩ hβ' hdeg')
+      · exact absurd (degree_add_lt_diagramCutoff_of_mem_diagramBox hD_mono v.property
           (Nat.pos_of_ne_zero hv0) hβ hβ0) (by omega)
     · rw [hkill0 hβ0, zero_mul]; exact zero_mem _
   · by_cases hγ0 : γ 0 = 0
@@ -235,14 +236,14 @@ private theorem span_diagramSliceZero_of_span {n k : ℕ} {D : Set (Fin (n + 1) 
 private theorem rename_succ_mem_span_diagramSpanSet {n m : ℕ} {D : Set (Fin (n + 1) →₀ ℕ)}
     (hD_up : IsUpperSet D) (hD_mono : D.IsMonotoneDiagram)
     {H : D.diagramVertices → MvPolynomial (Fin (n + 1)) A}
-    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) (hm : D.diagramCutoff ≤ m)
+    (hH : ∀ v, (H v).IsHomogeneous v.val.degree) (hm : D.diagramCutoff ≤ m)
     (ihm : homogeneousSubmodule (Fin (n + 1)) A m ≤ Submodule.span A (D.diagramSpanSet H m))
     {g' : MvPolynomial (Fin n) A}
     (hg' : g' ∈ D.diagramSliceZero.diagramSpanSet (sliceGenerators H) (m + 1)) :
     rename Fin.succ g' ∈ Submodule.span A (D.diagramSpanSet H (m + 1)) := by
   rcases hg' with ⟨v', β', hβ', hdeg', rfl⟩ | ⟨γ', hγ', hdeg', rfl⟩
   · let v : D.diagramVertices :=
-      ⟨Finsupp.cons 0 v'.1, mem_diagramVertices_diagramSliceZero_iff.mp v'.2⟩
+      ⟨Finsupp.cons 0 v'.val, mem_diagramVertices_diagramSliceZero_iff.mp v'.property⟩
     have hQ : monomial (Finsupp.cons 0 β') 1 * H v ∈ D.diagramSpanSet H (m + 1) :=
       monomial_mul_mem_diagramSpanSet v (cons_zero_mem_diagramBox_iff.mpr hβ') (by simpa [v])
     obtain ⟨R, hR, hsplit⟩ :=
@@ -260,7 +261,7 @@ private theorem rename_succ_mem_span_diagramSpanSet {n m : ℕ} {D : Set (Fin (n
 private theorem homogeneousSubmodule_le_span_fin :
     ∀ {d : ℕ} {D : Set (Fin d →₀ ℕ)} (_hD_up : IsUpperSet D) (_hD_mono : D.IsMonotoneDiagram)
       {H : D.diagramVertices → MvPolynomial (Fin d) A}
-      (_hH : ∀ v, (H v).IsHomogeneous v.1.degree) {k : ℕ} (_hk : D.diagramCutoff ≤ k)
+      (_hH : ∀ v, (H v).IsHomogeneous v.val.degree) {k : ℕ} (_hk : D.diagramCutoff ≤ k)
       (_hspan : homogeneousSubmodule (Fin d) A k ≤ Submodule.span A (D.diagramSpanSet H k))
       {ℓ : ℕ} (_hℓ : k ≤ ℓ),
       homogeneousSubmodule (Fin d) A ℓ ≤ Submodule.span A (D.diagramSpanSet H ℓ)
@@ -270,8 +271,8 @@ private theorem homogeneousSubmodule_le_span_fin :
     · obtain ⟨_, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_zero_of_lt hlt)
       rw [MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty]; exact bot_le
   | n + 1, D, hD_up, hD_mono, H, hH, k, hk, hspan, ℓ, hℓ => by
-    have hH' : ∀ v', (sliceGenerators H v').IsHomogeneous v'.1.degree := fun v' ↦ by
-      simpa [sliceGenerators] using (hH ⟨_, mem_diagramVertices_diagramSliceZero_iff.mp v'.2⟩
+    have hH' : ∀ v', (sliceGenerators H v').IsHomogeneous v'.val.degree := fun v' ↦ by
+      simpa [sliceGenerators] using (hH ⟨_, mem_diagramVertices_diagramSliceZero_iff.mp v'.property⟩
         ).killCompl (Fin.succ_injective n)
     have hspan' (m : ℕ) (hm : k ≤ m) := homogeneousSubmodule_le_span_fin hD_up.diagramSliceZero
       hD_mono.diagramSliceZero hH' ((diagramCutoff_diagramSliceZero_le D).trans hk)
@@ -296,8 +297,8 @@ private theorem homogeneousSubmodule_le_span_preimage_equivMapDomain_iff
     homogeneousSubmodule τ A m ≤
         Submodule.span A ((Finsupp.equivMapDomain e.toEquiv ⁻¹' D).diagramSpanSet
           (fun v₀ ↦ (renameEquiv A e.toEquiv).symm
-            (H ⟨Finsupp.equivMapDomain e.toEquiv v₀.1,
-              (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mp v₀.2⟩)) m) ↔
+            (H ⟨Finsupp.equivMapDomain e.toEquiv v₀.val,
+              (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mp v₀.property⟩)) m) ↔
       homogeneousSubmodule σ A m ≤ Submodule.span A (D.diagramSpanSet H m) := by
   let g := renameEquiv A e.toEquiv
   have hmap := (congrArg (Submodule.span A)
@@ -321,7 +322,7 @@ upward-closed monotone diagram `D` on a finite linearly ordered variable set `σ
 spans `homogeneousSubmodule σ A ℓ` for every `ℓ ≥ k`. -/
 theorem homogeneousSubmodule_le_span_diagramSpanSet_of_le {σ : Type*} [Finite σ] [LinearOrder σ]
     {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D) (hD_mono : D.IsMonotoneDiagram)
-    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.1.degree)
+    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     {k : ℕ} (hk : D.diagramCutoff ≤ k)
     (hspan : homogeneousSubmodule σ A k ≤ Submodule.span A (D.diagramSpanSet H k))
     {ℓ : ℕ} (hℓ : k ≤ ℓ) :
@@ -333,20 +334,20 @@ theorem homogeneousSubmodule_le_span_diagramSpanSet_of_le {σ : Type*} [Finite �
       ((isMonotoneDiagram_preimage_equivMapDomain e).mpr hD_mono) (fun v₀ ↦
         (IsHomogeneous.rename_isHomogeneous_iff e.symm.injective).mpr <| by
           simpa [renameEquiv_symm, renameEquiv_apply, Finsupp.equivMapDomain_eq_mapDomain] using
-            hH ⟨Finsupp.equivMapDomain e.toEquiv v₀.1,
-              (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mp v₀.2⟩)
+            hH ⟨Finsupp.equivMapDomain e.toEquiv v₀.val,
+              (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mp v₀.property⟩)
       (by rwa [diagramCutoff_preimage_equivMapDomain e D])
       ((homogeneousSubmodule_le_span_preimage_equivMapDomain_iff e D H k).mpr hspan) hℓ)
 
 /-- **Bierstone–Milman's Finite-Degree Criterion** (Theorem 8.1): for an upward-closed monotone
 diagram `D : Set (σ →₀ ℕ)` on a finite linearly ordered variable set `σ` and homogeneous
-polynomials `H v` of degree `v.1.degree` over a commutative ring `A`, if
+polynomials `H v` of degree `v.val.degree` over a commutative ring `A`, if
 `Submodule.span A (D.diagramSpanSet H k) = homogeneousSubmodule σ A k` at some
 `k ≥ D.diagramCutoff`, then `Submodule.span A (D.diagramSpanSet H ℓ) = homogeneousSubmodule σ A ℓ`
 for every `ℓ ≥ k`. -/
 theorem span_diagramSpanSet_eq_of_le {σ : Type*} [Finite σ] [LinearOrder σ]
     {D : Set (σ →₀ ℕ)} (hD_up : IsUpperSet D) (hD_mono : D.IsMonotoneDiagram)
-    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.1.degree)
+    {H : D.diagramVertices → MvPolynomial σ A} (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     {k : ℕ} (hk : D.diagramCutoff ≤ k)
     (hspan : Submodule.span A (D.diagramSpanSet H k) = homogeneousSubmodule σ A k)
     {ℓ : ℕ} (hℓ : k ≤ ℓ) :
@@ -370,7 +371,7 @@ variable [Finite σ] [LinearOrder σ]
 if the constant polynomial `H ⟨0, _⟩` is a unit in `A`. -/
 theorem span_diagramSpanSet_univ_zero_iff
     {H : (Set.univ : Set (σ →₀ ℕ)).diagramVertices → MvPolynomial σ A}
-    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
+    (hH : ∀ v, (H v).IsHomogeneous v.val.degree) :
     Submodule.span A ((Set.univ : Set (σ →₀ ℕ)).diagramSpanSet H 0) =
         homogeneousSubmodule σ A 0 ↔
       IsUnit (constantCoeff (H ⟨0, by simp⟩)) := by
@@ -400,7 +401,7 @@ theorem span_diagramSpanSet_univ_zero_iff
 `constantCoeff (H ⟨0, _⟩)` is a unit in `A`. -/
 theorem forall_span_diagramSpanSet_univ_iff
     {H : (Set.univ : Set (σ →₀ ℕ)).diagramVertices → MvPolynomial σ A}
-    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
+    (hH : ∀ v, (H v).IsHomogeneous v.val.degree) :
     (∀ ℓ : ℕ, Submodule.span A ((Set.univ : Set (σ →₀ ℕ)).diagramSpanSet H ℓ) =
         homogeneousSubmodule σ A ℓ) ↔
       IsUnit (constantCoeff (H ⟨0, by simp⟩)) := by
@@ -428,7 +429,7 @@ theorem span_diagramSpanSet_Ici_of_lt {α : σ →₀ ℕ} {ℓ : ℕ} (hℓ : �
 a unit in `A`. -/
 theorem span_diagramSpanSet_Ici_iff [Unique σ] {α : σ →₀ ℕ} {ℓ : ℕ} (haℓ : α.degree ≤ ℓ)
     {H : (Set.Ici α).diagramVertices → MvPolynomial σ A}
-    (hH : ∀ v, (H v).IsHomogeneous v.1.degree) :
+    (hH : ∀ v, (H v).IsHomogeneous v.val.degree) :
     Submodule.span A ((Set.Ici α).diagramSpanSet H ℓ) = homogeneousSubmodule σ A ℓ ↔
       IsUnit ((H ⟨α, by simp⟩).coeff α) := by
   have hsingle (γ : σ →₀ ℕ) : γ = Finsupp.single (default : σ) γ.degree := by
@@ -511,10 +512,10 @@ private theorem toDegLex_sharpDiagram_lt :
 open scoped Classical in
 private noncomputable def sharpGenerators (A : Type*) [CommSemiring A] :
     sharpDiagram.diagramVertices → MvPolynomial (Fin 2) A :=
-  fun v ↦ if v.1 = Finsupp.single 1 3 then X 0 ^ 3 else X 1 ^ 3
+  fun v ↦ if v.val = Finsupp.single 1 3 then X 0 ^ 3 else X 1 ^ 3
 
 private theorem isHomogeneous_sharpGenerators (A : Type*) [CommSemiring A]
-    (v : sharpDiagram.diagramVertices) : (sharpGenerators A v).IsHomogeneous v.1.degree := by
+    (v : sharpDiagram.diagramVertices) : (sharpGenerators A v).IsHomogeneous v.val.degree := by
   obtain ⟨v, hv⟩ := v; rw [sharpDiagram_vertices, Finset.mem_insert, Finset.mem_singleton] at hv
   rcases hv with rfl | rfl
   · simpa [sharpGenerators] using (isHomogeneous_X A (0 : Fin 2)).pow 3
@@ -594,13 +595,13 @@ private theorem sharpDiagram_span_six_ne (A : Type*) [CommSemiring A] [Nontrivia
 /-- Sharpness of `Set.diagramCutoff`: over any nontrivial commutative semiring `A`, there exist an
 upward-closed monotone diagram `D` on `Fin 2` with `0 < D.diagramCutoff` (in fact
 `D.diagramCutoff = 6` with vertices of degree `3`) and homogeneous polynomials `H` of degrees
-`v.1.degree` such that `D.diagramSpanSet H k` spans `homogeneousSubmodule (Fin 2) A k` for every
+`v.val.degree` such that `D.diagramSpanSet H k` spans `homogeneousSubmodule (Fin 2) A k` for every
 `k < D.diagramCutoff`, yet `D.diagramSpanSet H D.diagramCutoff` fails to span
 `homogeneousSubmodule (Fin 2) A D.diagramCutoff`. -/
 theorem exists_isMonotoneDiagram_forall_lt_diagramCutoff_and_span_ne
     (A : Type*) [CommSemiring A] [Nontrivial A] :
     ∃ (D : Set (Fin 2 →₀ ℕ)) (H : D.diagramVertices → MvPolynomial (Fin 2) A),
-      IsUpperSet D ∧ D.IsMonotoneDiagram ∧ (∀ v, (H v).IsHomogeneous v.1.degree) ∧
+      IsUpperSet D ∧ D.IsMonotoneDiagram ∧ (∀ v, (H v).IsHomogeneous v.val.degree) ∧
       0 < D.diagramCutoff ∧
       (∀ k < D.diagramCutoff,
         Submodule.span A (D.diagramSpanSet H k) = homogeneousSubmodule (Fin 2) A k) ∧

@@ -77,8 +77,13 @@ of `E[N]` is such an `H` (`EllipticCurveGeom.existsUnique_comp_torsionPairHom`),
 problem `[Γ(N)]` is relatively representable over every base (`ModuliProblem.gammaNaiveRelRepData`).
 Its representing schemes are open subschemes of `E[N] ×_S E[N]`, so they inherit from `E[N]` every
 property stable under base change and composition which open immersions have
-(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation, and
-étaleness when `N` is invertible on `B` (`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
+(`ModuliProblem.hasProperty_gammaNaiveRelRepData`), for instance local finite presentation.
+Étaleness is not inherited this way, since `E[N]` need not be étale where `N` is not invertible.
+Instead, for `N ≠ 0` the naive full-level locus lies over the open set `D(N)` of the base where
+`N` is invertible, because a naive `[Γ(N)]`-structure forces `N` to be nonzero in every residue
+field (`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`). Over `D(N)` the
+scheme `E[N]` is étale, so `[Γ(N)]` is étale over `Ell/B` for every base `B`
+(`ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`).
 
 **Finiteness and surjectivity where `N` is invertible.** When `N` is invertible on `B`, the
 representing schemes of `[Γ₁(N)]` and `[Γ(N)]` are also closed in `E[N]` and `E[N] ×_S E[N]`, so
@@ -146,8 +151,9 @@ field of the base, the `N`-torsion of an elliptic curve is `(ℤ/Nℤ)²`, so ev
   morphisms of `[Γ₁(N)]` and `[Γ(N)]` inherit the properties of `E[N]` stable under base change
   and composition and holding for open immersions.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData` and
-  `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`: if `N` is
-  invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are étale over `Ell/B`.
+  `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaNaiveRelRepData`: the naive
+  problem `[Γ₁(N)]` is étale over `Ell/B` if `N` is invertible on `B`, and, for `N ≠ 0`, `[Γ(N)]` is
+  étale over every `B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaOneNaiveRelRepData` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_isFinite_gammaNaiveRelRepData`: if `N` is
   invertible on `B`, the naive problems `[Γ₁(N)]` and `[Γ(N)]` are finite over `Ell/B`.
@@ -180,7 +186,7 @@ variable {B : Scheme.{u}}
 /-- **Naive `A`-structures pull back along arrows of `Ell/B`**: an arrow `f : X ⟶ Y` exhibits `X`
 as a base change of `Y`, and a homomorphism `A →* E(S)` injective on every fibre stays so after
 composing with base change of points along `f`. -/
-theorem EllObj.Hom.isFiberwiseInjective_pointsPullback {X Y : EllObj B} {A : Type} [Group A]
+theorem EllObj.Hom.isFiberwiseInjective_pointsPullback {X Y : EllObj B} {A : Type*} [Group A]
     {φ : A →* (𝟙_ (Over Y.base) ⟶ Over.mk Y.curve.structureMap)} (f : X ⟶ Y)
     (h : Y.curve.IsFiberwiseInjective φ) :
     X.curve.IsFiberwiseInjective
@@ -214,8 +220,8 @@ noncomputable def naiveLevelEquiv (X : EllObj B) :
 base change of points along `φ`. -/
 @[simp]
 theorem naiveLevelEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (naiveLevel B A).obj (op Y)) :
-    (naiveLevelEquiv X ((naiveLevel B A).map φ.op α)).1 =
-      (EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total).comp (naiveLevelEquiv Y α).1 :=
+    (naiveLevelEquiv X ((naiveLevel B A).map φ.op α)).val =
+      (EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total).comp (naiveLevelEquiv Y α).val :=
   homLevelEquiv_map φ α
 
 variable (B) in
@@ -230,7 +236,8 @@ noncomputable def naiveLevelMap {A' : Type} [Group A'] (ψ : A' →* A)
 @[simp]
 theorem naiveLevelEquiv_naiveLevelMap_app {A' : Type} [Group A'] (ψ : A' →* A)
     (hψ : Function.Injective ψ) (X : EllObj B) (α : (naiveLevel B A).obj (op X)) :
-    (naiveLevelEquiv X ((naiveLevelMap B ψ hψ).app (op X) α)).1 = (naiveLevelEquiv X α).1.comp ψ :=
+    (naiveLevelEquiv X ((naiveLevelMap B ψ hψ).app (op X) α)).val = (naiveLevelEquiv X α).val.comp ψ
+        :=
   homLevelEquiv_homLevelMap_app (hp := EllObj.Hom.isFiberwiseInjective_pointsPullback)
     (hp' := EllObj.Hom.isFiberwiseInjective_pointsPullback) ψ (fun _ _ h ↦ h.comp hψ) X α
 
@@ -239,7 +246,7 @@ homomorphism `A →* E(S)` to every structure. -/
 @[ext]
 theorem naiveLevel_hom_ext {P : ModuliProblem B} {f g : P ⟶ naiveLevel B A}
     (h : ∀ (X : EllObj B) (α : P.obj (op X)),
-      (naiveLevelEquiv X (f.app (op X) α)).1 = (naiveLevelEquiv X (g.app (op X) α)).1) :
+      (naiveLevelEquiv X (f.app (op X) α)).val = (naiveLevelEquiv X (g.app (op X) α)).val) :
     f = g :=
   homLevel_hom_ext h
 
@@ -259,8 +266,8 @@ noncomputable def naiveLevelAction : (MulAut A)ᵐᵒᵖ →* Aut (naiveLevel B 
 @[simp]
 theorem naiveLevelEquiv_naiveLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
     (α : (naiveLevel B A).obj (op X)) :
-    (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.hom.app (op X) α)).1 =
-      (naiveLevelEquiv X α).1.comp σ.unop.toMonoidHom :=
+    (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.hom.app (op X) α)).val =
+      (naiveLevelEquiv X α).val.comp σ.unop.toMonoidHom :=
   homLevelEquiv_homLevelAction_hom_app _ σ X α
 
 /-- The inverse of the automorphism of the moduli problem given by `σ` sends a naive
@@ -268,8 +275,8 @@ theorem naiveLevelEquiv_naiveLevelAction_hom_app (σ : (MulAut A)ᵐᵒᵖ) (X :
 @[simp]
 theorem naiveLevelEquiv_naiveLevelAction_inv_app (σ : (MulAut A)ᵐᵒᵖ) (X : EllObj B)
     (α : (naiveLevel B A).obj (op X)) :
-    (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.inv.app (op X) α)).1 =
-      (naiveLevelEquiv X α).1.comp σ.unop.symm.toMonoidHom :=
+    (naiveLevelEquiv X ((naiveLevelAction B A σ).asIso.inv.app (op X) α)).val =
+      (naiveLevelEquiv X α).val.comp σ.unop.symm.toMonoidHom :=
   homLevelEquiv_homLevelAction_inv_app _ σ X α
 
 /-- **The action of the automorphisms of `A` on naive `A`-structures is free.** Over a nonempty
@@ -278,9 +285,10 @@ structure is injective. Over the empty base every automorphism fixes the unique 
 theorem eq_one_of_naiveLevelAction_hom_app_eq_self {X : EllObj B} [Nonempty X.base]
     {σ : (MulAut A)ᵐᵒᵖ} {α : (naiveLevel B A).obj (op X)}
     (h : (naiveLevelAction B A σ).asIso.hom.app (op X) α = α) : σ = 1 := by
-  have h' := congrArg (fun α ↦ (naiveLevelEquiv X α).1) h
+  have h' := congrArg (fun α ↦ (naiveLevelEquiv X α).val) h
   simp only [naiveLevelEquiv_naiveLevelAction_hom_app] at h'
-  refine MulOpposite.unop_injective (MulEquiv.ext fun a ↦ (naiveLevelEquiv X α).2.injective ?_)
+  refine MulOpposite.unop_injective (MulEquiv.ext fun a ↦ (naiveLevelEquiv X α).property.injective
+      ?_)
   simpa using DFunLike.congr_fun h' a
 
 /-! ### Rigidity -/
@@ -294,13 +302,13 @@ theorem isRigid_naiveLevel {a b : A} (ha : a * a ≠ 1) (hb : b ≠ 1) (hba : b 
     (hba' : b ≠ a⁻¹) : (naiveLevel B A).IsRigid := by
   refine (isRigid_iff _).mpr fun X σ hσ α hα ↦ ?_
   have hfix (c : A) :
-      ((naiveLevelEquiv X α).1 c).left ≫ σ.total = ((naiveLevelEquiv X α).1 c).left := by
+      ((naiveLevelEquiv X α).val c).left ≫ σ.total = ((naiveLevelEquiv X α).val c).left := by
     have h := DFunLike.congr_fun (naiveLevelEquiv_map σ α) c
     rw [hα, MonoidHom.comp_apply, EllipticCurveGeom.eq_pointsPullback_iff] at h
     rw [h, hσ, Category.id_comp]
   refine EllObj.hom_ext ?_
   rw [EllObj.id_total]
-  exact (naiveLevelEquiv X α).2.eq_id_of_isPullback ha hb hba hba' (hσ ▸ σ.isPullback)
+  exact (naiveLevelEquiv X α).property.eq_id_of_isPullback ha hb hba hba' (hσ ▸ σ.isPullback)
     (by rw [σ.zero_total, hσ, Category.id_comp]) (hfix a) (hfix b)
 
 variable (B) (N : ℕ)
@@ -356,7 +364,6 @@ theorem isRigid_gammaOneNaive (hN : 4 ≤ N) : (gammaOneNaive B N).IsRigid := by
   · rw [← ofAdd_neg, Ne, Multiplicative.ofAdd.injective.eq_iff, ← sub_eq_zero, sub_neg_eq_add]
     exact_mod_cast h 3 (by omega) (by omega)
 
-
 /-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` of naive moduli problems which keeps the first component `P`
 of a naive `[Γ(N)]`-structure `(P, Q)`, that is, restricts it along `z ↦ (z, 0)`. When `N` is
 invertible, `P` is the first vector of the basis `(P, Q)` of the `N`-torsion. -/
@@ -368,8 +375,8 @@ noncomputable def gammaNaiveToGammaOneNaive : gammaNaive B N ⟶ gammaOneNaive B
 @[simp]
 theorem naiveLevelEquiv_gammaNaiveToGammaOneNaive_app_apply (X : EllObj B)
     (α : (gammaNaive B N).obj (op X)) (z : Multiplicative (ZMod N)) :
-    (naiveLevelEquiv X ((gammaNaiveToGammaOneNaive B N).app (op X) α)).1 z =
-      (naiveLevelEquiv X α).1 (.ofAdd (z.toAdd, 0)) :=
+    (naiveLevelEquiv X ((gammaNaiveToGammaOneNaive B N).app (op X) α)).val z =
+      (naiveLevelEquiv X α).val (.ofAdd (z.toAdd, 0)) :=
   DFunLike.congr_fun (naiveLevelEquiv_naiveLevelMap_app _ _ X α) z
 
 /-! ### Naive level structures as points of `E[N]` -/
@@ -395,7 +402,7 @@ noncomputable def gammaOneNaiveEquiv (X : EllObj B) :
 /-- The `S`-point of `E[N]` of a naive `[Γ₁(N)]`-structure `φ` is `φ 1`. -/
 @[simp]
 theorem gammaOneNaiveEquiv_apply_torsionι (X : EllObj B) (α : (gammaOneNaive B N).obj (op X)) :
-    (gammaOneNaiveEquiv X α).1 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd 1) :=
+    (gammaOneNaiveEquiv X α).val ≫ X.curve.torsionι N = (naiveLevelEquiv X α).val (.ofAdd 1) :=
   (X.curve.torsionPointsEquiv_apply_torsionι _ _ _).trans (coe_zmodMonoidHomEquiv_apply _)
 
 /-- The naive `[Γ₁(N)]`-structure of an `S`-point `P` of `E[N]` sends `a` to `aP`. -/
@@ -404,17 +411,17 @@ theorem naiveLevelEquiv_gammaOneNaiveEquiv_symm_apply (X : EllObj B)
     (P : {P : 𝟙_ (Over X.base) ⟶ (X.curve.torsion N).X //
       ∀ k : ℕ, 0 < k → k < N → ∀ s, ((P ≫ X.curve.torsionι N) ^ k).left s ≠ X.curve.zero s})
     (a : ZMod N) :
-    (naiveLevelEquiv X ((gammaOneNaiveEquiv X).symm P)).1 (.ofAdd a) =
-      (P.1 ≫ X.curve.torsionι N) ^ a.val := by
+    (naiveLevelEquiv X ((gammaOneNaiveEquiv X).symm P)).val (.ofAdd a) =
+      (P.val ≫ X.curve.torsionι N) ^ a.val := by
   simp [gammaOneNaiveEquiv]
 
 /-- The `S`-point of `E[N]` of the pull-back of a naive `[Γ₁(N)]`-structure along an arrow `φ` of
 `Ell/B` is the base change along `φ` of its `S`-point of `E[N]`. -/
 theorem gammaOneNaiveEquiv_map_torsionι {X Y : EllObj B} (φ : X ⟶ Y)
     (α : (gammaOneNaive B N).obj (op Y)) :
-    (gammaOneNaiveEquiv X ((gammaOneNaive B N).map φ.op α)).1 ≫ X.curve.torsionι N =
+    (gammaOneNaiveEquiv X ((gammaOneNaive B N).map φ.op α)).val ≫ X.curve.torsionι N =
       EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total
-        ((gammaOneNaiveEquiv Y α).1 ≫ Y.curve.torsionι N) := by
+        ((gammaOneNaiveEquiv Y α).val ≫ Y.curve.torsionι N) := by
   simp
 
 /-- **Naive `[Γ(N)]`-structures are pairs of points of `E[N]`.** For `N ≠ 0`, a naive
@@ -440,13 +447,13 @@ noncomputable def gammaNaiveEquiv (X : EllObj B) :
 /-- The first `S`-point `P` of `E[N]` of a naive `[Γ(N)]`-structure `φ` is `φ (1, 0)`. -/
 @[simp]
 theorem gammaNaiveEquiv_apply_fst_torsionι (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
-    (gammaNaiveEquiv X α).1.1 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd (1, 0)) :=
+    (gammaNaiveEquiv X α).val.1 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).val (.ofAdd (1, 0)) :=
   (X.curve.torsionPointsEquiv_apply_torsionι _ _ _).trans (coe_zmodProdMonoidHomEquiv_apply_fst _)
 
 /-- The second `S`-point `Q` of `E[N]` of a naive `[Γ(N)]`-structure `φ` is `φ (0, 1)`. -/
 @[simp]
 theorem gammaNaiveEquiv_apply_snd_torsionι (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
-    (gammaNaiveEquiv X α).1.2 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd (0, 1)) :=
+    (gammaNaiveEquiv X α).val.2 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).val (.ofAdd (0, 1)) :=
   (X.curve.torsionPointsEquiv_apply_torsionι _ _ _).trans (coe_zmodProdMonoidHomEquiv_apply_snd _)
 
 /-- The naive `[Γ(N)]`-structure of a pair `(P, Q)` of `S`-points of `E[N]` sends `(a, b)` to
@@ -458,26 +465,26 @@ theorem naiveLevelEquiv_gammaNaiveEquiv_symm_apply (X : EllObj B)
       ∀ a b : ZMod N, (a, b) ≠ 0 → ∀ s, ((PQ.1 ≫ X.curve.torsionι N) ^ a.val *
         (PQ.2 ≫ X.curve.torsionι N) ^ b.val).left s ≠ X.curve.zero s})
     (a b : ZMod N) :
-    (naiveLevelEquiv X ((gammaNaiveEquiv X).symm PQ)).1 (.ofAdd (a, b)) =
-      (PQ.1.1 ≫ X.curve.torsionι N) ^ a.val * (PQ.1.2 ≫ X.curve.torsionι N) ^ b.val := by
+    (naiveLevelEquiv X ((gammaNaiveEquiv X).symm PQ)).val (.ofAdd (a, b)) =
+      (PQ.val.1 ≫ X.curve.torsionι N) ^ a.val * (PQ.val.2 ≫ X.curve.torsionι N) ^ b.val := by
   simp [gammaNaiveEquiv]
 
 /-- The first `S`-point of `E[N]` of the pull-back of a naive `[Γ(N)]`-structure along an arrow `φ`
 of `Ell/B` is the base change along `φ` of its first `S`-point of `E[N]`. -/
 theorem gammaNaiveEquiv_map_fst_torsionι {X Y : EllObj B} (φ : X ⟶ Y)
     (α : (gammaNaive B N).obj (op Y)) :
-    (gammaNaiveEquiv X ((gammaNaive B N).map φ.op α)).1.1 ≫ X.curve.torsionι N =
+    (gammaNaiveEquiv X ((gammaNaive B N).map φ.op α)).val.1 ≫ X.curve.torsionι N =
       EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total
-        ((gammaNaiveEquiv Y α).1.1 ≫ Y.curve.torsionι N) := by
+        ((gammaNaiveEquiv Y α).val.1 ≫ Y.curve.torsionι N) := by
   simp
 
 /-- The second `S`-point of `E[N]` of the pull-back of a naive `[Γ(N)]`-structure along an arrow
 `φ` of `Ell/B` is the base change along `φ` of its second `S`-point of `E[N]`. -/
 theorem gammaNaiveEquiv_map_snd_torsionι {X Y : EllObj B} (φ : X ⟶ Y)
     (α : (gammaNaive B N).obj (op Y)) :
-    (gammaNaiveEquiv X ((gammaNaive B N).map φ.op α)).1.2 ≫ X.curve.torsionι N =
+    (gammaNaiveEquiv X ((gammaNaive B N).map φ.op α)).val.2 ≫ X.curve.torsionι N =
       EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total
-        ((gammaNaiveEquiv Y α).1.2 ≫ Y.curve.torsionι N) := by
+        ((gammaNaiveEquiv Y α).val.2 ≫ Y.curve.torsionι N) := by
   simp
 
 end Points
@@ -502,8 +509,8 @@ noncomputable def gammaNaiveAction : (GL (Fin 2) (ZMod N))ᵐᵒᵖ →* Aut (ga
 @[simp]
 theorem naiveLevelEquiv_gammaNaiveAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X : EllObj B)
     (α : (gammaNaive B N).obj (op X)) :
-    (naiveLevelEquiv X ((gammaNaiveAction B N g).asIso.hom.app (op X) α)).1 =
-      (naiveLevelEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).toMonoidHom :=
+    (naiveLevelEquiv X ((gammaNaiveAction B N g).asIso.hom.app (op X) α)).val =
+      (naiveLevelEquiv X α).val.comp (zmodProdMulAutEquiv N g.unop).toMonoidHom :=
   naiveLevelEquiv_naiveLevelAction_hom_app _ X α
 
 /-- The inverse of the automorphism of `[Γ(N)]` given by a matrix `g` sends a naive
@@ -511,8 +518,8 @@ theorem naiveLevelEquiv_gammaNaiveAction_hom_app (g : (GL (Fin 2) (ZMod N))ᵐ�
 @[simp]
 theorem naiveLevelEquiv_gammaNaiveAction_inv_app (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) (X : EllObj B)
     (α : (gammaNaive B N).obj (op X)) :
-    (naiveLevelEquiv X ((gammaNaiveAction B N g).asIso.inv.app (op X) α)).1 =
-      (naiveLevelEquiv X α).1.comp (zmodProdMulAutEquiv N g.unop).symm.toMonoidHom :=
+    (naiveLevelEquiv X ((gammaNaiveAction B N g).asIso.inv.app (op X) α)).val =
+      (naiveLevelEquiv X α).val.comp (zmodProdMulAutEquiv N g.unop).symm.toMonoidHom :=
   naiveLevelEquiv_naiveLevelAction_inv_app _ X α
 
 /-- The naive `[Γ(N)]`-structures are acted on freely by `GL₂(ℤ/Nℤ)` over a nonempty base. -/
@@ -538,10 +545,10 @@ variable [NeZero N]
 `[Γ(N)]`-structure `(P, Q) g` is `aP + cQ`, where `(a, c)` is the first column of `g`. -/
 theorem gammaNaiveEquiv_gammaNaiveAction_hom_app_fst_torsionι (g : GL (Fin 2) (ZMod N))
     (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
-    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).asIso.hom.app (op X) α)).1.1 ≫
+    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).asIso.hom.app (op X) α)).val.1 ≫
         X.curve.torsionι N =
-      ((gammaNaiveEquiv X α).1.1 ≫ X.curve.torsionι N) ^ (g 0 0).val *
-        ((gammaNaiveEquiv X α).1.2 ≫ X.curve.torsionι N) ^ (g 1 0).val := by
+      ((gammaNaiveEquiv X α).val.1 ≫ X.curve.torsionι N) ^ (g 0 0).val *
+        ((gammaNaiveEquiv X α).val.2 ≫ X.curve.torsionι N) ^ (g 1 0).val := by
   rw [← naiveLevelEquiv_gammaNaiveEquiv_symm_apply, Equiv.symm_apply_apply]
   simp
 
@@ -549,10 +556,10 @@ theorem gammaNaiveEquiv_gammaNaiveAction_hom_app_fst_torsionι (g : GL (Fin 2) (
 `[Γ(N)]`-structure `(P, Q) g` is `bP + dQ`, where `(b, d)` is the second column of `g`. -/
 theorem gammaNaiveEquiv_gammaNaiveAction_hom_app_snd_torsionι (g : GL (Fin 2) (ZMod N))
     (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
-    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).asIso.hom.app (op X) α)).1.2 ≫
+    (gammaNaiveEquiv X ((gammaNaiveAction B N (.op g)).asIso.hom.app (op X) α)).val.2 ≫
         X.curve.torsionι N =
-      ((gammaNaiveEquiv X α).1.1 ≫ X.curve.torsionι N) ^ (g 0 1).val *
-        ((gammaNaiveEquiv X α).1.2 ≫ X.curve.torsionι N) ^ (g 1 1).val := by
+      ((gammaNaiveEquiv X α).val.1 ≫ X.curve.torsionι N) ^ (g 0 1).val *
+        ((gammaNaiveEquiv X α).val.2 ≫ X.curve.torsionι N) ^ (g 1 1).val := by
   rw [← naiveLevelEquiv_gammaNaiveEquiv_symm_apply, Equiv.symm_apply_apply]
   simp
 
@@ -564,15 +571,14 @@ section Representable
 
 open EllipticCurveGeom
 
-variable {B} {X : EllObj B} {A : Type} [Group A] {H : Over X.base}
-  (u : A →* (H ⟶ Over.mk X.curve.structureMap))
+variable {B} {X : EllObj B}
 
 /-- **Injectivity on fibres of a base change, read on the original curve.** For an object
 `X = (E/S)` of `Ell/B` and a scheme `T` over `S`, a homomorphism `φ : A →* E_T(T)` is injective on
 every fibre of the base change `E_T` exactly when, for every `a ≠ 1`, the point of `E` with values
 in `T` given by `φ a` (`EllObj.baseChangePointsEquiv`) misses the zero section of `E` at every
 point of `T`. -/
-theorem isFiberwiseInjective_baseChange_iff {T : Over X.base}
+theorem isFiberwiseInjective_baseChange_iff {A : Type*} [Group A] {T : Over X.base}
     {φ : A →* (𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
       Over.mk (X.baseChangeFunctor.obj T).curve.structureMap)} :
     (X.baseChangeFunctor.obj T).curve.IsFiberwiseInjective φ ↔
@@ -587,7 +593,10 @@ theorem isFiberwiseInjective_baseChange_iff {T : Over X.base}
   -- the base change is `T.left` by definition
   exact Iff.rfl
 
-variable [Finite A]
+section NaiveLocusHom
+
+variable {A : Type*} [Group A] {H : Over X.base} (u : A →* (H ⟶ Over.mk X.curve.structureMap))
+  [Finite A]
 
 /-- **The naive structure of a point of the naive locus.** For a point `y` of the naive locus of
 `u` with values in a scheme `T` over `S`, the homomorphism `A →* E_T(T)` sending `a` to the
@@ -600,6 +609,8 @@ noncomputable def naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLocusOver u) :
     map_one' := by simp
     map_mul' a b := by simp [MonObj.comp_mul] }
 
+/-- Under `baseChangePointsEquiv`, the point `naiveLocusHom u y a` of the base change `E_T` is
+the point `y ≫ naiveLocusι u ≫ u a` of `E` with values in `T`. -/
 @[simp]
 theorem baseChangePointsEquiv_naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLocusOver u) (a : A) :
     X.baseChangePointsEquiv T (naiveLocusHom u y a) = y ≫ naiveLocusι u ≫ u a :=
@@ -616,6 +627,11 @@ theorem isFiberwiseInjective_naiveLocusHom {T : Over X.base} (y : T ⟶ naiveLoc
     ← Scheme.Opens.range_ι]
   exact ⟨_, rfl⟩
 
+end NaiveLocusHom
+
+variable {A : Type} [Group A] {H : Over X.base} (u : A →* (H ⟶ Over.mk X.curve.structureMap))
+  [Finite A]
+
 variable (hu : ∀ (T : Over X.base) (φ : A →* (T ⟶ Over.mk X.curve.structureMap)),
   ∃! x : T ⟶ H, ∀ a, x ≫ u a = φ a)
 
@@ -624,7 +640,7 @@ private theorem bijective_naiveLocusHom (T : Over X.base) :
     Function.Bijective fun y : T ⟶ naiveLocusOver u ↦ (naiveLevelEquiv _).symm
       ⟨naiveLocusHom u y, isFiberwiseInjective_naiveLocusHom u y⟩ := by
   refine ⟨fun y y' h ↦ ?_, fun α ↦ ?_⟩
-  · have h' := congrArg (fun α ↦ (naiveLevelEquiv _ α).1) h
+  · have h' := congrArg (fun α ↦ (naiveLevelEquiv _ α).val) h
     simp only [Equiv.apply_symm_apply] at h'
     have hyy' : ∀ a, (y' ≫ naiveLocusι u) ≫ u a = (y ≫ naiveLocusι u) ≫ u a := fun a ↦ by
       simpa using (congrArg (X.baseChangePointsEquiv T) (DFunLike.congr_fun h' a)).symm
@@ -652,9 +668,10 @@ noncomputable def naiveLocusEquiv (T : Over X.base) :
     (T ⟶ naiveLocusOver u) ≃ (naiveLevel B A).obj (op (X.baseChangeFunctor.obj T)) :=
   Equiv.ofBijective _ (bijective_naiveLocusHom u hu T)
 
+/-- The naive structure corresponding to a point `y` of the naive locus is `naiveLocusHom u y`. -/
 @[simp]
 theorem naiveLevelEquiv_naiveLocusEquiv {T : Over X.base} (y : T ⟶ naiveLocusOver u) :
-    (naiveLevelEquiv _ (naiveLocusEquiv u hu T y)).1 = naiveLocusHom u y := by
+    (naiveLevelEquiv _ (naiveLocusEquiv u hu T y)).val = naiveLocusHom u y := by
   simp [naiveLocusEquiv]
 
 /-- The correspondence `naiveLocusEquiv` is natural in the scheme `T` over `S`. -/
@@ -724,6 +741,8 @@ noncomputable def gammaOneNaiveRelRepData : (gammaOneNaive B N).RelRepData where
   representableBy X :=
     naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPointHom N
 
+/-- The object representing the naive problem `[Γ₁(N)]` over `X = (E/S)` is the naive locus of
+the universal point `torsionPointHom` of `E[N]`. -/
 @[simp]
 theorem gammaOneNaiveRelRepData_rep (X : EllObj B) :
     (gammaOneNaiveRelRepData (B := B) (N := N)).rep X =
@@ -789,6 +808,8 @@ noncomputable def gammaNaiveRelRepData : (gammaNaive B N).RelRepData where
   representableBy X :=
     naiveLevelRepresentableBy _ fun _ ↦ X.curve.existsUnique_comp_torsionPairHom N
 
+/-- The object representing the naive problem `[Γ(N)]` over `X = (E/S)` is the naive locus of
+the universal pair `torsionPairHom` of points of `E[N]`. -/
 @[simp]
 theorem gammaNaiveRelRepData_rep (X : EllObj B) :
     (gammaNaiveRelRepData (B := B) (N := N)).rep X =
@@ -813,14 +834,47 @@ theorem hasProperty_locallyOfFinitePresentation_gammaNaiveRelRepData :
     (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @LocallyOfFinitePresentation :=
   hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun _ ↦ inferInstance
 
-/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B` when `N` is invertible on `B`**
-(Katz–Mazur, 3.7.1): if `N` is invertible in every residue field of `B`, each representing scheme
-is étale over its base, as an open subscheme of `E[N] ×_S E[N]`. -/
-theorem hasProperty_etale_gammaNaiveRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
-    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @Etale :=
-  hasProperty_gammaNaiveRelRepData (fun _ _ _ _ ↦ inferInstance) fun X ↦
-    X.curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N) fun _ ↦ by
-      simpa using X.structureMap.natCast_residueField_ne_zero (hN _)
+/-- **The naive moduli problem `[Γ(N)]` is étale over `Ell/B`** for `N ≠ 0`, over every base `B`:
+a naive `[Γ(N)]`-structure forces `N` to be invertible
+(`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`), so each representing
+scheme lies over the open set where `N` is invertible, where it is étale as an open subscheme of
+`E[N] ×_S E[N]`. -/
+theorem hasProperty_etale_gammaNaiveRelRepData :
+    (gammaNaiveRelRepData (B := B) (N := N)).HasProperty @Etale := by
+  refine (RelRepData.hasProperty_iff _).mpr fun X ↦ ?_
+  let D := gammaNaiveRelRepData (B := B) (N := N)
+  -- the open set `U` of the base where `N` is invertible
+  let U : X.base.Opens := X.base.basicOpen (N : Γ(X.base, ⊤))
+  have hU (s : X.base) : s ∈ U ↔ (N : X.base.residueField s) ≠ 0 := by
+    rw [← X.base.evaluation_ne_zero_iff_mem_basicOpen s trivial, map_natCast]
+  -- over `U`, `E[N]` is étale, and so is the representing scheme
+  let T : Over X.base := Over.mk U.ι
+  have hT : Etale (D.rep (X.baseChangeFunctor.obj T)).hom := by
+    have h : Etale ((X.baseChangeFunctor.obj T).curve.torsion N).X.hom :=
+      (X.baseChangeFunctor.obj T).curve.etale_torsion_hom_of_forall_intCast_ne_zero (n := N)
+        fun u ↦ by
+            exact_mod_cast U.ι.natCast_residueField_ne_zero (x := u) (N := N) ((hU _).mp u.property)
+    exact EllipticCurveGeom.naiveLocusOver_hom_mem _ (fun _ _ _ _ ↦ inferInstance)
+      (MorphismProperty.comp_mem _ _ _ (MorphismProperty.pullback_fst _ _ h) h)
+  -- the representing scheme lies over `U`, since its tautological structure forces `N ≠ 0`
+  have hrange : Set.range (D.rep X).hom ⊆ Set.range U.ι := by
+    rintro _ ⟨r, rfl⟩
+    rw [Scheme.Opens.range_ι, SetLike.mem_coe, hU]
+    intro h0
+    have h := congrArg ((D.rep X).hom.residueFieldMap r) h0
+    rw [map_natCast, map_zero] at h
+    have hφ := isFiberwiseInjective_naiveLocusHom (X.curve.torsionPairHom N) (𝟙 _)
+    exact hφ.natCast_residueField_ne_zero r h
+  -- so it factors through `U`, by the base change to `U`, which is the representing scheme over `T`
+  have hlift : IsPullback (𝟙 _) (IsOpenImmersion.lift U.ι (D.rep X).hom hrange) (D.rep X).hom
+      (X.baseChangeFunctorHom T).base := by
+    rw [EllObj.baseChangeFunctorHom_base]
+    exact (IsOpenImmersion.isPullback_lift_id (D.rep X).hom U.ι hrange).flip
+  have : Etale (IsOpenImmersion.lift U.ι (D.rep X).hom hrange) := by
+    rw [← (D.isPullback (X.baseChangeFunctorHom T)).isoIsPullback_inv_snd _ _ hlift]
+    exact MorphismProperty.comp_mem _ _ _ inferInstance hT
+  rw [← IsOpenImmersion.lift_fac U.ι (D.rep X).hom hrange]
+  infer_instance
 
 /-- **The naive moduli problem `[Γ(N)]` is finite over `Ell/B` when `N` is invertible on `B`**:
 if `N` is invertible in every residue field of `B`, every representing scheme is finite over its
