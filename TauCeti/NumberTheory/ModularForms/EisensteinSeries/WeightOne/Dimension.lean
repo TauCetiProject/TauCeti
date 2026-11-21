@@ -284,7 +284,7 @@ end Profile
 
 /-- The matrix `!![1, 0; c, 1]`, which represents the cusp `1 / c`. -/
 private def lowerUnipotent (c : ℕ) : SL(2, ℤ) :=
-  ⟨!![1, 0; (c : ℤ), 1], by simp [Matrix.det_fin_two_of]⟩
+  .mk !![1, 0; (c : ℤ), 1] (by simp [Matrix.det_fin_two_of])
 
 /-- The constant term of `E₁^{ψ,φ,t}` at the cusp `1 / c` in terms of the two profiles. -/
 private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZero u] [NeZero v]

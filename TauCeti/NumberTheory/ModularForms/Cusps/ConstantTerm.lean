@@ -536,7 +536,7 @@ variable {N : ℕ}
 
 /-- The integral matrix representing the divisor cusp `1/d` of `Γ₀(N)`. -/
 def divisorCuspRep (d : N.divisors) : SL(2, ℤ) :=
-  ⟨!![1, 0; (d.val : ℤ), 1], by simp⟩
+  .mk !![1, 0; (d.val : ℤ), 1] (by simp)
 
 /-- The matrix entries of the representative of the divisor cusp `1/d`. -/
 @[simp]

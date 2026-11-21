@@ -488,7 +488,7 @@ lemma mul_inv_mem_Gamma1_iff_Gamma0Map_eq (g₁ g₂ : ↥(Gamma0 N)) :
 
 /-- The diagonal matrix `!![u⁻¹, 0; 0, u]` as an element of `SL₂(ZMod N)`. -/
 private def diagUnit (u : (ZMod N)ˣ) : SpecialLinearGroup (Fin 2) (ZMod N) :=
-  ⟨!![(↑u⁻¹ : ZMod N), 0; 0, ↑u], by simp [det_fin_two_of]⟩
+  .mk !![(↑u⁻¹ : ZMod N), 0; 0, ↑u] (by simp [det_fin_two_of])
 
 private lemma coe_diagUnit (u : (ZMod N)ˣ) :
     (diagUnit u : Matrix (Fin 2) (Fin 2) (ZMod N)) = !![(↑u⁻¹ : ZMod N), 0; 0, ↑u] := rfl
@@ -771,7 +771,7 @@ section InductiveStep
 variable (p : ℕ)
 
 private def lowerTriRep (k : ℕ) (c : Fin p) : SL(2, ℤ) :=
-  ⟨!![1, 0; (c : ℤ) * (p : ℤ) ^ k, 1], by simp [det_fin_two_of]⟩
+  .mk !![1, 0; (c : ℤ) * (p : ℤ) ^ k, 1] (by simp [det_fin_two_of])
 
 private lemma lowerTriRep_mem_Gamma0 (k : ℕ) (c : Fin p) :
     lowerTriRep p k c ∈ Gamma0 (p ^ k) := by

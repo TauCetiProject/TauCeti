@@ -108,9 +108,9 @@ theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom (γ : SL(2, �
     rw [ha]
     linear_combination (-(a : ZMod M) * γ 1 1) * hAD
   let γ' : SL(2, ℤ) :=
-    ⟨!![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c], by
+    .mk !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] (by
       rw [Matrix.det_fin_two_of]
-      linear_combination hdet + (M * c) * he + (a * a' * c - e) * hc⟩
+      linear_combination hdet + (M * c) * he + (a * a' * c - e) * hc)
   have hγ' : (γ' : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] := rfl
   refine ⟨γ', by simp [hγ'], by simp [hγ'], by simp [hγ'], ?_⟩

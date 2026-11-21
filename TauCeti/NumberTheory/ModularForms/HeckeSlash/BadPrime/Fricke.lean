@@ -62,7 +62,7 @@ variable {N p : ℕ} {k : ℤ}
 
 /-- The matrix `!![1, b; c M, c M b + 1] = !![1, 0; c M, 1] * !![1, b; 0, 1]` of `SL(2, ℤ)`. -/
 private def lowerShear (M : ℕ) (c b : ℤ) : SL(2, ℤ) :=
-  ⟨!![1, b; c * M, c * M * b + 1], by rw [Matrix.det_fin_two_of]; ring⟩
+  .mk !![1, b; c * M, c * M * b + 1] (by rw [Matrix.det_fin_two_of]; ring)
 
 /-- The entries of `lowerShear M c b`. -/
 private lemma coe_lowerShear (M : ℕ) (c b : ℤ) :

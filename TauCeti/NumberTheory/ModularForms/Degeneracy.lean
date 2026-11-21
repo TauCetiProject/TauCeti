@@ -534,18 +534,18 @@ section Transport
 entries are rearranged as `(a, b; d c, e) ↦ (a, d b; c, e)`, which is again integral of
 determinant one. -/
 def conjScale (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) : SL(2, ℤ) :=
-  ⟨!![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1], by
+  .mk !![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1] (by
     have hdet : (γ 0 0) * (γ 1 1) - (γ 0 1) * (γ 1 0) = 1 :=
       Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
     rw [hc] at hdet
     rw [Matrix.det_fin_two_of]
-    linarith [hdet]⟩
+    linarith [hdet])
 
 @[simp]
 lemma coe_conjScale (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) :
     ((conjScale d γ c hc : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1] := by
-  rw [conjScale]
+  rw [conjScale, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- `conjScale` leaves the lower-right entry alone. -/
 lemma conjScale_apply_one_one (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) :
@@ -697,8 +697,8 @@ lemma mem_gamma1Conj_of_mem_Gamma1 [NeZero q] {γ : SL(2, ℤ)} (hγ : γ ∈ Ga
   have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
   obtain ⟨δ, hδ⟩ : ∃ δ : SL(2, ℤ),
       (δ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, b; q * γ 1 0, γ 1 1] :=
-    ⟨⟨!![γ 0 0, b; q * γ 1 0, γ 1 1], by
-      rw [Matrix.det_fin_two_of]; rw [hb] at hdet; linear_combination hdet⟩, rfl⟩
+    ⟨.mk !![γ 0 0, b; q * γ 1 0, γ 1 1] (by
+      rw [Matrix.det_fin_two_of]; rw [hb] at hdet; linear_combination hdet), rfl⟩
   have hc : δ 1 0 = q * γ 1 0 := by rw [hδ]; simp
   have hδN : δ ∈ Gamma1 N := mem_Gamma1_of_dvd_lowerRow (by rw [hc]; exact h10.mul_left _)
     (by rw [hδ]; simpa using h11)

@@ -101,7 +101,7 @@ private theorem IsRatio.mul_left {x : ZMod N} {g γ : SL(2, ℤ)} (hg : g ∈ Ga
 
 /-- The lower-triangular matrix `[1, 0; x, 1]`, whose residue is `x`. -/
 private def lowerRep (x : ZMod N) : SL(2, ℤ) :=
-  ⟨!![1, 0; (x.cast : ℤ), 1], by simp [det_fin_two_of]⟩
+  .mk !![1, 0; (x.cast : ℤ), 1] (by simp [det_fin_two_of])
 
 private theorem isRatio_lowerRep (x : ZMod N) : IsRatio x (lowerRep x) := by
   simp [IsRatio, lowerRep]
