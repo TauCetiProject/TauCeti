@@ -13,23 +13,33 @@ public import TauCeti.GroupTheory.LimitGroup.NTQ.Block
 # Branches of the solution tree of a generalised equation
 
 In the Makanin–Razborov process a generalised equation `Ω` over `F = F(A)` is rewritten along the
-branches of a finite tree. Along a branch from `Ω` to a generalised equation `Ω'`, every solution of
-`Ω` is a composite `σ₀ π₁ σ₁ ⋯ πₙ σₙ U'`: canonical epimorphisms `πᵢ` of coordinate groups,
-canonical automorphisms `σᵢ` of the coordinate groups on the way, and a solution `U'` of `Ω'`. These
-composites are recorded by a block of triangular quasi-quadratic levels over the system `Ω'*`:
-an automorphism fixing a subgroup of the coordinate group and acting on the rest through a quadratic
-system, or through the extension of a centralizer, gives the values of a solution of that level in
-the coordinate group of `Ω'` (Kharlampovich–Myasnikov, the diagram of Case 14 and Lemma 8).
+branches of a finite tree. Every solution of `Ω` factors along some branch of this tree, from `Ω`
+to a generalised equation `Ω'` at its end, as a composite `σ₀ π₁ σ₁ ⋯ πₙ σₙ U'`: canonical
+epimorphisms `πᵢ` of coordinate groups, canonical automorphisms `σᵢ` of the coordinate groups on
+the way, and a solution `U'` of `Ω'`. Covering all solutions is a property of the family of branches
+of the tree, not of a single branch. The composites along one branch are recorded by a block of
+triangular quasi-quadratic levels over the system `Ω'*`: an automorphism fixing a subgroup of the
+coordinate group and acting on the rest through a quadratic system, or through the extension of a
+centralizer, gives the values of a solution of that level in the coordinate group of `Ω'`
+(Kharlampovich–Myasnikov, the diagram of Case 14 and Lemma 8).
 
 A *branch* from `Ω` to `Ω'` (`TauCeti.GenEq.Branch Ω Ω'`) is a block over `Ω'*` and a word map
 from the items of `Ω` to the variables of the block that sends the solutions of the block to group
 solutions of `Ω`; the points of `Ω` it reaches over a set of base points (solutions of `Ω'`) are
 the images of the fundamental points of the block over them, and its *image* is the set of points
-it reaches over the solutions of `Ω'`. Branches compose: a branch followed by a branch of its end
-is reached through a single branch. The edges of the tree give branches: a transformation (no
-level), and a homomorphism of coordinate groups that factors, at the items, through a solution of
-one level over the end (a quadratic system, an extension of a centralizer, a free abelian group or
-free variables).
+it reaches over the solutions of `Ω'`. The definition says nothing about which solutions of `Ω` a
+branch reaches: it carries no coverage guarantee. Branches compose: a branch followed by a branch of
+its end is reached through a single branch.
+
+Two kinds of edges are treated. A transformation of `Ω` gives, for each of its successors, the
+branch with no level of its homomorphism of coordinate groups, and every solution of `Ω` is reached
+through the branch of the successor to which the transformation transfers it. For a level over the
+end (a quadratic system, an extension of a centralizer, a free abelian group or free variables) and
+a word map from the items of `Ω`, there is the branch of that level; if a homomorphism
+`F_{R(Ω)} → F_{R(Ω')}` is given, at the items, by this word map evaluated at a solution of the level
+in `F_{R(Ω')}`, then its composite with any solution of `Ω'` is reached through that branch. This
+last result is conditional: the level, its solution and the factorisation at the items are
+hypotheses, and this file does not construct these data for the edges of the actual tree.
 
 ## Main definitions
 
@@ -48,9 +58,10 @@ free variables).
   points reached through the branch of a homomorphism and through the branch of one level.
 * `TauCeti.GenEq.Transformation.point_mem_imageOf_ofGHom`: a solution of `Ω` is reached, over its
   transfer, through the branch of the successor to which a transformation transfers it.
-* `TauCeti.GenEq.Branch.toHom_comp_mem_imageOf_ofLevel`: if the composite of an automorphism and
-  an epimorphism factors through a solution of a level, it is reached through the branch of that
-  level over the solution of the end it is composed with.
+* `TauCeti.GenEq.Branch.toHom_comp_mem_imageOf_ofLevel`: if a homomorphism of coordinate groups
+  (in the source, a canonical automorphism followed by a canonical epimorphism) factors, at the
+  items, through a solution of a level, then its composite with a solution of the end is reached
+  through the branch of that level over the point of that solution.
 * `TauCeti.GenEq.Branch.exists_comp`: branches compose.
 
 ## References
