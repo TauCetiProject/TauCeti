@@ -17,24 +17,34 @@ a `Cⁿ` function into a Hausdorff manifold agrees almost everywhere on `Ω` wit
 that is `Cⁿ` on `Ω`. Two local representatives are continuous and agree almost everywhere on their
 common open domain, so for a measure that charges every nonempty open set they agree everywhere
 there (`MeasureTheory.Measure.eqOn_open_of_ae_eq`). The value at `y` of any representative near
-`y` therefore defines the glued function on `Ω`, and a countable subcover of `Ω` turns the local
-almost everywhere equalities into a global one without assuming second countability of the ambient
+`y` therefore defines the glued function on `Ω`, and the Lindelöf property turns the local almost
+everywhere equalities into a global one without assuming second countability of the ambient
 manifold.
 
-This is the manifold counterpart of `TauCeti.exists_contDiffOn_ae_eq_of_locally`.
+This is how regularity proved in charts, for instance by Euclidean elliptic regularity, becomes
+regularity of one representative on a Lindelöf subset or the whole manifold. The case `n = 0` glues
+continuous representatives. It is the manifold counterpart of
+`TauCeti.exists_contDiffOn_ae_eq_of_locally`.
 
 ## Main results
 
-* `TauCeti.Manifold.exists_contMDiffOn_ae_eq_of_locally`: local `Cⁿ` representatives on a Lindelöf
-  subset glue to a single `Cⁿ` representative on that subset.
-* `TauCeti.Manifold.exists_contMDiff_ae_eq_of_locally`: global version on a Lindelöf manifold.
+* `TauCeti.exists_contMDiffOn_ae_eq_of_locally`: local `Cⁿ` representatives on a Lindelöf subset
+  glue to a single `Cⁿ` representative on that subset.
+* `TauCeti.exists_contMDiff_ae_eq_of_locally`: local `Cⁿ` representatives on a Lindelöf manifold
+  glue to a global `Cⁿ` representative.
+
+## Attribution
+
+Adapted from the manifold gluing lemma of
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section
 
-open Filter MeasureTheory Set Topology
+open MeasureTheory Set Filter Topology
+open scoped Manifold
 
-namespace TauCeti.Manifold
+namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -42,27 +52,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MeasurableSpace M]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
-  {M' : Type*} [TopologicalSpace M'] [T2Space M'] [ChartedSpace H' M']
-  {μ : Measure M} [μ.IsOpenPosMeasure] {n : WithTop ℕ∞} {u : M → M'} {Ω : Set M}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [T2Space N]
+  {μ : Measure M} [μ.IsOpenPosMeasure] {n : WithTop ℕ∞} {u : M → N}
 
-/-- **Gluing local `Cⁿ` representatives on a manifold.** If near each point of a Lindelöf set `Ω`
-the function `u` agrees almost everywhere with a function `Cⁿ` on a neighbourhood of that point,
-then `u` agrees almost everywhere on `Ω` with a single function `Cⁿ` on `Ω`. The measure must
-charge every nonempty open set and the target manifold must be Hausdorff. -/
-theorem exists_contMDiffOn_ae_eq_of_locally (hΩ : IsLindelof Ω)
-    (h : ∀ x ∈ Ω, ∃ U ∈ 𝓝 x, ∃ g : M → M', ContMDiffOn I I' n g U ∧ u =ᵐ[μ.restrict U] g) :
-    ∃ g : M → M', ContMDiffOn I I' n g Ω ∧ u =ᵐ[μ.restrict Ω] g := by
+/-- **Gluing local `Cⁿ` representatives on a manifold subset.** If near each point of a Lindelöf
+set `Ω` the function `u` agrees almost everywhere with a function `Cⁿ` on a neighbourhood of that
+point, then `u` agrees almost everywhere on `Ω` with a single function `Cⁿ` on `Ω`. The measure
+must charge every nonempty open set. -/
+theorem exists_contMDiffOn_ae_eq_of_locally {Ω : Set M} (hΩ : IsLindelof Ω)
+    (h : ∀ x ∈ Ω, ∃ U ∈ 𝓝 x, ∃ g : M → N, ContMDiffOn I I' n g U ∧ u =ᵐ[μ.restrict U] g) :
+    ∃ g : M → N, ContMDiffOn I I' n g Ω ∧ u =ᵐ[μ.restrict Ω] g := by
   classical
   -- Shrink every neighbourhood to an open one.
   have h' : ∀ x ∈ Ω, ∃ U, IsOpen U ∧ x ∈ U ∧
-      ∃ g : M → M', ContMDiffOn I I' n g U ∧ u =ᵐ[μ.restrict U] g := by
+      ∃ g : M → N, ContMDiffOn I I' n g U ∧ u =ᵐ[μ.restrict U] g := by
     intro x hx
     obtain ⟨U, hU, g, hg, hug⟩ := h x hx
     exact ⟨interior U, isOpen_interior, mem_interior_iff_mem_nhds.2 hU, g,
       hg.mono interior_subset, ae_restrict_of_ae_restrict_of_subset interior_subset hug⟩
   choose! U hUo hxU g hg hug using h'
   -- Local representatives agree on overlaps since `μ` charges every nonempty open set.
-  let G : M → M' := fun y ↦ if hy : y ∈ Ω then g y hy y else u y
+  let G : M → N := fun y ↦ if hy : y ∈ Ω then g y hy y else u y
   have hGΩ : ∀ y (hy : y ∈ Ω), G y = g y hy y := fun y hy ↦ dite_eq_left hy
   have hGu : ∀ y ∉ Ω, G y = u y := fun y hy ↦ dite_eq_right hy
   have hG : ∀ x (hx : x ∈ Ω), EqOn G (g x hx) (Ω ∩ U x) := fun x hx y hy ↦ by
@@ -86,13 +96,14 @@ theorem exists_contMDiffOn_ae_eq_of_locally (hΩ : IsLindelof Ω)
   obtain ⟨x, hxt, hyU⟩ := mem_iUnion₂.1 (hΩt (hmem y hy))
   exact mem_iUnion₂.2 ⟨x, hxt, hyU, hy⟩
 
-/-- **Gluing local `Cⁿ` representatives globally on a Lindelöf manifold.** If near every point of a
-Lindelöf manifold `M` the function `u` agrees almost everywhere with a `Cⁿ` function, then `u`
-agrees almost everywhere on `M` with a single `Cⁿ` function. -/
+/-- **Gluing local `Cⁿ` representatives on a manifold.** If near each point of `M` the function
+`u` agrees almost everywhere with a function that is `Cⁿ` on a neighbourhood of that point, then
+`u` agrees almost everywhere with a single globally `Cⁿ` function. The measure must charge every
+nonempty open set. -/
 theorem exists_contMDiff_ae_eq_of_locally [LindelofSpace M]
-    (h : ∀ x : M, ∃ U ∈ 𝓝 x, ∃ g : M → M', ContMDiffOn I I' n g U ∧ u =ᵐ[μ.restrict U] g) :
-    ∃ g : M → M', ContMDiff I I' n g ∧ u =ᵐ[μ] g := by
+    (h : ∀ x, ∃ U ∈ 𝓝 x, ∃ g : M → N, ContMDiffOn I I' n g U ∧ u =ᵐ[μ.restrict U] g) :
+    ∃ g : M → N, ContMDiff I I' n g ∧ u =ᵐ[μ] g := by
   obtain ⟨g, hg, hug⟩ := exists_contMDiffOn_ae_eq_of_locally isLindelof_univ fun x _ ↦ h x
   exact ⟨g, contMDiffOn_univ.1 hg, by rwa [Measure.restrict_univ] at hug⟩
 
-end TauCeti.Manifold
+end TauCeti

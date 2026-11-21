@@ -192,13 +192,15 @@ include hS
 variable {X : CochainComplex C ℤ} (A₀ : Subobject X) (J : Type w) [LinearOrder J] [OrderBot J]
   [SuccOrder J] [WellFoundedLT J]
 
+omit [OrderBot J] [SuccOrder J] in
 private lemma transfiniteIterate_mono {j j' : J} (h : j ≤ j') :
-    transfiniteIterate (largerSubobject hS) j A₀ ≤ transfiniteIterate (largerSubobject hS) j' A₀ :=
-  monotone_transfiniteIterate _ _ (le_largerSubobject hS) h
+    supTransfiniteIterate (largerSubobject hS) j A₀ ≤
+      supTransfiniteIterate (largerSubobject hS) j' A₀ :=
+  supTransfiniteIterate_mono _ (le_largerSubobject hS) h
 
 /-- The transfinite iteration of `largerSubobject`, as a functor to `MonoOver X`. -/
 private noncomputable def functorToMonoOver : J ⥤ MonoOver X where
-  obj j := MonoOver.mk (transfiniteIterate (largerSubobject hS) j A₀).arrow
+  obj j := MonoOver.mk (supTransfiniteIterate (largerSubobject hS) j A₀).arrow
   map {j j'} f := MonoOver.homMk (Subobject.ofLE _ _
       (transfiniteIterate_mono hS A₀ J (leOfHom f)))
 
@@ -206,12 +208,14 @@ private noncomputable def functorToMonoOver : J ⥤ MonoOver X where
 private noncomputable abbrev functor : J ⥤ CochainComplex C ℤ :=
   functorToMonoOver hS A₀ J ⋙ MonoOver.forget _ ⋙ Over.forget _
 
+omit [OrderBot J] [SuccOrder J] in
 private lemma functor_map {j j' : J} (f : j ⟶ j') :
-    (functor hS A₀ J).map f = Subobject.ofLE (transfiniteIterate (largerSubobject hS) j A₀)
-      (transfiniteIterate (largerSubobject hS) j' A₀)
+    (functor hS A₀ J).map f = Subobject.ofLE (supTransfiniteIterate (largerSubobject hS) j A₀)
+      (supTransfiniteIterate (largerSubobject hS) j' A₀)
         (transfiniteIterate_mono hS A₀ J (leOfHom f)) :=
   rfl
 
+omit [OrderBot J] [SuccOrder J] in
 private lemma isWellOrderContinuous_functor : (functor hS A₀ J).IsWellOrderContinuous where
   nonempty_isColimit m hm := ⟨by
     have := hm.nonempty_Iio.to_subtype
@@ -221,18 +225,18 @@ private lemma isWellOrderContinuous_functor : (functor hS A₀ J).IsWellOrderCon
       ((Set.principalSegIio m).monotone.functor ⋙ functorToMonoOver hS A₀ J) c
     dsimp [c, functorToMonoOver]
     simp only [Subobject.mk_arrow]
-    exact transfiniteIterate_limit (largerSubobject hS) A₀ m hm⟩
+    exact supTransfiniteIterate_limit (largerSubobject hS) A₀ hm⟩
 
 /-- Every subobject in the transfinite iteration starting from a subobject whose inclusion is a
 quasi-isomorphism has an inclusion which is a quasi-isomorphism. -/
 private lemma quasiIso_transfiniteIterate_arrow (hA₀ : QuasiIso A₀.arrow) (j : J) :
-    QuasiIso (transfiniteIterate (largerSubobject hS) j A₀).arrow := by
+    QuasiIso (supTransfiniteIterate (largerSubobject hS) j A₀).arrow := by
   induction j using SuccOrder.limitRecOn with
   | isMin j hj =>
     obtain rfl := hj.eq_bot
-    rwa [transfiniteIterate_bot]
+    rwa [supTransfiniteIterate_bot]
   | succ j hj hj' =>
-    rw [transfiniteIterate_succ _ _ _ hj]
+    rw [supTransfiniteIterate_succ_of_not_isMax _ _ hj]
     exact quasiIso_largerSubobject_arrow hS _ hj'
   | isSuccLimit m hm ih =>
     have := hm.nonempty_Iio.to_subtype
@@ -244,16 +248,17 @@ private lemma quasiIso_transfiniteIterate_arrow (hA₀ : QuasiIso A₀.arrow) (j
     have hF : ((Set.principalSegIio m).monotone.functor ⋙ functor hS A₀ J ⋙ H)
         |>.IsEventuallyConstantFrom i₀ := fun k φ ↦ by
       have : QuasiIso ((functor hS A₀ J).map ((Set.principalSegIio m).monotone.functor.map φ)) :=
-        (Subobject.quasiIso_ofLE_iff _ (ih _ k.2)).2 (ih _ i₀.2)
+        (Subobject.quasiIso_ofLE_iff _ (ih _ k.property)).2 (ih _ i₀.property)
       rw [Functor.comp_map, Functor.comp_map, HomologicalComplex.homologyFunctor_map]
       exact (quasiIsoAt_iff_isIso_homologyMap _ n).1 ((quasiIso_iff _).1 this n)
     have hι := hF.isIso_ι_of_isColimit (isColimitOfPreserves H hc)
     rw [Functor.mapCocone_ι_app, PrincipalSeg.cocone_ι_app, HomologicalComplex.homologyFunctor_map,
       functor_map] at hι
-    have := ih _ i₀.2
-    have : QuasiIsoAt (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)) n :=
+    have := ih _ i₀.property
+    have : QuasiIsoAt (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.property.le)) n :=
       (quasiIsoAt_iff_isIso_homologyMap _ n).2 hι
-    rw [← quasiIsoAt_iff_comp_left (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)),
+    rw [← quasiIsoAt_iff_comp_left (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J
+        i₀.property.le)),
       Subobject.ofLE_arrow]
     infer_instance
 
@@ -261,7 +266,7 @@ variable {J} in
 /-- The transfinite iteration up to `j`, as a transfinite composition, provided it does not reach
 `⊤` before `j`. -/
 private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : QuasiIso A₀.arrow)
-    (j : J) (hj : ∀ k < j, transfiniteIterate (largerSubobject hS) k A₀ ≠ ⊤) :
+    (j : J) (hj : ∀ k < j, supTransfiniteIterate (largerSubobject hS) k A₀ ≠ ⊤) :
     S.monoWithCokernel.TransfiniteCompositionOfShape (Set.Iic j)
       ((functor hS A₀ J).map (homOfLE bot_le : ⊥ ⟶ j)) where
   F := (Set.initialSegIic j).monotone.functor ⋙ functor hS A₀ J
@@ -270,37 +275,37 @@ private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : Quasi
     have := isWellOrderContinuous_functor hS A₀ J
     infer_instance
   incl :=
-    { app k := (functor hS A₀ J).map (homOfLE k.2)
+    { app k := (functor hS A₀ J).map (homOfLE k.property)
       naturality k k' h := by
         simp only [Functor.comp_map, Functor.const_obj_map]
         exact (Subobject.ofLE_comp_ofLE _ _ _ _ _).trans (Category.comp_id _).symm }
   isColimit := colimitOfDiagramTerminal isTerminalTop _
   map_mem k hk := by
-    have hk' : k.1 < j := lt_of_le_of_ne k.2 fun h ↦ hk fun l _ ↦ by
+    have hk' : k.val < j := lt_of_le_of_ne k.property fun h ↦ hk fun l _ ↦ by
       rw [← Subtype.coe_le_coe, h]
-      exact l.2
-    have heq : transfiniteIterate (largerSubobject hS) (Order.succ k).1 A₀ =
-        largerSubobject hS (transfiniteIterate (largerSubobject hS) k.1 A₀) := by
+      exact l.property
+    have heq : supTransfiniteIterate (largerSubobject hS) (Order.succ k).val A₀ =
+        largerSubobject hS (supTransfiniteIterate (largerSubobject hS) k.val A₀) := by
       rw [Set.Iic.succ_eq_of_not_isMax hk,
-        transfiniteIterate_succ _ _ _ (Set.not_isMax_coe _ hk)]
+        supTransfiniteIterate_succ_of_not_isMax _ _ (Set.not_isMax_coe _ hk)]
     refine (S.monoWithCokernel.arrow_mk_iso_iff
       (Arrow.isoMk (Iso.refl _) (Subobject.isoOfEq _ _ heq.symm) ?_ :
         Arrow.mk (Subobject.ofLE _ _ (le_largerSubobject hS _)) ≅
           Arrow.mk (((Set.initialSegIic j).monotone.functor ⋙ functor hS A₀ J).map
             (homOfLE (Order.le_succ k))))).1
       (prop_ofLE_largerSubobject hS _ (hj _ hk')
-        (quasiIso_transfiniteIterate_arrow hS A₀ J hA₀ k.1))
+        (quasiIso_transfiniteIterate_arrow hS A₀ J hA₀ k.val))
     exact (Category.id_comp _).trans (Subobject.ofLE_comp_ofLE _ _ _ _ _).symm
 
 /-- The transfinite iteration of `largerSubobject` reaches `⊤`. -/
 private lemma exists_ordinal :
-    ∃ (o : Ordinal.{w}) (j : o.ToType), transfiniteIterate (largerSubobject hS) j A₀ = ⊤ := by
+    ∃ (o : Ordinal.{w}) (j : o.ToType), supTransfiniteIterate (largerSubobject hS) j A₀ = ⊤ := by
   let κ := Order.succ (Cardinal.mk (Shrink.{w} (Subobject X)))
   have : Nonempty κ.ord.ToType := by simp [κ]
   have := WellFoundedLT.toOrderBot κ.ord.ToType
   have hJ : HasCardinalLT (Subobject X) (Cardinal.mk κ.ord.ToType) :=
     lt_of_lt_of_le (Order.lt_succ _) (by simp [κ])
-  exact ⟨κ.ord, top_mem_range_transfiniteIterate (largerSubobject hS) A₀
+  exact ⟨κ.ord, top_mem_range_supTransfiniteIterate
     (lt_largerSubobject hS) (largerSubobject_top hS)
     (fun h ↦ by simpa [hasCardinalLT_iff_cardinal_mk_lt] using hJ.of_injective _ h)⟩
 
@@ -323,21 +328,21 @@ theorem exists_transfiniteCompositionOfShape_of_quasiIso {A X : CochainComplex C
   have := WellFoundedLT.toOrderBot o.ToType
   -- the first index at which the iteration reaches `⊤`
   obtain ⟨j₀, hj₀, hj₀'⟩ : ∃ j₀ : o.ToType,
-      transfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f) = ⊤ ∧
-        ∀ k < j₀, transfiniteIterate (largerSubobject hS) k (Subobject.mk f) ≠ ⊤ :=
-    let T := {k : o.ToType | transfiniteIterate (largerSubobject hS) k (Subobject.mk f) = ⊤}
+      supTransfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f) = ⊤ ∧
+        ∀ k < j₀, supTransfiniteIterate (largerSubobject hS) k (Subobject.mk f) ≠ ⊤ :=
+    let T := {k : o.ToType | supTransfiniteIterate (largerSubobject hS) k (Subobject.mk f) = ⊤}
     ⟨wellFounded_lt.min T ⟨j, hj⟩, wellFounded_lt.min_mem T ⟨j, hj⟩,
       fun k hk hk' ↦ wellFounded_lt.not_lt_min T hk' hk⟩
   have h := transfiniteCompositionOfShapeMapFromBot hS (Subobject.mk f) hA₀ j₀ hj₀'
   have := (Subobject.isIso_arrow_iff_eq_top _).2 hj₀
-  have hw : (Subobject.isoOfEq _ _ (transfiniteIterate_bot (largerSubobject hS) _) ≪≫
+  have hw : (Subobject.isoOfEq _ _ (supTransfiniteIterate_bot (largerSubobject hS) _) ≪≫
       Subobject.underlyingIso f).hom ≫ f =
         Subobject.ofLE _ _
           (transfiniteIterate_mono hS (Subobject.mk f) o.ToType (bot_le (a := j₀))) ≫
-          (transfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f)).arrow := by
+          (supTransfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f)).arrow := by
     rw [Subobject.ofLE_arrow]
     simp
-  let e₀ := asIso (transfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f)).arrow
+  let e₀ := asIso (supTransfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f)).arrow
   let e : Arrow.mk ((functor hS (Subobject.mk f) o.ToType).map (homOfLE bot_le : ⊥ ⟶ j₀)) ≅
       Arrow.mk f :=
     Arrow.isoMk _ e₀ hw
@@ -348,7 +353,7 @@ complexes in a Grothendieck abelian category such that every nonzero acyclic com
 nonzero acyclic subcomplex satisfying `S`. If `I` is a complex of injective objects such that every
 `1`-cocycle from a complex satisfying `S` to `I` is a coboundary, then `I` is K-injective. -/
 theorem isKInjective_of_forall_eq_δ (I : CochainComplex C ℤ) [∀ n, Injective (I.X n)]
-    (hI : ∀ N, S N → ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.1) :
+    (hI : ∀ N, S N → ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.val) :
     IsKInjective I := by
   refine ((rlp_monomorphisms_inf_quasiIso_iff_of_isZero (0 : I ⟶ 0) (isZero_zero _)).1
     fun A X f ⟨_, (_ : QuasiIso f)⟩ ↦ ?_).2
@@ -382,7 +387,7 @@ theorem exists_isKInjective_iff {G : C} (hG : IsSeparator G) :
     ∃ B : ℕ → C, ∀ (I : CochainComplex C ℤ) [∀ n, Injective (I.X n)],
       IsKInjective I ↔ ∀ N : CochainComplex C ℤ, N.Acyclic → (∃ n : ℤ, N.IsStrictlyLE n) →
         (∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p) →
-          ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.1 := by
+          ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.val := by
   obtain ⟨B, hB⟩ := hG.exists_bounded_nonzero_acyclic_subcomplex
   let S : ObjectProperty (CochainComplex C ℤ) := fun N ↦
     N.Acyclic ∧ (∃ n : ℤ, N.IsStrictlyLE n) ∧ ∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p

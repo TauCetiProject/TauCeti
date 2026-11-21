@@ -120,7 +120,7 @@ theorem regularEval_eq_iff_tendsto (φ : (toMeromorphicGerms a).range) {c : ℂ}
     regularEval a φ = c ↔ ((φ : meromorphicGerms ℂ a) : Germ (𝓝[≠] a) ℂ).Tendsto (𝓝 c) := by
   refine ⟨fun h ↦ h ▸ tendsto_regularEval φ, fun h ↦ ?_⟩
   have hφ := tendsto_regularEval φ
-  obtain ⟨f, -, hf⟩ := mem_meromorphicGerms_iff.1 (φ : meromorphicGerms ℂ a).2
+  obtain ⟨f, -, hf⟩ := mem_meromorphicGerms_iff.1 (φ : meromorphicGerms ℂ a).property
   rw [← hf, Germ.coe_tendsto] at h hφ
   exact tendsto_nhds_unique hφ h
 
@@ -150,7 +150,7 @@ theorem regularEval_pullback {b : ℂ} (g : ℂ → ℂ) (hg : AnalyticAt ℂ g 
     regularEval a ⟨meromorphicGerms.pullback g hg hga ht φ, hφ⟩ = regularEval b φ := by
   rw [regularEval_eq_iff_tendsto, meromorphicGerms.coe_pullback]
   have h := tendsto_regularEval φ
-  obtain ⟨f, -, hf⟩ := mem_meromorphicGerms_iff.1 (φ : meromorphicGerms ℂ b).2
+  obtain ⟨f, -, hf⟩ := mem_meromorphicGerms_iff.1 (φ : meromorphicGerms ℂ b).property
   rw [← hf, Germ.coe_tendsto] at h
   rw [← hf, Germ.coe_compTendsto, Germ.coe_tendsto]
   exact h.comp ht

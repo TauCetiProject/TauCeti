@@ -444,7 +444,7 @@ theorem ratFuncEquivMonicIrreducible_none : ratFuncEquivMonicIrreducible k none 
 
 @[simp]
 theorem ratFuncEquivMonicIrreducible_some (q : {q : k[X] // q.Monic ∧ Irreducible q}) :
-    ratFuncEquivMonicIrreducible k (some q) = adicOfIrreducible q.2.2 :=
+    ratFuncEquivMonicIrreducible k (some q) = adicOfIrreducible q.property.2 :=
   congrArg (ofPrime k (RatFunc k)) (HeightOneSpectrum.monicIrreducibleEquiv_apply q)
 
 @[simp]
@@ -456,7 +456,7 @@ theorem ratFuncEquivMonicIrreducible_symm_infty :
 @[simp]
 theorem ratFuncEquivMonicIrreducible_symm_adicOfIrreducible
     (q : {q : k[X] // q.Monic ∧ Irreducible q}) :
-    (ratFuncEquivMonicIrreducible k).symm (adicOfIrreducible q.2.2) = some q := by
+    (ratFuncEquivMonicIrreducible k).symm (adicOfIrreducible q.property.2) = some q := by
   apply (ratFuncEquivMonicIrreducible k).injective
   simp
 
@@ -508,7 +508,7 @@ def ratFuncDegreeOneEquiv : Option k ≃ {P : Place k (RatFunc k) // P.degree = 
       · exact absurd (congrArg Subtype.val h) (ofPrime_ne_infty k _)
       · exact congrArg some (adicOfIrreducible_X_sub_C_injective (congrArg Subtype.val h)),
       fun P => by
-      rcases eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C P.2 with h | ⟨a, h⟩
+      rcases eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C P.property with h | ⟨a, h⟩
       · exact ⟨none, Subtype.ext h.symm⟩
       · exact ⟨some a, Subtype.ext h.symm⟩⟩
 
