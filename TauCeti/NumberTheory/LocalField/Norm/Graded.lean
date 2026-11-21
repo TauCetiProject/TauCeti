@@ -11,7 +11,8 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
 import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
-import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
+import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 
 /-!
 # The norm on the graded pieces of the unit filtration
@@ -306,7 +307,8 @@ theorem normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top
   set p := ringChar 𝓀[L]
   have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
   -- The Galois group is `G_1`, a `p`-group, so `[L : K]` is a power of `p`.
-  have hpG := isPGroup_ramificationGroup (L := L) (L ≃ₐ[K] L) p (i := 1) one_pos
+  have hpG := TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroup
+    (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] p (i := 1) one_pos
   rw [← lowerRamificationGroup_def, hG] at hpG
   obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 hpG
   rw [Subgroup.card_top, IsGalois.card_aut_eq_finrank] at hk
@@ -471,7 +473,8 @@ private theorem residue_ne_zero_of_smul_sub_eq {t : ℕ} {π : 𝒪[L]} (hπ : I
   intro h0
   apply hσ
   rw [lowerRamificationGroup_def] at hσ0 ⊢
-  have := (mem_ramificationGroup_natCast_iff_smul_sub_mem hπ hσ0 (n := t + 1)).2 <| by
+  have := (TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
+    𝒪[K] hπ hσ0 (n := t + 1)).2 <| by
     rw [hγ, pow_succ' _ (t + 1)]
     exact Ideal.mul_mem_mul ((residue_eq_zero_iff γ).1 h0)
       (Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) _)
@@ -536,14 +539,19 @@ theorem exists_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGraded
   set y : unitFiltration K (t + 1) := ⟨Algebra.normUnits K (x : Lˣ),
     map_normUnits_unitFiltration_psiNat_le K L (t + 1) (Subgroup.mem_map_of_mem _ x.property)⟩
   obtain ⟨b, hb⟩ : ∃ b : 𝒪[K], b * Algebra.norm 𝒪[K] π ^ (t + 1) =
-      (unitFiltrationDifference t y : 𝒪[K]) := by
+      (unitFiltrationToIntegerUnits (t + 1) y : 𝒪[K]) - 1 := by
     have hspan : 𝓂[K] ^ (t + 1) = Ideal.span {Algebra.norm 𝒪[K] π ^ (t + 1)} := by
       rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK, Ideal.span_singleton_pow]
-    exact Ideal.mem_span_singleton'.1 (hspan ▸ (unitFiltrationDifference t y).property)
+    have hyMem : (unitFiltrationToIntegerUnits (t + 1) y : 𝒪[K]) - 1 ∈ 𝓂[K] ^ (t + 1) := by
+      simpa using
+        TauCeti.IsLocalRing.mem_unitFiltration_iff.1
+          (unitFiltrationEquivInteger (t + 1) y).property
+    exact Ideal.mem_span_singleton'.1 (hspan ▸ hyMem)
   refine ⟨b, ?_, ?_⟩
   · apply Subtype.ext
     have hb' := congrArg (fun z : 𝒪[K] ↦ (z : K)) hb
-    simp only [coe_coe_unitFiltrationDifference, y, Algebra.coe_normUnits] at hb'
+    simp only [AddSubgroupClass.coe_sub, OneMemClass.coe_one, coe_unitFiltrationToIntegerUnits,
+      y, Algebra.coe_normUnits] at hb'
     have hx : ((1 + a * π ^ (t + 1) : 𝒪[L]) : L) = ((x : Lˣ) : L) := by
       rw [hxa]
       simp
@@ -590,7 +598,8 @@ private theorem charP_residueField_of_lowerRamificationGroup_one_eq_top
   let _ := Fintype.ofFinite 𝓀[L]
   set p := ringChar 𝓀[L]
   have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  have hpG := isPGroup_ramificationGroup (L := L) (L ≃ₐ[K] L) p (i := 1) one_pos
+  have hpG := TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroup
+    (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] p (i := 1) one_pos
   rw [← lowerRamificationGroup_def, hG1] at hpG
   obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 hpG
   rw [Subgroup.card_top, IsGalois.card_aut_eq_finrank] at hk
@@ -629,7 +638,7 @@ private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {
       unitFiltrationGradedCongr_mk, AddEquiv.toEquiv_eq_coe, AddEquiv.coe_toEquiv]
     refine unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_residue t π hπ _ a
       (Subtype.ext ?_)
-    rw [coe_coe_unitFiltrationDifference, hxa]
+    rw [AddSubgroupClass.coe_sub, OneMemClass.coe_one, coe_unitFiltrationToIntegerUnits, hxa]
     push_cast
     ring
   rw [hE, MonoidHom.mem_ker,

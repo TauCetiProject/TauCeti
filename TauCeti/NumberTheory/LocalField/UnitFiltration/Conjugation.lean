@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
-import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
 # Conjugation on ramification quotients
@@ -53,6 +52,7 @@ public section
 noncomputable section
 
 open ValuativeRel IsLocalRing IsNonarchimedeanLocalField TauCeti.IsLocalRing
+  TauCeti.IsDiscreteValuationRing
 
 namespace TauCeti
 
@@ -60,30 +60,23 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]]
 
-/-- The change from `π` to `g⁻¹ • π` is the inverse tame-character coordinate of `g`. -/
+/-- The change from `π` to `σ⁻¹ • π` is the inverse tame-character coordinate of `σ`. -/
 private theorem residue_uniformizerChangeUnit_inv_smul
     (π π' : 𝒪[L]) (hπ : Irreducible π) (hπ' : Irreducible π')
-    (σ : ramificationGroup G 𝒪[L] 0)
-    (hπ'coe : (π' : L) = (σ : G)⁻¹ • (π : L)) :
+    (σ : ramificationGroup G 𝒪[L] 0) (hπ'eq : π' = (σ : G)⁻¹ • π) :
     residue 𝒪[L] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L]) =
       ((tameCharacter hπ σ : (ResidueField 𝒪[L])ˣ)⁻¹ : ResidueField 𝒪[L]) := by
-  let a := uniformizerChangeUnit π π' hπ hπ'
-  have hπ0 : (π : L) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
-  have haRing := mul_uniformizerChangeUnit π π' hπ hπ'
-  have haField : (π : L) * ((a : 𝒪[L]) : L) = (π' : L) := by
-    exact congrArg (fun z : 𝒪[L] ↦ (z : L)) haRing
-  have ha : ((a : 𝒪[L]) : L) = (σ : G)⁻¹ • (π : L) / (π : L) := by
-    apply mul_left_cancel₀ hπ0
-    rw [mul_div_cancel₀ _ hπ0, ← hπ'coe]
-    exact haField
+  have ha : (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L]) * π =
+      (σ⁻¹ : ramificationGroup G 𝒪[L] 0) • π := by
+    rw [mul_comm, mul_uniformizerChangeUnit, hπ'eq]
+    rfl
   calc
-    residue 𝒪[L] (a : 𝒪[L]) =
-        (tameCharacter hπ σ⁻¹ : ResidueField 𝒪[L]) :=
-      (coe_tameCharacter_of_val_eq_smul_div hπ σ⁻¹ ha).symm
-    _ = ((tameCharacter hπ σ : (ResidueField 𝒪[L])ˣ)⁻¹ :
-        ResidueField 𝒪[L]) := by
-      rw [map_inv]
-      exact Units.val_inv_eq_inv_val (tameCharacter hπ σ)
+    residue 𝒪[L] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L])
+        = (tameCharacter hπ σ⁻¹ : ResidueField 𝒪[L]) :=
+          (coe_tameCharacter_of_mul_eq hπ σ⁻¹ ha).symm
+    _ = ((tameCharacter hπ σ : (ResidueField 𝒪[L])ˣ)⁻¹ : ResidueField 𝒪[L]) := by
+          rw [map_inv]
+          exact Units.val_inv_eq_inv_val (tameCharacter hπ σ)
 
 /-- Conjugation by inertia acts trivially on the tame quotient `G_0/G_1`. -/
 @[simp]
@@ -92,20 +85,24 @@ theorem ramificationGroupGradedConj_zero
     (τ : RamificationGroupGraded G 𝒪[L] 0) :
     ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ = τ := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[L])
-  apply tameCharacterGraded_injective hπ
+  apply TauCeti.ramificationGroupGradedToUnitFiltrationGraded_injective (i := 0) hπ
   induction τ using QuotientGroup.induction_on with
   | _ τ =>
-    simp only [ramificationGroupGradedConj_mk, tameCharacterGraded_mk]
-    rw [MulAut.conjNormal_val, MulAut.conj_apply, map_mul, map_mul, map_inv,
-      mul_comm (tameCharacter hπ σ) (tameCharacter hπ τ), mul_assoc, mul_inv_cancel,
-      mul_one]
+    simp only [ramificationGroupGradedConj_mk]
+    rw [TauCeti.ramificationGroupGradedToUnitFiltrationGraded_mk (i := 0),
+      TauCeti.ramificationGroupGradedToUnitFiltrationGraded_mk (i := 0),
+      ← TauCeti.ramificationGroupToUnitFiltrationGraded_apply (i := 0),
+      ← TauCeti.ramificationGroupToUnitFiltrationGraded_apply (i := 0),
+      MulAut.conjNormal_val, MulAut.conj_apply, map_mul, map_mul, map_inv,
+      mul_comm _ (TauCeti.ramificationGroupToUnitFiltrationGraded 0 hπ τ), mul_assoc,
+      mul_inv_cancel, mul_one]
 
 /-- The residue coordinate of a conjugate of `τ` at the uniformizer `π`: if `τ` moves `g⁻¹ • π` by
 `y * (g⁻¹ • π) ^ (n + 2)`, then `g τ g⁻¹` moves `π` by `g • y * π ^ (n + 2)`. -/
 private theorem ramificationGroupGradedToResidueField_conjNormal (n : ℕ) (π : 𝒪[L])
     (hπ : Irreducible π) (g : G) (τ : ramificationGroup G 𝒪[L] ((n : ℤ) + 1)) (y : 𝒪[L])
     (hy : (τ : G) • (g⁻¹ • π) - g⁻¹ • π = y * (g⁻¹ • π) ^ (n + 2)) :
-    ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
+    ramificationGroupGradedToResidueField G 𝒪[L] n π hπ
         (Additive.ofMul (QuotientGroup.mk (MulAut.conjNormal g τ))) =
       residue 𝒪[L] (g • y) := by
   have hgπ' : g • g⁻¹ • π = π := by simp
@@ -126,11 +123,11 @@ multiplication by `theta_0(σ)^i`, where `theta_0` is the tame character. -/
 theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
     (hπ : Irreducible π) (σ : ramificationGroup G 𝒪[L] 0)
     (τ : RamificationGroupGraded G 𝒪[L] ((n : ℤ) + 1)) :
-    ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
+    ramificationGroupGradedToResidueField G 𝒪[L] n π hπ
         (Additive.ofMul (ramificationGroupGradedConj G 𝒪[L]
           (σ : G) ((n : ℤ) + 1) τ)) =
       (tameCharacter hπ σ : IsLocalRing.ResidueField 𝒪[L]) ^ (n + 1) *
-        ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
+        ramificationGroupGradedToResidueField G 𝒪[L] n π hπ
           (Additive.ofMul τ) := by
   induction τ using QuotientGroup.induction_on with
   | _ τ =>
@@ -143,34 +140,32 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
     obtain ⟨y, hy⟩ := hmove
     -- First compute the coordinate of `τ` using the moved uniformizer `π' = g⁻¹ • π`.
     have hτcoord :
-        ramificationGroupGradedToResidueField (G := G) (L := L) n π' hπ'
+        ramificationGroupGradedToResidueField G 𝒪[L] n π' hπ'
             (Additive.ofMul (QuotientGroup.mk τ)) = residue 𝒪[L] y := by
       exact ramificationGroupGradedToResidueField_of_smul_sub_eq n π' hπ' τ y hy.symm
     have hconjCoord := ramificationGroupGradedToResidueField_conjNormal n π hπ g τ y hy.symm
     have hresidue : residue 𝒪[L] (g • y) = residue 𝒪[L] y :=
       residue_smul_eq_of_mem_ramificationGroup_zero G 𝒪[L] σ.property y
     -- Changing back from `π'` to `π` contributes the inverse tame-character factor.
-    have hπ'coe : (π' : L) = (σ : G)⁻¹ • (π : L) := by
-      simpa only [π', g] using coe_smul_integer ((σ : G)⁻¹) π
     have haResidue :
         residue 𝒪[L] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[L]) =
-        ((tameCharacter hπ σ : (ResidueField 𝒪[L])ˣ)⁻¹ : ResidueField 𝒪[L]) := by
-      exact residue_uniformizerChangeUnit_inv_smul π π' hπ hπ' σ hπ'coe
+        ((tameCharacter hπ σ : (ResidueField 𝒪[L])ˣ)⁻¹ : ResidueField 𝒪[L]) :=
+      residue_uniformizerChangeUnit_inv_smul π π' hπ hπ' σ rfl
     have hchange' := ramificationGroupGradedToResidueField_change
       (G := G) n π π' hπ hπ' (QuotientGroup.mk τ)
     rw [haResidue] at hchange'
     simp only [ramificationGroupGradedConj_mk]
     rw [hconjCoord, hresidue, ← hτcoord]
     calc
-      ramificationGroupGradedToResidueField (G := G) (L := L) n π' hπ'
+      ramificationGroupGradedToResidueField G 𝒪[L] n π' hπ'
           (Additive.ofMul (QuotientGroup.mk τ)) =
           (tameCharacter hπ σ : ResidueField 𝒪[L]) ^ (n + 1) *
             (((tameCharacter hπ σ : (ResidueField 𝒪[L])ˣ)⁻¹ : ResidueField 𝒪[L]) ^
               (n + 1) *
-                ramificationGroupGradedToResidueField (G := G) (L := L) n π' hπ'
+                ramificationGroupGradedToResidueField G 𝒪[L] n π' hπ'
                   (Additive.ofMul (QuotientGroup.mk τ))) := by simp
       _ = (tameCharacter hπ σ : ResidueField 𝒪[L]) ^ (n + 1) *
-            ramificationGroupGradedToResidueField (G := G) (L := L) n π hπ
+            ramificationGroupGradedToResidueField G 𝒪[L] n π hπ
               (Additive.ofMul (QuotientGroup.mk τ)) := by rw [← hchange']
 
 /-! ### Equivariance of the tame character -/
@@ -184,21 +179,16 @@ theorem tameCharacter_conj {π : 𝒪[L]} (hπ : Irreducible π) (g : G)
     (tameCharacter hπ (MulAut.conjNormal g σ) : 𝓀[L]) = g • (tameCharacter hπ σ : 𝓀[L]) := by
   have hσπ : Irreducible ((σ : G) • π) := hπ.map (MulSemiringAction.toRingAut G 𝒪[L] σ)
   have hgπ : Irreducible (g • π) := hπ.map (MulSemiringAction.toRingAut G 𝒪[L] g)
-  have hπ0 : (π : L) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
-  have hgπ0 : ((g • π : 𝒪[L]) : L) ≠ 0 := fun h ↦ hgπ.ne_zero (Subtype.ext h)
-  -- Write `σ π = π u` with `u` a unit of `𝒪[L]`; then `(g σ g⁻¹) (g π) = (g π) (g u)`.
+  -- Write `σ π = u π` with `u` a unit of `𝒪[L]`; then `(g σ g⁻¹) (g π) = (g u) (g π)`.
   set u : 𝒪[L] := (uniformizerChangeUnit π ((σ : G) • π) hπ hσπ : 𝒪[L])
-  have hu : π * u = (σ : G) • π := mul_uniformizerChangeUnit π _ hπ hσπ
-  have hgu : (MulAut.conjNormal g σ : G) • (g • π) = g • π * g • u := by
-    rw [MulAut.conjNormal_apply, mul_smul, mul_smul, inv_smul_smul, ← hu, smul_mul']
-  have hσ : (u : L) = (σ : G) • (π : L) / (π : L) := by
-    rw [eq_div_iff hπ0, mul_comm, ← coe_smul_integer, ← hu, MulMemClass.coe_mul]
-  have hconj : ((g • u : 𝒪[L]) : L) =
-      (MulAut.conjNormal g σ : G) • ((g • π : 𝒪[L]) : L) / ((g • π : 𝒪[L]) : L) := by
-    rw [eq_div_iff hgπ0, mul_comm, ← coe_smul_integer, hgu, MulMemClass.coe_mul]
+  have hu : u * π = (σ : G) • π := by
+    rw [mul_comm]
+    exact mul_uniformizerChangeUnit π _ hπ hσπ
+  have hgu : (g • u) * (g • π) = (MulAut.conjNormal g σ : G) • (g • π) := by
+    rw [MulAut.conjNormal_apply, mul_smul, mul_smul, inv_smul_smul, ← smul_mul', hu]
   rw [congrArg (· (MulAut.conjNormal g σ)) (tameCharacter_eq_of_irreducible hπ hgπ),
-    coe_tameCharacter_of_val_eq_smul_div hgπ _ hconj,
-    coe_tameCharacter_of_val_eq_smul_div hπ σ hσ, ResidueField.residue_smul]
+    coe_tameCharacter_of_mul_eq hgπ _ hgu,
+    coe_tameCharacter_of_mul_eq hπ σ hu, ResidueField.residue_smul]
 
 /-- **The tame character twisted by a power map.** If `g ∈ G` acts on the residue field as the
 `q`-th power map, then `theta_0(g σ g⁻¹) = theta_0(σ) ^ q` for every `σ ∈ G_0`. This applies with

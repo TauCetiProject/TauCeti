@@ -14,8 +14,8 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.LocalField.Monogenic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.TotallyRamified
-import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 
 /-!
 # Tamely ramified extensions of local fields
@@ -108,11 +108,12 @@ residue-characteristic part of the ramification index: `#G_1(L/K) = p ^ (v_p e(L
 theorem natCard_lowerRamificationGroup_one [Module.Finite K L] [IsGalois K L] :
     Nat.card (lowerRamificationGroup K L 1) =
       ringChar 𝓀[K] ^ wildRamificationExponent K L := by
+  have : Fact (ringChar 𝓀[K]).Prime := ⟨CharP.prime_ringChar 𝓀[K]⟩
   have : CharP 𝓀[L] (ringChar 𝓀[K]) := Algebra.ringChar_eq 𝓀[K] 𝓀[L] ▸ ringChar.charP 𝓀[L]
   rw [wildRamificationExponent_def, ← natCard_lowerRamificationGroup_zero K L,
     lowerRamificationGroup_def,
     lowerRamificationGroup_def]
-  exact natCard_ramificationGroup_one _ _
+  exact TauCeti.IsDiscreteValuationRing.natCard_ramificationGroup_one _ 𝒪[K] _ _
 
 variable (K L) in
 /-- **Wild inertia is trivial exactly in the tame case.** For a finite Galois extension `L/K` of
@@ -122,10 +123,11 @@ order `e(L/K)`. -/
 @[simp]
 theorem lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified [Module.Finite K L]
     [IsGalois K L] : lowerRamificationGroup K L 1 = ⊥ ↔ IsTamelyRamified K L := by
+  have : Fact (ringChar 𝓀[K]).Prime := ⟨CharP.prime_ringChar 𝓀[K]⟩
   have : CharP 𝓀[L] (ringChar 𝓀[K]) := Algebra.ringChar_eq 𝓀[K] 𝓀[L] ▸ ringChar.charP 𝓀[L]
   rw [isTamelyRamified_iff, ← natCard_lowerRamificationGroup_zero, lowerRamificationGroup_def,
     lowerRamificationGroup_def]
-  exact ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero _ _
+  exact TauCeti.IsDiscreteValuationRing.ramificationGroup_one_eq_bot_iff_not_dvd_card _ 𝒪[K] _ _
 
 section Indices
 
@@ -177,7 +179,9 @@ theorem tameRamificationIndex_dvd_card_residueField_sub_one :
   have := finite_of_valuativeExtension K L
   rw [← natCard_lowerRamificationGroup_zero_quotient_one]
   rw [lowerRamificationGroup_def, lowerRamificationGroup_def]
-  exact card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one L (L ≃ₐ[K] L)
+  exact
+    TauCeti.IsDiscreteValuationRing.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one
+      (L ≃ₐ[K] L) 𝒪[K] 𝒪[L]
 
 /-- For a Galois extension `L/K`, the tame index divides `q ^ f - 1`, where `q` is the residue
 cardinality of the base. -/
@@ -197,7 +201,9 @@ theorem IsTamelyRamified.ramificationIndex_dvd_card_residueField_sub_one
     [IsGalois K L] (ht : IsTamelyRamified K L) :
     ramificationIndex K L ∣ Nat.card 𝓀[L] - 1 := by
   have := finite_of_valuativeExtension K L
-  have hG := card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one L (L ≃ₐ[K] L)
+  have hG :=
+    TauCeti.IsDiscreteValuationRing.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one
+      (L ≃ₐ[K] L) 𝒪[K] 𝒪[L]
   have h1 : TauCeti.IsLocalRing.ramificationGroup (L ≃ₐ[K] L) 𝒪[L] (0 + 1) = ⊥ := by
     rw [zero_add, ← lowerRamificationGroup_def]
     exact (lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified K L).2 ht
