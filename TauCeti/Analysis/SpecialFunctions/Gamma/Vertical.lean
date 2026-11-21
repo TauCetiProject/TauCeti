@@ -50,6 +50,8 @@ its coefficients.
   `‖Γ(s)‖ ≤ C / |Im s|ᵐ` across any closed strip `σ₀ ≤ Re s ≤ σ₁` for `|Im s| ≥ 1`.
 * `Complex.exists_norm_Gamma_mul_Gamma_add_le_div_pow_of_re_mem_Icc`: the same decay for
   `Γ(s) Γ(s + p)` with real `p`.
+* `Complex.norm_Gamma_mul_Gamma_add_le`: factorial decay of `Γ(s) Γ(s + p)` to the left, times
+  `(1 + (Im s)²)⁻¹`, on the line `Re s = δ - N` with `0 < δ`, `0 < p` and `δ + p < 1`.
 * `Complex.continuousAt_Gamma_of_re_ne_neg_nat`, `Complex.continuous_Gamma_add_mul_I`,
   `Complex.continuous_Gamma_sub_mul_I`: continuity of `Γ` away from `-ℕ` and along pole-free
   vertical lines `y ↦ w ± i y`.
@@ -309,6 +311,41 @@ theorem exists_norm_Gamma_mul_Gamma_add_le_div_pow_of_re_mem_Icc (p σ₀ σ₁ 
     _ ≤ C₁ / |s.im| ^ m * C₂ := mul_le_mul (hC₁ s hs him) h2 (norm_nonneg _)
         (div_nonneg hC₁0 (by positivity))
     _ = C₁ * C₂ / |s.im| ^ m := by ring
+
+/-- On the line `Re s = δ - N`, with `0 < δ`, `0 < p` and `δ + p < 1`, the product
+`Γ(s) Γ(s + p)` is bounded by `(1 + (Im s)²)⁻¹` times a constant multiple of `1 / (κ^N N!²)`,
+where `κ = (1 - δ)(1 - δ - p)`. -/
+theorem norm_Gamma_mul_Gamma_add_le {p δ : ℝ} (hδ : 0 < δ) (hp : 0 < p) (hδp : δ + p < 1)
+    (N : ℕ) (t : ℝ) :
+    ‖Gamma (((δ - N : ℝ) : ℂ) + t * I) * Gamma (((δ - N : ℝ) : ℂ) + t * I + p)‖ ≤
+      Real.Gamma (δ + 2) * Real.Gamma (δ + p) /
+        (δ * ((1 - δ) * (1 - (δ + p))) ^ N * (N ! : ℝ) ^ 2) * (1 + t ^ 2)⁻¹ := by
+  have h1 := norm_Gamma_mul_pow_mul_factorial_mul_le hδ (by linarith) N
+    (s := ((δ - N : ℝ) : ℂ) + t * I) (by simp)
+  have h2 := norm_Gamma_mul_pow_mul_factorial_le (a := δ + p) (by linarith) hδp N
+    (s := ((δ - N : ℝ) : ℂ) + t * I + p) (by
+      simp only [add_re, ofReal_re, mul_re, I_re, I_im, ofReal_im, mul_zero, mul_one, sub_zero,
+        add_zero]
+      ring)
+  simp only [add_im, ofReal_im, mul_im, ofReal_re, I_im, mul_one, I_re, mul_zero, zero_add,
+    add_zero] at h1
+  have hD1 : 0 < (1 - δ) ^ N * (N ! : ℝ) * (δ * (1 + t ^ 2)) := by
+    have : 0 < 1 - δ := by linarith
+    positivity
+  have hD2 : 0 < (1 - (δ + p)) ^ N * (N ! : ℝ) := by
+    have : 0 < 1 - (δ + p) := by linarith
+    positivity
+  rw [norm_mul]
+  calc ‖Gamma (((δ - N : ℝ) : ℂ) + t * I)‖ * ‖Gamma (((δ - N : ℝ) : ℂ) + t * I + p)‖
+      ≤ Real.Gamma (δ + 2) / ((1 - δ) ^ N * (N ! : ℝ) * (δ * (1 + t ^ 2))) *
+          (Real.Gamma (δ + p) / ((1 - (δ + p)) ^ N * (N ! : ℝ))) :=
+        mul_le_mul ((le_div_iff₀ hD1).mpr h1) ((le_div_iff₀ hD2).mpr h2) (norm_nonneg _)
+          (div_nonneg (Real.Gamma_pos_of_pos (by linarith)).le hD1.le)
+    _ = _ := by
+        have : 0 < 1 - δ := by linarith
+        have : 0 < 1 - (δ + p) := by linarith
+        rw [mul_pow]
+        field_simp
 
 /-- `Complex.Gamma` is continuous at every `s` whose real part is not a nonpositive integer. -/
 theorem continuousAt_Gamma_of_re_ne_neg_nat {s : ℂ} (hs : ∀ n : ℕ, s.re ≠ -n) :
