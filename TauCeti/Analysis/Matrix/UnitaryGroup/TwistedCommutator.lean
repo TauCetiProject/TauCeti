@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.UnitEigenvector
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
@@ -181,19 +182,6 @@ private theorem pow_card_eq_of_mul_eq_smul_mul {A B : Matrix n n ℂ} {ζ : ℂ}
     ← smul_one_mul] at hpow
   exact (hUunit.mul_left_inj.mp hpow).symm
 
-/-- If `X ^ card n = (-1) ^ (card n + 1) • 1`, every eigenvalue `ν` of `X` satisfies
-`ν ^ card n = (-1) ^ (card n + 1)`. -/
-private theorem pow_card_eq_of_mulVec_eq_smul {X : Matrix n n ℂ} {ν : ℂ} {x : n → ℂ}
-    (hX : X ^ Fintype.card n = (-1 : ℂ) ^ (Fintype.card n + 1) • (1 : Matrix n n ℂ))
-    (hx : X *ᵥ x = ν • x) (hx0 : x ≠ 0) : ν ^ Fintype.card n = (-1) ^ (Fintype.card n + 1) := by
-  have hpow (m : ℕ) : X ^ m *ᵥ x = ν ^ m • x := by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [pow_succ', ← mulVec_mulVec, ih, mulVec_smul, hx, smul_smul, pow_succ]
-  have := hpow (Fintype.card n)
-  rw [hX, smul_mulVec, one_mulVec] at this
-  exact smul_left_injective ℂ hx0 this.symm
-
 /-- Two twisted pairs with the same scalar `B ^ card n` and unit eigenvectors `v`, `v'` of `A`,
 `A'` for the same eigenvalue are conjugate by the unitary matrix `W` sending the eigenframe
 `B ^ k v` to the eigenframe `B' ^ k v'`. -/
@@ -319,7 +307,7 @@ theorem exists_conj_eq_of_coe_commutatorElement_eq_smul_one {ζ : ℂ}
   obtain ⟨μ', v', hv', hvv'⟩ :=
     exists_mulVec_eq_smul_and_star_dotProduct_self_eq_one (A' : Matrix n n ℂ)
   have hne {x : n → ℂ} (hxx : star x ⬝ᵥ x = 1) : x ≠ 0 := by rintro rfl; simp at hxx
-  have hμ := pow_card_eq_of_mulVec_eq_smul hAr hv (hne hvv)
+  have hμ := pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul hAr hv (hne hvv)
   have hsign : (-1 : ℂ) ^ (Fintype.card n + 1) ≠ 0 := pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)
   have hμ0 : μ ≠ 0 := by
     rintro rfl
@@ -327,7 +315,8 @@ theorem exists_conj_eq_of_coe_commutatorElement_eq_smul_one {ζ : ℂ}
     exact hsign hμ.symm
   -- Shift `v` along `B` until its eigenvalue is `μ'`.
   obtain ⟨m, -, hm⟩ := hζ.eq_pow_of_pow_eq_one (ξ := μ' / μ)
-    (by rw [div_pow, hμ, pow_card_eq_of_mulVec_eq_smul hA'r hv' (hne hvv'), div_self hsign])
+    (by rw [div_pow, hμ, pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul hA'r hv' (hne hvv'),
+      div_self hsign])
   have hv₁ : (A : Matrix n n ℂ) *ᵥ ((B : Matrix n n ℂ) ^ m *ᵥ v) =
       μ' • ((B : Matrix n n ℂ) ^ m *ᵥ v) := by
     rw [mulVec_pow_mulVec_of_mul_eq_smul_mul hAB hv, hm, mul_div_cancel₀ _ hμ0]

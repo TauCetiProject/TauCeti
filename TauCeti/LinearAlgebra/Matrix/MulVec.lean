@@ -27,7 +27,8 @@ sees coordinate `i` of that vector. In particular such a matrix maps the coordin
 
 Subtracting a matrix from a constant diagonal matrix turns its eigenvector equation into a
 homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
-eigenvector of each of its powers.
+eigenvector of each of its powers, so when `X ^ m` is a scalar matrix `c • 1`, every eigenvalue `ν`
+of `X` satisfies `ν ^ m = c`.
 
 The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
 line.
@@ -46,6 +47,8 @@ permutation to vectors invariant under the row map.
 * `Matrix.diagonal_const_sub_mulVec_eq_zero_iff`: `(a - A) v = 0` for a constant diagonal `a`
   is the eigenvector equation `A v = a • v`.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
+* `Matrix.pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul`: if `X ^ m = c • 1` and `X v = ν • v`
+  with `v ≠ 0`, then `ν ^ m = c`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
 * `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
@@ -126,6 +129,15 @@ theorem pow_mulVec_eq_pow_smul {A : Matrix n n R} {v : n → R} {μ : R} (h : A 
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
 
 end CommSemiring
+
+/-- If a power `X ^ m` of a square matrix is the scalar matrix `c • 1`, every eigenvalue `ν` of
+`X` satisfies `ν ^ m = c`. -/
+theorem pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul {R : Type*} [CommRing R] [NoZeroDivisors R]
+    [DecidableEq n] {X : Matrix n n R} {m : ℕ} {c ν : R} {x : n → R} (hX : X ^ m = c • 1)
+    (hx : X *ᵥ x = ν • x) (hx0 : x ≠ 0) : ν ^ m = c := by
+  have h := pow_mulVec_eq_pow_smul hx m
+  rw [hX, smul_mulVec, one_mulVec] at h
+  exact smul_left_injective R hx0 h.symm
 
 /-- Along a line the `σ`-sesquilinear form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`:
 `h(c v, c v) = σ c * c * h(v, v)`. -/
