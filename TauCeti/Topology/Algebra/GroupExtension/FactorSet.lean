@@ -56,6 +56,8 @@ continuous `2`-cocycle, so the two descriptions of the data are interchangeable.
   modules is continuous, and so is the induced homomorphism of twisted products.
 * `TauCeti.FactorSet.ofMul_mem_Z2_iff`: continuity of a factor set is membership of the explicit
   complex of continuous cochains.
+* `TauCeti.FactorSet.mem_Z1_of_splitting`: the coefficient component of a continuous homomorphic
+  section of the semidirect product is a continuous `1`-cocycle.
 
 ## References
 
@@ -312,6 +314,24 @@ the extension built from a cocycle of the explicit complex of continuous cochain
 theorem continuous_ofMemZ2 (hz : z ∈ ContCohomology.Z2 G (Additive M)) (hz₁ : z (1, 1) = 0) :
     Continuous ⇑(ofMemZ2 hz hz₁) :=
   (ContCohomology.mem_Z2_iff.1 hz).1
+
+variable {A : Type v} [AddCommGroup A] [DistribMulAction G A] [TopologicalSpace A]
+  [IsTopologicalAddGroup A]
+
+/-- **A continuous homomorphic section of the semidirect product is a continuous `1`-cocycle.**
+For the extension `A ⋊ G` attached to the trivial factor set, the `A`-component of a continuous
+splitting `s` is a continuous `1`-cocycle `G → A`. -/
+theorem mem_Z1_of_splitting (s : (trivial G (Multiplicative A)).groupExtension.Splitting)
+    (hs : Continuous s) : (fun g ↦ (s g).left.toAdd) ∈ ContCohomology.Z1 G A := by
+  have hright (g : G) : (s g).right = g := by
+    have h := s.rightHom_splitting g
+    rwa [groupExtension_rightHom, rightHom_apply] at h
+  refine ContCohomology.mem_Z1_iff.2
+    ⟨continuous_toAdd.comp (Extension.continuous_left.comp hs), fun g h ↦ ?_⟩
+  -- The cocycle identity is the `A`-component of `s (g * h) = s g * s h`.
+  simp only [map_mul, Extension.mul_left, hright, trivial_apply, mul_one, toAdd_mul,
+    Multiplicative.toAdd_smul]
+  exact add_comm _ _
 
 end Cocycle
 

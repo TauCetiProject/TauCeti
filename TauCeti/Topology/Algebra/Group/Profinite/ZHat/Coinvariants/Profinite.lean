@@ -14,8 +14,8 @@ import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.Pi
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
-import TauCeti.Algebra.GroupAction.QuotientAddGroup
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Extension
+import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 import TauCeti.Topology.Algebra.GroupAction.TypeTags
 import TauCeti.Topology.Algebra.GroupExtension.FactorSet
 
@@ -45,7 +45,8 @@ The action is only assumed to be by continuous additive maps; it need not commut
 For profinite `M`, a continuous `1`-cocycle `f` is the same as a continuous homomorphic section
 `g ↦ (f g, g)` of the semidirect product `M ⋊ zHat`, which is a profinite group. Such a section
 may be prescribed at `zHat.gen` (`GroupExtension.exists_splitting_continuous_zHat_apply_gen_eq`),
-so every `m ∈ M` is the value at `zHat.gen` of a continuous cocycle. This is the argument of
+so every `m ∈ M` is the value at `zHat.gen` of a continuous cocycle
+(`TauCeti.FactorSet.mem_Z1_of_splitting`). This is the argument of
 `TauCeti.freeProP.exists_mem_Z1_forall_apply_of_eq` for free pro-`p` groups.
 
 For rational coefficients the orbit of `c ∈ V` under `zHat` is compact, hence bounded in
@@ -61,14 +62,15 @@ elements of `M ⧸ (zHat.gen - 1) M = M`.
 ## Main results
 
 * `TauCeti.zHat.exists_apply_gen_eq_of_profinite`,
-  `TauCeti.zHat.evalGen_surjective_of_profinite`, `TauCeti.zHat.h1AddEquivOfProfinite`:
-  profinite coefficients.
-* `TauCeti.zHat.evalGen_surjective_of_moduleFinite`, `TauCeti.zHat.h1AddEquivOfModuleFinite`:
-  finitely generated modules over a compact totally disconnected ring.
+  `TauCeti.zHat.evalGen_surjective_of_profinite`,
+  `TauCeti.zHat.h1AddEquivCoinvariantsOfProfinite`: profinite coefficients.
+* `TauCeti.zHat.evalGen_surjective_of_moduleFinite`,
+  `TauCeti.zHat.h1AddEquivCoinvariantsOfModuleFinite`: finitely generated modules over a compact
+  totally disconnected ring.
 * `TauCeti.zHat.exists_apply_gen_eq_of_finiteDimensional`,
   `TauCeti.zHat.evalGen_surjective_of_finiteDimensional`,
-  `TauCeti.zHat.h1AddEquivOfFiniteDimensional`: finite-dimensional vector spaces over a locally
-  compact ultrametric field.
+  `TauCeti.zHat.h1AddEquivCoinvariantsOfFiniteDimensional`: finite-dimensional vector spaces over a
+  locally compact ultrametric field.
 
 ## References
 
@@ -92,11 +94,12 @@ variable (M : Type v) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGro
 
 variable {M} in
 /-- **Every element of a profinite continuous `zHat`-module is the value at `zHat.gen` of a
-continuous `1`-cocycle.** The cocycle is the `M`-component of a continuous homomorphic section of
-the semidirect product `M ⋊ zHat` sending `zHat.gen` to `(m, zHat.gen)`. -/
+continuous `1`-cocycle.** -/
 theorem exists_apply_gen_eq_of_profinite (m : M) : ∃ f : Z1 zHat.{u} M, f.val gen = m := by
-  -- The argument is that of `TauCeti.freeProP.exists_mem_Z1_forall_apply_of_eq`, with the
-  -- splitting of extensions of `zHat` in place of that of extensions of a free pro-`p` group.
+  -- The cocycle is the `M`-component of a continuous homomorphic section of the semidirect
+  -- product `M ⋊ zHat` sending `zHat.gen` to `(m, zHat.gen)`. The argument is that of
+  -- `TauCeti.freeProP.exists_mem_Z1_forall_apply_of_eq`, with the splitting of extensions of
+  -- `zHat` in place of that of extensions of a free pro-`p` group.
   -- The semidirect product is the extension attached to the trivial factor set; it is profinite.
   have _ : IsTopologicalGroup (FactorSet.trivial zHat.{u} (Multiplicative M)).Extension :=
     FactorSet.Extension.isTopologicalGroup FactorSet.continuous_trivial
@@ -105,37 +108,44 @@ theorem exists_apply_gen_eq_of_profinite (m : M) : ∃ f : Z1 zHat.{u} M, f.val 
     (by rw [FactorSet.groupExtension_rightHom]; exact FactorSet.continuous_rightHom _)
     ⟨Multiplicative.ofAdd m, gen⟩
     (by rw [FactorSet.groupExtension_rightHom, FactorSet.rightHom_apply])
-  have hright (g : zHat.{u}) : (s g).right = g := by
-    have h := s.rightHom_splitting g
-    rwa [FactorSet.groupExtension_rightHom, FactorSet.rightHom_apply] at h
-  refine ⟨⟨fun g ↦ Multiplicative.toAdd (s g).left, mem_Z1_iff.2 ⟨?_, fun g h ↦ ?_⟩⟩, ?_⟩
-  · exact continuous_toAdd.comp (FactorSet.Extension.continuous_left.comp hs)
-  · -- The cocycle identity is the `M`-component of `s (g * h) = s g * s h`.
-    simp only [map_mul, FactorSet.Extension.mul_left, hright, FactorSet.trivial_apply, mul_one,
-      toAdd_mul, Multiplicative.toAdd_smul]
-    exact add_comm _ _
-  · exact congrArg (fun z ↦ Multiplicative.toAdd z.left) hsg
+  exact ⟨⟨_, FactorSet.mem_Z1_of_splitting s hs⟩,
+    congrArg (fun z ↦ Multiplicative.toAdd z.left) hsg⟩
 
 /-- **Evaluation at `zHat.gen` is surjective on `H¹(zHat, M)`** for every profinite continuous
 `zHat`-module `M`. -/
-theorem evalGen_surjective_of_profinite : Function.Surjective (evalGen.{u} M) := by
-  intro q
-  induction q using QuotientAddGroup.induction_on with
-  | H m =>
-    obtain ⟨f, hf⟩ := exists_apply_gen_eq_of_profinite.{u} m
-    exact ⟨f, by rw [evalGen_mk, hf]⟩
+theorem evalGen_surjective_of_profinite : Function.Surjective (evalGen.{u} M) :=
+  evalGen_surjective_of_forall_exists exists_apply_gen_eq_of_profinite.{u}
 
 /-- **First continuous cohomology of `zHat` with profinite coefficients**:
 `H¹(zHat, M) ≃+ M ⧸ (zHat.gen - 1) M` via evaluation at `zHat.gen`, for every compact totally
 disconnected continuous `zHat`-module `M`. -/
-def h1AddEquivOfProfinite : H1 zHat.{u} M ≃+ M ⧸ (genSubId.{u} M).range :=
+def h1AddEquivCoinvariantsOfProfinite : H1 zHat.{u} M ≃+ M ⧸ (genSubId.{u} M).range :=
   AddEquiv.ofBijective (evalGen.{u} M) ⟨evalGen_injective M, evalGen_surjective_of_profinite M⟩
 
-/-- `h1AddEquivOfProfinite` acts as `evalGen`. -/
+/-- `h1AddEquivCoinvariantsOfProfinite` acts as `evalGen`. -/
 @[simp]
-theorem h1AddEquivOfProfinite_apply (x : H1 zHat.{u} M) :
-    h1AddEquivOfProfinite.{u} M x = evalGen.{u} M x :=
+theorem h1AddEquivCoinvariantsOfProfinite_apply (x : H1 zHat.{u} M) :
+    h1AddEquivCoinvariantsOfProfinite.{u} M x = evalGen.{u} M x :=
   (rfl)
+
+/-- The underlying additive homomorphism of `h1AddEquivCoinvariantsOfProfinite` is `evalGen`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfProfinite_toAddMonoidHom :
+    (h1AddEquivCoinvariantsOfProfinite.{u} M : H1 zHat.{u} M →+ M ⧸ (genSubId.{u} M).range) =
+      evalGen.{u} M :=
+  (rfl)
+
+/-- Evaluating at `zHat.gen` cancels the inverse of `h1AddEquivCoinvariantsOfProfinite`. -/
+@[simp]
+theorem evalGen_h1AddEquivCoinvariantsOfProfinite_symm (q : M ⧸ (genSubId.{u} M).range) :
+    evalGen.{u} M ((h1AddEquivCoinvariantsOfProfinite.{u} M).symm q) = q :=
+  (h1AddEquivCoinvariantsOfProfinite.{u} M).apply_symm_apply q
+
+/-- Applying the inverse of `h1AddEquivCoinvariantsOfProfinite` to `evalGen M x` recovers `x`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfProfinite_symm_evalGen (x : H1 zHat.{u} M) :
+    (h1AddEquivCoinvariantsOfProfinite.{u} M).symm (evalGen.{u} M x) = x :=
+  (h1AddEquivCoinvariantsOfProfinite.{u} M).symm_apply_apply x
 
 end Profinite
 
@@ -161,15 +171,35 @@ theorem evalGen_surjective_of_moduleFinite : Function.Surjective (evalGen.{u} M)
 `H¹(zHat, M) ≃+ M ⧸ (zHat.gen - 1) M` via evaluation at `zHat.gen`, for every finitely generated
 Hausdorff topological module `M` over a compact totally disconnected ring, for instance a finitely
 generated `ℤ_p`-module, with a continuous action of `zHat`. -/
-def h1AddEquivOfModuleFinite : H1 zHat.{u} M ≃+ M ⧸ (genSubId.{u} M).range :=
+def h1AddEquivCoinvariantsOfModuleFinite : H1 zHat.{u} M ≃+ M ⧸ (genSubId.{u} M).range :=
   AddEquiv.ofBijective (evalGen.{u} M)
     ⟨evalGen_injective M, evalGen_surjective_of_moduleFinite R M⟩
 
-/-- `h1AddEquivOfModuleFinite` acts as `evalGen`. -/
+/-- `h1AddEquivCoinvariantsOfModuleFinite` acts as `evalGen`. -/
 @[simp]
-theorem h1AddEquivOfModuleFinite_apply (x : H1 zHat.{u} M) :
-    h1AddEquivOfModuleFinite.{u} R M x = evalGen.{u} M x :=
+theorem h1AddEquivCoinvariantsOfModuleFinite_apply (x : H1 zHat.{u} M) :
+    h1AddEquivCoinvariantsOfModuleFinite.{u} R M x = evalGen.{u} M x :=
   (rfl)
+
+/-- The underlying additive homomorphism of `h1AddEquivCoinvariantsOfModuleFinite` is `evalGen`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfModuleFinite_toAddMonoidHom :
+    (h1AddEquivCoinvariantsOfModuleFinite.{u} R M : H1 zHat.{u} M →+ M ⧸ (genSubId.{u} M).range) =
+      evalGen.{u} M :=
+  (rfl)
+
+/-- Evaluating at `zHat.gen` cancels the inverse of `h1AddEquivCoinvariantsOfModuleFinite`. -/
+@[simp]
+theorem evalGen_h1AddEquivCoinvariantsOfModuleFinite_symm (q : M ⧸ (genSubId.{u} M).range) :
+    evalGen.{u} M ((h1AddEquivCoinvariantsOfModuleFinite.{u} R M).symm q) = q :=
+  (h1AddEquivCoinvariantsOfModuleFinite.{u} R M).apply_symm_apply q
+
+/-- Applying the inverse of `h1AddEquivCoinvariantsOfModuleFinite` to `evalGen M x` recovers
+`x`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfModuleFinite_symm_evalGen (x : H1 zHat.{u} M) :
+    (h1AddEquivCoinvariantsOfModuleFinite.{u} R M).symm (evalGen.{u} M x) = x :=
+  (h1AddEquivCoinvariantsOfModuleFinite.{u} R M).symm_apply_apply x
 
 end ModuleFinite
 
@@ -182,12 +212,14 @@ variable (K : Type*) [NontriviallyNormedField K] [IsUltrametricDist K] [ProperSp
 
 include K in
 /-- Every element `c` of a finite-dimensional Hausdorff vector space over a locally compact
-ultrametric field with a continuous `zHat`-action lies in a compact `zHat`-stable additive
-subgroup. -/
+ultrametric field with a continuous `zHat`-action lies in a compact totally disconnected
+`zHat`-stable additive subgroup. -/
 private theorem exists_isCompact_addSubgroup (c : V) :
-    ∃ N : AddSubgroup V, c ∈ N ∧ (∀ g : zHat.{u}, ∀ x ∈ N, g • x ∈ N) ∧ IsCompact (N : Set V) := by
+    ∃ N : AddSubgroup V, c ∈ N ∧ (∀ g : zHat.{u}, ∀ x ∈ N, g • x ∈ N) ∧ IsCompact (N : Set V) ∧
+      TotallyDisconnectedSpace N := by
   let e : V ≃L[K] (Fin (Module.finrank K V) → K) :=
     (Module.finBasis K V).equivFun.toContinuousLinearEquiv
+  have : TotallyDisconnectedSpace V := e.symm.toHomeomorph.totallyDisconnectedSpace
   -- The orbit of `c` is compact, so its coordinates are bounded by some `r > 0`.
   obtain ⟨r₀, hr₀⟩ := isCompact_univ.exists_bound_of_continuousOn
     (e.continuous.comp (continuous_id.smul continuous_const) : Continuous fun g : zHat.{u} ↦
@@ -203,7 +235,7 @@ private theorem exists_isCompact_addSubgroup (c : V) :
   have hN (x : V) : x ∈ N ↔ ∀ g : zHat.{u}, g • x ∈ T := by
     simp [N, AddSubgroup.mem_iInf]
   refine ⟨N, (hN c).mpr fun g ↦ (hT _).mpr ((hr₀ g trivial).trans (le_max_left _ _)),
-    fun g x hx ↦ (hN _).mpr fun g' ↦ by rw [smul_smul]; exact (hN x).mp hx _, ?_⟩
+    fun g x hx ↦ (hN _).mpr fun g' ↦ by rw [smul_smul]; exact (hN x).mp hx _, ?_, inferInstance⟩
   have hTc : IsCompact (T : Set V) := by
     have : (T : Set V) = e ⁻¹' Metric.closedBall 0 (max r₀ 1) := by
       ext x
@@ -224,14 +256,10 @@ variable {V} in
 ultrametric field with a continuous `zHat`-action is the value at `zHat.gen` of a continuous
 `1`-cocycle.** The action need not be linear. -/
 theorem exists_apply_gen_eq_of_finiteDimensional (c : V) : ∃ f : Z1 zHat.{u} V, f.val gen = c := by
-  obtain ⟨N, hcN, hN, hNc⟩ := exists_isCompact_addSubgroup.{u} K V c
+  obtain ⟨N, hcN, hN, hNc, _⟩ := exists_isCompact_addSubgroup.{u} K V c
   let := N.restrictDistribMulAction hN
-  have : ContinuousSMul zHat.{u} N :=
-    ⟨(continuous_fst.smul (continuous_subtype_val.comp continuous_snd)).subtype_mk _⟩
+  have : ContinuousSMul zHat.{u} N := N.restrictDistribMulAction_continuousSMul hN
   have : CompactSpace N := isCompact_iff_compactSpace.mp hNc
-  let e : V ≃L[K] (Fin (Module.finrank K V) → K) :=
-    (Module.finBasis K V).equivFun.toContinuousLinearEquiv
-  have : TotallyDisconnectedSpace V := e.symm.toHomeomorph.totallyDisconnectedSpace
   obtain ⟨f, hf⟩ := exists_apply_gen_eq_of_profinite.{u} (⟨c, hcN⟩ : N)
   obtain ⟨hcont, hcoc⟩ := mem_Z1_iff.mp f.2
   -- Composing with the inclusion `N → V` keeps continuity and the cocycle identity.
@@ -244,26 +272,43 @@ include K in
 /-- **Evaluation at `zHat.gen` is surjective on `H¹(zHat, V)`** for every finite-dimensional
 Hausdorff vector space `V` over a locally compact ultrametric field, for instance a
 finite-dimensional `ℚ_p`-vector space, with a continuous action of `zHat`. -/
-theorem evalGen_surjective_of_finiteDimensional : Function.Surjective (evalGen.{u} V) := by
-  intro q
-  induction q using QuotientAddGroup.induction_on with
-  | H c =>
-    obtain ⟨f, hf⟩ := exists_apply_gen_eq_of_finiteDimensional.{u} K c
-    exact ⟨f, by rw [evalGen_mk, hf]⟩
+theorem evalGen_surjective_of_finiteDimensional : Function.Surjective (evalGen.{u} V) :=
+  evalGen_surjective_of_forall_exists (exists_apply_gen_eq_of_finiteDimensional.{u} K)
 
 /-- **First continuous cohomology of `zHat` with rational coefficients**:
 `H¹(zHat, V) ≃+ V ⧸ (zHat.gen - 1) V` via evaluation at `zHat.gen`, for every finite-dimensional
 Hausdorff vector space `V` over a locally compact ultrametric field, for instance a
 finite-dimensional `ℚ_p`-vector space, with a continuous action of `zHat`. -/
-def h1AddEquivOfFiniteDimensional : H1 zHat.{u} V ≃+ V ⧸ (genSubId.{u} V).range :=
+def h1AddEquivCoinvariantsOfFiniteDimensional : H1 zHat.{u} V ≃+ V ⧸ (genSubId.{u} V).range :=
   AddEquiv.ofBijective (evalGen.{u} V)
     ⟨evalGen_injective V, evalGen_surjective_of_finiteDimensional K V⟩
 
-/-- `h1AddEquivOfFiniteDimensional` acts as `evalGen`. -/
+/-- `h1AddEquivCoinvariantsOfFiniteDimensional` acts as `evalGen`. -/
 @[simp]
-theorem h1AddEquivOfFiniteDimensional_apply (x : H1 zHat.{u} V) :
-    h1AddEquivOfFiniteDimensional.{u} K V x = evalGen.{u} V x :=
+theorem h1AddEquivCoinvariantsOfFiniteDimensional_apply (x : H1 zHat.{u} V) :
+    h1AddEquivCoinvariantsOfFiniteDimensional.{u} K V x = evalGen.{u} V x :=
   (rfl)
+
+/-- The underlying additive homomorphism of `h1AddEquivCoinvariantsOfFiniteDimensional` is
+`evalGen`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfFiniteDimensional_toAddMonoidHom :
+    (h1AddEquivCoinvariantsOfFiniteDimensional.{u} K V :
+      H1 zHat.{u} V →+ V ⧸ (genSubId.{u} V).range) = evalGen.{u} V :=
+  (rfl)
+
+/-- Evaluating at `zHat.gen` cancels the inverse of `h1AddEquivCoinvariantsOfFiniteDimensional`. -/
+@[simp]
+theorem evalGen_h1AddEquivCoinvariantsOfFiniteDimensional_symm (q : V ⧸ (genSubId.{u} V).range) :
+    evalGen.{u} V ((h1AddEquivCoinvariantsOfFiniteDimensional.{u} K V).symm q) = q :=
+  (h1AddEquivCoinvariantsOfFiniteDimensional.{u} K V).apply_symm_apply q
+
+/-- Applying the inverse of `h1AddEquivCoinvariantsOfFiniteDimensional` to `evalGen V x` recovers
+`x`. -/
+@[simp]
+theorem h1AddEquivCoinvariantsOfFiniteDimensional_symm_evalGen (x : H1 zHat.{u} V) :
+    (h1AddEquivCoinvariantsOfFiniteDimensional.{u} K V).symm (evalGen.{u} V x) = x :=
+  (h1AddEquivCoinvariantsOfFiniteDimensional.{u} K V).symm_apply_apply x
 
 end FiniteDimensional
 

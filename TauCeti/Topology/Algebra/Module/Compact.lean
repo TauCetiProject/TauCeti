@@ -311,13 +311,13 @@ theorem self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R]
   ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
 
 /-- **Finitely generated modules are compact modules.** A finitely generated Hausdorff topological
-module over a compact totally disconnected ring is a compact module. Its topology is the module
-topology (`TauCeti.isModuleTopology_of_finite_of_compactSpace`), which is nonarchimedean because
-the topology of the ring is, and a nonarchimedean Hausdorff group is totally disconnected. For
-example, every finitely generated Hausdorff topological `ℤ_p`-module is a compact module. -/
+module over a compact totally disconnected ring is a compact module. For example, every finitely
+generated Hausdorff topological `ℤ_p`-module is a compact module. -/
 theorem of_finite [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R]
     [Module.Finite R M] [ContinuousAdd M] [ContinuousSMul R M] [T2Space M] :
     IsCompactModule R M := by
+  -- The topology of `M` is the module topology, which is nonarchimedean because the topology of
+  -- the ring is, and a nonarchimedean Hausdorff group is totally disconnected.
   have := isModuleTopology_of_finite_of_compactSpace (R := R) (M := M)
   have := IsModuleTopology.isTopologicalAddGroup R M
   have : NonarchimedeanAddGroup M :=
