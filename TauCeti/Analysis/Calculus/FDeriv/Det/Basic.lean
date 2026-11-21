@@ -218,6 +218,14 @@ theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
 
 end Matrix
 
+/-- Jacobi's inverse formula for the derivative of a matrix curve's determinant. -/
+theorem HasDerivAt.matrix_det {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
+    [NontriviallyNormedField 𝕜] {A : 𝕜 → Matrix n n 𝕜} {A' : Matrix n n 𝕜} {a : 𝕜}
+    (hA : HasDerivAt A A' a) (hdet : IsUnit (A a).det) :
+    HasDerivAt (fun t ↦ (A t).det) ((A a).det * ((A a)⁻¹ * A').trace) a := by
+  exact ((Matrix.differentiable_det (A a)).hasFDerivAt.comp_hasDerivAt a hA).congr_deriv
+    (Matrix.fderiv_det_apply hdet A')
+
 namespace ContinuousLinearMap
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]

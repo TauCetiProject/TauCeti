@@ -138,7 +138,11 @@ namespace TauCeti
 
 open Real
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+
+section WeightRotation
+
+variable [Fintype ι]
 
 /-- The rotation `z_i ↦ exp(i θ_i) z_i` of `ℂ^ι`, written in the real coordinates
 `z_i = q_i + i p_i` of `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`. -/
@@ -360,7 +364,7 @@ theorem range_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
     exact (neg_smul (1 / 2 * (x.1 i ^ 2 + x.2 i ^ 2)) (α i)).symm
   · rintro ⟨c, rfl⟩
     refine ⟨(WithLp.toLp 2 fun i ↦ √(2 * c i), 0), Finset.sum_congr rfl fun i _ ↦ ?_⟩
-    have h : √(2 * (c i : ℝ)) ^ 2 = 2 * c i := Real.sq_sqrt (mul_nonneg zero_le_two (c i).2)
+    have h : √(2 * (c i : ℝ)) ^ 2 = 2 * c i := Real.sq_sqrt (mul_nonneg zero_le_two (c i).property)
     rw [← Nonneg.coe_smul, Pi.neg_apply, smul_neg, ← neg_smul]
     congr 1
     simp only [PiLp.zero_apply, h]
@@ -463,38 +467,34 @@ theorem mem_ker_weightGenerator_iff (θ : ι → ℝ) (x : EuclideanSpace ℝ ι
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, weightGenerator_apply_eq_zero_iff]
   exact forall_congr' fun i ↦ by tauto
 
-omit [Fintype ι] in
+end WeightRotation
+
 /-- The real coordinates `(q, p) ↦ (q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by `ι ⊕ ι`. -/
 def weightModelCoords :
     (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ≃ₗ[ℝ] (ι ⊕ ι → ℝ) :=
   ((WithLp.linearEquiv 2 ℝ (ι → ℝ)).prodCongr (WithLp.linearEquiv 2 ℝ (ι → ℝ))).trans
     (LinearEquiv.sumArrowLequivProdArrow ι ι ℝ ℝ).symm
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_apply_inl (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
     weightModelCoords v (Sum.inl i) = v.1 i :=
   (rfl)
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_apply_inr (v : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
     weightModelCoords v (Sum.inr i) = v.2 i :=
   (rfl)
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_symm_apply_fst (u : ι ⊕ ι → ℝ) (i : ι) :
     (weightModelCoords.symm u).1 i = u (Sum.inl i) :=
   (rfl)
 
-omit [Fintype ι] in
 @[simp]
 theorem weightModelCoords_symm_apply_snd (u : ι ⊕ ι → ℝ) (i : ι) :
     (weightModelCoords.symm u).2 i = u (Sum.inr i) :=
   (rfl)
 
-omit [Fintype ι] in
 /-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, a subspace `W` of `ℂ^ι` cut out by `z_i = 0` for
 every `i ∉ s` is spanned by the coordinates of the indices in `s`. -/
 theorem map_weightModelCoords_eq_spanSubset [Finite ι]
@@ -509,7 +509,6 @@ theorem map_weightModelCoords_eq_spanSubset [Finite ι]
   exact ⟨fun h ↦ ⟨fun i hi ↦ (h i hi).1, fun i hi ↦ (h i hi).2⟩,
     fun h i hi ↦ ⟨h.1 i hi, h.2 i hi⟩⟩
 
-omit [Fintype ι] in
 /-- A subspace `W` of `ℂ^ι` cut out by `z_i = 0` for every `i ∉ s` has real dimension twice the
 number of elements of `s`. -/
 theorem finrank_eq_two_mul_ncard_of_mem_iff [Finite ι]
@@ -519,6 +518,10 @@ theorem finrank_eq_two_mul_ncard_of_mem_iff [Finite ι]
   rw [← weightModelCoords.finrank_map_eq, map_weightModelCoords_eq_spanSubset s hW,
     Pi.dim_spanSubset, Set.preimage, Set.ncard_setOf_sumElim id (· ∈ s)]
   simp only [id_eq, Set.ofPred_mem_eq]
+
+section InfinitesimalAction
+
+variable [Fintype ι] {𝔱 : Type*} [NormedAddCommGroup 𝔱] [NormedSpace ℝ 𝔱]
 
 /-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
 angles `θ` is spanned by the coordinates whose angle vanishes. -/
@@ -803,7 +806,13 @@ theorem weightRotation_two_pi_smul_apply_eq_self_iff (α : ι → StrongDual ℝ
   refine forall₂_congr fun j _ ↦ exists_congr fun k ↦ ?_
   rw [map_smul, smul_eq_mul, mul_comm (2 * π), mul_left_inj' two_pi_pos.ne', eq_comm]
 
+end InfinitesimalAction
+
 /-! ### The rotation torus `(ℝ / 2πℤ)^ι` -/
+
+section TorusRotation
+
+variable [Fintype ι]
 
 /-- The rotation `z_j ↦ exp(-i θ_j) z_j` of `ℂ^ι` by angles `θ ∈ (ℝ / 2πℤ)^ι`, in the real
 coordinates `z_j = q_j + i p_j`. On representatives it is `TauCeti.weightRotation (-θ)`
@@ -840,12 +849,17 @@ theorem torusRotation_coe (t : ι → ℝ) :
     torusRotation (fun j ↦ (t j : AddCircle (2 * π))) = weightRotation (-t) := by
   ext x j <;> simp [torusRotation, cos_neg, sin_neg]
 
-omit [Fintype ι] in
+end TorusRotation
+
 /-- Every element of the torus `(ℝ / 2πℤ)^ι` has a representative in `ℝ^ι`. -/
 private theorem exists_coe_eq (θ : ι → AddCircle (2 * π)) :
     ∃ t : ι → ℝ, (fun j ↦ (t j : AddCircle (2 * π))) = θ := by
   choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
   exact ⟨t, funext ht⟩
+
+section TorusRotationProperties
+
+variable [Fintype ι]
 
 @[simp]
 theorem torusRotation_zero :
@@ -921,5 +935,7 @@ theorem continuous_torusRotation :
     ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ?_))
   · exact ((hcos.comp (hθ j)).mul (h1 j)).add ((hsin.comp (hθ j)).mul (h2 j))
   · exact (((hsin.comp (hθ j)).mul (h1 j)).neg).add ((hcos.comp (hθ j)).mul (h2 j))
+
+end TorusRotationProperties
 
 end TauCeti

@@ -25,6 +25,8 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.coeff_lift_apply`: the coordinates of `Perfection.lift p k R φ x` are the values of
+  `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
 * `PreTilt.ext`, `PreTilt.coeff_equivPerfection`, `PreTilt.coeff_equivPerfection_symm`: coordinate
@@ -54,6 +56,14 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   have hf := coeffMonoidHom_pow_p_pow f 0 n
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
+
+/-- The `n`-th coordinate of `Perfection.lift p k R φ x` is `φ` applied to the `p ^ n`-th root of
+`x` in the perfect ring `k`. -/
+theorem coeff_lift_apply [Fact p.Prime] {k R : Type*} [CommSemiring k] [CharP k p]
+    [PerfectRing k p] [CommSemiring R] [CharP R p] (φ : k →+* R) (n : ℕ) (x : k) :
+    coeff R p n (lift p k R φ x) = φ ((iterateFrobeniusEquiv k p n).symm x) := by
+  rw [iterateFrobeniusEquiv_symm, RingAut.coe_pow]
+  rfl
 
 section Reduced
 

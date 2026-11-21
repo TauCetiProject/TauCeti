@@ -130,19 +130,19 @@ must choose. The choice is harmless: `delta0Witness_eq` shows the witness is uni
 `Delta0UpperUnit_apply_val` states the resulting API against an arbitrary witness, so this
 definition never escapes into a consumer's proof obligation. -/
 private noncomputable def delta0Witness (g : Delta0 N) : Matrix (Fin 2) (Fin 2) ℤ :=
-  Classical.choose ((mem_Delta0_iff N).mp g.2)
+  Classical.choose ((mem_Delta0_iff N).mp g.property)
 
 private lemma delta0Witness_spec (g : Delta0 N) :
     ((g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
       (delta0Witness N g).map (Int.cast : ℤ → ℚ) :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).1
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).1
 
 private lemma delta0Witness_lowerLeft (g : Delta0 N) : (N : ℤ) ∣ delta0Witness N g 1 0 :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).2.2.1
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).2.2.1
 
 private lemma isUnit_delta0Witness_upperLeft (g : Delta0 N) :
     IsUnit ((delta0Witness N g 0 0 : ℤ) : ZMod N) :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).2.2.2
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).2.2.2
 
 /-- The integral witness of an element of `Δ₀(N)` is unique: the entrywise cast `ℤ → ℚ` is
 injective, so two witnesses for the same matrix agree. This is the same observation that lets
@@ -200,9 +200,8 @@ This is the right-hand half of the Hecke triple `Γ ≤ Δ₀(N) ≤ commensurat
 and it holds for every finite-index `Γ ≤ SL₂(ℤ)`: nothing about the subgroup enters beyond its
 index. Shimura's Lemma 3.10. -/
 lemma Delta0_le_commensurator_map (Γ : Subgroup SL(2, ℤ)) [Γ.FiniteIndex] :
-    Delta0 N ≤ (Subgroup.Commensurable.commensurator (Γ.map (mapGL ℚ))).toSubmonoid := by
-  rw [Subgroup.Commensurable.eq (commensurable_map_SLnZ 2 Γ)]
-  exact (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator 2)
+    Delta0 N ≤ (Subgroup.Commensurable.commensurator (Γ.map (mapGL ℚ))).toSubmonoid :=
+  (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator_map 2 Γ)
 
 /-- The gcd of the four entries, as a natural number. -/
 private def entryGCD (A : Matrix (Fin 2) (Fin 2) ℤ) : ℕ :=

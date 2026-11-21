@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.Topology.Algebra.Algebra
 
+import TauCeti.Topology.Algebra.Ring.Ideal
+
 /-!
 # Kernels of continuous algebra homomorphisms
 
@@ -31,6 +33,6 @@ namespace ContinuousAlgHom
 instance isClosed_ker {R A B : Type*} [CommSemiring R] [Semiring A] [TopologicalSpace A]
     [Semiring B] [TopologicalSpace B] [T1Space B] [Algebra R A] [Algebra R B] (f : A →A[R] B) :
     IsClosed (RingHom.ker f : Set A) :=
-  isClosed_singleton.preimage f.continuous
+  RingHom.isClosed_ker f.continuous
 
 end ContinuousAlgHom
