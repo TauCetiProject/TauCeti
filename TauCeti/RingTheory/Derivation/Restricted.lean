@@ -72,164 +72,59 @@ variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 section Hochschild
 
-/-- Recursive coefficients `P n k` in the expansion
-`((a • D)^[n]) y = ∑ k ∈ Finset.range (n + 1), P n k * D^[k] y`. -/
-private def hochschildCoeff (D : Derivation R A A) (a : A) : ℕ → ℕ → A
-  | 0, 0 => 1
-  | 0, _ + 1 => 0
-  | _ + 1, 0 => 0
-  | n + 1, k + 1 => a * D (hochschildCoeff D a n (k + 1)) + a * hochschildCoeff D a n k
-
-private theorem hochschildCoeff_eq_zero_of_lt (D : Derivation R A A) (a : A) :
-    ∀ {n k : ℕ}, n < k → hochschildCoeff D a n k = 0
-  | 0, _ + 1, _ => rfl
-  | n + 1, k + 1, h => by
-    have h1 : n < k + 1 := Nat.lt_trans (Nat.lt_of_succ_lt_succ h) (Nat.lt_succ_self k)
-    have h2 : n < k := Nat.lt_of_succ_lt_succ h
-    simp [hochschildCoeff, hochschildCoeff_eq_zero_of_lt D a h1,
-      hochschildCoeff_eq_zero_of_lt D a h2]
-
-private theorem hochschildCoeff_self (D : Derivation R A A) (a : A) :
-    ∀ n : ℕ, hochschildCoeff D a n n = a ^ n
-  | 0 => (pow_zero a).symm
-  | n + 1 => by
-    simp only [hochschildCoeff, hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n),
-      map_zero, mul_zero, zero_add, hochschildCoeff_self D a n, pow_succ']
-
-private theorem hochschildCoeff_zero_of_pos (D : Derivation R A A) (a : A) {n : ℕ} (hn : 0 < n) :
-    hochschildCoeff D a n 0 = 0 := by
-  cases n with
-  | zero => omega
-  | succ m => rfl
-
-private theorem map_hochschildCoeff_zero (D : Derivation R A A) (a : A) (n : ℕ) :
-    D (hochschildCoeff D a n 0) = 0 := by
-  cases n with
-  | zero => exact D.map_one_eq_zero
-  | succ m => exact map_zero D
-
-private theorem hochschildCoeff_one (D : Derivation R A A) (a : A) :
-    ∀ n : ℕ, hochschildCoeff D a (n + 1) 1 = (⇑(a • D))^[n] a
-  | 0 => by simp [hochschildCoeff]
-  | n + 1 => by
-    rw [hochschildCoeff, hochschildCoeff_zero_of_pos D a (Nat.succ_pos n), mul_zero, add_zero,
-      hochschildCoeff_one D a n, Function.iterate_succ_apply', smul_apply, smul_eq_mul]
-
-/-- Universal expansion of `(f a • E)^[n] y` along any compatible ring homomorphism `f : A →+* B`
-and derivation `E : Derivation R B B` intertwining `D` via `f`. -/
-private theorem iterate_smul_eq_sum_hochschildCoeff {B : Type*} [CommSemiring B] [Algebra R B]
-    (D : Derivation R A A) (E : Derivation R B B) (f : A →+* B)
-    (hf : ∀ x : A, E (f x) = f (D x)) (a : A) :
-    ∀ (n : ℕ) (y : B),
-      (⇑(f a • E))^[n] y =
-        ∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a n k) * E^[k] y
-  | 0, y => by simp [hochschildCoeff]
-  | n + 1, y => by
-    rw [Function.iterate_succ_apply', iterate_smul_eq_sum_hochschildCoeff D E f hf a n y]
-    rw [smul_apply, smul_eq_mul, map_sum, Finset.mul_sum]
-    have hstep : ∀ k ∈ Finset.range (n + 1),
-        f a * E (f (hochschildCoeff D a n k) * E^[k] y) =
-          f (a * D (hochschildCoeff D a n k)) * E^[k] y +
-            f (a * hochschildCoeff D a n k) * E^[k + 1] y := by
-      intro k _
-      rw [E.leibniz, smul_eq_mul, smul_eq_mul, hf, map_mul, map_mul, Function.iterate_succ_apply']
-      ring
-    rw [Finset.sum_congr rfl hstep, Finset.sum_add_distrib]
-    have hsum1 : ∑ k ∈ Finset.range (n + 1),
-          f (a * D (hochschildCoeff D a n k)) * E^[k] y =
-        ∑ k ∈ Finset.range (n + 1),
-          f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y := by
-      rw [Finset.sum_range_succ' (fun k => f (a * D (hochschildCoeff D a n k)) * E^[k] y) n,
-        map_hochschildCoeff_zero, mul_zero, map_zero, zero_mul, add_zero]
-      rw [Finset.sum_range_succ (fun k =>
-        f (a * D (hochschildCoeff D a n (k + 1))) * E^[k + 1] y) n]
-      rw [hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n), map_zero, mul_zero, map_zero,
-        zero_mul, add_zero]
-    rw [hsum1, ← Finset.sum_add_distrib]
-    rw [Finset.sum_range_succ' (fun k => f (hochschildCoeff D a (n + 1) k) * E^[k] y) (n + 1)]
-    rw [hochschildCoeff_zero_of_pos D a (Nat.succ_pos n), map_zero, zero_mul, add_zero]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    rw [hochschildCoeff, map_add, add_mul]
-
-/-- Apply a derivation `D` coefficientwise to a polynomial in `A[X]`. -/
-private noncomputable def coeffMap (D : Derivation R A A) (g : Polynomial A) : Polynomial A :=
-  g.sum fun n c => Polynomial.monomial n (D c)
-
-private theorem coeff_coeffMap (D : Derivation R A A) (g : Polynomial A) (k : ℕ) :
-    (coeffMap D g).coeff k = D (g.coeff k) := by
-  classical
-  simp only [coeffMap, Polynomial.sum_def, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial]
-  by_cases hk : k ∈ g.support
-  · rw [Finset.sum_eq_single k
-      (fun n _ hnk => Finsupp.single_eq_of_ne hnk.symm) (fun h => absurd hk h),
-      Finsupp.single_eq_same]
-  · have hg : g.coeff k = 0 := Polynomial.notMem_support_iff.mp hk
-    rw [hg, map_zero, Finset.sum_eq_zero]
-    intro n hn
-    exact Finsupp.single_eq_of_ne (fun h => hk (h ▸ hn))
-
 /-- The derivation on `A[X]` obtained by applying `D` coefficientwise. -/
 private noncomputable def coeffDer (D : Derivation R A A) :
     Derivation R (Polynomial A) (Polynomial A) where
-  toFun := coeffMap D
-  map_add' g h := by
-    ext k
-    simp only [coeff_coeffMap, Polynomial.coeff_add, map_add]
+  toFun := AddMonoidAlgebra.map D.toLinearMap.toAddMonoidHom
+  map_add' := AddMonoidAlgebra.map_add _
   map_smul' r g := by
     ext k
-    simp only [coeff_coeffMap, RingHom.id_apply]
+    simp only [AddMonoidAlgebra.coeff_map, Finsupp.mapRange_apply, LinearMap.toAddMonoidHom_coe,
+      coeFn_coe, RingHom.id_apply]
     rw [Algebra.smul_def (R := R) (A := Polynomial A),
       IsScalarTower.algebraMap_apply R A (Polynomial A), Polynomial.algebraMap_eq,
       Polynomial.coeff_C_mul, Algebra.smul_def (R := R) (A := Polynomial A),
       IsScalarTower.algebraMap_apply R A (Polynomial A), Polynomial.algebraMap_eq,
-      Polynomial.coeff_C_mul, coeff_coeffMap, ← Algebra.smul_def, ← Algebra.smul_def, map_smul]
+      Polynomial.coeff_C_mul, AddMonoidAlgebra.coeff_map, Finsupp.mapRange_apply,
+      LinearMap.toAddMonoidHom_coe, coeFn_coe, ← Algebra.smul_def, ← Algebra.smul_def, map_smul]
   map_one_eq_zero' := by
     ext k
     dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
-    rw [coeff_coeffMap, Polynomial.coeff_one, Polynomial.coeff_zero]
+    rw [AddMonoidAlgebra.coeff_map, Finsupp.mapRange_apply, LinearMap.toAddMonoidHom_coe,
+      coeFn_coe, Polynomial.coeff_one, Polynomial.coeff_zero]
     split_ifs <;> simp
   leibniz' g h := by
     ext k
     dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
-    rw [coeff_coeffMap, Polynomial.coeff_mul, map_sum, Polynomial.coeff_add, smul_eq_mul,
+    rw [AddMonoidAlgebra.coeff_map, Finsupp.mapRange_apply, LinearMap.toAddMonoidHom_coe,
+      coeFn_coe, Polynomial.coeff_mul, map_sum, Polynomial.coeff_add, smul_eq_mul,
       smul_eq_mul, Polynomial.coeff_mul, Polynomial.coeff_mul]
     have hterm : ∀ ij ∈ Finset.antidiagonal k,
         D (g.coeff ij.1 * h.coeff ij.2) =
-          g.coeff ij.1 * (coeffMap D h).coeff ij.2 +
-            h.coeff ij.2 * (coeffMap D g).coeff ij.1 := by
+          g.coeff ij.1 * (AddMonoidAlgebra.map D.toLinearMap.toAddMonoidHom h).coeff ij.2 +
+            h.coeff ij.2 * (AddMonoidAlgebra.map D.toLinearMap.toAddMonoidHom g).coeff ij.1 := by
       intro ij _
-      rw [D.leibniz, smul_eq_mul, smul_eq_mul, coeff_coeffMap, coeff_coeffMap]
+      rw [D.leibniz, smul_eq_mul, smul_eq_mul, AddMonoidAlgebra.coeff_map, Finsupp.mapRange_apply,
+        AddMonoidAlgebra.coeff_map, Finsupp.mapRange_apply, LinearMap.toAddMonoidHom_coe, coeFn_coe]
     rw [Finset.sum_congr rfl hterm, Finset.sum_add_distrib]
     congr 1
     refine Finset.sum_equiv (Equiv.prodComm ℕ ℕ) (fun ij => ?_) (fun ij _ => rfl)
     simp [Finset.mem_antidiagonal, add_comm]
 
-private theorem coeffDer_apply (D : Derivation R A A) (g : Polynomial A) :
-    coeffDer D g = coeffMap D g :=
-  rfl
-
-/-- The ordinary derivative `d/dX` on `A[X]`, viewed as an `R`-derivation. -/
-private noncomputable def polyDerivativeR : Derivation R (Polynomial A) (Polynomial A) where
-  toLinearMap := Polynomial.derivative.restrictScalars R
-  map_one_eq_zero' := Polynomial.derivative_one
-  leibniz' g h := by
-    simp only [LinearMap.restrictScalars_apply, Polynomial.derivative_mul, smul_eq_mul,
-      mul_comm h, add_comm]
-
-private theorem polyDerivativeR_apply (g : Polynomial A) :
-    polyDerivativeR (R := R) g = Polynomial.derivative g :=
+private theorem coeff_coeffDer (D : Derivation R A A) (g : Polynomial A) (k : ℕ) :
+    (coeffDer D g).coeff k = D (g.coeff k) :=
   rfl
 
 /-- The lifted derivation `D' = coeffDer D + d/dX` on `A[X]`. -/
 private noncomputable def polyLiftDer (D : Derivation R A A) :
     Derivation R (Polynomial A) (Polynomial A) :=
-  coeffDer D + polyDerivativeR
+  coeffDer D + (Polynomial.derivative' (R := A)).restrictScalars R
 
 private theorem polyLiftDer_C (D : Derivation R A A) (b : A) :
     polyLiftDer D (Polynomial.C b) = Polynomial.C (D b) := by
   ext k
-  rw [polyLiftDer, add_apply, coeffDer_apply, polyDerivativeR_apply, Polynomial.derivative_C,
-    add_zero, coeff_coeffMap, Polynomial.coeff_C, Polynomial.coeff_C]
+  rw [polyLiftDer, add_apply, Derivation.restrictScalars_apply, Polynomial.derivative'_apply,
+    Polynomial.derivative_C, add_zero, coeff_coeffDer, Polynomial.coeff_C, Polynomial.coeff_C]
   split_ifs <;> simp
 
 private theorem iterate_polyLiftDer_X_pow (D : Derivation R A A) (m : ℕ) :
@@ -241,10 +136,11 @@ private theorem iterate_polyLiftDer_X_pow (D : Derivation R A A) (m : ℕ) :
       Function.iterate_succ_apply']
     have hcoeff : coeffDer D (Polynomial.derivative^[k] (Polynomial.X ^ m : Polynomial A)) = 0 := by
       ext n
-      rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, coeffDer_apply, coeff_coeffMap,
-        Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, Polynomial.coeff_zero]
+      rw [Polynomial.iterate_derivative_X_pow_eq_C_mul, coeff_coeffDer, Polynomial.coeff_C_mul,
+        Polynomial.coeff_X_pow, Polynomial.coeff_zero]
       split_ifs <;> simp
-    rw [polyLiftDer, add_apply, hcoeff, zero_add, polyDerivativeR_apply]
+    rw [polyLiftDer, add_apply, hcoeff, zero_add, Derivation.restrictScalars_apply,
+      Polynomial.derivative'_apply]
 
 /-- Over a commutative semiring `A` of prime characteristic `p`, `m !` is invertible for `m < p`,
 so `x * (m ! : A) = 0` implies `x = 0`. -/
@@ -262,13 +158,10 @@ private theorem eq_zero_of_mul_factorial_eq_zero (p : ℕ) [Fact p.Prime] [CharP
     have hval := congrArg ZMod.val hz
     rw [ZMod.val_natCast, ZMod.val_one'' hp.one_lt.ne'] at hval
     exact hval
-  have hu_nat : u * m ! = p * (u * m ! / p) + 1 := by
-    rw [← hu_mod, Nat.div_add_mod]
+  have humod : u * m ! ≡ 1 [MOD p] := by
+    rw [Nat.ModEq, hu_mod, Nat.mod_eq_of_lt hp.one_lt]
   have hu_cast : (u : A) * (m ! : A) = 1 := by
-    have hc := congrArg (Nat.cast (R := A)) hu_nat
-    simp only [Nat.cast_mul, Nat.cast_add, Nat.cast_one, CharP.cast_eq_zero A p, zero_mul,
-      zero_add] at hc
-    exact hc
+    simpa [Nat.cast_mul, Nat.cast_one] using CharP.natCast_eq_natCast' A p humod
   calc
     x = x * 1 := (mul_one x).symm
     _ = x * ((m ! : A) * (u : A)) := by rw [mul_comm (m ! : A), hu_cast]
@@ -440,45 +333,11 @@ open Polynomial
 example (R : Type*) [CommSemiring R] (p : ℕ) [Fact p.Prime] [CharP R p] [CharP R[X] p] :
     ((Polynomial.X : R[X]) • Polynomial.derivative' (R := R)).pPow p =
       (Polynomial.X : R[X]) • Polynomial.derivative' (R := R) := by
-  have hX : ∀ n : ℕ,
-      (⇑((Polynomial.X : R[X]) • Polynomial.derivative' (R := R)))^[n] (Polynomial.X : R[X]) =
-        Polynomial.X := by
-    intro n
-    induction n with
-    | zero => rfl
-    | succ n ih =>
-      rw [Function.iterate_succ_apply', ih, smul_apply, Polynomial.derivative'_apply,
-        Polynomial.derivative_X, smul_eq_mul, mul_one]
-  rw [Derivation.pPow_smul, Derivation.pPow_derivative', smul_zero, zero_add, hX (p - 1)]
-
--- Witness 2: independent direct computation on monomials `X ^ k` via Fermat's little theorem
--- `(k : R) ^ p = k`, confirming `(X • d/dX)^[p] (X ^ k) = (X • d/dX) (X ^ k)` without using
--- `pPow_smul`.
-example (R : Type*) [CommSemiring R] (p : ℕ) [Fact p.Prime] [CharP R p] (k : ℕ) :
-    (⇑((Polynomial.X : R[X]) • Polynomial.derivative' (R := R)))^[p] ((Polynomial.X : R[X]) ^ k) =
-      ((Polynomial.X : R[X]) • Polynomial.derivative' (R := R)) ((Polynomial.X : R[X]) ^ k) := by
-  have hfermat : ∀ j : ℕ, (j : R) ^ p = (j : R) := by
-    intro j
-    induction j with
-    | zero => rw [Nat.cast_zero, zero_pow (Fact.out : p.Prime).ne_zero]
-    | succ m ih => rw [Nat.cast_succ, add_pow_char, ih, one_pow]
-  have hiter : ∀ n : ℕ,
-      (⇑((Polynomial.X : R[X]) • Polynomial.derivative' (R := R)))^[n]
-          ((Polynomial.X : R[X]) ^ k) =
-        C ((k : R) ^ n) * (X : R[X]) ^ k := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [Function.iterate_succ_apply', ih, smul_apply, Polynomial.derivative'_apply,
-        Polynomial.derivative_C_mul, Polynomial.derivative_X_pow, smul_eq_mul]
-      cases k with
-      | zero => simp [pow_succ']
-      | succ m =>
-        rw [Nat.succ_sub_one, pow_succ' ((m + 1 : ℕ) : R), map_mul]
-        ring
-  rw [hiter p, hfermat k,
-    ← Function.iterate_one (⇑((X : R[X]) • derivative' (R := R))), hiter 1, pow_one]
+  have hX : ((Polynomial.X : R[X]) • Polynomial.derivative' (R := R)) Polynomial.X =
+      Polynomial.X := by
+    simp
+  rw [Derivation.pPow_smul, Derivation.pPow_derivative', smul_zero, zero_add,
+    Function.iterate_fixed hX]
 
 -- Witness 3: characteristic `0` counterexample on `ℚ[X]` showing `(d/dX)^[2]` fails the Leibniz
 -- rule without `[CharP A p]`.

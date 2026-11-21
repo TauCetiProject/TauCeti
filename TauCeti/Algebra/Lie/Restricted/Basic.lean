@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.Ideal
 public import Mathlib.Algebra.Lie.Subalgebra
 public import TauCeti.Algebra.Lie.Restricted.Jacobson
-import Mathlib.Data.Matrix.Basic
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 
@@ -381,13 +380,6 @@ theorem coe_lie (S : RestrictedLieSubalgebra R p L) (x y : S) :
     ((⁅x, y⁆ : S) : L) = ⁅(x : L), (y : L)⁆ :=
   (rfl)
 
-/-- The canonical Lie algebra inclusion `S →ₗ⁅R⁆ L`. -/
-private def toLieHomIncl (S : RestrictedLieSubalgebra R p L) : S →ₗ⁅R⁆ L where
-  toFun x := (x : L)
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_lie' := rfl
-
 /-- A restricted Lie subalgebra inherits a restricted Lie algebra structure from the ambient
 restricted Lie algebra. -/
 instance instRestrictedLieAlgebra (S : RestrictedLieSubalgebra R p L) :
@@ -400,20 +392,14 @@ instance instRestrictedLieAlgebra (S : RestrictedLieSubalgebra R p L) :
     exact RestrictedLieAlgebra.pMap_smul c (x : L)
   ad_pMap x := by
     refine LinearMap.ext fun y => Subtype.ext ?_
-    have had : ∀ n : ℕ, ((LieAlgebra.ad R S x ^ n) y : L) = (LieAlgebra.ad R L x ^ n) y := by
-      intro n
-      induction n with
-      | zero => rfl
-      | succ n ih =>
-        rw [pow_succ', pow_succ', mul_apply_eq_comp, mul_apply_eq_comp, LieAlgebra.ad_apply,
-          LieAlgebra.ad_apply, coe_lie, ih]
-    rw [had p, LieAlgebra.ad_apply, coe_lie]
-    exact RestrictedLieAlgebra.lie_pMap (R := R) (p := p) (x : L) (y : L)
+    rw [LieAlgebra.ad_apply, coe_lie]
+    exact (RestrictedLieAlgebra.lie_pMap (R := R) (p := p) (x : L) (y : L)).trans
+      (LieSubalgebra.coe_ad_pow (R := R) (L := L) S.toLieSubalgebra x y p).symm
   pMap_add x y := by
     refine Subtype.ext ?_
     have hincl : (FreeLieAlgebra.lift R ![x, y] (jacobsonLie R p) : L) =
         FreeLieAlgebra.lift R ![(x : L), (y : L)] (jacobsonLie R p) :=
-      map_lift_jacobsonLie p S.toLieHomIncl x y
+      map_lift_jacobsonLie p S.toLieSubalgebra.incl x y
     dsimp only
     rw [coe_add, coe_add, coe_add, hincl]
     exact RestrictedLieAlgebra.pMap_add (R := R) (p := p) (x : L) (y : L)
@@ -426,7 +412,7 @@ theorem coe_pMap (S : RestrictedLieSubalgebra R p L) (x : S) :
 
 /-- The canonical inclusion `S → L` of a restricted Lie subalgebra as a restricted morphism. -/
 def incl (S : RestrictedLieSubalgebra R p L) : RestrictedLieHom R p S L where
-  toLieHom := S.toLieHomIncl
+  toLieHom := S.toLieSubalgebra.incl
   map_pMap' _ := rfl
 
 @[simp]
@@ -604,40 +590,11 @@ theorem coe_lie (I : RestrictedLieIdeal R p L) (x y : I) :
     ((⁅x, y⁆ : I) : L) = ⁅(x : L), (y : L)⁆ :=
   (rfl)
 
-/-- The canonical Lie algebra inclusion `I →ₗ⁅R⁆ L`. -/
-private def toLieHomIncl (I : RestrictedLieIdeal R p L) : I →ₗ⁅R⁆ L where
-  toFun x := (x : L)
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  map_lie' := rfl
-
+/-- A restricted Lie ideal inherits a restricted Lie algebra structure via its underlying
+restricted Lie subalgebra. -/
 instance instRestrictedLieAlgebra (I : RestrictedLieIdeal R p L) :
-    RestrictedLieAlgebra R I p where
-  prime := RestrictedLieAlgebra.prime (R := R) (L := L) (p := p)
-  p_nsmul_eq_zero x := Subtype.ext (RestrictedLieAlgebra.p_nsmul_eq_zero (R := R) (p := p) (x : L))
-  pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), I.pMap_mem x.property⟩
-  pMap_smul c x := by
-    apply Subtype.ext
-    exact RestrictedLieAlgebra.pMap_smul c (x : L)
-  ad_pMap x := by
-    refine LinearMap.ext fun y => Subtype.ext ?_
-    have had : ∀ n : ℕ, ((LieAlgebra.ad R I x ^ n) y : L) = (LieAlgebra.ad R L x ^ n) y := by
-      intro n
-      induction n with
-      | zero => rfl
-      | succ n ih =>
-        rw [pow_succ', pow_succ', mul_apply_eq_comp, mul_apply_eq_comp, LieAlgebra.ad_apply,
-          LieAlgebra.ad_apply, coe_lie, ih]
-    rw [had p, LieAlgebra.ad_apply, coe_lie]
-    exact RestrictedLieAlgebra.lie_pMap (R := R) (p := p) (x : L) (y : L)
-  pMap_add x y := by
-    refine Subtype.ext ?_
-    have hincl : (FreeLieAlgebra.lift R ![x, y] (jacobsonLie R p) : L) =
-        FreeLieAlgebra.lift R ![(x : L), (y : L)] (jacobsonLie R p) :=
-      map_lift_jacobsonLie p I.toLieHomIncl x y
-    dsimp only
-    rw [coe_add, coe_add, coe_add, hincl]
-    exact RestrictedLieAlgebra.pMap_add (R := R) (p := p) (x : L) (y : L)
+    RestrictedLieAlgebra R I p :=
+  inferInstanceAs <| RestrictedLieAlgebra R I.toRestrictedLieSubalgebra p
 
 @[simp]
 theorem coe_pMap (I : RestrictedLieIdeal R p L) (x : I) :
@@ -647,7 +604,7 @@ theorem coe_pMap (I : RestrictedLieIdeal R p L) (x : I) :
 
 /-- The canonical inclusion `I → L` of a restricted Lie ideal as a restricted morphism. -/
 def incl (I : RestrictedLieIdeal R p L) : RestrictedLieHom R p I L where
-  toLieHom := I.toLieHomIncl
+  toLieHom := I.toLieIdeal.incl
   map_pMap' _ := rfl
 
 @[simp]
@@ -876,37 +833,6 @@ example (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] (p : ℕ) [Fact p.
   let _ := TauCeti.RestrictedLieAlgebra.ofAssociative R A p
   exact TauCeti.RestrictedLieAlgebra.pMap_add_of_lie_eq_zero
     (by rw [Ring.lie_def, mul_comm, sub_self])
-
--- Witness: on `M_2(ZMod p)` for an odd prime `p`, `pMap a = a ^ p` is not additive.
-example (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
-    let e₁₂ : Matrix (Fin 2) (Fin 2) (ZMod p) := !![0, 1; 0, 0]
-    let e₂₁ : Matrix (Fin 2) (Fin 2) (ZMod p) := !![0, 0; 1, 0]
-    (e₁₂ + e₂₁) ^ p ≠ e₁₂ ^ p + e₂₁ ^ p := by
-  intro e₁₂ e₂₁ h
-  have hprime : p.Prime := Fact.out
-  have hodd : Odd p := hprime.odd_of_ne_two hp
-  have he12_sq : e₁₂ ^ 2 = 0 := by
-    ext i j; fin_cases i <;> fin_cases j <;> simp [e₁₂, pow_two, Matrix.mul_apply]
-  have he21_sq : e₂₁ ^ 2 = 0 := by
-    ext i j; fin_cases i <;> fin_cases j <;> simp [e₂₁, pow_two, Matrix.mul_apply]
-  have he12_pow : e₁₂ ^ p = 0 :=
-    calc e₁₂ ^ p = e₁₂ ^ (2 + (p - 2)) := congrArg (e₁₂ ^ ·) (Nat.add_sub_of_le hprime.two_le).symm
-      _ = e₁₂ ^ 2 * e₁₂ ^ (p - 2) := pow_add _ _ _
-      _ = 0 := by rw [he12_sq, zero_mul]
-  have he21_pow : e₂₁ ^ p = 0 :=
-    calc e₂₁ ^ p = e₂₁ ^ (2 + (p - 2)) := congrArg (e₂₁ ^ ·) (Nat.add_sub_of_le hprime.two_le).symm
-      _ = e₂₁ ^ 2 * e₂₁ ^ (p - 2) := pow_add _ _ _
-      _ = 0 := by rw [he21_sq, zero_mul]
-  have hsum_sq : (e₁₂ + e₂₁) ^ 2 = 1 := by
-    ext i j; fin_cases i <;> fin_cases j <;> simp [e₁₂, e₂₁, pow_two, Matrix.mul_apply]
-  obtain ⟨k, hk⟩ := hodd
-  have hsum_pow : (e₁₂ + e₂₁) ^ p = e₁₂ + e₂₁ :=
-    calc (e₁₂ + e₂₁) ^ p = (e₁₂ + e₂₁) ^ (2 * k + 1) := congrArg ((e₁₂ + e₂₁) ^ ·) hk
-      _ = ((e₁₂ + e₂₁) ^ 2) ^ k * (e₁₂ + e₂₁) := by rw [pow_succ, pow_mul]
-      _ = e₁₂ + e₂₁ := by rw [hsum_sq, one_pow, one_mul]
-  rw [hsum_pow, he12_pow, he21_pow, add_zero] at h
-  have h01 : (e₁₂ + e₂₁) 0 1 = (0 : ZMod p) := by simpa using congrArg (fun M => M 0 1) h
-  simp [e₁₂, e₂₁] at h01
 
 -- Witness: on a nontrivial commutative ring `R` of prime characteristic `p`, `ofAbelianZero` and
 -- `ofAssociative` are two distinct restricted Lie algebra structures on the same Lie algebra

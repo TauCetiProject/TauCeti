@@ -12,6 +12,7 @@ import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Polynomial.Derivative
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Data.Matrix.Basic
+import Mathlib.LinearAlgebra.Matrix.CharP
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 
@@ -221,19 +222,12 @@ theorem jacobsonLie_three (R : Type*) [CommRing R] :
       2 • ⁅FreeLieAlgebra.of R (0 : Fin 2),
         ⁅FreeLieAlgebra.of R (1 : Fin 2), FreeLieAlgebra.of R (0 : Fin 2)⁆⁆ := by
   rw [jacobsonLie_def]
-  let e : (Fin 2 → Fin 2) ≃ Fin 2 × Fin 2 :=
-    { toFun := fun z => (z 0, z 1)
-      invFun := fun p => ![p.1, p.2]
-      left_inv := fun z => by ext i; fin_cases i <;> rfl
-      right_inv := fun ⟨a, b⟩ => rfl }
-  rw [Fintype.sum_equiv e _ (fun p : Fin 2 × Fin 2 =>
+  rw [Fintype.sum_equiv (finTwoArrowEquiv (Fin 2)) _ (fun p : Fin 2 × Fin 2 =>
     (((((Finset.univ.filter fun j : Fin 2 => ![p.1, p.2] j = 0).card + 1 : ℕ) : ZMod 3)⁻¹).val) •
       ⁅FreeLieAlgebra.of R p.1,
         ⁅FreeLieAlgebra.of R p.2, FreeLieAlgebra.of R (0 : Fin 2)⁆⁆) (fun z => by
         have hz : ![z 0, z 1] = z := by ext i; fin_cases i <;> rfl
-        have he : e z = (z 0, z 1) := rfl
-        rw [he, hz]
-        simp [List.ofFn_succ])]
+        simp [finTwoArrowEquiv_apply, hz, List.ofFn_succ])]
   rw [Fintype.sum_prod_type, Fin.sum_univ_two, Fin.sum_univ_two, Fin.sum_univ_two]
   dsimp only
   have hself : ⁅FreeLieAlgebra.of R (0 : Fin 2), FreeLieAlgebra.of R (0 : Fin 2)⁆ = 0 := lie_self _
@@ -434,38 +428,6 @@ open Polynomial
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-private theorem coeff_linear_pow_zero {A : Type*} [Ring A] (a b : A) (n : ℕ) :
-    ((C a * X + C b) ^ n).coeff 0 = b ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ', Polynomial.mul_coeff_zero, coeff_add, coeff_C_mul_X, coeff_C, ih]
-    simp [pow_succ']
-
-private theorem coeff_linear_pow_eq_zero_of_gt {A : Type*} [Ring A] (a b : A) (n : ℕ) :
-    ∀ m, n < m → ((C a * X + C b) ^ n).coeff m = 0 := by
-  induction n with
-  | zero =>
-    intro m hm
-    rw [pow_zero, coeff_one]
-    simp [Nat.ne_of_gt hm]
-  | succ n ih =>
-    intro m hm
-    rcases m with _ | m
-    · omega
-    · rw [pow_succ', add_mul, coeff_add, mul_assoc, coeff_C_mul, coeff_X_mul, coeff_C_mul,
-        ih m (by omega), ih (m + 1) (by omega)]
-      simp
-
-private theorem coeff_linear_pow_self {A : Type*} [Ring A] (a b : A) (n : ℕ) :
-    ((C a * X + C b) ^ n).coeff n = a ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ', add_mul, coeff_add, mul_assoc, coeff_C_mul, coeff_X_mul, coeff_C_mul,
-      ih, coeff_linear_pow_eq_zero_of_gt a b n (n + 1) (Nat.lt_succ_self n)]
-    simp [pow_succ']
-
 private theorem lie_C_mul_X_mul_X_pow {A : Type*} [Ring A] (a v : A) (k : ℕ) :
     ⁅C a * X, C v * X ^ k⁆ = C ⁅a, v⁆ * X ^ (k + 1) := by
   rw [Ring.lie_def, Ring.lie_def]
@@ -571,14 +533,8 @@ private theorem coeff_linear_pow_succ_eq_sum {A : Type*} [Ring A] (p : ℕ) [Fac
     simpa [u, Nat.cast_mul, Nat.cast_one] using ZMod.val_inv_mul hcop
   have hmul_one : ∀ c : A, u • ((k + 1) • c) = c := fun c => by
     rw [← mul_nsmul', nsmul_eq_mul]
-    have hdiv : u * (k + 1) = p * (u * (k + 1) / p) + (u * (k + 1)) % p :=
-      (Nat.div_add_mod _ p).symm
-    have hrem : (u * (k + 1)) % p = 1 := by
-      rw [Nat.ModEq] at humod
-      simpa [Nat.mod_eq_of_lt hp.one_lt] using humod
     have hcast : ((u * (k + 1) : ℕ) : A) = 1 := by
-      rw [hdiv, hrem, Nat.cast_add, Nat.cast_mul, CharP.cast_eq_zero A p, zero_mul, zero_add,
-        Nat.cast_one]
+      simpa using CharP.natCast_eq_natCast' A p humod
     rw [hcast, one_mul]
   have hck : (derivative ((C a * X + C b) ^ p)).coeff k =
       (k + 1) • ((C a * X + C b) ^ p).coeff (k + 1) := by
@@ -641,17 +597,24 @@ theorem add_pow_eq_jacobson (R : Type*) [CommRing R] (p : ℕ) [Fact p.Prime]
   let ev1 : A[X] →+* A := eval₂RingHom' (RingHom.id A) (1 : A) (fun _ => Commute.one_right _)
   have hev_lhs : ev1 q = (a + b) ^ p := by
     simp [ev1, q, map_pow, eval₂_C]
-  have hdeg : q.natDegree < p + 1 := by
-    rw [Nat.lt_succ_iff]
-    exact Polynomial.natDegree_le_iff_coeff_eq_zero.mpr (coeff_linear_pow_eq_zero_of_gt a b p)
+  have hdeg1 : (C a * X + C b).natDegree ≤ 1 :=
+    natDegree_add_le_of_degree_le (by simpa using natDegree_C_mul_X_pow_le a 1) (by simp)
+  have hdeg : q.natDegree < p + 1 :=
+    Nat.lt_succ_of_le ((natDegree_pow_le_of_le p hdeg1).trans_eq (mul_one p))
+  have hcoeff0 : q.coeff 0 = b ^ p := by
+    change constantCoeff q = b ^ p
+    rw [map_pow, constantCoeff_apply]
+    simp
+  have hcoeffp : q.coeff p = a ^ p := by
+    simpa [q, mul_one] using coeff_pow_of_natDegree_le (m := p) hdeg1
   have hev_rhs : ev1 q = ∑ m ∈ Finset.range (p + 1), q.coeff m := by
     simpa [ev1] using Polynomial.eval₂_eq_sum_range' (f := RingHom.id A) (x := (1 : A)) hdeg
   have hsplit : ∑ m ∈ Finset.range (p + 1), q.coeff m =
       q.coeff 0 + (∑ k ∈ Finset.range (p - 1), q.coeff (k + 1)) + q.coeff p := by
     rw [Finset.sum_range_succ, ← Nat.sub_add_cancel hp.pos, Finset.sum_range_succ',
       Nat.sub_add_cancel hp.pos, add_comm (∑ k ∈ Finset.range (p - 1), q.coeff (k + 1))]
-  rw [← hev_lhs, hev_rhs, hsplit, coeff_linear_pow_zero, coeff_linear_pow_self,
-    sum_coeff_linear_pow_succ, lift_jacobsonLie_change_ring (R := ℤ) (S := R)]
+  rw [← hev_lhs, hev_rhs, hsplit, hcoeff0, hcoeffp, sum_coeff_linear_pow_succ,
+    lift_jacobsonLie_change_ring (R := ℤ) (S := R)]
   abel
 
 end Associative
@@ -673,11 +636,6 @@ example (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
   intro e₁₂ e₂₁
   have hprime : p.Prime := Fact.out
   have hodd : Odd p := hprime.odd_of_ne_two hp
-  have hinj : Function.Injective
-      (Matrix.scalar (Fin 2) : ZMod p →+* Matrix (Fin 2) (Fin 2) (ZMod p)) := by
-    intro a b h
-    simpa using congrArg (fun M => M 0 0) h
-  have : CharP (Matrix (Fin 2) (Fin 2) (ZMod p)) p := charP_of_injective_ringHom hinj p
   have he12_sq : e₁₂ ^ 2 = 0 := by
     ext i j; fin_cases i <;> fin_cases j <;> simp [e₁₂, pow_two, Matrix.mul_apply]
   have he21_sq : e₂₁ ^ 2 = 0 := by
