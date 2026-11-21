@@ -150,25 +150,35 @@ finitely generated projective `R`-modules, `A ⊗[R] Tr f` is canonically `A`-li
 to `Tr (f.baseChange A)`. -/
 def baseChangeEquiv (f : P₁ →ₗ[R] P₀) :
     A ⊗[R] AuslanderReitenTranspose f ≃ₗ[A] AuslanderReitenTranspose (f.baseChange A) :=
-  (cokernelDualMapEquiv f).baseChange R A _ _ ≪≫ₗ
-    f.dualMap.cokernelBaseChangeEquiv ≪≫ₗ
-    Submodule.Quotient.equiv _ _
-      (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁))
-      (by
-        rw [← LinearMap.range_comp, TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap,
-          TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap,
-          ← TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap,
-          LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]) ≪≫ₗ
-    (cokernelDualMapEquiv (f.baseChange A)).symm
+  let eQuot := Submodule.Quotient.equiv
+    (LinearMap.range (f.dualMap.baseChange A)) (LinearMap.range (f.baseChange A).dualMap)
+    (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁))
+    (by
+      rw [← LinearMap.range_comp, TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap,
+        TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap,
+        ← TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap,
+        LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)])
+  have hmapQ : ∀ (g : A ⊗[R] Module.Dual R P₁ →ₗ[A] Module.Dual A (A ⊗[R] P₁))
+      (hg : LinearMap.range (f.dualMap.baseChange A) ≤
+        (LinearMap.range (f.baseChange A).dualMap).comap g),
+      g = (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁)).toLinearMap →
+      Function.Bijective (Submodule.mapQ (LinearMap.range (f.dualMap.baseChange A))
+        (LinearMap.range (f.baseChange A).dualMap) g hg) := by
+    rintro _ _ rfl
+    exact eQuot.bijective
+  LinearEquiv.ofBijective (baseChangeHom A f) <| by
+    rw [baseChangeHom, LinearMap.coe_comp, LinearMap.coe_comp, LinearMap.coe_comp]
+    refine (cokernelDualMapEquiv (f.baseChange A)).symm.bijective.comp ?_
+    refine (hmapQ _ _ (TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap).symm).comp ?_
+    exact (f.dualMap.cokernelBaseChangeEquiv (S := A)).bijective.comp
+      ((cokernelDualMapEquiv f).baseChange R A _ _).bijective
 
 /-- The underlying linear map of `baseChangeEquiv` is `baseChangeHom`. -/
 @[simp]
 theorem baseChangeEquiv_toLinearMap (f : P₁ →ₗ[R] P₀) :
-    (baseChangeEquiv A f).toLinearMap = baseChangeHom A f := by
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro a y
-  induction y using induction_on with | _ φ => ?_
-  simp [baseChangeEquiv, baseChangeHom, Submodule.Quotient.equiv_apply]
+    (baseChangeEquiv A f).toLinearMap = baseChangeHom A f :=
+  LinearMap.ext fun x ↦ by
+    rw [LinearEquiv.coe_toLinearMap, baseChangeEquiv, LinearEquiv.ofBijective_apply]
 
 /-- `baseChangeEquiv` sends a pure tensor `a ⊗ [φ]` to `a • [φ_A]`. -/
 @[simp]

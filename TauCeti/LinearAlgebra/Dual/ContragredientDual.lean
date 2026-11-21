@@ -346,26 +346,18 @@ of `ContragredientDual σ M` whose `i`-th basis vector is `ContragredientDual.of
 whose `i`-th coordinate of `φ` is `σ⁻¹(φ (b i))`. -/
 def contragredientDual (b : Module.Basis ι R M) (σ : S ≃+* R) :
     Module.Basis ι S (ContragredientDual σ M) :=
-  let coordEquiv : ContragredientDual σ M ≃ₗ[S] (ι → S) :=
-    { toFun φ i := σ.symm (φ (b i))
-      invFun v := ContragredientDual.ofDual (b.constr R fun i ↦ σ (v i))
-      map_add' φ ψ := funext fun i ↦ by simp
-      map_smul' s φ := funext fun i ↦ by
-        rw [ContragredientDual.smul_apply_eq_mul, map_mul, σ.symm_apply_apply,
-          Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
-      left_inv φ := ContragredientDual.ext fun x ↦ by
-        simp only [ContragredientDual.ofDual_apply, σ.apply_symm_apply]
-        exact LinearMap.congr_fun (b.ext fun i ↦ by simp :
-          b.constr R (fun i ↦ φ (b i)) = φ.toDual) x
-      right_inv v := funext fun i ↦ by
-        simp only [ContragredientDual.ofDual_apply, Module.Basis.constr_basis,
-          σ.symm_apply_apply] }
-  Module.Basis.ofRepr (coordEquiv.trans (Finsupp.linearEquivFunOnFinite S S ι).symm)
+  letI := Classical.decEq ι
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  Module.Basis.ofRepr
+    (((ContragredientDual.toDualLinearEquiv σ M).trans b.dualBasis.repr).trans
+      (Finsupp.mapRange.linearEquiv σ.toSemilinearEquiv.symm))
 
 @[simp]
 theorem contragredientDual_repr_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
     (φ : ContragredientDual σ M) (i : ι) :
     (b.contragredientDual σ).repr φ i = σ.symm (φ (b i)) := by
+  classical
   simp [contragredientDual]
 
 theorem contragredientDual_equivFun_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
@@ -377,13 +369,8 @@ theorem contragredientDual_equivFun_apply (b : Module.Basis ι R M) (σ : S ≃+
 theorem contragredientDual_apply (b : Module.Basis ι R M) (σ : S ≃+* R) (i : ι) :
     b.contragredientDual σ i = ContragredientDual.ofDual (σ := σ) (b.coord i) := by
   classical
-  apply (b.contragredientDual σ).repr.injective
-  ext j
-  rw [Module.Basis.repr_self, contragredientDual_repr_apply, ContragredientDual.ofDual_apply,
-    Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply, Finsupp.single_apply]
-  by_cases h : j = i
-  · subst h; simp
-  · simp [h, Ne.symm h]
+  rw [← (b.contragredientDual σ).repr_symm_single_one]
+  simp [contragredientDual, ← Module.Basis.coe_dualBasis]
 
 theorem contragredientDual_apply_self (b : Module.Basis ι R M) (σ : S ≃+* R) [DecidableEq ι]
     (i j : ι) : b.contragredientDual σ i (b j) = if j = i then 1 else 0 := by

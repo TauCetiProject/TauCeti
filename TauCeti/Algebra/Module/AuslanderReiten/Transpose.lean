@@ -226,10 +226,6 @@ theorem mkLinear_apply (p : Q₁ →ₗ[R] Q₀) (φ : Module.Dual R Q₁) :
     mkLinear p φ = mk p φ :=
   (rfl)
 
-/-- Every element of `AuslanderReitenTranspose p` is in the image of `mkLinear p`. -/
-theorem mkLinear_surjective (p : Q₁ →ₗ[R] Q₀) : Function.Surjective (mkLinear p) :=
-  mk_surjective p
-
 end CommRing
 
 section QuotientEquiv
