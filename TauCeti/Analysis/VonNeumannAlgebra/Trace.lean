@@ -235,7 +235,9 @@ noncomputable instance : Zero (NormalTrace M) :=
     exact tendsto_const_nhds)⟩
 
 @[simp] theorem zero_apply (x : Nonneg M.toStarSubalgebra) : (0 : NormalTrace M) x = 0 := by
-  exact ENNReal.ofReal_zero
+  -- Expose the zero trace instance so the constructor's application lemma can match.
+  change ofLinearMap (M := M) 0 _ _ _ x = 0
+  simp only [ofLinearMap_apply, LinearMap.zero_apply, Complex.zero_re, ENNReal.ofReal_zero]
 
 /-- The zero trace is semifinite: the original positive element itself has finite trace. -/
 theorem semifinite_zero : (0 : NormalTrace M).Semifinite :=
