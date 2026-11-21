@@ -18,11 +18,25 @@ If `x` and `y` are each within `e` of a nonnegative `q`, their product is within
 compared with its own square. When `|b| ≤ 1` and `|c| ≤ 1`, the products `a c` and `b d` differ by
 at most `|a - b| + |c - d|`. When `|d| ≤ 1`, replacing `b` by `c` inside `|a - d b|` costs at
 most `|b - c|`. All are stated for any linearly ordered commutative ring.
+
+A sign criterion, stated for any linearly ordered ring: `|a| ≤ a b` with `0 ≤ b` forces
+`0 ≤ a`.
 -/
 
 public section
 
 namespace TauCeti
+
+section Ring
+
+variable {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
+
+/-- An element `a` with `|a| ≤ a * b` for some `b ≥ 0` is nonnegative. -/
+theorem nonneg_of_abs_le_mul {a b : R} (h : |a| ≤ a * b) (hb : 0 ≤ b) : 0 ≤ a := by
+  by_contra! ha
+  exact (abs_pos.2 ha.ne).not_ge (h.trans (mul_nonpos_of_nonpos_of_nonneg ha.le hb))
+
+end Ring
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 

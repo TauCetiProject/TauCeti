@@ -26,12 +26,13 @@ From this equivariance three structural consequences follow:
 
 1. **Central sheet involution and automorphisms.** Right multiplication on every fibre by the
    central element `-1` of `Spin(n)` defines an involutive self-equivalence
-   `TauCeti.SpinStructure.Equiv.negOne s : s.Equiv s` commuting with all equivalences and pullbacks.
-   The fibres of `s.toFrame` are the two-point orbits `{p, p • (-1)}`
+   `TauCeti.OrthonormalFrameLift.Equiv.negOne s : s.Equiv s` commuting with all equivalences and
+   pullbacks. The fibres of `s.toFrame` are the two-point orbits `{p, p • (-1)}`
    (`TauCeti.SpinStructure.toFrame_eq_toFrame_iff`), so every automorphism `φ : s.Equiv s` acts on
    each fibre as the identity or as `-1`; over a preconnected base `Equiv.refl s` and
-   `Equiv.negOne s` are the only automorphisms (`TauCeti.SpinStructure.Equiv.eq_refl_or_eq_negOne`),
-   and any two equivalences `s.Equiv t` are equal or differ by `Equiv.negOne s`.
+   `Equiv.negOne s` are the only automorphisms
+   (`TauCeti.OrthonormalFrameLift.Equiv.eq_refl_or_eq_negOne`), and any two equivalences
+   `s.Equiv t` are equal or differ by `Equiv.negOne s`.
 
 2. **Induced fibre and bundle orientations.** Because `SO(n)` acts by transformations of determinant
    `1`, all points of a fibre `s.P x` transport a model orientation `o` of `ℝⁿ` to the same
@@ -56,7 +57,8 @@ From this equivariance three structural consequences follow:
 
 ## Main definitions
 
-* `TauCeti.SpinStructure.Equiv.negOne`: the sheet-exchange automorphism acting by `-1 ∈ Spin(n)`.
+* `TauCeti.OrthonormalFrameLift.Equiv.negOne`: the sheet-exchange automorphism of a Spin structure,
+  acting by `-1 ∈ Spin(n)`.
 * `TauCeti.SpinStructure.fiberOrientation`: the fibre orientation induced by a Spin structure and an
   orientation of `EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.SpinStructure.orientation`: the bundle orientation induced by a Spin structure on a
@@ -67,13 +69,13 @@ From this equivariance three structural consequences follow:
 
 * `TauCeti.SpinStructure.toFrame_op_smul`, `TauCeti.SpinStructure.toFrame_eq_toFrame_iff`:
   `SO(n)`-equivariance and `{1, -1}`-fibres of `s.toFrame`.
-* `TauCeti.SpinStructure.Equiv.eq_refl_or_eq_negOne`,
-  `TauCeti.SpinStructure.Equiv.eq_or_eq_negOne_trans`: classification of equivalences over a
+* `TauCeti.OrthonormalFrameLift.Equiv.eq_refl_or_eq_negOne`,
+  `TauCeti.OrthonormalFrameLift.Equiv.eq_or_eq_negOne_trans`: classification of equivalences over a
   preconnected base.
 * `TauCeti.SpinStructure.fiberOrientation_pullback`,
   `TauCeti.SpinStructure.nonempty_vectorBundleOrientation`,
-  `TauCeti.SpinStructure.Equiv.orientation_eq`: orientability and functoriality of the induced
-  orientation.
+  `TauCeti.OrthonormalFrameLift.Equiv.orientation_eq`: orientability and functoriality of the
+  induced orientation.
 * `TauCeti.SpinStructure.range_toFrame_eq_orientedFrames`,
   `TauCeti.SpinStructure.isCoveringMap_toOrientedFrames`,
   `TauCeti.SpinStructure.isQuotientCoveringMap_toOrientedFrames`: the Spin structure as a
@@ -98,11 +100,13 @@ universe w
 
 namespace TauCeti.SpinStructure
 
+open OrthonormalFrameLift
+
 section EquivarianceAndFibers
 
 variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
   [TopologicalSpace (TotalSpace F E)]
-  [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ} [NeZero n]
+  [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ}
 
 /-- The frame map of a Spin structure is equivariant for the right `Spin(n)`-action on `P` and the
 right `SO(n)`-action on orthonormal frames via
@@ -122,10 +126,14 @@ theorem toFrame_op_smul (s : SpinStructure F E n) (g : realCliffordSpinGroupZero
     OrthonormalFrameBundle.eq_mk_of_proj_eq (op u • (⟨x, φ₀⟩ : OrthonormalFrameBundle ℝ F E _))
       (OrthonormalFrameBundle.proj_smul _ _)]
   refine OrthonormalFrameBundle.mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
-  have hw := s.toFrame_smul x p g w.ofLp
+  have hw := s.toFrame_smul_spinVectorAction x p g w.ofLp
   rw [WithLp.toLp_ofLp, hq₀, hq₁] at hw
   rw [TotalSpace.mk_inj.1 hw, OrthonormalFrameBundle.frame_smul_apply, unop_op,
     realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply]
+
+section NegOne
+
+variable [NeZero n]
 
 /-- Acting on the right by the central element `-1` of `Spin(n)` preserves the induced frame. -/
 @[simp]
@@ -194,6 +202,8 @@ theorem ncard_preimage_toFrame_singleton (s : SpinStructure F E n)
       s.toFrame_eq_toFrame_iff (p := q) (q := p)
   rw [hset, ncard_pair (s.op_negOne_smul_ne_self p).symm]
 
+end NegOne
+
 /-- Acting on `P` by `Spin(n)` preserves the induced point in the orientation double cover. -/
 theorem toOrientationCover_toFrame_op_smul (s : SpinStructure F E n)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (g : realCliffordSpinGroupZero n)
@@ -216,9 +226,22 @@ theorem toOrientationCover_toFrame_eq_of_proj_eq (s : SpinStructure F E n)
   obtain rfl : x = y := h
   rw [← PrincipalBundle.smul_division_mk q p, s.toOrientationCover_toFrame_op_smul]
 
-/-! ### Central sheet involution and automorphisms -/
+end EquivarianceAndFibers
 
-namespace Equiv
+end TauCeti.SpinStructure
+
+/-! ### Central sheet involution and automorphisms
+
+A Spin structure `s` is an `OrthonormalFrameLift`, and its equivalences are
+`TauCeti.OrthonormalFrameLift.Equiv`, so the automorphisms below live in that namespace. -/
+
+namespace TauCeti.OrthonormalFrameLift.Equiv
+
+open SpinStructure
+
+variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
+  [TopologicalSpace (TotalSpace F E)]
+  [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ} [NeZero n]
 
 /-- The **sheet-exchange automorphism** of a Spin structure, acting on every fibre by the central
 element `-1` of `Spin(n)`. -/
@@ -319,7 +342,7 @@ theorem division_toEquiv_eq_one_or_negOne {s : SpinStructure F E n} (φ : s.Equi
     PrincipalBundle.division (realCliffordSpinGroupZero n) p (φ.toEquiv x p) = 1 ∨
       PrincipalBundle.division (realCliffordSpinGroupZero n) p (φ.toEquiv x p) =
         spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero := by
-  rcases φ.toEquiv_apply_eq_self_or_negOne_smul x p with h | h <;> rw [h]
+  rcases toEquiv_apply_eq_self_or_negOne_smul φ x p with h | h <;> rw [h]
   · exact .inl (PrincipalBundle.division_self p)
   · refine .inr (PrincipalBundle.division_eq_iff.2 rfl)
 
@@ -330,10 +353,11 @@ theorem division_toEquiv_eq {s : SpinStructure F E n} (φ : s.Equiv s) (x : X) (
       PrincipalBundle.division (realCliffordSpinGroupZero n) q (φ.toEquiv x q) := by
   rw [← PrincipalBundle.smul_division (G := realCliffordSpinGroupZero n) q p, φ.map_smul,
     PrincipalBundle.division_smul_left, PrincipalBundle.division_smul_right]
-  rcases φ.division_toEquiv_eq_one_or_negOne x q with hd | hd <;> rw [hd]
+  rcases division_toEquiv_eq_one_or_negOne φ x q with hd | hd <;> rw [hd]
   · simp
   · rw [spinGroup.negOne_mul_comm, inv_mul_cancel_left]
 
+omit [NeZero n] in
 /-- For an automorphism `φ : s.Equiv s`, the division map
 `p ↦ division _ p.2 (φ.toEquiv p.proj p.2)` is continuous on the total space of `s.P`. -/
 theorem continuous_division_toEquiv {s : SpinStructure F E n} (φ : s.Equiv s) :
@@ -356,16 +380,16 @@ theorem eq_refl_or_eq_negOne [PreconnectedSpace X] {s : SpinStructure F E n} (φ
   have hd_eq (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
       d p.proj = PrincipalBundle.division (realCliffordSpinGroupZero n) p.snd
         (φ.toEquiv p.proj p.snd) :=
-    φ.division_toEquiv_eq p.proj _ p.snd
+    division_toEquiv_eq φ p.proj _ p.snd
   have hd_cont : Continuous d := by
     rw [(FiberBundle.isQuotientMap_proj
       (F := realCliffordSpinGroupZero n) (E := s.P)).continuous_iff]
-    exact φ.continuous_division_toEquiv.congr fun p ↦ (hd_eq p).symm
+    exact (continuous_division_toEquiv φ).congr fun p ↦ (hd_eq p).symm
   let T : Set (realCliffordSpinGroupZero n) :=
     {1, spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero}
   obtain ⟨g, hgT, hdg⟩ := isPreconnected_univ.eqOn_const_of_mapsTo (T := T)
     (toFinite T).isDiscrete hd_cont.continuousOn
-    (fun x _ ↦ φ.division_toEquiv_eq_one_or_negOne x _) ⟨1, by simp [T]⟩
+    (fun x _ ↦ division_toEquiv_eq_one_or_negOne φ x _) ⟨1, by simp [T]⟩
   have hdiv (x : X) (p : s.P x) :
       PrincipalBundle.division (realCliffordSpinGroupZero n) p (φ.toEquiv x p) = g :=
     (hd_eq ⟨x, p⟩).symm.trans (hdg (mem_univ x))
@@ -392,11 +416,21 @@ theorem eq_or_eq_negOne_trans [PreconnectedSpace X] {s t : SpinStructure F E n}
       φ = (φ.trans ψ.symm).trans ψ := by simp [trans_assoc]
       _ = (negOne s).trans ψ := by rw [h]
 
-end Equiv
+end TauCeti.OrthonormalFrameLift.Equiv
+
+namespace TauCeti.SpinStructure
+
+open OrthonormalFrameLift
+
+section EquivarianceAndFibers
+
+variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
+  [TopologicalSpace (TotalSpace F E)]
+  [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ}
 
 /-! ### Induced fibre orientations -/
 
-omit [TopologicalSpace X] [TopologicalSpace (TotalSpace F E)] [NeZero n] in
+omit [TopologicalSpace X] [TopologicalSpace (TotalSpace F E)] in
 private theorem mk_cast_orientation_eq_toOrientationCover
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n))
     (q : OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n))) {x : X} (hq : q.proj = x) :
@@ -459,7 +493,8 @@ theorem fiberOrientation_neg (s : SpinStructure F E n)
   exact hcast (s.proj_toFrame ⟨x, p⟩) _
 
 /-- Equivalent Spin structures induce the same orientation on every fibre. -/
-theorem Equiv.fiberOrientation_eq {s t : SpinStructure F E n} (φ : s.Equiv t)
+theorem _root_.TauCeti.OrthonormalFrameLift.Equiv.fiberOrientation_eq
+    {s t : SpinStructure F E n} (φ : s.Equiv t)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
     t.fiberOrientation o x = s.fiberOrientation o x := by
   obtain ⟨p⟩ := s.nonempty_P x
@@ -474,10 +509,10 @@ orientations. -/
 theorem fiberOrientation_pullback {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X]
     [ContinuousMapClass K Y X] (s : SpinStructure F E n) (f : K)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (y : Y) :
-    (s.pullback f).fiberOrientation o y = s.fiberOrientation o (f y) := by
+    fiberOrientation (s.pullback f) o y = s.fiberOrientation o (f y) := by
   obtain ⟨p⟩ := s.nonempty_P (f y)
   obtain ⟨φ₁, hfr⟩ := s.exists_toFrame_eq_mk ⟨f y, p⟩
-  have h₁ := (s.pullback f).toOrientationCover_toFrame o ⟨y, p⟩
+  have h₁ := toOrientationCover_toFrame (s.pullback f) o ⟨y, p⟩
   rw [s.toFrame_pullback_mk f y p hfr, OrthonormalFrameBundle.toOrientationCover_eq_mk,
     VectorBundleOrientationCover.mk_eq_mk_iff] at h₁
   have h₂ := s.toOrientationCover_toFrame o ⟨f y, p⟩
@@ -496,7 +531,7 @@ variable {X : Type*} [TopologicalSpace X]
   {E : X → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
   [FiberBundle F E] [VectorBundle ℝ F E]
-  {n : ℕ} [NeZero n]
+  {n : ℕ}
 
 /-- The **orientation of a vector bundle induced by a Spin structure** `s` and a model orientation
 `o` of `EuclideanSpace ℝ (Fin n)`: at each base point `x`, every point of `s.P x` transports `o`
@@ -548,7 +583,8 @@ theorem orientation_neg (s : SpinStructure F E n)
   simp
 
 /-- Equivalent Spin structures induce the same orientation of the underlying vector bundle. -/
-theorem Equiv.orientation_eq {s t : SpinStructure F E n} (φ : s.Equiv t)
+theorem _root_.TauCeti.OrthonormalFrameLift.Equiv.orientation_eq {s t : SpinStructure F E n}
+    (φ : s.Equiv t)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) :
     t.orientation o = s.orientation o := by
   ext x
@@ -558,7 +594,7 @@ theorem Equiv.orientation_eq {s t : SpinStructure F E n} (φ : s.Equiv t)
 the fibre orientation of the pulled-back Spin structure `s.pullback f`. -/
 theorem pullback_orientation_apply {Y : Type*} [TopologicalSpace Y] (s : SpinStructure F E n)
     (f : C(Y, X)) (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (y : Y) :
-    (s.orientation o).pullback f y = (s.pullback f).fiberOrientation o y := by
+    (s.orientation o).pullback f y = fiberOrientation (s.pullback f) o y := by
   rw [VectorBundleOrientation.pullback_apply, s.orientation_apply, s.fiberOrientation_pullback]
 
 /-- **Every real vector bundle carrying a Spin structure is orientable.** -/
@@ -621,7 +657,7 @@ theorem toOrientedFrames_op_smul (s : SpinStructure F E n)
   Subtype.ext (s.toFrame_op_smul g p)
 
 @[simp]
-theorem toOrientedFrames_negOne_smul (s : SpinStructure F E n)
+theorem toOrientedFrames_negOne_smul [NeZero n] (s : SpinStructure F E n)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n))
     (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
     s.toOrientedFrames o (op (spinGroup.negOne (realCliffordForm n 0)
@@ -630,7 +666,7 @@ theorem toOrientedFrames_negOne_smul (s : SpinStructure F E n)
 
 /-- Two points of `P` map to the same positively oriented frame if and only if they are equal or
 differ by `-1 ∈ Spin(n)`. -/
-theorem toOrientedFrames_eq_iff (s : SpinStructure F E n)
+theorem toOrientedFrames_eq_iff [NeZero n] (s : SpinStructure F E n)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n))
     {p q : TotalSpace (realCliffordSpinGroupZero n) s.P} :
     s.toOrientedFrames o p = s.toOrientedFrames o q ↔
@@ -640,7 +676,8 @@ theorem toOrientedFrames_eq_iff (s : SpinStructure F E n)
   Subtype.ext_iff.trans s.toFrame_eq_toFrame_iff
 
 /-- Every automorphism of `s` is a deck transformation of `s.toOrientedFrames o`. -/
-theorem Equiv.toOrientedFrames_toHomeomorph_self {s : SpinStructure F E n} (φ : s.Equiv s)
+theorem _root_.TauCeti.OrthonormalFrameLift.Equiv.toOrientedFrames_toHomeomorph_self
+    {s : SpinStructure F E n} (φ : s.Equiv s)
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n))
     (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
     s.toOrientedFrames o (φ.toHomeomorph p) = s.toOrientedFrames o p :=
@@ -659,7 +696,7 @@ theorem toOrientedFrames_surjective (s : SpinStructure F E n)
 
 section ContinuousRiemannian
 
-variable [IsContinuousRiemannianBundle F E]
+variable [IsContinuousRiemannianBundle F E] [NeZero n]
 
 /-- **The lifted frame map of a Spin structure is a covering map** onto the positively oriented
 orthonormal frames of a continuous Riemannian vector bundle (with two-point fibres by

@@ -212,6 +212,14 @@ theorem weight_ne_one_iff (i : Fin (Module.finrank ℝ E)) : ¬φ.weight i = 1 �
 theorem weight_eq_one_iff (i : Fin (Module.finrank ℝ E)) : φ.weight i = 1 ↔ 0 < φ.weight i := by
   rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
 
+/-- Every weight of a Morse chart at a point of Morse index `0` is `1`. -/
+theorem weight_eq_one_of_manifoldMorseIndex_eq_zero (h : manifoldMorseIndex 𝓘(ℝ, E) f x = 0)
+    (i : Fin (Module.finrank ℝ E)) : φ.weight i = 1 := by
+  have hempty : {i | φ.weight i < 0} = ∅ :=
+    (Set.ncard_eq_zero (toFinite _)).1 (φ.ncard_weight_neg.trans h)
+  by_contra hi
+  exact (Set.eq_empty_iff_forall_notMem.1 hempty) i ((φ.weight_ne_one_iff i).1 hi)
+
 /-- The **split coordinates** of a Morse chart: the pair formed by the coordinates of positive
 weight and the remaining coordinates, of weight `-1`. Each factor carries the sup norm. -/
 noncomputable def splitCoord :

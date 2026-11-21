@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
+public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 
 /-!
 # Pullback of line bundles
@@ -27,7 +28,9 @@ The generic restriction compatibility used to establish this result is provided 
   sheaf is invertible;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_forall_restrict`: a sheaf of modules
   is invertible exactly when its restrictions to the members of an open cover are invertible;
-* `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullback`: the pullback functor on line bundles.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullback`: the pullback functor on line bundles;
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullbackTrivialObjIso`: the pullback of the structure
+  sheaf is the structure sheaf.
 
 ## References
 
@@ -147,6 +150,13 @@ lemma pullback_map (f : X ⟶ Y) {L K : InvertibleSheaf Y} (φ : L ⟶ K) :
   cases pullback_obj_obj f K
   unfold pullback
   simp
+
+/-- The pullback of the structure sheaf is the structure sheaf: `f^* 𝒪_Y ≅ 𝒪_X`, both
+represented by trivial line bundles. -/
+def pullbackTrivialObjIso (f : X ⟶ Y) :
+    (Scheme.Modules.pullback f).obj (trivial Y).obj ≅ (trivial X).obj :=
+  (Scheme.Modules.pullback f).mapIso (trivialObjIsoUnit Y) ≪≫
+    Scheme.Modules.pullbackObjUnitIso f ≪≫ (trivialObjIsoUnit X).symm
 
 end InvertibleSheaf
 
