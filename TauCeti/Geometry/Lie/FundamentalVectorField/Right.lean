@@ -544,16 +544,6 @@ theorem injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp {n : ℕ∞ω} [Lie
   exact forall_mulInvariantExp_smul_eq_one_iff.1 fun t => hfree _ <|
     op_mulInvariantExp_smul_eq_self_of_rightFundamentalVectorField_eq_zero horbit hsmul hξ t
 
-/-- Evaluation of `rightFundamentalVectorField` at a free point `x` of a differentiable right action
-of a real `C^n` Banach Lie group (`3 ≤ n`) is injective on `GroupLieAlgebra I G`. -/
-theorem injective_rightFundamentalVectorField_of_op_smul_eq_self_imp {n : ℕ∞ω} [LieGroup I n G]
-    (hn : 3 ≤ n) [IsManifold I' 1 M] {x : M}
-    (horbit : MDifferentiableAt I I' (fun k : G => op k • x) 1)
-    (hsmul : ∀ g : G, MDifferentiableAt I' I' (fun y : M => op g • y) x)
-    (hfree : ∀ g : G, op g • x = x → g = 1) :
-    Injective (fun ξ : GroupLieAlgebra I G => rightFundamentalVectorField I' ξ x) :=
-  injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp hn horbit hsmul hfree
-
 /-- For a jointly `C^m` (`m ≠ 0`) right action of a real `C^n` Banach Lie group (`3 ≤ n`) on a
 `C¹` manifold `M`, the orbit differential `mfderiv I I' (fun g : G => op g • x) 1` is injective at
 any point `x : M` with trivial stabilizer (`∀ g : G, op g • x = x → g = 1`), without separation,

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
 public import TauCeti.Topology.FiberBundle.Projection
-import TauCeti.Algebra.Group.Action.Basic
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Principal bundle structures on fibres of an unbundled projection
@@ -53,11 +53,13 @@ variable {G E B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G] [To
 theorem isEquivariant_projectionFiber_iff (t : Trivialization G f)
     (hinv : ∀ (g : Gᵐᵒᵖ) (x : E), f (g • x) = f x) :
     (letI := TauCeti.ProjectionFiber.mulAction G hinv; t.projectionFiber.IsEquivariant) ↔
-      ∀ x : E, f x ∈ t.baseSet → ∀ g : G, (t (op g • x)).2 = (t x).2 * g := by
-  let := TauCeti.ProjectionFiber.mulAction G hinv
-  refine ⟨fun heq x hx g ↦ ?_, fun h ↦ ⟨fun b hb y g ↦ ?_⟩⟩
-  · simpa using heq.snd_apply_smul (f x) (by simpa using hx) ⟨x, rfl⟩ g
-  · simpa using h y.val (by simpa [y.map_val] using hb) g
+      ∀ x : E, f x ∈ t.baseSet → ∀ g : G, (t (op g • x)).2 = (t x).2 * g :=
+  letI := TauCeti.ProjectionFiber.mulAction G hinv
+  isEquivariant_iff_of_equiv t.projectionFiber t (TauCeti.ProjectionFiber.totalSpaceEquiv G f)
+    t.projectionFiber_baseSet
+    (fun p ↦ by rw [TauCeti.ProjectionFiber.totalSpaceEquiv_apply]; exact p.2.map_val)
+    (fun p ↦ t.projectionFiber_apply p)
+    fun g p ↦ TauCeti.ProjectionFiber.totalSpaceEquiv_smul G hinv (op g) p
 
 end Bundle.Trivialization
 

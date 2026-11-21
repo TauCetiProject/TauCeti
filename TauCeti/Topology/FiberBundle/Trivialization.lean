@@ -44,6 +44,8 @@ of its base set a trivialization is an equivalence between the fibre and the mod
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
   a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
   carries the sheets of `p` over a preconnected set onto sheets of `q`.
+* `Bundle.Trivialization.compHomeomorphOfEq`: pre-composing a trivialization with a homeomorphism
+  intertwining two projections.
 -/
 
 public section
@@ -87,6 +89,40 @@ theorem continuousOn_coordChange (e₁ e₂ : Trivialization F proj) :
     (e₂.toOpenPartialHomeomorph.continuousOn.comp hsymm hmaps)).congr
     fun p hp ↦ ?_
   simp only [Function.comp_apply, e₂.coe_coe, ← e₁.mk_coordChange e₂ hp.1.1 hp.1.2 p.2]
+
+/-- Pre-compose a trivialization `t : Trivialization F proj` with a homeomorphism `h : Z' ≃ₜ Z`
+intertwining `proj` with another projection `proj' : Z' → B`. -/
+@[expose] def compHomeomorphOfEq {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    Trivialization F proj' where
+  toOpenPartialHomeomorph := (t.compHomeomorph h).toOpenPartialHomeomorph
+  baseSet := t.baseSet
+  open_baseSet := t.open_baseSet
+  source_eq := by
+    ext p
+    exact (t.compHomeomorph h).mem_source.trans (by simp only [Function.comp_apply, hproj p]; rfl)
+  target_eq := (t.compHomeomorph h).target_eq
+  proj_toFun p hp := ((t.compHomeomorph h).proj_toFun p hp).trans (hproj p)
+
+/-- Evaluating `t.compHomeomorphOfEq h hproj` at `p` applies `t` to `h p`. -/
+@[simp]
+theorem compHomeomorphOfEq_apply {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) (p : Z') :
+    t.compHomeomorphOfEq h hproj p = t (h p) := (rfl)
+
+/-- Base set of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_baseSet {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+    (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
+    (t.compHomeomorphOfEq h hproj).baseSet = t.baseSet := (rfl)
+
+/-- Partial-homeomorphism inverse of `t.compHomeomorphOfEq h hproj`. -/
+@[simp]
+theorem compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply {Z' : Type*} [TopologicalSpace Z']
+    {proj' : Z' → B} (t : Trivialization F proj) (h : Z' ≃ₜ Z)
+    (hproj : ∀ p, proj (h p) = proj' p) (q : B × F) :
+    (t.compHomeomorphOfEq h hproj).toOpenPartialHomeomorph.symm q =
+      h.symm (t.toOpenPartialHomeomorph.symm q) := (rfl)
 
 end Bundle.Trivialization
 

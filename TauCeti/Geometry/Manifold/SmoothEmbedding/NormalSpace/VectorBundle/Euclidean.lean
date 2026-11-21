@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Euclidean
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.VectorBundle
+public import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # The intrinsic Euclidean normal vector bundle
@@ -20,7 +21,7 @@ These coordinates let tubular parametrizations use intrinsic normal classes rath
 chosen orthogonal vectors. Install `SmoothEmbedding.orthogonalNormalSpaceFiberBundle` and
 `SmoothEmbedding.orthogonalNormalSpaceVectorBundle` locally to use this atlas.
 
-The construction reuses `Bundle.Trivialization.compHomeomorph`, the quotient-to-orthogonal
+The construction reuses `Bundle.Trivialization.compHomeomorphOfEq`, the quotient-to-orthogonal
 homeomorphism, and the fixed-model orthogonal normal trivializations.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the
@@ -52,16 +53,7 @@ def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M 
     (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
     (f.isImmersion.mfderiv_injective hn) hdim x₀
   let h := f.normalBundleHomeomorphOrthogonal (F := F) hn
-  -- `compHomeomorph` initially uses `proj ∘ h`; the representative map preserves the base.
-  exact { e.compHomeomorph h with
-    source_eq := by
-      ext p
-      simp only [Trivialization.compHomeomorph, Homeomorph.transOpenPartialHomeomorph_source,
-        mem_preimage, e.mem_source, h, normalBundleHomeomorphOrthogonal_apply]
-    proj_toFun := by
-      intro p hp
-      simpa only [Function.comp_apply, h, normalBundleHomeomorphOrthogonal_apply] using
-        (e.compHomeomorph h).proj_toFun p hp }
+  exact e.compHomeomorphOfEq h fun p => by simp [h, normalBundleHomeomorphOrthogonal_apply]
 
 /-- Taking intrinsic coordinates is taking orthogonal coordinates of the representative. -/
 @[simp] theorem orthogonalNormalSpaceTrivialization_apply

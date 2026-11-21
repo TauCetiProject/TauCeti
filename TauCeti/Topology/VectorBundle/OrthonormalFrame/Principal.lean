@@ -246,8 +246,9 @@ theorem isEquivariant_orthonormalFrameBundleFiber_iff :
     (orthonormalFrameBundleFiber t).IsEquivariant ↔
       ∀ p : OrthonormalFrameBundle 𝕜 F E V, p.proj ∈ t.baseSet →
         ∀ g : unitary (V →L[𝕜] V), (t (op g • p)).2 = (t p).2 * g :=
-  ⟨fun h p hp g ↦ h.snd_apply_smul p.proj hp (.ofFrame p.frame) g,
-    fun h ↦ ⟨fun b hb φ g ↦ h (totalSpaceEquiv ⟨b, φ⟩) hb g⟩⟩
+  isEquivariant_iff_of_equiv (orthonormalFrameBundleFiber t) t totalSpaceEquiv rfl
+    proj_totalSpaceEquiv (orthonormalFrameBundleFiber_apply t)
+    fun g p ↦ totalSpaceEquiv_smul (op g) p
 
 /-- The Gram–Schmidt trivialization of the frame bundle over a linear trivialization of `E` gives
 an equivariant trivialization of `Fiber 𝕜 F E V`. -/

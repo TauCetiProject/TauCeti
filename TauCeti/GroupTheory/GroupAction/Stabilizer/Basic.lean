@@ -79,6 +79,9 @@ normality of it is equivalent to freeness of the action of the image.
   inverse map the set into itself.
 * `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
   point exactly when they differ on the right by an element of the stabilizer of `x₀`.
+* `TauCeti.smul_eq_smul_iff_of_smul_eq_self_imp`,
+  `TauCeti.op_smul_eq_op_smul_iff_of_op_smul_eq_self_imp`: pointwise orbit cancellation from
+  trivial stabilizer at a point, for left and right (`Gᵐᵒᵖ`) actions.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
   translation on its nonempty proper finite subsets.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
@@ -229,9 +232,30 @@ theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
 
 /-- Two group elements carry `x₀` to the same point exactly when they differ on the right by an
 element of the stabilizer of `x₀`. -/
+@[to_additive /-- Two additive-group elements carry `x₀` to the same point exactly when they differ
+by an element of the additive stabilizer of `x₀`. -/]
 theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : α) (a b : G) :
     a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ MulAction.stabilizer G x₀ := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
+
+/-- Pointwise cancellation: trivial stabilizer at `x` implies `g • x = h • x ↔ g = h`. -/
+@[to_additive /-- Pointwise additive cancellation: trivial stabilizer at `x` implies
+`g +ᵥ x = h +ᵥ x ↔ g = h`. -/]
+theorem smul_eq_smul_iff_of_smul_eq_self_imp {x : α}
+    (hfree : ∀ g : G, g • x = x → g = 1) {g h : G} : g • x = h • x ↔ g = h :=
+  (smul_eq_smul_iff_inv_mul_mem_stabilizer x g h).trans
+    ⟨fun hm ↦ inv_mul_eq_one.1 (hfree _ hm), fun e ↦ by simp [e]⟩
+
+/-- Right-action (`MulAction Gᵐᵒᵖ α`) pointwise cancellation: trivial stabilizer at `x` implies
+`op g • x = op h • x ↔ g = h`. -/
+@[to_additive /-- Right additive-action (`AddAction Gᵃᵒᵖ α`) pointwise cancellation: trivial
+stabilizer at `x` implies `op g +ᵥ x = op h +ᵥ x ↔ g = h`. -/]
+theorem op_smul_eq_op_smul_iff_of_op_smul_eq_self_imp {G α : Type*} [Group G] [MulAction Gᵐᵒᵖ α]
+    {x : α} (hfree : ∀ g : G, MulOpposite.op g • x = x → g = 1) {g h : G} :
+    MulOpposite.op g • x = MulOpposite.op h • x ↔ g = h :=
+  (smul_eq_smul_iff_of_smul_eq_self_imp (G := Gᵐᵒᵖ) fun k hk ↦ MulOpposite.unop_injective
+    ((hfree k.unop (k.op_unop.symm ▸ hk)).trans MulOpposite.unop_one.symm)).trans
+    MulOpposite.op_injective.eq_iff
 
 open scoped Pointwise in
 /-- If the stabilizer of `a` normalizes a subgroup `T`, then the conjugate `g T g⁻¹` depends only

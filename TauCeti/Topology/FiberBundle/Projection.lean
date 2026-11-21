@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.FiberBundle.Basic
 public import TauCeti.Algebra.Group.Action.TotalSpace
+public import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Bundled fibres of an arbitrary map
@@ -63,7 +64,7 @@ def equivSubtype (b : B) : ProjectionFiber F f b ≃ {x : E // f x = b} where
 
 /-- Coercing `equivSubtype F f b y` to `E` recovers `y.val`. -/
 @[simp]
-theorem coe_equivSubtype (b : B) (y : ProjectionFiber F f b) :
+theorem coe_equivSubtype_apply (b : B) (y : ProjectionFiber F f b) :
     ((equivSubtype F f b y : {x : E // f x = b}) : E) = y.val := (rfl)
 
 /-- Applying `(equivSubtype F f b).symm` preserves the underlying point in `E`. -/
@@ -240,14 +241,7 @@ variable {F E B : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalS
 projection `π F (TauCeti.ProjectionFiber F f)`. -/
 def projectionFiber (t : Trivialization F f) :
     Trivialization F (π F (TauCeti.ProjectionFiber F f)) :=
-  { t.compHomeomorph (TauCeti.ProjectionFiber.totalSpaceHomeomorph F f) with
-    source_eq := by
-      ext p
-      exact (t.compHomeomorph (TauCeti.ProjectionFiber.totalSpaceHomeomorph F f)).mem_source.trans
-        (by simp [p.2.map_val])
-    proj_toFun := fun p hp ↦
-      ((t.compHomeomorph (TauCeti.ProjectionFiber.totalSpaceHomeomorph F f)).proj_toFun p hp).trans
-        p.2.map_val }
+  t.compHomeomorphOfEq (TauCeti.ProjectionFiber.totalSpaceHomeomorph F f) fun p ↦ p.2.map_val
 
 /-- `t.projectionFiber` evaluates `t` on the underlying point in `E`. -/
 @[simp]

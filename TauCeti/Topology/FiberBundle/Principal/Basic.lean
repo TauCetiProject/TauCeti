@@ -159,6 +159,28 @@ theorem coordChange_one_mul_coordChange_one (e₁ e₂ e₃ : Trivialization G (
     e₂.coordChange e₃ b 1 * e₁.coordChange e₂ b 1 = e₁.coordChange e₃ b 1 := by
   rw [← e₂.coordChange_eq_mul e₃ h₂ h₃, e₁.coordChange_coordChange e₂ e₃ h₁ h₂]
 
+/-- Equivariance of a trivialization `e` of `P` transferred along an equivariant equivalence
+`h : TotalSpace G P ≃ Z` to an unbundled trivialization `t` of `proj : Z → B` holds iff `t`
+intertwines the right `G`-action on `proj ⁻¹' t.baseSet` with right multiplication on `G`. -/
+theorem isEquivariant_iff_of_equiv {Z : Type*} [TopologicalSpace Z] {proj : Z → B}
+    [MulAction Gᵐᵒᵖ Z]
+    (e : Trivialization G (π G P)) (t : Trivialization G proj) (h : TotalSpace G P ≃ Z)
+    (hbase : e.baseSet = t.baseSet) (hproj : ∀ p : TotalSpace G P, proj (h p) = p.proj)
+    (happ : ∀ p : TotalSpace G P, e p = t (h p))
+    (hsmul : ∀ (g : G) (p : TotalSpace G P), h ⟨p.proj, op g • p.2⟩ = op g • h p) :
+    e.IsEquivariant ↔
+      ∀ z : Z, proj z ∈ t.baseSet → ∀ g : G, (t (op g • z)).2 = (t z).2 * g := by
+  refine ⟨fun he z hz g ↦ ?_, fun ht ↦ ⟨fun b hb y g ↦ ?_⟩⟩
+  · have hzp : proj (h (h.symm z)) = (h.symm z).proj := hproj _
+    rw [h.apply_symm_apply] at hzp
+    have hb : (h.symm z).proj ∈ e.baseSet := hbase.symm ▸ hzp.symm ▸ hz
+    have h1 := he.snd_apply_smul (h.symm z).proj hb (h.symm z).2 g
+    rw [happ, hsmul, happ, h.apply_symm_apply] at h1
+    exact h1
+  · have h1 := ht (h ⟨b, y⟩) ((hproj ⟨b, y⟩).symm ▸ hbase ▸ hb) g
+    rw [← hsmul, ← happ, ← happ] at h1
+    exact h1
+
 end Bundle.Trivialization
 
 /-- The inverse of an equivalence from `G` that intertwines right multiplication with a right
