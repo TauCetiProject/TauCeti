@@ -25,8 +25,11 @@ characteristic polynomial `(X - 1) ^ 2`. The constant-term hypothesis cannot be 
 for the characteristic polynomial `X ^ 2`, the sequence that is `1` at `n = 1` and `0` elsewhere
 is a solution, but every `(P 0).eval n * 0 ^ n` vanishes at `n = 1`.
 
-When the characteristic roots are distinct, every multiplicity is one and the coefficients are
-constants: the solutions are the simple exponential sums `∑ θ, g θ * θ ^ n`. This is the form in
+When the characteristic polynomial splits with distinct roots, the coefficients are constants:
+the solutions are the simple exponential sums `∑ θ, g θ * θ ^ n`. This case needs neither
+characteristic zero nor a nonzero constant term, since the geometric sequences `n ↦ θ ^ n` of the
+distinct roots are distinct monoid homomorphisms `Multiplicative ℕ →* K`, hence linearly
+independent (`linearIndependent_monoidHom`), and there are `E.order` of them. This is the form in
 which the zeros of a solution are studied through unit equations.
 
 The proof is a dimension count. The characteristic polynomial evaluated at the forward shift
@@ -47,7 +50,8 @@ each `n ↦ p.eval n * θ ^ n` with `deg p` below the multiplicity of `θ` is a 
 * `LinearRecurrence.isSolution_iff_exists_eq_sum_eval_mul_pow`: the solutions of `E` are
   exactly these exponential polynomials.
 * `LinearRecurrence.exists_eq_sum_mul_pow`, `LinearRecurrence.isSolution_iff_exists_eq_sum_mul_pow`:
-  the closed form with constant coefficients when the characteristic roots are distinct.
+  the closed form with constant coefficients when the characteristic polynomial splits with
+  distinct roots, over any field.
 
 ## References
 
@@ -97,9 +101,73 @@ theorem isSolution_eval_mul_pow {p : R[X]} {θ : R}
 
 end CommRing
 
+section Domain
+
+variable {R : Type*} [CommRing R] [IsDomain R] [DecidableEq R] (E : LinearRecurrence R)
+
+/-- Every combination `∑ θ, g θ * θ ^ n` of powers of the distinct characteristic roots `θ`
+solves `E`. -/
+theorem isSolution_sum_mul_pow (g : R → R) :
+    E.IsSolution fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+  have : (fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n) =
+      ∑ θ ∈ E.charPoly.roots.toFinset, g θ • fun n : ℕ ↦ θ ^ n := by
+    ext n
+    simp [Finset.sum_apply]
+  rw [this, E.is_sol_iff_mem_solSpace]
+  refine Submodule.sum_mem _ fun θ hθ ↦ Submodule.smul_mem _ _ ?_
+  rw [← E.is_sol_iff_mem_solSpace, geom_sol_iff_root_charPoly]
+  exact (mem_roots E.charPoly_monic.ne_zero).mp (Multiset.mem_toFinset.mp hθ)
+
+end Domain
+
 section Field
 
 variable {K : Type*} [Field K] (E : LinearRecurrence K)
+
+/-! ### Simple recurrences -/
+
+/-- **Closed form of a simple recurrence.** If the characteristic polynomial of `E` splits with
+distinct roots, every solution of `E` is `∑ θ, g θ * θ ^ n` over the characteristic roots `θ`,
+with constant coefficients `g θ`. A root `θ = 0` contributes the sequence `0 ^ n`. -/
+theorem exists_eq_sum_mul_pow [DecidableEq K] (hsplit : E.charPoly.Splits)
+    (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} (hu : E.IsSolution u) :
+    ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+  set s := E.charPoly.roots.toFinset
+  -- The geometric sequences of the distinct characteristic roots are solutions.
+  let v (θ : s) : E.solSpace := ⟨fun n ↦ (θ : K) ^ n, (E.is_sol_iff_mem_solSpace _).mp <|
+    (E.geom_sol_iff_root_charPoly _).mpr (mem_roots'.mp (Multiset.mem_toFinset.mp θ.property)).2⟩
+  -- They are independent, being distinct monoid homomorphisms `Multiplicative ℕ →* K`.
+  have hli : LinearIndependent K v :=
+    .of_comp E.solSpace.subtype <| (linearIndependent_monoidHom (Multiplicative ℕ) K).comp
+      (fun θ : s ↦ powersHom K θ) fun θ θ' h ↦
+        Subtype.ext (by simpa using DFunLike.congr_fun h (.ofAdd 1))
+  -- Their number is `E.order`, the dimension of the solution space, so they span it.
+  have hcard : Fintype.card s = Module.finrank K E.solSpace := by
+    rw [Fintype.card_coe, Multiset.toFinset_card_of_nodup hnodup, ← hsplit.natDegree_eq_card_roots,
+      natDegree_eq_of_degree_eq_some E.charPoly_degree_eq_order,
+      Module.finrank_eq_card_basis E.basis, Fintype.card_fin]
+  have := Module.Finite.of_basis E.basis
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun K).mp <|
+    (hli.span_eq_top_of_card_eq_finrank' hcard).symm ▸
+      (Submodule.mem_top : (⟨u, (E.is_sol_iff_mem_solSpace u).mp hu⟩ : E.solSpace) ∈ ⊤)
+  refine ⟨fun θ ↦ if h : θ ∈ s then c ⟨θ, h⟩ else 0, fun n ↦ ?_⟩
+  have := congrArg (fun w : E.solSpace ↦ (w : ℕ → K) n) hc
+  simp only [Submodule.coe_sum, Submodule.coe_smul, Finset.sum_apply, Pi.smul_apply, v,
+    smul_eq_mul] at this
+  rw [← this, ← Finset.sum_coe_sort s]
+  exact Finset.sum_congr rfl fun θ _ ↦ by simp [θ.property]
+
+/-- The solutions of a linear recurrence whose characteristic polynomial splits with distinct
+roots are exactly the sums `∑ θ, g θ * θ ^ n` over the characteristic roots `θ`. -/
+theorem isSolution_iff_exists_eq_sum_mul_pow [DecidableEq K] (hsplit : E.charPoly.Splits)
+    (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} :
+    E.IsSolution u ↔ ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+  refine ⟨E.exists_eq_sum_mul_pow hsplit hnodup, ?_⟩
+  rintro ⟨g, hu⟩
+  rw [funext hu]
+  exact E.isSolution_sum_mul_pow g
+
+/-! ### Repeated roots -/
 
 /-- The exponential polynomials of the closed form, with the coefficient polynomial at each
 root `θ ∈ s` taken of degree less than `m θ`, as a linear map into sequences. -/
@@ -200,49 +268,6 @@ theorem isSolution_iff_exists_eq_sum_eval_mul_pow (hsplit : E.charPoly.Splits)
   rw [E.is_sol_iff_mem_solSpace, this]
   exact Submodule.sum_mem _ fun θ hθ ↦
     E.isSolution_eval_mul_pow (hP θ (Multiset.mem_toFinset.mp hθ))
-
-/-! ### Simple recurrences -/
-
-omit [CharZero K] in
-/-- Every combination `∑ θ, g θ * θ ^ n` of powers of the distinct characteristic roots `θ`
-solves `E`. -/
-theorem isSolution_sum_mul_pow (g : K → K) :
-    E.IsSolution fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
-  have : (fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n) =
-      ∑ θ ∈ E.charPoly.roots.toFinset, g θ • fun n : ℕ ↦ θ ^ n := by
-    ext n
-    simp [Finset.sum_apply]
-  rw [this, E.is_sol_iff_mem_solSpace]
-  refine Submodule.sum_mem _ fun θ hθ ↦ Submodule.smul_mem _ _ ?_
-  rw [← E.is_sol_iff_mem_solSpace, geom_sol_iff_root_charPoly]
-  exact (mem_roots E.charPoly_monic.ne_zero).mp (Multiset.mem_toFinset.mp hθ)
-
-/-- **Closed form of a simple recurrence.** If the characteristic polynomial of `E` splits with
-distinct roots and has nonzero constant term, every solution of `E` is `∑ θ, g θ * θ ^ n` over
-the characteristic roots `θ`, with constant coefficients `g θ`. -/
-theorem exists_eq_sum_mul_pow (hsplit : E.charPoly.Splits) (h0 : E.charPoly.coeff 0 ≠ 0)
-    (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} (hu : E.IsSolution u) :
-    ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
-  obtain ⟨P, hP, hu⟩ := E.exists_eq_sum_eval_mul_pow hsplit h0 hu
-  refine ⟨fun θ ↦ (P θ).coeff 0, fun n ↦ (hu n).trans (Finset.sum_congr rfl fun θ hθ ↦ ?_)⟩
-  have hθ := Multiset.mem_toFinset.mp hθ
-  -- A simple root has multiplicity one, so its coefficient polynomial is constant.
-  have hdeg : (P θ).degree ≤ 0 := by
-    have := hP θ hθ
-    rw [← count_roots, Multiset.count_eq_one_of_mem hnodup hθ, Nat.cast_one] at this
-    exact Order.le_of_lt_succ this
-  rw [eq_C_of_degree_le_zero hdeg, eval_C]
-
-/-- The solutions of a linear recurrence whose characteristic polynomial splits with distinct
-roots and has nonzero constant term are exactly the sums `∑ θ, g θ * θ ^ n` over the
-characteristic roots `θ`. -/
-theorem isSolution_iff_exists_eq_sum_mul_pow (hsplit : E.charPoly.Splits)
-    (h0 : E.charPoly.coeff 0 ≠ 0) (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} :
-    E.IsSolution u ↔ ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
-  refine ⟨E.exists_eq_sum_mul_pow hsplit h0 hnodup, ?_⟩
-  rintro ⟨g, hu⟩
-  rw [show u = _ from funext hu]
-  exact E.isSolution_sum_mul_pow g
 
 end Field
 
