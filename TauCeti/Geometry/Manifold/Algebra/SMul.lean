@@ -59,6 +59,7 @@ underlying real manifold.
   infinitely many diffeomorphisms.
 * `TauCeti.contMDiff_smul_of_mem_zpowers`: if an element of finite order acts by a `C^n` map, so
   does every element of the cyclic group it generates.
+* `TauCeti.instContMDiffSMulUnit`: every action on the one-point space `Unit` is smooth.
 -/
 
 public section
@@ -351,5 +352,12 @@ theorem contMDiff_smul_of_mem_zpowers {n : ℕ∞ω} {g : G} (hg : IsOfFinOrder 
     ContMDiff I I n fun x : M ↦ k • x := by
   obtain ⟨m, rfl⟩ := hg.mem_powers_iff_mem_zpowers.mpr hk
   simpa [smul_iterate] using hsmooth.iterate m
+
+/-- Every action on the one-point space `Unit` is smooth. -/
+instance instContMDiffSMulUnit {X : Type*} [TopologicalSpace X] [ChartedSpace H X] [SMul X Unit]
+    {n : ℕ∞ω} : ContMDiffSMul I 𝓘(𝕜, Unit) n X Unit :=
+  ⟨by
+    rw [show (fun p : X × Unit ↦ p.1 • p.2) = fun _ ↦ () from Subsingleton.elim _ _]
+    exact contMDiff_const⟩
 
 end TauCeti
