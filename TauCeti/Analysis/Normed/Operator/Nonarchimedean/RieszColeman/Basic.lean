@@ -292,11 +292,11 @@ theorem isClosed_range_aeval_reverse [T1Space M] (hE : IsRieszColemanProjection 
 
 /-- `Q*(u)` as a continuous linear automorphism of the complementary summand `ker E`. -/
 noncomputable def equivKer (hE : IsRieszColemanProjection u Q E) : E.ker ≃L[R] E.ker :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((Polynomial.aeval u Q.reverse).restrict (fun _ hx ↦ hE.mapsTo_ker_aeval Q.reverse hx))
     (hE.inverse.restrict (fun _ hx ↦ hE.mapsTo_ker_inverse hx))
-    (fun x ↦ Subtype.ext (hE.inverse_aeval_reverse_apply x.property))
-    (fun x ↦ Subtype.ext (hE.aeval_reverse_apply_inverse x.property))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (hE.aeval_reverse_apply_inverse x.property))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (hE.inverse_aeval_reverse_apply x.property))
 
 /-- The complementary automorphism `equivKer` acts by `Q*(u)`. -/
 @[simp]
@@ -380,12 +380,14 @@ unit, `u` restricts to a continuous linear automorphism of `range E`. This inclu
 `range E = 0`. -/
 noncomputable def equivRange (hE : IsRieszColemanProjection u Q E)
     (hQ : IsUnit Q.leadingCoeff) : E.range ≃L[R] E.range :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (u.restrict hE.mapsTo_range)
     (((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX).restrict
       fun _ hx ↦ E.range.smul_mem _ (hE.mapsTo_range_aeval Q.reverse.divX hx))
-    (fun x ↦ Subtype.ext (hE.neg_inverse_smul_aeval_divX_reverse_apply hQ x.property))
-    (fun x ↦ Subtype.ext (hE.apply_neg_inverse_smul_aeval_divX_reverse hQ x.property))
+    (ContinuousLinearMap.ext fun x ↦
+      Subtype.ext (hE.apply_neg_inverse_smul_aeval_divX_reverse hQ x.property))
+    (ContinuousLinearMap.ext fun x ↦
+      Subtype.ext (hE.neg_inverse_smul_aeval_divX_reverse_apply hQ x.property))
 
 /-- The spectral-summand automorphism `equivRange` acts by `u`. -/
 @[simp]
@@ -587,16 +589,16 @@ noncomputable def IsRieszColemanProjection.rangeEquivOfRetract (hri : r.comp i =
     fun _ hx ↦ hE.mapsTo_range_of_semiconj hE' i.toLinearMap hi_semi hx
   have hr : ∀ y ∈ E'.range, r y ∈ E.range :=
     fun _ hy ↦ hE'.mapsTo_range_of_semiconj hE r.toLinearMap hr_semi hy
-  ContinuousLinearEquiv.equivOfInverse (i.restrict hi) (r.restrict hr)
-    (fun ⟨x, _⟩ ↦ Subtype.ext (hri' x))
-    (fun ⟨y, hy⟩ ↦ Subtype.ext <| by
+  ContinuousLinearEquiv.ofContinuousLinearMap (i.restrict hi) (r.restrict hr)
+    (ContinuousLinearMap.ext fun ⟨y, hy⟩ ↦ Subtype.ext <| by
       have hEy : E' y = y :=
         (LinearMap.IsIdempotentElem.mem_range_iff
           (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE'.isIdempotentElem)).mp hy
       have hy' := congr($(hE'.mul_smul_aeval_divX_reverse_mul hQ) y).symm
       simp only [mul_apply_eq_comp, comp_apply, hEy] at hy'
-      simp only [coe_restrict_apply]
+      simp only [comp_apply, id_apply, coe_restrict_apply]
       rw [hy', hri'])
+    (ContinuousLinearMap.ext fun ⟨x, _⟩ ↦ Subtype.ext (hri' x))
 
 /-- The retract range equivalence `rangeEquivOfRetract` acts in the forward direction by `i`. -/
 @[simp]

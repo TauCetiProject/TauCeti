@@ -84,14 +84,14 @@ noncomputable def torsionGaloisAction (N : ℤ) :
     apply Multiplicative.toAdd.injective
     ext P
     rw [toAdd_ofAdd, AddEquiv.torsionByCongr_apply_coe, toAdd_one, AddAut.zero_apply]
-    exact DFunLike.congr_fun (Affine.Point.mapEquiv_refl W) P.1
+    exact DFunLike.congr_fun (Affine.Point.mapEquiv_refl W) P.val
   map_mul' e f := by
     apply Multiplicative.toAdd.injective
     ext P
     rw [toAdd_mul, toAdd_ofAdd, toAdd_ofAdd, toAdd_ofAdd, AddAut.add_apply,
       AddEquiv.torsionByCongr_apply_coe, AddEquiv.torsionByCongr_apply_coe,
       AddEquiv.torsionByCongr_apply_coe]
-    exact DFunLike.congr_fun (Affine.Point.mapEquiv_trans W f e) P.1
+    exact DFunLike.congr_fun (Affine.Point.mapEquiv_trans W f e) P.val
 
 /-- The Galois action on `N`-torsion agrees with the Galois action on points. -/
 @[simp]

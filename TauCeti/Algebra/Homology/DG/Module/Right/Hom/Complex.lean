@@ -102,8 +102,8 @@ omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN] in
 /-- A homogeneous right-module cochain applied to an element of degree `q` has degree `q + p`. -/
 theorem map_mem {p q : ℤ}
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p)
-    {x : M} (hx : x ∈ ℳ q) : f.1 x ∈ ℳN (q + p) :=
-  (mem_iff.mp f.2).map_mem hx
+    {x : M} (hx : x ∈ ℳ q) : f.val x ∈ ℳN (q + p) :=
+  (mem_iff.mp f.property).map_mem hx
 
 section gradedCommutator
 
@@ -117,7 +117,7 @@ variable (hMh : LinearMap.IsHomogeneous dM ℳ ℳ 1)
 private def gradedCommutatorLinearMap (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) :
     M →ₗ[Aᵐᵒᵖ] N where
-  toFun x := dN (f.1 x) - p.negOnePow • f.1 (dM x)
+  toFun x := dN (f.val x) - p.negOnePow • f.val (dM x)
   map_add' x y := by simp only [map_add, smul_add, add_sub_add_comm]
   map_smul' a x := by
     classical
@@ -127,12 +127,12 @@ private def gradedCommutatorLinearMap (p : ℤ)
       ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun q _ ↦ ?_
     let y : ℳ q := decompose ℳ x q
-    have hNq := hNl (q := q + p) (x := f.1 (y : M))
+    have hNq := hNl (q := q + p) (x := f.val (y : M))
       (map_mem f (SetLike.coe_mem y)) (unop a)
     have hMq := hMl (q := q) (x := (y : M)) (SetLike.coe_mem y) (unop a)
     simp only [op_unop] at hNq hMq
     rw [map_smul, hNq, hMq, map_add, map_smul]
-    have fmap (z : M) : f.1 (q.negOnePow • z) = q.negOnePow • f.1 z := by
+    have fmap (z : M) : f.val (q.negOnePow • z) = q.negOnePow • f.val z := by
       simp only [Units.smul_def, map_zsmul]
     rw [fmap, map_smul, smul_add]
     have hsign (z : N) :
@@ -143,7 +143,7 @@ private def gradedCommutatorLinearMap (p : ℤ)
     simp only [RingHom.id_apply]
     rw [hsign, hcomm]
     -- Unfold the local homogeneous-component abbreviation so both sides have the same carrier.
-    change a • dN (f.1 (y : M)) + _ - _ = a • dN (f.1 (y : M)) - _
+    change a • dN (f.val (y : M)) + _ - _ = a • dN (f.val (y : M)) - _
     abel
 
 omit [DirectSum.Decomposition ℳN] in
@@ -151,7 +151,7 @@ omit [DirectSum.Decomposition ℳN] in
 private theorem gradedCommutatorLinearMap_apply (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p)
     (x : M) :
-    gradedCommutatorLinearMap hMl hNl p f x = dN (f.1 x) - p.negOnePow • f.1 (dM x) :=
+    gradedCommutatorLinearMap hMl hNl p f x = dN (f.val x) - p.negOnePow • f.val (dM x) :=
   (rfl)
 
 /-- The **graded commutator** `f ↦ dN ∘ f - (-1) ^ p • f ∘ dM` on degree-`p` right-module
@@ -179,9 +179,9 @@ def gradedCommutator (p : ℤ) :
     apply LinearMap.ext
     intro x
     -- The target contains nested submodule coercions, so state their element-level equality.
-    change dN ((f + g).1 x) - p.negOnePow • (f + g).1 (dM x) =
-      (dN (f.1 x) - p.negOnePow • f.1 (dM x)) +
-        (dN (g.1 x) - p.negOnePow • g.1 (dM x))
+    change dN ((f + g).val x) - p.negOnePow • (f + g).val (dM x) =
+      (dN (f.val x) - p.negOnePow • f.val (dM x)) +
+        (dN (g.val x) - p.negOnePow • g.val (dM x))
     simp only [Submodule.coe_add, LinearMap.add_apply, map_add, smul_add]
     abel
   map_smul' r f := by
@@ -189,8 +189,8 @@ def gradedCommutator (p : ℤ) :
     apply LinearMap.ext
     intro x
     -- The target contains nested submodule coercions, so state their element-level equality.
-    change dN ((r • f).1 x) - p.negOnePow • (r • f).1 (dM x) =
-      r • (dN (f.1 x) - p.negOnePow • f.1 (dM x))
+    change dN ((r • f).val x) - p.negOnePow • (r • f).val (dM x) =
+      r • (dN (f.val x) - p.negOnePow • f.val (dM x))
     simp only [Submodule.coe_smul_of_tower, LinearMap.smul_apply, map_smul, smul_sub]
     rw [smul_comm r p.negOnePow]
 
@@ -199,8 +199,8 @@ omit [DirectSum.Decomposition ℳN] in
 @[simp]
 theorem gradedCommutator_apply (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) (x : M) :
-    ((gradedCommutator hMh hMl hNh hNl p f).1 : M →ₗ[Aᵐᵒᵖ] N) x =
-      dN (f.1 x) - p.negOnePow • f.1 (dM x) :=
+    ((gradedCommutator hMh hMl hNh hNl p f).val : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (f.val x) - p.negOnePow • f.val (dM x) :=
   (rfl)
 
 omit [DirectSum.Decomposition ℳN] in
@@ -209,8 +209,8 @@ module differentials: the mixed terms cancel by the sign rule. -/
 theorem gradedCommutator_gradedCommutator_apply (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p) (x : M) :
     ((gradedCommutator hMh hMl hNh hNl (p + 1)
-        (gradedCommutator hMh hMl hNh hNl p f)).1 : M →ₗ[Aᵐᵒᵖ] N) x =
-      dN (dN (f.1 x)) - f.1 (dM (dM x)) := by
+        (gradedCommutator hMh hMl hNh hNl p f)).val : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (dN (f.val x)) - f.val (dM (dM x)) := by
   simp only [gradedCommutator_apply, map_sub, map_zsmul_unit, Int.negOnePow_succ]
   rcases Int.units_eq_one_or p.negOnePow with hp | hp
   · simp [hp]
@@ -230,8 +230,8 @@ def differential (p : ℤ) :
 theorem differential_apply (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) p)
     (x : M) :
-    ((differential (hM := hM) (hN := hN) p f).1 : M →ₗ[Aᵐᵒᵖ] N) x =
-      dN (f.1 x) - p.negOnePow • f.1 (dM x) :=
+    ((differential (hM := hM) (hN := hN) p f).val : M →ₗ[Aᵐᵒᵖ] N) x =
+      dN (f.val x) - p.negOnePow • f.val (dM x) :=
   (rfl)
 
 /-- The differential on right-module cochains squares to zero. -/
@@ -326,14 +326,14 @@ def dgRightModuleHomEquivZeroCocycles (hM : IsDGRightModule h ℳ dM)
       simp only [dgRightModuleCochains.differential_apply, Int.negOnePow_zero, one_smul]
       exact sub_eq_zero.mpr (f.map_d x)⟩
   invFun f := {
-    toLinearMap := f.1.1
+    toLinearMap := f.val.val
     map_mem' {q} {x} hx := by
-      have := dgRightModuleCochains.map_mem f.1 hx
+      have := dgRightModuleCochains.map_mem f.val hx
       simpa only [add_zero] using this
     map_d' x := by
       have hx := congrArg
         (fun g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) 1 ↦
-          (g.1 : M →ₗ[Aᵐᵒᵖ] N) x) f.2
+          (g.val : M →ₗ[Aᵐᵒᵖ] N) x) f.property
       simpa only [dgRightModuleCochains.differential_apply, Int.negOnePow_zero, one_smul,
         Submodule.coe_zero, LinearMap.zero_apply, sub_eq_zero] using hx }
   left_inv f := by
@@ -350,7 +350,7 @@ def dgRightModuleHomEquivZeroCocycles (hM : IsDGRightModule h ℳ dM)
 @[simp]
 theorem dgRightModuleHomEquivZeroCocycles_apply (hM : IsDGRightModule h ℳ dM)
     (hN : IsDGRightModule h ℳN dN) (f : DGRightModuleHom hM hN) (x : M) :
-    ((dgRightModuleHomEquivZeroCocycles hM hN f).1.1 : M →ₗ[Aᵐᵒᵖ] N) x = f x :=
+    ((dgRightModuleHomEquivZeroCocycles hM hN f).val.val : M →ₗ[Aᵐᵒᵖ] N) x = f x :=
   (rfl)
 
 /-- The DG right-module morphism associated to a zero-cocycle has the same underlying map. -/
@@ -359,7 +359,7 @@ theorem dgRightModuleHomEquivZeroCocycles_symm_apply (hM : IsDGRightModule h ℳ
     (hN : IsDGRightModule h ℳN dN)
     (f : LinearMap.ker
       (dgRightModuleCochains.differential (hM := hM) (hN := hN) 0)) (x : M) :
-    (dgRightModuleHomEquivZeroCocycles hM hN).symm f x = (f.1.1 : M →ₗ[Aᵐᵒᵖ] N) x :=
+    (dgRightModuleHomEquivZeroCocycles hM hN).symm f x = (f.val.val : M →ₗ[Aᵐᵒᵖ] N) x :=
   (rfl)
 
 /-- The identification of DG right-module maps with closed degree-zero cochains is linear. -/
@@ -386,7 +386,7 @@ map. -/
 @[simp]
 theorem dgRightModuleHomLinearEquivZeroCocycles_apply (hM : IsDGRightModule h ℳ dM)
     (hN : IsDGRightModule h ℳN dN) (f : DGRightModuleHom hM hN) (x : M) :
-    ((dgRightModuleHomLinearEquivZeroCocycles hM hN f).1.1 : M →ₗ[Aᵐᵒᵖ] N) x = f x :=
+    ((dgRightModuleHomLinearEquivZeroCocycles hM hN f).val.val : M →ₗ[Aᵐᵒᵖ] N) x = f x :=
   (rfl)
 
 /-- The DG right-module morphism associated linearly to a zero-cocycle has the same underlying
@@ -396,7 +396,7 @@ theorem dgRightModuleHomLinearEquivZeroCocycles_symm_apply (hM : IsDGRightModule
     (hN : IsDGRightModule h ℳN dN)
     (f : LinearMap.ker
       (dgRightModuleCochains.differential (hM := hM) (hN := hN) 0)) (x : M) :
-    (dgRightModuleHomLinearEquivZeroCocycles hM hN).symm f x = (f.1.1 : M →ₗ[Aᵐᵒᵖ] N) x :=
+    (dgRightModuleHomLinearEquivZeroCocycles hM hN).symm f x = (f.val.val : M →ₗ[Aᵐᵒᵖ] N) x :=
   (rfl)
 
 end TauCeti

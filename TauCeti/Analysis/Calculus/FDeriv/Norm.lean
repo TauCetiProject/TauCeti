@@ -21,8 +21,9 @@ particular, the derivative of a map into a sphere is tangent to the sphere. Away
 a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
 vanish. A function that is nonincreasing in the norm has derivatives of equal norm at any
 two points of one level where they do not vanish (`TauCeti.norm_fderiv_eq_of_antitone_norm`).
-In any real normed space, a curve whose derivative is a multiple `c • f a` of its value has norm
-with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
+The norm itself, being `1`-Lipschitz, has derivative of norm at most `1` everywhere
+(`TauCeti.norm_fderiv_norm_le`). In any real normed space, a curve whose derivative is a multiple
+`c • f a` of its value has norm with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -30,7 +31,8 @@ sum of the squared partial derivatives of its components along `1` and `I`
 
 The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
 derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
-origin.
+origin. Over the open unit ball the height `√(1 - ‖x‖²)` of the unit hemisphere is positive
+(`TauCeti.sqrt_one_sub_norm_sq_pos`).
 -/
 
 public section
@@ -80,6 +82,11 @@ theorem norm_fderiv_eq_of_antitone_norm {v : F → ℝ} (hv : ∀ x y, ‖x‖ �
   rw [hT, hTx] at hcomp
   rw [hcomp]
   exact (fderiv ℝ v y).opNorm_comp_linearIsometryEquiv (Submodule.reflection (ℝ ∙ (x - y))ᗮ)
+
+/-- The derivative of the norm has norm at most `1` at every point, including the points where the
+norm is not differentiable and its derivative is `0` by definition. -/
+theorem norm_fderiv_norm_le (x : E) : ‖fderiv ℝ (‖·‖ : E → ℝ) x‖ ≤ 1 := by
+  simpa using norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_one_norm (E := E))
 
 /-- At a local extremum `w` of `‖ψ‖`, the Fréchet derivative of `ψ` is orthogonal to `ψ w`. This
 covers a map whose norm is constant near `w`: the derivative of a map into a sphere is tangent to
@@ -145,6 +152,11 @@ theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠
   simp only [id_eq, one_div, mul_inv_rev, ContinuousLinearMap.comp_id, smul_neg, neg_apply,
     smul_apply, coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul, neg_smul, neg_inj]
   ring
+
+/-- Over the open unit ball the height `√(1 - ‖x‖²)` of the unit hemisphere is positive. -/
+theorem sqrt_one_sub_norm_sq_pos {G : Type*} [SeminormedAddCommGroup G] {x : G} (hx : ‖x‖ < 1) :
+    0 < √(1 - ‖x‖ ^ 2) :=
+  Real.sqrt_pos.2 (by nlinarith [norm_nonneg x])
 
 /-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
 theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :

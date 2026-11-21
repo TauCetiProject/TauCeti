@@ -38,6 +38,8 @@ and vanishing on boundaries.
 
 * `TauCeti.singularHomologyFunctor_obj_obj`: singular homology with coefficients in `k` is the
   homology of `singularChains k`.
+* `ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map`: the induced linear map is
+  the map of the singular homology functor.
 * `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
   the vanishing of the homology of the chains of its source and target.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
@@ -275,6 +277,15 @@ abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace
     ((singularChains k).obj (TopCat.of Y)).homology n →ₗ[k]
       ((singularChains k).obj (TopCat.of Z)).homology n :=
   (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
+
+/-- The map induced on singular homology by a continuous map `g` is the map of the singular
+homology functor on `TopCat.ofHom g`. -/
+theorem singularHomologyMap_eq_singularHomologyFunctor_map {Y Z : Type u} [TopologicalSpace Y]
+    [TopologicalSpace Z] (g : C(Y, Z)) :
+    singularHomologyMap k n g =
+      (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
+        (TopCat.ofHom g)).hom :=
+  rfl
 
 variable {k n} in
 /-- The identity map induces the identity on singular homology. -/
