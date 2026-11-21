@@ -82,11 +82,11 @@ theorem positiveRootProduct_zero (l : List PositiveRoot) (A : Type v) [CommRing 
 theorem map_positiveRootProduct (l : List PositiveRoot)
     {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (u : PositiveRoot → A) :
-    (D.pointsPresentation A).map (D.pointsPresentation B) f
-        (D.positiveRootProduct l A u : D.points A) =
-      (D.positiveRootProduct l B (fun γ => f (u γ)) : D.points B) := by
-  simp only [coe_positiveRootProduct, map_list_prod, List.map_map, Function.comp_def,
-    D.map_rootSubgroupPoints, toAdd_ofAdd]
+    D.mapPositivePoints f (D.positiveRootProduct l A u) =
+      D.positiveRootProduct l B (f ∘ u) := by
+  ext1
+  simp only [coe_mapPositivePoints_apply, coe_positiveRootProduct, map_list_prod,
+    List.map_map, Function.comp_def, D.map_rootSubgroupPoints, toAdd_ofAdd]
 
 attribute [local instance high] Algebra.toModule
 
@@ -201,14 +201,13 @@ theorem positiveRootProduct_positiveRootEquiv_symm
     D.positiveRootProduct l A ((D.positiveRootEquiv l hl hcover A).symm g) = g :=
   (D.positiveRootEquiv l hl hcover A).apply_symm_apply g
 
-/-- Ring homomorphisms commute with `positiveRootEquiv` on datum points. -/
+/-- Ring homomorphisms commute with `positiveRootEquiv` on positive datum points. -/
 theorem map_positiveRootEquiv (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (u : PositiveRoot → A) :
-    (D.pointsPresentation A).map (D.pointsPresentation B) f
-        (D.positiveRootEquiv l hl hcover A u : D.points A) =
-      (D.positiveRootEquiv l hl hcover B (f ∘ u) : D.points B) :=
+    D.mapPositivePoints f (D.positiveRootEquiv l hl hcover A u) =
+      D.positiveRootEquiv l hl hcover B (f ∘ u) :=
   D.map_positiveRootProduct l f u
 
 /-- Extracting coordinates after scalar change applies the ring map coordinatewise. In
@@ -218,17 +217,12 @@ theorem positiveRootEquiv_symm_map (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (g : D.positivePoints A) :
-    (D.positiveRootEquiv l hl hcover B).symm
-        ⟨(D.pointsPresentation A).map (D.pointsPresentation B) f (g : D.points A),
-          D.map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.property, rfl⟩)⟩ =
+    (D.positiveRootEquiv l hl hcover B).symm (D.mapPositivePoints f g) =
       fun γ => f ((D.positiveRootEquiv l hl hcover A).symm g γ) := by
-  apply (D.positiveRootEquiv l hl hcover B).injective
-  simp only [Equiv.apply_symm_apply, positiveRootEquiv_apply]
-  apply Subtype.ext
-  rw [← D.map_positiveRootProduct l f]
-  exact congrArg ((D.pointsPresentation A).map (D.pointsPresentation B) f)
-    (congrArg Subtype.val
-      ((D.positiveRootEquiv l hl hcover A).apply_symm_apply g).symm)
+  rw [(D.positiveRootEquiv l hl hcover B).symm_apply_eq]
+  exact (congrArg (D.mapPositivePoints f)
+    ((D.positiveRootEquiv l hl hcover A).apply_symm_apply g)).symm.trans
+    (D.map_positiveRootEquiv l hl hcover f ((D.positiveRootEquiv l hl hcover A).symm g))
 
 /-- Zero positive-root coordinates map to the identity element of `D.positivePoints A`. -/
 theorem positiveRootEquiv_zero (l : List PositiveRoot) (hl : l.Nodup)

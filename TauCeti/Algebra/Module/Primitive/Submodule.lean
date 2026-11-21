@@ -11,10 +11,10 @@ import TauCeti.LinearAlgebra.FreeModule.PID
 /-!
 # Primitive vectors in submodules and images of integer linear maps
 
-A submodule `N` of a free integer module `M` contains a primitive vector of `M` if and only if `N`
-is nonzero and no prime `p` divides every element of `N` in `M`. Applied to `LinearMap.range f`, an
-integer-linear map `f : L →ₗ[ℤ] M` into a free integer module hits a primitive vector if and only
-if `f ≠ 0` and no prime divides every value of `f` in `M`.
+A submodule `N` of a free integer module `M` contains a primitive vector of `M` if and only if no
+prime `p` divides every element of `N` in `M`. Applied to `LinearMap.range f`, an integer-linear
+map `f : L →ₗ[ℤ] M` into a free integer module hits a primitive vector if and only if no prime
+divides every value of `f` in `M`.
 
 Both characterizations hold at arbitrary (possibly infinite) rank without any finite-generation
 hypothesis. Freeness of `M` is essential: the torsion group `⨁_{p prime} ZMod p` is nonzero and not
@@ -35,18 +35,16 @@ namespace Submodule
 open Submodule.IsPrincipal
 
 /-- A submodule of a free integer module contains a primitive ambient vector if and only if it is
-nonzero and not globally divisible in the ambient module by any prime. No finite-rank assumption on
-the ambient free module is needed. -/
+not globally divisible in the ambient module by any prime. No finite-rank assumption on the
+ambient free module is needed. -/
 theorem exists_isPrimitive_iff
     {M : Type*} [AddCommGroup M] [Module.Free ℤ M] (N : Submodule ℤ M) :
     (∃ v ∈ N, TauCeti.IsPrimitive v) ↔
-      N ≠ ⊥ ∧ ∀ p : ℕ, p.Prime → ∃ v ∈ N, ¬ ∃ w : M, p • w = v := by
+      ∀ p : ℕ, p.Prime → ∃ v ∈ N, ¬ ∃ w : M, p • w = v := by
   constructor
-  · rintro ⟨v, hvN, hv⟩
-    refine ⟨?_, fun p hp => ⟨v, hvN, fun ⟨w, hw⟩ => hp.ne_one (hv.eq_one_of_eq_nsmul hw.symm)⟩⟩
-    rintro rfl
-    exact hv.ne_zero (by simpa using hvN)
-  · rintro ⟨_, hdiv⟩
+  · rintro ⟨v, hvN, hv⟩ p hp
+    exact ⟨v, hvN, fun ⟨w, hw⟩ => hp.ne_one (hv.eq_one_of_eq_nsmul hw.symm)⟩
+  · intro hdiv
     classical
     obtain ⟨ϕ, hϕ⟩ := N.exists_forall_map_le
     obtain ⟨y, hyN, hϕy⟩ := Submodule.mem_map.mp (generator_mem (N.map ϕ))
@@ -76,13 +74,12 @@ end Submodule
 
 namespace LinearMap
 
-/-- An integer-linear map into a free integer module takes a primitive value if and only if it is
-nonzero and no prime divides all of its values in the codomain. -/
+/-- An integer-linear map into a free integer module takes a primitive value if and only if no
+prime divides all of its values in the codomain. -/
 theorem exists_isPrimitive_apply_iff
     {L M : Type*} [AddCommGroup L] [AddCommGroup M] [Module.Free ℤ M] (f : L →ₗ[ℤ] M) :
     (∃ x : L, TauCeti.IsPrimitive (f x)) ↔
-      f ≠ 0 ∧ ∀ p : ℕ, p.Prime → ∃ x : L, ¬ ∃ w : M, p • w = f x := by
-  simpa [LinearMap.range_eq_bot, exists_exists_eq_and] using
-    (LinearMap.range f).exists_isPrimitive_iff
+      ∀ p : ℕ, p.Prime → ∃ x : L, ¬ ∃ w : M, p • w = f x := by
+  simpa [exists_exists_eq_and] using (LinearMap.range f).exists_isPrimitive_iff
 
 end LinearMap

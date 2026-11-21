@@ -68,6 +68,7 @@ theorem exists_isPrimitive_kostantRootOperator (i : Fin t.rank ⊕ Fin t.rank) :
       (D.isSl2Triple_representation_rootGenerator j)
       (wt := fun r => D.weight r j)
       (fun r => ((isCartanWeightVector_iff _ _).mp (D.isCartanWeightVector_basis r)) j)
+      (Set.finite_range _).bddBelow (Set.finite_range _).bddAbove
   | inr j =>
     exact exists_isPrimitive_kostantRootOperator_of_isSl2Triple
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
@@ -79,6 +80,7 @@ theorem exists_isPrimitive_kostantRootOperator (i : Fin t.rank ⊕ Fin t.rank) :
         rw [LinearMap.neg_apply,
           ((isCartanWeightVector_iff _ _).mp (D.isCartanWeightVector_basis r)) j,
           Int.cast_neg, neg_smul])
+      (Set.finite_range _).bddBelow (Set.finite_range _).bddAbove
 
 end
 
