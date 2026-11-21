@@ -44,6 +44,9 @@ The comparison is built from structure that already exists rather than by hand:
 
 ## Main results
 
+* `TauCeti.linearHomComplexUnit_tensorUnit`: on the tensor unit, the identity cochain is the inverse
+  of evaluation at `1`; consequently composition with `Hom(R[0], R[0]) ≅ R[0]` is a unitor
+  (`TauCeti.linearHomComplexComp_eq_rightUnitor`, `TauCeti.linearHomComplexComp_eq_leftUnitor`).
 * `TauCeti.linearHomComplexDualTensor_ιTensorObj_tmul`,
   `TauCeti.linearHomComplexDualTensor_ιTensorObj_tmul_v` and
   `TauCeti.linearHomComplexDualTensor_ιTensorObj_tmul_v_eq_zero`: the value on `b ⊗ φ`, whose
@@ -175,6 +178,42 @@ lemma linearHomComplexFromTensorUnitIso_inv_naturality {K₁ K₂ : CochainCompl
   ((Iso.inv_comp_eq _).2 (by
     rw [← Category.assoc, ← linearHomComplexFromTensorUnitIso_hom_naturality, Category.assoc,
       Iso.hom_inv_id, Category.comp_id])).symm
+
+variable (R) in
+/-- On the tensor unit, the inverse of evaluation at `1` is the identity cochain: the cochain
+`r ↦ r • 1` of `Hom(R[0], R[0])` is `r` times the identity. -/
+lemma linearHomComplexUnit_tensorUnit :
+    linearHomComplexUnit R (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) =
+      (linearHomComplexFromTensorUnitIso R (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).inv := by
+  rw [← cancel_mono (linearHomComplexFromTensorUnitIso R _).hom, Iso.inv_hom_id]
+  apply HomologicalComplex.from_single_hom_ext
+  rw [← cancel_epi (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
+    (𝟙_ (ModuleCat.{v} R))).inv]
+  refine ModuleCat.hom_ext (LinearMap.ext fun r => ?_)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, HomologicalComplex.comp_f]
+  rw [linearHomComplexUnit_f_zero_apply, map_smul, linearHomComplexFromTensorUnitIso_hom_f_apply,
+    cochainFromTensorUnitLinearEquiv_apply, Cochain.ofHom_v, HomologicalComplex.id_f,
+    ModuleCat.hom_comp, LinearMap.comp_apply, ← map_smul, ← map_smul, smul_eq_mul, mul_one]
+
+/-- Composition `Hom(R[0], B) ⊗ Hom(R[0], R[0]) ⟶ Hom(R[0], B)` is the right unitor, once
+`Hom(R[0], R[0])` is identified with `R[0]` by evaluation at `1`. -/
+lemma linearHomComplexComp_eq_rightUnitor (B : CochainComplex (ModuleCat.{v} R) ℤ) :
+    linearHomComplexComp R (𝟙_ _) (𝟙_ _) B =
+      _ ◁ (linearHomComplexFromTensorUnitIso R (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).hom ≫
+        (ρ_ _).hom := by
+  rw [← linearHomComplexComp_unit (R := R) (F := 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) (G := B),
+    linearHomComplexUnit_tensorUnit, ← whiskerLeft_comp_assoc, Iso.hom_inv_id, whiskerLeft_id,
+    Category.id_comp]
+
+/-- Composition `Hom(R[0], R[0]) ⊗ Hom(A, R[0]) ⟶ Hom(A, R[0])` is the left unitor, once
+`Hom(R[0], R[0])` is identified with `R[0]` by evaluation at `1`. -/
+lemma linearHomComplexComp_eq_leftUnitor (A : CochainComplex (ModuleCat.{v} R) ℤ) :
+    linearHomComplexComp R A (𝟙_ _) (𝟙_ _) =
+      (linearHomComplexFromTensorUnitIso R (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).hom ▷ _ ≫
+        (λ_ _).hom := by
+  rw [← linearHomComplexUnit_comp (R := R) (F := A) (G := 𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)),
+    linearHomComplexUnit_tensorUnit, ← comp_whiskerRight_assoc, Iso.hom_inv_id, id_whiskerRight,
+    Category.id_comp]
 
 variable (R) in
 /-- Cochains of degree `q` from `A` to the tensor unit `R[0]` are the linear forms on `Aⁱ`, for
