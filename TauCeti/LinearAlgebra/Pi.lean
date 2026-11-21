@@ -125,12 +125,9 @@ public theorem finite_pi_univ_iff {R ι : Type*} {M : ι → Type*} [Semiring R]
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (S : ∀ i, Submodule R (M i)) :
     Finite ↥(Submodule.pi Set.univ S) ↔ ∀ i, Finite (S i) := by
   have : ∀ j, Nonempty (S j) := fun j ↦ ⟨0⟩
-  let e : ↥(Submodule.pi Set.univ S) ≃ ∀ i, S i :=
-    { toFun f i := ⟨f.val i, f.property i (Set.mem_univ i)⟩
-      invFun f := ⟨fun i ↦ (f i).val, fun i _ ↦ (f i).property⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
-  rw [Equiv.finite_iff e]
+  rw [← SetLike.coe_sort_coe, Submodule.coe_pi,
+    Equiv.finite_iff (Equiv.Set.univPi fun i ↦ (S i : Set (M i)))]
+  simp only [SetLike.coe_sort_coe]
   exact ⟨fun _ i ↦ Finite.of_surjective (fun f : ∀ j, S j ↦ f i) (Function.surjective_eval i),
     fun _ ↦ inferInstance⟩
 

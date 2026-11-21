@@ -339,12 +339,9 @@ theorem finite_ker_torsionByMap {R M N : Type*} [CommSemiring R] (r : R)
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (φ : M →ₗ[R] N)
     [Finite (LinearMap.ker φ)] :
     Finite (LinearMap.ker (torsionByMap r φ)) := by
-  have hmap : ∀ x ∈ torsionBy R M r, φ x ∈ torsionBy R N r := fun x hx ↦ by
-    rw [mem_torsionBy_iff] at hx ⊢
-    rw [← map_smul, hx, map_zero]
-  have h : torsionByMap r φ = φ.restrict hmap := by
-    ext x
-    simp
+  have hmap : ∀ x ∈ torsionBy R M r, φ x ∈ torsionBy R N r :=
+    fun x hx ↦ coe_torsionByMap_apply r φ ⟨x, hx⟩ ▸ (torsionByMap r φ ⟨x, hx⟩).property
+  have h : torsionByMap r φ = φ.restrict hmap := by ext x; simp
   rw [h]
   exact φ.finite_ker_restrict hmap
 

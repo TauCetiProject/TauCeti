@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -15,6 +14,7 @@ import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.AdicComplete
 import TauCeti.RingTheory.PowerSeries.Ideal
+import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
@@ -27,7 +27,7 @@ an ideal `I` of `O` containing `p`, `ω_n` lies in the `(n + 1)`-st power of the
 `I.comap constantCoeff` of series with constant coefficient in `I` (over a local ring in which `p`
 is not a unit, the maximal ideal of `O⟦X⟧`), so when `O` is `I`-adically Hausdorff, for instance
 when `O` is a complete local ring or, by Krull's intersection theorem, a noetherian local ring and
-`I` its maximal ideal, the principal ideals `(ω_n)` meet in zero. Over a local domain with a prime
+`I` its maximal ideal, the principal ideals `(ω_n)` meet in zero. Over a domain with a prime
 `ϖ`, every `(1 + X) ^ N - 1` with `N ≠ 0` acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 
 The polynomial counterparts, in particular that `(1 + X) ^ pⁿ - 1` is distinguished at every ideal
@@ -37,7 +37,7 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
 
 * `PowerSeries.one_add_X_pow_sub_one_eq_X_pow`: in characteristic `p`, `ω_n = X ^ pⁿ`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot`: for a prime `ϖ` of a
-  local domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
+  domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 * `PowerSeries.one_add_X_pow_sub_one_mem_comap_constantCoeff_pow`: `ω_n` lies in the
   `(n + 1)`-st power of `I.comap constantCoeff`, the ideal of series with constant coefficient in
   `I`, for an ideal `I` containing `p`.
@@ -50,6 +50,7 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
 public section
 
 open IsLocalRing
+open scoped Polynomial
 
 namespace PowerSeries
 
@@ -63,17 +64,20 @@ theorem one_add_X_pow_sub_one_eq_X_pow [Fact p.Prime] [CharP O p] (n : ℕ) :
   have : CharP O⟦X⟧ p := charP_of_injective_ringHom C_injective p
   rw [add_pow_char_pow, one_pow, add_sub_cancel_left]
 
-/-- Over a local domain `O` with a prime `ϖ`, `(1 + X) ^ N - 1` acts injectively on
+/-- Over a domain `O` with a prime `ϖ`, `(1 + X) ^ N - 1` acts injectively on
 `O⟦X⟧ ⧸ (ϖ ^ m)` for `N ≠ 0`; in particular `(O⟦X⟧ ⧸ (ϖ ^ m))[ω_n] = 0` for
 `ω_n = (1 + X) ^ pⁿ - 1`. -/
-theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O] [IsLocalRing O]
+theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O]
     {ϖ : O} (hϖ : Prime ϖ) {N : ℕ} (hN : N ≠ 0) (m : ℕ) :
     Submodule.torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) ((1 + X) ^ N - 1) = ⊥ := by
-  refine torsionBy_quotient_span_C_pow_eq_bot hϖ (fun h ↦ ?_) m
-  -- Over the residue field, `(1 + X) ^ N - 1` is the image of a monic polynomial of degree `N`.
-  refine (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := ResidueField O) hN).ne_zero ?_
-  rw [← Polynomial.coe_eq_zero_iff]
-  simpa using h
+  rw [← isSMulRegular_iff_torsionBy_eq_bot, map_pow]
+  refine (prime_C_iff.2 hϖ).isSMulRegular_quotient_span_pow (fun ⟨k, hk⟩ ↦ hϖ.not_isUnit ?_) m
+  have hcoeff := congrArg (coeff N) hk
+  have hcoe : (((1 + Polynomial.X) ^ N - 1 : O[X]) : O⟦X⟧) = (1 + X) ^ N - 1 := by simp
+  have hlead := (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := O) hN).leadingCoeff
+  rw [Polynomial.leadingCoeff, TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one] at hlead
+  rw [← hcoe, Polynomial.coeff_coe, hlead, coeff_C_mul] at hcoeff
+  exact IsUnit.of_mul_eq_one _ hcoeff.symm
 
 /-- For an ideal `I` of `O` containing `p`, the series `ω_n = (1 + X) ^ pⁿ - 1` lies in the
 `(n + 1)`-st power of the ideal `I.comap constantCoeff` of series with constant coefficient in `I`:

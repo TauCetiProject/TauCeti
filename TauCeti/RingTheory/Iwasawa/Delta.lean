@@ -16,9 +16,9 @@ import TauCeti.Algebra.Module.Torsion.EulerQuotient
 import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
+import TauCeti.RingTheory.PowerSeries.OneAddXPow
 import TauCeti.RingTheory.PowerSeries.Weierstrass.HeightOne
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Norm
-import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
@@ -181,15 +181,8 @@ theorem deltaSubmodule_quotient_span_C_pow_eq_bot {O : Type*} [CommRing O] [IsDo
     deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) = ⊥ := by
   rw [eq_bot_iff, deltaSubmodule_le_iff]
   intro n
-  rw [le_bot_iff, ← isSMulRegular_iff_torsionBy_eq_bot, map_pow]
-  refine (prime_C_iff.2 hϖ).isSMulRegular_quotient_span_pow (fun ⟨k, hk⟩ ↦ hϖ.not_isUnit ?_) m
-  have hcoeff := congrArg (coeff (p ^ n)) hk
-  have hcoe : (((1 + Polynomial.X) ^ p ^ n - 1 : O[X]) : O⟦X⟧) = (1 + X) ^ p ^ n - 1 := by simp
-  have hlead :=
-    (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := O) (pow_ne_zero n hp)).leadingCoeff
-  rw [Polynomial.leadingCoeff, TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one] at hlead
-  rw [← hcoe, Polynomial.coeff_coe, hlead, coeff_C_mul] at hcoeff
-  exact IsUnit.of_mul_eq_one _ hcoeff.symm
+  exact (PowerSeries.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot
+    hϖ (pow_ne_zero n hp) m).le
 
 /-- For a prime `p` with `(p : O) ≠ 0` and a prime polynomial `F` distinguished at `I` over an
 `I`-adically complete domain `O`, if `F ∣ Φ_{p ^ j}(X + 1)` and `n ≠ 0`, then for every `k ≥ j`
@@ -259,7 +252,8 @@ theorem deltaSubmodule_quotient_span_pow_eq_bot_of_not_dvd {O : Type*} [CommRing
   set ω : O[X] := (1 + Polynomial.X) ^ p ^ k - 1
   have hcoe : (ω : O⟦X⟧) = (1 + X) ^ p ^ k - 1 := by simp [ω]
   rw [← hcoe, (H.torsionBy_eq_bot_iff (ω : O⟦X⟧)).mpr]
-  rw [H.norm_mk_coe_eq_resultant, hF.monic.resultant_pow_left]
+  rw [H.norm_mk_coe_eq_resultant,
+    Polynomial.resultant_pow_left _ _ _ _ (by simp [hF.monic.leadingCoeff]) le_rfl]
   refine pow_ne_zero n fun h0 ↦ ?_
   have hdvd : F ∣ ω := (hF.monic.resultant_eq_zero_iff_dvd hprime ω).mp h0
   dsimp only [ω] at hdvd

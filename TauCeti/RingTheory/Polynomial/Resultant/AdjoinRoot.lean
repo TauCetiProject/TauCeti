@@ -424,7 +424,7 @@ theorem resultant_prod_pow_ne_zero_iff [IsDomain R] {ι : Type*} (s : Finset ι)
     (∏ i ∈ s, f i ^ n i).resultant g ≠ 0 ↔ ∀ i ∈ s, ¬ f i ∣ g := by
   rw [resultant_prod_left_of_monic s fun i hi ↦ (hf i hi).pow _, Finset.prod_ne_zero_iff]
   refine forall₂_congr fun i hi ↦ ?_
-  rw [(hf i hi).resultant_pow_left, pow_ne_zero_iff (hn i hi), ne_eq,
-    (hf i hi).resultant_eq_zero_iff_dvd (hprime i hi)]
+  rw [Polynomial.resultant_pow_left _ _ _ _ (by simp [(hf i hi).leadingCoeff]) le_rfl,
+    pow_ne_zero_iff (hn i hi), ne_eq, (hf i hi).resultant_eq_zero_iff_dvd (hprime i hi)]
 
 end Polynomial

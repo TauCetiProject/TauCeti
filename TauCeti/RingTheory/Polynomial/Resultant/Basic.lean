@@ -57,7 +57,6 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
-* `Polynomial.Monic.resultant_pow_left`: for a monic left argument, `Res(f ^ n, g) = Res(f, g) ^ n`.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
 * `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
@@ -272,13 +271,6 @@ theorem _root_.Polynomial.Monic.resultant_of_le {f g : R[X]} (hf : f.Monic) {n :
   conv_lhs => rw [hn']
   rw [Polynomial.resultant_add_right_deg _ _ _ _ _ le_rfl, Polynomial.coeff_natDegree,
     hf.leadingCoeff, one_pow, one_mul]
-
-/-- For a monic polynomial `f`, taking a power on the left raises the resultant to that power. -/
-theorem _root_.Polynomial.Monic.resultant_pow_left {f g : R[X]} (hf : f.Monic) (n : ℕ) :
-    (f ^ n).resultant g = f.resultant g ^ n := by
-  nontriviality R
-  exact Polynomial.resultant_pow_left f g n g.natDegree
-    (by rw [hf.leadingCoeff, one_pow]; exact one_ne_zero) le_rfl
 
 end TauCeti
 

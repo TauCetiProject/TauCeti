@@ -447,11 +447,8 @@ private theorem exists_natCard_torsionBy_growthTransition {p n₀ : ℕ}
   have hmono : Monotone T := fun k₁ k₂ hk ↦
     Submodule.torsionBy_le_torsionBy_of_dvd _ _
       (map_dvd Polynomial.coeToPowerSeries.ringHom (growthTransition_dvd_of_le p O hk))
-  obtain ⟨N, hN⟩ :=
-    (IsNoetherian.noetherian (⨆ k, T k)).stabilizes_of_iSup_eq ⟨T, hmono⟩ rfl
+  obtain ⟨N, hN⟩ := monotone_stabilizes_iff_noetherian.mpr inferInstance ⟨T, hmono⟩
   dsimp only [OrderHom.coe_mk] at hN
-  have hstab : ∀ k ≥ N, T k = T N := fun k hk ↦ le_antisymm
-    (by rw [← hN]; exact le_iSup T k) (hmono hk)
   have : Finite (T N) :=
     finite_torsionBy_of_finite_quotSMulTop (monic_growthTransition p O n₀ N) (hfin N)
   -- View `T N` as a finite `O`-module via `PowerSeries.C`; its cardinality is a power of `#κ(O)`.
@@ -460,8 +457,8 @@ private theorem exists_natCard_torsionBy_growthTransition {p n₀ : ℕ}
     isFiniteLength_iff_isNoetherian_isArtinian.mpr
       ⟨isNoetherian_of_finite O (T N), isArtinian_of_finite⟩
   refine ⟨(Module.length O (T N)).toNat, N, fun k hk ↦ ?_⟩
-  dsimp only [T] at hstab
-  rw [hstab k hk]
+  have hstab : torsionBy O⟦X⟧ M (growthTransition p O n₀ k : O⟦X⟧) = T N := (hN k hk).symm
+  rw [hstab]
   exact hfl.natCard_eq_natCard_residueField_pow_length
 
 /-- Helper: asymptotic cardinality of `O ⧸ (Res(F_M, ν_{k, n₀}))` for `k ≥ n₁`. -/
@@ -709,14 +706,10 @@ example (p : ℕ) [Fact p.Prime] :
       rw [hν, Submodule.mem_bot, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul,
         Submodule.Quotient.mk_eq_zero, smul_eq_mul, Ideal.mem_span_singleton]
       exact (dvd_pow_self _ (Nat.sub_pos_of_lt hp.one_lt).ne').trans (dvd_mul_right _ _)
-    have : Infinite O := TauCeti.IsDiscreteValuationRing.infinite
-    have hM : Infinite M := Infinite.of_injective (fun c : O ↦ Ideal.Quotient.mk _ (C c))
-      fun c₁ c₂ h ↦ by
-        rw [Ideal.Quotient.eq, Ideal.mem_span_singleton] at h
-        obtain ⟨r, hr⟩ := h
-        have hc := congrArg constantCoeff hr
-        simp only [map_sub, constantCoeff_C, map_mul, constantCoeff_X, zero_mul] at hc
-        exact sub_eq_zero.mp hc
+    have hO : Infinite O := TauCeti.IsDiscreteValuationRing.infinite
+    have hM : Infinite M := by
+      let : Algebra O O⟦X⟧ := MvPowerSeries.instAlgebra
+      exact (Equiv.infinite_iff (PowerSeries.quotientSpanXAlgEquiv O).toEquiv).mpr hO
     exact (Equiv.infinite_iff (Submodule.quotEquivOfEqBot _ hsmul).toEquiv).mpr hM
 
 -- 2. Equal characteristic breaks linear `λ`-growth:

@@ -73,24 +73,20 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
 theorem smul_prod {α R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] [Monoid α] [DistribMulAction α M] [DistribMulAction α N]
     [SMulCommClass α R M] [SMulCommClass α R N] (a : α) (S : Submodule R M) (T : Submodule R N) :
-    a • S.prod T = (a • S).prod (a • T) := by
-  ext ⟨x, y⟩
-  simp only [mem_smul_pointwise_iff_exists, mem_prod, Prod.ext_iff, Prod.smul_fst, Prod.smul_snd]
-  exact ⟨fun ⟨⟨u, v⟩, ⟨hu, hv⟩, hxu, hyv⟩ ↦ ⟨⟨u, hu, hxu⟩, ⟨v, hv, hyv⟩⟩,
-    fun ⟨⟨u, hu, hxu⟩, ⟨v, hv, hyv⟩⟩ ↦ ⟨⟨u, v⟩, ⟨hu, hv⟩, hxu, hyv⟩⟩
+    a • S.prod T = (a • S).prod (a • T) :=
+  SetLike.coe_injective <| by
+    rw [coe_pointwise_smul, prod_coe, prod_coe, coe_pointwise_smul, coe_pointwise_smul]
+    exact Set.prodMap_image_prod (a • ·) (a • ·) (S : Set M) (T : Set N)
 
 /-- Pointwise scalar multiplication distributes over the unrestricted dependent product
 `Submodule.pi Set.univ S`. -/
 theorem smul_pi_univ {α R ι : Type*} {M : ι → Type*} [Semiring R] [∀ i, AddCommMonoid (M i)]
     [∀ i, Module R (M i)] [Monoid α] [∀ i, DistribMulAction α (M i)]
     [∀ i, SMulCommClass α R (M i)] (a : α) (S : ∀ i, Submodule R (M i)) :
-    a • Submodule.pi Set.univ S = Submodule.pi Set.univ fun i ↦ a • S i := by
-  ext f
-  simp only [mem_smul_pointwise_iff_exists, mem_pi, Set.mem_univ, forall_true_left, funext_iff,
-    Pi.smul_apply]
-  refine ⟨fun ⟨g, hg, hgf⟩ i ↦ ⟨g i, hg i, hgf i⟩, fun hf ↦ ?_⟩
-  choose g hg hgf using hf
-  exact ⟨g, hg, hgf⟩
+    a • Submodule.pi Set.univ S = Submodule.pi Set.univ fun i ↦ a • S i :=
+  SetLike.coe_injective <| by
+    rw [coe_pointwise_smul, coe_pi, coe_pi, Set.smul_set_univ_pi]
+    simp only [coe_pointwise_smul, Pi.smul_def]
 
 /-- Inside a submodule `S`, the scaled submodule `r • (⊤ : Submodule R S)` is finite if and only
 if `r • S` is finite in the ambient module. -/
