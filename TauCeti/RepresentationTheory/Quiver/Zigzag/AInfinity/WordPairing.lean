@@ -284,24 +284,6 @@ variable {B : Type*} [Semiring B] [Module k B]
 
 variable [Fintype G.Dart] [DecidableEq V]
 
-omit [Finite V] [Fintype G.Dart] [DecidableEq V] in
-/-- Moving the first dart to the end negates the product weight induced by an anticyclic linear
-functional `f` on `β : G.Dart → B`. -/
-theorem anticyclic_prod_ofFn_snoc {n : ℕ} (β : G.Dart → B) (f : B →ₗ[k] k)
-    (hf : ∀ (e : G.Dart) (y : B), f (y * β e) = -f (β e * y))
-    (u : Fin n → G.Dart) (e : G.Dart) :
-    f (List.ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → G.Dart) t)).prod =
-      -f (List.ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → G.Dart) t)).prod := by
-  have hsnoc : (List.ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → G.Dart) t)).prod =
-      (List.ofFn fun t ↦ β (u t)).prod * β e := by
-    rw [List.ofFn_succ', List.concat_eq_append, List.prod_append, List.prod_singleton]
-    simp
-  have hcons : (List.ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → G.Dart) t)).prod =
-      β e * (List.ofFn fun t ↦ β (u t)).prod := by
-    rw [List.ofFn_succ, List.prod_cons]
-    simp
-  rw [hsnoc, hcons, hf]
-
 omit [Finite V] in
 /-- When `β : G.Dart → B` satisfies the signless preprojective relation at every vertex, the
 product weight induced by any linear functional `f : B →ₗ[k] k` satisfies the signless relation in
@@ -340,7 +322,7 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic {n : ℕ}
     zigzagWordPairing hns n (fun w ↦ f (List.ofFn fun t ↦ β (w t)).prod)
       ((𝒵).hochschildDifferential 0 φ) = 0 :=
   zigzagWordPairing_hochschildDifferential_eq_zero
-    (anticyclic_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f) hφ
+    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f) hφ
 
 /-- **Higher loop operations detected by an anticyclic functional are not coboundaries.** Let `β`
 satisfy the signless relations `∑_{d.snd = v} β d * β d.symm = 0` and let `f` be a linear

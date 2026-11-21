@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.End
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.Ring
@@ -27,7 +28,8 @@ blocks of equal length, laid out as the bottom and the top row of a rectangle an
 counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
 reversing each block is reversing the concatenated order followed by a rotation by one block.
 Finally, `TauCeti.apply_comp_finCycle` iterates a single-step rotation rule (`Fin.cons` to
-`Fin.snoc`) along `finCycle`.
+`Fin.snoc`) along `finCycle`, and `TauCeti.apply_comp_finCycle_of_anticyclic` specializes it to
+anticyclic functions.
 `TauCeti.homotopyIndexEquiv` splits `Fin (n + 1) × Fin (n + 2)` into off-diagonal, diagonal, and
 superdiagonal pairs.
 -/
@@ -154,6 +156,16 @@ theorem apply_comp_finCycle {α β : Type*} {n : ℕ} {a : (Fin (n + 1) → α) 
       rw [Function.iterate_succ', ← Function.comp_assoc, ih, h1, ← Function.iterate_succ_apply]
   rw [finCycle_eq_finRotate_iterate]
   exact hiter r.val w
+
+/-- Rotating an anticyclic function `a` on tuples by `finCycle r` multiplies it by
+`(-1) ^ r.val`. -/
+theorem apply_comp_finCycle_of_anticyclic {α β : Type*} [Monoid β] [HasDistribNeg β] {n : ℕ}
+    {a : (Fin (n + 1) → α) → β}
+    (hrot : ∀ (u : Fin n → α) (e : α), a (Fin.snoc u e) = -a (Fin.cons e u))
+    (r : Fin (n + 1)) (w : Fin (n + 1) → α) :
+    a (w ∘ finCycle r) = (-1 : β) ^ r.val * a w := by
+  simpa only [mul_left_iterate_apply] using
+    apply_comp_finCycle (f := ((-1 : β) * ·)) (fun u e ↦ by simpa using hrot u e) r w
 
 /-- The equivalence `Fin n ≃ Fin (n - r) ⊕ Fin r` sending the first `r` indices to the second
 summand and the last `n - r` indices to the first summand, both in order. It moves an initial

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction.Invariance
 public import TauCeti.Combinatorics.SimpleGraph.Degree
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Deformation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Parity
+import TauCeti.Data.List.ProdOfFn
 
 /-!
 # Non-formal loop deformations of zigzag algebras
@@ -194,7 +195,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even
     (hodd : ¬Even (∑ w, f (List.ofFn fun t ↦ β (w t)).prod * c w)) :
     ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal :=
   not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul hm
-    (anticyclic_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
     c hc hodd
 
 /-- **Quartic non-formality from a balanced backtrack pairing, over any nontrivial commutative
@@ -264,7 +265,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four
     (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading c hc)
     (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
     (zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by decide) (by decide))
-    (anticyclic_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
     (by
       rw [zigzagWordPairing_obstruction (by decide : 1 ≤ 2) _ c hc]
       exact ((Units.isUnit _).map (Int.castRingHom k)).mul hu)

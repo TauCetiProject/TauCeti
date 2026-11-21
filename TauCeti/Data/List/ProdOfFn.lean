@@ -17,6 +17,8 @@ word `u` of length `n` by inserting two consecutive letters `d, e` at the positi
 `p + 1` factors as `L * β d * β e * R`, where `L` and `R` depend only on `u` and `p`
 (`List.exists_prod_ofFn_insertNth_insertNth`). This is how a relation among the products
 `β d * β e` passes to the products of all words carrying the letters `d, e` in a fixed position.
+Similarly, moving the first letter of a word to the end corresponds to moving its factor from the
+left to the right (`List.apply_prod_ofFn_snoc`).
 
 A nonempty product `f₀ f₁ ⋯ fₙ` is the left fold of `f₁, …, fₙ` starting from `f₀`
 (`List.prod_ofFn_eq_foldl`), and multiplicative maps, not necessarily unital, preserve such left
@@ -61,6 +63,22 @@ theorem exists_prod_ofFn_insertNth_insertNth {D M : Type*} [Monoid M] (β : D �
       rw [← Fin.cons_self_tail u, Fin.insertNth_succ_cons, ← Fin.succ_castSucc,
         Fin.insertNth_succ_cons, ofFn_succ, prod_cons]
       simp only [Fin.cons_zero, Fin.cons_succ, h, mul_assoc]
+
+/-- Moving the first letter of a word to the end applies `g` to the image of its product under a
+map `f` satisfying `f (y * β e) = g (f (β e * y))`. -/
+theorem apply_prod_ofFn_snoc {D M C : Type*} [Monoid M] (β : D → M) (f : M → C) {g : C → C}
+    (hf : ∀ (e : D) (y : M), f (y * β e) = g (f (β e * y))) {n : ℕ} (u : Fin n → D) (e : D) :
+    f (ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → D) t)).prod =
+      g (f (ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → D) t)).prod) := by
+  have hsnoc : (ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → D) t)).prod =
+      (ofFn fun t ↦ β (u t)).prod * β e := by
+    rw [ofFn_succ', concat_eq_append, prod_append, prod_singleton]
+    simp
+  have hcons : (ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → D) t)).prod =
+      β e * (ofFn fun t ↦ β (u t)).prod := by
+    rw [ofFn_succ, prod_cons]
+    simp
+  rw [hsnoc, hcons, hf]
 
 /-- A nonempty product `f₀ f₁ ⋯ fₙ` is the left fold of `f₁, …, fₙ` starting from `f₀`. -/
 theorem prod_ofFn_eq_foldl {M : Type*} [Monoid M] {n : ℕ} (f : Fin (n + 1) → M) :

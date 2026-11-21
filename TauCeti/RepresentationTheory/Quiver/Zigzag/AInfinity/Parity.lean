@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
 import Mathlib.Algebra.Group.Subgroup.Even
 import Mathlib.Algebra.Ring.Parity
 import TauCeti.Algebra.BigOperators.Finset.Involution
+import TauCeti.Data.List.ProdOfFn
 import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
@@ -135,15 +136,25 @@ private theorem even_zigzagTrace_mul_self_apply_subword
       (apply_subword_mem_zigzagIntegerGrade_one hψ
         (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) hd hpd)
 
-/-- On two elements `u, v` with `u` of path length one, the binary Taylor component of `𝒵` is
-`-(u * v)` because the Koszul twist of degree one is `-1`. -/
-private theorem taylor_of_tprod_two_eq_neg_mul
-    {u : nonisolatedZigzagQuotient k G} (hu : u ∈ zigzagIntegerGrade k G 1)
-    (v : nonisolatedZigzagQuotient k G) :
-    (𝒵).taylor (of k _ (2 : ℕ+) (PiTensorProduct.tprod k ![u, v])) = -(u * v) := by
+/-- For a homogeneous cochain `ψ` of suspended degree zero, the trace of the binary Taylor
+operation of `𝒵` on two nonempty subwords of arrows is the negated trace of their product. -/
+private theorem zigzagTrace_taylor_of_tprod_two_apply_subword
+    {ψ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
+    (hψ : LinearMap.IsHomogeneous ψ (gradedPiece ((𝒵).grading.shift 1))
+      ((𝒵).grading.shift 1).piece 0)
+    {N : ℕ} (w : Fin N → G.Dart) {p₁ d₁ p₂ d₂ : ℕ} (hd₁ : 0 < d₁) (hpd₁ : p₁ + d₁ ≤ N) :
+    zigzagTrace k G hns ((𝒵).taylor (of k _ (2 : ℕ+)
+        (PiTensorProduct.tprod k
+          ![ψ (subword k (fun t ↦ 𝔞 (w t)) p₁ d₁),
+            ψ (subword k (fun t ↦ 𝔞 (w t)) p₂ d₂)]))) =
+      -zigzagTrace k G hns
+        (ψ (subword k (fun t ↦ 𝔞 (w t)) p₁ d₁) * ψ (subword k (fun t ↦ 𝔞 (w t)) p₂ d₂)) := by
   rw [AInfinityAlgebra.taylor_of_two, zigzagStrictAInfinityAlgebra_m_two_apply,
     (𝒵).grading.koszulTwist_one_apply_of_mem (e := 1)
-      (by rwa [zigzagStrictAInfinityAlgebra_grading_piece])]
+      (by
+        rw [zigzagStrictAInfinityAlgebra_grading_piece]
+        exact apply_subword_mem_zigzagIntegerGrade_one hψ
+          (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) hd₁ hpd₁)]
   simp
 
 end TraceParity
@@ -153,15 +164,6 @@ end TraceParity
 section WordParity
 
 variable [Fintype G.Dart]
-
-omit [Finite V] [Fintype G.Dart] in
-/-- Rotating an anticyclic weight `a` by `finCycle r` multiplies it by `(-1) ^ r.val`. -/
-private theorem apply_comp_finCycle_of_anticyclic {α : Type*} {n : ℕ} {a : (Fin (n + 1) → α) → k}
-    (hrot : ∀ (u : Fin n → α) (e : α), a (Fin.snoc u e) = -a (Fin.cons e u))
-    (r : Fin (n + 1)) (w : Fin (n + 1) → α) :
-    a (w ∘ finCycle r) = (-1 : k) ^ r.val * a w := by
-  simpa only [mul_left_iterate_apply] using
-    apply_comp_finCycle (f := ((-1 : k) * ·)) (fun u e ↦ by simpa using hrot u e) r w
 
 /-- Reindexing by a cyclic shift of `d` steps relates the `(2 * m + 2 - d, d)` cut to the
 `(d, 2 * m + 2 - d)` cut up to the anticyclicity sign `(-1) ^ d`. -/
@@ -179,18 +181,20 @@ private theorem sum_word_cut_sub_eq_neg_one_pow_mul {m : ℕ}
   have hsub : 2 * m + 2 - (2 * m + 2 - d) = d := by omega
   let rFin : Fin (2 * m + 2) := ⟨d, hdN⟩
   let σ : (Fin (2 * m + 2) → G.Dart) ≃ (Fin (2 * m + 2) → G.Dart) :=
-    { toFun := fun w i ↦ w (i + rFin)
-      invFun := fun w i ↦ w (i - rFin)
-      left_inv := fun w ↦ funext fun i ↦ congrArg w (sub_add_cancel i rFin)
-      right_inv := fun w ↦ funext fun i ↦ congrArg w (add_sub_cancel_right i rFin) }
+    { toFun := fun w ↦ w ∘ finCycle rFin
+      invFun := fun w ↦ w ∘ (finCycle rFin).symm
+      left_inv := fun w ↦ funext fun i ↦ by simp
+      right_inv := fun w ↦ funext fun i ↦ by simp }
   rw [hsub, Finset.mul_sum, ← Equiv.sum_comp σ]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
-  have hw : a (fun i ↦ w (i + rFin)) = (-1 : k) ^ d * a w :=
+  have hw : a (σ w) = (-1 : k) ^ d * a w :=
     apply_comp_finCycle_of_anticyclic hrot rFin w
+  have hcomp : (fun t ↦ 𝔞 (σ w t)) = fun t ↦ 𝔞 (w (t + rFin)) :=
+    funext fun t ↦ congrArg (fun i ↦ 𝔞 (w i)) (finCycle_apply rFin t)
   have hs0 := subword_shift_zero_eq k (fun t ↦ 𝔞 (w t)) rFin
   have hs1 := subword_shift_right_eq k (fun t ↦ 𝔞 (w t)) rFin
-  dsimp only [σ, Equiv.coe_fn_mk, rFin] at hw hs0 hs1 ⊢
-  rw [hw, hs0, hs1, zigzagTrace_mul_comm]
+  dsimp only [rFin] at hs0 hs1 ⊢
+  rw [hw, hcomp, hs0, hs1, zigzagTrace_mul_comm]
   ring
 
 /-- At the midpoint cut `d = m + 1` of a word of length `2 * m + 2`, shifting by `m + 1` steps is
@@ -208,18 +212,23 @@ private theorem exists_sum_word_cut_mid_eq_two_mul {m : ℕ}
   have hsub : 2 * m + 2 - (m + 1) = m + 1 := by omega
   rw [hsub, ← even_iff_exists_two_mul, ← AddSubmonoid.mem_even]
   let rFin : Fin (2 * m + 2) := ⟨m + 1, by omega⟩
-  let τ : (Fin (2 * m + 2) → G.Dart) → (Fin (2 * m + 2) → G.Dart) := fun w i ↦ w (i + rFin)
+  let τ : (Fin (2 * m + 2) → G.Dart) → (Fin (2 * m + 2) → G.Dart) := fun w ↦ w ∘ finCycle rFin
   have hτ (w : Fin (2 * m + 2) → G.Dart) : τ (τ w) = w := funext fun i ↦ congrArg w <| by
     have hsum : rFin.val + rFin.val = 2 * m + 2 := by dsimp [rFin]; omega
     have h0 : rFin + rFin = 0 := Fin.ext (by rw [Fin.val_add, Fin.val_zero, hsum, Nat.mod_self])
-    rw [add_assoc, h0, add_zero]
+    rw [finCycle_apply, finCycle_apply, add_assoc, h0, add_zero]
+  have hcomp (w : Fin (2 * m + 2) → G.Dart) :
+      (fun t ↦ 𝔞 (τ w t)) = fun t ↦ 𝔞 (w (t + rFin)) :=
+    funext fun t ↦ congrArg (fun i ↦ 𝔞 (w i)) (finCycle_apply rFin t)
   have hsw0 (w : Fin (2 * m + 2) → G.Dart) :
       subword k (fun t ↦ 𝔞 (τ w t)) 0 (m + 1) =
         subword k (fun t ↦ 𝔞 (w t)) (m + 1) (m + 1) := by
+    rw [hcomp]
     simpa only [rFin, hsub] using subword_shift_zero_eq k (fun t ↦ 𝔞 (w t)) rFin
   have hsw1 (w : Fin (2 * m + 2) → G.Dart) :
       subword k (fun t ↦ 𝔞 (τ w t)) (m + 1) (m + 1) =
         subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1) := by
+    rw [hcomp]
     simpa only [rFin, hsub] using subword_shift_right_eq k (fun t ↦ 𝔞 (w t)) rFin
   refine Finset.sum_mem_of_involution Finset.univ τ (fun _ _ ↦ Finset.mem_univ _)
     (fun w _ ↦ hτ w) (fun w _ hw ↦ ?_) (fun w _ _ ↦ ?_)
@@ -300,9 +309,7 @@ theorem exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal [DecidableEq
         -(a w * zigzagTrace k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 d) *
           ψ (subword k (fun t ↦ 𝔞 (w t)) d (2 * m + 2 - d)))) := fun d hd ↦ by
       have hd' := Finset.mem_Icc.1 hd
-      rw [taylor_of_tprod_two_eq_neg_mul (apply_subword_mem_zigzagIntegerGrade_one hψ
-        (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) (by omega) (by omega)),
-        map_neg, mul_neg]
+      rw [zigzagTrace_taylor_of_tprod_two_apply_subword hψ w (by omega) (by omega), mul_neg]
     rw [Finset.sum_congr rfl hneg, Finset.sum_neg_distrib, sub_eq_add_neg]
   simp_rw [Finset.sum_congr rfl fun w _ ↦ hterm w, Finset.sum_sub_distrib, hcob, zero_sub]
   rw [Finset.sum_comm]
@@ -321,7 +328,7 @@ theorem exists_zigzagWordPairing_obstruction_eq_two_mul_of_anticyclic_of_isForma
     ∃ y : k, zigzagWordPairing hns (2 * m) (fun w ↦ f (List.ofFn fun t ↦ β (w t)).prod)
       (𝒜.obstruction 𝒵 ⟨2 * m + 2, by omega⟩) = 2 * y :=
   exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal h𝒜 hG h₂ hlow hF
-    (anticyclic_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
 
 end WordParity
 
@@ -395,9 +402,8 @@ theorem exists_zigzagBacktrackPairing_obstruction_eq_two_mul_of_isFormal
           ψ (subword k (fun t ↦ 𝔞 (x t)) 2 2)) := by
     rw [hdec (fun t ↦ 𝔞 (x t))]
     simp only [Finset.Icc_self, Finset.sum_singleton, Nat.add_sub_cancel]
-    rw [taylor_of_tprod_two_eq_neg_mul (apply_subword_mem_zigzagIntegerGrade_one hψ
-      (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) (by decide) (by decide)),
-      map_add, map_neg, sub_eq_add_neg]
+    rw [map_add, zigzagTrace_taylor_of_tprod_two_apply_subword hψ x (by decide) (by decide),
+      sub_eq_add_neg]
   have hswap2 (d e : G.Dart) : (fun t : Fin 4 ↦ zigzagBacktrackWalk G d.symm e t) =
       fun t ↦ zigzagBacktrackWalk G e.symm d (t + 2) :=
     funext fun t ↦ by fin_cases t <;> simp [zigzagBacktrackWalk_def]

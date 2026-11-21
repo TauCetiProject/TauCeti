@@ -173,6 +173,25 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isUnit_two
     hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two (hns := hns) h2 hD
   exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
+/-- Transport a non-formal loop deformation of the strict zigzag algebra on a non-Dynkin tree to
+a non-formal `IsZigzagAInfinityDeformation` of the public zigzag algebra `zigzagAlgebra k G`. -/
+private theorem exists_isZigzagAInfinityDeformation_not_isFormal_of_exists_loop
+    (hG : G.IsTree)
+    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix))
+    (hw : ∀ hns : ∀ i : V, ∃ j, G.Adj i j,
+      ∃ (n : ℕ) (_ : NeZero n) (c : (Fin n → G.Dart) →₀ k)
+        (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
+        ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal) :
+    ∃ 𝒜 : AInfinityAlgebra k (zigzagAlgebra k G),
+      IsZigzagAInfinityDeformation k G 𝒜 ∧ ¬𝒜.IsFormal := by
+  obtain ⟨t, ht, -, h⟩ :=
+    hG.connected.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
+  have : Nontrivial V := t.nontrivial_of_graph_isContained ht h
+  obtain ⟨_, _, c, hc, hnf⟩ := hw hG.connected.preconnected.exists_adj_of_nontrivial
+  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
+    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
+    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected c hc).not.mpr hnf⟩
+
 /-- **Every finite non-Dynkin tree admits a non-formal minimal strictly unital `A∞` deformation** of
 its public zigzag algebra `zigzagAlgebra k G`, over any nontrivial `ℚ`-algebra (in particular over
 any field of characteristic zero). -/
@@ -180,16 +199,11 @@ theorem exists_isZigzagAInfinityDeformation_not_isFormal [Nontrivial k] [Algebra
     (hG : G.IsTree)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
     ∃ 𝒜 : AInfinityAlgebra k (zigzagAlgebra k G),
-      IsZigzagAInfinityDeformation k G 𝒜 ∧ ¬𝒜.IsFormal := by
-  obtain ⟨t, ht, -, h⟩ :=
-    hG.connected.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
-  have : Nontrivial V := t.nontrivial_of_graph_isContained ht h
-  obtain ⟨_, _, _, w, hw, hnf⟩ := hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra
-    (k := k) (hns := hG.connected.preconnected.exists_adj_of_nontrivial) hD
-  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected (Finsupp.single w (1 : k))
-      (fst_eq_snd_of_mem_support_single hw 1),
-    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected _ _,
-    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected _ _).not.mpr hnf⟩
+      IsZigzagAInfinityDeformation k G 𝒜 ∧ ¬𝒜.IsFormal :=
+  exists_isZigzagAInfinityDeformation_not_isFormal_of_exists_loop hG hD fun hns ↦
+    let ⟨n, hn, _, w, hw, hnf⟩ :=
+      hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra (k := k) (hns := hns) hD
+    ⟨n, hn, Finsupp.single w (1 : k), fst_eq_snd_of_mem_support_single hw 1, hnf⟩
 
 /-- **Every finite non-Dynkin tree admits a non-formal minimal strictly unital `A∞` deformation** of
 its public zigzag algebra `zigzagAlgebra k G` whenever `(2 : k)` is not a unit (for instance in
@@ -198,18 +212,11 @@ theorem exists_isZigzagAInfinityDeformation_not_isFormal_of_not_isUnit_two (h2 :
     (hG : G.IsTree)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
     ∃ 𝒜 : AInfinityAlgebra k (zigzagAlgebra k G),
-      IsZigzagAInfinityDeformation k G 𝒜 ∧ ¬𝒜.IsFormal := by
-  have : Nontrivial k := ⟨⟨2, 1, fun h ↦ h2 (h ▸ isUnit_one)⟩⟩
-  obtain ⟨t, ht, -, h⟩ :=
-    hG.connected.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
-  have : Nontrivial V := t.nontrivial_of_graph_isContained ht h
-  obtain ⟨_, _, _, w, hw, hnf⟩ :=
-    hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two
-      (hns := hG.connected.preconnected.exists_adj_of_nontrivial) h2 hD
-  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected (Finsupp.single w (1 : k))
-      (fst_eq_snd_of_mem_support_single hw 1),
-    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected _ _,
-    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected _ _).not.mpr hnf⟩
+      IsZigzagAInfinityDeformation k G 𝒜 ∧ ¬𝒜.IsFormal :=
+  exists_isZigzagAInfinityDeformation_not_isFormal_of_exists_loop hG hD fun hns ↦
+    let ⟨n, hn, _, w, hw, hnf⟩ :=
+      hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two (hns := hns) h2 hD
+    ⟨n, hn, Finsupp.single w (1 : k), fst_eq_snd_of_mem_support_single hw 1, hnf⟩
 
 /-- **The public zigzag algebra of a finite non-Dynkin tree is not intrinsically formal**, over any
 nontrivial `ℚ`-algebra (in particular over any field of characteristic zero). This proves the
