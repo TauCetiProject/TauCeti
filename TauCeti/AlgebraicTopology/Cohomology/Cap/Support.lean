@@ -165,9 +165,7 @@ private lemma relative_capInto_zero (p q n : ℕ) (h : p + q = n)
         ((TopPair.toSSetPair.obj (TopPair.ofSubset (A : Set X))).restrict S).hom ℤₘ).f n ≫
       capInto L S U p q n h
         (((TopPair.ofSubset (A : Set X)).singularChainComplexπ ℤₘ).f p ≫ φ) = 0 := by
-  apply SSet.chainComplex_hom_ext
-  intro τ
-  erw [← Category.assoc, SSet.ι_chainComplexMap_f]
+  refine (SSet.chainComplexMap_f_comp_eq_zero_iff _ _ _).2 fun τ ↦ ?_
   apply ι_capInto_eq_zero_of_front
   have hA := (TopPair.mem_range_restrict_hom_app_iff (TopPair.ofSubset (A : Set X)) S
     (((TopPair.toSSetPair.obj (TopPair.ofSubset (A : Set X))).restrict S).hom.app _ τ)).1
