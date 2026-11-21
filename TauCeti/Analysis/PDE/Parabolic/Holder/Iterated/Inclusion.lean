@@ -43,6 +43,13 @@ spaces are the same derivative identities.
 The hypothesis `α ≤ 1` is used for both: a bounded Lipschitz function is `α`-Hölder only for
 `α ≤ 1`.
 
+The same arguments bound every field of a single map of order `k` by its norm: for `α ≤ 1`, each
+field `D_t^r D_x^m u` is `α`-Hölder in space with constant `3 ‖u‖`
+(`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_space`) and `α / 2`-Hölder in time with
+constant `5 ‖u‖` (`TauCeti.ParabolicCkHolderSpace.holderWith_div_two_mixedDerivL_slabMk`), and below
+the top order its time slices are `(1 + α) / 2`-Hölder with constant `3 ‖u‖`
+(`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk_of_add_one_le`).
+
 ## Main declarations
 
 * `TauCeti.ParabolicCkHolderSpace.inclusionL`: the inclusion
@@ -98,6 +105,80 @@ private theorem holderWith_mixedDerivL_slabMk_of_add_two_le (f : ParabolicCkHold
     (fun p q ↦ by simpa using (mixedDerivL r m f).dist_le_two_norm p q) hγ one_pos
   rw [NNReal.one_rpow, NNReal.one_rpow, mul_one, mul_one] at hle
   exact timeEHolderNorm_le_iff.1 hle x
+
+/-- For `α ≤ 1`, every field `D_t^r D_x^m u` is `α`-Hölder in space with constant `3 ‖u‖`: at the
+top order by the Hölder condition, below it because the next spatial derivative is bounded. -/
+theorem holderWith_mixedDerivL_space (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m ≤ k) (hα : α ≤ 1) (t : Icc a b) :
+    HolderWith (3 * ‖f‖₊) α fun x ↦ mixedDerivL r m f (slabMk x t) := by
+  rcases h.lt_or_eq with h | h
+  · have hlip : LipschitzWith ‖f‖₊ fun x ↦ mixedDerivL r m f (slabMk x t) :=
+      lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
+        (fun x _ ↦ (f.hasFDerivAt_mixedDerivL (by omega) t x).hasFDerivWithinAt) fun x _ ↦ by
+          rw [← NNReal.coe_le_coe, coe_nnNorm, ContinuousMultilinearMap.curryLeft_norm,
+            coe_nnNorm]
+          exact f.norm_mixedDerivL_apply_le r (m + 1) _)
+    refine (holderOnWith_univ.1 ((hlip.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
+      (M := ‖f‖₊) (fun x _ ↦ f.norm_mixedDerivL_apply_le r m _) hα)).mono (le_of_eq ?_)
+    ring
+  · have hslab : LipschitzWith 1 fun x : E ↦ slabMk (a := a) (b := b) x t :=
+      LipschitzWith.of_edist_le fun x y ↦ by
+        rw [edist_slabMk, edist_self, ENNReal.zero_rpow_of_pos (by norm_num), add_zero]
+    have hle : ‖mixedDerivHolderL r m f‖₊ ≤ 3 * ‖f‖₊ := by
+      rw [← NNReal.coe_le_coe]
+      push_cast
+      linarith [f.norm_mixedDerivHolderL_le r m, norm_nonneg f]
+    have hH := ((mixedDerivHolderL r m f).holderWith_nnnorm.comp_lipschitzWith_one hslab).mono hle
+    simpa only [Function.comp_def, mixedDerivHolderL_apply f h] using hH
+
+/-- For `α ≤ 1`, every field `D_t^r D_x^m u` below the top order has `(1 + α) / 2`-Hölder time
+slices with constant `3 ‖u‖`. -/
+theorem holderWith_mixedDerivL_slabMk_of_add_one_le (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m + 1 ≤ k) (hα : α ≤ 1) (x : E) :
+    HolderWith (3 * ‖f‖₊) ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
+  rcases h.lt_or_eq with h | h
+  · refine (holderWith_mixedDerivL_slabMk_of_add_two_le f (by omega) hα x).mono ?_
+    have h₁ : ‖mixedDerivL (r + 1) m f‖₊ ≤ ‖f‖₊ := f.norm_mixedDerivL_le (r + 1) m
+    have h₂ : ‖mixedDerivL r m f‖₊ ≤ ‖f‖₊ := f.norm_mixedDerivL_le r m
+    calc _ ≤ ‖f‖₊ + 2 * ‖f‖₊ := by gcongr
+      _ = _ := by ring
+  · refine (f.holderWith_mixedDerivL_slabMk h x).mono ?_
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    linarith [f.norm_timeSliceL_le r m, norm_nonneg f]
+
+/-- For `α ≤ 1`, every field `D_t^r D_x^m u` is `α / 2`-Hölder in time with constant `5 ‖u‖`: at
+the top order by the parabolic Hölder condition, below it from the `(1 + α) / 2`-Hölder bound at
+time differences below one and the bound `2 ‖u‖` on the oscillation above. -/
+theorem holderWith_div_two_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m ≤ k) (hα : α ≤ 1) (x : E) :
+    HolderWith (5 * ‖f‖₊) (α / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
+  rcases h.lt_or_eq with h | h
+  · have hγ : α / 2 ≤ (1 + α) / 2 := by gcongr; exact le_add_self
+    have hH := holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (D := 2 * ‖f‖₊)
+      (fun t _ s _ _ ↦ (holderWith_mixedDerivL_slabMk_of_add_one_le f (r := r) (m := m)
+        (by omega) hα x).dist_le t s)
+      (fun t _ s _ ↦ by
+        push_cast
+        linarith [dist_le_norm_add_norm (mixedDerivL r m f (slabMk x t))
+          (mixedDerivL r m f (slabMk x s)), f.norm_mixedDerivL_apply_le r m (slabMk x t),
+          f.norm_mixedDerivL_apply_le r m (slabMk x s)]) hγ one_pos)
+    refine hH.mono (le_of_eq ?_)
+    simp only [NNReal.one_rpow, mul_one]
+    ring
+  · have hle : ‖mixedDerivHolderL r m f‖₊ ≤ 5 * ‖f‖₊ := by
+      rw [← NNReal.coe_le_coe]
+      push_cast
+      linarith [f.norm_mixedDerivHolderL_le r m, norm_nonneg f]
+    intro t s
+    calc edist (mixedDerivL r m f (slabMk x t)) (mixedDerivL r m f (slabMk x s))
+        = edist (mixedDerivHolderL r m f (slabMk x t)) (mixedDerivHolderL r m f (slabMk x s)) := by
+          rw [mixedDerivHolderL_apply f h, mixedDerivHolderL_apply f h]
+      _ ≤ ‖mixedDerivHolderL r m f‖₊ * edist (slabMk x t) (slabMk x s) ^ (α : ℝ) :=
+          (mixedDerivHolderL r m f).holderWith_nnnorm _ _
+      _ ≤ ↑(5 * ‖f‖₊) * edist t s ^ ((α / 2 : ℝ≥0) : ℝ) := by
+          rw [edist_slabMk_same_space_rpow]
+          gcongr
 
 /-- For `2 r + m + 1 = k` and `α ≤ 1`, the field `D_t^r D_x^m u` is parabolically `α`-Hölder:
 it is bounded, Lipschitz in space, and `(1 + α) / 2`-Hölder in time. -/

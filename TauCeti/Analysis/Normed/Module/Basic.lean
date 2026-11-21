@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
 /-!
@@ -28,6 +29,8 @@ normed spaces:
   satisfy `‖u i‖ ≤ C` (or perturbations satisfy `‖u i - v i‖ ≤ δ`) on `s`, the scalar-weighted sum
   `∑ i ∈ s, a i • u i` (or difference `∑ i ∈ s, a i • u i - ∑ i ∈ s, a i • v i`) has norm at most
   `(∑ i ∈ s, ‖a i‖) * C` (respectively `(∑ i ∈ s, ‖a i‖) * δ`).
+* `TauCeti.norm_sum_choose_smul_le`: a binomially weighted sum `∑ j ≤ r, (r choose j) • w j` of
+  vectors of norm at most `c` has norm at most `2 ^ r * c`.
 * `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
@@ -100,6 +103,15 @@ theorem norm_sum_smul_sub_smul_le {ι A E : Type*} [SeminormedAddGroup A]
     ‖∑ i ∈ s, a i • u i - ∑ i ∈ s, a i • v i‖ ≤ (∑ i ∈ s, ‖a i‖) * δ := by
   simpa only [smul_sub, Finset.sum_sub_distrib] using
     norm_sum_smul_le_sum_norm_mul (a := a) huv
+
+/-- A binomially weighted sum `∑ j ≤ r, (r choose j) • w j` of vectors of norm at most `c` has norm
+at most `2 ^ r * c`. -/
+theorem norm_sum_choose_smul_le {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    {r : ℕ} {w : ℕ → V} {c : ℝ} (hw : ∀ j ∈ Finset.range (r + 1), ‖w j‖ ≤ c) :
+    ‖∑ j ∈ Finset.range (r + 1), (r.choose j : ℝ) • w j‖ ≤ 2 ^ r * c := by
+  refine (norm_sum_smul_le_sum_norm_mul hw).trans_eq ?_
+  simp only [Real.norm_natCast]
+  rw [← Nat.cast_sum, Nat.sum_range_choose, Nat.cast_pow, Nat.cast_ofNat]
 
 /-- The sign `(-1) ^ n` does not change norms. -/
 @[simp]
