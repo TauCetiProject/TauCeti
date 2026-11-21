@@ -63,6 +63,11 @@ orthogonal Lie algebra. Its adjoint is `-f`, whose generalized `ν`-eigenspace i
   (`LinearMap.IsSkewAdjoint.charpoly_comp_neg_X`): the eigenvalues of `f` come in pairs `±μ`
   with equal geometric and algebraic multiplicities.
 
+For a **self-adjoint** endomorphism `f`, `B (f x) y = B x (f y)` (`LinearMap.IsSelfAdjoint`), of an
+anisotropic `B`, the maximal generalized `μ`-eigenspace is the `μ`-eigenspace
+(`LinearMap.IsSelfAdjoint.maxGenEigenspace_eq_eigenspace`), over any commutative ring and with no
+finiteness hypothesis.
+
 ## References
 
 * J. Williamson, *On the algebraic problem concerning the normal forms of linear dynamical
@@ -353,5 +358,32 @@ theorem hasEigenvalue_neg_iff (hB : B.Nondegenerate) (h : B.IsSkewAdjoint f) {μ
 end Field
 
 end IsSkewAdjoint
+
+namespace IsSelfAdjoint
+
+/-- **Generalized eigenvectors of a self-adjoint endomorphism are eigenvectors.** For an
+endomorphism `f` self-adjoint for an anisotropic bilinear map `B` (`B v v = 0` only for `v = 0`),
+the maximal generalized `μ`-eigenspace of `f` is its `μ`-eigenspace: if `(f - μ)² v = 0` then
+`B ((f - μ) v) ((f - μ) v) = B v ((f - μ)² v) = 0`, so `(f - μ) v = 0`. -/
+theorem maxGenEigenspace_eq_eigenspace (hB : ∀ v, B v v = 0 → v = 0) (hf : B.IsSelfAdjoint f)
+    (μ : R) : f.maxGenEigenspace μ = f.eigenspace μ := by
+  set A := f - μ • 1
+  have hA : IsAdjointPair B B ⇑A ⇑A := IsAdjointPair.sub_smul_one hf μ
+  -- Every vector killed by a power of `A` is killed by `A`, by induction on the exponent.
+  have key (k : ℕ) : ∀ v, (A ^ (k + 1)) v = 0 → A v = 0 := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      intro v hv
+      refine hB _ ?_
+      rw [hA v (A v), ih (A v) (by rwa [← mul_apply_eq_comp, ← pow_succ]), map_zero]
+  refine le_antisymm (fun v hv ↦ ?_) (Module.End.eigenspace_le_maxGenEigenspace)
+  obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace f μ v).1 hv
+  rw [Module.End.mem_eigenspace_iff, ← sub_eq_zero]
+  cases k with
+  | zero => simp_all
+  | succ k => simpa [A] using key k v hk
+
+end IsSelfAdjoint
 
 end LinearMap
