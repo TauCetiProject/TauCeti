@@ -67,7 +67,7 @@ theorem card_hammingDist_le_two_pow_mul_exp {m : ℕ} (c : Fin m → Bool) (r : 
       2 ^ m * exp (m * t ^ 2 / 2 - t * (m - 2 * r)) := by
   have hpt (ω : Fin m → Bool) : (if (hammingDist ω c : ℝ) ≤ r then (1 : ℝ) else 0) ≤
       exp (2 * t * r) * exp (-2 * t) ^ hammingDist ω c := by
-    rw [← exp_nat_mul, ← exp_add]
+    rw [← exp_natCast_mul, ← exp_add]
     split_ifs with h
     · exact one_le_exp (by nlinarith)
     · exact (exp_pos _).le
@@ -92,7 +92,7 @@ theorem card_hammingDist_le_two_pow_mul_exp {m : ℕ} (c : Fin m → Bool) (r : 
         rw [← mul_sum, sum_pow_hammingDist_eq, Fintype.card_fin]
     _ ≤ exp (2 * t * r) * (2 * exp (t ^ 2 / 2 - t)) ^ m := by gcongr
     _ = 2 ^ m * exp (m * t ^ 2 / 2 - t * (m - 2 * r)) := by
-        rw [mul_pow, ← exp_nat_mul, mul_left_comm, ← exp_add]
+        rw [mul_pow, ← exp_natCast_mul, mul_left_comm, ← exp_add]
         congr 2
         ring
 
@@ -182,11 +182,11 @@ theorem exists_varshamovGilbert {m : ℕ} (hm : 8 ≤ m) :
   let e := C'.equivFin.symm
   let ω : Fin (C'.card + 1) → Fin m → Bool := Fin.cons (fun _ ↦ false) fun i ↦ (e i : _)
   have hω : Function.Injective ω := Fin.cons_injective_iff.mpr
-    ⟨fun ⟨i, hi⟩ ↦ (mem_erase.mp (e i).2).1 hi, Subtype.val_injective.comp e.injective⟩
+    ⟨fun ⟨i, hi⟩ ↦ (mem_erase.mp (e i).property).1 hi, Subtype.val_injective.comp e.injective⟩
   have hmem (j : Fin (C'.card + 1)) : ω j ∈ C := by
     induction j using Fin.cases with
     | zero => exact h0
-    | succ i => exact (mem_erase.mp (e i).2).2
+    | succ i => exact (mem_erase.mp (e i).property).2
   refine ⟨C'.card, ω, by linarith, rfl, fun j k hjk ↦ ?_⟩
   have h := hsep (hmem j) (hmem k) (hω.ne hjk)
   have h8 : (m : ℝ) < 8 * ((m / 8 : ℕ) + 1) := by
