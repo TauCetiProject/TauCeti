@@ -89,14 +89,6 @@ variable {F₂ H₂' B₂ : Type*}
   [IsManifold J₂ ∞ B₂] [T2Space B₂]
   {π₂ : M₂ → B₂} {g : B → B₂}
 
-omit [TopologicalSpace M] [T2Space M] [TopologicalSpace B] [T2Space B] [TopologicalSpace M₂]
-  [T2Space M₂] [TopologicalSpace B₂] [T2Space B₂] in
-/-- A map of fibrations sends the fibre over `b` into the fibre over `g b`. -/
-private theorem apply_mem_preimage_singleton (hπ : π₂ ∘ Ψ = g ∘ π) {b : B} (x : π ⁻¹' {b}) :
-    Ψ x ∈ π₂ ⁻¹' {g b} := by
-  have hx : π x = b := x.property
-  rw [mem_preimage, ← comp_apply (f := π₂), hπ, comp_apply, hx, mem_singleton_iff]
-
 variable (hπ : π₂ ∘ Ψ = g ∘ π)
 include hΨσ hΨs hπ
 
@@ -141,7 +133,7 @@ theorem mem_periodLattice_of_comp_mfderiv_mem (h₂ : hσ₂.IsLagrangianTorusFi
     (hα : (α.comp (mfderiv J J₂ g b) : F →L[ℝ] ℝ) ∈ h.periodLattice hσc b) :
     α ∈ h₂.periodLattice hσ₂c (g b) := by
   obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
-  let y : π₂ ⁻¹' {g b} := ⟨Ψ x, apply_mem_preimage_singleton hπ x⟩
+  let y : π₂ ⁻¹' {g b} := ⟨Ψ x, (congrFun hπ x).trans (congrArg g x.property)⟩
   rw [h₂.mem_periodLattice_iff_fiberAction_eq hσ₂c (g b) y, Subtype.ext_iff,
     ← h.apply_fiberAction_comp_mfderiv hσc hσ₂c hΨ hΨσ hΨs hπ h₂ b α x y rfl,
     (h.mem_periodLattice hσc b).1 hα x]
@@ -156,7 +148,7 @@ theorem comp_mfderiv_mem_periodLattice_iff (h₂ : hσ₂.IsLagrangianTorusFibra
       α ∈ h₂.periodLattice hσ₂c (g b) := by
   refine ⟨h.mem_periodLattice_of_comp_mfderiv_mem hσc hσ₂c hΨ hΨσ hΨs hπ h₂, fun hα ↦ ?_⟩
   obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
-  let y : π₂ ⁻¹' {g b} := ⟨Ψ x, apply_mem_preimage_singleton hπ x⟩
+  let y : π₂ ⁻¹' {g b} := ⟨Ψ x, (congrFun hπ x).trans (congrArg g x.property)⟩
   rw [h.mem_periodLattice_iff_fiberAction_eq hσc b x, Subtype.ext_iff]
   -- Both points of the fibre over `b` have the image `Ψ x`.
   refine hΨb (h.fiberAction hσc b _ x).property x.property ?_
@@ -179,13 +171,6 @@ end Base
 
 section SameBase
 
-omit [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B] in
-/-- Precomposing a covector at `b` with the differential of the identity does not change it. -/
-private theorem comp_mfderiv_id {b : B} (α : F →L[ℝ] ℝ) :
-    (α.comp (mfderiv J J id b) : F →L[ℝ] ℝ) = α :=
-  -- After `mfderiv_id`, the two sides differ only in reading `T_b B` as its model `F`.
-  ContinuousLinearMap.ext fun _ ↦ by simp only [mfderiv_id]; rfl
-
 variable {π₂ : M₂ → B} (hπ : π₂ ∘ Ψ = π)
 include hΨσ hΨs hπ
 
@@ -198,7 +183,8 @@ theorem apply_fiberAction_of_comp_eq (h₂ : hσ₂.IsLagrangianTorusFibration J
     Ψ (h.fiberAction hσc b α x) = h₂.fiberAction hσ₂c b α y := by
   have := h.apply_fiberAction_comp_mfderiv hσc hσ₂c hΨ hΨσ hΨs (g := id) (by rwa [id_comp]) h₂ b
     α x y hxy
-  rwa [comp_mfderiv_id] at this
+  -- After `mfderiv_id`, `α` precomposed with the identity of `T_b B` unfolds to `α`.
+  rwa [mfderiv_id] at this
 
 /-- **Fibrewise symplectic maps send periods to periods.** Let `Ψ` be a smooth map with surjective
 differentials, pulling `σ₂` back to `σ`, from one regular Lagrangian torus fibration to another over
@@ -208,7 +194,8 @@ double cover. -/
 theorem periodLattice_le_of_comp_eq (h₂ : hσ₂.IsLagrangianTorusFibration J π₂) (b : B) :
     h.periodLattice hσc b ≤ h₂.periodLattice hσ₂c b := fun α hα ↦
   h.mem_periodLattice_of_comp_mfderiv_mem hσc hσ₂c hΨ hΨσ hΨs (g := id) (by rwa [id_comp]) h₂
-    (by rwa [comp_mfderiv_id])
+    -- After `mfderiv_id`, `α` precomposed with the identity of `T_b B` unfolds to `α`.
+    (by rwa [mfderiv_id])
 
 /-- **Fibrewise symplectomorphisms preserve the period lattice.** Let `Ψ` be a smooth map with
 surjective differentials, pulling `σ₂` back to `σ`, from one regular Lagrangian torus fibration to
@@ -220,7 +207,8 @@ theorem periodLattice_eq_of_comp_eq (h₂ : hσ₂.IsLagrangianTorusFibration J 
   AddSubgroup.ext fun α ↦ by
     have := h.comp_mfderiv_mem_periodLattice_iff hσc hσ₂c hΨ hΨσ hΨs (g := id)
       (by rwa [id_comp]) h₂ hΨb (α := α)
-    rw [comp_mfderiv_id] at this
+    -- After `mfderiv_id`, `α` precomposed with the identity of `T_b B` unfolds to `α`.
+    rw [mfderiv_id] at this
     exact this.symm
 
 end SameBase
