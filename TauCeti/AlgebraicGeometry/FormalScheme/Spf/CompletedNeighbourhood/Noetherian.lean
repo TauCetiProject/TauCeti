@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood
 
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
-import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Localization.LocalizationLocalization
 import TauCeti.RingTheory.AdicCompletion.Localization
 import TauCeti.RingTheory.Flat.Colimit
@@ -37,8 +37,20 @@ the completion `Â_𝔭` of the local ring `A_𝔭` along `I A_𝔭`, which is n
 
 A ring with a faithfully flat noetherian algebra is noetherian.
 
+## Main definitions
+
+* `TauCeti.FormalScheme.Spf.CompletedAtPrime p`: the completed localisation `Â_𝔭`, the completion
+  of `A_𝔭` along `I A_𝔭`.
+* `TauCeti.FormalScheme.Spf.toCompletedAtPrime p f`: for `f ∉ 𝔭`, the map `A_{f} → Â_𝔭`.
+* `TauCeti.FormalScheme.Spf.colimitToCompletedAtPrime p`: the induced map
+  `colim_{f ∉ 𝔭} A_{f} → Â_𝔭`.
+
 ## Main results
 
+* `TauCeti.FormalScheme.Spf.isLocalHom_colimitToCompletedAtPrime`: the map
+  `colim_{f ∉ 𝔭} A_{f} → Â_𝔭` is a local homomorphism.
+* `TauCeti.FormalScheme.Spf.faithfullyFlat_colimitToCompletedAtPrime`: for noetherian `A`, the
+  completed localisation `Â_𝔭` is faithfully flat over `colim_{f ∉ 𝔭} A_{f}`.
 * `TauCeti.FormalScheme.Spf.completedNeighbourhood_noetherian`: for noetherian `A`, the colimit
   `colim_{f ∉ 𝔭} A_{f}` is a noetherian ring.
 
@@ -61,9 +73,10 @@ open AdicRing
 variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
   (p : carrier A)
 
-/-- The completion `Â_𝔭` of the local ring `A_𝔭` along the ideal of definition `I`, for the open
-prime `𝔭` of `A` corresponding to `p`. -/
-private abbrev LocalCompletion : Type u :=
+/-- The **completed localisation** `Â_𝔭 = lim_n (A ⧸ Iⁿ)_𝔭` of `A` at the open prime `𝔭`
+corresponding to `p`: the completion of the local ring `A_𝔭` along the ideal of definition `I`. It
+is the completed localisation `A_{A ∖ 𝔭}` of EGA I, Ch. 0, 7.6.15. -/
+abbrev CompletedAtPrime : Type u :=
   AdicCompletion
     ((IsAdicRing.ideal A).map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)))
     (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
@@ -100,8 +113,8 @@ private theorem map_ideal_away (f : BasicNeighbourhood p) :
 
 attribute [local instance] awayAlgebra in
 /-- For `f ∉ 𝔭`, the map `A_{f} → Â_𝔭`: the completion of the localisation map `A_f → A_𝔭`. -/
-private noncomputable def toLocalCompletion (f : BasicNeighbourhood p) :
-    CompletedAway A f.elem →ₐ[A] LocalCompletion p :=
+noncomputable def toCompletedAtPrime (f : BasicNeighbourhood p) :
+    CompletedAway A f.elem →ₐ[A] CompletedAtPrime p :=
   haveI := isScalarTower_away p f
   ((AdicCompletion.mapₐ (Algebra.ofId (Localization.Away f.elem) _)
     ((map_ideal_away p f) ▸ Ideal.le_comap_map)).comp
@@ -109,8 +122,8 @@ private noncomputable def toLocalCompletion (f : BasicNeighbourhood p) :
 
 attribute [local instance] awayAlgebra in
 /-- For noetherian `A` and `f ∉ 𝔭`, the completion `Â_𝔭` is flat over `A_{f}`. -/
-private theorem flat_toLocalCompletion [IsNoetherianRing A] (f : BasicNeighbourhood p) :
-    (toLocalCompletion p f).toRingHom.Flat := by
+private theorem flat_toCompletedAtPrime [IsNoetherianRing A] (f : BasicNeighbourhood p) :
+    (toCompletedAtPrime p f).toRingHom.Flat := by
   have := isScalarTower_away p f
   have : IsLocalization (Algebra.algebraMapSubmonoid (Localization.Away f.elem)
       (p : PrimeSpectrum A).asIdeal.primeCompl)
@@ -123,34 +136,38 @@ private theorem flat_toLocalCompletion [IsNoetherianRing A] (f : BasicNeighbourh
         (p : PrimeSpectrum A).asIdeal.primeCompl) (map_ideal_away p f))
 
 /-- The cocone of the maps `A_{f} → Â_𝔭` over the diagram of completed localisations. -/
-private noncomputable def localCompletionCocone : Cocone (completedNeighbourhoodDiagram p) where
-  pt := CommRingCat.of (LocalCompletion p)
-  ι.app f := CommRingCat.ofHom (toLocalCompletion p f).toRingHom
+private noncomputable def completedAtPrimeCocone : Cocone (completedNeighbourhoodDiagram p) where
+  pt := CommRingCat.of (CompletedAtPrime p)
+  ι.app f := CommRingCat.ofHom (toCompletedAtPrime p f).toRingHom
   ι.naturality {f g} h := by
     -- both composites are `A`-algebra homomorphisms into the completion of `A_𝔭`
-    have := CompletedAway.algHom_ext_adicCompletion le_rfl ((toLocalCompletion p g).comp
+    have := CompletedAway.algHom_ext_adicCompletion le_rfl ((toCompletedAtPrime p g).comp
       (CompletedAway.restrict ((BasicNeighbourhood.le_iff_mem_radical
-        (IsAdicRing.ideal_spec A).2.1).mp h.le))) (toLocalCompletion p f)
+        (IsAdicRing.ideal_spec A).2.1).mp h.le))) (toCompletedAtPrime p f)
     -- in `CommRingCat`, a composite of morphisms acts on elements as the composite of functions
     ext x
     exact congr($this x)
 
 /-- The map `colim_{f ∉ 𝔭} A_{f} → Â_𝔭` induced by the maps `A_{f} → Â_𝔭`. -/
-private noncomputable def fromColimit :
-    (colimit (completedNeighbourhoodDiagram p) : CommRingCat) →+* LocalCompletion p :=
-  (colimit.desc _ (localCompletionCocone p)).hom
+noncomputable def colimitToCompletedAtPrime :
+    (colimit (completedNeighbourhoodDiagram p) : CommRingCat) →+* CompletedAtPrime p :=
+  (colimit.desc _ (completedAtPrimeCocone p)).hom
 
 /-- On `A_{f}`, the map `colim_{f ∉ 𝔭} A_{f} → Â_𝔭` is the map `A_{f} → Â_𝔭`. -/
-private theorem fromColimit_ι (f : BasicNeighbourhood p)
+@[simp]
+theorem colimitToCompletedAtPrime_ι (f : BasicNeighbourhood p)
     (x : ToType ((completedNeighbourhoodDiagram p).obj f)) :
-    fromColimit p (colimit.ι (completedNeighbourhoodDiagram p) f x) = toLocalCompletion p f x :=
-  colimit.ι_desc_apply (localCompletionCocone p) f x
+    colimitToCompletedAtPrime p (colimit.ι (completedNeighbourhoodDiagram p) f x) =
+      toCompletedAtPrime p f x :=
+  colimit.ι_desc_apply (completedAtPrimeCocone p) f x
 
 /-- For noetherian `A`, the completion `Â_𝔭` is flat over `colim_{f ∉ 𝔭} A_{f}`, being flat over
 every `A_{f}`. -/
-private theorem flat_fromColimit [IsNoetherianRing A] : (fromColimit p).Flat :=
-  RingHom.Flat.of_isColimit (colimit.isColimit _) (fromColimit p) fun f ↦
-    (congrArg RingHom.Flat (RingHom.ext (fromColimit_ι p f))).mpr (flat_toLocalCompletion p f)
+private theorem flat_colimitToCompletedAtPrime [IsNoetherianRing A] :
+    (colimitToCompletedAtPrime p).Flat :=
+  RingHom.Flat.of_isColimit (colimit.isColimit _) (colimitToCompletedAtPrime p) fun f ↦
+    (congrArg RingHom.Flat (RingHom.ext (colimitToCompletedAtPrime_ι p f))).mpr
+      (flat_toCompletedAtPrime p f)
 
 omit [IsTopologicalRing A] [IsAdicRing A] in
 /-- The elements of `A ∖ 𝔭` are units in `Frac(A ⧸ 𝔭)`. -/
@@ -180,8 +197,8 @@ private noncomputable def residueLocalization :
 
 /-- The value at `𝔭` of an element of `Â_𝔭`: its image under `Â_𝔭 → A_𝔭 ⧸ I A_𝔭 → Frac(A ⧸ 𝔭)`,
 which is defined since `I ⊆ 𝔭`. -/
-private noncomputable def residueLocalCompletion :
-    LocalCompletion p →ₐ[A] FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
+private noncomputable def residueCompletedAtPrime :
+    CompletedAtPrime p →ₐ[A] FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
   (Ideal.Quotient.liftₐ _ (residueLocalization p) fun _ hx ↦
     (Ideal.map_eq_bot_iff_le_ker (residueLocalization p)).mp
       ((Ideal.map_map_algebraMap _ _).trans (map_ideal_residue p)) hx).comp
@@ -189,11 +206,12 @@ private noncomputable def residueLocalCompletion :
 
 /-- On the colimit, the value at `𝔭` through `Â_𝔭` is the residue map of the local ring
 `colim_{f ∉ 𝔭} A_{f}`, identified with `Frac(A ⧸ 𝔭)` by `stalkResidueIso`. -/
-private theorem residueLocalCompletion_fromColimit
+private theorem residueCompletedAtPrime_colimitToCompletedAtPrime
     (x : (colimit (completedNeighbourhoodDiagram p) : CommRingCat)) :
-    residueLocalCompletion p (fromColimit p x) = stalkResidueIso p (IsLocalRing.residue _ x) := by
+    residueCompletedAtPrime p (colimitToCompletedAtPrime p x) =
+      stalkResidueIso p (IsLocalRing.residue _ x) := by
   obtain ⟨f, y, rfl⟩ := Concrete.colimit_exists_rep _ x
-  rw [fromColimit_ι]
+  rw [colimitToCompletedAtPrime_ι]
   -- both sides are `A`-algebra homomorphisms out of `A_{f}` into `Frac(A ⧸ 𝔭)`
   let g : CompletedAway A f.elem →ₐ[A] FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
     { toRingHom := (stalkResidueIso p).toRingHom.comp
@@ -201,25 +219,34 @@ private theorem residueLocalCompletion_fromColimit
       commutes' a := (stalkResidueIso_coeff p f a).trans
         (IsScalarTower.algebraMap_apply A (A ⧸ (p : PrimeSpectrum A).asIdeal) _ a).symm }
   exact congr($(CompletedAway.algHom_ext_of_map_pow_eq_bot (n := 1)
-    (by rw [pow_one, map_ideal_residue p]) ((residueLocalCompletion p).comp
-      (toLocalCompletion p f)) g) y)
+    (by rw [pow_one, map_ideal_residue p]) ((residueCompletedAtPrime p).comp
+      (toCompletedAtPrime p f)) g) y)
+
+/-- The map `colim_{f ∉ 𝔭} A_{f} → Â_𝔭` is a local homomorphism: an element whose image is a unit
+has a nonzero value at `𝔭`, so it is a unit of the local ring `colim_{f ∉ 𝔭} A_{f}`. -/
+instance isLocalHom_colimitToCompletedAtPrime : IsLocalHom (colimitToCompletedAtPrime p) := by
+  refine ⟨fun x hx ↦ ?_⟩
+  have h := hx.map (residueCompletedAtPrime p)
+  rw [residueCompletedAtPrime_colimitToCompletedAtPrime, isUnit_map_iff] at h
+  exact isUnit_of_map_unit (IsLocalRing.residue _) x h
 
 /-- For noetherian `A`, the completion `Â_𝔭` is faithfully flat over `colim_{f ∉ 𝔭} A_{f}`: it is
 flat, and the maximal ideal of the colimit maps into the kernel of the value at `𝔭`. -/
-private theorem faithfullyFlat_fromColimit [IsNoetherianRing A] :
-    (fromColimit p).FaithfullyFlat := by
-  algebraize [fromColimit p]
-  have : Module.Flat _ (LocalCompletion p) := flat_fromColimit p
+theorem faithfullyFlat_colimitToCompletedAtPrime [IsNoetherianRing A] :
+    (colimitToCompletedAtPrime p).FaithfullyFlat := by
+  algebraize [colimitToCompletedAtPrime p]
+  have : Module.Flat _ (CompletedAtPrime p) := flat_colimitToCompletedAtPrime p
   refine ⟨fun m hm hmtop ↦ ?_⟩
   rw [IsLocalRing.eq_maximalIdeal hm, Ideal.smul_top_eq_map, Submodule.restrictScalars_eq_top_iff,
     Ideal.eq_top_iff_one] at hmtop
   have hle : (IsLocalRing.maximalIdeal
       (colimit (completedNeighbourhoodDiagram p) : CommRingCat)).map
-        (algebraMap _ (LocalCompletion p)) ≤
-      RingHom.ker (residueLocalCompletion p) := by
+        (algebraMap _ (CompletedAtPrime p)) ≤
+      RingHom.ker (residueCompletedAtPrime p) := by
     refine Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_
     rw [Ideal.mem_comap, RingHom.mem_ker, RingHom.algebraMap_toAlgebra,
-      residueLocalCompletion_fromColimit, (IsLocalRing.residue_eq_zero_iff x).mpr hx, map_zero]
+      residueCompletedAtPrime_colimitToCompletedAtPrime, (IsLocalRing.residue_eq_zero_iff x).mpr hx,
+      map_zero]
   exact one_ne_zero (α := FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal))
     (by simpa using hle hmtop)
 
@@ -229,11 +256,11 @@ over the basic open neighbourhoods of an open prime `p` is a noetherian ring (EG
 instance completedNeighbourhood_noetherian [IsNoetherianRing A] :
     IsNoetherianRing (colimit (completedNeighbourhoodDiagram p) : CommRingCat) := by
   -- noetherianity descends along the faithfully flat map to the noetherian ring `Â_𝔭`
-  algebraize [fromColimit p]
-  have : Module.FaithfullyFlat _ (LocalCompletion p) := faithfullyFlat_fromColimit p
+  algebraize [colimitToCompletedAtPrime p]
+  have : Module.FaithfullyFlat _ (CompletedAtPrime p) := faithfullyFlat_colimitToCompletedAtPrime p
   exact isNoetherianRing_iff.mpr
     (Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
-      (A := LocalCompletion p)
+      (A := CompletedAtPrime p)
       (isNoetherian_of_linearEquiv (TensorProduct.AlgebraTensorModule.rid _ _ _).symm))
 
 end TauCeti.FormalScheme.Spf
