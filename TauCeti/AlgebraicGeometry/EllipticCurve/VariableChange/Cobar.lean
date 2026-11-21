@@ -66,7 +66,9 @@ change of variables from the curve `W_{f m}` to the last curve `W_n` (`cobarWeig
 weights form a cocycle because the character is multiplicative under the coproduct, so the
 weight-`k` structure maps form a cosimplicial abelian group `weightedCobarObject k`, with
 alternating coface complex `weightedCobarComplex k`. Its differentials in degrees `0` and `1` are
-`cobarD₀ k` and `cobarD₁ k`, and in weight `0` its structure maps are those of `cobarObject`.
+`cobarD₀ k` and `cobarD₁ k`. In weight `0` its structure maps are those of `cobarObject`, so
+`weightedCobarComplex 0` is `cobarComplex`, and the differentials and degree `0` cocycles of
+`cobarComplex` in low degrees are the weight-`0` cases of those of `weightedCobarComplex k`.
 
 ## Main definitions
 
@@ -117,6 +119,8 @@ alternating coface complex `weightedCobarComplex k`. Its differentials in degree
 * `WeierstrassCurve.isIntegralModularForm_iff_weightedCobarComplex_d_zero_one_hom_apply_eq_zero`:
   for `k ≥ 0`, the degree `0` cocycles of the weight-`k` cobar complex are the integral modular
   forms of weight `k`.
+* `weightedCobarObject_zero`, `weightedCobarComplex_zero`: in weight `0` the weighted cobar
+  construction and its complex are `cobarObject` and `cobarComplex`.
 
 ## References
 
@@ -753,49 +757,7 @@ theorem cobarComplex_d_hom_apply (n : ℕ) (x : cobarRing n) :
   AlgebraicTopology.AlternatingCofaceMapComplex.obj_d_hom_apply
     (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n x
 
-/-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`. -/
-theorem cobarComplex_d_zero_one_hom_apply (x : MvPolynomial Coeff ℤ) :
-    (cobarComplex.d 0 1).hom x = rightUnit x - algebraMap (MvPolynomial Coeff ℤ) ArrowRing x := by
-  have h := cobarComplex_d_hom_apply 0 x
-  rw [Fin.sum_univ_two, cobarMap_δ_zero_eq_rightUnit, cobarMap_δ_one_eq_algebraMap] at h
-  simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul,
-    ← sub_eq_add_neg] at h
-  exact h
-
-/-- The differential `Γ → Γ ⊗_A Γ` of the cobar complex in degree `1` is
-`x ↦ 1 ⊗ x - Δ x + x ⊗ 1`. -/
-theorem cobarComplex_d_one_two_hom_apply (x : ArrowRing) :
-    (cobarComplex.d 1 2).hom x =
-      ChangeRing.map rightUnit x - coproduct x + algebraMap ArrowRing (ChangeRing ArrowRing) x := by
-  have h := cobarComplex_d_hom_apply 1 x
-  rw [Fin.sum_univ_three, cobarMap_δ_zero_eq_map_rightUnit, cobarMap_δ_one_eq_coproduct,
-    cobarMap_δ_two_eq_algebraMap] at h
-  simp only [Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one, one_smul, neg_smul,
-    neg_one_sq, ← sub_eq_add_neg] at h
-  exact h
-
-end TauCeti.WeierstrassHopfAlgebroid
-
-namespace WeierstrassCurve
-
-open TauCeti.WeierstrassHopfAlgebroid
-
-/-- The degree `0` cocycles of the cobar complex of the Weierstrass Hopf algebroid are the
-integral modular forms of weight `0`. -/
-theorem isIntegralModularForm_zero_iff_cobarComplex_d_zero_one_hom_apply_eq_zero
-    (f : MvPolynomial Coeff ℤ) :
-    IsIntegralModularForm 0 f ↔ (cobarComplex.d 0 1).hom f = 0 := by
-  rw [cobarComplex_d_zero_one_hom_apply, isIntegralModularForm_iff_rightUnit, pow_zero, one_mul]
-  exact sub_eq_zero.symm
-
-end WeierstrassCurve
-
-
 /-! ### The weighted cobar complex -/
-
-namespace TauCeti.WeierstrassHopfAlgebroid
-
-open CategoryTheory MvPolynomial Simplicial _root_.WeierstrassCurve TauCeti.WeierstrassChange
 
 /-- The twist of the weight-`k` structure map of `f : [m] ⟶ [n]`: the weight-`k` character `u⁻ᵏ`
 of the composite change of variables from the curve `W_{f m}` to the last curve `W_n` of the
@@ -995,6 +957,50 @@ theorem weightedCobarComplex_d_one_two_hom_apply (k : ℤ) (x : ArrowRing) :
   -- The two sides differ only in spelling `Γ ⊗_A Γ` as `cobarRing 2` or `ChangeRing ArrowRing`.
   rfl
 
+/-! ### The cobar complex as the cobar complex of weight `0` -/
+
+/-- In weight `0` the weight-`k` cobar construction is the cobar construction `cobarObject`,
+viewed as a cosimplicial abelian group. -/
+theorem weightedCobarObject_zero :
+    weightedCobarObject 0 =
+      cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat :=
+  CategoryTheory.Functor.ext (fun _ ↦ rfl) fun _ _ f ↦ by
+    ext x
+    -- The objects agree definitionally, so both `eqToHom`s are identities, and the forgetful
+    -- functors to additive groups keep the underlying function of `cobarMap f`.
+    exact DFunLike.congr_fun (weightedCobarMap_zero f) x
+
+/-- In weight `0` the weight-`k` cobar complex is the cobar complex. -/
+theorem weightedCobarComplex_zero : weightedCobarComplex 0 = cobarComplex :=
+  congrArg (AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj
+    weightedCobarObject_zero
+
+/-- The differentials of the weight-`0` cobar complex are those of the cobar complex. -/
+theorem weightedCobarComplex_zero_d (i j : ℕ) :
+    (weightedCobarComplex 0).d i j = cobarComplex.d i j := by
+  have h := (eqToHom weightedCobarComplex_zero).comm i j
+  -- The two complexes have the same cochains, so the components of `eqToHom` are identities.
+  have h₁ (n : ℕ) (e : (weightedCobarComplex 0).X n = cobarComplex.X n) : eqToHom e = 𝟙 _ := rfl
+  rw [HomologicalComplex.eqToHom_f, HomologicalComplex.eqToHom_f, h₁, h₁] at h
+  exact (Category.comp_id _).symm.trans (h.symm.trans (Category.id_comp _))
+
+/-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`, the first
+weighted cobar differential `cobarD₀ 0`. -/
+theorem cobarComplex_d_zero_one_hom_apply (x : MvPolynomial Coeff ℤ) :
+    (cobarComplex.d 0 1).hom x = rightUnit x - algebraMap (MvPolynomial Coeff ℤ) ArrowRing x := by
+  refine (congrArg (·.hom x) (weightedCobarComplex_zero_d 0 1)).symm.trans ?_
+  rw [weightedCobarComplex_d_zero_one_hom_apply, cobarD₀_apply, weightCharacter_zero,
+    Units.val_one, one_mul]
+
+/-- The differential `Γ → Γ ⊗_A Γ` of the cobar complex in degree `1` is
+`x ↦ 1 ⊗ x - Δ x + x ⊗ 1`, the second weighted cobar differential `cobarD₁ 0`. -/
+theorem cobarComplex_d_one_two_hom_apply (x : ArrowRing) :
+    (cobarComplex.d 1 2).hom x =
+      ChangeRing.map rightUnit x - coproduct x + algebraMap ArrowRing (ChangeRing ArrowRing) x := by
+  refine (congrArg (·.hom x) (weightedCobarComplex_zero_d 1 2)).symm.trans ?_
+  rw [weightedCobarComplex_d_one_two_hom_apply, cobarD₁_apply, weightCharacter_zero,
+    Units.val_one, map_one, one_mul]
+
 end TauCeti.WeierstrassHopfAlgebroid
 
 namespace WeierstrassCurve
@@ -1008,5 +1014,15 @@ theorem isIntegralModularForm_iff_weightedCobarComplex_d_zero_one_hom_apply_eq_z
     IsIntegralModularForm k f ↔ ((weightedCobarComplex k).d 0 1).hom f = 0 := by
   rw [weightedCobarComplex_d_zero_one_hom_apply]
   exact (cobarD₀_natCast_eq_zero_iff k f).symm
+
+/-- The degree `0` cocycles of the cobar complex of the Weierstrass Hopf algebroid are the
+integral modular forms of weight `0`. -/
+theorem isIntegralModularForm_zero_iff_cobarComplex_d_zero_one_hom_apply_eq_zero
+    (f : MvPolynomial Coeff ℤ) :
+    IsIntegralModularForm 0 f ↔ (cobarComplex.d 0 1).hom f = 0 := by
+  rw [isIntegralModularForm_iff_weightedCobarComplex_d_zero_one_hom_apply_eq_zero, Nat.cast_zero,
+    weightedCobarComplex_zero_d]
+  -- The two sides differ only in spelling the cochains of `cobarComplex`.
+  exact Iff.rfl
 
 end WeierstrassCurve
