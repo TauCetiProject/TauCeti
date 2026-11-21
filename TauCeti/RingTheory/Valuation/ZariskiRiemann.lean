@@ -68,7 +68,7 @@ variable {K : Type*} [Field K]
 
 /-- Below a valuation subring `V₀` containing a set `s` there is a valuation subring which is
 minimal among the valuation subrings containing `s`. -/
-theorem exists_le_minimal {s : Set K} {V₀ : ValuationSubring K} (hs : s ⊆ V₀) :
+theorem exists_le_minimal (V₀ : ValuationSubring K) {s : Set K} (hs : s ⊆ V₀) :
     ∃ W ≤ V₀, Minimal (fun W : ValuationSubring K ↦ s ⊆ W) W := by
   refine zorn_ge_nonempty₀ {W : ValuationSubring K | s ⊆ W} (fun c hcs hc _ _ ↦ ?_) V₀ hs
   -- the intersection of a nonempty chain of valuation subrings is a valuation subring
@@ -113,28 +113,24 @@ variable {k K : Type*} [Field k] [Field K] [Algebra k K]
 /-- **Valuation subrings with residue field `k` are closed points of `ZR(K/k)`.** If a valuation
 subring `W` of `K` contains `k` and has residue field `k`, then every valuation subring `V ⊆ W`
 containing `k` equals `W`. -/
-theorem eq_of_le_of_surjective_algebraMap_residueField {V W : ValuationSubring K}
-    [V.valuation.IsTrivialOn k] [W.valuation.IsTrivialOn k]
-    (hW : Function.Surjective (algebraMap k (ResidueField W))) (hVW : V ≤ W) : V = W := by
-  refine le_antisymm hVW fun x hx ↦ ?_
-  obtain ⟨c, hc⟩ := hW (residue W ⟨x, hx⟩)
-  -- `x - c` is a nonunit of `W`, hence of `V`
-  have hsub : x - algebraMap k K c ∈ W.nonunits := by
-    have : (⟨x, hx⟩ - algebraMap k W c : W) ∈ maximalIdeal W := by
-      rw [← residue_eq_zero_iff, map_sub, ← hc, IsScalarTower.algebraMap_apply k W,
-        ResidueField.algebraMap_eq, sub_self]
-    simpa using W.coe_mem_nonunits_iff.mpr this
-  have := nonunits_subset (nonunits_le_nonunits.mpr hVW hsub)
-  simpa using V.add_mem _ _ this (V.algebraMap_mem_of_isTrivialOn c)
+theorem eq_of_le_of_surjective_algebraMap_residueField (V : ValuationSubring K)
+    {W : ValuationSubring K} [V.valuation.IsTrivialOn k] [W.valuation.IsTrivialOn k]
+    (hVW : V ≤ W) (hW : Function.Surjective (algebraMap k (ResidueField W))) : V = W := by
+  refine W.eq_of_le_of_surjective_residue hVW fun y ↦ ?_
+  obtain ⟨c, rfl⟩ := hW y
+  -- the residue of the constant `c ∈ V` is the image of `c` in `κ(W)`
+  refine ⟨algebraMap k V c, ?_⟩
+  rw [IsScalarTower.algebraMap_apply k W (ResidueField W), ResidueField.algebraMap_eq]
+  exact congrArg (residue W) (Subtype.ext rfl)
 
 /-- **Existence of valuation subrings with residue field `k`.** Let `k` be algebraically closed,
 `A` a finitely generated `k`-subalgebra of `K` and `V₀` a valuation subring of `K` containing `A`.
 Then some valuation subring `W ⊆ V₀` of `K` containing `A` has residue field `k`. -/
-theorem exists_le_bijective_algebraMap_residueField [IsAlgClosed k] {A : Subalgebra k K}
-    (hA : A.FG) {V₀ : ValuationSubring K} (hAV₀ : (A : Set K) ⊆ V₀) :
+theorem exists_le_bijective_algebraMap_residueField [IsAlgClosed k] (V₀ : ValuationSubring K)
+    {A : Subalgebra k K} (hA : A.FG) (hAV₀ : (A : Set K) ⊆ V₀) :
     ∃ (W : ValuationSubring K) (_ : W.valuation.IsTrivialOn k), W ≤ V₀ ∧ (A : Set K) ⊆ W ∧
       Function.Bijective (algebraMap k (ResidueField W)) := by
-  obtain ⟨W, hWV₀, hmin⟩ := exists_le_minimal hAV₀
+  obtain ⟨W, hWV₀, hmin⟩ := V₀.exists_le_minimal hAV₀
   have hAW : (A : Set K) ⊆ W := hmin.prop
   have : W.valuation.IsTrivialOn k := .of_le_one _ fun c ↦
     (W.valuation_le_one_iff _).mpr (hAW (A.algebraMap_mem c))
@@ -142,9 +138,11 @@ theorem exists_le_bijective_algebraMap_residueField [IsAlgClosed k] {A : Subalge
   -- the image `B` of `A` in `κ(W)` lies in no proper valuation subring of `κ(W)`, since its
   -- composite with `W` would be a smaller valuation subring containing `A`
   let f : A →ₐ[k] ResidueField W := (IsScalarTower.toAlgHom k W (ResidueField W)).comp
-    { toFun a := ⟨a, hAW a.property⟩, map_one' := rfl, map_mul' _ _ := rfl, map_zero' := rfl,
-      map_add' _ _ := rfl, commutes' _ := rfl }
-  have hf (a : A) : f a = residue W ⟨a, hAW a.property⟩ := rfl
+    ⟨A.val.toRingHom.codRestrict W fun a ↦ hAW a.property, fun c ↦
+      Subtype.ext (W.coe_algebraMap_of_isTrivialOn c).symm⟩
+  have hf (a : A) : f a = residue W ⟨a, hAW a.property⟩ := by
+    simp only [f, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', ResidueField.algebraMap_eq]
+    exact congrArg (residue W) (Subtype.ext (by simp))
   have : Algebra.IsIntegral k (ResidueField W) := by
     have hfg : (⊤ : Subalgebra k A).FG := ((Subalgebra.fg_iff_finiteType A).mp hA).out
     refine .of_forall_valuationSubring_eq_top (hfg.map f) fun U hU ↦ ?_
@@ -157,12 +155,12 @@ theorem exists_le_bijective_algebraMap_residueField [IsAlgClosed k] {A : Subalge
 generated `k`-subalgebra of `K` and `V₀` a valuation subring of `K` containing `A`. Then some
 valuation subring `W ⊆ V₀` containing `A` is minimal among the valuation subrings of `K`
 containing `k`. -/
-theorem exists_le_minimal_isTrivialOn [IsAlgClosed k] {A : Subalgebra k K} (hA : A.FG)
-    {V₀ : ValuationSubring K} (hAV₀ : (A : Set K) ⊆ V₀) :
+theorem exists_le_minimal_isTrivialOn [IsAlgClosed k] (V₀ : ValuationSubring K)
+    {A : Subalgebra k K} (hA : A.FG) (hAV₀ : (A : Set K) ⊆ V₀) :
     ∃ W ≤ V₀, (A : Set K) ⊆ W ∧
       Minimal (fun V : ValuationSubring K ↦ V.valuation.IsTrivialOn k) W := by
-  obtain ⟨W, _, hWV₀, hAW, hW⟩ := exists_le_bijective_algebraMap_residueField hA hAV₀
+  obtain ⟨W, _, hWV₀, hAW, hW⟩ := V₀.exists_le_bijective_algebraMap_residueField hA hAV₀
   exact ⟨W, hWV₀, hAW, ‹_›, fun V _ hVW ↦
-    (eq_of_le_of_surjective_algebraMap_residueField hW.2 hVW).ge⟩
+    (V.eq_of_le_of_surjective_algebraMap_residueField hVW hW.2).ge⟩
 
 end ValuationSubring

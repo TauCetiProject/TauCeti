@@ -27,6 +27,8 @@ of `A`.
 
 * `ValuationSubring.comapResidue`: the composite of `A` with a valuation subring of `κ(A)`.
 * `ValuationSubring.residue_inv`: residues of `x` and `x⁻¹` in `κ(A)` are inverse.
+* `ValuationSubring.eq_of_le_of_surjective_residue`: a valuation subring `B ⊆ A` taking every
+  residue in `κ(A)` is `A`.
 * `ValuationSubring.mem_comapResidue_iff`: its elements are those of `A` with residue in `U`.
 * `ValuationSubring.nonunits_subset_comapResidue`, `ValuationSubring.comapResidue_le`: it lies
   between the nonunits of `A` and `A`.
@@ -67,6 +69,28 @@ theorem residue_inv {x : K} (hx : x ∈ A) (hx' : x⁻¹ ∈ A) :
   congr 1
   exact Subtype.ext (inv_mul_cancel₀ h0)
 
+/-- A nonunit of `A` has residue `0` in `κ(A)`. -/
+theorem residue_eq_zero_of_mem_nonunits {x : K} (h : x ∈ A.nonunits) :
+    residue A ⟨x, nonunits_subset h⟩ = 0 :=
+  (residue_eq_zero_iff _).mpr (coe_mem_nonunits_iff.mp h)
+
+/-- Let `B ⊆ A`. An element of `A` with the same residue in `κ(A)` as an element of `B` lies in
+`B`: their difference is a nonunit of `A`, hence of `B`. -/
+theorem mem_of_le_of_residue_eq {B : ValuationSubring K} (hBA : B ≤ A) {x b : K} (hx : x ∈ A)
+    (hb : b ∈ B) (h : residue A ⟨x, hx⟩ = residue A ⟨b, hBA hb⟩) : x ∈ B := by
+  have hsub : x - b ∈ A.nonunits := by
+    have : (⟨x, hx⟩ - ⟨b, hBA hb⟩ : A) ∈ maximalIdeal A := by
+      rw [← residue_eq_zero_iff, map_sub, h, sub_self]
+    exact coe_mem_nonunits_iff.mpr this
+  simpa using B.add_mem _ _ (nonunits_subset (nonunits_le_nonunits.mpr hBA hsub)) hb
+
+/-- A valuation subring `B ⊆ A` whose elements take every residue in `κ(A)` is `A` itself. -/
+theorem eq_of_le_of_surjective_residue {B : ValuationSubring K} (hBA : B ≤ A)
+    (h : Function.Surjective ((residue A).comp (inclusion B A hBA))) : B = A := by
+  refine le_antisymm hBA fun x hx ↦ ?_
+  obtain ⟨b, hb⟩ := h (residue A ⟨x, hx⟩)
+  exact A.mem_of_le_of_residue_eq hBA hx b.property hb.symm
+
 /-- The **composite** of a valuation subring `A` of `K` with a valuation subring `U` of its
 residue field: the elements of `A` whose residue lies in `U`. -/
 noncomputable def comapResidue (U : ValuationSubring (ResidueField A)) : ValuationSubring K :=
@@ -78,14 +102,11 @@ noncomputable def comapResidue (U : ValuationSubring (ResidueField A)) : Valuati
         · exact .inl ⟨hx, h⟩
         · exact .inr ⟨hx', (residue_inv A hx hx').symm ▸ h⟩
       · -- `x` is a nonunit of `A`, so its residue is `0`
-        have : (⟨x, hx⟩ : A) ∈ maximalIdeal A :=
-          A.coe_mem_nonunits_iff.mp (A.mem_nonunits_iff_or.mpr (.inr hx'))
-        exact .inl ⟨hx, by simp [(residue_eq_zero_iff _).mpr this]⟩
+        exact .inl ⟨hx, by
+          simp [residue_eq_zero_of_mem_nonunits A (A.mem_nonunits_iff_or.mpr (.inr hx'))]⟩
     · -- `x⁻¹` is a nonunit of `A`, so its residue is `0`
-      have hx' : x⁻¹ ∈ A := (A.mem_or_inv_mem x).resolve_left hx
-      have : (⟨x⁻¹, hx'⟩ : A) ∈ maximalIdeal A :=
-        A.coe_mem_nonunits_iff.mp (A.inv_mem_nonunits_iff.mpr (.inr hx))
-      exact .inr ⟨hx', by simp [(residue_eq_zero_iff _).mpr this]⟩
+      exact .inr ⟨(A.mem_or_inv_mem x).resolve_left hx, by
+        simp [residue_eq_zero_of_mem_nonunits A (A.inv_mem_nonunits_iff.mpr (.inr hx))]⟩
 
 variable {A} {U U' : ValuationSubring (ResidueField A)}
 
@@ -101,11 +122,8 @@ theorem comapResidue_le : A.comapResidue U ≤ A :=
   fun _ hx ↦ (mem_comapResidue_iff.mp hx).1
 
 /-- The composite contains every nonunit of `A`: their residues are `0`. -/
-theorem nonunits_subset_comapResidue : (A.nonunits : Set K) ⊆ A.comapResidue U := by
-  intro x hx
-  have hxA : x ∈ A := nonunits_subset hx
-  have : (⟨x, hxA⟩ : A) ∈ maximalIdeal A := coe_mem_nonunits_iff.mp hx
-  exact mem_comapResidue_iff.mpr ⟨hxA, by simp [(residue_eq_zero_iff _).mpr this]⟩
+theorem nonunits_subset_comapResidue : (A.nonunits : Set K) ⊆ A.comapResidue U := fun x hx ↦
+  mem_comapResidue_iff.mpr ⟨nonunits_subset hx, by simp [residue_eq_zero_of_mem_nonunits A hx]⟩
 
 @[simp]
 theorem comapResidue_le_comapResidue_iff : A.comapResidue U ≤ A.comapResidue U' ↔ U ≤ U' := by
@@ -145,13 +163,7 @@ theorem exists_comapResidue_eq {B : ValuationSubring K} (hBA : B ≤ A) :
   refine ⟨U, ext _ _ fun x ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩⟩
   · obtain ⟨hxA, hU⟩ := mem_comapResidue_iff.mp hx
     obtain ⟨b, hb, hbx⟩ := (mem_ofSubring _ _ _).mp hU
-    -- `x - b` is a nonunit of `A`, hence of `B`
-    have hsub : x - b ∈ A.nonunits := by
-      have : (⟨x, hxA⟩ - b : A) ∈ maximalIdeal A := by
-        rw [← residue_eq_zero_iff, map_sub, ← hbx, sub_self]
-      exact coe_mem_nonunits_iff.mpr this
-    have := nonunits_subset (nonunits_le_nonunits.mpr hBA hsub)
-    simpa using B.add_mem _ _ this hb
+    exact A.mem_of_le_of_residue_eq hBA hxA hb hbx.symm
   · exact mem_comapResidue_iff.mpr ⟨hBA hx, (mem_ofSubring _ _ _).mpr ⟨⟨x, hBA hx⟩, hx, rfl⟩⟩
 
 variable (A) in
