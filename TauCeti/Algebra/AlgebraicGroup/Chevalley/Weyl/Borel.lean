@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 
 /-!
 # Word factorization of the Weyl subgroup and its intersection with the Borel subgroup
@@ -20,13 +20,13 @@ satisfy `nᵢ(1)² = αᵢ∨(-1) ∈ T_D(A)` and normalize the actual torus `T_
 element of `D.weylSubgroup A` decomposes as a positive word in the pinned simple Weyl
 representatives followed by an actual torus point.
 
-Over any field `K`, combining this word decomposition with weight-space block unitriangularity of
-`D.positivePoints K` and the Weyl-word block `LDU` criterion shows that `D.positivePoints K`
-intersects `D.weylSubgroup K` trivially: the block `LDU` test forces the Weyl projection to be `1`,
-so off-block matrix entries vanish by torus character separation over `AlgebraicClosure K` while
-diagonal weight blocks equal the identity by block unitriangularity. Decomposing elements of
-`D.borelSubgroup K` as positive times torus factors then yields the exact intersection
-`D.borelSubgroup K ⊓ D.weylSubgroup K = (D.torusPoints K).range`.
+Over every nontrivial commutative ring `A`, combining this word decomposition with weight-space
+block unitriangularity of `D.positivePoints A` and the Weyl-word block `LDU` criterion shows that
+any Weyl word in `D.weylSubgroup A` lying in `D.borelSubgroup A` spells `1` in the Weyl group,
+hence lies in `T_D(A)` by `weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`. Together
+with `positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot`, this yields the exact
+intersections `D.positivePoints A ⊓ D.weylSubgroup A = ⊥` and
+`D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range` over every commutative ring `A`.
 
 ## References
 
@@ -162,6 +162,84 @@ theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
       (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
       (D.torusPoints A s)).mp ⟨s, rfl⟩
 
+/-- Over every commutative ring, the positive point subgroup intersects the Weyl subgroup
+trivially. -/
+@[simp]
+theorem positivePoints_inf_weylSubgroup_eq_bot :
+    D.positivePoints A ⊓ D.weylSubgroup A = ⊥ := by
+  refine eq_bot_iff.mpr ?_
+  intro u ⟨huP, huW⟩
+  rw [Subgroup.mem_bot]
+  rcases subsingleton_or_nontrivial A with _ | _
+  · exact Subtype.ext (Units.ext (Matrix.ext fun _ _ => Subsingleton.elim _ _))
+  · obtain ⟨l, s, hls⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints A).mp huW
+    -- Conjugate the positive factor across the torus point so the Weyl word has block LDU form.
+    let u' : D.points A := D.torusPoints A s * u * (D.torusPoints A s)⁻¹
+    have hu'P : u' ∈ D.positivePoints A :=
+      (Subgroup.mem_normalizer_iff.mp
+        (D.range_torusPoints_le_normalizer_positivePoints A ⟨s, rfl⟩) u).mp huP
+    have hwprod' :
+        (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
+          D.torusPoints A s⁻¹ * u' := by
+      rw [eq_mul_inv_of_mul_eq hls, (D.torusPoints A).map_inv]
+      dsimp only [u']
+      group
+    have hl : t.geckWeylWordProd ht l = 1 :=
+      D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive A hu'P hwprod'
+    have huT : u ∈ (D.torusPoints A).range := by
+      rw [← hls]
+      exact mul_mem
+        (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A l hl) ⟨s, rfl⟩
+    have hmem : u ∈ D.positivePoints A ⊓ (D.negativePoints A ⊔ (D.torusPoints A).range) :=
+      ⟨huP, Subgroup.mem_sup_right huT⟩
+    rwa [D.positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot A,
+      Subgroup.mem_bot] at hmem
+
+/-- Over every commutative ring, the intersection of the Borel-type subgroup and the Weyl subgroup
+of a Chevalley datum is precisely the image of its actual torus. -/
+@[simp]
+theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
+    D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range := by
+  apply le_antisymm
+  · intro g hg
+    rw [Subgroup.mem_inf] at hg
+    obtain ⟨hgB, hgW⟩ := hg
+    obtain ⟨u, huP, s, rfl⟩ := (D.mem_borelSubgroup_iff A).mp hgB
+    have huW : u ∈ D.weylSubgroup A := by
+      have hts : D.torusPoints A s ∈ D.weylSubgroup A := D.torusPoints_mem_weylSubgroup A s
+      simpa only [mul_inv_cancel_right] using mul_mem hgW (inv_mem hts)
+    have hu1 : u = 1 := by
+      have hmem : u ∈ D.positivePoints A ⊓ D.weylSubgroup A :=
+        Subgroup.mem_inf.mpr ⟨huP, huW⟩
+      rwa [D.positivePoints_inf_weylSubgroup_eq_bot A, Subgroup.mem_bot] at hmem
+    rw [hu1, one_mul]
+    exact ⟨s, rfl⟩
+  · refine le_inf (D.range_torusPoints_le_borelSubgroup A) ?_
+    rintro _ ⟨s, rfl⟩
+    exact D.torusPoints_mem_weylSubgroup A s
+
+/-- Over every commutative ring, an element of `D.weylSubgroup A` belongs to `D.borelSubgroup A`
+if and only if it lies in the image of the actual torus. -/
+theorem mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup
+    {n : D.points A} (hn : n ∈ D.weylSubgroup A) :
+    n ∈ D.borelSubgroup A ↔ n ∈ (D.torusPoints A).range := by
+  rw [← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints A, Subgroup.mem_inf]
+  exact (and_iff_left hn).symm
+
+/-- Inside the points of a Chevalley datum over every commutative ring, the Weyl subgroup meets the
+positive unipotent subgroup trivially. -/
+@[simp]
+theorem weylSubgroup_inf_positivePoints_eq_bot :
+    D.weylSubgroup A ⊓ D.positivePoints A = ⊥ := by
+  rw [inf_comm, D.positivePoints_inf_weylSubgroup_eq_bot]
+
+/-- Over every commutative ring, the intersection of the Weyl subgroup and the positive Borel
+subgroup of a Chevalley datum is the actual weight-lattice torus. -/
+@[simp]
+theorem weylSubgroup_inf_borelSubgroup_eq_range_torusPoints :
+    D.weylSubgroup A ⊓ D.borelSubgroup A = (D.torusPoints A).range := by
+  rw [inf_comm, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints]
+
 end CommRing
 
 section Field
@@ -210,110 +288,6 @@ theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
     apply Subtype.ext
     rw [Subgroup.coe_mul]
   rw [hmul, map_mul, hword l, D.weylProjection_torusPoints K s, mul_one]
-
-private theorem eq_one_of_mem_positivePoints_of_weylProjection_eq_one
-    {u : D.points K} (huP : u ∈ D.positivePoints K) (huW : u ∈ D.weylSubgroup K)
-    (hproj : D.weylProjection K ⟨u, huW⟩ = 1) : u = 1 := by
-  -- Block unitriangularity handles equal-weight blocks; torus-character separation over the
-  -- algebraic closure forces distinct-weight entries to vanish.
-  apply Subtype.ext
-  apply Units.ext
-  ext i j
-  by_cases hwt : D.weight i = D.weight j
-  · exact D.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq K huP hwt
-  · have hij : i ≠ j := fun h => hwt (congrArg D.weight h)
-    rw [Subgroup.coe_one, Units.val_one, Matrix.one_apply_ne hij]
-    apply (algebraMap K (AlgebraicClosure K)).injective
-    rw [map_zero]
-    obtain ⟨s'', hs''⟩ := exists_torusCharacter_ne (K := AlgebraicClosure K) hwt
-    have hconj := (D.weylProjection_eq_iff K ⟨u, huW⟩ 1).mp hproj s''
-    rw [map_one, MulAut.one_apply, mul_inv_eq_iff_eq_mul] at hconj
-    have hcomm : Commute
-        (Matrix.diagonal fun k => (torusCharacter s'' (D.weight k) : AlgebraicClosure K))
-        ((Matrix.GeneralLinearGroup.map (algebraMap K (AlgebraicClosure K))
-          ((u : D.points K) : Matrix.GeneralLinearGroup (Fin D.dim) K) :
-          Matrix.GeneralLinearGroup (Fin D.dim) (AlgebraicClosure K)) :
-          Matrix (Fin D.dim) (Fin D.dim) (AlgebraicClosure K)) := by
-      rw [Commute, SemiconjBy]
-      simpa only [Units.val_mul, diagGL_coe] using congrArg Units.val hconj.symm
-    simpa only [Matrix.GeneralLinearGroup.map_apply] using
-      apply_eq_zero_of_commute_diagonal hcomm (fun h => hs'' (Units.ext h))
-
-/-- Over a field, the positive point subgroup intersects the Weyl subgroup trivially. -/
-@[simp]
-theorem positivePoints_inf_weylSubgroup_eq_bot :
-    D.positivePoints K ⊓ D.weylSubgroup K = ⊥ := by
-  refine eq_bot_iff.mpr ?_
-  intro u hu
-  rw [Subgroup.mem_inf] at hu
-  obtain ⟨huP, huW⟩ := hu
-  rw [Subgroup.mem_bot]
-  obtain ⟨l, s, hls⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints K).mp huW
-  -- Conjugate the positive factor across the torus point so the Weyl word has block LDU form.
-  let u' : D.points K := D.torusPoints K s * u * (D.torusPoints K s)⁻¹
-  have hu'P : u' ∈ D.positivePoints K :=
-    (Subgroup.mem_normalizer_iff.mp
-      (D.range_torusPoints_le_normalizer_positivePoints K ⟨s, rfl⟩) u).mp huP
-  have hwprod' :
-      (l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod =
-        D.torusPoints K s⁻¹ * u' := by
-    rw [eq_mul_inv_of_mul_eq hls, (D.torusPoints K).map_inv]
-    dsimp only [u']
-    group
-  have hproj : D.weylProjection K ⟨u, huW⟩ = 1 := by
-    have hsub : (⟨u, huW⟩ : D.weylSubgroup K) =
-        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod * D.torusPoints K s,
-          mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
-            (D.torusPoints_mem_weylSubgroup K s)⟩ :=
-      Subtype.ext hls.symm
-    rw [hsub, D.weylProjection_list_prod_mul_torusPoints K l s,
-      D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive K hu'P hwprod']
-  exact D.eq_one_of_mem_positivePoints_of_weylProjection_eq_one K huP huW hproj
-
-/-- Over any field, the intersection of the Borel-type subgroup and the Weyl subgroup of a
-Chevalley datum is precisely the image of its actual torus. -/
-@[simp]
-theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
-    D.borelSubgroup K ⊓ D.weylSubgroup K = (D.torusPoints K).range := by
-  apply le_antisymm
-  · intro g hg
-    rw [Subgroup.mem_inf] at hg
-    obtain ⟨hgB, hgW⟩ := hg
-    obtain ⟨u, huP, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hgB
-    have huW : u ∈ D.weylSubgroup K := by
-      have hts : D.torusPoints K s ∈ D.weylSubgroup K := D.torusPoints_mem_weylSubgroup K s
-      simpa only [mul_inv_cancel_right] using mul_mem hgW (inv_mem hts)
-    have hu1 : u = 1 := by
-      have hmem : u ∈ D.positivePoints K ⊓ D.weylSubgroup K :=
-        Subgroup.mem_inf.mpr ⟨huP, huW⟩
-      rwa [D.positivePoints_inf_weylSubgroup_eq_bot K, Subgroup.mem_bot] at hmem
-    rw [hu1, one_mul]
-    exact ⟨s, rfl⟩
-  · refine le_inf (D.range_torusPoints_le_borelSubgroup K) ?_
-    rintro _ ⟨s, rfl⟩
-    exact D.torusPoints_mem_weylSubgroup K s
-
-/-- Over any field, an element of `D.weylSubgroup K` belongs to `D.borelSubgroup K` if and only if
-it lies in the image of the actual torus. -/
-theorem mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup
-    {n : D.points K} (hn : n ∈ D.weylSubgroup K) :
-    n ∈ D.borelSubgroup K ↔ n ∈ (D.torusPoints K).range := by
-  rw [← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints K, Subgroup.mem_inf]
-  exact (and_iff_left hn).symm
-
-/-- Inside the points of a Chevalley datum over any field, the Weyl subgroup meets the positive
-unipotent subgroup trivially. -/
-@[simp]
-theorem weylSubgroup_inf_positivePoints_eq_bot :
-    D.weylSubgroup K ⊓ D.positivePoints K = ⊥ := by
-  rw [inf_comm, D.positivePoints_inf_weylSubgroup_eq_bot]
-
-/-- Over any field, the intersection of the Weyl subgroup and the positive Borel subgroup of a
-Chevalley datum is the actual weight-lattice torus. -/
-@[simp]
-theorem weylSubgroup_inf_borelSubgroup_eq_range_torusPoints :
-    D.weylSubgroup K ⊓ D.borelSubgroup K = (D.torusPoints K).range := by
-  rw [inf_comm, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints]
 
 /-- Any element of the Weyl subgroup that also belongs to the positive Borel subgroup has trivial
 Weyl projection. -/
