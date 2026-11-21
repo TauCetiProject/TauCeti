@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `PadicInt.residueField` identifies the residue field of `ℤ_[p]` with `ZMod p`.
-public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori
+-- `PadicInt.finite_residueField` and `PadicInt.card_residueField`: the residue field of `ℤ_[p]`
+-- has `p` elements.
+public import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Iwahori subgroups of `GL_m(ℤ_p)`
@@ -31,24 +32,17 @@ public section
 
 namespace TauCeti
 
-open IsLocalRing
-
 variable (m : Type*) [Fintype m] [LinearOrder m] (p : ℕ) [Fact p.Prime]
-
-/-- The residue field of `ℤ_p` has `p` elements. -/
-private theorem natCard_residueField_padicInt : Nat.card (ResidueField ℤ_[p]) = p := by
-  rw [Nat.card_congr PadicInt.residueField.toEquiv, Nat.card_zmod]
 
 /-- The Iwahori subgroup of `GL₂(ℤ_p)` has index `p + 1`. -/
 theorem index_iwahori_fin_two_padicInt : (iwahori (Fin 2) ℤ_[p]).index = p + 1 := by
-  have : Finite (ResidueField ℤ_[p]) := .of_equiv _ PadicInt.residueField.symm.toEquiv
-  rw [index_iwahori_fin_two, natCard_residueField_padicInt]
+  rw [index_iwahori_fin_two, PadicInt.card_residueField p]
 
 /-- The pro-`p` Iwahori subgroup of `GL_m(ℤ_p)` has index `(p - 1) ^ #m` in the Iwahori
 subgroup. -/
 theorem relIndex_iwahoriOne_iwahori_padicInt :
     (iwahoriOne m ℤ_[p]).relIndex (iwahori m ℤ_[p]) = (p - 1) ^ Fintype.card m := by
-  rw [relIndex_iwahoriOne_iwahori, natCard_residueField_padicInt]
+  rw [relIndex_iwahoriOne_iwahori, PadicInt.card_residueField p]
 
 /-- The pro-`p` Iwahori subgroup of `GL_m(ℤ_p)` is the whole Iwahori subgroup exactly when `p = 2`
 or `m` is empty. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `IsLocalRing.residue`, `IsLocalRing.ker_residue` and `IsLocalRing.residue_surjective`.
+-- `IsLocalRing.residue` and `IsLocalRing.ker_residue`.
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 -- `TauCeti.GL2Borel.index_eq` computes the index of the Borel subgroup of `GL₂(𝔽_q)`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
@@ -91,18 +91,14 @@ theorem comap_map_residue_upperUnitriangularGroup :
 /-- The index of the Iwahori subgroup in `GL_m(R)` is the index of the upper-triangular subgroup
 in `GL_m` of the residue field. -/
 theorem index_iwahori :
-    (iwahori m R).index = (upperTriangularGroup m (ResidueField R)).index := by
-  rw [← comap_map_residue_upperTriangularGroup]
-  exact Subgroup.index_comap_of_surjective _
-    (GeneralLinearGroup.map_surjective _ residue_surjective)
+    (iwahori m R).index = (upperTriangularGroup m (ResidueField R)).index :=
+  index_upperTriangularCongruenceSubgroup (ringJacobson_eq_maximalIdeal R).ge
 
 /-- The index of the pro-`p` Iwahori subgroup in `GL_m(R)` is the index of the
 upper-unitriangular subgroup in `GL_m` of the residue field. -/
 theorem index_iwahoriOne :
-    (iwahoriOne m R).index = (upperUnitriangularGroup m (ResidueField R)).index := by
-  rw [← comap_map_residue_upperUnitriangularGroup]
-  exact Subgroup.index_comap_of_surjective _
-    (GeneralLinearGroup.map_surjective _ residue_surjective)
+    (iwahoriOne m R).index = (upperUnitriangularGroup m (ResidueField R)).index :=
+  index_upperUnitriangularCongruenceSubgroup (ringJacobson_eq_maximalIdeal R).ge
 
 /-- For a finite residue field with `q` elements, the Iwahori subgroup of `GL₂(R)` has index
 `q + 1`, the number of points of the projective line over the residue field. -/
@@ -111,22 +107,12 @@ theorem index_iwahori_fin_two [Finite (ResidueField R)] :
   have := Fintype.ofFinite (ResidueField R)
   rw [index_iwahori, GL2Borel.index_eq, Nat.card_eq_fintype_card]
 
-/-- Reduction modulo the maximal ideal followed by the identification with the residue field. -/
-private noncomputable def quotientMaximalIdealEquiv : R ⧸ maximalIdeal R ≃+* ResidueField R :=
-  (Ideal.quotEquivOfEq ker_residue.symm).trans
-    (RingHom.quotientKerEquivOfSurjective residue_surjective)
-
-private theorem quotientMaximalIdealEquiv_mk (x : R) :
-    quotientMaximalIdealEquiv (Ideal.Quotient.mk (maximalIdeal R) x) = residue R x := by
-  simp [quotientMaximalIdealEquiv]
-
 variable (m R) in
 /-- The diagonal modulo the maximal ideal identifies the quotient of the Iwahori subgroup by the
 pro-`p` Iwahori subgroup with `m → kˣ`, for the residue field `k`. -/
 noncomputable def iwahoriQuotientEquiv :
     iwahori m R ⧸ (iwahoriOne m R).subgroupOf (iwahori m R) ≃* (m → (ResidueField R)ˣ) :=
-  (quotientEquiv (ringJacobson_eq_maximalIdeal R).ge).trans
-    (MulEquiv.piCongrRight fun _ ↦ Units.mapEquiv quotientMaximalIdealEquiv.toMulEquiv)
+  quotientEquiv (ringJacobson_eq_maximalIdeal R).ge
 
 /-- The identification of the Iwahori quotient sends a class to the diagonal entries of a
 representative, reduced to the residue field. -/
@@ -134,15 +120,16 @@ representative, reduced to the residue field. -/
 theorem iwahoriQuotientEquiv_mk_apply_val (g : iwahori m R) (i : m) :
     ((iwahoriQuotientEquiv m R
         (g : iwahori m R ⧸ (iwahoriOne m R).subgroupOf (iwahori m R)) i : (ResidueField R)ˣ) :
-      ResidueField R) = residue R (((g : GL m R) : Matrix m m R) i i) := by
-  simp [iwahoriQuotientEquiv, quotientMaximalIdealEquiv_mk]
+      ResidueField R) = residue R (((g : GL m R) : Matrix m m R) i i) :=
+  (congrArg (fun x ↦ ((x i : (R ⧸ maximalIdeal R)ˣ) : R ⧸ maximalIdeal R))
+    (quotientEquiv_mk _ g)).trans (diag_apply_val g i)
 
 /-- The index of the pro-`p` Iwahori subgroup in the Iwahori subgroup is `(q - 1) ^ #m`, where `q`
 is the cardinality of the residue field. -/
 theorem relIndex_iwahoriOne_iwahori :
     (iwahoriOne m R).relIndex (iwahori m R) = (Nat.card (ResidueField R) - 1) ^ Fintype.card m := by
   rw [relIndex_upperUnitriangularCongruenceSubgroup (ringJacobson_eq_maximalIdeal R).ge,
-    Nat.card_congr (Units.mapEquiv quotientMaximalIdealEquiv.toMulEquiv).toEquiv,
-    Nat.card_units]
+    ← Nat.card_units]
+  rfl
 
 end TauCeti
