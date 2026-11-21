@@ -41,9 +41,12 @@ graded isomorphism.
   preconnected prime spectrum has a homogeneous unit.
 * `TauCeti.GradedAlgebra.exists_shift_linearEquiv_of_connected`: every such grading is
   graded-isomorphic to a shift `A(d)`.
-* `TauCeti.GradedAlgebra.shiftClass_eq_mk_iff` and `TauCeti.GradedAlgebra.shiftClass_eq_iff`: two
-  compatible `ℤ`-gradings of `A` on a preconnected spectrum are graded-isomorphic if and only if
-  they have the same `shiftClass` in `ShiftClassGroup 𝒜`.
+* `TauCeti.GradedAlgebra.shiftClass_eq_mk_iff`: a compatible `ℤ`-grading `ℳ` of `A` on a
+  preconnected spectrum has `shiftClass 𝒜 ℳ = (d : ShiftClassGroup 𝒜)` if and only if `(A, ℳ)` is
+  graded-isomorphic to the shift `A(d)`.
+* `TauCeti.GradedAlgebra.shiftClass_eq_iff`: two compatible `ℤ`-gradings of `A` on a preconnected
+  spectrum are graded-isomorphic if and only if they have the same `shiftClass` in
+  `ShiftClassGroup 𝒜`.
 -/
 
 public section

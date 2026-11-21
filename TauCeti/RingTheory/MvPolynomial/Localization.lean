@@ -11,8 +11,8 @@ public import TauCeti.RingTheory.Localization.Away.Units
 /-!
 # Units of localizations of multivariate polynomial rings away from primes
 
-Let `R` be a commutative domain (more generally, a cancellative commutative semiring that is a
-domain, so `MvPolynomial σ R` is a domain). Combining `TauCeti.MvPolynomial.unitsMulEquiv`
+Let `R` be an additively cancellative commutative semiring satisfying `IsDomain` (in particular, any
+integral domain, so `MvPolynomial σ R` is a domain). Combining `TauCeti.MvPolynomial.unitsMulEquiv`
 (`Rˣ ≃* (MvPolynomial σ R)ˣ`) with `Prime.awayUnitsMulEquiv` and
 `TauCeti.Localization.awayProdPrimesUnitsMulEquiv` identifies the unit group of a localization `S`
 of `MvPolynomial σ R` away from a prime polynomial `f` with `Rˣ × Multiplicative ℤ`, and away from a
@@ -42,8 +42,9 @@ open _root_.MvPolynomial TauCeti.Localization
 
 variable {σ R : Type*} [CommSemiring R] [IsCancelAdd R] [IsDomain R]
 
-/-- Over a domain `R`, the units of a localization `S` of `MvPolynomial σ R` away from a prime
-polynomial `f` are canonically `Rˣ × Multiplicative ℤ`, sending `(c, m)` to `C c * f ^ m`. -/
+/-- Over an additively cancellative commutative semiring `R` satisfying `IsDomain`, the units of a
+localization `S` of `MvPolynomial σ R` away from a prime polynomial `f` are canonically
+`Rˣ × Multiplicative ℤ`, sending `(c, m)` to `C c * f ^ m`. -/
 noncomputable def awayPrimeUnitsMulEquiv (S : Type*) [CommSemiring S]
     [Algebra (_root_.MvPolynomial σ R) S] {f : _root_.MvPolynomial σ R} (hprime : Prime f)
     [IsLocalization.Away f S] :
@@ -87,9 +88,9 @@ theorem awayPrimeUnitsMulEquiv_symm_awayUnit (S : Type*) [CommSemiring S]
   rw [MulEquiv.symm_apply_eq]
   simp
 
-/-- Over a domain `R`, the units of a localization `S` of `MvPolynomial σ R` away from a product
-`∏ j ∈ s, p j` of pairwise non-associated prime polynomials are canonically
-`Rˣ × (s → Multiplicative ℤ)`. -/
+/-- Over an additively cancellative commutative semiring `R` satisfying `IsDomain`, the units of a
+localization `S` of `MvPolynomial σ R` away from a product `∏ j ∈ s, p j` of pairwise non-associated
+prime polynomials are canonically `Rˣ × (s → Multiplicative ℤ)`. -/
 noncomputable def awayProdPrimesUnitsMulEquiv {J : Type*} (S : Type*) [CommSemiring S]
     [Algebra (_root_.MvPolynomial σ R) S] (s : Finset J) {p : J → _root_.MvPolynomial σ R}
     (hp : ∀ j ∈ s, Prime (p j))
@@ -160,8 +161,9 @@ open MvPolynomial
 
 variable {σ R : Type*} [CommSemiring R] [IsCancelAdd R] [IsDomain R]
 
-/-- Every unit of a localization `S` of `MvPolynomial σ R` away from a prime `f` has the form
-`C c * f ^ m` with `c : Rˣ` and `m : ℤ`. -/
+/-- Over an additively cancellative commutative semiring `R` satisfying `IsDomain`, every unit of a
+localization `S` of `MvPolynomial σ R` away from a prime `f` has the form `C c * f ^ m` with
+`c : Rˣ` and `m : ℤ`. -/
 theorem isUnit_away_mvPolynomial_iff {S : Type*} [CommSemiring S]
     [Algebra (MvPolynomial σ R) S] {f : MvPolynomial σ R} (hprime : Prime f)
     [IsLocalization.Away f S] {y : S} :
@@ -185,8 +187,9 @@ open MvPolynomial
 
 variable {σ R : Type*} [CommSemiring R] [IsCancelAdd R] [IsDomain R]
 
-/-- Every unit of a localization `S` of `MvPolynomial σ R` away from a product `∏ j ∈ s, p j` of
-primes has the form `C c * ∏ j : s, p j ^ m j` with `c : Rˣ` and `m : s → ℤ`. -/
+/-- Over an additively cancellative commutative semiring `R` satisfying `IsDomain`, every unit of a
+localization `S` of `MvPolynomial σ R` away from a product `∏ j ∈ s, p j` of primes has the form
+`C c * ∏ j : s, p j ^ m j` with `c : Rˣ` and `m : s → ℤ`. -/
 theorem isUnit_away_prod_mvPolynomial_primes_iff {J : Type*} {S : Type*} [CommSemiring S]
     [Algebra (MvPolynomial σ R) S] (s : Finset J) {p : J → MvPolynomial σ R}
     (hp : ∀ j ∈ s, Prime (p j)) [IsLocalization.Away (∏ j ∈ s, p j) S] {y : S} :

@@ -11,9 +11,10 @@ public import TauCeti.Algebra.GroupWithZero.Associated
 /-!
 # Divisors of products of prime elements
 
-In a cancellative commutative monoid with zero, Mathlib's `dvd_prime_pow` and
-`Prime.exists_associated_pow_mul_of_dvd_pow_mul` characterize the divisors of `p ^ n` and
-`p ^ n * a` for a prime element `p` without assuming unique factorization.
+In a cancellative commutative monoid with zero, Mathlib's `dvd_prime_pow` characterizes the
+divisors of `p ^ n` for a prime element `p` without assuming unique factorization, and Tau Ceti's
+`Prime.exists_associated_pow_mul_of_dvd_pow_mul` (in `TauCeti.Algebra.GroupWithZero.Associated`)
+extends that characterization to divisors of `p ^ n * a`.
 
 This file extends that characterization to finite products of prime elements and their powers:
 every divisor of a multiset product of primes is associated to the product of a submultiset, every

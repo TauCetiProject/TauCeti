@@ -224,8 +224,9 @@ noncomputable def shiftClassGroupAwayPrimeEquiv {f : A} {e : ℤ} (hf : f ∈ �
 theorem shiftClassGroupAwayPrimeEquiv_mk {f : A} {e : ℤ} (hf : f ∈ 𝒜 e) (hprime : Prime f)
     (hbot : homogeneousUnitDegrees 𝒜 = ⊥) (d : ℤ) :
     shiftClassGroupAwayPrimeEquiv hf hprime hbot (QuotientAddGroup.mk d) = d := by
-  -- Both quotient equivalences are induced by maps on representatives, and the second is the
-  -- canonical cast `ℤ → ZMod |e|`; Mathlib states no lemma evaluating them on a class.
+  -- `QuotientAddGroup.quotientAddEquivOfEq_mk` evaluates the first equivalence on a class, while
+  -- `Int.quotientZMultiplesEquivZMod` acts on representatives by `ℤ → ZMod |e|` without a Mathlib
+  -- `_mk` lemma, so the composition reduces by `rfl`.
   rfl
 
 @[simp]

@@ -48,9 +48,10 @@ grading graded-isomorphic to a shift has such a generator.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_iff` and `TauCeti.ShiftClassGroup.mk_eq_mk_iff`: the
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular` and
-  `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated`: associated homogeneous elements (with a
-  left-regular or nonzero left-cancellative factor) have degrees differing by an element of
-  `homogeneousUnitDegrees 𝒜`.
+  `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated`: associated homogeneous elements `b`
+  and `a` have degrees differing by an element of `homogeneousUnitDegrees 𝒜`, either when `b`
+  is left-regular in a graded semiring or when `b ≠ 0` in a graded semiring with left
+  cancellation by nonzero elements.
 
 The group-algebra and Laurent-polynomial examples, `TauCeti.homogeneousUnitDegrees_gradeBy` and
 `TauCeti.shiftClassGroupLaurentPolynomialEquiv`, are in `TauCeti.Algebra.MonoidAlgebra.Grading`
@@ -247,8 +248,8 @@ theorem sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular {a b : A} 
   exact mem_homogeneousUnitDegrees_of_mem <|
     GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hb hb_reg (by rwa [add_sub_cancel])
 
-/-- In a left-cancellative ring with zero graded by an additive commutative group, if a nonzero
-homogeneous element `b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then
+/-- In a graded semiring with left cancellation by nonzero elements and grading group an additive
+commutative group, if a nonzero homogeneous element `b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then
 `da - db ∈ homogeneousUnitDegrees 𝒜`. -/
 theorem sub_mem_homogeneousUnitDegrees_of_associated [IsLeftCancelMulZero A] {a b : A} {da db : ι}
     (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb0 : b ≠ 0) (h : Associated b a) :
