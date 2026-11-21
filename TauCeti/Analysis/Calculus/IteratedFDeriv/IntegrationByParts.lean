@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Calculus.ContDiff.IsOpen
+import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 
 /-!
 # Iterated integration by parts along a list of directions
@@ -55,44 +54,6 @@ variable {E V V' W : Type*}
   [NormedAddCommGroup W] [NormedSpace ℝ W]
   {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- Auxiliary global version of `integral_bilinear_iteratedFDerivAlong_eq` when `f` is `C^k` on all
-of `E`. -/
-private theorem integral_bilinear_iteratedFDerivAlong_eq_of_contDiff
-    (B : V →L[ℝ] V' →L[ℝ] W) (vs : List E) {f : E → V} {g : E → V'}
-    (hf : ContDiff ℝ vs.length f) (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) :
-    ∫ x, B (f x) (iteratedFDerivAlong ℝ vs g x) ∂μ =
-      (-1 : ℝ) ^ vs.length • ∫ x, B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) ∂μ := by
-  have hcs (P : E → V) (Q : E → V') (hQ : HasCompactSupport Q) :
-      HasCompactSupport fun x ↦ B (P x) (Q x) :=
-    hQ.mono fun x ↦ mt fun h ↦ by simp [h]
-  induction vs generalizing f with
-  | nil => simp
-  | cons v ws ih =>
-    set g' : E → V' := iteratedFDerivAlong ℝ ws g
-    have hg'1 : ContDiff ℝ 1 g' :=
-      hg.iteratedFDerivAlong ws (by simp [List.length_cons, add_comm])
-    have hg'supp : HasCompactSupport g' := hsupp.iteratedFDerivAlong ws
-    have hf1 : ContDiff ℝ 1 f := hf.of_le (by exact_mod_cast Nat.succ_pos ws.length)
-    have hcv : Continuous fun x ↦ fderiv ℝ f x v :=
-      (hf1.continuous_fderiv one_ne_zero).clm_apply continuous_const
-    have hcg' : Continuous fun x ↦ fderiv ℝ g' x v :=
-      (hg'1.continuous_fderiv one_ne_zero).clm_apply continuous_const
-    have step1 := integral_bilinear_fderiv_right_eq_neg_left_of_integrable (μ := μ) (B := B)
-      (f := f) (g := g') (v := v)
-      (((B.continuous.comp hcv).clm_apply hg'1.continuous).integrable_of_hasCompactSupport
-        (hcs _ _ hg'supp))
-      (((B.continuous.comp hf1.continuous).clm_apply hcg').integrable_of_hasCompactSupport
-        (hcs _ _ (hg'supp.fderiv_apply (𝕜 := ℝ) v)))
-      (((B.continuous.comp hf1.continuous).clm_apply
-        hg'1.continuous).integrable_of_hasCompactSupport (hcs _ _ hg'supp))
-      (fun x _ ↦ hf1.differentiable one_ne_zero x) (fun x _ ↦ hg'1.differentiable one_ne_zero x)
-    have step2 := ih (f := iteratedFDerivAlong ℝ [v] f)
-      (hf.iteratedFDerivAlong [v] (by simp [List.length_cons]))
-      (hg.of_le (by exact_mod_cast Nat.le_succ ws.length))
-    simp only [g', iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil] at step1 step2 ⊢
-    rw [step1, step2, ← iteratedFDerivAlong_append]
-    simp [pow_succ']
-
 /-- **Iterated integration by parts along a list of directions.** If `g` is `C^{vs.length}` with
 compact support and `f` is `C^{vs.length}` at every point of `tsupport g`, then
 `∫ x, B (f x) (iteratedFDerivAlong ℝ vs g x) ∂μ =
@@ -103,21 +64,28 @@ theorem integral_bilinear_iteratedFDerivAlong_eq
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) :
     ∫ x, B (f x) (iteratedFDerivAlong ℝ vs g x) ∂μ =
       (-1 : ℝ) ^ vs.length • ∫ x, B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) ∂μ := by
-  obtain ⟨U, hU, hsU, hfU⟩ := exists_isOpen_superset_contDiffOn (by simp) hf
-  have hfU' : ContDiffOn ℝ (vs.length : ℕ∞) f U := by simpa using hfU
-  obtain ⟨F, hF, -, -, -, hFf⟩ := hfU'.exists_contDiff_eventuallyEq_on_isCompact hsupp hU hsU
-  have hlhs : (fun x ↦ B (F x) (iteratedFDerivAlong ℝ vs g x)) =
-      fun x ↦ B (f x) (iteratedFDerivAlong ℝ vs g x) := by
-    ext x; by_cases hx : x ∈ tsupport g
-    · rw [(hFf x hx).eq_of_nhds]
-    · simp [image_eq_zero_of_notMem_tsupport (mt (tsupport_iteratedFDerivAlong_subset vs g ·) hx)]
-  have hrhs : (fun x ↦ B (iteratedFDerivAlong ℝ vs.reverse F x) (g x)) =
-      fun x ↦ B (iteratedFDerivAlong ℝ vs.reverse f x) (g x) := by
-    ext x; by_cases hx : x ∈ tsupport g
-    · rw [((hFf x hx).iteratedFDerivAlong vs.reverse).eq_of_nhds]
-    · simp [image_eq_zero_of_notMem_tsupport hx]
-  rw [← hlhs, ← hrhs]
-  exact integral_bilinear_iteratedFDerivAlong_eq_of_contDiff B vs (by simpa using hF) hg hsupp
+  induction vs generalizing f with
+  | nil => simp
+  | cons v ws ih =>
+    set g' : E → V' := iteratedFDerivAlong ℝ ws g
+    have hg'1 : ContDiff ℝ 1 g' :=
+      hg.iteratedFDerivAlong ws (by simp [List.length_cons, add_comm])
+    have hg'supp : HasCompactSupport g' := hsupp.iteratedFDerivAlong ws
+    have hf' : ∀ x ∈ tsupport g', ContDiffAt ℝ 1 f x := fun x hx ↦
+      (hf x (tsupport_iteratedFDerivAlong_subset ws g hx)).of_le
+        (by exact_mod_cast Nat.succ_pos ws.length)
+    have step1 := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport
+      (μ := μ) B hf' hg'1 hg'supp v
+    have hfv : ∀ x ∈ tsupport g, ContDiffAt ℝ ws.length (fun x ↦ fderiv ℝ f x v) x :=
+      fun x hx ↦ ((hf x hx).fderiv_right (m := ws.length)
+        (by simp [List.length_cons])).clm_apply contDiffAt_const
+    have step2 := ih hfv (hg.of_le (by exact_mod_cast Nat.le_succ ws.length))
+    simp only [g', iteratedFDerivAlong_cons_apply] at step1 ⊢
+    rw [step1, step2, ← neg_one_smul ℝ, smul_smul]
+    have hrev : iteratedFDerivAlong ℝ ws.reverse (fun x ↦ fderiv ℝ f x v) =
+        iteratedFDerivAlong ℝ (v :: ws).reverse f := by
+      rw [List.reverse_cons, iteratedFDerivAlong_append_singleton]
+    simp only [hrev, List.length_cons, pow_succ']
 
 /-- Scalar-multiplication form of `integral_bilinear_iteratedFDerivAlong_eq`. -/
 theorem integral_smul_iteratedFDerivAlong_eq

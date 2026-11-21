@@ -80,14 +80,16 @@ point `y`, the `m`-th Taylor polynomial `taylorPolynomial ℝ m u y` belongs to
 theorem taylorPolynomial_mem_polynomialsDegLE (m : ℕ) (u : EuclideanSpace ℝ ι → ℝ)
     (y : EuclideanSpace ℝ ι) :
     taylorPolynomial ℝ m u y ∈ polynomialsDegLE ι m := by
-  convert Submodule.sum_mem (polynomialsDegLE ι m) (t := Finset.range (m + 1)) fun j hj ↦
-    Submodule.smul_mem _ ((j ! : ℝ)⁻¹) <|
-      polynomialsDegLE_mono ι (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)) <|
-        comp_sub_mem_polynomialsDegLE y (by
-          simpa using (iteratedFDeriv ℝ j u y).toMultilinearMap.apply_const_mem_polynomialsDegLE)
-    using 1
-  ext x
-  simp [taylorPolynomial_apply]
+  have h : taylorPolynomial ℝ m u y = fun x ↦
+      (finiteJetSeries m (fun i ↦ iteratedFDeriv ℝ i.val u y)).partialSum (m + 1) (x - y) := by
+    ext x
+    rw [taylorPolynomial_eq_finiteJetPolynomial, finiteJetPolynomial_apply,
+      FormalMultilinearSeries.partialSum, ← Fin.sum_univ_eq_sum_range]
+    simp only [finiteJetSeries_apply, smul_apply]
+  rw [h]
+  simpa using comp_sub_mem_polynomialsDegLE y
+    ((finiteJetSeries m (fun i ↦ iteratedFDeriv ℝ i.val u y)).partialSum_mem_polynomialsDegLE
+      (m + 1))
 
 /-- Every polynomial function of degree at most `m` is reproduced by its `m`-th Taylor polynomial
 about any expansion center `y`. -/

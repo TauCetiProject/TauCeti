@@ -22,8 +22,8 @@ and `ρ`.
 
 ## Main results
 
-* `ContDiffBump.setIntegral_normed`: integrating `f.normed μ` over any superset of
-  `Metric.closedBall c f.rOut` yields `1`.
+* `ContDiffBump.setIntegral_normed`: for a locally finite measure `μ` positive on nonempty open
+  sets, integrating `f.normed μ` over any superset of `Metric.closedBall c f.rOut` yields `1`.
 * `ContDiffBump.setIntegral_normed_halfSpace`: integrating `f.normed μ` (for `f` centered at `0`)
   over the closed half-space `{y : E | 0 ≤ L y}` defined by any nonzero `L : E →L[ℝ] ℝ` yields
   `1 / 2`.
@@ -46,7 +46,8 @@ namespace ContDiffBump
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
   [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
 
-/-- Integrating `f.normed μ` over any set `s` containing `Metric.closedBall c f.rOut` yields `1`. -/
+/-- For a locally finite measure `μ` positive on nonempty open sets, integrating `f.normed μ` over
+any set `s` containing `Metric.closedBall c f.rOut` yields `1`. -/
 theorem setIntegral_normed {c : E} (f : ContDiffBump c) (μ : Measure E)
     [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] {s : Set E} (hs : closedBall c f.rOut ⊆ s) :
     ∫ y in s, f.normed μ y ∂μ = 1 := by

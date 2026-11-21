@@ -29,7 +29,8 @@ Over `ℝ` into a complete normed space `F`, if `u` is `C^{m + 1}` at every poin
 segment from `y` to `x`, Mathlib's `map_add_eq_sum_add_integral_iteratedFDeriv` gives the integral
 remainder formula (`TauCeti.sub_taylorPolynomial_eq_integral`)
 
-`u x - T^m_y u x = (m ! : ℝ)⁻¹ • ∫ t in 0..1, (1 - t) ^ m • D^{m + 1} u (y + t • (x - y)) (x - y)`.
+`u x - T^m_y u x =`
+`  (m ! : ℝ)⁻¹ • ∫ t in 0..1, (1 - t) ^ m • D^{m + 1} u (y + t • (x - y)) (fun _ ↦ x - y)`.
 
 Regularity along the whole segment is load-bearing: a step function smooth near `y` and jumping
 halfway along the segment has zero Taylor polynomial at `y`, nonzero increment, and zero integral
@@ -198,7 +199,8 @@ variable [CompleteSpace F]
 
 /-- **Taylor's theorem with integral remainder.** If `u` is `C^{m + 1}` at every point of the
 closed segment from `y` to `x`, then `u x - taylorPolynomial ℝ m u y x` is the integral along the
-segment of `(1 - t) ^ m / m!` times the `(m + 1)`-st Fréchet derivative applied to `x - y`. -/
+segment of `(1 - t) ^ m / m!` times the `(m + 1)`-st Fréchet derivative applied diagonally to
+`m + 1` copies of `x - y` (`fun _ ↦ x - y`). -/
 theorem sub_taylorPolynomial_eq_integral {m : ℕ} {u : E → F} {y x : E}
     (hu : ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ (m + 1) u (y + t • (x - y))) :
     u x - taylorPolynomial ℝ m u y x =

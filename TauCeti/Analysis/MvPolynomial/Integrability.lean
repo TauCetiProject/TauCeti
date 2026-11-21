@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
-import Mathlib.Topology.Algebra.MvPolynomial
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -37,11 +36,8 @@ theorem memLp_restrict_of_mem_polynomialsDegLE_of_isBounded
     {Ω : Set (EuclideanSpace ℝ ι)} (hΩ : Bornology.IsBounded Ω) (p : ℝ≥0∞) :
     MemLp q p (μ.restrict Ω) := by
   have := Fintype.ofFinite ι
-  obtain ⟨P, -, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hq
-  have hq_cont : Continuous (polynomialEvalₗ ι P) := by
-    rw [funext (polynomialEvalₗ_apply ι P)]
-    exact P.continuous_eval.comp (continuous_pi fun i ↦ PiLp.continuous_apply 2 (fun _ : ι ↦ ℝ) i)
-  exact (hq_cont.continuousOn.memLp_restrict_of_subset_isCompact hΩ.isCompact_closure
-    measurableSet_closure Subset.rfl p).mono_measure (Measure.restrict_mono subset_closure le_rfl)
+  exact ((contDiff_of_mem_polynomialsDegLE hq (n := 0)).continuous.continuousOn
+    |>.memLp_restrict_of_subset_isCompact hΩ.isCompact_closure measurableSet_closure
+    Subset.rfl p).mono_measure (Measure.restrict_mono subset_closure le_rfl)
 
 end TauCeti

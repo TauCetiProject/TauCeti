@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.FieldTheory.Finite.Polynomial
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Analysis.MvPolynomial.Jacobian
+import TauCeti.RingTheory.MvPolynomial.OrderAt
 
 /-!
 # Bounded-degree polynomial functions on Euclidean space
@@ -262,14 +263,10 @@ theorem comp_add_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → �
     (a : EuclideanSpace ℝ ι) (hf : f ∈ polynomialsDegLE ι m) :
     (fun x ↦ f (x + a)) ∈ polynomialsDegLE ι m := by
   obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
-  have hdeg (i : ι) : (X i + C (a i) : MvPolynomial ι ℝ).totalDegree ≤ 1 :=
-    (totalDegree_add _ _).trans (max_le (by simp [totalDegree_X]) (by simp))
-  refine (mem_polynomialsDegLE_iff ι).2 ⟨aeval (fun i ↦ X i + C (a i)) p,
-    (mem_restrictTotalDegree ι m _).1
-      (aeval_mem_restrictTotalDegree hdeg ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
+  refine (mem_polynomialsDegLE_iff ι).2 ⟨taylor (fun i ↦ a i) p,
+    (totalDegree_taylor_le (fun i ↦ a i) p).trans hp, ?_⟩
   ext x
-  simp only [polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply, map_add, aeval_X, aeval_C,
-    Algebra.algebraMap_self, RingHom.id_apply, PiLp.add_apply]
+  simp [eval_taylor, Pi.add_def]
 
 /-- Translating the input by subtracting a fixed vector preserves the total-degree bound. -/
 theorem comp_sub_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}

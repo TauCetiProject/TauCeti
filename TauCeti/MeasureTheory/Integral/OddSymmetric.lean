@@ -128,30 +128,22 @@ theorem setIntegral_setOf_nonneg_of_even {G F : Type*} [MeasurableSpace G] [AddG
     (heven : Function.Even φ) {g : G → ℝ} (hg : Measurable g) (hodd : Function.Odd g)
     (hzero : μ {y | g y = 0} = 0) :
     ∫ y in {y | 0 ≤ g y}, φ y ∂μ = (2 : ℝ)⁻¹ • ∫ y, φ y ∂μ := by
-  let P : Set G := {y | 0 ≤ g y}
   let N : Set G := {y | g y < 0}
   let Ppos : Set G := {y | 0 < g y}
-  let Z : Set G := {y | g y = 0}
   have hNm : MeasurableSet N := measurableSet_lt hg measurable_const
-  have hZm : MeasurableSet Z := measurableSet_eq_fun hg measurable_const
   have hPpos_m : MeasurableSet Ppos := measurableSet_lt measurable_const hg
-  have hPN_union : P ∪ N = Set.univ := by ext y; simp [P, N, le_or_gt]
-  have hP_union : P = Ppos ∪ Z := by ext y; simp [P, Ppos, Z, le_iff_lt_or_eq, eq_comm]
-  have hPN_disj : Disjoint P N := Set.disjoint_left.mpr fun y h1 h2 ↦ by
-    simp only [P, N, Set.mem_ofPred_eq] at h1 h2; exact not_lt_of_ge h1 h2
-  have hPposZ_disj : Disjoint Ppos Z := Set.disjoint_left.mpr fun y h1 h2 ↦ by
-    simp only [Ppos, Z, Set.mem_ofPred_eq] at h1 h2; exact ne_of_gt h1 h2
-  have hsum : ∫ y in P, φ y ∂μ + ∫ y in N, φ y ∂μ = ∫ y, φ y ∂μ := by
-    rw [← setIntegral_union hPN_disj hNm hφ.integrableOn hφ.integrableOn, hPN_union,
-      setIntegral_univ]
+  have hNc : Nᶜ = {y | 0 ≤ g y} := by ext y; simp [N]
+  have hP_union : {y | 0 ≤ g y} = Ppos ∪ {y | g y = 0} := by
+    ext y; simp [Ppos, le_iff_lt_or_eq, eq_comm]
   have hind : (fun y ↦ Ppos.indicator φ (-y)) = N.indicator φ := by
     ext y; by_cases hy : g y < 0 <;> simp [Ppos, N, hodd y, heven y, hy]
-  have heq_PN : ∫ y in P, φ y ∂μ = ∫ y in N, φ y ∂μ := by
-    rw [hP_union, setIntegral_union hPposZ_disj hZm hφ.integrableOn hφ.integrableOn,
-      setIntegral_measure_zero _ hzero, add_zero, ← integral_indicator hPpos_m,
-      ← integral_indicator hNm, ← integral_neg_eq_self, hind]
+  have heq_PN : ∫ y in Nᶜ, φ y ∂μ = ∫ y in N, φ y ∂μ := by
+    rw [hNc, setIntegral_congr_set
+      (hP_union ▸ union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.mpr hzero)),
+      ← integral_indicator hPpos_m, ← integral_indicator hNm, ← integral_neg_eq_self, hind]
+  have hsum := integral_add_compl hNm hφ
   rw [← heq_PN, ← two_smul ℝ] at hsum
-  rw [← hsum, inv_smul_smul₀ two_ne_zero]
+  rw [← hNc, ← hsum, inv_smul_smul₀ two_ne_zero]
 
 /-- Integrating an integrable even function against an additive Haar measure over the closed
 half-space `{y : E | 0 ≤ L y}` defined by any nonzero continuous linear functional

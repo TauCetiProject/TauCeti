@@ -152,8 +152,11 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {x : 
     (hf : ContDiffAt 𝕜 n f x) (vs : List E) (hvs : m + vs.length ≤ n) :
     ContDiffAt 𝕜 m (iteratedFDerivAlong 𝕜 vs f) x := by
   induction vs generalizing m with
-  | nil => exact hf.of_le (by simpa using hvs)
+  | nil =>
+    rw [iteratedFDerivAlong_nil]
+    exact hf.of_le (by simpa using hvs)
   | cons v vs ih =>
+    rw [iteratedFDerivAlong_cons]
     refine ((ih (m := m + 1) ?_).fderiv_right le_rfl).clm_apply contDiffAt_const
     rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
 
