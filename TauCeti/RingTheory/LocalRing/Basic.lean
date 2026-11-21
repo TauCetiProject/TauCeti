@@ -38,6 +38,8 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   two elements, every unit is congruent to `1` modulo the maximal ideal, and
   `IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two`: `2` lies in the maximal ideal,
   and `IsLocalRing.isUnit_three_of_card_residueField_eq_two`: `3` is a unit.
+* `IsLocalRing.exists_one_lt_isUnit_natCast`: every local ring has a natural number `ℓ > 1`
+  that is a unit (`ℓ = 2` or `ℓ = 3`).
 * `AlgHom.ker_isMaximal_residueField`: the kernel of an algebra map from a possibly
   noncommutative algebra to the residue field of a commutative local ring is a maximal ideal.
 -/
@@ -107,6 +109,13 @@ theorem Nat.Coprime.isUnit_natCast {R : Type*} [Ring R] [IsLocalRing R] {m n : �
     exact_mod_cast congrArg (Int.cast : ℤ → R) hab.symm
   exact ((IsLocalRing.isUnit_or_isUnit_of_add_one hab').imp isUnit_of_mul_isUnit_left
     isUnit_of_mul_isUnit_left).resolve_right hn
+
+/-- Every local ring has a natural number `ℓ > 1` that is a unit (`ℓ = 2` or `ℓ = 3`). -/
+theorem IsLocalRing.exists_one_lt_isUnit_natCast (R : Type*) [Ring R] [IsLocalRing R] :
+    ∃ ℓ : ℕ, 1 < ℓ ∧ IsUnit (ℓ : R) := by
+  by_cases h2 : IsUnit ((2 : ℕ) : R)
+  · exact ⟨2, by decide, h2⟩
+  · exact ⟨3, by decide, Nat.Coprime.isUnit_natCast (m := 3) (n := 2) (by decide) h2⟩
 
 /-- When the residue field of a commutative local ring has two elements, every unit is congruent
 to `1` modulo the maximal ideal: its residue is a nonzero element of `𝔽₂`. -/
