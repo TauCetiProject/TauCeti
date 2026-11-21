@@ -11,12 +11,13 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Constructions
 
 /-!
-# Transport of continuous additive homomorphisms and subgroups to `Multiplicative`
+# Transport of continuous homomorphisms and subgroups between additive and multiplicative type tags
 
-Mathlib's `AddMonoidHom.toMultiplicative` identifies homomorphisms between additive monoids with
-homomorphisms between their `Multiplicative` type tags. Since `Multiplicative` inherits the
-topology of its underlying type, continuity is preserved in both directions. This file packages the
-resulting equivalence for `ContinuousAddMonoidHom`, records its compatibility with identity,
+Mathlib's `AddMonoidHom.toMultiplicative` and `MonoidHom.toAdditive` identify homomorphisms
+between additive and multiplicative monoids with homomorphisms between their `Multiplicative` and
+`Additive` type tags. Since `Multiplicative` and `Additive` inherit the topology of the underlying
+type, continuity is preserved in both directions. This file packages the resulting equivalences
+for `ContinuousAddMonoidHom` and `ContinuousMonoidHom`, records their compatibility with identity,
 composition, surjectivity, and dense range, and upgrades Mathlib's subgroup correspondence
 `AddSubgroup.toSubgroup` to a topological isomorphism on the carrier subtypes carrying the subspace
 topology.
@@ -25,12 +26,15 @@ topology.
 
 * `ContinuousAddMonoidHom.toMultiplicative`: the equivalence
   `(M →ₜ+ N) ≃ (Multiplicative M →ₜ* Multiplicative N)` upgrading `AddMonoidHom.toMultiplicative`.
+* `ContinuousMonoidHom.toAdditive`: the equivalence
+  `(M →ₜ* N) ≃ (Additive M →ₜ+ Additive N)` upgrading `MonoidHom.toAdditive`.
 * `AddSubgroup.toSubgroupContinuousMulEquiv`: the topological isomorphism
   `Multiplicative H ≃ₜ* H.toSubgroup` for `H : AddSubgroup A`.
 -/
 
 public section
 
+open Additive (ofMul toMul)
 open Multiplicative (ofAdd toAdd)
 
 namespace ContinuousAddMonoidHom
@@ -104,6 +108,77 @@ theorem denseRange_toMultiplicative_iff (f : M →ₜ+ N) :
         (h.comp toAdd.surjective.denseRange f.continuous) continuous_ofAdd)⟩
 
 end ContinuousAddMonoidHom
+
+namespace ContinuousMonoidHom
+
+variable {M N P : Type*} [Monoid M] [Monoid N] [Monoid P]
+  [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P]
+
+/-- Reinterpret continuous multiplicative homomorphisms `M →ₜ* N` as continuous additive
+homomorphisms `Additive M →ₜ+ Additive N`. This is `MonoidHom.toAdditive` upgraded to
+`ContinuousMonoidHom`. -/
+def toAdditive : (M →ₜ* N) ≃ (Additive M →ₜ+ Additive N) where
+  toFun f :=
+    { toAddMonoidHom := f.toMonoidHom.toAdditive
+      continuous_toFun := continuous_ofMul.comp (f.continuous.comp continuous_toMul) }
+  invFun f :=
+    { toMonoidHom := MonoidHom.toAdditive.symm f.toAddMonoidHom
+      continuous_toFun := continuous_toMul.comp (f.continuous.comp continuous_ofMul) }
+  left_inv _ := ext fun _ => rfl
+  right_inv _ := ContinuousAddMonoidHom.ext fun _ => rfl
+
+/-- Evaluating `f.toAdditive` conjugates `f` by `toMul` and `ofMul`. -/
+@[simp]
+theorem toAdditive_apply_apply (f : M →ₜ* N) (x : Additive M) :
+    f.toAdditive x = ofMul (f x.toMul) :=
+  (rfl)
+
+/-- Evaluating `toAdditive.symm` conjugates by `ofMul` and `toMul`. -/
+@[simp]
+theorem toAdditive_symm_apply_apply (f : Additive M →ₜ+ Additive N) (x : M) :
+    toAdditive.symm f x = (f (ofMul x)).toMul :=
+  (rfl)
+
+/-- Forgetting continuity commutes with `toAdditive`. -/
+@[simp]
+theorem toAddMonoidHom_toAdditive (f : M →ₜ* N) :
+    (f.toAdditive : Additive M →+ Additive N) = f.toMonoidHom.toAdditive :=
+  (rfl)
+
+/-- `toAdditive` maps the identity continuous multiplicative homomorphism to the identity. -/
+@[simp]
+theorem toAdditive_id :
+    (ContinuousMonoidHom.id M).toAdditive = ContinuousAddMonoidHom.id (Additive M) :=
+  (rfl)
+
+/-- `toAdditive` commutes with composition of continuous multiplicative homomorphisms. -/
+@[simp]
+theorem toAdditive_comp (g : N →ₜ* P) (f : M →ₜ* N) :
+    (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive :=
+  (rfl)
+
+/-- `f.toAdditive` is surjective if and only if `f` is surjective. -/
+@[simp]
+theorem surjective_toAdditive_iff (f : M →ₜ* N) :
+    Function.Surjective f.toAdditive ↔ Function.Surjective f := by
+  refine ⟨fun h y => ?_, fun h y => ?_⟩
+  · obtain ⟨x, hx⟩ := h (ofMul y)
+    exact ⟨x.toMul, ofMul.injective hx⟩
+  · obtain ⟨x, rfl⟩ := h y.toMul
+    exact ⟨ofMul x, rfl⟩
+
+/-- `f.toAdditive` has dense range if and only if `f` has dense range. -/
+@[simp]
+theorem denseRange_toAdditive_iff (f : M →ₜ* N) :
+    DenseRange f.toAdditive ↔ DenseRange f :=
+  ⟨fun h =>
+      (toMul.surjective.denseRange.comp
+        (h.comp ofMul.surjective.denseRange f.toAdditive.continuous) continuous_toMul),
+    fun h =>
+      (ofMul.surjective.denseRange.comp
+        (h.comp toMul.surjective.denseRange f.continuous) continuous_ofMul)⟩
+
+end ContinuousMonoidHom
 
 namespace AddSubgroup
 

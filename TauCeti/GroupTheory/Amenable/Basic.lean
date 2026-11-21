@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.GroupTheory.Amenable.Mean
 public import TauCeti.Topology.Algebra.Group.UCB.CompRight
 
@@ -204,6 +205,16 @@ theorem Amenable.of_denseRange [Amenable G] (φ : G →ₜ* H) (hφ : DenseRange
     Amenable H :=
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
+
+/-- The range of a continuous homomorphism from an amenable topological group is amenable. -/
+theorem Amenable.range_of_continuous [Amenable G] {φ : G →* H} (hφ : Continuous φ) :
+    Amenable φ.range :=
+  .of_denseRange ⟨φ.rangeRestrict, hφ.subtype_mk _⟩ φ.rangeRestrict_surjective.denseRange
+
+/-- Any quotient of an amenable topological group by a normal subgroup is amenable. -/
+instance Amenable.quotientGroup [Amenable G] (N : Subgroup G) [N.Normal] : Amenable (G ⧸ N) :=
+  .of_denseRange ⟨QuotientGroup.mk' N, QuotientGroup.continuous_mk⟩
+    (QuotientGroup.mk'_surjective N).denseRange
 
 omit [TopologicalSpace G] [IsTopologicalGroup G] in
 /-- Amenability passes from a finer group topology to a coarser group topology. -/

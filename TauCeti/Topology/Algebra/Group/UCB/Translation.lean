@@ -366,6 +366,94 @@ theorem continuous_leftTranslation_apply (f : AddUCB A) :
   ext
   simp
 
+/-- Right translation `R_a`, where `(R_a f)(x) = f (x + a)`, as a linear isometry equivalence of
+`AddUCB A`. -/
+def rightTranslation (a : A) : AddUCB A ≃ₗᵢ[ℝ] AddUCB A :=
+  BoundedContinuousFunction.compContinuousₗᵢ (addUcb A)
+    (ContinuousMap.addRight a) (ContinuousMap.addRight (-a)) (by simp) (by simp)
+    (fun _ hf => compContinuous_addRight_mem_addUcb hf _)
+    (fun _ hf => compContinuous_addRight_mem_addUcb hf _)
+
+/-- The right translate `R_a f` is the precomposition of `f` with `x ↦ x + a`. -/
+theorem coe_rightTranslation (a : A) (f : AddUCB A) :
+    (rightTranslation a f : A →ᵇ ℝ) =
+      (f : A →ᵇ ℝ).compContinuous (ContinuousMap.addRight a) :=
+  BoundedContinuousFunction.compContinuousₗᵢ_apply ..
+
+@[simp]
+theorem rightTranslation_apply (a : A) (f : AddUCB A) (x : A) :
+    (rightTranslation a f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (x + a) :=
+  DFunLike.congr_fun (coe_rightTranslation a f) x
+
+/-- The inverse of `R_a` is precomposition with `x ↦ x + -a`. -/
+theorem coe_rightTranslation_symm (a : A) (f : AddUCB A) :
+    ((rightTranslation a).symm f : A →ᵇ ℝ) =
+      (f : A →ᵇ ℝ).compContinuous (ContinuousMap.addRight (-a)) :=
+  BoundedContinuousFunction.compContinuousₗᵢ_symm_apply ..
+
+theorem rightTranslation_symm_apply (a : A) (f : AddUCB A) (x : A) :
+    ((rightTranslation a).symm f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (x + -a) :=
+  DFunLike.congr_fun (coe_rightTranslation_symm a f) x
+
+@[simp]
+theorem rightTranslation_symm (a : A) : (rightTranslation a).symm = rightTranslation (-a) := by
+  ext
+  simp [rightTranslation_symm_apply]
+
+@[simp]
+theorem rightTranslation_zero :
+    rightTranslation (0 : A) = LinearIsometryEquiv.refl ℝ (AddUCB A) := by
+  ext
+  simp
+
+theorem rightTranslation_add (a b : A) :
+    rightTranslation (a + b) = rightTranslation a * rightTranslation b := by
+  ext
+  simp [add_assoc]
+
+theorem rightTranslation_neg (a : A) : rightTranslation (-a) = (rightTranslation a).symm :=
+  (rightTranslation_symm a).symm
+
+/-- Right translation preserves and reflects the pointwise order. -/
+@[simp]
+theorem rightTranslation_le_rightTranslation_iff {a : A} {f f' : AddUCB A} :
+    rightTranslation a f ≤ rightTranslation a f' ↔ f ≤ f' := by
+  refine ⟨fun h => le_def.2 fun x => ?_, fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
+  simpa using le_def.1 h (x + -a)
+
+/-- Right translation fixes the constant function `1`. -/
+@[simp]
+theorem rightTranslation_apply_one (a : A) : rightTranslation a 1 = 1 := by
+  ext
+  simp
+
+/-- Right translation fixes every constant function. -/
+@[simp]
+theorem rightTranslation_apply_algebraMap (a : A) (c : ℝ) :
+    rightTranslation a (algebraMap ℝ (AddUCB A) c) = algebraMap ℝ (AddUCB A) c := by
+  simp [Algebra.algebraMap_eq_smul_one]
+
+/-- Left and right translations of `AddUCB A` commute. -/
+theorem commute_leftTranslation_rightTranslation (a b : A) :
+    Commute (leftTranslation a) (rightTranslation b) := by
+  ext
+  simp [add_assoc]
+
+/-- Left and right translations of `AddUCB A` commute, applied to a function. -/
+theorem leftTranslation_rightTranslation (a b : A) (f : AddUCB A) :
+    leftTranslation a (rightTranslation b f) = rightTranslation b (leftTranslation a f) :=
+  congr($(commute_leftTranslation_rightTranslation a b) f)
+
+/-- On a finite additive group, the sum of the left translates `L_a f` of a function `f` in
+`AddUCB A` is the constant function `∑ x, f x`. -/
+theorem sum_leftTranslation [Fintype A] (f : AddUCB A) :
+    ∑ a, leftTranslation a f = algebraMap ℝ (AddUCB A) (∑ x, (f : A →ᵇ ℝ) x) := by
+  refine ext fun x => ?_
+  simp only [AddSubmonoidClass.coe_finsetSum, FunLike.coe_sum, Finset.sum_apply,
+    leftTranslation_apply, SubalgebraClass.coe_algebraMap,
+    BoundedContinuousFunction.algebraMap_apply, smul_eq_mul, mul_one]
+  exact Fintype.sum_equiv ((Equiv.neg A).trans (Equiv.addRight x)) _ _ fun _ => rfl
+
 end AddUCB
 
 end TauCeti

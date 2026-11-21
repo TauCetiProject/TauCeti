@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Basic
 public import TauCeti.Topology.Algebra.Group.UCB.Discrete
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Discrete invariant means
@@ -127,6 +128,11 @@ theorem mapOfDiscrete_apply (r : G → H) (m : Mean G) (f : UCB H) :
 theorem mapOfDiscrete_coe (φ : G →ₜ* H) (m : Mean G) : m.mapOfDiscrete (φ : G → H) = m.map φ :=
   ext fun f => by simp [UCB.compRightAlgHomOfDiscrete_coe]
 
+/-- Pushing forward a mean on a discrete group along the identity map is the identity. -/
+@[simp]
+theorem mapOfDiscrete_id (m : Mean G) : m.mapOfDiscrete id = m :=
+  ext fun _ => by simp only [mapOfDiscrete_apply]; exact congrArg m (UCB.ext fun _ => by simp)
+
 /-- If `r (φ h * x) = h * r x` for a homomorphism `φ : H →* G`, then the pushforward of a
 left-invariant mean along `r` is left invariant. -/
 theorem IsLeftInvariant.mapOfDiscrete {m : Mean G} (hm : m.IsLeftInvariant) (φ : H →* G)
@@ -136,6 +142,25 @@ theorem IsLeftInvariant.mapOfDiscrete {m : Mean G} (hm : m.IsLeftInvariant) (φ 
     UCB.compRightAlgHomOfDiscrete_leftTranslation φ hr, hm.apply_leftTranslation]
 
 end MapOfDiscrete
+
+/-- Pushing forward a mean along `r` and then along `s` is pushing forward along `s ∘ r`. -/
+@[simp]
+theorem mapOfDiscrete_mapOfDiscrete {H K : Type*} [Group H] [TopologicalSpace H]
+    [DiscreteTopology H] [Group K] [TopologicalSpace K] [IsTopologicalGroup K]
+    (s : H → K) (r : G → H) (m : Mean G) :
+    (m.mapOfDiscrete r).mapOfDiscrete s = m.mapOfDiscrete (s ∘ r) :=
+  ext fun _ => by simp only [mapOfDiscrete_apply]; exact congrArg m (UCB.ext fun _ => by simp)
+
+/-- Pushing forward a mean on a discrete group along the quotient-by-kernel isomorphism agrees with
+pushing forward directly to the range. -/
+theorem mapOfDiscrete_quotientKerEquivRange {H : Type*} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : G →* H) [DiscreteTopology (G ⧸ φ.ker)] (m : Mean G) :
+    (m.mapOfDiscrete (QuotientGroup.mk' φ.ker)).mapOfDiscrete
+        (QuotientGroup.quotientKerEquivRange φ) =
+      m.mapOfDiscrete φ.rangeRestrict := by
+  rw [mapOfDiscrete_mapOfDiscrete]
+  exact congrArg (m.mapOfDiscrete ·)
+    (funext (TauCeti.QuotientGroup.quotientKerEquivRange_apply_mk φ))
 
 end Mean
 
@@ -164,6 +189,12 @@ theorem Amenable.of_surjective [Amenable G] {H : Type*} [Group H]
     Amenable H :=
   .of_denseRange ⟨φ, continuous_of_discreteTopology⟩ hφ.denseRange
 
+/-- The range of a homomorphism out of an amenable discrete group into a topological group is
+amenable. -/
+instance Amenable.range [Amenable G] {H : Type*} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : G →* H) : Amenable φ.range :=
+  .range_of_continuous continuous_of_discreteTopology
+
 end Discrete
 
 /-- An abstract group which is amenable with the discrete topology is amenable with any
@@ -176,3 +207,30 @@ theorem Amenable.of_discrete [IsTopologicalGroup G]
   exact Amenable.of_le (t₁ := ⊥) bot_le h
 
 end TauCeti
+
+namespace MulEquiv
+
+open TauCeti
+
+/-- Amenability of discrete groups is invariant under group isomorphisms. -/
+theorem amenable_iff_of_discreteTopology {G H : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] [Group H] [TopologicalSpace H] [DiscreteTopology H] (e : G ≃* H) :
+    Amenable G ↔ Amenable H :=
+  ⟨fun _ => .of_surjective e.toMonoidHom e.surjective,
+    fun _ => .of_surjective e.symm.toMonoidHom e.symm.surjective⟩
+
+end MulEquiv
+
+namespace MonoidHom
+
+open TauCeti
+
+/-- For a homomorphism `φ : G →* H` of discrete groups, `G ⧸ φ.ker` is amenable if and only if
+`φ.range` is amenable, via `QuotientGroup.quotientKerEquivRange`. -/
+theorem amenable_quotient_ker_iff_range {G H : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] [Group H] [TopologicalSpace H] [DiscreteTopology H] (φ : G →* H) :
+    Amenable (G ⧸ φ.ker) ↔ Amenable φ.range := by
+  have := QuotientGroup.discreteTopology (isOpen_discrete (φ.ker : Set G))
+  exact (QuotientGroup.quotientKerEquivRange φ).amenable_iff_of_discreteTopology
+
+end MonoidHom
