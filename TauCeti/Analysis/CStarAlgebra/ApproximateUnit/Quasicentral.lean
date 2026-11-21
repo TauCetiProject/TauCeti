@@ -396,7 +396,7 @@ theorem IsQuasicentralApproximateUnit.map {I : TwoSidedIdeal A} {l : Filter A}
   have := hl.neBot
   refine .of_tendsto_mul_right
     (eventually_map.mpr <| hl.eventually_mem.mono fun e he =>
-      TwoSidedIdeal.subset_span ⟨e, he, rfl⟩)
+      (TwoSidedIdeal.mem_map_iff_of_surjective f hf).mpr ⟨e, he, rfl⟩)
     (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ hx => map_nonneg f hx)
     (eventually_map.mpr <| hl.eventually_norm.mono fun e he =>
       (NonUnitalStarAlgHom.norm_apply_le f e).trans he)
@@ -691,6 +691,18 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
   · simpa only [e, mul_smul_comm, Finset.mul_sum] using
       havg (fun k => (x : A) * u k) x (fun k hk => ((hu k hk).2.2.2 x hx).2)
 
+omit [PartialOrder A] [StarOrderedRing A] in
+private theorem norm_average_sq_le {ι : Type*} {s : Finset ι} (hs : s.Nonempty)
+    {d : ι → A} {C η : ℝ} (hη : 0 ≤ η) (hd : ∀ i ∈ s, ‖d i‖ ≤ C)
+    (hoff : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → ‖star (d i) * d j‖ ≤ η) :
+    ‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2 ≤ C ^ 2 / s.card + η := by
+  rw [norm_smul, Real.norm_of_nonneg (by positivity), mul_pow]
+  have hcard : (s.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hs.card_pos.ne'
+  calc ((s.card : ℝ)⁻¹) ^ 2 * ‖∑ i ∈ s, d i‖ ^ 2
+      ≤ ((s.card : ℝ)⁻¹) ^ 2 * ((s.card : ℝ) * C ^ 2 + (s.card : ℝ) ^ 2 * η) :=
+        mul_le_mul_of_nonneg_left (TauCeti.CStarAlgebra.norm_sum_sq_le hη hd hoff) (by positivity)
+    _ = C ^ 2 / s.card + η := by field_simp
+
 /-- **Finite-set Arveson–Akemann–Pedersen theorem.** For every closed two-sided ideal `I` of a
 C⋆-algebra `A`, finite subsets `G ⊆ I` and `F ⊆ A`, and `ε > 0`, there exists a positive
 contraction `e ∈ I` such that `‖e * x - x‖ < ε` and `‖x * e - x‖ < ε` for all `x ∈ G`, and
@@ -722,18 +734,20 @@ theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt
     (hoff i j hij hjn a ha).trans <| by
       calc δ * (‖a‖ + 1) ≤ δ * (M + 1) := by gcongr
         _ = ε ^ 2 / 4 := by dsimp [δ]; field_simp
-  have hsq := TauCeti.CStarAlgebra.norm_sum_sq_le (s := Finset.range n)
-    (d := fun k => u k * a - a * u k) (C := 2 * ‖a‖) (η := ε ^ 2 / 4) (by positivity)
-    (fun k hk => (TauCeti.norm_commutator_le (u k) a).trans
-      (mul_le_mul_of_nonneg_right
-        (mul_le_of_le_one_right zero_le_two (hu k (Finset.mem_range.mp hk)).2.2.1)
-        (norm_nonneg a)))
-    (fun i hi j hj hij => by
-      rcases lt_or_gt_of_ne hij with h | h
-      · exact hoff_lt h (Finset.mem_range.mp hj)
-      · rw [← norm_star, star_mul, star_star]
-        exact hoff_lt h (Finset.mem_range.mp hi))
-  rw [Finset.card_range] at hsq
+  have havg_sq : ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2 ≤
+      (2 * ‖a‖) ^ 2 / n + ε ^ 2 / 4 := by
+    simpa only [Finset.card_range] using
+      norm_average_sq_le (Finset.nonempty_range_iff.mpr hn_pos.ne') (C := 2 * ‖a‖)
+        (η := ε ^ 2 / 4) (by positivity)
+        (fun k hk => (TauCeti.norm_commutator_le (u k) a).trans
+          (mul_le_mul_of_nonneg_right
+            (mul_le_of_le_one_right zero_le_two (hu k (Finset.mem_range.mp hk)).2.2.1)
+            (norm_nonneg a)))
+        (fun i hi j hj hij => by
+          rcases lt_or_gt_of_ne hij with h | h
+          · exact hoff_lt h (Finset.mem_range.mp hj)
+          · rw [← norm_star, star_mul, star_star]
+            exact hoff_lt h (Finset.mem_range.mp hi))
   have hterm1 : 4 * ‖a‖ ^ 2 / (n : ℝ) < ε ^ 2 / 2 := by
     have hmn : 8 * M ^ 2 / ε ^ 2 < (n : ℝ) := hm.trans (by exact_mod_cast Nat.lt_succ_self m)
     rw [div_lt_iff₀ (by positivity)] at hmn
@@ -741,11 +755,10 @@ theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt
     have ha2 : ‖a‖ ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (norm_nonneg a) haM 2
     nlinarith
   have hlt : ‖e * a - a * e‖ ^ 2 < ε ^ 2 := by
-    rw [hcomm, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow]
-    calc ((n : ℝ)⁻¹) ^ 2 * ‖∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2
-        ≤ ((n : ℝ)⁻¹) ^ 2 * ((n : ℝ) * (2 * ‖a‖) ^ 2 + (n : ℝ) ^ 2 * (ε ^ 2 / 4)) :=
-          mul_le_mul_of_nonneg_left hsq (by positivity)
-      _ = 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 := by field_simp; ring
+    rw [hcomm]
+    calc ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2
+        ≤ (2 * ‖a‖) ^ 2 / (n : ℝ) + ε ^ 2 / 4 := havg_sq
+      _ = 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 := by ring
       _ < ε ^ 2 / 2 + ε ^ 2 / 2 := add_lt_add hterm1
           (div_lt_div_of_pos_left (sq_pos_of_pos hε) two_pos (by norm_num))
       _ = ε ^ 2 := add_halves _
@@ -812,6 +825,14 @@ theorem exists_isQuasicentralApproximateUnit_iff_exists_seq (I : TwoSidedIdeal A
       TopologicalSpace.denseRange_denseSeq I ⟨x, hx⟩
     have himg := image_closure_subset_closure_image continuous_subtypeVal ⟨⟨x, hx⟩, hx', rfl⟩
     rwa [← Set.range_comp] at himg
+  have hdiag (k : ℕ) {f : ℕ → A} {y : A}
+      (hf : ∀ n, k < n → ‖f n - y‖ < 1 / ((n : ℝ) + 1)) :
+      Tendsto f atTop (𝓝 y) := by
+    rw [Metric.tendsto_nhds]
+    intro ε hε
+    filter_upwards [(tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually (gt_mem_nhds hε),
+      eventually_gt_atTop k] with n hn hkn
+    simpa only [dist_eq_norm] using (hf n hkn).trans hn
   refine ⟨u, fun n => ⟨huI n, hu₀ n, hu₁ n⟩, ?_⟩
   have : (atTop.map u).NeBot := atTop_neBot.map u
   refine IsQuasicentralApproximateUnit.of_tendsto_mul_right_of_dense
@@ -820,19 +841,14 @@ theorem exists_isQuasicentralApproximateUnit_iff_exists_seq (I : TwoSidedIdeal A
     (eventually_map.mpr (Eventually.of_forall hu₁))
     hsI (TopologicalSpace.denseRange_denseSeq A) ?_ ?_
   · rintro _ ⟨k, rfl⟩
-    rw [tendsto_map'_iff, Metric.tendsto_nhds]
-    intro ε hε
-    filter_upwards [(tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually (gt_mem_nhds hε),
-      eventually_gt_atTop k] with n hn hkn
-    simpa only [Function.comp_def, dist_eq_norm] using
-      ((huG n (dI k) (Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr hkn, rfl⟩)).1).trans hn
+    rw [tendsto_map'_iff]
+    exact hdiag k fun n hkn =>
+      (huG n (dI k) (Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr hkn, rfl⟩)).1
   · rintro _ ⟨k, rfl⟩
-    rw [tendsto_map'_iff, Metric.tendsto_nhds]
-    intro ε hε
-    filter_upwards [(tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually (gt_mem_nhds hε),
-      eventually_gt_atTop k] with n hn hkn
-    simpa only [Function.comp_def, dist_zero_right] using
-      (huF n (dA k) (Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr hkn, rfl⟩)).trans hn
+    rw [tendsto_map'_iff]
+    exact hdiag k fun n hkn => by
+      simpa only [Function.comp_def, sub_zero] using
+        huF n (dA k) (Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr hkn, rfl⟩)
 
 /-- Every closed two-sided ideal `I` of a separable C⋆-algebra `A` admits a sequential
 quasicentral approximate unit `u : ℕ → A` in the nonnegative closed unit ball of `I`. -/

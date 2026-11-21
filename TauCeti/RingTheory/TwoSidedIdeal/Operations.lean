@@ -43,8 +43,9 @@ theorem coe_map_of_surjective (I : TwoSidedIdeal R) (f : F) (hf : Function.Surje
       rintro _ b ⟨x, hx, rfl⟩
       obtain ⟨a, rfl⟩ := hf b
       exact ⟨x * a, I.mul_mem_right x a hx, map_mul f x a⟩)
-  have hIJ : I.map f = J :=
-    le_antisymm
+  have hIJ : I.map f = J := by
+    rw [TwoSidedIdeal.map]
+    exact le_antisymm
       (TwoSidedIdeal.span_le.mpr fun _ hx => (TwoSidedIdeal.mem_mk' ..).mpr hx)
       fun _ hx => TwoSidedIdeal.subset_span ((TwoSidedIdeal.mem_mk' ..).mp hx)
   rw [hIJ]
@@ -54,8 +55,8 @@ theorem coe_map_of_surjective (I : TwoSidedIdeal R) (f : F) (hf : Function.Surje
 homomorphism `f` if and only if `y = f x` for some `x ∈ I`. -/
 theorem mem_map_iff_of_surjective {I : TwoSidedIdeal R} (f : F) (hf : Function.Surjective f)
     {y : S} : y ∈ I.map f ↔ ∃ x ∈ I, f x = y := by
-  rw [← SetLike.mem_coe, coe_map_of_surjective I f hf]
-  rfl
+  rw [← SetLike.mem_coe, coe_map_of_surjective I f hf, Set.mem_image]
+  simp only [SetLike.mem_coe]
 
 end NonUnitalNonAssocRing
 
