@@ -61,7 +61,7 @@ instance smulInvariantMeasure_uniformSphereMeasure :
     have hU : (U • · : sphere (0 : E) 1 → sphere (0 : E) 1) =
         Subtype.map f fun x hx ↦ by simpa using hx :=
       funext fun x ↦ Subtype.ext <| by
-        rw [Unitary.coe_smul_unitSphere, Subtype.map_coe]
+        rw [TauCeti.Sphere.coe_smul_of_isIsometricSMul, Subtype.map_coe]
         exact congr($(Unitary.coe_linearIsometryEquiv_apply U) (x : E)).symm
     rw [hU, ← Measure.map_apply (f.continuous.measurable.subtype_map _) hs,
       f.map_uniformSphereMeasure]
