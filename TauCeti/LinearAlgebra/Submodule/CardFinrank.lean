@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.RingTheory.Polynomial.GaussianBinomial
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+import TauCeti.LinearAlgebra.LinearIndependent.SpanEq
 
 /-!
 # The number of subspaces of a given dimension over a finite field
@@ -19,8 +20,9 @@ For a finite division ring `K` with `q` elements and a finite `K`-vector space `
 
 The linearly independent `k`-tuples of `V` are counted by `card_linearIndependent`; sending a
 tuple to its span partitions them according to the `k`-dimensional subspace they span, and the
-tuples spanning a given subspace `W` are exactly the linearly independent `k`-tuples of `W`. The
-count follows from the product formula `TauCeti.gaussianBinomial_mul_prod_pow_sub_pow`.
+tuples spanning a given subspace `W` are exactly the linearly independent `k`-tuples of `W`
+(`Submodule.linearIndependentSpanEqEquiv`). The count follows from the product formula
+`TauCeti.gaussianBinomial_mul_prod_pow_sub_pow`.
 
 ## Main results
 
@@ -40,19 +42,6 @@ namespace TauCeti
 
 variable {K V : Type*} [DivisionRing K] [Fintype K] [AddCommGroup V] [Module K V] [Finite V]
 
-/-- The linearly independent `k`-tuples of `V` spanning a `k`-dimensional subspace `W` are the
-linearly independent `k`-tuples of `W`. -/
-private def fiberEquiv {k : ℕ} (W : {W : Submodule K V // finrank K W = k}) :
-    {s : {s : Fin k → V // LinearIndependent K s} // span K (Set.range s.val) = W.val} ≃
-      {t : Fin k → W.val // LinearIndependent K t} where
-  toFun s := ⟨fun i ↦ ⟨s.val.val i, s.property.le (subset_span (Set.mem_range_self i))⟩,
-    LinearIndependent.of_comp W.val.subtype s.val.property⟩
-  invFun t := ⟨⟨W.val.subtype ∘ t.val, t.property.map' _ (ker_subtype _)⟩, by
-    rw [Set.range_comp, span_image, t.property.span_eq_top_of_card_eq_finrank'
-      (by rw [Fintype.card_fin, W.property]), map_subtype_top]⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 /-- **The number of `k`-dimensional subspaces** of a finite vector space `V` over a finite
 division ring `K` with `q` elements is the Gaussian binomial coefficient `[finrank K V k]_q`. -/
 theorem card_submodule_finrank_eq_gaussianBinomial (k : ℕ) :
@@ -71,7 +60,8 @@ theorem card_submodule_finrank_eq_gaussianBinomial (k : ℕ) :
   -- Every subspace in the image is spanned by as many tuples as there are independent
   -- `k`-tuples in a `k`-dimensional space.
   have hfiber (W : Sub) : Nat.card {s // span' s = W} = ∏ i : Fin k, (q ^ k - q ^ i.val) := by
-    rw [Nat.card_congr ((Equiv.subtypeEquivRight fun s ↦ Subtype.ext_iff).trans (fiberEquiv W)),
+    rw [Nat.card_congr ((Equiv.subtypeEquivRight fun s ↦ Subtype.ext_iff).trans
+        (W.val.linearIndependentSpanEqEquiv (W.property.trans (Fintype.card_fin k).symm))),
       card_linearIndependent W.property.ge, W.property]
   have hcount : Nat.card Sub * ∏ i : Fin k, (q ^ k - q ^ i.val) =
       ∏ i : Fin k, (q ^ n - q ^ i.val) := by
