@@ -73,8 +73,9 @@ theorem eq_coe (hb : IsFirstBreak h σ l j) {n : ℕ} (hln : l ≤ n) (hnj : n �
   rw [eq_coe_add_sum_unitSlope (hb.ne_top n hln hnj) hln,
     Finset.sum_congr rfl fun i hi => hb.unitSlope_eq i (Finset.mem_Ico.mp hi).1
       ((Finset.mem_Ico.mp hi).2.trans_le hnj),
-    Finset.sum_const, Nat.card_Ico, nsmul_eq_mul, Nat.cast_sub hln]
-  congr 1
+    Finset.sum_const, Nat.card_Ico]
+  norm_cast
+  push_cast [nsmul_eq_mul, Nat.cast_sub hln]
   ring
 
 /-- A first break of a convex sequence is the right endpoint of a finite face of slope `σ`
@@ -93,11 +94,9 @@ theorem isFiniteFace (hb : IsFirstBreak h σ l j) (hh : IsConvexSeq h) :
   refine ⟨le_of_not_gt fun hnl => hn' (hb.eq_top_of_lt n hnl), le_of_not_gt fun hjn => ?_⟩
   -- Past `j` the sequence follows a strictly steeper edge, so it leaves the line.
   have hj1 : h (j + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hb.right_ne_top hn' (Nat.le_succ j) hjn
-  have hs := hb.lt_unitSlope hj1
-  have hle := hh.supportingLine_le hb.right_ne_top hj1 n
-  rw [hn, hb.eq_coe hb.lt.le le_rfl, WithTop.untop₀_coe, WithTop.coe_le_coe] at hle
-  have hjn' : (j : ℝ) < n := Nat.cast_lt.mpr hjn
-  nlinarith
+  exact (hh.supportingFace_subset_Iic_of_lt_unitSlope hc
+    (mem_finiteEdges.mpr ⟨hb.right_ne_top, hj1⟩) (hb.lt_unitSlope hj1)
+    (mem_supportingFace.mpr hn)).not_gt hjn
 
 end IsFirstBreak
 

@@ -153,10 +153,10 @@ theorem newtonSlopes_eq_replicate_of_isFirstBreak [IsUltrametricDist K]
   have htrail : P.natTrailingDegree = l := by
     have hP := (P.newtonPolygon_ne_top_iff v hv0 hP0 (n := l)).mp
       ((hne hbr.lt.le).mpr hbr.left_ne_top)
-    refine le_antisymm hP.1 (le_of_not_gt fun hlt => ?_)
-    have hPt :=
-      (P.newtonPolygon_ne_top_iff v hv0 hP0).mpr ⟨le_rfl, P.natTrailingDegree_le_natDegree⟩
-    exact (hne (P.natTrailingDegree_le_natDegree.trans hPdeg)).mp hPt (hbr.eq_top_of_lt _ hlt)
+    refine le_antisymm hP.1 (Polynomial.le_natTrailingDegree_of_forall_lt_newtonPolygon_eq_top
+      (mt (hv0 _) (Polynomial.trailingCoeff_ne_zero.mpr hP0)) fun n hn => ?_)
+    by_contra hPn
+    exact (hne (hn.trans hbr.lt).le).mp hPn (hbr.eq_top_of_lt n hn)
   have hfr : f.IsRestricted (b ^ σ) := hmul ▸ IsRestricted.mem_subring.mp
     (Subring.mul_mem _ u.2 (IsRestricted.mem_subring.mpr
       (TauCeti.PowerSeries.isRestricted_polynomial P)))
@@ -208,9 +208,8 @@ theorem isFirstBreak_newtonPolygon_iff {K : Type*} [NormedDivisionRing K] (p : K
     ⟨hlj, fun n hn => p.newtonPolygon_eq_top_of_lt_natTrailingDegree v (htrail ▸ hn), hface⟩⟩
   -- The order of vanishing is the first index where the Newton polygon is finite.
   have hp0 : p ≠ 0 := Polynomial.coe_eq_zero_iff.not.mp hface.2.ne_zero
-  refine le_antisymm (natTrailingDegree_le_of_ne_zero (by simpa using hface.1.coeff_ne_zero))
-    (le_of_not_gt fun hlt => ?_)
-  exact (p.newtonPolygon_ne_top_iff v hv0 hp0).mpr ⟨le_rfl, p.natTrailingDegree_le_natDegree⟩
-    (hl _ hlt)
+  exact le_antisymm (natTrailingDegree_le_of_ne_zero (by simpa using hface.1.coeff_ne_zero))
+    (le_natTrailingDegree_of_forall_lt_newtonPolygon_eq_top
+      (mt (hv0 _) (trailingCoeff_ne_zero.mpr hp0)) hl)
 
 end Polynomial
