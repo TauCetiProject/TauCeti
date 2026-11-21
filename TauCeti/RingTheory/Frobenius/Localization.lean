@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Frobenius.Splitting
-public import Mathlib.RingTheory.Localization.Ideal
+public import TauCeti.RingTheory.Localization.PowMul
 
 /-!
 # Localization of Frobenius splittings
@@ -19,7 +19,8 @@ In particular the construction includes localizations that are the zero ring.
 Compatible ideals remain compatible after localization. Conversely, compatibility of an
 ideal of the localization is equivalent to compatibility of its contraction. Uniqueness
 ensures that successive restrictions of a splitting agree, as needed when restricting
-splittings on affine charts to their overlaps.
+splittings on affine charts to their overlaps. The splitting on a compatible quotient
+commutes with localization.
 
 ## References
 
@@ -32,131 +33,79 @@ public section
 namespace TauCeti.FrobeniusSplitting
 
 variable {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime]
-  (σ : FrobeniusSplitting R p) (M : Submonoid R)
-  (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S]
+  (σ : FrobeniusSplitting R p)
 
-include M in
-private theorem map_apply_eq_of_map_eq {a b : R}
-    (h : algebraMap R S a = algebraMap R S b) :
-    algebraMap R S (σ a) = algebraMap R S (σ b) := by
-  obtain ⟨s, hs⟩ := (IsLocalization.eq_iff_exists M S).mp h
-  have hp : p - 1 + 1 = p := Nat.sub_add_cancel (Fact.out : p.Prime).one_le
-  have he : (s : R) ^ p * a = (s : R) ^ p * b := by
-    simpa only [← mul_assoc, ← pow_succ, hp] using congrArg ((s : R) ^ (p - 1) * ·) hs
-  have he' := congrArg (algebraMap R S) (congrArg σ he)
-  simp only [σ.map_pow_mul, map_mul] at he'
-  exact (IsLocalization.map_units S s).mul_right_inj.mp he'
+section
 
-private theorem fraction_eq_of_pow_fraction_eq {a b : R} {s t : M}
-    (h : IsLocalization.mk' S a (s ^ p) = IsLocalization.mk' S b (t ^ p)) :
-    IsLocalization.mk' S (σ a) s = IsLocalization.mk' S (σ b) t := by
-  rw [IsLocalization.mk'_eq_iff_eq] at h ⊢
-  have he := σ.map_apply_eq_of_map_eq M S h
-  simpa only [SubmonoidClass.coe_pow, σ.map_pow_mul, map_mul] using he
-
-private noncomputable def fractionMap (x : S) : S :=
-  let h : ∃ q : R × M, IsLocalization.mk' S q.1 (q.2 ^ p) = x := by
-    obtain ⟨a, s, rfl⟩ := IsLocalization.exists_mk'_eq M x
-    refine ⟨⟨a * (s : R) ^ (p - 1), s⟩, ?_⟩
-    simpa only [SubmonoidClass.coe_pow, ← pow_succ',
-      Nat.sub_add_cancel (Fact.out : p.Prime).one_le] using
-      (IsLocalization.mk'_cancel (S := S) a s (s ^ (p - 1)))
-  IsLocalization.mk' S (σ h.choose.1) h.choose.2
-
-private theorem fractionMap_mk'_pow (a : R) (s : M) :
-    σ.fractionMap M S (IsLocalization.mk' S a (s ^ p)) =
-      IsLocalization.mk' S (σ a) s := by
-  unfold fractionMap
-  extract_lets h
-  exact σ.fraction_eq_of_pow_fraction_eq M S h.choose_spec
-
-private theorem fractionMap_add (x y : S) :
-    σ.fractionMap M S (x + y) = σ.fractionMap M S x + σ.fractionMap M S y := by
-  obtain ⟨a, s, rfl⟩ := IsLocalization.exists_mk'_eq M x
-  obtain ⟨b, t, rfl⟩ := IsLocalization.exists_mk'_eq M y
-  -- Replace both denominators by p-th powers before using twisted linearity.
-  have hrep (a : R) (s : M) :
-      IsLocalization.mk' S a s =
-        IsLocalization.mk' S (a * (s : R) ^ (p - 1)) (s ^ p) := by
-    simpa only [SubmonoidClass.coe_pow, ← pow_succ',
-      Nat.sub_add_cancel (Fact.out : p.Prime).one_le] using
-      (IsLocalization.mk'_cancel (S := S) a s (s ^ (p - 1))).symm
-  rw [hrep a s, hrep b t]
-  generalize a * (s : R) ^ (p - 1) = c, b * (t : R) ^ (p - 1) = d
-  rw [← IsLocalization.mk'_add, ← mul_pow, fractionMap_mk'_pow,
-    fractionMap_mk'_pow, fractionMap_mk'_pow, ← IsLocalization.mk'_add]
-  congr 1
-  simp only [map_add, SubmonoidClass.coe_pow, mul_comm c, mul_comm d, σ.map_pow_mul]
-  simp only [mul_comm]
-
-private theorem fractionMap_pow_mul (x y : S) :
-    σ.fractionMap M S (x ^ p * y) = x * σ.fractionMap M S y := by
-  obtain ⟨a, s, rfl⟩ := IsLocalization.exists_mk'_eq M x
-  obtain ⟨b, t, rfl⟩ := IsLocalization.exists_mk'_eq M y
-  have ht : IsLocalization.mk' S b t =
-      IsLocalization.mk' S (b * (t : R) ^ (p - 1)) (t ^ p) := by
-    simpa only [SubmonoidClass.coe_pow, ← pow_succ',
-      Nat.sub_add_cancel (Fact.out : p.Prime).one_le] using
-      (IsLocalization.mk'_cancel (S := S) b t (t ^ (p - 1))).symm
-  rw [ht]
-  generalize b * (t : R) ^ (p - 1) = c
-  rw [← IsLocalization.mk'_pow, ← IsLocalization.mk'_mul, ← mul_pow,
-    fractionMap_mk'_pow, fractionMap_mk'_pow, σ.map_pow_mul, IsLocalization.mk'_mul]
+variable (M : Submonoid R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S]
 
 /-- Extend a Frobenius splitting to a localization. The extension is uniquely determined
 by agreement on the original ring and twisted linearity. -/
 noncomputable def localization : FrobeniusSplitting S p where
   char_eq_zero := by rw [← map_natCast (algebraMap R S), σ.char_eq_zero, map_zero]
-  toAddMonoidHom :=
-    { toFun := σ.fractionMap M S
-      map_zero' := by
-        simpa using σ.fractionMap_mk'_pow M S 0 1
-      map_add' := σ.fractionMap_add M S }
-  map_pow_mul' := σ.fractionMap_pow_mul M S
+  toAddMonoidHom := σ.toAddMonoidHom.localizationOfPowMul M S σ.map_pow_mul
+  map_pow_mul' := σ.toAddMonoidHom.localizationOfPowMul_pow_mul M S σ.map_pow_mul
   map_one' := by
-    have h : σ.fractionMap M S 1 = 1 := by
-      simpa only [one_pow, IsLocalization.mk'_one, map_one] using
-        σ.fractionMap_mk'_pow M S 1 1
-    exact h
+    simpa only [map_one, coe_toAddMonoidHom] using
+      σ.toAddMonoidHom.localizationOfPowMul_algebraMap M S σ.map_pow_mul 1
 
 /-- The localized splitting removes a p-th power from a denominator. -/
-@[simp]
+@[simp↓]
 theorem localization_mk'_pow (a : R) (s : M) :
     σ.localization M S (IsLocalization.mk' S a (s ^ p)) =
       IsLocalization.mk' S (σ a) s :=
-  σ.fractionMap_mk'_pow M S a s
+  σ.toAddMonoidHom.localizationOfPowMul_mk'_pow M S σ.map_pow_mul a s
+
+/-- The power-denominator formula for a denominator written as a subtype constructor. -/
+@[simp]
+theorem localization_mk'_pow_mk (a s : R) (hs : s ∈ M) {hsp : s ^ p ∈ M} :
+    σ.localization M S (IsLocalization.mk' S a ⟨s ^ p, hsp⟩) =
+      IsLocalization.mk' S (σ a) ⟨s, hs⟩ := by
+  rw [← SubmonoidClass.mk_pow s hs, localization_mk'_pow]
 
 /-- Localization of a splitting agrees with it on the original ring. -/
 @[simp]
 theorem localization_algebraMap (a : R) :
-    σ.localization M S (algebraMap R S a) = algebraMap R S (σ a) := by
-  simpa only [one_pow, IsLocalization.mk'_one] using σ.localization_mk'_pow M S a 1
+    σ.localization M S (algebraMap R S a) = algebraMap R S (σ a) :=
+  σ.toAddMonoidHom.localizationOfPowMul_algebraMap M S σ.map_pow_mul a
 
 /-- The denominator formula on an ordinary fraction; denominators may be zero divisors. -/
 theorem localization_mk' (a : R) (s : M) :
     σ.localization M S (IsLocalization.mk' S a s) =
-      IsLocalization.mk' S (σ (a * (s : R) ^ (p - 1))) s := by
-  have h : IsLocalization.mk' S a s =
-      IsLocalization.mk' S (a * (s : R) ^ (p - 1)) (s ^ p) := by
-    simpa only [SubmonoidClass.coe_pow, ← pow_succ',
-      Nat.sub_add_cancel (Fact.out : p.Prime).one_le] using
-      (IsLocalization.mk'_cancel (S := S) a s (s ^ (p - 1))).symm
-  rw [h, localization_mk'_pow]
+      IsLocalization.mk' S (σ (a * (s : R) ^ (p - 1))) s :=
+  σ.toAddMonoidHom.localizationOfPowMul_mk' M S σ.map_pow_mul a s
 
-/-- A splitting on a localization is uniquely determined by its values on the base ring. -/
-theorem localization_unique (τ : FrobeniusSplitting S p)
+variable {S} in
+include M in
+/-- A ring homomorphism out of a localization commutes with splittings if it does so
+on the image of the original ring. -/
+theorem map_eq_of_isLocalization {T : Type*} [CommRing T] {τ : FrobeniusSplitting S p}
+    {υ : FrobeniusSplitting T p} (f : S →+* T)
+    (h : ∀ a : R, f (τ (algebraMap R S a)) = υ (f (algebraMap R S a))) (x : S) :
+    f (τ x) = υ (f x) :=
+  IsLocalization.map_apply_eq_of_map_pow_mul M f τ.map_pow_mul υ.map_pow_mul h x
+
+variable {S} in
+include M in
+/-- Two splittings on a localization are equal if they agree on the image of the original ring. -/
+theorem ext_of_isLocalization {τ υ : FrobeniusSplitting S p}
+    (h : ∀ a : R, τ (algebraMap R S a) = υ (algebraMap R S a)) : τ = υ :=
+  DFunLike.coe_injective (IsLocalization.eq_of_map_pow_mul M τ.map_pow_mul υ.map_pow_mul h)
+
+/-- The localized splitting of `σ` is the unique splitting on `S` agreeing with `σ` along
+`algebraMap R S`. -/
+theorem localization_unique {τ : FrobeniusSplitting S p}
     (hτ : ∀ a, τ (algebraMap R S a) = algebraMap R S (σ a)) :
-    τ = σ.localization M S := by
-  ext x
-  obtain ⟨a, s, rfl⟩ := IsLocalization.exists_mk'_eq M x
-  apply (IsLocalization.map_units S s).mul_right_inj.mp
-  rw [← τ.map_pow_mul, ← (σ.localization M S).map_pow_mul]
-  have he : algebraMap R S (s : R) ^ p * IsLocalization.mk' S a s =
-      algebraMap R S (a * (s : R) ^ (p - 1)) := by
-    conv_lhs => rw [← Nat.sub_add_cancel (Fact.out : p.Prime).one_le, pow_succ,
-      mul_assoc, IsLocalization.mk'_spec']
-    rw [map_mul, map_pow, mul_comm]
-  rw [he, hτ, localization_algebraMap]
+    τ = σ.localization M S :=
+  ext_of_isLocalization M fun a ↦ (hτ a).trans (σ.localization_algebraMap M S a).symm
+
+/-- An algebra homomorphism between localizations of the same base ring intertwines
+the extensions of the same splitting. -/
+theorem localization_map {T : Type*} [CommRing T] [Algebra R T]
+    (N : Submonoid R) [IsLocalization N T] (f : S →ₐ[R] T) (x : S) :
+    f (σ.localization M S x) = σ.localization N T (f x) :=
+  map_eq_of_isLocalization M (f : S →+* T) (fun a ↦ by
+    simp only [AlgHom.coe_toRingHom, localization_algebraMap, AlgHom.commutes]) x
 
 /-- Localizing in two stages agrees with direct localization whenever both presentations
 of the final ring are given. This is the restriction law for repeated affine overlaps. -/
@@ -164,34 +113,42 @@ theorem localization_localization (N : Submonoid S) (L : Submonoid R)
     (T : Type*) [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
     [IsLocalization N T] [IsLocalization L T] :
     (σ.localization M S).localization N T = σ.localization L T := by
-  apply σ.localization_unique L T
-  intro a
-  rw [IsScalarTower.algebraMap_apply R S T, localization_algebraMap,
-    localization_algebraMap, ← IsScalarTower.algebraMap_apply R S T]
-
-/-- Extension of a compatible ideal is compatible with the localized splitting. -/
-theorem IsCompatible.map_localization {I : Ideal R} (hI : σ.IsCompatible I) :
-    (σ.localization M S).IsCompatible (I.map (algebraMap R S)) := by
-  rw [isCompatible_iff]
-  intro x hx
-  obtain ⟨⟨a, s⟩, hx⟩ := (IsLocalization.mem_map_algebraMap_iff M S).mp hx
-  rw [(IsLocalization.eq_mk'_iff_mul_eq.mpr hx), localization_mk']
-  apply IsLocalization.mk'_mem_iff.mpr
-  exact Ideal.mem_map_of_mem _ ((σ.isCompatible_iff I).mp hI _
-    (I.mul_mem_right _ a.prop))
+  ext x
+  exact DFunLike.congr_fun
+    (σ.toAddMonoidHom.localizationOfPowMul_localizationOfPowMul M S σ.map_pow_mul N L T) x
 
 /-- Compatibility of an ideal in a localization can be tested on its contraction. -/
 theorem localization_isCompatible_iff (J : Ideal S) :
     (σ.localization M S).IsCompatible J ↔ σ.IsCompatible (J.comap (algebraMap R S)) := by
-  constructor
-  · intro h
-    rw [isCompatible_iff] at h ⊢
-    intro a ha
-    simpa only [Ideal.mem_comap, localization_algebraMap] using h _ ha
-  · intro h
-    have he : (J.comap (algebraMap R S)).map (algebraMap R S) = J :=
-      IsLocalization.map_under M S J
-    rw [← he]
-    exact IsCompatible.map_localization σ M S h
+  rw [isCompatible_iff, isCompatible_iff]
+  exact σ.toAddMonoidHom.localizationOfPowMul_mem_iff M S σ.map_pow_mul J
+
+end
+
+namespace IsCompatible
+
+variable {σ} {I : Ideal R} (hI : σ.IsCompatible I)
+  (M : Submonoid R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S]
+
+include hI in
+/-- Extension of a compatible ideal is compatible with the localized splitting. -/
+theorem localization_map :
+    (σ.localization M S).IsCompatible (I.map (algebraMap R S)) :=
+  ((σ.localization M S).isCompatible_iff _).mpr fun _ hx ↦
+    σ.toAddMonoidHom.localizationOfPowMul_mem_map M S σ.map_pow_mul
+      ((σ.isCompatible_iff I).mp hI) hx
+
+/-- Descending to a compatible quotient and localizing commute. -/
+theorem localization_map_quotient :
+    (hI.localization_map M S).quotient = hI.quotient.localization
+      (Algebra.algebraMapSubmonoid (R ⧸ I) M) (S ⧸ I.map (algebraMap R S)) := by
+  apply localization_unique
+  intro a
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
+  have h (b : R) : algebraMap (R ⧸ I) (S ⧸ I.map (algebraMap R S)) (Ideal.Quotient.mk I b) =
+      Ideal.Quotient.mk _ (algebraMap R S b) := Ideal.quotientMap_mk
+  rw [h, quotient_mk, quotient_mk, localization_algebraMap, h]
+
+end IsCompatible
 
 end TauCeti.FrobeniusSplitting
