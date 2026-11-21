@@ -160,7 +160,7 @@ private theorem exists_sub_sum_leftAct_sub_boundary_mem (p : ℕ)
   classical
   obtain ⟨μ, hμ⟩ :=
     (cellPathPullbackPair b C (m + 1)).exists_isCubicalRepresentative_of_boundary_mem
-      R (n := p + m) x (by rw [range_cellPathPullbackPair_map]; exact hx)
+      R (n := p + m) x (by rw [TopPair.range_ofSubset_map]; exact hx)
   choose z hz using fun j ↦
     HomologicalComplex.moduleCat_homologyπ_surjective
       ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))) p
@@ -174,7 +174,7 @@ private theorem exists_sub_sum_leftAct_sub_boundary_mem (p : ℕ)
     LinearEquiv.apply_symm_apply] at hsum
   obtain ⟨v, hv⟩ := ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R _).1
     (by simpa using hμ.sub hsum)
-  exact ⟨v, by rwa [range_cellPathPullbackPair_map] at hv⟩
+  exact ⟨v, by rwa [TopPair.range_ofSubset_map] at hv⟩
 
 /-- **The section cubes are independent on relative homology.** If `∑ⱼ zⱼ · cⱼ`, for finitely many
 `(m + 1)`-cells `j` and `q`-cycles `zⱼ` of the Moore loops at `b`, is a relative boundary of the
@@ -199,7 +199,7 @@ private theorem homologyπ_eq_zero_of_sum_leftAct_sub_boundary_mem (q : ℕ)
       0 := by
   classical
   have h₀ := ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R _).2
-    ⟨v, by rw [range_cellPathPullbackPair_map]; exact h⟩
+    ⟨v, by rw [TopPair.range_ofSubset_map]; exact h⟩
   have hsum := TopPair.IsCubicalRepresentative.sum s fun j _ ↦
     isCubicalRepresentative_cellPathPullbackHomologyEquiv γ R q j (z j)
   have hz := hsum.unique h₀
@@ -273,15 +273,15 @@ private theorem exists_differential_sub_mem_of_lt {i : ℤ} (hi : -((m : ℤ) + 
       rw [cubicalChainModuleDifferential_lof_succ,
         cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff] at hx
       exact (cellPathPullbackPair b C (m + 1)).exists_isCubicalRepresentative_of_boundary_mem R x
-        (by rw [range_cellPathPullbackPair_map]; exact hx)
+        (by rw [TopPair.range_ofSubset_map]; exact hx)
   obtain rfl : μ = 0 := (ModuleCat.isZero_iff_subsingleton.1
     (isZero_cubicalHomology_cellPathPullbackPair_of_lt γ R (j := e) (by omega))).elim _ _
   obtain ⟨v, hv⟩ : ∃ v : NormalizedCubicalChain (MoorePathPullback (sigmaCellMap C (m + 1)) b) R
       (e + 1), x - NormalizedCubicalChain.boundary _ R e v ∈ NormalizedCubicalChain.supportedIn R
         (MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
           {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1}) e := by
-    rw [← range_cellPathPullbackPair_map]
-    exact ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R x).1 hμ
+    have h := ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R x).1 hμ
+    rwa [TopPair.range_ofSubset_map] at h
   refine ⟨cubicalChainModuleLof _ H R (e + 1) v, ?_⟩
   rw [← neg_sub, neg_mem_iff,
     cubicalChainModuleLof_sub_differential_mem_cubicalChainModuleSupportedIn_iff]
