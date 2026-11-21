@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ContDiff.Prod
+public import TauCeti.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.CylinderHomotopy
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 public import TauCeti.Topology.Compactness.Compact
@@ -49,6 +50,16 @@ fixed test function `ψ` equal to one near `[0, 1]` (`TestFunction.prodSMulCLM`)
 homotopy operator only sees the times `t ∈ [0, 1]`, where the cutoff is one, and the change of
 variables `s = σ t` removes the reparametrization.
 
+For a current `T` whose support is a compact subset of `Ω` no properness of `H` is needed, as for
+the pushforward with a cutoff (`TestFunction.cutoffPullbackCLM`). For `H` smooth on `Ω × ℝ` and a
+test function `χ` on `Ω`, the **homotopy operator with a cutoff**
+`TestFunction.cutoffHomotopyPullbackCLM` sends `ω` to `x ↦ χ x • ∫₀¹ (H^* ω)(x, t)(∂ₜ, ·) dt`; it
+pulls `ω` back to the cylinder with the cutoff `(x, t) ↦ τ t • χ x`
+(`TestFunction.cylinderCutoff`). When `χ` is equal to one near the support of `T`, the same
+homotopy formula holds with `Hₜ# T = T ∘ (χ Hₜ^*)`, the current `T ∘ K` is supported in the union
+of the tracks `H ({x} × [0, 1])` of the points `x` of the support of `T`, and its mass is at most
+`A L ^ k M(T)` when the bounds on `H` hold over the support of `χ`.
+
 ## Main declarations
 
 * `TestFunction.homotopyPullbackCLM`: the homotopy operator `K = h ∘ H^*` on test forms.
@@ -64,7 +75,19 @@ variables `s = σ t` removes the reparametrization.
 * `ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM`: the homotopy formula for
   currents, and `ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM_finZero` in degree
   zero.
-* `Distribution.mass_comp_homotopyPullbackCLM_le`: `M(H_# ([[0, 1]] × T)) ≤ A L ^ k M(T)`.
+* `Distribution.mass_comp_homotopyPullbackCLM_le`: `M(H_# ([[0, 1]] × T)) ≤ A L ^ k M(T)`, from
+  the pointwise bound `TauCeti.norm_cylinderHomotopy_pullback_le`.
+* `TestFunction.cutoffHomotopyPullbackCLM`: the homotopy operator with a cutoff, with its values
+  `TestFunction.cutoffHomotopyPullbackCLM_apply`, its support
+  `TestFunction.tsupport_cutoffHomotopyPullbackCLM_subset` and the homotopy identities
+  `TestFunction.cutoffHomotopyPullbackCLM_extDerivCLM_apply` and
+  `TestFunction.cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero` where `χ` is one.
+* `ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM` and
+  `ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM_finZero`: the homotopy
+  formula for a current with compact support.
+* `Distribution.dsupport_comp_cutoffHomotopyPullbackCLM_subset`,
+  `Distribution.mass_comp_cutoffHomotopyPullbackCLM_le`: the support and mass of the homotopy
+  current.
 
 ## References
 
@@ -78,6 +101,53 @@ noncomputable section
 
 open Set Filter TopologicalSpace ContinuousAlternatingMap
 open scoped Distributions Topology NNReal ENNReal Interval
+
+namespace TauCeti
+
+variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+
+/-- **The pointwise bound of the homotopy operator**: if, along the track `t ↦ H (x, t)`,
+`t ∈ [0, 1]`, the time derivative satisfies `‖∂ₜ H‖ ≤ A`, the spatial derivative of `H` has operator
+norm at most `L` and the form satisfies `‖ω‖ ≤ B`, then the cylinder homotopy operator of the
+pullback `H^* ω` has norm at most `B A L ^ k` at `x`. -/
+theorem norm_cylinderHomotopy_pullback_le (ω : E' → E' [⋀^Fin (k + 1)]→L[ℝ] F) (H : E × ℝ → E')
+    (x : E) {A L B : ℝ} (hA : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ H (x, t) (0, 1)‖ ≤ A)
+    (hL : ∀ t ∈ Icc (0 : ℝ) 1, ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ≤ L)
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (H (x, t))‖ ≤ B) :
+    ‖cylinderHomotopy (fun p ↦ (ω (H p)).compContinuousLinearMap (fderiv ℝ H p)) x‖ ≤
+      B * A * L ^ k := by
+  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
+  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0 h0)
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 h0)
+  rw [cylinderHomotopy_apply]
+  refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := B * A * L ^ k)
+    fun t ht ↦ ?_).trans_eq (by simp)
+  rw [uIoc_of_le zero_le_one] at ht
+  have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
+  rw [curryLeft_compContinuousLinearMap]
+  calc _ ≤ ‖(ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1))‖ *
+        ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ^ k := by
+        have hcomp : (((ω (H (x, t))).curryLeft
+            (fderiv ℝ H (x, t) (0, 1))).compContinuousLinearMap
+              (fderiv ℝ H (x, t))).compContinuousLinearMap (.inl ℝ E ℝ) =
+            ((ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1))).compContinuousLinearMap
+              ((fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)) := by
+          ext v
+          rfl
+        rw [hcomp]
+        exact (norm_compContinuousLinearMap_le
+          ((ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1)))
+          ((fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ))).trans_eq (by simp)
+    _ ≤ (‖ω (H (x, t))‖ * ‖fderiv ℝ H (x, t) (0, 1)‖) * L ^ k := by
+        gcongr
+        · exact ((ω (H (x, t))).curryLeft.le_opNorm _).trans_eq (by rw [norm_curryLeft])
+        · exact hL t ht'
+    _ ≤ B * A * L ^ k :=
+        mul_le_mul_of_nonneg_right (mul_le_mul (hB t ht') (hA t ht') (norm_nonneg _) hB0)
+          (pow_nonneg hL0 k)
+
+end TauCeti
 
 namespace TestFunction
 
@@ -464,40 +534,283 @@ theorem mass_comp_homotopyPullbackCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E
   refine mass_le_iff.2 fun ω hω ↦ ?_
   have hpt (x : E) : ‖homotopyPullbackCLM hH hHp ω x‖ ≤ A * L ^ k := by
     by_cases hx : x ∈ Ω
-    · rw [homotopyPullbackCLM_apply_of_mem ω hx, cylinderHomotopy_apply]
-      refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := A * L ^ k)
-        fun t ht ↦ ?_).trans_eq
-        (by simp)
-      rw [uIoc_of_le zero_le_one] at ht
-      have hp : (x, t) ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1 := ⟨hx, Ioc_subset_Icc_self ht⟩
-      rw [curryLeft_compContinuousLinearMap]
-      calc _ ≤ ‖(ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1))‖ *
-            ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ^ k := by
-            have hcomp : (((ω (H (x, t))).curryLeft
-                (fderiv ℝ H (x, t) (0, 1))).compContinuousLinearMap
-                  (fderiv ℝ H (x, t))).compContinuousLinearMap (.inl ℝ E ℝ) =
-                ((ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1))).compContinuousLinearMap
-                  ((fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)) := by
-              ext v
-              rfl
-            rw [hcomp]
-            exact (norm_compContinuousLinearMap_le
-              ((ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1)))
-              ((fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ))).trans_eq (by simp)
-        _ ≤ (‖ω (H (x, t))‖ * ‖fderiv ℝ H (x, t) (0, 1)‖) * L ^ k := by
-            gcongr
-            · exact ((ω (H (x, t))).curryLeft.le_opNorm _).trans_eq (by rw [norm_curryLeft])
-            · exact hL _ hp
-        _ ≤ (1 * A) * L ^ k := by
-            gcongr
-            exacts [hω _, hA _ hp]
-        _ = A * L ^ k := by ring
+    · rw [homotopyPullbackCLM_apply_of_mem ω hx]
+      exact (norm_cylinderHomotopy_pullback_le ω H x (fun t ht ↦ hA _ ⟨hx, ht⟩)
+        (fun t ht ↦ hL _ ⟨hx, ht⟩) fun t _ ↦ hω _).trans_eq (by ring)
     · rw [homotopyPullbackCLM_apply_of_notMem ω hx, norm_zero]
       positivity
   have hb : ‖(homotopyPullbackCLM hH hHp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ A * L ^ k :=
     (BoundedContinuousFunction.norm_le (by positivity)).2 hpt
   calc ‖T (homotopyPullbackCLM hH hHp ω)‖ₑ
       ≤ mass T * ‖(homotopyPullbackCLM hH hHp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
+        enorm_apply_le_mass_mul T _
+    _ ≤ mass T * (A * L ^ k : ℝ≥0) := by
+        gcongr
+        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+        exact ENNReal.ofReal_le_ofReal (by simpa using hb)
+    _ = A * L ^ k * mass T := by
+        rw [mul_comm]
+        push_cast
+        ring
+
+end Distribution
+
+/-! ### The homotopy operator with a cutoff
+
+For a current whose support is a compact subset of `Ω`, no properness of the homotopy is needed:
+the pulled-back form is multiplied by the cylinder cutoff `TestFunction.cylinderCutoff` of a test
+function `χ` equal to one near the support of the current, as for the pushforward with a cutoff
+`TestFunction.cutoffPullbackCLM`. -/
+
+namespace TestFunction
+
+open TauCeti
+
+variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [CompleteSpace F] {Ω : Opens E} {Ω' : Opens E'} {H : E × ℝ → E'} {k : ℕ} {χ : 𝓓(Ω, ℝ)}
+
+/-- The **homotopy operator with a cutoff** `χ` of a homotopy `H` smooth on `Ω × ℝ`: the continuous
+linear map sending a test `(k + 1)`-form `ω` on `Ω'` to the test `k`-form
+`x ↦ χ x • ∫₀¹ (H^* ω)(x, t)(∂ₜ, ·) dt` on `Ω`, see `TestFunction.cutoffHomotopyPullbackCLM_apply`.
+No properness of `H` is needed. Precomposing a `k`-current `T` on `Ω` with it gives the pushforward
+`H_# ([[0, 1]] × T)` when `χ` is equal to one near the support of `T`. -/
+def cutoffHomotopyPullbackCLM (χ : 𝓓(Ω, ℝ)) (H : E × ℝ → E')
+    (hH : ContDiffOn ℝ (⊤ : ℕ∞) H Ω.cylinder) :
+    𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
+  cylinderHomotopyCLM (fun _ hp _ ↦ Opens.mem_cylinder.1 hp) ∘L
+    cutoffPullbackCLM (cylinderCutoff χ) H hH
+
+variable {hH : ContDiffOn ℝ (⊤ : ℕ∞) H Ω.cylinder}
+
+/-- The homotopy operator with a cutoff is the cylinder homotopy operator of the pullback with the
+cylinder cutoff. -/
+private theorem cutoffHomotopyPullbackCLM_eq
+    (hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω)
+    (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    cutoffHomotopyPullbackCLM χ H hH ω =
+      cylinderHomotopyCLM hW (cutoffPullbackCLM (cylinderCutoff χ) H hH ω) :=
+  rfl
+
+/-- The homotopy operator with a cutoff is `χ` times the cylinder homotopy operator of the pullback
+`H^* ω`: `x ↦ χ x • ∫₀¹ (H^* ω)(x, t)(∂ₜ, ·) dt`. -/
+theorem cutoffHomotopyPullbackCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)) (x : E) :
+    cutoffHomotopyPullbackCLM χ H hH ω x =
+      χ x • cylinderHomotopy (fun p ↦ (ω (H p)).compContinuousLinearMap (fderiv ℝ H p)) x := by
+  rw [cutoffHomotopyPullbackCLM, ContinuousLinearMap.comp_apply, cylinderHomotopyCLM_apply,
+    cylinderHomotopy_apply, ← intervalIntegral.integral_smul]
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  rw [uIcc_of_le zero_le_one] at ht
+  ext v
+  simp [cutoffPullbackCLM_apply, cylinderCutoff_apply_of_mem_Icc ht, Function.comp_def]
+
+/-- The homotopy operator with a cutoff is supported in the points `x` of the support of `χ` whose
+track `H (x, t)`, `t ∈ [0, 1]`, meets the support of the form. -/
+theorem tsupport_cutoffHomotopyPullbackCLM_subset (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    tsupport (cutoffHomotopyPullbackCLM χ H hH ω) ⊆
+      Prod.fst '' ((tsupport χ ×ˢ Icc (0 : ℝ) 1) ∩ H ⁻¹' tsupport ω) := by
+  have hc : IsCompact ((tsupport χ ×ˢ Icc (0 : ℝ) 1) ∩ H ⁻¹' tsupport ω) :=
+    (χ.hasCompactSupport.prod isCompact_Icc).of_isClosed_subset
+      ((hH.continuousOn.mono fun p (hp : p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1) ↦
+        Opens.mem_cylinder.2 (χ.tsupport_subset hp.1)).preimage_isClosed_of_isClosed
+          ((isClosed_tsupport χ).prod isClosed_Icc) (isClosed_tsupport ω)) inter_subset_left
+  refine closure_minimal (fun x hx ↦ ?_) (hc.image continuous_fst).isClosed
+  by_contra hxS
+  refine hx ?_
+  rw [cutoffHomotopyPullbackCLM_apply]
+  by_cases hχx : χ x = 0
+  · rw [hχx, zero_smul]
+  have hxχ : x ∈ tsupport χ := subset_tsupport _ hχx
+  refine (congrArg (χ x • ·) ((cylinderHomotopy_congr fun t ht ↦ ?_).trans
+    (congrFun cylinderHomotopy_zero x))).trans (smul_zero _)
+  rw [image_eq_zero_of_notMem_tsupport fun h ↦ hxS ⟨(x, t), ⟨⟨hxχ, ht⟩, h⟩, rfl⟩, Pi.zero_apply]
+  ext _
+  simp
+
+omit [CompleteSpace F] in
+/-- At the times `t ∈ [0, 1]`, the slice of the pullback with the cylinder cutoff is the pullback
+with the cutoff `χ` along the slice `H (·, t)`. -/
+private theorem pullbackCLM_prodMk_left_cutoffPullbackCLM_cylinderCutoff {m : ℕ} {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1)
+    {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ Ω.cylinder →
+      IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, t)) ⁻¹' K)}
+    {hHt : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, t)) Ω} (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) :
+    pullbackCLM (fun x ↦ (x, t)) (contDiffOn_id.prodMk contDiffOn_const) hp
+        (cutoffPullbackCLM (cylinderCutoff χ) H hH ω) =
+      cutoffPullbackCLM χ (fun x ↦ H (x, t)) hHt ω := by
+  ext x : 1
+  rw [pullbackCLM_prodMk_left_apply (fun _ hp _ ↦ Opens.mem_cylinder.1 hp) ht,
+    cutoffPullbackCLM_apply, cutoffPullbackCLM_apply, cylinderCutoff_apply_of_mem_Icc ht]
+  by_cases hx : x ∈ Ω
+  · have hD : fderiv ℝ (fun y ↦ H (y, t)) x = (fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ) :=
+      (((hH.contDiffAt (Ω.cylinder.isOpen.mem_nhds (Opens.mem_cylinder.2 hx))).differentiableAt
+        (by simp)).hasFDerivAt.comp x (hasFDerivAt_prodMk_left x t)).fderiv
+    ext v
+    simp [hD, Function.comp_def]
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (χ.tsupport_subset h)]
+    ext v
+    simp
+
+/-- Where `χ` is one, the homotopy operator with a cutoff of `d ω` is the cylinder homotopy operator
+of the exterior derivative of the pullback with the cylinder cutoff. -/
+private theorem cutoffHomotopyPullbackCLM_extDerivCLM_apply_eq {m : ℕ}
+    (hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω)
+    (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F)) {x : E} (hx : ∀ᶠ y in 𝓝 x, χ y = 1) :
+    cutoffHomotopyPullbackCLM χ H hH (extDerivCLM ω) x =
+      cylinderHomotopyCLM hW (extDerivCLM (cutoffPullbackCLM (cylinderCutoff χ) H hH ω)) x := by
+  rw [cutoffHomotopyPullbackCLM_eq hW, coe_cylinderHomotopyCLM, coe_cylinderHomotopyCLM]
+  exact cylinderHomotopy_congr fun t ht ↦
+    (extDerivCLM_cutoffPullbackCLM_apply ω (cylinderCutoff_eventually_eq_one hx ht)).symm
+
+/-- **The homotopy formula with a cutoff on test forms**: at every point near which `χ` is one,
+`K d ω = χ H₁^* ω - χ H₀^* ω - d K ω` for a test `(k + 1)`-form `ω`, where `K` is the homotopy
+operator with cutoff `χ` and `χ Hₜ^*` is the pullback with cutoff `χ` along `Hₜ = H (·, t)`. -/
+theorem cutoffHomotopyPullbackCLM_extDerivCLM_apply
+    {hH₀ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, 0)) Ω}
+    {hH₁ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, 1)) Ω}
+    (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)) {x : E} (hx : ∀ᶠ y in 𝓝 x, χ y = 1) :
+    cutoffHomotopyPullbackCLM χ H hH (extDerivCLM ω) x =
+      cutoffPullbackCLM χ (fun y ↦ H (y, 1)) hH₁ ω x -
+        cutoffPullbackCLM χ (fun y ↦ H (y, 0)) hH₀ ω x -
+        extDerivCLM (cutoffHomotopyPullbackCLM χ H hH ω) x := by
+  have hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun _ hp _ ↦ Opens.mem_cylinder.1 hp
+  have h := congr($(cylinderHomotopyCLM_comp_extDerivCLM (hW := hW) (k := k) (F := F))
+    (cutoffPullbackCLM (cylinderCutoff χ) H hH ω) x)
+  simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply] at h
+  rw [cutoffHomotopyPullbackCLM_extDerivCLM_apply_eq hW ω hx, h,
+    pullbackCLM_prodMk_left_cutoffPullbackCLM_cylinderCutoff ⟨zero_le_one, le_rfl⟩,
+    pullbackCLM_prodMk_left_cutoffPullbackCLM_cylinderCutoff ⟨le_rfl, zero_le_one⟩,
+    cutoffHomotopyPullbackCLM_eq hW]
+
+/-- **The homotopy formula with a cutoff on test `0`-forms**: at every point near which `χ` is one,
+`K d ω = χ H₁^* ω - χ H₀^* ω`, where `K` is the homotopy operator with cutoff `χ` and `χ Hₜ^*` is
+the pullback with cutoff `χ` along `Hₜ = H (·, t)`. -/
+theorem cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero
+    {hH₀ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, 0)) Ω}
+    {hH₁ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, 1)) Ω}
+    (ω : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] F)) {x : E} (hx : ∀ᶠ y in 𝓝 x, χ y = 1) :
+    cutoffHomotopyPullbackCLM χ H hH (extDerivCLM ω) x =
+      cutoffPullbackCLM χ (fun y ↦ H (y, 1)) hH₁ ω x -
+        cutoffPullbackCLM χ (fun y ↦ H (y, 0)) hH₀ ω x := by
+  have hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun _ hp _ ↦ Opens.mem_cylinder.1 hp
+  have h := congr($(cylinderHomotopyCLM_comp_extDerivCLM_finZero (hW := hW) (F := F))
+    (cutoffPullbackCLM (cylinderCutoff χ) H hH ω) x)
+  simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply] at h
+  rw [cutoffHomotopyPullbackCLM_extDerivCLM_apply_eq hW ω hx, h,
+    pullbackCLM_prodMk_left_cutoffPullbackCLM_cylinderCutoff ⟨zero_le_one, le_rfl⟩,
+    pullbackCLM_prodMk_left_cutoffPullbackCLM_cylinderCutoff ⟨le_rfl, zero_le_one⟩]
+
+end TestFunction
+
+namespace ContinuousLinearMap
+
+open TestFunction TauCeti Distribution
+
+variable {E E' F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [CompleteSpace F] [AddCommGroup G] [Module ℝ G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  {Ω : Opens E} {Ω' : Opens E'} {H : E × ℝ → E'} {k : ℕ} {χ : 𝓓(Ω, ℝ)}
+  {hH : ContDiffOn ℝ (⊤ : ℕ∞) H Ω.cylinder} {hH₀ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, 0)) Ω}
+  {hH₁ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ H (x, 1)) Ω}
+
+/-- **The homotopy formula with a cutoff**: if `χ` is equal to one near the support of a
+`(k + 1)`-current `T` on `Ω`, then `∂ H_# ([[0, 1]] × T) = H₁# T - H₀# T - H_# ([[0, 1]] × ∂ T)`,
+where `H_# ([[0, 1]] × T) = T ∘ K` for the homotopy operator `K` with cutoff `χ`,
+`Hₜ# T = T ∘ (χ Hₜ^*)` and `∂ T = T ∘ d`. -/
+theorem comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    (T ∘L cutoffHomotopyPullbackCLM χ H hH) ∘L
+        (extDerivCLM : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _) =
+      T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 1)) hH₁ -
+        T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 0)) hH₀ -
+        (T ∘L extDerivCLM) ∘L cutoffHomotopyPullbackCLM χ H hH := by
+  ext ω
+  simp only [comp_apply, _root_.sub_apply, ← map_sub]
+  refine map_eq_map_of_eventuallyEq T ?_
+  filter_upwards [hχ.eventually_nhdsSet] with x hx
+  simp [cutoffHomotopyPullbackCLM_extDerivCLM_apply (hH₀ := hH₀) (hH₁ := hH₁) ω hx]
+
+/-- **The homotopy formula with a cutoff in degree zero**: if `χ` is equal to one near the support
+of a `0`-current `T` on `Ω`, then `∂ H_# ([[0, 1]] × T) = H₁# T - H₀# T`, where
+`H_# ([[0, 1]] × T) = T ∘ K` for the homotopy operator `K` with cutoff `χ` and
+`Hₜ# T = T ∘ (χ Hₜ^*)`. -/
+theorem comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM_finZero
+    (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    (T ∘L cutoffHomotopyPullbackCLM χ H hH) ∘L
+        (extDerivCLM : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] F) →L[ℝ] _) =
+      T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 1)) hH₁ -
+        T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 0)) hH₀ := by
+  ext ω
+  simp only [comp_apply, _root_.sub_apply, ← map_sub]
+  refine map_eq_map_of_eventuallyEq T ?_
+  filter_upwards [hχ.eventually_nhdsSet] with x hx
+  simp [cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero (hH₀ := hH₀) (hH₁ := hH₁) ω hx]
+
+end ContinuousLinearMap
+
+namespace Distribution
+
+open TestFunction TauCeti
+open scoped BoundedContinuousFunction
+
+variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [CompleteSpace F] {Ω : Opens E} {Ω' : Opens E'} {H : E × ℝ → E'} {k : ℕ} {χ : 𝓓(Ω, ℝ)}
+  {hH : ContDiffOn ℝ (⊤ : ℕ∞) H Ω.cylinder} {𝓕 : Type*}
+
+/-- **The support of a homotopy current with a cutoff**: the support of `T ∘ K`, for the homotopy
+operator `K` with cutoff `χ`, lies in the image under `H` of the part of `(spt T ∩ tsupport χ)
+× [0, 1]`, the union of the tracks of the points of the support of `T` in the support of `χ`. -/
+theorem dsupport_comp_cutoffHomotopyPullbackCLM_subset [AddCommMonoid V]
+    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
+    (T : 𝓕) :
+    dsupport (T ∘ (cutoffHomotopyPullbackCLM χ H hH :
+        𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ⊆
+      H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1) := by
+  have hS : IsCompact (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1)) :=
+    ((IsCompact.inter_right χ.hasCompactSupport isClosed_dsupport).prod
+      isCompact_Icc).image_of_continuousOn (hH.continuousOn.mono fun p hp ↦
+        Opens.mem_cylinder.2 (χ.tsupport_subset hp.1.1))
+  -- A test form supported off this image is taken to a test form supported off `spt T`.
+  have hvan : IsVanishingOn (T ∘ (cutoffHomotopyPullbackCLM χ H hH :
+      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _))
+      (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1))ᶜ := fun ω hω ↦
+    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦ by
+      obtain ⟨p, ⟨⟨hpχ, hpt⟩, hpω⟩, rfl⟩ := tsupport_cutoffHomotopyPullbackCLM_subset ω hx
+      exact hω hpω ⟨p, ⟨⟨hpχ, hxT⟩, hpt⟩, rfl⟩
+  have h := (hvan.disjoint_dsupport hS.isClosed.isOpen_compl).subset_compl_left
+  rwa [compl_compl] at h
+
+/-- **The mass of a homotopy current with a cutoff**: if `|χ| ≤ 1`, `‖∂ₜ H‖ ≤ A` and the spatial
+derivative of `H` has operator norm at most `L` on `tsupport χ × [0, 1]`, then
+`M(T ∘ K) ≤ A L ^ k M(T)` for a `k`-current `T` on `Ω` and the homotopy operator `K` with cutoff
+`χ`. -/
+theorem mass_comp_cutoffHomotopyPullbackCLM_le [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [LinearMapClass 𝓕 ℝ 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
+    (T : 𝓕) (hχ : ∀ x, |χ x| ≤ 1) {A L : ℝ≥0}
+    (hA : ∀ p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ H p (0, 1)‖ ≤ A)
+    (hL : ∀ p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1, ‖(fderiv ℝ H p).comp (.inl ℝ E ℝ)‖ ≤ L) :
+    mass (T ∘ (cutoffHomotopyPullbackCLM χ H hH :
+        𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ≤ A * L ^ k * mass T := by
+  refine mass_le_iff.2 fun ω hω ↦ ?_
+  have hpt (x : E) : ‖cutoffHomotopyPullbackCLM χ H hH ω x‖ ≤ A * L ^ k := by
+    by_cases hx : x ∈ tsupport χ
+    · rw [cutoffHomotopyPullbackCLM_apply, norm_smul, Real.norm_eq_abs]
+      calc |χ x| * ‖cylinderHomotopy (fun p ↦ (ω (H p)).compContinuousLinearMap
+              (fderiv ℝ H p)) x‖
+          ≤ 1 * (1 * A * L ^ k) := by
+            gcongr
+            · exact hχ x
+            · exact norm_cylinderHomotopy_pullback_le ω H x (fun t ht ↦ hA _ ⟨hx, ht⟩)
+                (fun t ht ↦ hL _ ⟨hx, ht⟩) fun t _ ↦ hω _
+        _ = A * L ^ k := by ring
+    · rw [cutoffHomotopyPullbackCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul,
+        norm_zero]
+      positivity
+  have hb : ‖(cutoffHomotopyPullbackCLM χ H hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ A * L ^ k :=
+    (BoundedContinuousFunction.norm_le (by positivity)).2 hpt
+  calc ‖T (cutoffHomotopyPullbackCLM χ H hH ω)‖ₑ
+      ≤ mass T * ‖(cutoffHomotopyPullbackCLM χ H hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
         enorm_apply_le_mass_mul T _
     _ ≤ mass T * (A * L ^ k : ℝ≥0) := by
         gcongr

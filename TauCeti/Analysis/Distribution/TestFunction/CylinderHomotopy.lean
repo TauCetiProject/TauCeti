@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
 public import TauCeti.Analysis.Convex.Segment
 public import TauCeti.Analysis.Distribution.Mass.Normal
+public import TauCeti.Analysis.Distribution.TestFunction.Prod
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
@@ -56,6 +57,8 @@ estimate their masses.
 
 * `TopologicalSpace.Opens.cylinder`: the open cylinder `Ω × ℝ`, and `TestFunction.timeCutoff`, a
   test function of time equal to one near `[0, 1]`, used to cut forms on it off in time.
+* `TestFunction.cylinderCutoff`: the cutoff `(x, t) ↦ τ t • χ x` on the cylinder built from a test
+  function `χ` on `Ω` and the time cutoff `τ`, equal to `χ` at the times `t ∈ [0, 1]`.
 * `TestFunction.cylinderHomotopyCLM`: the cylinder homotopy operator on test forms, as a
   continuous linear map.
 * `TauCeti.isCompact_inter_preimage_prodMk_left`: the slices `ιₜ` are proper from `Ω` to `W` at
@@ -169,6 +172,34 @@ theorem timeCutoff_eventually_eq_one : ∀ᶠ t in 𝓝ˢ (Icc (0 : ℝ) 1), tim
 /-- The time cutoff is equal to one on `[0, 1]`. -/
 theorem timeCutoff_eq_one {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : timeCutoff t = 1 :=
   timeCutoff_eventually_eq_one.self_of_nhdsSet t ht
+
+section CylinderCutoff
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E} {χ : 𝓓(Ω, ℝ)}
+
+/-- The **cylinder cutoff** `(x, t) ↦ τ t • χ x` of a test function `χ` on `Ω`, for the time cutoff
+`τ = timeCutoff`: a test function on the cylinder `Ω × ℝ` equal to `χ x` at the times
+`t ∈ [0, 1]`. Pulling a form back to the cylinder and multiplying by it cuts the result off without
+changing what the cylinder homotopy operator sees over the points where `χ` is one. -/
+def cylinderCutoff (χ : 𝓓(Ω, ℝ)) : 𝓓(Ω.cylinder, ℝ) :=
+  prodSMulCLM timeCutoff Opens.prod_top_subset_cylinder χ
+
+/-- At the times `t ∈ [0, 1]`, the cylinder cutoff is `χ`. -/
+theorem cylinderCutoff_apply_of_mem_Icc {x : E} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    cylinderCutoff χ (x, t) = χ x := by
+  simp [cylinderCutoff, prodSMulCLM_apply, timeCutoff_eq_one ht]
+
+/-- Near every point `(x, t)` with `t ∈ [0, 1]` near which `χ` is one, the cylinder cutoff is
+one. -/
+theorem cylinderCutoff_eventually_eq_one {x : E} (hx : ∀ᶠ y in 𝓝 x, χ y = 1) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : ∀ᶠ q in 𝓝 (x, t), cylinderCutoff χ q = 1 := by
+  have hτ : ∀ᶠ s in 𝓝 t, timeCutoff s = 1 := timeCutoff_eventually_eq_one.filter_mono
+    (nhds_le_nhdsSet ht)
+  filter_upwards [continuous_fst.continuousAt.eventually hx,
+    continuous_snd.continuousAt.eventually hτ] with q hq₁ hq₂
+  simp [cylinderCutoff, prodSMulCLM_apply, hq₁, hq₂]
+
+end CylinderCutoff
 
 section UnitInterval
 

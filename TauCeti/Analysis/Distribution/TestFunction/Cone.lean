@@ -128,28 +128,10 @@ private theorem fderiv_coneMap_comp_inl (p x : E) (t : ℝ) :
   ext v
   simp [fderiv_coneMap_apply]
 
-/-- The cutoff `(x, t) ↦ τ t • χ x` on the cylinder, for the time cutoff `τ`. -/
-private def cylCutoff (χ : 𝓓(Ω, ℝ)) : 𝓓(Ω.cylinder, ℝ) :=
-  prodSMulCLM timeCutoff Opens.prod_top_subset_cylinder χ
-
-/-- Near every point `(x, t)` with `t ∈ [0, 1]` near which `χ` is one, the cylinder cutoff is
-one. -/
-private theorem cylCutoff_eventually_eq_one {x : E} (hx : ∀ᶠ y in 𝓝 x, χ y = 1) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) : ∀ᶠ q in 𝓝 (x, t), cylCutoff χ q = 1 := by
-  have hτ : ∀ᶠ s in 𝓝 t, timeCutoff s = 1 := timeCutoff_eventually_eq_one.filter_mono
-    (nhds_le_nhdsSet ht)
-  filter_upwards [continuous_fst.continuousAt.eventually hx,
-    continuous_snd.continuousAt.eventually hτ] with q hq₁ hq₂
-  simp [cylCutoff, hq₁, hq₂]
-
-private theorem cylCutoff_apply {x : E} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    cylCutoff χ (x, t) = χ x := by
-  simp [cylCutoff, timeCutoff_eq_one ht]
-
 /-- The pullback with cutoff along the contraction onto `p`. -/
 private def conePullback (p : E) (χ : 𝓓(Ω, ℝ)) {m : ℕ} :
     𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) →L[ℝ] 𝓓(Ω.cylinder, (E × ℝ) [⋀^Fin m]→L[ℝ] F) :=
-  cutoffPullbackCLM (cylCutoff χ) (coneMap p) (contDiff_coneMap p).contDiffOn
+  cutoffPullbackCLM (cylinderCutoff χ) (coneMap p) (contDiff_coneMap p).contDiffOn
 
 omit [NormedSpace ℝ E] in
 private theorem cyl_fst_mem : ∀ q ∈ Ω.cylinder, q.2 ∈ Icc (0 : ℝ) 1 → q.1 ∈ Ω :=
@@ -162,7 +144,7 @@ private theorem conePullback_apply_comp_inl {m : ℕ} (ω : 𝓓(Ω, E [⋀^Fin 
     (conePullback p χ ω (x, t)).compContinuousLinearMap (.inl ℝ E ℝ) =
       χ x • (ω (coneMap p (x, t))).compContinuousLinearMap (t • ContinuousLinearMap.id ℝ E) := by
   ext v
-  simp [conePullback, cylCutoff_apply ht, Function.comp_def, fderiv_coneMap_apply]
+  simp [conePullback, cylinderCutoff_apply_of_mem_Icc ht, Function.comp_def, fderiv_coneMap_apply]
 
 /-- The integrand of the cone operator. -/
 private theorem curryLeft_conePullback_apply (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) {x : E}
@@ -172,7 +154,7 @@ private theorem curryLeft_conePullback_apply (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]�
   ext v
   have h := (ω (p + t • (x - p))).curryLeft (x - p) |>.map_smul_univ (fun _ ↦ t) v
   simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
-  simp only [conePullback, cutoffPullbackCLM_apply, cylCutoff_apply ht,
+  simp only [conePullback, cutoffPullbackCLM_apply, cylinderCutoff_apply_of_mem_Icc ht,
     ContinuousAlternatingMap.smul_apply, curryLeft_apply_apply, compContinuousLinearMap_apply]
   rw [← curryLeft_apply_apply, ← h, curryLeft_apply_apply]
   congr 2
@@ -262,7 +244,7 @@ private theorem coneCLM_extDerivCLM_apply_eq {m : ℕ} (ω : 𝓓(Ω, E [⋀^Fin
       cylinderHomotopyCLM cyl_fst_mem (extDerivCLM (conePullback p χ ω)) x := by
   rw [coneCLM, ContinuousLinearMap.comp_apply, coe_cylinderHomotopyCLM, coe_cylinderHomotopyCLM]
   exact cylinderHomotopy_congr fun t ht ↦
-    (extDerivCLM_cutoffPullbackCLM_apply ω (cylCutoff_eventually_eq_one hx ht)).symm
+    (extDerivCLM_cutoffPullbackCLM_apply ω (cylinderCutoff_eventually_eq_one hx ht)).symm
 
 /-- **The homotopy formula of the cone operator**: `K d ω + d K ω = ω` on test `(k + 1)`-forms, at
 every point near which the cutoff `χ` is one. -/
