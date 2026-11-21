@@ -146,16 +146,14 @@ private theorem realImage_diagonalStraightening_mul_graphFrame {Ψ : Matrix (n �
     (isUnit_iff_isUnit_det _).2 (by
       rw [det_smul]
       exact ((IsUnit.mk0 _ (by positivity)).pow _).mul h)
-  have hm (X Y : Matrix (n ⊕ n) (n ⊕ n) ℝ) : (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
   have heq : diagonalStraightening n * graphFrame Ψ =
       (1 + Complex.I • (graphSymm Ψ).map ((↑) : ℝ → ℂ)) *
         ((((√2 : ℝ)⁻¹) • (Ψ + 1)).map ((↑) : ℝ → ℂ)) := by
     have hs : (((√2 : ℝ)⁻¹) • (Ψ + 1)).map ((↑) : ℝ → ℂ) = ((√2 : ℝ) : ℂ)⁻¹ • (Ψ + 1).map (↑) := by
       ext i j
       simp [mul_add]
-    rw [diagonalStraightening_mul_graphFrame_eq, ← graphSymm_mul hΨ h, hm, hs, Matrix.add_mul,
-      Matrix.one_mul, Matrix.smul_mul, Matrix.mul_smul]
+    rw [diagonalStraightening_mul_graphFrame_eq, ← graphSymm_mul hΨ h, map_ofReal_mul, hs,
+      Matrix.add_mul, Matrix.one_mul, Matrix.smul_mul, Matrix.mul_smul]
     module
   rw [heq, realImage_mul_map_ofReal _ hu]
 
