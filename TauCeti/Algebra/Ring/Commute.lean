@@ -35,6 +35,8 @@ residue products of fields.
 ## Main results
 
 * `Commute.one_sub_smul_left`, `Commute.one_sub_smul_right`: commutation with `1 - a • u`.
+* `Commute.add_pow_smul_add_eq_zero`: if `v ^ a` kills `m₁ + m₂`, `u ^ b` kills `m₂` and
+  `(u + v) ^ c` kills `m₁`, then `(u + v) ^ (a + b + c)` kills `m₁ + m₂`.
 * `Commute.sub_pow_smul_add_eq_zero`: if `(x - y) ^ a` kills `m₁ + m₂`, `(x - z) ^ b` kills
   `m₂` and `(y - z) ^ c` kills `m₁`, then `(y - z) ^ (a + b + c)` kills `m₁ + m₂`.
 * `TauCeti.commute_of_sq_zero_of_homotopy`: commutation of a square-zero differential with its
@@ -57,47 +59,51 @@ theorem one_sub_smul_left (h : Commute u x) (a : R) : Commute (1 - a • u) x :=
 theorem one_sub_smul_right (h : Commute x u) (a : R) : Commute x (1 - a • u) :=
   (h.symm.one_sub_smul_left a).symm
 
-/-- Let `x`, `y` and `z` be pairwise commuting. If `(x - y) ^ a` kills `m₁ + m₂`, `(x - z) ^ b`
-kills `m₂` and `(y - z) ^ c` kills `m₁`, then `(y - z) ^ (a + b + c)` kills `m₁ + m₂`.
+/-- Let `u` and `v` commute. If `v ^ a` kills `m₁ + m₂`, `u ^ b` kills `m₂` and `(u + v) ^ c`
+kills `m₁`, then `(u + v) ^ (a + b + c)` kills `m₁ + m₂`.
 
-Writing `y - z = (x - z) + (y - x)` and expanding, each term of `(y - z) ^ (a + b)` has a factor
-`(x - z) ^ b` or `(x - y) ^ a`. -/
-theorem sub_pow_smul_add_eq_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    {x y z : R} (hxy : Commute x y) (hxz : Commute x z) (hyz : Commute y z) {m₁ m₂ : M}
-    {a b c : ℕ} (ha : (x - y) ^ a • (m₁ + m₂) = 0) (hb : (x - z) ^ b • m₂ = 0)
-    (hc : (y - z) ^ c • m₁ = 0) : (y - z) ^ (a + b + c) • (m₁ + m₂) = 0 := by
-  -- Write `y - z = u + v` with `u = x - z` and `v = y - x = -(x - y)`.
-  set u := x - z with hu
-  set v := y - x with hv
-  have huv : Commute u v :=
-    (hxy.sub_right (Commute.refl x)).sub_left (hyz.symm.sub_right hxz.symm)
-  have hwu : Commute (y - z) u :=
-    (hxy.symm.sub_right hyz).sub_left (hxz.symm.sub_right (Commute.refl z))
-  have hwv : Commute (y - z) v :=
-    ((Commute.refl y).sub_right hxy.symm).sub_left (hyz.symm.sub_right hxz.symm)
-  have hw : y - z = u + v := by rw [hu, hv]; abel
-  have hva : v ^ a • (m₁ + m₂) = 0 := by
-    rw [hv, ← neg_sub, neg_pow, mul_smul, ha, smul_zero]
+Expanding `(u + v) ^ (a + b)`, each term has a factor `u ^ b` or `v ^ a`. -/
+theorem add_pow_smul_add_eq_zero {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {u v : R} (huv : Commute u v) {m₁ m₂ : M} {a b c : ℕ} (ha : v ^ a • (m₁ + m₂) = 0)
+    (hb : u ^ b • m₂ = 0) (hc : (u + v) ^ c • m₁ = 0) :
+    (u + v) ^ (a + b + c) • (m₁ + m₂) = 0 := by
+  have hwu : Commute (u + v) u := (Commute.refl u).add_left huv.symm
+  have hwv : Commute (u + v) v := huv.add_left (Commute.refl v)
   rw [show a + b + c = c + (a + b) by omega, pow_add, mul_smul]
-  nth_rw 2 [hw]
-  rw [huv.add_pow', Finset.sum_smul, Finset.smul_sum]
+  nth_rw 2 [huv.add_pow']
+  rw [Finset.sum_smul, Finset.smul_sum]
   refine Finset.sum_eq_zero fun ij hij ↦ ?_
-  suffices h : (y - z) ^ c • (u ^ ij.1 * v ^ ij.2) • (m₁ + m₂) = 0 by
+  suffices h : (u + v) ^ c • (u ^ ij.1 * v ^ ij.2) • (m₁ + m₂) = 0 by
     rw [smul_assoc, smul_comm, h, smul_zero]
   rw [Finset.mem_antidiagonal] at hij
   by_cases hi : b ≤ ij.1
-  · -- The term is killed on `m₁` by `(y - z) ^ c`, and on `m₂` by `(x - z) ^ b`.
+  · -- The term is killed on `m₁` by `(u + v) ^ c`, and on `m₂` by `u ^ b`.
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hi
-    have h₁ : (y - z) ^ c • (u ^ ij.1 * v ^ ij.2) • m₁ = 0 := by
+    have h₁ : (u + v) ^ c • (u ^ ij.1 * v ^ ij.2) • m₁ = 0 := by
       rw [smul_smul, ((hwu.pow_pow _ _).mul_right (hwv.pow_pow _ _)).eq, mul_smul, hc,
         smul_zero]
     have h₂ : (u ^ ij.1 * v ^ ij.2) • m₂ = 0 := by
       rw [hk, pow_add, mul_assoc, ((Commute.pow_pow_self u b k).mul_right
         (huv.pow_pow b ij.2)).eq, mul_smul, hb, smul_zero]
     rw [smul_add, h₂, add_zero, h₁]
-  · -- The term is killed by `(x - y) ^ a`.
+  · -- The term is killed by `v ^ a`.
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le' (show a ≤ ij.2 by omega)
-    rw [hk, pow_add, ← mul_assoc, mul_smul, hva, smul_zero, smul_zero]
+    rw [hk, pow_add, ← mul_assoc, mul_smul, ha, smul_zero, smul_zero]
+
+/-- Let `x`, `y` and `z` be pairwise commuting. If `(x - y) ^ a` kills `m₁ + m₂`, `(x - z) ^ b`
+kills `m₂` and `(y - z) ^ c` kills `m₁`, then `(y - z) ^ (a + b + c)` kills `m₁ + m₂`.
+
+This is `Commute.add_pow_smul_add_eq_zero` for `y - z = (x - z) + (y - x)`. -/
+theorem sub_pow_smul_add_eq_zero {R M : Type*} [Ring R] [AddCommMonoid M] [Module R M]
+    {x y z : R} (hxy : Commute x y) (hxz : Commute x z) (hyz : Commute y z) {m₁ m₂ : M}
+    {a b c : ℕ} (ha : (x - y) ^ a • (m₁ + m₂) = 0) (hb : (x - z) ^ b • m₂ = 0)
+    (hc : (y - z) ^ c • m₁ = 0) : (y - z) ^ (a + b + c) • (m₁ + m₂) = 0 := by
+  have hw : y - z = (x - z) + (y - x) := by abel
+  have hva : (y - x) ^ a • (m₁ + m₂) = 0 := by
+    rw [← neg_sub, neg_pow, mul_smul, ha, smul_zero]
+  rw [hw] at hc ⊢
+  exact ((hxy.sub_right (Commute.refl x)).sub_left (hyz.symm.sub_right hxz.symm)
+    ).add_pow_smul_add_eq_zero hva hb hc
 
 end Commute
 

@@ -121,6 +121,14 @@ theorem succ (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder B (N + 1) := by
       show m + ↑(ij.1 + 1) = m + 1 + ij.1 by push_cast; ring]
   rw [sum_congr rfl e₁, sum_congr rfl e₂, sum_neg_distrib, h₁, h₂, neg_zero, add_zero]
 
+/-- Applying an additive map to every coefficient of a locality relation of order `N` gives
+another vanishing binomial sum, for instance after taking commutators with a third field. -/
+theorem sum_map_eq_zero {M : Type*} [AddCommGroup M] (h : A.IsLocalOfOrder B N)
+    (f : Module.End R V →+ M) (m n : ℤ) :
+    ∑ ij ∈ antidiagonal N, N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+      f (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]]) = 0 := by
+  simpa only [map_sum, map_nsmul, map_zsmul, map_zero] using congr_arg f (h m n)
+
 /-- Locality is monotone in the order. -/
 theorem mono (h : A.IsLocalOfOrder B N) {N' : ℕ} (hN : N ≤ N') : A.IsLocalOfOrder B N' := by
   induction hN with
