@@ -22,14 +22,15 @@ The comparison map `K.realizationToSpace` sends a point with barycentric coordin
 combination `∑ v, x v • v` of the vertices. It is linear in barycentric coordinates on every closed
 simplex, continuous, injective, and has range `K.space`. Injectivity combines the affine
 independence of the vertices of each face with the fact that the closed simplices of `K` meet in
-common faces. In a Hausdorff space, when the closed simplices of `K` form a locally finite family
-in `K.space`, the map is a closed map onto `K.space` and gives a homeomorphism
+common faces. When `K.space` is Hausdorff and the closed simplices of `K` form a locally finite
+family in `K.space`, the map is a closed map onto `K.space` and gives a homeomorphism
 `K.realizationHomeomorph hK : |K.vertexScheme| ≃ₜ K.space`; this covers complexes such as the
-dyadic subdivision of an open ray, which accumulate only outside their underlying space. When the
-family is locally finite in `E` itself, the map is moreover a closed embedding into `E`. Without
-local finiteness the weak topology is in general strictly finer than the subspace topology of
-`K.space`: for the infinitely many edges `[0, eᵢ]` of a fan in `ℓ²`, the points at parameter
-`1 / i` on the `i`-th edge converge to `0` in `E`, but form a closed set in the weak topology.
+dyadic subdivision of an open ray, which accumulate only outside their underlying space. When `E`
+is Hausdorff and the family is locally finite in `E` itself, the map is moreover a closed embedding
+into `E`. Without local finiteness the weak topology is in general strictly finer than the subspace
+topology of `K.space`: for the infinitely many edges `[0, eᵢ]` of a fan in `ℓ²`, the points at
+parameter `1 / i` on the `i`-th edge converge to `0` in `E`, but form a closed set in the weak
+topology.
 
 This is how polyhedra built inside a vector space, by subdividing, intersecting or gluing geometric
 complexes, become triangulations in the sense of `TauCeti.IsTriangulable`, whose domain is the
@@ -259,11 +260,9 @@ theorem continuous_realizationToSpace :
   simp_rw [comp_def, realizationToSpace_faceInclusion, Fintype.linearCombination_apply]
   exact continuous_finsetSum _ fun a _ => (hcoord a).smul continuous_const
 
-variable [T2Space E]
-
-/-- If the closed simplices of `K` form a locally finite family in `K.space`, the comparison map,
-read as a map onto `K.space`, is closed. -/
-theorem isClosedMap_codRestrict_realizationToSpace
+/-- If `K.space` is Hausdorff and the closed simplices of `K` form a locally finite family in
+`K.space`, the comparison map, read as a map onto `K.space`, is closed. -/
+theorem isClosedMap_codRestrict_realizationToSpace [T2Space K.space]
     (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
     IsClosedMap (codRestrict K.realizationToSpace K.space realizationToSpace_mem_space) := by
   intro C hC
@@ -299,7 +298,7 @@ theorem isClosedMap_codRestrict_realizationToSpace
 
 /-- If the closed simplices of `K` form a locally finite family in `E`, the comparison map is
 closed. -/
-theorem isClosedMap_realizationToSpace
+theorem isClosedMap_realizationToSpace [T2Space E]
     (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
     IsClosedMap K.realizationToSpace := by
   -- The underlying space is a locally finite union of compact simplices, hence closed.
@@ -315,18 +314,18 @@ theorem isClosedMap_realizationToSpace
 
 /-- If the closed simplices of `K` form a locally finite family in `E`, the comparison map is a
 closed embedding of the realization of the vertex scheme into `E`. -/
-theorem isClosedEmbedding_realizationToSpace
+theorem isClosedEmbedding_realizationToSpace [T2Space E]
     (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
     IsClosedEmbedding K.realizationToSpace :=
   .of_continuous_injective_isClosedMap continuous_realizationToSpace injective_realizationToSpace
     (isClosedMap_realizationToSpace hK)
 
 variable (K) in
-/-- For a geometric complex whose closed simplices form a locally finite family in its underlying
-space, the homeomorphism from the realization of its vertex scheme onto its underlying space. A
-family locally finite in `E` is locally finite in `K.space`, by `LocallyFinite.preimage_continuous`
-along `continuous_subtypeVal`. -/
-def realizationHomeomorph
+/-- For a geometric complex with Hausdorff underlying space, whose closed simplices form a locally
+finite family in that space, the homeomorphism from the realization of its vertex scheme onto its
+underlying space. A family locally finite in `E` is locally finite in `K.space`, by
+`LocallyFinite.preimage_continuous` along `continuous_subtypeVal`. -/
+def realizationHomeomorph [T2Space K.space]
     (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
     Realization K.vertexScheme ≃ₜ K.space :=
   (Equiv.ofBijective _ ⟨(injective_codRestrict _).mpr injective_realizationToSpace,
@@ -335,7 +334,7 @@ def realizationHomeomorph
 
 /-- The homeomorphism onto the underlying space is the comparison map. -/
 @[simp]
-theorem coe_realizationHomeomorph_apply
+theorem coe_realizationHomeomorph_apply [T2Space K.space]
     (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E))
     (x : Realization K.vertexScheme) :
     (K.realizationHomeomorph hK x : E) = K.realizationToSpace x :=
