@@ -135,14 +135,12 @@ def W1p.lipschitzRepresentativeL : W1p μ Ω ∞ →L[ℝ] HolderSpace 1 (closur
       map_add' u v := W1p.lipschitzRepresentative_eq_of_ae_eq hΩ (u + v) <| by
         filter_upwards [W1p.ae_lipschitzRepresentative_eq hΩ u,
           W1p.ae_lipschitzRepresentative_eq hΩ v,
-          (ae_restrict_iff' Ω.isOpen.measurableSet).1
-            (W1p.value_add u v ▸ Lp.coeFn_add (W1p.value u) (W1p.value v))]
+          (ae_restrict_iff' Ω.isOpen.measurableSet).1 (W1p.value_add_ae u v)]
           with x h₁ h₂ h₃ hx
         rw [HolderSpace.add_apply, h₁ hx, h₂ hx, h₃ hx, Pi.add_apply]
       map_smul' c u := W1p.lipschitzRepresentative_eq_of_ae_eq hΩ (c • u) <| by
         filter_upwards [W1p.ae_lipschitzRepresentative_eq hΩ u,
-          (ae_restrict_iff' Ω.isOpen.measurableSet).1
-            (W1p.value_smul c u ▸ Lp.coeFn_smul c (W1p.value u))]
+          (ae_restrict_iff' Ω.isOpen.measurableSet).1 (W1p.value_smul_ae c u)]
           with x h₁ h₂ hx
         rw [RingHom.id_apply, HolderSpace.smul_apply, h₁ hx, h₂ hx, Pi.smul_apply] }
     2 fun u ↦ by
