@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
+public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Order.Prod.Lex.Basic
-import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Data.Set.Card
 
@@ -29,8 +29,8 @@ every zero of `f` in the sector is `airySectorZero f k` for some `k ≥ 1`
 every `airySectorZero f k` is such a zero, preceded by exactly `k − 1` others
 (`TauCeti.airySectorZero_spec`), and for `k ≥ 1` the zeros are listed in increasing order
 (`TauCeti.strictMonoOn_toLex_airySectorZero`), so with nondecreasing moduli
-(`TauCeti.monotoneOn_norm_airySectorZero`). The finiteness hypothesis holds for `Bi` and `Bi′`,
-which are entire and nonzero at `0` (`TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`).
+(`TauCeti.monotoneOn_norm_airySectorZero`). The finiteness hypothesis holds for every entire `f`
+with `f 0 ≠ 0` (`TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`), such as `Bi` and `Bi′`.
 
 ## Main definitions
 
@@ -43,8 +43,8 @@ which are entire and nonzero at `0` (`TauCeti.finite_setOf_airySector_eq_zero_an
 * `TauCeti.airySectorZero_spec`: `airySectorZero f k` is attained.
 * `TauCeti.strictMonoOn_toLex_airySectorZero`, `TauCeti.monotoneOn_norm_airySectorZero`: the zeros
   are listed in increasing order, with nondecreasing moduli.
-* `TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`: `Bi` and `Bi′` have finitely many zeros
-  in the sector in each closed disc about `0`.
+* `TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`: an entire `f` with `f 0 ≠ 0`, such as
+  `Bi` or `Bi′`, has finitely many zeros in the sector in each closed disc about `0`.
 
 ## References
 
@@ -193,27 +193,14 @@ theorem monotoneOn_norm_airySectorZero {f : ℂ → ℂ}
     MonotoneOn (fun k => ‖airySectorZero f k‖) (Ici 1) := fun _ hj _ hk hjk =>
   Prod.Lex.monotone_fst _ _ ((strictMonoOn_toLex_airySectorZero hfin hinf).monotoneOn hj hk hjk)
 
-/-- `Bi` and `Bi′` have only finitely many zeros in `π/3 < ph z < π/2` in each closed disc about
-`0`, since they are entire and nonzero at `0`. -/
-theorem finite_setOf_airySector_eq_zero_and_norm_le {f : ℂ → ℂ}
-    (hf : f = airyBi ∨ f = deriv airyBi) (R : ℝ) :
+/-- An entire function `f` with `f 0 ≠ 0` has only finitely many zeros in `π/3 < ph z < π/2` in
+each closed disc about `0`. This applies to `Bi` and `Bi′` (`TauCeti.airyBi_zero_ne_zero`,
+`TauCeti.deriv_airyBi_zero_ne_zero`). -/
+theorem finite_setOf_airySector_eq_zero_and_norm_le {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f univ)
+    (h0 : f 0 ≠ 0) (R : ℝ) :
     {z | (π / 3 < arg z ∧ arg z < π / 2 ∧ f z = 0) ∧ ‖z‖ ≤ R}.Finite := by
-  have hBi : AnalyticOnNhd ℂ airyBi univ :=
-    differentiable_airyBi.differentiableOn.analyticOnNhd isOpen_univ
-  have h3 : (3 : ℂ) ≠ 0 := three_ne_zero
-  -- `f` is entire and `f 0 ≠ 0`.
-  have hf' : AnalyticOnNhd ℂ f univ ∧ f 0 ≠ 0 := by
-    rcases hf with rfl | rfl
-    · refine ⟨hBi, ?_⟩
-      rw [airyBi_zero]
-      exact div_ne_zero ((cpow_ne_zero_iff_of_exponent_ne_zero (by norm_num)).2 h3)
-        (Gamma_ne_zero_of_re_pos (by norm_num))
-    · refine ⟨hBi.deriv, ?_⟩
-      rw [deriv_airyBi_zero]
-      exact div_ne_zero ((cpow_ne_zero_iff_of_exponent_ne_zero (by norm_num)).2 h3)
-        (Gamma_ne_zero_of_re_pos (by norm_num))
-  refine ((hf'.1.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ 0)
-    hf'.2 (isCompact_closedBall 0 R) (subset_univ _))).subset fun z hz => ⟨?_, hz.1.2.2⟩
+  refine (hf.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ 0) h0
+    (isCompact_closedBall 0 R) (subset_univ _)).subset fun z hz => ⟨?_, hz.1.2.2⟩
   simpa using hz.2
 
 end TauCeti
