@@ -60,6 +60,8 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
   implies absolute summability on `‖y‖ ≤ ρ`, and the multi-index series converges
   normally and absolutely wherever the operator-norm bounds `(card ι) ^ k * ‖p k‖ * ρ ^ k` are
   summable.
+* `TauCeti.summable_norm_shift_single` and `TauCeti.hasSum_monomial_shift_single`: shifting
+  coefficients preserves normal summability and extracts a coordinate monomial from a series.
 * `TauCeti.summable_norm_sum_Iic_smul_mul_pow` and
   `TauCeti.hasSum_prod_pow_smul_sum_Iic_smul`: Cauchy convolution over `Finset.Iic` preserves
   normal summability and evaluates the product of two absolutely summable multi-index power series.
@@ -81,6 +83,8 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 Multi-index coefficients of formal multilinear series, under the name `coeff`, are also part of
 Michail Karatarakis's formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`,
 commit `1d51891b5b`, `Mathlib/NumberTheory/Transcendental/Baker/MultiIndex.lean`, Apache 2.0).
+The exponent shift follows `Mathlib/NumberTheory/Transcendental/Baker/CoordinateDivision.lean`
+from the same formalization at commit `1d51891b5be7ceeca95b4583cad39e0681c5e453`.
 -/
 
 public section
@@ -281,6 +285,47 @@ theorem summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι 
     (hd : Summable fun β : ι → ℕ ↦ ‖d β‖ * ρ ^ (∑ i, β i)) (hy : ‖y‖ ≤ ρ) :
     Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • d β‖ :=
   hd.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun β ↦ norm_prod_pow_smul_le hy β (d β)
+
+/-- Shifting a normally summable multi-index coefficient family by `m` in coordinate `i`
+preserves normal summability at every positive radius. Only the real-valued norm of the
+coefficients is used. -/
+theorem summable_norm_shift_single {ι F : Type*} [Fintype ι] [DecidableEq ι] [Norm F]
+    {c : (ι → ℕ) → F} {r : ℝ} (hr : 0 < r) (i : ι) (m : ℕ)
+    (hc : Summable fun α : ι → ℕ ↦ ‖c α‖ * r ^ (∑ j, α j)) :
+    Summable fun α : ι → ℕ ↦ ‖c (α + Pi.single i m)‖ * r ^ (∑ j, α j) := by
+  have h := (hc.comp_injective (add_left_injective (Pi.single i m))).mul_left (r ^ m)⁻¹
+  refine h.congr fun α ↦ ?_
+  simp only [Function.comp_apply, Pi.add_apply, sum_add_distrib, Fintype.sum_pi_single', pow_add]
+  field_simp
+
+/-- A multi-index series whose coefficients vanish below degree `m` in coordinate `i` is
+obtained by multiplying the series with shifted coefficients by the monomial `y i ^ m`.
+The identity only needs a commutative monoid of scalars acting continuously on the target. -/
+theorem hasSum_monomial_shift_single {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fintype ι]
+    [DecidableEq ι] [AddCommMonoid F] [TopologicalSpace F] [DistribMulAction 𝕜 F]
+    [ContinuousConstSMul 𝕜 F] {c : (ι → ℕ) → F}
+    (i : ι) (m : ℕ) (hzero : ∀ α, α i < m → c α = 0) {y : ι → 𝕜} {a : F}
+    (h : HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c (α + Pi.single i m)) a) :
+    HasSum (fun α : ι → ℕ ↦ (∏ j, y j ^ α j) • c α) (y i ^ m • a) := by
+  let s : ι → ℕ := Pi.single i m
+  refine (Function.Injective.hasSum_iff (add_left_injective s) (fun α hα ↦ ?_)).1 ?_
+  · have hi : α i < m := by
+      by_contra! hmi
+      apply hα
+      have hs : s ≤ α := by
+        intro j
+        by_cases hj : j = i <;> simp [s, hj, Pi.single_eq_of_ne, hmi]
+      obtain ⟨β, hβ⟩ := exists_add_of_le hs
+      exact ⟨β, (add_comm β s).trans hβ.symm⟩
+    simp [hzero α hi]
+  · refine (h.const_smul (y i ^ m)).congr_fun fun α ↦ ?_
+    have hs : ∏ j, y j ^ s j = y i ^ m := by
+      convert Fintype.prod_pi_mulSingle' i (y i ^ m) using 1
+      congr 1
+      ext j
+      by_cases hj : j = i <;> simp [s, hj, Pi.single_eq_of_ne, Pi.mulSingle_eq_of_ne]
+    simp only [Function.comp_apply, Pi.add_apply, pow_add, prod_mul_distrib, hs, smul_smul]
+    rw [mul_comm]
 
 /-- Normal summability at radius `ρ` is preserved under Cauchy convolution over `Finset.Iic`. -/
 theorem summable_norm_sum_Iic_smul_mul_pow {ι A G : Type*} [Fintype ι] [DecidableEq ι]

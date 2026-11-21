@@ -12,8 +12,8 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 # Elementary facts about `dslope`
 
 Elementary divided-slope facts. Away from its base point `dslope` is the plain difference quotient,
-so most of these are statements about a normed field and its norm; only the product rule and the
-germ congruence also involve the value `deriv f a` of `dslope f a` at its base point.
+so most of these are statements about a normed field and its norm. The product rule, germ
+congruence, and coordinate factorization also use the derivative at the base point.
 
 ## Main results
 
@@ -31,6 +31,8 @@ germ congruence also involve the value `deriv f a` of `dslope f a` at its base p
 * `TauCeti.dslope_mul`: the product rule for divided differences.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
+* `TauCeti.eventuallyEq_dslope_update_of_factorization`: a local coordinate factorization
+  identifies the coordinate divided difference with its factor.
 -/
 
 public section
@@ -102,5 +104,44 @@ theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedFi
   · rw [dslope_same, dslope_same, h.deriv_eq]
   · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
       h.eq_of_nhds]
+
+/-- A local factorization by a coordinate difference identifies the coordinate divided
+difference with its factor. On the base hyperplane only continuity of the factor's
+one-dimensional slices is needed; the index type can be infinite. -/
+theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
+    [NontriviallyNormedField 𝕜] [DecidableEq ι]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f g : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι}
+    (hg : ∀ᶠ z in nhds x, z i = x i →
+      ContinuousAt (fun w ↦ g (Function.update z i w)) (x i))
+    (hfg : (fun z ↦ f z - f (Function.update z i (x i))) =ᶠ[nhds x]
+      fun z ↦ (z i - x i) • g z) :
+    (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) (x i) (z i)) =ᶠ[nhds x] g := by
+  filter_upwards [hfg.eventually_nhds, hg] with z hz hgz
+  by_cases hzi : z i = x i
+  · have huz : Function.update z i (x i) = z := by rw [← hzi, Function.update_eq_self]
+    have hu : ContinuousAt (Function.update z i) (x i) :=
+      continuousAt_const.update i continuousAt_id
+    have heq := hu.tendsto.eventually (huz ▸ hz)
+    have heq' : (fun w ↦ f (Function.update z i w) - f z) =ᶠ[nhds (x i)]
+        (fun w ↦ (w - x i) • g (Function.update z i w)) := by
+      filter_upwards [heq] with w hw
+      simpa only [Function.update_self, Function.update_idem, huz] using hw
+    have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) (x i) := by
+      rw [hasDerivAt_iff_tendsto_slope]
+      have hgt : Filter.Tendsto (fun w ↦ g (Function.update z i w)) (nhdsWithin (x i) {x i}ᶜ)
+          (nhds (g z)) := by
+        simpa only [huz] using (hgz hzi).tendsto.mono_left nhdsWithin_le_nhds
+      apply Filter.Tendsto.congr' ?_ hgt
+      filter_upwards [heq'.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with w hw hne
+      have hne' : w ≠ x i := hne
+      symm
+      rw [slope_def_module, huz, hw]
+      exact inv_smul_smul₀ (sub_ne_zero.mpr hne') _
+    simpa only [hzi, dslope_same] using hd'.deriv
+  · apply (smul_right_injective _ (sub_ne_zero.mpr hzi))
+    change (z i - x i) • dslope _ _ _ = (z i - x i) • g z
+    rw [sub_smul_dslope, Function.update_eq_self]
+    exact mem_of_mem_nhds hz
 
 end TauCeti

@@ -22,7 +22,9 @@ slices `y ↦ f (x, y)` with `x` near `p.1` (`AnalyticAt.eventually_analyticAt_c
 Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic
 (`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`), as is the slice
 `ζ ↦ Sum.elim x (fun _ ↦ ζ)` fixing the first block (`TauCeti.analyticAt_sumElim_const`).
-Replacing one component of an analytic family by another analytic function preserves analyticity
+An updated finite family is analytic within a set exactly when its replacement and its retained
+components are analytic there (`TauCeti.analyticWithinAt_update_iff`). In particular, replacing one
+component of an analytic family by another analytic function preserves analyticity
 (`AnalyticAt.update`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
@@ -93,15 +95,21 @@ variable {𝕜 ι E : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [Decida
   {G : ι → Type*} [∀ i, NormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
   {f : E → ∀ i, G i} {x : E} {i : ι} {g : E → G i}
 
+/-- An updated family is analytic within `s` exactly when the replacement and all retained
+components are analytic within `s`. -/
+theorem TauCeti.analyticWithinAt_update_iff {s : Set E} :
+    AnalyticWithinAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) s x ↔
+      AnalyticWithinAt 𝕜 g s x ∧ ∀ j ≠ i, AnalyticWithinAt 𝕜 (fun z ↦ f z j) s x := by
+  rw [analyticWithinAt_pi_iff, ← and_forall_ne i]
+  simp only [Function.update_self]
+  refine and_congr_right fun _ ↦ ?_
+  exact forall_congr' fun j ↦ forall_congr' fun hj ↦ by simp only [Function.update_of_ne hj]
+
 /-- Updating one component of a finite analytic family by an analytic function is analytic. -/
 theorem AnalyticAt.update (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) :
     AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x := by
-  apply AnalyticAt.pi
-  intro j
-  by_cases h : j = i
-  · subst j
-    simpa only [Function.update_self] using hg
-  · simpa only [Function.update_of_ne h] using (analyticAt_pi_iff.mp hf j)
+  rw [← analyticWithinAt_univ, TauCeti.analyticWithinAt_update_iff]
+  exact ⟨hg.analyticWithinAt, fun j _ ↦ (analyticAt_pi_iff.mp hf j).analyticWithinAt⟩
 
 end Update
 
