@@ -43,11 +43,11 @@ open scoped ENNReal NNReal Distributions Topology ContDiff
 
 namespace Distribution
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E} {k : ℕ} {u : E → ℝ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] in
 private lemma contDiff_smoothTransition_sub (hu : ContDiff ℝ ∞ u) (m : ℕ) (t : ℝ) :
     ContDiff ℝ ∞ fun x => Real.smoothTransition (((m : ℝ) + 1) * (t - u x)) :=
   Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_const.sub hu))
@@ -76,14 +76,14 @@ private theorem memLp_intervalIntegral_mul_smoothTransition_smul {G : Type*}
       (f := fun x t => g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x)))
       ((hg.comp continuous_snd).mul <| Real.smoothTransition.continuous.comp <|
         continuous_const.mul (continuous_snd.sub (hu.continuous.comp continuous_fst))) a b
-  refine ((TestFunction.memLp_subtype (p := 1) (μ := μ) η).norm.const_mul
-    (∫ t in uIoc a b, |g t|)).mono
-    (((hJcont.comp continuous_subtypeVal).smul
-      (η.continuous.comp continuous_subtypeVal)).aestronglyMeasurable)
-    (ae_of_all _ fun x => ?_)
-  rw [norm_smul, Real.norm_eq_abs]
-  exact (mul_le_mul_of_nonneg_right (abs_intervalIntegral_mul_smoothTransition_le hg a b m (u x))
-    (norm_nonneg _)).trans (le_abs_self _)
+  have hK : IsCompact ((↑) ⁻¹' tsupport η : Set Ω) :=
+    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' η.hasCompactSupport
+      (by simpa using η.tsupport_subset)
+  refine ((hJcont.comp continuous_subtypeVal).smul
+    (η.continuous.comp continuous_subtypeVal)).memLp_of_hasCompactSupport
+    (HasCompactSupport.of_support_subset_isCompact hK fun x hx => ?_)
+  by_contra h
+  exact hx (by simp [image_eq_zero_of_notMem_tsupport h])
 
 /-- Continuity of `s ↦ S (ψ((m + 1) (s - u ·)) • η)` for a locally finite-mass functional `S`. -/
 theorem continuous_apply_smulLeftCLM_smoothTransition {G : Type*}

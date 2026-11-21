@@ -48,6 +48,8 @@ shows that the alternation of the derivative, the exterior derivative, has compo
   `TauCeti.SmoothAlmostComplexStructure.delBar_delBar_ofComplexManifold`,
   `TauCeti.SmoothAlmostComplexStructure.del_delBar_add_delBar_del_ofComplexManifold`:
   `∂² = 0`, `∂bar² = 0` and `∂ ∂bar + ∂bar ∂ = 0` on a complex manifold.
+* `TauCeti.SmoothAlmostComplexStructure.delBarType_delBarType_ofComplexManifold`: `∂bar² = 0` on
+  forms of type `(p,q)`.
 
 ## References
 
@@ -152,6 +154,14 @@ theorem delBar_delBar_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :
     (ofComplexManifold E M).delBar ((ofComplexManifold E M).delBar φ) = 0 :=
   delBar_delBar_eq_zero_of_mextDerivₗ_eq_del_add_delBar
     mextDerivₗ_eq_del_add_delBar_ofComplexManifold mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
+
+/-- `∂bar² = 0` on the forms of type `(p,q)` of a complex manifold. -/
+@[simp]
+theorem delBarType_delBarType_ofComplexManifold (p q : ℕ)
+    (φ : (ofComplexManifold E M).typeForms (F := F) p q) :
+    (ofComplexManifold E M).delBarType p (q + 1) ((ofComplexManifold E M).delBarType p q φ) = 0 :=
+  Subtype.ext <| by
+    rw [coe_delBarType, coe_delBarType, delBar_delBar_ofComplexManifold, Submodule.coe_zero]
 
 /-- **`∂` and `∂bar` anticommute on a complex manifold**: `∂ ∂bar φ + ∂bar ∂φ = 0`. -/
 theorem del_delBar_add_delBar_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :

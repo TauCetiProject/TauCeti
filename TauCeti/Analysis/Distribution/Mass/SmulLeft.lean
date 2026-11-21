@@ -139,7 +139,7 @@ section MassMeasure
 
 open MeasureTheory
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
+variable [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
   [FunLike 𝓕 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
   [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
 
@@ -237,7 +237,7 @@ omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
 /-- **Sharp mass of a contraction against the mass measure on an inner product space.** For `T` of
 locally finite mass, `M(T ⌞ α) ≤ ∫ ‖α‖ d‖T‖`. -/
 theorem mass_comp_oneFormWedgeCLM_le_lintegral_of_innerProductSpace
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
+    [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
     [FunLike 𝓕 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
     [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
     {T : 𝓕} (hT : HasLocallyFiniteMass T) (hα : ContDiff ℝ n α) :

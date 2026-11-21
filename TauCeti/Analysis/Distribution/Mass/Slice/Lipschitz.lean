@@ -343,6 +343,7 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
         refine lintegral_congr fun x => ?_
         rw [neg_sub_neg, ← eDist_eq_eNorm_sub, edist_comm]
 
+omit [FiniteDimensional ℝ E] in
 private theorem slice_eq_zero_of_lipschitzOnWith_zero
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hu : LipschitzOnWith 0 u Ω) (t : ℝ) :

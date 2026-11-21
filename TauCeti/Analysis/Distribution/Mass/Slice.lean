@@ -14,7 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 /-!
 # Slicing currents by a function
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E`, let `T` be a
+Let `Ω` be an open set of a real normed space `E`, let `T` be a
 `(k + 1)`-current on `Ω` (a continuous linear functional on the test `(k + 1)`-forms), and let
 `u : E → ℝ` be Borel measurable on `Ω`. The **slice** of `T` by `u` at `t` is the `k`-current
 
@@ -40,7 +40,12 @@ and on a real inner product space the sharp bound
 
 `∫ M(⟨T, u, t⟩) dt ≤ ∫ ‖du‖ d‖T‖`,
 
-free of the `(k + 1)` factor because `‖du ∧ φ‖ ≤ ‖du‖ * ‖φ‖` in the operator (comass) norm.
+free of the `(k + 1)` factor because `‖du ∧ φ‖ ≤ ‖du‖ * ‖φ‖` in the operator (comass) norm, so for
+a normal current `T` and a smooth `u` with bounded derivative almost every slice is a normal
+current. The mass here is taken with respect to the operator norm on alternating forms
+(`Distribution.mass`); the factor `k + 1` comes from the unnormalized alternatization defining the
+wedge `du ∧ φ`. Slices by merely Lipschitz functions are not treated here. If `E` is
+infinite-dimensional, every test form is zero, so every current and every slice is zero.
 
 ## Main declarations
 
@@ -74,7 +79,7 @@ open scoped BoundedContinuousFunction ENNReal NNReal Distributions Topology Cont
 
 namespace Distribution
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E} {k : ℕ} {u v : E → ℝ} {t : ℝ}
 
@@ -405,6 +410,10 @@ theorem massRestrict_comp_pullbackCLM {E' : Type*} [NormedAddCommGroup E'] [Norm
           hΦ.continuousOn.domRestrict.measurable) ∘L
         pullbackCLM Φ hΦ hΦp := by
   set P : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) := pullbackCLM Φ hΦ hΦp
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · have hP : P = 0 := by ext1 φ; exact TestFunction.eq_zero_of_not_finiteDimensional (P φ) hE
+    simp [hP]
   have hΦc : Continuous fun x : Ω => Φ x := hΦ.continuousOn.domRestrict
   set A : Set Ω := (Ω : Set E).domRestrict Φ ⁻¹' ((↑) '' B : Set E')
   have hA : MeasurableSet A :=
@@ -609,6 +618,12 @@ private theorem exists_measurable_mass_slice_le_aux
       mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ c * ∫⁻ x, ‖α x‖ₑ ∂massMeasure T) :
     ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ t, mass (slice T u t) ≤ G t) ∧
       ∫⁻ t, G t ≤ c * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- In infinite dimension every test form is zero, so every slice has mass zero.
+    refine ⟨0, measurable_const, fun t => ?_, by simp⟩
+    rw [Pi.zero_apply, nonpos_iff_eq_zero, mass_eq_zero_iff]
+    exact funext fun φ => by simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtypeVal
   have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_eNorm.comp
@@ -701,7 +716,7 @@ section InnerProductSpace
 /-- On a real inner product space, a measurable majorant of `t ↦ M(⟨T, u, t⟩)` has integral at
 most `∫ ‖du‖ d‖T‖`, without the `(k + 1)` factor. -/
 theorem exists_measurable_mass_slice_le_of_innerProductSpace {V : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] {U : Opens V} {w : V → ℝ}
     {T : 𝓓(U, V [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hw : ContDiff ℝ ∞ w) :
@@ -714,7 +729,7 @@ theorem exists_measurable_mass_slice_le_of_innerProductSpace {V : Type*}
 /-- **Sharp slicing inequality on an inner product space.** For a locally normal `(k + 1)`-current
 `T` and smooth `w`, `∫ M(⟨T, w, t⟩) dt ≤ ∫ ‖dw‖ d‖T‖`. -/
 theorem lintegral_mass_slice_le_of_innerProductSpace {V : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] {U : Opens V} {w : V → ℝ}
     {T : 𝓓(U, V [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hw : ContDiff ℝ ∞ w) :
@@ -725,7 +740,7 @@ theorem lintegral_mass_slice_le_of_innerProductSpace {V : Type*}
 /-- **Sharp slicing inequality with a derivative bound on an inner product space.** If
 `‖dw‖ ≤ L` on `U`, then `∫ M(⟨T, w, t⟩) dt ≤ L M(T)`. -/
 theorem lintegral_mass_slice_le_mul_mass_of_innerProductSpace {V : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] {U : Opens V} {w : V → ℝ}
     {T : 𝓓(U, V [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hw : ContDiff ℝ ∞ w) {L : ℝ≥0∞}
