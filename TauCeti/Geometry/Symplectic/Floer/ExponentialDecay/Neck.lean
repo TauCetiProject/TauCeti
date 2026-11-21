@@ -182,7 +182,7 @@ private theorem div_le_mul_sq_of_le_mul_exp_add_exp {W E κ₀ a b s d h : ℝ} 
     W / h ≤ 4 * (Real.exp κ₀ + 1) * E * h ^ 2 := by
   have hh0 : 0 < h := hh ▸ Real.exp_pos _
   have hh3 : h ^ 3 = Real.exp (-(κ₀ * d)) := by
-    rw [hh, ← Real.exp_nat_mul]
+    rw [hh, ← Real.exp_natCast_mul]
     congr 1
     push_cast
     ring
