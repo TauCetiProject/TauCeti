@@ -25,6 +25,10 @@ characteristic polynomial `(X - 1) ^ 2`. The constant-term hypothesis cannot be 
 for the characteristic polynomial `X ^ 2`, the sequence that is `1` at `n = 1` and `0` elsewhere
 is a solution, but every `(P 0).eval n * 0 ^ n` vanishes at `n = 1`.
 
+When the characteristic roots are distinct, every multiplicity is one and the coefficients are
+constants: the solutions are the simple exponential sums `∑ θ, g θ * θ ^ n`. This is the form in
+which the zeros of a solution are studied through unit equations.
+
 The proof is a dimension count. The characteristic polynomial evaluated at the forward shift
 annihilates exactly the solutions (`LinearRecurrence.isSolution_iff_aeval_charPoly_apply`), so
 each `n ↦ p.eval n * θ ^ n` with `deg p` below the multiplicity of `θ` is a solution
@@ -42,6 +46,8 @@ each `n ↦ p.eval n * θ ^ n` with `deg p` below the multiplicity of `θ` is a 
 * `LinearRecurrence.exists_eq_sum_eval_mul_pow`: the closed form of a solution.
 * `LinearRecurrence.isSolution_iff_exists_eq_sum_eval_mul_pow`: the solutions of `E` are
   exactly these exponential polynomials.
+* `LinearRecurrence.exists_eq_sum_mul_pow`, `LinearRecurrence.isSolution_iff_exists_eq_sum_mul_pow`:
+  the closed form with constant coefficients when the characteristic roots are distinct.
 
 ## References
 
@@ -194,6 +200,49 @@ theorem isSolution_iff_exists_eq_sum_eval_mul_pow (hsplit : E.charPoly.Splits)
   rw [E.is_sol_iff_mem_solSpace, this]
   exact Submodule.sum_mem _ fun θ hθ ↦
     E.isSolution_eval_mul_pow (hP θ (Multiset.mem_toFinset.mp hθ))
+
+/-! ### Simple recurrences -/
+
+omit [CharZero K] in
+/-- Every combination `∑ θ, g θ * θ ^ n` of powers of the distinct characteristic roots `θ`
+solves `E`. -/
+theorem isSolution_sum_mul_pow (g : K → K) :
+    E.IsSolution fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+  have : (fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n) =
+      ∑ θ ∈ E.charPoly.roots.toFinset, g θ • fun n : ℕ ↦ θ ^ n := by
+    ext n
+    simp [Finset.sum_apply]
+  rw [this, E.is_sol_iff_mem_solSpace]
+  refine Submodule.sum_mem _ fun θ hθ ↦ Submodule.smul_mem _ _ ?_
+  rw [← E.is_sol_iff_mem_solSpace, geom_sol_iff_root_charPoly]
+  exact (mem_roots E.charPoly_monic.ne_zero).mp (Multiset.mem_toFinset.mp hθ)
+
+/-- **Closed form of a simple recurrence.** If the characteristic polynomial of `E` splits with
+distinct roots and has nonzero constant term, every solution of `E` is `∑ θ, g θ * θ ^ n` over
+the characteristic roots `θ`, with constant coefficients `g θ`. -/
+theorem exists_eq_sum_mul_pow (hsplit : E.charPoly.Splits) (h0 : E.charPoly.coeff 0 ≠ 0)
+    (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} (hu : E.IsSolution u) :
+    ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+  obtain ⟨P, hP, hu⟩ := E.exists_eq_sum_eval_mul_pow hsplit h0 hu
+  refine ⟨fun θ ↦ (P θ).coeff 0, fun n ↦ (hu n).trans (Finset.sum_congr rfl fun θ hθ ↦ ?_)⟩
+  have hθ := Multiset.mem_toFinset.mp hθ
+  -- A simple root has multiplicity one, so its coefficient polynomial is constant.
+  have hdeg : (P θ).degree ≤ 0 := by
+    have := hP θ hθ
+    rw [← count_roots, Multiset.count_eq_one_of_mem hnodup hθ, Nat.cast_one] at this
+    exact Order.le_of_lt_succ this
+  rw [eq_C_of_degree_le_zero hdeg, eval_C]
+
+/-- The solutions of a linear recurrence whose characteristic polynomial splits with distinct
+roots and has nonzero constant term are exactly the sums `∑ θ, g θ * θ ^ n` over the
+characteristic roots `θ`. -/
+theorem isSolution_iff_exists_eq_sum_mul_pow (hsplit : E.charPoly.Splits)
+    (h0 : E.charPoly.coeff 0 ≠ 0) (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} :
+    E.IsSolution u ↔ ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+  refine ⟨E.exists_eq_sum_mul_pow hsplit h0 hnodup, ?_⟩
+  rintro ⟨g, hu⟩
+  rw [show u = _ from funext hu]
+  exact E.isSolution_sum_mul_pow g
 
 end Field
 
