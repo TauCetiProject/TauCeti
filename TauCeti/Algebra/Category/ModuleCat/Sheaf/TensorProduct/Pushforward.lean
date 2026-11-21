@@ -118,7 +118,8 @@ attribute [instance] presheafPushforwardLaxBraided
 /-- On sections over `U`, the unit map of the pushforward of presheaves of modules is `φ`. -/
 @[simp]
 lemma presheafPushforward_ε_app_apply (U : Cᵒᵖ) (r : S.obj.obj U) :
-    (Functor.LaxMonoidal.ε (presheafPushforward φ)).app U r = φ.hom.app U r :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((Functor.LaxMonoidal.ε (presheafPushforward φ)).app U r = φ.hom.app U r) :=
   PresheafOfModules.pushforward_ε_app_apply F (commRingCatHom φ) U r
 
 /-- On sections over `U`, the tensor map of the pushforward of presheaves of modules sends the
@@ -126,8 +127,9 @@ pure tensor `m ⊗ₜ n` over `S.obj.obj U` to the same pure tensor over `R.obj.
 @[simp]
 lemma presheafPushforward_μ_app_tmul (M N : PresheafOfModulesOfCommRing.{u} R.obj)
     (U : Cᵒᵖ) (m : M.obj (F.op.obj U)) (n : N.obj (F.op.obj U)) :
-    (Functor.LaxMonoidal.μ (presheafPushforward φ) M N).app U (m ⊗ₜ[S.obj.obj U] n) =
-      m ⊗ₜ[R.obj.obj (F.op.obj U)] n :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((Functor.LaxMonoidal.μ (presheafPushforward φ) M N).app U (m ⊗ₜ[S.obj.obj U] n) =
+      m ⊗ₜ[R.obj.obj (F.op.obj U)] n) :=
   PresheafOfModules.pushforward_μ_app_tmul F (commRingCatHom φ) M N U m n
 
 /-- The braiding on the underlying presheaves of pushforward sheaves is the braiding on the
@@ -238,8 +240,9 @@ lemma pushforward_ε : Functor.LaxMonoidal.ε (pushforward φ) = unitToPushforwa
       ((congrArg (_ ≫ ·) (CategoryTheory.Functor.map_id _ _)).trans
         ((Category.comp_id _).trans h₁)))
   rw [pushforwardLaxMonoidal, Functor.LaxMonoidal.transport_ε, Functor.LaxMonoidal.comp_ε,
-    Functor.LaxMonoidal.comp_ε, Functor.comp_map, assoc, assoc, ← Functor.map_comp_assoc, h₂,
-    sheafification_ε, presheafPushforwardSheafificationIso_hom_app, Iso.inv_comp_eq,
+    Functor.LaxMonoidal.comp_ε, Functor.comp_map, assoc, assoc, ← Functor.map_comp_assoc, h₂]
+  erw [sheafification_ε S]
+  rw [presheafPushforwardSheafificationIso_hom_app, Iso.inv_comp_eq,
     sheafificationUnitIso_hom, ← sheafificationIso_hom]
   exact sheafificationIso_hom_naturality (unitToPushforwardObjUnit φ)
 

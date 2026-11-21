@@ -167,10 +167,17 @@ theorem isRegularPair_singleton (hε : 0 < ε) (u v : V) : S.IsRegularPair ε {u
   simpa using hε.le
 
 /-- Renaming the palette along an equivalence preserves `IsRegularPair`. -/
+@[simp]
+theorem isRegularPair_relabel_iff {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).IsRegularPair ε s t ↔ S.IsRegularPair ε s t := by
+  refine ⟨fun h c s' hs' t' ht' hs ht ↦ ?_, fun h c s' hs' t' ht' hs ht ↦ ?_⟩
+  · simpa only [pairColorDensity_relabel, e.symm_apply_apply] using h (e c) s' hs' t' ht' hs ht
+  · simpa only [pairColorDensity_relabel] using h (e.symm c) s' hs' t' ht' hs ht
+
+/-- Renaming the palette along an equivalence preserves `IsRegularPair`. -/
 theorem IsRegularPair.relabel {κ' : Type*} (h : S.IsRegularPair ε s t) (e : κ ≃ κ') :
-    (S.relabel e).IsRegularPair ε s t := by
-  intro c s' hs' t' ht' hs ht
-  simpa only [pairColorDensity_relabel] using h (e.symm c) s' hs' t' ht' hs ht
+    (S.relabel e).IsRegularPair ε s t :=
+  (isRegularPair_relabel_iff e).2 h
 
 section Discrepancy
 
@@ -250,43 +257,44 @@ theorem abs_card_filter_colorOfPair_sub_le_of_refines [DecidableEq V]
   let r (x y : V) : Prop := S.colorOfPair x y = some c
   have hinter (s t : Finset V) :
       {q ∈ s ×ˢ t | S.colorOfPair q.1 q.2 = some c} = Rel.interedges r s t := rfl
-  have hXA : QA.biUnion (fun A' ↦ X ∩ A'.1) = X := by
+  have hXA : QA.biUnion (fun A' ↦ X ∩ A'.val) = X := by
     rw [← inter_biUnion, Finpartition.biUnion_filter_refinementParent_eq hQP pA,
       inter_eq_left.2 hX]
-  have hYB : QB.biUnion (fun B' ↦ Y ∩ B'.1) = Y := by
+  have hYB : QB.biUnion (fun B' ↦ Y ∩ B'.val) = Y := by
     rw [← inter_biUnion, Finpartition.biUnion_filter_refinementParent_eq hQP pB,
       inter_eq_left.2 hY]
-  have hXcard : (#X : ℝ) = ∑ A' ∈ QA, (#(X ∩ A'.1) : ℝ) := by
+  have hXcard : (#X : ℝ) = ∑ A' ∈ QA, (#(X ∩ A'.val) : ℝ) := by
     exact_mod_cast (congrArg card (inter_eq_left.2 hX).symm).trans
       (Finpartition.sum_card_inter_filter_refinementParent_eq hQP pA X).symm
-  have hYcard : (#Y : ℝ) = ∑ B' ∈ QB, (#(Y ∩ B'.1) : ℝ) := by
+  have hYcard : (#Y : ℝ) = ∑ B' ∈ QB, (#(Y ∩ B'.val) : ℝ) := by
     exact_mod_cast (congrArg card (inter_eq_left.2 hY).symm).trans
       (Finpartition.sum_card_inter_filter_refinementParent_eq hQP pB Y).symm
-  have hAcard : (#A : ℝ) = ∑ A' ∈ QA, (#A'.1 : ℝ) := by
+  have hAcard : (#A : ℝ) = ∑ A' ∈ QA, (#A'.val : ℝ) := by
     exact_mod_cast (Finpartition.sum_card_filter_refinementParent_eq hQP pA).symm
-  have hBcard : (#B : ℝ) = ∑ B' ∈ QB, (#B'.1 : ℝ) := by
+  have hBcard : (#B : ℝ) = ∑ B' ∈ QB, (#B'.val : ℝ) := by
     exact_mod_cast (Finpartition.sum_card_filter_refinementParent_eq hQP pB).symm
   have hcount : (#{q ∈ X ×ˢ Y | S.colorOfPair q.1 q.2 = some c} : ℝ) =
       ∑ A' ∈ QA, ∑ B' ∈ QB,
-        (#{q ∈ (X ∩ A'.1) ×ˢ (Y ∩ B'.1) | S.colorOfPair q.1 q.2 = some c} : ℝ) := by
+        (#{q ∈ (X ∩ A'.val) ×ˢ (Y ∩ B'.val) | S.colorOfPair q.1 q.2 = some c} : ℝ) := by
     simp_rw [hinter]
     have hnat : #(Rel.interedges r X Y) =
-        ∑ A' ∈ QA, ∑ B' ∈ QB, #(Rel.interedges r (X ∩ A'.1) (Y ∩ B'.1)) := by
+        ∑ A' ∈ QA, ∑ B' ∈ QB, #(Rel.interedges r (X ∩ A'.val) (Y ∩ B'.val)) := by
       conv_lhs => rw [← hXA, ← hYB]
       rw [Rel.card_interedges_biUnion_left r QA _ _
         ((Q.pairwiseDisjoint_subtype_val _).mono fun _ ↦ inter_subset_right)]
       exact sum_congr rfl fun A' _ ↦ Rel.card_interedges_biUnion_right r _ QB _
         ((Q.pairwiseDisjoint_subtype_val _).mono fun _ ↦ inter_subset_right)
     exact_mod_cast hnat
-  have hmean : d * (#X * #Y) = ∑ A' ∈ QA, ∑ B' ∈ QB, d * (#(X ∩ A'.1) * #(Y ∩ B'.1)) := by
+  have hmean : d * (#X * #Y) = ∑ A' ∈ QA, ∑ B' ∈ QB, d * (#(X ∩ A'.val) * #(Y ∩ B'.val)) := by
     rw [hXcard, hYcard, sum_mul_sum, mul_sum]
     exact sum_congr rfl fun _ _ ↦ mul_sum _ _ _
   rw [hcount, hmean, ← sum_sub_distrib, hAcard, hBcard, sum_mul_sum, mul_sum]
   refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun A' hA' ↦ ?_)
   rw [← sum_sub_distrib, mul_sum]
   refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun B' hB' ↦ ?_)
-  exact hfine A'.1 A'.2 ((Finpartition.refinementParent_eq_iff hQP).1 (mem_filter.1 hA').2)
-    B'.1 B'.2 ((Finpartition.refinementParent_eq_iff hQP).1 (mem_filter.1 hB').2)
+  exact hfine A'.val A'.property
+    ((Finpartition.refinementParent_eq_iff hQP).1 (mem_filter.1 hA').2)
+    B'.val B'.property ((Finpartition.refinementParent_eq_iff hQP).1 (mem_filter.1 hB').2)
 
 variable (S) in
 /-- Small rectangle count discrepancy on disjoint nonempty `(s, t)` around `p` implies both
@@ -429,17 +437,29 @@ theorem relabel_pairColors {κ' : Type*} (e : κ ≃ κ') :
     (S.relabel e).pairColors = S.pairColors.relabel e :=
   (rfl)
 
+/-- Renaming the pair palette preserves pair-color regularity of a lower skeleton. -/
+@[simp]
+theorem isPairColorRegular_relabel_iff {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).IsPairColorRegular ε ↔ S.IsPairColorRegular ε := by
+  simp [IsPairColorRegular]
+
 /-- Renaming the palette along an equivalence preserves `IsPairColorRegular`. -/
 theorem IsPairColorRegular.relabel {κ' : Type*} (h : S.IsPairColorRegular ε) (e : κ ≃ κ') :
     (S.relabel e).IsPairColorRegular ε :=
-  fun A hA B hB ↦ (h A hA B hB).relabel e
+  (isPairColorRegular_relabel_iff e).2 h
+
+/-- Renaming the pair palette preserves scheduled lower-skeleton regularity. -/
+@[simp]
+theorem lowerSkeletonRegular_relabel_iff {κ' : Type*} [Fintype κ] [Fintype κ'] (e : κ ≃ κ')
+    {F : ℕ → ℝ} :
+    (S.relabel e).LowerSkeletonRegular F ↔ S.LowerSkeletonRegular F := by
+  simp [LowerSkeletonRegular, Fintype.card_congr e]
 
 /-- Renaming the palette along an equivalence preserves `LowerSkeletonRegular`. -/
 theorem LowerSkeletonRegular.relabel {κ' : Type*} [Fintype κ] [Fintype κ'] {F : ℕ → ℝ}
     (h : S.LowerSkeletonRegular F) (e : κ ≃ κ') :
-    (S.relabel e).LowerSkeletonRegular F := by
-  rw [lowerSkeletonRegular_iff, relabel_vertexPart, Fintype.card_congr e.symm]
-  exact IsPairColorRegular.relabel h e
+    (S.relabel e).LowerSkeletonRegular F :=
+  (lowerSkeletonRegular_relabel_iff e).2 h
 
 end PairSkeleton3
 
