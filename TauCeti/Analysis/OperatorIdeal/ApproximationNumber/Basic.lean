@@ -209,7 +209,9 @@ theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) 
   rw [NNReal.mul_iInf]
   refine le_ciInf fun R₂ ↦ ?_
   -- `S T - (R₁ T + (S - R₁) R₂) = (S - R₁)(T - R₂)`, and the subtracted map has rank `≤ m + n`.
-  have h₁ : (R₁.val.comp T).rank ≤ m := (LinearMap.rank_comp_le_left _ _).trans R₁.property
+  have h₁ : (R₁.val.comp T).rank ≤ m := by
+    rw [toLinearMap_comp]
+    exact (LinearMap.rank_comp_le_left _ _).trans R₁.property
   have hrank : (R₁.val.comp T + (S - R₁.val).comp R₂.val).rank ≤ ↑(m + n) :=
     (rank_add_le_of_le h₁ ((S - R₁.val).rank_comp_le_of_rank_le R₂.property)).trans_eq
       (Nat.cast_add m n).symm

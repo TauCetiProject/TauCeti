@@ -20,6 +20,7 @@ infimum defining approximation numbers.
 * `ContinuousLinearMap.rank_comp_le_of_rank_le`: postcomposition preserves a rank bound by a
   natural number. The bound is a natural number so that the three spaces may lie in different
   universes.
+* `ContinuousLinearMap.range_toLinearMap_eq_bot`: only the zero map has trivial range.
 * `ContinuousLinearMap.rank_eq_zero_iff`: over a domain, with torsion-free target, only the zero
   map has rank `0`.
 * `ContinuousLinearMap.rank_add_le_of_le`: rank bounds add along a sum of maps.
@@ -50,6 +51,12 @@ theorem rank_comp_le_of_rank_le (A : F →L[K] G) {R : E →L[K] F} {n : ℕ} (h
   exact Cardinal.lift_le_nat_iff.mp <|
     (LinearMap.lift_rank_comp_le_right _ _).trans (by simpa using hR)
 
+/-- A continuous linear map has trivial range exactly when it is the zero map. This is the
+`simp` normal form that `R.rank = 0` reaches through `Submodule.rank_eq_zero`. -/
+@[simp]
+theorem range_toLinearMap_eq_bot {R : E →L[K] F} : (R : E →ₗ[K] F).range = ⊥ ↔ R = 0 := by
+  rw [LinearMap.range_eq_bot, ← toLinearMap_zero, coe_inj]
+
 end ContinuousLinearMap
 
 namespace ContinuousLinearMap
@@ -62,11 +69,10 @@ variable {K E F : Type*} [Ring K]
 is the zero map.
 
 This is not a `simp` lemma: `simp` already rewrites `R.rank = 0` to `range R = ⊥` through
-`Submodule.rank_eq_zero`. -/
+`Submodule.rank_eq_zero`, and then to `R = 0` through `range_toLinearMap_eq_bot`. -/
 theorem rank_eq_zero_iff [IsDomain K] [Module.IsTorsionFree K F] {R : E →L[K] F} :
     R.rank = 0 ↔ R = 0 := by
-  rw [LinearMap.rank, Submodule.rank_eq_zero, LinearMap.range_eq_bot, ← toLinearMap_zero,
-    coe_inj]
+  rw [LinearMap.rank, Submodule.rank_eq_zero, range_toLinearMap_eq_bot]
 
 end ContinuousLinearMap
 
