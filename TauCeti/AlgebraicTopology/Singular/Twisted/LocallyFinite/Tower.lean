@@ -344,8 +344,7 @@ lemma complChainComplexTower_shift_surjective (i : ℕ) :
     fun n ↦ by
       erw [Category.id_comp, complChainComplexTower_map_succ,
         TopTriple.locallyFiniteChainComplexToRelative_comp_twistedChainComplexTotalToOuter
-          (hA := (hK n).compl_range_ofSubset_compl_map)]
-      rfl
+          (hA := (hK n).compl_range_ofSubset_compl_map)]; rfl
 /-- Canonical map from locally finite chains to `(complChainComplexTower L C hC).limComplex`. -/
 def locallyFiniteChainComplexToComplLim (hK : ∀ n, IsCompact (C n)) :
     locallyFiniteChainComplex L ⟶ (complChainComplexTower L C hC).limComplex :=
@@ -357,19 +356,13 @@ def locallyFiniteChainComplexToComplLim (hK : ∀ n, IsCompact (C n)) :
         (complChainComplexTower L C hC).limComplexπ n =
       (TopPair.ofSubset (C n)ᶜ).locallyFiniteChainComplexToRelative L
         (hK n).compl_range_ofSubset_compl_map :=
-  (complChainComplexTower L C hC).isLimitLimComplexCone.fac
-    (locallyFiniteChainComplexComplCone L C hC hK) (op n)
+  (complChainComplexTower L C hC).isLimitLimComplexCone.fac _ (op n)
 end Basic
 
 section Helpers
 variable {X₁ X₂ : TopCat.{v}} {L₁ : LocalCoefficientSystem.{u, v, max v w} R X₁}
   {L₂ : LocalCoefficientSystem.{u, v, max v w} R X₂}
   {C₁ : ℕ → Set X₁} {hC₁ : ∀ n, C₁ n ⊆ C₁ (n + 1)} {C₂ : ℕ → Set X₂} {hC₂ : ∀ n, C₂ n ⊆ C₂ (n + 1)}
-
-private lemma sq_comp {C : Type*} [Category C] {a b c d e f : C} {p₁ : a ⟶ b} {p₂ : c ⟶ d}
-    {p₃ : e ⟶ f} {α : b ⟶ d} {β : d ⟶ f} {u : a ⟶ c} {v : c ⟶ e}
-    (h₁ : p₁ ≫ α = u ≫ p₂) (h₂ : p₂ ≫ β = v ≫ p₃) : p₁ ≫ α ≫ β = (u ≫ v) ≫ p₃ := by
-  rw [← Category.assoc, h₁, Category.assoc, h₂, Category.assoc]
 
 private def mkComplTowerHom (app : ∀ n, (TopPair.ofSubset (C₁ n)ᶜ).twistedChainComplex L₁ ⟶
       (TopPair.ofSubset (C₂ n)ᶜ).twistedChainComplex L₂)
@@ -436,10 +429,9 @@ def complChainComplexTowerMap (h : ∀ n, C₁ n ⊆ C₂ n) :
     locallyFiniteChainComplexToComplLim L C₂ hC₂ hK₂ ≫
         ComplexTower.limComplexMap (complChainComplexTowerMap L hC₁ hC₂ h) =
       locallyFiniteChainComplexToComplLim L C₁ hC₁ hK₁ :=
-  ((Category.id_comp _).symm.trans <| comp_toComplLim_eq (𝟙 _) _ fun n ↦
-    (Category.id_comp _).trans
-      (locallyFiniteChainComplexToRelative_comp_complChainComplexTowerMap_app
-        L hC₁ hC₂ hK₁ hK₂ h n).symm).symm
+  ((Category.id_comp _).symm.trans <| comp_toComplLim_eq (𝟙 _) _ fun n ↦ (Category.id_comp _).trans
+    (locallyFiniteChainComplexToRelative_comp_complChainComplexTowerMap_app
+      L hC₁ hC₂ hK₁ hK₂ h n).symm).symm
 end TowerMap
 
 @[simp] lemma complChainComplexTowerMap_refl (L : LocalCoefficientSystem.{u, v, max v w} R X)
@@ -522,14 +514,15 @@ end Fixed
         complChainComplexTowerPairMap f L hC_X hC_Y hf =
       complChainComplexTowerPairMap f L hC_X' hC_Y' hf' ≫
         complChainComplexTowerMap L hC_Y hC_Y' hY :=
-  complTower_hom_ext fun n ↦
-    (sq_comp ((twistedChainComplexπ_comp_complChainComplexTowerMap_app _ hC_X hC_X' hX n).trans
-        (Category.id_comp _).symm)
-      (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L hC_X hC_Y hf n)).trans <|
-      (congrArg (· ≫ _) ((Category.id_comp _).trans (Category.comp_id _).symm)).trans
-        (sq_comp (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L hC_X' hC_Y' hf' n)
-          ((twistedChainComplexπ_comp_complChainComplexTowerMap_app L hC_Y hC_Y' hY n).trans
-            (Category.id_comp _).symm)).symm
+  complTower_hom_ext fun n ↦ (CommSq.vert_comp
+      ⟨(twistedChainComplexπ_comp_complChainComplexTowerMap_app _ hC_X hC_X' hX n).trans
+        (Category.id_comp _).symm⟩
+      ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L hC_X hC_Y hf n⟩).w.trans <|
+    (congrArg (· ≫ _) ((Category.id_comp _).trans (Category.comp_id _).symm)).trans
+      (CommSq.vert_comp
+        ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L hC_X' hC_Y' hf' n⟩
+        ⟨(twistedChainComplexπ_comp_complChainComplexTowerMap_app L hC_Y hC_Y' hY n).trans
+          (Category.id_comp _).symm⟩).w.symm
 /-- `complChainComplexTowerPairMap` is natural in the local coefficient system. -/
 @[reassoc] lemma complChainComplexTowerPairMap_naturality
     {L₁ L₂ : LocalCoefficientSystem.{u, v, max v w} R Y} (η : L₁ ⟶ L₂) {C_X : ℕ → Set X}
@@ -539,12 +532,12 @@ end Fixed
         complChainComplexTowerCoefficientMap C_Y hC_Y η =
       complChainComplexTowerCoefficientMap C_X hC_X ((pullback f.hom).map η) ≫
         complChainComplexTowerPairMap f L₂ hC_X hC_Y hf :=
-  complTower_hom_ext fun n ↦
-    (sq_comp (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L₁ hC_X hC_Y hf n)
-      ((TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η)).trans <|
-    (congrArg (· ≫ _) (twistedChainComplexMap_naturality f η)).trans
-      (sq_comp ((TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap _)
-        (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L₂ hC_X hC_Y hf n)).symm
+  complTower_hom_ext fun n ↦ (CommSq.vert_comp
+      ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L₁ hC_X hC_Y hf n⟩
+      ⟨(TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η⟩).w.trans
+    <| (congrArg (· ≫ _) (twistedChainComplexMap_naturality f η)).trans (CommSq.vert_comp
+      ⟨(TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap _⟩
+      ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f L₂ hC_X hC_Y hf n⟩).w.symm
 /-- Proper pushforward commutes with `locallyFiniteChainComplexToComplLim`. -/
 @[reassoc] lemma locallyFiniteChainComplexMap_comp_toComplLim (hf_proper : IsProperMap f.hom)
     (L : LocalCoefficientSystem.{u, v, max v w} R Y) {C_X : ℕ → Set X}
@@ -580,10 +573,12 @@ end PairMap
           complChainComplexTowerPairMap f₂ L hC_Y hC_Z hf₂ :=
   complTower_hom_ext fun n ↦
     (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app _ L hC_X hC_Z hf₁₂ n).trans <|
-    (congrArg (· ≫ _) (twistedChainComplexMap_comp f₁ f₂ L)).trans <|
-    (sq_comp ((TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap _) <|
-      sq_comp (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f₁ _ hC_X hC_Y hf₁ n)
-        (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f₂ L hC_Y hC_Z hf₂ n)).symm
+    (congrArg (· ≫ _) (twistedChainComplexMap_comp f₁ f₂ L)).trans <| (CommSq.vert_comp
+      ⟨(TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap _⟩
+      ⟨(CommSq.vert_comp
+        ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f₁ _ hC_X hC_Y hf₁ n⟩
+        ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app f₂ L hC_Y hC_Z hf₂ n⟩
+      ).w⟩).w.symm
 
 /-- Naturality square for `complChainComplexTowerPairMap`. -/
 @[reassoc] lemma complChainComplexTowerPairMap_naturality_square {A B C' D : TopCat.{v}}
@@ -602,13 +597,16 @@ end PairMap
             (pullbackCompIso c.hom d.hom).app L).hom ≫
         complChainComplexTowerPairMap c ((pullback d.hom).obj L) hC_A hC_C hc ≫
           complChainComplexTowerPairMap d L hC_C hC_D hd :=
-  complTower_hom_ext fun n ↦
-    (sq_comp (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app a _ hC_A hC_B ha n)
-      (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app b L hC_B hC_D hb n)).trans <|
+  complTower_hom_ext fun n ↦ (CommSq.vert_comp
+      ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app a _ hC_A hC_B ha n⟩
+      ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app b L hC_B hC_D hb n⟩).w.trans <|
     (congrArg (· ≫ _) (twistedChainComplexMap_naturality_square a b c d L h)).trans <|
-    (sq_comp ((TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap _) <|
-      sq_comp (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app c _ hC_A hC_C hc n)
-        (twistedChainComplexπ_comp_complChainComplexTowerPairMap_app d L hC_C hC_D hd n)).symm
+    (CommSq.vert_comp
+      ⟨(TopPair.ofSubset _).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap _⟩
+      ⟨(CommSq.vert_comp
+        ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app c _ hC_A hC_C hc n⟩
+        ⟨twistedChainComplexπ_comp_complChainComplexTowerPairMap_app d L hC_C hC_D hd n⟩
+      ).w⟩).w.symm
 
 end ComplTower
 
