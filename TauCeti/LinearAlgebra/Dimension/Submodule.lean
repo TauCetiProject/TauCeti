@@ -233,6 +233,14 @@ theorem lift_rank_quotient_comap_le [Ring 𝕜] {M : Type u} {N : Type v}
   apply LinearMap.lift_rank_le_of_injective ((p.comap f).mapQ p f le_rfl)
   rw [← LinearMap.ker_eq_bot, ker_mapQ, mkQ_map_self]
 
+/-- The preimage of a submodule of codimension at most `n` has codimension at most `n`. -/
+theorem rank_quotient_comap_le_of_le [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    {p : Submodule 𝕜 N} {n : ℕ} (hp : Module.rank 𝕜 (N ⧸ p) ≤ n) (f : M →ₗ[𝕜] N) :
+    Module.rank 𝕜 (M ⧸ p.comap f) ≤ n :=
+  Cardinal.lift_le_nat_iff.mp ((p.lift_rank_quotient_comap_le f).trans
+    (Cardinal.lift_le_nat_iff.mpr hp))
+
 /-- A submodule of rank greater than `n` contains a nonzero vector of the kernel of every linear
 map `f` of rank at most `n`. -/
 theorem exists_mem_ker_ne_zero_of_rank_lt [Ring 𝕜] {M : Type u} {N : Type v}

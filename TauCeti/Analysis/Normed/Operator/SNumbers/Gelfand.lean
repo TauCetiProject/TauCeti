@@ -178,13 +178,6 @@ theorem gelfandNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
     (S + T).gelfandNumber n ≤ S.gelfandNumber n + ‖T‖₊ := by
   simpa using S.gelfandNumber_add_index_le T n 0
 
-/-- The preimage of a subspace of codimension at most `n` has codimension at most `n`. -/
-private theorem rank_quotient_comap_le {M : Submodule 𝕜 F} {n : ℕ}
-    (hM : Module.rank 𝕜 (F ⧸ M) ≤ n) (A : E →L[𝕜] F) :
-    Module.rank 𝕜 (E ⧸ M.comap (A : E →ₗ[𝕜] F)) ≤ n :=
-  Cardinal.lift_le_nat_iff.mp ((M.lift_rank_quotient_comap_le _).trans
-    (Cardinal.lift_le_nat_iff.mpr hM))
-
 /-- **Two-sided ideal inequality.** `cₙ(B T A) ≤ ‖B‖ cₙ(T) ‖A‖`: a subspace `M` admissible for
 `T` pulls back along `A` to a subspace of no larger codimension. -/
 theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A : E →L[𝕜] F) (n : ℕ) :
@@ -192,7 +185,8 @@ theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
   rw [gelfandNumber_def T, NNReal.mul_iInf, NNReal.iInf_mul]
   refine le_ciInf fun M ↦ ?_
   -- `E ⧸ A⁻¹(M)` embeds into `F ⧸ M`, so the preimage has codimension at most `n`.
-  refine ((B ∘L T ∘L A).gelfandNumber_le (rank_quotient_comap_le M.property.2 A)).trans
+  refine ((B ∘L T ∘L A).gelfandNumber_le
+    (Submodule.rank_quotient_comap_le_of_le M.property.2 (A : E →ₗ[𝕜] F))).trans
     (opNNNorm_le_bound _ _ fun x ↦ ?_)
   have hx : A x ∈ M.val := x.property
   calc ‖B (T (A x))‖₊ ≤ ‖B‖₊ * ‖T (A x)‖₊ := B.le_opNNNorm _
@@ -212,7 +206,8 @@ theorem gelfandNumber_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) 
   have hrank : Module.rank 𝕜 (E ⧸ (M.val ⊓ N.val.comap (T : E →ₗ[𝕜] F))) ≤ ↑(m + n) := by
     rw [Nat.cast_add, add_comm (m : Cardinal)]
     exact (Submodule.rank_quotient_inf_le _ _).trans
-      (add_le_add M.property.2 (rank_quotient_comap_le N.property.2 T))
+      (add_le_add M.property.2
+        (Submodule.rank_quotient_comap_le_of_le N.property.2 (T : E →ₗ[𝕜] F)))
   refine ((S ∘L T).gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
   have hxM : (x : E) ∈ M.val := x.property.1
   have hxN : T x ∈ N.val := x.property.2
