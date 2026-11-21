@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.AtlasEquiv
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Equiv
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 import TauCeti.Analysis.Sobolev.Wkp.FiniteCover
 
