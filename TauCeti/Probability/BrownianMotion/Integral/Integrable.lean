@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Predictable.Basic
+public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
@@ -28,9 +28,13 @@ variable, held constant in time, belongs to the pathwise domain without any mome
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
-of the pullback Lebesgue measure to `(0,T]`. Pathwise membership uses native `MemLp`, so square
-energy means a finite nonnegative lower integral, never the default value of a divergent
-Bochner integral.
+of the pullback Lebesgue measure to `(0,T]`, giving direct `L²` membership bridges and
+characterizations for `Probability.timeMeasure` (`BrownianIntegrable.memLp_timeMeasure`,
+`brownianIntegrable_iff_timeMeasure`, `LocallyBrownianIntegrable.ae_memLp_timeMeasure`,
+`locallyBrownianIntegrable_iff_timeMeasure`) and `Filtration.predictableMeasure`
+(`BrownianIntegrable.memLp_predictableMeasure`). Pathwise membership uses native `MemLp`, so square
+energy means a finite nonnegative lower integral, never the default value of a divergent Bochner
+integral.
 
 ## References
 
@@ -237,5 +241,45 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · rintro ⟨hξ, hξ₂⟩
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
+
+/-- Every `BrownianIntegrable` integrand belongs to `L²` of `(timeMeasure t).prod P` at each
+deterministic horizon `t`. -/
+theorem BrownianIntegrable.memLp_timeMeasure (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P) := by
+  simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using hH.memLp t
+
+/-- `BrownianIntegrable` expressed directly in terms of `Probability.timeMeasure`. -/
+theorem brownianIntegrable_iff_timeMeasure :
+    BrownianIntegrable ℱ P H ↔ IsStronglyPredictable ℱ H ∧
+      ∀ t : ℝ≥0, MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P) :=
+  ⟨fun h ↦ ⟨h.isStronglyPredictable, h.memLp_timeMeasure⟩, fun ⟨hp, hm⟩ ↦ ⟨hp, fun t ↦ by
+    simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using hm t⟩⟩
+
+/-- Almost every path of a `LocallyBrownianIntegrable` integrand lies in `L²(timeMeasure t)` for
+all finite horizons `t` simultaneously. -/
+theorem LocallyBrownianIntegrable.ae_memLp_timeMeasure (hH : LocallyBrownianIntegrable ℱ P H) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0, MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure t) :=
+  hH.ae_memLp.mono fun _ hω t ↦ by
+    simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using hω t
+
+/-- `LocallyBrownianIntegrable` expressed directly in terms of `Probability.timeMeasure`. -/
+theorem locallyBrownianIntegrable_iff_timeMeasure :
+    LocallyBrownianIntegrable ℱ P H ↔ IsStronglyPredictable ℱ H ∧
+      ∀ᵐ ω ∂P, ∀ t : ℝ≥0, MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure t) :=
+  ⟨fun h ↦ ⟨h.isStronglyPredictable, h.ae_memLp_timeMeasure⟩, fun ⟨hp, hm⟩ ↦ ⟨hp, hm.mono
+    fun _ hω t ↦ by
+      simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using hω t⟩⟩
+
+/-- `LocallyBrownianIntegrable` expressed via `Probability.timeMeasure` at integer horizons. -/
+theorem locallyBrownianIntegrable_iff_nat_timeMeasure :
+    LocallyBrownianIntegrable ℱ P H ↔ IsStronglyPredictable ℱ H ∧
+      ∀ n : ℕ, ∀ᵐ ω ∂P, MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure n) := by
+  simpa only [← NNReal.coe_natCast, NNReal.comap_volume_restrict_Ioc,
+    ← Probability.timeMeasure_def] using locallyBrownianIntegrable_iff_nat (ℱ := ℱ) (P := P)
+
+/-- Every `BrownianIntegrable` integrand lies in `L²(ℱ.predictableMeasure P t)` at each `t`. -/
+theorem BrownianIntegrable.memLp_predictableMeasure (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P t) :=
+  (ℱ.memLp_predictableMeasure_iff P hH.isStronglyPredictable t 2).2 (hH.memLp_timeMeasure t)
 
 end TauCeti

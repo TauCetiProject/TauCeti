@@ -47,6 +47,8 @@ constant indicator classes it intersects the supporting sets.
   function `G`, as a sum of indicator classes of the fibres of `G`.
 * `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
   simple function cut off to a measurable set of finite measure lies in every `Lᵖ`.
+* `TauCeti.coeFn_sum_indicatorConstLp_prod`: a finite sum of `Lᵖ` indicator classes of rectangles
+  `I ×ˢ A k` agrees almost everywhere with `I.indicator` of the spatial sum.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
 * `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
   `c • 1_s` is `c • linftyIndicator μ s hs`.
@@ -202,6 +204,26 @@ open scoped ENNReal
 namespace TauCeti
 
 open MeasureTheory
+
+/-- A finite sum of `Lᵖ` indicator classes of rectangles `I ×ˢ A k` sharing a first factor `I`
+agrees almost everywhere with `I.indicator` of the spatial sum. The measurable space on `α × β` is
+arbitrary (e.g. a predictable sigma-algebra). -/
+theorem coeFn_sum_indicatorConstLp_prod {α β κ E : Type*} [MeasurableSpace (α × β)]
+    {μ : Measure (α × β)} {p : ℝ≥0∞} [NormedAddCommGroup E] (S : Finset κ) (I : Set α)
+    {A : κ → Set β} (hIA : ∀ k, MeasurableSet (I ×ˢ A k)) (hμ : ∀ k, μ (I ×ˢ A k) ≠ ∞)
+    (c : κ → E) :
+    ⇑(∑ k ∈ S, indicatorConstLp p (hIA k) (hμ k) (c k)) =ᵐ[μ]
+      fun q ↦ I.indicator (fun _ ↦ ∑ k ∈ S, (A k).indicator (fun _ ↦ c k) q.2) q.1 := by
+  filter_upwards [Lp.coeFn_fun_finsetSum S fun k ↦ indicatorConstLp p (hIA k) (hμ k) (c k),
+    (ae_ball_iff S.countable_toSet).2 fun k _ ↦
+      indicatorConstLp_coeFn (μ := μ) (p := p) (hs := hIA k) (hμs := hμ k) (c := c k)]
+    with q hsum hk
+  rw [hsum]; by_cases hq : q.1 ∈ I
+  · simp only [indicator_of_mem hq]
+    exact Finset.sum_congr rfl fun k hkS ↦ by
+      rw [hk k hkS]; by_cases hω : q.2 ∈ A k <;> simp [hq, hω]
+  · simp only [indicator_of_notMem hq]
+    exact Finset.sum_eq_zero fun k hkS ↦ by rw [hk k hkS]; simp [hq]
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {s t : Set α}
 

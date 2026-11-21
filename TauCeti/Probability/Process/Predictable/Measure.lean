@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The finite-horizon predictable time-product measure
@@ -29,7 +30,9 @@ different ambient measurable spaces.
 Native `lintegral_trim`, `integral_trim`, and `eLpNorm_trim` then identify predictable
 integrands' energies and norms with their ambient time-product counterparts; the dictionary
 lemmas below retain the predictable measurability hypothesis, since trimming does not preserve
-integrals of arbitrary ambient-product-measurable functions.
+integrals of arbitrary ambient-product-measurable functions. For `ℱ s`-strongly measurable
+variables in `Lᵖ(P)`, extending by zero outside `(s, t]` lands in predictable `Lᵖ` with exact
+`Lᵖ` norm determined by the truncated interval length and the spatial `Lᵖ` integral.
 
 The horizon operators `predictableMeasureExtendLp` and `predictableMeasureRestrictLp`
 transport native predictable `Lᵖ` classes without exposing measure-equality casts. Extension
@@ -525,5 +528,32 @@ theorem memLp_indicator_Ioc_predictableMeasure {E : Type*} [TopologicalSpace E]
     ((measurableSet_Ioc (a := s) (b := t)).prod MeasurableSet.univ).nullMeasurableSet using 1
   ext q
   by_cases hq : q.1 ∈ Ioc s t <;> simp [hq]
+
+/-- For `0 < p < ∞`, the `p`-th power of the predictable `Lᵖ` norm of an `ℱ s`-strongly measurable
+`Lᵖ(P)` function extended by zero outside `(s, t]` equals `(timeMeasure T).real (Ioc s t)` times
+the spatial `Lᵖ` integral. -/
+theorem norm_toLp_indicator_Ioc_rpow (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (T s t : ℝ≥0)
+    {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) (hξp : MemLp ξ p P) :
+    ‖(ℱ.memLp_indicator_Ioc_predictableMeasure T s t hξ hξp).toLp
+      (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ q.2) q.1)‖ ^ p.toReal =
+      (timeMeasure T).real (Ioc s t) * ∫ ω, ‖ξ ω‖ ^ p.toReal ∂P := by
+  have hmem := ℱ.memLp_indicator_Ioc_predictableMeasure T s t hξ hξp
+  have h1 : ‖hmem.toLp (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ q.2) q.1)‖ ^ p.toReal =
+      ∫ q, ‖(Ioc s t).indicator (fun _ ↦ ξ q.2) q.1‖ ^ p.toReal ∂ℱ.predictableMeasure P T := by
+    let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp]
+    exact integral_congr_ae <| hmem.coeFn_toLp.mono fun _ h ↦ by dsimp only; rw [h]
+  have hsm : StronglyMeasurable[ℱ.predictable]
+      (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ q.2) q.1) :=
+    ℱ.stronglyMeasurable_indicator_Ioc_predictable s t hξ
+  rw [h1, ℱ.integral_predictableMeasure P
+    ((Real.continuous_rpow_const ENNReal.toReal_nonneg).comp_stronglyMeasurable hsm.norm) T]
+  have hmul : (fun q : ℝ≥0 × Ω ↦ ‖(Ioc s t).indicator (fun _ ↦ ξ q.2) q.1‖ ^ p.toReal) =
+      fun q ↦ (Ioc s t).indicator (1 : ℝ≥0 → ℝ) q.1 * ‖ξ q.2‖ ^ p.toReal := by
+    ext ⟨r, ω⟩
+    by_cases hr : r ∈ Ioc s t <;> simp [hr, Real.zero_rpow (ENNReal.toReal_pos hp0 hp).ne']
+  rw [hmul, integral_prod_mul ((Ioc s t).indicator (1 : ℝ≥0 → ℝ)) (fun ω ↦ ‖ξ ω‖ ^ p.toReal),
+    integral_indicator_one measurableSet_Ioc]
 
 end MeasureTheory.Filtration

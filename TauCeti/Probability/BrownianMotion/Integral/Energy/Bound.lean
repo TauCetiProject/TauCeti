@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
@@ -93,6 +94,23 @@ theorem monotoneOn_elementaryEnergy (hτ : MonotoneOn τ (Iic n)) (ω : Ω) :
 theorem elementaryEnergy_nonneg (hτ : MonotoneOn τ (Iic n)) (ω : Ω) :
     0 ≤ elementaryEnergy τ a n ω := by
   simpa using monotoneOn_elementaryEnergy (a := a) hτ ω (by simp) (by simp) (Nat.zero_le n)
+
+/-- On any nondecreasing grid whose terminal date lies within `t`, the lower square-norm integral of
+`Finance.simpleHolding τ n a` against `timeMeasure t` equals
+`ENNReal.ofReal (elementaryEnergy τ a n ω)`. -/
+theorem lintegral_enorm_sq_simpleHolding_eq_ofReal_elementaryEnergy {t : ℝ≥0}
+    (hτ : MonotoneOn τ (Iic n)) (ht : τ n ≤ t) (ω : Ω) :
+    ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure t =
+      ENNReal.ofReal (elementaryEnergy τ a n ω) := by
+  rw [Finance.lintegral_enorm_sq_simpleHolding_timeMeasure hτ t ω,
+    elementaryEnergy_def, ENNReal.ofReal_sum_of_nonneg fun j hj ↦ ?_]
+  · refine sum_congr rfl fun j hj ↦ ?_
+    have hj' : j + 1 ≤ n := mem_range.1 hj
+    rw [min_eq_left ((hτ hj' self_mem_Iic hj').trans ht), ENNReal.ofReal_mul (sq_nonneg _),
+      (Real.enorm_sq_eq_ofReal_sq (a j ω)).symm]
+  · have hj' : j + 1 ≤ n := mem_range.1 hj
+    exact mul_nonneg (sq_nonneg _)
+      (sub_nonneg.2 (NNReal.coe_le_coe.2 (hτ (Nat.le_of_succ_le hj') hj' (Nat.le_succ j))))
 
 variable {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 variable {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}

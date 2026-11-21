@@ -9,6 +9,7 @@ public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
 public import TauCeti.Probability.Process.Progressive
 public import TauCeti.Probability.Process.Stopping
+import Mathlib.MeasureTheory.Integral.Indicator
 
 /-!
 # Adapted representatives of local processes and filtration enlargement
@@ -31,6 +32,8 @@ merely adapted replacement at a general stopping time requires additional measur
 
 For any native local property, the stopped stages converge almost surely at each fixed time
 to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
+Under a finite measure, the sublevel events `{ω | τ n ω ≤ T}` of any pre-localizing sequence
+have measure tending to zero (`ProbabilityTheory.IsPreLocalizingSequence.tendsto_measure_le`).
 
 Cutting localizing times off at the initial time outside increasing, exhausting initial events
 preserves localization (`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`). The corresponding
@@ -75,6 +78,19 @@ theorem IsLocalizingSequence.piecewise_bot {ι Ω : Type*} [Preorder ι] [OrderB
     · have hm : ω ∈ A m := hmono hnm hn
       simpa [Set.piecewise, hn, hm] using hω hnm
     · simp [Set.piecewise, hn]
+
+/-- Under a finite measure, the sublevel events `{ω | τ n ω ≤ T}` of a pre-localizing sequence
+have measure tending to zero at every finite horizon `T`. Monotonicity of `τ` is not needed. -/
+theorem IsPreLocalizingSequence.tendsto_measure_le {ι Ω : Type*} [LinearOrder ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {P : Measure Ω} [IsFiniteMeasure P] {τ : ℕ → Ω → WithTop ι}
+    (hτ : IsPreLocalizingSequence ℱ τ P) (T : ι) :
+    Tendsto (fun n ↦ P {ω | τ n ω ≤ T}) atTop (𝓝 0) := by
+  simpa only [measure_empty] using
+    tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop MeasurableSet.empty
+      (fun n ↦ ℱ.le T _ (hτ.isStoppingTime n T)) <| hτ.tendsto_top.mono fun ω hω ↦ by
+        filter_upwards [hω.eventually (Ioi_mem_nhds (WithTop.coe_lt_top T))] with n hn
+        simp [hn.not_ge]
 
 variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}

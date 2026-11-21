@@ -20,8 +20,8 @@ measurability the seminorm is `∞` by convention, so the inequality
 (`TauCeti.lintegral_rpow_enorm_le_rpow_eLpNorm`). This is the form in which a bound on the `Lᵖ`
 seminorm is used to bound an integral, with no measurability side condition. For a natural
 exponent `n ≠ 0` and measurable `f` the identity reads `∫⁻ ‖f‖ₑ ^ n ∂μ = eLpNorm f n μ ^ n`
-(`TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow`). For an almost everywhere strongly measurable `f`
-and `p ≠ 0, ∞` in `ℝ≥0∞`, the two sides agree
+(`TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow`). For an almost everywhere strongly
+measurable `f` and `p ≠ 0, ∞` in `ℝ≥0∞`, the two sides agree
 (`MeasureTheory.lintegral_rpow_enorm_eq_eLpNorm_rpow`), so `∫⁻ ‖f‖ₑ ^ p ∂μ ≤ t ^ p` gives
 `eLpNorm f p μ ≤ t` (`MeasureTheory.eLpNorm_le_of_lintegral_rpow_le`). In particular a pointwise
 bound `‖k x‖ ^ q ≤ t ^ (q - p) ‖f x‖ ^ p` with `t = ‖f‖_p` integrates to `‖k‖_q ≤ t`

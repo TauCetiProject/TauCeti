@@ -7,9 +7,12 @@ module
 
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Process.EnergyLocalizer
+public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 public import Mathlib.Probability.Process.LocalProperty
+import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
+import TauCeti.Probability.Process.LocalProperty
 
 /-!
 # Closed-level energy localization of Brownian integrands
@@ -19,9 +22,12 @@ its repaired energy clock. The resulting integrand is Brownian integrable under 
 sample measure: its pathwise square energy is bounded by the level, hence its expected
 square energy is finite. These stopping times belong to the original raw filtration.
 
-For locally Brownian-integrable inputs, the integer levels form a native localizing sequence.
-On one common sample-full event the stopped cutoffs eventually agree with the original
-integrand on every finite horizon. No stochastic integral or usual augmentation is constructed.
+For locally Brownian-integrable inputs, stopping the original integrand directly at any closed
+energy level already yields a Brownian-integrable process, and the integer levels form a native
+localizing sequence along which the pathwise square-energy error on each finite horizon tends to
+zero in measure. On one common sample-full event the stopped cutoffs eventually agree with the
+original integrand on every finite horizon. No stochastic integral or usual augmentation is
+constructed.
 
 ## References
 
@@ -101,5 +107,33 @@ theorem ae_eventually_ite_le_energyLocalizer_eqOn (hH : LocallyBrownianIntegrabl
   have hle : (t : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω :=
     (WithTop.coe_le_coe.mpr htime).trans hn.le
   simpa only [ite_eq_left hle] using nnvolume.finiteEnergyCutoff_eqOn (hfinite T) ht
+
+/-- Stopping a locally Brownian-integrable integrand directly at any closed energy level yields a
+Brownian-integrable process under a finite sample measure, without needing `finiteEnergyCutoff`. -/
+theorem brownianIntegrable_ite_le_energyLocalizer [IsFiniteMeasure P]
+    (hH : LocallyBrownianIntegrable ℱ P H) (C : ℝ≥0) :
+    BrownianIntegrable ℱ P
+      (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H C ω then H t ω else 0) := by
+  refine brownianIntegrable_iff_timeMeasure.2
+    ⟨hH.isStronglyPredictable.ite_le
+      (hH.isStronglyPredictable.isStoppingTime_energyLocalizer nnvolume C), fun T ↦
+      (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer C).memLp_timeMeasure T
+        |>.ae_eq ?_⟩
+  filter_upwards
+    [Measure.quasiMeasurePreserving_fst.tendsto_ae (Probability.ae_mem_Ioc_timeMeasure T),
+      Measure.quasiMeasurePreserving_snd.tendsto_ae hH.ae_accumulatedEnergy_lt_top] with p ht hfin
+  dsimp only [Function.uncurry]
+  split_ifs; exacts [nnvolume.finiteEnergyCutoff_eqOn (hfin T) ht.2, rfl]
+
+/-- Along the integer closed-level energy localizers, the pathwise square-energy error on each
+finite horizon tends to zero in measure under a finite sample measure. -/
+theorem tendsto_measure_lintegral_energyLocalizer [IsFiniteMeasure P]
+    (hH : LocallyBrownianIntegrable ℱ P H) (T : ℝ≥0) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun n : ℕ ↦ P {ω | ε ≤ ∫⁻ s,
+      ‖(if (s : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω then
+          H s ω else 0) - H s ω‖ₑ ^ 2 ∂Probability.timeMeasure T}) atTop (𝓝 0) :=
+  tendsto_measure_lintegral_ite_le_pow_of_tendsto_measure_le
+    (hH.isLocalizingSequence_energyLocalizer.toIsPreLocalizingSequence.tendsto_measure_le T)
+    H ((Probability.ae_mem_Ioc_timeMeasure T).mono fun _ hs ↦ hs.2) two_ne_zero hε
 
 end TauCeti.LocallyBrownianIntegrable
