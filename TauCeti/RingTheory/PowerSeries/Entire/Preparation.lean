@@ -53,11 +53,15 @@ entire factor.
   of entire series.
 * `TauCeti.PowerSeries.IsEntirePreparation.mono`: a normalised preparation at `c` is one at every
   smaller radius.
+* `TauCeti.PowerSeries.IsEntirePreparation.dvd_of_le`: the polynomial factor at a smaller
+  positive radius divides the polynomial factor at a larger radius.
 
 ## References
 
 * R. F. Coleman, *p-adic Banach spaces and families of modular forms*, Invent. Math. 127 (1997),
   Appendix A3.
+* S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, §5.2.2, for comparison
+  of Weierstrass polynomials at nested radii.
 * F. Martin, *Overconvergent subanalytic subsets in the framework of Berkovich spaces*,
   J. Eur. Math. Soc. 18 (2016), Corollary 1.28, for preparation over a Banach ring.
 -/
@@ -193,5 +197,34 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one]
   rw [hP, Polynomial.coe_smul, smul_mul_smul_comm, h.isUnit_leadingCoeff.val_inv_mul, one_smul]
   linear_combination hωGq
+
+/-- The polynomial factor in a normalised entire preparation at a smaller positive radius
+  divides the polynomial factor at a larger radius. Only the smaller preparation needs to be
+  known to come from a multiplicatively distinguished series. -/
+theorem IsEntirePreparation.dvd_of_le [CompleteSpace R] {d' : ℕ}
+    (h : IsEntirePreparation c d F P G) (h' : IsEntirePreparation c' d' F P' G')
+    (hF : IsMulDistinguished c d F) (hc : 0 < c) (hcc' : c ≤ c') : P ∣ P' := by
+  let : NormOneClass R := hF.normOneClass
+  have hFe : F.IsEntire := h.eq_mul ▸ (isEntire_coe P).mul h.isEntire
+  obtain ⟨e, ω, he, hω, hωd, heω⟩ :=
+    hF.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq hc (hFe.isRestricted c)
+  obtain ⟨hP, -⟩ := h.eq_smul_and_smul_eq hF hc he hω heω
+  -- Invert the larger cofactor on the smaller disc, then promote the quotient to an entire one.
+  have hrad : |c| ≤ |c'| := by rwa [abs_of_pos hc, abs_of_pos (hc.trans_le hcc')]
+  obtain ⟨H, hGH⟩ := (h'.mono hrad).isUnit.exists_right_inv
+  have hGH' : G' * (H : R⟦X⟧) = 1 := congrArg Subtype.val hGH
+  have hprod : (P' : R⟦X⟧) = (ω : R⟦X⟧) * ((e : R⟦X⟧) * H) := by
+    calc
+      (P' : R⟦X⟧) = ((P' : R⟦X⟧) * G') * H := by rw [mul_assoc, hGH', mul_one]
+      _ = (ω : R⟦X⟧) * ((e : R⟦X⟧) * H) := by
+        rw [← h'.eq_mul, ← heω, mul_comm (e : R⟦X⟧), mul_assoc]
+  have hq := hωd.isEntire_of_isEntire_coe_mul hc hω (e.property.mul H.property)
+    (hprod ▸ isEntire_coe P')
+  have hωunit : IsUnit ω.leadingCoeff := hω.leadingCoeff_eq ▸ isUnit_one
+  have hdvd := (coe_subring_dvd_iff hωunit).mp
+    ⟨⟨_, IsEntire.mem_subring.mpr hq⟩, Subtype.ext hprod⟩
+  have ha : IsUnit (Polynomial.C P.leadingCoeff) := Polynomial.isUnit_C.mpr h.isUnit_leadingCoeff
+  rw [hP, Polynomial.smul_eq_C_mul]
+  exact ha.mul_left_dvd.mpr hdvd
 
 end TauCeti.PowerSeries

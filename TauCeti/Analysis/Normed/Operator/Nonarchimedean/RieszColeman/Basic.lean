@@ -266,6 +266,17 @@ theorem range_eq_ker (hE : IsRieszColemanProjection u Q E) :
     rw [eq_comm, sub_eq_zero] at h
     exact h.symm
 
+/-- Divisibility of reversed factors gives inclusion of the corresponding spectral summands. -/
+theorem range_le_of_reverse_dvd {P : R[X]} {F : M →L[R] M}
+    (hE : IsRieszColemanProjection u P E) (hF : IsRieszColemanProjection u Q F)
+    (hPQ : P.reverse ∣ Q.reverse) : E.range ≤ F.range := by
+  obtain ⟨A, hA⟩ := hPQ
+  rw [mul_comm] at hA
+  rw [hE.range_eq_ker, hF.range_eq_ker, hA]
+  simpa only [map_mul, mul_def, toLinearMap_comp] using
+    LinearMap.ker_le_ker_comp (aeval u P.reverse : M →L[R] M).toLinearMap
+      (aeval u A : M →L[R] M).toLinearMap
+
 /-- **The range of `Q*(u)` is the complementary summand `ker E`.** -/
 theorem range_aeval_reverse_eq_ker (hE : IsRieszColemanProjection u Q E) :
     LinearMap.range ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M) =
