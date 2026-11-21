@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.HopfAlgebra.Antipode
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
@@ -38,14 +39,11 @@ public section
 
 namespace MonoidAlgebra
 
-/-- The antipode of a group algebra is involutive: `S(S(x)) = x`. -/
-@[simp]
+/-- The antipode of a group algebra is involutive: `S(S(x)) = x`. This is the cocommutative case
+`TauCeti.HopfAlgebra.antipode_antipode_of_isCocomm`, which is the simp lemma. -/
 theorem antipode_antipode {k G : Type*} [CommSemiring k] [Group G] (x : MonoidAlgebra k G) :
-    HopfAlgebra.antipode k (HopfAlgebra.antipode k x) = x := by
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | single g r => simp
+    HopfAlgebra.antipode k (HopfAlgebra.antipode k x) = x :=
+  TauCeti.HopfAlgebra.antipode_antipode_of_isCocomm x
 
 /-- The antipode of a group algebra is bijective, being involutive. -/
 theorem antipode_bijective {k G : Type*} [CommSemiring k] [Group G] :
@@ -93,6 +91,6 @@ theorem antipode_subgroupCharSum {k G : Type*} [CommSemiring k] [Group G] (χ : 
     HopfAlgebra.antipode k (subgroupCharSum χ H) = subgroupCharSum χ H := by
   rw [subgroupCharSum_def, map_sum]
   refine Fintype.sum_equiv (Equiv.inv H) _ _ fun h => ?_
-  simp [MonoidAlgebra.of_apply, hχ h h.2]
+  simp [MonoidAlgebra.of_apply, hχ h h.property]
 
 end TauCeti

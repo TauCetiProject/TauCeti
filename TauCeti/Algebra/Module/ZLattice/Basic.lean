@@ -166,7 +166,7 @@ theorem mem_comap (K : Type*) [NormedField K] {E F : Type*} [NormedAddCommGroup 
 instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*}
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
-  comap_discreteTopology K L continuous_subtype_val V.injective_subtype
+  comap_discreteTopology K L continuous_subtypeVal V.injective_subtype
 
 section LinearIsometryEquiv
 
@@ -222,7 +222,7 @@ theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup 
     {L : Submodule ℤ E} {c : ℝ} (hc : 0 < c) (h : ∀ x ∈ L, ∃ m : ℤ, ‖x‖ ^ 2 = c * m) :
     DiscreteTopology L := by
   refine DiscreteTopology.of_forall_le_norm (Real.sqrt_pos.2 hc) fun y hy ↦ ?_
-  obtain ⟨m, hm⟩ := h y y.2
+  obtain ⟨m, hm⟩ := h y y.property
   have hy0 : 0 < ‖(y : E)‖ := norm_pos_iff.2 fun h0 ↦ hy (Subtype.ext h0)
   have hm1 : (1 : ℝ) ≤ m := by
     have hmpos : (0 : ℝ) < m := by

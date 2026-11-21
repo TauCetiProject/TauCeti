@@ -94,7 +94,7 @@ theorem contMDiff_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) :
   have h : ContMDiff (𝓡 n) 𝓘(ℝ, F) m fun x : sphere (0 : E) 1 => e (x : E) :=
     (e.toContinuousLinearEquiv : E →L[ℝ] F).contDiff.comp_contMDiff contMDiff_coe_sphere
   refine (h.codRestrict_sphere (n := k) fun x =>
-    (map_mem_unitSphere_iff e _).2 x.2).congr fun x => ?_
+    (map_mem_unitSphere_iff e _).2 x.property).congr fun x => ?_
   exact Subtype.ext (coe_unitSphereEquiv_apply e x)
 
 /-- The differential of the restriction of a linear isometry to the unit spheres, read in the
@@ -129,6 +129,12 @@ def unitSphereDiffeomorph (e : E ≃ₗᵢ[ℝ] F) (m : ℕ∞ω) :
 theorem coe_unitSphereDiffeomorph_apply (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1) :
     ((unitSphereDiffeomorph (n := n) (k := k) e m x : sphere (0 : F) 1) : F) = e x :=
   coe_unitSphereEquiv_apply e x
+
+/-- The underlying function of `unitSphereDiffeomorph e m` is the restriction of `e` to the unit
+spheres. Not a simp lemma: `coe_unitSphereDiffeomorph_apply` already evaluates the coordinates. -/
+theorem coe_unitSphereDiffeomorph (e : E ≃ₗᵢ[ℝ] F) :
+    ⇑(unitSphereDiffeomorph (n := n) (k := k) e m) = unitSphereEquiv e :=
+  (rfl)
 
 @[simp]
 theorem unitSphereDiffeomorph_toEquiv (e : E ≃ₗᵢ[ℝ] F) :
@@ -218,7 +224,7 @@ private theorem mem_invertibleOpens_iff {T : E →L[ℝ] F} :
 /-- An invertible linear map does not vanish on the unit sphere. -/
 private theorem apply_ne_zero_of_mem_invertibleOpens (T : invertibleOpens n (E := E) (F := F))
     (x : sphere (0 : E) 1) : (T : E →L[ℝ] F) x ≠ 0 := by
-  obtain ⟨e, he⟩ := mem_invertibleOpens_iff.mp T.2
+  obtain ⟨e, he⟩ := mem_invertibleOpens_iff.mp T.property
   rw [← he, ContinuousLinearEquiv.coe_coe]
   exact (map_ne_zero_iff e e.injective).mpr (ne_zero_of_mem_unit_sphere x)
 
@@ -237,7 +243,7 @@ private theorem contMDiff_normalizedApply :
   have hpair : ContMDiff (𝓘(ℝ, E →L[ℝ] F).prod (𝓡 n)) 𝓘(ℝ, (E →L[ℝ] F) × E) m
       fun z : invertibleOpens n (E := E) (F := F) × sphere (0 : E) 1 ↦
         ((z.1 : E →L[ℝ] F), (z.2 : E)) :=
-    (contMDiff_subtype_val.comp contMDiff_fst).prodMk_space
+    (contMDiff_subtypeVal.comp contMDiff_fst).prodMk_space
       (contMDiff_coe_sphere.comp contMDiff_snd)
   have happ : ContDiff ℝ m fun p : (E →L[ℝ] F) × E ↦ p.1 p.2 :=
     isBoundedBilinearMap_apply.contDiff
@@ -248,7 +254,7 @@ private theorem contMDiff_normalizedApply :
     exact (((happ.contDiffAt.norm ℝ hne).inv (norm_ne_zero_iff.mpr hne)).smul
       happ.contDiffAt).comp_contMDiffAt (hpair z)
   -- `normalizedApply` is by definition the corestriction of its underlying `F`-valued map.
-  exact hval.codRestrict_sphere fun z ↦ (normalizedApply z).2
+  exact hval.codRestrict_sphere fun z ↦ (normalizedApply z).property
 
 /-- The restriction to the unit sphere of a continuous family of linear isometry equivalences is
 a continuous family of `C^m` maps between the spheres, for the weak Whitney topology. Continuity of
