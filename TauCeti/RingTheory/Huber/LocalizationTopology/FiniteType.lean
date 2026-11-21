@@ -5,15 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RingHom.FinitePresentation
 public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation
 public import TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation
-public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
-import TauCeti.RingTheory.Huber.LocalizationTopology.Discrete
-import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.WeightedPresentation
@@ -55,9 +51,7 @@ homomorphisms (`isTopologicallyFiniteType_completionLocMap`) and for morphisms o
 the map of coordinate rings over a rational open `R(T/s)` of `Spa(A, A⁺)` and its preimage in
 `Spa(B, B⁺)`, which is what restricting a chart of a morphism locally of finite type
 (Wedhorn, Definition 8.48) to a rational open of its target needs. Both the composition and the
-base-change statements apply to general Huber pairs, including non-Tate rings. Over a base in
-Huber's standing class, rational base change also preserves conditional discrete finite presentation
-(`finitePresentation_completionLocMap_of_discreteTopology`).
+base-change statements apply to general Huber pairs, including non-Tate rings.
 
 ## References
 
@@ -622,48 +616,5 @@ theorem isTopologicallyFiniteType_completionLocPairMap (hf : f.IsTopologicallyFi
   rw [← completionLocPairMap_comp_toCompletionLocHom P U hP T s S hden P' U' hP' f T' s' S' hden'
     hs hT] at h
   exact h.of_comp
-
-/-- **Base change along a rational localisation preserves conditional discrete finite presentation**
-over Huber's standing class. Assuming `A` is in Huber's standing class, `f : A →+* B` is
-topologically of finite type, `T ∪ {s}` and `T' ∪ {s'}` span open ideals, and `f` is algebraically
-of finite presentation whenever the *original base* `A` is discrete, the induced map
-`A⟨T/s⟩ →+* B⟨T'/s'⟩` (`completionLocMap`) is algebraically of finite presentation whenever the
-*completed localisation* `A⟨T/s⟩` is discrete. -/
-theorem finitePresentation_completionLocMap_of_discreteTopology [IsHuberStandard A]
-    (P : PairOfDefinition A) (T : Finset A) (s : A)
-    (hT_open : IsOpen (Ideal.span (insert s (T : Set A)) : Set A))
-    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
-    (hden : HasDenominatorPower P T s S)
-    (P' : PairOfDefinition B) {f : A →+* B} (hf : Huber.IsTopologicallyFiniteType f)
-    (hfp : DiscreteTopology A → f.FinitePresentation)
-    (T' : Finset B) (s' : B) (S' : Type*) [CommRing S'] [Algebra B S']
-    [IsLocalization.Away s' S'] (hden' : HasDenominatorPower P' T' s' S')
-    (hs : f s = s') (hT : ∀ t ∈ T, f t ∈ T')
-    (hspan : IsOpen (Ideal.span (insert s' (T' : Set B)) : Set B))
-    {hf_cont : ContinuousAt f 0} :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    letI := locUniformSpace P' T' s' S' hden'
-    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-    DiscreteTopology (UniformSpace.Completion S) →
-      (completionLocMap P T s S hden P' f hf_cont T' s' S' hden' hs hT).FinitePresentation := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  have _ := isHuberRing_completion_locTopology P T s S hden
-  let _ := locUniformSpace P' T' s' S' hden'
-  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
-  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
-  have _ := isHuberRing_completion_locTopology P' T' s' S' hden'
-  intro _
-  exact (P.isTopologicallyFiniteType_toCompletionLoc T s S hden hT_open).finitePresentation_of_comp
-    (P.isTopologicallyFiniteType_completionLocMap T s S hden P' hf T' s' S' hden' hs hT hspan)
-    fun hDiscA ↦ by
-      have : DiscreteTopology B := hf.discreteTopology
-      rw [P.completionLocMap_comp_toCompletionLoc T s S hden P' f hf_cont T' s' S' hden' hs hT]
-      exact (P'.finitePresentation_toCompletionLoc_of_discreteTopology (T' : Set B) s' S'
-        hden').comp (hfp hDiscA)
 
 end TauCeti.Huber.PairOfDefinition

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
+public import Mathlib.Order.WithBot
 
 import Mathlib.Order.SuccPred.Nat
 import TauCeti.Order.SuccPred.IntermediateValue
@@ -42,7 +44,9 @@ steps of at most one.
 
 In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
-(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`.
+(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`. In an
+Archimedean ordered semiring, truncating a finite `WithTop` element at natural casts eventually
+stabilizes (`WithTop.eventually_min_natCast_eq`).
 -/
 
 public section
@@ -178,3 +182,18 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
 end TauCeti
+
+namespace WithTop
+
+/-- Truncating a finite extended element at `(n : ι)` eventually leaves it unchanged. -/
+theorem eventually_min_natCast_eq {ι : Type*} [Semiring ι] [LinearOrder ι] [IsOrderedRing ι]
+    [Archimedean ι] {τ : WithTop ι} (hfin : τ ≠ ⊤) :
+    ∀ᶠ n : ℕ in atTop, min ((n : ι) : WithTop ι) τ = τ := by
+  cases τ with
+  | top => exact absurd rfl hfin
+  | coe s =>
+    obtain ⟨N, hN⟩ := exists_nat_ge s
+    filter_upwards [eventually_ge_atTop N] with n hn
+    exact min_eq_right (WithTop.coe_le_coe.mpr (hN.trans (Nat.mono_cast hn)))
+
+end WithTop

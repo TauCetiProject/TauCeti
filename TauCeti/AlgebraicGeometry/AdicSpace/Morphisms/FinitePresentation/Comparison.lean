@@ -16,50 +16,28 @@ import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 /-!
 # Analytic, noetherian, and discrete affinoid comparisons for `LocallyOfFinitePresentation`
 
-This file explains when `TauCeti.AdicSpace.LocallyOfFinitePresentation` coincides with
-`TauCeti.AdicSpace.LocallyOfFiniteType` and when the two separate:
+This file compares `TauCeti.AdicSpace.LocallyOfFinitePresentation` with
+`TauCeti.AdicSpace.LocallyOfFiniteType` and gives affinoid criteria:
 
-* **Noetherian discrete charts and analytic targets**: over a target `Y` locally of Huber's
-  standing class, `LocallyOfFinitePresentation f ↔ LocallyOfFiniteType f` as soon as every discrete
-  complete affinoid open of `Y` has a noetherian ring
-  (`locallyOfFinitePresentation_iff_locallyOfFiniteType_of_forall_discrete_isNoetherianRing`). In
-  particular, this holds whenever `Y` is analytic (`Y.IsAnalytic`, i.e.
-  `Y.obj.analyticPoints = Set.univ`), where no nonempty discrete open exists at all; hence over a
-  locally noetherian target `Y`, every morphism locally of finite type restricts to a morphism
-  locally of finite presentation on analytic loci
-  (`LocallyOfFiniteType.locallyOfFinitePresentation_analyticLocusMap`).
-* **Affinoid sufficient conditions**: for any Huber pairs `(A, A⁺)` and `(B, B⁺)` (with no
-  completeness or Hausdorffness assumption) whose adic spectra are sheafy, a morphism
-  `φ : (A, A⁺) → (B, B⁺)` topologically of finite type induces a morphism locally of finite
-  presentation whenever `IsHuberStandard A` and
-  `DiscreteTopology A → φ.toRingHom.FinitePresentation`
-  (`locallyOfFinitePresentation_comapOfPresentation`, `locallyOfFinitePresentation_comapOfPair`).
-  Over a strongly noetherian Tate ring `A`, the discrete condition is vacuous
-  (`locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian`).
-* **Discrete affinoid comparison**: for discrete rings `A, B` with maximal plus subrings
-  `Pair.discrete A` and `Pair.discrete B`, `LocallyOfFinitePresentation (comapOfPair hS hT φ)` is
-  equivalent to algebraic `RingHom.FinitePresentation φ.toRingHom`
-  (`locallyOfFinitePresentation_comapOfPair_discrete_iff`), showing that
-  `LocallyOfFinitePresentation` strictly refines `LocallyOfFiniteType` over non-noetherian discrete
-  targets.
+* **Discrete-noetherian and analytic equivalence**: over `Y.IsLocallyHuberStandard`, the two
+  properties coincide when every discrete complete affinoid open of `Y` is noetherian, and in
+  particular whenever `Y` is analytic.
+* **Affinoid criteria**: `comapOfPresentation` and `comapOfPair` are locally of finite
+  presentation under `IsHuberStandard A` and `DiscreteTopology A → φ.toRingHom.FinitePresentation`
+  (automatically satisfied over strongly noetherian Tate bases).
+* **Discrete affinoid comparison**: for discrete rings with `Pair.discrete`,
+  `LocallyOfFinitePresentation (comapOfPair hS hT φ) ↔ φ.toRingHom.FinitePresentation`.
 
 ## Main results
 
-* `locallyOfFinitePresentation_iff_locallyOfFiniteType_of_forall_discrete_isNoetherianRing`:
-  equivalence with `LocallyOfFiniteType` when all discrete complete affinoid opens of `Y` are
-  noetherian.
-* `TauCeti.AdicSpace.locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ`,
-  `TauCeti.AdicSpace.locallyOfFinitePresentation_iff_of_isAnalytic`, and their
-  `IsLocallyNoetherian` counterparts: equivalence over analytic targets.
-* `TauCeti.AdicSpace.LocallyOfFiniteType.locallyOfFinitePresentation_analyticLocusMap`: upgrading
-  a morphism locally of finite type over a locally noetherian target on analytic loci.
-* `TauCeti.AdicSpace.locallyOfFinitePresentation_comapOfPresentation`,
-  `TauCeti.AdicSpace.locallyOfFinitePresentation_comapOfPair`,
-  `TauCeti.AdicSpace.locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian`: affinoid
-  sufficient criteria for arbitrary (not necessarily complete) Huber pairs.
-* `TauCeti.AdicSpace.LocallyOfFinitePresentation.finitePresentation_of_discreteTopology`,
-  `TauCeti.AdicSpace.locallyOfFinitePresentation_comapOfPair_discrete_iff`: discrete descent and
-  full equivalence with algebraic `RingHom.FinitePresentation`.
+* `locallyOfFinitePresentation_iff_locallyOfFiniteType_of_forall_discrete_isNoetherianRing`,
+  `locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ`,
+  `locallyOfFinitePresentation_iff_of_isAnalytic`, and `IsLocallyNoetherian` counterparts.
+* `LocallyOfFiniteType.locallyOfFinitePresentation_analyticLocusMap`.
+* `locallyOfFinitePresentation_comapOfPresentation`, `locallyOfFinitePresentation_comapOfPair`,
+  `locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian`.
+* `LocallyOfFinitePresentation.finitePresentation_of_discreteTopology`,
+  `locallyOfFinitePresentation_comapOfPair_discrete_iff`.
 
 ## References
 
@@ -218,9 +196,11 @@ theorem locallyOfFinitePresentation_comapOfPresentation {A B : Type u} [CommRing
         rw [← Pair.Hom.toRingHom_comp, ofCompletionMap_comp_toCompletionHom,
           Pair.Hom.toRingHom_comp]
         exact (finitePresentation_toCompletionHom P' hT hsheafT).comp (hfp hDiscA)
-  refine (locallyOfFinitePresentation_iff _).mpr fun x ↦
-    locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁
-      (ofCompletion_hom_base_ofCompletionIso_inv P' hT hsheafT x) ?_
+  refine (locallyOfFinitePresentation_iff _).mpr fun x ↦ ?_
+  obtain ⟨b₀, hb₀⟩ : x ∈ Set.range CX.hom.base := by
+    rw [range_ofCompletion_hom_base]
+    exact Set.mem_univ _
+  refine locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁ hb₀ ?_
   rw [comapOfPresentation_hom]
   exact pairComap_ofCompletionMap_comp_hom P hS hsheafS P' hT hsheafT φ
 
@@ -289,14 +269,14 @@ theorem LocallyOfFinitePresentation.finitePresentation_of_discreteTopology {A B 
     {hS : IsSheafyForEveryPresentation S.plus} {hT : IsSheafyForEveryPresentation T.plus}
     {φ : Pair.Hom S T} (hf : LocallyOfFinitePresentation (comapOfPair hS hT φ)) :
     φ.toRingHom.FinitePresentation := by
-  let _ : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
-  have : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
-  have : DiscreteUniformity A := IsRightUniformAddGroup.discreteUniformity
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
   have hsheafA := hS.isSheaf P hP
   have hq := (locallyOfFinitePresentation_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP'
     φ).mp hf
+  let _ : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
+  have : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
+  have : DiscreteUniformity A := IsRightUniformAddGroup.discreteUniformity
   let CA : CompleteAffinoidOpen (ofPresentation S P hP hsheafA).obj :=
     { Ring := A, pair := S, pairOfDefinition := P, le_plus := hP, isSheaf := hsheafA, hom := 𝟙 _ }
   refine PreAdicSpace.ringHom_prop_of_forall_rational_chart_discrete

@@ -242,6 +242,12 @@ theorem face_val_subset (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
   rw [face_val]
   exact Finset.erase_subset _ _
 
+/-- The vertex set of a deleted-vertex face of a cell is a proper subset of the original cell. -/
+theorem face_val_ssubset (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
+    (c.face j).val.val ⊂ c.val.val := by
+  rw [face_val]
+  exact Finset.erase_ssubset (c.vertexEmbedding_mem j)
+
 /-- Adjoining `v` to a deleted-vertex face of a cell gives a face of `K` when adjoining it to the
 cell does. -/
 theorem insert_face_mem (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) {v : ι}

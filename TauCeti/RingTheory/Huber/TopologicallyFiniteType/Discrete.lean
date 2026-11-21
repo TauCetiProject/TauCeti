@@ -14,49 +14,27 @@ import TauCeti.Topology.UniformSpace.DiscreteUniformity
 /-!
 # Topological finite type over a discrete ring
 
-Over a discrete nonarchimedean ring `A`, every weighted restricted power-series completion
-`Â⟨X₁, …, Xₖ⟩_T` is discrete and canonically isomorphic to the polynomial ring `A[X₁, …, Xₖ]`
-(`TauCeti.Huber.weightedPolynomialCompletionEquivOfDiscrete`). As a consequence, topological
-finiteness conditions collapse to purely algebraic finiteness together with discreteness of the
-target:
+Over a discrete nonarchimedean ring `A`, `Â⟨X₁, …, Xₖ⟩_T ≃+* A[X₁, …, Xₖ]`, so topological
+finiteness conditions collapse to algebraic finite type together with target discreteness:
 
-* On underlying rings, `IsTopologicallyFiniteType φ` is equivalent to
-  `DiscreteTopology B ∧ φ.FiniteType`
-  (`isTopologicallyFiniteType_iff_discreteTopology_and_finiteType`), and every finite-type
-  homomorphism between discrete rings is in fact strictly topologically of finite type
-  (`IsStrictlyTopologicallyFiniteType.of_finiteType`).
-* On Huber pairs `f : S → U` with `A` discrete, `f.IsTopologicallyFiniteType` is equivalent to
-  `f.IsPlusWeaklyFiniteType`
-  (`Pair.Hom.isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology`), since
-  weight-`∅` variables absorb polynomial generators while weight-`{1}` variables absorb the
-  finitely many extra generators of `U.plus`.
-* When both plus rings are the entire ring (`S.plus = ⊤` and `U.plus = ⊤`), and in particular for
-  morphisms between discrete Huber pairs `Pair.discrete A → Pair.discrete B`, topological finite
-  type of `f` reduces completely to algebraic `f.toRingHom.FiniteType` (together with discreteness
-  of `B` when not already assumed).
-
-This characterization is the ring-level bridge used to identify `LocallyOfFiniteType` and
-`LocallyOfFinitePresentation` on discrete affinoid adic spaces with `RingHom.FiniteType` and
-`RingHom.FinitePresentation`.
+* On underlying rings, `IsTopologicallyFiniteType φ ↔ DiscreteTopology B ∧ φ.FiniteType`, and
+  finite-type homomorphisms between discrete rings are strictly topologically of finite type.
+* On Huber pairs over a discrete base, `f.IsTopologicallyFiniteType ↔ f.IsPlusWeaklyFiniteType`,
+  and when `S.plus = ⊤` and `U.plus = ⊤` (e.g. `Pair.discrete`), this reduces to
+  `DiscreteTopology B ∧ f.toRingHom.FiniteType`.
 
 ## Main results
 
-* `TauCeti.Huber.IsTopologicallyFiniteType.finiteType`: over a discrete base, a ring homomorphism
-  topologically of finite type is algebraically of finite type.
-* `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.of_finiteType`,
-  `TauCeti.Huber.IsTopologicallyFiniteType.of_finiteType`: between discrete rings, an algebraically
-  finite-type homomorphism is (strictly) topologically of finite type.
-* `TauCeti.Huber.isTopologicallyFiniteType_iff_discreteTopology_and_finiteType`: over a discrete
-  base, `IsTopologicallyFiniteType φ ↔ DiscreteTopology B ∧ φ.FiniteType`.
-* `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology`:
-  over a discrete base, pair-level topological finite type coincides with `+`-weakly finite type.
-* `Pair.Hom.isTopologicallyFiniteType_iff_discreteTopology_and_finiteType_of_plus_eq_top`:
-  when both plus rings are `⊤`, pair-level topological finite type over a discrete base is
-  equivalent to `DiscreteTopology B ∧ f.toRingHom.FiniteType`.
-* `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_iff_finiteType_of_plus_eq_top` and
-  `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_iff_finiteType_discrete`: between discrete
-  rings with plus rings `⊤` (in particular for `Pair.discrete`), pair-level topological finite type
-  coincides with algebraic finite type of the underlying ring homomorphism.
+* `TauCeti.Huber.IsTopologicallyFiniteType.finiteType`,
+  `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.of_finiteType`,
+  `TauCeti.Huber.IsTopologicallyFiniteType.of_finiteType`,
+  `TauCeti.Huber.isTopologicallyFiniteType_iff_discreteTopology_and_finiteType`: ring-level
+  equivalences.
+* `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology`,
+  `Pair.Hom.isTopologicallyFiniteType_iff_discreteTopology_and_finiteType_of_plus_eq_top`,
+  `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_iff_finiteType_of_plus_eq_top`,
+  `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_iff_finiteType_discrete`: pair-level
+  equivalences.
 
 ## References
 
@@ -135,6 +113,20 @@ private theorem weightedCompletionQuotientHom_weightedX {k : ℕ} (T : Fin k →
     ← weightedPolynomialCompletionEquivOfDiscrete_X (T := T) (hT := hT),
     RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
     RingEquiv.symm_apply_apply]
+
+/-- The transported quotient homomorphism sends `(weightedC T hT 1 * weightedX T hT i : A⟨X⟩_T)`
+in the completion to `ψ (X i)`. -/
+private theorem weightedCompletionQuotientHom_weightedC_one_mul_weightedX {k : ℕ}
+    (T : Fin k → Set A) (hT : IsWeightFamily T) {φ : A →+* B}
+    (ψ : letI : Algebra A B := φ.toAlgebra; MvPolynomial (Fin k) A →ₐ[A] B) (i : Fin k) :
+    weightedCompletionQuotientHom T hT ψ
+      ((weightedC T hT 1 * weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) =
+      ψ (MvPolynomial.X i) := by
+  let _ : Algebra A B := φ.toAlgebra
+  rw [Completion.coe_mul, map_mul, ← algebraMap_completion_weightedRestrictedSubring_apply,
+    weightedCompletionQuotientHom_algebraMap, map_one, one_mul,
+    weightedCompletionQuotientHom_weightedX]
 
 end Helpers
 
@@ -226,10 +218,10 @@ theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology
   have hπC (a : A) :
       π (algebraMap A (Completion (weightedRestrictedSubring T hT)) a) = f.toRingHom a :=
     weightedCompletionQuotientHom_algebraMap T hT ev a
-  have hπX_right (j : Fin E.card) :
-      π (weightedX T hT (Fin.natAdd k j) : Completion (weightedRestrictedSubring T hT)) =
-        (eE j : B) := by
-    rw [weightedCompletionQuotientHom_weightedX]
+  have hπ_right (j : Fin E.card) :
+      π ((weightedC T hT 1 * weightedX T hT (Fin.natAdd k j) : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) = (eE j : B) := by
+    rw [weightedCompletionQuotientHom_weightedC_one_mul_weightedX]
     simp [ev]
   have hEU : (E : Set B) ⊆ U.plus := hE ▸ fun _ hb ↦ subset_plusClosure _ (Or.inr hb)
   refine isTopologicallyFiniteType_iff_exists_isOpenQuotientMap.mpr
@@ -250,9 +242,8 @@ theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology
         ⟨b, Subring.mem_map.mpr
           ⟨((weightedC T hT 1 * weightedX T hT (Fin.natAdd k j) :
               weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)),
-            S.weightedC_mul_weightedX_mem_weighted_completion_plus hT ht, ?_⟩⟩
-      rw [Completion.coe_mul, map_mul, ← algebraMap_completion_weightedRestrictedSubring_apply,
-        hπC, map_one, one_mul, hπX_right, hj]
+            S.weightedC_mul_weightedX_mem_weighted_completion_plus hT ht,
+            (hπ_right j).trans hj⟩⟩
   · have := U.isRingOfIntegralElements.isIntegrallyClosedIn
     rw [Subring.integralClosure_subring_le_iff]
     refine Subring.map_le_iff_le_comap.mpr <|
@@ -263,8 +254,7 @@ theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology
     · simp only [T, Fin.append_left, Set.mem_empty_iff_false] at ht
     · simp only [T, Fin.append_right, Set.mem_singleton_iff] at ht
       subst ht
-      rw [Completion.coe_mul, map_mul, ← algebraMap_completion_weightedRestrictedSubring_apply,
-        hπC, map_one, one_mul, hπX_right]
+      rw [hπ_right]
       exact hEU (eE j).property
 
 /-- Over a discrete base `A`, a morphism `f : S → U` of Huber pairs whose plus rings are both the

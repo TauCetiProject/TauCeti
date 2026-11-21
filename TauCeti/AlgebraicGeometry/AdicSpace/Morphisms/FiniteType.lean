@@ -44,9 +44,6 @@ affinoid comparison `LocallyOfFiniteType (comapOfPair hS hT φ) ↔ φ.toRingHom
 * `TauCeti.AdicSpace.LocallyOfFiniteType.locallyOfPlusWeaklyFiniteType`,
   `TauCeti.AdicSpace.LocallyOfFiniteType.locallyOfWeaklyFiniteType`,
   `TauCeti.AdicSpace.LocallyOfFiniteType.isAdic`: implications down Huber's hierarchy.
-* `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfFiniteType`,
-  `TauCeti.AdicSpace.IsLocallyHuberStandard.of_locallyOfFiniteType`: ascent of locally noetherian
-  and Huber-standard structure along morphisms locally of finite type.
 * `TauCeti.AdicSpace.LocallyOfFiniteType.exists_complete_openImmersion_chart`,
   `TauCeti.AdicSpace.locallyOfFiniteType_of_forall_openImmersion_sq`,
   `TauCeti.AdicSpace.LocallyOfFiniteType.exists_openImmersion_over_rationalLocalization`:
@@ -129,20 +126,6 @@ theorem LocallyOfFiniteType.locallyOfWeaklyFiniteType {f : X ⟶ Y}
 theorem LocallyOfFiniteType.isAdic {f : X ⟶ Y} (hf : LocallyOfFiniteType f) : IsAdic f :=
   hf.locallyOfWeaklyFiniteType.isAdic
 
-/-- **Locally noetherian structure ascends along morphisms locally of finite type**: if
-`f : X ⟶ Y` is locally of finite type and `Y` is locally noetherian, then `X` is locally
-noetherian. -/
-theorem IsLocallyNoetherian.of_locallyOfFiniteType {f : X ⟶ Y}
-    (hf : LocallyOfFiniteType f) (hY : Y.IsLocallyNoetherian) : X.IsLocallyNoetherian :=
-  hY.of_locallyOfWeaklyFiniteType hf.locallyOfWeaklyFiniteType
-
-/-- **Being locally of Huber's standing class ascends along morphisms locally of finite type**: if
-`f : X ⟶ Y` is locally of finite type and `Y` is locally of Huber's standing class, then `X` is
-locally of Huber's standing class. -/
-theorem IsLocallyHuberStandard.of_locallyOfFiniteType {f : X ⟶ Y}
-    (hf : LocallyOfFiniteType f) (hY : Y.IsLocallyHuberStandard) : X.IsLocallyHuberStandard :=
-  hY.of_locallyOfWeaklyFiniteType hf.locallyOfWeaklyFiniteType
-
 /-- **Identities on adic spaces are locally of finite type.** -/
 instance LocallyOfFiniteType.containsIdentities :
     LocallyOfFiniteType.{u}.ContainsIdentities where
@@ -176,11 +159,19 @@ theorem LocallyOfFiniteType.exists_complete_openImmersion_chart {f : X ⟶ Y}
     (hf : LocallyOfFiniteType f) (x : X.obj) :
     ∃ (CY : CompleteAffinoidOpen Y.obj) (CX : CompleteAffinoidOpen X.obj)
       (φ : Pair.Hom CY.pair CX.pair) (_ : φ.IsTopologicallyFiniteType) (b₀ : CX.space),
-      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom :=
-  PreAdicSpace.chartLocally.exists_complete_openImmersion_chart
-    (fun P hP hsheafA P' hP' hsheafB φ hφ ↦
-      isTopologicallyFiniteType_ofCompletionMap P hP hsheafA P' hP' hsheafB φ hφ)
-    Y.property.isSheafy ((locallyOfFiniteType_iff_chartLocally f).mp hf) x
+      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom := by
+  obtain ⟨U, hxU, V, -, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP',
+    φ, hφ, hsheafB, eU, eV, hfac⟩ :=
+    exists_complete_chart_of_chartLocally (fun φ ↦ φ.IsTopologicallyFiniteType)
+      (fun h ↦ .of_comp h) ((locallyOfFiniteType_iff_chartLocally f).mp hf) x
+  have hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
+      (presentationLimitPresheaf P S.plus) :=
+    (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp
+      (ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ Y.property.isSheafy))
+  exact ⟨ofRestrictIso S P hP hsheafA eV, ofRestrictIso T P' hP' hsheafB eU, φ, hφ,
+    eU.hom.base ⟨x, hxU⟩, ofRestrictIso_hom_base T P' hP' hsheafB eU hxU,
+    ofRestrictIso_pairComap_comp_hom S P hP hsheafA eV T P' hP' hsheafB eU φ hfac⟩
 
 /-- **Open-immersion chart criterion for `LocallyOfFiniteType`**: a morphism `f : X ⟶ Y` of adic
 spaces is locally of finite type if every point `x ∈ X` is covered by a complete affinoid
@@ -324,12 +315,13 @@ theorem locallyOfFiniteType_comapOfPresentation {A : Type u} [CommRing A] [Topol
       (presentationLimitPresheaf P' T.plus))
     (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType) :
     LocallyOfFiniteType (comapOfPresentation S P hS hsheafS T P' hT hsheafT φ) := by
-  refine locallyOfFiniteType_of_forall_openImmersion_sq fun x ↦
-    ⟨ofCompletion P hS hsheafS, ofCompletion P' hT hsheafT,
-      ofCompletionMap P hS hsheafS P' hT hsheafT φ,
-      isTopologicallyFiniteType_ofCompletionMap P hS hsheafS P' hT hsheafT φ hφ,
-      (ofCompletionIso P' hT hsheafT).inv.base x,
-      ofCompletion_hom_base_ofCompletionIso_inv P' hT hsheafT x, ?_⟩
+  refine locallyOfFiniteType_of_forall_openImmersion_sq fun x ↦ ?_
+  obtain ⟨b₀, hb₀⟩ : x ∈ Set.range (ofCompletion P' hT hsheafT).hom.base := by
+    rw [range_ofCompletion_hom_base]
+    exact Set.mem_univ _
+  refine ⟨ofCompletion P hS hsheafS, ofCompletion P' hT hsheafT,
+    ofCompletionMap P hS hsheafS P' hT hsheafT φ,
+    isTopologicallyFiniteType_ofCompletionMap P hS hsheafS P' hT hsheafT φ hφ, b₀, hb₀, ?_⟩
   rw [comapOfPresentation_hom]
   exact pairComap_ofCompletionMap_comp_hom P hS hsheafS P' hT hsheafT φ
 

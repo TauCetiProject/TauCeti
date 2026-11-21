@@ -9,10 +9,11 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.Adic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.QuasiCompact
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyHuberStandard
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteType.OpenImmersion
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyStablySheafy
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Comap
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.CompleteChart
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StablySheafy
 import TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
@@ -45,13 +46,16 @@ quasi-compact source into a quasi-separated adic space, and morphisms out of the
 are of weakly finite type, as is the morphism of affinoid adic spaces induced by a morphism of
 Huber pairs whose ring homomorphism is topologically of finite type.
 
-Because noetherian type and Huber's standing class ascend along ring homomorphisms topologically of
-finite type (`TauCeti.Huber.IsNoetherianType.of_isTopologicallyFiniteType`,
-`TauCeti.Huber.IsHuberStandard.of_isTopologicallyFiniteType`), and topological finite type cancels
-on the right along continuous ring homomorphisms
-(`TauCeti.Huber.IsTopologicallyFiniteType.of_comp`), both `TauCeti.AdicSpace.IsLocallyNoetherian`
-and `TauCeti.AdicSpace.IsLocallyHuberStandard` ascend from the target of a morphism locally of
-weakly finite type to its source.
+Because noetherian type, Huber's standing class, and stable sheafiness ascend along ring
+homomorphisms topologically of finite type
+(`TauCeti.Huber.IsNoetherianType.of_isTopologicallyFiniteType`,
+`TauCeti.Huber.IsHuberStandard.of_isTopologicallyFiniteType`,
+`TauCeti.Huber.IsStablySheafyRing.of_isTopologicallyFiniteType`), and topological finite type
+cancels on the right along continuous ring homomorphisms
+(`TauCeti.Huber.IsTopologicallyFiniteType.of_comp`), `TauCeti.AdicSpace.IsLocallyNoetherian`,
+`TauCeti.AdicSpace.IsLocallyHuberStandard`, and `TauCeti.AdicSpace.IsLocallyStablySheafy` ascend
+from the target of a morphism locally of weakly finite type (and hence of a morphism locally of
+finite type) to its source.
 
 ## Main definitions
 
@@ -63,6 +67,8 @@ weakly finite type to its source.
 
 * `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.isAdic`: a morphism locally of weakly finite type
   is adic.
+* `TauCeti.PreAdicSpace.LocallyOfFiniteType.locallyOfWeaklyFiniteType`: a morphism of adic spaces
+  locally of finite type is locally of weakly finite type.
 * `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.of_isOpenImmersion`: open immersions are locally of
   weakly finite type.
 * `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.containsIdentities`,
@@ -78,10 +84,17 @@ weakly finite type to its source.
 * `TauCeti.AdicSpace.isWeaklyFiniteType_presentationLimitPreAdicSpaceComap`: the morphism of
   affinoid adic spaces induced by a morphism of Huber pairs whose ring homomorphism is
   topologically of finite type is of weakly finite type.
-* `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfWeaklyFiniteType`: locally noetherian
-  structure ascends along morphisms locally of weakly finite type.
-* `TauCeti.AdicSpace.IsLocallyHuberStandard.of_locallyOfWeaklyFiniteType`: being locally of Huber's
-  standing class ascends along morphisms locally of weakly finite type.
+* `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.exists_complete_chart`: morphisms locally of weakly
+  finite type admit charts whose target and source rings are both complete and Hausdorff.
+* `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfWeaklyFiniteType` and
+  `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfFiniteType`: locally noetherian structure
+  ascends along morphisms locally of weakly finite type and locally of finite type.
+* `TauCeti.AdicSpace.IsLocallyHuberStandard.of_locallyOfWeaklyFiniteType` and
+  `TauCeti.AdicSpace.IsLocallyHuberStandard.of_locallyOfFiniteType`: being locally of Huber's
+  standing class ascends along morphisms locally of weakly finite type and locally of finite type.
+* `TauCeti.AdicSpace.IsLocallyStablySheafy.of_locallyOfWeaklyFiniteType` and
+  `TauCeti.AdicSpace.IsLocallyStablySheafy.of_locallyOfFiniteType`: local stable sheafiness ascends
+  along morphisms locally of weakly finite type and locally of finite type.
 
 ## References
 
@@ -134,10 +147,10 @@ theorem LocallyOfWeaklyFiniteType.isAdic {f : X ⟶ Y} (hf : LocallyOfWeaklyFini
 
 end AdicSpace
 
--- Internal bridge used to deduce `of_isOpenImmersion` and `containsIdentities` from the pre-adic
--- versions; the public `AdicSpace.LocallyOfFiniteType.locallyOfWeaklyFiniteType` lives in
--- `Morphisms.FiniteType`.
-private theorem PreAdicSpace.LocallyOfFiniteType.locallyOfWeaklyFiniteType {X Y : AdicSpace.{u}}
+/-- **A morphism of adic spaces locally of finite type is locally of weakly finite type**: the ring
+homomorphism of a morphism of Huber pairs topologically of finite type is topologically of finite
+type. -/
+theorem PreAdicSpace.LocallyOfFiniteType.locallyOfWeaklyFiniteType {X Y : AdicSpace.{u}}
     {f : X ⟶ Y} (hf : PreAdicSpace.LocallyOfFiniteType f.hom) :
     AdicSpace.LocallyOfWeaklyFiniteType f :=
   (AdicSpace.locallyOfWeaklyFiniteType_iff_chartLocally f).mpr <|
@@ -270,10 +283,10 @@ section Ascent
 
 open PairOfDefinition
 
--- Every chart of a morphism locally of weakly finite type can be upgraded, via rational
--- localization at `{1} / 1`, so that BOTH the target ring `A` and the source ring `B` are complete
--- and Hausdorff, while preserving `IsTopologicallyFiniteType` on rings.
-private theorem LocallyOfWeaklyFiniteType.exists_complete_chart {f : X ⟶ Y}
+/-- Every point of the source of a morphism locally of weakly finite type admits an affinoid chart
+in which *both* the target ring `A` and the source ring `B` are complete and Hausdorff, and
+`φ : (A, A⁺) → (B, B⁺)` has `φ.toRingHom` topologically of finite type. -/
+theorem LocallyOfWeaklyFiniteType.exists_complete_chart {f : X ⟶ Y}
     (hf : LocallyOfWeaklyFiniteType f) (x : X.obj) :
     ∃ (U : Opens X.obj) (_ : x ∈ U) (V : Opens Y.obj) (_ : U ≤ (Opens.map f.hom.base).obj V)
       (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
@@ -296,11 +309,9 @@ private theorem LocallyOfWeaklyFiniteType.exists_complete_chart {f : X ⟶ Y}
           φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
           T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
           eV.inv ≫ Y.obj.ofRestrict _ :=
-  PreAdicSpace.chartLocally.exists_complete_chart
-    (fun P hP hsheafA P' hP' hsheafB φ hφ ↦
-      CompleteAffinoidOpen.isTopologicallyFiniteType_toRingHom_ofCompletionMap P hP hsheafA P' hP'
-        hsheafB φ hφ)
-    Y.property.isSheafy ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf) x
+  exists_complete_chart_of_chartLocally (fun φ ↦ IsTopologicallyFiniteType φ.toRingHom)
+    (fun h ↦ Pair.Hom.isTopologicallyFiniteType_toRingHom_of_comp h)
+    ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf) x
 
 -- When a morphism `f : Spa(D, D⁺) ⟶ Spa(A, A⁺)` of complete Hausdorff affinoid pre-adic spaces
 -- has global-sections homomorphism topologically of finite type and lands inside an open immersion
@@ -476,6 +487,12 @@ theorem IsLocallyNoetherian.of_locallyOfWeaklyFiniteType {f : X ⟶ Y}
   have := IsNoetherianType.of_isTopologicallyFiniteType hβ
   exact isNoetherianAffinoid_presentationLimitPreAdicSpace SD PD hPD
 
+/-- **Locally noetherian structure ascends along morphisms locally of finite type.** -/
+theorem IsLocallyNoetherian.of_locallyOfFiniteType {f : X ⟶ Y}
+    (hf : PreAdicSpace.LocallyOfFiniteType f.hom) (hY : Y.IsLocallyNoetherian) :
+    X.IsLocallyNoetherian :=
+  hY.of_locallyOfWeaklyFiniteType hf.locallyOfWeaklyFiniteType
+
 /-- **Being locally of Huber's standing class ascends along morphisms locally of weakly finite
 type** (Huber 1996, (1.1.1) and §1.2): if `f : X ⟶ Y` is locally of weakly finite type and `Y` is
 locally of Huber's standing class, then `X` is locally of Huber's standing class. -/
@@ -490,6 +507,33 @@ theorem IsLocallyHuberStandard.of_locallyOfWeaklyFiniteType {f : X ⟶ Y}
     inferInstance, inferInstance, SC, PC, hPC, eZ, fun hβ SD PD hPD ↦ ?_⟩
   have := IsHuberStandard.of_isTopologicallyFiniteType hβ
   exact isHuberStandardAffinoid_presentationLimitPreAdicSpace SD PD hPD
+
+/-- **Being locally of Huber's standing class ascends along morphisms locally of finite type.** -/
+theorem IsLocallyHuberStandard.of_locallyOfFiniteType {f : X ⟶ Y}
+    (hf : PreAdicSpace.LocallyOfFiniteType f.hom) (hY : Y.IsLocallyHuberStandard) :
+    X.IsLocallyHuberStandard :=
+  hY.of_locallyOfWeaklyFiniteType hf.locallyOfWeaklyFiniteType
+
+/-- **Local stable sheafiness ascends along morphisms locally of weakly finite type** (Wedhorn,
+Proposition 6.33 and Definition 8.26): if `f : X ⟶ Y` is locally of weakly finite type and `Y` is
+locally stably sheafy, then `X` is locally stably sheafy. -/
+theorem IsLocallyStablySheafy.of_locallyOfWeaklyFiniteType {f : X ⟶ Y}
+    (hf : LocallyOfWeaklyFiniteType f) (hY : Y.IsLocallyStablySheafy) :
+    X.IsLocallyStablySheafy := by
+  refine isLocallyStablySheafy_iff.mpr <|
+    hf.forall_exists_mem_propOpens isStablySheafyAffinoid hY.isBasis_stablySheafyAffinoidOpens
+      fun hZ ↦ ?_
+  obtain ⟨C, _, _, _, _, _, _, _, hCA, SC, PC, hPC, eZ⟩ := (isStablySheafyAffinoid_iff _).mp hZ
+  refine ⟨C, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, SC, PC, hPC, eZ, fun hβ SD PD hPD ↦ ?_⟩
+  exact isStablySheafyAffinoid_presentationLimitPreAdicSpace
+    (hCA.of_isTopologicallyFiniteType hβ) SD PD hPD
+
+/-- **Local stable sheafiness ascends along morphisms locally of finite type.** -/
+theorem IsLocallyStablySheafy.of_locallyOfFiniteType {f : X ⟶ Y}
+    (hf : PreAdicSpace.LocallyOfFiniteType f.hom) (hY : Y.IsLocallyStablySheafy) :
+    X.IsLocallyStablySheafy :=
+  hY.of_locallyOfWeaklyFiniteType hf.locallyOfWeaklyFiniteType
 
 end Ascent
 

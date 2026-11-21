@@ -6,35 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Open
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.ChartLocally
 public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
 /-!
-# Completed presentations via `{1} / 1` and complete chart extraction
+# Completed presentations via `{1} / 1`
 
 This module packages the trivial `{1} / 1` rational-localisation completion of a sheafy
-presentation `(P, S)` into a reusable `CompleteAffinoidOpen` interface built on
+presentation `(P, S)` into a `CompleteAffinoidOpen` interface built on
 `TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Open`:
 
 * **Completed presentations**: `CompleteAffinoidOpen.ofCompletion` produces a complete Hausdorff
   sheafy `CompleteAffinoidOpen` over `Spa(A, A⁺)`, with canonical pair morphism
-  `CompleteAffinoidOpen.toCompletionHom`, spectrum isomorphism
-  `CompleteAffinoidOpen.ofCompletionIso`, and finite-type / discrete finite-presentation lemmas
+  `CompleteAffinoidOpen.toCompletionHom`, surjectivity on underlying points
+  (`range_ofCompletion_hom_base`), and finite-type / discrete finite-presentation lemmas
   (`isTopologicallyFiniteType_toCompletionHom`, `finitePresentation_toCompletionHom`).
 * **Functoriality and commuting completion square**: `CompleteAffinoidOpen.ofCompletionMap` lifts
   any Huber-pair morphism `φ : S → T` between sheafy presentations to a morphism between their
   `{1} / 1` completions, obeying naturality (`ofCompletionMap_comp_toCompletionHom`), the
-  commuting-square law (`pairComap_ofCompletionMap_comp_hom`), identity/composition laws
-  (`ofCompletionMap_id`, `ofCompletionMap_comp`), and preservation of topological finite type
-  (`isTopologicallyFiniteType_ofCompletionMap`,
-  `isTopologicallyFiniteType_toRingHom_ofCompletionMap`).
-* **Complete chart extraction**: `chartLocally.exists_complete_chart` and
-  `chartLocally.exists_complete_openImmersion_chart` upgrade any chart-local property `Q` preserved
-  by `ofCompletionMap` so that both the target and source rings of the chart are complete and
-  Hausdorff.
+  commuting-square law (`pairComap_ofCompletionMap_comp_hom`), and preservation of topological
+  finite type (`isTopologicallyFiniteType_ofCompletionMap`).
 
 ## References
 
@@ -48,15 +41,11 @@ public section
 
 open CategoryTheory TopologicalSpace Topology
 
-namespace TauCeti.PreAdicSpace
+namespace TauCeti.PreAdicSpace.CompleteAffinoidOpen
 
 open Huber Huber.PairOfDefinition ValuationSpectrum
 
 universe u
-
-namespace CompleteAffinoidOpen
-
-section OfCompletion
 
 section Single
 
@@ -66,8 +55,7 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
     (presentationLimitPresheaf P S.plus))
 
 /-- Complete Hausdorff affinoid open `Spa(A⟨{1}/1⟩, A⟨{1}/1⟩⁺) ⟶ Spa(A, A⁺)` obtained by completing
-a sheafy presentation `(P, S)` via the trivial rational localisation `R({1} / 1)`. Its structure
-morphism `hom` is an isomorphism of pre-adic spaces (`ofCompletionIso`). -/
+a sheafy presentation `(P, S)` via the trivial rational localisation `R({1} / 1)`. -/
 @[expose]
 noncomputable def ofCompletion :
     CompleteAffinoidOpen (presentationLimitPreAdicSpace P S.plus
@@ -108,72 +96,10 @@ theorem finitePresentation_toCompletionHom [DiscreteTopology A] :
     (toCompletionHom P hP hsheaf).toRingHom.FinitePresentation :=
   finitePresentation_toRationalLocalizationHom P hP hsheaf (𝟙 _) ({1} : Finset A) 1 (by simp)
 
-/-- Canonical isomorphism `(ofCompletion P hP hsheaf).space ≅ Spa(A, A⁺)` whose forward morphism
-is `(ofCompletion P hP hsheaf).hom`. -/
-noncomputable def ofCompletionIso :
-    (ofCompletion P hP hsheaf).space ≅
-      presentationLimitPreAdicSpace P S.plus
-        S.isRingOfIntegralElements.isPowerBounded_of_mem hP :=
-  IsOpenImmersion.isoOfRangeEq (ofCompletion P hP hsheaf).hom (𝟙 _) (by
-    rw [range_ofCompletion_hom_base]
-    simp)
-
-/-- The forward morphism of `ofCompletionIso` is `(ofCompletion P hP hsheaf).hom`. -/
-@[simp]
-theorem ofCompletionIso_hom :
-    (ofCompletionIso P hP hsheaf).hom = (ofCompletion P hP hsheaf).hom :=
-  (Category.comp_id _).symm.trans (IsOpenImmersion.isoOfRangeEq_hom_comp _ _ _)
-
-/-- The structure morphism `(ofCompletion P hP hsheaf).hom` is an isomorphism. -/
-theorem isIso_ofCompletion_hom : IsIso (ofCompletion P hP hsheaf).hom := by
-  rw [← ofCompletionIso_hom]
-  exact inferInstance
-
-/-- Right-inverse cancellation for `(ofCompletion P hP hsheaf).hom` and
-`(ofCompletionIso P hP hsheaf).inv`. -/
-@[reassoc (attr := simp)]
-theorem ofCompletion_hom_comp_ofCompletionIso_inv :
-    (ofCompletion P hP hsheaf).hom ≫ (ofCompletionIso P hP hsheaf).inv =
-      𝟙 (ofCompletion P hP hsheaf).space := by
-  rw [← ofCompletionIso_hom]
-  exact (ofCompletionIso P hP hsheaf).hom_inv_id
-
-/-- Left-inverse cancellation for `(ofCompletionIso P hP hsheaf).inv` and
-`(ofCompletion P hP hsheaf).hom`. -/
-@[reassoc (attr := simp)]
-theorem ofCompletionIso_inv_comp_ofCompletion_hom :
-    (ofCompletionIso P hP hsheaf).inv ≫ (ofCompletion P hP hsheaf).hom = 𝟙 _ := by
-  rw [← ofCompletionIso_hom]
-  exact (ofCompletionIso P hP hsheaf).inv_hom_id
-
-/-- On points, `(ofCompletion P hP hsheaf).hom` sends `(ofCompletionIso P hP hsheaf).inv.base x`
-back to `x`. -/
-@[simp]
-theorem ofCompletion_hom_base_ofCompletionIso_inv
-    (x : presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :
-    (ofCompletion P hP hsheaf).hom.base ((ofCompletionIso P hP hsheaf).inv.base x) = x := by
-  have hx := congrArg (fun m : presentationLimitPreAdicSpace P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP ⟶ _ ↦ m.base x)
-    (ofCompletionIso_inv_comp_ofCompletion_hom P hP hsheaf)
-  rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply] at hx
-  exact hx.trans (by simp)
-
-/-- On points, `(ofCompletionIso P hP hsheaf).inv` sends `(ofCompletion P hP hsheaf).hom.base x`
-back to `x`. -/
-@[simp]
-theorem ofCompletionIso_inv_base_ofCompletion_hom (x : (ofCompletion P hP hsheaf).space) :
-    (ofCompletionIso P hP hsheaf).inv.base ((ofCompletion P hP hsheaf).hom.base x) = x := by
-  have hx := congrArg (fun m : (ofCompletion P hP hsheaf).space ⟶ _ ↦ m.base x)
-    (ofCompletion_hom_comp_ofCompletionIso_inv P hP hsheaf)
-  rw [PreAdicSpace.comp_base, TopCat.coe_comp, Function.comp_apply] at hx
-  exact hx.trans (by simp)
-
 end Single
 
-variable {A B C : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+variable {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-  [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
   {S : Pair A} (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
   (hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
     (presentationLimitPresheaf P S.plus))
@@ -235,31 +161,6 @@ theorem pairComap_ofCompletionMap_comp_hom (φ : Pair.Hom S T) :
     ← presentationLimitPreAdicSpacePairComap_comp, ← presentationLimitPreAdicSpacePairComap_comp,
     ofCompletionMap_comp_toCompletionHom]
 
-/-- `ofCompletionMap` preserves the identity morphism of a Huber pair. -/
-@[simp]
-theorem ofCompletionMap_id :
-    ofCompletionMap P hP hsheafA P hP hsheafA (Pair.Hom.id S) =
-      Pair.Hom.id (ofCompletion P hP hsheafA).pair :=
-  (ofCompletion P hP hsheafA).pairComap_injective (ofCompletion P hP hsheafA) <| by
-    rw [pairComap_id, ← cancel_mono (ofCompletion P hP hsheafA).hom,
-      pairComap_ofCompletionMap_comp_hom, presentationLimitPreAdicSpacePairComap_id,
-      Category.id_comp, Category.comp_id]
-
-/-- `ofCompletionMap` preserves composition of morphisms of Huber pairs. -/
-theorem ofCompletionMap_comp {U : Pair C} (P'' : PairOfDefinition C)
-    (hP'' : P''.ringOfDefinition ≤ U.plus)
-    (hsheafC : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa U.plus))
-      (presentationLimitPresheaf P'' U.plus))
-    (φ : Pair.Hom S T) (ψ : Pair.Hom T U) :
-    ofCompletionMap P hP hsheafA P'' hP'' hsheafC (ψ.comp φ) =
-      (ofCompletionMap P' hP' hsheafB P'' hP'' hsheafC ψ).comp
-        (ofCompletionMap P hP hsheafA P' hP' hsheafB φ) :=
-  (ofCompletion P hP hsheafA).pairComap_injective (ofCompletion P'' hP'' hsheafC) <| by
-    rw [pairComap_comp, ← cancel_mono (ofCompletion P hP hsheafA).hom,
-      pairComap_ofCompletionMap_comp_hom, Category.assoc,
-      pairComap_ofCompletionMap_comp_hom, pairComap_ofCompletionMap_comp_hom_assoc,
-      presentationLimitPreAdicSpacePairComap_comp]
-
 /-- `ofCompletionMap` preserves `Pair.Hom.IsTopologicallyFiniteType`. -/
 theorem isTopologicallyFiniteType_ofCompletionMap (φ : Pair.Hom S T)
     (hφ : φ.IsTopologicallyFiniteType) :
@@ -267,124 +168,4 @@ theorem isTopologicallyFiniteType_ofCompletionMap (φ : Pair.Hom S T)
   .of_comp ((ofCompletionMap_comp_toCompletionHom P hP hsheafA P' hP' hsheafB φ).symm ▸
     (isTopologicallyFiniteType_toCompletionHom P' hP' hsheafB).comp hφ)
 
-/-- `ofCompletionMap` preserves ring-level `IsTopologicallyFiniteType`. -/
-theorem isTopologicallyFiniteType_toRingHom_ofCompletionMap (φ : Pair.Hom S T)
-    (hφ : IsTopologicallyFiniteType φ.toRingHom) :
-    IsTopologicallyFiniteType (ofCompletionMap P hP hsheafA P' hP' hsheafB φ).toRingHom := by
-  have h := (isTopologicallyFiniteType_toCompletionHom P' hP'
-    hsheafB).isTopologicallyFiniteType_toRingHom.comp hφ
-  rw [← Pair.Hom.toRingHom_comp,
-    ← ofCompletionMap_comp_toCompletionHom P hP hsheafA P' hP' hsheafB φ,
-    Pair.Hom.toRingHom_comp] at h
-  exact h.of_comp (toCompletionHom P hP hsheafA).continuous_toRingHom
-    (ofCompletionMap P hP hsheafA P' hP' hsheafB φ).continuous_toRingHom
-
-end OfCompletion
-
-end CompleteAffinoidOpen
-
-section CompleteCharts
-
-open CompleteAffinoidOpen
-
-/-- **Upgrading a `chartLocally Q` chart to complete Hausdorff rings on both sides**: if a
-Huber-pair morphism property `Q` is preserved by `{1} / 1` completion
-(`CompleteAffinoidOpen.ofCompletionMap`), and `f : X ⟶ Y` is `chartLocally Q` into a sheafy
-pre-adic space `Y`, then every point `x : X` admits a `Q`-chart whose target and source rings are
-both complete and Hausdorff. -/
-theorem chartLocally.exists_complete_chart
-    {Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-      {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop}
-    (hQ : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
-      [IsTopologicalRing B] [CompleteSpace B] [T2Space B] [IsHuberRing B]
-      {S : Pair A} {T : Pair B} (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-      (hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-        (presentationLimitPresheaf P S.plus))
-      (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (hsheafB : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-        (presentationLimitPresheaf P' T.plus))
-      (φ : Pair.Hom S T) (_ : Q φ),
-      Q (ofCompletionMap P hP hsheafA P' hP' hsheafB φ))
-    {X Y : PreAdicSpace.{u}} (hY : isSheafy Y) {f : X ⟶ Y} (hf : chartLocally Q f) (x : X) :
-    ∃ (U : Opens X) (_ : x ∈ U) (V : Opens Y) (_ : U ≤ (Opens.map f.base).obj V)
-      (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
-      (_ : IsTopologicalRing A) (_ : CompleteSpace A) (_ : T2Space A) (_ : IsHuberRing A)
-      (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-      (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-      (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
-      (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (φ : Pair.Hom S T) (_ : Q φ)
-      (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-        (presentationLimitPresheaf P' T.plus))
-      (eU : X.restrict U.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP')
-      (eV : Y.restrict V.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP),
-      X.ofRestrict _ ≫ f =
-        eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-          T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
-          eV.inv ≫ Y.ofRestrict _ := by
-  obtain ⟨U, hxU, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-    hsheafB, eU, eV, hfac⟩ := (chartLocally_iff f).mp hf x
-  have hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-      (presentationLimitPresheaf P S.plus) :=
-    ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ hY)
-  let CA := ofCompletion P hP hsheafA
-  let CB := ofCompletion P' hP' hsheafB
-  let eA := ofCompletionIso P hP hsheafA
-  let eB := ofCompletionIso P' hP' hsheafB
-  let φ₁ := ofCompletionMap P hP hsheafA P' hP' hsheafB φ
-  refine ⟨U, hxU, V, hUV, CA.Ring, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, CA.pair, CA.pairOfDefinition, CA.le_plus,
-    CB.Ring, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, CB.pair, CB.pairOfDefinition, CB.le_plus, φ₁,
-    hQ P hP hsheafA P' hP' hsheafB φ hφ, CB.isSheaf, eU ≪≫ eB.symm, eV ≪≫ eA.symm, ?_⟩
-  rw [Iso.trans_hom, Iso.symm_hom, Iso.trans_inv, Iso.symm_inv, hfac]
-  simp only [Category.assoc]
-  congr 1
-  have hcomm := pairComap_ofCompletionMap_comp_hom P hP hsheafA P' hP' hsheafB φ
-  rw [pairComap, presentationLimitPreAdicSpacePairComap_def,
-    presentationLimitPreAdicSpacePairComap_def] at hcomm
-  dsimp only [eA, eB]
-  rw [ofCompletionIso_hom, ← Category.assoc _ CA.hom, hcomm, Category.assoc,
-    ofCompletionIso_inv_comp_ofCompletion_hom_assoc]
-
-/-- **Complete affinoid open-immersion chart extraction for `chartLocally Q`**: packages
-`chartLocally.exists_complete_chart` into a pair of `CompleteAffinoidOpen`s `CY`, `CX` with a
-commuting open-immersion square `CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f`. -/
-theorem chartLocally.exists_complete_openImmersion_chart
-    {Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-      {S : Pair A} {T : Pair B}, Pair.Hom S T → Prop}
-    (hQ : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-      {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
-      [IsTopologicalRing B] [CompleteSpace B] [T2Space B] [IsHuberRing B]
-      {S : Pair A} {T : Pair B} (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-      (hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-        (presentationLimitPresheaf P S.plus))
-      (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (hsheafB : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-        (presentationLimitPresheaf P' T.plus))
-      (φ : Pair.Hom S T) (_ : Q φ),
-      Q (ofCompletionMap P hP hsheafA P' hP' hsheafB φ))
-    {X Y : PreAdicSpace.{u}} (hY : isSheafy Y) {f : X ⟶ Y} (hf : chartLocally Q f) (x : X) :
-    ∃ (CY : CompleteAffinoidOpen Y) (CX : CompleteAffinoidOpen X)
-      (φ : Pair.Hom CY.pair CX.pair) (_ : Q φ) (b₀ : CX.space),
-      CX.hom.base b₀ = x ∧ CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f := by
-  obtain ⟨U, hxU, V, -, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP',
-    φ, hφ, hsheafB, eU, eV, hfac⟩ := hf.exists_complete_chart hQ hY x
-  have hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-      (presentationLimitPresheaf P S.plus) :=
-    ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ hY)
-  exact ⟨ofRestrictIso S P hP hsheafA eV, ofRestrictIso T P' hP' hsheafB eU, φ, hφ,
-    eU.hom.base ⟨x, hxU⟩, ofRestrictIso_hom_base T P' hP' hsheafB eU hxU,
-    ofRestrictIso_pairComap_comp_hom S P hP hsheafA eV T P' hP' hsheafB eU φ hfac⟩
-
-end CompleteCharts
-
-end TauCeti.PreAdicSpace
+end TauCeti.PreAdicSpace.CompleteAffinoidOpen
