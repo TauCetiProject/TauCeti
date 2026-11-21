@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
-public import TauCeti.Analysis.Pseudodifferential.Lp
+public import TauCeti.Analysis.Pseudodifferential.LpTempered
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.FourierMultiplier
 import TauCeti.Analysis.Pseudodifferential.Symbol.Dyadic
-import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -50,9 +49,10 @@ of `j` are handled as follows.
   Littlewood–Paley pieces (`TauCeti.Symbol.IsUniform.quantizeTempered_fourierMultiplierCLM`). A
   piece at frequency `2^i` has an integrable kernel with row and column integrals bounded
   independently of `i`, by the integrated dyadic estimates
-  `TauCeti.Symbol.IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`; and on the
-  tempered distribution of an `Lᵖ` function the quantization of such a symbol is the integral
-  operator with that kernel (`TauCeti.Symbol.exists_quantizeTempered_eq_and_norm_le`).
+  `TauCeti.Symbol.IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`; so on the
+  tempered distribution of an `Lᵖ` function the quantization of such a piece is an `Lᵖ` function,
+  bounded by the row and column integrals of its kernel
+  (`TauCeti.Symbol.exists_quantizeTempered_eq_and_norm_le`).
   So `‖Op(a) Δₖ u‖_p ≤ C ‖Δₖ u‖_p`, and `j = k` follows.
 * **High output frequencies, `j > k`.** A derivative falls either on the input or on the position
   variable of the symbol, `∂_v Op(a) = Op(a) ∂_v + Op(∂_{x, v} a)`
@@ -66,11 +66,6 @@ of `j` are handled as follows.
 
 ## Main declarations
 
-* `TauCeti.Symbol.IsUniform.transposeUniformCLM_ae_eq_integral`: for a uniform symbol of order
-  `m < -n`, the transpose of `Op(b)` is the integral operator with the transposed kernel.
-* `TauCeti.Symbol.exists_quantizeTempered_eq_and_norm_le`: for such a symbol, `Op(b)` maps the
-  tempered distribution of an `Lᵖ` function to an `Lᵖ` function, with the scale-invariant bound of
-  `TauCeti.Symbol.norm_quantizeLp_le`.
 * `TauCeti.Symbol.IsUniform.exists_toDistr_eq_quantizeTempered_and_norm_le`: the bound
   `‖Op(a) u‖_{B^{s-m}_{p,q}} ≤ C ‖u‖_{B^s_{p,q}}`.
 * `TemperedDistribution.MemBesov.quantizeTempered`: `Op(a)` maps `B^s_{p,q}` into
@@ -97,231 +92,6 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-! ### Quantizations with integrable kernels on `Lᵖ` functions -/
-
-section Kernel
-
-variable (F) in
-/-- A scalar coefficient `T : ℂ →L[ℂ] ℂ`, acting on `F` as multiplication by `T 1`. -/
-private def scalarCLM : (ℂ →L[ℂ] ℂ) →L[ℝ] (F →L[ℂ] F) :=
-  ((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).smulRight
-    (ContinuousLinearMap.id ℂ F)).restrictScalars ℝ
-
-private theorem scalarCLM_apply_apply (T : ℂ →L[ℂ] ℂ) (v : F) : scalarCLM F T v = T 1 • v :=
-  (rfl)
-
-private theorem norm_scalarCLM_apply [Nontrivial F] (T : ℂ →L[ℂ] ℂ) : ‖scalarCLM F T‖ = ‖T‖ := by
-  have hT : T = ContinuousLinearMap.toSpanSingleton ℂ (T 1) := by ext; simp
-  have h : scalarCLM F T = T 1 • ContinuousLinearMap.id ℂ F := by
-    ext v
-    simp [scalarCLM_apply_apply]
-  rw [h, norm_smul, ContinuousLinearMap.norm_id, mul_one]
-  conv_rhs => rw [hT]
-  rw [ContinuousLinearMap.norm_toSpanSingleton]
-
-private theorem scalarCLM_circle_smul (c : Circle) (T : ℂ →L[ℂ] ℂ) :
-    scalarCLM F (c • T) = c • scalarCLM F T := by
-  ext v
-  simp only [scalarCLM_apply_apply, FunLike.coe_smul, Pi.smul_apply, Circle.smul_def, smul_smul,
-    smul_eq_mul]
-
-variable [CompleteSpace F] {b : Symbol n ℂ ℂ m}
-
-/-- The kernel of the image of `b` under `scalarCLM` is the image of the kernel of `b`. -/
-private theorem quantizationKernel_map_scalarCLM (hm : m < -n) (x y : CoordinateSpace n) :
-    quantizationKernel (b.map (scalarCLM F)).coefficient x y =
-      scalarCLM F (quantizationKernel b.coefficient x y) := by
-  simp only [quantizationKernel_def, coefficient_map]
-  rw [← ContinuousLinearMap.integral_comp_comm]
-  · simp only [scalarCLM_circle_smul]
-  · exact integrable_quantizationKernel_integrand (b.integrable_coefficient hm x) y
-
-/-- The product `φ(x) K_b(x, y) 1` of a Schwartz function and the kernel of a uniform symbol of
-order `m < -n` is integrable on `ℝⁿ × ℝⁿ`. -/
-private theorem integrable_mul_quantizationKernel (hb : b.IsUniform) (hm : m < -n)
-    (φ : 𝓢(CoordinateSpace n, ℂ)) :
-    Integrable (fun z : CoordinateSpace n × CoordinateSpace n ↦
-      φ z.1 * quantizationKernel b.coefficient z.1 z.2 1) (volume.prod volume) := by
-  obtain ⟨B, hrow, -⟩ := hb.exists_lintegral_enorm_quantizationKernel_le hm
-  have hc : Continuous fun z : CoordinateSpace n × CoordinateSpace n ↦
-      φ z.1 * quantizationKernel b.coefficient z.1 z.2 1 :=
-    (φ.continuous.comp continuous_fst).mul
-      ((b.continuous_quantizationKernel hm).clm_apply continuous_const)
-  refine (integrable_prod_iff hc.aestronglyMeasurable).2 ⟨ae_of_all _ fun x ↦ ?_, ?_⟩
-  · exact (((hb.integrable_quantizationKernel hm x).apply_continuousLinearMap 1).const_mul (φ x))
-  refine (φ.integrable.norm.mul_const B).mono' hc.norm.aestronglyMeasurable.integral_prod_right'
-    (ae_of_all _ fun x ↦ ?_)
-  rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
-  simp_rw [norm_mul]
-  rw [integral_const_mul]
-  gcongr
-  have hK := hb.integrable_quantizationKernel hm x
-  calc ∫ y, ‖quantizationKernel b.coefficient x y 1‖
-      ≤ ∫ y, ‖quantizationKernel b.coefficient x y‖ :=
-        integral_mono (hK.apply_continuousLinearMap 1).norm hK.norm fun y ↦ by
-          simpa using (quantizationKernel b.coefficient x y).le_opNorm 1
-    _ = (∫⁻ y, ‖quantizationKernel b.coefficient x y‖ₑ).toReal :=
-        integral_norm_eq_lintegral_eNorm hK.aestronglyMeasurable
-    _ ≤ B := ENNReal.toReal_le_of_le_ofReal B.coe_nonneg (by simpa using hrow x)
-
-/-- **The kernel of the transpose.** For a uniform symbol `b` of order `m < -n`, the transpose
-`Op(b)ᵗ` of its quantization is the integral operator with the transposed kernel:
-`Op(b)ᵗ φ (y) = ∫ φ(x) K_b(x, y) dx` for almost every `y`. -/
-theorem IsUniform.transposeUniformCLM_ae_eq_integral (hb : b.IsUniform) (hm : m < -n)
-    (φ : 𝓢(CoordinateSpace n, ℂ)) :
-    ⇑(transposeUniformCLM b hb φ) =ᵐ[volume]
-      fun y ↦ ∫ x, φ x * quantizationKernel b.coefficient x y 1 := by
-  have hint := integrable_mul_quantizationKernel hb hm φ
-  set g : CoordinateSpace n → ℂ := fun y ↦ ∫ x, φ x * quantizationKernel b.coefficient x y 1
-  have hg : LocallyIntegrable g volume := hint.integral_prod_right.locallyIntegrable
-  set u : Lp ℂ 1 (volume : Measure (CoordinateSpace n)) := (transposeUniformCLM b hb φ).toLp 1
-  have hu : (u : CoordinateSpace n → ℂ) =ᵐ[volume] transposeUniformCLM b hb φ :=
-    (transposeUniformCLM b hb φ).coeFn_toLp 1
-  refine hu.symm.trans (Lp.ae_eq_of_toTemperedDistribution_apply_eq u hg fun ψ ↦ ?_)
-  have h₁ : (u : 𝓢'(CoordinateSpace n, ℂ)) ψ = ∫ y, transposeUniformCLM b hb φ y * ψ y := by
-    rw [Lp.toTemperedDistribution_apply]
-    refine integral_congr_ae ?_
-    filter_upwards [hu] with y hy
-    rw [hy, smul_eq_mul, mul_comm]
-  have h₂ (x : CoordinateSpace n) : φ x * quantizeUniformCLM b hb ψ x =
-      ∫ y, φ x * quantizationKernel b.coefficient x y 1 * ψ y := by
-    rw [quantizeUniformCLM_apply,
-      quantizeSchwartzValue_eq_integral_quantizationKernel (b.integrable_coefficient hm x),
-      ← integral_const_mul]
-    refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
-    have := (quantizationKernel b.coefficient x y).map_smul (ψ y) 1
-    rw [smul_eq_mul, smul_eq_mul, mul_one] at this
-    dsimp only
-    rw [this, mul_assoc, mul_comm (ψ y)]
-  have h₃ : Integrable (fun z : CoordinateSpace n × CoordinateSpace n ↦
-      φ z.1 * quantizationKernel b.coefficient z.1 z.2 1 * ψ z.2) (volume.prod volume) :=
-    hint.mul_bdd (ψ.continuous.comp continuous_snd).aestronglyMeasurable
-      (ae_of_all _ fun z ↦ ψ.norm_le_seminorm ℂ z.2)
-  rw [h₁, ← integral_mul_quantizeUniformCLM b hb ψ φ]
-  simp_rw [h₂]
-  rw [integral_integral_swap h₃]
-  refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
-  simp only [g, smul_eq_mul]
-  rw [integral_mul_const, mul_comm]
-
-variable {p : ℝ≥0∞} [hp : Fact (1 ≤ p)]
-
-/-- The integrand `(φ(x) K_b(x, y) 1) • f(y)` pairing a Schwartz function, the kernel of a uniform
-symbol of order `m < -n` and an `Lᵖ` function is integrable on `ℝⁿ × ℝⁿ`. -/
-private theorem integrable_smul_quantizationKernel (hb : b.IsUniform) (hm : m < -n)
-    (φ : 𝓢(CoordinateSpace n, ℂ)) (f : Lp F p (volume : Measure (CoordinateSpace n))) :
-    Integrable (fun z : CoordinateSpace n × CoordinateSpace n ↦
-      (φ z.1 * quantizationKernel b.coefficient z.1 z.2 1) • f z.2) (volume.prod volume) := by
-  have hKF (x y : CoordinateSpace n) (v : F) :
-      quantizationKernel (b.map (scalarCLM F)).coefficient x y v =
-        quantizationKernel b.coefficient x y 1 • v := by
-    rw [quantizationKernel_map_scalarCLM hm, scalarCLM_apply_apply]
-  set KF := quantizationKernel (b.map (scalarCLM F)).coefficient
-  obtain ⟨B, hrow, hcol⟩ := (hb.map (scalarCLM F)).exists_lintegral_enorm_quantizationKernel_le hm
-  have hKFc : Continuous (uncurry KF) := (b.map (scalarCLM F)).continuous_quantizationKernel hm
-  -- The real kernel `‖K_F(x, y)‖` and the function `‖f‖` give an `Lᵖ` majorant `N`.
-  set Kr : CoordinateSpace n → CoordinateSpace n → ℝ →L[ℝ] ℝ :=
-    fun x y ↦ ‖KF x y‖ • ContinuousLinearMap.id ℝ ℝ
-  have hKr (x y : CoordinateSpace n) : ‖Kr x y‖ₑ ≤ ‖KF x y‖ₑ := by
-    refine eNorm_le_iff_norm_le.2 ?_
-    simp only [Kr, norm_smul, norm_norm]
-    exact mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le
-  have hKrm : AEStronglyMeasurable (uncurry Kr) (volume.prod volume) :=
-    (hKFc.norm.smul continuous_const).aestronglyMeasurable
-  have hrow' : ∀ᵐ x ∂volume, ∫⁻ y, ‖Kr x y‖ₑ ≤ B :=
-    ae_of_all _ fun x ↦ (lintegral_mono (hKr x)).trans (hrow x)
-  have hcol' : ∀ᵐ y ∂volume, ∫⁻ x, ‖Kr x y‖ₑ ≤ B :=
-    ae_of_all _ fun y ↦ (lintegral_mono fun x ↦ hKr x y).trans (hcol y)
-  have hfn : MemLp (fun y ↦ ‖f y‖) p volume := (Lp.memLp f).norm
-  have hN := memLp_integral_apply hKrm hfn hp.out hrow' hcol'
-  have hNi := ae_integrable_apply_of_memLp hKrm hfn hp.out hrow' hcol'
-  simp only [Kr, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
-    at hN hNi
-  -- `‖φ‖` is in the dual exponent, so `‖φ‖ N` is integrable by Hölder's inequality.
-  have : (1 - p⁻¹)⁻¹.HolderConjugate p := (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
-  have hφN := (φ.memLp (1 - p⁻¹)⁻¹ (μ := volume)).norm.integrable_mul hN
-  have hm' : AEStronglyMeasurable (fun z : CoordinateSpace n × CoordinateSpace n ↦
-      (φ z.1 * quantizationKernel b.coefficient z.1 z.2 1) • f z.2) (volume.prod volume) :=
-    ((φ.continuous.comp continuous_fst).mul ((b.continuous_quantizationKernel hm).clm_apply
-      continuous_const)).aestronglyMeasurable.smul
-      (Lp.aestronglyMeasurable f).comp_snd
-  have hpt (x y : CoordinateSpace n) :
-      ‖(φ x * quantizationKernel b.coefficient x y 1) • f y‖ ≤ ‖φ x‖ * (‖KF x y‖ * ‖f y‖) := by
-    rw [mul_smul, norm_smul, ← hKF]
-    gcongr
-    exact (KF x y).le_opNorm _
-  refine (integrable_prod_iff hm').2 ⟨?_, ?_⟩
-  · filter_upwards [hNi, hm'.prodMk_left] with x hx hxm
-    exact (hx.const_mul ‖φ x‖).mono' hxm (ae_of_all _ fun y ↦ hpt x y)
-  · refine hφN.mono' hm'.norm.integral_prod_right' ?_
-    filter_upwards [hNi] with x hx
-    rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _), Pi.mul_apply,
-      ← integral_const_mul]
-    exact integral_mono_of_nonneg (ae_of_all _ fun _ ↦ norm_nonneg _) (hx.const_mul _)
-      (ae_of_all _ fun y ↦ hpt x y)
-
-/-- **Quantization of `Lᵖ` functions.** Let `b` be a uniform symbol of order `m < -n`. For
-`1 ≤ p ≤ ∞` and `f ∈ Lᵖ(ℝⁿ; F)`, the quantization of the tempered distribution of `f` is the
-`Lᵖ` function `x ↦ ∫ K_b(x, y) f(y) dy`. If `∫ ‖b(x, ξ)‖ dξ ≤ A` and
-`∫ ‖∂_{ξ_j}^{n+1} b(x, ξ)‖ dξ ≤ A Rⁿ⁺¹` at every position and in every coordinate direction, its
-norm is at most `C A Rⁿ ‖f‖_p`, with `C` depending only on `n`. -/
-theorem exists_quantizeTempered_eq_and_norm_le :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {m : ℝ} {b : Symbol n ℂ ℂ m} (hb : b.IsUniform), m < -n →
-      ∀ {A R : ℝ}, 0 < R → (∀ x, ∫ ξ, ‖b.coefficient (x, ξ)‖ ≤ A) →
-      (∀ x j, ∫ ξ, ‖mixedDeriv [] (List.replicate (n + 1) j) b.coefficient x ξ‖ ≤
-        A * R ^ (n + 1)) →
-      ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p (volume : Measure (CoordinateSpace n))),
-      ∃ v : Lp F p (volume : Measure (CoordinateSpace n)),
-        quantizeTempered F b hb (f : 𝓢'(CoordinateSpace n, F)) = v ∧ ‖v‖ ≤ C * A * R ^ n * ‖f‖ := by
-  refine ⟨2 ^ (n + 1) * (1 + √n ^ (n + 1)) * ((2 * Real.pi) ^ n)⁻¹ *
-    ∫ w : CoordinateSpace n, ((1 + ‖w‖) ^ (n + 1))⁻¹, by positivity,
-    fun {m b} hb hm {A R} hR h₀ h₁ {p} _ f ↦ ?_⟩
-  have hA : 0 ≤ A := (integral_nonneg fun _ ↦ norm_nonneg _).trans (h₀ 0)
-  rcases subsingleton_or_nontrivial F with hF | hF
-  · refine ⟨0, ?_, by rw [norm_zero]; positivity⟩
-    have hf : f = 0 := Lp.ext (by
-      filter_upwards [Lp.coeFn_zero F p (volume : Measure (CoordinateSpace n))] with x _
-      exact Subsingleton.elim _ _)
-    rw [hf, Lp.toTemperedDistribution_zero, map_zero]
-  set T := (b.map (scalarCLM F)).quantizeLp p hm (hb.map _)
-  refine ⟨T f, ?_, ?_⟩
-  · ext φ
-    rw [quantizeTempered_apply_apply, Lp.toTemperedDistribution_apply,
-      Lp.toTemperedDistribution_apply]
-    have hKF (x y : CoordinateSpace n) (v : F) :
-        quantizationKernel (b.map (scalarCLM F)).coefficient x y v =
-          quantizationKernel b.coefficient x y 1 • v := by
-      rw [quantizationKernel_map_scalarCLM hm, scalarCLM_apply_apply]
-    calc ∫ y, transposeUniformCLM b hb φ y • f y
-        = ∫ y, (∫ x, φ x * quantizationKernel b.coefficient x y 1) • f y := by
-          refine integral_congr_ae ?_
-          filter_upwards [hb.transposeUniformCLM_ae_eq_integral hm φ] with y hy
-          rw [hy]
-      _ = ∫ y, ∫ x, (φ x * quantizationKernel b.coefficient x y 1) • f y := by
-          simp_rw [integral_smul_const]
-      _ = ∫ x, ∫ y, (φ x * quantizationKernel b.coefficient x y 1) • f y :=
-          (integral_integral_swap (integrable_smul_quantizationKernel hb hm φ f)).symm
-      _ = ∫ x, φ x • T f x := by
-          refine integral_congr_ae ?_
-          filter_upwards [coeFn_quantizeLp (a := b.map (scalarCLM F)) (hm := hm)
-            (ha := hb.map _) f] with x hx
-          rw [hx, ← integral_smul]
-          simp_rw [hKF, smul_smul]
-  · have h₀' (x) : ∫ ξ, ‖(b.map (scalarCLM F)).coefficient (x, ξ)‖ ≤ A := by
-      simpa only [coefficient_map, norm_scalarCLM_apply] using h₀ x
-    have h₁' (x j) : ∫ ξ, ‖mixedDeriv [] (List.replicate (n + 1) j)
-        (b.map (scalarCLM F)).coefficient x ξ‖ ≤ A * R ^ (n + 1) := by
-      rw [show (b.map (scalarCLM F)).coefficient = scalarCLM F ∘ b.coefficient from
-        funext (coefficient_map _ b)]
-      simp_rw [(scalarCLM F).mixedDeriv_comp_left b.contDiff_coefficient, norm_scalarCLM_apply]
-      exact h₁ x j
-    refine (T.le_opNorm f).trans ?_
-    gcongr
-    exact (norm_quantizeLp_le hR h₀' h₁').trans_eq (by ring)
-
-end Kernel
-
 
 /-! ### Dyadic pieces -/
 
@@ -442,85 +212,26 @@ private theorem isVanishingOn_offSpectrum (k : ℕ) (u : 𝓢'(CoordinateSpace n
     rw [Set.compl_sdiff] at h
     simpa [offSpectrum, show 2 ^ (k + 1) * φ.rIn / 2 = 2 ^ k * φ.rIn by ring] using h
 
-/-- The enlarged Littlewood–Paley cutoff of width `L₀ + 3` is `1` on the annulus
-`2^k φ.rIn / 4 < ‖ζ‖ < 2^{k+1} φ.rOut` (on the ball `‖ζ‖ < 2 φ.rOut` for `k = 0`), as soon as
-`φ.rOut < 2^{L₀} φ.rIn`. -/
-private theorem enlargedLittlewoodPaley_eq_one {L₀ : ℕ} (hL₀ : φ.rOut < 2 ^ L₀ * φ.rIn) {k : ℕ}
-    {ζ : CoordinateSpace n} (hup : ‖ζ‖ < 2 ^ (k + 1) * φ.rOut)
-    (hlow : k ≠ 0 → 2 ^ k * φ.rIn / 4 < ‖ζ‖) : φ.enlargedLittlewoodPaley (L₀ + 3) k ζ = 1 := by
-  have hrIn := φ.rIn_pos
-  have hφ1 : φ (((2 : ℝ) ^ (k + L₀ + 2))⁻¹ • ζ) = 1 := by
-    refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
-    rw [norm_smul, norm_inv, norm_pow, Real.norm_two, inv_mul_le_iff₀ (by positivity)]
-    calc ‖ζ‖ ≤ 2 ^ (k + 1) * φ.rOut := hup.le
-      _ ≤ 2 ^ (k + 1) * (2 ^ L₀ * φ.rIn) := by gcongr
-      _ ≤ 2 ^ (k + L₀ + 2) * φ.rIn := by
-          have h := mul_pos (mul_pos (pow_pos (two_pos : (0 : ℝ) < 2) k)
-            (pow_pos (two_pos : (0 : ℝ) < 2) L₀)) hrIn
-          rw [pow_add, pow_add, pow_add]
-          nlinarith
-  rw [ContDiffBump.enlargedLittlewoodPaley_apply, Finset.sum_Ico_eq_sub _ (by omega),
-    show k + (L₀ + 3) = (k + L₀ + 2) + 1 by omega, φ.sum_inhomogeneousLittlewoodPaley_range, hφ1]
-  rcases le_or_gt k (L₀ + 2) with hk | hk
-  · simp [show k + 1 - (L₀ + 3) = 0 by omega]
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + L₀ + 3 := ⟨k - (L₀ + 3), by omega⟩
-  rw [show j + L₀ + 3 + 1 - (L₀ + 3) = j + 1 by omega, φ.sum_inhomogeneousLittlewoodPaley_range,
-    φ.zero_of_le_dist, sub_zero]
-  rw [dist_zero_right, norm_smul, norm_inv, norm_pow, Real.norm_two,
-    le_inv_mul_iff₀ (by positivity)]
-  calc 2 ^ j * φ.rOut ≤ 2 ^ j * (2 ^ L₀ * φ.rIn) := by gcongr
-    _ ≤ 2 ^ (j + L₀ + 3) * φ.rIn / 4 := by
-        have h := mul_pos (mul_pos (pow_pos (two_pos : (0 : ℝ) < 2) j)
-          (pow_pos (two_pos : (0 : ℝ) < 2) L₀)) hrIn
-        rw [pow_add, pow_add]
-        nlinarith
-    _ ≤ ‖ζ‖ := (hlow (by omega)).le
-
 /-- **The enlarged cutoff is `1` near the spectrum of the `k`-th piece**, for a width depending
 only on `φ`. -/
 private theorem exists_tsupport_enlargedLittlewoodPaley_sub_one_subset :
     ∃ L : ℕ, ∀ k, tsupport (fun ζ ↦ ((φ.enlargedLittlewoodPaley L k ζ : ℝ) : ℂ) - 1) ⊆
       offSpectrum φ k := by
-  obtain ⟨L₀, hL₀⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
-  have hrIn := φ.rIn_pos
-  have hrOut := φ.rOut_pos
-  refine ⟨L₀ + 3, fun k ↦ ?_⟩
-  set U : Set (CoordinateSpace n) := ball 0 (2 ^ (k + 1) * φ.rOut) ∩
-    (if k = 0 then Set.univ else (closedBall 0 (2 ^ k * φ.rIn / 4))ᶜ)
-  have hU : IsOpen U := isOpen_ball.inter (by split_ifs <;> simp [isOpen_univ, isClosed_closedBall])
-  -- The window cutoff is `1` on `U`.
-  have h1 (ζ : CoordinateSpace n) (hζ : ζ ∈ U) : φ.enlargedLittlewoodPaley (L₀ + 3) k ζ = 1 :=
-    enlargedLittlewoodPaley_eq_one φ hL₀ (mem_ball_zero_iff.1 hζ.1) fun hk ↦ by
-      have h := hζ.2
-      rw [ite_eq_right hk] at h
-      simpa using h
-  -- `U` contains the spectrum.
-  have h2 : Uᶜ ⊆ offSpectrum φ k := by
-    intro ζ hζ
-    simp only [U, Set.mem_compl_iff, Set.mem_inter_iff, not_and_or, mem_ball_zero_iff,
-      not_lt] at hζ
-    rcases eq_or_ne k 0 with rfl | hk
-    · simp only [offSpectrum, ite_true, Set.mem_compl_iff, mem_closedBall_zero_iff, not_le]
-      rcases hζ with hζ | hζ
-      · simp only [zero_add, pow_one] at hζ
-        linarith
-      · simp at hζ
-    · simp only [offSpectrum, ite_eq_right hk, Set.mem_union, mem_ball_zero_iff, Set.mem_compl_iff,
-        mem_closedBall_zero_iff, not_le]
-      rw [ite_eq_right hk] at hζ
-      rcases hζ with hζ | hζ
-      · right
-        calc 2 ^ k * φ.rOut < 2 ^ (k + 1) * φ.rOut := by
-              rw [pow_succ]
-              nlinarith [pow_pos (two_pos : (0 : ℝ) < 2) k]
-          _ ≤ ‖ζ‖ := hζ
-      · left
-        have h := mem_closedBall_zero_iff.1 (not_not.1 hζ)
-        have : 0 < 2 ^ k * φ.rIn := by positivity
-        linarith
-  refine (closure_minimal (fun ζ hζ ↦ ?_) hU.isClosed_compl).trans h2
-  intro hζU
-  exact hζ (by simp [h1 ζ hζU])
+  obtain ⟨L, hL⟩ := φ.exists_tsupport_enlargedLittlewoodPaley_sub_one_subset
+  refine ⟨L, fun k ↦ ?_⟩
+  have h : (fun ζ ↦ ((φ.enlargedLittlewoodPaley L k ζ : ℝ) : ℂ) - 1) =
+      ((↑) : ℝ → ℂ) ∘ fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ - 1 := by
+    ext ζ
+    simp
+  rw [h]
+  refine (tsupport_comp_subset ofReal_zero _).trans ((hL k).trans ?_)
+  rintro ζ (hζ | ⟨hk, hζ⟩)
+  · rcases eq_or_ne k 0 with rfl | hk
+    · simpa [offSpectrum] using hζ
+    · simp only [offSpectrum, ite_eq_right hk]
+      exact Or.inr hζ
+  · simp only [offSpectrum, ite_eq_right hk]
+    exact Or.inl (mem_ball_zero_iff.2 hζ)
 
 /-- **Quantization of a block.** For a uniform symbol `a` of order `0` there is `C`, depending
 only on `a` and `φ`, with the following property. For `1 ≤ p ≤ ∞`, if the Fourier transform of
@@ -566,6 +277,29 @@ private theorem IsUniform.exists_quantizeTempered_eq_and_norm_le_of_isVanishingO
           omega
       _ = 2 * L * C * ‖f‖ := by push_cast; ring
 
+/-- **Blocks of the quantization of a block.** For a uniform symbol `a` of order `0` there is `C`
+such that for `1 ≤ p ≤ ∞`, if the Fourier transform of `f ∈ Lᵖ` vanishes off the spectrum of the
+`k`-th Littlewood–Paley piece, then every block `Δⱼ Op(a) f` is an `Lᵖ` function of norm at most
+`C ‖f‖_p`. -/
+private theorem
+    IsUniform.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_norm_le_of_isVanishingOn
+    {a : Symbol n ℂ ℂ 0} (ha : a.IsUniform) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (j k : ℕ) {p : ℝ≥0∞} [Fact (1 ≤ p)]
+      (f : Lp F p (volume : Measure (CoordinateSpace n))),
+      IsVanishingOn (𝓕 (f : 𝓢'(CoordinateSpace n, F)) : 𝓢'(CoordinateSpace n, F))
+        (offSpectrum φ k) →
+      ∃ v : Lp F p (volume : Measure (CoordinateSpace n)),
+        littlewoodPaleyBlock F φ j (quantizeTempered F a ha f) = v ∧ ‖v‖ ≤ C * ‖f‖ := by
+  obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  obtain ⟨C₀, hC₀, hD⟩ := ha.exists_quantizeTempered_eq_and_norm_le_of_isVanishingOn (F := F) φ
+  refine ⟨max CΔ 0 * C₀, by positivity, fun j k {p} _ f hf ↦ ?_⟩
+  obtain ⟨v₀, hv₀, hv₀n⟩ := hD k f hf
+  obtain ⟨v, hv, hvn⟩ := hΔ j v₀
+  refine ⟨v, by rw [hv₀, hv], ?_⟩
+  calc ‖v‖ ≤ CΔ * ‖v₀‖ := hvn
+    _ ≤ max CΔ 0 * (C₀ * ‖f‖) := by gcongr; exact le_max_left _ _
+    _ = _ := by rw [mul_assoc]
+
 private theorem compl_closedBall_subset_offSpectrum (k : ℕ) :
     (closedBall (0 : CoordinateSpace n) (2 ^ k * φ.rOut))ᶜ ⊆ offSpectrum φ k := by
   rcases eq_or_ne k 0 with rfl | hk
@@ -596,7 +330,7 @@ private theorem IsUniform.exists_iteratedLineDerivOp_quantizeTempered_eq_and_nor
     intro a ha w
     set v := w (Fin.last M)
     obtain ⟨C₁, hC₁, h₁⟩ := ih ha (Fin.init w)
-    obtain ⟨C₂, hC₂, h₂⟩ := ih (ha.dirSpatialDeriv v) (Fin.init w)
+    obtain ⟨C₂, hC₂, h₂⟩ := ih (ha.lineSpatialDeriv v) (Fin.init w)
     obtain ⟨CB, hCB, hB⟩ :=
       exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := CoordinateSpace n) (F := F)
     have hrOut := φ.rOut_pos
@@ -748,15 +482,11 @@ private theorem IsUniform.exists_lowFrequencyBound (N : ℕ) :
   induction N with
   | zero =>
     intro a ha
-    obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-    obtain ⟨C₀, hC₀, hD⟩ := ha.exists_quantizeTempered_eq_and_norm_le_of_isVanishingOn (F := F) φ
-    refine ⟨max CΔ 0 * C₀, by positivity, fun {p} _ j k f hf ↦ ?_⟩
-    obtain ⟨v₀, hv₀, hv₀n⟩ := hD (k + 1) f hf
-    obtain ⟨v, hv, hvn⟩ := hΔ j v₀
-    refine ⟨v, by rw [hv₀, hv], ?_⟩
-    calc ‖v‖ ≤ CΔ * ‖v₀‖ := hvn
-      _ ≤ max CΔ 0 * (C₀ * ‖f‖) := by gcongr; exact le_max_left _ _
-      _ = _ := by rw [pow_zero, mul_one, mul_assoc]
+    obtain ⟨C, hC, h⟩ :=
+      ha.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_norm_le_of_isVanishingOn (F := F) φ
+    refine ⟨C, hC, fun {p} _ j k f hf ↦ ?_⟩
+    obtain ⟨v, hv, hvn⟩ := h j (k + 1) f hf
+    exact ⟨v, hv, by rwa [pow_zero, mul_one]⟩
   | succ N ih =>
     intro a ha
     obtain ⟨C, hC, h⟩ := ih ha
@@ -779,31 +509,25 @@ private theorem IsUniform.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_no
   obtain ⟨C₁, hC₁, h₁⟩ :=
     ha.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_norm_le_of_lt (F := F) φ N
   obtain ⟨C₂, hC₂, h₂⟩ := ha.exists_lowFrequencyBound (F := F) φ N
-  obtain ⟨C₀, hC₀, hD⟩ := ha.exists_quantizeTempered_eq_and_norm_le_of_isVanishingOn (F := F) φ
-  obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  refine ⟨C₁ + C₂ * 2 ^ N + max CΔ 0 * C₀, by positivity, fun {p} _ j k u f hf ↦ ?_⟩
+  obtain ⟨C₀, hC₀, h₀⟩ :=
+    ha.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_norm_le_of_isVanishingOn (F := F) φ
+  refine ⟨C₁ + C₂ * 2 ^ N + C₀, by positivity, fun {p} _ j k u f hf ↦ ?_⟩
   have hfv : IsVanishingOn (𝓕 (f : 𝓢'(CoordinateSpace n, F)) : 𝓢'(CoordinateSpace n, F))
       (offSpectrum φ k) := hf ▸ isVanishingOn_offSpectrum φ k u
-  have hK (K : ℝ) (hKK : K ≤ C₁ + C₂ * 2 ^ N + max CΔ 0 * C₀) :
+  have hK (K : ℝ) (hKK : K ≤ C₁ + C₂ * 2 ^ N + C₀) :
       K * (2 : ℝ) ^ (-(N * |(j : ℝ) - k|)) * ‖f‖ ≤
-        (C₁ + C₂ * 2 ^ N + max CΔ 0 * C₀) * (2 : ℝ) ^ (-(N * |(j : ℝ) - k|)) * ‖f‖ := by
+        (C₁ + C₂ * 2 ^ N + C₀) * (2 : ℝ) ^ (-(N * |(j : ℝ) - k|)) * ‖f‖ := by
     gcongr
   have hC₂' : 0 ≤ C₂ * 2 ^ N := by positivity
-  have hC₀' : 0 ≤ max CΔ 0 * C₀ := by positivity
   rcases lt_trichotomy k j with hkj | rfl | hjk
   · -- High output frequency.
     obtain ⟨v, hv, hvn⟩ := h₁ hkj f hfv
     refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK C₁ (by linarith))⟩
     rw [Real.pow_div_pow_pow_eq_rpow_of_le two_pos hkj.le]
   · -- Equal frequencies: `Op(a)` is bounded on the block, and so is `Δⱼ`.
-    obtain ⟨v₀, hv₀, hv₀n⟩ := hD k f hfv
-    obtain ⟨v, hv, hvn⟩ := hΔ k v₀
-    refine ⟨v, by rw [hv₀, hv], ?_⟩
-    calc ‖v‖ ≤ max CΔ 0 * C₀ * (2 : ℝ) ^ (-(N * |(k : ℝ) - k|)) * ‖f‖ := by
-          rw [sub_self, abs_zero, mul_zero, neg_zero, Real.rpow_zero, mul_one, mul_assoc]
-          calc ‖v‖ ≤ CΔ * ‖v₀‖ := hvn
-            _ ≤ max CΔ 0 * (C₀ * ‖f‖) := by gcongr; exact le_max_left _ _
-      _ ≤ _ := hK _ (by linarith)
+    obtain ⟨v, hv, hvn⟩ := h₀ k k f hfv
+    refine ⟨v, hv, (hvn.trans_eq ?_).trans (hK C₀ (by linarith))⟩
+    rw [sub_self, abs_zero, mul_zero, neg_zero, Real.rpow_zero, mul_one]
   · -- Low output frequency: the block `f` has spectrum in the `k`-th dyadic annulus.
     obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
     obtain ⟨v, hv, hvn⟩ := h₂ j k f hfv

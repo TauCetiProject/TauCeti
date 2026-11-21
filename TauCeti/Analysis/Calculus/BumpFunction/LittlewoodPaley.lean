@@ -77,6 +77,9 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.enlargedLittlewoodPaley`: the enlarged cutoffs `Ψⱼ`, sums of the neighbouring
   pieces.
 * `ContDiffBump.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`: `Ψⱼ ψⱼ = ψⱼ`.
+* `ContDiffBump.enlargedLittlewoodPaley_eq_one` and
+  `ContDiffBump.exists_tsupport_enlargedLittlewoodPaley_sub_one_subset`: for a width depending only
+  on `φ`, `Ψⱼ` is `1` on a neighbourhood of the annulus carrying `ψⱼ`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the enlarged cutoffs.
 * `ContDiffBump.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley`: on the
@@ -606,6 +609,79 @@ theorem tsupport_enlargedLittlewoodPaley_subset_of_le {L j : ℕ} (hLj : L ≤ j
   closure_minimal (fun _ hξ ↦ not_lt.1 fun h ↦
     hξ (φ.enlargedLittlewoodPaley_eq_zero_of_norm_le hLj h.le))
     (isClosed_le continuous_const continuous_norm)
+
+/-- The enlarged cutoff `Ψₖ` of width `L₀ + 3` is `1` on the annulus
+`2^k φ.rIn / 4 < ‖ξ‖ < 2^{k+1} φ.rOut` (on the ball `‖ξ‖ < 2 φ.rOut` for `k = 0`), as soon as
+`φ.rOut < 2^{L₀} φ.rIn`. -/
+theorem enlargedLittlewoodPaley_eq_one {L₀ : ℕ} (hL₀ : φ.rOut < 2 ^ L₀ * φ.rIn) {k : ℕ}
+    {ξ : E} (hup : ‖ξ‖ < 2 ^ (k + 1) * φ.rOut)
+    (hlow : k ≠ 0 → 2 ^ k * φ.rIn / 4 < ‖ξ‖) : φ.enlargedLittlewoodPaley (L₀ + 3) k ξ = 1 := by
+  have hrIn := φ.rIn_pos
+  have hφ1 : φ (((2 : ℝ) ^ (k + L₀ + 2))⁻¹ • ξ) = 1 := by
+    refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
+    rw [norm_smul, norm_inv, norm_pow, Real.norm_two, inv_mul_le_iff₀ (by positivity)]
+    calc ‖ξ‖ ≤ 2 ^ (k + 1) * φ.rOut := hup.le
+      _ ≤ 2 ^ (k + 1) * (2 ^ L₀ * φ.rIn) := by gcongr
+      _ ≤ 2 ^ (k + L₀ + 2) * φ.rIn := by
+          have h := mul_pos (mul_pos (pow_pos (two_pos : (0 : ℝ) < 2) k)
+            (pow_pos (two_pos : (0 : ℝ) < 2) L₀)) hrIn
+          rw [pow_add, pow_add, pow_add]
+          nlinarith
+  rw [enlargedLittlewoodPaley_apply, Finset.sum_Ico_eq_sub _ (by omega),
+    show k + (L₀ + 3) = (k + L₀ + 2) + 1 by omega, φ.sum_inhomogeneousLittlewoodPaley_range, hφ1]
+  rcases le_or_gt k (L₀ + 2) with hk | hk
+  · simp [show k + 1 - (L₀ + 3) = 0 by omega]
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + L₀ + 3 := ⟨k - (L₀ + 3), by omega⟩
+  rw [show j + L₀ + 3 + 1 - (L₀ + 3) = j + 1 by omega, φ.sum_inhomogeneousLittlewoodPaley_range,
+    φ.zero_of_le_dist, sub_zero]
+  rw [dist_zero_right, norm_smul, norm_inv, norm_pow, Real.norm_two,
+    le_inv_mul_iff₀ (by positivity)]
+  calc 2 ^ j * φ.rOut ≤ 2 ^ j * (2 ^ L₀ * φ.rIn) := by gcongr
+    _ ≤ 2 ^ (j + L₀ + 3) * φ.rIn / 4 := by
+        have h := mul_pos (mul_pos (pow_pos (two_pos : (0 : ℝ) < 2) j)
+          (pow_pos (two_pos : (0 : ℝ) < 2) L₀)) hrIn
+        rw [pow_add, pow_add]
+        nlinarith
+    _ ≤ ‖ξ‖ := (hlow (by omega)).le
+
+/-- **The enlarged cutoff is `1` near the support of `ψₖ`**, for a width `L` depending only on
+`φ`: `Ψₖ - 1` is supported outside the closed ball of radius `2^k φ.rOut` and, for `k ≥ 1`, inside
+the open ball of radius `2^k φ.rIn / 2`. -/
+theorem exists_tsupport_enlargedLittlewoodPaley_sub_one_subset :
+    ∃ L : ℕ, ∀ k, tsupport (fun ξ ↦ φ.enlargedLittlewoodPaley L k ξ - 1) ⊆
+      (closedBall 0 (2 ^ k * φ.rOut))ᶜ ∪ {ξ | k ≠ 0 ∧ ‖ξ‖ < 2 ^ k * φ.rIn / 2} := by
+  obtain ⟨L₀, hL₀⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  have hrIn := φ.rIn_pos
+  have hrOut := φ.rOut_pos
+  refine ⟨L₀ + 3, fun k ↦ ?_⟩
+  set U : Set E := ball 0 (2 ^ (k + 1) * φ.rOut) ∩
+    (if k = 0 then univ else (closedBall 0 (2 ^ k * φ.rIn / 4))ᶜ)
+  have hU : IsOpen U := isOpen_ball.inter (by split_ifs <;> simp [isOpen_univ, isClosed_closedBall])
+  -- The enlarged cutoff is `1` on `U`.
+  have h1 (ξ : E) (hξ : ξ ∈ U) : φ.enlargedLittlewoodPaley (L₀ + 3) k ξ = 1 :=
+    φ.enlargedLittlewoodPaley_eq_one hL₀ (mem_ball_zero_iff.1 hξ.1) fun hk ↦ by
+      have h := hξ.2
+      rw [ite_eq_right hk] at h
+      simpa using h
+  -- `U` contains the support of `ψₖ`.
+  have h2 : Uᶜ ⊆ (closedBall 0 (2 ^ k * φ.rOut))ᶜ ∪ {ξ | k ≠ 0 ∧ ‖ξ‖ < 2 ^ k * φ.rIn / 2} := by
+    intro ξ hξ
+    simp only [U, mem_compl_iff, mem_inter_iff, not_and_or, mem_ball_zero_iff, not_lt] at hξ
+    rcases hξ with hξ | hξ
+    · left
+      rw [mem_compl_iff, mem_closedBall_zero_iff, not_le]
+      calc 2 ^ k * φ.rOut < 2 ^ (k + 1) * φ.rOut := by
+            rw [pow_succ]
+            nlinarith [pow_pos (two_pos : (0 : ℝ) < 2) k]
+        _ ≤ ‖ξ‖ := hξ
+    · rcases eq_or_ne k 0 with rfl | hk
+      · simp at hξ
+      · rw [ite_eq_right hk, mem_compl_iff, not_not, mem_closedBall_zero_iff] at hξ
+        have : 0 < 2 ^ k * φ.rIn := by positivity
+        exact Or.inr ⟨hk, by linarith⟩
+  refine (closure_minimal (fun ξ hξ ↦ ?_) hU.isClosed_compl).trans h2
+  intro hξU
+  exact hξ (by simp [h1 ξ hξU])
 
 /-- On the support of the enlarged cutoff `Ψⱼ`, the Japanese bracket is comparable to `2^j`:
 `a 4^j ≤ 1 + ‖ξ‖ ^ 2 ≤ b 4^j` with `a > 0` and `b` independent of `j`. -/
