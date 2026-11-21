@@ -296,7 +296,7 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
     (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
+    (hH : Periodic (H q) 1)
     (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     {Jq : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x) {C : Set M}
@@ -323,6 +323,8 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
       ∫ z in Ω, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z ≤ E := by
   set v : ℝ × ℝ → M := fun z ↦ u (positiveEndChart q (z + (R, 0)))
+  have hHd (t : ℝ) : MDifferentiable I 𝓘(ℝ) (H q t) :=
+    (hHq.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable (by norm_num)
   have hT (z : ℝ × ℝ) (hz : z ∈ Ω) : T₀ ≤ z.1 + R := by
     simpa using ((le_max_left _ _).trans_lt (hΩT z hz).1).le
   have hS (z : ℝ × ℝ) (hz : z ∈ Ω) : positiveEndChart q (z + (R, 0)) ∈ thricePuncturedSphereReal :=
@@ -361,10 +363,10 @@ private theorem contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positive
 
 /-- **The translated ends of Floer pairs of pants in a symplectic chart of a manifold converge
 off finitely many bubbling points.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on the end `q`,
-for a period-one Hamiltonian `H_q` which is differentiable on `M` and `C³` on `ℝ × M`. Let
-`J(z, x)` be structures on the tangent spaces of `M`, `z ∈ S = ℂ ∖ {0, 1}` read in real
-coordinates, which on the end `q` beyond `T₀` are `J(φ_q(±s, t), x) = J_q(t, x)`. Let `φ` be a
-smooth partial diffeomorphism from `M` onto an open subset of `V`, let `C ⊆ φ.source` be compact,
+for a period-one Hamiltonian `H_q` which is `C³` on `ℝ × M`. Let `J(z, x)` be structures on the
+tangent spaces of `M`, `z ∈ S = ℂ ∖ {0, 1}` read in real coordinates, which on the end `q` beyond
+`T₀` are `J(φ_q(±s, t), x) = J_q(t, x)`. Let `φ` be a smooth partial diffeomorphism from `M` onto
+an open subset of `V`, let `C ⊆ φ.source` be compact,
 let `φ` pull the symplectic form `ω₀` back to `ω` at the points of `C`, let every `J_q(t, x)` with
 `x ∈ C` be tamed by `ω`, and let `J'_q` be the family `J_q` read in the chart,
 `dφ_x ∘ J_q(t, x) = J'_q(t, φ x) ∘ dφ_x` for `x ∈ C`, and `C²` on an open set containing
@@ -381,7 +383,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
     (hω : ω.IsNondegenerate) {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
+    (hH : Periodic (H q) 1)
     (hHq : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     {Jq : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s t x, T₀ ≤ s → J (endChart q (q.endSign * s, t)) x = Jq t x)
@@ -451,8 +453,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
     simp only [Prod.fst_add, mem_Ioi]
     linarith [hR k, mem_Ioi.1 h₁]
   have h (k : ℕ) :=
-    contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHd
-      hHq hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huC k)
+    contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω hKH hH hHq
+      hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huC k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1) (fun k ↦ (h k).2.1) huC (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
 

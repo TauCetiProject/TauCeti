@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -344,10 +345,9 @@ theorem integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le {α : Type*}
     (hf : AEStronglyMeasurable f (ν.restrict Ω)) (hf0 : 0 ≤ᵐ[ν.restrict Ω] f) (hΩS : Ω ⊆ S)
     {E : ℝ} (hE0 : 0 ≤ E) (hE : ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν ≤ ENNReal.ofReal E) :
     IntegrableOn f Ω ν ∧ ∫ x in Ω, f x ∂ν ≤ E := by
-  have hlin := (lintegral_mono_set hΩS).trans hE
-  refine ⟨⟨hf, (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0 hf]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+  have h := TauCeti.MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le hf hf0
+    (E := E.toNNReal) ((lintegral_mono_set hΩS).trans hE)
+  exact ⟨h.1, h.2.trans_eq (Real.coe_toNNReal _ hE0)⟩
 
 variable {α : Type*} {m : MeasurableSpace α} {μ : Measure α} {E : Type*} [NormedAddCommGroup E]
   [NormedSpace ℝ E]
