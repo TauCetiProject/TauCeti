@@ -26,11 +26,13 @@ stabilized by a *target cut*: a real codimension-two submanifold `D` of the targ
 `u` of the component meets transversally. The *full* preimage `u⁻¹(D)` is then a finite set, and
 it is added to the domain as an *unordered* set of further marked points. The group theory of this
 stabilization, for a sphere `K ∪ {∞}` with a special point at `∞`, is in
-`TauCeti.LinearAlgebra.AffineSpace.MarkingStabilizer`: the stabilized domain has finitely many
+`TauCeti.LinearAlgebra.AffineSpace.MarkingStabilizer`: when the other special points `P ⊆ K`
+together with the cut points contain two distinct points, the stabilized domain has finitely many
 automorphisms (`TauCeti.card_markingStabilizer_dvd_factorial`), and forgetting the cut points does
 not change the isotropy of `u` (`TauCeti.markedIsotropy_le_markingStabilizer`), which is therefore
 finite of order dividing `|u⁻¹(D)|!` (`TauCeti.card_markedIsotropy_dvd_factorial`) as soon as
-`u⁻¹(D)` is finite. This file proves that finiteness for `K = ℂ`.
+`u⁻¹(D)` is finite and `P ∪ u⁻¹(D)` contains two distinct points. This file proves that
+finiteness for `K = ℂ`.
 
 * **Finiteness of transverse preimages.** The predicate `TauCeti.IsTransverseCutAt u D z` asks
   that near `u z` the set `D` be the zero set of a function `g : X → ℂ` such that `g ∘ u` has an
