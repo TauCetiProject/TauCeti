@@ -38,7 +38,7 @@ For bounded operators between finite-dimensional spaces the same block matrix is
 * `LinearPMap.hermitianDilation`: the operator `(x, y) ↦ (T† y, T x)` on `dom T × dom T†`.
 * `LinearPMap.mem_hermitianDilation_domain`: its domain is `dom T × dom T†`.
 * `LinearPMap.hermitianDilation_apply_eq_swap`: `D_T` evaluates as `T ⊕ T†` followed by the swap.
-* `LinearPMap.hermitianDilation_toLp`: `D_T (x, y) = (T† y, T x)`.
+* `LinearPMap.hermitianDilation_apply_toLp`: `D_T (x, y) = (T† y, T x)`.
 * `LinearPMap.mem_graph_hermitianDilation_iff`: the graph of `D_T` in terms of the graphs of `T`
   and `T†`.
 * `LinearPMap.norm_hermitianDilation_apply_sq`: `‖D_T (x, y)‖² = ‖T† y‖² + ‖T x‖²`.
@@ -135,7 +135,7 @@ theorem hermitianDilation_apply (u : T.hermitianDilation.domain) :
   WithLp.ofLp_injective 2 (Prod.ext (fst_hermitianDilation_apply u) (snd_hermitianDilation_apply u))
 
 /-- The Hermitian dilation on a pair `(x, y)` with `x ∈ dom T` and `y ∈ dom T†`. -/
-theorem hermitianDilation_toLp (x : T.domain) (y : T†.domain) :
+theorem hermitianDilation_apply_toLp (x : T.domain) (y : T†.domain) :
     T.hermitianDilation ⟨WithLp.toLp 2 ((x : E), (y : F)),
       mem_hermitianDilation_domain.mpr ⟨x.property, y.property⟩⟩ =
       WithLp.toLp 2 (T† y, T x) :=
@@ -224,13 +224,13 @@ theorem adjoint_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
       have h := (adjoint_isFormalAdjoint hD) w
         ⟨WithLp.toLp 2 ((x : E), ((0 : T†.domain) : F)),
           mem_hermitianDilation_domain.mpr ⟨x.property, (0 : T†.domain).property⟩⟩
-      rw [hermitianDilation_toLp, map_zero] at h
+      rw [hermitianDilation_apply_toLp, map_zero] at h
       simpa using h
     · intro y
       have h := (adjoint_isFormalAdjoint hD) w
         ⟨WithLp.toLp 2 (((0 : T.domain) : E), (y : F)),
           mem_hermitianDilation_domain.mpr ⟨(0 : T.domain).property, y.property⟩⟩
-      rw [hermitianDilation_toLp, map_zero] at h
+      rw [hermitianDilation_apply_toLp, map_zero] at h
       simpa using h
   have hsnd (w : T.hermitianDilation†.domain) : (w : WithLp 2 (E × F)).snd ∈ T†.domain :=
     mem_adjoint_domain_of_exists _ ⟨_, (key w).1⟩
@@ -316,7 +316,7 @@ theorem hasCore_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
     have hTx : T.domRestrict S x = T ⟨(x : E), x.property.2⟩ := domRestrict_apply rfl
     have hTy : T†.domRestrict S' y = T† ⟨(y : F), y.property.2⟩ := domRestrict_apply rfl
     refine (mem_graph_iff' _).mpr ⟨⟨_, hu⟩, ?_⟩
-    rw [hDu, hTx, hTy, hermitianDilation_toLp (T := T) ⟨_, x.property.2⟩ ⟨_, y.property.2⟩]
+    rw [hDu, hTx, hTy, hermitianDilation_apply_toLp (T := T) ⟨_, x.property.2⟩ ⟨_, y.property.2⟩]
   intro p hp
   obtain ⟨hp₁, hp₂⟩ := mem_graph_hermitianDilation_iff.mp hp
   have hmem : ((p.1.fst, p.2.snd), (p.1.snd, p.2.fst)) ∈
