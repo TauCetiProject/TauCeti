@@ -21,7 +21,8 @@ with the actual simplicial face.
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology of the singular
 simplicial set and the map it induces, also applied to a class
-(`TauCeti.singularHomologyFunctor_obj_map_hom_apply`). It also exposes additivity of the
+(`TauCeti.singularHomologyFunctor_obj_map_hom_apply`), and likewise for a change of coefficients
+(`TauCeti.singularHomologyFunctor_map_app_hom_apply`). It also exposes additivity of the
 coefficient homology functor, inherited from the singular-chain and homology functors.
 It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
 without requiring the small-chain subdivision theory.
@@ -113,6 +114,19 @@ theorem singularHomologyFunctor_obj_map_hom_apply {Λ : Type*} [Ring Λ] (L : Mo
     (μ : ((TopCat.toSSet.obj X).homology L k : ModuleCat.{w} Λ)) :
     (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj L).map f).hom μ =
       (SSet.homologyMap (TopCat.toSSet.map f) L k).hom μ :=
+  (rfl)
+
+/-- A coefficient morphism `g` acts on the singular homology of `X`, applied to a class `μ` typed
+in `SSet.homology` of the singular simplicial set, by the homology map of its simplicial chain map.
+As for `TauCeti.singularHomologyFunctor_obj_map_hom_apply`, the two sides agree only after
+unfolding, and the right side is well typed as stated, so later rewrites can match it
+syntactically. -/
+theorem singularHomologyFunctor_map_app_hom_apply {Λ : Type*} [Ring Λ] {L L' : ModuleCat.{w} Λ}
+    (g : L ⟶ L') (X : TopCat.{w}) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj X).homology L k : ModuleCat.{w} Λ)) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).map g).app X).hom μ =
+      (HomologicalComplex.homologyMap
+        (((SSet.chainComplexFunctor (ModuleCat.{w} Λ)).map g).app (TopCat.toSSet.obj X)) k).hom μ :=
   (rfl)
 
 /-- A commuting square of continuous maps gives a commuting square of the simplicial homology maps
