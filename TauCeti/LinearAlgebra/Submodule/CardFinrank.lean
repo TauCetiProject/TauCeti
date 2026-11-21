@@ -76,10 +76,11 @@ theorem card_submodule_finrank_eq_gaussianBinomial (k : ℕ) :
   have hcount : Nat.card Sub * ∏ i : Fin k, (q ^ k - q ^ i.val) =
       ∏ i : Fin k, (q ^ n - q ^ i.val) := by
     rw [← card_linearIndependent hkn, Nat.card_congr (Equiv.sigmaFiberEquiv span').symm,
-      Nat.card_sigma, sum_congr rfl fun W _ ↦ hfiber W, sum_const, smul_eq_mul, card_univ,
-      Nat.card_eq_fintype_card]
+      Nat.card_sigma, sum_congr rfl fun W _ ↦ hfiber W]
+    simp [Nat.card_eq_fintype_card]
   have hq : 1 < q := Fintype.one_lt_card
-  have hle {m : ℕ} {i : ℕ} (hi : i ≤ m) : q ^ i ≤ q ^ m := Nat.pow_le_pow_right hq.le hi
+  have hle {m : ℕ} (hm : k ≤ m) (i : Fin k) : q ^ i.val ≤ q ^ m :=
+    Nat.pow_le_pow_right hq.le (i.isLt.le.trans hm)
   have hpos : 0 < ∏ i : Fin k, (q ^ k - q ^ i.val) :=
     prod_pos fun i _ ↦ Nat.sub_pos_of_lt (Nat.pow_lt_pow_right hq i.isLt)
   refine Nat.eq_of_mul_eq_mul_right hpos (hcount.trans ?_)
@@ -89,10 +90,7 @@ theorem card_submodule_finrank_eq_gaussianBinomial (k : ℕ) :
   have hG : ((gaussianBinomial q n k : ℕ) : ℤ) = gaussianBinomial (q : ℤ) n k :=
     map_gaussianBinomial (Nat.castRingHom ℤ) q n k
   apply Nat.cast_injective (R := ℤ)
-  simp only [Nat.cast_mul, Nat.cast_prod]
-  rw [prod_congr rfl fun i _ ↦ Nat.cast_sub (hle (i.isLt.le.trans hkn)),
-    prod_congr rfl fun i _ ↦ Nat.cast_sub (hle i.isLt.le), hG]
-  push_cast
+  push_cast [hG, Nat.cast_sub, hle le_rfl, hle hkn]
   exact key.symm
 
 end TauCeti
