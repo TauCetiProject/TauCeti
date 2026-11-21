@@ -476,10 +476,8 @@ theorem puncturedSphereAlmostComplex_associativity_of_nonpos {τ L : ℝ} (hτ :
         (Jb inf) (fun t => by simpa using hJb inf t)
         (Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
         (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ)
-        (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub (by positivity)
-          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ)
-        (Floer.norm_associativityCenter_add_mul_exp_le (by positivity)
-          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ) w =
+        (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg hL τ)
+        (Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg hL τ) w =
       h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb zero fun _ => J₀) hJa hJb
         zero L w hw :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
@@ -511,10 +509,8 @@ theorem puncturedSphereAlmostComplex_associativity_of_one_le {τ L : ℝ} (hτ :
         (Jb inf) (fun t => by simpa using hJb inf t)
         (Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
         (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ)
-        (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub (by positivity)
-          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ)
-        (Floer.norm_associativityCenter_add_mul_exp_le (by positivity)
-          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ) w =
+        (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg hL τ)
+        (Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg hL τ) w =
       h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb one fun _ => J₀) hJa hJb
         one L w hw :=
   -- The two structures list the same three input ends in the orders `a, b, c` and `b, c, a`.

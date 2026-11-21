@@ -492,6 +492,30 @@ section Ends
 
 variable {τ L : ℝ}
 
+/-- **The supports of the input data stay disjoint along the path with a plumbing factor.** For
+the plumbing factor `f = exp (-2πL) / 4` of a neck length `L ≥ 0`, the discs
+`‖w - c_i‖ < ‖a_i‖ exp (-2π) / 2` of the three input ends are pairwise disjoint at every point of
+the path. -/
+theorem pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg (hL : 0 ≤ L) (τ : ℝ) :
+    Pairwise fun i j =>
+      ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ * Real.exp (-(2 * π)) / 2 +
+        ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ j‖ * Real.exp (-(2 * π)) / 2 ≤
+        ‖associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i -
+          associativityCenter (Real.exp (-(2 * π * L)) / 4) τ j‖ :=
+  pairwise_mul_exp_add_le_norm_associativityCenter_sub (by positivity)
+    (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ
+
+/-- **The supports of the input data stay inside the disc where the output datum vanishes, along
+the path with a plumbing factor.** For the plumbing factor `f = exp (-2πL) / 4` of a neck length
+`L ≥ 0`, every disc `‖w - c_i‖ < ‖a_i‖ exp (-2π) / 2` along the path lies in the disc
+`‖w‖ ≤ 2 exp (2π)`. -/
+theorem norm_associativityCenter_add_mul_exp_le_of_nonneg (hL : 0 ≤ L) (τ : ℝ) (i : Fin 3) :
+    ‖associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i‖ +
+        ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ * Real.exp (-(2 * π)) / 2 ≤
+      2 * Real.exp (2 * π) :=
+  norm_associativityCenter_add_mul_exp_le (by positivity)
+    (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ i
+
 /-- **The path starts at the plumbed configuration of `(a ⋆ b) ⋆ c`.** For `τ ≤ 0` and the
 plumbing factor `f = exp (-2πL) / 4`, the centers of the associativity path are the centers `c_0`,
 `ψ(1)` and `c_1` of the sphere obtained by plumbing the output end of a pair of pants into the
