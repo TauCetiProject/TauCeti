@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.LinearAlgebra.Reflection
@@ -23,17 +25,21 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 An oriented subatlas of the maximal atlas determines an actual orientation, also at boundary and
 corner points (`TauCeti.IsOrientedAtlas.orientation`).
 
-Conversely, on a `C¹` manifold without boundary modelled on a nontrivial space, every orientation
-`o` comes from an oriented atlas: for a fixed orientation `μ` of the model space, the charts of the
-maximal atlas whose derivatives carry `o` to `μ` at every point of their sources form an oriented
-atlas (`TauCeti.isOrientedAtlas_setOf_isOrientationPreservingAt`), which determines `o` from `μ`
-(`TauCeti.orientation_isOrientedAtlas_setOf_isOrientationPreservingAt`). They cover the manifold
-because a chart may be followed by a linear reflection of the model. In dimension zero the maximal
-atlas is itself oriented. Hence a `C¹` manifold without boundary is orientable if and only if it
-has an oriented atlas (`TauCeti.orientable_iff_exists_atlas`, [Lee, Proposition 15.6]). The
-boundary hypothesis cannot be dropped: `Set.Icc 0 1` is orientable, but its charts send each
-endpoint to the boundary point of the half-line, so a chart at `0` is increasing near `0` and a
-chart at `1` is decreasing near `1`, and no atlas of `Set.Icc 0 1` is oriented.
+Conversely, on a `C¹` manifold without boundary (`BoundarylessManifold I M`, while the model `I`
+itself may have boundary) modelled on a nontrivial space, every orientation `o` comes from an
+oriented atlas: for a fixed orientation `μ` of the model space, the charts of the maximal atlas
+whose derivatives carry `o` to `μ` at every point of their sources form an oriented atlas
+(`TauCeti.isOrientedAtlas_setOf_isOrientationPreservingAt`), which determines `o` from `μ`
+(`TauCeti.orientation_isOrientedAtlas_setOf_isOrientationPreservingAt`). They cover the manifold:
+near a point where a chart reverses orientation, the chart may be followed by a reflection of `E`
+fixing the image of that point, which lies in the interior of the range of the model
+(`TauCeti.exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationReversingAt`). In
+dimension zero the maximal atlas is itself oriented. Hence a `C¹` manifold without boundary is
+orientable if and only if it has an oriented atlas (`TauCeti.orientable_iff_exists_atlas`,
+[Lee, Proposition 15.6]). The boundary hypothesis cannot be dropped: `Set.Icc 0 1` is orientable,
+but its charts send each endpoint to the boundary point of the half-line, so a chart at `0` is
+increasing near `0` and a chart at `1` is decreasing near `1`, and no atlas of `Set.Icc 0 1` is
+oriented.
 
 When the given atlas is itself oriented, every model orientation is the model orientation of an
 orientation lift all of whose chart signs are `1` (`Manifold.OrientationLift.ofHasGroupoid`). It
@@ -58,7 +64,7 @@ public section
 noncomputable section
 
 open Set
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -296,88 +302,96 @@ theorem symm_trans_mem_orientationPreservingGroupoid {o : Manifold.Orientation I
     rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hz
     rw [OpenPartialHomeomorph.coe_trans]
     -- The chart `e`, as a partial diffeomorphism onto its image in the model.
-    let Φ : PartialDiffeomorph I I M H 1 :=
-      { e.toPartialEquiv with
-        open_source := e.open_source
-        open_target := e.open_target
-        contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
-        contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
-    exact (ho' _ hz.2).comp ((ho _ (e.map_target hz.1)).partialDiffeomorph_symm (Φ := Φ) hz.1
-      one_ne_zero)
+    set Φ := e.toPartialDiffeomorph he
+    have hΦ : IsOrientationPreservingAt o (model (I := I) μ o.card_eq) Φ (Φ.symm z) := by
+      simpa [Φ] using ho _ (e.map_target hz.1)
+    have hsymm := hΦ.partialDiffeomorph_symm (by simpa [Φ] using hz.1) one_ne_zero
+    simp only [Φ, OpenPartialHomeomorph.coe_toPartialDiffeomorph_symm] at hsymm
+    exact (ho' _ hz.2).comp hsymm
   rw [mem_orientationPreservingGroupoid_iff]
   refine ⟨key he ho ho', ?_⟩
   rw [← OpenPartialHomeomorph.symm_source, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
     OpenPartialHomeomorph.symm_symm]
   exact key he' ho' ho
 
-section Boundaryless
-
-variable [I.Boundaryless]
-
-/-- The reflection of the boundaryless model `H` along a continuous linear automorphism of `E`. -/
-private def modelLinearEquiv (R : E ≃L[ℝ] E) : OpenPartialHomeomorph H H :=
-  (I.toHomeomorph.trans (R.toHomeomorph.trans I.toHomeomorph.symm)).toOpenPartialHomeomorph
-
-omit [FiniteDimensional ℝ E] in
-/-- The reflection of the model is `R` read through `I`. -/
-private theorem coe_modelLinearEquiv (R : E ≃L[ℝ] E) :
-    ⇑(modelLinearEquiv (I := I) R) = I.symm ∘ R ∘ I := by
-  ext z; simp [modelLinearEquiv]
-
-omit [FiniteDimensional ℝ E] in
-/-- The inverse of the reflection of the model is `R.symm` read through `I`. -/
-private theorem coe_modelLinearEquiv_symm (R : E ≃L[ℝ] E) :
-    ⇑(modelLinearEquiv (I := I) R).symm = I.symm ∘ R.symm ∘ I := by
-  ext z; simp [modelLinearEquiv]
-
-omit [FiniteDimensional ℝ E] in
-/-- A continuous linear automorphism of `E` read through the boundaryless model is smooth. -/
-private theorem contMDiff_model_conj (R : E ≃L[ℝ] E) {n : ℕ∞ω} :
-    ContMDiff I I n (I.symm ∘ R ∘ I) := by
-  have hsymm : ContMDiff 𝓘(ℝ, E) I n I.symm := by
-    rw [← contMDiffOn_univ, ← I.range_eq_univ]
-    exact I.contMDiffOn_symm
-  exact hsymm.comp (R.contDiff.contMDiff.comp I.contMDiff)
-
-omit [FiniteDimensional ℝ E] in
-/-- A self-map of `E` read in `H` through the boundaryless model and back is the original map. -/
-private theorem model_comp_conj (f : E → E) : I ∘ (I.symm ∘ f ∘ I) ∘ I.symm = f := by
-  ext v
-  simp only [Function.comp_apply]
-  rw [I.right_inv (by simp [I.range_eq_univ]), I.right_inv (by simp [I.range_eq_univ])]
-
-omit [FiniteDimensional ℝ E] in
-/-- A chart of the maximal atlas followed by a linear change of coordinates of the model is a chart
-of the maximal atlas. -/
-private theorem trans_modelLinearEquiv_mem_maximalAtlas {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (R : E ≃L[ℝ] E) :
-    e.trans (modelLinearEquiv (I := I) R) ∈ IsManifold.maximalAtlas I 1 M := by
-  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
-  constructor
-  · rw [OpenPartialHomeomorph.coe_trans, coe_modelLinearEquiv]
-    exact (contMDiff_model_conj R).comp_contMDiffOn
-      ((contMDiffOn_of_mem_maximalAtlas he).mono fun _ hy ↦ hy.1)
-  · rw [OpenPartialHomeomorph.coe_trans_symm, coe_modelLinearEquiv_symm]
-    exact (contMDiffOn_symm_of_mem_maximalAtlas he).comp
-      (contMDiff_model_conj R.symm).contMDiffOn fun _ hz ↦ hz.2
-
-/-- A continuous linear automorphism of negative determinant reverses the constant orientation of
-the boundaryless model at every point. -/
-private theorem isOrientationReversingAt_modelLinearEquiv (μ : Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) (R : E ≃L[ℝ] E)
-    (hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0) (z : H) :
-    IsOrientationReversingAt (model (I := I) μ hι) (model (I := I) μ hι)
-      (modelLinearEquiv (I := I) R) z := by
-  have hg : MDifferentiableAt I I (modelLinearEquiv (I := I) R) z := by
-    rw [coe_modelLinearEquiv]
-    exact ((contMDiff_model_conj R (n := 1)).mdifferentiable one_ne_zero) z
-  have hR' : fderiv ℝ (I ∘ modelLinearEquiv (I := I) R ∘ I.symm) (I z) = R := by
-    rw [coe_modelLinearEquiv, model_comp_conj, ContinuousLinearEquiv.fderiv]
+/-- A map `f` of `E` with derivative `R` of negative determinant at `I z`, read in the model `H`
+through `I`, reverses the constant orientation of the model at `z` when `I z` and `f (I z)` lie in
+the interior of the range of `I`. -/
+theorem isOrientationReversingAt_symm_comp_comp (μ : Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) {f : E → E} {R : E ≃L[ℝ] E} {z : H}
+    (hf : HasFDerivAt f (R : E →L[ℝ] E) (I z)) (hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0)
+    (hz : I z ∈ interior (range I)) (hfz : f (I z) ∈ interior (range I)) :
+    IsOrientationReversingAt (model (I := I) μ hι) (model (I := I) μ hι) (I.symm ∘ f ∘ I) z := by
+  have hz' := mem_interior_iff_mem_nhds.1 hz
+  have hfz' := mem_interior_iff_mem_nhds.1 hfz
+  have hg : MDifferentiableAt I I (I.symm ∘ f ∘ I) z :=
+    ((I.contMDiffOn_symm (n := 1)).contMDiffAt hfz' |>.mdifferentiableAt one_ne_zero).comp z
+      (hf.differentiableAt.mdifferentiableAt.comp z I.mdifferentiableAt)
+  have heq : I ∘ (I.symm ∘ f ∘ I) ∘ I.symm =ᶠ[𝓝 (I z)] f := by
+    filter_upwards [hz', hf.continuousAt.preimage_mem_nhds hfz'] with v hv hfv
+    simp only [Function.comp_apply, I.right_inv hv, I.right_inv hfv]
+  have hR' : fderivWithin ℝ (I ∘ (I.symm ∘ f ∘ I) ∘ I.symm) (range I) (I z) = R := by
+    rw [fderivWithin_of_mem_nhds hz', heq.fderiv_eq, hf.fderiv]
   refine (isOrientationReversingAt_iff _ _ _ _).2 ⟨R, ?_, ?_⟩
-  · rw [hg.mfderiv_eq_fderiv_extChartAt_conj rfl, extChartAt_self_eq, extChartAt_self_eq]
+  · rw [hg.mfderiv]
     exact hR'.symm
   · rw [orientationAt_model, orientationAt_model]
     exact (Orientation.map_eq_neg_iff_det_neg μ R.toLinearEquiv hι).2 hR
+
+/-- Let `c` be a chart of the maximal `C¹` atlas which reverses the orientation `o` against a
+constant orientation `μ` of the model at every point of its source, and let `x` be a point of its
+source with `I (c x)` in the interior of the range of `I`. Following `c` by a reflection of `E`
+fixing `I (c x)` gives a chart of the maximal atlas around `x` which carries `o` to `μ` at every
+point of its source. -/
+theorem exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationReversingAt
+    [Nontrivial E] {o : Manifold.Orientation I M ι} {μ : Orientation ℝ E ι}
+    {c : OpenPartialHomeomorph M H} (hc : c ∈ IsManifold.maximalAtlas I 1 M)
+    (hcr : ∀ y ∈ c.source, IsOrientationReversingAt o (model (I := I) μ o.card_eq) c y) {x : M}
+    (hx : x ∈ c.source) (hxi : I (c x) ∈ interior (range I)) :
+    ∃ e ∈ IsManifold.maximalAtlas I 1 M, x ∈ e.source ∧
+      ∀ y ∈ e.source, IsOrientationPreservingAt o (model (I := I) μ o.card_eq) e y := by
+  obtain ⟨g, hg⟩ := Module.exists_det_eq_neg_one (R := ℝ) (M := E) Module.finrank_pos
+  set R : E ≃L[ℝ] E := g.toContinuousLinearEquiv
+  have hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0 := by
+    simp [R, ← LinearEquiv.coe_det, hg]
+  -- The reflection `A` of `E` along `R`, fixing `I (c x)`.
+  set v₀ := I (c x)
+  let A : E ≃ₜ E :=
+    { toFun v := R (v - v₀) + v₀
+      invFun v := R.symm (v - v₀) + v₀
+      left_inv v := by simp
+      right_inv v := by simp
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  have hA : A.toOpenPartialHomeomorph ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 E :=
+    OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _
+      (ContDiff.contMDiff (f := fun v ↦ R (v - v₀) + v₀) (by fun_prop)).contMDiffOn
+      (ContDiff.contMDiff (f := fun v ↦ R.symm (v - v₀) + v₀) (by fun_prop)).contMDiffOn
+  have hchart : ⇑(((c.trans I.interiorChart).trans A.toOpenPartialHomeomorph).trans
+      I.interiorChart.symm) = (I.symm ∘ A ∘ I) ∘ c := by
+    simp only [OpenPartialHomeomorph.coe_trans, ModelWithCorners.interiorChart_coe,
+      ModelWithCorners.interiorChart_coe_symm]
+    rfl
+  refine ⟨((c.trans I.interiorChart).trans A.toOpenPartialHomeomorph).trans I.interiorChart.symm,
+    OpenPartialHomeomorph.trans_interiorChart_trans_trans_interiorChart_symm_mem_maximalAtlas hc
+      hA, ?_, fun y hy ↦ ?_⟩
+  · have hAv₀ : A v₀ = v₀ := by simp [A]
+    have hx' : (x ∈ c.source ∧ I (c x) ∈ interior (range I)) ∧
+        A (I (c x)) ∈ interior (range I) := ⟨⟨hx, hxi⟩, hAv₀ ▸ hxi⟩
+    simpa using hx'
+  · have hy' : (y ∈ c.source ∧ I (c y) ∈ interior (range I)) ∧
+        A (I (c y)) ∈ interior (range I) := by
+      simpa using hy
+    have hAd := (((R : E →L[ℝ] E).hasFDerivAt (x := I (c y) - v₀)).comp (I (c y))
+      ((hasFDerivAt_id (I (c y))).sub_const v₀)).add_const v₀
+    rw [ContinuousLinearMap.comp_id] at hAd
+    rw [hchart]
+    exact (isOrientationReversingAt_symm_comp_comp μ o.card_eq hAd hR hy'.1.2 hy'.2).comp
+      (hcr y hy'.1.1)
+
+section Boundaryless
+
+variable [BoundarylessManifold I M]
 
 /-- On a manifold without boundary modelled on a nontrivial space, the charts of the maximal
 `C¹` atlas which carry an orientation `o` of `M` to a given constant orientation `μ` of the model at
@@ -404,21 +418,19 @@ theorem isOrientedAtlas_setOf_isOrientationPreservingAt [Nontrivial E]
       · rw [c.restr_source' U isOpen_interior]
         exact ⟨mem_chart_source H x, hxU⟩
     · -- Restrict the chart to the open set where it reverses orientation, then reflect.
-      obtain ⟨g, hg⟩ := Module.exists_det_eq_neg_one (R := ℝ) (M := E) Module.finrank_pos
-      set R : E ≃L[ℝ] E := g.toContinuousLinearEquiv
-      have hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0 := by
-        simp [R, ← LinearEquiv.coe_det, hg]
       set U := interior {y | IsOrientationReversingAt o (model (I := I) μ o.card_eq) c y}
       have hxU : x ∈ U := mem_interior_iff_mem_nhds.2 (eventually_isOrientationReversingAt hcx hx)
-      refine ⟨(c.restr U).trans (modelLinearEquiv (I := I) R),
-        ⟨trans_modelLinearEquiv_mem_maximalAtlas
-          (restr_mem_maximalAtlas _ hc isOpen_interior) R, fun y hy ↦ ?_⟩, ?_⟩
-      · rw [OpenPartialHomeomorph.trans_source, c.restr_source' U isOpen_interior] at hy
-        rw [OpenPartialHomeomorph.coe_trans]
-        exact (isOrientationReversingAt_modelLinearEquiv μ o.card_eq R hR _).comp
-          (interior_subset hy.1.2)
-      · rw [OpenPartialHomeomorph.trans_source, c.restr_source' U isOpen_interior]
-        exact ⟨⟨mem_chart_source H x, hxU⟩, by simp [modelLinearEquiv]⟩
+      obtain ⟨e, he, hxe, hpres⟩ :=
+        exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationReversingAt
+          (restr_mem_maximalAtlas _ hc isOpen_interior)
+          (fun y hy ↦ by
+            rw [c.restr_source' U isOpen_interior] at hy
+            exact interior_subset hy.2)
+          (by
+            rw [c.restr_source' U isOpen_interior]
+            exact ⟨mem_chart_source H x, hxU⟩)
+          (BoundarylessManifold.isInteriorPoint (x := x))
+      exact ⟨e, ⟨he, hpres⟩, hxe⟩
   symm_trans_mem he he' := symm_trans_mem_orientationPreservingGroupoid he.1 he'.1 he.2 he'.2
 
 /-- The oriented atlas of the charts which carry `o` to `μ` determines the orientation `o`
@@ -440,7 +452,7 @@ end Boundaryless
 variable (I M) in
 /-- **The oriented-atlas criterion.** A `C¹` manifold without boundary is orientable if and only
 if it has an oriented atlas. -/
-theorem orientable_iff_exists_atlas [I.Boundaryless] :
+theorem orientable_iff_exists_atlas [BoundarylessManifold I M] :
     Orientable I M ↔ ∃ A : Set (OpenPartialHomeomorph M H), IsOrientedAtlas I 1 A := by
   refine ⟨fun ⟨⟨o⟩⟩ ↦ ?_, fun ⟨_, hA⟩ ↦ hA.orientable⟩
   rcases subsingleton_or_nontrivial E with hE | hE
