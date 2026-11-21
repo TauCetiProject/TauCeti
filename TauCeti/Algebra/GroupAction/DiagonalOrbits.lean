@@ -32,7 +32,8 @@ def orbitRelQuotientStabilizerMap (y : Y) :
     MulAction.orbitRel.Quotient (MulAction.stabilizer G y) X →
       MulAction.orbitRel.Quotient G (X × Y) :=
   Quotient.map' (fun x => (x, y)) fun _ _ ⟨g, hg⟩ =>
-    ⟨g, Prod.ext (by simpa [Subgroup.smul_def] using hg) (MulAction.mem_stabilizer_iff.mp g.2)⟩
+    ⟨g, Prod.ext (by simpa [Subgroup.smul_def] using hg) (MulAction.mem_stabilizer_iff.mp
+        g.property)⟩
 
 @[simp]
 theorem orbitRelQuotientStabilizerMap_mk (y : Y) (x : X) :

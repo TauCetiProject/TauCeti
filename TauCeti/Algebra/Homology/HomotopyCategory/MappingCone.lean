@@ -130,7 +130,7 @@ lemma inrCompHomotopy_hom (i j : ℤ) (hij : j + 1 = i) :
 /-- A variant of `inl_v_fst_v` with an arbitrary target degree. -/
 @[reassoc]
 lemma inl_v_fst_v' (p q r : ℤ) (h₁ : p + -1 = q) (h₂ : q + 1 = r) :
-    (inl f).v p q h₁ ≫ (fst f).1.v q r h₂ = (K.XIsoOfEq (show p = r by lia)).hom := by
+    (inl f).v p q h₁ ≫ (fst f).val.v q r h₂ = (K.XIsoOfEq (show p = r by lia)).hom := by
   obtain rfl : r = p := by lia
   simp
 
@@ -222,15 +222,15 @@ lemma inr_f_mapOfHomotopy_f (p : ℤ) :
 /-- The first projection of a cone map does not depend on the square homotopy. -/
 @[reassoc (attr := simp)]
 lemma mapOfHomotopy_f_fst_v (p q : ℤ) (hpq : p + 1 = q) :
-    (mapOfHomotopy H).f p ≫ (fst φ₂).1.v p q hpq =
-      (fst φ₁).1.v p q hpq ≫ a.f q := by
+    (mapOfHomotopy H).f p ≫ (fst φ₂).val.v p q hpq =
+      (fst φ₁).val.v p q hpq ≫ a.f q := by
   apply ext_from φ₁ q p hpq <;> simp
 
 /-- The second projection retains the specified square homotopy. -/
 @[reassoc (attr := simp)]
 lemma mapOfHomotopy_f_snd_v (p q : ℤ) (hpq : p + 1 = q) :
     (mapOfHomotopy H).f p ≫ (snd φ₂).v p p (add_zero p) =
-      (fst φ₁).1.v p q hpq ≫ H.hom q p +
+      (fst φ₁).val.v p q hpq ≫ H.hom q p +
         (snd φ₁).v p p (add_zero p) ≫ b.f p := by
   apply ext_from φ₁ q p hpq <;> simp
 
@@ -300,7 +300,7 @@ lemma inr_f_map_f (p : ℤ) : (inr φ₁).f p ≫ (map φ₁ φ₂ a b comm).f p
 
 @[reassoc (attr := simp)]
 lemma map_f_fst_v (p q : ℤ) (hpq : p + 1 = q) :
-    (map φ₁ φ₂ a b comm).f p ≫ (fst φ₂).1.v p q hpq = (fst φ₁).1.v p q hpq ≫ a.f q := by
+    (map φ₁ φ₂ a b comm).f p ≫ (fst φ₂).val.v p q hpq = (fst φ₁).val.v p q hpq ≫ a.f q := by
   apply ext_from φ₁ q p hpq <;> simp
 
 @[reassoc (attr := simp)]
@@ -378,8 +378,8 @@ end MapHomotopy
 /-- The first component of `mappingCone.shiftIso` carries the sign `(-1)^n`. -/
 @[reassoc (attr := simp)]
 lemma shiftIso_hom_f_fst_v (n p q : ℤ) (hpq : p + 1 = q) :
-    (shiftIso f n).hom.f p ≫ (fst (f⟦n⟧')).1.v p q hpq =
-      n.negOnePow • (fst f).1.v (p + n) (q + n) (by lia) := by
+    (shiftIso f n).hom.f p ≫ (fst (f⟦n⟧')).val.v p q hpq =
+      n.negOnePow • (fst f).val.v (p + n) (q + n) (by lia) := by
   simp [shiftIso, Cochain.shift_v']
 
 @[reassoc (attr := simp)]
@@ -391,8 +391,8 @@ lemma shiftIso_hom_f_snd_v (n p : ℤ) :
 /-- The inverse of `mappingCone.shiftIso` also carries the sign `(-1)^n` on the first component. -/
 @[reassoc (attr := simp)]
 lemma shiftIso_inv_f_fst_v (n p q : ℤ) (hpq : p + 1 = q) :
-    (shiftIso f n).inv.f p ≫ (fst f).1.v (p + n) (q + n) (by lia) =
-      n.negOnePow • (fst (f⟦n⟧')).1.v p q hpq := by
+    (shiftIso f n).inv.f p ≫ (fst f).val.v (p + n) (q + n) (by lia) =
+      n.negOnePow • (fst (f⟦n⟧')).val.v p q hpq := by
   rw [← cancel_epi ((shiftIso f n).hom.f p)]
   simp [← HomologicalComplex.comp_f_assoc, smul_smul]
 
@@ -448,10 +448,10 @@ is the identity on these summands except for the sign `-1` on `X₁ⁿ⁺²`. It
 `mappingCone.transposeIso`, whose inverse is the comparison for the transposed square. -/
 noncomputable def transposeHom :
     mappingCone (map a b u v comm) ⟶ mappingCone (map u v a b comm.symm) :=
-  lift _ (descCocycle _ (-(fst a).1.comp (inl u) (add_neg_cancel 1))
-      (Cocycle.mk ((fst b).1.comp (Cochain.ofHom (inr u)) (add_zero 1)) 2 (by lia) (by
+  lift _ (descCocycle _ (-(fst a).val.comp (inl u) (add_neg_cancel 1))
+      (Cocycle.mk ((fst b).val.comp (Cochain.ofHom (inr u)) (add_zero 1)) 2 (by lia) (by
         simp [δ_comp_zero_cochain])) (zero_add 1) (by
-        rw [δ_neg, δ_comp (fst a).1 (inl u) _ 2 0 1 (by lia) rfl (by lia)]
+        rw [δ_neg, δ_comp (fst a).val (inl u) _ 2 0 1 (by lia) rfl (by lia)]
         ext p q hpq
         simp))
     (descCochain _ ((snd a).comp (inl v) (zero_add _))
@@ -531,7 +531,7 @@ the vertical maps are isomorphisms in degrees `p + 1` (on the sources) and `p` (
 targets). -/
 lemma isIso_map_f (p q : ℤ) (hpq : p + 1 = q) [IsIso (a.f q)] [IsIso (b.f p)] :
     IsIso ((map φ₁ φ₂ a b comm).f p) := by
-  refine ⟨(fst φ₂).1.v p q hpq ≫ inv (a.f q) ≫ (inl φ₁).v q p (by lia) +
+  refine ⟨(fst φ₂).val.v p q hpq ≫ inv (a.f q) ≫ (inl φ₁).v q p (by lia) +
       (snd φ₂).v p p (add_zero p) ≫ inv (b.f p) ≫ (inr φ₁).f p, ?_, ?_⟩
   · apply ext_from φ₁ q p (by lia) <;> simp
   · simp only [Preadditive.add_comp, Category.assoc, inl_v_map_f, inr_f_map_f,

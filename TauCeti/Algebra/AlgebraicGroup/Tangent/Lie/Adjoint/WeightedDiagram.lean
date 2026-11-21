@@ -160,14 +160,15 @@ partner; by Malcev–Kostant conjugacy at fixed `h`, this orbit is independent o
 private noncomputable def dominantNilpotentOrbit {𝔥 : LieSubalgebra k 𝔤} [𝔥.IsCartanSubalgebra]
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) (h : b.dominantNeutralElements) :
     Comodule.VectorOrbit k H 𝔤 :=
-  Comodule.VectorOrbit.mk (Classical.choose ((b.mem_dominantNeutralElements_iff h.1).mp h.2).1)
+  Comodule.VectorOrbit.mk (Classical.choose ((b.mem_dominantNeutralElements_iff h.val).mp
+      h.property).1)
 
 private theorem dominantNilpotentOrbit_eq_mk_of_isSl2Triple {𝔥 : LieSubalgebra k 𝔤}
     [𝔥.IsCartanSubalgebra] (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
     (h : b.dominantNeutralElements) {e f : 𝔤} (t : IsSl2Triple (h : 𝔤) e f) :
     dominantNilpotentOrbit (H := H) b h = Comodule.VectorOrbit.mk e := by
   obtain ⟨f₀, t₀⟩ :=
-    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h.1).mp h.2).1
+    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h.val).mp h.property).1
   obtain ⟨g, -, -, hge, -⟩ :=
     t₀.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq t
   exact Comodule.VectorOrbit.mk_eq_mk_iff.mpr ⟨g, hge⟩
@@ -179,7 +180,7 @@ private theorem range_dominantNilpotentOrbit_eq {𝔥 : LieSubalgebra k 𝔤} [�
   refine Set.Subset.antisymm ?_ ?_
   · rintro _ ⟨h, rfl⟩
     obtain ⟨f₀, t₀⟩ :=
-      Classical.choose_spec ((b.mem_dominantNeutralElements_iff h.1).mp h.2).1
+      Classical.choose_spec ((b.mem_dominantNeutralElements_iff h.val).mp h.property).1
     exact ⟨Comodule.VectorOrbit.isNilpotentAd_mk_iff.mpr (t₀.isNilpotent_toEnd_e (K := k) (M := 𝔤)),
       mt Comodule.VectorOrbit.mk_eq_mk_zero_iff.mp t₀.e_ne_zero⟩
   · intro O ⟨hO, hne⟩
@@ -353,13 +354,13 @@ private theorem optionDominantToNilpotentOrbit_bijective
         (Set.mem_range_self h₁)).2 (congrArg Subtype.val heq)
     · congr 1
       obtain ⟨f₁, t₁⟩ :=
-        Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₁.1).mp h₁.2).1
+        Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₁.val).mp h₁.property).1
       obtain ⟨f₂, t₂⟩ :=
-        Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₂.1).mp h₂.2).1
+        Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₂.val).mp h₂.property).1
       obtain ⟨g, hge⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp (congrArg Subtype.val heq)
       exact Subtype.ext
         (t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq
-          (H := H) b t₂ h₁.2 h₂.2 hge)
+          (H := H) b t₂ h₁.property h₂.property hge)
   · rintro ⟨O, hO⟩
     by_cases h0 : O = Comodule.VectorOrbit.mk 0
     · exact ⟨none, Subtype.ext h0.symm⟩

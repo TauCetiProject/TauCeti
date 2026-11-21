@@ -198,7 +198,7 @@ theorem exists_smul_eq_of_mem_openWeylChambers {C D : Set M} (hC : C ∈ openWey
 the pointwise action on `Set M` restricts to `TauCeti.openWeylChambers`. -/
 noncomputable instance : SMul P.weylGroup (openWeylChambers P b) where
   smul v C := ⟨v • (C : Set M), by
-    obtain ⟨w, hw⟩ := C.2
+    obtain ⟨w, hw⟩ := C.property
     exact ⟨v * w, by rw [← smul_openWeylChamber, hw]⟩⟩
 
 /-- The action on the chambers is the pointwise action on the underlying set. -/
@@ -215,7 +215,7 @@ noncomputable instance : MulAction P.weylGroup (openWeylChambers P b) where
 themselves. -/
 instance : MulAction.IsPretransitive P.weylGroup (openWeylChambers P b) where
   exists_smul_eq C D := by
-    obtain ⟨u, hu⟩ := exists_smul_eq_of_mem_openWeylChambers P b C.2 D.2
+    obtain ⟨u, hu⟩ := exists_smul_eq_of_mem_openWeylChambers P b C.property D.property
     exact ⟨u, Subtype.ext ((openWeylChambers.coe_smul P b u C).trans hu)⟩
 
 /-! ### Simple transitivity -/
@@ -292,7 +292,7 @@ of `TauCeti.openWeylChambers`, is trivial. Together with the transitivity instan
 simple transitivity of the action on the chambers. -/
 theorem openWeylChambers.stabilizer_eq_bot (C : openWeylChambers P b) :
     MulAction.stabilizer P.weylGroup C = ⊥ := by
-  obtain ⟨w, hw⟩ := C.2
+  obtain ⟨w, hw⟩ := C.property
   ext v
   rw [MulAction.mem_stabilizer_iff, ← Subtype.coe_inj, openWeylChambers.coe_smul, ← hw,
     Subgroup.mem_bot]
@@ -396,7 +396,7 @@ private theorem exists_weylGroup_forall_mem_posRoots_pos (b : P.Base) {x : M}
   obtain ⟨φ, hφ⟩ := Module.exists_dual_forall_apply_ne_zero (K := ℚ)
     (fun i ↦ P.coroot' i x) ((P.isRegularWeight_iff x).mp hx)
   have hφ_orb (v : P.weylGroup) (i : ι) : φ (P.coroot' i (v • x)) ≠ 0 := by
-    rw [Subgroup.smul_def, P.coroot'_smul v.1 i x]; exact hφ _
+    rw [Subgroup.smul_def, P.coroot'_smul v.val i x]; exact hφ _
   obtain ⟨v, hv⟩ := Finite.exists_max fun v : P.weylGroup ↦ φ (posCorootSum P b (v • x))
   have hpos_supp {i : ι} (hi : i ∈ b.support) : 0 < φ (P.coroot' i (v • x)) := by
     have hle := hv (weylGroup.ofIdx P i * v)
@@ -425,7 +425,7 @@ theorem eq_one_of_isRegularWeight_of_smul_eq (b : P.Base) {x : M} (hx : P.IsRegu
     let j' := P.reflectionPerm j j
     have hcor : P.coroot' k (v • x) = -P.coroot' j' (v • x) := by
       conv_lhs => rw [← hu_fix]
-      rw [Subgroup.smul_def, P.coroot'_smul u.1 k (v • x)]
+      rw [Subgroup.smul_def, P.coroot'_smul u.val k (v • x)]
       simp [j', j, coroot'_reflectionPerm_self]
     have h1 := hpos_all k (inversions_subset_posRoots P b u⁻¹ hk)
     have h2 := hpos_all j' ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b j).2

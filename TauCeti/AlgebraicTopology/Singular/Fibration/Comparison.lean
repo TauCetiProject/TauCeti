@@ -147,7 +147,7 @@ fibrations over `B`, `C ⊆ B` a relative CW complex with skeleta `Xⁿ`, and `f
 maps of fibres over the centres of the `n`-cells have kernels and cokernels in `Q ≤ P` on `Hq(-; R)`
 for `q + n = m`. Then `f` induces an isomorphism modulo `P` on
 `Hₘ(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ⟶ Hₘ(p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹); R)`. -/
-private lemma isoModSerre_singularHomologyMap_preimagePairMap (hQP : Q ≤ P)
+lemma isoModSerre_singularHomologyMap_preimagePairMap (hQP : Q ≤ P)
     (sq : CommSq f p p' (𝟙 B)) (n m : ℕ)
     (hfib : ∀ j : cell C n, ∀ q, q + n = m →
       Q (kernel (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
@@ -423,8 +423,8 @@ theorem isoModSerre_singularHomologyMap_of_commSq {B' : _root_.TopCat.{u}} {p' :
       -- The composite is typed over `(𝟙 B) b` rather than `b`, so `rw` cannot match it.
       erw [ConcreteCategory.comp_apply, TopCat.Hom.fiberPullbackFstIso_hom_apply_coe]
       rw [sq.fiberMap_apply_coe]
-      exact (congrArg (fun y : _root_.TopCat.of { x : B × E' // g x.1 = p' x.2 } ↦ y.1.2)
-        (sqL.fiberMap_apply_coe b x)).trans (ConcreteCategory.congr_hom hl₂ x.1)
+      exact (congrArg (fun y : _root_.TopCat.of { x : B × E' // g x.1 = p' x.2 } ↦ y.val.2)
+        (sqL.fiberMap_apply_coe b x)).trans (ConcreteCategory.congr_hom hl₂ x.val)
     -- The fibre map of `sqL` lands over `(𝟙 B) b` rather than `b`, so compare the two maps as
     -- isomorphic arrows, as in `isoModSerre_singularHomologyMap_of_commSq_id`.
     have hc := (CommSq.mk hcomm).map H
@@ -464,7 +464,7 @@ theorem isoModSerre_singularHomologyMap_of_fiber_to_point (hQP : Q ≤ P)
   -- The fibre of the identity over `b` is a point.
   let F := TopCat.Hom.fiber (𝟙 B) ((𝟙 B) b)
   let t := _root_.TopCat.isTerminalPUnit.from F
-  have : Unique F := ⟨⟨⟨b, rfl⟩⟩, fun x ↦ Subtype.ext x.2⟩
+  have : Unique F := ⟨⟨⟨b, rfl⟩⟩, fun x ↦ Subtype.ext x.property⟩
   have : IsIso t := by
     rw [_root_.TopCat.isTerminalPUnit.hom_ext t
       (_root_.TopCat.isoOfHomeo (Homeomorph.homeomorphOfUnique F PUnit)).hom]

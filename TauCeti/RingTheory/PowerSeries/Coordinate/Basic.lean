@@ -172,6 +172,11 @@ theorem toPowerSeries_mul_inv (φ : FormalCoordinate R) : (φ * φ⁻¹).toPower
 theorem toPowerSeries_inv_mul (φ : FormalCoordinate R) : (φ⁻¹ * φ).toPowerSeries = X := by
   rw [inv_mul_cancel, toPowerSeries_one]
 
+/-- A formal coordinate `φ = u X + ⋯` is `X` times a unit power series. -/
+theorem exists_unit_toPowerSeries_eq_X_mul (φ : FormalCoordinate R) :
+    ∃ v : R⟦X⟧ˣ, φ.toPowerSeries = X * (v : R⟦X⟧) :=
+  exists_unit_eq_X_mul_of_subst_eq_X φ.constantCoeff_toPowerSeries (toPowerSeries_inv_mul φ)
+
 section Points
 
 variable {σ : Type*} {x : MvPowerSeries σ R}
@@ -386,10 +391,11 @@ theorem ofStrictCoeffs_mem_ker_linearCoeff (b : ℕ+ → R) :
 `X + ∑ bᵢ X^(i + 1)`. -/
 noncomputable def strictCoeffsEquiv : (ℕ+ → R) ≃ (linearCoeff (R := R)).ker where
   toFun b := ⟨ofStrictCoeffs b, ofStrictCoeffs_mem_ker_linearCoeff b⟩
-  invFun φ i := coeff (i + 1) φ.1.toPowerSeries
+  invFun φ i := coeff (i + 1) φ.val.toPowerSeries
   left_inv b := funext (coeff_succ_ofStrictCoeffs b)
   right_inv φ := by
-    have h1 : coeff 1 φ.1.toPowerSeries = 1 := congrArg Units.val (MonoidHom.mem_ker.mp φ.2)
+    have h1 : coeff 1 φ.val.toPowerSeries = 1 := congrArg Units.val
+        (MonoidHom.mem_ker.mp φ.property)
     refine Subtype.ext <| FormalCoordinate.ext <| PowerSeries.ext fun n ↦ ?_
     rcases n with _ | _ | n
     · simp [ofStrictCoeffs, coeff_zero_eq_constantCoeff_apply]
@@ -402,7 +408,7 @@ theorem coe_strictCoeffsEquiv_apply (b : ℕ+ → R) :
 
 @[simp]
 theorem strictCoeffsEquiv_symm_apply (φ : (linearCoeff (R := R)).ker) (i : ℕ+) :
-    strictCoeffsEquiv.symm φ i = coeff (i + 1) φ.1.toPowerSeries := (rfl)
+    strictCoeffsEquiv.symm φ i = coeff (i + 1) φ.val.toPowerSeries := (rfl)
 
 /-- Base change of `X + ∑ bᵢ X^(i + 1)` along `f` is `X + ∑ f(bᵢ) X^(i + 1)`. -/
 @[simp]

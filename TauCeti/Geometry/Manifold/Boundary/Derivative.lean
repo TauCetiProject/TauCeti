@@ -76,7 +76,7 @@ theorem mfderiv_subtypeVal_boundary (x : (𝓡∂ (n + 1)).boundary M) :
       (chartAt (EuclideanHalfSpace (n + 1)) (x : M)).right_inv hz',
       modelWithCornersEuclideanHalfSpace_toFun, EuclideanHalfSpace.boundaryParam_coe]
   apply HasMFDerivAt.mfderiv
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   have hd := (euclideanHalfSpaceBoundaryParam n).hasFDerivAt.congr_of_eventuallyEq heq
   convert hd.hasFDerivWithinAt (s := Set.range 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) using 1
   ext v

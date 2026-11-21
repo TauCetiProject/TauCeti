@@ -217,7 +217,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
         (ω.perturbedMFDeriv (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x Complex.I) (u k)
           z).toLinearMap) →
-      (∀ k, Tendsto (fun R ↦ cappedLoopAction ω.1 H (fun t ↦ u k (equivRealProdCLM
+      (∀ k, Tendsto (fun R ↦ cappedLoopAction ω.val H (fun t ↦ u k (equivRealProdCLM
         (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) (u k ∘ p.endDisc R)) atTop
           (𝓝 (a k))) →
       (∀ k, p.endSign * a k ≤ A) → (∀ k, MapsTo (u k) Ω C) →

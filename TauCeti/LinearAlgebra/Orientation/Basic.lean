@@ -49,6 +49,10 @@ compatibility under linear equivalences.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 * `Orientation.exists_eq_neg_one_pow_smul`: every orientation is a signed copy `(-1) ^ i • y` of
   any other orientation `y`.
+* `Orientation.ite_eq_neg_eq_neg_ite`, `Orientation.ite_neg_eq_eq_neg_ite`: reversing either
+  orientation reverses the sign comparing them.
+* `Orientation.ite_map_mul_ite_map_trans`: the signs comparing transported orientations multiply
+  along a composite.
 -/
 
 public section
@@ -199,7 +203,7 @@ theorem Orientation.eq_or_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M
     · exact .inr rfl
     · exact .inl rfl
   · have : FiniteDimensional R M := Module.finite_of_finrank_pos (h ▸ Fintype.card_pos)
-    exact Orientation.eq_or_eq_neg x₁ x₂ h
+    exact Orientation.eq_or_eq_neg x₁ x₂ (Nat.card_eq_fintype_card.trans h)
 
 /-- If the index type has cardinality equal to the dimension, an orientation equals the negation of
 another orientation if and only if they are not equal. Unlike `Orientation.ne_iff_eq_neg`, this
@@ -294,5 +298,41 @@ theorem Orientation.exists_eq_neg_one_pow_smul (x y : Orientation R M ι)
   rcases eq_or_eq_neg_of_card_eq_finrank x y h with rfl | rfl
   · exact ⟨0, by rw [pow_zero, one_smul]⟩
   · exact ⟨1, by rw [pow_one, Module.Ray.neg_units_smul, one_smul]⟩
+
+open Classical in
+/-- Comparing an orientation with the opposite of a reference orientation reverses the sign of the
+comparison, when the index type has the dimension of the space. -/
+theorem Orientation.ite_eq_neg_eq_neg_ite {o τ : Orientation R M ι}
+    (h : Fintype.card ι = finrank R M) :
+    (if o = -τ then (1 : ℤ) else -1) = -(if o = τ then 1 else -1) := by
+  rcases eq_or_eq_neg_of_card_eq_finrank o τ h with rfl | rfl
+  · rw [ite_eq_right (Module.Ray.ne_neg_self o), ite_eq_left rfl]
+  · rw [ite_eq_left rfl, ite_eq_right (Module.Ray.ne_neg_self τ).symm, neg_neg]
+
+open Classical in
+/-- Reversing an orientation reverses the sign of its comparison with a reference orientation, when
+the index type has the dimension of the space. -/
+theorem Orientation.ite_neg_eq_eq_neg_ite {o τ : Orientation R M ι}
+    (h : Fintype.card ι = finrank R M) :
+    (if -o = τ then (1 : ℤ) else -1) = -(if o = τ then 1 else -1) := by
+  rcases eq_or_eq_neg_of_card_eq_finrank o τ h with rfl | rfl
+  · rw [ite_eq_right (Module.Ray.ne_neg_self o).symm, ite_eq_left rfl]
+  · rw [ite_eq_left (neg_neg τ), ite_eq_right (Module.Ray.ne_neg_self τ).symm, neg_neg]
+
+open Classical in
+/-- **Signs of orientations along a composite.** If `F` carries `o` to `oT` up to the sign
+`[F o = oT]`, then the sign `[(A ∘ F) o = τ]` is that sign times `[A oT = τ]`. -/
+theorem Orientation.ite_map_mul_ite_map_trans {T W : Type*} [AddCommGroup T] [Module R T]
+    [AddCommGroup W] [Module R W] (F : M ≃ₗ[R] T) (A : T ≃ₗ[R] W) (o : Orientation R M ι)
+    {oT : Orientation R T ι} {τ : Orientation R W ι} (hT : Fintype.card ι = finrank R T)
+    (hW : Fintype.card ι = finrank R W) :
+    (if Orientation.map ι F o = oT then (1 : ℤ) else -1) *
+        (if Orientation.map ι (F.trans A) o = τ then 1 else -1) =
+      if Orientation.map ι A oT = τ then 1 else -1 := by
+  rw [map_trans]
+  rcases eq_or_eq_neg_of_card_eq_finrank (Orientation.map ι F o) oT hT with h | h
+  · simp only [h, ite_eq_left, one_mul]
+  · rw [h, Orientation.map_neg, ite_eq_right (Module.Ray.ne_neg_self oT).symm,
+      ite_neg_eq_eq_neg_ite hW, neg_one_mul, neg_neg]
 
 end Field

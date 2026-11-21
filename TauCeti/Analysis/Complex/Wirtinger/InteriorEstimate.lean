@@ -148,7 +148,7 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
     refine ae_restrict_of_forall_mem hU.measurableSet fun z hz ↦ ?_
     have h := norm_conjWirtingerDeriv_smul_le (hχ.differentiable (by simp) z)
       ((hu.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hz)) (hχr ⟨z, rfl⟩).1
-      (hχr ⟨z, rfl⟩).2 (hL z) δ.2 M.2 (hg z hz)
+      (hχr ⟨z, rfl⟩).2 (hL z) δ.property M.property (hg z hz)
     simpa using h
   have hsplit : (fun z ↦ ‖g z‖ + δ * ‖fderiv ℝ v z‖ + (δ * L + M + L : ℝ≥0) * ‖u z‖) =
       (fun z ↦ ‖g z‖) + ((δ : ℝ) • fun z ↦ ‖fderiv ℝ v z‖) +

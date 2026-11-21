@@ -99,7 +99,7 @@ theorem dirichletChart_apply_self (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) :
 @[simp]
 theorem dirichletChart_apply_coe (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) (j : {i // i ≠ i₀}) :
     dirichletChart i₀ x j = x j := by
-  simp [dirichletChart, j.2]
+  simp [dirichletChart, j.property]
 
 /-- The value of the chart at an index other than `i₀`, indexed by `ι` rather than by the
 subtype. -/

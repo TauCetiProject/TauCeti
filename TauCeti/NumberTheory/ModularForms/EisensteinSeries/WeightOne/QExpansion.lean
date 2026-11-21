@@ -151,7 +151,7 @@ private lemma hasSum_charE1MF [NeZero v] (huv : u * v ∣ N) (hpar : ψ (-1) * �
     have hpow : cexp (2 * π * I * z / N) ^ ((v * p.1 : ℕ) * (L * p.2 : ℕ)) =
         cexp (2 * π * I * z) ^ ((p.1 : ℕ) * p.2) := by
       rw [show (v * p.1 : ℕ) * (L * p.2 : ℕ) = N * (p.1 * p.2) by rw [hN]; ring, pow_mul,
-        ← Complex.exp_nat_mul]
+        ← Complex.exp_natCast_mul]
       congr 2
       field_simp [Nat.cast_ne_zero.mpr (NeZero.ne N)]
     simp only [Function.comp_apply, PNat.mul_coe, hvP, hLP, Nat.cast_mul, dvd_mul_right,

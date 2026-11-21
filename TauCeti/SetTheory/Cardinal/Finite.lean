@@ -36,6 +36,8 @@ particular is a subsingleton.
 
 * `Finite.eq_or_eq_of_card_le_two`: two distinct elements exhaust a finite type of
   cardinality at most two.
+* `Fintype.sum_eq_add_of_natCard_le_two`: so a sum over such a type is the sum of the values at
+  the two elements.
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
@@ -63,7 +65,7 @@ theorem card_pi_eq_prod_of_card_eq_one {ι : Type*} {X : ι → Type*} (s : Fins
     (hX : ∀ i ∉ s, Nat.card (X i) = 1) :
     Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i) := by
   classical
-  have h (i : {i // i ∉ s}) := Nat.card_eq_one_iff_unique.mp (hX i.1 i.2)
+  have h (i : {i // i ∉ s}) := Nat.card_eq_one_iff_unique.mp (hX i.val i.property)
   have (i : {i // i ∉ s}) : Subsingleton (X i) := (h i).1
   have (i : {i // i ∉ s}) : Nonempty (X i) := (h i).2
   rw [Nat.card_congr (Equiv.piEquivPiSubtypeProd (· ∈ s) X), Nat.card_prod,
@@ -83,7 +85,7 @@ theorem card_sigma_eq_finsum {ι : Type*} (β : ι → Type*) [∀ i, Finite (β
     rw [Nat.card_sigma, ← finsum_mem_support, ← finsum_set_coe_eq_finsum_mem,
       finsum_eq_sum_of_fintype]
   · have : Infinite s := Set.infinite_coe_iff.mpr hs
-    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.2).1
+    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.property).1
     rw [Nat.card_eq_zero_of_infinite, finsum_of_infinite_support hs]
 
 /-- **A sigma type with constant fibre cardinality.** If every fibre `β a` has `Nat.card` equal to
@@ -171,3 +173,17 @@ theorem eq_or_eq_of_card_le_two {K : Type*} [Finite K] (hK : Nat.card K ≤ 2)
   omega
 
 end Finite
+
+namespace Fintype
+
+/-- Over a finite type of cardinality at most two, a product is the product of the values at any
+two distinct elements `i` and `j`. -/
+@[to_additive /-- Over a finite type of cardinality at most two, a sum is the sum of the values at
+any two distinct elements `i` and `j`. -/]
+theorem prod_eq_mul_of_natCard_le_two {K M : Type*} [Fintype K] [CommMonoid M]
+    (hK : Nat.card K ≤ 2) {i j : K} (hij : i ≠ j) (f : K → M) :
+    ∏ k, f k = f i * f j :=
+  prod_eq_mul i j hij fun k hk ↦
+    ((Finite.eq_or_eq_of_card_le_two hK hij k).elim hk.1 hk.2).elim
+
+end Fintype

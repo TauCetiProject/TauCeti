@@ -45,6 +45,9 @@ once.
   updates the corresponding entry of `u` or of `v`.
 * `Fin.append_comp_swap_castAdd`, `Fin.append_comp_swap_natAdd`: exchanging two entries of
   `Fin.append u v` exchanges the corresponding entries of `u` or of `v`.
+* `Fin.comp_append`, `Fin.comp_append_comp_cast`, `Fin.comp_cast_comp_cast`: postcomposing an
+  appended (or casted appended) tuple with a function, and collapsing nested `Fin.cast`
+  precompositions.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -59,12 +62,15 @@ once.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
+* `Fin.contractNth_castSucc_insertNth_castSucc`: inserting an entry before entry `j` and
+  contracting the two overwrites entry `j` by the contraction.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
   meet at an inserted vertex.
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
   the corresponding entry of `a`.
+* `Fin.removeNth_comp`: deleting an entry commutes with applying a function to every entry.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 * `Fin.injective_apply_zero_one_two`: a tuple of length three is determined by its entries.
 * `Fin.injective_comp_succAbove_of_eq` and `Fin.range_comp_succAbove_of_eq`: if `b p = b q`,
@@ -72,6 +78,9 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
+* `Fin.comp_succ_succAbove_comp_predAbove`: when adjacent entries at `p.castSucc` and `p.succ`
+  agree, deleting `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers the
+  tuple.
 -/
 
 public section
@@ -196,6 +205,23 @@ theorem append_comp_swap_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) 
       simp)
     (fun i ↦ by rw [Function.comp_apply, ← (natAdd_injective n m).map_swap j k i]; simp) i
 
+/-- Postcomposing `Fin.append u v` with `f` appends `f ∘ u` and `f ∘ v`. -/
+theorem comp_append {β : Sort*} {n : ℕ} (f : α → β) (u : Fin m → α) (v : Fin n → α) :
+    f ∘ append u v = append (f ∘ u) (f ∘ v) :=
+  funext fun i ↦ addCases (fun _ ↦ by simp) (fun _ ↦ by simp) i
+
+/-- Postcomposing a casted appended tuple `Fin.append u v ∘ Fin.cast h` with `f` appends `f ∘ u`
+and `f ∘ v` with the same cast. -/
+theorem comp_append_comp_cast {β : Sort*} {n k : ℕ} (f : α → β) (u : Fin m → α) (v : Fin n → α)
+    (h : k = m + n) :
+    f ∘ (append u v ∘ Fin.cast h) = append (f ∘ u) (f ∘ v) ∘ Fin.cast h := by
+  rw [← Function.comp_assoc, comp_append]
+
+/-- Precomposing a tuple with two `Fin.cast` maps precomposes with the composite cast. -/
+theorem comp_cast_comp_cast {k n : ℕ} (u : Fin n → α) (h₁ : k = m) (h₂ : m = n) :
+    (u ∘ Fin.cast h₂) ∘ Fin.cast h₁ = u ∘ Fin.cast (h₁.trans h₂) :=
+  rfl
+
 section ContractNth
 
 variable {n : ℕ} (op : α → α → α)
@@ -289,6 +315,18 @@ theorem contractNth_castSucc_const (j : Fin n) (x : α) :
   · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
   · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj]
 
+/-- Inserting `x` at `j.castSucc` and then contracting the entries `j` and `j + 1` overwrites
+entry `j` of the tuple by `op x (a j)`. -/
+theorem contractNth_castSucc_insertNth_castSucc (j : Fin n) (x : α) (a : Fin n → α) :
+    contractNth j.castSucc op (insertNth (α := fun _ => α) j.castSucc x a) =
+      Function.update a j (op x (a j)) := by
+  funext k
+  rcases eq_or_ne k j with rfl | h
+  · rw [contractNth_apply_of_eq _ _ _ _ rfl, insertNth_apply_same, insertNth_castSucc_apply_succ,
+      Function.update_self]
+  · rw [contractNth_apply_of_ne _ _ _ _ (val_ne_of_ne h).symm, insertNth_apply_succAbove,
+      Function.update_of_ne h]
+
 end ContractNth
 
 /-- Deleting entry `j + 1` and then overwriting entry `j` by the deleted entry is deleting
@@ -356,6 +394,11 @@ theorem removeNth_succ_cons {n : ℕ} (j : Fin (n + 1)) (x : α) (a : Fin (n + 1
     removeNth j.succ (cons x a : Fin (n + 2) → α) = cons x (removeNth j a) := by
   funext k
   cases k using Fin.cases <;> simp [removeNth_apply]
+
+/-- Deleting an entry commutes with applying a function to every entry of a tuple. -/
+theorem removeNth_comp {β : Sort*} (h : α → β) {n : ℕ} (i : Fin (n + 1))
+    (v : Fin (n + 1) → α) : (i.removeNth fun k ↦ h (v k)) = fun k ↦ h (i.removeNth v k) :=
+  (rfl)
 
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/
@@ -459,5 +502,16 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
     omega
   · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
     omega
+
+/-- When `f` takes equal values at the adjacent indices `p.castSucc` and `p.succ`, deleting
+`p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers `f`. -/
+theorem comp_succ_succAbove_comp_predAbove {α : Type*} {n : ℕ} {f : Fin (n + 1) → α} {p : Fin n}
+    (hf : f p.castSucc = f p.succ) :
+    (f ∘ p.succ.succAbove) ∘ p.predAbove = f := by
+  funext i
+  by_cases hi : i = p.succ
+  · subst hi
+    simp [hf]
+  · simp [Function.comp_apply, Fin.succ_succAbove_predAbove hi]
 
 end Fin

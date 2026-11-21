@@ -50,22 +50,22 @@ noncomputable def regularFiberRestrictDiffeomorph (hm : 1 ≤ m) (hf : ContMDiff
     (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c) (U : Opens M) :
     letI := regularFiberChartedSpace hm hf hc hreg
     letI := regularFiberChartedSpace (f := fun x : U ↦ f x) hm
-      (hf.comp contMDiff_subtype_val) hc
+      (hf.comp contMDiff_subtypeVal) hc
       (hreg.restrict U)
     {x : U // f x = c} ≃ₘ^m⟮𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ),
       𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ)⟯
-      (Opens.comap ⟨(Subtype.val : {x : M // f x = c} → M), continuous_subtype_val⟩ U) := by
-  let hfU : ContMDiff I J m (fun x : U ↦ f x) := hf.comp contMDiff_subtype_val
+      (Opens.comap ⟨(Subtype.val : {x : M // f x = c} → M), continuous_subtypeVal⟩ U) := by
+  let hfU : ContMDiff I J m (fun x : U ↦ f x) := hf.comp contMDiff_subtypeVal
   let hrU := hreg.restrict U
   letI := regularFiberChartedSpace hm hf hc hreg
   letI := regularFiberChartedSpace hm hfU hc hrU
   haveI := isManifold_regularFiber hm hf hc hreg
   haveI := isManifold_regularFiber hm hfU hc hrU
   let V : Opens {x : M // f x = c} :=
-    Opens.comap ⟨Subtype.val, continuous_subtype_val⟩ U
+    Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ U
   let e : {x : U // f x = c} ≃ₜ V :=
-    { toFun := fun x ↦ ⟨⟨x.1.1, x.2⟩, x.1.2⟩
-      invFun := fun x ↦ ⟨⟨x.1.1, x.2⟩, x.1.2⟩
+    { toFun := fun x ↦ ⟨⟨x.val.val, x.property⟩, x.val.property⟩
+      invFun := fun x ↦ ⟨⟨x.val.val, x.property⟩, x.val.property⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       continuous_toFun := by fun_prop
@@ -74,33 +74,34 @@ noncomputable def regularFiberRestrictDiffeomorph (hm : 1 ≤ m) (hf : ContMDiff
   · apply (TauCeti.ContMDiff.subtypeVal_comp_iff V _).mp
     apply (ContMDiff.iff_comp_isImmersion
       (isSmoothEmbedding_coe_regularFiber hm hf hc hreg).isImmersion).2
-    exact ⟨continuous_subtype_val.comp e.continuous, contMDiff_subtype_val.comp
+    exact ⟨continuous_subtypeVal.comp e.continuous, contMDiff_subtypeVal.comp
       (isSmoothEmbedding_coe_regularFiber hm hfU hc hrU).isImmersion.contMDiff⟩
   · apply (ContMDiff.iff_comp_isImmersion
       (isSmoothEmbedding_coe_regularFiber hm hfU hc hrU).isImmersion).2
     refine ⟨e.symm.continuous, ?_⟩
     apply (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp
     exact ((isSmoothEmbedding_coe_regularFiber hm hf hc hreg).isImmersion.contMDiff).comp
-      contMDiff_subtype_val
+      contMDiff_subtypeVal
 
 /-- The restriction comparison preserves the underlying point of the ambient manifold. -/
 @[simp]
 theorem regularFiberRestrictDiffeomorph_apply (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c) (U : Opens M)
     (x : {x : U // f x = c}) :
-    regularFiberRestrictDiffeomorph hm hf hc hreg U x = ⟨⟨x.1.1, x.2⟩, x.1.2⟩ :=
+    regularFiberRestrictDiffeomorph hm hf hc hreg U x = ⟨⟨x.val.val, x.property⟩, x.val.property⟩ :=
   (rfl)
 
 /-- The inverse restriction comparison preserves the underlying point in the open subset. -/
 @[simp]
 theorem regularFiberRestrictDiffeomorph_symm_apply (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     (hc : J.IsInteriorPoint c) (hreg : IsRegularValue I J f c) (U : Opens M)
-    (x : Opens.comap ⟨(Subtype.val : {x : M // f x = c} → M), continuous_subtype_val⟩ U) :
+    (x : Opens.comap ⟨(Subtype.val : {x : M // f x = c} → M), continuous_subtypeVal⟩ U) :
     letI := regularFiberChartedSpace hm hf hc hreg
     letI := regularFiberChartedSpace (f := fun x : U ↦ f x) hm
-      (hf.comp contMDiff_subtype_val) hc
+      (hf.comp contMDiff_subtypeVal) hc
       (hreg.restrict U)
-    (regularFiberRestrictDiffeomorph hm hf hc hreg U).symm x = ⟨⟨x.1.1, x.2⟩, x.1.2⟩ :=
+    (regularFiberRestrictDiffeomorph hm hf hc hreg U).symm x = ⟨⟨x.val.val, x.property⟩,
+        x.val.property⟩ :=
   (rfl)
 
 end TauCeti

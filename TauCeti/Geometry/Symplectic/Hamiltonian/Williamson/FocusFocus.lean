@@ -146,7 +146,7 @@ theorem exists_isDarbouxBasis_apply_eq_of_commute (hV : finrank ℝ V = 4)
   have hp₂ : a₁ (a₂ p) = -a₂ p := by rw [k₁₂, hp, map_neg]
   have iso {μ : ℝ} (hμ : μ ≠ 0) {u w : V} (hu : a₁ u = μ • u) (hw : a₁ w = μ • w) :
       ω.toBilinForm u w = 0 :=
-    isIsotropic_iff.1 (isIsotropic_genEigenspace ω A₁.2 hμ 1) _
+    isIsotropic_iff.1 (isIsotropic_genEigenspace ω A₁.property hμ 1) _
       (Module.End.mem_genEigenspace_one.2 hu) _ (Module.End.mem_genEigenspace_one.2 hw)
   obtain ⟨b, hb, hbe⟩ := exists_isDarbouxBasis_coe_eq (ω := ω)
     (v := fun c ↦ ![![q, p], ![a₂ q, a₂ p]] c.1 c.2) (by omega)

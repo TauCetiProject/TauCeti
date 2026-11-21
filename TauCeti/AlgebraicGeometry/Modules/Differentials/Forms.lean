@@ -6,45 +6,50 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
-public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.Basic
+public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.LocallyConstantRank
+public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
 
 /-!
 # Sheaves of relative differential forms
 
-For a scheme `X` over a commutative ring `R`, the sheaf of relative differential `p`-forms
-`Ω^p_{X/R}` is the `p`-th exterior power of the sheaf of relative differentials `Ω_{X/R}`, taken
-in the category of sheaves of `𝒪_X`-modules. The exterior power is that of the sheaf, not the
-sheaf associated with the exterior powers of the global sections.
+For a scheme `X` with a structure morphism `f : X ⟶ Spec R`, the sheaf `Ωᵖ_{X/R}` of relative
+differential `p`-forms is the `p`-th exterior power, as a sheaf of `𝒪_X`-modules, of the sheaf of
+relative differentials `Ω_{X/R}`. The exterior power is taken of the sheaf, not of its global
+sections: on a smooth scheme it is the sheaf whose local frames are the wedge products of a local
+frame of `Ω_{X/R}`.
 
-In degrees zero and one it is the structure sheaf and `Ω_{X/R}` itself. When `X` is smooth of
-relative dimension `n` over `Spec R`, `Ω_{X/R}` is finite locally free of rank `n`, so `Ω^p_{X/R}`
-is finite locally free of rank `n.choose p`. In particular the top power `Ω^n_{X/R}` is the
-determinant `det Ω_{X/R}` of the cotangent bundle, an invertible sheaf, and `Ω^p_{X/R}` vanishes
-for `p > n`. These are the sheaves of differential forms whose triviality and cohomology enter the
-definition of a K3 surface (`n = 2`).
+The structure morphism is an explicit argument, so that a base change `X_K ⟶ Spec K` or any other
+morphism to `Spec R` can be used directly; the statements below that compare with `Ω_{X/R}` use
+the structure morphism `X ↘ Spec R` of an `X.Over (Spec R)` instance.
+
+In degree zero `Ωᵖ_{X/R}` is `𝒪_X` and in degree one it is `Ω_{X/R}`. If `X` is smooth of
+relative dimension `n` over `Spec R`, then `Ωᵖ_{X/R}` is finite locally free of rank `n.choose p`;
+in particular the top-degree forms `Ωⁿ_{X/R}` are an invertible sheaf, identified with the
+determinant `det Ω_{X/R}` (the canonical sheaf of `X` over `R`), and `Ωᵖ_{X/R}` vanishes for
+`p > n`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.differentialForms`: the sheaf `Ω^p_{X/R}`;
-* `AlgebraicGeometry.Scheme.differentialFormsZeroIso` and
-  `AlgebraicGeometry.Scheme.differentialFormsOneIso`: `Ω^0_{X/R} ≅ 𝒪_X` and
-  `Ω^1_{X/R} ≅ Ω_{X/R}`;
-* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_differentialForms_apply`: in relative
-  dimension `n`, `Ω^p_{X/R}` has rank `n.choose p` everywhere;
-* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.determinant_obj_relativeDifferentials_obj`:
-  the top power `Ω^n_{X/R}` is the determinant of `Ω_{X/R}`, so it is invertible
-  (`TauCeti.AlgebraicGeometry.isInvertible_differentialForms`);
-* `TauCeti.AlgebraicGeometry.isZero_differentialForms_of_lt`: `Ω^p_{X/R} = 0` for `p > n`.
+* `TauCeti.AlgebraicGeometry.differentialForms R f p`: the sheaf `Ωᵖ_{X/R}`;
+* `differentialFormsZeroIso` and `differentialFormsOneIso`: `Ω⁰_{X/R} ≅ 𝒪_X` and
+  `Ω¹_{X/R} ≅ Ω_{X/R}`;
+* `FiniteLocallyFreeSheaf.differentialForms R X p`, `FiniteLocallyFreeSheaf.differentialForms_def`,
+  `FiniteLocallyFreeSheaf.rank_differentialForms_apply'` and
+  `FiniteLocallyFreeSheaf.rank_differentialForms_apply`: on a smooth scheme `Ωᵖ_{X/R}` is the
+  finite locally free exterior power of `Ω_{X/R}`, of rank `n.choose p` in relative dimension `n`;
+* `isZero_differentialForms`: `Ωᵖ_{X/R} = 0` for `p` above the relative dimension;
+* `isInvertible_differentialForms` and `differentialFormsIsoDet`: the top-degree forms are
+  invertible and are the determinant of `Ω_{X/R}`.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Section II.8, definitions before Example 8.20.1.
-* D. Huybrechts, *Lectures on K3 Surfaces*, Chapter 1, Section 1.1.
+* R. Hartshorne, *Algebraic Geometry*, Section II.8 (the sheaves `Ωᵖ = ⋀ᵖ Ω` and the canonical
+  sheaf `ω = ⋀ⁿ Ω` of a nonsingular variety of dimension `n`).
 -/
 
 public section
 
-open CategoryTheory Limits MonoidalCategory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -52,97 +57,105 @@ universe u
 
 noncomputable section
 
-variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
+variable (R : Type u) [CommRing R] {X : Scheme.{u}}
 
-/-- The sheaf `Ω^p_{X/R}` of relative differential `p`-forms of a scheme `X` over `R`: the `p`-th
-exterior power of the sheaf of relative differentials `Ω_{X/R}`, as a sheaf of `𝒪_X`-modules. -/
-def _root_.AlgebraicGeometry.Scheme.differentialForms (p : ℕ) : X.Modules :=
+/-- The sheaf `Ωᵖ_{X/R}` of **relative differential `p`-forms** of a scheme `X` along a structure
+morphism `f : X ⟶ Spec R`: the `p`-th exterior power, as a sheaf of `𝒪_X`-modules, of the sheaf of
+relative differentials `Ω_{X/R}` defined by `f`. -/
+def differentialForms (f : X ⟶ Spec (.of R)) (p : ℕ) : X.Modules :=
+  letI : X.Over (Spec (.of R)) := ⟨f⟩
   (SheafOfModules.exteriorPower X.sheaf p).obj (X.relativeDifferentials R)
 
 /-- The sheaf of differential `0`-forms is the structure sheaf. -/
-def _root_.AlgebraicGeometry.Scheme.differentialFormsZeroIso :
-    X.differentialForms R 0 ≅ 𝟙_ X.Modules :=
-  (SheafOfModules.exteriorPowerZeroIso X.sheaf).app (X.relativeDifferentials R)
+def differentialFormsZeroIso (f : X ⟶ Spec (.of R)) :
+    differentialForms R f 0 ≅ SheafOfModules.unit X.ringCatSheaf :=
+  (SheafOfModules.exteriorPowerZeroIso X.sheaf).app _
+
+variable (X) [X.Over (Spec (.of R))]
+
+/-- For the structure morphism of a scheme over `Spec R`, `Ωᵖ_{X/R}` is the `p`-th exterior power
+of `Ω_{X/R}`. -/
+lemma differentialForms_def (p : ℕ) :
+    differentialForms R (X ↘ Spec (.of R)) p =
+      (SheafOfModules.exteriorPower X.sheaf p).obj (X.relativeDifferentials R) :=
+  (rfl)
 
 /-- The sheaf of differential `1`-forms is the sheaf of relative differentials. -/
-def _root_.AlgebraicGeometry.Scheme.differentialFormsOneIso :
-    X.differentialForms R 1 ≅ X.relativeDifferentials R :=
-  (SheafOfModules.exteriorPowerOneIso X.sheaf).app (X.relativeDifferentials R)
+def differentialFormsOneIso :
+    differentialForms R (X ↘ Spec (.of R)) 1 ≅ X.relativeDifferentials R :=
+  (SheafOfModules.exteriorPowerOneIso X.sheaf).app _
 
-namespace FiniteLocallyFreeSheaf
-
-/-- The sheaf `Ω^p_{X/R}` of relative differential `p`-forms of a scheme smooth over `Spec R`, as
-a finite locally free sheaf. -/
-def differentialForms [Smooth (X ↘ Spec (.of R))] (p : ℕ) : FiniteLocallyFreeSheaf X :=
+/-- The sheaf `Ωᵖ_{X/R}` of differential `p`-forms of a scheme smooth over `Spec R`, as a finite
+locally free sheaf. -/
+def FiniteLocallyFreeSheaf.differentialForms [Smooth (X ↘ Spec (.of R))] (p : ℕ) :
+    FiniteLocallyFreeSheaf X :=
   (exteriorPower X p).obj (relativeDifferentials R X)
 
-/-- The underlying sheaf of `FiniteLocallyFreeSheaf.differentialForms R X p` is `Ω^p_{X/R}`. -/
+/-- The underlying sheaf of `FiniteLocallyFreeSheaf.differentialForms R X p` is `Ωᵖ_{X/R}`. -/
 @[simp]
-lemma differentialForms_obj [Smooth (X ↘ Spec (.of R))] (p : ℕ) :
-    (differentialForms R X p).obj = X.differentialForms R p := by
-  rw [differentialForms, exteriorPower_obj_obj, relativeDifferentials_obj,
-    Scheme.differentialForms]
+lemma FiniteLocallyFreeSheaf.differentialForms_obj [Smooth (X ↘ Spec (.of R))] (p : ℕ) :
+    (differentialForms R X p).obj =
+      TauCeti.AlgebraicGeometry.differentialForms R (X ↘ Spec (.of R)) p := by
+  rw [differentialForms, exteriorPower_obj_obj, relativeDifferentials_obj, differentialForms_def]
+
+/-- On a scheme smooth over `Spec R`, `FiniteLocallyFreeSheaf.differentialForms R X p` is the
+`p`-th exterior power of the finite locally free sheaf `Ω_{X/R}`. -/
+lemma FiniteLocallyFreeSheaf.differentialForms_def [Smooth (X ↘ Spec (.of R))] (p : ℕ) :
+    differentialForms R X p = (exteriorPower X p).obj (relativeDifferentials R X) :=
+  (rfl)
 
 variable {X}
 
+/-- On a scheme smooth over `Spec R`, the rank of the sheaf of differential `p`-forms at `x` is
+`r.choose p`, where `r` is the rank of `Ω_{X/R}` at `x`. -/
+@[simp]
+theorem FiniteLocallyFreeSheaf.rank_differentialForms_apply' [Smooth (X ↘ Spec (.of R))] (p : ℕ)
+    (x : X) : (differentialForms R X p).rank x = ((relativeDifferentials R X).rank x).choose p := by
+  rw [differentialForms_def, rank_exteriorPower_apply]
+
 /-- On a scheme smooth of relative dimension `n` over `Spec R`, the sheaf of differential
 `p`-forms has rank `n.choose p` at every point. -/
-theorem rank_differentialForms_apply (n p : ℕ)
+theorem FiniteLocallyFreeSheaf.rank_differentialForms_apply (n p : ℕ)
     [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] (x : X) :
     haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
     (differentialForms R X p).rank x = n.choose p := by
   have := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
-  rw [differentialForms, rank_exteriorPower_apply, rank_relativeDifferentials_apply R n]
+  rw [rank_differentialForms_apply', rank_relativeDifferentials_apply R n]
 
 variable (X)
 
-/-- The sheaf of relative differentials of a scheme smooth of relative dimension `n` over
-`Spec R`, as a finite locally free sheaf of constant rank `n`. -/
-def FixedRank.relativeDifferentials (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] :
-    FixedRank X n :=
-  haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
-  ⟨FiniteLocallyFreeSheaf.relativeDifferentials R X,
-    (isConstantRank_iff _ n).mpr (rank_relativeDifferentials_apply R n)⟩
-
-/-- The underlying sheaf of `FixedRank.relativeDifferentials R X n` is `Ω_{X/R}`. -/
-@[simp]
-lemma FixedRank.relativeDifferentials_obj_obj (n : ℕ)
-    [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] :
-    (FixedRank.relativeDifferentials R X n).obj.obj = X.relativeDifferentials R :=
-  haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
-  FiniteLocallyFreeSheaf.relativeDifferentials_obj R X
-
-/-- On a scheme smooth of relative dimension `n` over `Spec R`, the determinant of the cotangent
-bundle `Ω_{X/R}` is the sheaf `Ω^n_{X/R}` of top-degree differential forms. -/
-theorem determinant_obj_relativeDifferentials_obj (n : ℕ)
-    [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] :
-    ((determinant X n).obj (FixedRank.relativeDifferentials R X n)).obj =
-      X.differentialForms R n := by
-  rw [determinant_obj_obj, FixedRank.relativeDifferentials_obj_obj, Scheme.differentialForms]
-
-end FiniteLocallyFreeSheaf
-
-variable {X}
-
-/-- On a scheme smooth of relative dimension `n` over `Spec R`, the sheaf `Ω^n_{X/R}` of
-top-degree differential forms is invertible. -/
-theorem isInvertible_differentialForms (n : ℕ)
-    [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] :
-    SheafOfModules.isInvertible X (X.differentialForms R n) :=
-  FiniteLocallyFreeSheaf.determinant_obj_relativeDifferentials_obj R X n ▸
-    ((FiniteLocallyFreeSheaf.determinant X n).obj
-      (FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials R X n)).property
-
 /-- On a scheme smooth of relative dimension `n` over `Spec R`, there are no nonzero differential
-`p`-forms for `p > n`: the sheaf `Ω^p_{X/R}` is zero. -/
-theorem isZero_differentialForms_of_lt {n p : ℕ} (h : n < p)
-    [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] :
-    IsZero (X.differentialForms R p) := by
+`p`-forms for `p > n`. -/
+theorem isZero_differentialForms {n p : ℕ} [SmoothOfRelativeDimension n (X ↘ Spec (.of R))]
+    (hp : n < p) : IsZero (differentialForms R (X ↘ Spec (.of R)) p) := by
   have := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
-  rw [← FiniteLocallyFreeSheaf.differentialForms_obj,
-    FiniteLocallyFreeSheaf.isZero_obj_iff_forall_rank_eq_zero]
-  intro x
-  rw [FiniteLocallyFreeSheaf.rank_differentialForms_apply R n, Nat.choose_eq_zero_of_lt h]
+  rw [← FiniteLocallyFreeSheaf.differentialForms_obj]
+  exact (FiniteLocallyFreeSheaf.differentialForms R X p).isZero_obj_iff_forall_rank_eq_zero.2
+    fun x ↦ by
+      rw [FiniteLocallyFreeSheaf.rank_differentialForms_apply R n, Nat.choose_eq_zero_of_lt hp]
+
+/-- On a scheme smooth of relative dimension `n` over `Spec R`, the sheaf `Ωⁿ_{X/R}` of top-degree
+differential forms is invertible. -/
+theorem isInvertible_differentialForms (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] :
+    SheafOfModules.isInvertible X (differentialForms R (X ↘ Spec (.of R)) n) := by
+  have := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
+  rw [← FiniteLocallyFreeSheaf.differentialForms_obj]
+  exact (FiniteLocallyFreeSheaf.differentialForms R X n).isInvertible_iff_forall_rank_eq_one.2
+    fun x ↦ by rw [FiniteLocallyFreeSheaf.rank_differentialForms_apply R n, Nat.choose_self]
+
+/-- On a scheme smooth of relative dimension `n` over `Spec R`, the sheaf `Ωⁿ_{X/R}` of top-degree
+differential forms is the determinant `det Ω_{X/R}` of the sheaf of relative differentials: the
+determinant is the exterior power in the degree given by the rank, which is `n` everywhere. -/
+def differentialFormsIsoDet (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] :
+    haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
+    differentialForms R (X ↘ Spec (.of R)) n ≅
+      (FiniteLocallyFreeSheaf.det (FiniteLocallyFreeSheaf.relativeDifferentials R X)).obj :=
+  haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
+  eqToIso (differentialForms_def R X n) ≪≫
+    ((locallyConstantExteriorPowerIso _
+      (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R n)).app _).symm ≪≫
+    eqToIso (by
+      rw [FiniteLocallyFreeSheaf.det_obj, FiniteLocallyFreeSheaf.relativeDifferentials_obj])
 
 end
 
