@@ -345,10 +345,10 @@ theorem W1p.exists_value_gradient_ae_eq_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ :
         W1p.gradient w =ᵐ[mu.restrict Omega]
           fun x => deriv Φ (W1p.value u x) • W1p.gradient u x := by
   obtain ⟨F, K, hF, hK, hFΦ, hF0⟩ := hΦ.exists_contDiff_bdd_deriv_eventuallyEq M
-  refine ⟨W1p.contDiffComp hp hF hK (hF0 hΦ0) u, ?_, ?_⟩
-  · filter_upwards [W1p.value_contDiffComp_ae hp hF hK (hF0 hΦ0) u, hM] with x hx hxM
+  refine ⟨W1p.contDiffComp hp hF hK (hF0.trans hΦ0) u, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffComp_ae hp hF hK (hF0.trans hΦ0) u, hM] with x hx hxM
     rw [hx, (hFΦ _ hxM).eq_of_nhds]
-  · filter_upwards [W1p.gradient_contDiffComp_ae hp hF hK (hF0 hΦ0) u, hM] with x hx hxM
+  · filter_upwards [W1p.gradient_contDiffComp_ae hp hF hK (hF0.trans hΦ0) u, hM] with x hx hxM
     rw [hx, (hFΦ _ hxM).deriv_eq]
 
 end ChainRule

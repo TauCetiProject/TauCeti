@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Global boundedness of weak subsolutions with a drift
@@ -644,12 +645,6 @@ private theorem mul_norm_gradient_posPartAbove_sq_le_of_driftTransform
     filter_upwards [hw0, hwA] with x h₁ h₂
     rw [Real.norm_of_nonneg (driftWeight_nonneg hκ h₁ h₂)]
     exact driftWeight_le hκ hA _
-  have hint_inner : ∀ {G₁ G₂ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}, MemLp G₁ 2 ν →
-      MemLp G₂ 2 ν → Integrable (fun x => ⟪G₁ x, G₂ x⟫) ν := fun h₁ h₂ =>
-    (h₁.norm.integrable_mul h₂.norm).mono' (h₁.aestronglyMeasurable.inner h₂.aestronglyMeasurable)
-      (ae_of_all _ fun x => by
-        rw [Real.norm_eq_abs]
-        exact abs_real_inner_le_norm _ _)
   have hGF : MemLp (fun x => driftWeight A κ (W1p.value w x) • F x) 2 ν :=
     hF2.of_le_mul (c := (2 * κ)⁻¹) (hGmeas.smul hF.aestronglyMeasurable)
       (hGbd.mono fun x hx => by rw [norm_smul]; gcongr)
@@ -658,11 +653,11 @@ private theorem mul_norm_gradient_posPartAbove_sq_le_of_driftTransform
     ((integrable_const _).add (hg1.norm.const_mul _)).add (hF2.norm.integrable_sq.const_mul _)
   have hY₁ : Integrable (fun x => g x * W1p.value θ x) ν :=
     hg1.mul_bdd (Lp.aestronglyMeasurable _) hθbd
-  have hY₂ := hint_inner hF2 (Lp.memLp (W1p.gradient θ))
+  have hY₂ := hF2.integrable_inner (𝕜 := ℝ) (Lp.memLp (W1p.gradient θ))
   have hR₁ : Integrable (fun x => (beta ^ 2 / lam + κ⁻¹ * ‖g x‖ + (lam * κ ^ 2)⁻¹ * ‖F x‖ ^ 2) *
       W1p.value v x) ν :=
     hg'int.mul_bdd (Lp.aestronglyMeasurable _) hvbd
-  have hR₂ := hint_inner hGF (Lp.memLp (W1p.gradient v))
+  have hR₂ := hGF.integrable_inner (𝕜 := ℝ) (Lp.memLp (W1p.gradient v))
   have hX := integrable_energyIntegrand_jetField hcoeff u θ
   have hP : Integrable (fun x => lam * ‖W1p.gradient v x‖ ^ 2) ν :=
     (Lp.memLp (W1p.gradient v)).norm.integrable_sq.const_mul lam
