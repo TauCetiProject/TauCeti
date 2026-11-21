@@ -12,20 +12,18 @@ public import TauCeti.RingTheory.FilteredAlgebra.AssociatedGraded.Basic
 # Separated filtrations with a domain as associated graded ring
 
 Let `F` be a decreasing ideal filtration of a ring `A` which is separated, `⋂ₙ Fⁿ = 0`. Every
-nonzero `x ∈ A` then has an exact order: there is `n` with `x ∈ Fⁿ` and `x ∉ Fⁿ⁺¹`, so that its
-class in `Fⁿ / Fⁿ⁺¹`, the principal symbol of `x`, is nonzero. The product of the principal
-symbols of `x` and `y` is the class of `x * y` in the degree given by the sum of the orders. If
-the associated graded ring has no zero divisors, this class is nonzero, hence so is `x * y`. Thus
-a separated filtered ring whose associated graded ring is a domain is itself a domain; no
-completeness and no commutativity are needed.
+nonzero `x ∈ A` then has an exact order (`TauCeti.AlgFiltration.exists_mem_notMem_succ`): there is
+`n` with `x ∈ Fⁿ` and `x ∉ Fⁿ⁺¹`, so that its class in `Fⁿ / Fⁿ⁺¹`, the principal symbol of `x`,
+is nonzero. The product of the principal symbols of `x` and `y` is the class of `x * y` in the
+degree given by the sum of the orders. If the associated graded ring has no zero divisors, this
+class is nonzero, hence so is `x * y`. Thus a separated filtered ring whose associated graded ring
+is a domain is itself a domain; no completeness and no commutativity are needed.
 
 This applies to the Iwasawa algebra of a uniform pro-`p` group and to power series rings, whose
 associated graded rings for their natural filtrations are polynomial rings.
 
 ## Main results
 
-* `TauCeti.AlgFiltration.exists_mem_notMem_succ`: under separatedness, a nonzero element has an
-  exact filtration order.
 * `TauCeti.AlgFiltration.nontrivial_of_nontrivial_associatedGraded`: a ring with a nontrivial
   associated graded ring is nontrivial.
 * `TauCeti.AlgFiltration.noZeroDivisors_of_noZeroDivisors_associatedGraded` and
@@ -45,18 +43,6 @@ public section
 namespace TauCeti.AlgFiltration
 
 variable {A : Type*} [Ring A] {F : AlgFiltration A}
-
-/-- For a separated filtration, `⋂ₙ Fⁿ = 0`, every nonzero element has an exact order: it lies
-in `Fⁿ` but not in `Fⁿ⁺¹` for some `n`. -/
-theorem exists_mem_notMem_succ (hF : ∀ x, (∀ n, x ∈ F.ideal n) → x = 0) {x : A} (hx : x ≠ 0) :
-    ∃ n, x ∈ F.ideal n ∧ x ∉ F.ideal (n + 1) := by
-  classical
-  have h : ∃ k, x ∉ F.ideal k := by
-    by_contra! h
-    exact hx (hF x h)
-  obtain ⟨n, hn⟩ : ∃ n, Nat.find h = n + 1 :=
-    Nat.exists_eq_succ_of_ne_zero fun h0 => Nat.find_spec h (h0 ▸ by simp)
-  exact ⟨n, by_contra fun hxn => Nat.find_min h (by omega) hxn, hn ▸ Nat.find_spec h⟩
 
 /-- A ring whose associated graded ring is nontrivial is nontrivial. -/
 theorem nontrivial_of_nontrivial_associatedGraded [Nontrivial F.AssociatedGraded] :

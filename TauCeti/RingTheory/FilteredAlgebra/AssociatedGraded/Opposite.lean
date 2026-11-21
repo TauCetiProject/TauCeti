@@ -5,37 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Opposite
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.RingTheory.FilteredAlgebra.AssociatedGraded.Noetherian
+public import TauCeti.RingTheory.FilteredAlgebra.Opposite
 
 /-!
-# The opposite of a filtered ring
+# The associated graded ring of the opposite filtration
 
 A decreasing filtration `F` of a ring `A` by two-sided ideals is also a filtration of the
-opposite ring `Aᵐᵒᵖ`, the opposite filtration `TauCeti.AlgFiltration.op F`. Its graded pieces are
-those of `F`, and reversing the order of multiplication identifies its associated graded ring
-with the opposite of the associated graded ring of `F`.
+opposite ring `Aᵐᵒᵖ`, the opposite filtration `TauCeti.AlgFiltration.op F` of
+`TauCeti.RingTheory.FilteredAlgebra.Opposite`. Its graded pieces are those of `F`, and reversing
+the order of multiplication identifies its associated graded ring with the opposite of the
+associated graded ring of `F`.
 
-Right ideals of `A` are left ideals of `Aᵐᵒᵖ`, so right-sided statements about filtered rings
-follow from left-sided ones through this file. In particular, a complete separated filtered ring
-whose associated graded ring is right noetherian is right noetherian.
+Right ideals of `A` are left ideals of `Aᵐᵒᵖ`, so right-sided statements about associated graded
+rings follow from left-sided ones through this file. In particular, a complete separated filtered
+ring whose associated graded ring is right noetherian is right noetherian.
 
 ## Main definitions
 
-* `TauCeti.AlgFiltration.op F`: the filtration of `Aᵐᵒᵖ` given by the same ideals.
 * `TauCeti.AlgFiltration.gradedPieceOpEquiv F n`: the identification of the graded pieces.
 * `TauCeti.AlgFiltration.associatedGradedOpEquiv F`: the ring isomorphism
   `gr (Aᵐᵒᵖ) ≃+* (gr A)ᵐᵒᵖ`.
 
 ## Main results
 
-* `TauCeti.AlgFiltration.isCompleteFiltration_op`: the opposite of a complete separated
-  filtration is complete and separated.
-* `AlgFiltration.isNoetherianRing_mulOpposite_of_isNoetherianRing_mulOpposite_associatedGraded`:
-  a complete separated filtered ring with right noetherian associated graded ring is right
-  noetherian.
+* `isNoetherianRing_mulOpposite_of_isNoetherianRing_mulOpposite_associatedGraded`, in the
+  namespace `TauCeti.AlgFiltration`: a complete separated filtered ring with right noetherian
+  associated graded ring is right noetherian.
 -/
 
 public section
@@ -44,42 +42,7 @@ open MulOpposite
 
 namespace TauCeti.AlgFiltration
 
-variable {A : Type*} [Ring A] (F : AlgFiltration A)
-
-/-- The filtration of the opposite ring `Aᵐᵒᵖ` by the same two-sided ideals. -/
-def op : AlgFiltration Aᵐᵒᵖ where
-  ideal k :=
-    { carrier := {x | x.unop ∈ F.ideal k}
-      add_mem' := add_mem
-      zero_mem' := zero_mem (F.ideal k)
-      smul_mem' a x hx := F.mul_mem (b := 0) hx (by simp) }
-  isTwoSided k := ⟨fun b hx => (F.ideal k).smul_mem b.unop hx⟩
-  antitone _ _ h _ hx := F.antitone h hx
-  ideal_zero := by
-    ext
-    simp
-  mul_mem {a b} _ _ hx hy := by
-    have h := F.mul_mem hy hx
-    rw [Nat.add_comm b a] at h
-    exact h
-
-variable {F}
-
-/-- An element of `Aᵐᵒᵖ` lies in the opposite filtration exactly when its image in `A` lies in
-the filtration. -/
-@[simp]
-theorem mem_op_ideal {k : ℕ} {x : Aᵐᵒᵖ} : x ∈ F.op.ideal k ↔ x.unop ∈ F.ideal k :=
-  (Iff.rfl)
-
-/-- The opposite of a complete separated filtration is complete and separated. -/
-theorem isCompleteFiltration_op (hF : IsCompleteFiltration F.ideal) :
-    IsCompleteFiltration F.op.ideal where
-  antitone := F.op.antitone
-  eq_zero_of_forall_mem x hx := unop_injective (hF.eq_zero_of_forall_mem x.unop fun n => by
-    simpa using hx n)
-  exists_limit x hx := by
-    obtain ⟨L, hL⟩ := hF.exists_limit (fun n => (x n).unop) fun n => by simpa using hx n
-    exact ⟨MulOpposite.op L, fun n => by simpa using hL n⟩
+variable {A : Type*} [Ring A] {F : AlgFiltration A}
 
 variable (F) in
 /-- The `n`-th term of the opposite filtration is additively the `n`-th term of the
@@ -130,27 +93,19 @@ private def associatedGradedOpHom : F.op.AssociatedGraded →+* F.AssociatedGrad
 /-- Additively, `associatedGradedOpHom` is the identification of graded pieces in each degree. -/
 private theorem associatedGradedOpHom_eq :
     ⇑(associatedGradedOpHom (F := F)) =
-      (DFinsupp.mapRange.addEquiv F.gradedPieceOpEquiv).trans
-        (opAddEquiv : F.AssociatedGraded ≃+ F.AssociatedGradedᵐᵒᵖ) := by
-  refine congrArg DFunLike.coe
-    (DirectSum.addHom_ext (f := (associatedGradedOpHom (F := F)).toAddMonoidHom)
-      (g := ((DFinsupp.mapRange.addEquiv F.gradedPieceOpEquiv).trans
-        (opAddEquiv : F.AssociatedGraded ≃+ F.AssociatedGradedᵐᵒᵖ)).toAddMonoidHom)
-      fun i x => ?_)
-  -- `DirectSum.of` is `DFinsupp.single`, on which `DFinsupp.mapRange` is computed.
-  have hof : DirectSum.of F.op.GradedPiece i x = DFinsupp.single i x := rfl
-  simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, associatedGradedOpHom,
-    DirectSum.toSemiring_of, AddMonoidHom.coe_comp, Function.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply, opAddEquiv_apply]
-  rw [hof, DFinsupp.mapRange.addEquiv_apply, DFinsupp.mapRange_single]
-  rfl
+      ⇑((opAddEquiv : F.AssociatedGraded ≃+ F.AssociatedGradedᵐᵒᵖ).toAddMonoidHom.comp
+        (DirectSum.map fun i => (F.gradedPieceOpEquiv i).toAddMonoidHom)) :=
+  congrArg DFunLike.coe (DirectSum.addHom_ext (f := (associatedGradedOpHom (F := F)).toAddMonoidHom)
+    fun i x => by simp [associatedGradedOpHom])
 
 variable (F) in
 /-- The associated graded ring of the opposite filtration is the opposite of the associated graded
 ring: the class of `x ∈ (Aᵐᵒᵖ)ⁿ` corresponds to the class of `x.unop ∈ Aⁿ`. -/
 noncomputable def associatedGradedOpEquiv : F.op.AssociatedGraded ≃+* F.AssociatedGradedᵐᵒᵖ :=
-  RingEquiv.ofBijective associatedGradedOpHom
-    (associatedGradedOpHom_eq (F := F) ▸ AddEquiv.bijective _)
+  RingEquiv.ofBijective associatedGradedOpHom <| associatedGradedOpHom_eq (F := F) ▸
+    opAddEquiv.bijective.comp
+      ⟨(DirectSum.map_injective _).2 fun i => (F.gradedPieceOpEquiv i).injective,
+        (DirectSum.map_surjective _).2 fun i => (F.gradedPieceOpEquiv i).surjective⟩
 
 /-- The ring isomorphism `gr (Aᵐᵒᵖ) ≃+* (gr A)ᵐᵒᵖ` on homogeneous classes. -/
 @[simp]

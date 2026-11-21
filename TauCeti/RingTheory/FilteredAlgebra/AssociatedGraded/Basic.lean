@@ -36,8 +36,8 @@ the noetherian property in `TauCeti.RingTheory.FilteredAlgebra.AssociatedGraded.
 
 ## Main results
 
-* `TauCeti.AlgFiltration.mk_eq_zero_iff`: the class of `x ∈ Fⁿ` vanishes exactly when
-  `x ∈ Fⁿ⁺¹`.
+* `TauCeti.AlgFiltration.gradedPiece_mk_eq_zero_iff`: the class of `x ∈ Fⁿ` vanishes exactly
+  when `x ∈ Fⁿ⁺¹`.
 * `TauCeti.AlgFiltration.gradedMul_mk_mk`: homogeneous products are computed on representatives.
 * `TauCeti.AlgFiltration.of_mk_mul_of_mk`, `TauCeti.AlgFiltration.of_mk_eq_zero_iff`: the same
   statements for homogeneous elements of `gr A`.
@@ -79,18 +79,19 @@ private theorem mem_comap_iff {n : ℕ} (x : F.ideal n) :
     Submodule.coe_subtype]
 
 /-- The class of `x ∈ Fⁿ` in `Fⁿ / Fⁿ⁺¹` vanishes exactly when `x ∈ Fⁿ⁺¹`. -/
-theorem mk_eq_zero_iff {n : ℕ} (x : F.ideal n) :
+theorem gradedPiece_mk_eq_zero_iff {n : ℕ} (x : F.ideal n) :
     (x : F.GradedPiece n) = 0 ↔ (x : A) ∈ F.ideal (n + 1) := by
   rw [QuotientAddGroup.eq_zero_iff, mem_comap_iff]
 
 /-- Two elements of `Fⁿ` have the same class in `Fⁿ / Fⁿ⁺¹` exactly when their difference lies
 in `Fⁿ⁺¹`. -/
-theorem mk_eq_mk_iff {n : ℕ} (x y : F.ideal n) :
+theorem gradedPiece_mk_eq_mk_iff {n : ℕ} (x y : F.ideal n) :
     (x : F.GradedPiece n) = y ↔ (x : A) - y ∈ F.ideal (n + 1) := by
-  rw [← sub_eq_zero, ← QuotientAddGroup.mk_sub, mk_eq_zero_iff, Submodule.coe_sub]
+  rw [← sub_eq_zero, ← QuotientAddGroup.mk_sub, gradedPiece_mk_eq_zero_iff, Submodule.coe_sub]
 
 /-- Transporting a class along an equality of degrees keeps its representative. -/
-theorem cast_mk {i j : ℕ} (h : i = j) (x : A) (hi : x ∈ F.ideal i) (hj : x ∈ F.ideal j) :
+theorem gradedPiece_cast_mk {i j : ℕ} (h : i = j) (x : A) (hi : x ∈ F.ideal i)
+    (hj : x ∈ F.ideal j) :
     cast (congrArg F.GradedPiece h) (⟨x, hi⟩ : F.ideal i) =
       ((⟨x, hj⟩ : F.ideal j) : F.GradedPiece j) := by
   subst h
@@ -110,12 +111,12 @@ private theorem mulMk_apply {m n : ℕ} (x : F.ideal m)
       F.GradedPiece (m + n)) :=
   rfl
 
-/-- Right multiplication of classes by a fixed `x ∈ Fᵐ`, descended to `Fⁿ / Fⁿ⁺¹`. -/
+/-- Left multiplication of classes by a fixed `x ∈ Fᵐ`, descended to `Fⁿ / Fⁿ⁺¹`. -/
 private def mulLeft {m : ℕ} (n : ℕ) (x : F.ideal m) :
     F.GradedPiece n →+ F.GradedPiece (m + n) :=
   QuotientAddGroup.lift _ (mulMk n x) fun y hy => by
     rw [mem_comap_iff] at hy
-    rw [AddMonoidHom.mem_ker, mulMk_apply, mk_eq_zero_iff]
+    rw [AddMonoidHom.mem_ker, mulMk_apply, gradedPiece_mk_eq_zero_iff]
     exact F.mul_mem (a := m) (b := n + 1) x.property hy
 
 private theorem mulLeft_mk {m n : ℕ} (x : F.ideal m)
@@ -131,8 +132,8 @@ private def mulLeftHom (m n : ℕ) :
   map_zero' := by
     refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun y => ?_)
     simp only [AddMonoidHom.coe_comp, Function.comp_apply, QuotientAddGroup.mk'_apply,
-      mulLeft_mk, AddMonoidHom.zero_apply, mk_eq_zero_iff, ZeroMemClass.coe_zero, zero_mul,
-      zero_mem]
+      mulLeft_mk, AddMonoidHom.zero_apply, gradedPiece_mk_eq_zero_iff, ZeroMemClass.coe_zero,
+      zero_mul, zero_mem]
   map_add' x x' := by
     refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun y => ?_)
     simp only [AddMonoidHom.coe_comp, Function.comp_apply, QuotientAddGroup.mk'_apply,
@@ -149,7 +150,7 @@ def gradedMul (m n : ℕ) : F.GradedPiece m →+ F.GradedPiece n →+ F.GradedPi
       (QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun y => ?_))
     simp only [mulLeftHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, AddMonoidHom.coe_comp,
       Function.comp_apply, QuotientAddGroup.mk'_apply, mulLeft_mk, AddMonoidHom.zero_apply,
-      mk_eq_zero_iff]
+      gradedPiece_mk_eq_zero_iff]
     simpa only [Nat.add_right_comm m 1 n] using F.mul_mem hx y.property
 
 /-- The product of the classes of `x ∈ Fᵐ` and `y ∈ Fⁿ` is the class of `x * y ∈ Fᵐ⁺ⁿ`. -/
@@ -168,7 +169,7 @@ private theorem cast_gradedMul_mk_mk {i j k : ℕ} (h : i + j = k) (x : A) (hx :
         (F.gradedMul i j (⟨x, hx⟩ : F.ideal i)
           (⟨y, hy⟩ : F.ideal j)) =
       ((⟨z, hz⟩ : F.ideal k) : F.GradedPiece k) := by
-  rw [gradedMul_mk_mk, cast_mk h (x * y) (F.mul_mem hx hy) (hxyz ▸ hz)]
+  rw [gradedMul_mk_mk, gradedPiece_cast_mk h (x * y) (F.mul_mem hx hy) (hxyz ▸ hz)]
   exact congrArg _ (Subtype.ext hxyz)
 
 variable (F) in
@@ -275,7 +276,7 @@ theorem of_mk_mul_of_mk {m n : ℕ} (x : F.ideal m)
 @[simp]
 theorem of_mk_eq_zero_iff {n : ℕ} (x : F.ideal n) :
     DirectSum.of F.GradedPiece n (x : F.GradedPiece n) = 0 ↔ (x : A) ∈ F.ideal (n + 1) := by
-  rw [map_eq_zero_iff _ (DirectSum.of_injective n), mk_eq_zero_iff]
+  rw [map_eq_zero_iff _ (DirectSum.of_injective n), gradedPiece_mk_eq_zero_iff]
 
 /-- Homogeneous classes of the same element in equal degrees agree in the associated graded
 ring. -/
