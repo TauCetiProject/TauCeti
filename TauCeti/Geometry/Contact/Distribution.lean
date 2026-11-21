@@ -156,6 +156,12 @@ theorem odd_finrank [Nonempty M] (hD : IsContactDistribution I n D) : Odd (finra
   rw [← hD.finrank_add_one x]
   exact (hD.even_finrank x).add_one
 
+/-- On a nonempty manifold the rank `dim M - 1` of a contact structure is one less than the
+dimension. -/
+theorem finrank_sub_one_add_one [Nonempty M] (hD : IsContactDistribution I n D) :
+    finrank ℝ E - 1 + 1 = finrank ℝ E :=
+  Nat.sub_add_cancel hD.odd_finrank.pos
+
 /-- **A contact structure is not involutive** in dimension at least three: its Levi form, which
 measures the failure of involutivity, is nondegenerate on nonzero hyperplanes. -/
 theorem not_isInvolutiveDistribution [Nonempty M] (hD : IsContactDistribution I n D)
@@ -263,6 +269,18 @@ theorem SmoothForm.IsContactForm.isContactDistribution_kerDistribution [ENat.LEI
     [IsManifold I (n + 1) M] {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) :
     IsContactDistribution I n α.kerDistribution :=
   isContactForm_iff_isContactDistribution_kerDistribution.1 hα
+
+/-- **Global contact forms of a contact structure are its nowhere-vanishing defining forms.** A
+smooth one-form is a contact form with kernel the contact structure `D` exactly when it vanishes
+nowhere and has kernel `D`. -/
+theorem IsContactDistribution.isContactForm_and_kerDistribution_eq_iff [ENat.LEInfty n]
+    [IsManifold I (n + 1) M] (hD : IsContactDistribution I n D) {α : SmoothForm I M ℝ 1} :
+    α.IsContactForm ∧ α.kerDistribution = D ↔ ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
+  refine ⟨fun ⟨hα, hαD⟩ x ↦ ⟨hα.apply_ne_zero x, ?_⟩, fun h ↦ ?_⟩
+  · rw [← SmoothForm.kerDistribution_eq_ker, hαD]
+  · have hαD : α.kerDistribution = D :=
+      funext fun x ↦ (SmoothForm.kerDistribution_eq_ker α x).trans (h x).2
+    exact ⟨SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hαD ▸ hD), hαD⟩
 
 omit [CompleteSpace E] [FiniteDimensional ℝ E] in
 /-- The linear symplectic form on the contact hyperplane `α.kerDistribution x` induced by `dα_x`:
