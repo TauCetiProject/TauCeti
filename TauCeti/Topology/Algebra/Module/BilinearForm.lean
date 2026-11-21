@@ -77,6 +77,8 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
+* `IsCompact.exists_forall_le_mul_norm_sq`: a family of continuous bilinear forms continuous on a
+  compact set is bounded by a uniform multiple of `‖v‖²`.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
@@ -400,6 +402,21 @@ theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
     (b := fun _ ↦ -(L.bilinearComp N.subtypeL N.subtypeL)) continuousOn_const
     fun _ _ v hv ↦ by simpa using hN v v.property (by simpa using hv)
   exact ⟨c, hc, fun x hx ↦ by have := h () rfl ⟨x, hx⟩; simp at this; linarith⟩
+
+/-- **Uniform bound over a compact family.** On a real normed space, let `b x` be a family of
+continuous bilinear forms, continuous on a compact set `K`. Then one constant `C` gives
+`b x v v ≤ C ‖v‖²` for every `x ∈ K` and every `v`. -/
+theorem _root_.IsCompact.exists_forall_le_mul_norm_sq
+    {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {K : Set X} (hK : IsCompact K) {b : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hb : ContinuousOn b K) : ∃ C, ∀ x ∈ K, ∀ v, b x v v ≤ C * ‖v‖ ^ 2 := by
+  -- `hb` is stated for the topology of `→L[ℝ]`, which is the operator-norm topology only up to
+  -- unfolding instances, so it is passed by `exact`.
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (f := b) (by exact hb)
+  refine ⟨C, fun x hx v ↦ ?_⟩
+  calc b x v v ≤ ‖b x‖ * ‖v‖ * ‖v‖ := (Real.le_norm_self _).trans ((b x).le_opNorm₂ v v)
+    _ = ‖b x‖ * ‖v‖ ^ 2 := by ring
+    _ ≤ C * ‖v‖ ^ 2 := mul_le_mul_of_nonneg_right (hC x hx) (sq_nonneg _)
 
 /-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
 space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms

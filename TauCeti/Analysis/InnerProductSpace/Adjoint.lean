@@ -84,7 +84,9 @@ Similarly, if `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, then `‖M‖ ≤ λ⁻¹ �
 (`ContinuousLinearEquiv.norm_le_inv_mul_norm_adjoint_comp_comp`).
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
-endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
+endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`), so the determinants
+of an invertible real operator and of the adjoint of its inverse multiply to `1`
+(`ContinuousLinearMap.det_mul_det_adjoint_ringInverse`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
@@ -407,6 +409,14 @@ theorem coe_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F
     (A.adjointEquiv : F →L[𝕜] E) = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) :=
   ContinuousLinearMap.ext A.adjointEquiv_apply
 
+/-- The adjoint equivalence depends continuously on the operator: if `A x` depends continuously on
+`x` as a continuous linear map, then so does its adjoint. -/
+theorem continuous_adjointEquiv [CompleteSpace E] [CompleteSpace F] {X : Type*}
+    [TopologicalSpace X] {A : X → E ≃L[𝕜] F} (hA : Continuous fun x ↦ (A x : E →L[𝕜] F)) :
+    Continuous fun x ↦ ((A x).adjointEquiv : F →L[𝕜] E) := by
+  simp_rw [coe_adjointEquiv]
+  exact ContinuousLinearMap.adjoint.continuous.comp hA
+
 /-- The adjoint equivalence has the same operator norm as the equivalence. -/
 @[simp]
 theorem norm_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
@@ -681,3 +691,15 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+/-- The determinants of an invertible operator on a finite-dimensional real inner product space and
+of the adjoint of its inverse multiply to `1`. -/
+theorem det_mul_det_adjoint_ringInverse {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {A : E →L[ℝ] E} (hA : IsUnit A) :
+    A.det * (adjoint (Ring.inverse A)).det = 1 := by
+  rw [det, det, ← adjoint_toLinearMap, LinearMap.det_adjoint, star_trivial, ← LinearMap.det_comp,
+    ← toLinearMap_comp, ← mul_def, Ring.mul_inverse_cancel A hA, toLinearMap_one, map_one]
+
+end ContinuousLinearMap

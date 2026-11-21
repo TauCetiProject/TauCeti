@@ -36,14 +36,20 @@ instance of the compact parameter integral `TauCeti.Symbol.integral`. Its main p
 
 * `TauCeti.Symbol.transport_average`: the average is invariant, `h • avg(a) = avg(a)`.
 * `TauCeti.Symbol.quantizeSchwartzValue_average_transport`: hence the averaged operator is
-  equivariant, `Op(avg a)(h • u) = h • Op(avg a) u`.
+  equivariant, `Op(avg a)(h • u) = h • Op(avg a) u`. More generally every invariant symbol
+  quantizes to an equivariant operator (`TauCeti.Symbol.quantizeSchwartzValue_of_transport_eq`),
+  for the representation `TauCeti.schwartzRep` of `G` on Schwartz functions
+  (`TauCeti.Symbol.quantizeSchwartzValue_schwartzRep`).
 * `TauCeti.Symbol.quantizeSchwartzValue_average`: the averaged operator is the average of the
   conjugated operators, `Op(avg a) u = ∫ g • Op(a)(g⁻¹ • u) dμ(g)`.
 * `TauCeti.Symbol.average_eq_smul_self`: averaging multiplies an invariant symbol by the total
   mass of `μ`. So for a probability measure, averaging fixes invariant symbols
-  (`TauCeti.Symbol.average_eq_self`); in particular it is idempotent
+  (`TauCeti.Symbol.average_eq_self`), and these are exactly the symbols it fixes
+  (`TauCeti.Symbol.average_eq_self_iff`); in particular it is idempotent
   (`TauCeti.Symbol.average_average`). Trivial actions fix every symbol
   (`TauCeti.Symbol.transport_one`), so for them averaging is the identity.
+* Seminorm bounds on `g • a` uniform in `g` pass to the average
+  (`TauCeti.Symbol.seminorm_average_le`, `TauCeti.Symbol.seminorm_average_le_of_probability`).
 * Averaging is `ℂ`-linear (`TauCeti.Symbol.average_add`, `TauCeti.Symbol.average_smul`) and
   preserves smoothing symbols, estimates uniform in the position and compact spatial support
   (`TauCeti.Symbol.IsSmoothing.average`, `TauCeti.Symbol.IsUniform.average`,
@@ -81,14 +87,38 @@ continuously on `g` in the operator norm, for representations `ρ`, `σ` and `τ
 theorem continuous_transportParams (hρ : Continuous fun g ↦ (ρ g : E →L[ℝ] E))
     (hσ : Continuous fun g ↦ (σ g : V →L[ℂ] V)) (hτ : Continuous fun g ↦ (τ g : W →L[ℂ] W)) :
     Continuous fun g ↦ ((((ρ g).symm : E →L[ℝ] E), ((ρ g).adjointEquiv : E →L[ℝ] E)),
-      ((τ g : W →L[ℂ] W), ((σ g).symm : V →L[ℂ] V))) := by
-  have hadj : Continuous fun g ↦ ((ρ g).adjointEquiv : E →L[ℝ] E) := by
-    simp only [ContinuousLinearEquiv.coe_adjointEquiv]
-    exact ContinuousLinearMap.adjoint.continuous.comp hρ
-  exact (hρ.continuous_symm_of_monoidHom.prodMk hadj).prodMk
+      ((τ g : W →L[ℂ] W), ((σ g).symm : V →L[ℂ] V))) :=
+  (hρ.continuous_symm_of_monoidHom.prodMk
+    (ContinuousLinearEquiv.continuous_adjointEquiv hρ)).prodMk
     (hτ.prodMk hσ.continuous_symm_of_monoidHom)
 
 end TransportParams
+
+section SchwartzRep
+
+variable {G : Type*} [Group G] {n : ℕ} {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- The representation of `G` on `V`-valued Schwartz functions induced by actions `ρ` on `ℝⁿ` and
+`σ` on `V`: `(g • u)(x) = σ(g) u(ρ(g)⁻¹ x)`. This is the action on inputs in
+`TauCeti.Symbol.quantizeSchwartzValue_transport`. -/
+def schwartzRep (ρ : G →* (CoordinateSpace n ≃L[ℝ] CoordinateSpace n)) (σ : G →* (V ≃L[ℂ] V)) :
+    G →* (𝓢(CoordinateSpace n, V) →L[ℂ] 𝓢(CoordinateSpace n, V)) where
+  toFun g := (SchwartzMap.postcompCLM (σ g : V →L[ℂ] V)).comp
+    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ρ g).symm)
+  map_one' := by
+    ext u x
+    simp [ContinuousLinearEquiv.one_eq_refl]
+  map_mul' g h := by
+    ext u x
+    simp [ContinuousLinearEquiv.mul_eq_trans]
+
+@[simp]
+theorem schwartzRep_apply (ρ : G →* (CoordinateSpace n ≃L[ℝ] CoordinateSpace n))
+    (σ : G →* (V ≃L[ℂ] V)) (g : G) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    schwartzRep ρ σ g u x = σ g (u ((ρ g).symm x)) := by
+  simp [schwartzRep]
+
+end SchwartzRep
 
 namespace Symbol
 
@@ -123,6 +153,11 @@ theorem coefficient_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n
       (f : W →L[ℂ] W) ∘L a.coefficient (A.symm p.1, A.adjointEquiv p.2) ∘L
         (e.symm : V →L[ℂ] V) :=
   ContinuousLinearMap.ext fun v ↦ by simp [transport]
+
+@[simp]
+theorem transport_zero (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
+    (f : W ≃L[ℂ] W) : transport A e f (0 : Symbol n V W m) = 0 :=
+  Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp)
 
 @[simp]
 theorem transport_add (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
@@ -172,6 +207,33 @@ theorem quantizeSchwartzValue_transport (A : CoordinateSpace n ≃L[ℝ] Coordin
         a).coefficient p)) (fun _ ↦ by rw [transport, coefficient_map_arrowCongr]),
     quantizeSchwartzValue_arrowCongr, ← A.apply_symm_apply y,
     quantizeSchwartzValue_compProdMap_symm_adjointEquiv, hv, A.apply_symm_apply]
+
+/-- **Invariant symbols quantize to equivariant operators.** If the transport of `a` along
+`(A, e, f)` is `a`, then `Op(a)(e ∘ v ∘ A⁻¹)(y) = f (Op(a) v (A⁻¹ y))`. -/
+theorem quantizeSchwartzValue_of_transport_eq {A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n}
+    {e : V ≃L[ℂ] V} {f : W ≃L[ℂ] W} {a : Symbol n V W m} (ha : transport A e f a = a)
+    (v : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n) :
+    quantizeSchwartzValue a.coefficient
+        ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm v).postcompCLM (e : V →L[ℂ] V)) y =
+      f (quantizeSchwartzValue a.coefficient v (A.symm y)) := by
+  conv_lhs => rw [← ha]
+  exact quantizeSchwartzValue_transport A e f a v y
+
+/-- **Invariant symbols quantize to equivariant operators**, in terms of the representation
+`TauCeti.schwartzRep` on Schwartz functions: if `a` is invariant under the action of `G`, then
+`Op(a)(g • u)(ρ(g) x) = τ(g) (Op(a) u x)`. -/
+theorem quantizeSchwartzValue_schwartzRep {G : Type*} [Group G]
+    {ρ : G →* (CoordinateSpace n ≃L[ℝ] CoordinateSpace n)} {σ : G →* (V ≃L[ℂ] V)}
+    {τ : G →* (W ≃L[ℂ] W)} {a : Symbol n V W m} (ha : ∀ g, transport (ρ g) (σ g) (τ g) a = a)
+    (g : G) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue a.coefficient (schwartzRep ρ σ g u) (ρ g x) =
+      τ g (quantizeSchwartzValue a.coefficient u x) := by
+  have hrep : schwartzRep ρ σ g u =
+      (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ρ g).symm u).postcompCLM
+        (σ g : V →L[ℂ] V) := by
+    ext y
+    simp
+  rw [hrep, quantizeSchwartzValue_of_transport_eq (ha g), ContinuousLinearEquiv.symm_apply_apply]
 
 end Transport
 
@@ -298,6 +360,10 @@ theorem coefficient_average (a : Symbol n V W m) (p : CoordinateSpace n × Coord
         ((σ g).symm : V →L[ℂ] V) ∂μ := by
   simp only [average, coefficient_integral, coefficient_transport]
 
+@[simp]
+theorem average_zero : average μ hρ hσ hτ (0 : Symbol n V W m) = 0 :=
+  Symbol.ext (funext fun p ↦ by simp)
+
 /-- Averaging is additive. -/
 theorem average_add (a b : Symbol n V W m) :
     average μ hρ hσ hτ (a + b) = average μ hρ hσ hτ a + average μ hρ hσ hτ b := by
@@ -317,6 +383,22 @@ commutes with the inclusions of symbol classes. -/
 theorem average_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
     average μ hρ hσ hτ (inclusion h a) = inclusion h (average μ hρ hσ hτ a) :=
   Symbol.ext (funext fun p ↦ by simp [coefficient_inclusion])
+
+/-- **Seminorm control.** A bound `C` on the seminorm `p_{K,α,β}` of the transported symbols
+`g • a`, uniform in `g`, bounds the seminorm of the average by `μ(G) C`. -/
+theorem seminorm_average_le (a : Symbol n V W m) (K : TopologicalSpace.Compacts (CoordinateSpace n))
+    (α β : List (Fin n)) {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ g, Symbol.seminorm K α β (transport (ρ g) (σ g) (τ g) a) ≤ C) :
+    Symbol.seminorm K α β (average μ hρ hσ hτ a) ≤ μ.real Set.univ * C :=
+  seminorm_integral_le μ _ _ _ K α β hC h
+
+/-- **Seminorm control.** Averaging over a probability measure preserves every bound on the
+seminorm `p_{K,α,β}` of the transported symbols `g • a` that is uniform in `g`. -/
+theorem seminorm_average_le_of_probability [IsProbabilityMeasure μ] (a : Symbol n V W m)
+    (K : TopologicalSpace.Compacts (CoordinateSpace n)) (α β : List (Fin n)) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ g, Symbol.seminorm K α β (transport (ρ g) (σ g) (τ g) a) ≤ C) :
+    Symbol.seminorm K α β (average μ hρ hσ hτ a) ≤ C :=
+  seminorm_integral_le_of_probability μ _ _ _ K α β hC h
 
 variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 
@@ -354,9 +436,8 @@ theorem quantizeSchwartzValue_average_transport (a : Symbol n V W m) (h : G)
     quantizeSchwartzValue (average μ hρ hσ hτ a).coefficient
         ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ρ h).symm u).postcompCLM
           (σ h : V →L[ℂ] V)) y =
-      τ h (quantizeSchwartzValue (average μ hρ hσ hτ a).coefficient u ((ρ h).symm y)) := by
-  conv_lhs => rw [← transport_average μ hρ hσ hτ a h]
-  exact quantizeSchwartzValue_transport _ _ _ _ u y
+      τ h (quantizeSchwartzValue (average μ hρ hσ hτ a).coefficient u ((ρ h).symm y)) :=
+  quantizeSchwartzValue_of_transport_eq (transport_average μ hρ hσ hτ a h) u y
 
 omit [MeasurableMul G] [μ.IsMulLeftInvariant] in
 /-- **The averaged operator is the average of the conjugated operators.** On a Schwartz input `u`,
@@ -400,6 +481,13 @@ theorem average_average [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ
     (a : Symbol n V W m) :
     average μ hρ hσ hτ (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
   average_eq_self μ hρ hσ hτ (transport_average μ hρ hσ hτ a)
+
+/-- For a left-invariant probability measure, such as the normalized Haar measure, a symbol is
+its own average exactly when it is invariant under the action of every `g ∈ G`. -/
+theorem average_eq_self_iff [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ]
+    {a : Symbol n V W m} :
+    average μ hρ hσ hτ a = a ↔ ∀ g, transport (ρ g) (σ g) (τ g) a = a :=
+  ⟨fun h g ↦ by rw [← h]; exact transport_average μ hρ hσ hτ a g, average_eq_self μ hρ hσ hτ⟩
 
 omit [MeasurableMul G] [μ.IsMulLeftInvariant]
 

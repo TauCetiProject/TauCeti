@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -112,6 +113,9 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrableOn.integrable_smul_right_of_hasCompactSupport`: a function
   locally integrable on `s`, scaling a continuous function with compact support in `s`, is
+  integrable.
+* `MeasureTheory.LocallyIntegrableOn.integrable_inner_left_of_hasCompactSupport`: a function
+  locally integrable on `s`, paired with a continuous vector field with compact support in `s`, is
   integrable.
 * `MeasureTheory.LocallyIntegrableOn.continuousOn_smul_of_isOpen`: a function locally integrable
   on an open set, times a function continuous on it, is locally integrable on it.
@@ -706,6 +710,31 @@ theorem integrable_smul_left_of_hasCompactSupport {f : X → E} {g : X → 𝕜}
   refine Integrable.smul_of_top_right ?_ (hg.memLp_top_of_hasCompactSupport h'g μ)
   rw [integrable_indicator_iff (isClosed_tsupport g).measurableSet]
   exact hf.integrableOn_compact_subset hgs h'g
+
+end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X 𝕜 E : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {μ : Measure X} {s : Set X}
+
+open scoped InnerProductSpace
+
+/-- If `f` is locally integrable on `s` and `g` is continuous with compact support contained in
+`s`, then `⟪g, f⟫` is integrable. This is the inner-product counterpart of
+`MeasureTheory.LocallyIntegrableOn.integrable_smul_left_of_hasCompactSupport`. -/
+theorem integrable_inner_left_of_hasCompactSupport {f g : X → E}
+    (hf : LocallyIntegrableOn f s μ) (hg : Continuous g) (h'g : HasCompactSupport g)
+    (hgs : tsupport g ⊆ s) : Integrable (fun x ↦ ⟪g x, f x⟫_𝕜) μ := by
+  have hK := hf.integrableOn_compact_subset hgs h'g
+  obtain ⟨C, hC⟩ := h'g.isCompact.exists_bound_of_continuousOn hg.continuousOn
+  refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := tsupport g) ?_
+    fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
+  refine (hK.norm.const_mul C).mono' (AEStronglyMeasurable.inner
+    (hg.continuousOn.aestronglyMeasurable_of_isCompact h'g.isCompact
+      (isClosed_tsupport g).measurableSet) hK.aestronglyMeasurable)
+    ((ae_restrict_iff' (isClosed_tsupport g).measurableSet).2 <| ae_of_all _ fun x hx ↦ ?_)
+  exact (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (hC x hx) (norm_nonneg _))
 
 end MeasureTheory.LocallyIntegrableOn
 

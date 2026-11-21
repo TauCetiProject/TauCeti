@@ -31,6 +31,9 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Hom.commSq_specMap_algebraMap_self`: a morphism over `Spec R` forms a
+  commutative square with the structure morphisms and
+  `Spec.map (CommRingCat.ofHom (algebraMap R R))`.
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`: a morphism over
@@ -62,6 +65,20 @@ theorem homEquivAlgHom_symm_apply_val {R A B : Type u}
   (rfl)
 
 end AlgebraicGeometry.Spec
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- A morphism `f : X ⟶ Y` over `Spec R` forms a commutative square with the structure morphisms
+and `Spec.map (CommRingCat.ofHom (algebraMap R R))`. -/
+theorem commSq_specMap_algebraMap_self {X Y : Scheme.{u}} (f : X ⟶ Y) (R : Type u) [CommRing R]
+    [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [hf : f.IsOver (Spec (.of R))] :
+    CommSq f (X ↘ Spec (.of R)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R))) := by
+  refine ⟨?_⟩
+  rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id, Category.comp_id]
+  exact hf.comp_over
+
+end AlgebraicGeometry.Scheme.Hom
 
 namespace TauCeti.AlgebraicGeometry
 
