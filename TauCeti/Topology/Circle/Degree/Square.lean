@@ -26,6 +26,7 @@ laws of a winding number:
 
 * **products:** for `Γ` and `Γ'` continuous on the boundary,
   `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`), and hence
+  `deg Γ⁻¹ = -deg Γ` (`TauCeti.squareBoundaryDegree_inv`) and
   `deg (Γ ^ n) = n deg Γ` (`TauCeti.squareBoundaryDegree_pow`);
 * **maps defined on the whole square:** if `Γ` is continuous on all of `I²`, its boundary loop is
   null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`);
@@ -58,7 +59,8 @@ quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
 
 * `TauCeti.squareBoundaryDegree_eq_degree`: the degree is that of the loop `Γ ∘ ∂I²`.
 * `TauCeti.squareBoundaryDegree_congr`, `TauCeti.squareBoundaryDegree_mul`,
-  `TauCeti.squareBoundaryDegree_pow`, `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
+  `TauCeti.squareBoundaryDegree_inv`, `TauCeti.squareBoundaryDegree_pow`,
+  `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
   `TauCeti.squareBoundaryDegree_eq_of_homotopy`, `TauCeti.squareBoundaryDegree_eq_add`: the laws
   above.
 * `TauCeti.squareBoundaryDegree_squareCenterDirection`: the direction from the centre has
@@ -186,6 +188,14 @@ theorem squareBoundaryDegree_mul (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
   rw [squareBoundaryDegree_eq_degree (hΓ.mul hΓ'), squareBoundaryDegree_eq_degree hΓ,
     squareBoundaryDegree_eq_degree hΓ', ← Circle.degree_mul]
   exact Circle.degree_congr _ _ fun _ ↦ rfl
+
+/-- **Inverses.** The degree around the boundary of the square of the pointwise inverse of a map
+continuous on the boundary is the negative of its degree. -/
+theorem squareBoundaryDegree_inv (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) :
+    squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
+  have h := squareBoundaryDegree_mul hΓ hΓ.inv
+  rw [mul_inv_cancel, Pi.one_def, squareBoundaryDegree_const] at h
+  omega
 
 /-- **Powers.** The degree around the boundary of the square of the `n`-th power of a map
 continuous on the boundary is `n` times its degree. -/
