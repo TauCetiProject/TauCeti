@@ -491,8 +491,8 @@ variable [I.Boundaryless] [T2Space M] [CompactSpace M]
 is defined for all times. -/
 theorem isCompleteVectorField_timeDependentSuspensionField_grayVectorField :
     IsCompleteVectorField (timeDependentSuspensionField α.grayVectorField) :=
-  isCompleteVectorField_timeDependentSuspensionField
-    ((contMDiff_grayVectorField hc).of_le (by simp)) isCompact_univ (by simp)
+  isCompleteVectorField_timeDependentSuspensionField_of_compactSpace
+    ((contMDiff_grayVectorField hc).of_le (by simp))
 
 /-- **Gray's isotopy.** On a compact manifold without boundary, the time-dependent flow of the
 Gray vector field of a smooth family of contact forms, from time `s` to time `t`, as a

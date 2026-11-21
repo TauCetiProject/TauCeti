@@ -16,12 +16,12 @@ Let `V` be a continuation field on `M × ℝ` from a pseudo-gradient `X₀` to a
 at rate `C > 0` (`TauCeti.IsContinuationField`), on a compact boundaryless manifold `M`. In the
 open slab `M × (0, 1)` the time component of `V` is `C t (1 - t²)`, so along every trajectory
 through the slab the time component is a translate of the base trajectory
-`q = TauCeti.intervalBaseOrbit C`. Reading the space component of `V` along `q` gives a
+`β = TauCeti.intervalBaseOrbit C`. Reading the space component of `V` along `β` gives a
 time-dependent vector field on `M`,
 
-`Y s x = (V (x, q s)).1` (`TauCeti.continuationSpaceField`),
+`Y s x = (V (x, β s)).1` (`TauCeti.continuationSpaceField`),
 
-and the trajectories of `V` through the slab are exactly the curves `s ↦ (φ_{τ, s} x, q s)`, up to
+and the trajectories of `V` through the slab are exactly the curves `s ↦ (φ_{τ, s} x, β s)`, up to
 translation of time, where `φ_{s, t}` is the time-dependent flow of `Y`
 (`TauCeti.timeDependentFlowOf`). This is the time-dependent formulation of a continuation used by
 Hutchings: a trajectory from `(p, 0)` to `(q, 1)` is a solution of `x' = Y_s(x)` which tends to
@@ -36,7 +36,7 @@ and of `X₁` (`TauCeti.IsAdaptedPseudoGradient.eqOn_timeDependentFlowOf_flow_of
 unstable and stable manifolds. So a solution tends to `p` at `-∞` exactly when its value at one very
 negative time `a` lies in the unstable manifold `W^u(p)` of `X₀`, and to `q` at `+∞` exactly when
 its value at one very positive time `b` lies in the stable manifold `W^s(q)` of `X₁`. Reading
-trajectories on the middle level `t = 1 / 2`, at the time `σ` with `q σ = 1 / 2`, this identifies
+trajectories on the middle level `t = 1 / 2`, at the time `σ` with `β σ = 1 / 2`, this identifies
 the slices of the continuation map
 (`TauCeti.IsContinuationField.eventually_morseContinuationSlice_eq_preimage`):
 
@@ -58,7 +58,7 @@ this form the transversality condition for continuations is the transversality o
   trajectory, a time-dependent vector field on `M`.
 * `TauCeti.contMDiff_continuationSpaceField`: it is as smooth as the field.
 * `TauCeti.isMIntegralCurve_timeDependentFlowOf_continuationSpaceField`: the curves
-  `s ↦ (φ_{τ, s} x, q s)` are trajectories of `V`.
+  `s ↦ (φ_{τ, s} x, β s)` are trajectories of `V`.
 * `TauCeti.exists_eq_timeDependentFlowOf_continuationSpaceField`: every trajectory of `V` through
   the slab is such a curve, up to translation of time.
 * `TauCeti.IsAdaptedPseudoGradient.eqOn_timeDependentFlowOf_flow_of_lt`,
@@ -67,7 +67,7 @@ this form the transversality condition for continuations is the transversality o
   pseudo-gradient.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet`,
   `TauCeti.IsAdaptedPseudoGradient.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet`: a
-  trajectory `s ↦ (φ_{τ, s + τ} x, q (s + τ))` enters the slab along an unstable manifold and
+  trajectory `s ↦ (φ_{τ, s + τ} x, β (s + τ))` enters the slab along an unstable manifold and
   leaves it along a stable manifold exactly when its value at one very negative, resp. very
   positive, time lies in that manifold.
 * `TauCeti.IsContinuationField.eventually_atBot_continuationSpaceField_eq`,
@@ -101,9 +101,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The **space component of a field `V` on `M × ℝ` along the base trajectory**: the
 time-dependent vector field on `M` whose value at time `s` is the space component of `V` on the
-level `t = q s` of the base trajectory `q = TauCeti.intervalBaseOrbit C`. When the time component
+level `t = β s` of the base trajectory `β = TauCeti.intervalBaseOrbit C`. When the time component
 of `V` in the open slab is `C t (1 - t²)`, the trajectories of `V` through the slab are the curves
-`s ↦ (x s, q (s + τ))` with `x' = Y (s + τ) x`. -/
+`s ↦ (x s, β (s + τ))` with `x' = Y (s + τ) x`. -/
 noncomputable def continuationSpaceField (C : ℝ)
     (V : (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z) (s : ℝ) (x : M) :
     TangentSpace 𝓘(ℝ, E) x :=
@@ -146,7 +146,7 @@ variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) 1 M] [CompactSpace M
 include hsnd hV in
 /-- **The time-dependent flow along the base trajectory gives trajectories of `V`.** If the time
 component of a `C¹` field `V` on `M × ℝ` is `C t (1 - t²)` in the open slab, then for every point
-`x` of the compact manifold `M` and every time `τ`, the curve `s ↦ (φ_{τ, s} x, q s)` is an
+`x` of the compact manifold `M` and every time `τ`, the curve `s ↦ (φ_{τ, s} x, β s)` is an
 integral curve of `V`, where `φ` is the time-dependent flow of `continuationSpaceField C V`. -/
 theorem isMIntegralCurve_timeDependentFlowOf_continuationSpaceField (τ : ℝ) (x : M) :
     IsMIntegralCurve
@@ -161,8 +161,8 @@ theorem isMIntegralCurve_timeDependentFlowOf_continuationSpaceField (τ : ℝ) (
   have hV₂ : (V (timeDependentFlowOf (continuationSpaceField C V) τ s x, intervalBaseOrbit C s) :
       E × ℝ).2 = C * intervalBaseOrbit C s * (1 - intervalBaseOrbit C s ^ 2) :=
     hsnd _ (intervalBaseOrbit_mem_Ioo C s)
-  -- Both derivatives send `r` to `(r • Y s (φ_{τ, s} x), r • C q (1 - q²))`, read in `E × ℝ`;
-  -- the time component of `V` on the curve is `C q (1 - q²)`.
+  -- Both derivatives send `r` to `(r • Y s (φ_{τ, s} x), r • C β s (1 - (β s)²))`, read in
+  -- `E × ℝ`; the time component of `V` on the curve is `C β s (1 - (β s)²)`.
   exact (h₁.prodMk h₂).congr_mfderiv
     (ContinuousLinearMap.ext fun r ↦ Prod.ext rfl (congrArg (HSMul.hSMul (α := ℝ) r) hV₂.symm))
 
@@ -171,7 +171,7 @@ include hsnd hV in
 /-- **Every trajectory of `V` through the slab comes from the time-dependent flow.** If the time
 component of a `C¹` field `V` on `M × ℝ` is `C t (1 - t²)` in the open slab, with `C ≠ 0`, then
 an integral curve `γ` of `V` which meets the open slab at time `0` is
-`s ↦ (φ_{τ, s + τ} (γ 0).1, q (s + τ))` for some shift `τ`, where `φ` is the time-dependent flow
+`s ↦ (φ_{τ, s + τ} (γ 0).1, β (s + τ))` for some shift `τ`, where `φ` is the time-dependent flow
 of `continuationSpaceField C V`. -/
 theorem exists_eq_timeDependentFlowOf_continuationSpaceField (hC : C ≠ 0) {γ : ℝ → M × ℝ}
     (hγ : IsMIntegralCurve γ V) (h₀ : (γ 0).2 ∈ Ioo 0 1) :
@@ -246,8 +246,8 @@ theorem eqOn_timeDependentFlowOf_flow_of_gt (hYX : ∀ u > a, Y u = X) (hab : a 
 
 /-- **A time-dependent trajectory through the slab enters it along the unstable manifold.** Let
 the `C¹` time-dependent field `Y` be the adapted pseudo-gradient `X` at all times before `b`, let
-`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, q (s + τ))` in `M × ℝ`, where `φ`
-is the time-dependent flow of `Y` and `q` the base trajectory, tends to `(p, 0)` at `-∞` exactly
+`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, β (s + τ))` in `M × ℝ`, where `φ`
+is the time-dependent flow of `Y` and `β` the base trajectory, tends to `(p, 0)` at `-∞` exactly
 when `φ_{τ, a} x` lies in the unstable manifold of `p` for `X`. -/
 theorem tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet (hC : 0 < C)
     (hYX : ∀ u < b, Y u = X) (hab : a < b) :
@@ -264,8 +264,8 @@ theorem tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet (hC : 0 < C)
 
 /-- **A time-dependent trajectory through the slab leaves it along the stable manifold.** Let the
 `C¹` time-dependent field `Y` be the adapted pseudo-gradient `X` at all times after `a`, let
-`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, q (s + τ))` in `M × ℝ`, where `φ`
-is the time-dependent flow of `Y` and `q` the base trajectory, tends to `(p, 1)` at `+∞` exactly
+`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, β (s + τ))` in `M × ℝ`, where `φ`
+is the time-dependent flow of `Y` and `β` the base trajectory, tends to `(p, 1)` at `+∞` exactly
 when `φ_{τ, b} x` lies in the stable manifold of `p` for `X`. -/
 theorem tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet (hC : 0 < C)
     (hYX : ∀ u > a, Y u = X) (hab : a < b) :
@@ -322,8 +322,8 @@ theorem eventually_atTop_continuationSpaceField_eq :
 include hV hX₀ hX₁ hC hVs in
 /-- **The slices of the continuation map through the transition maps of the slab.** Let `V` be a
 `C¹` continuation field from `X₀` to `X₁` at rate `C > 0`, let `φ` be the time-dependent flow of
-its space component `continuationSpaceField C V` along the base trajectory `q`, and let `σ` be
-the time at which `q σ = 1 / 2`. Then for every sufficiently negative time `a` and every
+its space component `continuationSpaceField C V` along the base trajectory `β`, and let `σ` be
+the time at which `β σ = 1 / 2`. Then for every sufficiently negative time `a` and every
 sufficiently positive time `b`, the points on the middle level of the trajectories from `(p, 0)`
 to `(q, 1)` are the points `x` with `φ_{σ, a} x` in the unstable manifold of `p` for `X₀` and
 `φ_{σ, b} x` in the stable manifold of `q` for `X₁`, for all `p` and `q` at once. -/
