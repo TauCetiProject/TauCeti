@@ -27,6 +27,8 @@ integrable field is determined almost everywhere on `Ω` by its pairings with `�
   on `Ω`.
 * `TestFunction.integrable_inner_fderiv`: `x ↦ ⟪∂_v φ x, w x⟫` is integrable for `w` locally
   integrable on `Ω`.
+* `TestFunction.integrable_mul_inner`: `x ↦ α x * ⟪v, w x⟫` is integrable for `α ∈ 𝓓^{n}(Ω, ℝ)`
+  and `w` locally integrable on `Ω`.
 * `TauCeti.ae_eq_of_forall_integral_inner_eq`: two locally integrable fields with the same
   pairings against every `φ ∈ 𝓓(Ω, V)` agree almost everywhere on `Ω`. The target `V` need only
   be complete; the proof tests against `ψ • c` for scalar test functions `ψ` and a constant
@@ -56,6 +58,13 @@ theorem integrable_inner_fderiv {w : E → V} (hw : LocallyIntegrableOn w Ω μ)
   have h := (lineDerivCLM ℝ v φ : 𝓓(Ω, V)).integrable_inner hw
   simp only [coe_lineDerivCLM, lineDeriv_eq_fderiv] at h
   exact h
+
+/-- A scalar test function multiplied by the inner product of a constant vector with a locally
+integrable field is integrable. -/
+theorem integrable_mul_inner {n : ℕ∞} {w : E → V} (hw : LocallyIntegrableOn w Ω μ)
+    (α : 𝓓^{n}(Ω, ℝ)) (v : V) : Integrable (fun x => (α : E → ℝ) x * ⟪v, w x⟫_ℝ) μ := by
+  simpa only [innerSL_apply_apply, inner_smul_right] using
+    (innerSL ℝ v).integrable_comp (α.integrable_smul hw)
 
 end TestFunction
 

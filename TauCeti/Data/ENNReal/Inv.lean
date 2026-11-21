@@ -50,6 +50,14 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
+* `ENNReal.inv_add_inv_lt_one_of_two_lt`, `ENNReal.inv_add_inv_min_lt_one`,
+  `ENNReal.inv_add_inv_min_le_one`: reciprocal-sum bounds for `p > 2` and preservation under
+  `min q p`.
+* `ENNReal.one_lt_of_ne_top_of_inv_add_inv_le_one`,
+  `ENNReal.exists_gt_ne_top_and_inv_add_inv_lt_one`: deducing `1 < q` from `p < ∞` and
+  `p⁻¹ + q⁻¹ ≤ 1`, and constructing a finite `p > c` with `p⁻¹ + q⁻¹ < 1` from `c < ∞` and `1 < q`.
+* `ENNReal.inv_coe_add_inv_coe_lt_one_iff`, `ENNReal.inv_coe_add_inv_coe_le_inv_coe_iff`:
+  comparison of `ℝ≥0` reciprocal sums between `ℝ≥0∞` and `ℝ≥0`.
 -/
 
 public section
@@ -254,5 +262,66 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
+
+/-- If `p > 2` and `q ≥ 2` in `ℝ≥0∞`, then `1/p + 1/q < 1` (with `1/∞ = 0`). -/
+theorem inv_add_inv_lt_one_of_two_lt {p q : ℝ≥0∞} (hp : 2 < p) (hq : 2 ≤ q) :
+    p⁻¹ + q⁻¹ < 1 :=
+  calc p⁻¹ + q⁻¹ ≤ p⁻¹ + 2⁻¹ := add_le_add le_rfl (ENNReal.inv_le_inv.2 hq)
+    _ < (2 : ℝ≥0∞)⁻¹ + 2⁻¹ := ENNReal.add_lt_add_right (inv_ne_top.2 two_ne_zero)
+        (ENNReal.inv_lt_inv.2 hp)
+    _ = 1 := ENNReal.inv_two_add_inv_two
+
+/-- Lowering the second exponent to `min q p` preserves `1/p + 1/q < 1` when `p > 2`. -/
+theorem inv_add_inv_min_lt_one {p q : ℝ≥0∞} (hp : 2 < p) (hpq : p⁻¹ + q⁻¹ < 1) :
+    p⁻¹ + (min q p)⁻¹ < 1 := by
+  rcases le_total q p with hqp | hpq'
+  · simpa only [min_eq_left hqp] using hpq
+  · simpa only [min_eq_right hpq'] using inv_add_inv_lt_one_of_two_lt hp hp.le
+
+/-- Lowering the second exponent to `min q p` preserves `1/p + 1/q ≤ 1` when `p ≥ 2`. -/
+theorem inv_add_inv_min_le_one {p q : ℝ≥0∞} (hp : 2 ≤ p) (hpq : p⁻¹ + q⁻¹ ≤ 1) :
+    p⁻¹ + (min q p)⁻¹ ≤ 1 := by
+  rcases le_total q p with hqp | hpq'
+  · simpa only [min_eq_left hqp] using hpq
+  · rw [min_eq_right hpq']
+    exact (add_le_add (ENNReal.inv_le_inv.2 hp) (ENNReal.inv_le_inv.2 hp)).trans_eq
+      ENNReal.inv_two_add_inv_two
+
+/-- If `p < ∞` and `1/p + 1/q ≤ 1` in `ℝ≥0∞`, then `1 < q` (since `1/p > 0` forces `1/q < 1`). -/
+theorem one_lt_of_ne_top_of_inv_add_inv_le_one {p q : ℝ≥0∞} (hp_top : p ≠ ∞)
+    (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 < q := by
+  have hq_inv_top : q⁻¹ ≠ ∞ := ne_top_of_le_ne_top one_ne_top (le_add_self.trans hpq)
+  refine ENNReal.inv_lt_one.1 ((?_ : q⁻¹ < p⁻¹ + q⁻¹).trans_le hpq)
+  simpa only [zero_add] using ENNReal.add_lt_add_right hq_inv_top (ENNReal.inv_pos.2 hp_top)
+
+/-- For any finite `c : ℝ≥0∞` and any `q > 1` in `ℝ≥0∞` (including `q = ∞`), there exists a
+finite exponent `p > c` with `1/p + 1/q < 1`: take `p = max (1 - q⁻¹)⁻¹ c + 1`. -/
+theorem exists_gt_ne_top_and_inv_add_inv_lt_one {c q : ℝ≥0∞} (hc : c ≠ ∞) (hq : 1 < q) :
+    ∃ p : ℝ≥0∞, c < p ∧ p ≠ ∞ ∧ p⁻¹ + q⁻¹ < 1 := by
+  have hq_inv_lt : q⁻¹ < 1 := ENNReal.inv_lt_one.2 hq
+  have hsub_ne : 1 - q⁻¹ ≠ 0 := (tsub_pos_of_lt hq_inv_lt).ne'
+  have hm_ne : max (1 - q⁻¹)⁻¹ c ≠ ∞ := max_ne_top (inv_ne_top.2 hsub_ne) hc
+  refine ⟨max (1 - q⁻¹)⁻¹ c + 1, ?_, add_ne_top.2 ⟨hm_ne, one_ne_top⟩, ?_⟩
+  · exact (le_max_right _ _).trans_lt (ENNReal.lt_add_right hm_ne one_ne_zero)
+  · have hlt : (max (1 - q⁻¹)⁻¹ c + 1)⁻¹ < 1 - q⁻¹ := by
+      conv_rhs => rw [← inv_inv (1 - q⁻¹)]
+      exact ENNReal.inv_lt_inv.2
+        ((le_max_left _ _).trans_lt (ENNReal.lt_add_right hm_ne one_ne_zero))
+    calc (max (1 - q⁻¹)⁻¹ c + 1)⁻¹ + q⁻¹
+      _ < (1 - q⁻¹) + q⁻¹ :=
+        ENNReal.add_lt_add_right (ne_top_of_lt (hq_inv_lt.trans one_lt_top)) hlt
+      _ = 1 := tsub_add_cancel_of_le hq_inv_lt.le
+
+/-- For nonzero `a, b : ℝ≥0`, `(a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ < 1` holds if and only if
+`a⁻¹ + b⁻¹ < 1` in `ℝ≥0`. -/
+theorem inv_coe_add_inv_coe_lt_one_iff {a b : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) :
+    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ < 1 ↔ a⁻¹ + b⁻¹ < 1 := by
+  rw [← coe_inv ha, ← coe_inv hb, ← coe_add, ← coe_one, coe_lt_coe]
+
+/-- For nonzero `a, b, c : ℝ≥0`, `(a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ ≤ (c : ℝ≥0∞)⁻¹` holds if and only if
+`a⁻¹ + b⁻¹ ≤ c⁻¹` in `ℝ≥0`. -/
+theorem inv_coe_add_inv_coe_le_inv_coe_iff {a b c : ℝ≥0} (ha : a ≠ 0) (hb : b ≠ 0) (hc : c ≠ 0) :
+    (a : ℝ≥0∞)⁻¹ + (b : ℝ≥0∞)⁻¹ ≤ (c : ℝ≥0∞)⁻¹ ↔ a⁻¹ + b⁻¹ ≤ c⁻¹ := by
+  rw [← coe_inv ha, ← coe_inv hb, ← coe_inv hc, ← coe_add, coe_le_coe]
 
 end ENNReal
