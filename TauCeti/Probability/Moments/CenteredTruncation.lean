@@ -331,7 +331,7 @@ open ProbabilityTheory Finset TauCeti.Probability
 
 /-- Mean-norm bound for a weighted sum of centered pairwise independent real variables.
 The cutoff controls the retained part and the tail integrals bound the discarded part. -/
-theorem integral_norm_sum_mul_centered_le {Ω ι 𝕜 : Type*}
+theorem _root_.Pairwise.integral_norm_sum_mul_sub_integral_le {Ω ι 𝕜 : Type*}
     [MeasurableSpace Ω] [Fintype ι] [RCLike 𝕜] {P : Measure Ω} [IsProbabilityMeasure P]
     {W : ι → Ω → ℝ} (hWi : Pairwise fun i j ↦ IndepFun (W i) (W j) P)
     (hW : ∀ i, Integrable (W i) P) (a : ι → 𝕜) {C v : ℝ}

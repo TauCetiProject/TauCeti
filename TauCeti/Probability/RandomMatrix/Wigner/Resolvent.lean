@@ -81,7 +81,7 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
     (continuous_id.matrix_submatrix _ _).measurable.comp_aemeasurable
       (aemeasurable_wignerMatrix (fun ij _ ↦ hm ij) (fun _ _ ↦ aemeasurable_const))
   have hi := indepFun_submatrix_wignerMatrix_zero_column hind' (fun ij _ ↦ hm ij) i
-  have hia := iIndepFun_wignerMatrix_column_of_ne (η := fun _ _ ↦ 0) i hind'
+  have hia := iIndepFun_wignerMatrix_offDiag_column (η := fun _ _ ↦ 0) i hind'
   have ha (j : {j // j ≠ i}) := integral_norm_wignerMatrix_apply_sq_of_ne
     (η := fun _ _ ↦ 0) (fun ij _ ↦ hv ij) j.property
   have hcard : (Fintype.card {j // j ≠ i} : ℝ) ≤ n + 1 := by
@@ -106,9 +106,8 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
   simp only [NNReal.coe_div, NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one,
     ← mul_assoc] at htail
   rw [hr₁, hr₂, ← min_mul_of_nonneg _ _ hd.le, ← mul_assoc] at htail
-  simpa only [Matrix.minorQuadraticError_def, Matrix.minorResolvent_def, Fintype.card_fin,
-    Complex.ofReal_div, Complex.ofReal_add, Complex.ofReal_natCast, Complex.ofReal_one,
-    Nat.cast_add, Nat.cast_one, Complex.ofReal_inv, Complex.ofReal_mul, div_eq_inv_mul]
+  simpa only [Matrix.minorQuadraticError_eq_sub_sum_diag, Matrix.minorResolvent_def,
+    ← Finset.mul_sum, Matrix.trace, Matrix.diag, Fintype.card_fin, Nat.cast_succ, div_eq_inv_mul]
     using htail
 
 omit [MeasurableSpace Ω] in

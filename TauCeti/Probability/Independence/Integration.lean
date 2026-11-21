@@ -88,13 +88,21 @@ theorem norm_sq {Ω E F : Type*} [MeasurableSpace Ω] [SeminormedAddGroup E]
     IndepFun (fun ω ↦ ‖X ω‖ ^ 2) (fun ω ↦ ‖Y ω‖ ^ 2) P :=
   h.comp (continuous_norm.pow 2).measurable (continuous_norm.pow 2).measurable
 
-private theorem memLp_two_of_norm_le_mul {Ω R : Type*} [MeasurableSpace Ω]
-    [NormedAddCommGroup R] [MeasurableSpace R] [OpensMeasurableSpace R]
-    {P : Measure Ω} {X Y Z : Ω → R} (h : IndepFun X Y P)
+/-- A variable dominated in norm by the product of the norms of two independent
+square-integrable variables is square integrable. -/
+theorem memLp_two_of_norm_le_mul {Ω E F G : Type*} [MeasurableSpace Ω]
+    [SeminormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [SeminormedAddCommGroup F] [MeasurableSpace F] [OpensMeasurableSpace F]
+    [NormedAddCommGroup G] {P : Measure Ω} {X : Ω → E} {Y : Ω → F} {Z : Ω → G}
+    (h : IndepFun X Y P)
     (hX : MemLp X 2 P) (hY : MemLp Y 2 P) (hZ : AEStronglyMeasurable Z P)
     (hbound : ∀ ω, ‖Z ω‖ ≤ ‖X ω‖ * ‖Y ω‖) : MemLp Z 2 P := by
   refine (memLp_two_iff_integrable_sq_norm hZ).2 ?_
-  refine (h.norm_sq.integrable_mul hX.norm.integrable_sq hY.norm.integrable_sq).mono'
+  have hX₂ := hX.congr_eNorm hX.aestronglyMeasurable.norm
+    (.of_forall fun ω ↦ (eNorm_norm (X ω)).symm)
+  have hY₂ := hY.congr_eNorm hY.aestronglyMeasurable.norm
+    (.of_forall fun ω ↦ (eNorm_norm (Y ω)).symm)
+  refine (h.norm_sq.integrable_mul hX₂.integrable_sq hY₂.integrable_sq).mono'
     (hZ.norm.pow 2) (.of_forall fun ω ↦ ?_)
   rw [Real.norm_of_nonneg (sq_nonneg _), Pi.mul_apply, ← mul_pow]
   exact pow_le_pow_left₀ (norm_nonneg _) (hbound ω) 2
@@ -134,7 +142,7 @@ theorem integral_norm_mul_sq_eq_mul_integral {Ω R : Type*} [MeasurableSpace Ω]
 joint evaluation at independent variables. -/
 theorem integrable_and_integral_norm_comp_prodMk_le_of_sections {Ω α β E : Type*}
     [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
-    [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E] [SecondCountableTopology E]
     {P : Measure Ω} [IsFiniteMeasure P] {X : Ω → α} {Y : Ω → β}
     (hind : IndepFun X Y P) (hX : AEMeasurable X P) (hY : AEMeasurable Y P)
     {f : α × β → E} (hf : Measurable f) {g : α → ℝ} (hg : Integrable g (P.map X))

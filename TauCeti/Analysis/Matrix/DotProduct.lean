@@ -11,7 +11,10 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Analysis.Matrix.Hermitian
 
 /-!
-# Diagonal and off-diagonal decomposition of `RCLike` matrix quadratic forms
+# Diagonal and off-diagonal decomposition of matrix forms
+
+Over a ring, `u ⬝ᵥ (A - diagonal A.diag) *ᵥ v` is the sum of the terms
+`u i * A i j * v j` over ordered off-diagonal pairs.
 
 For a square matrix `A : Matrix n n 𝕜` over an `RCLike` field `𝕜`, the sesquilinear quadratic form
 `star v ⬝ᵥ A *ᵥ v` splits into the weighted squared-norm sum `∑ i, A i i * ‖v i‖ ^ 2` and the
@@ -33,21 +36,19 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n]
 
 section
 
-variable [CommRing 𝕜] [Star 𝕜]
+variable [Ring 𝕜]
 
-/-- The zero-diagonal part of a quadratic form is its sum over ordered off-diagonal pairs. -/
-theorem star_dotProduct_mulVec_sub_diagonal_eq_sum_offDiag (A : Matrix n n 𝕜) (v : n → 𝕜) :
-    star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
-      ∑ p ∈ (Finset.univ : Finset n).offDiag, A p.1 p.2 * (star (v p.1) * v p.2) := by
-  let f (p : n × n) := (A - diagonal A.diag) p.1 p.2 * (star (v p.1) * v p.2)
-  have he : star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
+/-- The zero-diagonal part of a matrix bilinear form is its sum over ordered off-diagonal pairs. -/
+theorem dotProduct_mulVec_sub_diagonal_eq_sum_offDiag (A : Matrix n n 𝕜) (u v : n → 𝕜) :
+    u ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
+      ∑ p ∈ (Finset.univ : Finset n).offDiag, u p.1 * A p.1 p.2 * v p.2 := by
+  let f (p : n × n) := u p.1 * (A - diagonal A.diag) p.1 p.2 * v p.2
+  have he : u ⬝ᵥ (A - diagonal A.diag) *ᵥ v =
       ∑ p ∈ (Finset.univ : Finset n) ×ˢ (Finset.univ : Finset n), f p := by
     rw [dot_mulVec_eq_sum_sum, Finset.sum_comm, Finset.sum_product]
-    simp only [Pi.star_apply, f]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ac_rfl
   rw [he, ← Finset.diag_union_offDiag, Finset.sum_union (Finset.disjoint_diag_offDiag _),
     Finset.sum_diag]
-  simp only [f, Matrix.sub_apply, diagonal_apply_eq, diag_apply, sub_self, zero_mul,
+  simp only [f, Matrix.sub_apply, diagonal_apply_eq, diag_apply, sub_self, mul_zero, zero_mul,
     Finset.sum_const_zero, zero_add]
   exact Finset.sum_congr rfl fun _ hp ↦ by
     rw [diagonal_apply_ne _ (Finset.mem_offDiag.mp hp).2.2, sub_zero]
@@ -77,9 +78,9 @@ theorem star_dotProduct_mulVec_sub_sum_diag_eq (A : Matrix n n 𝕜) (v : n → 
       ∑ i, A i i * ((‖v i‖ ^ 2 - m i : ℝ) : 𝕜) := by
   classical
   rw [A.star_dotProduct_mulVec_eq_sum_diag_add,
-    A.star_dotProduct_mulVec_sub_diagonal_eq_sum_offDiag, add_comm, add_sub_assoc,
+    A.dotProduct_mulVec_sub_diagonal_eq_sum_offDiag, add_comm, add_sub_assoc,
     ← Finset.sum_sub_distrib]
-  simp only [RCLike.ofReal_sub, mul_sub]
+  simp only [RCLike.ofReal_sub, mul_sub, Pi.star_apply, mul_assoc, mul_left_comm (star _) (A _ _)]
 
 /-- Real part of the diagonal/off-diagonal decomposition of `star v ⬝ᵥ A *ᵥ v`. -/
 theorem re_star_dotProduct_mulVec_eq_sum_diag_add (A : Matrix n n 𝕜) (v : n → 𝕜) :

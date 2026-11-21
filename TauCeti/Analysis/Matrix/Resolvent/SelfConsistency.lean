@@ -52,6 +52,16 @@ theorem minorQuadraticError_def (A : Matrix n n ℂ) (i : n) (z : ℂ) (v : ℝ�
         ((v : ℂ) / (Fintype.card n : ℂ)) * (A.minorResolvent i z).trace := by
   rw [minorQuadraticError]
 
+/-- Expand the minor quadratic error with the normalized real coefficient on each diagonal
+entry of the minor resolvent. -/
+theorem minorQuadraticError_eq_sub_sum_diag (A : Matrix n n ℂ) (i : n) (z : ℂ) (v : ℝ≥0) :
+    A.minorQuadraticError i z v =
+      star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
+        A.minorResolvent i z *ᵥ (fun j : {j // j ≠ i} ↦ A j i) -
+        ∑ j, (((v : ℝ) / (Fintype.card n : ℝ) : ℝ) : ℂ) * A.minorResolvent i z j j := by
+  rw [minorQuadraticError_def]
+  simp only [Complex.ofReal_div, Complex.ofReal_natCast, Matrix.trace, Matrix.diag, Finset.mul_sum]
+
 /-- At fixed index, spectral parameter and trace coefficient, the minor quadratic error
 is measurable in the matrix. -/
 @[fun_prop] theorem measurable_minorQuadraticError (i : n) (z : ℂ) (v : ℝ≥0) :

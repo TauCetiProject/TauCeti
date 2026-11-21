@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Moments.QuadraticForm.SecondMoment
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal
 import TauCeti.Analysis.Matrix.Resolvent.Semicircle
+import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.ResolventTransform.InProbability
 
@@ -48,28 +49,34 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
+section LindebergSum
+
+variable {ι E : Type*} [Fintype ι] [Norm E]
+
+open scoped Classical in
 /-- Integrate the squared modulus above the cutoff, sum over ordered off-diagonal pairs and
 divide by the dimension `N`. The sum is infinite if any discarded second moment is infinite.
-The entries already include the Wigner normalization. The cutoff `r` corresponds to an
-unnormalized modulus cutoff `√(r * N)`. -/
-def wignerLindebergSum {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) ℂ) (P : Measure Ω)
+For Wigner matrices the entries already include the normalization, so the cutoff `r` corresponds
+to an unnormalized norm cutoff `√(r * N)` in dimension `N`. -/
+def wignerLindebergSum (A : Ω → Matrix ι ι E) (P : Measure Ω)
     (r : ℝ≥0) : ℝ≥0∞ :=
-  (N : ℝ≥0∞)⁻¹ * ∑ i : Fin N, ∑ j : {j : Fin N // j ≠ i},
+  (Fintype.card ι : ℝ≥0∞)⁻¹ * ∑ i : ι, ∑ j : {j : ι // j ≠ i},
     ∫⁻ ω, ENNReal.ofReal
       ({ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2) ω) ∂P
 
+open scoped Classical in
 /-- The entrywise formula for the normalized Lindeberg sum. -/
-theorem wignerLindebergSum_def {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) ℂ) (P : Measure Ω)
+theorem wignerLindebergSum_def (A : Ω → Matrix ι ι E) (P : Measure Ω)
     (r : ℝ≥0) :
     wignerLindebergSum A P r =
-      (N : ℝ≥0∞)⁻¹ * ∑ i : Fin N, ∑ j : {j : Fin N // j ≠ i},
+      (Fintype.card ι : ℝ≥0∞)⁻¹ * ∑ i : ι, ∑ j : {j : ι // j ≠ i},
         ∫⁻ ω, ENNReal.ofReal
           ({ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2) ω) ∂P := by
   rw [wignerLindebergSum]
 
 /-- Almost-everywhere equality of the off-diagonal entries preserves the Lindeberg sum. -/
-theorem wignerLindebergSum_congr_ae {N : ℕ}
-    {A B : Ω → Matrix (Fin N) (Fin N) ℂ} (r : ℝ≥0)
+theorem wignerLindebergSum_congr_ae
+    {A B : Ω → Matrix ι ι E} (r : ℝ≥0)
     (h : ∀ i j, j ≠ i → (fun ω ↦ A ω j i) =ᵐ[P] (fun ω ↦ B ω j i)) :
     wignerLindebergSum A P r = wignerLindebergSum B P r := by
   simp only [wignerLindebergSum_def]
@@ -79,7 +86,7 @@ theorem wignerLindebergSum_congr_ae {N : ℕ}
   simp [Set.indicator_apply, hω]
 
 /-- Raising the squared-modulus cutoff decreases the Lindeberg sum. -/
-theorem wignerLindebergSum_antitone {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) ℂ) :
+theorem wignerLindebergSum_antitone (A : Ω → Matrix ι ι E) :
     Antitone (wignerLindebergSum A P) := by
   intro r s hrs
   simp only [wignerLindebergSum_def]
@@ -92,41 +99,61 @@ theorem wignerLindebergSum_antitone {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N)
   · simp [Set.indicator_apply, h]
 
 @[simp]
-theorem wignerLindebergSum_fin_zero {A : Ω → Matrix (Fin 0) (Fin 0) ℂ} (r : ℝ≥0) :
+theorem wignerLindebergSum_fin_zero {A : Ω → Matrix (Fin 0) (Fin 0) E} (r : ℝ≥0) :
     wignerLindebergSum A P r = 0 := by simp [wignerLindebergSum_def]
 
 @[simp]
-theorem wignerLindebergSum_fin_one {A : Ω → Matrix (Fin 1) (Fin 1) ℂ} (r : ℝ≥0) :
+theorem wignerLindebergSum_fin_one {A : Ω → Matrix (Fin 1) (Fin 1) E} (r : ℝ≥0) :
     wignerLindebergSum A P r = 0 := by
   have (i : Fin 1) : IsEmpty {j : Fin 1 // j ≠ i} :=
     ⟨fun j ↦ j.property (Subsingleton.elim _ _)⟩
   simp [wignerLindebergSum_def]
 
 /-- If the discarded second moments are integrable, the Lindeberg sum is finite. -/
-theorem wignerLindebergSum_ne_top {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) ℂ) (r : ℝ≥0)
-    (hA : ∀ (i : Fin N) (j : {j : Fin N // j ≠ i}),
+theorem wignerLindebergSum_ne_top (A : Ω → Matrix ι ι E) (r : ℝ≥0)
+    (hA : ∀ (i : ι) (j : {j : ι // j ≠ i}),
       Integrable ({ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2)) P) :
     wignerLindebergSum A P r ≠ ∞ := by
-  cases N with
-  | zero => simp
-  | succ n =>
-    rw [wignerLindebergSum_def]
-    refine ENNReal.mul_ne_top (by simp) (ENNReal.sum_ne_top.mpr fun i _ ↦
+  cases isEmpty_or_nonempty ι
+  · simp [wignerLindebergSum_def]
+  · rw [wignerLindebergSum_def]
+    refine ENNReal.mul_ne_top (by simp [Fintype.card_ne_zero]) (ENNReal.sum_ne_top.mpr fun i _ ↦
       ENNReal.sum_ne_top.mpr fun j _ ↦ ?_)
     rw [← ofReal_integral_eq_lintegral_ofReal (hA i j)
       (.of_forall fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)]
     exact ENNReal.ofReal_ne_top
 
+/-- For a.e.-measurable off-diagonal entries, the Lindeberg sum is finite exactly when all
+discarded second moments are integrable. -/
+theorem wignerLindebergSum_ne_top_iff {F : Type*} [SeminormedAddGroup F] [MeasurableSpace F]
+    [OpensMeasurableSpace F] (A : Ω → Matrix ι ι F) (r : ℝ≥0)
+    (hA : ∀ (i : ι) (j : {j : ι // j ≠ i}), AEMeasurable (fun ω ↦ A ω j i) P) :
+    wignerLindebergSum A P r ≠ ∞ ↔ ∀ (i : ι) (j : {j : ι // j ≠ i}),
+      Integrable ({ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2)) P := by
+  classical
+  refine ⟨fun h i j ↦ ?_, wignerLindebergSum_ne_top A r⟩
+  rw [wignerLindebergSum_def, ne_eq, ENNReal.mul_eq_top] at h
+  have hs := (not_or.mp h).1
+  have hj := ENNReal.sum_ne_top.mp
+    (ENNReal.sum_ne_top.mp (fun htop ↦ hs ⟨by simp, htop⟩) i (mem_univ i)) j (mem_univ j)
+  have hm : AEMeasurable (fun ω ↦ ‖A ω j i‖ ^ 2) P :=
+    (continuous_norm.measurable.comp_aemeasurable (hA i j)).pow_const 2
+  have htail := hm.aestronglyMeasurable.indicator₀
+    (nullMeasurableSet_lt (aemeasurable_const (b := (r : ℝ))) hm)
+  exact (lintegral_ofReal_ne_top_iff_integrable htail
+    (.of_forall fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)).mp hj
+
+open scoped Classical in
 /-- For integrable discarded second moments, the real value of the Lindeberg sum uses Bochner
 integrals of the squared modulus above the cutoff, summed over ordered off-diagonal pairs and
 divided by the matrix dimension. -/
-theorem wignerLindebergSum_toReal {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) ℂ) (r : ℝ≥0)
-    (hA : ∀ (i : Fin N) (j : {j : Fin N // j ≠ i}),
+theorem wignerLindebergSum_toReal (A : Ω → Matrix ι ι E) (r : ℝ≥0)
+    (hA : ∀ (i : ι) (j : {j : ι // j ≠ i}),
       Integrable ({ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2)) P) :
     (wignerLindebergSum A P r).toReal =
-      (N : ℝ)⁻¹ * ∑ i : Fin N, ∑ j : {j : Fin N // j ≠ i},
+      (Fintype.card ι : ℝ)⁻¹ * ∑ i : ι, ∑ j : {j : ι // j ≠ i},
         ∫ ω, {ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2) ω ∂P := by
-  have hnonneg (i : Fin N) (j : {j : Fin N // j ≠ i}) (ω : Ω) :
+  have hnonneg (i : ι) (j : {j : ι // j ≠ i}) (ω : Ω) :
       0 ≤ {ω | (r : ℝ) < ‖A ω j i‖ ^ 2}.indicator (fun ω ↦ ‖A ω j i‖ ^ 2) ω :=
     Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
   simp_rw [wignerLindebergSum_def, ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast,
@@ -134,6 +161,8 @@ theorem wignerLindebergSum_toReal {N : ℕ} (A : Ω → Matrix (Fin N) (Fin N) �
   rw [ENNReal.toReal_sum (fun _ _ ↦ ENNReal.sum_ne_top.mpr fun _ _ ↦ ENNReal.ofReal_ne_top)]
   simp_rw [ENNReal.toReal_sum (fun _ _ ↦ ENNReal.ofReal_ne_top),
     ENNReal.toReal_ofReal (integral_nonneg (hnonneg _ _))]
+
+end LindebergSum
 
 variable {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {n : ℕ}
 
@@ -147,11 +176,9 @@ private theorem wigner_minor_secondMoment_terms_le {m N : ℝ} (hN : 0 < N) (hm 
   apply add_le_add
   · calc
       _ ≤ 2 * N⁻¹ * Real.sqrt N := by gcongr
-      _ = _ := by field_simp; nlinarith [Real.sq_sqrt hN.le]
-  · apply Real.sqrt_le_sqrt
-    calc
-      _ ≤ (r : ℝ) * N * N⁻¹ := by gcongr
-      _ = _ := by rw [mul_assoc, mul_inv_cancel₀ hN.ne', mul_one]
+      _ = _ := by rw [mul_assoc, inv_mul_eq_div, Real.sqrt_div_self, div_eq_mul_inv]
+  · rw [mul_assoc, ← div_eq_mul_inv]
+    exact Real.sqrt_le_sqrt (mul_le_of_le_one_right r.coe_nonneg ((div_le_one hN).2 hm))
 
 private theorem integral_norm_wigner_minor_quadraticForm_sub_normalized_trace_le
     (hind : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n + 1} ↦ ξ ij.val) P)
@@ -182,7 +209,7 @@ private theorem integral_norm_wigner_minor_quadraticForm_sub_normalized_trace_le
   have hiR : IndepFun R (fun ω j ↦ a j ω) P := by
     rw [hR_eq]
     simpa only [Function.id_comp] using hi.comp hS measurable_id
-  have hia := iIndepFun_wignerMatrix_column_of_ne (η := fun _ _ ↦ 0) i hind
+  have hia := iIndepFun_wignerMatrix_offDiag_column (η := fun _ _ ↦ 0) i hind
   have hRbound : ∀ᵐ ω ∂P, ‖R ω‖ ≤ z.im⁻¹ := .of_forall fun ω ↦ by
     simpa only [R, RCLike.im_eq_complex_im, abs_of_pos hz] using
       (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)).l2_opNorm_minorResolvent_le hz.ne' i
@@ -200,9 +227,8 @@ private theorem integral_norm_wigner_minor_quadraticForm_sub_normalized_trace_le
   have hQ : Q = fun ω ↦ star (fun j ↦ a j ω) ⬝ᵥ R ω *ᵥ (fun j ↦ a j ω) -
       ∑ j, R ω j j * ((∫ y, ‖a j y‖ ^ 2 ∂P : ℝ) : ℂ) := by
     funext ω
-    simp only [Q, Matrix.minorQuadraticError_def, NNReal.coe_one, Complex.ofReal_one, one_div,
-      Fintype.card_fin, hmoment, R, a, Complex.ofReal_inv, Complex.ofReal_add,
-      Complex.ofReal_natCast, Nat.cast_succ, Matrix.trace, Matrix.diag, Finset.mul_sum]
+    simp only [Q, Matrix.minorQuadraticError_eq_sub_sum_diag, Fintype.card_fin, Nat.cast_succ,
+      NNReal.coe_one, one_div, hmoment, R, a]
     congr 1
     exact sum_congr rfl fun j _ ↦ mul_comm _ _
   rw [hQ]
@@ -272,10 +298,15 @@ private theorem integral_norm_resolventTransform_wignerMatrix_zero_sub_semicircl
     simpa only [U, T, b, A] using (hq i).2
   have htail : (wignerLindebergSum A P r).toReal = 𝔼 i, T i := by
     rw [Fintype.expect_eq_sum_div_card, div_eq_inv_mul, Fintype.card_fin]
-    exact wignerLindebergSum_toReal A r (fun i j ↦ by
+    rw [wignerLindebergSum_toReal A r (fun i j ↦ by
       have hsq := (memLp_wignerMatrix_apply hLp (fun _ _ ↦ memLp_const 0)
         j.val i).integrable_norm_pow (by decide : 2 ≠ 0)
-      exact hsq.indicator₀ (nullMeasurableSet_lt aemeasurable_const hsq.aemeasurable))
+      exact hsq.indicator₀ (nullMeasurableSet_lt aemeasurable_const hsq.aemeasurable)),
+      Fintype.card_fin]
+    congr 1
+    refine sum_congr rfl fun i _ ↦ ?_
+    dsimp only [T]
+    exact sum_congr (congrArg (@Finset.univ {j // j ≠ i}) (Subsingleton.elim _ _)) fun _ _ ↦ rfl
   have hscaled : (𝔼 i, U i) = z.im⁻¹ * (b + 2 * (wignerLindebergSum A P r).toReal) := by
     dsimp only [U]
     rw [← Finset.mul_expect, Finset.expect_add_distrib, Fintype.expect_const, ← Finset.mul_expect,
@@ -361,11 +392,17 @@ theorem wignerLindebergSum_wignerMatrix_eq_sum {N : ℕ} (ξ : StrictUpper → �
       simp only [hdiag, sum_const_zero, zero_add, nsmul_eq_mul, Nat.cast_ofNat]
       congr 1
       exact Fintype.sum_equiv (Equiv.refl (StrictUpperFin (n + 1))) _ _ hupper
-    simp_rw [wignerLindebergSum_def, fun (i : Fin (n + 1)) (j : {j // j ≠ i}) ↦
-      lintegral_indicator_norm_wignerMatrix_apply_sq_eq (ξ := ξ) (η := η) (P := P) j.property r]
-    simp only [← mul_sum]
-    rw [hordered, pow_two]
-    ac_rfl
+    simp_rw [wignerLindebergSum_def, Fintype.card_fin]
+    calc
+      _ = ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ * (((n + 1 : ℕ) : ℝ≥0∞)⁻¹ *
+          ∑ i : Fin (n + 1), ∑ j : {j // j ≠ i}, T (edge j i j.property)) := by
+        simp_rw [fun (i : Fin (n + 1)) (j : {j // j ≠ i}) ↦
+          lintegral_indicator_norm_wignerMatrix_apply_sq_eq (ξ := ξ) (η := η) (P := P) j.property r]
+        simp only [← mul_sum]
+        congr 2
+        exact sum_congr rfl fun i _ ↦
+          sum_congr (congrArg (@Finset.univ {j // j ≠ i}) (Subsingleton.elim _ _)) fun _ _ ↦ rfl
+      _ = _ := by rw [hordered, pow_two]; ac_rfl
 
 /-- At each upper-half-plane parameter, the mean absolute error of a Wigner resolvent
 transform is controlled by the matrix size, the off-diagonal Lindeberg sum and the

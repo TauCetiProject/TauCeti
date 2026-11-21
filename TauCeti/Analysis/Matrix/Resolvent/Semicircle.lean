@@ -11,8 +11,10 @@ public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 /-!
 # Deterministic semicircle comparison for Hermitian resolvents
 
-The mean absolute errors of the principal-minor quadratic forms control the spectral resolvent
-transform's deviation from the semicircle transform at each upper-half-plane parameter.
+The spectral resolvent transform's deviation from the semicircle transform is bounded by
+the mean absolute errors of the principal-minor quadratic forms, the normalized minor-trace
+correction, and the mean absolute diagonal entry, with a factor depending on the imaginary
+part of the spectral parameter.
 -/
 
 public section

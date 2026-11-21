@@ -40,7 +40,7 @@ variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
 omit [IsProbabilityMeasure μ] in
 /-- An independent restriction remains independent when the other coordinates are almost
 surely constant. The constants and the exceptional null sets may depend on the coordinate. -/
-theorem _root_.ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const
+theorem _root_.ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const_outside
     {f : ∀ i, Ω → β i} {s : Set ι}
     (h : iIndepFun (fun i : s ↦ f i.val) μ)
     (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ ↦ c) : iIndepFun f μ := by
@@ -97,7 +97,7 @@ theorem iIndepFun_of_ae_eq_const_outside_subsingleton {f : ∀ i, Ω → β i} {
     (hs : s.Subsingleton) (hf : ∀ i ∉ s, ∃ c, f i =ᵐ[μ] fun _ => c) :
     iIndepFun f μ := by
   let : Subsingleton s := ⟨fun i j ↦ Subtype.ext (hs i.property j.property)⟩
-  exact (iIndepFun.of_subsingleton (f := fun i : s ↦ f i.val)).of_subtype_of_ae_eq_const hf
+  exact (iIndepFun.of_subsingleton (f := fun i : s ↦ f i.val)).of_subtype_of_ae_eq_const_outside hf
 
 end TauCeti.Probability
 
