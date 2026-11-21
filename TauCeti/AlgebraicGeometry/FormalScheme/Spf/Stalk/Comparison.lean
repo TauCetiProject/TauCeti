@@ -66,25 +66,6 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
 
 section MaximalIdealCompletion
 
-/-- The maximal ideal of `A_𝔭` generates the maximal ideal of `𝒪_{Spf A, p}`. -/
-theorem map_maximalIdeal_localizationToStalk :
-    (maximalIdeal (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)).map
-        (localizationToStalk p) =
-      maximalIdeal ((Spf A).presheaf.stalk p) :=
-  TauCeti.IsLocalRing.map_maximalIdeal_eq_of_quotientMap_bijective (localizationToStalk p)
-    (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
-    (H := Ideal.le_comap_map)
-    (Ideal.quotientMap_bijective_congr (localizationToStalk p) rfl
-      (map_localizationToStalk_map p (IsAdicRing.ideal A)).symm
-      (quotientMap_localizationToStalk_bijective_of_isOpen p
-        (by simpa [pow_one] using (isAdic_iff.mp (IsAdicRing.ideal_spec A).2.1).1 1)
-        (H := map_localizationToStalk_map p (IsAdicRing.ideal A) ▸ Ideal.le_comap_map)))
-
-/-- The canonical homomorphism `A_𝔭 →+* 𝒪_{Spf A, p}` is local. -/
-instance isLocalHom_localizationToStalk : IsLocalHom (localizationToStalk p) :=
-  ((local_hom_tfae (localizationToStalk p)).out 1 3).mpr
-    (map_maximalIdeal_localizationToStalk p).le
-
 private theorem ideal_map_toStalk_le_maximalIdeal :
     (IsAdicRing.ideal A).map (toStalk p) ≤ maximalIdeal ((Spf A).presheaf.stalk p) := by
   rw [← map_maximalIdeal_localizationToStalk p, ← map_localizationToStalk_map p]
@@ -347,7 +328,7 @@ theorem localizationToStalk_bijective_of_isLocalRing [IsLocalRing A]
   refine (Function.Bijective.of_comp_iff (localizationToStalk p)
     (algebraMap_bijective_of_algEquiv (atPrimeAlgEquivOfIsLocalRing p hp))).mp ?_
   convert toStalk_bijective_of_isLocalRing p hp
-  exact funext (localizationToStalk_algebraMap p)
+  exact funext (localizationToStalk_algebraMap_eq_toStalk p)
 
 /-- For a complete local adic ring `A` at its closed point `p`, `𝒪_{Spf A, p} → Â_𝔭` is
 bijective. -/
@@ -380,19 +361,6 @@ theorem faithfullyFlat_stalkToLocalCompletion : (stalkToLocalCompletion p).Faith
 theorem flat_stalkToLocalCompletion : (stalkToLocalCompletion p).Flat :=
   (faithfullyFlat_stalkToLocalCompletion p).flat
 
-/-- For noetherian `A`, the stalk `𝒪_{Spf A, p}` is flat over `A_𝔭` (EGA I, Ch. 0, 7.6.17). -/
-theorem flat_localizationToStalk : (localizationToStalk p).Flat := by
-  let := (localizationToStalk p).toAlgebra
-  let := (stalkToLocalCompletion p).toAlgebra
-  have : IsScalarTower (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
-      ((Spf A).presheaf.stalk p) (LocalCompletion p) :=
-    .of_algebraMap_eq fun x ↦ (stalkToLocalCompletion_localizationToStalk p x).symm
-  have : Module.FaithfullyFlat ((Spf A).presheaf.stalk p) (LocalCompletion p) :=
-    faithfullyFlat_stalkToLocalCompletion p
-  exact Module.Flat.of_faithfullyFlat_of_flat
-    (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
-    ((Spf A).presheaf.stalk p) (LocalCompletion p)
-
 /-- For noetherian `A`, `A_𝔭 → 𝒪_{Spf A, p}` is faithfully flat. -/
 theorem faithfullyFlat_localizationToStalk : (localizationToStalk p).FaithfullyFlat := by
   algebraize [localizationToStalk p]
@@ -400,21 +368,11 @@ theorem faithfullyFlat_localizationToStalk : (localizationToStalk p).FaithfullyF
   have : IsLocalHom (algebraMap _ ((Spf A).presheaf.stalk p)) := isLocalHom_localizationToStalk p
   exact Module.FaithfullyFlat.of_flat_of_isLocalHom
 
-/-- For noetherian `A`, the stalk `𝒪_{Spf A, p}` and the algebraic localisation `A_𝔭` have the same
-Krull dimension. -/
-theorem ringKrullDim_stalk_eq :
-    ringKrullDim ((Spf A).presheaf.stalk p) =
-      ringKrullDim (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) := by
-  algebraize [localizationToStalk p]
-  have : Module.Flat _ _ := flat_localizationToStalk p
-  exact TauCeti.ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq
-    (map_maximalIdeal_localizationToStalk p)
-
 /-- For noetherian `A`, the Krull dimension of the stalk `𝒪_{Spf A, p}` is the height of the prime
 ideal `𝔭`. -/
 theorem ringKrullDim_stalk_eq_height :
     ringKrullDim ((Spf A).presheaf.stalk p) = ((p : PrimeSpectrum A).asIdeal.height : WithBot ℕ∞) :=
-  (ringKrullDim_stalk_eq p).trans
+  (ringKrullDim_stalk p).trans
     (IsLocalization.AtPrime.ringKrullDim_eq_height (p : PrimeSpectrum A).asIdeal _)
 
 /-- For noetherian `A`, `Â_𝔭` and `𝒪_{Spf A, p}` have the same Krull dimension. -/
@@ -429,16 +387,7 @@ theorem ringKrullDim_localCompletion_eq_stalk :
 theorem ringKrullDim_localCompletion_eq :
     ringKrullDim (LocalCompletion p) =
       ringKrullDim (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
-  (ringKrullDim_localCompletion_eq_stalk p).trans (ringKrullDim_stalk_eq p)
-
-/-- For noetherian `A`, the stalk `𝒪_{Spf A, p}` is a regular local ring if and only if `A_𝔭` is. -/
-theorem isRegularLocalRing_stalk_iff :
-    IsRegularLocalRing ((Spf A).presheaf.stalk p) ↔
-      IsRegularLocalRing (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) := by
-  algebraize [localizationToStalk p]
-  have : Module.Flat _ _ := flat_localizationToStalk p
-  exact TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq
-    (map_maximalIdeal_localizationToStalk p)
+  (ringKrullDim_localCompletion_eq_stalk p).trans (ringKrullDim_stalk p)
 
 /-- For noetherian `A`, `Â_𝔭` is a regular local ring if and only if `𝒪_{Spf A, p}` is. -/
 theorem isRegularLocalRing_localCompletion_iff_stalk :
@@ -453,16 +402,6 @@ theorem isRegularLocalRing_localCompletion_iff :
     IsRegularLocalRing (LocalCompletion p) ↔
       IsRegularLocalRing (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
   (isRegularLocalRing_localCompletion_iff_stalk p).trans (isRegularLocalRing_stalk_iff p)
-
-/-- For noetherian `A`, the stalk `𝒪_{Spf A, p}` is Cohen–Macaulay if and only if `A_𝔭` is. -/
-theorem isCohenMacaulay_stalk_iff :
-    Module.IsCohenMacaulay ((Spf A).presheaf.stalk p) ((Spf A).presheaf.stalk p) ↔
-      Module.IsCohenMacaulay (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)
-        (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) := by
-  algebraize [localizationToStalk p]
-  have : Module.Flat _ _ := flat_localizationToStalk p
-  exact Module.isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq
-    (map_maximalIdeal_localizationToStalk p)
 
 /-- For noetherian `A`, `Â_𝔭` is Cohen–Macaulay if and only if `𝒪_{Spf A, p}` is. -/
 theorem isCohenMacaulay_localCompletion_iff_stalk :

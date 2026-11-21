@@ -75,9 +75,12 @@ non-top value implies feasibility.
 * `TauCeti.IsKantorovichOptimalTransportMap.isMongeMinimizer` and
   `TauCeti.isKantorovichOptimalTransportMap_iff` — a map attaining the Kantorovich value is a
   Monge minimizer, and forces the two values to agree; the converse needs that agreement;
-* `TauCeti.isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan` — the equality case
-  of the relaxation: a transport map attains the Kantorovich value exactly when its graph plan
-  is an optimal plan;
+* `TauCeti.isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan`,
+  `TauCeti.isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan`, and
+  `TauCeti.IsKantorovichOptimalTransportMap.ae_eq_of_isOptimalCoupling_eq_graphPlan` — the equality
+  case of the relaxation: a transport map attains the Kantorovich value exactly when its graph plan
+  is an optimal plan, and uniqueness of that optimal graph plan gives a.e. uniqueness of the
+  optimal map;
 * `TauCeti.lintegral_eq_transportCost_of_ae_eq_comp` and `TauCeti.lintegral_le_of_ae_eq_comp` —
   if `U = T ∘ s` almost everywhere for an optimal transport map `T` from `μ` to the law of `U`
   and a map `s` of law `μ`, then `s` attains the transport cost and minimises the cost of
@@ -404,6 +407,26 @@ theorem isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan (hT : H
       ← transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc, h.transportMapCost_eq]
   · rw [transportMapCost_eq_lintegral_graphPlan hT.aemeasurable hc,
       lintegral_graphPlan hT.aemeasurable hc, h]
+
+/-- An a.e. measurable map whose graph plan is an optimal coupling from `μ` to `ν` is a
+Kantorovich-optimal transport map from `μ` to `ν`: optimality of the graph plan already forces
+its second marginal `μ.map T` to be `ν`. -/
+theorem isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan (hT : AEMeasurable T μ)
+    (hc : AEMeasurable c (graphPlan T μ))
+    (h : IsOptimalCoupling c (graphPlan T μ) μ ν) :
+    IsKantorovichOptimalTransportMap c μ ν T :=
+  (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan
+    ((isCoupling_graphPlan_iff hT).1 h.toIsCoupling) hc).2 h
+
+/-- If `T` is a Kantorovich-optimal transport map from `μ` to `ν` and its optimal graph plan
+must equal `graphPlan S μ` for an a.e. measurable `S`, then `T =ᵐ[μ] S`. -/
+theorem IsKantorovichOptimalTransportMap.ae_eq_of_isOptimalCoupling_eq_graphPlan [MeasurableEq Y]
+    (h : IsKantorovichOptimalTransportMap c μ ν T) (hS : AEMeasurable S μ)
+    (hc : AEMeasurable c (graphPlan T μ))
+    (huniq : IsOptimalCoupling c (graphPlan T μ) μ ν → graphPlan T μ = graphPlan S μ) :
+    T =ᵐ[μ] S :=
+  (graphPlan_eq_graphPlan_iff h.aemeasurable hS).1 <|
+    huniq ((isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan h.toHasLaw hc).1 h)
 
 section Factor
 

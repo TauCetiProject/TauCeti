@@ -167,9 +167,9 @@ def superdiagonalSubgroup (r : ℕ) : Subgroup (upperUnitriangularGroup (Fin n) 
     have heq : Ginv - 1 = -((G - 1) * Ginv) := by
       have hmul : G * Ginv = 1 := by
         -- The two matrices are the values of a unit and its inverse.
-        change (g.1 : Matrix (Fin n) (Fin n) R) *
-          (g.1⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
-        exact Units.mul_inv g.1
+        change (g.val : Matrix (Fin n) (Fin n) R) *
+          (g.val⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
+        exact Units.mul_inv g.val
       calc
         Ginv - 1 = -(1 - Ginv) := by abel
         _ = -(G * Ginv - 1 * Ginv) := by rw [hmul, one_mul]
@@ -250,9 +250,9 @@ theorem commutator_superdiagonalSubgroup_le (r s : ℕ) :
         (G * H - H * G) * (K : Matrix (Fin n) (Fin n) R) := by
     have hmul : H * G * (K : Matrix (Fin n) (Fin n) R) = 1 := by
       -- The product and `K` are the values of a unit and its inverse.
-      change ((h * g).1 : Matrix (Fin n) (Fin n) R) *
-        ((h * g).1⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
-      exact Units.mul_inv (h * g).1
+      change ((h * g).val : Matrix (Fin n) (Fin n) R) *
+        ((h * g).val⁻¹ : Matrix.GeneralLinearGroup (Fin n) R) = 1
+      exact Units.mul_inv (h * g).val
     have hK :
         Ginv * Hinv = (K : Matrix (Fin n) (Fin n) R) := by
       simp [Ginv, Hinv, K]

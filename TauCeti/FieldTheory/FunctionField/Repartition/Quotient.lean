@@ -120,7 +120,7 @@ noncomputable def adeleFiltrationEval (E : Divisor k F) (P : Place k F) :
     adeleFiltration E →ₗ[k] P.filtration (-E.coeff P) :=
   LinearMap.codRestrict _ ((LinearMap.proj P).comp (adeleFiltration E).subtype) fun a ↦ by
     rw [Place.mem_filtration_iff, neg_neg]
-    exact mem_adeleFiltration_iff.mp a.2 P
+    exact mem_adeleFiltration_iff.mp a.property P
 
 @[simp]
 theorem coe_adeleFiltrationEval (E : Divisor k F) (P : Place k F) (a : adeleFiltration E) :
@@ -168,7 +168,7 @@ theorem ker_adeleFiltrationLocalMap {D E : Divisor k F} {P : Place k F}
   rcases eq_or_ne Q P with rfl | hQ
   · exact h
   · rw [hoff Q hQ]
-    exact mem_adeleFiltration_iff.mp a.2 Q
+    exact mem_adeleFiltration_iff.mp a.property Q
 
 /-- **The local reduction at `P` is surjective**: a function with pole order at most `E P` at `P`,
 extended by zero at every other place, is a repartition bounded by `E`. -/
@@ -181,7 +181,7 @@ theorem adeleFiltrationLocalMap_surjective (D E : Divisor k F) (P : Place k F) :
     mem_adeleFiltration_iff.mpr fun Q ↦ ?_⟩, ?_⟩
   · rcases eq_or_ne Q P with rfl | hQ
     · rw [ite_eq_left (rfl : Q = Q)]
-      simpa only [Place.mem_filtration_iff, neg_neg] using z.2
+      simpa only [Place.mem_filtration_iff, neg_neg] using z.property
     · simp [ite_eq_right hQ]
   · rw [adeleFiltrationLocalMap_apply]
     exact congrArg _ (Subtype.ext (ite_eq_left rfl))
@@ -243,7 +243,7 @@ theorem ker_adeleFiltrationLocalMapPi {D E : Divisor k F} {s : Finset (Place k F
       rw [WeilDivisor.coeff_sub] at h0
       omega
     rw [hQD]
-    exact mem_adeleFiltration_iff.mp a.2 Q
+    exact mem_adeleFiltration_iff.mp a.property Q
 
 /-- **The place-by-place reduction over `s` is surjective**: entries prescribed at the finitely
 many places of `s`, extended by zero elsewhere, form a repartition bounded by `E`. -/
@@ -256,12 +256,12 @@ theorem adeleFiltrationLocalMapPi_surjective (D E : Divisor k F) (s : Finset (Pl
     mem_adeleFiltration_iff.mpr fun Q ↦ ?_⟩, funext fun P ↦ ?_⟩
   · rcases em (Q ∈ s) with h | h
     · rw [dite_eq_left h]
-      simpa only [Place.mem_filtration_iff, neg_neg] using (z ⟨Q, h⟩).2
+      simpa only [Place.mem_filtration_iff, neg_neg] using (z ⟨Q, h⟩).property
     · simp [dite_eq_right h]
   · rw [adeleFiltrationLocalMapPi_apply, adeleFiltrationLocalMap_apply, ← hz P]
     refine congrArg _ (Subtype.ext ?_)
     rw [coe_adeleFiltrationEval]
-    exact dite_eq_left P.2
+    exact dite_eq_left P.property
 
 /-- The place-by-place reduction over `s`, descended to the quotient `A_F(E) / A_F(D)`: it is
 well defined because a repartition bounded by `D` satisfies the bound `D` imposes at every place,

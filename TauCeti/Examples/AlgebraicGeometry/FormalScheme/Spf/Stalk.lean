@@ -68,8 +68,8 @@ def padicPowerSeriesClosedPoint : carrier ℤ_[p]⟦X⟧ :=
 example : Subsingleton (carrier ℤ_[p]⟦X⟧) :=
   ⟨fun x y ↦ Subtype.ext (PrimeSpectrum.ext <| by
     have h (z : carrier ℤ_[p]⟦X⟧) : (z : PrimeSpectrum ℤ_[p]⟦X⟧).asIdeal = maximalIdeal _ :=
-      ((maximalIdeal.isMaximal _).eq_of_le z.1.isPrime.ne_top
-        ((mem_carrier_iff_le (I := maximalIdeal ℤ_[p]⟦X⟧) rfl).mp z.2)).symm
+      ((maximalIdeal.isMaximal _).eq_of_le z.val.isPrime.ne_top
+        ((mem_carrier_iff_le (I := maximalIdeal ℤ_[p]⟦X⟧) rfl).mp z.property)).symm
     exact (h x).trans (h y).symm)⟩
 
 /-- The unique point of `Spf ℤ_[p]⟦X⟧` is closed. -/
@@ -98,7 +98,7 @@ example :
     rw [← TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing (R := ℤ_[p])]
     exact (ringKrullDim_eq_of_ringEquiv
       (RingEquiv.ofBijective _ (toStalk_bijective_of_isLocalRing _ rfl))).symm
-  exact ⟨(ringKrullDim_stalk_eq _).symm.trans hstalk, hstalk,
+  exact ⟨(ringKrullDim_stalk _).symm.trans hstalk, hstalk,
     (ringKrullDim_localCompletion_eq_stalk _).trans hstalk⟩
 
 /-- The localisation, stalk, and completed localisation of `Spf ℤ_[p]⟦X⟧` are all regular and
@@ -206,7 +206,7 @@ example :
     ringKrullDim ((Spf k[X]).presheaf.stalk (polyOrigin k)) = 1 ∧
     ringKrullDim ((Spf k[X]).presheaf.stalk (polyGeneric k)) = 0 := by
   refine ⟨?_, by rw [ringKrullDim_stalk_eq_height (polyGeneric k)]; simp [polyGeneric]⟩
-  rw [ringKrullDim_stalk_eq (polyOrigin k)]
+  rw [ringKrullDim_stalk (polyOrigin k)]
   have hne : (polyOrigin k : PrimeSpectrum k[X]).asIdeal ≠ ⊥ :=
     mt Ideal.span_singleton_eq_bot.mp Polynomial.X_ne_zero
   have : IsDiscreteValuationRing
@@ -251,7 +251,7 @@ example (p : carrier A) :
       Module.IsCohenMacaulay ((Spf A).presheaf.stalk p) ((Spf A).presheaf.stalk p)) :=
   ⟨inferInstance, inferInstance, faithfullyFlat_localizationToStalk p,
    faithfullyFlat_stalkToLocalCompletion p, maximalIdealCompletionLocalizationEquivStalk_trans p,
-   ringKrullDim_stalk_eq p, ringKrullDim_localCompletion_eq_stalk p,
+   ringKrullDim_stalk p, ringKrullDim_localCompletion_eq_stalk p,
    isRegularLocalRing_stalk_iff p, isRegularLocalRing_localCompletion_iff_stalk p,
    isCohenMacaulay_stalk_iff p, isCohenMacaulay_localCompletion_iff_stalk p⟩
 
