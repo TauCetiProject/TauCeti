@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+import TauCeti.AlgebraicGeometry.IdealSheaf.FaithfullyFlat
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import Mathlib.RingTheory.RingHom.Injective
 
@@ -33,7 +34,14 @@ scheme-theoretically dominant morphism stays so after corestriction along an ope
 containing its image
 (`AlgebraicGeometry.IsOpenImmersion.isSchemeTheoreticallyDominant_lift`). The scheme-theoretic
 image of a scheme-theoretically dominant morphism is its whole target
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`).
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`). A flat surjective morphism is
+scheme-theoretically dominant
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`), because the inverse
+image of an ideal sheaf along it vanishes only if the ideal sheaf does
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_eq_bot_iff_of_flat_of_surjective`). For a
+commutative square whose side `p` is scheme-theoretically dominant, factorization through a closed
+subscheme can be checked after precomposition with `p`
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_le_ker_iff_of_isSchemeTheoreticallyDominant`).
 -/
 
 public section
@@ -146,5 +154,22 @@ instance IsOpenImmersion.isSchemeTheoreticallyDominant_lift {W V Z : Scheme.{u}}
     (H : Set.range u ⊆ Set.range v) :
     IsSchemeTheoreticallyDominant (IsOpenImmersion.lift v u H) :=
   IsSchemeTheoreticallyDominant.of_isPullback (IsOpenImmersion.isPullback_lift_id u v H).flip
+
+/-- **Factorization through a closed subscheme descends along scheme-theoretically dominant
+morphisms.** For a commutative square `φ' ≫ g = p ≫ φ` with `p` scheme-theoretically dominant,
+`φ'` factors through the inverse image of `V(D)` along `g` exactly when `φ` factors through
+`V(D)`. -/
+theorem Scheme.IdealSheafData.comap_le_ker_iff_of_isSchemeTheoreticallyDominant
+    {X' Y' : Scheme.{u}} (D : Y.IdealSheafData) {g : Y' ⟶ Y} (p : X' ⟶ X)
+    [IsSchemeTheoreticallyDominant p] {φ' : X' ⟶ Y'} {φ : X ⟶ Y} (w : φ' ≫ g = p ≫ φ) :
+    D.comap g ≤ φ'.ker ↔ D ≤ φ.ker := by
+  rw [← Scheme.IdealSheafData.le_map_iff_comap_le, Scheme.IdealSheafData.map_ker, w,
+    p.ker_comp_of_isSchemeTheoreticallyDominant]
+
+/-- **A flat surjective morphism is scheme-theoretically dominant**: its scheme-theoretic image is
+the whole target. -/
+instance IsSchemeTheoreticallyDominant.of_flat_of_surjective (f : X ⟶ Y) [Flat f]
+    [Surjective f] : IsSchemeTheoreticallyDominant f where
+  ker_eq_bot := (Scheme.IdealSheafData.comap_eq_bot_iff_of_flat_of_surjective f).mp f.comap_ker_self
 
 end AlgebraicGeometry
