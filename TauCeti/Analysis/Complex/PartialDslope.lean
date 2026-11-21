@@ -168,10 +168,10 @@ theorem differentiable_partialDslope [Finite ι] [CompleteSpace E] (hf : Differe
       Filter.univ_mem
   -- Parametrize the segment `[0, 1]` by a continuous map of `ℝ` into the closed unit disc.
   set φ : ℝ → ℂ := fun t ↦ ((projIcc (0 : ℝ) 1 zero_le_one t : ℝ) : ℂ)
-  have hφ : Continuous φ := Complex.continuous_ofReal.comp (continuous_subtype_val.comp
+  have hφ : Continuous φ := Complex.continuous_ofReal.comp (continuous_subtypeVal.comp
     continuous_projIcc)
   have hφK (t : ℝ) : φ t ∈ closedBall (0 : ℂ) 1 := by
-    have := (projIcc (0 : ℝ) 1 zero_le_one t).2
+    have := (projIcc (0 : ℝ) 1 zero_le_one t).property
     simp only [φ, mem_closedBall_zero_iff, Complex.norm_real, Real.norm_eq_abs]
     exact abs_le.2 ⟨by linarith [this.1], this.2⟩
   have heq : partialDslope i f ζ = fun q ↦
