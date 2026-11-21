@@ -279,40 +279,16 @@ private theorem mul_card_filter_range_bounds {k : ℕ} {a y : ℝ} (ha : 0 < a) 
     (hyk : y ≤ k * a) :
     y ≤ a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y).card : ℝ) ∧
       a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y).card : ℝ) ≤ y + a := by
-  set I : Finset ℕ := (Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y
-  constructor
-  · by_contra! hlt
-    have hcard_lt : I.card < k := by
-      by_contra! hge
-      have hkle : (k : ℝ) * a ≤ a * (I.card : ℝ) := by
-        nlinarith [show (k : ℝ) ≤ I.card from Nat.cast_le.2 hge]
-      linarith
-    have hsub : Finset.range (I.card + 1) ⊆ I := by
-      intro j hj
-      rw [Finset.mem_range] at hj
-      refine Finset.mem_filter.2 ⟨Finset.mem_range.2 (by omega), ?_⟩
-      have hja : (j : ℝ) * a ≤ (I.card : ℝ) * a :=
-        mul_le_mul_of_nonneg_right (Nat.cast_le.2 (by omega)) ha.le
-      linarith
-    have hle := Finset.card_le_card hsub
-    rw [Finset.card_range] at hle
-    omega
-  · rcases Nat.eq_zero_or_pos I.card with h0 | hpos
-    · rw [h0, Nat.cast_zero, mul_zero]
-      linarith
-    · have hex : ∃ j ∈ I, I.card - 1 ≤ j := by
-        by_contra! hall
-        have hle := Finset.card_le_card (s := I) (t := Finset.range (I.card - 1))
-          fun j hj ↦ Finset.mem_range.2 (hall j hj)
-        rw [Finset.card_range] at hle
-        omega
-      obtain ⟨j, hjI, hj⟩ := hex
-      have hjlt : (j : ℝ) * a < y := (Finset.mem_filter.1 hjI).2
-      have hcast : ((I.card : ℝ) - 1) * a ≤ (j : ℝ) * a := by
-        refine mul_le_mul_of_nonneg_right ?_ ha.le
-        have hle := (Nat.cast_le (α := ℝ)).2 hj
-        rwa [Nat.cast_sub (by omega : 1 ≤ I.card), Nat.cast_one] at hle
-      linarith
+  have hceil : ⌈y / a⌉₊ ≤ k := Nat.ceil_le.2 ((div_le_iff₀ ha).2 hyk)
+  have hfilter : ((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y) = Finset.range ⌈y / a⌉₊ := by
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_range, ← lt_div_iff₀ ha, ← Nat.lt_ceil]
+    exact ⟨fun ⟨_, hj⟩ ↦ hj, fun hj ↦ ⟨hj.trans_le hceil, hj⟩⟩
+  rw [hfilter, Finset.card_range]
+  refine ⟨(div_le_iff₀' ha).1 (Nat.le_ceil _), ?_⟩
+  have hlt := mul_lt_mul_of_pos_left (Nat.ceil_lt_add_one (div_nonneg hy0 ha.le)) ha
+  rw [mul_add, mul_div_cancel₀ _ ha.ne', mul_one] at hlt
+  exact hlt.le
 
 /-- Finite layer-cake approximation of the integral of a nonnegative bounded continuous function by
 a Riemann sum of open superlevel-set probabilities. -/
@@ -355,19 +331,11 @@ private theorem eventually_measureReal_sub_lt_of_le_liminf
     {L : Filter ι} {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
     {U : Set X} (hU : μ U ≤ L.liminf (fun i ↦ μs i U)) {δ : ℝ} (hδ : 0 < δ) :
     ∀ᶠ i in L, (μ : Measure X).real U - δ < (μs i : Measure X).real U := by
-  rcases eq_zero_or_pos (μ U) with h0 | hpos
-  · exact Eventually.of_forall fun i ↦ by
-      simp only [measureReal_eq_coe_coeFn, h0, NNReal.coe_zero]
-      linarith [NNReal.coe_nonneg (μs i U)]
-  · have hlt : μ U - Real.toNNReal δ < L.liminf (fun i ↦ μs i U) :=
-      (tsub_lt_self hpos (Real.toNNReal_pos.2 hδ)).trans_le hU
-    filter_upwards [Filter.eventually_lt_of_lt_liminf hlt
-      (isBoundedUnder_of ⟨0, fun _ ↦ zero_le⟩)] with i hi
-    simp only [measureReal_eq_coe_coeFn]
-    have hsub : (μ U : ℝ) - δ ≤ ((μ U - Real.toNNReal δ : ℝ≥0) : ℝ) := by
-      rw [NNReal.coe_sub_def, Real.coe_toNNReal _ hδ.le]
-      exact le_max_left _ _
-    exact hsub.trans_lt (NNReal.coe_lt_coe.2 hi)
+  have hU' : (μ U : ℝ) ≤ L.liminf (fun i ↦ (μs i U : ℝ)) := by
+    rw [NNReal.toReal_liminf]
+    exact NNReal.coe_le_coe.2 hU
+  simpa only [measureReal_eq_coe_coeFn] using Filter.eventually_lt_of_lt_liminf
+    ((sub_lt_self _ hδ).trans_le hU') (isBoundedUnder_of ⟨0, fun _ ↦ NNReal.coe_nonneg _⟩)
 
 /-- **Portmanteau `(O) ⇒ (T)` for an arbitrary filter.** If `μ U ≤ liminf (μs · U)` along an
 arbitrary filter `L` for every open set `U`, then `μs` converges weakly to `μ`. Unlike Mathlib's
@@ -443,42 +411,47 @@ theorem tendsto_iff_forall_lipschitz_integral_tendsto
   intro h
   rcases L.eq_or_neBot with rfl | _
   · simp
-  refine tendsto_of_forall_isOpen_le_liminf fun U hU ↦
-    le_of_forall_pos_le_add fun ε hε ↦ tsub_le_iff_right.1 <| Filter.le_liminf_of_le
-      (isBoundedUnder_of ⟨1, fun _ ↦ apply_le_one _ _⟩).isCoboundedUnder_ge ?_
-  have hs : IsClosed Uᶜ := hU.isClosed_compl
-  let fs : ℕ → X → ℝ := fun n x ↦
-    thickenedIndicator (δ := (1 : ℝ) / (n + 1)) (by positivity) Uᶜ x
-  have key₁ : Tendsto (fun n ↦ ∫ x, fs n x ∂(μ : Measure X)) atTop
-      (𝓝 ((μ : Measure X).real Uᶜ)) :=
-    tendsto_integral_thickenedIndicator_of_isClosed (μ : Measure X) hs
-      (δs := fun n ↦ (1 : ℝ) / (n + 1)) (fun _ ↦ by positivity)
-      tendsto_one_div_add_atTop_nhds_zero_nat
-  have hε_pos : (0 : ℝ) < ε := NNReal.coe_pos.2 hε
-  obtain ⟨M, hM⟩ := eventually_atTop.1
-    (key₁.eventually_lt_const (lt_add_of_pos_right _ (half_pos hε_pos)))
-  have hbd : ∃ C, ∀ x y, dist (fs M x) (fs M y) ≤ C := ⟨1, fun x y ↦ by
-    rw [Real.dist_eq, abs_le]
-    have h1 (z : X) : fs M z ≤ 1 := thickenedIndicator_le_one _ _ _
-    have h2 (z : X) : 0 ≤ fs M z := by simp [fs]
-    constructor <;> linarith [h1 x, h1 y, h2 x, h2 y]⟩
-  have hlip : ∃ K, LipschitzWith K (fs M) :=
-    ⟨_, lipschitzWith_thickenedIndicator (δ := (1 : ℝ) / (M + 1)) (by positivity) Uᶜ⟩
-  filter_upwards [(h (fs M) hbd hlip).eventually_lt_const
-    (lt_add_of_pos_right _ (half_pos hε_pos))] with i hi
-  have hle_i : (μs i : Measure X).real Uᶜ ≤ ∫ x, fs M x ∂(μs i : Measure X) := by
-    rw [← integral_indicator_one hs.measurableSet]
-    refine integral_mono ((integrable_indicator_iff hs.measurableSet).2
-      (integrable_const _).integrableOn) (integrable_thickenedIndicator _ _) fun x ↦ ?_
-    have h1 := indicator_le_thickenedIndicator (δ := (1 : ℝ) / (M + 1)) (by positivity) Uᶜ x
-    by_cases hx : x ∈ Uᶜ
-    · simpa only [fs, Set.indicator_of_mem hx, Pi.one_apply, NNReal.coe_one] using
-        NNReal.coe_le_coe.2 h1
-    · simp [fs, Set.indicator_of_notMem hx]
-  have hc_μ := probReal_compl_eq_one_sub (μ := (μ : Measure X)) hU.measurableSet
-  have hc_i := probReal_compl_eq_one_sub (μ := (μs i : Measure X)) hU.measurableSet
-  rw [← NNReal.coe_le_coe, NNReal.coe_sub_def]
-  simp only [measureReal_eq_coe_coeFn] at hc_μ hc_i hle_i hM hi
-  exact max_le (by linarith [hM M le_rfl]) (NNReal.coe_nonneg _)
+  have hclosed_real (s : Set X) (hs : IsClosed s) :
+      L.limsup (fun i ↦ (μs i : Measure X).real s) ≤ (μ : Measure X).real s := by
+    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+    let fs : ℕ → BoundedContinuousFunction X ℝ≥0 := fun n ↦
+      thickenedIndicator (δ := (1 : ℝ) / (n + 1)) (by positivity) s
+    have key₁ : Tendsto (fun n ↦ ∫ x, (fs n x : ℝ) ∂(μ : Measure X)) atTop
+        (𝓝 ((μ : Measure X).real s)) :=
+      tendsto_integral_thickenedIndicator_of_isClosed (μ : Measure X) hs
+        (δs := fun n ↦ (1 : ℝ) / (n + 1)) (fun _ ↦ by positivity)
+        tendsto_one_div_add_atTop_nhds_zero_nat
+    obtain ⟨M, hM⟩ := eventually_atTop.1
+      (key₁.eventually_lt_const (lt_add_of_pos_right _ (half_pos hε)))
+    have hbd : ∃ C, ∀ x y, dist (fs M x : ℝ) (fs M y : ℝ) ≤ C := ⟨1, fun x y ↦ by
+      rw [Real.dist_eq, abs_le]
+      have h1 (z : X) : (fs M z : ℝ) ≤ 1 := thickenedIndicator_le_one _ _ _
+      have h2 (z : X) : 0 ≤ (fs M z : ℝ) := (fs M z).coe_nonneg
+      constructor <;> linarith [h1 x, h1 y, h2 x, h2 y]⟩
+    have hlip : ∃ K, LipschitzWith K (fun x ↦ (fs M x : ℝ)) :=
+      ⟨_, lipschitzWith_thickenedIndicator (δ := (1 : ℝ) / (M + 1)) (by positivity) s⟩
+    have ev_near : ∀ᶠ i in L,
+        (μs i : Measure X).real s ≤ (∫ x, (fs M x : ℝ) ∂(μ : Measure X)) + ε / 2 := by
+      refine ((h (fun x ↦ (fs M x : ℝ)) hbd hlip).eventually_lt_const
+        (lt_add_of_pos_right _ (half_pos hε))).mono fun i hi ↦ le_trans ?_ hi.le
+      have hle := ENNReal.toReal_mono ((fs M).lintegral_lt_top_of_nnreal _).ne
+        (measure_le_lintegral_thickenedIndicator (μs i : Measure X) hs.measurableSet
+          (by positivity : (0 : ℝ) < 1 / (M + 1)))
+      rwa [BoundedContinuousFunction.toReal_lintegral_coe_eq_integral] at hle
+    exact (Filter.limsup_le_of_le (isCoboundedUnder_le_of_le L (x := 0) (by simp)) ev_near).trans
+      (by linarith [hM M le_rfl])
+  have hclosed : ∀ s : Set X, IsClosed s →
+      L.limsup (fun i ↦ (μs i : Measure X) s) ≤ (μ : Measure X) s := fun s hs ↦ by
+    have hle := ENNReal.ofReal_le_ofReal (hclosed_real s hs)
+    simp only [measureReal_def] at hle
+    rwa [ENNReal.ofReal_limsup_toReal (C := 1) (Eventually.of_forall fun _ ↦ prob_le_one),
+      ENNReal.ofReal_toReal (measure_ne_top _ _)] at hle
+  have hopen := limsup_measure_closed_le_iff_liminf_measure_open_ge.mp hclosed
+  refine tendsto_of_forall_isOpen_le_liminf fun U hU ↦ ENNReal.coe_le_coe.1 ?_
+  have aux : ENNReal.ofNNReal (L.liminf fun i ↦ μs i U) =
+      L.liminf (ENNReal.ofNNReal ∘ fun i ↦ μs i U) :=
+    Monotone.map_liminf_of_continuousAt ENNReal.coe_mono (μs · U) (by fun_prop)
+      (isBoundedUnder_of ⟨1, fun _ ↦ apply_le_one _ _⟩).isCoboundedUnder_ge ⟨0, by simp⟩
+  simpa only [aux, Function.comp_def, ennreal_coeFn_eq_coeFn_toMeasure] using hopen U hU
 
 end MeasureTheory.ProbabilityMeasure

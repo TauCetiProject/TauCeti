@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
-import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
 # Chebyshev's inequality for the second moment
@@ -91,15 +91,13 @@ theorem ae_tendsto_inv_smul_zero_of_summable_integral_norm_sq
     (hsum : Summable fun k ↦ (∫ ω, ‖Z k ω‖ ^ 2 ∂μ) / b k ^ 2) :
     ∀ᵐ ω ∂μ, Tendsto (fun k ↦ (b k)⁻¹ • Z k ω) atTop (𝓝 0) := by
   obtain ⟨N, hN⟩ := eventually_atTop.1 hint
-  have h_ae : ∀ m : ℕ, ∀ᵐ ω ∂μ, ∀ᶠ k in atTop, ‖(b k)⁻¹ • Z k ω‖ < ((m : ℝ) + 1)⁻¹ := by
-    intro m
-    set ε : ℝ := ((m : ℝ) + 1)⁻¹
-    have hε : 0 < ε := by positivity
-    let A : ℕ → Set Ω := fun k ↦ if N ≤ k then {ω | ε ≤ ‖(b k)⁻¹ • Z k ω‖} else ∅
-    have hbound (k : ℕ) : μ (A k) ≤
+  let Z' : ℕ → Ω → E := fun k ω ↦ if N ≤ k then (b k)⁻¹ • Z k ω else 0
+  have h_ae : ∀ᵐ ω ∂μ, Tendsto (fun k ↦ Z' k ω) atTop (𝓝 0) := by
+    refine TauCeti.MeasureTheory.ae_tendsto_of_tsum_dist_ge_ne_top (g := 0) fun ε hε ↦ ?_
+    have hbound (k : ℕ) : μ {ω | ε ≤ dist (Z' k ω) 0} ≤
         ENNReal.ofReal (ε⁻¹ ^ 2 * ((∫ ω, ‖Z k ω‖ ^ 2 ∂μ) / b k ^ 2)) := by
       by_cases hkN : N ≤ k
-      · simp only [A, hkN, ite_true]
+      · simp only [Z', hkN, ite_true, dist_zero_right]
         by_cases hbk : b k = 0
         · have hempty : {ω | ε ≤ ‖(b k)⁻¹ • Z k ω‖} = ∅ :=
             Set.eq_empty_iff_forall_notMem.2 fun ω hω ↦ by
@@ -114,23 +112,12 @@ theorem ae_tendsto_inv_smul_zero_of_summable_integral_norm_sq
           refine (measure_mono hsub).trans ((meas_ge_le_integral_norm_sq_div_sq (hN k hkN)
             (mul_pos hε (abs_pos.2 hbk))).trans_eq ?_)
           congr 1; rw [mul_pow, sq_abs]; field_simp
-      · simp [A, hkN]
-    have htsum_ne_top : ∑' k, μ (A k) ≠ ∞ := by
-      refine ne_top_of_le_ne_top ?_ (tsum_le_tsum hbound)
-      rw [← ENNReal.ofReal_tsum_of_nonneg (fun k ↦
-        mul_nonneg (sq_nonneg _) (div_nonneg (integral_nonneg fun _ ↦ sq_nonneg _) (sq_nonneg _)))
-        (hsum.mul_left (ε⁻¹ ^ 2))]
-      exact ENNReal.ofReal_ne_top
-    filter_upwards [ae_eventually_notMem htsum_ne_top] with ω hω
-    filter_upwards [hω, eventually_ge_atTop N] with k hk hkN
-    simpa only [A, hkN, ite_true, Set.mem_ofPred_eq, not_le] using hk
-  filter_upwards [ae_all_iff.2 h_ae] with ω hω
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨m, hm⟩ := exists_nat_one_div_lt hε
-  filter_upwards [hω m] with k hk
-  rw [dist_zero_right]
-  exact hk.trans (by simpa only [one_div] using hm)
+      · simp [Z', hkN, not_le_of_gt hε]
+    exact ne_top_of_le_ne_top (hsum.mul_left (ε⁻¹ ^ 2)).tsum_ofReal_ne_top (tsum_le_tsum hbound)
+  filter_upwards [h_ae] with ω hω
+  refine hω.congr' ?_
+  filter_upwards [eventually_ge_atTop N] with k hk
+  simp [Z', hk]
 
 /-- **Chebyshev–Borel–Cantelli almost-sure convergence for real sequences.** If
 `(∫ (Z k)²) / b k ^ 2` is summable, then `Z k / b k → 0` almost everywhere. -/

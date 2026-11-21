@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Measure.TightNormed
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Measure.Portmanteau
 
 /-!
@@ -28,8 +29,8 @@ algebraic closure properties.
 * `TauCeti.isBoundedInProbability_iff` — definitional unfolding of `IsBoundedInProbability`.
 * `TauCeti.IsBoundedInProbability.mono_norm_ae`, `TauCeti.IsBoundedInProbability.add`,
   `TauCeti.IsBoundedInProbability.sub`, `TauCeti.IsBoundedInProbability.const_smul`,
-  `TauCeti.IsBoundedInProbability.smul`, `TauCeti.IsBoundedInProbability.mul` — closure of
-  `O_P(1)` under norm domination, linear combinations, scalar actions, and multiplication.
+  `TauCeti.IsBoundedInProbability.smul` — closure of
+  `O_P(1)` under norm domination, linear combinations, and scalar actions.
 * `TauCeti.isBoundedInProbability_of_tendstoInMeasure_const`,
   `TauCeti.isBoundedInProbability_of_tendstoInMeasure`,
   `TauCeti.isBoundedInProbability_of_tendstoInDistribution` — sequences converging in measure or in
@@ -171,38 +172,21 @@ theorem IsBoundedInProbability.const_smul {𝕜 : Type*} [SeminormedAddGroup �
     IsBoundedInProbability μ (fun n ω ↦ c • X n ω) :=
   (isBoundedInProbability_const μ c).smul hX
 
-/-- The product of two sequences bounded in probability in a seminormed ring is bounded in
-probability, under a finite measure. -/
-theorem IsBoundedInProbability.mul {R : Type*} [NonUnitalSeminormedRing R] {μ : Measure Ω}
-    [IsFiniteMeasure μ] {X Y : ℕ → Ω → R}
-    (hX : IsBoundedInProbability μ X) (hY : IsBoundedInProbability μ Y) :
-    IsBoundedInProbability μ (fun n ω ↦ X n ω * Y n ω) :=
-  hX.smul hY
-
 /-- A single function whose norm is almost-everywhere measurable defines a constant sequence that
 is bounded in probability under any finite measure. The measurability hypothesis on `‖Z ·‖` is
 needed because continuity from above fails for outer measure on arbitrary non-measurable sets. -/
 theorem isBoundedInProbability_of_aemeasurable_norm {μ : Measure Ω} [IsFiniteMeasure μ]
     {Z : Ω → E} (hZ : AEMeasurable (fun ω ↦ ‖Z ω‖) μ) :
     IsBoundedInProbability μ (fun _ ↦ Z) := by
-  have hlim : Tendsto (fun k : ℕ ↦ μ {ω | (k : ℝ) < ‖Z ω‖}) atTop (𝓝 0) := by
-    have hInter : (⋂ k : ℕ, {ω | (k : ℝ) < ‖Z ω‖}) = ∅ :=
-      Set.eq_empty_iff_forall_notMem.2 fun ω hω ↦ by
-        obtain ⟨k, hk⟩ := exists_nat_gt ‖Z ω‖
-        exact not_lt_of_gt hk (Set.mem_iInter.1 hω k)
-    have hcont := tendsto_measure_iInter_atTop (μ := μ)
-      (s := fun k : ℕ ↦ {ω | (k : ℝ) < ‖Z ω‖})
-      (fun k ↦ nullMeasurableSet_lt aemeasurable_const hZ)
-      (fun m n hmn ω hω ↦
-        Set.mem_ofPred_eq.mpr ((Nat.cast_le.2 hmn).trans_lt (Set.mem_ofPred_eq.mp hω)))
-      ⟨0, measure_ne_top _ _⟩
-    simpa [hInter, Function.comp_def] using hcont
+  have hlim := MeasureTheory.tendsto_measure_dist_ge_atTop hZ.aestronglyMeasurable 0
   intro ε hε
-  obtain ⟨k, hk⟩ := (hlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).exists
-  refine ⟨(k : ℝ) + 1, by positivity, Eventually.of_forall fun _ ↦ ?_⟩
-  have hsub : {ω | (k : ℝ) + 1 < ‖Z ω‖} ⊆ {ω | (k : ℝ) < ‖Z ω‖} :=
-    fun ω hω ↦ Set.mem_ofPred_eq.mpr (by linarith [Set.mem_ofPred_eq.mp hω])
-  have hle : μ {ω | (k : ℝ) + 1 < ‖Z ω‖} ≤ ENNReal.ofReal ε := (measure_mono hsub).trans hk.le
+  obtain ⟨r, hr, hr1⟩ :=
+    ((hlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).and (eventually_ge_atTop 1)).exists
+  refine ⟨r, by linarith, Eventually.of_forall fun _ ↦ ?_⟩
+  have hsub : {ω | r < ‖Z ω‖} ⊆ {ω | r ≤ dist ‖Z ω‖ 0} := fun ω hω ↦ by
+    simpa only [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _), Set.mem_ofPred_eq] using
+      le_of_lt (Set.mem_ofPred_eq.mp hω)
+  have hle : μ {ω | r < ‖Z ω‖} ≤ ENNReal.ofReal ε := (measure_mono hsub).trans hr.le
   rw [measureReal_def]
   exact ENNReal.toReal_le_of_le_ofReal hε.le hle
 

@@ -136,7 +136,7 @@ theorem IsIndependentIdenticallyDistributed.pairwise_indepFun
 theorem IsIndependentIdenticallyDistributed.identDistrib
     (h : IsIndependentIdenticallyDistributed μ X P) (i j : ι) :
     IdentDistrib (X i) (X j) μ μ :=
-  ⟨h.aemeasurable i, h.aemeasurable j, (h.map_eq i).trans (h.map_eq j).symm⟩
+  (h.hasLaw i).identDistrib (h.hasLaw j)
 
 /-- Applying a measurable statistic coordinatewise preserves the i.i.d. property, pushing the common
 law forward to `P.map s`. -/
@@ -221,8 +221,7 @@ theorem ae_tendsto_sampleMean_of_iid {μ : Measure Ω} {X : ℕ → Ω → E} {P
     fun _ _ hij ↦ (h.iIndepFun.comp₀ (fun _ ↦ s) h.aemeasurable hs_aem).indepFun hij
   have hint0 : Integrable (fun ω ↦ s (X 0 ω)) μ :=
     ((h.measurePreserving 0).integrable_comp hs.1).2 hs
-  have hmean : ∫ ω, s (X 0 ω) ∂μ = ∫ y, s y ∂P := by
-    rw [← h.map_eq 0, integral_map (h.aemeasurable 0) (by rw [h.map_eq 0]; exact hs.1)]
+  have hmean : ∫ ω, s (X 0 ω) ∂μ = ∫ y, s y ∂P := (h.hasLaw 0).integral_comp hs.1
   simpa only [hmean] using strong_law_ae (fun i ω ↦ s (X i ω)) hint0 hindep hident
 
 /-- **Weak law of large numbers for an integrable statistic of an i.i.d. sequence.** If `X` is

@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
-import TauCeti.Statistics.Convergence.BoundedInProbability
 
 /-!
 # Contiguity of sequences of measures
@@ -183,24 +182,16 @@ along any filter `l`. -/
 theorem isContiguous_const_of_absolutelyContinuous {Ω₀ : Type*} [MeasurableSpace Ω₀]
     (l : Filter ι) {P₀ Q₀ : Measure Ω₀} [IsFiniteMeasure P₀] [IsFiniteMeasure Q₀]
     (h : Q₀ ≪ P₀) : IsContiguous l (fun _ ↦ P₀) (fun _ ↦ Q₀) := by
-  refine isContiguous_of_absolutelyContinuous_of_uniformlyIntegrable
-    (Eventually.of_forall fun _ ↦ h) fun ε hε ↦ ?_
-  have hlt_top : ∀ᵐ ω ∂Q₀, Q₀.rnDeriv P₀ ω < ∞ := h.ae_le (Measure.rnDeriv_lt_top Q₀ P₀)
-  have hbd := isBoundedInProbability_of_aemeasurable_norm (μ := Q₀)
-    (Z := fun ω ↦ (Q₀.rnDeriv P₀ ω).toReal)
-    ((Measure.measurable_rnDeriv Q₀ P₀).ennreal_toReal.norm.aemeasurable)
-  obtain ⟨C, hC, hC_ev⟩ := isBoundedInProbability_iff.1 hbd ε hε
-  obtain ⟨_, hC_le⟩ := hC_ev.exists
-  let C' : ℝ≥0 := ⟨C, hC.le⟩
-  refine ⟨C', Eventually.of_forall fun _ ↦ ?_⟩
-  have hsub : {ω | (C' : ℝ≥0∞) < Q₀.rnDeriv P₀ ω} ≤ᵐ[Q₀]
-      {ω | C < ‖(Q₀.rnDeriv P₀ ω).toReal‖} := by
-    filter_upwards [hlt_top] with ω hω hlt
-    have hto := ENNReal.toReal_strict_mono hω.ne hlt
-    rw [ENNReal.coe_toReal] at hto
-    rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
-    exact hto
-  exact (ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae hsub)).trans hC_le
+  intro A _ hP
+  have hP' : Tendsto (fun i ↦ P₀ (A i)) l (𝓝 0) := by
+    have := ENNReal.tendsto_ofReal hP
+    simpa only [measureReal_def, ENNReal.ofReal_toReal (measure_ne_top P₀ _),
+      ENNReal.ofReal_zero] using this
+  have hQ' := tendsto_setLIntegral_zero (μ := P₀) (f := Q₀.rnDeriv P₀)
+    (Measure.lintegral_rnDeriv_lt_top Q₀ P₀).ne hP'
+  simp_rw [Measure.setLIntegral_rnDeriv h] at hQ'
+  simpa only [measureReal_def, Function.comp_def, ENNReal.toReal_zero] using
+    (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hQ'
 
 end Basic
 

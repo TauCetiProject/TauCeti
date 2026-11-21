@@ -74,8 +74,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
 * `MeasureTheory.TendstoInMeasure.uniformContinuous_comp` and
   `MeasureTheory.TendstoInMeasure.uniformContinuous₂_comp`: post-composition with uniformly
   continuous unary and binary maps on arbitrary measure spaces.
-* `MeasureTheory.TendstoInMeasure.add`, `neg`, `sub`, `const_smul`, `const_mul`: uniform-group
-  and constant scalar/ring operations on arbitrary measure spaces.
+* `MeasureTheory.TendstoInMeasure.add`, `neg`, `sub`, `const_smul`: uniform-group
+  and constant scalar operations on arbitrary measure spaces.
 * `MeasureTheory.TendstoInMeasure.of_edist_le_on`,
   `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on`, and
   `MeasureTheory.TendstoInMeasure.zero_of_norm_le_on_prob`: domination on events whose complements
@@ -486,13 +486,6 @@ theorem TendstoInMeasure.const_smul [SMul 𝕜 E] [PseudoEMetricSpace E]
     (hf : TendstoInMeasure μ f l g) (c : 𝕜) :
     TendstoInMeasure μ (fun i x ↦ c • f i x) l (fun x ↦ c • g x) :=
   hf.uniformContinuous_comp (uniformContinuous_const_smul c)
-
-/-- Left multiplication by a fixed constant preserves convergence in measure, for any measure and
-filter. -/
-theorem TendstoInMeasure.const_mul [NonUnitalSeminormedRing R] {f : ι → α → R} {g : α → R}
-    (hf : TendstoInMeasure μ f l g) (c : R) :
-    TendstoInMeasure μ (fun i x ↦ c * f i x) l (fun x ↦ c * g x) :=
-  hf.const_smul c
 
 /-- On a finite measure space, the measure of `{x | r ≤ dist (g x) y₀}` tends to `0` as
 `r → ∞` for every almost-everywhere strongly measurable function `g`. Both finiteness of `μ`
