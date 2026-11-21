@@ -144,13 +144,13 @@ end IsToricCone
 /-- The canonical primitive lattice generator of a ray of a toric cone. -/
 noncomputable def primitiveGenerator (hi : IsIntegralLattice i) (hσ : IsToricCone i σ)
     (ρ : ToricRay σ) : N :=
-  ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose
+  ((hσ.face ρ.val).existsUnique_primitiveGenerator hi).choose
 
 /-- The canonical primitive generator satisfies the defining primitive-generator property. -/
 theorem isPrimitiveGenerator_primitiveGenerator (hi : IsIntegralLattice i)
     (hσ : IsToricCone i σ) (ρ : ToricRay σ) :
     IsPrimitiveGenerator i ρ (primitiveGenerator hi hσ ρ) :=
-  ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose_spec.1
+  ((hσ.face ρ.val).existsUnique_primitiveGenerator hi).choose_spec.1
 
 /-- The image of the primitive generator lies on its ray. -/
 @[simp]
@@ -174,7 +174,7 @@ theorem primitiveGenerator_ne_zero (hi : IsIntegralLattice i) (hσ : IsToricCone
 theorem IsPrimitiveGenerator.eq_primitiveGenerator {v : N} (hv : IsPrimitiveGenerator i ρ v)
     (hi : IsIntegralLattice i) (hσ : IsToricCone i σ) :
     v = primitiveGenerator hi hσ ρ :=
-  ((hσ.face ρ.1).existsUnique_primitiveGenerator hi).choose_spec.2 v hv
+  ((hσ.face ρ.val).existsUnique_primitiveGenerator hi).choose_spec.2 v hv
 
 /-- A lattice vector is a primitive generator of a ray exactly when it is the canonical one. -/
 @[simp]

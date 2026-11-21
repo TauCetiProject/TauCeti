@@ -250,10 +250,11 @@ theorem isInvolutiveDistribution_mulInvariantDistribution [CompleteSpace 𝕜]
       ((hY x hx).mdifferentiableAt (hU.mem_nhds hx)).leftMaurerCartanEval
   rw [(expand hVD).mlieBracket_vectorField_eq (expand hWD)]
   refine mlieBracket_sum_smul_mem (fun i _ ↦ mdifferentiableAt_mulInvariantVectorField _)
-    (fun i _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution (b i).2 x)
+    (fun i _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution (b i).property x)
     (fun i _ j _ ↦ ?_) (fun i _ ↦ hcoeff hV i) (fun i _ ↦ hcoeff hW i)
   rw [← mulInvariantVector_mlieBracket, ← GroupLieAlgebra.bracket_def]
-  exact mulInvariantVectorField_mem_mulInvariantDistribution (hS _ (b i).2 _ (b j).2) x
+  exact mulInvariantVectorField_mem_mulInvariantDistribution (hS _ (b i).property _
+      (b j).property) x
 
 /-- The left-invariant distribution of a subspace `S` of the Lie algebra is involutive exactly when
 `S` is closed under the bracket, that is, when `S` is a Lie subalgebra. -/

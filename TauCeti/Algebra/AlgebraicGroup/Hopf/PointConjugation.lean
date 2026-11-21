@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 
 /-!

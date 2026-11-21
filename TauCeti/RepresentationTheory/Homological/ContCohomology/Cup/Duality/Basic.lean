@@ -174,7 +174,8 @@ theorem explicitDualityPairing02_mk (a : H0 G (InternalHom G M N)) (b : Z2 G M) 
     explicitDualityPairing02 G M N a (b : H2 G M) =
       ((⟨fun q : G × G => InternalHom.evalPairing G (a : InternalHom G M N) ((b : G × G → M) q),
         cup02_mem_Z2 G (InternalHom G M N) M N (InternalHom.evalPairing G)
-          continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G)) a b.2⟩ :
+          continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G
+              := G)) a b.property⟩ :
         Z2 G N) : H2 G N) := by
   simpa only [explicitDualityPairing02] using
     explicitCup02_mk G (InternalHom G M N) M N (InternalHom.evalPairing G)
@@ -224,7 +225,8 @@ theorem explicitDualityPairing11_mk (a : Z1 G (InternalHom G M N)) (b : Z1 G M) 
       ((⟨fun q : G × G => InternalHom.evalPairing G ((a : G → InternalHom G M N) q.1)
           (q.1 • (b : G → M) q.2),
         cup11_mem_Z2 G (InternalHom G M N) M N (InternalHom.evalPairing G)
-          continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G)) a.2 b.2⟩ :
+          continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G
+              := G)) a.property b.property⟩ :
         Z2 G N) : H2 G N) := by
   simpa only [explicitDualityPairing11] using
     explicitCup11_mk G (InternalHom G M N) M N (InternalHom.evalPairing G)
@@ -237,7 +239,8 @@ theorem explicitDualityPairing20_mk (a : Z2 G (InternalHom G M N)) (b : H0 G M) 
       ((⟨fun q : G × G => InternalHom.evalPairing G ((a : G × G → InternalHom G M N) q)
           ((q.1 * q.2) • (b : M)),
         cup20_mem_Z2 G (InternalHom G M N) M N (InternalHom.evalPairing G)
-          continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G := G)) a.2 b⟩ :
+          continuous_of_discreteTopology (InternalHom.evalPairing_equivariant (G
+              := G)) a.property b⟩ :
         Z2 G N) : H2 G N) := by
   simpa only [explicitDualityPairing20] using
     explicitCup20_mk G (InternalHom G M N) M N (InternalHom.evalPairing G)
@@ -474,7 +477,7 @@ theorem dualityMap0_mk (m : H0 G M) (b : Z2 G (InternalHom G M N)) :
           (InternalHom.evalPairing G).flip (m : M) ((b : G × G → InternalHom G M N) q),
         cup02_mem_Z2 G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
           continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G))
-          m b.2⟩ : Z2 G N) : H2 G N) := by
+          m b.property⟩ : Z2 G N) : H2 G N) := by
   simpa only [dualityMap0] using
     explicitCup02_mk G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
       continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G)) m b
@@ -487,7 +490,7 @@ theorem dualityMap1_mk (a : Z1 G M) (b : Z1 G (InternalHom G M N)) :
           (q.1 • (b : G → InternalHom G M N) q.2),
         cup11_mem_Z2 G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
           continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G))
-          a.2 b.2⟩ : Z2 G N) : H2 G N) := by
+          a.property b.property⟩ : Z2 G N) : H2 G N) := by
   simpa only [dualityMap1] using
     explicitCup11_mk G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
       continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G)) a b
@@ -538,7 +541,7 @@ theorem dualityMap2_mk (b : Z2 G M) (φ : H0 G (InternalHom G M N)) :
           ((q.1 * q.2) • (φ : InternalHom G M N)),
         cup20_mem_Z2 G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
           continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G))
-          b.2 φ⟩ : Z2 G N) : H2 G N) := by
+          b.property φ⟩ : Z2 G N) : H2 G N) := by
   simpa only [dualityMap2] using
     explicitCup20_mk G M (InternalHom G M N) N (InternalHom.evalPairing G).flip
       continuous_of_discreteTopology (InternalHom.evalPairing_flip_equivariant (G := G)) b φ
@@ -770,7 +773,7 @@ theorem dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero {n : ℕ}
       (explicitCoeff2 G N f continuous_of_discreteTopology) :
         (H0 G (InternalHom G M N) →+ H2 G N) →+ H0 G (InternalHom G M N) →+ H2 G N') :=
     AddMonoidHom.compHom_bijective_of_forall_nsmul_eq_zero hH
-      (fun v => Subtype.ext (by simpa using InternalHom.nsmul_eq_zero_of_domain hM v.1)) hH'
+      (fun v => Subtype.ext (by simpa using InternalHom.nsmul_eq_zero_of_domain hM v.val)) hH'
   have hsq : ⇑(AddMonoidHom.compHom' (explicitCoeff0 G (InternalHom G M N)
       (InternalHom.postcomp G f))) ∘ ⇑(dualityMap2 G M N') =
       ⇑(AddMonoidHom.compHom (explicitCoeff2 G N f continuous_of_discreteTopology)) ∘
@@ -1080,7 +1083,7 @@ theorem dualityMap0_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
   rw [e₂.natCard_addMonoidHom_zmod (nsmul_H2_eq_zero (G := G) hM')]
   refine (Nat.card_le_card_of_injective _ h₂).trans_eq ?_
   rw [e₂.natCard_addMonoidHom_zmod fun v ↦ Subtype.ext (by
-    simpa using InternalHom.nsmul_eq_zero_of_domain hM' v.1)]
+    simpa using InternalHom.nsmul_eq_zero_of_domain hM' v.val)]
   exact Nat.card_congr (Equiv.ofBijective _ (explicitCoeff0_bijective G M
     (InternalHom.eval_bijective_of_addEquiv_zmod e hM))).symm
 

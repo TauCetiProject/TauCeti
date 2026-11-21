@@ -737,7 +737,7 @@ variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
 
 /-- Two bundled couplings are equal when their underlying measures are equal. -/
 @[ext]
-theorem ext {π σ : Coupling μ ν} (h : π.1.toMeasure = σ.1.toMeasure) : π = σ :=
+theorem ext {π σ : Coupling μ ν} (h : π.val.toMeasure = σ.val.toMeasure) : π = σ :=
   Subtype.ext (ProbabilityMeasure.toMeasure_injective h)
 
 /-- The independent coupling of two probability measures: their product. -/
@@ -759,22 +759,22 @@ instance instNonempty : Nonempty (Coupling μ ν) :=
 
 /-- The first marginal of a bundled coupling. -/
 def fst (π : Coupling μ ν) : ProbabilityMeasure X :=
-  π.1.map Prod.fst
+  π.val.map Prod.fst
 
 /-- The second marginal of a bundled coupling. -/
 def snd (π : Coupling μ ν) : ProbabilityMeasure Y :=
-  π.1.map Prod.snd
+  π.val.map Prod.snd
 
 /-- The underlying measure of the first marginal is the pushforward along the first projection.
 This is not a `simp` lemma: `simp` rewrites `π.fst` to `μ` via `fst_eq` instead. -/
 theorem coe_fst (π : Coupling μ ν) :
-    (π.fst).toMeasure = π.1.toMeasure.map Prod.fst :=
+    (π.fst).toMeasure = π.val.toMeasure.map Prod.fst :=
   (rfl)
 
 /-- The underlying measure of the second marginal is the pushforward along the second projection.
 This is not a `simp` lemma: `simp` rewrites `π.snd` to `ν` via `snd_eq` instead. -/
 theorem coe_snd (π : Coupling μ ν) :
-    (π.snd).toMeasure = π.1.toMeasure.map Prod.snd :=
+    (π.snd).toMeasure = π.val.toMeasure.map Prod.snd :=
   (rfl)
 
 /-- The first marginal of a bundled coupling is its prescribed source. -/
@@ -782,26 +782,26 @@ theorem coe_snd (π : Coupling μ ν) :
 theorem fst_eq (π : Coupling μ ν) : π.fst = μ :=
   ProbabilityMeasure.toMeasure_injective <| by
     rw [fst, ProbabilityMeasure.toMeasure_map]
-    exact π.2.fst_eq
+    exact π.property.fst_eq
 
 /-- The second marginal of a bundled coupling is its prescribed target. -/
 @[simp]
 theorem snd_eq (π : Coupling μ ν) : π.snd = ν :=
   ProbabilityMeasure.toMeasure_injective <| by
     rw [snd, ProbabilityMeasure.toMeasure_map]
-    exact π.2.snd_eq
+    exact π.property.snd_eq
 
 /-- Exchanging the two coordinates of a bundled coupling. -/
 def swap (π : Coupling μ ν) : Coupling ν μ :=
-  ⟨π.1.map Prod.swap, by
+  ⟨π.val.map Prod.swap, by
     rw [ProbabilityMeasure.toMeasure_map]
-    exact π.2.swap⟩
+    exact π.property.swap⟩
 
 /-- The underlying probability measure of the exchanged coupling is the pushforward along the
 coordinate swap. -/
 @[simp]
 theorem coe_swap (π : Coupling μ ν) :
-    (π.swap : ProbabilityMeasure (Y × X)) = π.1.map Prod.swap :=
+    (π.swap : ProbabilityMeasure (Y × X)) = π.val.map Prod.swap :=
   (rfl)
 
 /-- Exchanging the coordinates twice is the identity. -/

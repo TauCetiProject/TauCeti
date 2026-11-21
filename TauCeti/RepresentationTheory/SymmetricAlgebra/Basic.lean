@@ -310,7 +310,7 @@ noncomputable def symmetricAlgebraOverInvariants :
       map_add' := map_add _
       map_smul' a p := by
         -- `g` fixes the invariant factor `a`.
-        have ha := (ρ.mem_symmetricAlgebraInvariants a).1 a.2 g
+        have ha := (ρ.mem_symmetricAlgebraInvariants a).1 a.property g
         simp only [symmetricAlgebra_apply] at ha ⊢
         simp only [Subalgebra.smul_def, smul_eq_mul, map_mul, ha, RingHom.id_apply] }
   map_one' := LinearMap.ext fun p ↦ by simp
@@ -408,7 +408,7 @@ theorem map_subtype_invariants_symmetricAlgebraHomogeneous (n : ℕ) :
     Subalgebra.mem_toSubmodule]
   constructor
   · rintro ⟨q, hq, rfl⟩
-    exact ⟨(ρ.mem_invariants_symmetricAlgebraHomogeneous_iff q).1 hq, q.2⟩
+    exact ⟨(ρ.mem_invariants_symmetricAlgebraHomogeneous_iff q).1 hq, q.property⟩
   · rintro ⟨hp, hpn⟩
     exact ⟨⟨p, hpn⟩, (ρ.mem_invariants_symmetricAlgebraHomogeneous_iff ⟨p, hpn⟩).2 hp, rfl⟩
 
@@ -439,18 +439,18 @@ variable [CommRing R] [Group G] [AddCommGroup M] [Module R M] (ρ : Representati
 via `homogeneousSubmoduleOneEquiv`. -/
 noncomputable def invariantsSymmetricAlgebraHomogeneousOneEquiv :
     (ρ.symmetricAlgebraHomogeneous 1).invariants ≃ₗ[R] ρ.invariants where
-  toFun p := ⟨homogeneousSubmoduleOneEquiv R M p.1, by
+  toFun p := ⟨homogeneousSubmoduleOneEquiv R M p.val, by
     rw [mem_invariants, ← ι_mem_symmetricAlgebraInvariants_iff,
       ι_homogeneousSubmoduleOneEquiv_apply]
-    exact (ρ.mem_invariants_symmetricAlgebraHomogeneous_iff p.1).1 p.2⟩
-  map_add' p q := Subtype.ext (map_add (homogeneousSubmoduleOneEquiv R M) p.1 q.1)
-  map_smul' r p := Subtype.ext (map_smul (homogeneousSubmoduleOneEquiv R M) r p.1)
-  invFun m := ⟨(homogeneousSubmoduleOneEquiv R M).symm m.1, by
+    exact (ρ.mem_invariants_symmetricAlgebraHomogeneous_iff p.val).1 p.property⟩
+  map_add' p q := Subtype.ext (map_add (homogeneousSubmoduleOneEquiv R M) p.val q.val)
+  map_smul' r p := Subtype.ext (map_smul (homogeneousSubmoduleOneEquiv R M) r p.val)
+  invFun m := ⟨(homogeneousSubmoduleOneEquiv R M).symm m.val, by
     rw [mem_invariants_symmetricAlgebraHomogeneous_iff, coe_homogeneousSubmoduleOneEquiv_symm_apply,
       ι_mem_symmetricAlgebraInvariants_iff]
-    exact m.2⟩
-  left_inv p := Subtype.ext ((homogeneousSubmoduleOneEquiv R M).symm_apply_apply p.1)
-  right_inv m := Subtype.ext ((homogeneousSubmoduleOneEquiv R M).apply_symm_apply m.1)
+    exact m.property⟩
+  left_inv p := Subtype.ext ((homogeneousSubmoduleOneEquiv R M).symm_apply_apply p.val)
+  right_inv m := Subtype.ext ((homogeneousSubmoduleOneEquiv R M).apply_symm_apply m.val)
 
 /-- Applying `invariantsSymmetricAlgebraHomogeneousOneEquiv` applies
 `homogeneousSubmoduleOneEquiv` to the underlying homogeneous element. -/
@@ -458,7 +458,7 @@ noncomputable def invariantsSymmetricAlgebraHomogeneousOneEquiv :
 theorem coe_invariantsSymmetricAlgebraHomogeneousOneEquiv_apply
     (p : (ρ.symmetricAlgebraHomogeneous 1).invariants) :
     (ρ.invariantsSymmetricAlgebraHomogeneousOneEquiv p : M) =
-      homogeneousSubmoduleOneEquiv R M p.1 :=
+      homogeneousSubmoduleOneEquiv R M p.val :=
   (rfl)
 
 /-- Applying `invariantsSymmetricAlgebraHomogeneousOneEquiv.symm` applies
@@ -467,7 +467,7 @@ theorem coe_invariantsSymmetricAlgebraHomogeneousOneEquiv_apply
 theorem coe_invariantsSymmetricAlgebraHomogeneousOneEquiv_symm_apply
     (m : ρ.invariants) :
     (ρ.invariantsSymmetricAlgebraHomogeneousOneEquiv.symm m : homogeneousSubmodule R M 1) =
-      (homogeneousSubmoduleOneEquiv R M).symm m.1 :=
+      (homogeneousSubmoduleOneEquiv R M).symm m.val :=
   (rfl)
 
 /-- The invariants of `Sym¹ M` have the same rank as the linear invariants `M^G`. -/

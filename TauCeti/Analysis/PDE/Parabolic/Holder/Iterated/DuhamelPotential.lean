@@ -165,7 +165,7 @@ private theorem hasFDerivAt_potential {j : ℕ} (h : j < k) (t : Icc (0 : ℝ) T
     (fun s _ y ↦ by
       rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.norm_map]
       exact ParabolicC2HolderSpace.norm_timeExtension_holderSpace_le T.coe_nonneg _ s y)
-    (fun s _ y ↦ hd s y) (fun s _ ↦ hc s) t.2.1 x
+    (fun s _ y ↦ hd s y) (fun s _ ↦ hc s) t.property.1 x
   have hcomm := heatDuhamelPotential_comp_continuousLinearEquiv L
     (fun s y ↦ ParabolicC2HolderSpace.timeExtension T.coe_nonneg (forcing hα₁ f (j + 1)) y s)
     t x
@@ -616,7 +616,7 @@ private def potentialLinear (hα₀ : 0 < α) (hα₁ : α < 1) :
 private theorem norm_potentialK_apply_le (hα₀ : 0 < α) (hα₁ : α < 1)
     (f : ParabolicCkHolderSpace k α E F hT)
     (p : slab (E := E) 0 T) : ‖potentialK hα₀ hα₁ f p‖ ≤ ‖f‖ * T := by
-  have hp := (slabTime p).2
+  have hp := (slabTime p).property
   rw [coe_slabTime] at hp
   rw [potentialK_apply_eq_heatDuhamelPotential]
   refine (norm_heatDuhamelPotential_le hp.1
