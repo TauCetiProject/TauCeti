@@ -225,14 +225,9 @@ theorem conductorExponent_le_exponent (χ : Grossencharacter K 𝔪)
 
 /-- **The finite conductor of a presentation divides the finite part of its modulus.** -/
 theorem finiteConductor_dvd_finitePart (χ : Grossencharacter K 𝔪) :
-    χ.toHeckeCharacter.finiteConductor ∣ 𝔪.finitePart := by
-  rw [Ideal.dvd_iff_le]
-  refine (le_iInf fun v ↦ ?_).trans
-    (Ideal.iInf_maxPowDividing_eq χ.toHeckeCharacter.finiteConductor_ne_bot).le
-  -- `maxPowDividing` is the prime power recorded by the conductor exponent.
-  rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
-  exact (Ideal.dvd_iff_le.mp (𝔪.pow_exponent_dvd_finitePart v)).trans
-    (Ideal.pow_le_pow_right (χ.conductorExponent_le_exponent v))
+    χ.toHeckeCharacter.finiteConductor ∣ 𝔪.finitePart :=
+  (χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔪).mpr
+    χ.conductorExponent_le_exponent
 
 /-- **The finite conductor of a presentation, as a modulus without real places, divides the
 finite part of its modulus**, also taken without real places. -/

@@ -232,6 +232,25 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter (χ : HeckeCharacter K)
   χ.coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity n hn x fun w _ ↦
     (isTotallyPositive_iff.mp hx) w.val w.property
 
+/-- **Product formula for a Hecke character on a principal idele.** For `x : Kˣ`, the product of
+the infinite components of `χ` at `x` times `χ` evaluated on the diagonal finite idele of `x` is
+`1`. -/
+theorem prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding (χ : HeckeCharacter K) (x : Kˣ) :
+    (∏ w : InfinitePlace K,
+        χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x)) *
+      χ (QuotientGroup.mk
+        (IdeleGroup.ofFiniteIdele (𝓞 K) K
+          (IsDedekindDomain.FiniteAdeleRing.unitEmbedding (𝓞 K) K x))) = 1 := by
+  have hprincipal :
+      (QuotientGroup.mk (IdeleGroup.unitEmbedding (𝓞 K) K x) : IdeleClassGroup (𝓞 K) K) = 1 :=
+    (QuotientGroup.eq_one_iff _).mpr ⟨x, rfl⟩
+  have hsplit := congrArg (fun z : IdeleGroup (𝓞 K) K ↦ χ (QuotientGroup.mk z))
+    (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele (IdeleGroup.unitEmbedding (𝓞 K) K x))
+  rw [QuotientGroup.mk_mul, map_mul, hprincipal, map_one,
+    QuotientGroup.mk_prod, map_prod, IdeleGroup.toFiniteIdele_unitEmbedding] at hsplit
+  simpa only [infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
+    InfinitePlace.ideleInfiniteCoord_unitEmbedding] using hsplit
+
 /-- The monomial of a matching algebraic infinity type is trivial on a congruence subgroup of
 integer units whose modulus includes every real place. This subgroup has finite index. -/
 theorem exists_modulus_embeddingCharacter_eq_one (χ : HeckeCharacter K)
@@ -250,20 +269,12 @@ theorem exists_modulus_embeddingCharacter_eq_one (χ : HeckeCharacter K)
   have hx : IdeleGroup.unitEmbedding (𝓞 K) K x ∈ ideleCongruenceSubgroup 𝔪 :=
     unitEmbedding_mem_ideleCongruenceSubgroup_iff.mpr ⟨u, hu, rfl⟩
   have hfinite := h𝔫 _ (ideleCongruenceSubgroup_antitone hdvd hx)
+  rw [IdeleGroup.toFiniteIdele_unitEmbedding] at hfinite
   have hpos : IsTotallyPositive (x : K) :=
     isTotallyPositive_iff.mpr fun w hw ↦
       (mem_unitsCongruenceSubgroup.mp hu).pos (mem_narrowModulus_infinitePart ⟨w, hw⟩)
-  have hprincipal :
-      (QuotientGroup.mk (IdeleGroup.unitEmbedding (𝓞 K) K x) : IdeleClassGroup (𝓞 K) K) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨x, rfl⟩
-  have hsplit := congrArg (fun z : IdeleGroup (𝓞 K) K ↦ χ (QuotientGroup.mk z))
-    (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele (IdeleGroup.unitEmbedding (𝓞 K) K x))
-  rw [QuotientGroup.mk_mul, map_mul, hfinite, mul_one, hprincipal, map_one,
-    QuotientGroup.mk_prod, map_prod] at hsplit
-  have hinf : (∏ w : InfinitePlace K,
-      χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x)) = 1 := by
-    simpa only [infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
-      InfinitePlace.ideleInfiniteCoord_unitEmbedding] using hsplit
+  have hinf := χ.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding x
+  rw [hfinite, mul_one] at hinf
   apply Units.ext
   refine (χ.coe_prod_infiniteComponent_eq_embeddingCharacter n hn x hpos).symm.trans ?_
   simpa only [Units.coe_prod] using congrArg Units.val hinf

@@ -241,8 +241,8 @@ theorem conductorExponent_eq_zero_iff (χ : HeckeCharacter K) (v : HeightOneSpec
       ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) 0, χ.finiteComponent v u = 1 := by
   rw [← Nat.le_zero, conductorExponent_le_iff]
 
-/-- Shrinking a product of local finite components along `S ⊆ T` when `χ` is unramified outside
-`S` and `x` is a local unit at all primes of `T`. -/
+/-- Shrinking a product of local finite components along `S ⊆ T` when `χ` is unramified at all
+primes in `T \ S` and `x` is a local unit at all primes of `T`. -/
 theorem prod_finiteComponent_eq_of_subset (χ : HeckeCharacter K)
     {S T : Finset (HeightOneSpectrum (𝓞 K))} (hST : S ⊆ T)
     (hzero : ∀ v ∈ T, v ∉ S → χ.conductorExponent v = 0)
@@ -426,6 +426,19 @@ theorem finitePart_eq_one_of_forall_mem_unitFiltration (χ : HeckeCharacter K)
     inv_one, mul_one] at hyχ
   exact hyχ
 
+/-- **The finite conductor divides the finite part of a modulus exactly when every conductor
+exponent is bounded by the modulus exponent.** -/
+theorem finiteConductor_dvd_finitePart_iff (χ : HeckeCharacter K) (𝔪 : Modulus K) :
+    χ.finiteConductor ∣ 𝔪.finitePart ↔
+      ∀ v : HeightOneSpectrum (𝓞 K), χ.conductorExponent v ≤ 𝔪.exponent v := by
+  refine ⟨fun h v ↦ (Modulus.pow_dvd_finitePart_iff_le_exponent 𝔪 v).mp
+      (((χ.pow_dvd_finiteConductor_iff v _).mpr le_rfl).trans h),
+    fun h ↦ Ideal.dvd_iff_le.mpr ((le_iInf fun v ↦ ?_).trans
+      (Ideal.iInf_maxPowDividing_eq χ.finiteConductor_ne_bot).le)⟩
+  rw [HeightOneSpectrum.maxPowDividing, χ.count_finiteConductor]
+  exact (Ideal.dvd_iff_le.mp (𝔪.pow_exponent_dvd_finitePart v)).trans
+    (Ideal.pow_le_pow_right (h v))
+
 /-- **A Hecke character vanishes on purely finite congruence ideles modulo any multiple of its
 finite conductor**: if `y ∈ ideleCongruenceSubgroup 𝔫` has trivial archimedean coordinates and
 `χ.finiteConductor ∣ 𝔫.finitePart`, then `χ y = 1`. -/
@@ -434,9 +447,7 @@ theorem eq_one_of_finiteConductor_dvd_finitePart (χ : HeckeCharacter K) {𝔫 :
     (hw : ∀ w : InfinitePlace K, w.ideleInfiniteCoord y = 1)
     (hfin : χ.finiteConductor ∣ 𝔫.finitePart) :
     χ (y : IdeleClassGroup (𝓞 K) K) = 1 := by
-  have hexp (v : HeightOneSpectrum (𝓞 K)) : χ.conductorExponent v ≤ 𝔫.exponent v := by
-    rw [← Modulus.pow_dvd_finitePart_iff_le_exponent]
-    exact ((χ.pow_dvd_finiteConductor_iff v _).mpr le_rfl).trans hfin
+  have hexp := (χ.finiteConductor_dvd_finitePart_iff 𝔫).mp hfin
   have hfinite := χ.finitePart_eq_one_of_forall_mem_unitFiltration y fun v ↦
     TauCeti.unitFiltration_antitone (hexp v)
       (ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hy v)

@@ -255,22 +255,7 @@ theorem idealCharacter_apply_toPrincipalIdeal (χ : HeckeCharacter K) (x : Kˣ)
   have hprod := Finset.prod_eq_one hlocal
   rw [hprod, inv_one, mul_one]
   -- The full diagonal idele is principal, so its infinite and finite values multiply to one.
-  have hprincipal :
-      (QuotientGroup.mk (IdeleGroup.unitEmbedding (𝓞 K) K x) : IdeleClassGroup (𝓞 K) K) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨x, rfl⟩
-  have hsplit := congrArg (fun z : IdeleGroup (𝓞 K) K ↦ χ (QuotientGroup.mk z))
-    (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele (IdeleGroup.unitEmbedding (𝓞 K) K x))
-  rw [QuotientGroup.mk_mul, map_mul, hprincipal, map_one,
-    QuotientGroup.mk_prod, map_prod] at hsplit
-  have hinf : (∏ w : InfinitePlace K,
-      χ (QuotientGroup.mk (IdeleGroup.ofCompletion (𝓞 K) K w
-        (w.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x))))) =
-      ∏ w : InfinitePlace K,
-        χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x) := by
-    simp only [infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
-      InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-  rw [hinf, IdeleGroup.toFiniteIdele_unitEmbedding] at hsplit
-  exact eq_inv_of_mul_eq_one_right hsplit
+  exact eq_inv_of_mul_eq_one_right (χ.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding x)
 
 /-- For a matching algebraic infinity type `n`, a generator congruent to `1` modulo the finite
 conductor has ideal-character value the inverse embedding monomial, provided it is positive at

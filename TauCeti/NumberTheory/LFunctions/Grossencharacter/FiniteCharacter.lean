@@ -6,15 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.MulChar.Lemmas
+public import TauCeti.NumberTheory.LFunctions.Grossencharacter.ArchimedeanValue
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
-public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Inverse
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
 
 import TauCeti.NumberTheory.MulChar.Lemmas
 import TauCeti.NumberTheory.MulChar.Real
-import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
+import TauCeti.NumberTheory.NumberField.Global.Approximation.Modulus
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
@@ -59,8 +58,9 @@ integers, `Grossencharacter.finiteCharacter` is the coefficient that the twisted
 attaches to a lattice point: it is `0` exactly at the integers not prime to `𝔪` (`0` included),
 and the residue character at the class of every nonzero integer
 (`Grossencharacter.finiteCharacter_eq_residueCharacter`), which pins the residue character down
-(`Grossencharacter.existsUnique_residueCharacter`). Its zero-extension to `K` is
-`Grossencharacter.finiteCharacterK'`.
+(`Grossencharacter.existsUnique_residueCharacter`). On `K`, `Grossencharacter.finiteCharacterK'`
+extends `Grossencharacter.finiteCharacterK` by zero off `primeToSubgroup 𝔪` and restricts to
+`Grossencharacter.finiteCharacter` on algebraic integers.
 
 The coefficient and the residue character must be kept apart at `0`. When `𝔪₀ = 𝓞 K`, the residue
 ring has one element, a unit, at which the residue character is `1`, while the coefficient at the
@@ -68,13 +68,12 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
 
 ## Main definitions
 
-* `TauCeti.LFunctions.Grossencharacter.archimedeanValue`: the archimedean value `χ_∞` on `Kˣ`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacterK`: the finite character on the fractions
   prime to `𝔪`.
 * `TauCeti.LFunctions.Grossencharacter.residueCharacter`: the induced character of `𝓞 K ⧸ 𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter`: the finite character on `𝓞 K`.
-* `TauCeti.LFunctions.Grossencharacter.finiteCharacterK'`: the finite character extended by `0`
-  to all of `K`.
+* `TauCeti.LFunctions.Grossencharacter.finiteCharacterK'`: the extension of `finiteCharacterK` by
+  `0` off `primeToSubgroup 𝔪` to all of `K`, restricting to `finiteCharacter` on `𝓞 K`.
 
 ## Main results
 
@@ -118,60 +117,6 @@ open GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
 
 namespace Grossencharacter
-
-/-! ### The archimedean value -/
-
-/-- **The archimedean value** `χ_∞(x)` of a presentation at `x ∈ Kˣ`: the product, over the
-infinite places `w`, of the component of the presented Hecke character at `w` evaluated at the
-image of `x` in `K_w`. It is the monomial `∏_τ τ(x) ^ (n τ)` of the infinity type on the elements
-positive at the real places of `𝔪` (`archimedeanValue_eq_embeddingCharacter`). -/
-def archimedeanValue (χ : Grossencharacter K 𝔪) : Kˣ →* ℂˣ :=
-  ∏ w : InfinitePlace K, (χ.toHeckeCharacter.infiniteComponent w : w.Completionˣ →* ℂˣ).comp
-    (Units.map (algebraMap K w.Completion).toMonoidHom)
-
-/-- The archimedean value as the product of the infinite components. -/
-theorem archimedeanValue_apply (χ : Grossencharacter K 𝔪) (x : Kˣ) :
-    χ.archimedeanValue x = ∏ w : InfinitePlace K,
-      χ.toHeckeCharacter.infiniteComponent w
-        (Units.map (algebraMap K w.Completion).toMonoidHom x) := by
-  simp [archimedeanValue]
-
-/-- **On the elements positive at the real places of `𝔪`, the archimedean value is the monomial**
-`∏_τ τ(x) ^ (n τ)` of the algebraic infinity type `n`. At a real place outside `𝔪` the parities of
-the Hecke character and of `n` agree, so no sign condition is needed there. -/
-theorem archimedeanValue_eq_embeddingCharacter (χ : Grossencharacter K 𝔪) {x : Kˣ}
-    (hx : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K)) :
-    χ.archimedeanValue x = χ.infinityType.embeddingCharacter x := by
-  refine Units.ext ?_
-  rw [archimedeanValue_apply, Units.coe_prod]
-  exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity
-    χ.infinityType χ.agreesOnIdentityComponent x
-    fun w hw ↦ hx w (not_imp_comm.mp (χ.realParity_eq w) hw)
-
-/-- Inversion of a presentation inverts its archimedean value. -/
-@[simp]
-theorem archimedeanValue_inverse (χ : Grossencharacter K 𝔪) :
-    χ.inverse.archimedeanValue = χ.archimedeanValue⁻¹ := by
-  refine MonoidHom.ext fun x ↦ ?_
-  rw [MonoidHom.inv_apply, archimedeanValue_apply, archimedeanValue_apply,
-    ← Finset.prod_inv_distrib]
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
-  rw [toHeckeCharacter_inverse, HeckeCharacter.infiniteComponent_inv]
-  rfl
-
-/-- The archimedean value depends only on the underlying Hecke character. -/
-theorem archimedeanValue_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
-    {ψ : Grossencharacter K 𝔫} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) :
-    χ.archimedeanValue = ψ.archimedeanValue := by
-  ext x
-  simp [archimedeanValue_apply, h]
-
-/-- The trivial ray class character has identically `1` archimedean value. -/
-@[simp]
-theorem archimedeanValue_ofRayClassCharacter_one :
-    (ofRayClassCharacter (1 : RayClassCharacter 𝔪)).archimedeanValue = 1 := by
-  ext x
-  simp [archimedeanValue_apply]
 
 /-! ### The finite character on the fractions prime to the modulus -/
 
@@ -243,23 +188,8 @@ theorem finiteCharacterK_eq_prod_finiteComponent_inv (χ : Grossencharacter K �
     rw [coe_toIdealsAway, toFractionalIdeal_unitEmbedding,
       NumberFieldArithmetic.coe_idealsAwayInclusion,
       NumberFieldArithmetic.coe_principalIdealAway]
-  have hprincipal :
-      (QuotientGroup.mk (IdeleGroup.unitEmbedding (𝓞 K) K (x : Kˣ)) :
-        IdeleClassGroup (𝓞 K) K) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨(x : Kˣ), rfl⟩
-  have hsplit := congrArg (fun z : IdeleGroup (𝓞 K) K ↦ ψ (QuotientGroup.mk z))
-    (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele
-      (IdeleGroup.unitEmbedding (𝓞 K) K (x : Kˣ)))
-  rw [QuotientGroup.mk_mul, map_mul, hprincipal, map_one, QuotientGroup.mk_prod, map_prod,
-    IdeleGroup.toFiniteIdele_unitEmbedding] at hsplit
-  have hinf : (∏ w : InfinitePlace K,
-      ψ (QuotientGroup.mk (IdeleGroup.ofCompletion (𝓞 K) K w
-        (w.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K (x : Kˣ)))))) =
-      χ.archimedeanValue (x : Kˣ) := by
-    rw [archimedeanValue_apply]
-    simp only [ψ, HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
-      InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-  rw [hinf] at hsplit
+  have hsplit := ψ.prod_infiniteComponent_mul_ofFiniteIdele_unitEmbedding (x : Kˣ)
+  rw [← χ.archimedeanValue_apply (x : Kˣ)] at hsplit
   have hprod_eq := χ.prod_finiteComponent_eq_finiteConductor_support x
   rw [finiteCharacterK_apply, ← hyideal, ψ.idealCharacter_apply_toIdealsAway y]
   simp only [y, HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding]
@@ -448,6 +378,15 @@ theorem residueCharacter_comp_finiteUnitsMap {𝔫 : Modulus K} {χ : Grossencha
 
 /-! ### Finite-conductor characterization and primitivity -/
 
+private theorem factor_residueHom_eq_one_iff {𝔪 𝔫 : Modulus K}
+    (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart) (x : primeToSubgroup 𝔪) :
+    Ideal.Quotient.factor (Ideal.le_of_dvd hdvd)
+        ((residueHom 𝔪 x : (𝓞 K ⧸ 𝔪.finitePart)ˣ) : 𝓞 K ⧸ 𝔪.finitePart) = 1 ↔
+      residue 𝔫 (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x) = 1 := by
+  have hf := congrArg Units.val (finiteUnitsMap_residueHom hdvd x)
+  rw [coe_finiteUnitsMap, coe_residueHom, coe_residueHom] at hf
+  rw [coe_residueHom, hf]
+
 /-- Forward direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
 private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossencharacter K 𝔪)
     {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart)
@@ -456,22 +395,15 @@ private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossenchar
     (hu : Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1) :
     χ.residueCharacter u = 1 := by
   obtain ⟨x, rfl⟩ := residueHom_surjective 𝔪 u
-  have hres𝔫 : residue 𝔫 (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x) = 1 := by
-    have hf := finiteUnitsMap_residueHom hdvd x
-    rw [Units.ext_iff, coe_finiteUnitsMap, coe_residueHom, coe_residueHom] at hf
-    exact hf.symm.trans (by simpa only [coe_residueHom] using hu)
-  have hval :=
-    (residue_eq_one_iff (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x)).mp hres𝔫
+  have hval := (residue_eq_one_iff (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x)).mp
+    ((factor_residueHom_eq_one_iff hdvd x).mp hu)
   rw [coe_residueHom, χ.residueCharacter_residue x,
     χ.finiteCharacterK_eq_prod_finiteComponent_inv x]
   have hprod : (∏ v ∈ 𝔪.support,
       χ.toHeckeCharacter.finiteComponent v
         (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ))) = 1 := by
     refine Finset.prod_eq_one fun v hv ↦ ?_
-    have hexp : χ.toHeckeCharacter.conductorExponent v ≤ 𝔫.exponent v := by
-      rw [Modulus.exponent_def, v.le_count_associates_iff_le_pow 𝔫.finitePart_ne_bot,
-        ← Ideal.dvd_iff_le]
-      exact ((χ.toHeckeCharacter.pow_dvd_finiteConductor_iff v _).mpr le_rfl).trans hcond
+    have hexp := (χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔫).mp hcond v
     refine χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
       (TauCeti.unitFiltration_antitone hexp ?_)
     by_cases hvI : v.asIdeal ∣ 𝔫.finitePart
@@ -499,10 +431,9 @@ private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
   · rw [χ.toHeckeCharacter.conductorExponent_le_iff]
     intro z hz
     -- Approximate `z` at `v` and `1` at all other primes of `𝔪.support` by a global element `x`.
-    have hle_exp (w : HeightOneSpectrum (𝓞 K)) : 𝔫.exponent w ≤ 𝔪.exponent w := by
-      rw [Modulus.exponent_def (m := 𝔪),
-        w.le_count_associates_iff_le_pow 𝔪.finitePart_ne_bot, ← Ideal.dvd_iff_le]
-      exact (𝔫.pow_exponent_dvd_finitePart w).trans hdvd
+    have hle_exp (w : HeightOneSpectrum (𝓞 K)) : 𝔫.exponent w ≤ 𝔪.exponent w :=
+      (Modulus.pow_dvd_finitePart_iff_le_exponent 𝔪 w).mp
+        ((𝔫.pow_exponent_dvd_finitePart w).trans hdvd)
     obtain ⟨x, hxz, hother, hxv⟩ := exists_primeToSubgroup_approx_localUnit hv (hle_exp v) z hz
     -- Show `x` reduces to `1` modulo `𝔫.finitePart`, so `χ.residueCharacter (residueHom 𝔪 x) = 1`.
     have hres𝔫 : residue 𝔫 (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x) = 1 := by
@@ -516,12 +447,7 @@ private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
           (w.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent w) (x : Kˣ)).mp
             (hother w hw𝔪 hwv)
         exact hw_mem.2.trans (WithZero.exp_le_exp.mpr (by have := hle_exp w; omega))
-    have hfactor : Ideal.Quotient.factor (Ideal.le_of_dvd hdvd)
-        ((residueHom 𝔪 x : (𝓞 K ⧸ 𝔪.finitePart)ˣ) : 𝓞 K ⧸ 𝔪.finitePart) = 1 := by
-      have hf := congrArg Units.val (finiteUnitsMap_residueHom hdvd x)
-      simpa only [coe_finiteUnitsMap, coe_residueHom] using
-        hf.trans ((coe_residueHom 𝔫 _).trans hres𝔫)
-    have h1 := htriv (residueHom 𝔪 x) hfactor
+    have h1 := htriv (residueHom 𝔪 x) ((factor_residueHom_eq_one_iff hdvd x).mpr hres𝔫)
     rw [coe_residueHom, χ.residueCharacter_residue x,
       χ.finiteCharacterK_eq_prod_finiteComponent_inv x] at h1
     have h1' : (∏ w ∈ 𝔪.support,
@@ -556,14 +482,9 @@ private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossenchar
     (htriv : ∀ u : (𝓞 K ⧸ 𝔪.finitePart)ˣ,
       Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 →
         χ.residueCharacter u = 1) :
-    χ.toHeckeCharacter.finiteConductor ∣ 𝔫.finitePart := by
-  rw [Ideal.dvd_iff_le]
-  refine (le_iInf fun v ↦ ?_).trans
-    (Ideal.iInf_maxPowDividing_eq χ.toHeckeCharacter.finiteConductor_ne_bot).le
-  rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
-  exact (Ideal.dvd_iff_le.mp (𝔫.pow_exponent_dvd_finitePart v)).trans
-    (Ideal.pow_le_pow_right
-      (χ.conductorExponent_le_exponent_of_residueCharacter_eq_one hdvd htriv v))
+    χ.toHeckeCharacter.finiteConductor ∣ 𝔫.finitePart :=
+  (χ.toHeckeCharacter.finiteConductor_dvd_finitePart_iff 𝔫).mpr
+    (χ.conductorExponent_le_exponent_of_residueCharacter_eq_one hdvd htriv)
 
 /-- **Finite-conductor criterion for `residueCharacter`.** For an ideal `I ∣ 𝔪.finitePart`, the
 finite conductor of `χ.toHeckeCharacter` divides `I` if and only if `χ.residueCharacter` is
@@ -826,8 +747,9 @@ theorem finiteCharacterK'_of_mem (χ : Grossencharacter K 𝔪) (x : primeToSubg
   have hx : Units.mk0 ((x : Kˣ) : K) (x : Kˣ).ne_zero ∈ primeToSubgroup 𝔪 := by
     simpa [Units.mk0_val] using x.property
   rw [dite_eq_left hx]
-  congr 2
-  exact Subtype.ext (Units.ext rfl)
+  have hsub : (⟨Units.mk0 ((x : Kˣ) : K) (x : Kˣ).ne_zero, hx⟩ : primeToSubgroup 𝔪) = x :=
+    Subtype.ext (Units.ext (Units.val_mk0 (x : Kˣ).ne_zero))
+  rw [hsub]
 
 /-- Outside `primeToSubgroup 𝔪`, `finiteCharacterK'` vanishes on `x : Kˣ`. -/
 theorem finiteCharacterK'_of_not_mem (χ : Grossencharacter K 𝔪) {x : Kˣ}
@@ -850,7 +772,7 @@ theorem finiteCharacterK'_algebraMap (χ : Grossencharacter K 𝔪) (a : 𝓞 K)
       rw [hax, χ.finiteCharacterK'_of_mem x, χ.finiteCharacter_eq_finiteCharacterK x hax]
     · rw [χ.finiteCharacter_eq_zero_of_not_isCoprimeTo hcop]
       exact χ.finiteCharacterK'_of_not_mem (x := Units.mk0 _ hx0) fun hmem ↦
-        hcop (Modulus.isCoprimeTo_span_singleton_iff.mpr ⟨⟨_, hmem⟩, rfl⟩)
+        hcop (Modulus.isCoprimeTo_span_singleton_iff.mpr ⟨⟨_, hmem⟩, Units.val_mk0 hx0⟩)
 
 /-- Multiplying any element of `K` by an element of `primeToSubgroup 𝔪` factors out
 `finiteCharacterK`. -/
@@ -861,14 +783,15 @@ theorem finiteCharacterK'_mul_of_mem_left (χ : Grossencharacter K 𝔪) (u : pr
   by_cases hx0 : x = 0
   · simp [hx0]
   · let xK : Kˣ := Units.mk0 x hx0
-    have hx_eq : x = (xK : K) := rfl
-    have hux_eq : ((u : Kˣ) : K) * x = ((u : Kˣ) * xK : Kˣ) := rfl
+    have hx_eq : x = (xK : K) := (Units.val_mk0 hx0).symm
+    have hux_eq : ((u : Kˣ) : K) * x = (((u : Kˣ) * xK : Kˣ) : K) := by
+      rw [Units.val_mul, Units.val_mk0]
     rw [hux_eq, hx_eq]
     by_cases hxm : xK ∈ primeToSubgroup 𝔪
     · have huxm : (u : Kˣ) * xK ∈ primeToSubgroup 𝔪 := mul_mem u.property hxm
       rw [χ.finiteCharacterK'_of_mem ⟨(u : Kˣ) * xK, huxm⟩, χ.finiteCharacterK'_of_mem ⟨xK, hxm⟩]
       have hmul : (⟨(u : Kˣ) * xK, huxm⟩ : primeToSubgroup 𝔪) = u * ⟨xK, hxm⟩ :=
-        Subtype.ext rfl
+        Subtype.ext (by rw [Subgroup.coe_mul])
       rw [hmul, map_mul, Units.val_mul]
     · have huxm : (u : Kˣ) * xK ∉ primeToSubgroup 𝔪 := fun h ↦
         hxm (by simpa using mul_mem (inv_mem u.property) h)
@@ -885,34 +808,37 @@ theorem finiteCharacterK'_mul_unit (χ : Grossencharacter K 𝔪) (u : (𝓞 K)�
   rw [heq, χ.finiteCharacterK'_mul_of_mem_left (unitsToPrimeToSubgroup 𝔪 u) x,
     finiteCharacterK_unitsToPrimeToSubgroup, finiteCharacter_unit]
 
+private theorem finiteCharacterK'_cases {P : K → ℂ → Prop} (χ : Grossencharacter K 𝔪)
+    (h0 : P 0 0)
+    (hmem : ∀ u : primeToSubgroup 𝔪, P ((u : Kˣ) : K) (χ.finiteCharacterK u))
+    (hnot : ∀ u : Kˣ, u ∉ primeToSubgroup 𝔪 → P (u : K) 0) (x : K) :
+    P x (χ.finiteCharacterK' x) := by
+  classical
+  by_cases hx0 : x = 0
+  · simpa [hx0] using h0
+  · by_cases hx : Units.mk0 x hx0 ∈ primeToSubgroup 𝔪
+    · have hx_eq : x = ((⟨Units.mk0 x hx0, hx⟩ : primeToSubgroup 𝔪) : Kˣ) :=
+        (Units.val_mk0 hx0).symm
+      rw [hx_eq, χ.finiteCharacterK'_of_mem ⟨Units.mk0 x hx0, hx⟩]
+      exact hmem ⟨Units.mk0 x hx0, hx⟩
+    · have hx_eq : x = (Units.mk0 x hx0 : Kˣ) := (Units.val_mk0 hx0).symm
+      rw [hx_eq, χ.finiteCharacterK'_of_not_mem hx]
+      exact hnot (Units.mk0 x hx0) hx
+
 /-- Inversion conjugates `finiteCharacterK'` on all of `K`. -/
 @[simp]
 theorem finiteCharacterK'_inverse (χ : Grossencharacter K 𝔪) (x : K) :
-    χ.inverse.finiteCharacterK' x = starRingEnd ℂ (χ.finiteCharacterK' x) := by
-  classical
-  by_cases hx0 : x = 0
-  · simp [hx0]
-  · by_cases hx : Units.mk0 x hx0 ∈ primeToSubgroup 𝔪
-    · have hx_eq : x = ((⟨Units.mk0 x hx0, hx⟩ : primeToSubgroup 𝔪) : Kˣ) := rfl
-      rw [hx_eq, χ.inverse.finiteCharacterK'_of_mem, χ.finiteCharacterK'_of_mem,
-        χ.coe_finiteCharacterK_inverse]
-    · have hx_eq : x = (Units.mk0 x hx0 : Kˣ) := rfl
-      rw [hx_eq, χ.inverse.finiteCharacterK'_of_not_mem hx, χ.finiteCharacterK'_of_not_mem hx,
-        map_zero]
+    χ.inverse.finiteCharacterK' x = starRingEnd ℂ (χ.finiteCharacterK' x) :=
+  finiteCharacterK'_cases (P := fun x v ↦ χ.inverse.finiteCharacterK' x = starRingEnd ℂ v)
+    χ (by simp)
+    (fun u ↦ by rw [χ.inverse.finiteCharacterK'_of_mem, χ.coe_finiteCharacterK_inverse])
+    (fun u hu ↦ by rw [χ.inverse.finiteCharacterK'_of_not_mem hu, map_zero]) x
 
 /-- Every value of `finiteCharacterK'` has absolute value at most `1`. -/
 theorem norm_finiteCharacterK'_le_one (χ : Grossencharacter K 𝔪) (x : K) :
-    ‖χ.finiteCharacterK' x‖ ≤ 1 := by
-  classical
-  by_cases hx0 : x = 0
-  · simp [hx0]
-  · by_cases hx : Units.mk0 x hx0 ∈ primeToSubgroup 𝔪
-    · have hx_eq : x = ((⟨Units.mk0 x hx0, hx⟩ : primeToSubgroup 𝔪) : Kˣ) := rfl
-      rw [hx_eq, χ.finiteCharacterK'_of_mem]
-      exact (χ.norm_finiteCharacterK _).le
-    · have hx_eq : x = (Units.mk0 x hx0 : Kˣ) := rfl
-      rw [hx_eq, χ.finiteCharacterK'_of_not_mem hx]
-      simp
+    ‖χ.finiteCharacterK' x‖ ≤ 1 :=
+  finiteCharacterK'_cases (P := fun _ v ↦ ‖v‖ ≤ 1) χ (by simp)
+    (fun u ↦ (χ.norm_finiteCharacterK u).le) (fun _ _ ↦ by simp) x
 
 /-! ### Ray class presentations -/
 
