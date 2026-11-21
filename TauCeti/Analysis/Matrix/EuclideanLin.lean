@@ -331,6 +331,14 @@ theorem UnitaryGroup.symm_toLinearIsometryEquiv :
       UnitaryGroup.ofLinearIsometryEquiv :=
   (rfl)
 
+/-- The inverse of `Matrix.UnitaryGroup.ofLinearIsometryEquiv` is
+`Matrix.UnitaryGroup.toLinearIsometryEquiv`. -/
+@[simp]
+theorem UnitaryGroup.symm_ofLinearIsometryEquiv :
+    (UnitaryGroup.ofLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)).symm =
+      UnitaryGroup.toLinearIsometryEquiv :=
+  (rfl)
+
 /-- The unitary matrix of a linear isometry is the matrix of its continuous linear map. -/
 theorem UnitaryGroup.coe_ofLinearIsometryEquiv (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
     (UnitaryGroup.ofLinearIsometryEquiv g : Matrix ι ι 𝕜) =
