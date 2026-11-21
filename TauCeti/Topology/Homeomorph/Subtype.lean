@@ -35,8 +35,8 @@ variable {X : Type*} [TopologicalSpace X]
 homeomorphism between the two nested subspaces. -/
 def subtypePreimageComm (s t : Set X) :
     ((Subtype.val : s → X) ⁻¹' t) ≃ₜ ((Subtype.val : t → X) ⁻¹' s) where
-  toFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
-  invFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
+  toFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
+  invFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -44,7 +44,7 @@ def subtypePreimageComm (s t : Set X) :
 underlying ambient point. -/
 @[simp]
 theorem subtypePreimageComm_apply (s t : Set X) (y : (Subtype.val : s → X) ⁻¹' t) :
-    subtypePreimageComm s t y = ⟨⟨y.1.1, y.2⟩, y.1.2⟩ := by
+    subtypePreimageComm s t y = ⟨⟨y.val.val, y.property⟩, y.val.property⟩ := by
   rfl
 
 /-- Reversing `Homeomorph.Set.subtypePreimageComm s t` exchanges the two subsets `s` and `t`. -/

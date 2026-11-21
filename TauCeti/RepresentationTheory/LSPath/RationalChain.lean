@@ -51,7 +51,7 @@ noncomputable def ofBruhatChain
     (dir : Fin (l + 1) →
       {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
     (hdir : ∀ j : Fin l,
-      (weylCoxeterSystem P b).BruhatLE (dir j.succ).1 (dir j.castSucc).1)
+      (weylCoxeterSystem P b).BruhatLE (dir j.succ).val (dir j.castSucc).val)
     (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc)
     (time : Fin (l + 2) → ℚ) (hzero : time 0 = 0) (hlast : time (Fin.last _) = 1)
     (htime : StrictMono time) (n : ℕ) (hn : 0 < n)
@@ -71,12 +71,12 @@ noncomputable def ofBruhatChain
       exists_isAChain := ?_ }
   intro j
   obtain ⟨C, hhead, hlast⟩ := CoxeterSystem.exists_minimalCosetRepChain
-    (dir' j.succ).2 (dir' j.castSucc).2
+    (dir' j.succ).property (dir' j.castSucc).property
     (by simpa only [dir', liftDir, coe_minimalCosetRepNsmulEquiv] using hdir j)
   refine ⟨C, hhead, hlast, isAChain_iff_forall_reflectionBond.mpr fun k ↦ ?_⟩
   obtain ⟨z, hz⟩ := (Rat.den_dvd_iff_exists_mul_intCast_eq (time j.castSucc.succ) (n : ℤ)).mp
     (by exact_mod_cast hden j)
-  refine ⟨z * P.reflectionBond b ((C k.castSucc).1 • lam) ((C k.succ).1 • lam), ?_⟩
+  refine ⟨z * P.reflectionBond b ((C k.castSucc).val • lam) ((C k.succ).val • lam), ?_⟩
   rw [P.reflectionBond_smul_nsmul b]
   push_cast at hz ⊢
   rw [← mul_assoc, hz]
@@ -85,7 +85,7 @@ variable
     (dir : Fin (l + 1) →
       {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
     (hdir : ∀ j : Fin l,
-      (weylCoxeterSystem P b).BruhatLE (dir j.succ).1 (dir j.castSucc).1)
+      (weylCoxeterSystem P b).BruhatLE (dir j.succ).val (dir j.castSucc).val)
     (hne : ∀ j : Fin l, dir j.succ ≠ dir j.castSucc)
     (time : Fin (l + 2) → ℚ) (hzero : time 0 = 0) (hlast : time (Fin.last _) = 1)
     (htime : StrictMono time) (n : ℕ) (hn : 0 < n)
@@ -100,11 +100,11 @@ theorem length_ofBruhatChain :
 @[simp]
 theorem dir_ofBruhatChain
     (j : Fin ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).length + 1)) :
-    ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).dir j).1 =
+    ((ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).dir j).val =
       (dir (j.cast (congrArg (· + 1)
-        (length_ofBruhatChain dir hdir hne time hzero hlast htime n hn hden)))).1 := by
+        (length_ofBruhatChain dir hdir hne time hzero hlast htime n hn hden)))).val := by
   simp only [ofBruhatChain, coe_minimalCosetRepNsmulEquiv]
-  exact congrArg (fun k ↦ (dir k).1) (Fin.ext rfl)
+  exact congrArg (fun k ↦ (dir k).val) (Fin.ext rfl)
 
 /-- Clearing break denominators retains every break time, including the endpoints. -/
 @[simp]
@@ -139,7 +139,7 @@ theorem timed_ofBruhatChain :
     (ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).timed 𝕜 f =
       List.ofFn (fun j : Fin (l + 1) ↦
         (((time j.succ - time j.castSucc : ℚ) : 𝕜),
-          (n : 𝕜) • (((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).1 • lam)))) := by
+          (n : 𝕜) • (((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam)))) := by
   simp only [timed_def]
   rw [List.ofFn_congr (congrArg (· + 1)
     (length_ofBruhatChain dir hdir hne time hzero hlast htime n hn hden))]
@@ -154,7 +154,7 @@ path modulo reparametrization, rather than merely an equality of endpoints. -/
 theorem toPLPath_ofBruhatChain :
     (ofBruhatChain dir hdir hne time hzero hlast htime n hn hden).toPLPath 𝕜 f =
       (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
-        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).1 • lam))).map
+        ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam))).map
           ((n : 𝕜) • LinearMap.id) := by
   simp only [toPLPath_def, timed_ofBruhatChain, PLPath.map_ofSegments, List.map_ofFn,
     Function.comp_def, LinearMap.smul_apply, LinearMap.id_apply]
@@ -167,7 +167,7 @@ theorem exists_toPLPath_eq_dilation_of_bruhatChain :
     ∃ n : ℕ, 0 < n ∧ ∃ π : LSPath P b (n • lam),
       π.toPLPath 𝕜 f =
         (PLPath.ofSegments 𝕜 (List.ofFn fun j : Fin (l + 1) ↦
-          ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).1 • lam))).map
+          ((time j.succ - time j.castSucc : ℚ) : 𝕜) • f ((dir j).val • lam))).map
             ((n : 𝕜) • LinearMap.id) := by
   let n := ∏ j : Fin l, (time j.castSucc.succ).den
   have hn : 0 < n := Finset.prod_pos fun j _ ↦ (time j.castSucc.succ).den_pos

@@ -38,7 +38,8 @@ recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y
 discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
 `(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`). In particular `C • W` is
-elliptic exactly when `W` is (`isElliptic_smul_iff`).
+elliptic exactly when `W` is (`isElliptic_smul_iff`). Base change along a ring homomorphism is
+equivariant for the base change of changes of variables (`mapMulActionHom`).
 
 The negation is the nontrivial automorphism in `Aut (E, O)`, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
@@ -137,6 +138,10 @@ enough. -/
 @[simp] lemma map_mul (φ : R →+* A) (C D : VariableChange R) :
     (C * D).map φ = C.map φ * D.map φ :=
   _root_.map_mul (VariableChange.mapHom φ) C D
+
+/-- The bundled base change `VariableChange.mapHom φ` applies `VariableChange.map φ`. -/
+@[simp] lemma mapHom_apply (φ : R →+* A) (C : VariableChange R) : mapHom φ C = C.map φ :=
+  rfl
 
 /-! ### Components of `C * D⁻¹`
 
@@ -248,6 +253,20 @@ theorem isElliptic_smul_iff (C : VariableChange R) (W : WeierstrassCurve R) :
   have : (C⁻¹ • C • W).IsElliptic := inferInstance
   rwa [inv_smul_smul] at this
 
+/-- Base change of Weierstrass curves along a ring homomorphism `φ : R →+* S`, as a map
+equivariant along the base change `VariableChange.mapHom φ` of changes of variables (Mathlib's
+`WeierstrassCurve.map_variableChange`). It induces the functor from the action groupoid of
+Weierstrass curves over `R` to that over `S`. -/
+def mapMulActionHom {S : Type*} [CommRing S] (φ : R →+* S) :
+    WeierstrassCurve R →ₑ[VariableChange.mapHom φ] WeierstrassCurve S where
+  toFun W := W.map φ
+  map_smul' C W := (map_variableChange W C φ).symm
+
+@[simp]
+theorem mapMulActionHom_apply {S : Type*} [CommRing S] (φ : R →+* S) (W : WeierstrassCurve R) :
+    mapMulActionHom φ W = W.map φ :=
+  (rfl)
+
 section BaseChange
 
 variable (L : Type*) [CommRing L] [Algebra R L]
@@ -335,9 +354,9 @@ lemma map_smul_baseChange_eq (σ : L →ₐ[R] L) {V W : WeierstrassCurve R}
 end BaseChange
 
 /-- **A change of variables descends exactly when its coefficients do.** A change of variables
-over a nontrivial `K`-algebra `L` is the base change of one over the field `K` if and only if its
+over a `K`-algebra `L` is the base change of one over the field `K` if and only if its
 four coefficients `u, r, s, t` lie in the image of `K`. -/
-lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing L] [Nontrivial L]
+lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing L]
     [Algebra K L] (C : VariableChange L) :
     C ∈ Set.range (fun D : VariableChange K ↦ D.baseChange L) ↔
       (C.u : L) ∈ Set.range (algebraMap K L) ∧ C.r ∈ Set.range (algebraMap K L) ∧
@@ -346,6 +365,9 @@ lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing 
   · rintro ⟨D, rfl⟩
     exact ⟨⟨D.u, rfl⟩, ⟨D.r, rfl⟩, ⟨D.s, rfl⟩, ⟨D.t, rfl⟩⟩
   · rintro ⟨⟨u, hu⟩, ⟨r, hr⟩, ⟨s, hs⟩, ⟨t, ht⟩⟩
+    rcases subsingleton_or_nontrivial L with _ | _
+    · exact ⟨1, VariableChange.ext (Units.ext (Subsingleton.elim _ _)) (Subsingleton.elim _ _)
+        (Subsingleton.elim _ _) (Subsingleton.elim _ _)⟩
     have hu₀ : u ≠ 0 := by
       rintro rfl
       exact C.u.ne_zero (hu.symm.trans (map_zero _))

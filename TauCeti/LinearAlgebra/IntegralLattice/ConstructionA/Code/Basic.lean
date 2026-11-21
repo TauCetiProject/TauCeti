@@ -68,7 +68,7 @@ theorem orthogonalComplement_codeInZeroLatticeDiscriminantBilinearModule
       codeInZeroLatticeDiscriminantBilinearModule m ι
         (AddSubgroup.toZModSubmodule m C).euclideanDual.toAddSubgroup := by
   rw [codeInZeroLatticeDiscriminantBilinearModule,
-    (discriminantIsometry m ι).comap_orthogonalComplement,
+    (discriminantIsometry m ι).orthogonalComplement_comap,
     orthogonalComplement_coordinatePower_zmodStandard,
     codeInZeroLatticeDiscriminantBilinearModule]
 
@@ -164,7 +164,7 @@ theorem map_codeInZeroLatticeDiscriminantGroup (C : AdditiveCode (ZMod m) ι) :
 private theorem mem_intermediateCarrier_codeInZeroLatticeDiscriminantGroup_iff
     (C : AdditiveCode (ZMod m) ι) (x : ι → ℚ) :
     x ∈ ((zeroLattice m ι).intermediateCarrierOfDiscriminantSubgroup
-        (codeInZeroLatticeDiscriminantGroup m ι C)).1 ↔ x ∈ lattice m C := by
+        (codeInZeroLatticeDiscriminantGroup m ι C)).val ↔ x ∈ lattice m C := by
   constructor
   · intro hx
     obtain ⟨hxdual, hxC⟩ := (IntegralLattice.mem_intermediateCarrierOfDiscriminantSubgroup_iff
@@ -191,7 +191,7 @@ private theorem mem_intermediateCarrier_codeInZeroLatticeDiscriminantGroup_iff
 theorem coe_intermediateCarrierOfDiscriminantSubgroup_codeInZeroLatticeDiscriminantGroup
     (C : AdditiveCode (ZMod m) ι) :
     ((zeroLattice m ι).intermediateCarrierOfDiscriminantSubgroup
-      (codeInZeroLatticeDiscriminantGroup m ι C)).1 = lattice m C := by
+      (codeInZeroLatticeDiscriminantGroup m ι C)).val = lattice m C := by
   ext x
   exact mem_intermediateCarrier_codeInZeroLatticeDiscriminantGroup_iff m ι C x
 

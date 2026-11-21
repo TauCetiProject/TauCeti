@@ -43,7 +43,8 @@ basis of the indecomposables of a connected graded ring generate it.
 
 ## Main definitions
 
-* `TauCeti.LazardRing.augmentation`: the augmentation `L →+* ℤ`, classifying `X + Y`.
+* `TauCeti.LazardRing.augmentation`: the augmentation `L →+* ℤ`, classifying `X + Y` (showing in
+  particular that `L` has characteristic zero).
 * `TauCeti.LazardRing.augmentationIdeal`: its kernel `I`.
 * `TauCeti.LazardRing.generator n`: the element `xₙ ∈ L₂ₙ`.
 * `TauCeti.LazardRing.cotangentBasis`: the basis `(xₙ mod I²)ₙ` of `Q(L) = I ⧸ I²` over `ℤ`.
@@ -83,6 +84,11 @@ formal group law `X + Y`. It sends every coefficient `aᵢⱼ`, `i, j ≥ 1`, of
 the universal formal group law to `0`. -/
 def augmentation : LazardRing →+* ℤ :=
   lift ⟨FormalGroup.𝔾ₐ, inferInstance⟩
+
+/-- The Lazard ring has characteristic zero, since the augmentation
+`TauCeti.LazardRing.augmentation` splits `ℤ →+* LazardRing`. -/
+instance : CharZero LazardRing :=
+  ⟨fun m n h ↦ Nat.cast_injective (R := ℤ) (by simpa using congrArg augmentation h)⟩
 
 /-- The augmentation sends a coefficient of the universal formal group law to the corresponding
 coefficient of `X + Y`. -/
@@ -265,7 +271,7 @@ private theorem constantCoeff_dualCocycle (n : ℕ+) :
 
 private theorem coeff_mul_coeff_dualCocycle (n : ℕ+) (d e : Fin 2 →₀ ℕ) :
     (dualCocycle n).coeff d * (dualCocycle n).coeff e = 0 := by
-  simp only [dualCocycle, MvPolynomial.coeff_smul, smul_eq_mul]
+  simp only [dualCocycle, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
   rw [mul_mul_mul_comm, DualNumber.eps_mul_eps, zero_mul]
 
 /-- The homomorphism `L →+* ℤ[ε]` classifying the formal group law `X + Y + ε C_{n+1}(X, Y)`. -/
@@ -280,7 +286,7 @@ private theorem cocycleHom_coeff_formalGroup (n : ℕ+) (d : Fin 2 →₀ ℕ) :
         DualNumber.eps * (lazardCocycle ((n : ℕ) + 1) (DualNumber ℤ)).coeff d := by
   rw [← coeff_map, ← FormalGroup.map_toPowerSeries, cocycleHom, map_lift,
     MvPolynomial.IsAddCocycle₂.toPowerSeries_formalGroup, map_add, MvPolynomial.coeff_coe,
-    MvPolynomial.coeff_smul, smul_eq_mul]
+    AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
 
 /-- The first component of `cocycleHom n` is the augmentation. -/
 private theorem fst_cocycleHom (n : ℕ+) (x : LazardRing) :
@@ -358,7 +364,7 @@ private theorem toCotangent_smul_eq_augmentation_smul (c : LazardRing) (y : augm
     augmentationIdeal.toCotangent (c • y) = augmentation c • augmentationIdeal.toCotangent y := by
   have hc : c - (augmentation c : LazardRing) ∈ augmentationIdeal := by simp
   rw [← map_zsmul, augmentationIdeal.toCotangent_eq, pow_two]
-  convert Ideal.mul_mem_mul hc y.2 using 1
+  convert Ideal.mul_mem_mul hc y.property using 1
   simp [sub_mul, zsmul_eq_mul]
 
 /-- The classes of the generators `xₙ` span `I ⧸ I²` over `ℤ`. -/

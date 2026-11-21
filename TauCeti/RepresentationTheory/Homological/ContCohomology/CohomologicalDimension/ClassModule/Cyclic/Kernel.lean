@@ -109,7 +109,7 @@ private theorem cyclicKernel_isClosed (hV : IsOpen (V : Set G)) (s : G) :
   have hβ : Continuous (cyclicCoinvariantMap p V s) :=
     QuotientGroup.continuous_mk.comp (continuous_abelianizationProPMk p G V)
   rw [cyclicKernel, Subgroup.coe_map]
-  exact (V.isClosed_of_isOpen hV).isClosedMap_subtype_val _ (isClosed_singleton.preimage hβ)
+  exact (V.isClosed_of_isOpen hV).isClosedMap_subtypeVal _ (isClosed_singleton.preimage hβ)
 
 omit [CompactSpace G] in
 private theorem cyclicKernel_quotient_commutative (s : G)
@@ -157,12 +157,12 @@ private theorem cyclicKernel_quotient_isProP (hV : IsOpen (V : Set G))
     (MonoidHom.id G) (QuotientGroup.mk'_surjective V) (Subgroup.map_subtype_le _)
   -- The kernel of `f` is a continuous image of `V^ab(p) / (s - 1)`.
   let ψ : V →* f.ker := ((QuotientGroup.mk' K).comp V.subtype).codRestrict f.ker
-    fun w => (QuotientGroup.eq_one_iff (N := V) _).mpr w.2
+    fun w => (QuotientGroup.eq_one_iff (N := V) _).mpr w.property
   have hψker : β.ker ≤ ψ.ker := fun w hw =>
     Subtype.ext ((QuotientGroup.eq_one_iff _).mpr ⟨w, hw, rfl⟩)
   let φ : V ⧸ β.ker →* f.ker := QuotientGroup.lift β.ker ψ hψker
   have hφ : Continuous φ := (QuotientGroup.isQuotientMap_mk β.ker).continuous_iff.mpr
-    ((QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _)
+    ((QuotientGroup.continuous_mk.comp continuous_subtypeVal).subtype_mk _)
   have hφs : Function.Surjective φ := by
     rintro ⟨x, hx⟩
     obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
@@ -220,16 +220,16 @@ theorem exists_abelianizationProPMk_eq_smul_div_iff_mk_eq_one
   refine ⟨exists_abelianizationProPMk_eq_smul_div_of_mk_eq_one p V hV hpV s hs v, ?_⟩
   rintro ⟨b, hb⟩
   obtain ⟨w, rfl⟩ := abelianizationProPMk_surjective p G V b
-  let ι := TopologicalAbelianization.map V.subtype continuous_subtype_val
+  let ι := TopologicalAbelianization.map V.subtype continuous_subtypeVal
   let F := maximalProPQuotient.map (p := p) ι
-    (TopologicalAbelianization.continuous_map V.subtype continuous_subtype_val)
+    (TopologicalAbelianization.continuous_map V.subtype continuous_subtypeVal)
   have hF (x : V) : F (abelianizationProPMk p G V x) =
       maximalProPQuotient.mk p (TopologicalAbelianization G)
         (x.val : TopologicalAbelianization G) := by
     rw [abelianizationProPMk_apply, maximalProPQuotient.mk_apply,
       maximalProPQuotient.map_mk]
     exact congrArg (maximalProPQuotient.mk p (TopologicalAbelianization G))
-      (TopologicalAbelianization.map_mk V.subtype continuous_subtype_val x)
+      (TopologicalAbelianization.map_mk V.subtype continuous_subtypeVal x)
   have h := congrArg F hb
   rw [abelianizationProPMk_conj, map_div, hF, hF, hF] at h
   -- Conjugation vanishes in the ambient commutative quotient.

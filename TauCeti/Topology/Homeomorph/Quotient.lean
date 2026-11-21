@@ -10,18 +10,15 @@ public import Mathlib.Topology.Homeomorph.Quotient
 import Mathlib.Topology.ContinuousMap.Basic
 
 /-!
-# Homeomorphisms associated with setoids and quotient spaces
+# Homeomorphisms associated with quotient spaces
 
 This file records how Mathlib's `Homeomorph.Quotient.congr` and
 `Homeomorph.Quotient.congrRight`, homeomorphisms between quotient spaces, act on equivalence
-classes, and constructs the coordinate-swap homeomorphism on the graph of a setoid together with
-the canonical homeomorphism between an open subset of a quotient space and the quotient of its
-saturated preimage.
+classes, and constructs the canonical homeomorphism between an open subset of a quotient space and
+the quotient of its saturated preimage.
 
 ## Main definitions
 
-* `Setoid.swapHomeomorph`: the involutive coordinate-swap homeomorphism of
-  `{q : X × X | r q.1 q.2}`.
 * `IsOpen.quotientComapHomeomorph`: for an open subset `V` of `Quotient r`, the canonical
   homeomorphism `Quotient (r.comap (Subtype.val : Quotient.mk r ⁻¹' V → X)) ≃ₜ V`.
 
@@ -29,9 +26,6 @@ saturated preimage.
 
 * `Homeomorph.Quotient.congr_mk`: `congr` sends the class of `x` to the class of its image.
 * `Homeomorph.Quotient.congrRight_mk`: `congrRight` sends the class of `x` to the class of `x`.
-* `Setoid.swapHomeomorph_apply`, `Setoid.swapHomeomorph_symm`, `Setoid.fst_comp_swapHomeomorph`,
-  `Setoid.snd_comp_swapHomeomorph`: pointwise action, involutivity, and projection compatibility of
-  `Setoid.swapHomeomorph`.
 * `IsOpen.quotientComapHomeomorph_mk`, `IsOpen.quotientComapHomeomorph_symm_mk`: action of
   `IsOpen.quotientComapHomeomorph` and its inverse on equivalence classes.
 -/
@@ -66,43 +60,6 @@ theorem congrRight_mk {r r' : Setoid X} (h : ∀ x₁ x₂, r x₁ x₂ ↔ r' x
 
 end Homeomorph.Quotient
 
-namespace Setoid
-
-variable {X : Type*} [TopologicalSpace X]
-
-/-- Coordinate swap on `X × X` restricts to an involutive homeomorphism of the graph of any
-equivalence relation `r`. -/
-def swapHomeomorph (r : Setoid X) :
-    {q : X × X | r q.1 q.2} ≃ₜ {q : X × X | r q.1 q.2} :=
-  (Homeomorph.prodComm X X).subtype fun _ ↦ ⟨fun h ↦ r.symm h, fun h ↦ r.symm h⟩
-
-/-- `Setoid.swapHomeomorph` exchanges the two coordinates of a pair in the graph of `r`. -/
-@[simp]
-theorem swapHomeomorph_apply (r : Setoid X) (q : {q : X × X | r q.1 q.2}) :
-    r.swapHomeomorph q = ⟨q.1.swap, r.symm q.2⟩ := by
-  ext <;> rfl
-
-/-- `Setoid.swapHomeomorph` is involutive. -/
-@[simp]
-theorem swapHomeomorph_symm (r : Setoid X) : r.swapHomeomorph.symm = r.swapHomeomorph := by
-  ext <;> rfl
-
-/-- Composing the first projection of the graph of `r` with `Setoid.swapHomeomorph` yields the
-second projection. -/
-theorem fst_comp_swapHomeomorph (r : Setoid X) :
-    (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ∘ r.swapHomeomorph = fun q ↦ q.1.2 := by
-  funext _
-  rfl
-
-/-- Composing the second projection of the graph of `r` with `Setoid.swapHomeomorph` yields the
-first projection. -/
-theorem snd_comp_swapHomeomorph (r : Setoid X) :
-    (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) ∘ r.swapHomeomorph = fun q ↦ q.1.1 := by
-  funext _
-  rfl
-
-end Setoid
-
 namespace IsOpen
 
 variable {X : Type*} [TopologicalSpace X] {r : Setoid X}
@@ -121,12 +78,12 @@ noncomputable def quotientComapHomeomorph {V : Set (Quotient r)} (hV : IsOpen V)
     hg.homeomorph
 
 /-- `IsOpen.quotientComapHomeomorph` sends the induced equivalence class of `x` in
-`Quotient.mk r ⁻¹' V` to the ambient class `Quotient.mk r x.1` in `V`. -/
+`Quotient.mk r ⁻¹' V` to the ambient class `Quotient.mk r x.val` in `V`. -/
 @[simp]
 theorem quotientComapHomeomorph_mk {V : Set (Quotient r)} (hV : IsOpen V)
     (x : Quotient.mk r ⁻¹' V) :
     hV.quotientComapHomeomorph (Quotient.mk (r.comap Subtype.val) x) =
-      ⟨Quotient.mk r x.1, x.2⟩ := by
+      ⟨Quotient.mk r x.val, x.property⟩ := by
   rfl
 
 /-- The inverse of `IsOpen.quotientComapHomeomorph` sends a class `⟨Quotient.mk r x, hx⟩` in `V`
