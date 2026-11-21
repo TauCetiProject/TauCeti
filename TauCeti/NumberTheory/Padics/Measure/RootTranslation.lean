@@ -8,6 +8,9 @@ module
 public import TauCeti.NumberTheory.Padics.Complex.Basic
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.RingTheory.MvPowerSeries.LinearTopology
+import Mathlib.RingTheory.AdjoinRoot
+import Mathlib.RingTheory.Ideal.GoingUp
+import Mathlib.RingTheory.Ideal.Nonunits
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -18,7 +21,9 @@ For a `p`-th root of unity `ζ` in the integers of `ℂ_p`, substitution at
 is topologically nilpotent but need not be zero, so this is topological evaluation,
 not formal substitution. The resulting homomorphism is continuous for the
 coefficientwise topologies and is given by a convergent sum of translated monomials.
-These translations are the summands in integral root-of-unity averaging.
+These translations are the summands in integral root-of-unity averaging. For polynomials
+with unit constant term, the translated series is a unit over any receiving ring, without
+a topology on that ring.
 
 ## References
 
@@ -90,16 +95,55 @@ theorem map_rootTranslation_coe (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ)
   ext a
   simp
 
-/-- A polynomial with unit constant term stays a unit after an integral root translation
-and extension of coefficients to `ℂ_p`. In particular the translated denominator is nonzero. -/
-theorem isUnit_eval₂_rootTranslation (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ)
+/-- Over any receiving ring, translating a polynomial with unit constant coefficient
+at a `p`-th root of unity gives a unit power series. -/
+theorem isUnit_eval₂_rootTranslation {R : Type*} [CommRing R]
+    (ζ : R) (hζ : ζ ^ p = 1) (j : ℤ_[p] →+* R) (i : ℕ)
     (Q : Polynomial ℤ_[p]) (hQ : IsUnit (Q.coeff 0)) :
-    IsUnit (Q.eval₂ (C.comp ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom))
-      (C ((ζ : ℂ_[p]) ^ i) * (1 + X) - 1)) := by
-  have hunit : IsUnit (Q : PowerSeries ℤ_[p]) :=
-    PowerSeries.isUnit_iff_constantCoeff.mpr (by simpa using hQ)
-  simpa only [map_rootTranslation_coe] using
-    (hunit.map (rootTranslation p ζ hζ i)).map (PowerSeries.map (𝓞_ℂ_[p]).subtype)
+    IsUnit (Q.eval₂ (C.comp j) (C (ζ ^ i) * (1 + X) - 1)) := by
+  let f : Polynomial ℤ_[p] := Polynomial.X ^ p - 1
+  have hp : p.Prime := Fact.out
+  have hf : f.Monic := (Polynomial.monic_X_pow_sub_C (1 : ℤ_[p]) hp.ne_zero)
+  let x := AdjoinRoot.root f
+  have hx : x ^ p = 1 := by
+    simpa [f, x, sub_eq_zero] using AdjoinRoot.eval₂_root f
+  -- Every maximal residue field of this finite algebra has characteristic p,
+  -- so the universal root becomes 1 in each of them.
+  have hu : IsUnit (Q.eval₂ (AdjoinRoot.of f) (x ^ i - 1)) := by
+    by_contra hn
+    obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits (mem_nonunits_iff.mpr hn)
+    have := Ideal.Quotient.field m
+    have := hf.finite_adjoinRoot
+    have hmax : m.comap (AdjoinRoot.of f) = IsLocalRing.maximalIdeal ℤ_[p] :=
+      IsLocalRing.eq_maximalIdeal
+        (Ideal.isMaximal_comap_of_isIntegral_of_isMaximal (AdjoinRoot.of f)
+          (algebraMap_isIntegral_iff.mpr (Algebra.IsIntegral.of_finite ℤ_[p] (AdjoinRoot f))) m)
+    have hp₀ : (p : AdjoinRoot f ⧸ m) = 0 := by
+      have hpm : (p : ℤ_[p]) ∈ m.comap (AdjoinRoot.of f) := by
+        rw [hmax, PadicInt.maximalIdeal_eq_span_p]
+        exact Ideal.mem_span_singleton_self _
+      simpa only [map_natCast] using (Ideal.Quotient.eq_zero_iff_mem.mpr hpm :
+        Ideal.Quotient.mk m (AdjoinRoot.of f (p : ℤ_[p])) = 0)
+    have := (CharP.charP_iff_prime_eq_zero hp).2 hp₀
+    have hx₁ : Ideal.Quotient.mk m x = 1 := by
+      have hpow : (Ideal.Quotient.mk m x) ^ p = 1 := by
+        simpa only [map_pow, map_one] using congrArg (Ideal.Quotient.mk m) hx
+      apply sub_eq_zero.mp
+      exact eq_zero_of_pow_eq_zero
+        (by rw [sub_pow_char, one_pow, hpow, sub_self] : (Ideal.Quotient.mk m x - 1) ^ p = 0)
+    have hz := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
+    rw [Polynomial.hom_eval₂] at hz
+    simp only [map_sub, map_pow, map_one, hx₁, one_pow, sub_self, Polynomial.eval₂_at_zero] at hz
+    exact (hQ.map ((Ideal.Quotient.mk m).comp (AdjoinRoot.of f))).ne_zero hz
+  have hroot : f.eval₂ j ζ = 0 := by simp [f, hζ]
+  let g := AdjoinRoot.lift j ζ hroot
+  apply PowerSeries.isUnit_iff_constantCoeff.mpr
+  rw [Polynomial.hom_eval₂]
+  have hg : g.comp (AdjoinRoot.of f) = j := AdjoinRoot.lift_comp_of hroot
+  have hgx : g x = ζ := AdjoinRoot.lift_root hroot
+  simpa only [map_sub, map_mul, map_add, map_one, map_pow, constantCoeff_C, constantCoeff_X,
+    add_zero, mul_one, ← RingHom.comp_assoc, constantCoeff_comp_C, RingHom.id_comp,
+    hg, hgx, Polynomial.hom_eval₂] using hu.map g
 
 /-- Root translation sends `X` to the translated variable `ζ ^ i * (1 + X) - 1`. -/
 @[simp]
@@ -162,6 +206,14 @@ example : rootTranslation 2 (-1) (by norm_num) 1 X =
 example : rootTranslation 2 (-1) (by norm_num) 1 ((1 + X) ^ 3) =
     (-(1 + X) ^ 3 : PowerSeries 𝓞_ℂ_[2]) := by
   simp only [rootTranslation_one_add_X_pow, pow_one, map_neg, map_one]
+  ring
+
+-- Without a unit constant coefficient, X + 2 translates to the nonunit -X at ζ = -1.
+example : ¬ IsUnit ((Polynomial.X + 2 : Polynomial ℤ_[2]).eval₂
+    (C.comp (PadicInt.Coe.ringHom : ℤ_[2] →+* ℚ_[2]))
+    (C (-1) * (1 + X) - 1)) := by
+  norm_num [PowerSeries.isUnit_iff_constantCoeff, isUnit_iff_ne_zero]
+  rw [map_ofNat]
   ring
 
 end TauCeti.IwasawaAveraging
