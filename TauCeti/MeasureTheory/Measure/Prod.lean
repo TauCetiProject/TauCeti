@@ -23,7 +23,11 @@ the extended masses (`MeasureTheory.measure_preimage_fst_singleton_eq_sum`); thi
 for the real masses `Measure.real`. A set of zero first-marginal mass carries no mass in any
 rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`). The graph
 `{z | z.2 = f z.1}` of a measurable function is null for `μ.prod ν` whenever `ν` gives no mass to
-points (`MeasureTheory.Measure.prod_graph_eq_zero`).
+points (`MeasureTheory.Measure.prod_graph_eq_zero`). More generally, for an s-finite second factor
+the graph has measure `∑' y, μ (f ⁻¹' {y}) * ν {y}` (`MeasureTheory.Measure.prod_graph`), and the
+diagonal carries mass `∑' x, μ {x} * ν {x}` (`MeasureTheory.Measure.prod_diagonal`, with real-valued
+counterparts `MeasureTheory.Measure.hasSum_prod_real_diagonal` and
+`MeasureTheory.Measure.prod_real_diagonal` for finite measures).
 For a probability measure `μ`, the pairs with a coordinate in a set `s` have `μ.prod μ`-measure
 at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
 of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
@@ -207,6 +211,85 @@ theorem prod_graph_eq_zero {α β : Type*} [MeasurableSpace α] [MeasurableSpace
     (hf : Measurable f) : μ.prod ν {z : α × β | z.2 = f z.1} = 0 :=
   measure_prod_null_of_ae_null (measurableSet_eq_fun measurable_snd (hf.comp measurable_fst))
     (Filter.Eventually.of_forall fun x ↦ by simp)
+
+/-- The product measure of the graph `{z | z.2 = f z.1}` of a measurable function is the sum over
+all target points `y` of `μ (f ⁻¹' {y}) * ν {y}`. Only the second factor must be s-finite. -/
+theorem prod_graph {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableEq β]
+    (μ : Measure α) (ν : Measure β) [SFinite ν] {f : α → β} (hf : Measurable f) :
+    (μ.prod ν) {z : α × β | z.2 = f z.1} = ∑' y : β, μ (f ⁻¹' {y}) * ν {y} := by
+  have hmeas : MeasurableSet {z : α × β | z.2 = f z.1} :=
+    measurableSet_eq_fun measurable_snd (hf.comp measurable_fst)
+  have hS : ({y : β | 0 < ν {y}}).Countable := by
+    simpa using Measure.countable_meas_level_set_pos (μ := ν) (g := id) measurable_id
+  set S : Set β := {y : β | 0 < ν {y}}
+  have hSm : MeasurableSet (f ⁻¹' S) := hf hS.measurableSet
+  have hcompl : ∫⁻ x in (f ⁻¹' S)ᶜ, ν {f x} ∂μ = 0 := by
+    refine setLIntegral_eq_zero hSm.compl ?_
+    intro x hx
+    simp only [Set.mem_compl_iff, Set.mem_preimage, S, Set.mem_ofPred_eq, not_lt,
+      nonpos_iff_eq_zero] at hx
+    exact hx
+  have hbiUnion : f ⁻¹' S = ⋃ y ∈ S, f ⁻¹' {y} := by
+    ext x
+    simp
+  rw [prod_apply hmeas]
+  have hsec : ∀ x : α, Prod.mk x ⁻¹' {z : α × β | z.2 = f z.1} = {f x} := fun x ↦ by
+    ext y
+    simp
+  simp_rw [hsec]
+  rw [← lintegral_add_compl _ hSm, hcompl, add_zero, hbiUnion,
+    lintegral_biUnion hS (fun y _ ↦ hf (measurableSet_singleton y))
+      (Set.pairwiseDisjoint_fiber f S)]
+  have hterm (y : S) : ∫⁻ x in f ⁻¹' {(y : β)}, ν {f x} ∂μ = μ (f ⁻¹' {(y : β)}) * ν {(y : β)} := by
+    calc ∫⁻ x in f ⁻¹' {(y : β)}, ν {f x} ∂μ
+        = ∫⁻ _ in f ⁻¹' {(y : β)}, ν {(y : β)} ∂μ :=
+          setLIntegral_congr_fun (hf (measurableSet_singleton _)) fun x hx ↦ by
+            simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx
+            rw [hx]
+      _ = ν {(y : β)} * μ (f ⁻¹' {(y : β)}) := setLIntegral_const _ _
+      _ = μ (f ⁻¹' {(y : β)}) * ν {(y : β)} := mul_comm _ _
+  simp_rw [hterm]
+  rw [tsum_subtype S (fun y ↦ μ (f ⁻¹' {y}) * ν {y})]
+  congr 1 with y
+  by_cases hy : y ∈ S
+  · simp [Set.indicator_of_mem hy]
+  · have hνy : ν {y} = 0 := by
+      simpa [S, not_lt, nonpos_iff_eq_zero] using hy
+    simp [Set.indicator_of_notMem hy, hνy]
+
+/-- The product measure of the diagonal `Set.diagonal α` is `∑' x, μ {x} * ν {x}`. Only the second
+factor must be s-finite. -/
+theorem prod_diagonal {α : Type*} [MeasurableSpace α] [MeasurableEq α]
+    (μ ν : Measure α) [SFinite ν] :
+    (μ.prod ν) (Set.diagonal α) = ∑' x : α, μ {x} * ν {x} := by
+  have hdiag : Set.diagonal α = {z : α × α | z.2 = id z.1} := by
+    ext ⟨x, y⟩
+    simp [eq_comm]
+  rw [hdiag, prod_graph μ ν measurable_id]
+  simp
+
+/-- For finite measures `μ` and `ν` on a space with measurable diagonal, the products
+`μ.real {x} * ν.real {x}` of their singleton masses are summable with sum
+`(μ.prod ν).real (Set.diagonal α)`. -/
+theorem hasSum_prod_real_diagonal {α : Type*} [MeasurableSpace α] [MeasurableEq α]
+    (μ ν : Measure α) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    HasSum (fun x : α ↦ μ.real {x} * ν.real {x}) ((μ.prod ν).real (Set.diagonal α)) := by
+  have hne : ∑' x : α, μ {x} * ν {x} ≠ ∞ := by
+    rw [← prod_diagonal]
+    exact measure_ne_top _ _
+  have hsum : Summable fun x : α ↦ μ.real {x} * ν.real {x} := by
+    simpa only [ENNReal.toReal_mul, measureReal_def] using ENNReal.summable_toReal hne
+  have htsum : ∑' x : α, μ.real {x} * ν.real {x} = (μ.prod ν).real (Set.diagonal α) := by
+    rw [measureReal_def, prod_diagonal, ENNReal.tsum_toReal_eq (fun _ ↦ by finiteness)]
+    simp_rw [ENNReal.toReal_mul, measureReal_def]
+  exact htsum ▸ hsum.hasSum
+
+/-- For finite measures `μ` and `ν` on a space with measurable diagonal, the real mass of the
+diagonal under `μ.prod ν` is `∑' x, μ.real {x} * ν.real {x}`. -/
+theorem prod_real_diagonal {α : Type*} [MeasurableSpace α] [MeasurableEq α]
+    (μ ν : Measure α) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    (μ.prod ν).real (Set.diagonal α) = ∑' x : α, μ.real {x} * ν.real {x} :=
+  (hasSum_prod_real_diagonal μ ν).tsum_eq.symm
 
 /-- For a probability measure `μ` and any set `s`, the pairs having a first or a second coordinate
 in `s` have `μ.prod μ`-measure at most twice `μ s`. No measurability is needed. -/
