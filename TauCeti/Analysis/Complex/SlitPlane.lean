@@ -66,6 +66,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.add_ofReal_mem_slitPlane`,
+  `TauCeti.natCast_add_mem_slitPlane_iff`,
   `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.ne_neg_natCast_of_mem_slitPlane`
@@ -217,6 +218,13 @@ slit plane. -/
 theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
     z + (t : ℂ) ∈ slitPlane := by
   simpa only [add_comm] using ofReal_add_mem_slitPlane hz ht
+
+/-- Every nonnegative-integer shift `n + z` lies in the slit plane if and only if `z` itself lies
+in the slit plane. -/
+theorem natCast_add_mem_slitPlane_iff {z : ℂ} :
+    (∀ n : ℕ, (n : ℂ) + z ∈ slitPlane) ↔ z ∈ slitPlane :=
+  ⟨fun h => by simpa using h 0, fun hz n => by
+    simpa only [Complex.ofReal_natCast] using ofReal_add_mem_slitPlane hz (Nat.cast_nonneg n)⟩
 
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/
