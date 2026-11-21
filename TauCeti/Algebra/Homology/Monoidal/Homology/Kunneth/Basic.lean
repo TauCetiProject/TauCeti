@@ -349,6 +349,26 @@ lemma homologyKunneth_comp_eqToHom (e : L' = L) (n : I) :
 
 end EqToHom
 
+section EqToHomLeft
+
+universe u
+
+variable {R : Type u} [CommRing R] {I : Type*} [Small.{u} I] [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] {K K' : HomologicalComplex (ModuleCat.{u} R) c}
+  (L : HomologicalComplex (ModuleCat.{u} R) c)
+
+/-- The Künneth map is compatible with replacing the first complex by an equal one. -/
+@[reassoc]
+lemma homologyKunneth_comp_eqToHom_left (e : K' = K) (n : I) :
+    homologyKunneth K' L n ≫ eqToHom (congrArg (fun M ↦ (tensorObj M L).homology n) e) =
+      GradedObject.Monoidal.tensorHom (fun p ↦ eqToHom (congrArg (fun M ↦ M.homology p) e))
+        (𝟙 (fun q ↦ L.homology q)) n ≫ homologyKunneth K L n := by
+  subst e
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
+  simp
+
+end EqToHomLeft
+
 section FlatZeroDifferential
 
 /-! ### One factor with zero differentials and flat terms -/
