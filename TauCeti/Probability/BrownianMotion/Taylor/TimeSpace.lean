@@ -22,8 +22,9 @@ This identifies the finite-variation time term in the partition proof of the
 time-dependent Itô formula. It does not yet identify the spatial linear sum with a
 stochastic integral or the spatial quadratic sum with its time-integral limit.
 There are no growth or moment assumptions on the function, no filtration hypothesis,
-and no nestedness requirement on the partitions. Repeated dates and a zero-length
-horizon are allowed.
+and no nestedness requirement on the partitions. The family may be indexed by any
+filter, and the grid conditions need only hold eventually. Repeated dates and a
+zero-length horizon are allowed.
 
 ## References
 
@@ -41,7 +42,7 @@ namespace ProbabilityTheory.IsBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {B : ℝ≥0 → Ω → ℝ} {f g : ℝ → ℝ → ℝ} {a b : ℝ≥0}
 
-private theorem aestronglyMeasurable_timeSpaceRemainder (hB : IsBrownianReal B P)
+private theorem aestronglyMeasurable_sub_sum_taylor_two (hB : IsBrownianReal B P)
     (hf : ∀ t ∈ Icc (a : ℝ) b, ContDiff ℝ 2 (f t))
     {n : ℕ} {τ : ℕ → ℝ≥0} (hτ : MonotoneOn τ (Iic n))
     (ha : τ 0 = a) (hb : τ n = b) :
@@ -66,14 +67,7 @@ private theorem aestronglyMeasurable_timeSpaceRemainder (hB : IsBrownianReal B P
       ((hf _ (hs i hi)).deriv'.continuous_deriv_one).comp_aestronglyMeasurable (hm _)
         |>.mul (((hm _).sub (hm _)).pow 2)))
 
-/-- **Time-dependent Brownian Taylor partition formula.** Subtracting the first two
-spatial Taylor sums from the endpoint increment leaves the integral of the time derivative,
-in probability along every deterministic vanishing-mesh sequence.
-
-Only the spatial slices must be `C²`; the time derivative and spatial second derivative
-are jointly continuous on the closed time horizon. No mixed derivatives, growth bounds,
-filtration, or moments of the transformed process are assumed. -/
-theorem tendstoInMeasure_sub_sum_taylor_two_timeSpace (hB : IsBrownianReal B P)
+private theorem tendstoInMeasure_sub_sum_taylor_two_integral_atTop (hB : IsBrownianReal B P)
     (hf : ∀ t ∈ Icc (a : ℝ) b, ContDiff ℝ 2 (f t))
     (h₂ : ContinuousOn (fun p : ℝ × ℝ ↦ iteratedDeriv 2 (f p.1) p.2)
       (Icc (a : ℝ) b ×ˢ univ))
@@ -101,7 +95,7 @@ theorem tendstoInMeasure_sub_sum_taylor_two_timeSpace (hB : IsBrownianReal B P)
     ha hb (fun k i ↦ hmesh k i i.isLt) hδ
     (fun k i ↦ (τ k i : ℝ)) (fun k i ↦ hcell k i i.isLt.le)
   apply (exists_seq_tendstoInMeasure_atTop_iff (fun k ↦
-    aestronglyMeasurable_timeSpaceRemainder hB hf (hτ k) (ha k) (hb k))).2
+    aestronglyMeasurable_sub_sum_taylor_two hB hf (hτ k) (ha k) (hb k))).2
   intro φ hφ
   obtain ⟨ψ, hψ, hlim⟩ := (hspatial.comp hφ.tendsto_atTop).exists_seq_tendsto_ae
   refine ⟨ψ, hψ, ?_⟩
@@ -137,5 +131,43 @@ theorem tendstoInMeasure_sub_sum_taylor_two_timeSpace (hB : IsBrownianReal B P)
   apply Finset.sum_congr rfl
   intro i _
   ring
+
+/-- **Time-dependent Brownian Taylor partition formula.** Subtracting the first two
+spatial Taylor sums from the endpoint increment leaves the integral of the time derivative,
+in probability along a deterministic vanishing-mesh family indexed by any filter.
+The grid conditions need only hold eventually.
+
+Only the spatial slices must be `C²`; the time derivative and spatial second derivative
+are jointly continuous on the closed time horizon. No mixed derivatives, growth bounds,
+filtration, or moments of the transformed process are assumed. -/
+theorem tendstoInMeasure_sub_sum_taylor_two_integral (hB : IsBrownianReal B P)
+    (hf : ∀ t ∈ Icc (a : ℝ) b, ContDiff ℝ 2 (f t))
+    (h₂ : ContinuousOn (fun p : ℝ × ℝ ↦ iteratedDeriv 2 (f p.1) p.2)
+      (Icc (a : ℝ) b ×ˢ univ))
+    (hg : ContinuousOn (Function.uncurry g) (Icc (a : ℝ) b ×ˢ univ))
+    (htime : ∀ x t, t ∈ Icc (a : ℝ) b →
+      HasDerivWithinAt (fun u ↦ f u x) (g t x) (Icc (a : ℝ) b) t)
+    {ι : Type*} {l : Filter ι} {N : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {δ : ι → ℝ}
+    (hτ : ∀ᶠ k in l, MonotoneOn (τ k) (Iic (N k)))
+    (ha : ∀ᶠ k in l, τ k 0 = a) (hb : ∀ᶠ k in l, τ k (N k) = b)
+    (hmesh : ∀ᶠ k in l, ∀ i < N k, (τ k (i + 1) : ℝ) - τ k i ≤ δ k)
+    (hδ : Tendsto δ l (𝓝 0)) :
+    TendstoInMeasure P (fun k ω ↦ f b (B b ω) - f a (B a ω) -
+      (∑ i ∈ Finset.range (N k), deriv (f (τ k i)) (B (τ k i) ω) *
+        (B (τ k (i + 1)) ω - B (τ k i) ω)) -
+      1 / 2 * ∑ i ∈ Finset.range (N k), deriv (deriv (f (τ k i))) (B (τ k i) ω) *
+        (B (τ k (i + 1)) ω - B (τ k i) ω) ^ 2) l
+      (fun ω ↦ ∫ t in (a : ℝ)..b, g t (B t.toNNReal ω)) := by
+  intro ε hε
+  by_contra hbad
+  obtain ⟨S, hS, hfreq⟩ := not_tendsto_iff_exists_frequently_notMem.1 hbad
+  -- Extract valid grids with mesh tending to zero that all violate the same bound.
+  obtain ⟨u, hu, hgood⟩ := exists_seq_forall_of_frequently <|
+    (hfreq.and_eventually (hτ.and (ha.and (hb.and hmesh)))).filter_mono hδ.le_comap
+  have hlim := tendstoInMeasure_sub_sum_taylor_two_integral_atTop hB hf h₂ hg htime
+    (N := N ∘ u) (τ := τ ∘ u) (fun k ↦ (hgood k).2.1) (fun k ↦ (hgood k).2.2.1)
+    (fun k ↦ (hgood k).2.2.2.1) (fun k ↦ (hgood k).2.2.2.2) (tendsto_comap_iff.1 hu)
+  obtain ⟨k, hk⟩ := ((hlim ε hε).eventually hS).exists
+  exact (hgood k).1 hk
 
 end ProbabilityTheory.IsBrownianReal
