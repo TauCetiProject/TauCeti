@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
-# Bilinear product identities for Gauss hypergeometric series
+# Product identities for Gauss hypergeometric series
 
 Two classical bilinear combinations of Gauss hypergeometric functions collapse to constant multiples
 of reciprocal Gamma products — Wronskian-type identities for contiguous solutions of the
@@ -36,6 +38,17 @@ complementary arguments `z` and `1 - z` on the open lens `{z | ‖z‖ < 1 ∧ �
 At `λ = μ = ν = 0` this specializes to Legendre's classical relation `2 / π` for the complete
 elliptic hypergeometric series at `z` and `1 - z`.
 
+The third identity is the Burchnall–Chaundy product formula (DLMF 15.16.3), which expands the
+product of two Gauss functions with the same parameters at arguments `z` and `ζ` in Gauss functions
+at `z + ζ - z ζ`, for `‖z‖ < 1`, `‖ζ‖ < 1` and `‖z + ζ - z ζ‖ < 1`:
+`𝐅(a, b; c; z) 𝐅(a, b; c; ζ)`
+`= ∑ₛ (a)ₛ (b)ₛ (c - a)ₛ (c - b)ₛ / (s! Γ(c + s)) (z ζ)ˢ 𝐅(a + s, b + s; c + 2s; z + ζ - z ζ)`.
+The coefficient of `ζⁿ` on the right is a finite sum over `s ≤ n`, which the `n`-fold iterate of
+the contiguous relation `Complex.regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul` identifies with
+the coefficient of `ζⁿ` on the left. The coefficients of the resulting double series grow at most
+polynomially, so it converges absolutely when `‖z‖ + ‖ζ‖ ‖1 - z‖ < 1`; on the rest of the domain
+both sides are holomorphic in `ζ` on a convex set, and the identity theorem applies.
+
 ## Main results
 
 * `Complex.regularizedGaussHGFun_mul_neg_sub_eq_inv_Gamma_mul`,
@@ -49,14 +62,20 @@ elliptic hypergeometric series at `z` and `1 - z`.
   `ordinaryHypergeometric` when `1 + lam + mu` and `1 + nu + mu` avoid nonpositive integers.
 * `Complex.ordinaryHypergeometric_legendreRelation_zero` — the `lam = mu = nu = 0` elliptic
   specialization with right-hand side `2 / π`.
+* `Complex.hasSum_regularizedGaussHGFun_mul_regularizedGaussHGFun` — regularized form of the
+  Burchnall–Chaundy product formula (DLMF 15.16.3), valid for all `a, b, c : ℂ`.
+* `Complex.hasSum_ordinaryHypergeometric_mul_ordinaryHypergeometric` — DLMF 15.16.3 for
+  `ordinaryHypergeometric` when `c` is not a nonpositive integer.
 
 ## References
 
+* J. L. Burchnall and T. W. Chaundy, *Expansions of Appell's double hypergeometric functions*,
+  Quart. J. Math. Oxford Ser. **11** (1940), 249–270.
 * E. B. Elliott, *A formula including Legendre's $EK' + KE' - KK' = \frac{1}{2}\pi$*, Messenger of
   Mathematics **33** (1904), 31–32.
 * A. Erdélyi, W. Magnus, F. Oberhettinger, and F. G. Tricomi, *Higher Transcendental Functions*,
   Vol. I, McGraw–Hill, 1953, §2.1.4 and §2.4.
-* NIST *Digital Library of Mathematical Functions*, §15.16, equations 15.16.4 and 15.16.5,
+* NIST *Digital Library of Mathematical Functions*, §15.16, equations 15.16.3–15.16.5,
   <https://dlmf.nist.gov/15.16>.
 -/
 
@@ -71,20 +90,6 @@ namespace Complex
 
 /-! ### Bilinear product at opposite parameters (DLMF 15.16.4) -/
 
-private theorem mul_regularizedGaussHGFun_eq (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
-    a * regularizedGaussHGFun a b c z =
-      a * (c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
-        (a - c) * (b - c) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z) := by
-  have h₂ := regularizedGaussHGFun_eq_sub_mul_add_mul b a c hz
-  rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b a,
-    regularizedGaussHGFun_symm (b + 1) a] at h₂
-  have h₅ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b c hz
-  have h₇ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b (c + 1) hz
-  have hc2 : c + 1 + 1 = c + 2 := by ring
-  rw [hc2] at h₇
-  have h₉ := regularizedGaussHGFun_eq_sub_mul_add_mul a (b + 1) c hz
-  linear_combination -(c - a) * h₂ - (c - a) * (c - b) * h₇ + c * h₅ + c * h₉
-
 private theorem hasDerivAt_regularizedGaussHGFun_mul_neg_sub (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasDerivAt (fun w =>
       regularizedGaussHGFun a b c w * regularizedGaussHGFun (-a) (-b) (-c) w -
@@ -93,8 +98,8 @@ private theorem hasDerivAt_regularizedGaussHGFun_mul_neg_sub (a b c : ℂ) {z : 
             regularizedGaussHGFun (1 - a) (1 - b) (2 - c) w) 0 z := by
   have hdf₀ := hasDerivAt_regularizedGaussHGFun a b c hz
   have hdg₀ := hasDerivAt_regularizedGaussHGFun (-a) (-b) (-c) hz
-  have hs₁ := mul_regularizedGaussHGFun_eq a b c hz
-  have hs₂ := mul_regularizedGaussHGFun_eq (-a) (-b) (-c) hz
+  have hs₁ := regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul a b c hz
+  have hs₂ := regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul (-a) (-b) (-c) hz
   have hn1 (s : ℂ) : -s + 1 = 1 - s := by ring
   have hn2 (s : ℂ) : -s + 2 = 2 - s := by ring
   have hp2 : c + 2 = 2 + c := add_comm c 2
@@ -115,8 +120,8 @@ private theorem hasDerivAt_regularizedGaussHGFun_mul_neg_sub (a b c : ℂ) {z : 
   rw [h1c] at hc₁
   rw [h2c] at hc₂
   linear_combination
-    b * regularizedGaussHGFun (1 - a) (1 - b) (1 - c) z * hs₁ -
-      b * regularizedGaussHGFun (1 + a) (1 + b) (1 + c) z * hs₂ -
+    a * b * regularizedGaussHGFun (1 - a) (1 - b) (1 - c) z * hs₁ +
+      a * b * regularizedGaussHGFun (1 + a) (1 + b) (1 + c) z * hs₂ -
       a * b * (a - c) * (b - c) * z *
         regularizedGaussHGFun (1 - a) (1 - b) (2 - c) z * hc₁ -
       a * b * (a - c) * (b - c) * z *
@@ -440,6 +445,559 @@ theorem ordinaryHypergeometric_legendreRelation_zero {z : ℂ} (hz₀ : ‖z‖ 
     push_cast
     ring
   rw [Gamma_one, mul_one, one_mul, ← mul_inv, hΓ, inv_div]
+
+/-! ### Burchnall–Chaundy product formula (DLMF 15.16.3) -/
+
+section BurchnallChaundy
+
+open Finset
+
+/-- The weight `C(s + m, s) (c + s)ₘ` of `z ^ s (1 - z) ^ m 𝐅(a + s + m, b + s + m; c + 2s + m; z)`
+in the `(s + m)`-fold iterate of `Complex.regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul`. -/
+private noncomputable def bcWeight (c : ℂ) (s m : ℕ) : ℂ :=
+  ((s + m).choose s : ℂ) * (ascPochhammer ℂ m).eval (c + s)
+
+/-- The factor `(c - a)ₛ (c - b)ₛ` of the iterated contiguous relation. -/
+private noncomputable def bcP (a b c : ℂ) (s : ℕ) : ℂ :=
+  (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b)
+
+/-- The term `z ^ s (1 - z) ^ m 𝐅(a + s + m, b + s + m; c + 2s + m; z)` of the iterated contiguous
+relation. -/
+private noncomputable def bcX (a b c z : ℂ) (s m : ℕ) : ℂ :=
+  z ^ s * (1 - z) ^ m * regularizedGaussHGFun (a + s + m) (b + s + m) (c + 2 * s + m) z
+
+/-- Pascal-type recurrence for `bcWeight`, splitting off the last step of the iteration. -/
+private theorem bcWeight_eq (c : ℂ) {s m : ℕ} (h : s + m ≠ 0) :
+    bcWeight c s m =
+      (if m = 0 then 0 else bcWeight c s (m - 1) * (c + 2 * s + (m - 1 : ℕ))) +
+        (if s = 0 then 0 else bcWeight c (s - 1) m) := by
+  rcases s with _ | s <;> rcases m with _ | m
+  · simp at h
+  · simp [bcWeight, ascPochhammer_succ_eval]
+  · simp [bcWeight]
+  · simp only [Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, bcWeight]
+    set N := s + m + 1
+    rw [show s + 1 + (m + 1) = N + 1 by omega, show s + 1 + m = N by omega,
+      show s + (m + 1) = N by omega, show c + ((s + 1 : ℕ) : ℂ) = c + s + 1 by push_cast; ring]
+    have h₁ : ((N + 1).choose (s + 1) : ℂ) = N.choose s + N.choose (s + 1) := by
+      exact_mod_cast Nat.choose_succ_succ N s
+    have h₂ : (N.choose (s + 1) : ℂ) * (s + 1) = N.choose s * (m + 1) := by
+      have := Nat.choose_succ_right_eq N s
+      rw [show N - s = m + 1 by omega] at this
+      exact_mod_cast this
+    have hp : (ascPochhammer ℂ (m + 1)).eval (c + s) =
+        (c + s) * (ascPochhammer ℂ m).eval (c + s + 1) := by
+      rw [ascPochhammer_succ_eval, ← ascPochhammer_eval_succ]
+    rw [ascPochhammer_succ_eval, hp]
+    push_cast
+    linear_combination (ascPochhammer ℂ m).eval (c + s + 1) * ((c + s + 1 + m) * h₁ - h₂)
+
+/-- One step of `Complex.regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul` on the terms `bcX`. -/
+private theorem bcP_mul_bcX (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) (s m : ℕ) :
+    bcP a b c s * bcX a b c z s m = (c + 2 * s + m) * bcP a b c s * bcX a b c z s (m + 1) +
+      bcP a b c (s + 1) * bcX a b c z (s + 1) m := by
+  simp only [bcP, bcX, ascPochhammer_succ_eval]
+  rw [regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul _ _ _ hz]
+  push_cast
+  ring_nf
+
+/-- Iterating `Complex.regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul` `n` times. -/
+private theorem regularizedGaussHGFun_eq_sum_bcWeight (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1)
+    (n : ℕ) :
+    regularizedGaussHGFun a b c z =
+      ∑ p ∈ antidiagonal n, bcWeight c p.1 p.2 * (bcP a b c p.1 * bcX a b c z p.1 p.2) := by
+  induction n with
+  | zero => simp [bcWeight, bcP, bcX]
+  | succ n ih =>
+    rw [ih]
+    calc ∑ p ∈ antidiagonal n, bcWeight c p.1 p.2 * (bcP a b c p.1 * bcX a b c z p.1 p.2)
+        = ∑ p ∈ antidiagonal n, (bcWeight c p.1 p.2 * (c + 2 * p.1 + p.2) *
+            (bcP a b c p.1 * bcX a b c z p.1 (p.2 + 1)) +
+          bcWeight c p.1 p.2 * (bcP a b c (p.1 + 1) * bcX a b c z (p.1 + 1) p.2)) :=
+          sum_congr rfl fun p _ => by rw [bcP_mul_bcX a b c hz]; ring
+      _ = ∑ p ∈ antidiagonal (n + 1),
+            ((if p.2 = 0 then 0 else bcWeight c p.1 (p.2 - 1) * (c + 2 * p.1 + (p.2 - 1 : ℕ))) *
+              (bcP a b c p.1 * bcX a b c z p.1 p.2) +
+            (if p.1 = 0 then 0 else bcWeight c (p.1 - 1) p.2) *
+              (bcP a b c p.1 * bcX a b c z p.1 p.2)) := by
+          rw [sum_add_distrib, sum_add_distrib, Nat.sum_antidiagonal_succ',
+            Nat.sum_antidiagonal_succ]
+          simp
+      _ = ∑ p ∈ antidiagonal (n + 1), bcWeight c p.1 p.2 * (bcP a b c p.1 * bcX a b c z p.1 p.2) :=
+          sum_congr rfl fun p hp => by
+            rw [bcWeight_eq c (s := p.1) (m := p.2) (by rw [mem_antidiagonal] at hp; omega)]
+            ring
+
+/-- `bcWeight c s m / ((s + m)! Γ(c + s + m)) = 1 / (s! m! Γ(c + s))`, for all `c`. -/
+private theorem bcWeight_mul_inv (c : ℂ) (s m : ℕ) :
+    bcWeight c s m * (((s + m)! : ℂ)⁻¹ * (Gamma (c + (s + m : ℕ)))⁻¹) =
+      (s ! : ℂ)⁻¹ * (m ! : ℂ)⁻¹ * (Gamma (c + s))⁻¹ := by
+  rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + s) m, bcWeight,
+    show c + ((s + m : ℕ) : ℂ) = c + s + m by push_cast; ring]
+  have hf : ((s + m)! : ℂ) = (s + m).choose s * s ! * m ! := by
+    rw [Nat.choose_symm_add]
+    exact_mod_cast (Nat.add_choose_mul_factorial_mul_factorial s m).symm
+  have hC : ((s + m).choose s : ℂ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
+  rw [hf]
+  field_simp
+
+/-- The `m`-th Taylor coefficient at `z` of `𝐅(α, β; γ; ·)` collects the coefficients
+`C(m + i, m) 𝐅ₘ₊ᵢ` into `(α)ₘ (β)ₘ / m!` times the coefficients of `𝐅(α + m, β + m; γ + m; ·)`. -/
+private theorem choose_mul_coeff_regularizedGaussHGFunSeries (α β γ : ℂ) (m i : ℕ) :
+    ((m + i).choose m : ℂ) * (regularizedGaussHGFunSeries α β γ).coeff (m + i) =
+      (ascPochhammer ℂ m).eval α * (ascPochhammer ℂ m).eval β / m ! *
+        (regularizedGaussHGFunSeries (α + m) (β + m) (γ + m)).coeff i := by
+  simp only [coeff_regularizedGaussHGFunSeries]
+  rw [TauCeti.ascPochhammer_add_eval α m i, TauCeti.ascPochhammer_add_eval β m i,
+    show γ + ((m + i : ℕ) : ℂ) = γ + m + i by push_cast; ring]
+  have hf : ((m + i)! : ℂ) = (m + i).choose m * m ! * i ! := by
+    rw [Nat.choose_symm_add]
+    exact_mod_cast (Nat.add_choose_mul_factorial_mul_factorial m i).symm
+  have hC : ((m + i).choose m : ℂ) ≠ 0 := by exact_mod_cast (Nat.choose_pos (by omega)).ne'
+  rw [hf]
+  field_simp
+
+/-- The coefficient `(a)ₛ (b)ₛ (c - a)ₛ (c - b)ₛ / (s! Γ(c + s))` of the Burchnall–Chaundy
+expansion. -/
+private noncomputable def bcCoeff (a b c : ℂ) (s : ℕ) : ℂ :=
+  (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ s).eval b * (ascPochhammer ℂ s).eval (c - a) *
+    (ascPochhammer ℂ s).eval (c - b) / (s ! * Gamma (c + s))
+
+/-- The norm of a term of the Burchnall–Chaundy double series, with the Pochhammer symbols in `a`
+and `b` merged. -/
+private theorem norm_bcCoeff_mul_coeff (a b c : ℂ) (s j : ℕ) :
+    ‖bcCoeff a b c s‖ * ‖(regularizedGaussHGFunSeries (a + s) (b + s) (c + 2 * s)).coeff j‖ =
+      ‖(ascPochhammer ℂ (s + j)).eval a‖ * ‖(ascPochhammer ℂ (s + j)).eval b‖ *
+        (‖(ascPochhammer ℂ s).eval (c - a)‖ * ‖(ascPochhammer ℂ s).eval (c - b)‖) *
+        (‖(Gamma (c + s))⁻¹‖ * ‖(Gamma (c + (2 * s + j : ℕ)))⁻¹‖) / (s ! * j !) := by
+  rw [TauCeti.ascPochhammer_add_eval a s j, TauCeti.ascPochhammer_add_eval b s j,
+    show c + ((2 * s + j : ℕ) : ℂ) = c + 2 * s + j by push_cast; ring]
+  simp only [bcCoeff, coeff_regularizedGaussHGFunSeries, norm_mul, norm_inv,
+    Complex.norm_natCast, div_eq_mul_inv, mul_inv]
+  ring
+
+/-- `(s + j)!² ≤ (2s + j)! j!`, which makes the factorials in the Burchnall–Chaundy double series
+cancel. -/
+private theorem factorial_add_mul_factorial_add_le (s j : ℕ) :
+    ((s + j)! : ℝ) * (s + j)! ≤ (2 * s + j)! * j ! := by
+  have e₁ := Nat.add_choose_mul_factorial_mul_factorial j s
+  have e₂ := Nat.add_choose_mul_factorial_mul_factorial (s + j) s
+  have e₃ : (j + s).choose s ≤ (s + j + s).choose s := Nat.choose_le_choose s (by omega)
+  rw [add_comm j s] at e₁ e₃
+  rw [show 2 * s + j = s + j + s by omega]
+  have h : (s + j)! * (s + j)! ≤ (s + j + s)! * j ! :=
+    calc (s + j)! * (s + j)! = (s + j).choose s * j ! * s ! * (s + j)! := by rw [e₁]
+      _ ≤ (s + j + s).choose s * j ! * s ! * (s + j)! := by gcongr
+      _ = (s + j + s)! * j ! := by rw [← e₂]; ring
+  exact_mod_cast h
+
+/-- Polynomial growth of the Burchnall–Chaundy double series, from bounds on the Pochhammer symbols
+of the parameters and on `1 / Γ(c + k)`. -/
+private theorem norm_bcCoeff_mul_coeff_le (a b c : ℂ) {M N : ℕ} {G R : ℝ} (hR : 0 ≤ R)
+    (hpoch : ∀ {x : ℂ}, x ∈ ({a, b, c - a, c - b} : Set ℂ) → ∀ n : ℕ,
+      ‖(ascPochhammer ℂ n).eval x‖ ≤ n ! * ((M : ℝ) + n) ^ M)
+    (hgam : ∀ k : ℕ, ‖(Gamma (c + k))⁻¹‖ * k ! ≤ G * (R + k) ^ N) (s j : ℕ) :
+    ‖bcCoeff a b c s‖ * ‖(regularizedGaussHGFunSeries (a + s) (b + s) (c + 2 * s)).coeff j‖ ≤
+      G ^ 2 * ((M : ℝ) + R + 2) ^ (4 * M + 2 * N) *
+        (((s : ℝ) + 1) * ((j : ℝ) + 1)) ^ (4 * M + 2 * N) := by
+  have hA := mul_le_mul (hpoch (x := a) (by simp) (s + j)) (hpoch (x := b) (by simp) (s + j))
+    (norm_nonneg _) (by positivity)
+  have hB := mul_le_mul (hpoch (x := c - a) (by simp) s) (hpoch (x := c - b) (by simp) s)
+    (norm_nonneg _) (by positivity)
+  have hC : ‖(Gamma (c + s))⁻¹‖ * ‖(Gamma (c + (2 * s + j : ℕ)))⁻¹‖ ≤
+      G ^ 2 * ((R + s) ^ N * (R + (2 * s + j : ℕ)) ^ N) / (s ! * (2 * s + j)!) := by
+    rw [le_div_iff₀ (by positivity)]
+    calc ‖(Gamma (c + s))⁻¹‖ * ‖(Gamma (c + (2 * s + j : ℕ)))⁻¹‖ * (s ! * (2 * s + j)!)
+        = (‖(Gamma (c + s))⁻¹‖ * s !) * (‖(Gamma (c + (2 * s + j : ℕ)))⁻¹‖ * (2 * s + j)!) := by
+          ring
+      _ ≤ (G * (R + s) ^ N) * (G * (R + (2 * s + j : ℕ)) ^ N) :=
+          mul_le_mul (hgam s) (hgam _) (by positivity)
+            ((mul_nonneg (norm_nonneg _) (by positivity)).trans (hgam s))
+      _ = G ^ 2 * ((R + s) ^ N * (R + (2 * s + j : ℕ)) ^ N) := by ring
+  set Y : ℝ := ((M : ℝ) + R + 2) * (((s : ℝ) + 1) * ((j : ℝ) + 1))
+  have hs : (0 : ℝ) ≤ s := s.cast_nonneg
+  have hj : (0 : ℝ) ≤ j := j.cast_nonneg
+  have hpoly : ((M : ℝ) + (s + j : ℕ)) ^ M * ((M : ℝ) + (s + j : ℕ)) ^ M *
+      (((M : ℝ) + s) ^ M * ((M : ℝ) + s) ^ M) * ((R + s) ^ N * (R + (2 * s + j : ℕ)) ^ N) ≤
+        Y ^ (4 * M + 2 * N) := by
+    have h₁ : (M : ℝ) + (s + j : ℕ) ≤ Y := by push_cast; nlinarith [mul_nonneg hs hj]
+    have h₂ : (M : ℝ) + s ≤ Y := by nlinarith [mul_nonneg hs hj]
+    have h₃ : R + s ≤ Y := by nlinarith [mul_nonneg hs hj]
+    have h₄ : R + (2 * s + j : ℕ) ≤ Y := by push_cast; nlinarith [mul_nonneg hs hj]
+    calc _ ≤ Y ^ M * Y ^ M * (Y ^ M * Y ^ M) * (Y ^ N * Y ^ N) := by gcongr
+      _ = Y ^ (4 * M + 2 * N) := by ring
+  rw [norm_bcCoeff_mul_coeff]
+  calc _ ≤ ((s + j)! * ((M : ℝ) + (s + j : ℕ)) ^ M * ((s + j)! * ((M : ℝ) + (s + j : ℕ)) ^ M)) *
+        (s ! * ((M : ℝ) + s) ^ M * (s ! * ((M : ℝ) + s) ^ M)) *
+        (G ^ 2 * ((R + s) ^ N * (R + (2 * s + j : ℕ)) ^ N) / (s ! * (2 * s + j)!)) /
+          (s ! * j !) := by gcongr
+    _ = G ^ 2 * (((M : ℝ) + (s + j : ℕ)) ^ M * ((M : ℝ) + (s + j : ℕ)) ^ M *
+          (((M : ℝ) + s) ^ M * ((M : ℝ) + s) ^ M) * ((R + s) ^ N * (R + (2 * s + j : ℕ)) ^ N)) *
+          (((s + j)! : ℝ) * (s + j)! / ((2 * s + j)! * j !)) := by
+        field_simp
+    _ ≤ G ^ 2 * Y ^ (4 * M + 2 * N) * 1 := by
+        gcongr
+        exact (div_le_one (by positivity)).2 (factorial_add_mul_factorial_add_le s j)
+    _ = _ := by simp only [Y, mul_pow]; ring
+
+/-- The terms of the Burchnall–Chaundy double series grow at most polynomially. -/
+private theorem exists_norm_bcCoeff_mul_coeff_le (a b c : ℂ) : ∃ D : ℝ, ∃ Q : ℕ, ∀ s j : ℕ,
+    ‖bcCoeff a b c s‖ * ‖(regularizedGaussHGFunSeries (a + s) (b + s) (c + 2 * s)).coeff j‖ ≤
+      D * (((s : ℝ) + 1) * ((j : ℝ) + 1)) ^ Q := by
+  obtain ⟨M, hM⟩ := exists_nat_ge (‖a‖ + ‖b‖ + ‖c - a‖ + ‖c - b‖)
+  obtain ⟨N, hN⟩ := exists_nat_ge (1 - c.re)
+  have hpoch {x : ℂ} (hx : x ∈ ({a, b, c - a, c - b} : Set ℂ)) (n : ℕ) :
+      ‖(ascPochhammer ℂ n).eval x‖ ≤ n ! * ((M : ℝ) + n) ^ M := by
+    refine TauCeti.norm_ascPochhammer_eval_le_factorial_mul_pow n ?_
+    have := norm_nonneg a
+    have := norm_nonneg b
+    have := norm_nonneg (c - a)
+    have := norm_nonneg (c - b)
+    rcases hx with rfl | rfl | rfl | rfl <;> linarith
+  -- `‖1 / Γ(c + k)‖ k! ≤ ‖1 / Γ(c + N)‖ (M + N + k) ^ N`, from
+  -- `1 / Γ(c + k) = (c + k)_N / Γ(c + k + N)` and the factorial decay of `1 / Γ` on `1 ≤ re`.
+  have hgam (k : ℕ) : ‖(Gamma (c + k))⁻¹‖ * k ! ≤
+      ‖(Gamma (c + N))⁻¹‖ * (((M + N : ℕ) : ℝ) + k) ^ N := by
+    rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + k) N, norm_mul]
+    have h₁ : ‖(ascPochhammer ℂ N).eval (c + k)‖ ≤ (((M + N : ℕ) : ℝ) + k) ^ N := by
+      have hc : ‖c + k‖ ≤ ((M + k + 1 : ℕ) : ℝ) := by
+        have := norm_sub_norm_le c a
+        have := norm_nonneg b
+        have := norm_nonneg (c - b)
+        refine (norm_add_le _ _).trans ?_
+        push_cast
+        rw [Complex.norm_natCast]
+        linarith
+      refine (TauCeti.norm_ascPochhammer_eval_le_ascFactorial N hc).trans ?_
+      have := Nat.ascFactorial_le_pow_add (M + k) N
+      rw [show M + k + N = M + N + k by omega] at this
+      exact_mod_cast this
+    have h₂ : ‖(Gamma (c + k + N))⁻¹‖ * k ! ≤ ‖(Gamma (c + N))⁻¹‖ := by
+      have := norm_inv_Gamma_add_natCast_le (s := c + N) (by simp; linarith) k
+      rw [show c + k + N = c + N + k by ring]
+      rwa [le_div_iff₀ (by positivity)] at this
+    calc ‖(ascPochhammer ℂ N).eval (c + k)‖ * ‖(Gamma (c + k + N))⁻¹‖ * k !
+        = ‖(ascPochhammer ℂ N).eval (c + k)‖ * (‖(Gamma (c + k + N))⁻¹‖ * k !) := by ring
+      _ ≤ (((M + N : ℕ) : ℝ) + k) ^ N * ‖(Gamma (c + N))⁻¹‖ := by gcongr
+      _ = ‖(Gamma (c + N))⁻¹‖ * (((M + N : ℕ) : ℝ) + k) ^ N := by ring
+  exact ⟨_, _, norm_bcCoeff_mul_coeff_le a b c (by positivity) hpoch hgam⟩
+
+/-- Absolute convergence of the Burchnall–Chaundy double series for `0 ≤ x, y < 1`. -/
+private theorem summable_norm_bcCoeff_mul_tsum (a b c : ℂ) {x y : ℝ} (hx₀ : 0 ≤ x) (hx : x < 1)
+    (hy₀ : 0 ≤ y) (hy : y < 1) :
+    Summable fun s : ℕ => ‖bcCoeff a b c s‖ * x ^ s *
+      ∑' j, ‖(regularizedGaussHGFunSeries (a + s) (b + s) (c + 2 * s)).coeff j‖ * y ^ j := by
+  obtain ⟨D, Q, hDQ⟩ := exists_norm_bcCoeff_mul_coeff_le a b c
+  have hgeo {r : ℝ} (hr₀ : 0 ≤ r) (hr : r < 1) :
+      Summable fun n : ℕ => ((n : ℝ) + 1) ^ Q * r ^ n := by
+    have hr' : ‖r‖ < 1 := by rwa [Real.norm_of_nonneg hr₀]
+    refine (((summable_pow_mul_geometric_of_norm_lt_one Q hr').add
+      (summable_geometric_of_lt_one hr₀ hr)).mul_left (2 ^ (Q - 1))).of_nonneg_of_le
+      (fun n => mul_nonneg (pow_nonneg n.cast_add_one_pos.le _) (pow_nonneg hr₀ _)) fun n => ?_
+    calc ((n : ℝ) + 1) ^ Q * r ^ n ≤ 2 ^ (Q - 1) * ((n : ℝ) ^ Q + 1 ^ Q) * r ^ n := by
+          gcongr; exact add_pow_le n.cast_nonneg zero_le_one Q
+      _ = 2 ^ (Q - 1) * ((n : ℝ) ^ Q * r ^ n + r ^ n) := by ring
+  set F : ℕ × ℕ → ℝ := fun p => ‖bcCoeff a b c p.1‖ * x ^ p.1 *
+    (‖(regularizedGaussHGFunSeries (a + p.1) (b + p.1) (c + 2 * p.1)).coeff p.2‖ * y ^ p.2)
+  have hF₀ : 0 ≤ F := fun p => mul_nonneg (mul_nonneg (norm_nonneg _) (pow_nonneg hx₀ _))
+    (mul_nonneg (norm_nonneg _) (pow_nonneg hy₀ _))
+  have hF : Summable F := by
+    refine (((hgeo hx₀ hx).mul_of_nonneg (hgeo hy₀ hy)
+      (fun n => mul_nonneg (pow_nonneg n.cast_add_one_pos.le _) (pow_nonneg hx₀ _))
+      fun n => mul_nonneg (pow_nonneg n.cast_add_one_pos.le _) (pow_nonneg hy₀ _)).mul_left
+        D).of_nonneg_of_le hF₀ fun p => ?_
+    calc F p = ‖bcCoeff a b c p.1‖ *
+          ‖(regularizedGaussHGFunSeries (a + p.1) (b + p.1) (c + 2 * p.1)).coeff p.2‖ *
+            (x ^ p.1 * y ^ p.2) := by simp only [F]; ring
+      _ ≤ D * (((p.1 : ℝ) + 1) * ((p.2 : ℝ) + 1)) ^ Q * (x ^ p.1 * y ^ p.2) :=
+          mul_le_mul_of_nonneg_right (hDQ p.1 p.2) (by positivity)
+      _ = D * ((((p.1 : ℝ) + 1) ^ Q * x ^ p.1) * (((p.2 : ℝ) + 1) ^ Q * y ^ p.2)) := by
+          rw [mul_pow]; ring
+  refine ((summable_prod_of_nonneg hF₀).1 hF).2.congr fun s => ?_
+  simp only [F]
+  rw [tsum_mul_left]
+
+/-- A bound for `𝐅(α, β; γ; w)` by its majorant series. -/
+private theorem norm_regularizedGaussHGFun_le_tsum (α β γ : ℂ) {w : ℂ} {y : ℝ} (hw : ‖w‖ ≤ y)
+    (hy : y < 1) :
+    ‖regularizedGaussHGFun α β γ w‖ ≤
+      ∑' j, ‖(regularizedGaussHGFunSeries α β γ).coeff j‖ * y ^ j := by
+  have hy₀ : 0 ≤ y := (norm_nonneg w).trans hw
+  have hs := (summable_coeff_regularizedGaussHGFunSeries_mul_pow α β γ
+    (z := (y : ℂ)) (by rwa [norm_real, Real.norm_of_nonneg hy₀])).norm
+  simp only [norm_mul, norm_pow, norm_real, Real.norm_of_nonneg hy₀] at hs
+  have hle (j : ℕ) : ‖(regularizedGaussHGFunSeries α β γ).coeff j * w ^ j‖ ≤
+      ‖(regularizedGaussHGFunSeries α β γ).coeff j‖ * y ^ j := by
+    rw [norm_mul, norm_pow]; gcongr
+  have hs' := hs.of_nonneg_of_le (fun _ => norm_nonneg _) hle
+  rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow]
+  exact (norm_tsum_le_tsum_norm hs').trans (Summable.tsum_le_tsum hle hs' hs)
+
+/-- The binomial double series of `𝐅(α, β; γ; u + z)` in powers of `u` and `z`, in norm. -/
+private theorem hasSum_norm_choose_mul_coeff (α β γ : ℂ) {u z : ℂ} (h : ‖u‖ + ‖z‖ < 1) :
+    HasSum (fun q : ℕ × ℕ => ‖((q.1 + q.2).choose q.1 : ℂ) *
+        (regularizedGaussHGFunSeries α β γ).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2)‖)
+      (∑' n, ‖(regularizedGaussHGFunSeries α β γ).coeff n‖ * (‖u‖ + ‖z‖) ^ n) := by
+  set g : ℕ × ℕ → ℝ := fun q => ‖((q.1 + q.2).choose q.1 : ℂ) *
+    (regularizedGaussHGFunSeries α β γ).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2)‖
+  have hfib (n : ℕ) : ∑ q ∈ antidiagonal n, g q =
+      ‖(regularizedGaussHGFunSeries α β γ).coeff n‖ * (‖u‖ + ‖z‖) ^ n := by
+    rw [(Commute.all _ _).add_pow', mul_sum]
+    refine sum_congr rfl fun q hq => ?_
+    rw [mem_antidiagonal] at hq
+    simp only [g, norm_mul, norm_pow, Complex.norm_natCast, hq, nsmul_eq_mul]
+    ring
+  have h₀ : 0 ≤ ‖u‖ + ‖z‖ := by positivity
+  have hy : Summable fun n =>
+      ‖(regularizedGaussHGFunSeries α β γ).coeff n‖ * (‖u‖ + ‖z‖) ^ n := by
+    have := (summable_coeff_regularizedGaussHGFunSeries_mul_pow α β γ
+      (z := ((‖u‖ + ‖z‖ : ℝ) : ℂ)) (by rwa [norm_real, Real.norm_of_nonneg h₀])).norm
+    simpa only [norm_mul, norm_pow, norm_real, Real.norm_of_nonneg h₀] using this
+  have hgs : Summable g := by
+    rw [← HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff]
+    refine (summable_sigma_of_nonneg fun _ => norm_nonneg _).2
+      ⟨fun n => Summable.of_finite, hy.congr fun n => ?_⟩
+    rw [tsum_fintype]
+    exact ((sum_coe_sort (antidiagonal n) g).trans (hfib n)).symm
+  have hgrp := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hgs.hasSum).sigma
+    fun n => Finset.hasSum (antidiagonal n) g
+  rw [show (fun n => ∑ q ∈ antidiagonal n, g q) = _ from funext hfib] at hgrp
+  have hg := hgs.hasSum
+  rwa [← hgrp.tsum_eq] at hg
+
+/-- The binomial double series of `𝐅(α, β; γ; u + z)` in powers of `u` and `z`. -/
+private theorem hasSum_choose_mul_coeff (α β γ : ℂ) {u z : ℂ} (h : ‖u‖ + ‖z‖ < 1) :
+    HasSum (fun q : ℕ × ℕ => ((q.1 + q.2).choose q.1 : ℂ) *
+        (regularizedGaussHGFunSeries α β γ).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2))
+      (regularizedGaussHGFun α β γ (u + z)) := by
+  set f : ℕ × ℕ → ℂ := fun q => ((q.1 + q.2).choose q.1 : ℂ) *
+    (regularizedGaussHGFunSeries α β γ).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2)
+  have hs : Summable f := (hasSum_norm_choose_mul_coeff α β γ h).summable.of_norm
+  have hgrp := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hs.hasSum).sigma
+    fun n => Finset.hasSum (antidiagonal n) f
+  have hfib (n : ℕ) : ∑ q ∈ antidiagonal n, f q =
+      (regularizedGaussHGFunSeries α β γ).coeff n * (u + z) ^ n := by
+    rw [(Commute.all _ _).add_pow', mul_sum]
+    refine sum_congr rfl fun q hq => ?_
+    rw [mem_antidiagonal] at hq
+    simp only [f, hq, nsmul_eq_mul]
+    ring
+  rw [show (fun n => ∑ q ∈ antidiagonal n, f q) = _ from funext hfib] at hgrp
+  have hF := hs.hasSum
+  rwa [← (hasSum_regularizedGaussHGFun α β γ ((norm_add_le _ _).trans_lt h)).unique hgrp] at hF
+
+/-- The coefficient of `ζ ^ n` in the Burchnall–Chaundy double series. -/
+private theorem sum_antidiagonal_bcCoeff (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) (ζ : ℂ) (n : ℕ) :
+    ∑ q ∈ antidiagonal n, bcCoeff a b c q.1 * (z * ζ) ^ q.1 * ((ζ * (1 - z)) ^ q.2 *
+        ((ascPochhammer ℂ q.2).eval (a + q.1) * (ascPochhammer ℂ q.2).eval (b + q.1) / q.2 ! *
+          regularizedGaussHGFun (a + q.1 + q.2) (b + q.1 + q.2) (c + 2 * q.1 + q.2) z)) =
+      (regularizedGaussHGFunSeries a b c).coeff n * ζ ^ n * regularizedGaussHGFun a b c z := by
+  rw [regularizedGaussHGFun_eq_sum_bcWeight a b c hz n, mul_sum]
+  refine sum_congr rfl fun q hq => ?_
+  obtain ⟨s, m⟩ := q
+  rw [mem_antidiagonal] at hq
+  subst hq
+  have hw := bcWeight_mul_inv c s m
+  simp only [bcCoeff, bcP, bcX, coeff_regularizedGaussHGFunSeries,
+    TauCeti.ascPochhammer_add_eval a s m, TauCeti.ascPochhammer_add_eval b s m, div_eq_mul_inv,
+    mul_inv, mul_pow] at hw ⊢
+  linear_combination (-(ascPochhammer ℂ s).eval a * (ascPochhammer ℂ m).eval (a + s) *
+    ((ascPochhammer ℂ s).eval b * (ascPochhammer ℂ m).eval (b + s)) *
+    ((ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b)) *
+    (z ^ s * (1 - z) ^ m *
+      regularizedGaussHGFun (a + s + m) (b + s + m) (c + 2 * s + m) z) * ζ ^ (s + m)) * hw
+
+/-- The triple series behind the Burchnall–Chaundy formula, indexed by `(s, (m, i))`, where `m` is
+the power of `ζ (1 - z)` and `i` the power of `z` in the binomial expansion of
+`𝐅(a + s, b + s; c + 2s; ζ (1 - z) + z)`. -/
+private noncomputable def bcTriple (a b c z ζ : ℂ) (p : ℕ × ℕ × ℕ) : ℂ :=
+  bcCoeff a b c p.1 * (z * ζ) ^ p.1 * (((p.2.1 + p.2.2).choose p.2.1 : ℂ) *
+    (regularizedGaussHGFunSeries (a + p.1) (b + p.1) (c + 2 * p.1)).coeff (p.2.1 + p.2.2) *
+      ((ζ * (1 - z)) ^ p.2.1 * z ^ p.2.2))
+
+/-- The triple series `bcTriple` converges absolutely when `‖z ζ‖ < 1` and
+`‖ζ (1 - z)‖ + ‖z‖ < 1`. -/
+private theorem summable_bcTriple (a b c : ℂ) {z ζ : ℂ} (hzζ : ‖z * ζ‖ < 1)
+    (hu : ‖ζ * (1 - z)‖ + ‖z‖ < 1) : Summable (bcTriple a b c z ζ) := by
+  refine Summable.of_norm ((summable_prod_of_nonneg fun p => norm_nonneg _).2
+    ⟨fun s => ?_, ?_⟩)
+  · exact ((hasSum_norm_choose_mul_coeff (a + s) (b + s) (c + 2 * s) hu).summable.mul_left
+      ‖bcCoeff a b c s * (z * ζ) ^ s‖).congr fun q => (norm_mul _ _).symm
+  · refine (summable_norm_bcCoeff_mul_tsum a b c (norm_nonneg _) hzζ (by positivity) hu).congr
+      fun s => ?_
+    simp only [bcTriple]
+    rw [tsum_congr fun q => norm_mul (bcCoeff a b c s * (z * ζ) ^ s) _, tsum_mul_left,
+      (hasSum_norm_choose_mul_coeff (a + s) (b + s) (c + 2 * s) hu).tsum_eq]
+    simp only [norm_mul, norm_pow]
+
+/-- The Burchnall–Chaundy expansion where the binomial double series converges absolutely. -/
+private theorem hasSum_bcCoeff_of_norm_add_norm_mul_lt_one (a b c : ℂ) {z ζ : ℂ}
+    (h : ‖z‖ + ‖ζ‖ * ‖1 - z‖ < 1) :
+    HasSum (fun s : ℕ => bcCoeff a b c s * (z * ζ) ^ s *
+        regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ζ - z * ζ))
+      (regularizedGaussHGFun a b c z * regularizedGaussHGFun a b c ζ) := by
+  have hζz := mul_nonneg (norm_nonneg ζ) (norm_nonneg (1 - z))
+  have hz : ‖z‖ < 1 := by linarith
+  have hζ : ‖ζ‖ < 1 := by
+    have h₁ : 1 - ‖z‖ ≤ ‖1 - z‖ := by simpa using norm_sub_norm_le (1 : ℂ) z
+    nlinarith [mul_le_mul_of_nonneg_left h₁ (norm_nonneg ζ)]
+  have hu : ‖ζ * (1 - z)‖ + ‖z‖ < 1 := by rw [norm_mul]; linarith
+  have hΦ := summable_bcTriple a b c (by rw [norm_mul]; nlinarith [norm_nonneg z, norm_nonneg ζ]) hu
+  -- Summing over `(m, i)` first gives the Burchnall–Chaundy series.
+  have h₁ : HasSum (fun s : ℕ => bcCoeff a b c s * (z * ζ) ^ s *
+      regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (ζ * (1 - z) + z))
+        (∑' p, bcTriple a b c z ζ p) :=
+    hΦ.hasSum.prod_fiberwise fun s =>
+      (hasSum_choose_mul_coeff (a + s) (b + s) (c + 2 * s) hu).mul_left
+        (bcCoeff a b c s * (z * ζ) ^ s)
+  -- Summing over `i` and then over `s + m = n` gives the Cauchy product of `𝐅(z)` and `𝐅(ζ)`.
+  set T : ℕ × ℕ → ℂ := fun q => bcCoeff a b c q.1 * (z * ζ) ^ q.1 * ((ζ * (1 - z)) ^ q.2 *
+    ((ascPochhammer ℂ q.2).eval (a + q.1) * (ascPochhammer ℂ q.2).eval (b + q.1) / q.2 ! *
+      regularizedGaussHGFun (a + q.1 + q.2) (b + q.1 + q.2) (c + 2 * q.1 + q.2) z))
+  have hT : HasSum T (∑' p, bcTriple a b c z ζ p) := by
+    refine ((Equiv.prodAssoc ℕ ℕ ℕ).hasSum_iff.2 hΦ.hasSum).prod_fiberwise fun q => ?_
+    obtain ⟨s, m⟩ := q
+    have hF := (hasSum_regularizedGaussHGFun (a + s + m) (b + s + m) (c + 2 * s + m) hz).mul_left
+      (bcCoeff a b c s * (z * ζ) ^ s * ((ζ * (1 - z)) ^ m *
+        ((ascPochhammer ℂ m).eval (a + s) * (ascPochhammer ℂ m).eval (b + s) / m !)))
+    convert hF using 1
+    · funext i
+      simp only [Function.comp_apply, Equiv.prodAssoc_apply, bcTriple,
+        choose_mul_coeff_regularizedGaussHGFunSeries]
+      ring
+    · simp only [T]
+      ring
+  have h₂ := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hT).sigma
+    fun n => Finset.hasSum (antidiagonal n) T
+  rw [show (fun n => ∑ q ∈ antidiagonal n, T q) = _ from
+    funext (sum_antidiagonal_bcCoeff a b c hz ζ)] at h₂
+  have h₃ := (hasSum_regularizedGaussHGFun a b c hζ).mul_right (regularizedGaussHGFun a b c z)
+  have hval : ∑' p, bcTriple a b c z ζ p =
+      regularizedGaussHGFun a b c z * regularizedGaussHGFun a b c ζ := by
+    rw [h₂.unique h₃, mul_comm]
+  rw [hval, show ζ * (1 - z) + z = z + ζ - z * ζ by ring] at h₁
+  exact h₁
+
+/-- The domain `{ξ | ‖ξ‖ < 1 ∧ ‖z + ξ - z ξ‖ < 1}` of the Burchnall–Chaundy expansion is convex. -/
+private theorem convex_bcDomain (z : ℂ) : Convex ℝ {ξ : ℂ | ‖ξ‖ < 1 ∧ ‖z + ξ - z * ξ‖ < 1} := by
+  convert (convex_ball (0 : ℂ) 1).inter
+    ((convex_ball (-z) 1).linear_preimage (LinearMap.mulLeft ℝ (1 - z))) using 1
+  ext ξ
+  simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Metric.mem_ball, Set.mem_preimage,
+    LinearMap.mulLeft_apply, dist_eq_norm, sub_neg_eq_add, sub_zero]
+  rw [show (1 - z) * ξ + z = z + ξ - z * ξ by ring]
+
+/-- A bound for the terms of the Burchnall–Chaundy series by the majorant double series. -/
+private theorem norm_bcTerm_le (a b c : ℂ) {z ξ : ℂ} {x y : ℝ} (hx : ‖z * ξ‖ ≤ x)
+    (hy : ‖z + ξ - z * ξ‖ ≤ y) (hy₁ : y < 1) (s : ℕ) :
+    ‖bcCoeff a b c s * (z * ξ) ^ s *
+        regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ξ - z * ξ)‖ ≤
+      ‖bcCoeff a b c s‖ * x ^ s *
+        ∑' j, ‖(regularizedGaussHGFunSeries (a + s) (b + s) (c + 2 * s)).coeff j‖ * y ^ j := by
+  rw [norm_mul, norm_mul, norm_pow]
+  exact mul_le_mul (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hx s)
+    (norm_nonneg _)) (norm_regularizedGaussHGFun_le_tsum _ _ _ hy hy₁) (norm_nonneg _)
+    (mul_nonneg (norm_nonneg _) (pow_nonneg ((norm_nonneg _).trans hx) _))
+
+/-- The Burchnall–Chaundy series is holomorphic in `ζ` on its domain. -/
+private theorem differentiableOn_tsum_bcTerm (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    DifferentiableOn ℂ (fun ξ => ∑' s : ℕ, bcCoeff a b c s * (z * ξ) ^ s *
+        regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ξ - z * ξ))
+      {ξ : ℂ | ‖ξ‖ < 1 ∧ ‖z + ξ - z * ξ‖ < 1} := by
+  intro ξ₀ hξ₀
+  set y : ℝ := (1 + ‖z + ξ₀ - z * ξ₀‖) / 2
+  have hy₁ : y < 1 := by simp only [y]; linarith [hξ₀.2]
+  set V : Set ℂ := {ξ : ℂ | ‖ξ‖ < 1 ∧ ‖z + ξ - z * ξ‖ < 1} ∩ {ξ | ‖z + ξ - z * ξ‖ < y}
+  have hW : IsOpen {ξ : ℂ | ‖z + ξ - z * ξ‖ < y} :=
+    isOpen_lt (f := fun ξ : ℂ => ‖z + ξ - z * ξ‖) (by fun_prop) continuous_const
+  have hVo : IsOpen V := ((isOpen_lt continuous_norm continuous_const).inter
+    (isOpen_lt (f := fun ξ : ℂ => ‖z + ξ - z * ξ‖) (by fun_prop) continuous_const)).inter hW
+  have hξ₀V : ξ₀ ∈ V := ⟨hξ₀, by simp only [Set.mem_ofPred_eq, y]; linarith [hξ₀.2]⟩
+  have hzξ {ξ : ℂ} (hξ : ‖ξ‖ < 1) : ‖z * ξ‖ ≤ ‖z‖ := by
+    rw [norm_mul]; exact mul_le_of_le_one_right (norm_nonneg z) hξ.le
+  refine (DifferentiableOn.differentiableAt ?_ (hVo.mem_nhds hξ₀V)).differentiableWithinAt
+  refine differentiableOn_tsum_of_summable_norm (summable_norm_bcCoeff_mul_tsum a b c
+    (norm_nonneg z) hz (by simp only [y]; positivity) hy₁) (fun s => ?_) hVo
+    fun s ξ hξ => norm_bcTerm_le a b c (hzξ hξ.1.1) (le_of_lt hξ.2) hy₁ s
+  have hF : DifferentiableOn ℂ (fun ξ => regularizedGaussHGFun (a + s) (b + s) (c + 2 * s)
+      (z + ξ - z * ξ)) V :=
+    DifferentiableOn.regularizedGaussHGFun (differentiableOn_const _)
+      (differentiableOn_const _) (differentiableOn_const _) (by fun_prop) fun ξ hξ => hξ.1.2
+  exact ((differentiableOn_const _).mul
+    (((differentiableOn_const _).mul differentiableOn_id).pow s)).mul hF
+
+/-- **Burchnall–Chaundy product formula** (DLMF 15.16.3, regularized form): for `‖z‖ < 1`,
+`‖ζ‖ < 1` and `‖z + ζ - z ζ‖ < 1`,
+`𝐅(a, b; c; z) 𝐅(a, b; c; ζ) = ∑ₛ (a)ₛ (b)ₛ (c - a)ₛ (c - b)ₛ / (s! Γ(c + s)) (z ζ)ˢ`
+`𝐅(a + s, b + s; c + 2s; z + ζ - z ζ)`, for all complex `a`, `b`, `c`. -/
+theorem hasSum_regularizedGaussHGFun_mul_regularizedGaussHGFun (a b c : ℂ) {z ζ : ℂ}
+    (hz : ‖z‖ < 1) (hζ : ‖ζ‖ < 1) (hw : ‖z + ζ - z * ζ‖ < 1) :
+    HasSum (fun s : ℕ => (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ s).eval b *
+        (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) /
+          (s ! * Gamma (c + s)) * (z * ζ) ^ s *
+        regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ζ - z * ζ))
+      (regularizedGaussHGFun a b c z * regularizedGaussHGFun a b c ζ) := by
+  set U : Set ℂ := {ξ : ℂ | ‖ξ‖ < 1 ∧ ‖z + ξ - z * ξ‖ < 1}
+  have hUo : IsOpen U :=
+    (isOpen_lt continuous_norm continuous_const).inter
+      (isOpen_lt (f := fun ξ : ℂ => ‖z + ξ - z * ξ‖) (by fun_prop) continuous_const)
+  have hGa : AnalyticOnNhd ℂ
+      (fun ξ => regularizedGaussHGFun a b c z * regularizedGaussHGFun a b c ξ) U :=
+    fun ξ hξ => analyticAt_const.mul (analyticAt_regularizedGaussHGFun a b c hξ.1)
+  -- Near `0` both sides agree by `hasSum_bcCoeff_of_norm_add_norm_mul_lt_one`; the identity
+  -- theorem on the convex set `U` gives the rest.
+  have heq : (fun ξ => ∑' s : ℕ, bcCoeff a b c s * (z * ξ) ^ s *
+        regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ξ - z * ξ)) =ᶠ[𝓝 0]
+      fun ξ => regularizedGaussHGFun a b c z * regularizedGaussHGFun a b c ξ := by
+    have hS : IsOpen {ξ : ℂ | ‖z‖ + ‖ξ‖ * ‖1 - z‖ < 1} :=
+      isOpen_lt (f := fun ξ : ℂ => ‖z‖ + ‖ξ‖ * ‖1 - z‖) (by fun_prop) continuous_const
+    filter_upwards [hS.mem_nhds (by simpa using hz)] with ξ hξ
+    exact (hasSum_bcCoeff_of_norm_add_norm_mul_lt_one a b c hξ).tsum_eq
+  have hEq := ((differentiableOn_tsum_bcTerm a b c hz).analyticOnNhd
+    hUo).eqOn_of_preconnected_of_eventuallyEq hGa (convex_bcDomain z).isPreconnected
+      (by simpa [U] using hz) heq
+  have hzζ : ‖z * ζ‖ < 1 := (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg z, norm_nonneg ζ])
+  have hs := Summable.of_norm ((summable_norm_bcCoeff_mul_tsum a b c (norm_nonneg _) hzζ
+    (norm_nonneg _) hw).of_nonneg_of_le (fun s => norm_nonneg _)
+      (norm_bcTerm_le a b c le_rfl le_rfl hw))
+  have h := hs.hasSum
+  rw [show ∑' s : ℕ, bcCoeff a b c s * (z * ζ) ^ s *
+      regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ζ - z * ζ) = _ from
+    hEq (show ζ ∈ U from ⟨hζ, hw⟩)] at h
+  simpa only [bcCoeff] using h
+
+/-- **Burchnall–Chaundy product formula** (DLMF 15.16.3): for `c ∉ {0, -1, -2, …}`, `‖z‖ < 1`,
+`‖ζ‖ < 1` and `‖z + ζ - z ζ‖ < 1`,
+`F(a, b; c; z) F(a, b; c; ζ) = ∑ₛ (a)ₛ (b)ₛ (c - a)ₛ (c - b)ₛ / ((c)ₛ (c)₂ₛ s!) (z ζ)ˢ`
+`F(a + s, b + s; c + 2s; z + ζ - z ζ)`. -/
+theorem hasSum_ordinaryHypergeometric_mul_ordinaryHypergeometric {a b c z ζ : ℂ}
+    (hc : ∀ k : ℕ, c ≠ -k) (hz : ‖z‖ < 1) (hζ : ‖ζ‖ < 1) (hw : ‖z + ζ - z * ζ‖ < 1) :
+    HasSum (fun s : ℕ => (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ s).eval b *
+        (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) /
+          ((ascPochhammer ℂ s).eval c * (ascPochhammer ℂ (2 * s)).eval c * s !) * (z * ζ) ^ s *
+        ordinaryHypergeometric (a + s) (b + s) (c + 2 * s) (z + ζ - z * ζ))
+      (ordinaryHypergeometric a b c z * ordinaryHypergeometric a b c ζ) := by
+  have hF {α β γ w : ℂ} (hγ : ∀ k : ℕ, γ ≠ -k) :
+      ordinaryHypergeometric α β γ w = Gamma γ * regularizedGaussHGFun α β γ w := by
+    rw [← ordinaryHypergeometric_div_Gamma_eq hγ, mul_div_cancel₀ _ (Gamma_ne_zero hγ)]
+  have hc' (k : ℕ) : ∀ m : ℕ, c + k ≠ -m := fun m h =>
+    hc (m + k) (by push_cast; linear_combination h)
+  have hΓ (k : ℕ) := Gamma_add_natCast_eq_ascPochhammer_eval_mul hc k
+  have hp (k : ℕ) : (ascPochhammer ℂ k).eval c ≠ 0 := fun h0 =>
+    Gamma_ne_zero (hc' k) (by rw [hΓ k, h0, zero_mul])
+  rw [hF hc, hF hc]
+  convert (hasSum_regularizedGaussHGFun_mul_regularizedGaussHGFun a b c hz hζ hw).mul_left
+    (Gamma c ^ 2) using 1
+  · funext s
+    rw [show c + 2 * (s : ℂ) = c + ((2 * s : ℕ) : ℂ) by push_cast; ring, hF (hc' (2 * s)),
+      hΓ (2 * s), hΓ s]
+    have := hp s
+    have := hp (2 * s)
+    have := Gamma_ne_zero hc
+    field_simp
+  · ring
+
+end BurchnallChaundy
 
 end Complex
 

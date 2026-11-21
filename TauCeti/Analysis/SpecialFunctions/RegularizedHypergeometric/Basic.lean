@@ -76,6 +76,9 @@ hypothesis on the lower parameter.
   `Complex.mul_deriv_regularizedGaussHGFun_add_mul_eq_mul`,
   `Complex.mul_one_sub_mul_deriv_regularizedGaussHGFun` — parameter-shift and first-order
   contiguous-derivative identities on `‖z‖ < 1` (DLMF §15.5).
+* `Complex.regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul` — the three-term relation
+  `𝐅(a, b; c; z) = c (1 - z) 𝐅(a + 1, b + 1; c + 1; z) + (c - a)(c - b) z 𝐅(a + 1, b + 1; c + 2; z)`
+  on `‖z‖ < 1`.
 * `Complex.analyticAt_uncurry_regularizedGaussHGFun`, `AnalyticAt.regularizedGaussHGFun`,
   `DifferentiableAt.regularizedGaussHGFun`, `DifferentiableWithinAt.regularizedGaussHGFun`,
   `DifferentiableOn.regularizedGaussHGFun`, `Differentiable.regularizedGaussHGFun` — joint
@@ -765,6 +768,41 @@ theorem _root_.Differentiable.regularizedGaussHGFun {E : Type*} [NormedAddCommGr
     (hc : Differentiable ℂ fc) (hz : Differentiable ℂ fz) (hz_lt : ∀ x, ‖fz x‖ < 1) :
     Differentiable ℂ fun w => Complex.regularizedGaussHGFun (fa w) (fb w) (fc w) (fz w) :=
   fun x => (ha x).regularizedGaussHGFun (hb x) (hc x) (hz x) (hz_lt x)
+
+/-- Regularized three-term contiguous relation raising `a`, `b` and `c` on the open unit disk:
+`𝐅(a, b; c; z) = c (1 - z) 𝐅(a + 1, b + 1; c + 1; z) + (c - a)(c - b) z 𝐅(a + 1, b + 1; c + 2; z)`,
+for all complex `a`, `b`, `c`. -/
+theorem regularizedGaussHGFun_eq_mul_one_sub_mul_add_mul (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    regularizedGaussHGFun a b c z =
+      c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
+        (c - a) * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z := by
+  -- Multiplied by `a`, the relation is a combination of the shifts in `a`, `b` and `c`.
+  have hmul (a : ℂ) : a * regularizedGaussHGFun a b c z =
+      a * (c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
+        (c - a) * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z) := by
+    have h₂ := regularizedGaussHGFun_eq_sub_mul_add_mul b a c hz
+    rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b a,
+      regularizedGaussHGFun_symm (b + 1) a] at h₂
+    have h₅ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b c hz
+    have h₇ := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b (c + 1) hz
+    rw [show c + 1 + 1 = c + 2 by ring] at h₇
+    have h₉ := regularizedGaussHGFun_eq_sub_mul_add_mul a (b + 1) c hz
+    linear_combination -(c - a) * h₂ - (c - a) * (c - b) * h₇ + c * h₅ + c * h₉
+  -- Both sides are continuous in `a`, so the relation extends from `a ≠ 0` to `a = 0`.
+  have hd (k : ℂ) : Differentiable ℂ fun a => regularizedGaussHGFun (a + 1) (b + 1) (c + k) z :=
+    Differentiable.regularizedGaussHGFun (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop)
+      fun _ => hz
+  have hL : Continuous fun a => regularizedGaussHGFun a b c z :=
+    (Differentiable.regularizedGaussHGFun differentiable_id (differentiable_const _)
+      (differentiable_const _) (differentiable_const _) fun _ => hz).continuous
+  have hR : Continuous fun a => c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
+      (c - a) * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z :=
+    (continuous_const.mul (hd 1).continuous).add
+      ((((continuous_const.sub continuous_id).mul continuous_const).mul continuous_const).mul
+        (hd 2).continuous)
+  have hext := hL.ext_on (dense_compl_singleton 0) hR fun a' ha' =>
+    mul_left_cancel₀ (Set.mem_compl_singleton_iff.mp ha') (hmul a')
+  exact congrFun hext a
 
 end Gaussian
 
