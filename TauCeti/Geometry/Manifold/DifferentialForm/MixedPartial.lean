@@ -124,7 +124,11 @@ private theorem paramFrame_apply (q : P × M) :
   fin_cases l
   exacts [paramFrame_zero q, paramFrame_one q, paramFrame_two q]
 
-variable [IsManifold I 1 M] {p : P} {x : M}
+variable {p : P} {x : M}
+
+section
+
+variable [IsManifold I 1 M]
 
 private theorem removeNth_paramFrame (η : SmoothForm (𝓘(ℝ, P).prod I) (P × M) F 2)
     (i j l : Fin 3) (hjl : ∀ m, i.succAbove m = ![j, l] m) :
@@ -174,6 +178,8 @@ private theorem mvfderiv_apply_paramFrame (η : SmoothForm (𝓘(ℝ, P).prod I)
   rw [hd.mvfderiv_prod_eq_add_apply, paramFrame_fst, paramFrame_snd]
   -- The parameter summand is `mvfderiv_eq_fderiv_apply` once `(p, x).1` and `(p, x).2` reduce.
   exact congrArg (· + _) (mvfderiv_eq_fderiv_apply _ p _)
+
+end
 
 variable [CompleteSpace E] [CompleteSpace P] [IsManifold I 2 M]
 
