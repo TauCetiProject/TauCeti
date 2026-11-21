@@ -17,8 +17,9 @@ of `ComplexShape.down ℕ` into `ComplexShape.up ℤ`. This file records the sam
 
 The upper boundary of an embedding is where good truncation along it replaces the components
 of a complex by cycles. The lemma here reduces every upper-boundary condition for good truncation
-along `embeddingDownNat`, that is for `τ_{≥ 0}` of a cochain complex indexed by `ℤ`, to the single
-degree `0`.
+along `embeddingDownNat` to the single degree `0`. For a cochain complex `K` indexed by `ℤ`, this
+truncation keeps the nonpositive cohomological degrees: it is `τ_{≤ 0} K` in cohomological
+grading, that is `τ_{≥ 0} K` in homological grading.
 
 ## Main results
 
