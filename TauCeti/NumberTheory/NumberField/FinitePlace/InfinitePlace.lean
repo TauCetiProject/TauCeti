@@ -42,39 +42,39 @@ variable {K : Type*} [Field K] [NumberField K]
 values. -/
 @[simp]
 theorem InfinitePlace.not_isEquiv_finitePlace (v : InfinitePlace K) (u : FinitePlace K) :
-    ¬ v.1.IsEquiv u.1 :=
+    ¬ v.val.IsEquiv u.val :=
   v.not_isEquiv_of_isNonarchimedean u.add_le
 
 /-- A finite place and an infinite place of a number field have inequivalent underlying absolute
 values. -/
 @[simp]
 theorem FinitePlace.not_isEquiv_infinitePlace (u : FinitePlace K) (v : InfinitePlace K) :
-    ¬ u.1.IsEquiv v.1 :=
+    ¬ u.val.IsEquiv v.val :=
   fun h ↦ v.not_isEquiv_finitePlace u h.symm
 
 /-- An infinite place and a finite place of a number field never have the same underlying absolute
 value. -/
 @[simp]
 theorem InfinitePlace.val_ne_finitePlace_val (v : InfinitePlace K) (u : FinitePlace K) :
-    v.1 ≠ u.1 :=
+    v.val ≠ u.val :=
   fun h ↦ v.not_isEquiv_finitePlace u (h ▸ .rfl)
 
 /-- A finite place and an infinite place of a number field never have the same underlying absolute
 value. -/
 @[simp]
 theorem FinitePlace.val_ne_infinitePlace_val (u : FinitePlace K) (v : InfinitePlace K) :
-    u.1 ≠ v.1 :=
+    u.val ≠ v.val :=
   (v.val_ne_finitePlace_val u).symm
 
 /-- The underlying absolute value of an infinite place is not a finite place. -/
 @[simp]
-theorem InfinitePlace.not_isFinitePlace (v : InfinitePlace K) : ¬ IsFinitePlace v.1 := by
+theorem InfinitePlace.not_isFinitePlace (v : InfinitePlace K) : ¬ IsFinitePlace v.val := by
   rintro ⟨𝔭, h𝔭⟩
   exact v.val_ne_finitePlace_val (FinitePlace.mk 𝔭) h𝔭.symm
 
 /-- The underlying absolute value of a finite place is not an infinite place. -/
 @[simp]
-theorem FinitePlace.not_isInfinitePlace (u : FinitePlace K) : ¬ IsInfinitePlace u.1 := by
+theorem FinitePlace.not_isInfinitePlace (u : FinitePlace K) : ¬ IsInfinitePlace u.val := by
   rintro ⟨φ, hφ⟩
   exact (InfinitePlace.mk φ).val_ne_finitePlace_val u hφ
 

@@ -122,7 +122,7 @@ private theorem livesOverFundamentalClass_actionClass_iff (b : G) {k : ℕ}
     rw [hΦ]
     exact Ψ.symm_comp_toContinuousMap
   have h : mappingSpaceEval Sphere2.north ∘ Φ = id ∘ Prod.fst := funext fun x ↦ by
-    simp [Φ, x.2.2]
+    simp [Φ, x.2.property]
   have h' : (id ∘ Prod.fst) ∘ Ψ.symm = mappingSpaceEval Sphere2.north := funext fun f ↦ by
     simp [Ψ]
   -- Carry the class back along the homeomorphism over `G`, identify the coefficients `ℤ ⊗ ℤ`

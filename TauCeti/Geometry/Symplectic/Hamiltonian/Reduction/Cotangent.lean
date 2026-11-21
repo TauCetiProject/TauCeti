@@ -99,7 +99,7 @@ vanishing on `ker dρ_q` it does not depend on `R`: it is the unique covector `p
 no meaning. -/
 def reductionMap (z : CotangentBundle I Q) : CotangentBundle IB B :=
   TotalSpace.mk' (EB →L[ℝ] ℝ) (ρ z.proj)
-    (if h : (mfderiv I IB ρ z.proj).HasRightInverse then z.2 ∘L h.rightInverse else 0)
+    (if h : (mfderiv I IB ρ z.proj).HasRightInverse then z.snd ∘L h.rightInverse else 0)
 
 /-- The reduction map lies over `ρ`. -/
 @[simp]
@@ -109,13 +109,13 @@ theorem proj_reductionMap (z : CotangentBundle I Q) : (reductionMap I IB ρ z).p
 /-- Where `dρ_q` has a continuous right inverse, the reduction map composes the covector with the
 chosen one. -/
 theorem reductionMap_snd {z : CotangentBundle I Q} (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) :
-    (reductionMap I IB ρ z).2 = z.2 ∘L hρ.rightInverse :=
+    (reductionMap I IB ρ z).snd = z.snd ∘L hρ.rightInverse :=
   dite_eq_left hρ
 
 /-- Where `dρ_q` has a continuous right inverse `R`, the reduction map evaluates as `p ∘ R`. -/
 theorem reductionMap_snd_apply {z : CotangentBundle I Q}
     (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) (w : TangentSpace IB (ρ z.proj)) :
-    (reductionMap I IB ρ z).2 w = z.2 (hρ.rightInverse w) := by
+    (reductionMap I IB ρ z).snd w = z.snd (hρ.rightInverse w) := by
   rw [reductionMap_snd hρ]
   rfl
 
@@ -123,8 +123,8 @@ theorem reductionMap_snd_apply {z : CotangentBundle I Q}
 `p' (dρ_q v) = p v`. -/
 theorem reductionMap_snd_apply_mfderiv {z : CotangentBundle I Q}
     (hρ : (mfderiv I IB ρ z.proj).HasRightInverse)
-    (hz : ∀ v, mfderiv I IB ρ z.proj v = 0 → z.2 v = 0) (v : TangentSpace I z.proj) :
-    (reductionMap I IB ρ z).2 (mfderiv I IB ρ z.proj v) = z.2 v := by
+    (hz : ∀ v, mfderiv I IB ρ z.proj v = 0 → z.snd v = 0) (v : TangentSpace I z.proj) :
+    (reductionMap I IB ρ z).snd (mfderiv I IB ρ z.proj v) = z.snd v := by
   rw [reductionMap_snd_apply hρ, ← sub_eq_zero, ← map_sub]
   refine hz _ ?_
   rw [map_sub, hρ.rightInverse_rightInverse, sub_self]
@@ -133,7 +133,7 @@ theorem reductionMap_snd_apply_mfderiv {z : CotangentBundle I Q}
 `ker dρ_q` is the pullback of its reduced covector: `p = p' ∘ dρ_q`. -/
 theorem cotangentRel_reductionMap {z : CotangentBundle I Q}
     (hρ : (mfderiv I IB ρ z.proj).HasRightInverse)
-    (hz : ∀ v, mfderiv I IB ρ z.proj v = 0 → z.2 v = 0) :
+    (hz : ∀ v, mfderiv I IB ρ z.proj v = 0 → z.snd v = 0) :
     cotangentRel I IB ρ z (reductionMap I IB ρ z) :=
   (cotangentRel_iff I IB ρ _ _).2
     ⟨rfl, ContinuousLinearMap.ext fun v ↦ (reductionMap_snd_apply_mfderiv hρ hz v).symm⟩
@@ -153,7 +153,7 @@ theorem eq_reductionMap_of_cotangentRel {z : CotangentBundle I Q} {w : Cotangent
 theorem cotangentRel_iff_eq_reductionMap {z : CotangentBundle I Q} {w : CotangentBundle IB B}
     (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) :
     cotangentRel I IB ρ z w ↔
-      (∀ v, mfderiv I IB ρ z.proj v = 0 → z.2 v = 0) ∧ w = reductionMap I IB ρ z := by
+      (∀ v, mfderiv I IB ρ z.proj v = 0 → z.snd v = 0) ∧ w = reductionMap I IB ρ z := by
   refine ⟨fun h ↦ ⟨fun v hv ↦ ?_, eq_reductionMap_of_cotangentRel hρ h⟩, ?_⟩
   · obtain ⟨y, p⟩ := w
     obtain rfl : ρ z.proj = y := cotangentRel_proj h
@@ -168,9 +168,9 @@ is the pullback `p ∘ dσ_(ρ q)`. -/
 theorem reductionMap_eq_mk_comp_mfderiv {z : CotangentBundle I Q} {σ : B → Q}
     (hσ : σ (ρ z.proj) = z.proj) (hσd : MDifferentiableAt IB I σ (ρ z.proj))
     (hρd : MDifferentiableAt I IB ρ z.proj) (hρσ : ρ ∘ σ =ᶠ[𝓝 (ρ z.proj)] id)
-    (hz : ∀ v, mfderiv I IB ρ z.proj v = 0 → z.2 v = 0) :
+    (hz : ∀ v, mfderiv I IB ρ z.proj v = 0 → z.snd v = 0) :
     reductionMap I IB ρ z =
-      TotalSpace.mk' (EB →L[ℝ] ℝ) (ρ z.proj) (z.2 ∘L mfderiv IB I σ (ρ z.proj)) := by
+      TotalSpace.mk' (EB →L[ℝ] ℝ) (ρ z.proj) (z.snd ∘L mfderiv IB I σ (ρ z.proj)) := by
   -- The differential of `σ` is a right inverse of `dρ_q`, by the chain rule for `ρ ∘ σ = id`.
   have hR : ∀ w, mfderiv I IB ρ z.proj (mfderiv IB I σ (ρ z.proj) w) = w := fun w ↦ by
     rw [← mfderiv_comp_apply_of_eq (ρ z.proj) hρd hσd hσ,
@@ -179,7 +179,7 @@ theorem reductionMap_eq_mk_comp_mfderiv {z : CotangentBundle I Q} {σ : B → Q}
   refine (eq_reductionMap_of_cotangentRel ⟨_, hR⟩
     ((cotangentRel_iff I IB ρ _ _).2 ⟨rfl, ContinuousLinearMap.ext fun v ↦ ?_⟩)).symm
   let u : TangentSpace I z.proj := mfderiv IB I σ (ρ z.proj) (mfderiv I IB ρ z.proj v)
-  have h0 : z.2 (v - u) = 0 := hz _ (by rw [map_sub, hR, sub_self])
+  have h0 : z.snd (v - u) = 0 := hz _ (by rw [map_sub, hR, sub_self])
   rw [map_sub, sub_eq_zero] at h0
   -- The right-hand side is `z.2 (dσ (dρ v))`, the second component of `TotalSpace.mk'` applied.
   exact h0
@@ -198,7 +198,7 @@ private theorem exists_contMDiffAt_eventuallyEq_reductionMap (hρ : IsSubmersion
     (z₀ : CotangentBundle I Q) :
     ∃ Ψ : CotangentBundle I Q → CotangentBundle IB B,
       ContMDiffAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (IB.prod 𝓘(ℝ, EB →L[ℝ] ℝ)) ∞ Ψ z₀ ∧
-      ∀ᶠ z in 𝓝 z₀, (∀ v, mfderiv I IB ρ z.proj v = 0 → z.2 v = 0) →
+      ∀ᶠ z in 𝓝 z₀, (∀ v, mfderiv I IB ρ z.proj v = 0 → z.snd v = 0) →
         Ψ z = reductionMap I IB ρ z := by
   classical
   obtain ⟨W, hW, hW₀, s, hs, hρs, hs₀⟩ :=
@@ -217,7 +217,7 @@ private theorem exists_contMDiffAt_eventuallyEq_reductionMap (hρ : IsSubmersion
     hproj.continuous.prodMk (hρ.contMDiff.continuous.comp hproj.continuous)
   have hW' : ∀ᶠ z in 𝓝 z₀, (z.proj, ρ z.proj) ∈ W :=
     hgraph.continuousAt.preimage_mem_nhds (hW.mem_nhds hW₀)
-  refine ⟨fun z ↦ TotalSpace.mk' (EB →L[ℝ] ℝ) (ρ z.proj) (z.2 ∘L mfderiv IB I (S z) (ρ z.proj)),
+  refine ⟨fun z ↦ TotalSpace.mk' (EB →L[ℝ] ℝ) (ρ z.proj) (z.snd ∘L mfderiv IB I (S z) (ρ z.proj)),
     ?_, ?_⟩
   · -- Pull covectors back along the jointly smooth family `S`.
     refine contMDiffAt_mk_comp_mfderiv_uncurry (m := ∞) (n := ∞) (Ψ := id)
@@ -253,7 +253,7 @@ vanishes on the vertical tangent vectors of `ρ`, then the family of reduced cov
 `C^m` at `x₀`. -/
 theorem contMDiffAt_reductionMap_comp (hρ : IsSubmersion I IB ∞ ρ) {f : X → CotangentBundle I Q}
     {x₀ : X} (hf : ContMDiffAt IX (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m f x₀)
-    (hz : ∀ᶠ x in 𝓝 x₀, ∀ v, mfderiv I IB ρ (f x).proj v = 0 → (f x).2 v = 0) (hm : m ≤ ∞) :
+    (hz : ∀ᶠ x in 𝓝 x₀, ∀ v, mfderiv I IB ρ (f x).proj v = 0 → (f x).snd v = 0) (hm : m ≤ ∞) :
     ContMDiffAt IX (IB.prod 𝓘(ℝ, EB →L[ℝ] ℝ)) m (reductionMap I IB ρ ∘ f) x₀ := by
   obtain ⟨Ψ, hΨ, hΨeq⟩ := exists_contMDiffAt_eventuallyEq_reductionMap hρ (f x₀)
   refine ((hΨ.of_le hm).comp x₀ hf).congr_of_eventuallyEq ?_
@@ -264,7 +264,7 @@ theorem contMDiffAt_reductionMap_comp (hρ : IsSubmersion I IB ∞ ρ) {f : X �
 version of `TauCeti.CotangentBundle.contMDiffAt_reductionMap_comp`. -/
 theorem contMDiff_reductionMap_comp (hρ : IsSubmersion I IB ∞ ρ) {f : X → CotangentBundle I Q}
     (hf : ContMDiff IX (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m f)
-    (hz : ∀ x v, mfderiv I IB ρ (f x).proj v = 0 → (f x).2 v = 0) (hm : m ≤ ∞) :
+    (hz : ∀ x v, mfderiv I IB ρ (f x).proj v = 0 → (f x).snd v = 0) (hm : m ≤ ∞) :
     ContMDiff IX (IB.prod 𝓘(ℝ, EB →L[ℝ] ℝ)) m (reductionMap I IB ρ ∘ f) :=
   fun x ↦ contMDiffAt_reductionMap_comp hρ (hf x) (Eventually.of_forall (hz ·)) hm
 
@@ -274,7 +274,7 @@ reduction map pulls the Liouville form of `T*B` back along `f` to the Liouville 
 `(Ψ ∘ f)^* λ_B = f^* λ_Q`. -/
 theorem mpullback_reductionMap_comp_liouvilleForm [IsManifold IX ∞ X] (hρ : IsSubmersion I IB ∞ ρ)
     {f : X → CotangentBundle I Q} (hf : ContMDiff IX (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ f)
-    (hz : ∀ x v, mfderiv I IB ρ (f x).proj v = 0 → (f x).2 v = 0) :
+    (hz : ∀ x v, mfderiv I IB ρ (f x).proj v = 0 → (f x).snd v = 0) :
     SmoothForm.mpullback (reductionMap I IB ρ ∘ f) (contMDiff_reductionMap_comp hρ hf hz le_rfl)
         (liouvilleForm IB B) =
       SmoothForm.mpullback f hf (liouvilleForm I Q) := by
@@ -297,7 +297,7 @@ the reduction map pulls the canonical symplectic form `ω_B = -dλ_B` back along
 `(Ψ ∘ f)^* ω_B = f^* ω_Q`. -/
 theorem mpullback_reductionMap_comp_symplecticForm [IsManifold IX ∞ X] (hρ : IsSubmersion I IB ∞ ρ)
     {f : X → CotangentBundle I Q} (hf : ContMDiff IX (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ f)
-    (hz : ∀ x v, mfderiv I IB ρ (f x).proj v = 0 → (f x).2 v = 0) :
+    (hz : ∀ x v, mfderiv I IB ρ (f x).proj v = 0 → (f x).snd v = 0) :
     SmoothForm.mpullback (reductionMap I IB ρ ∘ f) (contMDiff_reductionMap_comp hρ hf hz le_rfl)
         (symplecticForm IB B) =
       SmoothForm.mpullback f hf (symplecticForm I Q) := by
@@ -324,7 +324,7 @@ when it vanishes on the vertical tangent vectors. -/
 theorem momentMap_eq_zero_iff_of_ker_eq {z : CotangentBundle I Q}
     (hker : (mfderiv I IB ρ z.proj).ker =
       (InfinitesimalAction.fundamental IG G I Q).orbitTangent z.proj) :
-    momentMap IG G z = 0 ↔ ∀ v, mfderiv I IB ρ z.proj v = 0 → z.2 v = 0 := by
+    momentMap IG G z = 0 ↔ ∀ v, mfderiv I IB ρ z.proj v = 0 → z.snd v = 0 := by
   simp only [momentMap_eq_zero_iff, ← hker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
 
 /-- **The zero level consists of pullbacks.** If `dρ_q` has a continuous right inverse and the

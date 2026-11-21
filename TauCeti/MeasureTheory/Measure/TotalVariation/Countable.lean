@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
+import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 
 /-!
 # Total variation distance and event excess on countable spaces
@@ -36,7 +37,11 @@ probability measures is at most two, not one.
   its attainment on `{x | ν {x} < μ {x}}`;
 * `MeasureTheory.iSup_measure_sub_eq_sum_singleton`,
   `MeasureTheory.measure_setOf_lt_sub_eq_sum_singleton`: the corresponding finite sums on finite
-  types.
+  types;
+* `MeasureTheory.etvDist_eq_two_mul_tsum_singleton`,
+  `MeasureTheory.etvDist_eq_two_mul_sum_singleton`: for a finite measure and a measure of the same
+  total mass, extended total variation distance is twice the sum of the truncated singleton
+  differences.
 
 ## References
 
@@ -150,6 +155,13 @@ theorem iSup_measure_sub_eq_tsum_singleton :
     exact le_iSup₂ (f := fun (A : Set α) (_ : MeasurableSet A) => μ A - ν A)
       (B : Set α) .of_discrete
 
+/-- On a countable space with measurable singletons, for a finite measure `μ` and a measure `ν` of
+the same total mass (e.g. two probability measures), extended total variation distance is twice the
+sum of the truncated singleton differences `μ {x} - ν {x}`. -/
+theorem etvDist_eq_two_mul_tsum_singleton [IsFiniteMeasure μ] (h : μ Set.univ = ν Set.univ) :
+    etvDist μ ν = 2 * ∑' x, (μ {x} - ν {x}) := by
+  rw [etvDist_eq_two_mul_iSup_sub h, iSup_measure_sub_eq_tsum_singleton]
+
 end Countable
 
 section Fintype
@@ -174,6 +186,14 @@ normalization hypothesis is needed. -/
 theorem iSup_measure_sub_eq_sum_singleton :
     (⨆ (A : Set α) (_ : MeasurableSet A), μ A - ν A) = ∑ x, (μ {x} - ν {x}) := by
   rw [iSup_measure_sub_eq_tsum_singleton, tsum_fintype]
+
+/-- On a finite type with measurable singletons, for a finite measure `μ` and a measure `ν` of the
+same total mass (e.g. two probability measures), extended total variation distance is twice the
+sum of the truncated singleton differences `μ {x} - ν {x}`; see Levin–Peres–Wilmer,
+Proposition 4.2 and Remark 4.3. -/
+theorem etvDist_eq_two_mul_sum_singleton [IsFiniteMeasure μ] (h : μ Set.univ = ν Set.univ) :
+    etvDist μ ν = 2 * ∑ x, (μ {x} - ν {x}) := by
+  rw [etvDist_eq_two_mul_tsum_singleton h, tsum_fintype]
 
 end Fintype
 

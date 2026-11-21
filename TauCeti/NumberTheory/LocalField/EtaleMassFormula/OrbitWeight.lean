@@ -74,9 +74,9 @@ private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
     (IntermediateField.fixedField
       (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
         (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent := by
-  rw [discriminantExponent_fixedField_stabilizer_out K hx,
-    MulAction.stabilizer_eq_of_injective f hf he]
+          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
+  apply_fixedField_stabilizer_out_of_injective K
+    IntermediateField.discriminantExponent_eq_of_algEquiv f hf he hx
 
 /-- The sum of the discriminant exponents of the fixed fields of point stabilizers, one per
 orbit. An infinite fixed field contributes zero; infinitely many nonzero summands give a total

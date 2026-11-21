@@ -361,16 +361,19 @@ private theorem eventually_forall_one_le_gauge {K : Set V} (hK : IsCompact K)
     exact mem_iInter.1 hw ⟨ε, hε⟩
   have hdt : Directed (· ⊇ ·) t := by
     intro ε₁ ε₂
-    refine ⟨⟨min ε₁ ε₂, lt_min ε₁.2.1 ε₂.2.1, (min_le_left _ _).trans_lt ε₁.2.2⟩,
+    refine ⟨⟨min ε₁ ε₂, lt_min ε₁.property.1 ε₂.property.1,
+        (min_le_left _ _).trans_lt ε₁.property.2⟩,
       fun w hw => ?_, fun w hw => ?_⟩
-    · exact (gauge_anti (lt_min ε₁.2.1 ε₂.2.1) (min_le_left _ _) ε₁.2.2.le w).trans hw
-    · exact (gauge_anti (lt_min ε₁.2.1 ε₂.2.1) (min_le_right _ _) ε₂.2.2.le w).trans hw
+    · exact (gauge_anti (lt_min ε₁.property.1 ε₂.property.1) (min_le_left _ _) ε₁.property.2.le
+        w).trans hw
+    · exact (gauge_anti (lt_min ε₁.property.1 ε₂.property.1) (min_le_right _ _) ε₂.property.2.le
+        w).trans hw
   obtain ⟨ε₀, hε₀⟩ := hK.elim_directed_family_closed t htc hst hdt
-  filter_upwards [Ioc_mem_nhdsGT ε₀.2.1] with ε hε w hw
+  filter_upwards [Ioc_mem_nhdsGT ε₀.property.1] with ε hε w hw
   by_contra hlt
   push Not at hlt
   exact Set.disjoint_left.1 hε₀ hw
-    ((gauge_anti hε.1 hε.2 ε₀.2.2.le w).trans hlt.le)
+    ((gauge_anti hε.1 hε.2 ε₀.property.2.le w).trans hlt.le)
 
 end Frame
 

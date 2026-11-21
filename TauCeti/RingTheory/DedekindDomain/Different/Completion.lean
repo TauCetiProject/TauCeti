@@ -193,16 +193,16 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
         (Algebra.TensorProduct.includeRight : B →ₐ[R] v.adicCompletionIntegers K ⊗[R] B)).map
         (v.adicCompletionIntegersSemilocalEquiv K B L) =
       Ideal.pi fun u ↦
-        differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
+        differentIdeal (v.adicCompletionIntegers K) (u.val.adicCompletionIntegers L) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
   let f : B →+* ∀ u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-      u.1.adicCompletionIntegers L :=
+      u.val.adicCompletionIntegers L :=
     (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom.comp
       (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
   have hcomp (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
       ((differentIdeal R B).map f).map (Pi.evalRingHom _ u) =
-        differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
-    rw [Ideal.map_map, differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.1]
+        differentIdeal (v.adicCompletionIntegers K) (u.val.adicCompletionIntegers L) := by
+    rw [Ideal.map_map, differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.val]
     congr 1; ext x; simp [f]
   have hf : ((differentIdeal R B).map
       (Algebra.TensorProduct.includeRight : B →ₐ[R] v.adicCompletionIntegers K ⊗[R] B)).map
