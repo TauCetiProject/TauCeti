@@ -38,6 +38,8 @@ complexified Spin group.
 
 * `CliffordAlgebra.spinGroupBaseChange` extends a Spin element's scalars.
 * `CliffordAlgebra.spinGroupBaseChange_injective` proves injectivity for faithful flat extensions.
+* `CliffordAlgebra.span_spinGroupBaseChange_eq_even`: if a Spin group spans its even Clifford
+  algebra, then its scalar extension spans the even Clifford algebra of the extended form.
 * `CliffordAlgebra.spinVectorAction_baseChange_tmul` computes the extended action on pure tensors.
 * `CliffordAlgebra.spinToSpecialOrthogonal_baseChange` gives the commuting square with extension
   of special orthogonal automorphisms.
@@ -115,6 +117,24 @@ theorem spinGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
     Function.Injective (spinGroupBaseChange (A := A) Q) := fun x y hxy ↦
   Subtype.ext <| ofBaseChangeAux_injective Q <| by
     simpa only [coe_spinGroupBaseChange_apply] using congrArg Subtype.val hxy
+
+/-- **Scalar-extended Spin elements span the even Clifford algebra of the scalar extension** as
+soon as the Spin group of `Q` spans the even Clifford algebra of `Q`. Over `ℂ`, this is the
+statement that a real Spin group with this spanning property has complex-linear span the whole
+complex even Clifford algebra. -/
+theorem span_spinGroupBaseChange_eq_even {Q : QuadraticForm R M}
+    (hspan : Submodule.span R (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule) :
+    Submodule.span A (Set.range fun g : spinGroup Q ↦
+        (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
+      (even (Q.baseChange A)).toSubmodule := by
+  have hrange : (Set.range fun g : spinGroup Q ↦
+      (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
+      ofBaseChangeAux A Q '' (spinGroup Q : Set (CliffordAlgebra Q)) := by
+    simp only [coe_spinGroupBaseChange_apply]
+    exact (Set.range_comp (ofBaseChangeAux A Q) Subtype.val).trans (congrArg _ Subtype.range_coe)
+  rw [hrange, ← Submodule.span_span_of_tower R, ← AlgHom.coe_toLinearMap,
+    Submodule.span_image, hspan, even_toSubmodule, Submodule.map_coe, AlgHom.coe_toLinearMap,
+    span_ofBaseChangeAux_image_evenOdd, even_toSubmodule]
 
 /-- On a pure tensor, the action of a scalar-extended Spin element is the extension of the
 original action. -/
