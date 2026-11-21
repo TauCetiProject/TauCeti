@@ -88,8 +88,6 @@ negative planes and the output by a positive plane.
 * `TauCeti.Floer.perturbationPullback_realChart_plumbedPerturbation_single_inf`: read in the
   inserted plane through the plumbing chart, the capped datum is the negative plane datum, outside
   the circle `s_∞ = -L/2` of the end of the plane and including its pole.
-* `TauCeti.Floer.plumbingMap_one_ne_zero`: outside that circle the plumbing chart of the end at
-  `1` carries the inserted plane into the capped plane `ℂ ∖ {0}`.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap_single_inf`: there,
   composing with the plumbing chart turns solutions of the capped Floer equation into solutions of
   the Floer equation of the negative plane, for a vector space target.
@@ -453,35 +451,6 @@ theorem perturbationPullback_realChart_plumbedPerturbation_single_inf (hq : q �
       zero_apply, zero_apply]
   · rw [perturbationPullback_realChart_plumbedPerturbation hq (by simp) hL hw hwL,
       pairOfPantsPerturbation_single_inf]
-
-/-- A point of the capped plane `ℂ ∖ {0}` is the capped puncture `1` or a point of the pair of
-pants `ℂ ∖ {0, 1}`: these are the domain points at which the data of the pair of pants capped at
-`1` are smooth. -/
-theorem eq_endCenter_one_or_of_ne_zero {w : ℂ} (hw : w ≠ 0) :
-    w = one.endCenter ∨ w ≠ 0 ∧ w ≠ 1 := by
-  rcases eq_or_ne w 1 with h | h
-  · exact Or.inl (by simpa using h)
-  · exact Or.inr ⟨hw, h⟩
-
-/-- The plumbing map `ψ_L` of the end at `1` carries every point of the inserted plane outside the
-circle `s_∞ = -L/2` of its end into the capped plane `ℂ ∖ {0}`: points of the pole disc
-`‖w‖ ≤ 2 exp (2π)` land within `exp (-2π(L - 1)) / 2 < 1` of the capped puncture `1`, and the
-other points land in the plumbed four-punctured sphere. -/
-theorem plumbingMap_one_ne_zero (hL : 4 < L) {w : ℂ}
-    (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 := by
-  by_cases hw : ‖w‖ ≤ 2 * Real.exp (2 * π)
-  · intro h0
-    have h := (norm_sub_endCenter_div_plumbingFactor_le_iff (q := one) (by simp) L 1).1
-      (by rwa [plumbingMap_sub_endCenter_div_plumbingFactor, mul_one])
-    rw [h0, endCenter_one, zero_sub, norm_neg, norm_one] at h
-    have hexp : Real.exp (-(2 * π * (L - 1))) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    linarith
-  · have h1 : (1 : ℝ) ≤ 2 * Real.exp (2 * π) := by
-      linarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
-    exact (plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (q := one) (by simp)
-      (by linarith) ⟨fun h ↦ hw (by rw [h, norm_zero]; positivity),
-        fun h ↦ hw (by rw [h, norm_one]; exact h1)⟩ hwL).1.1
 
 /-- **The capped datum is smooth along the capping family.** For period-one Hamiltonians `Hb` of
 class `C^n` on `ℝ × M`, the perturbation obtained by plumbing the negative plane with Hamiltonian
