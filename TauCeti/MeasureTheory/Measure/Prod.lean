@@ -219,43 +219,29 @@ theorem prod_graph {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] [Me
     (μ.prod ν) {z : α × β | z.2 = f z.1} = ∑' y : β, μ (f ⁻¹' {y}) * ν {y} := by
   have hmeas : MeasurableSet {z : α × β | z.2 = f z.1} :=
     measurableSet_eq_fun measurable_snd (hf.comp measurable_fst)
-  have hS : ({y : β | 0 < ν {y}}).Countable := by
-    simpa using Measure.countable_meas_level_set_pos (μ := ν) (g := id) measurable_id
-  set S : Set β := {y : β | 0 < ν {y}}
-  have hSm : MeasurableSet (f ⁻¹' S) := hf hS.measurableSet
-  have hcompl : ∫⁻ x in (f ⁻¹' S)ᶜ, ν {f x} ∂μ = 0 := by
-    refine setLIntegral_eq_zero hSm.compl ?_
-    intro x hx
-    simp only [Set.mem_compl_iff, Set.mem_preimage, S, Set.mem_ofPred_eq, not_lt,
-      nonpos_iff_eq_zero] at hx
-    exact hx
-  have hbiUnion : f ⁻¹' S = ⋃ y ∈ S, f ⁻¹' {y} := by
-    ext x
-    simp
+  have hν_meas : Measurable fun y : β ↦ ν {y} := by
+    have hdiag : (fun y : β ↦ ν (Prod.mk y ⁻¹' Set.diagonal β)) = fun y : β ↦ ν {y} := by
+      ext1 y
+      congr 1
+      ext z
+      simp [eq_comm]
+    simpa only [hdiag] using measurable_measure_prodMk_left (ν := ν) measurableSet_diagonal
+  have hS : (Function.support fun y : β ↦ ν {y}).Countable := by
+    simpa [Function.support, pos_iff_ne_zero] using
+      Measure.countable_meas_level_set_pos (μ := ν) (g := id) measurable_id
   rw [prod_apply hmeas]
   have hsec : ∀ x : α, Prod.mk x ⁻¹' {z : α × β | z.2 = f z.1} = {f x} := fun x ↦ by
     ext y
     simp
   simp_rw [hsec]
-  rw [← lintegral_add_compl _ hSm, hcompl, add_zero, hbiUnion,
-    lintegral_biUnion hS (fun y _ ↦ hf (measurableSet_singleton y))
-      (Set.pairwiseDisjoint_fiber f S)]
-  have hterm (y : S) : ∫⁻ x in f ⁻¹' {(y : β)}, ν {f x} ∂μ = μ (f ⁻¹' {(y : β)}) * ν {(y : β)} := by
-    calc ∫⁻ x in f ⁻¹' {(y : β)}, ν {f x} ∂μ
-        = ∫⁻ _ in f ⁻¹' {(y : β)}, ν {(y : β)} ∂μ :=
-          setLIntegral_congr_fun (hf (measurableSet_singleton _)) fun x hx ↦ by
-            simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx
-            rw [hx]
-      _ = ν {(y : β)} * μ (f ⁻¹' {(y : β)}) := setLIntegral_const _ _
-      _ = μ (f ⁻¹' {(y : β)}) * ν {(y : β)} := mul_comm _ _
-  simp_rw [hterm]
-  rw [tsum_subtype S (fun y ↦ μ (f ⁻¹' {y}) * ν {y})]
+  rw [show (fun x ↦ ν {f x}) = (fun y : β ↦ ν {y}) ∘ f from rfl,
+    lintegral_comp hν_meas hf, ← setLIntegral_eq_of_support_subset Set.Subset.rfl,
+    lintegral_countable _ hS, tsum_subtype (Function.support fun y : β ↦ ν {y})
+      fun y ↦ ν {y} * (μ.map f) {y}]
   congr 1 with y
-  by_cases hy : y ∈ S
-  · simp [Set.indicator_of_mem hy]
-  · have hνy : ν {y} = 0 := by
-      simpa [S, not_lt, nonpos_iff_eq_zero] using hy
-    simp [Set.indicator_of_notMem hy, hνy]
+  by_cases hy : y ∈ Function.support fun y : β ↦ ν {y}
+  · simp [Set.indicator_of_mem hy, map_apply hf (measurableSet_singleton y), mul_comm]
+  · simp_all [Function.mem_support]
 
 /-- The product measure of the diagonal `Set.diagonal α` is `∑' x, μ {x} * ν {x}`. Only the second
 factor must be s-finite. -/
