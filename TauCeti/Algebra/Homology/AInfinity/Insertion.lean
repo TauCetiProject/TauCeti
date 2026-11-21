@@ -48,6 +48,7 @@ bar convention.
 
 ## Main results
 
+* `TauCeti.InsertionSlots.le_fst`: a word with `k` marked slots has length at least `k`.
 * `TauCeti.InsertionSlots.eq_univ_of_fst_eq`: a word of length `k` with `k` marked slots has every
   slot marked.
 * `TauCeti.insertionTerm_mem`: an insertion term has energy at least the energy of its inputs plus
@@ -80,6 +81,10 @@ variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
 /-- The terms of an insertion series of arity `k`: a word length `n` together with the set of `k`
 slots, out of `n`, holding the inputs. The other `n - k` slots hold the inserted element. -/
 abbrev InsertionSlots (k : ℕ) : Type := Σ n : ℕ, {s : Finset (Fin n) // #s = k}
+
+/-- A word with `k` marked slots has length at least `k`. -/
+theorem InsertionSlots.le_fst {k : ℕ} (i : InsertionSlots k) : k ≤ i.1 := by
+  simpa [i.2.2] using card_le_univ i.2.1
 
 /-- A word of length `k` with `k` marked slots has every slot marked. -/
 theorem InsertionSlots.eq_univ_of_fst_eq {k : ℕ} {i : InsertionSlots k} (h : i.1 = k) :
@@ -132,10 +137,10 @@ theorem insertionTerm_apply_of_arity_zero (i : InsertionSlots 0) (x : Fin 0 → 
 theorem insertionTerm_zero_of_ne {k : ℕ} (i : InsertionSlots k) (hi : i.1 ≠ k) :
     insertionTerm μ 0 i = 0 := by
   obtain ⟨n, s, hs⟩ := i
-  obtain ⟨p, hp⟩ : sᶜ.Nonempty := by
-    rw [nonempty_iff_ne_empty, Ne, compl_eq_empty_iff, ← card_eq_iff_eq_univ, Fintype.card_fin,
-      hs]
-    exact fun h ↦ hi h.symm
+  have hk : k ≤ n := InsertionSlots.le_fst ⟨n, s, hs⟩
+  have hi : n ≠ k := hi
+  obtain ⟨p, hp⟩ : sᶜ.Nonempty :=
+    card_pos.1 (by rw [card_compl, Fintype.card_fin, hs]; omega)
   ext x
   rw [insertionTerm_apply, zero_apply]
   refine MultilinearMap.map_coord_zero _ p ?_
@@ -189,10 +194,9 @@ theorem insertionTerm_mem_of_ne (hF : Antitone F)
     (hx : ∀ j, x j ∈ F (c j)) :
     insertionTerm μ b i x ∈ F (∑ j, c j + δ) := by
   refine hF ?_ (insertionTerm_mem μ b hμ hb i hx)
-  have hk : k ≤ i.1 := by
-    simpa [i.2.2] using card_le_univ i.2.1
+  have hk := i.le_fst
   have : (1 : ℝ) ≤ ((i.1 - k : ℕ) : ℝ) := by
-    exact_mod_cast Nat.one_le_iff_ne_zero.2 (Nat.sub_ne_zero_of_lt (lt_of_le_of_ne hk (Ne.symm hi)))
+    exact_mod_cast (by omega : 1 ≤ i.1 - k)
   nlinarith
 
 /-- The words of bounded length with `k` marked slots are finite in number. -/
