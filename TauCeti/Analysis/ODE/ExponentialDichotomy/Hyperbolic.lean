@@ -220,10 +220,6 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero (B : E →L[ℝ] E) {p : ℝ[X]
     (hp : aeval B p = 0) (hroots : ∀ z : ℂ, aeval z p = 0 → z.re < 0) :
     ∃ K α : ℝ, 0 < K ∧ 0 < α ∧ ∀ t : ℝ, 0 ≤ t → ‖exp (t • B)‖ ≤ K * Real.exp (-α * t) := by
   have := FiniteDimensional.completeSpace ℝ E
-  have : FiniteDimensional ℝ (TauCeti.Complexification E) :=
-    (TauCeti.Complexification.equivProd E).symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℂ (TauCeti.Complexification E) :=
-    Module.Finite.of_restrictScalars_finite ℝ ℂ _
   obtain ⟨K, α, hK, hα, h⟩ := B.complexify.exists_norm_exp_smul_le_of_aeval_eq_zero'
     (q := p.map (algebraMap ℝ ℂ))
     (by rw [aeval_map_algebraMap, ← complexifyAlgHom_apply, aeval_algHom_apply, hp, map_zero])

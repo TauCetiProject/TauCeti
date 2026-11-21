@@ -278,6 +278,14 @@ theorem trace_cliffordProjection (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
   simp [cliffordProjection_eq_smul, map_add, trace_cliffordRestriction o ρ hQ, div_eq_inv_mul]
 
 variable {ω} in
+/-- In complex dimension two, `tr P_α = 1`. -/
+private theorem trace_cliffordProjection_of_finrank_eq_two (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
+    LinearMap.trace ℂ (positiveHalfSpinors o ρ) (cliffordProjection o ρ ω) = 1 := by
+  rw [trace_cliffordProjection o ρ ω hQ, h₂]
+  norm_num
+
+variable {ω} in
 /-- **A nonzero spinor fixed by `P_α` forces the normalization `‖ω‖² = 2`**: on such a spinor
 `C(iω)` acts as `2`, while `C(iω)² = 2 ‖ω‖²` for self-dual `ω`. -/
 theorem norm_sq_eq_two_of_cliffordProjection_apply_eq_self (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -341,13 +349,6 @@ section TwoDimensional
 variable (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
 include h₂
 
-omit hkl hω hω₂ in
-/-- In complex dimension two, `tr P_α = 1`. -/
-private theorem trace_cliffordProjection_of_finrank_eq_two :
-    LinearMap.trace ℂ (positiveHalfSpinors o ρ) (cliffordProjection o ρ ω) = 1 := by
-  rw [trace_cliffordProjection o ρ ω hQ, h₂]
-  norm_num
-
 /-- **The range of `P_α` is a line** when `W⁺` has complex dimension two. -/
 theorem finrank_range_cliffordProjection :
     finrank ℂ (LinearMap.range (cliffordProjection o ρ ω).toLinearMap) = 1 := by
@@ -386,10 +387,17 @@ theorem exists_ne_zero_cliffordProjection_apply_eq_zero_forall_eq_smul :
     (ω := -ω) hQ hkl (by rw [map_neg, hω]) (by rwa [norm_neg]) h₂
   exact ⟨u, hu₀, hP.1 hu, fun ψ hψ ↦ hspan ψ (hP.2 hψ)⟩
 
-variable {ρ} (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-include hρ
+end TwoDimensional
 
-omit hω₂ in
+end Normalized
+
+section SelfDualTwoDimensional
+
+variable {ρ ω} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
+  (hω : o.hodgeStar hkl ω = ω) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+include hQ hω h₂ hρ
+
 /-- On the line `P_α W⁺`, the rank-one operator of a spinor is a multiple of `P_α`:
 `ψψ* = ‖ψ‖² P_α` when `P_α ψ = ψ`. In particular `P_α = u₀u₀*` for a unit spinor `u₀` of
 that line. -/
@@ -420,7 +428,6 @@ theorem rankOne_eq_smul_cliffordProjection {ψ : positiveHalfSpinors o ρ}
     hinner]
   ring_nf
 
-omit hω₂ in
 /-- **`q` on the line `P_α W⁺`**: `q(ψ) = (‖ψ‖² / 4) ω` when `P_α ψ = ψ`. In particular
 `q(u₀) = ω / 4` for a unit spinor `u₀` of that line. -/
 theorem coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
@@ -437,7 +444,6 @@ theorem coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self {ψ : positiveH
     cliffordRestriction_eq_cliffordProjection, ← ContinuousLinearMap.one_def]
   module
 
-omit hω₂ in
 /-- **`q` on the kernel of `P_α`**: `q(β) = -(‖β‖² / 4) ω` when `P_α β = 0`, that is when `β` lies
 in the line `P_β W⁺`. -/
 theorem coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero {β : positiveHalfSpinors o ρ}
@@ -449,14 +455,13 @@ theorem coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero {β : positiveH
       one_apply_eq_self]
   rw [coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self o hQ hkl hneg h₂ hρ hβ', smul_neg]
 
-end TwoDimensional
+end SelfDualTwoDimensional
 
 section Pairing
 
-variable {ρ} (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-include hρ
+variable {ρ ω} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
+include hQ
 
-omit hω hω₂ hρ in
 /-- **The `ω`-component of `q`**: `⟪q(ψ), ω⟫ = (‖P_α ψ‖² - ‖P_β ψ‖²) / 2` for every two-form `ω`.
 With `ψ = α u₀ + β` and `‖ω‖² = 2` this is `(|α|² - ‖β‖²) / 2`, the term of the curvature equation
 along `ω`. -/
@@ -479,7 +484,12 @@ theorem inner_quadraticTwoForm (ψ : positiveHalfSpinors o ρ) :
   norm_num [Complex.mul_re]
   ring
 
-omit hω₂ in
+section SelfDualSkewAdjoint
+
+variable (hω : o.hodgeStar hkl ω = ω)
+  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+include hω hρ
+
 /-- **The cross term of `q` is orthogonal to `ω`**: `⟪q'(φ, β), ω⟫ = 0` when `P_α φ = φ` and
 `P_α β = 0`. -/
 theorem inner_quadraticTwoFormPolar_of_cliffordProjection {φ β : positiveHalfSpinors o ρ}
@@ -499,7 +509,6 @@ theorem inner_quadraticTwoFormPolar_of_cliffordProjection {φ β : positiveHalfS
     ← Submodule.coe_inner, horth]
   simp
 
-omit hω₂ in
 /-- **`q` on the decomposition `ψ = φ + β`** with `P_α φ = φ` and `P_α β = 0`:
 `q(φ + β) = ((‖φ‖² - ‖β‖²) / 4) ω + q'(φ, β)`, where the cross term `q'(φ, β)` is orthogonal to
 `ω` (`inner_quadraticTwoFormPolar_of_cliffordProjection`). -/
@@ -515,7 +524,6 @@ theorem coe_quadraticTwoForm_add_of_cliffordProjection
 
 /-! ### The curvature equation along `ω` -/
 
-omit hω₂ in
 /-- **Taubes's coordinate `α`**: for a unit spinor `u₀` of the line `P_α W⁺`,
 `P_α ψ = ⟪u₀, ψ⟫ u₀`. Thus `ψ = α u₀ + β` with `α = ⟪u₀, ψ⟫` and `β = P_β ψ`. -/
 theorem cliffordProjection_apply_eq_inner_smul (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
@@ -526,7 +534,6 @@ theorem cliffordProjection_apply_eq_inner_smul (h₂ : finrank ℂ (positiveHalf
     (rankOne_eq_smul_cliffordProjection o hQ hkl hω h₂ hρ hu₀)
   simpa [hu₀₁] using h.symm
 
-omit hω₂ in
 /-- **The quadratic term of the perturbed curvature equation.** In Taubes's normalization
 `Ψ = √r (φ + β)` with `P_α φ = φ` and `P_α β = 0`,
 `q(Ψ) - (r / 4) ω = (r / 4) (‖φ‖² - ‖β‖² - 1) ω + r q'(φ, β)`, where the cross term `q'(φ, β)` is
@@ -544,7 +551,13 @@ theorem coe_quadraticTwoForm_sqrt_smul_add_sub_smul
     coe_quadraticTwoForm_add_of_cliffordProjection o hQ hkl hω hρ h₂ hφ hβ]
   module
 
-omit hω hρ in
+end SelfDualSkewAdjoint
+
+section NormSqTwo
+
+variable (hω₂ : ‖ω‖ ^ 2 = 2)
+include hω₂
+
 /-- **The curvature equation along `ω`**: for `Ψ = √r (φ + β)` with `P_α φ = φ` and `P_α β = 0`,
 `⟪q(Ψ) - (r / 4) ω, ω⟫ = (r / 2) (‖φ‖² - ‖β‖² - 1)`. -/
 theorem inner_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positiveHalfSpinors o ρ}
@@ -560,7 +573,6 @@ theorem inner_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positiveHalfSpino
     real_inner_self_eq_norm_sq, hω₂]
   ring
 
-omit hω hρ in
 /-- **The projection of the curvature equation onto `ω`**: for `Ψ = √r (φ + β)` with `P_α φ = φ`
 and `P_α β = 0`, the orthogonal projection of `q(Ψ) - (r / 4) ω` onto the line `ℝ ω` is
 `(r / 4) (‖φ‖² - ‖β‖² - 1) ω`. With `φ = α u₀` for a unit `u₀`, this is the pointwise identity
@@ -578,8 +590,8 @@ theorem starProjection_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positive
   simp only [RCLike.ofReal_real_eq_id, id_eq]
   ring
 
-end Pairing
+end NormSqTwo
 
-end Normalized
+end Pairing
 
 end TauCeti.SeibergWitten
