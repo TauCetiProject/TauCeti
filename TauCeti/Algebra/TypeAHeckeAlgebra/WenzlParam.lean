@@ -64,10 +64,13 @@ whenever `Q ≠ 0, 1`, and its value at `Q = 1` is the removable limit.
   `TauCeti.mem_wenzlPositiveSet_of_mem_Icc_of_one_le`,
   `TauCeti.mem_wenzlPositiveSet_of_mem_Icc_of_le_one`, `TauCeti.wenzlPositiveSet_inv`, and
   `TauCeti.one_sub_mem_wenzlPositiveSet_iff`: membership and symmetries of `wenzlPositiveSet Q`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric`: the Ocneanu
-  trace realized by the atomic model on `r + 1` positive letters with geometric weights
-  (`TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_eq`) has projection parameter
-  `a_(r + 1)(q ^ 2)`.
+* `TauCeti.mul_wenzlParam_natCast_sub` and `TauCeti.mul_wenzlParam_neg_natCast_sub`: converting
+  the positive and negative discrete projection parameters `a_(±(r + 1))(q ^ 2)` to their Markov
+  parameters.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_negGeometric`: the Ocneanu
+  traces realized by the atomic models on `r + 1` positive or negative letters with geometric
+  weights have projection parameters `a_(r + 1)(q ^ 2)` and `a_(-(r + 1))(q ^ 2)`.
 
 ## References
 
@@ -430,6 +433,45 @@ end PositiveSet
 
 /-! ### The discrete Markov traces of the geometric atomic models -/
 
+/-- For `c * [r + 1]_Q = 1` with `Q = q ^ 2` and `1 + Q ≠ 0`, the projection parameter
+`a_(r + 1)(Q)` corresponds to the Markov parameter `c * q ^ (2 * r + 1)`. -/
+theorem mul_wenzlParam_natCast_sub {q : Kˣ} (hQ : 1 + (q : K) ^ 2 ≠ 0) {r : ℕ} {c : K}
+    (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) :
+    (q : K) * wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) -
+        ((q⁻¹ : Kˣ) : K) * (1 - wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2)) =
+      c * (q : K) ^ (2 * r + 1) := by
+  have hq : (q : K) ≠ 0 := q.ne_zero
+  have hZ : ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a ≠ 0 := right_ne_zero_of_mul_eq_one hc
+  rw [wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]
+  field_simp
+  linear_combination -((1 + (q : K) ^ 2) * (q : K) ^ (2 * r + 2)) * hc
+
+/-- For `c * [r + 1]_Q = 1` with `Q = q ^ 2` and `1 + Q ≠ 0`, the projection parameter
+`a_(-(r + 1))(Q)` corresponds to the Markov parameter `-(c * q⁻¹)`. -/
+theorem mul_wenzlParam_neg_natCast_sub {q : Kˣ} (hQ : 1 + (q : K) ^ 2 ≠ 0) {r : ℕ} {c : K}
+    (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) :
+    (q : K) * wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) -
+        ((q⁻¹ : Kˣ) : K) * (1 - wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2)) =
+      -(c * ((q⁻¹ : Kˣ) : K)) := by
+  have hq : (q : K) ≠ 0 := q.ne_zero
+  have hZ : ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a ≠ 0 := right_ne_zero_of_mul_eq_one hc
+  have hg : ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a =
+      (q : K) ^ 2 * ∑ a ∈ range r, ((q : K) ^ 2) ^ a + 1 := by
+    simp [sum_range_succ', pow_succ', ← mul_sum]
+  rw [wenzlParam_neg_natCast, Nat.add_sub_cancel, Units.val_inv_eq_inv_val]
+  field_simp
+  linear_combination -((1 + (q : K) ^ 2) * hg) + (1 + (q : K) ^ 2) * hc
+
+private theorem one_add_sq_ne_zero_of_eq_add_inv {q s : Kˣ} (hs : (s : K) = q + ↑q⁻¹) :
+    1 + (q : K) ^ 2 ≠ 0 := by
+  have hq : (q : K) ≠ 0 := q.ne_zero
+  have hqs : 1 + (q : K) ^ 2 = q * s := by
+    rw [hs, Units.val_inv_eq_inv_val]
+    field_simp
+    ring
+  rw [hqs]
+  exact mul_ne_zero hq s.ne_zero
+
 namespace InfiniteTypeAHeckeAlgebra
 
 variable {q : Kˣ}
@@ -446,17 +488,21 @@ theorem ocneanuTrace_mul_eigenprojection_geometric (s : Kˣ) (hs : (s : K) = q +
     ocneanuTrace K q (c * (q : K) ^ (2 * r + 1))
         (x * (↑s⁻¹ : K) • (T q n + algebraMap K _ (↑q⁻¹ : K))) =
       wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) *
-        ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) x := by
-  refine (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs ?_ hx
-  have hq : (q : K) ≠ 0 := q.ne_zero
-  have hZ : ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a ≠ 0 := right_ne_zero_of_mul_eq_one hc
-  -- `1 + q ^ 2 = q * s` is nonzero since `s` is a unit.
-  have hQ : 1 + (q : K) ^ 2 ≠ 0 := by
-    rw [show 1 + (q : K) ^ 2 = q * s by rw [hs, Units.val_inv_eq_inv_val]; field_simp; ring]
-    exact mul_ne_zero hq s.ne_zero
-  rw [wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]
-  field_simp
-  linear_combination ((1 + (q : K) ^ 2) * (q : K) ^ (2 * r + 2)) * hc
+        ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) x :=
+  (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs
+    (mul_wenzlParam_natCast_sub (one_add_sq_ne_zero_of_eq_add_inv hs) hc).symm hx
+
+/-- **The projection parameter of a negative geometric atomic model** is `wenzlParam (-(r + 1)) Q`
+(`Q = q ^ 2`, `c * [r + 1]_Q = 1`). -/
+theorem ocneanuTrace_mul_eigenprojection_negGeometric (s : Kˣ) (hs : (s : K) = q + ↑q⁻¹) {r : ℕ}
+    {c : K} (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) {n : ℕ}
+    {x : InfiniteTypeAHeckeAlgebra K q} (hx : x ∈ stage K q (n + 1)) :
+    ocneanuTrace K q (-(c * ↑q⁻¹))
+        (x * (↑s⁻¹ : K) • (T q n + algebraMap K _ (↑q⁻¹ : K))) =
+      wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) *
+        ocneanuTrace K q (-(c * ↑q⁻¹)) x :=
+  (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs
+    (mul_wenzlParam_neg_natCast_sub (one_add_sq_ne_zero_of_eq_add_inv hs) hc).symm hx
 
 end InfiniteTypeAHeckeAlgebra
 

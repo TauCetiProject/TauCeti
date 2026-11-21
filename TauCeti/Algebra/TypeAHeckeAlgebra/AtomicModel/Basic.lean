@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Finsupp.ProductDensity
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Atomic tensor models of Markov traces on the type-A Hecke algebra
@@ -59,6 +60,10 @@ Positivity is not considered: everything here is algebraic, over any commutative
 * `TauCeti.TypeAHeckeAlgebra.signedChecked_comp_eq_of_forall_T`: a map of Hecke algebras and a
   linear map of word spaces intertwining the representations on generators intertwine them
   everywhere.
+* `TauCeti.TypeAHeckeAlgebra.signedChecked_strictMono_single_apply`: alphabet embedding invariance
+  under strictly monotone sign-preserving maps.
+* `TauCeti.TypeAHeckeAlgebra.signedChecked_strandIncl_mul_T_last_single_snoc_apply`: the diagonal
+  matrix entry of `strandIncl x * T n` at a `Fin.snoc` word.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_mul_comm`, `TauCeti.TypeAHeckeAlgebra.atomicTrace_one`
   and `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl`: the atomic trace is tracial, its value
   at `1`, and its behaviour under adding a strand.
@@ -131,12 +136,13 @@ theorem commute_productDensity_signedChecked (p : ι → R) (x : TypeAHeckeAlgeb
 
 /-- A map of Hecke algebras and a linear map of word spaces which intertwine the signed checked
 representations on every generator intertwine them on every element. -/
-theorem signedChecked_comp_eq_of_forall_T {m : ℕ}
+theorem signedChecked_comp_eq_of_forall_T {ι' : Type*} [LinearOrder ι'] {pos' : ι' → Prop}
+    [DecidablePred pos'] {m : ℕ}
     (f : TypeAHeckeAlgebra R q n →ₐ[R] TypeAHeckeAlgebra R q m)
-    (L : ((Fin n → ι) →₀ R) →ₗ[R] (Fin m → ι) →₀ R)
-    (h : ∀ i, (signedChecked pos q (f (T q i))).comp L = L.comp (signedChecked pos q (T q i)))
+    (L : ((Fin n → ι') →₀ R) →ₗ[R] (Fin m → ι) →₀ R)
+    (h : ∀ i, (signedChecked pos q (f (T q i))).comp L = L.comp (signedChecked pos' q (T q i)))
     (x : TypeAHeckeAlgebra R q n) :
-    (signedChecked pos q (f x)).comp L = L.comp (signedChecked pos q x) := by
+    (signedChecked pos q (f x)).comp L = L.comp (signedChecked pos' q x) := by
   have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
     rw [adjoin_range_T]
     trivial
@@ -151,6 +157,22 @@ theorem signedChecked_comp_eq_of_forall_T {m : ℕ}
   | mul x y _ _ hx hy =>
     rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
       LinearMap.comp_assoc, hy, ← LinearMap.comp_assoc, hx, LinearMap.comp_assoc]
+
+/-- **Alphabet embedding invariance of `signedChecked`** under strictly monotone sign-preserving
+maps `g : ι' → ι`. -/
+theorem signedChecked_strictMono_single_apply {ι' : Type*} [LinearOrder ι']
+    (pos' : ι' → Prop) [DecidablePred pos'] {g : ι' → ι} (hg : StrictMono g)
+    (hpos : ∀ a, pos (g a) ↔ pos' a) (x : TypeAHeckeAlgebra R q n) (w u : Fin n → ι') :
+    signedChecked pos q x (single (g ∘ w) 1) (g ∘ u) =
+      signedChecked pos' q x (single w 1) u := by
+  set L := lmapDomain R R (fun v : Fin n → ι' ↦ g ∘ v)
+  have hcomp : (signedChecked pos q x).comp L = L.comp (signedChecked pos' q x) := by
+    refine signedChecked_comp_eq_of_forall_T pos q (AlgHom.id R _) L (fun i ↦ ?_) x
+    rw [AlgHom.id_apply, signedChecked_T, signedChecked_T, LinearMap.smul_comp,
+      LinearMap.comp_smul, signedCheckedR_comp_lmapDomain_strictMono pos pos' (q : R) hg hpos]
+  have hw := LinearMap.congr_fun hcomp (single w 1)
+  simp only [LinearMap.coe_comp, comp_apply, L, lmapDomain_apply, mapDomain_single] at hw
+  rw [hw, mapDomain_apply_of_injective hg.injective.comp_left]
 
 /-- The action of an element after adding an uncrossed last strand is its original action with
 the last letter held fixed. -/
@@ -191,7 +213,7 @@ theorem signedChecked_strandIncl_single_snoc_apply_snoc (x : TypeAHeckeAlgebra R
 
 /-- In the diagonal coefficient of `x * T n`, at a word ending in the letters `w (Fin.last n)` and
 `c`, only the colour-preserving part of the last crossing survives. -/
-private theorem signedChecked_strandIncl_mul_T_last_single_snoc_apply
+theorem signedChecked_strandIncl_mul_T_last_single_snoc_apply
     (x : TypeAHeckeAlgebra R q (n + 1)) (w : Fin (n + 1) → ι) (c : ι) :
     signedChecked pos q (strandIncl R q (n + 1) x * T q (Fin.last n))
         (single (Fin.snoc w c) 1) (Fin.snoc w c) =
@@ -202,12 +224,8 @@ private theorem signedChecked_strandIncl_mul_T_last_single_snoc_apply
     Fin.ext (by simp)
   have hk : BraidGroup.strandSucc (Fin.last n : Fin (n + 2 - 1)) = Fin.last (n + 1) :=
     Fin.ext (by simp)
-  have hswap : Fin.snoc w c ∘ Equiv.swap (Fin.last n).castSucc (Fin.last (n + 1)) =
-      Fin.snoc (update w (Fin.last n) c) (w (Fin.last n)) := by
-    rw [Equiv.comp_swap_eq_update]
-    simp [← Fin.snoc_update, Fin.update_snoc_last]
   simp only [map_mul, mul_apply_eq_comp, signedChecked_T, hj, hk, LinearMap.smul_apply,
-    signedCheckedR_single_one, Fin.snoc_castSucc, Fin.snoc_last, hswap]
+    signedCheckedR_single_one, Fin.snoc_castSucc, Fin.snoc_last, Fin.snoc_comp_swap_last]
   rcases lt_trichotomy (w (Fin.last n)) c with h | h | h
   · simp only [h.ne, h, ↓reduceIte, map_sub, map_smul, Finsupp.smul_apply, Finsupp.sub_apply,
       smul_eq_mul, signedChecked_strandIncl_single_snoc_apply_snoc]

@@ -7,29 +7,30 @@ module
 
 public import Mathlib.Order.Sum.Order
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable
-import Mathlib.Analysis.Complex.Order
-import Mathlib.Topology.Algebra.InfiniteSum.Constructions
-import Mathlib.Topology.Algebra.InfiniteSum.Group
+import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Zero
+import TauCeti.Analysis.SpecificLimits.TwoSidedGeometric
 
 /-!
-# Countable geometric models and positivity of positive-real Markov traces
+# Countable geometric models on Wenzl's continuous interval
 
-For real nonzero `q : ℂˣ` (`IsSelfAdjoint (q : ℂ)`) with `Q = q ^ 2 > 0`, writing
-`z = q * η - q⁻¹ * (1 - η)` gives `q * z = (1 + Q) * η - 1`. Over Wenzl's positive-real set
-`TauCeti.wenzlPositiveSet Q` (defined in `TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam`), we prove
-positivity of the Ocneanu trace
-(`TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_star_mul_self_nonneg`, bundled as
-`TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuPositiveFunctional`) by combining:
-1. **Two-sided geometric models on `ℕ ⊕ₗ ℕᵒᵈ` (`1 < Q` and `0 < Q < 1`)**: `wenzlGtOneWeight` and
-   `wenzlLtOneWeight` realize the continuous interval, with telescoping cycle-trace product
-   `(1 + c * x) / (1 - s * x)` for `1 < Q` (`wenzlGtOneWeight_cycleWord_hasProd`).
-2. **The `z = 0` Ocneanu trace (`η = 1 / 2` at `Q = 1`)**: positive by
-   `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_zero_star_mul_self_nonneg`.
-3. **Finite positive/negative geometric atomic models (`d ≠ 0`, `Q > 0`)**.
+For real nonzero `q : ℂˣ` with `Q = q ^ 2 > 0`, writing `z = q * η - q⁻¹ * (1 - η)` gives
+`q * z = (1 + Q) * η - 1`. We construct the countable two-sided geometric atomic models on
+`ℕ ⊕ₗ ℕᵒᵈ` realizing every parameter `η` in Wenzl's continuous interval:
+
+* **For `1 < Q`** (`wenzlGtOnePos`, `wenzlGtOneWeight`): positive letters on `ℕ` followed by
+  negative letters on `ℕᵒᵈ`, realizing the Ocneanu trace for any `η`
+  (`countableAtomicTrace_wenzlGtOneWeight_eq_ocneanuTrace`), nonnegative on
+  `[1 / (1 + Q), Q / (1 + Q)]` (`wenzlGtOneWeight_nonneg`), with telescoping cycle-trace product
+  `(1 + (Q - (1 + Q) * η) * x) / (1 - ((1 + Q) * η - 1) * x)` on `Q * ‖x‖ < 1`
+  (`wenzlGtOneWeight_cycleWord_hasProd`).
+* **For `0 < Q < 1`** (`wenzlLtOnePos`, `wenzlLtOneWeight`): negative letters on `ℕ` followed by
+  positive letters on `ℕᵒᵈ`, realizing the Ocneanu trace for any `η`
+  (`countableAtomicTrace_wenzlLtOneWeight_eq_ocneanuTrace`), nonnegative on
+  `[Q / (1 + Q), 1 / (1 + Q)]` (`wenzlLtOneWeight_nonneg`), with the same telescoping cycle-trace
+  product on `‖x‖ < 1` (`wenzlLtOneWeight_cycleWord_hasProd`).
 
 ## References
 
@@ -41,85 +42,20 @@ positivity of the Ocneanu trace
 public section
 
 open Filter Function Finsupp OrderDual
-open scoped Topology ComplexOrder
+open scoped Topology
 
-namespace TauCeti
-
-namespace TypeAHeckeAlgebra
+namespace TauCeti.TypeAHeckeAlgebra
 
 section CountableGeometricModels
 
-private noncomputable def twoSidedGeom (a₁ a₂ r : ℝ) (a : ℕ ⊕ₗ ℕᵒᵈ) : ℝ :=
-  match ofLex a with
-  | Sum.inl k => a₁ * r ^ k
-  | Sum.inr k => a₂ * r ^ ofDual k
-
-private theorem twoSidedGeom_nonneg {a₁ a₂ r : ℝ} (h₁ : 0 ≤ a₁) (h₂ : 0 ≤ a₂) (hr : 0 ≤ r)
-    (a : ℕ ⊕ₗ ℕᵒᵈ) : 0 ≤ twoSidedGeom a₁ a₂ r a := by
-  cases ha : ofLex a <;> simp only [twoSidedGeom, ha] <;> positivity
-
-private theorem summable_norm_twoSidedGeom (a₁ a₂ : ℝ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
-    Summable fun a ↦ ‖twoSidedGeom a₁ a₂ r a‖ := by
-  have hgeom := summable_geometric_of_lt_one hr0 hr1
-  refine ((Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex).summable_iff.mp <|
-    Summable.sum _
-      ((hgeom.mul_left ‖a₁‖).congr fun k ↦ by simp [twoSidedGeom, abs_of_nonneg hr0])
-      ((hgeom.mul_left ‖a₂‖).congr fun k ↦ by simp [twoSidedGeom, abs_of_nonneg hr0])
-
-private theorem tsum_twoSidedGeom (a₁ a₂ : ℝ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
-    (∑' a, twoSidedGeom a₁ a₂ r a) = (a₁ + a₂) / (1 - r) := by
-  have hgeom := summable_geometric_of_lt_one hr0 hr1
-  let e : (ℕ ⊕ ℕ) ≃ (ℕ ⊕ₗ ℕᵒᵈ) := (Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex
-  rw [(e.tsum_eq _).symm.trans (Summable.tsum_sum (f := twoSidedGeom a₁ a₂ r ∘ e)
-    (hgeom.mul_left a₁) (hgeom.mul_left a₂))]
-  simp only [e, comp_def, Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.refl_apply, Sum.map_inl,
-    Sum.map_inr, twoSidedGeom, ofLex_toLex, ofDual_toDual, hgeom.tsum_mul_left,
-    tsum_geometric_of_lt_one hr0 hr1]
+private theorem mul_markovParam_proj_eq {q : ℂˣ} {Q : ℝ} (hqQ : (q : ℂ) ^ 2 = Q) (η : ℝ) :
+    (q : ℂ) * ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) = (((1 + Q) * η - 1 : ℝ) : ℂ) := by
+  have _ := q.ne_zero
+  rw [Units.val_inv_eq_inv_val]
+  push_cast
+  rw [← hqQ]
+  field_simp
   ring
-
-private theorem mul_tsum_lt_twoSidedGeom_inl (a₁ a₂ r : ℝ) (m : ℕ) :
-    (1 - r) * (∑' a : ℕ ⊕ₗ ℕᵒᵈ, if a < Sum.inlₗ m then twoSidedGeom a₁ a₂ r a else 0) =
-      a₁ * (1 - r ^ m) := by
-  have hpref : HasSum (fun k : ℕ ↦ if k < m then a₁ * r ^ k else 0)
-      (∑ k ∈ Finset.range m, a₁ * r ^ k) := by
-    convert hasSum_subtype_iff_indicator.mp ((Finset.range m).hasSum fun k ↦ a₁ * r ^ k) using 1
-    ext k; simp [Set.indicator_apply]
-  let e : (ℕ ⊕ ℕ) ≃ (ℕ ⊕ₗ ℕᵒᵈ) := (Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex
-  rw [(e.tsum_eq _).symm.trans (Summable.tsum_sum
-    (f := (fun a : ℕ ⊕ₗ ℕᵒᵈ ↦ if a < Sum.inlₗ m then twoSidedGeom a₁ a₂ r a else 0) ∘ e)
-    (by simpa [e, comp_def, twoSidedGeom] using hpref.summable) (by simp [e, comp_def]))]
-  simp only [e, comp_def, Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.refl_apply, Sum.map_inl,
-    Sum.map_inr, twoSidedGeom, ofLex_toLex, Sum.Lex.inl_lt_inl_iff, Sum.Lex.not_inr_lt_inl,
-    ↓reduceIte, tsum_zero, add_zero, hpref.tsum_eq, ← Finset.mul_sum]
-  rw [mul_left_comm, mul_neg_geom_sum]
-
-private theorem mul_tsum_lt_twoSidedGeom_inr (a₁ a₂ : ℝ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1)
-    (m : ℕ) :
-    (1 - r) * (∑' a : ℕ ⊕ₗ ℕᵒᵈ, if a < Sum.inrₗ (toDual m) then twoSidedGeom a₁ a₂ r a else 0) =
-      a₁ + a₂ * r ^ (m + 1) := by
-  have hgeom := summable_geometric_of_lt_one hr0 hr1; have h₂ := hgeom.mul_left a₂
-  have htail_sum : Summable fun k : ℕ ↦ if m < k then a₂ * r ^ k else 0 := by
-    convert (summable_subtype_iff_indicator (s := (Finset.range (m + 1) : Set ℕ)ᶜ)
-      (f := fun k ↦ a₂ * r ^ k)).mp ((Finset.range (m + 1)).summable_compl_iff.mpr h₂) using 1
-    ext k; simp [Set.indicator_apply]
-  have htail : (∑' k : ℕ, if m < k then a₂ * r ^ k else 0) =
-      (∑' k : ℕ, a₂ * r ^ k) - ∑ k ∈ Finset.range (m + 1), a₂ * r ^ k := by
-    have hsplit := h₂.sum_add_tsum_compl (s := Finset.range (m + 1))
-    rw [tsum_subtype (s := (Finset.range (m + 1) : Set ℕ)ᶜ) (fun k ↦ a₂ * r ^ k),
-      tsum_congr (g := fun k ↦ if m < k then a₂ * r ^ k else 0) fun k ↦ by
-        simp [Set.indicator_apply]] at hsplit
-    linarith
-  let e : (ℕ ⊕ ℕ) ≃ (ℕ ⊕ₗ ℕᵒᵈ) := (Equiv.sumCongr (Equiv.refl ℕ) toDual).trans toLex
-  rw [(e.tsum_eq _).symm.trans (Summable.tsum_sum
-    (f := (fun a : ℕ ⊕ₗ ℕᵒᵈ ↦ if a < Sum.inrₗ (toDual m) then twoSidedGeom a₁ a₂ r a else 0) ∘ e)
-    (by simpa [e, comp_def, twoSidedGeom] using hgeom.mul_left a₁)
-    (by simpa [e, comp_def, twoSidedGeom] using htail_sum))]
-  simp only [e, comp_def, Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.refl_apply, Sum.map_inl,
-    Sum.map_inr, twoSidedGeom, ofLex_toLex, ofDual_toDual, Sum.Lex.inl_lt_inr,
-    Sum.Lex.inr_lt_inr_iff, toDual_lt_toDual, ↓reduceIte, htail, hgeom.tsum_mul_left,
-    tsum_geometric_of_lt_one hr0 hr1, ← Finset.mul_sum]
-  rw [mul_add, mul_sub, mul_left_comm (1 - r) a₂ (∑ _ ∈ _, _), mul_neg_geom_sum]
-  have h1r : 1 - r ≠ 0 := sub_ne_zero.mpr hr1.ne'; field_simp; ring
 
 private theorem countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice {ι : Type*}
     [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos] {q : ℂˣ} {Q : ℝ}
@@ -135,9 +71,45 @@ private theorem countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice {ι : T
   refine countableAtomicTrace_eq_ocneanuTrace_of_leftSlice pos q _ _
     (by rw [← Complex.ofReal_tsum, hsum, Complex.ofReal_one]) (fun b ↦ ?_) x
   have hsl := congrArg ((↑) : ℝ → ℂ) (hslice b)
+  rw [← mul_markovParam_proj_eq hqQ η] at hsl
   push_cast [Complex.ofReal_tsum, apply_ite ((↑) : ℝ → ℂ)] at hsl
-  rw [← hqQ] at hsl
-  have _ := q.ne_zero; rw [hsl, Units.val_inv_eq_inv_val]; field_simp; ring
+  rwa [← hqQ, ← Units.val_inv_eq_inv_val] at hsl
+
+private theorem hasProd_ofReal_cycleWord {ι : Type*} [LinearOrder ι] (pos : ι → Prop)
+    [DecidablePred pos] {q : ℂˣ} {Q : ℝ} (hqQ : (q : ℂ) ^ 2 = Q) {w : ι → ℝ}
+    (hw : Summable fun a ↦ ‖w a‖) (hw0 : ∀ a, 0 ≤ w a) (hsum : (∑' a, w a) = 1)
+    (η : ℝ) (hslice : ∀ b, (if pos b then Q else -1) * w b +
+      (Q - 1) * (∑' a, if a < b then w a else 0) = (1 + Q) * η - 1)
+    {x : ℂ} (hxM : max 1 (max ‖(q : ℂ) ^ 2‖ ‖(q : ℂ) ^ 2 - 1‖) * ‖x‖ < 1)
+    (hsx : ‖(((1 + Q) * η - 1 : ℝ) : ℂ) * x‖ < 1) :
+    HasProd (fun a : ι ↦
+        if pos a then (1 - (w a : ℂ) * x) / (1 - (q : ℂ) ^ 2 * (w a : ℂ) * x)
+        else (1 + (q : ℂ) ^ 2 * (w a : ℂ) * x) / (1 + (w a : ℂ) * x))
+      ((1 + ((Q - (1 + Q) * η : ℝ) : ℂ) * x) /
+        (1 - (((1 + Q) * η - 1 : ℝ) : ℂ) * x)) := by
+  have hp : Summable fun a ↦ ‖(w a : ℂ)‖ := hw.congr fun _ ↦ (Complex.norm_real _).symm
+  have hnorm_sum : (∑' a, ‖(w a : ℂ)‖) = 1 := by
+    simpa only [Complex.norm_real, Real.norm_of_nonneg (hw0 _)] using hsum
+  have hprod := (countableAtomicTrace_cycleWord_hasProd pos q _ hp (by rwa [hnorm_sum, mul_one])).2
+  set s : ℝ := (1 + Q) * η - 1
+  have htr (m : ℕ) : countableAtomicTrace pos q (fun a ↦ (w a : ℂ))
+      hp (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1) = x * ((s : ℂ) * x) ^ m := by
+    rw [countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice pos hqQ hw η hsum hslice,
+      toInfinite_cycleWord,
+      (InfiniteTypeAHeckeAlgebra.isMarkovTrace_ocneanuTrace _).map_cycleWord,
+      Nat.add_sub_cancel, mul_markovParam_proj_eq hqQ η]
+    ring
+  have hne : 1 - (s : ℂ) * x ≠ 0 := fun h0 ↦ by
+    have : ‖(s : ℂ) * x‖ = 1 := by simpa [sub_eq_zero.mp h0] using norm_one (α := ℂ)
+    linarith
+  convert hprod using 1
+  simp_rw [htr]
+  rw [(summable_geometric_of_norm_lt_one hsx).tsum_mul_left,
+    tsum_geometric_of_norm_lt_one hsx, hqQ, eq_comm, eq_div_iff hne]
+  have hmul : (1 - (s : ℂ) * x)⁻¹ * (1 - (s : ℂ) * x) = 1 := inv_mul_cancel₀ hne
+  dsimp only [s] at hmul ⊢
+  push_cast at hmul ⊢
+  linear_combination ((Q : ℂ) - 1) * x * hmul
 
 /-! ### The `1 < Q` countable model on `ℕ ⊕ₗ ℕᵒᵈ` -/
 
@@ -177,7 +149,9 @@ theorem wenzlGtOneWeight_inr (Q η : ℝ) (k : ℕᵒᵈ) :
 
 private theorem wenzlGtOneWeight_eq_twoSidedGeom (Q η : ℝ) :
     wenzlGtOneWeight Q η =
-      twoSidedGeom (((1 + Q) * η - 1) * Q⁻¹) ((Q - (1 + Q) * η) * Q⁻¹) Q⁻¹ := rfl
+      twoSidedGeom (((1 + Q) * η - 1) * Q⁻¹) ((Q - (1 + Q) * η) * Q⁻¹) Q⁻¹ := by
+  ext a
+  obtain ⟨k | k, rfl⟩ := toLex.surjective a <;> simp
 
 /-- For `1 < Q` and `η ∈ [1 / (1 + Q), Q / (1 + Q)]`, `wenzlGtOneWeight Q η` is nonnegative. -/
 theorem wenzlGtOneWeight_nonneg {Q : ℝ} (hQ : 1 < Q) {η : ℝ}
@@ -247,40 +221,19 @@ theorem wenzlGtOneWeight_cycleWord_hasProd {q : ℂˣ} {Q : ℝ} (hQ : 1 < Q) (h
             (1 + (wenzlGtOneWeight Q η a : ℂ) * x))
       ((1 + ((Q - (1 + Q) * η : ℝ) : ℂ) * x) /
         (1 - (((1 + Q) * η - 1 : ℝ) : ℂ) * x)) := by
-  have hp : Summable fun a ↦ ‖(wenzlGtOneWeight Q η a : ℂ)‖ :=
-    (summable_norm_wenzlGtOneWeight hQ η).congr fun _ ↦ (Complex.norm_real _).symm
-  have hnorm_sum : (∑' a, ‖(wenzlGtOneWeight Q η a : ℂ)‖) = 1 := by
-    simpa only [Complex.norm_real, Real.norm_of_nonneg (wenzlGtOneWeight_nonneg hQ hη _)] using
-      tsum_wenzlGtOneWeight hQ η
   have hmax : max 1 (max ‖(q : ℂ) ^ 2‖ ‖(q : ℂ) ^ 2 - 1‖) = Q := by
     rw [hqQ, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Complex.norm_real,
       Real.norm_of_nonneg (zero_lt_one.trans hQ).le, Real.norm_of_nonneg (sub_nonneg.mpr hQ.le),
       max_eq_left (a := Q) (b := Q - 1) (by linarith), max_eq_right hQ.le]
-  have hprod := (countableAtomicTrace_cycleWord_hasProd wenzlGtOnePos q _ hp
-    (by rwa [hmax, hnorm_sum, mul_one])).2
-  set s : ℝ := (1 + Q) * η - 1
-  have hs0 : 0 ≤ s := by linarith [(div_le_iff₀ (by linarith : 0 < 1 + Q)).mp hη.1]
-  have hsx : ‖(s : ℂ) * x‖ < 1 := by
+  have hs0 : 0 ≤ (1 + Q) * η - 1 := by linarith [(div_le_iff₀ (by linarith : 0 < 1 + Q)).mp hη.1]
+  have hsx : ‖(((1 + Q) * η - 1 : ℝ) : ℂ) * x‖ < 1 := by
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg hs0]
     exact (mul_le_mul_of_nonneg_right
       (by linarith [(le_div_iff₀ (by linarith : 0 < 1 + Q)).mp hη.2])
       (norm_nonneg x)).trans_lt hx
-  have htr (m : ℕ) : countableAtomicTrace wenzlGtOnePos q (fun a ↦ (wenzlGtOneWeight Q η a : ℂ))
-      hp (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1) = x * ((s : ℂ) * x) ^ m := by
-    rw [countableAtomicTrace_wenzlGtOneWeight_eq_ocneanuTrace hQ hqQ η, toInfinite_cycleWord,
-      (InfiniteTypeAHeckeAlgebra.isMarkovTrace_ocneanuTrace _).map_cycleWord, Nat.add_sub_cancel,
-      show (q : ℂ) * ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) = (s : ℂ) by
-        have _ := q.ne_zero; dsimp only [s]; push_cast; rw [← hqQ]; field_simp; ring]
-    ring
-  have hne : 1 - (s : ℂ) * x ≠ 0 := fun h0 ↦ by
-    have : ‖(s : ℂ) * x‖ = 1 := by simpa [sub_eq_zero.mp h0] using norm_one (α := ℂ)
-    linarith
-  convert hprod using 1
-  simp_rw [htr]
-  rw [(summable_geometric_of_norm_lt_one hsx).tsum_mul_left,
-    tsum_geometric_of_norm_lt_one hsx, hqQ, eq_comm, eq_div_iff hne]
-  have hmul : (1 - (s : ℂ) * x)⁻¹ * (1 - (s : ℂ) * x) = 1 := inv_mul_cancel₀ hne
-  dsimp only [s] at hmul ⊢; push_cast at hmul ⊢; linear_combination ((Q : ℂ) - 1) * x * hmul
+  exact hasProd_ofReal_cycleWord wenzlGtOnePos hqQ (summable_norm_wenzlGtOneWeight hQ η)
+    (wenzlGtOneWeight_nonneg hQ hη) (tsum_wenzlGtOneWeight hQ η) η
+    (wenzlGtOneWeight_leftSlice hQ η) (by rwa [hmax]) hsx
 
 /-! ### The `0 < Q < 1` countable model on `ℕ ⊕ₗ ℕᵒᵈ` -/
 
@@ -316,7 +269,9 @@ theorem wenzlLtOneWeight_inr (Q η : ℝ) (k : ℕᵒᵈ) :
   simp [wenzlLtOneWeight]
 
 private theorem wenzlLtOneWeight_eq_twoSidedGeom (Q η : ℝ) :
-    wenzlLtOneWeight Q η = twoSidedGeom (1 - (1 + Q) * η) ((1 + Q) * η - Q) Q := rfl
+    wenzlLtOneWeight Q η = twoSidedGeom (1 - (1 + Q) * η) ((1 + Q) * η - Q) Q := by
+  ext a
+  obtain ⟨k | k, rfl⟩ := toLex.surjective a <;> simp
 
 /-- For `0 < Q < 1` and `η ∈ [Q / (1 + Q), 1 / (1 + Q)]`, `wenzlLtOneWeight Q η` is nonnegative. -/
 theorem wenzlLtOneWeight_nonneg {Q : ℝ} (hQ0 : 0 < Q) {η : ℝ}
@@ -346,11 +301,11 @@ theorem wenzlLtOneWeight_leftSlice {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1) (η : �
     (if wenzlLtOnePos b then Q else -1) * wenzlLtOneWeight Q η b +
       (Q - 1) * (∑' a, if a < b then wenzlLtOneWeight Q η a else 0) = (1 + Q) * η - 1 := by
   obtain ⟨m | m, rfl⟩ := toLex.surjective b
-  · rw [show Q - 1 = -(1 - Q) by ring, neg_mul, wenzlLtOneWeight_inl,
+  · rw [← neg_sub 1 Q, neg_mul, wenzlLtOneWeight_inl,
       wenzlLtOneWeight_eq_twoSidedGeom, mul_tsum_lt_twoSidedGeom_inl]
     simp only [not_wenzlLtOnePos_inl, ↓reduceIte]; ring
   · obtain ⟨m, rfl⟩ := toDual.surjective m
-    rw [show Q - 1 = -(1 - Q) by ring, neg_mul, wenzlLtOneWeight_inr,
+    rw [← neg_sub 1 Q, neg_mul, wenzlLtOneWeight_inr,
       wenzlLtOneWeight_eq_twoSidedGeom, mul_tsum_lt_twoSidedGeom_inr _ _ hQ0.le hQ1, pow_succ']
     simp only [wenzlLtOnePos_inr, ↓reduceIte, ofDual_toDual]; ring
 
@@ -365,113 +320,36 @@ theorem countableAtomicTrace_wenzlLtOneWeight_eq_ocneanuTrace {q : ℂˣ} {Q : �
     (summable_norm_wenzlLtOneWeight hQ0 hQ1 η) η (tsum_wenzlLtOneWeight hQ0 hQ1 η)
     (wenzlLtOneWeight_leftSlice hQ0 hQ1 η) x
 
+/-- **Telescoping infinite product for Wenzl's `0 < Q < 1` countable model.** For `0 < Q < 1`,
+`η ∈ [Q / (1 + Q), 1 / (1 + Q)]`, and `‖x‖ < 1`, the cycle-trace product converges to
+`(1 + (Q - (1 + Q) * η) * x) / (1 - ((1 + Q) * η - 1) * x)`. -/
+theorem wenzlLtOneWeight_cycleWord_hasProd {q : ℂˣ} {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1)
+    (hqQ : (q : ℂ) ^ 2 = Q) {η : ℝ} (hη : η ∈ Set.Icc (Q / (1 + Q)) (1 / (1 + Q)))
+    {x : ℂ} (hx : ‖x‖ < 1) :
+    HasProd (fun a : ℕ ⊕ₗ ℕᵒᵈ ↦
+        if wenzlLtOnePos a then
+          (1 - (wenzlLtOneWeight Q η a : ℂ) * x) /
+            (1 - (q : ℂ) ^ 2 * (wenzlLtOneWeight Q η a : ℂ) * x)
+        else
+          (1 + (q : ℂ) ^ 2 * (wenzlLtOneWeight Q η a : ℂ) * x) /
+            (1 + (wenzlLtOneWeight Q η a : ℂ) * x))
+      ((1 + ((Q - (1 + Q) * η : ℝ) : ℂ) * x) /
+        (1 - (((1 + Q) * η - 1 : ℝ) : ℂ) * x)) := by
+  have hmax : max 1 (max ‖(q : ℂ) ^ 2‖ ‖(q : ℂ) ^ 2 - 1‖) = 1 := by
+    rw [hqQ, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Complex.norm_real,
+      Real.norm_of_nonneg hQ0.le, Real.norm_of_nonpos (sub_nonpos.mpr hQ1.le), neg_sub]
+    exact max_eq_left (max_le hQ1.le (by linarith))
+  have hs0 : (1 + Q) * η - 1 ≤ 0 := by linarith [(le_div_iff₀ (by linarith : 0 < 1 + Q)).mp hη.2]
+  have hs1 : -(1 - Q) ≤ (1 + Q) * η - 1 := by
+    linarith [(div_le_iff₀ (by linarith : 0 < 1 + Q)).mp hη.1]
+  have hs_le : -((1 + Q) * η - 1) ≤ 1 := by linarith
+  have hsx : ‖(((1 + Q) * η - 1 : ℝ) : ℂ) * x‖ < 1 := by
+    rw [norm_mul, Complex.norm_real, Real.norm_of_nonpos hs0]
+    exact (mul_le_mul_of_nonneg_right hs_le (norm_nonneg x)).trans_lt (by simpa using hx)
+  exact hasProd_ofReal_cycleWord wenzlLtOnePos hqQ (summable_norm_wenzlLtOneWeight hQ0 hQ1 η)
+    (wenzlLtOneWeight_nonneg hQ0 hη) (tsum_wenzlLtOneWeight hQ0 hQ1 η) η
+    (wenzlLtOneWeight_leftSlice hQ0 hQ1 η) (by rwa [hmax, one_mul]) hsx
+
 end CountableGeometricModels
 
-end TypeAHeckeAlgebra
-
-/-! ### Positivity of `ocneanuTrace` across Wenzl's positive-real parameter set -/
-
-namespace InfiniteTypeAHeckeAlgebra
-
-private theorem ocneanuTrace_wenzlParam_nonneg {q : ℂˣ} [Fact (IsSelfAdjoint (q : ℂ))]
-    {Q : ℝ} (hQ0 : 0 < Q) (hQ : (Q : ℂ) = (q : ℂ) ^ 2) (b : Bool) (r : ℕ) {n : ℕ}
-    (y : TypeAHeckeAlgebra ℂ q n) :
-    let d : ℤ := if b then ((r + 1 : ℕ) : ℤ) else -((r + 1 : ℕ) : ℤ)
-    0 ≤ ocneanuTrace ℂ q ((q : ℂ) * ((wenzlParam d Q : ℝ) : ℂ) -
-        (↑q⁻¹ : ℂ) * (1 - ((wenzlParam d Q : ℝ) : ℂ)))
-      (TypeAHeckeAlgebra.toInfinite ℂ q n (star y * y)) := by
-  set Z : ℝ := ∑ a ∈ Finset.range (r + 1), Q ^ a
-  have hZ0 : 0 < Z :=
-    Finset.sum_pos (fun a _ ↦ pow_pos hQ0 a) (Finset.nonempty_range_iff.mpr (Nat.succ_ne_zero r))
-  set c : ℝ := Z⁻¹
-  have hcZ : (c : ℂ) * ∑ a ∈ Finset.range (r + 1), ((q : ℂ) ^ 2) ^ a = 1 := by
-    simpa [c, Z, hQ] using congrArg ((↑) : ℝ → ℂ) (inv_mul_cancel₀ hZ0.ne')
-  have h1Q : 1 + (q : ℂ) ^ 2 ≠ 0 := by
-    rw [← hQ, ← Complex.ofReal_one, ← Complex.ofReal_add]
-    exact Complex.ofReal_ne_zero.mpr (by linarith)
-  have hZc := right_ne_zero_of_mul_eq_one hcZ
-  have hq0 := q.ne_zero
-  have hw (a : Fin (r + 1)) : (0 : ℂ) ≤ (c : ℂ) * ((q : ℂ) ^ 2) ^ (a : ℕ) := by
-    simpa [hQ] using Complex.zero_le_real.mpr (show 0 ≤ c * Q ^ (a : ℕ) by positivity)
-  have hmap (d : ℤ) : ((wenzlParam d Q : ℝ) : ℂ) = wenzlParam d (Q : ℂ) := by
-    simpa using map_wenzlParam Complex.ofRealHom d Q
-  cases b
-  · simp only [Bool.false_eq_true, ↓reduceIte]
-    have hg : ∑ a ∈ Finset.range (r + 1), ((q : ℂ) ^ 2) ^ a =
-        (q : ℂ) ^ 2 * ∑ a ∈ Finset.range r, ((q : ℂ) ^ 2) ^ a + 1 := by
-      simp [Finset.sum_range_succ', pow_succ', ← Finset.mul_sum]
-    have hz : (q : ℂ) * ((wenzlParam (-((r + 1 : ℕ) : ℤ)) Q : ℝ) : ℂ) -
-        (↑q⁻¹ : ℂ) * (1 - ((wenzlParam (-((r + 1 : ℕ) : ℤ)) Q : ℝ) : ℂ)) = -((c : ℂ) * ↑q⁻¹) := by
-      rw [hmap, hQ, wenzlParam_neg_natCast, Nat.add_sub_cancel, Units.val_inv_eq_inv_val]
-      field_simp; linear_combination -((1 + (q : ℂ) ^ 2) * hg) + (1 + (q : ℂ) ^ 2) * hcZ
-    rw [hz, ← TypeAHeckeAlgebra.atomicTrace_negGeometric_eq q hcZ (star y * y)]
-    exact TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg _ q hw y
-  · simp only [↓reduceIte]
-    have hz : (q : ℂ) * ((wenzlParam ((r + 1 : ℕ) : ℤ) Q : ℝ) : ℂ) -
-        (↑q⁻¹ : ℂ) * (1 - ((wenzlParam ((r + 1 : ℕ) : ℤ) Q : ℝ) : ℂ)) =
-        (c : ℂ) * (q : ℂ) ^ (2 * r + 1) := by
-      rw [hmap, hQ, wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]
-      field_simp; linear_combination -((1 + (q : ℂ) ^ 2) * (q : ℂ) ^ (2 * r + 2)) * hcZ
-    rw [hz, ← TypeAHeckeAlgebra.atomicTrace_geometric_eq q hcZ (star y * y)]
-    exact TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg _ q hw y
-
-/-- **Positivity of the Ocneanu trace across Wenzl's positive-real parameter set.** For real nonzero
-`q : ℂˣ` with `(Q : ℂ) = (q : ℂ) ^ 2` and `η ∈ wenzlPositiveSet Q`, the Ocneanu trace at
-`z = q * η - q⁻¹ * (1 - η)` is nonnegative on every `star x * x`. -/
-theorem ocneanuTrace_star_mul_self_nonneg {q : ℂˣ} [Fact (IsSelfAdjoint (q : ℂ))] {Q : ℝ}
-    (hQ : (Q : ℂ) = (q : ℂ) ^ 2) {η : ℝ} (hη : η ∈ wenzlPositiveSet Q)
-    (x : InfiniteTypeAHeckeAlgebra ℂ q) :
-    0 ≤ ocneanuTrace ℂ q ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) (star x * x) := by
-  have hQ0 : 0 < Q := by
-    have hre : (q : ℂ) = ((q : ℂ).re : ℂ) :=
-      (Complex.conj_eq_iff_re.mp (Fact.out : IsSelfAdjoint (q : ℂ)).star_eq).symm
-    rw [Complex.ofReal_injective
-      (hQ.trans ((congrArg (· ^ 2) hre).trans (Complex.ofReal_pow _ 2).symm))]
-    exact sq_pos_of_ne_zero fun h0 ↦ q.ne_zero (by rw [hre, h0, Complex.ofReal_zero])
-  obtain ⟨n, hx⟩ := exists_mem_stage x
-  rw [← TypeAHeckeAlgebra.range_toInfinite, AlgHom.mem_range] at hx; obtain ⟨y, rfl⟩ := hx
-  rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul]
-  rcases mem_wenzlPositiveSet_iff.mp hη with hIcc | ⟨d, hd, rfl⟩
-  · rcases lt_trichotomy Q 1 with hQ1 | rfl | hQ1
-    · have hle : Q / (1 + Q) ≤ 1 / (1 + Q) := div_le_div_of_nonneg_right hQ1.le (by linarith)
-      rw [min_eq_right hle, max_eq_left hle] at hIcc
-      rw [← TypeAHeckeAlgebra.countableAtomicTrace_wenzlLtOneWeight_eq_ocneanuTrace hQ0 hQ1 hQ.symm]
-      exact TypeAHeckeAlgebra.countableAtomicTrace_star_mul_self_nonneg _ q _
-        (fun a ↦ Complex.zero_le_real.mpr (TypeAHeckeAlgebra.wenzlLtOneWeight_nonneg hQ0 hIcc a)) y
-    · rw [show (1 : ℝ) / (1 + 1) = 1 / 2 by norm_num, min_self, max_self,
-        Set.Icc_self, Set.mem_singleton_iff] at hIcc
-      subst hIcc
-      have hz0 : (q : ℂ) * ((1 / 2 : ℝ) : ℂ) - (↑q⁻¹ : ℂ) * (1 - ((1 / 2 : ℝ) : ℂ)) = 0 := by
-        have _ := q.ne_zero; have hq2 : (q : ℂ) ^ 2 = 1 := by simpa using hQ.symm
-        rw [Units.val_inv_eq_inv_val]; push_cast; field_simp; linear_combination hq2
-      rw [hz0, map_mul, TypeAHeckeAlgebra.toInfinite_star]
-      exact ocneanuTrace_zero_star_mul_self_nonneg _
-    · have hle : 1 / (1 + Q) ≤ Q / (1 + Q) := div_le_div_of_nonneg_right hQ1.le (by linarith)
-      rw [min_eq_left hle, max_eq_right hle] at hIcc
-      rw [← TypeAHeckeAlgebra.countableAtomicTrace_wenzlGtOneWeight_eq_ocneanuTrace hQ1 hQ.symm]
-      exact TypeAHeckeAlgebra.countableAtomicTrace_star_mul_self_nonneg _ q _
-        (fun a ↦ Complex.zero_le_real.mpr (TypeAHeckeAlgebra.wenzlGtOneWeight_nonneg hQ1 hIcc a)) y
-  · obtain ⟨_ | r, rfl | rfl⟩ := Int.eq_nat_or_neg d
-    · exact absurd rfl hd
-    · simp at hd
-    · exact ocneanuTrace_wenzlParam_nonneg hQ0 hQ true r y
-    · exact ocneanuTrace_wenzlParam_nonneg hQ0 hQ false r y
-
-/-- The complex Ocneanu trace on `InfiniteTypeAHeckeAlgebra ℂ q` bundled as a
-`StarPositiveFunctional` for real nonzero `q : ℂˣ` and `η ∈ wenzlPositiveSet Q`. -/
-noncomputable def ocneanuPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))] {Q : ℝ}
-    (hQ : (Q : ℂ) = (q : ℂ) ^ 2) {η : ℝ} (hη : η ∈ wenzlPositiveSet Q) :
-    StarPositiveFunctional (InfiniteTypeAHeckeAlgebra ℂ q) where
-  toLinearMap := ocneanuTrace ℂ q ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η))
-  square_nonneg := ocneanuTrace_star_mul_self_nonneg hQ hη
-
-@[simp]
-theorem ocneanuPositiveFunctional_apply (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))] {Q : ℝ}
-    (hQ : (Q : ℂ) = (q : ℂ) ^ 2) {η : ℝ} (hη : η ∈ wenzlPositiveSet Q)
-    (x : InfiniteTypeAHeckeAlgebra ℂ q) :
-    ocneanuPositiveFunctional q hQ hη x =
-      ocneanuTrace ℂ q ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) x := (rfl)
-
-end InfiniteTypeAHeckeAlgebra
-
-end TauCeti
+end TauCeti.TypeAHeckeAlgebra

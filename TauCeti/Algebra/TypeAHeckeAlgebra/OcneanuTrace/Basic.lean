@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.CanonicalTrace
 public import TauCeti.Algebra.TypeAHeckeAlgebra.CosetBasis
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 
@@ -49,9 +48,6 @@ stages.
 * `TauCeti.TypeAHeckeAlgebra.eq_ocneanuTrace_toInfinite`: a normalized, tracial family of
   functionals on the finite Hecke algebras, compatible with the tower maps and satisfying the
   Markov rule, is the Ocneanu trace restricted to each finite algebra.
-* `TauCeti.TypeAHeckeAlgebra.canonicalTrace_eq_regularRep_toInfinite` and
-  `TauCeti.TypeAHeckeAlgebra.canonicalTrace_eq_ocneanuTrace_zero`: at `z = 0` the Ocneanu trace
-  restricts to the canonical symmetrizing trace on every finite Hecke algebra.
 
 ## References
 
@@ -593,64 +589,6 @@ theorem eq_ocneanuTrace_toInfinite {z : R} (φ : ∀ n, TypeAHeckeAlgebra R q n 
   obtain ⟨y, hy, hyx⟩ := hP (hmem _ x)
   rw [← toInfinite_injective R q (n + 2) hyx]
   exact hy
-
-/-- Evaluating the `A_∞` regular representation at `(Finsupp.single 1 1) 1` recovers
-`canonicalTrace`. -/
-theorem canonicalTrace_eq_regularRep_toInfinite {n : ℕ} {W W' : Type*} [Group W] [Group W']
-    (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
-    (cs' : CoxeterSystem coxeterMatrixAInfty W') (x : TypeAHeckeAlgebra R q n) :
-    canonicalTrace cs x =
-      InfiniteTypeAHeckeAlgebra.regularRep q cs' (toInfinite R q n x) (Finsupp.single 1 1) 1 := by
-  classical
-  refine LinearMap.congr_fun ((basisTw q cs).ext (f₁ := canonicalTrace (R := R) (q := q) cs)
-    (f₂ := (Finsupp.lapply (1 : W')).comp ((LinearMap.applyₗ (Finsupp.single (1 : W') (1 : R))).comp
-      ((InfiniteTypeAHeckeAlgebra.regularRep q cs').toLinearMap.comp
-        (toInfinite R q n).toLinearMap))) fun w ↦ ?_) x
-  simp only [LinearMap.coe_comp, Function.comp_apply, AlgHom.toLinearMap_apply,
-    LinearMap.applyₗ_apply_apply, Finsupp.lapply_apply, coe_basisTw, canonicalTrace_Tw,
-    regularRep_toInfinite_Tw_apply_single_one, Finsupp.single_apply]
-  rw [eq_comm, map_eq_one_iff _
-    (cs.parabolicHom_injective (cs' := cs') coxeterMatrixA_eq_coxeterMatrixAInfty)]
-
-/-- **The canonical trace is the `z = 0` Ocneanu trace** along `toInfinite`. -/
-theorem canonicalTrace_eq_ocneanuTrace_zero {n : ℕ} {W : Type*} [Group W]
-    (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W) (x : TypeAHeckeAlgebra R q n) :
-    canonicalTrace cs x = InfiniteTypeAHeckeAlgebra.ocneanuTrace R q 0 (toInfinite R q n x) := by
-  classical
-  let cs₀ (m : ℕ) := (CoxeterMatrix.A (m - 1)).toCoxeterSystem
-  let cs' := coxeterMatrixAInfty.toCoxeterSystem
-  rw [canonicalTrace_eq_regularRep_toInfinite cs cs',
-    ← canonicalTrace_eq_regularRep_toInfinite (cs₀ n) cs']
-  refine eq_ocneanuTrace_toInfinite (fun m ↦ canonicalTrace (cs₀ m))
-    (canonicalTrace_one (cs₀ 0)) (fun m y ↦ by
-      rw [canonicalTrace_eq_regularRep_toInfinite (cs₀ (m + 1)) cs',
-        canonicalTrace_eq_regularRep_toInfinite (cs₀ m) cs', toInfinite_strandIncl])
-    (fun m ↦ canonicalTrace_mul_comm (cs₀ m)) (fun m y ↦ ?_) n x
-  rw [zero_mul, canonicalTrace_mul_comm]
-  refine LinearMap.congr_fun ((basisTw q (cs₀ (m + 1))).ext
-    (f₁ := (canonicalTrace (R := R) (q := q) (cs₀ (m + 2))).comp
-      ((LinearMap.mulLeft R (T q (Fin.last m))).comp (strandIncl R q (m + 1)).toLinearMap))
-    (f₂ := 0) fun w ↦ ?_) y
-  simp only [LinearMap.coe_comp, Function.comp_apply, AlgHom.toLinearMap_apply,
-    LinearMap.mulLeft_apply, LinearMap.zero_apply, coe_basisTw,
-    canonicalTrace_eq_regularRep_toInfinite (cs₀ (m + 2)) cs', map_mul, toInfinite_T,
-    Fin.val_last, toInfinite_strandIncl, mul_apply_eq_comp,
-    InfiniteTypeAHeckeAlgebra.regularRep_T, regularRep_toInfinite_Tw_apply_single_one]
-  set u := (cs₀ (m + 1)).parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty w
-  have hsu : cs'.simple m * u ≠ 1 := fun hmul ↦ by
-    have hmem : cs'.simple m ∈
-        ((cs₀ (m + 1)).parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty).range :=
-      ⟨w⁻¹, by rw [map_inv]; exact (eq_inv_of_mul_eq_one_left hmul).symm⟩
-    rw [(cs₀ (m + 1)).range_parabolicHom coxeterMatrixA_eq_coxeterMatrixAInfty,
-      cs'.simple_mem_parabolic_iff] at hmem
-    obtain ⟨j, hj⟩ := hmem
-    exact j.isLt.ne hj
-  by_cases hd : cs'.IsLeftDescent u m
-  · have hu1 : u ≠ 1 := fun h1 ↦ cs'.not_isLeftDescent_one m (h1 ▸ hd)
-    rw [cs'.heckeLeftMul_single_of_isLeftDescent hd]
-    simp [hu1.symm, hsu.symm]
-  · rw [cs'.heckeLeftMul_single_of_not_isLeftDescent hd]
-    simp [hsu.symm]
 
 end TypeAHeckeAlgebra
 

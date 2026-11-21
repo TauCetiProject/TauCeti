@@ -59,12 +59,16 @@ alphabets of this kind arise from the vector representation of the quantum super
 * `TauCeti.signedCheckedR_mul_comm`: operators on disjoint pairs of strands commute.
 * `TauCeti.signedCheckedR_braid`: the braid relation.
 * `TauCeti.signedCheckedR_single_apply_comm`: the matrix in the word basis is symmetric.
+* `TauCeti.star_signedCheckedR_single_apply`: for self-adjoint `s`, the matrix is Hermitian.
 * `TauCeti.signedCheckedR_apply`: the coefficient of a word in the image of an arbitrary vector.
 * `TauCeti.signedCheckedR_comp_lmapDomain`: the operators are local, so an embedding of words
   along a map of strands intertwines the operators on corresponding strands. Special cases are
-  `TauCeti.signedCheckedR_comp_lmapDomain_snoc`, appending a letter, and
+  `TauCeti.signedCheckedR_comp_lmapDomain_snoc` (appending a letter),
+  `TauCeti.signedCheckedR_comp_lmapDomain_cons` (prepending a letter),
   `TauCeti.signedCheckedR_castAdd_comp_lmapDomain_append` and
-  `TauCeti.signedCheckedR_natAdd_comp_lmapDomain_append`, appending a word on either side.
+  `TauCeti.signedCheckedR_natAdd_comp_lmapDomain_append` (appending a word on either side), and
+  `TauCeti.signedCheckedR_comp_lmapDomain_strictMono` (embedding the alphabet strictly
+  monotonically).
 * `TauCeti.commute_productDensity_signedCheckedR`: the operators commute with every product
   density, since they only permute the letters of a word.
 * `TauCeti.inv_smul_signedCheckedR_mul_self`: the Hecke quadratic relation for `s⁻¹ • X`.
@@ -260,6 +264,15 @@ theorem signedCheckedR_apply (s : R) (j k : Fin n) (v : (Fin n → ι) →₀ R)
     split_ifs <;> simp only [Finsupp.sub_apply, Finsupp.smul_apply, Finsupp.neg_apply, single_apply,
       smul_eq_mul, eq_comm (a := w)] <;> split_ifs <;> ring
 
+/-- For self-adjoint `s`, `signedCheckedR pos s j k` is Hermitian in the word basis. -/
+theorem star_signedCheckedR_single_apply [StarRing R] {s : R} (hs : IsSelfAdjoint s)
+    (j k : Fin n) (v w : Fin n → ι) :
+    star (signedCheckedR pos s j k (single w 1) v) = signedCheckedR pos s j k (single v 1) w := by
+  have hs₂ : star (s ^ 2) = s ^ 2 := by rw [star_pow, hs.star_eq]
+  rw [signedCheckedR_single_apply_comm, signedCheckedR_single_one]
+  split_ifs <;> simp only [Finsupp.sub_apply, Finsupp.smul_apply, Finsupp.neg_apply, single_apply,
+    smul_eq_mul, star_sub, star_neg, star_mul, hs.star_eq, hs₂, star_one] <;> split_ifs <;> simp
+
 /-- **Locality of the signed checked R-matrix.** Let `E` embed the words on `m` strands into the
 words on `n` strands along the strand map `f`, so that `E u` carries the letter `u i` at the
 strand `f i`, and suppose that `E` intertwines the exchange of the strands `j` and `k` with that
@@ -284,6 +297,34 @@ theorem signedCheckedR_comp_lmapDomain_snoc (s : R) (j k : Fin n) (a : ι) :
       (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)).comp (signedCheckedR pos s j k) :=
   signedCheckedR_comp_lmapDomain pos s _ (fun _ _ ↦ Fin.snoc_castSucc ..) j k
     (fun _ ↦ Fin.snoc_comp_swap_castSucc ..)
+
+/-- Prepending a fixed first letter intertwines `signedCheckedR` with its shifted counterpart. -/
+theorem signedCheckedR_comp_lmapDomain_cons (s : R) (j k : Fin n) (a : ι) :
+    (signedCheckedR pos s j.succ k.succ).comp
+        (lmapDomain R R (fun w : Fin n → ι ↦ Fin.cons a w)) =
+      (lmapDomain R R (fun w : Fin n → ι ↦ Fin.cons a w)).comp (signedCheckedR pos s j k) :=
+  signedCheckedR_comp_lmapDomain pos s _ (fun _ _ ↦ Fin.cons_succ ..) j k fun u ↦ funext <|
+    Fin.cases (by simp [Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero j).symm
+      (Fin.succ_ne_zero k).symm]) fun i ↦ by
+      rw [comp_apply, ← (Fin.succ_injective n).map_swap j k i]; simp
+
+/-- A strictly monotone sign-preserving map intertwines `signedCheckedR` via `lmapDomain`. -/
+theorem signedCheckedR_comp_lmapDomain_strictMono {ι' : Type*} [LinearOrder ι']
+    (pos' : ι' → Prop) [DecidablePred pos'] (s : R) {g : ι' → ι} (hg : StrictMono g)
+    (hpos : ∀ a, pos (g a) ↔ pos' a) (j k : Fin n) :
+    (signedCheckedR pos s j k).comp (lmapDomain R R (fun w : Fin n → ι' ↦ g ∘ w)) =
+      (lmapDomain R R (fun w : Fin n → ι' ↦ g ∘ w)).comp (signedCheckedR pos' s j k) := by
+  ext w : 2
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply]
+  conv_lhs => rw [lmapDomain_apply, mapDomain_single]
+  rw [signedCheckedR_single_one, signedCheckedR_single_one]
+  simp only [comp_apply]
+  by_cases hjk : w j = w k
+  · simp only [hjk, ↓reduceIte, hpos (w k)]
+    split_ifs <;> simp only [map_smul, lmapDomain_apply, mapDomain_single]
+  · simp only [hjk, hg.injective.ne hjk, ↓reduceIte, hg.lt_iff_lt]
+    split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single,
+      Function.comp_assoc]
 
 /-- Appending a word of `n` letters on the right intertwines the signed checked R-matrix on two
 strands with the one on the same two strands of the longer words. -/

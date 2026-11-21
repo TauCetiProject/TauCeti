@@ -33,8 +33,8 @@ once.
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
-* `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
-  appending.
+* `Fin.snoc_comp_swap_castSucc` and `Fin.snoc_comp_swap_last`: exchanging two entries other
+  than the last one, or the last two entries, of a `Fin.snoc` tuple.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.snoc_self_zero_succ`: in `q 0, …, q n, q 0`, the entry after the `i`-th is `q (i + 1)`.
@@ -128,6 +128,14 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
     simp
+
+/-- Exchanging the last two entries of `Fin.snoc c z` replaces the last entry of `c` by `z` and
+puts the old last entry at the end. -/
+theorem snoc_comp_swap_last {n : ℕ} (c : Fin (n + 1) → α) (z : α) :
+    snoc c z ∘ Equiv.swap (last n).castSucc (last (n + 1)) =
+      snoc (Function.update c (last n) z) (c (last n)) := by
+  rw [Equiv.comp_swap_eq_update]
+  simp [← snoc_update, update_snoc_last]
 
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :

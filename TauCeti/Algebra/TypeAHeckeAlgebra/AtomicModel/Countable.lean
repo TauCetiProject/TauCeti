@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
+public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord
+public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.LeftSlice
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Positivity
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import Mathlib.Topology.Order.Basic
+import TauCeti.Algebra.Order.Star.Basic
 import TauCeti.Analysis.Normed.Module.Finsupp
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.RingTheory.PowerSeries.EvalAt
@@ -23,12 +27,14 @@ complete normed commutative ring `R`, the matrix entries of `signedChecked pos q
 bounded (`exists_norm_signedChecked_single_apply_le`), so the diagonal series converges absolutely
 and defines `countableAtomicTrace` (bundled over `ℂ` as `countableAtomicPositiveFunctional`).
 
-Strict monotone inclusions intertwine `signedChecked` (`signedChecked_strictMono_single_apply`),
-giving exhaustion by finite `atomicTrace`s (`tendsto_atomicTrace_finset`). Traciality, scaling on
-`1` / `strandIncl` / `tailIncl`, block multiplicativity, `⋆`-positivity
-(`countableAtomicTrace_star_mul_self_nonneg`), and the left- and right-slice Ocneanu
+Exhaustion by finite `atomicTrace`s (`tendsto_atomicTrace_finset`) passes traciality, scaling on
+`1` / `strandIncl` / `tailIncl`, block multiplicativity, star compatibility
+(`star_countableAtomicTrace`, `countableAtomicTrace_star`), `⋆`-positivity
+(`countableAtomicTrace_star_mul_self_nonneg`), null space and trace radical for strictly positive
+weights (`countableAtomicTrace_star_mul_self_eq_zero_iff`,
+`traceRadical_countableAtomicTrace_eq_ker_signedChecked`), and the left- and right-slice Ocneanu
 identifications (`countableAtomicTrace_eq_ocneanuTrace_of_leftSlice`,
-`countableAtomicTrace_eq_ocneanuTrace_of_rightSlice`) pass to countable alphabets.
+`countableAtomicTrace_eq_ocneanuTrace_of_rightSlice`) to countable alphabets.
 
 We also lift the cycle-word generating identity to infinite alphabets over a complete normed field
 `K` (`countableAtomicTrace_cycleWord_hasProd`), evaluate the `Q = 1` signed power sums
@@ -47,111 +53,7 @@ public section
 open Filter Function Finsupp
 open scoped Topology ComplexOrder
 
-namespace TauCeti
-
-section StrictMonoAlphabet
-
-variable {R : Type*} [CommRing R] {ι ι' : Type*} [LinearOrder ι] [LinearOrder ι']
-  (pos : ι → Prop) [DecidablePred pos] (pos' : ι' → Prop) [DecidablePred pos'] {n : ℕ}
-
-/-- A strictly monotone sign-preserving map intertwines `signedCheckedR` via `lmapDomain`. -/
-theorem signedCheckedR_comp_lmapDomain_strictMono (s : R) {g : ι' → ι} (hg : StrictMono g)
-    (hpos : ∀ a, pos (g a) ↔ pos' a) (j k : Fin n) :
-    (signedCheckedR pos s j k).comp (lmapDomain R R (fun w : Fin n → ι' ↦ g ∘ w)) =
-      (lmapDomain R R (fun w : Fin n → ι' ↦ g ∘ w)).comp (signedCheckedR pos' s j k) := by
-  ext w : 2
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply]
-  conv_lhs => rw [lmapDomain_apply, mapDomain_single]
-  rw [signedCheckedR_single_one, signedCheckedR_single_one]
-  simp only [comp_apply]
-  by_cases hjk : w j = w k
-  · simp only [hjk, ↓reduceIte, hpos (w k)]
-    split_ifs <;> simp only [map_smul, lmapDomain_apply, mapDomain_single]
-  · simp only [hjk, hg.injective.ne hjk, ↓reduceIte, hg.lt_iff_lt]
-    split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single,
-      Function.comp_assoc]
-
-end StrictMonoAlphabet
-
-namespace TypeAHeckeAlgebra
-
-section StrictMonoAndCycleDiag
-
-variable {R : Type*} [CommRing R] {ι : Type*} [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos]
-  (q : Rˣ) {n : ℕ}
-
-/-- **Alphabet embedding invariance of `signedChecked`** under strictly monotone sign-preserving
-maps `g : ι' → ι`. -/
-theorem signedChecked_strictMono_single_apply {ι' : Type*} [LinearOrder ι']
-    (pos' : ι' → Prop) [DecidablePred pos'] {g : ι' → ι} (hg : StrictMono g)
-    (hpos : ∀ a, pos (g a) ↔ pos' a) (x : TypeAHeckeAlgebra R q n) (w u : Fin n → ι') :
-    signedChecked pos q x (single (g ∘ w) 1) (g ∘ u) =
-      signedChecked pos' q x (single w 1) u := by
-  set L := lmapDomain R R (fun v : Fin n → ι' ↦ g ∘ v)
-  have hcomp : (signedChecked pos q x).comp L = L.comp (signedChecked pos' q x) := by
-    have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by rw [adjoin_range_T]; trivial
-    induction hx using Algebra.adjoin_induction with
-    | mem _ hy =>
-      obtain ⟨i, rfl⟩ := hy
-      rw [signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
-        signedCheckedR_comp_lmapDomain_strictMono pos pos' (q : R) hg hpos]
-    | algebraMap r =>
-      ext v : 2; simp [L, AlgHom.commutes, Module.algebraMap_end_apply]
-    | add _ _ _ _ hx hy => rw [map_add, map_add, LinearMap.add_comp, LinearMap.comp_add, hx, hy]
-    | mul _ _ _ _ hx hy =>
-      rw [map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.comp_assoc,
-        hy, ← LinearMap.comp_assoc, hx, LinearMap.comp_assoc]
-  have hw := LinearMap.congr_fun hcomp (single w 1)
-  simp only [LinearMap.coe_comp, comp_apply, L, lmapDomain_apply, mapDomain_single] at hw
-  rw [hw, mapDomain_apply_of_injective hg.injective.comp_left]
-
-/-- **Cycle-word diagonal recursion across a prepended first strand.** -/
-theorem signedChecked_cycleWord_succ_cons_apply {m : ℕ} (a : ι) (w : Fin (m + 1) → ι) :
-    signedChecked pos q (cycleWord q (m + 2)) (single (Fin.cons a w) 1) (Fin.cons a w) =
-      signedChecked pos q (cycleWord q (m + 1)) (single w 1) w *
-        (if a = w 0 then (if pos (w 0) then (q : R) ^ 2 else -1)
-          else if a < w 0 then (q : R) ^ 2 - 1 else 0) := by
-  rw [← tailIncl_cycleWord_mul_smul_T_zero m, mul_smul_comm, map_smul, LinearMap.smul_apply,
-    Finsupp.smul_apply, smul_eq_mul, signedChecked_tailIncl_mul_T_zero_single_cons_apply]
-  linear_combination (signedChecked pos q (cycleWord q (m + 1)) (single w 1) w *
-    (if a = w 0 then (if pos (w 0) then (q : R) ^ 2 else -1)
-      else if a < w 0 then (q : R) ^ 2 - 1 else 0)) * Units.mul_inv q
-
-/-- At `(q : R) ^ 2 = 1`, the diagonal entry of `cycleWord (m + 1)` vanishes off constant words. -/
-theorem signedChecked_cycleWord_single_apply_of_sq_eq_one (hq : (q : R) ^ 2 = 1) :
-    ∀ {m : ℕ} (w : Fin (m + 1) → ι),
-      signedChecked pos q (cycleWord q (m + 1)) (single w 1) w =
-        if ∀ i, w i = w 0 then (if pos (w 0) then (1 : R) else -1) ^ m else 0
-  | 0, w => by simp [Fin.forall_fin_one]
-  | m + 1, w => by
-    conv_lhs => rw [← Fin.cons_self_tail w]
-    rw [signedChecked_cycleWord_succ_cons_apply,
-      signedChecked_cycleWord_single_apply_of_sq_eq_one hq (Fin.tail w), hq, sub_self, ite_self]
-    by_cases hall : ∀ i : Fin (m + 2), w i = w 0
-    · have h0 : w 0 = Fin.tail w 0 := (hall (0 : Fin (m + 1)).succ).symm
-      have hj : ∀ j : Fin (m + 1), Fin.tail w j = Fin.tail w 0 := fun j ↦ (hall j.succ).trans h0
-      rw [ite_eq_left hj, ite_eq_left h0, ite_eq_left hall, ← h0, pow_succ]
-    · rw [ite_eq_right hall]
-      by_cases h0 : w 0 = Fin.tail w 0
-      · rw [ite_eq_right (fun hj ↦ hall (Fin.forall_fin_succ.mpr ⟨rfl,
-          fun j ↦ (hj j).trans h0.symm⟩)), zero_mul]
-      · rw [ite_eq_right h0, mul_zero]
-
-/-- **Cycle-word atomic trace at `Q = 1`** equals the signed `(m + 1)`-th power sum. -/
-theorem atomicTrace_cycleWord_of_sq_eq_one [Fintype ι] (hq : (q : R) ^ 2 = 1) (p : ι → R)
-    (m : ℕ) :
-    atomicTrace pos q p (m + 1) (cycleWord q (m + 1)) =
-      ∑ a, (if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1) := by
-  classical
-  rw [atomicTrace_eq_sum]
-  simp_rw [signedChecked_cycleWord_single_apply_of_sq_eq_one pos q hq, ite_mul, zero_mul,
-    ← Finset.sum_filter]
-  refine Finset.sum_bij' (fun w _ ↦ w 0) (fun a _ _ ↦ a) (fun _ _ ↦ Finset.mem_univ _)
-    (fun _ _ ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ _, fun _ ↦ rfl⟩)
-    (fun w hw ↦ funext fun i ↦ ((Finset.mem_filter.mp hw).2 i).symm) (fun _ _ ↦ rfl) fun w hw ↦ ?_
-  simp [fun i ↦ congrArg p ((Finset.mem_filter.mp hw).2 i)]
-
-end StrictMonoAndCycleDiag
+namespace TauCeti.TypeAHeckeAlgebra
 
 section NormBounds
 
@@ -209,10 +111,10 @@ theorem norm_signedChecked_cycleWord_single_apply_le :
   | 0, w => by rw [cycleWord_one, map_one, one_apply_eq_self, single_eq_same, pow_zero, mul_one]
   | m + 1, w => by
     set M : ℝ := max 1 (max ‖(q : R) ^ 2‖ ‖(q : R) ^ 2 - 1‖)
-    conv_lhs => rw [← Fin.cons_self_tail w]
-    rw [signedChecked_cycleWord_succ_cons_apply, pow_succ M m, ← mul_assoc]
-    have ih := norm_signedChecked_cycleWord_single_apply_le (Fin.tail w)
-    set z := signedChecked pos q (cycleWord q (m + 1)) (single (Fin.tail w) 1) (Fin.tail w)
+    conv_lhs => rw [← Fin.snoc_init_self w]
+    rw [signedChecked_cycleWord_succ_snoc_apply, pow_succ M m, ← mul_assoc]
+    have ih := norm_signedChecked_cycleWord_single_apply_le (Fin.init w)
+    set z := signedChecked pos q (cycleWord q (m + 1)) (single (Fin.init w) 1) (Fin.init w)
     refine le_trans ?_ (mul_le_mul_of_nonneg_right ih (by positivity))
     split_ifs
     · exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left
@@ -342,6 +244,76 @@ theorem countableAtomicTrace_star_mul_self_nonneg [PartialOrder R] [StarRing R] 
     Eventually.of_forall fun s ↦
       atomicTrace_star_mul_self_nonneg (fun a : s ↦ pos a) q (fun a : s ↦ hp0 a) x
 
+/-- Conjugating `countableAtomicTrace` conjugates both the weights and the argument. -/
+theorem star_countableAtomicTrace [StarRing R] [NormedStarGroup R]
+    [Fact (IsSelfAdjoint (q : R))] (p : ι → R) (hp : Summable fun a ↦ ‖p a‖) {n : ℕ}
+    (x : TypeAHeckeAlgebra R q n) :
+    star (countableAtomicTrace pos q p hp n x) =
+      countableAtomicTrace pos q (star ∘ p) (hp.congr fun _ ↦ (norm_star _).symm) n (star x) :=
+  tendsto_nhds_unique
+    ((continuous_star.tendsto _).comp (tendsto_atomicTrace_finset pos q p hp n x)) <|
+    (tendsto_atomicTrace_finset pos q (star ∘ p) (hp.congr fun _ ↦ (norm_star _).symm) n
+      (star x)).congr fun s ↦ (star_atomicTrace (fun a : s ↦ pos a) q (fun a : s ↦ p a) x).symm
+
+/-- For self-adjoint weights, `countableAtomicTrace` commutes with `star`. -/
+@[simp]
+theorem countableAtomicTrace_star [StarRing R] [ContinuousStar R]
+    [Fact (IsSelfAdjoint (q : R))] {p : ι → R} (hp_sum : Summable fun a ↦ ‖p a‖)
+    (hp : ∀ a, IsSelfAdjoint (p a)) {n : ℕ} (x : TypeAHeckeAlgebra R q n) :
+    countableAtomicTrace pos q p hp_sum n (star x) =
+      star (countableAtomicTrace pos q p hp_sum n x) :=
+  tendsto_nhds_unique (tendsto_atomicTrace_finset pos q p hp_sum n (star x)) <|
+    ((continuous_star.tendsto _).comp (tendsto_atomicTrace_finset pos q p hp_sum n x)).congr
+      fun s ↦ (atomicTrace_star (fun a : s ↦ pos a) q (fun a : s ↦ hp a) x).symm
+
+/-- **Null space of a strictly positive countable atomic trace** over a complete normed
+`StarOrderedRing` with `OrderClosedTopology` and no zero divisors:
+`countableAtomicTrace (star x * x) = 0 ↔ signedChecked pos q x = 0`. -/
+theorem countableAtomicTrace_star_mul_self_eq_zero_iff [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [OrderClosedTopology R] [NoZeroDivisors R]
+    [Fact (IsSelfAdjoint (q : R))] {p : ι → R} (hp : Summable fun a ↦ ‖p a‖)
+    (hp0 : ∀ a, 0 < p a) {n : ℕ} (x : TypeAHeckeAlgebra R q n) :
+    countableAtomicTrace pos q p hp n (star x * x) = 0 ↔ signedChecked pos q x = 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ by
+    rw [countableAtomicTrace_apply, map_mul (signedChecked pos q), hx]; simp⟩
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
+  rw [countableAtomicTrace_apply] at hx
+  have hsum : Summable fun w : Fin n → ι ↦
+      signedChecked pos q (star x * x) (single w 1) w * ∏ i, p (w i) :=
+    (summable_norm_signedChecked_mul_prod pos q hp n (star x * x)).of_norm
+  have hnonneg (w : Fin n → ι) :
+      0 ≤ signedChecked pos q (star x * x) (single w 1) w * ∏ i, p (w i) :=
+    StarOrderedRing.mul_nonneg (signedChecked_star_mul_self_single_apply_nonneg pos q x w)
+      (Finset.prod_nonneg_of_starOrderedRing fun i _ ↦ (hp0 (w i)).le)
+  ext w u
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, LinearMap.zero_apply,
+    Finsupp.coe_zero, Pi.zero_apply]
+  have hw : signedChecked pos q (star x * x) (single w 1) w * ∏ i, p (w i) = 0 :=
+    le_antisymm ((hsum.le_tsum w fun _ _ ↦ hnonneg _).trans_eq hx) (hnonneg w)
+  have hdiag : signedChecked pos q (star x * x) (single w 1) w = 0 :=
+    (mul_eq_zero.mp hw).resolve_right (Finset.prod_ne_zero_iff.mpr fun i _ ↦ (hp0 (w i)).ne')
+  rw [signedChecked_star_mul_self_single_apply] at hdiag
+  have hcol := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ star_mul_self_nonneg _).mp hdiag
+  by_contra hne
+  exact hne ((mul_eq_zero.mp (hcol u (Finsupp.mem_support_iff.mpr hne))).elim star_eq_zero.mp id)
+
+/-- **Trace radical of a strictly positive countable atomic model** equals
+`RingHom.ker (signedChecked)`. -/
+theorem traceRadical_countableAtomicTrace_eq_ker_signedChecked [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [OrderClosedTopology R] [NoZeroDivisors R]
+    [Fact (IsSelfAdjoint (q : R))] {p : ι → R} (hp : Summable fun a ↦ ‖p a‖)
+    (hp0 : ∀ a, 0 < p a) (n : ℕ) :
+    (countableAtomicTrace pos q p hp n).traceRadical
+        (countableAtomicTrace_mul_comm pos q p hp) =
+      RingHom.ker (signedChecked pos q) := by
+  ext x
+  simp only [LinearMap.mem_traceRadical, RingHom.mem_ker]
+  refine ⟨fun hx ↦ (countableAtomicTrace_star_mul_self_eq_zero_iff pos q hp hp0 x).mp
+    (by rw [countableAtomicTrace_mul_comm]; exact hx (star x)), fun hx y ↦ ?_⟩
+  rw [countableAtomicTrace_apply, map_mul (signedChecked pos q), hx]
+  simp
+
 /-- The complex countable atomic trace on `n` strands bundled as a `StarPositiveFunctional`. -/
 noncomputable def countableAtomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))]
     {p : ι → ℂ} (hp : Summable fun a ↦ ‖p a‖) (hp0 : ∀ a, 0 ≤ p a) (n : ℕ) :
@@ -349,6 +321,14 @@ noncomputable def countableAtomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdj
   toLinearMap := countableAtomicTrace pos q p hp n
   square_nonneg := countableAtomicTrace_star_mul_self_nonneg pos q hp hp0
 
+/-- Forgetting positivity recovers the underlying countable atomic trace. -/
+@[simp]
+theorem toLinearMap_countableAtomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))]
+    {p : ι → ℂ} (hp : Summable fun a ↦ ‖p a‖) (hp0 : ∀ a, 0 ≤ p a) (n : ℕ) :
+    (countableAtomicPositiveFunctional pos q hp hp0 n).toLinearMap =
+      countableAtomicTrace pos q p hp n := (rfl)
+
+/-- Evaluating `countableAtomicPositiveFunctional` at an element recovers `countableAtomicTrace`. -/
 @[simp]
 theorem countableAtomicPositiveFunctional_apply (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))]
     {p : ι → ℂ} (hp : Summable fun a ↦ ‖p a‖) (hp0 : ∀ a, 0 ≤ p a) (n : ℕ)
@@ -361,11 +341,12 @@ theorem countableAtomicTrace_cycleWord_of_sq_eq_one (hq : (q : R) ^ 2 = 1) (p : 
     (hp : Summable fun a ↦ ‖p a‖) (m : ℕ) :
     countableAtomicTrace pos q p hp (m + 1) (cycleWord q (m + 1)) =
       ∑' a, (if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1) := by
+  have hsign (a : ι) : ‖(if pos a then (1 : R) else -1) ^ m‖ = ‖(1 : R)‖ := by
+    split_ifs <;> simp
   have hpow : Summable fun a ↦ ‖(if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1)‖ :=
     (hp.mul_left (‖(1 : R)‖ * (∑' b, ‖p b‖) ^ m)).of_nonneg_of_le
       (fun _ ↦ norm_nonneg _) fun a ↦ (norm_mul_le _ _).trans <| by
-        rw [show ‖(if pos a then (1 : R) else -1) ^ m‖ = ‖(1 : R)‖ by split_ifs <;> simp,
-          mul_assoc]
+        rw [hsign a, mul_assoc]
         refine mul_le_mul_of_nonneg_left ((norm_pow_le' (p a) (Nat.succ_pos m)).trans ?_)
           (norm_nonneg _)
         rw [pow_succ]; gcongr; exact hp.le_tsum a fun _ _ ↦ norm_nonneg _
@@ -400,14 +381,14 @@ private theorem countableAtomicTrace_eq_mul_of_slice (p : ι → R) (hp : Summab
   have h_ite : Summable fun a ↦ ‖if P u a then p a else 0‖ :=
     hp.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun _ ↦ by split_ifs <;> simp
   have h₂ := h_ite.of_norm.mul_left ((q : R) ^ 2 - 1)
-  rw [show (fun a ↦ signedChecked pos q y (single (e (w, a)) 1) (e (w, a)) * ∏ i, p (e (w, a) i)) =
-      fun a ↦ (((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) *
-        ((if a = u then (if pos u then (q : R) ^ 2 else -1) * p u else 0) +
-          ((q : R) ^ 2 - 1) * (if P u a then p a else 0)) from
-      funext fun a ↦ by
-        rw [hdiag w a, hprod w a]
-        split_ifs <;> simp_all [u] <;> ring,
-    (h₁.add h₂).tsum_mul_left, h₁.tsum_add h₂, tsum_ite_eq,
+  have hdecomp (a : ι) :
+      signedChecked pos q y (single (e (w, a)) 1) (e (w, a)) * ∏ i, p (e (w, a) i) =
+        (((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) *
+          ((if a = u then (if pos u then (q : R) ^ 2 else -1) * p u else 0) +
+            ((q : R) ^ 2 - 1) * (if P u a then p a else 0)) := by
+    rw [hdiag w a, hprod w a]
+    split_ifs <;> simp_all [u] <;> ring
+  rw [funext hdecomp, (h₁.add h₂).tsum_mul_left, h₁.tsum_add h₂, tsum_ite_eq,
     h_ite.of_norm.tsum_mul_left, hz u]
   linear_combination (z * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) * Units.inv_mul q
 
@@ -453,23 +434,10 @@ theorem countableAtomicTrace_strandIncl_mul_T_last (p : ι → R) (hp : Summable
     ((Equiv.prodComm (Fin (n + 1) → ι) ι).trans (Fin.snocEquiv fun _ : Fin (n + 2) ↦ ι))
     (· (Fin.last n)) (· < ·) lt_irrefl
     (fun w c ↦ by simp [Fin.prod_univ_castSucc (n := n + 1), mul_comm]) (fun w c ↦ ?_) hz
-  have hswap : Fin.snoc w c ∘ Equiv.swap (Fin.last n).castSucc (Fin.last (n + 1)) =
-      Fin.snoc (update w (Fin.last n) c) (w (Fin.last n)) := by
-    rw [Equiv.comp_swap_eq_update]; simp [← Fin.snoc_update, Fin.update_snoc_last]
   simp only [Equiv.trans_apply, Equiv.prodComm_apply, Prod.swap_prod_mk, Fin.snocEquiv_apply,
-    map_mul, mul_apply_eq_comp, signedChecked_T,
-    show BraidGroup.strand (Fin.last n : Fin (n + 2 - 1)) = (Fin.last n).castSucc from
-      Fin.ext (by simp),
-    show BraidGroup.strandSucc (Fin.last n : Fin (n + 2 - 1)) = Fin.last (n + 1) from
-      Fin.ext (by simp),
-    LinearMap.smul_apply, signedCheckedR_single_one, Fin.snoc_castSucc, Fin.snoc_last, hswap]
-  rcases lt_trichotomy (w (Fin.last n)) c with h | rfl | h
-  · simp only [h.ne, h.ne', h, ↓reduceIte, map_sub, map_smul, Finsupp.smul_apply,
-      Finsupp.sub_apply, smul_eq_mul, signedChecked_strandIncl_single_snoc_apply_snoc]; ring
-  · simp only [↓reduceIte, map_smul, Finsupp.smul_apply, smul_eq_mul,
-      signedChecked_strandIncl_single_snoc_apply_snoc]; ring
-  · simp only [h.ne, h.ne', h.not_gt, ↓reduceIte, map_neg, map_smul, Finsupp.smul_apply,
-      Finsupp.neg_apply, smul_eq_mul, signedChecked_strandIncl_single_snoc_apply_snoc]; ring
+    signedChecked_strandIncl_mul_T_last_single_snoc_apply]
+  congr 1
+  by_cases h : c = w (Fin.last n) <;> simp [h, eq_comm]
 
 /-- **Countable atomic trace with scalar right slice is the Ocneanu trace.** -/
 theorem countableAtomicTrace_eq_ocneanuTrace_of_rightSlice (p : ι → R)
@@ -510,7 +478,7 @@ theorem norm_countableAtomicTrace_cycleWord_le {R : Type*} [NormedCommRing R] [C
     Finset.card_univ, Fintype.card_fin]
 
 private theorem norm_countableAtomicTrace_cycleWord_mul_pow_le {K : Type*}
-    [NontriviallyNormedField K] [CompleteSpace K] {ι : Type*} [LinearOrder ι] (pos : ι → Prop)
+    [NormedField K] [CompleteSpace K] {ι : Type*} [LinearOrder ι] (pos : ι → Prop)
     [DecidablePred pos] (q : Kˣ) (p : ι → K) (hp : Summable fun a ↦ ‖p a‖) (x : K) (m : ℕ) :
     ‖countableAtomicTrace pos q p hp (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1)‖ ≤
       ((∑' a, ‖p a‖) * ‖x‖) *
@@ -520,7 +488,7 @@ private theorem norm_countableAtomicTrace_cycleWord_mul_pow_le {K : Type*}
     (pow_nonneg (norm_nonneg x) _)).trans ?_
   rw [norm_one, one_mul]; exact le_of_eq (by ring)
 
-private theorem eval_denom_ne_zero {K : Type*} [NontriviallyNormedField K] {ι : Type*} [Fintype ι]
+private theorem eval_denom_ne_zero {K : Type*} [NormedField K] {ι : Type*} [Fintype ι]
     (pos : ι → Prop) [DecidablePred pos] (q : Kˣ) (p : ι → K) {x : K}
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1) (a : ι) :
     (if pos a then 1 - (q : K) ^ 2 * p a * x else 1 + p a * x) ≠ 0 := by
@@ -537,9 +505,23 @@ private theorem eval_denom_ne_zero {K : Type*} [NontriviallyNormedField K] {ι :
     have : ‖p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ := by rw [norm_mul, ← one_mul ‖p a‖]; gcongr
     linarith
 
+private theorem tsum_coeff_mul_pow_mul_eval_eq {K : Type*} [NormedField K] [CompleteSpace K]
+    (F : PowerSeries K) (P Qp : Polynomial K) {x : K}
+    (hF : Summable fun m : ℕ ↦ ‖PowerSeries.coeff m F * x ^ m‖)
+    (hFP : F * (P : PowerSeries K) = (Qp : PowerSeries K)) :
+    (∑' m : ℕ, PowerSeries.coeff m F * x ^ m) * P.eval x = Qp.eval x := by
+  have hP : Summable fun m : ℕ ↦ ‖PowerSeries.coeff m (P : PowerSeries K) • x ^ m‖ :=
+    summable_of_ne_finset_zero (s := Finset.range (P.natDegree + 1)) fun k hk ↦ by
+      simp [P.coeff_eq_zero_of_natDegree_lt (by simpa using hk)]
+  have heval := PowerSeries.evalAt_mul_of_summable_norm (b := x)
+    (by simpa only [smul_eq_mul] using hF) hP
+  rw [hFP, PowerSeries.evalAt_coe, PowerSeries.evalAt_coe, Polynomial.coe_aeval_eq_eval,
+    PowerSeries.evalAt_def] at heval
+  simpa only [smul_eq_mul] using heval.symm
+
 /-- **Analytic evaluation of the cycle-trace generating function on a finite alphabet** on the disk
 `max 1 (max ‖Q‖ ‖Q - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1` (`Q = q ^ 2`). -/
-theorem atomicTrace_cycleWord_generating_eval {K : Type*} [NontriviallyNormedField K]
+theorem atomicTrace_cycleWord_generating_eval {K : Type*} [NormedField K]
     [CompleteSpace K] {ι : Type*} [LinearOrder ι] [Fintype ι] (pos : ι → Prop) [DecidablePred pos]
     (q : Kˣ) (p : ι → K) {x : K}
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1) :
@@ -574,15 +556,7 @@ theorem atomicTrace_cycleWord_generating_eval {K : Type*} [NontriviallyNormedFie
       apply_ite ((↑) : Polynomial K → PowerSeries K), Polynomial.coe_sub, Polynomial.coe_add,
       Polynomial.coe_one, Polynomial.coe_mul, Polynomial.coe_C, Polynomial.coe_X] using
       atomicTrace_cycleWord_generating_function pos q p
-  have hP_sum : Summable fun m : ℕ ↦ ‖PowerSeries.coeff m (P : PowerSeries K) • x ^ m‖ :=
-    summable_of_ne_finset_zero (s := Finset.range (P.natDegree + 1)) fun k hk ↦ by
-      simp [P.coeff_eq_zero_of_natDegree_lt (by simpa using hk)]
-  have heval : (∑' m : ℕ, PowerSeries.coeff m F * x ^ m) * P.eval x = Qp.eval x := by
-    have h := PowerSeries.evalAt_mul_of_summable_norm (b := x)
-      (by simpa only [smul_eq_mul] using hF_sum) hP_sum
-    rw [hFP, PowerSeries.evalAt_coe, PowerSeries.evalAt_coe, Polynomial.coe_aeval_eq_eval,
-      PowerSeries.evalAt_def] at h
-    simpa only [smul_eq_mul] using h.symm
+  have heval := tsum_coeff_mul_pow_mul_eval_eq F P Qp hF_sum hFP
   rw [hF_sum.of_norm.tsum_eq_zero_add] at heval
   simp only [F, P, Qp, PowerSeries.coeff_mk, ↓reduceIte, pow_zero, mul_one, Nat.succ_ne_zero,
     mul_assoc, hsum.of_norm.tsum_mul_left, Polynomial.eval_prod, apply_ite (Polynomial.eval x),
@@ -598,7 +572,7 @@ theorem atomicTrace_cycleWord_generating_eval {K : Type*} [NontriviallyNormedFie
 
 /-- **Countable cycle-trace generating product** over any complete normed field `K` on the disk
 `max 1 (max ‖Q‖ ‖Q - 1‖) * (∑' a, ‖p a‖) * ‖x‖ < 1` (`Q = q ^ 2`). -/
-theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NontriviallyNormedField K]
+theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NormedField K]
     [CompleteSpace K] {ι : Type*} [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos]
     (q : Kˣ) (p : ι → K) (hp : Summable fun a ↦ ‖p a‖) {x : K}
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑' a, ‖p a‖) * ‖x‖ < 1) :
@@ -672,6 +646,4 @@ theorem tendsto_atomicTrace_dust_generating_function (b : Bool) (q : ℂˣ) (γ 
 
 end GeneratingProductAndDust
 
-end TypeAHeckeAlgebra
-
-end TauCeti
+end TauCeti.TypeAHeckeAlgebra
