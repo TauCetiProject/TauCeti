@@ -183,7 +183,7 @@ theorem convexOn_Icc_of_local {a b : ℝ} {f : ℝ → ℝ}
     rw [le_antisymm (hx.2.trans (hba.trans hy.1)) (hy.2.trans (hba.trans hx.1)),
       ← add_smul, ← add_smul, huv, one_smul, one_smul]
   · have hL : 0 < b - a := sub_pos.mpr hab
-    choose V hVnhds hVconv using fun x : Icc a b => h x.1 x.2
+    choose V hVnhds hVconv using fun x : Icc a b => h x.val x.property
     choose U hUo hxU hUV using fun x : Icc a b => mem_nhdsWithin.mp (hVnhds x)
     obtain ⟨δ, hδ_pos, hball⟩ := lebesgue_number_lemma_of_metric isCompact_Icc hUo
       fun s hs => mem_iUnion.mpr ⟨⟨s, hs⟩, hxU ⟨s, hs⟩⟩

@@ -25,6 +25,16 @@ linear map into a finite free Tate module. Thus coefficient lifts still tend to 
 prescribed weights. No spherical completeness or discrete valuation is needed, and the new
 variables and their positive radii are arbitrary.
 
+The series with coefficients in a finitely presented module do not depend on the presentation.
+Every linear equivalence of quotients of finite free modules induces a topological isomorphism
+of the quotient-valued Gauss families over the scalar restricted series, with equivalent Gauss
+norms (`LinearEquiv.mapGaussFamily`). Indeed every linear map out of a quotient of a finite
+free module is bounded for the quotient norm, so it induces a continuous linear map of Gauss
+families (`LinearMap.mapGaussFamily`). Applied to the identification of the quotients
+of two finite free presentations of one module, this compares the two series modules
+coefficientwise through that module. It holds over any ultrametric normed ring, in particular
+over a Tate algebra.
+
 ## References
 
 * S. Bosch, *Lectures on Formal and Rigid Geometry*, §1.3, Corollaries 8–10.
@@ -114,6 +124,140 @@ theorem isQuotientMap_restrictedFamilyPresentation (N : Submodule R (ι → R))
     (piRingLinearIsometryEquiv R c).symm.toHomeomorph.isQuotientMap
 
 end Submodule
+
+namespace LinearMap
+
+open _root_.MvPowerSeries
+
+variable {σ ι κ R M : Type*} [Fintype ι] [Fintype κ]
+  [NormedRing R] [IsUltrametricDist R] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+  [SeminormedAddCommGroup M] [IsUltrametricDist M] [Module R M] [IsBoundedSMul R M]
+  {N₁ : Submodule R (ι → R)} {N₂ : Submodule R (κ → R)}
+
+/-- A linear map out of a quotient of a finite free module induces a continuous linear map of the
+restricted series with coefficients in its source and target, linearly over the scalar restricted
+series. No bound needs to be supplied: the map is bounded for the quotient norm. -/
+def mapGaussFamily (f : ((ι → R) ⧸ N₁) →ₗ[R] M) :
+    Gauss c ((ι → R) ⧸ N₁) →L[IsRestricted.subring (R := R) c] Gauss c M :=
+  mapContinuousLinearMap f f.exists_bound_of_pi_quotient.choose_spec.2
+
+/-- The induced continuous linear map applies the linear map coefficientwise. -/
+@[simp]
+theorem mapGaussFamily_apply (f : ((ι → R) ⧸ N₁) →ₗ[R] M) (a : Gauss c ((ι → R) ⧸ N₁))
+    (t : σ →₀ ℕ) : f.mapGaussFamily a t = f (a t) :=
+  mapContinuousLinearMap_apply _ _ a t
+
+/-- The identity induces the identity. -/
+@[simp]
+theorem mapGaussFamily_id :
+    (LinearMap.id (R := R) (M := (ι → R) ⧸ N₁)).mapGaussFamily (c := c) = .id _ _ := by
+  ext a t
+  simp
+
+/-- Composite linear maps induce the composite continuous linear maps. -/
+theorem mapGaussFamily_comp (f : ((ι → R) ⧸ N₁) →ₗ[R] ((κ → R) ⧸ N₂))
+    (g : ((κ → R) ⧸ N₂) →ₗ[R] M) :
+    (g ∘ₗ f).mapGaussFamily (c := c) = g.mapGaussFamily.comp f.mapGaussFamily := by
+  ext a t
+  simp
+
+/-- The induced continuous linear map sends finitely supported families to finitely supported
+families. -/
+@[simp]
+theorem mapGaussFamily_ofFinsupp (f : ((ι → R) ⧸ N₁) →ₗ[R] M) (a : (σ →₀ ℕ) →₀ ((ι → R) ⧸ N₁)) :
+    f.mapGaussFamily (Gauss.ofFinsupp R c a) = Gauss.ofFinsupp R c (a.mapRange f f.map_zero) :=
+  mapContinuousLinearMap_ofFinsupp _ _ a
+
+/-- The induced continuous linear map is bounded for the Gauss norms. -/
+theorem exists_norm_mapGaussFamily_le (f : ((ι → R) ⧸ N₁) →ₗ[R] M) :
+    ∃ C > 0, ∀ a : Gauss c ((ι → R) ⧸ N₁), ‖f.mapGaussFamily a‖ ≤ C * ‖a‖ := by
+  obtain ⟨C, hC, hf⟩ := f.exists_bound_of_pi_quotient
+  exact ⟨C, hC, fun a ↦ norm_le_mul_of_norm_coeff_le fun t ↦ by simpa using hf (a t)⟩
+
+end LinearMap
+
+namespace LinearEquiv
+
+open _root_.MvPowerSeries
+
+variable {σ ι κ θ R : Type*} [Fintype ι] [Fintype κ] [Fintype θ]
+  [NormedRing R] [IsUltrametricDist R] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+  {N₁ : Submodule R (ι → R)} {N₂ : Submodule R (κ → R)} {N₃ : Submodule R (θ → R)}
+
+/-- A linear equivalence of quotients of finite free modules induces a topological isomorphism
+of the restricted series with coefficients in them, linearly over the scalar restricted series.
+No bound needs to be supplied: both directions are bounded for the quotient norms. Applied to
+`(π₁.quotKerEquivOfSurjective hπ₁).trans (π₂.quotKerEquivOfSurjective hπ₂).symm` for two finite
+free presentations `π₁`, `π₂` of the same module, this shows that the restricted series with
+coefficients in a finitely presented module do not depend on the presentation. -/
+def mapGaussFamily (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂)) :
+    Gauss c ((ι → R) ⧸ N₁) ≃L[IsRestricted.subring (R := R) c] Gauss c ((κ → R) ⧸ N₂) :=
+  mapContinuousLinearEquiv e e.toLinearMap.exists_bound_of_pi_quotient.choose_spec.2
+    e.symm.toLinearMap.exists_bound_of_pi_quotient.choose_spec.2
+
+/-- The induced isomorphism, as a continuous linear map, is induced by the underlying linear
+map. -/
+@[simp]
+theorem toContinuousLinearMap_mapGaussFamily (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂)) :
+    (e.mapGaussFamily (c := c) : Gauss c ((ι → R) ⧸ N₁) →L[IsRestricted.subring (R := R) c]
+      Gauss c ((κ → R) ⧸ N₂)) = e.toLinearMap.mapGaussFamily :=
+  toContinuousLinearMap_mapContinuousLinearEquiv _ _ _
+
+/-- The induced isomorphism applies the equivalence coefficientwise. -/
+@[simp]
+theorem mapGaussFamily_apply (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂))
+    (a : Gauss c ((ι → R) ⧸ N₁)) (t : σ →₀ ℕ) :
+    e.mapGaussFamily a t = e (a t) :=
+  mapContinuousLinearEquiv_apply _ _ _ a t
+
+/-- The inverse of the induced isomorphism is induced by the inverse equivalence. -/
+@[simp]
+theorem mapGaussFamily_symm (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂)) :
+    (e.mapGaussFamily (c := c)).symm = e.symm.mapGaussFamily :=
+  mapContinuousLinearEquiv_symm _ _ _
+
+/-- The identity equivalence induces the identity. -/
+@[simp]
+theorem mapGaussFamily_refl :
+    (LinearEquiv.refl R ((ι → R) ⧸ N₁)).mapGaussFamily (c := c) = .refl _ _ := by
+  ext a t
+  simp
+
+/-- Composite equivalences induce the composite isomorphisms. -/
+@[simp]
+theorem mapGaussFamily_trans (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂))
+    (f : ((κ → R) ⧸ N₂) ≃ₗ[R] ((θ → R) ⧸ N₃)) :
+    (e.mapGaussFamily (c := c)).trans f.mapGaussFamily = (e.trans f).mapGaussFamily := by
+  ext a t
+  simp
+
+/-- Applying two induced isomorphisms in turn applies the isomorphism induced by the composite.
+With `mapGaussFamily_symm`, this lets `simp` cancel an induced isomorphism against its
+inverse. -/
+@[simp]
+theorem mapGaussFamily_mapGaussFamily (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂))
+    (f : ((κ → R) ⧸ N₂) ≃ₗ[R] ((θ → R) ⧸ N₃)) (a : Gauss c ((ι → R) ⧸ N₁)) :
+    f.mapGaussFamily (e.mapGaussFamily a) = (e.trans f).mapGaussFamily a := by
+  ext t
+  simp
+
+/-- The induced isomorphism sends finitely supported families to finitely supported families. -/
+@[simp]
+theorem mapGaussFamily_ofFinsupp (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂))
+    (a : (σ →₀ ℕ) →₀ ((ι → R) ⧸ N₁)) :
+    e.mapGaussFamily (Gauss.ofFinsupp R c a) = Gauss.ofFinsupp R c (a.mapRange e e.map_zero) :=
+  mapContinuousLinearEquiv_ofFinsupp _ _ _ a
+
+/-- The induced isomorphism is bounded for the Gauss norms. Applied to `e.symm`, this bounds the
+inverse as well, so the two Gauss norms are equivalent. -/
+theorem exists_norm_mapGaussFamily_le (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂)) :
+    ∃ C > 0, ∀ a : Gauss c ((ι → R) ⧸ N₁), ‖e.mapGaussFamily a‖ ≤ C * ‖a‖ := by
+  obtain ⟨C, hC, h⟩ := e.toLinearMap.exists_norm_mapGaussFamily_le (c := c)
+  refine ⟨C, hC, fun a ↦ ?_⟩
+  rw [← ContinuousLinearEquiv.coe_coe, toContinuousLinearMap_mapGaussFamily]
+  exact h a
+
+end LinearEquiv
 
 namespace Matrix
 

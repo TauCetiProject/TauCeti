@@ -27,6 +27,15 @@ inverse computed over `ℚ` is the inverse over `ℝ`.
 `Matrix.inv_submatrix_mul_row_eq_single` normalizes the rows of a matrix whose columns off a pivot
 set vanish to coordinate vectors, by the inverse of its pivot submatrix.
 
+Two matrices `L` and `M` with the same Gram matrix `L * Lᵀ = M * Mᵀ`, where `det L` is a unit,
+differ by the orthogonal matrix `L⁻¹ * M` (`Matrix.inv_mul_mul_transpose_inv_mul_eq_one`).
+
+Scaling a square matrix by a semifield scalar scales its nonsingular inverse by the inverse scalar
+(`Matrix.nonsing_inv_smul`), including at zero and for singular matrices. Given a ring homomorphism
+`f : R →+* A`, a matrix `w` with right inverse `w_inv`, and an invariance relation
+`v * M.map f * w = M.map f`, the mapped inverse satisfies `w * M⁻¹.map f * v = M⁻¹.map f`
+(`Matrix.mul_map_nonsing_inv_mul`).
+
 `LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 
 For invertible matrices `A`, `B` over a linearly ordered field, inverse entries bounded by `L`
@@ -53,6 +62,54 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
   ext i j
   simp
 
+/-- Scaling a square matrix by a scalar in a semifield scales its nonsingular inverse by the
+inverse scalar (including when the scalar is zero or the matrix is singular). -/
+theorem nonsing_inv_smul {n R α : Type*} [Fintype n] [DecidableEq n]
+    [Semifield R] [CommRing α] [Module R α] [SMulCommClass R α α] [IsScalarTower R α α]
+    (r : R) (A : Matrix n n α) :
+    (r • A)⁻¹ = r⁻¹ • A⁻¹ := by
+  by_cases hr : r = 0
+  · simp [hr]
+  · by_cases hdet : IsUnit A.det
+    · refine inv_eq_left_inv ?_
+      rw [smul_mul_smul_comm, inv_mul_cancel₀ hr, one_smul, nonsing_inv_mul A hdet]
+    · have hrdet : ¬IsUnit (r • A).det := fun hu ↦ hdet <|
+        isUnit_det_of_left_inverse (B := r • (r • A)⁻¹) (by
+          rw [smul_mul, ← Matrix.mul_smul, nonsing_inv_mul (r • A) hu])
+      rw [nonsing_inv_apply_not_isUnit _ hrdet, nonsing_inv_apply_not_isUnit _ hdet, smul_zero]
+
+/-- Invert an invariance equation `v * M.map f * w = M.map f` across a ring homomorphism `f` when
+`w` has a right inverse `w_inv` (handling singular `M` via `M⁻¹ = 0`). -/
+theorem mul_map_nonsing_inv_mul {n R A F : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [Semiring A] [FunLike F R A] [RingHomClass F R A] (f : F)
+    {w w_inv v : Matrix n n A} (hw : w * w_inv = 1) {M : Matrix n n R}
+    (hinv : v * M.map f * w = M.map f) :
+    w * M⁻¹.map f * v = M⁻¹.map f := by
+  by_cases hdet : IsUnit M.det
+  · set MA := M.map f
+    set MiA := M⁻¹.map f
+    have hMMi : MA * MiA = 1 := by
+      rw [← Matrix.map_mul, mul_nonsing_inv M hdet, Matrix.map_one _ (map_zero f) (map_one f)]
+    have hMiM : MiA * MA = 1 := by
+      rw [← Matrix.map_mul, nonsing_inv_mul M hdet, Matrix.map_one _ (map_zero f) (map_one f)]
+    have hvM : v * MA = MA * w_inv := by
+      calc
+        v * MA = v * MA * (w * w_inv) := by rw [hw, Matrix.mul_one]
+        _ = (v * MA * w) * w_inv := by simp only [Matrix.mul_assoc]
+        _ = MA * w_inv := by rw [hinv]
+    have hMiv : MiA * v = w_inv * MiA := by
+      calc
+        MiA * v = MiA * (v * (MA * MiA)) := by rw [hMMi, Matrix.mul_one]
+        _ = (MiA * MA) * w_inv * MiA := by
+          rw [← Matrix.mul_assoc v MA MiA, hvM]; simp only [Matrix.mul_assoc]
+        _ = w_inv * MiA := by rw [hMiM, Matrix.one_mul]
+    calc
+      w * MiA * v = w * (MiA * v) := by rw [Matrix.mul_assoc]
+      _ = (w * w_inv) * MiA := by rw [hMiv, Matrix.mul_assoc]
+      _ = MiA := by rw [hw, Matrix.one_mul]
+  · rw [nonsing_inv_apply_not_isUnit _ hdet, Matrix.map_zero _ (map_zero f),
+      Matrix.mul_zero, Matrix.zero_mul]
+
 /-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
 the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/
 theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [CommRing K] [Fintype ι] [DecidableEq ι]
@@ -70,6 +127,20 @@ theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [CommRing K] [Fintype ι]
       e.injective.eq_iff, Matrix.one_apply, eq_comm] using h
   · have hz : ∀ b, e b ≠ j := fun b h ↦ hj ⟨b, h⟩
     simp [Matrix.mul_apply, hred, hj, hz, Ne.symm]
+
+/-- If `L` has unit determinant and `L * Lᵀ = M * Mᵀ`, then `L⁻¹ * M` is orthogonal:
+`(L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1`. -/
+theorem inv_mul_mul_transpose_inv_mul_eq_one {L M : Matrix n n R} (hLdet : IsUnit L.det)
+    (hgram : L * Lᵀ = M * Mᵀ) : (L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1 := by
+  have hLinvt_right : Lᵀ * L⁻¹ᵀ = 1 := by
+    rw [← transpose_mul, nonsing_inv_mul L hLdet, transpose_one]
+  rw [transpose_mul]
+  calc
+    (L⁻¹ * M) * (Mᵀ * L⁻¹ᵀ) = L⁻¹ * (M * Mᵀ) * L⁻¹ᵀ := by
+      simp only [Matrix.mul_assoc]
+    _ = L⁻¹ * (L * Lᵀ) * L⁻¹ᵀ := by rw [← hgram]
+    _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
+    _ = 1 := by rw [nonsing_inv_mul L hLdet, hLinvt_right, Matrix.one_mul]
 
 end Matrix
 

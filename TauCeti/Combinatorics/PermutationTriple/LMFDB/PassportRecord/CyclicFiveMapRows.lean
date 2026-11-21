@@ -30,6 +30,9 @@ stored triples of the three rows are pairwise non-isomorphic, and they represent
 class of the passport, so the stored orbit sizes sum to the stored passport size `3`. Neither fact
 is asserted by the rows themselves; both are proved here from the classification of the passport.
 
+The passport row is primitive, its degree being prime, and stores the map row `5T1-5_5_5-a` as its
+own primitivization; that row certifies it.
+
 The stored triple of each row is the database form, under
 `TauCeti.PermutationTriple.equivOppositeConvention`, of the corresponding stored triple
 `TauCeti.PermutationTriple.cyclicPowTriple 5 k` of the passport row; its components are the
@@ -54,6 +57,8 @@ corresponding isomorphism class is an orbit certificate, which these rows do not
   the three map rows represent exactly the classes of the passport.
 * `TauCeti.PermutationTriple.LMFDB.sum_orbitSize_cyclicFivePassportRecord`: the stored orbit sizes
   of the three map rows sum to the stored passport size.
+* `TauCeti.PermutationTriple.LMFDB.isPrimitivizationOf_cyclicFivePassportRecord`: the map row
+  `5T1-5_5_5-a` certifies the stored primitivization of the passport row.
 
 ## References
 
@@ -308,6 +313,16 @@ theorem sum_orbitSize_cyclicFivePassportRecord :
   · exact isValidFor_cyclicFiveBelyiRecordA
   · exact isValidFor_cyclicFiveBelyiRecordB
   · exact isValidFor_cyclicFiveBelyiRecordC
+
+/-- The map row `5T1-5_5_5-a` certifies the stored primitivization of the passport row
+`5T1-5_5_5`, which is primitive. -/
+theorem isPrimitivizationOf_cyclicFivePassportRecord :
+    cyclicFiveBelyiRecordA.IsPrimitivizationOf cyclicFivePassportRecord
+      ⟨cyclicPowTriple 5 1, isConnected_cyclicPowTriple (by decide)⟩ :=
+  .of_card_primitivizationBlock_eq_one
+    (isValidAt_cyclicFivePassportRecord.card_primitivizationBlock_eq_one_iff.mpr rfl) rfl
+    (PassportSpec.hasPassport_cyclicPowTriple (by decide) (by decide))
+    isValidFor_cyclicFiveBelyiRecordA
 
 end LMFDB
 end PermutationTriple

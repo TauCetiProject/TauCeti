@@ -18,10 +18,14 @@ The extended charts do not change, and the identity is a diffeomorphism.
 This lets constructions stated for self-modelled manifolds apply to arbitrary boundaryless
 models without installing a second atlas on the original manifold. In particular, local
 normal forms and implicit-function constructions can retain their actual coordinates.
+`BoundarylessModel.contMDiffAt_source_iff` and `BoundarylessModel.eventually_contMDiffAt_source_iff`
+transfer `C^n` smoothness of a function on `M`, at and near a point, to its composite with the
+inverse identity homeomorphism on the copy, and back.
 
 `OpenPartialHomeomorph.symm_trans_mem_contDiffGroupoid_iff_of_extend` compares coordinate changes
 for any pair of extended charts, independently of model-boundarylessness.
-The carrier also inherits monoid, additive monoid, group and additive group operations.
+The carrier also inherits nonemptiness, separation, compactness, connectedness, path-connectedness,
+and monoid, additive monoid, group and additive group operations.
 `homeomorph_one`, `homeomorph_mul`, `homeomorph_inv` and their `symm` forms give the algebraic
 transport laws; `homeomorph_zero`, `homeomorph_add`, `homeomorph_neg` and their `symm` forms
 are their additive counterparts.
@@ -40,7 +44,7 @@ transport from the extended-chart comparison and manifold boundarylessness;
 public section
 
 open Function Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -105,10 +109,30 @@ instance {I : ModelWithCorners 𝕜 E H} {M : Type*} [Monoid M] :
 instance {I : ModelWithCorners 𝕜 E H} {M : Type*} [Group M] :
     Group (BoundarylessModel I M) := inferInstanceAs (Group M)
 
+instance {I : ModelWithCorners 𝕜 E H} {M : Type*} [Nonempty M] :
+    Nonempty (BoundarylessModel I M) := inferInstanceAs (Nonempty M)
+
 variable (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
 
 /-- The model copy inherits the topology of the original manifold. -/
 instance : TopologicalSpace (BoundarylessModel I M) := inferInstanceAs (TopologicalSpace M)
+
+instance [T2Space M] : T2Space (BoundarylessModel I M) := inferInstanceAs (T2Space M)
+
+instance [CompactSpace M] : CompactSpace (BoundarylessModel I M) :=
+  inferInstanceAs (CompactSpace M)
+
+instance [PreconnectedSpace M] : PreconnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (PreconnectedSpace M)
+
+instance [ConnectedSpace M] : ConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (ConnectedSpace M)
+
+instance [LocallyPathConnectedSpace M] : LocallyPathConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (LocallyPathConnectedSpace M)
+
+instance [PathConnectedSpace M] : PathConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (PathConnectedSpace M)
 
 /-- The identity homeomorphism to the copy with vector-space-valued charts. -/
 def homeomorph : M ≃ₜ BoundarylessModel I M where
@@ -454,6 +478,26 @@ section Derivatives
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [TopologicalSpace H'] (J : ModelWithCorners 𝕜 E' H')
   [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Changing the source model preserves `C^n` smoothness at a point: `f ∘ (homeomorph I M).symm`
+is `C^n` at a point `x` of the self-modelled copy `BoundarylessModel I M` exactly when `f` is
+`C^n` at the same point `(homeomorph I M).symm x` of `M`. No manifold regularity assumption is
+imposed on either atlas. -/
+@[simp]
+theorem contMDiffAt_source_iff {n : ℕ∞ω} (f : M → N) (x : BoundarylessModel I M) :
+    ContMDiffAt 𝓘(𝕜, E) J n (f ∘ (homeomorph I M).symm) x ↔
+      ContMDiffAt I J n f ((homeomorph I M).symm x) := by
+  rw [← coe_diffeomorph_symm I n]
+  exact (diffeomorph I n).symm.contMDiffAt_comp_diffeomorph_iff le_rfl
+
+/-- Changing the source model preserves `C^n` smoothness near a point: `f ∘ (homeomorph I M).symm`
+is `C^n` at every point near `x` in the self-modelled copy `BoundarylessModel I M` exactly when
+`f` is `C^n` at every point near `(homeomorph I M).symm x` in `M`. -/
+theorem eventually_contMDiffAt_source_iff {n : ℕ∞ω} (f : M → N) (x : BoundarylessModel I M) :
+    (∀ᶠ y in 𝓝 x, ContMDiffAt 𝓘(𝕜, E) J n (f ∘ (homeomorph I M).symm) y) ↔
+      ∀ᶠ y in 𝓝 ((homeomorph I M).symm x), ContMDiffAt I J n f y := by
+  simp only [contMDiffAt_source_iff]
+  rw [← (homeomorph I M).symm.map_nhds_eq x, Filter.eventually_map]
 
 /-- Changing the source model preserves differentiability, even when no manifold regularity
 assumption is imposed on either atlas. -/

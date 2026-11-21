@@ -76,6 +76,10 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
   then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_comp` and
+  `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: composing a symbol on the left
+  with a smooth function `f` of the position, operator-valued between Banach spaces or real,
+  composes its quantization with `f`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -921,6 +925,35 @@ theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → 
   | insert i s hi ih =>
     rw [Finset.sum_insert hi, Finset.sum_insert hi, coefficient_add,
       quantizeSchwartzValue_coefficient_add, ih]
+
+open scoped ContDiff in
+/-- Composing a symbol on the left with a smooth operator-valued function `f` of the position
+before quantizing composes the quantization with `f`: `Op(f(x) a(x, ξ)) u = f (Op(a) u)`. -/
+theorem quantizeSchwartzValue_ofSpatial_comp [CompleteSpace W] {U : Type*}
+    [NormedAddCommGroup U] [NormedSpace ℂ U] [CompleteSpace U]
+    {f : CoordinateSpace n → W →L[ℂ] U} (hf : ContDiff ℝ ∞ f) (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((ofSpatial f hf).comp a).coefficient u x =
+      f x (quantizeSchwartzValue a.coefficient u x) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  rw [quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← (f x).integral_comp_comm
+    (integrable_quantizeSchwartzValue_integrand
+      (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 u))]
+  simp only [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.comp_apply,
+    Circle.smul_def, map_smul]
+
+open scoped ContDiff in
+/-- Multiplying a symbol by a real function `f` of the position before quantizing multiplies the
+quantization by `f`. -/
+theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
+    {f : CoordinateSpace n → ℝ} (hf : ContDiff ℝ ∞ fun x ↦ f x • ContinuousLinearMap.id ℂ W)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((ofSpatial (fun x ↦ f x • ContinuousLinearMap.id ℂ W) hf).comp
+      a).coefficient u x = (f x : ℂ) • quantizeSchwartzValue a.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := (f x : ℂ) • a.coefficient) (fun ξ ↦ by
+      rw [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.smul_comp,
+        ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
+    quantizeSchwartzValue_smul_left]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/
