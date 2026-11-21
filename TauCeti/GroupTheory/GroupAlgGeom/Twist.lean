@@ -34,6 +34,8 @@ automorphisms are computed.
 * `TauCeti.GroupAlgGeom.twistHom A e`: the `G`-endomorphism `v ↦ A ^ (e v).1 * v * A ^ (e v).2`.
 * `TauCeti.GroupAlgGeom.twist A e h₁ h₂`: the same substitution as an automorphism of `G[X]`,
   when the substitutions for `A` and for `A⁻¹` fix `A`.
+* `TauCeti.GroupAlgGeom.blockExp f e`: the exponents that are `e a` at the variable `f a` of an
+  injective family `f` and zero at the other variables, used to twist a block of variables.
 * `TauCeti.GroupAlgGeom.TwistData`: a word `A` with exponents `e` such that the substitutions for
   `A` and for `A⁻¹` fix `A`, and its automorphism `TauCeti.GroupAlgGeom.TwistData.toMulAut`. The
   automorphism forgets the word, which lifting a point along the twist needs.
@@ -49,6 +51,33 @@ public section
 open Monoid.Coprod
 
 namespace TauCeti.GroupAlgGeom
+
+/-! ### Exponents supported on a family of variables -/
+
+section BlockExp
+
+variable {X : Type*} {ι : Sort*} {f : ι → X} {e : ι → ℤ × ℤ}
+
+/-- The exponents on `X` that are `e a` at the variable `f a` of an injective family `f`
+(`blockExp_apply`) and zero at the variables outside the family (`blockExp_eq_zero`). -/
+noncomputable def blockExp (f : ι → X) (e : ι → ℤ × ℤ) : X → ℤ × ℤ :=
+  Function.extend f e 0
+
+theorem blockExp_def (f : ι → X) (e : ι → ℤ × ℤ) : blockExp f e = Function.extend f e 0 := (rfl)
+
+theorem blockExp_apply (hf : f.Injective) (a : ι) : blockExp f e (f a) = e a :=
+  hf.extend_apply _ _ a
+
+theorem blockExp_eq_zero {v : X} (h : ∀ a, f a = v → e a = 0) : blockExp f e v = 0 := by
+  classical
+  rw [blockExp_def, Function.extend_def]
+  split_ifs with hv
+  · exact h _ (Classical.choose_spec hv)
+  · rfl
+
+end BlockExp
+
+/-! ### Twists -/
 
 variable {G X : Type*} [Group G] {A B C : GX G X} {e : X → ℤ × ℤ}
 
