@@ -44,19 +44,23 @@ local instance : IsAdicHom (algebraMap A A) := by
 multiplies the specified coefficients. -/
 example (c a : A) :
     Algebra.TensorProduct.rid A A A
-      ((Pair.finiteAlgebra.baseChangeEquiv A A A).symm
+      ((Pair.finiteAlgebra.baseChangeEquiv A A A
+        (IsNaturallyComplete.of_projective (A := A) (M := A ⊗[A] A))).symm
         (CompletedTensor.toCompletion A A A (c ⊗ₜ[A] a))) = a * c := by
   simp
 
 /-- *baseChangeIso_proper_plus*: the comparison cannot turn a coefficient outside
 the chosen plus ring into an integral element. -/
 example (S : Pair A) {a : A} (ha : a ∉ S.plus) :
-    Pair.finiteAlgebra.baseChangeEquiv A A A (a ⊗ₜ[A] 1) ∉
+    Pair.finiteAlgebra.baseChangeEquiv A A A
+      (IsNaturallyComplete.of_projective (A := A) (M := A ⊗[A] A)) (a ⊗ₜ[A] 1) ∉
       (S.completedTensor A (S.finiteAlgebra A)).plus := by
   intro h
-  rw [← Pair.finiteAlgebra.map_plus_baseChangeEquiv S S (Pair.Hom.id S) (by simp)] at h
+  have hnc : IsNaturallyComplete A (A ⊗[A] A) :=
+    IsNaturallyComplete.of_projective (A := A) (M := A ⊗[A] A)
+  rw [← Pair.finiteAlgebra.map_plus_baseChangeEquiv hnc S S (Pair.Hom.id S) (by simp)] at h
   obtain ⟨x, hx, he⟩ := h
-  have he' : x = a ⊗ₜ[A] 1 := (Pair.finiteAlgebra.baseChangeEquiv A A A).injective he
+  have he' : x = a ⊗ₜ[A] 1 := (Pair.finiteAlgebra.baseChangeEquiv A A A hnc).injective he
   subst x
   let f := Pair.finiteAlgebra.lift (Pair.Hom.id S) (by simp)
     (Algebra.TensorProduct.lid A A).toAlgHom
@@ -77,7 +81,8 @@ local instance : IsAdicHom (algebraMap ℤ (ℤ × ℤ)) :=
 /-- *baseChangeIso_split*: the two ordered idempotents give the two ordered sheets. -/
 example (c₁ c₂ : ℤ) :
     (Algebra.TensorProduct.prodRight ℤ ℤ ℤ ℤ ℤ
-      ((Pair.finiteAlgebra.baseChangeEquiv ℤ ℤ (ℤ × ℤ)).symm
+      ((Pair.finiteAlgebra.baseChangeEquiv ℤ ℤ (ℤ × ℤ)
+        IsNaturallyComplete.of_projective).symm
         (CompletedTensor.toCompletion ℤ ℤ (ℤ × ℤ)
           (c₁ ⊗ₜ[ℤ] (1, 0) + c₂ ⊗ₜ[ℤ] (0, 1))))).map
         (Algebra.TensorProduct.rid ℤ ℤ ℤ) (Algebra.TensorProduct.rid ℤ ℤ ℤ) = (c₁, c₂) := by
@@ -102,7 +107,8 @@ variable (A C B : Type*) [CommRing A] [CommRing C] [CommRing B]
 example : Nonempty (C ⊗[A] B ≃+* CompletedTensor A C B) := by
   have : Module.FinitePresentation A B := .of_finite_of_finitePresentation A B
   have : Module.Projective A B := Module.Flat.projective_of_finitePresentation
-  exact ⟨Pair.finiteAlgebra.baseChangeEquiv A C B⟩
+  exact ⟨Pair.finiteAlgebra.baseChangeEquiv A C B
+    (IsNaturallyComplete.of_projective (A := C) (M := C ⊗[A] B))⟩
 
 end Etale
 

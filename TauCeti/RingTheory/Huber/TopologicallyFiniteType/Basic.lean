@@ -83,6 +83,8 @@ it.
   topologically of finite type implies topologically of finite type, by the trivial weight family.
 * `TauCeti.Huber.IsTopologicallyFiniteType.continuous`: such a `φ` is continuous, since it factors
   through the presenting algebra's structure map.
+* `TauCeti.Huber.IsTopologicallyFiniteType.exists_finset_dense_adjoin`: an `A`-algebra
+  topologically of finite type admits a finite subset generating a dense `A`-subalgebra.
 * `TauCeti.Huber.IsTopologicallyFiniteType.isOpen_map`: out of a Huber ring, such a `φ` carries
   open ideals to ideals generating open ideals.
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.comp_isOpenQuotientMap` and
@@ -225,6 +227,35 @@ theorem IsTopologicallyFiniteType.continuous {φ : A →+* B} (h : IsTopological
   obtain ⟨k, T, _, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
   rw [← hcomm]
   exact hπ.continuous.comp (continuous_algebraMap_completion_weightedRestrictedSubring k A hT)
+
+/-- **An algebra topologically of finite type admits a finite topologically generating set**: if
+`algebraMap A B` is topologically of finite type, there is a finite subset `N : Finset B` whose
+generated `A`-subalgebra is dense in `B`. -/
+theorem IsTopologicallyFiniteType.exists_finset_dense_adjoin [Algebra A B]
+    (h : IsTopologicallyFiniteType (algebraMap A B)) :
+    ∃ N : Finset B, Dense (Algebra.adjoin A (N : Set B) : Set B) := by
+  classical
+  obtain ⟨k, T, _, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
+  let g : Fin k → B := fun i ↦ π (weightedX T hT i : weightedRestrictedSubring T hT)
+  refine ⟨Finset.univ.image g, ?_⟩
+  have hrange : (Finset.univ.image g : Set B) = Set.range g := by simp
+  rw [hrange, Algebra.adjoin_range_eq_range_aeval]
+  have heval : (MvPolynomial.aeval g).toRingHom =
+      π.comp (Completion.coeRingHom.comp (weightedPolynomialHom T hT)) := by
+    refine MvPolynomial.ringHom_ext (fun a ↦ ?_) (fun i ↦ ?_)
+    · simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_C,
+        RingHom.comp_apply, Completion.coe_coeRingHom, weightedPolynomialHom_C]
+      rw [← algebraMap_completion_weightedRestrictedSubring_apply, ← RingHom.comp_apply, hcomm]
+    · simp [g, weightedPolynomialHom_X]
+  refine (hπ.surjective.denseRange.comp Completion.denseRange_coe hπ.continuous).dense_of_mapsTo
+    (hπ.continuous.comp (Completion.continuous_coe _)) (dense_weightedPolynomials hT) ?_
+  intro x hx
+  obtain ⟨p, hp⟩ := (weightedPolynomialsEquiv hT).surjective ⟨x, hx⟩
+  have hp' := congrArg (fun z : weightedPolynomials T hT ↦ (z : weightedRestrictedSubring T hT)) hp
+  rw [coe_weightedPolynomialsEquiv] at hp'
+  refine ⟨p, (congrFun (congrArg DFunLike.coe heval) p).trans ?_⟩
+  simpa only [RingHom.comp_apply, Completion.coe_coeRingHom, Function.comp_apply] using
+    congrArg (fun y : weightedRestrictedSubring T hT ↦ π y) hp'
 
 /-! ### Stability under a further open quotient
 
