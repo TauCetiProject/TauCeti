@@ -9,6 +9,7 @@ public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.Heisenberg
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Automorphism
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Peripheral automorphisms of exponent `-1`
@@ -111,16 +112,13 @@ theorem reflect_partialProd (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r))
     reflect hF e (partialProd (basis e) j) = (partialProd (basis e) j)⁻¹ := by
   -- The reflection carries `P_j` to the initial product of the reflected basis, whose entries
   -- `P_i * x_i⁻¹ * P_i⁻¹ = P_i * P_{i+1}⁻¹` telescope to `P_j⁻¹`.
-  have hmap : reflect hF e (partialProd (basis e) j) =
-      partialProd (fun i ↦ reflect hF e (basis e i)) j := by
-    simp only [Fin.partialProd, map_list_prod, List.map_take, List.map_ofFn, Function.comp_def]
-  have hval : (fun i ↦ reflect hF e (basis e i)) = fun i : Fin r ↦
+  have hval : reflect hF e ∘ basis e = fun i : Fin r ↦
       ((partialProd (basis e) i.castSucc)⁻¹)⁻¹ * (partialProd (basis e) i.succ)⁻¹ := by
     funext i
-    rw [reflect_basis, Fin.partialProd_succ, inv_inv, mul_inv_rev, mul_assoc]
+    rw [Function.comp_apply, reflect_basis, Fin.partialProd_succ, inv_inv, mul_inv_rev, mul_assoc]
   have h := congr_fun (Fin.partialProd_left_inv fun j ↦ (partialProd (basis e) j)⁻¹) j
   rw [Fin.partialProd_zero, inv_one, one_smul] at h
-  rw [hmap, hval, h]
+  rw [Fin.map_partialProd, hval, h]
 
 /-- The reflection sends the cusp to its inverse. -/
 theorem reflect_cusp (hF : IsProP p F) (e : F ≃ₜ* freeProP p (Fin r)) :

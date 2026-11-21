@@ -248,7 +248,7 @@ def negativeNormalHessianMetric (h : i.IsNondegenerateCriticalSubmanifold f)
     pos := fun s u hu ↦ by
       rw [negativeNormalHessianBilin_apply]
       have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g.toRiemannianMetric
-        u.2 (Subtype.coe_ne_coe.mpr hu)
+        u.property (Subtype.coe_ne_coe.mpr hu)
       linarith
     isVonNBounded := fun s ↦ by
       let e := (trivializationAt (Fin r → ℝ)
@@ -262,7 +262,7 @@ def negativeNormalHessianMetric (h : i.IsNondegenerateCriticalSubmanifold f)
           simp only [c, ContinuousLinearMap.bilinearComp_apply, ContinuousLinearEquiv.coe_coe,
             negativeNormalHessianBilin_apply]
           have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn
-            g.toRiemannianMetric (e.symm v).2
+            g.toRiemannianMetric (e.symm v).property
             (Subtype.coe_ne_coe.mpr (e.symm.map_ne_zero_iff.mpr hv))
           linarith
       exact Bornology.IsVonNBounded.subset

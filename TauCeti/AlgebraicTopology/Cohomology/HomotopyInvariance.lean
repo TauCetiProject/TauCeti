@@ -38,8 +38,8 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
 * `TopPair.isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy`: enlarging the subspace of a
   pair to a neighbourhood which deforms back into it does not change relative cohomology.
 * `TopPair.isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel`: a strong
-  deformation retraction of the ambient space onto a subspace containing the second space induces
-  isomorphisms on relative singular cohomology.
+  deformation retraction of the ambient space onto an intermediate subset does not change relative
+  cohomology.
 * `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap` and
   `ContinuousMap.HomotopyEquiv.singularCohomologyIso`: the induced isomorphism on singular
   cohomology for a bundled homotopy equivalence of spaces.
@@ -234,9 +234,8 @@ lemma isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy {X : TopCat.{w}} {B
 
 /-- **A strong deformation retraction of the ambient space induces isomorphisms on relative
 singular cohomology.** If `s ⊆ c ⊆ t` and `t` deformation retracts onto `c` relative to `c`, the
-inclusion `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular cohomology. This is the
-cohomology counterpart of
-`TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`. -/
+inclusion `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular cohomology.  This is the
+cohomology form of `TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`. -/
 theorem isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X : TopCat.{w}}
     {s c t : Set X} (hsc : s ⊆ c) (hct : c ⊆ t) (r : C(t, c))
     (G : ((ContinuousMap.inclusion hct).comp r).HomotopyRel (ContinuousMap.id t)
@@ -253,7 +252,7 @@ theorem isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X :
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
     have hid : r.comp (ContinuousMap.inclusion hct) = ContinuousMap.id c := by
       ext x
-      exact hrc _ x.2
+      exact hrc _ x.property
     simp only [hid]
     exact Homotopy.refl _
   · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
