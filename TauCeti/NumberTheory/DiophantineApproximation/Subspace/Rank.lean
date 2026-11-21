@@ -16,9 +16,13 @@ The rank of the span of an approximation domain is the number of its successive 
 `r` vectors, where `r` is this rank. These statements let arguments about the dimensions and
 spans of domains use the geometry of their successive minima without choosing a new basis.
 
+Equivalently, below the ambient dimension a successive minimum is at most one exactly when its
+index is below the rank (`TauCeti.NumberField.successiveMinimum_approx_le_one_iff`); these minima
+are positive (`TauCeti.NumberField.successiveMinimum_approx_pos`).
+
 The threshold is non-strict: vectors on the boundary of the closed approximation body belong
 to the domain. Only indices below the ambient dimension are counted, since later successive
-minima have junk value zero. Both statements allow rank zero and full rank.
+minima have junk value zero. The rank statements allow rank zero and full rank.
 
 ## References
 
@@ -76,6 +80,35 @@ theorem finrank_approxSpan {S₀ : Finset (FinitePlace K)}
   rw [hspan, ← hcoe]
   exact Submodule.finrank_span_setOf_mem (Λ := approxModule S₀ L c Q) hB
     (t := (1 : ℝ)) zero_lt_one
+
+/-- Below `#ι`, the successive minima over `K` of an approximation domain of positive level are
+positive. -/
+theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
+    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l := by
+  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
+  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
+  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
+  rw [← hcoe]
+  exact Submodule.successiveMinimum_pos hB hl
+
+/-- Below `#ι`, a successive minimum over `K` of an approximation domain of positive level is at
+most one exactly when its index is below the rank of the domain. -/
+theorem successiveMinimum_approx_le_one_iff {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
+    (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1 ↔
+      l < finrank K (approxSpan S₀ L c Q) := by
+  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
+  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
+  obtain ⟨B, hcoe, hB, hspan⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
+  rw [hspan, ← hcoe]
+  exact Submodule.successiveMinimum_le_iff_lt_finrank_span hB hl one_pos
 
 open scoped Classical in
 /-- A family realizing the successive minima spans an approximation domain with its first
