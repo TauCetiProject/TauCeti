@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+public import TauCeti.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Data.Fin.Tuple.Reflection
@@ -65,7 +65,7 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
-* `TauCeti.FourTensor.pullbackAlgebraicCurvature`: functorial continuous linear pullback on
+* `ContinuousLinearMap.pullbackAlgebraicCurvature`: functorial continuous linear pullback on
   submodules of algebraic curvature tensors.
 * `TauCeti.FourTensor.ofLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄`, and
   `TauCeti.FourTensor.toLinearMap₄Equiv`: currying four-tensors into four-fold linear forms and the
@@ -90,7 +90,7 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   curvature tensors.
 * `TauCeti.FourTensor.isAlgebraicCurvature_compContinuousLinearMap_iff`,
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`,
-  `TauCeti.FourTensor.pullbackAlgebraicCurvature_injective`, and
+  `ContinuousLinearMap.pullbackAlgebraicCurvature_injective`, and
   `TauCeti.FourTensor.coe_algebraicCurvatureLinearIsometryEquiv`: continuous linear and isometric
   equivalences identify algebraic curvature tensors, and pullback along a dense-range map is
   injective.
@@ -100,8 +100,9 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   `TauCeti.FourTensor.scalar_compContinuousLinearMap_linearIsometryEquiv`: the contractions are
   equivariant under linear isometric equivalences.
 * `TauCeti.FourTensor.ricci_kulkarniNomizu_innerₗ`: `Ric(h ⊙ g) = (n - 2) h + (tr h) g`.
-* `TauCeti.FourTensor.constantCurvature_apply_self_pos_iff`: `r(u, v, u, v) > 0` for the
-  constant-curvature tensor exactly on a linearly independent pair.
+* `TauCeti.FourTensor.constantCurvature_eq_half_smul_kulkarniNomizu`,
+  `TauCeti.FourTensor.constantCurvature_apply_self_pos_iff`: the Kulkarni–Nomizu square formula
+  and positivity of `r(u, v, u, v)` on linearly independent pairs.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
 * `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`,
@@ -338,52 +339,75 @@ theorem comap_compContinuousLinearMapL_algebraicCurvatureSubmodule (e : W ≃L[�
   ext r
   exact isAlgebraicCurvature_compContinuousLinearMap_iff e
 
+end NormedSpace
+
+end FourTensor
+
+end TauCeti
+
+namespace ContinuousLinearMap
+
+open TauCeti TauCeti.FourTensor
+
+section AlgebraicCurvature
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
+
 /-- Continuous linear pullback of algebraic curvature tensors along `f : W →L[ℝ] V`. -/
 def pullbackAlgebraicCurvature (f : W →L[ℝ] V) :
     algebraicCurvatureSubmodule V →L[ℝ] algebraicCurvatureSubmodule W :=
   (ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ f).restrict
     fun _ hr ↦ compContinuousLinearMap_mem_algebraicCurvatureSubmodule hr f
 
-/-- The underlying four-tensor of `pullbackAlgebraicCurvature f r` is
+/-- The underlying four-tensor of `f.pullbackAlgebraicCurvature r` is
 `r.val.compContinuousLinearMap (fun _ ↦ f)`. -/
 @[simp]
 theorem coe_pullbackAlgebraicCurvature_apply (f : W →L[ℝ] V)
     (r : algebraicCurvatureSubmodule V) :
-    (pullbackAlgebraicCurvature f r : FourTensor W) =
+    (f.pullbackAlgebraicCurvature r : FourTensor W) =
       r.val.compContinuousLinearMap fun _ ↦ f := (rfl)
 
 /-- Pulling back algebraic curvature tensors along the identity continuous linear map is the
 identity. -/
 @[simp]
 theorem pullbackAlgebraicCurvature_id :
-    pullbackAlgebraicCurvature (ContinuousLinearMap.id ℝ V) =
+    (ContinuousLinearMap.id ℝ V).pullbackAlgebraicCurvature =
       ContinuousLinearMap.id ℝ (algebraicCurvatureSubmodule V) := by ext; simp
 
 /-- Pulling back algebraic curvature tensors is contravariantly functorial under composition. -/
 theorem pullbackAlgebraicCurvature_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
     (f : W →L[ℝ] V) (g : U →L[ℝ] W) :
-    pullbackAlgebraicCurvature (f.comp g) =
-      (pullbackAlgebraicCurvature g).comp (pullbackAlgebraicCurvature f) := by
+    (f.comp g).pullbackAlgebraicCurvature =
+      g.pullbackAlgebraicCurvature.comp f.pullbackAlgebraicCurvature := by
   ext; simp [ContinuousMultilinearMap.compContinuousLinearMap_apply]
 
-/-- If `f : W →L[ℝ] V` has dense range, `pullbackAlgebraicCurvature f` is injective. -/
+/-- If `f : W →L[ℝ] V` has dense range, `f.pullbackAlgebraicCurvature` is injective. -/
 theorem pullbackAlgebraicCurvature_injective (f : W →L[ℝ] V) (hf : DenseRange f) :
-    Function.Injective (pullbackAlgebraicCurvature f) := fun r q hrq ↦ Subtype.ext <|
-  ContinuousMultilinearMap.ext <| congrFun <|
-    (DenseRange.piMap fun _ : Fin 4 ↦ hf).equalizer r.val.cont q.val.cont <| funext fun m ↦ by
-      have hm : Pi.map (fun _ : Fin 4 ↦ (f : W → V)) m = fun i ↦ f (m i) :=
-        funext fun i ↦ Pi.map_apply _ m i
-      simpa only [Function.comp_apply, hm, coe_pullbackAlgebraicCurvature_apply,
-        ContinuousMultilinearMap.compContinuousLinearMap_apply] using
-        congr($(congrArg Subtype.val hrq) m)
+    Function.Injective f.pullbackAlgebraicCurvature := fun _ _ hrq ↦ Subtype.ext <|
+  ContinuousMultilinearMap.compContinuousLinearMapL_injective (fun _ : Fin 4 ↦ hf)
+    (congrArg Subtype.val hrq)
+
+end AlgebraicCurvature
+
+end ContinuousLinearMap
+
+namespace TauCeti
+
+namespace FourTensor
+
+section NormedSpace
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
 
 /-- Pullback of algebraic curvature tensors along `e : W ≃ₗᵢ[ℝ] V` as a `LinearIsometryEquiv`. -/
 def algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) :
     algebraicCurvatureSubmodule V ≃ₗᵢ[ℝ] algebraicCurvatureSubmodule W where
-  toFun := pullbackAlgebraicCurvature (e : W →L[ℝ] V)
+  toFun := (e : W →L[ℝ] V).pullbackAlgebraicCurvature
   map_add' := map_add _
   map_smul' := map_smul _
-  invFun := pullbackAlgebraicCurvature (e.symm : V →L[ℝ] W)
+  invFun := (e.symm : V →L[ℝ] W).pullbackAlgebraicCurvature
   left_inv _ := by ext; simp
   right_inv _ := by ext; simp
   norm_map' r := r.val.norm_compContinuous_linearIsometryEquiv fun _ ↦ e
@@ -653,6 +677,11 @@ product with itself. It is the curvature four-tensor of the unit sphere, and `κ
 curvature four-tensor of a space of constant sectional curvature `κ`. -/
 def constantCurvature : FourTensor V :=
   (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V)
+
+/-- The constant-curvature tensor is half the Kulkarni–Nomizu square of the inner product. -/
+theorem constantCurvature_eq_half_smul_kulkarniNomizu :
+    constantCurvature V = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V) :=
+  (rfl)
 
 /-- Evaluation of the constant-curvature tensor. -/
 @[simp]

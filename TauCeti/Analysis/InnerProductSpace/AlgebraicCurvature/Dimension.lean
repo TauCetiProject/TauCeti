@@ -395,9 +395,9 @@ theorem finrank_algebraicCurvatureSubmodule {V : Type*} [NormedAddCommGroup V] [
       obtain ⟨P, hP⟩ := Submodule.ClosedComplemented.of_finiteDimensional p
       have hP_surj : Function.Surjective P := fun x ↦ ⟨(x : V), hP x⟩
       have hle := LinearMap.finrank_le_finrank_of_injective
-        (f := (pullbackAlgebraicCurvature P).toLinearMap)
+        (f := P.pullbackAlgebraicCurvature.toLinearMap)
         (by simpa only [ContinuousLinearMap.coe_coe] using
-          pullbackAlgebraicCurvature_injective P hP_surj.denseRange)
+          P.pullbackAlgebraicCurvature_injective hP_surj.denseRange)
       rw [finrank_algebraicCurvatureSubmodule_of_finiteDimensional, Module.finrank_eq_card_basis bp,
         Fintype.card_fin] at hle
       have hsub : (m + 3) ^ 2 - 1 = (m + 4) * (m + 2) := by

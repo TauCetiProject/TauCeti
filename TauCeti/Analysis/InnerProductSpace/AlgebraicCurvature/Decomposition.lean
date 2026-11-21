@@ -47,12 +47,14 @@ orthogonal to both in every dimension.
   `TauCeti.FourTensor.weyl_kulkarniNomizu_innerₗ`,
   `TauCeti.FourTensor.curvatureEndomorphism_eq_add`, trace-pairing orthogonality (coinciding with
   Hilbert–Schmidt orthogonality when at least one factor is self-adjoint),
-  `TauCeti.FourTensor.sum_kulkarniNomizu_innerₗ_mul`,
-  `TauCeti.FourTensor.sum_sq_eq_scalar_add_tracelessRicci_add_weyl`, and
+  `TauCeti.FourTensor.sum_kulkarniNomizu_innerₗ_mul_of_antisymm`,
+  `TauCeti.FourTensor.sum_sq_eq_scalar_add_tracelessRicci_add_weyl_of_antisymm`, and
   `TauCeti.FourTensor.weyl_eq_zero_of_finrank_le_three_of_antisymm`.
 
 ## References
 
+* I. M. Singer and J. A. Thorpe, *The curvature of 4-dimensional Einstein spaces* (1969), for the
+  `O(n)`-invariant orthogonal decomposition into scalar, trace-free Ricci, and Weyl components.
 * R. S. Hamilton, *Four-manifolds with positive curvature operator*, J. Differential Geom. 24
   (1986), 153–179, Section 2.
 * A. L. Besse, *Einstein Manifolds*, Springer (1987), Section 1.G, Propositions 1.116–1.120.
@@ -492,6 +494,11 @@ theorem IsBivectorSymmetric.isSymm_schouten {r : FourTensor V} (hr : IsBivectorS
 theorem IsAlgebraicCurvature.isSymm_schouten {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     (schouten r).IsSymm := FourTensor.isSymm_schouten hr.isSymm_ricci
 
+/-- In dimension `2`, the Schouten bilinear form vanishes for every four-tensor `r`. -/
+@[simp] theorem schouten_eq_zero_of_finrank_eq_two (hdim : Module.finrank ℝ V = 2)
+    (r : FourTensor V) : schouten r = 0 := by
+  ext; simp [schouten_apply_apply, hdim]
+
 /-- In dimension at least `3`, the Schouten bilinear form splits as
 `(n - 2)⁻¹ • tracelessRicci r + (scalar r / (2 n (n - 1))) • innerₗ V`. -/
 theorem schouten_eq_add_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V) (r : FourTensor V) :
@@ -518,14 +525,8 @@ theorem kulkarniNomizu_schouten_innerₗ (hn : Module.finrank ℝ V ≠ 2) (r : 
   · have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     have : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 :=
       sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
-    have hcc : constantCurvature V = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V) :=
-      toLinearMap₄_injective <| by
-        ext u v z w
-        simp only [toLinearMap₄_apply, _root_.smul_apply, constantCurvature_apply,
-          kulkarniNomizu_apply, innerₗ_apply_apply, smul_eq_mul]
-        ring
     rw [add_comm (scalarPart r), schouten_eq_add_of_three_le_finrank hngt r,
-      tracelessRicciPart_apply, scalarPart_apply, hcc]
+      tracelessRicciPart_apply, scalarPart_apply, constantCurvature_eq_half_smul_kulkarniNomizu]
     simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_smul]
     congr 2; field_simp
 
@@ -548,7 +549,7 @@ theorem bilinFormTrace_schouten_of_finrank_ne_one_of_finrank_ne_two
 
 /-- Away from dimension `2`, if `r` is antisymmetric in its first pair,
 `bilinFormTrace (schouten r) = scalar r / (2 (n - 1))`. -/
-theorem bilinFormTrace_schouten (hn : Module.finrank ℝ V ≠ 2) {r : FourTensor V}
+theorem bilinFormTrace_schouten_of_antisymm_first (hn : Module.finrank ℝ V ≠ 2) {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) :
     bilinFormTrace (schouten r) = scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) := by
   rcases eq_or_ne (Module.finrank ℝ V) 1 with hn1 | hn1
@@ -560,10 +561,10 @@ algebraic curvature tensor `r`. -/
 theorem IsAlgebraicCurvature.bilinFormTrace_schouten {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V ≠ 2) :
     bilinFormTrace (schouten r) = scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) :=
-  FourTensor.bilinFormTrace_schouten hn hr.antisymm_first
+  FourTensor.bilinFormTrace_schouten_of_antisymm_first hn hr.antisymm_first
 
 /-- In dimension at least `3`, `schouten` is a left inverse to `h ↦ kulkarniNomizu h (innerₗ V)`. -/
-theorem schouten_kulkarniNomizu_innerₗ_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V)
+@[simp] theorem schouten_kulkarniNomizu_innerₗ_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V)
     (h : BilinForm ℝ V) : schouten (kulkarniNomizu h (innerₗ V)) = h := by
   have : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 :=
     sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
@@ -576,35 +577,31 @@ theorem schouten_kulkarniNomizu_innerₗ_of_three_le_finrank (hn : 3 ≤ Module.
 /-- In dimension at least `3`, `schouten (constantCurvature V) = (1 / 2) • innerₗ V`. -/
 theorem schouten_constantCurvature_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V) :
     schouten (constantCurvature V) = (1 / 2 : ℝ) • innerₗ V := by
-  have hcc : constantCurvature V = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V) :=
-    toLinearMap₄_injective <| by
-      ext u v z w
-      simp only [toLinearMap₄_apply, _root_.smul_apply, constantCurvature_apply,
-        kulkarniNomizu_apply, innerₗ_apply_apply, smul_eq_mul]
-      ring
-  rw [hcc, map_smul, schouten_kulkarniNomizu_innerₗ_of_three_le_finrank hn]
+  rw [constantCurvature_eq_half_smul_kulkarniNomizu, map_smul,
+    schouten_kulkarniNomizu_innerₗ_of_three_le_finrank hn]
 
 /-- Away from dimension `1`, `schouten (weyl r) = 0` for every four-tensor `r`. -/
-theorem schouten_weyl_of_finrank_ne_one (hn : Module.finrank ℝ V ≠ 1) (r : FourTensor V) :
+@[simp] theorem schouten_weyl_of_finrank_ne_one (hn : Module.finrank ℝ V ≠ 1) (r : FourTensor V) :
     schouten (weyl r) = 0 := by
   rcases (by omega : Module.finrank ℝ V = 0 ∨ Module.finrank ℝ V = 2 ∨ 3 ≤ Module.finrank ℝ V)
     with h0 | h2 | h3
   · have : Subsingleton V := Module.finrank_zero_iff.mp h0
     ext u _; simp [Subsingleton.elim u 0]
-  · ext; simp [schouten_apply_apply, h2]
+  · exact schouten_eq_zero_of_finrank_eq_two h2 (weyl r)
   · rw [schouten_eq_add_of_three_le_finrank h3, tracelessRicci_weyl (by omega) r,
       scalar_weyl hn r]; simp
 
 /-- If `r` is antisymmetric in its first pair, `schouten (weyl r) = 0` in all dimensions. -/
-theorem schouten_weyl {r : FourTensor V} (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) :
-    schouten (weyl r) = 0 := by
+theorem schouten_weyl_of_antisymm_first {r : FourTensor V}
+    (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) : schouten (weyl r) = 0 := by
   rcases eq_or_ne (Module.finrank ℝ V) 1 with hn1 | hn1
   · simp [eq_zero_of_finrank_le_one_of_antisymm_first hn1.le hr₁]
   · exact schouten_weyl_of_finrank_ne_one hn1 r
 
 /-- For an algebraic curvature tensor `r`, `schouten (weyl r) = 0` in all dimensions. -/
-theorem IsAlgebraicCurvature.schouten_weyl {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
-    schouten (FourTensor.weyl r) = 0 := FourTensor.schouten_weyl hr.antisymm_first
+@[simp] theorem IsAlgebraicCurvature.schouten_weyl {r : FourTensor V}
+    (hr : IsAlgebraicCurvature r) : schouten (FourTensor.weyl r) = 0 :=
+  FourTensor.schouten_weyl_of_antisymm_first hr.antisymm_first
 
 /-- In every dimension, `weyl (kulkarniNomizu h (innerₗ V)) = 0` for every bilinear form `h`. -/
 @[simp] theorem weyl_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
@@ -808,8 +805,8 @@ private theorem sum_kn_term₁ (b : OrthonormalBasis ι ℝ V) (h : BilinForm �
 
 /-- **Adjointness of `h ↦ h ⊙ g` and `ricci`**: componentwise pairing of
 `kulkarniNomizu h (innerₗ V)` with a skew-pair `q` equals `4 * ∑ h (b i) (b k) * ricci q ..`. -/
-theorem sum_kulkarniNomizu_innerₗ_mul (b : OrthonormalBasis ι ℝ V) (h : BilinForm ℝ V)
-    {q : FourTensor V} (hq₁ : ∀ u v z w, q ![u, v, z, w] = -q ![v, u, z, w])
+theorem sum_kulkarniNomizu_innerₗ_mul_of_antisymm (b : OrthonormalBasis ι ℝ V)
+    (h : BilinForm ℝ V) {q : FourTensor V} (hq₁ : ∀ u v z w, q ![u, v, z, w] = -q ![v, u, z, w])
     (hq₂ : ∀ u v z w, q ![u, v, z, w] = -q ![u, v, w, z]) :
     (∑ i, ∑ j, ∑ k, ∑ l,
       kulkarniNomizu h (innerₗ V) ![b i, b j, b k, b l] * q ![b i, b j, b k, b l]) =
@@ -826,12 +823,12 @@ theorem IsAlgebraicCurvature.sum_kulkarniNomizu_innerₗ_mul {q : FourTensor V}
     (∑ i, ∑ j, ∑ k, ∑ l,
       kulkarniNomizu h (innerₗ V) ![b i, b j, b k, b l] * q ![b i, b j, b k, b l]) =
       4 * ∑ i, ∑ k, h (b i) (b k) * ricci q (b i) (b k) :=
-  FourTensor.sum_kulkarniNomizu_innerₗ_mul b h hq.antisymm_first hq.antisymm_last
+  FourTensor.sum_kulkarniNomizu_innerₗ_mul_of_antisymm b h hq.antisymm_first hq.antisymm_last
 
 /-- Pairing `constantCurvature V` against `q` antisymmetric in its first pair gives
 `2 * scalar q`. -/
-theorem sum_constantCurvature_mul (b : OrthonormalBasis ι ℝ V) {q : FourTensor V}
-    (hq₁ : ∀ u v z w, q ![u, v, z, w] = -q ![v, u, z, w]) :
+theorem sum_constantCurvature_mul_of_antisymm_first (b : OrthonormalBasis ι ℝ V)
+    {q : FourTensor V} (hq₁ : ∀ u v z w, q ![u, v, z, w] = -q ![v, u, z, w]) :
     (∑ i, ∑ j, ∑ k, ∑ l, constantCurvature V ![b i, b j, b k, b l] * q ![b i, b j, b k, b l]) =
       2 * scalar q := by
   have hc (i j k l : ι) : constantCurvature V ![b i, b j, b k, b l] * q ![b i, b j, b k, b l] =
@@ -850,7 +847,8 @@ theorem sum_constantCurvature_sq (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, constantCurvature V ![b i, b j, b k, b l] ^ 2) =
       2 * (Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1) := by
   simp only [sq]
-  rw [sum_constantCurvature_mul b isAlgebraicCurvature_constantCurvature.antisymm_first,
+  rw [sum_constantCurvature_mul_of_antisymm_first b
+      isAlgebraicCurvature_constantCurvature.antisymm_first,
     scalar_constantCurvature, mul_assoc]
 
 /-- The squared component norm of `scalarPart r` is `2 * scalar r ^ 2 / (n (n - 1))`. -/
@@ -874,7 +872,7 @@ theorem sum_tracelessRicciPart_sq (r : FourTensor V) (b : OrthonormalBasis ι �
   · simp [tracelessRicciPart_apply, hn2]
   · simp_rw [sq]; nth_rw 1 [tracelessRicciPart_apply]
     simp_rw [_root_.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum]
-    rw [sum_kulkarniNomizu_innerₗ_mul b (tracelessRicci r)
+    rw [sum_kulkarniNomizu_innerₗ_mul_of_antisymm b (tracelessRicci r)
       (tracelessRicciPart_antisymm_first r) (tracelessRicciPart_antisymm_last r),
       ricci_tracelessRicciPart hn2 r]; ring
 
@@ -884,35 +882,35 @@ theorem sum_scalarPart_mul_tracelessRicciPart (r q : FourTensor V) (b : Orthonor
       tracelessRicciPart q ![b i, b j, b k, b l]) = 0 := by
   rw [scalarPart_apply]
   simp_rw [_root_.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum]
-  rw [sum_constantCurvature_mul b (tracelessRicciPart_antisymm_first q),
+  rw [sum_constantCurvature_mul_of_antisymm_first b (tracelessRicciPart_antisymm_first q),
     scalar_tracelessRicciPart, mul_zero, mul_zero]
 
 /-- `scalarPart r` is orthogonal to `weyl q` whenever `q` is antisymmetric in its first pair. -/
-theorem sum_scalarPart_mul_weyl (r : FourTensor V) {q : FourTensor V}
+theorem sum_scalarPart_mul_weyl_of_antisymm_first (r : FourTensor V) {q : FourTensor V}
     (hq₁ : ∀ u v z w, q ![u, v, z, w] = -q ![v, u, z, w]) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l,
       scalarPart r ![b i, b j, b k, b l] * weyl q ![b i, b j, b k, b l]) = 0 := by
   rw [scalarPart_apply]
   simp_rw [_root_.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum]
-  rw [sum_constantCurvature_mul b (weyl_antisymm_first hq₁), scalar_weyl_of_antisymm_first hq₁,
-    mul_zero, mul_zero]
+  rw [sum_constantCurvature_mul_of_antisymm_first b (weyl_antisymm_first hq₁),
+    scalar_weyl_of_antisymm_first hq₁, mul_zero, mul_zero]
 
 /-- `scalarPart r` is orthogonal to `weyl q` for any algebraic curvature tensor `q`. -/
 theorem IsAlgebraicCurvature.sum_scalarPart_mul_weyl (r : FourTensor V) {q : FourTensor V}
     (hq : IsAlgebraicCurvature q) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l,
       scalarPart r ![b i, b j, b k, b l] * FourTensor.weyl q ![b i, b j, b k, b l]) = 0 :=
-  FourTensor.sum_scalarPart_mul_weyl r hq.antisymm_first b
+  FourTensor.sum_scalarPart_mul_weyl_of_antisymm_first r hq.antisymm_first b
 
 /-- `tracelessRicciPart r` is orthogonal to `weyl q` for any skew-pair four-tensor `q`. -/
-theorem sum_tracelessRicciPart_mul_weyl (r : FourTensor V) {q : FourTensor V}
+theorem sum_tracelessRicciPart_mul_weyl_of_antisymm (r : FourTensor V) {q : FourTensor V}
     (hq₁ : ∀ u v z w, q ![u, v, z, w] = -q ![v, u, z, w])
     (hq₂ : ∀ u v z w, q ![u, v, z, w] = -q ![u, v, w, z]) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l,
       tracelessRicciPart r ![b i, b j, b k, b l] * weyl q ![b i, b j, b k, b l]) = 0 := by
   rw [tracelessRicciPart_apply]
   simp_rw [_root_.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum]
-  rw [sum_kulkarniNomizu_innerₗ_mul b (tracelessRicci r)
+  rw [sum_kulkarniNomizu_innerₗ_mul_of_antisymm b (tracelessRicci r)
     (weyl_antisymm_first hq₁) (weyl_antisymm_last hq₂), ricci_weyl_of_antisymm hq₁ hq₂]
   simp
 
@@ -921,11 +919,11 @@ theorem IsAlgebraicCurvature.sum_tracelessRicciPart_mul_weyl (r : FourTensor V) 
     (hq : IsAlgebraicCurvature q) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, FourTensor.tracelessRicciPart r ![b i, b j, b k, b l] *
       FourTensor.weyl q ![b i, b j, b k, b l]) = 0 :=
-  FourTensor.sum_tracelessRicciPart_mul_weyl r hq.antisymm_first hq.antisymm_last b
+  FourTensor.sum_tracelessRicciPart_mul_weyl_of_antisymm r hq.antisymm_first hq.antisymm_last b
 
 /-- **Pythagorean decomposition of any skew-pair four-tensor** into scalar, trace-free Ricci, and
 Weyl component norms. -/
-theorem sum_sq_eq_add {r : FourTensor V}
+theorem sum_sq_eq_add_of_antisymm {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] ^ 2) =
@@ -949,7 +947,8 @@ theorem sum_sq_eq_add {r : FourTensor V}
         scalarPart r ![b i, b j, b k, b l] * tracelessRicciPart r ![b i, b j, b k, b l] :=
     mul_comm _ _
   simp_rw [hwt, hws, hts, sum_scalarPart_mul_tracelessRicciPart r r b,
-    sum_scalarPart_mul_weyl r hr₁ b, sum_tracelessRicciPart_mul_weyl r hr₁ hr₂ b]
+    sum_scalarPart_mul_weyl_of_antisymm_first r hr₁ b,
+    sum_tracelessRicciPart_mul_weyl_of_antisymm r hr₁ hr₂ b]
   ring
 
 /-- **Pythagorean decomposition of an algebraic curvature tensor.** -/
@@ -959,18 +958,18 @@ theorem IsAlgebraicCurvature.sum_sq_eq_add {r : FourTensor V} (hr : IsAlgebraicC
       (∑ i, ∑ j, ∑ k, ∑ l, scalarPart r ![b i, b j, b k, b l] ^ 2) +
         (∑ i, ∑ j, ∑ k, ∑ l, FourTensor.tracelessRicciPart r ![b i, b j, b k, b l] ^ 2) +
         (∑ i, ∑ j, ∑ k, ∑ l, FourTensor.weyl r ![b i, b j, b k, b l] ^ 2) :=
-  FourTensor.sum_sq_eq_add hr.antisymm_first hr.antisymm_last b
+  FourTensor.sum_sq_eq_add_of_antisymm hr.antisymm_first hr.antisymm_last b
 
 /-- **Explicit norm-squared identity for skew-pair four-tensors**:
 `∑ |r|² = (2 / (n (n - 1))) Scal(r)² + (4 / (n - 2)) ∑ |Ric₀(r)|² + ∑ |Weyl(r)|²`. -/
-theorem sum_sq_eq_scalar_add_tracelessRicci_add_weyl {r : FourTensor V}
+theorem sum_sq_eq_scalar_add_tracelessRicci_add_weyl_of_antisymm {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (hr₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] ^ 2) =
       2 * scalar r ^ 2 / ((Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1)) +
         (4 / ((Module.finrank ℝ V : ℝ) - 2)) * (∑ i, ∑ k, tracelessRicci r (b i) (b k) ^ 2) +
         (∑ i, ∑ j, ∑ k, ∑ l, weyl r ![b i, b j, b k, b l] ^ 2) := by
-  rw [sum_sq_eq_add hr₁ hr₂ b, sum_scalarPart_sq r b, sum_tracelessRicciPart_sq r b]
+  rw [sum_sq_eq_add_of_antisymm hr₁ hr₂ b, sum_scalarPart_sq r b, sum_tracelessRicciPart_sq r b]
 
 /-- **Explicit norm-squared identity for algebraic curvature tensors.** -/
 theorem IsAlgebraicCurvature.sum_sq_eq_scalar_add_tracelessRicci_add_weyl {r : FourTensor V}
@@ -979,7 +978,8 @@ theorem IsAlgebraicCurvature.sum_sq_eq_scalar_add_tracelessRicci_add_weyl {r : F
       2 * scalar r ^ 2 / ((Module.finrank ℝ V : ℝ) * ((Module.finrank ℝ V : ℝ) - 1)) +
         (4 / ((Module.finrank ℝ V : ℝ) - 2)) * (∑ i, ∑ k, tracelessRicci r (b i) (b k) ^ 2) +
         (∑ i, ∑ j, ∑ k, ∑ l, FourTensor.weyl r ![b i, b j, b k, b l] ^ 2) :=
-  FourTensor.sum_sq_eq_scalar_add_tracelessRicci_add_weyl hr.antisymm_first hr.antisymm_last b
+  FourTensor.sum_sq_eq_scalar_add_tracelessRicci_add_weyl_of_antisymm hr.antisymm_first
+    hr.antisymm_last b
 
 end Orthogonality
 
