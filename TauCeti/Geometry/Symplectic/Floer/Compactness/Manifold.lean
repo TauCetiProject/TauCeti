@@ -161,8 +161,9 @@ variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ} {u : ℝ ×
 of the chart at `α`, the coordinate expression of `ω` on a vector `a` and its image under the
 structure `J(z, ·)` read in the chart is `ω(a', J(z, x) a')`, at the point
 `x = (extChartAt I α).symm y` and for the tangent vector `a'` at `x` with tangent coordinate `a`. -/
-theorem inChartAt_apply_almostComplexInChartAt (ω : SmoothTwoForm I M) {y : E}
-    (hy : y ∈ (extChartAt I α).target) (z : ℝ × ℝ) (a : E) :
+theorem inChartAt_apply_almostComplexInChartAt {P : Type*}
+    {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)} (ω : SmoothTwoForm I M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (z : P) (a : E) :
     RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α y
         ![a, Floer.almostComplexInChartAt I α J (z, y) a] =
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
@@ -248,13 +249,15 @@ theorem IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt (hω : ω.I
   exact floerEnergyDensity_nonneg hω hJ h
 
 /-- **The energy form is comparable to the chart norm, uniformly on a compact window.** Let the
-structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for
-compact `D ⊆ ℝ × ℝ` and a compact set `K` of chart coordinates. There are constants `c > 0` and `C`
-such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`, the energy form
-`ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the chart at `α`
-satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
-theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq
-    (hω : ω.IsNondegenerate) (α : M) {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D)
+structures `J(z, x)` be tamed by `ω` and, read in the chart at `α`, continuous on `D × K`, for a
+compact set `D` of parameters, such as a compact window of the domain `ℝ × ℝ` or a compact family
+of almost complex structures, and a compact set `K` of chart coordinates. There are constants
+`c > 0` and `C` such that at every point `x` with chart coordinate `y ∈ K`, and for every `z ∈ D`,
+the energy form `ω_x(a, J(z, x) a)` of the tangent vector `a` with tangent coordinate `ξ` in the
+chart at `α` satisfies `c ‖ξ‖² ≤ ω_x(a, J(z, x) a) ≤ C ‖ξ‖²`. -/
+theorem IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq {P : Type*}
+    [TopologicalSpace P] {J : P → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hω : ω.IsNondegenerate) (α : M) {D : Set P} {K : Set E} (hD : IsCompact D)
     (hK : IsCompact K) (hKα : K ⊆ (extChartAt I α).target)
     (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) (D ×ˢ K))
     (hJt : ∀ z ∈ D, ∀ y ∈ K, (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames
