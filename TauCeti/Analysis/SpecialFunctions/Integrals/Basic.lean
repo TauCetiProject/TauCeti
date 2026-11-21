@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors, Matteo Cipollina
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -49,6 +51,9 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_inv_linear_mul_eq_log_sub`:
+  `∫ t in a₀..b₀, (z₀ + t * d)⁻¹ * d = log (u * (z₀ + b₀ * d)) - log (u * (z₀ + a₀ * d))`
+  when `u * (z₀ + t * d) ∈ Complex.slitPlane` on `uIcc a₀ b₀`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
@@ -470,6 +475,30 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+/-- Fundamental theorem of calculus for `t ↦ (z₀ + t * d)⁻¹ * d` along a real segment mapped into
+`Complex.slitPlane` after rotation by a constant `u`. -/
+theorem integral_inv_linear_mul_eq_log_sub {u z₀ d : ℂ} {a₀ b₀ : ℝ}
+    (hslit : ∀ t ∈ Set.uIcc a₀ b₀, u * (z₀ + (t : ℂ) * d) ∈ Complex.slitPlane) :
+    ∫ t in a₀..b₀, (z₀ + (t : ℂ) * d)⁻¹ * d =
+      Complex.log (u * (z₀ + (b₀ : ℂ) * d)) - Complex.log (u * (z₀ + (a₀ : ℂ) * d)) := by
+  have hu : u ≠ 0 :=
+    (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit a₀ Set.left_mem_uIcc))).1
+  have heq : (fun t : ℝ => (u * d) / (u * (z₀ + (t : ℂ) * d))) =
+      fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d :=
+    funext fun t => by rw [mul_div_mul_left _ _ hu, div_eq_inv_mul]
+  have hint : IntervalIntegrable (fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d)
+      MeasureTheory.volume a₀ b₀ :=
+    ContinuousOn.intervalIntegrable fun t ht =>
+      (((continuous_const.add (Complex.continuous_ofReal.mul continuous_const)).continuousAt.inv₀
+        (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit t ht))).2).mul
+          continuousAt_const).continuousWithinAt
+  simpa only [heq] using TauCeti.Contour.integral_deriv_div_eq_log_sub_log
+    (f := fun t : ℝ => u * (z₀ + (t : ℂ) * d)) (f' := fun _ => u * d) (P := ∅)
+    Set.countable_empty (by fun_prop)
+    (fun t _ => by
+      simpa using (((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const d).const_add z₀).const_mul u)
+    hslit (heq.symm ▸ hint)
 
 end TauCeti
 

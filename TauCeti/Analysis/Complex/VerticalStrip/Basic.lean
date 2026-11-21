@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.TangentCone.Defs
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.RCLike.TangentCone
 import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
@@ -15,13 +17,13 @@ import TauCeti.Analysis.Complex.HasPrimitives
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection, convexity, closure, the
-exponential gauge multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic
-primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip
-(specializing `TauCeti.Analysis.Complex.HasPrimitives` to
-`verticalClosedStrip a b = Icc a b ×ℂ univ`), and the Cauchy rectangle contour-shift identity
-`DiffContOnCl.intervalIntegral_add_mul_I_eq` equating vertical line integrals of vertically
-periodic holomorphic strip functions.
+This file records their membership criteria, behavior under reflection, convexity, closure, unique
+differentiability (`uniqueDiffOn_verticalClosedStrip`), the exponential gauge multiplier
+`scaleFactor` normalizing strip boundary bounds, and holomorphic primitives `Complex.wedgeIntegral`
+for functions satisfying `DiffContOnCl` on a vertical strip (specializing
+`TauCeti.Analysis.Complex.HasPrimitives` to `verticalClosedStrip a b = Icc a b ×ℂ univ`), and the
+Cauchy rectangle contour-shift identity `DiffContOnCl.intervalIntegral_add_mul_I_eq` equating
+vertical line integrals of vertically periodic holomorphic strip functions.
 -/
 
 public section
@@ -84,6 +86,18 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
 theorem closure_verticalStrip (hab : a < b) :
     closure (verticalStrip a b) = verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re, closure_Ioo hab.ne, verticalClosedStrip]
+
+/-- A closed vertical strip `verticalClosedStrip a b` with `a < b` has unique complex derivatives
+at every point, including on both vertical boundary lines `Re z = a` and `Re z = b`. -/
+theorem uniqueDiffOn_verticalClosedStrip (hab : a < b) :
+    UniqueDiffOn ℂ (verticalClosedStrip a b) := by
+  have hconv : Convex ℝ (verticalClosedStrip a b) :=
+    (convex_Icc a b).linear_preimage reLm
+  have hsub : verticalStrip a b ⊆ interior (verticalClosedStrip a b) :=
+    interior_maximal (verticalStrip_subset_verticalClosedStrip a b) (isOpen_verticalStrip a b)
+  refine uniqueDiffOn_convex_of_isRCLikeNormedField hconv ⟨(((a + b) / 2 : ℝ) : ℂ), hsub ?_⟩
+  simp only [mem_verticalStrip_iff, mem_Ioo, ofReal_re]
+  constructor <;> linarith
 
 section ScaleFactor
 

@@ -39,7 +39,10 @@ the real axis, holomorphic above it and vanishing on it vanishes identically,
 `TauCeti.eqOn_zero_of_zero_on_real_axis`. The horizontal-strip form
 `TauCeti.eqOn_zero_im_preimage_uIcc_of_zero_on_real_axis`, for strips on either side of the
 axis, determines a bounded holomorphic function on a strip by its values on one edge, as for
-the KMS functions of C⋆-algebra dynamics.
+the KMS functions of C⋆-algebra dynamics. Applying boundary uniqueness to
+`z ↦ f z - conj (f (conj z))` yields global conjugation symmetry `f (conj z) = conj (f z)` for a
+holomorphic function real on the real axis (`TauCeti.apply_conj_eq_conj_of_real_on_axis`), and by
+continuity on the closure of a vertical strip (`TauCeti.conj_apply_eq_of_im_eq_zero_on_strip`).
 -/
 
 public section
@@ -234,5 +237,53 @@ theorem eqOn_zero_im_preimage_uIcc_of_zero_on_real_axis {c : ℝ}
   · simpa [uIcc_of_le hc.le, uIoo_of_le hc.le] using
       eqOn_zero_im_preimage_Icc_of_zero_on_real_axis hc (by simpa [uIcc_of_le hc.le] using hcont)
         (by simpa [uIoo_of_le hc.le] using hholo) hzero
+
+/-- **Conjugation symmetry of a holomorphic function real on the axis.** On a preconnected
+conjugation-symmetric open set `Ω` meeting the real axis, a holomorphic function that is real on
+`Ω ∩ ℝ` satisfies `f (conj z) = conj (f z)` throughout `Ω`. -/
+theorem apply_conj_eq_conj_of_real_on_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω)
+    (hΩconn : IsPreconnected Ω) (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) {x : ℝ} (hx : (x : ℂ) ∈ Ω)
+    (hf : DifferentiableOn ℂ f Ω) (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0)
+    {z : ℂ} (hz : z ∈ Ω) :
+    f ((starRingEnd ℂ) z) = (starRingEnd ℂ) (f z) := by
+  let G : ℂ → ℂ := fun w => f w - (starRingEnd ℂ) (f ((starRingEnd ℂ) w))
+  have hGdiff : DifferentiableOn ℂ G Ω := hf.sub (differentiableOn_conj_conj_of_symmetric hΩ hf)
+  have hGupper : EqOn G 0 (Ω ∩ {w : ℂ | 0 ≤ w.im}) :=
+    eqOn_zero_of_zero_on_real_axis hΩopen hΩconn hΩ hx
+      (hGdiff.continuousOn.mono inter_subset_left) (hGdiff.mono inter_subset_left)
+      fun w hw hw0 => by
+        dsimp only [G]
+        rw [Complex.conj_eq_iff_im.mpr hw0, Complex.conj_eq_iff_im.mpr (hreal w hw hw0), sub_self]
+  rcases le_or_gt 0 z.im with hz_im | hz_im
+  · have h0 : f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := sub_eq_zero.mp (hGupper ⟨hz, hz_im⟩)
+    simpa only [starRingEnd_self_apply] using (congrArg (starRingEnd ℂ) h0).symm
+  · have h0 := sub_eq_zero.mp (hGupper ⟨hΩ hz, by simp [hz_im.le]⟩)
+    simpa only [starRingEnd_self_apply] using h0
+
+/-- **Schwarz reflection symmetry on a closed vertical strip.** If `f` is holomorphic on the open
+strip `a < Re z < b` (`a < b`), continuous on the closed strip `a ≤ Re z ≤ b`, and real on
+`(a, b)`, then `f (conj z) = conj (f z)` throughout the closed strip. -/
+theorem conj_apply_eq_of_im_eq_zero_on_strip {a b : ℝ} (hab : a < b)
+    (hf : DifferentiableOn ℂ f {z | a < z.re ∧ z.re < b})
+    (hcont : ContinuousOn f {z | a ≤ z.re ∧ z.re ≤ b})
+    (hreal : ∀ x : ℝ, a < x → x < b → (f x).im = 0)
+    {z : ℂ} (hz : z ∈ {w : ℂ | a ≤ w.re ∧ w.re ≤ b}) :
+    f (conj z) = conj (f z) := by
+  let Ω : Set ℂ := re ⁻¹' Ioo a b
+  let S : Set ℂ := re ⁻¹' Icc a b
+  have hΩ : EqOn (fun w => f (conj w)) (fun w => conj (f w)) Ω := fun w hw =>
+    apply_conj_eq_conj_of_real_on_axis (isOpen_Ioo.preimage continuous_re)
+      ((convex_Ioo a b).linear_preimage reLm).isPreconnected
+      (fun _ h => by simpa [Ω] using h) (x := (a + b) / 2)
+      (by simp; constructor <;> linarith) hf
+      (fun u hu hu0 => by
+        rw [← re_add_im u, hu0, ofReal_zero, zero_mul, add_zero]
+        exact hreal u.re hu.1 hu.2) hw
+  have hSsymm : MapsTo (starRingEnd ℂ) S S := fun _ h => by simpa [S] using h
+  have hS : EqOn (fun w => f (conj w)) (fun w => conj (f w)) S :=
+    hΩ.of_subset_closure (hcont.comp continuous_conj.continuousOn hSsymm)
+      (continuous_conj.comp_continuousOn hcont) (preimage_mono Ioo_subset_Icc_self) (by
+        rw [closure_preimage_re, closure_Ioo hab.ne])
+  exact hS hz
 
 end TauCeti

@@ -69,6 +69,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   `V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` of scalars with the powers of `a`.
 * `Finset.sum_range_succ_eq_sum_range_add`: regroup a sum whose successive terms split into
   adjacent contributions, retaining the final boundary term.
+* `Finset.prod_range_two_mul`, `Finset.sum_range_two_mul`: split a product or sum over
+  `range (2 * k)` into its even and odd indices.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
   over `range (2 * k + 1)` into its even and odd indices.
 * `Finset.prod_range_ite_lt`, `Finset.sum_range_ite_lt`: a product or sum over `range n` whose
@@ -105,6 +107,19 @@ theorem sum_range_succ_eq_sum_range_add {M : Type*} [AddCommMonoid M]
     sum_congr rfl (fun k hk ↦ hsucc k (mem_range.mp hk)), sum_add_distrib, sum_add_distrib]
   have hshift := (sum_range_succ' g n).symm.trans (sum_range_succ g n)
   simpa only [add_assoc, add_left_comm, add_comm] using congrArg (· + ∑ k ∈ range n, h k) hshift
+
+/-- A product over `range (2 * k)` splits into its factors at even and at odd indices. -/
+@[to_additive sum_range_two_mul /-- A sum over `range (2 * k)` splits into its terms at even
+and at odd indices. -/]
+theorem prod_range_two_mul {M : Type*} [CommMonoid M] (g : ℕ → M) (k : ℕ) :
+    ∏ i ∈ range (2 * k), g i =
+      (∏ j ∈ range k, g (2 * j)) * ∏ j ∈ range k, g (2 * j + 1) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Nat.mul_succ, prod_range_succ, prod_range_succ, ih,
+      prod_range_succ (fun j => g (2 * j)) k, prod_range_succ (fun j => g (2 * j + 1)) k]
+    ac_rfl
 
 /-- A product over `range (2 * k + 1)` splits into its factors at even and at odd indices. -/
 @[to_additive sum_range_two_mul_add_one /-- A sum over `range (2 * k + 1)` splits into its terms at

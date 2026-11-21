@@ -38,6 +38,9 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.continuousOn_integral_prod`: the interval integral
+  `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
+  `uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms.
 * `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo` and
   `TauCeti.intervalIntegral.integral_norm_primitive_le`: such a primitive is integrable on
   `(a, b)`, with `L¹(a, b)` norm at most `(b - a) ‖f‖₁`.
@@ -104,6 +107,22 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- The interval integral `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
+`uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms. -/
+theorem continuousOn_integral_prod {μ : Measure ℝ} [NullSingletonClass μ]
+    (hf : IntervalIntegrable f μ a b) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ ∫ x in p.1..p.2, f x ∂μ) (uIcc a b ×ˢ uIcc a b) := by
+  have hprim : ContinuousOn (fun t ↦ ∫ x in a..t, f x ∂μ) (uIcc a b) :=
+    _root_.intervalIntegral.continuousOn_primitive_interval' hf left_mem_uIcc
+  have hsub : ContinuousOn (fun p : ℝ × ℝ ↦ (∫ x in a..p.2, f x ∂μ) - ∫ x in a..p.1, f x ∂μ)
+      (uIcc a b ×ˢ uIcc a b) :=
+    (hprim.comp (continuous_snd.continuousOn (s := uIcc a b ×ˢ uIcc a b)) fun _ hp ↦ hp.2).sub
+      (hprim.comp (continuous_fst.continuousOn (s := uIcc a b ×ˢ uIcc a b)) fun _ hp ↦ hp.1)
+  refine hsub.congr fun p ⟨hp1, hp2⟩ ↦ ?_
+  exact (_root_.intervalIntegral.integral_interval_sub_left
+    (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp2))
+    (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp1))).symm
 
 /-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on `(a, b)`, based at a point
 `t₀` of `[a, b]`, lies in every `Lᵖ((a, b), ν)` for any measure `ν` that is finite on compact sets:
