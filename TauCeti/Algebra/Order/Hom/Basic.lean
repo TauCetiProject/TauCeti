@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Hom.Basic
 public import Mathlib.Algebra.Order.Archimedean.Basic
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.Order.Interval.Set.Infinite
+public import Mathlib.Order.Preorder.Finite
 
 /-!
 # Positive values of additive homomorphisms
@@ -56,10 +57,8 @@ theorem AddMonoidHom.infinite_image_setOf_le {H G ι : Type*} [AddGroup H] [AddC
   -- kernel of `δ`.
   obtain ⟨t, ht, hδt⟩ : ∃ t : ℕ, 0 < t ∧ δ (t • u) = 0 := by
     obtain ⟨m₀, hm₀⟩ := key 0
-    obtain ⟨a, -, b, -, hab, he⟩ := (Set.Ici_infinite m₀).exists_ne_map_eq_of_mapsTo
+    obtain ⟨a, -, b, -, hlt, he⟩ := (Set.Ici_infinite m₀).exists_lt_map_eq_of_mapsTo
       (f := fun n : ℕ => δ (n • u)) (fun n hn => by simpa using hm₀ n hn) hfin
-    wlog hlt : a < b generalizing a b
-    · exact this b a hab.symm he.symm (hab.symm.lt_of_le (not_lt.1 hlt))
     obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_lt hlt
     refine ⟨t + 1, t.succ_pos, ?_⟩
     have hsplit : (t + 1) • u = -(a • u) + (a + t + 1) • u := by
