@@ -371,6 +371,22 @@ lemma compactSupportCohomologyExtend_congr {f g : U ⟶ X} (h : f = g)
   subst h
   rfl
 
+/-- Extension along a homeomorphism is an isomorphism; its inverse is the extension along the
+inverse homeomorphism. -/
+lemma isIso_compactSupportCohomologyExtend [T2Space U] {f : U ⟶ X} [IsIso f]
+    (hf : IsOpenEmbedding f) (n : ℕ) :
+    IsIso (compactSupportCohomologyExtend (R := R) (k := k) (M := M) hf n) := by
+  have hg : IsOpenEmbedding (inv f) := (homeoOfIso (asIso f)).symm.isOpenEmbedding
+  refine ⟨compactSupportCohomologyExtend hg n, ?_, ?_⟩
+  · rw [← compactSupportCohomologyExtend_comp hf hg n (by simpa using IsOpenEmbedding.id),
+      compactSupportCohomologyExtend_congr (IsIso.hom_inv_id f) _
+        (by simpa using IsOpenEmbedding.id),
+      compactSupportCohomologyExtend_id]
+  · rw [← compactSupportCohomologyExtend_comp hg hf n (by simpa using IsOpenEmbedding.id),
+      compactSupportCohomologyExtend_congr (IsIso.inv_hom_id f) _
+        (by simpa using IsOpenEmbedding.id),
+      compactSupportCohomologyExtend_id]
+
 variable (R k M) in
 /-- The class in `Hⁿ_c(U)` of a class of `Hⁿ(X, X ∖ S)` restricted along `f`, extended back along
 `f`, is the class in `Hⁿ_c(X)`. -/
