@@ -12,6 +12,7 @@ public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
 import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Measure.Smul
 import TauCeti.Probability.Distributions.Gaussian.Affine
+import TauCeti.Probability.Distributions.Gaussian.Pi
 
 /-!
 # Laws, moments, conjugation invariance, and entry characterizations of the GOE and GUE
@@ -497,11 +498,12 @@ theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_two {n : ℕ}
       (Matrix.UnitaryGroup.hermitianConj U).continuous.measurable, map_hermitianConj_gueMeasure]
 
 /-- **Orthogonal conjugation invariance of `gaussianEnsemble 1 n`.** With independent `N(0, v)`
-coordinates, conjugating `gaussianEnsemble 1 n` by a real orthogonal matrix lifted to `ℂ` preserves
-its distribution. -/
+upper-triangular coordinates, conjugating `gaussianEnsemble 1 n` by a real orthogonal matrix lifted
+to `ℂ` preserves its distribution. -/
 theorem identDistrib_conj_gaussianEnsemble_one {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {n : ℕ} {g : Fin n × Fin n → Ω → ℝ} {v : ℝ≥0}
-    (hg : ∀ ij, HasLaw (g ij) (gaussianReal 0 v) P) (hindep : iIndepFun g P)
+    (hg : ∀ ij : upperTriangle n, HasLaw (g ij.val) (gaussianReal 0 v) P)
+    (hindep : iIndepFun (fun (ij : upperTriangle n) ω ↦ g ij.val ω) P)
     (O : Matrix.orthogonalGroup (Fin n) ℝ) :
     IdentDistrib
       (fun ω ↦
@@ -509,11 +511,36 @@ theorem identDistrib_conj_gaussianEnsemble_one {Ω : Type*} [MeasurableSpace Ω]
           gaussianEnsemble 1 n (fun ij ↦ g ij ω) *
           ((O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᵀ)
       (fun ω ↦ gaussianEnsemble 1 n (fun ij ↦ g ij ω)) P P := by
+  let gUpper : (upperTriangle n → ℝ) →
+      selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) :=
+    fun x ↦ (symmetricCoordinates n).symm fun ij ↦
+      (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * x ij)
+  have hgUpper : Measurable gUpper := by unfold gUpper; fun_prop
+  let f : (upperTriangle n → ℝ) → Matrix (Fin n) (Fin n) ℂ := castSym n ∘ gUpper
+  have hf : Measurable f := (measurable_castSym n).comp hgUpper
+  have hf_smul (c : ℝ) (x : upperTriangle n → ℝ) : f (c • x) = c • f x := by
+    have hinner : (fun ij : upperTriangle n ↦
+        (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * (c • x) ij)) =
+        c • fun ij : upperTriangle n ↦
+          (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * x ij) := by
+      funext ij; simp only [Pi.smul_apply, smul_eq_mul]; ring
+    ext i j
+    simp only [f, Function.comp_apply, gUpper, hinner, map_smul, castSym, SetLike.val_smul,
+      Matrix.map_apply, Matrix.smul_apply, smul_eq_mul, Complex.ofReal_mul, Complex.real_smul]
+  have hfun : (fun ω ↦ gaussianEnsemble 1 n (fun ij ↦ g ij ω)) =
+      fun ω ↦ f (fun ij ↦ g ij.val ω) :=
+    funext fun ω ↦ by
+      rw [← map_ofReal_coe_goeMatrix, goeMatrix_def]; rfl
   have hlaw : HasLaw (fun ω ↦ gaussianEnsemble 1 n (fun ij ↦ g ij ω))
       ((gaussianEnsembleLaw 1 n).map (Real.sqrt v • ·)) P := by
-    convert hasLaw_gaussianEnsemble 1 hg hindep using 2
-    rw [gaussianEnsembleLaw_def, Measure.map_map (by fun_prop) (by fun_prop)]
-    rfl
+    rw [hfun, gaussianEnsembleLaw_one_eq_map_goeMeasure, goeMeasure_eq_map_pi_upperTriangle,
+      Measure.map_map (measurable_castSym n) hgUpper]
+    change HasLaw (fun ω ↦ f (fun ij ↦ g ij.val ω))
+      (((Measure.pi fun _ : upperTriangle n ↦ gaussianReal 0 1).map f).map
+        (Real.sqrt v • ·)) P
+    rw [← Measure.map_map_const_smul _ hf _ (hf_smul _),
+      ← pi_gaussianReal_eq_map_sqrt_smul (upperTriangle n) v]
+    exact (hasLaw_map hf.aemeasurable).fun_comp (hindep.hasLaw_pi hg)
   let conjO : Matrix (Fin n) (Fin n) ℂ → Matrix (Fin n) (Fin n) ℂ := fun H ↦
     (O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H *
       ((O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᵀ
