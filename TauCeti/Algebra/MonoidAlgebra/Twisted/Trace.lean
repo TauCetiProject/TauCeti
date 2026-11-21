@@ -150,17 +150,16 @@ variable (k G : Type*) [CommSemiring k] [StarRing k] [Group G] (α : G → G →
 /-- **Conjugate-linear reversal** on `k_α[G]`: the conjugate-linear involution sending
 `∑ z_g • of g` to `∑ star z_g • of g⁻¹`. -/
 noncomputable def conjReverse :
-    twistedMonoidAlgebra k G α →ₗ⋆[k] twistedMonoidAlgebra k G α where
-  toFun x := ((basis k G α).repr x).sum fun g r ↦ star r • of g⁻¹
-  map_add' x y := by
-    rw [map_add, Finsupp.sum_add_index' (fun _ ↦ by simp) (fun _ _ _ ↦ by simp [add_smul])]
-  map_smul' c x := by
-    rw [map_smul, Finsupp.sum_smul_index' (fun _ ↦ by simp), starRingEnd_apply, Finsupp.smul_sum]
-    exact Finset.sum_congr rfl fun g _ ↦ by simp [smul_smul]
+    twistedMonoidAlgebra k G α →ₗ⋆[k] twistedMonoidAlgebra k G α :=
+  ((((basis k G α).repr.symm.toLinearMap ∘ₗ
+      (Finsupp.mapDomain.linearEquiv k k (Equiv.inv G)).toLinearMap).comp
+      (Finsupp.mapRange.linearMap (starLinearEquiv k (A := k)).toLinearMap)).comp
+    (basis k G α).repr.toLinearMap)
 
 variable {k G α}
 
-@[simp] theorem conjReverse_of (g : G) : conjReverse k G α (of g) = of g⁻¹ := by simp [conjReverse]
+@[simp] theorem conjReverse_of (g : G) : conjReverse k G α (of g) = of g⁻¹ := by
+  simp [conjReverse, Finsupp.mapRange_single, Finsupp.mapDomain_single]
 
 @[simp] theorem conjReverse_one : conjReverse k G α 1 = 1 := by
   rw [← of_one, conjReverse_of, inv_one, of_one]
@@ -168,16 +167,10 @@ variable {k G α}
 /-- The `g`-coordinate of `conjReverse x` is the conjugate of the `g⁻¹`-coordinate of `x`. -/
 @[simp] theorem basis_repr_conjReverse (x : twistedMonoidAlgebra k G α) (g : G) :
     (basis k G α).repr (conjReverse k G α x) g = star ((basis k G α).repr x g⁻¹) := by
-  classical
-  induction (basis k G α).mem_span x using Submodule.span_induction with
-  | mem _ hy =>
-    obtain ⟨h, rfl⟩ := hy
-    rw [basis_apply, conjReverse_of, basis_repr_of, basis_repr_of, Finsupp.single_apply,
-      Finsupp.single_apply, inv_eq_iff_eq_inv]
-    split_ifs <;> simp
-  | zero => simp
-  | add _ _ _ _ hx hy => simp [hx, hy]
-  | smul _ _ _ hx => simp [hx, starRingEnd_apply]
+  dsimp only [conjReverse, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Finsupp.mapDomain.coe_linearEquiv]
+  rw [LinearEquiv.apply_symm_apply, Finsupp.mapDomain_equiv_apply]
+  simp
 
 @[simp] theorem conjReverse_conjReverse (x : twistedMonoidAlgebra k G α) :
     conjReverse k G α (conjReverse k G α x) = x :=
@@ -234,9 +227,12 @@ theorem conjReverse_unique {f : twistedMonoidAlgebra k G α → twistedMonoidAlg
 theorem scalarTrace_conjReverse_mul (x y : twistedMonoidAlgebra k G α) :
     scalarTrace k G α (conjReverse k G α x * y) =
       ((basis k G α).repr x).sum fun g z ↦ star z * ((α g⁻¹ g : k) * (basis k G α).repr y g) := by
-  -- Unfold `conjReverse` on `x` to distribute right multiplication by `y` across `Finsupp.sum`.
-  change scalarTrace k G α ((((basis k G α).repr x).sum fun g r ↦ star r • of g⁻¹) * y) = _
-  rw [Finsupp.sum, Finset.sum_mul, map_sum, Finsupp.sum]
+  have hsum : conjReverse k G α x = ((basis k G α).repr x).sum fun g r ↦ star r • of g⁻¹ := by
+    conv_lhs => rw [← (basis k G α).linearCombination_repr x, Finsupp.linearCombination_apply]
+    rw [Finsupp.sum, map_sum]
+    exact Finset.sum_congr rfl fun g _ ↦ by
+      rw [map_smulₛₗ, starRingEnd_apply, basis_apply, conjReverse_of]
+  rw [hsum, Finsupp.sum, Finset.sum_mul, map_sum, Finsupp.sum]
   exact Finset.sum_congr rfl fun g _ ↦ by
     rw [smul_mul_assoc, map_smul, scalarTrace_of_mul, inv_inv, smul_eq_mul]
 

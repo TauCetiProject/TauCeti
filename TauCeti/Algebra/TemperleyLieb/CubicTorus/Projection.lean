@@ -104,22 +104,33 @@ theorem cubicProjection_mul_weyl_mul_cubicProjection_eq_zero {N : ℕ} (j : Fin 
   set u := cubicSite N j with hu_def
   set s := 1 + u + u ^ 2 with hs_def
   set c := chainForm N (Pi.single j 1) a.toAdd
-  have hu : u * weyl N a = (cubeRootPow c : ℂ) • (weyl N a * u) := by
+  have hu : u * weyl N a =
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three c : ℂˣ) : ℂ) • (weyl N a * u) := by
     simpa [u, c, cubicSite_def] using weyl_mul_comm N (ofAdd (Pi.single j 1)) a
-  have hu2 : u ^ 2 * weyl N a = (cubeRootPow (2 * c) : ℂ) • (weyl N a * u ^ 2) := by
-    rw [sq, mul_assoc, hu, mul_smul_comm, ← mul_assoc, hu, smul_mul_assoc, smul_smul,
-      ← Units.val_mul, ← cubeRootPow_add, two_mul, mul_assoc (weyl N a) u u]
+  have hu2 : u ^ 2 * weyl N a =
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * c) : ℂˣ) : ℂ) • (weyl N a * u ^ 2) := by
+    have hsemi : SemiconjBy (weyl N a)
+        (((AddChar.zmodChar 3 cubeRootOfUnity_pow_three c : ℂˣ) : ℂ) • u) u := by
+      simpa [SemiconjBy, smul_mul_assoc] using hu.symm
+    have hp := (hsemi.pow_right 2).eq.symm
+    rwa [smul_pow, mul_smul_comm, ← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow,
+      nsmul_eq_mul, Nat.cast_ofNat] at hp
   have hus : u * s = s := cubicSite_mul_one_add_cubicSite N j
   have hu2s : u ^ 2 * s = s := by rw [sq, mul_assoc, hus, hus]
   have hs : s * weyl N a * s = 0 := by
     calc
       s * weyl N a * s
-          = weyl N a * s + (cubeRootPow c : ℂ) • (weyl N a * (u * s)) +
-              (cubeRootPow (2 * c) : ℂ) • (weyl N a * (u ^ 2 * s)) := by
+          = weyl N a * s +
+              ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three c : ℂˣ) : ℂ) •
+                (weyl N a * (u * s)) +
+              ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * c) : ℂˣ) : ℂ) •
+                (weyl N a * (u ^ 2 * s)) := by
             simp only [s, add_mul, one_mul, hu, hu2, smul_mul_assoc, mul_assoc]
-      _ = (1 + (cubeRootPow c : ℂ) + (cubeRootPow (2 * c) : ℂ)) • (weyl N a * s) := by
+      _ = (1 + ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three c : ℂˣ) : ℂ) +
+              ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * c) : ℂˣ) : ℂ)) •
+            (weyl N a * s) := by
             rw [hus, hu2s, add_smul, add_smul, one_smul]
-      _ = 0 := by rw [one_add_cubeRootPow_add_two_mul hc, zero_smul]
+      _ = 0 := by rw [one_add_zmodChar_cubeRootOfUnity_add_two_mul hc, zero_smul]
   rw [cubicProjection_def, ← hu_def, ← hs_def]
   simp only [smul_mul_assoc, mul_smul_comm, hs, smul_zero]
 
@@ -244,10 +255,11 @@ private theorem symmWeyl_mul_mem_of_chainForm_ne_zero {N : ℕ} {S : Subalgebra 
   have hαβ : α * β = 1 := by simp [α, β]
   have hβα : β * α = 1 := mul_comm α β ▸ hαβ
   have hα3 : α ^ 3 = 1 := by
-    rw [← Units.val_pow_eq_pow_val, cubicFactor_def, cubeRootPow_pow_three, Units.val_one]
+    rw [← Units.val_pow_eq_pow_val, cubicFactor_def, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul,
+      show ((3 : ℕ) : ZMod 3) = 0 by decide, zero_mul, AddChar.map_zero_eq_one, Units.val_one]
   have hα1 : α ≠ 1 := fun h1 ↦ by
     have hu : cubicFactor N a b = 1 := Units.ext h1
-    rw [cubicFactor_def, cubeRootPow_eq_one_iff] at hu
+    rw [cubicFactor_def, zmodChar_cubeRootOfUnity_eq_one_iff] at hu
     exact hc ((mul_eq_zero.mp hu).resolve_left (by decide))
   have hba : symmWeyl N b * symmWeyl N a = β • symmWeyl N (a * b) + α • symmWeyl N (a * b⁻¹) := by
     rw [symmWeyl_mul_symmWeyl, cubicFactor_swap, inv_inv, mul_comm b a,

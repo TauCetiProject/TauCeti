@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Trace
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Data.ZMod.Basic
--- Private: field structure on `ZMod 3`, essential-idempotent trace, and tactics are proof-only.
+public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+-- Private: field structure on `ZMod 3`, primitive root orthogonality, permutation trace,
+-- essential-idempotent trace are proof-only.
 import TauCeti.LinearAlgebra.Trace.Idempotent
+import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.Tactic.LinearCombination
+import Mathlib.LinearAlgebra.Matrix.Permutation
+import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
 # The cubic quantum torus and its inversion-fixed subalgebra
@@ -28,7 +31,7 @@ inherits the conjugate-linear reversal `cubicFixedAdjoint N`.
 
 ## Main definitions and results
 
-* `chainForm`, `cubeRootOfUnity`, `cubeRootPow`, `cubicFactor`, `CubicTorus`, `weyl`.
+* `chainForm`, `cubeRootOfUnity`, `cubicFactor`, `CubicTorus`, `weyl`.
 * `cubicSite`, `liftSite`, `adjoin_range_cubicSite`, `algHom_ext_cubicSite`.
 * `cubicScalarCoefficient`, `cubicAdjoint`, `cubicInversion`, `cubicFixed`, `cubicFixedAdjoint`.
 * `finrank_cubicTorus`, `finrank_cubicFixed`.
@@ -140,102 +143,80 @@ noncomputable def cubeRootOfUnity : ℂˣ :=
 theorem coe_cubeRootOfUnity :
     (cubeRootOfUnity : ℂ) = Complex.exp (2 * Real.pi / 3 * Complex.I) := (rfl)
 
-/-- `ω ^ x` for an exponent `x : ZMod 3`, read through `ZMod.val`. -/
-noncomputable def cubeRootPow (x : ZMod 3) : ℂˣ :=
-  cubeRootOfUnity ^ x.val
-
-theorem cubeRootPow_def (x : ZMod 3) : cubeRootPow x = cubeRootOfUnity ^ x.val := (rfl)
-
-@[simp] theorem cubeRootOfUnity_pow_three : cubeRootOfUnity ^ 3 = 1 := by
-  ext
-  simp only [Units.val_pow_eq_pow_val, coe_cubeRootOfUnity, Units.val_one]
-  rw [← Complex.exp_nat_mul]
-  convert Complex.exp_two_pi_mul_I using 2
+private theorem isPrimitiveRoot_coe_cubeRootOfUnity :
+    IsPrimitiveRoot (cubeRootOfUnity : ℂ) 3 := by
+  rw [coe_cubeRootOfUnity]
+  convert Complex.isPrimitiveRoot_exp 3 (by decide) using 2
   push_cast; ring
 
-@[simp] theorem coe_cubeRootOfUnity_pow_three : (cubeRootOfUnity : ℂ) ^ 3 = 1 := by
-  rw [← Units.val_pow_eq_pow_val, cubeRootOfUnity_pow_three, Units.val_one]
+@[simp] theorem coe_cubeRootOfUnity_pow_three : (cubeRootOfUnity : ℂ) ^ 3 = 1 :=
+  isPrimitiveRoot_coe_cubeRootOfUnity.pow_eq_one
+
+@[simp] theorem cubeRootOfUnity_pow_three : cubeRootOfUnity ^ 3 = 1 :=
+  Units.ext coe_cubeRootOfUnity_pow_three
 
 /-- `cubeRootOfUnity` is nontrivial: `exp (2 π i / 3) ≠ 1`. -/
-theorem coe_cubeRootOfUnity_ne_one : (cubeRootOfUnity : ℂ) ≠ 1 := by
-  intro h
-  have him : (cubeRootOfUnity : ℂ).im = Real.sin (2 * Real.pi / 3) := by
-    have hexp : 2 * Real.pi / 3 * Complex.I = ((2 * Real.pi / 3 : ℝ) : ℂ) * Complex.I := by
-      push_cast; ring
-    simp [coe_cubeRootOfUnity, hexp, Complex.exp_ofReal_mul_I_im]
-  have hpos : 0 < Real.sin (2 * Real.pi / 3) :=
-    Real.sin_pos_of_pos_of_lt_pi (by positivity) (by linarith [Real.pi_pos])
-  exact hpos.ne (by rwa [h, Complex.one_im] at him)
+theorem coe_cubeRootOfUnity_ne_one : (cubeRootOfUnity : ℂ) ≠ 1 :=
+  isPrimitiveRoot_coe_cubeRootOfUnity.ne_one (by decide)
 
 /-- Cyclotomic vanishing `1 + ω + ω² = 0`. -/
 theorem one_add_cubeRootOfUnity_add_sq :
     1 + (cubeRootOfUnity : ℂ) + (cubeRootOfUnity : ℂ) ^ 2 = 0 := by
-  have hprod : (1 - (cubeRootOfUnity : ℂ)) *
-      (1 + (cubeRootOfUnity : ℂ) + (cubeRootOfUnity : ℂ) ^ 2) = 0 := by
-    linear_combination -coe_cubeRootOfUnity_pow_three
-  exact (mul_eq_zero.mp hprod).resolve_left (sub_ne_zero.mpr coe_cubeRootOfUnity_ne_one.symm)
+  have h := isPrimitiveRoot_coe_cubeRootOfUnity.sum_pow_pow_eq 1
+  simp only [pow_one, Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero,
+    Nat.dvd_one, OfNat.ofNat_ne_one, ↓reduceIte] at h
+  exact h
 
 @[simp] theorem star_coe_cubeRootOfUnity :
     star (cubeRootOfUnity : ℂ) = ((cubeRootOfUnity⁻¹ : ℂˣ) : ℂ) := by
-  simp only [coe_cubeRootOfUnity, Units.val_inv_eq_inv_val, Complex.star_def,
-    ← Complex.exp_conj, ← Complex.exp_neg]
-  congr 1; simp only [map_mul, map_div₀, map_ofNat, Complex.conj_ofReal, Complex.conj_I]; ring
+  simpa [Complex.star_def] using
+    Complex.conj_rootsOfUnity ((mem_rootsOfUnity 3 cubeRootOfUnity).mpr cubeRootOfUnity_pow_three)
 
-@[simp] theorem cubeRootPow_zero : cubeRootPow 0 = 1 := by simp [cubeRootPow]
+@[simp] theorem zmodChar_cubeRootOfUnity_eq_one_iff {x : ZMod 3} :
+    AddChar.zmodChar 3 cubeRootOfUnity_pow_three x = 1 ↔ x = 0 := by
+  refine ⟨fun h ↦ by_contra fun hx ↦ ?_, fun h ↦ by simp [h]⟩
+  have hval : (cubeRootOfUnity : ℂ) ^ x.val = 1 := by
+    simpa [AddChar.zmodChar_apply] using congrArg Units.val h
+  exact isPrimitiveRoot_coe_cubeRootOfUnity.pow_ne_one_of_pos_of_lt
+    (ZMod.val_pos.mpr hx).ne' (ZMod.val_lt x) hval
 
-@[simp] theorem cubeRootPow_one : cubeRootPow 1 = cubeRootOfUnity := pow_one cubeRootOfUnity
-
-@[simp] theorem cubeRootPow_two : cubeRootPow 2 = cubeRootOfUnity ^ 2 := (rfl)
-
-theorem cubeRootPow_add (x y : ZMod 3) : cubeRootPow (x + y) = cubeRootPow x * cubeRootPow y := by
-  simp only [cubeRootPow, ZMod.val_add]
-  rw [← pow_add, ← pow_eq_pow_mod _ cubeRootOfUnity_pow_three]
-
-@[simp] theorem cubeRootPow_neg (x : ZMod 3) : cubeRootPow (-x) = (cubeRootPow x)⁻¹ :=
-  mul_eq_one_iff_eq_inv.mp <| by rw [← cubeRootPow_add, neg_add_cancel, cubeRootPow_zero]
-
-@[simp] theorem cubeRootPow_pow_three (x : ZMod 3) : cubeRootPow x ^ 3 = 1 := by
-  rw [cubeRootPow, ← pow_mul, mul_comm, pow_mul, cubeRootOfUnity_pow_three, one_pow]
-
-theorem cubeRootPow_natCast (n : ℕ) : cubeRootPow (n : ZMod 3) = cubeRootOfUnity ^ n := by
-  rw [cubeRootPow, ZMod.val_natCast, ← pow_eq_pow_mod _ cubeRootOfUnity_pow_three]
-
-@[simp] theorem cubeRootPow_eq_one_iff {x : ZMod 3} : cubeRootPow x = 1 ↔ x = 0 := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ by simp [hx]⟩
-  rcases zmod3_cases x with rfl | rfl | rfl
-  · rfl
-  · rw [cubeRootPow_one] at hx
-    exact absurd ((congrArg Units.val hx).trans Units.val_one) coe_cubeRootOfUnity_ne_one
-  · have h := cubeRootPow_add 2 2
-    rw [show (2 : ZMod 3) + 2 = 1 by decide, cubeRootPow_one, hx, one_mul] at h
-    exact absurd ((congrArg Units.val h).trans Units.val_one) coe_cubeRootOfUnity_ne_one
-
-@[simp] theorem star_coe_cubeRootPow (x : ZMod 3) :
-    star (cubeRootPow x : ℂ) = (cubeRootPow (-x) : ℂ) := by
-  rw [cubeRootPow_neg, cubeRootPow, Units.val_pow_eq_pow_val, star_pow, star_coe_cubeRootOfUnity,
-    Units.val_inv_eq_inv_val, ← inv_pow, ← Units.val_inv_eq_inv_val, ← Units.val_pow_eq_pow_val]
+@[simp] theorem star_coe_zmodChar_cubeRootOfUnity (x : ZMod 3) :
+    star ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three x : ℂˣ) : ℂ) =
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (-x) : ℂˣ) : ℂ) := by
+  have hmem : AddChar.zmodChar 3 cubeRootOfUnity_pow_three x ∈ rootsOfUnity 3 ℂ := by
+    rw [mem_rootsOfUnity, AddChar.zmodChar_apply, ← pow_mul, mul_comm, pow_mul,
+      cubeRootOfUnity_pow_three, one_pow]
+  simpa [Complex.star_def, AddChar.map_neg_eq_inv] using Complex.conj_rootsOfUnity hmem
 
 /-- For every nonzero `c : ZMod 3`, `1 + ω^c + ω^(2c) = 0`. -/
-theorem one_add_cubeRootPow_add_two_mul {c : ZMod 3} (hc : c ≠ 0) :
-    1 + (cubeRootPow c : ℂ) + (cubeRootPow (2 * c) : ℂ) = 0 := by
-  rcases zmod3_cases c with rfl | rfl | rfl
-  · exact absurd rfl hc
-  · simpa [show (2 : ZMod 3) * 1 = 2 by decide] using one_add_cubeRootOfUnity_add_sq
-  · rw [show (2 : ZMod 3) * 2 = 1 by decide, cubeRootPow_two, cubeRootPow_one,
-      Units.val_pow_eq_pow_val, add_right_comm]
-    exact one_add_cubeRootOfUnity_add_sq
+theorem one_add_zmodChar_cubeRootOfUnity_add_two_mul {c : ZMod 3} (hc : c ≠ 0) :
+    1 + ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three c : ℂˣ) : ℂ) +
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * c) : ℂˣ) : ℂ) = 0 := by
+  have h := isPrimitiveRoot_coe_cubeRootOfUnity.sum_pow_pow_eq c.val
+  have hndvd : ¬ 3 ∣ c.val := Nat.not_dvd_of_pos_of_lt (ZMod.val_pos.mpr hc) (ZMod.val_lt c)
+  simp only [hndvd, ↓reduceIte, Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two,
+    pow_zero, pow_one] at h
+  have hc1 : (cubeRootOfUnity : ℂ) ^ c.val =
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three c : ℂˣ) : ℂ) := by
+    simp [AddChar.zmodChar_apply]
+  have hc2 : ((cubeRootOfUnity : ℂ) ^ c.val) ^ 2 =
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * c) : ℂˣ) : ℂ) := by
+    rw [hc1, ← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul,
+      Nat.cast_ofNat]
+  rwa [← hc1, ← hc2]
 
 /-- **The factor set of the cubic quantum torus**: `α(a, b) = ω ^ (2 * B(a, b))`. -/
 noncomputable def cubicFactor (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) : ℂˣ :=
-  cubeRootPow (2 * chainForm N a.toAdd b.toAdd)
+  AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * chainForm N a.toAdd b.toAdd)
 
 theorem cubicFactor_def (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
-    cubicFactor N a b = cubeRootPow (2 * chainForm N a.toAdd b.toAdd) := (rfl)
+    cubicFactor N a b =
+      AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * chainForm N a.toAdd b.toAdd) := (rfl)
 
 /-- `cubicFactor N` is a normalized factor set on `Multiplicative (Fin N → ZMod 3)`. -/
 instance cubicFactor_isFactorSet (N : ℕ) : IsFactorSet (cubicFactor N) where
   cocycle g h j := by
-    simp only [cubicFactor, toAdd_mul, ← cubeRootPow_add]
+    simp only [cubicFactor, toAdd_mul, ← AddChar.map_add_eq_mul]
     congr 1; rw [chainForm_add_left, chainForm_add_right]; ring
   one_left g := by simp [cubicFactor]
 
@@ -252,19 +233,21 @@ theorem cubicFactor_inv_inv (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) 
     cubicFactor N a⁻¹ b⁻¹ = cubicFactor N a b := by simp [cubicFactor]
 
 @[simp] theorem cubicFactor_inv_right (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
-    cubicFactor N a b⁻¹ = (cubicFactor N a b)⁻¹ := by simp [cubicFactor, ← cubeRootPow_neg]
+    cubicFactor N a b⁻¹ = (cubicFactor N a b)⁻¹ := by
+  simp [cubicFactor, AddChar.map_neg_eq_inv]
 
 @[simp] theorem cubicFactor_inv_left (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
-    cubicFactor N a⁻¹ b = (cubicFactor N a b)⁻¹ := by simp [cubicFactor, ← cubeRootPow_neg]
+    cubicFactor N a⁻¹ b = (cubicFactor N a b)⁻¹ := by
+  simp [cubicFactor, AddChar.map_neg_eq_inv]
 
 theorem cubicFactor_swap (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
     cubicFactor N b a = (cubicFactor N a b)⁻¹ := by
-  rw [cubicFactor, chainForm_swap, mul_neg, cubeRootPow_neg, ← cubicFactor]
+  rw [cubicFactor, chainForm_swap, mul_neg, AddChar.map_neg_eq_inv, ← cubicFactor]
 
 theorem star_coe_cubicFactor (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
     star (cubicFactor N a b : ℂ) = (cubicFactor N b⁻¹ a⁻¹ : ℂ) := by
-  rw [cubicFactor, star_coe_cubeRootPow, cubicFactor_inv_inv, cubicFactor, chainForm_swap, mul_neg,
-    neg_neg]
+  rw [cubicFactor, star_coe_zmodChar_cubeRootOfUnity, cubicFactor_inv_inv, cubicFactor,
+    chainForm_swap, mul_neg, neg_neg]
 
 /-! ### The cubic quantum torus `G_N`, Weyl basis, trace, and adjoint -/
 
@@ -297,11 +280,17 @@ theorem weyl_inv_mul_weyl (N : ℕ) (a : Multiplicative (Fin N → ZMod 3)) :
 /-- Commutation law for Weyl basis elements: `W(a) W(b) = ω ^ B(a, b) • (W(b) W(a))`. -/
 theorem weyl_mul_comm (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
     weyl N a * weyl N b =
-      (cubeRootPow (chainForm N a.toAdd b.toAdd) : ℂ) • (weyl N b * weyl N a) := by
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (chainForm N a.toAdd b.toAdd) : ℂˣ) : ℂ) •
+        (weyl N b * weyl N a) := by
   rw [weyl_mul_weyl, weyl_mul_weyl, mul_comm b a, smul_smul, ← Units.val_mul, cubicFactor,
-    cubicFactor, chainForm_swap N a.toAdd b.toAdd, ← cubeRootPow_add]
-  refine congrArg (fun z ↦ (cubeRootPow z : ℂ) • weyl N (a * b)) ?_
-  rcases zmod3_cases (chainForm N a.toAdd b.toAdd) with h | h | h <;> rw [h] <;> decide
+    cubicFactor, chainForm_swap N a.toAdd b.toAdd, ← AddChar.map_add_eq_mul]
+  refine congrArg
+    (fun z ↦ ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three z : ℂˣ) : ℂ) • weyl N (a * b)) ?_
+  calc
+    2 * chainForm N a.toAdd b.toAdd
+        = 2 * chainForm N a.toAdd b.toAdd + (3 : ZMod 3) * (-chainForm N a.toAdd b.toAdd) := by
+          rw [show (3 : ZMod 3) = 0 by decide, zero_mul, add_zero]
+    _ = chainForm N a.toAdd b.toAdd + 2 * -chainForm N a.toAdd b.toAdd := by ring
 
 /-- The dimension of `CubicTorus N` over `ℂ` is `3 ^ N`. -/
 @[simp] theorem finrank_cubicTorus (N : ℕ) : Module.finrank ℂ (CubicTorus N) = 3 ^ N := by
@@ -342,9 +331,9 @@ theorem cubicSite_sq (N : ℕ) (j : Fin N) :
 @[simp] theorem cubicSite_pow_three (N : ℕ) (j : Fin N) : cubicSite N j ^ 3 = 1 := by
   rw [pow_succ, cubicSite_sq, cubicSite_def, weyl_mul_weyl, cubicFactor, toAdd_ofAdd, toAdd_ofAdd,
     chainForm_single_single]
-  simp only [Nat.add_one_ne_self, ↓reduceIte, sub_self, mul_zero, cubeRootPow_zero, Units.val_one,
-    one_smul, ← ofAdd_add, ← Pi.single_add, show (2 : ZMod 3) + 1 = 0 by decide, Pi.single_zero,
-    ofAdd_zero, weyl_one]
+  simp only [Nat.add_one_ne_self, ↓reduceIte, sub_self, mul_zero, AddChar.map_zero_eq_one,
+    Units.val_one, one_smul, ← ofAdd_add, ← Pi.single_add, show (2 : ZMod 3) + 1 = 0 by decide,
+    Pi.single_zero, ofAdd_zero, weyl_one]
 
 @[simp] theorem cubicAdjoint_cubicSite (N : ℕ) (j : Fin N) :
     cubicAdjoint N (cubicSite N j) = cubicSite N j ^ 2 := by
@@ -358,7 +347,7 @@ theorem cubicSite_mul_cubicSite_of_succ {N : ℕ} {i j : Fin N} (h : (i : ℕ) +
   have hne : ¬ (j : ℕ) + 1 = i := by omega
   rw [cubicSite_def, cubicSite_def, weyl_mul_comm, toAdd_ofAdd, toAdd_ofAdd,
     chainForm_single_single]
-  simp [h, hne]
+  simp [h, hne, AddChar.zmodChar_apply, ZMod.val_one]
 
 /-- Site unitaries at distance at least two commute. -/
 theorem commute_cubicSite {N : ℕ} {i j : Fin N} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
@@ -371,74 +360,70 @@ theorem commute_cubicSite {N : ℕ} {i j : Fin N} (h : (i : ℕ) + 2 ≤ j ∨ (
 
 section UniversalProperty
 
-/-- Ordered monomial `u_0^{a_0} ⋯ u_{N-1}^{a_{N-1}}` used to construct `liftSite`. -/
-private def siteMonomial {A : Type*} [Monoid A] :
-    ∀ {N : ℕ}, (Fin N → A) → (Fin N → ZMod 3) → A
-  | 0, _, _ => 1
-  | _ + 1, u, a =>
-    siteMonomial (u ∘ Fin.castSucc) (Fin.init a) * u (Fin.last _) ^ (a (Fin.last _)).val
+private theorem partialProd_one {A : Type*} [Monoid A] (N : ℕ) :
+    Fin.partialProd (fun _ : Fin N ↦ (1 : A)) (Fin.last N) = 1 := by
+  induction N with
+  | zero => exact Fin.partialProd_zero _
+  | succ N ih =>
+    rw [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init]
+    simpa [Fin.init_def] using ih
 
-private theorem siteMonomial_zero {A : Type*} [Monoid A] :
-    ∀ {N : ℕ} (u : Fin N → A), siteMonomial u 0 = 1
-  | 0, _ => rfl
-  | _ + 1, u => by
-    simp only [siteMonomial, Fin.init_def, Pi.zero_apply, ZMod.val_zero, pow_zero, mul_one]
-    exact siteMonomial_zero (u ∘ Fin.castSucc)
-
-private theorem siteMonomial_single {A : Type*} [Monoid A] :
-    ∀ {N : ℕ} (u : Fin N → A) (j : Fin N), siteMonomial u (Pi.single j 1) = u j
+private theorem partialProd_pow_single {A : Type*} [Monoid A] :
+    ∀ {N : ℕ} (u : Fin N → A) (j : Fin N),
+      Fin.partialProd (fun i ↦ u i ^ ((Pi.single j (1 : ZMod 3) : Fin N → ZMod 3) i).val)
+        (Fin.last N) = u j
   | 0, _, j => Fin.elim0 j
   | N + 1, u, j => by
+    rw [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init]
     induction j using Fin.lastCases with
     | last =>
-      have hinit : Fin.init (Pi.single (Fin.last N) 1 : Fin (N + 1) → ZMod 3) = 0 := by
-        ext i; simp [Fin.init]
-      rw [siteMonomial, hinit, siteMonomial_zero, one_mul, Pi.single_eq_same]
-      exact pow_one _
+      have hinit : Fin.init (fun i : Fin (N + 1) ↦
+          u i ^ ((Pi.single (Fin.last N) (1 : ZMod 3) : Fin (N + 1) → ZMod 3) i).val) =
+          fun _ ↦ 1 := by
+        ext i; simp [Fin.init_def]
+      rw [hinit, partialProd_one, one_mul, Pi.single_eq_same, ZMod.val_one, pow_one]
     | cast i =>
-      have hinit : Fin.init (Pi.single i.castSucc 1 : Fin (N + 1) → ZMod 3) = Pi.single i 1 := by
-        ext k; simp [Fin.init, Pi.single_apply, Fin.castSucc_inj]
-      rw [siteMonomial, hinit,
+      have hinit : Fin.init (fun k : Fin (N + 1) ↦
+          u k ^ ((Pi.single i.castSucc (1 : ZMod 3) : Fin (N + 1) → ZMod 3) k).val) =
+          fun k ↦ (u ∘ Fin.castSucc) k ^
+            ((Pi.single i (1 : ZMod 3) : Fin N → ZMod 3) k).val := by
+        ext k; simp [Fin.init_def, Pi.single_apply, Fin.castSucc_inj]
+      rw [hinit, partialProd_pow_single (u ∘ Fin.castSucc) i,
         Pi.single_eq_of_ne (M := fun _ : Fin (N + 1) ↦ ZMod 3) (Fin.castSucc_ne_last i).symm 1,
         ZMod.val_zero, pow_zero, mul_one]
-      exact siteMonomial_single (u ∘ Fin.castSucc) i
+      rfl
 
 variable {A : Type*} [Semiring A] [Algebra ℂ A]
 
-private theorem mul_pow_of_qcomm {v w : A} {c : ZMod 3}
-    (hvw : v * w = (cubeRootPow (2 * c) : ℂ) • (w * v)) :
-    ∀ s : ℕ, v * w ^ s = (cubeRootPow (2 * c * (s : ZMod 3)) : ℂ) • (w ^ s * v)
-  | 0 => by simp
-  | s + 1 => by
-    rw [pow_succ', ← mul_assoc, hvw, smul_mul_assoc, mul_assoc, mul_pow_of_qcomm hvw s,
-      mul_smul_comm, smul_smul, ← Units.val_mul, ← cubeRootPow_add, ← mul_assoc w (w ^ s) v,
-      ← pow_succ']
-    congr 3; push_cast; ring
-
-private theorem pow_mul_of_qcomm {v w : A} {c : ZMod 3}
-    (hvw : v * w = (cubeRootPow (2 * c) : ℂ) • (w * v)) :
-    ∀ r : ℕ, v ^ r * w = (cubeRootPow (2 * (r : ZMod 3) * c) : ℂ) • (w * v ^ r)
-  | 0 => by simp
-  | r + 1 => by
-    rw [pow_succ, mul_assoc, hvw, mul_smul_comm, ← mul_assoc, pow_mul_of_qcomm hvw r,
-      smul_mul_assoc, smul_smul, ← Units.val_mul, ← cubeRootPow_add, mul_assoc w (v ^ r) v,
-      ← pow_succ]
-    congr 3; push_cast; ring
-
-private theorem mul_siteMonomial_of_qcomm :
+private theorem mul_partialProd_of_qcomm :
     ∀ {N : ℕ} {u : Fin N → A} {v : A} {φ : Fin N → ZMod 3},
-      (∀ i : Fin N, v * u i = (cubeRootPow (2 * φ i) : ℂ) • (u i * v)) →
+      (∀ i : Fin N, v * u i =
+        ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * φ i) : ℂˣ) : ℂ) • (u i * v)) →
       ∀ b : Fin N → ZMod 3,
-        v * siteMonomial u b =
-          (cubeRootPow (2 * ∑ i : Fin N, φ i * b i) : ℂ) • (siteMonomial u b * v)
-  | 0, _, _, _, _, _ => by simp [siteMonomial]
+        v * Fin.partialProd (fun i ↦ u i ^ (b i).val) (Fin.last N) =
+          ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * ∑ i : Fin N, φ i * b i) : ℂˣ) : ℂ) •
+            (Fin.partialProd (fun i ↦ u i ^ (b i).val) (Fin.last N) * v)
+  | 0, _, _, _, _, _ => by simp
   | N + 1, u, v, φ, hφ, b => by
-    have ih := mul_siteMonomial_of_qcomm (u := u ∘ Fin.castSucc) (φ := φ ∘ Fin.castSucc)
+    have ih := mul_partialProd_of_qcomm (u := u ∘ Fin.castSucc) (φ := φ ∘ Fin.castSucc)
       (fun i ↦ hφ i.castSucc) (Fin.init b)
-    have hlast := mul_pow_of_qcomm (hφ (Fin.last N)) (b (Fin.last N)).val
-    simp only [ZMod.natCast_zmod_val] at hlast
-    rw [siteMonomial, ← mul_assoc, ih, smul_mul_assoc, mul_assoc, hlast, mul_smul_comm,
-      smul_smul, ← Units.val_mul, ← cubeRootPow_add, ← mul_assoc]
+    have hsemi : SemiconjBy v (u (Fin.last N))
+        (((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * φ (Fin.last N)) : ℂˣ) : ℂ) •
+          u (Fin.last N)) := by
+      simpa [SemiconjBy, smul_mul_assoc] using hφ (Fin.last N)
+    have hlast : v * u (Fin.last N) ^ (b (Fin.last N)).val =
+        ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three
+          (2 * φ (Fin.last N) * b (Fin.last N)) : ℂˣ) : ℂ) •
+          (u (Fin.last N) ^ (b (Fin.last N)).val * v) := by
+      have hp := (hsemi.pow_right (b (Fin.last N)).val).eq
+      rw [smul_pow, smul_mul_assoc, ← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow,
+        nsmul_eq_mul, ZMod.natCast_zmod_val, mul_comm (b (Fin.last N))] at hp
+      exact hp
+    have hinit_fn : Fin.init (fun i ↦ u i ^ (b i).val) =
+        fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val := rfl
+    rw [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init, hinit_fn, ← mul_assoc, ih,
+      smul_mul_assoc, mul_assoc, hlast, mul_smul_comm, smul_smul, ← Units.val_mul,
+      ← AddChar.map_add_eq_mul, ← mul_assoc]
     congr 3; rw [Fin.sum_univ_castSucc]; simp [Fin.init, mul_add]; ring
 
 private theorem halfChainForm_succ (N : ℕ) (b a : Fin (N + 1) → ZMod 3) :
@@ -456,41 +441,67 @@ private theorem halfChainForm_succ (N : ℕ) (b a : Fin (N + 1) → ZMod 3) :
     Fin.init, Finset.mul_sum]
   congr 1; exact Finset.sum_congr rfl fun i _ ↦ by split_ifs <;> ring
 
-private theorem siteMonomial_mul_siteMonomial :
+private theorem partialProd_mul_partialProd :
     ∀ {N : ℕ} (u : Fin N → A), (∀ j, u j ^ 3 = 1) →
       (∀ {i j : Fin N}, (i : ℕ) + 1 = j → u i * u j = (cubeRootOfUnity : ℂ) • (u j * u i)) →
       (∀ {i j : Fin N}, (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i → u i * u j = u j * u i) →
       ∀ a b : Fin N → ZMod 3,
-      siteMonomial u a * siteMonomial u b =
-        (cubeRootPow (2 * halfChainForm N b a) : ℂ) • siteMonomial u (a + b)
-  | 0, _, _, _, _, _, _ => by simp [siteMonomial, halfChainForm]
+      Fin.partialProd (fun i ↦ u i ^ (a i).val) (Fin.last N) *
+          Fin.partialProd (fun i ↦ u i ^ (b i).val) (Fin.last N) =
+        ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three (2 * halfChainForm N b a) : ℂˣ) : ℂ) •
+          Fin.partialProd (fun i ↦ u i ^ ((a + b) i).val) (Fin.last N)
+  | 0, _, _, _, _, _, _ => by simp [halfChainForm]
   | N + 1, u, hcube, hadj, hdist, a, b => by
     have hqcomm : ∀ i : Fin N, u (Fin.last N) * u i.castSucc =
-        (cubeRootPow (2 * if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) : ℂ) •
+        ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three
+          (2 * if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) : ℂˣ) : ℂ) •
           (u i.castSucc * u (Fin.last N)) := fun i ↦ by
       split_ifs with hi
-      · have h := congrArg ((cubeRootPow 2 : ℂ) • ·) (hadj (i := i.castSucc) (j := Fin.last N) hi)
+      · have h := congrArg
+          (((AddChar.zmodChar 3 cubeRootOfUnity_pow_three 2 : ℂˣ) : ℂ) • ·)
+          (hadj (i := i.castSucc) (j := Fin.last N) hi)
         have h21 : (cubeRootOfUnity : ℂ) ^ 2 * (cubeRootOfUnity : ℂ) = 1 := by
           rw [← pow_succ, coe_cubeRootOfUnity_pow_three]
-        simpa [smul_smul, h21] using h.symm
+        simpa [AddChar.zmodChar_apply, show (2 : ZMod 3).val = 2 by decide, smul_smul, h21]
+          using h.symm
       · have hd : (i.castSucc : ℕ) + 2 ≤ (Fin.last N : ℕ) := by
           have := i.isLt; simp at hi ⊢; omega
         simp [hdist (Or.inr hd)]
-    have hcomm := pow_mul_of_qcomm
-      (mul_siteMonomial_of_qcomm (u := u ∘ Fin.castSucc) hqcomm (Fin.init b)) (a (Fin.last N)).val
-    simp only [ZMod.natCast_zmod_val] at hcomm
-    have ih := siteMonomial_mul_siteMonomial (u ∘ Fin.castSucc) (fun j ↦ hcube j.castSucc)
+    have hmulb := mul_partialProd_of_qcomm (u := u ∘ Fin.castSucc) hqcomm (Fin.init b)
+    have hsemi : SemiconjBy
+        (Fin.partialProd (fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val) (Fin.last N))
+        (((AddChar.zmodChar 3 cubeRootOfUnity_pow_three
+          (2 * ∑ i : Fin N,
+            (if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) * Fin.init b i) : ℂˣ) : ℂ) •
+          u (Fin.last N))
+        (u (Fin.last N)) := by
+      simpa [SemiconjBy, smul_mul_assoc] using hmulb.symm
+    have hcomm : u (Fin.last N) ^ (a (Fin.last N)).val *
+          Fin.partialProd (fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val) (Fin.last N) =
+        ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three
+          (2 * (a (Fin.last N) * ∑ i : Fin N,
+            (if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) * Fin.init b i)) : ℂˣ) : ℂ) •
+          (Fin.partialProd (fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val) (Fin.last N) *
+            u (Fin.last N) ^ (a (Fin.last N)).val) := by
+      have hp := (hsemi.pow_right (a (Fin.last N)).val).eq.symm
+      rwa [smul_pow, mul_smul_comm, ← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow,
+        nsmul_eq_mul, ZMod.natCast_zmod_val, mul_left_comm] at hp
+    have ih := partialProd_mul_partialProd (u ∘ Fin.castSucc) (fun j ↦ hcube j.castSucc)
       (fun h ↦ hadj h) (fun h ↦ hdist h) (Fin.init a) (Fin.init b)
     have hpow : u (Fin.last N) ^ (a (Fin.last N)).val * u (Fin.last N) ^ (b (Fin.last N)).val =
         u (Fin.last N) ^ ((a + b) (Fin.last N)).val := by
       rw [← pow_add, Pi.add_apply, ZMod.val_add, ← pow_eq_pow_mod _ (hcube (Fin.last N))]
     have hinit : Fin.init (a + b) = Fin.init a + Fin.init b := by ext i; simp [Fin.init_def]
-    simp only [siteMonomial, mul_assoc]
-    rw [← mul_assoc (u (Fin.last N) ^ _), hcomm, smul_mul_assoc, mul_smul_comm,
-      ← mul_assoc (siteMonomial _ _), ← mul_assoc (siteMonomial _ _), ih, smul_mul_assoc,
-      smul_mul_assoc, mul_assoc, mul_assoc, hpow, smul_smul, ← Units.val_mul, ← cubeRootPow_add,
-      halfChainForm_succ, hinit]
-    refine congrArg (fun z ↦ (cubeRootPow z : ℂ) • _) ?_
+    have hinit_fn (x : Fin (N + 1) → ZMod 3) :
+        Fin.init (fun i ↦ u i ^ (x i).val) = fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init x i).val :=
+      rfl
+    simp only [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init, hinit_fn]
+    rw [mul_assoc (Fin.partialProd _ _) (u (Fin.last N) ^ _),
+      ← mul_assoc (u (Fin.last N) ^ _), hcomm, smul_mul_assoc, mul_smul_comm,
+      mul_assoc (Fin.partialProd _ _), ← mul_assoc (Fin.partialProd _ _), ih, smul_mul_assoc,
+      hpow, smul_smul, ← Units.val_mul, ← AddChar.map_add_eq_mul, halfChainForm_succ, hinit]
+    refine congrArg
+      (fun z ↦ ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three z : ℂˣ) : ℂ) • _) ?_
     simp only [Fin.init]; ring
 
 /-- **Universal property of `CubicTorus N` on site generators.** Any `N` elements `u : Fin N → A` of
@@ -503,13 +514,17 @@ noncomputable def liftSite {N : ℕ} (u : Fin N → A)
     (hdist : ∀ {i j : Fin N}, (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i → u i * u j = u j * u i) :
     CubicTorus N →ₐ[ℂ] A :=
   TwistedMonoidAlgebra.lift
-    (fun a ↦ (cubeRootPow (halfChainForm N a.toAdd a.toAdd) : ℂ) • siteMonomial u a.toAdd)
-    (by simp [siteMonomial_zero, halfChainForm])
+    (fun a ↦
+      ((AddChar.zmodChar 3 cubeRootOfUnity_pow_three
+        (halfChainForm N a.toAdd a.toAdd) : ℂˣ) : ℂ) •
+        Fin.partialProd (fun i ↦ u i ^ (a.toAdd i).val) (Fin.last N))
+    (by simp [partialProd_one, halfChainForm])
     (fun a b ↦ by
-      rw [smul_mul_smul_comm, siteMonomial_mul_siteMonomial u hcube hadj hdist, smul_smul,
+      rw [smul_mul_smul_comm, partialProd_mul_partialProd u hcube hadj hdist, smul_smul,
         smul_smul, ← Units.val_mul, ← Units.val_mul, ← Units.val_mul, cubicFactor,
-        ← cubeRootPow_add, ← cubeRootPow_add, ← cubeRootPow_add, chainForm_eq_sub, toAdd_mul,
-        halfChainForm_add_left, halfChainForm_add_right, halfChainForm_add_right]
+        ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul,
+        chainForm_eq_sub, toAdd_mul, halfChainForm_add_left, halfChainForm_add_right,
+        halfChainForm_add_right]
       congr 3; apply sub_eq_zero.mp
       calc _ = (3 : ZMod 3) * (halfChainForm N b.toAdd a.toAdd -
               halfChainForm N a.toAdd b.toAdd) := by ring
@@ -518,7 +533,10 @@ noncomputable def liftSite {N : ℕ} (u : Fin N → A)
 /-- `liftSite` sends each site unitary `cubicSite N j` to `u j`. -/
 @[simp] theorem liftSite_cubicSite {N : ℕ} (u : Fin N → A) (hcube) (hadj) (hdist) (j : Fin N) :
     liftSite u hcube hadj hdist (cubicSite N j) = u j := by
-  simp [liftSite, cubicSite_def, weyl_def, halfChainForm_single_single, siteMonomial_single]
+  rw [liftSite, cubicSite_def, weyl_def, TwistedMonoidAlgebra.lift_of, toAdd_ofAdd,
+    halfChainForm_single_single]
+  simp only [Nat.add_one_ne_self, ↓reduceIte, AddChar.map_zero_eq_one, Units.val_one, one_smul]
+  exact partialProd_pow_single u j
 
 end UniversalProperty
 
@@ -642,28 +660,30 @@ theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
     simp only [_root_.LinearMap.mem_range, Subalgebra.mem_toSubmodule, mem_cubicFixed_iff]
     exact ⟨fun ⟨y, hy⟩ ↦ by subst hy; simp [f, θ, add_comm],
       fun hx ↦ ⟨(2 : ℂ)⁻¹ • x, by simp [f, θ, hx, ← two_smul ℂ x]⟩⟩
-  have hinv (a : Multiplicative (Fin N → ZMod 3)) : a⁻¹ = a ↔ a = 1 :=
-    ⟨fun h ↦ toAdd.injective (funext fun i ↦ by
-        have hi := congrFun (congrArg toAdd h) i
-        simp only [toAdd_inv, Pi.neg_apply] at hi
-        rcases zmod3_cases (a.toAdd i) with h0 | h1 | h2
-        · exact h0
-        · rw [h1] at hi; exact absurd hi (by decide)
-        · rw [h2] at hi; exact absurd hi (by decide)),
-      fun h ↦ by simp [h]⟩
+  let σ : Equiv.Perm (Multiplicative (Fin N → ZMod 3)) := inv_involutive.toPerm Inv.inv
+  have : Module.Finite ℂ (CubicTorus N) := Module.Finite.of_basis b
+  have : Module.Free ℂ (CubicTorus N) := Module.Free.of_basis b
+  have hmat : _root_.LinearMap.toMatrix b b θ = σ.permMatrix ℂ := by
+    ext i j
+    rw [_root_.LinearMap.toMatrix_apply, TwistedMonoidAlgebra.basis_apply]
+    dsimp only [θ, σ, Equiv.Perm.permMatrix]
+    rw [AlgHom.toLinearMap_apply, ← weyl_def, cubicInversion_weyl, weyl_def,
+      TwistedMonoidAlgebra.basis_repr_of, Finsupp.single_apply, PEquiv.toMatrix_apply]
+    simp [Equiv.toPEquiv_apply, inv_eq_iff_eq_inv, eq_comm (a := i)]
+  have hfix : Function.fixedPoints σ = {1} := by
+    ext a
+    simp only [Function.mem_fixedPoints_iff, σ, Set.mem_singleton_iff]
+    refine ⟨fun h ↦ toAdd.injective (funext fun i ↦ ?_), fun h ↦ by simp [h]⟩
+    have hi : -a.toAdd i = a.toAdd i := congrFun (congrArg toAdd h) i
+    rw [ZMod.neg_eq_self_iff] at hi
+    exact hi.resolve_right (by omega)
   have htrθ : _root_.LinearMap.trace ℂ (CubicTorus N) θ = 1 := by
-    rw [_root_.LinearMap.trace_eq_matrix_trace ℂ b θ, Matrix.trace]
-    have hdiag (a : Multiplicative (Fin N → ZMod 3)) :
-        (_root_.LinearMap.toMatrix b b θ) a a = if a = 1 then 1 else 0 := by
-      rw [_root_.LinearMap.toMatrix_apply, TwistedMonoidAlgebra.basis_apply]
-      dsimp only [θ]
-      rw [AlgHom.toLinearMap_apply, ← weyl_def, cubicInversion_weyl, weyl_def,
-        TwistedMonoidAlgebra.basis_repr_of, Finsupp.single_apply]
-      simp only [hinv]
-    simp [hdiag]
+    rw [_root_.LinearMap.trace_eq_matrix_trace ℂ b θ, hmat, Matrix.trace_permutation, hfix,
+      Set.ncard_singleton, Nat.cast_one]
   have htr1 : _root_.LinearMap.trace ℂ (CubicTorus N) (1 : Module.End ℂ (CubicTorus N)) =
-      (3 ^ N : ℂ) := by
-    rw [_root_.LinearMap.trace_eq_matrix_trace ℂ b 1]; simp
+      (3 ^ N : ℂ) :=
+    (_root_.LinearMap.trace_one (R := ℂ) (M := CubicTorus N)).trans
+      (by rw [finrank_cubicTorus, Nat.cast_pow, Nat.cast_ofNat])
   have htr := TauCeti.LinearMap.trace_eq_mul_finrank_range (K := ℂ) (M := CubicTorus N) hsq
   rw [hrange] at htr
   dsimp only [f] at htr

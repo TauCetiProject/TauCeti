@@ -9,8 +9,9 @@ public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Projection
 public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.Algebra.TemperleyLieb.Trace.Star
 public import Mathlib.Analysis.Complex.Order
--- Private: bounded interval case analysis is proof-only.
-import Mathlib.Tactic.IntervalCases
+-- Private: cosine quantum integer formulas and `cos (π / 6)` are proof-only.
+import TauCeti.QuantumGroups.QuantumInteger.Real
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
 # The Jones quotient at `δ = √3` is the inversion-fixed cubic quantum torus
@@ -404,23 +405,17 @@ theorem exists_cubicFixedModel
 /-- At `δ = √3`, `cubicFixedHom 5` maps the five-strand Jones–Wenzl projection to `0`. -/
 @[simp] theorem cubicFixedHom_jonesWenzl_five :
     cubicFixedHom 5 (jonesWenzl (Real.sqrt 3 : ℂ) 5) = 0 := by
-  have hsqrt : (Real.sqrt 3 : ℂ) * (Real.sqrt 3 : ℂ) = 3 := by
-    exact_mod_cast Real.mul_self_sqrt (by positivity)
-  have hne : (Real.sqrt 3 : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by positivity)).ne'
-  have hq3 : qInt ℂ (Real.sqrt 3 : ℂ) 3 = 2 := by
-    rw [qInt_add_two (Real.sqrt 3 : ℂ) 1, qInt_two, qInt_one, hsqrt]; norm_num
-  have hq4 : qInt ℂ (Real.sqrt 3 : ℂ) 4 = (Real.sqrt 3 : ℂ) := by
-    rw [qInt_add_two (Real.sqrt 3 : ℂ) 2, hq3, qInt_two]; ring
-  have hq5 : qInt ℂ (Real.sqrt 3 : ℂ) 5 = 1 := by
-    rw [qInt_add_two (Real.sqrt 3 : ℂ) 3, hq4, hq3, hsqrt]; norm_num
-  have hq6 : qInt ℂ (Real.sqrt 3 : ℂ) 6 = 0 := by
-    rw [qInt_add_two (Real.sqrt 3 : ℂ) 4, hq5, hq4]; ring
+  have hsqrt : (Real.sqrt 3 : ℝ) = 2 * Real.cos (Real.pi / (6 : ℕ)) := by
+    rw [Nat.cast_ofNat, Real.cos_pi_div_six]; ring
+  have hcoe : (Real.sqrt 3 : ℂ) = Complex.ofRealHom (2 * Real.cos (Real.pi / (6 : ℕ))) := by
+    rw [← hsqrt]; rfl
   have hunits : ∀ k ∈ Finset.Icc 1 5, IsUnit (qInt ℂ (Real.sqrt 3 : ℂ) k) := by
-    intro k hk; obtain ⟨hk1, hk5⟩ := Finset.mem_Icc.mp hk
-    interval_cases k <;> simp [qInt_two, hq3, hq4, hq5, hne]
+    intro k hk
+    obtain ⟨hk1, hk5⟩ := Finset.mem_Icc.mp hk
+    rw [hcoe, ← Complex.ofRealHom.map_qInt, isUnit_iff_ne_zero]
+    exact Complex.ofReal_ne_zero.mpr (qInt_two_mul_cos_pi_div_pos (by omega) (by omega)).ne'
   rw [← RingHom.mem_ker, ← isMarkovTrace_cubicTrace.traceRadical_eq_ker_cubicFixedHom 5,
-    isMarkovTrace_cubicTrace.jonesWenzl_mem_traceRadical_iff hunits]
-  exact hq6
+    isMarkovTrace_cubicTrace.jonesWenzl_mem_traceRadical_iff hunits, hcoe,
+    ← Complex.ofRealHom.map_qInt, qInt_two_mul_cos_pi_div_eq_zero (by decide), map_zero]
 
 end TauCeti.TemperleyLieb
