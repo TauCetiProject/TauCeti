@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Algebra.Quaternion.Split
@@ -101,9 +101,8 @@ unfolding.
   standard real sum-of-squares form.
 * `TauCeti.finrank_cliffordAlgebra_realCliffordForm`:
   `finrank ℝ (CliffordAlgebra (realCliffordForm p q)) = 2 ^ (p + q)`.
-* `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_ι` and
-  `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_reverseEven`: the even comparison sends a
-  bivector `ι a * ι b` to minus the transported bivector, and commutes with Clifford reversal.
+* `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_ι`: the even comparison sends a bivector
+  `ι a * ι b` to minus the transported bivector.
 
 ## References
 
@@ -326,6 +325,14 @@ noncomputable def realCliffordEvenEquivNeg (p q : ℕ) :
   (evenEquivEvenNeg (realCliffordForm p q)).trans
     (evenEquivOfIsometry (realCliffordFormNegIsometry p q))
 
+/-- `realCliffordEvenEquivNeg p q` applies `CliffordAlgebra.evenEquivEvenNeg` followed by the
+even-algebra map of `realCliffordFormNegIsometry p q`. -/
+theorem realCliffordEvenEquivNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
+    realCliffordEvenEquivNeg p q x =
+      evenEquivOfIsometry (realCliffordFormNegIsometry p q)
+        (evenEquivEvenNeg (realCliffordForm p q) x) :=
+  (rfl)
+
 /-- The Clifford value of `realCliffordEvenEquivNeg p q x` is the even comparison
 `realCliffordEvenToNeg p q x`. -/
 theorem coe_realCliffordEvenEquivNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
@@ -343,15 +350,6 @@ theorem realCliffordEvenEquivNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
         (realCliffordFormNegIsometry p q b) := by
   rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι,
     map_neg, evenEquivOfIsometry_ι]
-
-/-- `realCliffordEvenEquivNeg` commutes with Clifford reversal. Grade involution is the identity
-on both even algebras (`CliffordAlgebra.involute_eq_of_mem_even`), so the comparison also commutes
-with it, and hence with Clifford conjugation `star`. -/
-theorem realCliffordEvenEquivNeg_reverseEven (p q : ℕ) (x : even (realCliffordForm p q)) :
-    realCliffordEvenEquivNeg p q (reverseEven (realCliffordForm p q) x) =
-      reverseEven (realCliffordForm q p) (realCliffordEvenEquivNeg p q x) := by
-  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    evenEquivEvenNeg_reverseEven, evenEquivOfIsometry_reverseEven]
 
 end CliffordAlgebra
 

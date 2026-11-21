@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Even
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Topology.Algebra.Ring.Real
