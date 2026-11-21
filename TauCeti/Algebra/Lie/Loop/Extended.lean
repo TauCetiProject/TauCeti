@@ -389,6 +389,18 @@ def degreeElement : E' :=
 def degreeProj : E' →ₗ⁅R⁆ R :=
   projr ψ
 
+/-- The degree projection vanishes on the residue central extension `ĝ`. -/
+@[simp]
+theorem degreeProj_toExtendedResidueExtension (x : E) :
+    degreeProj Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs x) = 0 :=
+  projr_inl_apply ψ
+
+/-- The degree projection sends the degree element `d` to `1`. -/
+@[simp]
+theorem degreeProj_degreeElement :
+    degreeProj Φ hΦ hΦs (degreeElement Φ hΦ hΦs) = 1 :=
+  projr_inr_apply ψ
+
 /-- The linear equivalence identifying `extendedResidueExtension Φ hΦ hΦs` with `ĝ × R`. -/
 def extendedToProd : E' ≃ₗ[R] E × R :=
   toProdl ψ
@@ -456,6 +468,12 @@ theorem mode_apply (n : ℤ) (x : L) :
       toExtendedResidueExtension Φ hΦ hΦs
         (ofProd c (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x, 0)) := by
   simp [mode]
+
+/-- The degree projection vanishes on every loop mode `tⁿ ⊗ x`. -/
+@[simp]
+theorem degreeProj_mode (n : ℤ) (x : L) :
+    degreeProj Φ hΦ hΦs (mode Φ hΦ hΦs n x) = 0 := by
+  rw [mode_apply, degreeProj_toExtendedResidueExtension]
 
 /-- **The bracket of two modes** in the extended affine loop algebra:
 `⁅tᵐ ⊗ x, tⁿ ⊗ y⁆ = t^{m + n} ⊗ ⁅x, y⁆ + δ_{m + n, 0} n Φ(x, y) K`. -/

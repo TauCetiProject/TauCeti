@@ -24,9 +24,9 @@ requiring `K` to be algebraically closed.
 
 * `TauCeti.LieAlgebra.IsKilling.nonempty_root_of_isSimple`: the type `H.root` of roots is
   nonempty.
-* `TauCeti.LieAlgebra.IsKilling.exists_eq_smul_killingForm_of_isSimple`: **every invariant bilinear
-  form on a split finite-dimensional simple Lie algebra over a field of characteristic zero is a
-  scalar multiple of the Killing form.**
+* `LieSubalgebra.exists_eq_smul_killingForm_of_isSimple`: **every invariant bilinear form on a split
+  finite-dimensional simple Lie algebra over a field of characteristic zero is a scalar multiple of
+  the Killing form.**
 -/
 
 public section
@@ -48,6 +48,14 @@ instance nonempty_root_of_isSimple {H : LieSubalgebra K L} [H.IsCartanSubalgebra
   rw [Set.range_eq_empty, Submodule.span_empty] at hspan
   exact bot_ne_top hspan
 
+end TauCeti.LieAlgebra.IsKilling
+
+namespace LieSubalgebra
+
+open TauCeti.LieAlgebra.IsKilling
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+
 /-- **Every invariant bilinear form on a split finite-dimensional simple Lie algebra is a multiple
 of the Killing form**, over any field `K` of characteristic zero (without assuming `K` is
 algebraically closed). -/
@@ -59,13 +67,13 @@ theorem exists_eq_smul_killingForm_of_isSimple (H : LieSubalgebra K L) [H.IsCart
     (killingForm K L).toDual (killingForm_nondegenerate K L)
   let T : L →ₗ[K] L := e.symm.toLinearMap ∘ₗ Φ
   have hT (x y : L) : killingForm K L (T x) y = Φ x y := by
-    change e (e.symm (Φ x)) y = Φ x y
-    rw [LinearEquiv.apply_symm_apply]
+    simp [T, e]
   have hT_lie (z x : L) : T ⁅z, x⁆ = ⁅z, T x⁆ := by
     refine sub_eq_zero.mp <| (killingForm_nondegenerate K L).1 _ fun y ↦ ?_
     rw [map_sub, LinearMap.sub_apply, hT, hΦ z x y,
       LieModule.traceForm_lieInvariant K L L z (T x) y, hT, sub_self]
   let f : L →ₗ⁅K,L⁆ L := { T with map_lie' := fun {z x} ↦ hT_lie z x }
+  have hf_apply (x : L) : f x = T x := rfl
   obtain ⟨α⟩ := nonempty_root_of_isSimple (H := H)
   have hα : α.1.IsNonZero := H.isNonZero_coe_root α
   have hdim : Module.finrank K (rootSpace H (α : H → K)) = 1 := finrank_rootSpace_eq_one α.1 hα
@@ -75,21 +83,8 @@ theorem exists_eq_smul_killingForm_of_isSimple (H : LieSubalgebra K L) [H.IsCart
   obtain ⟨⟨v, hv⟩, hv0⟩ := exists_ne (0 : rootSpace H (α : H → K))
   have hv0' : v ≠ 0 := fun h ↦ hv0 (Subtype.ext h)
   have hTv : T v ∈ rootSpace H (α : H → K) := by
-    rw [LieAlgebra.rootSpace, LieModule.mem_genWeightSpace] at hv ⊢
-    intro h
-    obtain ⟨k, hk⟩ := hv h
-    refine ⟨k, ?_⟩
-    have hcomm (n : ℕ) (x : L) :
-        ((toEnd K H L h - (α : H → K) h • (1 : Module.End K L)) ^ n) (T x) =
-          T (((toEnd K H L h - (α : H → K) h • (1 : Module.End K L)) ^ n) x) := by
-      induction n with
-      | zero => rfl
-      | succ n ih =>
-        rw [pow_succ', mul_apply_eq_comp, mul_apply_eq_comp, ih]
-        simp only [LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
-          toEnd_apply_apply, map_sub, map_smul]
-        rw [LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket_of_module, hT_lie]
-    rw [hcomm, hk, map_zero]
+    rw [← hf_apply, ← LieModuleHom.coe_restrictLie (f := f) (L' := H), LieAlgebra.rootSpace]
+    exact LieModule.map_genWeightSpace_le (f.restrictLie H) ⟨v, hv, rfl⟩
   obtain ⟨c, hc⟩ := exists_smul_eq_of_finrank_eq_one hdim hv0 ⟨T v, hTv⟩
   have hTv_eq : T v = c • v := (congrArg Subtype.val hc).symm
   let g : L →ₗ⁅K,L⁆ L := f - c • LieModuleHom.id
@@ -106,4 +101,4 @@ theorem exists_eq_smul_killingForm_of_isSimple (H : LieSubalgebra K L) [H.IsCart
   rw [LieModuleHom.mem_ker, hg_apply, sub_eq_zero] at hx
   rw [← hT, hx, map_smul, LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.smul_apply]
 
-end TauCeti.LieAlgebra.IsKilling
+end LieSubalgebra

@@ -26,20 +26,19 @@ algebra `loopAlgebra K ℤ L = K[t, t⁻¹] ⊗ L`.
 This file proves the universal central extension criterion for `ofTwoCocycle c₀`
 (`TauCeti.LieAlgebra.LoopAlgebra.lie_top_ker_eq_ker_of_surjective_ofTwoCocycle`): for any
 surjective Lie algebra homomorphism `f : G →ₗ⁅K⁆ ofTwoCocycle c₀` from a perfect Lie algebra `G`
-admitting a central lift `cG` of `centralElement c₀` expressed as a finite linear combination of
-brackets whose residue pairing is nonzero, the kernel satisfies `⁅⊤, f.ker⁆ = f.ker`.
+admitting a central lift `cG` of `centralElement c₀`, the kernel satisfies `⁅⊤, f.ker⁆ = f.ker`.
 
 In particular, when `L` is a split finite-dimensional simple Lie algebra over `K` (without assuming
 `K` is algebraically closed), uniqueness of invariant bilinear forms
-(`TauCeti.LieAlgebra.IsKilling.exists_eq_smul_killingForm_of_isSimple`) discharges the spanning
+(`LieSubalgebra.exists_eq_smul_killingForm_of_isSimple`) discharges the spanning
 hypothesis automatically for any nonzero symmetric invariant form `Φ`
-(`TauCeti.LieAlgebra.LoopAlgebra.lie_top_ker_eq_ker_of_surjective_ofTwoCocycle_of_isSimple`).
+(`LieSubalgebra.lie_top_ker_eq_ker_of_surjective_ofTwoCocycle_of_isSimple`).
 
 ## Main results
 
 * `TauCeti.LieAlgebra.LoopAlgebra.lie_top_ker_eq_ker_of_surjective_ofTwoCocycle`: universal central
   extension property (`⁅⊤, f.ker⁆ = f.ker`) for perfect covers of `ofTwoCocycle c₀`.
-* `TauCeti.LieAlgebra.LoopAlgebra.lie_top_ker_eq_ker_of_surjective_ofTwoCocycle_of_isSimple`:
+* `LieSubalgebra.lie_top_ker_eq_ker_of_surjective_ofTwoCocycle_of_isSimple`:
   specialization to any split finite-dimensional simple Lie algebra `L` and nonzero symmetric
   invariant form `Φ`.
 
@@ -106,10 +105,10 @@ private theorem eq_bot_of_central_extension_of_loopAlgebra
     exact hmk_ne ((Module.forall_dual_apply_eq_zero_iff K _).mp h)
   let μ : πQ.ker →ₗ[K] K := ν ∘ₗ U.mkQ
   have hμ_cQ : μ ⟨cQ, hcQ_ker⟩ = 0 := by
-    change ν (U.mkQ ⟨cQ, hcQ_ker⟩) = 0
-    rw [Submodule.mkQ_apply,
+    simp only [μ, LinearMap.comp_apply, Submodule.mkQ_apply,
       (Submodule.Quotient.mk_eq_zero U).mpr (Submodule.mem_span_singleton_self _), map_zero]
-  have hμ_z₀ : μ ⟨z₀, hz₀_ker⟩ ≠ 0 := hν
+  have hμ_z₀ : μ ⟨z₀, hz₀_ker⟩ ≠ 0 := by
+    simpa only [μ, LinearMap.comp_apply] using hν
   -- Choose a `K`-linear section `sec` of `πQ` and form the associated 2-cocycle `ω`.
   obtain ⟨sec, hsec⟩ := LinearMap.exists_rightInverse_of_surjective πQ.toLinearMap
     (LinearMap.range_eq_top.mpr hπQ_surj)
@@ -158,17 +157,19 @@ private theorem eq_bot_of_central_extension_of_loopAlgebra
         rw [map_smul, lie_smul, LieAlgebra.lie_smul r p₁ p₂, map_smul, smul_sub])
   let ω : twoCochain K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K) :=
     ⟨ωB, fun p ↦ by
-      change e.symm (μ ⟨⁅sec p, sec p⁆ - sec ⁅p, p⁆, _⟩) = 0
+      simp only [ωB, LinearMap.mk₂_apply]
       have h0 : (⟨⁅sec p, sec p⁆ - sec ⁅p, p⁆, hsec_ker p p⟩ : πQ.ker) = 0 :=
         Subtype.ext (by simp)
       rw [h0, map_zero, map_zero]⟩
+  have hω_apply (p₁ p₂ : loopAlgebra K ℤ L) :
+      ω p₁ p₂ = e.symm (μ ⟨⁅sec p₁, sec p₂⁆ - sec ⁅p₁, p₂⁆, hsec_ker p₁ p₂⟩) := by
+    rw [← twoCochain_val_apply]
+    simp only [ω, ωB, LinearMap.mk₂_apply]
   have hω_cocycle : ω ∈ twoCocycle K (loopAlgebra K ℤ L)
       (TrivialLieModule K (loopAlgebra K ℤ L) K) := by
     rw [mem_twoCocycle_iff_of_trivial]
     intro p₁ p₂ p₃
-    change e.symm (μ ⟨⁅sec p₁, sec ⁅p₂, p₃⁆⁆ - sec ⁅p₁, ⁅p₂, p₃⁆⁆, _⟩) =
-      e.symm (μ ⟨⁅sec ⁅p₁, p₂⁆, sec p₃⁆ - sec ⁅⁅p₁, p₂⁆, p₃⁆, _⟩) +
-      e.symm (μ ⟨⁅sec p₂, sec ⁅p₁, p₃⁆⁆ - sec ⁅p₂, ⁅p₁, p₃⁆⁆, _⟩)
+    simp only [hω_apply]
     rw [← map_add, ← map_add]
     congr 2
     apply Subtype.ext
@@ -212,6 +213,8 @@ private theorem eq_bot_of_central_extension_of_loopAlgebra
         rw [hsub, map_smul, map_smul, map_smul, map_smul]
         simp only [RingHom.id_apply, smul_eq_mul]
         ring }
+  have hψ_apply (y : Q) : ψ y = μ ⟨y - sec (πQ y), hproj_ker y⟩ + e (η (πQ y)) := by
+    simp only [ψ, LinearMap.coe_mk, AddHom.coe_mk]
   have hψ_lie (y₁ y₂ : Q) :
       ψ ⁅y₁, y₂⁆ = t * residuePairing K ℤ L Φ (πQ y₁) (πQ y₂) := by
     have hbra : ⁅y₁, y₂⁆ = ⁅sec (πQ y₁), sec (πQ y₂)⁆ := by
@@ -228,23 +231,22 @@ private theorem eq_bot_of_central_extension_of_loopAlgebra
       e.apply_symm_apply r
     simp only [add_apply_apply, smul_apply_apply, twoCochainOfBilinear_apply_apply,
       d₁₂_apply_apply_ofTrivial, map_add, map_smul, map_neg, he_inv, smul_eq_mul] at hω_eval
-    change μ ⟨⁅y₁, y₂⁆ - sec (πQ ⁅y₁, y₂⁆), _⟩ + e (η (πQ ⁅y₁, y₂⁆)) = _
+    rw [hψ_apply]
     have heq_sub : (⟨⁅y₁, y₂⁆ - sec (πQ ⁅y₁, y₂⁆), hproj_ker ⁅y₁, y₂⁆⟩ : πQ.ker) =
         ⟨⁅sec (πQ y₁), sec (πQ y₂)⁆ - sec ⁅πQ y₁, πQ y₂⁆, hsec_ker (πQ y₁) (πQ y₂)⟩ := by
       apply Subtype.ext
-      change ⁅y₁, y₂⁆ - sec (πQ ⁅y₁, y₂⁆) = ⁅sec (πQ y₁), sec (πQ y₂)⁆ - sec ⁅πQ y₁, πQ y₂⁆
+      dsimp only
       rw [hbra, LieHom.map_lie, hsec_apply, hsec_apply]
     rw [heq_sub, LieHom.map_lie]
     have hω_val : e (ω (πQ y₁) (πQ y₂)) =
         μ ⟨⁅sec (πQ y₁), sec (πQ y₂)⁆ - sec ⁅πQ y₁, πQ y₂⁆, hsec_ker (πQ y₁) (πQ y₂)⟩ := by
-      change e (e.symm _) = _
-      exact e.apply_symm_apply _
+      rw [hω_apply, e.apply_symm_apply]
     rw [hω_val] at hω_eval
     linear_combination -hω_eval
   -- Evaluate `ψ cQ` both directly (`0`) and via `hcQ_sum`, forcing `t = 0`.
   have hψ_cQ_zero : ψ cQ = 0 := by
-    change μ ⟨cQ - sec (πQ cQ), _⟩ + e (η (πQ cQ)) = 0
-    have hπc : πQ cQ = 0 := hcQ_ker
+    rw [hψ_apply]
+    have hπc : πQ cQ = 0 := LieHom.mem_ker.mp hcQ_ker
     have hsub : (⟨cQ - sec (πQ cQ), hproj_ker cQ⟩ : πQ.ker) = ⟨cQ, hcQ_ker⟩ :=
       Subtype.ext (by simp [hπc])
     rw [hsub, hμ_cQ, hπc, map_zero, map_zero, add_zero]
@@ -267,8 +269,8 @@ private theorem eq_bot_of_central_extension_of_loopAlgebra
     exact hle (by rw [hQ_perf]; trivial)
   -- Evaluate `ψ z₀ = μ ⟨z₀, hz₀_ker⟩` to obtain a contradiction.
   have hψ_z₀ : ψ z₀ = μ ⟨z₀, hz₀_ker⟩ := by
-    change μ ⟨z₀ - sec (πQ z₀), _⟩ + e (η (πQ z₀)) = _
-    have hπz : πQ z₀ = 0 := hz₀_ker
+    rw [hψ_apply]
+    have hπz : πQ z₀ = 0 := LieHom.mem_ker.mp hz₀_ker
     have hsub : (⟨z₀ - sec (πQ z₀), hproj_ker z₀⟩ : πQ.ker) = ⟨z₀, hz₀_ker⟩ :=
       Subtype.ext (by simp [hπz])
     rw [hsub, hπz, map_zero, map_zero, add_zero]
@@ -279,8 +281,7 @@ let `L` be a Lie algebra with nondegenerate Killing form over a field `K` of cha
 whose invariant bilinear forms are all scalar multiples of a symmetric invariant form `Φ`, and let
 `c₀ = twoCocycleOfBilinear K ℤ L Φ hΦ hΦs`. Suppose `f : G →ₗ⁅K⁆ ofTwoCocycle c₀` is a surjective
 Lie algebra homomorphism from a perfect Lie algebra `G` (`⁅⊤, ⊤⁆ = ⊤`) admitting a central element
-`cG` with `f cG = centralElement c₀` that can be expressed as a finite linear combination
-`∑ k ∈ s, a k • ⁅u k, v k⁆` whose residue pairing is nonzero. Then `⁅⊤, f.ker⁆ = f.ker`. -/
+`cG` with `f cG = centralElement c₀`. Then `⁅⊤, f.ker⁆ = f.ker`. -/
 theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle
     {Φ : LinearMap.BilinForm K L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
     (hspan : ∀ Ψ : LinearMap.BilinForm K L, Ψ.lieInvariant L → ∃ t : K, Ψ = t • Φ)
@@ -288,20 +289,16 @@ theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle
     (hf : Function.Surjective f)
     (hperf : (⁅(⊤ : LieIdeal K G), (⊤ : LieIdeal K G)⁆ : LieIdeal K G) = ⊤)
     {cG : G} (hcG_cent : ∀ y : G, ⁅y, cG⁆ = 0)
-    (hcG_map : f cG = centralElement (twoCocycleOfBilinear K ℤ L Φ hΦ hΦs))
-    {ι : Type*} {s : Finset ι} {a : ι → K} {u v : ι → G}
-    (hcG_sum : cG = ∑ k ∈ s, a k • ⁅u k, v k⁆)
-    (hpair : ∑ k ∈ s, a k * residuePairing K ℤ L Φ
-      (ofTwoCocycle.proj _ (f (u k))) (ofTwoCocycle.proj _ (f (v k))) ≠ 0) :
+    (hcG_map : f cG = centralElement (twoCocycleOfBilinear K ℤ L Φ hΦ hΦs)) :
     ⁅(⊤ : LieIdeal K G), f.ker⁆ = f.ker := by
   let c₀ := twoCocycleOfBilinear K ℤ L Φ hΦ hΦs
   let I : LieIdeal K G := f.ker
   let J : LieIdeal K G := ⁅(⊤ : LieIdeal K G), I⁆
   let π : G →ₗ⁅K⁆ loopAlgebra K ℤ L := (ofTwoCocycle.proj c₀).comp f
+  have hπ_apply (y : G) : π y = ofTwoCocycle.proj c₀ (f y) := LieHom.comp_apply _ _ _
   have hπ_surj : Function.Surjective π := (ofTwoCocycle.proj_surjective c₀).comp hf
   have hker_π (y : G) : y ∈ π.ker ↔ ∃ r : K, y - r • cG ∈ I := by
-    rw [LieHom.mem_ker]
-    change ofTwoCocycle.proj c₀ (f y) = 0 ↔ _
+    rw [LieHom.mem_ker, hπ_apply]
     constructor
     · intro h0
       set r := TrivialLieModule.equiv K (loopAlgebra K ℤ L) K ((ofProd c₀).symm (f y)).2
@@ -353,9 +350,8 @@ theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle
       rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.lieIdeal_oper_eq_linear_span',
         Submodule.span_le]
       rintro _ ⟨x₁, _, x₂, _, rfl⟩
-      change q ⁅x₁, x₂⁆ ∈ (⁅(⊤ : LieIdeal K (G ⧸ J)), (⊤ : LieIdeal K (G ⧸ J))⁆ :
-        LieIdeal K (G ⧸ J))
-      rw [LieHom.map_lie]
+      rw [SetLike.mem_coe, Submodule.mem_comap, LieHom.coe_toLinearMap,
+        LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.mem_toSubmodule, LieHom.map_lie]
       exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _)
     exact hle (by rw [hperf]; trivial)
   have hZ_le : Z ≤ πQ.ker := by
@@ -378,14 +374,61 @@ theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle
       exact add_mem (hJ_le_I hdiff) hxI
     have hc0 : centralElement c₀ = 0 := hcG_map ▸ LieHom.mem_ker.mp hcI
     exact ofTwoCocycle.centralElement_ne_zero c₀ hc0
-  have hcQ_sum : cQ = ∑ k ∈ s, a k • ⁅q (u k), q (v k)⁆ := by
-    change q cG = _
+  have hcG_mem : cG ∈ Submodule.span K {z : G | ∃ u v : G, ⁅u, v⁆ = z} := by
+    have hcG_top : cG ∈ (↑(⁅(⊤ : LieIdeal K G), (⊤ : LieIdeal K G)⁆ : LieIdeal K G) :
+        Submodule K G) := by
+      rw [hperf]
+      trivial
+    rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.lieIdeal_oper_eq_linear_span'] at hcG_top
+    simpa only [LieSubmodule.mem_top, true_and] using hcG_top
+  obtain ⟨n, a, g, hg_sum⟩ := Submodule.mem_span_set'.mp hcG_mem
+  choose u v huv using fun k : Fin n ↦ (g k).property
+  have hcG_sum : cG = ∑ k : Fin n, a k • ⁅u k, v k⁆ := by
+    rw [← hg_sum]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [huv k]
+  have hcQ_sum : cQ = ∑ k ∈ Finset.univ, a k • ⁅q (u k), q (v k)⁆ := by
+    dsimp only [cQ]
     rw [hcG_sum, map_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [map_smul, LieHom.map_lie]
-  have hπ_apply (y : G) : π y = ofTwoCocycle.proj c₀ (f y) := rfl
-  have hpair' : ∑ k ∈ s, a k * residuePairing K ℤ L Φ (πQ (q (u k))) (πQ (q (v k))) ≠ 0 := by
-    simpa only [hπQ_q, hπ_apply] using hpair
+  let χ : ofTwoCocycle c₀ →ₗ[K] K :=
+    (TrivialLieModule.equiv K (loopAlgebra K ℤ L) K).toLinearMap ∘ₗ
+      LinearMap.snd K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K) ∘ₗ
+      (ofProdLinearEquiv c₀).symm.toLinearMap
+  have hχ_apply (x : ofTwoCocycle c₀) :
+      χ x = TrivialLieModule.equiv K (loopAlgebra K ℤ L) K ((ofProd c₀).symm x).2 := by
+    simp only [χ, LinearMap.comp_apply, LinearEquiv.coe_coe, coe_ofProdLinearEquiv_symm,
+      LinearMap.snd_apply]
+  have hχ_lie (x y : ofTwoCocycle c₀) :
+      χ ⁅x, y⁆ = residuePairing K ℤ L Φ (ofTwoCocycle.proj c₀ x) (ofTwoCocycle.proj c₀ y) := by
+    obtain ⟨⟨px, zx⟩, rfl⟩ := (ofProd c₀).surjective x
+    obtain ⟨⟨py, zy⟩, rfl⟩ := (ofProd c₀).surjective y
+    simp only [hχ_apply, bracket_ofTwoCocycle, Equiv.symm_apply_apply, trivial_lie_zero, sub_zero,
+      add_zero, ofTwoCocycle.proj_apply]
+    simp only [c₀, twoCocycleOfBilinear_coe, twoCochain_val_apply, twoCochainOfBilinear_apply_apply,
+      LinearEquiv.apply_symm_apply]
+  have hpair_sum :
+      ∑ k : Fin n, a k * residuePairing K ℤ L Φ (πQ (q (u k))) (πQ (q (v k))) = 1 := by
+    have h1 : χ (centralElement c₀) = 1 := by
+      simp only [hχ_apply, ofTwoCocycle.ofProd_symm_centralElement, LinearEquiv.apply_symm_apply]
+    have h2 : χ (f cG) =
+        ∑ k : Fin n, a k * residuePairing K ℤ L Φ (πQ (q (u k))) (πQ (q (v k))) := by
+      calc χ (f cG)
+          = χ (f (∑ k : Fin n, a k • ⁅u k, v k⁆)) := by rw [hcG_sum]
+        _ = ∑ k : Fin n, a k * residuePairing K ℤ L Φ (π (u k)) (π (v k)) := by
+            simp only [map_sum, map_smul, smul_eq_mul, LieHom.map_lie, hχ_lie, hπ_apply]
+        _ = ∑ k : Fin n, a k * residuePairing K ℤ L Φ (πQ (q (u k))) (πQ (q (v k))) := by
+            refine Finset.sum_congr rfl fun k _ ↦ ?_
+            rw [hπQ_q, hπQ_q]
+    calc ∑ k : Fin n, a k * residuePairing K ℤ L Φ (πQ (q (u k))) (πQ (q (v k)))
+        = χ (f cG) := h2.symm
+      _ = χ (centralElement c₀) := congrArg χ hcG_map
+      _ = 1 := h1
+  have hpair' :
+      ∑ k ∈ Finset.univ, a k * residuePairing K ℤ L Φ (πQ (q (u k))) (πQ (q (v k))) ≠ 0 := by
+    rw [hpair_sum]
+    exact one_ne_zero
   have hZ : Z = ⊥ := eq_bot_of_central_extension_of_loopAlgebra hΦs hspan πQ hπQ_surj
     hker_central hQ_perf Z hZ_le hcQ_ker hcQ_not_Z hcQ_sum hpair'
   refine le_antisymm hJ_le_I fun y hy ↦ ?_
@@ -394,6 +437,14 @@ theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle
   exact LieSubmodule.Quotient.mk_eq_zero'.mp hqy
 
 end UniversalCentralExtension
+
+end TauCeti.LieAlgebra.LoopAlgebra
+
+namespace LieSubalgebra
+
+open _root_.LieAlgebra _root_.LieAlgebra.LoopAlgebra
+open _root_.LieAlgebra.ofTwoCocycle (centralElement)
+open TauCeti.LieAlgebra.LoopAlgebra
 
 section SplitSimple
 
@@ -405,7 +456,7 @@ for any nonzero symmetric invariant bilinear form `Φ` on a split finite-dimensi
 algebra `L` over a characteristic-zero field `K` (without assuming algebraic closure), any
 surjective homomorphism from a perfect Lie algebra `G` onto
 `ofTwoCocycle (twoCocycleOfBilinear K ℤ L Φ hΦ hΦs)` lifting the central element to a central
-bracket combination with nonzero residue pairing satisfies `⁅⊤, f.ker⁆ = f.ker`. -/
+element satisfies `⁅⊤, f.ker⁆ = f.ker`. -/
 theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle_of_isSimple
     (H : LieSubalgebra K L) [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
     {Φ : LinearMap.BilinForm K L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΦ0 : Φ ≠ 0)
@@ -413,16 +464,12 @@ theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle_of_isSimple
     (hf : Function.Surjective f)
     (hperf : (⁅(⊤ : LieIdeal K G), (⊤ : LieIdeal K G)⁆ : LieIdeal K G) = ⊤)
     {cG : G} (hcG_cent : ∀ y : G, ⁅y, cG⁆ = 0)
-    (hcG_map : f cG = centralElement (twoCocycleOfBilinear K ℤ L Φ hΦ hΦs))
-    {ι : Type*} {s : Finset ι} {a : ι → K} {u v : ι → G}
-    (hcG_sum : cG = ∑ k ∈ s, a k • ⁅u k, v k⁆)
-    (hpair : ∑ k ∈ s, a k * residuePairing K ℤ L Φ
-      (ofTwoCocycle.proj _ (f (u k))) (ofTwoCocycle.proj _ (f (v k))) ≠ 0) :
+    (hcG_map : f cG = centralElement (twoCocycleOfBilinear K ℤ L Φ hΦ hΦs)) :
     ⁅(⊤ : LieIdeal K G), f.ker⁆ = f.ker := by
   refine lie_top_ker_eq_ker_of_surjective_ofTwoCocycle hΦ hΦs (fun Ψ hΨ ↦ ?_)
-    hf hperf hcG_cent hcG_map hcG_sum hpair
-  obtain ⟨c, hc⟩ := TauCeti.LieAlgebra.IsKilling.exists_eq_smul_killingForm_of_isSimple H hΦ
-  obtain ⟨d, hd⟩ := TauCeti.LieAlgebra.IsKilling.exists_eq_smul_killingForm_of_isSimple H hΨ
+    hf hperf hcG_cent hcG_map
+  obtain ⟨c, hc⟩ := H.exists_eq_smul_killingForm_of_isSimple hΦ
+  obtain ⟨d, hd⟩ := H.exists_eq_smul_killingForm_of_isSimple hΨ
   have hc0 : c ≠ 0 := by
     rintro rfl
     exact hΦ0 (by simpa using hc)
@@ -431,4 +478,4 @@ theorem lie_top_ker_eq_ker_of_surjective_ofTwoCocycle_of_isSimple
 
 end SplitSimple
 
-end TauCeti.LieAlgebra.LoopAlgebra
+end LieSubalgebra
