@@ -193,7 +193,7 @@ theorem integral_Ioi_pow_div_exp_mul_sub_one {s : ℕ} (hs : 1 ≤ s) {c : ℝ} 
     rw [h2s, Gamma_nat_eq_factorial]
   have hfact : ((2 * s)! : ℝ) = (2 * s : ℝ) * ((2 * s - 1)! : ℝ) := by
     rw [← Nat.mul_factorial_pred (by omega : 2 * s ≠ 0)]
-    push_cast; rfl
+    push_cast; ring
   have hpow2 : (2 : ℝ) ^ (2 * s) = 2 * (2 : ℝ) ^ (2 * s - 1) := by
     rw [← pow_succ', Nat.sub_add_cancel (by omega : 1 ≤ 2 * s)]
   have : ((2 * s - 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)

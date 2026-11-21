@@ -67,6 +67,75 @@ namespace TauCeti
 
 /-! ### Taylor–Lagrange expansion along a vertical line -/
 
+private lemma I_pow_two_mul (k : ℕ) : I ^ (2 * k) = (((-1 : ℝ) ^ k : ℝ) : ℂ) := by
+  rw [pow_mul, I_sq]; push_cast; ring
+
+/-- Iterated derivatives of a function real-valued on `[a, b]` within the closed vertical strip
+`{z | a ≤ z.re ∧ z.re ≤ b}` (`a < b`) have vanishing imaginary part at points of `[a, b]`. -/
+private lemma im_iteratedDerivWithin_eq_zero_of_real_on_Icc {f : ℂ → ℂ} {a b c : ℝ} {n k : ℕ}
+    (hab : a < b) (hc : c ∈ Icc a b) (hk : k ≤ n)
+    (hf : ContDiffOn ℂ (n : ℕ) f {z | a ≤ z.re ∧ z.re ≤ b})
+    (hreal : ∀ x : ℝ, a ≤ x → x ≤ b → (f x).im = 0) :
+    (iteratedDerivWithin k f {z | a ≤ z.re ∧ z.re ≤ b} c).im = 0 := by
+  let S : Set ℂ := {z : ℂ | a ≤ z.re ∧ z.re ≤ b}
+  have huniqS : UniqueDiffOn ℂ S :=
+    TauCeti.Complex.HadamardThreeLines.uniqueDiffOn_verticalClosedStrip hab
+  have hmaps : MapsTo (fun t : ℝ => (0 : ℂ) + t • (1 : ℂ)) (Icc a b) S := fun t ht => by
+    simp [S, Complex.real_smul, ht.1, ht.2]
+  simpa [Complex.real_smul] using
+    hf.map_pow_smul_iteratedDerivWithin_eq_zero huniqS (uniqueDiffOn_Icc hab) hmaps
+      Complex.imCLM (fun t ht => by simpa [Complex.real_smul] using hreal t ht.1 ht.2)
+      (by exact_mod_cast hk : (k : WithTop ℕ∞) ≤ ((n : ℕ) : WithTop ℕ∞)) hc
+
+/-- The degree-`(2 * m - 1)` Taylor polynomial of `t ↦ Im f(c + i t)` on `[0, y]` collapses to
+the odd-order sum over `Finset.Icc 1 m` when `f` is real on `[a, b]`. -/
+private lemma taylorWithinEval_im_comp {f : ℂ → ℂ} {a b c y : ℝ} {m : ℕ}
+    (hab : a < b) (hc : c ∈ Icc a b) (hm : 1 ≤ m) (hy : 0 < y)
+    (hf : ContDiffOn ℂ (2 * m : ℕ) f {z | a ≤ z.re ∧ z.re ≤ b})
+    (hreal : ∀ x : ℝ, a ≤ x → x ≤ b → (f x).im = 0)
+    (hψ : ContDiff ℝ (2 * m : ℕ) (Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)))
+    (hψ_deriv : ∀ {k : ℕ}, k ≤ 2 * m →
+      iteratedDeriv k (Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)) 0 =
+        (I ^ k * iteratedDerivWithin k f {z | a ≤ z.re ∧ z.re ≤ b} c).im) :
+    taylorWithinEval (Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I))
+        (2 * m - 1) (uIcc 0 y) 0 y =
+      ∑ s ∈ Finset.Icc 1 m,
+        (-1 : ℝ) ^ (s - 1) * (iteratedDerivWithin (2 * s - 1) f {z | a ≤ z.re ∧ z.re ≤ b} c).re *
+          y ^ (2 * s - 1) / (2 * s - 1)! := by
+  let S : Set ℂ := {z : ℂ | a ≤ z.re ∧ z.re ≤ b}
+  let ψ : ℝ → ℝ := Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)
+  have h2m : (2 * m - 1) + 1 = 2 * m := by omega
+  rw [taylor_within_apply, h2m]
+  have hcongr : ∑ k ∈ Finset.range (2 * m),
+        ((k ! : ℝ)⁻¹ * (y - 0) ^ k) • iteratedDerivWithin k ψ (uIcc 0 y) 0 =
+      ∑ k ∈ Finset.range (2 * m),
+        (I ^ k * iteratedDerivWithin k f S c).im * y ^ k / (k ! : ℝ) := by
+    refine Finset.sum_congr rfl fun k hk => ?_
+    have hk_le : k ≤ 2 * m := (Finset.mem_range.mp hk).le
+    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hy.ne)
+      (hψ.contDiffAt.of_le (by exact_mod_cast hk_le)) left_mem_uIcc,
+      hψ_deriv hk_le, sub_zero, smul_eq_mul]
+    ring
+  rw [hcongr, Finset.sum_range_two_mul]
+  have heven : ∑ j ∈ Finset.range m,
+      (I ^ (2 * j) * iteratedDerivWithin (2 * j) f S c).im * y ^ (2 * j) / ((2 * j)! : ℝ) =
+      0 := by
+    refine Finset.sum_eq_zero fun j hj => ?_
+    have hj_le : 2 * j ≤ 2 * m := by
+      have := Finset.mem_range.mp hj; omega
+    rw [I_pow_two_mul j, mul_im, ofReal_re, ofReal_im,
+      im_iteratedDerivWithin_eq_zero_of_real_on_Icc hab hc hj_le hf hreal]
+    ring
+  rw [heven, zero_add]
+  refine Finset.sum_nbij' (· + 1) (· - 1)
+    (fun j hj => Finset.mem_Icc.mpr (by have := Finset.mem_range.mp hj; omega))
+    (fun s hs => Finset.mem_range.mpr (by have := Finset.mem_Icc.mp hs; omega))
+    (fun _ _ => by omega) (fun s hs => by have := Finset.mem_Icc.mp hs; omega) fun j _ => ?_
+  have hsub : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
+  rw [hsub, Nat.add_sub_cancel, pow_succ, I_pow_two_mul j, mul_assoc, mul_im, ofReal_re, ofReal_im,
+    I_mul_im, I_mul_re]
+  ring
+
 /-- Pointwise Taylor–Lagrange identity for `Im f(c + y * I)` at `y > 0` when `f` is real on `[a, b]`
 and `1 ≤ m`. -/
 private lemma exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ} {m : ℕ}
@@ -92,6 +161,7 @@ private lemma exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ
     (hf.restrict_scalars ℝ).comp_contDiff (by fun_prop) hγ_mem
   let ψ : ℝ → ℝ := Complex.imCLM ∘ (f ∘ γ)
   have hψ : ContDiff ℝ (2 * m : ℕ) ψ := Complex.imCLM.contDiff.comp hfγ
+  -- Line derivatives along `t ↦ c + t * I`.
   have hψ_deriv : ∀ {k : ℕ}, k ≤ 2 * m → ∀ t : ℝ,
       iteratedDeriv k ψ t = (I ^ k * iteratedDerivWithin k f S ((c : ℂ) + (t : ℂ) * I)).im := by
     intro k hk t
@@ -99,6 +169,7 @@ private lemma exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ
     rw [Complex.imCLM.iteratedDeriv_comp_left hfγ.contDiffAt hk']
     have hline := hf.iteratedDeriv_comp_add_smul huniqS hγ_mem hk' t
     simpa [γ, S, Function.comp_def, Complex.real_smul, smul_eq_mul] using congrArg Complex.im hline
+  -- Lagrange remainder on `[0, y]`.
   have h2m : (2 * m - 1) + 1 = 2 * m := by omega
   have hψ_on : ContDiffOn ℝ (((2 * m - 1 : ℕ) : WithTop ℕ∞) + 1) ψ (uIcc 0 y) := by
     have h1 : ContDiffOn ℝ (2 * m : ℕ) ψ (uIcc 0 y) := hψ.contDiffOn
@@ -107,56 +178,16 @@ private lemma exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ
   rw [uIoo_of_lt hy] at hξ_mem
   refine ⟨ξ / y, ⟨div_pos hξ_mem.1 hy, (div_lt_one hy).mpr hξ_mem.2⟩, ?_⟩
   have hθy : ξ / y * y = ξ := div_mul_cancel₀ ξ hy.ne'
-  have hIeven : ∀ k : ℕ, I ^ (2 * k) = (((-1 : ℝ) ^ k : ℝ) : ℂ) := fun k => by
-    rw [pow_mul, I_sq]; push_cast; rfl
-  have him_zero : ∀ {k : ℕ}, k ≤ 2 * m → (iteratedDerivWithin k f S c).im = 0 := by
-    intro k hk
-    have hmaps : MapsTo (fun t : ℝ => (0 : ℂ) + t • (1 : ℂ)) (Icc a b) S := fun t ht => by
-      simp [S, Complex.real_smul, ht.1, ht.2]
-    have h := hf.map_pow_smul_iteratedDerivWithin_eq_zero huniqS (uniqueDiffOn_Icc hab) hmaps
-      Complex.imCLM (fun t ht => by simpa [Complex.real_smul] using hreal t ht.1 ht.2)
-      (by exact_mod_cast hk : (k : WithTop ℕ∞) ≤ ((2 * m : ℕ) : WithTop ℕ∞)) hc
-    simpa [Complex.real_smul] using h
-  have htaylor : taylorWithinEval ψ (2 * m - 1) (uIcc 0 y) 0 y =
-      ∑ s ∈ Finset.Icc 1 m,
-        (-1 : ℝ) ^ (s - 1) * (iteratedDerivWithin (2 * s - 1) f S c).re *
-          y ^ (2 * s - 1) / (2 * s - 1)! := by
-    rw [taylor_within_apply, h2m]
-    have hcongr : ∑ k ∈ Finset.range (2 * m),
-          ((k ! : ℝ)⁻¹ * (y - 0) ^ k) • iteratedDerivWithin k ψ (uIcc 0 y) 0 =
-        ∑ k ∈ Finset.range (2 * m),
-          (I ^ k * iteratedDerivWithin k f S c).im * y ^ k / (k ! : ℝ) := by
-      refine Finset.sum_congr rfl fun k hk => ?_
-      have hk_le : k ≤ 2 * m := (Finset.mem_range.mp hk).le
-      have hψk : iteratedDeriv k ψ 0 = (I ^ k * iteratedDerivWithin k f S c).im := by
-        simpa using hψ_deriv hk_le 0
-      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hy.ne)
-        (hψ.contDiffAt.of_le (by exact_mod_cast hk_le)) left_mem_uIcc,
-        hψk, sub_zero, smul_eq_mul]
-      ring
-    rw [hcongr, Finset.sum_range_two_mul]
-    have heven : ∑ j ∈ Finset.range m,
-        (I ^ (2 * j) * iteratedDerivWithin (2 * j) f S c).im * y ^ (2 * j) / ((2 * j)! : ℝ) =
-        0 := by
-      refine Finset.sum_eq_zero fun j hj => ?_
-      have hj_le : 2 * j ≤ 2 * m := by
-        have := Finset.mem_range.mp hj; omega
-      rw [hIeven j, mul_im, ofReal_re, ofReal_im, him_zero hj_le]; ring
-    rw [heven, zero_add]
-    refine Finset.sum_nbij' (· + 1) (· - 1)
-      (fun j hj => Finset.mem_Icc.mpr (by have := Finset.mem_range.mp hj; omega))
-      (fun s hs => Finset.mem_range.mpr (by have := Finset.mem_Icc.mp hs; omega))
-      (fun _ _ => by omega) (fun s hs => by have := Finset.mem_Icc.mp hs; omega) fun j _ => ?_
-    have hsub : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
-    rw [hsub, Nat.add_sub_cancel, pow_succ, hIeven j, mul_assoc, mul_im, ofReal_re, ofReal_im,
-      I_mul_im, I_mul_re]
-    ring
+  -- Polynomial part (even terms vanish since `f` is real on `[a, b]`).
+  have htaylor := taylorWithinEval_im_comp hab hc hm hy hf hreal hψ fun hk => by
+    simpa only [ofReal_zero, zero_mul, add_zero] using hψ_deriv hk 0
+  -- Remainder part.
   have hrem : iteratedDeriv ((2 * m - 1) + 1) ψ ξ * (y - 0) ^ ((2 * m - 1) + 1) /
         ((2 * m - 1) + 1)! =
       (-1 : ℝ) ^ m * (iteratedDerivWithin (2 * m) f S (c + ((ξ / y * y : ℝ) : ℂ) * I)).im *
         y ^ (2 * m) / (2 * m)! := by
-    rw [h2m, hψ_deriv le_rfl ξ, hθy, sub_zero, hIeven m, mul_im, ofReal_re, ofReal_im, zero_mul,
-      add_zero]
+    rw [h2m, hψ_deriv le_rfl ξ, hθy, sub_zero, I_pow_two_mul m, mul_im, ofReal_re, ofReal_im,
+      zero_mul, add_zero]
   have hψy : ψ y = (f (c + (y : ℂ) * I)).im := by simp [ψ, γ, Complex.real_smul]
   linarith [hξ_eq, htaylor, hrem, hψy]
 
@@ -176,7 +207,7 @@ private lemma two_mul_odd_moment_eq_bernoulli {s : ℕ} (hs : 1 ≤ s) (A : ℝ)
     rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
   have hfact_s : ((2 * (k + 1))! : ℝ) = (2 * (k + 1 : ℝ)) * ((2 * (k + 1) - 1)! : ℝ) := by
     rw [← Nat.mul_factorial_pred (by omega : 2 * (k + 1) ≠ 0)]
-    push_cast; rfl
+    push_cast; ring
   have hfac_s_ne : ((2 * (k + 1) - 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
   have hk_ne : ((k + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero k)
   rw [Nat.add_sub_cancel, hs_add, hfact_s]
@@ -330,31 +361,23 @@ theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m :
   rw [sum_Icc_eq_abelPlana han.le hdiff_open hf.continuousOn hgrowth hreal hinta hintn]
   simp only [ofReal_intCast] at hϑ_eq
   have hcast := congrArg (fun r : ℝ => (r : ℂ)) hϑ_eq
-  rw [ofReal_mul, ofReal_ofNat, ofReal_add, ofReal_sum, ofReal_mul, ofReal_div, ofReal_mul,
-    ofReal_ofNat, ofReal_pow, ofReal_neg, ofReal_one, ofReal_natCast] at hcast
-  have huniqS : UniqueDiffOn ℂ S :=
-    TauCeti.Complex.HadamardThreeLines.uniqueDiffOn_verticalClosedStrip han'
-  have hmaps : MapsTo (fun t : ℝ => (0 : ℂ) + t • (1 : ℂ)) (Icc (a : ℝ) n) S :=
-    fun t ht => by simp [S, Complex.real_smul, ht.1, ht.2]
+  push_cast at hcast
   have hsum_cast :
       (∑ s ∈ Finset.Icc 1 m,
-        (((bernoulli (2 * s) : ℝ) / (2 * s)! *
-          (iteratedDerivWithin (2 * s - 1) f S n).re : ℝ) : ℂ)) =
+        ((bernoulli (2 * s) : ℂ) / (2 * s)!) *
+          (((iteratedDerivWithin (2 * s - 1) f S n).re : ℝ) : ℂ)) =
       ∑ s ∈ Finset.Icc 1 m,
         ((bernoulli (2 * s) : ℂ) / (2 * s)!) * iteratedDerivWithin (2 * s - 1) f S n := by
     refine Finset.sum_congr rfl fun s hs => ?_
-    have him0 : (iteratedDerivWithin (2 * s - 1) f S ((n : ℝ) : ℂ)).im = 0 := by
-      have hk : ((2 * s - 1 : ℕ) : WithTop ℕ∞) ≤ ((2 * m : ℕ) : WithTop ℕ∞) := by
-        exact_mod_cast (by have := (Finset.mem_Icc.mp hs).2; omega : 2 * s - 1 ≤ 2 * m)
-      simpa [Complex.real_smul] using
-        hf.map_pow_smul_iteratedDerivWithin_eq_zero huniqS (uniqueDiffOn_Icc han') hmaps
-          Complex.imCLM (fun t ht => by simpa [Complex.real_smul] using hreal t ht.1 ht.2)
-          hk ⟨han'.le, le_rfl⟩
+    have him0 : (iteratedDerivWithin (2 * s - 1) f S ((n : ℝ) : ℂ)).im = 0 :=
+      im_iteratedDerivWithin_eq_zero_of_real_on_Icc han' ⟨han'.le, le_rfl⟩
+        (by have := (Finset.mem_Icc.mp hs).2; omega) hf hreal
     have hre_eq : (((iteratedDerivWithin (2 * s - 1) f S n).re : ℝ) : ℂ) =
         iteratedDerivWithin (2 * s - 1) f S n :=
       Complex.ext rfl (by simpa using him0.symm)
-    rw [ofReal_mul, ofReal_div, ofReal_ratCast, ofReal_natCast, hre_eq]
+    rw [hre_eq]
   rw [hsum_cast] at hcast
+  simp only [← ofReal_mul] at hcast
   linear_combination hcast
 
 /-- **Supremum bound for the Abel–Plana Lagrange remainder** (DLMF 2.10.2). If `ϑ(y) ∈ [0, 1]` and
@@ -378,9 +401,7 @@ theorem abs_two_mul_pow_div_factorial_integral_im_le {g : ℂ → ℂ} {c : ℝ}
           sSup ((fun t : ℝ => |(g (c + ((t * y : ℝ) : ℂ) * I)).im|) '' Icc 0 1) *
             y ^ (2 * m) / (Real.exp (2 * π * y) - 1) := by
   have hcoeff : |2 * (-1 : ℝ) ^ m / (2 * m)!| = 2 / (2 * m)! := by
-    rw [abs_div, abs_mul, abs_pow, abs_neg, abs_one, one_pow, mul_one,
-      abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2),
-      abs_of_nonneg (Nat.cast_nonneg (2 * m)!)]
+    simp [abs_div, abs_mul]
   rw [abs_mul, hcoeff]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   rw [← Real.norm_eq_abs]

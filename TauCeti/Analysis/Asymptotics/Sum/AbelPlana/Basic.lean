@@ -32,7 +32,7 @@ For integers `a ≤ n` and a function `f : ℂ → ℂ` holomorphic on the open 
   boundary lines `Re z = a` and `Re z = n` against `(e^{2πy} - 1)⁻¹`.
 * If in addition `f` is real on `[a, n]` and the two boundary integrands
   `y ↦ Im f(c + iy) / (e^{2πy} - 1)` are integrable on `(0, ∞)` at `c = a` and `c = n`, Schwarz
-  reflection symmetry (`TauCeti.conj_apply_eq_of_im_eq_zero_on_strip`, imported from
+  reflection symmetry (`TauCeti.apply_conj_eq_conj_of_im_eq_zero_on_strip`, imported from
   `TauCeti.Analysis.Complex.Conformal.Reflection.Principle`) specializes this to the classical real
   form (`TauCeti.sum_Icc_eq_abelPlana`).
 
@@ -102,14 +102,18 @@ private theorem cexp_neg_two_pi_I_mul_int_add_mul_I (k : ℤ) (y : ℝ) :
       _ = ((2 * π * y : ℝ) : ℂ) := by rw [I_mul_I]; push_cast; ring
   rw [hy, Complex.ofReal_exp]
 
+/-- The nonzero constant `-2 * π * I`. -/
+private theorem neg_two_pi_I_ne_zero : (-2 * π * I : ℂ) ≠ 0 :=
+  mul_ne_zero (mul_ne_zero (neg_ne_zero.mpr two_ne_zero)
+    (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)) I_ne_zero
+
 /-- Solutions to `e^{-2πiz} = 1` are integers. -/
 private theorem exists_int_of_cexp_neg_two_pi_I_mul_eq_one {z : ℂ}
     (h : cexp (-2 * π * I * z) = 1) : ∃ m : ℤ, z = m := by
   obtain ⟨k, hk⟩ := Complex.exp_eq_one_iff.mp h
-  have hpi : (2 * π * I : ℂ) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero)) I_ne_zero
-  have hneg := mul_right_cancel₀ hpi (by linear_combination hk : -z * (2 * π * I) = k * (2 * π * I))
-  exact ⟨-k, by push_cast; linear_combination -hneg⟩
+  have hneg := mul_left_cancel₀ neg_two_pi_I_ne_zero
+    (by linear_combination hk : (-2 * π * I : ℂ) * z = (-2 * π * I) * (-k : ℂ))
+  exact ⟨-k, by push_cast; exact hneg⟩
 
 /-- `e^{-2πiz} ≠ 1` off the real axis. -/
 private theorem cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
@@ -414,9 +418,7 @@ private theorem tendsto_norm_mul_abelPlanaUpper_sub {f : ℂ → ℂ} {S : Set �
     (hk : (k : ℂ) ∈ S) (hcont : ContinuousOn f S) :
     Tendsto (fun w : ℂ => ‖w‖ * ‖abelPlanaUpper f ((k : ℂ) + w) - f k / (-2 * π * I * w)‖)
       (𝓝[{w : ℂ | w ≠ 0 ∧ (k : ℂ) + w ∈ S}] 0) (𝓝 0) := by
-  have hc_ne : (-2 * π * I : ℂ) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (neg_ne_zero.mpr two_ne_zero)
-      (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)) I_ne_zero
+  have hc_ne : (-2 * π * I : ℂ) ≠ 0 := neg_two_pi_I_ne_zero
   have hinv : Tendsto (fun u : ℂ => u / (cexp u - 1)) (𝓝[≠] (0 : ℂ)) (𝓝 1) := by
     simpa [div_eq_inv_mul] using
       ((Complex.hasDerivAt_exp 0).tendsto_slope_zero).inv₀ (by simp : cexp 0 ≠ 0)
@@ -470,9 +472,7 @@ private theorem tendsto_integral_abelPlanaUpper_sub_zero {f : ℂ → ℂ} {S : 
       ∀ t ∈ Icc (a₀ ε) (b₀ ε), ε ≤ ‖γ ε t‖ ∧ ‖γ ε t‖ ≤ 2 * ε ∧ (k : ℂ) + γ ε t ∈ S) :
     Tendsto (fun ε : ℝ => (∫ t in a₀ ε..b₀ ε, abelPlanaUpper f ((k : ℂ) + γ ε t)) -
       ∫ t in a₀ ε..b₀ ε, f k / (-2 * π * I * γ ε t)) (𝓝[>] 0) (𝓝 0) := by
-  have hc_ne : (-2 * π * I : ℂ) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (neg_ne_zero.mpr two_ne_zero)
-      (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)) I_ne_zero
+  have hc_ne : (-2 * π * I : ℂ) ≠ 0 := neg_two_pi_I_ne_zero
   have hlim := tendsto_norm_mul_abelPlanaUpper_sub hk hcont
   rw [Metric.tendsto_nhds]
   intro δ hδ
@@ -573,12 +573,77 @@ private theorem tendsto_upperLeftCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈
   simp only [sub_eq_add_neg, add_assoc]
   linear_combination -upperLeftCap_model (f ((j + 1 : ℤ) : ℂ)) hε
 
+/-- Shrinking the punctured unit subintervals `[j + ε, j + 1 - ε]` to `[j, j + 1]` recovers
+`- ∫_a^n f` as `ε → 0⁺`. -/
+private theorem tendsto_neg_sum_integral_Ico {f : ℂ → ℂ} {a n : ℤ} (han : a < n)
+    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    Tendsto
+      (fun ε : ℝ => - ∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), f x)
+      (𝓝[>] 0) (𝓝 (- ∫ x in (a : ℝ)..n, f x)) := by
+  have hcont_real : ContinuousOn (fun x : ℝ => f x) (Icc (a : ℝ) n) :=
+    hcont.comp Complex.continuous_ofReal.continuousOn fun x hx => ⟨by simp [hx.1], by simp [hx.2]⟩
+  have hsplit := (TauCeti.intervalIntegral.sum_integral_adjacent_intervals_Ico_int (μ := volume)
+    han.le (fun j : ℤ => (j : ℝ)) fun j hj => by
+      obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
+      simpa [Int.cast_add, Int.cast_one] using
+        (hcont_real.mono (Icc_subset_Icc (by exact_mod_cast hja)
+          (by exact_mod_cast hjn))).intervalIntegrable_of_Icc (by linarith)).symm
+  simp only [Int.cast_add, Int.cast_one] at hsplit
+  rw [hsplit]
+  refine (tendsto_finsetSum _ fun j hj => ?_).neg
+  obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
+  have hint_j : IntervalIntegrable (fun x : ℝ => f x) volume (j : ℝ) ((j : ℝ) + 1) :=
+    (hcont_real.mono (Icc_subset_Icc (by exact_mod_cast hja)
+      (by exact_mod_cast hjn))).intervalIntegrable_of_Icc (by linarith)
+  have h0 : Tendsto (fun ε : ℝ => ε) (𝓝[>] 0) (𝓝 0) :=
+    tendsto_id.mono_left nhdsWithin_le_nhds
+  refine (TauCeti.intervalIntegral.continuousOn_integral_prod hint_j
+    ((j : ℝ), (j : ℝ) + 1) ⟨left_mem_uIcc, right_mem_uIcc⟩).tendsto.comp
+      (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
+        (fun ε : ℝ => ((j : ℝ) + ε, (j : ℝ) + 1 - ε)) ?_ ?_)
+  · simpa using (tendsto_const_nhds (x := (j : ℝ)).add h0).prodMk_nhds
+      (tendsto_const_nhds (x := (j : ℝ) + 1).sub h0)
+  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with ε hε
+    rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1)]
+    exact ⟨⟨by linarith [hε.1], by linarith [hε.2]⟩, ⟨by linarith [hε.2], by linarith [hε.1]⟩⟩
+
 /-! ### General complex Abel–Plana formula and Schwarz-symmetric specialization -/
 
 /-- Schwarz conjugate `z ↦ conj (f (conj z))` used to deduce the lower half-plane contour identity
 from the upper half-plane one. -/
 private noncomputable def schwarzConjFun (f : ℂ → ℂ) (z : ℂ) : ℂ :=
   conj (f (conj z))
+
+/-- Combining the upper and conjugated lower quarter-box limits over `j ∈ [a, n)` yields the
+trapezoidal sum `∑_{j=a}^n f(j) - f(a) / 2 - f(n) / 2` as `ε → 0⁺`. -/
+private theorem tendsto_sum_abelPlana_caps {f : ℂ → ℂ} {a n : ℤ} (han : a < n)
+    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    Tendsto
+      (fun ε : ℝ => ∑ j ∈ Finset.Ico a n,
+        (upperRightCap f j ε + conj (upperRightCap (schwarzConjFun f) j ε) +
+          upperLeftCap f (j + 1) ε + conj (upperLeftCap (schwarzConjFun f) (j + 1) ε)))
+      (𝓝[>] 0) (𝓝 ((∑ j ∈ Finset.Icc a n, f j) - f a / 2 - f n / 2)) := by
+  have hcont_conj : ContinuousOn (schwarzConjFun f) {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n} :=
+    continuousOn_conj_conj_of_symmetric (fun _ h => by simpa using h) hcont
+  have htrap : ∑ j ∈ Finset.Ico a n, (f j / 2 + f ((j + 1 : ℤ) : ℂ) / 2) =
+      (∑ j ∈ Finset.Icc a n, f j) - f a / 2 - f n / 2 := by
+    have hsum := Finset.sum_Ico_add_add_endpoints (fun j : ℤ => f j / 2) han.le
+    have h2 : 2 • ∑ j ∈ Finset.Icc a n, f j / 2 = ∑ j ∈ Finset.Icc a n, f j := by
+      rw [Finset.smul_sum]
+      exact Finset.sum_congr rfl fun j _ => by rw [two_smul, add_halves]
+    rw [h2] at hsum; linear_combination hsum
+  rw [← htrap]
+  refine tendsto_finsetSum _ fun j hj => ?_
+  have hr2 := (Complex.continuous_conj.tendsto _).comp (tendsto_upperRightCap hj hcont_conj)
+  have hl2 := (Complex.continuous_conj.tendsto _).comp (tendsto_upperLeftCap hj hcont_conj)
+  have hsum4 := (((tendsto_upperRightCap hj hcont).add hr2).add
+    (tendsto_upperLeftCap hj hcont)).add hl2
+  have hval : f j / 4 + conj (schwarzConjFun f j / 4) + f ((j + 1 : ℤ) : ℂ) / 4 +
+      conj (schwarzConjFun f ((j + 1 : ℤ) : ℂ) / 4) =
+      f j / 2 + f ((j + 1 : ℤ) : ℂ) / 2 := by
+    dsimp only [schwarzConjFun]
+    simp only [map_div₀, map_ofNat, map_intCast, starRingEnd_self_apply]; ring
+  rwa [hval] at hsum4
 
 private theorem tendsto_schwarzConjFun_growth {f : ℂ → ℂ} {a b : ℝ}
     (hgrowth : Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
@@ -757,61 +822,9 @@ theorem sum_Icc_eq_abelPlana_sub {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
           (f (n + y * I) - f (n - y * I)) / (Real.exp (2 * π * y) - 1)) := by
   rcases han.lt_or_eq with han | rfl
   swap; · simp
-  have hcont_conj : ContinuousOn (schwarzConjFun f) {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n} :=
-    continuousOn_conj_conj_of_symmetric (fun _ h => by simpa using h) hcont
-  have hlim_seg : Tendsto
-      (fun ε : ℝ => - ∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), f x)
-      (𝓝[>] 0) (𝓝 (- ∫ x in (a : ℝ)..n, f x)) := by
-    have hcont_real : ContinuousOn (fun x : ℝ => f x) (Icc (a : ℝ) n) :=
-      hcont.comp Complex.continuous_ofReal.continuousOn fun x hx => ⟨by simp [hx.1], by simp [hx.2]⟩
-    have hsplit := (TauCeti.intervalIntegral.sum_integral_adjacent_intervals_Ico_int (μ := volume)
-      han.le (fun j : ℤ => (j : ℝ)) fun j hj => by
-        obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
-        simpa [Int.cast_add, Int.cast_one] using
-          (hcont_real.mono (Icc_subset_Icc (by exact_mod_cast hja)
-            (by exact_mod_cast hjn))).intervalIntegrable_of_Icc (by linarith)).symm
-    simp only [Int.cast_add, Int.cast_one] at hsplit
-    rw [hsplit]
-    refine (tendsto_finsetSum _ fun j hj => ?_).neg
-    obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
-    have hint_j : IntervalIntegrable (fun x : ℝ => f x) volume (j : ℝ) ((j : ℝ) + 1) :=
-      (hcont_real.mono (Icc_subset_Icc (by exact_mod_cast hja)
-        (by exact_mod_cast hjn))).intervalIntegrable_of_Icc (by linarith)
-    have h0 : Tendsto (fun ε : ℝ => ε) (𝓝[>] 0) (𝓝 0) :=
-      tendsto_id.mono_left nhdsWithin_le_nhds
-    refine (TauCeti.intervalIntegral.continuousOn_integral_prod hint_j
-      ((j : ℝ), (j : ℝ) + 1) ⟨left_mem_uIcc, right_mem_uIcc⟩).tendsto.comp
-        (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
-          (fun ε : ℝ => ((j : ℝ) + ε, (j : ℝ) + 1 - ε)) ?_ ?_)
-    · simpa using (tendsto_const_nhds (x := (j : ℝ)).add h0).prodMk_nhds
-        (tendsto_const_nhds (x := (j : ℝ) + 1).sub h0)
-    · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with ε hε
-      rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1)]
-      exact ⟨⟨by linarith [hε.1], by linarith [hε.2]⟩, ⟨by linarith [hε.2], by linarith [hε.1]⟩⟩
-  have hlim_caps : Tendsto
-      (fun ε : ℝ => ∑ j ∈ Finset.Ico a n,
-        (upperRightCap f j ε + conj (upperRightCap (schwarzConjFun f) j ε) +
-          upperLeftCap f (j + 1) ε + conj (upperLeftCap (schwarzConjFun f) (j + 1) ε)))
-      (𝓝[>] 0) (𝓝 ((∑ j ∈ Finset.Icc a n, f j) - f a / 2 - f n / 2)) := by
-    have htrap : ∑ j ∈ Finset.Ico a n, (f j / 2 + f ((j + 1 : ℤ) : ℂ) / 2) =
-        (∑ j ∈ Finset.Icc a n, f j) - f a / 2 - f n / 2 := by
-      have hsum := Finset.sum_Ico_add_add_endpoints (fun j : ℤ => f j / 2) han.le
-      have h2 : 2 • ∑ j ∈ Finset.Icc a n, f j / 2 = ∑ j ∈ Finset.Icc a n, f j := by
-        rw [Finset.smul_sum]
-        exact Finset.sum_congr rfl fun j _ => by rw [two_smul, add_halves]
-      rw [h2] at hsum; linear_combination hsum
-    rw [← htrap]
-    refine tendsto_finsetSum _ fun j hj => ?_
-    have hr2 := (Complex.continuous_conj.tendsto _).comp (tendsto_upperRightCap hj hcont_conj)
-    have hl2 := (Complex.continuous_conj.tendsto _).comp (tendsto_upperLeftCap hj hcont_conj)
-    have hsum4 := (((tendsto_upperRightCap hj hcont).add hr2).add
-      (tendsto_upperLeftCap hj hcont)).add hl2
-    have hval : f j / 4 + conj (schwarzConjFun f j / 4) + f ((j + 1 : ℤ) : ℂ) / 4 +
-        conj (schwarzConjFun f ((j + 1 : ℤ) : ℂ) / 4) =
-        f j / 2 + f ((j + 1 : ℤ) : ℂ) / 2 := by
-      dsimp only [schwarzConjFun]
-      simp only [map_div₀, map_ofNat, map_intCast, starRingEnd_self_apply]; ring
-    rwa [hval] at hsum4
+  -- Combine the segment, quarter-box, and improper vertical-tail limits as `ε → 0⁺`.
+  have hlim_seg := tendsto_neg_sum_integral_Ico han hcont
+  have hlim_caps := tendsto_sum_abelPlana_caps han hcont
   have hlim_rhs :=
     ((hinta.continuousWithinAt_Ici_primitive_Ioi.mono Ioi_subset_Ici_self).tendsto.const_mul I).sub
       ((hintn.continuousWithinAt_Ici_primitive_Ioi.mono Ioi_subset_Ici_self).tendsto.const_mul I)
@@ -851,7 +864,7 @@ theorem sum_Icc_eq_abelPlana {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
     intro k hka hkn hk_int
     have hdiff : ∀ y : ℝ, (f (k + y * I) - f (k - y * I)) / (Real.exp (2 * π * y) - 1) =
         (2 * I) * (((f (k + y * I)).im / (Real.exp (2 * π * y) - 1) : ℝ) : ℂ) := fun y => by
-      have hsymm := conj_apply_eq_of_im_eq_zero_on_strip han' hf hcont
+      have hsymm := apply_conj_eq_conj_of_im_eq_zero_on_strip han' hf hcont
         (fun x h1 h2 => hreal x h1.le h2.le)
         (z := (k : ℂ) + (y : ℂ) * I) ⟨by simp [hka], by simp [hkn]⟩
       have hconj : conj ((k : ℂ) + (y : ℂ) * I) = (k : ℂ) - (y : ℂ) * I := by

@@ -42,7 +42,7 @@ axis, determines a bounded holomorphic function on a strip by its values on one 
 the KMS functions of C⋆-algebra dynamics. Applying boundary uniqueness to
 `z ↦ f z - conj (f (conj z))` yields global conjugation symmetry `f (conj z) = conj (f z)` for a
 holomorphic function real on the real axis (`TauCeti.apply_conj_eq_conj_of_real_on_axis`), and by
-continuity on the closure of a vertical strip (`TauCeti.conj_apply_eq_of_im_eq_zero_on_strip`).
+continuity on the closure of a vertical strip (`TauCeti.apply_conj_eq_conj_of_im_eq_zero_on_strip`).
 -/
 
 public section
@@ -263,7 +263,7 @@ theorem apply_conj_eq_conj_of_real_on_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω)
 /-- **Schwarz reflection symmetry on a closed vertical strip.** If `f` is holomorphic on the open
 strip `a < Re z < b` (`a < b`), continuous on the closed strip `a ≤ Re z ≤ b`, and real on
 `(a, b)`, then `f (conj z) = conj (f z)` throughout the closed strip. -/
-theorem conj_apply_eq_of_im_eq_zero_on_strip {a b : ℝ} (hab : a < b)
+theorem apply_conj_eq_conj_of_im_eq_zero_on_strip {a b : ℝ} (hab : a < b)
     (hf : DifferentiableOn ℂ f {z | a < z.re ∧ z.re < b})
     (hcont : ContinuousOn f {z | a ≤ z.re ∧ z.re ≤ b})
     (hreal : ∀ x : ℝ, a < x → x < b → (f x).im = 0)
