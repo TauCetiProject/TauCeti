@@ -13,7 +13,9 @@ public import TauCeti.NumberTheory.Real.Irrational
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.TwistedWirtinger
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -60,7 +62,9 @@ normal line.
 Integration by parts over the fundamental domain rests on one periodicity: for `C¹` sections `u`
 and `φ` twisted by the same unit complex number along `ω₁`, the function `u conj φ` is periodic in
 the first lattice coordinate, so its derivative along `ω₁` integrates to zero
-(`TauCeti.setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero`).
+(`TauCeti.setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero`). Derivatives of sections are
+again sections of the same line (`TauCeti.fderiv_add_eq_smul`,
+`TauCeti.wirtingerDeriv_add_apply_one_eq_mul`, `TauCeti.conjWirtingerDeriv_add_apply_one_eq_mul`).
 
 ## Proof
 
@@ -219,6 +223,22 @@ theorem setIntegral_fderiv_mul_conj_add_mul_conj_fderiv_eq_zero {φ : ℂ → �
   simp only [hL₁, hu₁, hφ₁, map_mul]
   linear_combination (u (L (0, t)) * conj (φ (L (0, t)))) * hconj
 
+/-- If `u (z + ω) = χ u z`, then also `∂u (z + ω) = χ ∂u z`: the Wirtinger derivative of a
+section of a flat line is a section of the same line. -/
+theorem wirtingerDeriv_add_apply_one_eq_mul {ω χ : ℂ} (h : ∀ z, u (z + ω) = χ * u z) (z : ℂ) :
+    wirtingerDeriv u (z + ω) 1 = χ * wirtingerDeriv u z 1 := by
+  simp only [wirtingerDeriv_apply, fderiv_add_eq_smul (𝕜 := ℝ) (a := χ) h, smul_apply,
+    smul_eq_mul]
+  ring
+
+/-- If `u (z + ω) = χ u z`, then also `∂bar u (z + ω) = χ ∂bar u z`: the conjugate Wirtinger
+derivative of a section of a flat line is a section of the same line. -/
+theorem conjWirtingerDeriv_add_apply_one_eq_mul {ω χ : ℂ} (h : ∀ z, u (z + ω) = χ * u z)
+    (z : ℂ) : conjWirtingerDeriv u (z + ω) 1 = χ * conjWirtingerDeriv u z 1 := by
+  simp only [conjWirtingerDeriv_apply, fderiv_add_eq_smul (𝕜 := ℝ) (a := χ) h, smul_apply,
+    smul_eq_mul]
+  ring
+
 /-- **A periodic potential.** Let `u` be `C²` with `u (z + ω₁) = χ₁ u z` for a unit complex
 number `χ₁`, and `v (s, t) = u (s ω₁ + t ω₂)`. For every direction `w`, the function
 `v conj (Du w)` is periodic in `s`, so its `s`-derivative `∂_s v conj (Du w) + v conj (D²u ω₁ w)`
@@ -229,13 +249,10 @@ private theorem setIntegral_potential_eq_zero (hu : ContDiff ℝ 2 u) (hχ₁ : 
       (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) ω₁ * conj (fderiv ℝ u (p.1 * ω₁ + p.2 * ω₂) w) +
         u (p.1 * ω₁ + p.2 * ω₂) * conj (fderiv ℝ (fderiv ℝ u) (p.1 * ω₁ + p.2 * ω₂) ω₁ w)) =
       0 := by
-  have hud : Differentiable ℝ u := hu.differentiable (by norm_num)
   have hdu : Differentiable ℝ (fderiv ℝ u) :=
     (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero
   -- Differentiating `u (z + ω₁) = χ₁ u z` twists the derivative by the same `χ₁`.
-  have hdu₁ (z : ℂ) : fderiv ℝ u (z + ω₁) = χ₁ • fderiv ℝ u z := by
-    have := congrArg (fun g ↦ fderiv ℝ g z) (funext h₁ : (fun z ↦ u (z + ω₁)) = fun z ↦ χ₁ * u z)
-    simpa only [fderiv_comp_add_right, fderiv_const_mul (hud z)] using this
+  have hdu₁ := fderiv_add_eq_smul (𝕜 := ℝ) (a := χ₁) h₁
   have hd (z : ℂ) : fderiv ℝ (fun z ↦ fderiv ℝ u z w) z ω₁ = fderiv ℝ (fderiv ℝ u) z ω₁ w := by
     rw [fderiv_clm_apply (hdu z) (differentiableAt_const w)]
     simp
@@ -462,8 +479,8 @@ private theorem mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq (hu : C
   have hIc : Continuous fun p ↦ ε * (2 * (conj ω₁ * ω₂).im *
       (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im) := by
     fun_prop
-  have him := setIntegral_im_mul_conj_eq_zero hu (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₁))
-    (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₂)) h₁ h₂
+  have him := setIntegral_im_mul_conj_eq_zero hu (norm_exp_two_pi_mul_ofReal_mul_I θ₁)
+    (norm_exp_two_pi_mul_ofReal_mul_I θ₂) h₁ h₂
   refine mul_setIntegral_le_of_four_mul (W := fun p ↦ W (L p))
     (V := ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (L p)‖ ^ 2)
     (G := fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
