@@ -422,6 +422,15 @@ theorem valueSet_shift (v : N) :
   · rintro ⟨l, ⟨u, hu⟩, rfl⟩
     exact ⟨u, by rw [hu]; norm_cast⟩
 
+/-- A shift fixes a valuation exactly when every root vanishes on the shifting vector. -/
+theorem shift_eq_self_iff {v : N} : φ.shift v = φ ↔ ∀ i, P.root' i v = 0 := by
+  refine ⟨fun h i ↦ ?_, fun h ↦ ext fun i u ↦ by simp [h]⟩
+  obtain ⟨k, u, hu⟩ := (φ.valueSet_nontrivial i).nonempty
+  have e : φ i u + (P.root' i v : WithTop ℝ) = φ i u := by
+    simpa using congrArg (fun ψ : Valuation D ↦ ψ i u) h
+  rw [hu] at e
+  exact_mod_cast add_eq_left.mp (by exact_mod_cast e : k + P.root' i v = k)
+
 /-- The coroot space acts on the valuations by shifts: `v +ᵥ φ = φ + v`. -/
 instance : AddAction N (Valuation D) where
   vadd v φ := φ.shift v
