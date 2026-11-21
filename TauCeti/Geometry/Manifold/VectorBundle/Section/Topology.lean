@@ -68,7 +68,7 @@ def frameJet : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜]
     ∀ (i : ι) (x : U i) (m : {m : ℕ // m ≤ n}),
       C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F) :=
   LinearMap.pi fun i ↦ LinearMap.pi fun x ↦ LinearMap.pi fun m ↦
-    (ContMDiffMap.chartIteratedFDerivLinearMap x m m.2).comp
+    (ContMDiffMap.chartIteratedFDerivLinearMap x m m.property).comp
       ((e i).frameCoordinates (hU i))
 
 /-- The frame jet is the native chart derivative of the frame-coordinate function. -/
@@ -80,7 +80,7 @@ theorem frameJet_apply (s : Cₛ^n⟮I; F, V⟯) (i : ι) (x : U i)
       ∀ (i : ι) (x : U i) (m : {m : ℕ // m ≤ n}),
         C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F))
       (frameJet e U hU) s i x m =
-      ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x m m.2 :=
+      ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x m m.property :=
   ContMDiffMap.chartIteratedFDerivLinearMap_apply _ _ _ _
 
 /-- The topology of compact convergence of all available coordinate derivatives in the
@@ -120,11 +120,44 @@ theorem continuous_frameJet_apply (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n) :
   let _ := frameTopology (I := I) (n := n) e U hU
   exact (continuous_frameTopology_iff (I := I) (n := n) e U hU).mp continuous_id i x m hm
 
+/-- A frame-coordinate jet at a chosen coordinate point depends continuously on the section. -/
+theorem continuous_frameJetAt (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n)
+    (z : (extChartAt I x).target) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous ((e i).frameJetAt (hU i) x m hm z) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  rw [funext ((e i).frameJetAt_apply (hU i) x m hm z)]
+  exact (continuous_eval_const z).comp (continuous_frameJet_apply e U hU i x m hm)
+
 /-- Addition and subtraction are continuous for the frame topology. -/
 theorem isTopologicalAddGroup_frameTopology :
     let _ := frameTopology (I := I) (n := n) e U hU
     IsTopologicalAddGroup Cₛ^n⟮I; F, V⟯ :=
   isTopologicalAddGroup_induced (frameJet (I := I) e U hU)
+
+/-- The additive uniformity compatible with the existing compact derivative frame topology.
+It is supplied explicitly because the frame system is a parameter. -/
+@[expose, instance_reducible]
+def frameUniformSpace : UniformSpace Cₛ^n⟮I; F, V⟯ :=
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  IsTopologicalAddGroup.rightUniformSpace _
+
+/-- The frame uniformity retains the original compact derivative topology on sections. -/
+@[simp]
+theorem frameUniformSpace_toTopologicalSpace :
+    (frameUniformSpace (I := I) (n := n) e U hU).toTopologicalSpace =
+      frameTopology (I := I) (n := n) e U hU :=
+  (rfl)
+
+/-- The frame uniformity makes sections a uniform additive group. -/
+theorem isUniformAddGroup_frameUniformSpace :
+    let _ := frameUniformSpace (I := I) (n := n) e U hU
+    IsUniformAddGroup Cₛ^n⟮I; F, V⟯ := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  let _ := frameUniformSpace (I := I) (n := n) e U hU
+  exact isUniformAddGroup_of_addCommGroup
 
 /-- Joint scalar multiplication is continuous for the frame topology. -/
 theorem continuousSMul_frameTopology :
@@ -171,10 +204,10 @@ theorem isInducing_sectionFrameCoordinates :
   let J : (∀ i, C^n⟮I, U i; 𝓘(𝕜, F), F⟯) →
       ∀ (i : ι) (x : U i) (m : {m : ℕ // m ≤ n}),
         C((extChartAt I x).target, E [×(m : ℕ)]→L[𝕜] F) :=
-    fun f i x m ↦ ContMDiffMap.chartIteratedFDeriv (f i) x m m.2
+    fun f i x m ↦ ContMDiffMap.chartIteratedFDeriv (f i) x m m.property
   have hJ : Continuous J := continuous_pi fun i ↦ continuous_pi fun x ↦
     continuous_pi fun m ↦
-      (ContMDiffMap.continuous_chartIteratedFDeriv x m m.2).comp (continuous_apply i)
+      (ContMDiffMap.continuous_chartIteratedFDeriv x m m.property).comp (continuous_apply i)
   have hcomp : J ∘ TauCeti.Manifold.sectionFrameCoordinates (I := I) e U hU =
       frameJet e U hU := by
     funext s i x m
@@ -253,7 +286,7 @@ theorem continuous_totalSpace_eval (hcover : ∀ x, ∃ i, x ∈ U i) :
       ContMDiffMap.continuous_eval_manifoldWeakWhitney.comp
         (((continuous_frameCoordinates e U hU i).comp continuous_fst).prodMk continuous_snd)
     have ht := (e i).continuousOn_symm.comp_continuous
-      ((continuous_subtype_val.comp continuous_snd).prodMk hc)
+      ((continuous_subtypeVal.comp continuous_snd).prodMk hc)
       (fun p ↦ ⟨hU i p.2.property, Set.mem_univ _⟩)
     exact ht.congr fun p ↦ by
       simp only [Function.comp_apply, Trivialization.frameCoordinates_apply,

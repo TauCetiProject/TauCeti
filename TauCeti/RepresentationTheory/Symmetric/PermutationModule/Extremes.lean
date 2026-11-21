@@ -37,8 +37,6 @@ Both isomorphisms come with the lemmas reading them, and their inverses, on the 
 ## References
 
 * G. D. James, *The Representation Theory of the Symmetric Groups*, §4.
-* [Schur-Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 1, “the base cases `M^{(n)} = S^{(n)}` (trivial) and `M^{(1ⁿ)} = ℚ[Sₙ]` (regular)”.
 -/
 
 public section
@@ -163,7 +161,7 @@ theorem char_permutationModule_ones (n : ℕ) (σ : Equiv.Perm (Fin n)) :
     rw [hcard, ite_eq_left rfl]
   · have : IsEmpty {q : Equiv.Perm (Fin n) ⧸ (⊥ : Subgroup (Equiv.Perm (Fin n))) //
         σ • q = q} :=
-      ⟨fun q => hσ ((quotientBot_smul_eq_self_iff σ q.1).mp q.2)⟩
+      ⟨fun q => hσ ((quotientBot_smul_eq_self_iff σ q.val).mp q.property)⟩
     rw [Nat.card_of_isEmpty, ite_eq_right hσ, Nat.cast_zero]
 
 end TauCeti

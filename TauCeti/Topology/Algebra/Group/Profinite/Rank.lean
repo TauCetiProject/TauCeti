@@ -95,14 +95,14 @@ for a group with no such generating set the empty infimum makes the rank `0`, an
 below assumes what it needs. -/
 noncomputable def topologicalGeneratorRank : Cardinal.{u} :=
   ⨅ s : {s : Set G // ConvergesToOne s ∧ (Subgroup.closure s).topologicalClosure = ⊤},
-    #(s.1 : Set G)
+    #(s.val : Set G)
 
 /-- The defining equation of the topological generator rank: the body of
 `TauCeti.topologicalGeneratorRank` is not exposed, so unfolding it goes through this lemma. -/
 theorem topologicalGeneratorRank_def :
     topologicalGeneratorRank G =
       ⨅ s : {s : Set G // ConvergesToOne s ∧ (Subgroup.closure s).topologicalClosure = ⊤},
-        #(s.1 : Set G) := by
+        #(s.val : Set G) := by
   rw [topologicalGeneratorRank]
 
 /-- The **natural-number topological generator rank** of a topologically finitely generated
@@ -150,9 +150,9 @@ theorem lift_topologicalGeneratorRank_congr (e : G ≃ₜ* H) :
     Cardinal.lift.{v} (topologicalGeneratorRank G)
       = Cardinal.lift.{u} (topologicalGeneratorRank H) := by
   have hrange : Set.range (fun s : {s : Set G // ConvergesToOne s ∧
-        (Subgroup.closure s).topologicalClosure = ⊤} ↦ Cardinal.lift.{v} #(s.1 : Set G))
+        (Subgroup.closure s).topologicalClosure = ⊤} ↦ Cardinal.lift.{v} #(s.val : Set G))
       = Set.range (fun t : {t : Set H // ConvergesToOne t ∧
-        (Subgroup.closure t).topologicalClosure = ⊤} ↦ Cardinal.lift.{u} #(t.1 : Set H)) := by
+        (Subgroup.closure t).topologicalClosure = ⊤} ↦ Cardinal.lift.{u} #(t.val : Set H)) := by
     refine Set.Subset.antisymm ?_ ?_
     · rintro _ ⟨⟨s, hs, hgen⟩, rfl⟩
       refine ⟨⟨(e.toMulEquiv.toMonoidHom : G →* H) '' s,
@@ -198,8 +198,8 @@ theorem exists_convergesToOne_mk_eq_topologicalGeneratorRank [CompactSpace G]
     let ⟨s, hs, hgen⟩ := exists_convergesToOne_topologicallyGenerates (G := G)
     ⟨⟨s, hs, hgen⟩⟩
   obtain ⟨s, hs⟩ := ciInf_mem fun s : {s : Set G // ConvergesToOne s ∧
-    (Subgroup.closure s).topologicalClosure = ⊤} ↦ #(s.1 : Set G)
-  refine ⟨s.1, s.2.1, s.2.2, ?_⟩
+    (Subgroup.closure s).topologicalClosure = ⊤} ↦ #(s.val : Set G)
+  refine ⟨s.val, s.property.1, s.property.2, ?_⟩
   rw [topologicalGeneratorRank_def]
   exact hs
 
@@ -386,22 +386,24 @@ theorem topologicalGeneratorRankNat_congr (e : G ≃ₜ* H) (hG : IsTopologicall
 available. Every theorem that subtracts ranks is stated with the accessor, and this is how it
 connects to the general cardinal theory. -/
 @[simp]
-theorem topologicalGeneratorRankNat_eq_topologicalGeneratorRank [CompactSpace G]
-    [TotallyDisconnectedSpace G] (h : IsTopologicallyFinitelyGenerated G) :
+theorem topologicalGeneratorRankNat_eq_topologicalGeneratorRank
+    (h : IsTopologicallyFinitelyGenerated G) :
     (topologicalGeneratorRankNat G h : Cardinal.{u}) = topologicalGeneratorRank G := by
-  obtain ⟨s, -, hgen, hcard⟩ := exists_convergesToOne_mk_eq_topologicalGeneratorRank G
-  have hlt : #(s : Set G) < ℵ₀ := by
-    rw [hcard]
-    exact topologicalGeneratorRank_lt_aleph0_iff.mpr h
-  have hfin : s.Finite := Cardinal.lt_aleph0_iff_set_finite.mp hlt
-  obtain ⟨t, rfl⟩ : ∃ t : Finset G, (t : Set G) = s := ⟨hfin.toFinset, hfin.coe_toFinset⟩
+  obtain ⟨u, hucard, hugen⟩ := exists_finset_card_eq_topologicalGeneratorRankNat h
   refine le_antisymm ?_ ?_
-  · rw [← hcard]
-    calc (topologicalGeneratorRankNat G h : Cardinal.{u})
-        ≤ (t.card : Cardinal.{u}) := by exact_mod_cast topologicalGeneratorRankNat_le h hgen
-      _ = #((t : Set G)) := by simp
-  · obtain ⟨u, hucard, hugen⟩ := exists_finset_card_eq_topologicalGeneratorRankNat h
-    rw [← hucard]
+  · -- every admissible generating set is finite and at least as large as the accessor, or infinite
+    rw [topologicalGeneratorRank_def]
+    have : Nonempty {s : Set G // ConvergesToOne s ∧ (Subgroup.closure s).topologicalClosure = ⊤} :=
+      ⟨⟨(u : Set G), u.finite_toSet.convergesToOne, hugen⟩⟩
+    refine le_ciInf fun ⟨s, _, hgen⟩ ↦ ?_
+    by_cases hfin : s.Finite
+    · obtain ⟨t, rfl⟩ : ∃ t : Finset G, (t : Set G) = s := ⟨hfin.toFinset, hfin.coe_toFinset⟩
+      calc (topologicalGeneratorRankNat G h : Cardinal.{u})
+          ≤ (t.card : Cardinal.{u}) := by exact_mod_cast topologicalGeneratorRankNat_le h hgen
+        _ = #((t : Set G)) := by simp
+    · exact (Cardinal.natCast_lt_aleph0).le.trans
+        (Cardinal.infinite_iff.1 (Set.infinite_coe_iff.2 hfin))
+  · rw [← hucard]
     refine le_trans (topologicalGeneratorRank_le u.finite_toSet.convergesToOne hugen) ?_
     simp
 

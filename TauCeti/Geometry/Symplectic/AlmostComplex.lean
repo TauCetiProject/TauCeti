@@ -37,7 +37,11 @@ on tangent fibers rather than restating the linear algebra.
   determinant, and `TauCeti.SymplecticForm.exists_apply_eq_one`: existence of a
   hyperbolic partner for every nonzero vector.
 * `TauCeti.SymplecticForm.Tames`: the positivity condition `0 < ω v (J v)` for `v ≠ 0`.
+* `TauCeti.SymplecticForm.ofTames`: an alternating form `B` with `B v (J v) > 0` for every
+  nonzero `v` is a symplectic form, which tames `J` (`TauCeti.SymplecticForm.tames_ofTames`).
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
+* `TauCeti.SymplecticForm.exists_tames_not_compatible`: a tame pair on `ℝ⁴` which is not
+  compatible, so taming is strictly weaker than compatibility.
 * `TauCeti.AlmostComplexStructure.product`: the standard almost complex structure on
   `V × V`, sending `(x, y)` to `(-y, x)`.
 * `TauCeti.cayleyFormula`: the Cayley coordinate expression `-(1 + A B)(1 - A B)⁻¹` in any ring,
@@ -420,7 +424,7 @@ underlying endomorphisms. -/
 lemma isComplexLinearMap_iff_isComplexLinear (J : AlmostComplexStructure V)
     (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
     IsComplexLinearMap J J' F ↔ IsComplexLinear J.toLinearMap J'.toLinearMap F :=
-  Iff.rfl
+  isComplexLinear_iff.symm
 
 /-- Rewrite complex-linearity of a real-linear map as the pointwise equation
 `F (J v) = J' (F v)`. -/
@@ -440,7 +444,7 @@ lemma isComplexLinearMap_iff_mem_complexLinearMaps (J : AlmostComplexStructure V
 @[simp]
 lemma isComplexLinearMap_zero (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W) :
     IsComplexLinearMap J J' (0 : V →ₗ[ℝ] W) :=
-  isComplexLinear_zero
+  (isComplexLinearMap_iff_isComplexLinear J J' 0).mpr isComplexLinear_zero
 
 /-- Complex-linear maps are closed under addition. -/
 lemma IsComplexLinearMap.add {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
@@ -453,7 +457,8 @@ lemma IsComplexLinearMap.add {J : AlmostComplexStructure V} {J' : AlmostComplexS
 lemma IsComplexLinearMap.neg {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) :
     IsComplexLinearMap J J' (-F) :=
-  IsComplexLinear.neg hF
+  (isComplexLinearMap_iff_isComplexLinear J J' (-F)).mpr
+    ((isComplexLinearMap_iff_isComplexLinear J J' F).mp hF).neg
 
 /-- Negating a map preserves and reflects complex-linearity. -/
 @[simp]
@@ -504,14 +509,31 @@ lemma IsComplexLinearMap.smul {J : AlmostComplexStructure V} {J' : AlmostComplex
 @[simp]
 lemma isComplexLinearMap_id (J : AlmostComplexStructure V) :
     IsComplexLinearMap J J (LinearMap.id : V →ₗ[ℝ] V) :=
-  isComplexLinear_id
+  (isComplexLinearMap_iff_isComplexLinear J J LinearMap.id).mpr isComplexLinear_id
 
 /-- Complex-linear maps are closed under composition. -/
 lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {J'' : AlmostComplexStructure X} {F : V →ₗ[ℝ] W} {G : W →ₗ[ℝ] X}
     (hG : IsComplexLinearMap J' J'' G) (hF : IsComplexLinearMap J J' F) :
     IsComplexLinearMap J J'' (G.comp F) :=
-  IsComplexLinear.comp hG hF
+  (isComplexLinearMap_iff_isComplexLinear J J'' (G.comp F)).mpr
+    (((isComplexLinearMap_iff_isComplexLinear J' J'' G).mp hG).comp
+      ((isComplexLinearMap_iff_isComplexLinear J J' F).mp hF))
+
+/-- The range of a complex-linear map is invariant under the target structure. -/
+theorem IsComplexLinearMap.apply_mem_range
+    {j : AlmostComplexStructure V} {J : AlmostComplexStructure W} {f : V →ₗ[ℝ] W}
+    (hf : IsComplexLinearMap j J f) {v : W} (hv : v ∈ LinearMap.range f) :
+    J v ∈ LinearMap.range f := by
+  obtain ⟨u, rfl⟩ := hv
+  exact ⟨j u, (isComplexLinearMap_iff_apply _ _ _).1 hf u⟩
+
+/-- The kernel of a complex-linear map is invariant under the source structure: if `f u = 0`
+then `f (j u) = J (f u) = 0`. -/
+theorem IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero
+    {j : AlmostComplexStructure V} {J : AlmostComplexStructure W} {f : V →ₗ[ℝ] W}
+    (hf : IsComplexLinearMap j J f) {u : V} (hu : f u = 0) : f (j u) = 0 := by
+  rw [(isComplexLinearMap_iff_apply j J f).1 hf u, hu, J.apply_zero]
 
 /-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
 the restricted complex structure. -/
@@ -633,6 +655,11 @@ lemma neg_eq (ω : SymplecticForm V) (v w : V) :
     -ω v w = ω w v :=
   ω.isAlt.neg_eq v w
 
+/-- A symplectic form is linear in its second argument; in particular it commutes with negation
+there. -/
+lemma apply_neg (ω : SymplecticForm V) (v w : V) : ω v (-w) = -ω v w :=
+  map_neg (ω.toBilinForm v) w
+
 /-- Bilinear expansion of `ω` on the plane spanned by a pair of vectors: only the mixed term
 `ω x y` survives. -/
 lemma apply_smul_add_smul (ω : SymplecticForm V) (x y : V) (a b c d : ℝ) :
@@ -737,6 +764,39 @@ lemma tames_iff_associated_pos (ω : SymplecticForm V) (J : AlmostComplexStructu
     fun h v hv => by
       simpa [associatedBilinForm, LinearMap.BilinMap.toQuadraticMap_apply] using h v hv⟩
 
+section OfTames
+
+variable {B : LinearMap.BilinForm ℝ V} {J : AlmostComplexStructure V}
+
+/-- An alternating bilinear form `B` with `B v (J v) > 0` for every nonzero `v` is nondegenerate,
+hence a symplectic form; it tames `J` (`TauCeti.SymplecticForm.tames_ofTames`). -/
+def ofTames (B : LinearMap.BilinForm ℝ V) (hB : B.IsAlt) (hJ : ∀ v, v ≠ 0 → 0 < B v (J v)) :
+    SymplecticForm V where
+  toBilinForm := B
+  isAlt := hB
+  nondegenerate := hB.isRefl.nondegenerate_iff_separatingLeft.mpr fun v hv ↦ by
+    by_contra h
+    exact (hJ v h).ne' (hv (J v))
+
+@[simp]
+theorem ofTames_toBilinForm (hB : B.IsAlt) (hJ : ∀ v, v ≠ 0 → 0 < B v (J v)) :
+    (ofTames B hB hJ).toBilinForm = B :=
+  (rfl)
+
+/-- Evaluation of `TauCeti.SymplecticForm.ofTames`. This is not a `simp` lemma: the coercion of a
+symplectic form to a function unfolds to `toBilinForm`, so `ofTames_toBilinForm` already
+simplifies the left-hand side. -/
+theorem ofTames_apply (hB : B.IsAlt) (hJ : ∀ v, v ≠ 0 → 0 < B v (J v)) (v w : V) :
+    ofTames B hB hJ v w = B v w :=
+  (rfl)
+
+theorem tames_ofTames (hB : B.IsAlt) (hJ : ∀ v, v ≠ 0 → 0 < B v (J v)) :
+    (ofTames B hB hJ).Tames J := by
+  intro v hv
+  simpa using hJ v hv
+
+end OfTames
+
 /-- `ω` is compatible with `J` if it is `J`-invariant and `ω(·, J ·)` is positive definite. -/
 structure Compatible (ω : SymplecticForm V) (J : AlmostComplexStructure V) : Prop where
   /-- The form is invariant under applying `J` to both variables. -/
@@ -759,9 +819,75 @@ lemma Compatible.tames {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) : ω.Tames J :=
   (ω.tames_iff_associated_pos J).mpr h.positive
 
+/-- **Structures tamed by a common form are nowhere opposite.** If `ω` tames both `J₀` and `J₁`,
+no nonzero vector `v` has `J₁ v = -J₀ v`, since `ω(v, J₀ v)` and `ω(v, J₁ v)` are both positive:
+the map `J₀ + J₁` is injective. It is complex linear from `(V, J₀)` to `(V, J₁)`, since
+`(J₀ + J₁) J₀ = J₁ J₀ - 1 = J₁ (J₀ + J₁)`. -/
+theorem Tames.injective_add {ω : SymplecticForm V} {J₀ J₁ : AlmostComplexStructure V}
+    (h₀ : ω.Tames J₀) (h₁ : ω.Tames J₁) :
+    Function.Injective (J₀.toLinearMap + J₁.toLinearMap) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  by_contra hv₀
+  have h : ω v (J₁ v) = -ω v (J₀ v) := by
+    rw [eq_neg_of_add_eq_zero_right hv]
+    exact map_neg (ω.toBilinForm v) (J₀ v)
+  linarith [h₀ v hv₀, h₁ v hv₀]
+
 lemma Compatible.invariant_apply {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) (v w : V) : ω (J v) (J w) = ω v w :=
   (ω.invariant_iff J).mp h.invariant v w
+
+/-! ### A tame structure which is not compatible -/
+
+section TameNotCompatible
+
+/-- The alternating form on `ℝ⁴ = (ℝ × ℝ) × (ℝ × ℝ)` which is the sum of the standard form
+`ω₀ = da ∧ dc + db ∧ dd`, compatible with `J(x, y) = (-y, x)`, and the anti-invariant form
+`β = da ∧ db - dc ∧ dd`, for the coordinates `((a, b), (c, d))`. -/
+private def tameNotCompatibleBilinForm : LinearMap.BilinForm ℝ ((ℝ × ℝ) × (ℝ × ℝ)) :=
+  LinearMap.mk₂ ℝ
+    (fun v w ↦ v.1.1 * w.2.1 - v.2.1 * w.1.1 + v.1.2 * w.2.2 - v.2.2 * w.1.2 +
+      (v.1.1 * w.1.2 - v.1.2 * w.1.1) - (v.2.1 * w.2.2 - v.2.2 * w.2.1))
+    (fun _ _ _ ↦ by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ ↦ by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+    (fun _ _ _ ↦ by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ ↦ by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+
+private theorem tameNotCompatibleBilinForm_apply (v w : (ℝ × ℝ) × (ℝ × ℝ)) :
+    tameNotCompatibleBilinForm v w =
+      v.1.1 * w.2.1 - v.2.1 * w.1.1 + v.1.2 * w.2.2 - v.2.2 * w.1.2 +
+        (v.1.1 * w.1.2 - v.1.2 * w.1.1) - (v.2.1 * w.2.2 - v.2.2 * w.2.1) :=
+  (rfl)
+
+/-- **Tameness does not imply compatibility.** On `ℝ⁴ = (ℝ × ℝ) × (ℝ × ℝ)` with the almost
+complex structure `J(x, y) = (-y, x)`, the form `ω = ω₀ + β`, where `ω₀` is the standard
+compatible form and `β = da ∧ db - dc ∧ dd` satisfies `β(J ·, J ·) = -β`, has
+`ω(v, J v) = ω₀(v, J v) = a² + b² + c² + d²` for `v = ((a, b), (c, d))`, so it tames `J`; but
+`ω(J v, J w) = ω₀(v, w) - β(v, w)` differs from `ω(v, w)` when `β(v, w) ≠ 0`, so it is not
+compatible with `J`. -/
+theorem exists_tames_not_compatible :
+    ∃ (ω : SymplecticForm ((ℝ × ℝ) × (ℝ × ℝ)))
+      (J : AlmostComplexStructure ((ℝ × ℝ) × (ℝ × ℝ))), ω.Tames J ∧ ¬ω.Compatible J := by
+  have hB : tameNotCompatibleBilinForm.IsAlt := fun v ↦ by
+    rw [tameNotCompatibleBilinForm_apply]
+    ring
+  have hJ : ∀ v, v ≠ 0 → 0 < tameNotCompatibleBilinForm v (AlmostComplexStructure.product _ v) := by
+    rintro ⟨⟨a, b⟩, ⟨c, d⟩⟩ hv
+    simp only [tameNotCompatibleBilinForm_apply, AlmostComplexStructure.product_apply,
+      Prod.fst_neg, Prod.snd_neg]
+    have : a ≠ 0 ∨ b ≠ 0 ∨ c ≠ 0 ∨ d ≠ 0 := by
+      by_contra! h
+      obtain ⟨rfl, rfl, rfl, rfl⟩ := h
+      exact hv rfl
+    rcases this with h | h | h | h <;>
+      nlinarith [sq_pos_of_ne_zero h, sq_nonneg a, sq_nonneg b, sq_nonneg c, sq_nonneg d]
+  refine ⟨ofTames _ hB hJ, AlmostComplexStructure.product _, tames_ofTames hB hJ, fun hc ↦ ?_⟩
+  have := hc.invariant_apply ((1, 0), (0, 0)) ((0, 1), (0, 0))
+  simp only [ofTames_apply, tameNotCompatibleBilinForm_apply,
+    AlmostComplexStructure.product_apply] at this
+  norm_num at this
+
+end TameNotCompatible
 
 /-- For a complex structure `J` preserving `ω`, the endomorphism `J` itself is skew-adjoint
 for `ω`. This is the form of invariance that is linear in `J`. -/
@@ -815,6 +941,18 @@ lemma associatedBilinForm_apply_apply_self_eq (ω : SymplecticForm V)
       simp
     _ = ω.associatedBilinForm J v v := by
       rw [associatedBilinForm_apply]
+
+/-- The endomorphism `a - b J`, multiplication by the complex number `a - b i`, scales the diagonal
+of the associated bilinear form by `a² + b²`. -/
+lemma associatedBilinForm_smul_sub_smul_apply_self (ω : SymplecticForm V)
+    (J : AlmostComplexStructure V) (a b : ℝ) (v : V) :
+    ω.associatedBilinForm J (a • v - b • J v) (a • v - b • J v) =
+      (a ^ 2 + b ^ 2) * ω.associatedBilinForm J v v := by
+  have h := ω.neg_eq v (J v)
+  simp only [associatedBilinForm_apply, map_sub, map_smul, map_neg,
+    AlmostComplexStructure.apply_apply, LinearMap.sub_apply, LinearMap.smul_apply,
+    ω.self_eq_zero, smul_eq_mul]
+  linear_combination (b ^ 2) * h
 
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=

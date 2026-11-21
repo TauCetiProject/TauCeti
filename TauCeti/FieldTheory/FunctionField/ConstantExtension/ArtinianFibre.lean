@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.KummerPolynomial
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 public import TauCeti.RingTheory.AdjoinRoot.Length
 import TauCeti.RingTheory.AdjoinRoot.Basic
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.Algebra.Module.Equiv.Length
 import TauCeti.RingTheory.Polynomial.Truncated.Basic
 

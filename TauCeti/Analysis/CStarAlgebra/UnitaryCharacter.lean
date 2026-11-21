@@ -30,14 +30,14 @@ public section
 
 open WeakDual
 
-namespace TauCeti
+namespace MonoidHom
 
 variable {G B : Type*} [Monoid G] [TopologicalSpace G] [CStarAlgebra B]
 
 /-- A character nonzero on a commuting operator with norm-continuous unitary translates
 induces a unique continuous circle-valued character. It describes every translate in the subalgebra,
 not just the translates of the witnessing operator. -/
-theorem _root_.MonoidHom.existsUnique_pontryaginDual_of_unitary_translate
+theorem existsUnique_pontryaginDual_of_unitary_translate
     (ρ : G →* B) (hρ : ∀ g, ρ g ∈ unitary B)
     (A : StarSubalgebra ℂ B) [CompleteSpace A]
     (a : A) (hcomm : ∀ g, Commute (ρ g) (a : B))
@@ -87,4 +87,4 @@ theorem _root_.MonoidHom.existsUnique_pontryaginDual_of_unitary_translate
   refine ⟨χ, hχ, fun ψ hψ => PontryaginDual.ext fun g => Circle.ext ?_⟩
   exact mul_right_cancel₀ ha ((hψ g a (hmem g)).symm.trans (hχ g a (hmem g)))
 
-end TauCeti
+end MonoidHom

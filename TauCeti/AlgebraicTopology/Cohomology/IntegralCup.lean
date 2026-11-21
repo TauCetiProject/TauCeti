@@ -24,7 +24,8 @@ The diagonal is coassociative and cocommutative and the multiplication associati
 commutative, so the general laws of the singular cup product specialize: the integral cup product
 is associative and graded commutative, `b ⌣ a = (-1)^(p q) a ⌣ b`, with unit the class
 `1 ∈ H⁰(X; ℤ)` of the constant cocycle. Consequently the cup square of a class of odd degree has
-order at most two, and degree-one classes anticommute in iterated products,
+order at most two, and so does the cup square `(a ⌣ c) ⌣ (a ⌣ c)` of a product whose first factor
+has odd degree. Degree-one classes anticommute in iterated products,
 `a ⌣ (b ⌣ c) = -(b ⌣ (a ⌣ c))`.
 
 For degree-one classes `a₁, …, a_r ∈ H¹(X; ℤ)` the iterated cup product
@@ -43,15 +44,22 @@ alone gives only this weaker statement.
   multilinear map `H¹(X; ℤ)ʳ → Hʳ(X; ℤ)`.
 * `TauCeti.integralCoeffComul`, `TauCeti.integralCoeffMul`: the coefficient maps, the diagonal of
   `ULift ℤ` and the multiplication of `ℤ`.
+* `TauCeti.integralCoeffIso`: the isomorphism `ULift ℤ ≅ ℤ` of chain coefficients, through which
+  the diagonal and the multiplication are the inverse left unitor and the left unitor of `ℤ`
+  (`TauCeti.integralCoeffComul_comp_tensorHom`, `TauCeti.integralCoeffMul_eq_leftUnitor_hom`).
 
 ## Main results
 
 * `TopCat.integralCup_naturality`: `f^* a ⌣ f^* b = f^* (a ⌣ b)`.
+* `TopCat.integralCup_singularCohomologyChainCoefficientMap`: through `TauCeti.integralCoeffIso`,
+  the integral cup product is the cup product with chain coefficients `ℤ` along the left unitor.
 * `TopCat.integralCup_assoc`: `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`.
 * `TopCat.integralCup_gradedComm`: `b ⌣ a = (-1)^(p q) a ⌣ b`.
 * `TopCat.integralCup_integralCohomologyOne`: `1 ⌣ b = b`, and
   `TopCat.integralCup_integralCohomologyOne_right`: `a ⌣ 1 = a`.
 * `TopCat.integralCup_self_add_self_eq_zero`: `a ⌣ a + a ⌣ a = 0` for `a` of odd degree.
+* `TopCat.integralCup_integralCup_add_self_eq_zero_of_odd`:
+  `(a ⌣ c) ⌣ (a ⌣ c) + (a ⌣ c) ⌣ (a ⌣ c) = 0` for `a` of odd degree.
 * `TopCat.integralCup_left_anticomm`: `a ⌣ (b ⌣ c) = -(b ⌣ (a ⌣ c))` for `a`, `b` of degree
   one.
 * `TopCat.integralCupProd_add_self_eq_zero`: an iterated product of degree-one classes with a
@@ -69,12 +77,7 @@ noncomputable section
 
 open CategoryTheory MonoidalCategory
 
-/-- Mathlib's `MonoidalLinear ℤ` instance on `ModuleCat ℤ` is stated for its `ℤ`-linear structure
-as a category of modules, while instance search finds the `ℤ`-linear structure of a preadditive
-category; whiskering commutes with the integer multiples of the latter as well. -/
-local instance : MonoidalLinear ℤ (ModuleCat.{0} ℤ) where
-  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
-  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 
 namespace TauCeti
 
@@ -133,6 +136,39 @@ theorem integralCoeffMul_assoc :
   -- Both sides are `integralCoeffMul` on pure tensors, that is products (`integralCoeffMul_apply`).
   exact mul_assoc a b c
 
+/-- The isomorphism `ULift ℤ ≅ ℤ` from the integral chain coefficients to the unit object `ℤ` of
+`ModuleCat ℤ`, the chain coefficients of `TopCat.singularCup` along the left unitor. -/
+def integralCoeffIso : ModuleCat.of ℤ (ULift.{0} ℤ) ≅ 𝟙_ (ModuleCat.{0} ℤ) :=
+  ULift.moduleEquiv.toModuleIso
+
+@[simp]
+theorem integralCoeffIso_hom_apply (n : ModuleCat.of ℤ (ULift.{0} ℤ)) :
+    integralCoeffIso.hom n = n.down :=
+  (rfl)
+
+@[simp]
+theorem integralCoeffIso_inv_apply (n : 𝟙_ (ModuleCat.{0} ℤ)) :
+    integralCoeffIso.inv n = (⟨n⟩ : ULift ℤ) :=
+  (rfl)
+
+/-- Through `integralCoeffIso`, the diagonal `n ↦ n (1 ⊗ 1)` of `ULift ℤ` is the inverse of the left
+unitor of `ℤ`. -/
+theorem integralCoeffComul_comp_tensorHom :
+    integralCoeffComul ≫ (integralCoeffIso.hom ⊗ₘ integralCoeffIso.hom) =
+      integralCoeffIso.hom ≫ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv := by
+  ext n
+  simp only [ConcreteCategory.comp_apply]
+  rw [integralCoeffComul_apply, map_smul, ModuleCat.MonoidalCategory.tensorHom_tmul,
+    ModuleCat.MonoidalCategory.leftUnitor_inv_apply, integralCoeffIso_hom_apply,
+    integralCoeffIso_hom_apply, ← TensorProduct.tmul_smul]
+  simp
+
+/-- The multiplication of the integral cochain values is the left unitor of `ℤ`. -/
+theorem integralCoeffMul_eq_leftUnitor_hom :
+    integralCoeffMul = (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom := by
+  refine ModuleCat.MonoidalCategory.tensor_ext fun a b ↦ ?_
+  exact (ModuleCat.MonoidalCategory.leftUnitor_hom_apply (M := 𝟙_ (ModuleCat.{0} ℤ)) a b).symm
+
 end TauCeti
 
 namespace TopCat
@@ -168,6 +204,24 @@ theorem integralCup_naturality {Y : TopCat.{0}} (f : X ⟶ Y) (p q n : ℕ) (h :
         (TopCat.singularCohomologyMap f q b) =
       TopCat.singularCohomologyMap f n (Y.integralCup p q n h a b) :=
   singularCup_naturality f ℤ integralCoeffComul integralCoeffMul p q n h a b
+
+/-- **The integral cup product is the cup product with coefficients in `ℤ`**: through the
+isomorphism `TauCeti.integralCoeffIso` of chain coefficients `ULift ℤ ≅ ℤ`, the integral cup product
+is the singular cup product along the inverse left unitor and the left unitor of `ℤ`, the cup
+product of Hatcher's convention. -/
+theorem integralCup_singularCohomologyChainCoefficientMap (p q n : ℕ) (h : p + q = n)
+    (a : X.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ) p)
+    (b : X.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ) q) :
+    X.integralCup p q n h
+        (X.singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) integralCoeffIso.hom p a)
+        (X.singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) integralCoeffIso.hom q b) =
+      X.singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) integralCoeffIso.hom n
+        (X.singularCup ℤ (λ_ _).inv (λ_ _).hom p q n h a b) := by
+  rw [integralCup_def, ← singularCup_comp_tensorHom, integralCoeffComul_comp_tensorHom,
+    singularCup_precomp, integralCoeffMul_eq_leftUnitor_hom]
+  -- The two sides differ only in writing the cochain values as `ModuleCat.of ℤ ℤ` or as the unit
+  -- object `𝟙_ (ModuleCat ℤ)`, which Mathlib defines to be `ModuleCat.of ℤ ℤ`.
+  rfl
 
 /-- **Associativity of the integral cup product**, `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`. -/
 theorem integralCup_assoc {p q r m m' n : ℕ} (h₁₂ : p + q = m) (h : m + r = n)
@@ -211,6 +265,35 @@ theorem integralCup_integralCup_self_add_self_eq_zero {q m n : ℕ} (hm : 1 + q 
   rw [← X.integralCup_assoc rfl (by omega) hm hn, ← LinearMap.add_apply, ← map_add,
     X.integralCup_self_add_self_eq_zero odd_one rfl, map_zero, LinearMap.zero_apply]
 
+/-- **The cup square of a product with an odd factor has order at most two**: if `a` has odd
+degree, then `(a ⌣ c) ⌣ (a ⌣ c) + (a ⌣ c) ⌣ (a ⌣ c) = 0`. -/
+theorem integralCup_integralCup_add_self_eq_zero_of_odd {p q k n : ℕ} (hp : Odd p)
+    (hk : p + q = k) (hn : k + k = n) (a : X.integralCohomology p) (c : X.integralCohomology q) :
+    X.integralCup k k n hn (X.integralCup p q k hk a c) (X.integralCup p q k hk a c) +
+      X.integralCup k k n hn (X.integralCup p q k hk a c) (X.integralCup p q k hk a c) = 0 := by
+  set W := X.integralCup (p + p) (q + q) n (by omega) (X.integralCup p p (p + p) rfl a a)
+    (X.integralCup q q (q + q) rfl c c)
+  -- `a ⌣ a` has order at most two, hence so has `W = (a ⌣ a) ⌣ (c ⌣ c)`.
+  have hW : W + W = 0 := by
+    rw [← LinearMap.add_apply, ← map_add, X.integralCup_self_add_self_eq_zero hp rfl, map_zero,
+      LinearMap.zero_apply]
+  -- Moving the second `a` past `c` gives `(a ⌣ c) ⌣ (a ⌣ c) = ±W`.
+  have key : X.integralCup k k n hn (X.integralCup p q k hk a c) (X.integralCup p q k hk a c) =
+      W ∨ X.integralCup k k n hn (X.integralCup p q k hk a c) (X.integralCup p q k hk a c) =
+      -W := by
+    rw [X.integralCup_assoc hk hn rfl (by omega),
+      ← X.integralCup_assoc (p := q) (q := p) rfl (by omega) hk rfl,
+      X.integralCup_gradedComm (n := q + p) (by omega) rfl a c]
+    rcases neg_one_pow_eq_or ℤ (p * q) with hε | hε <;> rw [hε] <;>
+      simp only [one_zsmul, neg_one_zsmul, map_neg, LinearMap.neg_apply] <;>
+      rw [X.integralCup_assoc (m := q + p) (m' := q + q) (by omega) (by omega) rfl (by omega),
+        ← X.integralCup_assoc (m := p + p) (m' := q + k) rfl (by omega) (by omega) (by omega)]
+    · exact .inl rfl
+    · exact .inr rfl
+  rcases key with h | h <;> rw [h]
+  · exact hW
+  · rw [← neg_add, hW, neg_zero]
+
 /-- The unit class `1 ∈ H⁰(X; ℤ)`, the class of the constant `0`-cocycle with value `1`. -/
 def integralCohomologyOne : X.integralCohomology 0 :=
   (X.singularCochainComplex (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ)).homologyπ 0
@@ -243,8 +326,9 @@ theorem integralCup_integralCohomologyOne_right (p : ℕ) (a : X.integralCohomol
 /-- **The iterated cup product of degree-one classes**, `(a₁, …, a_r) ↦ a₁ ⌣ (a₂ ⌣ ⋯ a_r)`, as
 a multilinear map `H¹(X; ℤ)ʳ → Hʳ(X; ℤ)`; for `r = 0` it is the unit class. -/
 def integralCupProd :
-    (r : ℕ) → MultilinearMap ℤ (fun _ : Fin r ↦ X.integralCohomology 1) (X.integralCohomology r)
-  | 0 => MultilinearMap.constOfIsEmpty ℤ _ X.integralCohomologyOne
+    (r : ℕ) → MultilinearMap (RingHom.id ℤ) (fun _ : Fin r ↦ X.integralCohomology
+        1) (X.integralCohomology r)
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id ℤ) _ X.integralCohomologyOne
   | r + 1 => MultilinearMap.mk'
     (fun v ↦ X.integralCup 1 r (r + 1) (by omega) (v 0) (integralCupProd r (Fin.tail v)))
     (fun v i x y ↦ by cases i using Fin.cases <;> simp [Ne.symm])

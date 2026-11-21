@@ -94,7 +94,7 @@ theorem isNilpotent_ad_sl_iff [PerfectField K] (hn : Nonempty n → (Fintype.car
     -- The scalar component has trace zero, so it vanishes.
     obtain ⟨c, hc⟩ := isNilpotent_ad_matrix_iff.mp (isNilpotent_ad_of_isNilpotent_ad_sl hn hx)
     have htr : c * Fintype.card n = 0 := by
-      simpa [Matrix.trace_sub, (SpecialLinear.mem_sl_iff).mp x.2] using
+      simpa [Matrix.trace_sub, (SpecialLinear.mem_sl_iff).mp x.property] using
         (Matrix.isNilpotent_trace_of_isNilpotent hc).eq_zero
     simpa [(mul_eq_zero.mp htr).resolve_right (hn hne)] using hc
 
@@ -107,7 +107,7 @@ theorem image_setOf_isNilpotent_ad_sl [PerfectField K]
       {X : Matrix n n K | IsNilpotent X} := by
   ext X
   simp only [Set.mem_image, Set.mem_ofPred_eq, isNilpotent_ad_sl_iff hn]
-  refine ⟨fun ⟨x, hx, hxX⟩ ↦ hxX ▸ hx, fun hX ↦ ⟨⟨X, ?_⟩, hX, rfl⟩⟩
+  refine ⟨fun ⟨_, hx, hxX⟩ ↦ hxX ▸ hx, fun hX ↦ ⟨⟨X, ?_⟩, hX, rfl⟩⟩
   exact (SpecialLinear.mem_sl_iff).mpr (Matrix.isNilpotent_trace_of_isNilpotent hX).eq_zero
 
 end TauCeti

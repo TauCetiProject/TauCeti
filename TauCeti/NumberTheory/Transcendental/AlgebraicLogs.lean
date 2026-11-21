@@ -68,7 +68,7 @@ noncomputable def algebraicLogs : Submodule ℚ ℂ where
       rw [Rat.smul_def, ← mul_assoc]
       congr 1
       exact_mod_cast q.den_mul_eq_num
-    rw [← exp_nat_mul, h, exp_int_mul]
+    rw [← exp_natCast_mul, h, exp_intCast_mul]
     rcases Int.eq_nat_or_neg q.num with ⟨m, hm | hm⟩ <;> rw [hm]
     · simpa using hl.pow m
     · simpa using (hl.pow m).inv
@@ -112,7 +112,7 @@ theorem mem_algebraicLogs_iff_exists_int {l : ℂ} :
       ∃ α : ℂ, IsAlgebraic ℚ α ∧ α ≠ 0 ∧ ∃ k : ℤ, l = log α + k * (2 * Real.pi * I) := by
   refine ⟨fun hl ↦ ⟨exp l, hl, exp_ne_zero l, ?_⟩, ?_⟩
   · rw [← exp_eq_exp_iff_exists_int, exp_log (exp_ne_zero l)]
-  · rintro ⟨α, hα, h0, k, rfl⟩
+  · rintro ⟨α, hα, _, k, rfl⟩
     exact add_mem (log_mem_algebraicLogs hα) (intCast_mul_two_pi_I_mem_algebraicLogs k)
 
 /-- The logarithm `log x` of a real algebraic number lies in `𝓛`; here `Real.log x = log |x|`,

@@ -242,8 +242,10 @@ theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective
   have : Unique (FundamentalGroup U u) := uniqueOfSubsingleton 1
   -- the first factor of `π₁(U × (V \ {p})) ≃* π₁(U) × π₁(V \ {p})` is trivial
   have hsnd : Function.Bijective
-      (FundamentalGroup.map (ContinuousMap.snd : C(U × ↥(V \ {p}), _)) (u, z)) :=
-    (Equiv.uniqueProd _ _).bijective.comp (FundamentalGroup.prodMulEquiv u z).bijective
+      (FundamentalGroup.map (ContinuousMap.snd : C(U × ↥(V \ {p}), _)) (u, z)) := by
+    have h := (Equiv.uniqueProd _ _).bijective.comp (FundamentalGroup.prodMulEquiv u z).bijective
+    simp only [Function.comp_def, FundamentalGroup.prodMulEquiv_apply] at h
+    exact h
   have hcomp : ⇑(FundamentalGroup.map ((p.directionFrom V).comp ContinuousMap.snd) (u, z)) =
       FundamentalGroup.map (p.directionFrom V) z ∘ FundamentalGroup.map ContinuousMap.snd (u, z) :=
     funext fun γ => CategoryTheory.End.ext (FundamentalGroupoid.map_comp_map _ _ γ.asHom)
@@ -258,7 +260,7 @@ theorem fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective
     (a : U × ↥(ball p R \ {p})) :
     Function.Bijective ((Circle.fundamentalGroupMulEquiv _).toMonoidHom.comp
       (FundamentalGroup.map ((p.directionFrom (ball p R)).comp ContinuousMap.snd) a)) := by
-  have hR : 0 < R := (norm_nonneg _).trans_lt (mem_ball_iff_norm.1 a.2.2.1)
+  have hR : 0 < R := (norm_nonneg _).trans_lt (mem_ball_iff_norm.1 a.2.property.1)
   exact (Circle.fundamentalGroupMulEquiv _).bijective.comp
     (((convex_ball p R).starConvex
       (mem_ball_self hR)).fundamentalGroup_map_directionFrom_comp_snd_bijective (half_pos hR)

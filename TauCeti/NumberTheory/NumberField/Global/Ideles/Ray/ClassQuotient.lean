@@ -87,23 +87,24 @@ theorem exists_unitEmbedding_mul_mem_ideleCongrOneSubgroup (𝔪 : Modulus K)
     ∃ α : Kˣ, IdeleGroup.unitEmbedding (𝓞 K) K α * x ∈ ideleCongrOneSubgroup 𝔪 := by
   -- The components of `x` at the real places of `𝔪`, read in `ℝ`; they are nonzero.
   set r : 𝔪.infinitePart → ℝ := fun w ↦
-    InfinitePlace.Completion.extensionEmbeddingOfIsReal w.1.2
-      (w.1.1.ideleInfiniteCoord x : w.1.1.Completion) with hr_def
+    InfinitePlace.Completion.extensionEmbeddingOfIsReal w.val.property
+      (w.val.val.ideleInfiniteCoord x : w.val.val.Completion) with hr_def
   have hr (w : 𝔪.infinitePart) : r w ≠ 0 :=
-    (map_ne_zero _).mpr (w.1.1.ideleInfiniteCoord x).ne_zero
+    (map_ne_zero _).mpr (w.val.val.ideleInfiniteCoord x).ne_zero
   -- The open set of targets at the places of `𝔪` for which the product is congruent to one.
-  let U : Set ((∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ)) :=
-    {p | (∀ v : 𝔪.support, Valued.v (p.1 v * (v.1.ideleFiniteCoord x : v.1.adicCompletion K) - 1)
-        ≤ WithZero.exp (-(𝔪.exponent v.1 : ℤ))) ∧ ∀ w : 𝔪.infinitePart, 0 < p.2 w * r w}
+  let U : Set ((∀ v : 𝔪.support, v.val.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ)) :=
+    {p | (∀ v : 𝔪.support, Valued.v (p.1 v * (v.val.ideleFiniteCoord x : v.val.adicCompletion K) -
+        1)
+        ≤ WithZero.exp (-(𝔪.exponent v.val : ℤ))) ∧ ∀ w : 𝔪.infinitePart, 0 < p.2 w * r w}
   have hU : IsOpen U := by
     simp only [U, Set.ofPred_and, Set.ofPred_forall]
     refine (isOpen_iInter_of_finite fun v ↦ ?_).inter (isOpen_iInter_of_finite fun w ↦ ?_)
-    · exact (v.1.isOpen_setOf_valued_le (K := K) WithZero.exp_ne_zero).preimage
-        (f := fun p : (∀ v : 𝔪.support, v.1.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ) ↦
-          p.1 v * (v.1.ideleFiniteCoord x : v.1.adicCompletion K) - 1) (by fun_prop)
+    · exact (v.val.isOpen_setOf_valued_le (K := K) WithZero.exp_ne_zero).preimage
+        (f := fun p : (∀ v : 𝔪.support, v.val.adicCompletion K) × (∀ _ : 𝔪.infinitePart, ℝ) ↦
+          p.1 v * (v.val.ideleFiniteCoord x : v.val.adicCompletion K) - 1) (by fun_prop)
     · exact isOpen_lt continuous_const (by fun_prop)
   have hp₀ : ((fun v : 𝔪.support ↦
-      (((v.1.ideleFiniteCoord x)⁻¹ : (v.1.adicCompletion K)ˣ) : v.1.adicCompletion K)),
+      (((v.val.ideleFiniteCoord x)⁻¹ : (v.val.adicCompletion K)ˣ) : v.val.adicCompletion K)),
         fun w ↦ (r w)⁻¹) ∈ U :=
     ⟨fun v ↦ by simp only [Units.inv_mul, sub_self, map_zero, zero_le],
       fun w ↦ by simp [inv_mul_cancel₀ (hr w)]⟩
@@ -111,22 +112,24 @@ theorem exists_unitEmbedding_mul_mem_ideleCongrOneSubgroup (𝔪 : Modulus K)
     𝔪.infinitePart).exists_mem_open hU ⟨_, hp₀⟩
   -- An element of `Kˣ` meeting the targets makes the product congruent to one.
   have key (β : Kˣ)
-      (hf : ∀ v : 𝔪.support, Valued.v (algebraMap K (v.1.adicCompletion K) (β : K) *
-        (v.1.ideleFiniteCoord x : v.1.adicCompletion K) - 1) ≤
-          WithZero.exp (-(𝔪.exponent v.1 : ℤ)))
-      (hi : ∀ w : 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.1.2 (β : K) * r w) :
+      (hf : ∀ v : 𝔪.support, Valued.v (algebraMap K (v.val.adicCompletion K) (β : K) *
+        (v.val.ideleFiniteCoord x : v.val.adicCompletion K) - 1) ≤
+          WithZero.exp (-(𝔪.exponent v.val : ℤ)))
+      (hi : ∀ w : 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.val.property
+          (β : K) * r w) :
       IdeleGroup.unitEmbedding (𝓞 K) K β * x ∈ ideleCongrOneSubgroup 𝔪 := by
     refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
     · rw [map_mul, Units.val_mul, HeightOneSpectrum.ideleFiniteCoord_unitEmbedding,
         Units.coe_map]
       simpa using hf ⟨v, (Modulus.mem_support_iff 𝔪 v).mpr hv⟩
     · rw [map_mul, Units.val_mul, map_mul, InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-      simpa [hr_def] using hi ⟨w, hw⟩
+      simpa [hr_def, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
+        using hi ⟨w, hw⟩
   by_cases hα : α = 0
   · -- Then `𝔪` has no finite divisor and no real place, since `0` meets none of the targets.
     subst hα
     refine ⟨1, key 1 (fun v ↦ absurd (𝔪.valued_eq_one_of_valued_sub_one_le
-      ((Modulus.mem_support_iff 𝔪 v.1).mp v.2) (hαf v)) ?_) fun w ↦ absurd (hαi w) ?_⟩ <;>
+      ((Modulus.mem_support_iff 𝔪 v.val).mp v.property) (hαf v)) ?_) fun w ↦ absurd (hαi w) ?_⟩ <;>
       simp
   · exact ⟨Units.mk0 α hα, key _ hαf hαi⟩
 
@@ -148,12 +151,12 @@ private def ideleRayClass (𝔪 : Modulus K) : ideleCongrOneSubgroup 𝔪 →* R
   (rayClassMk 𝔪).comp <| MonoidHom.codRestrict
     ((toFractionalIdeal.comp (IdeleGroup.toFiniteIdele (𝓞 K) K)).comp
       (ideleCongrOneSubgroup 𝔪).subtype) (idealsPrimeTo 𝔪)
-    fun x ↦ toFractionalIdeal_toFiniteIdele_mem_idealsPrimeTo x.2
+    fun x ↦ toFractionalIdeal_toFiniteIdele_mem_idealsPrimeTo x.property
 
 private theorem ideleRayClass_apply (x : ideleCongrOneSubgroup 𝔪) :
     ideleRayClass 𝔪 x = rayClassMk 𝔪
       ⟨toFractionalIdeal (IdeleGroup.toFiniteIdele (𝓞 K) K x),
-        toFractionalIdeal_toFiniteIdele_mem_idealsPrimeTo x.2⟩ :=
+        toFractionalIdeal_toFiniteIdele_mem_idealsPrimeTo x.property⟩ :=
   (rfl)
 
 /-- A principal idele congruent to one has trivial ray class: its generator is congruent to one,
@@ -371,11 +374,13 @@ finite place `v` of `K` outside the support of a modulus `𝔪` and a uniformize
 class of the idele with component `π` at `v` and `1` elsewhere has the ray class of the prime `v`:
 this idele is congruent to one modulo `𝔪`, and its fractional ideal is `v`. -/
 theorem rayClassQuotient_ofAdicCompletion_of_isUniformizer {v : HeightOneSpectrum (𝓞 K)}
-    (hv : v ∉ 𝔪.support) {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π)
+    {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π)
     (I : idealsPrimeTo 𝔪)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     rayClassQuotient 𝔪 (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π) = rayClassMk 𝔪 I := by
+  -- `I` has multiplicity one at `v`, so `v` is outside the support of `𝔪`.
+  have hv : v ∉ 𝔪.support := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.property hI
   -- The idele concentrated at `v` is trivial at the places of `𝔪`.
   have hmem : IdeleGroup.ofAdicCompletion (𝓞 K) K v π ∈ ideleCongrOneSubgroup 𝔪 := by
     refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v' hv' ↦ ?_, fun w _ ↦ ?_⟩
@@ -419,7 +424,7 @@ theorem ideleClassGroup_hom_ext_of_raySubgroup_le {M : Type*} [Group M]
     (NumberFieldArithmetic.idealsAway_hom_ext fun I v hv hI ↦ ?_)
   obtain ⟨π, hπ⟩ := exists_isUniformizer (v.adicCompletion K)
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply,
-    ← rayClassQuotient_ofAdicCompletion_of_isUniformizer hv hπ I hI,
+    ← rayClassQuotient_ofAdicCompletion_of_isUniformizer hπ I hI,
     ← MonoidHom.comp_apply f', hf', ← MonoidHom.comp_apply g', hg']
   exact h v hv π hπ
 
@@ -433,7 +438,7 @@ that is `-1` at `w` and `1` at the other real places of `𝔪`.
 At a real place outside `𝔪` the corresponding class is trivial (`ofCompletion_mem_raySubgroup`). -/
 theorem rayClassQuotient_ofCompletion_neg_one (𝔪 : Modulus K) [DecidableEq 𝔪.infinitePart]
     (w : 𝔪.infinitePart) :
-    rayClassQuotient 𝔪 (IdeleClassGroup.ofCompletion (𝓞 K) K w.1.1 (-1)) =
+    rayClassQuotient 𝔪 (IdeleClassGroup.ofCompletion (𝓞 K) K w.val.val (-1)) =
       residueSignRayClass 𝔪 (1, Pi.mulSingle w (-1)) := by
   -- An element `x` with trivial residue and these signs makes the idele congruent to one, without
   -- changing its class; the ray class is then the principal ray class of `x`.
@@ -441,10 +446,10 @@ theorem rayClassQuotient_ofCompletion_neg_one (𝔪 : Modulus K) [DecidableEq �
   have hres : residue 𝔪 x = 1 := by
     rw [← coe_residueHom, ← residueSignHom_fst, hx, Units.val_one]
   have hsign (w' : 𝔪.infinitePart) :
-      signHom (x : Kˣ) w'.1 = (Pi.mulSingle w (-1) : 𝔪.infinitePart → ℤˣ) w' := by
+      signHom (x : Kˣ) w'.val = (Pi.mulSingle w (-1) : 𝔪.infinitePart → ℤˣ) w' := by
     rw [← modulusSignHom_apply, ← residueSignHom_snd, hx]
   set z := IdeleGroup.unitEmbedding (𝓞 K) K (x : Kˣ) *
-    IdeleGroup.ofCompletion (𝓞 K) K w.1.1 (-1) with hz_def
+    IdeleGroup.ofCompletion (𝓞 K) K w.val.val (-1) with hz_def
   have hz : z ∈ ideleCongrOneSubgroup 𝔪 := by
     refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun w' hw' ↦ ?_⟩
     · -- At a finite divisor of `𝔪` the coordinate of `z` is that of `x`, which is congruent to one.
@@ -454,14 +459,16 @@ theorem rayClassQuotient_ofCompletion_neg_one (𝔪 : Modulus K) [DecidableEq �
     · -- At a real place of `𝔪` the sign of `x` cancels the sign of the archimedean component.
       have hs := hsign ⟨w', hw'⟩
       simp only [hz_def, map_mul, Units.val_mul, InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-      by_cases h : w' = w.1
+      by_cases h : w' = w.val
       · subst h
         rw [Pi.mulSingle_eq_same] at hs
         rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
-        simpa using (signHom_apply_eq_neg_one_iff _ _).mp hs
+        simpa [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
+          using (signHom_apply_eq_neg_one_iff _ _).mp hs
       · rw [Pi.mulSingle_eq_of_ne fun h' ↦ h (congrArg Subtype.val h')] at hs
         rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ fun h' ↦ h (Subtype.ext h')]
-        simpa using (signHom_apply_eq_one_iff _ _).mp hs
+        simpa [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
+          using (signHom_apply_eq_one_iff _ _).mp hs
   rw [IdeleClassGroup.ofCompletion_apply, mk_eq_mk_unitEmbedding_mul _ (x : Kˣ),
     rayClassQuotient_mk_of_mem hz, ← hx, residueSignRayClass_residueSignHom,
     principalRayClass_apply]

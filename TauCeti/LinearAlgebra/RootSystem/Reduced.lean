@@ -25,8 +25,16 @@ symmetric form of a simply-laced Cartan matrix.
 ## Main results
 
 * `RootPairing.isReduced_of_pairing_comm`: a root pairing with symmetric pairings is reduced.
+* `RootPairing.flip_isReduced`: a reduced root pairing on a finite index type has reduced coroots.
 * `RootPairing.ne_neg_of_root_eq_add_nsmul`: in a reduced root pairing, a root string through a
   root `j ≠ -s` in the direction `s` never reaches `-s`.
+* `RootPairing.root_ne_and_root_ne_neg_of_root_eq_add`: in a reduced root pairing, a summand of a
+  root that is a sum of two roots is neither that root nor its negative.
+* `RootPairing.two_smul_sub_coroot'_smul_root_mem_ker_coroot'` and
+  `RootPairing.eq_or_eq_reflectionPerm_self_of_ker_coroot'_le`: in a root pairing with reduced
+  coroots and `2 ≠ 0`, inclusion of coroot kernels forces the indices to agree up to root negation.
+* `RootPairing.root_add_root_notMem_range_root_and_ne_zero_of_root_eq_add_of_root_eq_add`:
+  if `γ = α + β` and `δ = α + γ` are roots, then `β + δ` is neither a root nor zero.
 -/
 
 public section
@@ -72,5 +80,80 @@ lemma ne_neg_of_root_eq_add_nsmul [CharZero R] [HasUniqueDiv M] [P.IsReduced] (s
     simp [← hkroot, -indexNeg_neg]
   · have _i : (n + 1).AtLeastTwo := ⟨by omega⟩
     exact P.nsmul_notMem_range_root (n := n + 1) (i := s) ⟨-j, hkroot⟩
+
+section Sum
+
+variable [P.IsReduced]
+
+omit [Module.IsTorsionFree R M] in
+/-- If a root is the sum of two roots, then each summand is neither that root nor its negative. -/
+theorem root_ne_and_root_ne_neg_of_root_eq_add [CharZero R] {i j k : ι}
+    (hk : P.root k = P.root i + P.root j) :
+    P.root i ≠ P.root k ∧ P.root i ≠ -P.root k := by
+  have hadd : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk⟩
+  have hlin := P.linearIndependent_of_add_mem_range_root' hadd
+  refine ⟨fun h ↦ P.ne_zero j (by simpa [hk] using h), fun h ↦ ?_⟩
+  have hrel : (2 : R) • P.root i + (1 : R) • P.root j = 0 := by
+    rw [one_smul, two_smul, add_assoc, ← hk, h, neg_add_cancel]
+  exact one_ne_zero (hlin.eq_zero_of_pair hrel).2
+
+omit [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- The sum of the initial and last roots of a double chain is twice its middle root,
+and hence is neither a root nor zero. No bound on Cartan integers is needed. -/
+theorem root_add_root_notMem_range_root_and_ne_zero_of_root_eq_add_of_root_eq_add [CharZero R]
+    {α β γ δ : ι}
+    (hγ : P.root γ = P.root α + P.root β)
+    (hδ : P.root δ = P.root α + P.root γ) :
+    P.root β + P.root δ ∉ Set.range P.root ∧ P.root β + P.root δ ≠ 0 := by
+  let : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  let : HasUniqueDiv M := .of_isTorsionFree R M
+  have heq : P.root β + P.root δ = 2 • P.root γ := by
+    rw [hδ, hγ]
+    abel
+  rw [heq]
+  exact ⟨P.nsmul_notMem_range_root, smul_ne_zero (by decide : (2 : ℕ) ≠ 0) (P.ne_zero γ)⟩
+
+end Sum
+
+omit [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- A reduced root pairing has reduced coroots: both the weight and the coweight module are
+reflexive, being perfectly paired with each other, hence torsion free, which is what
+`RootPairing.instFlipIsReduced` needs. So `P.flip.IsReduced` need not be assumed separately. -/
+theorem flip_isReduced [Finite ι] [CharZero R] [P.IsReduced] : P.flip.IsReduced :=
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
+  inferInstance
+
+omit [IsDomain R] [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- For any root `α` and weight `x`, `2 • x - ⟨x, α^∨⟩ • α` lies in `ker (P.coroot' α)`. -/
+theorem two_smul_sub_coroot'_smul_root_mem_ker_coroot' (α : ι) (x : M) :
+    (2 : R) • x - P.coroot' α x • P.root α ∈ LinearMap.ker (P.coroot' α) := by
+  simp [mul_comm]
+
+omit [IsDomain R] [Module.IsTorsionFree R M] in
+/-- If `ker (P.coroot' α) ≤ ker (P.coroot' β)` in a root pairing with reduced coroots and `2 ≠ 0`,
+then `β` is either `α` or its negated index `P.reflectionPerm α α`. -/
+theorem eq_or_eq_reflectionPerm_self_of_ker_coroot'_le [P.flip.IsReduced] {α β : ι}
+    (h : LinearMap.ker (P.coroot' α) ≤ LinearMap.ker (P.coroot' β)) :
+    β = α ∨ β = P.reflectionPerm α α := by
+  have hprop : (2 : R) • P.coroot' β = P.coroot' β (P.root α) • P.coroot' α := by
+    ext x
+    have hβx : P.coroot' β ((2 : R) • x - P.coroot' α x • P.root α) = 0 :=
+      h (P.two_smul_sub_coroot'_smul_root_mem_ker_coroot' α x)
+    simp only [map_sub, map_smul, smul_eq_mul, sub_eq_zero] at hβx
+    simp only [LinearMap.smul_apply, smul_eq_mul, hβx, mul_comm]
+  have hcoroot : (2 : R) • P.coroot β = P.coroot' β (P.root α) • P.coroot α :=
+    P.toLinearMap.flip.toPerfPair.injective (by simpa [map_smul] using hprop)
+  have hdep : ¬ LinearIndependent R ![P.coroot α, P.coroot β] := by
+    rw [LinearIndependent.pair_iff]
+    push Not
+    exact ⟨-P.coroot' β (P.root α), 2, by rw [neg_smul, ← hcoroot, neg_add_cancel],
+      fun _ ↦ NeZero.ne (2 : R)⟩
+  rcases IsReduced.eq_or_eq_neg (P := P.flip) α β hdep with hpos | hneg
+  · exact Or.inl (P.coroot.injective hpos.symm)
+  · refine Or.inr (P.coroot.injective ?_)
+    simp only [flip_root] at hneg
+    rw [coroot_reflectionPerm, coreflection_apply_self]
+    exact neg_eq_iff_eq_neg.mp hneg.symm
 
 end RootPairing

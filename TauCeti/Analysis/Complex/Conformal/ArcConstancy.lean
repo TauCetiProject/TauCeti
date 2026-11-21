@@ -155,7 +155,7 @@ private lemma exists_mem_ball_eventuallyEq_const (hr : 0 < r) (hV : IsOpen V)
   set G : ℂ → ℂ := (closedBall c r).piecewise (fun z => f z - a) 0 with hGdef
   have hΩo : IsOpen (ball w δ) := isOpen_ball
   have hGan : AnalyticOnNhd ℂ G (ball w δ) :=
-    (differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere hr hΩo
+    (differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere hΩo
       (continuousOn_piecewise_sub_const hr.ne' hδV hcont harc)
       ((differentiableOn_piecewise_sub_const_compl_sphere hdiff).mono
         fun _ hz => hz.2)).analyticOnNhd hΩo
@@ -230,7 +230,7 @@ theorem interior_setOf_eq_eq_empty_of_not_eqOn_const_ball (hr : 0 < r)
   obtain ⟨u, hu, hsub⟩ := (mem_nhds_subtype _ z _).mp (mem_interior_iff_mem_nhds.mp hz)
   obtain ⟨V, hVu, hVo, hzV⟩ := _root_.mem_nhds_iff.mp hu
   refine not_eqOn_const_inter_sphere_of_not_eqOn_const_ball hr hVo
-    (hcont.mono inter_subset_right) hdiff ⟨z, hzV, z.2⟩ hnc fun y hy => ?_
+    (hcont.mono inter_subset_right) hdiff ⟨z, hzV, z.property⟩ hnc fun y hy => ?_
   have hyu : (⟨y, hy.2⟩ : sphere c r) ∈ Subtype.val ⁻¹' u := Set.mem_preimage.mpr (hVu hy.1)
   exact hsub hyu
 

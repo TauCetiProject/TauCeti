@@ -28,6 +28,9 @@ The construction uses the open embedding and transported interior charts from
 of a cocompact group follows from its compact Dirichlet fundamental domain and local finiteness
 of hyperbolic area.
 
+Combining the two directions, a subgroup of finite index in a cocompact group is again
+cocompact: it is cofinite, and each of its cusps would be a cusp of the larger group.
+
 ## References
 
 * Svetlana Katok, *Fuchsian Groups*, §§4.2–4.3.
@@ -85,5 +88,16 @@ theorem compactSpace_quotient_iff_isCofinite_and_isEmpty_cuspOrbit :
   · let := hC
     let := hΓ.compactSpace_compactifiedQuotient
     exact (CompactifiedQuotient.ofQuotientBiholomorph (Γ := Γ)).toHomeomorph.symm.compactSpace
+
+/-- **A finite-index subgroup of a cocompact Fuchsian group is cocompact.** It is cofinite, and
+it has no cusps since every cusp of the subgroup is a cusp of `Γ`. -/
+theorem compactSpace_orbitRel_quotient_of_le {Δ : Subgroup PSL(2, ℝ)}
+    [CompactSpace (orbitRel.Quotient Γ ℍ)] (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] :
+    CompactSpace (orbitRel.Quotient Δ ℍ) := by
+  have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+  have := CompactifiedQuotient.isEmpty_cuspOrbit_of_compactSpace (Γ := Γ)
+  exact compactSpace_quotient_iff_isCofinite_and_isEmpty_cuspOrbit.mpr
+    ⟨(isCofinite_iff_isCofinite_and_finiteIndex h).mpr ⟨isCofinite_of_compactSpace, inferInstance⟩,
+      (cuspOrbitMap h).isEmpty⟩
 
 end Subgroup

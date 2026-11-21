@@ -27,10 +27,9 @@ opens by limits, is determined by its values on the rational opens.
 When `B` is a basis of the topology, an adapted presheaf is a sheaf exactly when its restriction
 to `B` is a sheaf for the topology restricted to `B`; this is what makes sheaf conditions checkable
 on a basis for presheaves defined by such limits. Only the direction from `B` to `X` uses
-adaptedness; the other direction holds for every sheaf. Conversely, when the target category has
-limits, every sheaf is adapted to every basis: a sheaf is determined on an open `V` by its values
-on the basic opens contained in `V`. So, for a basis, being a sheaf is the same as being adapted
-and a sheaf on the basis.
+adaptedness; the other direction holds for every sheaf. Conversely, every sheaf is adapted to
+every basis: a sheaf is determined on an open `V` by its values on the basic opens contained
+in `V`. So, for a basis, being a sheaf is the same as being adapted and a sheaf on the basis.
 
 ## Main definitions
 
@@ -46,8 +45,7 @@ and a sheaf on the basis.
   conditions are equivalent.
 * `TopCat.Presheaf.isSheaf_of_isAdapted_of_forall_exists_le`: a presheaf adapted to a basis is a
   sheaf if every basic open lies in an open on which it restricts to a sheaf.
-* `TopCat.Presheaf.IsSheaf.isAdapted`: a sheaf with values in a category with limits is adapted
-  to every basis.
+* `TopCat.Presheaf.IsSheaf.isAdapted`: every sheaf is adapted to every basis.
 * `TopCat.Presheaf.isSheaf_iff_isAdapted_and_isSheaf_restrictedTopology`: for a basis, a presheaf
   is a sheaf exactly when it is adapted to the basis and a sheaf on the basis.
 * `TopCat.Presheaf.IsAdapted.mono`: a presheaf adapted to `B` is adapted to every `B' ⊇ B`. This
@@ -95,7 +93,7 @@ variable {F} {B} {B' : Set (Opens X)}
 private def inducedOfSubset (hBB' : B ⊆ B') :
     InducedCategory (Opens X) (Subtype.val : B → Opens X) ⥤
       InducedCategory (Opens X) (Subtype.val : B' → Opens X) where
-  obj b := ⟨b.1, hBB' b.2⟩
+  obj b := ⟨b.val, hBB' b.property⟩
   map φ := InducedCategory.homMk φ.hom
 
 /-- For `B ⊆ B'`, the functor from the members of `B` below an open `Y` to the members of `B'`
@@ -180,7 +178,7 @@ members of `B`, taking preimages. -/
 private def inducedMapIso :
     InducedCategory (Opens Y) (Subtype.val : (Opens.map f.hom).obj ⁻¹' B → Opens Y) ⥤
       InducedCategory (Opens X) (Subtype.val : B → Opens X) where
-  obj b := ⟨(Opens.map f.hom).obj b.1, b.2⟩
+  obj b := ⟨(Opens.map f.hom).obj b.val, b.property⟩
   map φ := InducedCategory.homMk ((Opens.map f.hom).map φ.hom)
 
 private instance : (inducedMapIso B f).Full where
@@ -192,11 +190,11 @@ private instance : (inducedMapIso B f).Full where
 private instance : (inducedMapIso B f).EssSurj where
   mem_essImage b := by
     -- the member `f(U)` of the preimage of `B`, for `U = b` a member of `B`
-    have hmem : (Opens.map f.inv).obj b.1 ∈ (Opens.map f.hom).obj ⁻¹' B := by
+    have hmem : (Opens.map f.inv).obj b.val ∈ (Opens.map f.hom).obj ⁻¹' B := by
       rw [Set.mem_preimage, Opens.map_hom_obj_map_inv_obj]
-      exact b.2
-    exact ⟨⟨(Opens.map f.inv).obj b.1, hmem⟩,
-      ⟨eqToIso (Subtype.ext (Opens.map_hom_obj_map_inv_obj f b.1))⟩⟩
+      exact b.property
+    exact ⟨⟨(Opens.map f.inv).obj b.val, hmem⟩,
+      ⟨eqToIso (Subtype.ext (Opens.map_hom_obj_map_inv_obj f b.val))⟩⟩
 
 private instance : (inducedMapIso B f).IsEquivalence where
 
@@ -258,7 +256,7 @@ to the members of `B`, taking images. -/
 private def inducedFunctorObj :
     InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U) ⥤
       InducedCategory (Opens X) (Subtype.val : B → Opens X) where
-  obj b := ⟨hf.functor.obj b.1, b.2⟩
+  obj b := ⟨hf.functor.obj b.val, b.property⟩
   map φ := InducedCategory.homMk (hf.functor.map φ.hom)
 
 /-- The commutative square of the inclusions of the opens of `U` with image in `B` and of `B` into
@@ -275,24 +273,25 @@ private instance (W : Opens U) :
   faithful.map_injective _ := StructuredArrow.hom_ext _ _ (Subsingleton.elim _ _)
   full.map_surjective {a b} φ := by
     -- the image functor of an open embedding reflects inclusions
-    have hle : b.right.unop.1 ≤ a.right.unop.1 := by
-      rw [← Opens.map_functor_eq' f hf b.right.unop.1, ← Opens.map_functor_eq' f hf a.right.unop.1]
+    have hle : b.right.unop.val ≤ a.right.unop.val := by
+      rw [← Opens.map_functor_eq' f hf b.right.unop.val,
+          ← Opens.map_functor_eq' f hf a.right.unop.val]
       exact (Opens.map f).monotone φ.right.unop.hom.le
     exact ⟨StructuredArrow.homMk (InducedCategory.homMk (homOfLE hle)).op
       (Subsingleton.elim _ _), StructuredArrow.hom_ext _ _ (Subsingleton.elim _ _)⟩
   essSurj.mem_essImage c := by
     -- a member of `B` below the image of `W` is the image of its preimage
-    have hcW : c.right.unop.1 ≤ hf.functor.obj W := c.hom.unop.le
-    have hc : hf.functor.obj ((Opens.map f).obj c.right.unop.1) = c.right.unop.1 := by
+    have hcW : c.right.unop.val ≤ hf.functor.obj W := c.hom.unop.le
+    have hc : hf.functor.obj ((Opens.map f).obj c.right.unop.val) = c.right.unop.val := by
       rw [Opens.functor_obj_map_obj, inf_eq_right]
       exact hcW.trans (hf.functor.monotone le_top)
-    have hmem : (Opens.map f).obj c.right.unop.1 ∈ hf.functor.obj ⁻¹' B := by
+    have hmem : (Opens.map f).obj c.right.unop.val ∈ hf.functor.obj ⁻¹' B := by
       rw [Set.mem_preimage, hc]
-      exact c.right.unop.2
-    have hW : (Opens.map f).obj c.right.unop.1 ≤ W :=
+      exact c.right.unop.property
+    have hW : (Opens.map f).obj c.right.unop.val ≤ W :=
       ((Opens.map f).monotone hcW).trans_eq (Opens.map_functor_eq' f hf W)
     let b : InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U) :=
-      ⟨(Opens.map f).obj c.right.unop.1, hmem⟩
+      ⟨(Opens.map f).obj c.right.unop.val, hmem⟩
     let a : StructuredArrow (op W)
         (inducedFunctor (Subtype.val : hf.functor.obj ⁻¹' B → Opens U)).op :=
       StructuredArrow.mk (Y := op b) (homOfLE hW).op
@@ -386,38 +385,32 @@ theorem isSheaf_of_isAdapted_of_forall_exists_le (hB : Opens.IsBasis B) (hF : F.
       IsSheaf (X := (Opens.toTopCat X).obj U) (U.isOpenEmbedding.functor.op ⋙ F)) :
     F.IsSheaf := by
   refine isSheaf_of_isAdapted_of_isSheaf_restrictedTopology F B hB hF fun E b S hS ↦ ?_
-  obtain ⟨U, hbU, hU⟩ := h b.1 b.2
+  obtain ⟨U, hbU, hU⟩ := h b.val b.property
   -- the pushforward `G` of the restriction of `F` to `U` is a sheaf, with `G(W) = F(W ⊓ U)`
   have hG := (TopCat.Sheaf.pushforward_sheaf_of_sheaf U.inclusion' hU).isSheaf_restrictedTopology hB
   -- restriction `F(W) ⟶ F(W ⊓ U) = G(W)`, along the counit of the adjunction for `U`
   let α : F ⟶ U.inclusion' _* (U.isOpenEmbedding.functor.op ⋙ F) :=
     Functor.whiskerRight (NatTrans.op U.isOpenEmbedding.isOpenMap.adjunction.counit) F
-  refine Presieve.isSheafFor_of_bijective_app
-    (Functor.whiskerLeft (inducedFunctor (Subtype.val : B → Opens X)).op
-      (Functor.whiskerRight α (coyoneda.obj (op E)))) (fun b' f ↦ ?_) (hG E S hS)
   -- below `U` the restriction is along an isomorphism, as `W ⊓ U = W`
-  have : IsIso (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1) :=
-    ⟨homOfLE fun x hx ↦ ⟨⟨x, hbU (f.hom.le hx)⟩, hx, rfl⟩, Subsingleton.elim _ _,
-      Subsingleton.elim _ _⟩
-  exact (isIso_iff_bijective _).mp ((coyoneda.obj (op E)).map_isIso
-    (F.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1).op))
+  have hα : ∀ ⦃b'⦄, (b' ⟶ b) → Function.Bijective
+      ((Functor.whiskerLeft (inducedFunctor (Subtype.val : B → Opens X)).op
+        (Functor.whiskerRight α (coyoneda.obj (op E)))).app (op b')) := fun b' f ↦ by
+    have : IsIso (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.val) :=
+      ⟨homOfLE fun x hx ↦ ⟨⟨x, hbU (f.hom.le hx)⟩, hx, rfl⟩, Subsingleton.elim _ _,
+        Subsingleton.elim _ _⟩
+    exact (isIso_iff_bijective _).mp ((coyoneda.obj (op E)).map_isIso
+      (F.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.val).op))
+  exact Presieve.isSheafFor_of_bijective_app _ (hα (𝟙 b)) (fun _ f _ ↦ (hα f).1) (hG E S hS)
 
 /-! ### Sheaves are adapted to every basis -/
 
-section HasLimits
-
-variable [HasLimitsOfSize.{w, w} C]
-
-/-- **A sheaf is adapted to every basis.** If `F` takes values in a category with limits and is a
-sheaf, then for every basis `B` and every open `V`, the restriction maps exhibit `F(V)` as the
-limit of the `F(U)` over the members `U ∈ B` below `V`: a basis is a dense subsite of the opens,
-and a sheaf is the pointwise right Kan extension of its restriction to a dense subsite. -/
+/-- **A sheaf is adapted to every basis.** If `F` is a sheaf, then for every basis `B` and every
+open `V`, the restriction maps exhibit `F(V)` as the limit of the `F(U)` over the members
+`U ∈ B` below `V`. -/
 theorem IsSheaf.isAdapted {B : Set (Opens X)} (hB : Opens.IsBasis B) {F : X.Presheaf C}
     (hF : F.IsSheaf) : F.IsAdapted B :=
   have := TauCeti.TopologicalSpace.Opens.coverDense_inducedFunctor_subtypeVal hB
-  ⟨Functor.IsDenseSubsite.isPointwiseRightKanExtension (inducedFunctor (Subtype.val : B → Opens X))
-    ((inducedFunctor (Subtype.val : B → Opens X)).restrictedTopology
-      (Opens.grothendieckTopology X))
+  ⟨Functor.IsCoverDense.isPointwiseRightKanExtension (inducedFunctor (Subtype.val : B → Opens X))
     (Opens.grothendieckTopology X) ⟨F, hF⟩⟩
 
 /-- **For a basis `B`, a presheaf is a sheaf exactly when it is adapted to `B` and a sheaf on
@@ -429,8 +422,6 @@ theorem isSheaf_iff_isAdapted_and_isSheaf_restrictedTopology (hB : Opens.IsBasis
       ((inducedFunctor (Subtype.val : B → Opens X)).op ⋙ F) :=
   ⟨fun h ↦ ⟨h.isAdapted hB, h.isSheaf_restrictedTopology hB⟩,
     fun h ↦ isSheaf_of_isAdapted_of_isSheaf_restrictedTopology F B hB h.1 h.2⟩
-
-end HasLimits
 
 end TopCat.Presheaf
 

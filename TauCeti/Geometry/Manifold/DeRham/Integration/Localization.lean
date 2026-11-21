@@ -67,8 +67,7 @@ theorem eq_zero_of_integral_eq_zero_of_mem_range_extendByZero
     (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U) {c : compactlySupportedDeRhamCohomology I W n}
     (hc : c ∈ LinearMap.range (extendByZero h n))
     (hzero : integral (o.restrict W) c = 0) : c = 0 := by
-  have : SigmaCompactSpace U :=
-    ⟨Φ.toHomeomorph.surjective.range_eq ▸ isSigmaCompact_range Φ.continuous⟩
+  have : SigmaCompactSpace U := Φ.toHomeomorph.symm.isClosedEmbedding.sigmaCompactSpace
   obtain ⟨d, rfl⟩ := hc
   rw [integral_extendByZero] at hzero
   have hd : d = 0 := (bijective_integral_of_diffeomorph_normedSpace (o.restrict U) Φ).injective
@@ -105,8 +104,8 @@ theorem mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_of_tsupport
     [SigmaCompactSpace W] (h : U ≤ W)
     (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U) {φ : SmoothForm I W ℝ n}
     (hφ : φ ∈ compactlySupportedForms I W n)
-    (hs : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.1 ⊆ {x | (x : M) ∈ U}) :
-    φ ∈ exactCompactlySupportedForms I W n ↔ integralTopForm (o.restrict W) φ.1 = 0 := by
+    (hs : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.val ⊆ {x | (x : M) ∈ U}) :
+    φ ∈ exactCompactlySupportedForms I W n ↔ integralTopForm (o.restrict W) φ.val = 0 := by
   refine ⟨integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms (o.restrict W), fun hz ↦ ?_⟩
   have hn : finrank ℝ E ≤ n := by simpa using o.card_eq.ge
   let φd := compactlySupportedForms.toClosedOfFinrankLe I hn ⟨φ, hφ⟩

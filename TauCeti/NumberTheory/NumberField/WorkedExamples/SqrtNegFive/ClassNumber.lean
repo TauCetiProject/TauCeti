@@ -149,7 +149,7 @@ theorem isPrincipal_or_isPrincipal_mul_span_two_integralSqrt_sub_one
   rcases eq_or_ne I ⊥ with rfl | hI
   · exact .inl bot_isPrincipal
   have h𝔭sq : 𝔭 ^ 2 = Ideal.span {2} :=
-    span_two_integralSqrt_sub_one_sq_eq_span_two squarefree_neg_five neg_five_emod_four
+    span_two_integralSqrt_sub_one_sq_eq_span_two neg_five_emod_four
   have h𝔭 : 𝔭 ≠ ⊥ := by
     rintro h
     rw [h, sq, Ideal.bot_mul, eq_comm, Ideal.span_singleton_eq_bot] at h𝔭sq
@@ -196,9 +196,7 @@ theorem irreducible_two : Irreducible (2 : QuadraticAlgebra ℤ (-5) 0) := by
       rw [← map_mul, ← hxy, norm_eq_re_sq_add_five_mul_im_sq]
       simp
     have hx := norm_nonneg_of_discr_nonpos (by norm_num [discr_def]) x
-    have hy := norm_nonneg_of_discr_nonpos (by norm_num [discr_def]) y
     have hx2 := norm_neg_five_ne_two x
-    have hy2 := norm_neg_five_ne_two y
     have hle : x.norm ≤ 4 := Int.le_of_dvd (by norm_num) ⟨y.norm, h4.symm⟩
     have h1 : x.norm ∣ 2 ∨ y.norm ∣ 2 := by
       interval_cases x.norm

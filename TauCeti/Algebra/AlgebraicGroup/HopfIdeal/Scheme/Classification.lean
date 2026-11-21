@@ -37,6 +37,10 @@ ideals of `H`.
   criterion for factoring through a quotient closed subgroup.
 * `TauCeti.CommHopfAlgCat.quotientClosedSubgroup_commonKernel_le_iff`: the minimality of the
   quotient closed subgroup cut out by a common-kernel Hopf ideal.
+* `CommHopfAlgCat.mk_eq_quotientClosedSubgroup_kerOfSurjective`: a closed subgroup
+  scheme presented by a surjective map of Hopf algebras is cut out by its kernel.
+* `TauCeti.CommHopfAlgCat.mapIso_quotientClosedSubgroup`: transport of quotient closed subgroups
+  along isomorphisms of Hopf algebras.
 * `TauCeti.CommHopfAlgCat.mk_quotientSpecMapOfLe_eq_quotientClosedSubgroup`: the
   quotient-to-quotient presentation of a quotient closed subgroup.
 * `TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup`: the classification of closed
@@ -79,11 +83,18 @@ noncomputable def quotientClosedSubgroup (H : _root_.CommHopfAlgCat.{u} R)
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)) :=
   ClosedSubgroupScheme.mk (quotientSpecι H I)
 
+/-- `quotientClosedSubgroup H I` is the closed subgroup scheme represented by the quotient closed
+immersion `Spec (H ⧸ I) ⟶ Spec H`. -/
+lemma _root_.CommHopfAlgCat.quotientClosedSubgroup_def
+    (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+    quotientClosedSubgroup H I = ClosedSubgroupScheme.mk (quotientSpecι H I) :=
+  (rfl)
+
 /-- The subobject underlying `quotientClosedSubgroup` is represented by the quotient closed
 immersion `Spec (H ⧸ I) ⟶ Spec H`. -/
 @[simp]
 lemma quotientClosedSubgroup_coe (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
-    (quotientClosedSubgroup H I).1 = Subobject.mk (quotientSpecι H I) :=
+    (quotientClosedSubgroup H I).val = Subobject.mk (quotientSpecι H I) :=
   by
     unfold quotientClosedSubgroup
     exact ClosedSubgroupScheme.coe_mk (quotientSpecι H I)
@@ -97,7 +108,7 @@ theorem quotientClosedSubgroup_le_iff (H : _root_.CommHopfAlgCat.{u} R)
   constructor
   · intro h x hx
     have hSubobject :
-        (quotientClosedSubgroup H I).1 ≤ (quotientClosedSubgroup H J).1 := h
+        (quotientClosedSubgroup H I).val ≤ (quotientClosedSubgroup H J).val := h
     rw [quotientClosedSubgroup_coe, quotientClosedSubgroup_coe] at hSubobject
     let g := Subobject.ofMkLEMk (quotientSpecι H I) (quotientSpecι H J) hSubobject
     let F := AlgebraicGeometry.hopfSpec (CommRingCat.of R)
@@ -126,7 +137,7 @@ theorem quotientClosedSubgroup_le_iff (H : _root_.CommHopfAlgCat.{u} R)
   · intro hJI
     -- The order on `ClosedSubgroupScheme` is inherited from its underlying subobject. The public
     -- projection equation then identifies the quotient presentations used by `Subobject`.
-    change (quotientClosedSubgroup H I).1 ≤ (quotientClosedSubgroup H J).1
+    change (quotientClosedSubgroup H I).val ≤ (quotientClosedSubgroup H J).val
     rw [quotientClosedSubgroup_coe, quotientClosedSubgroup_coe]
     exact Subobject.mk_le_mk_of_comm (quotientSpecMapOfLe H hJI)
       (quotientSpecMapOfLe_comp_quotientSpecι H hJI)
@@ -168,12 +179,12 @@ private theorem isAffine_closedSubgroup
     (H : _root_.CommHopfAlgCat.{u} R)
     (P : ClosedSubgroupScheme
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))) :
-    IsAffine (P.1 : Grp (Over (Spec (CommRingCat.of R)))).X.left := by
+    IsAffine (P.val : Grp (Over (Spec (CommRingCat.of R)))).X.left := by
   let F := AlgebraicGeometry.hopfSpec (CommRingCat.of R)
-  let i : (P.1 : Grp (Over (Spec (CommRingCat.of R)))) ⟶ F.obj (Opposite.op H) := P.1.arrow
+  let i : (P.val : Grp (Over (Spec (CommRingCat.of R)))) ⟶ F.obj (Opposite.op H) := P.val.arrow
   have hi : IsClosedImmersion i.hom.hom.left := by
     simpa only [i] using
-      (closedSubgroupMorphismProperty_iff _ P.1.arrow).mp P.2
+      (closedSubgroupMorphismProperty_iff _ P.val.arrow).mp P.property
   have hTarget : IsAffine (F.obj (Opposite.op H)).X.left :=
     AlgebraicGeometry.essImage_hopfSpec.mp (F.obj_mem_essImage (Opposite.op H))
   exact (@IsClosedImmersion.isAffine_surjective_of_isAffine _ _ hTarget
@@ -186,35 +197,35 @@ private noncomputable def closedSubgroupCoordinateMorphism
     (P : ClosedSubgroupScheme
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)))
     (e : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op K) ≅
-      (P.1 : Grp (Over (Spec (CommRingCat.of R))))) : H ⟶ K :=
+      (P.val : Grp (Over (Spec (CommRingCat.of R))))) : H ⟶ K :=
   (AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).preimage
-    (e.hom ≫ P.1.arrow) |>.unop
+    (e.hom ≫ P.val.arrow) |>.unop
 
 private theorem hopfSpec_map_closedSubgroupCoordinateMorphism
     (H K : _root_.CommHopfAlgCat.{u} R)
     (P : ClosedSubgroupScheme
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)))
     (e : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op K) ≅
-      (P.1 : Grp (Over (Spec (CommRingCat.of R))))) :
+      (P.val : Grp (Over (Spec (CommRingCat.of R))))) :
     (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
-        (closedSubgroupCoordinateMorphism H K P e).op = e.hom ≫ P.1.arrow := by
+        (closedSubgroupCoordinateMorphism H K P e).op = e.hom ≫ P.val.arrow := by
   let hF := AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)
   simpa only [closedSubgroupCoordinateMorphism, Quiver.Hom.op_unop] using
-    hF.map_preimage (e.hom ≫ P.1.arrow)
+    hF.map_preimage (e.hom ≫ P.val.arrow)
 
 private theorem closedSubgroupCoordinateMorphism_surjective
     (H K : _root_.CommHopfAlgCat.{u} R)
     (P : ClosedSubgroupScheme
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)))
     (e : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op K) ≅
-      (P.1 : Grp (Over (Spec (CommRingCat.of R))))) :
+      (P.val : Grp (Over (Spec (CommRingCat.of R))))) :
     Function.Surjective (closedSubgroupCoordinateMorphism H K P e).hom := by
   apply (isClosedImmersion_hopfSpec_map_iff (S := CommRingCat.of R)
     (closedSubgroupCoordinateMorphism H K P e)).mp
   rw [hopfSpec_map_closedSubgroupCoordinateMorphism H K P e]
-  apply (closedSubgroupMorphismProperty_iff _ (e.hom ≫ P.1.arrow)).mp
+  apply (closedSubgroupMorphismProperty_iff _ (e.hom ≫ P.val.arrow)).mp
   exact MorphismProperty.RespectsIso.precomp
-    (closedSubgroupMorphismProperty (Spec (CommRingCat.of R))) e.hom P.1.arrow P.2
+    (closedSubgroupMorphismProperty (Spec (CommRingCat.of R))) e.hom P.val.arrow P.property
 
 private theorem exists_surjective_hopf_presentation
     (H : _root_.CommHopfAlgCat.{u} R)
@@ -222,15 +233,15 @@ private theorem exists_surjective_hopf_presentation
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))) :
     ∃ (K : _root_.CommHopfAlgCat.{u} R)
       (e : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op K) ≅
-        (P.1 : Grp (Over (Spec (CommRingCat.of R)))))
+        (P.val : Grp (Over (Spec (CommRingCat.of R)))))
       (f : H ⟶ K),
       Function.Surjective f.hom ∧
-        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op = e.hom ≫ P.1.arrow := by
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op = e.hom ≫ P.val.arrow := by
   let F := AlgebraicGeometry.hopfSpec (CommRingCat.of R)
-  have hEss : F.essImage (P.1 : Grp (Over (Spec (CommRingCat.of R)))) :=
+  have hEss : F.essImage (P.val : Grp (Over (Spec (CommRingCat.of R)))) :=
     AlgebraicGeometry.essImage_hopfSpec.mpr (isAffine_closedSubgroup H P)
   let K := hEss.witness.unop
-  let e : F.obj (Opposite.op K) ≅ (P.1 : Grp (Over (Spec (CommRingCat.of R)))) := hEss.getIso
+  let e : F.obj (Opposite.op K) ≅ (P.val : Grp (Over (Spec (CommRingCat.of R)))) := hEss.getIso
   exact ⟨K, e, closedSubgroupCoordinateMorphism H K P e,
     closedSubgroupCoordinateMorphism_surjective H K P e,
     hopfSpec_map_closedSubgroupCoordinateMorphism H K P e⟩
@@ -245,13 +256,13 @@ private theorem hopfIdealClosedSubgroupOrderEmbedding_surjective
   -- The private order embedding forgets only the reversed order. Its value at `toDual I` is the
   -- public quotient construction, whose projection equation exposes the represented subobject.
   have hEmbedding :
-      (hopfIdealClosedSubgroupOrderEmbedding H (OrderDual.toDual I)).1 =
-        (quotientClosedSubgroup H I).1 := by
+      (hopfIdealClosedSubgroupOrderEmbedding H (OrderDual.toDual I)).val =
+        (quotientClosedSubgroup H I).val := by
     unfold hopfIdealClosedSubgroupOrderEmbedding OrderDual.toDual
     rfl
   rw [hEmbedding, quotientClosedSubgroup_coe]
-  exact (quotientSubobject_ker_eq_mk H K f hf e P.1.arrow hmap_f).trans
-    (Subobject.mk_arrow P.1)
+  exact (quotientSubobject_ker_eq_mk H K f hf e P.val.arrow hmap_f).trans
+    (Subobject.mk_arrow P.val)
 
 /-- Hopf ideals of `H`, ordered by reverse inclusion, are order-isomorphic to the closed subgroup
 schemes of `Spec H`. -/
@@ -310,18 +321,18 @@ theorem hopfIdealOrderIsoClosedSubgroup_symm_apply_eq_ker
     (P : ClosedSubgroupScheme
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)))
     (e : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op K) ≅
-      (P.1 : Grp (Over (Spec (CommRingCat.of R)))))
+      (P.val : Grp (Over (Spec (CommRingCat.of R)))))
     (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (hmap_f : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op =
-      e.hom ≫ P.1.arrow) :
+      e.hom ≫ P.val.arrow) :
     (hopfIdealOrderIsoClosedSubgroup H).symm P =
       OrderDual.toDual (HopfIdeal.kerOfSurjective f.hom hf) := by
   let I : HopfIdeal R H := HopfIdeal.kerOfSurjective f.hom hf
   have hP : quotientClosedSubgroup H I = P := by
     apply Subtype.ext
     rw [quotientClosedSubgroup_coe]
-    exact (quotientSubobject_ker_eq_mk H K f hf e P.1.arrow hmap_f).trans
-      (Subobject.mk_arrow P.1)
+    exact (quotientSubobject_ker_eq_mk H K f hf e P.val.arrow hmap_f).trans
+      (Subobject.mk_arrow P.val)
   rw [← hP]
   exact hopfIdealOrderIsoClosedSubgroup_symm_apply_quotientClosedSubgroup H I
 
@@ -329,7 +340,7 @@ theorem hopfIdealOrderIsoClosedSubgroup_symm_apply_eq_ker
 defining Hopf ideal is killed by the corresponding coordinate morphism. -/
 theorem quotientClosedSubgroup_factors_hopfSpec_map_iff
     {H K : _root_.CommHopfAlgCat.{u} R} (J : HopfIdeal R H) (f : H ⟶ K) :
-    (quotientClosedSubgroup H J).1.Factors
+    (quotientClosedSubgroup H J).val.Factors
         ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op) ↔
       J.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom := by
   rw [quotientClosedSubgroup_coe, Subobject.mk_factors_iff]
@@ -359,12 +370,29 @@ theorem quotientClosedSubgroup_commonKernel_le_iff
     (P : ClosedSubgroupScheme
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))) :
     quotientClosedSubgroup H (commonKernelHopfIdeal f) ≤ P ↔
-      ∀ i, P.1.Factors ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (f i).op) := by
+      ∀ i, P.val.Factors ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (f i).op) := by
   let J := OrderDual.ofDual ((hopfIdealOrderIsoClosedSubgroup H).symm P)
   have hP : quotientClosedSubgroup H J = P :=
     hopfIdealOrderIsoClosedSubgroup_apply_symm_apply H P
   rw [← hP, quotientClosedSubgroup_le_iff, le_commonKernelHopfIdeal_iff]
   simp only [quotientClosedSubgroup_factors_hopfSpec_map_iff]
+
+/-- **Closed subgroup schemes from surjective presentations.** Let `i : X ⟶ Spec H` be a closed
+immersion of group schemes, and suppose that `X ≅ Spec K` identifies `i` with the morphism induced
+by a surjective map of Hopf algebras `f : H ⟶ K`. Then the closed subgroup scheme represented by
+`i` is the one cut out by the kernel of `f`. -/
+theorem _root_.CommHopfAlgCat.mk_eq_quotientClosedSubgroup_kerOfSurjective
+    (H K : _root_.CommHopfAlgCat.{u} R)
+    {X : Grp (Over (Spec (CommRingCat.of R)))}
+    (i : X ⟶ (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))
+    [IsClosedImmersion i.hom.hom.left]
+    (e : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op K) ≅ X)
+    (f : H ⟶ K) (hf : Function.Surjective f.hom)
+    (hmap_f : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op = e.hom ≫ i) :
+    ClosedSubgroupScheme.mk i = quotientClosedSubgroup H (HopfIdeal.kerOfSurjective f.hom hf) :=
+  Subtype.ext <| by
+    rw [ClosedSubgroupScheme.coe_mk, quotientClosedSubgroup_coe]
+    exact (quotientSubobject_ker_eq_mk H K f hf e i hmap_f).symm
 
 /-- The closed subgroup represented by a quotient-to-quotient map is the quotient closed subgroup
 cut out by the kernel of that map. -/
@@ -373,27 +401,50 @@ theorem mk_quotientSpecMapOfLe_eq_quotientClosedSubgroup
     ClosedSubgroupScheme.mk (quotientSpecMapOfLe H hIJ) =
       quotientClosedSubgroup (quotient H I)
         (HopfIdeal.kerOfSurjective (quotientMapOfLe H hIJ).hom
-          (quotientMapOfLe_surjective H hIJ)) := by
-  apply Subtype.ext
-  rw [ClosedSubgroupScheme.coe_mk, quotientClosedSubgroup_coe]
-  exact (quotientSubobject_ker_eq_mk (quotient H I) (quotient H J)
-    (quotientMapOfLe H hIJ) (quotientMapOfLe_surjective H hIJ) (Iso.refl _)
-    (quotientSpecMapOfLe H hIJ) (by simp [quotientSpecMapOfLe_def])).symm
+          (quotientMapOfLe_surjective H hIJ)) :=
+  mk_eq_quotientClosedSubgroup_kerOfSurjective (quotient H I) (quotient H J) _ (Iso.refl _)
+    (quotientMapOfLe H hIJ) (quotientMapOfLe_surjective H hIJ)
+    (by simp [quotientSpecMapOfLe_def])
+
+/-- **Transport of quotient closed subgroups along isomorphisms of Hopf algebras.** An isomorphism
+`φ : K ≅ K'` of Hopf algebras induces `Spec K ≅ Spec K'`, which carries the closed subgroup scheme
+cut out by a Hopf ideal `J` of `K` to the one cut out by its image `φ(J)`. -/
+theorem mapIso_quotientClosedSubgroup {K K' : _root_.CommHopfAlgCat.{u} R} (φ : K ≅ K')
+    (J : HopfIdeal R K) :
+    ClosedSubgroupScheme.mapIso
+        ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso φ.op).symm
+        (quotientClosedSubgroup K J) =
+      quotientClosedSubgroup K' (J.map φ.hom.hom) := by
+  have hf : Function.Surjective (φ.inv ≫ mkQuotient K J).hom := by
+    rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (mkQuotient_surjective K J).comp (ConcreteCategory.bijective_of_isIso φ.inv).2
+  rw [quotientClosedSubgroup_def, ClosedSubgroupScheme.mapIso_mk,
+    mk_eq_quotientClosedSubgroup_kerOfSurjective K' (quotient K J) _ (Iso.refl _) _ hf (by
+      rw [Iso.symm_hom, Functor.mapIso_inv, Iso.op_inv, Iso.refl_hom, Category.id_comp,
+        quotientSpecι_def, ← Functor.map_comp, ← op_comp])]
+  congr 1
+  ext x
+  rw [HopfIdeal.mem_kerOfSurjective, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
+    mkQuotient_eq_zero_iff, HopfIdeal.mem_map_iff_of_surjective
+      (ConcreteCategory.bijective_of_isIso φ.hom).2]
+  exact ⟨fun hx ↦ ⟨_, hx, _root_.CommHopfAlgCat.hom_inv_apply φ x⟩, by
+    rintro ⟨y, hy, rfl⟩
+    simpa using hy⟩
 
 /-- The closed subgroup scheme cut out by a Hopf ideal `I` of a commutative `R`-Hopf algebra `H`
 is finite locally free of constant rank `k` over `Spec R` exactly when `H ⧸ I` is finite projective
 of constant rank `k` over `R`. -/
 theorem finiteLocallyFree_quotientClosedSubgroup_iff (H : _root_.CommHopfAlgCat.{u} R)
     (I : HopfIdeal R H) {k : ℕ} :
-    (IsFinite ((quotientClosedSubgroup H I).1 : Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
-        Flat ((quotientClosedSubgroup H I).1 : Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
-        LocallyOfFinitePresentation ((quotientClosedSubgroup H I).1 :
+    (IsFinite ((quotientClosedSubgroup H I).val : Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
+        Flat ((quotientClosedSubgroup H I).val : Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
+        LocallyOfFinitePresentation ((quotientClosedSubgroup H I).val :
           Grp (Over (Spec (CommRingCat.of R)))).X.hom ∧
-        ∀ s, (((quotientClosedSubgroup H I).1 :
+        ∀ s, (((quotientClosedSubgroup H I).val :
           Grp (Over (Spec (CommRingCat.of R)))).X.hom).finrank s = k) ↔
       _root_.Module.Finite R (H ⧸ I.toIdeal) ∧ _root_.Module.Projective R (H ⧸ I.toIdeal) ∧
         ∀ p, _root_.Module.rankAtStalk (R := R) (H ⧸ I.toIdeal) p = k := by
-  let e : ((quotientClosedSubgroup H I).1 : Grp (Over (Spec (CommRingCat.of R)))).X ≅
+  let e : ((quotientClosedSubgroup H I).val : Grp (Over (Spec (CommRingCat.of R)))).X ≅
       (quotientSpec H I).X :=
     (Grp.forget _).mapIso (Subobject.underlying.mapIso
       (eqToIso (quotientClosedSubgroup_coe H I)) ≪≫ Subobject.underlyingIso (quotientSpecι H I))

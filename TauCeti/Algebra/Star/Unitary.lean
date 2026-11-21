@@ -13,12 +13,19 @@ public import Mathlib.Algebra.Star.Unitary
 
 The unitary elements of a product of star monoids are the pairs of unitary elements. This file
 packages that identification as a multiplicative equivalence. It also records that a unit is
-unitary exactly when its adjoint is its inverse.
+unitary exactly when its adjoint is its inverse. A star-preserving multiplicative map that
+sends `1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to
+unitaries.
 
 ## Main definitions and results
 
+* `TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply`: the inverse unitary equivalence
+  agrees with `Unitary.toUnits` after coercion to units.
+
 * `Unitary.prodEquiv`: `unitary (A × B)` is multiplicatively equivalent to
   `unitary A × unitary B`.
+* `Unitary.map_mem_of_map_one`: a star-preserving multiplicative map with `f 1 = 1` maps
+  unitaries to unitaries.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
 -/
@@ -48,6 +55,16 @@ theorem coe_prodEquiv_symm_apply (u : unitary A × unitary B) :
     ((prodEquiv A B).symm u : A × B) = ((u.1 : A), (u.2 : B)) :=
   (rfl)
 
+/-- A star-preserving multiplicative map sending `1` to `1` maps unitaries to unitaries. This
+applies to non-unital `⋆`-homomorphisms that happen to preserve the unit; compare
+`Unitary.map_mem` for monoid homomorphism classes. -/
+theorem map_mem_of_map_one {R S F : Type*} [Monoid R] [StarMul R] [Monoid S] [StarMul S]
+    [FunLike F R S] [MulHomClass F R S] [StarHomClass F R S] (f : F) (hf : f 1 = 1) {r : R}
+    (hr : r ∈ unitary R) : f r ∈ unitary S :=
+  Unitary.mem_iff.mpr
+    ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem hr, hf],
+      by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem hr, hf]⟩
+
 end Unitary
 
 namespace Units
@@ -73,5 +90,17 @@ theorem star_sub_inv_of_mem_unitary {R : Type*} [Ring R] [StarRing R] {u : Rˣ}
   rw [star_sub, mem_unitary_iff_star_eq_inv.1 h, star_inv_eq_of_mem_unitary h]
 
 end Units
+
+namespace TauCeti
+
+/-- The inverse unitary equivalence, viewed in the units, is the canonical unitary inclusion. -/
+@[simp]
+theorem coe_unitarySubgroupUnitsEquiv_symm_apply {M : Type*} [Monoid M] [StarMul M]
+    (u : unitary M) : (unitarySubgroupUnitsEquiv.symm u : Mˣ) = Unitary.toUnits u := by
+  apply Units.ext
+  exact (val_unitarySubgroupUnitsEquiv_symm_apply_coe u).trans
+    (Unitary.val_toUnits_apply u).symm
+
+end TauCeti
 
 end

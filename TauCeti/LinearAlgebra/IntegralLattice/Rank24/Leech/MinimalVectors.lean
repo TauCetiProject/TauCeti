@@ -201,14 +201,20 @@ theorem leechPairVector_mem {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
   rcases Int.units_eq_one_or s with rfl | rfl <;> rcases Int.units_eq_one_or t with rfl | rfl <;>
     decide
 
-private theorem pair_mem_minimalSpan {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
+/-- A first-shape vector with distinct coordinate positions, halved into rational coordinates,
+occurs in the norm-four shell of the Leech lattice. -/
+theorem leechPairVector_mem_image_vectorsOfNorm {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
     (fun k ↦ (leechPairVector i j s t k : ℚ) / 2) ∈
-      Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) := by
+      Subtype.val '' leechLattice.vectorsOfNorm 4 := by
   obtain ⟨hmem, hnorm⟩ := leechPairVector_mem hij s t
-  apply Submodule.subset_span
   refine ⟨⟨_, hmem⟩, ?_, rfl⟩
   rw [mem_vectorsOfNorm, leechLattice_norm_intCast_div_two, hnorm]
   norm_num
+
+private theorem pair_mem_minimalSpan {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
+    (fun k ↦ (leechPairVector i j s t k : ℚ) / 2) ∈
+      Submodule.span ℚ (Subtype.val '' leechLattice.vectorsOfNorm 4 : Set (Fin 24 → ℚ)) :=
+  Submodule.subset_span (leechPairVector_mem_image_vectorsOfNorm hij s t)
 
 /-- The Leech minimal vectors span the entire rational coordinate space. This is a rational
 span assertion; it does not assert that the first family alone generates the integral lattice. -/
@@ -472,7 +478,7 @@ theorem intCast_div_two_mem_leechLattice_carrier_and_sum_sq_eq_iff (a : Fin 24 �
     obtain ⟨m, hm, b, hb, hsum, hx⟩ := (mem_leechLattice_carrier_iff_exists _).1 ha
     have hab : a = fun i ↦ 2 * b i + m := funext fun i ↦ by
       have := congrFun hx i
-      exact_mod_cast (div_left_inj' two_ne_zero).mp this
+      exact_mod_cast (div_left_inj₀ two_ne_zero).mp this
     subst hab
     rcases hm with rfl | rfl
     · simp only [add_zero, mul_zero] at hsq hsum ⊢
@@ -497,9 +503,9 @@ theorem mem_vectorsOfNorm_four_leechLattice_iff (x : leechLattice) :
   rw [mem_vectorsOfNorm]
   constructor
   · intro hx
-    obtain ⟨m, -, b, -, -, hxb⟩ := (mem_leechLattice_carrier_iff_exists _).1 x.2
+    obtain ⟨m, -, b, -, -, hxb⟩ := (mem_leechLattice_carrier_iff_exists _).1 x.property
     refine ⟨fun i ↦ 2 * b i + m,
-      (intCast_div_two_mem_leechLattice_carrier_and_sum_sq_eq_iff _).1 ⟨hxb ▸ x.2, ?_⟩, hxb⟩
+      (intCast_div_two_mem_leechLattice_carrier_and_sum_sq_eq_iff _).1 ⟨hxb ▸ x.property, ?_⟩, hxb⟩
     rw [hxb, leechLattice_norm_intCast_div_two] at hx
     have : ((∑ i, (2 * b i + m) ^ 2 : ℤ) : ℚ) = ((32 : ℤ) : ℚ) := by
       push_cast at hx ⊢
@@ -523,7 +529,7 @@ theorem leechPairVector_ne_zero_iff (i j : Fin 24) (s t : ℤˣ) (k : Fin 24) :
 
 /-- The parametrization of the first family by ordered pairs of coordinates and two signs. -/
 private def pairParam : {p : Fin 24 × Fin 24 // p.1 < p.2} × ℤˣ × ℤˣ → Fin 24 → ℤ :=
-  fun p ↦ leechPairVector p.1.1.1 p.1.1.2 p.2.1 p.2.2
+  fun p ↦ leechPairVector p.1.val.1 p.1.val.2 p.2.1 p.2.2
 
 private theorem pairParam_injective : Function.Injective pairParam := by
   rintro ⟨⟨⟨i, j⟩, hij⟩, s, t⟩ ⟨⟨⟨i', j'⟩, hij'⟩, s', t'⟩ h
@@ -533,7 +539,6 @@ private theorem pairParam_injective : Function.Injective pairParam := by
   have h1 := (hsupp i).1 (Or.inl rfl)
   have h2 := (hsupp j).1 (Or.inr rfl)
   have h3 := (hsupp i').2 (Or.inl rfl)
-  have hlt : i.val < j.val := hij
   have hlt' : i'.val < j'.val := hij'
   simp only [Fin.ext_iff] at h1 h2 h3
   have hi : i = i' := Fin.ext (by omega)
@@ -572,7 +577,7 @@ private abbrev Octad : Type :=
 
 /-- The sign patterns on an octad: binary words inside it of even weight. -/
 private abbrev OctadSigns (c : Octad) : Type :=
-  {d : Fin 24 → ZMod 2 // (∀ k, c.1 k = 0 → d k = 0) ∧ Even (hammingNorm d)}
+  {d : Fin 24 → ZMod 2 // (∀ k, c.val k = 0 → d k = 0) ∧ Even (hammingNorm d)}
 
 private theorem natCard_octad : Nat.card Octad = 759 := by
   rw [← Set.weightDistribution_def, weightDistribution_code]
@@ -580,35 +585,35 @@ private theorem natCard_octad : Nat.card Octad = 759 := by
 
 /-- A binary word inside the octad `c` is the indicator of a subset of its support. -/
 private def octadSignsEquiv (c : Octad) :
-    OctadSigns c ≃ {t : Finset (Fin 24) // (∀ k ∈ t, c.1 k ≠ 0) ∧ Even #t} where
-  toFun d := ⟨({k | d.1 k ≠ 0} : Finset (Fin 24)),
-    fun k hk h ↦ (mem_filter.1 hk).2 (d.2.1 k h), d.2.2⟩
-  invFun t := ⟨fun k ↦ if k ∈ t.1 then 1 else 0, by
+    OctadSigns c ≃ {t : Finset (Fin 24) // (∀ k ∈ t, c.val k ≠ 0) ∧ Even #t} where
+  toFun d := ⟨({k | d.val k ≠ 0} : Finset (Fin 24)),
+    fun k hk h ↦ (mem_filter.1 hk).2 (d.property.1 k h), d.property.2⟩
+  invFun t := ⟨fun k ↦ if k ∈ t.val then 1 else 0, by
     refine ⟨fun k hk ↦ ?_, ?_⟩
-    · have : k ∉ t.1 := fun h ↦ t.2.1 k h hk
+    · have : k ∉ t.val := fun h ↦ t.property.1 k h hk
       simp [this]
-    · have hnorm : hammingNorm (fun k ↦ if k ∈ t.1 then (1 : ZMod 2) else 0) = #t.1 := by
+    · have hnorm : hammingNorm (fun k ↦ if k ∈ t.val then (1 : ZMod 2) else 0) = #t.val := by
         unfold hammingNorm
         congr 1
         ext k
-        by_cases h : k ∈ t.1 <;> simp [h]
-      exact hnorm ▸ t.2.2⟩
+        by_cases h : k ∈ t.val <;> simp [h]
+      exact hnorm ▸ t.property.2⟩
   left_inv d := by
     refine Subtype.ext (funext fun k ↦ ?_)
-    rcases eq_zero_or_one_of_sq_eq_self (ZMod.pow_card (d.1 k)) with h | h <;> simp [h]
+    rcases eq_zero_or_one_of_sq_eq_self (ZMod.pow_card (d.val k)) with h | h <;> simp [h]
   right_inv t := by
     refine Subtype.ext (Finset.ext fun k ↦ ?_)
-    by_cases h : k ∈ t.1 <;> simp [h]
+    by_cases h : k ∈ t.val <;> simp [h]
 
 /-- An octad carries `2⁷` sign patterns: the subsets of even cardinality of its eight-element
 support. -/
 private theorem natCard_octadSigns (c : Octad) : Nat.card (OctadSigns c) = 128 := by
-  have hsupp : Nat.card {k // c.1 k ≠ 0} = 8 := by
+  have hsupp : Nat.card {k // c.val k ≠ 0} = 8 := by
     rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
-    exact c.2.2
+    exact c.property.2
   -- Subsets of the support, read in `Fin 24`, keep their cardinality.
-  let e : {S : Finset {k // c.1 k ≠ 0} // Even #S} ≃
-      {t : Finset (Fin 24) // (∀ k ∈ t, c.1 k ≠ 0) ∧ Even #t} :=
+  let e : {S : Finset {k // c.val k ≠ 0} // Even #S} ≃
+      {t : Finset (Fin 24) // (∀ k ∈ t, c.val k ≠ 0) ∧ Even #t} :=
     ((Equiv.finsetSubtypeComm _).subtypeEquiv fun S ↦ by
       simp [Equiv.finsetSubtypeComm_apply_coe]).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter _ fun t ↦ Even #t)
@@ -617,7 +622,7 @@ private theorem natCard_octadSigns (c : Octad) : Nat.card (OctadSigns c) = 128 :
 
 /-- The parametrization of the second family by octads and their sign patterns. -/
 private def octadParam : (Σ c : Octad, OctadSigns c) → Fin 24 → ℤ :=
-  fun p ↦ leechOctadVector p.1.1 p.2.1
+  fun p ↦ leechOctadVector p.1.val p.2.val
 
 private theorem octadParam_injective : Function.Injective octadParam := by
   rintro ⟨⟨c, hc⟩, ⟨d, hd⟩⟩ ⟨⟨c', hc'⟩, ⟨d', hd'⟩⟩ h
@@ -681,7 +686,7 @@ private theorem oddParam_injective : Function.Injective oddParam := by
   refine Prod.ext (Subtype.ext (funext fun k ↦ ?_)) rfl
   have hk := congrFun h k
   simp only [leechOddVector_apply] at hk
-  have hval : (c.1 k).val = (c'.1 k).val := by
+  have hval : (c.val k).val = (c'.val k).val := by
     split_ifs at hk <;> omega
   exact ZMod.val_injective _ hval
 
@@ -786,7 +791,7 @@ theorem ncard_vectorsOfNorm_four_leechLattice :
     funext i
     have := congrFun (congrArg Subtype.val h) i
     simp only at this
-    exact_mod_cast (div_left_inj' two_ne_zero).mp this
+    exact_mod_cast (div_left_inj₀ two_ne_zero).mp this
   · intro x hx
     obtain ⟨a, ha, hxa⟩ := (mem_vectorsOfNorm_four_leechLattice_iff x).1 hx
     exact ⟨a, ha, Subtype.ext hxa.symm⟩

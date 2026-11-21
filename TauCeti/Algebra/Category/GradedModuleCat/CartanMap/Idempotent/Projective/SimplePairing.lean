@@ -86,7 +86,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
     IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A)))
 
 /-- The basis `[A eᵢ]` of `K₀^gr(proj A)`. -/
-local notation "bP" => gradedIdempotentProjectiveBasisOfPrimitive he he₀
+local notation "bP" => gradedIdempotentProjectiveBasisOfPrimitive he
   (fun i ↦ Ideal.isHomogeneous_span_singleton 𝒜
     (SetLike.isHomogeneousElem_coe (Subtype.mk (e i) (he₀ i) : 𝒜 0)))
   hprim hnoniso
@@ -115,7 +115,7 @@ omit [IsSemisimpleRing (𝒜 0)] in
 that it can be rewritten backwards. -/
 private theorem projective_eq_basis (i : I) :
     LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) (P i) = (bP) i :=
-  (gradedIdempotentProjectiveBasisOfPrimitive_apply _ _ _ _ _ i).symm
+  (gradedIdempotentProjectiveBasisOfPrimitive_apply _ _ _ _ i).symm
 
 /-- **The graded projective/simple multiplicity pairing**
 `K₀^gr(proj A) × G₀^gr(mod A) → ℤ[q,q⁻¹]`. Pairing the class of `A eᵢ` with the class of a finite

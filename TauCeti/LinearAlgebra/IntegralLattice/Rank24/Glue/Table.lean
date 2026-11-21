@@ -34,7 +34,9 @@ The uniform checks proved here, each a single statement over the row index, are:
   actual element of the module of glue words;
 * the `𝔽₄`-linear span mode is used only for the row `D₄⁶`, all of whose components are `D₄`;
 * `|H|² = |A_R|` for the expected order `|H|`
-  (`TauCeti.RootfulNiemeierType.glueOrder_sq_eq_natCard_glueModule`).
+  (`TauCeti.RootfulNiemeierType.glueOrder_sq_eq_natCard_glueModule`);
+* `E₈³` is the unique row whose glue subgroup `H_r` is trivial
+  (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff_eq_e8Cubed`).
 
 The isotropy, cardinality and minimum-norm checks of the generated subgroups themselves are proved
 in `TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Isotropic` and
@@ -50,7 +52,9 @@ computations by `decide`.
 * `TauCeti.RootfulNiemeierType.gluePatterns`, `spanMode`, `glueOrder`: the glue columns.
 * `TauCeti.RootfulNiemeierType.glueWords`: the digit words denoted by a row's glue columns.
 * `TauCeti.RootfulNiemeierType.glueModule`: the glue words of a row's ordered components.
-* `TauCeti.RootfulNiemeierType.glueSubgroup`: the glue subgroup `H_r` of a row.
+* `TauCeti.RootfulNiemeierType.glueSubgroup`: the glue subgroup `H_r` of a row, containing every
+  decoded word of `r.glueWords` (`TauCeti.RootfulNiemeierType.glueLabelEquiv_mem_glueSubgroup`) and
+  trivial only for `E₈³` (`TauCeti.RootfulNiemeierType.glueSubgroup_eq_bot_iff_eq_e8Cubed`).
 * `TauCeti.RootfulNiemeierType.glueModuleIsometry`: the glue words of a row as the glue words of
   an explicit family of its components, with `map_glueSubgroup_glueModuleIsometry` describing
   `H_r` in these coordinates; the lemmas `*_of_map_glueModuleIsometry` transfer the order, the
@@ -217,7 +221,7 @@ rotated block of `TauCeti.GluePattern.cyclic`, and `[even permutations of (0123)
 /-- **The `𝔽₄`-linear span mode is valid**: it is used only for rows all of whose components are
 `D₄`, so that the `𝔽₄` scalars act on every glue label. -/
 theorem eq_D_four_of_spanMode_eq_f4Linear {r : RootfulNiemeierType}
-    (hr : r.spanMode = .f4Linear) : ∀ c ∈ r.components, c.1 = .D 4 := by
+    (hr : r.spanMode = .f4Linear) : ∀ c ∈ r.components, c.val = .D 4 := by
   rw [spanMode_eq_f4Linear_iff] at hr
   subst hr
   intro c hc
@@ -298,6 +302,15 @@ def glueGenerators (r : RootfulNiemeierType) : Set r.glueModule :=
       encodeGlueWord r.componentType r.isSimplyLaced_componentType w ∈ r.glueWords := by
   simp [glueGenerators]
 
+/-- A row with a single digit word has exactly its decoded word as glue generator. -/
+theorem glueGenerators_eq_singleton (r : RootfulNiemeierType) {l : List ℕ}
+    {w : r.glueModule} (hl : r.glueWords = {l})
+    (hw : encodeGlueWord r.componentType r.isSimplyLaced_componentType w = l) :
+    r.glueGenerators = {w} := by
+  ext v
+  rw [mem_glueGenerators_iff, hl, Finset.mem_singleton, ← hw, Set.mem_singleton_iff]
+  exact (encodeGlueWord_injective _ _).eq_iff
+
 /-- Every digit word of a row decodes to a glue generator. -/
 theorem exists_decodeGlueWord_mem_glueGenerators {r : RootfulNiemeierType} {l : List ℕ}
     (hl : l ∈ r.glueWords) :
@@ -317,6 +330,56 @@ theorem glueSubgroup_def (r : RootfulNiemeierType) :
     r.glueSubgroup = AddSubgroup.closure r.glueGenerators :=
   (rfl)
 
+/-- Every decoded table generator belongs to the glue subgroup it generates. -/
+theorem glueGenerators_subset_glueSubgroup (r : RootfulNiemeierType) :
+    r.glueGenerators ⊆ r.glueSubgroup := by
+  rw [glueSubgroup_def]
+  exact AddSubgroup.subset_closure
+
+/-- An additive automorphism taking table generators into the glue subgroup preserves that
+subgroup, since it is finite. -/
+theorem map_glueSubgroup_of_forall_mem (r : RootfulNiemeierType)
+    {F : Type*} [EquivLike F r.glueModule r.glueModule]
+    [AddEquivClass F r.glueModule r.glueModule] (φ : F)
+    (h : ∀ w ∈ r.glueGenerators, φ w ∈ r.glueSubgroup) :
+    r.glueSubgroup.map (φ : r.glueModule →+ r.glueModule) = r.glueSubgroup := by
+  apply AddSubgroup.eq_of_le_of_card_ge
+  · rw [AddSubgroup.map_le_iff_le_comap, glueSubgroup_def, AddSubgroup.closure_le]
+    intro w hw
+    simpa only [glueSubgroup_def, SetLike.mem_coe, AddSubgroup.mem_comap,
+      AddMonoidHom.coe_ofClass] using h w hw
+  · exact (AddSubgroup.card_map_of_injective (EquivLike.injective φ)).ge
+
+/-- Membership in the glue subgroup is invariant under an additive automorphism taking its
+table generators into the subgroup. -/
+theorem apply_mem_glueSubgroup_iff_of_forall_mem (r : RootfulNiemeierType)
+    {F : Type*} [EquivLike F r.glueModule r.glueModule]
+    [AddEquivClass F r.glueModule r.glueModule] (φ : F)
+    (h : ∀ w ∈ r.glueGenerators, φ w ∈ r.glueSubgroup) (w : r.glueModule) :
+    φ w ∈ r.glueSubgroup ↔ w ∈ r.glueSubgroup := by
+  have hm := AddSubgroup.mem_map_iff_mem (f := (φ : r.glueModule →+ r.glueModule))
+    (EquivLike.injective φ) (K := r.glueSubgroup) (x := w)
+  rwa [r.map_glueSubgroup_of_forall_mem φ h, AddMonoidHom.coe_ofClass] at hm
+
+/-- A glue word whose Conway--Sloane label list belongs to `r.glueWords` lies in
+`r.glueSubgroup`. -/
+theorem glueLabelEquiv_mem_glueSubgroup {r : RootfulNiemeierType}
+    (d : ∀ i : Fin r.components.length, Fin (r.componentType i).glueLabelCount)
+    (hd : (List.ofFn fun i ↦ (d i).val) ∈ r.glueWords) :
+    (fun i ↦ (r.componentType i).glueLabelEquiv (r.isSimplyLaced_componentType i) (d i)) ∈
+      r.glueSubgroup := by
+  rw [glueSubgroup_def]
+  refine AddSubgroup.subset_closure (mem_glueGenerators_iff.mpr ?_)
+  rwa [encodeGlueWord_glueLabelEquiv]
+
+/-- The glue subgroup of a row with one digit word is generated by its decoded word. -/
+theorem glueSubgroup_eq_zmultiples (r : RootfulNiemeierType) {l : List ℕ}
+    {w : r.glueModule} (hl : r.glueWords = {l})
+    (hw : encodeGlueWord r.componentType r.isSimplyLaced_componentType w = l) :
+    r.glueSubgroup = AddSubgroup.zmultiples w := by
+  rw [glueSubgroup_def, r.glueGenerators_eq_singleton hl hw,
+    AddSubgroup.zmultiples_eq_closure]
+
 /-! ### Glue words of a row in the coordinates of an explicit family -/
 
 section glueModuleIsometry
@@ -335,6 +398,18 @@ noncomputable def glueModuleIsometry :
     subst hn
     obtain rfl : t = r.componentType := funext h
     rfl)
+
+/-- The explicit-family identification transports each coordinate along its component equality. -/
+theorem glueModuleIsometry_apply (w : r.glueModule) (i : Fin r.components.length) :
+    r.glueModuleIsometry ht hn h w (Fin.cast hn i) =
+      FiniteQuadraticModule.Isometry.ofEq
+        (DynkinType.glueAlphabet_congr (h i).symm (r.isSimplyLaced_componentType i)
+          (ht (Fin.cast hn i))) (w i) := by
+  subst hn
+  obtain rfl : t = r.componentType := funext h
+  rw [glueModuleIsometry, FiniteQuadraticModule.Isometry.ofEq_apply, cast_eq,
+    FiniteQuadraticModule.Isometry.ofEq_apply, cast_eq]
+  simp only [Fin.cast_eq_self]
 
 /-- The identification of glue words keeps the Conway--Sloane digits of every word. -/
 @[simp]
@@ -412,6 +487,53 @@ theorem glueOrder_sq_eq_natCard_glueModule (r : RootfulNiemeierType) :
   rw [Nat.card_pi]
   simp only [DynkinType.natCard_glueAlphabet_eq_glueLabelCount]
   cases r <;> decide
+
+/-! ### Trivial glue -/
+
+/-- The module of glue words of `E₈³` has a single element, because every `E₈` component has a
+trivial glue alphabet. -/
+instance instSubsingletonGlueModuleE8Cubed : Subsingleton e8Cubed.glueModule :=
+  (Nat.card_eq_one_iff_unique.mp
+    ((glueOrder_sq_eq_natCard_glueModule .e8Cubed).symm.trans (by decide))).1
+
+/-- The printed glue-word set of `E₈³` consists solely of the zero word `[0, 0, 0]`. -/
+@[simp]
+theorem glueWords_e8Cubed : e8Cubed.glueWords = {[0, 0, 0]} := by
+  decide
+
+/-- The decoded glue-generator set of `E₈³` is `{0}`. -/
+theorem glueGenerators_e8Cubed : e8Cubed.glueGenerators = {0} :=
+  e8Cubed.glueGenerators_eq_singleton glueWords_e8Cubed (encodeGlueWord_zero _ _)
+
+/-- The glue subgroup of `E₈³` is trivial. -/
+theorem glueSubgroup_e8Cubed : e8Cubed.glueSubgroup = ⊥ := by
+  ext w
+  simp [Subsingleton.elim w 0]
+
+/-- Every row other than `E₈³` has a printed digit word distinct from the all-zero word. -/
+private theorem exists_mem_glueWords_ne_replicate_zero_of_ne {r : RootfulNiemeierType}
+    (hr : r ≠ .e8Cubed) :
+    ∃ l ∈ r.glueWords, l ≠ List.replicate r.components.length 0 := by
+  revert hr
+  cases r <;> decide
+
+/-- **`E₈³` is the unique row of the rootful rank-24 table whose glue subgroup is trivial.** -/
+@[simp]
+theorem glueSubgroup_eq_bot_iff_eq_e8Cubed (r : RootfulNiemeierType) :
+    r.glueSubgroup = ⊥ ↔ r = .e8Cubed := by
+  refine ⟨fun hbot ↦ ?_, ?_⟩
+  · by_contra hr
+    obtain ⟨l, hl, hne⟩ := exists_mem_glueWords_ne_replicate_zero_of_ne hr
+    obtain ⟨w, hw, hdec⟩ := exists_decodeGlueWord_mem_glueGenerators hl
+    have hwmem : w ∈ r.glueSubgroup := r.glueGenerators_subset_glueSubgroup hw
+    rw [hbot, AddSubgroup.mem_bot] at hwmem
+    subst hwmem
+    have h0 : encodeGlueWord r.componentType r.isSimplyLaced_componentType
+        (0 : ∀ i, (r.componentType i).glueAlphabet (r.isSimplyLaced_componentType i)) = l :=
+      ((decodeGlueWord_eq_some_iff _ _ _ _).mp hdec).symm
+    exact hne (h0.symm.trans (encodeGlueWord_zero r.componentType r.isSimplyLaced_componentType))
+  · rintro rfl
+    exact glueSubgroup_e8Cubed
 
 end RootfulNiemeierType
 

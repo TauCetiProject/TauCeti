@@ -11,8 +11,9 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
 import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
-import Mathlib.Data.Finset.Prod
+public import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Finset.Powerset
+import Mathlib.Data.Finset.Max
 import Mathlib.Data.Set.Finite.Lattice
 
 /-!
@@ -27,20 +28,25 @@ triangles.
 This file constructs the product first for `PreAbstractSimplicialComplex`, then for
 `AbstractSimplicialComplex`. It also supplies the simplicial coordinate projections,
 fixed-coordinate inclusions, and the ordered cylinder obtained by taking the second factor to be
-the standard one-simplex on `Fin 2`.
+the standard one-simplex on `Fin 2`. The faces of the ordered cylinder are described explicitly
+as the subsets of staircase simplices, which switch from the initial to the terminal end of the
+interval at one vertex of a face of the base.
 
-The construction is the simplicial product used in the collapse track of layer 11 of the
-geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`). In particular, the
-ordered cylinder is the missing product `K × I` in the statement of Zeeman's conjecture. The
-definition follows the ordered (staircase) triangulation convention in Rourke--Sanderson,
-*Introduction to Piecewise-Linear Topology*, Chapter 2. No claim about the realization of this
-product is made here; identifying its realization with the product of realizations is later work.
+The construction is the simplicial product used in collapse arguments. In particular, the ordered
+cylinder is the simplicial model of the product `K × I` in the statement of Zeeman's conjecture
+(`Zeeman`). The definition follows the ordered (staircase) triangulation convention in
+Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2. No claim about the
+realization of this product is made here; for a product with finitely many faces,
+`Realization.Product.Homeomorph` identifies its realization with the product of realizations.
 
 ## Main definitions
 
 * `PreAbstractSimplicialComplex.orderedProd`: the ordered product of two precomplexes.
 * `AbstractSimplicialComplex.orderedProd`: the ordered product of two complexes.
 * `AbstractSimplicialComplex.orderedCylinder`: product with the standard one-simplex.
+* `Finset.cylinderStaircase`: the staircase simplices of the prism on a finite set.
+* `AbstractSimplicialComplex.mem_orderedCylinder_iff_exists_subset_cylinderStaircase`: the faces
+  of the ordered cylinder are the nonempty subsets of the staircases over faces of the base.
 * `AbstractSimplicialComplex.isCone_orderedCylinder_of_isCone`: taking the ordered cylinder
   preserves a cone whose apex is greatest.
 * `PreAbstractSimplicialComplex.SimplicialMap.orderedProdFst` and
@@ -312,6 +318,33 @@ end SimplicialMap
 
 end PreAbstractSimplicialComplex
 
+namespace Finset
+
+variable {α : Type*} [LinearOrder α]
+
+/-- The staircase simplex of the prism on `V` that passes from the initial to the terminal end of
+the interval at `k`: the vertices `(x, 0)` with `x ≤ k` and `(x, 1)` with `k ≤ x`, for `x ∈ V`.
+For `k ∈ V` these are the top-dimensional simplices of the ordered cylinder on the simplex `V`.
+The body is exposed so that staircases of explicit complexes can be evaluated by `decide`. -/
+@[expose] def cylinderStaircase (V : Finset α) (k : α) : Finset (α × Fin 2) :=
+  V.filter (· ≤ k) ×ˢ {0} ∪ V.filter (k ≤ ·) ×ˢ {1}
+
+/-- Membership in a staircase: a vertex of the initial end at or below the switching vertex, or a
+vertex of the terminal end at or above it. -/
+@[simp]
+theorem mem_cylinderStaircase {V : Finset α} {k : α} {p : α × Fin 2} :
+    p ∈ cylinderStaircase V k ↔ p.1 ∈ V ∧ (p.2 = 0 ∧ p.1 ≤ k ∨ p.2 = 1 ∧ k ≤ p.1) := by
+  simp only [cylinderStaircase, Finset.mem_union, Finset.mem_product, Finset.mem_filter,
+    Finset.mem_singleton]
+  tauto
+
+/-- Staircases are monotone in the vertex set. -/
+theorem cylinderStaircase_mono {V W : Finset α} (h : V ⊆ W) (k : α) :
+    cylinderStaircase V k ⊆ cylinderStaircase W k := fun _ hp =>
+  mem_cylinderStaircase.mpr ⟨h (mem_cylinderStaircase.mp hp).1, (mem_cylinderStaircase.mp hp).2⟩
+
+end Finset
+
 namespace AbstractSimplicialComplex
 
 variable {α β : Type*}
@@ -437,6 +470,69 @@ theorem finite_faces_orderedCylinder (hfin : K.faces.Finite) :
     simpa only [PreAbstractSimplicialComplex.simplex_univ] using
       (PreAbstractSimplicialComplex.finite_faces_simplex (Finset.univ : Finset (Fin 2)))
   exact PreAbstractSimplicialComplex.finite_faces_orderedProd hfin htop
+
+/-- A staircase over a face, switching at one of its vertices, is a face of the ordered
+cylinder. -/
+theorem cylinderStaircase_mem_orderedCylinder {V : Finset α} {k : α} (hV : V ∈ K) (hk : k ∈ V) :
+    V.cylinderStaircase k ∈ K.orderedCylinder := by
+  refine mem_orderedCylinder_iff.mpr ⟨?_, ?_⟩
+  · refine (K.isRelLowerSet_faces hV).2 (fun x hx => ?_) ⟨k, Finset.mem_image.mpr
+      ⟨(k, 0), Finset.mem_cylinderStaircase.mpr ⟨hk, Or.inl ⟨rfl, le_rfl⟩⟩, rfl⟩⟩
+    obtain ⟨p, hp, rfl⟩ := Finset.mem_image.mp hx
+    exact (Finset.mem_cylinderStaircase.mp hp).1
+  · intro p hp q hq _
+    simp only [Finset.mem_coe, Finset.mem_cylinderStaircase] at hp hq
+    obtain ⟨-, ⟨hp2, hpk⟩ | ⟨hp2, hkp⟩⟩ := hp <;> obtain ⟨-, ⟨hq2, hqk⟩ | ⟨hq2, hkq⟩⟩ := hq
+    · rcases le_total p.1 q.1 with h | h
+      · exact Or.inl ⟨h, (hp2.trans hq2.symm).le⟩
+      · exact Or.inr ⟨h, (hq2.trans hp2.symm).le⟩
+    · exact Or.inl ⟨hpk.trans hkq, hp2 ▸ Fin.zero_le _⟩
+    · exact Or.inr ⟨hqk.trans hkp, hq2 ▸ Fin.zero_le _⟩
+    · rcases le_total p.1 q.1 with h | h
+      · exact Or.inl ⟨h, (hp2.trans hq2.symm).le⟩
+      · exact Or.inr ⟨h, (hq2.trans hp2.symm).le⟩
+
+/-- Every face of the ordered cylinder lies in a staircase over its first-coordinate image,
+switching at one of the vertices of that image. -/
+theorem exists_subset_cylinderStaircase_of_mem_orderedCylinder {σ : Finset (α × Fin 2)}
+    (hσ : σ ∈ K.orderedCylinder) :
+    ∃ k ∈ σ.image Prod.fst, σ ⊆ (σ.image Prod.fst).cylinderStaircase k := by
+  have hne : σ.Nonempty := Finset.image_nonempty.mp (K.isRelLowerSet_faces
+    (image_fst_mem_of_mem_orderedCylinder hσ)).1
+  have hchain := isChain_of_mem_orderedCylinder hσ
+  have hfst {p : α × Fin 2} (hp : p ∈ σ) : p.1 ∈ σ.image Prod.fst := Finset.mem_image_of_mem _ hp
+  -- Switch at the largest vertex on the initial end, or at the smallest vertex if that end
+  -- is not met.
+  by_cases h0 : (σ.filter (·.2 = 0)).Nonempty
+  · obtain ⟨p, hp, hmax⟩ := (σ.filter (·.2 = 0)).exists_max_image Prod.fst h0
+    obtain ⟨hpσ, hp0⟩ := Finset.mem_filter.mp hp
+    refine ⟨p.1, hfst hpσ, fun q hq => Finset.mem_cylinderStaircase.mpr ⟨hfst hq, ?_⟩⟩
+    rcases Fin.exists_fin_two.mp ⟨q.2, rfl⟩ with hq2 | hq2
+    · exact Or.inl ⟨hq2, hmax q (Finset.mem_filter.mpr ⟨hq, hq2⟩)⟩
+    · refine Or.inr ⟨hq2, ?_⟩
+      rcases eq_or_ne p q with rfl | hpq
+      · exact absurd (hp0.symm.trans hq2) (by decide)
+      rcases hchain hpσ hq hpq with hle | hle
+      · exact hle.1
+      · exact absurd (hq2 ▸ hp0 ▸ hle.2) (by decide)
+  · obtain ⟨p, hp, hmin⟩ := σ.exists_min_image Prod.fst hne
+    refine ⟨p.1, hfst hp, fun q hq => Finset.mem_cylinderStaircase.mpr
+      ⟨hfst hq, Or.inr ⟨?_, hmin q hq⟩⟩⟩
+    rcases Fin.exists_fin_two.mp ⟨q.2, rfl⟩ with hq2 | hq2
+    · exact absurd ⟨q, Finset.mem_filter.mpr ⟨hq, hq2⟩⟩ h0
+    · exact hq2
+
+/-- The faces of the ordered cylinder are exactly the nonempty subsets of the staircases over
+faces of the base. -/
+theorem mem_orderedCylinder_iff_exists_subset_cylinderStaircase {σ : Finset (α × Fin 2)} :
+    σ ∈ K.orderedCylinder ↔ σ.Nonempty ∧ ∃ V ∈ K, ∃ k ∈ V, σ ⊆ V.cylinderStaircase k := by
+  refine ⟨fun hσ => ⟨Finset.image_nonempty.mp (K.isRelLowerSet_faces
+    (image_fst_mem_of_mem_orderedCylinder hσ)).1, _,
+      image_fst_mem_of_mem_orderedCylinder hσ,
+      exists_subset_cylinderStaircase_of_mem_orderedCylinder hσ⟩, ?_⟩
+  rintro ⟨hne, V, hV, k, hk, hσ⟩
+  exact (K.orderedCylinder.isRelLowerSet_faces
+    (cylinderStaircase_mem_orderedCylinder hV hk)).2 hσ hne
 
 /-- The ordered cylinder of a cone whose apex bounds every vertex of the complex is a cone with
 apex the pair of that vertex and the terminal endpoint of the interval. -/

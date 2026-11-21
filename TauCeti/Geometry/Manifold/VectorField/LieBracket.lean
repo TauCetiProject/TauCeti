@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -17,8 +19,7 @@ bracket with the commutator of its directional derivatives. It also records that
 fields on a model space have zero manifold Lie bracket.
 
 The chart argument follows the pullback idiom used for the manifold bracket in
-`Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`. The resulting lemma is a general manifold
-prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
+`Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`.
 
 ## Main results
 
@@ -30,10 +31,18 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
+* `TauCeti.mvfderiv_div_mvfderiv_sub_eq_mlieBracket`: the logarithmic differential `df / f` of a
+  nonvanishing function is closed, i.e. `X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f`.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
   bracket of the coordinate expressions of two fields is their manifold bracket.
+* `VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq`: near the chart image of an
+  interior point, the flat bracket of the coordinate expressions of two fields differentiable near
+  that point is the coordinate expression of their manifold bracket.
+* `lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_eventually_mlieBracket_eq_zero`: if
+  the manifold bracket of two such fields vanishes near an interior point, the flat bracket of
+  their coordinate expressions vanishes near its chart image.
 * `VectorField.lieBracketWithin_neg_right` and `VectorField.mlieBracket_neg_right`: the flat and
   manifold brackets are odd in their second argument.
 * `VectorField.mlieBracket_neg_left`: the manifold bracket is odd in its first argument.
@@ -45,8 +54,6 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 * `Mathlib/Analysis/Calculus/VectorField.lean`, theorem `fderivWithin_apply_lieBracket`.
 * `Mathlib/Geometry/Manifold/VectorField/LieBracket.lean`, for the chart-transport construction.
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1.
 -/
 
 public section
@@ -197,11 +204,41 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
       |>.differentiableWithinAt_mpullbackWithin_vectorField
   rw [fderivWithin_apply_lieBracket hfcoord le_rfl I.uniqueDiffOn
     (I.range_subset_closure_interior (Set.mem_range_self (f := I) _))
-    (Set.mem_range_self (f := I) _) hWcoord hVcoord,
-    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hW,
-    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
+    (Set.mem_range_self (f := I) _) hVcoord hWcoord,
+    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin (U := W),
+    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin (U := V)]
 
 namespace TauCeti
+
+/-- The second derivatives of a scalar function `f` cancel in the commutator of the logarithmic
+differentials `df(U) / f`: the logarithmic differential is closed, so
+`X (df(Y) / f) - Y (df(X) / f) = df([X, Y]) / f` at a point `p` where `f` is `C^n` with
+`minSmoothness 𝕜 2 ≤ n` and nonzero and the vector fields `X`, `Y` are differentiable. -/
+theorem mvfderiv_div_mvfderiv_sub_eq_mlieBracket {n : ℕ∞ω} {f : M → 𝕜}
+    {X Y : Π x : M, TangentSpace I x} {p : M} (hf : CMDiffAt n f p)
+    (hn : minSmoothness 𝕜 2 ≤ n) (hX : MDiffAt (T% X) p) (hY : MDiffAt (T% Y) p)
+    (hp : f p ≠ 0) :
+    mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) p (X p) -
+      mvfderiv I (fun x ↦ mvfderiv I f x (X x) / f x) p (Y p) =
+        mvfderiv I f p (mlieBracket I X Y p) / f p := by
+  have hfd := hf.mdifferentiableAt
+    (pos_iff_ne_zero.mp ((by norm_num : (0 : ℕ∞ω) < 2).trans_le (le_minSmoothness.trans hn)))
+  have h2n : (2 : ℕ∞ω) ≤ n := (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have hdX := TauCeti.mdifferentiableAt_mvfderiv_apply hf h2n hX
+  have hdY := TauCeti.mdifferentiableAt_mvfderiv_apply hf h2n hY
+  -- The derivative of `df(U) / f` along `Z`, by the quotient rule.
+  have hda {U Z : Π x : M, TangentSpace I x}
+      (hdU : MDiffAt (fun x ↦ mvfderiv I f x (U x)) p) :
+      mvfderiv I (fun x ↦ mvfderiv I f x (U x) / f x) p (Z p) =
+        (1 / f p) * mvfderiv I (fun x ↦ mvfderiv I f x (U x)) p (Z p) -
+          (mvfderiv I f p (U p) / f p ^ 2) * mvfderiv I f p (Z p) := by
+    have hq := congrArg (fun L ↦ L (Z p)) (hdU.hasMFDerivAt.div hfd.hasMFDerivAt hp).mfderiv
+    simp only [mvfderiv_apply_eq_mfderiv_apply]
+    exact hq
+  have hcomm := mvfderiv_mlieBracket hf hn hX hY
+  rw [hda hdY, hda hdX, hcomm]
+  field_simp
+  ring
 
 /-- A tangent vector `v` at `x` is the Lie bracket of the differentiable vector fields `V` and `W`
 at `x` as soon as the differential of the extended chart at `x` sends `v` to the commutator of the
@@ -224,6 +261,52 @@ theorem eq_mlieBracket_of_mvfderiv_extChartAt {V W : ∀ y : M, TangentSpace I y
 
 end TauCeti
 
+namespace VectorField
+
+/-- **Naturality of the bracket under the inverse chart.** If two vector fields are differentiable
+near an interior point `x`, then near the chart image of `x` the flat Lie bracket of their pullbacks
+along the inverse extended chart at `x` is the pullback of their manifold Lie bracket. This is
+`VectorField.mpullback_mlieBracket` at the points of the interior of the chart target. -/
+theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq
+    {V W : ∀ y : M, TangentSpace I y} {x : M} (hx : I.IsInteriorPoint x)
+    (hV : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) y)
+    (hW : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, W y⟩ : TangentBundle I M)) y) :
+    lieBracket 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
+      (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm W) =ᶠ[𝓝 (extChartAt I x x)]
+      mpullback 𝓘(𝕜, E) I (extChartAt I x).symm (mlieBracket I V W) := by
+  have hc : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
+    have h := continuousAt_extChartAt_symm (I := I) x
+    rwa [ContinuousAt, extChartAt_to_inv] at h
+  -- At an interior point the model range is a neighbourhood, so the chart target is one too.
+  have ht : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) := by
+    rw [← nhdsWithin_eq_nhds.2 (mem_interior_iff_mem_nhds.1 hx)]
+    exact extChartAt_target_mem_nhdsWithin x
+  filter_upwards [hc.eventually hV, hc.eventually hW, interior_mem_nhds.2 ht] with z hzV hzW hzt
+  have hf : ContMDiffAt 𝓘(𝕜, E) I (minSmoothness 𝕜 2) (extChartAt I x).symm z :=
+    (contMDiffOn_extChartAt_symm x).contMDiffAt (mem_interior_iff_mem_nhds.1 hzt)
+  rw [mpullback_mlieBracket hzV hzW hf le_rfl, mlieBracket_eq_lieBracket]
+
+/-- If two vector fields are differentiable near an interior point `x` and their manifold Lie
+bracket vanishes near `x`, then the flat Lie bracket of their pullbacks along the inverse extended
+chart at `x` vanishes near the chart image of `x`. -/
+theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_eventually_mlieBracket_eq_zero
+    {V W : ∀ y : M, TangentSpace I y} {x : M} (hx : I.IsInteriorPoint x)
+    (hV : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) y)
+    (hW : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, W y⟩ : TangentBundle I M)) y)
+    (hVW : ∀ᶠ y in 𝓝 x, mlieBracket I V W y = 0) :
+    lieBracket 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
+      (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm W) =ᶠ[𝓝 (extChartAt I x x)] 0 := by
+  have hc : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
+    have h := continuousAt_extChartAt_symm (I := I) x
+    rwa [ContinuousAt, extChartAt_to_inv] at h
+  filter_upwards [lieBracket_mpullback_extChartAt_symm_eventuallyEq hx hV hW,
+    hc.eventually hVW] with z hz hz0
+  rw [hz, mpullback_apply, hz0, map_zero]
+  -- The zero of a tangent space of `E` is the zero of `E` by definition.
+  rfl
+
+end VectorField
+
 end
 
 namespace VectorField
@@ -231,7 +314,7 @@ namespace VectorField
 omit [CompleteSpace E] in
 /-- At the centre of the preferred chart, the Lie bracket of the inverse-chart pullbacks of two
 vector fields is their manifold Lie bracket. -/
-theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
+theorem lieBracketWithin_mpullbackWithin_extChartAt_symm
     (V W : ∀ y : M, TangentSpace I y) (s : Set M) (x : M) :
     lieBracketWithin 𝕜 (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I))
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm W (Set.range I))
@@ -239,9 +322,9 @@ theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
         mlieBracketWithin I V W s x := by
   -- The chart derivative at its centre is the identity of `E`; `TangentSpace I x` is not
   -- syntactically `E`, so the identification is made on the inverse before evaluating it.
-  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E :=
-    (congrArg (fun f : E →L[𝕜] E ↦ f.inverse) (mfderiv_extChartAt_self (I := I) (x := x))).trans
-      ContinuousLinearMap.inverse_id
+  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E := by
+    rw [TauCeti.mfderiv_extChartAt_eq_id]
+    exact ContinuousLinearMap.inverse_id
   rw [mlieBracketWithin_apply]
   exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
 
@@ -271,6 +354,28 @@ omit [CompleteSpace E] in
 theorem mlieBracket_neg_left {V W : ∀ y : M, TangentSpace I y} {x : M} :
     mlieBracket I (-V) W x = -mlieBracket I V W x := by
   rw [mlieBracket_swap_apply, mlieBracket_neg_right, neg_neg, mlieBracket_swap_apply]
+
+omit [CompleteSpace E] in
+/-- Scaling the first vector field by a constant scales the manifold Lie bracket. This is Mathlib's
+`mlieBracket_const_smul_left` without its differentiability hypothesis, and without completeness:
+`fderivWithin` of a constant multiple is the constant multiple of `fderivWithin`
+(`fderivWithin_const_smul_field`). -/
+theorem mlieBracket_const_smul_left_field {V W : ∀ y : M, TangentSpace I y} {x : M} (c : 𝕜) :
+    mlieBracket I (c • V) W x = c • mlieBracket I V W x := by
+  have hs : UniqueDiffWithinAt 𝕜 ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+      (extChartAt I x x) := by
+    rw [Set.preimage_univ, Set.univ_inter]
+    exact I.uniqueDiffOn _ (Set.mem_range_self _)
+  have key (V' W' : E → E) :
+      lieBracketWithin 𝕜 (c • V') W' ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+          (extChartAt I x x) =
+        c • lieBracketWithin 𝕜 V' W' ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+          (extChartAt I x x) := by
+    simp only [lieBracketWithin, fderivWithin_const_smul_field c hs, Pi.smul_apply, map_smul,
+      smul_apply, smul_sub]
+  simp only [← mlieBracketWithin_univ, mlieBracketWithin_def, mpullbackWithin_const_smul,
+    mpullback]
+  exact (congrArg _ (key _ _)).trans (map_smul _ _ _)
 
 /-- The **Jacobi identity** for the manifold Lie bracket, in cyclic form:
 `[U, [V, W]] + [V, [W, U]] + [W, [U, V]] = 0`. This rearranges Mathlib's Leibniz form

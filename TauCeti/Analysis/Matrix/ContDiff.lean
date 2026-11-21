@@ -19,7 +19,7 @@ elementary matrices.
 
 public section
 
-open scoped ContDiff Matrix Matrix.Norms.Elementwise
+open scoped ContDiff Matrix.Norms.Elementwise
 
 variable {𝕜 R E : Type*} [NontriviallyNormedField 𝕜]
   [NormedRing R] [NormedAlgebra 𝕜 R] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -30,11 +30,6 @@ variable {𝕜 R E : Type*} [NontriviallyNormedField 𝕜]
 theorem ContDiff.matrix_mul {f : E → Matrix m n R} {g : E → Matrix n p R}
     (hf : ContDiff 𝕜 k f) (hg : ContDiff 𝕜 k g) :
     ContDiff 𝕜 k (fun x => f x * g x) := by
-  apply contDiff_pi.mpr
-  intro i
-  apply contDiff_pi.mpr
-  intro j
+  refine contDiff_pi' fun i => contDiff_pi' fun j => ?_
   simp only [Matrix.mul_apply]
-  exact ContDiff.sum fun a _ =>
-    ((contDiff_pi.mp (contDiff_pi.mp hf i) a).mul
-      (contDiff_pi.mp (contDiff_pi.mp hg a) j))
+  fun_prop

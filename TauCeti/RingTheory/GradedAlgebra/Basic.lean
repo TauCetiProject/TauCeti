@@ -66,13 +66,14 @@ theorem coe_decompose_mul_zero_of_nonneg (hneg : ∀ p < 0, 𝒜 p = ⊥) (x y :
     rwa [hneg p hp, Submodule.mem_bot] at hc
   induction x using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
-  | add x x' hx hx' => simp only [add_mul, decompose_add, add_apply, Submodule.coe_add, hx, hx']
+  | add x x' hx hx' => simp only [add_mul, decompose_add, DirectSum.add_apply, Submodule.coe_add,
+    hx, hx']
   | @homogeneous i x =>
     obtain ⟨c, hc⟩ := x
     induction y using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | add y y' hy hy' =>
-      simp only [mul_add, decompose_add, add_apply, Submodule.coe_add, hy, hy']
+      simp only [mul_add, decompose_add, DirectSum.add_apply, Submodule.coe_add, hy, hy']
     | @homogeneous j y =>
       obtain ⟨c', hc'⟩ := y
       dsimp only
@@ -101,7 +102,7 @@ theorem eq_zero_of_isIdempotentElem_of_decompose_zero (hneg : ∀ p < 0, 𝒜 p 
   have hr1 : ∀ i < (1 : ℤ), r i = 0 := by
     intro i hi
     rcases lt_or_eq_of_le (show i ≤ 0 by omega) with hi | rfl
-    · exact Subtype.ext (hzero hi (r i).2)
+    · exact Subtype.ext (hzero hi (r i).property)
     · exact Subtype.ext h0
   have hpow (n : ℕ) : r = r ^ (n + 1) := by
     have h : decompose 𝒜 (f ^ (n + 1)) = decompose 𝒜 f ^ (n + 1) :=
@@ -143,7 +144,7 @@ theorem mem_of_mul_mem_add_of_isLeftRegular {a b : A} {i j : ι} (ha : a ∈ �
       rw [DirectSum.of_eq_same]
     · rw [hk k hkj, DirectSum.of_eq_of_ne _ _ _ hkj]
   rw [← (decompose 𝒜).symm_apply_apply b, hb, decompose_symm_of]
-  exact (decompose 𝒜 b j).2
+  exact (decompose 𝒜 b j).property
 
 end Regular
 

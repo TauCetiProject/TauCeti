@@ -6,7 +6,10 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Fernique
+public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.MeasureTheory.Integral.OddSymmetric
+public import Mathlib.Probability.Distributions.Gaussian.Real
+import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
 # Symmetry of Gaussian measures
@@ -15,6 +18,12 @@ A centered Gaussian measure on a real separable Banach space is invariant under 
 Consequently, an odd function of a Gaussian vector centered at its mean has integral zero.
 This applies in particular to odd products of centered linear observables, without assuming
 independence or a nonsingular covariance.
+The standard real Gaussian product law is also invariant under planar reflections, linear isometry
+equivalences intertwine scaled standard Gaussian measures on finite-dimensional real inner product
+spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), centered real
+Gaussian laws assign equal mass to opposite half-lines (giving positive-variance half-line mass
+`2⁻¹`), and centered real Gaussian laws and their independent products are invariant under
+multiplication by deterministic scalars of unit modulus.
 -/
 
 public section
@@ -63,3 +72,95 @@ theorem integral_comp_sub_eq_zero_of_odd (μ : Measure E) [IsGaussian μ]
     _ = 0 := integral_eq_zero_of_odd hf
 
 end ProbabilityTheory.IsGaussian
+
+namespace TauCeti.Probability
+
+open ProbabilityTheory Real Set
+open scoped NNReal ENNReal
+
+/-- Every centered real Gaussian law is invariant under negation. -/
+instance isNegInvariant_gaussianReal_zero (v : ℝ≥0) : (gaussianReal 0 v).IsNegInvariant :=
+  ⟨by simp [Measure.neg_def]⟩
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `(0, ∞)`. -/
+@[simp] theorem gaussianReal_zero_Ioi_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Ioi 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Ioi_zero_eq_inv_two (measure_singleton 0)
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `(-∞, 0)`. -/
+@[simp] theorem gaussianReal_zero_Iio_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Iio 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Iio_zero_eq_inv_two (measure_singleton 0)
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `[0, ∞)`. -/
+@[simp] theorem gaussianReal_zero_Ici_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Ici 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Ici_zero_eq_inv_two (measure_singleton 0)
+
+/-- A nondegenerate centered real Gaussian law assigns measure `2⁻¹` to `(-∞, 0]`. -/
+@[simp] theorem gaussianReal_zero_Iic_zero {v : ℝ≥0} (hv : v ≠ 0) :
+    gaussianReal 0 v (Iic 0) = 2⁻¹ :=
+  have := nullSingletonClass_gaussianReal (μ := 0) hv
+  (gaussianReal 0 v).measure_Iic_zero_eq_inv_two (measure_singleton 0)
+
+/-- The standard Gaussian product law is invariant under reflection across a line. -/
+theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
+    MeasurePreserving
+      (fun p : ℝ × ℝ => (cos θ * p.1 + sin θ * p.2, sin θ * p.1 - cos θ * p.2))
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1))
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) := by
+  have hrot : MeasurePreserving (ContinuousLinearMap.rotation θ : ℝ × ℝ →L[ℝ] ℝ × ℝ)
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1))
+      (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) :=
+    ⟨by fun_prop, IsGaussian.map_rotation_eq_self (μ := gaussianReal 0 1)
+      (by simp [integral_id_gaussianReal]) _⟩
+  have hneg : MeasurePreserving (fun x : ℝ => -x) (gaussianReal 0 1) (gaussianReal 0 1) :=
+    ⟨by fun_prop, by simp⟩
+  convert ((MeasurePreserving.id (gaussianReal 0 1)).prod hneg).comp hrot using 1
+  funext p
+  simp [ContinuousLinearMap.rotation_apply, sub_eq_add_neg, add_comm]
+
+/-- Every linear isometry equivalence between finite-dimensional real inner product spaces
+intertwines scaled standard Gaussian measures; in particular, a linear isometry self-equivalence
+preserves every scaled standard Gaussian measure. -/
+theorem map_linearIsometryEquiv_map_smul_stdGaussian {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F]
+    (f : E ≃ₗᵢ[ℝ] F) (c : ℝ) :
+    ((stdGaussian E).map (fun x ↦ c • x)).map f = (stdGaussian F).map (fun y ↦ c • y) := by
+  rw [Measure.map_map f.continuous.measurable (by fun_prop),
+    show f ∘ (fun x : E ↦ c • x) = (fun y : F ↦ c • y) ∘ f from funext (map_smul f c),
+    ← Measure.map_map (by fun_prop) f.continuous.measurable, stdGaussian_map f]
+
+end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open scoped NNReal
+
+/-- Multiplying a centered real Gaussian random variable by a scalar of unit modulus preserves its
+law. -/
+theorem HasLaw.gaussianReal_const_mul_of_abs_eq_one {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {v : ℝ≥0} (hX : HasLaw X (gaussianReal 0 v) P)
+    {c : ℝ} (hc : |c| = 1) :
+    HasLaw (fun ω ↦ c * X ω) (gaussianReal 0 v) P := by
+  have hc2 : NNReal.mk (c ^ 2) (sq_nonneg c) = 1 :=
+    NNReal.eq (by simp [← sq_abs, hc])
+  simpa [hc2] using gaussianReal_const_mul hX c
+
+/-- Multiplying independent centered real Gaussian random variables by deterministic signs `η i`
+with `|η i| = 1` preserves their joint product law. -/
+theorem iIndepFun.hasLaw_pi_mul_gaussianReal_of_abs_eq_one {Ω ι : Type*} [MeasurableSpace Ω]
+    [Fintype ι] {P : Measure Ω} {g : ι → Ω → ℝ} {σ : ι → ℝ≥0}
+    (hindep : iIndepFun g P) (hlaw : ∀ i, HasLaw (g i) (gaussianReal 0 (σ i)) P)
+    {η : ι → ℝ} (hη : ∀ i, |η i| = 1) :
+    HasLaw (fun ω i ↦ η i * g i ω) (Measure.pi fun i ↦ gaussianReal 0 (σ i)) P :=
+  (hindep.comp (fun i x ↦ η i * x) fun _ ↦ by fun_prop).hasLaw_pi fun i ↦
+    (hlaw i).gaussianReal_const_mul_of_abs_eq_one (hη i)
+
+end ProbabilityTheory

@@ -59,7 +59,7 @@ variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace 
 theorem IsProP.finite_continuousCohomology_of_finite_cohomFp (hG : IsProP p G) {n : ℕ}
     [Finite (cohomFp p G n)] (M : Type u) [AddCommGroup M] [TopologicalSpace M]
     [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
-    (hM : IsPPrimaryTorsion p M) : Finite (continuousCohomology n (ofDiscreteModule ℤ G M)) :=
+    (hM : IsAddPGroup p M) : Finite (continuousCohomology n (ofDiscreteModule ℤ G M)) :=
   hG.finite_continuousCohomology_of_forall_natCard_eq_smul_eq_self (n := n)
     (fun A _ _ _ _ _ _ hA htriv ↦
       (finite_continuousCohomology_iff_finite_cohomFp_of_natCard_eq A hA htriv n).2
@@ -70,7 +70,7 @@ with `H²(G, 𝔽_p)` finite. Then the explicit `H²(G, M)` is finite for every 
 `p`-primary `G`-module `M`. -/
 theorem IsProP.finite_H2 (hG : IsProP p G) [Finite (cohomFp p G 2)] (M : Type u) [AddCommGroup M]
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M]
-    [Finite M] (hM : IsPPrimaryTorsion p M) : Finite (H2 G M) :=
+    [Finite M] (hM : IsAddPGroup p M) : Finite (H2 G M) :=
   have := hG.finite_continuousCohomology_of_finite_cohomFp (n := 2) M hM
   Finite.of_equiv _ (explicitH2AddEquivContinuousCohomology G M).symm.toEquiv
 
@@ -90,7 +90,7 @@ theorem IsProP.finite_cohomFp_openSubgroup (hG : IsProP p G) {n : ℕ} [Finite (
   -- `Coind_U^G 𝔽_p` is finite and `p`-primary, so its cohomology in degree `n` is finite
   have := hG.finite_continuousCohomology_of_finite_cohomFp (n := n)
     (DiscreteCoind G U.toSubgroup (trivialFp p U.toSubgroup).V)
-    (isPPrimaryTorsion_discreteCoind G U.toSubgroup _ (isPPrimaryTorsion_trivialFp_V p _))
+    (isAddPGroup_discreteCoind G U.toSubgroup _ (isAddPGroup_trivialFp_V p _))
   -- Shapiro's lemma, then the identification of the carrier's `ℤ`-cohomology with `cohomFp`
   have : Finite (continuousCohomology n
       (ofDiscreteModule ℤ U.toSubgroup (trivialFp p U.toSubgroup).V)) :=

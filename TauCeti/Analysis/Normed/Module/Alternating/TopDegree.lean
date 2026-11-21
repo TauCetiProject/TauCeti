@@ -21,7 +21,7 @@ Hausdorff topological vector space, with no choice of norm or inner product.
 
 public section
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
@@ -29,7 +29,7 @@ variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [Fintype ι] [DecidableEq ι]
 
 /-- The determinant form of a basis as a continuous alternating map. -/
-noncomputable def _root_.Module.Basis.continuousDet (b : Module.Basis ι 𝕜 E) :
+noncomputable def continuousDet (b : Module.Basis ι 𝕜 E) :
     E [⋀^ι]→L[𝕜] 𝕜 :=
   { b.det with
     cont := by
@@ -37,16 +37,16 @@ noncomputable def _root_.Module.Basis.continuousDet (b : Module.Basis ι 𝕜 E)
       exact funext b.det_apply }
 
 @[simp]
-theorem _root_.Module.Basis.continuousDet_apply (b : Module.Basis ι 𝕜 E) (v : ι → E) :
+theorem continuousDet_apply (b : Module.Basis ι 𝕜 E) (v : ι → E) :
     b.continuousDet v = b.det v := by rfl
 
 @[simp]
-theorem _root_.Module.Basis.continuousDet_toAlternatingMap (b : Module.Basis ι 𝕜 E) :
+theorem continuousDet_toAlternatingMap (b : Module.Basis ι 𝕜 E) :
     b.continuousDet.toAlternatingMap = b.det := by rfl
 
 /-- Evaluation on a basis is a continuous linear equivalence from top-degree forms to scalars.
 The inverse sends `c` to `c` times the determinant form of the basis. -/
-noncomputable def _root_.Module.Basis.topFormEquiv (b : Module.Basis ι 𝕜 E) :
+noncomputable def topFormEquiv (b : Module.Basis ι 𝕜 E) :
     (E [⋀^ι]→L[𝕜] 𝕜) ≃L[𝕜] 𝕜 where
   toLinearEquiv :=
     { toFun := fun ω ↦ ω b
@@ -63,25 +63,25 @@ noncomputable def _root_.Module.Basis.topFormEquiv (b : Module.Basis ι 𝕜 E) 
   continuous_invFun := continuous_id.smul continuous_const
 
 @[simp]
-theorem _root_.Module.Basis.topFormEquiv_apply (b : Module.Basis ι 𝕜 E)
+theorem topFormEquiv_apply (b : Module.Basis ι 𝕜 E)
     (ω : E [⋀^ι]→L[𝕜] 𝕜) : b.topFormEquiv ω = ω b := by rfl
 
 /-- The inverse scalar coordinate map multiplies the continuous determinant form. -/
-theorem _root_.Module.Basis.topFormEquiv_symm_eq_smul (b : Module.Basis ι 𝕜 E) (c : 𝕜) :
+theorem topFormEquiv_symm_eq_smul (b : Module.Basis ι 𝕜 E) (c : 𝕜) :
     b.topFormEquiv.symm c = c • b.continuousDet := by rfl
 
 @[simp]
-theorem _root_.Module.Basis.topFormEquiv_symm_apply (b : Module.Basis ι 𝕜 E)
+theorem topFormEquiv_symm_apply (b : Module.Basis ι 𝕜 E)
     (c : 𝕜) (v : ι → E) : b.topFormEquiv.symm c v = c * b.det v := by
   simp [Module.Basis.topFormEquiv_symm_eq_smul]
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- The top-degree scalar-valued continuous alternating forms on a space with a finite basis form
 a line. -/
-theorem _root_.Module.Basis.finrank_continuousAlternatingMap_eq_one [Finite ι]
+theorem finrank_continuousAlternatingMap_eq_one [Finite ι]
     (b : Module.Basis ι 𝕜 E) : Module.finrank 𝕜 (E [⋀^ι]→L[𝕜] 𝕜) = 1 := by
   classical
   have := Fintype.ofFinite ι
   exact b.topFormEquiv.toLinearEquiv.finrank_eq.trans (Module.finrank_self 𝕜)
 
-end TauCeti
+end Module.Basis

@@ -18,7 +18,8 @@ import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.QuotSMulTop
-import TauCeti.RingTheory.Regular.RegularSequence
+
+import TauCeti.RingTheory.Regular.Pair
 
 /-!
 # Completions of localizations
@@ -106,13 +107,7 @@ theorem map_span_singleton_injective_of_isLocalizedModule (hr : IsSMulRegular M 
   -- `reduceModIdeal` and `Ideal.mapQSMulTop` induce the same map on these quotients.
   have h := congrArg DFunLike.coe (QuotSMulTop.map_comp_quotEquivOfEq (r ^ n) f)
   rw [LinearMap.coe_comp, LinearMap.coe_comp] at h
-  have hmap : ⇑(((Ideal.span {r ^ n}).mapQSMulTop f).restrictScalars R) =
-      ⇑(f.reduceModIdeal (Ideal.span {r ^ n})) := by
-    funext q
-    induction q using Submodule.Quotient.induction_on with | H m =>
-      simp only [LinearMap.restrictScalars_apply, Ideal.mapQSMulTop_mk,
-        LinearMap.reduceModIdeal_apply]
-  rw [hmap] at h
+  rw [Ideal.mapQSMulTop_eq_reduceModIdeal, LinearMap.coe_restrictScalars] at h
   exact (h ▸ hinj.comp (LinearEquiv.injective _)).of_comp
 
 /-- Principal-adic completion is exact at the localized module when the
@@ -198,15 +193,15 @@ private theorem bijective_quotientMap_toLocalization (hJ : J.FG) {K : Ideal S}
       IsLocalization.algebraMap_mem_map_algebraMap_iff
         (Algebra.algebraMapSubmonoid (AdicCompletion J R) M)] at hr
     obtain ⟨_, ⟨m₀, hm₀, rfl⟩, hm⟩ := hr
-    rw [← map_mul, AdicCompletion.algebraMap_mem_map_pow_iff hJ] at hm
+    rw [← map_mul, AdicCompletion.algebraMap_mem_map_pow_iff] at hm
     rw [← hK, ← Ideal.map_pow, ← Ideal.mul_unit_mem_iff_mem _
-      (IsLocalization.map_units S (⟨m₀ * m, mul_mem hm₀ m.2⟩ : M)), map_mul,
+      (IsLocalization.map_units S (⟨m₀ * m, mul_mem hm₀ m.property⟩ : M)), map_mul,
       mul_left_comm, IsLocalization.mk'_spec, ← map_mul]
     exact Ideal.mem_map_of_mem _ hm
   · -- write `t = x / m₀` with `x ∈ R̂`, and `x ≡ r` modulo `J ^ n R̂` with `r ∈ R`
     obtain ⟨⟨x, m⟩, rfl⟩ := IsLocalization.mk'_surjective
       (Algebra.algebraMapSubmonoid (AdicCompletion J R) M) t
-    obtain ⟨m₀, hm₀, hm⟩ := m.2
+    obtain ⟨m₀, hm₀, hm⟩ := m.property
     obtain ⟨r, hr⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow hJ n x
     refine ⟨Ideal.Quotient.mk _ (IsLocalization.mk' S r ⟨m₀, hm₀⟩), ?_⟩
     -- after multiplying by the unit `m₀`, the difference is the image of `r - x ∈ J ^ n R̂`

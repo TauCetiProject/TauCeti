@@ -42,12 +42,12 @@ variable {κ κ₂ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
 
 private theorem sum_color_discrepancy (c : κ)
     (A : Finset {x : Fin 3 → V // Function.Injective x}) :
-    (∑ x ∈ A, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c then 1 else 0) -
+    (∑ x ∈ A, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c then 1 else 0) -
       (H.relativeDensity c P : ℝ))) =
       ((H.relDensityOn c A : ℝ) - H.relativeDensity c P) * #A := by
   classical
   have hc : (H.relDensityOn c A : ℝ) * #A =
-      (#{x ∈ A | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℝ) := by
+      (#{x ∈ A | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) := by
     exact_mod_cast H.relDensityOn_mul_card c A
   simp only [sum_sub_distrib, sum_const, nsmul_eq_mul]
   rw [sum_boole]
@@ -60,26 +60,8 @@ theorem IsTopRegularOverPolyad.abs_relDensityOn_sub_mul_card_le
     (h : H.IsTopRegularOverPolyad P δ 1) (c : κ) (Q : Subpolyad3 P) :
     |(H.relDensityOn c Q.support : ℝ) - H.relativeDensity c P| * #Q.support ≤
       δ * #P.support := by
-  have : Nonempty κ := ⟨c⟩
-  have hδ := h.nonneg
-  by_cases hQ : δ * #P.support ≤ (#Q.support : ℝ)
-  · calc
-      _ ≤ δ * #Q.support := by
-        gcongr
-        exact isTopRegularOverPolyad_one_iff.1 h c Q hQ
-      _ ≤ _ := by gcongr; exact Q.support_subset
-  · have h₀ : (0 : ℝ) ≤ H.relDensityOn c Q.support := by
-      exact_mod_cast H.relDensityOn_nonneg c Q.support
-    have h₁ : (H.relDensityOn c Q.support : ℝ) ≤ 1 := by
-      exact_mod_cast H.relDensityOn_le_one c Q.support
-    have h₀' : (0 : ℝ) ≤ H.relativeDensity c P := by
-      exact_mod_cast H.relativeDensity_nonneg c P
-    have h₁' : (H.relativeDensity c P : ℝ) ≤ 1 := by
-      exact_mod_cast H.relativeDensity_le_one c P
-    have hd : |(H.relDensityOn c Q.support : ℝ) - H.relativeDensity c P| ≤ 1 :=
-      abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
-    calc _ ≤ 1 * (#Q.support : ℝ) := by gcongr
-      _ ≤ _ := by simpa using (lt_of_not_ge hQ).le
+  simpa using h.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le c (ι := Unit)
+    le_rfl fun _ ↦ Q
 
 /-- Rank-one top regularity bounds the signed discrepancy on a finite union of subpolyads,
 with a loss bounded by the number of subsets of the indexing type. -/
@@ -92,13 +74,13 @@ theorem IsTopRegularOverPolyad.abs_relDensityOn_unionSupport_sub_mul_card_le
   have : Nonempty κ := ⟨c⟩
   have hδ := h.nonneg
   let f := fun x : {x : Fin 3 → V // Function.Injective x} ↦
-    (if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c then 1 else 0) -
+    (if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c then 1 else 0) -
       (H.relativeDensity c P : ℝ)
   have hi (t : (univ : Finset ι).powerset.filter (·.Nonempty)) :
-      |∑ x ∈ t.1.inf' (mem_filter.1 t.2).2 (fun i ↦ (Q i).support), f x| ≤
+      |∑ x ∈ t.val.inf' (mem_filter.1 t.property).2 (fun i ↦ (Q i).support), f x| ≤
         δ * #P.support := by
     have ht := h.abs_relDensityOn_sub_mul_card_le c
-      (finsetInter t.1 (mem_filter.1 t.2).2 Q)
+      (finsetInter t.val (mem_filter.1 t.property).2 Q)
     rw [support_finsetInter] at ht
     rw [sum_color_discrepancy, abs_mul]
     simpa only [Nat.abs_cast] using ht
@@ -107,7 +89,7 @@ theorem IsTopRegularOverPolyad.abs_relDensityOn_unionSupport_sub_mul_card_le
     rw [unionSupport_def, inclusion_exclusion_sum_biUnion]
     calc
       _ ≤ ∑ t : (univ : Finset ι).powerset.filter (·.Nonempty),
-          |(-1 : ℤ) ^ (#t.1 + 1) • ∑ x ∈ t.1.inf' (mem_filter.1 t.2).2
+          |(-1 : ℤ) ^ (#t.val + 1) • ∑ x ∈ t.val.inf' (mem_filter.1 t.property).2
             (fun i ↦ (Q i).support), f x| := abs_sum_le_sum_abs _ _
       _ ≤ ∑ _t : (univ : Finset ι).powerset.filter (·.Nonempty), δ * #P.support := by
         apply sum_le_sum

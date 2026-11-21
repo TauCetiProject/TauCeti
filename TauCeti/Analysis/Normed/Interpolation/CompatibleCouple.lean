@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import TauCeti.Analysis.Normed.Module.Quotient
 
 /-!
 # Compatible couples of normed spaces
@@ -34,11 +36,16 @@ We realise both spaces without choosing a norm on `V`:
   inclusions `interFst`, `interSnd`.
 * `TauCeti.CompatibleCouple.SumSpace`: the sum, with its norm-nonincreasing inclusions
   `fstToSum`, `sndToSum` and the injective map `sumSpaceEmbed` into `V`.
+* `TauCeti.CompatibleCouple.toSum`: the factorisation through the sum space of a linear map into
+  `V` whose values have bounded preimages in the sum.
 * `TauCeti.CompatibleCouple.sumLift`: the extension to the sum of continuous linear maps on `X₀`
   and `X₁` that agree on the intersection.
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
   the infimum description of the sum norm.
 * `TauCeti.CompatibleCouple.refl`: the couple `(X, X)`, for which both norms are the norm of `X`.
+* `TauCeti.CompatibleCouple.swap`, `TauCeti.CompatibleCouple.interSwap`,
+  `TauCeti.CompatibleCouple.sumSwap`: reversal of the endpoints and the canonical isometric
+  identifications of their intersection and sum spaces.
 
 ## References
 
@@ -118,7 +125,7 @@ theorem interSnd_apply (x : C.inter) : C.interSnd x = (x : X₀ × X₁).2 :=
   (rfl)
 
 theorem embed₀_interFst (x : C.inter) : C.embed₀ (C.interFst x) = C.embed₁ (C.interSnd x) :=
-  C.mem_inter_iff.1 x.2
+  C.mem_inter_iff.1 x.property
 
 theorem interFst_injective : Function.Injective C.interFst := by
   rintro ⟨⟨a₀, a₁⟩, ha⟩ ⟨⟨b₀, b₁⟩, hb⟩ h
@@ -299,6 +306,38 @@ theorem sndToSum_injective : Function.Injective C.sndToSum := fun x y h =>
 theorem fstToSum_interFst (x : C.inter) : C.fstToSum (C.interFst x) = C.sndToSum (C.interSnd x) :=
   C.sumSpace_ext <| by simpa using C.embed₀_interFst x
 
+section ToSum
+
+variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+
+/-- A linear map `T : X → V` whose values `T x` are images of elements of the sum space of norm at
+most `c ‖x‖` factors through the sum space: this is the continuous linear map `X → X₀ + X₁` sending
+`x` to the unique `u` with `sumSpaceEmbed u = T x` (`sumSpaceEmbed_toSum`), of norm at most `c`
+(`norm_toSum_le`). -/
+def toSum (T : X →ₗ[𝕜] V) (c : ℝ) (hT : ∀ x, ∃ u, C.sumSpaceEmbed u = T x ∧ ‖u‖ ≤ c * ‖x‖) :
+    X →L[𝕜] C.SumSpace :=
+  LinearMap.mkContinuous
+    { toFun x := (hT x).choose
+      map_add' x y := C.sumSpace_ext <| (hT (x + y)).choose_spec.1.trans <| by
+        simp only [map_add, (hT x).choose_spec.1, (hT y).choose_spec.1]
+      map_smul' a x := C.sumSpace_ext <| (hT (a • x)).choose_spec.1.trans <| by
+        simp only [RingHom.id_apply, map_smul, (hT x).choose_spec.1] }
+    c fun x => (hT x).choose_spec.2
+
+variable (T : X →ₗ[𝕜] V) (c : ℝ) (hT : ∀ x, ∃ u, C.sumSpaceEmbed u = T x ∧ ‖u‖ ≤ c * ‖x‖)
+
+@[simp]
+theorem sumSpaceEmbed_toSum (x : X) : C.sumSpaceEmbed (C.toSum T c hT x) = T x :=
+  (hT x).choose_spec.1
+
+theorem norm_toSum_le (x : X) : ‖C.toSum T c hT x‖ ≤ c * ‖x‖ :=
+  (hT x).choose_spec.2
+
+theorem toSum_injective (hTi : Function.Injective T) : Function.Injective (C.toSum T c hT) :=
+  fun x y h => hTi <| by rw [← sumSpaceEmbed_toSum C T c hT, h, sumSpaceEmbed_toSum]
+
+end ToSum
+
 section Lift
 
 variable {W : Type*} [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
@@ -361,7 +400,174 @@ theorem sumLift_unique {f : C.SumSpace →L[𝕜] W} (h₀ : f.comp C.fstToSum =
 
 end Lift
 
+/-- `sumLift T₀ T₁ h` has operator norm at most `max ‖T₀‖ ‖T₁‖`. -/
+theorem norm_sumLift_le {𝕜 X₀ X₁ V W : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup X₀] [NormedSpace 𝕜 X₀] [NormedAddCommGroup X₁] [NormedSpace 𝕜 X₁]
+    [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [ContinuousAdd V]
+    [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] (C : CompatibleCouple 𝕜 X₀ X₁ V)
+    (T₀ : X₀ →L[𝕜] W) (T₁ : X₁ →L[𝕜] W)
+    (h : ∀ x : C.inter, T₀ (C.interFst x) = T₁ (C.interSnd x)) :
+    ‖C.sumLift T₀ T₁ h‖ ≤ max ‖T₀‖ ‖T₁‖ :=
+  (C.sumKer.norm_liftQL_le _ _).trans <| ContinuousLinearMap.opNorm_le_bound _
+    (le_max_of_le_left (norm_nonneg T₀)) fun x =>
+      ((norm_add_le (T₀ x.fst) (T₁ x.snd)).trans (add_le_add
+        ((T₀.le_opNorm x.fst).trans
+          (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)))
+        ((T₁.le_opNorm x.snd).trans
+          (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))))).trans_eq
+        (by rw [← mul_add, ← prod_norm_eq_of_L1])
+
+section Morphism
+
+variable {C} {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace 𝕜 Y₀] [NormedAddCommGroup Y₁]
+  [NormedSpace 𝕜 Y₁] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [ContinuousAdd W]
+  {D : CompatibleCouple 𝕜 Y₀ Y₁ W}
+
+/-- A linear map `P` of sum spaces is a left inverse of another one `I` as soon as their
+restrictions to the endpoints are left inverses of each other. -/
+theorem leftInverse_of_leftInverse {I : C.SumSpace →ₗ[𝕜] D.SumSpace}
+    {P : D.SumSpace →ₗ[𝕜] C.SumSpace} {I₀ : X₀ → Y₀} {I₁ : X₁ → Y₁} {P₀ : Y₀ → X₀}
+    {P₁ : Y₁ → X₁} (hI₀ : ∀ x, I (C.fstToSum x) = D.fstToSum (I₀ x))
+    (hI₁ : ∀ x, I (C.sndToSum x) = D.sndToSum (I₁ x))
+    (hP₀ : ∀ y, P (D.fstToSum y) = C.fstToSum (P₀ y))
+    (hP₁ : ∀ y, P (D.sndToSum y) = C.sndToSum (P₁ y)) (h₀ : Function.LeftInverse P₀ I₀)
+    (h₁ : Function.LeftInverse P₁ I₁) : Function.LeftInverse P I := by
+  intro u
+  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+  rw [map_add, map_add, hI₀, hI₁, hP₀, hP₁, h₀, h₁]
+
+/-- If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, the map of sum spaces induced by `P₀`, `P₁`
+is a left inverse of the one induced by `I₀`, `I₁`. -/
+theorem leftInverse_sumLift (I₀ : X₀ →L[𝕜] Y₀) (I₁ : X₁ →L[𝕜] Y₁)
+    (hI : ∀ x : C.inter, D.fstToSum (I₀ (C.interFst x)) = D.sndToSum (I₁ (C.interSnd x)))
+    (P₀ : Y₀ →L[𝕜] X₀) (P₁ : Y₁ →L[𝕜] X₁)
+    (hP : ∀ y : D.inter, C.fstToSum (P₀ (D.interFst y)) = C.sndToSum (P₁ (D.interSnd y)))
+    (hPI₀ : Function.LeftInverse P₀ I₀) (hPI₁ : Function.LeftInverse P₁ I₁) :
+    Function.LeftInverse (D.sumLift (C.fstToSum.comp P₀) (C.sndToSum.comp P₁) hP)
+      (C.sumLift (D.fstToSum.comp I₀) (D.sndToSum.comp I₁) hI) :=
+  leftInverse_of_leftInverse (I := (C.sumLift _ _ hI).toLinearMap)
+    (P := (D.sumLift _ _ hP).toLinearMap) (fun x => C.sumLift_fstToSum _ _ hI x)
+    (fun x => C.sumLift_sndToSum _ _ hI x) (fun y => D.sumLift_fstToSum _ _ hP y)
+    (fun y => D.sumLift_sndToSum _ _ hP y) hPI₀ hPI₁
+
+variable {e : C.SumSpace ≃ₗ[𝕜] D.SumSpace} {e₀ : X₀ ≃L[𝕜] Y₀} {e₁ : X₁ ≃L[𝕜] Y₁}
+
+/-- If a linear equivalence of sum spaces restricts to an isomorphism `e₀` of the first
+endpoints, its inverse restricts to `e₀.symm`. -/
+theorem symm_apply_fstToSum (he₀ : ∀ x, e (C.fstToSum x) = D.fstToSum (e₀ x)) (y : Y₀) :
+    e.symm (D.fstToSum y) = C.fstToSum (e₀.symm y) :=
+  e.symm_apply_eq.2 (by rw [he₀, ContinuousLinearEquiv.apply_symm_apply])
+
+/-- If a linear equivalence of sum spaces restricts to an isomorphism `e₁` of the second
+endpoints, its inverse restricts to `e₁.symm`. -/
+theorem symm_apply_sndToSum (he₁ : ∀ x, e (C.sndToSum x) = D.sndToSum (e₁ x)) (y : Y₁) :
+    e.symm (D.sndToSum y) = C.sndToSum (e₁.symm y) :=
+  e.symm_apply_eq.2 (by rw [he₁, ContinuousLinearEquiv.apply_symm_apply])
+
+end Morphism
+
 end Sum
+
+/-! ### Reversing the endpoints -/
+
+/-- The compatible couple with the two endpoints exchanged. -/
+-- Reducibility makes double reversal preserve the types of the associated sum spaces.
+abbrev swap : CompatibleCouple 𝕜 X₁ X₀ V where
+  embed₀ := C.embed₁
+  embed₁ := C.embed₀
+  embed₀_injective := C.embed₁_injective
+  embed₁_injective := C.embed₀_injective
+
+@[simp]
+theorem swap_embed₀ : C.swap.embed₀ = C.embed₁ := (rfl)
+
+@[simp]
+theorem swap_embed₁ : C.swap.embed₁ = C.embed₀ := (rfl)
+
+@[simp]
+theorem swap_swap : C.swap.swap = C := (rfl)
+
+/-- Exchanging the endpoints preserves the intersection norm and swaps the two coordinates. -/
+def interSwap : C.inter ≃ₗᵢ[𝕜] C.swap.inter where
+  toFun x := ⟨(x.val.2, x.val.1), C.swap.mem_inter_iff.2 (C.mem_inter_iff.1 x.property).symm⟩
+  invFun x := ⟨(x.val.2, x.val.1), C.mem_inter_iff.2 (C.swap.mem_inter_iff.1 x.property).symm⟩
+  left_inv _ := Subtype.ext <| Prod.ext rfl rfl
+  right_inv _ := Subtype.ext <| Prod.ext rfl rfl
+  map_add' _ _ := Subtype.ext <| Prod.ext rfl rfl
+  map_smul' _ _ := Subtype.ext <| Prod.ext rfl rfl
+  norm_map' x := (C.swap.norm_inter _).trans ((max_comm _ _).trans (C.norm_inter x).symm)
+
+@[simp] theorem coe_interSwap_fst (x : C.inter) : (C.interSwap x).val.1 = x.val.2 := (rfl)
+@[simp] theorem coe_interSwap_snd (x : C.inter) : (C.interSwap x).val.2 = x.val.1 := (rfl)
+theorem interFst_interSwap (x : C.inter) : C.swap.interFst (C.interSwap x) = C.interSnd x := by simp
+theorem interSnd_interSwap (x : C.inter) : C.swap.interSnd (C.interSwap x) = C.interFst x := by simp
+theorem interSwap_symm : C.interSwap.symm = C.swap.interSwap := by ext x <;> rfl
+@[simp] theorem swap_interSwap_interSwap (x : C.inter) :
+    C.swap.interSwap (C.interSwap x) = x := by
+  rw [← interSwap_symm, LinearIsometryEquiv.symm_apply_apply]
+@[simp] theorem interSwap_trans_swap_interSwap :
+    C.interSwap.trans C.swap.interSwap = .refl 𝕜 C.inter :=
+  LinearIsometryEquiv.ext C.swap_interSwap_interSwap
+
+section SwapSum
+
+variable [ContinuousAdd V] [T1Space V]
+
+omit [T1Space V] in
+private theorem sumSwap_compat (x : C.inter) :
+    C.swap.sndToSum (C.interFst x) = C.swap.fstToSum (C.interSnd x) :=
+  C.swap.sumSpace_ext (by simpa using C.embed₀_interFst x)
+
+private def sumSwapMap : C.SumSpace →L[𝕜] C.swap.SumSpace :=
+  C.sumLift C.swap.sndToSum C.swap.fstToSum C.sumSwap_compat
+
+private theorem sumSwapMap_norm_le (u : C.SumSpace) : ‖C.sumSwapMap u‖ ≤ ‖u‖ := by
+  refine le_of_forall_gt fun r hr => ?_
+  obtain ⟨x₀, x₁, rfl, hx⟩ := C.norm_sumSpace_lt_iff.1 hr
+  simpa [sumSwapMap, add_comm] using
+    (C.swap.norm_fstToSum_add_sndToSum_le x₁ x₀).trans_lt (by simpa [add_comm] using hx)
+
+omit [T1Space V] in
+private theorem sumSwapMap_sumSwapMap (u : C.SumSpace) :
+    C.swap.sumSwapMap (C.sumSwapMap u) = u := by
+  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+  simp [sumSwapMap]
+
+/-- Exchanging the endpoints preserves the sum norm and the element in the ambient space. -/
+def sumSwap : C.SumSpace ≃ₗᵢ[𝕜] C.swap.SumSpace :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := C.sumSwapMap
+      invFun := C.swap.sumSwapMap
+      left_inv := C.sumSwapMap_sumSwapMap
+      right_inv := C.swap.sumSwapMap_sumSwapMap
+      map_add' := map_add C.sumSwapMap
+      map_smul' := map_smul C.sumSwapMap }
+    C.sumSwapMap_norm_le C.swap.sumSwapMap_norm_le
+
+@[simp]
+theorem sumSwap_fstToSum (x : X₀) : C.sumSwap (C.fstToSum x) = C.swap.sndToSum x :=
+  C.sumLift_fstToSum _ _ C.sumSwap_compat x
+
+@[simp]
+theorem sumSwap_sndToSum (x : X₁) : C.sumSwap (C.sndToSum x) = C.swap.fstToSum x :=
+  C.sumLift_sndToSum _ _ C.sumSwap_compat x
+
+@[simp]
+theorem sumSwap_symm : C.sumSwap.symm = C.swap.sumSwap := (rfl)
+
+theorem swap_sumSwap_sumSwap (u : C.SumSpace) : C.swap.sumSwap (C.sumSwap u) = u := by
+  rw [← sumSwap_symm, LinearIsometryEquiv.symm_apply_apply]
+@[simp] theorem sumSwap_trans_swap_sumSwap :
+    C.sumSwap.trans C.swap.sumSwap = .refl 𝕜 C.SumSpace :=
+  LinearIsometryEquiv.ext C.swap_sumSwap_sumSwap
+
+@[simp]
+theorem sumSpaceEmbed_sumSwap (u : C.SumSpace) :
+    C.swap.sumSpaceEmbed (C.sumSwap u) = C.sumSpaceEmbed u := by
+  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+  simp
+
+end SwapSum
 
 /-! ### The diagonal couple -/
 
@@ -402,7 +608,7 @@ theorem refl_sndToSum_sumSpaceEmbed (u : (refl 𝕜 X).SumSpace) :
 
 /-- For the couple `(X, X)` the intersection norm is the norm of `X`. -/
 theorem norm_refl_inter (x : (refl 𝕜 X).inter) : ‖x‖ = ‖(refl 𝕜 X).interFst x‖ := by
-  have h := (refl 𝕜 X).mem_inter_iff.1 x.2
+  have h := (refl 𝕜 X).mem_inter_iff.1 x.property
   simp only [refl_embed₀, refl_embed₁, ContinuousLinearMap.id_apply] at h
   rw [norm_inter, interFst_apply, h, max_self]
 

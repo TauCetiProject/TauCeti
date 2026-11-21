@@ -13,6 +13,8 @@ public import Mathlib.Combinatorics.Graph.Subgraph
 This file constructs the union of two compatible `Graph`s. Its vertices and edges are the
 set-theoretic unions, and an edge is linked exactly when it is linked in either input graph.
 Compatibility is essential: a shared edge must not acquire two different pairs of endpoints.
+The incident-edge, loop, and nonloop incident-edge sets at a vertex are likewise unions of the
+corresponding sets in the two inputs, without any finiteness assumptions.
 
 The union is the least common supergraph of its inputs. Compatible unions commute, and unions of
 three pairwise compatible graphs associate. These facts let graph constructions grow a subgraph
@@ -38,32 +40,16 @@ protected def union (h : G.Compatible H) : Graph α β where
   vertexSet := V(G) ∪ V(H)
   edgeSet := E(G) ∪ E(H)
   IsLink e x y := G.IsLink e x y ∨ H.IsLink e x y
-  isLink_symm _ _ := {
-    symm := by
-      rintro x y (hxy | hxy)
-      · exact Or.inl hxy.symm
-      · exact Or.inr hxy.symm }
+  isLink_symm _ _ := { symm _ _ := Or.imp IsLink.symm IsLink.symm }
   eq_or_eq_of_isLink_of_isLink := by
     rintro e x y v w (hxy | hxy) (hvw | hvw)
     · exact hxy.left_eq_or_eq hvw
     · exact ((h.isLink_congr hxy.edge_mem hvw.edge_mem).mp hxy).left_eq_or_eq hvw
     · exact hxy.left_eq_or_eq ((h.isLink_congr hvw.edge_mem hxy.edge_mem).mp hvw)
     · exact hxy.left_eq_or_eq hvw
-  edge_mem_iff_exists_isLink := by
-    intro e
-    constructor
-    · rintro (he | he)
-      · obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
-        exact ⟨x, y, Or.inl hxy⟩
-      · obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
-        exact ⟨x, y, Or.inr hxy⟩
-    · rintro ⟨x, y, hxy | hxy⟩
-      · exact Or.inl hxy.edge_mem
-      · exact Or.inr hxy.edge_mem
-  left_mem_of_isLink := by
-    rintro e x y (hxy | hxy)
-    · exact Or.inl hxy.left_mem
-    · exact Or.inr hxy.left_mem
+  edge_mem_iff_exists_isLink e := by
+    simp only [mem_union, edge_mem_iff_exists_isLink, ← exists_or]
+  left_mem_of_isLink _ _ _ := Or.imp IsLink.left_mem IsLink.left_mem
 
 @[simp]
 theorem vertexSet_union (h : G.Compatible H) : V(h.union) = V(G) ∪ V(H) :=
@@ -81,22 +67,12 @@ theorem union_isLink (h : G.Compatible H) :
 @[simp]
 theorem union_inc_iff (h : G.Compatible H) :
     h.union.Inc e x ↔ G.Inc e x ∨ H.Inc e x := by
-  constructor
-  · rintro ⟨y, hxy⟩
-    exact h.union_isLink.mp hxy |>.imp (fun hxy ↦ ⟨y, hxy⟩) (fun hxy ↦ ⟨y, hxy⟩)
-  · rintro (⟨y, hxy⟩ | ⟨y, hxy⟩)
-    · exact ⟨y, h.union_isLink.mpr (Or.inl hxy)⟩
-    · exact ⟨y, h.union_isLink.mpr (Or.inr hxy)⟩
+  simp [Inc, exists_or]
 
 @[simp]
 theorem union_adj_iff (h : G.Compatible H) :
     h.union.Adj x y ↔ G.Adj x y ∨ H.Adj x y := by
-  constructor
-  · rintro ⟨e, hxy⟩
-    exact h.union_isLink.mp hxy |>.imp (fun hxy ↦ ⟨e, hxy⟩) (fun hxy ↦ ⟨e, hxy⟩)
-  · rintro (⟨e, hxy⟩ | ⟨e, hxy⟩)
-    · exact ⟨e, h.union_isLink.mpr (Or.inl hxy)⟩
-    · exact ⟨e, h.union_isLink.mpr (Or.inr hxy)⟩
+  simp [Adj, exists_or]
 
 @[simp]
 theorem union_isLoopAt_iff (h : G.Compatible H) :
@@ -106,28 +82,42 @@ theorem union_isLoopAt_iff (h : G.Compatible H) :
 @[simp]
 theorem union_isNonloopAt_iff (h : G.Compatible H) :
     h.union.IsNonloopAt e x ↔ G.IsNonloopAt e x ∨ H.IsNonloopAt e x := by
-  constructor
-  · rintro ⟨y, hy, hxy⟩
-    exact h.union_isLink.mp hxy |>.imp (fun hxy ↦ ⟨y, hy, hxy⟩) (fun hxy ↦ ⟨y, hy, hxy⟩)
-  · rintro (⟨y, hy, hxy⟩ | ⟨y, hy, hxy⟩)
-    · exact ⟨y, hy, h.union_isLink.mpr (Or.inl hxy)⟩
-    · exact ⟨y, hy, h.union_isLink.mpr (Or.inr hxy)⟩
+  simp [IsNonloopAt, and_or_left, exists_or]
+
+/-- Incident edge identities in a compatible union are those incident in either input. -/
+@[simp]
+theorem incidenceSet_union (h : G.Compatible H) (x : α) :
+    h.union.incidenceSet x = G.incidenceSet x ∪ H.incidenceSet x := by
+  ext e
+  simp only [mem_incidenceSet, mem_union, h.union_inc_iff]
+
+/-- Loop identities in a compatible union are those that are loops in either input. -/
+@[simp]
+theorem loopSet_union (h : G.Compatible H) (x : α) :
+    h.union.loopSet x = G.loopSet x ∪ H.loopSet x := by
+  ext e
+  simp only [mem_loopSet, mem_union, h.union_isLoopAt_iff]
+
+/-- Compatibility ensures that a shared edge cannot be a loop in just one input. Consequently,
+nonloop incident edges also commute with union. -/
+theorem incidenceSet_sdiff_loopSet_union (h : G.Compatible H) (x : α) :
+    h.union.incidenceSet x \ h.union.loopSet x =
+      (G.incidenceSet x \ G.loopSet x) ∪ (H.incidenceSet x \ H.loopSet x) := by
+  ext e
+  simp only [mem_sdiff, mem_incidenceSet, mem_loopSet, mem_union,
+    ← Graph.isNonloopAt_iff_inc_not_isLoopAt, h.union_isNonloopAt_iff]
 
 /-- The left input is a subgraph of a compatible union. -/
 @[simp]
 theorem left_le_union (h : G.Compatible H) : G ≤ h.union where
   vertexSet_mono := subset_union_left
-  isLink_mono := by
-    intro e x y hxy
-    exact h.union_isLink.mpr (Or.inl hxy)
+  isLink_mono _ _ _ hxy := h.union_isLink.mpr (.inl hxy)
 
 /-- The right input is a subgraph of a compatible union. -/
 @[simp]
 theorem right_le_union (h : G.Compatible H) : H ≤ h.union where
   vertexSet_mono := subset_union_right
-  isLink_mono := by
-    intro e x y hxy
-    exact h.union_isLink.mpr (Or.inr hxy)
+  isLink_mono _ _ _ hxy := h.union_isLink.mpr (.inr hxy)
 
 /-- A compatible union is contained in a graph exactly when both inputs are contained in it. -/
 @[simp]
@@ -136,17 +126,12 @@ theorem union_le_iff (h : G.Compatible H) : h.union ≤ K ↔ G ≤ K ∧ H ≤ 
   · intro hle
     exact ⟨h.left_le_union.trans hle, h.right_le_union.trans hle⟩
   · rintro ⟨hG, hH⟩
-    exact ⟨union_subset hG.vertexSet_mono hH.vertexSet_mono, by
-      rintro e x y (hxy | hxy)
-      · exact hG.isLink_mono hxy
-      · exact hH.isLink_mono hxy⟩
+    exact ⟨union_subset hG.vertexSet_mono hH.vertexSet_mono, fun _ _ _ hxy ↦
+      (h.union_isLink.mp hxy).elim (hG.isLink_mono ·) (hH.isLink_mono ·)⟩
 
 /-- Compatible union is commutative. -/
 theorem union_comm (h : G.Compatible H) : h.union = h.symm.union := by
-  apply Graph.ext
-  · exact Set.union_comm V(G) V(H)
-  · intro e x y
-    rw [h.union_isLink, h.symm.union_isLink, or_comm]
+  ext <;> simp [Set.union_comm, or_comm]
 
 /-- The union of `G` and `H` is compatible with `K` when all three graphs are pairwise
 compatible. -/
@@ -172,11 +157,7 @@ theorem compatible_union (hGH : G.Compatible H) (hGK : G.Compatible K)
 theorem union_assoc (hGH : G.Compatible H) (hGK : G.Compatible K) (hHK : H.Compatible K) :
     (hGH.union_compatible hGK hHK).union =
       (hGH.compatible_union hGK hHK).union := by
-  apply Graph.ext
-  · exact Set.union_assoc V(G) V(H) V(K)
-  · intro e x y
-    simp only [union_isLink]
-    tauto
+  ext <;> simp [Set.union_assoc, or_assoc]
 
 end Compatible
 

@@ -48,13 +48,12 @@ namespace TauCeti
 
 namespace Probability
 
-variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+variable {Ω α : Type*}
 
 /-- The block cylinder event on the selected coordinates: `{ω | ∀ i, X (k i) ω ∈ C i}`. -/
 def blockCylinder (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) (C : Fin m → Set α) : Set Ω :=
   {ω | ∀ i, X (k i) ω ∈ C i}
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- Membership in the block cylinder: `ω` lies in `blockCylinder X k C` iff every selected
 coordinate `X (k i) ω` lies in its set `C i`. -/
 @[simp]
@@ -62,7 +61,6 @@ theorem mem_blockCylinder {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ} 
     ω ∈ blockCylinder X k C ↔ ∀ i, X (k i) ω ∈ C i :=
   Iff.rfl
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- The block cylinder is the preimage of the rectangle `Set.univ.pi C` under the
 selected-coordinate map `ω ↦ (X (k ·) ω)`. -/
 theorem blockCylinder_eq_preimage_univ_pi (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
@@ -71,7 +69,6 @@ theorem blockCylinder_eq_preimage_univ_pi (X : ℕ → Ω → α) {m : ℕ} (k :
   ext ω
   simp only [mem_blockCylinder, Set.mem_preimage, Set.mem_univ_pi]
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- The block cylinder is the intersection of the selected coordinates' preimages. This is the
 `⋂` counterpart of `blockCylinder_eq_preimage_univ_pi`: the rectangle form suits pushforwards and
 block laws, this one suits intersections with another event. -/
@@ -79,6 +76,10 @@ theorem blockCylinder_eq_iInter (X : ℕ → Ω → α) {m : ℕ} (k : Fin m →
     blockCylinder X k C = ⋂ i, X (k i) ⁻¹' C i := by
   ext ω
   simp only [mem_blockCylinder, Set.mem_iInter, Set.mem_preimage]
+
+section Measurable
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The block cylinder of a process with measurable selected coordinates on measurable sets is
 measurable. -/
@@ -97,7 +98,8 @@ theorem blockLaw_blockCylinder {μ : Measure Ω} (X : ℕ → Ω → α) {m : �
     blockLaw μ X k (Set.univ.pi C) = μ (blockCylinder X k C) := by
   rw [blockLaw_apply_rectangle μ X k hX C hC, blockCylinder]
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
+end Measurable
+
 /-- **A block cylinder is invariant under permuting the selection.** Reordering the coordinates of
 a block, and the sets along with them, describes the same event: membership is a conjunction over
 the index set, which a permutation does not change.
@@ -112,7 +114,6 @@ theorem blockCylinder_comp_perm (X : ℕ → Ω → α) {m : ℕ} (k : Fin m →
   exact ⟨fun h i => h (e i), fun h j => by
     have := h (e.symm j); rwa [e.apply_symm_apply] at this⟩
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- **Sorting an injective block selection.** Any injective `k` can be permuted into strictly
 increasing order without changing the block event or any product over the selected sets.
 
@@ -135,7 +136,6 @@ theorem exists_perm_strictMono_comp_blockCylinder_eq_and_prod_eq (X : ℕ → Ω
 def blockIndicatorProd (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) (C : Fin m → Set α) : Ω → ℝ :=
   fun ω => ∏ i, (C i).indicator (fun _ => (1 : ℝ)) (X (k i) ω)
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- Pointwise value of the indicator product: the product of the selected coordinate indicators. -/
 @[simp]
 theorem blockIndicatorProd_apply (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) (C : Fin m → Set α)
@@ -143,7 +143,6 @@ theorem blockIndicatorProd_apply (X : ℕ → Ω → α) {m : ℕ} (k : Fin m �
     blockIndicatorProd X k C ω = ∏ i, (C i).indicator (fun _ => (1 : ℝ)) (X (k i) ω) := by
   simp only [blockIndicatorProd]
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- The indicator product is the indicator of the block cylinder. -/
 theorem blockIndicatorProd_eq_indicator (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
     (C : Fin m → Set α) :
@@ -157,7 +156,6 @@ theorem blockIndicatorProd_eq_indicator (X : ℕ → Ω → α) {m : ℕ} (k : F
     obtain ⟨i, hi⟩ := not_forall.1 (mem_blockCylinder.not.mp h)
     exact Finset.prod_eq_zero (Finset.mem_univ i) (Set.indicator_of_notMem hi _)
 
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- The empty (zero-coordinate) indicator product is the constant-one function. -/
 @[simp]
 theorem blockIndicatorProd_empty (X : ℕ → Ω → α) (k : Fin 0 → ℕ) (C : Fin 0 → Set α) :
@@ -167,7 +165,6 @@ theorem blockIndicatorProd_empty (X : ℕ → Ω → α) (k : Fin 0 → ℕ) (C 
 
 -- Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/IndicatorAlgebra.lean`,
 -- pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`), matching this file's module-level credit.
-omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- **Successor split of the indicator product.** Splitting off the last selected coordinate, the
 length-`r+1` indicator product equals the indicator of the length-`r` prefix cylinder intersected
 with the last coordinate's preimage. The `Fin 0` companion is `blockIndicatorProd_empty`. -/
@@ -187,6 +184,10 @@ theorem blockIndicatorProd_succ_eq_indicator_inter (X : ℕ → Ω → α) {r : 
   by_cases hc : ω ∈ blockCylinder X (fun i : Fin r => k i.castSucc) (fun j => C j.castSucc) <;>
     by_cases hp : X (k (Fin.last r)) ω ∈ C (Fin.last r) <;> simp [hc, hp]
 
+section Integral
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
+
 /-- The block cylinder is null-measurable when the selected coordinates are a.e. measurable. -/
 theorem nullMeasurableSet_blockCylinder {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ}
     {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ) (hC : ∀ i, MeasurableSet (C i)) :
@@ -200,6 +201,16 @@ theorem integrable_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X 
     (hC : ∀ i, MeasurableSet (C i)) : Integrable (blockIndicatorProd X k C) μ := by
   rw [blockIndicatorProd_eq_indicator]
   exact (integrable_const (1 : ℝ)).indicator₀ (nullMeasurableSet_blockCylinder hX hC)
+
+/-- A product of indicators along any selection `s` of a process with a.e. measurable selected
+coordinates is integrable under a finite measure: `integrable_blockIndicatorProd` read through
+`blockIndicatorProd_apply`. -/
+theorem integrable_prod_indicator_comp {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
+    {r : ℕ} {s : Fin r → ℕ} (hX : ∀ i, AEMeasurable (X (s i)) μ) {B : Fin r → Set α}
+    (hB : ∀ i, MeasurableSet (B i)) :
+    Integrable (fun ω => ∏ i, (B i).indicator (fun _ => (1 : ℝ)) (X (s i) ω)) μ :=
+  (integrable_blockIndicatorProd hX hB).congr
+    (ae_of_all _ fun ω => blockIndicatorProd_apply X s B ω)
 
 /-- **The block law of a rectangle is the lintegral of the block-cylinder indicator.** For
 a.e.-measurable selected coordinates,
@@ -239,6 +250,8 @@ theorem toReal_measure_inter_blockCylinder_eq_setIntegral_blockIndicatorProd {μ
     (hX i).mono_measure Measure.restrict_le_self
   rw [integral_blockIndicatorProd hX' hC, blockLaw_blockCylinder X hX' hC,
     Measure.restrict_apply₀ (nullMeasurableSet_blockCylinder hX' hC), Set.inter_comm]
+
+end Integral
 
 end Probability
 

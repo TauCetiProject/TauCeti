@@ -7,9 +7,10 @@ module
 
 import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
-import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Generation
+import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Open subgroups of a topologically finitely generated compact group
@@ -73,26 +74,25 @@ theorem finite_openSubgroup_index_eq_of_ne_zero (hG : IsTopologicallyFinitelyGen
     Finite {U : OpenSubgroup G // (U : Subgroup G).index = n} := by
   classical
   set S := {U : OpenSubgroup G // (U : Subgroup G).index = n}
-  have hindex : ∀ U : S, (U.1 : Subgroup G).index ≠ 0 := fun U ↦ U.2.symm ▸ hn
+  have hindex : ∀ U : S, (U.val : Subgroup G).index ≠ 0 := fun U ↦ U.property.symm ▸ hn
   -- Each coset space has exactly `n` elements, so it can be transported to `Fin n`.
-  have hcard : ∀ U : S, Nonempty ((G ⧸ (U.1 : Subgroup G)) ≃ Fin n) := fun U ↦ by
-    let _ := (U.1 : Subgroup G).fintypeOfIndexNeZero (hindex U)
+  have hcard : ∀ U : S, Nonempty ((G ⧸ (U.val : Subgroup G)) ≃ Fin n) := fun U ↦ by
+    let _ := (U.val : Subgroup G).fintypeOfIndexNeZero (hindex U)
     exact ⟨Fintype.equivFinOfCardEq <| by
-      rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, U.2]⟩
-  set e : ∀ U : S, (G ⧸ (U.1 : Subgroup G)) ≃ Fin n := fun U ↦ (hcard U).some
+      rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, U.property]⟩
+  set e : ∀ U : S, (G ⧸ (U.val : Subgroup G)) ≃ Fin n := fun U ↦ (hcard U).some
   -- The permutation representation of `G` on the cosets of `U`, read on `Fin n`.
   set ψ : ∀ _ : S, G →* Equiv.Perm (Fin n) := fun U ↦
-    ((e U).permCongrHom : Equiv.Perm (G ⧸ (U.1 : Subgroup G)) →* Equiv.Perm (Fin n)).comp
-      (MulAction.toPermHom G (G ⧸ (U.1 : Subgroup G))) with hψ
-  have hker : ∀ U : S, ((ψ U).ker : Subgroup G) = (U.1 : Subgroup G).normalCore := fun U ↦ by
+    ((e U).permCongrHom : Equiv.Perm (G ⧸ (U.val : Subgroup G)) →* Equiv.Perm (Fin n)).comp
+      (MulAction.toPermHom G (G ⧸ (U.val : Subgroup G))) with hψ
+  have hker : ∀ U : S, ((ψ U).ker : Subgroup G) = (U.val : Subgroup G).normalCore := fun U ↦ by
     rw [hψ, MonoidHom.ker_mulEquiv_comp, ← Subgroup.normalCore_eq_ker]
   have hopen : ∀ U : S, IsOpen (((ψ U).ker : Subgroup G) : Set G) := fun U ↦ by
-    let _ : (U.1 : Subgroup G).FiniteIndex := ⟨hindex U⟩
     rw [hker U]
-    exact Subgroup.isOpen_of_isClosed_of_finiteIndex _
-      (Subgroup.normalCore_isClosed _ U.1.isClosed)
+    have : (U.val : Subgroup G).FiniteIndex := ⟨hindex U⟩
+    exact U.val.isOpen_normalCore
   -- `U` is exactly the stabilizer of the trivial coset under that representation.
-  have hmem : ∀ (U : S) (g : G), g ∈ (U.1 : Subgroup G) ↔
+  have hmem : ∀ (U : S) (g : G), g ∈ (U.val : Subgroup G) ↔
       ψ U g (e U (QuotientGroup.mk 1)) = e U (QuotientGroup.mk 1) := fun U g ↦ by
     have hact : ψ U g (e U (QuotientGroup.mk 1)) = e U (QuotientGroup.mk g) := by
       simp [hψ]
@@ -101,7 +101,7 @@ theorem finite_openSubgroup_index_eq_of_ne_zero (hG : IsTopologicallyFinitelyGen
   refine Finite.of_injective
     (fun U : S ↦ ((⟨ψ U, hopen U⟩ : {f : G →* Equiv.Perm (Fin n) // IsOpen (f.ker : Set G)}),
       e U (QuotientGroup.mk 1))) fun U V huv ↦ ?_
-  have hUV : ψ U = ψ V := congrArg (fun x ↦ (Prod.fst x).1) huv
+  have hUV : ψ U = ψ V := congrArg (fun x ↦ (Prod.fst x).val) huv
   have hpt : e U (QuotientGroup.mk 1) = e V (QuotientGroup.mk 1) := congrArg Prod.snd huv
   refine Subtype.ext (OpenSubgroup.toSubgroup_injective (SetLike.ext fun g ↦ ?_))
   rw [hmem U g, hmem V g, hUV, hpt]
@@ -115,7 +115,7 @@ theorem finite_openSubgroup_index_eq (hG : IsTopologicallyFinitelyGenerated G) (
     Finite {U : OpenSubgroup G // (U : Subgroup G).index = n} := by
   rcases eq_or_ne n 0 with rfl | hn
   · let _ : IsEmpty {U : OpenSubgroup G // (U : Subgroup G).index = 0} :=
-      ⟨fun U ↦ (U.1 : Subgroup G).index_ne_zero_of_finite U.2⟩
+      ⟨fun U ↦ (U.val : Subgroup G).index_ne_zero_of_finite U.property⟩
     infer_instance
   · exact hG.finite_openSubgroup_index_eq_of_ne_zero n hn
 
@@ -133,14 +133,14 @@ theorem openSubgroup_comap_surjective (hG : IsTopologicallyFinitelyGenerated G) 
   have := hG.finite_openSubgroup_index_eq (U : Subgroup G).index
   let Φ : {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index} →
       {V : OpenSubgroup G // (V : Subgroup G).index = (U : Subgroup G).index} := fun V ↦
-    ⟨V.1.comap f hf, (hindex V.1).trans V.2⟩
+    ⟨V.val.comap f hf, (hindex V.val).trans V.property⟩
   have hinj : Function.Injective Φ := fun V W hVW ↦ by
-    have h : (V.1 : Subgroup G).comap f = (W.1 : Subgroup G).comap f := by
-      have h' := congrArg (fun X ↦ ((X.1 : OpenSubgroup G) : Subgroup G)) hVW
+    have h : (V.val : Subgroup G).comap f = (W.val : Subgroup G).comap f := by
+      have h' := congrArg (fun X ↦ ((X.val : OpenSubgroup G) : Subgroup G)) hVW
       simpa only [Φ, OpenSubgroup.toSubgroup_comap] using h'
     exact Subtype.ext (OpenSubgroup.toSubgroup_injective (Subgroup.comap_injective hsurj h))
   obtain ⟨V, hV⟩ := Finite.injective_iff_surjective.mp hinj ⟨U, rfl⟩
-  exact ⟨V.1, congrArg Subtype.val hV⟩
+  exact ⟨V.val, congrArg Subtype.val hV⟩
 
 /-- A topologically finitely generated compact group has only countably many open subgroups: they
 are sorted into finitely many of each index. -/
@@ -166,7 +166,6 @@ over the finite quotients into a statement about a sequence. -/
 theorem exists_antitone_openNormalSubgroup_cofinal (hG : IsTopologicallyFinitelyGenerated G) :
     ∃ N : ℕ → OpenNormalSubgroup G, Antitone N ∧ ∀ U : OpenNormalSubgroup G, ∃ k, N k ≤ U := by
   have hcount := hG.countable_openNormalSubgroup
-  have hne : Nonempty (OpenNormalSubgroup G) := ⟨{ toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }⟩
   obtain ⟨f, hf⟩ := exists_surjective_nat (OpenNormalSubgroup G)
   -- Take the intersection of the first `k + 1` members of an enumeration.
   refine ⟨fun k ↦ Nat.rec (f 0) (fun i N ↦ N ⊓ f (i + 1)) k, antitone_nat_of_succ_le fun k ↦

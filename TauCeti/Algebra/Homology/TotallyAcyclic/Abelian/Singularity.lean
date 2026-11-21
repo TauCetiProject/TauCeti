@@ -8,9 +8,12 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.ShortExact
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
-public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius
+public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius.Basic
+public import TauCeti.CategoryTheory.ObjectProperty.Syzygy
 public import TauCeti.CategoryTheory.Triangulated.TriangleIso
 public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
+
+import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Syzygy
 
 /-!
 # Gorenstein-projective objects in the singularity category
@@ -46,6 +49,15 @@ vanishing of `δₘ ≫ f` descend to `δ₁ ≫ f = 0`, which says that `f` fac
 * `CategoryTheory.GorensteinProjective.fullyFaithfulToSingularityCategory`: **Chen's theorem**,
   the functor from the stable category of Gorenstein-projective objects to the singularity
   category is fully faithful.
+* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`: a
+  Gorenstein-projective object placed in any degree is isomorphic in the singularity category to a
+  cycle of its complete resolution placed in degree zero
+  (`TauCeti.SingularityCategory.nonempty_iso_Q_obj_singleFunctor_cycles`), so
+  `CategoryTheory.GorensteinProjective.mem_essImage_toSingularityCategory`: it lies in the essential
+  image of Chen's functor.
+* `CategoryTheory.GorensteinProjective.essSurj_toSingularityCategory_of_isSyzygy`: in an abelian
+  category with enough projectives where every `d`-th projective syzygy is Gorenstein-projective,
+  Chen's functor is essentially surjective.
 
 ## References
 
@@ -328,6 +340,25 @@ theorem map_eq_zero_iff_of_isGorensteinProjective {G Y : C} (hG : isGorensteinPr
   · rw [hpq, Functor.map_comp, Functor.map_comp,
       (isZero_Q_obj_singleFunctor_obj hP).eq_of_src ((Q C).map _) 0, comp_zero]
 
+section Shift
+
+open _root_.DerivedCategory
+
+/-- **Gorenstein-projective objects in every degree**: in the singularity category, a
+Gorenstein-projective object placed in any degree is isomorphic to a Gorenstein-projective object
+placed in degree zero, namely a cycle of its complete resolution. -/
+theorem exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective {G : C}
+    (hG : isGorensteinProjective C G) (n : ℤ) :
+    ∃ G' : C, isGorensteinProjective C G' ∧
+      Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj G) ≅
+        (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj G')) := by
+  obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff G).1 hG
+  obtain ⟨e'⟩ := nonempty_iso_Q_obj_singleFunctor_cycles hP.projective hP.acyclic n 0
+  exact ⟨P.cycles (0 - n), hP.isGorensteinProjective_cycles _,
+    ⟨(Q C).mapIso ((DerivedCategory.Bounded.singleFunctor C n).mapIso e.symm) ≪≫ e'⟩⟩
+
+end Shift
+
 end TauCeti.SingularityCategory
 
 namespace CategoryTheory.GorensteinProjective
@@ -443,5 +474,31 @@ instance : (toSingularityCategory C).Faithful where
 abelian category to its singularity category is fully faithful. -/
 noncomputable def fullyFaithfulToSingularityCategory : (toSingularityCategory C).FullyFaithful :=
   .ofFullyFaithful _
+
+variable {C} in
+/-- A Gorenstein-projective object placed in any degree lies in the essential image of Chen's
+functor (`TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`). -/
+theorem mem_essImage_toSingularityCategory {G : C} (hG : isGorensteinProjective C G) (n : ℤ) :
+    (toSingularityCategory C).essImage ((TauCeti.SingularityCategory.Q C).obj
+      ((DerivedCategory.Bounded.singleFunctor C n).obj G)) := by
+  obtain ⟨G', hG', ⟨e⟩⟩ :=
+    TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective hG n
+  exact ⟨(exactStructure C).projectiveStableFunctor.obj ⟨G', hG'⟩, ⟨e.symm⟩⟩
+
+variable {C} in
+/-- **Buchweitz–Chen density criterion**: in an abelian category with enough projectives, if every
+`d`-th projective syzygy is Gorenstein-projective, then Chen's functor `toSingularityCategory C`
+is essentially surjective. -/
+theorem essSurj_toSingularityCategory_of_isSyzygy [EnoughProjectives C] (d : ℕ)
+    (h : ∀ M : C, (isProjective C).IsSyzygy d M → isGorensteinProjective C M) :
+    (toSingularityCategory C).EssSurj where
+  mem_essImage Y := by
+    have := Localization.essSurj (TauCeti.SingularityCategory.Q C)
+      (TauCeti.DerivedCategory.Bounded.perfect C).trW
+    obtain ⟨M, n, hM, ⟨e⟩⟩ :=
+      TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy
+        ((TauCeti.SingularityCategory.Q C).objPreimage Y) d
+    exact (mem_essImage_toSingularityCategory (h M hM) n).ofIso
+      (e.symm ≪≫ (TauCeti.SingularityCategory.Q C).objObjPreimageIso Y)
 
 end CategoryTheory.GorensteinProjective

@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
 # Regularity at the origin of positively homogeneous maps
@@ -17,6 +20,10 @@ when `k < p` in finite-dimensional sources. Such maps give finite-regularity exa
 vanishing jets at the origin and allow singular homogeneous formulas to extend across zero.
 More generally, punctured derivative bounds of degree `p-j` give the same extension on arbitrary
 normed sources, without compactness or finite-dimensionality assumptions.
+
+Away from zero, on a real inner product space, the homogeneous extension
+`ξ ↦ ‖ξ‖ ^ m • g (‖ξ‖⁻¹ • ξ)` of a map `g` that is `C^n` off zero is `C^n`, with `C^n` dependence
+on an extra parameter (`ContDiffOn.norm_rpow_smul_comp_normalize`).
 -/
 
 public section
@@ -115,7 +122,7 @@ theorem contDiff_of_homogeneous [FiniteDimensional ℝ E] {k : ℕ}
     intro x
     by_cases hx : x = 0
     · subst x
-      obtain ⟨C, hC, hbound⟩ := exists_norm_le_mul_rpow_of_homogeneous hf.continuousOn hhom
+      obtain ⟨C, _, hbound⟩ := exists_norm_le_mul_rpow_of_homogeneous hf.continuousOn hhom
       have hn : ContinuousAt (fun x : E ↦ ‖x‖ ^ p) 0 :=
         continuousAt_id.norm.rpow_const (Or.inr hp.le)
       rw [ContinuousAt, h0]
@@ -202,3 +209,21 @@ theorem contDiff_of_iteratedFDeriv_norm_rpow_bound {f : E → F} {k : ℕ} {p : 
         (by exact_mod_cast hj)
 
 end TauCeti
+
+/-- The homogeneous extension `(y, ξ) ↦ ‖ξ‖ ^ m • g (y, ‖ξ‖⁻¹ • ξ)` of degree `m` from the unit
+sphere of an inner product space is `C^n` off `ξ = 0` when `g` is. -/
+theorem ContDiffOn.norm_rpow_smul_comp_normalize {Y E F : Type*} [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {n : WithTop ℕ∞} {g : Y × E → F} (hg : ContDiffOn ℝ n g {q | q.2 ≠ 0})
+    (m : ℝ) :
+    ContDiffOn ℝ n (fun q : Y × E ↦ ‖q.2‖ ^ m • g (q.1, ‖q.2‖⁻¹ • q.2)) {q | q.2 ≠ 0} := by
+  intro q hq
+  have hq' : q.2 ≠ 0 := hq
+  have hn : ‖q.2‖ ≠ 0 := norm_ne_zero_iff.mpr hq'
+  have hnorm : ContDiffAt ℝ n (fun q : Y × E ↦ ‖q.2‖) q :=
+    (contDiffAt_norm ℝ hq').comp q contDiffAt_snd
+  -- The radial projection stays off `ξ = 0`, where `g` is smooth.
+  have hmem : (q.1, ‖q.2‖⁻¹ • q.2) ∈ {q : Y × E | q.2 ≠ 0} := smul_ne_zero (inv_ne_zero hn) hq'
+  have hg' := (hg.contDiffAt ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hmem)).comp
+    q (contDiffAt_fst.prodMk ((hnorm.inv hn).smul contDiffAt_snd))
+  exact ((hnorm.rpow_const_of_ne (p := m) hn).smul hg').contDiffWithinAt

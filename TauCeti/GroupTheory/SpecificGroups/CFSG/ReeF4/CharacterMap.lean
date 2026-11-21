@@ -36,13 +36,13 @@ noncomputable section
 variable (d : ReeF4LieIndex)
 
 /-- The represented weight torus in the index's fundamental-weight coordinates. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (F4ShortRoot.PrimeField.weightTorusPoints d.1.Closure).comp
+def weightTorus : (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  (F4ShortRoot.PrimeField.weightTorusPoints d.val.Closure).comp
     (MonoidHom.pi fun i => Pi.evalMonoidHom _ (finCongr d.rank_eq_four.symm i))
 
 /-- Evaluation of the indexed torus uses the rank identification and no node permutation. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.weightTorus s = F4ShortRoot.PrimeField.weightTorusPoints d.1.Closure
+theorem weightTorus_apply (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.weightTorus s = F4ShortRoot.PrimeField.weightTorusPoints d.val.Closure
       (fun i => s (finCongr d.rank_eq_four.symm i)) :=
   (rfl)
 
@@ -50,7 +50,7 @@ theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
 theorem isCharacterMap_halfFrobenius :
     IsCharacterMap d.weightTorus d.halfFrobenius
       d.toSuzukiReeIndex.datumSpecialIsogeny.weightMap := by
-  have h := F4ShortRoot.PrimeField.isCharacterMap_specialIsogeny d.1.Closure
+  have h := F4ShortRoot.PrimeField.isCharacterMap_specialIsogeny d.val.Closure
   -- The character lattice depends on the rank; eliminate the index before identifying it
   -- with the four coordinates of the represented carrier.
   obtain ⟨m, hv, rfl⟩ := d.exists_eq_of
@@ -63,7 +63,7 @@ map, with the same odd exponent as the point-group endomorphism. -/
 theorem isCharacterMap_steinberg :
     IsCharacterMap d.weightTorus d.steinberg d.toSuzukiReeIndex.datumSteinberg.weightMap := by
   have h := F4ShortRoot.PrimeField.isCharacterMap_specialIsogeny_pow
-    d.1.Closure d.1.fieldExponent
+    d.val.Closure d.val.fieldExponent
   rw [d.toSuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one,
     RootPairingIsogeny.weightMap_pow_two_mul_add_one _
       DynkinType.f4SpecialIsogeny_mul_self] at h

@@ -53,6 +53,14 @@ domain.
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
   holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
+* `TauCeti.Floer.perturbationPullback_one_sub`: the pullback of a datum `P` on `ℂ` along the
+  exchange `w ↦ 1 - w` is `-P` at `1 - w`.
+* `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
+  `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
+  differentiable jointly in the domain and target points is differentiable in each of them, in
+  real coordinates.
+* `TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_perturbationPullback`: the derivative of the
+  Hamiltonian vector field of a component of `φ^*K` in the target point.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -80,7 +88,8 @@ domain.
 
 public section
 
-open Function MeasureTheory Set
+open Filter Function MeasureTheory Set
+open scoped Topology
 open TauCeti.Complex (realChart realChart_apply fderiv_realChart_apply)
 
 namespace TauCeti
@@ -103,6 +112,14 @@ theorem perturbationPullback_apply (φ : ℝ × ℝ → ℝ × ℝ) (Ks Kt : ℝ
     perturbationPullback φ Ks Kt v w x =
       (fderiv ℝ φ w v).1 * Ks (φ w) x + (fderiv ℝ φ w v).2 * Kt (φ w) x :=
   (rfl)
+
+/-- The pullback of the zero perturbation along any change of coordinates is zero. -/
+@[simp]
+theorem perturbationPullback_zero (φ : ℝ × ℝ → ℝ × ℝ) (v : ℝ × ℝ) :
+    perturbationPullback φ (fun (_ : ℝ × ℝ) (_ : X) ↦ (0 : ℝ)) (fun _ _ ↦ 0) v =
+      fun _ _ ↦ 0 := by
+  funext w x
+  simp [perturbationPullback_apply]
 
 /-- The `ds` component of the pullback along the identity is `K_s`. -/
 @[simp]
@@ -131,6 +148,15 @@ theorem perturbationPullback_comp {φ ψ : ℝ × ℝ → ℝ × ℝ} (Ks Kt : �
   simp only [perturbationPullback_apply, fderiv_comp w hφ hψ, ContinuousLinearMap.comp_apply,
     comp_apply, h, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
   ring
+
+/-- Pulling back along `w ↦ φ (w + c)` is pulling back along `φ` at the translated point, since a
+translation of the domain has the identity as derivative. -/
+theorem perturbationPullback_comp_add_right (φ : ℝ × ℝ → ℝ × ℝ) (Ks Kt : ℝ × ℝ → X → ℝ)
+    (c v w : ℝ × ℝ) :
+    perturbationPullback (fun w ↦ φ (w + c)) Ks Kt v w =
+      perturbationPullback φ Ks Kt v (w + c) := by
+  funext x
+  simp only [perturbationPullback_apply, fderiv_comp_add_right]
 
 /-- The domain derivative of a component of the pullback `φ^*K`, by the product and chain rules:
 the second derivative of `φ` falls on the coefficient and the first derivative of `φ` on `K`. -/
@@ -203,6 +229,44 @@ theorem perturbationPullback_realChart (P : ℂ → X → ℂ →L[ℝ] ℝ) {f 
     ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply]
   exact ((P _ x : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I _).symm
 
+/-- The pullback of a datum `P` on `ℂ` along the exchange `σ(z) = (1, 0) - z`, which is `w ↦ 1 - w`
+in the real coordinates `ℝ × ℝ ≃ ℂ`, is `-P` at `1 - w`, since `σ` reverses tangent vectors. -/
+theorem perturbationPullback_one_sub (P : ℂ → X → ℂ →L[ℝ] ℝ) (v w : ℝ × ℝ) (x : X) :
+    perturbationPullback (fun z ↦ (1, 0) - z) (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
+      -P (1 - Complex.equivRealProdCLM.symm w) x (Complex.equivRealProdCLM.symm v) := by
+  have hσ : Complex.equivRealProdCLM.symm ((1, 0) - w) = 1 - Complex.equivRealProdCLM.symm w := by
+    apply Complex.ext <;> simp
+  have hv : Complex.equivRealProdCLM.symm v = v.1 • (1 : ℂ) + v.2 • Complex.I := by
+    apply Complex.ext <;> simp
+  rw [perturbationPullback_apply, fderiv_const_sub, fderiv_fun_id, hσ, hv]
+  simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg,
+    Prod.snd_neg, map_add, map_smul, smul_eq_mul]
+  ring
+
+section Differentiable
+
+variable [NormedAddCommGroup X] [NormedSpace ℝ X] {P : ℂ → X → ℂ →L[ℝ] ℝ} {w : ℝ × ℝ} {x : X}
+
+/-- If a datum `P` on `ℂ` is differentiable jointly in the domain and target points, then, in the
+real coordinates, its value on a fixed tangent vector is differentiable in the domain point. -/
+theorem differentiableAt_domain_of_differentiableAt
+    (hP : DifferentiableAt ℝ (fun p : ℂ × X ↦ P p.1 p.2) (Complex.equivRealProdCLM.symm w, x))
+    (v : ℂ) : DifferentiableAt ℝ (fun z ↦ P (Complex.equivRealProdCLM.symm z) x v) w :=
+  (hP.comp (f := fun z ↦ (Complex.equivRealProdCLM.symm z, x)) w
+    (Complex.equivRealProdCLM.symm.differentiableAt.prodMk (differentiableAt_const x))).clm_apply
+    (differentiableAt_const v)
+
+/-- If a datum `P` on `ℂ` is differentiable jointly in the domain and target points, then, in the
+real coordinates, its value on a fixed tangent vector is differentiable in the target point. -/
+theorem differentiableAt_target_of_differentiableAt
+    (hP : DifferentiableAt ℝ (fun p : ℂ × X ↦ P p.1 p.2) (Complex.equivRealProdCLM.symm w, x))
+    (v : ℂ) : DifferentiableAt ℝ (fun y ↦ P (Complex.equivRealProdCLM.symm w) y v) x :=
+  (hP.comp (f := fun y ↦ (Complex.equivRealProdCLM.symm w, y)) x
+    ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply (differentiableAt_const v)
+
+end Differentiable
+
 end Floer
 
 namespace SymplecticForm
@@ -227,6 +291,26 @@ theorem hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V)
     funext (perturbationPullback_apply φ Ks Kt v w)
   rw [h]
   exact ω.hamiltonianVectorField_const_mul_add_const_mul hKs hKt _ _
+
+/-- **The derivative of the Hamiltonian vector field of a pulled-back component.** If the
+Hamiltonians `K_s` and `K_t` at `φ w` are differentiable near `x` and their Hamiltonian vector
+fields are differentiable at `x`, then the derivative at `x` of the Hamiltonian vector field of
+the component `(φ^*K)(v)` at `w` is the corresponding combination of the derivatives of `X_{K_s}`
+and `X_{K_t}`. -/
+theorem fderiv_hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V)
+    (hKs : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) x)
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) x) (v : ℝ × ℝ) :
+    fderiv ℝ (ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w)) x =
+      (fderiv ℝ φ w v).1 • fderiv ℝ (ω.hamiltonianVectorField (Ks (φ w))) x +
+        (fderiv ℝ φ w v).2 • fderiv ℝ (ω.hamiltonianVectorField (Kt (φ w))) x := by
+  have hX : ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w) =ᶠ[𝓝 x]
+      fun y ↦ (fderiv ℝ φ w v).1 • ω.hamiltonianVectorField (Ks (φ w)) y +
+        (fderiv ℝ φ w v).2 • ω.hamiltonianVectorField (Kt (φ w)) y :=
+    (hKs.and hKt).mono fun y hy ↦ ω.hamiltonianVectorField_perturbationPullback hy.1 hy.2 v
+  rw [hX.fderiv_eq]
+  exact ((hXs.hasFDerivAt.const_smul _).add (hXt.hasFDerivAt.const_smul _)).fderiv
 
 /-- **Naturality of the perturbed derivative.** The perturbed derivative of the reparametrized
 map `u ∘ φ` for the pulled-back datum `φ^*K` is `(du - X_K) ∘ dφ`. -/
@@ -274,8 +358,7 @@ pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the curvatur
 The terms involving second derivatives of `φ` cancel by the symmetry of `d²φ`. -/
 theorem hamiltonianCurvature_perturbationPullback (ω : SymplecticForm V)
     (hφ : ContDiffAt ℝ 2 φ w) (hKs : DifferentiableAt ℝ (fun z ↦ Ks z x) (φ w))
-    (hKt : DifferentiableAt ℝ (fun z ↦ Kt z x) (φ w))
-    (hKs' : DifferentiableAt ℝ (Ks (φ w)) x) (hKt' : DifferentiableAt ℝ (Kt (φ w)) x) :
+    (hKt : DifferentiableAt ℝ (fun z ↦ Kt z x) (φ w)) :
     ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w x =
       (fderiv ℝ φ w).det * ω.hamiltonianCurvature Ks Kt (φ w) x := by
@@ -283,8 +366,12 @@ theorem hamiltonianCurvature_perturbationPullback (ω : SymplecticForm V)
   have hbracket : ω.poissonBracket (perturbationPullback φ Ks Kt stdComplexLineReal w)
       (perturbationPullback φ Ks Kt stdComplexLineImag w) x =
         (fderiv ℝ φ w).det * ω.poissonBracket (Ks (φ w)) (Kt (φ w)) x := by
-    simp only [poissonBracket_def, ω.hamiltonianVectorField_perturbationPullback hKs' hKt']
-    exact ω.apply_smul_add_smul_det (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
+    have h (v : ℝ × ℝ) : perturbationPullback φ Ks Kt v w = fun y ↦
+        (fderiv ℝ φ w v).1 * Ks (φ w) y + (fderiv ℝ φ w v).2 * Kt (φ w) y :=
+      funext (perturbationPullback_apply φ Ks Kt v w)
+    rw [h, h, ω.poissonBracket_comb]
+    simp [ContinuousLinearMap.det, LinearMap.det_finTwoProd, stdComplexLineReal_eq,
+      stdComplexLineImag_eq]
   have hderiv := fderiv_perturbationPullback_sub_fderiv_perturbationPullback hφ hKs hKt
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def]
   linear_combination hderiv - hbracket
@@ -334,16 +421,14 @@ theorem integral_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : Measur
     (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
     (hdet : ∀ w ∈ s, 0 ≤ (fderiv ℝ φ w).det)
     (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
-    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
-    (hKs' : ∀ w ∈ s, DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
-    (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w)) :
     ∫ z in φ '' s, ω.hamiltonianCurvature Ks Kt z (u z) =
       ∫ w in s, ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w)) :=
   integral_image_eq_integral_of_eq_abs_det_smul hs hinj
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
       rw [abs_of_nonneg (hdet w hw), smul_eq_mul, ω.hamiltonianCurvature_perturbationPullback
-        (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw) (hKt' w hw)]
+        (hφ w hw) (hKs w hw) (hKt w hw)]
 
 /-- **Invariance of the curvature allowance under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective on a measurable set `s`, the integral of `|R_K(u)|` over
@@ -353,16 +438,14 @@ computed in any chart. -/
 theorem integral_abs_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : MeasurableSet s)
     (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
     (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
-    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
-    (hKs' : ∀ w ∈ s, DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
-    (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w)) :
     ∫ z in φ '' s, |ω.hamiltonianCurvature Ks Kt z (u z)| =
       ∫ w in s, |ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))| :=
   integral_image_eq_integral_of_eq_abs_det_smul hs hinj
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
-      rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
-        (hKt' w hw), abs_mul, smul_eq_mul]
+      rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw), abs_mul,
+        smul_eq_mul]
 
 /-- **Invariance of the curvature allowance as a lower integral.** For a `C²` change of
 coordinates `φ` that is injective on a measurable set `s`, the lower Lebesgue integral of
@@ -373,16 +456,13 @@ be computed in any chart. -/
 theorem lintegral_enorm_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : MeasurableSet s)
     (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
     (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
-    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
-    (hKs' : ∀ w ∈ s, DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
-    (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w)) :
     ∫⁻ z in φ '' s, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
       ∫⁻ w in s, ‖ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ :=
   lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul hs hinj
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦
-      ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
-        (hKt' w hw)
+      ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw)
 
 end Integral
 

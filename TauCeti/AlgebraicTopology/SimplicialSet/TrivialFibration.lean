@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
+public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
-public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 
 /-!
 # Trivial fibrations of simplicial sets are shrinkable
@@ -25,11 +25,12 @@ it is a Kan fibration which is shrinkable:
 * a trivial fibration is a split epimorphism, any two maps into its source which agree after
   composing with it are homotopic over its target, and hence every section of it extends to a
   shrinking;
-* conversely, a shrinkable Kan fibration is a trivial fibration.
+* conversely, a shrinkable left fibration is a trivial fibration.
 
 In particular a trivial fibration is a simplicial homotopy equivalence, compatibly with the
-projection to `Y`. This is the combinatorial input for the comparison of trivial fibrations with
-weak equivalences in the Kan–Quillen model structure.
+projection to `Y`, and so induces a bijection on connected components. This is the combinatorial
+input for the comparison of trivial fibrations with weak equivalences in the Kan–Quillen model
+structure.
 
 ## Main declarations
 
@@ -38,8 +39,10 @@ weak equivalences in the Kan–Quillen model structure.
 * `SSet.exists_homotopy_of_rlp_monomorphisms`: maps into the source of a trivial fibration which
   agree after composing with it are homotopic over its target.
 * `SSet.Shrinking.ofRLP`: every section of a trivial fibration extends to a shrinking.
-* `SSet.Shrinking.rlp_monomorphisms`: a shrinkable Kan fibration is a trivial fibration.
+* `SSet.Shrinking.rlp_monomorphisms`: a shrinkable left fibration is a trivial fibration.
 * `SSet.rlp_monomorphisms_iff`: the resulting characterization of trivial fibrations.
+* `SSet.bijective_mapπ₀_of_rlp_monomorphisms`: a trivial fibration induces a bijection on
+  connected components.
 
 ## References
 
@@ -135,33 +138,18 @@ theorem ofRLP_section_ (hp : (monomorphisms SSet.{u}).rlp p) (s : Y ⟶ X) (hs :
   -- A tactic proof keeps the body of `ofRLP` private: an exported `dsimp` lemma would need it.
   rfl
 
-/-- A Kan fibration admitting a shrinking has the right lifting property with respect to all
+/-- A left fibration admitting a shrinking has the right lifting property with respect to all
 monomorphisms. -/
-theorem rlp_monomorphisms [Fibration p] (h : Shrinking p) : (monomorphisms SSet.{u}).rlp p := by
+theorem rlp_monomorphisms [LeftFibration p] (h : Shrinking p) : (monomorphisms SSet.{u}).rlp p := by
   intro A B i (hi : Mono i)
   refine ⟨fun {a b} sq ↦ ?_⟩
-  -- Deform `b ≫ h.section_` along the shrinking, extending the shrinking homotopy on `A`, by
-  -- lifting against the anodyne pushout-product of `i` with the vertex `0` of `Δ[1]`; the other
-  -- end of the deformation is a lift.
-  let P := Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet.{u}) i Λ[1, 0].ι
-  have hP : anodyneExtensions P.ι := anodyneExtensions_pushoutObjObjι P (.horn_ι 0)
-  have := hP p (mem_fibrations p)
-  let φ : P.pt ⟶ X := P.isPushout.desc (fst _ _ ≫ b ≫ h.section_) (a ▷ _ ≫ h.homotopy.h) (by
-    have e : X ◁ Λ[1, 0].ι ≫ h.homotopy.h = fst _ _ ≫ p ≫ h.section_ := by
-      have hι : X ◁ Λ[1, 0].ι = fst _ _ ≫ ι₀ := CartesianMonoidalCategory.hom_ext _ _
-        (by simp) (by simp [horn_one_ι_eq_const, comp_const])
-      rw [hι, Category.assoc, Homotopy.h₀]
-    dsimp
-    rw [whisker_exchange_assoc, e]
-    simp [sq.w_assoc])
-  have sq' : CommSq φ P.ι p (fst _ _ ≫ b) := ⟨P.hom_ext (by simp [φ]) (by
-    simp [φ, sq.w])⟩
-  exact ⟨⟨{ l := ι₁ ≫ sq'.lift
-            fac_left := by
-              have e : i ▷ Δ[1] = P.inr ≫ P.ι := P.inr_ι.symm
-              rw [← ι₁_comp_assoc, e, Category.assoc, sq'.fac_left]
-              simp [φ]
-            fac_right := by simp }⟩⟩
+  -- Deform `b ≫ h.section_` along the shrinking, extending the shrinking homotopy on `A`, by the
+  -- covering homotopy extension property of `p`; the other end of the deformation is a lift.
+  obtain ⟨L, -, hL, hLp⟩ := exists_lift_cylinder_ι₀_of_mono i p (fst _ _ ≫ b) (b ≫ h.section_)
+    (a ▷ Δ[1] ≫ h.homotopy.h) (by simp) (by simp [sq.w]) (by simp [sq.w_assoc])
+  exact ⟨⟨{ l := ι₁ ≫ L
+            fac_left := by rw [← ι₁_comp_assoc, hL]; simp
+            fac_right := by simp [hLp] }⟩⟩
 
 end Shrinking
 
@@ -173,5 +161,15 @@ theorem rlp_monomorphisms_iff {p : X ⟶ Y} :
   ⟨fun hp ↦ ⟨(modelCategoryQuillen.fibration_iff p).2 (antitone_rlp J_le_monomorphisms _ hp),
     have := isSplitEpi_of_rlp_monomorphisms hp
     ⟨.ofRLP hp (section_ p) (IsSplitEpi.id p)⟩⟩, fun ⟨_, ⟨h⟩⟩ ↦ h.rlp_monomorphisms⟩
+
+/-- A morphism with the right lifting property with respect to all monomorphisms (a trivial
+fibration) induces a bijection on connected components. -/
+lemma bijective_mapπ₀_of_rlp_monomorphisms {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) :
+    Function.Bijective (mapπ₀ p) := by
+  have := isSplitEpi_of_rlp_monomorphisms hp
+  let h := Shrinking.ofRLP hp (section_ p) (IsSplitEpi.id p)
+  refine Function.bijective_iff_has_inverse.2 ⟨mapπ₀ h.section_, fun c ↦ ?_, fun c ↦ ?_⟩
+  · rw [← mapπ₀_comp_apply, h.homotopy.mapπ₀_eq, mapπ₀_id_apply]
+  · rw [← mapπ₀_comp_apply, h.section_comp, mapπ₀_id_apply]
 
 end SSet

@@ -8,12 +8,12 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Separable
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 
 /-!
 # Decomposition groups inside the image of a local absolute Galois group
 
-Let `K ⊆ F ⊆ E` be number fields with `E/F` Galois, let `ι : E →ₐ[K] Kˢ` embed `E` in the
+Let `K ⊆ F ⊆ E` be number fields, let `ι : E →ₐ[K] Kˢ` embed `E` in the
 separable closure `Kˢ` of `K`, and let `w` be a finite place of `E` above a place of `F` above the
 finite place `v` of `K`. An embedding of separable closures `τ : Kˢ →ₐ[K] K_vˢ` gives the map
 `TauCeti.absoluteGaloisGroupMap τ : G_{K_v} → G_K`. This file shows that for a suitable `τ` every
@@ -26,9 +26,10 @@ Let `u` be the place of `F` below `w`. The embedding `τ` is chosen so that its 
 factors through the completion `E_w`: embed `F_u` in `K_vˢ` over `K_v`, which makes `K_vˢ` a
 separable closure of `F_u`, embed `E_w` in it over `F_u`, and extend `E → E_w → K_vˢ` to `Kˢ`.
 An element `σ` of the decomposition group extends by continuity to an automorphism of `E_w/F_u`
-(`IsDedekindDomain.HeightOneSpectrum.decompositionHom`), which in turn is the restriction of an
-automorphism of `K_vˢ` over `F_u`, since `K_vˢ/F_u` is normal; that automorphism is in particular an
-element `g` of `G_{K_v}`, and `absoluteGaloisGroupMap τ g` acts as `σ` on `ι(E)`.
+(`IsDedekindDomain.HeightOneSpectrum.decompositionHom`), which in turn extends to an automorphism
+of `K_vˢ` over `F_u`, since `K_vˢ/F_u` is normal (no normality of `E/F` is needed); that
+automorphism is in particular an element `g` of `G_{K_v}`, and `absoluteGaloisGroupMap τ g` acts
+as `σ` on `ι(E)`.
 
 For `F = K` this says that the decomposition group of `w` in `Gal(E/K)` lies in the image of
 `G_{K_v}` (`AlgHom.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`). So a
@@ -66,12 +67,12 @@ variable {K F E : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Fi
   [NumberField E] [Algebra K F] [Algebra K E] [Algebra F E] [IsScalarTower K F E]
 
 /-- **The decomposition group acts through the local absolute Galois group.** Let `K ⊆ F ⊆ E` be
-number fields with `E/F` Galois, `ι : E →ₐ[K] Kˢ` an embedding into the separable closure of `K`,
+number fields, `ι : E →ₐ[K] Kˢ` an embedding into the separable closure of `K`,
 and `w` a finite place of `E` above a finite place `u` of `F` above the finite place `v` of `K`. For
 some embedding of separable closures `τ : Kˢ →ₐ[K] K_vˢ`, every element `σ` of the decomposition
 group of `w` in `Gal(E/F)` satisfies `absoluteGaloisGroupMap τ g (ι x) = ι (σ x)` for some
 `g ∈ G_{K_v}` and every `x ∈ E`. -/
-theorem exists_absoluteGaloisGroupMap_apply_eq_of_mem_stabilizer [IsGalois F E]
+theorem exists_absoluteGaloisGroupMap_apply_eq_of_mem_stabilizer
     (ι : E →ₐ[K] SeparableClosure K) {v : HeightOneSpectrum (𝓞 K)}
     {u : HeightOneSpectrum (𝓞 F)} [hu : u.asIdeal.LiesOver v.asIdeal]
     (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver u.asIdeal] :
@@ -79,8 +80,8 @@ theorem exists_absoluteGaloisGroupMap_apply_eq_of_mem_stabilizer [IsGalois F E]
       ∀ σ ∈ MulAction.stabilizer Gal(E/F) w.asIdeal,
         ∃ g : AbsoluteGaloisGroup (v.adicCompletion K),
           ∀ x, absoluteGaloisGroupMap τ g (ι x) = ι (σ x) := by
-  have := HeightOneSpectrum.adicCompletion_isSeparable v u
-  have := HeightOneSpectrum.adicCompletion_isSeparable u w
+  have := HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable (K := K) (L := F) v u
+  have := HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable (K := F) (L := E) u w
   -- Embed `F_u` in `K_vˢ` over `K_v`, making `K_vˢ` a separable closure of `F_u`, and then embed
   -- `E_w` in it over `F_u`.
   let κ : u.adicCompletion F →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K) :=
@@ -122,15 +123,21 @@ theorem exists_absoluteGaloisGroupMap_apply_eq_of_mem_stabilizer [IsGalois F E]
     (congrArg (fun φ : ι.fieldRange →ₐ[K] _ ↦ φ (ι.equivFieldRange x)) hτ).trans
       (congrArg j (ι.equivFieldRange.symm_apply_apply x))
   refine ⟨τ, fun σ hσ ↦ ?_⟩
-  -- The automorphism of `E_w` induced by `σ` is the restriction along `τ'` of an automorphism `g₀`
-  -- of `K_vˢ` over `F_u`, in particular over `K_v`.
-  obtain ⟨g₀, hg₀⟩ :=
-    τ'.restrictNormalHom_surjective (HeightOneSpectrum.decompositionHom u w ⟨σ, hσ⟩)
+  -- The automorphism of `E_w` induced by `σ` extends along `τ'` to an automorphism `g₀` of the
+  -- normal extension `K_vˢ` of `F_u`, in particular over `K_v`.
+  let _ : Algebra (w.adicCompletion E) (SeparableClosure (v.adicCompletion K)) :=
+    τ'.toRingHom.toAlgebra
+  have : IsScalarTower (u.adicCompletion F) (w.adicCompletion E)
+      (SeparableClosure (v.adicCompletion K)) := .of_algebraMap_eq fun x ↦ (τ'.commutes x).symm
+  let g₀ : SeparableClosure (v.adicCompletion K) ≃ₐ[u.adicCompletion F]
+      SeparableClosure (v.adicCompletion K) :=
+    (HeightOneSpectrum.decompositionHom u w ⟨σ, hσ⟩).liftNormal _
   refine ⟨g₀.restrictScalars (v.adicCompletion K), fun x ↦ ?_⟩
   have h : τ (absoluteGaloisGroupMap τ (g₀.restrictScalars (v.adicCompletion K)) (ι x)) =
       τ (ι (σ x)) := by
-    rw [absoluteGaloisGroupMap_commutes, hτι, hτι, AlgEquiv.restrictScalars_apply,
-      ← τ'.restrictNormalHom_commutes, hg₀, HeightOneSpectrum.decompositionHom_algebraMap]
+    rw [absoluteGaloisGroupMap_commutes, hτι, hτι, AlgEquiv.restrictScalars_apply]
+    exact (AlgEquiv.liftNormal_commutes _ _ _).trans
+      (congrArg τ' (HeightOneSpectrum.decompositionHom_algebraMap (v := u) ⟨σ, hσ⟩ x))
   exact τ.injective h
 
 /-- **The decomposition group lies in the image of the local absolute Galois group.** Let `E/K`

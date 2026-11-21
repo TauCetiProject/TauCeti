@@ -73,7 +73,7 @@ theorem localFrameCoeff_derivCurvatureTensor {x : M} (hx : x ∈ e.baseSet)
   have hX (m : ι) : CMDiff[e.baseSet] ∞ (T% (X m)) :=
     e.contMDiffOn_localFrame_baseSet ∞ b m
   -- Local regularity is needed to differentiate the curvature section in this frame.
-  have hcov := cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) e.open_baseSet
+  have hcov := cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ∞) e.open_baseSet
   have hD {Y Z : Π y : M, TangentSpace I y}
       (hY : CMDiff[e.baseSet] ∞ (T% Y)) (hZ : CMDiff[e.baseSet] ∞ (T% Z)) :
       CMDiff[e.baseSet] ∞ (T% (fun y ↦ cov Z y (Y y))) :=
@@ -108,9 +108,9 @@ theorem localFrameCoeff_derivCurvatureTensor {x : M} (hx : x ∈ e.baseSet)
     (hX i) (hX j) (hX k),
     cov.isCovariantDerivativeOn.congr_of_eventuallyEq hdR hdS Filter.univ_mem heq,
     covariantDerivative_apply_localFrame_eq_sum b cov.isCovariantDerivativeOn hx hdS a,
-    covariantDerivative_localFrame_eq_sum_christoffelSymbol b hx a i,
-    covariantDerivative_localFrame_eq_sum_christoffelSymbol b hx a j,
-    covariantDerivative_localFrame_eq_sum_christoffelSymbol b hx a k]
+    covariantDerivative_localFrame_eq_sum_christoffelSymbol b a i,
+    covariantDerivative_localFrame_eq_sum_christoffelSymbol b a j,
+    covariantDerivative_localFrame_eq_sum_christoffelSymbol b a k]
   simp [map_sub, map_sum, map_smul, localFrameCoeff_localFrame b hx, S]
 
 end CovariantDerivative

@@ -155,10 +155,13 @@ theorem eichlerIntegral_order_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofCompl
     simpa using hasSum_qExpansion hh hfper hfhol hfbdd τ)
 
 /-- The Eichler integral has the same period `h` as the `q`-parameter. -/
-theorem periodic_eichlerIntegral_comp_ofComplex (hh : h ≠ 0) (n : ℕ) :
+theorem periodic_eichlerIntegral_comp_ofComplex (n : ℕ) :
     Periodic (eichlerIntegral h n f ∘ ofComplex) h := by
+  by_cases hh : h = 0
+  · subst hh
+    exact fun x ↦ by simp
   simpa only [comp_def, eichlerIntegral] using
-    (UpperHalfPlane.periodic_qParam_comp_ofComplex hh).comp
+    UpperHalfPlane.periodic_qParam_comp_ofComplex.comp
       (fun q : ℂ ↦ ∑' m : ℕ, ((h : ℂ) / m) ^ n * (qExpansion h f).coeff m * q ^ m)
 
 /-- On a half-plane `ε < im w` the terms of the Eichler series are dominated by a summable
@@ -244,7 +247,7 @@ theorem qExpansion_eichlerIntegral_coeff (hh : 0 < h) (hfper : Periodic (f ∘ o
       (eichlerIntegral h n f τ) := by
     simpa using hasSum_eichlerIntegral hh hfper hfhol hfbdd n
   exact (UpperHalfPlane.qExpansion_coeff_unique hh
-    (analyticAt_cuspFunction_zero hh (periodic_eichlerIntegral_comp_ofComplex hh.ne' n)
+    (analyticAt_cuspFunction_zero hh (periodic_eichlerIntegral_comp_ofComplex n)
       (mdifferentiable_eichlerIntegral hh hfper hfhol hfbdd n)
       (isBoundedAtImInfty_of_hasSum_qExpansion hh hE)) hE m).symm
 

@@ -23,7 +23,12 @@ group-ring calculations in the Popa--Zagier construction of the trace formula.
 Inverse right multiplication is written as a left action. Its representative formula is
 `A ↦ A * g⁻¹`, so applying `h` and then `g` gives the action of `g * h`; in `GL(2, ℚ)`, through
 `FixedDetMatrices.toGL`, it is right multiplication by `g⁻¹`
-(`TauCeti.toGL_traceFormulaMatrixRight`).
+(`TauCeti.toGL_traceFormulaMatrixRight`). On the upper-triangular representatives
+`FixedDetMatrices.reps n`, `n ≠ 0`, of `SL(2, ℤ) \ ℳₙ`, it is read as `TauCeti.repsRightMul`,
+the representative of the coset of `A g⁻¹`; this is injective on the representatives
+(`TauCeti.repsRightMul_injOn`), so it permutes the cosets. It preserves the primitive
+representatives `FixedDetMatrices.primitiveReps n` and permutes them
+(`TauCeti.image_repsRightMul_primitiveReps`).
 
 The right and conjugation actions are also `MulAction` instances, of `PSL(2, ℤ)ᵐᵒᵖ` and of
 `ConjAct PSL(2, ℤ)`. With `open scoped RightActions`, `x <• g`, that is `MulOpposite.op g • x`,
@@ -71,14 +76,14 @@ def TraceFormulaMatrix.diagonal (d₀ d₁ : ℤ) (h : d₀ * d₁ = n) : TraceF
 /-- The underlying matrix of `TraceFormulaMatrix.diagonal d₀ d₁ h` is `diag(d₀, d₁)`. -/
 @[simp]
 theorem TraceFormulaMatrix.val_diagonal (d₀ d₁ : ℤ) (h : d₀ * d₁ = n) :
-    (TraceFormulaMatrix.diagonal d₀ d₁ h).1 = !![d₀, 0; 0, d₁] := (rfl)
+    (TraceFormulaMatrix.diagonal d₀ d₁ h).val = !![d₀, 0; 0, d₁] := (rfl)
 
 instance (n : ℤ) : Neg (TraceFormulaMatrix n) where
-  neg A := ⟨-A.1, by simpa [Matrix.det_neg] using A.2⟩
+  neg A := ⟨-A.val, by simpa [Matrix.det_neg] using A.property⟩
 
 /-- Negation of a determinant fibre is computed on its underlying matrix. -/
 @[simp]
-theorem TraceFormulaMatrix.val_neg (A : TraceFormulaMatrix n) : (-A).1 = -A.1 := rfl
+theorem TraceFormulaMatrix.val_neg (A : TraceFormulaMatrix n) : (-A).val = -A.val := rfl
 
 instance (n : ℤ) : InvolutiveNeg (TraceFormulaMatrix n) where
   neg_neg A := by
@@ -153,14 +158,14 @@ theorem TraceFormulaMatrixModule.mk_surjective :
 /-- Right multiplication by the inverse of an integral determinant-one matrix. -/
 public def traceFormulaMatrixRight (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     TraceFormulaMatrix n :=
-  ⟨A.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ), by
-    rw [Matrix.det_mul, Matrix.SpecialLinearGroup.det_coe, A.2, mul_one]⟩
+  ⟨A.val * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ), by
+    rw [Matrix.det_mul, Matrix.SpecialLinearGroup.det_coe, A.property, mul_one]⟩
 
 /-- Inverse right multiplication is computed on the underlying matrix. -/
 @[simp]
 theorem val_traceFormulaMatrixRight (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
-    (traceFormulaMatrixRight g A).1 =
-      A.1 * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := (rfl)
+    (traceFormulaMatrixRight g A).val =
+      A.val * ((g⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := (rfl)
 
 /-- For `n ≠ 0`, inverse right multiplication becomes right multiplication by the image of `g⁻¹`
 in `GL(2, ℚ)`. -/
@@ -171,6 +176,107 @@ theorem toGL_traceFormulaMatrixRight (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceF
   rw [Units.val_mul, FixedDetMatrices.coe_toGL, FixedDetMatrices.coe_toGL,
     Matrix.SpecialLinearGroup.mapGL_coe_matrix, val_traceFormulaMatrixRight]
   exact Matrix.map_mul (f := Int.castRingHom ℚ)
+
+/-- For `n ≠ 0`, inverse right multiplication becomes right multiplication by the image of `g⁻¹`
+in `GL(2, ℝ)`. -/
+theorem toGLReal_traceFormulaMatrixRight (hn : n ≠ 0) (g : SL(2, ℤ))
+    (A : TraceFormulaMatrix n) :
+    FixedDetMatrices.toGLReal hn (traceFormulaMatrixRight g A) =
+      FixedDetMatrices.toGLReal hn A * Matrix.SpecialLinearGroup.mapGL ℝ g⁻¹ := by
+  rw [FixedDetMatrices.toGLReal_eq_map_toGL, toGL_traceFormulaMatrixRight, map_mul,
+    Matrix.SpecialLinearGroup.map_mapGL, FixedDetMatrices.toGLReal_eq_map_toGL]
+
+/-- Inverse right multiplication preserves and reflects primitivity. -/
+theorem isPrimitive_traceFormulaMatrixRight_iff (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    IsPrimitive (traceFormulaMatrixRight g A).val ↔ IsPrimitive A.val := by
+  rw [val_traceFormulaMatrixRight, ← Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+    Units.isPrimitive_mul_units_iff]
+
+/-! ### Right multiplication on the upper-triangular representatives -/
+
+/-- A matrix of `SL(2, ℤ)` moving the right translate `A g⁻¹` back into
+`FixedDetMatrices.reps n`. -/
+noncomputable def repsRightMulFactor (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    SL(2, ℤ) :=
+  (FixedDetMatrices.exists_smul_mem_reps hn (traceFormulaMatrixRight g A)).choose
+
+/-- **Right multiplication by `g⁻¹` on `SL(2, ℤ) \ ℳₙ`**, read on the representatives
+`FixedDetMatrices.reps n`: the representative of the coset `SL(2, ℤ) A g⁻¹`. -/
+noncomputable def repsRightMul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    TraceFormulaMatrix n :=
+  repsRightMulFactor hn g A • traceFormulaMatrixRight g A
+
+/-- The defining equation of `repsRightMul`: the right translate `A g⁻¹` moved by
+`repsRightMulFactor`. -/
+theorem repsRightMul_def (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    repsRightMul hn g A = repsRightMulFactor hn g A • traceFormulaMatrixRight g A := (rfl)
+
+/-- The right translate `repsRightMul hn g A` is a representative. -/
+theorem repsRightMul_mem_reps (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    repsRightMul hn g A ∈ FixedDetMatrices.reps n :=
+  (FixedDetMatrices.exists_smul_mem_reps hn (traceFormulaMatrixRight g A)).choose_spec
+
+/-- In `GL(2, ℚ)`, `repsRightMul hn g A` is `A g⁻¹` moved on the left by
+`repsRightMulFactor hn g A`. -/
+theorem toGL_repsRightMul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    FixedDetMatrices.toGL hn (repsRightMul hn g A) =
+      Matrix.SpecialLinearGroup.mapGL ℚ (repsRightMulFactor hn g A) *
+        (FixedDetMatrices.toGL hn A * Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹) := by
+  rw [repsRightMul_def, FixedDetMatrices.toGL_smul, toGL_traceFormulaMatrixRight]
+
+/-- In `GL(2, ℝ)`, `repsRightMul hn g A` is `A g⁻¹` moved on the left by
+`repsRightMulFactor hn g A`. -/
+theorem toGLReal_repsRightMul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
+    FixedDetMatrices.toGLReal hn (repsRightMul hn g A) =
+      Matrix.SpecialLinearGroup.mapGL ℝ (repsRightMulFactor hn g A) *
+        (FixedDetMatrices.toGLReal hn A * Matrix.SpecialLinearGroup.mapGL ℝ g⁻¹) := by
+  rw [repsRightMul_def, FixedDetMatrices.toGLReal_smul, toGLReal_traceFormulaMatrixRight]
+
+/-- Right multiplication by `g⁻¹` permutes `SL(2, ℤ) \ ℳₙ`: distinct cosets have distinct right
+translates. -/
+theorem repsRightMul_injOn (hn : n ≠ 0) (g : SL(2, ℤ)) :
+    Set.InjOn (repsRightMul hn g) (FixedDetMatrices.reps n) := by
+  intro A hA B hB h
+  have hGL := congrArg (FixedDetMatrices.toGL hn) h
+  simp only [toGL_repsRightMul] at hGL
+  -- cancel `g` on the right and move the left factors across: `A = h • B` for some `h`
+  have hAB : FixedDetMatrices.toGL hn A =
+      FixedDetMatrices.toGL hn
+        (((repsRightMulFactor hn g A)⁻¹ * repsRightMulFactor hn g B) • B) := by
+    rw [FixedDetMatrices.toGL_smul, map_mul, map_inv]
+    simpa [mul_assoc] using
+      congrArg (fun x ↦ (Matrix.SpecialLinearGroup.mapGL ℚ (repsRightMulFactor hn g A))⁻¹ * x *
+        (Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹)⁻¹) hGL
+  exact (FixedDetMatrices.eq_of_smul_eq_of_mem_reps hB hA
+    (FixedDetMatrices.toGL_injective hn hAB).symm).symm
+
+/-- Right multiplication by `g⁻¹` preserves the primitive representatives. -/
+theorem repsRightMul_mem_primitiveReps (hn : n ≠ 0) (g : SL(2, ℤ)) {A : TraceFormulaMatrix n}
+    (hA : A ∈ FixedDetMatrices.primitiveReps n) :
+    repsRightMul hn g A ∈ FixedDetMatrices.primitiveReps n := by
+  refine FixedDetMatrices.mem_primitiveReps.2 ⟨repsRightMul_mem_reps hn g A, ?_⟩
+  rw [repsRightMul_def, FixedDetMatrices.isPrimitive_smul_iff,
+    isPrimitive_traceFormulaMatrixRight_iff]
+  exact (FixedDetMatrices.mem_primitiveReps.1 hA).2
+
+/-- Right multiplication by `g⁻¹` is injective on the primitive representatives. -/
+theorem repsRightMul_injOn_primitiveReps (hn : n ≠ 0) (g : SL(2, ℤ)) :
+    Set.InjOn (repsRightMul hn g)
+      (FixedDetMatrices.primitiveReps n : Set (TraceFormulaMatrix n)) :=
+  (repsRightMul_injOn hn g).mono fun _ hA ↦ (FixedDetMatrices.mem_primitiveReps.1 hA).1
+
+open scoped Classical in
+/-- Right multiplication by `g⁻¹` permutes the `SL(2, ℤ)`-orbits of primitive matrices: the
+representatives of the right translates of `FixedDetMatrices.primitiveReps n` are again all of
+`FixedDetMatrices.primitiveReps n`. -/
+theorem image_repsRightMul_primitiveReps (hn : n ≠ 0) (g : SL(2, ℤ)) :
+    (FixedDetMatrices.primitiveReps n).image (repsRightMul hn g) =
+      FixedDetMatrices.primitiveReps n := by
+  refine Finset.eq_of_subset_of_card_le ?_
+    (Finset.card_image_of_injOn (repsRightMul_injOn_primitiveReps hn g)).ge
+  intro B hB
+  obtain ⟨A, hA, rfl⟩ := Finset.mem_image.1 hB
+  exact repsRightMul_mem_primitiveReps hn g hA
 
 /-- For `n ≠ 0`, a determinant-`n` matrix and its negative act in the same way on the cusps
 `ℙ¹(ℚ)`. -/
@@ -244,7 +350,7 @@ theorem TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_smul_eq (hn : n ≠ 0) 
     {x : TraceFormulaMatrixModule n} (h : g • x = x) : g = 1 ∨ g = -1 := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   -- `A` is cancellable on the right, as its determinant `n` is nonzero
-  have hA := (isRegular_of_isLeftRegular_det (A.2 ▸ IsRegular.of_ne_zero hn).left).right
+  have hA := (isRegular_of_isLeftRegular_det (A.property ▸ IsRegular.of_ne_zero hn).left).right
   rw [TraceFormulaMatrixModule.smul_mk, TraceFormulaMatrixModule.mk_eq_iff] at h
   rcases h with h | h <;> [left; right] <;>
     exact Subtype.ext <| hA <| by simpa [FixedDetMatrices.smul_coe] using congrArg Subtype.val h
@@ -266,7 +372,7 @@ public def TraceFormulaMatrixModule.right (x : TraceFormulaMatrixModule n) (g : 
     · exact Or.inl (h ▸ rfl)
     · right
       apply FixedDetMatrices.ext'
-      have hval : A.1 = -B.1 := congrArg Subtype.val h
+      have hval : A.val = -B.val := congrArg Subtype.val h
       rw [val_traceFormulaMatrixRight, TraceFormulaMatrix.val_neg, val_traceFormulaMatrixRight,
         hval, Matrix.neg_mul]) x
 
@@ -556,7 +662,7 @@ theorem TraceFormulaMatrixModule.inv_op_smul_mk (g : SL(2, ℤ)) (A : TraceFormu
 @[simp low]
 theorem TraceFormulaMatrixModule.mk_mem_orbit_op_mk_iff {A B : TraceFormulaMatrix n} :
     TraceFormulaMatrixModule.mk A ∈ MulAction.orbit PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule.mk B) ↔
-      ∃ g : SL(2, ℤ), A.1 = B.1 * (g : Matrix (Fin 2) (Fin 2) ℤ) := by
+      ∃ g : SL(2, ℤ), A.val = B.val * (g : Matrix (Fin 2) (Fin 2) ℤ) := by
   simp only [MulAction.mem_orbit_iff, MulOpposite.exists, QuotientGroup.exists_mk, op_smul_mk,
     eq_comm (b := mk A), mk_eq_iff]
   constructor
@@ -572,7 +678,7 @@ theorem TraceFormulaMatrixModule.eq_one_or_eq_neg_one_of_op_smul_eq (hn : n ≠ 
     {x : TraceFormulaMatrixModule n} (h : x <• (g : PSL(2, ℤ)) = x) : g = 1 ∨ g = -1 := by
   induction x using TraceFormulaMatrixModule.induction with | h A => ?_
   -- `A` is cancellable on the left, as its determinant `n` is nonzero
-  have hA := (isRegular_of_isLeftRegular_det (A.2 ▸ IsRegular.of_ne_zero hn).left).left
+  have hA := (isRegular_of_isLeftRegular_det (A.property ▸ IsRegular.of_ne_zero hn).left).left
   rw [op_smul_mk, mk_eq_iff] at h
   rcases h with h | h <;> [left; right] <;>
     exact Subtype.ext <| hA <| by simpa using congrArg Subtype.val h
@@ -626,15 +732,15 @@ variable {k : Type*} [Semiring k] {n : ℤ}
 `w` on integral matrices that vanishes on every determinant-`n` matrix with an entry larger than
 `B` in absolute value. Its coefficients are given by `coeff_ofWeight_mk`. -/
 noncomputable def ofWeight (n : ℤ) (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
-    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B) :
+    (hw : ∀ A : TraceFormulaMatrix n, w A.val ≠ 0 → ∀ i j, |A.val i j| ≤ B) :
     k[TraceFormulaMatrixModule n] :=
   .ofCoeff <| .ofSupportFinite
-    (Quotient.lift (fun A : TraceFormulaMatrix n ↦ w A.1 + w (-A.1))
+    (Quotient.lift (fun A : TraceFormulaMatrix n ↦ w A.val + w (-A.val))
       fun _ _ ↦ by rintro (rfl | rfl) <;> simp [add_comm]) <| by
     -- a class in the support has a representative of nonzero weight
     refine ((FixedDetMatrices.finite_setOf_abs_le n B).image mk).subset fun x hx ↦ ?_
     induction x using TraceFormulaMatrixModule.induction with | h A => ?_
-    obtain h | h : w A.1 ≠ 0 ∨ w (-A.1) ≠ 0 := by
+    obtain h | h : w A.val ≠ 0 ∨ w (-A.val) ≠ 0 := by
       by_contra! h
       simp [h] at hx
     exacts [⟨A, hw A h, rfl⟩, ⟨-A, hw (-A) h, mk_neg A⟩]
@@ -642,9 +748,9 @@ noncomputable def ofWeight (n : ℤ) (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B :
 /-- The coefficient of the class of `A` in `ofWeight n w B hw` is `w A + w (-A)`. -/
 @[simp]
 theorem coeff_ofWeight_mk (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
-    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.val ≠ 0 → ∀ i j, |A.val i j| ≤ B)
     (A : TraceFormulaMatrix n) :
-    (ofWeight n w B hw).coeff (mk A) = w A.1 + w (-A.1) := by
+    (ofWeight n w B hw).coeff (mk A) = w A.val + w (-A.val) := by
   simp [ofWeight, Finsupp.ofSupportFinite_coe]
 
 /-- An element given by a weight is the sum of the weighted projective classes over any finite
@@ -652,19 +758,19 @@ set containing every determinant-`n` matrix of nonzero weight. The weights of th
 representatives of a projective class add, with no factor of two. -/
 theorem ofWeight_eq_sum (hn : n ≠ 0)
     (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
-    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
-    (s : Finset (TraceFormulaMatrix n)) (hs : ∀ A, w A.1 ≠ 0 → A ∈ s) :
-    ofWeight n w B hw = ∑ A ∈ s, single (mk A) (w A.1) := by
+    (hw : ∀ A : TraceFormulaMatrix n, w A.val ≠ 0 → ∀ i j, |A.val i j| ≤ B)
+    (s : Finset (TraceFormulaMatrix n)) (hs : ∀ A, w A.val ≠ 0 → A ∈ s) :
+    ofWeight n w B hw = ∑ A ∈ s, single (mk A) (w A.val) := by
   classical
   apply MonoidAlgebra.coeff_injective
   ext y
   induction y using TraceFormulaMatrixModule.induction with | h C => ?_
   have hC : C ≠ -C := fun h ↦ hn <| by
-    have h₀ : C.1 = 0 := by
-      have h₁ : C.1 = -C.1 := congrArg Subtype.val h
+    have h₀ : C.val = 0 := by
+      have h₁ : C.val = -C.val := congrArg Subtype.val h
       rw [eq_neg_iff_add_eq_zero, ← two_smul ℤ] at h₁
       exact (smul_eq_zero.mp h₁).resolve_left two_ne_zero
-    rw [← C.2, h₀]
+    rw [← C.property, h₀]
     simp
   rw [coeff_ofWeight_mk, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply,
     Finset.sum_eq_add C (-C) hC]
@@ -685,16 +791,16 @@ determinant-`n` matrices whose class lies in `x Γ`. Each class `±A` contribute
 both representatives of a class are counted. -/
 theorem mapDomain_orbitRel_mk_coeff_ofWeight (hn : n ≠ 0)
     (w : Matrix (Fin 2) (Fin 2) ℤ → k) (B : ℤ)
-    (hw : ∀ A : TraceFormulaMatrix n, w A.1 ≠ 0 → ∀ i j, |A.1 i j| ≤ B)
+    (hw : ∀ A : TraceFormulaMatrix n, w A.val ≠ 0 → ∀ i j, |A.val i j| ≤ B)
     (x : TraceFormulaMatrixModule n) :
     (ofWeight n w B hw).coeff.mapDomain
         (Quotient.mk (orbitRel PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n))) ⟦x⟧ =
-      ∑ᶠ A ∈ mk ⁻¹' orbit PSL(2, ℤ)ᵐᵒᵖ x, w A.1 := by
+      ∑ᶠ A ∈ mk ⁻¹' orbit PSL(2, ℤ)ᵐᵒᵖ x, w A.val := by
   classical
   set F := (FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n B).toFinset
-  have hF (A : TraceFormulaMatrix n) (h : w A.1 ≠ 0) : A ∈ F := by
+  have hF (A : TraceFormulaMatrix n) (h : w A.val ≠ 0) : A ∈ F := by
     simpa [F] using hw A h
-  have hcoeff : (ofWeight n w B hw).coeff = ∑ A ∈ F, Finsupp.single (mk A) (w A.1) := by
+  have hcoeff : (ofWeight n w B hw).coeff = ∑ A ∈ F, Finsupp.single (mk A) (w A.val) := by
     rw [ofWeight_eq_sum hn w B hw F hF, MonoidAlgebra.coeff_sum]
     rfl
   have hq (y : TraceFormulaMatrixModule n) :

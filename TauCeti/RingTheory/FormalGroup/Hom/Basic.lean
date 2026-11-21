@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Order
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
+import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.MvPowerSeries.Equiv
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.SubstInv
@@ -24,18 +25,25 @@ The homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect`) o
 `f` measures how far `f` is from a homomorphism: it vanishes exactly for homomorphisms
 (`TauCeti.FormalGroupHom.homDefect_toPowerSeries`, `TauCeti.FormalGroupHom.ofHomDefectEqZero`).
 At substitutable `x, y` the defect is `f(F(x, y)) - G(f(x), f(y))` (`FormalGroup.subst_homDefect`);
-in particular it is `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect_eq`).
-The defect of `X` is the difference `F - G` (`FormalGroup.homDefect_X`).
-Towards the additive formal group law the defect is additive in `f`
-(`FormalGroup.homDefect_𝔾ₐ_sub`) and vanishes to the order of `f`
-(`FormalGroup.le_order_homDefect_𝔾ₐ`).
+in particular it is `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect_eq_sub_subst_pair`).
+The defect of `X` is the difference `F - G` (`FormalGroup.homDefect_X`), which vanishes below
+degree `2` (`FormalGroup.two_le_order_homDefect_X`).
+Towards the additive formal group law the defect is linear in `f`
+(`FormalGroup.homDefect_𝔾ₐ_add`, `FormalGroup.homDefect_𝔾ₐ_sub`,
+`FormalGroup.homDefect_𝔾ₐ_smul`), has constant coefficient `-f(0)`
+(`FormalGroup.constantCoeff_homDefect_𝔾ₐ`), is the additivity defect
+`f(F(x, y)) - f(x) - f(y)` at any substitutable `x, y` (`FormalGroup.subst_homDefect_𝔾ₐ`), and
+vanishes to the order of `f` (`FormalGroup.le_order_homDefect_𝔾ₐ`). If `p` is a prime with
+`p = 0` in `R`, the defect of `f ^ (p ^ m)` is the `p ^ m`-th power of the defect of `f`
+(`FormalGroup.homDefect_𝔾ₐ_pow_prime_pow`).
 Towards an arbitrary formal group law, the defects of two series with zero constant term that
 agree below degree `n` agree below degree `n` (`FormalGroup.le_order_homDefect_sub`), and
 replacing `f` by `f + c Xⁿ` changes the defect in degree `n` by `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`
 (`FormalGroup.homogeneousComponent_homDefect_add_sub`).
 
 Base change along a ring homomorphism `φ : R →+* S` applies `φ` to the coefficients of the
-series: `TauCeti.FormalGroupHom.map` and `TauCeti.FormalGroupIso.map` carry homomorphisms and
+series, commuting with `FormalGroup.homDefect` (`FormalGroup.map_homDefect`):
+`TauCeti.FormalGroupHom.map` and `TauCeti.FormalGroupIso.map` carry homomorphisms and
 isomorphisms between `F` and `G` to ones between `F.map φ` and `G.map φ`, compatibly with
 identities, composition, inverses and strictness. Base change along the identity ring
 homomorphism does nothing, and successive base changes agree with base change along the composite.
@@ -88,48 +96,111 @@ theorem subst_homDefect {σ : Type*} {g : PowerSeries R} (hg : PowerSeries.const
   rw [PowerSeries.subst_toMvPowerSeries hxy]
   fin_cases i <;> rfl
 
-/-- The homomorphism defect is `g(F(X, Y)) - G(g(X), g(Y))`. -/
-theorem homDefect_eq {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) :
-    homDefect F G g = PowerSeries.subst F.toPowerSeries g -
-      G.toPowerSeries.subst ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g,
-        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) g] := by
-  have h := subst_homDefect F G hg (PowerSeries.HasSubst.X (S := R) (0 : Fin 2))
-    (PowerSeries.HasSubst.X (S := R) (1 : Fin 2))
-  simpa only [finTwo_X_eq_X, subst_self, id] using h
-
 /-- The homomorphism defect of `X` is the difference `F - G` of the formal group laws. -/
 @[simp]
 theorem homDefect_X : F.homDefect G PowerSeries.X = F.toPowerSeries - G.toPowerSeries := by
   simp [homDefect_def, PowerSeries.subst_X (.of_constantCoeff_zero F.zero_constantCoeff),
     PowerSeries.toMvPowerSeries_X, subst_self]
 
+/-- The homomorphism defect of `X`, the difference `F - G`, vanishes below degree `2`. -/
+theorem two_le_order_homDefect_X : ((2 : ℕ) : ℕ∞) ≤ (F.homDefect G PowerSeries.X).order := by
+  rw [homDefect_X, ← sub_sub_sub_cancel_right _ _ (X 0 + X 1)]
+  exact le_order_sub (two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y)
+    (two_le_order_sub_X_add_X G.zero_constantCoeff G.lin_coeff_X G.lin_coeff_Y)
+
 /-- The homomorphism defect towards the additive formal group law is the additivity defect
 `f(F(X, Y)) - f(X) - f(Y)`. -/
-theorem homDefect_𝔾ₐ {f : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0) :
+theorem homDefect_𝔾ₐ {f : PowerSeries R} :
     F.homDefect 𝔾ₐ f = PowerSeries.subst F.toPowerSeries f - PowerSeries.subst (X 0) f -
       PowerSeries.subst (X 1) f := by
-  have hE := HasSubst.toMvPowerSeries (σ := Fin 2) hf
-  rw [homDefect_def, 𝔾ₐ_toPowerSeries, subst_add hE, subst_X hE, subst_X hE]
-  simp only [PowerSeries.toMvPowerSeries_eq_subst]
+  rw [homDefect_def, 𝔾ₐ_toPowerSeries, ← MvPolynomial.coe_X, ← MvPolynomial.coe_X,
+    ← MvPolynomial.coe_add, subst_coe]
+  simp only [map_add, MvPolynomial.aeval_X, MvPolynomial.coe_X,
+    PowerSeries.toMvPowerSeries_eq_subst]
   ring
 
 /-- The homomorphism defect towards the additive formal group law is additive in the series. -/
-theorem homDefect_𝔾ₐ_sub {g h : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
-    (hh : PowerSeries.constantCoeff h = 0) :
+theorem homDefect_𝔾ₐ_sub {g h : PowerSeries R} :
     F.homDefect 𝔾ₐ (g - h) = F.homDefect 𝔾ₐ g - F.homDefect 𝔾ₐ h := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  rw [F.homDefect_𝔾ₐ (by rw [map_sub, hg, hh, sub_zero]), F.homDefect_𝔾ₐ hg, F.homDefect_𝔾ₐ hh]
+  rw [F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ]
   simp only [PowerSeries.subst_sub hF, PowerSeries.subst_sub (PowerSeries.HasSubst.X _)]
+  ring
+
+/-- The homomorphism defect towards the additive formal group law is additive in the series. -/
+theorem homDefect_𝔾ₐ_add {g h : PowerSeries R} :
+    F.homDefect 𝔾ₐ (g + h) = F.homDefect 𝔾ₐ g + F.homDefect 𝔾ₐ h := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  rw [F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ]
+  simp only [PowerSeries.subst_add hF, PowerSeries.subst_add (PowerSeries.HasSubst.X _)]
+  ring
+
+/-- The homomorphism defect towards the additive formal group law commutes with scalars. -/
+theorem homDefect_𝔾ₐ_smul (c : R) (g : PowerSeries R) :
+    F.homDefect 𝔾ₐ (c • g) = c • F.homDefect 𝔾ₐ g := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  rw [F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ, PowerSeries.subst_smul hF,
+    PowerSeries.subst_smul (PowerSeries.HasSubst.X _),
+    PowerSeries.subst_smul (PowerSeries.HasSubst.X _), smul_sub, smul_sub]
+
+/-- The homomorphism defect towards the additive formal group law, at substitutable `x, y`, is the
+additivity defect `g(F(x, y)) - g(x) - g(y)`. Unlike `FormalGroup.subst_homDefect`, this needs no
+hypothesis on the constant coefficient of `g`. -/
+theorem subst_homDefect_𝔾ₐ {σ : Type*} (g : PowerSeries R) {x y : MvPowerSeries σ R}
+    (hx : PowerSeries.HasSubst x) (hy : PowerSeries.HasSubst y) :
+    (F.homDefect 𝔾ₐ g).subst ![x, y] = PowerSeries.subst (F.toPowerSeries.subst ![x, y]) g -
+      PowerSeries.subst x g - PowerSeries.subst y g := by
+  have hxy := hasSubst_finTwo hx hy
+  rw [homDefect_𝔾ₐ, subst_sub hxy, subst_sub hxy,
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.X 0),
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.X 1), subst_X hxy, subst_X hxy,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+
+/-- The constant coefficient of the homomorphism defect `g(F(X, Y)) - g(X) - g(Y)` towards the
+additive formal group law is `-g(0)`. -/
+@[simp]
+theorem constantCoeff_homDefect_𝔾ₐ (g : PowerSeries R) :
+    constantCoeff (F.homDefect 𝔾ₐ g) = -PowerSeries.constantCoeff g := by
+  rw [homDefect_𝔾ₐ, map_sub, map_sub,
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero F.zero_constantCoeff,
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero (constantCoeff_X 0),
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero (constantCoeff_X 1)]
+  simp
+
+/-- **Frobenius on homomorphism defects.** If `p` is a prime with `p = 0` in `R`, the homomorphism
+defect of `g ^ (p ^ m)` towards the additive formal group law is the `p ^ m`-th power of that of
+`g`, since `x ↦ x ^ (p ^ m)` is additive. -/
+theorem homDefect_𝔾ₐ_pow_prime_pow {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0)
+    (g : PowerSeries R) (m : ℕ) : F.homDefect 𝔾ₐ (g ^ p ^ m) = F.homDefect 𝔾ₐ g ^ p ^ m := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  have hpS : (p : MvPowerSeries (Fin 2) R) = 0 := by
+    rw [← map_natCast (MvPowerSeries.C (σ := Fin 2) (R := R)), hpR, map_zero]
+  have hfrob (x y : MvPowerSeries (Fin 2) R) : (x + y) ^ p ^ m = x ^ p ^ m + y ^ p ^ m := by
+    obtain ⟨r, hr⟩ := exists_add_pow_prime_pow_eq hp x y m
+    rw [hr, hpS]
+    ring
+  rw [homDefect_𝔾ₐ, homDefect_𝔾ₐ, PowerSeries.subst_pow hF,
+    PowerSeries.subst_pow (PowerSeries.HasSubst.X _),
+    PowerSeries.subst_pow (PowerSeries.HasSubst.X _)]
+  set a := PowerSeries.subst F.toPowerSeries g
+  set b := PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g
+  set c := PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) g
+  have ha : a ^ p ^ m = (a - b - c) ^ p ^ m + b ^ p ^ m + c ^ p ^ m := by
+    rw [← hfrob, ← hfrob]
+    congr 1
+    ring
+  rw [ha]
   ring
 
 /-- The homomorphism defect of `g` towards the additive formal group law vanishes to the order
 of `g`. -/
-theorem le_order_homDefect_𝔾ₐ {g : PowerSeries R} (hg₀ : PowerSeries.constantCoeff g = 0)
-    {n : ℕ} (hg : n ≤ g.order) : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
+theorem le_order_homDefect_𝔾ₐ {g : PowerSeries R} {n : ℕ} (hg : n ≤ g.order) :
+    (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
   have h {x : MvPowerSeries (Fin 2) R} (hx : constantCoeff x = 0) :
       (n : ℕ∞) ≤ (PowerSeries.subst x g).order :=
     hg.trans (PowerSeries.le_order_subst_left hx)
-  rw [F.homDefect_𝔾ₐ hg₀]
+  rw [F.homDefect_𝔾ₐ]
   exact le_order_sub (le_order_sub (h F.zero_constantCoeff) (h (constantCoeff_X 0)))
     (h (constantCoeff_X 1))
 
@@ -189,9 +260,15 @@ theorem homogeneousComponent_subst_sub_subst {τ : Type*} {x y z w : MvPowerSeri
   · rw [_root_.add_zero]
 
 /-- The homomorphism defects of two series agreeing below degree `n` agree below degree `n`. -/
-theorem le_order_homDefect_sub {f g : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0)
-    (hg : PowerSeries.constantCoeff g = 0) {n : ℕ} (hfg : (n : ℕ∞) ≤ (f - g).order) :
+theorem le_order_homDefect_sub {f g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
+    {n : ℕ} (hfg : (n : ℕ∞) ≤ (f - g).order) :
     (n : ℕ∞) ≤ (F.homDefect G f - F.homDefect G g).order := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  have hf : PowerSeries.constantCoeff f = 0 := by
+    have h := PowerSeries.one_le_order_iff_constCoeff_eq_zero.1
+      ((by exact_mod_cast hn : (1 : ℕ∞) ≤ n).trans hfg)
+    rwa [map_sub, hg, sub_zero] at h
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) : (n : ℕ∞) ≤ (PowerSeries.subst (X i : MvPowerSeries (Fin 2) R) f -
       PowerSeries.subst (X i) g).order := by
@@ -313,14 +390,27 @@ theorem hom_subst (f : FormalGroupHom F G) {σ : Type*}
   simpa only [PowerSeries.subst_toMvPowerSeries ha] using h
 
 /-- The homomorphism equation into the additive formal group is the additivity equation. -/
-theorem hom_additive_iff {g : PowerSeries R} (hg : g.constantCoeff = 0) :
+theorem hom_additive_iff {g : PowerSeries R} :
     (PowerSeries.subst F.toPowerSeries g =
       subst (fun i => g.toMvPowerSeries i) (FormalGroup.𝔾ₐ (R := R)).toPowerSeries) ↔
     PowerSeries.subst F.toPowerSeries g =
       PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
-  rw [FormalGroup.𝔾ₐ_toPowerSeries, subst_add (.toMvPowerSeries hg),
-    subst_X (.toMvPowerSeries hg), subst_X (.toMvPowerSeries hg)]
-  simp only [PowerSeries.toMvPowerSeries_eq_subst]
+  rw [FormalGroup.𝔾ₐ_toPowerSeries, ← MvPolynomial.coe_X, ← MvPolynomial.coe_X,
+    ← MvPolynomial.coe_add, subst_coe]
+  simp only [map_add, MvPolynomial.aeval_X, MvPolynomial.coe_X,
+    PowerSeries.toMvPowerSeries_eq_subst]
+
+/-- A power series that is additive along a formal group law has zero constant coefficient:
+evaluating the additivity equation at the origin gives `g(0) = g(0) + g(0)`. -/
+theorem constantCoeff_eq_zero_of_additive {g : PowerSeries R}
+    (h : PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
+    PowerSeries.constantCoeff g = 0 := by
+  have := congrArg MvPowerSeries.constantCoeff h
+  rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero F.zero_constantCoeff, map_add,
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp),
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp)] at this
+  exact left_eq_add.mp this
 
 /-- A homomorphism of formal group laws has zero homomorphism defect. -/
 @[simp]
@@ -751,6 +841,19 @@ section BaseChange
 
 variable {S : Type*} [CommRing S]
 
+/-- Base change along a ring homomorphism `φ` commutes with the homomorphism defect of any series
+with zero constant coefficient. -/
+theorem _root_.FormalGroup.map_homDefect {f : PowerSeries R}
+    (hf : PowerSeries.constantCoeff f = 0) (φ : R →+* S) :
+    (F.homDefect G f).map φ = (F.map φ).homDefect (G.map φ) (f.map φ) := by
+  rw [FormalGroup.homDefect_def, FormalGroup.homDefect_def, map_sub,
+    FormalGroup.map_toPowerSeries, FormalGroup.map_toPowerSeries,
+    PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
+    MvPowerSeries.map_subst (MvPowerSeries.HasSubst.toMvPowerSeries hf)]
+  congr 2
+  funext i
+  exact PowerSeries.map_toMvPowerSeries φ i f
+
 namespace FormalGroupHom
 
 /-- The base change of a formal group homomorphism along a ring homomorphism `φ`: its series is
@@ -762,10 +865,10 @@ noncomputable def map (f : FormalGroupHom F G) (φ : R →+* S) :
     rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
       PowerSeries.coeff_zero_eq_constantCoeff_apply, f.zero_constantCoeff, map_zero]
   hom := by
-    have h := congrArg (MvPowerSeries.map φ) f.hom
-    rw [PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
-      MvPowerSeries.map_subst (.toMvPowerSeries f.zero_constantCoeff)] at h
-    simpa only [FormalGroup.map_toPowerSeries, PowerSeries.map_toMvPowerSeries] using h
+    rw [← FormalGroup.homDefect_eq_zero_iff,
+      ← FormalGroup.map_homDefect
+        (by rw [PowerSeries.constantCoeff_eq]; exact f.zero_constantCoeff),
+      f.homDefect_toPowerSeries, map_zero]
 
 @[simp]
 theorem map_toPowerSeries (f : FormalGroupHom F G) (φ : R →+* S) :

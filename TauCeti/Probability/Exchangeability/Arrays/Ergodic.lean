@@ -94,7 +94,7 @@ private theorem measurableSet_cylinder_blockSigma {F : Finset (ℕ × ℕ)} {I :
   let _ : MeasurableSpace (ℕ × ℕ → α) :=
     blockSigma (fun p (x : ℕ × ℕ → α) => x p) ((I : Set ℕ) ×ˢ (I : Set ℕ))
   refine (Measurable.of_eval fun p => ?_) hS
-  have hp : p.1 ∈ (I : Set ℕ) ×ˢ (I : Set ℕ) := hFI p.1 p.2
+  have hp : p.val ∈ (I : Set ℕ) ×ˢ (I : Set ℕ) := hFI p.val p.property
   simpa using (measurable_blockSigma_of_mem
     (Z := fun p (x : ℕ × ℕ → α) => x p) hp)
 
@@ -110,12 +110,12 @@ private theorem measurableSet_pairReindex_preimage_cylinder_blockSigma {F : Fins
   -- a cylinder is the preimage of `S` under restriction to `F`; `cylinder` is a definition with
   -- no propositional unfolding lemma, so the preimage form is by `rfl`
   have hcyl : pairReindex π π ⁻¹' cylinder F S
-      = (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.1) ⁻¹' S := rfl
+      = (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.val) ⁻¹' S := rfl
   rw [hcyl]
-  have hread : Measurable (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.1) :=
+  have hread : Measurable (fun x : ℕ × ℕ → α => fun p : F => pairReindex π π x p.val) :=
     Measurable.of_eval fun p => by
-      have hpJ : (π p.1.1, π p.1.2) ∈ (J : Set ℕ) ×ˢ (J : Set ℕ) :=
-        ⟨hπ _ (hFI p.1 p.2).1, hπ _ (hFI p.1 p.2).2⟩
+      have hpJ : (π p.val.1, π p.val.2) ∈ (J : Set ℕ) ×ˢ (J : Set ℕ) :=
+        ⟨hπ _ (hFI p.val p.property).1, hπ _ (hFI p.val p.property).2⟩
       simpa only [pairReindex_apply] using (measurable_blockSigma_of_mem
         (Z := fun p (x : ℕ × ℕ → α) => x p) hpJ)
   exact hread hS
@@ -174,7 +174,7 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
   let π : Equiv.Perm ℕ := N.blockSwap
   let J : Finset ℕ := I.map (Equiv.toEmbedding π)
   set t : Set (ℕ × ℕ → α) := cylinder F S with ht
-  set t' : Set (ℕ × ℕ → α) := pairReindex π π ⁻¹' t with ht'
+  set t' : Set (ℕ × ℕ → α) := pairReindex π π ⁻¹' t
   have ht_meas : MeasurableSet t := by
     rw [ht]
     exact MeasurableSet.cylinder (α := fun _ : ℕ × ℕ => α) F hS
@@ -240,7 +240,7 @@ theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [Is
     MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm
       ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
         fun p _ _ => measurable_pi_apply p) s hs).nullMeasurableSet
-      fun g => EventuallyEq.of_eq (by
+      fun g => Filter.EventuallyEqSet.of_eq (by
         rw [preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g])
   rcases eventuallyEmptyOrUniv_iff'.mp hconst with h | h
   · exact Or.inl (by simpa using measure_congr h)
@@ -395,7 +395,7 @@ theorem jointlyDissociated_iff_ergodicSMul_pair {ρ : Measure (ℕ × ℕ → α
     have hact : (fun x : ℕ × ℕ → α => (g, g) • x) = fun x => g • x := by
       funext x p
       simp [finitaryPermPair_smul_array_apply, finitaryPerm_smul_array_apply]
-    exact EventuallyEq.of_eq (by rw [← hact, hinv (g, g)])
+    exact Filter.EventuallyEqSet.of_eq (by rw [← hact, hinv (g, g)])
   · intro herg
     let := hexch.smulInvariantMeasure_pair
     let : ErgodicSMul (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) ρ := herg
@@ -410,7 +410,7 @@ theorem jointlyDissociated_iff_ergodicSMul_pair {ρ : Measure (ℕ × ℕ → α
         (FinitaryPerm × FinitaryPerm)
         ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
           fun p _ _ => measurable_pi_apply p) s hs).nullMeasurableSet
-        fun g => EventuallyEq.of_eq (by
+        fun g => Filter.EventuallyEqSet.of_eq (by
           rw [preimage_finitaryPermPair_smul_array_eq_self_of_measurableSet_arrayTail hs g])
     rcases eventuallyEmptyOrUniv_iff'.mp hconst with h | h
     · exact Or.inl (by simpa using measure_congr h)

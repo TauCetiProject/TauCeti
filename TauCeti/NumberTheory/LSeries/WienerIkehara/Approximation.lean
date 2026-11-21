@@ -12,6 +12,7 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SumIntegralComparisons
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Asymptotics.Sum.Window
 
@@ -31,7 +32,7 @@ The approximation step rests on a uniform bound. If the partial sums of `‖a‖
 Chebyshev bound `∑_{1 ≤ n ≤ N} ‖a n‖ ≤ C N`, then
 `∑ ‖a n‖ / n * (1 + (log (n / x) / 2π) ^ 2)⁻¹ ≤ C (1 + 2π²)` for every scale `x > 0`.
 The weight `t ↦ (t (1 + (log (t / x) / 2π) ^ 2))⁻¹` is antitone on `t > 0`, so Abel's inequality
-`TauCeti.sum_range_mul_le_sum_range_mul` bounds the weighted sum by `C` times the sum of the
+`TauCeti.sum_range_smul_le_sum_range_smul` bounds the weighted sum by `C` times the sum of the
 weight, and the integral test bounds the latter by `1 + ∫ = 1 + 2π (arctan - arctan) ≤ 1 + 2π²`.
 Consequently a weight `W` with `‖W v‖ ≤ M (1 + v ^ 2)⁻¹` gives a series of size at most
 `M C (1 + 2π²)`, uniformly in `x`, and a small error in the weighted sup norm costs little in the
@@ -55,7 +56,7 @@ The uniform bound and the truncation argument follow `bound_sum_log`, `bound_I1`
 `limiting_cor_W21` in `PrimeNumberTheoremAnd/Wiener.lean` of the Apache-2.0
 `AxiomMath/PrimeNumberTheoremAnd` repository, revision
 `2667e414c38e5a5dc9aa1946f16f13001e5cd3ed`, the same source as the sibling files in this
-directory. Here the summation by parts is the general `TauCeti.sum_range_mul_le_sum_range_mul`,
+directory. Here the summation by parts is the general `TauCeti.sum_range_smul_le_sum_range_smul`,
 the integral of the weight is bounded on finite intervals by the fundamental theorem of calculus
 rather than evaluated on `(0, ∞)`, and the approximation hypothesis is stated for an arbitrary
 weight `W` instead of a fixed truncation of a `W^{2,1}` function. For a Schwartz function `g`
@@ -216,14 +217,15 @@ private lemma sum_range_norm_term_mul_inv_one_add_sq_le
     convert hC k using 1
     rw [Finset.range_eq_Ico, Finset.sum_Ico_add' (fun n ↦ ‖a n‖) 0 k 1]
     rfl
-  have habel := sum_range_mul_le_sum_range_mul (w := fun i ↦ logWeight x (i + 1 : ℕ)) hpartial
+  have habel := sum_range_smul_le_sum_range_smul (w := fun i ↦ logWeight x (i + 1 : ℕ)) hpartial
     (fun i _ ↦ antitoneOn_logWeight hx (by simp only [mem_Ioi]; positivity)
       (by simp only [mem_Ioi]; positivity) (by push_cast; linarith))
     (logWeight_nonneg hx (Nat.cast_nonneg _))
   calc ∑ i ∈ Finset.range N, ‖a (i + 1)‖ * logWeight x (i + 1 : ℕ)
       = ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) * ‖a (i + 1)‖ :=
         Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-    _ ≤ ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) * C := habel
+    _ ≤ ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) * C := by
+        simpa only [smul_eq_mul] using habel
     _ = C * ∑ i ∈ Finset.range N, logWeight x (i + 1 : ℕ) := by
         rw [Finset.mul_sum]
         exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
@@ -296,6 +298,34 @@ theorem norm_tsum_term_mul_comp_log_div_le
 
 variable {G : ℂ → ℂ} {A L : ℂ}
 
+/-- Splitting the series for an approximable weight `W` into the part carried by the Fourier
+transform of a smooth compactly supported `psi` and the error `W - 𝓕 psi`. -/
+private lemma tsum_term_mul_eq_add_tsum_sub {psi : ℝ → ℂ} (ha : 0 ≤ a)
+    (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
+    (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
+    (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma)
+    (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi)
+    (hC : ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, ‖a n‖ ≤ C * N)
+    (hW : ∀ v, ‖W v - 𝓕 psi v‖ ≤ M * (1 + v ^ 2)⁻¹) (hxpos : 0 < x) :
+    ∑' n : ℕ, _root_.LSeries.term a 1 n * W (1 / (2 * π) * Real.log (n / x)) =
+      ∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)) +
+        ∑' n : ℕ, _root_.LSeries.term a 1 n *
+          (W (1 / (2 * π) * Real.log (n / x)) - 𝓕 psi (1 / (2 * π) * Real.log (n / x))) := by
+  have hsumpsi : Summable fun n : ℕ ↦
+      _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)) := by
+    have := LSeriesSummable_mul_fourier_of_nonneg (x := x) ha
+      (hG.comp Complex.continuous_ofReal.continuousOn fun r hr ↦ by simpa using hr.1)
+      (fun sigma h1 _ ↦ hG' sigma (by simpa using h1)) (fun sigma h1 _ ↦ hsum sigma h1)
+      hpsi hsupp hxpos
+    rwa [LSeriesSummable, term_mul_comp_log_div] at this
+  have hsumerr : Summable fun n : ℕ ↦ _root_.LSeries.term a 1 n *
+      (W (1 / (2 * π) * Real.log (n / x)) - 𝓕 psi (1 / (2 * π) * Real.log (n / x))) := by
+    have := LSeriesSummable_mul_comp_log_div (W := W - 𝓕 psi) hC hW hxpos
+    rw [LSeriesSummable, term_mul_comp_log_div] at this
+    simpa only [Pi.sub_apply] using this
+  rw [← hsumpsi.tsum_add hsumerr]
+  exact tsum_congr fun n ↦ by ring
+
 /-- **The smoothed Wiener--Ikehara asymptotic for an approximable weight.** Let `a` be
 nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
 `G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. Suppose that for every `ε > 0` some smooth
@@ -333,38 +363,14 @@ theorem tendsto_tsum_term_mul_atTop_of_approx_fourier (ha : 0 ≤ a)
   refine ⟨max x₀ 1, fun x hx ↦ ?_⟩
   have hxpos : 0 < x := lt_of_lt_of_le one_pos ((le_max_right _ _).trans hx)
   have hmain := hx₀ x ((le_max_left _ _).trans hx)
-  -- Split the series into the compactly supported part and the error.
-  have hsumpsi : Summable fun n : ℕ ↦
-      _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)) := by
-    have := LSeriesSummable_mul_fourier_of_nonneg (x := x) ha
-      (hG.comp Complex.continuous_ofReal.continuousOn fun r hr ↦ by simpa using hr.1)
-      (fun sigma h1 _ ↦ hG' sigma (by simpa using h1)) (fun sigma h1 _ ↦ hsum sigma h1)
-      hpsi hsupp hxpos
-    rwa [LSeriesSummable, term_mul_comp_log_div] at this
-  have hsumerr : Summable fun n : ℕ ↦ _root_.LSeries.term a 1 n *
-      (W (1 / (2 * π) * Real.log (n / x)) - 𝓕 psi (1 / (2 * π) * Real.log (n / x))) := by
-    have := LSeriesSummable_mul_comp_log_div (W := W - 𝓕 psi) hC hW hxpos
-    rw [LSeriesSummable, term_mul_comp_log_div] at this
-    simpa only [Pi.sub_apply] using this
-  have hsplit : ∑' n : ℕ, _root_.LSeries.term a 1 n * W (1 / (2 * π) * Real.log (n / x)) =
-      ∑' n : ℕ, _root_.LSeries.term a 1 n * 𝓕 psi (1 / (2 * π) * Real.log (n / x)) +
-        ∑' n : ℕ, _root_.LSeries.term a 1 n *
-          (W (1 / (2 * π) * Real.log (n / x)) - 𝓕 psi (1 / (2 * π) * Real.log (n / x))) := by
-    rw [← hsumpsi.tsum_add hsumerr]
-    exact tsum_congr fun n ↦ by ring
+  have hsplit := tsum_term_mul_eq_add_tsum_sub ha hG hG' hsum hpsi hsupp hC hW hxpos
   have herr := norm_tsum_term_mul_comp_log_div_le hC hW hxpos
   have hconst : ‖2 * (π : ℂ) * A * psi 0 - 2 * (π : ℂ) * A * L‖ ≤
       ‖2 * (π : ℂ) * A‖ * (ε / (2 * K)) := by
     rw [← mul_sub, norm_mul, norm_sub_rev]
     exact mul_le_mul_of_nonneg_left hL (norm_nonneg _)
-  have hsmall : ε / (2 * K) * (C * (1 + 2 * π ^ 2)) + ‖2 * (π : ℂ) * A‖ * (ε / (2 * K)) ≤
-      ε / 2 := by
-    calc _ = ε / (2 * K) * (C * (1 + 2 * π ^ 2) + ‖2 * (π : ℂ) * A‖) := by ring
-      _ ≤ ε / (2 * K) * K := by
-          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-          rw [hK]
-          exact le_add_of_nonneg_right zero_le_one
-      _ = ε / 2 := by field_simp
+  have hsmall := div_mul_add_mul_div_le_half (a := C * (1 + 2 * π ^ 2))
+    (b := ‖2 * (π : ℂ) * A‖) hε.le hK0 (by rw [hK]; linarith)
   rw [dist_eq_norm] at hmain ⊢
   rw [hsplit]
   calc
@@ -413,7 +419,7 @@ theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
     (hFu (2, 0) (ε / 2) (half_pos hε)))).exists
   simp only [SchwartzMap.schwartzSeminormFamily_apply] at h0 h2
   refine ⟨u R, (u R).smooth ⊤, SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul
-    b.contDiff b.hasCompactSupport hR.ne' g, fun v ↦ ?_, ?_⟩
+    b.hasCompactSupport hR.ne' g, fun v ↦ ?_, ?_⟩
   · -- The weighted sup norm of `𝓕 g - 𝓕 (u R)` is at most two seminorms of it.
     have hv0 := SchwartzMap.norm_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) v
     have hv2 := SchwartzMap.norm_pow_mul_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) 2 v

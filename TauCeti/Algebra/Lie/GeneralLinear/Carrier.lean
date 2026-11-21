@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.GeneralLinear.Existence
 public import TauCeti.Algebra.Lie.GeneralLinear.Restriction
 public import TauCeti.Algebra.Lie.GeneralLinear.Twist
 public import TauCeti.Algebra.Lie.GeneralLinear.Uniqueness
@@ -316,8 +317,9 @@ theorem nonempty_lieModuleEquiv_glIrreducible_iff {nu : Fin N → K}
 finite-dimensional `gl N K`-module carrying a highest weight vector of weight `mu` has at least the
 dimension of the carrier. -/
 theorem finrank_glIrreducible_le [FiniteDimensional K M] {v : M}
-    (hmu : IsGlDominantIntegral mu) (hv : IsGlHighestWeightVector mu v) :
+    (hv : IsGlHighestWeightVector mu v) :
     finrank K (glIrreducible N mu) ≤ finrank K M :=
+  have hmu := hv.isGlDominantIntegral
   have := isIrreducible_glIrreducible (K := K) hmu
   finrank_le_of_isGlHighestWeightVector (isGlHighestWeightVector_glIrreducibleGenerator hmu) hv
 

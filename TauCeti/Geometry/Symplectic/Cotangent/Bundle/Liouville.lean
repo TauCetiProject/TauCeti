@@ -49,6 +49,8 @@ and nothing here assumes finite dimension.
 * `TauCeti.CotangentBundle.symplecticForm`: the canonical symplectic form `ω = -dλ`.
 * `TauCeti.CotangentBundle.inChartAt_symplecticForm_apply`: its chart formula.
 * `TauCeti.CotangentBundle.isSymplectic_symplecticForm`: `ω` is symplectic.
+* `TauCeti.CotangentBundle.isLagrangian_ker_mfderiv_proj`: the fibres of `T*M → M` are
+  Lagrangian.
 
 ## References
 
@@ -82,14 +84,14 @@ smoothness. -/
 private def liouvilleRough :
     RoughForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M) ℝ 1 :=
   fun z ↦ ContinuousAlternatingMap.ofSubsingleton ℝ _ ℝ 0
-    (z.2 ∘L mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
+    (z.snd ∘L mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
       (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z)
 
 /-- The rough Liouville form applies the covector to the derivative of the projection. -/
 private theorem liouvilleRough_apply (z : CotangentBundle I M)
     (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
     liouvilleRough I M z v =
-      z.2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
+      z.snd (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
         (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) :=
   rfl
 
@@ -145,7 +147,7 @@ def liouvilleForm : SmoothForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBun
   ⟨liouvilleRough I M, isSmoothForm_liouvilleRough.mem_smoothBundleForms⟩
 
 /-- The underlying rough form of `liouvilleForm`. -/
-private theorem coe_liouvilleForm : (liouvilleForm I M).1 = liouvilleRough I M :=
+private theorem coe_liouvilleForm : (liouvilleForm I M).val = liouvilleRough I M :=
   rfl
 
 /-- The Liouville form evaluates a tangent vector of `T*M` at the covector `z` by applying `z` to
@@ -153,8 +155,8 @@ the image of the vector under the derivative of the bundle projection. -/
 @[simp]
 theorem liouvilleForm_apply (z : CotangentBundle I M)
     (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
-    (liouvilleForm I M).1 z v =
-      z.2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
+    (liouvilleForm I M).val z v =
+      z.snd (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (π (E →L[ℝ] ℝ)
         (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) :=
   (rfl)
 
@@ -163,7 +165,7 @@ with coordinates `(q, p)`, the Liouville form is the linear Liouville form
 `λ_(q,p)(δq, δp) = p(δq)`, that is `Σ pᵢ dqᵢ`. -/
 theorem inChartAt_liouvilleForm (z₀ : CotangentBundle I M) {w : E × (E →L[ℝ] ℝ)}
     (hw : w ∈ (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀).target) :
-    RoughForm.inChartAt (liouvilleForm I M).1 z₀ w = cotangentLiouvilleForm w :=
+    RoughForm.inChartAt (liouvilleForm I M).val z₀ w = cotangentLiouvilleForm w :=
   inChartAt_liouvilleRough z₀ hw
 
 variable {G H'' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace H'']
@@ -174,8 +176,8 @@ differentiable at `x`. -/
 theorem mpullback_liouvilleForm_apply_of_proj_comp_eq {ψ : X → CotangentBundle I M} {g : X → M}
     (hproj : ∀ y, (ψ y).proj = g y) {x : X}
     (hψ : MDifferentiableAt K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ x) (v : Fin 1 → TangentSpace K x) :
-    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).1 x v =
-      (ψ x).2 (mfderiv K I g x (v 0)) := by
+    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).val x v =
+      (ψ x).snd (mfderiv K I g x (v 0)) := by
   rw [mpullback_apply, liouvilleForm_apply]
   have hπ : π (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) ∘ ψ = g := funext hproj
   -- The chain rule computes the derivative of `π ∘ ψ = g`.
@@ -191,7 +193,7 @@ theorem mpullback_liouvilleForm_section {σ : (x : M) → TangentSpace I x →L[
     (hσ : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y)) x) :
     mpullback I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y))
-        (liouvilleForm I M).1 x =
+        (liouvilleForm I M).val x =
       ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ x) := by
   -- The section lies over the identity of `M`.
   ext v
@@ -209,7 +211,7 @@ theorem mpullback_liouvilleForm (α : SmoothForm I M ℝ 1) :
     (((SmoothForm.degreeOneEquiv α).contMDiff x).mdifferentiableAt (by simp))]
   ext v
   rw [ContinuousAlternatingMap.ofSubsingleton_apply_apply, SmoothForm.degreeOneEquiv_apply_apply]
-  exact congrArg (α.1 x) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
+  exact congrArg (α.val x) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
 
 variable {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
   {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
@@ -222,8 +224,8 @@ theorem mpullback_liouvilleForm_apply_of_proj_apply_eq
     (hψ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ ψ)
     {f : M → N} (hproj : ∀ z, (ψ z).proj = f z.proj) (z : CotangentBundle I M)
     (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
-    (SmoothForm.mpullback ψ hψ (liouvilleForm J N)).1 z v =
-      (ψ z).2 (mfderiv I J f z.proj (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
+    (SmoothForm.mpullback ψ hψ (liouvilleForm J N)).val z v =
+      (ψ z).snd (mfderiv I J f z.proj (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
         (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0))) := by
   -- The base map `f` is `x ↦ π_N (ψ (0_x))`, hence smooth.
   have hf : MDifferentiableAt I J f z.proj := by
@@ -246,8 +248,8 @@ theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → Co
     (hg : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ g)
     (hproj : ∀ z, (g z).proj = z.proj) (z : CotangentBundle I M)
     (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
-    (SmoothForm.mpullback g hg (liouvilleForm I M)).1 z v =
-      (g z).2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
+    (SmoothForm.mpullback g hg (liouvilleForm I M)).val z v =
+      (g z).snd (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
         (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) := by
   rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hg (f := id) hproj z,
     mfderiv_id, ContinuousLinearMap.id_apply]
@@ -261,10 +263,10 @@ point, then `φ^*λ = c • ψ^*λ`. The scalar function `c` need not be smooth 
 theorem mpullback_liouvilleForm_apply_of_eq_smul {φ ψ : P → CotangentBundle I M}
     (hφ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ φ)
     (hψ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ψ) (c : P → ℝ)
-    (hφψ : ∀ y, φ y = TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).2)) (y : P) :
-    (SmoothForm.mpullback φ hφ (liouvilleForm I M)).1 y =
-      c y • (SmoothForm.mpullback ψ hψ (liouvilleForm I M)).1 y := by
-  obtain rfl : φ = fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).2) := funext hφψ
+    (hφψ : ∀ y, φ y = TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).snd)) (y : P) :
+    (SmoothForm.mpullback φ hφ (liouvilleForm I M)).val y =
+      c y • (SmoothForm.mpullback ψ hψ (liouvilleForm I M)).val y := by
+  obtain rfl : φ = fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (ψ y).proj (c y • (ψ y).snd) := funext hφψ
   ext v
   rw [ContinuousAlternatingMap.smul_apply, SmoothForm.mpullback_apply,
     SmoothForm.mpullback_apply, liouvilleForm_apply, liouvilleForm_apply]
@@ -298,7 +300,7 @@ theorem symplecticForm_eq_neg_mextDerivₗ :
 
 /-- The canonical symplectic form is minus the exterior derivative of the Liouville form. -/
 theorem symplecticForm_eq_neg_mextDeriv :
-    (symplecticForm I M).1 = -mextDeriv (liouvilleForm I M).1 := by
+    (symplecticForm I M).val = -mextDeriv (liouvilleForm I M).val := by
   rw [symplecticForm, NegMemClass.coe_neg, mextDerivₗ_apply]
 
 /-- **Chart formula for the canonical symplectic form.** In every preferred chart of the cotangent
@@ -307,7 +309,7 @@ bundle, the canonical symplectic form is the linear form
 theorem inChartAt_symplecticForm_apply (z₀ : CotangentBundle I M) {w : E × (E →L[ℝ] ℝ)}
     (hw : w ∈ (extChartAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z₀).target)
     (v : Fin 2 → E × (E →L[ℝ] ℝ)) :
-    RoughForm.inChartAt (symplecticForm I M).1 z₀ w v =
+    RoughForm.inChartAt (symplecticForm I M).val z₀ w v =
       strongDualCotangentSymplecticForm (v 0) (v 1) := by
   have huniq : UniqueDiffWithinAt ℝ (range (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))) w :=
     (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).uniqueDiffOn w (extChartAt_target_subset_range z₀ hw)
@@ -327,7 +329,7 @@ own coordinates, the canonical symplectic form is the linear form. -/
 @[simp]
 theorem symplecticForm_apply (z : CotangentBundle I M)
     (v : Fin 2 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
-    (symplecticForm I M).1 z v = strongDualCotangentSymplecticForm (V := E) (v 0) (v 1) := by
+    (symplecticForm I M).val z v = strongDualCotangentSymplecticForm (V := E) (v 0) (v 1) := by
   have h := inChartAt_symplecticForm_apply z (mem_extChartAt_target z) v
   rw [RoughForm.inChartAt_extChartAt_self] at h
   -- Tangent vectors at `z` are their own coordinates in the chart at `z`.
@@ -351,6 +353,28 @@ theorem isSymplectic_symplecticForm : (symplecticForm I M).IsSymplectic where
     intro z v hv
     exact (strongDualCotangentSymplecticForm (V := E)).nondegenerate.1 v fun w ↦
       (eval₂_symplecticForm z v w).symm.trans (hv w)
+
+/-- At a covector `z`, read in the preferred chart at `z` itself, the tangent-space symplectic form
+of `ω` is the linear form `TauCeti.strongDualCotangentSymplecticForm`. -/
+theorem symplecticFormAt_symplecticForm (z : CotangentBundle I M) :
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.symplecticFormAt z =
+      strongDualCotangentSymplecticForm (V := E) :=
+  SymplecticForm.toBilinForm_injective (LinearMap.ext₂ fun v w ↦
+    (SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply _ z v w).trans
+      (eval₂_symplecticForm z v w))
+
+/-- **The fibres of a cotangent bundle are Lagrangian.** At every covector, the vertical tangent
+space, the kernel of the differential of the projection `T*M → M`, is a Lagrangian subspace for the
+canonical symplectic form. -/
+theorem isLagrangian_ker_mfderiv_proj (z : CotangentBundle I M) :
+    ((isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.symplecticFormAt
+        z).IsLagrangian
+      (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (TotalSpace.proj : CotangentBundle I M → M) z).ker := by
+  have h := isLagrangian_strongDualCotangentFiber (V := E)
+  rw [← ker_fst_eq_strongDualCotangentFiber, ← symplecticFormAt_symplecticForm z] at h
+  rw [Bundle.mfderiv_proj, ContinuousLinearMap.coe_fst]
+  -- The tangent space at `z` is the model space `E × StrongDual ℝ E` of the preferred chart.
+  exact h
 
 end Symplectic
 

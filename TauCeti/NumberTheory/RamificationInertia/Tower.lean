@@ -61,14 +61,19 @@ variable {R S : Type*} [CommRing R] [IsDomain R] [CommRing S] [Algebra R S]
 /-- **There are at most `Module.finrank R S` primes above a prime.** Every ramification index and
 inertia degree in the fundamental identity is positive, so every prime above `p` contributes at
 least one to the rank. -/
-theorem ncard_primesOver_le_finrank (p : Ideal R) [p.IsPrime] :
+theorem ncard_primesOver_le_finrank (p : Ideal R) :
     (p.primesOver S).ncard ≤ finrank R S := by
+  by_cases hp : p.IsPrime
+  swap
+  · have : p.primesOver S = ∅ := Set.eq_empty_of_forall_notMem fun P hP ↦
+      hp (hP.2.over.symm ▸ hP.1.under R)
+    simp [this]
   have : Fintype (p.primesOver S) := (Algebra.QuasiFinite.finite_primesOver p).fintype
   rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, Fintype.card_eq_sum_ones,
     ← Ideal.sum_ramification_inertia_eq_finrank p S]
   refine Finset.sum_le_sum fun q _ ↦ ?_
-  have : q.1.IsPrime := q.2.1
-  exact Nat.succ_le_of_lt (Nat.mul_pos (q.1.ramificationIdx_pos R) (q.1.inertiaDeg_pos R))
+  have : q.val.IsPrime := q.property.1
+  exact Nat.succ_le_of_lt (Nat.mul_pos (q.val.ramificationIdx_pos R) (q.val.inertiaDeg_pos R))
 
 variable (R) in
 /-- **One prime's contribution to the fundamental identity is at most the extension rank.**
@@ -80,7 +85,7 @@ theorem ramificationIdx_mul_inertiaDeg_le_finrank (q : Ideal S) [q.IsPrime] :
     (Algebra.QuasiFinite.finite_primesOver (q.under R)).fintype
   rw [← Ideal.sum_ramification_inertia_eq_finrank (q.under R) S]
   exact Finset.single_le_sum (f := fun Q : (q.under R).primesOver S ↦
-    Q.1.ramificationIdx R * Q.1.inertiaDeg R) (fun _ _ ↦ Nat.zero_le _)
+    Q.val.ramificationIdx R * Q.val.inertiaDeg R) (fun _ _ ↦ Nat.zero_le _)
     (Finset.mem_univ ⟨q, inferInstance, inferInstance⟩)
 
 variable (R) in

@@ -89,7 +89,7 @@ theorem map_mul_hyperexponentialMeasure {c : ℝ} (hc : 0 < c) :
     · simp [hi]
     · rw [Measure.map_smul _ (by fun_prop)]
       congr 1
-      exact expMeasure_map_const_mul (hr i (pos_iff_ne_zero.mpr hi)) hc
+      exact expMeasure_map_const_mul hc
   · have hscale : ¬ ∀ i, 0 < p.weights i → 0 < r i / c := by
       simpa only [div_pos_iff_of_pos_right hc] using hr
     simp [hyperexponentialMeasure_of_not_pos hr,
@@ -119,7 +119,7 @@ theorem map_div_prod_categoricalMeasure_expMeasure
   dsimp only
   rw [Measure.map_map hmeas measurable_prodMk_left]
   simp_rw [Function.comp_def, div_eq_inv_mul]
-  rw [expMeasure_map_const_mul one_pos (inv_pos.mpr hri), one_div, inv_inv]
+  rw [expMeasure_map_const_mul (inv_pos.mpr hri), one_div, inv_inv]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 variable {I : Ω → ι} {E : Ω → ℝ}

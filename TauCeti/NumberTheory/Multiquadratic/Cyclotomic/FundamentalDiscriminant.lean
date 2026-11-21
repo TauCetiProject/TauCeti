@@ -103,7 +103,7 @@ theorem exists_mem_sq_eq_of_isPrimeDiscriminant (hN : 0 < N) (hζ : IsPrimitiveR
     (hmem : ζ ∈ F) {P : ℤ} (hP : IsPrimeDiscriminant P) (hdvd : P.natAbs ∣ N) :
     ∃ x ∈ F, x ^ 2 = (P : L) := by
   obtain ⟨x, hxF, hx⟩ := exists_mem_sq_eq_primeDiscriminantRadicand hN hζ hmem hP hdvd
-  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand hP with h | h
+  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand P with h | h
   · exact ⟨x, hxF, by rw [hx, ← h]⟩
   · refine ⟨2 * x, mul_mem (ofNat_mem F 2) hxF, ?_⟩
     rw [mul_pow, hx]
@@ -122,7 +122,7 @@ theorem exists_mem_sq_eq_of_isFundamentalDiscr (hN : 0 < N) (hζ : IsPrimitiveRo
     obtain ⟨x, hxF, hx⟩ := exists_mem_sq_eq_of_isPrimeDiscriminant hN hζ hmem (hs P hP)
       ((Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem _ hP)).trans hdvd)
     exact ⟨⟨x, hxF⟩, Subtype.ext (by simp [← sq, hx])⟩
-  exact ⟨r, r.2, by simpa [sq] using congrArg ((↑) : F → L) hr.symm⟩
+  exact ⟨r, r.property, by simpa [sq] using congrArg ((↑) : F → L) hr.symm⟩
 
 /-- **Every square root of a fundamental discriminant `D` lies in a field of roots of unity of order
 divisible by `|D|`.** In particular `ℚ(√D) ⊆ ℚ(ζ_|D|)`. -/
@@ -158,9 +158,10 @@ theorem candidateGenusField_le_of_isPrimitiveRoot {d : ℤ} (hd : Squarefree d)
   obtain ⟨hs, -, hprod⟩ := genusPrimeDiscriminants_spec hd
   rw [candidateGenusField_le_iff]
   intro P
-  refine mem_of_sq_eq_primeDiscriminantRadicand hN hζ hmem (hs P.1 P.2) ?_ (genusFieldRoot_sq hd P)
+  refine mem_of_sq_eq_primeDiscriminantRadicand hN hζ hmem (hs P.val P.property) ?_
+      (genusFieldRoot_sq hd P)
   rw [← hprod] at hdvd
-  exact (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem _ P.2)).trans hdvd
+  exact (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem _ P.property)).trans hdvd
 
 /-! ### Over `ℂ`: the cyclotomic field `ℚ(exp (2πi / |D|))` -/
 
@@ -215,7 +216,7 @@ theorem genusFieldRoot_mem_of_isCyclotomicExtension
   have hζ : IsPrimitiveRoot ((zeta (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs ℚ K : K) : ℂ)
       (∏ P ∈ genusPrimeDiscriminants hd, P).natAbs :=
     (zeta_spec _ ℚ K).map_of_injective (f := K.val) Subtype.val_injective
-  refine candidateGenusField_le_of_isPrimitiveRoot hd hN hζ (zeta _ ℚ K).2 ?_
+  refine candidateGenusField_le_of_isPrimitiveRoot hd hN hζ (zeta _ ℚ K).property ?_
     (genusFieldRoot_mem_candidateGenusField hd P)
   rw [(genusPrimeDiscriminants_spec hd).2.2]
 
@@ -247,12 +248,12 @@ private theorem coe_genusFieldRootOfPrimeDiscriminant
 @[simp] theorem genusFieldRootOfPrimeDiscriminant_sq
     (P : {P // P ∈ genusPrimeDiscriminants hd}) :
     genusFieldRootOfPrimeDiscriminant hd K P ^ 2 = ((P : ℤ) : K) := by
-  have hP := (genusPrimeDiscriminants_spec hd).1 P P.2
+  have hP := (genusPrimeDiscriminants_spec hd).1 P P.property
   apply Subtype.ext
   rw [SubmonoidClass.coe_pow, coe_genusFieldRootOfPrimeDiscriminant, mul_pow, genusFieldRoot_sq,
     SubringClass.coe_intCast]
   unfold genusFieldRootScale
-  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand hP with h | h
+  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand (P : ℤ) with h | h
   · have h4 : ¬ ((P : ℤ) = 4 * primeDiscriminantRadicand P) := by
       intro h4
       have : primeDiscriminantRadicand P = 0 := by linarith

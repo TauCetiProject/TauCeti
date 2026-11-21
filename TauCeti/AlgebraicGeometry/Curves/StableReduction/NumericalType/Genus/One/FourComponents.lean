@@ -105,15 +105,6 @@ theorem isGenusOneFourPathShape_iff {x y z t : T.Component} :
           T.intersection z t = 2 * T.weight y) :=
   Iff.rfl
 
-/-- A component of self-intersection `-2w` has a nonnegative intersection number only with
-other components. -/
-private lemma ne_of_intersection_nonneg {i j : T.Component}
-    (hi : T.intersection i i = -(2 * (T.weight i : ℤ))) (h : 0 ≤ T.intersection i j) :
-    i ≠ j := by
-  rintro rfl
-  have := (T.weight i).pos
-  omega
-
 /-- The fibre relation when four distinct components exhaust a numerical type. -/
 private lemma fiber_relation_of_card_eq_four (hcard : Fintype.card T.Component = 4)
     {i j k l : T.Component} (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l) (hjk : j ≠ k)
@@ -185,10 +176,10 @@ theorem isGenusOneFourPathShape_or_isGenusOneFourPathShape
     (hjk0 : 0 < T.intersection j k) (hkl0 : 0 < T.intersection k l) :
     T.IsGenusOneFourPathShape i j k l ∨ T.IsGenusOneFourPathShape l k j i := by
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
-  have hr := fiber_relation_of_card_eq_four hcard (ne_of_intersection_nonneg hi hij0.le)
-    (ne_of_intersection_nonneg hi hik0.ge) (ne_of_intersection_nonneg hi hil0.ge)
-    (ne_of_intersection_nonneg hj hjk0.le) (ne_of_intersection_nonneg hj hjl0.ge)
-    (ne_of_intersection_nonneg hk hkl0.le)
+  have hr := fiber_relation_of_card_eq_four hcard (T.ne_of_intersection_nonneg hi hij0.le)
+    (T.ne_of_intersection_nonneg hi hik0.ge) (T.ne_of_intersection_nonneg hi hil0.ge)
+    (T.ne_of_intersection_nonneg hj hjk0.le) (T.ne_of_intersection_nonneg hj hjl0.ge)
+    (T.ne_of_intersection_nonneg hk hkl0.le)
   have ri := hr i
   have rj := hr j
   have rk := hr k
@@ -333,12 +324,12 @@ theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
       T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
   classical
-  have hci := ne_of_intersection_nonneg hc hci0.le
-  have hcj := ne_of_intersection_nonneg hc hcj0.le
-  have hck := ne_of_intersection_nonneg hc hck0.le
-  have hij := ne_of_intersection_nonneg hi hij0.ge
-  have hik := ne_of_intersection_nonneg hi hik0.ge
-  have hjk := ne_of_intersection_nonneg hj hjk0.ge
+  have hci := T.ne_of_intersection_nonneg hc hci0.le
+  have hcj := T.ne_of_intersection_nonneg hc hcj0.le
+  have hck := T.ne_of_intersection_nonneg hc hck0.le
+  have hij := T.ne_of_intersection_nonneg hi hij0.ge
+  have hik := T.ne_of_intersection_nonneg hi hik0.ge
+  have hjk := T.ne_of_intersection_nonneg hj hjk0.ge
   refine exists_isGenusOneFourStarShape_of_exists_shape hcard hci hcj hck hij hik hjk hij0 hik0
     hjk0 ?_
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.

@@ -239,7 +239,7 @@ private theorem ker_latticeCoeff (a b : ℤ) :
 private theorem latticeCoeff_surjective (a b : ℤ) : Function.Surjective (latticeCoeff R V a b) := by
   intro c
   refine ⟨⟨∑ k : Finset.Ico a b, single (k : ℤ) (c k), Submodule.sum_mem _ fun k _ ↦
-    single_mem_lattice (Finset.mem_Ico.mp k.2).1 _⟩, funext fun k ↦ ?_⟩
+    single_mem_lattice (Finset.mem_Ico.mp k.property).1 _⟩, funext fun k ↦ ?_⟩
   rw [latticeCoeff_apply, coeff_sum, Finset.sum_eq_single k
     (fun j _ hj ↦ coeff_single_of_ne (Subtype.coe_ne_coe.mpr hj.symm)) (by simp), coeff_single_same]
 
@@ -275,7 +275,8 @@ theorem latticeQuotientEquiv_mk (a b : ℤ) (f : lattice R V a) (k : Finset.Ico 
 @[simp]
 theorem latticeQuotientEquiv_symm_single (a b : ℤ) (k : Finset.Ico a b) (v : V) :
     (latticeQuotientEquiv R V a b).symm (Pi.single k v) =
-      Submodule.Quotient.mk ⟨single (k : ℤ) v, single_mem_lattice (Finset.mem_Ico.mp k.2).1 v⟩ := by
+      Submodule.Quotient.mk ⟨single (k : ℤ) v, single_mem_lattice (Finset.mem_Ico.mp k.property).1
+          v⟩ := by
   rw [LinearEquiv.symm_apply_eq]
   funext j
   rw [latticeQuotientEquiv_mk]
@@ -322,6 +323,12 @@ noncomputable def lattice (a : ℤ) : Submodule R (HahnModule ℤ R V) :=
 theorem mem_lattice_iff {a : ℤ} {f : HahnModule ℤ R V} :
     f ∈ lattice R V a ↔ ∀ n < a, ((of R).symm f).coeff n = 0 := by
   simp [lattice, TauCeti.LaurentSeries.mem_lattice_iff]
+
+/-- Membership in the Hahn-module lattice is the order bound `a ≤ ord f`. -/
+theorem mem_lattice_iff_le_orderTop {a : ℤ} {f : HahnModule ℤ R V} :
+    f ∈ lattice R V a ↔ (a : WithTop ℤ) ≤ ((of R).symm f).orderTop := by
+  rw [mem_lattice_iff, ← LaurentSeries.mem_lattice_iff (R := R),
+    LaurentSeries.mem_lattice_iff_le_orderTop]
 
 /-- The comparison from Hahn series to Hahn modules preserves lattice membership. -/
 @[simp]
@@ -407,7 +414,7 @@ theorem latticeQuotientEquiv_symm_single (a b : ℤ) (k : Finset.Ico a b) (v : V
     (latticeQuotientEquiv R V a b).symm (Pi.single k v) =
       Submodule.Quotient.mk ⟨of R (HahnSeries.single (k : ℤ) v),
         (of_mem_lattice_iff R V).mpr
-          (TauCeti.LaurentSeries.single_mem_lattice (Finset.mem_Ico.mp k.2).1 v)⟩ := by
+          (TauCeti.LaurentSeries.single_mem_lattice (Finset.mem_Ico.mp k.property).1 v)⟩ := by
   rw [LinearEquiv.symm_apply_eq]
   funext j
   rw [latticeQuotientEquiv_mk]
@@ -442,6 +449,12 @@ end TauCeti.HahnModule
 namespace HahnModule
 
 open TauCeti.HahnModule
+
+/-- Every module-valued Laurent series lies in the lattice at its finite order. -/
+theorem mem_lattice_order (R V : Type*) [Semiring R] [AddCommMonoid V] [Module R V]
+    (f : HahnModule ℤ R V) : f ∈ lattice R V ((of R).symm f).order := by
+  rw [mem_lattice_iff]
+  exact fun _ hn ↦ HahnSeries.coeff_eq_zero_of_lt_order hn
 
 /-- Multiplying by a Laurent monomial translates the lattice bound. -/
 theorem single_smul_mem_lattice_iff {R V : Type*} [Semiring R] [AddCommMonoid V]

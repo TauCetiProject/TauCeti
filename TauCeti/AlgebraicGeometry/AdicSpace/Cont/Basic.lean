@@ -178,7 +178,7 @@ variable [SeparatelyContinuousAdd A]
 /-- The support of a continuous point of `Spv A` is closed. -/
 theorem IsContinuous.isClosed_supp {v : Spv A} (hv : v.IsContinuous) :
     IsClosed (v.supp : Set A) :=
-  v.supp_eq_valuation_supp ▸ isClosed_supp_of_isContinuous hv
+  v.supp_eq_valuation_supp ▸ ((isContinuous_def v).mp hv).isClosed_supp
 
 /-- The support of every continuous valuation contains the closure of zero. This is the set-level
 form, needing only separately continuous addition; over a topological ring,

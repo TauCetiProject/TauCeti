@@ -48,11 +48,11 @@ theorem continuous_integral_pow_noncentralBetaMeasure (n : ℕ) :
     intro i _
     exact (by fun_prop : Continuous (fun p : ℝ≥0 × Ioi (0 : ℝ) × ℝ≥0 ↦
       (p.1 : ℝ) + j + i)).div (by fun_prop) (fun p ↦ by
-        have hb : 0 < (p.2.1 : ℝ) := p.2.1.2
+        have hb : 0 < (p.2.1 : ℝ) := p.2.1.property
         positivity)
   have heq (p : ℝ≥0 × Ioi (0 : ℝ) × ℝ≥0) :
       (∫ x, x ^ n ∂noncentralBetaMeasure p.1 p.2.1 p.2.2) = ∑' j, f j p :=
-    integral_pow_noncentralBetaMeasure p.1.coe_nonneg p.2.1.2 n
+    integral_pow_noncentralBetaMeasure p.1.coe_nonneg p.2.1.property n
   simp_rw [heq]
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   -- Bound noncentrality locally to obtain one summable majorant for the whole series.
@@ -62,7 +62,7 @@ theorem continuous_integral_pow_noncentralBetaMeasure (n : ℕ) :
     refine continuousOn_tsum (fun j ↦ (hf j).continuousOn)
       (Real.summable_pow_div_factorial (R / 2)) ?_
     intro j q hq
-    have hb : 0 < (q.2.1 : ℝ) := q.2.1.2
+    have hb : 0 < (q.2.1 : ℝ) := q.2.1.property
     have hq' : (q.2.2 : ℝ) < R := hq
     -- The Beta product stays in the unit interval even at first shape zero.
     have hratio₀ (i : ℕ) :
@@ -72,9 +72,6 @@ theorem continuous_integral_pow_noncentralBetaMeasure (n : ℕ) :
         ((q.1 : ℝ) + j + i) / ((q.1 : ℝ) + j + (q.2.1 : ℝ) + i) ≤ 1 := by
       apply (div_le_one (by positivity)).2
       linarith
-    have hprod₀ : 0 ≤ ∏ i ∈ Finset.range n,
-        ((q.1 : ℝ) + j + i) / ((q.1 : ℝ) + j + (q.2.1 : ℝ) + i) :=
-      Finset.prod_nonneg fun i _ ↦ hratio₀ i
     have hprod₁ : (∏ i ∈ Finset.range n,
         ((q.1 : ℝ) + j + i) / ((q.1 : ℝ) + j + (q.2.1 : ℝ) + i)) ≤ 1 :=
       Finset.prod_le_one₀ (fun i _ ↦ hratio₀ i) (fun i _ ↦ hratio₁ i)
@@ -100,7 +97,7 @@ positive second shape and nonnegative noncentrality, including their atomic boun
 theorem continuous_noncentralBetaMeasure :
     Continuous (Y := ProbabilityMeasure ℝ) (fun p : ℝ≥0 × Ioi (0 : ℝ) × ℝ≥0 ↦
       (⟨noncentralBetaMeasure p.1 p.2.1 p.2.2,
-        isProbabilityMeasure_noncentralBetaMeasure p.1.coe_nonneg p.2.1.2 p.2.2⟩ :
+        isProbabilityMeasure_noncentralBetaMeasure p.1.coe_nonneg p.2.1.property p.2.2⟩ :
           ProbabilityMeasure ℝ)) := by
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   apply ProbabilityMeasure.tendsto_of_tendsto_integral_pow (K := Icc (0 : ℝ) 1) isCompact_Icc

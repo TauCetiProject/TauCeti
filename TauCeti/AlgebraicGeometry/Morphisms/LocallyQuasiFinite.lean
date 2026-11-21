@@ -1,7 +1,8 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang,
+  Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -38,6 +39,8 @@ the codimension of its image, and the dimension of the source is at most that of
   the coheight of a point is at most the coheight of its image.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le`: the source of a locally quasi-finite
   morphism has dimension at most that of its target.
+* `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective`:
+  a closed, surjective, locally quasi-finite morphism preserves dimension.
 * `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt`: a dominant morphism of
   integral schemes, locally of finite type, which is quasi-finite at `x` with integrally closed
   local ring at `f x`, preserves the dimension of the local ring at `x`;
@@ -142,6 +145,15 @@ theorem Scheme.Hom.topologicalKrullDim_le {X Y : Scheme.{u}} (f : X ⟶ Y)
   exact iSup_le fun x ↦ (WithBot.coe_le_coe.mpr (f.coheight_le_coheight_apply x)).trans
     (le_iSup (fun y : Y ↦ (Order.coheight y : WithBot ℕ∞)) (f x))
 
+/-- A closed, surjective, locally quasi-finite morphism preserves Krull dimension.
+The two inequalities use incomparability of its fibers and lifting of specialization chains.
+Flatness is not required. -/
+theorem Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyQuasiFinite f] [Surjective f]
+    (hf : IsClosedMap f) : topologicalKrullDim X = topologicalKrullDim Y :=
+  le_antisymm f.topologicalKrullDim_le
+    (hf.specializingMap.topologicalKrullDim_le_of_surjective f.surjective)
+
 /-- **Quasi-finite morphisms over a normal base preserve the dimension of local rings.** Let
 `f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type. If `f` is
 quasi-finite at `x` and the local ring of `Y` at `f x` is integrally closed, then the local rings
@@ -178,13 +190,17 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt {X Y : Scheme.{u}} (f 
     IsLocalization.AtPrime.ringKrullDim_eq_height (hU.primeIdealOf ⟨f x, e hxV⟩).asIdeal,
     Ideal.height_eq_height_of_quasiFiniteAt (hU.primeIdealOf ⟨f x, e hxV⟩).asIdeal q]
 
-/-- A locally quasi-finite dominant morphism `f : X ⟶ Y` of integral schemes, locally of finite
-type, onto a normal scheme preserves the dimension of every local ring:
-`dim 𝒪_{X,x} = dim 𝒪_{Y,f x}` for all `x`. Normality of `X` is not needed. -/
+/-- A locally quasi-finite dominant morphism `f : X ⟶ Y`, locally of finite type, from an integral
+scheme onto a normal scheme preserves the dimension of every local ring:
+`dim 𝒪_{X,x} = dim 𝒪_{Y,f x}` for all `x`. Normality of `X` is not needed, and `Y` is integral
+for free, being reduced and the dominant image of an irreducible scheme. -/
 theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [IsIntegral X] [IsIntegral Y] [IsDominant f] [LocallyOfFiniteType f] [LocallyQuasiFinite f]
+    [IsIntegral X] [IsDominant f] [LocallyOfFiniteType f] [LocallyQuasiFinite f]
     [TauCeti.AlgebraicGeometry.IsNormalScheme Y] (x : X) :
-    ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) :=
-  f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
+    ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) := by
+  -- `Y` is reduced, being normal, and irreducible, being the dominant image of `X`.
+  have := f.irreducibleSpace_of_isDominant
+  have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
+  exact f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
 
 end AlgebraicGeometry

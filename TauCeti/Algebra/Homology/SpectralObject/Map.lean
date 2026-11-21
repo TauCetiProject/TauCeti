@@ -30,9 +30,12 @@ spectral sequences induced by `φ`.
 
 ## Main results
 
-* `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
+* `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality; in particular
+  `EMap φ`, `cyclesMapOfHom φ` and `opcyclesMapOfHom φ` are isomorphisms when `φ` is.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
+* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: on the objects `E^n(𝟙, f, 𝟙)`,
+  identified with `H^n(f)`, `EMap φ` is the component of `φ` at `f`.
 
 ## References
 
@@ -84,22 +87,14 @@ lemma shortComplexMapOfHom_τ₃ :
 @[simp]
 lemma shortComplexMapOfHom_id :
     shortComplexMapOfHom (𝟙 X) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ = 𝟙 _ := by
-  -- the remaining goals are `𝟙 ((X.H n₀).obj (mk₁ f₃)) = 𝟙 (X.shortComplex …).X₁` (and similarly
-  -- for `X₂`, `X₃`): `(X.shortComplex …).X₁` is `(X.H n₀).obj (mk₁ f₃)` by definition, and
-  -- `shortComplex_X₁` cannot rewrite the object under `𝟙`
-  ext <;> simp only [shortComplexMapOfHom_τ₁, shortComplexMapOfHom_τ₂, shortComplexMapOfHom_τ₃,
-    id_hom, NatTrans.id_app, ShortComplex.id_τ₁, ShortComplex.id_τ₂, ShortComplex.id_τ₃] <;> rfl
+  ext <;> simp
 
 @[reassoc, simp]
 lemma shortComplexMapOfHom_comp :
     shortComplexMapOfHom (φ ≫ ψ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
       shortComplexMapOfHom φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫
         shortComplexMapOfHom ψ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
-  -- after `simp`, both sides are `(φ.hom n).app _ ≫ (ψ.hom n).app _`, composed in `C` between
-  -- the objects `(Y.H n).obj _` and `(Y.shortComplex …).X₁` (equal by definition), hence `rfl`
-  ext <;> simp only [shortComplexMapOfHom_τ₁, shortComplexMapOfHom_τ₂, shortComplexMapOfHom_τ₃,
-    comp_hom, NatTrans.comp_app, ShortComplex.comp_τ₁, ShortComplex.comp_τ₂,
-    ShortComplex.comp_τ₃] <;> rfl
+  ext <;> simp
 
 /-- The morphism `X.E f₁ f₂ f₃ n₀ n₁ n₂ ⟶ Y.E f₁ f₂ f₃ n₀ n₁ n₂` induced by a morphism of
 spectral objects. -/
@@ -147,8 +142,6 @@ lemma map_EMap (α : mk₃ f₁ f₂ f₃ ⟶ mk₃ f₁' f₂' f₃') :
   dsimp only [map, EMap]
   erw [← ShortComplex.homologyMap_comp, shortComplexMap_shortComplexMapOfHom,
     ShortComplex.homologyMap_comp]
-  -- `X.E f₁ f₂ f₃ …` is by definition `(X.shortComplex f₁ f₂ f₃ …).homology`
-  rfl
 
 end E
 
@@ -169,22 +162,18 @@ lemma cyclesMapOfHom_i :
 
 @[simp]
 lemma cyclesMapOfHom_id : cyclesMapOfHom (𝟙 X) f g n = 𝟙 _ := by
-  rw [← cancel_mono (X.iCycles f g n), cyclesMapOfHom_i, id_hom, NatTrans.id_app, Category.comp_id,
-    Category.id_comp]
+  simp [← cancel_mono (X.iCycles f g n)]
 
 @[reassoc, simp]
 lemma cyclesMapOfHom_comp :
     cyclesMapOfHom (φ ≫ ψ) f g n = cyclesMapOfHom φ f g n ≫ cyclesMapOfHom ψ f g n := by
-  rw [← cancel_mono (Z.iCycles f g n), cyclesMapOfHom_i, Category.assoc, cyclesMapOfHom_i,
-    cyclesMapOfHom_i_assoc, comp_hom, NatTrans.comp_app]
+  simp [← cancel_mono (Z.iCycles f g n)]
 
 @[reassoc]
 lemma toCycles_cyclesMapOfHom (fg : i ⟶ k) (h : f ≫ g = fg) :
     X.toCycles f g fg h n ≫ cyclesMapOfHom φ f g n =
       (φ.hom n).app (mk₁ fg) ≫ Y.toCycles f g fg h n := by
-  rw [← cancel_mono (Y.iCycles f g n), Category.assoc, cyclesMapOfHom_i, toCycles_i_assoc,
-    Category.assoc, toCycles_i]
-  exact (φ.hom n).naturality _
+  simp [← cancel_mono (Y.iCycles f g n)]
 
 variable {l : ι} (f₃ : k ⟶ l) (n₀ n₂ : ℤ) (hn₁ : n₀ + 1 = n) (hn₂ : n + 1 = n₂)
 
@@ -233,34 +222,27 @@ lemma p_opcyclesMapOfHom :
 
 @[simp]
 lemma opcyclesMapOfHom_id : opcyclesMapOfHom (𝟙 X) f g n = 𝟙 _ := by
-  rw [← cancel_epi (X.pOpcycles f g n), p_opcyclesMapOfHom, id_hom, NatTrans.id_app,
-    Category.comp_id, Category.id_comp]
+  simp [← cancel_epi (X.pOpcycles f g n)]
 
 @[reassoc, simp]
 lemma opcyclesMapOfHom_comp :
     opcyclesMapOfHom (φ ≫ ψ) f g n = opcyclesMapOfHom φ f g n ≫ opcyclesMapOfHom ψ f g n := by
-  rw [← cancel_epi (X.pOpcycles f g n), p_opcyclesMapOfHom, p_opcyclesMapOfHom_assoc,
-    p_opcyclesMapOfHom, comp_hom, NatTrans.comp_app, Category.assoc]
+  simp [← cancel_epi (X.pOpcycles f g n)]
 
 @[reassoc]
 lemma opcyclesMapOfHom_fromOpcycles (fg : i ⟶ k) (h : f ≫ g = fg) :
     opcyclesMapOfHom φ f g n ≫ Y.fromOpcycles f g fg h n =
       X.fromOpcycles f g fg h n ≫ (φ.hom n).app (mk₁ fg) := by
-  rw [← cancel_epi (X.pOpcycles f g n), p_opcyclesMapOfHom_assoc, p_fromOpcycles,
-    p_fromOpcycles_assoc]
-  exact ((φ.hom n).naturality _).symm
+  simp [← cancel_epi (X.pOpcycles f g n)]
 
 @[reassoc]
 lemma opcyclesMap_opcyclesMapOfHom {i' j' k' : ι} (f' : i' ⟶ j') (g' : j' ⟶ k')
     (α : mk₂ f g ⟶ mk₂ f' g') :
     X.opcyclesMap f g f' g' α n ≫ opcyclesMapOfHom φ f' g' n =
       opcyclesMapOfHom φ f g n ≫ Y.opcyclesMap f g f' g' α n := by
-  rw [← cancel_epi (X.pOpcycles f g n),
+  simp [← cancel_epi (X.pOpcycles f g n),
     X.p_opcyclesMap_assoc f g f' g' α (homMk₁ (α.app 0) (α.app 1) (naturality' α 0 1)) n,
-    p_opcyclesMapOfHom, p_opcyclesMapOfHom_assoc,
-    Y.p_opcyclesMap f g f' g' α (homMk₁ (α.app 0) (α.app 1) (naturality' α 0 1)) n,
-    ← Category.assoc, ← Category.assoc]
-  exact congrArg (· ≫ Y.pOpcycles f' g' n) ((φ.hom n).naturality _)
+    Y.p_opcyclesMap f g f' g' α (homMk₁ (α.app 0) (α.app 1) (naturality' α 0 1)) n]
 
 end
 
@@ -271,10 +253,7 @@ variable {i₀ i₁ i₂ i₃ : ι} (f₁ : i₀ ⟶ i₁) (f₂ : i₁ ⟶ i₂
 lemma opcyclesMapOfHom_opcyclesToE :
     opcyclesMapOfHom φ f₁₂ f₃ n₁ ≫ Y.opcyclesToE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ =
       X.opcyclesToE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ ≫ EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ := by
-  rw [← cancel_epi (X.pOpcycles f₁₂ f₃ n₁), p_opcyclesMapOfHom_assoc,
-    Y.p_opcyclesToE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂,
-    X.p_opcyclesToE_assoc f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂,
-    πE_EMap φ f₁ f₂ n₁ f₃ n₀ n₂ hn₁ hn₂, toCycles_cyclesMapOfHom_assoc]
+  simp [← cancel_epi (X.pOpcycles f₁₂ f₃ n₁), toCycles_cyclesMapOfHom_assoc]
 
 variable (f₂₃ : i₁ ⟶ i₃) (h₂₃ : f₂ ≫ f₃ = f₂₃)
 
@@ -310,14 +289,52 @@ variable {i₀ i₁ i₂ i₃ i₄ i₅ : ι} (f₁ : i₀ ⟶ i₁) (f₂ : i�
 lemma d_EMap :
     X.d f₁ f₂ f₃ f₄ f₅ n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃ ≫ EMap φ f₁ f₂ f₃ n₁ n₂ n₃ hn₂ hn₃ =
       EMap φ f₃ f₄ f₅ n₀ n₁ n₂ hn₁ hn₂ ≫ Y.d f₁ f₂ f₃ f₄ f₅ n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃ := by
-  rw [← cancel_epi (X.toCycles f₃ f₄ (f₃ ≫ f₄) rfl n₁ ≫ X.πE f₃ f₄ f₅ n₀ n₁ n₂ hn₁ hn₂),
-    Category.assoc, X.toCycles_πE_d_assoc f₁ f₂ f₃ f₄ f₅ (f₁ ≫ f₂) rfl (f₃ ≫ f₄) rfl
-      n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃,
-    πE_EMap φ f₁ f₂ n₂ f₃ n₁ n₃ hn₂ hn₃, Category.assoc,
-    πE_EMap_assoc φ f₃ f₄ n₁ f₅ n₀ n₂ hn₁ hn₂, toCycles_cyclesMapOfHom_assoc,
-    toCycles_cyclesMapOfHom_assoc, φ.comm_assoc,
-    Y.toCycles_πE_d f₁ f₂ f₃ f₄ f₅ (f₁ ≫ f₂) rfl (f₃ ≫ f₄) rfl n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃]
+  rw [← cancel_epi (X.toCycles f₃ f₄ (f₃ ≫ f₄) rfl n₁ ≫ X.πE f₃ f₄ f₅ n₀ n₁ n₂ hn₁ hn₂)]
+  simp [X.toCycles_πE_d_assoc f₁ f₂ f₃ f₄ f₅ (f₁ ≫ f₂) rfl (f₃ ≫ f₄) rfl n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃,
+    Y.toCycles_πE_d f₁ f₂ f₃ f₄ f₅ (f₁ ≫ f₂) rfl (f₃ ≫ f₄) rfl n₀ n₁ n₂ n₃ hn₁ hn₂ hn₃,
+    toCycles_cyclesMapOfHom_assoc]
 
 end Differentials
+
+section FirstPage
+
+variable {i₀ i₁ : ι} (f : i₀ ⟶ i₁) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂)
+
+/-- On the objects `E^n(𝟙, f, 𝟙)`, identified with `H^n(f)` by Mathlib's `EIsoH`, the map `EMap`
+induced by a morphism of spectral objects is its component at `f`. -/
+@[reassoc]
+lemma EMap_comp_EIsoH_hom :
+    EMap φ (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+  rw [← cancel_epi (X.toCycles (𝟙 i₀) f f (Category.id_comp f) n₁ ≫
+    X.πE (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂)]
+  simp only [Category.assoc, πE_EMap_assoc, πE_EIsoH_hom, πE_EIsoH_hom_assoc,
+    toCycles_cyclesMapOfHom_assoc, cyclesIsoH_inv_hom_id, cyclesIsoH_inv_hom_id_assoc,
+    Category.comp_id]
+
+end FirstPage
+
+section IsIso
+
+variable [IsIso φ]
+
+instance isIso_EMap {i j k l : ι} (f₁ : i ⟶ j) (f₂ : j ⟶ k) (f₃ : k ⟶ l) (n₀ n₁ n₂ : ℤ)
+    (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂) : IsIso (EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂) :=
+  ⟨EMap (inv φ) f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂, by rw [← EMap_comp, IsIso.hom_inv_id, EMap_id],
+    by rw [← EMap_comp, IsIso.inv_hom_id, EMap_id]⟩
+
+instance isIso_cyclesMapOfHom {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n : ℤ) :
+    IsIso (cyclesMapOfHom φ f g n) :=
+  ⟨cyclesMapOfHom (inv φ) f g n,
+    by rw [← cyclesMapOfHom_comp, IsIso.hom_inv_id, cyclesMapOfHom_id],
+    by rw [← cyclesMapOfHom_comp, IsIso.inv_hom_id, cyclesMapOfHom_id]⟩
+
+instance isIso_opcyclesMapOfHom {i j k : ι} (f : i ⟶ j) (g : j ⟶ k) (n : ℤ) :
+    IsIso (opcyclesMapOfHom φ f g n) :=
+  ⟨opcyclesMapOfHom (inv φ) f g n,
+    by rw [← opcyclesMapOfHom_comp, IsIso.hom_inv_id, opcyclesMapOfHom_id],
+    by rw [← opcyclesMapOfHom_comp, IsIso.inv_hom_id, opcyclesMapOfHom_id]⟩
+
+end IsIso
 
 end CategoryTheory.Abelian.SpectralObject

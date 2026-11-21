@@ -63,6 +63,7 @@ namespace QuadraticAlgebra
 
 variable {d : ℤ} [Fact (¬ IsSquare d)]
 
+omit [Fact (¬ IsSquare d)] in
 /-- The generator `ω` of the model `ℚ(√d)` squares to the integer `d`. -/
 theorem omega_sq_eq_algebraMap_int :
     (ω : QuadraticAlgebra ℚ (d : ℚ) 0) ^ 2 = algebraMap ℤ (QuadraticAlgebra ℚ (d : ℚ) 0) d := by

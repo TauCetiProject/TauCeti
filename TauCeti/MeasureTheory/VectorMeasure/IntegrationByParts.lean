@@ -32,13 +32,13 @@ public section
 open MeasureTheory Set
 open scoped ENNReal
 
-namespace TauCeti
+namespace MeasureTheory.VectorMeasure
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
 /-- Integration by parts for the cumulative function of a vector measure of finite variation.
 The measure may have atoms or a singular continuous part. -/
-theorem _root_.MeasureTheory.VectorMeasure.integral_deriv_smul_apply_Iic_eq_neg_integral
+theorem integral_deriv_smul_apply_Iic_eq_neg_integral
     (ν : VectorMeasure ℝ E) [IsFiniteMeasure ν.variation] {φ : ℝ → ℝ}
     (hφ : ContDiff ℝ 1 φ) (hcφ : HasCompactSupport φ) :
     ∫ x, deriv φ x • ν (Iic x) = -∫ᵛ x, φ x ∂•ν := by
@@ -73,9 +73,9 @@ theorem _root_.MeasureTheory.VectorMeasure.integral_deriv_smul_apply_Iic_eq_neg_
       ext x
       simp only [indicator, mem_Iic, mem_Ici]
     rw [heq]
-    rw [setIntegral_eq_integral_of_forall_compl_eq_zero (s := K)
+    rw [MeasureTheory.setIntegral_eq_integral_of_forall_compl_eq_zero (s := K)
       (fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]),
-      integral_indicator measurableSet_Ici,
+      MeasureTheory.integral_indicator measurableSet_Ici,
       integral_Ici_eq_integral_Ioi]
     exact hcφ.integral_Ioi_deriv_eq hφ y
   simp only [VectorMeasure.integral_toSignedMeasure, hinner,
@@ -83,7 +83,7 @@ theorem _root_.MeasureTheory.VectorMeasure.integral_deriv_smul_apply_Iic_eq_neg_
   simp only [VectorMeasure.integral_indicator_const _ measurableSet_Iic,
     ContinuousLinearMap.lsmul_apply] at hswap
   rw [← hswap]
-  exact (setIntegral_eq_integral_of_forall_compl_eq_zero (s := K) fun x hx ↦ by
+  exact (MeasureTheory.setIntegral_eq_integral_of_forall_compl_eq_zero (s := K) fun x hx ↦ by
     simp [image_eq_zero_of_notMem_tsupport hx]).symm
 
-end TauCeti
+end MeasureTheory.VectorMeasure

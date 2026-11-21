@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Topology.PathSpace.Moore.Between.Basic
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
 /-!
@@ -30,8 +31,11 @@ the chains of the loop space are compared in Brown's theory of twisted tensor pr
 * `TauCeti.MoorePathFrom X b`: the Moore paths starting at `b`.
 * `TauCeti.MoorePathFrom.refl X b`: the constant path of length zero at `b`.
 * `TauCeti.MoorePathFrom.leftAct`: concatenation of a Moore loop at `b` in front of a path.
+* `TauCeti.MoorePathFrom.endpoint X b`: the end point, which the left loop action preserves.
 * `TauCeti.MoorePathFrom.truncateHomotopy`: the homotopy from the constant map at the constant path
   to the identity, by truncation.
+* `TauCeti.MoorePathBetween.toMoorePathFrom`: a Moore path from `b` to `c` as a path from `b`. It is
+  an equivariant embedding onto the paths ending at `c`, the fibre of the end point map over `c`.
 
 ## Main results
 
@@ -76,7 +80,7 @@ theorem source (γ : MoorePathFrom X b) : γ.toMoorePath.source = b := γ.proper
 
 @[fun_prop]
 theorem continuous_toMoorePath : Continuous (toMoorePath : MoorePathFrom X b → MoorePath X) :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 variable (X b) in
 /-- The constant path of length zero at `b`, the basepoint of `P_b X`. -/
@@ -125,6 +129,23 @@ theorem smul_eq_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathFrom X b) :
 instance : ContinuousSMul (MooreLoopSpace X b) (MoorePathFrom X b) :=
   ⟨continuous_leftAct⟩
 
+/-! ### The end point -/
+
+variable (X b) in
+/-- The **end point** of a Moore path from `b`, the projection of the path fibration
+`P_b X → X`. -/
+def endpoint : C(MoorePathFrom X b, X) :=
+  ⟨fun γ ↦ γ.toMoorePath.target, MoorePath.continuous_target.comp continuous_toMoorePath⟩
+
+theorem endpoint_apply (γ : MoorePathFrom X b) : endpoint X b γ = γ.toMoorePath.target :=
+  (rfl)
+
+/-- Concatenating a loop in front does not move the end point. -/
+@[simp]
+theorem endpoint_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathFrom X b) :
+    endpoint X b (leftAct ω γ) = endpoint X b γ := by
+  simp [endpoint_apply]
+
 /-! ### The contraction -/
 
 /-- The **contraction of the based path space** by truncation: at time `t` a path `γ` is truncated
@@ -155,5 +176,56 @@ instance : ContractibleSpace (MoorePathFrom X b) :=
   (contractible_iff_id_nullhomotopic _).2 ⟨refl X b, ⟨truncateHomotopy.symm⟩⟩
 
 end MoorePathFrom
+
+/-! ### The fibres of the end point map -/
+
+namespace MoorePathBetween
+
+variable {X : Type*} [TopologicalSpace X] {b c : X}
+
+variable (b c) in
+/-- A Moore path from `b` to `c`, read as a Moore path from `b`: the inclusion of the fibre over `c`
+of the end point map `P_b X → X`. -/
+def toMoorePathFrom : C(MoorePathBetween X b c, MoorePathFrom X b) :=
+  ⟨fun γ ↦ ⟨γ.toMoorePath, γ.source⟩, continuous_toMoorePath.subtype_mk _⟩
+
+@[simp]
+theorem toMoorePath_toMoorePathFrom (γ : MoorePathBetween X b c) :
+    (toMoorePathFrom b c γ).toMoorePath = γ.toMoorePath :=
+  (rfl)
+
+/-- A Moore path from `b` to `c` ends at `c`. -/
+@[simp]
+theorem endpoint_toMoorePathFrom (γ : MoorePathBetween X b c) :
+    MoorePathFrom.endpoint X b (toMoorePathFrom b c γ) = c :=
+  γ.target
+
+/-- The inclusion commutes with the concatenation of loops at `b` in front. -/
+theorem toMoorePathFrom_smul (ω : MooreLoopSpace X b) (γ : MoorePathBetween X b c) :
+    toMoorePathFrom b c (ω • γ) = ω • toMoorePathFrom b c γ :=
+  MoorePathFrom.ext (by simp)
+
+/-- The inclusion commutes with the concatenation of loops at `b` in front, in the form of the
+`leftAct` functions. -/
+@[simp]
+theorem toMoorePathFrom_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathBetween X b c) :
+    toMoorePathFrom b c (leftAct ω γ) = MoorePathFrom.leftAct ω (toMoorePathFrom b c γ) :=
+  MoorePathFrom.ext (by simp)
+
+/-- The paths from `b` to `c` are the paths from `b` ending at `c`. -/
+theorem range_toMoorePathFrom :
+    Set.range (toMoorePathFrom b c) = MoorePathFrom.endpoint X b ⁻¹' {c} := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 fun γ ↦ endpoint_toMoorePathFrom γ)
+    fun γ hγ ↦ ⟨⟨γ.toMoorePath, γ.source, hγ⟩, MoorePathFrom.ext (by simp)⟩
+
+/-- The paths from `b` to `c` carry the topology induced from the paths from `b`. -/
+theorem isEmbedding_toMoorePathFrom : Topology.IsEmbedding (toMoorePathFrom b c) := by
+  -- Both are subspaces of the Moore paths, and the inclusion commutes with the two inclusions.
+  have h : (Subtype.val ∘ toMoorePathFrom b c : MoorePathBetween X b c → MoorePath X) =
+      Subtype.val :=
+    funext fun ⟨γ, hγ⟩ ↦ toMoorePath_mk γ hγ
+  exact (Topology.IsEmbedding.subtypeVal.of_comp_iff).1 (h ▸ Topology.IsEmbedding.subtypeVal)
+
+end MoorePathBetween
 
 end TauCeti

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Coordinates of tangent fields along curves
@@ -49,17 +50,21 @@ variable
   {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 variable (γ : 𝕜 → M) (V : Π t, TangentSpace I (γ t))
+
+section CoordChange
+
+variable [IsManifold I 1 M]
 
 /-- The coordinate readings of a tangent field along a curve in the trivializations at two points
 whose base sets contain `γ r` differ by the tangent coordinate change between them. -/
 theorem sectionCoord_coordChange {x y : M} {r : 𝕜}
     (hx : γ r ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hy : γ r ∈ (trivializationAt E (TangentSpace I) y).baseSet) :
-    sectionCoord (F := E) γ V y r =
-      tangentCoordChange I x y (γ r) (sectionCoord (F := E) γ V x r) := by
+    sectionCoord 𝕜 (F := E) γ V y r =
+      tangentCoordChange I x y (γ r) (sectionCoord 𝕜 (F := E) γ V x r) := by
   rw [sectionCoord_apply, sectionCoord_apply, ← continuousLinearMapAt_symmL_coordChange hx hy,
     (trivializationAt E (TangentSpace I) x).symmL_continuousLinearMapAt (R := 𝕜) hx]
 
@@ -69,14 +74,16 @@ theorem sectionCoord_eventuallyEq_coordChange {x y : M} {s : Set 𝕜} {r : 𝕜
     (hγ : ContinuousWithinAt γ s r)
     (hx : γ r ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hy : γ r ∈ (trivializationAt E (TangentSpace I) y).baseSet) :
-    sectionCoord (F := E) γ V y =ᶠ[𝓝[s] r]
-      fun q ↦ tangentCoordChange I x y (γ q) (sectionCoord (F := E) γ V x q) := by
+    sectionCoord 𝕜 (F := E) γ V y =ᶠ[𝓝[s] r]
+      fun q ↦ tangentCoordChange I x y (γ q) (sectionCoord 𝕜 (F := E) γ V x q) := by
   filter_upwards
     [hγ.preimage_mem_nhdsWithin
       ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx),
     hγ.preimage_mem_nhdsWithin
       ((trivializationAt E (TangentSpace I) y).open_baseSet.mem_nhds hy)] with q hqx hqy
   exact sectionCoord_coordChange γ V hqx hqy
+
+end CoordChange
 
 section CoordChangeDeriv
 
@@ -89,12 +96,12 @@ change applied to the fixed vector `V t` in the chart at `γ t`. -/
 theorem derivWithin_sectionCoord_eq {x : M} {s : Set 𝕜} {t : 𝕜}
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) (hu : UniqueDiffWithinAt 𝕜 s t)
     (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
-    derivWithin (sectionCoord (F := E) γ V x) s t
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) s t) :
+    derivWithin (sectionCoord 𝕜 (F := E) γ V x) s t
       = mvfderiv I (fun z ↦ tangentCoordChange I (γ t) x z
-          (sectionCoord (F := E) γ V (γ t) t)) (γ t) (curveVelocityWithin I γ s t)
+          (sectionCoord 𝕜 (F := E) γ V (γ t) t)) (γ t) (curveVelocityWithin I γ s t)
         + tangentCoordChange I (γ t) x (γ t)
-            (derivWithin (sectionCoord (F := E) γ V (γ t)) s t) := by
+            (derivWithin (sectionCoord 𝕜 (F := E) γ V (γ t)) s t) := by
   have hγ' : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (curveVelocityWithin I γ s t)) :=
     hasMFDerivWithinAt_curveVelocityWithin hγ
@@ -132,9 +139,9 @@ differentiable in local coordinates. -/
 theorem _root_.ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv {s : Set 𝕜} {t : 𝕜}
     (hf : ContMDiffAt I J n f (γ t)) (hn : 2 ≤ n)
     (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) s t) :
     DifferentiableWithinAt 𝕜
-      (sectionCoord (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t := by
+      (sectionCoord 𝕜 (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) s t := by
   let e := trivializationAt E (TangentSpace I) (γ t)
   have hbase : γ t ∈ e.baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
@@ -172,9 +179,9 @@ theorem _root_.ContMDiffAt.differentiableWithinAt_sectionCoord_mfderiv {s : Set 
 theorem _root_.ContMDiffAt.differentiableAt_sectionCoord_mfderiv {t : 𝕜}
     (hf : ContMDiffAt I J n f (γ t)) (hn : 2 ≤ n)
     (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t) :
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) t) :
     DifferentiableAt 𝕜
-      (sectionCoord (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) t := by
+      (sectionCoord 𝕜 (F := F) (f ∘ γ) (fun r ↦ mfderiv I J f (γ r) (V r)) (f (γ t))) t := by
   rw [← differentiableWithinAt_univ]
   exact hf.differentiableWithinAt_sectionCoord_mfderiv hn hγ.mdifferentiableWithinAt
     hV.differentiableWithinAt

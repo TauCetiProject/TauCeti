@@ -36,7 +36,8 @@ first `n` links.
   indecomposable modules of length at most `b`, the composite of at least `2 ^ n - 1` links has
   image of length at most `b - n`.
 * `TauCeti.map_eq_zero_of_length_le`: **the Harada–Sai lemma**, the case `n = b` of the bound.
-* `TauCeti.ofSequence_map_eq_zero_of_length_le`: the same statement for a sequence of morphisms.
+* `TauCeti.ofSequence_map_eq_zero_of_length_le`: the same statement for a sequence of morphisms,
+  and `TauCeti.map_op_eq_zero_of_length_le` for a descending chain.
 
 ## Implementation notes
 
@@ -137,7 +138,6 @@ theorem length_range_map_le (hF : ∀ i, Indecomposable (F.obj i))
   induction n generalizing i j with
   | zero => simpa using hrange φ
   | succ n ih =>
-    have hpow : 2 ^ (n + 1) = 2 ^ n + 2 ^ n := by rw [pow_succ, mul_two]
     have hpos := Nat.one_le_two_pow (n := n)
     by_cases hbn : b ≤ n
     · exact (ih φ (by omega)).trans (Nat.cast_le.mpr (by omega))
@@ -188,6 +188,52 @@ theorem ofSequence_map_eq_zero_of_length_le {M : ℕ → ModuleCat.{v} A}
     (hn : 2 ^ b - 1 ≤ n) : (Functor.ofSequence f).map (homOfLE (Nat.zero_le n)) = 0 :=
   map_eq_zero_of_length_le hM hlen
     (fun i ↦ by rw [Functor.ofSequence_map_homOfLE_succ]; exact hf i) _ (by omega)
+
+open Opposite in
+/-- **The Harada–Sai lemma for descending chains.** Let `G : ℕᵒᵖ ⥤ ModuleCat A` be a descending
+chain of modules whose links `G.obj (op (i + 1)) ⟶ G.obj (op i)` are not isomorphisms, between
+indecomposable modules of length at most `b`. Then every composite `G.obj (op j) ⟶ G.obj (op i)` of
+at least `2 ^ b - 1` links is zero. -/
+theorem map_op_eq_zero_of_length_le {G : ℕᵒᵖ ⥤ ModuleCat.{v} A}
+    (hG : ∀ i, Indecomposable (G.obj (op i))) (hlen : ∀ i, Module.length A (G.obj (op i)) ≤ b)
+    (hf : ∀ i, ¬ IsIso (G.map (homOfLE (Nat.le_add_right i 1)).op)) {i j : ℕ} (φ : i ⟶ j)
+    (hij : i + (2 ^ b - 1) ≤ j) : G.map φ.op = 0 := by
+  classical
+  -- Read the first `j` links backwards, continued by zero morphisms.
+  let g (k : ℕ) : G.obj (op (j - k)) ⟶ G.obj (op (j - (k + 1))) :=
+    if k < j then G.map (homOfLE (by omega : j - (k + 1) ≤ j - k)).op else 0
+  have hlink (k m : ℕ) (h : k ≤ m) (hm : m = k + 1) : ¬ IsIso (G.map (homOfLE h).op) := by
+    subst hm
+    exact hf k
+  have hg (k : ℕ) : ¬ IsIso (g k) := by
+    by_cases hk : k < j
+    · simp only [g, hk, ↓reduceIte]
+      exact hlink (j - (k + 1)) (j - k) _ (by omega)
+    · simp only [g, hk, ↓reduceIte]
+      intro h
+      exact (hG (j - k)).1 ((Limits.IsZero.iff_id_eq_zero _).mpr
+        ((IsIso.hom_inv_id (0 : G.obj (op (j - k)) ⟶ G.obj (op (j - (k + 1))))).symm.trans
+          Limits.zero_comp))
+  have hcomp (m : ℕ) (hm : m ≤ j) : (Functor.ofSequence g).map (homOfLE (Nat.zero_le m)) =
+      G.map (homOfLE (by omega : j - m ≤ j)).op := by
+    induction m with
+    -- `(Functor.ofSequence g).obj m` is `G.obj (op (j - m))` by definition.
+    | zero => simp
+    | succ m ih =>
+      have hmj : m < j := by omega
+      rw [← homOfLE_comp (Nat.zero_le m) (Nat.le_succ m), Functor.map_comp, ih (by omega),
+        Functor.ofSequence_map_homOfLE_succ]
+      simp only [g, hmj, ↓reduceIte]
+      exact (G.map_comp _ _).symm
+  have h0 := ofSequence_map_eq_zero_of_length_le g (fun k ↦ hG _) (fun k ↦ hlen _) hg
+    (by omega : 2 ^ b - 1 ≤ j - i)
+  rw [hcomp (j - i) (by omega)] at h0
+  -- The composite of the first `j - i` links read backwards ends at `j - (j - i) = i`.
+  have key (m : ℕ) (h : m ≤ j) (hm : m = i) (h' : G.map (homOfLE h).op = 0) :
+      G.map φ.op = 0 := by
+    subst hm
+    rwa [Subsingleton.elim φ (homOfLE h)]
+  exact key _ _ (by omega) h0
 
 end Chain
 

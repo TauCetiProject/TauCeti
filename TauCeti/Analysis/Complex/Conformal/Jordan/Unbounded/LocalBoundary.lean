@@ -99,7 +99,8 @@ private theorem exists_ball_finite_boundary_of_inverted_coordinate
     exact (lt_irrefl 0) hypos
   refine ⟨r, hr, hFcont, hFinj, fun z hz hzH => himage hz hzH, fun z hz hz0 => ?_⟩
   exact hgU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-    (continuousWithinAt_const.add ((hgc z hz0.ge).inv₀ (hnonzero hz hz0.ge)))
+    ((continuousWithinAt_const.add ((hgc z hz0.ge).inv₀ (hnonzero hz hz0.ge))).mono
+      (fun w (hw : 0 < w.im) ↦ hw.le))
     hz0 (hnot hz hz0)
 
 /-- Near a nonzero boundary value of a continuous inverted coordinate, the recovered finite map
@@ -134,7 +135,7 @@ theorem exists_ball_corner_of_inverted_coordinate
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
     (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0})
     (hgU : (fun z => q + (g z)⁻¹) '' upperHalfPlaneSet = U) {x : ℝ} (hx : g x ≠ 0)
-    {b : ℂ} {rho alpha : ℝ} (hrho : 0 < rho) (hb : b ≠ 0)
+    {b : ℂ} {rho alpha : ℝ} (hrho : 0 < rho)
     (hU : ∀ z ∈ ball (q + (g x)⁻¹) rho, z ≠ q + (g x)⁻¹ →
       (z ∈ U ↔ |((z - (q + (g x)⁻¹)) / b).arg| < alpha)) :
     ∃ r > 0,
@@ -151,7 +152,7 @@ theorem exists_ball_corner_of_inverted_coordinate
       have := hinj ⟨hz, hz0.le⟩ ⟨mem_ball_self hr, by simp⟩ h
       simp [this] at hz0
     exact (hU _ (hball z hz hz0.le) hzx).mp (hgU ▸ mem_image_of_mem _ hz0)
-  · exact abs_arg_div_eq_of_mem_frontier hb isOpen_ball hU (hball z hz hz0.ge) hzx
+  · exact abs_arg_div_eq_of_mem_frontier isOpen_ball hU (hball z hz hz0.ge) hzx
       (hfrontier z hz hz0)
 
 end TauCeti

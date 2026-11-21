@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.MarkovChain.Visits
+public import TauCeti.Probability.MarkovChain.Recurrence
 public import TauCeti.Probability.Process.Excursion.MarkovChain
 
 /-!
@@ -23,10 +23,11 @@ any process with the Markov-chain path law. Together with
 return cycles to be applied to occupation counts. No finite-mean assumption is made.
 
 These laws are derived from the i.i.d. excursion decomposition at a recurrent state.
+Every return gap has extended mean `Kernel.meanReturnTime`, including when it is infinite.
 
 ## References
 
-* J. R. Norris, *Markov Chains*, Cambridge University Press, 1997, §§1.5 and 1.10.
+* J. R. Norris, *Markov Chains*, Cambridge University Press, 1997, §§1.5, 1.7 and 1.10.
 -/
 
 public section
@@ -133,3 +134,30 @@ theorem natCast_returnGap_map_hittingAfter
   simpa only [Function.comp_def, returnGap_def] using hk.comp hX
 
 end ProbabilityTheory.HasLaw
+
+namespace ProbabilityTheory.Kernel
+
+variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S]
+  {κ : Kernel S S} [IsMarkovKernel κ] {x : S} [Countable S]
+
+open scoped ENNReal NNReal
+
+/-- At a recurrent state every return gap has the extended mean positive return time.
+This equality remains valid for infinite mean. -/
+theorem IsRecurrent.lintegral_returnGap (hx : κ.IsRecurrent x) (k : ℕ) :
+    ∫⁻ ω, (returnGap (fun n (ω : ℕ → S) => ω n) x k ω : ℝ≥0∞)
+      ∂markovChainLaw (Measure.dirac x) κ = κ.meanReturnTime x := by
+  have hgap := HasLaw.natCast_returnGap_map_hittingAfter
+    (HasLaw.id (μ := markovChainLaw (Measure.dirac x) κ)) (isRecurrent_iff.mp hx) k
+  have hm : Measurable (fun t : WithTop ℕ => ENat.toENNReal t) :=
+    measurable_of_countable _
+  have hmean := hgap.lintegral_comp hm.aemeasurable
+  rw [lintegral_map' hm.aemeasurable] at hmean
+  · have hcast (n : ℕ) : ENat.toENNReal (n : WithTop ℕ) = (n : ℝ≥0∞) :=
+      ENat.toENNReal_coe n
+    simpa only [Function.comp_def, id_eq, hcast, meanReturnTime_def] using hmean
+  · exact (Filtration.adapted_piLE.isStoppingTime_hittingAfter
+      (f := Filtration.piLE (X := fun _ : ℕ => S))
+      (s := {x}) (n := 1) (measurableSet_singleton x)).measurable'.aemeasurable
+
+end ProbabilityTheory.Kernel

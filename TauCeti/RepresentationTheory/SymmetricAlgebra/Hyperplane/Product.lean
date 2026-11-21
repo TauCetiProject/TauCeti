@@ -78,9 +78,9 @@ private noncomputable def sigmaInertiaNeOneEquivPseudoreflections
   have hfix (H : ρ.reflectingHyperplanes) (g : I H) :
       H.val ≤ (ρ g).fixedSubmodule := by
     rw [← hker H]
-    exact (ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.2
+    exact (ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.property
   have hneq (H : ρ.reflectingHyperplanes) (g : {g : I H // g ≠ 1}) : (g.val : G) ≠ 1 :=
-    fun h ↦ g.2 (Subtype.ext h)
+    fun h ↦ g.property (Subtype.ext h)
   have hfixed (H : ρ.reflectingHyperplanes) (g : {g : I H // g ≠ 1}) :
       (ρ g.val).fixedSubmodule = H.val :=
     ρ.fixedSubmodule_eq_of_mem_reflectingHyperplanes H.property
@@ -159,7 +159,7 @@ theorem prod_dual_inertia_sub_one_dvd_jacobian [FiniteDimensional K V]
     exact fun h ↦ hne (Subtype.ext h)
   · intro H
     obtain ⟨g, hg⟩ := ρ.exists_isPrimitiveRoot_det_dual_inertia_span_singleton_ι hG hρ (hℓ H)
-    apply ρ.dual_ι_pow_sub_one_dvd_jacobian b (hℓ H) _ Nat.card_pos hg hf
+    apply ρ.dual_ι_pow_sub_one_dvd_jacobian b _ Nat.card_pos hg hf
     exact (ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.property
 
 end Representation

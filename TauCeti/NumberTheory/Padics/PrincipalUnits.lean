@@ -342,12 +342,15 @@ theorem relIndex_unitsPrincipal {f : ℕ} (hf : 0 < f) (k : ℕ) :
   exact mul_right_cancel₀ (Nat.mul_ne_zero (pow_pos hp.out.pos _).ne'
     (Nat.sub_ne_zero_of_lt hp.out.one_lt)) h
 
-/-- At `p = 2`, two elements of exact level `f ≥ 1` are congruent modulo `U^(f+1)`: the quotient
-`U^(f) / U^(f+1)` has order `2`. -/
-theorem inv_mul_mem_unitsPrincipal_two_succ {f : ℕ} (hf : 0 < f) {u x : ℤ_[2]ˣ}
+/-- At `p = 2`, two elements of exact level `f` are congruent modulo `U^(f+1)`: for `f ≥ 1` the
+quotient `U^(f) / U^(f+1)` has order `2`; for `f = 0` the hypotheses are unsatisfiable, since
+`U^(1) = ⊤`. -/
+theorem inv_mul_mem_unitsPrincipal_two_succ {f : ℕ} {u x : ℤ_[2]ˣ}
     (hu : u ∈ unitsPrincipal 2 f) (hu' : u ∉ unitsPrincipal 2 (f + 1))
     (hx : x ∈ unitsPrincipal 2 f) (hx' : x ∉ unitsPrincipal 2 (f + 1)) :
     u⁻¹ * x ∈ unitsPrincipal 2 (f + 1) := by
+  rcases Nat.eq_zero_or_pos f with rfl | hf
+  · exact absurd (by rw [zero_add, unitsPrincipal_two_one]; exact Subgroup.mem_top _) hu'
   have h2 : ((unitsPrincipal 2 (f + 1)).subgroupOf (unitsPrincipal 2 f)).index = 2 := by
     rw [← Subgroup.relIndex, relIndex_unitsPrincipal 2 hf 1, pow_one]
   have := (Subgroup.mul_mem_iff_of_index_two h2 (a := ⟨u⁻¹, (unitsPrincipal 2 f).inv_mem hu⟩)
@@ -616,7 +619,7 @@ theorem isProP_unitsPrincipal {f : ℕ} (hf : 0 < f) : IsProP p (unitsPrincipal 
   -- `u ∈ U^(f)`.
   obtain ⟨k, -, hk⟩ := (hasBasis_nhds_one_unitsPrincipal p).mem_iff.mp
     (U.isOpen.mem_nhds (one_mem _))
-  obtain ⟨u, hu, hgu⟩ := Subgroup.mem_map.mp g.2
+  obtain ⟨u, hu, hgu⟩ := Subgroup.mem_map.mp g.property
   refine ⟨k, Subtype.ext ?_⟩
   rw [Subgroup.coe_pow, OneMemClass.coe_one, ← hgu, ← map_pow, QuotientGroup.mk'_apply,
     QuotientGroup.eq_one_iff]

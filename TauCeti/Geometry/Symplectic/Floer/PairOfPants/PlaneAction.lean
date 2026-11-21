@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Analysis.Calculus.ContDiff.Pi
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -91,12 +93,8 @@ theorem integral_symplecticForm_fderiv_closedBall_eq_neg_loopArea (ω : Symplect
   have h := ω.integral_fderiv_apply_closedBall (u := v) (b := b) 0
     (mul_pos two_pos (Real.exp_pos _)) fun z _ ↦
       (hu.comp Complex.equivRealProdCLM.contDiff).contDiffAt
-  have h₁ : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
-    rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
-  have hI : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
-    rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
   simp only [v, ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, h₁, hI] at h
+    ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one, equivRealProdCLM_I] at h
   -- The boundary loop is the circle traversed backwards.
   have hg : Periodic (fun θ ↦ v (circleMap 0 b θ)) (2 * π) := fun θ ↦ by
     simp only [periodic_circleMap 0 b θ]
@@ -145,18 +143,8 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
     have : Real.exp (2 * (2 * π)) ≤ Real.exp (2 * π * R) :=
       Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
     linarith
-  have hH' (q : Puncture) : Periodic ((Pi.single inf H : Puncture → ℝ → V → ℝ) q) 1 := by
-    rcases eq_or_ne q inf with rfl | hq
-    · simpa using hH
-    · rw [Pi.single_eq_of_ne hq]
-      exact fun _ ↦ rfl
-  have hHs' (q : Puncture) :
-      ContDiff ℝ 1 (uncurry ((Pi.single inf H : Puncture → ℝ → V → ℝ) q)) := by
-    rcases eq_or_ne q inf with rfl | hq
-    · simpa using hHs
-    · rw [Pi.single_eq_of_ne hq]
-      exact contDiff_const
-  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH' hHs'
+  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (hH.piSingle_apply inf)
+    (hHs.uncurry_piSingle_apply inf)
     ⟨hw₀, hw₁⟩ hs x
   rwa [pairOfPantsPerturbation_single_inf] at h
 
@@ -185,8 +173,8 @@ private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V) (hH
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)| ≤ B := by
   rw [← ENNReal.ofReal_le_ofReal_iff ((abs_nonneg _).trans (hB 0 0)),
-    ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+    ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hH hHs hB u)
 
 /-- **The energy identity on discs of the negative plane, in terms of the action.** Let `K` be

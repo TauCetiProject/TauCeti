@@ -37,41 +37,41 @@ variable {n m : ℕ}
 
 private def throughTop (D : TLDiagram n m)
     (i : {i : Fin n // D.bottomHalf.val i = i}) : Fin m :=
-  ⟨n + m - 1 - (D.matching.1.val (i.val.castAdd m) : ℕ), by
+  ⟨n + m - 1 - (D.matching.val.val (i.val.castAdd m) : ℕ), by
     have hi := (D.bottomHalf_apply_eq_self_iff i).mp i.property
-    have := (D.matching.1.val (i.val.castAdd m)).isLt
+    have := (D.matching.val.val (i.val.castAdd m)).isLt
     omega⟩
 
 private theorem throughTop_boundary (D : TLDiagram n m)
     (i : {i : Fin n // D.bottomHalf.val i = i}) :
     (⟨n + m - 1 - (D.throughTop i : ℕ), by omega⟩ : Fin (n + m)) =
-      D.matching.1.val (i.val.castAdd m) := by
+      D.matching.val.val (i.val.castAdd m) := by
   apply Fin.ext
-  have := (D.matching.1.val (i.val.castAdd m)).isLt
+  have := (D.matching.val.val (i.val.castAdd m)).isLt
   simp only [throughTop]
   omega
 
 private theorem throughTop_defect (D : TLDiagram n m)
     (i : {i : Fin n // D.bottomHalf.val i = i}) :
     D.topHalf.val (D.throughTop i) = D.throughTop i := by
-  rw [topHalf_apply_eq_self_iff, throughTop_boundary, D.matching.1.apply_apply]
+  rw [topHalf_apply_eq_self_iff, throughTop_boundary, D.matching.val.apply_apply]
   exact i.val.isLt
 
 private def throughBottom (D : TLDiagram n m)
     (j : {j : Fin m // D.topHalf.val j = j}) : Fin n :=
-  ⟨D.matching.1.val ⟨n + m - 1 - j.val, by omega⟩,
+  ⟨D.matching.val.val ⟨n + m - 1 - j.val, by omega⟩,
     (D.topHalf_apply_eq_self_iff j).mp j.property⟩
 
 private theorem throughBottom_boundary (D : TLDiagram n m)
     (j : {j : Fin m // D.topHalf.val j = j}) :
     (D.throughBottom j).castAdd m =
-      D.matching.1.val ⟨n + m - 1 - j.val, by omega⟩ := by
+      D.matching.val.val ⟨n + m - 1 - j.val, by omega⟩ := by
   rfl
 
 private theorem throughBottom_defect (D : TLDiagram n m)
     (j : {j : Fin m // D.topHalf.val j = j}) :
     D.bottomHalf.val (D.throughBottom j) = D.throughBottom j := by
-  rw [bottomHalf_apply_eq_self_iff, throughBottom_boundary, D.matching.1.apply_apply]
+  rw [bottomHalf_apply_eq_self_iff, throughBottom_boundary, D.matching.val.apply_apply]
   have := j.val.isLt
   dsimp only
   omega
@@ -80,25 +80,24 @@ private theorem throughTop_strictMono (D : TLDiagram n m) :
     StrictMono D.throughTop := by
   intro i j hij
   have hi := (D.bottomHalf_apply_eq_self_iff i).mp i.property
-  have hj := (D.bottomHalf_apply_eq_self_iff j).mp j.property
-  have hne : D.matching.1.val (i.val.castAdd m) ≠
-      D.matching.1.val (j.val.castAdd m) := by
+  have hne : D.matching.val.val (i.val.castAdd m) ≠
+      D.matching.val.val (j.val.castAdd m) := by
     intro h
-    have := D.matching.1.val.injective h
+    have := D.matching.val.val.injective h
     have : i.val = j.val := by
       apply Fin.ext
       exact congrArg (fun a : Fin (n + m) => a.val) this
     exact (ne_of_lt hij) (Subtype.ext this)
-  have hnc := Perm.isNoncrossingMatching_iff.mp D.matching.2
-  have hnot : ¬ D.matching.1.val (i.val.castAdd m) <
-      D.matching.1.val (j.val.castAdd m) := by
+  have hnc := Perm.isNoncrossingMatching_iff.mp D.matching.property
+  have hnot : ¬ D.matching.val.val (i.val.castAdd m) <
+      D.matching.val.val (j.val.castAdd m) := by
     intro h
     exact hnc (a := i.val.castAdd m) (b := j.val.castAdd m)
       hij
       (by simp only [Fin.lt_def, Fin.val_castAdd]; omega) h
   have hlt := lt_of_le_of_ne (not_lt.mp hnot) hne.symm
-  have := (D.matching.1.val (i.val.castAdd m)).isLt
-  have := (D.matching.1.val (j.val.castAdd m)).isLt
+  have := (D.matching.val.val (i.val.castAdd m)).isLt
+  have := (D.matching.val.val (j.val.castAdd m)).isLt
   simp only [throughTop, Fin.lt_def] at *
   omega
 
@@ -111,12 +110,12 @@ def throughOrderIso (D : TLDiagram n m) :
   left_inv i := by
     apply Subtype.ext
     apply Fin.ext
-    simp only [throughBottom, throughTop_boundary, D.matching.1.apply_apply,
+    simp only [throughBottom, throughTop_boundary, D.matching.val.apply_apply,
       Fin.val_castAdd]
   right_inv j := by
     apply Subtype.ext
     apply Fin.ext
-    simp only [throughTop, throughBottom_boundary, D.matching.1.apply_apply]
+    simp only [throughTop, throughBottom_boundary, D.matching.val.apply_apply]
     have := j.val.isLt
     omega
   map_rel_iff' := by
@@ -130,18 +129,18 @@ endpoint. -/
 theorem throughOrderIso_apply_val (D : TLDiagram n m)
     (i : {i : Fin n // D.bottomHalf.val i = i}) :
     ((D.throughOrderIso i).val : ℕ) =
-      n + m - 1 - (D.matching.1.val (i.val.castAdd m) : ℕ) := (rfl)
+      n + m - 1 - (D.matching.val.val (i.val.castAdd m) : ℕ) := (rfl)
 
 /-- The bottom endpoint of a through strand is the cyclic partner of its top endpoint. -/
 @[simp↓]
 theorem throughOrderIso_symm_apply_val (D : TLDiagram n m)
     (j : {j : Fin m // D.topHalf.val j = j}) :
     ((D.throughOrderIso.symm j).val : ℕ) =
-      (D.matching.1.val ⟨n + m - 1 - j.val, by omega⟩ : ℕ) := (rfl)
+      (D.matching.val.val ⟨n + m - 1 - j.val, by omega⟩ : ℕ) := (rfl)
 
 private theorem matching_bottom_eq_of_halves {D E : TLDiagram n m}
     (hb : D.bottomHalf.val = E.bottomHalf.val) (ht : D.topHalf.val = E.topHalf.val)
-    (i : Fin n) : D.matching.1.val (i.castAdd m) = E.matching.1.val (i.castAdd m) := by
+    (i : Fin n) : D.matching.val.val (i.castAdd m) = E.matching.val.val (i.castAdd m) := by
   by_cases hi : D.bottomHalf.val i = i
   · let eb : {i : Fin n // D.bottomHalf.val i = i} ≃o
         {i : Fin n // E.bottomHalf.val i = i} :=
@@ -162,8 +161,8 @@ private theorem matching_bottom_eq_of_halves {D E : TLDiagram n m}
         {j : Fin m | D.topHalf.val j = j} {j : Fin m | E.topHalf.val j = j} _ y)
     simp only [OrderIso.trans_apply, et_val, throughOrderIso_apply_val, eb_val] at hv
     apply Fin.ext
-    have hd := (D.matching.1.val (i.castAdd m)).isLt
-    have he := (E.matching.1.val (i.castAdd m)).isLt
+    have hd := (D.matching.val.val (i.castAdd m)).isLt
+    have he := (E.matching.val.val (i.castAdd m)).isLt
     omega
   · have hiE : E.bottomHalf.val i ≠ i := by simpa only [hb] using hi
     have hd := not_le.mp ((D.bottomHalf_apply_eq_self_iff i).not.mp hi)
@@ -193,8 +192,8 @@ theorem matching_eq_of_halves {D E : TLDiagram n m}
       omega
     rw [heq] at hv
     apply Fin.ext
-    have := (D.matching.1.val a).isLt
-    have := (E.matching.1.val a).isLt
+    have := (D.matching.val.val a).isLt
+    have := (E.matching.val.val a).isLt
     omega
 
 /-- A diagram is determined by its bottom half, top half, and number of closed circles. -/
@@ -202,5 +201,19 @@ theorem ext_halves {D E : TLDiagram n m}
     (hb : D.bottomHalf.val = E.bottomHalf.val) (ht : D.topHalf.val = E.topHalf.val)
     (hc : D.circles = E.circles) : D = E :=
   TLDiagram.ext (matching_eq_of_halves hb ht) hc
+
+/-- An endomorphism diagram `n → n` whose strands all go through has the fully nested identity
+matching. -/
+theorem matching_eq_nested_of_through_eq {D : TLDiagram n n} (h : D.through = n) :
+    D.matching = PlanarMatching.nested n :=
+  (matching_eq_of_halves (D := D) (E := id n)
+    ((HalfDiagram.val_eq_one_iff.mpr h).trans (bottomHalf_id_val n).symm)
+    ((HalfDiagram.val_eq_one_iff.mpr h).trans (topHalf_id_val n).symm)).trans (matching_id n)
+
+/-- An endomorphism diagram `n → n` whose strands all go through is the identity matching together
+with its closed circles. -/
+theorem eq_mk_nested_of_through_eq {D : TLDiagram n n} (h : D.through = n) :
+    D = ⟨PlanarMatching.nested n, D.circles⟩ :=
+  TLDiagram.ext (matching_eq_nested_of_through_eq h) rfl
 
 end TauCeti.TLDiagram

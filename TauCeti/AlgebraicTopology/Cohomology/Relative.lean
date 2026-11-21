@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.LinearYoneda
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Empty
 
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Restrict
 public import TauCeti.AlgebraicTopology.Singular.Relative
@@ -39,6 +41,8 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   (`SSetPair.quasiIso_cochainComplexMap_restrictι`). A map of pairs bijecting the simplices
   outside the subspaces induces an isomorphism of relative cochain complexes
   (`SSetPair.isIso_cochainComplexMap_of_relativeSimplex_equiv`).
+* `SSetPair.cochainComplexπ`: the map from relative to ambient cochains of a pair of simplicial
+  sets, natural in maps of pairs (`SSetPair.cochainComplexπ_naturality`).
 * `TopPair.singularCochainComplex`, `TopPair.singularCohomology`, and the maps
   `TopPair.singularCochainComplexMap` and `TopPair.singularCohomologyMap` induced by maps of
   pairs, with `TopPair.singularCohomologyFunctor` the functor `TopPairᵒᵖ ⥤ ModuleCat k`;
@@ -47,17 +51,28 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
 * `TopPair.isIso_singularCohomologyMap_of_forall_isIso`: a map of pairs inducing isomorphisms on
   the cohomology of the ambient spaces and of the subspaces in every degree induces isomorphisms on
   relative cohomology.
+* `TopPair.isZero_singularCohomology_of_isZero_singularHomology`: relative cohomology vanishes in
+  degree `n` when relative homology with projective coefficients vanishes up to degree `n`.
+* `TopPair.singularCohomologyMap_eq_zero_of_fac` and
+  `TopPair.isZero_singularCohomology_of_surjective_map`: a map of pairs factoring through the
+  target subspace induces zero on cohomology; in particular, a pair with surjective subspace map
+  has vanishing relative cohomology in every degree.
 * `TopPair.shortExact_singularCochainComplexShortComplex`: the cochain sequence of a pair is short
   exact.
 * `TopPair.singularCohomologyδ`: the connecting morphism `Hⁿ(A) ⟶ Hᵐ(X, A)` for `n + 1 = m`, with
   the three exactness statements `TopPair.singularCohomology_exact_relative`,
   `TopPair.singularCohomology_exact_space` and `TopPair.singularCohomology_exact_subspace`, and its
   naturality `TopPair.singularCohomologyδ_naturality`.
+* `TopPair.singularCohomologyπ_singularCohomologyMap_ofSubsetMap`: the map to absolute cohomology
+  is natural under maps of pairs induced by continuous maps.
 * `TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ`: for `S' ⊆ S`, the map
   `Hⁿ(X, S) ⟶ Hⁿ(X)` factors through `Hⁿ(X, S')`; and
   `TopPair.singularCohomologyπ_ofSubset_univ`: the map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes.
 * `TopPair.isIso_singularCohomologyπ_of_isEmpty`: for an empty subspace, `Hⁿ(X, ∅) ⟶ Hⁿ(X)` is an
   isomorphism.
+* `TopCat.singularCohomologyComplRestrict`: the restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for
+  `S ⊆ T`, with its composition lemma
+  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict`.
 
 ## References
 
@@ -127,7 +142,7 @@ every degree induces an isomorphism of relative cochain complexes. -/
 theorem isIso_cochainComplexMap_of_relativeSimplex_equiv {P P' : SSetPair.{w}} (f : P ⟶ P')
     (e : ∀ n, P.RelativeSimplex n ≃ P'.RelativeSimplex n)
     (he : ∀ n (x : P.RelativeSimplex n),
-      (e n x).1 = f.right.app (Opposite.op (SimplexCategory.mk n)) x.1) :
+      (e n x).val = f.right.app (Opposite.op (SimplexCategory.mk n)) x.val) :
     IsIso (cochainComplexMap (R := R) (k := k) (M := M) f) := by
   have := isIso_chainComplexMap_of_relativeSimplex_equiv f R e he
   exact (linearYonedaFunctor k M).map_isIso (chainComplexMap f R).op
@@ -144,6 +159,24 @@ lemma quasiIso_cochainComplexMap_restrictι {P : SSetPair.{w}} (S : P.right.Subc
   have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S).right) := by
     rwa [restrictι_right]
   exact quasiIso_cochainComplexMap _
+
+variable (R k M) in
+/-- The map `Hom(C(P), M) ⟶ Hom(C(P.right), M)` from relative to ambient cochains of a pair of
+simplicial sets: precomposition with the quotient map from ambient to relative chains. -/
+abbrev cochainComplexπ (P : SSetPair.{w}) :
+    (P.chainComplex R).linearYonedaObj k M ⟶ (P.right.chainComplex R).linearYonedaObj k M :=
+  (linearYonedaFunctor k M).map (P.chainComplexπ R).op
+
+variable (R k M) in
+/-- The maps `cochainComplexπ` from relative to ambient cochains are natural in maps of pairs of
+simplicial sets. -/
+@[reassoc]
+lemma cochainComplexπ_naturality {P Q : SSetPair.{w}} (f : P ⟶ Q) :
+    cochainComplexπ R k M Q ≫ SSet.cochainComplexMap f.right =
+      cochainComplexMap f ≫ cochainComplexπ R k M P := by
+  have h := congrArg (fun φ ↦ (linearYonedaFunctor k M).map φ.op) (chainComplexπ_naturality R f)
+  simp only [op_comp, Functor.map_comp] at h
+  exact h
 
 end SSetPair
 
@@ -266,6 +299,40 @@ def singularCohomologyFunctor (n : ℕ) : TopPair.{w}ᵒᵖ ⥤ ModuleCat.{v} k 
   map f := TopPair.singularCohomologyMap f.unop n
   map_comp f g := singularCohomologyMap_comp g.unop f.unop n
 
+variable (P) {k} in
+/-- **Relative cohomology vanishes up to the degree where relative homology does**: for a
+projective coefficient object `R`, if `Hⱼ(X, A; R) = 0` for `j ≤ n`, then
+`Hⁿ(X, A; R, M) = 0` for every object `M`. The relative singular chains are projective, since they
+are a direct summand of the singular chains of `X`, so their dual `Hom(C(X, A; R), M)` is exact
+wherever they are (`ChainComplex.exactAt_linearYonedaObj_of_projective`). -/
+theorem isZero_singularCohomology_of_isZero_singularHomology [Projective R] (n : ℕ)
+    (h : ∀ j ≤ n, IsZero (P.singularHomology R j)) : IsZero (P.singularCohomology R k M n) := by
+  rw [← HomologicalComplex.exactAt_iff_isZero_homology]
+  exact ChainComplex.exactAt_linearYonedaObj_of_projective k _ M
+    (fun i _ ↦ SSetPair.projective_chainComplex_X R (toSSetPair.obj P) i)
+    (fun j hj ↦ (HomologicalComplex.exactAt_iff_isZero_homology _ _).2 (h j hj)) le_rfl
+
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
+subspace `A'` induces the zero map on relative singular cohomology. -/
+lemma singularCohomologyMap_eq_zero_of_fac {P P' : TopPair.{w}} (f : P ⟶ P')
+    (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f) (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n = 0 := by
+  have hzero : singularCochainComplexMap (R := R) (k := k) (M := M) f = 0 := by
+    rw [singularCochainComplexMap, singularChainComplexMap_eq_zero_of_fac f R g hg, op_zero,
+      Functor.map_zero]
+    rfl
+  rw [TopPair.singularCohomologyMap, hzero, HomologicalComplex.homologyMap_zero]
+
+variable (P) in
+/-- **A pair whose subspace is everything has no relative cohomology.** If the embedding of the
+subspace of `P` is surjective, the relative singular cohomology of `P` vanishes in every degree. -/
+lemma isZero_singularCohomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :
+    IsZero (P.singularCohomology R k M n) := by
+  -- The identity of `P` factors through the subspace, so it induces zero.
+  rw [IsZero.iff_id_eq_zero, ← singularCohomologyMap_id]
+  exact singularCohomologyMap_eq_zero_of_fac R k M (𝟙 P)
+    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x) n
+
 section LongExactSequence
 
 variable (P)
@@ -326,16 +393,25 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.snd.singularCohomology R k M n ⟶ P.singularCohomology R k M m :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyπ_comp_singularCohomologyMap (n : ℕ) :
     P.singularCohomologyπ R k M n ≫ TopCat.singularCohomologyMap P.map n = 0 := by
   rw [← HomologicalComplex.homologyMap_comp, (P.singularCochainComplexShortComplex R k M).zero,
     HomologicalComplex.homologyMap_zero]
 
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma singularCohomologyMap_comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     TopCat.singularCohomologyMap P.map n ≫ P.singularCohomologyδ R k M n m h = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa)
+
+@[reassoc, elementwise]
+lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
+    P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
+  (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
+
+-- Only the element-wise form is `simp`: the parent is already proved by simp through Mathlib's
+-- `ShortComplex.ShortExact.δ_comp`, so `elementwise (attr := simp)` would fail simpNF.
+attribute [simp] singularCohomologyδ_comp_singularCohomologyπ_apply
 
 /-- Exactness at relative cohomology: `Hⁿ(A) ⟶ Hᵐ(X, A) ⟶ Hᵐ(X)` is exact for `n + 1 = m`. -/
 lemma singularCohomology_exact_relative (n m : ℕ) (h : n + 1 = m := by lia) :
@@ -385,12 +461,9 @@ def singularCochainComplexShortComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
   τ₂ := TopCat.singularCochainComplexMap (Hom.fst f)
   τ₃ := TopCat.singularCochainComplexMap (Hom.snd f)
   comm₁₂ := by
-    have h := congrArg (fun φ ↦ (TauCeti.ChainComplex.linearYonedaFunctor k M).map φ.op)
-      (((SSetPair.chainComplexFunctorπ C).app R).naturality (toSSetPair.map f))
-    simp only [op_comp, Functor.map_comp] at h
     rw [singularCochainComplexMap_eq, singularCochainComplexMap_fst_eq,
       singularCochainComplexShortComplex_f_eq]
-    exact h.symm
+    exact (SSetPair.cochainComplexπ_naturality _ k M (toSSetPair.map f)).symm
   comm₂₃ := by
     rw [← TopCat.singularCochainComplexMap_comp, ← TopCat.singularCochainComplexMap_comp, Hom.w]
 
@@ -409,6 +482,24 @@ lemma singularCochainComplexShortComplexMap_τ₃ {P P' : TopPair.{w}} (f : P �
     (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₃ =
       TopCat.singularCochainComplexMap (Hom.snd f) := (rfl)
 
+/-- On cohomology, the ambient component of the morphism of cochain sequences induced by a map of
+pairs `f` is the singular cohomology map of `Hom.fst f`. -/
+lemma homologyMap_singularCochainComplexShortComplexMap_τ₂ {P P' : TopPair.{w}} (f : P ⟶ P')
+    (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₂ n =
+      TopCat.singularCohomologyMap (Hom.fst f) n := by
+  rw [singularCochainComplexShortComplexMap_τ₂]
+
+/-- On cohomology, the subspace component of the morphism of cochain sequences induced by a map of
+pairs `f` is the singular cohomology map of `Hom.snd f`. -/
+lemma homologyMap_singularCochainComplexShortComplexMap_τ₃ {P P' : TopPair.{w}} (f : P ⟶ P')
+    (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₃ n =
+      TopCat.singularCohomologyMap (Hom.snd f) n := by
+  rw [singularCochainComplexShortComplexMap_τ₃]
+
 /-- The map from relative to absolute cohomology is natural in the pair. -/
 @[reassoc]
 lemma singularCohomologyπ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
@@ -418,6 +509,20 @@ lemma singularCohomologyπ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n : �
     (congrArg (HomologicalComplex.homologyMap · n)
       (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).comm₁₂).symm.trans
         (HomologicalComplex.homologyMap_comp _ _ n)
+
+/-- The image in absolute cohomology of a class pulled back along the map of pairs induced by a
+continuous map `g : X ⟶ Y` carrying `B` into `A` is the pull-back along `g` of its image. -/
+lemma singularCohomologyπ_singularCohomologyMap_ofSubsetMap {X Y : TopCat.{w}} {A : Set Y}
+    {B : Set X} (g : X ⟶ Y) (hg : Set.MapsTo g B A) (n : ℕ)
+    (x : (ofSubset A).singularCohomology R k M n) :
+    (ofSubset B).singularCohomologyπ R k M n
+        (TopPair.singularCohomologyMap (ofSubsetMap g hg) n x) =
+      TopCat.singularCohomologyMap g n ((ofSubset A).singularCohomologyπ R k M n x) := by
+  have h := ConcreteCategory.congr_hom (singularCohomologyπ_naturality (R := R) (k := k)
+    (M := M) (ofSubsetMap g hg) n) x
+  rw [ofSubsetMap_fst] at h
+  simp only [ConcreteCategory.comp_apply] at h
+  exact h.symm
 
 /-- The connecting morphism of the long exact sequence of a topological pair is natural: for a
 map of pairs `f : (X, A) ⟶ (Y, B)`, following `Hⁿ(B) ⟶ Hᵐ(Y, B)` by the map induced by `f` on
@@ -463,3 +568,29 @@ lemma singularCohomologyπ_ofSubset_univ (X : TopCat.{w}) (n : ℕ) :
 end LongExactSequence
 
 end TopPair
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C) {X : TopCat.{w}}
+
+/-- The restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for `S ⊆ T`, induced by the identity of `X`. -/
+abbrev singularCohomologyComplRestrict {S T : Set X} (h : S ⊆ T) (n : ℕ) :
+    (TopPair.ofSubset Sᶜ).singularCohomology R k M n ⟶
+      (TopPair.ofSubset Tᶜ).singularCohomology R k M n :=
+  TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl h)) n
+
+variable {R k M}
+
+/-- Restricting from the complement of `S` to the complement of `T`, then to the complement of
+`Q`, is restricting from the complement of `S` to the complement of `Q`. -/
+@[simp]
+lemma singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict {S T Q : Set X}
+    (h : S ⊆ T) (h' : T ⊆ Q) (n : ℕ) (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    singularCohomologyComplRestrict R k M h' n (singularCohomologyComplRestrict R k M h n a) =
+      singularCohomologyComplRestrict R k M (h.trans h') n a := by
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_id_compl (h.trans h'))
+      (Category.id_comp _)]
+
+end TopCat

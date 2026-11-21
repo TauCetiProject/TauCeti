@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.BraidEquivalence
 public import TauCeti.GroupTheory.Coxeter.Dihedral
-public import TauCeti.GroupTheory.Coxeter.Geometric
+public import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 
 /-!
 # Matsumoto's theorem
@@ -50,13 +50,13 @@ open CoxeterSystem
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
 
 -- This bridge is specific to the different-first-letters step of Matsumoto's induction.
-private theorem exists_braidEquivalent_cons_of_isLeftDescent_pair {i j : B} (hne : i ≠ j)
-    {w : W} (hi : cs.IsLeftDescent w i) (hj : cs.IsLeftDescent w j) :
+private theorem exists_braidEquivalent_cons_of_isLeftDescent_pair {i j : B} {w : W}
+    (hi : cs.IsLeftDescent w i) (hj : cs.IsLeftDescent w j) :
     ∃ u v : List B, cs.IsReduced (i :: u) ∧ cs.IsReduced (j :: v) ∧
       cs.wordProd (i :: u) = w ∧ cs.wordProd (j :: v) = w ∧
       BraidEquivalent M (i :: u) (j :: v) := by
   obtain ⟨x, hm, hx, hx', hlen⟩ :=
-    cs.exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair hne hi hj
+    cs.exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair hi hj
   rw [cs.orderOf_simple_mul_simple] at hm hx hx' hlen
   obtain ⟨σ, hσ, hprod⟩ := cs.exists_isReduced x
   have hA : cs.wordProd (braidWord M i j ++ σ) = w := by
@@ -117,7 +117,7 @@ theorem braidEquivalent_of_isReduced_wordProd_eq {ω ω' : List B}
       by_cases hij : i = j
       · subst j; exact sameHead i u v hlen hred hred' hp
       obtain ⟨u', v', hu', hv', hpu', hpv', hbraid⟩ :=
-        exists_braidEquivalent_cons_of_isLeftDescent_pair cs hij hred.isLeftDescent_wordProd_cons
+        exists_braidEquivalent_cons_of_isLeftDescent_pair cs hred.isLeftDescent_wordProd_cons
           (hp.symm ▸ hred'.isLeftDescent_wordProd_cons)
       have h₁ := sameHead i u u' hlen hred hu' hpu'.symm
       have h₂ := sameHead j v v' hlen' hred' hv' (hp.symm.trans hpv'.symm)
@@ -161,9 +161,6 @@ theorem _root_.CoxeterSystem.isReduced_alternatingWord {i i' : B} {m : ℕ}
     rcases m with _ | k
     · rw [CoxeterSystem.IsLeftDescent, hlen] at hd
       omega
-    have hne : i ≠ i' := by
-      rintro rfl
-      rcases hm with hm | hm <;> simp at hm
     -- The first letter of the word is also a left descent, because the word is reduced.
     have hhead := alternatingWord_succ' i i' k
     have hd' := (hhead ▸ hred).isLeftDescent_wordProd_cons
@@ -177,11 +174,11 @@ theorem _root_.CoxeterSystem.isReduced_alternatingWord {i i' : B} {m : ℕ}
     by_cases hk : Even k
     · have hk' : ¬Even (k + 1) := by simpa [Nat.even_add_one] using hk
       simp only [hk, hk', ↓reduceIte] at hd hd'
-      have := cs.length_eq_orderOf_of_isLeftDescent_pair hne hmem hd hd'
+      have := cs.length_eq_orderOf_of_isLeftDescent_pair hmem hd hd'
       omega
     · have hk' : Even (k + 1) := by simpa [Nat.even_add_one] using hk
       simp only [hk, hk', ↓reduceIte] at hd hd'
-      have := cs.length_eq_orderOf_of_isLeftDescent_pair hne hmem hd' hd
+      have := cs.length_eq_orderOf_of_isLeftDescent_pair hmem hd' hd
       omega
 
 /-- **Braid words are reduced**: the two sides of the braid relation at `(i, i')` are reduced

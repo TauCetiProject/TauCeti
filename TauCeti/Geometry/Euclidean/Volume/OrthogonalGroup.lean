@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Geometry.Euclidean.Volume.Sphere
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.BlockSucc
-public import TauCeti.LinearAlgebra.OrthogonalGroup
+public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Algebra.UnitaryGroup
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
@@ -95,7 +95,7 @@ goes to its last column, a point of the unit sphere of `ℝⁿ⁺¹`. Its fibres
 the stabilizer `O(n)` of `eₙ`, embedded by `TauCeti.orthogonalBlockSucc`. -/
 def orthogonalGroupLastColumn (n : ℕ) (g : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
-  ⟨orthogonalGroupToLinearIsometryEquiv g (EuclideanSpace.single (Fin.last n) 1), by
+  ⟨Matrix.UnitaryGroup.toLinearIsometryEquiv g (EuclideanSpace.single (Fin.last n) 1), by
     rw [mem_sphere_zero_iff_norm, LinearIsometryEquiv.norm_map]
     simp⟩
 
@@ -103,36 +103,36 @@ def orthogonalGroupLastColumn (n : ℕ) (g : Matrix.orthogonalGroup (Fin (n + 1)
 @[simp]
 theorem coe_orthogonalGroupLastColumn (n : ℕ) (g : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
     (orthogonalGroupLastColumn n g : EuclideanSpace ℝ (Fin (n + 1))) =
-      orthogonalGroupToLinearIsometryEquiv g (EuclideanSpace.single (Fin.last n) 1) :=
+      Matrix.UnitaryGroup.toLinearIsometryEquiv g (EuclideanSpace.single (Fin.last n) 1) :=
   (rfl)
 
 /-- The orbit map `O(n + 1) → Sⁿ` is continuous. -/
 theorem continuous_orthogonalGroupLastColumn (n : ℕ) :
     Continuous (orthogonalGroupLastColumn n) := by
   refine Continuous.subtype_mk ?_ _
-  simp only [orthogonalGroupToLinearIsometryEquiv_apply]
-  exact (PiLp.continuous_toLp 2 _).comp (continuous_subtype_val.matrix_mulVec continuous_const)
+  simp only [Matrix.UnitaryGroup.toLinearIsometryEquiv_apply]
+  exact (PiLp.continuous_toLp 2 _).comp (continuous_subtypeVal.matrix_mulVec continuous_const)
 
 variable {n : ℕ}
 
 /-- The rotation of the unit sphere by an orthogonal matrix. -/
 private def rotateSphere (g : Matrix.orthogonalGroup (Fin n) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
-  Subtype.map (orthogonalGroupToLinearIsometryEquiv g) fun x hx ↦ by
+  Subtype.map (Matrix.UnitaryGroup.toLinearIsometryEquiv g) fun x hx ↦ by
     rwa [mem_sphere_zero_iff_norm, LinearIsometryEquiv.norm_map, ← mem_sphere_zero_iff_norm]
 
 private theorem coe_rotateSphere (g : Matrix.orthogonalGroup (Fin n) ℝ)
     (u : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :
-    (rotateSphere g u : EuclideanSpace ℝ (Fin n)) = orthogonalGroupToLinearIsometryEquiv g u :=
+    (rotateSphere g u : EuclideanSpace ℝ (Fin n)) = Matrix.UnitaryGroup.toLinearIsometryEquiv g u :=
   (rfl)
 
 /-- Rotations preserve the surface measure of the sphere. -/
 private theorem measurePreserving_rotateSphere (g : Matrix.orthogonalGroup (Fin n) ℝ) :
     MeasurePreserving (rotateSphere g) (volume : Measure (EuclideanSpace ℝ (Fin n))).toSphere
       (volume : Measure (EuclideanSpace ℝ (Fin n))).toSphere := by
-  refine ⟨(orthogonalGroupToLinearIsometryEquiv g).continuous.measurable.subtype_map _, ?_⟩
+  refine ⟨(Matrix.UnitaryGroup.toLinearIsometryEquiv g).continuous.measurable.subtype_map _, ?_⟩
   rw [rotateSphere, LinearIsometryEquiv.map_toSphere,
-    (orthogonalGroupToLinearIsometryEquiv g).measurePreserving.map_eq]
+    (Matrix.UnitaryGroup.toLinearIsometryEquiv g).measurePreserving.map_eq]
 
 /-- The reflection of `ℝⁿ⁺¹` exchanging the last basis vector with a point `u` of the sphere. -/
 private def sphereReflection (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
@@ -151,9 +151,9 @@ private def sphereSection (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) 
       (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis (sphereReflection u).toLinearEquiv,
     (sphereReflection u).toMatrix_mem_unitaryGroup _ _⟩
 
-private theorem orthogonalGroupToLinearIsometryEquiv_sphereSection
+private theorem toLinearIsometryEquiv_sphereSection
     (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    orthogonalGroupToLinearIsometryEquiv (sphereSection u) = sphereReflection u := by
+    Matrix.UnitaryGroup.toLinearIsometryEquiv (sphereSection u) = sphereReflection u := by
   ext x i
   have h := congrFun (LinearMap.toMatrix_mulVec_repr
     (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis
@@ -167,9 +167,9 @@ private theorem orthogonalGroupToLinearIsometryEquiv_sphereSection
 
 private theorem sphereSection_mul_self (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     sphereSection u * sphereSection u = 1 := by
-  apply orthogonalGroupToLinearIsometryEquiv_injective
+  apply Matrix.UnitaryGroup.toLinearIsometryEquiv_injective
   ext x : 1
-  simp [orthogonalGroupToLinearIsometryEquiv_sphereSection, sphereReflection]
+  simp [toLinearIsometryEquiv_sphereSection, sphereReflection]
 
 private theorem measurable_sphereSection :
     Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
@@ -177,15 +177,12 @@ private theorem measurable_sphereSection :
   refine Measurable.of_eval_matrix _ fun i j ↦ ?_
   have hw : Continuous fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
       EuclideanSpace.single (Fin.last n) (1 : ℝ) - u :=
-    continuous_const.sub continuous_subtype_val
+    continuous_const.sub continuous_subtypeVal
   have hc : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
       inner ℝ (EuclideanSpace.single (Fin.last n) (1 : ℝ) - u)
         (EuclideanSpace.single j (1 : ℝ)) /
         ‖EuclideanSpace.single (Fin.last n) (1 : ℝ) - u‖ ^ 2 :=
     (hw.inner continuous_const).measurable.div (hw.norm.pow 2).measurable
-  have hwi : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
-      (EuclideanSpace.single (Fin.last n) (1 : ℝ) - u).ofLp i :=
-    ((PiLp.continuous_apply 2 _ i).comp hw).measurable
   simp only [sphereSection, LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr,
     EuclideanSpace.basisFun_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
@@ -203,7 +200,7 @@ private def decompose
 private theorem measurable_of_measurable_coe {α : Type*} [MeasurableSpace α] {m : ℕ}
     {f : α → Matrix.orthogonalGroup (Fin m) ℝ}
     (hf : Measurable fun x ↦ (f x : Matrix (Fin m) (Fin m) ℝ)) : Measurable f :=
-  hf.subtype_mk (h := fun x ↦ (f x).2)
+  hf.subtype_mk (h := fun x ↦ (f x).property)
 
 private theorem coe_decompose
     (p : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 × Matrix.orthogonalGroup (Fin n) ℝ) :
@@ -215,27 +212,27 @@ private theorem measurable_decompose : Measurable (decompose (n := n)) := by
   refine measurable_of_measurable_coe ?_
   simp only [coe_decompose]
   exact (measurable_sphereSection.comp measurable_fst).mul
-    (measurable_matrix_blockSucc.comp (measurable_subtype_coe.comp measurable_snd))
+    (measurable_matrix_blockSucc.comp (measurable_subtypeVal.comp measurable_snd))
 
 /-- An orthogonal matrix fixes the last basis vector of Euclidean space exactly when it fixes the
 last coordinate vector. -/
-private theorem orthogonalGroupToLinearIsometryEquiv_single_last_eq_iff
+private theorem toLinearIsometryEquiv_single_last_eq_iff
     (g : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
-    orthogonalGroupToLinearIsometryEquiv g (EuclideanSpace.single (Fin.last n) 1) =
+    Matrix.UnitaryGroup.toLinearIsometryEquiv g (EuclideanSpace.single (Fin.last n) 1) =
         EuclideanSpace.single (Fin.last n) 1 ↔
       (g : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ).mulVec (Pi.single (Fin.last n) 1) =
         Pi.single (Fin.last n) 1 := by
-  rw [orthogonalGroupToLinearIsometryEquiv_apply, ← (WithLp.ofLp_injective 2).eq_iff]
+  rw [Matrix.UnitaryGroup.toLinearIsometryEquiv_apply, ← (WithLp.ofLp_injective 2).eq_iff]
   simp
 
 private theorem orthogonalGroupLastColumn_decompose
     (p : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 × Matrix.orthogonalGroup (Fin n) ℝ) :
     orthogonalGroupLastColumn n (decompose p) = p.1 := by
-  have hfix := (orthogonalGroupToLinearIsometryEquiv_single_last_eq_iff _).2
+  have hfix := (toLinearIsometryEquiv_single_last_eq_iff _).2
     ((exists_orthogonalBlockSucc_eq_iff_mulVec_single ℝ n _).1 ⟨p.2, rfl⟩)
   apply Subtype.ext
-  rw [coe_orthogonalGroupLastColumn, decompose, orthogonalGroupToLinearIsometryEquiv_mul_apply,
-    hfix, orthogonalGroupToLinearIsometryEquiv_sphereSection]
+  rw [coe_orthogonalGroupLastColumn, decompose, Matrix.UnitaryGroup.toLinearIsometryEquiv_mul_apply,
+    hfix, toLinearIsometryEquiv_sphereSection]
   exact sphereReflection_last p.1
 
 /-- The orbit map `O(n + 1) → Sⁿ` is surjective: `O(n + 1)` acts transitively on the unit
@@ -252,9 +249,9 @@ theorem orthogonalGroupLastColumn_eq_iff {g g' : Matrix.orthogonalGroup (Fin (n 
       ∃ h, g * orthogonalBlockSucc ℝ n h = g' := by
   simp_rw [← eq_inv_mul_iff_mul_eq]
   rw [exists_orthogonalBlockSucc_eq_iff_mulVec_single,
-    ← orthogonalGroupToLinearIsometryEquiv_single_last_eq_iff]
-  simp only [orthogonalGroupToLinearIsometryEquiv_mul_apply,
-    orthogonalGroupToLinearIsometryEquiv_inv_apply, LinearIsometryEquiv.symm_apply_eq,
+    ← toLinearIsometryEquiv_single_last_eq_iff]
+  simp only [Matrix.UnitaryGroup.toLinearIsometryEquiv_mul_apply,
+    Matrix.UnitaryGroup.toLinearIsometryEquiv_inv_apply, LinearIsometryEquiv.symm_apply_eq,
     Subtype.ext_iff, coe_orthogonalGroupLastColumn]
   exact eq_comm
 
@@ -269,15 +266,15 @@ private theorem exists_orthogonalBlockSucc_eq_fibreShift
     (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     ∃ h, orthogonalBlockSucc ℝ n h = fibreShift g u := by
   refine (exists_orthogonalBlockSucc_eq_iff_mulVec_single ℝ n _).2 ?_
-  rw [← orthogonalGroupToLinearIsometryEquiv_single_last_eq_iff]
+  rw [← toLinearIsometryEquiv_single_last_eq_iff]
   -- `s(u)` sends `eₙ` to `u`, `g` sends `u` to `g u`, and the involution `s(g u)` sends `g u` back
   -- to `eₙ`.
   have hrot : sphereReflection (rotateSphere g u) (rotateSphere g u) =
       EuclideanSpace.single (Fin.last n) 1 := by
     rw [← sphereReflection_last (rotateSphere g u), sphereReflection,
       Submodule.reflection_reflection]
-  simpa only [fibreShift, orthogonalGroupToLinearIsometryEquiv_mul_apply,
-    orthogonalGroupToLinearIsometryEquiv_sphereSection, sphereReflection_last,
+  simpa only [fibreShift, Matrix.UnitaryGroup.toLinearIsometryEquiv_mul_apply,
+    toLinearIsometryEquiv_sphereSection, sphereReflection_last,
     ← coe_rotateSphere]
     using hrot
 
@@ -288,7 +285,7 @@ private def fibreCorner (g : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
   ⟨(fibreShift g u : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ).submatrix Fin.castSucc Fin.castSucc, by
     obtain ⟨h, hh⟩ := exists_orthogonalBlockSucc_eq_fibreShift g u
     rw [← hh, coe_orthogonalBlockSucc, Matrix.submatrix_blockSucc_castSucc]
-    exact h.2⟩
+    exact h.property⟩
 
 private theorem coe_fibreCorner (g : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
     (u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
@@ -320,7 +317,7 @@ private theorem measurable_fibreCorner_mul (g : Matrix.orthogonalGroup (Fin (n +
     exact Measurable.of_eval_matrix _ fun i j ↦ hshift.eval_matrix
   refine measurable_of_measurable_coe ?_
   simp only [Submonoid.coe_mul]
-  exact (hcorner.comp measurable_fst).mul (measurable_subtype_coe.comp measurable_snd)
+  exact (hcorner.comp measurable_fst).mul (measurable_subtypeVal.comp measurable_snd)
 
 /-- Left translation by `g` acts on the trivialization as the skew product
 `(u, h) ↦ (g u, fibreCorner g u * h)`. -/
@@ -478,13 +475,14 @@ theorem orthogonalGroupVolume_eq_two_mul_specialOrthogonalGroupVolume {n : ℕ} 
   set S : Set (Matrix.orthogonalGroup (Fin (m + 1)) ℝ) :=
     {g | (g : Matrix (Fin (m + 1)) (Fin (m + 1)) ℝ).det = 1}
   have hS : MeasurableSet S := measurableSet_eq_fun
-    ((Continuous.matrix_det continuous_subtype_val).measurable) measurable_const
+    ((Continuous.matrix_det continuous_subtypeVal).measurable) measurable_const
   -- Left translation by the reflection carries `SO(m + 1)` onto its complement.
   have hpre : (fun g ↦ orthogonalDiagonalReflection ℝ 0 * g) ⁻¹' S = Sᶜ := by
     ext g
     simp only [S, mem_preimage, mem_compl_iff, Set.mem_ofPred_eq, Submonoid.coe_mul,
       Matrix.det_mul, det_orthogonalDiagonalReflection, neg_one_mul, neg_eq_iff_eq_neg]
-    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.2 with h | h <;> rw [h] <;> norm_num
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.property with h | h <;> rw
+        [h] <;> norm_num
   have hcompl : orthogonalGroupMeasure (m + 1) Sᶜ = orthogonalGroupMeasure (m + 1) S := by
     rw [← hpre, measure_preimage_mul]
   have hSO : {g : Matrix.orthogonalGroup (Fin (m + 1)) ℝ |
@@ -520,8 +518,6 @@ theorem two_mul_pi_rpow_mul_prod_Gamma_eq_two_pow_div_orthogonalGroupVolume (n :
   induction n with
   | zero => norm_num
   | succ n ih =>
-    have hΓ : 0 < Real.Gamma (((n + 1 : ℕ) : ℝ) / 2) := Real.Gamma_pos_of_pos (by positivity)
-    have hπ : 0 < Real.pi ^ (((n + 1 : ℕ) : ℝ) / 2) := by positivity
     rw [Finset.prod_Icc_succ_top (by omega), Finset.prod_Icc_succ_top (by omega)]
     have hexp : -(((n + 1 : ℕ) : ℝ) * ((n + 1 : ℕ) + 1) / 4) =
         -((n : ℝ) * (n + 1) / 4) - ((n + 1 : ℕ) : ℝ) / 2 := by

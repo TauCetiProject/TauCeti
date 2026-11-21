@@ -9,9 +9,11 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Sums and products over pairs
@@ -35,12 +37,22 @@ sign of the permutation.
 
 * `TauCeti.sum_fin_product_eq_sum_antidiagonal`: a sum over the pairs of `Fin n × Fin n` with
   coordinate sum `d < n`, as a sum over the antidiagonal `antidiagonal d` in `ℕ × ℕ`.
+* `TauCeti.sum_symmetric_pairs`: a symmetric double sum is its diagonal plus twice the sum
+  over strictly increasing pairs.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi`: an off-diagonal pairing against an antisymmetric
+  kernel, folded onto the strictly increasing pairs `i < j`.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
   pairs separates into the strictly increasing pairs and the diagonal.
+* `Finset.prod_prod_Iio_eq_prod_prod_Ioi`: transposes a double product from strictly decreasing to
+  strictly increasing index pairs (`Finset.sum_sum_Iio_eq_sum_sum_Ioi` additively).
+* `Finset.prod_erase_univ_eq_prod_Ioi_mul_prod_Iio`: splits the product over `univ.erase i` into
+  the indices above `i` and below `i` (`Finset.sum_erase_univ_eq_sum_Ioi_add_sum_Iio` additively).
+* `Finset.sum_mul_sum_Ioi_sub_sum_Iio`: folds a weighted antisymmetric difference of upper and
+  lower sums onto strictly increasing index pairs.
 * `TauCeti.prod_prod_Ioi_eq_of_two`: separates the first pair and its cross terms from a product
   over the increasing pairs of a finite ordinal.
 * `TauCeti.prod_prod_Ioi_three` and `TauCeti.prod_prod_Ioi_four`: the products over the increasing
@@ -68,11 +80,43 @@ theorem prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag
   simp_rw [← prod_Ioi_mul_eq_prod_Ici]
   exact prod_mul_distrib
 
+/-- Transposing a double product from strictly decreasing to strictly increasing index pairs. -/
+@[to_additive /-- Transposing a double sum from strictly decreasing to strictly increasing index
+pairs. -/]
+theorem prod_prod_Iio_eq_prod_prod_Ioi {ι M : Type*} [Fintype ι] [Preorder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (f : ι → ι → M) :
+    (∏ i, ∏ j ∈ Iio i, f i j) = ∏ i, ∏ j ∈ Ioi i, f j i := by
+  rw [prod_sigma', prod_sigma']
+  exact prod_nbij' (fun p ↦ ⟨p.2, p.1⟩) (fun p ↦ ⟨p.2, p.1⟩)
+    (by simp) (by simp) (by simp) (by simp) (by simp)
+
+/-- Splitting the product over all indices other than `i` into the indices above `i` and below
+`i`. -/
+@[to_additive /-- Splitting the sum over all indices other than `i` into the indices above `i` and
+below `i`. -/]
+theorem prod_erase_univ_eq_prod_Ioi_mul_prod_Iio {ι M : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [CommMonoid M] (i : ι) (f : ι → M) :
+    (∏ j ∈ univ.erase i, f j) = (∏ j ∈ Ioi i, f j) * ∏ j ∈ Iio i, f j := by
+  rw [← compl_singleton, ← Ioi_disjUnion_Iio, prod_disjUnion]
+
+/-- Pairing a weight `w` against the antisymmetric difference `(∑_{j > i} g i j) - ∑_{j < i} g j i`
+folds onto strictly increasing index pairs as `∑_{i < j} (w i - w j) * g i j`. -/
+theorem sum_mul_sum_Ioi_sub_sum_Iio {ι R : Type*} [Fintype ι] [Preorder ι]
+    [LocallyFiniteOrderBot ι] [LocallyFiniteOrderTop ι] [NonUnitalNonAssocRing R]
+    (w : ι → R) (g : ι → ι → R) :
+    (∑ i, w i * ((∑ j ∈ Ioi i, g i j) - ∑ j ∈ Iio i, g j i)) =
+      ∑ i, ∑ j ∈ Ioi i, (w i - w j) * g i j := by
+  simp_rw [mul_sub, mul_sum, sum_sub_distrib,
+    sum_sum_Iio_eq_sum_sum_Ioi (fun i j ↦ w i * g j i), ← sum_sub_distrib, sub_mul]
+
 end Finset
 
 namespace TauCeti
 
 open Finset
+
+/-- Strictly increasing pairs of indices in `Fin n`. -/
+abbrev FinStrictUpper (n : ℕ) := {p : Fin n × Fin n // p.1 < p.2}
 
 /-- A sum over bounded pairs of indices of total degree less than the bound equals the
 antidiagonal sum, provided the summands agree under the natural-index coercions. -/
@@ -275,6 +319,33 @@ theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l]
   rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
     ← hnot, hswap, Finset.sum_add_distrib]
 
+/-- A symmetric double sum is its diagonal plus twice the sum over increasing pairs. -/
+theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCommMonoid G]
+    (g : α → α → G) (hs : ∀ i j, g i j = g j i) :
+    (∑ i, ∑ j, g i j) =
+      (∑ i, g i i) + 2 • ∑ p : {p : α × α // p.1 < p.2}, g p.val.1 p.val.2 := by
+  classical
+  let F : α × α → G := fun p ↦ if p.1 = p.2 then 0 else g p.1 p.2
+  have hfold := sum_univ_prod_eq_sum_lt_add_swap F (by intro a; simp [F])
+  have hsplit : (∑ i, ∑ j, g i j) =
+      (∑ i, g i i) + ∑ p : α × α, F p := by
+    rw [Fintype.sum_prod_type, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hdiag : g i i = ∑ j, if i = j then g i j else 0 := by simp
+    rw [hdiag, ← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro j _
+    by_cases h : i = j <;> simp [F, h]
+  have hupper : (∑ p ∈ {p : α × α | p.1 < p.2}, g p.1 p.2) =
+      ∑ p : {p : α × α // p.1 < p.2}, g p.val.1 p.val.2 :=
+    Finset.sum_subtype _ (by simp) _
+  rw [hsplit, hfold, ← hupper, two_nsmul, ← Finset.sum_add_distrib]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro p hp
+  have hp' : p.1 < p.2 := by simpa using hp
+  simp [F, hp'.ne, hp'.ne', hs]
+
 /-- **A product over the increasing pairs of a symmetric function is permutation invariant:**
 for symmetric `f`, `∏_{i<j} f (σ i) (σ j) = ∏_{i<j} f i j` for every permutation `σ`. -/
 @[to_additive /-- **A sum over the increasing pairs of a symmetric function is permutation
@@ -301,5 +372,24 @@ theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
   · rcases le_total (σ a) (σ b) with hab | hab
     · simp [hab]
     · simp [hab, hf]
+
+/-- **An off-diagonal pairing against an antisymmetric kernel, folded onto increasing pairs.**
+Summing `u i * ∑ j ∈ univ.erase i, k i j` folds onto strictly increasing pairs `i < j` as
+`∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j`. Only off-diagonal antisymmetry (`i < j → k j i = -k i j`)
+is required, since the diagonal is excluded from `univ.erase i`. -/
+theorem sum_mul_sum_erase_eq_sum_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderTop ι] [NonUnitalNonAssocRing R]
+    (u : ι → R) (k : ι → ι → R) (hk : ∀ ⦃i j : ι⦄, i < j → k j i = -k i j) :
+    ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j := by
+  let : LocallyFiniteOrderBot ι :=
+    { finsetIio := fun a ↦ univ.filter (· < a)
+      finsetIic := fun a ↦ univ.filter (· ≤ a)
+      finset_mem_Iic := fun _ _ ↦ by simp
+      finset_mem_Iio := fun _ _ ↦ by simp }
+  have hpull : ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ {i}ᶜ, u i * k i j :=
+    sum_congr rfl fun i _ ↦ by rw [compl_singleton, mul_sum]
+  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * k i j)]
+  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
+  rw [hk (mem_Ioi.1 hj), mul_neg, ← sub_eq_add_neg, ← sub_mul]
 
 end TauCeti

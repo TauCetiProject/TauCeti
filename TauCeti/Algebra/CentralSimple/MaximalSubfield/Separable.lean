@@ -43,10 +43,13 @@ variable {K D : Type*} [Field K] [DivisionRing D] [Algebra K D]
   [Algebra.IsCentral K D] [FiniteDimensional K D]
 
 /-- In a central division algebra, a separable commutative subalgebra of maximal dimension
-is its own centralizer, hence a maximal subfield. -/
+is its own centralizer, hence a maximal subfield.
+
+Maximality enters as the hypothesis `hmax`: no separable commutative subalgebra of `D` containing
+`L` has larger dimension over `K`. -/
 theorem centralizer_eq_self_of_isSeparable_forall_finrank_le (L : Subalgebra K D)
     [IsMulCommutative L] [Algebra.IsSeparable K L]
-    (hmax : ∀ M : Subalgebra K D, IsMulCommutative M → Algebra.IsSeparable K M →
+    (hmax : ∀ M : Subalgebra K D, L ≤ M → IsMulCommutative M → Algebra.IsSeparable K M →
       Module.finrank K M ≤ Module.finrank K L) :
     centralizer K (L : Set D) = L := by
   let : Field L := (IsField.of_isDomain_of_finite K L).toField
@@ -87,7 +90,7 @@ theorem exists_subalgebra_isField_isSeparable_finrank_eq_deg :
   have hfield : IsField L := IsField.of_isDomain_of_finite K L
   refine ⟨L, hfield, hsep, ?_⟩
   have hdim := finrank_mul_finrank_centralizer_of_isField L hfield
-  rw [L.centralizer_eq_self_of_isSeparable_forall_finrank_le hmax] at hdim
+  rw [L.centralizer_eq_self_of_isSeparable_forall_finrank_le fun M _ ↦ hmax M] at hdim
   have hsq : Module.finrank K L ^ 2 = deg K D ^ 2 := by rw [sq, hdim, deg_sq]
   exact Nat.pow_left_injective (by norm_num : 2 ≠ 0) hsq
 

@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Constructions
-public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Lifting
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
@@ -21,8 +19,9 @@ at `p e`, with the endpoint map `p' (e, γ) = γ.target`.
   `γ.target` lifts to `s ↦ (e, γ · δ|[0, s])`.  So `p'` is a Hurewicz fibration, whatever `p` is
   (`TauCeti.MooreReplacement.isHurewiczFibration_endpoint`).
 * The inclusion `E → E'`, `e ↦ (e, const)`, is a map over `B` and a homotopy equivalence, with
-  homotopy inverse the projection `(e, γ) ↦ e`: a path shrinks to its start
-  (`TauCeti.MooreReplacement.homotopyEquiv`).
+  homotopy inverse the projection `(e, γ) ↦ e`: shrinking each path to its start is a strong
+  deformation retraction of `E'` onto the image of the inclusion
+  (`TauCeti.MooreReplacement.shrinkHomotopy`, `TauCeti.MooreReplacement.homotopyEquiv`).
 * The fibre `F'` of `p'` over `b` carries the **strict** right action `(e, γ) · ω = (e, γ · ω)` of
   the Moore loops at `b`, continuous in both variables.  No choice of lifting function for `p` is
   involved.
@@ -39,6 +38,8 @@ act strictly on `F` by `f · ω = Φ (f, ω)(end)`, and transport is strictly eq
 * `TauCeti.MooreReplacement.endpointLiftingFunction p`: the transitive lifting function of `p'`.
 * `TauCeti.MooreReplacement.Fiber p b`: the fibre `F'` of `p'` over `b`, with its right action of
   `MooreLoopSpace B b`.
+* `TauCeti.MooreReplacement.Fiber.homeomorphEndpointFiber p b`: `F'` is the fibre of `p'` over
+  `b`.
 * `TauCeti.MooreReplacement.Fiber.map h hh`: the equivariant map of fibres induced by a map `h`
   over `B`.
 * `TauCeti.MooreLiftingFunction.transport`: transport `F' → F` along a lifting function.
@@ -201,6 +202,11 @@ theorem path_incl {p : C(E, B)} (e : E) : (incl p e).path = .refl (p e) := by
 theorem endpoint_incl {p : C(E, B)} (e : E) : endpoint p (incl p e) = p e := by
   simp
 
+/-- The inclusion `E → E'` is a map over `B`. -/
+@[simp]
+theorem endpoint_comp_incl (p : C(E, B)) : (endpoint p).comp (incl p) = p :=
+  ContinuousMap.ext endpoint_incl
+
 /-- The projection `E' → E`, `(e, γ) ↦ e`. -/
 def proj (p : C(E, B)) : C(MooreReplacement p, E) :=
   ⟨point, continuous_point⟩
@@ -215,8 +221,10 @@ theorem proj_comp_incl (p : C(E, B)) : (proj p).comp (incl p) = .id E := by
   simp
 
 /-- The homotopy from `incl ∘ proj` to the identity of `E'`, shrinking each path to its start:
-`(s, (e, γ)) ↦ (e, γ|[0, s · γ.length])`. -/
-def shrinkHomotopy (p : C(E, B)) : ContinuousMap.Homotopy ((incl p).comp (proj p)) (.id _) where
+`(s, (e, γ)) ↦ (e, γ|[0, s · γ.length])`.  It fixes the constant paths of length zero throughout,
+so it is a strong deformation retraction onto the image of `incl p`. -/
+def shrinkHomotopy (p : C(E, B)) :
+    ContinuousMap.HomotopyRel ((incl p).comp (proj p)) (.id _) (Set.range (incl p)) where
   toFun y := mk y.2.point (y.2.path.truncate (toNNReal y.1 * y.2.path.length))
     (y.2.source_truncate_path _)
   continuous_toFun := continuous_mk (continuous_point.comp continuous_snd)
@@ -225,6 +233,9 @@ def shrinkHomotopy (p : C(E, B)) : ContinuousMap.Homotopy ((incl p).comp (proj p
         (MoorePath.continuous_length.comp (continuous_path.comp continuous_snd)))) _
   map_zero_left x := ext (by simp) (by simp)
   map_one_left x := ext (by simp) (by simp)
+  prop' s := by
+    rintro _ ⟨e, rfl⟩
+    exact ext (by simp) (by simp)
 
 @[simp]
 theorem point_shrinkHomotopy (p : C(E, B)) (y : I × MooreReplacement p) :
@@ -241,7 +252,7 @@ def homotopyEquiv (p : C(E, B)) : ContinuousMap.HomotopyEquiv E (MooreReplacemen
   toFun := incl p
   invFun := proj p
   left_inv := by rw [proj_comp_incl]
-  right_inv := ⟨shrinkHomotopy p⟩
+  right_inv := ⟨(shrinkHomotopy p).toHomotopy⟩
 
 @[simp]
 theorem coe_homotopyEquiv (p : C(E, B)) : ⇑(homotopyEquiv p) = incl p :=
@@ -274,7 +285,7 @@ theorem val_eq_subtypeVal (x : Fiber p b) : x.val = Subtype.val x :=
 
 @[simp]
 theorem target_path_val (x : Fiber p b) : x.val.path.target = b :=
-  x.2
+  x.property
 
 @[ext]
 theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
@@ -282,7 +293,7 @@ theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
 
 @[fun_prop]
 theorem continuous_val : Continuous (val : Fiber p b → MooreReplacement p) :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 /-- The point `(e, γ)` of the fibre, for a pair whose path ends at `b`. -/
 def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
@@ -290,6 +301,22 @@ def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
 
 @[simp]
 theorem val_mk' (x : MooreReplacement p) (h : x.path.target = b) : (mk' x h).val = x :=
+  (rfl)
+
+/-- The fibre `F'` is the fibre of the endpoint map `p'` over `b`: a point of `F'` is sent to its
+underlying pair. -/
+def homeomorphEndpointFiber (p : C(E, B)) (b : B) : Fiber p b ≃ₜ {x // endpoint p x = b} :=
+  (Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
+    rw [endpoint_apply, Homeomorph.refl_apply, id_eq]
+
+@[simp]
+theorem coe_homeomorphEndpointFiber_apply (p : C(E, B)) (b : B) (x : Fiber p b) :
+    (homeomorphEndpointFiber p b x : MooreReplacement p) = x.val :=
+  (rfl)
+
+@[simp]
+theorem val_homeomorphEndpointFiber_symm_apply (p : C(E, B)) (b : B)
+    (x : {x // endpoint p x = b}) : ((homeomorphEndpointFiber p b).symm x).val = x :=
   (rfl)
 
 /-- The right action of a Moore loop `ω` at `b` on the fibre: `(e, γ) · ω = (e, γ · ω)`. -/
@@ -353,18 +380,19 @@ open MooreReplacement
 `f · ω = Φ (f, ω)(end)`.  It is a strict action when `Φ` is transitive. -/
 def fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
     (ω : MooreLoopSpace B b) : {e // p e = b} :=
-  ⟨(Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.2])).target, by rw [target_lift, ω.target_eq]⟩
+  ⟨(Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.property])).target, by rw [target_lift,
+      ω.target_eq]⟩
 
 @[simp]
 theorem coe_fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) (f : {e // p e = b})
     (ω : MooreLoopSpace B b) :
-    (Φ.fiberAct b f ω : E) = (Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.2])).target :=
+    (Φ.fiberAct b f ω : E) = (Φ.lift f ω.toMoorePath (by rw [ω.source_eq, f.property])).target :=
   (rfl)
 
 /-- The action through a lifting function is continuous in both variables. -/
 theorem continuous_fiberAct {p : C(E, B)} (Φ : MooreLiftingFunction p) (b : B) :
     Continuous fun q : {e // p e = b} × MooreLoopSpace B b ↦ Φ.fiberAct b q.1 q.2 :=
-  (MoorePath.continuous_target.comp (Φ.continuous_lift (continuous_subtype_val.comp continuous_fst)
+  (MoorePath.continuous_target.comp (Φ.continuous_lift (continuous_subtypeVal.comp continuous_fst)
     (MooreLoopSpace.continuous_toMoorePath.comp continuous_snd) _)).subtype_mk _
 
 /-- The unit loop acts trivially, for any lifting function: the lift of a path of length zero is
@@ -430,12 +458,12 @@ theorem IsTransitive.transport_act {p : C(E, B)} {Φ : MooreLiftingFunction p}
 
 private theorem target_path_incl_val {p : C(E, B)} {b : B} (f : {e // p e = b}) :
     (incl p f).path.target = b := by
-  simp [f.2]
+  simp [f.property]
 
 /-- The inclusion of the fibre of `p` into the fibre `F'`, `f ↦ (f, const)`. -/
 def fiberIncl (p : C(E, B)) (b : B) : C({e // p e = b}, Fiber p b) :=
   ⟨fun f ↦ Fiber.mk' (incl p f) (target_path_incl_val f),
-    ((incl p).continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ((incl p).continuous.comp continuous_subtypeVal).subtype_mk _⟩
 
 @[simp]
 theorem val_fiberIncl {p : C(E, B)} (b : B) (f : {e // p e = b}) :
@@ -567,6 +595,16 @@ theorem map_comp (h : C(E, E')) (h' : C(E', E'')) (hh : p'.comp h = p) (hh' : p'
     map (b := b) (h'.comp h) (by rw [← ContinuousMap.comp_assoc, hh', hh]) =
       (map h' hh').comp (map h hh) :=
   ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp))
+
+/-- Transport along the lifting function of the endpoint map, after the map of fibres induced by
+the inclusion `E → E'`, is the identity of the underlying pairs: `(e, γ) ↦ (e, const · γ) = (e, γ)`.
+So the fibre `F'` of `p` is identified with the fibre over `b` of its replacement `p'`. -/
+theorem coe_transport_map_incl (x : Fiber p b) :
+    ((endpointLiftingFunction p).transport b (map (incl p) (endpoint_comp_incl p) x) :
+      MooreReplacement p) = x.val := by
+  rw [MooreLiftingFunction.coe_transport, endpointLiftingFunction_lift, MoorePath.target_def]
+  refine MooreReplacement.ext (by simp) ?_
+  simp [MoorePath.truncate_length, MoorePath.refl_trans]
 
 end MooreReplacement.Fiber
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Sym.Family
 public import TauCeti.Topology.PiCurry
 public import TauCeti.Topology.Sym.Basic
+import TauCeti.Data.Fin.Sum
 
 /-!
 # The symmetric power is locally a product, along a family
@@ -23,19 +24,19 @@ Together these two statements are what charts the symmetric power of a surface. 
 distinct points `z₁, …, z_k` of multiplicities `n₁, …, n_k` has a neighbourhood in `Sym^n(Σ)`
 homeomorphic to `Sym^{n₁}(U₁) × ⋯ × Sym^{n_k}(U_k)` for disjoint coordinate discs `U_j ∋ z_j`, and
 each factor is an open subspace of affine space by
-`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`. These local products give `Sym^g(Σ)` its
+`Sym.isOpenEmbedding_coeffEquiv_comp_map`. These local products give `Sym^g(Σ)` its
 complex structure, after Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1); the charted structure itself is
 in `TauCeti/Geometry/Manifold/SymmetricPower.lean`.
 
-The open-embedding proof reduces to ordered tuples: `TauCeti.Sym.ofFn` is an open quotient map on
+The open-embedding proof reduces to ordered tuples: `Sym.ofFn` is an open quotient map on
 each member of the family, hence so is the product of those maps, and read on ordered tuples the
 concatenation is the regrouping of `n` entries along a bijection `(Σ i, Fin (m i)) ≃ Fin n`, which
 is a homeomorphism followed by the (open) inclusions of the members of the family.
 
 ## Main declarations
 
-* `TauCeti.Sym.isOpenEmbedding_sumSubtype`: for a pairwise disjoint family of open sets,
+* `Sym.isOpenEmbedding_sumSubtype`: for a pairwise disjoint family of open sets,
   concatenation identifies the product of the symmetric powers of the members with an open
   subspace of `Sym α n`.
 * `Finset.exists_mem_range_sumSubtype_of_t2`: in a Hausdorff space, one disjoint family of
@@ -46,8 +47,6 @@ is a homeomorphism followed by the (open) inclusions of the members of the famil
 public section
 
 open Topology
-
-namespace TauCeti
 
 namespace Sym
 
@@ -65,19 +64,19 @@ omit [Fintype ι] in
 private theorem continuous_regroup (e : (Σ i, Fin (m i)) ≃ Fin n) :
     Continuous (regroup U m e) :=
   continuous_pi fun _j =>
-    continuous_subtype_val.comp ((continuous_apply _).comp (continuous_apply _))
+    continuous_subtypeVal.comp ((continuous_apply _).comp (continuous_apply _))
 
 omit [Fintype ι] in
 private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m i)) ≃ Fin n) :
     IsOpenMap (regroup U m e) := by
   let R : (∀ i, Fin (m i) → U i) ≃ₜ (∀ j : Fin n, ↥(U (e.symm j).1)) :=
-    piSigmaHomeomorph (fun i _ => ↥(U i)) e
+    TauCeti.piSigmaHomeomorph (fun i _ => ↥(U i)) e
   have hfun : regroup U m e
       = (Pi.map fun j : Fin n => (Subtype.val : ↥(U (e.symm j).1) → α)) ∘ R := by
     funext f j
     simp [regroup, R]
   rw [hfun]
-  exact (IsOpenMap.piMap (fun j => (hU _).isOpenMap_subtype_val) (by simp)).comp R.isOpenMap
+  exact (IsOpenMap.piMap (fun j => (hU _).isOpenMap_subtypeVal) (by simp)).comp R.isOpenMap
 
 omit [Fintype ι] in
 private theorem isOpenQuotientMap_piMap_ofFn :
@@ -93,7 +92,7 @@ private theorem sumSubtype_comp_piMap_ofFn (hn : ∑ i, m i = n) (e : (Σ i, Fin
 /-- Concatenating unordered tuples of points of the members of a family is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (sumSubtype U m hn) := by
-  obtain ⟨e⟩ := nonempty_sigmaFinEquiv hn
+  obtain ⟨e⟩ := TauCeti.nonempty_sigmaFinEquiv hn
   rw [isOpenQuotientMap_piMap_ofFn.isQuotientMap.continuous_iff,
     sumSubtype_comp_piMap_ofFn hn e]
   exact continuous_ofFn.comp (continuous_regroup e)
@@ -102,14 +101,14 @@ theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (sumSubtype U m
 map. -/
 theorem isOpenMap_sumSubtype (hU : ∀ i, IsOpen (U i)) (hn : ∑ i, m i = n) :
     IsOpenMap (sumSubtype U m hn) := by
-  obtain ⟨e⟩ := nonempty_sigmaFinEquiv hn
+  obtain ⟨e⟩ := TauCeti.nonempty_sigmaFinEquiv hn
   rw [isOpenQuotientMap_piMap_ofFn.isOpenMap_iff, sumSubtype_comp_piMap_ofFn hn e]
   exact isOpenMap_ofFn.comp (isOpenMap_regroup hU e)
 
 /-- **The symmetric power is locally a product.** For a pairwise disjoint family of open sets,
 concatenation identifies the product of the symmetric powers of its members with an open subspace
 of `Sym α n`, namely the unordered tuples supported in the union of the family with exactly `m i`
-of their points in `U i` (`TauCeti.Sym.mem_range_sumSubtype`). -/
+of their points in `U i` (`Sym.mem_range_sumSubtype`). -/
 theorem isOpenEmbedding_sumSubtype (hU : ∀ i, IsOpen (U i))
     (h : Pairwise (Function.onFun Disjoint U)) (hn : ∑ i, m i = n) :
     IsOpenEmbedding (sumSubtype U m hn) :=
@@ -117,8 +116,6 @@ theorem isOpenEmbedding_sumSubtype (hU : ∀ i, IsOpen (U i))
     (isOpenMap_sumSubtype hU hn)
 
 end Sym
-
-end TauCeti
 
 /-! ### A common family for tuples supported in a finite set -/
 
@@ -136,31 +133,31 @@ theorem exists_mem_range_sumSubtype_of_t2 {α : Type*} [TopologicalSpace α] [T2
       ∀ {n : ℕ} (w : Sym α n), (∀ a ∈ w, a ∈ S) →
         ∃ hm : ∑ i : S, Multiset.count (i : α) (w : Multiset α) = n,
           w ∈ Set.range
-            (TauCeti.Sym.sumSubtype V (fun i => Multiset.count (i : α) (w : Multiset α)) hm) := by
+            (Sym.sumSubtype V (fun i => Multiset.count (i : α) (w : Multiset α)) hm) := by
   classical
   obtain ⟨V₀, hV₀, hdisj⟩ := (S : Set α).toFinite.t2_separation (X := α)
   let V : S → Set α := fun i => V₀ (i : α) ∩ W (i : α)
   have hVdisj : Pairwise (Function.onFun Disjoint V) := fun i j hij =>
-    (hdisj i.2 j.2 (Subtype.coe_ne_coe.2 hij)).mono
+    (hdisj i.property j.property (Subtype.coe_ne_coe.2 hij)).mono
       Set.inter_subset_left Set.inter_subset_left
-  refine ⟨V, fun i => (hV₀ i).2.inter (hWo i i.2),
-    fun i => ⟨(hV₀ i).1, hWm i i.2⟩,
+  refine ⟨V, fun i => (hV₀ i).2.inter (hWo i i.property),
+    fun i => ⟨(hV₀ i).1, hWm i i.property⟩,
     fun i => Set.inter_subset_right, hVdisj, ?_⟩
   intro n w hw
   have hm : ∑ i : S, Multiset.count (i : α) (w : Multiset α) = n := by
     rw [Finset.sum_coe_sort S fun a => Multiset.count a (w : Multiset α)]
-    exact (Multiset.sum_count_eq_card (fun a ha => hw a (_root_.Sym.mem_coe.1 ha))).trans w.2
+    exact (Multiset.sum_count_eq_card (fun a ha => hw a (_root_.Sym.mem_coe.1 ha))).trans w.property
   refine ⟨hm, ?_⟩
-  rw [TauCeti.Sym.mem_range_sumSubtype hVdisj]
+  rw [Sym.mem_range_sumSubtype hVdisj]
   refine ⟨fun a ha => ⟨⟨a, hw a ha⟩, (hV₀ a).1, hWm a (hw a ha)⟩, fun i => ?_⟩
   have hfilter : Multiset.filter (fun a => a ∈ V i) (w : Multiset α)
       = Multiset.filter (fun a => (i : α) = a) (w : Multiset α) := by
     refine Multiset.filter_congr fun a ha => ⟨fun haV => ?_, ?_⟩
     · by_contra hne
-      exact Set.disjoint_left.1 (hdisj (hw a (_root_.Sym.mem_coe.1 ha)) i.2 (Ne.symm hne))
+      exact Set.disjoint_left.1 (hdisj (hw a (_root_.Sym.mem_coe.1 ha)) i.property (Ne.symm hne))
         (hV₀ a).1 haV.1
     · rintro rfl
-      exact ⟨(hV₀ _).1, hWm _ i.2⟩
+      exact ⟨(hV₀ _).1, hWm _ i.property⟩
   rw [hfilter, ← Multiset.count_eq_card_filter_eq]
 
 end Finset

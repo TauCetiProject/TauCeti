@@ -15,6 +15,9 @@ public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 An automorphism of a ring as a module over itself sends one to a unit. Consequently,
 the scalar comparing the images of one under two isomorphisms is a unit as well.
+
+A natural number `e` kills a module `M` exactly when the endomorphism `e • 𝟙 M` vanishes
+(`ModuleCat.nsmul_id_eq_zero_iff`).
 -/
 
 public noncomputable section
@@ -40,5 +43,10 @@ theorem isUnit_of_apply_one_eq_smul {M : ModuleCat R}
   have hu := isUnit_apply_one_of_isIso (g ≫ inv f)
   simpa only [CategoryTheory.comp_apply, h, map_smul, IsIso.hom_inv_id_apply,
     smul_eq_mul, mul_one] using hu
+
+/-- A natural number `e` kills a module `M`, in the sense that `e • 𝟙 M = 0`, exactly when
+`e • x = 0` for every element `x` of `M`. -/
+theorem nsmul_id_eq_zero_iff {M : ModuleCat R} {e : ℕ} : e • 𝟙 M = 0 ↔ ∀ x : M, e • x = 0 :=
+  ⟨fun h x ↦ by simpa using congr($h x), fun h ↦ by ext x; simpa using h x⟩
 
 end ModuleCat

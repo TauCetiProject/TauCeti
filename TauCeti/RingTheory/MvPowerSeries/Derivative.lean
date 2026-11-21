@@ -72,6 +72,15 @@ theorem coeff_pderiv_mem [CommSemiring R] {S : Type*} [SetLike S R] [AddSubmonoi
 
 variable [CommSemiring R] [IsAddTorsionFree R]
 
+/-- Over a commutative semiring without additive torsion, a coefficient of the partial derivative
+in `X i` vanishes exactly when the corresponding coefficient of `f`, with the exponent of `X i`
+raised by one, does. -/
+@[simp]
+theorem coeff_pderiv_eq_zero_iff {f : MvPowerSeries σ R} {i : σ} {d : σ →₀ ℕ} :
+    coeff d (pderiv i f) = 0 ↔ coeff (d + single i 1) f = 0 := by
+  rw [coeff_pderiv, mul_comm, ← Nat.cast_succ, ← nsmul_eq_mul, nsmul_eq_zero_iff,
+    or_iff_left (Nat.succ_ne_zero _)]
+
 /-- Over a commutative semiring without additive torsion, `f` has order at least `n + 1` if and
 only if its constant coefficient vanishes and each partial derivative has order at least `n`. -/
 theorem succ_le_order_iff {f : MvPowerSeries σ R} {n : ℕ∞} :
@@ -88,9 +97,7 @@ theorem succ_le_order_iff {f : MvPowerSeries σ R} {n : ℕ∞} :
   have he : (e.degree : ℕ∞) < n := by
     simpa only [map_add, degree_single, Nat.cast_add, Nat.cast_one,
       ENat.add_lt_add_iff_right ENat.one_ne_top] using hd
-  have := coeff_of_lt_order (lt_of_lt_of_le he (h i))
-  rw [coeff_pderiv, mul_comm, ← Nat.cast_succ, ← nsmul_eq_mul] at this
-  exact (nsmul_eq_zero_iff.mp this).resolve_right (Nat.succ_ne_zero _)
+  exact coeff_pderiv_eq_zero_iff.mp (coeff_of_lt_order (lt_of_lt_of_le he (h i)))
 
 end MvPowerSeries
 
@@ -118,12 +125,8 @@ theorem eq_zero_of_pderiv_eq_zero_of_subst_eq_zero [DecidableEq σ] {i : σ}
     · simpa using this
     · rw [Function.update_of_ne (by rintro rfl; simp_all), Pi.one_apply, one_pow]
   -- the others are read off the vanishing derivative, since `n i` is nonzero
-  · have hle : single i 1 ≤ n := by
-      rw [single_le_iff]; omega
-    have := congrArg (coeff (n - single i 1)) h₀
-    rw [coeff_pderiv, tsub_add_cancel_of_le hle, map_zero, mul_comm, ← Nat.cast_succ,
-      ← nsmul_eq_mul] at this
-    exact (nsmul_eq_zero_iff.mp this).resolve_right (Nat.succ_ne_zero _)
+  · have := congrArg (coeff (n - single i 1)) h₀
+    rwa [map_zero, coeff_pderiv_eq_zero_iff, sub_add_single_one_cancel hn] at this
 
 end MvPowerSeries
 
@@ -137,15 +140,11 @@ namespace WithPiTopology
 
 /-- **A partial derivative is continuous** for the coefficientwise topology: each coefficient of
 `pderiv i f` is a coefficient of `f` times a constant. -/
-theorem continuous_pderiv [CommSemiring R] [TopologicalSpace R] [ContinuousMul R] (i : σ) :
-    Continuous (pderiv (R := R) i : MvPowerSeries σ R → MvPowerSeries σ R) := by
+theorem continuous_pderiv [CommSemiring R] [TopologicalSpace R] [SeparatelyContinuousMul R]
+    (i : σ) : Continuous (pderiv (R := R) i : MvPowerSeries σ R → MvPowerSeries σ R) :=
   -- the coefficientwise topology is the product topology, so continuity is coefficientwise
-  refine continuous_pi fun n ↦ ?_
-  have : (fun f : MvPowerSeries σ R ↦ pderiv i f n) =
-      fun f ↦ coeff (n + Finsupp.single i 1) f * ((n i : R) + 1) :=
-    funext fun f ↦ coeff_pderiv (i := i) f n
-  rw [this]
-  exact (continuous_coeff R _).mul continuous_const
+  continuous_pi fun n ↦ by
+    simpa only [← coeff_apply, coeff_pderiv] using (continuous_coeff R _).mul_const _
 
 end WithPiTopology
 
@@ -172,16 +171,12 @@ theorem pderiv_subst [CommRing R] [Fintype σ] {a : σ → MvPowerSeries τ R} (
   | C r => simp [h0]
   | add p q hp hq =>
     simp only [MvPolynomial.coe_add, map_add, subst_add ha] at hp hq ⊢
-    rw [hp, hq, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [add_mul]
+    simp [hp, hq, add_mul, Finset.sum_add_distrib]
   | mul_X p n hp =>
     simp only [MvPolynomial.coe_mul, MvPolynomial.coe_X, subst_mul ha, subst_X ha,
       Derivation.leibniz, smul_eq_mul, subst_add ha] at hp ⊢
-    rw [hp]
-    simp only [pderiv_X, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum]
-    congr 2
-    rw [Finset.sum_eq_single n (fun j _ hj ↦ by rw [Pi.single_eq_of_ne hj.symm, h0, zero_mul])
-      (by simp), Pi.single_eq_same, h1, one_mul]
+    simp [hp, pderiv_X, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum,
+      Pi.single_apply, apply_ite (subst a), h0, h1]
 
 end MvPowerSeries
 
@@ -192,8 +187,7 @@ power series `f`: `∂ᵢ (f ∘ g) = (f' ∘ g) · ∂ᵢ g`. -/
 theorem pderiv_subst {τ R : Type*} [CommRing R] {g : MvPowerSeries τ R} (hg : HasSubst g)
     (f : PowerSeries R) (i : τ) :
     MvPowerSeries.pderiv i (subst g f) = subst g (derivative f) * MvPowerSeries.pderiv i g := by
-  rw [subst_def, MvPowerSeries.pderiv_subst hg.const, Fintype.sum_unique]
   -- `PowerSeries.derivative` is by definition the partial derivative in the unique variable
-  rfl
+  rw [subst_def, MvPowerSeries.pderiv_subst hg.const, Fintype.sum_unique, derivative, subst_def]
 
 end PowerSeries

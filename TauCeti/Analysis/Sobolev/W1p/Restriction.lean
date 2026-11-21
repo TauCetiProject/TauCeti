@@ -31,10 +31,12 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 * `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
   value almost everywhere on the smaller open set.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
+* `TauCeti.W1p.norm_gradient_restrictL_le`: restriction does not increase the `Lᵖ` norm of the
+  weak gradient.
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
-  finite-measure subset depends continuously on the Sobolev function.
+  subset depends continuously on the Sobolev function.
 
 ## References
 
@@ -47,8 +49,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal Gradient
+open Filter _root_.MeasureTheory Set TopologicalSpace
+open scoped Distributions ENNReal Gradient Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -212,6 +214,17 @@ theorem W1p.restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {u : W1p mu U p} {w :
     (hvalw : W1p.value w =ᵐ[mu.restrict U] W1p.value u) : W1p.restrictL hU w = u :=
   W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hU w).trans hvalw))
 
+/-- An extension operator, a right inverse of restriction to the smaller open set `U`, keeps the
+value representative on `U`. -/
+theorem W1p.value_ae_eq_of_restrictL_comp_eq_id (hU : U ≤ Omega)
+    {T : W1p mu U p →L[ℝ] W1p mu Omega p}
+    (hT : (W1p.restrictL hU).comp T = ContinuousLinearMap.id ℝ (W1p mu U p)) (u : W1p mu U p) :
+    W1p.value (T u) =ᵐ[mu.restrict U] W1p.value u := by
+  have hu : W1p.restrictL hU (T u) = u := by
+    simpa using congrArg (· u) hT
+  filter_upwards [W1p.value_restrictL_ae hU (T u)] with x hx
+  rw [← hx, hu]
+
 /-- Restriction keeps the same weak-gradient representative on the smaller open set. -/
 theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     W1p.gradient (W1p.restrictL hU u) =ᵐ[mu.restrict U] W1p.gradient u := by
@@ -219,6 +232,13 @@ theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
   exact Lp.coeFn_LpToLpOfMeasureLeSMul (by simp)
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.gradient u)
+
+/-- Restriction does not increase the `Lᵖ` norm of the weak gradient. -/
+theorem W1p.norm_gradient_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :
+    ‖W1p.gradient (W1p.restrictL hU u)‖ ≤ ‖W1p.gradient u‖ := by
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (W1p.gradient_restrictL_ae hU u)]
+  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) (eLpNorm_mono_measure _
+    (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
 
 /-- Restriction does not increase the Sobolev norm. -/
 theorem W1p.norm_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :
@@ -258,23 +278,22 @@ theorem W1p.setIntegral_norm_gradient_sub_sq_eq (hU : U ≤ Omega) (u : W1p mu O
     (w : W1p mu U 2) :
     ∫ x in U, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ∂mu =
       ‖W1p.gradient (W1p.restrictL hU u - w)‖ ^ 2 := by
-  have hsub : W1p.gradient (W1p.restrictL hU u - w) =
-      W1p.gradient (W1p.restrictL hU u) - W1p.gradient w := by
-    simp only [← W1p.gradientL_apply, map_sub]
   rw [← MeasureTheory.Lp.integral_norm_sq_eq_norm_sq]
   refine integral_congr_ae ?_
-  filter_upwards [W1p.gradient_restrictL_ae hU u,
-    Lp.coeFn_sub (W1p.gradient (W1p.restrictL hU u)) (W1p.gradient w)] with x h1 h2
-  rw [hsub, h2, Pi.sub_apply, h1]
+  filter_upwards [W1p.gradient_restrictL_ae hU u, W1p.gradient_sub_ae (W1p.restrictL hU u) w]
+    with x h1 h2
+  rw [h2, Pi.sub_apply, h1]
 
 /-! ### Subset averages -/
 
 omit [FiniteDimensional ℝ E] in
-/-- The mean of the value of a first-order Sobolev function over a fixed subset of finite
-measure depends continuously on the function. -/
-theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
-    (hSfin : mu S ≠ ∞) :
+/-- The mean of the value of a first-order Sobolev function over a fixed subset
+depends continuously on the function (for a subset of infinite measure the mean is `0`). -/
+theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E)) :
     Continuous fun v : W1p mu U p => ⨍ y in S, W1p.value v y ∂mu := by
+  by_cases hSfin : mu S = ∞
+  · simp only [setAverage_eq, measureReal_def, hSfin, ENNReal.toReal_top, inv_zero, zero_smul]
+    exact continuous_const
   have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
     Measure.restrict_restrict_of_subset hSU
   have hmeas : (mu.restrict (U : Set E)) S = mu S := by
@@ -284,7 +303,7 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
     rw [setAverage_eq, smul_eq_mul, W1p.valueL_apply, hrs]
   have hSlt : (mu.restrict (U : Set E)) S < ∞ := by
     rw [hmeas]
-    exact hSfin.lt_top
+    exact lt_top_iff_ne_top.2 hSfin
   have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
       ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
     (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (μ := mu.restrict (U : Set E)) (p := p) S
@@ -292,5 +311,26 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
   simp only [hEq]
   exact continuous_const.mul
     (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
+
+omit [FiniteDimensional ℝ E] in
+/-- If Sobolev classes `a n` converge to `u`, their gradients converge in `L¹` on any open set
+`V` of finite measure contained in the domain. -/
+theorem W1p.tendsto_lintegral_gradient_sub (hV : V ≤ Omega)
+    {a : ℕ → W1p mu Omega p} {u : W1p mu Omega p} (ha : Tendsto a atTop (𝓝 u))
+    [IsFiniteMeasure (mu.restrict (V : Set E))] :
+    Tendsto (fun n => ∫⁻ x in (V : Set E), ‖W1p.gradient (a n) x - W1p.gradient u x‖ₑ ∂mu)
+      atTop (𝓝 0) := by
+  have hrs : (mu.restrict (Omega : Set E)).restrict (V : Set E) = mu.restrict (V : Set E) :=
+    Measure.restrict_restrict_of_subset hV
+  have hlt : (mu.restrict (Omega : Set E)) (V : Set E) < ⊤ := by
+    rw [← Measure.restrict_apply_univ, hrs, Measure.restrict_apply_univ]
+    simpa only [Measure.restrict_apply_univ] using
+      measure_lt_top (mu.restrict (V : Set E)) Set.univ
+  have hgrad : Tendsto (fun n => W1p.gradient (a n)) atTop (𝓝 (W1p.gradient u)) := by
+    simpa only [Function.comp_def, W1p.gradientL_apply] using
+      ((W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).continuous.tendsto u).comp ha
+  simpa only [hrs] using tendsto_setLIntegral_enorm_sub_of_tendsto_Lp hlt hgrad
+    (a := fun n => W1p.gradient (a n)) (a₀ := W1p.gradient u) (fun n => ae_eq_refl _)
+    (ae_eq_refl _)
 
 end TauCeti

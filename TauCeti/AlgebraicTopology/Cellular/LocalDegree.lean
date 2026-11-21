@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.AlgebraicTopology.Cellular.Incidence
+public import TauCeti.AlgebraicTopology.Cellular.Map
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
-public import TauCeti.AlgebraicTopology.Singular.ReducedRelative
 
 /-!
 # Cellular incidence numbers as local degrees of attaching maps
@@ -24,7 +23,11 @@ local degrees of the attaching maps.
   induces isomorphisms on relative singular homology in every degree.
 * The inclusion of pairs `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, Xⁿ ∖ {x})` sends the summand of `i` in the cellular
   chain group to the local class, and the summand of every other `n`-cell to zero, because the
-  closed cells of the other `n`-cells miss `x`.
+  closed cells of the other `n`-cells miss `x`. With ring coefficients, this recovers the `i`-th
+  cellular coordinate of any `n`-chain (`TauCeti.cellularChainBasis_repr_eq_inv_cellLocalClass`)
+  and implies that a cellular map sending `openCell n i` into `skeletonLT C' n ∪ openCell n i'`
+  maps the cellular basis vector of `i` to a scalar multiple of that of `i'`
+  (`TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`).
 * Hence, with coefficients in a ring, pushing the reduced fundamental class of the boundary sphere
   of an `(n + 1)`-cell `j` through its attaching map into `Hₙ(Xⁿ)`, and then into
   `Hₙ(Xⁿ, Xⁿ ∖ {x})`, gives the incidence coefficient `[j : i]` times the local class of `i` at
@@ -60,11 +63,22 @@ local homology is constant along convex sets in a chart
 * `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton` and
   `TauCeti.ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton_of_ne`:
   the local homology at `x` reads off the coefficient of `i` in the cellular chain group.
+* `TauCeti.singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul` and
+  `TauCeti.cellularChainBasis_repr_eq_inv_cellLocalClass`: reading cellular coordinates of an
+  `n`-chain in local homology.
+* `TauCeti.cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem`,
+  `TauCeti.cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne`, and
+  `TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`: off-cell vanishing and scalar action
+  on cellular basis vectors for cellular maps carrying an open `n`-cell into the union of the
+  `(n - 1)`-skeleton and another open `n`-cell.
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
+* `TauCeti.cellularIncidence_eq_zero_of_not_mem_cellFrontier`: the incidence number of an
+  `(n + 1)`-cell `j` on an `n`-cell `i` vanishes when the attaching map of `j` misses a point of
+  the open cell of `i`.
 * `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass` and
-  `TauCeti.singularHomologyπ_singularHomology₀Section_apply_one`: for a `0`-cell, the local class
+  `TauCeti.singularHomology₀Section_comp_singularHomologyπ_eq_ite`: for a `0`-cell, the local class
   is the class of its point, and the class of any other point of the `0`-skeleton is zero.
 
 ## References
@@ -93,8 +107,8 @@ def skeletonPairToComplSingleton {n : ℕ} (x : skeletonObj C (n + 1))
     (hx : (x : X) ∉ (skeletonLT C (n : ℕ∞) : Set X)) :
     skeletonPair C n ⟶ TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C (n + 1))) :=
   TopPair.ofHom (𝟙 _)
-    (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1, skeletonLT_subset_skeletonLT_succ C n y.2⟩,
-      fun h ↦ hx (congrArg Subtype.val h ▸ y.2)⟩, by fun_prop⟩) rfl
+    (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.val, skeletonLT_subset_skeletonLT_succ C n y.property⟩,
+      fun h ↦ hx (congrArg Subtype.val h ▸ y.property)⟩, by fun_prop⟩) rfl
 
 /-- The ambient component of `TauCeti.skeletonPairToComplSingleton` is the identity. -/
 @[simp]
@@ -162,7 +176,7 @@ lemma ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplS
 /-- **Other cells vanish in the local homology at a point of an open cell.** On the summand of a
 cell `k ≠ i`, the map from the cellular chain group to the local homology at a point `x` of the
 open cell `i` is zero: the closed cell of `k` misses `x`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton_of_ne
     {i k : cell C n} (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i) (hk : k ≠ i) :
     Sigma.ι (fun _ : cell C n ↦ R) k ≫ (cellularChainGroupIso C R n).inv ≫
@@ -180,7 +194,7 @@ lemma ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplS
       rw [← hz]
       erw [coe_characteristicCellPairMap_fst_apply]
       exact ⟨_, ((EuclideanSpace.equiv (Fin n) ℝ).image_unitBallHomeomorph_closedBall ▸
-        Set.mem_image_of_mem _ (z.down.2)), rfl⟩
+        Set.mem_image_of_mem _ (z.down.property)), rfl⟩
     exact (disjoint_closedCell_openCell_of_ne n le_rfl
       (fun h ↦ hk (eq_of_heq (Sigma.mk.inj_iff.1 h).2))).notMem_of_mem_left hmem hx
   -- The characteristic map of `k` lands in `Xⁿ ∖ {x}`, the subspace of the target pair.
@@ -213,7 +227,7 @@ private lemma isIso_diskBoundaryPairToDiskSphere (n : ℕ) :
     IsIso (diskBoundaryPairToDiskSphere.{w} n) := by
   have : IsIso (TopPair.Hom.fst (diskBoundaryPairToDiskSphere.{w} n)) := IsIso.id _
   refine TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun z ↦ ?_
-  obtain ⟨s, hs⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff z.1).1 z.2
+  obtain ⟨s, hs⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff z.val).1 z.property
   exact ⟨s, Subtype.ext hs⟩
 
 /-- The interior of the disk, in sup-norm coordinates. -/
@@ -221,7 +235,7 @@ private def diskInterior (n : ℕ) : Set (TopCat.disk.{w} n) :=
   {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1}
 
 private lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
-  isOpen_lt (continuous_norm.comp (continuous_subtype_val.comp
+  isOpen_lt (continuous_norm.comp (continuous_subtypeVal.comp
     (diskHomeomorphClosedBall n).continuous)) continuous_const
 
 /-- The radial deformation `TauCeti.radialPush r` of the disk, in sup-norm coordinates. -/
@@ -229,11 +243,11 @@ private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
     C(I × TopCat.disk.{w} n, TopCat.disk.{w} n) where
   toFun q := (diskHomeomorphClosedBall n).symm
     ⟨radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ), mem_closedBall_zero_iff.2
-      (norm_radialPush_le_one hr q.1
-        (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).2))⟩
+      (norm_radialPush_le_one q.1
+        (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).property))⟩
   continuous_toFun := (diskHomeomorphClosedBall n).symm.continuous.comp
     (Continuous.subtype_mk ((continuous_radialPush hr).comp (continuous_fst.prodMk
-      (continuous_subtype_val.comp ((diskHomeomorphClosedBall n).continuous.comp
+      (continuous_subtypeVal.comp ((diskHomeomorphClosedBall n).continuous.comp
         continuous_snd)))) _)
 
 private lemma coe_diskHomeomorphClosedBall_diskRadialPush {r : ℝ} (hr : 0 ≤ r)
@@ -277,7 +291,7 @@ private lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
   -- Read the interior of the disk as the open ball through `diskHomeomorphClosedBall`, then
   -- apply the homeomorphism of the open ball onto the open cell.
   have he₁ : IsEmbedding fun z : diskInterior.{w} n ↦
-      (⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.2⟩ :
+      (⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.property⟩ :
         ball (0 : Fin n → ℝ) 1) :=
     (IsEmbedding.subtypeVal.comp ((diskHomeomorphClosedBall n).isEmbedding.comp
       IsEmbedding.subtypeVal)).codRestrict _ _
@@ -286,8 +300,8 @@ private lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
   have he₂ := (IsEmbedding.inclusion hsub).comp (openCellHomeomorph n i).isEmbedding
   convert he₂.comp he₁ using 1
   funext z
-  exact Subtype.ext ((coe_cellDiskHom_apply i z.1).trans (openCellHomeomorph_apply n i
-    ⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.2⟩).symm)
+  exact Subtype.ext ((coe_cellDiskHom_apply i z.val).trans (openCellHomeomorph_apply n i
+    ⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.property⟩).symm)
 
 variable (x : skeletonObj C (n + 1))
 
@@ -304,7 +318,7 @@ private def diskCore (i : cell C n) : Set (TopCat.disk.{w} n) :=
   {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ ≤ cellRadius C x i}
 
 private lemma isClosed_diskCore (i : cell C n) : IsClosed (diskCore C x i) :=
-  isClosed_le (continuous_norm.comp (continuous_subtype_val.comp
+  isClosed_le (continuous_norm.comp (continuous_subtypeVal.comp
     (diskHomeomorphClosedBall n).continuous)) continuous_const
 
 variable {i : cell C n} (hx : (x : X) ∈ openCell n i)
@@ -333,14 +347,8 @@ private lemma mem_cellBall_iff (m : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set
     cellChart_apply, ULift.norm_up]
 
 private lemma isClosed_cellBall : IsClosed (cellBall C x i) := by
-  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) := by
-    have h : closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i) =
-        Homeomorph.ulift ⁻¹' closedBall 0 (cellRadius C x i) := by
-      ext u
-      rw [mem_preimage, mem_closedBall_zero_iff, mem_closedBall_zero_iff]
-      rfl
-    rw [h, Homeomorph.isCompact_preimage]
-    exact isCompact_closedBall _ _
+  have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) :=
+    isCompact_closedBall _ _
   exact (hK.image_of_continuousOn ((cellChart C i).continuousOn_symm.mono
     (closedBall_subset_target_cellChart C x hx))).isClosed
 
@@ -363,7 +371,7 @@ private lemma mapsTo_cellDiskHom_compl :
   rw [mem_cellBall_iff C x hx] at hmem
   obtain ⟨hop, hle⟩ := hmem
   rw [coe_cellDiskHom_apply] at hop hle
-  have hz1 := mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).2
+  have hz1 := mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).property
   rcases hz1.lt_or_eq with hlt | heq
   · -- Inside the open ball the inverse characteristic map recovers the coordinate.
     have hinv : (map n i).symm (map n i (diskHomeomorphClosedBall n z)) =
@@ -401,7 +409,7 @@ private lemma isIso_singularHomologyMap_excisionMap_comp_cellDiskHom (k : ℕ) :
       R k) := by
   set g := TopPair.excisionMap (diskInterior n) (diskCore C x i)ᶜ ≫
     TopPair.ofSubsetMap (cellDiskHom i) (mapsTo_cellDiskHom_compl C x hx)
-  have hg : ∀ z, TopPair.Hom.fst g z = cellDiskHom i z.1 := fun z ↦ by
+  have hg : ∀ z, TopPair.Hom.fst g z = cellDiskHom i z.val := fun z ↦ by
     rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply]
     exact TopPair.ofSubsetMap_fst_apply _ _ _
   refine TopPair.isIso_singularHomologyMap_of_open_cover R g ?_ ?_
@@ -418,10 +426,10 @@ private lemma isIso_singularHomologyMap_excisionMap_comp_cellDiskHom (k : ℕ) :
     rw [TopPair.range_ofSubset_map, hg] at hz
     rw [TopPair.range_ofSubset_map]
     intro hcore
-    refine hz ((mem_cellBall_iff C x hx _).2 ⟨⟨_, mem_ball_zero_iff.2 z.2,
-      (coe_cellDiskHom_apply i z.1).symm⟩, ?_⟩)
-    rw [coe_cellDiskHom_apply i z.1,
-      (map n i).left_inv (by rw [source_eq]; exact mem_ball_zero_iff.2 z.2)]
+    refine hz ((mem_cellBall_iff C x hx _).2 ⟨⟨_, mem_ball_zero_iff.2 z.property,
+      (coe_cellDiskHom_apply i z.val).symm⟩, ?_⟩)
+    rw [coe_cellDiskHom_apply i z.val,
+      (map n i).left_inv (by rw [source_eq]; exact mem_ball_zero_iff.2 z.property)]
     exact hcore
   · cases b
     · exact (isClosed_cellBall C x hx).isOpen_compl
@@ -501,7 +509,7 @@ private lemma isIso_singularHomologyMap_diskSphere (k : ℕ) :
       hle
     rw [hH] at hle'
     exact (norm_le_norm_radialPush hr hr1 _
-      (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).2)).trans hle'
+      (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).property)).trans hle'
 
 /-- **The characteristic map of a cell computes the local homology at a point of the open cell.**
 For a point `x` of the open `n`-cell `i`, the characteristic map of `i`, as a map of pairs
@@ -530,9 +538,7 @@ theorem isIso_singularHomologyMap_characteristicCellPairMap_comp_skeletonPairToC
     rfl
   have := isIso_diskBoundaryPairToDiskSphere.{w} n
   have : IsIso (TopPair.singularHomologyMap (diskBoundaryPairToDiskSphere.{w} n) R k) :=
-    ⟨TopPair.singularHomologyMap (inv (diskBoundaryPairToDiskSphere.{w} n)) R k,
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.hom_inv_id, TopPair.singularHomologyMap_id],
-      by rw [← TopPair.singularHomologyMap_comp, IsIso.inv_hom_id, TopPair.singularHomologyMap_id]⟩
+    inferInstance
   have := isIso_singularHomologyMap_diskSphere C R x hx k
   have := isIso_singularHomologyMap_cellDiskHom C R x hx k
   have := isIso_singularHomologyMap_compl_cellBall C R x hx k
@@ -560,7 +566,7 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
     singularHomology₀Section R x ≫
         (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
       cellLocalClass C R x hx := by
-  let pt : TopCat.disk.{w} 0 := ULift.up ⟨0, by simp⟩
+  let pt : TopCat.disk.{w} 0 := diskCenter 0
   -- The identification `H₀(D⁰, ∅) ≅ R` sends the class of the point of `D⁰` to `1`.
   have hinv : (singularHomologyDiskBoundaryPairIso R 0).inv =
       singularHomology₀Section R pt ≫ (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
@@ -594,6 +600,26 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
   exact ((h₂ =≫ _).symm.trans (Category.assoc _ _ _)).trans
     ((_ ≫= h₁).trans (Category.assoc _ _ _).symm)
 
+open scoped Classical in
+/-- In the local homology at the point `x` of a `0`-cell `i`, the class of a point `y` of the
+`0`-skeleton is the local class of `i` if `y` is the point of `i`, and zero otherwise. -/
+lemma singularHomology₀Section_comp_singularHomologyπ_eq_ite {i : cell C 0}
+    (x : skeletonObj C 1) (hx : (x : X) ∈ openCell 0 i) (y : skeletonObj C 1) :
+    singularHomology₀Section R y ≫
+      (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
+      if (y : X) ∈ openCell 0 i then cellLocalClass C R x hx else 0 := by
+  split_ifs with hy
+  · have hyx : y = x := by
+      apply Subtype.ext
+      rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hx hy
+      exact hy.trans hx.symm
+    subst y
+    exact singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass C R x hx
+  · have hyx : y ∈ ({x}ᶜ : Set (skeletonObj C 1)) :=
+      fun h ↦ hy (h ▸ hx)
+    exact (TopPair.ofSubset _).singularHomology₀Section_comp_singularHomologyπ
+      R ⟨y, hyx⟩
+
 end Coefficients
 
 section Ring
@@ -623,6 +649,39 @@ lemma singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne
       hx hj]
   rfl
 
+/-- At a point `x` of the open `n`-cell `i`, the map from the `n`-th cellular chain group to the
+local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` sends any chain `c` to its `i`-th cellular coordinate times the
+local class of `i` at `x`. -/
+theorem singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul {i : cell C n}
+    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
+    (c : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
+    TopPair.singularHomologyMap
+        (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
+        (ModuleCat.of R R) n c =
+      ((cellularChainBasis C R n).repr c i) • cellLocalClass C (ModuleCat.of R R) x hx 1 := by
+  conv_lhs => rw [← (cellularChainBasis C R n).linearCombination_repr c]
+  rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_single i]
+  · rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_self]
+  · intro l _ hl
+    rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne C R x
+      hx hl, smul_zero]
+  · intro hi
+    rw [Finsupp.notMem_support_iff.1 hi, zero_smul, map_zero]
+
+/-- The `i`-th cellular coordinate of an `n`-chain `c` is recovered from its image in the local
+homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at any point `x` of the open `n`-cell `i`, via the inverse of
+`TauCeti.cellLocalClass`. -/
+theorem cellularChainBasis_repr_eq_inv_cellLocalClass {i : cell C n}
+    (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i)
+    (c : (cellularChainGroup C (ModuleCat.of R R) n : ModuleCat R)) :
+    (cellularChainBasis C R n).repr c i =
+      inv (cellLocalClass C (ModuleCat.of R R) x hx)
+        (TopPair.singularHomologyMap
+          (skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell n hx))
+          (ModuleCat.of R R) n c) := by
+  rw [singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul C R x hx c, map_smul,
+    ← ModuleCat.comp_apply, IsIso.hom_inv_id, ModuleCat.id_apply, smul_eq_mul, mul_one]
+
 /-- **Incidence numbers are local degrees of attaching maps.** Send the reduced fundamental class
 of the boundary sphere of an `(n + 1)`-cell `j` through its attaching map into `Hₙ(Xⁿ)`, and then
 into the local homology `Hₙ(Xⁿ, Xⁿ ∖ {x})` at a point `x` of the open `n`-cell `i`. The result is
@@ -645,16 +704,8 @@ theorem singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul {i : cell 
   -- The two presentations of the `n`-skeleton agree only up to unfolding, so `hπ` is used as a
   -- term rather than rewritten.
   refine hπ.symm.trans ?_
-  rw [← (cellularChainBasis C R n).linearCombination_repr (skeletonPairπ C (ModuleCat.of R R) n a),
-    ← cellularBoundaryColumn_eq_attaching, Finsupp.linearCombination_apply, map_finsuppSum,
-    Finsupp.sum, Finset.sum_eq_single i]
-  · rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_self,
-      cellularBoundaryColumn_apply]
-  · intro l _ hl
-    rw [map_smul, singularHomologyMap_skeletonPairToComplSingleton_cellularChainBasis_of_ne C R x
-      hx hl, smul_zero]
-  · intro hi
-    rw [Finsupp.notMem_support_iff.1 hi, zero_smul, map_zero]
+  rw [singularHomologyMap_skeletonPairToComplSingleton_eq_repr_smul C R x hx,
+    ← cellularBoundaryColumn_eq_attaching, cellularBoundaryColumn_apply]
 
 /-- **The incidence numbers are the local degrees of the attaching maps.** For a point `x` of
 the open `n`-cell `i` and an `(n + 1)`-cell `j`, the incidence coefficient of `i` in the cellular
@@ -698,47 +749,140 @@ theorem cellularIncidence_eq_zero_of_not_mem_cellFrontier {i : cell C n}
   have hzero :
       SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n ≫
         P.singularHomologyπ (ModuleCat.of R R) n = 0 := by
-    let Q := TopPair.ofSubset (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
-    have hmaps : Set.MapsTo (cellAttachingMap j) (∅ : Set (TopCat.diskBoundary.{w} (n + 1)))
-        ({x}ᶜ : Set (skeletonObj C (n + 1))) := fun _ hz ↦ hz.elim
-    have hf : Q.singularHomologyMap (TopPair.ofSubsetMap (cellAttachingMap j) hmaps)
-        (ModuleCat.of R R) n = 0 :=
-      TopPair.singularHomologyMap_eq_zero_of_fac _ (ModuleCat.of R R) g
-        (hfac.trans (TopPair.ofSubsetMap_fst _ _).symm) n
-    have hπ := TopPair.singularHomologyπ_naturality (R := ModuleCat.of R R)
-      (f := TopPair.ofSubsetMap (cellAttachingMap j) hmaps) n
-    rw [TopPair.ofSubsetMap_fst, hf, comp_zero] at hπ
-    exact hπ
+    have h := SSet.homologyMap (TopCat.toSSet.map g) (ModuleCat.of R R) n ≫=
+      P.homologyMap_comp_singularHomologyπ (ModuleCat.of R R) n
+    rw [comp_zero] at h
+    refine Eq.trans ?_ ((Category.assoc _ _ _).trans h)
+    rw [← SSet.homologyMap_comp, ← Functor.map_comp, hfac]
+    rfl
   rw [cellularIncidence_eq_inv_cellLocalClass C R x hx j]
   erw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← Category.assoc, hzero, zero_comp]
   rfl
 
-open scoped Classical in
-/-- In the local homology at the point `x` of a `0`-cell `i`, the class of a point `y` of the
-`0`-skeleton is the local class of `i` if `y` is the point of `i`, and zero otherwise. -/
-lemma singularHomologyπ_singularHomology₀Section_apply_one {i : cell C 0}
-    (x : skeletonObj C 1) (hx : (x : X) ∈ openCell 0 i) (y : skeletonObj C 1) :
-    (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ (ModuleCat.of R R) 0
-        (singularHomology₀Section (ModuleCat.of R R) y (1 : R)) =
-      if (y : X) ∈ openCell 0 i then cellLocalClass C (ModuleCat.of R R) x hx 1 else 0 := by
-  have hx' := hx
-  rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hx'
-  split_ifs with hy
-  · have hyx : y = x := by
-      rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hy
-      exact Subtype.ext (hy.trans hx'.symm)
-    subst hyx
-    exact ConcreteCategory.congr_hom
-      (singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass C (ModuleCat.of R R) y
-        hx) 1
-  · have hyx : y ∈ ({x}ᶜ : Set (skeletonObj C 1)) := fun h ↦ hy (h ▸ hx)
-    -- The composite is evaluated at `1` across the two presentations of the homology of the
-    -- `0`-skeleton, which `simp` cannot split as a composite.
-    exact (ConcreteCategory.congr_hom
-      ((TopPair.ofSubset _).singularHomology₀Section_comp_singularHomologyπ
-        (ModuleCat.of R R) ⟨y, hyx⟩) 1).trans
-        (by simp)
-
 end Ring
+
+section CellularMap
+
+open Metric Set
+
+variable {Y : Type w} [TopologicalSpace Y] [T2Space Y] {D' : Set Y}
+  (C' : Set Y) [RelCWComplex C' D'] (R : Type w) [Ring R]
+
+/-- If a cellular map `f` sends the closed `n`-cell `i` into the complement of `x`, then the
+characteristic pair map of `i` followed by `f` and the projection to local homology at `x`
+factors through `X'ⁿ ∖ {x}` and therefore induces zero on `Hₙ`. -/
+private theorem singularHomologyMap_characteristicCellPairMap_comp_eq_zero
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ} {i : cell C n}
+    (x : skeletonObj C' (n + 1)) (hx : (x : Y) ∉ (skeletonLT C' (n : ℕ∞) : Set Y))
+    (hmiss : ∀ z (hz : z ∈ closedCell n i), (f ⟨z, closedCell_subset_complex n i hz⟩ : Y) ≠ x) :
+    TopPair.singularHomologyMap
+        (characteristicCellPairMap C i ≫ skeletonPairMap C C' hf n ≫
+          skeletonPairToComplSingleton C' x hx) (ModuleCat.of R R) n = 0 := by
+  set Φ := characteristicCellPairMap C i ≫ skeletonPairMap C C' hf n ≫
+    skeletonPairToComplSingleton C' x hx
+  have hfst : TopPair.Hom.fst Φ = cellDiskHom i ≫ skeletonMap C C' hf (n + 1) := by
+    -- `(TopPair.ofSubset _).fst` unfolds to `skeletonObj C' (n + 1)` only at `default`
+    -- transparency, so `erw` discharges the trailing identity on that object.
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, characteristicCellPairMap_fst,
+      skeletonPairMap_fst, skeletonPairToComplSingleton_fst]
+    erw [Category.comp_id]
+    rfl
+  have hnotEq (p : TopCat.disk.{w} n) :
+      (TopPair.Hom.fst Φ p : skeletonObj C' (n + 1)) ≠ x := by
+    intro hp
+    have hclosed : map n i (diskHomeomorphClosedBall n p) ∈ closedCell n i :=
+      ⟨_, (diskHomeomorphClosedBall n p).property, rfl⟩
+    have key : ∀ (a b : X) (ha : a ∈ C) (hb : b ∈ C),
+        a = b → (f ⟨a, ha⟩ : Y) = (f ⟨b, hb⟩ : Y) := by rintro a _ _ _ rfl; rfl
+    have hval : (f ⟨_, closedCell_subset_complex n i hclosed⟩ : Y) = x :=
+      (key _ _ _ _ (coe_cellDiskHom_apply i p).symm).trans <|
+        (congrArg Subtype.val (skeletonMap_apply C C' hf (n + 1) (cellDiskHom i p))).symm.trans <|
+          congrArg Subtype.val ((ConcreteCategory.congr_hom hfst p).symm.trans hp)
+    exact hmiss _ hclosed hval
+  exact TopPair.singularHomologyMap_eq_zero_of_fac Φ (ModuleCat.of R R)
+    (TopCat.ofHom ⟨fun p ↦ ⟨TopPair.Hom.fst Φ p, hnotEq p⟩,
+      (TopPair.Hom.fst Φ).hom.continuous.subtype_mk _⟩) rfl n
+
+/-- If a cellular map `f` sends the open `n`-cell `i` into the complement of a point `x` of the
+open `n`-cell `k`, then the `k`-th cellular coordinate of the image of the basis vector of `i`
+under `f` vanishes. The frontier of `i` needs no hypothesis: it lies in the `(n - 1)`-skeleton,
+which `f` keeps away from `x`. -/
+theorem cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
+    {i : cell C n} {k : cell C' n} (x : skeletonObj C' (n + 1)) (hx : (x : Y) ∈ openCell n k)
+    (hmiss : ∀ z (hz : z ∈ openCell n i), (f ⟨z, openCell_subset_complex n i hz⟩ : Y) ≠ x) :
+    (cellularChainBasis C' R n).repr
+        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n
+          (cellularChainBasis C R n i)) k = 0 := by
+  have hmiss' : ∀ z (hz : z ∈ closedCell n i),
+      (f ⟨z, closedCell_subset_complex n i hz⟩ : Y) ≠ x := by
+    intro z hz hzx
+    rcases (cellFrontier_union_openCell_eq_closedCell n i ▸ hz :
+      z ∈ cellFrontier n i ∪ openCell n i) with hfr | hop
+    · have hskel := hf n (show (⟨z, closedCell_subset_complex n i hz⟩ : C) ∈
+          {y : C | y.val ∈ skeletonLT C (n : ℕ∞)} from cellFrontier_subset_skeletonLT n i hfr)
+      exact notMem_skeletonLT_of_mem_openCell n hx (hzx ▸ hskel)
+    · exact hmiss z hop hzx
+  have hcomp :
+      Sigma.ι (fun _ : cell C n ↦ ModuleCat.of R R) i ≫
+          (cellularChainGroupIso C (ModuleCat.of R R) n).inv ≫
+          cellularChainGroupMap C C' hf (ModuleCat.of R R) n ≫
+          TopPair.singularHomologyMap
+            (skeletonPairToComplSingleton C' x (notMem_skeletonLT_of_mem_openCell n hx))
+            (ModuleCat.of R R) n ≫
+          inv (cellLocalClass C' (ModuleCat.of R R) x hx) = 0 := by
+    rw [ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPairMap_assoc,
+      cellularChainGroupMap_def, ← TopPair.singularHomologyMap_comp_assoc,
+      ← TopPair.singularHomologyMap_comp_assoc, Category.assoc,
+      singularHomologyMap_characteristicCellPairMap_comp_eq_zero C C' R hf x _ hmiss',
+      zero_comp, comp_zero]
+  rw [cellularChainBasis_repr_eq_inv_cellLocalClass C' R x hx, cellularChainBasis_apply,
+    ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    ← ModuleCat.comp_apply, hcomp]
+  rfl
+
+/-- If a cellular map `f` sends the open `n`-cell `i` into the union of the `(n - 1)`-skeleton and
+the open `n`-cell `i'`, then for every other `n`-cell `k ≠ i'` the `k`-th cellular coordinate of
+the image of the basis vector of `i` under `f` vanishes. -/
+theorem cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
+    {i : cell C n} {i' k : cell C' n}
+    (hi : ∀ z (hz : z ∈ openCell n i), (f ⟨z, openCell_subset_complex n i hz⟩ : Y) ∈
+      (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') (hk : k ≠ i') :
+    (cellularChainBasis C' R n).repr
+        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n
+          (cellularChainBasis C R n i)) k = 0 := by
+  let x : skeletonObj C' (n + 1) := ⟨map n k 0, map_mem_skeletonLT_succ k (by simp)⟩
+  have hx : (x : Y) ∈ openCell n k := ⟨0, mem_ball_zero_iff.2 (by simp), rfl⟩
+  refine cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem C C' R hf x hx
+    fun z hz hzx ↦ ?_
+  rcases hi z hz with hskel | hopen
+  · exact notMem_skeletonLT_of_mem_openCell n hx (hzx ▸ hskel)
+  · have hdisj : Disjoint (openCell n k) (openCell n i') :=
+      disjoint_openCell_of_ne fun h ↦ hk (eq_of_heq (Sigma.mk.inj_iff.1 h).2)
+    exact hdisj.notMem_of_mem_left hx (hzx ▸ hopen)
+
+/-- **A cellular map carrying the open cell of `i` into the union of the `(n - 1)`-skeleton and the
+open cell of `i'` sends the cellular basis vector of `i` to a scalar multiple of the cellular
+basis vector of `i'`.** -/
+theorem cellularChainGroupMap_cellularChainBasis_eq_smul
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ}
+    {i : cell C n} {i' : cell C' n}
+    (hi : ∀ z (hz : z ∈ openCell n i), (f ⟨z, openCell_subset_complex n i hz⟩ : Y) ∈
+      (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') :
+    cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i) =
+      ((cellularChainBasis C' R n).repr
+        (cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i)) i') •
+        cellularChainBasis C' R n i' := by
+  apply (cellularChainBasis C' R n).repr.injective
+  rw [map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one]
+  ext k
+  by_cases hk : k = i'
+  · subst hk
+    rw [Finsupp.single_eq_same]
+  · rw [Finsupp.single_eq_of_ne hk]
+    exact cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne C C' R hf hi hk
+
+end CellularMap
 
 end TauCeti

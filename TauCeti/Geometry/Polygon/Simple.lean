@@ -32,7 +32,8 @@ the unit circle `Circle`. A framing is not part of this presentation: a framing 
 knot is a chosen push-off, which is separate data on top of the simple polygon, as for
 `TauCeti.SmoothCircleEmbedding`. Nothing here depends on the dimension of the ambient space.
 
-The first simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`. The polygon with
+The basic examples of simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`
+(over `ℝ` they are the smallest nonempty ones, `Polygon.IsSimple.three_le`). The polygon with
 no vertices is vacuously simple and has empty boundary, so the results about the boundary assume
 `NeZero n`.
 
@@ -102,8 +103,7 @@ variable {R V P : Type*} {n : ℕ}
 
 section IsSimple
 
-variable [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGroup V] [Module R V]
-  [AddTorsor V P]
+variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 variable (R) in
 /-- A polygon is **simple** when its edges are nondegenerate and two distinct edges meet only when
@@ -116,7 +116,6 @@ structure IsSimple (poly : Polygon P n) : Prop where
   eq_vertex_of_mem_edgeSet : ∀ ⦃i j : Fin n⦄ ⦃x : P⦄, i ≠ j → x ∈ poly.edgeSet R i →
     x ∈ poly.edgeSet R j → (j = finRotate n i ∧ x = poly j) ∨ (i = finRotate n j ∧ x = poly i)
 
-omit [ZeroLEOneClass R] in
 /-- Relabelling the vertices cyclically keeps a polygon simple. -/
 @[simp]
 theorem isSimple_rotate_iff (poly : Polygon P n) : poly.rotate.IsSimple R ↔ poly.IsSimple R := by
@@ -146,13 +145,16 @@ theorem isSimple_rotate_iff (poly : Polygon P n) : poly.rotate.IsSimple R ↔ po
 theorem IsSimple.apply_notMem_edgeSet {poly : Polygon P n} (hs : poly.IsSimple R) {k j : Fin n}
     (hkj : k ≠ j) (hkj' : k ≠ finRotate n j) : poly k ∉ poly.edgeSet R j := by
   intro h
+  have : ZeroLEOneClass R := by
+    obtain ⟨s, ⟨hs₀, hs₁⟩, -⟩ := h
+    exact ⟨hs₀.trans hs₁⟩
   rcases hs.eq_vertex_of_mem_edgeSet hkj (apply_mem_edgeSet_self R poly k) h with ⟨rfl, he⟩ |
     ⟨h', -⟩
   · exact hs.hasNondegenerateEdges k he
   · exact hkj' h'
 
-omit [ZeroLEOneClass R] in
-variable [IsOrderedRing R] in
+variable [IsOrderedRing R]
+
 /-- Reversing a simple polygon keeps it simple. -/
 theorem IsSimple.reverse {poly : Polygon P n} (h : poly.IsSimple R) : poly.reverse.IsSimple R := by
   refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
@@ -168,8 +170,6 @@ theorem IsSimple.reverse {poly : Polygon P n} (h : poly.IsSimple R) : poly.rever
     · rw [Fin.finRotate_neg_finRotate, neg_inj] at e
       exact .inl ⟨e.symm, by rw [reverse_apply, ← e]⟩
 
-omit [ZeroLEOneClass R] in
-variable [IsOrderedRing R] in
 /-- A polygon is simple exactly when its reversal is. -/
 @[simp]
 theorem isSimple_reverse_iff (poly : Polygon P n) : poly.reverse.IsSimple R ↔ poly.IsSimple R :=
@@ -260,17 +260,14 @@ section InsertVertex
 
 variable [Ring R] [PartialOrder R] [IsOrderedRing R] [AddCommGroup V] [Module R V]
   [AddTorsor V P] {poly : Polygon P n} {i : Fin n} {c : P}
-  (hleft : poly (finRotate n i) ∉ affineSegment R (poly i) c)
-  (hright : poly i ∉ affineSegment R c (poly (finRotate n i)))
-  (hother : ∀ ⦃k : Fin n⦄, k ≠ i →
-    poly.edgeSet R k ∩ (affineSegment R (poly i) c ∪
-      affineSegment R c (poly (finRotate n i))) ⊆ {poly i, poly (finRotate n i)})
 
-include hleft hright hother
-
-omit hright in
 /-- The first replacement segment meets an old edge only at the old initial vertex. -/
-private theorem eq_vertex_of_mem_affineSegment_left (hp : poly.IsSimple R) {k : Fin n}
+private theorem eq_vertex_of_mem_affineSegment_left
+    (hleft : poly (finRotate n i) ∉ affineSegment R (poly i) c)
+    (hother : ∀ ⦃k : Fin n⦄, k ≠ i →
+      poly.edgeSet R k ∩ (affineSegment R (poly i) c ∪
+        affineSegment R c (poly (finRotate n i))) ⊆ {poly i, poly (finRotate n i)})
+    (hp : poly.IsSimple R) {k : Fin n}
     (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k) (hx : x ∈ affineSegment R (poly i) c) :
     (i.castSucc = finRotate (n + 1) (i.succ.succAbove k) ∧
         x = poly.insertVertex i c i.castSucc) ∨
@@ -285,9 +282,13 @@ private theorem eq_vertex_of_mem_affineSegment_left (hp : poly.IsSimple R) {k : 
       exact absurd e₂ (hp.hasNondegenerateEdges i)
   · exact absurd hx hleft
 
-omit hleft in
 /-- The second replacement segment meets an old edge only at the old final vertex. -/
-private theorem eq_vertex_of_mem_affineSegment_right (hp : poly.IsSimple R) {k : Fin n}
+private theorem eq_vertex_of_mem_affineSegment_right
+    (hright : poly i ∉ affineSegment R c (poly (finRotate n i)))
+    (hother : ∀ ⦃k : Fin n⦄, k ≠ i →
+      poly.edgeSet R k ∩ (affineSegment R (poly i) c ∪
+        affineSegment R c (poly (finRotate n i))) ⊆ {poly i, poly (finRotate n i)})
+    (hp : poly.IsSimple R) {k : Fin n}
     (hk : k ≠ i) {x : P} (hxk : x ∈ poly.edgeSet R k)
     (hx : x ∈ affineSegment R c (poly (finRotate n i))) :
     (i.succ = finRotate (n + 1) (i.succ.succAbove k) ∧ x = poly.insertVertex i c i.succ) ∨
@@ -302,7 +303,6 @@ private theorem eq_vertex_of_mem_affineSegment_right (hp : poly.IsSimple R) {k :
       exact .inr ⟨(Fin.finRotate_succ_eq_succ_succAbove i).symm,
         (insertVertex_apply_succAbove _ _ _ _).symm⟩
 
-omit hleft hright hother in
 /-- Inserting a vertex preserves simplicity if the two replacement segments meet only at the
 new vertex, avoid the opposite endpoints, and meet every other edge only at the old endpoints.
 This criterion includes both nondegenerate triangle moves and subdivisions of an edge. -/
@@ -318,66 +318,41 @@ theorem IsSimple.insertVertex (hp : poly.IsSimple R)
   have hright : poly i ∉ affineSegment R c (poly (finRotate n i)) := fun hx ↦
     hac (hinter.subset ⟨left_mem_affineSegment _ _ _, hx⟩)
   refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
-  · obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+  · rcases Fin.eq_succ_or_eq_castSucc_or_eq_succAbove i j with rfl | rfl | ⟨k, hk, rfl⟩
     · rw [insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
       exact hcb
-    · by_cases hk : k = i
-      · subst hk
-        rw [Fin.succAbove_succ_self, finRotate_apply, Fin.coeSucc_eq_succ,
-          insertVertex_apply_castSucc_self, insertVertex_apply_succ_self]
-        exact hac
-      · rw [Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
-          insertVertex_apply_succAbove]
-        exact hp.hasNondegenerateEdges k
+    · rw [Fin.finRotate_castSucc, insertVertex_apply_castSucc_self, insertVertex_apply_succ_self]
+      exact hac
+    · rw [Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
+        insertVertex_apply_succAbove]
+      exact hp.hasNondegenerateEdges k
   -- The two new edges meet only at the new vertex.
   have new (hx₁ : x ∈ affineSegment R (poly i) c)
       (hx₂ : x ∈ affineSegment R c (poly (finRotate n i))) :
       i.succ = finRotate (n + 1) i.castSucc ∧ x = poly.insertVertex i c i.succ := by
     rw [insertVertex_apply_succ_self]
-    exact ⟨by rw [finRotate_apply, Fin.coeSucc_eq_succ],
-      hinter.subset ⟨hx₁, hx₂⟩⟩
-  -- An index of the new polygon is the second new edge `i.succ`, the first new edge
-  -- `i.succ.succAbove i`, or an old edge `i.succ.succAbove k` with `k ≠ i`.
-  obtain rfl | ⟨k₁, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j₁ <;>
-    obtain rfl | ⟨k₂, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j₂
+    exact ⟨(Fin.finRotate_castSucc i).symm, hinter.subset ⟨hx₁, hx₂⟩⟩
+  -- Each index of the new polygon is the second new edge `i.succ`, the first new edge
+  -- `i.castSucc`, or an old edge `i.succ.succAbove k` with `k ≠ i`.
+  rcases Fin.eq_succ_or_eq_castSucc_or_eq_succAbove i j₁ with rfl | rfl | ⟨k₁, hk₁, rfl⟩ <;>
+    rcases Fin.eq_succ_or_eq_castSucc_or_eq_succAbove i j₂ with rfl | rfl | ⟨k₂, hk₂, rfl⟩ <;>
+    simp (disch := assumption) only [edgeSet_insertVertex_succ_self,
+      edgeSet_insertVertex_castSucc_self, edgeSet_insertVertex_succAbove] at hx₁ hx₂
   · exact absurd rfl hne
-  · rw [edgeSet_insertVertex_succ_self] at hx₁
-    by_cases hk₂ : k₂ = i
-    · subst hk₂
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₂
-      rw [Fin.succAbove_succ_self]
-      exact .inr (new hx₂ hx₁)
-    · rw [edgeSet_insertVertex_succAbove _ _ _ hk₂] at hx₂
-      exact (eq_vertex_of_mem_affineSegment_right hright hother hp hk₂ hx₂ hx₁).symm
-  · rw [edgeSet_insertVertex_succ_self] at hx₂
-    by_cases hk₁ : k₁ = i
-    · subst hk₁
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₁
-      rw [Fin.succAbove_succ_self]
-      exact .inl (new hx₁ hx₂)
-    · rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
-      exact eq_vertex_of_mem_affineSegment_right hright hother hp hk₁ hx₁ hx₂
-  · have hk : k₁ ≠ k₂ := fun e => hne (e ▸ rfl)
-    by_cases hk₁ : k₁ = i
-    · subst hk₁
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₁
-      rw [edgeSet_insertVertex_succAbove _ _ _ hk.symm] at hx₂
-      rw [Fin.succAbove_succ_self]
-      exact (eq_vertex_of_mem_affineSegment_left hleft hother hp hk.symm hx₂ hx₁).symm
-    by_cases hk₂ : k₂ = i
-    · subst hk₂
-      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hx₂
-      rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
-      rw [Fin.succAbove_succ_self]
-      exact eq_vertex_of_mem_affineSegment_left hleft hother hp hk₁ hx₁ hx₂
-    -- Two old edges meet in the new polygon as they did in the old one.
-    rw [edgeSet_insertVertex_succAbove _ _ _ hk₁] at hx₁
-    rw [edgeSet_insertVertex_succAbove _ _ _ hk₂] at hx₂
-    rcases hp.eq_vertex_of_mem_edgeSet hk hx₁ hx₂ with ⟨e, rfl⟩ | ⟨e, rfl⟩
-    · exact .inl ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₁, e],
-        (insertVertex_apply_succAbove _ _ _ _).symm⟩
-    · exact .inr ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₂, e],
-        (insertVertex_apply_succAbove _ _ _ _).symm⟩
+  · exact .inr (new hx₂ hx₁)
+  · exact (eq_vertex_of_mem_affineSegment_right hright hother hp hk₂ hx₂ hx₁).symm
+  · exact .inl (new hx₁ hx₂)
+  · exact absurd rfl hne
+  · exact (eq_vertex_of_mem_affineSegment_left hleft hother hp hk₂ hx₂ hx₁).symm
+  · exact eq_vertex_of_mem_affineSegment_right hright hother hp hk₁ hx₁ hx₂
+  · exact eq_vertex_of_mem_affineSegment_left hleft hother hp hk₁ hx₁ hx₂
+  -- Two old edges meet in the new polygon as they did in the old one.
+  have hk : k₁ ≠ k₂ := fun e => hne (e ▸ rfl)
+  rcases hp.eq_vertex_of_mem_edgeSet hk hx₁ hx₂ with ⟨e, rfl⟩ | ⟨e, rfl⟩
+  · exact .inl ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₁, e],
+      (insertVertex_apply_succAbove _ _ _ _).symm⟩
+  · exact .inr ⟨by rw [Fin.finRotate_succ_succAbove_of_ne hk₂, e],
+      (insertVertex_apply_succAbove _ _ _ _).symm⟩
 
 end InsertVertex
 
@@ -412,6 +387,8 @@ private theorem vertexIndex_eq_vertexIndex_iff [NeZero n] {k l : ℤ} :
     vertexIndex n k = vertexIndex n l ↔ (n : ℤ) ∣ l - k := by
   rw [vertexIndex, vertexIndex, (ZMod.finEquiv n).symm.injective.eq_iff,
     ZMod.intCast_eq_intCast_iff_dvd_sub]
+
+section NeZero
 
 variable [NeZero n] (poly : Polygon P n)
 
@@ -493,13 +470,9 @@ theorem boundaryParam_rotate (t : ℝ) :
 `-(i + 1)`, where `i` is the edge it runs along at time `t`. -/
 theorem edgeIndexAt_neg {t : ℝ} (ht : Int.fract t ≠ 0) :
     edgeIndexAt n (-t) = -finRotate n (edgeIndexAt n t) := by
-  have hfract := (Int.fract_nonneg t).lt_of_ne' ht
-  rw [Int.fract] at hfract
-  have hfloor : ⌊-t⌋ = -⌊t⌋ - 1 := by
-    rw [Int.floor_eq_iff]
-    push_cast
-    constructor <;> linarith [Int.lt_floor_add_one t]
-  rw [edgeIndexAt, edgeIndexAt, hfloor, ← vertexIndex_add_one, ← vertexIndex_neg, neg_add']
+  rw [edgeIndexAt, edgeIndexAt, Int.floor_neg,
+    (Int.ceil_eq_floor_add_one_iff_notMem t).2 (Int.fract_ne_zero_iff.1 ht), vertexIndex_neg,
+    vertexIndex_add_one]
 
 /-- The reversal `poly.reverse` traverses the boundary of `poly` backwards from vertex `0`: its
 boundary parametrization at time `t` is that of `poly` at time `-t`. -/
@@ -542,15 +515,23 @@ of vertices. -/
 noncomputable def boundaryParamCircle : AddCircle (n : ℝ) → P :=
   poly.periodic_boundaryParam.lift
 
+/-- The circle parametrization, composed with the quotient map, is the boundary parametrization. -/
 @[simp]
 theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.boundaryParam t :=
   poly.periodic_boundaryParam.lift_coe t
 
-omit [NeZero n] in
+/-- The circle parametrization runs over the whole boundary of the polygon. -/
+@[simp]
+theorem range_boundaryParamCircle : range poly.boundaryParamCircle = poly.boundary ℝ := by
+  rw [← poly.range_boundaryParam, ← QuotientAddGroup.mk_surjective.range_comp]
+  exact congrArg range (funext poly.boundaryParamCircle_coe)
+
+end NeZero
+
 /-- The circle parametrization depends affinely on an inserted vertex. This expresses a moving
 polygon as the pointwise affine interpolation of its endpoint parametrizations. -/
-theorem boundaryParamCircle_insertVertex_lineMap {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (poly : Polygon V n) (i : Fin n) (a b : V) (t : ℝ) (z : AddCircle ((n + 1 : ℕ) : ℝ)) :
+theorem boundaryParamCircle_insertVertex_lineMap
+    (poly : Polygon P n) (i : Fin n) (a b : P) (t : ℝ) (z : AddCircle ((n + 1 : ℕ) : ℝ)) :
     (poly.insertVertex i (AffineMap.lineMap a b t)).boundaryParamCircle z =
       AffineMap.lineMap ((poly.insertVertex i a).boundaryParamCircle z)
         ((poly.insertVertex i b).boundaryParamCircle z) t := by
@@ -563,22 +544,95 @@ theorem boundaryParamCircle_insertVertex_lineMap {V : Type*} [AddCommGroup V] [M
   obtain ⟨u, rfl⟩ := QuotientAddGroup.mk_surjective z
   simp only [boundaryParamCircle_coe, boundaryParam_eq_edgePath_edgeIndexAt, edgePath]
   rw [hv, hv]
-  simp only [AffineMap.lineMap_apply_module]
+  apply (vsub_left_injective a)
+  simp only [AffineMap.lineMap_vsub, AffineMap.lineMap_apply_module]
   module
 
-/-- The circle parametrization runs over the whole boundary of the polygon. -/
-@[simp]
-theorem range_boundaryParamCircle : range poly.boundaryParamCircle = poly.boundary ℝ := by
-  rw [← poly.range_boundaryParam, ← QuotientAddGroup.mk_surjective.range_comp]
-  exact congrArg range (funext poly.boundaryParamCircle_coe)
+section Segments
 
-variable {poly}
+variable {poly : Polygon P n}
 
-omit [NeZero n] in
 /-- A point of an edge reached before its end point is not the end vertex. -/
 private theorem edgePath_ne_finRotate (h : poly.HasNondegenerateEdges) (i : Fin n) {s : ℝ}
     (hs : s < 1) : poly.edgePath ℝ i s ≠ poly (finRotate n i) := fun heq =>
   hs.ne (AffineMap.lineMap_injective ℝ (h i) (heq.trans (AffineMap.lineMap_apply_one _ _).symm))
+
+/-- At a vertex `poly k` of a simple polygon, the two edges through it are two segments from
+`poly k`, meeting only there, which cover every edge through `poly k`. -/
+private theorem IsSimple.exists_segments_of_vertex (h : poly.IsSimple ℝ) (k : Fin n) :
+    ∃ a b : P, a ≠ poly k ∧ b ≠ poly k ∧
+      affineSegment ℝ (poly k) a ∩ affineSegment ℝ (poly k) b = {poly k} ∧
+      (∀ j, poly k ∈ poly.edgeSet ℝ j →
+        poly.edgeSet ℝ j ⊆ affineSegment ℝ (poly k) a ∪ affineSegment ℝ (poly k) b) ∧
+      affineSegment ℝ (poly k) a ∪ affineSegment ℝ (poly k) b ⊆ poly.boundary ℝ := by
+  have hnd := h.hasNondegenerateEdges
+  set k' := (finRotate n).symm k with hk'
+  have hk'k : finRotate n k' = k := (finRotate n).apply_symm_apply k
+  have hedge' : poly.edgeSet ℝ k' = affineSegment ℝ (poly k) (poly k') := by
+    rw [edgeSet, hk'k, affineSegment_comm]
+  have hne : k' ≠ k := fun he => hnd k' (by rw [hk'k, he])
+  refine ⟨poly k', poly (finRotate n k), fun he => hnd k' (by rw [hk'k, he]),
+    (hnd k).symm, ?_, fun j hj => ?_, ?_⟩
+  · refine Subset.antisymm (fun y ⟨hy₁, hy₂⟩ => ?_) (by simp [left_mem_affineSegment])
+    rw [← hedge'] at hy₁
+    exact h.subsingleton_edgeSet_inter hne ⟨hy₁, hy₂⟩
+      ⟨by rw [hedge']; exact left_mem_affineSegment _ _ _, poly.apply_mem_edgeSet_self ℝ k⟩
+  · by_cases hjk : j = k
+    · subst hjk
+      exact subset_union_right
+    by_cases hjk' : j = k'
+    · subst hjk'
+      rw [hedge']
+      exact subset_union_left
+    exact absurd hj (h.apply_notMem_edgeSet (Ne.symm hjk)
+      fun he => hjk' (by rw [hk', he, Equiv.symm_apply_apply]))
+  · refine union_subset ?_ (subset_iUnion (poly.edgeSet ℝ) k)
+    rw [← hedge']
+    exact subset_iUnion (poly.edgeSet ℝ) k'
+
+/-- Near a point `z` of a simple polygon there are two segments from `z`, meeting only at `z`,
+which lie in the boundary and cover every edge through `z`: the two edges at a vertex, and the
+two pieces of the edge on either side of `z` otherwise. -/
+private theorem IsSimple.exists_segments (h : poly.IsSimple ℝ) {z : P}
+    (hz : z ∈ poly.boundary ℝ) : ∃ a b : P, a ≠ z ∧ b ≠ z ∧
+      affineSegment ℝ z a ∩ affineSegment ℝ z b = {z} ∧
+      (∀ j, z ∈ poly.edgeSet ℝ j → poly.edgeSet ℝ j ⊆ affineSegment ℝ z a ∪ affineSegment ℝ z b) ∧
+      affineSegment ℝ z a ∪ affineSegment ℝ z b ⊆ poly.boundary ℝ := by
+  by_cases hv : ∃ k, poly k = z
+  · obtain ⟨k, rfl⟩ := hv
+    exact h.exists_segments_of_vertex k
+  -- Inside an edge `i`: the two pieces of that edge on either side of `z`.
+  push Not at hv
+  obtain ⟨i, s, hs, rfl⟩ := mem_boundary_iff.1 hz
+  have hf : Injective (poly.edgePath ℝ i) :=
+    AffineMap.lineMap_injective ℝ (h.hasNondegenerateEdges i)
+  have hseg (t u : ℝ) (htu : t ≤ u) : affineSegment ℝ (poly.edgePath ℝ i t)
+      (poly.edgePath ℝ i u) = poly.edgePath ℝ i '' Icc t u := by
+    rw [← affineSegment_image, affineSegment_eq_segment, segment_eq_Icc htu]
+  have hsa : affineSegment ℝ (poly.edgePath ℝ i s) (poly i) = poly.edgePath ℝ i '' Icc 0 s := by
+    rw [affineSegment_comm, ← hseg 0 s hs.1, edgePath, AffineMap.lineMap_apply_zero]
+  have hsb : affineSegment ℝ (poly.edgePath ℝ i s) (poly (finRotate n i)) =
+      poly.edgePath ℝ i '' Icc s 1 := by
+    rw [← hseg s 1 hs.2, edgePath, AffineMap.lineMap_apply_one]
+  have hedge : poly.edgeSet ℝ i = affineSegment ℝ (poly.edgePath ℝ i s) (poly i) ∪
+      affineSegment ℝ (poly.edgePath ℝ i s) (poly (finRotate n i)) := by
+    rw [edgeSet_eq_affineSegment_union poly i hs, affineSegment_comm ℝ (poly i)]
+  refine ⟨poly i, poly (finRotate n i), hv i, hv _, ?_, fun j hj => ?_, ?_⟩
+  · rw [hsa, hsb, ← image_inter hf, Icc_inter_Icc, max_eq_right hs.1, min_eq_left hs.2,
+      Icc_self, image_singleton]
+  · by_cases hji : j = i
+    · rw [hji, hedge]
+    rcases h.eq_vertex_of_mem_edgeSet hji hj (poly.edgePath_mem_edgeSet i hs) with ⟨-, hx⟩ | ⟨-, hx⟩
+    · exact absurd hx.symm (hv i)
+    · exact absurd hx.symm (hv j)
+  · rw [← hedge]
+    exact subset_iUnion (poly.edgeSet ℝ) i
+
+end Segments
+
+section Injectivity
+
+variable [NeZero n] {poly : Polygon P n}
 
 /-- **Injectivity of the boundary parametrization.** For a simple polygon, two parameters give the
 same boundary point exactly when they agree modulo the number of vertices. -/
@@ -620,10 +674,8 @@ theorem exists_mem_Ico_boundaryParam_eq {x : P} (hx : x ∈ poly.boundary ℝ) :
     ∃ t ∈ Ico (0 : ℝ) n, poly.boundaryParam t = x := by
   rw [← range_boundaryParam] at hx
   obtain ⟨u, rfl⟩ := hx
-  have hn : (0 : ℝ) < n := mod_cast NeZero.pos n
-  refine ⟨toIcoMod hn 0 u, by simpa using toIcoMod_mem_Ico hn 0 u, ?_⟩
-  rw [← sub_sub_cancel u (toIcoMod hn 0 u), self_sub_toIcoMod]
-  exact poly.periodic_boundaryParam.sub_zsmul_eq _
+  obtain ⟨t, ht, h⟩ := poly.periodic_boundaryParam.exists_mem_Ico₀ (mod_cast NeZero.pos n) u
+  exact ⟨t, ht, h.symm⟩
 
 /-- The circle parametrization of a simple polygon is injective. -/
 theorem IsSimple.boundaryParamCircle_injective (h : poly.IsSimple ℝ) :
@@ -634,9 +686,14 @@ theorem IsSimple.boundaryParamCircle_injective (h : poly.IsSimple ℝ) :
   rw [boundaryParamCircle_coe, boundaryParamCircle_coe] at hxy
   exact h.boundaryParam_eq_boundaryParam_iff.1 hxy
 
+end Injectivity
+
 section Topology
 
-variable [TopologicalSpace V] [ContinuousSMul ℝ V] [TopologicalSpace P] [IsTopologicalAddTorsor P]
+section Circle
+
+variable [NeZero n] {poly : Polygon P n}
+  [TopologicalSpace V] [ContinuousSMul ℝ V] [TopologicalSpace P] [IsTopologicalAddTorsor P]
 
 variable (poly) in
 /-- The boundary parametrization is continuous. -/
@@ -680,81 +737,23 @@ theorem IsSimple.isJordanCurve_boundary [T2Space P] (h : poly.IsSimple ℝ) :
     h.boundaryParamCircle_injective.injOn
   rwa [image_univ, range_boundaryParamCircle] at himage
 
+end Circle
+
+section Local
+
+variable {poly : Polygon P n}
+  [TopologicalSpace V] [ContinuousSMul ℝ V] [TopologicalSpace P] [IsTopologicalAddTorsor P]
+  [T2Space P]
+
 /-- **Local structure of a simple polygon.** Near each of its points `z`, a simple polygon is the
 union of two segments from `z`, to points `a` and `b` other than `z`, which meet only at `z`. For a
 vertex `z` these run along the two edges at `z`; for a point inside an edge they run along that
 edge in its two directions. -/
-theorem IsSimple.exists_mem_nhds_inter_boundary_eq [T2Space P] (h : poly.IsSimple ℝ) {z : P}
+theorem IsSimple.exists_mem_nhds_inter_boundary_eq (h : poly.IsSimple ℝ) {z : P}
     (hz : z ∈ poly.boundary ℝ) : ∃ a b : P, a ≠ z ∧ b ≠ z ∧
       affineSegment ℝ z a ∩ affineSegment ℝ z b = {z} ∧
       ∃ U ∈ 𝓝 z, U ∩ poly.boundary ℝ = U ∩ (affineSegment ℝ z a ∪ affineSegment ℝ z b) := by
-  have hnd := h.hasNondegenerateEdges
-  -- The two segments, together with the edges through `z`, which they cover.
-  obtain ⟨a, b, ha, hb, hab, hsub, hsup⟩ : ∃ a b : P, a ≠ z ∧ b ≠ z ∧
-      affineSegment ℝ z a ∩ affineSegment ℝ z b = {z} ∧
-      (∀ j, z ∈ poly.edgeSet ℝ j → poly.edgeSet ℝ j ⊆ affineSegment ℝ z a ∪ affineSegment ℝ z b) ∧
-      affineSegment ℝ z a ∪ affineSegment ℝ z b ⊆ poly.boundary ℝ := by
-    by_cases hv : ∃ k, poly k = z
-    · -- At a vertex `z = poly k`: the edges ending and starting at `k`.
-      obtain ⟨k, rfl⟩ := hv
-      set k' := (finRotate n).symm k with hk'
-      have hk'k : finRotate n k' = k := (finRotate n).apply_symm_apply k
-      have hedge' : poly.edgeSet ℝ k' = affineSegment ℝ (poly k) (poly k') := by
-        rw [edgeSet, hk'k, affineSegment_comm]
-      have hne : k' ≠ k := fun he => hnd k' (by rw [hk'k, he])
-      refine ⟨poly k', poly (finRotate n k), fun he => hnd k' (by rw [hk'k, he]),
-        (hnd k).symm, ?_, fun j hj => ?_, ?_⟩
-      · refine Subset.antisymm (fun y ⟨hy₁, hy₂⟩ => ?_) (by simp [left_mem_affineSegment])
-        rw [← hedge'] at hy₁
-        rcases h.eq_vertex_of_mem_edgeSet hne hy₁ hy₂ with ⟨-, rfl⟩ | ⟨he, -⟩
-        · rfl
-        · -- `k' = k + 1` would make `k + 2 = k`, impossible with at least three vertices.
-          have h3 := h.three_le
-          have he2 : k + (1 + 1) = k := by
-            rw [← add_assoc, ← finRotate_apply, ← finRotate_apply, ← he, hk'k]
-          rw [add_eq_left] at he2
-          obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-          have hm2 : 2 < m + 3 := by omega
-          simp [Fin.ext_iff, Fin.val_add, Nat.mod_eq_of_lt hm2] at he2
-      · by_cases hjk : j = k
-        · subst hjk
-          exact subset_union_right
-        by_cases hjk' : j = k'
-        · subst hjk'
-          rw [hedge']
-          exact subset_union_left
-        rcases h.eq_vertex_of_mem_edgeSet hjk hj (left_mem_affineSegment ℝ _ _) with
-          ⟨he, -⟩ | ⟨he, hx⟩
-        · exact absurd (by rw [hk', Equiv.eq_symm_apply, he]) hjk'
-        · exact absurd (by rw [hx, he]) (hnd k)
-      · refine union_subset ?_ (subset_iUnion (poly.edgeSet ℝ) k)
-        rw [← hedge']
-        exact subset_iUnion (poly.edgeSet ℝ) k'
-    · -- Inside an edge `i`: the two pieces of that edge on either side of `z`.
-      push Not at hv
-      obtain ⟨i, s, hs, rfl⟩ := mem_iUnion.1 hz
-      set f : ℝ →ᵃ[ℝ] P := AffineMap.lineMap (poly i) (poly (finRotate n i))
-      have hf : Injective f := AffineMap.lineMap_injective ℝ (hnd i)
-      have hseg (t u : ℝ) (htu : t ≤ u) : affineSegment ℝ (f t) (f u) = f '' Icc t u := by
-        rw [← affineSegment_image, affineSegment_eq_segment, segment_eq_Icc htu]
-      have hsa : affineSegment ℝ (f s) (poly i) = f '' Icc 0 s := by
-        rw [affineSegment_comm, ← hseg 0 s hs.1, AffineMap.lineMap_apply_zero]
-      have hsb : affineSegment ℝ (f s) (poly (finRotate n i)) = f '' Icc s 1 := by
-        rw [← hseg s 1 hs.2, AffineMap.lineMap_apply_one]
-      have hedge : poly.edgeSet ℝ i = affineSegment ℝ (f s) (poly i) ∪
-          affineSegment ℝ (f s) (poly (finRotate n i)) := by
-        rw [hsa, hsb, ← image_union, Icc_union_Icc_eq_Icc hs.1 hs.2]
-        rfl
-      refine ⟨poly i, poly (finRotate n i), hv i, hv _, ?_, fun j hj => ?_, ?_⟩
-      · rw [hsa, hsb, ← image_inter hf, Icc_inter_Icc, max_eq_right hs.1, min_eq_left hs.2,
-          Icc_self, image_singleton]
-      · by_cases hji : j = i
-        · rw [hji, hedge]
-        rcases h.eq_vertex_of_mem_edgeSet hji hj ⟨s, hs, rfl⟩ with ⟨-, hx⟩ | ⟨-, hx⟩
-        · exact absurd hx.symm (hv i)
-        · exact absurd hx.symm (hv j)
-      · rw [← hedge]
-        exact subset_iUnion (poly.edgeSet ℝ) i
+  obtain ⟨a, b, ha, hb, hab, hsub, hsup⟩ := h.exists_segments hz
   refine ⟨a, b, ha, hb, hab, ?_⟩
   -- Away from the edges missing `z`, the polygon is the union of the edges through `z`.
   have hclosed (j : Fin n) : IsClosed (poly.edgeSet ℝ j) :=
@@ -769,6 +768,8 @@ theorem IsSimple.exists_mem_nhds_inter_boundary_eq [T2Space P] (h : poly.IsSimpl
   by_cases hzj : z ∈ poly.edgeSet ℝ j
   · exact ⟨hyC, hsub j hzj hj⟩
   · exact absurd (mem_iUnion₂_of_mem (i := j) hzj hj) hyC
+
+end Local
 
 end Topology
 
@@ -793,7 +794,7 @@ end Polygon
 
 namespace Affine.Triangle
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
+variable {R V P : Type*} [Ring R] [PartialOrder R]
   [Nontrivial R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- **A triangle is a simple polygon.** -/
@@ -804,6 +805,9 @@ theorem toPolygon_isSimple (t : Affine.Triangle R P) : t.toPolygon.IsSimple R :=
   -- vertex, the middle one of three consecutive vertices.
   have hside (i : Fin 3) {x : P} (hi : x ∈ t.toPolygon.edgeSet R i)
       (hj : x ∈ t.toPolygon.edgeSet R (finRotate 3 i)) : x = t.toPolygon (finRotate 3 i) := by
+    have : ZeroLEOneClass R := by
+      obtain ⟨s, ⟨hs₀, hs₁⟩, -⟩ := hi
+      exact ⟨hs₀.trans hs₁⟩
     have hx : x ∈ affineSegment R (t.toPolygon i) (t.toPolygon (i + 1)) ∩
         affineSegment R (t.toPolygon (i + 1)) (t.toPolygon (i + 2)) := by
       refine ⟨by simpa [Polygon.edgeSet, finRotate_apply] using hi, ?_⟩
@@ -827,6 +831,7 @@ structure SimplePolygon (R : Type*) {V : Type*} (P : Type*) [Ring R] [PartialOrd
     [ZeroLEOneClass R] [AddCommGroup V] [Module R V] [AddTorsor V P] where
   /-- The number of vertices. -/
   numVertices : ℕ
+  /-- A simple polygon has at least one vertex. -/
   [neZero : NeZero numVertices]
   /-- The underlying polygon. -/
   toPolygon : Polygon P numVertices
@@ -848,10 +853,12 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGr
   toPolygon := p.toPolygon.rotate
   isSimple := p.toPolygon.isSimple_rotate_iff.2 p.isSimple
 
+/-- Rotating a simple polygon does not change its number of vertices. -/
 @[simp]
 theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
   rfl
 
+/-- The underlying polygon of the rotation is the rotation of the underlying polygon. -/
 @[simp]
 theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
   rfl
@@ -864,12 +871,14 @@ when the result is simple. For `c` a point of edge `i`, this subdivides that edg
   toPolygon := p.toPolygon.insertVertex i c
   isSimple := hq
 
+/-- Inserting a vertex adds one to the number of vertices. -/
 @[simp]
 theorem insertVertex_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
     (p.insertVertex i c hq).numVertices = p.numVertices + 1 :=
   rfl
 
+/-- The underlying polygon after inserting a vertex is the polygon with the vertex inserted. -/
 @[simp]
 theorem insertVertex_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
@@ -923,11 +932,13 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
   toPolygon := t.toPolygon
   isSimple := t.toPolygon_isSimple
 
+/-- The simple polygon of a triangle has three vertices. -/
 @[simp]
 theorem toSimplePolygon_numVertices (t : Affine.Triangle R P) :
     t.toSimplePolygon.numVertices = 3 :=
   rfl
 
+/-- The underlying polygon of the simple polygon of a triangle is its polygon. -/
 @[simp]
 theorem toSimplePolygon_toPolygon (t : Affine.Triangle R P) :
     t.toSimplePolygon.toPolygon = t.toPolygon :=

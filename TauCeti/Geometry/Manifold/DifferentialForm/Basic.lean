@@ -83,6 +83,15 @@ theorem RoughForm.eq_ofFunction {I : ModelWithCorners ℝ E H} {M : Type*} [Topo
   ext v
   rw [RoughForm.ofFunction_apply, Subsingleton.elim v 0]
 
+/-- A rough form takes the same value at equal points on tuples of tangent vectors with equal
+coordinates in the model vector space. -/
+theorem RoughForm.apply_congr {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {k : ℕ}
+    (φ : RoughForm I M F k) {x y : M} (h : x = y) {v : Fin k → TangentSpace I x}
+    {w : Fin k → TangentSpace I y} (hvw : ∀ i, (v i : E) = w i) : φ x v = φ y w := by
+  subst h
+  exact congrArg (φ x) (funext hvw)
+
 section Kernel
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -122,6 +131,12 @@ theorem ker_eq_top_iff {α : RoughForm I M ℝ 1} {x : M} : α.ker x = ⊤ ↔ �
   · have hv : ![v 0] = v := funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl
     simpa [hv] using mem_ker.1 (h ▸ Submodule.mem_top : v 0 ∈ α.ker x)
   · simp [h]
+
+/-- A one-form which does not vanish at `x` takes a nonzero value on some tangent vector at `x`. -/
+theorem exists_apply_ne_zero {α : RoughForm I M ℝ 1} {x : M} (hα : α x ≠ 0) :
+    ∃ v : TangentSpace I x, α x ![v] ≠ 0 := by
+  by_contra! h
+  exact hα (ker_eq_top_iff.1 (eq_top_iff.2 fun v _ ↦ mem_ker.2 (h v)))
 
 /-- Rescaling a one-form by a function that does not vanish at `x` does not change its kernel
 at `x`. -/

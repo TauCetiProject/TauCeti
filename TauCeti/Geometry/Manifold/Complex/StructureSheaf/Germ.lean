@@ -21,7 +21,11 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
 
 * `toFilterGerm_germ`: the germ of a section is the germ of any function agreeing with it on
   the domain of the section;
-* `toFilterGerm_nhds_injective`: a holomorphic germ is determined by its germ along `𝓝 x`;
+* `toFilterGerm_nhds_injective`: a holomorphic germ is determined by its germ along `𝓝 x`; in
+  particular it vanishes exactly when a representative vanishes near `x`
+  (`eq_zero_iff_of_toFilterGerm_eq`);
+* `toFilterGerm_ringEquivCast`: transporting a germ along an equality of points with
+  `RingEquiv.cast` keeps its representative;
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
@@ -30,10 +34,12 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   and `exists_toFilterGerm_nhds_eq_iff_analyticAt` express this directly via `AnalyticAt`);
 * `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
   with the same germ;
+* `evalEquivOfNhdsEqPure`: at an isolated point (`𝓝 x = pure x`), evaluation identifies the
+  holomorphic stalk at `x` with `ℂ`;
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
   is composition of germs with `f`;
 * `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
-  of the germs vanishing along a local holomorphic section `σ` through `p` of a holomorphic map
+  of the germs vanishing along a local holomorphic section `σ` of a holomorphic map
   `π`, then pulling back along `π` identifies the germs at `π p` with the quotient by that ideal.
   This computes local rings of analytic subsets that are locally graphs.
   The inverse is composition with `σ` (`toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq`).
@@ -86,16 +92,16 @@ private def toFilterGermHom (x : X) (l : Filter X) (hl : l ≤ 𝓝 x) :
       (holomorphicStructureSheaf I X).presheaf)
     { pt := CommRingCat.of (Germ l ℂ)
       ι :=
-        { app := fun U ↦ CommRingCat.ofHom (sectionToFilterGerm I X (unop U).2 hl)
+        { app := fun U ↦ CommRingCat.ofHom (sectionToFilterGerm I X (unop U).property hl)
           naturality := by
             intro U V h
             apply CommRingCat.hom_ext
             apply RingHom.ext
             intro f
             -- Both composites send `f` to the germ of its extension by zero.
-            exact coe_extend_eq I X (unop V).2 hl _ _ fun y ↦
+            exact coe_extend_eq I X (unop V).property hl _ _ fun y ↦
               (map_apply (I := I) (X := X)
-                (U := op (α := Opens X) (unop U).1) (V := op (α := Opens X) (unop V).1)
+                (U := op (α := Opens X) (unop U).val) (V := op (α := Opens X) (unop V).val)
                 ((OpenNhds.inclusion (X := TopCat.of X) x).map h.unop).op f y).trans
                 (Subtype.val_injective.extend_apply _ (0 : X → ℂ) _).symm } }
 
@@ -128,7 +134,7 @@ theorem toFilterGerm_germ {x : X} {l : Filter X} (hl : l ≤ 𝓝 x) {U : Opens 
 def germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     (holomorphicStructureSheaf I X).presheaf.stalk x :=
   ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ ⊤ x trivial)
-    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtype_val))
+    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtypeVal))
 
 /-- The holomorphic germ of a globally analytic function `f` is the germ of `f`. -/
 @[simp]
@@ -158,7 +164,7 @@ theorem exists_toFilterGerm_eq_of_eventually_contMDiffAt {x : X} {f : X → ℂ}
   obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 hf
   let U : Opens X := ⟨t, hto⟩
   let fU : (holomorphicStructureSheaf I X).obj.obj (op U) :=
-    ofContMDiff (fun y : U ↦ f y) fun y ↦ contMDiffAt_subtype_iff.2 (ht y y.2)
+    ofContMDiff (fun y : U ↦ f y) fun y ↦ contMDiffAt_subtype_iff.2 (ht y y.property)
   exact ⟨ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ U x hxt) fU,
     fun l hl ↦ toFilterGerm_germ hl hxt fU f fun y ↦ ofContMDiff_apply _ _ y⟩
 
@@ -191,7 +197,25 @@ theorem toFilterGerm_nhds_injective (x : X) :
   refine TopCat.Presheaf.germ_ext _ W hxt (homOfLE hWU) (homOfLE hWU) (ext fun y ↦ ?_)
   rw [map_apply, map_apply, zero_apply]
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (Opens.inclusion hWU y)).symm.trans
-    (ht y y.2).1
+    (ht y y.property).1
+
+/-- A holomorphic germ vanishes exactly when a function with the same germ along `𝓝 x` vanishes
+near `x`. -/
+theorem eq_zero_iff_of_toFilterGerm_eq {x : X}
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (h : toFilterGerm I X x (𝓝 x) le_rfl s = f) : s = 0 ↔ f =ᶠ[𝓝 x] 0 := by
+  rw [← (toFilterGerm_nhds_injective x).eq_iff, h, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+
+/-- Transporting a holomorphic germ along an equality of points `x = y` with `RingEquiv.cast`
+keeps its representative. This lets coordinate changes that fix a point only propositionally
+compare germs at the two descriptions of the point. -/
+theorem toFilterGerm_ringEquivCast {x y : X} (h : x = y)
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (hs : toFilterGerm I X x (𝓝 x) le_rfl s = f) :
+    toFilterGerm I X y (𝓝 y) le_rfl
+      (RingEquiv.cast (R := fun z ↦ (holomorphicStructureSheaf I X).presheaf.stalk z) h s) = f := by
+  subst h
+  exact hs
 
 /-- At a point which is not isolated, a holomorphic germ is determined by its germ on the
 punctured neighbourhoods of the point, by continuity. -/
@@ -202,8 +226,7 @@ theorem toFilterGerm_nhdsNE_injective (x : X) [(𝓝[≠] x).NeBot] :
   obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq x s
   have hc : ContinuousAt f x := hf.self_of_nhds.continuousAt
   rw [hfs, ← Germ.coe_zero, Germ.coe_eq] at hs
-  apply toFilterGerm_nhds_injective x
-  rw [hfs, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+  refine (eq_zero_iff_of_toFilterGerm_eq (hfs _ le_rfl)).2 ?_
   exact (hc.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE (g := fun _ ↦ 0) continuousAt_const).1 hs
 
 /-- A function has a holomorphic germ at `x` with the same germ along `𝓝 x` exactly when it is
@@ -233,6 +256,44 @@ theorem eval_germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (
     eval I X x (germOfContMDiff f hf x) = f x :=
   eval_eq_of_toFilterGerm_eq (toFilterGerm_germOfContMDiff f hf le_rfl)
 
+/-- At an isolated point (`𝓝 x = pure x`), evaluation identifies the holomorphic stalk at `x`
+with `ℂ`. -/
+def evalEquivOfNhdsEqPure (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+* ℂ :=
+  RingEquiv.ofBijective (eval I X x)
+    ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ by
+      obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
+      refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
+      rw [hx]
+      exact eventually_pure.2 ((eval_eq_of_toFilterGerm_eq (hφ _ le_rfl)).symm.trans hs),
+      eval_surjective I X x⟩
+
+/-- Evaluating the stalk isomorphism at an isolated point agrees with `eval`. -/
+@[simp]
+theorem evalEquivOfNhdsEqPure_apply (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    evalEquivOfNhdsEqPure I hx s = eval I X x s :=
+  RingEquiv.ofBijective_apply _ _ _
+
+/-- At an isolated point, the inverse stalk isomorphism recovers any germ from its value. -/
+@[simp]
+theorem evalEquivOfNhdsEqPure_symm_eval (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    (evalEquivOfNhdsEqPure I hx).symm (eval I X x s) = s := by
+  rw [← evalEquivOfNhdsEqPure_apply I hx, RingEquiv.symm_apply_apply]
+
+/-- Evaluating the inverse stalk isomorphism at an isolated point returns the given scalar. -/
+@[simp]
+theorem eval_evalEquivOfNhdsEqPure_symm (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (c : ℂ) : eval I X x ((evalEquivOfNhdsEqPure I hx).symm c) = c := by
+  rw [← evalEquivOfNhdsEqPure_apply I hx, RingEquiv.apply_symm_apply]
+
+/-- At an isolated point, the inverse of `evalEquivOfNhdsEqPure` sends `c` to the constant germ. -/
+theorem evalEquivOfNhdsEqPure_symm_apply (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (c : ℂ) :
+    (evalEquivOfNhdsEqPure I hx).symm c = germOfContMDiff (fun _ ↦ c) contMDiff_const x :=
+  (evalEquivOfNhdsEqPure I hx).injective (by simp)
+
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
@@ -248,7 +309,7 @@ theorem toFilterGerm_stalkPrecomp (f : X → Y) (hf : ContMDiff I J ω f) (x : X
     fun y ↦ (Subtype.val_injective.extend_apply _ (0 : Y → ℂ) y).symm
   rw [stalkPrecomp_germ, toFilterGerm_germ le_rfl hx g _ hg]
   exact (toFilterGerm_germ (U := (Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj U) le_rfl hx _
-    _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.1, y.2⟩)).trans
+    _ fun y ↦ (precomp_apply I X f hf (op U) g y).trans (hg ⟨f y.val, y.property⟩)).trans
     (Germ.coe_compTendsto _ _).symm
 
 /-- Pulling back the holomorphic germ of a globally analytic function `g` along a complex analytic
@@ -325,17 +386,31 @@ theorem toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq {π : V → W}
   rwa [Pi.sub_apply, Function.comp_apply, hπw, sub_eq_zero] at hw
 
 /-- **Germs on the image of a holomorphic section.** Let `π : V → W` be holomorphic and `σ` a
-local holomorphic section of `π` near `π p` through `p`. If an ideal `J` of the holomorphic germs
+local holomorphic section of `π` near `π p`. If an ideal `J` of the holomorphic germs
 at `p` consists exactly of the germs vanishing along `σ`, then pulling back along `π` identifies
 the holomorphic germs at `π p` with the germs at `p` modulo `J`. -/
 theorem quotientMk_comp_stalkPrecomp_bijective {π : V → W} (hπ : ContMDiff 𝓘(ℂ, V) 𝓘(ℂ, W) ω π)
-    {σ : W → V} {p : V} (hσ : ContDiffAt ℂ ω σ (π p)) (hσp : σ (π p) = p)
+    {σ : W → V} {p : V} (hσ : ContDiffAt ℂ ω σ (π p))
     (hπσ : ∀ᶠ w in 𝓝 (π p), π (σ w) = w)
     (J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p))
     (hJ : ∀ (g : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk p) (G : V → ℂ),
       toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl g = G →
         (g ∈ J ↔ ∀ᶠ w in 𝓝 (π p), G (σ w) = 0)) :
     Bijective ((Ideal.Quotient.mk J).comp (stalkPrecomp 𝓘(ℂ, V) V π hπ p)) := by
+  -- The section passes through `p`: otherwise the indicator of a neighbourhood of `σ (π p)`
+  -- away from `p` is a germ at `p` vanishing along `σ`, yet equal to `1` along `σ` near `π p`.
+  have hσp : σ (π p) = p := by
+    by_contra hne
+    obtain ⟨U, U', hU, hU', hpU, hqU', hdisj⟩ := t2_separation (Ne.symm hne)
+    classical
+    have h0 := (hJ 0 (U'.indicator fun _ ↦ 1) (by
+      rw [map_zero, ← Germ.coe_zero]
+      refine Germ.coe_eq.2 ?_
+      filter_upwards [hU.mem_nhds hpU] with x hx
+      exact (Set.indicator_of_notMem (fun h ↦ hdisj.le_bot ⟨hx, h⟩) _).symm)).1 (zero_mem J)
+    have h1 : ∀ᶠ w in 𝓝 (π p), σ w ∈ U' := hσ.continuousAt.eventually (hU'.mem_nhds hqU')
+    obtain ⟨w, hw0, hw1⟩ := (h0.and h1).exists
+    simp [hw1] at hw0
   constructor
   · -- A germ at `π p` whose pullback vanishes along `σ` vanishes, since `π ∘ σ = id`.
     rw [injective_iff_map_eq_zero]

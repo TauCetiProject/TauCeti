@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DysonSeries
+public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Dynamics.Flow.OfLipschitz
 public import TauCeti.Dynamics.Flow.TimeDependent
--- Private: parametric integrals and the chain rule are used only inside proofs.
+-- Private: parametric integrals, the chain rule and the local-inverse derivative are used only
+-- inside proofs.
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -42,6 +45,8 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.contDiff_timeDependentFlow` and `TauCeti.hasDerivAt_fderiv_timeDependentFlow`: the
   time-dependent flow `φ(s, t)` of a jointly `C^(n+1)` field (`TauCeti.timeDependentFlow`) is
   `C^(n+1)` in `(s, t, x)`, and `∂ₜ Dφ(s, t)(x) = Dvₜ(φ(s, t) x) ∘ Dφ(s, t)(x)`.
+* `TauCeti.contDiff_timeDependentFlow_apply`: the time maps of a `C^r` time-dependent field are
+  `C^r`, for every `r : ℕ∞`.
 * `TauCeti.differentiable_timeDependentFlow` and
   `TauCeti.fderiv_timeDependentFlow_eq_dysonSeriesLeft`: consequently `Dφ(s, t)(x)` exists and is
   the propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ξ' = Dv_r(φ(s, r) x) ξ`
@@ -116,9 +121,9 @@ theorem fderiv_flowOfLipschitz_eq_id_add_integral (x : E) (t : ℝ) :
       calc _ ≤ ‖fderiv ℝ v (flowOfLipschitz v hv τ y)‖ * ‖fderiv ℝ (flowOfLipschitz v hv τ) y‖ :=
             ContinuousLinearMap.opNorm_comp_le _ _
         _ ≤ K * Real.exp (K * |t|) := by
-          refine mul_le_mul (norm_fderiv_le_of_lipschitz ℝ hv) ?_ (norm_nonneg _) K.2
+          refine mul_le_mul (norm_fderiv_le_of_lipschitz ℝ hv) ?_ (norm_nonneg _) K.property
           exact (norm_fderiv_flowOfLipschitz_le hv y τ).trans
-            (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hτt K.2))
+            (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hτt K.property))
     · refine ae_restrict_of_forall_mem measurableSet_uIoc fun τ _ y _ ↦ ?_
       exact ((hvs.differentiable one_ne_zero _).hasFDerivAt.comp y (hdiff τ y).hasFDerivAt)
   have hφ : flowOfLipschitz v hv t = fun y ↦ y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) :=
@@ -173,7 +178,7 @@ theorem fderiv_neg_comp (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
 theorem fderiv_comp_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     (fderiv ℝ (ϕ t) x).comp (fderiv ℝ (ϕ (-t)) (ϕ t x)) = ContinuousLinearMap.id ℝ E := by
-  have hx : ϕ (-t) (ϕ t x) = x := by rw [← ϕ.map_add, neg_add_cancel, Flow.map_zero_apply]
+  have hx : ϕ (-t) (ϕ t x) = x := ϕ.map_neg_apply_map t x
   have := Flow.fderiv_add (s := t) (t := -t) (x := ϕ t x) (by rw [hx]; exact ht) hs
   rw [add_neg_cancel, Flow.map_zero, fderiv_id, hx] at this
   exact this.symm
@@ -207,12 +212,28 @@ theorem coe_inv_fderivUnit (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     ((Flow.fderivUnit hs ht)⁻¹ : (E →L[ℝ] E)ˣ) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
   (rfl)
 
-/-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. -/
+/-- **The inverse of the derivative of a flow** is the derivative of the reverse time map. No
+differentiability of the reverse time map is assumed: when `Dϕ_t(x)` is not invertible, the reverse
+time map is not differentiable at `ϕ t x`, and both sides are `0`. -/
 @[simp]
-theorem ringInverse_fderiv (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
-    (ht : DifferentiableAt ℝ (ϕ t) x) :
-    Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) :=
-  Ring.inverse_unit (Flow.fderivUnit hs ht)
+theorem ringInverse_fderiv (ht : DifferentiableAt ℝ (ϕ t) x) :
+    Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) := by
+  by_cases hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x)
+  · exact Ring.inverse_unit (Flow.fderivUnit hs ht)
+  · -- If the reverse time map were not differentiable, `Dϕ_t(x)` cannot be a unit.
+    rw [fderiv_zero_of_not_differentiableAt hs, Ring.inverse_non_unit]
+    rintro ⟨u, hu⟩
+    have hcoe : ((ContinuousLinearEquiv.unitsEquiv ℝ E u : E ≃L[ℝ] E) : E →L[ℝ] E) =
+        fderiv ℝ (ϕ t) x := by
+      rw [← hu]
+      ext v
+      simp
+    refine hs (HasFDerivAt.of_local_left_inverse (f := ϕ t)
+      (f' := ContinuousLinearEquiv.unitsEquiv ℝ E u) ?_ ?_ ?_).differentiableAt
+    · exact (ϕ.continuous continuous_const continuous_id).continuousAt
+    · rw [ϕ.map_neg_apply_map, hcoe]
+      exact ht.hasFDerivAt
+    · exact Filter.Eventually.of_forall fun y ↦ ϕ.map_apply_map_neg t y
 
 /-- **The derivative of a flow carries its velocity field along**: if the orbits of `x` and of
 `ϕ t x` have velocities `a` and `b` at time `0`, then `Dϕ_t(x) a = b`. -/
@@ -282,6 +303,15 @@ theorem contDiff_timeDependentFlow (n : ℕ)
   convert contDiff_snd.comp h using 1
   funext p
   simp [globalSolution_timeDependentSuspension]
+
+/-- A time-dependent field which is jointly `C^r` has `C^r` time maps, for every `r : ℕ∞`. -/
+theorem contDiff_timeDependentFlow_apply {r : ℕ∞} (hvs : ContDiff ℝ r fun p : ℝ × E ↦ v p.1 p.2)
+    (s t : ℝ) : ContDiff ℝ r (timeDependentFlow v hv s t) := by
+  refine contDiff_iff_forall_nat_le.2 fun m hm ↦ ?_
+  have hι : ContDiff ℝ m fun x : E ↦ ((s, t), x) := contDiff_const.prodMk contDiff_id
+  cases m with
+  | zero => exact contDiff_zero.2 ((continuous_timeDependentFlow v hv).comp hι.continuous)
+  | succ m => exact (contDiff_timeDependentFlow hv m (hvs.of_le (by exact_mod_cast hm))).comp hι
 
 variable (hvs : ContDiff ℝ 1 fun p : ℝ × E ↦ v p.1 p.2)
 include hvs

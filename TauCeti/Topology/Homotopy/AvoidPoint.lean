@@ -84,22 +84,15 @@ theorem exists_homotopyRel_of_segment_subset_target (f : C(X, Y)) (φ : OpenPart
   have hmem : ∀ (t : unitInterval) x, f x ∈ φ.source →
       (t : ℝ) • (w x - φ (f x)) + φ (f x) ∈ φ.target := fun t x hx =>
     hseg x hx (AffineMap.lineMap_apply_module' (φ (f x)) (w x) (t : ℝ) ▸
-      lineMap_mem_segment ℝ _ _ t.2)
+      lineMap_mem_segment ℝ _ _ t.property)
   let H : unitInterval × X → Y := fun q =>
     if f q.2 ∈ φ.source then φ.symm ((q.1 : ℝ) • (w q.2 - φ (f q.2)) + φ (f q.2)) else f q.2
-  have hH_eq : ∀ q : unitInterval × X, (f q.2 ∈ φ.source → w q.2 = φ (f q.2)) → H q = f q.2 := by
-    intro q h
-    simp only [H]
-    split_ifs with hx
-    · simp [h hx, φ.left_inv hx]
-    · rfl
+  have hH_eq : ∀ q : unitInterval × X, (f q.2 ∈ φ.source → w q.2 = φ (f q.2)) → H q = f q.2 :=
+    fun q h => by simp +contextual [H, h, φ.left_inv]
   have hHc : Continuous H := by
     set M := closure {x | f x ∈ φ.source ∧ w x ≠ φ (f x)}
     have hcover : {q : unitInterval × X | f q.2 ∈ φ.source} ∪ {q | q.2 ∉ M} = univ :=
-      eq_univ_of_forall fun q => by
-        by_cases hq : q.2 ∈ M
-        · exact Or.inl (hclosure hq)
-        · exact Or.inr hq
+      eq_univ_of_forall fun q => (em (q.2 ∈ M)).imp (fun h => hclosure h) id
     rw [← continuousOn_univ, ← hcover]
     refine ContinuousOn.union_of_isOpen ?_ ?_
       (φ.open_source.preimage (f.continuous.comp continuous_snd))
@@ -113,9 +106,7 @@ theorem exists_homotopyRel_of_segment_subset_target (f : C(X, Y)) (φ : OpenPart
       exact φ.continuousOn_symm.comp
         ((ContinuousOn.smul (by fun_prop) (hw'.sub hφf)).add hφf) fun q hq => hmem q.1 q.2 hq
     · refine (f.continuous.comp continuous_snd).continuousOn.congr fun q hq =>
-        hH_eq q fun hx => ?_
-      by_contra hne
-      exact hq (subset_closure ⟨hx, hne⟩)
+        hH_eq q fun hx => of_not_not fun hne => hq (subset_closure ⟨hx, hne⟩)
   refine ⟨⟨fun x => H (1, x), hHc.comp (continuous_const.prodMk continuous_id)⟩,
     fun x hx => ?_, fun x hx => ite_eq_right hx,
     ⟨{ toFun := H
@@ -124,10 +115,7 @@ theorem exists_homotopyRel_of_segment_subset_target (f : C(X, Y)) (φ : OpenPart
        map_one_left := fun x => rfl
        prop' := fun t x hx => hH_eq (t, x) (hS x hx) }⟩⟩
   · simp [H, hx]
-  · simp only [H]
-    split_ifs with hx
-    · simp [φ.left_inv hx]
-    · rfl
+  · simp +contextual [H, φ.left_inv]
 
 end Chart
 
@@ -149,14 +137,12 @@ private lemma exists_differentiable_approx_notMem_range {D : Set E} (f : C(D, Y)
   have hK : IsClosed K :=
     ((isCompact_closedBall c _).image_of_continuousOn
       (φ.continuousOn_symm.mono hsub)).isClosed.preimage f.continuous
-  have hKsource : K ⊆ f ⁻¹' φ.source := by
-    rintro x ⟨y, hy, hxy⟩
-    rw [mem_preimage, ← hxy]
-    exact φ.map_target (hsub hy)
+  have hKsource : K ⊆ f ⁻¹' φ.source :=
+    preimage_mono (φ.mapsTo_symm.mono_left hsub).image_subset
   obtain ⟨u, hu⟩ := ContinuousMap.exists_extension
     (hD.isClosedEmbedding_subtypeVal.comp hK.isClosedEmbedding_subtypeVal)
     ⟨fun x : K => φ (f x), φ.continuousOn.comp_continuous
-      (f.continuous.comp continuous_subtype_val) fun x => hKsource x.2⟩
+      (f.continuous.comp continuous_subtypeVal) fun x => hKsource x.property⟩
   obtain ⟨G, hG, hGu, -⟩ := u.continuous.exists_contDiff_approx (1 : ℕ∞) continuous_const
     (fun _ => show (0 : ℝ) < r / 8 by positivity)
   obtain ⟨p, hp, hpG⟩ :=
@@ -188,15 +174,12 @@ private lemma exists_chart_value_interpolation {D : Set E} (f : C(D, Y))
   have hK : IsClosed K :=
     ((isCompact_closedBall c _).image_of_continuousOn
       (φ.continuousOn_symm.mono hsub)).isClosed.preimage f.continuous
-  have hKsource : K ⊆ f ⁻¹' φ.source := by
-    rintro x ⟨y, hy, hxy⟩
-    rw [mem_preimage, ← hxy]
-    exact φ.map_target (hsub hy)
+  have hKsource : K ⊆ f ⁻¹' φ.source :=
+    preimage_mono (φ.mapsTo_symm.mono_left hsub).image_subset
   -- A bump function equal to `1` on `closedBall c (r / 4)` and supported in `ball c (r / 2)`.
   let β : ContDiffBump c := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  have hβ_zero : ∀ y, β y ≠ 0 → dist y c < r / 2 := fun y hy => by
-    by_contra! h
-    exact hy (β.zero_of_le_dist h)
+  have hβ_zero : ∀ y, β y ≠ 0 → dist y c < r / 2 := fun y hy =>
+    lt_of_not_ge fun h => hy (β.zero_of_le_dist h)
   let d : D → F := fun x => β (φ (f x)) • (G x - φ (f x))
   have hK_of : ∀ x, f x ∈ φ.source → β (φ (f x)) ≠ 0 → x ∈ K := fun x hx hβ =>
     ⟨φ (f x), mem_closedBall.2 (hβ_zero _ hβ).le, φ.left_inv hx⟩
@@ -211,7 +194,7 @@ private lemma exists_chart_value_interpolation {D : Set E} (f : C(D, Y))
   have hφf : ContinuousOn (fun x => φ (f x)) (f ⁻¹' φ.source) :=
     φ.continuousOn.comp f.continuous.continuousOn fun x hx => hx
   refine ⟨fun x => φ (f x) + d x, hφf.add ((β.continuous.comp_continuousOn hφf).smul
-      ((hG.comp continuous_subtype_val).continuousOn.sub hφf)), ?_, ?_, ?_, ?_, ?_⟩
+      ((hG.comp continuous_subtypeVal).continuousOn.sub hφf)), ?_, ?_, ?_, ?_, ?_⟩
   · refine (closure_minimal ?_ hK).trans hKsource
     intro x hx
     exact hK_of x hx.1 fun hβ => hx.2 (by simp [d, hβ])
@@ -231,17 +214,20 @@ private lemma exists_chart_value_interpolation {D : Set E} (f : C(D, Y))
   · intro x hx
     simpa [dist_eq_norm, d] using hd_lt x hx
 
+omit [FiniteDimensional ℝ F] in
 /-- **Homotoping a map off a point of a higher-dimensional chart** (Hatcher, Lemma 4.10). Let
 `D` be a closed subset of `E`, and let `φ` be a chart of the Hausdorff space `Y` into `F` whose
-target contains `ball c r`. If `dim E < dim F`, then every map `f : D → Y` is homotopic, relative
-to the points that `f` does not send into `φ.symm '' ball c r`, to a map `g` missing the point
-`φ.symm p` for some `p ∈ ball c r`. The map `g` sends the points that `f` sends into the chart
-into the chart. -/
+target contains `ball c r`. If `finrank ℝ E < finrank ℝ F` (so `F` is finite dimensional), then
+every map `f : D → Y` is homotopic, relative to the points that `f` does not send into
+`φ.symm '' ball c r`, to a map `g` missing the point `φ.symm p` for some `p ∈ ball c r`. The map
+`g` sends the points that `f` sends into the chart into the chart. -/
 theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed D)
     (hEF : finrank ℝ E < finrank ℝ F) (φ : OpenPartialHomeomorph Y F) {c : F} {r : ℝ}
     (hr : 0 < r) (hφ : ball c r ⊆ φ.target) :
     ∃ g : C(D, Y), Nonempty (f.HomotopyRel g (f ⁻¹' (φ.symm '' ball c r))ᶜ) ∧
       (∀ x, f x ∈ φ.source → g x ∈ φ.source) ∧ ∃ p ∈ ball c r, φ.symm p ∉ range g := by
+  -- `hEF` forces `F` to be finite dimensional, since `finrank` is `0` otherwise.
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (Nat.zero_lt_of_lt hEF)
   obtain ⟨G, hG, hGu, p, hp, hpG⟩ := exists_differentiable_approx_notMem_range f hD hEF φ hr hφ
   obtain ⟨w, hw, hcl, hseg, hS, hwG, hwd⟩ :=
     exists_chart_value_interpolation f φ hr hφ hG.continuous hGu

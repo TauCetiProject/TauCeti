@@ -52,13 +52,13 @@ def supportedSubmodulePresheaf : TopCat.Presheaf (ModuleCat.{u} R) X where
   obj W := ModuleCat.of R (F.supportedSubmodule S W.unop)
   map f := ModuleCat.ofHom <|
     ((F.obj.map f).hom.comp (F.supportedSubmodule S _).subtype).codRestrict _
-      fun s ↦ F.map_mem_supportedSubmodule_of_le (leOfHom f.unop) s.2
+      fun s ↦ F.map_mem_supportedSubmodule_of_le (leOfHom f.unop) s.property
   map_id W := by
     ext s
-    exact congr($(F.obj.map_id W) s.1)
+    exact congr($(F.obj.map_id W) s.val)
   map_comp f g := by
     ext s
-    exact congr($(F.obj.map_comp f g) s.1)
+    exact congr($(F.obj.map_comp f g) s.val)
 
 @[simp]
 lemma supportedSubmodulePresheaf_obj (W : (Opens X)ᵒᵖ) :
@@ -79,10 +79,10 @@ private def supportedSubmodulePresheafForgetIso :
       supportedSectionsPresheaf
         ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) S :=
   NatIso.ofComponents (fun _ ↦ AddEquiv.toAddCommGrpIso
-    { toFun s := ⟨s.1, (mem_supportedSections_iff _).2
-        ((F.mem_supportedSubmodule_iff).1 s.2)⟩
-      invFun s := ⟨s.1, (F.mem_supportedSubmodule_iff).2
-        ((mem_supportedSections_iff _).1 s.2)⟩
+    { toFun s := ⟨s.val, (mem_supportedSections_iff _).2
+        ((F.mem_supportedSubmodule_iff).1 s.property)⟩
+      invFun s := ⟨s.val, (F.mem_supportedSubmodule_iff).2
+        ((mem_supportedSections_iff _).1 s.property)⟩
       left_inv _ := rfl
       right_inv _ := rfl
       map_add' _ _ := rfl }) (fun _ ↦ rfl)
@@ -110,7 +110,7 @@ lemma supportedSubmoduleSheaf_obj :
 lemma mem_supportedSubmodule_supportedSubmoduleSheaf_iff (T : Closeds X) (W : Opens X)
     (s : F.supportedSubmodule S W) :
     s ∈ (F.supportedSubmoduleSheaf S).supportedSubmodule T W ↔
-      s.1 ∈ F.supportedSubmodule T W := by
+      s.val ∈ F.supportedSubmodule T W := by
   -- Restriction in the supported-section sheaf is restriction in `F` on the subtype.
   constructor
   · intro hs
@@ -172,20 +172,20 @@ def supportedSubmoduleSheafForgetIso :
     ObjectProperty.homMk (F.supportedSubmodulePresheafForgetIso S).inv,
     by ext; rfl, by ext; rfl⟩
 
-@[simp]
 lemma coe_supportedSubmoduleSheafForgetIso_hom_app_apply (W : (Opens X)ᵒᵖ)
     (s : F.supportedSubmodule S W.unop) :
-    Subtype.val (p := (· ∈ supportedSections
+    dsimp% only [sheafCompose_obj_obj, Opposite.op_unop, Functor.comp_obj, ModuleCat.forget₂_obj]
+    (Subtype.val (p := (· ∈ supportedSections
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) S W.unop))
-      ((F.supportedSubmoduleSheafForgetIso S).hom.hom.app W s) = s.1 :=
+      ((F.supportedSubmoduleSheafForgetIso S).hom.hom.app W s) = s.val) :=
   (rfl)
 
-@[simp]
 lemma coe_supportedSubmoduleSheafForgetIso_inv_app_apply (W : (Opens X)ᵒᵖ)
     (s : supportedSections
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) S W.unop) :
-    Subtype.val (p := (· ∈ F.supportedSubmodule S W.unop))
-      ((F.supportedSubmoduleSheafForgetIso S).inv.hom.app W s) = s.1 :=
+    dsimp% only [Opposite.op_unop, sheafCompose_obj_obj, Functor.comp_obj, ModuleCat.forget₂_obj]
+    (Subtype.val (p := (· ∈ F.supportedSubmodule S W.unop))
+      ((F.supportedSubmoduleSheafForgetIso S).inv.hom.app W s) = s.val) :=
   (rfl)
 
 @[reassoc (attr := simp)]
@@ -249,9 +249,9 @@ lemma coe_supportedSubmoduleFunctor_map_ι_hom_app_apply (Z S : Closeds X)
     (W : (Opens X)ᵒᵖ)
     (s : (F.supportedSubmoduleSheaf S).supportedSubmodule Z W.unop) :
     Subtype.val (p := (· ∈ F.supportedSubmodule Z W.unop))
-      (((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom.app W s) = s.1.1 :=
+      (((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom.app W s) = s.val.val :=
   (coe_supportedSubmoduleFunctor_map_hom_app_apply Z (F.supportedSubmoduleι S) W s).trans
-    (F.supportedSubmoduleι_hom_app_apply S W s.1)
+    (F.supportedSubmoduleι_hom_app_apply S W s.val)
 
 /-- The supported-section functor is additive. -/
 instance additive_supportedSubmoduleFunctor : (supportedSubmoduleFunctor (R := R) S).Additive where
@@ -271,6 +271,41 @@ instance additive_supportedSubmoduleSectionsFunctor (W : Opens X) :
       (J := Opens.grothendieckTopology X) (A := ModuleCat.{u} R) (X := W)).symm
   exact inferInstanceAs ((supportedSubmoduleFunctor S ⋙
     (sheafSections _ (ModuleCat.{u} R)).obj (op W)).Additive)
+
+/-- Restriction of supported sections, natural in the coefficient sheaf. -/
+def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
+    supportedSubmoduleSectionsFunctor (R := R) S W ⟶
+      supportedSubmoduleSectionsFunctor S W' :=
+  Functor.whiskerLeft (supportedSubmoduleFunctor S)
+    ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
+
+/-- Restriction of supported sections leaves the usual restriction in the ambient sheaf. -/
+-- Rewrite before evaluation simplifies the bundled section object.
+@[simp↓]
+lemma coe_supportedSubmoduleSectionsRestrict_app_apply {W' W : Opens X} (i : W' ⟶ W)
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (s : F.supportedSubmodule S W) :
+    ((supportedSubmoduleSectionsRestrict (R := R) S i).app F s).val = F.obj.map i.op s :=
+  (rfl)
+
+/-- Restriction along an identity open inclusion is the identity transformation. -/
+@[simp]
+lemma supportedSubmoduleSectionsRestrict_id (W : Opens X) :
+    supportedSubmoduleSectionsRestrict (R := R) S (𝟙 W) = 𝟙 _ := by
+  ext F s
+  apply Subtype.ext
+  simp [supportedSubmoduleSectionsRestrict]
+
+/-- Restricting through two open inclusions agrees with restriction along their composite. -/
+@[reassoc (attr := simp)]
+lemma supportedSubmoduleSectionsRestrict_comp {W'' W' W : Opens X}
+    (i : W'' ⟶ W') (j : W' ⟶ W) :
+    supportedSubmoduleSectionsRestrict (R := R) S j ≫
+        supportedSubmoduleSectionsRestrict S i =
+      supportedSubmoduleSectionsRestrict S (i ≫ j) := by
+  ext F s
+  apply Subtype.ext
+  simp [supportedSubmoduleSectionsRestrict, ← Functor.map_comp, ← op_comp]
 
 /-- The comparison with underlying abelian supported sections is natural in the sheaf. -/
 def supportedSubmoduleFunctorForgetIso :

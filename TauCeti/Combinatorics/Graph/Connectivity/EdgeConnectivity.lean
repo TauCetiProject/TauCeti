@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Delete
-public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Data.ENat.Lattice
 
 /-!
@@ -48,7 +48,8 @@ actual vertex set.
   with the simple-graph predicates.
 * `Graph.isEdgeReachable_iff_le_edgeReachability`, `Graph.isEdgeConnected_iff_le_edgeConnectivity`:
   the numerical invariants record exactly the thresholds at which the predicates hold.
-* `Graph.edgeConnectivity_ofSimpleGraph`: agreement with the simple-graph edge connectivity.
+* `Graph.edgeReachability_ofSimpleGraph`, `Graph.edgeConnectivity_ofSimpleGraph`: agreement with
+  the simple-graph numerical edge invariants.
 * `Graph.edgeConnectivity_eq_iInf_edgeReachability`: edge connectivity is the least local edge
   reachability between actual vertices.
 * `Graph.edgeReachability_le_nonloopIncidenceCount`: local edge reachability between distinct
@@ -251,12 +252,24 @@ theorem isEdgeConnected_two_iff_connected_and_forall_not_isBridge (hV : V(G).Non
     connected_iff_forall_reachable, and_iff_right hV]
   exact and_congr_left' ⟨fun h _ _ hx hy ↦ h hx hy, fun h _ hx _ hy ↦ h hx hy⟩
 
+/-- The graph traced by a closed trail is `2`-edge-connected. -/
+theorem Walk.IsTrail.isEdgeConnected_two_walkGraph {p : G.Walk x x} (hp : p.IsTrail) :
+    (G.walkGraph p).IsEdgeConnected 2 := by
+  refine (isEdgeConnected_two_iff_connected_and_forall_not_isBridge
+    p.connected_walkGraph.nonempty).mpr ⟨p.connected_walkGraph, fun e he ↦ ?_⟩
+  have hep : e ∈ p.edges := (p.mem_edgeSet_walkGraph e).mp he.mem_edgeSet
+  have hpos : 0 < p.length := by
+    rw [← p.length_edges]
+    exact List.length_pos_of_mem hep
+  have hle : G.walkGraph p ≤ G := p.walkGraph_le_of_pos hpos
+  have hpG : ∀ f ∈ p.edges, f ∈ E(G.walkGraph p) := fun f hf ↦ (p.mem_edgeSet_walkGraph f).mpr hf
+  exact he.notMem_edges_of_isTrail ((Walk.isTrail_transfer hle p hpG).mpr hp)
+    (by simpa [Walk.edges_transfer] using hep)
+
 /-- The graph traced by a cycle is `2`-edge-connected. -/
 theorem Walk.IsCycle.isEdgeConnected_two_walkGraph {p : G.Walk x x} (hp : p.IsCycle) :
-    (G.walkGraph p).IsEdgeConnected 2 := by
-  rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge (by
-    exact ⟨x, by simp⟩)]
-  exact ⟨p.connected_walkGraph, hp.not_isBridge_walkGraph⟩
+    (G.walkGraph p).IsEdgeConnected 2 :=
+  hp.isTrail.isEdgeConnected_two_walkGraph
 
 /-! ### Graphs from simple graphs -/
 
@@ -307,6 +320,16 @@ theorem isEdgeConnected_iff_le_edgeConnectivity (k : ℕ) :
     G.IsEdgeConnected k ↔ k ≤ G.edgeConnectivity :=
   (Antitone.natCast_le_iSup_iff (fun _ _ hkl (h : G.IsEdgeConnected _) ↦ h.anti hkl)
     IsEdgeConnected.zero).symm
+
+/-- The local edge reachability in `Graph.ofSimpleGraph H` is the local edge reachability in
+`H`. -/
+@[simp]
+theorem edgeReachability_ofSimpleGraph (H : SimpleGraph α) (x y : α) :
+    (Graph.ofSimpleGraph H).edgeReachability x y = H.edgeReachability x y :=
+  ENat.eq_of_forall_natCast_le_iff fun k ↦ by
+    rw [← isEdgeReachable_iff_le_edgeReachability,
+      ← SimpleGraph.isEdgeReachable_iff_le_edgeReachability,
+      isEdgeReachable_ofSimpleGraph_iff]
 
 /-- The edge connectivity of `Graph.ofSimpleGraph H` is the edge connectivity of `H`. -/
 @[simp]

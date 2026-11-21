@@ -42,31 +42,59 @@ chart to the weak realization. -/
 private theorem exists_openStar_chart_of_simplexModel
     {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {v : ι} {m : ℕ}
     (e₀ : closedStarRealization K {v} ≃ₜ coordinateSimplex (Fin m))
-    (hmem : ∀ x : closedStarRealization K {v}, x.1 ∈ openStarRealization K v ↔
-      (e₀ x).1 ∈ interior (coordinateSimplex (Fin m))) :
+    (hmem : ∀ x : closedStarRealization K {v}, x.val ∈ openStarRealization K v ↔
+      (e₀ x).val ∈ interior (coordinateSimplex (Fin m))) :
     ∃ c : OpenPartialHomeomorph (Realization K) (Fin m → ℝ),
       c.source = openStarRealization K v ∧
       c.target = interior (coordinateSimplex (Fin m)) ∧
       ∀ x : openStarRealization K v,
-        c x.1 = (e₀ ⟨x.1, K.openStarRealization_subset_closedStarRealization v x.2⟩).1 := by
+        c x.val = (e₀ ⟨x.val, K.openStarRealization_subset_closedStarRealization v x.property⟩).val
+            := by
   let toStar (x : openStarRealization K v) : closedStarRealization K {v} :=
-    ⟨x.1, K.openStarRealization_subset_closedStarRealization v x.2⟩
+    ⟨x.val, K.openStarRealization_subset_closedStarRealization v x.property⟩
   let ofInterior (y : interior (coordinateSimplex (Fin m))) :
-      coordinateSimplex (Fin m) := ⟨y.1, interior_subset y.2⟩
+      coordinateSimplex (Fin m) := ⟨y.val, interior_subset y.property⟩
   let e : openStarRealization K v ≃ₜ interior (coordinateSimplex (Fin m)) := {
-    toFun x := ⟨(e₀ (toStar x)).1, (hmem (toStar x)).mp x.2⟩
-    invFun y := ⟨(e₀.symm (ofInterior y)).1,
-      (hmem _).mpr (by rw [e₀.apply_symm_apply]; exact y.2)⟩
+    toFun x := ⟨(e₀ (toStar x)).val, (hmem (toStar x)).mp x.property⟩
+    invFun y := ⟨(e₀.symm (ofInterior y)).val,
+      (hmem _).mpr (by rw [e₀.apply_symm_apply]; exact y.property)⟩
     left_inv x := by simp [toStar, ofInterior]
     right_inv y := by simp [toStar, ofInterior]
     continuous_toFun := ((e₀.continuous.comp
-      (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _
+      (continuous_subtypeVal.subtype_mk _)).subtypeVal).subtype_mk _
     continuous_invFun := ((e₀.symm.continuous.comp
-      (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _ }
+      (continuous_subtypeVal.subtype_mk _)).subtypeVal).subtype_mk _ }
   obtain ⟨c, hcs, hct, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
     (K.isOpen_openStarRealization v) isOpen_interior e
     (e.symm ⟨_, (nonempty_interior_coordinateSimplex (Fin m)).some_mem⟩)
   exact ⟨c, hcs, hct, fun x ↦ hc x⟩
+
+/-- The open star is the preimage of the simplex interior under the closed-star simplex model
+whose height formula is `hheight`. -/
+private theorem mem_openStarRealization_iff_interior
+    {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {v : ι} {n : ℕ}
+    (φ : closedStarRealization K {v} ≃ₜ
+      Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))))
+    (hheight : ∀ x, ((n : ℝ) + 2) * Finset.univ.inf' Finset.univ_nonempty
+        ((φ x).val : Fin (n + 2) → ℝ) = x.val.val v)
+    (x : closedStarRealization K {v}) :
+    x.val ∈ openStarRealization K v ↔
+      ((φ.trans (realizationTopHomeomorphCoordinateSimplex (n + 1))) x).val ∈
+        interior (coordinateSimplex (Fin (n + 1))) := by
+  have hs := Realization.sum_eq_one _ (φ x)
+  rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at hs
+  have hpos : 0 < (n : ℝ) + 2 := by positivity
+  rw [mem_openStarRealization, ← hheight x, mul_pos_iff_of_pos_left hpos,
+    Finset.lt_inf'_iff]
+  simp only [Finset.mem_univ, forall_const]
+  rw [interior_coordinateSimplex]
+  simp only [mem_ofPred_eq, Homeomorph.trans_apply,
+    realizationTopHomeomorphCoordinateSimplex_apply]
+  constructor
+  · intro hx
+    exact ⟨fun i => hx i.castSucc, by linarith [hx (Fin.last (n + 1))]⟩
+  · rintro ⟨hx, hsum⟩ i
+    exact Fin.lastCases (by linarith) hx i
 
 /-- A spherical vertex link gives a PL chart on the entire open star, with target the
 interior of a full-dimensional simplex. The vertex maps to the barycentre. The ambient
@@ -81,61 +109,30 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_isPL
       c (vertex K v) = (fun _ => ((n : ℝ) + 2)⁻¹) ∧
       ∃ F : (ι → ℝ) → (Fin (n + 1) → ℝ),
       ∃ G : (Fin (n + 1) → ℝ) → (ι → ℝ),
-        IsPLOn F (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn F (range fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ)) ∧
         IsPLOn G c.target ∧
-        (∀ x ∈ c.source, F (x.1 : ι → ℝ) = c x) ∧
-        (∀ y ∈ c.target, G y = ((c.symm y).1 : ι → ℝ)) := by
+        (∀ x ∈ c.source, F (x.val : ι → ℝ) = c x) ∧
+        (∀ y ∈ c.target, G y = ((c.symm y).val : ι → ℝ)) := by
   obtain ⟨φ, hapex, hheight, F, G, hF, hG, hFφ, hGφ⟩ :=
     h.exists_homeomorph_closedStarRealization_top
   let r := realizationTopHomeomorphCoordinateSimplex (n + 1)
   let e₀ := φ.trans r
-  -- The height formula identifies the open star with the simplex interior.
-  have hmem (x : closedStarRealization K {v}) :
-      x.1 ∈ openStarRealization K v ↔
-        (e₀ x).1 ∈ interior (coordinateSimplex (Fin (n + 1))) := by
-    have hs := Realization.sum_eq_one _ (φ x)
-    rw [Finsupp.sum_fintype _ _ (fun _ => rfl), Fin.sum_univ_castSucc] at hs
-    have hpos : 0 < (n : ℝ) + 2 := by positivity
-    rw [mem_openStarRealization, ← hheight x, mul_pos_iff_of_pos_left hpos,
-      Finset.lt_inf'_iff]
-    simp only [Finset.mem_univ, forall_const]
-    rw [interior_coordinateSimplex]
-    simp only [mem_ofPred_eq, e₀, r, Homeomorph.trans_apply,
-      realizationTopHomeomorphCoordinateSimplex_apply]
-    constructor
-    · intro hx
-      exact ⟨fun i => hx i.castSucc, by linarith [hx (Fin.last (n + 1))]⟩
-    · rintro ⟨hx, hsum⟩ i
-      exact Fin.lastCases (by linarith) hx i
-  obtain ⟨c, hcs, hct, hc⟩ := exists_openStar_chart_of_simplexModel e₀ hmem
+  obtain ⟨c, hcs, hct, hc⟩ := exists_openStar_chart_of_simplexModel e₀
+    (mem_openStarRealization_iff_interior φ hheight)
   let toStar (x : openStarRealization K v) : closedStarRealization K {v} :=
-    ⟨x.1, K.openStarRealization_subset_closedStarRealization v x.2⟩
-  have hc' (x : openStarRealization K v) : c x.1 = (e₀ (toStar x)).1 := hc x
-  -- Drop one barycentric coordinate; its affine inverse restores the missing mass.
-  let A : (Fin (n + 2) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
-    ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj i.castSucc
-  let B₀ : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 2) → ℝ) :=
-    ContinuousLinearMap.pi (Fin.lastCases (-(∑ i, ContinuousLinearMap.proj i))
-      (fun i => ContinuousLinearMap.proj i))
-  let B : (Fin (n + 1) → ℝ) →ᴬ[ℝ] (Fin (n + 2) → ℝ) :=
-    B₀.toContinuousAffineMap + ContinuousAffineMap.const ℝ (Fin (n + 1) → ℝ)
-      (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → ℝ)
-  have hB (y : coordinateSimplex (Fin (n + 1))) :
-      B y.1 = ((r.symm y).1 : Fin (n + 2) → ℝ) := by
-    funext i
-    refine Fin.lastCases ?_ (fun k => ?_) i
-    · simp [B, B₀, r, sub_eq_add_neg, add_comm]
-    · simp [B, B₀, r]
+    ⟨x.val, K.openStarRealization_subset_closedStarRealization v x.property⟩
+  have hc' (x : openStarRealization K v) : c x.val = (e₀ (toStar x)).val := hc x
+  obtain ⟨A, B, hA, hB⟩ := realizationTopHomeomorphCoordinateSimplex_exists_affine n
   -- Read the inverse on its target through the closed-star inverse formula.
-  have hGB (y : c.target) : G (B y.1) = ((c.symm y.1).1 : ι → ℝ) := by
-    have hx : c.symm y.1 ∈ openStarRealization K v := by
+  have hGB (y : c.target) : G (B y.val) = ((c.symm y.val).val : ι → ℝ) := by
+    have hx : c.symm y.val ∈ openStarRealization K v := by
       rw [← hcs]
-      exact c.map_target y.2
-    let x : openStarRealization K v := ⟨c.symm y.1, hx⟩
-    have hcx : c x.1 = y.1 := c.right_inv y.2
-    have hBφ : B y.1 = ((φ (toStar x)).1 : Fin (n + 2) → ℝ) := by
+      exact c.map_target y.property
+    let x : openStarRealization K v := ⟨c.symm y.val, hx⟩
+    have hcx : c x.val = y.val := c.right_inv y.property
+    have hBφ : B y.val = ((φ (toStar x)).val : Fin (n + 2) → ℝ) := by
       rw [← hcx, hc', hB]
-      simp [e₀]
+      simp [e₀, r]
     rw [hBφ, hGφ]
   refine ⟨c, hcs, hct, ?_, A ∘ F, G ∘ B, ?_, ?_, ?_, ?_⟩
   · rw [hc' ⟨vertex K v, by simp [mem_openStarRealization]⟩]
@@ -143,7 +140,7 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_isPL
     have ha : toStar ⟨vertex K v, by simp [mem_openStarRealization]⟩ = starApex K v :=
       Subtype.ext (starApex_val K v).symm
     simpa only [e₀, r, Homeomorph.trans_apply, ha,
-      realizationTopHomeomorphCoordinateSimplex_apply] using congrFun hapex i.castSucc
+      realizationTopHomeomorphCoordinateSimplex_apply, hA] using congrFun hapex i.castSucc
   · exact (isPLOn_continuousAffineMap A.toContinuousAffineMap univ).comp hF
       (mapsTo_univ _ _)
   · refine hG.comp (isPLOn_continuousAffineMap B c.target) ?_
@@ -154,7 +151,7 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_isPL
     rw [hcs] at hx
     rw [Function.comp_apply, hFφ (toStar ⟨x, hx⟩), hc' ⟨x, hx⟩]
     funext i
-    simp [e₀, r, A]
+    simp [e₀, r, hA]
   · intro y hy
     exact hGB ⟨y, hy⟩
 

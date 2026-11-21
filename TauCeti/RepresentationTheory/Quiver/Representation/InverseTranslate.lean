@@ -49,7 +49,7 @@ variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
 local notation "kQ" => pathAlgebra k Q
 local notation "eRep" => quiverRepEquivalence k Q
 local notation "F" => quiverRepFunctor k Q
-local notation "D" => ModuleCat.rightScalarDual k
+local notation "D" => ModuleCat.matlisDualObj k k
 
 private local instance : IsArtinianRing kQᵐᵒᵖ := IsArtinianRing.of_finite k kQᵐᵒᵖ
 private local instance : IsNoetherianRing kQᵐᵒᵖ := IsNoetherianRing.of_finite k kQᵐᵒᵖ
@@ -65,6 +65,7 @@ private noncomputable def arInversePresentation
   have := arDual_finite.{u, v, w, t} k Q M hM
   have : Module.Finite kQᵐᵒᵖ (D ((eRep).functor.obj M)) :=
     Module.Finite.of_restrictScalars_finite k kQᵐᵒᵖ _
+  have := Module.finitePresentation_of_finite kQᵐᵒᵖ (D ((eRep).functor.obj M))
   exact FiniteProjectivePresentation.minimal
 
 private theorem arInversePresentation_isMinimal
@@ -74,6 +75,7 @@ private theorem arInversePresentation_isMinimal
   have := arDual_finite.{u, v, w, t} k Q M hM
   have : Module.Finite kQᵐᵒᵖ (D ((eRep).functor.obj M)) :=
     Module.Finite.of_restrictScalars_finite k kQᵐᵒᵖ _
+  have := Module.finitePresentation_of_finite kQᵐᵒᵖ (D ((eRep).functor.obj M))
   exact FiniteProjectivePresentation.isMinimal_minimal
 
 /-- The inverse Auslander–Reiten translate `Tr D M`, using a finite minimal presentation
@@ -98,7 +100,7 @@ theorem nonempty_iso_arInverseTranslate_of_iso
     (hM : IsFinDim k Q M) (hN : IsFinDim k Q N) (e : M ≅ N) :
     Nonempty (arInverseTranslate.{u, v, w, t} k Q M hM ≅
       arInverseTranslate.{u, v, w, t} k Q N hN) := by
-  let d := ModuleCat.rightScalarDualIso (k := k) ((eRep).functor.mapIso e).symm
+  let d := (ModuleCat.matlisDual k k).mapIso ((eRep).functor.mapIso e).symm.op
   obtain ⟨f⟩ := (arInversePresentation.{u, v, w, t} k Q M hM).nonempty_linearEquiv_rightTranspose
     (arInversePresentation.{u, v, w, t} k Q N hN) d.toLinearEquiv
     (arInversePresentation_isMinimal.{u, v, w, t} k Q M hM)
@@ -128,8 +130,8 @@ theorem projective_arInverseTranslate_iff (M : QuiverRep.{u, v, w, max u v w t} 
   have hp := P.projective_rightTranspose_iff_injective
     (E := (eRep).functor.obj M)
     (arInversePresentation_isMinimal.{u, v, w, t} k Q M hM)
-    (ModuleCat.rightScalarDualEvalEquiv k ((eRep).functor.obj M))
-    (ModuleCat.rightScalarDualEvalEquiv_smul k ((eRep).functor.obj M))
+    (ModuleCat.scalarDualEvalEquiv k ((eRep).functor.obj M))
+    (ModuleCat.scalarDualEvalEquiv_smul k ((eRep).functor.obj M))
   have h : Projective ((F).obj P.rightTranspose) ↔ Projective P.rightTranspose := by
     simpa only [Equivalence.symm_functor, quiverRepEquivalence_inverse] using
       (eRep).symm.map_projective_iff P.rightTranspose
@@ -148,8 +150,8 @@ theorem isZero_arInverseTranslate_iff (M : QuiverRep.{u, v, w, max u v w t} k Q)
   have hz : IsZero ((F).obj P.rightTranspose) ↔ IsZero P.rightTranspose :=
     ⟨fun h ↦ IsZero.of_full_of_faithful_of_isZero (F) _ h, (F).map_isZero⟩
   have hd := LinearEquiv.moduleInjective_iff_projective_of_dual
-    (ModuleCat.rightScalarDualEvalEquiv k ((eRep).functor.obj M))
-      (ModuleCat.rightScalarDualEvalEquiv_smul k ((eRep).functor.obj M))
+    (ModuleCat.scalarDualEvalEquiv k ((eRep).functor.obj M))
+      (ModuleCat.scalarDualEvalEquiv_smul k ((eRep).functor.obj M))
   exact hz.trans (ModuleCat.isZero_iff_subsingleton.trans
     ((P.subsingleton_rightTranspose_iff_projective
       (arInversePresentation_isMinimal.{u, v, w, t} k Q M hM)).trans
@@ -170,8 +172,8 @@ theorem indecomposable_arInverseTranslate_iff (M : QuiverRep.{u, v, w, max u v w
   have ht := P.isIndecomposableModule_rightTranspose_iff_not_injective
     (E := (eRep).functor.obj M)
     (arInversePresentation_isMinimal.{u, v, w, t} k Q M hM)
-    (ModuleCat.rightScalarDualEvalEquiv k ((eRep).functor.obj M))
-    (ModuleCat.rightScalarDualEvalEquiv_smul k ((eRep).functor.obj M))
+    (ModuleCat.scalarDualEvalEquiv k ((eRep).functor.obj M))
+    (ModuleCat.scalarDualEvalEquiv_smul k ((eRep).functor.obj M))
     ((indecomposable_iff_isIndecomposableModule _).mp hi)
   constructor
   · intro h hiM

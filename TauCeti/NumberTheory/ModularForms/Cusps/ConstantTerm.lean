@@ -24,8 +24,9 @@ representatives; the common vanishing condition is intrinsic.  Bundling all of t
 linear map `ModularForm.constantTerms` to `SL₂(ℤ) → ℂ`.
 
 For any subgroup of finite relative index in `SL₂(ℤ)`, constant terms are also indexed by
-`CuspTranslationOrbit`, using the full-coset convention. For modular forms they are independent
-of the representative coset and equal the zeroth q-expansion coefficients in the orbit widths.
+`CuspTranslationOrbit`, using the full-coset convention. For slash-invariant forms they are
+independent of the representative coset; for modular forms they equal the zeroth q-expansion
+coefficients in the orbit widths.
 At arithmetic determinant-one levels their common kernel is the cusp-form submodule.
 
 The constant term at `γ` depends only on the cusp `γ ∞` and on the sign of `γ`: it is unchanged
@@ -128,10 +129,7 @@ omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 theorem constantTermAtCuspTranslationOrbit_def (f : F) (c : CuspTranslationOrbit 𝒢) :
     constantTermAtCuspTranslationOrbit f c = valueAtInfty (quotientFunc f c.out) := (rfl)
 
-end SlashInvariant
-
-variable [ModularFormClass F 𝒢 k]
-
+omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The constant term may be read at any coset representing the cusp translation orbit. -/
 @[simp]
 theorem constantTermAtCuspTranslationOrbit_mk (f : F)
@@ -140,11 +138,15 @@ theorem constantTermAtCuspTranslationOrbit_mk (f : F)
       valueAtInfty (quotientFunc f q) := by
   obtain ⟨h, hh⟩ := (MulAction.orbitRel_apply (G := Subgroup.zpowers TSL)).mp
     (Quotient.eq.mp (Quotient.out_eq (⟦q⟧ : CuspTranslationOrbit 𝒢)))
-  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.2
+  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.property
   have heq : TSL ^ j • q = (⟦q⟧ : CuspTranslationOrbit 𝒢).out := by
     simpa only [hj, Subgroup.smul_def] using hh
   rw [constantTermAtCuspTranslationOrbit_def, ← heq]
   exact valueAtInfty_quotientFunc_TSL_zpow_smul f q j
+
+end SlashInvariant
+
+variable [ModularFormClass F 𝒢 k]
 
 /-- The constant term is the zeroth coefficient in the orbit's own width parameter. -/
 theorem constantTermAtCuspTranslationOrbit_eq_qExpansion_coeff_zero (f : F)
@@ -412,7 +414,7 @@ theorem qExpansionAt_diamondOp {N : ℕ} [NeZero N] (k : ℤ) (d : (ZMod N)ˣ)
     (f : ModularForm ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)) k) :
     qExpansionAt γ (diamondOp k d f) = qExpansionAt ((g : SL(2, ℤ)) * γ) f := by
   simp only [qExpansionAt_apply, coe_translate, coe_diamondOp k d g hg, map_mul,
-    CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1 g.2, SlashAction.slash_mul]
+    CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1 g.property, SlashAction.slash_mul]
 
 /-- Applying a diamond operator to a modular form acts on its cusp constant terms by left
 multiplication of the cusp representative. The representative `g ∈ Γ₀(N)` may be any lift
@@ -499,7 +501,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
       (((γ₁⁻¹ : SL(2, ℤ)) 1 j : ℤ) : ZMod N) = (((γ₂⁻¹ : SL(2, ℤ)) 1 j : ℤ) : ZMod N) := by
     have := congrFun h j
     simp only [vecMul, dotProduct, Fin.sum_univ_two, cons_val_zero, cons_val_one, zero_mul,
-      one_mul, zero_add, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+      one_mul, zero_add, Matrix.SpecialLinearGroup.map_apply_coe,
       Matrix.map_apply, eq_intCast] at this
     exact this
   have hentry (g : SL(2, ℤ)) (j : Fin 2) : (g⁻¹ * γ₁ : SL(2, ℤ)) 1 j =

@@ -34,21 +34,21 @@ local notation "D" => closedBall (0 : ℂ) 1
 local notation "B" => ModelWithCorners.boundary (I := (𝓡∂ (1 + 1))) D
 local notation "E₁" => EuclideanSpace ℝ (Fin 1)
 
-local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D (by simp)
+local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D
 
 /-- Green's formula on the actual closed-disk manifold and its counterclockwise induced
 boundary. Both integrabilities follow from the global manifold comparison theorem. -/
 theorem green_unitDisk (P Q : ℂ → ℝ) (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
     IntegrableOn (curl P Q) (closedBall (0 : ℂ) 1) ∧
       CurveIntegrable (oneForm P Q)
-        (unitDiskBoundaryLoop.map (continuous_subtype_val.comp continuous_subtype_val)) ∧
+        (unitDiskBoundaryLoop.map (continuous_subtypeVal.comp continuous_subtypeVal)) ∧
       (∫ z in closedBall (0 : ℂ) 1, curl P Q z) =
         curveIntegral (oneForm P Q)
-          (unitDiskBoundaryLoop.map (continuous_subtype_val.comp continuous_subtype_val)) := by
+          (unitDiskBoundaryLoop.map (continuous_subtypeVal.comp continuous_subtypeVal)) := by
   classical
   let o := Manifold.Orientation.closedBall (n := 2) Complex.basisOneI.orientation
   have hparam (z : E₁) : ∃ e : E₁ ≃L[ℝ] TangentSpace (𝓡 1)
-      (unitDiskBoundaryLoop.extend (z 0)), ∀ hz : z 0 ∈ Ioo (0 : ℝ) 1,
+      (unitDiskBoundaryLoop.extend (z 0)), ∀ _ : z 0 ∈ Ioo (0 : ℝ) 1,
       HasMFDerivAt (𝓡 1) (𝓡 1) (fun w : E₁ ↦ unitDiskBoundaryLoop.extend (w 0)) z
         (e.toContinuousLinearMap.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap) ∧
       Orientation.map (Fin 1) e.toLinearEquiv
@@ -81,7 +81,7 @@ theorem green_unitDisk (P Q : ℂ → ℝ) (hP : ContDiff ℝ 1 P) (hQ : ContDif
 /-- The area form on the actual counterclockwise disk boundary integrates to `π`. -/
 theorem curveIntegral_unitDisk_area :
     curveIntegral (oneForm Examples.areaP Examples.areaQ)
-      (unitDiskBoundaryLoop.map (continuous_subtype_val.comp continuous_subtype_val)) =
+      (unitDiskBoundaryLoop.map (continuous_subtypeVal.comp continuous_subtypeVal)) =
       Real.pi := by
   have h := (green_unitDisk Examples.areaP Examples.areaQ
     Examples.contDiff_areaP Examples.contDiff_areaQ).2.2.symm

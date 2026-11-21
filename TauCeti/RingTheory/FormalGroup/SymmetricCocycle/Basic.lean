@@ -16,6 +16,8 @@ import Mathlib.Algebra.MvPolynomial.CommRing
 -- Proof-only: substitution commutes with change of coefficients.
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Tactic.LinearCombination
+-- Proof-only: Fermat's little theorem, for `d_(n+1) ∣ k^(n + 1) - k`.
+import Mathlib.FieldTheory.Finite.Basic
 -- Proof-only: Bézout's identity and faithfulness of scalars, for uniqueness of the multiple.
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.Algebra.MvPolynomial.Coeff
@@ -75,6 +77,7 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   a unit in `A`.
 * `Nat.Prime.exists_not_dvd_choose`: if `n ≠ 0` is not a power of the prime `p`, then `p` does not
   divide some `n.choose i` with `0 < i < n`.
+* `TauCeti.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
 * `TauCeti.coeff_lazardCocycle`: the coefficient of `XⁱYʲ` in `C_n` is
@@ -87,7 +90,8 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
 * `TauCeti.isHomogeneous_lazardCocycle`, `TauCeti.isSymmetric_lazardCocycle`,
   `TauCeti.isAddCocycle₂_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
   of degree `n`.
-* `TauCeti.smul_lazardCocycle_eq_zero_iff`: for `n ≥ 2`, `r • C_n = 0 ↔ r = 0`.
+* `TauCeti.smul_lazardCocycle_injective`, `TauCeti.smul_lazardCocycle_eq_zero_iff`: for `n ≥ 2`,
+  `r ↦ r • C_n` is injective, so `r • C_n = 0 ↔ r = 0`.
 
 ## References
 
@@ -141,11 +145,11 @@ theorem smul (r : R) (hf : f.IsAddCocycle₂) : (r • f).IsAddCocycle₂ := by
 
 /-- Additive 2-cocycles are preserved by a change of coefficients. -/
 theorem map (hf : f.IsAddCocycle₂) (φ : R →+* S) : (MvPolynomial.map φ f).IsAddCocycle₂ := by
-  -- `map φ (aeval g f) = aeval (map φ ∘ g) (map φ f)`, by `aeval_eq_bind₁` and `map_bind₁`.
+  -- `map φ (aeval g f) = aeval (map φ ∘ g) (map φ f)`, by `map_aeval_eq_aeval_map_map`.
   have hmap (a b : MvPolynomial (Fin 3) R) :
       MvPolynomial.map φ (aeval ![a, b] f) =
         aeval ![MvPolynomial.map φ a, MvPolynomial.map φ b] (MvPolynomial.map φ f) := by
-    rw [aeval_eq_bind₁, aeval_eq_bind₁, map_bind₁]
+    rw [map_aeval_eq_aeval_map_map]
     congr 2
     funext i
     fin_cases i <;> simp
@@ -161,8 +165,7 @@ theorem coeff_eq (hf : f.IsAddCocycle₂) (i j k : ℕ) :
         if i = 0 then f.coeff (Finsupp.single 0 j + Finsupp.single 1 k) else 0 := by
   have h := congrArg (fun p : MvPolynomial (Fin 3) R =>
     p.coeff (Finsupp.single 0 i + Finsupp.single 1 j + Finsupp.single 2 k)) (isAddCocycle₂_iff.1 hf)
-  -- `aeval_eq_bind₁` would turn the four substitutions into `bind₁` before they are computed.
-  simpa [-aeval_eq_bind₁, coeff_aeval_X_add_X_X, coeff_aeval_X_X_add_X, coeff_aeval_X_zero_X_one,
+  simpa [coeff_aeval_X_add_X_X, coeff_aeval_X_X_add_X, coeff_aeval_X_zero_X_one,
     coeff_aeval_X_one_X_two, Finsupp.single_apply] using h
 
 /-- The coefficient of `Yⁿ` in an additive 2-cocycle vanishes for `n ≠ 0`. -/
@@ -278,6 +281,19 @@ theorem lazardGcd_dvd_self {n : ℕ} (hn : n ≠ 1) : lazardGcd n ∣ n := by
     exact dvd_zero _
   · simpa using lazardGcd_dvd_choose one_pos h
 
+/-- `d_(n+1)` divides `k^(n + 1) - k` for every `k`: if `n + 1 = pʲ` then `d_(n+1) = p` and this
+is Fermat's little theorem, and otherwise `d_(n+1) = 1`. -/
+theorem lazardGcd_dvd_pow_succ_sub (k : ℕ) (n : ℕ+) :
+    (lazardGcd ((n : ℕ) + 1) : ℤ) ∣ (k : ℤ) ^ ((n : ℕ) + 1) - k := by
+  by_cases h : IsPrimePow ((n : ℕ) + 1)
+  · obtain ⟨p, j, hp, hj, hpj⟩ := (isPrimePow_nat_iff _).1 h
+    have := Fact.mk hp
+    rw [← hpj, lazardGcd_prime_pow hp hj.ne', ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    rw [ZMod.pow_card_pow, sub_self]
+  · rw [lazardGcd_eq_one_of_not_isPrimePow (by simp) h, Nat.cast_one]
+    exact one_dvd _
+
 /-- For `n ≥ 2`, the numbers `n.choose i / d_n`, `0 < i < n`, have greatest common divisor `1`. -/
 theorem gcd_choose_div_lazardGcd_eq_one {n : ℕ} (hn : 2 ≤ n) :
     (Icc 1 (n - 1)).gcd (fun i => n.choose i / lazardGcd n) = 1 :=
@@ -349,8 +365,8 @@ theorem lazardGcd_nsmul_lazardCocycle {n : ℕ} (hn : n ≠ 0) :
     simpa using single_add_single_eq_iff (i := n) (j := 0) (d := d)
   have h1 : Finsupp.single 1 n = d ↔ d 0 = 0 ∧ d 1 = n := by
     simpa using single_add_single_eq_iff (i := 0) (j := n) (d := d)
-  rw [coeff_smul, coeff_lazardCocycle, coeff_sub, coeff_sub, coeff_add_pow, coeff_X_pow,
-    coeff_X_pow]
+  rw [AddMonoidAlgebra.coeff_smul_apply, coeff_lazardCocycle, AddMonoidAlgebra.coeff_sub_apply,
+    AddMonoidAlgebra.coeff_sub_apply, coeff_add_pow, coeff_X_pow, coeff_X_pow]
   simp only [h0, h1, mem_antidiagonal]
   by_cases h : d 0 + d 1 = n ∧ d 0 ≠ 0 ∧ d 1 ≠ 0
   · -- At `XⁱYʲ` with `i + j = n` and `i, j ≠ 0`, both sides are `n.choose i`, as `d_n` divides it.
@@ -419,7 +435,7 @@ theorem sum_aeval_natCast_mul_lazardCocycle {p : ℕ} (hp : p.Prime) {A : Type*}
     have hy : ![(j : A), 1] = algebraMap ℤ A ∘ ![(j : ℤ), 1] := by
       ext i
       fin_cases i <;> simp
-    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul,
+    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul_of_algebra,
       ← map_lazardCocycle (Int.castRingHom R), ← algebraMap_int_eq, aeval_map_algebraMap, hy,
       aeval_algebraMap_apply, smul_eq_mul, mul_comm, eq_intCast]
   -- `p ∑_{j < p} C_n(j, 1) = pⁿ - p`
@@ -479,27 +495,26 @@ theorem isAddCocycle₂_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsAddCocyc
   rw [← map_lazardCocycle (Int.castRingHom R)]
   exact (isAddCocycle₂_lazardCocycle_int n).map _
 
-/-- For `n ≥ 2`, `r • C_n = 0 ↔ r = 0` in every commutative ring `R`, including rings with
-torsion. -/
-@[simp]
-theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
-    r • lazardCocycle n R = 0 ↔ r = 0 := by
-  refine ⟨fun h => ?_, fun h => by rw [h, zero_smul]⟩
+/-- For `n ≥ 2`, `r ↦ r • C_n` is injective in every commutative ring `R`, including rings with
+torsion: an integer combination of the coefficients of `C_n` is `1`. -/
+theorem smul_lazardCocycle_injective {n : ℕ} (hn : 2 ≤ n) :
+    Function.Injective fun r : R => r • lazardCocycle n R := by
   obtain ⟨c, hc⟩ :=
-    Finset.exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one hn)
-  refine eq_zero_of_smul_eq_zero_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
-    (fun i => Finsupp.single 0 i + Finsupp.single 1 (n - i)) (fun i => (c i : R)) ?_ h
+    Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hn)
+  refine smul_left_injective_of_sum_coeff_mul_eq_one (Icc 1 (n - 1))
+    (fun i => Finsupp.single 0 i + Finsupp.single 1 (n - i)) (fun i => (c i : R)) ?_
   rw [← Int.cast_one, ← hc, Int.cast_sum]
   refine Finset.sum_congr rfl fun i hi => ?_
   rw [mem_Icc] at hi
   rw [Int.cast_mul, Int.cast_natCast, coeff_single_add_single_lazardCocycle (by omega) (by omega),
     mul_comm]
 
-/-- For `n ≥ 2`, `r ↦ r • C_n` is injective. -/
-theorem smul_lazardCocycle_injective {n : ℕ} (hn : 2 ≤ n) :
-    Function.Injective fun r : R => r • lazardCocycle n R := fun r s h => by
-  rw [← sub_eq_zero, ← smul_lazardCocycle_eq_zero_iff hn, sub_smul]
-  exact sub_eq_zero.2 h
+/-- For `n ≥ 2`, `r • C_n = 0 ↔ r = 0` in every commutative ring `R`, including rings with
+torsion. -/
+@[simp]
+theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
+    r • lazardCocycle n R = 0 ↔ r = 0 :=
+  (smul_lazardCocycle_injective hn).eq_iff' (zero_smul R _)
 
 end lazardCocycle
 

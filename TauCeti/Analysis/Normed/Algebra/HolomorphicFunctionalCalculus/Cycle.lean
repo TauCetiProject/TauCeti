@@ -69,7 +69,7 @@ namespace TauCeti.Contour.Cycle
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A] {a : A} {Γ : Cycle}
 
 /-- The resolvent of `a` is continuous on the trace of a cycle avoiding the spectrum. -/
-private theorem continuousOn_resolvent (hΓ : IsIn Γ (resolventSet ℂ a)) :
+theorem continuousOn_resolvent (hΓ : IsIn Γ (resolventSet ℂ a)) :
     ContinuousOn (resolvent a) (trace Γ) :=
   (spectrum.differentiableOn_resolvent a).continuousOn.mono (isIn_iff.mp hΓ)
 
@@ -83,7 +83,7 @@ theorem integral_smul_resolvent_eq_of_windingNumber_eq {U : Set ℂ} (hU : IsOpe
     (hU₂ : IsNullHomologous Γ₂ U)
     (h : ∀ z ∈ spectrum ℂ a, windingNumber z Γ₁ = windingNumber z Γ₂) :
     integral (fun z ↦ f z • resolvent a z) Γ₁ = integral (fun z ↦ f z • resolvent a z) Γ₂ :=
-  integral_eq_of_windingNumber_eq hU (spectrum.isClosed a)
+  integral_eq_of_windingNumber_eq hU (spectrum.isClosed ℂ a)
     ((hf.mono sdiff_subset).smul ((spectrum.differentiableOn_resolvent a).mono
       fun _ hz ↦ spectrum.notMem_iff.mp hz.2)) h₁ h₂ hU₁ hU₂ h
 
@@ -95,7 +95,7 @@ private theorem integral_resolvent_eq_circleIntegral (hΓ : IsIn Γ (resolventSe
     (hR : spectrum ℂ a ⊆ ball 0 R) :
     integral (resolvent a) Γ = ∮ z in C(0, R), resolvent a z := by
   rw [← integral_circleCycle]
-  refine integral_eq_of_windingNumber_eq isOpen_univ (spectrum.isClosed a)
+  refine integral_eq_of_windingNumber_eq isOpen_univ (spectrum.isClosed ℂ a)
     ((spectrum.differentiableOn_resolvent a).mono fun z hz ↦ spectrum.notMem_iff.mp hz.2) ?_ ?_
     (isNullHomologous_univ _) (isNullHomologous_univ _) fun z hz ↦ ?_
   · exact isIn_iff.mpr fun z hz ↦ ⟨trivial, fun hσ ↦
@@ -135,7 +135,7 @@ theorem integral_resolvent (hΓ : IsIn Γ (resolventSet ℂ a))
   set c := 2 * π * ‖a‖ + 1 with hc_def
   have hc : 0 < c := by positivity
   obtain ⟨r, -, hr⟩ := Filter.hasBasis_cobounded_norm.eventually_iff.mp
-    ((spectrum.resolvent_tendsto_cobounded (𝕜 := ℂ) a).eventually
+    ((resolvent_tendsto_cobounded (𝕜 := ℂ) a).eventually
       (closedBall_mem_nhds (0 : A) (div_pos hε hc)))
   set R := max R₀ r
   have hR0 : 0 < R := hR₀pos.trans_le (le_max_left _ _)
@@ -205,7 +205,7 @@ theorem integral_eval_smul_resolvent (hΓ : IsIn Γ (resolventSet ℂ a))
 /-- Integrating the resolvent identity over a cycle `Γ₂` that winds once around `z` evaluates the
 part of the double integrand carrying the resolvent at the point of `Γ₂`. -/
 private theorem integral_div_sub_smul_smul_resolvent {U : Set ℂ} (hU : IsOpen U) {g : ℂ → ℂ}
-    (hg : DifferentiableOn ℂ g U) {Γ₂ : Cycle} (c : ℂ) {z : ℂ} (hzU : z ∈ U)
+    (hg : DifferentiableOn ℂ g U) {Γ₂ : Cycle} (c : ℂ) {z : ℂ}
     (hzR : z ∈ resolventSet ℂ a) (hΓ₂U : IsIn Γ₂ U) (hR₂ : IsIn Γ₂ (resolventSet ℂ a))
     (hU₂ : IsNullHomologous Γ₂ U) (hz₂ : z ∉ trace Γ₂) (hw₂ : windingNumber z Γ₂ = 1) :
     integral (fun w ↦ (c / (w - z)) • (g w • resolvent a w)) Γ₂ =
@@ -236,7 +236,7 @@ private theorem integral_div_sub_smul_smul_resolvent {U : Set ℂ} (hU : IsOpen 
     rw [smul_mul_smul_comm, hres]
     module
   rw [← hmul, hsplit, integral_smul_const,
-    cauchyIntegralFormula_nullHomologous hU hg hΓ₂U hU₂ hzU hz₂, hw₂, mul_one, sub_sub_cancel]
+    cauchyIntegralFormula_nullHomologous hU hg hΓ₂U hU₂ hz₂, hw₂, mul_one, sub_sub_cancel]
 
 /-- Integrating the part of the double integrand carrying the resolvent at the point of `Γ₂` over
 `Γ₂` first and `Γ₁` second gives zero, since `Γ₁` does not wind around any point of `Γ₂`. -/
@@ -265,7 +265,7 @@ private theorem integral_integral_div_sub_smul_smul_resolvent {U : Set ℂ} (hU 
     have hcauchy : integral (fun z ↦ f z / (w - z)) Γ₁ = 0 := by
       rw [integral_congr (g := fun z ↦ (-1 : ℂ) • (f z / (z - w))) fun z _ ↦ by
           simp only [smul_eq_mul, ← neg_sub z w, div_neg, neg_one_mul], integral_smul,
-        cauchyIntegralFormula_nullHomologous hU hf hΓ₁U hU₁ (isIn_iff.mp hΓ₂U hw) hw₁',
+        cauchyIntegralFormula_nullHomologous hU hf hΓ₁U hU₁ hw₁',
         hw₁ w hw]
       simp
     rw [← hcauchy, ← integral_smul_const]
@@ -305,7 +305,7 @@ theorem integral_smul_resolvent_mul_integral_smul_resolvent {U : Set ℂ} (hU : 
   have hinner : ∀ z ∈ trace Γ₁,
       integral (fun w ↦ (f z / (w - z)) • (g w • resolvent a w)) Γ₂ =
         (2 * π * I * g z) • (f z • resolvent a z) - (f z • resolvent a z) * I₂ := fun z hz ↦
-    integral_div_sub_smul_smul_resolvent hU hg (f z) (isIn_iff.mp hΓ₁U hz)
+    integral_div_sub_smul_smul_resolvent hU hg (f z)
       (isIn_iff.mp hR₁ hz) hΓ₂U hR₂ hU₂ (disjoint_left.mp h₁₂ hz) (hw₂ z hz)
   -- Integrating out `z` first instead gives zero, by Cauchy's formula over `Γ₁`, which does not
   -- wind around any point of `Γ₂`.
@@ -334,7 +334,7 @@ theorem Commute.integral_smul_resolvent_right {A : Type*} [NormedRing A] [Normed
     [CompleteSpace A] {a b : A} (hb : Commute b a) {Γ : Cycle} {f : ℂ → ℂ}
     (hf : ContinuousOn f (Cycle.trace Γ)) (hΓ : Cycle.IsIn Γ (resolventSet ℂ a)) :
     Commute b (Cycle.integral (fun z ↦ f z • resolvent a z) Γ) := by
-  have hint : ∀ γ ∈ FreeAbelianGroup.support Γ,
+  have hint : ∀ γ ∈ FreeAddCommGroup.support Γ,
       IntervalIntegrable (fun t ↦ deriv γ t • (f (γ t) • resolvent a (γ t)))
         MeasureTheory.volume γ.a γ.b :=
     fun _ ↦ Cycle.intervalIntegrable_of_mem_support (hf.smul (Cycle.continuousOn_resolvent hΓ))

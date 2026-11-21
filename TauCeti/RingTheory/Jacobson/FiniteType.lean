@@ -22,11 +22,11 @@ along any intermediate algebra.
 
 public section
 
-namespace TauCeti
+namespace Ideal
 
 /-- Let `A → B` be a homomorphism of algebras over a Jacobson ring `R`, with `B` finitely generated
 over `R`. Then every maximal ideal of `B` contracts to a maximal ideal of `A`. -/
-theorem _root_.Ideal.isMaximal_under_of_finiteType (R : Type*) {A B : Type*} [CommRing R]
+theorem isMaximal_under_of_finiteType (R : Type*) {A B : Type*} [CommRing R]
     [IsJacobsonRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] [Algebra A B]
     [IsScalarTower R A B] [Algebra.FiniteType R B] (q : Ideal B) [q.IsMaximal] :
     (q.under A).IsMaximal := by
@@ -40,4 +40,4 @@ theorem _root_.Ideal.isMaximal_under_of_finiteType (R : Type*) {A B : Type*} [Co
     simp [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq_zero_iff_mem]
   exact hker ▸ Ideal.IsMaximal.under A ⊥
 
-end TauCeti
+end Ideal

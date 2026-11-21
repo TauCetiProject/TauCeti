@@ -23,16 +23,16 @@ is odd and `0` otherwise.
 
 public section
 
-namespace TauCeti
+namespace SignType
 
 /-- Comparing the signs `s * (-1) ^ m` and `t * (-1) ^ n` instead of `s` and `t` changes the
 sign-change indicator by `s * t` when `m + n` is odd and leaves it unchanged otherwise. If `s` or
 `t` is zero, both sides are `0`. -/
-theorem _root_.SignType.ite_mul_neg_one_pow_sub_ite (s t : SignType) (m n : ℕ) :
+theorem ite_mul_neg_one_pow_sub_ite (s t : SignType) (m n : ℕ) :
     ((if s * (-1) ^ m = t * (-1) ^ n then 0 else 1 : ℤ) - if s = t then 0 else 1) =
       if Odd (m + n) then (s : ℤ) * t else 0 := by
   rcases Nat.even_or_odd m with hm | hm <;> rcases Nat.even_or_odd n with hn | hn <;>
     cases s <;> cases t <;>
     simp [hm.neg_one_pow, hn.neg_one_pow, hm, hn, Nat.odd_add, Nat.not_odd_iff_even.mpr]
 
-end TauCeti
+end SignType

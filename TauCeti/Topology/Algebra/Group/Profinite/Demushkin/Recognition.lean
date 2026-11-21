@@ -127,7 +127,7 @@ theorem natCard_H2_sq_le_natCard_H2_ker (χ : G →ₜ* Multiplicative (ZMod p))
   have h3 : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
       [DistribMulAction G A] [ContinuousSMul G A], (∀ a : A, p • a = 0) →
       Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G A)) := fun A _ _ _ _ _ hA ↦
-    cohomologicalDimensionLE_iff.mp hcd A (isPPrimaryTorsion_iff.2 fun a ↦ ⟨1, by rw [pow_one, hA]⟩)
+    cohomologicalDimensionLE_iff.mp hcd A (fun a ↦ ⟨1, by rw [pow_one, hA]⟩)
       3 (by norm_num)
   have : ContinuousSMul G (ULift.{u} (ZMod p)) :=
     ⟨continuous_snd.congr fun q ↦ ULift.ext (htriv q.1 q.2.down).symm⟩
@@ -192,7 +192,7 @@ theorem natCard_H2_sq_le_natCard_H2_ker (χ : G →ₜ* Multiplicative (ZMod p))
       proj_surjective := fun x ↦ by
         obtain ⟨f, hf⟩ := CharacterExtension.coindTrace_surjective χ htriv hN hNker hχ x
         exact ⟨f, (hT f).trans hf⟩
-      exact := fun f ↦ ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact a.2⟩ }
+      exact := fun f ↦ ⟨fun hf ↦ ⟨⟨f, hf⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact a.property⟩ }
   -- `Coind_N^G 𝔽_p`, hence `K`, is killed by `p`
   have hp0 : ∀ f : DiscreteCoind G N (ZMod p), p • f = 0 :=
     DiscreteCoind.nsmul_eq_zero (ZModModule.char_nsmul_eq_zero p)
@@ -305,7 +305,7 @@ theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq (hG : I
   have : Finite (H2 G (ZMod p)) := Nat.finite_of_card_ne_zero (by
     rw [natCard_H2_eq_pow_finrank_cohomFp_two p G htriv]; exact pow_ne_zero _ hp.out.ne_zero)
   -- the three-term Euler formula for `U`
-  have hE := one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG hfg htriv hcd U
+  have hE := one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG hfg hcd U
   rw [← (cohomFpLinearEquivH2 p G htriv).finrank_eq, h2, hUi] at hE
   rw [(cohomFpLinearEquivH2 p (U : Subgroup G) fun u m ↦ htriv u m).finrank_eq]
   have hrank := hU U hUn hUi
@@ -348,7 +348,7 @@ theorem isDemushkin_iff_finrank_cohomFp_two_openSubgroup :
          right_inv := fun _ ↦ rfl
          map_mul' := fun _ _ ↦ rfl
          continuous_toFun := continuous_id.subtype_mk fun x ↦ Subgroup.mem_top x
-         continuous_invFun := continuous_subtype_val } : G ≃ₜ* (⊤ : Subgroup G))).trans
+         continuous_invFun := continuous_subtypeVal } : G ≃ₜ* (⊤ : Subgroup G))).trans
       (hU ⊤ Subgroup.normal_top)
   exact CohomologicalDimensionLE.isDemushkin_of_finrank_cohomFp_two_openSubgroup_index_eq
     ((cohomologicalDimensionAt_le_iff p G 2).1 hcd.le) hG hfg h2 fun U hUn _ ↦ hU U hUn

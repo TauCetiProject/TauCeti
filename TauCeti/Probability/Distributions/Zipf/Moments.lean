@@ -11,7 +11,7 @@ public import TauCeti.Probability.Distributions.Zipf.Basic
 import Mathlib.Analysis.PSeries
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.NumberTheory.LSeries.Dirichlet
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
@@ -151,7 +151,7 @@ theorem integrableExpSet_id_map_cast_zipfMeasure (hs : 1 < s) :
   by_contra ht
   push Not at ht
   -- A positive exponential moment would give the infinite moment of order `⌈s⌉₊`.
-  refine not_integrable_exp_mul_of_not_integrable_pow ⌈s⌉₊ aemeasurable_id hnonneg ?_ ht h
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈s⌉₊ hnonneg ?_ ht h
   intro hi
   linarith [Nat.le_ceil s, (integrable_pow_map_cast_zipfMeasure_iff hs _).1 hi]
 

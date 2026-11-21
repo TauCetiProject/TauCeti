@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Smooth.Flat
 public import Mathlib.RingTheory.Smooth.StandardSmoothOfFree
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.RegularLocalRing.Flat
+import TauCeti.RingTheory.EssentialFiniteness
 
 /-!
 # Smooth algebras over regular rings are regular
@@ -108,14 +109,9 @@ theorem IsRegularLocalRing.of_formallySmooth [IsRegularRing R] [IsLocalRing S]
     [Algebra.EssFiniteType R S] [Algebra.FormallySmooth R S] : IsRegularLocalRing S := by
   let T := Algebra.EssFiniteType.subalgebra R S
   have : Algebra.FinitePresentation R T := Algebra.FinitePresentation.of_finiteType.mp inferInstance
-  -- `S` is a localization of `T`, and since `S` is local, it is the localization at the prime
-  -- `q = 𝔪_S ∩ T`.
+  -- `S` is the localization of `T` at the prime `q = 𝔪_S ∩ T`.
   let q := (IsLocalRing.maximalIdeal S).comap (algebraMap T S)
-  have : IsLocalization q.primeCompl S :=
-    IsLocalization.of_le (Algebra.EssFiniteType.submonoid R S) _
-      (fun r hr h ↦ (IsLocalRing.maximalIdeal.isMaximal S).ne_top
-        (Ideal.eq_top_of_isUnit_mem _ h (IsLocalization.map_units S ⟨r, hr⟩)))
-      fun r hr ↦ not_not.mp ((IsLocalRing.mem_maximalIdeal _).not.mp hr)
+  have := Algebra.EssFiniteType.isLocalization_atPrime_subalgebra R S
   let e : Localization.AtPrime q ≃ₐ[T] S := IsLocalization.algEquiv q.primeCompl _ _
   have : Algebra.IsSmoothAt R q := Algebra.FormallySmooth.of_equiv (e.restrictScalars R).symm
   have := isRegularLocalRing_localization_of_isSmoothAt (R := R) q

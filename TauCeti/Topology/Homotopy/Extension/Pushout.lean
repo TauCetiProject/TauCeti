@@ -65,6 +65,8 @@ a two-sided homotopy inverse of `F`.
   gives spaces which are homotopy equivalent relative to `Z`.**
 * `CategoryTheory.IsPushout.exists_homotopic_id_of_homotopic_id`: **a homotopy equivalence of the
   base induces a homotopy equivalence of attachments.**
+* `ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_pushout`: the same for the pushouts in
+  `TopCat`, as a homotopy equivalence `Z ∪_a Y ≃ₕ Z' ∪_{e ∘ a} Y` which is `e` on `Z`.
 
 ## References
 
@@ -279,12 +281,45 @@ theorem exists_homotopic_id_of_homotopic_id (h : IsPushout i a j k)
   simp only [TopCat.hom_comp] at hFE hEψ hFE' ⊢
   -- `ψ` is a left and `F ≫ Fg` a right homotopy inverse of `E`, so `F ≫ Fg` is a left one too.
   have hx : ((Fg.hom.comp F.hom).comp E.hom).Homotopic (ContinuousMap.id _) :=
-    ((hEψ.homotopic_of_comp_homotopic_id (r := Fg.hom.comp F.hom) hFE).symm.comp
-      (.refl E.hom)).trans hEψ
+    hFE.comp_homotopic_id_of_comp_homotopic_id (f := Fg.hom.comp F.hom) hEψ
   -- `Ff ≫ E'` is a left and `E ≫ F` a right homotopy inverse of `Fg`, so `E ≫ F` is a left one too.
-  exact ((hFE'.homotopic_of_comp_homotopic_id (r := F.hom.comp E.hom) hx).symm.comp
-    (.refl Fg.hom)).trans hFE'
+  exact hx.comp_homotopic_id_of_comp_homotopic_id (f := F.hom.comp E.hom) hFE'
 
 end ChangeOfBase
 
 end CategoryTheory.IsPushout
+
+namespace ContinuousMap.HomotopyEquiv
+
+open CategoryTheory CategoryTheory.Limits Set Topology TauCeti
+
+universe u
+
+variable {B Y : TopCat.{u}} {Z Z' : Type u} [TopologicalSpace Z] [TopologicalSpace Z']
+
+/-- **Changing the base of an attachment by a homotopy equivalence.** Let `i : B → Y` be an
+embedding whose image has the homotopy extension property, and `a : B → Z` an attaching map. A
+homotopy equivalence `e : Z ≃ₕ Z'` induces a homotopy equivalence `Z ∪_a Y ≃ₕ Z' ∪_{e ∘ a} Y`
+between the pushouts, which is `e` on `Z` and whose homotopy inverse is the homotopy inverse of
+`e` on `Z'`. -/
+theorem exists_homotopyEquiv_pushout (e : Z ≃ₕ Z') (i : B ⟶ Y) (hi : IsEmbedding i)
+    (hA : HasHomotopyExtensionProperty (range i)) (a : B ⟶ TopCat.of Z) :
+    ∃ E : ↑(pushout i a) ≃ₕ ↑(pushout i (a ≫ TopCat.ofHom e.toFun)),
+      (∀ z, E (pushout.inr i a z) = pushout.inr i (a ≫ TopCat.ofHom e.toFun) (e z)) ∧
+      ∀ z, E.symm (pushout.inr i (a ≫ TopCat.ofHom e.toFun) z) = pushout.inr i a (e.symm z) := by
+  have h := IsPushout.of_hasPushout i a
+  have h' := IsPushout.of_hasPushout i (a ≫ TopCat.ofHom e.toFun)
+  -- The map of attachments which is `e` on `Z` and the identity on `Y`.
+  let F : pushout i a ⟶ pushout i (a ≫ TopCat.ofHom e.toFun) :=
+    h.desc (pushout.inl _ _) (TopCat.ofHom e.toFun ≫ pushout.inr _ _) (by
+      rw [← Category.assoc]
+      exact h'.w)
+  obtain ⟨G, hG, hFG, hGF⟩ := h.exists_homotopic_id_of_homotopic_id h' hi hA rfl
+    (g := TopCat.ofHom e.invFun) (by simpa using e.left_inv) (by simpa using e.right_inv)
+    (h.inl_desc _ _ _) (h.inr_desc _ _ _)
+  refine ⟨⟨F.hom, G.hom, by rw [← TopCat.hom_comp]; exact hFG,
+    by rw [← TopCat.hom_comp]; exact hGF⟩, fun z ↦ ?_, fun z ↦ ?_⟩
+  · exact ConcreteCategory.congr_hom (h.inr_desc _ _ _) z
+  · exact ConcreteCategory.congr_hom hG z
+
+end ContinuousMap.HomotopyEquiv

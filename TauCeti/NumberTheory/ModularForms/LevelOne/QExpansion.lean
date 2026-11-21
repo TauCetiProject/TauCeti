@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
@@ -14,6 +15,7 @@ import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
 import TauCeti.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
 /-!
 # Low-order `q`-expansion coefficients at level one
@@ -38,6 +40,9 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 * `TauCeti.ModularForm.qExpansion_E₄_eq`, `TauCeti.ModularForm.qExpansion_E₆_eq`: the
   `q`-expansions `E₄ = 1 + 240 ∑ σ₃(n) qⁿ` and `E₆ = 1 - 504 ∑ σ₅(n) qⁿ`, as images of integral
   power series.
+* `TauCeti.ModularForm.E_apply_eq_divisorSumAt`, `TauCeti.ModularForm.E₄_apply_eq_divisorSumAt`,
+  `TauCeti.ModularForm.E₆_apply_eq_divisorSumAt`: the values `E_k(z) = 1 - (2k / B_k) s_{k-1}(q)`,
+  `E₄(z) = 1 + 240 s₃(q)` and `E₆(z) = 1 - 504 s₅(q)` at `q = e^(2π i z)`.
 * `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
   series has rational coefficients.
 * `TauCeti.ModularForm.E₄_qExpansion_coeff_of_ne_zero`,
@@ -51,6 +56,11 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
   of `Δ` is an integer.
 * `TauCeti.ModularForm.qExpansion_natCast_discriminant`: at period `N`, the expansion of `Δ` is
   its expansion at period `1` in the variable `qᴺ`, so it is `qᴺ + ⋯` with integer coefficients.
+* `TauCeti.ModularForm.mem_range_map_of_qExpansion_discriminant_mul_mem`: if `Δ Q` is the image
+  of a power series over a ring `R` under `R →+* ℂ`, then so is the power series `Q`.
+* `TauCeti.ModularForm.qExpansion_discriminantEquiv_mem_range`: dividing a level-one cusp form by
+  `Δ` preserves the property that its `q`-expansion is the image of a power series over a ring `R`
+  under `R →+* ℂ`.
 * `TauCeti.ModularForm.tendsto_discriminant_div_qParam_atImInfty`: `Δ / q → 1` at `i∞`.
 * `TauCeti.ModularForm.algebraicIndependent_qExpansion_E₄_E₆`: the `q`-expansions of `E₄` and
   `E₆` are algebraically independent over `ℂ`.
@@ -85,7 +95,7 @@ theorem qExpansion_E₄_eq :
     PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · simp [hm, bernoulli_four]
+  · simp [hm]
     norm_num
 
 /-- The `q`-expansion of `E₆` is `1 - 504 ∑ σ₅(n) qⁿ`. -/
@@ -97,8 +107,30 @@ theorem qExpansion_E₆_eq :
     PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · simp [hm, bernoulli_six]
+  · simp [hm]
     norm_num
+
+open scoped Real in
+/-- The value of the normalised Eisenstein series of even weight `k ≥ 4` at `z`, as the sum of its
+`q`-expansion at `q = e^(2π i z)`: `E_k(z) = 1 - (2k / B_k) s_{k-1}(q)`. -/
+theorem E_apply_eq_divisorSumAt {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (z : ℍ) :
+    E hk z = 1 - 2 * k / bernoulli k *
+      TauCeti.divisorSumAt (k - 1) (Complex.exp (2 * π * Complex.I * z)) := by
+  simp only [q_expansion_bernoulli hk hk2 z, TauCeti.divisorSumAt_eq_tsum_pnat, zpow_natCast]
+
+open scoped Real in
+/-- The value `E₄(z) = 1 + 240 s₃(q)` of the `q`-expansion at `q = e^(2π i z)`. -/
+theorem E₄_apply_eq_divisorSumAt (z : ℍ) :
+    E₄ z = 1 + 240 * TauCeti.divisorSumAt 3 (Complex.exp (2 * π * Complex.I * z)) := by
+  rw [E₄, E_apply_eq_divisorSumAt _ ⟨2, rfl⟩, bernoulli_four]
+  norm_num
+
+open scoped Real in
+/-- The value `E₆(z) = 1 - 504 s₅(q)` of the `q`-expansion at `q = e^(2π i z)`. -/
+theorem E₆_apply_eq_divisorSumAt (z : ℍ) :
+    E₆ z = 1 - 504 * TauCeti.divisorSumAt 5 (Complex.exp (2 * π * Complex.I * z)) := by
+  rw [E₆, E_apply_eq_divisorSumAt _ ⟨3, rfl⟩, bernoulli_six]
+  norm_num
 
 /-- The `q²`-coefficient of `E₄` is `240 σ₃(2) = 2160`. -/
 theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
@@ -184,16 +216,19 @@ theorem qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
   rw [qExpansion_add_smul_discriminant, coe_mcast,
     ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL]
 
-/-- The `q`-expansion of a normalised Eisenstein series of even weight `k ≥ 3` has rational
+/-- The `q`-expansion of a normalised Eisenstein series of weight `k ≥ 3` has rational
 coefficients, so it is the image of a power series over `K` under every ring homomorphism
-`φ : K →+* ℂ`. -/
-theorem qExpansion_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ} (hk : 3 ≤ k)
-    (hk2 : Even k) : qExpansion 1 (E hk) ∈ (PowerSeries.map φ).range := by
-  refine RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦
-    ((if m = 0 then 1 else -(2 * k / bernoulli k) * σ (k - 1) m : ℚ) : K), ?_⟩
-  ext m
-  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, map_ratCast, E_qExpansion_coeff hk hk2]
-  split_ifs <;> simp
+`φ : K →+* ℂ`. For odd `k` the series vanishes. -/
+theorem qExpansion_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ} (hk : 3 ≤ k) :
+    qExpansion 1 (E hk) ∈ (PowerSeries.map φ).range := by
+  rcases Nat.even_or_odd k with hk2 | hk2
+  · refine RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦
+      ((if m = 0 then 1 else -(2 * k / bernoulli k) * σ (k - 1) m : ℚ) : K), ?_⟩
+    ext m
+    rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, map_ratCast, E_qExpansion_coeff hk hk2]
+    split_ifs <;> simp
+  · rw [levelOne_odd_weight_eq_zero hk2.natCast (E hk), FunLike.coe_zero, qExpansion_zero]
+    exact zero_mem _
 
 /-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the image of Mathlib's
 `ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq_graded` under the `q`-expansion algebra
@@ -260,6 +295,27 @@ section Period
 
 variable {N : ℕ} [NeZero N]
 
+/-- The expansion of a normalized Eisenstein series of weight `k ≥ 3` in the parameter of any
+positive integral period is the image of a power series over `K` under every ring homomorphism
+`φ : K →+* ℂ`. -/
+theorem qExpansion_natCast_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ}
+    (hk : 3 ≤ k) : qExpansion N (E hk) ∈ (PowerSeries.map φ).range := by
+  have hperiod : qExpansion N (E hk) =
+      PowerSeries.expand N (NeZero.ne N) (qExpansion 1 (E hk)) := by
+    simpa using TauCeti.qExpansion_nat_mul one_ne_zero (NeZero.pos N)
+      (SlashInvariantFormClass.periodic_comp_ofComplex (E hk) one_mem_strictPeriods_SL)
+      (ModularFormClass.analyticAt_cuspFunction_zero (E hk) one_pos one_mem_strictPeriods_SL)
+  obtain ⟨P, hP⟩ := qExpansion_E_mem_range_map φ hk
+  exact ⟨PowerSeries.expand N (NeZero.ne N) P, by rw [PowerSeries.map_expand, hP, hperiod]⟩
+
+/-- The normalized Eisenstein series has coefficients in every subfield of `ℂ`, also
+when expanded in the parameter of any positive integral period. -/
+theorem qExpansion_natCast_E_coeff_mem {K : Subfield ℂ} {k : ℕ} (hk : 3 ≤ k) (i : ℕ) :
+    (qExpansion N (E hk)).coeff i ∈ K := by
+  obtain ⟨P, hP⟩ := qExpansion_natCast_E_mem_range_map (N := N) K.subtype hk
+  rw [← hP, PowerSeries.coeff_map]
+  exact (P.coeff i).property
+
 /-- The expansion of `Δ` at period `N` is its expansion at period `1` in the variable `qᴺ`. -/
 theorem qExpansion_natCast_discriminant :
     qExpansion N discriminant =
@@ -270,10 +326,12 @@ theorem qExpansion_natCast_discriminant :
     (ModularFormClass.analyticAt_cuspFunction_zero CuspForm.discriminant one_pos
       one_mem_strictPeriods_SL)
 
+omit [NeZero N] in
 /-- The coefficients of `Δ` at period `N` vanish below `N`. -/
 @[simp]
 theorem qExpansion_natCast_discriminant_coeff_of_lt {i : ℕ} (hi : i < N) :
     (qExpansion N discriminant).coeff i = 0 := by
+  have : NeZero N := ⟨by omega⟩
   rw [qExpansion_natCast_discriminant, PowerSeries.coeff_expand]
   split_ifs with h
   · obtain rfl : i = 0 := Nat.eq_zero_of_dvd_of_lt h hi
@@ -298,6 +356,30 @@ theorem qExpansion_natCast_discriminant_coeff_mem {R : Subring ℂ} (i : ℕ) :
   · exact R.zero_mem
 
 end Period
+
+/-- If the `q`-expansion of `Δ` times a power series `Q` is the image of a power series over a
+ring `R` under `φ : R →+* ℂ`, then so is `Q`: the `q`-expansion of `Δ` has integer coefficients and
+is `q` times a power series with constant term `1`. -/
+theorem mem_range_map_of_qExpansion_discriminant_mul_mem {R : Type*} [Ring R] (φ : R →+* ℂ)
+    {Q : PowerSeries ℂ} (hQ : qExpansion 1 discriminant * Q ∈ (PowerSeries.map φ).range) :
+    Q ∈ (PowerSeries.map φ).range := by
+  rw [PowerSeries.mem_map_range] at hQ ⊢
+  refine PowerSeries.coeff_mem_of_coeff_mul_mem (m := 1) (D := qExpansion 1 discriminant)
+    (fun i hi ↦ by rw [Nat.lt_one_iff.1 hi, discriminant_qExpansion_coeff_zero])
+    discriminant_qExpansion_coeff_one (fun i ↦ ?_) (by simpa only [mul_comm] using hQ)
+  simpa using
+    qExpansion_natCast_discriminant_coeff_mem (N := 1) (R := φ.range) i
+
+/-- Dividing a level-one cusp form by `Δ` preserves the property that its `q`-expansion is
+the image of a power series over a ring `R` under `φ : R →+* ℂ`. -/
+theorem qExpansion_discriminantEquiv_mem_range {R : Type*} [Ring R] (φ : R →+* ℂ) {k : ℤ}
+    {g : CuspForm 𝒮ℒ k} (hg : qExpansion 1 g ∈ (PowerSeries.map φ).range) :
+    qExpansion 1 (CuspForm.discriminantEquiv g) ∈ (PowerSeries.map φ).range := by
+  have hΔg : qExpansion 1 discriminant * qExpansion 1 (CuspForm.discriminantEquiv g) =
+      qExpansion 1 g := by
+    rw [← CuspForm.coe_discriminant, ← ModularForm.qExpansion_mul_coe one_pos
+      one_mem_strictPeriods_SL, CuspForm.coe_discriminant, discriminant_mul_discriminantEquiv]
+  exact mem_range_map_of_qExpansion_discriminant_mul_mem φ (hΔg ▸ hg)
 
 /-- The discriminant is asymptotic to `q` at `i∞`: `Δ / q → 1`. -/
 theorem tendsto_discriminant_div_qParam_atImInfty :

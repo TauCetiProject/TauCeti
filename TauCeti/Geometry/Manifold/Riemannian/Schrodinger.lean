@@ -142,7 +142,6 @@ theorem exists_pos_mul_integral_sq_le_integral_norm_sq_mgradient_add_integral_mu
       hx₀
   set F := ∫ x, f x ∂μ
   set V := μ.real univ
-  have hV : 0 ≤ V := measureReal_nonneg
   refine ⟨(4 * V / F + (4 * V * B / F + 2) * C + 1)⁻¹, by positivity, fun u hu ↦ ?_⟩
   set m := ⨍ y, u y ∂μ
   set P := ∫ x, ‖mgradient I u x‖ ^ 2 ∂μ

@@ -99,23 +99,32 @@ private theorem sum_Ioc_floor_le_of_window {f : ℕ → ℝ} (hf : 0 ≤ f) {q K
 
 
 /-- **Summing windows.** If nonnegative terms `f n` have sums over the windows `q x < n ≤ x`
-bounded by `K x` for all large `x`, where `0 ≤ q < 1` is a fixed ratio, then their partial sums
+bounded by `K x` for all large `x`, where `q < 1` is a fixed ratio, then their partial sums
 `∑_{1 ≤ n ≤ x} f n` are `O(x)`. -/
 theorem isBigO_sum_Icc_of_sum_Ioc_floor_mul_le {f : ℕ → ℝ} (hf : 0 ≤ f) {q K : ℝ}
-    (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hq1 : q < 1)
     (h : ∀ᶠ x : ℝ in atTop, ∑ n ∈ Finset.Ioc ⌊q * x⌋₊ ⌊x⌋₊, f n ≤ K * x) :
     (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n) =O[atTop] fun x ↦ x := by
+  -- A negative ratio gives the same windows as `q = 0`, since `⌊q * x⌋₊ = 0` for `x ≥ 0`.
+  have hfloor (x : ℝ) (hx : 0 ≤ x) : ⌊max q 0 * x⌋₊ = ⌊q * x⌋₊ := by
+    rcases le_total 0 q with hq | hq
+    · rw [max_eq_left hq]
+    · rw [max_eq_right hq, zero_mul, Nat.floor_zero, Nat.floor_of_nonpos (by nlinarith)]
   obtain ⟨x₀, hx₀⟩ := eventually_atTop.1 h
-  set x₁ : ℝ := max x₀ (1 / (1 - q))
+  have hx₀' : ∀ x ≥ max x₀ 0, ∑ n ∈ Finset.Ioc ⌊max q 0 * x⌋₊ ⌊x⌋₊, f n ≤ K * x := fun x hx ↦ by
+    rw [hfloor x (le_trans (le_max_right _ _) hx)]
+    exact hx₀ x (le_trans (le_max_left _ _) hx)
+  have hq1' : max q 0 < 1 := max_lt hq1 one_pos
+  set x₁ : ℝ := max (max x₀ 0) (1 / (1 - max q 0))
   have hSnn (x : ℝ) : 0 ≤ ∑ n ∈ Finset.Ioc 0 ⌊x⌋₊, f n := Finset.sum_nonneg fun n _ ↦ hf n
   have hSx₁ := hSnn x₁
-  refine .of_bound (max K 0 / (1 - q) + ∑ n ∈ Finset.Ioc 0 ⌊(x₁ : ℝ)⌋₊, f n) ?_
+  refine .of_bound (max K 0 / (1 - max q 0) + ∑ n ∈ Finset.Ioc 0 ⌊(x₁ : ℝ)⌋₊, f n) ?_
   filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
   have hx0 : (0 : ℝ) ≤ x := by linarith
   have hS' : ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n = ∑ n ∈ Finset.Ioc 0 ⌊x⌋₊, f n := by
     simp only [← Finset.Icc_add_one_left_eq_Ioc, zero_add]
   rw [hS', Real.norm_of_nonneg (hSnn x), Real.norm_of_nonneg hx0]
-  have := sum_Ioc_floor_le_of_window hf hq0 hq1 hx₀ x hx0
+  have := sum_Ioc_floor_le_of_window hf (le_max_right _ _) hq1' hx₀' x hx0
   nlinarith
 
 /-- **A uniform linear bound from linear growth.** If the partial sums `∑_{1 ≤ n ≤ x} f n`

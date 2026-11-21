@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Conjugating subgroups and joining with a normalizing subgroup
@@ -29,11 +30,14 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
 ## Main statements
 
 * `TauCeti.mem_conj_smul`: membership in `sHs⁻¹` is `s⁻¹ * x * s ∈ H`.
+* `TauCeti.card_conj_smul_eq`: conjugation preserves the number of elements of a subgroup.
 * `TauCeti.map_conj_eq_conj_smul`: the image of `H` under the inner automorphism of `s` is
   `MulAut.conj s • H`, which converts Mathlib's statements phrased with `Subgroup.map`, such as
   `MulAction.stabilizer_smul_eq_stabilizer_map_conj` and `Ideal.inertia_smul`, to this convention.
 * `Subgroup.mem_sup_of_right_le_normalizer_left`: if `K` normalizes `H`, an element of `H ⊔ K` is
   a product of an element of `H` followed by an element of `K`.
+* `Subgroup.mem_smul_set_iff_exists_smul_mem`: a point lies in the translate `H • t` of a set by a
+  subgroup exactly when some element of `H` moves it into `t`.
 -/
 
 public section
@@ -58,6 +62,11 @@ theorem map_conj_eq_conj_smul (s : G) (H : Subgroup G) :
   -- The pointwise action of `MulAut G` on subgroups is defined as `Subgroup.map`.
   (rfl)
 
+/-- Conjugation preserves the number of elements of a subgroup. -/
+theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
+    Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
+  Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
+
 end TauCeti
 
 namespace Subgroup
@@ -72,5 +81,18 @@ theorem mem_sup_of_right_le_normalizer_left (hLE : K ≤ normalizer (H : Set G))
     g ∈ H ⊔ K ↔ ∃ x ∈ H, ∃ t ∈ K, x * t = g := by
   rw [← SetLike.mem_coe, coe_mul_of_right_le_normalizer_left H K hLE, Set.mem_mul]
   simp only [SetLike.mem_coe]
+
+/-- A point lies in the translate `H • t` of a set `t` by a subgroup `H` exactly when some element
+of `H` moves it into `t`. -/
+@[to_additive /-- A point lies in the translate `H +ᵥ t` of a set `t` by an additive subgroup `H`
+exactly when some element of `H` moves it into `t`. -/]
+theorem mem_smul_set_iff_exists_smul_mem {α : Type*} [MulAction G α] {t : Set α} {x : α} :
+    x ∈ (H : Set G) • t ↔ ∃ g ∈ H, g • x ∈ t := by
+  rw [Set.mem_smul]
+  constructor
+  · rintro ⟨g, hg, y, hy, rfl⟩
+    exact ⟨g⁻¹, H.inv_mem hg, by rwa [inv_smul_smul]⟩
+  · rintro ⟨g, hg, hx⟩
+    exact ⟨g⁻¹, H.inv_mem hg, g • x, hx, inv_smul_smul g x⟩
 
 end Subgroup

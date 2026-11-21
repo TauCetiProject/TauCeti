@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.IsomorphismClasses
-public import Mathlib.CategoryTheory.Functor.FullyFaithful
+public import Mathlib.CategoryTheory.Functor.ReflectsIso.Basic
 
 /-!
 # Functors on isomorphism classes
 
 Mathlib's `CategoryTheory.isomorphismClasses` already supplies the action of functors on
 isomorphism classes. Here we record its representative formula, invariance under natural
-isomorphism, and injectivity for fully faithful functors. These facts allow comparisons of
-presentations to descend to their spaces of objects up to isomorphism.
+isomorphism, injectivity for full functors reflecting isomorphisms, such as fully faithful
+functors or full functors out of groupoids, and surjectivity for essentially surjective
+functors. These facts allow comparisons of presentations to descend to their spaces of objects up
+to isomorphism.
 -/
 
 public section
@@ -50,8 +52,9 @@ theorem isomorphismClasses_map_eq_of_iso (F : C ⥤ D) {G : C ⥤ D} (e : F ≅ 
   induction q using Quotient.inductionOn with
   | h x => exact Quotient.sound ⟨e.app x⟩
 
-/-- A fully faithful functor induces an injection on isomorphism classes. -/
-theorem isomorphismClasses_map_injective (F : C ⥤ D) [F.Full] [F.Faithful] :
+/-- A full functor reflecting isomorphisms, for instance a fully faithful functor, induces an
+injection on isomorphism classes. -/
+theorem isomorphismClasses_map_injective (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms] :
     Function.Injective (isomorphismClasses.map F.toCatHom) := by
   intro q r
   induction q using Quotient.inductionOn with
@@ -60,6 +63,18 @@ theorem isomorphismClasses_map_injective (F : C ⥤ D) [F.Full] [F.Faithful] :
     | h y =>
       intro h
       obtain ⟨e⟩ := Quotient.exact h
-      exact Quotient.sound ⟨F.preimageIso e⟩
+      -- The preimage of `e.hom` is an isomorphism because `F` reflects isomorphisms.
+      have : IsIso (F.map (F.preimage e.hom)) := by rw [F.map_preimage]; infer_instance
+      have := isIso_of_reflects_iso (F.preimage e.hom) F
+      exact Quotient.sound ⟨asIso (F.preimage e.hom)⟩
+
+/-- An essentially surjective functor induces a surjection on isomorphism classes. -/
+theorem isomorphismClasses_map_surjective (F : C ⥤ D) [F.EssSurj] :
+    Function.Surjective (isomorphismClasses.map F.toCatHom) := by
+  intro q
+  induction q using Quotient.inductionOn with
+  | h y =>
+    exact ⟨Quotient.mk _ (F.objPreimage y),
+      (F.isomorphismClasses_map_mk _).trans (Quotient.sound ⟨F.objObjPreimageIso y⟩)⟩
 
 end CategoryTheory.Functor

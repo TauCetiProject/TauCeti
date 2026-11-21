@@ -59,11 +59,11 @@ exported as a corollary.
 
 ## Provenance
 
-Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `dev/hasse-weil @ 513e83879e2f`), file
-`HasseWeil/WeilPairing/Assembly.lean`, declarations `qf_nonneg_of_frob_det_residual`,
-`qf_nonneg_of_frob_det_residual_both` and `qf_nonneg_of_pairing_scaling`, together with
-`frob_det_data_of_scaling` from `HasseWeil/WeilPairing/PairingDet.lean`.
+Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`), file `HasseWeil/WeilPairing/Assembly.lean`, declarations
+`qf_nonneg_of_frob_det_residual`, `qf_nonneg_of_frob_det_residual_both` and
+`qf_nonneg_of_pairing_scaling`, together with `frob_det_data_of_scaling` from
+`HasseWeil/WeilPairing/PairingDet.lean`.
 
 Changes from the source. Its three theorems conclude `0 ≤ q * r ^ 2 - t * r * s + s ^ 2` and so
 each assume `0 < q`; the conclusion here is the discriminant bound `t ^ 2 ≤ 4 * q` that their

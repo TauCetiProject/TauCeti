@@ -646,8 +646,7 @@ private theorem eq_of_faceEnd_eq_inl {j k : κ} {w : ℍ} (hj : faceEnd (L j) K 
     leftHalfPlane_geodesicBetween_swap hkab.symm] at hy
   rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ hsbj,
     leftHalfPlane_geodesicBetween_swap hjab.symm, hv] at hx
-  exact notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane hkab.symm (hv ▸ hjab.symm) hy
-    hx
+  exact notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane hy hx
 
 /-- Two faces do not start at the same point of `ℍ`. -/
 private theorem eq_of_faceStart_eq_inl {j k : κ} {z : ℍ}
@@ -667,7 +666,7 @@ private theorem eq_of_faceStart_eq_inl {j k : κ} {z : ℍ}
   -- both faces leave the common point, so each is on the left of the other seen from it
   rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ hatk] at hy
   rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ hatj, hv] at hx
-  exact notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hkab (hv ▸ hjab) hy hx
+  exact notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hy hx
 
 /-- The finite end of each face is the start of the face of another line. -/
 private theorem exists_ne_faceStart_eq_of_faceEnd_eq_inl {k : κ} {w : ℍ}
@@ -966,8 +965,8 @@ theorem exists_convexPolygon_carrier_eq_iInter_closure_leftHalfPlane {ι ι' : T
     simp [L']
   have hess' (k : s) :
       ∃ u : ℝ, ∀ j : s, j ≠ k → geodesicLine (L' k) u ∈ leftHalfPlane (L' j) := by
-    obtain ⟨u, hu⟩ := hess k k.2
-    exact ⟨u, fun j hj ↦ hu j j.2 (Subtype.coe_injective.ne hj)⟩
+    obtain ⟨u, hu⟩ := hess k k.property
+    exact ⟨u, fun j hj ↦ hu j j.property (Subtype.coe_injective.ne hj)⟩
   choose u hu using hess'
   -- an empty family would leave all of `ℍ`, which stays unbounded after removing the horodiscs
   have : Nonempty s := by
@@ -980,7 +979,7 @@ theorem exists_convexPolygon_carrier_eq_iInter_closure_leftHalfPlane {ι ι' : T
   obtain ⟨n, _, P, hPK, hPs, hPv⟩ := exists_convexPolygon_of_faces hK hu g hA (hK ▸ hb)
   refine ⟨n, inferInstance, P, hPK, fun i ↦ ?_, hPv⟩
   obtain ⟨k, h₁, h₂⟩ := hPs i
-  exact ⟨k, hst k.2, h₁, h₂⟩
+  exact ⟨k, hst k.property, h₁, h₂⟩
 
 /-- **A bounded intersection of finitely many closed half-planes is a compact convex polygon.**
 Let `K` be the intersection of the closed left half-planes of the geodesic lines `L k`, `k ∈ t`,

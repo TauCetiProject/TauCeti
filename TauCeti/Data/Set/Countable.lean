@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Countable
+public import Mathlib.Data.Finset.Lattice.Fold
 
 /-!
 # Countable ranges and predicates with countable truth sides
@@ -23,6 +24,11 @@ values of countably many sentences.
 
 * `Set.Countable.range_min`: the pointwise minimum of two countable-range functions has
   countable range.
+* `Finset.countable_range_sup`: the pointwise finite supremum of countable-range functions
+  has countable range.
+* `Function.Injective.exists_injOn_comp_eq_inl`: an injective map `g : α → β` has a left inverse
+  `β → α ⊕ ℕ`, through `Sum.inl`, that is injective on the range of `g` together with a given
+  countable set.
 * `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
 * `TauCeti.countable_range_of_splits`: a map that depends only on the truth values of the `P i`
@@ -49,6 +55,41 @@ theorem Set.Countable.range_min {α β : Type*} [Min β] {f g : α → β}
     (hf : (Set.range f).Countable) (hg : (Set.range g).Countable) :
     (Set.range fun x ↦ min (f x) (g x)).Countable :=
   (hf.image2 hg min).mono (by rintro _ ⟨x, rfl⟩; exact ⟨f x, ⟨x, rfl⟩, g x, ⟨x, rfl⟩, rfl⟩)
+
+/-- The pointwise finite supremum of countable-range functions has countable range.
+The empty supremum is the constant bottom function. -/
+theorem Finset.countable_range_sup {κ α Ω : Type*} [SemilatticeSup α] [OrderBot α]
+    (s : Finset κ) {f : κ → Ω → α} (hf : ∀ j ∈ s, (Set.range (f j)).Countable) :
+    (Set.range (fun ω ↦ s.sup (fun j ↦ f j ω))).Countable := by
+  have h := Finset.sup_induction (p := fun g : Ω → α ↦ (Set.range g).Countable)
+    ((Set.countable_singleton (⊥ : α)).mono (by simp))
+    (fun a ha b hb ↦ (ha.image2 hb (· ⊔ ·)).mono (by
+      rintro _ ⟨ω, rfl⟩
+      exact ⟨a ω, ⟨ω, rfl⟩, b ω, ⟨ω, rfl⟩, rfl⟩)) hf
+  have heq : s.sup f = fun ω ↦ s.sup (fun j ↦ f j ω) := funext (s.sup_apply f)
+  exact heq ▸ h
+
+/-- An injective map `g : α → β` has a left inverse `β → α ⊕ ℕ`, through `Sum.inl`, that is
+injective on the range of `g` together with a given countable set. -/
+theorem Function.Injective.exists_injOn_comp_eq_inl {α β : Type*} {g : α → β}
+    (hg : Function.Injective g) {S : Set β} (hS : S.Countable) :
+    ∃ p : β → α ⊕ ℕ, (Set.range g ∪ S).InjOn p ∧ p ∘ g = Sum.inl := by
+  classical
+  obtain ⟨e, he⟩ := Set.countable_iff_exists_injOn.mp hS
+  refine ⟨Function.extend g Sum.inl (Sum.inr ∘ e), fun y hy z hz hyz => ?_,
+    funext fun x => hg.extend_apply _ _ x⟩
+  by_cases hy' : ∃ x, g x = y <;> by_cases hz' : ∃ x, g x = z
+  · obtain ⟨x, rfl⟩ := hy'
+    obtain ⟨x', rfl⟩ := hz'
+    rw [hg.extend_apply, hg.extend_apply, Sum.inl.injEq] at hyz
+    rw [hyz]
+  · obtain ⟨x, rfl⟩ := hy'
+    simp [hg.extend_apply, Function.extend_apply' _ _ _ hz'] at hyz
+  · obtain ⟨x, rfl⟩ := hz'
+    simp [hg.extend_apply, Function.extend_apply' _ _ _ hy'] at hyz
+  · simp only [Function.extend_apply' _ _ _ hy', Function.extend_apply' _ _ _ hz',
+      Function.comp_apply, Sum.inr.injEq] at hyz
+    exact he (hy.resolve_left hy') (hz.resolve_left hz') hyz
 
 namespace TauCeti
 

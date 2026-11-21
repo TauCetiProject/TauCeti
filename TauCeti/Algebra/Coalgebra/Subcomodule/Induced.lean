@@ -17,17 +17,14 @@ made under the flatness hypothesis on the coalgebra: flatness makes
 `N ⊗ C → M ⊗ C` injective for the subtype map of a subcomodule `N ≤ M`, so the ambient
 coaction has a unique lift to `N ⊗ C`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target "Comodules over a
-coalgebra/Hopf algebra": finite-dimensional subcomodules and categorical kernels need
-subcomodules to be usable as comodules in their own right.
-
 ## Main declarations
 
 * `TauCeti.Subcomodule.inducedCoact`: the coaction on the subtype of a subcomodule.
 * `TauCeti.Subcomodule.instComodule`: the induced right-comodule structure.
 * `TauCeti.Subcomodule.coact_coe_eq_tmul_one`: a fixed vector of a subcomodule is fixed in the
   ambient comodule.
-* `TauCeti.Subcomodule.subtype`: the inclusion as a comodule morphism.
+* `TauCeti.Subcomodule.subtype`: the inclusion as a comodule morphism, which is injective by
+  `TauCeti.Subcomodule.subtype_injective`.
 * `TauCeti.Comodule.Hom.codRestrict`: a comodule morphism corestricted to a
   subcomodule containing its image.
 
@@ -68,7 +65,7 @@ private theorem coact_mem_range (n : N) :
     ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N)) n ∈
       LinearMap.range ((SMulMemClass.subtype N).rTensor C) := by
   rw [LinearMap.comp_apply, LinearMap.rTensor_def, SMulMemClass.subtype_apply]
-  exact N.coact_mem n.2
+  exact N.coact_mem n.property
 
 /-- The coaction induced on the subtype of a subcomodule.
 
@@ -136,6 +133,18 @@ theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = SMulMemClass
 @[simp]
 theorem subtype_apply (n : N) : Subcomodule.subtype N n = n :=
   (rfl)
+
+/-- The subcomodule inclusion is injective. -/
+theorem subtype_injective : Function.Injective (Subcomodule.subtype N) := by
+  intro a b h
+  rw [subtype_apply, subtype_apply] at h
+  exact Subtype.ext h
+
+/-- The range of the subcomodule inclusion is its underlying submodule. -/
+theorem range_subtype_toLinearMap : LinearMap.range N.subtype.toLinearMap = N.toSubmodule := by
+  rw [subtype_toLinearMap]
+  -- The underlying submodule has the same carrier and linear inclusion.
+  exact Submodule.range_subtype N.toSubmodule
 
 end Subcomodule
 

@@ -281,6 +281,7 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
 
+omit [IsLocallyNoetherian X] in
 /-- **`H¹` of a line bundle on a proper curve is finite-dimensional once `H¹(X, 𝒪_X)` is.** On a
 proper integral curve over a field `k` whose codimension-one local rings are discrete valuation
 rings, if `H¹(X, 𝒪_X)` is finite-dimensional over `k`, then so is `H¹(X, L)` for every line
@@ -290,6 +291,7 @@ theorem finiteDimensional_cohomology_one (hX : ∀ y : X, coheight y ≤ 1)
       (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
     (L : InvertibleSheaf X) :
     FiniteDimensional k (Scheme.Modules.Cohomology L.obj 1) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have : CompactSpace X := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance
   have : IsNoetherian X := {}
   obtain ⟨D, ⟨e⟩⟩ := SchemeWeilDivisor.exists_nonempty_iso_sheaf hX L
@@ -351,11 +353,19 @@ theorem eulerDegree_mul (a b : LineBundleClass X) :
     eulerDegree_toLineBundleClass, eulerDegree_toLineBundleClass, map_add]
 
 include hX in
+omit [IsLocallyNoetherian X]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] in
 /-- The inverse class has the opposite Euler-characteristic degree, on a proper integral curve
 over `k` whose codimension-one local rings are discrete valuation rings and whose `H¹(X, 𝒪_X)` is
-finite-dimensional. -/
+finite-dimensional.
+
+The discrete-valuation-ring instance comes after `hX`, so that `simp` rejects this lemma when it
+cannot discharge `hX` before searching for that instance, a search that can time out. -/
 @[simp]
-theorem eulerDegree_inv (a : LineBundleClass X) : eulerDegree k a⁻¹ = -eulerDegree k a := by
+theorem eulerDegree_inv
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    (a : LineBundleClass X) : eulerDegree k a⁻¹ = -eulerDegree k a := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have h := eulerDegree_mul k hX a⁻¹ a
   rw [inv_mul_cancel, eulerDegree_one] at h
   linarith

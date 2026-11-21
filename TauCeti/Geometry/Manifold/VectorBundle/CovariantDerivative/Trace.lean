@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
@@ -63,17 +63,7 @@ private theorem bilinFormTrace_eq_sum_chartDualFrame (α : M) {y : M}
     (hy : y ∈ (chartAt H α).source) (B : LinearMap.BilinForm ℝ (TangentSpace I y)) :
     TauCeti.bilinFormTrace B =
       ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) := by
-  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hy
-  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy'
-  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) α i y :=
-    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) α hy i).symm
-  have hgram : Matrix.gram ℝ b = chartGramMatrix (I := I) α y := by
-    ext i j
-    rw [Matrix.gram_apply, chartGramMatrix_apply, hb]
-  have hinv : (Matrix.gram ℝ b)⁻¹ = chartInvGramMatrix (I := I) α y :=
-    Matrix.inv_eq_left_inv (hgram ▸ chartInvGramMatrix_mul_chartGramMatrix (I := I) α hy)
-  rw [TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hinv, hb]
+  rw [bilinFormTrace_eq_sum_chartInvGramMatrix α hy]
   simp only [chartDualFrame_apply, map_sum, map_smul, smul_eq_mul]
 
 end DualFrame
@@ -104,9 +94,8 @@ private theorem sum_apply_chartDualFrame_cancel
       filter_upwards [hU] with y hy
       exact inner_chartDualFrame x
         (by simpa only [TangentBundle.trivializationAt_baseSet] using hy) i j
-    have h := hcov.mvfderiv_inner_eq (extend E v) (hD i) (hF j)
-    rw [hconst.mvfderiv_eq, mvfderiv_const] at h
-    simp only [extend_apply_self, zero_apply] at h
+    have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+      (hD i) (hF j) hconst v
     rw [real_inner_comm]
     linarith
   have hexp (i : Fin (Module.finrank ℝ E)) : b (F i x) (cov (D i) x v) =
@@ -142,7 +131,7 @@ theorem IsMetricCompatible.mvfderiv_bilinFormTrace
   have hU := (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx
   have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   have hF (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (F i)) x :=
-    ((contMDiffOn_chartLocalFrame (n := 1) x i).contMDiffAt hU).mdifferentiableAt one_ne_zero
+    (contMDiffAt_chartLocalFrame (n := 1) x i).mdifferentiableAt one_ne_zero
   have hD (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (D i)) x :=
     (contMDiffAt_chartDualFrame (n := 1) x hx i).mdifferentiableAt one_ne_zero
   -- Near `x`, the metric trace of `b` is `∑ᵢ b(Fᵢ, Dᵢ)`.

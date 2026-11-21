@@ -8,7 +8,6 @@ name: Daily full lint
 # to repair; TauCetiWorker's `lint-repair` stage adapts TauCeti/ until it is green, and it merges
 # through the normal review and merge queue, like the daily Mathlib bump (update.yml). While a
 # repair PR is open, later runs comment the current violations on it instead of opening another.
-# stuck_alerts.py raises a Zulip alert when a repair PR stays open too long.
 
 on:
   schedule:
@@ -29,9 +28,7 @@ jobs:
   lint:
     # Keep unbounded/long-running research and maintenance off the hosted
     # capacity shared by small automation and roadmap merge builds.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     outputs:
       outcome: ${{ steps.lint.outputs.outcome }}
       sha: ${{ steps.lint.outputs.sha }}
@@ -58,10 +55,9 @@ jobs:
           fetch-depth: 100
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -175,12 +171,6 @@ jobs:
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: bash scripts/lake-cache-get.sh .
 
-      - name: Save verified Lake archive records before building
-        run: python3 scripts/lake_cache_reuse.py snapshot . "$RUNNER_TEMP/lake-cache-reuse.json"
-
-      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
-      # The build globs every TauCeti/ module directly, so nothing depends on a root that
-      # re-exports the library.
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the step above filled;

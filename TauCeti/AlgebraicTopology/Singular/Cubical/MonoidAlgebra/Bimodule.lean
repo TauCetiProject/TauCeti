@@ -102,6 +102,17 @@ theorem leftAct_ofCube {p q : ℕ} (a : SingularCube G p) (c : SingularCube Y q)
       ofCube Y R ((leftActMap G Y).comp (SingularCube.crossProduct a c)) := by
   simp [leftAct_def]
 
+/-- The left action of the point chain of `g` on the point chain of `y` is the point chain of
+`g • y`. -/
+@[simp]
+theorem leftAct_ofCube_point (g : G) (y : Y) :
+    leftAct G Y R 0 0 (ofCube G R (SingularCube.point g)) (ofCube Y R (SingularCube.point y)) =
+      ofCube Y R (SingularCube.point (g • y)) := by
+  rw [leftAct_ofCube, SingularCube.eq_point ((leftActMap G Y).comp _), ContinuousMap.comp_apply,
+    SingularCube.crossProduct_apply]
+  -- `simp` does not apply `crossProduct_apply` to cubes of dimension `0 + 0`.
+  simp
+
 /-- **The Leibniz rule for the left action**: for `a` of degree `p + 1` and `c` of degree `q + 1`,
 `∂ (a · c) = ∂ a · c + (-1) ^ (p + 1) • (a · ∂ c)`, in degree `p + q + 1`. -/
 theorem boundary_leftAct {p q : ℕ} (a : NormalizedCubicalChain G R (p + 1))
@@ -137,16 +148,24 @@ theorem boundary_leftAct_zero_left {q : ℕ} (a : NormalizedCubicalChain G R 0)
 
 variable {Y' : Type*} [TopologicalSpace Y'] [SMul G Y'] [ContinuousSMul G Y']
 
+omit [SMul G Y'] [ContinuousSMul G Y'] in
+/-- Pushing forward along a map `f` that intertwines the left actions of two spaces through a
+map `g` of the acting spaces commutes with the left action. -/
+theorem map_leftAct_map {G' : Type*} [TopologicalSpace G'] [SMul G' Y'] [ContinuousSMul G' Y']
+    (f : C(Y, Y')) (g : C(G, G')) (hf : ∀ (x : G) (y : Y), f (x • y) = g x • f y) {p q : ℕ}
+    (a : NormalizedCubicalChain G R p) (c : NormalizedCubicalChain Y R q) :
+    map R f (p + q) (leftAct G Y R p q a c) = leftAct G' Y' R p q (map R g p a) (map R f q c) := by
+  have key : f.comp (leftActMap G Y) = (leftActMap G' Y').comp (g.prodMap f) := by
+    ext x
+    simp [hf]
+  rw [leftAct_def, leftAct_def, ← LinearMap.comp_apply (map R f (p + q)), ← map_comp, key,
+    map_comp, LinearMap.comp_apply, map_crossProduct]
+
 /-- Pushing forward along an equivariant map commutes with the left action. -/
 theorem map_leftAct (f : C(Y, Y')) (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) {p q : ℕ}
     (a : NormalizedCubicalChain G R p) (c : NormalizedCubicalChain Y R q) :
     map R f (p + q) (leftAct G Y R p q a c) = leftAct G Y' R p q a (map R f q c) := by
-  have key : f.comp (leftActMap G Y) =
-      (leftActMap G Y').comp ((ContinuousMap.id G).prodMap f) := by
-    ext x
-    simp [hf]
-  rw [leftAct_def, leftAct_def, ← LinearMap.comp_apply (map R f (p + q)), ← map_comp, key,
-    map_comp, LinearMap.comp_apply, map_crossProduct, map_id, LinearMap.id_apply]
+  rw [map_leftAct_map f (ContinuousMap.id G) hf, map_id, LinearMap.id_apply]
 
 /-- **The left and right actions commute**, after the reindexing `(p + q) + r = p + (q + r)`:
 `(a · c) · b = a · (c · b)` for chains `a` on `G`, `c` on `Y` and `b` on `H`. -/
@@ -244,12 +263,8 @@ omit [ContinuousMul G] in
 /-- The unit acts trivially on the module from the left. -/
 theorem cubicalChainLeftActBilin_one (m : cubicalChainModule Y H R) :
     cubicalChainLeftActBilin G Y H R 1 m = m := by
-  have h1 : (1 : normalizedCubicalChainAlgebra G R) = cubicalChainLof G R 0 (one G R) := by
-    rw [DirectSum.lof_eq_of]
-    rfl
-  rw [h1]
+  rw [← cubicalChainLof_one]
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | lof n c =>
     rw [cubicalChainLeftActBilin_lof_lof, ← cubicalChainModuleLof_cast (Nat.zero_add n),
       one_leftAct]
@@ -261,7 +276,6 @@ theorem cubicalChainLeftActBilin_mul (a b : normalizedCubicalChainAlgebra G R)
     cubicalChainLeftActBilin G Y H R (a * b) m =
       cubicalChainLeftActBilin G Y H R a (cubicalChainLeftActBilin G Y H R b m) := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [map_add, hm, hm']
   | lof r c =>
     induction a using DirectSum.induction_on with
@@ -387,7 +401,6 @@ theorem cubicalChainModule_isDGLeftModule :
     · simp
     obtain rfl : p = -(n : ℤ) := by omega
     induction m using cubicalChainModule.induction_on with
-    | zero => simp
     | lof q c => exact cubicalChainModuleDifferential_lof_smul x c
     | add m m' hm hm' =>
       rw [smul_add, map_add, hm, hm', map_add, smul_add, smul_add, smul_add]
@@ -397,30 +410,52 @@ end LeftAction
 
 section LeftMap
 
-universe u
+variable {G G' Y Y' H H' : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
+  [TopologicalSpace Y] [TopologicalSpace Y'] [MulAction G Y] [ContinuousSMul G Y]
+  {R : Type*} [CommRing R]
 
-variable {G : Type*} {Y Y' : Type u} {H : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
-  [TopologicalSpace Y] [TopologicalSpace Y'] [MulAction G Y] [ContinuousSMul G Y] [MulAction G Y']
-  [ContinuousSMul G Y'] {R : Type*} [CommRing R]
-
-/-- The map of modules induced by a `G`-equivariant map commutes with the left action. -/
-theorem cubicalChainModuleLinearMap_smul (f : C(Y, Y'))
-    (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) (a : normalizedCubicalChainAlgebra G R)
+/-- The map of modules induced by a map `f` that intertwines the left actions through a map `g` of
+the acting monoids is semilinear for the left action, through the push-forward along `g`. -/
+theorem cubicalChainModuleLinearMap_smul_map [Monoid G'] [TopologicalSpace G'] [ContinuousMul G']
+    [MulAction G' Y'] [ContinuousSMul G' Y'] (f : C(Y, Y')) (g : C(G, G'))
+    (hf : ∀ (x : G) (y : Y), f (x • y) = g x • f y) (a : normalizedCubicalChainAlgebra G R)
     (x : cubicalChainModule Y H R) :
-    cubicalChainModuleLinearMap R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
+    cubicalChainModuleLinearMap (G' := H') R f (a • x) =
+      cubicalChainSumMap R g a • cubicalChainModuleLinearMap R f x := by
   induction x using cubicalChainModule.induction_on with
-  | zero => rw [smul_zero, map_zero, smul_zero]
   | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, smul_add]
   | lof q c =>
     induction a using DirectSum.induction_on with
-    | zero => rw [zero_smul, map_zero, zero_smul]
-    | add a a' ha ha' => rw [add_smul, map_add, ha, ha', add_smul]
+    | zero => rw [zero_smul, map_zero, map_zero, zero_smul]
+    | add a a' ha ha' => rw [add_smul, map_add, ha, ha', map_add, add_smul]
     | of p z =>
       rw [← DirectSum.lof_eq_of R, lof_smul_cubicalChainModuleLof,
-        cubicalChainModuleLinearMap_lof, cubicalChainModuleLinearMap_lof,
-        lof_smul_cubicalChainModuleLof, map_leftAct f hf]
+        cubicalChainModuleLinearMap_lof, cubicalChainModuleLinearMap_lof, cubicalChainSumMap_lof,
+        lof_smul_cubicalChainModuleLof, map_leftAct_map f g hf]
+
+/-- The map of modules induced by a `G`-equivariant map commutes with the left action. -/
+theorem cubicalChainModuleLinearMap_smul [MulAction G Y'] [ContinuousSMul G Y'] (f : C(Y, Y'))
+    (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) (a : normalizedCubicalChainAlgebra G R)
+    (x : cubicalChainModule Y H R) :
+    cubicalChainModuleLinearMap (G' := H') R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
+  rw [cubicalChainModuleLinearMap_smul_map f (ContinuousMap.id G) hf, cubicalChainSumMap_id,
+    LinearMap.id_apply]
 
 end LeftMap
+
+section Self
+
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a topological magma acting on itself by left multiplication, the left action of chains is
+the Pontryagin product. -/
+theorem NormalizedCubicalChain.leftAct_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : leftAct G G R p q a b = mul G R p q a b := by
+  have h : leftActMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [leftActMap_apply, mulMap_apply, smul_eq_mul]
+  rw [leftAct_def, mul_def, h]
+
+end Self
 
 section Bimodule
 
@@ -434,7 +469,6 @@ instance : SMulCommClass (normalizedCubicalChainAlgebra G R) (normalizedCubicalC
   smul_comm a b m := by
     rw [← op_unop b]
     induction m using cubicalChainModule.induction_on with
-    | zero => simp only [smul_zero]
     | add m m' hm hm' => simp only [smul_add, hm, hm']
     | lof q c =>
       induction a using DirectSum.induction_on with

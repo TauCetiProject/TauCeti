@@ -70,7 +70,7 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-attribute [local instance] finiteNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*) {n : ℕ}
 

@@ -100,7 +100,7 @@ theorem IsJordanCurve.not_isPreconnected_compl {C : Set ℂ} (h : IsJordanCurve 
     ¬ IsPreconnected Cᶜ := by
   obtain ⟨p, hp, q, hq, hpq⟩ := not_subsingleton_iff.mp h.not_subsingleton
   obtain ⟨A, B, hA, hB, hAc, hBc, hAB, hApB⟩ :=
-    h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq hpq
+    h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq
   rw [← hAB]
   refine not_isPreconnected_compl_union_of_not_isPreconnected_inter hA.isClosed hB.isClosed
     hAc.isPreconnected hBc.isPreconnected (hApB ▸ (toFinite _).isBounded) ?_
@@ -123,7 +123,7 @@ private theorem IsJordanCurve.exists_notMem_connectedComponentIn {C : Set ℂ} (
 union of the bounded components of the complement of `C` — is nonempty. -/
 theorem IsJordanCurve.nonempty_filledHull_sdiff {C : Set ℂ} (h : IsJordanCurve C) :
     (filledHull C \ C).Nonempty := by
-  obtain ⟨x, hx⟩ : Cᶜ.Nonempty := nonempty_iff_ne_empty.mpr fun hC =>
+  obtain ⟨x, hx⟩ : Cᶜ.Nonempty := Set.ne_empty_iff_nonempty.mp fun hC =>
     h.not_isPreconnected_compl (hC ▸ isPreconnected_empty)
   obtain ⟨y, hy, hxy⟩ := h.exists_notMem_connectedComponentIn x
   have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
@@ -144,7 +144,7 @@ theorem IsJordanCurve.subset_closure_connectedComponentIn {C : Set ℂ} (h : IsJ
   intro r hr
   -- cut out of `C` a closed arc `S` whose complement in the curve lies in `ball q r`
   obtain ⟨S, hSC, hS, hpre, hqS, hCS⟩ :=
-    h.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball hq hr
+    h.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball hr
   have hxS : x ∈ Sᶜ := fun hxS => hx (hSC hxS)
   -- `S` does not separate `x` from `y`
   have hyD : y ∈ connectedComponentIn Sᶜ x :=

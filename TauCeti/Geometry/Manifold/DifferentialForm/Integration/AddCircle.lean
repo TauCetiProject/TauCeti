@@ -36,6 +36,7 @@ wedge of the time forms of the two factors, integrates to `p q`
 * `AddCircle.integralTopForm_timeForm`: `∫ dt_p = p`.
 * `AddCircle.integralTopForm_prod_eq_setIntegral`: the integral of a two-form over
   `AddCircle p × AddCircle q` is its integral over a fundamental rectangle.
+* `AddCircle.eval₂_wedge_timeForm`: `(ds_p ∧ dt_q)(v, w) = v₁ w₂ - w₁ v₂`.
 * `AddCircle.integralTopForm_wedge_timeForm`: `∫ ds_p ∧ dt_q = p q`.
 
 ## References
@@ -64,7 +65,8 @@ theorem integralTopForm_eq_setIntegral {φ : RoughForm 𝓘(ℝ) (AddCircle p) �
       ∫ t in Ico a (a + p), φ t fun _ ↦ (1 : ℝ) := by
   obtain ⟨l, hl⟩ := (AddCircle.orientation p).exists_lift
   have h := integralTopForm_eq_oriented_parametrization l (Module.Basis.singleton (Fin 1) ℝ) φ hφ
-    (Q := ((↑) : ℝ → AddCircle p)) (D := Ico a (a + p)) measurableSet_Ico finite_empty
+    (Q := ((↑) : ℝ → AddCircle p)) (D := Ico a (a + p)) measurableSet_Ico
+    countable_empty.isNullSet
     (by rw [compl_empty, coe_image_Ico_eq])
     (fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
     (fun _ ↦ ContinuousLinearEquiv.refl ℝ ℝ) (fun t _ ↦ hasMFDerivAt_coe p t)
@@ -78,8 +80,8 @@ theorem integralTopForm_eq_setIntegral {φ : RoughForm 𝓘(ℝ) (AddCircle p) �
 
 /-- The time form `dt_p` integrates to the period `p` over `AddCircle p`. -/
 theorem integralTopForm_timeForm :
-    integralTopForm (AddCircle.orientation p) (timeForm p).1 = p := by
-  have hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) (timeForm p).1) :=
+    integralTopForm (AddCircle.orientation p) (timeForm p).val = p := by
+  have hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) (timeForm p).val) :=
     isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _)
   rw [integralTopForm_eq_setIntegral p
     ((timeForm p).isSmoothForm.integrableTopForm hc (Module.Basis.singleton (Fin 1) ℝ)) 0,
@@ -108,7 +110,7 @@ theorem integralTopForm_prod_eq_setIntegral
   have h := integralTopForm_eq_oriented_parametrization l (Module.Basis.finTwoProd ℝ) φ hφ
     (Q := Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q))
     (D := Ico a (a + p) ×ˢ Ico b (b + q))
-    (measurableSet_Ico.prod measurableSet_Ico) finite_empty
+    (measurableSet_Ico.prod measurableSet_Ico) countable_empty.isNullSet
     (by rw [compl_empty, prodMap_image_prod, coe_image_Ico_eq, coe_image_Ico_eq, univ_prod_univ])
     (InjOn.prodMap (fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
       fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
@@ -123,23 +125,34 @@ theorem integralTopForm_prod_eq_setIntegral
   -- The tangent spaces of the torus are `ℝ × ℝ`, so the standard frame is `((1, 0), (0, 1))`.
   fin_cases i <;> simp <;> rfl
 
+/-- The area form `ds_p ∧ dt_q`, the wedge of the time forms of the two factors, is the
+determinant `v₁ w₂ - w₁ v₂` of two tangent vectors written in the real coordinates of the two
+circles. -/
+theorem eval₂_wedge_timeForm (x : AddCircle p × AddCircle q)
+    (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x) :
+    SmoothBundleForm.eval₂ (SmoothForm.wedge
+        (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))) x v w =
+      v.1 * w.2 - w.1 * v.2 := by
+  refine (SmoothForm.eval₂_wedge_one_one _ _ x _ _).trans ?_
+  simp only [SmoothForm.coe_mpullback, mpullback_apply, mfderiv_fst, mfderiv_snd,
+    timeForm_apply, Matrix.cons_val]
+  -- The two projections of a tangent vector of the torus are its real coordinates.
+  rfl
+
 /-- The area form `ds_p ∧ dt_q`, the wedge of the time forms of the two factors, integrates to
 `p q` over `AddCircle p × AddCircle q`. -/
 theorem integralTopForm_wedge_timeForm :
     integralTopForm ((AddCircle.orientation p).prod (AddCircle.orientation q))
       (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))).1 = p * q := by
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))).val = p * q := by
   have hval (x : AddCircle p × AddCircle q) :
       SmoothBundleForm.eval₂ (SmoothForm.wedge
         (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
         (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))) x
-        ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ)) = 1 := by
+        ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ)) = 1 :=
     -- The tangent spaces of the torus are `ℝ × ℝ`, so the frame is stated in the model.
-    refine (SmoothForm.eval₂_wedge_one_one _ _ x _ _).trans ?_
-    simp only [SmoothForm.coe_mpullback, mpullback_apply, mfderiv_fst, mfderiv_snd,
-      timeForm_apply, Matrix.cons_val]
-    -- The two projections of the tangent vectors `(1, 0)` and `(0, 1)` are their coordinates.
-    exact (by norm_num : (1 : ℝ) * 1 - 0 * 0 = 1)
+    (eval₂_wedge_timeForm p q x _ _).trans (by norm_num)
   rw [integralTopForm_prod_eq_setIntegral p q
     ((SmoothForm.isSmoothForm _).integrableTopForm
       (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))

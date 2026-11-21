@@ -68,7 +68,7 @@ finite-dimensional space which is `C^n`, `n ≠ 0`, at a regular point `x` sends
 of `x` onto the neighbourhoods of its value. -/
 theorem IsRegularPoint.map_nhds_eq (hreg : IsRegularPoint I 𝓘(𝕜, V) F x)
     (hF : ContMDiffAt I 𝓘(𝕜, V) n F x) (hn : n ≠ 0) : map F (𝓝 x) = 𝓝 (F x) := by
-  have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
   have hmap := (hFc.hasStrictFDerivAt_fderiv hn).map_nhds_eq_of_surj
@@ -89,7 +89,7 @@ theorem IsRegularPoint.exists_eventuallyEq_comp_of_ker_mfderiv_le
     (hg : ContMDiffAt I 𝓘(𝕜, W) n g x) (hn : n ≠ 0)
     (hFg : ∀ᶠ y in 𝓝 x, (mfderiv I 𝓘(𝕜, V) F y).ker ≤ (mfderiv I 𝓘(𝕜, W) g y).ker) :
     ∃ h : V → W, ContDiffAt 𝕜 n h (F x) ∧ g =ᶠ[𝓝 x] h ∘ F := by
-  have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
   have hgc := hg.contDiffAt_comp_extChartAt_symm
@@ -151,15 +151,15 @@ theorem exists_eqOn_comp_of_ker_mfderiv_le {U : Set M} (hU : IsOpen U)
     have : PreconnectedSpace S := isPreconnected_iff_preconnectedSpace.1 (hconn (F y))
     have hlc : IsLocallyConstant (S.domRestrict g) := by
       refine (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦ ?_
-      obtain ⟨h, -, hgh⟩ := hloc z z.2.1
-      filter_upwards [(continuous_subtype_val.tendsto z).eventually hgh] with z' hz'
-      have hz : F z = F y := z.2.2
-      have hz'' : F z' = F y := z'.2.2
+      obtain ⟨h, -, hgh⟩ := hloc z z.property.1
+      filter_upwards [(continuous_subtypeVal.tendsto z).eventually hgh] with z' hz'
+      have hz : F z = F y := z.property.2
+      have hz'' : F z' = F y := z'.property.2
       rw [domRestrict_apply, domRestrict_apply, hz', hgh.self_of_nhds, comp_apply, comp_apply, hz,
         hz'']
     exact hlc.apply_eq_of_preconnectedSpace ⟨y, hy, rfl⟩ ⟨y', hy', hyy'.symm⟩
   have hfac : (U.domRestrict g).FactorsThrough (U.domRestrict F) :=
-    fun a b hab ↦ hfib a a.2 b b.2 hab
+    fun a b hab ↦ hfib a a.property b b.property hab
   refine ⟨extend (U.domRestrict F) (U.domRestrict g) 0,
     fun y hy ↦ (hfac.extend_apply 0 ⟨y, hy⟩).symm, fun y hy ↦ ?_⟩
   -- Near `F y`, every value is taken near `y`, where `g` agrees with a local `C^n` factor.

@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Category.Grp.Adjunctions
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 public import Mathlib.CategoryTheory.Abelian.Projective.Basic
 public import Mathlib.CategoryTheory.Sites.Adjunction
-public import Mathlib.CategoryTheory.Sites.EpiMono
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import Mathlib.CategoryTheory.Sites.Subcanonical
+public import TauCeti.CategoryTheory.Sites.EpiMono
 
 /-!
 # Sections over projective objects of a topos
@@ -61,16 +61,6 @@ variable {A : Type u'} [Category.{w} A] {FA : A → A → Type*} {CA : A → Typ
   [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory.{w} A FA]
   [HasSheafify J A] [J.HasSheafCompose (forget A)] [J.WEqualsLocallyBijective A]
   [ConcreteCategory.HasFunctorialSurjectiveInjectiveFactorization A] [Balanced (Sheaf J A)]
-
-/-- An epimorphism of sheaves with values in a concrete category is an epimorphism of the
-underlying sheaves of sets: both are the locally surjective morphisms. -/
-instance preservesEpimorphisms_sheafCompose_forget :
-    (sheafCompose J (forget A)).PreservesEpimorphisms where
-  preserves φ _ := by
-    have : IsLocallySurjective φ := (isLocallySurjective_iff_epi' (φ := φ)).2 ‹_›
-    have : IsLocallySurjective ((sheafCompose J (forget A)).map φ) :=
-      (Presheaf.isLocallySurjective_iff_whisker_forget J φ.hom).1 this
-    exact epi_of_isLocallySurjective' _
 
 /-- Sections over a projective sheaf of sets `U`, that is, morphisms from `U` to the underlying
 sheaf of sets, carry epimorphisms of sheaves with values in a concrete category to surjections. -/

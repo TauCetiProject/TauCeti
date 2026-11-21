@@ -23,6 +23,9 @@ For a retract `r ∘ i = id` of `M` through `N`, the extension `i ∘ e ∘ r` o
 of `M` is idempotent when `e` is, and `i` identifies the range of `e` with the range of
 `i ∘ e ∘ r` (`ContinuousLinearMap.rangeEquivOfRetract`).
 
+A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g ∘ f`
+(`ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`).
+
 ## Main definitions
 
 * `ContinuousLinearMap.IsIdempotentElem.rangeEquiv`: the isomorphism of the ranges of `p` and
@@ -34,10 +37,14 @@ of `M` is idempotent when `e` is, and `i` identifies the range of `e` with the r
 
 * `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
   fixes every vector of its range.
+* `ContinuousLinearMap.IsIdempotentElem.completeSpace_range`: the range of an idempotent
+  continuous linear map on a complete space is complete.
 * `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
   `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
   along a retract is idempotent.
+* `ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`: if `g` is a pseudo-inverse
+  of `f`, then `g ∘ f` is a continuous projection.
 
 ## References
 
@@ -58,7 +65,7 @@ variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R 
 @[simp]
 theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
   (LinearMap.IsIdempotentElem.mem_range_iff
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.2
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.property
 
 variable [IsTopologicalAddGroup M]
 
@@ -120,12 +127,12 @@ private theorem inverse_intertwiner_mem_range (hp : IsIdempotentElem p)
 of `p` onto the range of `q`, with inverse the restriction of `U⁻¹`. -/
 noncomputable def rangeEquiv (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (q * p + (1 - q) * (1 - p))) : p.range ≃L[R] q.range :=
-  .equivOfInverse ((intertwiner p q ∘L p.range.subtypeL).codRestrict q.range
+  .ofContinuousLinearMap ((intertwiner p q ∘L p.range.subtypeL).codRestrict q.range
       (intertwiner_mem_range hp hq))
     (((intertwiner p q)⁻¹ʳ ∘L q.range.subtypeL).codRestrict p.range
       (inverse_intertwiner_mem_range hp hq hU))
-    (fun w ↦ Subtype.ext (congr($(Ring.inverse_mul_cancel _ hU) (w : M))))
-    (fun w ↦ Subtype.ext (congr($(Ring.mul_inverse_cancel _ hU) (w : M))))
+    (ContinuousLinearMap.ext fun w ↦ Subtype.ext (congr($(Ring.mul_inverse_cancel _ hU) (w : M))))
+    (ContinuousLinearMap.ext fun w ↦ Subtype.ext (congr($(Ring.inverse_mul_cancel _ hU) (w : M))))
 
 variable (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
   (hU : IsUnit (q * p + (1 - q) * (1 - p)))
@@ -142,9 +149,23 @@ theorem coe_rangeEquiv_symm_apply (w : q.range) :
     ((rangeEquiv hp hq hU).symm w : M) = (q * p + (1 - q) * (1 - p))⁻¹ʳ w :=
   (rfl)
 
+/-- The range of an idempotent continuous linear map on a complete space is complete. -/
+theorem completeSpace_range {R M : Type*} [Ring R] [UniformSpace M] [T1Space M] [CompleteSpace M]
+    [AddCommGroup M] [IsTopologicalAddGroup M] [Module R M] {p : M →L[R] M}
+    (hp : IsIdempotentElem p) : CompleteSpace p.range :=
+  (isClosed_range hp).completeSpace_coe
+
 end ContinuousLinearMap.IsIdempotentElem
 
 namespace ContinuousLinearMap
+
+/-- If `g` is a pseudo-inverse of `f`, that is `f ∘ g ∘ f = f`, then `g ∘ f` is a projection. -/
+theorem isIdempotentElem_comp_of_comp_comp_eq_self {R M N : Type*} [Semiring R]
+    [TopologicalSpace M] [AddCommMonoid M] [Module R M] [TopologicalSpace N] [AddCommMonoid N]
+    [Module R N] {f : M →L[R] N} {g : N →L[R] M} (hfg : f ∘L g ∘L f = f) :
+    IsIdempotentElem (g ∘L f) := by
+  ext v
+  simpa using congrArg g congr($hfg v)
 
 section Retract
 

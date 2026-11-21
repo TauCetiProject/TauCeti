@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.AlgebraicGeometry.ResidueDegree
+import TauCeti.FieldTheory.IsSepClosed
 
 /-!
 # Residue fields of schemes and their behaviour under base change
@@ -32,6 +34,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of the spectrum of a
+  separably closed field is separably closed.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
   determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
@@ -96,6 +100,12 @@ theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN :
   rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
     (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
   exact (map_ne_zero _).mpr hN
+
+/-- The residue field of the spectrum of a separably closed field is separably closed: it is the
+field itself (`AlgebraicGeometry.Scheme.Spec.residueFieldIsoOfField`). -/
+instance Spec.isSepClosed_residueField {K : Type u} [Field K] [IsSepClosed K]
+    (s : Spec (.of K)) : IsSepClosed ((Spec (.of K)).residueField s) :=
+  IsSepClosed.of_ringEquiv (Scheme.Spec.residueFieldIsoOfField s).symm.commRingCatIsoToRingEquiv
 
 section residueFieldCongr
 
@@ -230,7 +240,7 @@ theorem Scheme.eq_of_SpecMap_comp_fromSpecResidueField {X : Scheme.{u}} {x : X}
 instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
     (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) := by
   exact (ConcreteCategory.isIso_iff_bijective _).mpr
-    ((TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mp
+    ((f.residueDegree_eq_one_iff x).mp
       (f.residueDegree_eq_one_of_surjectiveOnStalks x))
 
 /-- If a composite preserves the residue field at a point, the second morphism preserves
@@ -451,3 +461,30 @@ theorem isIso_SpecMap_residueFieldMap_iff {R S : Type u} [CommRing R] [CommRing 
   rfl
 
 end RingHom
+
+namespace AlgebraicGeometry
+
+universe u
+
+/-- The map `Spec R ⟶ U ⊆ S` induced by the structure map of a `Γ(S, U)`-algebra `R` on an
+affine open `U` induces an isomorphism of residue fields at a point `u` over the prime `s` of
+`Γ(S, U)` as soon as `κ(s) ≅ κ(u)`. -/
+theorem IsAffineOpen.isIso_residueFieldMap_spec_algebraMap_comp_fromSpec {S : Scheme.{u}}
+    {U : S.Opens} (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R]
+    [Algebra Γ(S, U) R] (u : Spec ↧R)
+    [u.asIdeal.LiesOver (hU.primeIdealOf ⟨s, hs⟩).asIdeal]
+    (hres : haveI := u.isPrime
+      Function.Bijective (Ideal.ResidueField.mapₐ (hU.primeIdealOf ⟨s, hs⟩).asIdeal
+        u.asIdeal (Algebra.ofId _ _) (u.asIdeal.over_def _))) :
+    IsIso ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec).residueFieldMap
+      u) := by
+  have := u.isPrime
+  -- the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
+  have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
+    (u.asIdeal.over_def _)).mpr hres
+  rw [Scheme.residueFieldMap_comp]
+  have h₁ : IsIso (hU.fromSpec.residueFieldMap
+    ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R))) u)) := inferInstance
+  exact IsIso.comp_isIso' h₁ this
+
+end AlgebraicGeometry

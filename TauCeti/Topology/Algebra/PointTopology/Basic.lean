@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Algebra.MvPolynomial.Lift
 public import TauCeti.Topology.Algebra.MvPolynomial.Aeval
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # The point topology on points of an affine algebra
@@ -51,6 +52,8 @@ schemes over `k` and their convolution groups of points are set up.
 * `TauCeti.PointTopology.polynomialHomeomorph` and
   `TauCeti.PointTopology.mvPolynomialHomeomorph`: the points of the affine line are `R`, and those
   of the affine space with coordinates indexed by `σ` are `σ → R`.
+* `TauCeti.PointTopology.mvPolynomialTowerHomeomorph`: the points of `MvPolynomial ι A` are
+  pairs of a point of `A` and coordinates in `ι → R`, using `MvPolynomial.continuous_aevalTower`.
 * `TauCeti.PointTopology.isEmbedding_eval_generators` and
   `TauCeti.PointTopology.isClosedEmbedding_eval_generators`: a generating family embeds the points
   in affine space, as a closed subspace when `R` is T1.
@@ -180,6 +183,52 @@ theorem mvPolynomialHomeomorph_symm_apply {σ : Type*} (v : σ → R) :
     (mvPolynomialHomeomorph k R σ).symm v = MvPolynomial.aeval v :=
   MvPolynomial.aevalEquiv_apply v
 
+/-- Polynomial evaluation is jointly continuous in the coefficient point and variable values. -/
+@[fun_prop]
+theorem _root_.MvPolynomial.continuous_aevalTower {ι : Type*} (p : MvPolynomial ι A) :
+    Continuous fun z : (A →ₐ[k] R) × (ι → R) ↦ MvPolynomial.aevalTower z.1 z.2 p := by
+  induction p using MvPolynomial.induction_on with
+  | C a =>
+    simpa only [MvPolynomial.aevalTower_C, Function.comp_def] using
+      (continuous_eval a).comp continuous_fst
+  | add p q hp hq => simpa only [map_add, Pi.add_apply] using hp.fun_add hq
+  | mul_X p i hp =>
+    simpa only [map_mul, MvPolynomial.aevalTower_X, Pi.mul_apply, Function.comp_def] using
+      hp.fun_mul ((continuous_apply i).comp continuous_snd)
+
+variable (k A R) in
+/-- A polynomial-algebra point consists of a coefficient point and freely chosen coordinates. -/
+noncomputable def mvPolynomialTowerHomeomorph (ι : Type*) :
+    (MvPolynomial ι A →ₐ[k] R) ≃ₜ (A →ₐ[k] R) × (ι → R) where
+  toFun x :=
+    (x.comp (IsScalarTower.toAlgHom k A (MvPolynomial ι A)), fun i ↦ x (MvPolynomial.X i))
+  invFun z := MvPolynomial.aevalTower z.1 z.2
+  left_inv x := by
+    apply AlgHom.toRingHom_injective
+    apply MvPolynomial.ringHom_ext <;> intro a <;> simp
+  right_inv z := by simp [MvPolynomial.aevalTower_comp_toAlgHom]
+  continuous_toFun :=
+    (continuous_iff (g := fun x : MvPolynomial ι A →ₐ[k] R ↦
+      x.comp (IsScalarTower.toAlgHom k A (MvPolynomial ι A))).2 fun a ↦ continuous_eval _).prodMk
+      (continuous_pi fun i ↦ continuous_eval (MvPolynomial.X i))
+  continuous_invFun := continuous_iff.2 MvPolynomial.continuous_aevalTower
+
+/-- The coefficient component of a polynomial point is restriction to the coefficient algebra. -/
+@[simp]
+theorem mvPolynomialTowerHomeomorph_apply_fst {ι : Type*} (x : MvPolynomial ι A →ₐ[k] R) :
+    (mvPolynomialTowerHomeomorph k A R ι x).1 =
+      x.comp (IsScalarTower.toAlgHom k A (MvPolynomial ι A)) := (rfl)
+
+/-- The coordinate components of a polynomial point are its values on the variables. -/
+@[simp]
+theorem mvPolynomialTowerHomeomorph_apply_snd {ι : Type*} (x : MvPolynomial ι A →ₐ[k] R)
+    (i : ι) : (mvPolynomialTowerHomeomorph k A R ι x).2 i = x (MvPolynomial.X i) := (rfl)
+
+/-- The polynomial point with given coefficients and coordinates is algebra evaluation. -/
+@[simp]
+theorem mvPolynomialTowerHomeomorph_symm_apply {ι : Type*} (z : (A →ₐ[k] R) × (ι → R)) :
+    (mvPolynomialTowerHomeomorph k A R ι).symm z = MvPolynomial.aevalTower z.1 z.2 := (rfl)
+
 /-- If the family `a` generates `A` as a `k`-algebra, then evaluation at `a` embeds the points
 `A →ₐ[k] R` in `ι → R`. -/
 theorem isEmbedding_eval_generators {ι : Type*} {a : ι → A}
@@ -205,14 +254,14 @@ theorem discreteTopology_of_finiteType [DiscreteTopology R] [Algebra.FiniteType 
   exact (isEmbedding_eval_generators (a := ((↑) : s → A)) (by simpa using hs)).discreteTopology
 
 /-- Without finite type, points over a discrete ring need not be discrete: for infinitely many
-variables and a nontrivial compact coefficient ring, such as `𝔽₂` with the discrete topology, the
-points of affine space are an infinite compact space, hence not discrete. -/
-theorem not_discreteTopology_mvPolynomial (σ : Type*) [Infinite σ] [Nontrivial R]
-    [CompactSpace R] : ¬DiscreteTopology (MvPolynomial σ k →ₐ[k] R) := fun _ ↦ by
+variables and a nontrivial coefficient ring, such as `𝔽₂` with the discrete topology, the points of
+affine space are not discrete, since every basic open set constrains only finitely many
+coordinates. -/
+theorem not_discreteTopology_mvPolynomial (σ : Type*) [Infinite σ] [Nontrivial R] :
+    ¬DiscreteTopology (MvPolynomial σ k →ₐ[k] R) := fun _ ↦ by
   have : DiscreteTopology (σ → R) :=
     (mvPolynomialHomeomorph k R σ).symm.isEmbedding.discreteTopology
-  have : Finite (σ → R) := finite_of_compact_of_discrete
-  exact not_finite (σ → R)
+  exact not_discreteTopology_pi this
 
 end CommSemiring
 

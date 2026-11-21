@@ -10,10 +10,9 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the first Janko group
 
-This file carries the `J₁` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the ATLAS version 3 presentation on the
-standard generators `a` and `b` as a `TauCeti.GroupPresentation`, together with the source,
-generator convention, transcription notes, and expected counts.
+This file carries the `J₁` row of the sporadic presentation data. It records the ATLAS version 3
+presentation on the standard generators `a` and `b` as a `TauCeti.GroupPresentation`, together with
+the source, generator convention, transcription notes, and expected counts.
 
 The presentation displayed by the ATLAS is
 
@@ -55,7 +54,7 @@ They agree in every letter, inverse, exponent, and source-order position with
 `j1Presentation_transcribed`: `repeatedWord` is `xyxy⁻¹`, `fifthPowerBase` is the fourth source
 base, and `squareBase` is the fifth. No constructor entry is commented out or marked redundant.
 This comparison was performed from the pinned source bytes independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -80,7 +79,7 @@ therefore has order `175560` and is the pinned subgroup.
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as a two-byte little-endian integer, has SHA-256
 `8ce03dd9c719b08567f80eb6289a08146479a83653c57c6213226aead66c8b0e`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row
@@ -101,6 +100,8 @@ a recorded number.
 * `TauCeti.Sporadic.j1Presentation`: the ATLAS finite presentation of `J₁`.
 * `TauCeti.Sporadic.j1Presentation_transcribed` and the equations for the remaining fields: the
   characterization of the sealed row.
+* `TauCeti.Sporadic.j1Presentation_relatorLetters`: the compiled words, spelled out letter by
+  letter.
 * `TauCeti.Sporadic.j1Presentation_map_length_relators`,
   `TauCeti.Sporadic.j1Presentation_totalLength` and
   `TauCeti.Sporadic.j1Presentation_relatorsCyclicallyReduced`: the three checks on the compiled
@@ -215,6 +216,37 @@ theorem j1Presentation_transcribed :
 
 /-- The relator count recorded for `J₁` agrees with the transcribed data. -/
 theorem j1Presentation_matchesMetadata : j1Presentation.matchesMetadata := by decide
+
+/-- The compiled relator words for `J₁`, spelled out. A letter `(i, true)` is the generator with
+index `i` and `(i, false)` is its inverse, so `(0, true)`, `(1, true)` and `(1, false)` read `a`,
+`b` and `b⁻¹`, and the five words are `a a`, `b b b`, seven copies of `a b`, five copies of
+`a b (a b a b⁻¹)³` and two copies of `a b (a b a b⁻¹)⁶ a b a b (a b⁻¹)²`. -/
+theorem j1Presentation_relatorLetters :
+    j1Presentation.relatorLetters =
+      [[(0, true), (0, true)],
+       [(1, true), (1, true), (1, true)],
+       [(0, true), (1, true), (0, true), (1, true), (0, true), (1, true), (0, true), (1, true),
+        (0, true), (1, true), (0, true), (1, true), (0, true), (1, true)],
+       [(0, true), (1, true), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false)],
+       [(0, true), (1, true), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, false), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, false), (0, true), (1, true), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, false),
+        (0, true), (1, true), (0, true), (1, false), (0, true), (1, true), (0, true), (1, true),
+        (0, true), (1, false), (0, true), (1, false)]] := by
+  simp [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def,
+    FreeGroup.invRev, j1Presentation, fifthPowerBase, squareBase, repeatedWord, a, b]
 
 /-- The lengths of the five compiled relator words for `J₁`, in the order of the source.
 

@@ -64,9 +64,11 @@ open LieAlgebra LieAlgebra.IsKilling LieModule
 
 universe u v
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+section Coroot
+
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
 
 /-- The set consisting of a weight-indexed family `x` and all coroots, regarded as elements of the
 ambient Lie algebra. When `x` is a normalized system (such as `IsSl2System x`), its zero-weight
@@ -74,7 +76,6 @@ value vanishes alongside the zero coroot. -/
 noncomputable def rootCorootGenerators (x : Weight K H L → L) : Set L :=
   Set.range x ∪ Set.range fun α : Weight K H L => (coroot α : L)
 
-omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- Membership in the set of root--coroot generators. -/
 @[simp]
 theorem mem_rootCorootGenerators_iff {x : Weight K H L → L} {v : L} :
@@ -86,21 +87,18 @@ theorem mem_rootCorootGenerators_iff {x : Weight K H L → L} {v : L} :
 noncomputable def rootCorootSpan (x : Weight K H L → L) : Submodule ℤ L :=
   Submodule.span ℤ (rootCorootGenerators x)
 
-omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- A root vector belongs to its root--coroot span. -/
 @[simp]
 theorem rootVector_mem_rootCorootSpan (x : Weight K H L → L) (α : Weight K H L) :
     x α ∈ rootCorootSpan x :=
   Submodule.subset_span (Or.inl (Set.mem_range_self α))
 
-omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- A coroot belongs to every root--coroot span. -/
 @[simp]
 theorem coroot_mem_rootCorootSpan (x : Weight K H L → L) (α : Weight K H L) :
     (coroot α : L) ∈ rootCorootSpan x :=
   Submodule.subset_span (Or.inr (Set.mem_range_self α))
 
-omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- The universal property of the integral root--coroot span. -/
 @[simp]
 theorem rootCorootSpan_le_iff {x : Weight K H L → L} {P : Submodule ℤ L} :
@@ -122,10 +120,28 @@ taken over this family.
 This is the family of distinguished Cartan vectors of `TauCeti.chevalleyKostantForm`. -/
 noncomputable def corootFamily : Weight K H L → L := fun α => (coroot α : L)
 
-omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- The coroot family evaluates to the coroot of the weight indexing it. -/
 @[simp] theorem corootFamily_apply (α : Weight K H L) :
     corootFamily H α = ((coroot α : H) : L) := (rfl)
+
+/-- A coroot at the zero weight vanishes in the ambient Lie algebra, which is why indexing the
+coroot family by all weights rather than by the roots costs nothing. -/
+@[simp] theorem coe_coroot_eq_zero_of_isZero {α : Weight K H L} (hα : α.IsZero) :
+    ((coroot α : H) : L) = 0 := by
+  simp [coroot, Weight.coe_toLinear_eq_zero_iff.mpr hα]
+
+/-- **Two coroots commute**, being elements of the abelian Cartan subalgebra. -/
+theorem lie_coroot_coroot_eq_zero (α β : Weight K H L) :
+    ⁅(coroot α : L), (coroot β : L)⁆ = 0 :=
+  LieSubalgebra.lie_eq_zero_of_mem (coroot α).property (coroot β).property
+
+end Coroot
+
+section CartanInteger
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
 
 /-- The Cartan integers `β α∨` collected as the integral weight of the root `β` against the family
 of all coroots, written through the root-chain coefficients that
@@ -143,12 +159,6 @@ exists to record. -/
 theorem intCast_rootCartanWeight_apply (α β : Weight K H L) :
     ((rootCartanWeight β α : ℤ) : K) = β (coroot α) := by
   rw [rootCartanWeight, apply_coroot_eq_cast α β]
-
-/-- A coroot at the zero weight vanishes in the ambient Lie algebra, which is why indexing the
-coroot family by all weights rather than by the roots costs nothing. -/
-@[simp] theorem coe_coroot_eq_zero_of_isZero {α : Weight K H L} (hα : α.IsZero) :
-    ((coroot α : H) : L) = 0 := by
-  rw [coroot_eq_zero_iff.2 hα, ZeroMemClass.coe_zero]
 
 /-- Every root has Cartan integer zero at the zero weight, the coroot there being zero. -/
 @[simp] theorem rootCartanWeight_eq_zero_of_isZero (β : Weight K H L) {α : Weight K H L}
@@ -168,19 +178,26 @@ theorem coweightPairing_toLinear_eq_rootCartanWeight (β : Weight K H L) (i : H.
     rw [intCast_rootCartanWeight_apply, IsKilling.rootSystem_coroot_apply,
       Weight.toLinear_apply]
 
-omit [CharZero K] [LieModule.IsTriangularizable K H L] in
-/-- **Two coroots commute**, being elements of the abelian Cartan subalgebra. -/
-theorem lie_coroot_coroot_eq_zero (α β : Weight K H L) :
-    ⁅(coroot α : L), (coroot β : L)⁆ = 0 :=
-  LieSubalgebra.lie_eq_zero_of_mem (coroot α).2 (coroot β).2
+end CartanInteger
 
 namespace IsSl2System
 
-variable {x : Weight K H L → L} (hx : IsSl2System x)
+section Bracket
 
-include hx
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
 
-omit [CharZero K] in
+variable {x : Weight K H L → L} in
+/-- Two coroots have zero bracket, hence their bracket belongs to the integral root--coroot span. -/
+theorem lie_coroot_coroot_mem_rootCorootSpan (α β : Weight K H L) :
+    ⁅(coroot α : L), (coroot β : L)⁆ ∈ rootCorootSpan x := by
+  rw [lie_coroot_coroot_eq_zero]
+  exact Submodule.zero_mem _
+
+variable [LieModule.IsTriangularizable K H L] {x : Weight K H L → L} (hx : IsSl2System x)
+
+include hx in
 /-- If every bracket of root vectors whose weights sum to a root has an integral coefficient, then
 the bracket of any two root-vector generators belongs to the integral root--coroot span.
 
@@ -214,6 +231,15 @@ theorem lie_rootVector_rootVector_mem_rootCorootSpan
   · rw [hx.eq_zero_of_isZero α (not_not.mp hα), zero_lie]
     exact Submodule.zero_mem _
 
+end Bracket
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
+  {x : Weight K H L → L} (hx : IsSl2System x)
+
+include hx
+
 /-- **A coroot acts on a root vector through a Cartan integer.** This is the Cartan relation
 `TauCeti.IsSl2System.lie_coroot` with its coefficient in the integral form
 `TauCeti.rootCartanWeight`. -/
@@ -233,13 +259,6 @@ theorem lie_rootVector_coroot_mem_rootCorootSpan (α β : Weight K H L) :
     ⁅x α, (coroot β : L)⁆ ∈ rootCorootSpan x := by
   rw [← lie_skew]
   exact Submodule.neg_mem _ (hx.lie_coroot_rootVector_mem_rootCorootSpan β α)
-
-omit [CharZero K] [LieModule.IsTriangularizable K H L] hx in
-/-- Two coroots have zero bracket, hence their bracket belongs to the integral root--coroot span. -/
-theorem lie_coroot_coroot_mem_rootCorootSpan (α β : Weight K H L) :
-    ⁅(coroot α : L), (coroot β : L)⁆ ∈ rootCorootSpan x := by
-  rw [lie_coroot_coroot_eq_zero]
-  exact Submodule.zero_mem _
 
 /-- **The integral root--coroot span is closed under the Lie bracket** when all root-vector
 structure constants are integers. -/

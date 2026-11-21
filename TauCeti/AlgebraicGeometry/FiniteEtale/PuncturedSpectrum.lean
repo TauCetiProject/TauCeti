@@ -7,9 +7,13 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
+public import Mathlib.RingTheory.Depth.Basic
 public import Mathlib.AlgebraicGeometry.Restrict
+public import TauCeti.RingTheory.LocalRing.RingHom
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Pullback
 import TauCeti.AlgebraicGeometry.FiniteEtale.MorphismProperty
+import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Connected
 
 /-!
 # Finite étale covers of a punctured local spectrum
@@ -29,6 +33,21 @@ projections `R × R → R`, viewed as morphisms of finite étale schemes over `S
   faithful if and only if `0 < ringKrullDim R`.
 * `TauCeti.IsLocalRing.restrictPunctured_faithful_of_one_le_depth`: restriction is faithful for a
   Noetherian local ring of positive depth.
+* `TauCeti.IsLocalRing.restrictPuncturedCompPullbackIso`: for a homomorphism of local rings
+  `A → A'` whose only point over the closed point is the closed point, restriction to the
+  punctured spectrum commutes with the pullback `TauCeti.IsLocalRing.pullbackPunctured` of finite
+  étale covers from the punctured spectrum of `A` to that of `A'`.
+* `TauCeti.IsLocalRing.pullbackPunctured_faithful`,
+  `TauCeti.IsLocalRing.pullbackPunctured_reflectsIsomorphisms`: if `A` is Noetherian of depth at
+  least two and `A'` has positive dimension, this pullback is faithful and reflects isomorphisms.
+  This applies to restriction to the punctured spectrum of a quotient `A ⧸ I`
+  (`TauCeti.IsLocalRing.restrictPuncturedQuotient`), for instance of a hypersurface section.
+* `TauCeti.IsLocalRing.extends_iff_extends_pullback`: if moreover pullback of finite étale
+  schemes from `Spec A` to `Spec A'` is essentially surjective and `pullbackPunctured` is fully
+  faithful, a finite étale cover of the punctured spectrum of `A` extends across the closed point
+  if and only if its pullback to the punctured spectrum of `A'` does.
+* `TauCeti.IsLocalRing.purityHolds_of_purityHolds_of_fullyFaithful`: under the same hypotheses,
+  purity for `A'` implies purity for `A`.
 
 ## References
 
@@ -93,10 +112,8 @@ theorem restrictPunctured_faithful_iff :
     (restrictPunctured R).Faithful ↔ 0 < ringKrullDim R := by
   refine ⟨fun _ ↦ ?_, restrictPunctured_faithful R⟩
   by_contra hdim
-  have : Ring.KrullDimLE 0 R := Ring.krullDimLE_iff.mpr (not_lt.mp hdim)
-  have := Ring.KrullDimLE.subsingleton_primeSpectrum R
   have : IsEmpty (puncturedSpectrum R).toScheme :=
-    ⟨fun x ↦ (mem_puncturedSpectrum_iff R x.1).mp x.2 (Subsingleton.elim _ _)⟩
+    not_nonempty_iff.mp (mt (nonempty_puncturedSpectrum_iff R).mp hdim)
   -- Over the empty punctured spectrum all finite étale schemes are empty, so any two parallel
   -- morphisms agree.
   have hsub {X Y : TauCeti.FiniteEtaleScheme (puncturedSpectrum R).toScheme} (a b : X ⟶ Y) :
@@ -122,5 +139,122 @@ theorem restrictPunctured_faithful_of_one_le_depth [IsNoetherianRing R]
   apply restrictPunctured_faithful
   apply dense_compl_singleton_closedPoint_iff.mp
   exact dense_compl_singleton_closedPoint_of_one_le_depth hdepth
+
+section Pullback
+
+variable {A A' : Type u} [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A']
+  [Algebra A A']
+  (h : ((_root_.IsLocalRing.maximalIdeal A).map (algebraMap A A')).radical =
+    _root_.IsLocalRing.maximalIdeal A')
+
+/-- Pullback of finite étale covers from the punctured spectrum of `A` to the punctured spectrum
+of `A'`, along the restriction of `Spec A' ⟶ Spec A`. This requires the closed point to be the
+only point of `Spec A'` over the closed point of `Spec A`. -/
+abbrev pullbackPunctured :
+    TauCeti.FiniteEtaleScheme (puncturedSpectrum A).toScheme ⥤
+      TauCeti.FiniteEtaleScheme (puncturedSpectrum A').toScheme :=
+  TauCeti.FiniteEtaleScheme.pullback ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
+    (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge)
+
+/-- Restriction to the punctured spectrum commutes with pullback along `Spec A' ⟶ Spec A`: both
+composites are pullback along the inclusion of the punctured spectrum of `A'` into `Spec A`. -/
+def restrictPuncturedCompPullbackIso :
+    restrictPunctured A ⋙ pullbackPunctured h ≅
+      TauCeti.FiniteEtaleScheme.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A'))) ⋙
+        restrictPunctured A' :=
+  (TauCeti.FiniteEtaleScheme.pullbackComp _ _).symm ≪≫
+    eqToIso (congrArg TauCeti.FiniteEtaleScheme.pullback (Scheme.Hom.resLE_comp_ι _ _)) ≪≫
+    TauCeti.FiniteEtaleScheme.pullbackComp _ _
+
+/-- Let `A` be a Noetherian local ring of depth at least two and `A → A'` a homomorphism of local
+rings whose only point over the closed point is the closed point, with `A'` of positive dimension.
+Then pullback of finite étale covers from the punctured spectrum of `A` to that of `A'` is
+faithful. For a quotient `A' = A ⧸ (f)` by an element `f` of the maximal ideal, Stacks, Lemma
+58.19.7 (0BLJ) asserts that this restriction is fully faithful when `A` has depth at least three
+and `(A, (f))` is a henselian pair; faithfulness holds already in depth two. -/
+theorem pullbackPunctured_faithful [IsNoetherianRing A]
+    (hdepth : 2 ≤ _root_.IsLocalRing.depth (ModuleCat.of A A)) (hA' : 0 < ringKrullDim A') :
+    (pullbackPunctured h).Faithful :=
+  -- The punctured spectrum of `A` is connected and that of `A'` is nonempty.
+  have := connectedSpace_puncturedSpectrum A hdepth
+  have : Nonempty (puncturedSpectrum A') := (nonempty_puncturedSpectrum_iff A').mpr hA'
+  inferInstance
+
+/-- Let `A` be a Noetherian local ring of depth at least two and `A → A'` a homomorphism of local
+rings whose only point over the closed point is the closed point, with `A'` of positive dimension.
+Then pullback of finite étale covers from the punctured spectrum of `A` to that of `A'` reflects
+isomorphisms. -/
+theorem pullbackPunctured_reflectsIsomorphisms [IsNoetherianRing A]
+    (hdepth : 2 ≤ _root_.IsLocalRing.depth (ModuleCat.of A A)) (hA' : 0 < ringKrullDim A') :
+    (pullbackPunctured h).ReflectsIsomorphisms :=
+  -- The punctured spectrum of `A` is connected and that of `A'` is nonempty.
+  have := connectedSpace_puncturedSpectrum A hdepth
+  have : Nonempty (puncturedSpectrum A') := (nonempty_puncturedSpectrum_iff A').mpr hA'
+  inferInstance
+
+/-- If a finite étale cover of the punctured spectrum of `A` extends across the closed point,
+then so does its pullback to the punctured spectrum of `A'`. -/
+theorem extends_pullbackPunctured_of_extends
+    {V : TauCeti.FiniteEtaleScheme (puncturedSpectrum A).toScheme}
+    (hV : ∃ Y : TauCeti.FiniteEtaleScheme (Spec (.of A)),
+      Nonempty ((restrictPunctured A).obj Y ≅ V)) :
+    ∃ Y' : TauCeti.FiniteEtaleScheme (Spec (.of A')),
+      Nonempty ((restrictPunctured A').obj Y' ≅ (pullbackPunctured h).obj V) := by
+  obtain ⟨Y, ⟨e⟩⟩ := hV
+  exact ⟨(TauCeti.FiniteEtaleScheme.pullback
+      (Spec.map (CommRingCat.ofHom (algebraMap A A')))).obj Y,
+    ⟨((restrictPuncturedCompPullbackIso h).app Y).symm ≪≫ (pullbackPunctured h).mapIso e⟩⟩
+
+variable [(TauCeti.FiniteEtaleScheme.pullback
+    (Spec.map (CommRingCat.ofHom (algebraMap A A')))).EssSurj]
+  [(pullbackPunctured h).Full] [(pullbackPunctured h).Faithful]
+
+/-- Suppose every finite étale scheme over `Spec A'` is a pullback from `Spec A`, and pullback of
+finite étale covers from the punctured spectrum of `A` to that of `A'` is fully faithful. If the
+pullback of a finite étale cover of the punctured spectrum of `A` extends across the closed point
+of `Spec A'`, then the cover extends across the closed point of `Spec A`. -/
+theorem extends_of_extends_pullbackPunctured
+    {V : TauCeti.FiniteEtaleScheme (puncturedSpectrum A).toScheme}
+    (hV : ∃ Y' : TauCeti.FiniteEtaleScheme (Spec (.of A')),
+      Nonempty ((restrictPunctured A').obj Y' ≅ (pullbackPunctured h).obj V)) :
+    ∃ Y : TauCeti.FiniteEtaleScheme (Spec (.of A)),
+      Nonempty ((restrictPunctured A).obj Y ≅ V) := by
+  obtain ⟨Y', ⟨e⟩⟩ := hV
+  let F := TauCeti.FiniteEtaleScheme.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A')))
+  refine ⟨F.objPreimage Y', ⟨(pullbackPunctured h).preimageIso ?_⟩⟩
+  exact (restrictPuncturedCompPullbackIso h).app _ ≪≫
+    (restrictPunctured A').mapIso (F.objObjPreimageIso Y') ≪≫ e
+
+/-- Suppose every finite étale scheme over `Spec A'` is a pullback from `Spec A`, and pullback of
+finite étale covers from the punctured spectrum of `A` to that of `A'` is fully faithful. Then a
+finite étale cover of the punctured spectrum of `A` extends across the closed point if and only if
+its pullback to the punctured spectrum of `A'` extends across the closed point. -/
+theorem extends_iff_extends_pullback
+    (V : TauCeti.FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    (∃ Y : TauCeti.FiniteEtaleScheme (Spec (.of A)),
+        Nonempty ((restrictPunctured A).obj Y ≅ V)) ↔
+      ∃ Y' : TauCeti.FiniteEtaleScheme (Spec (.of A')),
+        Nonempty ((restrictPunctured A').obj Y' ≅ (pullbackPunctured h).obj V) :=
+  ⟨extends_pullbackPunctured_of_extends h, extends_of_extends_pullbackPunctured h⟩
+
+include h in
+/-- Suppose every finite étale scheme over `Spec A'` is a pullback from `Spec A`, and pullback of
+finite étale covers from the punctured spectrum of `A` to that of `A'` is fully faithful. Then
+purity for `A'` implies purity for `A`. -/
+theorem purityHolds_of_purityHolds_of_fullyFaithful (hA' : PurityHolds A') : PurityHolds A :=
+  (purityHolds_iff A).mpr fun _ ↦
+    extends_of_extends_pullbackPunctured h ((purityHolds_iff A').mp hA' _)
+
+end Pullback
+
+/-- Restriction of finite étale covers from the punctured spectrum of `A` to the punctured
+spectrum of `A ⧸ I`, which is its intersection with `Spec (A ⧸ I)`. For `I = (f)`, this is
+restriction to the punctured spectrum of the hypersurface section `f = 0`. -/
+abbrev restrictPuncturedQuotient {A : Type u} [CommRing A] [IsLocalRing A] (I : Ideal A)
+    [IsLocalRing (A ⧸ I)] :
+    TauCeti.FiniteEtaleScheme (puncturedSpectrum A).toScheme ⥤
+      TauCeti.FiniteEtaleScheme (puncturedSpectrum (A ⧸ I)).toScheme :=
+  pullbackPunctured (radical_map_maximalIdeal_of_surjective
+    (Ideal.Quotient.algebraMap_eq I ▸ Ideal.Quotient.mk_surjective))
 
 end TauCeti.IsLocalRing

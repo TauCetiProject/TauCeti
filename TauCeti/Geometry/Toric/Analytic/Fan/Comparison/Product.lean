@@ -144,8 +144,8 @@ end Naturality
 namespace AlgebraicComplexPoint
 
 variable (m : IntegralCharacter (N × N'))
-  (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.1)
-  (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.1)
+  (h₁ : ∀ σ : Φ.cones, m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup Φ.lattice σ.val)
+  (h₂ : ∀ τ : Ψ.cones, m.comp (AddMonoidHom.inr N N') ∈ dualSemigroup Ψ.lattice τ.val)
 
 /-- Under the product identification of complex points, the character function of a character
 of the product lattice is the product of the character functions of its restrictions to the two
@@ -160,8 +160,8 @@ theorem character_prod (p : (Φ.prod Ψ).AlgebraicComplexPoint) :
     ← character_add]
   -- The product character is the sum of its two restrictions pulled back along the projections.
   congr 2
-  rw [FanHom.fst_latticeMap, FanHom.snd_latticeMap,
-    AddMonoidHom.comp_inl_comp_fst_add_comp_inr_comp_snd]
+  rw [FanHom.fst_latticeMap, FanHom.snd_latticeMap]
+  exact (AddMonoidHom.coprod_unique m).symm
 
 /-- The character function of a character of the product lattice, at the complex point with
 coordinates `q`, is the product of the character functions of its two restrictions at the two

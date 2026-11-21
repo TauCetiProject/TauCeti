@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.RingTheory.RingHom.Flat
 
 /-!
 # Nonzerodivisors in flat algebras
@@ -20,8 +21,10 @@ nonzero scalar becomes a nonzerodivisor.
 
 ## Main results
 
-* `Module.Flat.algebraMap_mem_nonZeroDivisors`: the image of a nonzerodivisor of `R` in a flat
-  `R`-algebra is a nonzerodivisor.
+* `Module.Flat.algebraMap_mem_nonZeroDivisors` and `RingHom.Flat.map_mem_nonZeroDivisors`: the
+  structure map of a flat `R`-algebra (or any flat ring homomorphism) sends nonzerodivisors to
+  nonzerodivisors; in particular, `RingHom.Flat.mem_nonZeroDivisors_of_aeval` shows that `w : S` is
+  a nonzerodivisor whenever evaluation `R[X] →+* S` at `w` is flat.
 * `Module.Flat.flat_iff_algebraMap_mem_nonZeroDivisors_of_isBezout`: over a Bezout domain, an
   algebra is flat exactly when the structure map sends nonzero elements to nonzerodivisors.
 * `Module.Flat.of_algebraMap_injective_of_isBezout`: a domain is flat over a Bezout domain mapping
@@ -57,8 +60,9 @@ theorem flat_iff_algebraMap_mem_nonZeroDivisors_of_isBezout [IsDomain R] [IsBezo
 omit [Flat R A] in
 /-- A domain is flat over a Bezout domain mapping injectively into it: over a Bezout domain,
 torsion-free modules are flat. -/
-theorem of_algebraMap_injective_of_isBezout [IsDomain R] [IsBezout R] [IsDomain A]
+theorem of_algebraMap_injective_of_isBezout [IsBezout R] [IsDomain A]
     (h : Function.Injective (algebraMap R A)) : Flat R A := by
+  have : IsDomain R := h.isDomain (algebraMap R A)
   rwa [flat_iff_torsion_eq_bot_of_isBezout, ← Submodule.isTorsionFree_iff_torsion_eq_bot,
     isTorsionFree_iff_algebraMap_injective]
 
@@ -74,3 +78,17 @@ theorem not_quotient_of_mem_nonZeroDivisors {I : Ideal R} (hI : I ≠ ⊤) {r : 
   exact zero_notMem_nonZeroDivisors h0
 
 end Module.Flat
+
+/-- A flat ring homomorphism sends nonzerodivisors to nonzerodivisors. -/
+theorem RingHom.Flat.map_mem_nonZeroDivisors {R S : Type*} [CommRing R] [CommRing S]
+    {f : R →+* S} (hf : f.Flat) {r : R} (hr : r ∈ nonZeroDivisors R) :
+    f r ∈ nonZeroDivisors S := by
+  algebraize [f]
+  exact Module.Flat.algebraMap_mem_nonZeroDivisors hr
+
+/-- If evaluation at `w : S` defines a flat ring homomorphism `R[X] →+* S`, then `w` is a
+nonzerodivisor in `S`. -/
+theorem RingHom.Flat.mem_nonZeroDivisors_of_aeval {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] {w : S} (hw : (Polynomial.aeval (R := R) w).toRingHom.Flat) :
+    w ∈ nonZeroDivisors S :=
+  Polynomial.aeval_X (R := R) w ▸ hw.map_mem_nonZeroDivisors Polynomial.X_mem_nonZeroDivisors

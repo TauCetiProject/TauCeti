@@ -95,11 +95,11 @@ theorem tendsto_quantile_hypoexponentialMeasure_nhdsLT_one (hr : ∀ i, 0 < r i)
       (cdf_hypoexponentialMeasure_lt_one hr))
 
 /-- At a common positive rate, the hypoexponential quantile is the Erlang quantile. -/
-theorem quantile_hypoexponentialMeasure_const {a : ℝ} (ha : 0 < a) (hu : u ∈ Ioo 0 1) :
+theorem quantile_hypoexponentialMeasure_const {a : ℝ} (ha : 0 < a) :
     (hypoexponentialMeasure fun _ : ι ↦ a).quantile u =
       inverseRegularizedGamma (Fintype.card ι) u / a := by
   rw [hypoexponentialMeasure_const ha,
-    quantile_gammaMeasure (Nat.cast_pos.2 Fintype.card_pos) ha hu]
+    quantile_gammaMeasure (Nat.cast_pos.2 Fintype.card_pos) ha]
 
 end Nonempty
 

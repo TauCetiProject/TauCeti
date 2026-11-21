@@ -260,13 +260,10 @@ theorem eventually_card_aroots_toFinset_eq_of_natDegree_gcd_derivative {B k K : 
     (hgcd : ∀ᶠ x in 𝓝 x₀, (EuclideanDomain.gcd (f x) (f x).derivative).natDegree =
       (EuclideanDomain.gcd (f x₀) (f x₀).derivative).natDegree) :
     ∀ᶠ x in 𝓝 x₀, ((f x).aroots K).toFinset.card = ((f x₀).aroots K).toFinset.card := by
-  have hne {x : B} (hx : (f x).degree = n) : f x ≠ 0 := by
-    rintro h
-    simp [h] at hx
   have hx₀ := hdeg.self_of_nhds
   filter_upwards [hdeg, hgcd] with x hx hxg
-  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (K := K) (hne hx),
-    ← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (K := K) (hne hx₀), hxg,
+  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (K := K),
+    ← natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset (K := K), hxg,
     natDegree_eq_of_degree_eq_some hx, natDegree_eq_of_degree_eq_some hx₀]
 
 end Polynomial

@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Complex.Pseudoconvex
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Squared distance along a differentiable map
@@ -27,11 +31,32 @@ These formulas are the local inner-product-space calculation behind squared-dist
 exhaustions of closed complex submanifolds. No immersion hypothesis is needed until strict
 positivity is deduced.
 
+The same calculus gives the first and second derivatives of the Gaussian
+`x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance, the classical barrier of Hopf's
+boundary-point lemma for elliptic operators with variable coefficients.
+
+The file also computes the Hessian of the radial profile `(σ ‖y - c‖² + ε)^(-β)`, the barrier
+of the Krylov–Safonov measure estimate. For the cutoff `(1 - ‖y - c‖² / R²)^(m + 2)` of the local
+maximum principle, it gives the range of the base `1 - ‖y - c‖² / R²` on `B(c, R)` and the first
+and second derivatives of the base and of the cutoff.
+
 ## Main results
 
 * `TauCeti.fderiv_norm_sq_sub_comp`: the first derivative of squared distance along a map.
 * `TauCeti.fderiv_norm_sq_sub_comp_eq_zero_iff`: the critical-point normal-vector test.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_apply`: the full Hessian formula.
+* `TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq`,
+  `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`: the first and second derivatives of
+  `x ↦ exp (-α ‖x - a‖ ^ 2)`.
+* `TauCeti.fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply`: the Hessian of
+  `(σ ‖y - c‖² + ε)^(-β)`.
+* `TauCeti.one_sub_norm_sq_sub_div_mem_Ioc`: on `B(c, R)`, `1 - ‖x - c‖² / R²` lies in `(0, 1]`.
+* `TauCeti.fderiv_one_sub_norm_sq_sub_div`,
+  `TauCeti.fderiv_fderiv_one_sub_norm_sq_sub_div_apply`: the first and second derivatives of
+  `1 - ‖y - c‖² / R²`.
+* `TauCeti.norm_fderiv_one_sub_norm_sq_sub_div_pow`,
+  `TauCeti.fderiv_fderiv_one_sub_norm_sq_sub_div_pow_apply`: the norm of the first derivative and
+  the second derivative of `(1 - ‖y - c‖² / R²)^(m + 2)`.
 * `TauCeti.fderiv_fderiv_norm_sq_apply_complex`: the real second derivative of complex squared
   norm is twice the real part of the inner product.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_add_I_smul`: the complex Hessian identity.
@@ -119,6 +144,179 @@ theorem fderiv_fderiv_norm_sq_sub_comp_apply (hi : ContDiffAt ℝ 2 i x) (v w : 
   ring
 
 end Real
+
+section Exp
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The derivative of the Gaussian `x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance from `a`
+is `-2 α exp (-α ‖x - a‖ ^ 2) ⟪x - a, ·⟫`. -/
+theorem hasFDerivAt_exp_neg_mul_norm_sub_sq (α : ℝ) (a x : E) :
+    HasFDerivAt (fun z ↦ Real.exp (-α * ‖z - a‖ ^ 2))
+      ((-2 * α * Real.exp (-α * ‖x - a‖ ^ 2)) • innerSL ℝ (x - a)) x := by
+  have h := (((hasFDerivAt_id x).sub_const a).norm_sq.const_mul (-α)).exp
+  refine h.congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+/-- The second derivative of the Gaussian `x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance from
+`a` is `(4 α² ⟪x - a, v⟫ ⟪x - a, w⟫ - 2 α ⟪v, w⟫) exp (-α ‖x - a‖ ^ 2)`. -/
+theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply (α : ℝ) (a x v w : E) :
+    fderiv ℝ (fderiv ℝ fun z ↦ Real.exp (-α * ‖z - a‖ ^ 2)) x v w =
+      (4 * α ^ 2 * inner ℝ (x - a) v * inner ℝ (x - a) w - 2 * α * inner ℝ v w) *
+        Real.exp (-α * ‖x - a‖ ^ 2) := by
+  have hD : fderiv ℝ (fun z ↦ Real.exp (-α * ‖z - a‖ ^ 2)) = fun x ↦
+      (-2 * α * Real.exp (-α * ‖x - a‖ ^ 2)) • innerSL ℝ (x - a) :=
+    funext fun x ↦ (hasFDerivAt_exp_neg_mul_norm_sub_sq α a x).fderiv
+  have h1 : HasFDerivAt (fun z : E ↦ -2 * α * Real.exp (-α * ‖z - a‖ ^ 2))
+      ((-2 * α) • ((-2 * α * Real.exp (-α * ‖x - a‖ ^ 2)) • innerSL ℝ (x - a))) x :=
+    (hasFDerivAt_exp_neg_mul_norm_sub_sq α a x).const_mul _
+  have h2 : HasFDerivAt (fun z : E ↦ innerSL ℝ (z - a)) (innerSL ℝ) x := by
+    simpa only [map_sub] using ((innerSL ℝ (E := E)).hasFDerivAt (x := x)).sub_const
+      (innerSL ℝ a)
+  have h3 : HasFDerivAt (fun z : E ↦
+      (-2 * α * Real.exp (-α * ‖z - a‖ ^ 2)) • innerSL ℝ (z - a)) _ x := h1.smul h2
+  rw [hD, h3.fderiv]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
+    smul_eq_mul]
+  -- `simp` leaves the term `innerSL ℝ v w` coming from the `smul` product rule unreduced.
+  rw [innerSL_apply_apply]
+  ring
+
+end Exp
+
+section Rpow
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {σ ε : ℝ} {c x : E}
+
+/-- The radial profile `(σ ‖y - c‖² + ε)^(-β)` is smooth when `σ ≥ 0` and `ε > 0`. -/
+theorem contDiffAt_rpow_mul_norm_sq_sub_add (hσ : 0 ≤ σ) (hε : 0 < ε) (β : ℝ)
+    {k : WithTop ℕ∞} : ContDiffAt ℝ k (fun y : E ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x :=
+  ((contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add
+    contDiffAt_const).rpow_const_of_ne (by positivity)
+
+/-- **The Hessian of a power of a shifted squared distance.** For `σ ≥ 0` and `ε > 0`, with
+`s = σ ‖x - c‖² + ε`, the second derivative of `(σ ‖y - c‖² + ε)^(-β)` at `x` is
+`4 σ² β (β + 1) s^(-β-2) ⟪x - c, v⟫ ⟪x - c, w⟫ - 2 σ β s^(-β-1) ⟪v, w⟫`. -/
+theorem fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply (hσ : 0 ≤ σ) (hε : 0 < ε) (β : ℝ)
+    (v w : E) :
+    fderiv ℝ (fderiv ℝ fun y : E ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x v w =
+      4 * σ ^ 2 * β * (β + 1) * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 2) * ⟪x - c, v⟫ * ⟪x - c, w⟫ -
+        2 * σ * β * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 1) * ⟪v, w⟫ := by
+  have hs : 0 < σ * ‖x - c‖ ^ 2 + ε := by positivity
+  have hD : fderiv ℝ (fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε) = fderiv ℝ (σ • fun y : E ↦ ‖y - c‖ ^ 2) :=
+    funext fun _ ↦ fderiv_add_const ε
+  have hid : fderiv ℝ (fun y : E ↦ y) = fun _ ↦ ContinuousLinearMap.id ℝ E :=
+    funext fun _ ↦ fderiv_fun_id
+  have h := fderiv_fderiv_scalar_comp_apply (f := fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε)
+    (Real.contDiffAt_rpow_const_of_ne (p := -β) hs.ne')
+    ((contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add contDiffAt_const)
+    v w
+  simp only [Function.comp_def] at h
+  rw [h, hD, fderiv_fderiv_const_smul, fderiv_const_smul_field]
+  simp only [Pi.smul_apply, smul_apply, smul_eq_mul]
+  rw [fderiv_fderiv_norm_sq_sub_comp_apply (i := fun y ↦ y) contDiffAt_id,
+    fderiv_norm_sq_sub_comp (i := fun y ↦ y) differentiableAt_id, iteratedDeriv_eq_iterate,
+    Real.iter_deriv_rpow_const, Real.deriv_rpow_const]
+  simp only [hid, descPochhammer_succ_right, descPochhammer_zero, Polynomial.eval_mul,
+    Polynomial.eval_X, Polynomial.eval_sub, Polynomial.eval_one, Nat.cast_one, Nat.cast_ofNat,
+    Nat.cast_zero, map_sub, ContinuousLinearMap.comp_id,
+    smul_apply, sub_apply, innerSL_apply_apply, nsmul_eq_mul, sub_zero, mul_neg, one_mul,
+    neg_mul, ContinuousLinearMap.id_apply, fderiv_fun_const, Pi.zero_apply, zero_apply,
+    inner_zero_right, add_zero, inner_sub_left]
+  ring_nf
+
+end Rpow
+
+section OneSubNormSqDiv
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+omit [InnerProductSpace ℝ E] in
+/-- On `B(c, R)`, `1 - ‖x - c‖² / R²` lies in `(0, 1]`. -/
+theorem one_sub_norm_sq_sub_div_mem_Ioc {c x : E} {R : ℝ} (hx : x ∈ Metric.ball c R) :
+    1 - ‖x - c‖ ^ 2 / R ^ 2 ∈ Set.Ioc 0 1 := by
+  have hR : 0 < R := Metric.pos_of_mem_ball hx
+  refine ⟨?_, sub_le_self _ (by positivity)⟩
+  rw [sub_pos, div_lt_one (by positivity)]
+  exact pow_lt_pow_left₀ (mem_ball_iff_norm.1 hx) (norm_nonneg _) two_ne_zero
+
+/-- `1 - ‖y - c‖² / R²` is smooth. -/
+theorem contDiff_one_sub_norm_sq_sub_div (c : E) (R : ℝ) {k : WithTop ℕ∞} :
+    ContDiff ℝ k (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) :=
+  contDiff_const.sub (((contDiff_id.sub contDiff_const).norm_sq ℝ).div_const _)
+
+/-- `1 - ‖y - c‖² / R²` is `1` plus the multiple `-(R²)⁻¹` of the squared distance from `c`, so
+its derivatives are those of the squared distance, scaled. -/
+private theorem fderiv_one_sub_norm_sq_sub_div_eq (c : E) (R : ℝ) :
+    fderiv ℝ (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) =
+      fderiv ℝ (-(R ^ 2)⁻¹ • fun y : E ↦ ‖y - c‖ ^ 2) := by
+  funext y
+  have hfun : (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) =
+      fun y ↦ 1 + (-(R ^ 2)⁻¹ • fun y : E ↦ ‖y - c‖ ^ 2) y := by
+    funext z; simp; ring
+  rw [hfun, fderiv_const_add]
+
+/-- The derivative of `1 - ‖y - c‖² / R²` is `-(2 / R²) ⟪x - c, ·⟫`. -/
+theorem fderiv_one_sub_norm_sq_sub_div (c x : E) (R : ℝ) :
+    fderiv ℝ (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) x = -(2 / R ^ 2) • innerSL ℝ (x - c) := by
+  rw [fderiv_one_sub_norm_sq_sub_div_eq, fderiv_const_smul_field, Pi.smul_apply,
+    fderiv_norm_sq_sub_comp (i := fun y ↦ y) differentiableAt_id, fderiv_fun_id,
+    ContinuousLinearMap.comp_id, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+  congr 1
+  push_cast
+  ring
+
+/-- The derivative of `1 - ‖y - c‖² / R²`, as a `HasFDerivAt` statement. -/
+theorem hasFDerivAt_one_sub_norm_sq_sub_div (c x : E) (R : ℝ) :
+    HasFDerivAt (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) (-(2 / R ^ 2) • innerSL ℝ (x - c)) x :=
+  fderiv_one_sub_norm_sq_sub_div c x R ▸
+    ((contDiff_one_sub_norm_sq_sub_div c R (k := 1)).differentiable one_ne_zero x).hasFDerivAt
+
+/-- The second derivative of `1 - ‖y - c‖² / R²` is `-(2 / R²) ⟪·, ·⟫`. -/
+theorem fderiv_fderiv_one_sub_norm_sq_sub_div_apply (c x : E) (R : ℝ) (v w : E) :
+    fderiv ℝ (fderiv ℝ fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) x v w = -(2 / R ^ 2) * ⟪v, w⟫ := by
+  have hid : fderiv ℝ (fun y : E ↦ y) = fun _ ↦ ContinuousLinearMap.id ℝ E :=
+    funext fun _ ↦ fderiv_fun_id
+  rw [fderiv_one_sub_norm_sq_sub_div_eq, fderiv_fderiv_const_smul, smul_apply, smul_apply,
+    fderiv_fderiv_norm_sq_sub_comp_apply (i := fun y ↦ y) contDiffAt_id, hid]
+  simp only [ContinuousLinearMap.id_apply, fderiv_fun_const, Pi.zero_apply, zero_apply,
+    inner_zero_right, add_zero, smul_eq_mul]
+  ring
+
+/-- The second derivative of `(1 - ‖y - c‖² / R²)^(m + 2)`. -/
+theorem fderiv_fderiv_one_sub_norm_sq_sub_div_pow_apply (c x : E) (R : ℝ) (m : ℕ) (v w : E) :
+    fderiv ℝ (fderiv ℝ fun y : E ↦ (1 - ‖y - c‖ ^ 2 / R ^ 2) ^ (m + 2)) x v w =
+      (m + 2) * (m + 1) * (1 - ‖x - c‖ ^ 2 / R ^ 2) ^ m * (2 / R ^ 2) ^ 2 * ⟪x - c, v⟫ *
+          ⟪x - c, w⟫ -
+        (m + 2) * (1 - ‖x - c‖ ^ 2 / R ^ 2) ^ (m + 1) * (2 / R ^ 2) * ⟪v, w⟫ := by
+  have h := fderiv_fderiv_scalar_comp_apply (f := fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2)
+    (φ := fun t : ℝ ↦ t ^ (m + 2)) (x := x) (contDiff_id.pow _).contDiffAt
+    (contDiff_one_sub_norm_sq_sub_div c R).contDiffAt v w
+  simp only [Function.comp_def] at h
+  rw [h, fderiv_fderiv_one_sub_norm_sq_sub_div_apply, fderiv_one_sub_norm_sq_sub_div,
+    iteratedDeriv_pow, deriv_pow_field]
+  simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, Nat.descFactorial_succ,
+    Nat.descFactorial_zero]
+  push_cast
+  ring
+
+/-- Where `1 - ‖x - c‖² / R² ≥ 0`, the derivative of `(1 - ‖y - c‖² / R²)^(m + 2)` at `x` has norm
+`(m + 2) (1 - ‖x - c‖² / R²)^(m + 1) (2 / R²) ‖x - c‖`. -/
+theorem norm_fderiv_one_sub_norm_sq_sub_div_pow (c x : E) (R : ℝ) (m : ℕ)
+    (hs : 0 ≤ 1 - ‖x - c‖ ^ 2 / R ^ 2) :
+    ‖fderiv ℝ (fun y : E ↦ (1 - ‖y - c‖ ^ 2 / R ^ 2) ^ (m + 2)) x‖ =
+      (m + 2) * (1 - ‖x - c‖ ^ 2 / R ^ 2) ^ (m + 1) * (2 / R ^ 2) * ‖x - c‖ := by
+  have hD := (hasDerivAt_pow (m + 2) _).comp_hasFDerivAt x
+    (hasFDerivAt_one_sub_norm_sq_sub_div c x R)
+  simp only [Function.comp_def] at hD
+  rw [hD.fderiv, norm_smul, norm_smul, innerSL_apply_norm,
+    Real.norm_of_nonneg (by positivity), norm_neg, Real.norm_of_nonneg (by positivity)]
+  push_cast
+  ring
+
+end OneSubNormSqDiv
 
 section Complex
 

@@ -76,12 +76,14 @@ theorem trace_adjoint_comp_self_eq_sum_norm_apply_sq [FiniteDimensional 𝕜 F] 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [comp_apply, adjoint_inner_right, inner_self_eq_norm_sq_to_K, RCLike.ofReal_pow]
 
+omit [FiniteDimensional 𝕜 E] in
 /-- **Basis independence of the Frobenius sum**: `∑ᵢ ‖A bᵢ‖²` takes the same value on any two
 orthonormal bases `(bᵢ)` and `(b'ⱼ)` of the source. -/
 theorem sum_norm_apply_sq_eq_sum_norm_apply_sq (A : E →ₗ[𝕜] F) (b : OrthonormalBasis ι 𝕜 E)
     (b' : OrthonormalBasis ι' 𝕜 E) : ∑ i, ‖A (b i)‖ ^ 2 = ∑ i, ‖A (b' i)‖ ^ 2 := by
   -- Corestrict `A` to its range, which is finite-dimensional, and compare both sums with the
   -- trace of `A† A` there.
+  have := b.toBasis.finiteDimensional_of_finite
   have h := (A.rangeRestrict.trace_adjoint_comp_self_eq_sum_norm_apply_sq b).symm.trans
     (A.rangeRestrict.trace_adjoint_comp_self_eq_sum_norm_apply_sq b')
   exact_mod_cast h

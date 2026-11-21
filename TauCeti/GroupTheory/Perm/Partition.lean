@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Type
-import Mathlib.Data.ZMod.QuotientGroup
+public import TauCeti.GroupTheory.Perm.Basic
 import Mathlib.GroupTheory.Perm.Cycle.PossibleTypes
 import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.Combinatorics.Enumerative.Partition.Basic
 
 /-!
 # Cycle types that count fixed points
@@ -56,9 +57,6 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
 * `Equiv.Perm.fullCycleType_eq_sum_subtypePerm`: the full cycle type is additive over the fibres
   of any function that `σ` preserves; `Equiv.Perm.fullCycleType_eq_add_subtypePerm` is the form
   for a `σ`-stable predicate and its complement.
-* `Equiv.Perm.ncard_setOf_sameCycle`: the cycle through `x` has `Function.minimalPeriod σ x`
-  points; `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle` is the case of a single cycle
-  through every point.
 * `Equiv.Perm.fullCycleType_eq_map_univ`: the full cycle type is the multiset of the cycle
   lengths, read through any finite type labelling the cycles.
 * `Equiv.Perm.fullCycleType_of_forall_sameCycle`: a permutation with a single cycle through every
@@ -70,6 +68,10 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   of the orbits of `⟨σ⟩` on the carrier, with `Equiv.Perm.sameCycle_iff_mem_orbit_zpowers`,
   `Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers` and `Equiv.Perm.orbit_zpowers_eq_singleton`
   identifying those orbits with the cycle supports and the fixed points.
+* `Equiv.Perm.mem_fullCycleType_iff`: the parts of the full cycle type are exactly the lengths
+  of the cycles, the minimal periods of the points.
+* `Equiv.Perm.count_one_fullCycleType_eq_card_filter`: the parts equal to one in the full cycle
+  type count the fixed points.
 
 ## Implementation notes
 
@@ -93,6 +95,8 @@ refine.
 -/
 
 public section
+
+open scoped Finset
 
 namespace Equiv.Perm
 
@@ -196,12 +200,9 @@ theorem parts_partition_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
 
 /-- The parts of `Equiv.Perm.partition` are empty exactly on an empty type; in particular they do
 not vanish on the identity of a nonempty type, unlike `Equiv.Perm.cycleType`. -/
-@[simp]
 theorem parts_partition_eq_zero_iff {σ : Equiv.Perm α} :
-    σ.partition.parts = 0 ↔ Fintype.card α = 0 := by
-  refine ⟨fun h => by rw [← σ.partition.parts_sum, h, Multiset.sum_zero], fun h => ?_⟩
-  have : IsEmpty α := Fintype.card_eq_zero_iff.1 h
-  exact parts_partition_of_isEmpty σ
+    σ.partition.parts = 0 ↔ Fintype.card α = 0 :=
+  σ.partition.parts_eq_zero_iff
 
 /-! ### Conjugacy -/
 
@@ -245,7 +246,7 @@ the number of parts, corrected by the ambient cardinality. This is `Equiv.Perm.s
 in the convention that keeps the fixed points, and the parity invariant of a Galois image is
 computed from it. -/
 theorem sign_of_parts_partition (σ : Equiv.Perm α) :
-    Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α + Multiset.card σ.partition.parts) := by
+    sign σ = (-1 : ℤˣ) ^ (Fintype.card α + Multiset.card σ.partition.parts) := by
   have hle : σ.support.card ≤ Fintype.card α := by
     simpa using σ.support.card_le_univ
   have h : Fintype.card α + Multiset.card σ.partition.parts =
@@ -326,7 +327,7 @@ theorem parts_partition_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
 /-- `fullCycleType` is the unbundled parts of Mathlib's permutation partition. -/
 theorem fullCycleType_def (σ : Equiv.Perm α) :
     fullCycleType σ = σ.partition.parts := by
-  rw [fullCycleType, Equiv.Perm.parts_partition]
+  rw [fullCycleType, parts_partition]
 
 /-! The filter and conjugacy forms of the partition API. -/
 
@@ -335,7 +336,7 @@ theorem fullCycleType_def (σ : Equiv.Perm α) :
 theorem filter_fullCycleType_eq_cycleType {σ : Equiv.Perm α} :
     (fullCycleType σ).filter (fun n => 2 ≤ n) = σ.cycleType := by
   rw [fullCycleType_def]
-  exact Equiv.Perm.filter_parts_partition_eq_cycleType
+  exact filter_parts_partition_eq_cycleType
 
 /-- A permutation has a single cycle length `n`, and no other, exactly when it is a cycle
 moving `n` points. -/
@@ -350,7 +351,7 @@ theorem cycleType_eq_singleton_iff {σ : Equiv.Perm α} {n : ℕ} :
 theorem fullCycleType_eq_of_isConj {σ τ : Equiv.Perm α}
     (hστ : IsConj σ τ) : fullCycleType σ = fullCycleType τ := by
   rw [fullCycleType_def, fullCycleType_def]
-  exact congrArg Nat.Partition.parts (Equiv.Perm.partition_eq_of_isConj.1 hστ)
+  exact congrArg Nat.Partition.parts (partition_eq_of_isConj.1 hστ)
 
 /-- The full cycle lengths of a permutation sum to the cardinality of its carrier. -/
 @[simp]
@@ -371,13 +372,13 @@ theorem pos_of_mem_fullCycleType {σ : Equiv.Perm α} {n : ℕ}
 theorem count_fullCycleType_of_ne_one (σ : Equiv.Perm α) {n : ℕ} (hn : n ≠ 1) :
     (fullCycleType σ).count n = σ.cycleType.count n := by
   rw [fullCycleType_def]
-  exact Equiv.Perm.count_parts_partition_of_ne_one σ hn
+  exact count_parts_partition_of_ne_one σ hn
 
 /-- The identity has one full cycle-type part for every point of the carrier. -/
 @[simp]
 theorem fullCycleType_one :
     fullCycleType (1 : Equiv.Perm α) = Multiset.replicate (Fintype.card α) 1 := by
-  rw [fullCycleType_def, Equiv.Perm.parts_partition_one]
+  rw [fullCycleType_def, parts_partition_one]
 
 /-- The identity is the only permutation all of whose full cycle lengths are one. -/
 @[simp]
@@ -393,20 +394,20 @@ theorem forall_mem_fullCycleType_eq_one_iff {σ : Equiv.Perm α} :
 @[simp]
 theorem fullCycleType_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
     fullCycleType σ = 0 := by
-  rw [fullCycleType_def, Equiv.Perm.parts_partition_of_isEmpty]
+  rw [fullCycleType_def, parts_partition_of_isEmpty]
 
 /-- The full cycle type is empty exactly when the carrier is empty. -/
 @[simp]
 theorem fullCycleType_eq_zero_iff {σ : Equiv.Perm α} :
     fullCycleType σ = 0 ↔ Fintype.card α = 0 := by
   simpa only [fullCycleType_def] using
-    (Equiv.Perm.parts_partition_eq_zero_iff (σ := σ))
+    (parts_partition_eq_zero_iff (σ := σ))
 
 /-- The full cycle type agrees with the cycle type exactly when there are no fixed points. -/
 theorem fullCycleType_eq_cycleType_iff {σ : Equiv.Perm α} :
     fullCycleType σ = σ.cycleType ↔ σ.support = Finset.univ := by
   simpa only [fullCycleType_def] using
-    (Equiv.Perm.parts_partition_eq_cycleType_iff (σ := σ))
+    (parts_partition_eq_cycleType_iff (σ := σ))
 
 /-- A fixed-point-free permutation has no one-parts in its full cycle type. -/
 theorem fullCycleType_eq_cycleType {σ : Equiv.Perm α}
@@ -419,28 +420,28 @@ theorem fullCycleType_eq_cycleType {σ : Equiv.Perm α}
 theorem fullCycleType_conj (g σ : Equiv.Perm α) :
     fullCycleType (g * σ * g⁻¹) = fullCycleType σ := by
   rw [fullCycleType_def, fullCycleType_def,
-    Equiv.Perm.parts_partition_conj]
+    parts_partition_conj]
 
 /-- Inverting a permutation does not change its full cycle type. -/
 @[simp]
 theorem fullCycleType_inv (σ : Equiv.Perm α) :
     fullCycleType σ⁻¹ = fullCycleType σ := by
   rw [fullCycleType_def, fullCycleType_def,
-    Equiv.Perm.parts_partition_inv]
+    parts_partition_inv]
 
 /-- Relabelling the carrier does not change a permutation's full cycle type. -/
 @[simp]
 theorem fullCycleType_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
     fullCycleType (e.permCongr σ) = fullCycleType σ := by
   rw [fullCycleType_def, fullCycleType_def,
-    Equiv.Perm.parts_partition_permCongr]
+    parts_partition_permCongr]
 
 /-- The parts equal to one in the full cycle type are precisely the fixed points. -/
 @[simp]
 theorem count_one_fullCycleType (σ : Equiv.Perm α) :
     (fullCycleType σ).count 1 = Fintype.card α - σ.support.card := by
   rw [fullCycleType_def]
-  exact Equiv.Perm.count_one_parts_partition σ
+  exact count_one_parts_partition σ
 
 open scoped Classical in
 /-- The fibres of `m` meeting the support of `σ` have the sizes of the cycles of `σ`. -/
@@ -564,17 +565,17 @@ theorem fullCycleType_eq_sum_subtypePerm {ι : Type*} [Fintype ι]
       fun x y => by rw [sameCycle_subtypePerm, hc]]
     refine Multiset.map_congr (by congr!) fun q hq => ?_
     obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp hq
-    refine Finset.card_bij (fun x _ => x.1) (by simp) (fun _ _ _ _ h => Subtype.ext h) ?_
+    refine Finset.card_bij (fun x _ => x.val) (by simp) (fun _ _ _ _ h => Subtype.ext h) ?_
     intro x hx
     have hxy := (Finset.mem_filter.mp hx).2
-    exact ⟨⟨x, (hπc x y hxy).trans y.2⟩, by simpa using hxy, rfl⟩
+    exact ⟨⟨x, (hπc x y hxy).trans y.property⟩, by simpa using hxy, rfl⟩
   have hdisj : ((Finset.univ : Finset ι) : Set ι).PairwiseDisjoint
       fun i => Finset.univ.image fun x : {x // π x = i} => c x := by
     intro i _ j _ hij
     refine Finset.disjoint_left.mpr fun q hi hj => hij ?_
     obtain ⟨x, -, rfl⟩ := Finset.mem_image.mp hi
     obtain ⟨y, -, hxy⟩ := Finset.mem_image.mp hj
-    exact (y.2.symm.trans ((hπc y x hxy).trans x.2)).symm
+    exact (y.property.symm.trans ((hπc y x hxy).trans x.property)).symm
   have hval : (Finset.univ.disjiUnion _ hdisj).val =
       ∑ i, (Finset.univ.image fun x : {x // π x = i} => c x).val := by
     rw [Finset.disjiUnion_val, Multiset.bind, Multiset.join, Finset.sum_eq_multiset_sum]
@@ -621,17 +622,6 @@ section
 
 variable (σ : Equiv.Perm α)
 
-/-- Two points lie on the same cycle of `σ` exactly when one is a `⟨σ⟩`-translate of the
-other. -/
-theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
-    σ.SameCycle x y ↔ y ∈ orbit (Subgroup.zpowers σ) x := by
-  constructor
-  · rintro ⟨i, hi⟩
-    exact ⟨⟨σ ^ i, Subgroup.zpow_mem_zpowers σ i⟩, hi⟩
-  · rintro ⟨g, hg⟩
-    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
-    exact ⟨i, by rw [hi]; exact hg⟩
-
 /-- The orbit relation of `⟨σ⟩` is the same-cycle relation of `σ`. -/
 theorem orbitRel_zpowers_apply {x y : α} :
     orbitRel (Subgroup.zpowers σ) α x y ↔ σ.SameCycle x y := by
@@ -648,23 +638,6 @@ theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
     exact zpow_apply_eq_self_of_apply_eq_self hx i
   · rintro rfl
     exact SameCycle.refl σ y
-
-/-- The cycle of `σ` through `x` has `Function.minimalPeriod σ x` points; a fixed point is a
-cycle of length one. -/
-theorem ncard_setOf_sameCycle [Finite α] (x : α) :
-    {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
-  classical
-  have := Fintype.ofFinite α
-  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
-    Nat.card_eq_fintype_card]
-  exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
-
-/-- If a single cycle of `σ` passes through every point, then every point has minimal period the
-cardinality of the carrier. -/
-theorem minimalPeriod_eq_natCard_of_forall_sameCycle [Finite α] {x : α}
-    (hx : ∀ y, σ.SameCycle x y) (y : α) : Function.minimalPeriod σ y = Nat.card α := by
-  rw [← ncard_setOf_sameCycle, Set.eq_univ_of_forall (s := {z | σ.SameCycle y z})
-    fun z => (hx y).symm.trans (hx z), Set.ncard_univ]
 
 end
 
@@ -723,6 +696,11 @@ theorem card_subtype_apply_eq :
     _ = σ.supportᶜ.card := Fintype.card_coe _
     _ = Fintype.card α - σ.support.card := Finset.card_compl (s := σ.support)
 
+/-- The parts equal to one in the full cycle type of `σ` count its fixed points. -/
+theorem count_one_fullCycleType_eq_card_filter :
+    (fullCycleType σ).count 1 = #{x | σ x = x} := by
+  rw [count_one_fullCycleType, ← Fintype.card_subtype, card_subtype_apply_eq]
+
 /-- The cycle factor of a moved point, or the point itself when it is fixed: the point-level map
 underlying `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`. -/
 def cycleFactorOrFixedPoint (x : α) :
@@ -760,8 +738,8 @@ noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints :
       exact congrArg Sum.inl (Subtype.ext hxy.cycleOf_eq)
   invFun := Sum.elim
     (fun c => Quotient.mk (SameCycle.setoid σ)
-      (IsCycle.nonempty_support (mem_cycleFactorsFinset_iff.mp c.2).1).choose)
-    (fun x => Quotient.mk (SameCycle.setoid σ) x.1)
+      (IsCycle.nonempty_support (mem_cycleFactorsFinset_iff.mp c.property).1).choose)
+    (fun x => Quotient.mk (SameCycle.setoid σ) x.val)
   left_inv q := by
     induction q using Quotient.ind with
     | _ x =>
@@ -773,11 +751,11 @@ noncomputable def orbitQuotientEquivCycleFactorsSumFixedPoints :
             (mem_support.mpr hx))).1).choose_spec).symm
   right_inv := by
     rintro (c | x)
-    · have hc := (IsCycle.nonempty_support (mem_cycleFactorsFinset_iff.mp c.2).1).choose_spec
+    · have hc := (IsCycle.nonempty_support (mem_cycleFactorsFinset_iff.mp c.property).1).choose_spec
       rw [Sum.elim_inl, Quotient.lift_mk, cycleFactorOrFixedPoint_of_apply_ne σ
-        (mem_support.mp (mem_cycleFactorsFinset_support_le c.2 hc))]
-      exact congrArg Sum.inl (Subtype.ext (cycle_is_cycleOf hc c.2).symm)
-    · rw [Sum.elim_inr, Quotient.lift_mk, cycleFactorOrFixedPoint_of_apply_eq σ x.2]
+        (mem_support.mp (mem_cycleFactorsFinset_support_le c.property hc))]
+      exact congrArg Sum.inl (Subtype.ext (cycle_is_cycleOf hc c.property).symm)
+    · rw [Sum.elim_inr, Quotient.lift_mk, cycleFactorOrFixedPoint_of_apply_eq σ x.property]
 
 /-- On the class of `x`, `orbitQuotientEquivCycleFactorsSumFixedPoints` computes as
 `cycleFactorOrFixedPoint x`. -/
@@ -804,7 +782,7 @@ theorem fullCycleType_eq_map_card_orbit :
   have he : ∀ x : α, e (Quotient.mk'' x) = σ.cycleFactorOrFixedPoint x := fun _ => rfl
   -- Through `e`, a class of moved points has the size of its cycle, a fixed point has size one.
   have hcard : ∀ ω : orbitRel.Quotient (Subgroup.zpowers σ) α, Nat.card ω.orbit =
-      Sum.elim (fun c : σ.cycleFactorsFinset => c.1.support.card) (fun _ => 1) (e ω) := by
+      Sum.elim (fun c : σ.cycleFactorsFinset => c.val.support.card) (fun _ => 1) (e ω) := by
     intro ω
     refine Quotient.inductionOn' ω fun x => ?_
     rw [orbitRel.Quotient.orbit_mk, he]
@@ -818,7 +796,7 @@ theorem fullCycleType_eq_map_card_orbit :
   -- Split the sum type into cycles and fixed points, then reindex the classes along `e`.
   calc fullCycleType σ
       = (Finset.univ : Finset (σ.cycleFactorsFinset ⊕ {x : α // σ x = x})).val.map
-          (Sum.elim (fun c => c.1.support.card) fun _ => 1) := by
+          (Sum.elim (fun c => c.val.support.card) fun _ => 1) := by
         rw [← Finset.univ_disjSum_univ, Finset.val_disjSum, Multiset.disjSum, Multiset.map_add,
           Multiset.map_map, Multiset.map_map, fullCycleType, cycleType_def]
         congr 1
@@ -827,15 +805,39 @@ theorem fullCycleType_eq_map_card_orbit :
         · -- `Multiset.map_const'` matches only the literal form `fun _ => 1`; the composite
           -- `Sum.elim _ (fun _ => 1) ∘ Sum.inr` is that function by `rfl` (`Sum.elim_inr`), so
           -- reshape it before rewriting.
-          rw [show (Sum.elim (fun c : σ.cycleFactorsFinset => c.1.support.card) (fun _ => 1) ∘
+          rw [show (Sum.elim (fun c : σ.cycleFactorsFinset => c.val.support.card) (fun _ => 1) ∘
               Sum.inr) = fun _ => 1 from rfl,
             Multiset.map_const', Finset.card_val, Finset.card_univ, card_subtype_apply_eq]
     _ = (Finset.univ.map e.toEmbedding).val.map
-          (Sum.elim (fun c => c.1.support.card) fun _ => 1) := by
+          (Sum.elim (fun c => c.val.support.card) fun _ => 1) := by
         rw [Finset.map_univ_equiv]
     _ = _ := by
         rw [Finset.map_val, Multiset.map_map]
         exact Multiset.map_congr rfl fun ω _ => (hcard ω).symm
+
+/-- The parts of the full cycle type of `σ` are exactly the lengths of its cycles, the minimal
+periods of the points of `α`. -/
+theorem mem_fullCycleType_iff {σ : Equiv.Perm α} {k : ℕ} :
+    k ∈ fullCycleType σ ↔ ∃ x, Function.minimalPeriod σ x = k := by
+  classical
+  have h (x : α) : Nat.card (orbitRel.Quotient.orbit
+      (Quotient.mk'' x : orbitRel.Quotient (Subgroup.zpowers σ) α)) =
+      Function.minimalPeriod σ x := by
+    rw [orbitRel.Quotient.orbit_mk, Nat.card_coe_set_eq, ← ncard_setOf_sameCycle]
+    simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq]
+  rw [fullCycleType_eq_map_card_orbit, Multiset.mem_map]
+  constructor
+  · rintro ⟨ω, -, rfl⟩
+    obtain ⟨x, rfl⟩ := Quotient.mk''_surjective ω
+    exact ⟨x, (h x).symm⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨Quotient.mk'' x, Finset.mem_univ _, h x⟩
+
+/-- The length of the cycle of `σ` through `x`, its minimal period, is a part of the full cycle
+type of `σ`. -/
+theorem minimalPeriod_mem_fullCycleType (x : α) :
+    Function.minimalPeriod σ x ∈ fullCycleType σ :=
+  mem_fullCycleType_iff.mpr ⟨x, rfl⟩
 
 end OrbitSizes
 
@@ -843,18 +845,18 @@ end OrbitSizes
 
 The three shapes that the degree-four recognition theorems read off a factorization type. -/
 
-example : Equiv.Perm.fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by
-  rw [Equiv.Perm.fullCycleType_one]
+example : fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by
+  rw [fullCycleType_one]
   rfl
 
-example : Equiv.Perm.fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by
+example : fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by
   have h : (0 : Fin 4) ≠ 1 := by decide
-  simp only [Equiv.Perm.fullCycleType, Equiv.Perm.support_swap h, Finset.card_pair h,
-    Fintype.card_fin, Equiv.Perm.isSwap_iff_cycleType.mp (Equiv.Perm.swap_isSwap_iff.mpr h)]
+  simp only [fullCycleType, support_swap h, Finset.card_pair h,
+    Fintype.card_fin, isSwap_iff_cycleType.mp (swap_isSwap_iff.mpr h)]
   rfl
 
-example : Equiv.Perm.fullCycleType (finRotate 4) = {4} := by
-  rw [Equiv.Perm.fullCycleType_eq_cycleType (support_finRotate_of_le (by norm_num)),
+example : fullCycleType (finRotate 4) = {4} := by
+  rw [fullCycleType_eq_cycleType (support_finRotate_of_le (by norm_num)),
     cycleType_finRotate_of_le (by norm_num)]
 
 end Equiv.Perm

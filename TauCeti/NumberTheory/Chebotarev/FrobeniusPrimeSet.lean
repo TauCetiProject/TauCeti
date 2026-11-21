@@ -85,11 +85,7 @@ and its Artin class is `C`.
 
 The unramifiedness proof is packaged existentially rather than assumed, because `artinSymbol`
 takes it as an argument and no value is assigned at a ramified prime. See
-`mem_frobeniusPrimeSet_iff_artinSymbol_eq` for the form used once such a proof is available.
-
-The carrier and this membership condition are taken from
-`TauCetiRoadmap/Chebotarev/Suggested.lean`, lines 64–76, described in the section
-`Frobenius prime sets and finite exceptional sets` of `TauCetiRoadmap/Chebotarev/README.md`. -/
+`mem_frobeniusPrimeSet_iff_artinSymbol_eq` for the form used once such a proof is available. -/
 def frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) : Set (HeightOneSpectrum (𝓞 K)) :=
   {𝔭 | ∃ hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
     Algebra.IsUnramifiedAt (𝓞 K) Q, artinSymbol 𝔭.asIdeal hur = C}
@@ -157,7 +153,7 @@ theorem frobeniusPrimeSet_subset_compl_ramifiedPrimes (C : ConjClasses (L ≃ₐ
 theorem mem_frobeniusPrimeSet_mk_of_isArithFrobAt {𝔭 : HeightOneSpectrum (𝓞 K)}
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) Q)
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal] {σ : L ≃ₐ[K] L}
+    (Q : Ideal (𝓞 L)) [Q.LiesOver 𝔭.asIdeal] {σ : L ≃ₐ[K] L}
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) :=
   ⟨hur, artinSymbol_eq_mk_of_isArithFrobAt 𝔭.asIdeal hur Q σ hσ⟩
@@ -167,7 +163,7 @@ itself — not merely some conjugate of it — is an arithmetic Frobenius at som
 above `𝔭`. -/
 theorem exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk {𝔭 : HeightOneSpectrum (𝓞 K)}
     {σ : L ≃ₐ[K] L} (h : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ)) :
-    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 := by
+    ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val := by
   obtain ⟨hur, hC⟩ := mem_frobeniusPrimeSet_iff.mp h
   exact exists_isArithFrobAt_of_artinSymbol_eq_mk 𝔭.asIdeal hur hC
 
@@ -178,9 +174,9 @@ theorem mem_frobeniusPrimeSet_mk_iff_exists_isArithFrobAt {𝔭 : HeightOneSpect
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) Q) (σ : L ≃ₐ[K] L) :
     𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) ↔
-      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 :=
+      ∃ Q : 𝔭.asIdeal.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val :=
   ⟨exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk, fun ⟨Q, hσ⟩ ↦
-    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.1 hσ⟩
+    mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.val hσ⟩
 
 section IsoOfExtensions
 

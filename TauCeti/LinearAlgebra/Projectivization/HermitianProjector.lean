@@ -6,8 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
+public import Mathlib.LinearAlgebra.Projectivization.Action
+public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Projector
+
+import Mathlib.LinearAlgebra.Matrix.Action
 
 /-!
 # The Hermitian projector of a line
@@ -49,6 +55,9 @@ imaginary parts of the entries. Its topological and semialgebraic properties are
   vector with `x* x ≠ 0` lies in the locus.
 * `TauCeti.rankOneHermitianProjector_col_eq_self`: a matrix in the locus is the Hermitian
   projector of each of its columns with nonzero diagonal entry.
+* `TauCeti.rankOneHermitianProjector_unitary_mulVec` and
+  `Projectivization.hermitianProjector_unitary_smul`: moving a vector or a line by a unitary
+  matrix `U` conjugates its Hermitian projector by `U`.
 * `Projectivization.hermitianProjector_injective` and `Projectivization.range_hermitianProjector`:
   over `ℝ` or `ℂ` the Hermitian projector map is a bijection from `ℙ 𝕜 (ι → 𝕜)` onto the locus.
 * `Projectivization.image_hermitianProjector_affineOpen`: the image of a standard affine open.
@@ -66,7 +75,7 @@ the standard Hermitian form.
 public section
 
 open Matrix
-open scoped LinearAlgebra.Projectivization
+open scoped LinearAlgebra.Projectivization MatrixGroups
 
 namespace TauCeti
 
@@ -150,6 +159,17 @@ theorem rankOneHermitianProjector_eq_rankOneHermitianProjector_iff {x y : ι →
   · rintro ⟨c, rfl⟩
     exact rankOneHermitianProjector_smul (by rintro rfl; simp at hx) y
 
+/-- Multiplying a vector by a unitary matrix `U` conjugates its Hermitian projector by `U`:
+the Hermitian projector of `U x` is `U P U*`, where `P` is that of `x`. -/
+theorem rankOneHermitianProjector_unitary_mulVec [DecidableEq ι] {U : Matrix ι ι K}
+    (hU : U ∈ unitaryGroup ι K) (x : ι → K) :
+    rankOneHermitianProjector (U *ᵥ x) = U * rankOneHermitianProjector x * star U := by
+  have hdot : star (U *ᵥ x) ⬝ᵥ (U *ᵥ x) = star x ⬝ᵥ x := by
+    rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, ← star_eq_conjTranspose,
+      mem_unitaryGroup_iff'.mp hU, one_mulVec]
+  rw [rankOneHermitianProjector_def, rankOneHermitianProjector_def, hdot, Matrix.mul_smul,
+    Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul, star_mulVec, star_eq_conjTranspose]
+
 variable (ι K) in
 /-- The *Hermitian projector locus*: the star projections (self-adjoint idempotents) of trace
 one. Over `ℝ` or `ℂ` these are exactly the Hermitian projectors of nonzero vectors
@@ -226,10 +246,10 @@ variable {ι K : Type*} [Fintype ι] [Field K] [StarRing K]
 /-- The Hermitian projector of a line of `ι → K`: the matrix `x x* / (x* x)` for any nonzero
 vector `x` spanning the line. -/
 def hermitianProjector (p : ℙ K (ι → K)) : Matrix ι ι K :=
-  p.lift (fun x ↦ rankOneHermitianProjector x.1) fun x y c h ↦ by
+  p.lift (fun x ↦ rankOneHermitianProjector x.val) fun x y c h ↦ by
     rw [h, rankOneHermitianProjector_smul]
     rintro rfl
-    exact x.2 (by simp [h])
+    exact x.property (by simp [h])
 
 @[simp]
 theorem hermitianProjector_mk (x : ι → K) (hx : x ≠ 0) :
@@ -243,6 +263,16 @@ theorem hermitianProjector_eq_projector [TrivialStar K] :
   funext p
   induction p using ind with
   | h x hx => simp [rankOneHermitianProjector_eq_rankOneProjector]
+
+/-- Moving a line by a unitary matrix `U` conjugates its Hermitian projector by `U`. -/
+theorem hermitianProjector_unitary_smul [DecidableEq ι] (p : ℙ K (ι → K))
+    (U : unitaryGroup ι K) :
+    hermitianProjector ((Unitary.toUnits U : GL ι K) • p) =
+      (U : Matrix ι ι K) * hermitianProjector p * star (U : Matrix ι ι K) := by
+  induction p using ind with
+  | h x hx =>
+    rw [smul_mk, hermitianProjector_mk, hermitianProjector_mk, Units.smul_def, smul_eq_mulVec]
+    exact rankOneHermitianProjector_unitary_mulVec U.property x
 
 end Field
 
@@ -325,3 +355,13 @@ theorem affineChart_eq_hermitianProjector_div {n : ℕ} (i : Fin (n + 1))
 end RCLike
 
 end Projectivization
+
+namespace TauCeti
+
+/-- The Hermitian square norm of the homogeneous coordinates `(t, 1)` of a point `[t : 1]` of the
+projective line over `ℝ` or `ℂ` is `1 + |t|²`. -/
+theorem star_vec2_one_dotProduct_self {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
+    star ![z, 1] ⬝ᵥ ![z, 1] = ((1 + ‖z‖ ^ 2 : ℝ) : 𝕜) := by
+  simp [dotProduct, Fin.sum_univ_two, RCLike.conj_mul, add_comm]
+
+end TauCeti

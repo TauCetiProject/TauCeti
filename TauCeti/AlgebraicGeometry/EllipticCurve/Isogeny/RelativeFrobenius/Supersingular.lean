@@ -105,7 +105,7 @@ private theorem separableDegree_mulByIntIsogenyOfNeZero_eq_one_of_isSupersingula
       (mod_cast expChar_ne_zero K p)).separableDegree = 1 := by
   set φ := mulByIntIsogenyOfNeZero W.toAffine (n := p) (mod_cast expChar_ne_zero K p)
   set Ω := AlgebraicClosure W.toAffine.FunctionField
-  have htors := (W.isSupersingular_iff_of_isAlgClosed (expChar_ne_zero K p) Ω).1 hW
+  have htors := (W.isSupersingular_iff_of_isAlgClosed Ω).1 hW
   -- Two embeddings over `[p]^* K(W)` move the generic point by a `p`-torsion point, which is zero.
   have : Subsingleton (Field.Emb φ.fieldPullback.fieldRange W.toAffine.FunctionField) := by
     refine ⟨fun σ τ ↦ AlgHom.restrictScalars_injective K
@@ -160,7 +160,7 @@ private theorem isSupersingular_of_separableDegree_verschiebungIsogeny_eq_one
     rw [← hcomp, separableDegree_comp, hsep, separableDegree_relativeFrobeniusIsogeny_map]
   -- That kernel is the `p`-torsion of `W` over the algebraic closure.
   rw [ker_mulByIntIsogeny_eq_torsionBy, Affine.baseChange_self] at hker
-  exact (W.isSupersingular_iff_of_isAlgClosed (expChar_ne_zero K p) (AlgebraicClosure K)).2 hker
+  exact (W.isSupersingular_iff_of_isAlgClosed (AlgebraicClosure K)).2 hker
 
 /-- **Supersingularity is pure inseparability of `[p]`**: `W` is supersingular exactly when
 multiplication by `p` has separable degree `1` (Silverman V.3.1). -/
@@ -275,12 +275,12 @@ theorem natCard_torsionBy_lt (hp : p.Prime) {n : ℤ} (hn : n ≠ 0) (hpn : (p :
     (AddSubgroup.torsionBy W.toAffine.Point ((p : ℤ) * k)).subtype
   have hker : Nat.card φ.ker ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) :=
     Nat.card_le_card_of_injective
-      (fun x ↦ ⟨x.1.1, (Submodule.mem_torsionBy_iff _ _).2 (AddMonoidHom.mem_ker.1 x.2)⟩)
-      fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy).1))
+      (fun x ↦ ⟨x.val.val, (Submodule.mem_torsionBy_iff _ _).2 (AddMonoidHom.mem_ker.1 x.property)⟩)
+      fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy).val))
   have hrange : Nat.card φ.range ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point (p : ℤ)) := by
     refine AddSubgroup.card_le_of_le ?_
     rintro _ ⟨x, rfl⟩
-    have hx := (Submodule.mem_torsionBy_iff _ _).1 x.2
+    have hx := (Submodule.mem_torsionBy_iff _ _).1 x.property
     exact (Submodule.mem_torsionBy_iff _ _).2 (by simpa [φ, smul_smul, mul_comm] using hx)
   have hcard := AddSubgroup.card_ker_mul_card_range φ
   have hp' := natCard_torsionBy_le p W

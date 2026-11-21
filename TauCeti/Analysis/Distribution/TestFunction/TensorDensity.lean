@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
+import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Fourier.Torus.Decay
@@ -16,13 +17,14 @@ import TauCeti.Analysis.Normed.Module.FiniteDimension
 /-!
 # Density of tensor products of test functions
 
-Let `Ω ⊆ E` and `O ⊆ D` be open subsets of finite-dimensional real normed spaces. The tensor
+Let `Ω ⊆ E` and `O ⊆ D` be open subsets of real normed spaces. The tensor
 products `(x, t) ↦ ψ t • φ x` of real test functions `φ` on `Ω` and `ψ` on `O`
 (`TestFunction.prodSMulCLM`) span a dense subspace of the real test functions on `Ω × O`, for the
 LF topology. Consequently a continuous linear map on the test functions on `Ω × O`, in particular
 a distribution on `Ω × O`, is determined by its values on these tensor products. This is the
 uniqueness half of the Schwartz kernel theorem: a distributional kernel `K` on `Ω × O` is
-determined by the pairings `K (ψ ⊗ φ)`.
+determined by the pairings `K (ψ ⊗ φ)`. The argument below is for finite-dimensional `E` and
+`D`; otherwise every test function on `Ω × O` is zero and density is trivial.
 
 ## The Fourier argument
 
@@ -51,6 +53,8 @@ Real-valued test functions are the ones on which Mathlib's distributions `𝓓'(
 * `TestFunction.ext_prodSMulCLM`: a continuous linear map on the test functions on a product, with
   Hausdorff target, is determined by its values on tensor products. In particular this applies to
   distributions on a product.
+* `TestFunction.continuous_prodSMulCLM_apply`: the tensor product `(x, t) ↦ ψ t • φ x` of real
+  test functions is continuous in `ψ`.
 
 ## References
 
@@ -146,7 +150,7 @@ private theorem tendsto_of_eq_mul_re {G : Type*} [NormedAddCommGroup G] [NormedS
     exact ⟨subset_tsupport _ (left_ne_zero_of_mul (left_ne_zero_of_mul hz)),
       subset_tsupport _ (right_ne_zero_of_mul (left_ne_zero_of_mul hz))⟩
   have hle (m : ℕ) : (m : WithTop ℕ∞) ≤ (⊤ : ℕ∞) := mod_cast le_top
-  refine tendsto_of_tendstoUniformly_iteratedFDeriv hC hCV (fun s ↦ hsuppC (hhz s)) (hsuppC hfg)
+  refine tendsto_of_tendstoUniformly_iteratedFDeriv hC hCV (fun s ↦ hsuppC (hhz s))
     fun k _ ↦ ?_
   -- `f - h s` is `z ↦ Λ z ((g - P s) (L z))`, where `Λ z = (χ₁ ⊗ χ₂)(z) • Re`.
   set Λ : E × D → ℂ →L[ℝ] ℝ := fun z ↦ (χ₁ z.1 * χ₂ z.2) • reCLM
@@ -187,14 +191,21 @@ private theorem tendsto_of_eq_mul_re {G : Type*} [NormedAddCommGroup G] [NormedS
     exact hε
 
 /-- **Density of tensor products of test functions.** For open sets `Ω ⊆ E` and `O ⊆ D` of
-finite-dimensional real normed spaces and `V = Ω ×ˢ O`, the tensor products
-`(x, t) ↦ ψ t • φ x` of real test functions `φ` on `Ω` and `ψ` on `O` span a dense subspace of
-the real test functions on `V`. -/
-theorem dense_span_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ D]
-    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
+real normed spaces and `V = Ω ×ˢ O`, the tensor products `(x, t) ↦ ψ t • φ x` of real test
+functions `φ` on `Ω` and `ψ` on `O` span a dense subspace of the real test functions on `V`. -/
+theorem dense_span_prodSMulCLM (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
     Dense (Submodule.span ℝ (range fun p : 𝓓(O, ℝ) × 𝓓(Ω, ℝ) ↦
       prodSMulCLM p.1 hV.symm.subset p.2) : Set 𝓓(V, ℝ)) := by
   intro f
+  by_cases hED : FiniteDimensional ℝ (E × D)
+  swap
+  · -- In infinite dimension every test function on `V` is zero.
+    rw [eq_zero_of_not_finiteDimensional f hED]
+    exact subset_closure (Submodule.zero_mem _)
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_surjective (LinearMap.fst ℝ E D) LinearMap.fst_surjective
+  have : FiniteDimensional ℝ D :=
+    Module.Finite.of_surjective (LinearMap.snd ℝ E D) LinearMap.snd_surjective
   have hK : IsCompact (tsupport (f : E × D → ℝ)) := f.hasCompactSupport
   have hKV : tsupport (f : E × D → ℝ) ⊆ (Ω : Set E) ×ˢ (O : Set D) := hV ▸ f.tsupport_subset
   -- Cutoffs `χ₁` on `Ω` and `χ₂` on `O` with `χ₁ ⊗ χ₂ = 1` on the support of `f`.
@@ -232,7 +243,7 @@ theorem dense_span_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
 `V = Ω ×ˢ O`, with values in a Hausdorff space, is determined by its values on the tensor products
 `(x, t) ↦ ψ t • φ x`. This applies in particular to distributions `𝓓'(V, F)` on `V`: a
 distributional kernel on a product is determined by its pairings with tensor products. -/
-theorem ext_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] {G 𝓕 : Type*}
+theorem ext_prodSMulCLM {G 𝓕 : Type*}
     [AddCommMonoid G] [Module ℝ G] [TopologicalSpace G] [T2Space G] [FunLike 𝓕 𝓓(V, ℝ) G]
     [ContinuousLinearMapClass 𝓕 ℝ 𝓓(V, ℝ) G]
     (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) {T₁ T₂ : 𝓕}
@@ -243,5 +254,20 @@ theorem ext_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] {G �
   have hT : B T₁ = B T₂ :=
     ContinuousLinearMap.ext_on (dense_span_prodSMulCLM hV) <| by rintro _ ⟨p, rfl⟩; exact h p.1 p.2
   exact DFunLike.coe_injective congr($hT)
+
+/-- The tensor product `(x, y) ↦ ψ y • φ x` of real test functions is continuous in `ψ`, for the
+LF topologies. -/
+theorem continuous_prodSMulCLM_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (φ : 𝓓(Ω, ℝ)) :
+    Continuous fun ψ : 𝓓(O, ℝ) ↦ prodSMulCLM ψ hV φ := by
+  -- It is the tensor product with `φ` in the first factor of `O × Ω`, transported along the swap.
+  let W : Opens (D × E) := ⟨(O : Set D) ×ˢ (Ω : Set E), O.isOpen.prod Ω.isOpen⟩
+  have hW : MapsTo (ContinuousLinearEquiv.prodComm ℝ D E) W V := fun p hp ↦ hV ⟨hp.2, hp.1⟩
+  have h : (fun ψ : 𝓓(O, ℝ) ↦ prodSMulCLM ψ hV φ) =
+      (ContinuousLinearEquiv.prodComm ℝ D E).transportTestFunction hW ∘
+        prodSMulCLM (V := W) φ Subset.rfl := by
+    ext ψ p
+    simp [mul_comm]
+  rw [h]
+  exact (ContinuousLinearMap.continuous _).comp (ContinuousLinearMap.continuous _)
 
 end TestFunction

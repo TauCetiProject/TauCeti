@@ -116,6 +116,14 @@ theorem raiseIter_add (m n : ℕ) (p : PLPath 𝕜 V) :
     raiseIter f x (m + n) p = (raiseIter f x m p).bind (raiseIter f x n) :=
   Option.iterate_add (raise f x) m n p
 
+theorem lowerIter_succ' (n : ℕ) (p : PLPath 𝕜 V) :
+    lowerIter f x (n + 1) p = (lowerIter f x n p).bind (lower f x) :=
+  Option.iterate_succ' (lower f x) n p
+
+theorem raiseIter_succ' (n : ℕ) (p : PLPath 𝕜 V) :
+    raiseIter f x (n + 1) p = (raiseIter f x n p).bind (raise f x) :=
+  Option.iterate_succ' (raise f x) n p
+
 variable {n : ℕ}
 
 /-- Lowering `n` times subtracts `n` copies of the root from the endpoint. -/
@@ -180,7 +188,6 @@ theorem isSome_lowerIter_iff (hx : f x = 2) :
       have hp := lower_eq_none_iff.1 h
       simp only [Option.bind_none, Option.isSome_none, Bool.false_eq_true, false_iff,
         Nat.cast_add, Nat.cast_one, not_le]
-      have hn : (0 : 𝕜) ≤ n := Nat.cast_nonneg n
       linarith
     | some r =>
       have he := endpoint_of_lower_eq_some h

@@ -12,7 +12,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalProbability
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
@@ -68,7 +68,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials;
 * `hasLaw_min_iid_expMeasure` — minimum of `d` i.i.d. exponentials of rate `r` is exponential of
   rate `d * r`.
-* `nnrealExpMeasure` — the exponential measure transported to `ℝ≥0`.
+* `nnrealExpMeasure`, `hasLaw_nnrealExpMeasure_iff` — the exponential measure transported to `ℝ≥0`
+  and its law equivalence with `expMeasure`.
 
 ## References
 
@@ -132,9 +133,19 @@ theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   exact ae_pos_gammaMeasure 1 r
 
 /-- A random variable with an exponential law is almost surely positive. -/
-theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : ∀ᵐ ω ∂P, 0 < X ω :=
   (hX.ae_iff measurableSet_Ioi.mem).2 (ae_pos_expMeasure r)
+
+/-- A nonnegative random variable with an exponential law has probability strictly less than
+one of being zero. -/
+lemma measure_eq_zero_lt_one_of_hasLaw_expMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ≥0}
+    (hlaw : HasLaw (fun ω ↦ (X ω : ℝ)) (expMeasure r) P) :
+    P {ω | X ω = 0} < 1 := by
+  refine (measure_mono_null (fun ω hω ↦ ?_)
+    (ae_iff.1 (ae_pos_of_hasLaw_expMeasure hlaw))).trans_lt zero_lt_one
+  simp_all
 
 /-- The rate of an exponential law of a random variable on a probability space is positive,
 because `expMeasure r` is the zero measure for `r ≤ 0`. -/
@@ -146,12 +157,12 @@ theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Me
 
 /-- Scaling an exponential variable by a positive constant divides its rate by that constant. -/
 @[simp]
-theorem expMeasure_map_const_mul (hr : 0 < r) {c : ℝ} (hc : 0 < c) :
+theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
-  simpa only [expMeasure] using gammaMeasure_map_const_mul one_pos hr hc
+  simpa only [expMeasure] using gammaMeasure_map_const_mul hc
 
-/-- `expMeasure r` presented by its real-valued density, the form in which the shared density
-bridge of `TauCeti/Probability/Density.lean` applies. -/
+/-- `expMeasure r` presented by its real-valued density, the form in which the real-density
+`withDensity` lemmas of `TauCeti/MeasureTheory/Integral/Bochner/WithDensity.lean` apply. -/
 private lemma expMeasure_eq_withDensity_ofReal (r : ℝ) :
     expMeasure r = volume.withDensity fun x => ENNReal.ofReal (exponentialPDFReal r x) :=
   (rfl)
@@ -165,7 +176,7 @@ rate exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_expMeasure_iff (hr : 0 < r) {g : ℝ → E} :
     Integrable g (expMeasure r) ↔ Integrable fun x => exponentialPDFReal r x • g x := by
   rw [expMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr))
 
 /-- **Integral transfer.** An integral against an exponential law with positive rate is the
@@ -173,7 +184,7 @@ density-weighted Lebesgue integral. -/
 theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
     ∫ x, g x ∂expMeasure r = ∫ x, exponentialPDFReal r x • g x := by
   rw [expMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal
+  exact MeasureTheory.integral_withDensity_ofReal
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr)) g
 
 /-- Integrability against an exponential law is integrability of the weighted integrand over
@@ -485,7 +496,7 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
   rw [cdf_min_iid hindep hlaw x, cdf_expMeasure_eq hr x,
     cdf_expMeasure_eq (mul_pos hd hr) x]
   by_cases hx : 0 ≤ x
-  · rw [ite_eq_left hx, ite_eq_left hx, sub_sub_cancel, ← Real.exp_nat_mul]
+  · rw [ite_eq_left hx, ite_eq_left hx, sub_sub_cancel, ← Real.exp_natCast_mul]
     congr 2
     ring
   · rw [ite_eq_right hx, ite_eq_right hx, sub_zero, one_pow, sub_self]
@@ -523,5 +534,50 @@ theorem isProbabilityMeasure_nnrealExpMeasure {r : ℝ} (hr : 0 < r) :
   let _ := isProbabilityMeasure_expMeasure hr
   rw [nnrealExpMeasure_def]
   infer_instance
+
+/-- Coercing `nnrealExpMeasure r` back to `ℝ` recovers `expMeasure r`, for every rate `r`
+(including nonpositive rates, where both measures are zero). -/
+@[simp]
+theorem nnrealExpMeasure_map_coe (r : ℝ) :
+    (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ) = expMeasure r := by
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_real measurable_real_toNNReal]
+  calc
+    (expMeasure r).map (((↑) : ℝ≥0 → ℝ) ∘ Real.toNNReal) = (expMeasure r).map id := by
+      apply Measure.map_congr
+      filter_upwards [ae_pos_expMeasure r] with x hx
+      exact Real.coe_toNNReal x hx.le
+    _ = expMeasure r := Measure.map_id
+
+/-- Coercing `nnrealExpMeasure r` to `ℝ≥0∞` agrees with pushing `expMeasure r` forward by
+`ENNReal.ofReal`, for every rate `r`. -/
+@[simp]
+theorem nnrealExpMeasure_map_coe_ennreal (r : ℝ) :
+    (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ≥0∞) = (expMeasure r).map ENNReal.ofReal := by
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_ennreal measurable_real_toNNReal]
+  have hcomp : (((↑) : ℝ≥0 → ℝ≥0∞) ∘ Real.toNNReal) = ENNReal.ofReal :=
+    funext fun x => by rw [Function.comp_apply, ENNReal.ofReal]
+  rw [hcomp]
+
+/-- Pushing `expMeasure r` forward to `ℝ≥0∞` via `ENNReal.ofReal` and back via `ENNReal.toReal`
+recovers `expMeasure r`, for every rate `r`. -/
+@[simp]
+theorem expMeasure_map_ofReal_map_toReal (r : ℝ) :
+    ((expMeasure r).map ENNReal.ofReal).map ENNReal.toReal = expMeasure r := by
+  rw [← nnrealExpMeasure_map_coe_ennreal,
+    Measure.map_map ENNReal.measurable_toReal measurable_coe_nnreal_ennreal]
+  simpa only [Function.comp_def, ENNReal.coe_toReal] using nnrealExpMeasure_map_coe r
+
+/-- A nonnegative random variable has law `nnrealExpMeasure r` exactly when its real coercion has
+law `expMeasure r`. This holds for every rate `r`, including nonpositive rates. -/
+theorem hasLaw_nnrealExpMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ≥0} {r : ℝ} :
+    HasLaw X (nnrealExpMeasure r) P ↔ HasLaw (fun ω => (X ω : ℝ)) (expMeasure r) P := by
+  constructor
+  · intro hX
+    have h := (hasLaw_map (P := nnrealExpMeasure r) measurable_coe_nnreal_real.aemeasurable).comp hX
+    simpa only [nnrealExpMeasure_map_coe, Function.comp_def] using h
+  · intro hX
+    have h := (hasLaw_map (P := expMeasure r) measurable_real_toNNReal.aemeasurable).comp hX
+    simpa only [← nnrealExpMeasure_def, Function.comp_def, Real.toNNReal_coe] using h
 
 end TauCeti.Probability

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
+public import Mathlib.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 
@@ -29,6 +30,9 @@ In particular, on a σ-compact Hausdorff topological group, the scalar function
 `(x, y) ↦ f (y⁻¹ * x)` is product-measurable for continuous real `f`. This supplies the
 continuous-generator step in measurable convolution arguments, without asserting that group
 multiplication itself is measurable for the product Borel σ-algebra.
+
+We also record `OpensMeasurableSpace.of_prod_left`: if the product `X × Y` with a nonempty second
+factor is an `OpensMeasurableSpace` for the product σ-algebra, then so is `X`.
 -/
 
 public section
@@ -74,7 +78,7 @@ theorem Continuous.measurable_prod_of_sigmaCompact
   have hlocal (n : ℕ) : Measurable (fun p : X × K n => f (p.1, p.2)) := by
     have := isCompact_iff_compactSpace.1 (hK n)
     exact Continuous.measurable_prod_of_sigmaCompact_of_compact
-      (hf.comp (continuous_id.prodMap continuous_subtype_val))
+      (hf.comp (continuous_id.prodMap continuous_subtypeVal))
   intro s hs
   have heq : f ⁻¹' s = ⋃ n : ℕ,
       (fun p : X × K n => (p.1, (p.2 : Y))) ''
@@ -91,5 +95,17 @@ theorem Continuous.measurable_prod_of_sigmaCompact
   rw [heq]
   exact MeasurableSet.iUnion fun n =>
     (MeasurableEmbedding.id.prodMap
-      (MeasurableEmbedding.subtype_coe (hK n).measurableSet)).measurableSet_image'
+      (MeasurableEmbedding.subtypeVal (hK n).measurableSet)).measurableSet_image'
         (hlocal n hs)
+
+/-- If the product of two topological spaces, the second nonempty, has the Borel property
+`OpensMeasurableSpace` for the product σ-algebra, so does the first factor: an open set `s` is
+the preimage of the measurable open set `s ×ˢ univ` under `x ↦ (x, b)`. -/
+theorem OpensMeasurableSpace.of_prod_left {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [TopologicalSpace Y] [MeasurableSpace Y] [Nonempty Y] [OpensMeasurableSpace (X × Y)] :
+    OpensMeasurableSpace X := by
+  obtain ⟨b⟩ := ‹Nonempty Y›
+  refine opensMeasurableSpace_iff_forall_measurableSet.2 fun s hs => ?_
+  have : s = (fun x => (x, b)) ⁻¹' (s ×ˢ univ) := by simp
+  rw [this]
+  exact (hs.prod isOpen_univ).measurableSet.preimage (measurable_prodMk_right)

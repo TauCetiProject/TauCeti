@@ -43,7 +43,7 @@ theorem listMinHeight_le_apply_evalTimed (hp : IsTimed p) (t : 𝕜) :
       have hm := listMinHeight_nonpos (f := f) (p.map Prod.snd)
       have h₀ := min_le_left (0 : 𝕜) (f v + listMinHeight f (p.map Prod.snd))
       have h₁ := min_le_right (0 : 𝕜) (f v + listMinHeight f (p.map Prod.snd))
-      rcases le_total 0 (f v) with hv | hv <;> nlinarith
+      rcases le_total 0 (f v) with hv | _ <;> nlinarith
     · rw [evalTimed_cons_of_le hd ht.le, map_add]
       have h := ih hp (t - d)
       exact (min_le_right _ _).trans (add_le_add_right h (f v))

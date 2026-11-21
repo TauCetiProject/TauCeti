@@ -30,6 +30,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
   the measure of a cube.
 * `EuclideanSpace.measure_preimage_ofLp_closedBall_le`: a cube has measure at most `√nⁿ` times
   that of the Euclidean ball of the same radius.
+* `EuclideanSpace.two_mul_div_sqrt_card_pow_le_volume_real_ball`: a Euclidean ball of radius
+  `r ≥ 0` in `ℝⁿ` (`n > 0`) has real volume at least `(2 * r / √n) ^ n`.
 * `EuclideanSpace.measurePreserving_consEquivL`: splitting off the first coordinate identifies the
   volume of `ℝⁿ⁺¹` with the product of the volumes of `ℝ` and `ℝⁿ`.
 -/
@@ -101,6 +103,23 @@ theorem measure_preimage_ofLp_closedBall_le [Nonempty ι] (μ : Measure (Euclide
   congr 3
   field_simp
 
+/-- In a nonempty finite-dimensional `EuclideanSpace ℝ ι`, the Euclidean ball of radius `r ≥ 0`
+contains the concentric cube of half-side `r / √(#ι)`, so its real volume is at least
+`(2 * r / √(#ι)) ^ #ι`. -/
+theorem two_mul_div_sqrt_card_pow_le_volume_real_ball [Nonempty ι]
+    (x : EuclideanSpace ℝ ι) {r : ℝ} (hr : 0 ≤ r) :
+    (2 * r / √(Fintype.card ι : ℝ)) ^ Fintype.card ι ≤ volume.real (ball x r) := by
+  have hle := measure_preimage_ofLp_closedBall_le volume x r
+  have he : volume.map (MeasurableEquiv.toLp 2 (ι → ℝ)).symm = (1 : ℝ≥0∞) • volume := by
+    rw [one_smul, (volume_preserving_symm_measurableEquiv_toLp ι).map_eq]
+  rw [measure_preimage_ofLp_closedBall he _ hr, one_mul] at hle
+  have htoReal := ENNReal.toReal_mono
+    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne) hle
+  rw [ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by positivity), ← measureReal_def] at htoReal
+  rw [div_pow, div_le_iff₀ (pow_pos sqrt_card_pos _)]
+  simpa only [mul_comm] using htoReal
+
 /-- Splitting off the first coordinate carries the product of Lebesgue measure on `ℝ` and the volume
 of `ℝⁿ` to the volume of `ℝⁿ⁺¹`. -/
 theorem measurePreserving_consEquivL (n : ℕ) : MeasurePreserving (consEquivL ℝ n) := by
@@ -140,5 +159,13 @@ theorem measurableEmbedding_euclideanSpace_proj {ι : Type*} [Unique ι] (i : ι
   convert hm using 1
   funext z
   exact congrArg (fun j ↦ z j) (Subsingleton.elim i default)
+
+/-- Integrating a function of the unique coordinate of a Euclidean line over the preimage of `s`
+is integrating it over `s`. -/
+theorem setIntegral_comp_euclideanSpace_proj_preimage {ι : Type*} [Fintype ι] [Unique ι]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (g : ℝ → G) (s : Set ℝ) (i : ι) :
+    ∫ z in proj (𝕜 := ℝ) i ⁻¹' s, g (z i) = ∫ t in s, g t :=
+  (volume_preserving_euclideanSpace_proj i).setIntegral_preimage_emb
+    (measurableEmbedding_euclideanSpace_proj i) g s
 
 end TauCeti

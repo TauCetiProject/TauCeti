@@ -9,6 +9,11 @@ public import TauCeti.AlgebraicTopology.Spectra.Free
 public import TauCeti.AlgebraicTopology.Spectra.SphereMonoid
 public import TauCeti.CategoryTheory.Monoidal.Action.Colimits
 public import TauCeti.CategoryTheory.Monoidal.Mod.Colimits
+public import Mathlib.CategoryTheory.Presentable.Finite
+
+import Mathlib.CategoryTheory.Filtered.Connected
+import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
+import Mathlib.CategoryTheory.Presentable.Adjunction
 
 /-!
 # Colimits of symmetric spectra
@@ -22,10 +27,14 @@ sphere monoid, with the sphere action induced on the levelwise colimit.
 Level evaluation preserves colimits, so Mathlib's `preservesColimitIso` gives the canonical
 isomorphism between a level of a spectral colimit and the colimit of that level. Its injection
 formulas are `ι_preservesColimitIso_hom` and `ι_preservesColimitIso_inv`.
+Since the underlying simplicial set of a level preserves filtered colimits, the free spectrum
+`F_n (K₊)` on a finitely presentable simplicial set `K` is finitely presentable
+(`SymmetricSpectrum.isFinitelyPresentable_free_obj_addBasepoint`).
 These are strict categorical colimits, not homotopy colimits.
 
 The construction reuses Mathlib's left-Kan-extension adjunction and functor-category colimits,
-and the colimit-creation theorem for native module objects.
+the colimit-creation theorem for native module objects, and Mathlib's transfer of
+presentability along adjunctions.
 
 ## References
 
@@ -76,5 +85,24 @@ noncomputable def SymmetricSpectrum.isColimitOfLevelwise {J : Type w} [Category.
   exact IsColimit.equivOfNatIsoOfIso
     (NatIso.ofComponents (fun _ ↦ Iso.refl _)) _ _
     (Cocone.ext (Iso.refl _) (fun _ ↦ by simp)) (h n)
+
+section Presentable
+
+attribute [local instance] Cardinal.fact_isRegular_aleph0
+
+open PointedSSet in
+/-- The free spectrum `F_n (K₊)` on a finitely presentable simplicial set is finitely
+presentable. -/
+instance SymmetricSpectrum.isFinitelyPresentable_free_obj_addBasepoint (n : ℕ) (K : SSet.{0})
+    [IsFinitelyPresentable.{0} K] :
+    IsFinitelyPresentable.{0} ((SymmetricSpectrum.free n).obj (addBasepoint.obj K)) :=
+  have : (evaluation n ⋙ forgetBasepoint).IsCardinalAccessible Cardinal.aleph0.{0} :=
+    { preservesColimitOfShape J _ _ := by
+        have := isFiltered_of_isCardinalFiltered J Cardinal.aleph0.{0}
+        have := IsFiltered.isConnected J
+        infer_instance }
+  (SymmetricSpectrum.freeAddBasepointAdjunction n).isCardinalPresentable_leftAdjoint_obj _ K
+
+end Presentable
 
 end TauCeti

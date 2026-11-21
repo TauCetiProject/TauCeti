@@ -235,7 +235,7 @@ theorem isTateTerminal_map_iff {S : Type*} [CommRing S] (f : R →+* S)
 
 /-- At a stopping symbol other than `Iₙ` with `m` components, `ϖ^(m+1)` divides the
 discriminant. This is the bound that makes the algorithmic Ogg exponent at least `2` there. -/
-theorem IsTateTerminal.pow_componentCount_add_one_dvd_Δ [IsDomain R] (hϖ : Prime ϖ)
+theorem IsTateTerminal.pow_componentCount_add_one_dvd_Δ (hϖ : Prime ϖ)
     {s : ReductionSymbol} (h : W.IsTateTerminal ϖ s) (hs : ∀ n, s ≠ .I n) :
     ϖ ^ (s.componentCount + 1) ∣ W.Δ := by
   match s, h with
@@ -427,7 +427,7 @@ theorem IsTateTerminal.two_le_algorithmicOggExponent (hϖ : Irreducible ϖ) {s :
   have key := addVal_le_iff_dvd.2 (h.pow_componentCount_add_one_dvd_Δ hϖ.prime hs)
   rw [hϖ.addVal_pow, hn] at key
   have : s.componentCount + 1 ≤ n := by exact_mod_cast key
-  rw [ReductionSymbol.algorithmicOggExponent_eq]
+  rw [ReductionSymbol.algorithmicOggExponent_def]
   omega
 
 /-! ### Termination -/

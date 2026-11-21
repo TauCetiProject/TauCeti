@@ -124,6 +124,22 @@ theorem isNilpotent_endOfPoint_comp_iff_of_injective [Module.Flat R V]
     simp
   · exact fun hg ↦ isNilpotent_endOfPoint_comp g φ hg
 
+/-- Nilpotence of a point action after subtracting the identity restricts along a comodule
+morphism whose scalar extension to the value algebra is injective. -/
+theorem isNilpotent_endOfPoint_sub_one_of_injective {W : Type*} [AddCommGroup W] [Module R W]
+    [Comodule R H W] (f : Hom R H V W) (g : H →ₐ[R] A)
+    (hf : Function.Injective (f.toLinearMap.baseChange A))
+    (hg : IsNilpotent (endOfPoint W g - 1)) :
+    IsNilpotent (endOfPoint V g - 1) := by
+  obtain ⟨n, hn⟩ := hg
+  have hnat : f.toLinearMap.baseChange A ∘ₗ (endOfPoint V g - 1) =
+      (endOfPoint W g - 1) ∘ₗ f.toLinearMap.baseChange A := by
+    rw [LinearMap.comp_sub, LinearMap.sub_comp, baseChange_comp_endOfPoint]
+    simp only [Module.End.one_eq_id, LinearMap.comp_id, LinearMap.id_comp]
+  have hpow := (Module.End.commute_pow_left_of_commute hnat.symm n).symm
+  refine ⟨n, LinearMap.ext fun x ↦ hf ?_⟩
+  simpa [hn] using congr($hpow x)
+
 end Comodule
 
 namespace HopfAlgebra

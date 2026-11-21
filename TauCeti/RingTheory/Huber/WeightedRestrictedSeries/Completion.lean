@@ -72,8 +72,9 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
   and its continuity.
 * `TauCeti.Huber.weightedMapCompletion_id` and `TauCeti.Huber.weightedMapCompletion_comp`: the
   functor laws.
-* `TauCeti.Huber.weightedMapCompletionEquiv_apply` and `…_symm_apply`: each direction of the
-  equivalence is the corresponding `TauCeti.Huber.weightedMapCompletion`.
+* `TauCeti.Huber.weightedMapCompletionEquiv_apply`, `…_symm_apply`, `…_coe_weightedC`, and
+  `…_coe_weightedX`: each direction of the equivalence is the corresponding
+  `TauCeti.Huber.weightedMapCompletion`, acting coefficientwise on constants and fixing variables.
 * `TauCeti.Huber.continuous_weightedMapCompletionEquiv` and its `_symm`: the equivalence is one
   of topological rings.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionFinZeroEquiv_coe`,
@@ -90,12 +91,12 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
 
 AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08` formalises restricted power series in
-`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`. It was consulted and not
-ported: everything there is stated for the *uncompleted* restricted-series subring, which
-matches Wedhorn only for complete Hausdorff rings, whereas the roadmap — and this file —
-define `A⟨X₁,…,Xₖ⟩` through the separated completion, so that the object is the intended one
-for an arbitrary Tate ring. The two descriptions are identified, where they agree, by
-`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. Nothing was copied.
+`projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`. It was consulted and not ported:
+everything there is stated for the *uncompleted* restricted-series subring, which matches Wedhorn
+only for complete Hausdorff rings, whereas this file defines `A⟨X₁,…,Xₖ⟩` through the separated
+completion, so that the object is the intended one for an arbitrary Tate ring. The two descriptions
+are identified, where they agree, by `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. Nothing
+was copied.
 
 ## References
 
@@ -171,8 +172,8 @@ ring map `φ : A → B` carrying each weight `T i` into `S i` induces `A⟨X⟩_
 
 This is the completion-level companion of `TauCeti.Huber.weightedMap`. The subring-level map is
 not enough on its own: `TauCeti.Huber.restrictedMvPowerSeriesCompletion` — the object
-`IsStronglyNoetherian` is stated over, and the one the roadmap writes `A⟨X₁,…,Xₖ⟩` — is a
-completion, so any statement natural in `A` has to live here. -/
+`IsStronglyNoetherian` is stated over, written `A⟨X₁,…,Xₖ⟩` — is a completion, so any statement
+natural in `A` has to live here. -/
 noncomputable def weightedMapCompletion (hφ : Continuous φ) (hT : IsWeightFamily T)
     (hS : IsWeightFamily S) (hTS : ∀ i, φ '' T i ⊆ S i) :
     UniformSpace.Completion (weightedRestrictedSubring T hT) →+*
@@ -299,6 +300,39 @@ theorem continuous_weightedMapCompletionEquiv_symm (e : A ≃+* B) (he : Continu
     Continuous (weightedMapCompletionEquiv e he he' hT hS hTS hST).symm :=
   (continuous_weightedMapCompletion ..).congr fun _ ↦
     (weightedMapCompletionEquiv_symm_apply ..).symm
+
+-- Not `@[simp]`: `weightedMapCompletionEquiv_apply` already simplifies the left-hand side, so
+-- `simpNF` rejects the tag (`simp` closes the equation via `weightedMapCompletionEquiv_apply`,
+-- `weightedMapCompletion_coe`, and `weightedMap_weightedC`). Stated for explicit `rw` use.
+/-- `TauCeti.Huber.weightedMapCompletionEquiv` maps the constant series `a` to the constant
+series `e a`. -/
+theorem weightedMapCompletionEquiv_coe_weightedC (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
+    (a : A) :
+    weightedMapCompletionEquiv e he he' hT hS hTS hST (weightedC T hT a) =
+      weightedC S hS (e a) :=
+  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans
+    ((weightedMapCompletion_coe he hT hS hTS _).trans
+      (congrArg ((↑) : weightedRestrictedSubring S hS →
+          UniformSpace.Completion (weightedRestrictedSubring S hS))
+        (weightedMap_weightedC he hTS a)))
+
+-- Not `@[simp]`: `weightedMapCompletionEquiv_apply` already simplifies the left-hand side, so
+-- `simpNF` rejects the tag (`simp` closes the equation via `weightedMapCompletionEquiv_apply`,
+-- `weightedMapCompletion_coe`, and `weightedMap_weightedX`). Stated for explicit `rw` use.
+/-- `TauCeti.Huber.weightedMapCompletionEquiv` fixes the `i`-th variable. -/
+theorem weightedMapCompletionEquiv_coe_weightedX (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
+    (i : Fin k) :
+    weightedMapCompletionEquiv e he he' hT hS hTS hST (weightedX T hT i) =
+      weightedX S hS i :=
+  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans
+    ((weightedMapCompletion_coe he hT hS hTS _).trans
+      (congrArg ((↑) : weightedRestrictedSubring S hS →
+          UniformSpace.Completion (weightedRestrictedSubring S hS))
+        (weightedMap_weightedX he hTS i)))
 
 end Functoriality
 

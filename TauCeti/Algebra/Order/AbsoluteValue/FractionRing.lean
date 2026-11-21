@@ -36,7 +36,7 @@ variable {R S : Type*} [CommRing R] [IsDomain R]
 /-- The multiplicative extension underlying the fraction-field absolute value. -/
 private noncomputable def fractionRingAbsHom (v : AbsoluteValue R S) : F →*₀ S :=
   (IsLocalization.toLocalizationMap R⁰ F).lift₀ v.toMonoidWithZeroHom
-    (fun s ↦ isUnit_iff_ne_zero.mpr (v.ne_zero (nonZeroDivisors.ne_zero s.2)))
+    (fun s ↦ isUnit_iff_ne_zero.mpr (v.ne_zero (nonZeroDivisors.ne_zero s.property)))
 
 private theorem fractionRingAbsHom_algebraMap (v : AbsoluteValue R S) (a : R) :
     fractionRingAbsHom F v (algebraMap R F a) = v a := by
@@ -54,7 +54,7 @@ variable [IsStrictOrderedRing S]
 
 private theorem fractionRingAbsHom_nonneg (v : AbsoluteValue R S) (x : F) :
     0 ≤ fractionRingAbsHom F v x := by
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective R x
+  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective R x
   simp only [map_div₀, fractionRingAbsHom_algebraMap]
   exact div_nonneg (v.nonneg a) (v.nonneg b)
 
@@ -66,7 +66,7 @@ noncomputable def fractionRingAbsoluteValue (v : AbsoluteValue R S) : AbsoluteVa
   eq_zero' _ := map_eq_zero _
   add_le' x y := by
     obtain ⟨a, b, d, hx, hy⟩ := IsLocalization.surj₂ R⁰ F x y
-    have hd : 0 < v d := v.pos (nonZeroDivisors.ne_zero d.2)
+    have hd : 0 < v d := v.pos (nonZeroDivisors.ne_zero d.property)
     have hxy : (x + y) * algebraMap R F d = algebraMap R F (a + b) := by
       rw [add_mul, hx, hy, map_add]
     apply (mul_le_mul_iff_left₀ hd).mp
@@ -84,7 +84,7 @@ theorem fractionRingAbsoluteValue_algebraMap (v : AbsoluteValue R S) (a : R) :
 theorem fractionRingAbsoluteValue_unique (v : AbsoluteValue R S) (w : AbsoluteValue F S)
     (hw : ∀ a, w (algebraMap R F a) = v a) : w = fractionRingAbsoluteValue F v := by
   ext x
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective R x
+  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective R x
   simp [hw]
 
 /-- Extending a nonarchimedean absolute value preserves the ultrametric inequality. -/
@@ -92,7 +92,7 @@ theorem isNonarchimedean_fractionRingAbsoluteValue (v : AbsoluteValue R S)
     (hv : IsNonarchimedean v) : IsNonarchimedean (fractionRingAbsoluteValue F v) := by
   intro x y
   obtain ⟨a, b, d, hx, hy⟩ := IsLocalization.surj₂ R⁰ F x y
-  have hd : 0 < v d := v.pos (nonZeroDivisors.ne_zero d.2)
+  have hd : 0 < v d := v.pos (nonZeroDivisors.ne_zero d.property)
   have hxy : (x + y) * algebraMap R F d = algebraMap R F (a + b) := by
     rw [add_mul, hx, hy, map_add]
   -- Unwrap the absolute value to reuse the common-denominator lemmas for its underlying

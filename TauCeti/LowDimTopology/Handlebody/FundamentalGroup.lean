@@ -9,12 +9,12 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.GroupTheory.Rank
 public import TauCeti.LowDimTopology.Handlebody.Basic
 
-import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.FundamentalGroup.FrontierProduct
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.FundamentalGroup.PlaneMinusPoints
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.GroupTheory.FreeGroup.Rank
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.Homotopy.HomotopyEquiv
@@ -37,15 +37,15 @@ radially in to its boundary circle, and all other points stay put. The fundament
 punctured plane is free on the punctures
 (`TauCeti.nonempty_fundamentalGroup_compl_mulEquiv_freeGroup`).
 
-The boundary surface of the handlebody, its frontier in `ℂ × ℝ`, carries its fundamental group:
-the handlebody deformation retracts vertically onto its top face, which lies in the boundary
-surface. Moreover the boundary surface is a deformation retract of an open neighbourhood of it in
-the handlebody, namely the complement of a core sheet at height `0`, at distance at least `1 / 4`
-from the boundary circles of the planar surface. Near the boundary circles, the deformation
-moves points radially towards the nearest circle and vertically away from height `0`, along rays
-from the edge of the core sheet; elsewhere it moves points vertically. These are the inputs for
-the Seifert–van Kampen argument showing that the fundamental group of either handlebody of a
-Heegaard splitting surjects onto that of the manifold.
+The boundary surface of the handlebody, its frontier in `ℂ × ℝ`, carries its fundamental group, as
+the boundary of any cylinder `s ×ˢ [a, b]` with closed base `s` does
+(`TauCeti.fundamentalGroupMap_frontier_prod_Icc_surjective`). Moreover the boundary surface is a
+deformation retract of an open neighbourhood of it in the handlebody, namely the complement of a
+core sheet at height `0`, at distance at least `1 / 4` from the boundary circles of the planar
+surface. Near the boundary circles, the deformation moves points radially towards the nearest circle
+and vertically away from height `0`, along rays from the edge of the core sheet; elsewhere it moves
+points vertically. These are the inputs for the Seifert–van Kampen argument showing that the
+fundamental group of either handlebody of a Heegaard splitting surjects onto that of the manifold.
 
 ## Main results
 
@@ -92,7 +92,6 @@ private theorem mem_planarSurface_iff {z : ℂ} :
 
 private theorem norm_holeCenter_le (k : Fin g) : ‖(holeCenter g k : ℂ)‖ ≤ g - 1 := by
   have hk : ((k : ℕ) : ℝ) + 1 ≤ g := by exact_mod_cast k.isLt
-  have hk₀ : (0 : ℝ) ≤ (k : ℕ) := Nat.cast_nonneg _
   rw [Complex.norm_real, Real.norm_eq_abs, abs_le, holeCenter]
   constructor <;> linarith
 
@@ -131,34 +130,30 @@ private theorem planarSurface_subset_compl_range :
 /-! ### Pushing the punctured plane onto the planar surface -/
 
 variable (g) in
-/-- Radial projection of the plane onto the closed disc of radius `g + 1`. -/
-private def clamp (z : ℂ) : ℂ := (((g : ℝ) + 1) / max ((g : ℝ) + 1) ‖z‖) • z
-
-variable (g) in
-/-- The radial push of the points inside each hole out to the boundary circle of the hole; it
-vanishes outside the holes. -/
+/-- The radial displacement pushing the points inside each hole out to the boundary circle of the
+hole: `z + holePush g z`, not `holePush g z`, lies on the circle. It vanishes outside the holes and
+at the hole centres (where `2⁻¹ / 0 = 0`). -/
 private def holePush (z : ℂ) : ℂ :=
   ∑ k : Fin g, (max (2⁻¹ / ‖z - holeCenter g k‖) 1 - 1) • (z - holeCenter g k)
 
 variable (g) in
-/-- The straight-line deformation from the identity to `clamp + holePush`. -/
+/-- The straight-line deformation from the identity to the radial retraction onto the closed disc
+of radius `g + 1` plus `holePush`. -/
 private def retract (p : unitInterval × ℂ) : ℂ :=
-  p.2 + (p.1 : ℝ) • (clamp g p.2 + holePush g p.2 - p.2)
-
-private theorem clamp_eq_self {z : ℂ} (hz : ‖z‖ ≤ g + 1) : clamp g z = z := by
-  have hR : (0 : ℝ) < g + 1 := by positivity
-  rw [clamp, max_eq_left hz, div_self hR.ne', one_smul]
+  p.2 + (p.1 : ℝ) • (radialRetraction ((g : ℝ) + 1) p.2 + holePush g p.2 - p.2)
 
 private theorem holePush_eq_zero {z : ℂ} (hz : ∀ k, 2⁻¹ ≤ ‖z - holeCenter g k‖) :
     holePush g z = 0 := by
   refine Finset.sum_eq_zero fun k _ ↦ ?_
   rw [max_eq_right (div_le_one_of_le₀ (hz k) (norm_nonneg _)), sub_self, zero_smul]
 
-private theorem holePush_eq {z : ℂ} {k : Fin g} (hk : ‖z - holeCenter g k‖ < 2⁻¹)
-    (hzk : z ≠ holeCenter g k) :
+private theorem holePush_eq {z : ℂ} {k : Fin g} (hk : ‖z - holeCenter g k‖ < 2⁻¹) :
     holePush g z = (2⁻¹ / ‖z - holeCenter g k‖ - 1) • (z - holeCenter g k) := by
-  have ha : 0 < ‖z - holeCenter g k‖ := norm_pos_iff.2 (sub_ne_zero.2 hzk)
-  rw [holePush, Finset.sum_eq_single k, max_eq_left ((one_lt_div ha).2 hk).le]
+  rw [holePush, Finset.sum_eq_single k]
+  · rcases eq_or_ne z (holeCenter g k) with rfl | hzk
+    · simp
+    · have ha : 0 < ‖z - holeCenter g k‖ := norm_pos_iff.2 (sub_ne_zero.2 hzk)
+      rw [max_eq_left ((one_lt_div ha).2 hk).le]
   · intro j _ hjk
     have h := two_le_norm_holeCenter_sub hjk
     have := norm_sub_le_norm_sub_add_norm_sub (holeCenter g j : ℂ) z (holeCenter g k)
@@ -178,12 +173,12 @@ private theorem norm_retract_sub_holeCenter {z : ℂ} {k : Fin g}
     linarith [norm_holeCenter_le k]
   have h : retract g (t, z) - holeCenter g k =
       (1 + (t : ℝ) * (2⁻¹ / ‖z - holeCenter g k‖ - 1)) • (z - holeCenter g k) := by
-    rw [retract, clamp_eq_self hz, holePush_eq hk hzk, add_sub_cancel_left, add_smul, one_smul,
-      smul_smul]
+    rw [retract, radialRetraction_of_norm_le hz, holePush_eq hk, add_sub_cancel_left, add_smul,
+      one_smul, smul_smul]
     abel
   have hc : 0 ≤ 1 + (t : ℝ) * (2⁻¹ / ‖z - holeCenter g k‖ - 1) := by
     have := (one_lt_div ha).2 hk
-    nlinarith [t.2.1]
+    nlinarith [t.property.1]
   rw [h, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc]
   field_simp
 
@@ -196,10 +191,10 @@ private theorem norm_retract_of_lt {z : ℂ} (hz : g + 1 < ‖z‖) (t : unitInt
     have := norm_sub_norm_le z (holeCenter g k : ℂ)
     linarith [norm_holeCenter_le k]
   have h : retract g (t, z) = ((1 - (t : ℝ)) + t * (((g : ℝ) + 1) / ‖z‖)) • z := by
-    rw [retract, holePush_eq_zero hholes, add_zero, clamp, max_eq_right hz.le]
+    rw [retract, holePush_eq_zero hholes, add_zero, radialRetraction_of_le_norm hz.le]
     module
   have hc : 0 ≤ (1 - (t : ℝ)) + t * (((g : ℝ) + 1) / ‖z‖) :=
-    add_nonneg (sub_nonneg.2 t.2.2) (mul_nonneg t.2.1 (by positivity))
+    add_nonneg (sub_nonneg.2 t.property.2) (mul_nonneg t.property.1 (by positivity))
   rw [h, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc]
   field_simp
 
@@ -207,7 +202,7 @@ private theorem norm_retract_of_lt {z : ℂ} (hz : g + 1 < ‖z‖) (t : unitInt
 private theorem retract_of_mem {z : ℂ} (hz : z ∈ planarSurface g) (t : unitInterval) :
     retract g (t, z) = z := by
   rw [mem_planarSurface_iff] at hz
-  rw [retract, clamp_eq_self hz.1, holePush_eq_zero hz.2]
+  rw [retract, radialRetraction_of_norm_le hz.1, holePush_eq_zero hz.2]
   simp
 
 /-- The deformation of a point that is in no hole and outside the big disc stays away from the
@@ -217,7 +212,7 @@ private theorem two_le_norm_retract_sub_of_lt {z : ℂ} (hz : g + 1 < ‖z‖) (
   have h := norm_retract_of_lt hz t
   have := norm_sub_norm_le (retract g (t, z)) (holeCenter g j : ℂ)
   have hj := norm_holeCenter_le j
-  nlinarith [t.2.1, t.2.2]
+  nlinarith [t.property.1, t.property.2]
 
 /-- Within a hole, the deformation stays at distance at least `3 / 2` from the other centres. -/
 private theorem norm_retract_sub_holeCenter_ne {z : ℂ} {k j : Fin g}
@@ -228,7 +223,7 @@ private theorem norm_retract_sub_holeCenter_ne {z : ℂ} {k j : Fin g}
   have := norm_sub_le_norm_sub_add_norm_sub (holeCenter g j : ℂ) (retract g (t, z))
     (holeCenter g k)
   rw [norm_sub_rev (holeCenter g j : ℂ) (retract g (t, z))] at this
-  nlinarith [t.2.1, t.2.2]
+  nlinarith [t.property.1, t.property.2]
 
 private theorem retract_mem_compl_range {z : ℂ}
     (hz : z ∈ (range fun k ↦ (holeCenter g k : ℂ))ᶜ) (t : unitInterval) :
@@ -241,13 +236,13 @@ private theorem retract_mem_compl_range {z : ℂ}
     · have h := norm_retract_sub_holeCenter hk (hz j) t
       rw [hj, sub_self, norm_zero] at h
       have ha : 0 < ‖z - holeCenter g j‖ := norm_pos_iff.2 (sub_ne_zero.2 (hz j))
-      nlinarith [t.2.1]
+      nlinarith [t.property.1]
     · have h := norm_retract_sub_holeCenter_ne hk (hz k) hjk t
       rw [hj, sub_self, norm_zero] at h
       norm_num at h
   · simp only [not_exists, not_lt] at hhole
     by_cases hR : ‖z‖ ≤ g + 1
-    · rw [retract, clamp_eq_self hR, holePush_eq_zero hhole] at hj
+    · rw [retract, radialRetraction_of_norm_le hR, holePush_eq_zero hhole] at hj
       exact hz j (by simpa using hj)
     · have h := two_le_norm_retract_sub_of_lt (not_le.1 hR) t j
       rw [hj, sub_self, norm_zero] at h
@@ -279,20 +274,21 @@ private theorem retract_one_mem {z : ℂ} (hz : z ∈ (range fun k ↦ (holeCent
 private theorem continuous_retract :
     Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
       retract g (p.1, p.2) := by
-  have hR : (0 : ℝ) < g + 1 := by positivity
-  unfold retract clamp holePush
-  fun_prop (disch := first
-    | exact fun _ ↦ (lt_max_of_lt_left hR).ne'
-    | exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.2 _)))
+  have hc : Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
+      radialRetraction ((g : ℝ) + 1) (p.2 : ℂ) :=
+    continuous_const.radialRetraction (fun _ ↦ by positivity) (by fun_prop)
+  unfold retract holePush
+  fun_prop (disch :=
+    exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.property _)))
 
 /-- The closed disc with `g` holes is homotopy equivalent to the plane punctured at the centres of
 its holes, by inclusion. -/
 private def planarSurfaceHomotopyEquiv :
     planarSurface g ≃ₕ ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ :=
   .ofWeakDeformationRetraction planarSurface_subset_compl_range (fun p ↦ retract g (p.1, p.2))
-    continuous_retract (fun p ↦ retract_mem_compl_range p.2.2 p.1)
+    continuous_retract (fun p ↦ retract_mem_compl_range p.2.property p.1)
     (fun _ ↦ by simp [retract])
-    (fun z ↦ retract_one_mem z.2)
+    (fun z ↦ retract_one_mem z.property)
     (fun t _ hz ↦ by rwa [retract_of_mem hz t])
 
 /-! ### The fundamental groups -/
@@ -307,24 +303,18 @@ instance : PathConnectedSpace (planarSurface g) :=
 point. -/
 theorem nonempty_fundamentalGroup_planarSurface_mulEquiv_freeGroup (z : planarSurface g) :
     Nonempty (FundamentalGroup (planarSurface g) z ≃* FreeGroup (Fin g)) := by
-  obtain ⟨e⟩ := planarSurfaceHomotopyEquiv.nonempty_fundamentalGroupMulEquiv z
-    (planarSurfaceHomotopyEquiv z)
   obtain ⟨f⟩ := nonempty_fundamentalGroup_compl_mulEquiv_freeGroup (finite_range _)
     (planarSurfaceHomotopyEquiv z)
-  exact ⟨e.trans <| f.trans <|
+  exact ⟨(planarSurfaceHomotopyEquiv.fundamentalGroupMulEquiv z).trans <| f.trans <|
     FreeGroup.freeGroupCongr (Equiv.ofInjective _ injective_holeCenter).symm⟩
 
 /-- The standard handlebody of genus `g` is homotopy equivalent to the closed disc with `g` holes,
 by projection. -/
 private theorem nonempty_handlebody_homotopyEquiv :
     Nonempty (handlebody g ≃ₕ planarSurface g) := by
-  have : ContractibleSpace (Icc (-1 : ℝ) 1) :=
-    (convex_Icc (-1 : ℝ) 1).contractibleSpace (nonempty_Icc.2 (by norm_num))
-  obtain ⟨e⟩ := ContractibleSpace.hequiv_unit (Icc (-1 : ℝ) 1)
   exact ⟨((Homeomorph.setCongr (Set.ext fun _ ↦ mem_handlebody.trans mem_prod.symm)).trans
-    (Homeomorph.Set.prod _ _)).toHomotopyEquiv.trans <|
-    ((ContinuousMap.HomotopyEquiv.refl _).prodCongr e).trans
-      (Homeomorph.prodUnique _ _).toHomotopyEquiv⟩
+    (Homeomorph.Set.prod _ _)).toHomotopyEquiv.trans
+      (ContinuousMap.HomotopyEquiv.prodIcc (⟨1, by norm_num, le_rfl⟩ : Icc (-1 : ℝ) 1)).symm⟩
 
 instance : PathConnectedSpace (handlebody g) :=
   nonempty_handlebody_homotopyEquiv.some.symm.pathConnectedSpace
@@ -334,9 +324,8 @@ every base point. -/
 theorem nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup (x : handlebody g) :
     Nonempty (FundamentalGroup (handlebody g) x ≃* FreeGroup (Fin g)) := by
   obtain ⟨e⟩ := nonempty_handlebody_homotopyEquiv (g := g)
-  obtain ⟨φ⟩ := e.nonempty_fundamentalGroupMulEquiv x (e x)
   obtain ⟨ψ⟩ := nonempty_fundamentalGroup_planarSurface_mulEquiv_freeGroup (e x)
-  exact ⟨φ.trans ψ⟩
+  exact ⟨(e.fundamentalGroupMulEquiv x).trans ψ⟩
 
 instance (x : handlebody g) : Group.FG (FundamentalGroup (handlebody g) x) :=
   have e := (nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup x).some
@@ -367,13 +356,16 @@ variable (g) in
 private def holeWeight (k : Fin g) (z : ℂ) : ℝ := max 0 (1 - 4 * (‖z - holeCenter g k‖ - 2⁻¹))
 
 variable (g) in
-/-- The boundary weight: `1` on the boundary circles of the planar surface, `0` at distance at least
-`1 / 4` from them. -/
+/-- The boundary weight: on the planar surface it is `1` on the boundary circles and `0` at distance
+at least `1 / 4` from them. It is defined on all of `ℂ`, where it can exceed `1` (for
+`g = 0` it is `5` at `‖z‖ = 2`, at distance `1` outside the only circle). -/
 private def boundaryWeight (z : ℂ) : ℝ := outerWeight g z + ∑ k, holeWeight g k z
 
 variable (g) in
 /-- The boundary weight times the unit vector pointing radially towards the nearest boundary
-circle. -/
+circle. This description is for points of the planar surface; the definition is on all of `ℂ`,
+where it can differ (for `g = 1`, `boundaryNormal 1 (1 / 4) = -1` has norm `1` inside the hole,
+where the weight is `2`). -/
 private def boundaryNormal (z : ℂ) : ℂ :=
   outerWeight g z • (max ‖z‖ 2⁻¹)⁻¹ • z -
     ∑ k, holeWeight g k z • (max ‖z - holeCenter g k‖ 2⁻¹)⁻¹ • (z - holeCenter g k)
@@ -381,9 +373,6 @@ private def boundaryNormal (z : ℂ) : ℂ :=
 private theorem outerWeight_nonneg (z : ℂ) : 0 ≤ outerWeight g z := le_max_left _ _
 
 private theorem holeWeight_nonneg (k : Fin g) (z : ℂ) : 0 ≤ holeWeight g k z := le_max_left _ _
-
-private theorem boundaryWeight_nonneg (z : ℂ) : 0 ≤ boundaryWeight g z :=
-  add_nonneg (outerWeight_nonneg z) (Finset.sum_nonneg fun k _ ↦ holeWeight_nonneg k z)
 
 private theorem outerWeight_le_boundaryWeight (z : ℂ) : outerWeight g z ≤ boundaryWeight g z :=
   le_add_of_nonneg_right (Finset.sum_nonneg fun k _ ↦ holeWeight_nonneg k z)
@@ -462,6 +451,19 @@ private theorem boundaryWeight_le_one {z : ℂ} (hz : z ∈ planarSurface g) :
   · rw [(boundaryWeight_core hk hout).1]
     exact zero_le_one
 
+/-- A point whose boundary weight is at most `1` lies in the planar surface. -/
+private theorem mem_planarSurface_of_boundaryWeight_le_one {z : ℂ} (h : boundaryWeight g z ≤ 1) :
+    z ∈ planarSurface g := by
+  refine mem_planarSurface_iff.2 ⟨?_, fun k ↦ ?_⟩
+  · by_contra hz
+    have := outerWeight_le_boundaryWeight (g := g) z
+    have : 1 < outerWeight g z := lt_max_of_lt_right (by linarith)
+    linarith
+  · by_contra hk
+    have := holeWeight_le_boundaryWeight k z
+    have : 1 < holeWeight g k z := lt_max_of_lt_right (by linarith)
+    linarith
+
 /-- **Moving along the boundary normal near a hole.** Near the `k`-th hole the point moves
 radially towards its centre, see `boundaryNormal_step`. -/
 private theorem boundaryNormal_step_hole {z : ℂ} (hz : z ∈ planarSurface g) {s : ℝ} (hs : 0 ≤ s)
@@ -534,13 +536,16 @@ private theorem boundaryNormal_step_outer {z : ℂ} {s : ℝ} (hs : 0 ≤ s)
   · rw [(boundaryWeight_outer hout').1, outerWeight, hnorm, hwo, hwr, max_eq_right (by nlinarith)]
     ring
 
-/-- **Moving along the boundary normal.** Moving a point `z` of the planar surface by `s / 4` times
-its boundary normal, for `s ≥ 0` with `(1 + s)` times its boundary weight at most `1`, stays in the
-planar surface and multiplies the boundary weight by `1 + s`. -/
-private theorem boundaryNormal_step {z : ℂ} (hz : z ∈ planarSurface g) {s : ℝ} (hs : 0 ≤ s)
+/-- **Moving along the boundary normal.** Moving a point `z` by `s / 4` times its boundary normal,
+for `s ≥ 0` with `(1 + s)` times its boundary weight at most `1`, stays in the planar surface and
+multiplies the boundary weight by `1 + s`. -/
+private theorem boundaryNormal_step {z : ℂ} {s : ℝ} (hs : 0 ≤ s)
     (hw : (1 + s) * boundaryWeight g z ≤ 1) :
     z + (s / 4) • boundaryNormal g z ∈ planarSurface g ∧
       boundaryWeight g (z + (s / 4) • boundaryNormal g z) = (1 + s) * boundaryWeight g z := by
+  have hz : z ∈ planarSurface g :=
+    mem_planarSurface_of_boundaryWeight_le_one
+      (by nlinarith [(outerWeight_nonneg z).trans (outerWeight_le_boundaryWeight (g := g) z)])
   rcases boundaryWeight_cases (g := g) z with ⟨k, hk⟩ | hout | ⟨hk, hout⟩
   · exact boundaryNormal_step_hole hz hs hw hk
   · exact boundaryNormal_step_outer hs hw hout
@@ -573,10 +578,12 @@ private theorem mem_interior_planarSurface {z : ℂ} (h : boundaryWeight g z < 1
   · rw [mem_compl_iff, mem_closedBall, dist_eq_norm, not_le]
     exact hhole k
 
-/-- A point of the plane with boundary weight `1` is not an interior point of the planar surface. -/
-private theorem notMem_interior_planarSurface {z : ℂ} (h : boundaryWeight g z = 1) :
+/-- A point of the plane with boundary weight at least `1` is not an interior point of the planar
+surface. -/
+private theorem notMem_interior_planarSurface {z : ℂ} (h : 1 ≤ boundaryWeight g z) :
     z ∉ interior (planarSurface g) := by
   intro hz
+  replace h : boundaryWeight g z = 1 := le_antisymm (boundaryWeight_le_one (interior_subset hz)) h
   -- If `max 0 a = 1` then `1 ≤ a`.
   have key {a : ℝ} (ha : max 0 a = 1) : 1 ≤ a := not_lt.1 fun h ↦ (max_lt zero_lt_one h).ne ha
   rcases boundaryWeight_cases (g := g) z with ⟨k, hk⟩ | hout | ⟨hk, hout⟩
@@ -631,7 +638,7 @@ private theorem mem_frontier_handlebody_iff {p : ℂ × ℝ} (hp : p ∈ handleb
   · rintro h ⟨hint, ht'⟩
     have : boundaryWeight g p.1 = 1 :=
       le_antisymm hw (not_lt.1 fun hlt ↦ (max_lt hlt ht').ne h)
-    exact notMem_interior_planarSurface this hint
+    exact notMem_interior_planarSurface this.ge hint
 
 variable (g) in
 /-- The deformation of the handlebody minus its core onto its boundary surface: at time `τ` a
@@ -643,30 +650,49 @@ private def boundaryDeform (τ : ℝ) (p : ℂ × ℝ) : ℂ × ℝ :=
 
 /-- The deformation stays in the handlebody and multiplies the boundary level by
 `1 + τ (m⁻¹ - 1)`. -/
-private theorem boundaryDeform_spec {p : ℂ × ℝ} (hp : p ∈ handlebody g) (hm : 0 < boundaryLevel g p)
-    {τ : ℝ} (hτ₀ : 0 ≤ τ) (hτ₁ : τ ≤ 1) :
+private theorem boundaryDeform_spec {p : ℂ × ℝ} (hp : p ∈ handlebody g) {τ : ℝ} (hτ₀ : 0 ≤ τ)
+    (hτ₁ : τ ≤ 1) :
     boundaryDeform g τ p ∈ handlebody g ∧
       boundaryLevel g (boundaryDeform g τ p) =
         (1 + τ * ((boundaryLevel g p)⁻¹ - 1)) * boundaryLevel g p := by
-  set m := boundaryLevel g p with hm_def
-  set s := τ * (m⁻¹ - 1) with hs_def
-  have hm₁ : m ≤ 1 := boundaryLevel_le_one hp
-  have hinv : 1 ≤ m⁻¹ := one_le_inv₀ hm |>.2 hm₁
-  have hs : 0 ≤ s := mul_nonneg hτ₀ (by linarith)
-  have hsm : (1 + s) * m ≤ 1 := by
-    have : 1 + s ≤ m⁻¹ := by nlinarith
-    calc (1 + s) * m ≤ m⁻¹ * m := mul_le_mul_of_nonneg_right this hm.le
-      _ = 1 := inv_mul_cancel₀ hm.ne'
-  have hw : (1 + s) * boundaryWeight g p.1 ≤ 1 :=
-    (mul_le_mul_of_nonneg_left (le_max_left _ _) (by linarith)).trans hsm
-  have ht : (1 + s) * |p.2| ≤ 1 :=
-    (mul_le_mul_of_nonneg_left (le_max_right _ _) (by linarith)).trans hsm
-  obtain ⟨hP, hW⟩ := boundaryNormal_step (mem_handlebody.1 hp).1 hs hw
-  have habs : |(1 + s) * p.2| = (1 + s) * |p.2| := by
-    rw [abs_mul, abs_of_nonneg (by linarith : (0 : ℝ) ≤ 1 + s)]
-  refine ⟨mem_handlebody.2 ⟨hP, abs_le.1 (habs ▸ ht)⟩, ?_⟩
-  rw [boundaryLevel, boundaryDeform, hW, habs,
-    ← mul_max_of_nonneg _ _ (by linarith : (0 : ℝ) ≤ 1 + s), hm_def, boundaryLevel]
+  by_cases hm : 0 < boundaryLevel g p
+  · set m := boundaryLevel g p with hm_def
+    set s := τ * (m⁻¹ - 1)
+    have hm₁ : m ≤ 1 := boundaryLevel_le_one hp
+    have hinv : 1 ≤ m⁻¹ := one_le_inv₀ hm |>.2 hm₁
+    have hs : 0 ≤ s := mul_nonneg hτ₀ (by linarith)
+    have hsm : (1 + s) * m ≤ 1 := by
+      have : 1 + s ≤ m⁻¹ := by nlinarith
+      calc (1 + s) * m ≤ m⁻¹ * m := mul_le_mul_of_nonneg_right this hm.le
+        _ = 1 := inv_mul_cancel₀ hm.ne'
+    have hw : (1 + s) * boundaryWeight g p.1 ≤ 1 :=
+      (mul_le_mul_of_nonneg_left (le_max_left _ _) (by linarith)).trans hsm
+    have ht : (1 + s) * |p.2| ≤ 1 :=
+      (mul_le_mul_of_nonneg_left (le_max_right _ _) (by linarith)).trans hsm
+    obtain ⟨hP, hW⟩ := boundaryNormal_step hs hw
+    have habs : |(1 + s) * p.2| = (1 + s) * |p.2| := by
+      rw [abs_mul, abs_of_nonneg (by linarith : (0 : ℝ) ≤ 1 + s)]
+    refine ⟨mem_handlebody.2 ⟨hP, abs_le.1 (habs ▸ ht)⟩, ?_⟩
+    rw [boundaryLevel, boundaryDeform, hW, habs,
+      ← mul_max_of_nonneg _ _ (by linarith : (0 : ℝ) ≤ 1 + s), hm_def, boundaryLevel]
+  · have h1 : boundaryWeight g p.1 ≤ boundaryLevel g p := le_max_left _ _
+    have h2 : |p.2| ≤ boundaryLevel g p := le_max_right _ _
+    have hw0 : 0 ≤ boundaryWeight g p.1 :=
+      (outerWeight_nonneg p.1).trans (outerWeight_le_boundaryWeight p.1)
+    have h0 : boundaryLevel g p = 0 := le_antisymm (not_lt.1 hm) (hw0.trans h1)
+    have hw : boundaryWeight g p.1 = 0 := le_antisymm (h0 ▸ h1) hw0
+    have ht : p.2 = 0 := abs_eq_zero.1 (le_antisymm (h0 ▸ h2) (abs_nonneg _))
+    have hout : outerWeight g p.1 = 0 :=
+      le_antisymm (hw ▸ outerWeight_le_boundaryWeight _) (outerWeight_nonneg _)
+    have hhole : ∀ k, holeWeight g k p.1 = 0 := fun k ↦
+      le_antisymm (hw ▸ holeWeight_le_boundaryWeight k _) (holeWeight_nonneg k _)
+    have hN : boundaryNormal g p.1 = 0 := by simp [boundaryNormal, hout, hhole]
+    have hD : boundaryDeform g τ p = p := by
+      obtain ⟨z, t⟩ := p
+      simp only at ht hN
+      simp [boundaryDeform, hN, ht]
+    rw [hD, h0, mul_zero]
+    exact ⟨hp, rfl⟩
 
 private theorem boundaryDeform_zero (p : ℂ × ℝ) : boundaryDeform g 0 p = p := by
   simp [boundaryDeform]
@@ -684,20 +710,22 @@ private theorem mem_boundaryNhd {x : handlebody g} : x ∈ boundaryNhd g ↔ 0 <
   Iff.rfl
 
 private theorem isOpen_boundaryNhd : IsOpen (boundaryNhd g) :=
-  isOpen_lt continuous_const (continuous_boundaryLevel.comp continuous_subtype_val)
+  isOpen_lt continuous_const (continuous_boundaryLevel.comp continuous_subtypeVal)
 
 /-- The deformation of the complement of the core onto the boundary surface, as a continuous map
 of subtypes. -/
 private def boundaryDeformMap : C(unitInterval × boundaryNhd g, boundaryNhd g) where
   toFun q := ⟨⟨boundaryDeform g q.1 q.2,
-      (boundaryDeform_spec q.2.1.2 q.2.2 q.1.2.1 q.1.2.2).1⟩, by
-    rw [mem_boundaryNhd, (boundaryDeform_spec q.2.1.2 q.2.2 q.1.2.1 q.1.2.2).2]
-    exact mul_pos (by nlinarith [q.1.2.1, one_le_inv₀ q.2.2 |>.2 (boundaryLevel_le_one q.2.1.2)])
-      q.2.2⟩
+      (boundaryDeform_spec q.2.val.property q.1.property.1 q.1.property.2).1⟩, by
+    rw [mem_boundaryNhd, (boundaryDeform_spec q.2.val.property q.1.property.1 q.1.property.2).2]
+    exact mul_pos
+      (by nlinarith [q.1.property.1,
+                one_le_inv₀ q.2.property |>.2 (boundaryLevel_le_one q.2.val.property)])
+      q.2.property⟩
   continuous_toFun := by
     refine (Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _)
     unfold boundaryDeform
-    fun_prop (disch := exact fun q ↦ q.2.2.ne')
+    fun_prop (disch := exact fun q ↦ q.2.property.ne')
 
 private theorem boundaryDeformMap_apply_coe (q : unitInterval × boundaryNhd g) :
     ((boundaryDeformMap q : handlebody g) : ℂ × ℝ) = boundaryDeform g q.1 q.2 :=
@@ -705,14 +733,16 @@ private theorem boundaryDeformMap_apply_coe (q : unitInterval × boundaryNhd g) 
 
 private theorem mem_frontier_boundaryDeformMap_one (x : boundaryNhd g) :
     ((boundaryDeformMap (1, x) : handlebody g) : ℂ × ℝ) ∈ frontier (handlebody g) := by
-  rw [mem_frontier_handlebody_iff (boundaryDeformMap (1, x)).1.2, boundaryDeformMap_apply_coe]
-  have h := (boundaryDeform_spec (τ := 1) x.1.2 x.2 zero_le_one le_rfl).2
-  rwa [one_mul, add_sub_cancel, inv_mul_cancel₀ x.2.ne'] at h
+  rw [mem_frontier_handlebody_iff (boundaryDeformMap (1, x)).val.property,
+      boundaryDeformMap_apply_coe]
+  have h := (boundaryDeform_spec (τ := 1) x.val.property zero_le_one le_rfl).2
+  rwa [one_mul, add_sub_cancel, inv_mul_cancel₀ x.property.ne'] at h
 
 /-! ### Path connectedness of the boundary surface -/
 
-/-- The point `(g + 1, 1)` of the boundary surface, where the outer boundary circle meets the
-top face. -/
+/-- The point `g + 1` of the outer boundary circle lies in the planar surface; with height `1` it
+is the point `(g + 1, 1)` of the boundary surface where the outer boundary circle meets the top
+face. -/
 private theorem outer_mem_planarSurface : ((g + 1 : ℝ) : ℂ) ∈ planarSurface g := by
   have hn : ‖((g + 1 : ℝ) : ℂ)‖ = g + 1 := by
     rw [Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by positivity)]
@@ -800,12 +830,13 @@ theorem exists_deformation_frontier_handlebody (g : ℕ) :
         ∀ t (x : V), ((x : handlebody g) : ℂ × ℝ) ∈ frontier (handlebody g) → F (t, x) = x := by
   have hsub : {x : handlebody g | (x : ℂ × ℝ) ∈ frontier (handlebody g)} ⊆ boundaryNhd g :=
     fun x hx ↦ by
-      rw [mem_boundaryNhd, (mem_frontier_handlebody_iff x.2).1 hx]
+      rw [mem_boundaryNhd, (mem_frontier_handlebody_iff x.property).1 hx]
       exact zero_lt_one
   have hfix : ∀ t (x : boundaryNhd g), ((x : handlebody g) : ℂ × ℝ) ∈ frontier (handlebody g) →
       boundaryDeformMap (t, x) = x := fun t x hx ↦ Subtype.ext <| Subtype.ext <| by
     rw [boundaryDeformMap_apply_coe]
-    exact boundaryDeform_of_boundaryLevel_eq_one ((mem_frontier_handlebody_iff x.1.2).1 hx) _
+    exact boundaryDeform_of_boundaryLevel_eq_one ((mem_frontier_handlebody_iff x.val.property).1 hx)
+        _
   have hconn : IsPathConnected {x : handlebody g | (x : ℂ × ℝ) ∈ frontier (handlebody g)} :=
     (isPathConnected_frontier_handlebody g).preimage_coe (isClosed_handlebody g).frontier_subset
   refine ⟨boundaryNhd g, isOpen_boundaryNhd, ?_, hsub, boundaryDeformMap,
@@ -816,51 +847,35 @@ theorem exists_deformation_frontier_handlebody (g : ℕ) :
   refine ⟨y, hsub hy, fun {x} hx ↦ ?_⟩
   have hpath : JoinedIn (boundaryNhd g) x (boundaryDeformMap (1, ⟨x, hx⟩)) :=
     ⟨⟨⟨fun t ↦ boundaryDeformMap (t, ⟨x, hx⟩),
-      continuous_subtype_val.comp (boundaryDeformMap.continuous.comp
+      continuous_subtypeVal.comp (boundaryDeformMap.continuous.comp
         (continuous_id.prodMk continuous_const))⟩,
       by simp [Subtype.ext_iff, boundaryDeformMap_apply_coe, boundaryDeform_zero], rfl⟩,
-      fun t ↦ (boundaryDeformMap (t, ⟨x, hx⟩)).2⟩
+      fun t ↦ (boundaryDeformMap (t, ⟨x, hx⟩)).property⟩
   exact ((hconn.joinedIn y hy _ (mem_frontier_boundaryDeformMap_one ⟨x, hx⟩)).mono hsub).trans
     hpath.symm
 
 /-- **The boundary surface carries the fundamental group of the handlebody.** At every point of
 the boundary surface of the standard handlebody, the inclusion of the boundary surface induces a
-surjection of fundamental groups: the handlebody deformation retracts vertically onto its top
-face, which lies in the boundary surface. -/
+surjection of fundamental groups. The handlebody is the cylinder `planarSurface g ×ˢ [-1, 1]`, so
+this is a case of `TauCeti.fundamentalGroupMap_frontier_prod_Icc_surjective`. -/
 theorem fundamentalGroup_map_frontier_handlebody_surjective
     (x : {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) :
     Function.Surjective (FundamentalGroup.map
       (ContinuousMap.subtypeVal {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) x) := by
-  have : PathConnectedSpace {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)} :=
-    isPathConnected_iff_pathConnectedSpace.1 <|
-      (isPathConnected_frontier_handlebody g).preimage_coe (isClosed_handlebody g).frontier_subset
-  -- The top face is a weak deformation retract of the handlebody.
-  have hTH : planarSurface g ×ˢ {(1 : ℝ)} ⊆ handlebody g := fun q hq ↦
-    mem_handlebody.2 ⟨hq.1, by rw [mem_singleton_iff.1 hq.2]; norm_num⟩
-  let e := ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction hTH
-    (fun q : unitInterval × handlebody g ↦ ((q.2 : ℂ × ℝ).1,
-      (q.2 : ℂ × ℝ).2 + q.1 * (1 - (q.2 : ℂ × ℝ).2))) (by fun_prop)
-    (fun q ↦ by
-      obtain ⟨hz, ht⟩ := mem_handlebody.1 q.2.2
-      refine mem_handlebody.2 ⟨hz, ⟨?_, ?_⟩⟩ <;> nlinarith [q.1.2.1, q.1.2.2, ht.1, ht.2])
-    (fun x ↦ by simp) (fun x ↦ ⟨(mem_handlebody.1 x.2).1, by simp⟩)
-    (fun t x hx ↦ by
-      obtain ⟨hz, ht⟩ := hx
-      rw [mem_singleton_iff.1 ht]
-      exact ⟨hz, by simp⟩)
-  let j : C(planarSurface g ×ˢ {(1 : ℝ)},
-      {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) :=
-    ⟨fun q ↦ ⟨⟨q, hTH q.2⟩, mem_frontier_of_abs_eq_one q.2.1
-      (by rw [mem_singleton_iff.1 q.2.2, abs_one])⟩, by fun_prop⟩
-  have hfac : (ContinuousMap.subtypeVal _).comp j = e.toFun := ContinuousMap.ext fun q ↦
-    Subtype.ext (ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_apply _ _ _ _ _ _ _
-      q).symm
-  let q₀ : planarSurface g ×ˢ {(1 : ℝ)} :=
-    ⟨(((g + 1 : ℝ) : ℂ), 1), outer_mem_planarSurface, mem_singleton 1⟩
-  -- The bijection induced by the inclusion of the top face factors through the boundary surface.
-  have hbij := e.fundamentalGroup_map_bijective q₀
-  rw [← hfac, _root_.FundamentalGroup.map_comp, MonoidHom.coe_comp] at hbij
-  exact FundamentalGroup.map_surjective_of_path _ (PathConnectedSpace.somePath (j q₀) x)
-    hbij.2.of_comp
+  -- The cylinder statement, transported along `handlebody g = planarSurface g ×ˢ [-1, 1]`; the
+  -- inclusion depends on the closedness proof, whose type also mentions the subset.
+  have hcyl : ∀ (K : Set (ℂ × ℝ)) (hK : IsClosed K), K = planarSurface g ×ˢ Icc (-1 : ℝ) 1 →
+      ∀ z : frontier K, Function.Surjective
+        (FundamentalGroup.map (ContinuousMap.inclusion hK.frontier_subset) z) := by
+    rintro K hK rfl
+    exact fundamentalGroupMap_frontier_prod_Icc_surjective (isCompact_planarSurface g).isClosed
+  have h := hcyl _ (isClosed_handlebody g) (Set.ext fun _ ↦ mem_handlebody) ⟨x.val.val, x.property⟩
+  -- The inclusion of the frontier factors through the boundary surface inside the handlebody.
+  let φ : C(frontier (handlebody g), {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) :=
+    ⟨fun z ↦ ⟨⟨z, (isClosed_handlebody g).frontier_subset z.property⟩, z.property⟩, by fun_prop⟩
+  rw [show ContinuousMap.inclusion (isClosed_handlebody g).frontier_subset =
+    (ContinuousMap.subtypeVal _).comp φ from rfl, _root_.FundamentalGroup.map_comp,
+    MonoidHom.coe_comp] at h
+  exact h.of_comp
 
 end TauCeti

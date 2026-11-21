@@ -3,13 +3,23 @@ name: pick-runner
 # Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
 # advertise capacity through registered runners with class, permanent machine,
 # and ephemeral instance labels. Concurrent pickers can observe the same free slot.
+# The configured shared PR backlog can wait for busy online fleet runners.
 # Capacity observations are advisory. A partial Namespace count below its cap
 # cannot establish spare capacity; unknown pools retain native GitHub fallback.
 # Picker/control jobs do not count towards the build-job cap.
 # Preserve the repository API reserve for status and merge automation.
 on:
+  workflow_dispatch:
+    inputs:
+      control_smoke:
+        description: Verify both reserved queue-control guests
+        type: boolean
+        default: true
   workflow_call:
     inputs:
+      control_smoke:
+        type: boolean
+        default: false
       fleet-staging:
         description: Use staging preferences and eligible dedicated machines; takes precedence over fleet-pr
         type: boolean
@@ -19,30 +29,25 @@ on:
         type: boolean
         default: false
       pr-head:
-        description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
+        description: Immutable PR head carried by the caller; PR fleet placement uses the shared pool
         type: string
         default: ""
-      pr-number:
-        description: Ordinary PR whose manual local-test route should be checked before selection
-        type: number
-        default: 0
     secrets:
-      SELF_TESTED_APP_ID: { required: false }
-      SELF_TESTED_APP_KEY: { required: false }
       FLEET_READ_TOKEN: { required: false }
+      FLEET_INVENTORY_APP_PRIVATE_KEY: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
+      namespace-slot:
+        description: Namespace build concurrency slot, below the runtime cap (maximum 64)
+        value: ${{ jobs.pick.outputs.namespace-slot }}
       hosted-slot:
-        description: Native GitHub bulk-build concurrency slot, from 0 through 18
+        description: Native GitHub bulk-build concurrency slot, bounded by HOSTED_RUNNER_BUDGET (1 through 19)
         value: ${{ jobs.pick.outputs.hosted-slot }}
-      skip-pr-build:
-        description: Eligible manual self-tested assertion for this exact PR head
-        value: ${{ jobs.pick.outputs.skip-pr-build }}
       runner:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
       pool:
-        description: "Destination key: github, namespace, or a machine name from services.fleet; valid only for the matching attempt"
+        description: "Destination key: github, fleet, or a named machine preference; valid only for the matching attempt"
         value: ${{ jobs.pick.outputs.pool }}
       attempt:
         description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
@@ -57,20 +62,23 @@ on:
         description: Observed queued or running Namespace build jobs, excluding control jobs; empty when unknown
         value: ${{ jobs.pick.outputs.namespace_busy }}
       namespace_cap:
-        description: Approximate shared Namespace build-job cap used for this selection
+        description: Runtime Namespace cap; build jobs share the corresponding scheduler groups
         value: ${{ jobs.pick.outputs.namespace_cap }}
 
 jobs:
   pick:
+    if: ${{ !inputs.control_smoke }}
     # Every picker must reach the fleet without first waiting for a GitHub build slot.
-    # Keep control work small, high priority, and isolated to this workflow run.
-    # An operator can recover selection during a Namespace outage without a PR.
-    runs-on: ${{ vars.PICKER_GITHUB_FALLBACK == 'true' && 'ubuntu-24.04' || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    # Staging and Fleet PR pickers retain the reserved queue-control host; ordinary pickers use the Fleet PR
+    # pool when Fleet CI is enabled so GitHub-hosted backlogs cannot starve selection.
+    # Set vars.PICKER_GITHUB_FALLBACK='true' to fall back to ubuntu-24.04 without a PR.
+    # No App private key enters this job.
+    runs-on: ${{ (inputs.fleet-staging || inputs.fleet-pr) && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || ((vars.FLEET_CI_ENABLED == 'true' && vars.PICKER_GITHUB_FALLBACK != 'true') && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet-pr"]}') || 'ubuntu-24.04') }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
       hosted-slot: ${{ steps.hosted-slot.outputs.slot }}
-      skip-pr-build: ${{ steps.local-route.outputs.skip }}
+      namespace-slot: ${{ steps.pick.outputs.namespace_slot }}
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
@@ -83,11 +91,15 @@ jobs:
         id: hosted-slot
         env:
           HOSTED_RUN_ID: ${{ github.run_id }}
+          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '12' }}
         run: |
           python3 - <<'PYTHON'
           import os
+          raw = (os.environ.get("BUDGET") or "").strip()
+          slots = int(raw) if raw.isdigit() else 12
+          slots = max(1, min(19, slots))
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 19), file=output)
+              print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % slots), file=output)
           PYTHON
       - name: Checkout workflow-pinned runner selector
         uses: actions/checkout@v4
@@ -99,43 +111,56 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
-      - name: Read the allowlist using the existing organization App
-        id: team-token
-        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
+      # The runner inventory read uses a read-only App (organization self-hosted runners:
+      # read) when vars.FLEET_INVENTORY_APP_ID is set. Until then, or if minting fails, the
+      # FLEET_READ_TOKEN secret is used; with neither, the picker keeps GitHub-hosted capacity.
+      - name: Mint the read-only runner inventory token
+        id: inventory
+        if: ${{ vars.FLEET_INVENTORY_APP_ID != '' }}
         continue-on-error: true
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
         with:
-          app-id: ${{ secrets.SELF_TESTED_APP_ID }}
-          private-key: ${{ secrets.SELF_TESTED_APP_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-members: read
-      - name: Decide the manual PR route before runner selection
-        id: local-route
-        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          TAUCETI_TEAM_TOKEN: ${{ steps.team-token.outputs.token }}
-        run: python3 -m tauceti_tools script self_tested.py --pr '${{ inputs.pr-number }}'
+          app-id: ${{ vars.FLEET_INVENTORY_APP_ID }}
+          private-key: ${{ secrets.FLEET_INVENTORY_APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          permission-organization-self-hosted-runners: read
       - name: Select destination in configured preference order
-        if: steps.local-route.outputs.skip != 'true'
         id: pick
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
-          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
+          BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '12' }}
+          NAMESPACE_ENABLED: ${{ vars.NAMESPACE_ENABLED }}
           NAMESPACE_BUILD_CAP: ${{ vars.NAMESPACE_BUILD_CAP }}
           API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
           FLEET_JOB_KIND: ${{ inputs.fleet-staging && 'staging' || inputs.fleet-pr && 'pr' || 'other' }}
           PR_HEAD: ${{ inputs.pr-head }}
           FLEET_CI_ENABLED: ${{ vars.FLEET_CI_ENABLED }}
           FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
-          FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+          FLEET_READ_TOKEN: ${{ steps.inventory.outputs.token || secrets.FLEET_READ_TOKEN }}
         run: python3 scripts/fleet_runner.py --route
+
+  queue-control-smoke:
+    if: ${{ inputs.control_smoke && github.event_name == 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        slot: [1, 2]
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - tauceti-fleet-queue-control
+      - fleet-74773fc7f54d4877add11d80113fe340
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check fresh reserved control capacity
+        run: |
+          printf 'Queue control runner=%s slot=%s\n' "$RUNNER_NAME" '${{ matrix.slot }}'
+          test ! -e .lake
+          ! mountpoint -q /cache

@@ -26,7 +26,7 @@ Continuous maps from a compact space into a discrete `p`-primary torsion group a
 
 * `TauCeti.quotientTorsionContinuousMulEquiv`: the quotient of `A` by its torsion subgroup is
   topologically isomorphic to `M`.
-* `TauCeti.IsPPrimaryTorsion.continuousMap`: compact-to-discrete continuous maps preserve
+* `IsAddPGroup.continuousMap`: compact-to-discrete continuous maps preserve
   `p`-primary torsion.
 -/
 
@@ -71,11 +71,11 @@ variable {p : ℕ}
 /-- The continuous maps from a compact space into a discrete `p`-primary torsion group form a
 `p`-primary torsion group: such a map has finite image, so one power of `p` kills all its values
 at once. -/
-theorem IsPPrimaryTorsion.continuousMap {V : Type*} [AddCommGroup V] [TopologicalSpace V]
-    [DiscreteTopology V] (h : IsPPrimaryTorsion p V) (X : Type*)
-    [TopologicalSpace X] [CompactSpace X] : IsPPrimaryTorsion p C(X, V) := by
-  refine isPPrimaryTorsion_iff.2 fun f ↦ ?_
-  choose k hk using isPPrimaryTorsion_iff.1 h
+theorem _root_.IsAddPGroup.continuousMap {V : Type*} [AddGroup V] [TopologicalSpace V]
+    [DiscreteTopology V] (h : IsAddPGroup p V) (X : Type*)
+    [TopologicalSpace X] [CompactSpace X] : IsAddPGroup p C(X, V) := by
+  refine fun f ↦ ?_
+  choose k hk using h
   have hfin : (Set.range f).Finite := (isCompact_range f.continuous).finite_of_discrete
   refine ⟨hfin.toFinset.sup k, ContinuousMap.ext fun x ↦ ?_⟩
   obtain ⟨c, hc⟩ := pow_dvd_pow p

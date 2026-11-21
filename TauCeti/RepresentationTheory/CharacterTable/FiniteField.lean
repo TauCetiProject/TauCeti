@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.FiniteField
-public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.Algebra.MonoidAlgebra.Trace
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
+public import TauCeti.RingTheory.Artinian.Subalgebra
 
 /-!
 # A finite field containing the roots of unity splits the centre of the group algebra
@@ -138,7 +138,7 @@ include hexp
 the structure theorem. -/
 theorem center_pow_card (z : Subalgebra.center K (MonoidAlgebra K G)) :
     z ^ Fintype.card K = z :=
-  Subtype.ext (by simpa using pow_card_eq_self_of_mem_center hexp z.2)
+  Subtype.ext (by simpa using pow_card_eq_self_of_mem_center hexp z.property)
 
 /-- The centre of `K[G]` is reduced. -/
 theorem isReduced_center : IsReduced (Subalgebra.center K (MonoidAlgebra K G)) :=

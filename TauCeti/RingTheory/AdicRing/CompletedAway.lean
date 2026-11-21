@@ -17,6 +17,7 @@ public import TauCeti.RingTheory.AdicRing.Basic
 
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Away.Quotient
+import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
 # The completed localisation of an adic ring
@@ -191,7 +192,7 @@ theorem algebraMap_mem_pow_iff (n : ℕ) {x : Localization.Away f} :
         (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n ↔
       x ∈ (IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)) ^ n := by
   rw [map_algebraMap_eq, ← Ideal.map_pow]
-  exact AdicCompletion.algebraMap_mem_map_pow_iff (fg_map A f) n
+  exact AdicCompletion.algebraMap_mem_map_pow_iff n
 
 /-- The image of `A_f` in the completed localisation `A_{f}` is dense. -/
 theorem denseRange_algebraMap :
@@ -263,6 +264,7 @@ private theorem uniformContinuous_awayLift {u : A →+* B} (hu : Continuous u)
     Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by simpa [IsLocalization.Away.lift_eq] using hn ha
   exact hle hx
 
+omit [IsTopologicalRing B] in
 /-- The **universal property of the completed localisation**: a continuous ring homomorphism
 `u : A → B` into a complete Hausdorff linearly topologised ring with `u f` a unit extends to a
 continuous ring homomorphism `A_{f} → B`. -/
@@ -303,13 +305,15 @@ theorem lift_comp_algebraMap (u : A →+* B) (hu : Continuous u) (hf : IsUnit (u
     (lift u hu hf).comp (algebraMap A (CompletedAway A f)) = u :=
   RingHom.ext (lift_algebraMap u hu hf)
 
+omit [IsTopologicalRing B] in
 /-- The **universal property of the completed localisation**: a continuous ring homomorphism
 `u : A → B` into a complete Hausdorff linearly topologised ring with `u f` a unit factors
 uniquely through a continuous ring homomorphism `A_{f} → B`. -/
 theorem existsUnique_lift (u : A →+* B) (hu : Continuous u) (hf : IsUnit (u f)) :
     ∃! g : CompletedAway A f →+* B,
-      Continuous g ∧ g.comp (algebraMap A (CompletedAway A f)) = u :=
-  ⟨lift u hu hf, ⟨continuous_lift u hu hf, lift_comp_algebraMap u hu hf⟩,
+      Continuous g ∧ g.comp (algebraMap A (CompletedAway A f)) = u := by
+  have : IsTopologicalRing B := IsLinearTopology.isTopologicalRing
+  exact ⟨lift u hu hf, ⟨continuous_lift u hu hf, lift_comp_algebraMap u hu hf⟩,
     fun _ hg ↦ ringHom_ext A f hg.1 (continuous_lift u hu hf)
       (hg.2.trans (lift_comp_algebraMap u hu hf).symm)⟩
 

@@ -96,7 +96,7 @@ private theorem IsJordanSplitting.sum_stdAddChar_dotProduct_two_pow_smul_toMatri
     mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i two_ne_zero)
   have hCs : C.IsSymm := IsSymm.of_smul h2 (hC ▸ hB.restrict (N i))
   have hdet : IsUnit (C.toMatrix d).det :=
-    d.isUnit_det_of_isPerfPair C ((h.isModular i).isPerfPair_of_smul_eq h2 hC)
+    d.isUnit_det_of_isPerfPair d C ((h.isModular i).isPerfPair_of_smul_eq h2 hC)
   obtain ⟨m, rfl⟩ : ∃ m, k = i + m := ⟨k - i, by omega⟩
   have hscale := PadicInt.sum_stdAddChar_dotProduct_map_pow_smul_mulVec (p := 2) (C.toMatrix d)
     (rfl : i + m = i + m)
@@ -140,7 +140,7 @@ theorem IsJordanSplitting.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_prod
   have hP := DirectSum.isInternal_biSup_submodule_of_iSupIndep (Set.Iic j)
     (h.isInternal.submodule_iSupIndep.comp Subtype.val_injective)
   let d' (i : Set.Iic j) : Basis (α i) ℤ_[2] ((N i).comap (⨆ i ∈ Set.Iic j, N i).subtype) :=
-    (d i).map (Submodule.comapSubtypeEquivOfLe (le_biSup N i.2)).symm
+    (d i).map (Submodule.comapSubtypeEquivOfLe (le_biSup N i.property)).symm
   -- In the basis collected from the `d i`, the Gram matrix is block diagonal.
   have hgram : (B.restrict (⨆ i ∈ Set.Iic j, N i)).toMatrix (hP.collectedBasis d') =
       Matrix.blockDiagonal' fun i : Set.Iic j ↦ (2 : ℤ_[2]) ^ (i : ℕ) • (C i).toMatrix (d i) := by
@@ -149,14 +149,14 @@ theorem IsJordanSplitting.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_prod
     congr 1
     funext i
     refine Matrix.ext fun a a' ↦ ?_
-    simpa [toMatrix_apply, d'] using (LinearMap.congr_fun₂ (hC i i.2) (d i a) (d i a')).symm
+    simpa [toMatrix_apply, d'] using (LinearMap.congr_fun₂ (hC i i.property) (d i a) (d i a')).symm
   rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq _ (hP.collectedBasis d') b, hgram,
     Matrix.blockDiagonal'_map _ _ (map_zero _), Matrix.sum_addChar_dotProduct_blockDiagonal'_mulVec,
     Finset.prod_subtype (Finset.Iic j) (p := (· ∈ Set.Iic j)) (by simp)]
   exact Fintype.prod_congr _ _ fun i ↦
     h.sum_stdAddChar_dotProduct_two_pow_smul_toMatrix_map_mulVec_eq hB
-      (by have := Set.mem_Iic.mp i.2; omega)
-      (hC i i.2) (d i) (hw i i.2)
+      (by have := Set.mem_Iic.mp i.property; omega)
+      (hC i i.property) (d i) (hw i i.property)
 
 /-- **The signs and oddities of the lower constituents of a dyadic Jordan splitting.** Let `B` and
 `B'` be isometric symmetric forms on finite free `ℤ_[2]`-modules, with Jordan splittings `N` and

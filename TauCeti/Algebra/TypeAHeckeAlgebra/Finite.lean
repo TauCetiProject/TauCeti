@@ -69,7 +69,6 @@ map is injective, so that the finite presentation is isomorphic to the stage, is
   algebra the right block map is the strand shift.
 * `TauCeti.TypeAHeckeAlgebra.algebraMap_injective`: the presentation does not collapse the
   scalars.
-* `TauCeti.TypeAHeckeAlgebra.T_ne_algebraMap`: a generator is not a scalar when `q ≠ -q⁻¹`.
 
 ## References
 
@@ -215,6 +214,11 @@ theorem val_inv_unitT (i : Fin (n - 1)) :
 
 /-- Each generator of the type-A Hecke algebra is a unit. -/
 theorem isUnit_T (i : Fin (n - 1)) : IsUnit (T q i) := (unitT q i).isUnit
+
+/-- The inverses of two generators on disjoint pairs of strands commute. -/
+theorem commute_inv_unitT {i j : Fin (n - 1)} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
+    Commute (↑(unitT q i)⁻¹ : TypeAHeckeAlgebra R q n) ↑(unitT q j)⁻¹ :=
+  (commute_T (q := q) h).units_inv_left (u := unitT q i) |>.units_inv_right (u := unitT q j)
 
 end Units
 
@@ -433,12 +437,6 @@ theorem algebraMap_injective : Function.Injective (algebraMap R (TypeAHeckeAlgeb
 
 instance [Nontrivial R] : Nontrivial (TypeAHeckeAlgebra R q n) :=
   algebraMap_injective.nontrivial
-
-/-- A generator is not a scalar when the two eigenvalues `q` and `-q⁻¹` are distinct. -/
-theorem T_ne_algebraMap (hq : (q : R) ≠ -↑q⁻¹) (i : Fin (n - 1)) (r : R) :
-    T q i ≠ algebraMap R _ r := fun h ↦
-  InfiniteTypeAHeckeAlgebra.T_ne_algebraMap hq i r <| by
-    simpa using congrArg (toInfinite R q n) h
 
 /-- Over a nontrivial base ring, no generator vanishes. -/
 @[simp]

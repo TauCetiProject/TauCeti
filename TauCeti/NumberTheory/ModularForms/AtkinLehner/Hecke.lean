@@ -112,9 +112,9 @@ private lemma heckeSlashSum_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
   rw [← HeckeCoset.mk_rep D, coprimeDetCoset_mk, HeckeCoset.rep_def] at hD
   rw [← hmap, ← ModularForm.rat_slash, ← ModularForm.rat_slash]
   have hnorm := h.mem_normalizer_map_mapGL hQN hw
-  obtain ⟨A, hA, -⟩ := (mem_Delta0_iff N).mp (Quotient.out D).2
+  obtain ⟨A, hA, -⟩ := (mem_Delta0_iff N).mp (Quotient.out D).property
   exact heckeSlashSum_slash_of_mem_normalizer k D hnorm hnorm
-    (h.inv_mul_mul_mem_doubleCoset hQN hw (Quotient.out D).2 hA (hD A hA)) f hf
+    (h.inv_mul_mul_mem_doubleCoset hQN hw (Quotient.out D).property hA (hD A hA)) f hf
 
 /-- **The Atkin–Lehner operator `W_Q` commutes with the Hecke operator of a double coset of
 determinant coprime to `Q`**, on `M_k(Γ₀(N))`. -/
@@ -209,7 +209,7 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
           ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) ((Gamma0Map N).toHomUnits ⟨A, hA⟩) = 1 ∧
           ∃ B ∈ Gamma1 N, φ (natDiagGL 2 ![1, n]) * atkinLehnerGL h.pos hM =
             atkinLehnerGL h.pos hM * mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) := by
-  set m := N / Q with hm
+  set m := N / Q
   have hNm : N = Q * m := (Nat.mul_div_cancel' h.dvd).symm
   have hN : (N : ℤ) = Q * m := by exact_mod_cast hNm
   set a : ℤ := Nat.gcdA Q m

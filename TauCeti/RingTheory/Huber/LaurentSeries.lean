@@ -16,7 +16,7 @@ For a field `K` the formal Laurent series `K⸨X⸩`, with the `X`-adic topology
 `LaurentSeries.valued` instance, are a Tate ring: the power series are an open subring, the
 ideal `(X)` is a finitely generated ideal of definition, and `X` itself is a pseudouniformiser.
 
-`K⸨X⸩` is the equal-characteristic Tate example of the roadmap's Layer-0 Examples row.
+`K⸨X⸩` is the standard equal-characteristic example of a Tate ring.
 
 ## Main definitions
 
@@ -45,7 +45,7 @@ form and the `ℤᵐ⁰` bounds the rest of the file uses.
 
 ## Provenance
 
-New work; the roadmap names no source for this row.
+New work.
 
 ## References
 
@@ -135,7 +135,7 @@ private theorem ball_mem_nhds (n : ℕ) :
 private theorem exists_ball_subset {s : Set K⸨X⸩} (hs : s ∈ 𝓝 (0 : K⸨X⸩)) :
     ∃ c : ℤᵐ⁰, c ≠ 0 ∧ {x : K⸨X⸩ | Valued.v x < c} ⊆ s := by
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-  exact ⟨MonoidWithZeroHom.ValueGroup₀.embedding γ.1, by simp,
+  exact ⟨MonoidWithZeroHom.ValueGroup₀.embedding γ.val, by simp,
     fun x hx ↦ hγ (Valued.v.restrict_lt_iff_lt_embedding.mpr hx)⟩
 
 /-- The subspace topology on `K⟦X⟧ ⊆ K⸨X⸩` is the `X`-adic topology. -/

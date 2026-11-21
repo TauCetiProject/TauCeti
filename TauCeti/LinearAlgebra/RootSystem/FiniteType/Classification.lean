@@ -20,10 +20,10 @@ import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
 /-!
 # The Cartan-Killing classification of finite-type Cartan matrices
 
-This file proves the central theorem of Layer 5 of the root systems roadmap: every nonempty
-connected finite-type Cartan matrix reindexes to the standard Cartan matrix of a **unique valid**
-`DynkinType`, and every base of an irreducible reduced crystallographic finite root system has a
-unique valid `DynkinType` (`TauCeti.existsUnique_dynkinType`).
+This file proves the Cartan-Killing classification: every nonempty connected finite-type Cartan
+matrix reindexes to the standard Cartan matrix of a **unique valid** `DynkinType`, and every base
+of an irreducible reduced crystallographic finite root system has a unique valid `DynkinType`
+(`TauCeti.existsUnique_dynkinType`).
 
 The proof assembles the four geometric branches established in the subdiagram modules:
 1. **Triple edge**:
@@ -71,7 +71,6 @@ statements in `TauCeti.LinearAlgebra.RootSystem.FiniteType.RationalClassificatio
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1.5 and §4.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Ch. III, §11.
-* `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, Layer 5.
 -/
 
 public section
@@ -129,12 +128,20 @@ section RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
-  [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] [Nonempty ι]
+  [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
 
 /-- **The Cartan-Killing classification, existence and uniqueness of the Dynkin type.** Every
 irreducible reduced crystallographic finite root system has a unique valid `DynkinType`. -/
 theorem existsUnique_dynkinType (b : P.Base) :
     ∃! t : DynkinType, t.Valid ∧ HasCartanType P b t := by
+  -- An irreducible root system has a root: its roots span the nontrivial module `M`.
+  have : Nonempty ι := by
+    by_contra h
+    have := not_nonempty_iff.1 h
+    have := RootPairing.IsIrreducible.nontrivial P
+    have htop := RootPairing.IsRootSystem.span_root_eq_top (P := P)
+    rw [Set.range_eq_empty, Submodule.span_empty] at htop
+    exact bot_ne_top htop
   obtain ⟨t, ⟨ht, e, he⟩, -⟩ :=
     (isFiniteType_cartanMatrix b).existsUnique_dynkinType
       (connected_diagramGraph_cartanMatrix b)
@@ -190,7 +197,7 @@ theorem _root_.RootPairing.Base.classifiedDynkinType_eq_classifiedDynkinType (b 
 
 variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {P₂ : RootPairing ι₂ R M₂ N₂} [Finite ι₂] [P₂.IsRootSystem] [P₂.IsCrystallographic]
-  [P₂.IsReduced] [P₂.IsIrreducible] [Nonempty ι₂]
+  [P₂.IsReduced] [P₂.IsIrreducible]
 
 /-- **Two root systems whose bases have the same Dynkin type are isomorphic.** This is the
 classification and the rigidity theorem `TauCeti.nonempty_equiv_of_hasCartanType` in one statement:

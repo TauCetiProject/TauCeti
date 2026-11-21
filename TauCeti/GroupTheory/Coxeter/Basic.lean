@@ -22,11 +22,17 @@ reflections are indexed by an empty type has a trivial group.
   yet known to satisfy it, so it cannot be routed through
   `CoxeterSystem.prod_alternatingWord_eq_mul_pow`, which evaluates only the simple reflections
   themselves. The evaluations at lengths `2` and `3` are special cases.
+* `TauCeti.prod_map_alternatingWord_eq_mul_pow`: for a family taking involutions at `i` and `i'`,
+  the two alternating words of length `m` differ by the `m`-th power of `f i * f i'`.
+* `TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq`: two involutions satisfying a braid relation
+  of length `m` have product of order dividing `m`.
 * `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
   its length is even, and leaves it unchanged when its length is odd.
 * `CoxeterSystem.subsingleton_of_isEmpty`: a Coxeter system of rank zero has a trivial group.
 * `CoxeterSystem.commute_simple_of_eq_two`: two simple reflections commute when their entry of the
   Coxeter matrix is `2`.
+* `CoxeterSystem.isConj_wordProd_append_comm`: rotating a word `l₁ ++ l₂` to `l₂ ++ l₁` conjugates
+  the element it spells.
 -/
 
 public section
@@ -59,6 +65,34 @@ theorem prod_map_alternatingWord_three (f : B → N) (i i' : B) :
     ((CoxeterSystem.alternatingWord i i' 3).map f).prod = f i' * f i * f i' := by
   simp [prod_map_alternatingWord, Nat.even_iff, mul_assoc]
 
+/-- **The two alternating words of length `m` differ by the `m`-th power of the rotation**, for
+any family `f` taking involutions at `i` and `i'`: the word alternating between `i` and `i'` and
+ending with `i'` evaluates to the word ending with `i` followed by `(f i * f i') ^ m`. -/
+theorem prod_map_alternatingWord_eq_mul_pow {G : Type*} [Group G] (f : B → G) {i i' : B}
+    (hi : f i * f i = 1) (hi' : f i' * f i' = 1) (m : ℕ) :
+    ((CoxeterSystem.alternatingWord i i' m).map f).prod =
+      ((CoxeterSystem.alternatingWord i' i m).map f).prod * (f i * f i') ^ m := by
+  induction m generalizing i i' with
+  | zero => simp [CoxeterSystem.alternatingWord]
+  | succ m ih =>
+    -- Conjugating by `f i'` carries the rotation `f i * f i'` to its inverse `f i' * f i`.
+    have hsemi : SemiconjBy (f i') ((f i * f i') ^ m) ((f i' * f i) ^ m) :=
+      SemiconjBy.pow_right (by simp only [SemiconjBy, mul_assoc]) m
+    have hcancel (y : G) : f i * (f i * y) = y := by rw [← mul_assoc, hi, one_mul]
+    simp only [CoxeterSystem.alternatingWord_succ, List.concat_eq_append, List.map_append,
+      List.prod_append, List.map_singleton, List.prod_singleton, ih hi' hi, pow_succ', mul_assoc,
+      hcancel, hsemi.eq]
+
+/-- If `f i` and `f j` are involutions satisfying the braid relation of length `m`, then
+`(f i * f j) ^ m = 1`. Thus a family of involutions satisfying the braid relations of a Coxeter
+matrix satisfies its Coxeter relations. -/
+theorem pow_eq_one_of_prod_map_alternatingWord_eq {G : Type*} [Group G] (f : B → G)
+    {i j : B} (hi : f i * f i = 1) (hj : f j * f j = 1) (m : ℕ)
+    (h : ((CoxeterSystem.alternatingWord i j m).map f).prod =
+      ((CoxeterSystem.alternatingWord j i m).map f).prod) :
+    (f i * f j) ^ m = 1 := by
+  rwa [prod_map_alternatingWord_eq_mul_pow f hi hj, mul_eq_left] at h
+
 /-! ### Reversing alternating words -/
 
 /-- Reversing an alternating word swaps its two letters when its length is even, and fixes it when
@@ -90,5 +124,12 @@ theorem subsingleton_of_isEmpty [IsEmpty B] : Subsingleton W :=
 theorem commute_simple_of_eq_two {i i' : B} (h : M i i' = 2) :
     Commute (cs.simple i) (cs.simple i') := by
   simpa [h, pow_two, ← eq_inv_iff_mul_eq_one, commute_iff_eq] using cs.simple_mul_simple_pow i i'
+
+/-- **Rotating a word conjugates the element it spells**: `l₁ ++ l₂` and `l₂ ++ l₁` spell
+conjugate elements. -/
+theorem isConj_wordProd_append_comm (l₁ l₂ : List B) :
+    IsConj (cs.wordProd (l₁ ++ l₂)) (cs.wordProd (l₂ ++ l₁)) := by
+  rw [wordProd_append, wordProd_append]
+  exact isConj_iff.mpr ⟨(cs.wordProd l₁)⁻¹, by simp⟩
 
 end CoxeterSystem

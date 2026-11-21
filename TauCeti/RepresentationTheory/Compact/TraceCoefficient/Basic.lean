@@ -64,7 +64,7 @@ normalized trace maps with the Hilbert-sum decomposition of Peter-Weyl blocks.
 * `ContRepresentation.biRegularLp_traceCoeffLp`: **the trace coefficient intertwines two-sided
   conjugation of operators with bi-translation in `L²(G)`**, with
   `ContRepresentation.leftRegularLp_traceCoeffLp` and
-  `ContRepresentation.rightRegularLp_traceCoeffLp` as its two one-sided shadows.
+  `ContRepresentation.rightRegular_traceCoeffLp` as its two one-sided shadows.
 * `TauCeti.range_traceCoeffLp`: the trace coefficients of a model are exactly its Peter-Weyl block.
 * `TauCeti.surjective_traceCoeffBlock` and `TauCeti.bijective_traceCoeffBlock`: the trace
   coefficient is onto its block, and bijective onto it for an algebraically closed `𝕜`.
@@ -196,8 +196,9 @@ theorem leftRegularLp_traceCoeffLp (g : G) (T : V →L[𝕜] V) :
 
 /-- Right translation of a trace coefficient precomposes its operator with the action of the
 inverse. -/
-theorem rightRegularLp_traceCoeffLp (h : G) (T : V →L[𝕜] V) :
-    rightRegularLp 𝕜 G h (traceCoeffLp π hπ T) = traceCoeffLp π hπ (T.comp (π h⁻¹)) := by
+theorem rightRegular_traceCoeffLp (h : G) (T : V →L[𝕜] V) :
+    (haarProb G).rightRegular 𝕜 𝕜 2 h (traceCoeffLp π hπ T) =
+      traceCoeffLp π hπ (T.comp (π h⁻¹)) := by
   rw [← biRegularLp_apply_one_mk, biRegularLp_traceCoeffLp, biLinHom_apply_one_mk]
 
 end Bitranslation
@@ -208,12 +209,6 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
   (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
-
-/-- Left translation of a matrix coefficient acts on its second vector. -/
-theorem leftRegularLp_matrixCoeffLp (hunitary : IsUnitary π) (g : G) (v w : V) :
-    leftRegularLp 𝕜 G g (matrixCoeffLp π hπ v w) = matrixCoeffLp π hπ v (π g w) := by
-  rw [← traceCoeffLp_rankOne π hπ hunitary v w, leftRegularLp_traceCoeffLp,
-    InnerProductSpace.comp_rankOne, traceCoeffLp_rankOne π hπ hunitary]
 
 /-- The matrix-coefficient map in its second vector, intertwining a finite-dimensional
 unitary representation with left translation on `L²(G)`. -/
@@ -282,7 +277,7 @@ theorem coe_traceCoeffBlock (model : IrrepModel 𝕜 G)
 theorem surjective_traceCoeffBlock (model : IrrepModel 𝕜 G) :
     Function.Surjective (traceCoeffBlock model) := by
   intro f
-  obtain ⟨T, hT⟩ := (range_traceCoeffLp model).ge f.2
+  obtain ⟨T, hT⟩ := (range_traceCoeffLp model).ge f.property
   exact ⟨T, Subtype.ext hT⟩
 
 /-- **The trace coefficient of an irreducible model is a bijection onto its block**, for an

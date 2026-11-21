@@ -36,9 +36,6 @@ joint-weight permutation; the finiteness and pointwise action are already suppli
 
 * A. Borel, *Linear Algebraic Groups*, §10.5.
 * J. E. Humphreys, *Linear Algebraic Groups*, §17.6.
-
-This advances the "Lie--Kolchin; solvable groups" milestone in Layer 5 of the ReductiveGroups
-roadmap.
 -/
 
 public section
@@ -82,8 +79,8 @@ theorem map_iInf_eigenspace_unitHom_eq_self_of_eq_pointHom
     (hcoordinate : nonzeroJointWeightAction N ρ =
       ConstantGroup.pointHom f)
     (g : WithConv (H →ₐ[k] k)) (χ : NonzeroJointWeight N ρ) :
-    (⨅ n : N, (ρ n).eigenspace (χ.1 n)).map (ρ g) =
-      ⨅ n : N, (ρ n).eigenspace (χ.1 n) := by
+    (⨅ n : N, (ρ n).eigenspace (χ.val n)).map (ρ g) =
+      ⨅ n : N, (ρ n).eigenspace (χ.val n) := by
   apply map_iInf_eigenspace_unitHom_eq_self_of_nonzeroJointWeightAction_eq N ρ g χ
   rw [nonzeroJointWeightAction_eq_one_of_eq_pointHom N ρ hconnected f hcoordinate]
   rfl

@@ -64,16 +64,8 @@ theorem integrable_one_div_cosh_sq : Integrable fun x : ℝ ↦ 1 / Real.cosh x 
     (continuous_const.div (by fun_prop) fun x ↦
       (pow_pos (Real.cosh_pos x) 2).ne').aestronglyMeasurable
     (.of_forall fun x ↦ ?_)
-  have hc : Real.exp |x| / 2 ≤ Real.cosh x := by
-    rw [← Real.cosh_abs, Real.cosh_eq]
-    linarith [Real.exp_pos (-|x|)]
-  have he : 0 < Real.exp |x| / 2 := by positivity
-  rw [Real.norm_of_nonneg (by positivity)]
-  calc 1 / Real.cosh x ^ 2 ≤ 1 / (Real.exp |x| / 2) ^ 2 := by gcongr
-    _ = 4 * Real.exp (-(2 * |x|)) := by
-      rw [show -(2 * |x|) = -(|x| + |x|) by ring, Real.exp_neg, Real.exp_add]
-      field_simp
-      ring
+  rw [Real.norm_of_nonneg (by positivity), ← Real.one_sub_tanh_sq]
+  exact Real.one_sub_tanh_sq_le x
 
 /-- `∫ x, 1 / cosh x ^ 2 = 2`: the integrand is the derivative of `Real.tanh`, which increases
 from `-1` to `1`. -/

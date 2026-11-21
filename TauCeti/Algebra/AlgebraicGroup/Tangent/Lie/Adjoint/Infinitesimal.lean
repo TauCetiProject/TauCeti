@@ -25,9 +25,9 @@ with the infinitesimal change of the group adjoint action, over any commutative 
 
 public section
 
-namespace TauCeti
+namespace Derivation
 
-open WithConv TrivSqZeroExt
+open TauCeti WithConv TrivSqZeroExt
 
 variable {R H B : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [CommRing B] [Algebra R B]
@@ -36,7 +36,7 @@ variable {R H B : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 is `e + ε[d,e]`. Thus the differential of the group adjoint action is the Lie bracket. -/
 -- Apply before the general adjoint and coefficient-map evaluation rules expand the input.
 @[simp↓]
-theorem _root_.Derivation.adDerivation_dualNumber_apply
+theorem adDerivation_dualNumber_apply
     (d e : Derivation R H (Bialgebra.CounitAlgebra R H B)) (a : H) :
     (Bialgebra.CounitAlgebra.algEquivSelf R H
       (DualNumber (Bialgebra.CounitAlgebra R H B)))
@@ -54,38 +54,16 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
     (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val
   let F := (fstHom R C C).toLinearMap
   let S := (sndHom C C).restrictScalars R
-  have hF (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-      F ∘ₗ (p d).ofConv.toLinearMap =
-        (1 : WithConv (H →ₗ[R] C)).ofConv := by
-    ext x
-    simpa only [F, p, C, LinearMap.comp_apply, AlgHom.toLinearMap_apply, fstHom_apply,
-      LinearMap.convOne_apply, Bialgebra.CounitAlgebra.algebraMap_apply,
-      Bialgebra.CounitAlgebra.algebraMap_base] using
-        derivationMulEquivTangentKer_apply_fst (Multiplicative.ofAdd d) x
-  have hS (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
-      S ∘ₗ (p d).ofConv.toLinearMap = d.toLinearMap := by
-    ext x
-    dsimp [S, p, C]
-    exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
-  have hinv : (p d)⁻¹ = p (-d) := by
-    simpa only [p, ← Subgroup.coe_inv, ← ofAdd_neg] using congrArg Subtype.val
-      (map_inv (derivationMulEquivTangentKer R H B) (Multiplicative.ofAdd d)).symm
+  have hF (d : Derivation R H C) :
+      F ∘ₗ (p d).ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] C)).ofConv :=
+    Derivation.fstHom_comp_derivationMulEquivTangentKer d
+  have hS (d : Derivation R H C) : S ∘ₗ (p d).ofConv.toLinearMap = d.toLinearMap :=
+    Derivation.sndHom_comp_derivationMulEquivTangentKer d
   let c := (Bialgebra.CounitAlgebra.algEquivSelf R H (DualNumber C)).toAlgHom
   let E := c.toLinearMap ∘ₗ (Derivation.mapValue ((inlAlgHom R C C).comp
     (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toAlgHom) e).toLinearMap
-  have hFE : F ∘ₗ E = e.toLinearMap := by
-    ext x
-    dsimp [F, E, c]
-    -- The evaluation lemmas identify the exported counit-algebra type synonyms.
-    erw [Derivation.mapValue_apply, AlgHom.comp_apply, inlAlgHom_apply,
-      Bialgebra.CounitAlgebra.algEquivSelf_apply, fstHom_apply, fst_inl,
-      Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
-  have hSE : S ∘ₗ E = 0 := by
-    ext x
-    dsimp [S, E, c]
-    -- As above, evaluate through the counit coefficient identification.
-    erw [Derivation.mapValue_apply, AlgHom.comp_apply, inlAlgHom_apply,
-      Bialgebra.CounitAlgebra.algEquivSelf_apply, sndHom_apply, snd_inl]
+  have hFE : F ∘ₗ E = e.toLinearMap := Derivation.fstHom_comp_mapValue_inlAlgHom e
+  have hSE : S ∘ₗ E = 0 := Derivation.sndHom_comp_mapValue_inlAlgHom e
   dsimp only [F] at hF hFE
   dsimp only [S] at hS hSE
   -- Apply the convolution product rule to `(1 + εd) e (1 - εd)`.
@@ -110,19 +88,15 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
   have hc (g : WithConv (H →ₐ[R] DualNumber C)) :
       c.toLinearMap ∘ₗ
         ((Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm g).ofConv.toLinearMap =
-          g.ofConv.toLinearMap := by
-    apply LinearMap.ext
-    intro x
-    dsimp only [c, LinearMap.comp_apply, AlgHom.toLinearMap_apply]
-    rw [Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
-    exact AlgEquiv.apply_symm_apply _ _
+          g.ofConv.toLinearMap :=
+    WithConv.algEquivSelf_comp_pointsMulEquiv_symm g
   rw [Derivation.adDerivation_apply]
   -- Postcompose convolution by the coefficient equivalence to calculate in actual dual numbers.
   rw [← AlgEquiv.toAlgHom_apply, ← AlgHom.toLinearMap_apply, ← LinearMap.comp_apply]
   simp only [LinearMap.algHom_comp_convMul_distrib, toConv_ofConv]
   erw [← map_inv (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm (p d)]
   rw [hc, hc]
-  rw [hinv]
+  rw [Derivation.derivationMulEquivTangentKer_val_inv]
   -- Expand the local coefficient transport in the computed product coefficients.
   dsimp only [E, c] at hprodF hprodS
   apply TrivSqZeroExt.ext
@@ -133,4 +107,4 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
       Derivation.coeFn_coe, snd_add, snd_inl, snd_inr, zero_add] using
         DFunLike.congr_fun hprodS a
 
-end TauCeti
+end Derivation

@@ -84,16 +84,6 @@ of the chart**, `z ↦ (-wᵢ zᵢ)ᵢ`. -/
 theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
     (hy : y ∈ φ.toChart.source) : -mgradient 𝓘(ℝ, E) f y = φ.field y := by
   have h : -φ.field y = mgradient 𝓘(ℝ, E) f y := eq_mgradient_iff.2 fun v ↦ by
-    have hdf : mvfderiv 𝓘(ℝ, E) f y v =
-        ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
-          φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
-      -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
-      -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
-      rw [mvfderiv, ContinuousLinearMap.comp_apply,
-        mfderiv_eq_fderiv_comp_of_eqOn
-          (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy
-          (φ.differentiableAt_quadratic _)]
-      exact φ.fderiv_quadratic_apply _ _
     have hX : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (-φ.field y)) =
         fun i ↦ φ.weight i * φ.coord (φ.toChart y) i := by
       -- `dψ` acts on tangent spaces and `L` on `E`; negation goes through each separately.
@@ -103,7 +93,7 @@ theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
       rw [hneg, φ.coord_mfderiv_field hy]
       ext i
       simp
-    rw [hφ.inner_eq hy, hdf, hX]
+    rw [hφ.inner_eq hy, φ.mvfderiv_apply hy, hX]
     rfl
   rw [← h, neg_neg]
 

@@ -183,9 +183,8 @@ theorem im_fdBoundary_sub_rho_add_one_arc_nonneg (H : ℝ) (ht : t ∈ Icc (1 : 
   -- proved for a contour at the corner height transports to this one.
   have htransport : fdBoundary H t = fdBoundary (Real.sqrt 3 / 2) t := by
     rw [eqOn_fdBoundary_arc H ht, eqOn_fdBoundary_arc (Real.sqrt 3 / 2) ht]
-  have ht05 : t ∈ Icc (0 : ℝ) 5 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
   rw [Complex.sub_im, rho_add_one_im, htransport]
-  linarith [sqrt_three_div_two_le_im_fdBoundary (H := Real.sqrt 3 / 2) le_rfl ht05]
+  linarith [sqrt_three_div_two_le_im_fdBoundary (H := Real.sqrt 3 / 2) (t := t) le_rfl]
 
 /-- Strictly inside the arc the shifted contour has positive height. -/
 theorem im_fdBoundary_sub_rho_add_one_arc_pos (H : ℝ) (ht1 : 1 < t) (ht3 : t < 3) :
@@ -198,11 +197,10 @@ theorem im_fdBoundary_sub_rho_add_one_arc_pos (H : ℝ) (ht1 : 1 < t) (ht3 : t <
 
 /-- The shifted contour stays in the closed upper half-plane over the whole parameter
 range: the contour clears the corner row `√3/2`, which is the height of `ρ + 1`. -/
-theorem im_fdBoundary_sub_rho_add_one_nonneg (hH : Real.sqrt 3 / 2 ≤ H)
-    (ht : t ∈ Icc (0 : ℝ) 5) :
+theorem im_fdBoundary_sub_rho_add_one_nonneg (hH : Real.sqrt 3 / 2 ≤ H) :
     0 ≤ (fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)).im := by
   rw [Complex.sub_im, rho_add_one_im]
-  linarith [sqrt_three_div_two_le_im_fdBoundary hH ht]
+  linarith [sqrt_three_div_two_le_im_fdBoundary (t := t) hH]
 
 /-- The polar form of the shifted contour just after the corner. -/
 private lemma fdBoundary_one_add_sub_rho_add_one_eq (H : ℝ) (hδ : 0 < δ) (hδ2 : δ ≤ 2) :

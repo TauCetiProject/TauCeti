@@ -20,9 +20,8 @@ the faces indexing a subdivision simplex form a chain, all their barycenters lie
 face in that chain. The affine extension therefore lands in the realization of `K`.
 
 This file constructs that canonical continuous map. It is the forward map in the homeomorphism
-between the realizations of a complex and its barycentric subdivision required by Layer 11 of the
-GeometricTopology roadmap. The inverse is constructed and proved continuous in
-`Subdivision.Homeomorph`.
+between the realizations of a complex and its barycentric subdivision. The inverse is constructed
+and proved continuous in `Subdivision.Homeomorph`.
 
 The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2,
 "Derived Subdivisions".
@@ -79,7 +78,7 @@ theorem barycentricSubdivisionLinearMap_single (K : AbstractSimplicialComplex ι
 theorem barycentricSubdivisionLinearMap_apply (K : AbstractSimplicialComplex ι)
     (a : Face K →₀ ℝ) (v : ι) :
     barycentricSubdivisionLinearMap K a v =
-      ∑ σ ∈ a.support, a σ * if v ∈ σ.1 then (σ.1.card : ℝ)⁻¹ else 0 := by
+      ∑ σ ∈ a.support, a σ * if v ∈ σ.val then (σ.val.card : ℝ)⁻¹ else 0 := by
   rw [barycentricSubdivisionLinearMap, Finsupp.linearCombination_apply, Finsupp.sum,
     Finset.sum_apply']
   simp only [Finsupp.smul_apply, smul_eq_mul, faceBarycenter_apply]
@@ -87,8 +86,8 @@ theorem barycentricSubdivisionLinearMap_apply (K : AbstractSimplicialComplex ι)
 private theorem barycentricSubdivisionLinearMap_mem_closedSimplex
     (K : AbstractSimplicialComplex ι) {ρ : Finset (Face K)} (σ : Face K)
     (x : StandardSimplex ρ) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) :
-    barycentricSubdivisionLinearMap K x.1 ∈
-      convexHull ℝ (σ.1.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) := by
+    barycentricSubdivisionLinearMap K x.val ∈
+      convexHull ℝ (σ.val.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ)) := by
   rw [barycentricSubdivisionLinearMap, Finsupp.linearCombination_apply, Finsupp.sum]
   apply (convex_convexHull ℝ _).sum_mem
   · intro τ _
@@ -108,15 +107,15 @@ faces of `σ`, as a map into the standard simplex of `σ`. It sends the vertex `
 barycenter of `τ`. -/
 noncomputable def barycentricSubdivisionFaceMap (K : AbstractSimplicialComplex ι)
     {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) :
-    StandardSimplex ρ → StandardSimplex σ.1 :=
-  fun x => ⟨barycentricSubdivisionLinearMap K x.1,
+    StandardSimplex ρ → StandardSimplex σ.val :=
+  fun x => ⟨barycentricSubdivisionLinearMap K x.val,
     barycentricSubdivisionLinearMap_mem_closedSimplex K σ x hρσ⟩
 
 /-- The barycentric-subdivision face map is given by the barycentric-subdivision linear map. -/
 @[simp]
 theorem barycentricSubdivisionFaceMap_val (K : AbstractSimplicialComplex ι)
     {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) (x : StandardSimplex ρ) :
-    (barycentricSubdivisionFaceMap K σ hρσ x : ι →₀ ℝ) = barycentricSubdivisionLinearMap K x.1 :=
+    (barycentricSubdivisionFaceMap K σ hρσ x : ι →₀ ℝ) = barycentricSubdivisionLinearMap K x.val :=
   (rfl)
 
 /-- The coordinates of the barycentric-subdivision face map: the coordinate at `v` is the
@@ -124,9 +123,9 @@ weighted sum of the coordinates at `v` of the barycenters of the faces in `ρ`. 
 theorem barycentricSubdivisionFaceMap_apply (K : AbstractSimplicialComplex ι)
     {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) (x : StandardSimplex ρ) (v : ι) :
     (barycentricSubdivisionFaceMap K σ hρσ x : ι →₀ ℝ) v =
-      ∑ τ ∈ ρ, x.1 τ * faceBarycenter K τ v := by
-  have hsupp : x.1 ∈ Finsupp.supported ℝ ℝ (↑ρ : Set (Face K)) :=
-    (Finsupp.mem_supported ℝ x.1).mpr (StandardSimplex.support_subset x)
+      ∑ τ ∈ ρ, x.val τ * faceBarycenter K τ v := by
+  have hsupp : x.val ∈ Finsupp.supported ℝ ℝ (↑ρ : Set (Face K)) :=
+    (Finsupp.mem_supported ℝ x.val).mpr (StandardSimplex.support_subset x)
   rw [barycentricSubdivisionFaceMap_val, barycentricSubdivisionLinearMap,
     Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp]
   simp only [Finset.sum_apply', Finsupp.smul_apply, smul_eq_mul]
@@ -139,24 +138,24 @@ theorem continuous_barycentricSubdivisionFaceMap (K : AbstractSimplicialComplex 
   simp only [Function.comp_apply, barycentricSubdivisionFaceMap_apply]
   apply continuous_finsetSum
   intro τ _
-  have hcoe : Continuous (fun x : StandardSimplex ρ => (x.1 : Face K → ℝ)) :=
+  have hcoe : Continuous (fun x : StandardSimplex ρ => (x.val : Face K → ℝ)) :=
     continuous_induced_dom
   exact ((continuous_apply τ).comp hcoe).mul continuous_const
 
 private theorem barycentricSubdivisionLinearMap_mem (K : AbstractSimplicialComplex ι)
     (x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex)) :
-    barycentricSubdivisionLinearMap K x.1 ∈ (standardGeometricComplex K).space := by
+    barycentricSubdivisionLinearMap K x.val ∈ (standardGeometricComplex K).space := by
   let ρ := carrier
     (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex) x
-  have hρ : ρ.1 ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-      K.toPreAbstractSimplicialComplex := ρ.2
+  have hρ : ρ.val ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+      K.toPreAbstractSimplicialComplex := ρ.property
   have hρ' := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp hρ
-  obtain ⟨σ, _, hσmax⟩ := hρ'.2.exists_isGreatest ρ.1.finite_toSet hρ'.1
+  obtain ⟨σ, _, hσmax⟩ := hρ'.2.exists_isGreatest ρ.val.finite_toSet hρ'.1
   rw [mem_realization_iff]
-  refine ⟨σ.1, σ.2, ?_⟩
-  let x' : StandardSimplex ρ.1 := ⟨x.1, mem_convexHull_carrier _ x⟩
+  refine ⟨σ.val, σ.property, ?_⟩
+  let x' : StandardSimplex ρ.val := ⟨x.val, mem_convexHull_carrier _ x⟩
   exact barycentricSubdivisionLinearMap_mem_closedSimplex K σ x' hσmax
 
 /-- The canonical map from the realization of the barycentric subdivision of `K` to the
@@ -165,7 +164,7 @@ subdivision simplex. -/
 noncomputable def barycentricSubdivisionRealizationMap (K : AbstractSimplicialComplex ι) :
     Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex) → Realization K :=
-  fun x => ⟨barycentricSubdivisionLinearMap K x.1,
+  fun x => ⟨barycentricSubdivisionLinearMap K x.val,
     barycentricSubdivisionLinearMap_mem K x⟩
 
 /-- The realization map has the expected underlying affine formula. -/
@@ -174,7 +173,7 @@ theorem barycentricSubdivisionRealizationMap_val (K : AbstractSimplicialComplex 
     (x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex)) :
     (barycentricSubdivisionRealizationMap K x : ι →₀ ℝ) =
-      barycentricSubdivisionLinearMap K x.1 :=
+      barycentricSubdivisionLinearMap K x.val :=
   (rfl)
 
 /-- A vertex of the barycentric subdivision maps to the barycenter of the original face it
@@ -193,7 +192,7 @@ face inclusion of `σ`. -/
 theorem barycentricSubdivisionRealizationMap_comp_faceInclusion
     (K : AbstractSimplicialComplex ι)
     (ρ : Face (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-      K.toPreAbstractSimplicialComplex)) (σ : Face K) (hρσ : ∀ τ ∈ ρ.1, τ ≤ σ) :
+      K.toPreAbstractSimplicialComplex)) (σ : Face K) (hρσ : ∀ τ ∈ ρ.val, τ ≤ σ) :
     barycentricSubdivisionRealizationMap K ∘ faceInclusion _ ρ =
       faceInclusion K σ ∘ barycentricSubdivisionFaceMap K σ hρσ := by
   funext x
@@ -207,8 +206,8 @@ theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialC
     Continuous (barycentricSubdivisionRealizationMap K) := by
   apply continuous_iff_faceInclusion.2
   intro ρ
-  have hρ := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
-  obtain ⟨σ, _, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
+  have hρ := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.property
+  obtain ⟨σ, _, hσmax⟩ := hρ.2.exists_isGreatest ρ.val.finite_toSet hρ.1
   rw [barycentricSubdivisionRealizationMap_comp_faceInclusion K ρ σ hσmax]
   exact (continuous_faceInclusion K σ).comp (continuous_barycentricSubdivisionFaceMap K σ hσmax)
 

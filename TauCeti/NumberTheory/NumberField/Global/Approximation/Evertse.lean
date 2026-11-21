@@ -71,20 +71,20 @@ theorem exists_evertse (m : ℕ) :
     ∃ C : ℝ, ∀ (V : Type*) [AddCommGroup V] [Module K V] (Sfin : Finset (FinitePlace K))
       (L : AbsoluteValue K ℝ → Fin m → Module.Dual K V) (x : Module.Basis (Fin m) K V)
       (ν μ : AbsoluteValue K ℝ → Fin m → ℝ),
-      (∀ v : InfinitePlace K, LinearIndependent K (L v.1)) →
-      (∀ v ∈ Sfin, LinearIndependent K (L v.1)) →
-      (∀ (v : InfinitePlace K) k, 0 < ν v.1 k) → (∀ v ∈ Sfin, ∀ k, 0 < ν v.1 k) →
-      (∀ v : InfinitePlace K, Monotone (μ v.1)) → (∀ v ∈ Sfin, Monotone (μ v.1)) →
-      (∀ (v : InfinitePlace K) k j, v (L v.1 k (x j)) ≤ ν v.1 k * μ v.1 j) →
-      (∀ v ∈ Sfin, ∀ k j, v (L v.1 k (x j)) ≤ ν v.1 k * μ v.1 j) →
+      (∀ v : InfinitePlace K, LinearIndependent K (L v.val)) →
+      (∀ v ∈ Sfin, LinearIndependent K (L v.val)) →
+      (∀ (v : InfinitePlace K) k, 0 < ν v.val k) → (∀ v ∈ Sfin, ∀ k, 0 < ν v.val k) →
+      (∀ v : InfinitePlace K, Monotone (μ v.val)) → (∀ v ∈ Sfin, Monotone (μ v.val)) →
+      (∀ (v : InfinitePlace K) k j, v (L v.val k (x j)) ≤ ν v.val k * μ v.val j) →
+      (∀ v ∈ Sfin, ∀ k j, v (L v.val k (x j)) ≤ ν v.val k * μ v.val j) →
       ∃ (ξ : Fin m → Fin m → K) (π : AbsoluteValue K ℝ → Equiv.Perm (Fin m)),
         (∀ j l, ∀ u : FinitePlace K, u ∉ Sfin → u (ξ j l) ≤ 1) ∧
         (∀ (v : InfinitePlace K) i j,
-          v (L v.1 (π v.1 i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
-            C * (ν v.1 (π v.1 i) * min (μ v.1 i) (μ v.1 j))) ∧
+          v (L v.val (π v.val i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
+            C * (ν v.val (π v.val i) * min (μ v.val i) (μ v.val j))) ∧
         ∀ v ∈ Sfin, ∀ i j,
-          v (L v.1 (π v.1 i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
-            ν v.1 (π v.1 i) * min (μ v.1 i) (μ v.1 j) := by
+          v (L v.val (π v.val i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
+            ν v.val (π v.val i) * min (μ v.val i) (μ v.val j) := by
   classical
   obtain ⟨A₀, hA₀⟩ := exists_forall_apply_add_le (K := K)
   refine ⟨2 ^ (2 * m + 1) * max 1 A₀, fun V _ _ Sfin L x ν μ hLinf hLfin hνinf hνfin hμinf
@@ -94,13 +94,13 @@ theorem exists_evertse (m : ℕ) :
     rw [Module.finrank_eq_card_basis x]
   -- The places of the statement, as underlying absolute values.
   set T : Set (AbsoluteValue K ℝ) :=
-    {v | (∃ w : InfinitePlace K, w.1 = v) ∨ ∃ u ∈ Sfin, u.1 = v} with hT
-  have hinfT (w : InfinitePlace K) : w.1 ∈ T := Or.inl ⟨w, rfl⟩
-  have hfinT (u : FinitePlace K) (hu : u ∈ Sfin) : u.1 ∈ T := Or.inr ⟨u, hu, rfl⟩
+    {v | (∃ w : InfinitePlace K, w.val = v) ∨ ∃ u ∈ Sfin, u.val = v}
+  have hinfT (w : InfinitePlace K) : w.val ∈ T := Or.inl ⟨w, rfl⟩
+  have hfinT (u : FinitePlace K) (hu : u ∈ Sfin) : u.val ∈ T := Or.inr ⟨u, hu, rfl⟩
   -- The approximation constant: `1` at the finite places, `A₀` at the infinite ones.
   set A : AbsoluteValue K ℝ → ℝ := fun v ↦ if IsNonarchimedean v then 1 else A₀ with hA
-  have hAinf (w : InfinitePlace K) : A w.1 = A₀ := by simp [hA, w.not_isNonarchimedean]
-  have hAfin (u : FinitePlace K) : A u.1 = 1 := by
+  have hAinf (w : InfinitePlace K) : A w.val = A₀ := by simp [hA, w.not_isNonarchimedean]
+  have hAfin (u : FinitePlace K) : A u.val = 1 := by
     simp only [hA, ite_eq_left_iff]
     exact fun h ↦ absurd u.add_le h
   have happrox (γ : AbsoluteValue K ℝ → K) :
@@ -132,9 +132,9 @@ theorem exists_evertse (m : ℕ) :
       · exact hinf w
       · exact hfin u hu)
   refine ⟨ξ, π, fun j l ↦ hξ j l, fun w i j ↦ ?_, fun u hu i j ↦ ?_⟩
-  · have h := hbound w.1 (hinfT w) i j
+  · have h := hbound w.val (hinfT w) i j
     rwa [hAinf] at h
-  · exact hbound_na u.1 (hfinT u hu) u.add_le (hAfin u).le i j
+  · exact hbound_na u.val (hfinT u hu) u.add_le (hAfin u).le i j
 
 /-- **Evertse's lemma without weights** (Evertse; Bombieri–Gubler, Lemma 7.5.29): the case
 `ν = 1` of `NumberField.exists_evertse`. If `|L v k (x j)|_v ≤ μ v j` with `μ v` nondecreasing,
@@ -144,19 +144,19 @@ theorem exists_evertse_unweighted (m : ℕ) :
     ∃ C : ℝ, ∀ (V : Type*) [AddCommGroup V] [Module K V] (Sfin : Finset (FinitePlace K))
       (L : AbsoluteValue K ℝ → Fin m → Module.Dual K V) (x : Module.Basis (Fin m) K V)
       (μ : AbsoluteValue K ℝ → Fin m → ℝ),
-      (∀ v : InfinitePlace K, LinearIndependent K (L v.1)) →
-      (∀ v ∈ Sfin, LinearIndependent K (L v.1)) →
-      (∀ v : InfinitePlace K, Monotone (μ v.1)) → (∀ v ∈ Sfin, Monotone (μ v.1)) →
-      (∀ (v : InfinitePlace K) k j, v (L v.1 k (x j)) ≤ μ v.1 j) →
-      (∀ v ∈ Sfin, ∀ k j, v (L v.1 k (x j)) ≤ μ v.1 j) →
+      (∀ v : InfinitePlace K, LinearIndependent K (L v.val)) →
+      (∀ v ∈ Sfin, LinearIndependent K (L v.val)) →
+      (∀ v : InfinitePlace K, Monotone (μ v.val)) → (∀ v ∈ Sfin, Monotone (μ v.val)) →
+      (∀ (v : InfinitePlace K) k j, v (L v.val k (x j)) ≤ μ v.val j) →
+      (∀ v ∈ Sfin, ∀ k j, v (L v.val k (x j)) ≤ μ v.val j) →
       ∃ (ξ : Fin m → Fin m → K) (π : AbsoluteValue K ℝ → Equiv.Perm (Fin m)),
         (∀ j l, ∀ u : FinitePlace K, u ∉ Sfin → u (ξ j l) ≤ 1) ∧
         (∀ (v : InfinitePlace K) i j,
-          v (L v.1 (π v.1 i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
-            C * min (μ v.1 i) (μ v.1 j)) ∧
+          v (L v.val (π v.val i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
+            C * min (μ v.val i) (μ v.val j)) ∧
         ∀ v ∈ Sfin, ∀ i j,
-          v (L v.1 (π v.1 i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
-            min (μ v.1 i) (μ v.1 j) := by
+          v (L v.val (π v.val i) (x j + ∑ l ∈ univ.filter (· < j), ξ j l • x l)) ≤
+            min (μ v.val i) (μ v.val j) := by
   obtain ⟨C, hC⟩ := exists_evertse (K := K) m
   refine ⟨C, fun V _ _ Sfin L x μ hLinf hLfin hμinf hμfin hinf hfin ↦ ?_⟩
   obtain ⟨ξ, π, hξ, hbinf, hbfin⟩ := hC V Sfin L x (fun _ _ ↦ 1) μ hLinf hLfin

@@ -16,7 +16,6 @@ import Mathlib.Algebra.Polynomial.Monic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
-import Mathlib.RingTheory.Valuation.Integers
 
 /-!
 # Valuations of roots of monic polynomials
@@ -30,9 +29,8 @@ most one. These estimates do not require the ring to be commutative or the value
 have inverses. With values in a group with zero, the leading term of a polynomial that need not be
 monic dominates at any `t` with `1 ≤ ν t` at which each lower coefficient has value below
 `ν (leadingCoeff p) * ν t`, and so, over a division ring, at every `t` of large enough value.
-The last estimate, that at a root of a monic cubic with unit discriminant the
-derivative is a unit, is stated over a commutative ring with values in a group with zero, so that
-it can compute in the ring of integers `ν.integer`.
+The last estimate, that at a root of a monic cubic with `ν`-integral quadratic and linear
+coefficients and unit discriminant the derivative is a unit, is stated over a commutative ring.
 
 ## Main results
 
@@ -53,8 +51,9 @@ it can compute in the ring of integers `ν.integer`.
   of a chord sum, read in its slope `λ`.
 * `Valuation.map_cubic_eq_of_one_lt` and `Valuation.le_one_of_root_cubic`: the two statements above
   for the monic cubic `t³ + at² + bt + c`, which is the shape a Weierstrass equation takes.
-* `Valuation.map_cubic_deriv_eq_one`: at a root of such a cubic whose discriminant has value `1`,
-  the derivative `3t² + 2at + b` has value `1`.
+* `Valuation.map_cubic_deriv_eq_one`: at a root of a monic cubic `t³ + at² + bt + c` whose
+  discriminant has value `1`, and whose coefficients `a`, `b` (but not necessarily `c`) are
+  `ν`-integral, the derivative `3t² + 2at + b` has value `1`.
 
 The cubic bounds apply to the Weierstrass equation: a root of the cubic is integral at every
 prime where its coefficients are integral. The companion estimate, for a polynomial expression
@@ -66,8 +65,9 @@ Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`, section `Valuation`, together with the cubic specializations
 from `EllipticCurves/WeakMordellWeil.lean`, section `Cubic`. `map_cubic_deriv_eq_one` follows the
-private lemma of that name in the same section at the later revision `3bfe124`, with the Bézout
-identity it takes as a hypothesis there proved here.
+private lemma of that name in the same section at the later revision `3bfe124`, without its
+hypothesis `ν c ≤ 1`: here `c` is eliminated with the root equation, and the Bézout identity that
+the source takes as a hypothesis is not needed.
 -/
 
 public section
@@ -152,7 +152,7 @@ theorem exists_map_eval_eq_leadingCoeff_mul_pow {K : Type*} [DivisionRing K] (ν
     rintro rfl
     simp at hi
   have hlc : 0 < ν p.leadingCoeff := by
-    rw [zero_lt_iff, ne_eq, ν.zero_iff, leadingCoeff_eq_zero]
+    rw [pos_iff_ne_zero, ne_eq, ν.zero_iff, leadingCoeff_eq_zero]
     exact hp
   have hi' := (hM _ (Finset.mem_image_of_mem _ (Finset.mem_range.mpr hi))).trans_lt
     ((le_max_right _ _).trans_lt ht)
@@ -164,12 +164,9 @@ end Group
 at most one. -/
 lemma le_one_of_root_monic {p : L[X]} (hp : p.Monic)
     (hcoeff : ∀ i < p.natDegree, ν (p.coeff i) ≤ 1) (heq : p.eval t = 0) :
-    ν t ≤ 1 := by
-  nontriviality Γ
-  by_contra! ht
-  have h := ν.map_eval_eq_of_one_lt hp hcoeff ht
-  rw [heq, map_zero] at h
-  exact (pow_ne_zero _ (zero_lt_one.trans ht).ne') h.symm
+    ν t ≤ 1 :=
+  le_of_not_gt fun ht ↦ pow_ne_zero _ (zero_le.trans_lt ht).ne' <| by
+    rw [← ν.map_eval_eq_of_one_lt hp hcoeff ht, heq, map_zero]
 
 section Quadratic
 
@@ -194,15 +191,11 @@ lemma map_quadratic_eq_of_one_lt (ha : ν a ≤ 1) (hc : ν c ≤ 1) (ht : 1 < �
 lemma one_lt_map_sq_add_mul_sub_iff (ha : ν a ≤ 1) (hc : ν c ≤ 1) :
     1 < ν (t ^ 2 + a * t - c) ↔ 1 < ν t := by
   refine ⟨fun h ↦ ?_, fun ht ↦ ?_⟩
-  · by_contra ht
-    push Not at ht
-    refine h.not_ge (ν.map_sub_le (ν.map_add_le ?_ ?_) hc)
-    · rw [map_pow]
-      exact pow_le_one₀ zero_le ht
-    · rw [map_mul]
-      exact mul_le_one' ha ht
+  · contrapose! h
+    exact ν.map_sub_le (ν.map_add_le (by simpa using pow_le_one₀ zero_le h)
+      (by simpa using mul_le_one' ha h)) hc
   · rw [sub_eq_add_neg, map_quadratic_eq_of_one_lt ν ha (by rwa [Valuation.map_neg]) ht]
-    exact lt_of_lt_of_le ht (by simpa using pow_le_pow_right₀ ht.le one_le_two)
+    exact ht.trans_le (le_self_pow₀ ht.le two_ne_zero)
 
 end Quadratic
 
@@ -213,19 +206,6 @@ variable {c : L}
 -- After the subsingleton value-monoid case is discharged, `ν` supplies the nontriviality
 -- of `L` needed to compute the degree and monicity of the cubic.
 
-/-- The non-leading coefficients of `X³ + aX² + bX + c` are `a`, `b`, `c` (and zeros), so they
-are integral as soon as `a`, `b`, `c` are. This is the coefficient hypothesis that the general
-lemmas above take. -/
-private lemma cubic_coeff_le_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1) :
-    ∀ i < (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree,
-      ν ((X ^ 3 + C a * X ^ 2 + C b * X + C c).coeff i) ≤ 1 := by
-  nontriviality Γ
-  have := domain_nontrivial ν ν.map_zero ν.map_one
-  have hdeg : (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree = 3 := by compute_degree!
-  intro i hi
-  rw [hdeg] at hi
-  interval_cases i <;> simp [ha, hb, hc]
-
 /-- A monic cubic with integral coefficients, evaluated at an element of value `> 1`, is
 dominated by its leading term. -/
 lemma map_cubic_eq_of_one_lt (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1) (ht : 1 < ν t) :
@@ -234,52 +214,61 @@ lemma map_cubic_eq_of_one_lt (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 
   have := domain_nontrivial ν ν.map_zero ν.map_one
   have hp : (X ^ 3 + C a * X ^ 2 + C b * X + C c).Monic := by monicity!
   have hdeg : (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree = 3 := by compute_degree!
-  have h := ν.map_eval_eq_of_one_lt hp (cubic_coeff_le_one ν ha hb hc) ht
+  have h := ν.map_eval_eq_of_one_lt hp (fun i hi ↦ by
+    rw [hdeg] at hi
+    interval_cases i <;> simp [ha, hb, hc]) ht
   rw [hdeg] at h
   simpa [eval_X_pow] using h
 
 /-- A root of a monic cubic with integral coefficients is integral. -/
 lemma le_one_of_root_cubic (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
     (heq : t ^ 3 + a * t ^ 2 + b * t + c = 0) :
-    ν t ≤ 1 := by
-  nontriviality Γ
-  have := domain_nontrivial ν ν.map_zero ν.map_one
-  have hp : (X ^ 3 + C a * X ^ 2 + C b * X + C c).Monic := by monicity!
-  refine ν.le_one_of_root_monic hp (cubic_coeff_le_one ν ha hb hc) ?_
-  simpa [eval_X_pow] using heq
+    ν t ≤ 1 :=
+  le_of_not_gt fun ht ↦ pow_ne_zero 3 (zero_le.trans_lt ht).ne' <| by
+    rw [← ν.map_cubic_eq_of_one_lt ha hb hc ht, heq, map_zero]
 
 end Cubic
 
 section CubicDerivative
 
-variable {L Γ : Type*} [CommRing L] [LinearOrderedCommGroupWithZero Γ] (ν : Valuation L Γ)
+variable {L Γ : Type*} [CommRing L] [LinearOrderedCommMonoidWithZero Γ] (ν : Valuation L Γ)
   {t a b c : L}
 
-/-- **At a root of a monic cubic with integral coefficients and unit discriminant, the derivative
-is a unit.** If `t³ + at² + bt + c = 0`, the coefficients are integral and the discriminant
-`a²b² - 4b³ - 4a³c - 27c² + 18abc` of the cubic has value `1`, then `3t² + 2at + b` has value `1`.
-The Bézout identity between the cubic and its derivative writes the discriminant, at a root, as
-the derivative times a polynomial in `t`, `a`, `b`, `c` with integer coefficients. -/
-lemma map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
+/-- **At a root of a monic cubic with `ν`-integral `a`, `b` and unit discriminant, the derivative
+is a unit.** If `t³ + at² + bt + c = 0`, the coefficients `a`, `b` are integral and the
+discriminant `a²b² - 4b³ - 4a³c - 27c² + 18abc` of the cubic has value `1`, then
+`3t² + 2at + b` has value `1`. At a root, the discriminant is `s² ((a² - 3b) - s)` for the
+derivative `s = 3t² + 2at + b`; integrality of `c` and `t` is not needed. -/
+lemma map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1)
     (heq : t ^ 3 + a * t ^ 2 + b * t + c = 0)
     (hd : ν (a ^ 2 * b ^ 2 - 4 * b ^ 3 - 4 * a ^ 3 * c - 27 * c ^ 2 + 18 * a * b * c) = 1) :
     ν (3 * t ^ 2 + 2 * a * t + b) = 1 := by
-  have ht : t ∈ ν.integer := ν.le_one_of_root_cubic ha hb hc heq
-  have ha' : a ∈ ν.integer := ha
-  have hb' : b ∈ ν.integer := hb
-  have hc' : c ∈ ν.integer := hc
-  refine ν.eq_one_of_mul_eq_one (b := (2 * a ^ 2 - 6 * b) * t ^ 2
-      + (2 * a ^ 3 - 7 * a * b + 9 * c) * t + (a ^ 2 * b - 4 * b ^ 2 + 3 * a * c))
-    (add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem ht 2))
-      (mul_mem (mul_mem (ofNat_mem _ 2) ha') ht)) hb') ?_ ?_
-  · refine add_mem (add_mem (mul_mem ?_ (pow_mem ht 2)) (mul_mem ?_ ht)) ?_
-    · exact sub_mem (mul_mem (ofNat_mem _ 2) (pow_mem ha' 2)) (mul_mem (ofNat_mem _ 6) hb')
-    · exact add_mem (sub_mem (mul_mem (ofNat_mem _ 2) (pow_mem ha' 3))
-        (mul_mem (mul_mem (ofNat_mem _ 7) ha') hb')) (mul_mem (ofNat_mem _ 9) hc')
-    · exact add_mem (sub_mem (mul_mem (pow_mem ha' 2) hb')
-        (mul_mem (ofNat_mem _ 4) (pow_mem hb' 2))) (mul_mem (mul_mem (ofNat_mem _ 3) ha') hc')
-  · convert hd using 2
-    linear_combination (-(18 * b - 6 * a ^ 2) * t - (15 * a * b - 4 * a ^ 3 - 27 * c)) * heq
+  have hc : c = -(t ^ 3 + a * t ^ 2 + b * t) := by linear_combination heq
+  subst hc
+  have hdisc : a ^ 2 * b ^ 2 - 4 * b ^ 3 - 4 * a ^ 3 * (-(t ^ 3 + a * t ^ 2 + b * t)) -
+      27 * (-(t ^ 3 + a * t ^ 2 + b * t)) ^ 2 + 18 * a * b * (-(t ^ 3 + a * t ^ 2 + b * t)) =
+      (3 * t ^ 2 + 2 * a * t + b) ^ 2 * ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) := by
+    ring
+  have h3b : ν (3 * b) ≤ 1 := by
+    have h3 : 3 * b = b + b + b := by ring
+    rw [h3]
+    exact ν.map_add_le (ν.map_add_le hb hb) hb
+  have hK : ν (a ^ 2 - 3 * b) ≤ 1 :=
+    ν.map_sub_le (by rw [map_pow]; exact pow_le_one' ha 2) h3b
+  -- The derivative `s` is a root of the monic cubic `s³ - (a² - 3b) s² + disc`, so it is integral.
+  have hs : ν (3 * t ^ 2 + 2 * a * t + b) ≤ 1 :=
+    ν.le_one_of_root_cubic ((ν.map_sub_swap (3 * b) (a ^ 2)).trans_le hK)
+      (ν.map_zero.trans_le zero_le) hd.le (by linear_combination hdisc)
+  have hK' : ν ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) ≤ 1 := ν.map_sub_le hK hs
+  rw [hdisc, map_mul, map_pow] at hd
+  refine ν.eq_one_of_mul_eq_one (b := (3 * t ^ 2 + 2 * a * t + b) *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b))) hs
+    (by rw [map_mul]; exact mul_le_one' hs hK') ?_
+  have hmul : (3 * t ^ 2 + 2 * a * t + b) * ((3 * t ^ 2 + 2 * a * t + b) *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b))) = (3 * t ^ 2 + 2 * a * t + b) ^ 2 *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) := by ring
+  rw [hmul, map_mul, map_pow]
+  exact hd
 
 end CubicDerivative
 

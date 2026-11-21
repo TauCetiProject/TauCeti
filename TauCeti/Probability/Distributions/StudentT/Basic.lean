@@ -5,12 +5,13 @@ Authors: Claude, Codex
 -/
 module
 
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Probability.Distributions.Cauchy
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Student's t distribution
@@ -263,7 +264,7 @@ theorem integrable_studentTMeasure_iff {F : Type*} [NormedAddCommGroup F] [Norme
     Integrable f (studentTMeasure ν) ↔
       Integrable (fun x : ℝ => studentTPDFReal ν x • f x) := by
   rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact integrable_withDensity_ofReal_iff (measurable_studentTPDFReal ν).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_studentTPDFReal ν).aemeasurable
     (ae_of_all _ (studentTPDFReal_nonneg ν))
 
 /-- An integral against a Student t law is the density-weighted Lebesgue integral. -/
@@ -271,16 +272,17 @@ theorem integral_studentTMeasure_eq {F : Type*} [NormedAddCommGroup F] [NormedSp
     (ν : ℝ) (f : ℝ → F) :
     ∫ x, f x ∂studentTMeasure ν = ∫ x, studentTPDFReal ν x • f x := by
   rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
     (ae_of_all _ (studentTPDFReal_nonneg ν)) f
 
-/-- The real mass of a measurable set under a Student t law is the integral of its real-valued
-density. -/
-theorem measureReal_studentTMeasure {s : Set ℝ} (hs : MeasurableSet s)
-    : (studentTMeasure ν).real s = ∫ z in s, studentTPDFReal ν z := by
-  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (studentTPDFReal_nonneg ν)) hs
-    (integrable_studentTPDFReal ν).integrableOn
+/-- The real mass of a set under a Student t law is the integral of its real-valued density. -/
+theorem measureReal_studentTMeasure (s : Set ℝ) :
+    (studentTMeasure ν).real s = ∫ z in s, studentTPDFReal ν z := by
+  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν), measureReal_def,
+    withDensity_apply' _ s,
+    ← ofReal_integral_eq_lintegral_ofReal (integrable_studentTPDFReal ν).integrableOn
+      (ae_of_all _ (studentTPDFReal_nonneg ν))]
+  exact ENNReal.toReal_ofReal (integral_nonneg fun z => studentTPDFReal_nonneg ν z)
 
 /-! ### Symmetry -/
 

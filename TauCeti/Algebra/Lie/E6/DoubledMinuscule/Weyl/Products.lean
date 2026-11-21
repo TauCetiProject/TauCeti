@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.GroupScheme
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Elementary.Coordinate
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate
 
 /-!
 # Unit-parameter Weyl products in the doubled E₆ carrier
@@ -66,23 +65,14 @@ theorem rootSubgroupPoints_weylWord_mul_inv (A : Type*) [CommRing A]
     intro j
     rw [E6.lie_serreH_rootGenerator, E6.rootGeneratorWeight_inr_eq_neg_inl]
     simp
-  have h := kostantWeylParam_mul_inv_kostantWeylParam rootGen cartanGen rep
-    lattice.toAddSubgroup rep_kostantForm_mem_lattice
-    (isNilpotent_rep_serreRootGenerator (.inl i))
-    (isNilpotent_rep_serreRootGenerator (.inr i)) matrixBasis matrixWeight
-    isCartanWeightVector_matrixBasis (isSl2Triple_rep_serreRootGenerator i)
-    (E6.lie_serreH_rootGenerator (.inl i)) hneg (CommAlgCat.of ℤ A) u v
-  rw [kostantCoordinateCocharacter_apply] at h
-  have hm := congrArg
-    (Units.map (LinearMap.toMatrixAlgEquiv (matrixBasis.baseChange A)).toMonoidHom) h
-  rw [MulEquiv.toMonoidHom_eq_coe,
-    basisMatrix_kostantTorusPoints lattice.toAddSubgroup matrixBasis matrixWeight
-      (Pi.mulSingle i (u * v⁻¹))] at hm
+  have h := kostantRootSubgroupMatrix_mul_mul_mul_inv rootGen cartanGen rep
+    lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
+    matrixBasis matrixWeight isCartanWeightVector_matrixBasis
+    (isSl2Triple_rep_serreRootGenerator i)
+    (E6.lie_serreH_rootGenerator (.inl i)) hneg A u v
   apply Subtype.ext
-  simpa only [kostantWeylParam_def, map_mul, map_inv, Subgroup.coe_mul,
-    Subgroup.coe_inv, coe_rootSubgroupPoints, coe_weightTorusPoints,
-    basisMatrix_kostantRootSubgroupParam rootGen cartanGen rep lattice.toAddSubgroup
-      rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis A] using hm
+  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_rootSubgroupPoints,
+    coe_weightTorusPoints] using h
 
 /-- Products of unit-parameter pinned Weyl words are simple-coroot values:
 `nᵢ(u) nᵢ(v) = hᵢ(-u v⁻¹)`, including their signs on both minuscule summands. -/

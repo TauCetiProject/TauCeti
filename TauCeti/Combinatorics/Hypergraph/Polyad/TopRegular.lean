@@ -38,6 +38,8 @@ parameter worsened by a factor depending only on the relative size of `P'`.
 
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.abs_relDensityOn_sub_le`: the test applies to
   every family of at most `r` subpolyads, indexed by any finite type.
+* `Colored3Graph.IsTopRegularOverPolyad.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le`:
+  the count-scaled form of the test, valid also below the size threshold.
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.of_rank_le`: regularity at a higher rank implies
   regularity at every lower rank.
 * `TauCeti.Colored3Graph.isTopRegularOverPolyad_one_iff`: at rank one the condition tests single
@@ -53,6 +55,9 @@ parameter worsened by a factor depending only on the relative size of `P'`.
   positive rank implies vertex-box regularity.
 * `TauCeti.Colored3Graph.isTopRegularOverPolyad_const`: a constant coloring is top-regular over
   every polyad, at every rank and every positive parameter.
+* `TauCeti.Colored3Graph.isTopRegularOverPolyad_of_card_support_le_one`: every coloring is
+  top-regular over any polyad of support cardinality at most `1`, at every rank and positive
+  parameter.
 
 ## References
 
@@ -149,11 +154,7 @@ variable (H P r) in
 /-- Every coloring is top-regular once `1 ≤ δ`, since relative densities lie in `[0, 1]`. -/
 theorem isTopRegularOverPolyad_of_one_le (hδ : 1 ≤ δ) : H.IsTopRegularOverPolyad P δ r := by
   intro c Q _
-  have h₀ : (0 : ℝ) ≤ H.relDensityOn c (unionSupport Q) := mod_cast H.relDensityOn_nonneg c _
-  have h₁ : (H.relDensityOn c (unionSupport Q) : ℝ) ≤ 1 := mod_cast H.relDensityOn_le_one c _
-  have h₀' : (0 : ℝ) ≤ H.relativeDensity c P := mod_cast H.relativeDensity_nonneg c P
-  have h₁' : (H.relativeDensity c P : ℝ) ≤ 1 := mod_cast H.relativeDensity_le_one c P
-  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+  exact (H.abs_relDensityOn_sub_relativeDensity_le_one c _ P).trans hδ
 
 /-- Top regularity over a polyad forces a nonnegative parameter when the top palette is
 nonempty: for a negative parameter, every family passes the size threshold. -/
@@ -163,6 +164,25 @@ theorem IsTopRegularOverPolyad.nonneg [Nonempty κ] (h : H.IsTopRegularOverPolya
   have hQ : δ * #P.support ≤ #(unionSupport fun _ : Fin r ↦ ofSubcells P ∅ ∅ ∅) :=
     (mul_nonpos_of_nonpos_of_nonneg hδ.le (Nat.cast_nonneg _)).trans (Nat.cast_nonneg _)
   exact (abs_nonneg _).not_gt ((h (Classical.arbitrary κ) _ hQ).trans_lt hδ)
+
+/-- **Count-scaled rank-`r` test.** A `(δ, r)`-top-regular coloring bounds the count-scaled
+discrepancy of each top color on the union of any family of at most `r` subpolyads by `δ |P|`.
+Unlike the test itself, this also covers unions below the size threshold. -/
+theorem IsTopRegularOverPolyad.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le
+    (h : H.IsTopRegularOverPolyad P δ r) (c : κ) {ι : Type*} [Fintype ι]
+    (hι : Fintype.card ι ≤ r) (Q : ι → Subpolyad3 P) :
+    |(H.relDensityOn c (unionSupport Q) : ℝ) - H.relativeDensity c P| * #(unionSupport Q) ≤
+      δ * #P.support := by
+  have : Nonempty κ := ⟨c⟩
+  have hδ := h.nonneg
+  by_cases hQ : δ * #P.support ≤ (#(unionSupport Q) : ℝ)
+  · calc _ ≤ δ * #(unionSupport Q) := by
+          gcongr
+          exact h.abs_relDensityOn_sub_le c hι Q hQ
+      _ ≤ _ := by gcongr; exact unionSupport_subset Q
+  · calc _ ≤ 1 * (#(unionSupport Q) : ℝ) := by
+          gcongr; exact H.abs_relDensityOn_sub_relativeDensity_le_one c _ P
+      _ ≤ _ := by simpa using (lt_of_not_ge hQ).le
 
 section inclusion
 
@@ -231,6 +251,25 @@ theorem isTopRegularOverPolyad_const (c₀ : κ) (hδ : 0 < δ) :
       simpa [relDensityOn_const_self hU, relDensityOn_const_self hP] using hδ.le
     · simpa [relDensityOn_const_of_ne hc] using hδ.le
 
+variable (H P r) in
+/-- Every coloring is `(δ, r)`-top-regular over any polyad whose support has cardinality at most
+`1`, for every positive parameter `δ` and every rank `r`: any nonempty subpolyad union equals the
+whole support. -/
+theorem isTopRegularOverPolyad_of_card_support_le_one (hP : #P.support ≤ 1) (hδ : 0 < δ) :
+    H.IsTopRegularOverPolyad P δ r := by
+  intro c Q hQ
+  obtain hP0 | hPne := P.support.eq_empty_or_nonempty
+  · have hU : unionSupport Q = ∅ := subset_empty.1 (hP0 ▸ unionSupport_subset Q)
+    rw [relativeDensity_of_support_eq_empty _ _ hP0, hU]
+    simpa using hδ.le
+  · have hUpos : 0 < #(unionSupport Q) := by
+      rw [← Nat.cast_pos (α := ℝ)]
+      exact (mul_pos hδ (Nat.cast_pos.2 hPne.card_pos)).trans_le hQ
+    have hUeq : unionSupport Q = P.support :=
+      eq_of_subset_of_card_le (unionSupport_subset Q) (hP.trans hUpos)
+    rw [relativeDensity_def, hUeq, sub_self, abs_zero]
+    exact hδ.le
+
 variable (H P) in
 /-- `H` is `ε`-vertex-box-regular over the polyad `P` when, for every top color `c` and all
 subsets of the three cells of `P` whose restriction of `P` keeps at least an `ε`-fraction of
@@ -245,8 +284,8 @@ def IsVertexBoxRegularOverPolyad (ε : ℝ) : Prop :=
 written as a filter of the support of `P`. -/
 theorem isVertexBoxRegularOverPolyad_iff {ε : ℝ} : H.IsVertexBoxRegularOverPolyad P ε ↔
     ∀ (c : κ), ∀ a₀ ⊆ P.c₀, ∀ a₁ ⊆ P.c₁, ∀ a₂ ⊆ P.c₂,
-      ε * #P.support ≤ #{x ∈ P.support | x.1 0 ∈ a₀ ∧ x.1 1 ∈ a₁ ∧ x.1 2 ∈ a₂} →
-        |(H.relDensityOn c {x ∈ P.support | x.1 0 ∈ a₀ ∧ x.1 1 ∈ a₁ ∧ x.1 2 ∈ a₂} : ℝ) -
+      ε * #P.support ≤ #{x ∈ P.support | x.val 0 ∈ a₀ ∧ x.val 1 ∈ a₁ ∧ x.val 2 ∈ a₂} →
+        |(H.relDensityOn c {x ∈ P.support | x.val 0 ∈ a₀ ∧ x.val 1 ∈ a₁ ∧ x.val 2 ∈ a₂} : ℝ) -
           H.relativeDensity c P| ≤ ε := by
   simp only [IsVertexBoxRegularOverPolyad, support_ofSubcells]
 

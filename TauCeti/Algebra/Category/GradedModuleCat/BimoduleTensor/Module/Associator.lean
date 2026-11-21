@@ -38,30 +38,30 @@ universe vM vN vP uk uA uB uC
 variable {k : Type uk} {A : Type uA} {B : Type uB} {C : Type uC}
   [CommRing k] [Ring A] [Ring B] [Ring C]
   [Algebra k A] [Algebra k B] [Algebra k C]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B) (Θ : InternalGrading k C)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ) (Θ : InternalGrading k C ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] [GradedAlgebra Θ.piece]
   (M : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece)
   (N : GradedModuleCat.{vN} (Δ.tensorProduct Θ.opposite).piece)
   (P : GradedModuleCat.{vP} Θ.piece)
 
 private local instance moduleAssocLeftModule {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : Module S X :=
   TauCeti.Algebra.TensorProduct.moduleLeft (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance moduleAssocRightModule {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : Module Tᵐᵒᵖ X :=
   TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance moduleAssocLeftTower {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : IsScalarTower k S X :=
   TauCeti.Algebra.TensorProduct.moduleLeftIsScalarTower (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance moduleAssocRightTower {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : IsScalarTower k Tᵐᵒᵖ X :=
   TauCeti.Algebra.TensorProduct.moduleRightIsScalarTower (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance moduleAssocComm {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : SMulCommClass S Tᵐᵒᵖ X :=
   TauCeti.Algebra.TensorProduct.moduleSMulCommClass (k := k) (A := S) (B := Tᵐᵒᵖ) X
 
@@ -289,8 +289,7 @@ def bimoduleModuleTensorAssociatorNatIso :
         intro P P' h
         simp only [bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_obj_map,
           bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_obj_map,
-          bimoduleModuleTensor_obj_map, bimoduleTensor_obj_obj,
-          eqToHom_refl, Category.id_comp, Category.comp_id]
+          bimoduleModuleTensor_obj_map, bimoduleTensor_obj_obj]
         simpa only [bimoduleTensorMap_id] using
           bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P (𝟙 M) (𝟙 N) h))
     (by
@@ -301,8 +300,7 @@ def bimoduleModuleTensorAssociatorNatIso :
         bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂Obj_map_app,
         bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃Obj_map_app,
         bimoduleTensor_obj_map, bimoduleModuleTensor_map_app, bimoduleModuleTensor_obj_map,
-        bimoduleTensor_obj_obj,
-        eqToHom_refl, Category.id_comp, Category.comp_id]
+        bimoduleTensor_obj_obj]
       exact bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P (𝟙 M) g (𝟙 P)))
     (by
       intro M M' f
@@ -314,8 +312,7 @@ def bimoduleModuleTensorAssociatorNatIso :
         bifunctorComp₁₂_obj, bifunctorComp₁₂Obj_obj_obj, bifunctorComp₁₂_map_app_app,
         bifunctorComp₂₃_obj, bifunctorComp₂₃Obj_obj_obj, bifunctorComp₂₃_map_app_app,
         bimoduleTensor_map_app, bimoduleModuleTensor_map_app,
-        bimoduleTensor_obj_obj,
-        eqToHom_refl, Category.id_comp, Category.comp_id]
+        bimoduleTensor_obj_obj]
       simpa only [bimoduleModuleTensor, bimoduleModuleTensorMap_id] using
         bimoduleModuleTensorAssociator_naturality Γ Δ Θ M N P f (𝟙 N) (𝟙 P))
 

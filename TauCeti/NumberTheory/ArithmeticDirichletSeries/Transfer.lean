@@ -37,8 +37,8 @@ taken as given, and the transfer covers the zero-density case `δ = 0` as well.
 * `TauCeti.primeCount_sub_mul_logIntegral_isLittleO`: the transfer itself, stated so that it covers
   the density `δ = 0` as well.
 * `TauCeti.primeCount_asymptotic_of_primeTheta`: the quotient form `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`
-  for `δ ≠ 0`, and `TauCeti.primeCount_isLittleO_logIntegral` for the zero-density case, where an
-  asymptotic equivalence would be false and the correct statement is `π(x) = o(Li x)`.
+  for every `δ`, and `TauCeti.primeCount_isLittleO_logIntegral` for the zero-density case, where
+  `π(x) = o(Li x)` is the meaningful statement.
 
 ## References
 
@@ -79,20 +79,8 @@ theorem primeCount_sub_mul_logIntegral_eq (S : Set (HeightOneSpectrum (𝓞 K)))
       (primeTheta K S x - δ * x) / Real.log x +
         (∫ t in (2 : ℝ)..x, (primeTheta K S t - δ * t) / (t * Real.log t ^ 2)) +
         2 * δ / Real.log 2 := by
-  have hsplit : (∫ t in (2 : ℝ)..x, primeTheta K S t / (t * Real.log t ^ 2)) =
-      (∫ t in (2 : ℝ)..x, (primeTheta K S t - δ * t) / (t * Real.log t ^ 2)) +
-        δ * ∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹ := by
-    rw [← intervalIntegral.integral_const_mul, ← intervalIntegral.integral_add
-      (Real.intervalIntegrable_div_mul_log_sq one_lt_two (by linarith)
-        (intervalIntegrable_primeTheta_sub_const_mul S δ 2 x))
-      ((Real.intervalIntegrable_inv_log_pow 2 one_lt_two (by linarith)).const_mul δ)]
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [Set.uIcc_of_le hx] at ht
-    have h2t : (2 : ℝ) ≤ t := ht.1
-    have ht0 : t ≠ 0 := by linarith
-    have hlt : Real.log t ≠ 0 := (Real.log_pos (by linarith)).ne'
-    field_simp
-    ring
+  have hsplit := Real.integral_div_mul_log_sq_eq_sub_add δ one_lt_two (by linarith)
+    (primeTheta_mono S).intervalIntegrable
   rw [primeCount_eq_primeTheta_div_log_add_integral, ← intervalIntegral.integral_of_le hx, hsplit,
     Real.logIntegral_eq_div_log_sub_add hx, sub_div]
   ring
@@ -130,12 +118,17 @@ theorem primeCount_isLittleO_logIntegral (h : primeTheta K S =o[atTop] id) :
     primeCount_sub_mul_logIntegral_isLittleO (by simpa using h)
   simpa using h0.trans_isBigO Real.logIntegral_isEquivalent_div_log.isBigO_symm
 
-/-- **`ϑ(x) ∼ δx` implies `π(x) ∼ δ Li(x)`,** for a nonzero density `δ`.  This is the transfer the
-prime-number-theorem chain consumes: Layer 10 produces the asymptotic for `ϑ` from a Tauberian
-theorem, and this turns it into one for `π`. -/
-theorem primeCount_asymptotic_of_primeTheta (hδ : δ ≠ 0)
+/-- **`ϑ(x) ∼ δx` implies `π(x) ∼ δ Li(x)`.**  This is the transfer the prime-number-theorem chain
+consumes: it turns an asymptotic for `ϑ`, as produced by a Tauberian theorem, into one for `π`.
+For `δ = 0` both asymptotic equivalences say that the counts vanish eventually. -/
+theorem primeCount_asymptotic_of_primeTheta
     (h : primeTheta K S ~[atTop] fun x ↦ δ * x) :
     primeCount K S ~[atTop] fun x ↦ δ * Real.logIntegral x := by
+  rcases eq_or_ne δ 0 with rfl | hδ
+  · simp only [zero_mul] at h ⊢
+    exact isEquivalent_zero_iff_eventually_zero.2
+      ((isEquivalent_zero_iff_eventually_zero.1 h).mono
+        fun x hx ↦ primeCount_eq_zero_of_primeTheta_eq_zero hx)
   have hlin : (fun x : ℝ ↦ δ * x) =O[atTop] (id : ℝ → ℝ) :=
     (isBigO_refl (id : ℝ → ℝ) atTop).const_mul_left δ
   have h' : (fun x ↦ primeTheta K S x - δ * x) =o[atTop] id :=

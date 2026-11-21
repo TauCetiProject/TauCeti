@@ -134,7 +134,7 @@ theorem no_totalMass_fraction_extension :
   rintro ⟨φ, hφ⟩
   obtain ⟨a, -, hreg⟩ := exists_val_eq_one_add_dirac_sub_one_mem_nonZeroDivisors (p := p)
   have hu := (IsLocalization.map_units (FractionRing D(ℤ_[p]ˣ, ℤ_[p])) ⟨_, hreg⟩).map φ
-  rw [hφ, ← characterIntegralAlgHom_one_character, map_sub, map_one, characterIntegralAlgHom_dirac,
+  rw [hφ, ← characterIntegralAlgHom_one_apply, map_sub, map_one, characterIntegralAlgHom_dirac,
     ContinuousMonoidHom.coe_one, Pi.one_apply, sub_self] at hu
   exact not_isUnit_zero hu
 

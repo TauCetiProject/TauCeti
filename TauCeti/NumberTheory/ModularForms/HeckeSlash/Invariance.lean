@@ -23,7 +23,7 @@ That is the content of Shimura's Proposition 3.37 — right multiplication by `�
 
 ⚠ The two groups are different: the hypothesis is invariance under `Γ₁` and the conclusion is
 invariance under `Γ₂`. They agree on a diagonal triple `HeckeCoset Δ Γ Γ`, which is where the
-Hecke operators of Layer 2(b) live, but nothing here needs them to.
+Hecke operators live, but nothing here needs them to.
 
 ## Main results
 
@@ -81,7 +81,7 @@ theorem heckeSlashSum_slash_invariant (f : ℍ → ℂ) (hf : ∀ δ ∈ Γ₁, 
     have hmul : (D.out : GL (Fin 2) ℚ) * ((v.out : GL (Fin 2) ℚ))⁻¹ * γ =
         (D.out : GL (Fin 2) ℚ) * (γ⁻¹ * (v.out : GL (Fin 2) ℚ))⁻¹ := by group
     rw [← SlashAction.slash_mul k (rightCosetRep D v) γ f, rightCosetRep_def D v, hmul,
-      slash_rightCosetRep_of_mem_right k D (mul_mem (inv_mem hγ) v.out.2) f hf]
+      slash_rightCosetRep_of_mem_right k D (mul_mem (inv_mem hγ) v.out.property) f hf]
     exact congrArg (f ∣[k] rightCosetRep D ·)
       (MulAction.Quotient.mk_smul_out _ (⟨γ, hγ⟩ : Γ₂)⁻¹ v)
   rw [heckeSlashSum_def, SlashAction.sum_slash]

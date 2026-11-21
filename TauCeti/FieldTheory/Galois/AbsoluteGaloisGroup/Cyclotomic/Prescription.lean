@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.RootsOfUnity.ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Inflation
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The prescription property of the cyclotomic character
@@ -70,15 +71,25 @@ variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K]
 /-- **The Galois action on `μ_{pʲ}` is the cyclotomic character modulo `pʲ`**: an element `τ` of
 `Gal(Kˢ/K)` raises every `pʲ`-th root of unity of `Kˢ` to the power `χ(τ) mod pʲ`, where `χ` is
 read on `τ` through the comparison with `Field.absoluteGaloisGroup K`. -/
-theorem smul_kummerCoeff_eq_nsmul_localCyclotomicCharacter [NeZero (p : K)] {j : ℕ}
+theorem smul_kummerCoeff_eq_nsmul_localCyclotomicCharacter {j : ℕ}
     (τ : AbsoluteGaloisGroup K) (x : KummerCoeff K (p ^ j)) :
     τ • x = (PadicInt.toZModPow j (localCyclotomicCharacter p K
       ((absoluteGaloisGroupRestrictEquiv K).symm τ) : ℤ_[p])).val • x := by
+  by_cases hp : (p : K) = 0
+  · -- in characteristic `p` there are no nontrivial `pʲ`-th roots of unity
+    have : CharP K p := (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).2 hp
+    have : CharP (SeparableClosure K) p :=
+      charP_of_injective_algebraMap (algebraMap K _).injective p
+    have : ExpChar (SeparableClosure K) p := ExpChar.prime (Fact.out : p.Prime)
+    have := subsingleton_rootsOfUnity_prime_pow (R := SeparableClosure K) p j
+    exact Additive.toMul.injective (Subsingleton.elim _ _)
+  have : NeZero (p : K) := ⟨hp⟩
   set σ := (absoluteGaloisGroupRestrictEquiv K).symm τ
-  set u : (SeparableClosure K)ˣ := x.toMul.1
+  set u : (SeparableClosure K)ˣ := x.toMul.val
   -- the defining equation of the cyclotomic character, in the algebraic closure
   have hu : ((u : SeparableClosure K) : AlgebraicClosure K) ^ p ^ j = 1 := by
-    rw [← IntermediateField.coe_pow, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity _ _).1 x.toMul.2,
+    rw [← IntermediateField.coe_pow, ← Units.val_pow_eq_pow_val,
+        (mem_rootsOfUnity _ _).1 x.toMul.property,
       Units.val_one, IntermediateField.coe_one]
   have hspec := cyclotomicCharacter.spec p σ.toRingEquiv _ hu
   refine Additive.toMul.injective (Subtype.ext (Units.ext (Subtype.ext ?_)))
@@ -111,7 +122,7 @@ theorem coe_toMul_zModTwistEquivKummerCoeff {j : ℕ} {ζ : (SeparableClosure K)
 module, multiplication by `χ(σ) mod pʲ`, corresponds to the action of the restriction of `σ` to
 `Kˢ` on the roots of unity. -/
 @[simp]
-theorem zModTwistEquivKummerCoeff_smul [NeZero (p : K)] {j : ℕ} {ζ : (SeparableClosure K)ˣ}
+theorem zModTwistEquivKummerCoeff_smul {j : ℕ} {ζ : (SeparableClosure K)ˣ}
     (hζ : IsPrimitiveRoot ζ (p ^ j)) (τ : AbsoluteGaloisGroup K)
     (x : ZModTwist (continuousLocalCyclotomicCharacter p K) j) :
     zModTwistEquivKummerCoeff p K hζ ((absoluteGaloisGroupRestrictEquiv K).symm τ • x) =

@@ -70,10 +70,7 @@ private theorem zigzagD4Graph_adj_iff (i j : Fin 4) :
   rw [zigzagD4Graph_adj]
   fin_cases i <;> fin_cases j <;> decide
 
-/-- The neighbours of a vertex of `D₄` form a finite type; this is the finiteness structure of the
-orientation comparisons of `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
-noncomputable local instance d4NeighborSetFintype (i : Fin 4) :
-    Fintype (zigzagD4Graph.neighborSet i) := Fintype.ofFinite _
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 section CommRing
 
@@ -112,8 +109,8 @@ private theorem d4Arrow_of_adj {i j : Fin 4} (h : zigzagD4Graph.Adj i j) :
 private theorem d4Arrow_mul_d4Arrow_leaf {l : Fin 4} (h : zigzagD4Graph.Adj 1 l) :
     d4Arrow k 1 l * d4Arrow k l 1 = 0 := by
   have hsub : Subsingleton (zigzagD4Graph.neighborSet l) := ⟨fun w w' => Subtype.ext <| by
-    have hw := (zigzagD4Graph_adj_iff _ _).1 w.2
-    have hw' := (zigzagD4Graph_adj_iff _ _).1 w'.2
+    have hw := (zigzagD4Graph_adj_iff _ _).1 w.property
+    have hw' := (zigzagD4Graph_adj_iff _ _).1 w'.property
     have hl := (zigzagD4Graph_adj_iff _ _).1 h
     omega⟩
   have hrel := signlessPreprojectiveMk_signlessPreprojectiveRelator k (vertex zigzagD4Graph l)
@@ -130,8 +127,8 @@ private theorem sum_d4Arrow_mul_d4Arrow :
     signlessPreprojectiveRelator_vertex, map_sum] at hrel
   rw [← hrel]
   refine Finset.sum_congr rfl fun l _ => ?_
-  rw [d4Arrow_of_adj k l.2, d4Arrow_of_adj k (zigzagD4Graph.adj_symm l.2), ← map_mul]
-  exact congrArg (signlessPreprojectiveMk k _) (ofArrow_symm_mul_ofArrow _ k l.2)
+  rw [d4Arrow_of_adj k l.property, d4Arrow_of_adj k (zigzagD4Graph.adj_symm l.property), ← map_mul]
+  exact congrArg (signlessPreprojectiveMk k _) (ofArrow_symm_mul_ofArrow _ k l.property)
 
 /-- The trivalent vertex of `D₄` has at most three neighbours. -/
 private theorem card_neighborSet_one_le_three :
@@ -153,21 +150,23 @@ private theorem d4Arrow_mul_eq_zero {v₀ v₁ v₂ v₃ v₄ v₅ : Fin 4} (h�
     d4Arrow k v₄ v₅ * (d4Arrow k v₃ v₄ * (d4Arrow k v₂ v₃ * (d4Arrow k v₁ v₂ *
       d4Arrow k v₀ v₁))) = 0 := by
   have hdu (l : zigzagD4Graph.neighborSet 1) : d4Arrow k 1 l * d4Arrow k l 1 = 0 :=
-    d4Arrow_mul_d4Arrow_leaf k l.2
+    d4Arrow_mul_d4Arrow_leaf k l.property
   by_cases h₀ : v₀ = 1
   · -- The path starts at the trivalent vertex, so it visits it at every even step.
     subst h₀
     obtain rfl := eq_one_of_adj h₂ h₁.ne'
     obtain rfl := eq_one_of_adj h₄ h₃.ne'
     simpa only [mul_assoc] using mul_mul_eq_zero_of_card_le_three' card_neighborSet_one_le_three
-      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l) hdu (sum_d4Arrow_mul_d4Arrow k)
+      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l)
+      (fun l => by rw [hdu, zero_mul]) (sum_d4Arrow_mul_d4Arrow k)
       ⟨v₁, h₁⟩ ⟨v₃, h₃⟩ ⟨v₅, h₅⟩
   · -- The path starts at a leaf, so it visits the trivalent vertex at every odd step.
     obtain rfl := eq_one_of_adj h₁ h₀
     obtain rfl := eq_one_of_adj h₃ h₂.ne'
     obtain rfl := eq_one_of_adj h₅ h₄.ne'
     simpa only [mul_assoc] using mul_mul_eq_zero_of_card_le_three card_neighborSet_one_le_three
-      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l) hdu (sum_d4Arrow_mul_d4Arrow k)
+      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l)
+      (fun l => by rw [mul_assoc, hdu, mul_zero]) (sum_d4Arrow_mul_d4Arrow k)
       ⟨v₄, h₄⟩ ⟨v₂, h₂⟩ ⟨v₀, h₁.symm⟩
 
 /-! ### Paths of length five -/
@@ -221,15 +220,9 @@ every orientation of the `D₄` graph. -/
 theorem preprojectiveMk_D4_ofPath_eq_zero_of_five_le
     (x : Quiver.TotalPath (Symmetrify (OrientedQuiver zigzagD4Graph o)))
     (hx : 5 ≤ x.2.2.length) :
-    preprojectiveMk k (OrientedQuiver zigzagD4Graph o) (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `D₄` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver zigzagD4Graph o⦄, (i ⟶ j) →
-      zigzagD4Coloring ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        zigzagD4Coloring ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => zigzagD4Coloring.valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_D4_ofPath_eq_zero_of_five_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+    preprojectiveMk k (OrientedQuiver zigzagD4Graph o) (ofPath x) = 0 :=
+  SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le zigzagD4Coloring.colorable k
+    (signlessPreprojectiveMk_D4_ofPath_eq_zero_of_five_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `D₄` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least five. -/

@@ -40,6 +40,8 @@ weight spaces of `M ⊗ N` and must agree with it termwise
 * `TauCeti.genWeightSpace_tensorProduct_eq_iSup`: **the weight-space decomposition of a tensor
   product.** The `χ`-weight space of `M ⊗ N` is the supremum, over the pairs `(μ, ν)` with
   `μ + ν = χ`, of the submodules spanned by `Mμ ⊗ Nν`.
+* `TauCeti.genWeightSpace_tensorProduct_eq_iSup_weight`: the same decomposition, indexed by the
+  pairs of bundled `Weight`s of `M` and `N` summing to `χ`.
 * `TauCeti.genWeightSpace_tensorProduct_ne_bot` and `TauCeti.exists_weight_add_eq`: **the weights of
   `M ⊗ N` are exactly the sums of a weight of `M` and a weight of `N`.**
 * `TauCeti.exists_mem_weight_tensorProduct`: if the weights of `M` and of `N` lie in an
@@ -135,12 +137,8 @@ finiteness or triangularizability is involved. -/
 theorem tmul_mem_genWeightSpace_add {χ ψ : L → R} {m : M} {n : N}
     (hm : m ∈ genWeightSpace M χ) (hn : n ∈ genWeightSpace N ψ) :
     m ⊗ₜ[R] n ∈ genWeightSpace (M ⊗[R] N) (χ + ψ) := by
-  rw [mem_genWeightSpace] at hm hn ⊢
-  intro x
-  have := tmul_mem_maxGenEigenspace_add (R := R) (x := x) (m := m) (n := n)
-    ((Module.End.mem_maxGenEigenspace _ _ _).mpr (hm x))
-    ((Module.End.mem_maxGenEigenspace _ _ _).mpr (hn x))
-  simpa using (Module.End.mem_maxGenEigenspace _ _ _).mp this
+  simp only [mem_genWeightSpace, ← Module.End.mem_maxGenEigenspace, Pi.add_apply] at hm hn ⊢
+  exact fun x ↦ tmul_mem_maxGenEigenspace_add (hm x) (hn x)
 
 variable (M N) in
 /-- The submodule of `M ⊗ N` spanned by the pure tensors of a `χ`-weight vector of `M` and a
@@ -192,14 +190,10 @@ variable (K L M N)
 theorem iSup_map₂_mk_genWeightSpace_eq_top :
     ⨆ (χ : L → K) (ψ : L → K), Submodule.map₂ (TensorProduct.mk K M N)
         (genWeightSpace M χ).toSubmodule (genWeightSpace N ψ).toSubmodule = ⊤ := by
-  have hM : ⨆ χ : L → K, (genWeightSpace M χ).toSubmodule = ⊤ := by
-    rw [← LieSubmodule.iSup_toSubmodule, iSup_genWeightSpace_eq_top K L M,
-      LieSubmodule.top_toSubmodule]
-  have hN : ⨆ ψ : L → K, (genWeightSpace N ψ).toSubmodule = ⊤ := by
-    rw [← LieSubmodule.iSup_toSubmodule, iSup_genWeightSpace_eq_top K L N,
-      LieSubmodule.top_toSubmodule]
   simp_rw [← Submodule.map₂_iSup_right]
-  rw [← Submodule.map₂_iSup_left, hM, hN, TensorProduct.map₂_mk_top_top_eq_top]
+  rw [← Submodule.map₂_iSup_left, LieSubmodule.iSup_toSubmodule_eq_top.mpr
+    (iSup_genWeightSpace_eq_top K L M), LieSubmodule.iSup_toSubmodule_eq_top.mpr
+    (iSup_genWeightSpace_eq_top K L N), TensorProduct.map₂_mk_top_top_eq_top]
 
 variable {K L M N}
 
@@ -227,10 +221,34 @@ theorem genWeightSpace_tensorProduct_eq_iSup (χ : L → K) :
     refine iSup_congr fun μ ↦ ?_
     rw [iSup_comm]
     exact iSup_congr fun ν ↦ iSup_iSup_eq_right
-  have hindep : iSupIndep q := by
-    have := iSupIndep_genWeightSpace K L (M ⊗[K] N)
-    rwa [← LieSubmodule.iSupIndep_toSubmodule] at this
+  have hindep : iSupIndep q :=
+    LieSubmodule.iSupIndep_toSubmodule.mpr (iSupIndep_genWeightSpace K L (M ⊗[K] N))
   exact (congr_fun ((hindep.le_iff_eq_of_iSup_eq_top hptop).mp hle) χ).symm
+
+/-- **The weight-space decomposition of a tensor product, indexed by weights.** The generalized
+`χ`-weight space of `M ⊗ N` is the supremum, over the pairs of a weight of `M` and a weight of `N`
+summing to `χ`, of the submodules spanned by the pure tensors of their weight vectors.
+
+This is `TauCeti.genWeightSpace_tensorProduct_eq_iSup` with the terms whose factors are not weights
+dropped: such a term has a zero factor, so it is zero. -/
+theorem genWeightSpace_tensorProduct_eq_iSup_weight (χ : L → K) :
+    (genWeightSpace (M ⊗[K] N) χ).toSubmodule =
+      ⨆ p : {p : Weight K L M × Weight K L N // (p.1 : L → K) + (p.2 : L → K) = χ},
+        Submodule.map₂ (TensorProduct.mk K M N) (genWeightSpace M p.val.1).toSubmodule
+          (genWeightSpace N p.val.2).toSubmodule := by
+  apply le_antisymm
+  · rw [genWeightSpace_tensorProduct_eq_iSup]
+    refine iSup₂_le fun μ ν ↦ iSup_le fun hμν ↦ ?_
+    by_cases hμ : genWeightSpace M μ = ⊥
+    · simp [hμ]
+    by_cases hν : genWeightSpace N ν = ⊥
+    · simp [hν]
+    have hadd : ((⟨μ, hμ⟩ : Weight K L M) : L → K) + ((⟨ν, hν⟩ : Weight K L N) : L → K) = χ := by
+      rwa [Weight.coe_weight_mk, Weight.coe_weight_mk]
+    exact le_iSup_of_le ⟨(⟨μ, hμ⟩, ⟨ν, hν⟩), hadd⟩ le_rfl
+  · refine iSup_le fun p ↦ ?_
+    exact (map₂_mk_genWeightSpace_le M N p.val.1 p.val.2).trans_eq
+      (congrArg (fun ξ ↦ (genWeightSpace (M ⊗[K] N) ξ).toSubmodule) p.property)
 
 /-- **Every weight of a tensor product is a sum of weights.** If `χ` is a weight of `M ⊗ N`, then
 `χ = μ + ν` for a weight `μ` of `M` and a weight `ν` of `N`. This is the converse of
@@ -241,20 +259,16 @@ If no such pair existed then every term of the decomposition
 that weight space would be zero. -/
 theorem exists_weight_add_eq (χ : Weight K L (M ⊗[K] N)) :
     ∃ (μ : Weight K L M) (ν : Weight K L N), (μ : L → K) + (ν : L → K) = (χ : L → K) := by
-  by_contra hc
-  push Not at hc
-  have hbot : genWeightSpace (M ⊗[K] N) (χ : L → K) = ⊥ := by
-    rw [← LieSubmodule.toSubmodule_eq_bot, genWeightSpace_tensorProduct_eq_iSup]
-    simp only [iSup_eq_bot]
-    intro μ ν hμν
-    by_cases hμ : genWeightSpace M μ = ⊥
-    · rw [hμ]
-      simp
-    by_cases hν : genWeightSpace N ν = ⊥
-    · rw [hν]
-      simp
-    exact absurd hμν (hc ⟨μ, hμ⟩ ⟨ν, hν⟩)
-  exact absurd hbot χ.genWeightSpace_ne_bot
+  by_contra! hc
+  refine Weight.genWeightSpace_ne_bot (M ⊗[K] N) χ ?_
+  rw [← LieSubmodule.toSubmodule_eq_bot, genWeightSpace_tensorProduct_eq_iSup]
+  simp only [iSup_eq_bot]
+  intro μ ν hμν
+  by_cases hμ : genWeightSpace M μ = ⊥
+  · simp [hμ]
+  by_cases hν : genWeightSpace N ν = ⊥
+  · simp [hν]
+  exact (hc ⟨μ, hμ⟩ ⟨ν, hν⟩ hμν).elim
 
 /-- **Weights in an additively closed set are preserved by tensor products.** If every weight of
 `M` and every weight of `N` agrees with a linear form in `s`, a set closed under addition such as a
@@ -272,26 +286,10 @@ theorem exists_mem_weight_tensorProduct {S : Type*} [SetLike S (Module.Dual K L)
 /-- A tensor product of finite-dimensional triangularizable modules with linear weights again has
 linear weights. Every weight of the tensor product is a sum of weights of the two factors. -/
 instance instLinearWeightsTensorProduct [LinearWeights K L M] [LinearWeights K L N] :
-    LinearWeights K L (M ⊗[K] N) where
-  map_add χ hχ x y := by
-    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N))
-    have hχ_eq : χ = (μ : L → K) + (ν : L → K) := by
-      simpa using hμν.symm
-    rw [hχ_eq]
-    simp only [Pi.add_apply, map_add]
-    ac_rfl
-  map_smul χ hχ t x := by
-    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N))
-    have hχ_eq : χ = (μ : L → K) + (ν : L → K) := by
-      simpa using hμν.symm
-    rw [hχ_eq]
-    simp only [Pi.add_apply, map_smul, smul_eq_mul, mul_add]
-  map_lie χ hχ x y := by
-    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N))
-    have hχ_eq : χ = (μ : L → K) + (ν : L → K) := by
-      simpa using hμν.symm
-    rw [hχ_eq]
-    simp only [Pi.add_apply, Weight.apply_lie, add_zero]
+    LinearWeights K L (M ⊗[K] N) := by
+  refine ⟨?_, ?_, ?_⟩ <;> intro χ hχ <;>
+    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N)) <;>
+    simp only [Weight.coe_weight_mk] at hμν <;> subst hμν <;> simp [add_add_add_comm, mul_add]
 
 end Field
 

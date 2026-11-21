@@ -32,7 +32,12 @@ local stable and unstable manifolds near a hyperbolic equilibrium.
 * `LinearMap.IsSymmetric.exists_exponential_bounds_spectralSubspaces`: a symmetric operator has
   a common positive contraction rate on its two strict spectral subspaces.
 * `ContinuousLinearMap.IsIdempotentElem.exists_projection_exponential_bounds`: exponential
-  bounds on the range and kernel of an idempotent operator give bounds in projection form.
+  bounds, with a common constant and rate, on the range and kernel of an idempotent operator give
+  bounds in projection form.
+* `ContinuousLinearMap.range_eq_stableSubspace_of_exponential_bounds` and
+  `ContinuousLinearMap.range_id_sub_eq_unstableSubspace_of_exponential_bounds`: conversely, the
+  range of a projection with such bounds is the stable subspace, and the range of its
+  complementary projection is the unstable subspace.
 
 ## References
 
@@ -156,49 +161,139 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 namespace IsIdempotentElem
 
-/-- If an idempotent operator `P` has exponential flow bounds on its range and kernel, then it
-has the projection-form bounds used by the Lyapunov--Perron construction. The common constant
-absorbs the operator norms of `P` and `1 - P`. -/
-theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) (halpha : 0 < alpha)
+/-- If an idempotent operator `P` has exponential flow bounds on its range and kernel, with a
+common constant `C` and rate `alpha`, then it has the projection-form bounds used by the
+Lyapunov--Perron construction. The common constant absorbs `C` and the operator norms of `P` and
+`1 - P`. -/
+theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) {C : ℝ}
+    (halpha : 0 < alpha)
     (hs : ∀ (t : ℝ), 0 ≤ t → ∀ w ∈ P.range,
-      ‖exp (t • A) w‖ ≤ Real.exp (-alpha * t) * ‖w‖)
+      ‖exp (t • A) w‖ ≤ C * Real.exp (-alpha * t) * ‖w‖)
     (hu : ∀ (t : ℝ), t ≤ 0 → ∀ w ∈ P.ker,
-      ‖exp (t • A) w‖ ≤ Real.exp (alpha * t) * ‖w‖) :
+      ‖exp (t • A) w‖ ≤ C * Real.exp (alpha * t) * ‖w‖) :
     ∃ (K rate : ℝ≥0), 0 < K ∧ 0 < rate ∧
       (∀ t : ℝ, 0 ≤ t → ∀ v : X,
         ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-rate * t) * ‖v‖) ∧
       (∀ t : ℝ, t ≤ 0 → ∀ v : X,
         ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (rate * t) * ‖v‖) := by
-  let K : ℝ≥0 := ‖P‖₊ + ‖ContinuousLinearMap.id ℝ X - P‖₊ + 1
+  -- If `C` were not positive, the bounds at `t = 0` would force `X` to be trivial.
+  obtain hC | hX : 0 < C ∨ ∀ v : X, v = 0 := by
+    refine (lt_or_ge 0 C).imp_right fun hC v ↦ ?_
+    have hPv : ‖P v‖ = 0 := by
+      have := hs 0 le_rfl (P v) ⟨v, rfl⟩
+      simp only [zero_smul, NormedSpace.exp_zero, one_apply_eq_self,
+        mul_zero, Real.exp_zero, mul_one] at this
+      nlinarith [norm_nonneg (P v)]
+    have hvP : ‖v - P v‖ = 0 := by
+      have hPP : P (P v) = P v := by rw [← mul_apply_eq_comp, hP.eq]
+      have := hu 0 le_rfl (v - P v) (by simp [hPP])
+      simp only [zero_smul, NormedSpace.exp_zero, one_apply_eq_self,
+        mul_zero, Real.exp_zero, mul_one] at this
+      nlinarith [norm_nonneg (v - P v)]
+    exact (sub_eq_zero.mp (norm_eq_zero.mp hvP)).trans (norm_eq_zero.mp hPv)
+  swap
+  · refine ⟨1, ⟨alpha, halpha.le⟩, one_pos, by exact_mod_cast halpha, ?_, ?_⟩ <;>
+      intro t _ v <;> simp [hX v]
+  let M : ℝ≥0 := ‖P‖₊ + ‖ContinuousLinearMap.id ℝ X - P‖₊ + 1
   let rate : ℝ≥0 := ⟨alpha, halpha.le⟩
-  have hP_le : ‖P‖ ≤ (K : ℝ) := by
-    dsimp only [K]
+  have hP_le : ‖P‖ ≤ (M : ℝ) := by
+    dsimp only [M]
     push_cast
     nlinarith [norm_nonneg (ContinuousLinearMap.id ℝ X - P)]
-  have hPc_le : ‖ContinuousLinearMap.id ℝ X - P‖ ≤ (K : ℝ) := by
-    dsimp only [K]
+  have hPc_le : ‖ContinuousLinearMap.id ℝ X - P‖ ≤ (M : ℝ) := by
+    dsimp only [M]
     push_cast
     nlinarith [norm_nonneg P]
-  have hK : 0 < K := by
-    dsimp only [K]
-    positivity
+  have hK : 0 < C.toNNReal * M := by
+    dsimp only [M]
+    exact mul_pos (Real.toNNReal_pos.mpr hC) (by positivity)
   have hrate : 0 < rate := by
     exact_mod_cast halpha
-  refine ⟨K, rate, hK, hrate, ?_, ?_⟩
+  have hKC : ((C.toNNReal * M : ℝ≥0) : ℝ) = C * M := by
+    rw [NNReal.coe_mul, Real.coe_toNNReal _ hC.le]
+  have hrate_eq : (rate : ℝ) = alpha := rfl
+  refine ⟨C.toNNReal * M, rate, hK, hrate, ?_, ?_⟩
   · intro t ht v
     have hPv : P v ∈ P.range := ⟨v, rfl⟩
-    exact norm_exp_smul_apply_le_mul_norm_of_le (hs t ht (P v) hPv) (P.le_opNorm v)
-      (Real.exp_nonneg _) hP_le
+    have := norm_exp_smul_apply_le_mul_norm_of_le (hs t ht (P v) hPv) (P.le_opNorm v)
+      (by positivity) hP_le
+    rw [hKC, hrate_eq]
+    linarith
   · intro t ht v
     have hvP : v - P v ∈ P.ker := by
       have hPP : P (P v) = P v := by rw [← mul_apply_eq_comp, hP.eq]
       simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hPP, sub_self]
     have hop : ‖v - P v‖ ≤ ‖ContinuousLinearMap.id ℝ X - P‖ * ‖v‖ := by
       simpa using (ContinuousLinearMap.id ℝ X - P).le_opNorm v
-    exact norm_exp_smul_apply_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop
-      (Real.exp_nonneg _) hPc_le
+    have := norm_exp_smul_apply_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop
+      (by positivity) hPc_le
+    rw [hKC, hrate_eq]
+    linarith
 
 end IsIdempotentElem
+
+section StableSubspace
+
+variable [CompleteSpace X] {K : ℝ}
+
+open Filter Topology
+
+/-- **The range of a dichotomy projection is the stable subspace.** If an idempotent `P`
+commuting with `A` has the projection-form bounds of an exponential dichotomy with rate
+`alpha > 0`, then the range of `P` is the stable subspace of `A`: its vectors decay in forward
+time, and a stable vector in the kernel of `P` vanishes, because the backward bound makes its
+forward orbit grow at rate `alpha` unless it is zero. In particular the stable direction of the
+Lyapunov–Perron construction depends only on `A`, not on the choice of `P`. -/
+theorem range_eq_stableSubspace_of_exponential_bounds (halpha : 0 < alpha)
+    (hP : IsIdempotentElem P) (hAP : Commute A P)
+    (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-alpha * t) * ‖v‖)
+    (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (alpha * t) * ‖v‖) :
+    P.range = A.stableSubspace := by
+  have hdecay : Tendsto (fun t : ℝ ↦ K * Real.exp (-alpha * t)) atTop (𝓝 0) := by
+    simpa using (Real.tendsto_exp_atBot.comp
+      (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 halpha))).const_mul K
+  have hrange (w : X) : P w ∈ A.stableSubspace := by
+    rw [mem_stableSubspace]
+    refine squeeze_zero_norm' (eventually_atTop.2 ⟨0, fun t ht ↦ hs t ht w⟩) ?_
+    simpa using hdecay.mul_const ‖w‖
+  refine le_antisymm (fun _ ⟨w, hw⟩ ↦ hw ▸ hrange w) fun v hv ↦ ?_
+  -- The kernel component `w = v - P v` is stable; the backward bound on the kernel of `P` gives
+  -- `‖w‖ ≤ K exp (-alpha t) ‖exp (t • A) w‖`, which tends to `0`.
+  have hPP : P (P v) = P v := by rw [← mul_apply_eq_comp, hP.eq]
+  set w := v - P v
+  have hPw : P w = 0 := by simp [w, hPP]
+  have hle (t : ℝ) (ht : 0 ≤ t) : ‖w‖ ≤ K * Real.exp (-alpha * t) * ‖exp (t • A) w‖ := by
+    have hz : P (exp (t • A) w) = 0 := by
+      rw [← mul_apply_eq_comp, ← ((hAP.smul_left t).exp_left).eq, mul_apply_eq_comp, hPw, map_zero]
+    have hback : exp ((-t) • A) (exp (t • A) w) = w := by
+      simpa only [flow_apply, neg_add_cancel, zero_smul, exp_zero, one_apply_eq_self] using
+        (A.flow.map_add (-t) t w).symm
+    have h := hu (-t) (by linarith) (exp (t • A) w)
+    rwa [hz, sub_zero, hback, mul_neg, ← neg_mul] at h
+  have hws : w ∈ A.stableSubspace := A.stableSubspace.sub_mem hv (hrange v)
+  have hw0 : ‖w‖ ≤ 0 := by
+    refine ge_of_tendsto ?_ (eventually_atTop.2 ⟨0, hle⟩)
+    simpa using hdecay.mul (mem_stableSubspace.1 hws).norm
+  exact ⟨v, (sub_eq_zero.1 (norm_le_zero_iff.1 hw0)).symm⟩
+
+/-- **The kernel direction of a dichotomy projection is the unstable subspace.** Under the
+hypotheses of `ContinuousLinearMap.range_eq_stableSubspace_of_exponential_bounds`, the range of
+`1 - P` is the unstable subspace of `A`. This is that statement for `-A` and `1 - P`, since the
+flow of `-A` reverses time. -/
+theorem range_id_sub_eq_unstableSubspace_of_exponential_bounds (halpha : 0 < alpha)
+    (hP : IsIdempotentElem P) (hAP : Commute A P)
+    (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-alpha * t) * ‖v‖)
+    (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (alpha * t) * ‖v‖) :
+    (ContinuousLinearMap.id ℝ X - P).range = A.unstableSubspace := by
+  rw [← stableSubspace_neg]
+  refine range_eq_stableSubspace_of_exponential_bounds (K := K) halpha ?_ ?_ (fun t ht v ↦ ?_)
+    fun t ht v ↦ ?_
+  · simpa [one_def] using hP.one_sub
+  · simpa [one_def] using (Commute.one_right (-A)).sub_right hAP.neg_left
+  · simpa [smul_neg, ← neg_smul, mul_neg, ← neg_mul] using hu (-t) (by linarith) v
+  · simpa [smul_neg, ← neg_smul, mul_neg, neg_mul] using hs (-t) (by linarith) v
+
+end StableSubspace
 
 end ContinuousLinearMap
 

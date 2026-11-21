@@ -11,6 +11,8 @@ public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Submodule
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import Mathlib.Analysis.LocallyConvex.HahnBanach
@@ -45,6 +47,9 @@ interior source points with the same ambient image, intertwining the two integra
   dimension equals the rank of the distribution at any image point.
 * `TauCeti.isIntegralManifold_id`: the identity is an integral manifold of the full tangent
   distribution.
+* `TauCeti.IsIntegralManifold.comp_isLocalDiffeomorph` and
+  `TauCeti.IsIntegralManifold.comp_subtypeVal`: precomposition with a local diffeomorphism and
+  restriction to a nonempty open subset preserve `IsIntegralManifold` for `n ≠ 0`.
 * `TauCeti.IsIntegralManifold.eventually_sub_mem`: an integral immersion, of regularity at least
   one, of a finite-dimensional constant distribution locally stays in one affine plaque, including
   at boundary source points.
@@ -142,6 +147,23 @@ theorem isIntegralManifold_id [IsManifold I n M] [Nonempty M] :
   refine ⟨inferInstance, Manifold.IsImmersion.id, fun x ↦ ?_⟩
   rw [mfderiv_id]
   exact LinearMap.range_id
+
+/-- Precomposing an integral manifold of regularity `n ≠ 0` with a `C^n` local diffeomorphism of a
+nonempty `C^n` manifold with the same source model gives an integral manifold. -/
+theorem IsIntegralManifold.comp_isLocalDiffeomorph
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace H' N'] [IsManifold J n N'] [Nonempty N']
+    {g : N' → N} (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) (hg : IsLocalDiffeomorph J J n g) :
+    IsIntegralManifold J n D (f ∘ g) :=
+  ⟨inferInstance, isImmersion_comp_isLocalDiffeomorph hg hf.isImmersion,
+    fun y ↦ ((hg y).range_mfderiv_comp hn).trans (hf.range_mfderiv (g y))⟩
+
+/-- Restricting an integral manifold of regularity `n ≠ 0` of a `C^n` manifold to a nonempty open
+subset gives an integral manifold. -/
+theorem IsIntegralManifold.comp_subtypeVal [IsManifold J n N]
+    {U : TopologicalSpace.Opens N} [Nonempty U]
+    (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) :
+    IsIntegralManifold J n D (f ∘ (Subtype.val : U → N)) :=
+  hf.comp_isLocalDiffeomorph hn isLocalDiffeomorph_subtype_val
 
 end Unbundled
 
@@ -269,28 +291,11 @@ theorem IsIntegralManifold.exists_plaque_transition
       x ∈ e.source ∧ e x = y ∧ ∀ z ∈ e.source, f z = g (e z) := by
   obtain ⟨c, hxc, hc0, _, hfc⟩ := hf.exists_plaque_chart hn hx isOpen_univ (mem_univ x)
   obtain ⟨d, hyd, hd0, _, hgd⟩ := hg.exists_plaque_chart hn hy isOpen_univ (mem_univ y)
-  have hsource : (c.trans d.symm).source = c.source ∩ c ⁻¹' d.target := by
-    simp [PartialDiffeomorph.trans_toPartialEquiv, PartialDiffeomorph.symm_toPartialEquiv]
-  have hcoe (z : N) : (c.trans d.symm) z = d.symm (c z) := by
-    simp [PartialDiffeomorph.trans_toPartialEquiv, PartialDiffeomorph.symm_toPartialEquiv]
-  refine ⟨c.trans d.symm, ?_, ?_, ?_⟩
-  · rw [hsource]
-    refine ⟨hxc, ?_⟩
-    rw [mem_preimage, hc0, ← hd0]
-    exact d.map_source hyd
-  · rw [hcoe]
-    rw [hc0, ← hd0]
-    exact d.left_inv hyd
-  · intro z hz
-    rw [hsource] at hz
-    rw [hcoe]
-    have hinv : d (d.symm (c z)) = c z := d.right_inv hz.2
-    calc
-      f z = f x + (c z : E) := hfc z hz.1
-      _ = g y + (c z : E) := congrArg (fun v : E ↦ v + (c z : E)) hfg
-      _ = g y + (d (d.symm (c z)) : E) :=
-        congrArg (fun w : W ↦ g y + (w : E)) hinv.symm
-      _ = g (d.symm (c z)) := (hgd _ (d.symm.map_source hz.2)).symm
+  obtain ⟨e, hxe, hex, hec, hed, he⟩ :=
+    c.exists_transition d hxc hyd (hc0.trans hd0.symm)
+  refine ⟨e, hxe, hex, ?_⟩
+  intro z hz
+  rw [hfc z (hec hz), hgd (e z) (hed hz), hfg, he z hz]
 
 end AffinePlaques
 

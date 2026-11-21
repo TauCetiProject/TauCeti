@@ -72,14 +72,14 @@ abbrev BidirectedHom (x y : V(G)) : Type v :=
 /-- A multigraph with finitely many actual edges has finitely many arrows between any two
 vertices of its bidirected arrow family. -/
 instance [Finite E(G)] (x y : V(G)) : Finite (G.BidirectedHom x y) :=
-  Finite.of_injective (fun e ↦ (⟨e.1, e.2.edge_mem⟩ : E(G))) fun _ _ h ↦
+  Finite.of_injective (fun e ↦ (⟨e.val, e.property.edge_mem⟩ : E(G))) fun _ _ h ↦
     Subtype.ext (Subtype.mk.inj h)
 
 /-- Changing the endpoints of a bidirected arrow does not change its underlying edge. -/
 @[simp]
 theorem BidirectedHom.fst_cast {x y x' y' : V(G)} (a : G.BidirectedHom x y)
     (hx : x = x') (hy : y = y') :
-    (@Quiver.Hom.cast G.vertexSet (Quiver.mk G.BidirectedHom) x y x' y' hx hy a).1 = a.1 := by
+    (@Quiver.Hom.cast G.vertexSet (Quiver.mk G.BidirectedHom) x y x' y' hx hy a).val = a.val := by
   cases hx
   cases hy
   rfl
@@ -94,9 +94,9 @@ abbrev IsLink.toBidirectedHom {e : β} {x y : α} (h : G.IsLink e x y) :
 /-- The map from bidirected arrows crossing a vertex set in the outward direction to their
 underlying edges is injective. -/
 theorem bidirectedHom_edge_injOn_cut (S : Set V(G)) :
-    Set.InjOn (fun a : Σ x y, G.BidirectedHom x y ↦ a.2.2.1)
+    Set.InjOn (fun a : Σ x y, G.BidirectedHom x y ↦ a.2.2.val)
       {a | a.1 ∈ S ∧ a.2.1 ∉ S} := by
-  rintro ⟨x, y, e, hxy⟩ ⟨hx, hy⟩ ⟨x', y', e', hxy'⟩ ⟨hx', hy'⟩ (rfl : e = e')
+  rintro ⟨x, y, e, hxy⟩ ⟨hx, _⟩ ⟨x', y', e', hxy'⟩ ⟨hx', hy'⟩ (rfl : e = e')
   rcases hxy.eq_and_eq_or_eq_and_eq hxy' with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
   · obtain rfl : x = x' := Subtype.ext h₁
     obtain rfl : y = y' := Subtype.ext h₂
@@ -158,8 +158,8 @@ variable {α : Type u} {β : Type v} {G : Graph α β}
 /-- A directed walk of the bidirected arrow family of `G`, as a walk of `G` traversing the edges
 of its arrows in the same order. -/
 def toGraphWalk {x : V(G)} : {y : V(G)} → ArrowWalk G.BidirectedHom x y → G.Walk x y
-  | _, @Quiver.Path.nil _ .(_) _ => .nil
-  | _, @Quiver.Path.cons _ .(_) _ _ _ q a => (toGraphWalk q).append a.2.toWalk
+  | _, @Quiver.Path.nil _ .(_) .(x) => .nil
+  | _, @Quiver.Path.cons _ .(_) .(x) _ _ q a => (toGraphWalk q).append a.property.toWalk
 
 variable {x y z : V(G)}
 
@@ -169,7 +169,7 @@ theorem toGraphWalk_nil (x : V(G)) : (nil x : ArrowWalk G.BidirectedHom x x).toG
 
 @[simp]
 theorem toGraphWalk_cons (q : ArrowWalk G.BidirectedHom x y) (a : G.BidirectedHom y z) :
-    (q.cons a).toGraphWalk = q.toGraphWalk.append a.2.toWalk :=
+    (q.cons a).toGraphWalk = q.toGraphWalk.append a.property.toWalk :=
   (rfl)
 
 /-- The walk of a composite directed walk is the concatenation of the walks. -/
@@ -201,7 +201,7 @@ theorem toGraphWalk_toBidirected (p : G.Walk x y) (hx : x ∈ V(G)) :
 /-- Every directed walk of the bidirected arrow family is the directed walk of its walk in `G`. -/
 @[simp]
 theorem toBidirected_toGraphWalk {x y : V(G)} (q : ArrowWalk G.BidirectedHom x y) :
-    q.toGraphWalk.toBidirected x.2 = q := by
+    q.toGraphWalk.toBidirected x.property = q := by
   induction q with
   | nil => rfl
   | cons q a ih =>
@@ -212,14 +212,14 @@ variable (G) in
 /-- The walks of `G` between two actual vertices are the directed walks of the bidirected arrow
 family between them, with the same vertex and edge sequences. -/
 def bidirectedEquiv (x y : V(G)) : G.Walk x y ≃ ArrowWalk G.BidirectedHom x y where
-  toFun p := p.toBidirected x.2
+  toFun p := p.toBidirected x.property
   invFun q := q.toGraphWalk
-  left_inv p := toGraphWalk_toBidirected p x.2
+  left_inv p := toGraphWalk_toBidirected p x.property
   right_inv := toBidirected_toGraphWalk
 
 @[simp]
 theorem bidirectedEquiv_apply {x y : V(G)} (p : G.Walk x y) :
-    bidirectedEquiv G x y p = p.toBidirected x.2 :=
+    bidirectedEquiv G x y p = p.toBidirected x.property :=
   (rfl)
 
 @[simp]
@@ -260,7 +260,7 @@ theorem vertices_toBidirected (p : G.Walk x y) (hx : x ∈ V(G)) :
 /-- The arrows of the directed walk are the edges of the walk, in the same order. -/
 @[simp]
 theorem edges_toBidirected (p : G.Walk x y) (hx : x ∈ V(G)) :
-    (p.toBidirected hx).arrows.map (fun a ↦ a.2.2.1) = p.edges := by
+    (p.toBidirected hx).arrows.map (fun a ↦ a.2.2.val) = p.edges := by
   induction p with
   | nil => simp
   | cons e h p ih => simp [ih]
@@ -310,7 +310,7 @@ theorem support_toGraphWalk (q : ArrowWalk G.BidirectedHom x y) :
 /-- The edges of the walk of a directed walk are the edges of its arrows, in the same order. -/
 @[simp]
 theorem edges_toGraphWalk (q : ArrowWalk G.BidirectedHom x y) :
-    q.toGraphWalk.edges = q.arrows.map (fun a ↦ a.2.2.1) := by
+    q.toGraphWalk.edges = q.arrows.map (fun a ↦ a.2.2.val) := by
   conv_rhs => rw [← Walk.toBidirected_toGraphWalk q]
   rw [Walk.edges_toBidirected]
 
@@ -327,8 +327,8 @@ theorem internallyDisjoint_toGraphWalk_iff {p q : ArrowWalk G.BidirectedHom x y}
     p.toGraphWalk.InternallyDisjoint q.toGraphWalk ↔ p.InternallyDisjoint q := by
   rw [Walk.internallyDisjoint_def, internallyDisjoint_def]
   refine ⟨fun h v hp hq ↦ ?_, fun h v hp hq ↦ ?_⟩
-  · exact (h v ((mem_support_toGraphWalk_iff _).2 ⟨v.2, hp⟩)
-      ((mem_support_toGraphWalk_iff _).2 ⟨v.2, hq⟩)).imp Subtype.ext Subtype.ext
+  · exact (h v ((mem_support_toGraphWalk_iff _).2 ⟨v.property, hp⟩)
+      ((mem_support_toGraphWalk_iff _).2 ⟨v.property, hq⟩)).imp Subtype.ext Subtype.ext
   · obtain ⟨hv, hp'⟩ := (mem_support_toGraphWalk_iff _).1 hp
     obtain ⟨_, hq'⟩ := (mem_support_toGraphWalk_iff _).1 hq
     exact (h ⟨v, hv⟩ hp' hq').imp (congrArg Subtype.val) (congrArg Subtype.val)
@@ -348,8 +348,8 @@ theorem isPath_toGraphWalk_iff (q : ArrowWalk G.BidirectedHom x y) :
 /-- A directed cycle of the bidirected arrow family is an undirected cycle exactly when no two of
 its arrows come from the same edge. -/
 theorem isCycle_toGraphWalk_iff {x : V(G)} (q : ArrowWalk G.BidirectedHom x x) :
-    q.toGraphWalk.IsCycle ↔ q.IsCycle ∧ (q.arrows.map fun a ↦ a.2.2.1).Nodup := by
-  rw [Walk.isCycle_iff_isCycle_toBidirected_and_isTrail _ x.2, Walk.toBidirected_toGraphWalk,
+    q.toGraphWalk.IsCycle ↔ q.IsCycle ∧ (q.arrows.map fun a ↦ a.2.2.val).Nodup := by
+  rw [Walk.isCycle_iff_isCycle_toBidirected_and_isTrail _ x.property, Walk.toBidirected_toGraphWalk,
     Walk.isTrail_def, edges_toGraphWalk]
 
 end TauCeti.ArrowWalk
@@ -363,7 +363,7 @@ family joins them. -/
 theorem reachable_iff_nonempty_arrowWalk (x y : V(G)) :
     G.Reachable x y ↔ Nonempty (ArrowWalk G.BidirectedHom x y) := by
   rw [reachable_def, (Walk.bidirectedEquiv G x y).nonempty_congr]
-  exact and_iff_right x.2
+  exact and_iff_right x.property
 
 /-- Two actual vertices are reachable after deleting a set `Y` of vertices of `G` exactly when a
 directed walk of the bidirected arrow family joins them avoiding `Y`. -/
@@ -371,24 +371,24 @@ theorem reachableAvoiding_bidirectedHom_iff {Y : Set α} {x y : V(G)} :
     ReachableAvoiding G.BidirectedHom (Subtype.val ⁻¹' Y) x y ↔
       (G.deleteVerts Y).Reachable x y := by
   rw [reachableAvoiding_def, reachable_deleteVerts_iff_exists_walk]
-  refine ⟨fun ⟨q, hq⟩ ↦ ⟨q.toGraphWalk, x.2, by simpa using hq⟩,
-    fun ⟨p, _, hp⟩ ↦ ⟨p.toBidirected x.2, fun v hv ↦ hp v ?_⟩⟩
-  rw [← Walk.vertices_toBidirected p x.2]
-  exact List.mem_unattach.2 ⟨v.2, hv⟩
+  refine ⟨fun ⟨q, hq⟩ ↦ ⟨q.toGraphWalk, x.property, by simpa using hq⟩,
+    fun ⟨p, _, hp⟩ ↦ ⟨p.toBidirected x.property, fun v hv ↦ hp v ?_⟩⟩
+  rw [← Walk.vertices_toBidirected p x.property]
+  exact List.mem_unattach.2 ⟨v.property, hv⟩
 
 /-- Two actual vertices are reachable after deleting a set `E` of edges of `G` exactly when a
 directed walk of the bidirected arrow family joins them using no arrow given by an edge of `E`. -/
 theorem reachableWithout_bidirectedHom_iff {E : Set β} {x y : V(G)} :
-    ReachableWithout {a : Σ v w, G.BidirectedHom v w | a.2.2.1 ∈ E} x y ↔
+    ReachableWithout {a : Σ v w, G.BidirectedHom v w | a.2.2.val ∈ E} x y ↔
       (G.deleteEdges E).Reachable x y := by
   rw [reachableWithout_def, reachable_deleteEdges_iff_exists_walk]
-  refine ⟨fun ⟨q, hq⟩ ↦ ⟨x.2, q.toGraphWalk, fun e he heE ↦ ?_⟩,
+  refine ⟨fun ⟨q, hq⟩ ↦ ⟨x.property, q.toGraphWalk, fun e he heE ↦ ?_⟩,
     fun ⟨_, p, hp⟩ ↦ ⟨Walk.bidirectedEquiv G x y p, fun a ha haE ↦ ?_⟩⟩
   · rw [ArrowWalk.edges_toGraphWalk, List.mem_map] at he
     obtain ⟨a, ha, rfl⟩ := he
     exact hq a ha heE
   · rw [Walk.bidirectedEquiv_apply] at ha
-    exact hp _ (Walk.edges_toBidirected p x.2 ▸ List.mem_map_of_mem ha) haE
+    exact hp _ (Walk.edges_toBidirected p x.property ▸ List.mem_map_of_mem ha) haE
 
 /-- A set of actual vertices that the bidirected arrow family cannot avoid on its way from `x` to
 `y` separates `x` from `y` in `G`. -/
@@ -401,6 +401,6 @@ theorem not_reachable_deleteVerts_map_subtype {X : Finset V(G)} {x y : V(G)}
 /-- No arrow of the bidirected arrow family runs between vertices that no edge joins. -/
 theorem isEmpty_bidirectedHom {s t : α} (hadj : ¬G.Adj s t) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
     IsEmpty (G.BidirectedHom ⟨s, hs⟩ ⟨t, ht⟩) :=
-  ⟨fun e ↦ hadj ⟨e.1, e.2⟩⟩
+  ⟨fun e ↦ hadj ⟨e.val, e.property⟩⟩
 
 end Graph

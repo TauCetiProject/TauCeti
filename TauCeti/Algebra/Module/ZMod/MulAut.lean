@@ -10,10 +10,11 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.ZMod
 
 /-!
-# Automorphisms of a group whose additive copy is a `ℤ/nℤ`-module
+# Automorphisms of a monoid whose additive copy is a `ℤ/nℤ`-module
 
-Let `Q` be a commutative group whose additive copy `Additive Q` is a `ZMod n`-module, for instance
+Let `Q` be a commutative monoid whose additive copy `Additive Q` is a `ZMod n`-module, for instance
 an elementary abelian `p`-group viewed as an `𝔽_p`-vector space through `AddCommGroup.zmodModule`.
+The module structure already supplies additive inverses, so a group instance on `Q` is not needed.
 Every additive endomorphism of a `ZMod n`-module is `ZMod n`-linear (`ZMod.map_smul`), so the group
 automorphisms of `Q` are exactly the `ZMod n`-linear automorphisms of `Additive Q`. This file
 records that identification as an isomorphism of groups; composed with a basis it presents the
@@ -29,13 +30,15 @@ public section
 
 namespace TauCeti
 
-variable (n : ℕ) (Q : Type*) [CommGroup Q] [Module (ZMod n) (Additive Q)]
+variable (n : ℕ) (Q : Type*) [CommMonoid Q] [Module (ZMod n) (Additive Q)]
 
-/-- **Group automorphisms are linear automorphisms.** For a commutative group `Q` whose additive
+/-- **Monoid automorphisms are linear automorphisms.** For a commutative monoid `Q` whose additive
 copy is a `ZMod n`-module, an automorphism of `Q`, read additively, is a `ZMod n`-linear
 automorphism of `Additive Q`, and every linear automorphism arises this way. -/
 def mulAutEquivZModLinearEquiv : MulAut Q ≃* (Additive Q ≃ₗ[ZMod n] Additive Q) where
-  toFun σ := (MulEquiv.toAdditive σ).toLinearEquiv (ZMod.map_smul (MulEquiv.toAdditive σ))
+  toFun σ := (MulEquiv.toAdditive σ).toLinearEquiv (by
+    let := Module.addCommMonoidToAddCommGroup (ZMod n) (M := Additive Q)
+    exact ZMod.map_smul (MulEquiv.toAdditive σ))
   invFun e := MulEquiv.toAdditive.symm e.toAddEquiv
   left_inv _ := rfl
   right_inv _ := rfl

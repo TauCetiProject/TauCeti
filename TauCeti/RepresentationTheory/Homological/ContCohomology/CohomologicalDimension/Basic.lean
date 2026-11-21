@@ -31,7 +31,7 @@ them (`⊤` when none does), and the cohomological dimension `cd G = cohomologic
 the supremum of `cd_p G` over the primes `p`.
 
 The first comparison between them is `cd_p G ≤ scd_p G` for compact `G` (NSW (3.3.3)). It rests
-on `isPPrimaryTorsion_continuousCohomology`: over a compact group, the continuous cohomology of a
+on `isAddPGroup_continuousCohomology`: over a compact group, the continuous cohomology of a
 discrete `p`-primary torsion representation is `p`-primary torsion in every degree. A continuous
 cochain out of a compact group into a discrete module has finite image, so a single power of `p`
 kills it; that bound propagates through the iterated function spaces of the homogeneous cochain
@@ -55,7 +55,7 @@ the intended notion.
 
 ## Main results
 
-* `TauCeti.isPPrimaryTorsion_continuousCohomology`: continuous cohomology of a discrete
+* `TauCeti.isAddPGroup_continuousCohomology`: continuous cohomology of a discrete
   `p`-primary torsion representation of a compact group is `p`-primary torsion.
 * `TauCeti.cohomologicalDimensionAt_le_iff`, `TauCeti.strictCohomologicalDimensionAt_le_iff`,
   `TauCeti.cohomologicalDimension_le_iff`: each invariant is at most `n` exactly when the
@@ -91,32 +91,33 @@ variable {k G : Type*} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace
 
 /-- Every term of the coinduced resolution of a discrete `p`-primary torsion representation of a
 compact group is `p`-primary torsion. -/
-theorem isPPrimaryTorsion_resolutionX (h : IsPPrimaryTorsion p X.V) :
-    ∀ n : ℕ, IsPPrimaryTorsion p (TopRep.resolutionX X n).V
+theorem isAddPGroup_resolutionX (h : IsAddPGroup p X.V) :
+    ∀ n : ℕ, IsAddPGroup p (TopRep.resolutionX X n).V
   | 0 => h
   -- the successor term is `TopRep.coind₁`, whose underlying module is `C(G, -)` by definition
-  | n + 1 => (isPPrimaryTorsion_resolutionX h n).continuousMap G
+  | n + 1 => (isAddPGroup_resolutionX h n).continuousMap G
 
 /-- Every term of the homogeneous cochain complex of a discrete `p`-primary torsion
 representation of a compact group is `p`-primary torsion. -/
-theorem isPPrimaryTorsion_homogeneousCochains (h : IsPPrimaryTorsion p X.V) (n : ℕ) :
-    IsPPrimaryTorsion p ((TopRep.homogeneousCochains X).X n) :=
+theorem isAddPGroup_homogeneousCochains (h : IsAddPGroup p X.V) (n : ℕ) :
+    IsAddPGroup p ((TopRep.homogeneousCochains X).X n) :=
   -- degree `n` of the complex is the invariants of the shifted resolution, an additive subgroup
-  (isPPrimaryTorsion_resolutionX X h (n + 1)).of_injective
-    (TopRep.resolutionX X (n + 1)).ρ.invariants.subtype Subtype.val_injective
+  (isAddPGroup_resolutionX X h (n + 1)).of_injective
+    (TopRep.resolutionX X (n + 1)).ρ.invariants.subtype.toAddMonoidHom Subtype.val_injective
 
 /-- **The continuous cohomology of a discrete `p`-primary torsion representation of a compact
 group is `p`-primary torsion**, in every degree. -/
-theorem isPPrimaryTorsion_continuousCohomology (h : IsPPrimaryTorsion p X.V) (n : ℕ) :
-    IsPPrimaryTorsion p (continuousCohomology n X) := by
+theorem isAddPGroup_continuousCohomology (h : IsAddPGroup p X.V) (n : ℕ) :
+    IsAddPGroup p (continuousCohomology n X) := by
   set S := (TopRep.homogeneousCochains X).sc n
-  have hker : IsPPrimaryTorsion p (TopModuleCat.ker S.g) :=
-    (isPPrimaryTorsion_homogeneousCochains X h n).of_injective (TopModuleCat.kerι S.g).hom
-      Subtype.val_injective
-  have hcycles : IsPPrimaryTorsion p S.cycles :=
-    hker.of_surjective (S.isoCyclesOfIsLimit (TopModuleCat.isLimitKer S.g)).hom.hom
+  have hker : IsAddPGroup p (TopModuleCat.ker S.g) :=
+    (isAddPGroup_homogeneousCochains X h n).of_injective
+      (TopModuleCat.kerι S.g).hom.toLinearMap.toAddMonoidHom Subtype.val_injective
+  have hcycles : IsAddPGroup p S.cycles :=
+    hker.of_surjective
+      (S.isoCyclesOfIsLimit (TopModuleCat.isLimitKer S.g)).hom.hom.toLinearMap.toAddMonoidHom
       (S.isoCyclesOfIsLimit _).toContinuousLinearEquiv.surjective
-  exact hcycles.of_surjective S.homologyπ.hom S.homologyπ_surjective
+  exact hcycles.of_surjective S.homologyπ.hom.toLinearMap.toAddMonoidHom S.homologyπ_surjective
 
 end Torsion
 
@@ -130,7 +131,7 @@ variable (p) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 discrete `p`-primary torsion `G`-module `M : Type (max u v)` with a continuous action. -/
 def CohomologicalDimensionLE (n : ℕ) : Prop :=
   ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+    [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M →
     ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M))
 
 /-- `StrictCohomologicalDimensionLE p G n` says that the `p`-primary component of `Hⁱ(G, M)`
@@ -163,7 +164,7 @@ degree `n` for every discrete `p`-primary torsion `G`-module with continuous act
 theorem cohomologicalDimensionLE_iff {n : ℕ} :
     CohomologicalDimensionLE.{v} p G n ↔
       ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M →
         ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) :=
   Iff.rfl
 
@@ -201,7 +202,7 @@ discrete `p`-primary torsion `M`. -/
 @[simp] theorem cohomologicalDimensionAt_eq_zero_iff :
     cohomologicalDimensionAt.{v} p G = 0 ↔
       ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M →
         ∀ i : ℕ, 0 < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) :=
   leastENatBound_eq_zero_iff.trans cohomologicalDimensionLE_iff
 
@@ -242,8 +243,9 @@ vanishing of its `p`-primary component is the vanishing of the whole group. -/
 theorem StrictCohomologicalDimensionLE.cohomologicalDimensionLE [CompactSpace G] {n : ℕ}
     (h : StrictCohomologicalDimensionLE.{v} p G n) : CohomologicalDimensionLE.{v} p G n := by
   intro M _ _ _ _ _ hM i hi
-  have hH := isPPrimaryTorsion_continuousCohomology (ofDiscreteModule ℤ G M) hM i
-  exact subsingleton_of_forall_eq 0 fun x ↦ AddSubgroup.mem_bot.1 (h M i hi ▸ hH.mem x)
+  have hH := isAddPGroup_continuousCohomology (ofDiscreteModule ℤ G M) hM i
+  exact subsingleton_of_forall_eq 0 fun x ↦
+    AddSubgroup.mem_bot.1 (h M i hi ▸ AddCommGroup.mem_primaryComponent.2 (hH x))
 
 /-- **`cd_p ≤ scd_p`** (NSW (3.3.3)): over a compact group, the `p`-cohomological dimension is
 at most the strict `p`-cohomological dimension. -/

@@ -343,7 +343,7 @@ theorem unique (hg₁ : f.IsPureSlopeFactorization v g₁)
     obtain ⟨c, -, hcu⟩ := Polynomial.isUnit_iff.mp u.isUnit
     rw [← hcu] at hu
     have hc1 : c = 1 := by
-      have h0 := congrArg (coeff · 0) hu
+      have h0 := congrArg (AddMonoidAlgebra.coeff · 0) hu
       simpa [mul_coeff_zero, hg₁.coeff_zero m, hg₂.coeff_zero m] using h0
     simpa [hc1] using hu
   · have hm' : m ∉ f.newtonSlopes v := by simpa [Multiset.mem_toFinset] using hm
@@ -383,8 +383,7 @@ theorem exists_mul_newtonSlopes_filter_le {f : K[X]} (hf0 : f.coeff 0 = 1) (σ :
   obtain ⟨l, j, hface⟩ := exists_isFiniteFace_newtonPolygon
     (newtonPolygon_ne_top_of_ne_zero (fun _ => v.top_iff.mp) hf_ne) σ
   have hfd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (f : K⟦X⟧) :=
-    PowerSeries.isDistinguished_of_isFiniteFace v hb hv
-      (TauCeti.PowerSeries.isRestricted_polynomial f) (f.newtonPolygon_coe v ▸ hface)
+    PowerSeries.isDistinguished_of_isFiniteFace v hb hv (f.newtonPolygon_coe v ▸ hface)
   obtain ⟨e, ω, he, hωm, heω⟩ := hfd.exists_isUnit_isMonicOfDegree_mul_eq
     hfd.coeff_ne_zero.isUnit hc (TauCeti.PowerSeries.isRestricted_polynomial f)
   have hωd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (ω : K⟦X⟧) :=

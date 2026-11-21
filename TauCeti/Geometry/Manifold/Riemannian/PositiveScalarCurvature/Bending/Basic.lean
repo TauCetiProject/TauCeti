@@ -421,7 +421,7 @@ private theorem tendsto_bendHeight_atTop (hr₁ : 0 < r₁) (hW : 1 ≤ W) :
 
 /-- The first stage: during the small-angle bend `[0, 1]` the bending term is at most `R₀ / 2`. -/
 private theorem bend_first_le {q R₀ K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 ≤ R₀) (hr₁ : 0 < r₁)
-    (h₀ : 0 ≤ θ₀) (h₁ : θ₀ ≤ π / 2) (hK : ∀ x, deriv smoothTransition x ≤ K)
+    (h₀ : 0 ≤ θ₀) (hK : ∀ x, deriv smoothTransition x ≤ K)
     (hθ₀ : 6 * (q - 1) * K * θ₀ ≤ R₀ * (r₁ * exp (-1)) ^ 2) {u : ℝ} (hu : 0 ≤ u) :
     3 * (q - 1) * (θ₀ * deriv smoothTransition u / bendSpeed r₁ θ₀ W u)
       * sin (bendAngle θ₀ u) / bendRadius r₁ θ₀ W u ≤ R₀ / 2 := by
@@ -431,9 +431,6 @@ private theorem bend_first_le {q R₀ K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 ≤ R�
   · have hρ : r₁ * exp (-1) ≤ bendRadius r₁ θ₀ W u :=
       mul_le_mul_of_nonneg_left (exp_le_exp.2 (neg_le_neg (bendLogRadius_le_one hu hu₁)))
         hr₁.le
-    have hs₀ : 0 ≤ sin (bendAngle θ₀ u) :=
-      sin_nonneg_of_nonneg_of_le_pi (bendAngle_nonneg h₀ h₁ u)
-        (by linarith [bendAngle_le h₀ h₁ u, pi_pos])
     have has : deriv smoothTransition u * sin (bendAngle θ₀ u) ≤ K := by
       nlinarith [hK u, sin_le_one (bendAngle θ₀ u)]
     have hL : 3 * (q - 1) * (θ₀ * deriv smoothTransition u / bendSpeed r₁ θ₀ W u)
@@ -446,7 +443,7 @@ private theorem bend_first_le {q R₀ K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 ≤ R�
     have h1 := mul_le_mul_of_nonneg_left has (by nlinarith : 0 ≤ 3 * (q - 1) * θ₀)
     have h2 := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hρ 2) hR₀
     nlinarith
-  · rw [smoothTransition.deriv_of_one_lt hu₁]
+  · rw [smoothTransition.deriv_of_one_le hu₁.le]
     simp only [mul_zero, zero_div, zero_mul]
     linarith
 
@@ -464,7 +461,7 @@ private theorem bend_second_le {q K : ℝ} (hq : 3 ≤ q) (hr₁ : 0 < r₁) (h�
       (by linarith [bendAngle_le h₀.le h₁ u, pi_pos])
   have hq₂ : 0 ≤ (q - 1) * (q - 2) := by nlinarith
   rcases lt_or_ge u 2 with hu | hu
-  · rw [smoothTransition.deriv_of_neg (by linarith)]
+  · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     simp only [mul_zero, zero_div, zero_mul]
     positivity
   have hb := smoothTransition.monotone.deriv_nonneg (x := u - 2)
@@ -512,7 +509,7 @@ private theorem bend_scalar_pos {q R₀ C K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 < R
   refine bending_pos hq hC hR ((mul_le_mul_of_nonneg_left (bendRadius_le hr₁ h₀.le h₁ hW hu)
     (by positivity)).trans hCr₁) hs₀ hk ?_
   rw [(hasDerivAt_bendAngle u).deriv, add_div, mul_add, add_mul, add_div]
-  linarith [bend_first_le (W := W) hq hR₀.le hr₁ h₀.le h₁ hK hθ₀ hu,
+  linarith [bend_first_le (W := W) hq hR₀.le hr₁ h₀.le hK hθ₀ hu,
     bend_second_le hq hr₁ h₀ h₁ hW hK hWθ₀ u]
 
 end Construction

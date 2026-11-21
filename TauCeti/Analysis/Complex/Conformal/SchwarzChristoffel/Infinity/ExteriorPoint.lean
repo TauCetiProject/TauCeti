@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Quadratic
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
+import TauCeti.Analysis.Normed.Field.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
 # Exterior points of Schwarz--Christoffel images
@@ -104,39 +106,18 @@ private theorem exists_eventually_cone_schwarzChristoffelPrimitive
   let F : ℂ := schwarzChristoffelPrimitive a e z₀ z
   have hz0 : z ≠ 0 := fun h => by simp [h] at hzH
   have hpow0 : z ^ (β : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
-  have hβnorm : ‖(β : ℂ)‖ = β := by simp [abs_of_pos hβ]
-  -- Convert the uniform ratio limit into a relative error for the leading power.
-  have herror : ‖F - P‖ ≤ η * ‖P‖ := by
-    have hmul := mul_le_mul_of_nonneg_right hz (norm_nonneg (z ^ (β : ℂ)))
-    rw [dist_eq_norm] at hmul
-    have heq : (F / z ^ (β : ℂ) - (β : ℂ)⁻¹) * z ^ (β : ℂ) = F - P := by
-      dsimp [P]
-      field_simp
-    rw [← norm_mul, heq] at hmul
-    calc
-      ‖F - P‖ ≤ η / β * ‖z ^ (β : ℂ)‖ := hmul
-      _ = η * ‖P‖ := by
-        dsimp only [P]
-        rw [norm_div, hβnorm]
-        ring
+  have herror : ‖F - P‖ ≤ η * ‖P‖ := norm_sub_div_le_of_dist_div_le (c := (β : ℂ)) hpow0
+    (by rwa [Complex.norm_real, Real.norm_of_nonneg hβ.le])
   have hcone : c * ‖P‖ ≤ (u * P).re := by
-    have harg : |z.arg * β - θ| ≤ θ := by
-      apply abs_le.mpr
-      constructor <;> dsimp [θ] <;>
-        nlinarith [arg_nonneg_iff.mpr hzH.le, arg_le_pi z]
-    have hcos : c ≤ Real.cos (z.arg * β - θ) := by
-      simpa only [Real.cos_abs] using
-        Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ.2.le harg
-    have hure : u.re = Real.cos θ := by
-      simpa only [Real.cos_neg] using exp_ofReal_mul_I_re (-θ)
-    have huim : u.im = -Real.sin θ := by
-      simpa only [Real.sin_neg] using exp_ofReal_mul_I_im (-θ)
-    have hre : (u * P).re = ‖P‖ * Real.cos (z.arg * β - θ) := by
-      simp [P, mul_div_assoc, Complex.mul_re, cpow_ofReal_re, cpow_ofReal_im,
-        hure, huim, Real.cos_sub, abs_of_pos hβ]
-      ring
-    rw [hre]
-    simpa only [mul_comm] using mul_le_mul_of_nonneg_left hcos (norm_nonneg P)
+    have h : c * ‖z ^ (β : ℂ)‖ ≤ (u * z ^ (β : ℂ)).re :=
+      cos_mul_norm_le_re_exp_mul_cpow hβ.le hβhigh.le hzH.le
+    have hPnorm : ‖P‖ = ‖z ^ (β : ℂ)‖ / β := by
+      simp only [P, norm_div, Complex.norm_real, Real.norm_of_nonneg hβ.le]
+    have hmulP : u * P = u * z ^ (β : ℂ) / (β : ℂ) := by
+      simp only [P, mul_div_assoc]
+    calc c * ‖P‖ = c * ‖z ^ (β : ℂ)‖ / β := by rw [hPnorm]; ring
+      _ ≤ (u * z ^ (β : ℂ)).re / β := by gcongr
+      _ = (u * P).re := by rw [hmulP, Complex.div_ofReal_re]
   -- Widen the leading cone from cosine bound `c` to `-(1 - η)`; the same
   -- error estimate controls both the real part and the norm of the primitive.
   have hreError : |(u * (F - P)).re| ≤ η * ‖P‖ := by
@@ -213,14 +194,14 @@ theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_lt_one
 
 /-- **The far-right band missed by an image with an end of opening `2π`.** Suppose the finite
 prevertices are integrable, the total exponent is `1`, and the logarithmic coefficient
-`C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` is negative. Then for each `δ > 0`,
-sufficiently far to the right, no point whose height lies strictly between `im c + π * C + δ`
-and `im c - δ` is in the closure of the image, where `c` is the quadratic constant at infinity.
-No simplicity or ordering assumption on the finite data is imposed. -/
+`C = ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2`. Then for each `δ > 0`, sufficiently far
+to the right, no point whose height lies strictly between `im c + π * C + δ` and `im c - δ` is in
+the closure of the image, where `c` is the quadratic constant at infinity (the band is empty
+unless `C < 0`). No simplicity or ordering assumption on the finite data is imposed. -/
 theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hsum : ∑ i, e i = 1)
-    (hC : (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2) {δ : ℝ} (hδ : 0 < δ) :
+    {δ : ℝ} (hδ : 0 < δ) :
     ∃ R : ℝ, ∀ w : ℂ, R < w.re →
       (schwarzChristoffelQuadraticConstantAtInfinity a e z₀).im +
           Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2) + δ < w.im →
@@ -230,7 +211,6 @@ theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq
   set C : ℝ := (M ^ 2 - ∑ i, e i * a i ^ 2) / 2
   set c := schwarzChristoffelQuadraticConstantAtInfinity a e z₀
   set F := schwarzChristoffelPrimitive a e z₀
-  have hCneg : C < 0 := by simp only [C]; linarith
   have hQ (z : ℂ) : z ^ 2 / 2 - (∑ i, (e i : ℂ) * (a i : ℂ)) * z +
       ((∑ i, (e i : ℂ) * (a i : ℂ)) ^ 2 - ∑ i, (e i : ℂ) * (a i : ℂ) ^ 2) / 2 * log z =
       z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z := by
@@ -245,7 +225,7 @@ theorem exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq
     exact h.mono fun z hz => mem_ball_iff_norm.mp hz
   rw [eventually_inf_principal, hasBasis_cobounded_norm.eventually_iff] at htail
   obtain ⟨A, _, htail⟩ := htail
-  obtain ⟨R₁, hR₁⟩ := exists_forall_im_quadratic_log_notMem_Ioo (M := M) hCneg (half_pos hδ)
+  obtain ⟨R₁, hR₁⟩ := exists_forall_im_quadratic_log_notMem_Ioo (M := M) (C := C) (half_pos hδ)
   obtain ⟨B, _, hB⟩ :=
     exists_norm_bound_schwarzChristoffelPrimitive_on_bounded_part a e z₀ hfinite (max A R₁)
   set R := max B (c.re + δ / 2 + 1 / 2)
@@ -286,7 +266,7 @@ theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one
   have hCneg : ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2 < 0 := by linarith
   obtain ⟨R, hR⟩ :=
     exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one a e z₀
-      hfinite hsum hC (δ := -(Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)) / 4)
+      hfinite hsum (δ := -(Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)) / 4)
       (by nlinarith [Real.pi_pos])
   set C : ℝ := ((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2
   -- Take a far-right point halfway between the two outer heights.

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Tactic.Abel
 
 /-!
@@ -17,7 +18,23 @@ The totalized inverse of a continuous linear map is zero when the map is not inv
 Consequently, convergence of inverse maps to any nonzero map forces eventual invertibility.
 The inverse of an invertible map also suffices, including on trivial spaces. These results apply
 without completeness or continuity of the original family, and are useful when differentiating
-inverse families.
+inverse families. The difference of two inverses satisfies the resolvent identity, which
+controls variation of inverse operators by variation of the original operators.
+
+Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
+of `c • f` is `c⁻¹ • f.inverse`, also for `c` from a subfield of the scalars; this is how the
+inverse of a positively homogeneous family of maps is seen to be homogeneous of the opposite
+degree. Scaling the identity by a nonzero scalar `c`
+from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
+real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`). On a
+topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
+(`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
+
+A one-sided inverse of an invertible map is its inverse
+(`ContinuousLinearMap.IsInvertible.eq_inverse_of_comp_eq_id_left` and `_right`).
+
+An endomorphism is invertible exactly when it is a unit of the endomorphism ring
+(`ContinuousLinearMap.isInvertible_iff_isUnit`).
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -40,6 +57,53 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+section IsUnit
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+
+/-- An endomorphism is invertible, that is, a continuous linear equivalence, exactly when it is a
+unit of the ring of continuous endomorphisms. -/
+theorem isInvertible_iff_isUnit {f : M →L[R] M} : f.IsInvertible ↔ IsUnit f :=
+  ⟨fun ⟨e, he⟩ ↦ he ▸ ((ContinuousLinearEquiv.unitsEquiv R M).symm e).isUnit,
+    fun ⟨u, hu⟩ ↦ ⟨ContinuousLinearEquiv.unitsEquiv R M u, hu ▸ rfl⟩⟩
+
+end IsUnit
+
+section Sub
+
+variable {R E F : Type*} [Ring R]
+  [TopologicalSpace E] [AddCommGroup E] [Module R E] [IsTopologicalAddGroup E]
+  [TopologicalSpace F] [AddCommGroup F] [Module R F] [IsTopologicalAddGroup F]
+
+/-- The difference of two inverse operators is obtained by composing their difference
+in reverse order with their inverses (the resolvent identity). -/
+theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
+    (hf : f.IsInvertible) (hg : g.IsInvertible) :
+    f.inverse - g.inverse = f.inverse ∘L (g - f) ∘L g.inverse := by
+  ext v
+  simp [hf.inverse_apply_self, hg.self_apply_inverse]
+
+end Sub
+
+section OneSided
+
+variable {R M M₂ : Type*} [Semiring R]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  {f : M →L[R] M₂} {g : M₂ →L[R] M}
+
+/-- A left inverse of an invertible continuous linear map is its inverse. -/
+theorem IsInvertible.eq_inverse_of_comp_eq_id_left (hf : f.IsInvertible)
+    (h : g ∘L f = .id R M) : g = f.inverse := by
+  rw [← comp_id g, ← hf.self_comp_inverse, ← comp_assoc, h, id_comp]
+
+/-- A right inverse of an invertible continuous linear map is its inverse. -/
+theorem IsInvertible.eq_inverse_of_comp_eq_id_right (hf : f.IsInvertible)
+    (h : f ∘L g = .id R M₂) : g = f.inverse := by
+  rw [← id_comp g, ← hf.inverse_comp_self, comp_assoc, h, comp_id]
+
+end OneSided
 
 section CompleteSpace
 
@@ -83,6 +147,81 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
     exact Eventually.of_forall fun i ↦
       Subsingleton.elim 0 (A i) ▸ isInvertible_zero_iff.mpr ⟨hE, hF⟩
   · exact eventually_isInvertible_of_tendsto_inverse h hzero
+
+section Smul
+
+variable {𝕜 M M₂ : Type*} [Semifield 𝕜]
+  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+
+omit [ContinuousConstSMul 𝕜 M] in
+/-- Multiplying a continuous linear map by a nonzero scalar does not change its
+invertibility. -/
+@[simp]
+theorem isInvertible_smul_iff {c : 𝕜} (hc : c ≠ 0) {f : M →L[𝕜] M₂} :
+    (c • f).IsInvertible ↔ f.IsInvertible := by
+  rw [smul_eq_smulLeft_comp hc, isInvertible_equiv_comp]
+
+/-- The inverse of `c • f` is `c⁻¹ • f.inverse`. This holds for every scalar: both sides vanish
+when `c = 0` or when `f` is not invertible. -/
+theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- `zero_smul` is unavailable here: `M →L[𝕜] M₂` is a `𝕜`-module only under
+    -- `ContinuousAdd M₂`, which these lemmas do not assume.
+    have h0 : (0 : 𝕜) • f = 0 := by ext; simp
+    ext y
+    simp [h0]
+  rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp]
+  ext y
+  rw [comp_apply, ContinuousLinearEquiv.coe_coe,
+    (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc]),
+    map_smul, smul_apply]
+
+/-- The inverse of `c • f` is `c⁻¹ • f.inverse` also for a scalar `c` from a subfield `S` of the
+scalars of `f`, such as a real multiple of a complex-linear map. -/
+theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
+    [Module S M] [IsScalarTower S 𝕜 M] [ContinuousConstSMul S M]
+    [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂]
+    (c : S) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+  have h (d : S) (g : M₂ →L[𝕜] M) : d • g = algebraMap S 𝕜 d • g := by
+    ext; simp [algebraMap_smul]
+  rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul], inverse_smul, h,
+    map_inv₀]
+
+end Smul
+
+section SMulId
+
+variable {R S M : Type*} [Semiring R] [GroupWithZero S] [TopologicalSpace M] [AddCommMonoid M]
+  [Module R M] [DistribMulAction S M] [SMulCommClass R S M] [ContinuousConstSMul S M]
+
+/-- Scaling the identity by a nonzero scalar `c` is invertible, with inverse scaling by `c⁻¹`. The
+scalars need not commute with operators: for example, multiplication by a nonzero complex number
+is an invertible real-linear map of `ℂ`. -/
+theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) :
+    IsUnit (c • ContinuousLinearMap.id R M) := by
+  have := SMulCommClass.symm R S M
+  convert (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc) : M ≃L[R] M).toUnit.isUnit
+  ext; simp [ContinuousLinearEquiv.toUnit]
+
+end SMulId
+
+section ToSpanSingleton
+
+variable {𝕜 : Type*} [Semifield 𝕜] [TopologicalSpace 𝕜] [ContinuousMul 𝕜]
+
+/-- On a topological semifield, the continuous linear map `a ↦ a • c` is invertible exactly when
+`c ≠ 0`. -/
+@[simp]
+theorem isInvertible_toSpanSingleton_iff {c : 𝕜} :
+    (toSpanSingleton 𝕜 c).IsInvertible ↔ c ≠ 0 := by
+  refine ⟨?_, fun hc ↦ .of_inverse (g := toSpanSingleton 𝕜 c⁻¹) ?_ ?_⟩
+  · rintro h rfl
+    rw [toSpanSingleton_zero, isInvertible_zero_iff] at h
+    exact not_subsingleton 𝕜 h.1
+  all_goals ext; simp [hc]
+
+end ToSpanSingleton
 
 section ProdMap
 

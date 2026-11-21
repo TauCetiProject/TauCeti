@@ -13,17 +13,19 @@ import TauCeti.FieldTheory.Minpoly
 /-!
 # Trace lemmas for field extensions
 
-This file collects reusable trace facts for finite field extensions.
+This file collects reusable trace facts for field extensions.
 
 ## Main results
 
 * `NumberField.trace_eq_zero_of_sq_ratCast`: the number-field
   specialization saying that `x² ∈ ℚ`, `x ∉ ℚ` implies `Tr x = 0`.
 * `TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`: the corresponding
-  trace-vanishing statement for any finite field extension.
+  trace-vanishing statement for any field extension.
 * `TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap`: in a quadratic extension, the
   trace-form discriminant of the square-root basis `{1, x}` is `4a` when `x² = a` and
   `x ∉ F`.
+* `TauCeti.Algebra.exists_trace_mul_ne_zero`: in a finite separable extension, a nonzero `x`
+  has some `y` with `Tr (x * y) ≠ 0`.
 
 ## Provenance
 
@@ -41,12 +43,17 @@ namespace TauCeti
 
 namespace Algebra
 
-/-- In a finite field extension, an element outside the base field whose square lies in the
-base field has trace zero. -/
+/-- In a field extension, an element outside the base field whose square lies in the
+base field has trace zero (in an infinite-dimensional extension, every trace is zero). -/
 theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] [Field L]
-    [Algebra F L] [FiniteDimensional F L] {x : L} {r : F}
+    [Algebra F L] {x : L} {r : F}
     (hx2 : x ^ 2 = algebraMap F L r) (hx : x ∉ (algebraMap F L).range) :
     Algebra.trace F L x = 0 := by
+  by_cases hfd : FiniteDimensional F L
+  swap
+  · rw [Algebra.trace_eq_zero_of_not_exists_basis F ?_, LinearMap.zero_apply]
+    · rintro ⟨s, ⟨b⟩⟩
+      exact hfd (Module.Finite.of_basis b)
   have haeval : aeval x (X ^ 2 - C r : F[X]) = 0 := by simp [hx2]
   have hdvd : minpoly F x ∣ (X ^ 2 - C r) := minpoly.dvd F x haeval
   have hint : IsIntegral F x := Algebra.IsIntegral.isIntegral x
@@ -105,6 +112,14 @@ theorem discr_one_elem_eq_of_sq_algebraMap {x : L} {a : F} (hfin : finrank F L =
     exact htr0
   rw [Algebra.discr_def, Matrix.det_fin_two, e00, e11, e01, e10]
   ring
+
+/-- In a finite separable extension `L / F`, a nonzero `x` has some `y` with `Tr (x * y) ≠ 0`,
+by nondegeneracy of the trace form (`traceForm_nondegenerate`). This generalizes Mathlib's
+`FiniteField.trace_to_zmod_nondegenerate` from `ZMod (ringChar L)` to any base field. -/
+theorem exists_trace_mul_ne_zero [FiniteDimensional F L] [Algebra.IsSeparable F L] {x : L}
+    (hx : x ≠ 0) : ∃ y, Algebra.trace F L (x * y) ≠ 0 := by
+  by_contra! h
+  exact hx ((traceForm_nondegenerate F L).1 x fun y ↦ by simpa using h y)
 
 end Algebra
 

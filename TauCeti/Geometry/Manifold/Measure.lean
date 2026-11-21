@@ -17,14 +17,19 @@ This file defines chartwise nullity for subsets of a charted manifold, without i
 measurable structure on the manifold itself.  The definition is independent of the choice of Haar
 measure on the model and has the usual subset and countable-union closure properties. On a
 manifold with a finite-dimensional model a null set has empty interior, so its complement is
-dense; this is how Sard's theorem produces regular values.
+dense; this is how Sard's theorem produces regular values. If the model is moreover nontrivial,
+every countable set is null.
 
 Nullity of an image `f '' s` under a map between manifolds can be checked on coordinate
 expressions (`TauCeti.isNullSet_image_of_forall_addHaar_image_extChartAt`): when the source is
 Lindelöf, it suffices that every coordinate expression
 `extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm` sends the chart image of the points of `s` seen by
 both charts to a Haar-null set. This is how Sard-type statements about maps between normed spaces
-pass to manifolds.
+pass to manifolds. Likewise, for an open set `U ⊆ M` and an open partial homeomorphism `φ`, the
+extended-chart domain `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` differs from its interior only
+along the Haar-null boundary of `range I`
+(`OpenPartialHomeomorph.measure_diff_interior_extend_eq_zero`,
+`OpenPartialHomeomorph.measure_restrict_interior_extend_eq`).
 -/
 
 public section
@@ -54,7 +59,7 @@ theorem isNullSet_iff (I : ModelWithCorners ℝ E H) [MeasurableSpace E] [hE : B
   rfl
 
 /-- The chartwise nullity statement for a null set at a point and Haar measure. -/
-theorem IsNullSet.chartwise {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE : BorelSpace E]
+theorem IsNullSet.chartwise {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [BorelSpace E]
     {s : Set M} (hs : IsNullSet I s) (x : M) (μ : Measure E) [μ.IsAddHaarMeasure] :
     μ (extChartAt I x '' (s ∩ (extChartAt I x).source)) = 0 :=
   (isNullSet_iff I s).1 hs x μ
@@ -90,7 +95,15 @@ theorem IsNullSet.biUnion {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE
     (hs : ∀ i ∈ t, IsNullSet I (s i)) : IsNullSet I (⋃ i ∈ t, s i) := by
   have := ht.to_subtype
   rw [biUnion_eq_iUnion]
-  exact IsNullSet.iUnion fun i ↦ hs i i.2
+  exact IsNullSet.iUnion fun i ↦ hs i i.property
+
+/-- A countable subset of a manifold with a nontrivial finite-dimensional model is null. -/
+theorem _root_.Set.Countable.isNullSet {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] {s : Set M} (hs : s.Countable) :
+    IsNullSet I s := by
+  rw [isNullSet_iff]
+  intro x μ _
+  exact ((hs.mono inter_subset_left).image _).measure_zero μ
 
 /-- On a manifold with a finite-dimensional model, a null set has empty interior. -/
 theorem IsNullSet.interior_eq_empty {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]
@@ -128,6 +141,39 @@ theorem isNullSet_boundary {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ
     simpa only [extChartAt_source] using hz.2
   exact (ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range one_ne_zero
     (IsManifold.chart_mem_maximalAtlas x) hsource).mp hz.1
+
+omit [ChartedSpace H M] in
+/-- For an open subset `U` of `M`, the subset `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` of a
+finite-dimensional real model space differs from its interior only within `frontier (range I)`, so
+the difference has additive Haar measure zero. -/
+theorem _root_.OpenPartialHomeomorph.measure_diff_interior_extend_eq_zero
+    {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (φ : OpenPartialHomeomorph M H) {U : Set M} (hU : IsOpen U)
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    μ (((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) \
+      interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U)) = 0 := by
+  set W := I.symm ⁻¹' (φ.target ∩ φ.symm ⁻¹' U)
+  have hWo : IsOpen W := (φ.isOpen_inter_preimage_symm hU).preimage I.continuous_symm
+  have hV : (φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U = W ∩ range I := by
+    ext z; simp only [W, OpenPartialHomeomorph.extend_target,
+      OpenPartialHomeomorph.extend_coe_symm, mem_inter_iff, mem_preimage, Function.comp_apply]
+    tauto
+  refine measure_mono_null (fun z ⟨hzV, hzint⟩ ↦ ?_) (I.convex_range.addHaar_frontier μ)
+  rw [hV] at hzV hzint; rw [interior_inter, hWo.interior_eq] at hzint
+  exact ⟨subset_closure hzV.2, fun hzr ↦ hzint ⟨hzV.1, hzr⟩⟩
+
+omit [ChartedSpace H M] in
+/-- Restricting an additive Haar measure on a finite-dimensional real model space to the interior
+of `(φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U` for open `U` agrees with restricting to the full
+set up to `frontier (range I)`. -/
+theorem _root_.OpenPartialHomeomorph.measure_restrict_interior_extend_eq
+    {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (φ : OpenPartialHomeomorph M H) {U : Set M} (hU : IsOpen U)
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    μ.restrict (interior ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U)) =
+      μ.restrict ((φ.extend I).target ∩ (φ.extend I).symm ⁻¹' U) :=
+  Measure.restrict_congr_set (ae_eq_set.2 ⟨by rw [sdiff_eq_empty.2 interior_subset, measure_empty],
+    φ.measure_diff_interior_extend_eq_zero hU μ⟩)
 
 section Image
 

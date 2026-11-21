@@ -100,9 +100,6 @@ subgroups and intertwining the Steinberg endomorphism with entrywise Frobenius, 
   type-`C` diagram that the root subgroups below are indexed by.
 -/
 
--- The signatures realized here follow the human-authored formal skeleton
--- `TauCetiRoadmap/CFSGStatement/Suggested.lean`.
-
 public section
 
 namespace TauCeti
@@ -120,13 +117,13 @@ noncomputable section
 of rank `r` is the one at `r - 1`. The subtraction never truncates, `r` being at least three by
 `TauCeti.TypeCLieIndex.three_le_rank`; `TauCeti.TypeCLieIndex.carrierRank_add_one` is the
 identification that recovers `r`. -/
-def carrierRank : ℕ := d.1.rank - 1
+def carrierRank : ℕ := d.val.rank - 1
 
 /-- The carrier rank of a validated type-`C` index is one less than its rank. It is oriented
 towards `TauCeti.ValidLieTypeIndex.rank`, so that `simp` normalizes the successor of the carrier
 rank to the rank the index's own Bourbaki index type is built on. -/
 @[simp]
-theorem carrierRank_add_one : d.carrierRank + 1 = d.1.rank := by
+theorem carrierRank_add_one : d.carrierRank + 1 = d.val.rank := by
   have := d.three_le_rank
   -- The body is unexposed, so the subtraction has to be unfolded before `omega` sees it.
   rw [carrierRank]
@@ -136,17 +133,17 @@ theorem carrierRank_add_one : d.carrierRank + 1 = d.1.rank := by
 correspondence of the Suzuki family, this is the rank identification and nothing else: the standard
 symplectic carrier at `TauCeti.TypeCLieIndex.carrierRank` numbers its generators by the Bourbaki
 numbering of the type-`C` diagram that the index names, node for node. -/
-abbrev carrierNode (i : Fin d.1.rank) : Fin (d.carrierRank + 1) :=
+abbrev carrierNode (i : Fin d.val.rank) : Fin (d.carrierRank + 1) :=
   Fin.cast d.carrierRank_add_one.symm i
 
 /-- **The node correspondence transports the type-`C` Cartan matrix.** The entry at a pair of
 carrier nodes is the entry at the pair of Bourbaki nodes they number: `carrierNode` moves no node
 value, only the rank its index type is built on, and `TauCeti.TypeCLieIndex.carrierRank_add_one`
 identifies the two ranks. -/
-theorem cartanMatrix_C_carrierNode (i j : Fin d.1.rank) :
+theorem cartanMatrix_C_carrierNode (i j : Fin d.val.rank) :
     CartanMatrix.C (d.carrierRank + 1) (d.carrierNode i) (d.carrierNode j) =
-      CartanMatrix.C d.1.rank i j := by
-  have hrank : d.1.rank - 1 = d.carrierRank := by
+      CartanMatrix.C d.val.rank i j := by
+  have hrank : d.val.rank - 1 = d.carrierRank := by
     have := d.carrierRank_add_one
     omega
   -- Both sides are the same table of conditions on the two node values, which `carrierNode` leaves
@@ -161,34 +158,34 @@ explicit full-weight standard symplectic Chevalley carrier at the index's rank, 
 closure of its prime field. No finiteness, reductivity, pinning or maximality statement is attached
 to it; its identification with the points of the symplectic group scheme over `ℤ` is
 `TauCeti.TypeCLieIndex.carrierEquivPinned`. -/
-abbrev AmbientGroup : Type := SpStd.points d.carrierRank d.1.Closure
+abbrev AmbientGroup : Type := SpStd.points d.carrierRank d.val.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the type-`C` diagram. It
 is the carrier's numbered raising subgroup at the node that `carrierNode` names. -/
-def simpleRootSubgroup (i : Fin d.1.rank) :
-    Multiplicative d.1.Closure →* d.AmbientGroup :=
-  SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) :
+    Multiplicative d.val.Closure →* d.AmbientGroup :=
+  SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.val.Closure
 
 -- The equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`, whose
 -- definition itself stays sealed.
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding
 carrier node. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure :=
+      SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.val.Closure :=
   (rfl)
 
 /-- The weight torus of the standard symplectic carrier, parametrized by the index's
 Bourbaki-numbered fundamental-weight coordinates. The rank identification changes no node. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (SpStd.weightTorusPoints d.carrierRank d.1.Closure).comp
+def weightTorus : (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  (SpStd.weightTorusPoints d.carrierRank d.val.Closure).comp
     (MonoidHom.pi fun i : Fin (d.carrierRank + 1) =>
-      Pi.evalMonoidHom (fun _ : Fin d.1.rank => d.1.Closureˣ)
+      Pi.evalMonoidHom (fun _ : Fin d.val.rank => d.val.Closureˣ)
         (Fin.cast d.carrierRank_add_one i))
 
 /-- The indexed torus is the carrier's weight torus with the same coordinate values. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.weightTorus s = SpStd.weightTorusPoints d.carrierRank d.1.Closure
+theorem weightTorus_apply (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.weightTorus s = SpStd.weightTorusPoints d.carrierRank d.val.Closure
       (fun i => s (Fin.cast d.carrierRank_add_one i)) :=
   (rfl)
 
@@ -198,10 +195,10 @@ same node correspondence, is the `i`-th simple root of
 `TauCeti.DynkinType.simplyConnectedRootDatum` at the Dynkin type the index names. This is the sense
 in which the standard symplectic carrier serves that diagram; it is not a claim that the carrier is
 the pinned group of the diagram, no pinning being constructed for it. -/
-theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank) :
+theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.val.rank) :
     SpStd.rootGeneratorWeight d.carrierRank (.inl (d.carrierNode i)) (d.carrierNode j) =
-      (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
-        (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) j := by
+      (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root
+        (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i) j := by
   -- Both sides are read as entries of the type-`C` Cartan matrix, the carrier's by the upstream
   -- `SpStd.rootGeneratorWeight_inl` and the datum's by the uniform `DynkinType.root_simpleIndex`,
   -- which is the same route the upstream identification takes past the dependent root index. The
@@ -220,13 +217,13 @@ theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank)
 index**, where `q` is the field order recorded by the index. It is the endomorphism of the point
 group raising every matrix entry to the `q`-th power. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
-  SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure
+  SpStd.frobenius d.carrierRank d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The Frobenius is the standard carrier's Frobenius at the characteristic and field exponent
 recorded by the index. -/
 theorem frobenius_def :
     d.frobenius =
-      SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure :=
+      SpStd.frobenius d.carrierRank d.val.characteristic d.val.fieldExponent d.val.Closure :=
   (rfl)
 
 /-- The Frobenius raises every matrix entry to the field order recorded by the index. -/
@@ -234,24 +231,25 @@ theorem frobenius_def :
 theorem coe_frobenius_apply (g : d.AmbientGroup)
     (r c : Fin (d.carrierRank + 1 + (d.carrierRank + 1))) :
     ((d.frobenius g : Matrix.GeneralLinearGroup
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) :
         Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c =
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) r c =
       ((g : Matrix.GeneralLinearGroup
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) :
         Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) r c ^ d.val.fieldOrder
+              := by
+  rw [frobenius_def, d.val.fieldOrder_eq_characteristic_pow]
   exact SpStd.coe_frobenius_apply d.carrierRank _ _ _ g r c
 
 /-- **The Frobenius fixes the numbering of a simple-root subgroup and raises its parameter to the
 `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
@@ -260,11 +258,11 @@ index**, the `p`-power map for `p` the defining characteristic. The `q`-power Fr
 `e`-th power, for `e` the field exponent the index records, by
 `frobenius_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  SpStd.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure
+  SpStd.frobenius d.carrierRank d.val.characteristic 1 d.val.Closure
 
 /-- The prime-field Frobenius is the standard carrier's Frobenius at exponent one. -/
 theorem primeFrobenius_def :
-    d.primeFrobenius = SpStd.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = SpStd.frobenius d.carrierRank d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
@@ -273,25 +271,25 @@ theorem primeFrobenius_def :
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
     (r c : Fin (d.carrierRank + 1 + (d.carrierRank + 1))) :
     ((d.primeFrobenius g : Matrix.GeneralLinearGroup
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) :
         Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c =
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) r c =
       ((g : Matrix.GeneralLinearGroup
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) :
         Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ^
-            d.1.characteristic := by
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) r c ^
+            d.val.characteristic := by
   rw [primeFrobenius_def]
-  simpa only [pow_one] using SpStd.coe_frobenius_apply d.carrierRank d.1.characteristic 1
-    d.1.Closure g r c
+  simpa only [pow_one] using SpStd.coe_frobenius_apply d.carrierRank d.val.characteristic 1
+    d.val.Closure g r c
 
 /-- **The prime-field Frobenius fixes the numbering of a simple-root subgroup and raises its
 parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
@@ -300,30 +298,30 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
 exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, SpStd.frobenius_pow, Nat.one_mul]
 
 /-- **The prime-field Frobenius raises every coordinate of the split weight torus to the `p`-th
 power.** -/
 @[simp]
-theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
-    d.primeFrobenius (SpStd.weightTorusPoints d.carrierRank d.1.Closure s) =
-      SpStd.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.characteristic) := by
+theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.val.Closureˣ) :
+    d.primeFrobenius (SpStd.weightTorusPoints d.carrierRank d.val.Closure s) =
+      SpStd.weightTorusPoints d.carrierRank d.val.Closure (s ^ d.val.characteristic) := by
   rw [primeFrobenius_def, SpStd.frobenius_weightTorusPoints, pow_one]
 
 /-- **The Frobenius raises every coordinate of the split weight torus to the `q`-th power.** -/
 @[simp]
 theorem frobenius_weightTorusPoints
-    (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
-    d.frobenius (SpStd.weightTorusPoints d.carrierRank d.1.Closure s) =
-      SpStd.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.fieldOrder) := by
+    (s : Fin (d.carrierRank + 1) → d.val.Closureˣ) :
+    d.frobenius (SpStd.weightTorusPoints d.carrierRank d.val.Closure s) =
+      SpStd.weightTorusPoints d.carrierRank d.val.Closure (s ^ d.val.fieldOrder) := by
   rw [frobenius_def, SpStd.frobenius_weightTorusPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
 /-- The represented Frobenius raises every indexed fundamental-weight torus coordinate to `q`. -/
 @[simp]
-theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
+theorem frobenius_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.val.fieldOrder) := by
   rw [weightTorus_apply, frobenius_weightTorusPoints, weightTorus_apply]
   rfl
 
@@ -338,12 +336,13 @@ points of the standard symplectic carrier whose entries all lie in `𝔽_q`. -/
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) :
         Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ∈ d.1.fixedField := by
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) r c ∈ d.val.fixedField
+              := by
   rw [mem_fixedSubgroup, frobenius_def, SpStd.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-! ## The Steinberg endomorphism -/
 
@@ -364,17 +363,17 @@ theorem steinberg_def : d.steinberg = d.frobenius := (rfl)
 the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`, the simple-root-subgroup action
 formula of an untwisted Steinberg endomorphism. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def]
   exact d.frobenius_simpleRootSubgroup i u
 
 /-- The represented Steinberg map raises every indexed torus coordinate to the field order. -/
 @[simp]
-theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.steinberg (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
+theorem steinberg_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.steinberg (d.weightTorus s) = d.weightTorus (s ^ d.val.fieldOrder) := by
   rw [steinberg_def, frobenius_weightTorus]
 
 /-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
@@ -384,9 +383,10 @@ points of the standard symplectic carrier whose entries lie in `𝔽_q`. Like
 theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) :
         Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
-          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ∈ d.1.fixedField := by
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.val.Closure) r c ∈ d.val.fixedField
+              := by
   rw [steinberg_def]
   exact d.mem_fixedSubgroup_frobenius_iff g
 

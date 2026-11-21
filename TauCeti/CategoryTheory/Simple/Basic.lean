@@ -34,9 +34,7 @@ nonzero monomorphism which is not an isomorphism. -/
 theorem exists_mono_ne_zero_not_isIso_of_not_simple {X : C} (hX : ¬IsZero X) (hs : ¬Simple X) :
     ∃ (Y : C) (f : Y ⟶ X), Mono f ∧ f ≠ 0 ∧ ¬IsIso f := by
   by_contra! h
-  refine hs ⟨fun {Y} f _ => ⟨fun _ hf => ?_, h Y f inferInstance⟩⟩
-  -- An isomorphism `0 : Y ⟶ X` would make the identity of `X` zero.
-  subst hf
-  exact hX ((IsZero.iff_id_eq_zero X).2 (by rw [← IsIso.inv_hom_id (0 : Y ⟶ X), comp_zero]))
+  -- A zero isomorphism into `X` is a zero epimorphism, which forces `X` to be a zero object.
+  exact hs ⟨fun f _ => ⟨fun _ hf => hX (.of_epi_eq_zero f hf), h _ f inferInstance⟩⟩
 
 end TauCeti

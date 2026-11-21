@@ -11,7 +11,7 @@ import Mathlib.Algebra.Polynomial.Div
 import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Analysis.RCLike.AtInfinity
 import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.Combinatorics.NoncrossingPartition.PowerSeries
 import TauCeti.Probability.Distributions.MarchenkoPastur.ResolventTransform
@@ -96,7 +96,7 @@ private lemma tendsto_mul_I_pow_mul_aeval_trunc_momentSeries (y : ℝ≥0) (n : 
       atTop (𝓝 0) := by
   let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
   let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) (PowerSeries.trunc (n + 1) (momentSeries y))
-  have hsharp := I.tendsto_inv_ofReal_mul_atTop_zero.mul <|
+  have hsharp := (RCLike.tendsto_inv_ofReal_mul_atTop_zero I).mul <|
     tendsto_mul_I_pow_mul_resolventTransform_add_sum (integrable_pow_marchenkoPastur y (n + 1))
   rw [zero_mul] at hsharp
   refine hsharp.congr' ?_
@@ -169,6 +169,47 @@ private lemma neg_mul_I_mul_resolventTransform_quadratic_eq_zero (y : ℝ≥0) {
   rw [hmQ] at hq
   linear_combination hq + (-(y : ℂ) * w * Q ^ 2 + Q) * hwt
 
+/-- If the quadratic polynomial built from `P` equals `X ^ n * G` and the truncation error
+`(i t) ^ n * (P(w(t)) - Q(t))` tends to `0`, then `G(w(t))` tends to `0` along
+`w(t) = (i t)⁻¹` as `t → +∞`: subtract the resolvent quadratic equation. -/
+private theorem tendsto_aeval_inv_mul_I_atTop_zero (y : ℝ≥0) (n : ℕ) (P G : ℝ[X])
+    (hFG : Polynomial.C (y : ℝ) * Polynomial.X * P ^ 2 +
+      (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) * P + 1 = Polynomial.X ^ n * G)
+    (hrem : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n *
+      (Polynomial.aeval (((t : ℂ) * I)⁻¹) P -
+        -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I)))) atTop (𝓝 0)) :
+    Tendsto (fun t : ℝ ↦ Polynomial.aeval (((t : ℂ) * I)⁻¹) G) atTop (𝓝 0) := by
+  let F : ℝ[X] := Polynomial.C (y : ℝ) * Polynomial.X * P ^ 2 +
+    (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) * P + 1
+  let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
+  let Q : ℝ → ℂ := fun t ↦ -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))
+  let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) P
+  have hw0 : Tendsto w atTop (𝓝 0) := RCLike.tendsto_inv_ofReal_mul_atTop_zero I
+  have hQ_lim : Tendsto Q atTop (𝓝 1) := by
+    simpa [Q] using (tendsto_mul_I_mul_resolventTransform (μ := marchenkoPastur y)).neg
+  have hS_lim : Tendsto S atTop (𝓝 (Polynomial.aeval (0 : ℂ) P)) :=
+    (P.continuous_aeval.tendsto (0 : ℂ)).comp hw0
+  have hrem' : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n * (S t - Q t)) atTop (𝓝 0) := hrem
+  have hFG' : F = Polynomial.X ^ n * G := hFG
+  have hprod : Tendsto (fun t : ℝ ↦ (((t : ℂ) * I) ^ n * (S t - Q t)) *
+      ((y : ℂ) * w t * (S t + Q t) + ((1 - (y : ℂ)) * w t - 1))) atTop (𝓝 0) := by
+    simpa using hrem'.mul (((tendsto_const_nhds.mul hw0).mul (hS_lim.add hQ_lim)).add
+      ((tendsto_const_nhds.mul hw0).sub tendsto_const_nhds))
+  refine hprod.congr' ?_
+  filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
+  have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_cancel₀ (by simp [ht])
+  have hQeq : (y : ℂ) * w t * Q t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * Q t + 1 = 0 :=
+    neg_mul_I_mul_resolventTransform_quadratic_eq_zero y ht
+  have hFeval : Polynomial.aeval (w t) F =
+      (y : ℂ) * w t * S t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * S t + 1 := by
+    simp [F, S]
+  have hFG_eval : Polynomial.aeval (w t) F = w t ^ n * Polynomial.aeval (w t) G := by
+    rw [hFG', map_mul, map_pow, Polynomial.aeval_X]
+  have hwn : ((t : ℂ) * I) ^ n * w t ^ n = 1 := by
+    rw [← mul_pow, mul_comm, hwt, one_pow]
+  linear_combination -((t : ℂ) * I) ^ n * hFeval + ((t : ℂ) * I) ^ n * hFG_eval -
+    ((t : ℂ) * I) ^ n * hQeq + Polynomial.aeval (w t) G * hwn
+
 /-- The moment generating series `M` of `marchenkoPastur y` satisfies the formal quadratic equation
 `y X M² + ((1 - y) X - 1) M + 1 = 0`. -/
 private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
@@ -201,35 +242,14 @@ private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
   let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
   let Q : ℝ → ℂ := fun t ↦ -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))
   let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) P
-  have hw0 : Tendsto w atTop (𝓝 0) := I.tendsto_inv_ofReal_mul_atTop_zero
+  have hw0 : Tendsto w atTop (𝓝 0) := RCLike.tendsto_inv_ofReal_mul_atTop_zero I
   have hG_lim : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 ((G.coeff 0 : ℝ) : ℂ)) := by
     simpa [Function.comp_def, Polynomial.aeval_def, Polynomial.eval₂_at_zero] using
       (G.continuous_aeval.tendsto (0 : ℂ)).comp hw0
-  have hQ_lim : Tendsto Q atTop (𝓝 1) := by
-    simpa [Q] using (tendsto_mul_I_mul_resolventTransform (μ := marchenkoPastur y)).neg
-  have hS_lim : Tendsto S atTop (𝓝 (Polynomial.aeval (0 : ℂ) P)) :=
-    (P.continuous_aeval.tendsto (0 : ℂ)).comp hw0
   have hrem : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n * (S t - Q t)) atTop (𝓝 0) :=
     tendsto_mul_I_pow_mul_aeval_trunc_momentSeries y n
-  have hG_zero : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 0) := by
-    have hprod : Tendsto (fun t : ℝ ↦ (((t : ℂ) * I) ^ n * (S t - Q t)) *
-        ((y : ℂ) * w t * (S t + Q t) + ((1 - (y : ℂ)) * w t - 1))) atTop (𝓝 0) := by
-      simpa using hrem.mul (((tendsto_const_nhds.mul hw0).mul (hS_lim.add hQ_lim)).add
-        ((tendsto_const_nhds.mul hw0).sub tendsto_const_nhds))
-    refine hprod.congr' ?_
-    filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
-    have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_cancel₀ (by simp [ht])
-    have hQeq : (y : ℂ) * w t * Q t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * Q t + 1 = 0 :=
-      neg_mul_I_mul_resolventTransform_quadratic_eq_zero y ht
-    have hFeval : Polynomial.aeval (w t) F =
-        (y : ℂ) * w t * S t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * S t + 1 := by
-      simp [F, S]
-    have hFG_eval : Polynomial.aeval (w t) F = w t ^ n * Polynomial.aeval (w t) G := by
-      rw [hFG, map_mul, map_pow, Polynomial.aeval_X]
-    have hwn : ((t : ℂ) * I) ^ n * w t ^ n = 1 := by
-      rw [← mul_pow, mul_comm, hwt, one_pow]
-    linear_combination -((t : ℂ) * I) ^ n * hFeval + ((t : ℂ) * I) ^ n * hFG_eval -
-      ((t : ℂ) * I) ^ n * hQeq + Polynomial.aeval (w t) G * hwn
+  have hG_zero : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 0) :=
+    tendsto_aeval_inv_mul_I_atTop_zero y n P G hFG hrem
   rw [hEG]
   exact ofReal_eq_zero.1 (tendsto_nhds_unique hG_lim hG_zero)
 
@@ -279,38 +299,38 @@ order, `∫ x ^ |s| d(marchenkoPastur y)` equals the sum over noncrossing partit
 theorem integral_pow_card_marchenkoPastur_eq_sum_prod {α : Type*} [LinearOrder α]
     (y : ℝ≥0) (s : Finset α) :
     ∫ x, x ^ #s ∂marchenkoPastur y =
-      ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, (y : ℝ) ^ (#B - 1) := by
+      ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, (y : ℝ) ^ (#B - 1) := by
   have h := TauCeti.NoncrossingPartition.sum_prod_coeff_eq_coeff_of_subst_eq
     (by simp [cumulantSeries]) (subst_cumulantSeries_eq_momentSeries y) s
   rw [momentSeries, PowerSeries.coeff_mk] at h
   rw [← h]
   refine sum_congr rfl fun π _ ↦ prod_congr rfl fun B hB ↦ ?_
-  have hne : #B ≠ 0 := (π.1.nonempty_of_mem_parts hB).card_pos.ne'
+  have hne : #B ≠ 0 := (π.val.nonempty_of_mem_parts hB).card_pos.ne'
   simp [cumulantSeries, hne]
 
 /-- For any finite set `s` in a linear order, `∫ x ^ |s| d(marchenkoPastur y)` is the sum over
 noncrossing partitions `π` of `s` of `y ^ (|s| - |π|)`. -/
 theorem integral_pow_card_marchenkoPastur {α : Type*} [LinearOrder α] (y : ℝ≥0) (s : Finset α) :
     ∫ x, x ^ #s ∂marchenkoPastur y =
-      ∑ π : NoncrossingPartition s, (y : ℝ) ^ (#s - #π.1.parts) := by
+      ∑ π : NoncrossingPartition s, (y : ℝ) ^ (#s - #π.val.parts) := by
   rw [integral_pow_card_marchenkoPastur_eq_sum_prod]
   refine sum_congr rfl fun π _ ↦ ?_
   rw [Finset.prod_pow_eq_pow_sum]
   congr 1
-  have hadd : (∑ B ∈ π.1.parts, (#B - 1)) + #π.1.parts = #s :=
-    calc (∑ B ∈ π.1.parts, (#B - 1)) + #π.1.parts
-        = (∑ B ∈ π.1.parts, (#B - 1)) + ∑ _ ∈ π.1.parts, 1 := by
+  have hadd : (∑ B ∈ π.val.parts, (#B - 1)) + #π.val.parts = #s :=
+    calc (∑ B ∈ π.val.parts, (#B - 1)) + #π.val.parts
+        = (∑ B ∈ π.val.parts, (#B - 1)) + ∑ _ ∈ π.val.parts, 1 := by
             rw [sum_const, smul_eq_mul, mul_one]
-      _ = ∑ B ∈ π.1.parts, (#B - 1 + 1) := sum_add_distrib.symm
+      _ = ∑ B ∈ π.val.parts, (#B - 1 + 1) := sum_add_distrib.symm
       _ = #s := (sum_congr rfl fun B hB ↦
-            Nat.sub_add_cancel (π.1.nonempty_of_mem_parts hB).card_pos).trans π.1.sum_card_parts
+            Nat.sub_add_cancel (π.val.nonempty_of_mem_parts hB).card_pos).trans π.val.sum_card_parts
   omega
 
 /-- **Noncrossing-partition moment formula for the Marchenko–Pastur law.** For every `k : ℕ`,
 `∫ x ^ k d(marchenkoPastur y) = ∑_{π ∈ NC(Fin k)} y ^ (k - |π|)`. -/
 theorem integral_pow_marchenkoPastur (y : ℝ≥0) (k : ℕ) :
     ∫ x, x ^ k ∂marchenkoPastur y =
-      ∑ π : NoncrossingPartition (univ : Finset (Fin k)), (y : ℝ) ^ (k - #π.1.parts) := by
+      ∑ π : NoncrossingPartition (univ : Finset (Fin k)), (y : ℝ) ^ (k - #π.val.parts) := by
   simpa using integral_pow_card_marchenkoPastur y (univ : Finset (Fin k))
 
 /-- **Narayana polynomial formula for the Marchenko–Pastur moments.** For `k : ℕ`, the `(k + 1)`-th
@@ -323,28 +343,29 @@ theorem integral_pow_succ_marchenkoPastur_eq_sum_range (y : ℝ≥0) (k : ℕ) :
   set s : Finset (Fin (k + 1)) := univ
   have hs : #s = k + 1 := by simp [s]
   rw [integral_pow_marchenkoPastur]
-  have hpos (π : NoncrossingPartition s) : 1 ≤ #π.1.parts := by
-    refine Finset.card_pos.2 (nonempty_iff_ne_empty.2 fun h ↦ ?_)
+  have hpos (π : NoncrossingPartition s) : 1 ≤ #π.val.parts := by
+    refine Finset.card_pos.2 (ne_empty_iff_nonempty.1 fun h ↦ ?_)
     have := Finpartition.parts_eq_empty_iff.1 h
     exact (univ_nonempty (α := Fin (k + 1))).ne_empty this
-  have hle (π : NoncrossingPartition s) : #π.1.parts ≤ k + 1 :=
-    π.1.card_parts_le_card.trans_eq hs
-  rw [← sum_fiberwise_of_maps_to (g := fun π : NoncrossingPartition s ↦ k + 1 - #π.1.parts)
+  have hle (π : NoncrossingPartition s) : #π.val.parts ≤ k + 1 :=
+    π.val.card_parts_le_card.trans_eq hs
+  rw [← sum_fiberwise_of_maps_to (g := fun π : NoncrossingPartition s ↦ k + 1 - #π.val.parts)
     (t := range (k + 1)) fun π _ ↦ mem_range.2 (by have := hpos π; omega)]
   refine sum_congr rfl fun i hi ↦ ?_
   rw [mem_range] at hi
-  have hfib : (univ.filter fun π : NoncrossingPartition s ↦ k + 1 - #π.1.parts = i) =
-      (univ.filter fun π : NoncrossingPartition s ↦ #π.1.parts = k - i + 1) := by
+  have hfib : (univ.filter fun π : NoncrossingPartition s ↦ k + 1 - #π.val.parts = i) =
+      (univ.filter fun π : NoncrossingPartition s ↦ #π.val.parts = k - i + 1) := by
     ext π
     simp only [mem_filter, mem_univ, true_and]
     have := hpos π
     have := hle π
     omega
-  calc ∑ π ∈ univ.filter (fun π : NoncrossingPartition s ↦ k + 1 - #π.1.parts = i),
-          (y : ℝ) ^ (k + 1 - #π.1.parts)
-      = ∑ _ ∈ univ.filter (fun π : NoncrossingPartition s ↦ k + 1 - #π.1.parts = i), (y : ℝ) ^ i :=
+  calc ∑ π ∈ univ.filter (fun π : NoncrossingPartition s ↦ k + 1 - #π.val.parts = i),
+          (y : ℝ) ^ (k + 1 - #π.val.parts)
+      = ∑ _ ∈ univ.filter (fun π : NoncrossingPartition s ↦ k + 1 - #π.val.parts = i), (y : ℝ) ^ i
+          :=
         sum_congr rfl fun π hπ ↦ by rw [(mem_filter.1 hπ).2]
-    _ = (#(univ.filter fun π : NoncrossingPartition s ↦ #π.1.parts = k - i + 1) : ℝ) *
+    _ = (#(univ.filter fun π : NoncrossingPartition s ↦ #π.val.parts = k - i + 1) : ℝ) *
           (y : ℝ) ^ i := by
         rw [hfib, sum_const, nsmul_eq_mul]
     _ = _ := by

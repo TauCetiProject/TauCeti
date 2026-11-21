@@ -44,6 +44,8 @@ difference of the two skeleta.
   a given `n`-cell misses its open cell.
 * `TauCeti.isOpen_preimage_val_openCell`: each open `n`-cell is open in that union, and more
   generally in every subset of the `n`-skeleton.
+* `TauCeti.cellRetractMap`: the characteristic map of a cell precomposed with the radial
+  retraction onto the closed unit ball, a continuous map on all of `Fin n → ℝ`.
 * `TauCeti.openCellChart`: the inverse of the characteristic map of an `n`-cell, as a chart of the
   `n`-skeleton with source the open cell and target the open unit ball.
 * `TauCeti.iUnionOpenCellHomeomorph`: that union is homeomorphic to the disjoint union of one
@@ -105,6 +107,25 @@ map. -/
 lemma openCellHomeomorph_symm_apply (i : cell C n) (x : (openCell (C := C) n i)) :
     ((openCellHomeomorph n i).symm x : Fin n → ℝ) = (map n i).symm x := (rfl)
 
+/-- The characteristic map of an `n`-cell `i`, precomposed with the radial retraction of
+`Fin n → ℝ` onto the closed unit ball: a continuous map on all of `Fin n → ℝ` that agrees with the
+characteristic map on the closed unit ball (`TauCeti.cellRetractMap_of_mem`). -/
+noncomputable def cellRetractMap (i : cell C n) : C(Fin n → ℝ, X) :=
+  ⟨fun y ↦ map n i (radialRetraction 1 y), (continuousOn n i).comp_continuous
+    (lipschitzWith_radialRetraction zero_le_one).continuous
+    fun y ↦ radialRetraction_mem_closedBall zero_le_one y⟩
+
+/-- The retracted characteristic map is the characteristic map after the radial retraction. -/
+@[simp]
+lemma cellRetractMap_apply (i : cell C n) (y : Fin n → ℝ) :
+    cellRetractMap n i y = map n i (radialRetraction 1 y) :=
+  (rfl)
+
+/-- On the closed unit ball, the retracted characteristic map is the characteristic map. -/
+lemma cellRetractMap_of_mem (i : cell C n) {y : Fin n → ℝ} (hy : y ∈ closedBall 0 1) :
+    cellRetractMap n i y = map n i y := by
+  rw [cellRetractMap_apply, radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 hy)]
+
 variable [T2Space X]
 
 /-- A point of an open `n`-cell does not lie in the `(n-1)`-skeleton. -/
@@ -112,14 +133,19 @@ lemma notMem_skeletonLT_of_mem_openCell {i : cell C n} {x : X} (hx : x ∈ openC
     x ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
   (disjoint_skeletonLT_openCell (le_refl (n : ℕ∞))).notMem_of_mem_right hx
 
+omit [T2Space X] in
 /-- A closed `m`-cell other than the `n`-cell `j` misses the open cell of `j` when `m ≤ n`: its
-frontier lies in the `(m-1)`-skeleton and its open cell is a different open cell. -/
+frontier lies in the base and in open cells of lower dimension, and its open cell is a different
+open cell. -/
 lemma disjoint_closedCell_openCell_of_ne {m : ℕ} (hm : m ≤ n) {i : cell C m} {j : cell C n}
     (hij : (⟨m, i⟩ : Σ n, cell C n) ≠ ⟨n, j⟩) : Disjoint (closedCell m i) (openCell n j) := by
   rw [← cellFrontier_union_openCell_eq_closedCell, disjoint_union_left]
-  exact ⟨(disjoint_skeletonLT_openCell le_rfl).mono_left
-      ((cellFrontier_subset_skeletonLT m i).trans (skeletonLT_mono (by exact_mod_cast hm))),
-    disjoint_openCell_of_ne hij⟩
+  refine ⟨?_, disjoint_openCell_of_ne hij⟩
+  obtain ⟨I, hI⟩ := cellFrontier_subset_finite_openCell m i
+  refine Disjoint.mono_left hI (disjoint_union_left.2 ⟨(disjointBase n j).symm, ?_⟩)
+  simp_rw [disjoint_iUnion₂_left]
+  intro k hk l _
+  exact disjoint_openCell_of_ne fun h ↦ (hk.trans_le hm).ne (Sigma.mk.inj_iff.1 h).1
 
 /-- Adjoining any family of closed `n`-cells to the `(n-1)`-skeleton gives a closed set.  Taking
 the family of all `n`-cells gives the `n`-skeleton; the point of the general statement is that
@@ -211,13 +237,13 @@ lemma isOpen_preimage_val_openCell {S : Set X}
     -- A point of the `n`-skeleton outside the `(n-1)`-skeleton lies in some open `n`-cell, and
     -- the open cells other than `i` lie in the excluded closed cells.
     by_contra hxi
-    refine hxn (mem_skeletonLT_of_forall_notMem_openCell n (hS x.2) fun k hk ↦ ?_)
+    refine hxn (mem_skeletonLT_of_forall_notMem_openCell n (hS x.property) fun k hk ↦ ?_)
     by_cases hki : k = i
     · exact hxi (hki ▸ hk)
     · exact h k (by simpa using hki) (openCell_subset_closedCell n k hk)
   rw [hcompl]
   exact ((isClosed_skeletonLT_union_iUnion_closedCell n _).preimage
-    continuous_subtype_val).isOpen_compl
+    continuous_subtypeVal).isOpen_compl
 
 /-- The inverse of the characteristic map of an `n`-cell `i`, as a chart of the `n`-skeleton
 `skeletonLT C (n + 1)` whose source is the open cell and whose target is the open unit ball.
@@ -243,11 +269,9 @@ noncomputable def openCellChart (i : cell C n) :
     exact (map n i).left_inv (by rwa [source_eq])
   open_source := isOpen_preimage_val_openCell n Subset.rfl i
   open_target := isOpen_ball
-  continuousOn_toFun := (continuousOn_symm n i).comp continuous_subtype_val.continuousOn
+  continuousOn_toFun := (continuousOn_symm n i).comp continuous_subtypeVal.continuousOn
     fun x hx ↦ by rwa [target_map_eq_openCell]
-  continuousOn_invFun := Continuous.continuousOn <| Continuous.subtype_mk
-    ((continuousOn n i).comp_continuous (lipschitzWith_radialRetraction zero_le_one).continuous
-      fun y ↦ radialRetraction_mem_closedBall zero_le_one y) _
+  continuousOn_invFun := ((cellRetractMap n i).continuous.subtype_mk _).continuousOn
 
 /-- The chart of an open cell is the inverse of its characteristic map. -/
 @[simp]
@@ -299,7 +323,7 @@ noncomputable def iUnionOpenCellHomeomorph :
   -- ball, distinct open cells are disjoint, and the open cells cover the target.
   (Equiv.ofBijective
     (fun p : Σ _ : cell C n, (ball (0 : Fin n → ℝ) 1) ↦
-      (⟨map n p.1 p.2, mem_iUnion.2 ⟨p.1, p.2, p.2.2, rfl⟩⟩ :
+      (⟨map n p.1 p.2, mem_iUnion.2 ⟨p.1, p.2, p.2.property, rfl⟩⟩ :
         (⋃ k : cell C n, openCell (C := C) n k : Set X)))
     (by
       constructor
@@ -307,12 +331,13 @@ noncomputable def iUnionOpenCellHomeomorph :
         have h' : map n i (y : Fin n → ℝ) = map n j (z : Fin n → ℝ) := congrArg Subtype.val h
         obtain rfl : i = j := by
           by_contra hij
-          have hmi : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n i := ⟨y, y.2, rfl⟩
-          have hmj : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n j := ⟨z, z.2, h'.symm⟩
+          have hmi : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n i := ⟨y, y.property, rfl⟩
+          have hmj : map n i (y : Fin n → ℝ) ∈ openCell (C := C) n j := ⟨z, z.property, h'.symm⟩
           exact (disjoint_openCell_of_ne fun hh ↦
             hij (eq_of_heq (Sigma.mk.inj_iff.1 hh).2)).notMem_of_mem_left hmi hmj
         exact congrArg (Sigma.mk i) (Subtype.ext
-          ((map n i).injOn (by rw [source_eq]; exact y.2) (by rw [source_eq]; exact z.2) h'))
+          ((map n i).injOn
+              (by rw [source_eq]; exact y.property) (by rw [source_eq]; exact z.property) h'))
       · rintro ⟨x, hx⟩
         obtain ⟨i, y, hy, rfl⟩ := mem_iUnion.1 hx
         exact ⟨⟨i, ⟨y, hy⟩⟩, rfl⟩)).toHomeomorphOfContinuousOpen
@@ -324,16 +349,17 @@ noncomputable def iUnionOpenCellHomeomorph :
       -- On the summand `i` the map is `openCellHomeomorph n i` followed by the inclusion of the
       -- open cell `i`, whose range is open in the union.
       have hemb : IsEmbedding fun y : ball (0 : Fin n → ℝ) 1 ↦
-          (⟨map n i y, mem_iUnion.2 ⟨i, y, y.2, rfl⟩⟩ :
+          (⟨map n i y, mem_iUnion.2 ⟨i, y, y.property, rfl⟩⟩ :
             (⋃ k : cell C n, openCell (C := C) n k : Set X)) :=
         (IsEmbedding.inclusion (subset_iUnion (fun k ↦ openCell (C := C) n k) i)).comp
           (openCellHomeomorph n i).isEmbedding
       have hrange : (range fun y : ball (0 : Fin n → ℝ) 1 ↦
-          (⟨map n i y, mem_iUnion.2 ⟨i, y, y.2, rfl⟩⟩ :
+          (⟨map n i y, mem_iUnion.2 ⟨i, y, y.property, rfl⟩⟩ :
             (⋃ k : cell C n, openCell (C := C) n k : Set X))) =
           Subtype.val ⁻¹' openCell (C := C) n i := by
         ext x
-        exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ ⟨y, y.2, rfl⟩, fun ⟨y, hy, hxy⟩ ↦ ⟨⟨y, hy⟩, Subtype.ext hxy⟩⟩
+        exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ ⟨y, y.property, rfl⟩, fun ⟨y, hy, hxy⟩ ↦ ⟨⟨y, hy⟩,
+            Subtype.ext hxy⟩⟩
       exact (IsOpenEmbedding.mk hemb (hrange ▸ isOpen_preimage_val_openCell n
         (iUnion_subset fun k ↦ openCell_subset_skeletonLT n k) i)).isOpenMap)
 

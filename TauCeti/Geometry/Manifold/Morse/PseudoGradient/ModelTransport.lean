@@ -220,11 +220,9 @@ end IsAdaptedPseudoGradient
 namespace IsMorse
 
 /-- Every Morse function on a compact arbitrary-model manifold has an adapted pseudo-gradient. -/
-theorem exists_isAdaptedPseudoGradient [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M]
+theorem exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
     {f : M → ℝ} (hf : TauCeti.IsMorse I f) :
     ∃ X : (x : M) → TangentSpace I x, IsAdaptedPseudoGradient I f X := by
-  let _ : CompactSpace (BoundarylessModel I M) := (homeomorph I M).compactSpace
-  let _ : T2Space (BoundarylessModel I M) := (homeomorph I M).t2Space
   have hf' : TauCeti.IsMorse 𝓘(ℝ, E) (f ∘ (homeomorph I M).symm) :=
     (isMorse_iff I f).mpr hf
   obtain ⟨Y, hY⟩ := hf'.exists_isAdaptedPseudoGradient

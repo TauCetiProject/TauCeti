@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive.FiniteSubgroup
 # Additive subgroups obstruct linear reductivity in positive characteristic
 
 If the additive group of the ground field embeds in the rational points of a linearly
-reductive affine group of finite type, the field has characteristic zero. In characteristic
+reductive affine group, the field has characteristic zero. In characteristic
 `p`, the image of `1` would have order `p`, contradicting the invertibility of orders of finite
 subgroups. No closedness or algebraicity assumption on the embedding is needed.
 
@@ -32,10 +32,9 @@ namespace TauCeti.HopfAlgebra
 universe u v
 
 variable {k : Type u} [Field k] {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
-  [Algebra.FiniteType k H]
 
 /-- If the additive group of the ground field embeds in the rational points of a linearly
-reductive affine group of finite type, the field has characteristic zero. -/
+reductive affine group, the field has characteristic zero. -/
 theorem charZero_of_isLinearlyReductive_of_injective_additiveHom
     (hH : Coalgebra.IsLinearlyReductive.{u, v, u} k H)
     (f : Multiplicative k →* WithConv (H →ₐ[k] k)) (hf : Function.Injective f) :

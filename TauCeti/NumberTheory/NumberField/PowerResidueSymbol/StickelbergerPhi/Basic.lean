@@ -60,8 +60,8 @@ the Eisenstein reciprocity law.
   integers, in particular for every automorphism of `K`.
 * `Ideal.apply_stickelbergerPhi_eq_gaussSum_pow`: `σ (Φ(P)) = g(χ_P ^ c, ψ)^m` for an automorphism
   `σ` of `𝓞 K` raising the `m`-th roots of unity to the power `c`.
-* `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`: `Φ(P) σ(Φ(P)) = N(P)^m` for an automorphism
-  `σ` inverting the `m`-th roots of unity.
+* `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`: `Φ(A) σ(Φ(A)) = N(A)^m` for an ideal `A`
+  whose norm is prime to `m` and an automorphism `σ` inverting the `m`-th roots of unity.
 * `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime and every maximal ideal `P`
   whose norm is prime to `m`.
 * `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime and every ideal
@@ -69,6 +69,8 @@ the Eisenstein reciprocity law.
   multiplicity.
 * `Ideal.powerResidueSymbol_stickelbergerPhi`: `(Φ(A) / P')_m = (N P' / A)_m` for `m ≥ 2`, a
   maximal ideal `P'` whose norm is prime to `m`, and an ideal `A` whose norm is prime to `N P'`.
+* `Ideal.powerResidueSymbolIdeal_stickelbergerPhi`: `(Φ(A) / B)_m = (N B / A)_m` for `m ≥ 2` and
+  ideals `A`, `B` with `N B` prime to `m` and `N A` prime to `N B`.
 
 ## References
 
@@ -295,11 +297,9 @@ theorem apply_stickelbergerPhi_eq_gaussSum_pow (P : Ideal (𝓞 K)) [P.IsMaximal
   rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, RingHom.comp_apply,
     RingEquiv.coe_toRingHom, hσ _ hu, MulChar.pow_apply_coe]
 
-/-- **`Φ(P)` times its conjugate.** Let `σ` be a ring automorphism of `𝓞 K` inverting every
-`m`-th root of unity, such as complex conjugation on a cyclotomic field. If `m ≥ 2` and the norm
-of the maximal ideal `P` is prime to `m`, then `Φ(P) σ(Φ(P)) = N(P)^m`. -/
-theorem stickelbergerPhi_mul_apply_eq_absNorm_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
-    (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
+/-- The case of a maximal ideal in `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`. -/
+private theorem stickelbergerPhi_mul_apply_eq_absNorm_pow_of_isMaximal (P : Ideal (𝓞 K))
+    [P.IsMaximal] (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
     (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ (m - 1)) :
     stickelbergerPhi P m * σ (stickelbergerPhi P m) = (absNorm P : 𝓞 K) ^ m := by
   let _ := Ideal.Quotient.field P
@@ -325,6 +325,27 @@ theorem stickelbergerPhi_mul_apply_eq_absNorm_pow (P : Ideal (𝓞 K)) [P.IsMaxi
   rw [map_mul, h₁, h₂, ← mul_pow, h, mul_pow, ← MulChar.pow_apply' χ (NeZero.ne m),
     ← hχ, pow_orderOf_eq_one, MulChar.one_apply (isUnit_one.neg), one_mul, map_pow, map_natCast,
     absNorm_eq_natCard, Nat.card_eq_fintype_card]
+
+/-- **`Φ(A)` times its conjugate.** Let `σ` be a ring automorphism of `𝓞 K` inverting every
+`m`-th root of unity, such as complex conjugation on a cyclotomic field. If `m ≥ 2` and the norm
+of the ideal `A` is prime to `m`, then `Φ(A) σ(Φ(A)) = N(A)^m`. -/
+theorem stickelbergerPhi_mul_apply_eq_absNorm_pow {A : Ideal (𝓞 K)}
+    (hA : (absNorm A).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
+    (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ (m - 1)) :
+    stickelbergerPhi A m * σ (stickelbergerPhi A m) = (absNorm A : 𝓞 K) ^ m := by
+  induction A using induction_on_prime with
+  | h₁ =>
+    rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
+    lia
+  | h₂ A hA' =>
+    rw [isUnit_iff.mp hA', stickelbergerPhi_top, absNorm_top]
+    simp
+  | h₃ A P hA₀ hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [map_mul, Nat.coprime_mul_iff_left] at hA
+    rw [stickelbergerPhi_mul hP.ne_zero hA₀, map_mul, map_mul, Nat.cast_mul, mul_pow,
+      ← stickelbergerPhi_mul_apply_eq_absNorm_pow_of_isMaximal P hA.1 hm σ hσ, ← ih hA.2]
+    ring
 
 /-- **`Φ(P)` is `-1` modulo `m`.** If `m` is prime and `P` is a maximal ideal whose norm is prime
 to `m`, then `Φ(P) ≡ -1` modulo `m 𝓞 K`. -/
@@ -363,7 +384,7 @@ theorem stickelbergerPhi_modEq [Fact m.Prime] (P : Ideal (𝓞 K)) [P.IsMaximal]
     have hfσ (x : 𝓞 K) : (f x : ℂ) = σ x := rfl
     simpa [hfσ] using (congrArg Subtype.val hy).symm
   obtain ⟨z, hz'⟩ := IsIntegralClosure.isIntegral_iff (A := 𝓞 K) |>.mp <|
-    (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.2)
+    (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.property)
   rw [SModEq.sub_mem, sub_neg_eq_add, mem_span_singleton']
   refine ⟨z, RingOfIntegers.coe_injective ?_⟩
   rw [map_mul, hz', map_natCast, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hm.ne_zero)]
@@ -391,6 +412,29 @@ theorem stickelbergerPhi_modEq_neg_one_pow [Fact m.Prime] {A : Ideal (𝓞 K)}
 
 section SecondPrime
 
+/-- The image of the Gauss sum of the inverse power residue symbol of a maximal ideal `P`, in the
+quotient ring `R ⧸ I` of a domain `R` containing `𝓞 K` and the values of a primitive additive
+character of `𝓞 K ⧸ P`, is nonzero when the ideal `I` lies over a maximal ideal `P'` whose norm is
+prime to that of `P`. -/
+private theorem quotientMk_gaussSum_ne_zero (P P' : Ideal (𝓞 K)) [P.IsMaximal] [P'.IsMaximal]
+    [Fintype (𝓞 K ⧸ P)]
+    (hP : (absNorm P).Coprime m) (hPP' : (absNorm P).Coprime (absNorm P')) (hm : 2 ≤ m)
+    {R : Type*} [CommRing R] [IsDomain R] {f : 𝓞 K →+* R} (hf : Function.Injective f)
+    {ψ : AddChar (𝓞 K ⧸ P) R} (hψ : ψ.IsPrimitive) (I : Ideal R)
+    (hI : I.comap f = P') :
+    Quotient.mk I (gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f) ψ) ≠ 0 := by
+  let _ := Ideal.Quotient.field P
+  have hχ : (powerResidueSymbol P m)⁻¹.ringHomComp f ≠ 1 := by
+    rw [MulChar.ringHomComp_ne_one_iff hf, Ne, inv_eq_one, ← orderOf_eq_one_iff,
+      orderOf_powerResidueSymbol hP]
+    lia
+  intro h
+  have h' := congrArg (Quotient.mk I) (gaussSum_mul_gaussSum_eq_card hχ hψ)
+  rw [map_mul, h, zero_mul, ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard, eq_comm,
+    Quotient.eq_zero_iff_mem] at h'
+  rw [← map_natCast f, ← mem_comap, hI] at h'
+  exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' hPP' h'
+
 /-- The case of a maximal ideal `P` in `powerResidueSymbol_stickelbergerPhi`, read through a domain
 `R` containing `𝓞 K` and the values of a primitive additive character of `𝓞 K ⧸ P`, and through a
 prime `I` of `R` over `P'`. -/
@@ -414,8 +458,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
       MulChar.map_one, MulChar.one_apply hq.isUnit]
   -- The residue field `F'` of `P'` embeds in the domain `S = R ⧸ I` through `ρ`, so `S` has the
   -- characteristic `p` of `F'`, and `N P' = q = p ^ n`.
-  have hle : P' ≤ I.comap f := hI.ge
-  let ρ := quotientMap I f hle
+  let ρ := quotientMap I f hI.ge
   have hρ : Function.Injective ρ := quotientMap_injective' hI.le
   set p := ringChar (𝓞 K ⧸ P')
   have hp : p.Prime := CharP.char_is_prime (𝓞 K ⧸ P') p
@@ -430,37 +473,19 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
   let χ := (powerResidueSymbol P m)⁻¹.ringHomComp f
   let π := Quotient.mk I
   let g := gaussSum χ ψ
-  have hg : π g = gaussSum (χ.ringHomComp π) (π.toMonoidHom.compAddChar ψ) := by
-    simp only [g, gaussSum, map_sum, map_mul, MulChar.ringHomComp_apply,
-      MonoidHom.coe_compAddChar, Function.comp_apply, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_ofClass]
   -- `gbar ≠ 0`, because `g g(χ⁻¹, ψ⁻¹) = N P` and `N P` is prime to `p`.
-  have hχ : χ ≠ 1 := by
-    rw [MulChar.ringHomComp_ne_one_iff hf, Ne, inv_eq_one, ← orderOf_eq_one_iff,
-      orderOf_powerResidueSymbol hP]
-    lia
-  have hg₀ : π g ≠ 0 := by
-    intro h
-    have h' := congrArg π (gaussSum_mul_gaussSum_eq_card hχ hψ)
-    rw [map_mul, h, zero_mul, ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard,
-      ← map_natCast f, eq_comm, Quotient.eq_zero_iff_mem, ← mem_comap, hI] at h'
-    exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' hPP' h'
+  have hg₀ : π g ≠ 0 := quotientMk_gaussSum_ne_zero P P' hP hPP' hm hf hψ I hI
   -- The Frobenius: `gbar ^ q = (q / P)_m gbar`, so `gbar ^ (q - 1) = (q / P)_m` in `S`.
   have hχq : χ.ringHomComp π ^ p ^ (n : ℕ) = χ.ringHomComp π := by
-    have h0 : powerResidueSymbol P m ^ m = 1 := by
-      simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P m)
-    have h1 : χ.ringHomComp π ^ m = 1 := by
-      rw [MulChar.ringHomComp_pow, MulChar.ringHomComp_pow, inv_pow, h0, inv_one,
-        MulChar.ringHomComp_one, MulChar.ringHomComp_one]
-    obtain ⟨k, hk⟩ := hmq
-    rw [← hqn, ← Nat.sub_add_cancel hq₀, hk, pow_succ, pow_mul, h1, one_pow, one_mul]
+    rw [← hqn, MulChar.ringHomComp_pow, MulChar.ringHomComp_pow, inv_pow,
+      powerResidueSymbol_pow_eq_self hmq hq₀]
   have hval : (χ.ringHomComp π)⁻¹ ((p : 𝓞 K ⧸ P) ^ (n : ℕ)) =
       π (f (powerResidueSymbol P m (Quotient.mk P (absNorm P' : 𝓞 K)))) := by
     rw [MulChar.ringHomComp_inv, MulChar.ringHomComp_inv, inv_inv, MulChar.ringHomComp_apply,
       MulChar.ringHomComp_apply, map_natCast, ← Nat.cast_pow, ← hqn]
   have hfrob := TauCeti.gaussSum_pow_char_pow hχq (π.toMonoidHom.compAddChar ψ)
     (by rw [← Nat.cast_pow, ← hqn, ← map_natCast (Quotient.mk P)]; exact hq.isUnit)
-  rw [hval, ← hg, ← hqn, ← pow_sub_one_mul hq₀.ne'] at hfrob
+  rw [hval, MulChar.gaussSum_ringHomComp, ← hqn, ← pow_sub_one_mul hq₀.ne'] at hfrob
   have hgq := mul_right_cancel₀ hg₀ hfrob
   -- `f (Φ(P)) = g ^ m`, so `Φ(P) ∉ P'` and `ρ ((Φ(P) / P')_m) = gbar ^ (q - 1)`.
   have hΦ : f (stickelbergerPhi P m) = g ^ m := stickelbergerPhi_prime P hP hm hf hψ
@@ -468,9 +493,9 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
     rw [Ne, Quotient.eq_zero_iff_mem, ← hI, mem_comap, ← Quotient.eq_zero_iff_mem, hΦ,
       map_pow]
     exact pow_ne_zero m hg₀
-  refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP' (powerResidueSymbol_pow_eq_one hP' hΦP')
-    (powerResidueSymbol_pow_eq_one hP hq) (hρ ?_)
-  rw [mk_powerResidueSymbol hP' hΦP', map_pow, quotientMap_mk, quotientMap_mk, hΦ, map_pow,
+  refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP' (powerResidueSymbol_pow_eq_one hΦP')
+    (powerResidueSymbol_pow_eq_one hq) (hρ ?_)
+  rw [mk_powerResidueSymbol hP', map_pow, quotientMap_mk, quotientMap_mk, hΦ, map_pow,
     ← pow_mul, Nat.mul_div_cancel' hmq, hgq]
 
 /-- `(Φ(P) / P')_m = (N P' / P)_m` at a maximal ideal `P`. -/
@@ -479,22 +504,14 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_isMaximal (P P' : Ideal (
     (hP' : (absNorm P').Coprime m) (hPP' : (absNorm P).Coprime (absNorm P')) (hm : 2 ≤ m) :
     powerResidueSymbol P' m (Quotient.mk P' (stickelbergerPhi P m)) =
       powerResidueSymbol P m (Quotient.mk P (absNorm P' : 𝓞 K)) := by
-  -- Work in the ring of algebraic integers of `ℂ`, which is integral over `𝓞 K` through `f`, and
-  -- in a prime of it over `P'`.
   let _ := Ideal.Quotient.field P
-  let f : 𝓞 K →+* integralClosure ℤ ℂ :=
-    (Classical.arbitrary (K →+* ℂ)).toIntAlgHom.mapIntegralClosure.toRingHom
-  have hf : Function.Injective f := AlgHom.mapIntegralClosure_injective
-    (f := (Classical.arbitrary (K →+* ℂ)).toIntAlgHom) (RingHom.injective _)
   obtain ⟨ψ, hψ⟩ := TauCeti.exists_primitive_addChar_integralClosure (𝓞 K ⧸ P)
-  let _ := f.toAlgebra
-  have : IsScalarTower ℤ (𝓞 K) (integralClosure ℤ ℂ) :=
-    IsScalarTower.of_algebraMap_eq' (RingHom.ext_int _ _)
-  have : Algebra.IsIntegral (𝓞 K) (integralClosure ℤ ℂ) :=
-    ⟨fun x ↦ (integralClosure.isIntegral x).tower_top⟩
-  obtain ⟨I, hI, hIP'⟩ := exists_ideal_over_maximal_of_isIntegral P'
-    (((RingHom.injective_iff_ker_eq_bot _).mp hf).trans_le bot_le)
-  exact powerResidueSymbol_stickelbergerPhi_of_comap P P' hP' hPP' hm hf hψ I hIP'
+  have hinj : Function.Injective (Classical.arbitrary (K →+* ℂ)).toIntAlgHom :=
+    RingHom.injective _
+  obtain ⟨I, _, hIP'⟩ :=
+    P'.exists_isPrime_comap_isIntegralClosure_map_eq (integralClosure ℤ ℂ) hinj
+  exact powerResidueSymbol_stickelbergerPhi_of_comap P P' hP' hPP' hm
+    (TauCeti.IsIntegralClosure.map_injective _ _ hinj) hψ I hIP'
 
 /-- **The residue symbol of `Φ(A)` at a second prime.** Let `m ≥ 2`, let `P'` be a maximal ideal of
 `𝓞 K` whose norm is prime to `m`, and let `A` be an ideal whose norm is prime to that of `P'`.
@@ -518,6 +535,29 @@ theorem powerResidueSymbol_stickelbergerPhi (A P' : Ideal (𝓞 K)) [P'.IsMaxima
     rw [stickelbergerPhi_mul hP.ne_zero hA₀, map_mul, map_mul,
       powerResidueSymbolIdeal_mul_right hP.ne_zero hA₀, powerResidueSymbolIdeal_of_isMaximal,
       powerResidueSymbol_stickelbergerPhi_of_isMaximal P P' hP' hAP'.1 hm, ih hAP'.2]
+
+/-- **The residue symbol of `Φ(A)` at an ideal.** Let `m ≥ 2`, let `B` be an ideal of `𝓞 K` whose
+norm is prime to `m`, and let `A` be an ideal whose norm is prime to `N B`. Then
+`(Φ(A) / B)_m = (N B / A)_m`, extending `Ideal.powerResidueSymbol_stickelbergerPhi` from a maximal
+ideal `P'` to a composite ideal `B` by multiplicativity in `B`. -/
+theorem powerResidueSymbolIdeal_stickelbergerPhi (A B : Ideal (𝓞 K))
+    (hB : (absNorm B).Coprime m) (hAB : (absNorm A).Coprime (absNorm B)) (hm : 2 ≤ m) :
+    powerResidueSymbolIdeal B m (Quotient.mk B (stickelbergerPhi A m)) =
+      powerResidueSymbolIdeal A m (Quotient.mk A (absNorm B : 𝓞 K)) := by
+  induction B using induction_on_prime with
+  | h₁ =>
+    rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hB
+    omega
+  | h₂ B h =>
+    rw [isUnit_iff.mp h, powerResidueSymbolIdeal_top, absNorm_top, Nat.cast_one, map_one,
+      MulChar.map_one]
+  | h₃ B P hB₀ hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [map_mul, Nat.coprime_mul_iff_left] at hB
+    rw [map_mul, Nat.coprime_mul_iff_right] at hAB
+    rw [powerResidueSymbolIdeal_mul_right hP.ne_zero hB₀, powerResidueSymbolIdeal_of_isMaximal,
+      powerResidueSymbol_stickelbergerPhi A P hB.1 hAB.1 hm, ih hB.2 hAB.2, map_mul,
+      Nat.cast_mul, map_mul, map_mul]
 
 end SecondPrime
 

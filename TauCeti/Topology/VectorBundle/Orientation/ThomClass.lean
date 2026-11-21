@@ -20,7 +20,9 @@ identifies the fibre pair `(E_b, E_b ∖ {0})` with `(F, F ∖ {0})`, and so rea
 the fibre pair. Two trivializations read `g` as classes differing by the sign of the determinant
 of their coordinate change at `b`
 (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`), and this sign
-is `+1` exactly when they read the orientation `o b` as the same orientation of `F`. So the class
+is `+1` exactly when they read the orientation `o b` as the same orientation of `F`
+(`Bundle.Trivialization.sign_det_coordChangeL_eq_one_of_mapOrientation_eq`,
+`Bundle.Trivialization.sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg`). So the class
 read off along any trivialization carrying `o b` to `ω`, or the negative of the class read off
 along one carrying `o b` to `-ω`, is a class of the fibre pair that depends only on `o b`.
 
@@ -68,6 +70,11 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   `singularCohomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg` and
   `singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq_neg` describe
   the effect of equal or opposite orientation readings in every degree.
+* In `Bundle.Trivialization`, the lemmas
+  `singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq` and
+  `singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg` are their homology
+  counterparts: equal readings induce the same map `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})`, and
+  opposite readings opposite maps.
 * `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`: there is a
   unique class of `Hʳ(E, E₀)` restricting on every fibre to the class read off from `g` along
   trivializations carrying the orientation of the fibre to `ω`, and to its negative along those
@@ -75,14 +82,20 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
 * `TauCeti.VectorBundleOrientation.thomClassOfModel`: this class, with fibre restrictions
   `singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq` and
   `singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg`;
-  `eq_thomClassOfModel_of_forall` characterizes it, and `isThomClass_thomClassOfModel` shows that
-  normalization by a generator gives a Thom class.
+  `eq_thomClassOfModel_of_forall` characterizes it, as does
+  `eq_thomClassOfModel_of_forall_exists` reading each fibre in a single trivialization, with
+  `exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel` its reading in any one; and
+  `isThomClass_thomClassOfModel` shows that normalization by a generator gives a Thom class.
 * `TauCeti.VectorBundleOrientation.exists_isThomClass`: an oriented real vector bundle has a Thom
   class with coefficients in any commutative ring.
 * `TauCeti.VectorBundleOrientation.singularCohomologyMap_fiberThomPairMap_thomClass`: the integral
   Thom class restricts on each fibre to the generator selected by the fibre orientation, read in
   any linear trivialization.
 * `TauCeti.VectorBundleOrientation.eq_thomClass_iff`: this property characterizes it.
+* `TauCeti.VectorBundleOrientation.singularCohomologyMap_thomPairOver_thomClass`: over a set on
+  which a linear trivialization reads the orientation as a single orientation `ω` of the model
+  fibre, the Thom class restricts to the pull-back of the generator selected by `ω` along the
+  projection to the fibre.
 * `TauCeti.VectorBundleOrientation.thomClass_neg`: reversing the orientation negates it.
 * `TauCeti.VectorBundleOrientation.singularCohomologyMap_pullbackThomPairMap_thomClass`: it is
   natural under pullback of bundles.
@@ -105,7 +118,7 @@ noncomputable section
 open Bundle CategoryTheory Filter Module Set
 open scoped Topology
 
-universe w
+universe w v u
 
 namespace Bundle.Trivialization
 
@@ -121,6 +134,29 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
 variable {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
   {o : Orientation ℝ (E b) ι}
 
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as the same
+orientation of the model fibre differ over `b` by a coordinate change of positive determinant. -/
+theorem sign_det_coordChangeL_eq_one_of_mapOrientation_eq
+    (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) :
+    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = 1 := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_iff_det_pos _ _ hι] at h
+  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+  exact sign_pos h
+
+omit [FiniteDimensional ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
+orientations of the model fibre differ over `b` by a coordinate change of negative determinant. -/
+theorem sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg
+    (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) :
+    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = -1 := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
+    at h
+  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
+  exact sign_neg h
+
 include hι in
 /-- Two linear trivializations reading an orientation of the fibre over `b` as the same
 orientation of the model fibre pull back every class of `Hⁿ(F, F ∖ {0})` to the same class of the
@@ -131,11 +167,8 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
     TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom n g =
       TopPair.singularCohomologyMap
         (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
-  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_iff_det_pos _ _ hι] at h
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-  have hd : 0 < (e.coordChangeL ℝ e' b : F →L[ℝ] F).det := h
-  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_pos hd,
-    SignType.coe_one, one_smul]
+  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_one_of_mapOrientation_eq e' hb hb' hι h, SignType.coe_one, one_smul]
 
 include hι in
 /-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
@@ -147,11 +180,8 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_n
     TopPair.singularCohomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom n g =
       -TopPair.singularCohomologyMap
         (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
-  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
-    at h
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-  have hd : (e.coordChangeL ℝ e' b : F →L[ℝ] F).det < 0 := h
-  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb', sign_neg hd,
+  rw [e.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg e' hb hb' hι h,
     SignType.coe_neg_one, neg_one_smul]
 
 include hι in
@@ -175,6 +205,34 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq
       hb' hι (by rw [h₁, h₂]; exact (neg_neg ω).symm)]
   · exact e.singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq e' hb hb' hι
       (h₂.trans h₁.symm) _
+
+variable {A : Type u} [Category.{v} A] [Limits.HasCoproducts.{w} A] [Abelian A] (R : A)
+
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as the same
+orientation of the model fibre induce the same map `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})`. This is
+the homology counterpart of
+`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq`. -/
+theorem singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
+    (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
+      TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R n := by
+  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_one_of_mapOrientation_eq e' hb hb' hι h, SignType.coe_one, one_smul]
+
+include hι in
+/-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
+orientations of the model fibre induce opposite maps `Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})`. This
+is the homology counterpart of
+`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg`.
+-/
+theorem singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg
+    (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
+      -TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R n := by
+  rw [e.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul e' hb hb',
+    e.sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg e' hb hb' hι h,
+    SignType.coe_neg_one, neg_one_zsmul]
 
 end Bundle.Trivialization
 
@@ -217,7 +275,8 @@ private theorem orientedFiberClass_eq (hι : Fintype.card ι = finrank ℝ F) (�
   all_goals
     split_ifs with h
     · exact Or.inl ⟨h, rfl⟩
-    · exact Or.inr ⟨(Orientation.eq_or_eq_neg _ ω hι).resolve_left h, rfl⟩
+    · exact Or.inr
+        ⟨(Orientation.eq_or_eq_neg _ ω (Nat.card_eq_fintype_card.trans hι)).resolve_left h, rfl⟩
 
 variable [VectorBundle ℝ F E]
 
@@ -244,7 +303,8 @@ private theorem fiber_eq_and_fiber_eq_neg_iff (hι : Fintype.card ι = finrank �
         TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
           orientedFiberClass ω g e hb (o b) := by
   refine ⟨fun ⟨h₁, h₂⟩ e _ b hb ↦ ?_, fun h ↦ ⟨fun e _ b hb hω ↦ ?_, fun e _ b hb hω ↦ ?_⟩⟩
-  · rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with hω | hω
+  · rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+      (Nat.card_eq_fintype_card.trans hι) with hω | hω
     · simp [orientedFiberClass, hω, h₁ e b hb hω]
     · simp [orientedFiberClass, hω, h₂ e b hb hω, (Module.Ray.ne_neg_self ω).symm]
   · simp [h e b hb, orientedFiberClass, hω]
@@ -366,6 +426,55 @@ theorem eq_thomClassOfModel_of_forall {u : (thomPair F E).singularCohomology R' 
 
 end ThomClass
 
+/-- To identify a class with the Thom class `thomClassOfModel o hι ω g`, it suffices to read its
+restriction to the fibre over each point in one linear trivialization at that point: as the
+pull-back of `g` if the trivialization reads the orientation as `ω`, and of `-g` if it reads it as
+`-ω`. -/
+theorem eq_thomClassOfModel_of_forall_exists (o : VectorBundleOrientation F E ι)
+    (hι : Fintype.card ι = finrank ℝ F) (ω : Orientation ℝ F ι)
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
+      (finrank ℝ F))
+    {u : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)}
+    (hu : ∀ b, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ) (hb : b ∈ e.baseSet)
+      (g' : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
+        (finrank ℝ F)),
+      (e.mapOrientation ι hb (o b) = ω ∧ g' = g ∨ e.mapOrientation ι hb (o b) = -ω ∧ g' = -g) ∧
+        TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+          TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _
+            g') :
+    u = o.thomClassOfModel hι ω g := by
+  refine eq_thomClassOfModel_of_forall o fun e' _ b hb' ↦ ?_
+  obtain ⟨e, _, hb, g', hg', hu'⟩ := hu b
+  refine ⟨fun h ↦ hu'.trans ?_, fun h ↦ hu'.trans ?_⟩
+  · exact (e.singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq_neg e' hb hb'
+      hι hg' (Or.inl ⟨h, rfl⟩)).symm
+  · rw [← map_neg]
+    exact (e.singularCohomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq_or_eq_neg e' hb hb'
+      hι hg' (Or.inr ⟨h, rfl⟩)).symm
+
+/-- On the fibre over a point `b` of the base set of a linear trivialization `e`, the Thom class
+`thomClassOfModel o hι ω g` is the pull-back along `e` of `g` or of `-g`, according as `e` reads
+the orientation as `ω` or as `-ω`. -/
+theorem exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel
+    (o : VectorBundleOrientation F E ι) (hι : Fintype.card ι = finrank ℝ F)
+    (ω : Orientation ℝ F ι)
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
+      (finrank ℝ F))
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
+    ∃ g' : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R' K M'
+        (finrank ℝ F),
+      (e.mapOrientation ι hb (o b) = ω ∧ g' = g ∨ e.mapOrientation ι hb (o b) = -ω ∧ g' = -g) ∧
+        TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClassOfModel hι ω g) =
+          TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _
+            g' := by
+  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+    (Nat.card_eq_fintype_card.trans hι) with h | h
+  · exact ⟨g, Or.inl ⟨h, rfl⟩,
+      o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb h⟩
+  · exact ⟨-g, Or.inr ⟨h, rfl⟩,
+      (o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg e hb
+        h).trans (map_neg _ _).symm⟩
+
 /-- **The Thom class of an oriented bundle normalized by a generator is a Thom class**: if `g`
 generates `Hʳ(F, F ∖ {0}; K, K) ≅ K`, then `thomClassOfModel o hι ω g` restricts to a generator of
 `Hʳ(E_b, E_b ∖ {0}; K, K)` on every fibre. -/
@@ -384,7 +493,8 @@ theorem isThomClass_thomClassOfModel (o : VectorBundleOrientation F E ι)
     let L := ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op).toLinearEquiv
     exact L.span_singleton_apply_eq_top_iff.2 hg
-  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h
+  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+    (Nat.card_eq_fintype_card.trans hι) with h | h
   · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb h]
     exact hge
   · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg e hb h,
@@ -444,7 +554,7 @@ private theorem exists_thomClass :
   have hω : e.mapOrientation (Fin (n + 1)) hb.2 (o b) = e.mapOrientation (Fin (n + 1)) hc (o c) :=
     ht b hb.1 hb.2
   rw [hu b hb, ← hω, Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
-  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF hF
 
 /-- **The integral Thom class of an oriented vector bundle.** For an orientation `o` of a real
 vector bundle `E` over an arbitrary base, with model fibre `F` of dimension `n + 1`, this is the
@@ -469,7 +579,7 @@ theorem singularCohomologyMap_fiberThomPairMap_thomClass (e : Trivialization F (
         (n + 1) ((e.mapOrientation (Fin (n + 1)) hb (o b)).localCohomologyClass hF) :=
   ((exists_thomClass o hF).choose_spec b).trans <| by
     rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
-    exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
+    exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF hF
 
 /-- **Uniqueness of the Thom class.** A class of `Hⁿ⁺¹(E, E₀; ℤ)` is the Thom class of the oriented
 bundle exactly when it restricts on every fibre to the generator selected by the fibre
@@ -488,6 +598,33 @@ theorem eq_thomClass_iff
       (y := v)) u _ fun b ↦ ?_⟩
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
   rw [h _ b hb, o.singularCohomologyMap_fiberThomPairMap_thomClass hF _ hb]
+
+/-- **The Thom class over an oriented trivializing set.** Over a set `W` inside the base set of a
+linear trivialization `e` that reads the orientation of every fibre over `W` as the same
+orientation `ω` of `F`, the Thom class restricts to the pull-back of the generator of
+`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` selected by `ω` along the projection `E|_W ≅ W × F → F`. -/
+theorem singularCohomologyMap_thomPairOver_thomClass (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) {ω : Orientation ℝ F (Fin (n + 1))}
+    (ho : ∀ b (hb : b ∈ W), e.mapOrientation (Fin (n + 1)) (hW hb) (o b) = ω) :
+    TopPair.singularCohomologyMap
+        (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom) (n + 1)
+        (o.thomClass hF) =
+      TopPair.singularCohomologyMap ((e.thomPairOverIso ℝ hW).hom ≫ prodThomPairSnd W F) (n + 1)
+        (ω.localCohomologyClass hF) := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  refine (hF ▸ fun u v ↦ e.singularCohomology_thomPairOver_ext hW
+    (R' := ModuleCat.of ℤ (ULift.{w} ℤ)) (K := ℤ) (M' := ModuleCat.of ℤ (ULift.{w} ℤ)) (u := u)
+    (v := v)) _ _ fun b hb ↦ ?_
+  -- Structural step: on the left the fibre over `b` includes into the Thom pair of `E`, and on
+  -- the right it is carried by `e` at `b` onto `(F, F ∖ {0})`.
+  simp only [← TopPair.singularCohomologyMap_comp_apply,
+    fiberThomPairOverMap_comp_thomPairOverMap_assoc,
+    fiberThomPairOverMap_comp_thomPairOverUnivIso_hom,
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc ℝ hW hb,
+    prodThomPairFiberMap_comp_prodThomPairSnd, Category.comp_id]
+  -- Mathematical step: the Thom class restricts on that fibre to the generator selected by the
+  -- fibre orientation, which `e` reads as `ω`.
+  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e (hW hb), ho b hb]
 
 /-- Reversing the orientation negates the Thom class. -/
 @[simp]
@@ -517,7 +654,7 @@ theorem singularCohomologyMap_pullbackThomPairMap_thomClass {B' : Type w} [Topol
   refine (o.singularCohomologyMap_fiberThomPairMap_thomClass hF (trivializationAt F E (f b'))
     (FiberBundle.mem_baseSet_trivializationAt' (f b'))).trans ?_
   rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply, pullback_apply]
-  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o (f b')) _ _ hF
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o (f b')) _ _ hF hF
 
 /-- **Fibrewise negation in odd rank reverses the Thom class.** For an oriented bundle of odd rank
 `n + 1`, pulling the Thom class back along `v ↦ -v` gives the Thom class of the opposite
@@ -527,64 +664,19 @@ theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
       (-o).thomClass hF := by
   refine ((eq_thomClass_iff (-o) hF _).2 fun e _ b hb ↦ ?_)
   let t := e.continuousLinearEquivAt ℝ b hb
-  -- On the fibre over `b`, negation is `t⁻¹ ∘ (x ↦ -x) ∘ t`.
-  have hφ : fiberThomPairMap F E b ≫ negThomPairMap F E =
-      t.complZeroPairIso.hom ≫ (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom ≫
-        t.complZeroPairIso.inv ≫ fiberThomPairMap F E b := by
-    refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
-    have h₁ : TopPair.Hom.fst t.complZeroPairIso.inv
-        (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
-          (TopPair.Hom.fst t.complZeroPairIso.hom x)) = (-1 : ℝ) • x := by
-      have h : t.symm (-t x) = (-1 : ℝ) • x := by
-        simpa using t.symm_apply_apply ((-1 : ℝ) • x)
-      simp only [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
-        ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply]
-      exact h
-    -- The ambient map of a composite of maps of pairs is the composite of the ambient maps. After
-    -- `TopPair.Hom.fst_comp`, `ConcreteCategory.comp_apply` and `ContinuousMap.comp_apply` do not
-    -- fire: the intermediate objects are `TopPair.ofSubset` carriers that agree with the types of
-    -- the composed maps only after unfolding. So `change` states the iterated applications.
-    change TopPair.Hom.fst (negThomPairMap F E) (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
-      TopPair.Hom.fst (fiberThomPairMap F E b) (TopPair.Hom.fst t.complZeroPairIso.inv
-        (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
-          (TopPair.Hom.fst t.complZeroPairIso.hom x)))
-    rw [h₁]
-    exact (congrArg _ (fiberThomPairMap_fst_apply F E b x)).trans
-      ((negThomPairMap_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b _).symm)
-  rw [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  rw [← TopPair.singularCohomologyMap_comp_apply, fiberThomPairMap_comp_negThomPairMap F E b t]
   simp only [TopPair.singularCohomologyMap_comp_apply]
   -- Restriction: on the fibre over `b`, the Thom class is the generator selected through `t`.
   rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb]
   -- The inverse of `t` cancels against `t`.
   rw [← TopPair.singularCohomologyMap_comp_apply t.complZeroPairIso.inv, Iso.inv_hom_id,
     TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
-  -- Antipodal action: `x ↦ -x` acts by the sign of `det (-1) = (-1) ^ (n + 1) = -1`.
-  have hdet : ((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F).det = -1 := by
-    have hneg : (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : F →ₗ[ℝ] F) =
-        (-1 : ℝ) • LinearMap.id := by
-      ext; simp
-    rw [ContinuousLinearMap.det, hneg, LinearMap.det_smul, LinearMap.det_id, mul_one, hF,
-      hn.add_one.neg_one_pow]
   have : FiniteDimensional ℝ F := .of_finrank_eq_succ hF
-  have hf : Set.MapsTo ((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) ({0}ᶜ : Set F)
-      {0}ᶜ :=
-    (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).mapsTo_compl_zero
-  have hneg : (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom =
-      TopPair.ofSubsetMap
-        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : C(F, F))) hf :=
-    ContinuousLinearEquiv.complZeroPairIso_hom _
-  -- The determinant-sign action, stated with the `ℤ`-linear structure used by the Thom class.
-  have hact : TopPair.singularCohomologyMap (R := ModuleCat.of ℤ (ULift.{w} ℤ)) (k := ℤ)
+  have hneg : TopPair.singularCohomologyMap (R := ModuleCat.of ℤ (ULift.{w} ℤ)) (k := ℤ)
       (M := ModuleCat.of ℤ (ULift.{w} ℤ))
-      (TopPair.ofSubsetMap
-        (TopCat.ofHom (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : C(F, F))) hf)
-      (n + 1) = -𝟙 _ := by
-    refine (singularCohomologyMap_continuousLinearMap_compl_zero
-      (ModuleCat.of ℤ (ULift.{w} ℤ)) (ModuleCat.of ℤ (ULift.{w} ℤ)) _ hf (n + 1)).trans ?_
-    simp [hdet]
-    -- The two sides differ only in the `ℤ`-linear structure on the hom groups used to negate.
-    rfl
-  rw [hneg, hact]
+      (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom (n + 1) = -𝟙 _ :=
+    singularCohomologyMap_neg_complZeroPairIso_hom _ _ _ (hF ▸ hn.add_one)
+  rw [hneg]
   -- Sign cleanup: the generator selected by the opposite orientation is the negative one.
   simp [t, Trivialization.mapOrientation_neg, Orientation.localCohomologyClass_neg]
 

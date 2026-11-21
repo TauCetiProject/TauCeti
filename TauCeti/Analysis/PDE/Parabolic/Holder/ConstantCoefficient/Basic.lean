@@ -30,6 +30,8 @@ spaces passes to `P_A`. The pointwise identity is the elliptic one,
 
 * `ParabolicC2HolderSpace.exists_continuousLinearEquiv_euclideanParabolicOperatorL_compSpatialL_eq`:
   a constant-coefficient operator is the heat operator in suitable linear coordinates.
+* `ParabolicC2HolderSpace.euclideanParabolicOperatorL_compSpatialL_symm_eq`: the same identity
+  read through the inverse coordinate change.
 
 ## References
 
@@ -87,6 +89,59 @@ theorem exists_continuousLinearEquiv_euclideanParabolicOperatorL_compSpatialL_eq
     Finset.sum_const_zero, add_zero, timeDerivL_compSpatialL, spatialSecondFDerivL_compSpatialL,
     slabSpaceMap_slabMk, ContinuousLinearMap.bilinearComp_apply, ContinuousLinearEquiv.coe_coe,
     Matrix.one_apply, ite_mul, one_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true, key]
+
+/-- The coordinate change of
+`exists_continuousLinearEquiv_euclideanParabolicOperatorL_compSpatialL_eq` in operator-norm form:
+both `e` and `e⁻¹` have operator norm at most `max 1 (max √Λ (1 / √λ))`, which is how the change
+of variables enters bounds on `u ↦ u ∘ (e × id)` (`norm_compSpatialL_le_of_norm_le`). -/
+theorem exists_continuousLinearEquiv_norm_le_euclideanParabolicOperatorL_compSpatialL_eq
+    (hα : α ≤ 1) {A : Matrix ι ι ℝ} {lam Lam : ℝ} (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) :
+    ∃ e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι,
+      ‖(e : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)‖ ≤ max 1 (max √Lam (√lam)⁻¹) ∧
+      ‖(e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)‖ ≤ max 1 (max √Lam (√lam)⁻¹) ∧
+      ∀ u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hab,
+        euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
+            (compSpatialL α ℝ hab (e : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) u) =
+          HolderSpace.compLipschitzL _
+            (lipschitzWith_slabSpaceMap (e : _ →L[ℝ] _).lipschitzWith)
+            (euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (A i j)) 0 0 u) := by
+  obtain ⟨e, he₁, he₂, he⟩ :=
+    exists_continuousLinearEquiv_euclideanParabolicOperatorL_compSpatialL_eq hα hlam hA hA'
+  have hK₀ : 0 ≤ max 1 (max √Lam (√lam)⁻¹) := zero_le_one.trans (le_max_left _ _)
+  exact ⟨e,
+    ContinuousLinearMap.opNorm_le_bound _ hK₀ fun x ↦ (he₂ x).trans (mul_le_mul_of_nonneg_right
+      ((le_max_left _ _).trans (le_max_right _ _)) (norm_nonneg x)),
+    ContinuousLinearMap.opNorm_le_bound _ hK₀ fun x ↦ (he₁ x).trans (mul_le_mul_of_nonneg_right
+      ((le_max_right _ _).trans (le_max_right _ _)) (norm_nonneg x)),
+    he⟩
+
+/-- **The inverse coordinate change.** If `P_I (u ∘ (e × id)) = (P_A u) ∘ (e × id)` for every `u`,
+then `P_A (w ∘ (e⁻¹ × id)) = (P_I w) ∘ (e⁻¹ × id)` for every `w`: solutions of the heat equation
+transported by `e⁻¹` solve the equation for `P_A`. -/
+theorem euclideanParabolicOperatorL_compSpatialL_symm_eq (hα : α ≤ 1) {A : Matrix ι ι ℝ}
+    (e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι)
+    (he : ∀ u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hab,
+      euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
+          (compSpatialL α ℝ hab (e : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) u) =
+        HolderSpace.compLipschitzL _
+          (lipschitzWith_slabSpaceMap (e : _ →L[ℝ] _).lipschitzWith)
+          (euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (A i j)) 0 0 u))
+    (w : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hab) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (A i j)) 0 0
+        (compSpatialL α ℝ hab (e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) w) =
+      HolderSpace.compLipschitzL _
+        (lipschitzWith_slabSpaceMap (e.symm : _ →L[ℝ] _).lipschitzWith)
+        (euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
+          w) := by
+  have h := he (compSpatialL α ℝ hab (e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) w)
+  rw [← compSpatialL_comp, ContinuousLinearEquiv.coe_symm_comp_coe, compSpatialL_id] at h
+  ext p
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have hp := congrArg (fun f ↦ f (slabMk (e.symm x) t)) h
+  simpa only [HolderSpace.compLipschitzL_apply, slabSpaceMap_slabMk,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using hp.symm
 
 end ParabolicC2HolderSpace
 

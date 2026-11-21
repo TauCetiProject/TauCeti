@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Indecomposable
@@ -151,20 +152,28 @@ private theorem coeff_single_hurewicz_eq_zero_of_mem_grading {m n : ℕ+} (hmn :
 
 /-! ### The linear coefficients -/
 
-/-- The additive formal group law transported along `X + ∑ bᵢ X^(i + 1)` over `ℤ[b₁, b₂, …]`. -/
-private abbrev law : FormalGroup (MvPolynomial ℕ+ ℤ) :=
-  FormalCoordinate.ofStrictCoeffs (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ ℤ) • FormalGroup.𝔾ₐ
-
 /-- Evaluation at `bₙ = ε`, `bᵢ = 0` for `i ≠ n`, in the dual numbers `ℤ[ε]`. -/
 private abbrev evalEps (n : ℕ+) : MvPolynomial ℕ+ ℤ →ₐ[ℤ] DualNumber ℤ :=
   MvPolynomial.aeval (Pi.single n DualNumber.eps)
 
-/-- The `ε`-component of the evaluation at `bₙ = ε` of the image of `y` is the coefficient of
-`bₙ`. -/
-private theorem snd_evalEps_hurewicz (n : ℕ+) (y : LazardRing) :
-    (evalEps n (hurewicz y)).snd = (hurewicz y).coeff (single n 1) := by
-  rw [evalEps, MvPolynomial.aeval_single_eps]
+/-- The `ε`-component of the evaluation at `bₙ = ε`, `bᵢ = 0` for `i ≠ n`, of the image of `y` is
+the coefficient of `bₙ`. -/
+theorem snd_aeval_single_eps_hurewicz (n : ℕ+) (y : LazardRing) :
+    (MvPolynomial.aeval (Pi.single n (DualNumber.eps : DualNumber ℤ)) (hurewicz y)).snd =
+      (hurewicz y).coeff (single n 1) := by
+  rw [MvPolynomial.aeval_single_eps]
   simp
+
+/-- Evaluated at `bₙ = ε`, `bᵢ = 0` for `i ≠ n`, the image of the universal formal group law is
+the additive law transported along `X + ε X^(n + 1)`. -/
+theorem map_aeval_single_eps_comp_hurewicz (n : ℕ+) :
+    formalGroup.map
+        ((MvPolynomial.aeval (Pi.single n (DualNumber.eps : DualNumber ℤ))).toRingHom.comp
+          hurewicz) =
+      FormalCoordinate.ofStrictCoeffs (Pi.single n (DualNumber.eps : DualNumber ℤ)) •
+        FormalGroup.𝔾ₐ := by
+  rw [← FormalGroup.map_comp, map_hurewicz, FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ]
+  simp [Function.comp_def]
 
 /-- Evaluating the image at `bₙ = ε` kills the square of the augmentation ideal. -/
 private theorem evalEps_hurewicz_eq_zero_of_mem_sq (n : ℕ+) {y : LazardRing}
@@ -182,7 +191,8 @@ private theorem evalEps_hurewicz_eq_zero_of_mem_sq (n : ℕ+) {y : LazardRing}
 /-- The coefficient of `bₙ` in the image vanishes on the square of the augmentation ideal. -/
 private theorem coeff_single_hurewicz_eq_zero_of_mem_sq (n : ℕ+) {y : LazardRing}
     (hy : y ∈ augmentationIdeal ^ 2) : (hurewicz y).coeff (single n 1) = 0 := by
-  rw [← snd_evalEps_hurewicz, evalEps_hurewicz_eq_zero_of_mem_sq n hy, TrivSqZeroExt.snd_zero]
+  rw [← snd_aeval_single_eps_hurewicz, evalEps_hurewicz_eq_zero_of_mem_sq n hy,
+    TrivSqZeroExt.snd_zero]
 
 /-- The coefficient of `X Yⁿ` in the transported additive law, evaluated at `bₙ = ε`, is
 `(n + 1) ε`. -/
@@ -191,15 +201,10 @@ private theorem snd_evalEps_hurewicz_coeff (n : ℕ+) :
       (n : ℤ) + 1 := by
   set d : Fin 2 →₀ ℕ := single 0 1 + single 1 (n : ℕ)
   -- Evaluating at `bₙ = ε` transports `X + Y` along `X + ε X^(n + 1)`.
-  have hmap : law.map (evalEps n).toRingHom =
-      FormalCoordinate.ofStrictCoeffs (Pi.single n (DualNumber.eps : DualNumber ℤ)) •
-        FormalGroup.𝔾ₐ := by
-    rw [FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ]
-    simp [Function.comp_def]
   have hcoeff : evalEps n (hurewicz (coeff d formalGroup.toPowerSeries)) =
-      coeff d (law.map (evalEps n).toRingHom).toPowerSeries := by
-    rw [← coeff_map, ← FormalGroup.map_toPowerSeries, map_hurewicz, FormalGroup.map_toPowerSeries,
-      coeff_map, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+      coeff d (formalGroup.map ((evalEps n).toRingHom.comp hurewicz)).toPowerSeries := by
+    rw [FormalGroup.map_toPowerSeries, coeff_map, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe]
   have hpow : ((X 0 + X 1) ^ ((n : ℕ) + 1) : MvPowerSeries (Fin 2) (DualNumber ℤ)) =
       ↑((MvPolynomial.X 0 + MvPolynomial.X 1) ^ ((n : ℕ) + 1) :
         MvPolynomial (Fin 2) (DualNumber ℤ)) := by
@@ -209,7 +214,7 @@ private theorem snd_evalEps_hurewicz_coeff (n : ℕ+) :
   have h1 : d ≠ single 1 1 := fun h ↦ by simpa [d] using DFunLike.congr_fun h 0
   have h2 : d ≠ single 0 ((n : ℕ) + 1) := fun h ↦ by simpa [d] using DFunLike.congr_fun h 1
   have h3 : d ≠ single 1 ((n : ℕ) + 1) := fun h ↦ by simpa [d] using DFunLike.congr_fun h 0
-  rw [hcoeff, hmap,
+  rw [hcoeff, map_aeval_single_eps_comp_hurewicz,
     FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries n DualNumber.eps_mul_eps, hpow]
   simp only [map_add, map_sub, coeff_X, coeff_C_mul, MvPolynomial.coeff_coe,
     MvPolynomial.coeff_add_pow, coeff_X_pow, h0, h1, h2, h3, ↓reduceIte]
@@ -225,7 +230,8 @@ private theorem coeff_single_hurewicz_generator_self (n : ℕ+) :
   have h := congrArg TrivSqZeroExt.snd (evalEps_hurewicz_eq_zero_of_mem_sq n hmem)
   simp only [map_sub, map_nsmul, TrivSqZeroExt.snd_sub, TrivSqZeroExt.snd_smul,
     TrivSqZeroExt.snd_zero, sub_eq_zero] at h
-  rw [snd_evalEps_hurewicz_coeff, snd_evalEps_hurewicz, Nat.choose_one_right, nsmul_eq_mul] at h
+  rw [snd_evalEps_hurewicz_coeff, snd_aeval_single_eps_hurewicz, Nat.choose_one_right,
+    nsmul_eq_mul] at h
   have hd := Nat.div_mul_cancel (lazardGcd_dvd_self (n := (n : ℕ) + 1) (by simp))
   have hq : ((((n : ℕ) + 1) / lazardGcd ((n : ℕ) + 1) : ℕ) : ℤ) ≠ 0 := by
     refine Nat.cast_ne_zero.2 fun h0 ↦ ?_
@@ -254,10 +260,11 @@ theorem coeff_single_hurewicz (n : ℕ+) {y : LazardRing} (hy : y ∈ augmentati
       lazardGcd (n + 1) * cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩) n := by
   -- Modulo `I²`, `y` is the combination `∑ cₘ xₘ` of the generators.
   have hcoeff := coeff_single_hurewicz_eq_zero_of_mem_sq n (sub_sum_generator_mem_sq hy)
-  rw [map_sub, MvPolynomial.coeff_sub, sub_eq_zero] at hcoeff
+  rw [map_sub, AddMonoidAlgebra.coeff_sub_apply, sub_eq_zero] at hcoeff
   rw [hcoeff]
   simp only [Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul_of_tower, map_sum, map_zsmul,
-    MvPolynomial.coeff_sum, MvPolynomial.coeff_smul, coeff_single_hurewicz_generator, smul_eq_mul,
+    MvPolynomial.coeff_sum, AddMonoidAlgebra.coeff_smul_apply,
+    coeff_single_hurewicz_generator, smul_eq_mul,
     mul_ite, mul_zero, Finset.sum_ite_eq, Finsupp.mem_support_iff]
   split_ifs with h
   · ring
@@ -269,7 +276,7 @@ theorem lazardGcd_dvd_coeff_single_hurewicz (n : ℕ+) (y : LazardRing) :
     (lazardGcd (n + 1) : ℤ) ∣ (hurewicz y).coeff (single n 1) := by
   have hy : y - augmentation y ∈ augmentationIdeal := by simp
   have h := coeff_single_hurewicz n hy
-  simp only [map_sub, MvPolynomial.coeff_sub, map_intCast, ← eq_intCast MvPolynomial.C,
+  simp only [map_sub, AddMonoidAlgebra.coeff_sub_apply, map_intCast, ← eq_intCast MvPolynomial.C,
     MvPolynomial.coeff_C, ite_eq_right (single_ne_zero.2 one_ne_zero).symm, sub_zero] at h
   exact h ▸ dvd_mul_right _ _
 

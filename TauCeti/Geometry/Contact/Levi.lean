@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -137,19 +138,20 @@ defines.** Let `D` have a `C¹` local frame on a neighbourhood of `x`, and let t
 differentiable at `x` with kernel `D` near `x`. Then `α` is a contact form at `x` exactly when
 `α_x ≠ 0` and the Levi form of `D` is nondegenerate at `x`: the map `u ↦ L_D (u, ·)` is an
 isomorphism from `D x` onto `Hom(D x, T_x M ⧸ D x)`. -/
-theorem isContactFormAt_iff_bijective_distributionLeviForm [FiniteDimensional ℝ E]
+theorem isContactFormAt_iff_bijective_distributionLeviForm
     (hX : IsDistributionFrameOn I 1 D X U) (hU : U ∈ 𝓝 x)
     (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
     (hDα : ∀ᶠ y in 𝓝 x, α.ker y = D y) :
     IsContactFormAt α x ↔ α x ≠ 0 ∧ Bijective (distributionLeviForm D x) := by
+  have : FiniteDimensional ℝ (D x) :=
+    Module.Finite.of_basis (hX.isSubbundleFrameOn.basis (mem_of_mem_nhds hU))
   have hiff : IsContactFormAt α x ↔ α x ≠ 0 ∧ ∀ v ∈ α.ker x,
       (∀ w ∈ α.ker x, mextDeriv α x ![v, w] = 0) → v = 0 :=
     ⟨fun h ↦ ⟨h.ne_zero, h.nondegenerate⟩, fun h ↦ ⟨h.1, h.2⟩⟩
   have hDx : α.ker x = D x := hDα.self_of_nhds
   rw [hiff, hDx]
   refine and_congr_right fun hx ↦ ?_
-  have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
   set L := distributionLeviForm D x
   -- `α_x` identifies the line `T_x M ⧸ D x` with `ℝ`, and turns `L` into `dα_x` on `D x`.
   have hzero (u v : D x) : L u v = 0 ↔ mextDeriv α x ![u, v] = 0 := by
@@ -161,13 +163,14 @@ theorem isContactFormAt_iff_bijective_distributionLeviForm [FiniteDimensional �
     simp only [injective_iff_map_eq_zero, LinearMap.ext_iff, LinearMap.zero_apply, hzero,
       Subtype.forall, Submodule.mk_eq_zero]
   -- Since `T_x M ⧸ D x` is a line, `L` maps between spaces of the same dimension.
+  have h1 : finrank ℝ (TangentSpace I x ⧸ D x) = 1 := by
+    -- `D x` is the kernel of the covector `v ↦ α_x (v)`, which is nonzero.
+    have ha : D x = LinearMap.ker (α.eval x) := hDx.symm.trans (α.ker_eq_ker_eval x)
+    rw [ha]
+    exact Module.Dual.finrank_quotient_ker_eq_one_of_ne_zero fun h ↦
+      hx (ker_eq_top_iff.1 (hDx.trans (ha.trans (LinearMap.ker_eq_top.2 h))))
+  have : FiniteDimensional ℝ (TangentSpace I x ⧸ D x) := Module.finite_of_finrank_pos (by omega)
   have hrank : finrank ℝ (D x) = finrank ℝ (D x →ₗ[ℝ] TangentSpace I x ⧸ D x) := by
-    have h1 : finrank ℝ (TangentSpace I x ⧸ D x) = 1 := by
-      -- `D x` is the kernel of the covector `v ↦ α_x (v)`, which is nonzero.
-      have ha : D x = LinearMap.ker (α.eval x) := hDx.symm.trans (α.ker_eq_ker_eval x)
-      rw [ha]
-      exact Module.Dual.finrank_quotient_ker_eq_one_of_ne_zero fun h ↦
-        hx (ker_eq_top_iff.1 (hDx.trans (ha.trans (LinearMap.ker_eq_top.2 h))))
     rw [Module.finrank_linearMap, h1, mul_one]
   rw [← hinj]
   exact ⟨fun h ↦ ⟨h, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).1 h⟩,
@@ -185,7 +188,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 vanish.** If `α_x ≠ 0`, then on an open neighbourhood of `x` the distribution `ker α` has a `C^n`
 local frame of `dim E - 1` vector fields. -/
 theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {n : ℕ∞ω}
-    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hx : α.1 x ≠ 0) :
+    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hx : α.val x ≠ 0) :
     ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ X : Fin (finrank ℝ E - 1) → Π y : M, TangentSpace I y,
       IsDistributionFrameOn I n α.kerDistribution X U := by
   classical
@@ -196,11 +199,11 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
   set F := e.localFrame (Module.finBasis ℝ E)
   have hF := e.isLocalFrameOn_localFrame_baseSet I n (Module.finBasis ℝ E)
   -- The coefficients `α (F i)` are `C^n` on the domain of the frame.
-  set a : Fin (finrank ℝ E) → M → ℝ := fun i y ↦ α.1 y ![F i y]
+  set a : Fin (finrank ℝ E) → M → ℝ := fun i y ↦ α.val y ![F i y]
   have ha (i) : ContMDiffOn I 𝓘(ℝ) n (a i) e.baseSet := fun y hy ↦ by
-    have h := ((degreeOneEquiv α).contMDiff.of_le ENat.LEInfty.out).contMDiffOn.clm_bundle_apply
-      (E₂ := Trivial M ℝ) (hF.contMDiffOn i) y hy
-    simpa [a, ← Matrix.vec_single_eq_const] using (contMDiffWithinAt_totalSpace.1 h).2
+    have h := (((degreeOneEquiv α).contMDiff.of_le ENat.LEInfty.out).contMDiffOn y
+      hy).clm_bundle_apply_scalar (hF.contMDiffOn i y hy)
+    simpa [a, ← Matrix.vec_single_eq_const] using h
   -- Some member of the frame is not in the kernel of `α_x`.
   obtain ⟨j, hj⟩ : ∃ j, a j x ≠ 0 := by
     by_contra! h
@@ -242,7 +245,7 @@ theorem exists_isDistributionFrameOn_kerDistribution [FiniteDimensional ℝ E] {
 /-- **The kernel of a nowhere vanishing one-form is a smooth hyperplane field**: a `C^n`
 distribution of rank `dim E - 1`. -/
 theorem isContMDiffDistribution_kerDistribution [FiniteDimensional ℝ E] {n : ℕ∞ω}
-    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hα : ∀ x, α.1 x ≠ 0) :
+    [ENat.LEInfty n] [IsManifold I (n + 1) M] (hα : ∀ x, α.val x ≠ 0) :
     IsContMDiffDistribution I n (finrank ℝ E - 1) α.kerDistribution :=
   isContMDiffDistribution_iff.2 fun x ↦ exists_isDistributionFrameOn_kerDistribution (hα x)
 
@@ -257,11 +260,11 @@ theorem IsContactForm.isContMDiffDistribution_kerDistribution [FiniteDimensional
 /-- **A one-form carries the Levi form of its kernel to its exterior derivative.** If `α_x ≠ 0`,
 the linear map `T_x M ⧸ ker α_x → ℝ` induced by `α_x` sends the Levi form
 `L(u, v) = -[U, V] mod ker α` of the distribution `ker α` to `dα_x (u, v)`. -/
-theorem liftQ_distributionLeviForm_kerDistribution [FiniteDimensional ℝ E] (hx : α.1 x ≠ 0)
+theorem liftQ_distributionLeviForm_kerDistribution [FiniteDimensional ℝ E] (hx : α.val x ≠ 0)
     (u v : α.kerDistribution x) :
     (α.kerDistribution x).liftQ (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
         (kerDistribution_def α x).le (distributionLeviForm α.kerDistribution x u v) =
-      mextDeriv α.1 x ![u, v] := by
+      mextDeriv α.val x ![u, v] := by
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := 2) le_rfl
   obtain ⟨U, hU, hxU, X, hX⟩ := exists_isDistributionFrameOn_kerDistribution (n := 1) hx
   obtain ⟨w, hw⟩ := (α.kerDistribution x).mkQ_surjective
@@ -275,9 +278,9 @@ theorem liftQ_distributionLeviForm_kerDistribution [FiniteDimensional ℝ E] (hx
 form at `x` exactly when `α_x ≠ 0` and the Levi form of `ξ = ker α` is nondegenerate at `x`: the
 map `u ↦ L_ξ (u, ·)` is an isomorphism from `ξ_x` onto `Hom(ξ_x, T_x M ⧸ ξ_x)`. -/
 theorem isContactFormAt_iff_bijective_distributionLeviForm [FiniteDimensional ℝ E] :
-    IsContactFormAt α.1 x ↔
-      α.1 x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
-  by_cases hx : α.1 x = 0
+    IsContactFormAt α.val x ↔
+      α.val x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
+  by_cases hx : α.val x = 0
   · exact ⟨fun h ↦ absurd hx h.ne_zero, fun h ↦ absurd hx h.1⟩
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := 2) le_rfl
   obtain ⟨U, hU, hxU, X, hX⟩ := exists_isDistributionFrameOn_kerDistribution (n := 1) hx
@@ -289,7 +292,7 @@ one-form `α` is a contact form exactly when it vanishes nowhere and, at every p
 form of `ξ = ker α` induces an isomorphism `ξ_x ≃ Hom(ξ_x, T_x M ⧸ ξ_x)`. -/
 theorem isContactForm_iff_forall_bijective_distributionLeviForm [FiniteDimensional ℝ E] :
     α.IsContactForm ↔
-      ∀ x, α.1 x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
+      ∀ x, α.val x ≠ 0 ∧ Bijective (distributionLeviForm α.kerDistribution x) := by
   rw [isContactForm_iff_forall_isContactFormAt]
   exact forall_congr' fun _ ↦ isContactFormAt_iff_bijective_distributionLeviForm
 
@@ -300,7 +303,7 @@ end SmoothForm
 section Horizontal
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I 2 M]
   {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]

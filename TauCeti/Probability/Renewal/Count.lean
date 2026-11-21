@@ -18,7 +18,9 @@ Zero increments are allowed, so genuine arrivals at zero are retained.
 
 On a nonexplosive path the natural count agrees with the extended count `renewalCount` and
 satisfies the inverse relations with `arrival`. In particular it can be used as an arrival
-index when defining the excess waiting time. For nondegenerate i.i.d. increments the two
+index when defining the excess waiting time. Increments that agree almost everywhere have natural
+counts that agree almost everywhere, simultaneously at all times, so the natural count is almost
+everywhere measurable when the increments are. For nondegenerate i.i.d. increments the two
 counts agree almost surely, simultaneously at all times. Whenever nonexplosion holds almost
 surely, any other natural-valued version agreeing on the nonexplosion event has the same
 process law. The process law also transfers to the canonical product realization of the increments.
@@ -192,19 +194,21 @@ lemma measurable_renewalCountNat (hT : ∀ n, Measurable (T n)) (t : ℝ≥0) :
 
 variable {P : Measure Ω}
 
+/-- If two increment sequences agree almost everywhere at each index, then almost everywhere their
+natural-valued counts agree at all times. -/
+theorem renewalCountNat_congr_ae {T' : ℕ → Ω → ℝ≥0} (h : ∀ n, T n =ᵐ[P] T' n) :
+    ∀ᵐ ω ∂P, ∀ t, renewalCountNat T t ω = renewalCountNat T' t ω := by
+  filter_upwards [arrival_congr_ae h] with ω harr t
+  classical
+  simp only [renewalCountNat_def, renewalCount_def, harr]
+
 /-- If every increment is almost-everywhere measurable, so is the natural-valued renewal count at
 every time `t`. -/
 @[fun_prop]
 theorem aemeasurable_renewalCountNat (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ≥0) :
-    AEMeasurable (renewalCountNat T t) P := by
-  set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hT n).mk (T n)
-  have hT' (n : ℕ) : Measurable (T' n) := (hT n).measurable_mk
-  have hT'_ae (n : ℕ) : T' n =ᵐ[P] T n := (hT n).ae_eq_mk.symm
-  refine (measurable_renewalCountNat hT' t).aemeasurable.congr ?_
-  filter_upwards [arrival_congr_ae hT'_ae] with ω harr
-  have hrc : renewalCount T' t ω = renewalCount T t ω := by
-    simp only [renewalCount_def, harr]
-  rw [renewalCountNat_def, renewalCountNat_def, funext harr, hrc]
+    AEMeasurable (renewalCountNat T t) P :=
+  (measurable_renewalCountNat (fun n ↦ (hT n).measurable_mk) t).aemeasurable.congr <|
+    all_ae_of (renewalCountNat_congr_ae fun n ↦ (hT n).ae_eq_mk.symm) t
 
 /-- For nondegenerate i.i.d. increments, the natural and extended counts agree almost surely
 on one event for all times. -/
@@ -231,7 +235,7 @@ theorem map_renewalCountNat_eq_of_nonexplosion
 /-- The entire natural-count process has the same law in any i.i.d. realization as on the
 canonical product space. This includes its exceptional-path convention and all finite-time
 joint distributions. -/
-theorem map_renewalCountNat_eq_infinitePi_map (hT : ∀ n, Measurable (T n))
+theorem map_renewalCountNat_eq_infinitePi_map
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
     P.map (fun ω t ↦ renewalCountNat T t ω) =
       (Measure.infinitePi fun _ : ℕ ↦ P.map (T 0)).map
@@ -241,9 +245,11 @@ theorem map_renewalCountNat_eq_infinitePi_map (hT : ∀ n, Measurable (T n))
         (fun ω n ↦ T n ω) := by
     funext ω t
     exact renewalCountNat_comp (fun n w ↦ w n) (fun ω n ↦ T n ω) t ω
-  rw [hcomp, ← Measure.map_map
-    (measurable_pi_iff.2 fun t ↦ measurable_renewalCountNat (fun n ↦ measurable_pi_apply n) t)
-    (measurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map hT]
+  have hT : ∀ n, AEMeasurable (T n) P := fun n ↦ (hid n).aemeasurable_fst
+  rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable
+    (measurable_pi_iff.2 fun t ↦
+      measurable_renewalCountNat (fun n ↦ measurable_pi_apply n) t).aemeasurable
+    (aemeasurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map₀' hT]
   simp_rw [fun n ↦ (hid n).map_eq]
 
 end TauCeti.Probability

@@ -229,7 +229,7 @@ theorem finrank_continuousCohomology_one_fdGalRepOfQuotient [Fact ℓ.Prime]
   have : Module.Finite (ZMod ℓ) X.V := Module.Finite.of_finite
   let ρ : Representation (ZMod ℓ) (Field.absoluteGaloisGroup F ⧸ W.toSubgroup) X.V := A.ρ
   have h1 := finrank_H1_eq_finrank_representationInvariants (A := X.V) (p := ℓ)
-    (fun n a ↦ galRepOfQuotient_ρ_eq_self ℓ F W _ n.2 a) W.isOpen hW ρ hρ
+    (fun n a ↦ galRepOfQuotient_ρ_eq_self ℓ F W _ n.property a) W.isOpen hW ρ hρ
   calc finrank (ZMod ℓ) (continuousCohomology 1 X)
       _ = finrank (ZMod ℓ) (H1 (Field.absoluteGaloisGroup F) X.V) :=
         ((TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete X).toLinearEquiv
@@ -371,9 +371,8 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_index_coprime {ℓ : ℕ} [
     (N : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) (hN : N.toSubgroup.index.Coprime ℓ)
     (hA : ∀ g ∈ N, ∀ x : A.V, A.ρ g x = x) :
     localEulerCharacteristic (Nat.cast_ne_zero.2 (NeZero.ne ℓ)) A = localCardNorm p A := by
-  have hℓ : IsUnit (ℓ : F) := (Nat.cast_ne_zero.2 (NeZero.ne ℓ)).isUnit
   -- Shrink `N` so that it also fixes `μ_ℓ`, keeping its index prime to `ℓ`.
-  obtain ⟨W, hWN, hWμ, hW, -⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime hℓ N hN
+  obtain ⟨W, hWN, hWμ, hW, -⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime N hN
   have := (Fact.out : IsSmoothDiscrete (ZMod ℓ) A).discreteTopology
   obtain ⟨B, ⟨eB⟩⟩ := exists_galRepOfQuotient_iso_of_trivial ℓ F W A fun g hg ↦ hA g (hWN hg)
   have : Finite B.V := Finite.of_equiv _ ((forget (GalRep ℓ F)).mapIso eB).toEquiv.symm

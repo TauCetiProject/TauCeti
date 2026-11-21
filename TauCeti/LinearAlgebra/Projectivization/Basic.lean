@@ -6,7 +6,10 @@ Authors: Ralf Stephan, Zayn Blore
 module
 
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.LinearAlgebra.Projectivization.Subspace
+
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Normalized representatives of projective points
@@ -31,10 +34,16 @@ not vanish (`Projectivization.linearProjection_mk`).
 
 The projectivization of a vector space of dimension at most one, such as
 `Projectivization K (Fin 1 → K)`, has at most one point
-(`Projectivization.subsingleton_of_rank_le_one`).
+(`Projectivization.subsingleton_of_rank_le_one`), and two nonzero vectors of a subspace of
+dimension at most one give the same point (`Projectivization.mk_eq_mk_of_mem_of_rank_le_one`).
+So a nonzero singular `2 × 2` matrix has rank one: it kills exactly the vectors of one line and
+sends every other vector into a single line
+(`Projectivization.exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero`).
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
-point under an injective semilinear map is the image of its line.
+point under an injective semilinear map is the image of its line, and
+`Projectivization.mk_eq_mk_iff_forall_mul_eq`: over a field, two nonzero coordinate vectors span
+the same line iff all their `2 × 2` homogeneous minors vanish.
 
 The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
@@ -52,7 +61,7 @@ variable (K : Type*) {V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 /-- The equivalence with one-dimensional subspaces retains the underlying line. -/
 @[simp]
 theorem coe_equivSubmodule (p : Projectivization K V) :
-    (equivSubmodule K V p).1 = p.submodule :=
+    (equivSubmodule K V p).val = p.submodule :=
   -- Mathlib has no equivSubmodule_apply lemma; its forward map is definitionally submodule.
   (rfl)
 
@@ -77,7 +86,47 @@ theorem subsingleton_of_rank_le_one (h : Module.rank K V ≤ 1) :
   have hb : b ≠ 0 := by rintro rfl; simp at hw
   exact (mk_eq_mk_iff' K _ _ hv hw).2 ⟨a * b⁻¹, by rw [smul_smul, inv_mul_cancel_right₀ hb]⟩
 
+variable {K} in
+/-- Two nonzero vectors of a subspace of dimension at most one give the same projective point. -/
+theorem mk_eq_mk_of_mem_of_rank_le_one {S : Submodule K V} (hS : Module.rank K S ≤ 1) {v w : V}
+    (hv : v ∈ S) (hw : w ∈ S) (hv0 : v ≠ 0) (hw0 : w ≠ 0) : mk K v hv0 = mk K w hw0 := by
+  have := subsingleton_of_rank_le_one hS
+  have h := Subsingleton.elim (mk K (⟨v, hv⟩ : S) (by simpa using hv0))
+    (mk K (⟨w, hw⟩ : S) (by simpa using hw0))
+  simpa [map_mk] using congrArg (map S.subtype S.injective_subtype) h
+
 end DivisionRing
+
+open scoped Matrix in
+/-- A nonzero `2 × 2` matrix `B` of determinant zero has rank one: there are lines `a` and `b`
+such that `B` kills exactly the vectors of `a`, and sends every other vector into `b`. -/
+theorem exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero {K : Type*} [Field K]
+    {B : Matrix (Fin 2) (Fin 2) K} (hB : B ≠ 0) (hdet : B.det = 0) :
+    ∃ a b : Projectivization K (Fin 2 → K), (∀ w (hw : w ≠ 0), B *ᵥ w = 0 ↔ mk K w hw = a) ∧
+      ∀ w (hw : B *ᵥ w ≠ 0), mk K (B *ᵥ w) hw = b := by
+  obtain ⟨v, hv, hBv⟩ := Matrix.exists_mulVec_eq_zero_iff.2 hdet
+  obtain ⟨w₀, hw₀⟩ : ∃ w₀, B *ᵥ w₀ ≠ 0 := by
+    by_contra! h
+    exact hB (Matrix.ext fun i j ↦ by simpa using congrFun (h (Pi.single j 1)) i)
+  -- Rank-nullity: the kernel and the range of `B` are both lines.
+  have hrank := LinearMap.finrank_range_add_finrank_ker B.mulVecLin
+  have hker : 0 < Module.finrank K (LinearMap.ker B.mulVecLin) :=
+    Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨v, hBv⟩, fun h ↦ hv (congrArg Subtype.val h)⟩
+  have hrange : 0 < Module.finrank K (LinearMap.range B.mulVecLin) :=
+    Module.finrank_pos_iff_exists_ne_zero.2
+      ⟨⟨B *ᵥ w₀, LinearMap.mem_range.2 ⟨w₀, rfl⟩⟩, fun h ↦ hw₀ (congrArg Subtype.val h)⟩
+  rw [Module.finrank_fin_fun] at hrank
+  have hle : ∀ S : Submodule K (Fin 2 → K), Module.finrank K S ≤ 1 → Module.rank K S ≤ 1 :=
+    fun S h ↦ by
+      rw [← Module.finrank_eq_rank]
+      exact_mod_cast h
+  refine ⟨mk K v hv, mk K (B *ᵥ w₀) hw₀, fun w hw ↦ ⟨fun hBw ↦ mk_eq_mk_of_mem_of_rank_le_one
+      (S := LinearMap.ker B.mulVecLin) (hle _ (by omega)) hBw hBv hw hv, fun h ↦ ?_⟩,
+    fun w hw ↦ mk_eq_mk_of_mem_of_rank_le_one
+      (S := LinearMap.range B.mulVecLin) (hle _ (by omega)) (LinearMap.mem_range.2 ⟨w, rfl⟩)
+      (LinearMap.mem_range.2 ⟨w₀, rfl⟩) hw hw₀⟩
+  obtain ⟨c, rfl⟩ := (mk_eq_mk_iff' K _ _ hw hv).1 h
+  rw [Matrix.mulVec_smul, hBv, smul_zero]
 
 section LinearProjection
 
@@ -122,6 +171,21 @@ theorem linearProjection_mk [Nonempty (Projectivization K W)] (G : V →ₗ[K] W
 end LinearProjection
 
 variable {K : Type*} [Field K] {ι : Type*}
+
+/-- Two nonzero coordinate vectors over a field span the same line if and only if all their
+`2 × 2` homogeneous minors vanish. -/
+theorem mk_eq_mk_iff_forall_mul_eq {x y : ι → K} (hx : x ≠ 0) (hy : y ≠ 0) :
+    mk K x hx = mk K y hy ↔ ∀ i j : ι, x i * y j = x j * y i := by
+  rw [mk_eq_mk_iff']
+  constructor
+  · rintro ⟨c, rfl⟩ i j
+    simp only [Pi.smul_apply, smul_eq_mul]
+    rw [mul_assoc, mul_comm (y i), ← mul_assoc]
+  · intro h
+    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hy
+    refine ⟨x j₀ / y j₀, funext fun i ↦ ?_⟩
+    simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, div_eq_iff hj₀]
+    exact (h i j₀).symm
 
 /-- At any nonzero coordinate of a projective point, there is a representative normalized
 to `1` whose coordinates are the ratios of the chosen representative's coordinates. -/

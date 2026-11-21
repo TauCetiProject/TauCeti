@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # Transport of test functions along continuous linear equivalences
 
 A continuous linear equivalence `e : E ≃L[ℝ] E'` carries a test function `φ` on an open set `V`
-of `E` to the test function `φ ∘ e.symm` on any open set `Ω` of `E'` containing `e '' V`. Its
-derivative is the derivative of `φ` precomposed with `e.symm`. A test vector field is transported
-by also applying `e` to its values, `y ↦ e (φ (e.symm y))`; its divergence is then the transported
-divergence of `φ`, because the trace is invariant under conjugation.
+of `E` to the test function `φ ∘ e.symm` on any open set `Ω` of `E'` containing `e '' V`. This
+transport is continuous for the LF topologies, so precomposing with it transports distributions
+along `e`. Its derivative is the derivative of `φ` precomposed with `e.symm`. A test vector field
+is transported by also applying `e` to its values, `y ↦ e (φ (e.symm y))`; its divergence is then
+the transported divergence of `φ`, because the trace is invariant under conjugation.
 
 These formulas transport the test-field pairings that define distributional derivatives,
 variation and perimeter along linear changes of variables, in particular along rotations and
@@ -23,13 +27,33 @@ reflections.
 
 ## Main declarations
 
-* `ContinuousLinearEquiv.transportTestFunction`: transport a test function along a continuous
-  linear equivalence, changing its domain.
+* `ContinuousLinearEquiv.transportSupportedIn`: transport of tests supported in a compact `K` to
+  tests supported in `e '' K`, as a continuous linear map.
+* `ContinuousLinearEquiv.transportTestFunction`: transport of test functions along a continuous
+  linear equivalence, changing their domain, as a continuous linear map.
 * `ContinuousLinearEquiv.transportTestFunction_apply`: evaluation of a transported test function.
-* `ContinuousLinearEquiv.fderiv_transportTestFunction`: the Fréchet derivative of a transported
-  test function.
+* `ContinuousLinearEquiv.transportTestFunction_trans`,
+  `ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm`: functoriality.
+* `ContinuousLinearEquiv.transportTestFunction_postcompCLM`: transport commutes with
+  postcomposition by a continuous linear map.
+* `ContinuousLinearEquiv.fderiv_transportTestFunction`,
+  `ContinuousLinearEquiv.lineDeriv_transportTestFunction`: the Fréchet and line derivatives of a
+  transported test function.
+* `LinearIsometryEquiv.laplacian_transportTestFunction`: the Laplacian of a test function
+  transported along a linear isometry equivalence.
 * `ContinuousLinearEquiv.divergenceCLM_postcompCLM_transportTestFunction`: the divergence of a
   transported test vector field is the transported divergence.
+* `TestFunction.compConj`: a test function on a conjugation-invariant open set of `ℂ` composed
+  with complex conjugation, an involution (`TestFunction.compConj_compConj`), with its derivatives
+  `TestFunction.fderiv_compConj` and `TestFunction.lineDeriv_compConj` and its Laplacian
+  `TestFunction.laplacian_compConj`.
+
+## Implementation notes
+
+Both transports work at every order of smoothness `n`. Continuity of `transportTestFunction` is
+checked on each space of tests supported in a fixed compact `K ⊆ V`, whose transports are
+supported in `e '' K` (`transportSupportedIn`); there the `i`-th derivative of `φ ∘ e.symm` is
+bounded by `‖e.symm‖ ^ i` times that of `φ`.
 -/
 
 public section
@@ -43,36 +67,108 @@ open scoped Distributions
 
 variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : Opens E} {Ω : Opens E'}
+  {V : Opens E} {Ω : Opens E'} {n : ℕ∞}
 
-/-- Transport a test function on `V` along a continuous linear equivalence `e`, regarding the
-result `φ ∘ e.symm` as a test function on an open set containing `e '' V`. -/
-def transportTestFunction (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (φ : 𝓓(V, F)) : 𝓓(Ω, F) :=
-  ⟨φ ∘ e.symm, φ.contDiff.comp e.symm.contDiff,
-    φ.hasCompactSupport.comp_homeomorph e.symm.toHomeomorph,
-    by
-      intro y hy
-      -- Composition with the homeomorphism underlying `e.symm` is the function `φ ∘ e.symm`, so
-      -- its topological support is the preimage of that of `φ`.
-      have hy' : e.symm y ∈ tsupport (φ : E → F) := by
-        have hycomp : y ∈ tsupport ((φ : E → F) ∘ e.symm.toHomeomorph) := hy
-        rwa [tsupport_comp_eq_preimage] at hycomp
-      simpa only [ContinuousLinearEquiv.apply_symm_apply] using hVO (φ.tsupport_subset hy')⟩
+/-- Transport along `e` of tests supported in a compact `K`, which are supported in `e '' K`, as a
+continuous linear map. Its `i`-th seminorm is at most `‖e.symm‖ ^ i` times that of the original
+test. -/
+def transportSupportedIn (e : E ≃L[ℝ] E') (K : Compacts E) :
+    𝓓^{n}_{K}(E, F) →L[ℝ] 𝓓^{n}_{K.map e e.continuous}(E', F) :=
+  letI P : 𝓓^{n}_{K}(E, F) →ₗ[ℝ] 𝓓^{n}_{K.map e e.continuous}(E', F) :=
+    { toFun φ := ⟨φ ∘ e.symm, φ.contDiff.comp e.symm.contDiff, fun y hy ↦
+        Function.notMem_support.1 fun h ↦ hy <| by
+          rw [Compacts.coe_map]
+          exact ⟨e.symm y, φ.support_subset h, e.apply_symm_apply y⟩⟩
+      map_add' φ ψ := ContDiffMapSupportedIn.ext fun _ ↦ rfl
+      map_smul' c φ := ContDiffMapSupportedIn.ext fun _ ↦ rfl }
+  { toLinearMap := P
+    cont := by
+      refine WithSeminorms.continuous_of_isBounded (ContDiffMapSupportedIn.withSeminorms ..)
+        (ContDiffMapSupportedIn.withSeminorms ..) _ (.of_real fun i ↦ ?_)
+      refine ⟨{i}, ‖(e.symm : E' →L[ℝ] E)‖ ^ i, fun φ ↦ ((P φ).seminorm_le_iff ℝ
+        (by positivity) i).2 fun hi y _ ↦ ?_⟩
+      rw [Finset.sup_singleton]
+      exact (e.symm.norm_iteratedFDeriv_comp_right_le φ y i).trans <| mul_le_mul_of_nonneg_left
+        (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ hi) (by positivity) }
+
+/-- A transported test supported in `K` is evaluated at the inversely transported point. -/
+@[simp]
+theorem transportSupportedIn_apply (e : E ≃L[ℝ] E') (K : Compacts E) (φ : 𝓓^{n}_{K}(E, F))
+    (y : E') : transportSupportedIn e K φ y = φ (e.symm y) :=
+  (rfl)
+
+/-- Transport test functions on `V` along a continuous linear equivalence `e`, regarding the
+result `φ ∘ e.symm` as a test function on an open set `Ω` containing `e '' V`. This is a
+continuous linear map for the LF topologies. -/
+def transportTestFunction (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) :
+    𝓓^{n}(V, F) →L[ℝ] 𝓓^{n}(Ω, F) :=
+  letI T (φ : 𝓓^{n}(V, F)) : 𝓓^{n}(Ω, F) :=
+    ⟨φ ∘ e.symm, φ.contDiff.comp e.symm.contDiff,
+      φ.hasCompactSupport.comp_homeomorph e.symm.toHomeomorph,
+      by
+        intro y hy
+        -- Composition with the homeomorphism underlying `e.symm` is the function `φ ∘ e.symm`,
+        -- so its topological support is the preimage of that of `φ`.
+        have hy' : e.symm y ∈ tsupport (φ : E → F) := by
+          have hycomp : y ∈ tsupport ((φ : E → F) ∘ e.symm.toHomeomorph) := hy
+          rwa [tsupport_comp_eq_preimage] at hycomp
+        simpa only [ContinuousLinearEquiv.apply_symm_apply] using hVO (φ.tsupport_subset hy')⟩
+  TestFunction.limitCLM ℝ T
+    (fun K hK ↦ ofSupportedInCLM ℝ (by
+        rw [Compacts.coe_map]
+        exact image_subset_iff.2 fun x hx ↦ hVO (hK hx)) ∘L
+      transportSupportedIn e K)
+    (fun _ _ _ ↦ rfl)
 
 /-- A transported test function is evaluated at the inversely transported point. -/
 @[simp]
-theorem transportTestFunction_apply (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (φ : 𝓓(V, F))
+theorem transportTestFunction_apply (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (φ : 𝓓^{n}(V, F))
     (y : E') : transportTestFunction e hVO φ y = φ (e.symm y) :=
   (rfl)
+
+/-- Transporting along a composite of continuous linear equivalences is transporting along each
+in turn. -/
+theorem transportTestFunction_trans {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {W : Opens E''} (e₁ : E ≃L[ℝ] E') (e₂ : E' ≃L[ℝ] E'') (h₁ : MapsTo e₁ V Ω)
+    (h₂ : MapsTo e₂ Ω W) (h : MapsTo (e₁.trans e₂) V W) (φ : 𝓓^{n}(V, F)) :
+    (e₁.trans e₂).transportTestFunction h φ =
+      e₂.transportTestFunction h₂ (e₁.transportTestFunction h₁ φ) := by
+  ext y
+  simp
+
+/-- Transporting along `e.symm` and then along `e` gives back the original test function. -/
+@[simp]
+theorem transportTestFunction_transportTestFunction_symm (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω)
+    (hOV : MapsTo e.symm Ω V) (φ : 𝓓^{n}(Ω, F)) :
+    e.transportTestFunction hVO (e.symm.transportTestFunction hOV φ) = φ := by
+  ext y
+  simp
+
+/-- Transport commutes with postcomposition by a continuous linear map. -/
+theorem transportTestFunction_postcompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (L : F →L[ℝ] G) (φ : 𝓓^{n}(V, F)) :
+    e.transportTestFunction hVO (postcompCLM L φ) =
+      postcompCLM L (e.transportTestFunction hVO φ) := by
+  ext y
+  simp
 
 /-- The Fréchet derivative of a transported test function is the transported derivative,
 precomposed with `e.symm`. -/
 @[simp]
-theorem fderiv_transportTestFunction (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (φ : 𝓓(V, F))
+theorem fderiv_transportTestFunction (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (φ : 𝓓^{n}(V, F))
     (y : E') :
     fderiv ℝ (transportTestFunction e hVO φ : E' → F) y =
       (fderiv ℝ (φ : E → F) (e.symm y)).comp (e.symm : E' →L[ℝ] E) :=
   e.symm.comp_right_fderiv
+
+/-- The line derivative of a transported test function at `y` in the direction `v` is that of the
+original test function at `e.symm y` in the direction `e.symm v`. -/
+@[simp]
+theorem lineDeriv_transportTestFunction (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω)
+    (φ : 𝓓^{n}(V, F)) (y v : E') :
+    lineDeriv ℝ (transportTestFunction e hVO φ : E' → F) y v =
+      lineDeriv ℝ (φ : E → F) (e.symm y) (e.symm v) := by
+  simp only [lineDeriv, transportTestFunction_apply, map_add, map_smul]
 
 /-- The divergence of a transported test vector field `y ↦ e (φ (e.symm y))` is the transported
 divergence of `φ`. -/
@@ -89,3 +185,100 @@ theorem divergenceCLM_postcompCLM_transportTestFunction [FiniteDimensional ℝ E
   simp [e.comp_fderiv, LinearEquiv.conj_apply]
 
 end ContinuousLinearEquiv
+
+namespace LinearIsometryEquiv
+
+open Set TestFunction TopologicalSpace InnerProductSpace
+open scoped Distributions Laplacian
+
+variable {E E' F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {V : Opens E} {Ω : Opens E'} {n : ℕ∞}
+
+/-- The Laplacian of a test function transported along a linear isometry equivalence `e` is the
+transported Laplacian: at `y` it is the Laplacian of the original test function at `e.symm y`. -/
+@[simp]
+theorem laplacian_transportTestFunction (e : E ≃ₗᵢ[ℝ] E')
+    (hVO : MapsTo (e.toContinuousLinearEquiv : E → E') V Ω) (φ : 𝓓^{n}(V, F)) (y : E') :
+    Δ (e.toContinuousLinearEquiv.transportTestFunction hVO φ : E' → F) y =
+      Δ (φ : E → F) (e.symm y) := by
+  have h : (e.toContinuousLinearEquiv.transportTestFunction hVO φ : E' → F) =
+      (φ : E → F) ∘ e.symm := by
+    ext z
+    simp
+  rw [h, TauCeti.laplacian_comp_linearIsometryEquiv_right, Function.comp_apply]
+
+end LinearIsometryEquiv
+
+namespace TestFunction
+
+open Complex InnerProductSpace Set TopologicalSpace
+open scoped ComplexConjugate Distributions Laplacian
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens ℂ} {n : ℕ∞}
+
+private theorem mapsTo_conjLIE (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) :
+    MapsTo (conjLIE.toContinuousLinearEquiv : ℂ → ℂ) Ω Ω := fun z hz ↦ by
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
+  exact hΩ hz
+
+/-- Precompose test functions on a conjugation-invariant open set `Ω ⊆ ℂ` with complex
+conjugation, `φ ↦ φ ∘ conj`: the transport along `conj`, which is its own inverse. -/
+def compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F) :=
+  conjLIE.toContinuousLinearEquiv.transportTestFunction (mapsTo_conjLIE hΩ)
+
+/-- The test function `φ ∘ conj` is evaluated at the conjugate point. -/
+@[simp]
+theorem compConj_apply (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z : ℂ) :
+    compConj hΩ φ z = φ (conj z) := by
+  rw [compConj, ContinuousLinearEquiv.transportTestFunction_apply,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
+
+/-- Conjugating twice gives back the original test function. -/
+@[simp]
+theorem compConj_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) :
+    compConj hΩ (compConj hΩ φ) = φ := by
+  ext z
+  simp
+
+/-- Precomposition with `conj` commutes with postcomposition by a continuous linear map. -/
+theorem compConj_postcompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (L : F →L[ℝ] G) (φ : 𝓓^{n}(Ω, F)) :
+    compConj hΩ (postcompCLM L φ) = postcompCLM L (compConj hΩ φ) :=
+  ContinuousLinearEquiv.transportTestFunction_postcompCLM _ _ L φ
+
+/-- The derivative of `φ ∘ conj` at `z` is that of `φ` at `conj z`, precomposed with `conj`. -/
+@[simp]
+theorem fderiv_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z : ℂ) :
+    fderiv ℝ (compConj hΩ φ : ℂ → F) z =
+      (fderiv ℝ (φ : ℂ → F) (conj z)).comp (conjCLE : ℂ →L[ℝ] ℂ) := by
+  ext v
+  simp only [compConj, ContinuousLinearEquiv.fderiv_transportTestFunction,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, conjLIE_symm, conjLIE_apply,
+    conjCLE_apply]
+
+/-- The derivative of `φ ∘ conj` at `z` in the direction `v` is that of `φ` at `conj z` in the
+direction `conj v`. -/
+theorem fderiv_compConj_apply (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z v : ℂ) :
+    fderiv ℝ (compConj hΩ φ : ℂ → F) z v = fderiv ℝ (φ : ℂ → F) (conj z) (conj v) := by
+  rw [fderiv_compConj, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    conjCLE_apply]
+
+/-- The line derivative of `φ ∘ conj` at `z` in the direction `v` is that of `φ` at `conj z` in
+the direction `conj v`. -/
+@[simp]
+theorem lineDeriv_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z v : ℂ) :
+    lineDeriv ℝ (compConj hΩ φ : ℂ → F) z v = lineDeriv ℝ (φ : ℂ → F) (conj z) (conj v) := by
+  rw [compConj, ContinuousLinearEquiv.lineDeriv_transportTestFunction,
+    LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, conjLIE_symm, conjLIE_apply,
+    conjLIE_apply]
+
+/-- The Laplacian of `φ ∘ conj` at `z` is that of `φ` at `conj z`. -/
+@[simp]
+theorem laplacian_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z : ℂ) :
+    Δ (compConj hΩ φ : ℂ → F) z = Δ (φ : ℂ → F) (conj z) := by
+  rw [compConj, LinearIsometryEquiv.laplacian_transportTestFunction, conjLIE_symm, conjLIE_apply]
+
+end TestFunction

@@ -33,21 +33,14 @@ variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀] (v :
 
 /-- The ultrametric bound on a finite sum, with every term weighted by a common factor `c`. -/
 theorem map_sum_mul_le {ι : Type*} {s : Finset ι} {f : ι → R} {c B : Γ₀}
-    (h : ∀ i ∈ s, v (f i) * c ≤ B) : v (∑ i ∈ s, f i) * c ≤ B := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons i s hi ih =>
-    rw [Finset.sum_cons]
-    refine (mul_le_mul_left (v.map_add _ _) c).trans ?_
-    rw [max_mul]
-    exact max_le (h i (by simp)) (ih fun j hj ↦ h j (by simp [hj]))
+    (h : ∀ i ∈ s, v (f i) * c ≤ B) : v (∑ i ∈ s, f i) * c ≤ B :=
+  Finset.sum_induction f (fun x ↦ v x * c ≤ B) (fun x y hx hy ↦
+    (mul_le_mul_left (v.map_add x y) c).trans ((max_mul ..).trans_le (max_le hx hy))) (by simp) h
 
 /-- The ultrametric bound on a difference, with both terms weighted by a common factor `c`. -/
 theorem map_sub_mul_le {x y : R} {c B : Γ₀} (hx : v x * c ≤ B) (hy : v y * c ≤ B) :
-    v (x - y) * c ≤ B := by
-  refine (mul_le_mul_left (v.map_sub x y) c).trans ?_
-  rw [max_mul]
-  exact max_le hx hy
+    v (x - y) * c ≤ B :=
+  (mul_le_mul_left (v.map_sub x y) c).trans ((max_mul ..).trans_le (max_le hx hy))
 
 end Valuation
 

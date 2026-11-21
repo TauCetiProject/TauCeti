@@ -24,14 +24,16 @@ exponential in its cumulative arclength. Cumulative arclength maps the parameter
 the whole length interval, so the pointwise formula gives equality of traces, rather than only
 containment in a circle. Nonconstancy excludes the radius-zero case.
 
-Conversely, every continuous simple closed parametrization of a circle of radius `r > 0` attains
-equality. It is automatically rectifiable, of length `2 π r`, because the length of a simple curve
-is the one-dimensional Hausdorff measure of its trace. Its geometric signed area is `π r²` or
-`-π r²`: a continuous angle function lifts the curve through `circleMap`, injectivity on `[a, b)`
-makes the angle strictly monotone with a total turn of exactly `± 2π`, and the geometric signed
-area is invariant under increasing and changes sign under decreasing continuous reparametrizations.
-Neither absolute continuity nor constant speed of the parametrization is assumed. Thus a
-rectifiable simple closed curve attains equality exactly when its trace is a circle.
+Conversely, every continuous parametrization of a circle `sphere c r` on `[a, b]` that is injective
+on `(a, b)` attains equality. For `r < 0` the parameter interval is empty and for `r = 0` the curve
+is constant, so both sides vanish. For `r > 0` the curve is automatically closed and rectifiable,
+of length `2 π r`, because the length of a simple curve is the one-dimensional Hausdorff measure of
+its trace. Its geometric signed area is `π r²` or `-π r²`: a continuous angle function lifts the
+curve through `circleMap`, injectivity on `(a, b)` makes the angle strictly monotone with a total
+turn of exactly `± 2π`, and the geometric signed area is invariant under increasing and changes
+sign under decreasing continuous reparametrizations. Neither absolute continuity nor constant speed
+of the parametrization is assumed. Thus a rectifiable simple closed curve attains equality exactly
+when its trace is a circle.
 
 These results concern equality for geometric signed area. For a circle, the Lebesgue area of the
 inside is computed directly, so its length `L` and inside area `A` also satisfy `L² = 4π A`.
@@ -48,10 +50,10 @@ In the `BoundedVariationOn` namespace:
 
 In the `ContinuousOn` namespace:
 
-* `rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere`: a simple closed parametrization of a
-  circle of radius `r` has geometric signed area `π r²` or `-π r²`.
-* `eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_of_image_eq_sphere`: simple
-  closed parametrizations of circles attain equality for the geometric signed area.
+* `rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere`: a parametrization of a circle of radius
+  `r`, injective on the open parameter interval, has geometric signed area `π r²` or `-π r²`.
+* `eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_of_image_eq_sphere`: such
+  parametrizations of circles attain equality for the geometric signed area.
 * `eVariationOn_toReal_sq_eq_four_pi_mul_volume_real_filledHull_sdiff_of_image_eq_sphere`: they
   also attain equality for the Lebesgue area of the inside.
 -/
@@ -65,14 +67,20 @@ namespace ContinuousOn
 
 variable {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ} {r : ℝ}
 
-/-- A simple closed curve that traces the circle `sphere c r` of positive radius has geometric
-signed area `π r²` or `-π r²`, according to its orientation. The parametrization need not be
-absolutely continuous; it is a continuous monotone reparametrization of a single traversal of
-the circle. -/
+/-- A curve that is continuous on `[a, b]`, injective on `(a, b)` and traces the circle
+`sphere c r` of nonnegative radius has geometric signed area `π r²` or `-π r²`, according to its
+orientation. The curve is automatically closed. The parametrization need not be absolutely
+continuous; it is a continuous monotone reparametrization of a single traversal of the circle.
+For `r = 0` the curve is constant and the area is zero. -/
 theorem rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere (hcont : ContinuousOn γ (Icc a b))
-    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b)) (himage : γ '' Icc a b = sphere c r)
-    (hr : 0 < r) :
+    (hinj : InjOn γ (Ioo a b)) (himage : γ '' Icc a b = sphere c r) (hr : 0 ≤ r) :
     rectifiableSignedArea γ a b = π * r ^ 2 ∨ rectifiableSignedArea γ a b = -(π * r ^ 2) := by
+  rcases hr.eq_or_lt with rfl | hr
+  · -- On a circle of radius zero the curve is constant.
+    left
+    rw [rectifiableSignedArea_congr (γ' := fun _ ↦ c) fun _ ht ↦ by
+      simpa [himage] using mem_image_of_mem γ ht]
+    simp
   -- The trace has the two distinct points `c + r` and `c - r`, so the interval is nontrivial.
   have hab : a < b := by
     by_contra hba
@@ -85,14 +93,16 @@ theorem rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere (hcont : Continuou
     linarith
   obtain ⟨θ, hθ, hγθ⟩ := hcont.exists_continuousOn_circleMap_comp_eqOn
     (himage ▸ mapsTo_image γ (Icc a b))
-  have hinj' : InjOn (circleMap c r ∘ θ) (Ico a b) :=
-    hinj.congr (hγθ.symm.mono Ico_subset_Icc_self)
+  have hinj' : InjOn (circleMap c r ∘ θ) (Ioo a b) :=
+    hinj.congr (hγθ.symm.mono Ioo_subset_Icc_self)
   have hclosed' : circleMap c r (θ a) = circleMap c r (θ b) :=
-    (hγθ (left_mem_Icc.2 hab.le)).trans (hclosed.trans (hγθ (right_mem_Icc.2 hab.le)).symm)
+    (hγθ (left_mem_Icc.2 hab.le)).trans
+      ((hcont.apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere hab.le hinj himage).trans
+        (hγθ (right_mem_Icc.2 hab.le)).symm)
   have hcirc (s : Set ℝ) : ContinuousOn (circleMap c r) s := (continuous_circleMap c r).continuousOn
   rw [← rectifiableSignedArea_congr hγθ]
-  rcases hθ.monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi hr.ne' hab hinj'
-    hclosed' with ⟨hmono, hb⟩ | ⟨hanti, ha⟩
+  rcases hθ.monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi hab hinj' hclosed'
+    with ⟨hmono, hb⟩ | ⟨hanti, ha⟩
   · left
     rw [rectifiableSignedArea_comp_of_monotoneOn (hcirc _) hab.le hθ hmono rfl rfl, hb,
       rectifiableSignedArea_circleMap]
@@ -100,18 +110,22 @@ theorem rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere (hcont : Continuou
     rw [rectifiableSignedArea_comp_of_antitoneOn (hcirc _) hab.le hθ hanti rfl rfl, ha,
       rectifiableSignedArea_circleMap]
 
-/-- **The circle attains equality in the isoperimetric inequality.** A simple closed curve that
-traces a circle of positive radius satisfies `L² = 4π |A|`, where `L` is its length and `A` its
-geometric signed area. The parametrization need not be absolutely continuous; its bounded
-variation is a consequence. -/
+/-- **The circle attains equality in the isoperimetric inequality.** A curve that is continuous on
+`[a, b]`, injective on `(a, b)` and traces a circle satisfies `L² = 4π |A|`, where `L` is its
+length and `A` its geometric signed area. The parametrization need not be absolutely continuous;
+its bounded variation is a consequence. -/
 theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_of_image_eq_sphere
-    (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
-    (himage : γ '' Icc a b = sphere c r) (hr : 0 < r) :
+    (hcont : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b))
+    (himage : γ '' Icc a b = sphere c r) :
     (eVariationOn γ (Icc a b)).toReal ^ 2 = 4 * π * |rectifiableSignedArea γ a b| := by
+  rcases lt_or_ge r 0 with hr | hr
+  · -- A circle of negative radius is empty, so the parameter interval is empty.
+    have hI : Icc a b = ∅ := image_eq_empty.1 (himage.trans (sphere_eq_empty_of_neg hr))
+    simp [hI, rectifiableSignedArea_of_lt (not_le.1 (Icc_eq_empty_iff.1 hI))]
   have habs : |rectifiableSignedArea γ a b| = π * r ^ 2 := by
-    rcases hcont.rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere hclosed hinj himage hr
-      with h | h <;> simp [h, abs_of_pos, Real.pi_pos, hr]
-  rw [hcont.eVariationOn_eq_of_image_eq_sphere (hinj.mono Ioo_subset_Ico_self) himage hr.le,
+    rcases hcont.rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere hinj himage hr
+      with h | h <;> simp [h, abs_of_nonneg (by positivity : 0 ≤ π * r ^ 2)]
+  rw [hcont.eVariationOn_eq_of_image_eq_sphere hinj himage,
     ENNReal.toReal_ofReal (by positivity), habs]
   ring
 
@@ -120,10 +134,14 @@ theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_of_image
 its filled hull minus the trace. -/
 theorem eVariationOn_toReal_sq_eq_four_pi_mul_volume_real_filledHull_sdiff_of_image_eq_sphere
     (hcont : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b))
-    (himage : γ '' Icc a b = sphere c r) (hr : 0 ≤ r) :
+    (himage : γ '' Icc a b = sphere c r) :
     (eVariationOn γ (Icc a b)).toReal ^ 2 =
       4 * π * volume.real (filledHull (γ '' Icc a b) \ γ '' Icc a b) := by
-  rw [hcont.eVariationOn_eq_of_image_eq_sphere hinj himage hr, himage, filledHull_sphere c hr,
+  rcases lt_or_ge r 0 with hr | hr
+  · -- A circle of negative radius is empty, so the parameter interval is empty.
+    have hI : Icc a b = ∅ := image_eq_empty.1 (himage.trans (sphere_eq_empty_of_neg hr))
+    simp [hI, filledHull_empty]
+  rw [hcont.eVariationOn_eq_of_image_eq_sphere hinj himage, himage, filledHull_sphere c hr,
     closedBall_sdiff_sphere, measureReal_def, Complex.volume_ball,
     ENNReal.toReal_ofReal (by positivity)]
   simp [ENNReal.toReal_pow, hr]
@@ -209,9 +227,9 @@ theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff_exis
     (eVariationOn γ (Icc a b)).toReal ^ 2 = 4 * π * |rectifiableSignedArea γ a b| ↔
       ∃ c : ℂ, ∃ r : ℝ, 0 < r ∧ γ '' Icc a b = sphere c r := by
   refine ⟨fun heq ↦ hγ.exists_image_eq_sphere_of_isoperimetric_eq hcont hclosed (fun hsub ↦ ?_)
-    heq, fun ⟨c, r, hr, himage⟩ ↦
+    heq, fun ⟨_, _, _, himage⟩ ↦
       hcont.eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_of_image_eq_sphere
-        hclosed hinj himage hr⟩
+        (hinj.mono Ioo_subset_Ico_self) himage⟩
   -- Injectivity on `[a, b)` gives the trace two distinct points.
   have hm : (a + b) / 2 ∈ Ico a b := ⟨by linarith, by linarith⟩
   have h := hinj ⟨le_rfl, hab⟩ hm (hsub (mem_image_of_mem γ (left_mem_Icc.2 hab.le))

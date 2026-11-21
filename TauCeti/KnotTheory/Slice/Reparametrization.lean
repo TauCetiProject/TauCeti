@@ -77,7 +77,6 @@ theorem isSmoothlySlice_congr_lift (hper : ∀ x, F (x + 2 * π) = F x + 2 * π)
     (hσ : ∀ x, σ (Circle.exp x) = Circle.exp (F x)) (hK' : ∀ z, K' z = K (σ z)) :
     IsSmoothlySlice K' ↔ IsSmoothlySlice K :=
   isSmoothlySlice_congr_diffeomorph (circleLiftDiscDiffeomorph hper hF hpos)
-    (norm_circleLiftDiscDiffeomorph_eq_one_iff hper hF hpos)
     (circleLiftDiscDiffeomorph_inclusion hper hF hpos hσ) hK'
 
 /-- **Topological sliceness does not depend on the parametrization.** If `σ` is an

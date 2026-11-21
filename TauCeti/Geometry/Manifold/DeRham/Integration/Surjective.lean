@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import Mathlib.Geometry.Manifold.BumpFunction
@@ -45,17 +45,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [T2Space M] {n : ℕ}
-
-/-- Cutting the chart pullback of a determinant off inside its chart gives a smooth form. -/
-private theorem isSmoothForm_bump_smul_chart_det (x : M) (χ : SmoothBumpFunction I x)
-    (b : Module.Basis (Fin n) ℝ E) :
-    IsSmoothForm I ∞ (fun y ↦ χ y •
-      mpullback I 𝓘(ℝ, E) (extChartAt I x) (fun _ ↦ b.continuousDet) y) := by
-  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  rw [isSmoothForm_def]
-  exact χ.contMDiff.contMDiffOn.smul_section_of_tsupport
-    (isOpen_extChartAt_source x) χ.tsupport_subset_extChartAt_source fun y hy ↦
-      (contMDiffAt_mpullback_extChartAt hy contDiffWithinAt_const).contMDiffWithinAt
 
 omit [T2Space M] in
 /-- A smooth compactly supported top form that equals a bump function times the chart determinant
@@ -98,8 +87,8 @@ private theorem integral_signedInChartAt_pos_of_bump [MeasurableSpace E] [BorelS
 private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (Fin n))
     (x : M) {U : Set M} (hU : U ∈ 𝓝 x) :
     ∃ φ : compactlySupportedClosedForms I M n,
-      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.1.1 ⊆ U ∧
-      integralTopForm o φ.1.1 ≠ 0 := by
+      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.val.val ⊆ U ∧
+      integralTopForm o φ.val.val ≠ 0 := by
   classical
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
@@ -116,7 +105,9 @@ private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (F
   let α : RoughForm 𝓘(ℝ, E) E ℝ n := fun _ ↦ b.continuousDet
   let p : RoughForm I M ℝ n := mpullback I 𝓘(ℝ, E) (extChartAt I x) α
   let ψ : RoughForm I M ℝ n := fun y ↦ χ y • p y
-  have hs : IsSmoothForm I ∞ ψ := isSmoothForm_bump_smul_chart_det x χ b
+  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  have hs : IsSmoothForm I ∞ ψ := isSmoothForm_smul_mpullback_extChartAt isOpen_univ
+    contDiffOn_const χ.contMDiff (by simpa using χ.tsupport_subset_chartAt_source)
   have hsub : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) ψ ⊆ _root_.tsupport χ :=
     -- Fix the model-space codomain so Mathlib's function-support lemma can infer the action.
     _root_.tsupport_smul_subset_left χ (show M → E [⋀^Fin n]→L[ℝ] ℝ from p)
@@ -147,13 +138,13 @@ compactly supported closed top form of integral one, also in dimension zero. -/
 theorem exists_compactlySupportedClosedForms_integralTopForm_eq_one
     (o : Manifold.Orientation I M (Fin n)) (x : M) {U : Set M} (hU : U ∈ 𝓝 x) :
     ∃ φ : compactlySupportedClosedForms I M n,
-      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.1.1 ⊆ U ∧
-      integralTopForm o φ.1.1 = 1 := by
+      _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.val.val ⊆ U ∧
+      integralTopForm o φ.val.val = 1 := by
   obtain ⟨φ, hφU, hφ⟩ := exists_topForm_integral_ne_zero o x hU
-  refine ⟨(integralTopForm o φ.1.1)⁻¹ • φ, ?_, ?_⟩
-  · exact (RoughForm.tsupport_smul_subset _ φ.1.1).trans hφU
+  refine ⟨(integralTopForm o φ.val.val)⁻¹ • φ, ?_, ?_⟩
+  · exact (RoughForm.tsupport_smul_subset _ φ.val.val).trans hφU
   · simpa only [Submodule.coe_smul] using
-      (integralTopForm_smul o (integralTopForm o φ.1.1)⁻¹ φ.1.1).trans (inv_mul_cancel₀ hφ)
+      (integralTopForm_smul o (integralTopForm o φ.val.val)⁻¹ φ.val.val).trans (inv_mul_cancel₀ hφ)
 
 /-- Integration on top compactly supported de Rham cohomology is onto for every nonempty
 oriented boundaryless Hausdorff sigma-compact finite-dimensional smooth manifold. Connectedness

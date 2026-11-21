@@ -46,6 +46,11 @@ Order zero, exponent zero, and the zero module are included.
 * `ContinuousLinearMap.IsPrCompact.finrank_ker_pow`,
   `ContinuousLinearMap.IsRieszProjection.finrank_range_of_isPrCompact`: over a field, the
   dimension equals the order of the good zero.
+* `ContinuousLinearMap.IsPrCompact.finrank_maxGenEigenspace`: over a field, the algebraic
+  multiplicity of a nonzero eigenvalue `μ` is the order of the zero of the Fredholm series at
+  `μ⁻¹`.
+* `ContinuousLinearMap.IsPrCompact.finrank_maxGenEigenspace_eq_order_taylor`: the same, stated
+  with the order of the Taylor translate of the Fredholm series at `μ⁻¹`.
 
 ## References
 
@@ -73,7 +78,7 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 row-compact endomorphism of a module with property (Pr), and `a` a good zero of order `h` of its
 Fredholm series `H_u`: `ΔʲH_u(a) = 0` for `j < h` and `ΔʰH_u(a)` is a unit. Then `u` has a Riesz
 projection at `a` of order `h`. -/
-theorem IsPrCompact.exists_isRieszProjection [NormOneClass R]
+theorem IsPrCompact.exists_isRieszProjection
     (hu : u.IsPrCompact) (ha : u.charPowerSeries.IsGoodZero a h) :
     ∃ E, IsRieszProjection u a h E := by
   classical
@@ -120,7 +125,7 @@ end PrModule
 
 section Ring
 
-variable {R M : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable {R M : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup M] [Module R M] [ContinuousConstSMul R M]
   {u E : M →L[R] M} {a : R} {h n : ℕ}
@@ -199,6 +204,27 @@ theorem IsRieszProjection.finrank_range_of_isPrCompact [IsBoundedSMul K M]
     (hH : u.charPowerSeries.IsGoodZero a h) : Module.finrank K E.range = h := by
   rw [hE.range_eq_ker]
   exact hu.finrank_ker_pow hH le_rfl
+
+/-- **Algebraic multiplicities are orders of Fredholm zeros.** Over a complete ultrametric field,
+if the Fredholm series of a row-compact endomorphism `u` of a module with property (Pr) has a good
+zero of order `h` at `μ⁻¹`, then the maximal generalised eigenspace of `u` at the nonzero scalar
+`μ` has dimension `h`. In particular `μ` is an eigenvalue when `h` is positive. -/
+theorem IsPrCompact.finrank_maxGenEigenspace [IsBoundedSMul K M] (hu : u.IsPrCompact) {μ : K}
+    (hμ : μ ≠ 0) (hH : u.charPowerSeries.IsGoodZero μ⁻¹ h) :
+    Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) = h := by
+  obtain ⟨E, hE⟩ := hu.exists_isRieszProjection hH
+  rw [hE.maxGenEigenspace_eq_range (inv_mul_cancel₀ hμ)]
+  exact hE.finrank_range_of_isPrCompact hu hH
+
+/-- Over a complete ultrametric field, the algebraic multiplicity of a nonzero scalar `μ` for a
+row-compact endomorphism `u` of a module with property (Pr) is the order of the zero of the
+Fredholm series at `μ⁻¹`, that is, the order of the Taylor translate `taylor μ⁻¹ H_u`. -/
+theorem IsPrCompact.finrank_maxGenEigenspace_eq_order_taylor [IsBoundedSMul K M]
+    (hu : u.IsPrCompact) {μ : K} (hμ : μ ≠ 0) :
+    (Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) : ℕ∞) =
+      (PowerSeries.taylor μ⁻¹ u.charPowerSeries).order := by
+  obtain ⟨h, hh⟩ := hu.isEntire_charPowerSeries.exists_isGoodZero u.charPowerSeries_ne_zero μ⁻¹
+  rw [hu.finrank_maxGenEigenspace hμ hh, PowerSeries.isGoodZero_iff_order_taylor_eq.mp hh]
 
 end Field
 

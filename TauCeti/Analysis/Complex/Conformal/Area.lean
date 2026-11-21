@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Determinant
 
 /-!
@@ -84,6 +86,9 @@ because that is what Mathlib's versions of them ask for.
   `TauCeti.integrableOn_image_iff_integrableOn_norm_deriv_sq_smul` and
   `TauCeti.integral_image_eq_integral_norm_deriv_sq_smul` — the change of variables formula for a
   holomorphic injection, in Lebesgue, integrability and Bochner form.
+* `TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff` — inversion preserves finite energy: on any
+  measurable set `s`, the squared norm of the derivative of `w ↦ u w⁻¹` is integrable on `s`
+  exactly when that of `u` is integrable on `s⁻¹`.
 
 ## References
 
@@ -169,7 +174,7 @@ theorem integrableOn_norm_deriv_sq (hf : ∀ z ∈ s, DifferentiableAt ℂ f z)
     (hs : NullMeasurableSet s volume) (hinj : InjOn f s) (hfin : volume (f '' s) ≠ ⊤) :
     IntegrableOn (fun z => ‖deriv f z‖ ^ 2) s := by
   simpa [IntegrableOn] using integrable_toReal_of_lintegral_ne_top
-    ((measurable_deriv f).enorm.pow_const 2).aemeasurable
+    ((measurable_deriv f).eNorm.pow_const 2).aemeasurable
     (lintegral_enorm_deriv_sq_ne_top hf hs hinj hfin)
 
 /-- The bounded-image form of `TauCeti.integrableOn_norm_deriv_sq`: the area distortion of a
@@ -188,7 +193,7 @@ theorem integral_norm_deriv_sq_eq_toReal_volume_image (hf : ∀ z ∈ s, Differe
     (hs : NullMeasurableSet s volume) (hinj : InjOn f s) :
     ∫ z in s, ‖deriv f z‖ ^ 2 = (volume (f '' s)).toReal := by
   rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj,
-    ← integral_toReal ((measurable_deriv f).enorm.pow_const 2).aemeasurable
+    ← integral_toReal ((measurable_deriv f).eNorm.pow_const 2).aemeasurable
       (.of_forall fun _ => by finiteness)]
   simp
 
@@ -209,7 +214,7 @@ theorem volume_image_eq_zero_iff (hf : ∀ z ∈ s, DifferentiableAt ℂ f z)
     (hd : ∀ᵐ z ∂volume.restrict s, deriv f z ≠ 0) :
     volume (f '' s) = 0 ↔ volume s = 0 := by
   rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj,
-    lintegral_eq_zero_iff ((measurable_deriv f).enorm.pow_const 2)]
+    lintegral_eq_zero_iff ((measurable_deriv f).eNorm.pow_const 2)]
   refine ⟨fun h => ?_, fun h => by simp [Measure.restrict_eq_zero.mpr h, Filter.EventuallyEq]⟩
   have hfalse : ∀ᵐ _ ∂volume.restrict s, False := by
     filter_upwards [h, hd] with z hz hz0
@@ -270,5 +275,29 @@ theorem integral_image_eq_integral_norm_deriv_sq_smul (hf : ∀ z ∈ s, Differe
   rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
     (hasFDerivWithinAt_smulRight_deriv hf) hinj g]
   exact setIntegral_congr_fun hs fun z _ => by rw [abs_det_restrictScalars_smulRight_one]
+
+
+/-! ### Inversion -/
+
+/-- **Inversion preserves finite energy.** On a measurable set `s`, the squared norm of the
+derivative of `w ↦ u w⁻¹` is integrable on `s` exactly when that of `u` is integrable on the image
+`s⁻¹` of `s` under inversion: the area distortion `‖w‖⁻⁴` of the inversion is the square of the
+factor `‖w‖⁻²` by which it scales derivatives. -/
+theorem integrableOn_norm_fderiv_comp_inv_sq_iff {u : ℂ → E} (hs : MeasurableSet s) :
+    IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) s ↔
+      IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) ((·⁻¹) '' s) := by
+  -- Removing the origin, a null set fixed by the inversion, changes neither side.
+  have hs0 : MeasurableSet (s \ {0}) := hs.diff (measurableSet_singleton 0)
+  have himage : (·⁻¹) '' (s \ {0}) = (·⁻¹) '' s \ {(0 : ℂ)} := by
+    rw [image_sdiff inv_injective, image_singleton, inv_zero]
+  rw [← integrableOn_congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)),
+    ← integrableOn_congr_set_ae (s := (·⁻¹) '' s \ {(0 : ℂ)})
+      (sdiff_null_ae_eq_self (measure_singleton 0)), ← himage,
+    integrableOn_image_iff_integrableOn_norm_deriv_sq_smul
+      (fun w (hw : w ∈ s \ {0}) ↦ differentiableAt_inv_iff.2 hw.2) hs0 inv_injective.injOn]
+  refine integrableOn_congr_fun (fun w hw ↦ ?_) hs0
+  have hw : (w : ℂ) ≠ 0 := hw.2
+  rw [norm_fderiv_comp_inv hw, deriv_inv, smul_eq_mul, norm_neg, norm_inv, norm_pow]
+  field_simp
 
 end TauCeti

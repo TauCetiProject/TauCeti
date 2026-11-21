@@ -14,16 +14,17 @@ This file supplies general lemmas about trace-dual fractional ideals. The coerci
 the fractional-ideal and submodule trace duals, allowing submodule results such as localization to
 be transferred to fractional ideals. The elementwise descriptions of the trace dual of `S` and of
 the different ideal, each as the inverse of the other, are what read the different off valuations
-and transport it along automorphisms. The different of the identity extension is the unit ideal,
-which is used to compute the relative discriminant of the identity extension. The trace criterion
-`TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem` decides when an ideal `I` with
+and transport it along automorphisms and compatible ring equivalences. The different of the identity
+extension is the unit ideal, which is used to compute the relative discriminant of the identity
+extension. The trace criterion `TauCeti.dvd_differentIdeal_iff_forall_intTrace_mem` decides when an
 `I * Q = p · B` divides the different ideal of an extension of Dedekind domains.
 The multiplicity lemmas express divisibility by powers of an ideal and Dedekind's universal
 `e - 1` bound as bounds on the different exponent.
 For finite separable fraction-field extensions, the different is nonzero. When it is principal,
 membership in the trace dual is tested by multiplication by a generator, and division by that
 generator identifies `S` with its trace dual. This equivalence feeds the length computation of
-the complementary-module quotient.
+the complementary-module quotient. Finally, `FractionalIdeal.dualEquiv` packages
+`FractionalIdeal.dual` as an involutive permutation of the invertible fractional ideals.
 -/
 
 public section
@@ -88,6 +89,7 @@ theorem coe_dual_one_of_isDomain [IsDomain S] :
 
 end FractionalIdeal
 
+omit [IsFractionRing S L] in
 /-- **The trace dual of `S` is the inverse of the different ideal, elementwise**: an element of
 `L` has integral traces against `S` exactly when it multiplies the different ideal of `S / R`
 into `S`. -/
@@ -95,7 +97,9 @@ theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
     [IsTorsionFree R S] {x : L} :
     x ∈ Submodule.traceDual R K (1 : Submodule S L) ↔
       ∀ y ∈ differentIdeal R S, x * algebraMap S L y ∈ (1 : Submodule S L) := by
-  rw [← FractionalIdeal.coe_dual_one (A := R) (K := K), FractionalIdeal.mem_coe,
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
+  rw [← FractionalIdeal.coeToSubmodule_dual_one (A := R) (K := K),
+    FractionalIdeal.mem_coeToSubmodule,
     ← inv_inv (FractionalIdeal.dual R K _),
     FractionalIdeal.mem_inv_iff (inv_ne_zero (FractionalIdeal.dual_ne_zero R K one_ne_zero)),
     ← coeIdeal_differentIdeal (A := R) (K := K) (L := L)]
@@ -106,9 +110,11 @@ theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
     exact (FractionalIdeal.mem_one_iff _).mpr (Submodule.mem_one.mp (h y hy))
 
 include K L in
+omit [IsFractionRing S L] in
 /-- The different is nonzero when the chosen fraction-field extension is finite separable. -/
 theorem differentIdeal_ne_bot_of_isSeparable [IsDedekindDomain S] [IsTorsionFree R S] :
     differentIdeal R S ≠ ⊥ := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
   rw [ne_eq, ← FractionalIdeal.coeIdeal_inj (K := L),
     coeIdeal_differentIdeal (K := K)]
   simp
@@ -122,6 +128,7 @@ theorem algebraMap_ne_zero_of_differentIdeal_eq_span
   rintro rfl
   exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa using hδ)
 
+omit [IsFractionRing S L] in
 /-- For a principal different, membership in the complementary module is tested by
 multiplication by its generator. -/
 theorem mem_traceDual_one_iff_mul_of_differentIdeal_eq_span
@@ -151,7 +158,7 @@ noncomputable def equivTraceDualOfDifferentIdealEqSpan
       map_smul' := fun b c ↦ Subtype.ext (by simp [Algebra.smul_def, mul_div_assoc]) }
   refine LinearEquiv.ofBijective f ⟨?_, ?_⟩
   · intro b c h
-    exact IsFractionRing.injective S L ((div_left_inj' hδL).mp
+    exact IsFractionRing.injective S L ((div_left_inj₀ hδL).mp
       (congrArg Subtype.val h))
   · intro x
     obtain ⟨b, hb⟩ := Submodule.mem_one.mp
@@ -182,6 +189,7 @@ theorem equivTraceDualOfDifferentIdealEqSpan_symm_apply
   rw [equivTraceDualOfDifferentIdealEqSpan_apply] at h
   exact (div_eq_iff (algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) hδ)).mp h
 
+omit [IsFractionRing S L] in
 /-- **The different ideal is the inverse of the trace dual of `S`, elementwise**: an element of
 `S` lies in the different ideal of `S / R` exactly when it multiplies the trace dual of `S` into
 `S`. -/
@@ -190,6 +198,7 @@ theorem mem_differentIdeal_iff_forall_mem_traceDual [IsDedekindDomain S] [IsTors
     y ∈ differentIdeal R S ↔
       ∀ x ∈ Submodule.traceDual R K (1 : Submodule S L), x * algebraMap S L y ∈
         (1 : Submodule S L) := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
   refine ⟨fun hy x hx ↦ ?_, fun h ↦ ?_⟩
   · have hmem : algebraMap S L y ∈ 1 / Submodule.traceDual R K (1 : Submodule S L) := by
       rw [← coeSubmodule_differentIdeal (A := R) (K := K)]
@@ -221,6 +230,7 @@ theorem apply_mem_traceDual_one_iff {σ : Gal(L/K)} {x : L} :
     ← algebraMap_galRestrict'_apply R S S (τ.symm : L →ₐ[K] L)]
   exact Submodule.mem_traceDual.mp hz _ (Submodule.mem_one.mpr ⟨_, rfl⟩)
 
+omit [IsFractionRing S L] in
 /-- **The different ideal is stable under the automorphisms of `L / K`**, acting on `S` through
 their restrictions `galRestrict`. -/
 @[simp]
@@ -276,11 +286,11 @@ theorem dvd_differentIdeal_iff_forall_intTrace_mem
   rw [Ideal.dvd_iff_le, differentialIdeal_le_iff (K := K) (L := L) hI, hIinv,
     Submodule.map_le_iff_le_comap]
   intro x hx
-  rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coe,
+  rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coeToSubmodule,
     FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp')] at hx
-  rw [Submodule.mem_comap, LinearMap.coe_restrictScalars, ← FractionalIdeal.coe_one,
+  rw [Submodule.mem_comap, LinearMap.coe_restrictScalars, ← FractionalIdeal.coeToSubmodule_one,
     ← div_self (G₀ := FractionalIdeal A⁰ K) (a := p) (by simpa using hp),
-    FractionalIdeal.mem_coe, FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp)]
+    FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.mem_div_iff_of_ne_zero (by simpa using hp)]
   simp only [FractionalIdeal.mem_coeIdeal, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂] at hx
   intro y hy'
@@ -308,5 +318,148 @@ theorem differentIdeal_self : differentIdeal D D = ⊤ := by
     Polynomial.derivative_X_sub_C, map_one, ← Ideal.eq_top_iff_one] at h
 
 end TauCeti
+
+namespace RingEquiv
+
+variable {A₁ K₁ B₁ L₁ A₂ K₂ B₂ L₂ : Type*}
+  [CommRing A₁] [Field K₁] [CommRing B₁] [Field L₁]
+  [Algebra A₁ K₁] [Algebra B₁ L₁] [Algebra A₁ B₁] [Algebra K₁ L₁] [Algebra A₁ L₁]
+  [IsScalarTower A₁ K₁ L₁] [IsScalarTower A₁ B₁ L₁]
+  [CommRing A₂] [Field K₂] [CommRing B₂] [Field L₂]
+  [Algebra A₂ K₂] [Algebra B₂ L₂] [Algebra A₂ B₂] [Algebra K₂ L₂] [Algebra A₂ L₂]
+  [IsScalarTower A₂ K₂ L₂] [IsScalarTower A₂ B₂ L₂]
+  (eA : A₁ ≃+* A₂) (eK : K₁ ≃+* K₂) (eB : B₁ ≃+* B₂) (eL : L₁ ≃+* L₂)
+  (hAK : ∀ a, eK (algebraMap A₁ K₁ a) = algebraMap A₂ K₂ (eA a))
+  (hBL : ∀ b, eL (algebraMap B₁ L₁ b) = algebraMap B₂ L₂ (eB b))
+  (hKL : (algebraMap K₂ L₂).comp eK.toRingHom = eL.toRingHom.comp (algebraMap K₁ L₁))
+
+include eA eK eB hAK hBL hKL in
+/-- **Compatible ring equivalences of integral towers transport membership in the complementary
+module.** -/
+theorem mem_traceDual_one_iff_of_equiv (z : L₁) :
+    z ∈ Submodule.traceDual A₁ K₁ (1 : Submodule B₁ L₁) ↔
+      eL z ∈ Submodule.traceDual A₂ K₂ (1 : Submodule B₂ L₂) := by
+  have htr (u : L₁) : eK (Algebra.trace K₁ L₁ u) = Algebra.trace K₂ L₂ (eL u) := by
+    rw [Algebra.trace_eq_of_equiv_equiv eK eL hKL, RingEquiv.apply_symm_apply]
+  have hrange (t : K₁) : t ∈ (algebraMap A₁ K₁).range ↔ eK t ∈ (algebraMap A₂ K₂).range :=
+    ⟨fun ⟨a, ha⟩ ↦ ⟨eA a, by rw [← ha, hAK]⟩,
+      fun ⟨a, ha⟩ ↦ ⟨eA.symm a, eK.injective (by rw [hAK, eA.apply_symm_apply, ha])⟩⟩
+  simp only [Submodule.mem_traceDual, Submodule.mem_one, forall_exists_index,
+    forall_apply_eq_imp_iff, Algebra.traceForm_apply]
+  exact ⟨fun h b ↦ by
+      have hb := (hrange _).mp (h (eB.symm b))
+      rwa [htr, map_mul, hBL, eB.apply_symm_apply] at hb,
+    fun h b ↦ (hrange _).mpr (by rw [htr, map_mul, hBL]; exact h (eB b))⟩
+
+variable [IsDomain A₁] [IsIntegrallyClosed A₁] [IsDedekindDomain B₁] [IsFractionRing A₁ K₁]
+  [Module.IsTorsionFree A₁ B₁] [IsIntegralClosure B₁ A₁ L₁] [FiniteDimensional K₁ L₁]
+  [Algebra.IsSeparable K₁ L₁]
+  [IsDomain A₂] [IsIntegrallyClosed A₂] [IsDedekindDomain B₂] [IsFractionRing A₂ K₂]
+  [Module.IsTorsionFree A₂ B₂] [IsIntegralClosure B₂ A₂ L₂] [FiniteDimensional K₂ L₂]
+  [Algebra.IsSeparable K₂ L₂]
+
+include eA eK eL hAK hBL hKL in
+/-- **Compatible ring equivalences of integral closures transport membership in the different
+ideal.** -/
+theorem mem_differentIdeal_iff_of_equiv (y : B₁) :
+    y ∈ differentIdeal A₁ B₁ ↔ eB y ∈ differentIdeal A₂ B₂ := by
+  rw [TauCeti.mem_differentIdeal_iff_forall_mem_traceDual (K := K₁) (L := L₁),
+    TauCeti.mem_differentIdeal_iff_forall_mem_traceDual (K := K₂) (L := L₂)]
+  refine ⟨fun hy z' hz' ↦ ?_, fun hy z hz ↦ ?_⟩
+  · obtain ⟨b, hb⟩ := Submodule.mem_one.mp (hy (eL.symm z') <|
+      (eA.mem_traceDual_one_iff_of_equiv eK eB eL hAK hBL hKL _).mpr
+        (by rwa [eL.apply_symm_apply]))
+    exact Submodule.mem_one.mpr ⟨eB b, by
+      have hb' := congrArg eL hb; rwa [hBL, map_mul, eL.apply_symm_apply, hBL] at hb'⟩
+  · obtain ⟨b, hb⟩ := Submodule.mem_one.mp (hy (eL z) <|
+      (eA.mem_traceDual_one_iff_of_equiv eK eB eL hAK hBL hKL z).mp hz)
+    exact Submodule.mem_one.mpr ⟨eB.symm b, eL.injective (by rw [hBL, eB.apply_symm_apply, hb,
+      map_mul, hBL])⟩
+
+include eA eK eL hAK hBL hKL in
+/-- **Compatible ring equivalences of integral closures transport the different ideal.** -/
+theorem map_differentIdeal_of_equiv :
+    (differentIdeal A₁ B₁).map (eB : B₁ →+* B₂) = differentIdeal A₂ B₂ := by
+  ext y
+  rw [Ideal.mem_map_iff_of_surjective (eB : B₁ →+* B₂) (by simpa using eB.surjective)]
+  exact ⟨fun ⟨x, hx, hxy⟩ ↦
+      hxy ▸ (eA.mem_differentIdeal_iff_of_equiv eK eB eL hAK hBL hKL x).mp hx,
+    fun hy ↦ ⟨eB.symm y, (eA.mem_differentIdeal_iff_of_equiv eK eB eL hAK hBL hKL _).mpr
+      (by rwa [eB.apply_symm_apply]), eB.apply_symm_apply y⟩⟩
+
+end RingEquiv
+
+namespace FractionalIdeal
+
+section DualEquiv
+
+variable (R K : Type*) {S L : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+  [Field K] [Algebra R K] [IsFractionRing R K] [Field L] [Algebra K L] [FiniteDimensional K L]
+  [Algebra.IsSeparable K L] [CommRing S] [IsDedekindDomain S] [Algebra R L] [Algebra R S]
+  [Algebra S L] [IsScalarTower R K L] [IsScalarTower R S L] [IsFractionRing S L]
+  [IsIntegralClosure S R L]
+
+/-- In a finite separable extension of fraction fields of Dedekind domains, the trace dual
+`FractionalIdeal.dual` restricts to an involutive permutation of `(FractionalIdeal S⁰ L)ˣ`. -/
+noncomputable def dualEquiv : Equiv.Perm (FractionalIdeal S⁰ L)ˣ where
+  toFun I := Units.mk0 (dual R K (I : FractionalIdeal S⁰ L)) (dual_ne_zero R K I.ne_zero)
+  invFun I := Units.mk0 (dual R K (I : FractionalIdeal S⁰ L)) (dual_ne_zero R K I.ne_zero)
+  left_inv I := Units.ext (dual_dual R K (I : FractionalIdeal S⁰ L))
+  right_inv I := Units.ext (dual_dual R K (I : FractionalIdeal S⁰ L))
+
+/-- Coercion of `FractionalIdeal.dualEquiv` to `FractionalIdeal S⁰ L` is `FractionalIdeal.dual`. -/
+@[simp]
+theorem coe_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    ((dualEquiv R K I : (FractionalIdeal S⁰ L)ˣ) : FractionalIdeal S⁰ L) =
+      dual R K (I : FractionalIdeal S⁰ L) :=
+  (rfl)
+
+/-- `FractionalIdeal.dualEquiv` is its own inverse. -/
+@[simp]
+theorem dualEquiv_symm :
+    (dualEquiv R K : Equiv.Perm (FractionalIdeal S⁰ L)ˣ).symm = dualEquiv R K :=
+  (rfl)
+
+/-- Applying `FractionalIdeal.dualEquiv` twice is the identity. -/
+@[simp]
+theorem dualEquiv_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K (dualEquiv R K I) = I :=
+  (dualEquiv R K).symm_apply_apply I
+
+/-- The trace dual of an invertible fractional ideal `I` is the inverse different `dualEquiv R K 1`
+times `I⁻¹`. -/
+theorem dualEquiv_eq_mul_inv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I = dualEquiv R K 1 * I⁻¹ :=
+  Units.ext <| by
+    rw [Units.val_mul, coe_dualEquiv, coe_dualEquiv, Units.val_one, Units.val_inv_eq_inv_val,
+      dual_eq_mul_inv]
+
+/-- The trace dual of `I⁻¹` is the inverse different `dualEquiv R K 1` times `I`. -/
+theorem dualEquiv_inv (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I⁻¹ = dualEquiv R K 1 * I := by
+  rw [dualEquiv_eq_mul_inv, inv_inv]
+
+/-- Multiplying `dualEquiv R K I` on the right by `I` yields the inverse different
+`dualEquiv R K 1`. -/
+theorem dualEquiv_mul_self (I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K I * I = dualEquiv R K 1 := by
+  rw [dualEquiv_eq_mul_inv, mul_assoc, inv_mul_cancel, mul_one]
+
+/-- Multiplying `I` on the right by `dualEquiv R K I` yields the inverse different
+`dualEquiv R K 1`. -/
+theorem self_mul_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+    I * dualEquiv R K I = dualEquiv R K 1 := by
+  rw [mul_comm, dualEquiv_mul_self]
+
+/-- The quotient of the trace duals of `J` and `I` is `I / J`. -/
+@[simp]
+theorem dualEquiv_div_dualEquiv (J I : (FractionalIdeal S⁰ L)ˣ) :
+    dualEquiv R K J / dualEquiv R K I = I / J := by
+  rw [dualEquiv_eq_mul_inv R K J, dualEquiv_eq_mul_inv R K I, mul_div_mul_comm, div_self', one_mul,
+    inv_div_inv]
+
+end DualEquiv
+
+end FractionalIdeal
 
 end

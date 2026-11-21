@@ -141,7 +141,7 @@ theorem IsRegularPair.isVertexBoxRegularPair (h : S.IsRegularPair ε s t)
       (h₀ : 0 < #{p ∈ s ×ˢ t | p.1 ≠ p.2})
       (hN : ε * #{p ∈ s ×ˢ t | p.1 ≠ p.2} ≤ #{p ∈ s' ×ˢ t' | p.1 ≠ p.2}) : ε * #s ≤ #s' := by
     have hle : (#{p ∈ s' ×ˢ t' | p.1 ≠ p.2} * #s : ℝ) ≤ #s' * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
-      exact_mod_cast card_filter_ne_product_mul_card_le hst hs' ht'
+      exact_mod_cast card_filter_ne_product_mul_card_le (hst.imp_left (·.subset)) hs' ht'
     refine le_of_mul_le_mul_right ?_ (show (0 : ℝ) < #{p ∈ s ×ˢ t | p.1 ≠ p.2} by
       exact_mod_cast h₀)
     calc ε * #s * #{p ∈ s ×ˢ t | p.1 ≠ p.2}
@@ -173,7 +173,6 @@ theorem IsVertexBoxRegularPair.isRegularPair_of_disjoint (h : S.IsVertexBoxRegul
 the thresholds of pair regularity but carries no distinct pair. -/
 theorem IsVertexBoxRegularPair.isRegularPair_self (h : S.IsVertexBoxRegularPair δ s s)
     (hδ : 2 * δ ≤ ε ^ 2) (hs : 2 ≤ ε * #s) : S.IsRegularPair ε s s := by
-  have hε : 0 ≤ ε := by nlinarith [(Nat.cast_nonneg (α := ℝ) #s)]
   obtain hε₁ | hε₁ := le_or_gt 1 ε
   · exact isRegularPair_of_one_le hε₁
   refine isRegularPair_iff.2 fun c s' hs' t' ht' ha hb ↦ ?_
@@ -183,7 +182,6 @@ theorem IsVertexBoxRegularPair.isRegularPair_self (h : S.IsVertexBoxRegularPair 
   have hlow : #s' * (#t' - 1) ≤ #{p ∈ s' ×ˢ t' | p.1 ≠ p.2} := by
     rw [card_filter_ne_product, ← smul_eq_mul, ← sum_const]
     exact sum_le_sum fun u _ ↦ pred_card_le_card_erase
-  have ht'₂ : (2 : ℝ) ≤ #t' := hs.trans hb
   have hlow' : (#s' : ℝ) * (#t' - 1) ≤ #{p ∈ s' ×ˢ t' | p.1 ≠ p.2} := by
     have ht'₁ : 1 ≤ #t' := by exact_mod_cast (show (1 : ℝ) ≤ #t' by linarith)
     have := (Nat.cast_le (α := ℝ)).2 hlow

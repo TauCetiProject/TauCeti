@@ -7,8 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Topology.Sequences
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.Topology.Order.Compact
+import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 import TauCeti.Topology.Sequences
 
@@ -23,7 +26,10 @@ once they are small, so a finite set `Z` of such points satisfies `#Z * δ ≤ E
 (`TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`). If instead the densities
 `1 + e k` concentrate energy `δ` at a null point `z`, then the `e k` concentrate energy `δ'` there
 for every `δ' < δ`, since small balls about `z` have small measure
-(`TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`).
+(`TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`). A pointwise
+bound `g ≤ A e + B` with `A, B ≥ 0` bounds the energy of `g` on `S` by a multiple of
+`μ(S) + ∫_S e` (`TauCeti.setIntegral_le_mul_measureReal_add_setIntegral_of_le`), which brings
+concentration of `g` into this form.
 
 Now let `g k` be continuous functions on `Ω`, for instance the norms of the differentials of
 maps `u k` whose energy densities are `e k`. Suppose that energy concentrates wherever the `g k`
@@ -43,6 +49,18 @@ This is the counting step of the bubbling analysis in Gromov compactness: for `J
 curves, the mean-value inequality supplies the energy concentration hypothesis, and the points of
 `Z` are the concentration points at which further bubbling analysis is required.
 
+Conversely, energy concentration forces blow-up, with no equation involved. A ball of measure
+below `δ / c` carrying energy at least `δ` contains a point where the density exceeds `c`
+(`TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`), so if energy `δ > 0` concentrates at a
+null point `z`, then along a subsequence there are points `y k → z` at which the densities tend
+to infinity
+(`TauCeti.exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball`). The same
+holds for functions `g k` controlling the densities, such as the norms `‖du_k‖` of the
+differentials of maps with energy densities `‖∂ₛu_k‖²`. These blow-up sequences are the input
+of the rescaling that produces a bubble at `z`. Consequently, when the `g k` are bounded on
+compact sets off a finite set `Z` of concentration points, `Z` is exactly the set of points near
+which the `g k` are unbounded (`TauCeti.coe_eq_setOf_forall_exists_lt_of_concentration`).
+
 ## Main results
 
 * `TauCeti.card_mul_le_of_forall_eventually_le_setIntegral_ball`: a finite set of energy
@@ -51,6 +69,10 @@ curves, the mean-value inequality supplies the energy concentration hypothesis, 
   measure of small balls from concentrating energy loses arbitrarily little of it.
 * `TauCeti.exists_strictMono_finset_forall_le_of_concentration`: when energy concentrates at
   blow-up points, a subsequence is bounded on compact sets off finitely many concentration points.
+* `TauCeti.exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball`: energy
+  concentration at a null point gives a subsequence blowing up at points converging to it.
+* `TauCeti.coe_eq_setOf_forall_exists_lt_of_concentration`: a finite set of concentration
+  points off which the sequence is locally bounded is its set of blow-up points.
 
 ## References
 
@@ -64,6 +86,41 @@ public section
 open Filter Function MeasureTheory Metric Set Topology
 
 namespace TauCeti
+
+section Comparison
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ} {S : Set α} {A B : ℝ}
+
+/-- A function `g ≥ 0` bounded by `A f + B` on a measurable set `S` of finite measure, for an
+integrable density `f`, is integrable on `S`. -/
+theorem integrableOn_of_le_mul_add (hS : MeasurableSet S) (hSfin : μ S ≠ ⊤)
+    (hg : AEStronglyMeasurable g (μ.restrict S)) (hf : IntegrableOn f S μ)
+    (hg0 : ∀ z ∈ S, 0 ≤ g z) (hle : ∀ z ∈ S, g z ≤ A * f z + B) : IntegrableOn g S μ :=
+  Integrable.mono' ((hf.const_mul A).fun_add (integrableOn_const (C := B) hSfin)) hg
+    (ae_restrict_of_forall_mem hS fun z hz ↦ by
+      rw [Real.norm_of_nonneg (hg0 z hz)]
+      exact hle z hz)
+
+/-- **Energy bounds from a pointwise bound.** If `g ≤ A f + B` on a measurable set `S` of finite
+measure, with `A, B ≥ 0` and `f ≥ 0`, then `∫_S g ≤ (A + B + 1)(μ(S) + ∫_S f)`. This is the shape
+of hypothesis in `TauCeti.eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball`. -/
+theorem setIntegral_le_mul_measureReal_add_setIntegral_of_le (hS : MeasurableSet S)
+    (hSfin : μ S ≠ ⊤) (hA0 : 0 ≤ A) (hB0 : 0 ≤ B) (hg : IntegrableOn g S μ)
+    (hf : IntegrableOn f S μ) (hf0 : ∀ z ∈ S, 0 ≤ f z) (hle : ∀ z ∈ S, g z ≤ A * f z + B) :
+    ∫ z in S, g z ∂μ ≤ (A + B + 1) * (μ.real S + ∫ z in S, f z ∂μ) := by
+  have hint0 : 0 ≤ ∫ z in S, f z ∂μ := setIntegral_nonneg hS hf0
+  have hm0 : 0 ≤ μ.real S := measureReal_nonneg
+  calc ∫ z in S, g z ∂μ
+      ≤ ∫ z in S, (A * f z + B) ∂μ :=
+        setIntegral_mono_on hg ((hf.const_mul A).fun_add (integrableOn_const (C := B) hSfin))
+          hS hle
+    _ = A * (∫ z in S, f z ∂μ) + B * μ.real S := by
+        rw [integral_add (hf.const_mul A) (integrableOn_const hSfin), integral_const_mul,
+          setIntegral_const, smul_eq_mul, mul_comm (μ.real S)]
+    _ ≤ (A + B + 1) * (μ.real S + ∫ z in S, f z ∂μ) := by
+        nlinarith [mul_nonneg hA0 hm0, mul_nonneg hB0 hint0]
+
+end Comparison
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} {Ω : Set X} {δ E : ℝ}
@@ -84,14 +141,14 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
   have hdisj : (Z : Set X).Pairwise (Disjoint on fun z ↦ ball z ε ∩ Ω) :=
     fun z hz z' hz' hne ↦ (ball_disjoint_ball (by linarith [hsep z hz z' hz' hne])).mono
       inter_subset_left inter_subset_left
-  calc Z.card * δ = ∑ z ∈ Z, δ := by simp
+  calc Z.card * δ = ∑ _ ∈ Z, δ := by simp
     _ ≤ ∑ z ∈ Z, ∫ y in ball z ε ∩ Ω, e i y ∂μ := Finset.sum_le_sum hi
     _ = ∫ y in ⋃ z ∈ Z, ball z ε ∩ Ω, e i y ∂μ :=
       (integral_biUnion_finset Z (fun _ _ ↦ measurableSet_ball.inter hΩ) hdisj
         fun _ _ ↦ (hint i).mono_set inter_subset_right).symm
     _ ≤ ∫ y in Ω, e i y ∂μ :=
       setIntegral_mono_set (hint i) (ae_restrict_of_forall_mem hΩ (he i))
-        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallyLE
+        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallySubset
     _ ≤ E := hE i
 
 /-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
@@ -106,8 +163,7 @@ theorem eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball {�
     (hconc : ∀ ρ > 0, ∀ᶠ i in l, δ ≤ μ.real (ball z ρ ∩ Ω) + ∫ y in ball z ρ ∩ Ω, e i y ∂μ) :
     ∀ᶠ i in l, δ' ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ := by
   have hlim : Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 0) := by
-    simpa [thickening_singleton, hz] using
-      tendsto_measure_thickening (μ := μ) (s := {z}) (by simpa [thickening_singleton] using hfin)
+    simpa [hz] using tendsto_measure_ball_nhdsGT_zero hfin
   obtain ⟨ρ, hρμ, hρ⟩ := ((hlim.eventually (gt_mem_nhds
     (ENNReal.ofReal_pos.2 (sub_pos.2 hδ')))).and (Ioo_mem_nhdsGT hε)).exists
   have hρvol : μ.real (ball z ρ ∩ Ω) < δ - δ' :=
@@ -118,7 +174,7 @@ theorem eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball {�
     _ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ :=
       setIntegral_mono_set ((hint i).mono_set inter_subset_right)
         (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ) fun y hy ↦ he i y hy.2)
-        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallyLE
+        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallySubset
 
 /-- **Finitely many blow-up points.** Let `g k` be functions continuous on a measurable set `Ω`,
 and let `e k ≥ 0` be densities on `Ω` with `∫_Ω e k ≤ E`. Suppose that energy at least `δ > 0`
@@ -178,5 +234,89 @@ theorem exists_strictMono_finset_forall_le_of_concentration {g e : ℕ → X →
   rw [hcardZ] at h
   rw [div_lt_iff₀ hδ] at hN
   linarith
+
+/-- **Energy concentration forces blow-up.** Let `z` be a point of measure zero about which some
+ball has finite measure, and suppose that energy at least `δ > 0` of the densities `e n`
+concentrates at `z`: for every `ε > 0`, eventually `δ ≤ ∫_{B_ε(z) ∩ Ω} e n`. Let `g n` be functions
+on `Ω` that control the densities, in the sense that `e n` is bounded above wherever `g n` is,
+uniformly in `n`. Then the `g n` blow up at `z`: along a subsequence `φ` there are points
+`y k ∈ Ω` with `y k → z` and `g (φ k) (y k) → ∞`. For `g = e` the control hypothesis holds
+trivially, and for the energy densities `e n = ‖∂ₛuₙ‖²` of maps `uₙ` it holds with `g n = ‖duₙ‖`.
+
+No integrability, nonnegativity or continuity is assumed: a small ball carrying energy at least
+`δ` must contain a point where the density is at least `δ` divided by the measure of the ball. -/
+theorem exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball
+    {g e : ℕ → X → ℝ} {z : X} (hδ : 0 < δ) (hz : μ {z} = 0) (hfin : ∃ R > 0, μ (ball z R) ≠ ⊤)
+    (hge : ∀ M, ∃ M', ∀ n, ∀ y ∈ Ω, g n y ≤ M → e n y ≤ M')
+    (hconc : ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, e n y ∂μ) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ y : ℕ → X, (∀ k, y k ∈ Ω) ∧ Tendsto y atTop (𝓝 z) ∧
+      Tendsto (fun k ↦ g (φ k) (y k)) atTop atTop := by
+  have hlim : Tendsto (fun r ↦ μ (ball z r)) (𝓝[>] 0) (𝓝 0) := by
+    simpa [hz] using tendsto_measure_ball_nhdsGT_zero hfin
+  -- For each `k`, the density bound `M k` matching the control bound `k`, and a radius
+  -- `ε k < 1 / (k + 1)` whose ball has measure below `δ / (|M k| + 1)`.
+  choose M hM using fun k : ℕ ↦ hge k
+  have hc : ∀ k, 0 < |M k| + 1 := fun k ↦ by positivity
+  choose ε hεμ hε using fun k : ℕ ↦ ((hlim.eventually (gt_mem_nhds
+    (ENNReal.ofReal_pos.2 (div_pos hδ (hc k))))).and (Ioo_mem_nhdsGT (Nat.one_div_pos_of_nat
+      (n := k)))).exists
+  -- Eventually the ball of radius `ε k` contains a point where `g n` exceeds `k`.
+  have hev : ∀ k, ∀ᶠ n in atTop, ∃ y ∈ ball z (ε k) ∩ Ω, (k : ℝ) < g n y := fun k ↦ by
+    filter_upwards [hconc (ε k) (hε k).1] with n hn
+    obtain ⟨y, hy, hlt⟩ := exists_lt_of_measure_lt_of_le_setIntegral (hc k)
+      ((measure_mono inter_subset_left).trans_lt (hεμ k)) hn
+    refine ⟨y, hy, lt_of_not_ge fun hgy ↦ ?_⟩
+    linarith [hM k n y hy.2 hgy, le_abs_self (M k)]
+  obtain ⟨φ, hφ, hφP⟩ := extraction_forall_of_eventually hev
+  choose y hy hgy using hφP
+  refine ⟨φ, hφ, y, fun k ↦ (hy k).2, ?_,
+    tendsto_atTop_mono (fun k ↦ (hgy k).le) tendsto_natCast_atTop_atTop⟩
+  rw [tendsto_iff_dist_tendsto_zero]
+  exact squeeze_zero (fun _ ↦ dist_nonneg) (fun k ↦ ((mem_ball.1 (hy k).1).trans (hε k).2).le)
+    tendsto_one_div_add_atTop_nhds_zero_nat
+
+/-- **Concentration points are exactly the blow-up points.** Let `Ω` be a set and `Z ⊆ Ω` a
+finite set of points of measure zero, each with a ball of finite measure. Let the densities `e n`
+concentrate energy at least `δ > 0` at every point of `Z`, and let the `g n` be uniformly bounded
+above on every compact subset of `Ω \ Z` and control the `e n`, in the sense that `e n` is bounded
+above wherever `g n` is, uniformly in `n`. Then `Z` is exactly the set of points of `Ω` near which
+the `g n` are not uniformly bounded above. So when the functions of
+`TauCeti.exists_strictMono_finset_forall_le_of_concentration` control its densities and its points
+have measure zero with balls of finite measure, the finite set it produces is determined by the
+subsequence it comes with. -/
+theorem coe_eq_setOf_forall_exists_lt_of_concentration
+    {g e : ℕ → X → ℝ} {Z : Finset X} (hδ : 0 < δ) (hZΩ : ↑Z ⊆ Ω)
+    (hz : ∀ z ∈ Z, μ {z} = 0) (hfin : ∀ z ∈ Z, ∃ R > 0, μ (ball z R) ≠ ⊤)
+    (hge : ∀ M, ∃ M', ∀ n, ∀ y ∈ Ω, g n y ≤ M → e n y ≤ M')
+    (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, e n y ∂μ)
+    (hbd : ∀ C, IsCompact C → C ⊆ Ω \ ↑Z → ∃ M, ∀ n, ∀ y ∈ C, g n y ≤ M) :
+    (↑Z : Set X) = {z ∈ Ω | ∀ ε > 0, ∀ M, ∃ n, ∃ y ∈ ball z ε ∩ Ω, M < g n y} := by
+  ext z
+  refine ⟨fun hzZ ↦ ⟨hZΩ hzZ, fun ε hε M ↦ ?_⟩, fun ⟨hzΩ, hunb⟩ ↦ ?_⟩
+  · obtain ⟨φ, -, y, hyΩ, hy, hgy⟩ :=
+      exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball hδ (hz z hzZ)
+        (hfin z hzZ) hge (hconc z hzZ)
+    obtain ⟨k, hk, hgk⟩ := ((hy.eventually (ball_mem_nhds z hε)).and
+      (hgy.eventually_gt_atTop M)).exists
+    exact ⟨φ k, y k, ⟨hk, hyΩ k⟩, hgk⟩
+  · -- Off `Z`, a convergent sequence of blow-up points together with its limit is a compact set
+    -- in `Ω \ Z` carrying a uniform bound.
+    by_contra hzZ
+    obtain ⟨ε₀, hε₀, hball⟩ := Metric.isOpen_iff.1 Z.finite_toSet.isClosed.isOpen_compl z hzZ
+    choose n y hy hgy using fun k : ℕ ↦ hunb (min ε₀ (1 / (k + 1))) (lt_min hε₀ (by positivity)) k
+    have hyz : Tendsto y atTop (𝓝 z) := by
+      rw [tendsto_iff_dist_tendsto_zero]
+      exact squeeze_zero (fun _ ↦ dist_nonneg)
+        (fun k ↦ ((mem_ball.1 (hy k).1).trans_le (min_le_right _ _)).le)
+        tendsto_one_div_add_atTop_nhds_zero_nat
+    have hsub : insert z (Set.range y) ⊆ Ω \ ↑Z := by
+      rintro _ (rfl | ⟨k, rfl⟩)
+      · exact ⟨hzΩ, hzZ⟩
+      · exact ⟨(hy k).2, fun h ↦
+          hball (mem_ball.2 ((mem_ball.1 (hy k).1).trans_le (min_le_left _ _))) h⟩
+    obtain ⟨M, hM⟩ := hbd _ hyz.isCompact_insert_range hsub
+    obtain ⟨k, hk⟩ := exists_nat_gt M
+    exact ((hM (n k) (y k) (Set.mem_insert_of_mem _ (Set.mem_range_self k))).trans_lt hk).not_gt
+      (hgy k)
 
 end TauCeti

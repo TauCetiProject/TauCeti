@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Extension and contraction away from an ideal contained in a subring
@@ -14,7 +15,8 @@ Let `S` be a subring of a commutative ring `R`, and let `C` be an ideal of `R` c
 in `S`. Extension and contraction are inverse for ideals coprime to `C`, and the inclusion
 induces isomorphisms of their quotient rings. In particular, extension preserves primality
 on this restricted family. Taking `C` to be the conductor compares ideals and residue rings
-of an order with those of its normalization.
+of an order with those of its normalization. That an ideal is coprime to `C` exactly when its
+contraction is coprime to the contraction of `C` holds more generally in any ring.
 
 The argument generalizes the monogenic conductor calculation in Mathlib's
 `comap_map_eq_map_adjoin_of_coprime_conductor` and `quotAdjoinEquivQuotMap` to arbitrary
@@ -30,10 +32,29 @@ public section
 
 namespace TauCeti
 
+section Ring
+
+variable {R : Type*} [Ring R] {S : Subring R} {C : Ideal R}
+
+/-- An ideal is coprime to an ideal contained in the subring if and only if their
+contractions are coprime. -/
+theorem comap_sup_comap_eq_top_iff (hC : (C : Set R) ⊆ S) {J : Ideal R} :
+    J.comap S.subtype ⊔ C.comap S.subtype = ⊤ ↔ J ⊔ C = ⊤ := by
+  refine ⟨fun h ↦ top_unique <| (Ideal.map_sup_eq_top_of_coprime_comap h).ge.trans <|
+    sup_le_sup_right Ideal.map_comap_le C, fun hJ ↦ ?_⟩
+  obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((Ideal.eq_top_iff_one _).mp hJ)
+  refine (Ideal.eq_top_iff_one _).mpr <|
+    Submodule.mem_sup.mpr ⟨1 - ⟨b, hC hb⟩, ?_, ⟨b, hC hb⟩, hb, sub_add_cancel _ _⟩
+  simpa [← eq_sub_of_add_eq hab] using ha
+
+end Ring
+
+section CommRing
+
 variable {R : Type*} [CommRing R] {S : Subring R} {C : Ideal R}
 
-/-- Multiplying an extended ideal by an element of an ideal contained in the subring
-lands back in the original ideal. -/
+/-- Multiplying an element of an extended ideal by an element of an ideal contained in the
+subring lands in the image of the original ideal. -/
 theorem mul_mem_image_of_mem_map_of_le
     (hC : (C : Set R) ⊆ S) {I : Ideal S} {c : R} (hc : c ∈ C)
     {x : R} (hx : x ∈ I.map S.subtype) : c * x ∈ S.subtype '' (I : Set S) := by
@@ -58,57 +79,25 @@ ambient ideal contained in the subring. -/
 theorem comap_map_of_coprime_comap (hC : (C : Set R) ⊆ S)
     {I : Ideal S} (hI : I ⊔ C.comap S.subtype = ⊤) :
     (I.map S.subtype).comap S.subtype = I := by
-  apply le_antisymm ?_ Ideal.le_comap_map
-  intro x hx
+  refine le_antisymm (fun x hx ↦ ?_) Ideal.le_comap_map
   obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((Ideal.eq_top_iff_one _).mp hI)
-  obtain ⟨y, hy, heq⟩ := mul_mem_image_of_mem_map_of_le hC
-    (Ideal.mem_comap.mp hb) (Ideal.mem_comap.mp hx)
-  have hxy : y = b * x := Subtype.ext heq
-  have hbx : b * x ∈ I := hxy ▸ hy
-  simpa [← add_mul, hab] using I.add_mem (I.mul_mem_right x ha) hbx
-
-/-- Extension preserves coprimality to an ambient ideal if the original ideal is coprime
-to its contraction. -/
-theorem map_sup_eq_top_of_coprime_comap
-    {I : Ideal S} (hI : I ⊔ C.comap S.subtype = ⊤) :
-    I.map S.subtype ⊔ C = ⊤ := by
-  have h := congrArg (Ideal.map S.subtype) hI
-  rw [Ideal.map_sup, Ideal.map_top] at h
-  exact top_unique (h ▸ sup_le_sup_left Ideal.map_comap_le _)
-
-/-- Contraction preserves coprimality to an ideal contained in the subring. -/
-theorem comap_sup_eq_top_of_le (hC : (C : Set R) ⊆ S)
-    {J : Ideal R} (hJ : J ⊔ C = ⊤) :
-    J.comap S.subtype ⊔ C.comap S.subtype = ⊤ := by
-  obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((Ideal.eq_top_iff_one _).mp hJ)
-  let b' : S := ⟨b, hC hb⟩
-  have ha' : ((1 - b' : S) : R) = a := by
-    simpa [b'] using (eq_sub_iff_add_eq.mpr hab).symm
-  apply (Ideal.eq_top_iff_one _).mpr
-  exact Submodule.mem_sup.mpr ⟨1 - b',
-    by simpa only [Ideal.mem_comap, Subring.subtype_apply, ha'] using ha,
-    b', hb, sub_add_cancel _ _⟩
+  obtain ⟨y, hy, hyx⟩ := mul_mem_image_of_mem_map_of_le hC hb hx
+  rw [← one_mul x, ← hab, add_mul, (Subtype.ext hyx.symm : b * x = y)]
+  exact I.add_mem (I.mul_mem_right x ha) hy
 
 /-- Extending a contracted ideal recovers it when it is coprime to an ideal contained
 in the subring. -/
 theorem map_comap_of_coprime (hC : (C : Set R) ⊆ S)
     {J : Ideal R} (hJ : J ⊔ C = ⊤) :
     (J.comap S.subtype).map S.subtype = J := by
-  apply le_antisymm Ideal.map_comap_le
-  intro x hx
+  refine le_antisymm Ideal.map_comap_le fun x hx ↦ ?_
   obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((Ideal.eq_top_iff_one _).mp hJ)
-  let a' : S := ⟨a, by
-    have : a = 1 - b := eq_sub_iff_add_eq.mpr hab
-    rw [this]
-    exact S.sub_mem S.one_mem (hC hb)⟩
-  let bx : S := ⟨b * x, hC (C.mul_mem_right x hb)⟩
-  have ha' : a' ∈ J.comap S.subtype := ha
-  have hbx : bx ∈ J.comap S.subtype := J.mul_mem_left b hx
-  have h := Ideal.add_mem ((J.comap S.subtype).map S.subtype)
-    (((J.comap S.subtype).map S.subtype).mul_mem_right x
-      (Ideal.mem_map_of_mem S.subtype ha'))
-    (Ideal.mem_map_of_mem S.subtype hbx)
-  simpa only [Subring.subtype_apply, a', bx, ← add_mul, hab, one_mul] using h
+  have haS : a ∈ S := eq_sub_of_add_eq hab ▸ S.sub_mem S.one_mem (hC hb)
+  rw [← one_mul x, ← hab, add_mul]
+  exact Ideal.add_mem _
+    (Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem S.subtype (x := ⟨a, haS⟩) ha))
+    (Ideal.mem_map_of_mem S.subtype (x := ⟨b * x, hC (C.mul_mem_right x hb)⟩)
+      (J.mul_mem_left b hx))
 
 /-- Every residue class modulo an ideal coprime to an ideal contained in the subring
 has a representative in the subring. -/
@@ -118,11 +107,8 @@ theorem surjective_quotient_mk_comp_of_coprime (hC : (C : Set R) ⊆ S)
   intro z
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective z
   obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((Ideal.eq_top_iff_one _).mp hJ)
-  refine ⟨⟨b * x, hC (C.mul_mem_right x hb)⟩, ?_⟩
-  have ha0 : Ideal.Quotient.mk J a = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr ha
-  have hb1 : Ideal.Quotient.mk J b = 1 := by
-    simpa [ha0] using congrArg (Ideal.Quotient.mk J) hab
-  simp only [RingHom.comp_apply, Subring.subtype_apply, map_mul, hb1, one_mul]
+  refine ⟨⟨b * x, hC (C.mul_mem_right x hb)⟩, Ideal.Quotient.eq.mpr ?_⟩
+  simpa [eq_sub_of_add_eq' hab, sub_mul] using J.mul_mem_right x ha
 
 /-- Inclusion induces an isomorphism on quotient rings for an ideal coprime to an ideal
 contained in the subring. -/
@@ -148,16 +134,12 @@ ambient ideal contained in the subring. -/
 theorem isPrime_map_iff_of_coprime_comap (hC : (C : Set R) ⊆ S)
     {I : Ideal S} (hI : I ⊔ C.comap S.subtype = ⊤) :
     (I.map S.subtype).IsPrime ↔ I.IsPrime := by
-  constructor
-  · intro h
-    have := Ideal.comap_isPrime S.subtype (I.map S.subtype)
-    rwa [comap_map_of_coprime_comap hC hI] at this
-  · intro h
-    have hcomap : ((I.map S.subtype).comap S.subtype).IsPrime := by
-      rwa [comap_map_of_coprime_comap hC hI]
-    let := hcomap
-    let e := quotientComapEquivOfCoprime hC (map_sup_eq_top_of_coprime_comap hI)
-    let : IsDomain (R ⧸ I.map S.subtype) := e.symm.toMulEquiv.isDomain _
-    exact (Ideal.Quotient.isDomain_iff_prime _).mp inferInstance
+  refine ⟨fun _ ↦ comap_map_of_coprime_comap hC hI ▸ Ideal.comap_isPrime S.subtype _,
+    fun h ↦ ?_⟩
+  rw [← comap_map_of_coprime_comap hC hI] at h
+  exact (Ideal.Quotient.isDomain_iff_prime _).mp <|
+    (quotientComapEquivOfCoprime hC (Ideal.map_sup_eq_top_of_coprime_comap hI)).symm.isDomain _
+
+end CommRing
 
 end TauCeti

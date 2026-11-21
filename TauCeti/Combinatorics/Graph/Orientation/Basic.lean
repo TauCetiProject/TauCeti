@@ -47,20 +47,25 @@ structure Orientation (G : Graph V E) where
   /-- The chosen head of an actual edge. -/
   head : G.edgeSet → G.vertexSet
   /-- The chosen tail and head are the two ends of the edge. -/
-  isLink (e : G.edgeSet) : G.IsLink e.1 (tail e).1 (head e).1
+  isLink (e : G.edgeSet) : G.IsLink e.val (tail e).val (head e).val
 
 namespace Orientation
 
-/-- Two orientations are equal when they choose the same tail and head for every edge. -/
+/-- Two orientations choosing the same tail for an edge also choose the same head. -/
+theorem head_eq_of_tail_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
+    (h : o₁.tail e = o₂.tail e) : o₁.head e = o₂.head e :=
+  Subtype.ext <| (o₁.isLink e).right_unique <| h ▸ o₂.isLink e
+
+/-- Two orientations are equal when they choose the same tail for every edge: the head is
+determined by the tail and the edge. -/
 @[ext]
-theorem ext {o₁ o₂ : Orientation G} (htail : ∀ e, o₁.tail e = o₂.tail e)
-    (hhead : ∀ e, o₁.head e = o₂.head e) : o₁ = o₂ := by
+theorem ext {o₁ o₂ : Orientation G} (htail : ∀ e, o₁.tail e = o₂.tail e) : o₁ = o₂ := by
   cases o₁ with
   | mk tail₁ head₁ hlink₁ =>
     cases o₂ with
     | mk tail₂ head₂ hlink₂ =>
       have htail' : tail₁ = tail₂ := funext htail
-      have hhead' : head₁ = head₂ := funext hhead
+      have hhead' : head₁ = head₂ := funext fun e ↦ head_eq_of_tail_eq (htail e)
       subst tail₂ head₂
       rfl
 
@@ -70,21 +75,12 @@ theorem edgeEnds_eq (o : Orientation G) (e : G.edgeSet) :
   G.edgeEnds_eq_iff_isLink e (o.tail e) (o.head e) |>.2 (o.isLink e)
 
 /-- The chosen tail is incident to its edge. -/
-theorem tail_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.1 (o.tail e).1 :=
+theorem tail_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.val (o.tail e).val :=
   (o.isLink e).inc_left
 
 /-- The chosen head is incident to its edge. -/
-theorem head_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.1 (o.head e).1 :=
+theorem head_inc (o : Orientation G) (e : G.edgeSet) : G.Inc e.val (o.head e).val :=
   (o.isLink e).inc_right
-
-/-- Two orientations choosing the same tail for an edge also choose the same head. -/
-theorem head_eq_of_tail_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
-    (h : o₁.tail e = o₂.tail e) : o₁.head e = o₂.head e :=
-  Subtype.ext <| (o₁.isLink e).right_unique <| h ▸ o₂.isLink e
-
-/-- Two orientations are equal when they choose the same tail for every edge. -/
-theorem ext_of_tail {o₁ o₂ : Orientation G} (h : ∀ e, o₁.tail e = o₂.tail e) : o₁ = o₂ :=
-  ext h fun _ ↦ head_eq_of_tail_eq (h _)
 
 /-- Two orientations choosing the same head for an edge also choose the same tail. -/
 theorem tail_eq_of_head_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
@@ -93,18 +89,18 @@ theorem tail_eq_of_head_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
 
 /-- Two orientations are equal when they choose the same head for every edge. -/
 theorem ext_of_head {o₁ o₂ : Orientation G} (h : ∀ e, o₁.head e = o₂.head e) : o₁ = o₂ :=
-  ext (fun _ ↦ tail_eq_of_head_eq (h _)) h
+  ext fun _ ↦ tail_eq_of_head_eq (h _)
 
 /-- The orientation choosing a prescribed incident vertex as the head of every edge; the tail is
 the other end, which is the head itself for a loop. -/
-noncomputable def ofHead (head : G.edgeSet → G.vertexSet) (h : ∀ e, G.Inc e.1 (head e).1) :
+noncomputable def ofHead (head : G.edgeSet → G.vertexSet) (h : ∀ e, G.Inc e.val (head e).val) :
     Orientation G where
   tail e := ⟨(h e).other, (h e).isLink_other.right_mem⟩
   head := head
   isLink e := (h e).isLink_other.symm
 
 @[simp]
-theorem ofHead_head (head : G.edgeSet → G.vertexSet) (h : ∀ e, G.Inc e.1 (head e).1)
+theorem ofHead_head (head : G.edgeSet → G.vertexSet) (h : ∀ e, G.Inc e.val (head e).val)
     (e : G.edgeSet) : (ofHead head h).head e = head e :=
   (rfl)
 
@@ -154,7 +150,8 @@ theorem reverse_head (o : Orientation G) (e : G.edgeSet) :
 
 @[simp]
 theorem reverse_reverse (o : Orientation G) : o.reverse.reverse = o := by
-  ext <;> rfl
+  ext
+  rfl
 
 theorem reverse_involutive : Function.Involutive (reverse (G := G)) :=
   reverse_reverse
@@ -177,7 +174,7 @@ theorem reverseEquiv_apply (G : Graph V E) (o : Orientation G) :
 
 /-- An edge is a loop at its chosen tail exactly when its chosen tail and head coincide. -/
 theorem tail_eq_head_iff_isLoopAt (o : Orientation G) (e : G.edgeSet) :
-    o.tail e = o.head e ↔ G.IsLoopAt e.1 (o.tail e).1 := by
+    o.tail e = o.head e ↔ G.IsLoopAt e.val (o.tail e).val := by
   rw [← isLink_self_iff]
   constructor
   · intro h
@@ -204,7 +201,7 @@ structure Hom (o : Orientation G) (x y : G.vertexSet) where
 
 /-- The underlying edge of an oriented arrow links its source and target. -/
 theorem Hom.isLink {o : Orientation G} {x y : G.vertexSet} (a : o.Hom x y) :
-    G.IsLink a.edge.1 x.1 y.1 := by
+    G.IsLink a.edge.val x.val y.val := by
   simpa only [a.tail_eq, a.head_eq] using o.isLink a.edge
 
 /-- Regard an actual edge as the arrow from its chosen tail to its chosen head. -/
@@ -242,7 +239,7 @@ theorem totalHomEquiv_symm_apply (o : Orientation G) (e : G.edgeSet) :
 
 /-- The edge identity determines an oriented arrow, including its endpoints. -/
 theorem totalHom_edge_val_injective (o : Orientation G) :
-    Function.Injective (fun a : o.TotalHom ↦ a.2.2.edge.1) :=
+    Function.Injective (fun a : o.TotalHom ↦ a.2.2.edge.val) :=
   Subtype.val_injective.comp o.totalHomEquiv.injective
 
 /-- Reversing an orientation reverses an arrow while retaining its edge identity. -/

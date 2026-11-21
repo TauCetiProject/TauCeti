@@ -148,7 +148,7 @@ theorem levelRaise_mem_qSupportedOnDvdSubmodule {N : ℕ} (M : ℕ)
       qSupportedOnDvdSubmodule N k d :=
   mem_qSupportedOnDvdSubmodule.mpr <|
     CuspForm.isSupportedOnDvd_qExpansion_levelRaise (one_mem_strictPeriods_Gamma1_map M)
-      (one_mem_strictPeriods_Gamma1_map N) (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g
+      (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g
 
 /-- **The range of `V_d` lies in the supported submodule.** Stated for the `ℂ`-linear map, which is
 the shape `TauCeti.cuspFormsOld` is assembled from, so the old subspace is contained in the

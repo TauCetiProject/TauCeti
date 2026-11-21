@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.Flow.TimeDependent
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Dynamics.FixedPoints.Defs
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # Periodic solutions of time-dependent vector fields
@@ -21,7 +22,10 @@ The results apply to Banach spaces whenever the suspended field is globally Lips
 hypothesis of `TauCeti.timeDependentFlow`. In particular they apply to the time-dependent
 Hamiltonian evolution by taking `v t x = omega.hamiltonianVectorField (H t) x`. The period is an
 arbitrary real number; taking it to be one gives the parametrized periodic trajectories used in
-Hamiltonian dynamics. No minimal-period or nondegeneracy assertion is made.
+Hamiltonian dynamics. No minimal-period assertion is made. A solution through an isolated fixed
+point of the return map, such as a nondegenerate one, is isolated among the periodic solutions: no
+other periodic solution starts close to it
+(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`).
 
 ## References
 
@@ -31,8 +35,8 @@ Hamiltonian dynamics. No minimal-period or nondegeneracy assertion is made.
 
 public section
 
-open Function
-open scoped NNReal
+open Filter Function
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -87,23 +91,23 @@ Periodicity is written pointwise to keep the evaluation simp lemmas in normal fo
 noncomputable def periodicSolutionEquivFixedPoints (hT : Periodic v T) (s : ℝ) :
     {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ ∀ t, y (t + T) = y t} ≃
       fixedPoints (timeDependentFlow v hv s (s + T)) where
-  toFun y := ⟨y.1 s, by
+  toFun y := ⟨y.val s, by
     rw [mem_fixedPoints, ← periodic_timeDependentFlow_iff hv hT]
-    have heq : (fun t ↦ timeDependentFlow v hv s t (y.1 s)) = y.1 :=
-      (funext (eq_timeDependentFlow v hv y.2.1 s)).symm
+    have heq : (fun t ↦ timeDependentFlow v hv s t (y.val s)) = y.val :=
+      (funext (eq_timeDependentFlow v hv y.property.1 s)).symm
     rw [heq]
-    exact y.2.2⟩
+    exact y.property.2⟩
   invFun x := ⟨fun t ↦ timeDependentFlow v hv s t x,
     (fun t ↦ hasDerivAt_timeDependentFlow v hv s t x),
-    (periodic_timeDependentFlow_iff hv hT s x).2 x.2⟩
-  left_inv y := Subtype.ext (funext (eq_timeDependentFlow v hv y.2.1 s)).symm
+    (periodic_timeDependentFlow_iff hv hT s x).2 x.property⟩
+  left_inv y := Subtype.ext (funext (eq_timeDependentFlow v hv y.property.1 s)).symm
   right_inv x := Subtype.ext (timeDependentFlow_self v hv s x)
 
 /-- The correspondence from periodic solutions to fixed points evaluates at the initial time. -/
 @[simp]
 theorem periodicSolutionEquivFixedPoints_apply (hT : Periodic v T) (s : ℝ)
     (y : {y : ℝ → E // (∀ t, HasDerivAt y (v t (y t)) t) ∧ ∀ t, y (t + T) = y t}) :
-    (periodicSolutionEquivFixedPoints hv hT s y : E) = y.1 s :=
+    (periodicSolutionEquivFixedPoints hv hT s y : E) = y.val s :=
   (rfl)
 
 /-- The periodic solution associated to a fixed point is its evolution trajectory. -/
@@ -113,5 +117,26 @@ theorem periodicSolutionEquivFixedPoints_symm_apply (hT : Periodic v T) (s : ℝ
     ((periodicSolutionEquivFixedPoints hv hT s).symm x).val t =
       timeDependentFlow v hv s t x :=
   (rfl)
+
+/-- **Periodic solutions through isolated fixed points are isolated.** If the value `x s` of a
+solution `x` is isolated among the fixed points of the return map from time `s` to time `s + T`,
+then every `T`-periodic solution `y` with `y s` close enough to `x s` is `x` itself. For a
+nondegenerate fixed point the isolation is
+`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`. -/
+theorem exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt {x : ℝ → E}
+    (hx : ∀ t, HasDerivAt x (v t (x t)) t) {s : ℝ}
+    (hiso : ∀ᶠ p in 𝓝[≠] x s, ¬IsFixedPt (timeDependentFlow v hv s (s + T)) p) :
+    ∃ ε > 0, ∀ y : ℝ → E, (∀ t, HasDerivAt y (v t (y t)) t) → Periodic y T →
+      dist (y s) (x s) < ε → y = x := by
+  obtain ⟨ε, hε, h⟩ := Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hiso)
+  refine ⟨ε, hε, fun y hy hyT hyx ↦ ?_⟩
+  -- The value `y s` is a fixed point of the return map close to `x s`, hence equal to it.
+  have hfix : IsFixedPt (timeDependentFlow v hv s (s + T)) (y s) := by
+    rw [IsFixedPt, ← eq_timeDependentFlow v hv hy s (s + T), hyT s]
+  have hys : y s = x s := by
+    by_contra hne
+    exact h hyx hne hfix
+  funext t
+  rw [eq_timeDependentFlow v hv hy s t, eq_timeDependentFlow v hv hx s t, hys]
 
 end TauCeti

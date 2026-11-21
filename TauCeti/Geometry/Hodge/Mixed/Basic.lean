@@ -41,9 +41,7 @@ Tate structure `ℤ(m)` an explicit rank-one inhabitant.
 ## References
 
 Deligne, *Théorie de Hodge II*, 1.2.10 and 2.3.5; Peters–Steenbrink, *Mixed Hodge Structures*,
-Ch. 3. The signature of `MixedHodgeStructure` is adapted from the proposed definitions in
-[`HodgeStructures/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/HodgeStructures/Suggested.lean),
-whose definitive mathematical specification is the accompanying Hodge structures roadmap.
+Ch. 3.
 -/
 
 public section
@@ -154,9 +152,9 @@ theorem mem_conjF_iff (p : ℤ) (x : Vℂ) : x ∈ mhs.conjF p ↔ latticeConj h
 
 /-- Conjugating a Hodge filtration step twice recovers it. -/
 @[simp]
-theorem conjF_conjF (p : ℤ) : (mhs.conjF p).map (latticeConj hℂ) = mhs.F p := by
+theorem map_conjF (p : ℤ) : (mhs.conjF p).map (latticeConj hℂ) = mhs.F p := by
   rw [← latticeConjugation_toLinearMap]
-  exact (latticeConjugation hℂ).conjFiltration_conjFiltration mhs.F p
+  exact (latticeConjugation hℂ).map_conjFiltration mhs.F p
 
 /-- The conjugate Hodge filtration is exhaustive wherever the Hodge filtration is. -/
 theorem conjF_eq_top_of_F_eq_top {p : ℤ} (hp : mhs.F p = ⊤) : mhs.conjF p = ⊤ :=

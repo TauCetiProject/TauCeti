@@ -20,35 +20,35 @@ this file gives it the corresponding quotient topology, together with the API th
 topology is used through: the quotient map is continuous, and a map out of `Sym α n` is continuous
 exactly when its composition with the quotient map is.
 
-The quotient map is `TauCeti.Sym.ofFn` of `TauCeti/Data/Sym/Basic.lean`, which reads an ordered
+The quotient map is `Sym.ofFn` of `TauCeti/Data/Sym/Basic.lean`, which reads an ordered
 tuple as an unordered one; the `Fin n → α` form is the one that carries a product topology, so it
 is what the quotient topology is defined against. Its surjectivity and the description
-`TauCeti.Sym.ofFn_eq_ofFn_iff` of its fibres as the orbits of the permutation action are the two
+`Sym.ofFn_eq_ofFn_iff` of its fibres as the orbits of the permutation action are the two
 facts about it used below.
 
 ## Main declarations
 
-* `TauCeti.Sym.preimage_image_ofFn`: the saturation of a set of ordered tuples under `ofFn` is the
+* `Sym.preimage_image_ofFn`: the saturation of a set of ordered tuples under `ofFn` is the
   union of its reindexings.
-* `TauCeti.Sym.instTopologicalSpace`: the quotient topology on `Sym α n`, coinduced along `ofFn`.
-* `TauCeti.Sym.isQuotientMap_ofFn`, `TauCeti.Sym.continuous_ofFn` and
-  `TauCeti.Sym.continuous_iff_comp_ofFn`: the resulting quotient-map API.
-* `TauCeti.Sym.isOpenMap_ofFn`, `TauCeti.Sym.isClosedMap_ofFn` and
-  `TauCeti.Sym.isOpenQuotientMap_ofFn`: the quotient map is open and closed, the permutation group
+* `Sym.instTopologicalSpace`: the quotient topology on `Sym α n`, coinduced along `ofFn`.
+* `Sym.isQuotientMap_ofFn`, `Sym.continuous_ofFn` and
+  `Sym.continuous_iff_comp_ofFn`: the resulting quotient-map API.
+* `Sym.isOpenMap_ofFn`, `Sym.isClosedMap_ofFn` and
+  `Sym.isOpenQuotientMap_ofFn`: the quotient map is open and closed, the permutation group
   being finite.
-* `TauCeti.Sym.continuous_map`, `TauCeti.Sym.isOpenMap_map` and
-  `TauCeti.Sym.isOpenEmbedding_map`: the `n`-th symmetric power of a continuous, open, or open
+* `Sym.continuous_map`, `Sym.isOpenMap_map` and
+  `Sym.isOpenEmbedding_map`: the `n`-th symmetric power of a continuous, open, or open
   embedding map is again one; in particular the symmetric power of an open subspace is an open
   subspace of the symmetric power.
-* `TauCeti.Sym.isOpen_setOf_forall_mem`: the tuples with all their points in an open set form an
+* `Sym.isOpen_setOf_forall_mem`: the tuples with all their points in an open set form an
   open set.
-* `TauCeti.Sym.continuous_append` and `TauCeti.Sym.isOpenMap_append`: concatenation of symmetric
+* `Sym.continuous_append` and `Sym.isOpenMap_append`: concatenation of symmetric
   powers is continuous and open.
-* `TauCeti.Sym.instCompactSpace` and `TauCeti.Sym.instT2Space`: the symmetric power of a compact
+* `Sym.instCompactSpace` and `Sym.instT2Space`: the symmetric power of a compact
   space is compact, and that of a Hausdorff space is Hausdorff.
 
-Lane F4.1 of the analytic Heegaard Floer roadmap needs `Sym^g(Σ)` as a space before it can be
-given a complex structure; this file supplies the underlying topology, and
+The symmetric power `Sym^g(Σ)` of a surface must be a space before it can be given a complex
+structure; this file supplies the underlying topology, and
 `TauCeti/Analysis/Polynomial/SymmetricPower.lean` identifies it, over an algebraically closed
 normed field, with affine space through the elementary symmetric functions.
 -/
@@ -57,15 +57,13 @@ public section
 
 open Topology
 
-namespace TauCeti
-
 namespace Sym
 
 variable {α β : Type*} {m n : ℕ}
 
 /-! ### The fibres of the quotient map -/
 
-/-- The saturation of a set of ordered tuples under `ofFn` is the union of its reindexings. -/
+/-- The saturation of a set of ordered tuples under `Sym.ofFn` is the union of its reindexings. -/
 theorem preimage_image_ofFn (s : Set (Fin n → α)) :
     ofFn ⁻¹' (ofFn '' s) = ⋃ σ : Equiv.Perm (Fin n), (· ∘ σ) ⁻¹' s := by
   ext g
@@ -83,7 +81,7 @@ variable [TopologicalSpace α] [TopologicalSpace β]
 
 /-- The `n`-th symmetric power of a topological space carries the quotient topology of the
 permutation action on ordered `n`-tuples, presented as the topology coinduced along
-`TauCeti.Sym.ofFn`. -/
+`Sym.ofFn`. -/
 instance instTopologicalSpace : TopologicalSpace (Sym α n) :=
   .coinduced ofFn inferInstance
 
@@ -92,7 +90,7 @@ instance instTopologicalSpace : TopologicalSpace (Sym α n) :=
 theorem continuous_ofFn : Continuous (ofFn : (Fin n → α) → Sym α n) :=
   continuous_coinduced_rng
 
-/-- `ofFn` presents `Sym α n` as a topological quotient of `Fin n → α`. -/
+/-- `Sym.ofFn` presents `Sym α n` as a topological quotient of `Fin n → α`. -/
 theorem isQuotientMap_ofFn : IsQuotientMap (ofFn : (Fin n → α) → Sym α n) :=
   ⟨⟨rfl⟩, ofFn_surjective⟩
 
@@ -199,5 +197,3 @@ instance instT2Space [T2Space α] : T2Space (Sym α n) := by
     isClosed_eq ((Pi.continuous_precomp σ).comp continuous_fst) continuous_snd
 
 end Sym
-
-end TauCeti

@@ -58,7 +58,7 @@ namespace TauCeti.LSPath
 open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M}
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
 /-- **Reflecting a rising window of a linked list.** Let `[k₀, j₁]` be a window of entries of a
 linked list along which the heights `⟨τ λ, αᵢ^∨⟩` of the directions are positive, with
@@ -124,7 +124,6 @@ private noncomputable def lowerList (i : b.support) (l : List (P.weylGroup × �
       (fun p ↦ ((weylCoxeterSystem P b).simple i * p.1, p.2)) ++
     (τ, (1 - θ) * d) :: l.drop (j₁ + 1)
 
-omit [P.flip.IsReduced] in
 private theorem nonneg_of_mem_lowerList (i : b.support) {l : List (P.weylGroup × ℚ)}
     (hl : ∀ p ∈ l, 0 ≤ p.2) {k₀ j₁ : ℕ} {τ : P.weylGroup} {d θ : ℚ} (hd : 0 ≤ d) (hθ₀ : 0 ≤ θ)
     (hθ₁ : θ ≤ 1) {p : P.weylGroup × ℚ} (hp : p ∈ lowerList b i l k₀ j₁ τ d θ) : 0 ≤ p.2 := by
@@ -137,7 +136,6 @@ private theorem nonneg_of_mem_lowerList (i : b.support) {l : List (P.weylGroup �
   · exact mul_nonneg (by linarith) hd
   · exact hl p (List.mem_of_mem_drop hp)
 
-omit [P.flip.IsReduced] in
 private theorem sum_map_snd_lowerList (i : b.support) {l : List (P.weylGroup × ℚ)} {k₀ j₁ : ℕ}
     (hj₁ : j₁ < l.length) (hk₀j₁ : k₀ ≤ j₁) (θ : ℚ) :
     ((lowerList b i l k₀ j₁ l[j₁].1 l[j₁].2 θ).map Prod.snd).sum = (l.map Prod.snd).sum := by
@@ -264,10 +262,10 @@ private theorem linked_lowerList (hlam : lam ∈ dominantChamber P b)
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V]
 
-omit [P.flip.IsReduced] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 /-- The reflection `s = Module.preReflection (f αᵢ) F`, for a form `F` inducing `⟨-, αᵢ^∨⟩`,
 sends the segment `d • f (τ λ)` to `d • f ((sᵢ τ) λ)`. -/
-private theorem preReflection_smul_apply (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
+theorem preReflection_smul_apply (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (d : 𝕜) (w : P.weylGroup) :
     Module.preReflection (f (P.root i)) F (d • f (w • lam)) =
       d • f (((weylCoxeterSystem P b).simple i * w) • lam) := by
@@ -294,34 +292,29 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
       PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) = some (PLPath.ofSegments 𝕜
         ((lowerList b i π.dirDurations k₀ j₁ π.dirDurations[j₁].1 π.dirDurations[j₁].2 θ).map
           fun p ↦ (p.2 : 𝕜) • f (p.1 • lam))) := by
-  obtain ⟨k₀, j₁', θ', hk₀j₁, hθpos', hθle', hmin, hrise, hcross, -, hlow⟩ :=
+  obtain ⟨k₀, j₁', θ, hk₀j₁, hθpos, hθle, hmin, hrise, hcross, -, hlow⟩ :=
     π.exists_lower_toPLPath_eq hlam f i F hF (f (P.root i)) h1
   obtain ⟨z, hz⟩ := π.exists_minHeight_eq_intCast hlam f i F hF
   have hminH : (π.toPLPath 𝕜 f).minHeight F =
       PLPath.listMinHeight F (π.dirDurations.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)) := by
     rw [toPLPath_def, PLPath.minHeight_ofSegments, map_snd_timed]
   rw [map_snd_timed] at hmin hrise hcross hlow
-  set D := π.dirDurations with hD
+  set D := π.dirDurations
   set seg : P.weylGroup × ℚ → V := fun p ↦ (p.2 : 𝕜) • f (p.1 • lam) with hseg
-  set H : P.weylGroup → ℚ := fun w ↦ (P.coroot' i (w • lam) : ℚ) with hH
+  set H : P.weylGroup → ℚ := fun w ↦ (P.coroot' i (w • lam) : ℚ)
   set hgt : ℕ → ℚ := fun k ↦ ((D.take k).map fun p ↦ p.2 * H p.1).sum with hhgt
-  set cum : ℕ → ℚ := fun k ↦ ((D.take k).map Prod.snd).sum with hcum
   have hHdef : ∀ w, H w = (P.coroot' i (w • lam) : ℚ) := fun _ ↦ rfl
   set j₁ : ℕ := (j₁' : ℕ) with hj₁
   have hlen : D.length = π.length + 1 := length_dirDurations π
-  have hj₁lt : j₁ < D.length := by rw [hlen]; exact j₁'.2
-  set τ := (π.dir j₁').1 with hτ
+  have hj₁lt : j₁ < D.length := by rw [hlen]; exact j₁'.isLt
+  set τ := (π.dir j₁').val with hτ
   set d := π.duration j₁' with hd
   have hDj₁ : D[j₁] = (τ, d) := by rw [getElem_dirDurations]
   have hdpos : ∀ k (hk : k < D.length), 0 < D[k].2 := fun k hk ↦ by
     rw [getElem_dirDurations]; exact π.duration_pos _
   -- Heights of the realization at the vertices are the rational heights of the encoding.
-  have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) := by
-    intro k
-    simp only [hgt, ← List.map_take, map_list_sum, List.map_map, Rat.cast_list_sum]
-    congr 1
-    refine List.map_congr_left fun p _ ↦ ?_
-    simp [seg, H, hF]
+  have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) :=
+    apply_sum_take_map_smul D f F (P.coroot' i) hF
   have hgt_succ : ∀ k (hk : k < D.length), hgt (k + 1) = hgt k + D[k].2 * H D[k].1 := by
     intro k hk
     simp only [hgt, List.map_take]
@@ -343,18 +336,10 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
     have := hposH j₁ hj₁lt hk₀j₁ le_rfl
     rw [hDj₁] at this
     exact mul_pos (by rw [hd]; exact π.duration_pos _) this
-  set θ : ℚ := (z + 1 - hgt j₁) / (d * H τ) with hθ
-  have hθd : θ * (d * H τ) = z + 1 - hgt j₁ := div_mul_cancel₀ _ hdH.ne'
-  have hθ' : θ' = θ := by
-    have hc := hcross
-    rw [hHF, hz, hFseg] at hc
-    have hc' : θ' * ((d * H τ : ℚ) : 𝕜) = ((z + 1 - hgt j₁ : ℚ) : 𝕜) := by
-      push_cast at hc ⊢
-      linear_combination hc
-    rw [hθ, Rat.cast_div, eq_div_iff (by exact_mod_cast hdH.ne'), hc']
-  rw [hθ'] at hθpos' hθle' hlow
-  have hθpos : 0 < θ := by exact_mod_cast hθpos'
-  have hθle : θ ≤ 1 := by exact_mod_cast hθle'
+  have hθd : θ * (d * H τ) = z + 1 - hgt j₁ := by
+    rw [hHF, hz, hFseg] at hcross
+    have hc : hgt j₁ + θ * (d * H τ) = z + 1 := by exact_mod_cast hcross
+    linarith
   -- The heights strictly between `k₀` and `j₁` lie strictly between `z` and `z + 1`.
   have hmono : ∀ m k, k₀ ≤ k → k + m ≤ j₁ + 1 → hgt k ≤ hgt (k + m) := by
     intro m
@@ -381,36 +366,24 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
     have := hgt_succ k hk
     rw [hkk, hgtk₀] at this
     exact nonpos_of_mul_nonpos_right (by linarith) (hdpos k hk)
-  -- Heights at breaks are congruent to `a_k ⟨τ_k λ, αᵢ^∨⟩` modulo integers.
-  have hcong : ∀ k (hk : k < D.length), ∃ m : ℤ, hgt k - cum k * H D[k].1 = m := fun k hk ↦
-    π.linked_dirDurations.exists_sum_take_sub_mul_eq_intCast hlam (P.coroot' i) hk
   refine ⟨k₀, j₁, hj₁lt, θ, hk₀j₁, hθpos.le, hθle, fun k hk hk₀ hkj ↦ ?_, fun k hk hk₀ hkj ↦ ?_,
     fun k hk hkk ↦ ?_, ?_, ?_⟩
   · have := hposH k hk hk₀ hkj
     rw [hHdef] at this
     exact_mod_cast this
   · -- The height at the break is strictly between the integers `z` and `z + 1`.
-    rintro ⟨m, hm⟩
-    obtain ⟨m', hm'⟩ := hcong k hk
     obtain ⟨h₁, h₂⟩ := hbetween k hk₀ hkj
-    have hk' : hgt k = ((m' + m : ℤ) : ℚ) := by
-      simp only [H] at hm'
-      push_cast
-      linarith
-    rw [hk'] at h₁ h₂
-    have h₁' : z < m' + m := by exact_mod_cast h₁
-    have h₂' : m' + m < z + 1 := by exact_mod_cast h₂
-    omega
+    exact π.linked_dirDurations.not_exists_sum_take_mul_eq_intCast hlam (P.coroot' i) hk h₁ h₂
   · have := hleftH k hk hkk
     rw [hHdef] at this
     exact_mod_cast this
   · -- The height at the cut is the integer `z + 1`.
-    obtain ⟨m, hm⟩ := hcong j₁ hj₁lt
-    refine ⟨z + 1 - m, ?_⟩
-    rw [hDj₁] at hm ⊢
-    simp only [H] at hm hθd
-    push_cast
-    linear_combination hθd - hm
+    have hcut : hgt j₁ + θ * (D[j₁].2 * H D[j₁].1) = ((z + 1 : ℤ) : ℚ) := by
+      rw [hDj₁]
+      push_cast
+      linear_combination hθd
+    exact π.linked_dirDurations.exists_sum_take_add_mul_mul_eq_intCast hlam (P.coroot' i) hj₁lt θ
+      hcut
   · rw [hlow, hDj₁]
     congr 2
     have hσ : ∀ p : P.weylGroup × ℚ,

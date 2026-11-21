@@ -258,7 +258,7 @@ lemma d_ιTwistedChainComplex_simplex₁_apply {x y : X} (γ : Path x y)
 
 /-- Parallel transport along a path identifies the corresponding fibre classes in zeroth
 homology. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma map_ιTwistedHomology₀ {x y : FundamentalGroupoid X} (p : x ⟶ y) :
     L.map p ≫ ιTwistedHomology₀ L y.as = ιTwistedHomology₀ L x.as := by
   induction p using Path.Homotopic.Quotient.ind with
@@ -387,5 +387,30 @@ lemma twistedHomology₀IsoColimit_hom_naturality
   erw [ιTwistedHomology₀_isoColimit_hom K (FundamentalGroupoid.mk x),
     ιTwistedHomology₀_isoColimit_hom_assoc L (FundamentalGroupoid.mk x)]
   simp
+
+/-- A chain supported on the singular `1`-simplex of a path only has nonzero coefficients on
+simplices whose image lies in the image of the path. -/
+lemma range_simplexMap_subset_range_of_ne_zero_simplex₁ {x y : X} (q : Path x y)
+    {σ : (TopCat.toSSet.obj X) _⦋1⦌}
+    {a : L.obj (initialVertex (simplex₁ q.toContinuousMap))}
+    (hσ : (twistedChainComplexCoeff L σ).hom
+      ((ιTwistedChainComplex L 1 (simplex₁ q.toContinuousMap)).hom a) ≠ 0) :
+    Set.range (simplexMap σ) ⊆ Set.range q := by
+  obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
+  rintro _ ⟨p, rfl⟩
+  -- `simplexMap` evaluates the singular simplex at the unlifted point.
+  exact ⟨_, (congr($(toSSetObjEquiv_simplex₁ _) p.down)).symm⟩
+
+/-- A chain supported on the singular vertex at a point of a path only has nonzero coefficients on
+simplices whose image lies in the image of the path. -/
+lemma range_simplexMap_subset_range_of_ne_zero_vertex {x y : X} (q : Path x y)
+    {σ : (TopCat.toSSet.obj X) _⦋0⦌}
+    {a : L.obj (initialVertex (TopCat.toSSetObj₀Equiv.symm x))}
+    (hσ : (twistedChainComplexCoeff L σ).hom
+      ((ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm x)).hom a) ≠ 0) :
+    Set.range (simplexMap σ) ⊆ Set.range q := by
+  obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
+  rintro _ ⟨_, rfl⟩
+  exact ⟨0, q.source⟩
 
 end TauCeti.LocalCoefficientSystem

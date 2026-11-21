@@ -175,6 +175,27 @@ theorem rowFiniteIndexGrading_le_rowFiniteTotalGrading (p n : ℤ) :
     rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteTotalGrading ℳ ind n :=
   inf_le_right
 
+/-- Extending a family of coefficients on the generators of index `p` by zero preserves the total
+degree. -/
+theorem mapDomain_subtypeVal_mem_rowFiniteTotalGrading {p n : ℤ} {f : {x // ind x = p} →₀ M}
+    (hf : f ∈ rowFiniteTotalGrading ℳ (fun x : {x // ind x = p} ↦ ind x) n) :
+    f.mapDomain Subtype.val ∈ rowFiniteTotalGrading ℳ ind n := by
+  rw [mem_rowFiniteTotalGrading_iff] at hf ⊢
+  intro x
+  by_cases hx : ind x = p
+  · rw [show x = ((⟨x, hx⟩ : {x // ind x = p}) : P) from rfl,
+      Finsupp.mapDomain_apply_of_injective Subtype.val_injective]
+    exact hf _
+  · rw [Finsupp.mapDomain_of_notMem_range _ _ (by rintro ⟨y, rfl⟩; exact hx y.property)]
+    exact zero_mem _
+
+/-- A family of coefficients on the generators of index `p`, extended by zero, lies in the stage
+of index `p` of the index filtration. -/
+theorem mapDomain_subtypeVal_mem_rowFiniteIndexFiltration {p : ℤ} (f : {x // ind x = p} →₀ M) :
+    f.mapDomain Subtype.val ∈ rowFiniteIndexFiltration (R := R) ind p :=
+  (mem_rowFiniteIndexFiltration_iff ind).2 fun _ hx ↦
+    Finsupp.mapDomain_of_notMem_range _ _ (by rintro ⟨z, rfl⟩; exact hx.ne' z.property)
+
 /-- For cohomologically nonpositive coefficients, a vector of total degree `n` is carried by
 generators of index at most `-n`. -/
 theorem rowFiniteTotalGrading_le_rowFiniteIndexFiltration (hℳ : ∀ k, 0 < k → ℳ k = ⊥) (n : ℤ) :
@@ -368,10 +389,10 @@ theorem isZero_rowFiniteIndexGradedPieceComplex_X (hℳ : ∀ k, 0 < k → ℳ k
   refine ⟨fun f g ↦ (rowFiniteIndexGradedPieceComplexXEquiv hM p n).injective ?_⟩
   ext x
   have hf := (mem_rowFiniteTotalGrading_iff ℳ _).mp
-    (rowFiniteIndexGradedPieceComplexXEquiv hM p n f).2 x
+    (rowFiniteIndexGradedPieceComplexXEquiv hM p n f).property x
   have hg := (mem_rowFiniteTotalGrading_iff ℳ _).mp
-    (rowFiniteIndexGradedPieceComplexXEquiv hM p n g).2 x
-  rw [x.2, hℳ _ hpn, Submodule.mem_bot] at hf hg
+    (rowFiniteIndexGradedPieceComplexXEquiv hM p n g).property x
+  rw [x.property, hℳ _ hpn, Submodule.mem_bot] at hf hg
   rw [hf, hg]
 
 end GradedPiece
@@ -389,20 +410,9 @@ include hm
 generators of index less than `ind x`. -/
 theorem coefficientDifferential_single_sub_mem (x : P) (α : M) :
     m.coefficientDifferential hM (Finsupp.single x α) - Finsupp.single x (dM α) ∈
-      rowFiniteIndexFiltration (R := R) ind (ind x - 1) := by
-  classical
-  induction α using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | @homogeneous q α =>
-    rw [m.coefficientDifferential_single hM x α.2, add_sub_cancel_left]
-    refine Submodule.smul_of_tower_mem _ _ (Submodule.finsuppSum_mem _ _ _ _ fun y hy ↦ ?_)
-    have hyx : ind y < ind x := lt_of_not_ge fun h ↦ hy (hm x y h)
-    rw [mem_rowFiniteIndexFiltration_iff]
-    intro z hz
-    exact Finsupp.single_eq_of_ne (by rintro rfl; omega)
-  | add α β hα hβ =>
-    rw [Finsupp.single_add, map_add, map_add, Finsupp.single_add, add_sub_add_comm]
-    exact add_mem hα hβ
+      rowFiniteIndexFiltration (R := R) ind (ind x - 1) :=
+  (mem_rowFiniteIndexFiltration_iff ind).mpr fun z hz ↦
+    m.coefficientDifferential_single_sub_apply_of_m_eq_zero hM x α (hm x z (by omega))
 
 /-- On a vector carried by generators of index at most `p`, the twisting part of the coefficient
 differential is carried by generators of index at most `p - 1`. -/
@@ -444,10 +454,9 @@ theorem coefficientDifferential_mem_rowFiniteIndexFiltration {p : ℤ} {f : P �
 the coefficient differential of the module. -/
 theorem coefficientDifferential_apply_of_eq {p : ℤ} {f : P →₀ M}
     (hf : f ∈ rowFiniteIndexFiltration (R := R) ind p) {x : P} (hx : ind x = p) :
-    m.coefficientDifferential hM f x = dM (f x) := by
-  have h := (mem_rowFiniteIndexFiltration_iff ind).mp
-    (m.coefficientDifferential_sub_mem_rowFiniteIndexFiltration hM hm hf) x (by omega)
-  simpa [sub_eq_zero] using h
+    m.coefficientDifferential hM f x = dM (f x) :=
+  m.coefficientDifferential_apply_of_forall_m_eq_zero hM fun y hy ↦ hm y x <| hx ▸
+    le_of_not_gt fun h ↦ hy ((mem_rowFiniteIndexFiltration_iff ind).mp hf y h)
 
 /-- The coefficient differential carries the degree-`n` part of `F_p` into degree `n + 1`. -/
 theorem coefficientDifferential_mem_rowFiniteIndexGrading {p n : ℤ} {f : P →₀ M}
@@ -558,7 +567,7 @@ theorem mem_range_indexSubobject_arrow_f_iff (p n : ℤ)
   rw [indexSubobject_eq_mk, Subobject.range_mk_arrow_f_hom]
   exact (mem_range_gradedCochainComplexInclusion_f_iff _ n f).trans <|
     mem_rowFiniteIndexGrading_iff.trans <| and_iff_left <|
-      (mem_rowFiniteTotalGrading_iff ℳ ind).mp (m.coefficientCochainComplexXEquiv hM n f).2
+      (mem_rowFiniteTotalGrading_iff ℳ ind).mp (m.coefficientCochainComplexXEquiv hM n f).property
 
 /-- **The index filtration is exhaustive**, with no finiteness hypothesis on the generators:
 every vector lies in some stage. -/
@@ -580,7 +589,7 @@ theorem indexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) :
   refine Subobject.mk_eq_bot_iff_zero.mpr (HomologicalComplex.hom_ext _ _ fun n ↦ ?_)
   ext f : 2
   have hf := rowFiniteIndexGrading_le_rowFiniteIndexFiltration p n
-    (m.indexCochainComplexXEquiv hM hm p n f).2
+    (m.indexCochainComplexXEquiv hM hm p n f).property
   rw [rowFiniteIndexFiltration_eq_bot ind hp, Submodule.mem_bot] at hf
   apply (m.coefficientCochainComplexXEquiv hM n).injective
   apply Subtype.ext
@@ -612,7 +621,7 @@ noncomputable def indexCochainComplexProj (p : ℤ) :
           Submodule.inclusion (rowFiniteIndexGrading_le_rowFiniteIndexFiltration p n)).codRestrict
         _ fun f ↦ (mem_rowFiniteTotalGrading_iff ℳ _).mpr fun x ↦ by
           simpa only [LinearMap.comp_apply, rowFiniteIndexProjection_apply,
-            Submodule.coe_inclusion] using (mem_rowFiniteIndexGrading_iff.mp f.2).2 x) ∘ₗ
+            Submodule.coe_inclusion] using (mem_rowFiniteIndexGrading_iff.mp f.property).2 x) ∘ₗ
         (m.indexCochainComplexXEquiv hM hm p n).toLinearMap)
   comm' i j hij := by
     obtain rfl : i + 1 = j := hij
@@ -625,14 +634,14 @@ noncomputable def indexCochainComplexProj (p : ℤ) :
       Submodule.coe_inclusion, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply]
     exact (m.coefficientDifferential_apply_of_eq hM hm
       (rowFiniteIndexGrading_le_rowFiniteIndexFiltration p i
-        (m.indexCochainComplexXEquiv hM hm p i f).2) x.2).symm
+        (m.indexCochainComplexXEquiv hM hm p i f).property) x.property).symm
 
 @[simp]
 theorem indexCochainComplexProj_f_apply (p n : ℤ) (f : (m.indexCochainComplex hM hm p).X n) :
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n
         (((m.indexCochainComplexProj hM hm p).f n).hom f) : {x // ind x = p} →₀ M) =
       rowFiniteIndexProjection ind p ⟨_, rowFiniteIndexGrading_le_rowFiniteIndexFiltration p n
-        (m.indexCochainComplexXEquiv hM hm p n f).2⟩ := by
+        (m.indexCochainComplexXEquiv hM hm p n f).property⟩ := by
   simp only [indexCochainComplexProj, ModuleCat.hom_ofHom, LinearMap.comp_apply,
     LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, LinearMap.codRestrict_apply,
     Submodule.inclusion_apply]
@@ -645,8 +654,9 @@ theorem indexCochainComplexMap_comp_proj (p : ℤ) :
   apply (rowFiniteIndexGradedPieceComplexXEquiv hM (p + 1) n).injective
   apply Subtype.ext
   ext x
-  simpa using (mem_rowFiniteIndexGrading_iff.mp (m.indexCochainComplexXEquiv hM hm p n f).2).1 x
-    (x.2.symm ▸ lt_add_one p)
+  simpa using (mem_rowFiniteIndexGrading_iff.mp (m.indexCochainComplexXEquiv hM hm p n
+      f).property).1 x
+    (x.property.symm ▸ lt_add_one p)
 
 /-- The short complex `F_p ⟶ F_{p+1} ⟶ ⊕_{ind x = p + 1} ℳ` of the index filtration, whose second
 map restricts to the generators of index `p + 1`. -/
@@ -663,7 +673,7 @@ theorem surjective_indexCochainComplexProj_f (p n : ℤ) :
   intro g
   set g' := (rowFiniteIndexGradedPieceComplexXEquiv hM p n g : {x // ind x = p} →₀ M)
   have hg := (mem_rowFiniteTotalGrading_iff ℳ _).mp
-    (rowFiniteIndexGradedPieceComplexXEquiv hM p n g).2
+    (rowFiniteIndexGradedPieceComplexXEquiv hM p n g).property
   have hf : g'.extendDomain ∈ rowFiniteIndexGrading ℳ ind p n := by
     refine mem_rowFiniteIndexGrading_iff.mpr ⟨fun x hx ↦ ?_, fun x ↦ ?_⟩
     · simp [Finsupp.extendDomain_apply, hx.ne']
@@ -673,7 +683,7 @@ theorem surjective_indexCochainComplexProj_f (p n : ℤ) :
   refine ⟨(m.indexCochainComplexXEquiv hM hm p n).symm ⟨_, hf⟩,
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n).injective (Subtype.ext ?_)⟩
   ext x
-  simp [g', Finsupp.extendDomain_apply, x.2]
+  simp [g', Finsupp.extendDomain_apply, x.property]
 
 /-- A vector of `F_{p+1}` vanishing on the generators of index `p + 1` comes from `F_p`. -/
 theorem exists_indexCochainComplexMap_f_eq (p n : ℤ)
@@ -687,7 +697,8 @@ theorem exists_indexCochainComplexMap_f_eq (p n : ℤ)
   rw [ker_rowFiniteIndexProjection, add_sub_cancel_right] at hker
   exact LinearMap.mem_range.mp <| (mem_range_gradedCochainComplexInclusion_f_iff _ n g).mpr
     (mem_rowFiniteIndexGrading_iff.mpr ⟨(mem_rowFiniteIndexFiltration_iff (R := R) ind).mp hker,
-      (mem_rowFiniteIndexGrading_iff.mp (m.indexCochainComplexXEquiv hM hm (p + 1) n g).2).2⟩)
+      (mem_rowFiniteIndexGrading_iff.mp (m.indexCochainComplexXEquiv hM hm
+          (p + 1) n g).property).2⟩)
 
 /-- **The graded pieces of the index filtration.** The sequence
 `F_p ⟶ F_{p+1} ⟶ ⊕_{ind x = p + 1} ℳ` is short exact: the quotient `F_{p+1} / F_p` is the complex

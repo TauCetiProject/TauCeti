@@ -72,7 +72,7 @@ variable {σ ι : Type*} {m : MonomialOrder σ}
 
 section CommSemiring
 
-variable {R : Type*} [CommSemiring R] [Nontrivial R] {c : ι → MvPolynomial σ R}
+variable {R : Type*} [CommSemiring R] {c : ι → MvPolynomial σ R}
 
 /-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
 `P` satisfies `A w ≼ δ` and the coefficient of `X^δ` in `aeval c P` vanishes, then the part of `P`
@@ -155,7 +155,8 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     ring
   rw [heq] at hw
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent, hA] at hw
+  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent,
+      hA] at hw
     have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
     have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
     exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
@@ -227,7 +228,7 @@ private theorem degree_aeval_mem_closure (hc : ∀ i, m.Monic (c i)) {u v : J �
     exact ih _ (hlt w₀ hw₀) (A w₀) (by rwa [hP']) hmax rfl
   · -- Otherwise the leading exponent of `aeval c P` is `δ`, a value of `A`.
     have hdeg : m.degree (aeval c P) = δ := m.toSyn.injective <|
-      le_antisymm (degree_aeval_le_of_forall_le hc hPδ) (m.le_degree (mem_support_iff.2 htop))
+      le_antisymm (degree_aeval_le_of_forall_le hPδ) (m.le_degree (mem_support_iff.2 htop))
     rw [coeff_aeval_of_forall_le hc hPδ] at htop
     obtain ⟨w, hw, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero htop
     rw [hdeg, ← (Finset.mem_filter.1 hw).2]

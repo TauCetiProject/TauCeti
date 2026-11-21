@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The map of a matrix on Euclidean space
@@ -35,7 +37,9 @@ Conversely, every continuous linear automorphism of Euclidean space is the map o
 matrix. This correspondence is a group isomorphism, and the matrix depends continuously on the
 automorphism.
 
-A square matrix is unitary exactly when its continuous linear map preserves the inner product.
+A square matrix is unitary exactly when its continuous linear map preserves the inner product,
+and a unitary matrix acts as a linear isometry equivalence of Euclidean space; every linear
+isometry equivalence arises in this way.
 The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
 matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
 diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
@@ -56,21 +60,54 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   continuous linear map;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
+* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
+  of the induced continuous linear map are those of the conjugate transpose and of the matrix;
+* `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
+  at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
+* `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group homomorphism from the unitary group to
+  the linear isometry group of Euclidean space, acting as the matrix does
+  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it is bijective
+  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_injective`,
+  `Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective`), preserves determinants
+  (`Matrix.UnitaryGroup.det_toLinearIsometryEquiv`) and is continuous for the operator-norm
+  topology (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv`), and its action on the unit
+  sphere is jointly continuous
+  (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere`);
 * `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
   a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
   conversely (`Matrix.continuous_toEuclideanCLM_symm`);
+* `Matrix.toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply` — the map of an invertible
+  matrix undoes the map of its inverse;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
   `apply`, `symm_apply`, coercion and determinant lemmas;
 * `Matrix.GeneralLinearGroup.ofEuclideanCLE` — the group isomorphism taking a continuous linear
   automorphism to its invertible matrix, inverse to `Matrix.toEuclideanCLE`; both directions are
   continuous in families
   (`Matrix.GeneralLinearGroup.continuous_ofEuclideanCLE`,
-  `Matrix.GeneralLinearGroup.continuous_toEuclideanCLE`).
+  `Matrix.GeneralLinearGroup.continuous_toEuclideanCLE`);
+* `TauCeti.matrixUnitaryContinuousMulEquivEuclidean` — topological group isomorphism induced by
+  `Matrix.toEuclideanCLM` identifying unitary matrices with unitary operators on
+  `EuclideanSpace 𝕜 ι`.
 -/
 
 public section
 
 open scoped InnerProductSpace
+
+namespace ContinuousLinearMap
+
+/-- The inverse Euclidean matrix equivalence gives the coordinate matrix in the standard
+orthonormal basis. -/
+theorem toEuclideanCLM_symm_eq_toMatrix {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype ι]
+    [DecidableEq ι] (f : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :
+    (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm f =
+      LinearMap.toMatrix (EuclideanSpace.basisFun ι 𝕜).toBasis
+        (EuclideanSpace.basisFun ι 𝕜).toBasis f.toLinearMap := by
+  apply Matrix.toEuclideanLin.injective
+  rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, StarAlgEquiv.apply_symm_apply,
+    Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.toLin_toMatrix]
+
+end ContinuousLinearMap
 
 namespace Matrix
 
@@ -136,12 +173,14 @@ theorem exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner (A : Matrix ι 
 omit [Fintype κ] [DecidableEq κ] in
 /-- The rank of a matrix is the dimension of the range of the linear map it induces on Euclidean
 space. -/
-theorem rank_eq_finrank_range_toEuclideanLin [Finite κ] (A : Matrix κ ι 𝕜) :
+theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
     A.rank = Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) := by
-  have : Fintype κ := Fintype.ofFinite κ
-  rw [toEuclideanLin_eq_toLin_orthonormal]
-  exact A.rank_eq_finrank_range_toLin (EuclideanSpace.basisFun κ 𝕜).toBasis
-    (EuclideanSpace.basisFun ι 𝕜).toBasis
+  -- `toEuclideanLin` is by definition the `arrowCongr` of `toLin'` with the `WithLp` equivalences,
+  -- and `toLin'` is `mulVecLin`
+  have h : toEuclideanLin A = (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap ∘ₗ
+      A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
+  rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq,
+    Matrix.finrank_range_mulVecLin]
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
@@ -189,12 +228,128 @@ theorem mem_unitaryGroup_iff_inner_toEuclideanCLM {M : Matrix ι ι 𝕜} :
   rw [map_mul, map_star, map_one, ContinuousLinearMap.star_eq_adjoint]
   exact (ContinuousLinearMap.inner_map_map_iff_adjoint_comp_self _).mp h
 
-/-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
+/-- The adjoint of the continuous linear map of a square matrix is the map of its conjugate
+transpose. -/
+theorem adjoint_toEuclideanCLM (A : Matrix ι ι 𝕜) :
+    (toEuclideanCLM (𝕜 := 𝕜) A).adjoint = toEuclideanCLM (𝕜 := 𝕜) Aᴴ := by
+  rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star, star_eq_conjTranspose]
+
+/-- Congruence by `A` on the operator side: the sesquilinear form of `A * B * Aᴴ` at `x, y` is
+the sesquilinear form of `B` at `Aᴴ x, Aᴴ y`. -/
+theorem inner_toEuclideanCLM_mul_mul_conjTranspose (A B : Matrix ι ι 𝕜)
+    (x y : EuclideanSpace 𝕜 ι) :
+    ⟪x, toEuclideanCLM (𝕜 := 𝕜) (A * B * Aᴴ) y⟫_𝕜 =
+      ⟪toEuclideanCLM (𝕜 := 𝕜) Aᴴ x,
+        toEuclideanCLM (𝕜 := 𝕜) B (toEuclideanCLM (𝕜 := 𝕜) Aᴴ y)⟫_𝕜 := by
+  rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, ← adjoint_toEuclideanCLM,
+    ContinuousLinearMap.adjoint_inner_left]
+
+
+/-- A unitary matrix acts on `EuclideanSpace 𝕜 ι` as a linear isometry equivalence, and this is a
+group homomorphism from the unitary group to the linear isometry group: the continuous linear map
+of a unitary matrix is a unitary operator. -/
+noncomputable def UnitaryGroup.toLinearIsometryEquiv :
+    unitaryGroup ι 𝕜 →* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+  Unitary.linearIsometryEquiv.toMonoidHom.comp
+    (Unitary.map (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMonoidHom
+
+/-- The linear isometry of a unitary matrix acts by matrix-vector multiplication in Euclidean
+coordinates. -/
 @[simp]
+theorem UnitaryGroup.toLinearIsometryEquiv_apply (A : unitaryGroup ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv A x = WithLp.toLp 2 ((A : Matrix ι ι 𝕜) *ᵥ x.ofLp) :=
+  (rfl)
+
+/-- The linear isometry of a unitary matrix sends the standard basis vector `e_j` to the column
+`j` of the matrix. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_single (A : unitaryGroup ι 𝕜) (j : ι) :
+    UnitaryGroup.toLinearIsometryEquiv A (EuclideanSpace.single j 1) =
+      WithLp.toLp 2 ((A : Matrix ι ι 𝕜).col j) := by
+  rw [UnitaryGroup.toLinearIsometryEquiv_apply, EuclideanSpace.single, PiLp.ofLp_single,
+    mulVec_single_one]
+
+/-- The linear isometry of a product of unitary matrices acts as the composite of the actions of
+the factors. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_mul_apply (A B : unitaryGroup ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv (A * B) x =
+      UnitaryGroup.toLinearIsometryEquiv A (UnitaryGroup.toLinearIsometryEquiv B x) := by
+  rw [map_mul, LinearIsometryEquiv.coe_mul, Function.comp_apply]
+
+/-- The linear isometry of the inverse of a unitary matrix is the inverse of its linear
+isometry. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_inv_apply (A : unitaryGroup ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv A⁻¹ x = (UnitaryGroup.toLinearIsometryEquiv A).symm x := by
+  rw [map_inv, LinearIsometryEquiv.coe_inv]
+
+/-- The conversion from unitary matrices to linear isometries of Euclidean space is injective. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_injective :
+    Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
+  intro A B h
+  apply Subtype.ext
+  apply toEuclideanLin.injective
+  exact LinearMap.ext fun x ↦ by
+    simpa only [UnitaryGroup.toLinearIsometryEquiv_apply, toLpLin_apply] using
+      LinearIsometryEquiv.congr_fun h x
+
+/-- Every linear isometry of Euclidean space is the action of a unitary matrix, namely its matrix
+in the standard basis. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_surjective :
+    Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
+  intro g
+  set B := toEuclideanLin.symm g.toLinearIsometry.toLinearMap with hBdef
+  have hB : toEuclideanLin B = g.toLinearIsometry.toLinearMap :=
+    toEuclideanLin.apply_symm_apply _
+  have hmem : B ∈ unitaryGroup ι 𝕜 := by
+    rw [hBdef, toEuclideanLin_eq_toLin_orthonormal]
+    exact g.toMatrix_mem_unitaryGroup (EuclideanSpace.basisFun ι 𝕜) (EuclideanSpace.basisFun ι 𝕜)
+  refine ⟨⟨B, hmem⟩, LinearIsometryEquiv.ext fun x ↦ ?_⟩
+  rw [UnitaryGroup.toLinearIsometryEquiv_apply]
+  exact LinearMap.congr_fun hB x
+
+/-- The linear isometry of a unitary matrix has the determinant of the matrix. -/
+@[simp]
+theorem UnitaryGroup.det_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
+    LinearMap.det (UnitaryGroup.toLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      (A : Matrix ι ι 𝕜).det := by
+  have : (UnitaryGroup.toLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      toEuclideanLin (A : Matrix ι ι 𝕜) := by
+    ext x
+    simp [toLpLin_apply]
+  rw [this, LinearMap.det_toLpLin]
+
+/-- The linear isometry of a unitary matrix depends continuously on the matrix, for the subspace
+topology on the unitary group and the operator-norm topology. -/
+theorem UnitaryGroup.continuous_toLinearIsometryEquiv :
+    Continuous fun A : unitaryGroup ι 𝕜 ↦
+      ((UnitaryGroup.toLinearIsometryEquiv A).toContinuousLinearEquiv :
+        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) := by
+  refine (continuous_toEuclideanCLM.comp continuous_subtypeVal).congr fun A ↦ ?_
+  ext x
+  simp
+
+/-- The action of the unitary group on the unit sphere of Euclidean space, through the linear
+isometries of unitary matrices, is jointly continuous. -/
+theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
+    Continuous fun p : unitaryGroup ι 𝕜 × Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1 ↦
+      UnitaryGroup.toLinearIsometryEquiv p.1 • p.2 := by
+  refine continuous_induced_rng.2 <| (continuous_uncurry_toEuclideanCLM.comp
+    ((continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd))).congr fun p ↦ ?_
+  simp [toLpLin_apply]
+
+/-- The determinant of the continuous linear map of a square matrix is the determinant of the
+matrix. -/
+@[simp]
+theorem det_toEuclideanCLM (A : Matrix ι ι 𝕜) : (toEuclideanCLM (𝕜 := 𝕜) A).det = A.det := by
+  rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin]
+
+/-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
 theorem det_toEuclideanCLM_diagonal (d : ι → 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) (diagonal d)).det = ∏ i, d i := by
-  rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin,
-    LinearMap.det_toLpLin, det_diagonal]
+  rw [det_toEuclideanCLM, det_diagonal]
 
 section Invertible
 
@@ -204,8 +359,7 @@ variables along it substitutes `A⁻¹`. -/
 noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
     EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι :=
   (toEuclideanCLM (𝕜 := 𝕜) A).toContinuousLinearEquivOfDetNeZero <| by
-    rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin]
-    exact hA
+    rwa [det_toEuclideanCLM]
 
 /-- The equivalence acts as the matrix does. -/
 @[simp]
@@ -214,14 +368,19 @@ theorem toEuclideanCLE_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) (x : Euc
   rw [toEuclideanCLE, ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero_apply,
     toEuclideanCLM_apply]
 
+/-- The map of an invertible matrix undoes the map of its inverse. -/
+theorem toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply {A : Matrix ι ι 𝕜}
+    (hA : A.det ≠ 0) (y : EuclideanSpace 𝕜 ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A (toEuclideanCLM (𝕜 := 𝕜) A⁻¹ y) = y := by
+  rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hA), map_one,
+    one_apply_eq_self]
+
 /-- The inverse of the equivalence is the map of the inverse matrix. -/
 @[simp]
 theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0)
     (y : EuclideanSpace 𝕜 ι) : (A.toEuclideanCLE hA).symm y = A⁻¹.toEuclideanLin y := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, toEuclideanCLE_apply]
-  simp only [← toEuclideanCLM_apply]
-  rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hA), map_one,
-    one_apply_eq_self]
+  rw [ContinuousLinearEquiv.symm_apply_eq, toEuclideanCLE_apply, ← toEuclideanCLM_apply,
+    ← toEuclideanCLM_apply, toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply hA]
 
 /-- The equivalence, as a continuous linear map, is the continuous linear map of the matrix. -/
 @[simp]
@@ -317,3 +476,59 @@ instance isStarNormal_toEuclideanLin {𝕜 : Type*} [RCLike 𝕜] (A : Matrix n 
       Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, h]
 
 end Matrix
+
+namespace TauCeti
+
+noncomputable section
+
+section MatrixUnitary
+
+variable (ι 𝕜 : Type*) [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+
+/-- Unitary `ι × ι` matrices over `𝕜` and unitary operators on `EuclideanSpace 𝕜 ι` are isomorphic
+as topological groups via `Matrix.toEuclideanCLM`. -/
+def matrixUnitaryContinuousMulEquivEuclidean :
+    Matrix.unitaryGroup ι 𝕜 ≃ₜ*
+      unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+  { (Unitary.mapEquiv (StarMulEquiv.ofClass (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMulEquiv
+    with
+    continuous_toFun :=
+      (Matrix.continuous_toEuclideanCLM.comp continuous_subtypeVal).subtype_mk _
+    continuous_invFun :=
+      (Matrix.continuous_toEuclideanCLM_symm.comp continuous_subtypeVal).subtype_mk _ }
+
+variable {ι 𝕜}
+
+/-- The underlying continuous linear map of `matrixUnitaryContinuousMulEquivEuclidean` is
+`Matrix.toEuclideanCLM`. -/
+@[simp]
+theorem coe_matrixUnitaryContinuousMulEquivEuclidean (A : Matrix.unitaryGroup ι 𝕜) :
+    (matrixUnitaryContinuousMulEquivEuclidean ι 𝕜 A :
+        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) =
+      Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) (A : Matrix ι ι 𝕜) :=
+  (rfl)
+
+/-- The underlying matrix of `(matrixUnitaryContinuousMulEquivEuclidean ι 𝕜).symm` is given by
+`Matrix.toEuclideanCLM.symm`. -/
+@[simp]
+theorem coe_matrixUnitaryContinuousMulEquivEuclidean_symm
+    (u : unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) :
+    ((matrixUnitaryContinuousMulEquivEuclidean ι 𝕜).symm u : Matrix ι ι 𝕜) =
+      (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
+        (u : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+  (rfl)
+
+/-- The unitary operator of a unitary matrix acts on `EuclideanSpace 𝕜 ι` by
+`Matrix.toEuclideanLin`. -/
+theorem matrixUnitaryContinuousMulEquivEuclidean_apply_apply (A : Matrix.unitaryGroup ι 𝕜)
+    (v : EuclideanSpace 𝕜 ι) :
+    (matrixUnitaryContinuousMulEquivEuclidean ι 𝕜 A :
+        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) v =
+      Matrix.toEuclideanLin (A : Matrix ι ι 𝕜) v :=
+  Matrix.toEuclideanCLM_apply (A : Matrix ι ι 𝕜) v
+
+end MatrixUnitary
+
+end
+
+end TauCeti

@@ -23,23 +23,23 @@ abelian `F`-module `M`: every class of the explicit `H²(F, M)` is the class of 
 of `F` by `M`, and the class of a split extension is zero. That vanishing is
 `TauCeti.IsProjective.subsingleton_H2` applied to the projectivity of `F`, and this file records
 its consequences in the forms the free pro-`p` theory consumes: for a `p`-primary torsion module
-written additively (`TauCeti.freeProP.subsingleton_H2_of_isPPrimaryTorsion`), in particular for
+written additively (`TauCeti.freeProP.subsingleton_H2_of_isAddPGroup`), in particular for
 `𝔽_p` with any continuous action (`TauCeti.freeProP.subsingleton_H2_zmod`), and, transported
 through the degree-two comparison with Mathlib's `continuousCohomology`, for a finite discrete
 `p`-primary `F`-module (`TauCeti.freeProP.subsingleton_continuousCohomology_two`, with the additive
-form `TauCeti.freeProP.subsingleton_continuousCohomology_two_of_isPPrimaryTorsion`).
+form `TauCeti.freeProP.subsingleton_continuousCohomology_two_of_isAddPGroup`).
 
 No finiteness of `X` is needed: the universal property of `freeProP p X` holds for every type, and
 the argument uses nothing else about `F`.
 
 ## Main results
 
-* `TauCeti.freeProP.subsingleton_H2_of_isPPrimaryTorsion`: **`H²(F, M) = 0`** for `F` free pro-`p`
+* `TauCeti.freeProP.subsingleton_H2_of_isAddPGroup`: **`H²(F, M) = 0`** for `F` free pro-`p`
   and `M` a profinite `p`-primary torsion abelian `F`-module written additively, and
   `TauCeti.freeProP.subsingleton_H2_zmod` for `𝔽_p` with any continuous action.
 * `TauCeti.freeProP.subsingleton_continuousCohomology_two`: the same in Mathlib's
   `continuousCohomology`, for a finite discrete `p`-primary `F`-module, and
-  `TauCeti.freeProP.subsingleton_continuousCohomology_two_of_isPPrimaryTorsion` for such a module
+  `TauCeti.freeProP.subsingleton_continuousCohomology_two_of_isAddPGroup` for such a module
   written additively.
 
 ## References
@@ -71,16 +71,16 @@ variable {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGro
 /-- **`H²` of a free pro-`p` group vanishes, additive form.** For `F = freeProP p X` and `M` a
 profinite `p`-primary torsion abelian group, written additively, with a continuous action of `F`,
 the explicit second continuous cohomology group `H²(F, M)` is zero. -/
-theorem subsingleton_H2_of_isPPrimaryTorsion (hM : IsPPrimaryTorsion p M) :
+theorem subsingleton_H2_of_isAddPGroup (hM : IsAddPGroup p M) :
     Subsingleton (H2 (freeProP p X) M) :=
-  IsProjective.subsingleton_H2_of_isPPrimaryTorsion
+  IsProjective.subsingleton_H2_of_isAddPGroup
     (isProjective_of_hasPGroupSolutions (hasPGroupSolutions_freeProP p X)) (isProP_freeProP p X) hM
 
 /-- **`H²(F, 𝔽_p) = 0` for a free pro-`p` group `F`**, for every continuous action of `F` on
 `𝔽_p`. -/
 theorem subsingleton_H2_zmod [NeZero p] [DistribMulAction (freeProP p X) (ZMod p)]
     [ContinuousSMul (freeProP p X) (ZMod p)] : Subsingleton (H2 (freeProP p X) (ZMod p)) :=
-  subsingleton_H2_of_isPPrimaryTorsion (isPPrimaryTorsion_iff.2 fun m ↦
+  subsingleton_H2_of_isAddPGroup (fun m ↦
     ⟨1, by rw [pow_one, nsmul_eq_mul, ZMod.natCast_self, zero_mul]⟩)
 
 end Additive
@@ -105,11 +105,11 @@ end Discrete
 continuous cohomology: for a finite discrete `p`-primary torsion abelian group `M`, written
 additively, with a continuous action of `F = freeProP p X`, the canonical `continuousCohomology 2`
 of the topological representation attached to `M` is zero. -/
-theorem subsingleton_continuousCohomology_two_of_isPPrimaryTorsion (M : Type u) [AddCommGroup M]
+theorem subsingleton_continuousCohomology_two_of_isAddPGroup (M : Type u) [AddCommGroup M]
     [TopologicalSpace M] [DiscreteTopology M] [Finite M] [DistribMulAction (freeProP p X) M]
-    [ContinuousSMul (freeProP p X) M] (hM : IsPPrimaryTorsion p M) :
+    [ContinuousSMul (freeProP p X) M] (hM : IsAddPGroup p M) :
     Subsingleton (continuousCohomology 2 (ofDiscreteModule ℤ (freeProP p X) M)) :=
-  haveI := subsingleton_H2_of_isPPrimaryTorsion (X := X) hM
+  haveI := subsingleton_H2_of_isAddPGroup (X := X) hM
   (explicitH2AddEquivContinuousCohomology (freeProP p X) M).toEquiv.symm.subsingleton
 
 end freeProP

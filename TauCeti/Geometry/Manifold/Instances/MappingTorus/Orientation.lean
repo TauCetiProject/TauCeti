@@ -21,6 +21,16 @@ and is followed by `o`. So this orientation descends to `Y_φ`
 orientation `o`. It is characterised by the quotient map `(t, x) ↦ [t, x]` preserving orientation
 at every point (`TauCeti.SmoothMappingTorus.eq_orientation_iff`).
 
+Conversely, when `M` is preconnected, `Y_φ` is orientable only if `φ` preserves `o` at every point
+(`TauCeti.SmoothMappingTorus.orientable_iff_forall_isOrientationPreservingAt`). An orientation of
+`Y_φ` pulls back to the product orientation of the preconnected manifold `ℝ × M` or to its
+opposite, so the quotient map preserves orientation from the product orientation to a suitable
+orientation of `Y_φ`. The quotient map identifies the time-one translation `(t, x) ↦ (t + 1, x)`,
+which preserves the product orientation, with `(t, x) ↦ (t, φ x)`, so `id × φ` and hence `φ`
+preserve orientation. In particular, the mapping torus of an orientation-reversing diffeomorphism,
+such as the open Möbius band, is not orientable
+(`TauCeti.SmoothMappingTorus.not_orientable_of_isOrientationReversingAt`).
+
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.orientation φ o hφ`: the orientation of `Y_φ` descended from the
@@ -32,6 +42,10 @@ at every point (`TauCeti.SmoothMappingTorus.eq_orientation_iff`).
   `ℝ × M → Y_φ` preserves orientation from the product orientation.
 * `TauCeti.SmoothMappingTorus.eq_orientation_iff`: the orientation of `Y_φ` is the only one from
   which the quotient map preserves orientation everywhere.
+* `TauCeti.SmoothMappingTorus.orientable_iff_forall_isOrientationPreservingAt`: for preconnected
+  `M`, `Y_φ` is orientable exactly when `φ` preserves `o` at every point.
+* `TauCeti.SmoothMappingTorus.not_orientable_of_isOrientationReversingAt`: for preconnected `M`,
+  `Y_φ` is not orientable when `φ` reverses `o` at some point.
 
 ## References
 
@@ -128,6 +142,81 @@ theorem eq_orientation_iff {o' : Manifold.Orientation (𝓘(ℝ).prod I) (Smooth
   refine ⟨fun h ↦ h ▸ isOrientationPreservingAt_uncurry_mk φ o hφ, fun h ↦ ext fun y ↦ ?_⟩
   obtain ⟨p, rfl⟩ := uncurry_mk_surjective φ y
   exact (h p).orientationAt_eq (isOrientationPreservingAt_uncurry_mk φ o hφ p)
+
+omit hφ
+
+/-! ### Orientability -/
+
+section Orientable
+
+variable [PreconnectedSpace M]
+
+omit [T2Space M] [LocallyCompactSpace M] [IsManifold I ∞ M] [PreconnectedSpace M] in
+include o in
+private theorem finrank_prod_eq : finrank ℝ (ℝ × E) = 1 + m := by
+  rw [finrank_prod, finrank_self, ← o.card_eq, Fintype.card_fin]
+
+/-- If the mapping torus of `φ` carries some orientation, the quotient map `(t, x) ↦ [t, x]`
+preserves orientation everywhere from the product orientation of `ℝ × M` to some orientation of
+the mapping torus. Pulled back to the preconnected manifold `ℝ × M`, the given orientation is the
+product orientation or its opposite; in the second case, use the opposite orientation. -/
+private theorem exists_forall_isOrientationPreservingAt_uncurry_mk
+    (O : Manifold.Orientation (𝓘(ℝ).prod I) (SmoothMappingTorus φ) (Fin (1 + m))) :
+    ∃ O' : Manifold.Orientation (𝓘(ℝ).prod I) (SmoothMappingTorus φ) (Fin (1 + m)),
+      ∀ p, IsOrientationPreservingAt (Manifold.Orientation.real.prod o) O' (uncurry (mk φ)) p := by
+  have hq := isLocalDiffeomorph_uncurry_mk (n := ∞) φ
+  have hι : Fintype.card (Fin (1 + m)) = finrank ℝ (ℝ × E) := by
+    rw [Fintype.card_fin, finrank_prod_eq o]
+  have hdf (p : ℝ × M) := hq.isInvertible_mfderiv (x := p) (by simp)
+  rcases eq_or_eq_neg (Manifold.Orientation.real.prod o)
+      (O.pullback (hq.contMDiff.of_le (by simp)) hdf hι) with h | h
+  · exact ⟨O, (eq_pullback_iff _ _ _ _).mp h⟩
+  · exact ⟨-O, fun p ↦ (isOrientationPreservingAt_neg_right _ _ _ _).mpr
+      ((eq_neg_pullback_iff _ _ _ _).mp h p)⟩
+
+/-- If the mapping torus of a diffeomorphism `φ` of a preconnected manifold carries an orientation,
+then `φ` preserves every orientation `o` of `M` at every point. The time-one translation of
+`ℝ × M` preserves its product orientation and agrees with `id × φ` after the quotient map, which
+preserves orientation from the product orientation for a suitable orientation of the torus. -/
+private theorem isOrientationPreservingAt_of_orientation
+    (O : Manifold.Orientation (𝓘(ℝ).prod I) (SmoothMappingTorus φ) (Fin (1 + m))) (x : M) :
+    IsOrientationPreservingAt o o φ x := by
+  let R := Manifold.Orientation.real.prod o
+  obtain ⟨O', hO'⟩ := exists_forall_isOrientationPreservingAt_uncurry_mk φ o O
+  have hT : IsOrientationPreservingAt R R (Prod.map (· + 1) id) ((0 : ℝ), x) :=
+    (isOrientationPreservingAt_add_const 1 0).prodMap (isOrientationPreservingAt_id o x)
+  have hTF : uncurry (mk φ) ∘ Prod.map (· + 1) id = uncurry (mk φ) ∘ Prod.map id φ :=
+    funext fun p ↦ mk_add_one φ p.1 p.2
+  have hF : IsOrientationPreservingAt R R (Prod.map id φ) ((0 : ℝ), x) :=
+    (hO' _).of_comp (hTF ▸ (hO' _).comp hT)
+      (mdifferentiableAt_id.prodMap (φ.mdifferentiable (by simp) x))
+  refine ((φ.isLocalDiffeomorph x).isOrientationPreservingAt_or_isOrientationReversingAt
+    (by simp) o o).resolve_right fun h ↦ ?_
+  have hneg : IsOrientationPreservingAt R (-R) (Prod.map id φ) ((0 : ℝ), x) := by
+    rw [← prod_neg_right]
+    exact (isOrientationPreservingAt_id _ _).prodMap
+      ((isOrientationPreservingAt_neg_right o o φ x).mpr h)
+  exact not_isOrientationPreservingAt_and_isOrientationReversingAt R R _ _
+    ⟨hF, (isOrientationPreservingAt_neg_right _ _ _ _).mp hneg⟩
+
+/-- **Orientability of a mapping torus.** For a diffeomorphism `φ` of a preconnected manifold
+with an orientation `o`, the mapping torus of `φ` is orientable exactly when `φ` preserves `o` at
+every point. -/
+theorem orientable_iff_forall_isOrientationPreservingAt :
+    Orientable (𝓘(ℝ).prod I) (SmoothMappingTorus φ) ↔ ∀ x, IsOrientationPreservingAt o o φ x := by
+  refine ⟨fun ⟨⟨O⟩⟩ ↦ isOrientationPreservingAt_of_orientation φ o
+    (O.reindex (finCongr (finrank_prod_eq o))), fun hφ ↦ ⟨⟨?_⟩⟩⟩
+  exact (orientation φ o hφ).reindex (finCongr (finrank_prod_eq o).symm)
+
+/-- The mapping torus of a diffeomorphism of a preconnected oriented manifold which reverses the
+orientation at some point is not orientable. -/
+theorem not_orientable_of_isOrientationReversingAt {x : M}
+    (h : IsOrientationReversingAt o o φ x) :
+    ¬ Orientable (𝓘(ℝ).prod I) (SmoothMappingTorus φ) := fun hY ↦
+  not_isOrientationPreservingAt_and_isOrientationReversingAt o o φ x
+    ⟨(orientable_iff_forall_isOrientationPreservingAt φ o).mp hY x, h⟩
+
+end Orientable
 
 end SmoothMappingTorus
 

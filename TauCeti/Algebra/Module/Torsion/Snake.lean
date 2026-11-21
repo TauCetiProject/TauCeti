@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+public import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The kernel–cokernel exact sequence of multiplication by a scalar
@@ -44,7 +45,9 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 ## Main definitions
 
 * `TauCeti.torsionByMap`: the restriction `M[r] →ₗ[R] N[r]` of a linear map.
+* `TauCeti.torsionByLinearMap`: `TauCeti.torsionByMap` promoted to an `R ⧸ (r)`-linear map.
 * `TauCeti.torsionByδ`: the connecting map `M₃[r] →ₗ[R] M₁ ⧸ rM₁` of a short exact sequence.
+* `TauCeti.torsionByδLinearMap`: `TauCeti.torsionByδ` promoted to an `R ⧸ (r)`-linear map.
 * `TauCeti.torsionByδEquiv`: the connecting map as an isomorphism, when multiplication by `r` is
   bijective on `M₂`.
 * `LinearMap.orbitRelQuotientTorsionByδ`: the connecting map `(E / f(Λ))[r] → Λ ⧸ rΛ` of the orbit
@@ -53,14 +56,18 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 ## Main results
 
 * `TauCeti.injective_torsionByMap`, `TauCeti.exact_torsionByMap`: `M[r]` is left exact.
+* `TauCeti.injective_torsionByMap_of_injective_smul`,
+  `TauCeti.surjective_torsionByMap_of_surjective_smul`: `M₂[r] → M₃[r]` is injective when
+  multiplication by `r` is injective on `M₁`, and surjective when multiplication by `r` is
+  surjective on `M₁`.
 * `TauCeti.bijective_torsionByMap_of_bijective_ker_smul`,
   `TauCeti.existsUnique_torsion_lift_of_bijective_ker_smul`: a surjection with uniquely
   `r`-divisible kernel induces a bijection on `r`-torsion and lifts `r`-torsion uniquely.
 * `TauCeti.torsionByδ_eq`: the connecting map sends `g y` to the class of `z` when `f z = r • y`.
 * `TauCeti.exact_torsionByMap_torsionByδ`, `TauCeti.exact_torsionByδ_quotSMulTop_map`: exactness
   at `M₃[r]` and at `M₁ ⧸ rM₁`.
-* `TauCeti.injective_torsionByδ`: the connecting map is injective when multiplication by `r` is
-  injective on `M₂`.
+* `TauCeti.injective_torsionByδ`, `TauCeti.surjective_torsionByδ`: the connecting map is injective
+  (resp. surjective) when multiplication by `r` is injective (resp. surjective) on `M₂`.
 * `TauCeti.torsionByδ_comp_torsionByMap`: naturality of the connecting map.
 * `TauCeti.finite_quotSMulTop_of_exact`: `M₁ ⧸ rM₁` is finite when `M₃[r]` and `M₂ ⧸ rM₂` are.
 * `LinearMap.orbitRelQuotientTorsionByδ_eq`, `LinearMap.quotSMulTop_mk_eq_mk_of_smul_eq`: the
@@ -113,7 +120,7 @@ variable (M) in
 /-- The `r`-torsion is the kernel of multiplication by `r`. -/
 theorem exact_subtype_torsionBy :
     Exact (torsionBy R M r).subtype (DistribSMul.toLinearMap R M r) := fun x ↦
-  ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.2⟩
+  ⟨fun hx ↦ ⟨⟨x, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.property⟩
 
 variable {r}
 
@@ -132,7 +139,7 @@ theorem exact_torsionByMap {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Exact 
     obtain ⟨x, hx⟩ := (hfg y).1 (congrArg Subtype.val hy)
     have hrx : r • x = 0 := hf <| by
       rw [map_smul, hx, map_zero]
-      exact (mem_torsionBy_iff _ _).1 y.2
+      exact (mem_torsionBy_iff _ _).1 y.property
     exact ⟨⟨x, (mem_torsionBy_iff _ _).2 hrx⟩, Subtype.ext hx⟩
   · rintro ⟨x, rfl⟩
     exact Subtype.ext <| hfg.apply_apply_eq_zero x
@@ -184,15 +191,41 @@ theorem exact_torsionByδ_quotSMulTop_map (hfg : Exact f g) (hf : Injective f)
   SnakeLemma.exact_δ'_left _ _ _ _ _ hfg _ _ hfg _ _ _ _ _ _ _ (exact_toLinearMap_mkQ r M₂) hg hf
     _ (QuotSMulTop.map_comp_mkQ r f) (r • (⊤ : Submodule R M₁)).mkQ_surjective
 
-/-- **Finiteness of `M₁ ⧸ rM₁` along a short exact sequence**: if `M₃[r]` and `M₂ ⧸ rM₂` are finite,
-so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. -/
-theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+/-- **Finiteness of `M₁ ⧸ rM₁` along an exact sequence** `0 → M₁ → M₂ → M₃`: if `M₃[r]` and
+`M₂ ⧸ rM₂` are finite, so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. The map
+`g` need not be surjective: the sequence is read as a short exact sequence ending in the image of
+`g`. -/
+theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f)
     [Finite (torsionBy R M₃ r)] [Finite (QuotSMulTop r M₂)] : Finite (QuotSMulTop r M₁) := by
-  let := Fintype.ofFinite (torsionBy R M₃ r)
+  have hfg' := hfg.rangeRestrict
+  have : Finite (torsionBy R (LinearMap.range g) r) := Finite.of_injective _
+    (injective_torsionByMap (r := r) (LinearMap.range g).injective_subtype)
+  let := Fintype.ofFinite (torsionBy R (LinearMap.range g) r)
   let := Fintype.ofFinite (QuotSMulTop r M₂)
-  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg hf hg
-  exact (AddGroup.fintypeOfKerLeRange (torsionByδ r hfg hf hg).toAddMonoidHom
+  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg' hf g.surjective_rangeRestrict
+  exact (AddGroup.fintypeOfKerLeRange
+    (torsionByδ r hfg' hf g.surjective_rangeRestrict).toAddMonoidHom
     (QuotSMulTop.map r f).toAddMonoidHom fun x hx ↦ (h x).1 hx).finite
+
+/-- Along an exact sequence `0 → M₁ → M₂ → M₃`, if multiplication by `r` is injective on `M₁`,
+then `M₂[r] → M₃[r]` is injective, since its kernel is the image of `M₁[r] = 0`. -/
+theorem injective_torsionByMap_of_injective_smul (hfg : Exact f g) (hf : Injective f)
+    (hr : Injective fun x : M₁ ↦ r • x) : Injective (torsionByMap r g) :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ by
+    obtain ⟨y, rfl⟩ := (exact_torsionByMap hfg hf x).1 hx
+    have hy : y = 0 := Subtype.ext (hr (by simp))
+    rw [hy, map_zero]
+
+/-- Along a short exact sequence `0 → M₁ → M₂ → M₃ → 0`, if multiplication by `r` is surjective
+on `M₁`, then `M₂[r] → M₃[r]` is surjective, since `M₁ ⧸ rM₁` vanishes. -/
+theorem surjective_torsionByMap_of_surjective_smul (hfg : Exact f g) (hf : Injective f)
+    (hg : Surjective g) (hr : Surjective fun x : M₁ ↦ r • x) :
+    Surjective (torsionByMap r g) := fun x ↦
+  (exact_torsionByMap_torsionByδ hfg hf hg x).1 <| by
+    obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _ (torsionByδ r hfg hf hg x)
+    obtain ⟨w, rfl⟩ := hr z
+    rw [← hz, Submodule.Quotient.mk_eq_zero]
+    exact Submodule.smul_mem_pointwise_smul w r ⊤ trivial
 
 /-- **Injectivity of the connecting map**: when multiplication by `r` is injective on `M₂`, the
 connecting map `M₃[r] → M₁ ⧸ rM₁` is injective, since its kernel is the image of `M₂[r] = 0`. -/
@@ -204,6 +237,17 @@ theorem injective_torsionByδ (hfg : Exact f g) (hf : Injective f) (hg : Surject
     have hy : y = 0 := Subtype.ext (hr (by simp))
     rw [hy, map_zero]
 
+/-- **Surjectivity of the connecting map**: when multiplication by `r` is surjective on `M₂`, the
+connecting map `M₃[r] → M₁ ⧸ rM₁` is surjective, since `M₂ ⧸ rM₂` vanishes. -/
+theorem surjective_torsionByδ (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+    (hr : Surjective fun x : M₂ ↦ r • x) : Surjective (torsionByδ r hfg hf hg) :=
+  fun q ↦ (exact_torsionByδ_quotSMulTop_map hfg hf hg q).1 <| by
+    -- `M₂ ⧸ rM₂` vanishes, so `q` maps to zero.
+    obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+    obtain ⟨w, hw⟩ := hr (f z)
+    rw [QuotSMulTop.map_apply_mk, Submodule.Quotient.mk_eq_zero, ← hw]
+    exact Submodule.smul_mem_pointwise_smul w r ⊤ trivial
+
 variable (r) in
 /-- **The connecting isomorphism `M₃[r] ≃ M₁ ⧸ rM₁`.** When multiplication by `r` is bijective on
 `M₂`, both `M₂[r]` and `M₂ ⧸ rM₂` vanish, so the six-term sequence makes the connecting map an
@@ -212,13 +256,7 @@ torus `M₃`, this identifies the `r`-torsion points of the torus with `M₁ ⧸
 noncomputable def torsionByδEquiv (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
     (hr : Bijective fun x : M₂ ↦ r • x) : torsionBy R M₃ r ≃ₗ[R] QuotSMulTop r M₁ :=
   LinearEquiv.ofBijective (torsionByδ r hfg hf hg)
-    ⟨injective_torsionByδ hfg hf hg hr.1,
-    fun q ↦ (exact_torsionByδ_quotSMulTop_map hfg hf hg q).1 <| by
-      -- `M₂ ⧸ rM₂` vanishes, so `q` maps to zero.
-      obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-      obtain ⟨w, hw⟩ := hr.2 (f z)
-      rw [QuotSMulTop.map_apply_mk, Submodule.Quotient.mk_eq_zero, ← hw]
-      exact Submodule.smul_mem_pointwise_smul w r ⊤ trivial⟩
+    ⟨injective_torsionByδ hfg hf hg hr.1, surjective_torsionByδ hfg hf hg hr.2⟩
 
 /-- The connecting isomorphism is the connecting map. -/
 @[simp]
@@ -242,7 +280,7 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
   obtain ⟨y, hy⟩ := hg x
   obtain ⟨z, hz⟩ := (hfg (r • y)).1 <| by
     rw [map_smul, hy]
-    exact (mem_torsionBy_iff _ _).1 x.2
+    exact (mem_torsionBy_iff _ _).1 x.property
   have hy' : g' (β y) = torsionByMap r γ x := by
     simpa [hy] using (LinearMap.congr_fun hβγ y).symm
   have hz' : f' (α z) = r • β y := by
@@ -251,6 +289,43 @@ theorem torsionByδ_comp_torsionByMap (hfg : Exact f g) (hf : Injective f) (hg :
     torsionByδ_eq hfg hf hg x hy hz, QuotSMulTop.map_apply_mk]
 
 end Snake
+
+section QuotientLinear
+
+variable {R : Type*} [CommRing R] (r : R) {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
+
+/-- `TauCeti.torsionByMap` promoted to an `R ⧸ (r)`-linear map on `r`-torsion submodules. -/
+noncomputable def torsionByLinearMap (f : M₁ →ₗ[R] M₂) :
+    torsionBy R M₁ r →ₗ[R ⧸ Ideal.span {r}] torsionBy R M₂ r :=
+  LinearMap.extendScalarsOfSurjective Ideal.Quotient.mk_surjective (torsionByMap r f)
+
+@[simp]
+theorem coe_torsionByLinearMap (f : M₁ →ₗ[R] M₂) :
+    ⇑(torsionByLinearMap r f) = ⇑(torsionByMap r f) := (rfl)
+
+@[simp]
+theorem torsionByLinearMap_id :
+    torsionByLinearMap r (LinearMap.id : M₁ →ₗ[R] M₁) = LinearMap.id :=
+  LinearMap.ext fun _ ↦ rfl
+
+theorem torsionByLinearMap_comp (g : M₂ →ₗ[R] M₃) (f : M₁ →ₗ[R] M₂) :
+    torsionByLinearMap r (g ∘ₗ f) = torsionByLinearMap r g ∘ₗ torsionByLinearMap r f :=
+  LinearMap.ext fun _ ↦ rfl
+
+variable {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃}
+
+/-- `TauCeti.torsionByδ` promoted to an `R ⧸ (r)`-linear connecting map
+`M₃[r] →ₗ[R ⧸ (r)] M₁ ⧸ rM₁`. -/
+noncomputable def torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g) :
+    torsionBy R M₃ r →ₗ[R ⧸ Ideal.span {r}] QuotSMulTop r M₁ :=
+  LinearMap.extendScalarsOfSurjective Ideal.Quotient.mk_surjective (torsionByδ r hfg hf hg)
+
+@[simp]
+theorem coe_torsionByδLinearMap (hfg : Exact f g) (hf : Injective f) (hg : Surjective g) :
+    ⇑(torsionByδLinearMap r hfg hf hg) = ⇑(torsionByδ r hfg hf hg) := (rfl)
+
+end QuotientLinear
 
 section Lift
 
@@ -261,20 +336,11 @@ variable {R : Type*} [CommRing R] (r : R) {M N : Type*}
 by `r` is bijective on its kernel. -/
 theorem bijective_torsionByMap_of_bijective_ker_smul (f : M →ₗ[R] N)
     (hf : Surjective f) (hr : Bijective fun x : LinearMap.ker f ↦ r • x) :
-    Bijective (torsionByMap r f) := by
-  have hex := LinearMap.exact_subtype_ker_map f
-  have hinj := (LinearMap.ker f).injective_subtype
-  have : Subsingleton (QuotSMulTop r (LinearMap.ker f)) := by
-    apply Submodule.Quotient.subsingleton_iff.mpr
-    apply top_unique
-    intro x _
-    obtain ⟨y, rfl⟩ := hr.2 x
-    exact Submodule.smul_mem_pointwise_smul y r ⊤ trivial
-  exact ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
-    obtain ⟨y, rfl⟩ := (exact_torsionByMap hex hinj x).1 hx
-    have hy : y = 0 := Subtype.ext (hr.1 (by simp))
-    rw [hy, map_zero],
-    fun y ↦ (exact_torsionByMap_torsionByδ hex hinj hf y).1 (Subsingleton.elim _ _)⟩
+    Bijective (torsionByMap r f) :=
+  ⟨injective_torsionByMap_of_injective_smul (LinearMap.exact_subtype_ker_map f)
+    (LinearMap.ker f).injective_subtype hr.1,
+    surjective_torsionByMap_of_surjective_smul (LinearMap.exact_subtype_ker_map f)
+      (LinearMap.ker f).injective_subtype hf hr.2⟩
 
 /-- A surjective linear map whose kernel is uniquely divisible by `r` lifts every
 `r`-torsion point uniquely to an `r`-torsion point. -/
@@ -284,7 +350,7 @@ theorem existsUnique_torsion_lift_of_bijective_ker_smul (f : M →ₗ[R] N)
   obtain ⟨x, hx, huniq⟩ :=
     (bijective_torsionByMap_of_bijective_ker_smul r f hf hr).existsUnique
       ⟨y, (mem_torsionBy_iff _ _).mpr hy⟩
-  refine ⟨x, ⟨(mem_torsionBy_iff _ _).mp x.2, congrArg Subtype.val hx⟩, fun z hz ↦ ?_⟩
+  refine ⟨x, ⟨(mem_torsionBy_iff _ _).mp x.property, congrArg Subtype.val hx⟩, fun z hz ↦ ?_⟩
   exact congrArg Subtype.val (huniq ⟨z, (mem_torsionBy_iff _ _).mpr hz.1⟩ (Subtype.ext hz.2))
 
 end Lift

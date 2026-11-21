@@ -155,14 +155,14 @@ theorem ρ_mem_level_conj (g : G) {U U' : OpenSubgroup G}
 says that `U'` is the conjugate `gUg⁻¹`. -/
 def levelConjEquiv (g : G) {U U' : OpenSubgroup G}
     (h : ∀ x : G, g * x * g⁻¹ ∈ U' ↔ x ∈ U) : F.level U ≃ₗ[ℤ] F.level U' where
-  toFun a := ⟨F.toRep.ρ g a, F.ρ_mem_level_conj g (fun x ↦ (h x).1) a.2⟩
+  toFun a := ⟨F.toRep.ρ g a, F.ρ_mem_level_conj g (fun x ↦ (h x).1) a.property⟩
   map_add' a b := Subtype.ext (by simp)
   map_smul' c a := Subtype.ext (by simp)
   invFun b := ⟨F.toRep.ρ g⁻¹ b, F.ρ_mem_level_conj g⁻¹
     (fun x hx ↦ by
       have hx' : g⁻¹ * x * g ∈ U := by simpa using hx
       have := (h (g⁻¹ * x * g)).2 hx'
-      simpa [mul_assoc] using this) b.2⟩
+      simpa [mul_assoc] using this) b.property⟩
   left_inv a := Subtype.ext (F.toRep.ρ.inv_self_apply g a)
   right_inv b := Subtype.ext (F.toRep.ρ.self_inv_apply g b)
 
@@ -295,7 +295,7 @@ the layer. -/
 def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
   toMonoidHom := (L.conjugateGroundEquiv g).symm.toMonoidHom
   continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
-    ((continuous_mul_const g).comp ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).congr
+    ((continuous_mul_const g).comp ((continuous_const_mul g⁻¹).comp continuous_subtypeVal)).congr
       fun v => (L.conjugateGroundEquiv_symm_apply_coe g v).symm
 
 /-- On elements of `G`, the inverse-conjugation homomorphism is `v ↦ g⁻¹ * v * g`. -/
@@ -776,7 +776,7 @@ theorem conjugateTateIso_one (r : ℤ) :
     L.conjugateTateIso F 1 r = eqToIso (by rw [conjugate_one]) := by
   refine Iso.ext ?_
   have key := L.tateCohomologyMap_eq_conjugateTateIso_hom F 1 L.conjugate_one
-    (Rep.isIntertwiningMap_id (L.rep F))
+    (L.rep F).ρ.isIntertwiningMap_id
     (fun u v huv ↦ congrArg QuotientGroup.mk (Subtype.ext (by simpa using huv.symm)))
     (fun x ↦ by simp) r
   rw [TateCohomology.map_id] at key

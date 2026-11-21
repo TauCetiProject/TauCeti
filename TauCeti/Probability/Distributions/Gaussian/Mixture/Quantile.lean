@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Mixture.Basic
-public import TauCeti.Probability.Quantile
+public import TauCeti.Probability.Distributions.Mixture.Quantile
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
 /-!
@@ -22,6 +22,8 @@ the whole line. The mixture then has full topological support, its quantile is c
 `(0, 1)` even if other components are atoms, and the quantile tends to minus and plus infinity
 at the endpoints. If every positive-weight component has nonzero variance, the cdf is moreover
 continuous, so every interior quantile is the unique real root of `F(x) = u`.
+The exact support and endpoint limits for all parameters, including purely atomic mixtures,
+are in `TauCeti.Probability.Distributions.Gaussian.Mixture.Endpoints`.
 
 ## References
 
@@ -45,11 +47,8 @@ steps of zero-variance components. -/
 theorem cdf_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) (v : ι → ℝ≥0) (x : ℝ) :
     cdf (gaussianMixtureMeasure p m v) x =
       ∑ i, (p.weights i : ℝ) * cdf (gaussianReal (m i) (v i)) x := by
-  rw [cdf_eq_real, measureReal_def, gaussianMixtureMeasure_def, _root_.sum_apply,
-    ENNReal.toReal_sum fun i _ ↦ by simp [ENNReal.mul_eq_top]]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [_root_.smul_apply, smul_eq_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, cdf_eq_real,
-    measureReal_def]
+  rw [gaussianMixtureMeasure_def, ← finiteMixtureMeasure_def,
+    cdf_finiteMixtureMeasure fun _ _ ↦ inferInstance]
 
 /-- **Quantile adjunction.** At an interior level, the Gaussian-mixture quantile lies below `x`
 exactly when the mixture cdf at `x` reaches the level. -/
@@ -69,13 +68,6 @@ theorem strictMono_cdf_gaussianMixtureMeasure (h : ∃ i, 0 < p.weights i ∧ v 
     (fun i _ ↦ mul_le_mul_of_nonneg_left (monotone_cdf _ hxy.le) (NNReal.coe_nonneg _))
     ⟨j, Finset.mem_univ j,
       mul_lt_mul_of_pos_left (strictMono_cdf_gaussianReal (m j) hvj hxy) (NNReal.coe_pos.mpr hj)⟩
-
-/-- A Gaussian mixture with a positive-weight component of nonzero variance has full topological
-support. -/
-@[simp]
-theorem support_gaussianMixtureMeasure (h : ∃ i, 0 < p.weights i ∧ v i ≠ 0) :
-    (gaussianMixtureMeasure p m v).support = univ :=
-  Measure.support_eq_univ_of_strictMono_cdf _ (strictMono_cdf_gaussianMixtureMeasure h)
 
 /-- If every positive-weight component has nonzero variance, the mixture cdf is continuous. -/
 theorem continuous_cdf_gaussianMixtureMeasure (hv : ∀ i, 0 < p.weights i → v i ≠ 0) :
@@ -113,22 +105,5 @@ theorem continuousOn_quantile_gaussianMixtureMeasure (h : ∃ i, 0 < p.weights i
     ContinuousOn (gaussianMixtureMeasure p m v).quantile (Ioo 0 1) :=
   Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_univ
     ((strictMono_cdf_gaussianMixtureMeasure h).strictMonoOn _) (mapsTo_univ _ _)
-
-/-- With a positive-weight component of nonzero variance, the quantile tends to minus infinity as
-the level tends to zero. -/
-theorem tendsto_quantile_gaussianMixtureMeasure_nhdsGT_zero
-    (h : ∃ i, 0 < p.weights i ∧ v i ≠ 0) :
-    Tendsto (fun u ↦ ((gaussianMixtureMeasure p m v).quantile u : EReal)) (𝓝[>] 0) (𝓝 ⊥) :=
-  Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos _ fun x ↦
-    (cdf_nonneg _ (x - 1)).trans_lt (strictMono_cdf_gaussianMixtureMeasure h (by linarith))
-
-/-- With a positive-weight component of nonzero variance, the quantile tends to plus infinity as
-the level tends to one. -/
-theorem tendsto_quantile_gaussianMixtureMeasure_nhdsLT_one
-    (h : ∃ i, 0 < p.weights i ∧ v i ≠ 0) :
-    Tendsto (fun u ↦ ((gaussianMixtureMeasure p m v).quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) :=
-  Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _ fun x ↦
-    (strictMono_cdf_gaussianMixtureMeasure h (by linarith : x < x + 1)).trans_le
-      (cdf_le_one _ (x + 1))
 
 end TauCeti.Probability

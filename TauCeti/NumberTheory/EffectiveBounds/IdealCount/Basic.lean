@@ -24,7 +24,7 @@ naturals with product `≤ absNorm I` (distributing, for each rational prime `p`
 `p^{vₚ}` of the `i`-th prime above `p` into the `i`-th coordinate); the valuations of the
 tuple recover the ideal, and there are at most `X²·2ⁿ` such tuples.
 
-Mathlib's `Ideal.finite_setOfPred_absNorm_le` already gives finiteness (and `Ideal/Asymptotics`
+Mathlib's `Ideal.finite_absNorm_le` already gives finiteness (and `Ideal/Asymptotics`
 the sharp asymptotic `~ ρ·X`); the contribution here is the explicit elementary bound, the
 input to the effective class-number estimate.
 
@@ -198,7 +198,7 @@ private theorem primeCoord_lt {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : P ≠
           (Finset.mem_toList.mpr (mem_primesOverFinset_under F hP hP0))
     _ = (IsDedekindDomain.primesOverFinset (Ideal.under ℤ P) (𝓞 F)).card := Finset.length_toList _
     _ ≤ Module.finrank ℚ F :=
-      TauCeti.NumberField.card_primesOverFinset_le_finrank (K := F) hp0
+      TauCeti.NumberField.card_primesOverFinset_le_finrank (K := F)
 
 /-
 [foundational] `absNormUnder` injectivity: equal `absNormUnder` means the primes lie

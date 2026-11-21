@@ -36,14 +36,13 @@ equivalence of discriminant groups.  The construction respects identity, inverse
 * `TauCeti.IntegralLattice.finite_discriminantGroup_iff_nondegenerate`: finiteness holds exactly
   in the nondegenerate case.
 * `TauCeti.IntegralLattice.Isometry.discriminantGroupEquiv`: the induced equivalence of
-  discriminant groups.
+  discriminant groups, with representative-transport lemma
+  `TauCeti.IntegralLattice.Isometry.discriminantGroupEquiv_mk_eq_mk_of_apply_eq`.
 
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md` (Layer 2).
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`.
 -/
 
 public section
@@ -126,6 +125,8 @@ theorem discriminantGroup_mk_eq_iff (L : IntegralLattice V) (x y : L.dualCarrier
 /-- The discriminant group of a nondegenerate integral lattice is finite. -/
 noncomputable instance instFiniteDiscriminantGroup (L : IntegralLattice V) [L.IsNondegenerate] :
     Finite L.DiscriminantGroup := by
+  have := Submodule.IsLattice.free ℚ L.dualCarrier
+  have := Submodule.IsLattice.finite ℚ L.dualCarrier
   apply Submodule.finiteQuotientOfFreeOfRankEq L.carrierInDual
   rw [L.finrank_carrierInDual, L.finrank_carrier, L.finrank_dualCarrier]
 
@@ -174,6 +175,14 @@ theorem discriminantGroupEquiv_mk (e : Isometry L M) (x : L.dualCarrier) :
     e.discriminantGroupEquiv (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (e.dualCarrierEquiv x) := by
   simp [discriminantGroupEquiv]
+
+/-- If an isometry maps the ambient vector of a dual-carrier representative `x` to that of `y`,
+then the induced discriminant-group equivalence maps the class of `x` to the class of `y`. -/
+theorem discriminantGroupEquiv_mk_eq_mk_of_apply_eq (e : Isometry L M)
+    {x : L.dualCarrier} {y : M.dualCarrier} (h : e (x : V) = (y : W)) :
+    e.discriminantGroupEquiv (Submodule.Quotient.mk x) = Submodule.Quotient.mk y := by
+  rw [e.discriminantGroupEquiv_mk]
+  exact congrArg Submodule.Quotient.mk (Subtype.ext ((e.coe_dualCarrierEquiv_apply x).trans h))
 
 /-- The identity isometry induces the identity equivalence of discriminant groups. -/
 @[simp]

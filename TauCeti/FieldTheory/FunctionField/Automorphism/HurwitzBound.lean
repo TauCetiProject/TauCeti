@@ -16,11 +16,13 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 -- `F` a finite Galois extension of the fixed field, which the tameness hypothesis of the statements
 -- below needs in order to elaborate at all.
 public import TauCeti.FieldTheory.Galois.FixedField
--- Non-public, all three in the proofs only: the numerical bound on the deficit of branch data, the
--- branch-data form of the tame different, and the tame Hurwitz genus formula.
-import TauCeti.Data.Rat.BranchDeficit
+-- Non-public, all four in the proofs only: the numerical bound on the deficit of branch data, the
+-- branch-data form of the tame different, the tame Hurwitz genus formula, and the Galois group
+-- instance on fixed fields.
+import TauCeti.Algebra.Order.Field.OrbifoldDeficit
 import TauCeti.FieldTheory.FunctionField.Different.Galois
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
+import TauCeti.FieldTheory.Galois.IsGaloisGroup
 
 /-!
 # The Hurwitz bound on a tame automorphism group
@@ -86,11 +88,8 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     (htame : ∀ P : Place k F, Place.IsTame k (IntermediateField.fixedField G) P) :
     Nat.card G ≤ 84 * (genus k F - 1) := by
   classical
-  set E := IntermediateField.fixedField G with hE
-  have hcard : Module.finrank ↥E F = Nat.card G := by
-    rw [hE]
-    exact IntermediateField.finrank_fixedField_eq_natCard G
-  have hGpos : 0 < Nat.card G := Nat.card_pos
+  set E := IntermediateField.fixedField G
+  have hcard : Module.finrank ↥E F = Nat.card G := (IsGaloisGroup.card_eq_finrank G E F).symm
   have hFE : IsFunctionField k ↥E := hF.fixedField G
   have hexE : IsIntegrallyClosedIn k ↥E := E.val.isIntegrallyClosedIn E.val.injective hex
   -- The ramified places of the fixed field form a finite set.
@@ -110,11 +109,6 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
   -- The branch data: each ramified place contributes its index, once per degree.
   set e : Multiset ℕ := s.val.bind fun P ↦ Multiset.replicate P.degree (P.ramificationIdxIn F)
     with he
-  have hetwo : ∀ n ∈ e, 2 ≤ n := by
-    intro n hn
-    obtain ⟨P, hP, hn⟩ := Multiset.mem_bind.mp hn
-    rw [Multiset.eq_of_mem_replicate hn]
-    exact hfinite.mem_toFinset.mp hP
   have hsum : (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum =
       ∑ P ∈ s, (1 - 1 / (P.ramificationIdxIn F : ℚ)) * P.degree := by
     rw [he, Multiset.map_bind, Multiset.sum_bind, Finset.sum]
@@ -128,7 +122,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     rw [hbranch] at hcastQ
     rw [hD, hsum, ← hcard]
     linarith [hcastQ]
-  exact card_le_eighty_four_mul_sub_one hgenus hGpos hetwo hkey
+  exact card_le_eighty_four_mul_sub_one hgenus hkey
 
 /-- **The Hurwitz bound for a group of order prime to the characteristic** (Stichtenoth,
 Exercise 3.18): over a perfect constant field of characteristic `p`, a finite group `G` of
@@ -150,7 +144,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one_of_not_dvd [PerfectField k] (p 
   refine ⟨{Q : Place k F | Q.restrict k ↥(IntermediateField.fixedField G) =
       P.restrict k ↥(IntermediateField.fixedField G)}.ncard *
       Place.relativeDegree k ↥(IntermediateField.fixedField G) P, ?_⟩
-  rw [← IntermediateField.finrank_fixedField_eq_natCard G, ← hfund]
+  rw [IsGaloisGroup.card_eq_finrank G (IntermediateField.fixedField G) F, ← hfund]
   ring
 
 /-- **The Hurwitz bound in characteristic zero** (Stichtenoth, Exercise 3.18): a finite group of

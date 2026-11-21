@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Groupoid
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
+public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
 # Successive full-subcategory restrictions
@@ -129,5 +131,19 @@ instance iteratedFullSubcategoryEquivalence_functor_linear (R : Type*) [Semiring
   map_smul f r := by ext; rfl
 
 end Linear
+
+section Biproducts
+
+open Limits
+
+variable [Preadditive C] [HasFiniteBiproducts C]
+
+/-- A full subcategory of a preadditive category with finite biproducts, closed under finite
+products, has finite biproducts. -/
+instance hasFiniteBiproducts_fullSubcategory [P.IsClosedUnderFiniteProducts] :
+    HasFiniteBiproducts P.FullSubcategory :=
+  .of_hasFiniteProducts
+
+end Biproducts
 
 end CategoryTheory.ObjectProperty

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 
@@ -46,7 +46,6 @@ construction.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, section 1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 3.
 -/
 
 public section
@@ -108,7 +107,7 @@ private theorem carrierInDual_le_radical_dualCarrierHalfNormModOne
       LinearMap.BilinMap.polar_toQuadraticMap, dualCarrierHalfFormModOne_apply,
       dualCarrierHalfFormModOne_apply, L.isSymm.eq]
     obtain ⟨z, hz⟩ := Submodule.mem_one.mp
-      (y.2 x ((L.mem_carrierInDual_iff x).mp hx))
+      (y.property x ((L.mem_carrierInDual_iff x).mp hx))
     rw [← AddCircle.coe_add]
     refine (AddCircle.coe_eq_zero_iff_mem_one _).mpr (Submodule.mem_one.mpr ⟨z, ?_⟩)
     have hz' : L.form y x = (z : ℚ) := by simpa using hz.symm

@@ -59,7 +59,7 @@ theorem cdf_gammaMeasure_le_of_shape_le (ha : 0 < a) (hr : 0 < r) (hab : a ≤ b
     refine ⟨by fun_prop, ?_⟩
     rw [← Measure.conv, gammaMeasure_conv_gammaMeasure ha hdiff hr, add_sub_cancel]
   refine hfst.cdf_le_of_ae_le hsum ?_ x
-  filter_upwards [ae_mem_prod_Ioi_gammaMeasure ha hdiff hr hr] with z hz
+  filter_upwards [ae_mem_prod_Ioi_gammaMeasure] with z hz
   exact le_add_of_nonneg_right hz.2.le
 
 /-- Increasing the positive rate at a fixed positive shape increases the Gamma cdf. -/
@@ -68,7 +68,7 @@ theorem cdf_gammaMeasure_le_of_rate_le (ha : 0 < a) (hs : 0 < s) (hsr : s ≤ r)
   have hr : 0 < r := hs.trans_le hsr
   let _ := isProbabilityMeasure_gammaMeasure ha hr
   have hscale : (gammaMeasure a r).map (r / s * ·) = gammaMeasure a s := by
-    rw [gammaMeasure_map_const_mul ha hr (div_pos hr hs)]
+    rw [gammaMeasure_map_const_mul (div_pos hr hs)]
     congr 1
     field_simp
   have hscaled : HasLaw (fun y : ℝ ↦ r / s * y) (gammaMeasure a s)

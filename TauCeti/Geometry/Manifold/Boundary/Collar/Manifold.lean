@@ -16,11 +16,10 @@ half-space in tangential and inward-normal coordinates. This file proves that th
 manifold modeled on `(𝓡 n).prod (𝓡∂ 1)` whenever the original half-space charted space is a
 `C^k` manifold.
 
-This is the local product-manifold step in Layer 1's collar-neighbourhood target of the
-GeometricTopology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`). It is deliberately not
-the global collar theorem: a collar chart still has an arbitrary open target in the product model,
-not a target of the form `V × [0, ε)`. The global step must shrink and patch these local product
-coordinates along the entire boundary.
+This is the local product-manifold step towards the collar-neighbourhood theorem. It is
+deliberately not the global collar theorem: a collar chart still has an arbitrary open target in
+the product model, not a target of the form `V × [0, ε)`. The global step must shrink and patch
+these local product coordinates along the entire boundary.
 
 For ambient atlas charts `e` and `e'`, their collar transition is the composite of the smooth
 inverse of `collarChart e` with the smooth map `collarChart e'`. The only bookkeeping left after
@@ -60,8 +59,8 @@ private lemma collarModel_coordinateChange_eq_extChartAt {n : ℕ}
 
 private lemma modelProd_exists_fiber {E : Type*}
     (p : E × EuclideanSpace ℝ (Fin 1)) :
-    (∃ y : ModelProd E (EuclideanHalfSpace 1), y.1 = p.1 ∧ y.2.1 = p.2) ↔
-      ∃ y : EuclideanHalfSpace 1, y.1 = p.2 := by
+    (∃ y : ModelProd E (EuclideanHalfSpace 1), y.1 = p.1 ∧ y.2.val = p.2) ↔
+      ∃ y : EuclideanHalfSpace 1, y.val = p.2 := by
   constructor
   · rintro ⟨y, -, hy⟩
     exact ⟨y.2, hy⟩
@@ -76,8 +75,8 @@ private lemma collarTransition_coordinateDomain_iff {n : ℕ} {M : Type*} [Topol
             (collarChart e).symm
               (p.1, (modelWithCornersEuclideanHalfSpace 1).symm p.2) ∈ e'.source) ∧
           ∃ y : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1),
-            y.1 = p.1 ∧ y.2.1 = p.2) ↔
-        (∃ y : EuclideanHalfSpace 1, y.1 = p.2) ∧
+            y.1 = p.1 ∧ y.2.val = p.2) ↔
+        (∃ y : EuclideanHalfSpace 1, y.val = p.2) ∧
           EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n
             (p.1, (modelWithCornersEuclideanHalfSpace 1).symm p.2) ∈ e.target ∧
           e.symm (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n

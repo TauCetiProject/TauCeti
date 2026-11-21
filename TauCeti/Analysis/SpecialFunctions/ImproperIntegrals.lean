@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -18,7 +19,7 @@ This file extends Mathlib's improper-integral estimates with an asymptotic estim
 integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
 `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
 closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
-Lebesgue integrals.
+Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` as a Bochner integral.
 
 It also evaluates the power-weighted sine integral on the positive half-line for exponents between
 zero and one.
@@ -26,6 +27,9 @@ zero and one.
 ## Main declarations
 
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
+* `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
+  `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
+  roots is dominated by a Cauchy integrand and is integrable for positive radii.
 
 * `TauCeti.integrableOn_rpow_mul_sin` and `TauCeti.integral_Ioi_rpow_mul_sin`: integrability
   and the value of `∫ x in Ioi 0, x ^ (-(alpha + 1)) * sin x` for `0 < alpha < 1`.
@@ -35,6 +39,8 @@ zero and one.
 * `TauCeti.lintegral_Iic_ofReal_exp_mul`, `TauCeti.lintegral_Ioi_ofReal_exp_neg_mul`:
   `∫⁻ s in Iic 0, ofReal (exp (a s)) = ∫⁻ s in Ioi 0, ofReal (exp (-a s)) = ofReal a⁻¹`
   for `0 < a`.
+* `TauCeti.integral_Ioi_exp_neg_mul`: the Bochner integral `∫ s in Ioi 0, exp (-a s) = a⁻¹`
+  for `0 < a`.
 
 * `TauCeti.integrableAtFilter_inv_mul_one_add_log_sq`: the function
   `t ↦ (t (1 + log t) ^ 2)⁻¹` is integrable at infinity.
@@ -43,6 +49,9 @@ zero and one.
 * `TauCeti.tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero`: if `g t → L` as `t → ∞`, then
   `ε ∫_1^∞ t ^ (-ε - 1) g t → L` as `ε → 0⁺`. Through Mathlib's `LSeries_eq_mul_integral` this
   is the Abelian theorem for Dirichlet series.
+* `TauCeti.integrableOn_Ioi_rpow_mul_log_of_lt` and `TauCeti.integral_Ioi_rpow_mul_log_of_lt`:
+  integrability and the closed form `∫ t in Ioi c, t ^ a * log t =
+  c ^ (a + 1) * (1 - (a + 1) * log c) / (a + 1) ^ 2` for `a < -1` and `0 < c`.
 -/
 
 public section
@@ -122,6 +131,77 @@ theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
   exact ((integrable_inv_one_add_sq.comp_div hc).const_mul (c ^ 2)⁻¹).congr
     (Eventually.of_forall hscale)
 
+/-- For positive radii, the inverse product of two quadratic square roots is bounded by the
+Cauchy integrand at their minimum radius. -/
+theorem one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
+    1 / (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) ≤
+      ((min a b) ^ 2 + t ^ 2)⁻¹ := by
+  have hd : 0 < min a b := lt_min ha hb
+  rw [one_div]
+  apply inv_anti₀ (add_pos_of_pos_of_nonneg (sq_pos_of_pos hd) (sq_nonneg t))
+  calc
+    (min a b) ^ 2 + t ^ 2 =
+        Real.sqrt ((min a b) ^ 2 + t ^ 2) * Real.sqrt ((min a b) ^ 2 + t ^ 2) :=
+      (Real.mul_self_sqrt (by positivity)).symm
+    _ ≤ _ := by
+      gcongr <;> nlinarith [min_le_left a b, min_le_right a b]
+
+/-- The inverse product of `sqrt (a² + t²)` and `sqrt (b² + t²)` is integrable on the whole
+real line when both radii are positive. -/
+theorem integrable_one_div_sqrt_mul_sqrt {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    Integrable (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) := by
+  have hdcont : Continuous (fun t : ℝ ↦
+      Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) :=
+    (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2))).mul
+      (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2)))
+  have hcont : Continuous (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) :=
+    continuous_const.div hdcont (fun t ↦ by
+      exact (mul_pos (Real.sqrt_pos.2 (by positivity))
+        (Real.sqrt_pos.2 (by positivity))).ne')
+  have hC : Integrable (fun t : ℝ ↦ ((min a b) ^ 2 + t ^ 2)⁻¹) := by
+    simpa only [add_comm] using TauCeti.integrable_inv_sq_add_sq (lt_min ha hb).ne'
+  refine hC.mono' hcont.aestronglyMeasurable (Eventually.of_forall fun t ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq ha hb t
+
+/-- A remainder `E` that is interval integrable on `[a, b]` with `0 < a` makes `t ^ (τ - 1) * E t`
+interval integrable on `[a, b]`. -/
+lemma intervalIntegrable_rpow_sub_one_mul {E : ℝ → ℝ} (τ : ℝ) {a b : ℝ}
+    (hE : IntervalIntegrable E volume a b) (ha : 0 < a) (hab : a ≤ b) :
+    IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume a b := by
+  refine hE.continuousOn_mul fun t ht ↦ ?_
+  rw [uIcc_of_le hab] at ht
+  exact (Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).continuousWithinAt
+
+/-- If `|E t| ≤ c * t` on `[T, x]` with `0 < T` and `τ ≠ -1`, then
+`∫ t in T..x, t ^ (τ - 1) * E t` is bounded in absolute value by `c * ∫ t in T..x, t ^ τ`,
+computed explicitly. -/
+lemma abs_integral_rpow_sub_one_mul_le {E : ℝ → ℝ} {τ c T x : ℝ} (hτ : τ ≠ -1)
+    (hT : 0 < T) (hx : T ≤ x)
+    (hint : IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume T x)
+    (hbound : ∀ t ∈ Icc T x, |E t| ≤ c * t) :
+    |∫ t in T..x, t ^ (τ - 1) * E t| ≤ c * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
+  have h0 : (0 : ℝ) ∉ uIcc T x := by
+    rw [uIcc_of_le hx]
+    exact fun h ↦ hT.not_ge h.1
+  calc |∫ t in T..x, t ^ (τ - 1) * E t|
+      ≤ ∫ t in T..x, |t ^ (τ - 1) * E t| := intervalIntegral.abs_integral_le_integral_abs hx
+    _ ≤ ∫ t in T..x, c * t ^ τ := by
+        refine intervalIntegral.integral_mono_on hx hint.abs
+          ((intervalIntegral.intervalIntegrable_rpow (Or.inr h0)).const_mul c) fun t ht ↦ ?_
+        have ht0 : 0 < t := by linarith [ht.1]
+        rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos ht0 _)]
+        calc t ^ (τ - 1) * |E t| ≤ t ^ (τ - 1) * (c * t) := by
+              gcongr
+              exact hbound t ht
+          _ = c * t ^ τ := by
+              rw [Real.rpow_sub_one ht0.ne']
+              field_simp
+    _ = c * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
+        rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inr ⟨hτ, h0⟩)]
+
 /-- **A remainder `o(t)` integrates to `o(x ^ (τ + 1))` against `t ^ (τ - 1)`.** If `E` is
 interval integrable above `1` and `E t = o(t)`, then for every exponent `τ > -1` the weighted
 integral `∫ t in 1..x, t ^ (τ - 1) * E t` is `o(x ^ (τ + 1))`. -/
@@ -129,14 +209,11 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
     (hE_int : ∀ x, 1 ≤ x → IntervalIntegrable E volume 1 x) (hE : E =o[atTop] id) :
     (fun x : ℝ ↦ ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t) =o[atTop] fun x ↦ x ^ (τ + 1) := by
   have hτ1 : 0 < τ + 1 := by linarith
-  have hint {a b : ℝ} (ha : 1 ≤ a) (hab : a ≤ b) :
-      IntervalIntegrable (fun t ↦ t ^ (τ - 1) * E t) volume a b := by
-    have hE' : IntervalIntegrable E volume a b := (hE_int b (ha.trans hab)).mono_set <| by
-      rw [uIcc_of_le (ha.trans hab), uIcc_of_le hab]
-      exact Icc_subset_Icc ha le_rfl
-    refine hE'.continuousOn_mul fun t ht ↦ ?_
-    rw [uIcc_of_le hab] at ht
-    exact (Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).continuousWithinAt
+  have hint {a b : ℝ} (ha : 1 ≤ a) (hab : a ≤ b) :=
+    intervalIntegrable_rpow_sub_one_mul τ
+      ((hE_int b (ha.trans hab)).mono_set <| by
+        rw [uIcc_of_le (ha.trans hab), uIcc_of_le hab]
+        exact Icc_subset_Icc ha le_rfl) (zero_lt_one.trans_le ha) hab
   rw [isLittleO_iff]
   intro ε hε
   -- Beyond a cutoff `T`, `|E t| ≤ ε' t` with `ε' = ε (τ + 1) / 2`.
@@ -156,23 +233,8 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
   have hTpow : 0 ≤ T ^ (τ + 1) := Real.rpow_nonneg (by linarith) _
   rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hxpow,
     ← intervalIntegral.integral_add_adjacent_intervals (hint le_rfl hT1) (hint hT1 hx)]
-  have htail : |∫ t in T..x, t ^ (τ - 1) * E t| ≤
-      ε' * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
-    calc |∫ t in T..x, t ^ (τ - 1) * E t|
-        ≤ ∫ t in T..x, |t ^ (τ - 1) * E t| := intervalIntegral.abs_integral_le_integral_abs hx
-      _ ≤ ∫ t in T..x, ε' * t ^ τ := by
-          refine intervalIntegral.integral_mono_on hx (hint hT1 hx).abs
-            ((intervalIntegral.intervalIntegrable_rpow' hτ).const_mul ε') fun t ht ↦ ?_
-          have ht0 : 0 < t := by linarith [ht.1]
-          rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos ht0 _)]
-          calc t ^ (τ - 1) * |E t| ≤ t ^ (τ - 1) * (ε' * t) := by
-                gcongr
-                exact hbound t ht.1
-            _ = ε' * t ^ τ := by
-                rw [Real.rpow_sub_one ht0.ne']
-                field_simp
-      _ = ε' * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
-          rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hτ)]
+  have htail := abs_integral_rpow_sub_one_mul_le hτ.ne' (zero_lt_one.trans_le hT1) hx
+    (hint hT1 hx) fun t ht ↦ hbound t ht.1
   have hM : M ≤ ε / 2 * x ^ (τ + 1) := by
     rw [div_le_iff₀ hε] at hxM
     linarith
@@ -187,6 +249,57 @@ theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : 
       ≤ M + |∫ t in T..x, t ^ (τ - 1) * E t| := abs_add_le _ _
     _ ≤ ε * x ^ (τ + 1) := by linarith
 
+/-- Let `ε > 0`, `c ≥ 0`, and let `g` be locally integrable on `[1, ∞)`. If `‖g t - L‖ ≤ c` for
+all `t > T`, then `t ^ (-ε - 1) • (g t - L)` is integrable on `(1, ∞)`
+and its integral has norm at most `∫ t in Ioc 1 T, ‖g t - L‖ + c * ∫ t in Ioi 1, t ^ (-ε - 1)`. -/
+lemma integrableOn_and_norm_integral_rpow_smul_sub_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {L : E}
+    {ε c T : ℝ} (hε : 0 < ε) (hc0 : 0 ≤ c)
+    (hg : LocallyIntegrableOn g (Ici 1))
+    (hc : ∀ t, T < t → ‖g t - L‖ ≤ c) :
+    IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L)) (Ioi 1) ∧
+      ‖∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)‖ ≤
+        (∫ t in Ioc 1 T, ‖g t - L‖) + c * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) := by
+  have hw : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
+    integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
+  have hgL : IntegrableOn (fun t ↦ g t - L) (Ioc 1 T) :=
+    ((hg.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
+      Ioc_subset_Icc_self).sub (integrableOn_const (by simp))
+  -- An integrable majorant `b` of `t ^ (-ε - 1) • (g t - L)` on `(1, ∞)`.
+  set b : ℝ → ℝ := fun t ↦ (Ioc 1 T).indicator (fun t ↦ ‖g t - L‖) t + c * t ^ (-ε - 1)
+  have hb_ind : IntegrableOn ((Ioc 1 T).indicator fun t ↦ ‖g t - L‖) (Ioi 1) :=
+    (IntegrableOn.integrable_indicator hgL.norm measurableSet_Ioc).integrableOn
+  have hb : IntegrableOn b (Ioi 1) := hb_ind.add (hw.const_mul _)
+  have hbound : ∀ t ∈ Ioi (1 : ℝ), ‖t ^ (-ε - 1) • (g t - L)‖ ≤ b t := by
+    intro t (ht : 1 < t)
+    have hw0 : 0 ≤ t ^ (-ε - 1) := Real.rpow_nonneg (by linarith) _
+    have hw1 : t ^ (-ε - 1) ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos ht.le (by linarith)
+    rw [norm_smul, Real.norm_of_nonneg hw0]
+    by_cases htT : t ≤ T
+    · have hmem : t ∈ Ioc 1 T := ⟨ht, htT⟩
+      have hbt : b t = ‖g t - L‖ + c * t ^ (-ε - 1) := by simp [b, indicator_of_mem hmem]
+      rw [hbt]
+      nlinarith [norm_nonneg (g t - L), mul_nonneg hc0 hw0]
+    · have hmem : t ∉ Ioc 1 T := fun h ↦ htT h.2
+      have hbt : b t = c * t ^ (-ε - 1) := by simp [b, indicator_of_notMem hmem]
+      rw [hbt]
+      have := hc t (not_le.mp htT)
+      nlinarith
+  have hbound_ae : ∀ᵐ t ∂(volume.restrict (Ioi (1 : ℝ))), ‖t ^ (-ε - 1) • (g t - L)‖ ≤ b t :=
+    (ae_restrict_iff' measurableSet_Ioi).mpr (ae_of_all _ hbound)
+  have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L))
+      (volume.restrict (Ioi 1)) := by
+    refine AEStronglyMeasurable.smul ?_ ?_
+    · exact (ContinuousOn.rpow_const continuousOn_id fun t ht ↦
+        Or.inl (zero_lt_one.trans ht).ne').aestronglyMeasurable measurableSet_Ioi
+    · exact (hg.aestronglyMeasurable.mono_set Ioi_subset_Ici_self).sub
+        aestronglyMeasurable_const
+  have hb_eq : ∫ t in Ioi 1, b t =
+      (∫ t in Ioc 1 T, ‖g t - L‖) + c * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) := by
+    rw [integral_add hb_ind (hw.const_mul _), integral_const_mul,
+      setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self]
+  exact ⟨hb.mono' hmeas hbound_ae, hb_eq ▸ norm_integral_le_of_norm_le hb hbound_ae⟩
+
 /-- **An Abelian limit for the weights `ε t ^ (-ε - 1)`.** If `g` is locally integrable on
 `[1, ∞)` and `g t → L` as `t → ∞`, then the averages `ε ∫_1^∞ t ^ (-ε - 1) g t` of `g` against
 the probability densities `ε t ^ (-ε - 1)` on `(1, ∞)` tend to `L` as `ε → 0⁺`. -/
@@ -194,8 +307,6 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
     [NormedSpace ℝ E] [CompleteSpace E] {g : ℝ → E} {L : E}
     (hg : LocallyIntegrableOn g (Ici 1)) (hlim : Tendsto g atTop (𝓝 L)) :
     Tendsto (fun ε : ℝ ↦ ε • ∫ t in Ioi 1, t ^ (-ε - 1) • g t) (𝓝[>] 0) (𝓝 L) := by
-  have hw {ε : ℝ} (hε : 0 < ε) : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
-    integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
   have hw_eq {ε : ℝ} (hε : 0 < ε) : ε * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) = 1 := by
     rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow, sub_add_cancel]
     field_simp
@@ -207,46 +318,14 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
     (hlim.eventually (Metric.closedBall_mem_nhds L (half_pos hδ)))
   set T' := max T 1
   set K := ∫ t in Ioc 1 T', ‖g t - L‖
-  have hgL : IntegrableOn (fun t ↦ g t - L) (Ioc 1 T') :=
-    ((hg.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
-      Ioc_subset_Icc_self).sub (integrableOn_const (by simp))
   have hsmall : ∀ᶠ ε : ℝ in 𝓝[>] 0, ε * K < δ / 2 := by
     have : Tendsto (fun ε : ℝ ↦ ε * K) (𝓝[>] 0) (𝓝 (0 * K)) :=
       (tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).mul_const K
     exact this.eventually_lt_const (by simpa using half_pos hδ)
   filter_upwards [hsmall, self_mem_nhdsWithin] with ε hεK (hε : 0 < ε)
-  -- An integrable majorant `b` of `t ^ (-ε - 1) • (g t - L)` on `(1, ∞)`.
-  set b : ℝ → ℝ := fun t ↦ (Ioc 1 T').indicator (fun t ↦ ‖g t - L‖) t + δ / 2 * t ^ (-ε - 1)
-  have hb_ind : IntegrableOn ((Ioc 1 T').indicator fun t ↦ ‖g t - L‖) (Ioi 1) :=
-    (IntegrableOn.integrable_indicator hgL.norm measurableSet_Ioc).integrableOn
-  have hb : IntegrableOn b (Ioi 1) := hb_ind.add ((hw hε).const_mul _)
-  have hbound : ∀ t ∈ Ioi (1 : ℝ), ‖t ^ (-ε - 1) • (g t - L)‖ ≤ b t := by
-    intro t (ht : 1 < t)
-    have hw0 : 0 ≤ t ^ (-ε - 1) := Real.rpow_nonneg (by linarith) _
-    have hw1 : t ^ (-ε - 1) ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos ht.le (by linarith)
-    rw [norm_smul, Real.norm_of_nonneg hw0]
-    by_cases htT : t ≤ T'
-    · have hmem : t ∈ Ioc 1 T' := ⟨ht, htT⟩
-      have hbt : b t = ‖g t - L‖ + δ / 2 * t ^ (-ε - 1) := by simp [b, indicator_of_mem hmem]
-      rw [hbt]
-      nlinarith [norm_nonneg (g t - L)]
-    · have hmem : t ∉ Ioc 1 T' := fun h ↦ htT h.2
-      have hbt : b t = δ / 2 * t ^ (-ε - 1) := by simp [b, indicator_of_notMem hmem]
-      rw [hbt]
-      have : ‖g t - L‖ ≤ δ / 2 := by
-        simpa [dist_eq_norm] using hT t ((le_max_left T 1).trans (not_le.mp htT).le)
-      nlinarith
-  have hbound_ae : ∀ᵐ t ∂(volume.restrict (Ioi (1 : ℝ))), ‖t ^ (-ε - 1) • (g t - L)‖ ≤ b t :=
-    (ae_restrict_iff' measurableSet_Ioi).mpr (ae_of_all _ hbound)
-  have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L))
-      (volume.restrict (Ioi 1)) := by
-    refine AEStronglyMeasurable.smul ?_ ?_
-    · exact (ContinuousOn.rpow_const continuousOn_id fun t ht ↦
-        Or.inl (zero_lt_one.trans ht).ne').aestronglyMeasurable measurableSet_Ioi
-    · exact (hg.aestronglyMeasurable.mono_set Ioi_subset_Ici_self).sub
-        aestronglyMeasurable_const
-  have hint : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1) • (g t - L)) (Ioi 1) :=
-    hb.mono' hmeas hbound_ae
+  obtain ⟨hint, hnorm⟩ :=
+    integrableOn_and_norm_integral_rpow_smul_sub_le hε (half_pos hδ).le hg fun t ht ↦ by
+      simpa [dist_eq_norm] using hT t ((le_max_left T 1).trans ht.le)
   -- Since the weights have total mass one, subtracting `L` subtracts `L` from the average.
   have hsplit : ε • ∫ t in Ioi 1, t ^ (-ε - 1) • g t =
       ε • (∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)) + L := by
@@ -254,17 +333,14 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
         fun t ↦ t ^ (-ε - 1) • (g t - L) + t ^ (-ε - 1) • L := by
       ext t
       rw [← smul_add, sub_add_cancel]
-    rw [this, integral_add hint ((hw hε).smul_const L), integral_smul_const, smul_add,
-      smul_smul, hw_eq hε, one_smul]
-  have hb_eq : ∫ t in Ioi 1, b t = K + δ / 2 * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1) := by
-    rw [integral_add hb_ind ((hw hε).const_mul _), integral_const_mul,
-      setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self]
+    have hw : IntegrableOn (fun t : ℝ ↦ t ^ (-ε - 1)) (Ioi 1) :=
+      integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one
+    rw [this, integral_add hint (hw.smul_const L), integral_smul_const,
+      smul_add, smul_smul, hw_eq hε, one_smul]
   rw [dist_eq_norm, hsplit, add_sub_cancel_right, norm_smul, Real.norm_of_nonneg hε.le]
   calc ε * ‖∫ t in Ioi 1, t ^ (-ε - 1) • (g t - L)‖
-      ≤ ε * ∫ t in Ioi 1, b t := by
-        gcongr
-        exact norm_integral_le_of_norm_le hb hbound_ae
-    _ = ε * K + δ / 2 := by rw [hb_eq, mul_add, mul_left_comm, hw_eq hε, mul_one]
+      ≤ ε * (K + δ / 2 * ∫ t in Ioi (1 : ℝ), t ^ (-ε - 1)) := by gcongr
+    _ = ε * K + δ / 2 := by rw [mul_add, mul_left_comm, hw_eq hε, mul_one]
     _ < δ := by linarith
 
 /-- The function `(t (1 + log t) ^ 2)⁻¹` is integrable at infinity. On `Ioi 1` it is dominated
@@ -298,7 +374,7 @@ theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
   have hy : 0 < y := hA.trans hy
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
-  simp [Real.rpow_neg hy.le, Real.nnnorm_of_nonneg hy.le]
+  simp [Real.rpow_neg hy.le, Real.nnNorm_of_nonneg hy.le]
 
 /-- `∫_{-∞}^0 e^{a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
 theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :
@@ -313,5 +389,69 @@ theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
   rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
     (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
   simp
+
+/-- `∫_0^∞ e^{-a s} ds = 1 / a` for `0 < a`, as a Bochner integral. -/
+theorem integral_Ioi_exp_neg_mul {a : ℝ} (ha : 0 < a) :
+    ∫ s in Ioi 0, Real.exp (-a * s) = a⁻¹ := by
+  rw [integral_exp_mul_Ioi (neg_neg_of_pos ha)]
+  simp
+
+/-- For `a < -1` and `0 < c`, the function `t ↦ t ^ a * log t` is integrable on `(c, ∞)`. -/
+theorem integrableOn_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
+    IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi c) := by
+  set M := max c 1
+  have hM1 : 1 ≤ M := le_max_right c 1
+  have h_cpt : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioc c M) := by
+    refine (ContinuousOn.integrableOn_Icc (a := c) (b := M) ?_).mono_set Ioc_subset_Icc_self
+    exact (continuousOn_id.rpow_const fun t (ht : t ∈ Icc c M) ↦ Or.inl (hc.trans_le ht.1).ne').mul
+      (continuousOn_log.mono fun t (ht : t ∈ Icc c M) ↦ (hc.trans_le ht.1).ne')
+  have h_tail : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi M) := by
+    simpa only [sub_sub_cancel] using
+      (integrableOn_rpow_mul_log (η := -1 - a) (by linarith)).mono_set (Ioi_subset_Ioi hM1)
+  rw [← Ioc_union_Ioi_eq_Ioi (le_max_left c 1)]
+  exact h_cpt.union h_tail
+
+/-- **The improper integral `∫_c^∞ t ^ a * log t dt`** for `a < -1` and `0 < c`. -/
+theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
+    ∫ t in Ioi c, t ^ a * Real.log t =
+      c ^ (a + 1) * (1 - (a + 1) * Real.log c) / (a + 1) ^ 2 := by
+  have ha1 : a + 1 ≠ 0 := by linarith
+  have hd : ∀ t ∈ Ici c,
+      HasDerivAt (fun x : ℝ ↦ x ^ (a + 1) * ((a + 1) * Real.log x - 1) / (a + 1) ^ 2)
+        (t ^ a * Real.log t) t := by
+    intro t (ht : c ≤ t)
+    have ht0 : 0 < t := hc.trans_le ht
+    have h1 := Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0.ne')
+    have h2 := ((Real.hasDerivAt_log ht0.ne').const_mul (a + 1)).sub_const 1
+    convert (h1.mul h2).div_const ((a + 1) ^ 2) using 1
+    rw [add_sub_cancel_right]
+    have ht_mul : t ^ (a + 1) * t⁻¹ = t ^ a := by
+      rw [← Real.rpow_neg_one, ← Real.rpow_add ht0, add_neg_cancel_right]
+    calc
+      t ^ a * Real.log t = (a + 1) ^ 2 * (t ^ a * Real.log t) / (a + 1) ^ 2 := by field_simp
+      _ = ((a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
+            t ^ (a + 1) * ((a + 1) * t⁻¹)) / (a + 1) ^ 2 := by
+          congr 1
+          calc
+            (a + 1) ^ 2 * (t ^ a * Real.log t)
+                = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) + (a + 1) * t ^ a := by ring
+            _ = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
+                  t ^ (a + 1) * ((a + 1) * t⁻¹) := by rw [← ht_mul]; ring
+  have hlim_log : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * Real.log t) atTop (𝓝 0) := by
+    refine (isLittleO_log_rpow_atTop (by linarith : 0 < -(a + 1))).tendsto_div_nhds_zero.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    rw [div_eq_mul_inv, ← Real.rpow_neg ht.le, neg_neg, mul_comm]
+  have hlim_rpow : Tendsto (fun t : ℝ ↦ t ^ (a + 1)) atTop (𝓝 0) :=
+    by simpa only [neg_neg] using tendsto_rpow_neg_atTop (by linarith : 0 < -(a + 1))
+  have ht : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * ((a + 1) * Real.log t - 1) / (a + 1) ^ 2)
+      atTop (𝓝 0) := by
+    have h0 : (((a + 1) * 0 - 0) / (a + 1) ^ 2 : ℝ) = 0 := by simp
+    rw [← h0]
+    refine (((hlim_log.const_mul (a + 1)).sub hlim_rpow).div_const ((a + 1) ^ 2)).congr' ?_
+    filter_upwards with t
+    congr 1
+    ring
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto' hd (integrableOn_Ioi_rpow_mul_log_of_lt ha hc) ht]
+  ring
 
 end TauCeti

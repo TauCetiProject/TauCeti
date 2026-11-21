@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.Measure.Prokhorov
 public import TauCeti.MeasureTheory.OptimalTransport.Compactness
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 -- Proof-only: the order-topology criterion turning a `liminf`/`limsup` sandwich into convergence.
 import Mathlib.Topology.Order.LiminfLimsup
 
@@ -36,8 +37,7 @@ problems. It is a genuine assumption — for a fixed lower semicontinuous cost a
 marginals the optimal values can strictly drop in the limit: take `c` to be the indicator of the
 off-diagonal of `ℝ × ℝ`, which is lower semicontinuous, `μs n = δ (1 / (n + 1))` and `νs n = δ 0`;
 every moving problem then has value `1`, while the limiting problem has value `0`. The recovery
-family must converge weakly to the chosen limiting plan as well as satisfy the cost bound; this is
-the recovery-coupling condition from the roadmap.
+family must converge weakly to the chosen limiting plan as well as satisfy the cost bound.
 
 The two bounds are separated on purpose: `TauCeti.transportCost_le_liminf_transportCost` needs the
 liminf hypothesis and compactness, `TauCeti.limsup_transportCost_le_transportCost` needs the
@@ -46,7 +46,7 @@ recovery hypothesis and nothing else, and only `TauCeti.tendsto_transportCost` n
 Compactness enters through `TauCeti.exists_isCoupling_tendsto_of_isTightMeasureSet`, proved in
 `TauCeti.MeasureTheory.OptimalTransport.Compactness`: a family of plans whose (varying) marginals
 are tight on a filter tail is relatively compact, and every weak limit along a finer filter is a
-coupling of the limiting marginals. This is the "tightness of optimizer subsequences" step, and it
+coupling of the limiting marginals. This is the tightness step of the stability argument, and it
 is what lets the arguments run along a filter rather than a sequence: passing to a subsequence is
 replaced by passing to a finer filter.
 
@@ -69,7 +69,10 @@ replaced by passing to a finer filter.
 * `TauCeti.transportCost_le_liminf_transportCost_of_lowerSemicontinuous` — the fixed-cost
   corollary: on Polish spaces the optimal transport cost of a lower semicontinuous cost is weakly
   lower semicontinuous in the pair of marginals, with `TauCeti.lowerSemicontinuous_transportCost`
-  its topological form on `ProbabilityMeasure X × ProbabilityMeasure Y`.
+  its topological form on `ProbabilityMeasure X × ProbabilityMeasure Y`;
+* `TauCeti.isCyclicallyMonotone_support_of_tendsto` — stability of cyclical monotonicity of the
+  support along a weakly convergent family of probability measures under continuous convergence of
+  the costs.
 
 ## References
 
@@ -78,10 +81,6 @@ replaced by passing to a finer filter.
   marginals and uniformly converging costs.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Springer 2015, Section 1.2 —
   the same statement obtained by the direct method from tightness and lower semicontinuity.
-
-This is Layer 1, item 6 of the optimal-transport roadmap. Layer 10 is where these two hypotheses
-are packaged as the Γ-liminf, Γ-limsup and equicoercivity conditions of an abstract variational
-convergence; here they stay explicit.
 -/
 
 public section
@@ -219,7 +218,8 @@ theorem transportCost_le_liminf_transportCost (hcs : IsCostLiminfStable l cs μs
     by_cases hi : transportCost (cs i) (μs i).toMeasure (νs i).toMeasure < a
     · obtain ⟨σ, hσ, hσa⟩ := transportCost_lt_iff.mp hi
       exact ⟨⟨σ, hσ.isProbabilityMeasure⟩, hσ, fun _ ↦ hσa⟩
-    · exact ⟨(Coupling.prod (μs i) (νs i)).1, (Coupling.prod (μs i) (νs i)).2, fun h ↦ absurd h hi⟩
+    · exact ⟨(Coupling.prod (μs i) (νs i)).val, (Coupling.prod (μs i) (νs i)).property,
+        fun h ↦ absurd h hi⟩
   choose πs hπs hπsa using hchoice
   set lb : Filter ι :=
     l ⊓ 𝓟 {i | transportCost (cs i) (μs i).toMeasure (νs i).toMeasure < a}
@@ -448,5 +448,50 @@ theorem lowerSemicontinuous_transportCost (hc : LowerSemicontinuous c) :
     (liminf_le_of_frequently_le' (Frequently.of_forall hqs))
 
 end Polish
+
+section CyclicalMonotonicity
+
+variable {ι X Y M : Type*} [TopologicalSpace X] [MeasurableSpace X]
+  [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace (X × Y)]
+  [HasOuterApproxClosed (X × Y)] [HereditarilyLindelofSpace (X × Y)]
+  [AddCommMonoid M] [Preorder M] [TopologicalSpace M] [OrderClosedTopology M] [ContinuousAdd M]
+  {l : Filter ι} [l.NeBot] {πs : ι → ProbabilityMeasure (X × Y)}
+  {π : ProbabilityMeasure (X × Y)} {cs : ι → X × Y → M} {c : X × Y → M}
+
+/-- **Stability of cyclically monotone supports.** Let `πs` be a family of probability measures on
+`X × Y` converging weakly to `π` along a nontrivial filter `l`, and let `cs` converge continuously
+to `c`, that is, `cs i z' → c z` as `(i, z') → (l, z)`. If `(πs i).toMeasure.support` is eventually
+`cs i`-cyclically monotone, then `π.toMeasure.support` is `c`-cyclically monotone. No integrability
+or finiteness of total cost is needed, and `M` may be any preordered commutative monoid with closed
+order and continuous addition, such as `ℝ` or `ℝ≥0∞`. -/
+theorem isCyclicallyMonotone_support_of_tendsto (hπ : Tendsto πs l (𝓝 π))
+    (hcm : ∀ᶠ i in l, IsCyclicallyMonotone (cs i) (πs i).toMeasure.support)
+    (hc : ∀ z, Tendsto (Function.uncurry cs) (l ×ˢ 𝓝 z) (𝓝 (c z))) :
+    IsCyclicallyMonotone c π.toMeasure.support := by
+  refine isCyclicallyMonotone_iff.2 fun n x y hmem σ ↦ ?_
+  let z : Fin n → X × Y := fun j ↦ (x j, y j)
+  have ht₁ : Tendsto (fun p : ι × (Fin n → X × Y) ↦ ∑ j, cs p.1 ((p.2 j).1, (p.2 (σ j)).2))
+      (l ×ˢ 𝓝 z) (𝓝 (∑ j, c (x j, y (σ j)))) :=
+    tendsto_finsetSum _ fun j _ ↦ (hc (x j, y (σ j))).comp <| tendsto_fst.prodMk <|
+      (((continuous_apply j).fst.prodMk (continuous_apply (σ j)).snd).tendsto z).comp tendsto_snd
+  have ht₂ : Tendsto (fun p : ι × (Fin n → X × Y) ↦ ∑ j, cs p.1 (p.2 j))
+      (l ×ˢ 𝓝 z) (𝓝 (∑ j, c (x j, y j))) :=
+    tendsto_finsetSum _ fun j _ ↦ (hc (x j, y j)).comp <| tendsto_fst.prodMk <|
+      ((continuous_apply j).tendsto z).comp tendsto_snd
+  refine le_of_tendsto_of_tendsto_of_frequently ht₂ ht₁ <| Filter.frequently_iff.2 fun {S} hS ↦ ?_
+  obtain ⟨P, hP, Q, hQ, hPQ⟩ := Filter.mem_prod_iff.1 hS
+  obtain ⟨V, hVQ, hVopen, hzV⟩ := mem_nhds_iff.1 hQ
+  obtain ⟨U, hU, hUV⟩ := isOpen_pi_iff'.1 hVopen z hzV
+  have hpos : ∀ᶠ i in l, ∀ j, 0 < (πs i).toMeasure (U j) := eventually_all.2 fun j ↦ by
+    have hUj : 0 < π.toMeasure (U j) :=
+      (Measure.mem_support_iff_forall _).1 (hmem j) _ ((hU j).1.mem_nhds (hU j).2)
+    exact eventually_lt_of_lt_liminf
+      (hUj.trans_le (ProbabilityMeasure.le_liminf_measure_open_of_tendsto hπ (hU j).1))
+  obtain ⟨i, hci, hPi, hi⟩ := (hcm.and (Filter.Eventually.and hP hpos)).exists
+  choose w hw using fun j ↦ Measure.nonempty_inter_support_of_pos (hi j)
+  exact ⟨(i, w), hPQ ⟨hPi, hVQ (hUV fun j _ ↦ (hw j).1)⟩,
+    hci.sum_le n (fun j ↦ (w j).1) (fun j ↦ (w j).2) (fun j ↦ (hw j).2) σ⟩
+
+end CyclicalMonotonicity
 
 end TauCeti

@@ -41,7 +41,6 @@ theorem exists_pos_period_le_nhds {x : X} (hx : ∃ s, ϕ s x ≠ x) :
   obtain ⟨ε, hε, hεu⟩ := Metric.mem_nhds_iff.mp hu
   refine ⟨ε, hε, U, hU, fun y hy T hT hfix ↦ ?_⟩
   by_contra h
-  have hTε : T < ε := lt_of_not_ge h
   -- An integer multiple of a small period lies within ε of the nonreturn time s.
   obtain ⟨k, hk, -⟩ := existsUnique_zsmul_near_of_pos hT s
   have hk' : (k : ℝ) * T ≤ s ∧ s < (k : ℝ) * T + T := by
@@ -63,7 +62,7 @@ theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
   classical
   -- Compactness makes the local bounds uniform.
   choose ε hε U hU hbound using fun x : K ↦
-    ϕ.exists_pos_period_le_nhds (hmove x x.2)
+    ϕ.exists_pos_period_le_nhds (hmove x x.property)
   obtain ⟨c, hc⟩ := hK.elim_nhds_subcover' (fun x hx ↦ U ⟨x, hx⟩)
     (fun x hx ↦ hU ⟨x, hx⟩)
   -- A finite family of positive local bounds admits a common positive lower bound.
@@ -73,5 +72,28 @@ theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
   refine ⟨δ, hδ, fun x hx T hT hfix ↦ ?_⟩
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp (hc hx)
   exact (hδsmall y hy).le.trans (hbound y x hxy T hT hfix)
+
+/-- Closed orbits meeting a compact set without stationary points have periods uniformly bounded
+away from zero. -/
+theorem exists_pos_period_le_closedOrbit_of_isCompact {K : Set X} (hK : IsCompact K)
+    (hmove : ∀ x ∈ K, ∃ s, ϕ s x ≠ x) :
+    ∃ ε > 0, ∀ γ : ϕ.ClosedOrbit, (γ.support ∩ K).Nonempty → ε ≤ γ.period := by
+  obtain ⟨ε, hε, hbound⟩ := ϕ.exists_pos_period_le_of_isCompact hK hmove
+  refine ⟨ε, hε, fun γ ↦ γ.ind fun c hc ↦ ?_⟩
+  obtain ⟨x, hx, hxK⟩ := hc
+  rw [ClosedOrbit.support_mk, mem_orbit_iff] at hx
+  obtain ⟨s, rfl⟩ := hx
+  rw [ClosedOrbit.period_mk]
+  exact hbound (ϕ s c.point) hxK c.period c.period_pos (s +ᵥ c).apply_period
+
+/-- On a compact space without stationary points, closed orbits of `ϕ` have periods uniformly
+bounded away from zero. -/
+theorem exists_pos_period_le_closedOrbit [CompactSpace X] (hmove : ∀ x, ∃ s, ϕ s x ≠ x) :
+    ∃ ε > 0, ∀ γ : ϕ.ClosedOrbit, ε ≤ γ.period := by
+  obtain ⟨ε, hε, hbound⟩ :=
+    ϕ.exists_pos_period_le_closedOrbit_of_isCompact isCompact_univ fun x _ ↦ hmove x
+  refine ⟨ε, hε, fun γ ↦ hbound γ (γ.ind fun c ↦ ⟨c.point, ?_, mem_univ _⟩)⟩
+  rw [ClosedOrbit.support_mk]
+  exact mem_orbit_self ϕ c.point
 
 end Flow

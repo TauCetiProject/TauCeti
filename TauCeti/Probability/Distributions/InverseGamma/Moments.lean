@@ -143,18 +143,22 @@ theorem not_integrable_sq_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (h : a �
 
 /-! ### Exponential moments -/
 
-/-- Every nonpositive exponential moment of a valid inverse-gamma law exists. -/
-theorem integrable_exp_mul_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (ht : t ≤ 0) :
+/-- Every nonpositive exponential moment of an inverse-gamma law exists. Invalid parameters give the
+zero measure. -/
+theorem integrable_exp_mul_inverseGammaMeasure (ht : t ≤ 0) :
     Integrable (fun x : ℝ ↦ Real.exp (t * x)) (inverseGammaMeasure a r) := by
-  let _ := isProbabilityMeasure_inverseGammaMeasure ha hr
-  exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
-    ((ae_pos_inverseGammaMeasure a r).mono fun _ hx ↦ hx.le)
+  by_cases hv : 0 < a ∧ 0 < r
+  · let _ := isProbabilityMeasure_inverseGammaMeasure hv.1 hv.2
+    exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+      ((ae_pos_inverseGammaMeasure a r).mono fun _ hx ↦ hx.le)
+  · rw [inverseGammaMeasure_of_not_pos hv]
+    exact integrable_zero_measure
 
 /-- **Positive exponential moments of a valid inverse-gamma law do not exist.** -/
 theorem not_integrable_exp_mul_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (ht : 0 < t) :
     ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x)) (inverseGammaMeasure a r) := by
   let _ := isProbabilityMeasure_inverseGammaMeasure ha hr
-  refine not_integrable_exp_mul_of_not_integrable_pow ⌈a⌉₊ measurable_id.aemeasurable
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈a⌉₊
     ((ae_pos_inverseGammaMeasure a r).mono fun _ hx ↦ hx.le) (fun hpow ↦ ?_) ht
   exact not_lt_of_ge (Nat.le_ceil a)
     ((integrable_pow_inverseGammaMeasure_iff ha hr ⌈a⌉₊).1 hpow)
@@ -167,7 +171,7 @@ theorem integrableExpSet_id_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) :
   ext u
   simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq, mem_Iic]
   exact ⟨fun h ↦ not_lt.mp fun hu ↦ not_integrable_exp_mul_inverseGammaMeasure ha hr hu h,
-    integrable_exp_mul_inverseGammaMeasure ha hr⟩
+    integrable_exp_mul_inverseGammaMeasure⟩
 
 
 end Probability

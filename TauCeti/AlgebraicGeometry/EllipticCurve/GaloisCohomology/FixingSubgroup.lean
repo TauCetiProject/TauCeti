@@ -76,7 +76,8 @@ theorem pointRes_eq_zero_iff {c : H1 (AbsoluteGaloisGroup K) W.PointCoeff} :
   rw [W.pointRes_eq_pointRes τ (separableClosureAlgEquiv K L σ), pointRes_eq_explicitMap1]
   exact explicitMap1_eq_zero_iff_explicitRes1_eq_zero _
     (absoluteGaloisGroupMap_separableClosureAlgEquiv K L σ)
-    (W.pointCoeffBaseChange_bijective (separableClosureAlgEquiv K L σ).bijective) _
+    (W.pointCoeffBaseChange_bijective (separableClosureAlgEquiv K L σ).bijective)
+    continuous_of_discreteTopology _
 
 /-- **A class of `H¹(G_K, E(Kˢ)[m])` restricts to zero over `L` exactly when it restricts to zero
 on the subgroup `Gal(Kˢ/σ(L))` of `G_K`.** -/
@@ -87,7 +88,8 @@ theorem torsionRes_eq_zero_iff {m : ℕ} {c : H1 (AbsoluteGaloisGroup K) (W.Tors
   rw [W.torsionRes_eq_torsionRes τ (separableClosureAlgEquiv K L σ), torsionRes_eq_explicitMap1]
   exact explicitMap1_eq_zero_iff_explicitRes1_eq_zero _
     (absoluteGaloisGroupMap_separableClosureAlgEquiv K L σ)
-    (W.torsionCoeffBaseChange_bijective m (separableClosureAlgEquiv K L σ).bijective) _
+    (W.torsionCoeffBaseChange_bijective m (separableClosureAlgEquiv K L σ).bijective)
+    continuous_of_discreteTopology _
 
 /-- **Restriction of `H¹(G_K, E(Kˢ))` to `L` has the kernel of restriction to `Gal(Kˢ/σ(L))`.** -/
 theorem ker_pointRes :
@@ -118,7 +120,8 @@ theorem forall_smul_eq_torsionCoeff_divisionField (m : ℕ)
   rw [absoluteGaloisGroupMap_separableClosureAlgEquiv, ContinuousMonoidHom.comp_toFun,
     ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.subgroupSubtype_apply]
   simpa only [IntermediateField.fieldRange_val] using
-    (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m) (W.divisionField m).val g).2
+    (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m)
+        (W.divisionField m).val g).property
 
 /-- **Restriction of `H¹(G_K, E[m])` to the `m`-division field `K(E[m])` has finite kernel**, for
 `W` elliptic and `m ≠ 0`, along any embedding of separable closures. -/

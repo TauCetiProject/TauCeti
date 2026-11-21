@@ -81,7 +81,7 @@ theorem geckTorusPositiveBaseChangeIdeal_comap_le_geckPositiveGeneratedDefiningI
             CommHopfAlgCat.mkQuotient _ (t.geckTorusPositiveBaseChangeIdeal ht A) ≫
             t.geckWeightTorusToTorusPositiveBaseChangeCoordinateMap ht A ≫
             (_root_.CommHopfAlgCat.ofHom
-              (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+              (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
                 (G := SplitTorus.characterGroup (Fin t.rank)))) =
           t.geckWeightTorusBaseChangeCoordinateMap ht A := by
       rw [← Category.assoc,

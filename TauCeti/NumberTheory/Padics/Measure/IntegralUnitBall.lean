@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Basic
 public import TauCeti.NumberTheory.Padics.Measure.MahlerDuality
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.NumberTheory.Padics.Measure.Dirac
+import TauCeti.Topology.Algebra.Module.AutomaticContinuity
 
 /-!
 # Integral measures on `ℤ_p` and the dual unit ball
@@ -19,10 +20,13 @@ This file identifies the integral measures with the closed unit ball for the ope
 describes that ball on the side of the Amice transform:
 
 * extension of coefficients along a continuous `ℤ_[p]`-algebra map `j` applies `j` to the
-  coefficients of the Amice transform (`AbstractMeasure.amiceTransform_extendCoefficients`). For
-  `ℤ_p ⊆ ℚ_p` this is the compatibility of Mathlib's integral Amice equivalence
-  `AbstractMeasure.amiceTransformEquiv` with extension to `ℚ_p`
-  (`AbstractMeasure.amiceTransform_extendCoefficients_coe_ringHom`);
+  coefficients of the Amice transform (`AbstractMeasure.amiceTransform_extendCoefficients`). When
+  the source ring `O` is Hausdorff and finitely generated as a `ℤ_[p]`-module, every `ℤ_[p]`-algebra
+  map `j : O →ₐ[ℤ_[p]] K` is automatically continuous, so no separate continuity hypothesis is
+  needed (`AbstractMeasure.amiceTransform_extendCoefficients_of_finite`,
+  `AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`). For `ℤ_p ⊆ ℚ_p` this is the
+  compatibility of Mathlib's integral Amice equivalence `AbstractMeasure.amiceTransformEquiv` with
+  extension to `ℚ_p` (`AbstractMeasure.amiceTransform_extendCoefficients_coe_ringHom`);
 * a `ℚ_p`-valued measure has operator norm at most `1` exactly when it is the unique extension of
   a `ℤ_p`-valued measure (`AbstractMeasure.existsUnique_integral_iff_norm_le_one`), and exactly when
   its Amice transform has coefficients in `ℤ_p`
@@ -65,6 +69,37 @@ theorem amiceTransform_extendCoefficients {O K : Type*} [CommRing O] [Topologica
   ext x
   simp
 
+/-- For a finite Hausdorff topological `ℤ_p`-algebra `O` with continuous `ℤ_p`-action and a
+`ℤ_p`-algebra homomorphism `j : O →ₐ[ℤ_[p]] K` into the closed unit ball of a complete ultrametric
+`ℤ_p`-field `K` with `[ContinuousSMul ℤ_[p] K]`, extending `ν ∈ D(ℤ_[p], O)` along `j` maps its
+Amice transform by `PowerSeries.map j`; no separate `Continuous j` hypothesis is needed because
+`ℤ_p`-linearity and `[ContinuousSMul ℤ_[p] K]` make `j` automatically continuous. -/
+@[simp]
+theorem amiceTransform_extendCoefficients_of_finite {O K : Type*}
+    [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Finite ℤ_[p] O]
+    [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+    [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K]
+    (j : O →ₐ[ℤ_[p]] K) (hj : ∀ a, ‖j a‖ ≤ 1) (ν : D(ℤ_[p], O)) :
+    (extendCoefficients (j : O →+* K) hj ν).amiceTransform =
+      PowerSeries.map (j : O →+* K) ν.amiceTransform :=
+  amiceTransform_extendCoefficients j j.toLinearMap.continuous_of_finite_of_compactSpace hj ν
+
+/-- For a finite Hausdorff topological `ℤ_p`-algebra `O` with continuous `ℤ_p`-action in a scalar
+tower `ℤ_p → O → K` over a complete ultrametric `ℤ_p`-field `K` with `[ContinuousSMul ℤ_[p] K]`,
+extending `ν ∈ D(ℤ_[p], O)` along `algebraMap O K` into the closed unit ball maps its Amice
+transform by `PowerSeries.map (algebraMap O K)`. -/
+@[simp]
+theorem amiceTransform_extendCoefficients_algebraMap {O K : Type*}
+    [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [Module.Finite ℤ_[p] O]
+    [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+    [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K] [Algebra O K] [IsScalarTower ℤ_[p] O K]
+    (hj : ∀ a, ‖algebraMap O K a‖ ≤ 1) (ν : D(ℤ_[p], O)) :
+    (extendCoefficients (algebraMap O K) hj ν).amiceTransform =
+      PowerSeries.map (algebraMap O K) ν.amiceTransform :=
+  amiceTransform_extendCoefficients_of_finite (IsScalarTower.toAlgHom ℤ_[p] O K) hj ν
+
 /-- Extension of coefficients from `ℤ_p` to `ℚ_p` applies the inclusion to the coefficients of the
 Amice transform. -/
 @[simp]
@@ -83,9 +118,9 @@ exactly when there is a unique `ℤ_p`-valued measure `μ` with `ν (f) = μ (f)
 `ℤ_p`-valued test function `f`. -/
 theorem existsUnique_integral_iff_norm_le_one (ν : D(ℤ_[p], ℚ_[p])) :
     (∃! μ : D(ℤ_[p], ℤ_[p]), ∀ f : C(ℤ_[p], ℤ_[p]),
-      ν ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtype_val⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
+      ν ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtypeVal⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
         (μ f : ℚ_[p])) ↔ ‖toCLMEquiv ν‖ ≤ 1 :=
-  -- The roadmap's test map `fun x ↦ (x : ℚ_[p])` is `PadicInt.Coe.ringHom` by definition.
+  -- The test map `fun x ↦ (x : ℚ_[p])` in the statement is `PadicInt.Coe.ringHom` by definition.
   existsUnique_apply_comp_eq_iff_norm_le_one PadicInt.norm_coe_ringHom_le_one
     PadicInt.isEmbedding_coe_ringHom PadicInt.closedBall_subset_range_coe_ringHom ν
 
@@ -113,7 +148,7 @@ example (x : ℤ_[p]) : ‖toCLMEquiv (dirac ℚ_[p] x)‖ ≤ 1 :=
 
 example : ¬ ∃! μ : D(ℤ_[p], ℤ_[p]), ∀ f : C(ℤ_[p], ℤ_[p]),
     ((p : ℚ_[p])⁻¹ • dirac ℚ_[p] (0 : ℤ_[p]))
-        ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtype_val⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
+        ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtypeVal⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
       (μ f : ℚ_[p]) := by
   rw [existsUnique_integral_iff_norm_le_one]
   simp only [map_smul, norm_smul, TauCeti.AbstractMeasure.norm_dirac, norm_inv, Padic.norm_p,

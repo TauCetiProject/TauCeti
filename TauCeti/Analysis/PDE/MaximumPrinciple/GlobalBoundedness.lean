@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 public import TauCeti.Analysis.SpecificLimits.Stampacchia
 public import TauCeti.MeasureTheory.Integral.Bochner.Holder
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Global boundedness of weak subsolutions (Stampacchia)
@@ -83,6 +85,9 @@ De Giorgi's interior estimates absorb a divergence-form right-hand side.
   dimension, for `r > max 1 (n/2)`.
 * `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow`: the two-sided bound for weak solutions
   of the Dirichlet problem.
+* `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_ae_abs_le`: on a ball `B(x₀, ρ)`, the
+  Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼw) = f`, `w ∈ H¹₀`, has a solution with
+  `|w| ≤ K ρ^(2 - n/r) ‖f‖_{Lʳ} / λ`.
 * `TauCeti.PDE.UniformlyEllipticOn.ae_value_le_add_of_forall_eLpNorm_le_divergence`: the bound
   with an explicit constant for a right-hand side `∂ᵢFⁱ` in divergence form, `F ∈ L^q` with
   `q ≥ 2`, under a Sobolev inequality on `H¹₀(Ω)` with exponent `s` and constant `S`, where
@@ -191,26 +196,23 @@ private theorem toReal_eLpNorm_posPartAbove_le
   have hwLp : MemLp (W1p.value w) s ν := lt_of_le_of_lt hsob (by finiteness)
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ := by
     have := ENNReal.toReal_mono (by finiteness) hsob
-    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] at this
+    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
   -- Hölder's inequality on the superlevel set `{u > l}`, off which `w` vanishes.
   set A := {x | l < W1p.value u x}
-  have hA : MeasurableSet A :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
   have hwA : ∀ᵐ x ∂ν, x ∉ A → W1p.value w x = 0 := by
     filter_upwards [hval] with x hx hxA
     rw [hx, max_eq_right (sub_nonpos.2 (not_lt.1 hxA))]
-  have hholder := (le_abs_self _).trans <|
-    MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs hf hwLp hA
+  have hholder := (Real.le_norm_self _).trans <|
+    MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs hf hwLp
       (measure_ne_top ν A) hwA
+  simp only [smul_eq_mul] at hholder
   -- Absorb one factor of `‖w‖_{Lˢ}`.
   set W := (eLpNorm (W1p.value w) s ν).toReal
   set F := (eLpNorm f r ν).toReal
   set m := ν.real A ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹)
   have hlam := h.pos
   have hW : 0 ≤ W := ENNReal.toReal_nonneg
-  have hm : 0 ≤ m := by positivity
-  have hF : 0 ≤ F := ENNReal.toReal_nonneg
   have hkey : lam * W ^ 2 ≤ S ^ 2 * F * m * W := by
     calc lam * W ^ 2 ≤ lam * ((S : ℝ) * ‖W1p.gradient w‖) ^ 2 := by gcongr
       _ = S ^ 2 * (lam * ‖W1p.gradient w‖ ^ 2) := by ring
@@ -266,8 +268,7 @@ private theorem ae_value_le_add_of_toReal_eLpNorm_posPartAbove_le (hOmega : mu O
         ν {x | ENNReal.ofReal (t - l) ≤ ‖W1p.value w x‖ₑ} := by
       refine measure_mono_ae ?_
       filter_upwards [W1p.value_posPartAbove_ae (by norm_num) (hk.trans hkl) u] with x hx hxt
-      rw [hx, Real.enorm_of_nonneg (le_max_right _ _)]
-      have hxt' : t < W1p.value u x := hxt
+      rw [hx, Real.eNorm_of_nonneg (le_max_right _ _)]
       exact ENNReal.ofReal_le_ofReal (le_max_of_le_left (by linarith))
     have hfin' : eLpNorm (W1p.value w) s ν ^ ((s : ℝ≥0∞).toReal) ≠ ∞ :=
       ENNReal.rpow_ne_top_of_nonneg (by positivity) (hfin l hkl)
@@ -409,7 +410,6 @@ private theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [No
           (Real.toNNReal (K * mu.real Omega ^ ((Fintype.card ι : ℝ)⁻¹ - δ)) : ℝ≥0∞) *
             ‖W1p.gradient v‖ₑ := by
   set n : ℕ := Fintype.card ι
-  have hn0 : (0 : ℝ) < n := by exact_mod_cast Fintype.card_pos
   set s : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
   have hs : (s : ℝ) = (2⁻¹ - δ)⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
   have hs2 : (2 : ℝ≥0∞) ≤ s := by
@@ -428,7 +428,7 @@ private theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [No
     positivity
   refine ⟨K, hK, fun {Omega} hOmega v hv => ?_⟩
   have hsob := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-    ENNReal.ofNat_ne_top hOmega hs2 (δ := δ) (by rw [ENNReal.toReal_ofNat, hs, inv_inv]; ring)
+    hOmega hs2 (δ := δ) (by rw [ENNReal.toReal_ofNat, hs, inv_inv]; ring)
     (by rwa [finrank_euclideanSpace]) hv
   rw [finrank_euclideanSpace] at hsob
   refine hsob.trans_eq ?_
@@ -547,18 +547,6 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
       rw [hpow]
       ring
 
-omit [DecidableEq ι] in
-/-- A bound from above for `u` and for `-u` is a bound for `|u|`. This is how the two-sided bounds
-for weak Dirichlet solutions follow from the one-sided bounds. -/
-private theorem ae_abs_value_le_of_ae_value_le_of_ae_value_neg_le {u : W1p mu Omega 2} {B : ℝ}
-    (hup : ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ B)
-    (hlo : ∀ᵐ x ∂mu.restrict Omega, W1p.value (-u) x ≤ B) :
-    ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ B := by
-  filter_upwards [hup, hlo, W1p.value_neg_ae u] with x h₁ h₂ h₃
-  rw [h₃, Pi.neg_apply] at h₂
-  rw [abs_le]
-  constructor <;> linarith
-
 /-- **Global boundedness of weak Dirichlet solutions, in every dimension.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the
 normalization of `mu`, such that on every `Ω` of finite measure, for measurable, uniformly
@@ -594,16 +582,70 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   refine ⟨C, hC, fun {Omega a c lam Lam gamma f u} hOmega h ha hc hc_bound hc_nonneg hf hsol => ?_⟩
   -- The bound from above for `u`, and for `-u`, a weak solution with forcing `-f`.
   have hup := hmain (u := (u : W1p mu Omega 2)) le_rfl hOmega h ha hc hc_bound hc_nonneg hf
-    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.2)
+    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.property)
   have hlo := hmain (u := -(u : W1p mu Omega 2)) (f := fun x => -f x) le_rfl hOmega h ha hc
     hc_bound hc_nonneg hf.neg (fun v _ => by
       rw [← neg_one_smul ℝ (u : W1p mu Omega 2), energyFormH1_smul_left, hsol v]
       simp only [neg_mul, integral_neg, one_mul, le_refl])
-    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).2)
+    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).property)
   have hnorm : eLpNorm (fun x => -f x) r (mu.restrict Omega) = eLpNorm f r (mu.restrict Omega) :=
     eLpNorm_neg _ _ _
   rw [hnorm] at hlo
-  simpa only [zero_add] using ae_abs_value_le_of_ae_value_le_of_ae_value_neg_le hup hlo
+  simpa only [zero_add] using (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
+
+open Metric in
+/-- **Stampacchia's bound on a ball.** Let `n ≥ 1` be the dimension and let `r > 1` with
+`r > n/2`. There is `K > 0`, depending only on `n`, `r` and the normalization of `mu`, such that
+the following holds. Let `a` be measurable and uniformly elliptic on `B = B(x₀, ρ)` with constants
+`λ, Λ`, and let `f ∈ Lʳ(B)`. Then there is a weak solution `w ∈ H¹₀(B)` of the Dirichlet problem
+`-∂ᵢ(aⁱʲ ∂ⱼw) = f` in `B`, that is `a(w, v) = ∫_B f v` for every `v ∈ H¹₀(B)`, with
+
+`|w| ≤ K ρ^(2 - n/r) ‖f‖_{Lʳ(B)} / λ` almost everywhere on `B`.
+
+This is `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow` on a ball, where
+`|B|^(2/n - 1/r)` is a multiple of `ρ^(2 - n/r)`. -/
+theorem exists_forall_energyFormH1_eq_setIntegral_ae_abs_le [Nonempty ι] {r : ℝ≥0}
+    (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r) :
+    ∃ K : ℝ, 0 < K ∧ ∀ {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+      {f : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ},
+      UniformlyEllipticOn (ball x₀ ρ) a lam Lam → AEStronglyMeasurable a (mu.restrict (ball x₀ ρ)) →
+      MemLp f r (mu.restrict (ball x₀ ρ)) → 0 < ρ →
+      ∃ w : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+        (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+          energyFormH1 a 0 0 (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2)
+              (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) =
+            ∫ x in ball x₀ ρ, f x * W1p.value (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x ∂mu) ∧
+        ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x| ≤
+          K * ρ ^ (2 - (Fintype.card ι : ℝ) / r) *
+            (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam := by
+  set n : ℝ := (Fintype.card ι : ℝ)
+  have hn : (0 : ℝ) < n := Nat.cast_pos.2 Fintype.card_pos
+  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
+  have hrn' : n * (2 - r) < 2 * r := by nlinarith [mul_pos hn (sub_pos.2 hr1)]
+  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow (mu := mu) hr hrn
+  set e : ℝ := 2 / n - (r : ℝ)⁻¹
+  refine ⟨C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e,
+    mul_pos hC (Real.rpow_pos_of_pos (measureReal_ball_pos _ _ one_pos) _), ?_⟩
+  intro a lam Lam f x₀ ρ h ha hf hρ
+  set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ ρ, isOpen_ball⟩
+  have hBfin : mu B ≠ ∞ := measure_ball_lt_top.ne
+  obtain ⟨w, hw, -⟩ :=
+    h.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (Omega := B) (c := 0) (gamma := 0)
+      ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin hr hrn' hf
+  refine ⟨w, hw, ?_⟩
+  -- `|B|^e = ρ^(n e) |B(0, 1)|^e`, with `n e = 2 - n/r`.
+  have hmeas : mu.real (ball x₀ ρ) ^ e =
+      ρ ^ (2 - n / r) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
+    rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace]
+    congr 2
+    simp only [e, n]
+    field_simp
+  filter_upwards [hstamp (Omega := B) (c := 0) (gamma := 0) hBfin h ha aestronglyMeasurable_const
+    (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw] with x hx
+  refine hx.trans_eq ?_
+  simp only [B, Opens.coe_mk]
+  rw [hmeas]
+  ring
 
 
 /-! ### A right-hand side in divergence form -/
@@ -659,16 +701,15 @@ private theorem toReal_eLpNorm_posPartAbove_le_divergence
     rw [← Real.norm_eq_abs]
     exact norm_integral_le_of_norm_le hint (ae_of_all _ fun x => norm_inner_le_norm _ _)
   set A := {x | l < W1p.value u x}
-  have hA : MeasurableSet A :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable
   have hwA : ∀ᵐ x ∂ν, x ∉ A → ‖W1p.gradient w x‖ = 0 := by
     filter_upwards [W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hx hxA
     rw [hx, indicator_of_notMem hxA, norm_zero]
   have hq0 : 0 < q := by exact_mod_cast two_pos.trans_le hq
-  have hholder := (le_abs_self _).trans <|
-    MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow (s := 2) hq0
+  have hholder := (Real.le_norm_self _).trans <|
+    MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow (s := 2) hq0
       two_pos (by rw [NNReal.coe_ofNat]; linarith [inv_anti₀ two_pos hq]) hF.norm
-      (by simpa using (Lp.memLp (W1p.gradient w)).norm) hA (measure_ne_top ν A) hwA
+      (by simpa using (Lp.memLp (W1p.gradient w)).norm) (measure_ne_top ν A) hwA
+  simp only [smul_eq_mul] at hholder
   -- Hölder's exponent for the measure of `{u > l}`, with `‖F‖` in `L^q` and `‖∇w‖` in `L²`.
   have hexp : 1 - (q : ℝ)⁻¹ - ((2 : ℝ≥0) : ℝ)⁻¹ = 2⁻¹ - (q : ℝ)⁻¹ := by
     rw [NNReal.coe_ofNat]
@@ -679,14 +720,12 @@ private theorem toReal_eLpNorm_posPartAbove_le_divergence
   -- The Sobolev inequality, in real form.
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ := by
     have := ENNReal.toReal_mono (by finiteness) (hS w hw0)
-    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] at this
+    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
   -- Absorb one factor of `‖∇w‖`.
   set Fq := (eLpNorm F q ν).toReal
   set m := ν.real A ^ (2⁻¹ - (q : ℝ)⁻¹)
   have hlam := h.pos
   have hG : lam * ‖W1p.gradient w‖ ≤ Fq * m := by
-    have hkey : lam * ‖W1p.gradient w‖ ^ 2 ≤ Fq * ‖W1p.gradient w‖ * m :=
-      henergy.trans (hinner.trans hholder)
     rcases (norm_nonneg (W1p.gradient w)).eq_or_lt with hG0 | hGpos
     · rw [← hG0, mul_zero]
       positivity
@@ -857,15 +896,15 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow_divergence [Nonempty ι] {q : �
   refine ⟨C, hC, fun {Omega a c lam Lam gamma F u} hOmega h ha hc hc_bound hc_nonneg hF hsol => ?_⟩
   -- The bound from above for `u`, and for `-u`, a weak solution with datum `-F`.
   have hup := hmain (u := (u : W1p mu Omega 2)) le_rfl hOmega h ha hc hc_bound hc_nonneg hF
-    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.2)
+    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.property)
   have hlo := hmain (u := -(u : W1p mu Omega 2)) (F := fun x => -F x) le_rfl hOmega h ha hc
     hc_bound hc_nonneg hF.neg (fun v _ => by
       rw [← neg_one_smul ℝ (u : W1p mu Omega 2), energyFormH1_smul_left, hsol v]
       simp only [inner_neg_left, integral_neg, neg_mul, one_mul, le_refl])
-    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).2)
+    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).property)
   have hnorm : eLpNorm (fun x => -F x) q (mu.restrict Omega) = eLpNorm F q (mu.restrict Omega) :=
     eLpNorm_neg _ _ _
   rw [hnorm] at hlo
-  simpa only [zero_add] using ae_abs_value_le_of_ae_value_le_of_ae_value_neg_le hup hlo
+  simpa only [zero_add] using (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
 
 end TauCeti.PDE

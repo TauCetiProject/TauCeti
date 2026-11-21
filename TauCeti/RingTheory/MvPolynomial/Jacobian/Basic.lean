@@ -110,7 +110,7 @@ theorem jacobiMatrixAt_mulVec_self_eq_zero [Fintype σ] {p : ι → MvPolynomial
 theorem jacobiMatrixAt_smul_apply {p : ι → MvPolynomial σ R} {d : ι → ℕ}
     (hp : ∀ i, (p i).IsHomogeneous (d i)) (t : R) (v : σ → R) (i : ι) (j : σ) :
     jacobiMatrixAt p (t • v) i j = t ^ (d i - 1) * jacobiMatrixAt p v i j := by
-  simp only [jacobiMatrixAt_apply, ((hp i).pderiv).eval_smul, smul_eq_mul]
+  simp only [jacobiMatrixAt_apply, ((hp i).pderiv).eval_smul]
 
 /-- Rescaling the point multiplies the Jacobian matrix of a family of homogeneous equations on
 the left by the diagonal matrix of the powers `t ^ (d i - 1)`. -/
@@ -148,7 +148,7 @@ variable [CommRing R]
 
 /-- Rescaling the point by a unit does not change the rank of the Jacobian matrix of a family of
 homogeneous equations. -/
-theorem rank_jacobiMatrixAt_smul [Finite ι] [Fintype σ] {p : ι → MvPolynomial σ R}
+theorem rank_jacobiMatrixAt_smul [Finite ι] [Finite σ] {p : ι → MvPolynomial σ R}
     {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) {t : R} (ht : IsUnit t) (v : σ → R) :
     (jacobiMatrixAt p (t • v)).rank = (jacobiMatrixAt p v).rank := by
   classical
@@ -198,7 +198,8 @@ theorem rank_jacobiMatrixAt_dehomogenize {n : ℕ} (i : Fin (n + 1))
     {a : Fin n → R} (ha : ∀ k, eval a (dehomogenize i (p k)) = 0) :
     (jacobiMatrixAt (fun k ↦ dehomogenize i (p k)) a).rank =
       (jacobiMatrixAt p (i.insertNth 1 a)).rank := by
-  rw [rank, rank, range_mulVecLin_jacobiMatrixAt_dehomogenize i hp ha]
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin,
+    range_mulVecLin_jacobiMatrixAt_dehomogenize i hp ha]
 
 end CommRing
 
@@ -208,22 +209,32 @@ variable {K : Type*} [Field K]
 
 /-- The rank of the Jacobian matrix of a family of homogeneous equations at a nonzero point
 depends only on the projective point it represents. -/
-theorem rank_jacobiMatrixAt_eq_of_mk_eq_mk [Finite ι] [Fintype σ] {p : ι → MvPolynomial σ K}
+theorem rank_jacobiMatrixAt_eq_of_mk_eq_mk [Finite ι] [Finite σ] {p : ι → MvPolynomial σ K}
     {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) {v w : σ → K} (hv : v ≠ 0) (hw : w ≠ 0)
     (h : Projectivization.mk K v hv = Projectivization.mk K w hw) :
     (jacobiMatrixAt p v).rank = (jacobiMatrixAt p w).rank := by
   obtain ⟨t, rfl⟩ := (Projectivization.mk_eq_mk_iff' K v w hv hw).mp h
   exact rank_jacobiMatrixAt_smul hp (isUnit_iff_ne_zero.mpr (left_ne_zero_of_smul hv)) w
 
-/-- Whether the Jacobian matrix of a finite family of homogeneous equations at a nonzero point
-has full rank depends only on the projective point it represents. -/
-theorem mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk [Finite ι] [Fintype σ]
+/-- Whether the Jacobian matrix of a family of homogeneous equations at a nonzero point is onto
+depends only on the projective point it represents. -/
+theorem mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk [Fintype σ]
     {p : ι → MvPolynomial σ K} {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) {v w : σ → K}
     (hv : v ≠ 0) (hw : w ≠ 0) (h : Projectivization.mk K v hv = Projectivization.mk K w hw) :
     (jacobiMatrixAt p v).mulVec.Surjective ↔ (jacobiMatrixAt p w).mulVec.Surjective := by
-  cases nonempty_fintype ι
-  rw [mulVec_surjective_iff_rank_eq_card, mulVec_surjective_iff_rank_eq_card,
-    rank_jacobiMatrixAt_eq_of_mk_eq_mk hp hv hw h]
+  -- Rescaling a point by a nonzero scalar scales each row by a nonzero scalar, which does not
+  -- change surjectivity of `mulVec`, for any family of equations.
+  have key (t : K) (ht : t ≠ 0) (u : σ → K) (hu : (jacobiMatrixAt p u).mulVec.Surjective) :
+      (jacobiMatrixAt p (t • u)).mulVec.Surjective := fun y ↦ by
+    obtain ⟨x, hx⟩ := hu fun i ↦ (t ^ (d i - 1))⁻¹ * y i
+    refine ⟨x, funext fun i ↦ ?_⟩
+    have := congr_fun hx i
+    simp only [mulVec, dotProduct, jacobiMatrixAt_smul_apply hp, mul_assoc, ← Finset.mul_sum]
+      at this ⊢
+    rw [this, mul_inv_cancel_left₀ (pow_ne_zero _ ht)]
+  obtain ⟨t, rfl⟩ := (Projectivization.mk_eq_mk_iff' K v w hv hw).mp h
+  have ht : t ≠ 0 := left_ne_zero_of_smul hv
+  exact ⟨fun hs ↦ by simpa [smul_smul, ht] using key t⁻¹ (inv_ne_zero ht) _ hs, key t ht w⟩
 
 /-- **The Jacobian criterion in a ratio chart**: at a common zero `b` of a family of homogeneous
 equations with `b i ≠ 0`, the Jacobian matrix of the dehomogenized equations at the coordinate
@@ -250,7 +261,7 @@ theorem rank_jacobiMatrixAt_lt_card [Fintype σ] {p : ι → MvPolynomial σ K} 
       ⟨⟨v, jacobiMatrixAt_mulVec_self_eq_zero hp hpv⟩, fun h ↦ hv (congrArg Subtype.val h)⟩
   have h := LinearMap.finrank_range_add_finrank_ker (jacobiMatrixAt p v).mulVecLin
   rw [Module.finrank_fintype_fun_eq_card] at h
-  rw [rank]
+  rw [← finrank_range_mulVecLin]
   omega
 
 /-- At a nonzero common zero of a family of homogeneous equations where the Jacobian matrix has

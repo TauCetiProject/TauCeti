@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
+import TauCeti.Logic.Equiv.PartialEquiv
 
 /-!
 # Conjugating a monoid action by an open partial homeomorphism
@@ -22,8 +24,11 @@ behind the chain-rule computation of the derivative representation at a fixed po
 
 `OpenPartialHomeomorph.restrInvariant` restricts a chart to the largest invariant open subset
 of its source for a finite monoid action. An equivariant chart with invariant source also has
-invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`), and
+invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`, a
+special case of `PartialEquiv.symm_map_of_intertwines`), and
 invariant restriction preserves equivariance (`OpenPartialHomeomorph.restrInvariant_map_smul`).
+For a jointly continuous action, the pairs `(w, g)` for which `χ (g • χ.symm w)` is defined form
+an open set (`OpenPartialHomeomorph.isOpen_setOf_mem_target_smul_symm_mem_source`).
 -/
 
 public section
@@ -65,15 +70,24 @@ theorem symm_map_smul_of_map_smul {M : Type*} [SMul M X] [SMul M E]
     (hequiv : ∀ (g : M) (x : X), x ∈ e.source →
       g • x ∈ e.source ∧ e (g • x) = g • e x)
     (g : M) (z : E) (hz : z ∈ e.target) :
-    g • z ∈ e.target ∧ e.symm (g • z) = g • e.symm z := by
-  have hg := hequiv g (e.symm z) (e.map_target hz)
-  have hz' : g • z ∈ e.target := by
-    rw [← e.right_inv hz, ← hg.2]
-    exact e.map_source hg.1
-  refine ⟨hz', ?_⟩
-  calc
-    e.symm (g • z) = e.symm (e (g • e.symm z)) := by rw [hg.2, e.right_inv hz]
-    _ = g • e.symm z := e.left_inv hg.1
+    g • z ∈ e.target ∧ e.symm (g • z) = g • e.symm z :=
+  e.toPartialEquiv.symm_map_of_intertwines (f := (g • ·)) (A := (g • ·)) (hequiv g) hz
+
+/-- Under a jointly continuous action, the pairs `(w, g)` for which the action of `g` is defined
+in the coordinates of a partial homeomorphism `e`, that is `w ∈ e.target` and
+`g • e.symm w ∈ e.source`, form an open set. -/
+theorem isOpen_setOf_mem_target_smul_symm_mem_source {M Y : Type*} [SMul M X]
+    [TopologicalSpace M] [TopologicalSpace Y] [ContinuousSMul M X]
+    (e : OpenPartialHomeomorph X Y) :
+    IsOpen {p : Y × M | p.1 ∈ e.target ∧ p.2 • e.symm p.1 ∈ e.source} := by
+  have hc : ContinuousOn (fun p : Y × M ↦ (p.2, e.symm p.1)) (e.target ×ˢ Set.univ) :=
+    continuous_snd.continuousOn.prodMk
+      (e.continuousOn_symm.comp continuous_fst.continuousOn fun p hp ↦ hp.1)
+  have h := (continuous_smul.comp_continuousOn hc).isOpen_inter_preimage
+    (e.open_target.prod isOpen_univ) e.open_source
+  convert h using 1
+  ext p
+  simp
 
 section InvariantRestriction
 

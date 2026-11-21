@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 
 /-!
 # Gram determinants of pairs
@@ -17,15 +18,32 @@ The Gram determinant of two vectors, with inner products valued in a commutative
 denominator in the definition of sectional curvature.
 
 The results here specialize Mathlib's general Gram-matrix API to a pair, exposing the explicit
-formula without introducing a second notion of Gram determinant.  The real Gram determinant
-`‖u‖² ‖v‖² - ⟪u, v⟫²` of a pair is also differentiated as a function of the pair
+formula without introducing a second notion of Gram determinant, and record invariance of the
+`2 × 2` Gram matrix of a pair under linear isometries (`LinearIsometry.gram_pair`).  The real Gram
+determinant `‖u‖² ‖v‖² - ⟪u, v⟫²` of a pair is also differentiated as a function of the pair
 (`TauCeti.hasStrictFDerivAt_sq_sub_inner_sq`); in mechanics it is the squared angular momentum
-`ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a phase-space point `(q, p)`.
+`ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a phase-space point `(q, p)`.  Replacing the pair by
+`(a q + b p, c q + d p)` multiplies it by `(a d - b c)²`
+(`TauCeti.sq_sub_inner_sq_smul_add_smul`), so changes with `a d - b c = ±1` preserve it.
 -/
 
 public section
 
 open scoped InnerProductSpace Matrix
+
+namespace LinearIsometry
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (l : E →ₗᵢ[𝕜] F)
+
+/-- A linear isometry preserves the `2 × 2` Gram matrix of a pair. -/
+@[simp]
+theorem gram_pair (u v : E) : Matrix.gram 𝕜 ![l u, l v] = Matrix.gram 𝕜 ![u, v] := by
+  have hcomp : (![l u, l v] : Fin 2 → F) = l ∘ ![u, v] :=
+    funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+  rw [hcomp, l.gram_comp]
+
+end LinearIsometry
 
 namespace Matrix
 
@@ -46,6 +64,8 @@ end Matrix
 
 namespace TauCeti
 
+section Normed
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- The partial gradients of the real Gram determinant `G(q, p) = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a pair
@@ -60,5 +80,22 @@ theorem hasStrictFDerivAt_sq_sub_inner_sq (x : V × V) :
   refine ((h1.mul h2).sub (h12.pow 2)).congr_fderiv (ContinuousLinearMap.ext fun v ↦ ?_)
   simp [real_inner_comm]
   ring
+
+end Normed
+
+section Seminormed
+
+variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- Replacing a pair `(q, p)` by `(a q + b p, c q + d p)` multiplies its real Gram determinant
+`‖q‖² ‖p‖² - ⟪q, p⟫²` by the square of the determinant `a d - b c` of the change of basis. -/
+theorem sq_sub_inner_sq_smul_add_smul (a b c d : ℝ) (q p : V) :
+    ‖a • q + b • p‖ ^ 2 * ‖c • q + d • p‖ ^ 2 - ⟪a • q + b • p, c • q + d • p⟫_ℝ ^ 2 =
+      (a * d - b * c) ^ 2 * (‖q‖ ^ 2 * ‖p‖ ^ 2 - ⟪q, p⟫_ℝ ^ 2) := by
+  simp only [← real_inner_self_eq_norm_sq, inner_add_left, inner_add_right, real_inner_smul_left,
+    real_inner_smul_right, real_inner_comm q p]
+  ring
+
+end Seminormed
 
 end TauCeti

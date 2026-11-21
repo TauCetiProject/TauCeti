@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.LinearAlgebra.Alternating.Curry
+public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
@@ -27,6 +29,21 @@ precomposed with the composite cast (`Module.Basis.reindex_finCongr_comp_cast`).
 the families on which top-degree forms are evaluated when the dimension is written in different
 but equal ways.
 
+The product of bases `b` of `M` and `c` of `N` indexed by `Fin m` and `Fin n`, reindexed by
+`Fin (m + n)`, is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))`
+(`Module.Basis.coe_prod_reindex_finSumFinEquiv`), and similarly when it is reindexed by `Fin k`
+for `m + n = k` (`Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr`). After a further
+reindexing it begins with a chosen vector of either factor, followed by the remaining vectors in
+their order
+(`Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
+`Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`). These are the bases of `M × N` that
+begin with a vector transverse to a hyperplane of one factor.
+
+A basis indexed by `Fin n × Fin 2`, reindexed by `Fin k` for `n * 2 = k`, lists its vectors in
+the interleaved order (`Module.Basis.coe_reindex_finProdFinEquiv`), as for Darboux bases
+`(q₁, p₁, …, qₙ, pₙ)`. Interleaving the product of two such bases lists the interleaved basis of
+the first factor before that of the second (`Module.Basis.coe_reindex_prod_finProdFinEquiv`).
+
 ## Main definitions
 
 * `Module.Basis.mkFinConsOfNotMem`: the basis `v, b 0, …, b (k - 1)` of `V`.
@@ -37,10 +54,22 @@ but equal ways.
   respect to a basis beginning with `v` and continuing with `b`, is its determinant with respect
   to `b`.
 * `Module.Basis.det_finCons_ne_zero`: `v` followed by a basis of `W` has nonzero determinant.
+* `Module.Basis.exists_repr_zero_ne_zero`: a nonzero vector has nonzero zeroth coordinate in some
+  basis indexed by `Fin (k + 1)`.
 * `Module.Basis.exists_basis_finCons_of_apply_eq_one`: if a linear functional takes the value one
   on `v`, then `v` followed by a basis of its kernel is a basis.
 * `Module.Basis.reindex_finCongr_comp_cast`: a basis reindexed along `finCongr` and precomposed
   with a `Fin.cast` is the original basis precomposed with a `Fin.cast`.
+* `Module.Basis.coe_prod_reindex_finSumFinEquiv`,
+  `Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr`: the product basis indexed by
+  `Fin (m + n)` or by `Fin k` for `m + n = k`.
+* `Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
+  `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`: the product basis beginning with the
+  first vector of the first or of the second factor.
+* `Module.Basis.coe_reindex_finProdFinEquiv`: a basis indexed by `Fin n × Fin 2` in the
+  interleaved order.
+* `Module.Basis.coe_reindex_prod_finProdFinEquiv`: the interleaved product of two bases indexed by
+  `Fin m × Fin 2` and `Fin n × Fin 2`.
 -/
 
 public section
@@ -56,6 +85,121 @@ theorem reindex_finCongr_comp_cast {R M : Type*} [Semiring R] [AddCommMonoid M] 
     ⇑(b.reindex (finCongr h)) ∘ Fin.cast h' = ⇑b ∘ Fin.cast (h'.trans h.symm) := by
   funext i
   simp
+
+section Prod
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N] {m n : ℕ}
+
+/-- The product of bases `b` and `c` indexed by `Fin m` and `Fin n`, reindexed by `Fin (m + n)`,
+is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))`. -/
+theorem coe_prod_reindex_finSumFinEquiv (b : Basis (Fin m) R M) (c : Basis (Fin n) R N) :
+    ⇑((b.prod c).reindex finSumFinEquiv) = Fin.append (fun i ↦ (b i, 0)) (fun j ↦ (0, c j)) := by
+  funext i
+  induction i using Fin.addCases <;> simp [prod_apply]
+
+/-- The product of bases `b` and `c` indexed by `Fin m` and `Fin n`, reindexed by `Fin k` for
+`m + n = k`, is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))` read through
+`Fin.cast`. -/
+theorem coe_prod_reindex_finSumFinEquiv_trans_finCongr {k : ℕ} (b : Basis (Fin m) R M)
+    (c : Basis (Fin n) R N) (h : m + n = k) :
+    ⇑((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))) =
+      fun r ↦ Fin.append (fun i ↦ (b i, 0)) (fun j ↦ (0, c j)) (Fin.cast h.symm r) := by
+  funext r
+  rw [← coe_prod_reindex_finSumFinEquiv]
+  simp [reindex_apply]
+
+/-- The product basis of `b` and `c` begins with `(b 0, 0)`: reindexed by `Fin (m + n + 1)`, it is
+`(b 0, 0)` followed by `(b 1, 0), …, (b m, 0), (0, c 0), …, (0, c (n - 1))`. -/
+theorem coe_prod_reindex_finSumFinEquiv_finCongr (b : Basis (Fin (m + 1)) R M)
+    (c : Basis (Fin n) R N) :
+    ⇑(((b.prod c).reindex finSumFinEquiv).reindex (finCongr (Nat.add_right_comm m 1 n))) =
+      Fin.cons (b 0, 0) (Fin.append (fun i ↦ (b i.succ, 0)) (fun j ↦ (0, c j))) := by
+  rw [coe_reindex, coe_prod_reindex_finSumFinEquiv, ← Fin.cons_self_tail fun i ↦ (b i, (0 : N)),
+    Fin.append_cons]
+  funext i
+  simp [Fin.tail_def]
+
+/-- Moving `(0, c 0)` to the front of the product basis of `b` and `c` with the cycle
+`Fin.cycleRange m` gives `(0, c 0)` followed by
+`(b 0, 0), …, (b (m - 1), 0), (0, c 1), …, (0, c n)`. -/
+theorem coe_prod_reindex_finSumFinEquiv_cycleRange (b : Basis (Fin m) R M)
+    (c : Basis (Fin (n + 1)) R N) :
+    ⇑(((b.prod c).reindex finSumFinEquiv).reindex (⟨m, by omega⟩ : Fin (m + n + 1)).cycleRange) =
+      Fin.cons (0, c 0) (Fin.append (fun i ↦ (b i, 0)) (fun j ↦ (0, c j.succ))) := by
+  set i₀ : Fin (m + n + 1) := ⟨m, by omega⟩
+  funext i
+  induction i using Fin.cases with
+  | zero =>
+    have : (finSumFinEquiv.symm i₀ : Fin m ⊕ Fin (n + 1)) = Sum.inr 0 := by
+      rw [← finSumFinEquiv_symm_apply_natAdd]
+      exact congrArg _ (Fin.ext (by simp [i₀]))
+    simp [Fin.cycleRange_symm_zero, this, prod_apply]
+  | succ i =>
+    induction i using Fin.addCases with
+    | left j =>
+      have hlt : (Fin.castAdd n j).castSucc < i₀ := by simp [Fin.lt_def, i₀]
+      have : (finSumFinEquiv.symm (Fin.castAdd n j).castSucc : Fin m ⊕ Fin (n + 1)) =
+          Sum.inl j := by
+        rw [← finSumFinEquiv_symm_apply_castAdd]
+        exact congrArg _ (Fin.ext (by simp))
+      simp [Fin.cycleRange_symm_succ, Fin.succAbove_of_castSucc_lt _ _ hlt, this, prod_apply]
+    | right j =>
+      have hle : i₀ ≤ (Fin.natAdd m j).castSucc := by simp [Fin.le_def, i₀]
+      have : (finSumFinEquiv.symm (Fin.natAdd m j).succ : Fin m ⊕ Fin (n + 1)) =
+          Sum.inr j.succ := by
+        rw [← finSumFinEquiv_symm_apply_natAdd]
+        exact congrArg _ (Fin.ext (by simp; omega))
+      simp [Fin.cycleRange_symm_succ, Fin.succAbove_of_le_castSucc _ _ hle, this, prod_apply]
+
+/-- A basis indexed by `Fin n × Fin 2`, reindexed by `Fin k` for `n * 2 = k` through
+`finProdFinEquiv`, lists its vectors in the interleaved order
+`d (0, 0), d (0, 1), …, d (n - 1, 0), d (n - 1, 1)`. -/
+theorem coe_reindex_finProdFinEquiv {k : ℕ} (d : Basis (Fin n × Fin 2) R M) (h : n * 2 = k) :
+    ⇑(d.reindex (finProdFinEquiv.trans (finCongr h))) =
+      fun r ↦ d (finProdFinEquiv.symm (Fin.cast h.symm r)) := by
+  funext r
+  simp only [coe_reindex, Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm,
+    finCongr_apply]
+
+/-- The product of bases `d₁` and `d₂` indexed by `Fin m × Fin 2` and `Fin n × Fin 2`, reindexed
+by `(Fin m ⊕ Fin n) × Fin 2 ≃ Fin (m + n) × Fin 2` and then interleaved, lists the interleaved
+`d₁` in the first factor followed by the interleaved `d₂` in the second factor, read through
+`Fin.cast` for `k = k₁ + k₂`. -/
+theorem coe_reindex_prod_finProdFinEquiv {k k₁ k₂ : ℕ} (d₁ : Basis (Fin m × Fin 2) R M)
+    (d₂ : Basis (Fin n × Fin 2) R N) (h₁ : m * 2 = k₁) (h₂ : n * 2 = k₂) (h : (m + n) * 2 = k)
+    (hk : k = k₁ + k₂) :
+    ⇑(((d₁.prod d₂).reindex
+        ((Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _)))).reindex
+          (finProdFinEquiv.trans (finCongr h))) =
+      fun r ↦ Fin.append
+        (fun i ↦ (d₁.reindex (finProdFinEquiv.trans (finCongr h₁)) i, (0 : N)))
+        (fun j ↦ ((0 : M), d₂.reindex (finProdFinEquiv.trans (finCongr h₂)) j))
+        (Fin.cast hk r) := by
+  subst h₁ h₂ hk
+  funext r
+  rw [coe_reindex_finProdFinEquiv, coe_reindex_finProdFinEquiv, coe_reindex_finProdFinEquiv]
+  beta_reduce
+  simp only [Fin.cast_eq_self]
+  -- Both sides read off the pair `(⌊r / 2⌋, r mod 2)`, shifted by `m` in the second block.
+  induction r using Fin.addCases with
+  | left i =>
+    rw [Fin.append_left]
+    have : finProdFinEquiv.symm (Fin.cast h.symm (Fin.castAdd (n * 2) i)) =
+        (Fin.castAdd n (finProdFinEquiv.symm i).1, (finProdFinEquiv.symm i).2) := by
+      ext <;> simp [finProdFinEquiv_symm_apply]
+    rw [this]
+    simp [reindex_apply]
+  | right j =>
+    rw [Fin.append_right]
+    have : finProdFinEquiv.symm (Fin.cast h.symm (Fin.natAdd (m * 2) j)) =
+        (Fin.natAdd m (finProdFinEquiv.symm j).1, (finProdFinEquiv.symm j).2) := by
+      ext <;> simp [finProdFinEquiv_symm_apply]
+      omega
+    rw [this]
+    simp [reindex_apply]
+
+end Prod
 
 section CommRing
 
@@ -110,6 +254,16 @@ theorem det_finCons_ne_zero (e : Basis (Fin (k + 1)) K V) (b : Basis (Fin k) K W
   have hV : finrank K V = k + 1 := by rw [finrank_eq_card_basis e, Fintype.card_fin]
   rw [← coe_mkFinConsOfNotMem v b hv hV]
   exact (e.isUnit_det _).ne_zero
+
+/-- A nonzero vector of a finite-dimensional space of dimension `k + 1` has nonzero zeroth
+coordinate in some basis indexed by `Fin (k + 1)`. -/
+theorem exists_repr_zero_ne_zero [FiniteDimensional K V] (hk : finrank K V = k + 1) {v : V}
+    (hv : v ≠ 0) : ∃ b : Basis (Fin (k + 1)) K V, b.repr v 0 ≠ 0 := by
+  let b₀ := Module.finBasisOfFinrankEq K V hk
+  obtain ⟨i₀, hi₀⟩ : ∃ i, b₀.repr v i ≠ 0 := by
+    by_contra! h
+    exact hv (b₀.repr.injective (by ext i; simp [h i]))
+  exact ⟨b₀.reindex (Equiv.swap i₀ 0), by simpa using hi₀⟩
 
 end Field
 

@@ -178,7 +178,7 @@ theorem existsUnique_mem_wassersteinSubdifferential_forall_norm_le
   obtain ⟨ξ, hξ, hmin⟩ := exists_norm_eq_iInf_of_complete_convex h
     (isClosed_wassersteinSubdifferential φ μ).isComplete (convex_wassersteinSubdifferential φ μ) 0
   have hle : ∀ ζ ∈ wassersteinSubdifferential φ μ, ‖ξ‖ ≤ ‖ζ‖ := fun ζ hζ ↦ by
-    have := ciInf_le (f := fun w : wassersteinSubdifferential φ μ ↦ ‖0 - w.1‖)
+    have := ciInf_le (f := fun w : wassersteinSubdifferential φ μ ↦ ‖0 - w.val‖)
       ⟨0, by rintro _ ⟨w, rfl⟩; exact norm_nonneg _⟩ ⟨ζ, hζ⟩
     simp only [zero_sub, norm_neg] at hmin this
     exact hmin ▸ this
@@ -274,7 +274,6 @@ private theorem exists_le_apply_of_mem_wassersteinSubdifferential {ν : Wasserst
   obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 (hξ.2.2 ε hε)
   set d := dist μ ν
   set t := min (min 1 ε) (δ / (d + 1)) / 2
-  have hd : 0 ≤ d := dist_nonneg
   have ht₀ : 0 < t := by positivity
   have ht₁ : t ≤ min (min 1 ε) (δ / (d + 1)) := half_le_self (by positivity)
   have htd : t * d < δ := by

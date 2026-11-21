@@ -19,9 +19,8 @@ when every piece is finite-dimensional and only finitely many pieces are nonzero
 packages those two conditions as `TauCeti.HasFiniteLaurentSupport` and defines
 `TauCeti.gradedDimension` without using a totalized infinite sum.
 
-For a family `V`, `gradedDimension k V h` has coefficient
-`dim_k(V j)` in degree `j`.  The companion `targetShiftGradedDimension` implements the convention
-used by the Grothendieck--Euler roadmap for target shifts:
+For a family `V`, `gradedDimension k V h` has coefficient `dim_k(V j)` in degree `j`.  The
+companion `targetShiftGradedDimension` implements the target-shift convention:
 
 ```text
 qdim(V) = ∑ j, q⁻ʲ dim_k(V j).
@@ -52,7 +51,6 @@ additive on degreewise short exact sequences.
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
   Combinatorial Theory, Series A* 185 (2022), Section 2.2, for graded dimensions and the
   target-shift convention.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 6, "Finite Laurent support".
 -/
 
 public section
@@ -147,7 +145,7 @@ theorem of_exact
   refine of_finset (fun j => ?_) (sU ∪ sW) fun j hj => ?_
   · let _ := hU.finiteDimensional j
     let _ := hW.finiteDimensional j
-    exact finiteDimensional_of_exact (hfg j)
+    exact (hfg j).moduleFinite
   · rw [Finset.mem_union, not_or] at hj
     let _ := hsU j hj.1
     let _ := hsW j hj.2
@@ -320,7 +318,7 @@ theorem gradedDimension_shortExact
   simp only [coeff_gradedDimension, AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   let _ := hU.finiteDimensional j
   let _ := hW.finiteDimensional j
-  let _ := finiteDimensional_of_exact (hfg j)
+  let _ := (hfg j).moduleFinite
   have hrank := (g j).finrank_range_add_finrank_ker
   rw [LinearMap.range_eq_top.mpr (hsurj j), finrank_top, (hfg j).linearMap_ker_eq,
     LinearMap.finrank_range_of_inj (hinj j)] at hrank

@@ -68,14 +68,14 @@ degree zero exactly when it is the empty divisor `⊤`. -/
 lemma mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj_iff {T : (Over S)ᵒᵖ}
     {D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T} :
     D ∈ (relativeEffectiveCartierDegreeSubfunctor f 0).obj T ↔
-      D.1 = (⊤ : (pullback T.unop.hom f).IdealSheafData) := by
-  have hD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2
-  have : Flat (D.1.subschemeι ≫ pullback.fst T.unop.hom f) := hD.flat
-  have : IsFinite (D.1.subschemeι ≫ pullback.fst T.unop.hom f) := hD.isFinite
+      D.val = (⊤ : (pullback T.unop.hom f).IdealSheafData) := by
+  have hD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.property
+  have : Flat (D.val.subschemeι ≫ pullback.fst T.unop.hom f) := hD.flat
+  have : IsFinite (D.val.subschemeι ≫ pullback.fst T.unop.hom f) := hD.isFinite
   -- Both sides say that the closed subscheme of `D` is empty.
   have h (I : (pullback T.unop.hom f).IdealSheafData) : I = ⊤ ↔ IsEmpty I.subscheme := by
     rw [← I.subschemeι.ker_eq_top_iff_isEmpty, I.ker_subschemeι]
-  refine Iff.trans ?_ (h D.1).symm
+  refine Iff.trans ?_ (h D.val).symm
   simp only [mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff, funext_iff,
     Scheme.Hom.finrank_eq_zero_iff_notMem_range, Set.mem_range, not_exists]
   exact ⟨fun H ↦ ⟨fun x ↦ H _ x rfl⟩, fun H _ x ↦ H.elim x⟩
@@ -87,7 +87,7 @@ instance (T : (Over S)ᵒᵖ) :
       top_mem_relativeEffectiveCartierSubfunctor_obj f T⟩,
     (mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj_iff f).mpr rfl⟩
   uniq D := Subtype.ext <| Subtype.ext <|
-    (mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj_iff f).mp D.2
+    (mem_relativeEffectiveCartierDegreeSubfunctor_zero_obj_iff f).mp D.property
 
 /-- **`S` represents `Div⁰_{X/S}`**: the functor of divisors of degree zero is represented by the
 terminal object `S` of the category of `S`-schemes. -/
@@ -111,16 +111,12 @@ theorem range_graphDivisor :
     Subfunctor.range (graphDivisor f) = relativeEffectiveCartierDegreeSubfunctor f 1 := by
   have := SmoothOfRelativeDimension.smooth 1 f
   ext T D
-  have hD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2
+  have hD := (mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.property
   simp only [Subfunctor.range_obj, Set.mem_range,
     mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff]
   rw [← Pi.one_def, ← exists_ker_graphSection_eq_iff_finrank_eq_one hD]
   refine exists_congr fun x ↦ ?_
   rw [Subtype.ext_iff, graphDivisor_app_apply_val]
-  -- The two sides differ only in how the type of ideal sheaves on `X_T` is written:
-  -- `(baseChangeIdealSheafFunctor f).obj T` against `(pullback T.unop.hom f).IdealSheafData`,
-  -- which agree by `baseChangeIdealSheafFunctor_obj`.
-  exact Iff.rfl
 
 /-- The **graph divisor of degree one**: for a smooth proper `f : X ⟶ S` of relative dimension
 one, the natural transformation from the functor of points `T ↦ Hom_S(T, X)` of `X` to the
@@ -144,7 +140,7 @@ lemma graphDivisorDegreeOne_ι :
 lemma graphDivisorDegreeOne_app_apply_val {T : (Over S)ᵒᵖ} (x : T.unop ⟶ Over.mk f) :
     (ConcreteCategory.hom (C := Type u) (X := T.unop ⟶ Over.mk f)
       (Y := (relativeEffectiveCartierDegreeSubfunctor f 1).obj T)
-      ((graphDivisorDegreeOne f).app T) x).1 = (graphDivisor f).app T x :=
+      ((graphDivisorDegreeOne f).app T) x).val = (graphDivisor f).app T x :=
   (rfl)
 
 /-- **`X` represents `Div¹_{X/S}`**: the graph divisor of degree one is an isomorphism. -/
@@ -153,7 +149,7 @@ instance : IsIso (graphDivisorDegreeOne f) := by
   intro T
   rw [isIso_iff_bijective]
   refine ⟨fun x y h ↦ graphDivisor_app_injective T (congrArg Subtype.val h), fun D ↦ ?_⟩
-  obtain ⟨x, hx⟩ := (range_graphDivisor f).ge T D.2
+  obtain ⟨x, hx⟩ := (range_graphDivisor f).ge T D.property
   exact ⟨x, Subtype.ext hx⟩
 
 /-- **`X` represents `Div¹_{X/S}`**, through the graph divisor of degree one. -/

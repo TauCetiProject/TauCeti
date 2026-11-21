@@ -36,8 +36,9 @@ separation or completeness hypotheses on the model.
 * `TauCeti.deRhamCohomology.const_injective`: on a nonempty manifold, distinct constants have
   distinct degree-zero classes.
 * `TauCeti.finrank_deRhamCohomology_zero`: `H⁰_dR(M)` has dimension one when `M` is connected.
-* `TauCeti.finrank_deRhamCohomology_zero_of_discreteTopology`: on a finite discrete manifold,
-  `H⁰_dR(M)` has dimension the number of points.
+* `TauCeti.finrank_deRhamCohomology_zero_of_discreteTopology`: on a discrete manifold,
+  `finrank ℝ H⁰_dR(M) = Nat.card M`, so `H⁰_dR(M)` has dimension the number of points when `M` is
+  finite (both sides are `0` when `M` is infinite).
 * `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`: `H⁰_c(M) = 0` when `M` is
   preconnected and noncompact.
 
@@ -62,8 +63,8 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- A smooth real `0`-form is closed exactly when its function is locally constant. -/
 theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
-    φ ∈ closedForms I M 0 ↔ IsLocallyConstant fun x ↦ φ.1 x 0 := by
-  have hφ : IsSmoothForm I ∞ (RoughForm.ofFunction I fun x ↦ φ.1 x 0) := by
+    φ ∈ closedForms I M 0 ↔ IsLocallyConstant fun x ↦ φ.val x 0 := by
+  have hφ : IsSmoothForm I ∞ (RoughForm.ofFunction I fun x ↦ φ.val x 0) := by
     rw [← RoughForm.eq_ofFunction, isSmoothForm_def]
     exact φ.contMDiff
   have h := mextDeriv_ofFunction_eq_zero_iff
@@ -73,7 +74,7 @@ theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
 variable (M) in
 /-- Closed smooth real `0`-forms are exactly the locally constant real functions. -/
 def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ where
-  toFun φ := ⟨fun x ↦ φ.1.1 x 0, (mem_closedForms_zero_iff I φ.1).mp φ.2⟩
+  toFun φ := ⟨fun x ↦ φ.val.val x 0, (mem_closedForms_zero_iff I φ.val).mp φ.property⟩
   invFun f := ⟨⟨RoughForm.ofFunction I f,
       (isSmoothForm_ofFunction_iff.mpr f.isLocallyConstant.contMDiff).mem_smoothBundleForms⟩,
     (mem_closedForms_zero_iff I _).mpr <| by
@@ -81,20 +82,20 @@ def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ w
       exact f.isLocallyConstant⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  left_inv φ := Subtype.ext <| Subtype.ext (RoughForm.eq_ofFunction φ.1.1).symm
+  left_inv φ := Subtype.ext <| Subtype.ext (RoughForm.eq_ofFunction φ.val.val).symm
   right_inv f := LocallyConstant.ext fun x ↦ RoughForm.ofFunction_apply (I := I) (f := ⇑f) x 0
 
 /-- The locally constant function of a closed `0`-form is its value on the empty tuple. -/
 @[simp]
 theorem closedFormsZeroEquiv_apply (φ : closedForms I M 0) (x : M) :
-    closedFormsZeroEquiv I M φ x = φ.1.1 x 0 := by
+    closedFormsZeroEquiv I M φ x = φ.val.val x 0 := by
   rw [closedFormsZeroEquiv]
   rfl
 
 /-- The closed `0`-form of a locally constant function is its `0`-form. -/
 @[simp]
 theorem coe_closedFormsZeroEquiv_symm_apply (f : LocallyConstant M ℝ) :
-    ((closedFormsZeroEquiv I M).symm f).1.1 = RoughForm.ofFunction I f := by
+    ((closedFormsZeroEquiv I M).symm f).val.val = RoughForm.ofFunction I f := by
   rw [closedFormsZeroEquiv]
   rfl
 
@@ -116,7 +117,7 @@ def deRhamCohomologyZeroEquiv : deRhamCohomology I M 0 ≃ₗ[ℝ] LocallyConsta
 /-- The class of a closed `0`-form corresponds to its locally constant function. -/
 @[simp]
 theorem deRhamCohomologyZeroEquiv_mk (φ : closedForms I M 0) (x : M) :
-    deRhamCohomologyZeroEquiv I M (deRhamCohomology.mk I 0 φ) x = φ.1.1 x 0 := by
+    deRhamCohomologyZeroEquiv I M (deRhamCohomology.mk I 0 φ) x = φ.val.val x 0 := by
   rw [deRhamCohomologyZeroEquiv, LinearEquiv.trans_apply, ← closedFormsZeroEquiv_apply]
   congr 2
   rw [LinearEquiv.symm_apply_eq]
@@ -181,15 +182,19 @@ theorem finrank_deRhamCohomology_zero [ConnectedSpace M] :
   rw [← (LinearEquiv.ofBijective _ hconst).finrank_eq, Module.finrank_self]
 
 variable (M) in
-/-- On a finite discrete manifold, degree-zero de Rham cohomology has dimension the number of
-points, since every real function is locally constant. -/
-theorem finrank_deRhamCohomology_zero_of_discreteTopology [DiscreteTopology M] [Finite M] :
+/-- On a discrete manifold, degree-zero de Rham cohomology has dimension the number of points,
+since every real function is locally constant. For an infinite manifold both sides are `0` by
+convention. -/
+theorem finrank_deRhamCohomology_zero_of_discreteTopology [DiscreteTopology M] :
     Module.finrank ℝ (deRhamCohomology I M 0) = Nat.card M := by
-  have : Fintype M := Fintype.ofFinite M
   have hcoe : Function.Bijective (LocallyConstant.coeFnₗ ℝ : LocallyConstant M ℝ →ₗ[ℝ] M → ℝ) :=
     ⟨DFunLike.coe_injective, fun f ↦ ⟨⟨f, .of_discrete f⟩, rfl⟩⟩
-  rw [(deRhamCohomologyZeroEquiv I M ≪≫ₗ LinearEquiv.ofBijective _ hcoe).finrank_eq,
-    Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
+  rw [(deRhamCohomologyZeroEquiv I M ≪≫ₗ LinearEquiv.ofBijective _ hcoe).finrank_eq]
+  rcases finite_or_infinite M with hM | hM
+  · have : Fintype M := Fintype.ofFinite M
+    rw [Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
+  · rw [Nat.card_eq_zero_of_infinite, Module.finrank, rank_fun_infinite]
+    exact Cardinal.toNat_apply_of_aleph0_le (Cardinal.infinite_iff.mp inferInstance)
 
 /-- On a preconnected noncompact manifold, the only compactly supported closed `0`-form is zero:
 its function is locally constant, hence constant, and a nonzero constant function on a noncompact
@@ -199,7 +204,7 @@ theorem eq_zero_of_mem_compactlySupportedClosedForms_zero [PreconnectedSpace M]
     (hφ : φ ∈ compactlySupportedClosedForms I M 0) : φ = 0 := by
   rw [mem_compactlySupportedClosedForms, mem_compactlySupportedForms] at hφ
   obtain ⟨c, hc⟩ := ((mem_closedForms_zero_iff I φ).mp hφ.2).exists_eq_const
-  have hφc (x : M) : φ.1 x 0 = c := congrFun hc x
+  have hφc (x : M) : φ.val x 0 = c := congrFun hc x
   obtain rfl | h0 := eq_or_ne c 0
   · refine Subtype.ext (funext fun x ↦ ?_)
     ext v
@@ -217,7 +222,7 @@ theorem subsingleton_compactlySupportedDeRhamCohomology_zero [PreconnectedSpace 
   refine subsingleton_of_forall_eq 0 fun c ↦ ?_
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective I 0 c
   -- The closed-form representative vanishes because its underlying form does.
-  have hφ : φ = 0 := Subtype.ext (eq_zero_of_mem_compactlySupportedClosedForms_zero I φ.2)
+  have hφ : φ = 0 := Subtype.ext (eq_zero_of_mem_compactlySupportedClosedForms_zero I φ.property)
   rw [hφ, map_zero]
 
 end TauCeti

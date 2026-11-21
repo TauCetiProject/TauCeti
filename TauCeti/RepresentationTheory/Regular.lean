@@ -133,8 +133,9 @@ def dualLeftRegularEquiv :
 /-- Under regular self-duality, the coefficient at `g` is evaluation on the basis vector `g`. -/
 @[simp]
 theorem dualLeftRegularEquiv_apply_coeff (f : Module.Dual k (MonoidAlgebra k G)) (g : G) :
-    (dualLeftRegularEquiv (k := k) (G := G) f).coeff g = f (MonoidAlgebra.single g 1) :=
-  f.coeff_basis_toDualEquiv_symm_apply g
+    (dualLeftRegularEquiv (k := k) (G := G) f).coeff g = f (MonoidAlgebra.single g 1) := by
+  classical
+  exact f.coeff_basis_toDualEquiv_symm_apply g
 
 /-- The inverse of regular self-duality evaluates on the basis vector `g` as the coefficient
 at `g`. -/

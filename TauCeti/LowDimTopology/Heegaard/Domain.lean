@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Rat
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Order.Pi
 public import TauCeti.Algebra.Group.AddSubgroup.NonnegativeCoset
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.LowDimTopology.Heegaard.Generator
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Ring
 
 /-!
 # Domains and periodic domains of a pointed Heegaard diagram
@@ -53,6 +56,8 @@ differential of `HF̂` is a finite count.
 * `TauCeti.HeegaardRegionSystem`: intersection data together with the cyclic order of the
   intersection points along each curve, the regions on the two sides of each arc, and the
   regions containing the basepoints.
+* `TauCeti.HeegaardRegionSystem.IsCrossingCompatible`: the four region labels at a transverse
+  crossing of two oriented curves agree.
 * `TauCeti.HeegaardRegionSystem.alphaBoundary`, `TauCeti.HeegaardRegionSystem.betaBoundary`: the
   `α`- and `β`-parts of the boundary of a domain.
 * `TauCeti.HeegaardRegionSystem.alphaArcBoundary`, `TauCeti.HeegaardRegionSystem.betaArcBoundary`:
@@ -97,6 +102,105 @@ namespace TauCeti
 
 universe u v w
 
+namespace HeegaardRegionSystem
+
+section Crossing
+
+variable {A B R : Type*}
+
+/-- Two oriented curves `a` and `b` cross transversally at a point, which is the start of the arc
+of `a` labelled `a₀` and of the arc of `b` labelled `b₀`; the arcs ending there are the
+predecessors `aNext.symm a₀` and `bNext.symm b₀`. The crossing is *compatible* with the region
+labels on the two sides of these four arcs when the four corner regions agree, for one of the two
+local orientations of the crossing. -/
+def IsCrossingCompatible (aNext : Equiv.Perm A) (aLeft aRight : A → R) (bNext : Equiv.Perm B)
+    (bLeft bRight : B → R) (a₀ : A) (b₀ : B) : Prop :=
+  (aLeft (aNext.symm a₀) = bLeft b₀ ∧ aRight (aNext.symm a₀) = bLeft (bNext.symm b₀) ∧
+      aLeft a₀ = bRight b₀ ∧ aRight a₀ = bRight (bNext.symm b₀)) ∨
+    (aLeft (aNext.symm a₀) = bRight (bNext.symm b₀) ∧ aRight (aNext.symm a₀) = bRight b₀ ∧
+      aLeft a₀ = bLeft (bNext.symm b₀) ∧ aRight a₀ = bLeft b₀)
+
+variable {aNext : Equiv.Perm A} {aLeft aRight : A → R} {bNext : Equiv.Perm B}
+  {bLeft bRight : B → R} {a₀ : A} {b₀ : B}
+
+/-- A crossing is compatible exactly when the four corner regions agree for one of the two local
+orientations of the crossing. -/
+theorem isCrossingCompatible_iff :
+    IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀ ↔
+      (aLeft (aNext.symm a₀) = bLeft b₀ ∧ aRight (aNext.symm a₀) = bLeft (bNext.symm b₀) ∧
+          aLeft a₀ = bRight b₀ ∧ aRight a₀ = bRight (bNext.symm b₀)) ∨
+        (aLeft (aNext.symm a₀) = bRight (bNext.symm b₀) ∧ aRight (aNext.symm a₀) = bRight b₀ ∧
+          aLeft a₀ = bLeft (bNext.symm b₀) ∧ aRight a₀ = bLeft b₀) :=
+  Iff.rfl
+
+/-- At a compatible crossing, the boundaries along the two curves of every region chain cancel:
+the `a`-boundary of the `a`-part of `∂D` and the `b`-boundary of its `b`-part sum to zero there. -/
+theorem IsCrossingCompatible.sum_eq_zero
+    (h : IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀) (D : R → ℤ) :
+    (D (aLeft (aNext.symm a₀)) - D (aRight (aNext.symm a₀)) - (D (aLeft a₀) - D (aRight a₀))) +
+      (D (bLeft (bNext.symm b₀)) - D (bRight (bNext.symm b₀)) - (D (bLeft b₀) - D (bRight b₀))) =
+      0 := by
+  rcases h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;> rw [h₁, h₂, h₃, h₄] <;> abel
+
+/-- At a compatible crossing, the multiplicities of a region chain at the four corners, read along
+the arcs of either curve, have the same sum. -/
+theorem IsCrossingCompatible.corner_sum_eq
+    (h : IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀) (D : R → ℤ) :
+    D (aLeft (aNext.symm a₀)) + D (aRight (aNext.symm a₀)) + (D (aLeft a₀) + D (aRight a₀)) =
+      D (bLeft (bNext.symm b₀)) + D (bRight (bNext.symm b₀)) + (D (bLeft b₀) + D (bRight b₀)) := by
+  rcases h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;> rw [h₁, h₂, h₃, h₄] <;> abel
+
+/-- At a compatible crossing, the local intersection number of the `a`-part of `∂D` with the
+`b`-part of `∂E` cancels that of the `b`-part of `∂E` with the `a`-part of `∂D`. Each is the sum of
+the coefficients of one boundary on the two arcs at the crossing, times the change across the other
+curve of the sum of the multiplicities on the two sides of the first. -/
+theorem IsCrossingCompatible.cross_add_cross_eq_zero
+    (h : IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀) (D E : R → ℤ) :
+    (D (aLeft (aNext.symm a₀)) - D (aRight (aNext.symm a₀)) + (D (aLeft a₀) - D (aRight a₀))) *
+        (E (aLeft a₀) + E (aRight a₀) - (E (aLeft (aNext.symm a₀)) + E (aRight (aNext.symm a₀)))) +
+      (E (bLeft (bNext.symm b₀)) - E (bRight (bNext.symm b₀)) + (E (bLeft b₀) - E (bRight b₀))) *
+        (D (bLeft b₀) + D (bRight b₀) - (D (bLeft (bNext.symm b₀)) + D (bRight (bNext.symm b₀)))) =
+      0 := by
+  rcases h with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩ <;> rw [h₁, h₂, h₃, h₄] <;> ring
+
+/-- Summation by parts along an oriented curve: pairing the boundary of the `1`-chain `∂X` with
+the corner sums of `Y` equals pairing the sums of the coefficients of `∂X` on the two arcs at each
+point with the change there of the side sums of `Y`. -/
+theorem sum_arcBoundary_mul_cornerSum {P : Type*} [Fintype P] (next : Equiv.Perm P)
+    (left right : P → R) (X Y : R → ℤ) :
+    ∑ q, (X (left (next.symm q)) - X (right (next.symm q)) - (X (left q) - X (right q))) *
+        (Y (left (next.symm q)) + Y (right (next.symm q)) + (Y (left q) + Y (right q))) =
+      ∑ q, (X (left (next.symm q)) - X (right (next.symm q)) + (X (left q) - X (right q))) *
+        (Y (left q) + Y (right q) - (Y (left (next.symm q)) + Y (right (next.symm q)))) := by
+  have h := Equiv.sum_comp next.symm fun q =>
+    (X (left q) - X (right q)) * (Y (left q) + Y (right q))
+  rw [← sub_eq_zero, ← Finset.sum_sub_distrib]
+  calc _ = ∑ q, 2 * ((X (left (next.symm q)) - X (right (next.symm q))) *
+          (Y (left (next.symm q)) + Y (right (next.symm q))) -
+            (X (left q) - X (right q)) * (Y (left q) + Y (right q))) :=
+        Finset.sum_congr rfl fun q _ => by ring
+    _ = 0 := by rw [← Finset.mul_sum, Finset.sum_sub_distrib, h, sub_self, mul_zero]
+
+/-- Summation by parts along an oriented curve, for point measures `m` given by the corner sums of
+`Y` divided by four: pairing the boundary `c` of the `1`-chain `∂X` with `m` equals pairing the
+sums of the coefficients of `∂X` on the two arcs at each point with the change there of the side
+sums of `Y`, divided by four. -/
+theorem sum_mul_cornerSum_div_four {P : Type*} [Fintype P] (next : Equiv.Perm P)
+    (left right : P → R) (X Y : R → ℤ) (c : P → ℤ) (m : P → ℚ)
+    (hc : ∀ q, c q = X (left (next.symm q)) - X (right (next.symm q)) - (X (left q) - X (right q)))
+    (hm : ∀ q, m q = ((Y (left (next.symm q)) + Y (right (next.symm q)) +
+      (Y (left q) + Y (right q)) : ℤ) : ℚ) / 4) :
+    ∑ q, (c q : ℚ) * m q =
+      ((∑ q, (X (left (next.symm q)) - X (right (next.symm q)) + (X (left q) - X (right q))) *
+        (Y (left q) + Y (right q) - (Y (left (next.symm q)) + Y (right (next.symm q)))) : ℤ) :
+          ℚ) / 4 := by
+  rw [← sum_arcBoundary_mul_cornerSum, Int.cast_sum, Finset.sum_div]
+  exact Finset.sum_congr rfl fun q _ => by rw [hc, hm]; push_cast; ring
+
+end Crossing
+
+end HeegaardRegionSystem
+
 /-- The incidence data of a pointed Heegaard diagram needed for domains. On top of the
 intersection data it records, for each intersection point `p`, the next intersection point along
 the oriented `α`- and `β`-curve through `p`, the regions to the left and to the right of the arcs
@@ -131,14 +235,8 @@ structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Bas
   /-- The four region labels around each transverse crossing agree on the `α`- and `β`-arc
   sides. The two alternatives are the two possible local crossing orientations. -/
   crossingCompatible (p : Point) :
-    (alphaLeft (alphaNext.symm p) = betaLeft p ∧
-      alphaRight (alphaNext.symm p) = betaLeft (betaNext.symm p) ∧
-      alphaLeft p = betaRight p ∧
-      alphaRight p = betaRight (betaNext.symm p)) ∨
-    (alphaLeft (alphaNext.symm p) = betaRight (betaNext.symm p) ∧
-      alphaRight (alphaNext.symm p) = betaRight p ∧
-      alphaLeft p = betaLeft (betaNext.symm p) ∧
-      alphaRight p = betaLeft p)
+    HeegaardRegionSystem.IsCrossingCompatible alphaNext alphaLeft alphaRight betaNext betaLeft
+      betaRight p p
   /-- Every region meets an arc, except for the unique region of a diagram with no
   intersection arcs. -/
   regionCovered (r : Region) :
@@ -148,6 +246,7 @@ structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Bas
   basepoint : Basepoint → Region
 
 namespace HeegaardRegionSystem
+
 
 variable {n : ℕ} {Point : Type u} {Region : Type v} {Basepoint : Type w}
   (H : HeegaardRegionSystem n Point Region Basepoint)
@@ -245,11 +344,7 @@ theorem boundary_boundary_eq_zero (D : Region → ℤ) :
   funext p
   simp only [Pi.add_apply, Pi.zero_apply, alphaArcBoundary_apply, betaArcBoundary_apply,
     alphaBoundary_apply, betaBoundary_apply]
-  rcases H.crossingCompatible p with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩
-  · rw [h₁, h₂, h₃, h₄]
-    abel
-  · rw [h₁, h₂, h₃, h₄]
-    abel
+  exact (H.crossingCompatible p).sum_eq_zero D
 
 /-- A `1`-chain on the `α`-arcs is a cycle exactly when it is a combination of whole `α`-curves,
 that is, constant along each `α`-curve. -/
@@ -289,6 +384,13 @@ theorem isDomainBetween_zero (x : H.Generator) : H.IsDomainBetween x x 0 := by
 
 /-- The whole surface connects every generator to itself. -/
 theorem isDomainBetween_one (x : H.Generator) : H.IsDomainBetween x x 1 := by
+  simp
+
+/-- A domain connects a generator to itself exactly when its `α`- and `β`-parts are cycles, that
+is, when its boundary is a combination of whole curves. This does not depend on the generator. -/
+theorem isDomainBetween_self_iff_arcBoundary_eq_zero {x : H.Generator} {E : Region → ℤ} :
+    H.IsDomainBetween x x E ↔
+      H.alphaArcBoundary (H.alphaBoundary E) = 0 ∧ H.betaArcBoundary (H.betaBoundary E) = 0 := by
   simp
 
 namespace IsDomainBetween
@@ -377,6 +479,17 @@ theorem isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains [Subsingleton 
   simp only [mem_periodicDomains_iff, isDomainBetween_iff, sub_self, map_sub, map_zsmul,
     alphaBoundary_one, betaBoundary_one, smul_zero, sub_zero, Pi.sub_apply, Pi.smul_apply,
     Pi.one_apply, smul_eq_mul, mul_one, Subsingleton.elim _ z, implies_true, true_and]
+
+/-- In a diagram with at most one basepoint, a nonnegative domain `E` from `x` to itself is a
+periodic domain plus a nonnegative number of copies of the whole surface: with a basepoint `z`,
+that number is `n_z(E)`, and without one `E` is itself periodic. -/
+theorem IsDomainBetween.exists_nonneg_sub_smul_one_mem_periodicDomains [Subsingleton Basepoint]
+    {x : H.Generator} {E : Region → ℤ} (hE : H.IsDomainBetween x x E) (hE₀ : 0 ≤ E) :
+    ∃ m : ℤ, 0 ≤ m ∧ E - m • 1 ∈ H.periodicDomains := by
+  rcases isEmpty_or_nonempty Basepoint with hB | ⟨⟨z⟩⟩
+  · exact ⟨0, le_rfl, by simpa using isDomainBetween_self_iff.mp ⟨hE, isEmptyElim⟩⟩
+  · exact ⟨E (H.basepoint z), hE₀ _,
+      (isDomainBetween_self_iff_sub_smul_one_mem_periodicDomains z).mp hE⟩
 
 variable (H) in
 /-- The supplied region incidence system is weakly admissible when every nonzero periodic domain

@@ -25,10 +25,22 @@ symbols.
 Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ (-1) = 1`
 (`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain.
 
+A character of order dividing two is `1` at the square of every unit
+(`MulChar.apply_sq_eq_one_of_sq_eq_one`). An integer-valued character pushed into a ring along
+`Int.castRingHom` takes the casts of its integer values
+(`MulChar.ringHomComp_intCast_apply_of_apply_eq`).
+
+The trivial character is quadratic (`MulChar.isQuadratic_one`), and `MulChar.equivToUnitHom` and
+its inverse carry the trivial character `1` and the trivial unit homomorphism `1` to each other
+(`MulChar.equivToUnitHom_one`, `MulChar.equivToUnitHom_symm_one`, `MulChar.toUnitHom_one`).
+
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
 
-Quadratic characters are closed under multiplication (`MulChar.IsQuadratic.mul`), and hence a
+A quadratic character takes the value `1` or `-1` at every unit
+(`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`), so it is trivial when `2 = 0` in the
+coefficient ring (`MulChar.IsQuadratic.eq_one_of_two_eq_zero`). Quadratic characters are closed
+under multiplication (`MulChar.IsQuadratic.mul`), and hence a
 finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 -/
 
@@ -58,11 +70,40 @@ theorem map_one_apply {R S R' R'' F G : Type*} [CommMonoid R] [CommMonoid S]
   · rw [one_apply ha, one_apply (ha.map e), map_one]
   · rw [map_nonunit _ ha, map_nonunit _ (by rwa [isUnit_map_iff]), map_zero]
 
+/-- The trivial character corresponds to the trivial homomorphism of unit groups under
+`MulChar.equivToUnitHom`. -/
+@[simp]
+theorem equivToUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
+    equivToUnitHom (1 : MulChar R R') = 1 :=
+  map_one mulEquivToUnitHom
+
+/-- `MulChar.equivToUnitHom.symm` sends the trivial unit homomorphism `1` to `1`. -/
+@[simp]
+theorem equivToUnitHom_symm_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
+    equivToUnitHom.symm (1 : Rˣ →* R'ˣ) = 1 :=
+  map_one mulEquivToUnitHom.symm
+
+/-- The trivial character restricts to the trivial homomorphism of unit groups. -/
+theorem toUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
+    (1 : MulChar R R').toUnitHom = 1 :=
+  equivToUnitHom_one
+
 /-- A multiplicative character takes a value at `-1` whose square is `1`. -/
 @[simp]
 theorem apply_neg_one_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
     [CommMonoidWithZero R'] (χ : MulChar R R') : χ (-1) * χ (-1) = 1 := by
   rw [← map_mul, neg_one_mul, neg_neg, map_one]
+
+/-- A character of order dividing two is `1` at the square of a unit. -/
+theorem apply_sq_eq_one_of_sq_eq_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R']
+    {χ : MulChar R R'} (hχ : χ ^ 2 = 1) {a : R} (ha : IsUnit a) : χ (a ^ 2) = 1 := by
+  rw [map_pow, ← pow_apply' χ two_ne_zero, hχ, one_apply ha]
+
+/-- An integer-valued character pushed into a ring takes the cast of its integer value. -/
+theorem ringHomComp_intCast_apply_of_apply_eq {R R' : Type*} [CommMonoid R] [CommRing R']
+    (χ : MulChar R ℤ) {a : R} {b : ℤ} (h : χ a = b) :
+    χ.ringHomComp (Int.castRingHom R') a = b := by
+  rw [ringHomComp_apply, h, eq_intCast]
 
 /-- Pushing a multiplicative character along an injective ring homomorphism of the coefficients
 preserves its order. -/
@@ -72,6 +113,22 @@ theorem orderOf_ringHomComp {R R' R'' : Type*} [CommMonoid R] [CommRing R'] [Com
     orderOf (χ.ringHomComp f) = orderOf χ := by
   rw [← ringHomCompHom_apply, orderOf_injective _ (injective_ringHomComp hf)]
 
+/-- A quadratic character takes the value `1` or `-1` at a unit. -/
+theorem IsQuadratic.apply_eq_one_or_eq_neg_one {M R : Type*} [CommMonoid M] [CommRing R]
+    {χ : MulChar M R} (hχ : χ.IsQuadratic) {a : M} (ha : IsUnit a) : χ a = 1 ∨ χ a = -1 := by
+  rcases hχ a with h | h | h
+  · exact Or.inl (h.trans (isUnit_zero_iff.mp (h ▸ ha.map χ)))
+  · exact Or.inl h
+  · exact Or.inr h
+
+/-- In a ring where `2 = 0`, `1` and `-1` coincide, so every quadratic character is trivial. -/
+theorem IsQuadratic.eq_one_of_two_eq_zero {M R : Type*} [CommMonoid M] [CommRing R]
+    {χ : MulChar M R} (hχ : χ.IsQuadratic) (hR : (2 : R) = 0) : χ = 1 := by
+  refine ext fun u ↦ ?_
+  rcases hχ.apply_eq_one_or_eq_neg_one u.isUnit with h | h
+  · rw [h, one_apply_coe]
+  · rw [h, neg_eq_iff_add_eq_zero.mpr (one_add_one_eq_two.trans hR), one_apply_coe]
+
 /-- The product of two quadratic characters is quadratic. -/
 theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulChar M R}
     (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) : (χ * ψ).IsQuadratic := by
@@ -79,14 +136,20 @@ theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulCh
   rw [mul_apply]
   rcases hχ a with h | h | h <;> rcases hψ a with h' | h' | h' <;> simp [h, h']
 
-/-- A finite product of quadratic characters is quadratic. -/
-theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
-    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
-    (∏ i ∈ s, χ i).IsQuadratic := by
-  refine Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) (fun a ↦ ?_) hχ
+/-- The trivial character is quadratic. -/
+@[simp]
+theorem isQuadratic_one {M R : Type*} [CommMonoid M] [CommRing R] :
+    (1 : MulChar M R).IsQuadratic := by
+  intro a
   by_cases ha : IsUnit a
   · exact Or.inr (Or.inl (one_apply ha))
   · exact Or.inl (map_nonunit 1 ha)
+
+/-- A finite product of quadratic characters is quadratic. -/
+theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
+    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
+    (∏ i ∈ s, χ i).IsQuadratic :=
+  Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
 
 section Transport
 

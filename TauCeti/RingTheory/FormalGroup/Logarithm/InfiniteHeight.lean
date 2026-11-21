@@ -90,11 +90,8 @@ private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p :
   have hpR : (p : R) = 0 := F.natCast_eq_zero_of_nsmulSeries_eq_zero hF
   by_cases hpow : ∃ k, n = p ^ k
   · obtain ⟨k, rfl⟩ := hpow
-    have hk : k ≠ 0 := by
-      rintro rfl
-      simp at hn₂
     -- the obstruction is the coefficient of `Xⁿ` in `[p]_{𝔾ₐ}(g(X)) - g([p]_F(X)) = 0`
-    have h0 := F.homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hk hn
+    have h0 := F.homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hn
     have hp0 : (p : PowerSeries R) = 0 := by rw [← map_natCast PowerSeries.C, hpR, map_zero]
     simp only [nsmulSeries_𝔾ₐ, hF, hp0, zero_mul, PowerSeries.subst_zero,
       PowerSeries.subst_zero_of_constantCoeff_zero hg, sub_zero, map_zero, zero_smul,
@@ -132,7 +129,7 @@ private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsm
     | zero =>
       have hF' := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
       refine ⟨PowerSeries.constantCoeff_X, ?_, fun k hk ↦ ?_⟩
-      · rw [approx, F.homDefect_𝔾ₐ PowerSeries.constantCoeff_X, PowerSeries.subst_X hF',
+      · rw [approx, F.homDefect_𝔾ₐ, PowerSeries.subst_X hF',
           PowerSeries.subst_X (PowerSeries.HasSubst.X _),
           PowerSeries.subst_X (PowerSeries.HasSubst.X _), sub_sub]
         exact two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y
@@ -163,8 +160,8 @@ private theorem exists_logarithm [F.IsComm] {p : ℕ} (hp : p.Prime) (hF : F.nsm
   · rw [hcoeff (Nat.lt_succ_self (p ^ k)), (key _).2.2 k hk]
   · -- the additivity defect of the limit vanishes below every degree
     refine order_eq_top_iff.mp (top_le_iff.mp (ENat.forall_natCast_le_iff_le.mp fun m _ ↦ ?_))
-    have hdiff := le_order_homDefect_𝔾ₐ F (by rw [map_sub, h₀, (key m).1, sub_zero]) (hlim m)
-    rw [homDefect_𝔾ₐ_sub F h₀ (key m).1] at hdiff
+    have hdiff := le_order_homDefect_𝔾ₐ F (hlim m)
+    rw [homDefect_𝔾ₐ_sub F] at hdiff
     have h := le_order_add ((key m).2.1.trans' (by exact_mod_cast (by omega : m ≤ m + 2))) hdiff
     rwa [add_sub_cancel] at h
 
@@ -177,19 +174,22 @@ series `g, g' = X + ⋯` without terms of degree `pᵏ`, `k ≥ 1`, that are add
 Indeed `g - g'` is a homomorphism from `F` to the additive formal group law, and a nonzero such
 homomorphism has order a power of `p`. -/
 theorem logarithm_unique_of_natCast_eq_zero {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0)
-    {g g' : PowerSeries R} (h₀ : PowerSeries.constantCoeff g = 0) (h₁ : PowerSeries.coeff 1 g = 1)
+    {g g' : PowerSeries R} (h₁ : PowerSeries.coeff 1 g = 1)
     (hpow : ∀ k, 0 < k → PowerSeries.coeff (p ^ k) g = 0)
     (hg : PowerSeries.subst F.toPowerSeries g =
       PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g)
-    (h₀' : PowerSeries.constantCoeff g' = 0) (h₁' : PowerSeries.coeff 1 g' = 1)
+    (h₁' : PowerSeries.coeff 1 g' = 1)
     (hpow' : ∀ k, 0 < k → PowerSeries.coeff (p ^ k) g' = 0)
     (hg' : PowerSeries.subst F.toPowerSeries g' =
       PowerSeries.subst (X 0) g' + PowerSeries.subst (X 1) g') :
     g = g' := by
+  -- additivity forces the constant coefficient to vanish
+  have h₀ := TauCeti.FormalGroupHom.constantCoeff_eq_zero_of_additive hg
+  have h₀' := TauCeti.FormalGroupHom.constantCoeff_eq_zero_of_additive hg'
   by_contra hne
   have hne' : g - g' ≠ 0 := sub_ne_zero.mpr hne
   have hf₀ : PowerSeries.constantCoeff (g - g') = 0 := by rw [map_sub, h₀, h₀', sub_zero]
-  have hf := (TauCeti.FormalGroupHom.hom_additive_iff (F := F) hf₀).mpr <| by
+  have hf := (TauCeti.FormalGroupHom.hom_additive_iff (F := F) (g := g - g')).mpr <| by
     rw [PowerSeries.subst_sub (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
       PowerSeries.subst_sub (PowerSeries.HasSubst.X _),
       PowerSeries.subst_sub (PowerSeries.HasSubst.X _), hg, hg']
@@ -214,10 +214,10 @@ theorem existsUnique_logarithm_of_nsmulSeries_eq_zero [F.IsComm] {p : ℕ} (hp :
       PowerSeries.subst F.toPowerSeries g =
         PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
   obtain ⟨g, h₀, h₁, hpow, hg⟩ := F.exists_logarithm hp hF
-  rw [F.homDefect_𝔾ₐ h₀, sub_sub, sub_eq_zero] at hg
-  refine ⟨g, ⟨h₀, h₁, hpow, hg⟩, fun g' ⟨h₀', h₁', hpow', hg'⟩ ↦ ?_⟩
+  rw [F.homDefect_𝔾ₐ, sub_sub, sub_eq_zero] at hg
+  refine ⟨g, ⟨h₀, h₁, hpow, hg⟩, fun g' ⟨_, h₁', hpow', hg'⟩ ↦ ?_⟩
   exact F.logarithm_unique_of_natCast_eq_zero hp (F.natCast_eq_zero_of_nsmulSeries_eq_zero hF)
-    h₀' h₁' hpow' hg' h₀ h₁ hpow hg
+    h₁' hpow' hg' h₁ hpow hg
 
 /-- **A formal group law of infinite height is additive.** If `p` is a prime and `F` is a
 commutative formal group law with `[p]_F = 0`, then `F` is strictly isomorphic to the additive
@@ -228,7 +228,7 @@ theorem exists_isStrict_formalGroupIso_𝔾ₐ [F.IsComm] {p : ℕ} (hp : p.Prim
   -- `g` is a strict coordinate transporting `F` to the additive formal group law
   let φ : TauCeti.FormalCoordinate R := ⟨g, h₀, h₁ ▸ isUnit_one⟩
   let f : TauCeti.FormalGroupHom F 𝔾ₐ :=
-    ⟨g, h₀, (TauCeti.FormalGroupHom.hom_additive_iff h₀).mpr hg⟩
+    ⟨g, h₀, TauCeti.FormalGroupHom.hom_additive_iff.mpr hg⟩
   rw [← f.smul_eq (φ := φ) rfl]
   exact ⟨smulIso φ F, (isStrict_smulIso_iff φ F).mpr
     (Units.ext (by rw [TauCeti.FormalCoordinate.val_linearCoeff]; exact h₁))⟩

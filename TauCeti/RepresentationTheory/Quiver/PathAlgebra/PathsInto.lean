@@ -61,7 +61,7 @@ abbrev PathBetween (R : Type u) [Quiver.{v} R] (n : ℕ) (i j : R) : Type _ :=
   {p : Path i j // p.length = n}
 
 private theorem pathInto_injective (n : ℕ) (j : R) :
-    Function.Injective fun p : PathInto R n j => (⟨p.1.1, j, p.1.2⟩ : Quiver.TotalPath R) := by
+    Function.Injective fun p : PathInto R n j => (⟨p.val.1, j, p.val.2⟩ : Quiver.TotalPath R) := by
   rintro ⟨⟨s, p⟩, hp⟩ ⟨⟨s', p'⟩, hp'⟩ h
   simp only [Sigma.mk.injEq] at h
   obtain ⟨rfl, h⟩ := h
@@ -75,7 +75,7 @@ instance finite_pathInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j
   have := (TauCeti.Quiver.finite_setOf_length_le (V := R) n).to_subtype
   refine Finite.of_injective
     (fun p : PathInto R n j =>
-      (⟨⟨p.1.1, j, p.1.2⟩, p.2.le⟩ : {x : Σ a b : R, Path a b | x.2.2.length ≤ n})) ?_
+      (⟨⟨p.val.1, j, p.val.2⟩, p.property.le⟩ : {x : Σ a b : R, Path a b | x.2.2.length ≤ n})) ?_
   intro p q h
   exact pathInto_injective n j (congrArg Subtype.val h)
 
@@ -84,7 +84,7 @@ instance finite_pathBetween [Finite R] [∀ a b : R, Finite (a ⟶ b)]
     (n : ℕ) (i j : R) : Finite (PathBetween R n i j) :=
   Finite.of_injective
     (fun p : PathBetween R n i j =>
-      (⟨(⟨i, p.1⟩ : Σ s : R, Path s j), p.2⟩ : PathInto R n j))
+      (⟨(⟨i, p.val⟩ : Σ s : R, Path s j), p.property⟩ : PathInto R n j))
     fun ⟨p, hp⟩ ⟨q, hq⟩ h => by
       simp only [Subtype.mk.injEq, Sigma.mk.injEq, heq_eq_eq, true_and] at h
       exact Subtype.ext h
@@ -95,8 +95,8 @@ theorem card_pathBetween_zero [DecidableEq R] (i j : R) :
   split_ifs with h
   · subst h
     refine Nat.card_eq_one_iff_unique.mpr ⟨⟨fun p q => Subtype.ext ?_⟩, ⟨⟨Path.nil, rfl⟩⟩⟩
-    rw [Path.eq_nil_of_length_zero p.1 p.2, Path.eq_nil_of_length_zero q.1 q.2]
-  · have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩
+    rw [Path.eq_nil_of_length_zero p.val p.property, Path.eq_nil_of_length_zero q.val q.property]
+  · have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.val p.property)⟩
     exact Nat.card_of_isEmpty
 
 /-- **The last-arrow decomposition of paths of length `n + 1`.** Appending an arrow `l ⟶ j` to a
@@ -105,7 +105,7 @@ This is `TauCeti.pathLastArrowEquiv` restricted to paths of length `n + 1`, wher
 does not occur. -/
 noncomputable def pathBetweenSuccEquiv (n : ℕ) (i j : R) :
     (Σ l : R, PathBetween R n i l × (l ⟶ j)) ≃ PathBetween R (n + 1) i j :=
-  Equiv.ofBijective (fun x => ⟨x.2.1.1.cons x.2.2, by simp [x.2.1.2]⟩) <| by
+  Equiv.ofBijective (fun x => ⟨x.2.1.val.cons x.2.2, by simp [x.2.1.property]⟩) <| by
     refine ⟨?_, ?_⟩
     · rintro ⟨l, ⟨p, hp⟩, b⟩ ⟨l', ⟨p', hp'⟩, b'⟩ h
       have h' := congrArg (pathLastArrowEquiv i j) (congrArg Subtype.val h)
@@ -129,7 +129,7 @@ recorded by `TauCeti.PathAlgebra.pathBetweenSuccEquiv`. -/
 @[simp]
 theorem pathBetweenSuccEquiv_apply (n : ℕ) (i j : R)
     (x : Σ l : R, PathBetween R n i l × (l ⟶ j)) :
-    (pathBetweenSuccEquiv n i j x).1 = x.2.1.1.cons x.2.2 :=
+    (pathBetweenSuccEquiv n i j x).val = x.2.1.val.cons x.2.2 :=
   (rfl)
 
 /-- Every path of length `n + 1` from `i` to `j` is a unique path of length `n` from `i` to some
@@ -146,8 +146,8 @@ private theorem card_pathInto_eq_sum [Fintype R] [∀ a b : R, Finite (a ⟶ b)]
     Nat.card (PathInto R n j) = ∑ s : R, Nat.card (PathBetween R n s j) := by
   rw [← Nat.card_sigma]
   exact Nat.card_congr
-    { toFun := fun p => ⟨p.1.1, p.1.2, p.2⟩
-      invFun := fun x => ⟨⟨x.1, x.2.1⟩, x.2.2⟩ }
+    { toFun := fun p => ⟨p.val.1, p.val.2, p.property⟩
+      invFun := fun x => ⟨⟨x.1, x.2.val⟩, x.2.property⟩ }
 
 /-- Every path of length `n + 1` into `j` has a unique last arrow and a length-`n` prefix. -/
 theorem card_arrow_mul_card_pathInto_eq [Fintype R] [∀ a b : R, Fintype (a ⟶ b)]
@@ -169,18 +169,18 @@ variable [CommSemiring k]
 `e_j kR` (`TauCeti.PathAlgebra.mem_pathsInto_iff`). -/
 noncomputable def pathsInto (n : ℕ) (j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
-    (Set.range fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R))
+    (Set.range fun p : PathInto R n j => (ofPath ⟨p.val.1, j, p.val.2⟩ : pathAlgebra k R))
 
 /-- The span of paths of length `n` from `i` to `j`: the degree-`n` part of the corner
 `e_j kR e_i`. -/
 noncomputable def pathsBetween (n : ℕ) (i j : R) : Submodule k (pathAlgebra k R) :=
   Submodule.span k
-    (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R))
+    (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.val⟩ : pathAlgebra k R))
 
 /-- The paths of length `n` from `i` to `j` span `pathsBetween k n i j`, by definition. -/
 theorem pathsBetween_def (n : ℕ) (i j : R) :
     pathsBetween k n i j = Submodule.span k
-      (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R)) :=
+      (Set.range fun p : PathBetween R n i j => (ofPath ⟨i, j, p.val⟩ : pathAlgebra k R)) :=
   (rfl)
 
 variable {k}
@@ -253,7 +253,7 @@ theorem mem_pathsBetween_iff {n : ℕ} {i j : R} {x : pathAlgebra k R} :
     induction hx using Submodule.span_induction with
     | mem y hy =>
         obtain ⟨p, rfl⟩ := hy
-        exact ⟨ofPath_mem_grade_of_length p.2,
+        exact ⟨ofPath_mem_grade_of_length p.property,
           by rw [vertexIdempotent_mul_ofPath, ofPath_mul_vertexIdempotent]⟩
     | zero => simp
     | add y z _ _ hy hz =>
@@ -446,15 +446,14 @@ instance finiteDimensional_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] 
 
 /-- The dimension of the span of the paths of length `n` into `j` is the number of such paths:
 distinct paths are linearly independent in the path algebra. -/
-theorem finrank_pathsInto [Finite R] [∀ a b : R, Finite (a ⟶ b)] (n : ℕ) (j : R) :
+theorem finrank_pathsInto (n : ℕ) (j : R) :
     Module.finrank k (pathsInto k n j) =
       Nat.card {p : Σ s : R, Path s j // p.2.length = n} := by
-  have := Fintype.ofFinite (PathInto R n j)
   have hli : LinearIndependent k
-      fun p : PathInto R n j => (ofPath ⟨p.1.1, j, p.1.2⟩ : pathAlgebra k R) := by
+      fun p : PathInto R n j => (ofPath ⟨p.val.1, j, p.val.2⟩ : pathAlgebra k R) := by
     have h := (pathAlgebraBasis k R).linearIndependent.comp _ (pathInto_injective n j)
     simpa only [coe_pathAlgebraBasis, Function.comp_def] using h
-  rw [pathsInto, finrank_span_eq_card hli, Nat.card_eq_fintype_card]
+  rw [pathsInto, ← Module.finrank_eq_nat_card_basis (Module.Basis.span hli)]
 
 instance finiteDimensional_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
     FiniteDimensional k (pathsBetween k n i j) :=
@@ -462,18 +461,17 @@ instance finiteDimensional_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween
 
 /-- The dimension of the length-`n` corner from `i` to `j` is the number of length-`n` paths
 from `i` to `j`. -/
-theorem finrank_pathsBetween (n : ℕ) (i j : R) [Finite (PathBetween R n i j)] :
+theorem finrank_pathsBetween (n : ℕ) (i j : R) :
     Module.finrank k (pathsBetween k n i j) = Nat.card (PathBetween R n i j) := by
-  have := Fintype.ofFinite (PathBetween R n i j)
   have hli : LinearIndependent k
-      fun p : PathBetween R n i j => (ofPath ⟨i, j, p.1⟩ : pathAlgebra k R) := by
+      fun p : PathBetween R n i j => (ofPath ⟨i, j, p.val⟩ : pathAlgebra k R) := by
     have h := (pathAlgebraBasis k R).linearIndependent.comp
-      (fun p : PathBetween R n i j => (⟨i, j, p.1⟩ : Quiver.TotalPath R))
+      (fun p : PathBetween R n i j => (⟨i, j, p.val⟩ : Quiver.TotalPath R))
       (fun ⟨p, hp⟩ ⟨q, hq⟩ h => by
         simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at h
         exact Subtype.ext h)
     simpa only [coe_pathAlgebraBasis, Function.comp_def] using h
-  rw [pathsBetween, finrank_span_eq_card hli, Nat.card_eq_fintype_card]
+  rw [pathsBetween, ← Module.finrank_eq_nat_card_basis (Module.Basis.span hli)]
 
 end Field
 

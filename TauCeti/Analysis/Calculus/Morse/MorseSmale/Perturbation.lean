@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Dynamics.Flow.Stable
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Dynamics.Flow.Variational
 
 /-!
@@ -60,6 +61,9 @@ for parameters in the closed unit ball.
 * `TauCeti.negativeGradientFlow_perturb_apply_eq`, `TauCeti.mem_stableSet_perturb_iff`,
   `TauCeti.mem_unstableSet_perturb_iff`: away from the supports of the family, the perturbed flow,
   and membership in stable and unstable sets, are those of `f`.
+* `TauCeti.stableSet_perturb_inter_preimage_Iic`, `TauCeti.unstableSet_perturb_inter_preimage_Ici`:
+  for a family supported where `f > c` (resp. `f < c`), the stable sets where `f ≤ c` (resp. the
+  unstable sets where `c ≤ f`) are those of `f`.
 
 ## References
 
@@ -191,22 +195,16 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     refine iff_of_false ?_ hne
     rw [fderiv_perturb (hfd x) fun i ↦ hhd i x]
     intro h0
-    have h1 : ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ Fintype.card ι * max C 0 * ‖s‖ := by
-      calc ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ ∑ i, ‖s i • fderiv ℝ (h i) x‖ := norm_sum_le _ _
-        _ ≤ ∑ _i : ι, ‖s‖ * max C 0 := Finset.sum_le_sum fun i _ ↦ by
-          rw [norm_smul]
-          exact mul_le_mul (PiLp.norm_apply_le s i)
-            ((hB i x).trans ((hC i).trans (le_max_left _ _))) (norm_nonneg _) (norm_nonneg _)
-        _ = Fintype.card ι * max C 0 * ‖s‖ := by
-          rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-          ring
+    have h1 : ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ ‖s‖ * (Fintype.card ι * max C 0) := by
+      refine (PiLp.norm_sum_smul_le s _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg s))
+      simpa using Finset.sum_le_card_nsmul Finset.univ _ _
+        fun i _ ↦ (hB i x).trans ((hC i).trans (le_max_left _ _))
     have h2 : ‖fderiv ℝ f x‖ ≤ ‖∑ i, s i • fderiv ℝ (h i) x‖ := by
       have : fderiv ℝ f x = -∑ i, s i • fderiv ℝ (h i) x := eq_neg_of_add_eq_zero_left h0
       rw [this, norm_neg]
     have hcard : (0 : ℝ) < Fintype.card ι * max C 0 + 1 := by positivity
     have h3 : ‖s‖ * (Fintype.card ι * max C 0 + 1) < m := by
       rwa [lt_div_iff₀ hcard] at hs
-    have h4 : 0 ≤ (Fintype.card ι * max C 0 : ℝ) := by positivity
     nlinarith [hmA x hx, norm_nonneg s]
   · -- Off the supports the perturbation agrees with `f` near `x`.
     have hev : perturb f h s =ᶠ[𝓝 x] f :=
@@ -317,6 +315,36 @@ theorem mem_unstableSet_perturb_iff (hf : LipschitzWith K (∇ f)) {s : Euclidea
     exact hτ.2
   simp only [Flow.mem_unstableSet]
   exact tendsto_congr' heq
+
+/-- **Stable sets below a level are unchanged.** If the family is supported where `f > c`, then
+at points where `f ≤ c` the stable set of `q` for the perturbed flow is that for the flow of `f`:
+the forward orbits of these points stay below `c`. -/
+theorem stableSet_perturb_inter_preimage_Iic
+    (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι} {K' : ℝ≥0}
+    (hf' : LipschitzWith K' (∇ (perturb f h s))) {c : ℝ} (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Ioi c)
+    (q : E) :
+    Flow.stableSet (negativeGradientFlow (perturb f h s) hf') q ∩ f ⁻¹' Iic c =
+      Flow.stableSet (negativeGradientFlow f hf) q ∩ f ⁻¹' Iic c := by
+  ext y
+  refine and_congr_left fun hy ↦ mem_stableSet_perturb_iff hf hf' fun τ hτ i hmem ↦ ?_
+  have hle : f (negativeGradientFlow f hf τ y) ≤ f y := by
+    simpa using negativeGradientFlow_orbit_antitone f hf y hτ
+  exact (hc i hmem).not_ge (hle.trans hy)
+
+/-- **Unstable sets above a level are unchanged.** If the family is supported where `f < c`, then
+at points where `c ≤ f` the unstable set of `p` for the perturbed flow is that for the flow of `f`:
+the backward orbits of these points stay above `c`. -/
+theorem unstableSet_perturb_inter_preimage_Ici
+    (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι} {K' : ℝ≥0}
+    (hf' : LipschitzWith K' (∇ (perturb f h s))) {c : ℝ} (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Iio c)
+    (p : E) :
+    Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p ∩ f ⁻¹' Ici c =
+      Flow.unstableSet (negativeGradientFlow f hf) p ∩ f ⁻¹' Ici c := by
+  ext y
+  refine and_congr_left fun hy ↦ mem_unstableSet_perturb_iff hf hf' fun τ hτ i hmem ↦ ?_
+  have hle : f y ≤ f (negativeGradientFlow f hf τ y) := by
+    simpa using negativeGradientFlow_orbit_antitone f hf y hτ
+  exact (hc i hmem).not_ge (hy.trans hle)
 
 end AwayFromSupport
 
@@ -643,7 +671,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh hc t) (x, 0) (0, e)).1
   set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
   have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
-  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv (hs t) (hφd t x)
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Flow.ringInverse_fderiv (hφd t x)
   have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
     congrArg (· v) (Flow.fderiv_comp_neg (hs t) (hφd t x))
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=

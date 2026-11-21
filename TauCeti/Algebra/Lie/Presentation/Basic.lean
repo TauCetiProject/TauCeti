@@ -37,12 +37,11 @@ generate the presented algebra, rather than merely determine maps out of it.
 * `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`: the generators of a free Lie algebra generate it
   as a Lie subalgebra.
 
-## Roadmap
+## Applications
 
 These are the general steps behind the universal property of the Serre presentation in
 `TauCeti/Algebra/Lie/Presentation/Serre.lean`, which names the generators of
-`Matrix.ToLieAlgebra R CM` and maps out of it, as required by the Chevalley--Demazure construction
-of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
+`Matrix.ToLieAlgebra R CM` and maps out of it.
 -/
 
 public section
@@ -68,7 +67,7 @@ theorem lieSpan_range_of_eq_top :
   refine eq_top_iff.2 fun y _ => ?_
   have hy : K.incl (g y) = y :=
     congrArg (fun F : FreeLieAlgebra R X →ₗ⁅R⁆ FreeLieAlgebra R X => F y) hid
-  exact hy ▸ (g y).2
+  exact hy ▸ (g y).property
 
 end FreeLieAlgebra
 

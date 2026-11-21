@@ -578,6 +578,26 @@ theorem product_smul (w : WreathProduct D ι) (x : ι → Λ) (i : ι) :
     (w • x) i = w.left i • x (w.right⁻¹ i) :=
   rfl
 
+variable {D ι Λ} in
+/-- A base element `SemidirectProduct.inl t` acts on a function coordinatewise, by `t j` at the
+coordinate `j`. -/
+@[simp]
+theorem product_inl_smul (t : ι → D) (x : ι → Λ) :
+    (SemidirectProduct.inl t : WreathProduct D ι) • x = fun j ↦ t j • x j :=
+  rfl
+
+variable {D ι Λ} in
+/-- The coordinate inclusion of the base group at `i` acts on a function by moving its value at `i`
+by `g` and leaving every other coordinate alone. -/
+theorem product_inl_mulSingle_smul [DecidableEq ι] (i : ι) (g : D) (x : ι → Λ) :
+    (SemidirectProduct.inl (Pi.mulSingle i g : ι → D) : WreathProduct D ι) • x =
+      Function.update x i (g • x i) := by
+  funext j
+  by_cases hji : j = i
+  · subst j
+    simp
+  · simp [hji]
+
 /-- The permutation representation of the product wreath-product action on `ι → Λ`. -/
 def productToPerm : WreathProduct D ι →* Equiv.Perm (ι → Λ) :=
   MulAction.toPermHom (WreathProduct D ι) (ι → Λ)

@@ -139,7 +139,7 @@ theorem orientationNeTwo_of (i : Fin n) :
 /-- The orientation of the `q ≠ 2` normal form takes `x₂` to its marked value `u`. -/
 theorem orientationNeTwo_presentedProPGen_one (hn : 1 < n) :
     orientationNeTwo q n u hu (presentedProPGen p n _ 1) = u := by
-  rw [presentedProPGen_of_lt p n _ hn, orientationNeTwo_of]
+  rw [presentedProPGen_of_lt p _ hn, orientationNeTwo_of]
   simp
 
 /-- The orientation of the `q ≠ 2` normal form is trivial on every generator other than `x₂`. -/
@@ -166,15 +166,16 @@ theorem range_orientationNeTwo (hn : 1 < n) :
   · exact one_mem _
 
 /-- **The image of the standard orientation of the `q ≠ 2` normal form is `1 + qℤ_p`**: for
-`1 < n` and `q = p^f` with `f ≥ 1`, and `f ≥ 2` when `p = 2`, the character with
-`χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise has image `U^(f) = 1 + qℤ_p`. -/
+`1 < n` and `q = p^f`, with `f ≥ 2` when `p = 2`, the character with
+`χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise has image `U^(f) = 1 + qℤ_p`. (The relation
+`u (1 - q) = 1` already forces `f ≥ 1`.) -/
 theorem range_orientationNeTwo_eq_unitsPrincipal (hn : 1 < n) {f : ℕ} (hq : q = p ^ f)
-    (hf : 0 < f) (hf₂ : p = 2 → 2 ≤ f) (hu' : (u : ℤ_[p]) * (1 - (q : ℤ_[p])) = 1) :
+    (hf₂ : p = 2 → 2 ≤ f) (hu' : (u : ℤ_[p]) * (1 - (q : ℤ_[p])) = 1) :
     (orientationNeTwo q n u hu).toMonoidHom.range = unitsPrincipal p f := by
   subst hq
   push_cast at hu'
   rw [range_orientationNeTwo _ n u hu hn,
-    topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one hf hf₂ hu']
+    topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one hf₂ hu']
 
 /-- **The standard orientation of the `q ≠ 2` normal form exists**: for `1 < n` and `q = p^f`
 with `f ≥ 1`, and `f ≥ 2` when `p = 2`, there is a principal unit `u` with `u (1 - q) = 1`, and
@@ -188,7 +189,7 @@ theorem exists_range_orientationNeTwo_eq_unitsPrincipal (hn : 1 < n) {f : ℕ} (
   have hu : u ∈ unitsPrincipal p 1 :=
     (mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one hu').mpr hf
   exact ⟨u, hu, by exact_mod_cast hu',
-    range_orientationNeTwo_eq_unitsPrincipal _ n u hu hn rfl hf hf₂ (by exact_mod_cast hu')⟩
+    range_orientationNeTwo_eq_unitsPrincipal _ n u hu hn rfl hf₂ (by exact_mod_cast hu')⟩
 
 end NeTwo
 
@@ -220,13 +221,13 @@ theorem orientationTwoOdd_of (i : Fin n) :
 /-- The orientation of the `q = 2`, `n` odd normal form takes `x₁` to `-1`. -/
 theorem orientationTwoOdd_presentedProPGen_zero (hn : 0 < n) :
     orientationTwoOdd f n u (presentedProPGen 2 n _ 0) = -1 := by
-  rw [presentedProPGen_of_lt 2 n _ hn, orientationTwoOdd_of]
+  rw [presentedProPGen_of_lt 2 _ hn, orientationTwoOdd_of]
   simp
 
 /-- The orientation of the `q = 2`, `n` odd normal form takes `x₃` to its marked value `u`. -/
 theorem orientationTwoOdd_presentedProPGen_two (hn : 2 < n) :
     orientationTwoOdd f n u (presentedProPGen 2 n _ 2) = u := by
-  rw [presentedProPGen_of_lt 2 n _ hn, orientationTwoOdd_of]
+  rw [presentedProPGen_of_lt 2 _ hn, orientationTwoOdd_of]
   simp
 
 /-- The orientation of the `q = 2`, `n` odd normal form is trivial on every generator other than
@@ -306,7 +307,7 @@ theorem orientationTwoOddTop_of (i : Fin n) :
 /-- The standard orientation of the odd normal form at `f = ∞` takes `x₁` to `-1`. -/
 theorem orientationTwoOddTop_presentedProPGen_zero (hn : 0 < n) :
     orientationTwoOddTop n (presentedProPGen 2 n _ 0) = -1 := by
-  rw [presentedProPGen_of_lt 2 n _ hn, orientationTwoOddTop_of]
+  rw [presentedProPGen_of_lt 2 _ hn, orientationTwoOddTop_of]
   simp
 
 /-- The standard orientation of the odd normal form at `f = ∞` is trivial on every generator
@@ -364,13 +365,13 @@ theorem orientationTwoEven_of (i : Fin n) :
 /-- The orientation of the `q = 2`, `n` even normal form takes `x₂` to its marked value `v`. -/
 theorem orientationTwoEven_presentedProPGen_one (hn : 1 < n) :
     orientationTwoEven a f n v u (presentedProPGen 2 n _ 1) = v := by
-  rw [presentedProPGen_of_lt 2 n _ hn, orientationTwoEven_of]
+  rw [presentedProPGen_of_lt 2 _ hn, orientationTwoEven_of]
   simp
 
 /-- The orientation of the `q = 2`, `n` even normal form takes `x₄` to its marked value `u`. -/
 theorem orientationTwoEven_presentedProPGen_three (hn : 3 < n) :
     orientationTwoEven a f n v u (presentedProPGen 2 n _ 3) = u := by
-  rw [presentedProPGen_of_lt 2 n _ hn, orientationTwoEven_of]
+  rw [presentedProPGen_of_lt 2 _ hn, orientationTwoEven_of]
   simp
 
 /-- The orientation of the `q = 2`, `n` even normal form is trivial on every generator other than
@@ -568,13 +569,13 @@ theorem orientationTwoRankTwo_of (i : Fin 2) :
 /-- The orientation of the rank-two `q = 2` normal form is trivial on `x₁`. -/
 theorem orientationTwoRankTwo_presentedProPGen_zero :
     orientationTwoRankTwo a v (presentedProPGen 2 2 _ 0) = 1 := by
-  rw [presentedProPGen_of_lt 2 2 _ two_pos, orientationTwoRankTwo_of]
+  rw [presentedProPGen_of_lt 2 _ two_pos, orientationTwoRankTwo_of]
   simp
 
 /-- The orientation of the rank-two `q = 2` normal form takes `x₂` to its marked value `v`. -/
 theorem orientationTwoRankTwo_presentedProPGen_one :
     orientationTwoRankTwo a v (presentedProPGen 2 2 _ 1) = v := by
-  rw [presentedProPGen_of_lt 2 2 _ one_lt_two, orientationTwoRankTwo_of]
+  rw [presentedProPGen_of_lt 2 _ one_lt_two, orientationTwoRankTwo_of]
   simp
 
 /-- The image of the orientation of the rank-two `q = 2` normal form is the closed subgroup

@@ -118,7 +118,6 @@ theorem isSemialgebraic_preimage_toLp_ball [Fintype σ] (x : EuclideanSpace ℝ 
   convert (isSemialgebraic_eval_pos (C r)).inter
     (isSemialgebraic_eval_lt (∑ i, (X i - C (x i)) ^ 2) (C r ^ 2)) using 1
   ext y
-  have hS : 0 ≤ ∑ i, (y i - x i) ^ 2 := Finset.sum_nonneg fun i _ => sq_nonneg _
   simp only [mem_preimage, Metric.mem_ball, EuclideanSpace.dist_eq,
     Real.dist_eq, sq_abs, mem_inter_iff, mem_ofPred_eq, eval_C, map_sum, map_pow, map_sub, eval_X]
   refine ⟨fun h => ?_, fun ⟨hr, h⟩ => (Real.sqrt_lt' hr).2 h⟩
@@ -233,7 +232,7 @@ theorem IsSemialgebraic.isNowhereDense_iff {n : ℕ} {s : Set (Fin n → ℝ)} (
   rw [← h𝒞.sUnion_sep_subset hsub] at h ⊢
   have := (h𝒞.finite.subset (sep_subset 𝒞 (· ⊆ s))).to_subtype
   rw [sUnion_eq_iUnion]
-  exact IsNowhereDense.iUnion fun E ↦ (h𝒞.isLocallyClosed E.2.1).isNowhereDense_iff.2 <|
-    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem E.2))
+  exact IsNowhereDense.iUnion fun E ↦ (h𝒞.isLocallyClosed E.property.1).isNowhereDense_iff.2 <|
+    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem E.property))
 
 end TauCeti

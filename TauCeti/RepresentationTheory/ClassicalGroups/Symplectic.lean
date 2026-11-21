@@ -21,7 +21,8 @@ preserves it, and packages the resulting equivariant self-duality.
 * `TauCeti.symplecticGroupToGL` is the canonical inclusion into the general linear group.
 * `TauCeti.stdSymplecticRep` is the standard representation of `Matrix.symplecticGroup`.
 * `TauCeti.stdSymplecticBilinForm` is the nondegenerate invariant alternating form; its value on
-  a pair of standard basis vectors is `TauCeti.stdSymplecticBilinForm_single_single`.
+  a pair of standard basis vectors is `TauCeti.stdSymplecticBilinForm_single_single`, and its value
+  against the all-ones vector is `TauCeti.stdSymplecticBilinForm_one_right`.
 * `TauCeti.stdSymplecticRepEquivDual` is the induced equivariant self-duality.
 
 ## References
@@ -48,7 +49,7 @@ variable [CommRing k]
 def symplecticGroupToGL :
     Matrix.symplecticGroup (Fin n) k →* GL (Fin n ⊕ Fin n) k where
   toFun g := Matrix.SpecialLinearGroup.toGL
-    ⟨g, SymplecticGroup.det_eq_one g.2⟩
+    ⟨g, SymplecticGroup.det_eq_one g.property⟩
   map_one' := by
     ext i j
     rfl
@@ -128,6 +129,14 @@ theorem stdSymplecticBilinForm_single_single (x y : Fin n ⊕ Fin n) :
       Matrix.J (Fin n) k x y := by
   simp [stdSymplecticBilinForm_apply]
 
+/-- The standard alternating form against the all-ones vector, in coordinates. -/
+theorem stdSymplecticBilinForm_one_right (w : (Fin n ⊕ Fin n) → k) :
+    stdSymplecticBilinForm k n w 1 =
+      ∑ a : Fin n ⊕ Fin n, ∑ b : Fin n ⊕ Fin n, w a * Matrix.J (Fin n) k a b := by
+  rw [stdSymplecticBilinForm_apply, ← Matrix.toBilin'_apply' (Matrix.J (Fin n) k),
+    Matrix.toBilin'_apply]
+  simp
+
 /-- The standard symplectic form is alternating. -/
 theorem isAlt_stdSymplecticBilinForm : (stdSymplecticBilinForm k n).IsAlt := by
   intro v
@@ -147,7 +156,7 @@ theorem stdSymplecticBilinForm_comp_stdSymplecticRep (g : Matrix.symplecticGroup
         (g : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k).mulVecLin =
       stdSymplecticBilinForm k n := by
   rw [stdSymplecticBilinForm, ← Matrix.toLin'_apply', Matrix.toBilin'_comp]
-  rw [(SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.2]
+  rw [(SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.property]
 
 /-- The standard symplectic pairing is invariant under the standard action. -/
 @[simp]

@@ -10,6 +10,9 @@ public import Mathlib.Analysis.Distribution.Support
 import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Complex-valued distributions on complex-valued test functions
@@ -24,13 +27,16 @@ This is how a complex-valued distribution is paired with a complex kernel, such 
 kernel `t ↦ χ t / (t - z)` whose pairing with a distribution on `ℝ` is the Cauchy transform. This
 file defines the extension `Distribution.complexPairing` and transfers to it the two basic
 estimates used when the test function varies: the pairing depends only on the germ of the test
-function along the support of `T`, and it has finite order on each compact set.
+function along the support of `T`, and it has finite order on each compact set. Complex
+conjugation of the values, `mapCLM conjCLE`, is an involution on complex distributions.
 
 ## Main declarations
 
 * `Distribution.complexPairing`: the complex-linear extension of `T : 𝓓'^{n}(Ω, ℂ)` to complex
   test functions, as a continuous complex-linear map.
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
+* `Distribution.complexPairing_lineDerivOp`: it turns derivatives of `T` into derivatives of the
+  test function, `(∂_{v} T) φ = - T (∂_{v} φ)`.
 * `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
@@ -38,6 +44,8 @@ function along the support of `T`, and it has finite order on each compact set.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
+* `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
+  back.
 
 ## References
 
@@ -48,7 +56,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Set TopologicalSpace TestFunction
+open Complex Filter Set TopologicalSpace TestFunction LineDeriv
 open scoped Distributions Topology
 
 namespace Distribution
@@ -63,15 +71,8 @@ def complexPairing (T : 𝓓'^{n}(Ω, ℂ)) : 𝓓^{n}(Ω, ℂ) →L[ℂ] ℂ wh
     simp only [map_add]
     ring
   map_smul' c φ := by
-    have hre : postcompCLM (𝕜 := ℝ) reCLM (c • φ) =
-        c.re • postcompCLM (𝕜 := ℝ) reCLM φ - c.im • postcompCLM (𝕜 := ℝ) imCLM φ := by
-      ext t
-      simp
-    have him : postcompCLM (𝕜 := ℝ) imCLM (c • φ) =
-        c.re • postcompCLM (𝕜 := ℝ) imCLM φ + c.im • postcompCLM (𝕜 := ℝ) reCLM φ := by
-      ext t
-      simp
-    simp only [hre, him, map_sub, map_add, map_smul, RingHom.id_apply, real_smul]
+    simp only [postcompCLM_reCLM_smul, postcompCLM_imCLM_smul, map_sub, map_add, map_smul,
+      RingHom.id_apply, real_smul]
     conv_rhs => rw [← re_add_im c]
     ring_nf
     rw [I_sq]
@@ -89,13 +90,11 @@ is `T` itself. -/
 @[simp]
 theorem complexPairing_postcompCLM_ofRealCLM (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℝ)) :
     T.complexPairing (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = T φ := by
-  have hre : postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
-    ext t
-    simp
-  have him : postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
-    ext t
-    simp
-  simp [complexPairing_apply, hre, him]
+  simp [complexPairing_apply]
+
+@[simp]
+theorem complexPairing_zero (φ : 𝓓^{n}(Ω, ℂ)) : (0 : 𝓓'^{n}(Ω, ℂ)).complexPairing φ = 0 := by
+  simp [complexPairing_apply]
 
 @[simp]
 theorem complexPairing_add (T S : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
@@ -111,6 +110,21 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
   simp
   ring
 
+/-- For a fixed complex test function `φ`, the pairing `T ↦ T φ` is continuous in the
+distribution `T`. -/
+theorem continuous_complexPairing_apply (φ : 𝓓^{n}(Ω, ℂ)) :
+    Continuous fun T : 𝓓'^{n}(Ω, ℂ) ↦ T.complexPairing φ := by
+  simp only [complexPairing_apply]
+  fun_prop
+
+/-- The complex-linear extension of a derivative of `T` is minus the extension of `T` applied to
+the derivative of the test function: `(∂_{v} T) φ = - T (∂_{v} φ)` on complex test functions. -/
+theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) :
+    (∂_{v} T).complexPairing φ = -T.complexPairing (∂_{v} φ) := by
+  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
+    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, lineDerivCLM_postcompCLM]
+  ring
+
 /-- The complex-linear extension of the complex point mass at `x` evaluates a complex test
 function at `x`. -/
 @[simp]
@@ -121,24 +135,22 @@ theorem complexPairing_mapCLM_ofRealCLM_delta (x : E) (φ : 𝓓^{n}(Ω, ℂ)) :
   rw [mul_comm]
   exact re_add_im (φ x)
 
-/-- If `T` is integration against a function `f` locally integrable on an open set `U`, on real
+/-- If `T` is integration against a function `f` locally integrable on a set `U`, on real
 test functions supported in `U`, then its complex-linear extension is integration against `f` on
 complex test functions supported in `U`. -/
 theorem complexPairing_eq_integral [MeasurableSpace E] [OpensMeasurableSpace E]
-    {T : 𝓓'^{n}(Ω, ℂ)} {U : Set E} (hU : IsOpen U) {f : E → ℂ} {μ : MeasureTheory.Measure E}
+    {T : 𝓓'^{n}(Ω, ℂ)} {U : Set E} {f : E → ℂ} {μ : MeasureTheory.Measure E}
     (hf : MeasureTheory.LocallyIntegrableOn f U μ)
     (hT : ∀ φ : 𝓓^{n}(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ x, φ x • f x ∂μ) {φ : 𝓓^{n}(Ω, ℂ)}
     (hφ : tsupport φ ⊆ U) : T.complexPairing φ = ∫ x, φ x * f x ∂μ := by
   have hpart (L : ℂ →L[ℝ] ℝ) : tsupport (postcompCLM (𝕜 := ℝ) L φ) ⊆ U := by
     rw [postcompCLM_apply]
     exact (tsupport_comp_subset (map_zero L) φ).trans hφ
-  -- A real test function supported in `U` is a test function on `U`, so `f` is integrable
-  -- against it.
+  -- `f` is integrable against a real test function supported in `U`.
   have hint (L : ℂ →L[ℝ] ℝ) :
       MeasureTheory.Integrable (fun x => postcompCLM (𝕜 := ℝ) L φ x • f x) μ :=
-    TestFunction.integrable_smul (Ω := ⟨U, hU⟩)
-      ⟨postcompCLM (𝕜 := ℝ) L φ, (postcompCLM (𝕜 := ℝ) L φ).contDiff,
-        (postcompCLM (𝕜 := ℝ) L φ).hasCompactSupport, hpart L⟩ hf
+    hf.integrable_smul_left_of_hasCompactSupport (postcompCLM (𝕜 := ℝ) L φ).continuous
+      (postcompCLM (𝕜 := ℝ) L φ).hasCompactSupport (hpart L)
   rw [complexPairing_apply, hT _ (hpart reCLM), hT _ (hpart imCLM),
     ← MeasureTheory.integral_const_mul,
     ← MeasureTheory.integral_add (hint reCLM) ((hint imCLM).const_mul I)]
@@ -153,7 +165,7 @@ theorem complexPairing_ofFun [MeasurableSpace E] [OpensMeasurableSpace E] {f : E
     {μ : MeasureTheory.Measure E} (hf : MeasureTheory.LocallyIntegrableOn f Ω μ)
     (φ : 𝓓^{n}(Ω, ℂ)) :
     (ofFun Ω f μ n).complexPairing φ = ∫ x, φ x * f x ∂μ :=
-  complexPairing_eq_integral Ω.isOpen hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset
+  complexPairing_eq_integral hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset
 
 /-- **The complex-linear extension has finite order on each compact set.** For a compact `K ⊆ Ω`
 there are an order `N` and a constant `C` such that `‖T.complexPairing φ‖ ≤ C * M` for every
@@ -182,7 +194,12 @@ theorem exists_norm_complexPairing_le (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
         exact add_le_add (hpart _ Complex.reCLM_norm.le) (hpart _ Complex.imCLM_norm.le)
     _ = 2 * C * M := by ring
 
-variable [FiniteDimensional ℝ E]
+/-- Conjugating a complex distribution twice gives it back. -/
+@[simp]
+theorem mapCLM_conj_mapCLM_conj (T : 𝓓'^{n}(Ω, ℂ)) :
+    mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) = T := by
+  ext φ
+  simp [mapCLM_apply]
 
 /-- The complex-linear extension of `T` depends only on the germ of the test function along the
 support of `T`. -/

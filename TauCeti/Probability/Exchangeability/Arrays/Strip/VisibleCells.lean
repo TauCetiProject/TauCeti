@@ -48,7 +48,7 @@ theorem SeparatelyExchangeable.iCondIndepFun_visibleCells
     let V : Set (ℕ × ℕ) := Sᶜ ×ˢ Tᶜ
     iCondIndepFun (MeasurableSpace.comap H.domRestrict inferInstance)
       (Set.measurable_restrict H).comap_le
-      (fun p : V => fun x : ℕ × ℕ → α => x p.1) ρ := by
+      (fun p : V => fun x : ℕ × ℕ → α => x p.val) ρ := by
   dsimp
   let H : Set (ℕ × ℕ) := (Set.univ ×ˢ T) ∪ (S ×ˢ Set.univ)
   let V : Set (ℕ × ℕ) := Sᶜ ×ˢ Tᶜ
@@ -56,24 +56,22 @@ theorem SeparatelyExchangeable.iCondIndepFun_visibleCells
   let m' : MeasurableSpace (ℕ × ℕ → α) :=
     MeasurableSpace.comap Z (inferInstanceAs (MeasurableSpace (H → α)))
   let m : V → MeasurableSpace (ℕ × ℕ → α) :=
-    fun p => MeasurableSpace.comap (fun x => x p.1)
+    fun p => MeasurableSpace.comap (fun x => x p.val)
       (inferInstanceAs (MeasurableSpace α))
   have hm' : m' ≤ (MeasurableSpace.pi : MeasurableSpace (ℕ × ℕ → α)) := by
     simpa only [m', Z] using
       (Set.measurable_restrict (X := fun _ : ℕ × ℕ => α) H).comap_le
-  have hm (p : V) : m p ≤ (MeasurableSpace.pi : MeasurableSpace (ℕ × ℕ → α)) :=
-    (measurable_pi_apply (X := fun _ : ℕ × ℕ => α) p.1).comap_le
   apply (iCondIndepFun_iff_iCondIndep (mΩ := MeasurableSpace.pi)
     m' hm' (fun _ : V => inferInstance)
-    (fun p : V => fun x : ℕ × ℕ → α => x p.1) ρ).2
-  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm' hm
+    (fun p : V => fun x : ℕ × ℕ → α => x p.val) ρ).2
+  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm'
   intro p
-  let C : Set (ℕ × ℕ) := ({p.1.1} : Set ℕ) ×ˢ ({p.1.2} : Set ℕ)
-  have hC : C = {p.1} := by ext q; simp [C, Prod.ext_iff]
-  have hIS : Disjoint ({p.1.1} : Set ℕ) S :=
-    Set.disjoint_singleton_left.mpr p.2.1
-  have hJT : Disjoint ({p.1.2} : Set ℕ) T :=
-    Set.disjoint_singleton_left.mpr p.2.2
+  let C : Set (ℕ × ℕ) := ({p.val.1} : Set ℕ) ×ˢ ({p.val.2} : Set ℕ)
+  have hC : C = {p.val} := by ext q; simp [C, Prod.ext_iff]
+  have hIS : Disjoint ({p.val.1} : Set ℕ) S :=
+    Set.disjoint_singleton_left.mpr p.property.1
+  have hJT : Disjoint ({p.val.2} : Set ℕ) T :=
+    Set.disjoint_singleton_left.mpr p.property.2
   have hlocal := hρ.condIndepFun_visibleBlock_compl hS hT
     (Set.finite_singleton _) (Set.finite_singleton _) hIS hJT
   have hbase : CondIndep m'
@@ -83,16 +81,16 @@ theorem SeparatelyExchangeable.iCondIndepFun_visibleCells
   have hleft : m p ≤ MeasurableSpace.comap C.domRestrict inferInstance := by
     simpa only [m] using
       TauCeti.MeasureTheory.comap_apply_le_comap_domRestrict (π := fun _ : ℕ × ℕ => α) C
-        (a := p.1) (by simp [hC])
-  have hright : (⨆ q : {q : V // q ≠ p}, m q.1) ≤
+        (a := p.val) (by simp [hC])
+  have hright : (⨆ q : {q : V // q ≠ p}, m q.val) ≤
       MeasurableSpace.comap Cᶜ.domRestrict inferInstance := by
     refine iSup_le fun q => ?_
-    have hq : q.1.1 ∈ Cᶜ := by
+    have hq : q.val.val ∈ Cᶜ := by
       simp only [hC, Set.mem_compl_iff, Set.mem_singleton_iff]
-      exact fun heq => q.2 (Subtype.ext heq)
+      exact fun heq => q.property (Subtype.ext heq)
     simpa only [m] using
       TauCeti.MeasureTheory.comap_apply_le_comap_domRestrict (π := fun _ : ℕ × ℕ => α) Cᶜ
-        (a := q.1.1) hq
+        (a := q.val.val) hq
   exact condIndep_of_condIndep_of_le_right
     (condIndep_of_condIndep_of_le_left hbase hleft) hright
 

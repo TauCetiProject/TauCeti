@@ -68,7 +68,7 @@ its generators. `I(χ)/p` is `ZModTwist χ 1`, the module at `i = 1`, with carri
 * `TauCeti.ZModTwist.mulPow_reduce`: multiplying by `pʲ` after reducing from level `i + j` to
   level `i` is multiplication by `pʲ`, and
   `TauCeti.ZModTwist.explicitCoeff2_mulPow_explicitCoeff2_reduce` is the induced identity on `H²`.
-* `TauCeti.ZModTwist.pow_nsmul_eq_zero`, `TauCeti.ZModTwist.isPPrimaryTorsion`: `pⁱ` kills
+* `TauCeti.ZModTwist.pow_nsmul_eq_zero`, `TauCeti.ZModTwist.isAddPGroup`: `pⁱ` kills
   `I(χ)/pⁱ`, which is therefore `p`-primary torsion;
   `TauCeti.ZModTwist.exists_mulPow_eq_of_nsmul_eq_zero`: the `pⁱ`-torsion of `I(χ)/pⁱ⁺ʲ` is the
   image of `I(χ)/pⁱ` under multiplication by `pʲ`.
@@ -173,8 +173,8 @@ theorem pow_nsmul_eq_zero (x : ZModTwist χ i) : p ^ i • x = 0 :=
   (equiv χ i).injective (by rw [map_nsmul, map_zero, nsmul_eq_mul, ZMod.natCast_self, zero_mul])
 
 /-- `I(χ)/pⁱ` is `p`-primary torsion. -/
-theorem isPPrimaryTorsion : IsPPrimaryTorsion p (ZModTwist χ i) :=
-  isPPrimaryTorsion_iff.2 fun x ↦ ⟨i, pow_nsmul_eq_zero χ i x⟩
+theorem isAddPGroup : IsAddPGroup p (ZModTwist χ i) :=
+  fun x ↦ ⟨i, pow_nsmul_eq_zero χ i x⟩
 
 instance : TopologicalSpace (ZModTwist χ i) := ⊥
 

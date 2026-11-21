@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
@@ -17,11 +18,10 @@ import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 A *ring of integral elements* of a Huber ring `A` is an open subring `A⁺` which is integrally
 closed in `A` and consists of power-bounded elements, and a *Huber pair* `(A, A⁺)` is a Huber
 ring together with such a subring. Huber pairs are the affine objects of the theory: the adic
-spectrum of the next layer is built from one.
+spectrum `Spa(A, A⁺)` is built from one.
 
-A Huber ring has many rings of integral elements, so `A⁺` is carried as data rather than
-selected by a typeclass; this is the roadmap's standing convention that the plus ring is
-explicit.
+A Huber ring has many rings of integral elements, so `A⁺` is carried as explicit data rather
+than selected by a typeclass.
 
 ## Main definitions
 
@@ -36,10 +36,14 @@ explicit.
   every ring of integral elements.
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_pow_mem`: `A⁺` contains every element some
   positive power of which lies in `A⁺`.
+* `TauCeti.Huber.IsRingOfIntegralElements.exists_isPseudoUniformizer`: in a Tate ring, `A⁺`
+  contains a pseudouniformiser.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
   `A⁺ = A°` is a ring of integral elements, the largest one.
+* `TauCeti.Huber.Pair.instPerfectRingPlus`: the plus ring of a Huber pair on a perfect ring is
+  perfect.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
 * `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose,
@@ -63,12 +67,10 @@ explicit.
 
 ## Provenance
 
-The shape of these declarations follows the roadmap's own prototype in
-`TauCetiRoadmap/AdicSpaces/Suggested.lean`, which fixes the design choice that the plus ring is
-explicit data rather than a typeclass, and the selection of results follows AINTLIB's
-`AffinoidRings.lean`; neither's proofs were used. That AINTLIB file was also consulted for the
-quotient-pair construction and its universal property. Its quotient uses the same integral closure
-of the image plus ring; this file bundles the construction with the current Tau Ceti Huber-pair API.
+The selection of results follows AINTLIB's `AffinoidRings.lean`; its proofs were not used. That
+AINTLIB file was also consulted for the quotient-pair construction and its universal property. Its
+quotient uses the same integral closure of the image plus ring; this file bundles the construction
+with the current Tau Ceti Huber-pair API.
 
 ## References
 
@@ -113,7 +115,7 @@ theorem mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn {Aplus : Subring
   have hpow : IsIntegral Aplus (a ^ n) :=
     isIntegral_algebraMap (R := Aplus) (x := (⟨a ^ n, hmem⟩ : Aplus))
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
-  exact hy ▸ y.2
+  exact hy ▸ y.property
 
 /-- `A°° ⊆ A⁺` for every ring of integral elements. -/
 theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [NonarchimedeanRing A]
@@ -129,6 +131,13 @@ theorem IsRingOfIntegralElements.mem_of_pow_mem [NonarchimedeanRing A] {Aplus : 
     a ∈ Aplus :=
   have := h.isIntegrallyClosedIn
   Subring.mem_of_pow_mem_of_isIntegrallyClosedIn hn ha
+
+/-- A ring of integral elements of a Tate ring contains a pseudouniformiser of the ambient ring. -/
+theorem IsRingOfIntegralElements.exists_isPseudoUniformizer [IsTopologicalRing A]
+    [IsTateRing A] {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) :
+    ∃ ϖ : Aplus, IsPseudoUniformizer (ϖ : A) :=
+  have ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  ⟨⟨ϖ, h.mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent⟩, hϖ⟩
 
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/
@@ -292,6 +301,11 @@ def powerBounded : Pair A where
 @[simp]
 theorem powerBounded_plus : (powerBounded A).plus = powerBoundedSubring A := (rfl)
 
+/-- The plus ring of a Huber pair on a perfect ring is perfect. -/
+instance instPerfectRingPlus (P : Pair A) (p : ℕ) [PerfectRing A p] : PerfectRing P.plus p :=
+  have := P.isRingOfIntegralElements.isIntegrallyClosedIn
+  inferInstance
+
 end
 
 /-- The integral closure of an open subring contained in `powerBoundedSubring` is a ring of
@@ -367,7 +381,7 @@ noncomputable def Hom.quotientLift {S : Pair A} {T : Pair B} (J : Ideal A) (f : 
     let R : Subring (A ⧸ J) := S.plus.map (Ideal.Quotient.mk J)
     let φ : R →+* T.plus :=
       (ψ.comp R.subtype).codRestrict T.plus fun x ↦ by
-        obtain ⟨a, ha, hax⟩ := Subring.mem_map.mp x.2
+        obtain ⟨a, ha, hax⟩ := Subring.mem_map.mp x.property
         have hψx : ψ x = f.toRingHom a := by
           rw [← hax]
           exact Ideal.Quotient.lift_mk J f.toRingHom _

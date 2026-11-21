@@ -375,9 +375,9 @@ private theorem initialPentagonInitialSelfPartner_injective :
   have hD := G.initialPentagonInitialSelfPartner_isRecut C D
   have hE := G.initialPentagonInitialSelfPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨_, _, honeD, hfirstD, hsecondD⟩ :=
+  obtain ⟨_, _, _, hfirstD, hsecondD⟩ :=
     G.initialPentagonInitialSelfSource_data C D.val D.property
-  obtain ⟨_, _, honeE, hfirstE, hsecondE⟩ :=
+  obtain ⟨_, _, _, hfirstE, hsecondE⟩ :=
     G.initialPentagonInitialSelfSource_data C E.val E.property
   have hbackD := hD.symm (D.val.underlying_first_isEmpty hfirstD)
     (D.val.underlying_second_isEmpty hsecondD)

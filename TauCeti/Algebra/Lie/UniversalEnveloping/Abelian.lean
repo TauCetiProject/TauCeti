@@ -245,7 +245,7 @@ general Lie algebra injectivity is instead a corollary of the Poincaré--Birkhof
 which over a commutative ring needs `L` to be free (or at least projective) as an `R`-module. -/
 theorem ι_injective_of_isLieAbelian :
     Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : L → U) := fun x y h ↦
-  TauCeti.SymmetricAlgebra.ι_injective R L <| by
+  SymmetricAlgebra.ι_injective R L <| by
     rw [← symmetricAlgebraEquiv_symm_ι R L x, ← symmetricAlgebraEquiv_symm_ι R L y, h]
 
 /-- The enveloping algebra of an abelian Lie algebra which is free as a module is free as a

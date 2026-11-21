@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.Complex.DSlope
+import TauCeti.Analysis.Calculus.DSlope.Star
 import TauCeti.Analysis.Complex.Conformal.Reflection.Primitive
 import TauCeti.Analysis.Complex.HasPrimitives
 
@@ -63,7 +63,8 @@ theorem exists_analyticOnNhd_eq_schwarzChristoffelPrimitive_sub_log_of_sum_eq_ne
     exists_analyticAt_schwarzChristoffelIntegrand_eq_cpow_mul a e p
   obtain ⟨r, hr, hgr⟩ := Metric.eventually_nhds_iff.mp
     ((hg.eventually_analyticAt.mono fun _ h => h.differentiableAt).and
-      (eventually_dslope_div_const_conj p (schwarzChristoffelPrevertexCoefficient a e p) hsym))
+      (eventually_dslope_div_const_conj (conj_ofReal p)
+        (schwarzChristoffelPrevertexCoefficient a e p) hsym))
   have hgd : DifferentiableOn ℂ g (ball (p : ℂ) r) := fun z hz =>
     (hgr hz).1.differentiableWithinAt
   -- The divided difference removes the simple pole from the derivative.

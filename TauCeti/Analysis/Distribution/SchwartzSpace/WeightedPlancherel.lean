@@ -98,7 +98,7 @@ theorem integral_norm_fourierInv_add_sub_le (σ : 𝓢(V, H)) (h : V) :
   rw [← ofReal_integral_eq_lintegral_ofReal
     (((𝓕⁻ (smulLeftCLM H (inner ℝ · h) σ)).integrable.norm).const_mul _)
     (.of_forall fun _ ↦ by positivity), integral_const_mul] at hle
-  rw [integral_norm_eq_lintegral_enorm (by fun_prop)]
+  rw [integral_norm_eq_lintegral_eNorm (by fun_prop)]
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **Cauchy–Schwarz on `{‖x‖ > R}`**, splitting `‖𝓕⁻ σ x‖ = ‖x‖ ^ (-N) · ‖x‖ ^ N ‖𝓕⁻ σ x‖`. -/
@@ -179,7 +179,6 @@ theorem setIntegral_closedBall_norm_fourierInv_le (σ : 𝓢(V, H)) {R : ℝ} (h
     ∫ x in closedBall (0 : V) R, ‖𝓕⁻ σ x‖ ≤
       √(volume.real (ball (0 : V) 1)) * R ^ ((finrank ℝ V : ℝ) / 2) * ‖σ.toLp 2‖ := by
   set A : ℝ := volume.real (ball (0 : V) 1)
-  have hA : 0 ≤ A := measureReal_nonneg
   have hvol : volume (closedBall (0 : V) R) = ENNReal.ofReal (R ^ finrank ℝ V * A) := by
     rw [Measure.addHaar_closedBall _ _ hR.le, ← ofReal_measureReal,
       ← ENNReal.ofReal_mul (by positivity)]
@@ -206,7 +205,7 @@ theorem setIntegral_closedBall_norm_fourierInv_le (σ : 𝓢(V, H)) {R : ℝ} (h
       Real.sqrt_mul (by positivity), Real.sqrt_sq (norm_nonneg _), Real.sqrt_eq_rpow,
       ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
     ring_nf
-  rw [integral_norm_eq_lintegral_enorm (by fun_prop)]
+  rw [integral_norm_eq_lintegral_eNorm (by fun_prop)]
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **The tail of an inverse Fourier transform in `L¹`.** Let `b` be an orthonormal basis of the
@@ -233,7 +232,7 @@ theorem exists_setIntegral_norm_fourierInv_le {ι : Type*} [Fintype ι]
   set S : Set V := {x | R < ‖x‖}
   set T : ℝ := √(∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ ^ 2)
   have hT : 0 ≤ T := Real.sqrt_nonneg _
-  have hS : MeasurableSet S := measurableSet_lt measurable_const measurable_norm
+  have _ : MeasurableSet S := measurableSet_lt measurable_const measurable_norm
   -- The weighted `L²` bound: `∫ ‖x‖ ^ (2N) ‖𝓕⁻ σ x‖² ≤ D T²`.
   have hW : ∫ x, ‖x‖ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2 ≤ D * T ^ 2 := by
     have h := integral_norm_pow_mul_norm_fourierInv_sq_le σ b hN0
@@ -265,7 +264,7 @@ theorem exists_setIntegral_norm_fourierInv_le {ι : Type*} [Fintype ι]
       ← ENNReal.ofReal_mul (by positivity), ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow,
       ← mul_assoc A c, Real.sqrt_mul (by positivity), Real.sqrt_mul hD, Real.sqrt_sq hT, hRpow]
     ring_nf
-  rw [integral_norm_eq_lintegral_enorm (by fun_prop)]
+  rw [integral_norm_eq_lintegral_eNorm (by fun_prop)]
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hle
 
 /-- **An inverse Fourier transform in `L¹`.** Let `b` be an orthonormal basis of the
@@ -280,7 +279,6 @@ theorem exists_integral_norm_fourierInv_le {ι : Type*} [Fintype ι]
         R ^ ((finrank ℝ V : ℝ) / 2 - N) * √(∑ i, ‖((∂_{b i})^[N] σ).toLp 2‖ ^ 2)) := by
   obtain ⟨C, -, hC⟩ := exists_setIntegral_norm_fourierInv_le (H := H) b hN
   set A : ℝ := volume.real (ball (0 : V) 1)
-  have hA : 0 ≤ A := measureReal_nonneg
   refine ⟨max √A C, (Real.sqrt_nonneg _).trans (le_max_left _ _), fun σ R hR ↦ ?_⟩
   set S : Set V := {x | R < ‖x‖}
   have hS : MeasurableSet S := measurableSet_lt measurable_const measurable_norm

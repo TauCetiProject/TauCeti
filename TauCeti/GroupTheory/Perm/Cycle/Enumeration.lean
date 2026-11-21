@@ -165,6 +165,7 @@ theorem sigmaCycleEquiv_symm_fst {x : α} {j : J} (h : σ.SameCycle (rep j) x) :
   rw [Equiv.symm_apply_apply]
   exact (hrep _).unique (σ.sameCycle_sigmaCycleEquiv rep hrep k i) h
 
+omit [Finite α] in
 /-- A product over the iterates of a point below the length of its cycle is the product over the
 points of that cycle. -/
 @[to_additive /-- A sum over the iterates of a point below the length of its cycle is the sum over
@@ -183,6 +184,7 @@ theorem prod_range_minimalPeriod [Fintype α] [DecidableRel σ.SameCycle] {M : T
     refine ⟨k % minimalPeriod σ x, Finset.mem_range.mpr (Nat.mod_lt k hpos), ?_⟩
     rw [coe_pow, coe_pow, iterate_mod_minimalPeriod_eq]
 
+omit [Finite α] in
 /-- A product over complete periods repeats the distinct-cycle product with multiplicity
 `k / minimalPeriod σ x`. Only the point `x` needs to be periodic with period `k`. -/
 @[to_additive sum_range_pow_eq_nsmul_sum_cycle

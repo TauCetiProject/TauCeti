@@ -59,7 +59,7 @@ theorem exists_card_sub_card_biUnion_eq_hallDeficiency (t : ι → Finset α) :
   classical
   by_cases h : hallDeficiency t = 0
   · exact ⟨∅, by simp [h]⟩
-  · obtain ⟨S, hS, hmax⟩ := Finset.exists_mem_eq_sup univ.powerset
+  · obtain ⟨S, _, hmax⟩ := Finset.exists_mem_eq_sup univ.powerset
       (by simp : univ.powerset.Nonempty) (fun S ↦ #S - #(S.biUnion t))
     exact ⟨S, hmax.symm⟩
 
@@ -148,7 +148,6 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
     by_cases hS : S.Nonempty
     · simp only [hbiUnion, card_disjSum, hS, ↓reduceIte, card_univ, Fintype.card_fin]
       have hle := card_sub_card_biUnion_le_hallDeficiency t S
-      have hle' : #S - #(S.biUnion t) ≤ d := hle
       omega
     · rw [not_nonempty_iff_eq_empty.mp hS]
       exact Nat.zero_le _
@@ -158,8 +157,8 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
   let D : Finset ι := univ.filter fun i ↦ ∃ a, g i = Sum.inl a
   have hg_left {i : ι} (hi : i ∈ D) : ∃ a, g i = Sum.inl a :=
     (mem_filter.mp hi).2
-  let f : D → α := fun i ↦ Classical.choose (hg_left i.2)
-  have hgf (i : D) : g i = Sum.inl (f i) := Classical.choose_spec (hg_left i.2)
+  let f : D → α := fun i ↦ Classical.choose (hg_left i.property)
+  have hgf (i : D) : g i = Sum.inl (f i) := Classical.choose_spec (hg_left i.property)
   have hf : Injective f := by
     intro i j hij
     apply Subtype.ext
@@ -172,7 +171,7 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
   -- The omitted indices inject into the `d` dummy choices.
   have hcompl : #(univ \ D) ≤ d := by
     have hright (i : (univ \ D : Finset ι)) : ∃ b, g i = Sum.inr b := by
-      have hiD : (i : ι) ∉ D := (mem_sdiff.mp i.2).2
+      have hiD : (i : ι) ∉ D := (mem_sdiff.mp i.property).2
       cases hgi : g i with
       | inl a => exact False.elim (hiD (mem_filter.mpr ⟨mem_univ _, ⟨a, hgi⟩⟩))
       | inr b => exact ⟨b, rfl⟩
@@ -199,8 +198,7 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
     -- exactly `d` indices to be omitted.
     have hweak := card_add_card_le_card_add_card_biUnion_of_partialInjective t D S f hf hft
     refine ⟨D, S, f, hf, hft, Nat.le_antisymm hweak ?_, ?_⟩
-    · have hS' : #S - #(S.biUnion t) = d := by simpa only [d] using hS
-      omega
+    · omega
     · have hcard : #D = Fintype.card ι - d := by omega
       simpa only [d] using hcard
 
@@ -217,7 +215,6 @@ theorem card_le_card_sub_hallDeficiency_of_partialInjective
     simpa only [d] using hcard
   · obtain ⟨S, hS⟩ := exists_card_sub_card_biUnion_eq_hallDeficiency t
     have hweak := card_add_card_le_card_add_card_biUnion_of_partialInjective t D S f hf hft
-    have hS' : #S - #(S.biUnion t) = d := by simpa only [d] using hS
     have hcard : #D ≤ Fintype.card ι - d := by omega
     simpa only [d] using hcard
 

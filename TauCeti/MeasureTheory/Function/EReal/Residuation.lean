@@ -19,13 +19,13 @@ can then use analytic projections to obtain completion measurability.
 
 public section
 
-namespace TauCeti
+namespace Measurable
 
 open MeasureTheory
 
 /-- Additive residuation of measurable extended real functions is measurable. -/
 @[fun_prop]
-theorem _root_.Measurable.ereal_rightAddResiduation {α : Type*} [MeasurableSpace α]
+theorem ereal_rightAddResiduation {α : Type*} [MeasurableSpace α]
     {a c : α → EReal} (ha : Measurable a) (hc : Measurable c) :
     Measurable fun x ↦ AddQuantale.rightAddResiduation (a x) (c x) := by
   simp_rw [EReal.rightAddResiduation_eq]
@@ -33,4 +33,4 @@ theorem _root_.Measurable.ereal_rightAddResiduation {α : Type*} [MeasurableSpac
     ((hc (measurableSet_singleton ⊤)).union (ha (measurableSet_singleton ⊥)))
     measurable_const (hc.sub ha)
 
-end TauCeti
+end Measurable

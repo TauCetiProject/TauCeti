@@ -5,17 +5,18 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
 # Endomorphisms preserving a submodule family and their centralizer
 
 For a family of submodules, the family-invariant endomorphisms are those preserving each member.
-An automorphism permuting the family preserves this space under conjugation. Over a field, if one
-member is disjoint from the sum of the others, every subspace of that member is the range of a
+An automorphism permuting the family preserves this space under conjugation. For a semisimple
+module over a commutative ring (in particular for a vector space over a field), if one member is
+disjoint from the sum of the others, every submodule of that member is the range of a
 family-invariant projection. Consequently an automorphism commuting with the scalar extensions
-of all family-invariant endomorphisms preserves the scalar extension of every such subspace.
+of all family-invariant endomorphisms preserves the scalar extension of every such submodule.
 
 The scalar-extension statement allows arbitrary coefficient algebras, including nonreduced
 ones. It supplies the linear-algebra step in the normal-subgroup kernel argument: subgroup
@@ -59,15 +60,15 @@ theorem mul_mem_familyInvariant {S : ι → Submodule R V} {f g : Module.End R V
   exact mem_familyInvariant.mpr fun i v hv ↦
     mem_familyInvariant.mp hf i _ (mem_familyInvariant.mp hg i v hv)
 
-/-- Conjugation by an automorphism permuting the family preserves family-invariant endomorphisms.
-No independence or spanning assumption is needed. -/
-theorem conj_mem_familyInvariant (S : ι → Submodule R V) (e : V ≃ₗ[R] V) (σ : Equiv.Perm ι)
-    (he : ∀ i, (S i).map e.toLinearMap = S (σ i)) {f : Module.End R V}
+/-- Conjugation by an automorphism preserves family-invariant endomorphisms as soon as every
+member of the family is the image of some member. No independence or spanning assumption is
+needed, and the automorphism need not permute the family. -/
+theorem conj_mem_familyInvariant (S : ι → Submodule R V) (e : V ≃ₗ[R] V)
+    (he : ∀ i, ∃ j, (S j).map e.toLinearMap = S i) {f : Module.End R V}
     (hf : f ∈ familyInvariant S) : e.conjAlgEquiv R f ∈ familyInvariant S := by
   refine mem_familyInvariant.mpr fun i ↦ ?_
   rw [← Module.End.mem_invtSubmodule_iff_forall_mem_of_mem]
-  have hmap : (S (σ.symm i)).map e.toLinearMap = S i := by
-    simpa only [σ.apply_symm_apply] using he (σ.symm i)
+  obtain ⟨j, hmap⟩ := he i
   rw [← hmap, LinearEquiv.conjAlgEquiv_apply]
   exact e.map_mem_invtSubmodule_conj_iff.mpr
     ((f.mem_invtSubmodule_iff_forall_mem_of_mem).mpr (mem_familyInvariant.mp hf _))
@@ -77,14 +78,12 @@ itself under conjugation. -/
 theorem map_conj_familyInvariant (S : ι → Submodule R V) (e : V ≃ₗ[R] V) (σ : Equiv.Perm ι)
     (he : ∀ i, (S i).map e.toLinearMap = S (σ i)) :
     (familyInvariant S).map (e.conjAlgEquiv R).toLinearMap = familyInvariant S := by
-  have he' (i) : (S i).map e.symm.toLinearMap = S (σ.symm i) := by
-    apply (Submodule.map_symm_eq_iff e).mpr
-    simpa using he (σ.symm i)
   refine le_antisymm ?_ ?_
   · rintro _ ⟨f, hf, rfl⟩
-    exact conj_mem_familyInvariant S e σ he hf
+    exact conj_mem_familyInvariant S e (fun i ↦ ⟨σ.symm i, by simpa using he (σ.symm i)⟩) hf
   · intro f hf
-    refine ⟨e.symm.conjAlgEquiv R f, conj_mem_familyInvariant S e.symm σ.symm he' hf, ?_⟩
+    refine ⟨e.symm.conjAlgEquiv R f, conj_mem_familyInvariant S e.symm
+      (fun i ↦ ⟨σ i, (Submodule.map_symm_eq_iff e).mpr (he i)⟩) hf, ?_⟩
     simp [LinearEquiv.conjAlgEquiv_apply, LinearMap.comp_assoc]
 
 /-- If an operator acts by a scalar on each member of a spanning family, it commutes with every
@@ -114,12 +113,13 @@ theorem commute_baseChange_of_forall_tmul_eq_smul {A : Type*} [Semiring A] [Alge
 
 end Semiring
 
-section Field
+section Semisimple
 
-variable {k V ι : Type*} [Field k] [AddCommGroup V] [Module k V]
+variable {k V ι : Type*} [CommRing k] [AddCommGroup V] [Module k V] [IsSemisimpleModule k V]
 
-/-- Every subspace of a family member disjoint from the sum of the other members is the range of
-a family-invariant idempotent, even when the family does not span the ambient space. -/
+/-- In a semisimple module, every submodule of a family member disjoint from the sum of the other
+members is the range of a family-invariant idempotent, even when the family does not span the
+ambient module. -/
 theorem exists_projection_mem_familyInvariant (S : ι → Submodule k V) (i : ι)
     (hS : Disjoint (S i) (⨆ j, ⨆ (_ : j ≠ i), S j)) (L : Submodule k V) (hL : L ≤ S i) :
     ∃ p ∈ familyInvariant S, IsIdempotentElem p ∧ LinearMap.range p = L := by
@@ -138,7 +138,7 @@ theorem exists_projection_mem_familyInvariant (S : ι → Submodule k V) (i : ι
 variable {A : Type*} [Ring A] [Algebra k A]
 
 /-- An automorphism commuting with every scalar-extended family-invariant endomorphism preserves
-any scalar-extended subspace of a family member disjoint from the sum of the other members.
+any scalar-extended submodule of a family member disjoint from the sum of the other members.
 This tests arbitrary algebra-valued automorphisms rather than just rational points. -/
 theorem map_baseChange_eq_of_forall_commute_familyInvariant
     (S : ι → Submodule k V) (i : ι)
@@ -159,6 +159,6 @@ theorem map_baseChange_eq_of_forall_commute_familyInvariant
   exact ((LinearMap.IsIdempotentElem.commute_iff_of_isUnit heunit hid').mp
     (he p hp).symm).1
 
-end Field
+end Semisimple
 
 end Submodule

@@ -402,8 +402,9 @@ private theorem coeffAction_eq (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R
     simp only [MvPolynomial.algebraTensorAlgEquiv_tmul, map_mul, smul_mul_assoc]
   simp only [coeffAction, LinearMap.coe_comp, Function.comp_apply, TensorProduct.mk_apply,
     LinearMap.restrictScalars_apply, h, map_sum, LinearMap.rTensor_tmul, lcoeff_apply,
-    coeff_smul, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero, LinearEquiv.coe_coe,
-    TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_range]
+    AddMonoidAlgebra.coeff_smul_apply, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    LinearEquiv.coe_coe, TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq,
+    Finset.mem_range]
   split_ifs with hn
   · rfl
   · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, zero_smul]
@@ -509,7 +510,7 @@ instance instFiniteDimensionalBinaryForms : FiniteDimensional k (binaryForms k d
     Module.Finite.iff_fg.mpr (MvPolynomial.homogeneousSubmodule_fg (Fin 2) k d)
   exact Module.Finite.of_injective
     ((SMulMemClass.subtype (binaryForms k d)).codRestrict
-      (MvPolynomial.homogeneousSubmodule (Fin 2) k d) fun f ↦ mem_binaryForms.mp f.2)
+      (MvPolynomial.homogeneousSubmodule (Fin 2) k d) fun f ↦ mem_binaryForms.mp f.property)
     ((LinearMap.injective_codRestrict_iff _).mpr Subtype.val_injective)
 
 /-- **Every nonzero subrepresentation of the binary forms of degree `d` contains `yᵈ`**, over every
@@ -523,7 +524,7 @@ theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
   have hf := mem_binaryForms.mp (hW hfW)
   -- The largest power of `x` occurring in `f`, and a monomial `m₀` of `f` realizing it.
   have hne : (f.support.image (· 0)).Nonempty :=
-    (Finset.nonempty_iff_ne_empty.mpr (by simpa using hf₀)).image _
+    (Finset.ne_empty_iff_nonempty.mp (by simpa using hf₀)).image _
   obtain ⟨m₀, hm₀, hm₀i⟩ := Finset.mem_image.mp ((f.support.image (· 0)).max'_mem hne)
   set i₀ := (f.support.image (· 0)).max' hne
   -- The coefficient of `t ^ i₀` in `f(x - t y, y)` only sees the monomial `m₀`.

@@ -19,8 +19,8 @@ which a construction transporting a group of matrices along a change of scalars 
 
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
-* `Matrix.GeneralLinearGroup.map_mem_glpos`: a strictly monotone ring hom carries `GLPos` to
-  `GLPos`, so a change of scalars restricts to the positive-determinant subgroups.
+* `Matrix.GeneralLinearGroup.map_mem_glpos_iff`: a monotone ring hom preserves and reflects
+  membership in the positive-determinant subgroups.
 * `Subgroup.map_mapGL`: extending a subgroup of `SL(n, R)` to `GL n S` and then to `GL n T`
   agrees with extending it directly to `GL n T`.
 -/
@@ -41,20 +41,43 @@ section StrictOrdered
 
 variable [LinearOrder R] [IsStrictOrderedRing R] [LinearOrder S] [IsStrictOrderedRing S]
 
-/-- A strictly monotone change of scalars restricts to the positive-determinant subgroups.
+/-- A monotone change of scalars preserves and reflects positive determinant.
 
-This is the side condition for cutting `Matrix.GeneralLinearGroup.map f` down to a homomorphism
-`GLPos n R →* GLPos n S`; for `f = algebraMap ℚ ℝ` the hypothesis is `Rat.cast_strictMono`.
-Contrast `Matrix.SpecialLinearGroup.toGLPos`, which lands in `GLPos` because the determinant
-is `1`: here it is only positive, and monotonicity of `f` is what keeps it so. -/
-theorem map_mem_glpos {f : R →+* S} (hf : StrictMono f) {g : GL n R} (hg : g ∈ GLPos n R) :
-    g.map f ∈ GLPos n S := by
-  -- the determinant commutes with the ring hom, and a strictly monotone ring hom is positive
-  simpa [GeneralLinearGroup.map_det] using hf.lt_iff_lt.mpr hg
+This characterizes membership in the positive-determinant subgroup after applying
+`Matrix.GeneralLinearGroup.map f`. Monotonicity suffices: a unit determinant cannot map to zero.
+For `f = algebraMap ℚ ℝ`, use `Rat.cast_strictMono.monotone`. -/
+-- Not a simp lemma: `Matrix.mem_glpos` already rewrites membership to determinant positivity.
+theorem map_mem_glpos_iff {f : R →+* S} (hf : Monotone f) {g : GL n R} :
+    g.map f ∈ GLPos n S ↔ g ∈ GLPos n R := by
+  rw [mem_glpos, mem_glpos, GeneralLinearGroup.map_det, Units.coe_map]
+  constructor
+  · intro h
+    exact hf.reflect_lt (by simpa only [MonoidHom.coe_ofClass, map_zero] using h)
+  · intro h
+    exact lt_of_le_of_ne (by simpa using hf h.le) (Ne.symm (g.det.isUnit.map f).ne_zero)
 
 end StrictOrdered
 
 end Matrix.GeneralLinearGroup
+
+namespace Matrix.SpecialLinearGroup
+
+variable {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R] (S : Type*) [CommRing S]
+  [Algebra R S]
+
+/-- The image of an element of `SL(n, R)` in `GL n S` has determinant `1` as a matrix. -/
+theorem det_coe_mapGL (g : SpecialLinearGroup n R) :
+    ((mapGL S g : GL n S) : Matrix n n S).det = 1 := by
+  rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
+
+/-- The image of an element of `SL(n, R)` in `GL n S` has positive determinant, when `S` is an
+ordered ring. -/
+theorem det_coe_mapGL_pos [PartialOrder S] [IsStrictOrderedRing S] (g : SpecialLinearGroup n R) :
+    0 < ((mapGL S g : GL n S) : Matrix n n S).det := by
+  rw [det_coe_mapGL]
+  exact one_pos
+
+end Matrix.SpecialLinearGroup
 
 namespace Subgroup
 

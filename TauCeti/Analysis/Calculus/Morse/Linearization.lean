@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Calculus.Morse.Basic
 -- Private: symmetry of the second derivative, strict differentiability, and the
 -- gradient/Fréchet-derivative norm comparison are used only in proofs below.
@@ -46,6 +47,8 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
   its entries and its determinant in an orthonormal basis.
+* `TauCeti.hessianOperator_single_apply`: for a `C²` function on `ℝⁿ`, its entries in the
+  standard basis are the second partial derivatives.
 * `ContDiffAt.contDiffAt_hessianOperator`: pointwise regularity of the Hessian field.
 * `ContDiffAt.fderiv_hessianOperator_apply`: its directional derivative is the Hessian of the
   directional derivative of the function.
@@ -110,19 +113,18 @@ both sides use Mathlib's totalized derivatives. -/
 theorem fderiv_gradient (f : E → ℝ) (x : E) : fderiv ℝ (∇ f) x = hessianOperator f x := by
   rw [hessianOperator, iteratedGradientChain_succ, iteratedGradientChain_zero]
 
-/-- The Riesz formula for the Hessian operator: it is the endomorphism that the inner product
-associates with the second derivative of `f`, viewed as a bilinear form. -/
-theorem hessianOperator_eq_continuousLinearMapOfBilin (f : E → ℝ) (x : E) :
-    hessianOperator f x = continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) := by
-  rw [← fderiv_gradient]
-  exact (toDual ℝ E).symm.toContinuousLinearEquiv.comp_fderiv (f := fderiv ℝ f) (x := x)
-
 /-- The inner-product characterization of the Hessian operator. -/
 @[simp]
 theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
-    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
-  rw [hessianOperator_eq_continuousLinearMapOfBilin]
-  exact continuousLinearMapOfBilin_apply _ _ _
+    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w :=
+  inner_iteratedGradientChain_one_apply f x v w
+
+/-- The Riesz formula for the Hessian operator: it is the endomorphism that the inner product
+associates with the second derivative of `f`, viewed as a bilinear form. -/
+theorem hessianOperator_eq_continuousLinearMapOfBilin (f : E → ℝ) (x : E) :
+    hessianOperator f x = continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) :=
+  ContinuousLinearMap.ext fun v =>
+    unique_continuousLinearMapOfBilin _ (inner_hessianOperator_left f x v)
 
 /-- In an orthonormal basis, the entry of the Hessian operator in row `i` and column `j`
 is the second derivative with the input directions `b j` and `b i`. -/
@@ -144,6 +146,15 @@ theorem _root_.OrthonormalBasis.det_hessianOperator {ι : Type*} [Fintype ι] [D
   congr 1
   ext i j
   exact b.toMatrix_hessianOperator_apply f x i j
+
+/-- In the standard basis of `ℝⁿ`, the entries `(D²u(y) eⱼ)ᵢ` of the Hessian operator of a function
+`C²` at `y` are the second partial derivatives `∂ᵢ∂ⱼu(y)`. -/
+theorem hessianOperator_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {u : EuclideanSpace ℝ ι → ℝ} {y : EuclideanSpace ℝ ι} (hu : ContDiffAt ℝ 2 u y) (i j : ι) :
+    hessianOperator u y (EuclideanSpace.single j 1) i =
+      fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  rw [← hu.isSymmSndFDerivAt (by simp), ← inner_hessianOperator_left]
+  simp [EuclideanSpace.inner_single_right]
 
 /-- Applying the Riesz map to the Hessian operator recovers the dual-valued second derivative. -/
 @[simp]
@@ -221,17 +232,9 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
 the Hessian operator. -/
 theorem hasFDerivAt_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (∇ f) (hessianOperator f x) x := by
-  have h := (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.hasFDerivAt.comp x
-    (hf.hasFDerivAt_fderiv le_rfl)
-  -- The composed function is the gradient, by the defining property `toDual_gradient` of `∇ f`.
-  have hfun : ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f = ∇ f := by
-    funext y
-    simp only [Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    exact ((InnerProductSpace.toDual ℝ E).eq_symm_apply.2 toDual_gradient).symm
-  rw [hfun] at h
   -- The derivative of the gradient is the Hessian operator by `fderiv_gradient`.
   rw [← fderiv_gradient]
-  exact h.differentiableAt.hasFDerivAt
+  exact ((hf.gradient_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
 
 /-- The negative-gradient vector field is differentiable at a twice continuously differentiable
 point, with derivative minus the Hessian operator. -/
@@ -347,7 +350,7 @@ theorem exists_lipschitzOnWith_negativeGradientRemainder (hf : ContDiffAt ℝ 2 
     (ε : ℝ≥0) (hε : 0 < ε) :
     ∃ r > 0, LipschitzOnWith ε (negativeGradientRemainder f x) (Metric.closedBall x r) := by
   obtain ⟨s, hs, hlip⟩ := hf.hasStrictFDerivAt_negativeGradientRemainder
-    |>.exists_lipschitzOnWith_of_nnnorm_lt ε (by simpa using hε)
+    |>.exists_lipschitzOnWith_of_nnNorm_lt ε (by simpa using hε)
   obtain ⟨r, hr, hrs⟩ := Metric.nhds_basis_closedBall.mem_iff.mp hs
   exact ⟨r, hr, hlip.mono hrs⟩
 
@@ -390,6 +393,14 @@ theorem isInvertible_hessianOperator_iff :
 theorem IsNondegenerateCriticalPoint.isInvertible_hessianOperator
     (h : IsNondegenerateCriticalPoint f x) : (hessianOperator f x).IsInvertible :=
   isInvertible_hessianOperator_iff.2 h.isInvertible
+
+/-- At a nondegenerate critical point the Hessian operator is bounded below: `α ‖v‖ ≤ ‖Hess f(x) v‖`
+for some `α > 0` and every `v`. -/
+theorem IsNondegenerateCriticalPoint.exists_pos_mul_norm_le_hessianOperator
+    (h : IsNondegenerateCriticalPoint f x) : ∃ α > 0, ∀ v, α * ‖v‖ ≤ ‖hessianOperator f x v‖ := by
+  obtain ⟨e, he⟩ := h.isInvertible_hessianOperator
+  obtain ⟨c, hc, hce⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e.antilipschitzWith⟩
+  exact ⟨c, hc, fun v ↦ he ▸ hce v⟩
 
 /-- The gradient vanishes at a nondegenerate critical point. This translates the dual-valued
 criticality condition in `TauCeti.IsNondegenerateCriticalPoint` through the Riesz equivalence. -/

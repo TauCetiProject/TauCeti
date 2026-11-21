@@ -73,14 +73,6 @@ because the pair `(aH, bK)` determines `H a⁻¹ b K`.
 
 ## References
 
-This supplies the "`⟨Ind_H^G 1, Ind_H^G 1⟩_G = #(H \ G / H)`" item of Layer 2 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` with its group-theoretic
-input.
-
-`orbitOfCosetTranslate` and its fibre count instead serve Layer 1 of
-`TauCetiRoadmap/ModularForms/README.md`, "General level — by the coset norm", whose
-orbit/stabiliser bookkeeping regroups a sum over a coset space into a sum over orbits.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.3.
 -/
 
@@ -112,7 +104,7 @@ theorem mem_doubleCoset_iff_mk_mem_orbit (s : G) (H K : Subgroup G) {x : G} :
   · rintro ⟨k, hkx⟩
     rw [Subgroup.smul_def, Quotient.smul_coe,
       smul_eq_mul, QuotientGroup.eq] at hkx
-    exact ⟨k, k.2, ((k : G) * s)⁻¹ * x, hkx, (mul_inv_cancel_left _ _).symm⟩
+    exact ⟨k, k.property, ((k : G) * s)⁻¹ * x, hkx, (mul_inv_cancel_left _ _).symm⟩
 
 /-- The double coset `KsH` is the preimage, under `G → G ⧸ H`, of the `K`-orbit of the coset `sH`.
 So the partition of `G` into `K`-`H` double cosets is the partition of `G ⧸ H` into `K`-orbits. -/
@@ -207,7 +199,7 @@ theorem orbitRel_smul_iff_mem_doubleCoset_stabilizer (K : Subgroup G) (p : α) (
   rw [orbitRel_apply, mem_orbit_iff, DoubleCoset.mem_doubleCoset]
   constructor
   · rintro ⟨k, hk⟩
-    refine ⟨(k : G), k.2, y⁻¹ * ((k : G)⁻¹ * x), ?_, by simp [mul_assoc]⟩
+    refine ⟨(k : G), k.property, y⁻¹ * ((k : G)⁻¹ * x), ?_, by simp [mul_assoc]⟩
     rw [SetLike.mem_coe, mem_stabilizer_iff, mul_smul, mul_smul, ← hk, Subgroup.smul_def,
       inv_smul_smul, inv_smul_smul]
   · rintro ⟨a, ha, b, hb, rfl⟩
@@ -267,7 +259,8 @@ theorem orbitOfCosetTranslate_eq_iff {𝒢 ℋ : Subgroup G} (hle : 𝒢 ≤ ℋ
         -- `y` lies in `ℋ`: solving `hr` gives `y = b * x⁻¹ * a⁻¹`, and `𝒢 ≤ ℋ` puts `x` there
         have hyH : y ∈ ℋ := by
           have hy2 : y = (b : G) * x⁻¹ * (a : G)⁻¹ := by rw [hr]; simp [mul_assoc]
-          exact hy2 ▸ mul_mem (mul_mem b.2 (inv_mem (hle (SetLike.mem_coe.1 hx)))) (inv_mem a.2)
+          exact hy2 ▸ mul_mem (mul_mem b.property (inv_mem (hle (SetLike.mem_coe.1 hx))))
+              (inv_mem a.property)
         have ha : (a : G) = y⁻¹ * (b : G) * x⁻¹ := by
           rw [← inv_inv (a : G), hr]; simp [mul_assoc]
         refine ⟨⟨(⟨y, hyH⟩ : ℋ)⁻¹, inv_mem ((Subgroup.mem_subgroupOf (H := stabilizer G p)).2
@@ -285,7 +278,8 @@ theorem orbitOfCosetTranslate_eq_iff {𝒢 ℋ : Subgroup G} (hle : 𝒢 ≤ ℋ
           Subgroup.mem_subgroupOf] at hs
         refine ⟨(((((s : ℋ) * b)⁻¹ * a : ℋ)⁻¹ : ℋ) : G), SetLike.mem_coe.2 (inv_mem hs),
           ((s : ℋ) : G)⁻¹,
-          SetLike.mem_coe.2 (inv_mem ((Subgroup.mem_subgroupOf (H := stabilizer G p)).1 s.2)), ?_⟩
+          SetLike.mem_coe.2 (inv_mem ((Subgroup.mem_subgroupOf (H
+              := stabilizer G p)).1 s.property)), ?_⟩
         rw [Subgroup.coe_inv, Subgroup.coe_mul, Subgroup.coe_inv, Subgroup.coe_mul]
         simp [mul_assoc]
 
@@ -387,9 +381,10 @@ theorem card_fiber_orbitOfCosetTranslate_eq_relIndex {𝒢 ℋ : Subgroup G}
 /-- **The orbit-indexed form**, which is the one a consumer wants: the weight is
 `TauCeti.cardStabilizerOnOrbit`, a function of the orbit rather than of a representative.
 
-A sum over `MulAction.orbitRel.Quotient 𝒢 α` weights each orbit once, and the roadmap sum
-`Σ_P (1/e_P)` reads `e_P` off the orbit, so a use site holding a class `q` can apply this directly
-instead of doing `QuotientGroup.induction_on` and rewriting the order into orbit form by hand. -/
+A sum over `MulAction.orbitRel.Quotient 𝒢 α` weights each orbit once, and in a sum such as
+`Σ_P (1/e_P)` the weight `e_P` is read off the orbit, so a use site holding a class `q` can apply
+this directly instead of doing `QuotientGroup.induction_on` and rewriting the order into orbit form
+by hand. -/
 theorem card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit {𝒢 ℋ : Subgroup G}
     (hle : 𝒢 ≤ ℋ) (p : α) (q : ℋ ⧸ 𝒢.subgroupOf ℋ) :
     Nat.card {r : ℋ ⧸ 𝒢.subgroupOf ℋ // orbitOfCosetTranslate p r =

@@ -40,37 +40,37 @@ def primesAwayConductorEquiv :
     {p : Ideal O.toRingOfIntegers // p.IsPrime ∧
       p ⊔ O.conductor.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) = ⊤} ≃
     {P : Ideal (𝓞 K) // P.IsPrime ∧ P ⊔ O.conductor = ⊤} where
-  toFun p := ⟨p.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K),
+  toFun p := ⟨p.val.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K),
     (isPrime_map_iff_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers p.2.2).mpr p.2.1,
-    map_sup_eq_top_of_coprime_comap (S := O.toRingOfIntegers.toSubring) p.2.2⟩
-  invFun P := ⟨P.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
-    have := P.2.1
+      O.conductor_le_toRingOfIntegers p.property.2).mpr p.property.1,
+    Ideal.map_sup_eq_top_of_coprime_comap p.property.2⟩
+  invFun P := ⟨P.val.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
+    have := P.property.1
     exact Ideal.comap_isPrime _ _,
-    comap_sup_eq_top_of_le (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers P.2.2⟩
+    (comap_sup_comap_eq_top_iff (S := O.toRingOfIntegers.toSubring)
+      O.conductor_le_toRingOfIntegers).mpr P.property.2⟩
   left_inv p := Subtype.ext <|
     comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers p.2.2
+      O.conductor_le_toRingOfIntegers p.property.2
   right_inv P := Subtype.ext <|
     map_comap_of_coprime (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers P.2.2
+      O.conductor_le_toRingOfIntegers P.property.2
 
 /-- The prime correspondence sends a prime of the order to its extension in the maximal order. -/
 @[simp]
 theorem primesAwayConductorEquiv_apply
     (p : {p : Ideal O.toRingOfIntegers // p.IsPrime ∧
       p ⊔ O.conductor.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) = ⊤}) :
-    (O.primesAwayConductorEquiv p).1 =
-      p.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) :=
+    (O.primesAwayConductorEquiv p).val =
+      p.val.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) :=
   (rfl)
 
 /-- The inverse prime correspondence sends a prime of the maximal order to its contraction. -/
 @[simp]
 theorem primesAwayConductorEquiv_symm_apply
     (P : {P : Ideal (𝓞 K) // P.IsPrime ∧ P ⊔ O.conductor = ⊤}) :
-    (O.primesAwayConductorEquiv.symm P).1 =
-      P.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) :=
+    (O.primesAwayConductorEquiv.symm P).val =
+      P.val.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) :=
   (rfl)
 
 end TauCeti.GlobalNumberFields.NumberFieldOrder

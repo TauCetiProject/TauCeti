@@ -133,8 +133,6 @@ theorem _root_.Subgroup.exists_openSubgroup_le_subset_of_isClosed (H : Subgroup 
       (⋂ U : OpenNormalSubgroup G, ((H ⊔ U.toSubgroup : Subgroup G) : Set G)) := by
     rw [← Subgroup.coe_iInf, ← Subgroup.eq_iInf_sup_openNormalSubgroup H hH]
     exact Set.disjoint_compl_left_iff_subset.mpr hHW
-  have : Nonempty (OpenNormalSubgroup G) :=
-    ⟨⟨⊤, (OpenSubgroup.toSubgroup_top (G := G)).symm ▸ Subgroup.normal_top⟩⟩
   obtain ⟨U, hU⟩ := hW.isClosed_compl.isCompact.elim_directed_family_closed
     (fun U : OpenNormalSubgroup G ↦ ((H ⊔ U.toSubgroup : Subgroup G) : Set G))
     (fun U ↦ Subgroup.isClosed_of_isOpen _ (hopen U)) hinf
@@ -222,10 +220,8 @@ theorem _root_.Subgroup.isOpen_of_index_sup_openNormalSubgroup_le {H : Subgroup 
     refine (Set.finite_Iic m).subset ?_
     rintro k ⟨N, -, rfl⟩
     exact hbound N
-  have hnonempty : (Set.univ : Set (OpenNormalSubgroup G)).Nonempty :=
-    ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }, Set.mem_univ _⟩
   obtain ⟨N₀, -, hmax⟩ :=
-    Set.Finite.exists_maximalFor' f Set.univ hfinite hnonempty
+    Set.Finite.exists_maximalFor' f Set.univ hfinite Set.univ_nonempty
   have hmax_le (N : OpenNormalSubgroup G) : f N ≤ f N₀ := by
     rcases le_total (f N) (f N₀) with hle | hle
     · exact hle

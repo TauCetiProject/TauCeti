@@ -34,9 +34,7 @@ theorem isPrimitiveBool_torusTriple : torusTriple.isPrimitiveBool = false :=
 
 /-- The degree-three symmetric triple is primitive, since its degree is prime. -/
 theorem isPrimitive_s3Triple : s3Triple.IsPrimitive :=
-  (isPrimitive_iff _).mpr <|
-    @IsPreprimitive.of_prime_card _ _ _ _ isConnected_s3Triple.isPretransitive
-      (by simpa using (by decide : Nat.Prime 3))
+  isConnected_s3Triple.isPrimitive_of_prime Nat.prime_three
 
 /-- The degree-three symmetric triple is primitive. -/
 theorem isPrimitiveBool_s3Triple : s3Triple.isPrimitiveBool = true :=

@@ -11,7 +11,7 @@ public import Mathlib.Data.Set.Card.Arithmetic
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
 public import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
-public import TauCeti.Topology.MetricSpace.LipschitzParametrizable
+public import TauCeti.Topology.MetricSpace.Lipschitz.Parametrizable
 
 /-!
 # Counting points of a discrete subgroup near a dilated Lipschitz-parametrizable set
@@ -127,7 +127,7 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
   refine ⟨n * ((C : ℝ) + 2) ^ d * N, by positivity, fun c hc ↦ ?_⟩
   -- Cut each edge of the unit cube into `m` pieces, so that each of the `m ^ d` subcubes has
   -- image of diameter at most `c * C / m ≤ 1` after dilating by `c`.
-  obtain ⟨m, hm0, hcm, hmc⟩ := exists_nat_pieces hc C.2
+  obtain ⟨m, hm0, hcm, hmc⟩ := exists_nat_pieces hc C.property
   choose T hTcov hTdist using fun i ↦ (hf i).exists_cover_image_unitCube hm0
   -- The thickened dilates of the pieces cover `c • S + B`.
   have hPcov : c • S + B ⊆ ⋃ p : Fin n × (Fin d → Fin m), c • T p.1 p.2 + B := by

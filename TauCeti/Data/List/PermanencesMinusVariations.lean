@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.SignVariations
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-! # Permanences minus variations with zero gaps
 
@@ -189,6 +190,24 @@ variations. -/
   · exact List.permanencesMinusVariations_map_of_sign_eq_neg
       fun x _ => by simp [sign_mul, sign_neg hc]
   · exact List.permanencesMinusVariations_map fun x _ => by simp [sign_mul, sign_pos hc]
+
+/-- Rescaling the tail after a zero gap by a nonzero constant `c` and replacing the head `h` by `h'`
+does not change permanences minus variations, provided the first entry of the tail is nonzero and,
+when the gap has even length, `h` and `c` have together the sign of `h'`. -/
+theorem _root_.List.permanencesMinusVariations_cons_replicate_zero_append_map_mul_left
+    {K : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K] {h h' c a : K}
+    (hc : c ≠ 0) (ha : a ≠ 0) (k : ℕ) (l : List K)
+    (hsign : Even k → (SignType.sign h : ℤ) * SignType.sign c = SignType.sign h') :
+    (h :: (List.replicate k 0 ++ (a :: l).map (c * ·))).permanencesMinusVariations =
+      (h' :: (List.replicate k 0 ++ a :: l)).permanencesMinusVariations := by
+  rw [List.map_cons, List.permanencesMinusVariations_cons_replicate_zero_append (mul_ne_zero hc ha),
+    ← List.map_cons, List.permanencesMinusVariations_map_mul_left hc,
+    List.permanencesMinusVariations_cons_replicate_zero_append ha]
+  congr 1
+  split_ifs with hk
+  · simp only [sign_mul, SignType.coe_mul]
+    linear_combination ((-1) ^ k.choose 2 * (SignType.sign a : ℤ)) * hsign hk
+  · rfl
 
 /-- On a list with no zeros, permanences minus variations is the number of
 adjacent pairs minus twice the number of sign changes. -/

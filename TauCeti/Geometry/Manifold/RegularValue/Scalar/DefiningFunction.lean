@@ -154,13 +154,9 @@ theorem exists_contMDiffMap_regular_definingFunction
   obtain ⟨g, hg, hgerm, hgle, hglt, hgeq⟩ :=
     TauCeti.exists_contMDiffMap_regular_definingFunction Φ.open_target hlocal
       (hle ▸ hclosed) (fun y hy hfy => by
-        have hdiff := Φ.symm.mdifferentiableAt (by simp) hy
         have hinv :=
           (PartialDiffeomorph.isLocalDiffeomorphAt J I ∞ Φ.symm hy).isInvertible_mfderiv (by simp)
-        exact (hreg _ hfy).comp (isRegularPoint_iff.mpr hinv.surjective)
-          (hf.contMDiffAt
-            (Φ.open_source.mem_nhds (Φ.toPartialEquiv.symm.map_source hy))
-              |>.mdifferentiableAt (by simp)) hdiff)
+        exact (hreg _ hfy).comp (isRegularPoint_iff.mpr hinv.surjective))
   refine ⟨g, hg, ?_, ?_, ?_, ?_⟩
   · intro x hx
     have hxsource := hsource hx

@@ -39,7 +39,7 @@ goes to `e ⊗ f + f ⊗ e`, with no factor `1/2`.
 
 For a basis `b` of `M`, words `w : Fin d → κ` index the product basis of `⨂[R]^d M`, and two words
 have the same letter counts exactly when they differ by a permutation of the positions
-(`TauCeti.Sym.ofFn_eq_ofFn_iff`). Choosing one word in each class, the coordinates of a symmetric
+(`Sym.ofFn_eq_ofFn_iff`). Choosing one word in each class, the coordinates of a symmetric
 tensor at the chosen words give a linear map back to `Γ^d_R(M)`, sending the chosen word with
 letter counts `l` to `∏ⱼ dp R lⱼ (b j)`. It is a left inverse of `toTensorPower`: by Roby
 representability this is an identity of polynomial laws, which is checked on
@@ -62,7 +62,7 @@ noncomputable section
 
 universe u
 
-open TensorProduct PiTensorProduct Module TauCeti.Sym
+open TensorProduct PiTensorProduct Module
 open scoped Finset
 
 namespace DividedPowerAlgebra
@@ -113,23 +113,23 @@ variable {d : ℕ} {κ : Type*}
 
 /-- The chosen word with the same letters as `w`. -/
 private def canonWord (w : Fin d → κ) : Fin d → κ :=
-  Function.surjInv TauCeti.Sym.ofFn_surjective (TauCeti.Sym.ofFn w)
+  Function.surjInv Sym.ofFn_surjective (Sym.ofFn w)
 
 private theorem ofFn_canonWord (w : Fin d → κ) :
-    TauCeti.Sym.ofFn (canonWord w) = TauCeti.Sym.ofFn w :=
+    Sym.ofFn (canonWord w) = Sym.ofFn w :=
   Function.surjInv_eq _ _
 
 private theorem canonWord_eq_canonWord_iff {v w : Fin d → κ} :
-    canonWord v = canonWord w ↔ TauCeti.Sym.ofFn v = TauCeti.Sym.ofFn w :=
+    canonWord v = canonWord w ↔ Sym.ofFn v = Sym.ofFn w :=
   ⟨fun h ↦ by rw [← ofFn_canonWord v, h, ofFn_canonWord],
-    fun h ↦ congrArg (Function.surjInv TauCeti.Sym.ofFn_surjective) h⟩
+    fun h ↦ congrArg (Function.surjInv Sym.ofFn_surjective) h⟩
 
 private theorem canonWord_canonWord (w : Fin d → κ) : canonWord (canonWord w) = canonWord w :=
   canonWord_eq_canonWord_iff.mpr (ofFn_canonWord w)
 
 /-- A word is the chosen word of `w` exactly when it is a chosen word with the same letters. -/
 private theorem eq_canonWord_iff {v w : Fin d → κ} :
-    v = canonWord w ↔ canonWord v = v ∧ TauCeti.Sym.ofFn w = TauCeti.Sym.ofFn v := by
+    v = canonWord w ↔ canonWord v = v ∧ Sym.ofFn w = Sym.ofFn v := by
   refine ⟨fun h ↦ ?_, fun ⟨hv, h⟩ ↦ ?_⟩
   · subst h
     exact ⟨canonWord_canonWord w, (ofFn_canonWord w).symm⟩
@@ -152,14 +152,14 @@ all words with the same letters as `w`. -/
 private theorem toTensorPower_basisProd (w : Fin d → κ) :
     toTensorPower d (basisProd b w) =
       ∑ v ∈ Fintype.piFinset (fun _ : Fin d ↦ Finset.univ.image w) with
-        TauCeti.Sym.ofFn v = TauCeti.Sym.ofFn w, Basis.piTensorProduct (fun _ ↦ b) v := by
+        Sym.ofFn v = Sym.ofFn w, Basis.piTensorProduct (fun _ ↦ b) v := by
   have hF : (∑ t, Finsupp.single (w t) 1 : κ →₀ ℕ).support ⊆ Finset.univ.image w := fun j hj ↦ by
     obtain ⟨t, rfl⟩ := Finsupp.sum_single_one_apply_ne_zero_iff.mp (Finsupp.mem_support_iff.mp hj)
     exact Finset.mem_image_of_mem w (Finset.mem_univ t)
   rw [basisProd, toTensorPower_prod_dp_eq_sum_tprod d _ b _ hF
     ((Finsupp.sum_sum_single_one_apply fun t ↦ Finset.mem_image_of_mem w (Finset.mem_univ t)).trans
       (Fintype.card_fin d))]
-  simp only [sum_single_eq_sum_single_iff, Basis.piTensorProduct_apply]
+  simp only [Sym.sum_single_eq_sum_single_iff, Basis.piTensorProduct_apply]
 
 /-- The map back from tensors to divided powers: the product basis vector of a chosen word goes to
 `basisProd b w`, and every other product basis vector goes to `0`. -/
@@ -196,12 +196,12 @@ private theorem fromTensorPower_comp_toTensorPower :
     obtain ⟨t, rfl⟩ := Finsupp.sum_single_one_apply_ne_zero_iff.mp (Finsupp.mem_support_iff.mp hj)
     exact hw.1 t
   · rw [← (Finset.mem_filter.mp hv).2, ← (Finset.mem_filter.mp hw).2,
-      canonWord_eq_canonWord_iff, ← sum_single_eq_sum_single_iff, h]
+      canonWord_eq_canonWord_iff, ← Sym.sum_single_eq_sum_single_iff, h]
   · rw [Finset.mem_finsuppAntidiag] at hl
-    obtain ⟨w₀, hw₀⟩ := (exists_sum_single_eq_iff l).2
+    obtain ⟨w₀, hw₀⟩ := (Finsupp.exists_sum_single_eq_iff l).2
       ((Finsupp.sum_of_support_subset l hl.2 _ fun _ _ ↦ rfl).trans hl.1)
     have hcount : ∑ t, Finsupp.single (canonWord w₀ t) 1 = l := by
-      rw [sum_single_eq_sum_single_iff.mpr (ofFn_canonWord w₀), hw₀]
+      rw [Sym.sum_single_eq_sum_single_iff.mpr (ofFn_canonWord w₀), hw₀]
     refine ⟨canonWord w₀, Finset.mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun t ↦ hl.2 ?_,
       canonWord_canonWord w₀⟩, hcount⟩
     rw [Finsupp.mem_support_iff, ← hcount]
@@ -234,10 +234,10 @@ private theorem lapply_repr_toTensorPower_fromTensorPower (w : Fin d → κ) :
   rw [Basis.piTensorProduct_apply, fromTensorPower_tprod]
   by_cases hv : canonWord v = v
   · -- the words with the same letters as `v` all have their letters among those of `v`
-    have key : (∀ t, w t ∈ Finset.univ.image v) ∧ TauCeti.Sym.ofFn w = TauCeti.Sym.ofFn v ↔
-        canonWord v = v ∧ TauCeti.Sym.ofFn w = TauCeti.Sym.ofFn v := by
+    have key : (∀ t, w t ∈ Finset.univ.image v) ∧ Sym.ofFn w = Sym.ofFn v ↔
+        canonWord v = v ∧ Sym.ofFn w = Sym.ofFn v := by
       refine ⟨fun h ↦ ⟨hv, h.2⟩, fun h ↦ ⟨fun t ↦ ?_, h.2⟩⟩
-      obtain ⟨u, hu⟩ := TauCeti.Sym.mem_ofFn.mp (h.2 ▸ TauCeti.Sym.mem_ofFn.mpr ⟨t, rfl⟩)
+      obtain ⟨u, hu⟩ := Sym.mem_ofFn.mp (h.2 ▸ Sym.mem_ofFn.mpr ⟨t, rfl⟩)
       exact Finset.mem_image.mpr ⟨u, Finset.mem_univ u, hu⟩
     rw [ite_eq_left_iff.mpr fun h ↦ (h hv).elim, toTensorPower_basisProd, map_sum,
       Finsupp.finsetSum_apply]
@@ -264,7 +264,7 @@ private theorem symmetricTensorMap_bijective_of_basis :
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Finsupp.lapply_apply] at h
     rw [h]
     -- the coordinates of a symmetric tensor are constant on words with the same letters
-    obtain ⟨σ, hσ⟩ := TauCeti.Sym.ofFn_eq_ofFn_iff.mp (ofFn_canonWord w).symm
+    obtain ⟨σ, hσ⟩ := Sym.ofFn_eq_ofFn_iff.mp (ofFn_canonWord w).symm
     rw [← hσ, (TensorPower.mem_symmetricTensors_iff_repr b).mp ht]
 
 end Free

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Hom
 import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -71,6 +71,7 @@ variable [I.Boundaryless] [T2Space M]
 
 namespace IsNormalDomain
 
+omit [I.Boundaryless] [T2Space M] in
 /-- Each normal matrix unit is a smooth section of the native endomorphism bundle
 on the normal neighbourhood. -/
 theorem contMDiffOn_normalEndomorphismFrame (h : IsNormalDomain I M p U)
@@ -90,6 +91,7 @@ theorem contMDiffOn_normalEndomorphismFrame (h : IsNormalDomain I M p U)
     (targetNorm := fun q ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I q)))
     h₁ h₂).contMDiffWithinAt
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The normal endomorphism frame is the basis of matrix units induced by the
 normal tangent basis at each point of the normal neighbourhood. -/
 theorem normalEndomorphismFrame_eq_basis_end (h : IsNormalDomain I M p U)
@@ -109,6 +111,7 @@ theorem normalEndomorphismFrame_eq_basis_end (h : IsNormalDomain I M p U)
     orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hq),
     ite_smul, one_smul, zero_smul] using hright.symm
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The induced matrix units form a smooth local frame of the tangent endomorphism bundle. -/
 theorem isLocalFrameOn_normalEndomorphismFrame (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) :
@@ -139,6 +142,7 @@ theorem normalEndomorphismFrame_self (h : IsNormalDomain I M p U)
   ext v
   simp [h.normalOrthonormalFrame_self b]
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The coordinates of an endomorphism in the normal matrix-unit frame are its
 usual matrix entries in the normal orthonormal tangent frame. -/
 theorem coeff_normalEndomorphismFrame (h : IsNormalDomain I M p U)

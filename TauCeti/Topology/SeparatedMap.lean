@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -16,11 +16,24 @@ So the source of a continuous separated map to a Hausdorff space is Hausdorff. C
 separated (`IsCoveringMap.isSeparatedMap`), so the total space of a covering of a Hausdorff space
 is Hausdorff.
 
-The fibers of a locally injective map are discrete, so a compact subset of one fiber is finite
+The fibers of a locally injective map are discrete
+(`IsLocallyInjective.isDiscrete_preimage_singleton`), so a compact subset of one fiber is finite
 (`IsLocallyInjective.finite_preimage_singleton_inter`); this needs no topology on the codomain.
-If the total space of a locally injective map is Hausdorff, two sections of it over a preconnected
-set that are continuous on that set and agree at one of its points agree on all of it
-(`IsLocallyInjective.eqOn_of_leftInvOn`).
+On a Hausdorff space, the neighbourhoods on which a locally injective map is injective can be
+chosen pairwise disjoint over any finite set
+(`IsLocallyInjective.exists_isOpen_injOn_pairwiseDisjoint`).
+For a continuous locally injective map into a Hausdorff space, distinct equal-image pairs
+form a closed set (`IsLocallyInjective.isClosed_setOf_apply_eq_and_ne`).
+A continuous section of a continuous locally injective map over an open set has open image
+(`IsLocallyInjective.isOpen_image_of_leftInvOn`).
+For a separated, locally injective map, such as a covering map or any locally injective map with
+Hausdorff total space, two sections over a preconnected set that are continuous on that set and
+agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
+
+## References
+
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -41,34 +54,89 @@ theorem IsSeparatedMap.t2Space (sep : IsSeparatedMap f) (hf : Continuous f) : T2
 theorem IsCoveringMap.t2Space (hf : IsCoveringMap f) : T2Space X :=
   hf.isSeparatedMap.t2Space hf.continuous
 
-section FiniteFiber
+section IsLocallyInjective
+
+open Set
+
+/-- For a continuous locally injective map into a Hausdorff space, the set of distinct
+pairs with the same image is closed. No separation assumption on the domain is needed. -/
+theorem IsLocallyInjective.isClosed_setOf_apply_eq_and_ne
+    {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] [T2Space X]
+    {f : E → X} (hinj : IsLocallyInjective f) (hf : Continuous f) :
+    IsClosed {z : E × E | f z.1 = f z.2 ∧ z.1 ≠ z.2} := by
+  have heq : IsClosed {z : E × E | f z.1 = f z.2} :=
+    isClosed_eq (hf.comp continuous_fst) (hf.comp continuous_snd)
+  have hopen : IsOpen {z : {z : E × E | f z.1 = f z.2} | z.val.1 = z.val.2} :=
+    hinj.isOpen_eqLocus (by fun_prop) (by fun_prop) (funext fun z ↦ z.property)
+  convert heq.isClosedMap_subtypeVal _ hopen.isClosed_compl using 1
+  ext z
+  constructor
+  · rintro ⟨hz, hne⟩
+    exact ⟨⟨z, hz⟩, hne, rfl⟩
+  · rintro ⟨w, hne, rfl⟩
+    exact ⟨w.property, hne⟩
 
 variable {E B : Type*} [TopologicalSpace E] {p : E → B}
+
+/-- The fibers of a locally injective map, such as a local homeomorphism, are discrete. -/
+theorem IsLocallyInjective.isDiscrete_preimage_singleton (hp : IsLocallyInjective p) (b : B) :
+    IsDiscrete (p ⁻¹' {b}) := by
+  -- `p` is constant on the fiber and locally injective.
+  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b}) → E) = fun _ ↦ b := funext fun e ↦ e.property
+  exact ⟨(discreteTopology_iff_locallyInjective b).2 <|
+    hb ▸ hp.comp_right continuous_subtypeVal Subtype.val_injective⟩
 
 /-- A compact set of points in one fiber of a locally injective map, such as a local
 homeomorphism, is finite. -/
 theorem IsLocallyInjective.finite_preimage_singleton_inter (hp : IsLocallyInjective p)
-    {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite := by
-  -- The fiber is discrete: `p` is constant on it and locally injective.
-  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b} ∩ s) → E) = fun _ ↦ b := funext fun e ↦ e.2.1
-  exact hs.finite ⟨(discreteTopology_iff_locallyInjective b).2 <|
-    hb ▸ hp.comp_right continuous_subtype_val Subtype.val_injective⟩
+    {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite :=
+  hs.finite <| (hp.isDiscrete_preimage_singleton b).mono inter_subset_left
 
-end FiniteFiber
+/-- A locally injective map `p` on a Hausdorff space, such as a local homeomorphism, is injective
+on an open neighbourhood `W e` of each point `e`, and these neighbourhoods can be chosen pairwise
+disjoint over the points of any given finite set `F`. -/
+theorem IsLocallyInjective.exists_isOpen_injOn_pairwiseDisjoint [T2Space E]
+    (hp : IsLocallyInjective p) {F : Set E} (hF : F.Finite) :
+    ∃ W : E → Set E, (∀ e, IsOpen (W e)) ∧ (∀ e, e ∈ W e) ∧ (∀ e, InjOn p (W e)) ∧
+      F.PairwiseDisjoint W := by
+  obtain ⟨O, hO, hdisj⟩ := hF.t2_separation
+  have hW (e : E) : ∃ W : Set E, IsOpen W ∧ e ∈ W ∧ W ⊆ O e ∧ InjOn p W := by
+    obtain ⟨U, hU, heU, hinj⟩ := hp e
+    exact ⟨O e ∩ U, (hO e).2.inter hU, ⟨(hO e).1, heU⟩, inter_subset_left,
+      hinj.mono inter_subset_right⟩
+  choose W hWo hWe hWO hWinj using hW
+  exact ⟨W, hWo, hWe, hWinj, fun e he e' he' hne ↦ (hdisj he he' hne).mono (hWO e) (hWO e')⟩
 
-section LeftInvOn
-
-open Set
-
-variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X}
+/-- A continuous section of a continuous locally injective map `p` over an open set `V` has open
+image. -/
+theorem IsLocallyInjective.isOpen_image_of_leftInvOn [TopologicalSpace B]
+    (hinj : IsLocallyInjective p)
+    (hp : Continuous p) {V : Set B} (hV : IsOpen V) {s : B → E} (hs : ContinuousOn s V)
+    (hps : LeftInvOn p s V) : IsOpen (s '' V) := by
+  refine isOpen_iff_mem_nhds.2 ?_
+  rintro _ ⟨y, hy, rfl⟩
+  obtain ⟨U, hUo, hyU, hUinj⟩ := hinj (s y)
+  have hsp : ContinuousAt (s ∘ p) (s y) := by
+    refine ContinuousAt.comp ?_ hp.continuousAt
+    rw [hps hy]
+    exact hs.continuousAt (hV.mem_nhds hy)
+  have hU' : s ∘ p ⁻¹' U ∈ 𝓝 (s y) := hsp.preimage_mem_nhds (by
+    simpa only [Function.comp_apply, hps hy] using hUo.mem_nhds hyU)
+  have hV' : p ⁻¹' V ∈ 𝓝 (s y) := hp.continuousAt.preimage_mem_nhds (by
+    simpa only [hps hy] using hV.mem_nhds hy)
+  filter_upwards [hUo.mem_nhds hyU, hU', hV'] with e heU hseU heV
+  refine ⟨p e, heV, hUinj hseU heU ?_⟩
+  exact hps heV
 
 /-- Two sections of `p` over a preconnected set `S` that are continuous on `S` and agree at one
-point of `S` agree on `S`, when `p` is locally injective and the total space is Hausdorff. -/
-theorem IsLocallyInjective.eqOn_of_leftInvOn [T2Space E] (hinj : IsLocallyInjective p)
-    {S : Set X} {s s' : X → E} (hS : IsPreconnected S) (hs : ContinuousOn s S)
-    (hs' : ContinuousOn s' S) (hl : LeftInvOn p s S) (hl' : LeftInvOn p s' S) {y : X} (hy : y ∈ S)
-    (hee' : s y = s' y) : EqOn s s' S :=
-  (T2Space.isSeparatedMap p).eqOn_of_comp_eqOn hinj hS hs hs'
+point of `S` agree on `S`, when `p` is separated and locally injective. Every map with Hausdorff
+total space is separated (`T2Space.isSeparatedMap`), and so is every covering map
+(`IsCoveringMap.isSeparatedMap`). -/
+theorem IsSeparatedMap.eqOn_of_leftInvOn [TopologicalSpace B] (sep : IsSeparatedMap p)
+    (hinj : IsLocallyInjective p) {S : Set B} {s s' : B → E} (hS : IsPreconnected S)
+    (hs : ContinuousOn s S) (hs' : ContinuousOn s' S) (hl : LeftInvOn p s S)
+    (hl' : LeftInvOn p s' S) {y : B} (hy : y ∈ S) (hee' : s y = s' y) : EqOn s s' S :=
+  sep.eqOn_of_comp_eqOn hinj hS hs hs'
     (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
 
-end LeftInvOn
+end IsLocallyInjective

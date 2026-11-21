@@ -103,7 +103,7 @@ theorem twistedHeckeSlashSum_diagCosetGamma0_of_prime [NeZero N] (hp : p.Prime)
       ((doubleCoset_out_diagCosetGamma0 p).trans
         (doubleCoset_natDiagGL_Gamma0_eq_iUnion_rightCosets_of_prime hp
           (gamma0Twist_apply_one_zero h) (gamma0Twist_apply_one_one h)))
-      (op_primeRep_smul_injective (G := Gamma0 N) hp.one_lt (gamma0Twist_apply_one_one h)) F hF,
+      (op_primeRep_smul_injective (G := Gamma0 N) hp.one_lt) F hF,
     Fintype.sum_option, heckeSlashUpperTri_def]
   simp only [primeRep_some, primeRep_none, delta0NebentypusChar_apply,
     Delta0UpperUnit_upperTriRep, Delta0UpperUnit_mapGL_mul_scaleRep hp.pos
@@ -141,14 +141,15 @@ theorem coe_twistedHeckeSlashModularFormCharEnd_diagCosetGamma0 [NeZero N] (hp :
           ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) =
       ⇑(heckeTNat k p (_hn := ⟨hp.ne_zero⟩) (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hF := (coe_mem_functionCharSpace_iff k χ _).mpr f.2
+  have hF := (coe_mem_functionCharSpace_iff k χ _).mpr f.property
   rw [coe_twistedHeckeSlashModularFormCharEnd]
   by_cases hpN : p ∣ N
   · rw [twistedHeckeSlashSum_diagCosetGamma0_of_dvd k χ hp hpN hF, heckeTNat_eq_upperTri k hpN,
       coe_heckeSlashUpperTriModularFormEnd]
   · have h := hp.coprime_iff_not_dvd.mpr hpN
     rw [twistedHeckeSlashSum_diagCosetGamma0_of_prime k χ hp h hF, heckeTNat_def,
-      coe_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace k hp h χ f.2]
+      coe_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace k hp h χ
+          f.property]
 
 /-- **At every prime, the twisted operator of `diag(1, p)` on `S_k(N, χ)` is the classical `Tₚ`**,
 as functions on `ℍ`: `Uₚ f + χ(p) • (f ∣[k] diag(p, 1))` when `p ∤ N`, and `Uₚ f` when `p ∣ N`. -/
@@ -160,14 +161,15 @@ theorem coe_twistedHeckeSlashCuspFormCharEnd_diagCosetGamma0 [NeZero N] (hp : p.
       ⇑(heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) := by
   have : NeZero p := ⟨hp.ne_zero⟩
   have hF : ⇑(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ functionCharSpace k χ :=
-    (mem_functionCharSpace_iff k χ _).mpr ((mem_cuspFormCharSpace_iff_nebentypus k χ _).mp f.2)
+    (mem_functionCharSpace_iff k χ _).mpr ((mem_cuspFormCharSpace_iff_nebentypus k χ _).mp
+        f.property)
   rw [coe_twistedHeckeSlashCuspFormCharEnd]
   by_cases hpN : p ∣ N
   · rw [twistedHeckeSlashSum_diagCosetGamma0_of_dvd k χ hp hpN hF, heckeTCuspNat_eq_upperTri k hpN,
       coe_heckeSlashUpperTriCuspFormEnd]
   · have h := hp.coprime_iff_not_dvd.mpr hpN
     rw [twistedHeckeSlashSum_diagCosetGamma0_of_prime k χ hp h hF, heckeTCuspNat_def,
-      coe_heckeSlashGamma1CuspFormEnd_diagCosetGamma1_of_mem_cuspFormCharSpace k hp h χ f.2]
+      coe_heckeSlashGamma1CuspFormEnd_diagCosetGamma1_of_mem_cuspFormCharSpace k hp h χ f.property]
 
 /-- **The Hecke-ring generator at a prime acts on `M_k(N, χ)` as the classical `Tₚ`**, on each
 form. -/
@@ -198,14 +200,14 @@ theorem heckeTNat_mem_modFormCharSpace [NeZero N] (hp : p.Prime)
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
     heckeTNat k p (_hn := ⟨hp.ne_zero⟩) f ∈ modFormCharSpace k χ :=
   coe_heckeRingHomCharSpace_heckeTGeneratorGamma0 k χ hp ⟨f, hf⟩ ▸
-    (heckeRingHomCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨f, hf⟩).2
+    (heckeRingHomCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨f, hf⟩).property
 
 /-- **The classical `Tₚ` preserves `S_k(N, χ)`**: it agrees there with the Hecke-ring action. -/
 theorem heckeTCuspNat_mem_cuspFormCharSpace [NeZero N] (hp : p.Prime)
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) f ∈ cuspFormCharSpace k χ :=
   coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp ⟨f, hf⟩ ▸
-    (heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨f, hf⟩).2
+    (heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨f, hf⟩).property
 
 /-- **The Hecke-ring generator at a prime acts on `M_k(N, χ)` as the classical `Tₚ`**, as an
 equality of endomorphisms of the space. -/

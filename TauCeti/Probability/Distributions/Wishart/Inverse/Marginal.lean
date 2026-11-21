@@ -146,24 +146,22 @@ theorem map_inv_inv_apply_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : �
           Measure.map_id]
       _ = (chiSquaredMeasure (n - p + 1)).map ((S i i)⁻¹ * ·) := by
         rw [chiSquaredMeasure_eq_gammaMeasure hk,
-          gammaMeasure_map_const_mul (by linarith) (by norm_num) (inv_pos.2 hSii)]
+          gammaMeasure_map_const_mul (inv_pos.2 hSii)]
         congr 1
         field_simp
 
 /-! ### Diagonal quantiles -/
 
-/-- The quantile of a diagonal entry of an inverse-Wishart matrix of degree `n > p - 1` and
-positive-definite scale `S` is the inverse-gamma quantile of shape `(n - p + 1) / 2` and scale
-`S i i / 2`. -/
+/-- The quantile of a diagonal entry of an inverse-Wishart matrix of positive-definite scale `S`
+is the inverse-gamma quantile of shape `(n - p + 1) / 2` and scale `S i i / 2`. -/
 @[simp]
-theorem quantile_map_coe_apply_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
-    (i : Fin p) {u : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+theorem quantile_map_coe_apply_inverseWishartMeasure (hS : S.PosDef) (i : Fin p) {u : ℝ} :
     ((inverseWishartMeasure n S).map
         (fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
           (B : Matrix (Fin p) (Fin p) ℝ) i i)).quantile u =
       S i i / 2 / inverseRegularizedGamma ((n - p + 1) / 2) (1 - u) := by
   rw [map_coe_apply_inverseWishartMeasure hS i,
-    quantile_inverseGammaMeasure (by linarith) (half_pos hS.diag_pos) hu]
+    quantile_inverseGammaMeasure (half_pos hS.diag_pos)]
 
 /-- The diagonal quantiles of an inverse-Wishart matrix tend to zero as the level tends to zero
 from above. -/

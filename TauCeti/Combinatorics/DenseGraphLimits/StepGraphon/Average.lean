@@ -36,8 +36,9 @@ contribution.
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_apply_of_measure_eq_zero_left` and
   `TauCeti.DenseGraphLimits.stepGraphonAvg_apply_of_measure_eq_zero_right` record the null-cell
   convention;
-* `TauCeti.DenseGraphLimits.stepGraphonAvg_rectIntegral` says block averaging preserves the
-  integral on every partition rectangle;
+* `TauCeti.DenseGraphLimits.rectIntegral_stepGraphon` evaluates the integral of a step graphon on
+  each partition rectangle, and `TauCeti.DenseGraphLimits.stepGraphonAvg_rectIntegral` says block
+  averaging preserves the integral on every partition rectangle;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_idem` says block averaging is strictly idempotent;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_stepGraphon_apply` verifies that a non-null constant
   block is recovered exactly, and `TauCeti.DenseGraphLimits.stepGraphonAvg_stepGraphon` that a
@@ -48,8 +49,6 @@ contribution.
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — `stepGraphonAvg` and the
-  null-cell validation gate preceding graphon partition energy.
 * The null-cell convention and its compatibility with Mathlib set averages follow
   `Graphon/RegularityFinpartition.lean` in `cameronfreer/graphon` (Apache 2.0) at commit
   `dfd7ecc9b197d8211842935204bcec6051d57863`.
@@ -156,10 +155,11 @@ theorem stepGraphonAvg_apply (P : Finpartition (Set.univ : Set Ω))
 This is not a simp lemma because the partition parts cannot be inferred from its left-hand side. -/
 theorem stepGraphonAvg_apply_of_measure_eq_zero_left
     (P : Finpartition (Set.univ : Set Ω)) (hP : ∀ p ∈ P.parts, MeasurableSet p)
-    (W : Graphon Ω μ) {p q : P.parts} {x y : Ω} (hp : μ (p : Set Ω) = 0)
-    (hx : x ∈ (p : Set Ω)) (hy : y ∈ (q : Set Ω)) :
+    (W : Graphon Ω μ) {p : P.parts} {x y : Ω} (hp : μ (p : Set Ω) = 0)
+    (hx : x ∈ (p : Set Ω)) :
     stepGraphonAvg (μ := μ) P hP W x y = 0 := by
-  rw [stepGraphonAvg_apply P hP W hx hy, setAverage_eq, measureReal_prod_prod]
+  rw [stepGraphonAvg_apply P hP W hx (P.indexedPartition.mem_index y), setAverage_eq,
+    measureReal_prod_prod]
   simp [hp]
 
 /-- On a partition rectangle whose right side is null, the block-average step graphon is zero.
@@ -167,11 +167,31 @@ theorem stepGraphonAvg_apply_of_measure_eq_zero_left
 This is not a simp lemma because the partition parts cannot be inferred from its left-hand side. -/
 theorem stepGraphonAvg_apply_of_measure_eq_zero_right
     (P : Finpartition (Set.univ : Set Ω)) (hP : ∀ p ∈ P.parts, MeasurableSet p)
-    (W : Graphon Ω μ) {p q : P.parts} {x y : Ω} (hq : μ (q : Set Ω) = 0)
-    (hx : x ∈ (p : Set Ω)) (hy : y ∈ (q : Set Ω)) :
+    (W : Graphon Ω μ) {q : P.parts} {x y : Ω} (hq : μ (q : Set Ω) = 0)
+    (hy : y ∈ (q : Set Ω)) :
     stepGraphonAvg (μ := μ) P hP W x y = 0 := by
-  rw [stepGraphonAvg_apply P hP W hx hy, setAverage_eq, measureReal_prod_prod]
+  rw [stepGraphonAvg_apply P hP W (P.indexedPartition.mem_index x) hy, setAverage_eq,
+    measureReal_prod_prod]
   simp [hq]
+
+/-- Integrating a step graphon over one of its partition rectangles multiplies the prescribed
+block value by the product of the two part measures. -/
+@[simp]
+theorem rectIntegral_stepGraphon (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p)
+    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p)
+    (p q : P.parts) :
+    (stepGraphon (μ := μ) P hP val hsymm).toSymmKernel.rectIntegral μ (p : Set Ω) (q : Set Ω) =
+      (μ.real (p : Set Ω) * μ.real (q : Set Ω)) * (val p q : ℝ) := by
+  rw [SymmKernel.rectIntegral_def]
+  calc
+    (∫ z in (p : Set Ω) ×ˢ (q : Set Ω),
+        stepGraphon (μ := μ) P hP val hsymm z.1 z.2 ∂(μ.prod μ)) =
+        ∫ _z in (p : Set Ω) ×ˢ (q : Set Ω), (val p q : ℝ) ∂(μ.prod μ) :=
+      setIntegral_congr_fun ((hP p p.property).prod (hP q q.property)) fun _z hz =>
+        stepGraphon_apply P hP val hsymm hz.1 hz.2
+    _ = (μ.real (p : Set Ω) * μ.real (q : Set Ω)) * (val p q : ℝ) := by
+      rw [setIntegral_const, measureReal_prod_prod, smul_eq_mul]
 
 /-- Block averaging preserves the integral over each rectangle of the partition.  This includes
 null rectangles: both sides are then zero under Mathlib's set-average convention. -/

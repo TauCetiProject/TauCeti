@@ -123,7 +123,7 @@ private def IsChainFin {n : ℕ} (p : Fin n → InducedQuiver C F × InducedQuiv
 quiver, the component between its endpoints of the operation of `𝒞` on the same morphisms; on
 any other string, zero. -/
 private noncomputable def inducedOperation : (n : ℕ) →
-    MultilinearMap R (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
       (TotalHom R (InducedQuiver C F))
   | 0 => 0
   | n + 1 => by
@@ -273,7 +273,7 @@ private theorem stasheffTerm_eq_zero
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
     (hab : ¬ IsComposableString a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
     stasheffTerm (𝒞.inducedOperation F) d x p s (n - p - s) = 0 := by
-  rcases not_isComposableString_block_or_replaceBlock hab hps with h | h
+  rcases not_isComposableString_block_or_replaceBlock hab with h | h
   · rw [stasheffTerm_def,
       evalNat_inducedOperation_eq_zero (fun i hi ↦ hx (p + i) (by omega)) h, evalNat_def,
       (MultilinearMap.map_coord_zero _ (⟨p, by omega⟩ : Fin (p + 1 + (n - p - s))) (by simp)),
@@ -286,7 +286,7 @@ private theorem stasheffTerm_eq_zero
 /-- The Stasheff identities of the induced category on homogeneous morphisms `aᵢ ⟶ bᵢ`.  On a
 composable string, the Stasheff sum is a morphism `a (n - 1) ⟶ b 0`, which the map of total
 modules sends to the Stasheff sum of `𝒞`; on any other string every term vanishes. -/
-private theorem stasheffSum_inducedOperation_of_mem (hn : 0 < n)
+private theorem stasheffSum_inducedOperation_of_mem
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
     (hd : ∀ i < n, x i ∈ (totalGrading R (InducedQuiver C F)).piece (d i)) :
     stasheffSum (𝒞.inducedOperation F) d x n = 0 := by
@@ -304,7 +304,7 @@ private theorem stasheffSum_inducedOperation_of_mem (hn : 0 < n)
     have hmap : totalHomMap R F (stasheffSum (𝒞.inducedOperation F) d x n) = 0 := by
       rw [stasheffSum_def, map_sum]
       simp_rw [map_sum]
-      rw [← 𝒞.stasheff n hn d (fun i ↦ totalHomMap R F (x i)) fun i hi ↦ by
+      rw [← 𝒞.stasheff n d (fun i ↦ totalHomMap R F (x i)) fun i hi ↦ by
         rw [𝒞.grading_eq]
         exact totalHomMap_mem_totalGrading_piece (hd i hi), stasheffSum_def]
       exact Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦
@@ -359,7 +359,7 @@ private theorem stasheffSum_inducedOperation (n : ℕ) (hn : 0 < n) (d : ℕ →
     have hyg : (fun i : Fin n ↦ y i) = fun i ↦ homInclusion (s i) (t i) (g i) := funext hy
     rw [LinearMap.compMultilinearMap_apply, ← hyg,
       hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d y hyd,
-      stasheffSum_inducedOperation_of_mem hn hyab hyd, smul_zero]
+      stasheffSum_inducedOperation_of_mem hyab hyd, smul_zero]
     exact zero_mem _
   rwa [Submodule.mem_bot, LinearMap.compMultilinearMap_apply,
     hFm.taylorComponent_comp_self_eq_smul_stasheffSum hm hn d x hx,
@@ -490,7 +490,7 @@ theorem totalHomMap_taylor_induced {X Y : InducedQuiver C F}
     {w : ReducedTensorWords R (TotalHom R (InducedQuiver C F))} (hw : w ∈ composableWords R X Y) :
     totalHomMap R F ((𝒞.induced F).taylor w) =
       𝒞.taylor (ReducedTensorWords.map (R := R) (totalHomMap R F) w) := by
-  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_) (by simp)
+  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_)
     (fun x y hx hy ↦ by simp only [map_add, hx, hy]) (fun r x hx ↦ by simp only [map_smul, hx]) hw
   · rw [ReducedTensorWords.map_of_tprod, AInfinityAlgebra.taylor_of_tprod,
       AInfinityAlgebra.taylor_of_tprod, (𝒞.induced F).grading_eq, 𝒞.grading_eq]

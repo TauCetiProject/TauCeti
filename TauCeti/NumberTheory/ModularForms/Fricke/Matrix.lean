@@ -37,7 +37,7 @@ normalizing scalar and so not an involution. The normalization
 * `TauCeti.val_det_frickeGL_pos`: over an ordered ring, that determinant is positive. This is
   about the single matrix `W`, deliberately not a general statement about `SL`-type elements.
 * `TauCeti.coe_inv_frickeGL`: `W⁻¹ = !![0, N⁻¹; -1, 0]`.
-* `TauCeti.coe_frickeGL_sq`: `W² = (-N) • 1` as matrices.
+* `TauCeti.frickeGL_sq`: `W² = (-N) • 1`, as a scalar element of `GL (Fin 2) K`.
 
 ## Relation to the Atkin–Lehner anti-involution
 
@@ -67,7 +67,7 @@ variable {K : Type*} [Field K] {N : ℕ} [NeZero (N : K)]
 `N`. -/
 public noncomputable def frickeGL (K : Type*) [Field K] (N : ℕ) [NeZero (N : K)] : GL (Fin 2) K :=
   Matrix.GeneralLinearGroup.mkOfDetNeZero !![0, -1; (N : K), 0]
-    (by rw [det_fin_two_of]; simpa using NeZero.ne (N : K))
+    (by simp [NeZero.ne])
 
 /-- The underlying matrix of `frickeGL K N`. -/
 @[simp]
@@ -77,8 +77,7 @@ public theorem coe_frickeGL :
 
 /-- The determinant of `frickeGL K N` is `N`. -/
 public theorem val_det_frickeGL : ((frickeGL K N).det : K) = N := by
-  rw [Matrix.GeneralLinearGroup.val_det_apply, coe_frickeGL, det_fin_two_of]
-  ring
+  simp [Matrix.GeneralLinearGroup.val_det_apply]
 
 /-- Over an ordered ring the determinant of `frickeGL K N` is positive. This is about the
 single matrix `W`; it is deliberately not a general statement about determinants of `SL`-type
@@ -94,20 +93,18 @@ Deliberately not `@[simp]`: `Matrix.coe_units_inv` is itself `simp`, so simp rew
 left-hand side to `(!![0, -1; N, 0])⁻¹` and it is not in simp-normal form. -/
 public theorem coe_inv_frickeGL :
     (↑(frickeGL K N)⁻¹ : Matrix (Fin 2) (Fin 2) K) = !![0, (N : K)⁻¹; -1, 0] := by
-  rw [Matrix.coe_units_inv, Matrix.inv_def, coe_frickeGL, Matrix.adjugate_fin_two_of,
-    Ring.inverse_eq_inv]
-  simp [Matrix.det_fin_two_of, NeZero.ne (N : K)]
+  simp [Matrix.inv_def, Matrix.adjugate_fin_two_of, NeZero.ne (N : K)]
 
-/-- `W² = (-N) • 1` as matrices. This is the entrywise identity behind the centrality of `W²`
-and the scalar the normalized Fricke operator divides out.
-
-Deliberately not `@[simp]`: the left-hand side `↑(W ^ 2)` is not in simp-normal form, since
-`Units.val_pow_eq_pow_val` and the in-file simp lemma `coe_frickeGL` already rewrite its head to
-`(!![0, -1; N, 0]) ^ 2`. Tagging it would put a non-normal left-hand side in the simp set. -/
-public theorem coe_frickeGL_sq :
-    (↑(frickeGL K N ^ 2) : Matrix (Fin 2) (Fin 2) K) =
-      (-(N : K)) • (1 : Matrix (Fin 2) (Fin 2) K) := by
-  rw [sq, Units.val_mul, coe_frickeGL, Matrix.mul_fin_two]
-  simp [Matrix.one_fin_two]
+/-- `W² = (-N) • 1`, as the scalar element `Matrix.GeneralLinearGroup.scalar` of
+`GL (Fin 2) K`. This is the identity behind the centrality of `W²` and the scalar the normalized
+Fricke operator divides out; the scalar form is the one that mathlib's `glScalar_smul` and
+`ModularForm.slash_scalar` consume. -/
+@[simp]
+public theorem frickeGL_sq :
+    frickeGL K N ^ 2 =
+      Matrix.GeneralLinearGroup.scalar (Fin 2)
+        (Units.mk0 (-(N : K)) (neg_ne_zero.mpr (NeZero.ne _))) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [sq]
 
 end TauCeti

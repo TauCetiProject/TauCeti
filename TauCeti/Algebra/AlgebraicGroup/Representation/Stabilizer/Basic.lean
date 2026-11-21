@@ -181,15 +181,15 @@ private theorem map_mkₐ_comul_stabilizerGenerators (W : Submodule k M) {x : H}
         (Ideal.Quotient.mkₐ k (Ideal.span (stabilizerGenerators H W)))
         (Coalgebra.comul (R := k) x) = 0 := by
   rcases hx with ⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩
-  · exact map_mkₐ_comul_matrixCoefficient W ψ w.2
+  · exact map_mkₐ_comul_matrixCoefficient W ψ w.property
   · rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, map_mkₐ_map_antipode_comm,
-      map_mkₐ_comul_matrixCoefficient W ψ w.2, map_zero, map_zero]
+      map_mkₐ_comul_matrixCoefficient W ψ w.property, map_zero, map_zero]
 
 /-- The counit vanishes on the stabilizer generators. -/
 private theorem counit_stabilizerGenerators (W : Submodule k M) {x : H}
     (hx : x ∈ stabilizerGenerators H W) : Coalgebra.counit (R := k) x = 0 := by
   rcases hx with ⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩ <;>
-  simp [Comodule.counit_matrixCoefficient, (Submodule.Quotient.mk_eq_zero W).mpr w.2]
+  simp [Comodule.counit_matrixCoefficient, (Submodule.Quotient.mk_eq_zero W).mpr w.property]
 
 variable (H) in
 /-- The Hopf ideal of the stabilizer of a subspace `W` of a comodule `M`.
@@ -237,8 +237,8 @@ theorem stabilizerHopfIdeal_le_iff (W : Submodule k M) (J : HopfIdeal k H) :
   refine ⟨fun h ψ w hw ↦ h (matrixCoefficient_mem_stabilizerHopfIdeal W ψ hw), fun h ↦ ?_⟩
   rw [← HopfIdeal.toIdeal_le_toIdeal, stabilizerHopfIdeal_toIdeal, Ideal.span_le]
   rintro _ (⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩)
-  · exact h ψ w w.2
-  · exact J.antipode_mem (h ψ w w.2)
+  · exact h ψ w w.property
+  · exact J.antipode_mem (h ψ w w.property)
 
 /-- A subspace is stable under a quotient Hopf algebra exactly when its stabilizer ideal
 is contained in the defining ideal of that quotient. -/
@@ -304,7 +304,7 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (W : Submodule k M)
   · have hzero (ψ : Module.Dual k (M ⧸ W)) (w : W) (h : ∀ w ∈ W,
         Comodule.differential (R := k) (H := H) (M := M) d w ∈ W) :
         d (Comodule.matrixCoefficient (R := k) (C := H) (ψ ∘ₗ W.mkQ) w) = 0 := by
-      rw [hcoeff, mkQ_apply, (Submodule.Quotient.mk_eq_zero W).mpr (h w w.2), map_zero]
+      rw [hcoeff, mkQ_apply, (Submodule.Quotient.mk_eq_zero W).mpr (h w w.property), map_zero]
     rintro h _ (⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩)
     · exact hzero ψ w h
     · rw [Derivation.apply_antipode, hzero ψ w h, neg_zero]
@@ -340,9 +340,9 @@ theorem stabilizerHopfIdeal_le_ker_iff (W : Submodule k M) {A : Type*} [CommRing
       rw [← hz'']
       exact hz'
     rintro _ (⟨⟨ψ, w⟩, rfl⟩ | ⟨_, ⟨⟨ψ, w⟩, rfl⟩, rfl⟩)
-    · exact (mapsTo_endOfPoint_baseChange_iff W g.ofConv).mp hg ψ w w.2
+    · exact (mapsTo_endOfPoint_baseChange_iff W g.ofConv).mp hg ψ w w.property
     · rw [SetLike.mem_coe, RingHom.mem_ker, ← hinv]
-      exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.2
+      exact (mapsTo_endOfPoint_baseChange_iff W (g⁻¹).ofConv).mp hginv ψ w w.property
 
 /-- A point with values in any commutative algebra belongs to the stabilizer exactly when
 its action preserves the scalar extension of the subspace. -/

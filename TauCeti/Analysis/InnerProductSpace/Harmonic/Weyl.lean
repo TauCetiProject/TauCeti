@@ -74,6 +74,8 @@ result to each continuous coordinate functional and reconstruct by a finite sum.
   `TauCeti.WeaklyHarmonicOn.add`, …: weak harmonicity is local, depends only on the a.e. class of
   the function on `Ω`, and is closed under the linear operations.
 * `TauCeti.WeaklyHarmonicOn.clm_comp`: continuous linear maps preserve weak harmonicity.
+* `TauCeti.weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`: two functions with the same
+  distributional Laplacian differ by a weakly harmonic function.
 * `TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`,
   `TauCeti.HasWeakFDerivOn.weaklyHarmonicOn`: weak derivatives of weakly harmonic functions
   are weakly harmonic.
@@ -168,13 +170,6 @@ section OpensMeasurable
 
 variable [OpensMeasurableSpace E]
 
-/-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
-globally integrable one. -/
-private theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
-    Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
-  simpa only [TestFunction.laplacianCLM_apply] using
-    TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) hw
-
 /-- The full weak Fréchet derivative of a weakly harmonic function is weakly harmonic.
 Each evaluation is a weak directional derivative, and evaluation commutes with integration. -/
 theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
@@ -183,10 +178,11 @@ theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
   have := h.completeSpace
   refine ⟨h.locallyIntegrableOn_deriv, fun φ => ?_⟩
   ext v
-  rw [ContinuousLinearMap.integral_apply (integrable_laplacian_smul
-    h.locallyIntegrableOn_deriv φ) v]
+  rw [ContinuousLinearMap.integral_apply (φ.integrable_laplacian_smul
+    h.locallyIntegrableOn_deriv) v]
   exact (h.hasWeakLineDerivOn v).weaklyHarmonicOn hw |>.integral_laplacian_smul_eq_zero φ
 
+omit [OpensMeasurableSpace E] in
 /-- Replacing `w` by a function agreeing with it almost everywhere on `Ω` preserves weak
 harmonicity: only the restriction of `w` to `Ω` is seen. -/
 theorem WeaklyHarmonicOn.congr_ae {w' : E → F} (h : WeaklyHarmonicOn μ Ω w)
@@ -194,7 +190,7 @@ theorem WeaklyHarmonicOn.congr_ae {w' : E → F} (h : WeaklyHarmonicOn μ Ω w)
   refine ⟨h.locallyIntegrableOn.congr hw, fun φ ↦ ?_⟩
   rw [← h.integral_laplacian_smul_eq_zero φ]
   refine integral_congr_ae ?_
-  filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hw] with x hx
+  filter_upwards [ae_imp_of_ae_restrict hw] with x hx
   by_cases hxΩ : x ∈ (Ω : Set E)
   · rw [hx hxΩ]
   · rw [image_eq_zero_of_notMem_tsupport fun h' ↦
@@ -206,8 +202,8 @@ theorem WeaklyHarmonicOn.add {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ �
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ + w₂) := by
   refine ⟨h₁.locallyIntegrableOn.add h₂.locallyIntegrableOn, fun φ ↦ ?_⟩
   simp only [Pi.add_apply, smul_add]
-  rw [integral_add (integrable_laplacian_smul h₁.locallyIntegrableOn φ)
-    (integrable_laplacian_smul h₂.locallyIntegrableOn φ), h₁.integral_laplacian_smul_eq_zero φ,
+  rw [integral_add (φ.integrable_laplacian_smul h₁.locallyIntegrableOn)
+    (φ.integrable_laplacian_smul h₂.locallyIntegrableOn), h₁.integral_laplacian_smul_eq_zero φ,
     h₂.integral_laplacian_smul_eq_zero φ, add_zero]
 
 /-- Weak harmonicity is preserved by subtraction. -/
@@ -215,13 +211,24 @@ theorem WeaklyHarmonicOn.sub {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ �
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
   simpa [sub_eq_add_neg] using h₁.add h₂.neg
 
+/-- Two functions locally integrable on `Ω` with the same distributional Laplacian on `Ω` differ
+by a weakly harmonic function. -/
+theorem weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {w₁ w₂ : E → F}
+    (h₁ : LocallyIntegrableOn w₁ Ω μ) (h₂ : LocallyIntegrableOn w₂ Ω μ)
+    (h : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • w₁ x ∂μ = ∫ x, Δ (φ : E → ℝ) x • w₂ x ∂μ) :
+    WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
+  refine ⟨h₁.sub h₂, fun φ ↦ ?_⟩
+  simp only [Pi.sub_apply, smul_sub]
+  rw [integral_sub (φ.integrable_laplacian_smul h₁) (φ.integrable_laplacian_smul h₂), h φ,
+    sub_self]
+
 /-- A continuous linear map of complete real normed spaces preserves weak harmonicity. -/
 theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [CompleteSpace G] (h : WeaklyHarmonicOn μ Ω w) (L : F →L[ℝ] G) :
     WeaklyHarmonicOn μ Ω (fun x ↦ L (w x)) := by
   refine ⟨L.locallyIntegrableOn_comp h.locallyIntegrableOn, fun φ ↦ ?_⟩
   simpa only [map_smul, h.integral_laplacian_smul_eq_zero φ, map_zero] using
-    L.integral_comp_comm (integrable_laplacian_smul h.locallyIntegrableOn φ)
+    L.integral_comp_comm (φ.integrable_laplacian_smul h.locallyIntegrableOn)
 
 end OpensMeasurable
 
@@ -246,30 +253,16 @@ private theorem laplacian_normed_convolution_eq_zero
     Δ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] f) y = 0 := by
   set ρ : E → ℝ := φ.normed μ with hρ_def
   -- The test function `ψ t = ρ (y - t)`, supported in `closedBall y φ.rOut ⊆ Ω`.
-  set g : E → ℝ := fun t ↦ ρ (y - t) with hg_def
-  have hg_supp : tsupport g ⊆ closedBall y φ.rOut := by
-    refine closure_minimal (fun t ht ↦ ?_) isClosed_closedBall
-    have : y - t ∈ Function.support ρ := ht
-    rw [hρ_def, φ.support_normed_eq, mem_ball_zero_iff, ← dist_eq_norm] at this
-    exact (mem_closedBall'.2 this.le)
-  let ψ : 𝓓(Ω, ℝ) := ⟨g, φ.contDiff_normed.comp (contDiff_const.sub contDiff_id),
-    (isCompact_closedBall y φ.rOut).of_isClosed_subset (isClosed_tsupport _) hg_supp,
-    hg_supp.trans hyΩ⟩
-  have hψ : (ψ : E → ℝ) = g := rfl
-  -- `Δψ t = Δρ (y - t)`, by invariance of the Laplacian under `t ↦ -t` and translations.
-  have hΔg : ∀ t, Δ g t = Δ ρ (y - t) := by
-    have hcomp : g = (fun s ↦ ρ (s + y)) ∘ (LinearIsometryEquiv.neg ℝ (E := E)) := by
-      ext t
-      simp [hg_def, neg_add_eq_sub]
-    intro t
-    rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
-    simp [neg_add_eq_sub]
+  have hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω := fun t ht ↦ hyΩ <| by
+    rw [hρ_def, φ.tsupport_normed_eq, mem_closedBall_zero_iff] at ht
+    rwa [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg]
   -- Move the Laplacian onto the bump, then recognize the pairing of `u` with `Δψ`.
   rw [← convolution_flip, HasCompactSupport.laplacian_convolution_right _ φ.hasCompactSupport_normed
-    hf.locallyIntegrable φ.contDiff_normed, convolution_def, ← hΔ ψ]
+    hf.locallyIntegrable φ.contDiff_normed, convolution_def,
+    ← hΔ (reflectTranslateTestFunction ρ y φ.contDiff_normed φ.hasCompactSupport_normed hy)]
   refine integral_congr_ae (ae_of_all _ fun t ↦ ?_)
   simp only [flip_apply, lsmul_apply, smul_eq_mul]
-  rw [hψ, hΔg]
+  rw [laplacian_reflectTranslateTestFunction]
   by_cases ht : t ∈ closedBall y φ.rOut
   · rw [hfu ht]
   · have hρ0 : Δ ρ (y - t) = 0 := by
@@ -312,8 +305,8 @@ private theorem dist_setAverage_ball_le_of_harmonicOnNhd {U f : E → ℝ} {y : 
           (integral_congr_ae (ae_of_all _ fun z ↦ by simp [norm_sub_rev]))
     _ ≤ ∫ z, ‖(U - f) z‖ ∂μ := setIntegral_le_integral hUf.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
     _ = (eLpNorm (U - f) 1 μ).toReal := by
-        rw [eLpNorm_one_eq_lintegral_enorm hUf.aestronglyMeasurable]
-        exact integral_norm_eq_lintegral_enorm hUf.aestronglyMeasurable
+        rw [eLpNorm_one_eq_lintegral_eNorm hUf.aestronglyMeasurable]
+        exact integral_norm_eq_lintegral_eNorm hUf.aestronglyMeasurable
 
 /-- **Weyl's lemma near a point.** If `u` is weakly harmonic on `Ω` and
 `closedBall x (3 * R) ⊆ Ω`, then `u` agrees almost everywhere on `ball x R` with a function
@@ -432,7 +425,7 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq [FiniteDimensional ℝ F]
     exact exists_harmonicOnNhd_ae_eq_real
       (hw.clm_comp (b.coord i).toContinuousLinearMap)
   choose h hh hae using hi
-  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum _ fun i _ =>
+  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum fun i _ =>
     (hh i).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i)), ?_⟩
   filter_upwards [ae_all_iff.2 hae] with x hx
   conv_lhs => rw [← b.sum_repr (w x)]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
+public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
@@ -30,8 +31,12 @@ finite place of the extension.
   forward implication for every nonarchimedean function, `IsNonarchimedean.apply_natCast_le_one`,
   and the reverse one for the norm of a normed division ring,
   `IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one`; here the latter is
-  transferred to absolute values through `WithAbs`. Consequently an absolute value lying over a
-  nonarchimedean one is nonarchimedean, `AbsoluteValue.isNonarchimedean_of_liesOver`.
+  transferred to absolute values through `WithAbs`. Consequently an absolute value on a field lying
+  over another is nonarchimedean if and only if the base absolute value is
+  (`AbsoluteValue.isNonarchimedean_of_liesOver`, `AbsoluteValue.isNonarchimedean_under_of_liesOver`,
+  `AbsoluteValue.isNonarchimedean_iff_of_liesOver`).
+* `IsNonarchimedean.isUltrametricDist_withAbs`: equipping a ring with a nonarchimedean real
+  absolute value through `WithAbs` produces an ultrametric distance.
 * `IsNonarchimedean.apply_le_one_of_isIntegral`: a nonarchimedean absolute value on an
   `R`-algebra which is bounded by `1` on the image of `R` is bounded by `1` on every element
   integral over `R`. Over `ℤ` the hypothesis on `R` is automatic,
@@ -43,6 +48,8 @@ finite place of the extension.
   power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
   general; the example at the end of the file checks that `|·| ^ 2` on `ℚ` is not an absolute
   value.
+* `AbsoluteValue.isNonarchimedean_trivial`: the trivial absolute value on any semiring without zero
+  divisors is nonarchimedean.
 
 ## References
 
@@ -60,6 +67,25 @@ theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] 
     [FaithfulSMul K L] [PartialOrder S] [Semiring S] {w : AbsoluteValue L S}
     (v : AbsoluteValue K S) [w.LiesOver v] (x : K) : w (algebraMap K L x) = v x := by
   rw [← LiesOver.under_eq w v, under_def, comp_apply]
+
+/-- An absolute value underneath a nonarchimedean absolute value is nonarchimedean. -/
+theorem isNonarchimedean_under_of_liesOver {K L S : Type*} [CommSemiring K] [Semiring L]
+    [Algebra K L] [FaithfulSMul K L] [LinearOrder S] [Semiring S]
+    {w : AbsoluteValue L S} (u : AbsoluteValue K S) [w.LiesOver u]
+    (hw : IsNonarchimedean w) : IsNonarchimedean u := fun x y ↦ by
+  simpa only [← LiesOver.apply_algebraMap (w := w) u, map_add] using
+    hw (algebraMap K L x) (algebraMap K L y)
+
+/-- The trivial absolute value is nonarchimedean. -/
+theorem isNonarchimedean_trivial {R S : Type*} [Semiring R] [DecidablePred fun x : R ↦ x = 0]
+    [NoZeroDivisors R] [Semiring S] [LinearOrder S] [IsOrderedRing S] [Nontrivial S] :
+    IsNonarchimedean (AbsoluteValue.trivial : AbsoluteValue R S) := by
+  intro x y
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rcases eq_or_ne (x + y) 0 with hxy | hxy
+    · simp [hxy]
+    · simp [trivial_apply hx, trivial_apply hxy]
 
 section Field
 
@@ -95,9 +121,23 @@ theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Algebra K F] 
 
 end Field
 
+/-- An absolute value on a field lying over an absolute value `u` is nonarchimedean if and only if
+`u` is nonarchimedean. -/
+theorem isNonarchimedean_iff_of_liesOver {K F : Type*} [CommSemiring K] [Field F] [Algebra K F]
+    [FaithfulSMul K F] (v : AbsoluteValue F ℝ) (u : AbsoluteValue K ℝ) [v.LiesOver u] :
+    IsNonarchimedean v ↔ IsNonarchimedean u :=
+  ⟨isNonarchimedean_under_of_liesOver u, isNonarchimedean_of_liesOver⟩
+
 end AbsoluteValue
 
 namespace IsNonarchimedean
+
+/-- Equipping a ring with a nonarchimedean real absolute value via `WithAbs` yields an
+ultrametric distance. -/
+theorem isUltrametricDist_withAbs {R : Type*} [Ring R] {v : AbsoluteValue R ℝ}
+    (hv : IsNonarchimedean v) : IsUltrametricDist (WithAbs v) :=
+  IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
+    simpa only [WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_add] using hv x.ofAbs y.ofAbs
 
 variable {R F : Type*} [CommRing R] [Ring F] [Algebra R F] {v : AbsoluteValue F ℝ}
 

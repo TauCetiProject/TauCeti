@@ -118,7 +118,7 @@ theorem IsIsotypicOfType.finrank_weightSpace_eq_isotypicMultiplicity_mul
     rw [hset, Set.ncard_univ, Nat.card_fin]
   have hsummand : ∀ i, finrank K (weightSpace ↥(N i) χ) =
       finrank K (weightSpace S χ) := fun i ↦
-    (TauCeti.LieModuleEquiv.restrictLie (hequiv i).some H).finrank_weightSpace_eq χ
+    ((hequiv i).some.restrictLie H).finrank_weightSpace_eq χ
   rw [hint.finrank_weightSpace_eq_sum (N := N) χ]
   simp only [hsummand]
   calc

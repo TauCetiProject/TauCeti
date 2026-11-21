@@ -28,7 +28,8 @@ represents the Weyl reflection exchanging `i` and `j`, so conjugation by it carr
 `x_{±2eⱼ}(c)` to `x_{±2eᵢ}(c)`. The sum roots are then isolated from the multiply-laced
 Chevalley commutator relations. In particular, the numbered adjacent difference roots and the
 final pair of opposite long roots generate every root subgroup in all characteristics, including
-characteristic two.
+characteristic two. These are the root subgroups needed to identify the full-weight type-`C`
+carrier with the standard symplectic group.
 
 ## Main results
 
@@ -43,12 +44,6 @@ characteristic two.
 
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §5.2.
 * R. Steinberg, *Lectures on Chevalley Groups* (1968), §§3--4.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: it supplies every root subgroup required for the
-reverse inclusion of the full-weight type-`C` carrier in the standard symplectic group. Removing
-the former invertibility-of-two hypothesis is necessary for the characteristic-two type-`C`
-branch consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section

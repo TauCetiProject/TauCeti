@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGNerve.Boundary
-public import TauCeti.AlgebraicTopology.DGNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
 import TauCeti.Data.Finset.Basic
 
@@ -73,38 +72,11 @@ private theorem isTerminalVertex_of_exactAt {Y : C}
   rw [SSet.isTerminalVertex_iff]
   intro n σ₀ hσ₀
   have hY := obj_last_of_map_const σ₀ hσ₀
-  obtain _ | m := n
-  · -- A map `∂Δ[1] ⟶ N_dg(C)` extends by the zero morphism.
-    let X₀ := Simplex.obj (R := R) (SSet.yonedaEquiv (boundary.ι 1 ≫ σ₀)) 0
-    let e : (dgNerve R C) _⦋1⦌ := Simplex.edge (0 : dgCycles R X₀ Y)
-    refine ⟨SSet.yonedaEquiv.symm e, (boundary.eq_ι_comp_iff _ _).2 fun j ↦ ?_⟩
-    rw [Equiv.apply_symm_apply]
-    refine Simplex.ext_zero ?_
-    fin_cases j
-    · exact hY
-    · rfl
-  -- Glue the faces of `σ₀` to coherences on its vertices.
-  obtain ⟨f, hself, heq, hfaces⟩ := DGNerve.exists_coherences_of_faces (R := R) (fun _ ↦ True)
-    (fun i ↦ Simplex.obj (R := R) (σ₀.app _ (boundary.vertex (m + 1) i)) 0)
-    (fun l _ ↦ SSet.yonedaEquiv (boundary.ι l ≫ σ₀)) (fun l _ p ↦ obj_yonedaEquiv_ι_comp σ₀ l p)
-    (fun _ _ _ _ hab ↦ map_yonedaEquiv_ι_comp σ₀ hab)
-  have hself' := fun i ↦ hself i ((exists_ne i).imp fun _ hl ↦ ⟨trivial, hl⟩)
-  have heq' : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) → _ :=
-    fun i j S d hij hS hd hl ↦ heq i j S d hij hS hd (hl.imp fun _ hl ↦ ⟨trivial, hl⟩)
-  have hd : (-(m + 1 : ℕ) : ℤ) + #(Ioo 0 (Fin.last (m + 2))) = 0 := by simp
-  -- The last vertex is `Y`, so the obstruction to filling is a cycle of degree `-m` into `Y`,
-  -- hence a boundary.
-  have hexact := h (Simplex.obj (R := R) (σ₀.app _ (boundary.vertex (m + 1) 0)) 0) _
-    (by omega : -(m + 1 : ℕ) + 1 ≤ (0 : ℤ))
-  rw [← hY, obj_yonedaEquiv_ι_comp, Fin.succAbove_zero, Fin.succ_last] at hexact
-  obtain ⟨g, hg⟩ := (exactAt_iff_forall_exists_dgDifferential_eq R).1 hexact _
-    (f.dgDifferential_boundary_eq_zero heq' hd)
-  obtain ⟨x, hxobj, hxcoh⟩ := (f.exists_simplex_iff_of_boundary hself' heq' hd).2 ⟨g, hg⟩
-  let x' : (dgNerve R C) _⦋m + 2⦌ := x
-  refine ⟨SSet.yonedaEquiv.symm x', (boundary.eq_ι_comp_iff _ _).2 fun l ↦ ?_⟩
-  rw [Equiv.apply_symm_apply, dgNerve_δ]
-  exact (hfaces x hxobj (fun i j S d hij hS hd ⟨l, _, hl⟩ ↦ hxcoh i j S d hij hS hd ⟨l, hl⟩) l
-    trivial).symm
+  rw [obj_yonedaEquiv_ι_comp, Fin.succAbove_zero, Fin.succ_last] at hY
+  apply exists_extension_of_exactAt
+  intro hn
+  rw [hY]
+  exact h _ _ (by omega)
 
 /-! ### The sphere attached to a cycle -/
 
@@ -217,10 +189,10 @@ vertex vanish. -/
 private lemma boundary_sphereCoh_zero (z : DGHom R (-(m + 1 : ℕ) + 1) X Y) {j : Fin (m + 3)}
     {S : Finset (Fin (m + 3))} {p : ℤ} (hij : 0 ≤ j) (hS : S ⊆ Ioo 0 j) (hp : p + #S = 0) :
     boundary R (sphereCoh z) 0 j S p hij hS hp =
-      ∑ t ∈ S.attach, (#{s ∈ S | t.1 ≤ s} : ℤ).negOnePow • sphereRow z j (S.erase t) (p + 1) := by
+      ∑ t ∈ S.attach, (#{s ∈ S | t.val ≤ s} : ℤ).negOnePow • sphereRow z j (S.erase t) (p + 1) := by
   rw [boundary_def]
   refine sum_congr rfl fun t _ ↦ ?_
-  have ht := mem_Ioo.1 (hS t.2)
+  have ht := mem_Ioo.1 (hS t.property)
   rw [sphereCoh_zero, sphereCoh_zero,
     sphereRow_eq_zero z ht.1.ne' (ht.2.trans_le (Fin.le_last j)).ne, zero_dgComp, smul_zero,
     sub_zero]
@@ -235,7 +207,7 @@ private lemma dgDifferential_sphereCoh_zero (z : DGHom R (-(m + 1 : ℕ) + 1) X 
   rw [boundary_sphereCoh_zero, sphereCoh_zero, dgDifferential_sphereRow z hz]
   refine (sum_eq_zero fun t _ ↦ ?_).symm
   cases j using Fin.cases with
-  | zero => exact absurd (hS t.2) (by simp)
+  | zero => exact absurd (hS t.property) (by simp)
   | succ j =>
     suffices h0 : sphereRow z j.succ (S.erase t) (p + 1) = 0 by
       rw [h0]
@@ -247,13 +219,13 @@ private lemma dgDifferential_sphereCoh_zero (z : DGHom R (-(m + 1 : ℕ) + 1) X 
     exfalso
     obtain ⟨l, hl₀, hlj, hlS⟩ := hB
     have hj : j.succ = Fin.last (m + 2) := by rw [h.1, Fin.succ_last]
-    have htI : t.1 ∈ Ioo 0 (Fin.last (m + 2)) := hj ▸ hS t.2
+    have htI : t.val ∈ Ioo 0 (Fin.last (m + 2)) := hj ▸ hS t.property
     have hlI : l ∈ Ioo 0 (Fin.last (m + 2)) :=
       mem_Ioo.2 ⟨Fin.pos_iff_ne_zero.2 hl₀, Fin.lt_last_iff_ne_last.2 (hj ▸ hlj)⟩
     by_cases hlt : l = t
-    · exact hlS (hlt ▸ t.2)
+    · exact hlS (hlt ▸ t.property)
     by_cases hl₁ : l = 1
-    · refine notMem_erase t.1 S ?_
+    · refine notMem_erase t.val S ?_
       rw [h.2.1]
       exact mem_erase.2 ⟨fun ht₁ ↦ hlt (hl₁.trans ht₁.symm), htI⟩
     · exact hlS (mem_of_mem_erase (h.2.1 ▸ mem_erase.2 ⟨hl₁, hlI⟩ :
@@ -297,7 +269,8 @@ private lemma boundary_sphereCoh_top (z : DGHom R (-(m + 1 : ℕ) + 1) X Y)
       rw [ne_eq, Fin.ext_iff, Fin.val_one, Fin.val_last]
       omega)⟩
   rw [boundary_sphereCoh_zero, sum_eq_single_of_mem ⟨1, h₁⟩ (mem_attach _ _) fun t _ ht ↦ by
-    rw [sphereRow_last_of_ne z (fun h ↦ ht (Subtype.ext ((erase_inj _ t.2).1 h))), smul_zero]]
+    rw [sphereRow_last_of_ne z (fun h ↦ ht (Subtype.ext ((erase_inj _ t.property).1 h))),
+        smul_zero]]
   have hcard : #{s ∈ Ioo 0 (Fin.last (m + 2)) | (1 : Fin (m + 3)) ≤ s} = m + 1 := by
     rw [filter_true_of_mem fun s hs ↦ Fin.one_le_of_ne_zero (mem_Ioo.1 hs).1.ne']
     omega

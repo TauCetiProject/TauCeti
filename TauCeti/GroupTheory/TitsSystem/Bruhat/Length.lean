@@ -105,7 +105,7 @@ theorem bruhatCell_mul_eq_of_wordLength_le {s : T.WeylGroup} (hs : s ∈ T.simpl
         T.bruhatCell (s * (l'.prod * s')) ∪ T.bruhatCell (s * l'.prod) := by
       calc T.bruhatCell s * T.bruhatCell (l'.prod * s')
           ⊆ T.bruhatCell s * (T.bruhatCell l'.prod * T.bruhatCell s') :=
-            Set.mul_subset_mul_left (T.subset_bruhatCell_mul_of_mem_simple_right l'.prod hs')
+            Set.mul_subset_mul_left (T.subset_bruhatCell_mul_right l'.prod s')
         _ = T.bruhatCell (s * l'.prod) * T.bruhatCell s' := by rw [← mul_assoc, hih]
         _ ⊆ T.bruhatCell (s * l'.prod * s') ∪ T.bruhatCell (s * l'.prod) :=
             T.bruhatCell_mul_subset_union_of_mem_simple_right (s * l'.prod) hs'

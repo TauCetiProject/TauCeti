@@ -21,7 +21,8 @@ public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 Give the objects and the total arrows of a quiver their own topologies. If the source is a
 local homeomorphism and the source-target map is proper, there are finitely many arrows between
-any two objects. In particular, the isotropy of a groupoid with these properties is finite.
+any two objects. In particular, the isotropy of a category with these properties is finite
+(`TauCeti.finite_aut_of_proper_source_target`).
 
 If target is also a local homeomorphism and the arrow space is Hausdorff, the arrows at an
 object admit pairwise disjoint open bisection neighborhoods. After shrinking the object
@@ -116,9 +117,9 @@ theorem exists_disjoint_bisections_of_proper_source_target [T2Space (Quiver.Tota
       (Filter.inter_mem (Filter.inter_mem hS hT) ((hO a).2.mem_nhds (hO a).1))
     refine ⟨W, hW, haW, fun b hb ↦ (hWsub hb).2, ?_, ?_⟩
     · exact hsS.comp (.inclusion (fun b hb ↦ (hWsub hb).1.1)
-        (hW.preimage continuous_subtype_val))
+        (hW.preimage continuous_subtypeVal))
     · exact htT.comp (.inclusion (fun b hb ↦ (hWsub hb).1.2)
-        (hW.preimage continuous_subtype_val))
+        (hW.preimage continuous_subtypeVal))
   choose B hBopen hBmem hBsub hBs hBt using hb
   let W (f : x ⟶ x) := B ⟨x, x, f⟩
   have hcover : ∀ a : Quiver.Total C, a.left = x → a.right = x → a ∈ ⋃ f, W f := by
@@ -153,7 +154,17 @@ open CategoryTheory
 section Category
 
 variable {C : Type*} [Category C] [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
-  (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+
+/-- Every automorphism group is finite in a category with proper source-target map and locally
+homeomorphic source. -/
+theorem finite_aut_of_proper_source_target
+    (hp : IsProperMap (fun a : Quiver.Total C ↦ (a.left, a.right)))
+    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C)) (x : C) :
+    Finite (Aut x) :=
+  have := finite_hom_of_proper_source_target hp hs x x
+  .of_injective (fun g : Aut x ↦ g.asIso.hom) fun _ _ h ↦ Aut.ext (Iso.ext h)
+
+variable (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
 include hu
 
 /-- In a topological category with continuous units and locally homeomorphic source, the identity
@@ -214,7 +225,7 @@ private theorem exists_nhds_section_one_mul {x : C} [Finite (Aut x)]
     {W : (x ⟶ x) → Set (Quiver.Total C)}
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2)
+      p.val.1.comp p.val.2 p.property)
     (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) (hWo : ∀ f, IsOpen (W f))
     (hWx : ∀ f, (⟨x, x, f⟩ : Quiver.Total C) ∈ W f) (hinj : ∀ f, InjOn Quiver.Total.left (W f))
     {σ : Aut x → C → Quiver.Total C} {T : Aut x → Set C} (hT : ∀ g, IsOpen (T g))
@@ -278,15 +289,16 @@ private theorem isotropy_functor_properties {x : C} {U₀ U : Set C}
   refine ⟨⟨fun {a b} φ ↦ ?_⟩, ⟨fun {a b} f f' h ↦ Functor.Elements.hom_ext ?_⟩, fun g ↦ ?_,
     fun g ↦ (hF _).trans ?_⟩
   · -- Every arrow between objects of `U` lies in a bisection, so it is the arrow of some label.
-    have ha : F.obj a ∈ U := by rw [hFo]; exact a.back.2
-    have hb : F.obj b ∈ U := by rw [hFo]; exact b.back.2
-    obtain ⟨g, hg⟩ := exists_section_eq hinj (fun g ↦ hσW g _ a.back.2) (fun g ↦ hσl g _ a.back.2)
+    have ha : F.obj a ∈ U := by rw [hFo]; exact a.back.property
+    have hb : F.obj b ∈ U := by rw [hFo]; exact b.back.property
+    obtain ⟨g, hg⟩ := exists_section_eq hinj (fun g ↦ hσW g _ a.back.property)
+        (fun g ↦ hσl g _ a.back.property)
       (hcover ⟨_, _, φ⟩ (hUU₀ _ ha) (hUU₀ _ hb)).exists (hFo a)
     let m : a ⟶ b :=
       Functor.Elements.homMk g
         (Subtype.ext ((hsmul _ _).trans ((congrArg Quiver.Total.right hg).trans (hFo b))))
     exact ⟨m, eq_of_heq (Quiver.Total.mk.inj ((hF m).trans hg)).2.2⟩
-  · exact eq_of_section_eq hdisj (hσW _ _ a.back.2) (hσW _ _ a.back.2)
+  · exact eq_of_section_eq hdisj (hσW _ _ a.back.property) (hσW _ _ a.back.property)
       ((hF f).symm.trans ((congrArg (fun φ ↦ (⟨_, _, φ⟩ : Quiver.Total C)) h).trans (hF f')))
   · simp only [hF, ActionCategory.totalEquiv_symm_apply_hom_hom,
       ActionCategory.totalEquiv_symm_apply_left, hback]
@@ -309,7 +321,7 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
     (ht : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2)
+      p.val.1.comp p.val.2 p.property)
     (x : C) :
     ∃ (U : Set C) (hxU : x ∈ U) (_ : MulAction (Aut x) U) (F : ActionCategory (Aut x) U ⥤ C),
       IsOpen U ∧ (∀ g : Aut x, Continuous fun y : U ↦ g • y) ∧
@@ -326,8 +338,7 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
   obtain ⟨U₀, W, hU₀, hxU₀, hW, hdisj, hcover⟩ :=
     exists_disjoint_bisections_of_proper_source_target hp hs ht x
   choose hWo hWx hWl _ using hW
-  have := finite_hom_of_proper_source_target hp hs x x
-  have : Finite (Aut x) := .of_equiv _ (Aut.isoEquiv.trans (Groupoid.isoEquivHom x x)).symm
+  have := finite_aut_of_proper_source_target hp hs x
   have hinj (f : x ⟶ x) : InjOn Quiver.Total.left (W f) := fun b hb b' hb' h ↦
     congrArg Subtype.val (@(hWl f).injective ⟨b, hb⟩ ⟨b', hb'⟩ h)
   -- The source restricted to the bisection of each isotropy arrow `g` is a chart `e g`.
@@ -350,7 +361,7 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
     (exists_nhds_section_one_mul (σ := σ) (T := T) hu hc ht.continuous hWo hWx hinj
       (fun g ↦ (e g).open_target) hxT (fun g ↦ (e g).continuousOn_symm) hσW hσl hσx))
   simp only [Set.subset_ofPred, forall₂_and] at hVE
-  obtain ⟨hVU₀, hVT, hVTT, hone, hmul⟩ := hVE
+  obtain ⟨hVU₀, _, hVTT, hone, hmul⟩ := hVE
   choose _ hmul using hmul
   -- Shrink `V` to the neighbourhood `U` which the local action preserves.
   have hmulr (y : C) (hy : y ∈ V) (g h : Aut x) :
@@ -360,9 +371,9 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
     (f := fun g y ↦ (σ g y).right) hV hxV (fun g ↦ (e g).open_target) hact hxT
     (fun g ↦ congrArg Quiver.Total.right (hσx g)) hVTT hmulr
   let inst : MulAction (Aut x) U :=
-    { smul g y := ⟨(σ g y).right, hUσ y y.2 g⟩
-      one_smul y := Subtype.ext ((congrArg Quiver.Total.right (hone y (hUV y.2))).trans rfl)
-      mul_smul g h y := Subtype.ext (hmulr y (hUV y.2) g h) }
+    { smul g y := ⟨(σ g y).right, hUσ y y.property g⟩
+      one_smul y := Subtype.ext ((congrArg Quiver.Total.right (hone y (hUV y.property))).trans rfl)
+      mul_smul g h y := Subtype.ext (hmulr y (hUV y.property) g h) }
   have hsmul (g : Aut x) (y : U) : ((g • y : U) : C) = (σ g y).right := rfl
   have hUl (g : Aut x) (y : C) (hy : y ∈ U) : (σ g y).left = y := hσl g y (hUT y hy g)
   obtain ⟨F, hFo, hF⟩ := ActionCategory.exists_functor_of_sections (σ := σ) hsmul hUl hUσ
@@ -370,12 +381,12 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
   -- The arrows of each label are parametrized by their sources, through the chart `e g`.
   have hopen (g : Aut x) : IsOpenEmbedding fun y : U ↦ σ g y :=
     (e g).symm.isOpenEmbedding_restrict.comp
-      (.inclusion (fun y hy ↦ hUT y hy g) (hUo.preimage continuous_subtype_val))
+      (.inclusion (fun y hy ↦ hUT y hy g) (hUo.preimage continuous_subtypeVal))
   obtain ⟨hfull, hfaith, hFopen, hFx⟩ := isotropy_functor_properties hinj hdisj hcover
     (fun y hy ↦ hVU₀ y (hUV hy)) hsmul (fun g y hy ↦ hσW g y (hUT y hy g)) hUl hσx hopen hxU
     F hFo hF
-  exact ⟨U, hxU, inst, F, hUo, fun g ↦ ((hact g).comp_continuous continuous_subtype_val
-    fun y ↦ hUT _ y.2 g).subtype_mk _, hFo, hfull, hfaith, hFopen, hFx⟩
+  exact ⟨U, hxU, inst, F, hUo, fun g ↦ ((hact g).comp_continuous continuous_subtypeVal
+    fun y ↦ hUT _ y.property g).subtype_mk _, hFo, hfull, hfaith, hFopen, hFx⟩
 
 end Groupoid
 

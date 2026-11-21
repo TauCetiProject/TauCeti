@@ -119,12 +119,12 @@ theorem isIso_of_isIso_app_self {F G : ModuleCat.{u} R ⥤ D}
     let g : ModuleCat.of R (⨁ _ : M, R) ⟶ M :=
       ofHom (toModule R M M fun m ↦ LinearMap.toSpanSingleton R M m)
     let f : ModuleCat.of R (⨁ _ : LinearMap.ker g.hom, R) ⟶ ModuleCat.of R (⨁ _ : M, R) :=
-      ofHom (toModule R _ _ fun k ↦ LinearMap.toSpanSingleton R _ k.1)
+      ofHom (toModule R _ _ fun k ↦ LinearMap.toSpanSingleton R _ k.val)
     have hg (m : M) : g.hom (lof R M (fun _ ↦ R) m 1) = m := by simp [g]
     have hf (k : LinearMap.ker g.hom) : f.hom (lof R _ (fun _ ↦ R) k 1) = k := by simp [f]
     have hgf : g.hom ∘ₗ f.hom = 0 := linearMap_ext R fun k ↦ LinearMap.ext_ring (by
       rw [LinearMap.comp_apply, LinearMap.comp_apply, hf]
-      exact k.2)
+      exact k.property)
     have hfg : Function.Exact f.hom g.hom := fun y ↦ ⟨fun hy ↦ ⟨_, hf ⟨y, hy⟩⟩, by
       rintro ⟨x, rfl⟩
       exact LinearMap.congr_fun hgf x⟩
@@ -144,7 +144,7 @@ theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v
   have : Finite {i | ¬ IsZero (M i)} := hM
   have hrange :
       (⨆ i, LinearMap.range (Sigma.ι M i).hom) =
-        ⨆ i : {i | ¬ IsZero (M i)}, LinearMap.range (Sigma.ι M i.1).hom := by
+        ⨆ i : {i | ¬ IsZero (M i)}, LinearMap.range (Sigma.ι M i.val).hom := by
     apply le_antisymm
     · refine iSup_le fun i ↦ ?_
       by_cases hi : IsZero (M i)
@@ -152,7 +152,7 @@ theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v
         simp [hz]
       · exact le_iSup_of_le ⟨i, hi⟩ le_rfl
     · exact iSup_le fun i ↦
-        le_iSup (fun j ↦ LinearMap.range (Sigma.ι M j).hom) i.1
+        le_iSup (fun j ↦ LinearMap.range (Sigma.ι M j).hom) i.val
   have htop : (⨆ i, LinearMap.range (Sigma.ι M i).hom) = ⊤ := by
     have h := TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit
       (colimit.isColimit (Discrete.functor M))
@@ -349,27 +349,18 @@ theorem free_of_isColimit {c : Cocone F} (hc : IsColimit c) (h0 : Module.Free R 
     (hfree : ∀ n : ℕ, Module.Free R
       (F.obj (n + 1) ⧸ LinearMap.range (F.map (homOfLE (n.le_add_right 1))).hom)) :
     Module.Free R c.pt := by
-  -- Filter the colimit by `0` followed by the images of the legs.
-  let N : ℕ → Submodule R c.pt
-    | 0 => ⊥
-    | n + 1 => LinearMap.range (c.ι.app n).hom
+  -- Filter the colimit by the images of the legs.
+  let N (n : ℕ) : Submodule R c.pt := LinearMap.range (c.ι.app n).hom
   have hN (n : ℕ) (x : F.obj n) :
       (c.ι.app (n + 1)).hom (F.map (homOfLE (n.le_add_right 1)) x) = (c.ι.app n).hom x := by
     rw [← ModuleCat.comp_apply, c.w]
   have hι (n : ℕ) := injective_ι_app_of_isColimit F hc hinj n
-  refine Module.Free.of_filtration N (monotone_nat_of_le_succ fun n ↦ ?_) rfl
-    (eq_top_iff.2 ((TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit hc).ge.trans
-      (iSup_le fun n ↦ le_iSup N (n + 1)))) fun n ↦ ?_
-  · rcases n with _ | n
-    · exact bot_le
-    · rintro _ ⟨x, rfl⟩
-      exact ⟨_, hN n x⟩
-  rcases n with _ | n
-  · -- The first subquotient is the image of the leg out of `F₀`.
-    refine .of_equiv ((LinearEquiv.ofInjective _ (hι 0)).trans
-      (Submodule.quotEquivOfEqBot _ ?_).symm)
-    exact (Submodule.comap_bot _).trans (Submodule.ker_subtype _)
-  · -- The leg `F (n + 1) ≃ N (n + 2)` carries the image of `F n` onto `N (n + 1)`.
+  refine Module.Free.of_filtration N (monotone_nat_of_le_succ fun n ↦ ?_)
+    (Module.Free.of_equiv (LinearEquiv.ofInjective _ (hι 0)))
+    (TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit hc) fun n ↦ ?_
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨_, hN n x⟩
+  · -- Each leg carries the image of the preceding transition onto the preceding filtration step.
     have := hfree n
     refine .of_equiv (Submodule.Quotient.equiv
       (LinearMap.range (F.map (homOfLE (n.le_add_right 1))).hom) _

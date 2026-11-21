@@ -231,14 +231,14 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
     integrable_norm_fderiv_sq_add hv₁ hvc stdComplexLineReal stdComplexLineImag
   have hWi : Integrable W volume :=
     integrable_mul_norm_defect_sq stdComplexLineReal stdComplexLineImag
-      (c := fun z => χ z ^ 2) hu₁ (hχ.continuous.pow 2) hc hA
+      (c := fun z => χ z ^ 2) hu₁ (hχ.continuous.pow 2).continuousOn hc hA
       (fun z hz => by
         contrapose hz
         simp [Function.mem_support, image_eq_zero_of_notMem_tsupport hz])
   have hDvi : Integrable Dv volume := by
     simpa only [one_mul] using integrable_mul_norm_defect_sq stdComplexLineReal stdComplexLineImag
       (c := fun _ => (1 : ℝ)) hv₁
-      continuous_const hc hA (fun z hz => by
+      continuousOn_const hc hA (fun z hz => by
         contrapose hz
         have hzv : z ∉ tsupport v := fun hzv => hz (tsupport_smul_subset_left χ u hzv)
         simp [Function.mem_support, fderiv_of_notMem_tsupport ℝ hzv])

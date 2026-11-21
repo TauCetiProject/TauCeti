@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
+public import TauCeti.Analysis.Distribution.Mass.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
@@ -15,22 +16,24 @@ import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
 /-!
 # Distributions of order zero are Radon measures
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E`. A linear functional `T` on
-the test functions `𝓓(Ω, ℝ)` has **order zero** if on each compact `K ⊆ Ω` it is bounded in the
-sup norm: `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ` supported in `K`. Such a functional is
-the difference of two regular measures on `Ω`:
-`T φ = ∫ φ dν₁ - ∫ φ dν₂`, and conversely such a difference has order zero
-(`Distribution.forall_exists_abs_le_iff_exists_regular`). The measures are finite on compact
-subsets of `Ω` but need not be finite. The bound is the defining estimate of a distribution of
-order zero, so the theorem is stated for any linear functional on `𝓓(Ω, ℝ)` (a `LinearMapClass`),
-with distributions `T : 𝓓'(Ω, ℝ)` as the main case; continuity is not used.
+Let `Ω` be an open set of a real normed space `E`; the substantive case is finite-dimensional `E`,
+since in infinite dimensions every test function is zero and the statements below hold trivially.
+A linear functional `T` on the test functions `𝓓(Ω, ℝ)` has **order zero** (it satisfies
+`Distribution.HasLocallyFiniteMass`) if on each compact `K ⊆ Ω` it is bounded in the sup
+norm: `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ` supported in `K`. Such a functional is the
+difference of two regular measures on `Ω`: `T φ = ∫ φ dν₁ - ∫ φ dν₂`, and conversely such a
+difference has order zero (`Distribution.hasLocallyFiniteMass_iff_exists_regular`). The measures
+are finite on compact subsets of `Ω` but need not be finite. The bound is the defining estimate of
+a distribution of order zero, so the theorem is stated for any linear functional on `𝓓(Ω, ℝ)`
+(a `LinearMapClass`), with distributions `T : 𝓓'(Ω, ℝ)` as the main case; continuity is not
+used.
 
 This is how a derivative of locally finite total variation becomes a measure: the distributional
 derivatives of a function of locally bounded variation have order zero.
 
-The proof extends `T` to compactly supported continuous functions on `Ω`. Mollifying a continuous
-function with compact support in `Ω` by bumps of small radius gives test functions supported in a
-fixed compact subset of `Ω` that converge to it uniformly
+For finite-dimensional `E`, the proof extends `T` to compactly supported continuous functions on
+`Ω`. Mollifying a continuous function with compact support in `Ω` by bumps of small radius gives
+test functions supported in a fixed compact subset of `Ω` that converge to it uniformly
 (`Continuous.exists_testFunction_dist_le`), and the sup-norm bound makes the values of `T` along
 such a sequence converge, to a limit independent of the sequence. The extension is a linear
 functional on `C_c(Ω, ℝ)` that is bounded on order intervals, so the Riesz–Markov–Kakutani theorem
@@ -42,9 +45,10 @@ The converse uses the sup-norm bound for integrals of test functions
 
 ## Main results
 
-* `Distribution.forall_exists_abs_le_iff_exists_regular`: a linear functional on the test
-  functions has order zero if and only if it is the difference of the integrals against two regular
-  measures on `Ω`.
+* `Distribution.hasLocallyFiniteMass_iff_exists_regular`: a linear functional on the test
+  functions has order zero (`Distribution.HasLocallyFiniteMass`) if and only if it is the
+  difference of the integrals against two regular measures on `Ω`. No finite-dimensionality of `E`
+  is assumed.
 
 ## References
 
@@ -77,7 +81,7 @@ private lemma zeroExt_apply (f : C_c(Ω, ℝ)) (x : E) :
     zeroExt f x = if h : x ∈ Ω then f ⟨x, h⟩ else 0 := by
   split_ifs with h
   · exact Subtype.val_injective.extend_apply _ _ (⟨x, h⟩ : Ω)
-  · exact Function.extend_apply' _ _ _ fun ⟨y, hy⟩ => h (hy ▸ y.2)
+  · exact Function.extend_apply' _ _ _ fun ⟨y, hy⟩ => h (hy ▸ y.property)
 
 private lemma zeroExt_add (f g : C_c(Ω, ℝ)) (x : E) :
     zeroExt (f + g) x = zeroExt f x + zeroExt g x := by
@@ -94,11 +98,11 @@ private lemma continuous_zeroExt (f : C_c(Ω, ℝ)) : Continuous (zeroExt f) :=
 
 private lemma tsupport_zeroExt_subset (f : C_c(Ω, ℝ)) :
     tsupport (zeroExt f) ⊆ (↑) '' tsupport f :=
-  f.hasCompactSupport.tsupport_extend_zero_subset continuous_subtype_val
+  f.hasCompactSupport.tsupport_extend_zero_subset continuous_subtypeVal
 
 private lemma isCompact_image_tsupport (f : C_c(Ω, ℝ)) :
     IsCompact (((↑) : Ω → E) '' tsupport f) :=
-  f.hasCompactSupport.isCompact.image continuous_subtype_val
+  f.hasCompactSupport.isCompact.image continuous_subtypeVal
 
 variable [NormedSpace ℝ E] {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, ℝ) ℝ]
 
@@ -108,20 +112,6 @@ private lemma zeroExt_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) (x 
   split_ifs with h
   · exact TestFunction.toCompactlySupportedContinuousMap_apply φ ⟨x, h⟩
   · exact (φ.zero_on_compl h).symm
-
-/-- On a compact `K ⊆ Ω`, an order-zero bound can be taken with a nonnegative constant and tested
-against any pointwise bound. -/
-private lemma exists_nonneg_bound {T : 𝓕}
-    (hT : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →
-      |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ C, 0 ≤ C ∧ ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K → ∀ c, (∀ x, |φ x| ≤ c) → |T φ| ≤ C * c := by
-  obtain ⟨C, hC⟩ := hT K hK hKΩ
-  refine ⟨max C 0, le_max_right _ _, fun φ hφ c hc => ?_⟩
-  have hc0 : 0 ≤ c := (abs_nonneg _).trans (hc 0)
-  have hφc : ‖(φ : E →ᵇ ℝ)‖ ≤ c := (BoundedContinuousFunction.norm_le hc0).2 fun x => by
-    simpa using hc x
-  exact (hC φ hφ).trans <| (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)).trans
-    (mul_le_mul_of_nonneg_left hφc (le_max_right _ _))
 
 /-- `φ` is a sequence of test functions, supported in a common compact subset of `Ω`, that
 approximates the extension by zero of `f` uniformly, with error at most `ε n` at step `n`. -/
@@ -156,9 +146,7 @@ private lemma IsApprox.smul {f : C_c(Ω, ℝ)} {φ : ℕ → 𝓓(Ω, ℝ)} {ε 
   · simpa [zeroExt_smul, ← mul_sub, abs_mul] using
       mul_le_mul_of_nonneg_left (hφε n x) (abs_nonneg c)
 
-variable [LinearMapClass 𝓕 ℝ 𝓓(Ω, ℝ) ℝ] {T : 𝓕}
-  (hT : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →
-  |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖)
+variable [LinearMapClass 𝓕 ℝ 𝓓(Ω, ℝ) ℝ] {T : 𝓕} (hT : HasLocallyFiniteMass (T : 𝓓(Ω, ℝ) → ℝ))
 include hT
 
 /-- Two approximating sequences of the same function have values under `T` that are close, up to
@@ -168,7 +156,7 @@ private lemma IsApprox.exists_abs_sub_le {f : C_c(Ω, ℝ)} {φ ψ : ℕ → �
     ∃ C, 0 ≤ C ∧ ∀ m n, |T (φ m) - T (ψ n)| ≤ C * (ε m + ε' n) := by
   obtain ⟨⟨K, hK, hKΩ, hφK⟩, hφε⟩ := hφ
   obtain ⟨⟨K', hK', hK'Ω, hψK⟩, hψε⟩ := hψ
-  obtain ⟨C, hC0, hC⟩ := exists_nonneg_bound hT (hK.union hK') (union_subset hKΩ hK'Ω)
+  obtain ⟨C, hC0, hC⟩ := hT.exists_nonneg_bound (hK.union hK') (union_subset hKΩ hK'Ω)
   refine ⟨C, hC0, fun m n => ?_⟩
   rw [← map_sub]
   refine hC _ ?_ _ fun x => ?_
@@ -262,13 +250,14 @@ private lemma exists_bound_extendₗ {K : Set E} (hK : IsCompact K) (hKΩ : K �
     ∃ C, ∀ g : C_c(Ω, ℝ), ((↑) : Ω → E) '' tsupport g ⊆ K → ∀ c, (∀ x, |zeroExt g x| ≤ c) →
       |extendₗ hT g| ≤ C * c := by
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  obtain ⟨C, -, hC⟩ := exists_nonneg_bound hT hK.cthickening hδΩ
+  obtain ⟨C, -, hC⟩ := hT.exists_nonneg_bound hK.cthickening hδΩ
   refine ⟨C, fun g hgK c hc => ?_⟩
   obtain ⟨φ, hφK, hφ⟩ := exists_isApprox_of_subset g hK hgK hδ hδΩ
   have h₀ := tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
   refine le_of_tendsto_of_tendsto' (hφ.tendsto_extend hT h₀).abs
     (by simpa only [add_zero] using (h₀.const_add c).const_mul C)
     fun n => hC _ (hφK n) _ fun x => ?_
+  rw [Real.norm_eq_abs]
   linarith [abs_sub_abs_le_abs_sub (φ n x) (zeroExt g x), hφ.2 n x, hc x]
 
 /-- The extension of `T` is bounded above on every order interval `[0, f]`. -/
@@ -293,20 +282,29 @@ private lemma bddAbove_extendₗ_image_Icc (f : C_c(Ω, ℝ)) :
 
 /-! ### The Radon representation -/
 
-omit hT in
+omit hT [FiniteDimensional ℝ E] in
 /-- **A distribution of order zero is a signed Radon measure.** A linear functional `T` on the
-test functions of `Ω` is bounded on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for
-the test functions `φ` supported in `K`, if and only if there are regular measures `ν₁` and `ν₂`
+test functions of `Ω` has locally finite mass (`Distribution.HasLocallyFiniteMass`: it is bounded
+on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ` supported
+in `K`) if and only if there are regular measures `ν₁` and `ν₂`
 on `Ω` with `T φ = ∫ φ dν₁ - ∫ φ dν₂` for every test function `φ`. The measures are finite on
 compact subsets of `Ω` but need not be finite. The bound is the defining estimate of a
 distribution of order zero, so `T` need not be assumed continuous; the main case is a distribution
 `T : 𝓓'(Ω, ℝ)`. -/
-theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace E]
+theorem hasLocallyFiniteMass_iff_exists_regular [MeasurableSpace E] [BorelSpace E]
     (T : 𝓕) :
-    (∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K →
-      |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖) ↔
+    HasLocallyFiniteMass (T : 𝓓(Ω, ℝ) → ℝ) ↔
     ∃ ν₁ ν₂ : Measure Ω, ν₁.Regular ∧ ν₂.Regular ∧
       ∀ φ : 𝓓(Ω, ℝ), T φ = ∫ x, φ x ∂ν₁ - ∫ x, φ x ∂ν₂ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- In an infinite-dimensional space every test function vanishes.
+    have h0 (φ : 𝓓(Ω, ℝ)) : φ = 0 :=
+      TestFunction.ext <| congrFun <|
+        (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.contDiff.continuous).resolve_right hE
+    exact iff_of_true
+      (hasLocallyFiniteMass_def.2 fun K _ _ => ⟨0, le_rfl, fun φ _ => by simp [h0 φ]⟩)
+      ⟨0, 0, inferInstance, inferInstance, fun φ => by simp [h0 φ]⟩
   refine ⟨fun hT => ?_, ?_⟩
   · have := Ω.isOpen.locallyCompactSpace
     obtain ⟨ν₁, ν₂, h₁, h₂, h⟩ :=
@@ -315,9 +313,11 @@ theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace 
     refine ⟨ν₁, ν₂, h₁, h₂, fun φ => ?_⟩
     simpa using (extendₗ_toCompactlySupportedContinuousMap hT φ).symm.trans
       (h φ.toCompactlySupportedContinuousMap)
-  · rintro ⟨ν₁, ν₂, h₁, h₂, h⟩ K hK hKΩ
-    refine ⟨ν₁.real (((↑) : Ω → E) ⁻¹' K) + ν₂.real (((↑) : Ω → E) ⁻¹' K), fun φ hφ => ?_⟩
-    rw [h, add_mul, ← Real.norm_eq_abs]
+  · rintro ⟨ν₁, ν₂, h₁, h₂, h⟩
+    refine hasLocallyFiniteMass_def.2 fun K hK hKΩ => ?_
+    refine ⟨ν₁.real (((↑) : Ω → E) ⁻¹' K) + ν₂.real (((↑) : Ω → E) ⁻¹' K), by positivity,
+      fun φ hφ => ?_⟩
+    rw [Real.norm_eq_abs, h, add_mul, ← Real.norm_eq_abs]
     exact (norm_sub_le _ _).trans
       (add_le_add (φ.norm_integral_le_measureReal_mul_norm hK hKΩ hφ ν₁)
         (φ.norm_integral_le_measureReal_mul_norm hK hKΩ hφ ν₂))

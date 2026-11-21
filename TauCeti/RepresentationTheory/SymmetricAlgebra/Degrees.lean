@@ -26,7 +26,8 @@ Chevalley and Shephard–Todd; for the symmetric group they are the elementary s
 (`Representation.esymmSymmetricAlgebraInvariantsEquiv`, `TauCeti.esymmStandardInvariantsEquiv`).
 Such systems are not unique, and this file proves that their numerical invariants are.
 
-* Every basic invariant has positive degree, since the invariants of degree zero are the scalars.
+* Every basic invariant has positive degree, since the invariants of degree zero are the scalars,
+  and the number of basic invariants of degree one equals the rank of the linear invariants `M^G`.
 * For a finite group acting on a finite-dimensional vector space `M` over a field, a system of basic
   invariants has exactly `finrank M` members: the invariant ring has the Krull dimension of `Sym M`,
   which is integral over it.
@@ -50,6 +51,12 @@ average over `G` of `det(1 - t g)⁻¹` through the degrees.
 
 * `Representation.ne_zero_of_injective_aeval_symmetricAlgebraInvariants`: algebraically
   independent homogeneous invariants have positive degrees.
+* `Representation.two_le_of_injective_aeval_symmetricAlgebraInvariants`: if `ρ.invariants = ⊥`,
+  algebraically independent homogeneous invariants have degree at least `2`.
+* `natCard_subtype_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants` and
+  `card_filter_eq_one_of_bijective_aeval_symmetricAlgebraInvariants` (in the namespace
+  `Representation`): the number of basic invariants of degree `1` equals
+  `Module.finrank R ρ.invariants`.
 * `Representation.card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants`: a polynomial
   generating system of the invariants of a finite group has `finrank M` members.
 * `mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_mul_prod_one_sub_X_pow` (in the
@@ -154,6 +161,73 @@ theorem map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants [F
 
 end CommRing
 
+section LinearInvariants
+
+variable [CommRing R] [Nontrivial R] [Group G] [AddCommGroup M] [Module R M]
+  (ρ : Representation R G M) {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ}
+
+/-- If `ρ` has no nonzero linear invariants (`ρ.invariants = ⊥`), then every algebraically
+independent homogeneous invariant has degree at least `2`. -/
+theorem two_le_of_injective_aeval_symmetricAlgebraInvariants
+    (hinv : ρ.invariants = ⊥)
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hinj : Function.Injective (aeval (R := R) f)) (i : ι) : 2 ≤ d i := by
+  have hd0 := ρ.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hinj i
+  have hd1 : d i ≠ 1 := fun hi1 ↦ by
+    have hm : homogeneousSubmoduleOneEquiv R M ⟨f i, hi1 ▸ hf i⟩ ∈ ρ.invariants := by
+      rw [mem_invariants, ← ι_mem_symmetricAlgebraInvariants_iff,
+        ι_homogeneousSubmoduleOneEquiv_apply]
+      exact (f i).property
+    rw [hinv, Submodule.mem_bot] at hm
+    have hfi0 : f i = 0 := Subtype.ext <| by
+      simpa [hm] using (ι_homogeneousSubmoduleOneEquiv_apply R M ⟨f i, hi1 ▸ hf i⟩).symm
+    exact X_ne_zero i (hinj (by rw [aeval_X, hfi0, map_zero]))
+  omega
+
+/-- **The number of basic invariants of degree one equals the rank of the linear invariants.**
+If `Sym(M)^G` is a polynomial algebra on invariants `f i` homogeneous of degrees `d i`, then
+`Nat.card {i : ι // d i = 1}` equals `Module.finrank R ρ.invariants`. -/
+theorem natCard_subtype_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hbij : Function.Bijective (aeval (R := R) f)) :
+    Nat.card {i : ι // d i = 1} = Module.finrank R ρ.invariants := by
+  let := Subalgebra.gradedAlgebra ρ.isHomogeneous_symmetricAlgebraInvariants
+  have hd : ∀ i, d i ≠ 0 := ρ.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hbij.1
+  have hnt : Finsupp.NonTorsionWeight ℕ d := Finsupp.nonTorsionWeight_of ℕ d hd
+  rw [← ρ.finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_one,
+    ← Subalgebra.finrank_grading,
+    TauCeti.GradedAlgebra.finrank_eq_natCard_weight _
+      (fun i ↦ (Subalgebra.mem_grading_iff _ _).2 (hf i)) hbij 1]
+  refine Nat.card_congr (Equiv.ofBijective
+    (fun i : {i : ι // d i = 1} ↦
+      ⟨Finsupp.single i.val 1, by simp [Finsupp.weight_single, i.property]⟩) ⟨?_, ?_⟩)
+  · exact fun i j hij ↦
+      Subtype.ext (Finsupp.single_left_injective one_ne_zero (congrArg Subtype.val hij))
+  · rintro ⟨e, he⟩
+    have he0 : e ≠ 0 := by
+      rintro rfl
+      simp at he
+    obtain ⟨i, hi⟩ : ∃ i, e i ≠ 0 := by simpa [DFunLike.ne_iff] using he0
+    have hsub := Finsupp.weight_sub_single_add (w := d) hi
+    have hdi0 : d i ≠ 0 := hd i
+    have hdi1 : d i = 1 := by omega
+    have hw0 : Finsupp.weight d (e - Finsupp.single i 1) = 0 := by omega
+    have hsub0 : e - Finsupp.single i 1 = 0 := (Finsupp.weight_eq_zero_iff_eq_zero d).mp hw0
+    refine ⟨⟨i, hdi1⟩, Subtype.ext ?_⟩
+    have hcancel := Finsupp.sub_add_single_one_cancel hi
+    rwa [hsub0, zero_add] at hcancel
+
+/-- **Finite-index form of the degree-one basic invariant count.** -/
+theorem card_filter_eq_one_of_bijective_aeval_symmetricAlgebraInvariants [Fintype ι]
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hbij : Function.Bijective (aeval (R := R) f)) :
+    Finset.card {i : ι | d i = 1} = Module.finrank R ρ.invariants := by
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+  exact ρ.natCard_subtype_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetricAlgebraInvariants
+    hf hbij
+
+end LinearInvariants
+
 section Subgroup
 
 variable [CommRing R] [IsDomain R] [Group G] [AddCommMonoid M] [Module R M]
@@ -178,7 +252,7 @@ theorem card_filter_le_le_card_filter_le_of_comp_subtype {H : Subgroup G}
   have hfi : (f i : SymmetricAlgebra R M) ∈ symmetricAlgebraInvariants (ρ.comp H.subtype) :=
     (mem_symmetricAlgebraInvariants (ρ.comp H.subtype) _).2 fun h ↦ by
       rw [symmetricAlgebra_comp_apply]
-      exact (ρ.mem_symmetricAlgebraInvariants _).1 (f i).2 h
+      exact (ρ.mem_symmetricAlgebraInvariants _).1 (f i).property h
   obtain ⟨p, hp⟩ := hsurj ⟨_, hfi⟩
   have hp' := congrArg Subtype.val hp
   rw [← Subalgebra.coe_val, comp_aeval_apply, Subalgebra.coe_val] at hp'
@@ -189,19 +263,27 @@ end Subgroup
 
 section Field
 
-variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M] [FiniteDimensional k M]
+variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M]
 variable (ρ : Representation k G M)
 
-/-- **The number of basic invariants.** For a finite group acting on a finite-dimensional vector
-space `M`, if the invariant subalgebra is a polynomial algebra on a finite family of invariants,
-then this family has `finrank M` members. -/
-theorem card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants [Finite ι]
+/-- **The number of basic invariants.** For a finite group acting on a vector space `M`, if the
+invariant subalgebra is a polynomial algebra on a family of invariants, then this family has
+`finrank M` members. (For infinite-dimensional `M` both sides are `0`.) -/
+theorem card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants
     {f : ι → ρ.symmetricAlgebraInvariants} (hbij : Function.Bijective (aeval (R := k) f)) :
     Nat.card ι = Module.finrank k M := by
   have h := ringKrullDim_eq_of_ringEquiv (AlgEquiv.ofBijective (aeval f) hbij).toRingEquiv
-  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-    zero_add, ρ.ringKrullDim_symmetricAlgebraInvariants, ringKrullDim_eq_finrank] at h
-  exact_mod_cast h
+  -- Both sides are polynomial rings over `k`, whose Krull dimension is the cardinality of the
+  -- variables.
+  let b := Module.Free.chooseBasis k M
+  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field, zero_add,
+    ρ.ringKrullDim_symmetricAlgebraInvariants,
+    ringKrullDim_eq_of_ringEquiv (SymmetricAlgebra.equivMvPolynomial b).toRingEquiv,
+    MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field,
+    zero_add] at h
+  have h2 : ENat.card ι = ENat.card (Module.Free.ChooseBasisIndex k M) := by exact_mod_cast h
+  rw [Module.finrank_eq_nat_card_basis b]
+  simpa using congrArg ENat.toNat h2
 
 end Field
 

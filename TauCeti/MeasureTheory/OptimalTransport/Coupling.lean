@@ -42,9 +42,10 @@ separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
 * `TauCeti.IsCoupling.measurePreserving_fst`, `TauCeti.IsCoupling.measurePreserving_snd`,
   `TauCeti.IsCoupling.integral_comp_fst`, and `TauCeti.IsCoupling.integral_comp_snd` — projection
   and integral-transfer forms of the marginal conditions;
-* `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.sum` and
-  `TauCeti.isCoupling_zero` — the relation is compatible with the additive and scalar structure
-  of measures, which is what mixtures of transport problems use;
+* `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.smul_add_smul`,
+  `TauCeti.IsCoupling.smul_add_smul_left`, `TauCeti.IsCoupling.smul_add_smul_right`,
+  `TauCeti.IsCoupling.sum` and `TauCeti.isCoupling_zero` — the relation is compatible with the
+  additive and scalar structure of measures, which is what mixtures of transport problems use;
 * `TauCeti.IsCoupling.sub_add` — replacing a finite part of a coupling by a measure with the same
   two marginals keeps the coupling property, which is how a plan is perturbed locally;
 * `TauCeti.IsCoupling.prodProdProdComm` — exchanging the two middle coordinates of a product of
@@ -55,6 +56,9 @@ separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
   exactly when they have the same total mass, the witness being their normalised product;
 * `TauCeti.isCoupling_sum_map_pi` — pairing the source of each of finitely many independent
   samples with the target of a permuted one preserves both total marginals;
+* `TauCeti.isCoupling_withDensity_of_lintegral_eq` — a density against `μ.prod ν` with almost
+  everywhere unit rows and almost everywhere constant columns is a coupling of finite measures of
+  equal mass;
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
   invariance of the relation under the coordinate swap and under measurable equivalences of the
   two factors;
@@ -368,6 +372,24 @@ protected theorem smul_add_smul {σ : Measure (X × Y)} (hπ : IsCoupling π μ 
   simp only [Measure.coe_nnreal_smul] at h
   rwa [← add_smul, ← add_smul, hab, one_smul, one_smul] at h
 
+/-- A convex combination of couplings with a common target marginal couples the convex combination
+of their source marginals to that target. -/
+protected theorem smul_add_smul_left {σ : Measure (X × Y)} {μ' : Measure X}
+    (hπ : IsCoupling π μ ν) (hσ : IsCoupling σ μ' ν) {a b : NNReal} (hab : a + b = 1) :
+    IsCoupling (a • π + b • σ) (a • μ + b • μ') ν := by
+  have h := (hπ.smul (a : ENNReal)).add (hσ.smul (b : ENNReal))
+  simp only [Measure.coe_nnreal_smul] at h
+  rwa [← add_smul, hab, one_smul] at h
+
+/-- A convex combination of couplings with a common source marginal couples that source to the
+convex combination of their target marginals. -/
+protected theorem smul_add_smul_right {σ : Measure (X × Y)} {ν' : Measure Y}
+    (hπ : IsCoupling π μ ν) (hσ : IsCoupling σ μ ν') {a b : NNReal} (hab : a + b = 1) :
+    IsCoupling (a • π + b • σ) μ (a • ν + b • ν') := by
+  have h := (hπ.smul (a : ENNReal)).add (hσ.smul (b : ENNReal))
+  simp only [Measure.coe_nnreal_smul] at h
+  rwa [← add_smul, hab, one_smul] at h
+
 /-- The sum of a family of couplings couples the sums of the two families of marginals. -/
 protected theorem sum {ι : Type*} {πs : ι → Measure (X × Y)} {μs : ι → Measure X}
     {νs : ι → Measure Y} (h : ∀ i, IsCoupling (πs i) (μs i) (νs i)) :
@@ -486,6 +508,39 @@ theorem isCoupling_of_measure_prod_univ_of_measure_univ_prod
     (ht : ∀ t, MeasurableSet t → π (univ ×ˢ t) = ν t) : IsCoupling π μ ν where
   fst_eq := Measure.ext fun s hsm ↦ by rw [Measure.fst_apply hsm, ← prod_univ]; exact hs s hsm
   snd_eq := Measure.ext fun t htm ↦ by rw [Measure.snd_apply htm, ← univ_prod]; exact ht t htm
+
+/-- A density `f` against `μ.prod ν` whose rows integrate to `1` against `ν` for `μ`-almost every
+`x`, and whose columns integrate to a constant against `μ` for `ν`-almost every `y`, defines a
+coupling of `μ` and `ν`, when `μ` and `ν` are finite measures of equal mass. -/
+theorem isCoupling_withDensity_of_lintegral_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (hμν : μ univ = ν univ) {f : X × Y → ℝ≥0∞} (hf : AEMeasurable f (μ.prod ν))
+    (hrow : ∀ᵐ x ∂μ, ∫⁻ y, f (x, y) ∂ν = 1) {κ : ℝ≥0∞}
+    (hcol : ∀ᵐ y ∂ν, ∫⁻ x, f (x, y) ∂μ = κ) :
+    IsCoupling ((μ.prod ν).withDensity f) μ ν := by
+  by_cases hν : ν = 0
+  · have hμ : μ = 0 := by rwa [← Measure.measure_univ_eq_zero, hμν, Measure.measure_univ_eq_zero]
+    subst hμ hν
+    exact ⟨by simp, by simp⟩
+  have hfst : ((μ.prod ν).withDensity f).fst = μ := by
+    ext s hs
+    rw [Measure.fst_apply hs, ← prod_univ, withDensity_apply _ (hs.prod MeasurableSet.univ),
+      setLIntegral_prod _ hf.restrict]
+    simp_rw [Measure.restrict_univ]
+    rw [setLIntegral_congr_fun_ae hs (hrow.mono fun x hx _ ↦ hx), setLIntegral_const, one_mul]
+  have hsnd (t : Set Y) (ht : MeasurableSet t) : ((μ.prod ν).withDensity f).snd t = κ * ν t := by
+    rw [Measure.snd_apply ht, ← univ_prod, withDensity_apply _ (MeasurableSet.univ.prod ht),
+      setLIntegral_prod_symm _ hf.restrict]
+    simp_rw [Measure.restrict_univ]
+    rw [setLIntegral_congr_fun_ae ht (hcol.mono fun y hy _ ↦ hy), setLIntegral_const]
+  -- Comparing total masses forces `κ = 1`.
+  have hκ : κ = 1 := by
+    have h₁ := hsnd univ MeasurableSet.univ
+    rw [Measure.snd_univ, ← Measure.fst_univ, hfst, hμν] at h₁
+    exact (ENNReal.mul_eq_right (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)).1
+      h₁.symm
+  refine ⟨hfst, ?_⟩
+  ext t ht
+  rw [hsnd t ht, hκ, one_mul]
 
 /-- The coupling relation is invariant under exchanging the two coordinates. -/
 @[simp]
@@ -682,7 +737,7 @@ variable {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
 
 /-- Two bundled couplings are equal when their underlying measures are equal. -/
 @[ext]
-theorem ext {π σ : Coupling μ ν} (h : π.1.toMeasure = σ.1.toMeasure) : π = σ :=
+theorem ext {π σ : Coupling μ ν} (h : π.val.toMeasure = σ.val.toMeasure) : π = σ :=
   Subtype.ext (ProbabilityMeasure.toMeasure_injective h)
 
 /-- The independent coupling of two probability measures: their product. -/
@@ -704,22 +759,22 @@ instance instNonempty : Nonempty (Coupling μ ν) :=
 
 /-- The first marginal of a bundled coupling. -/
 def fst (π : Coupling μ ν) : ProbabilityMeasure X :=
-  π.1.map Prod.fst
+  π.val.map Prod.fst
 
 /-- The second marginal of a bundled coupling. -/
 def snd (π : Coupling μ ν) : ProbabilityMeasure Y :=
-  π.1.map Prod.snd
+  π.val.map Prod.snd
 
 /-- The underlying measure of the first marginal is the pushforward along the first projection.
 This is not a `simp` lemma: `simp` rewrites `π.fst` to `μ` via `fst_eq` instead. -/
 theorem coe_fst (π : Coupling μ ν) :
-    (π.fst).toMeasure = π.1.toMeasure.map Prod.fst :=
+    (π.fst).toMeasure = π.val.toMeasure.map Prod.fst :=
   (rfl)
 
 /-- The underlying measure of the second marginal is the pushforward along the second projection.
 This is not a `simp` lemma: `simp` rewrites `π.snd` to `ν` via `snd_eq` instead. -/
 theorem coe_snd (π : Coupling μ ν) :
-    (π.snd).toMeasure = π.1.toMeasure.map Prod.snd :=
+    (π.snd).toMeasure = π.val.toMeasure.map Prod.snd :=
   (rfl)
 
 /-- The first marginal of a bundled coupling is its prescribed source. -/
@@ -727,26 +782,26 @@ theorem coe_snd (π : Coupling μ ν) :
 theorem fst_eq (π : Coupling μ ν) : π.fst = μ :=
   ProbabilityMeasure.toMeasure_injective <| by
     rw [fst, ProbabilityMeasure.toMeasure_map]
-    exact π.2.fst_eq
+    exact π.property.fst_eq
 
 /-- The second marginal of a bundled coupling is its prescribed target. -/
 @[simp]
 theorem snd_eq (π : Coupling μ ν) : π.snd = ν :=
   ProbabilityMeasure.toMeasure_injective <| by
     rw [snd, ProbabilityMeasure.toMeasure_map]
-    exact π.2.snd_eq
+    exact π.property.snd_eq
 
 /-- Exchanging the two coordinates of a bundled coupling. -/
 def swap (π : Coupling μ ν) : Coupling ν μ :=
-  ⟨π.1.map Prod.swap, by
+  ⟨π.val.map Prod.swap, by
     rw [ProbabilityMeasure.toMeasure_map]
-    exact π.2.swap⟩
+    exact π.property.swap⟩
 
 /-- The underlying probability measure of the exchanged coupling is the pushforward along the
 coordinate swap. -/
 @[simp]
 theorem coe_swap (π : Coupling μ ν) :
-    (π.swap : ProbabilityMeasure (Y × X)) = π.1.map Prod.swap :=
+    (π.swap : ProbabilityMeasure (Y × X)) = π.val.map Prod.swap :=
   (rfl)
 
 /-- Exchanging the coordinates twice is the identity. -/

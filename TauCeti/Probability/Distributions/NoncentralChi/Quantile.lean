@@ -66,11 +66,11 @@ theorem quantile_noncentralChiMeasure_eq_iff (hk : 0 ≤ k) (hs : 0 < s) (hu : u
   constructor
   · rintro rfl
     refine ⟨mul_pos hs (sqrt_pos.2 hpos), ?_⟩
-    rw [cdf_noncentralChiMeasure_eq hk hs, ite_eq_right (not_lt.mpr (by positivity)),
+    rw [cdf_noncentralChiMeasure_eq hs, ite_eq_right (not_lt.mpr (by positivity)),
       mul_div_cancel_left₀ _ hs.ne', sq_sqrt hpos.le,
       cdf_quantile_noncentralChiSquaredMeasure hk hu hcut']
   · rintro ⟨hx, hcdf⟩
-    rw [cdf_noncentralChiMeasure_eq hk hs, ite_eq_right (not_lt.mpr hx.le)] at hcdf
+    rw [cdf_noncentralChiMeasure_eq hs, ite_eq_right (not_lt.mpr hx.le)] at hcdf
     rw [((quantile_noncentralChiSquaredMeasure_eq_iff hk hu hcut').2
       ⟨by positivity, hcdf⟩), sqrt_sq (div_pos hx hs).le, mul_div_cancel₀ _ hs.ne']
 

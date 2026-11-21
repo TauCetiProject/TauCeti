@@ -11,6 +11,10 @@ public import Mathlib.CategoryTheory.Abelian.CommSq
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
+public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
+public import TauCeti.CategoryTheory.Subfunctor.Basic
+public import TauCeti.Order.CompleteLattice.MulticoequalizerDiagram
+public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 
 /-!
 # The Mayer–Vietoris sequence of a pushout of simplicial sets
@@ -49,7 +53,14 @@ of singular homology for an open cover by two sets is obtained from such a squar
 * `SSet.mayerVietoris_exact₁`, `SSet.mayerVietoris_exact₂`, `SSet.mayerVietoris_exact₃`:
   exactness at `Hₘ(X₁)`, at `Hₙ(X₂) ⊞ Hₙ(X₃)` and at `Hₙ(X₄)`.
 * `SSet.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `SSet.mayerVietorisShortComplexMap`: the map of Mayer–Vietoris short exact sequences induced by
+  a map of pushout squares.
 * `SSet.mayerVietorisδ_naturality`: the connecting morphism is natural in maps of pushout squares.
+* `SSet.quasiIso_chainComplexMap_of_isPushout`: a map of pushout squares that induces
+  quasi-isomorphisms on chains at three corners induces one at the fourth.
+* `SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq`: for a bicartesian square of subcomplexes
+  `A₁, A₂, A₃, A₄` and a further subcomplex `S`, if `S ⊓ Aᵢ ⊆ Aᵢ` is a quasi-isomorphism on chains
+  for `i = 1, 2, 3`, then so is `S ⊓ A₄ ⊆ A₄`.
 
 ## References
 
@@ -144,6 +155,52 @@ lemma mayerVietorisFromBiprod_naturality (hr : r ≫ φ₄ = φ₂ ≫ r') (hb :
         mayerVietorisFromBiprod R r' b' n := by
   ext <;> simp [← homologyMap_comp, hr, hb]
 
+variable {φ₁ φ₂ φ₃ φ₄} in
+/-- The map of Mayer–Vietoris short complexes of chain complexes induced by a map of pushout
+squares: `C(φ₁)`, `C(φ₂) ⊞ C(φ₃)` and `C(φ₄)` on the three terms. -/
+def mayerVietorisShortComplexMap (sq : IsPushout t l r b) (sq' : IsPushout t' l' r' b')
+    (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+    (hb : b ≫ φ₄ = φ₃ ≫ b') :
+    (sq.map ((chainComplexFunctor C).obj R)).shortComplex ⟶
+      (sq'.map ((chainComplexFunctor C).obj R)).shortComplex where
+  τ₁ := chainComplexMap φ₁ R
+  τ₂ := biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
+  τ₃ := chainComplexMap φ₄ R
+  comm₁₂ := by
+    -- Expose the two `f` maps to check the square on both biproduct projections.
+    change chainComplexMap φ₁ R ≫
+        biprod.lift (chainComplexMap t' R) (-chainComplexMap l' R) =
+      biprod.lift (chainComplexMap t R) (-chainComplexMap l R) ≫
+        biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
+    apply biprod.hom_ext <;> simp [← Functor.map_comp, ht, hl]
+  comm₂₃ := by
+    -- Expose the two `g` maps to check the square on both biproduct inclusions.
+    change biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R) ≫
+        biprod.desc (chainComplexMap r' R) (chainComplexMap b' R) =
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R) ≫ chainComplexMap φ₄ R
+    apply biprod.hom_ext' <;> simp [← Functor.map_comp, hr, hb]
+
+section
+
+variable {φ₁ φ₂ φ₃ φ₄} (sq : IsPushout t l r b) (sq' : IsPushout t' l' r' b')
+  (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+  (hb : b ≫ φ₄ = φ₃ ≫ b')
+
+@[simp]
+lemma mayerVietorisShortComplexMap_τ₁ :
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb).τ₁ = chainComplexMap φ₁ R := (rfl)
+
+@[simp]
+lemma mayerVietorisShortComplexMap_τ₂ :
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb).τ₂ =
+      biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R) := (rfl)
+
+@[simp]
+lemma mayerVietorisShortComplexMap_τ₃ :
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb).τ₃ = chainComplexMap φ₄ R := (rfl)
+
+end
+
 private lemma mayerVietorisToBiprod_eq (t : X₁ ⟶ X₂) (l : X₁ ⟶ X₃) (n : ℕ) :
     mayerVietorisToBiprod R t l n =
       biprod.lift (SSet.homologyMap t R n)
@@ -229,25 +286,52 @@ lemma mayerVietorisδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
     (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
     (hb : b ≫ φ₄ = φ₃ ≫ b') (n m : ℕ) (h : m + 1 = n := by lia) :
     mayerVietorisδ R sq n m h ≫ SSet.homologyMap φ₁ R m =
-      SSet.homologyMap φ₄ R n ≫ mayerVietorisδ R sq' n m h := by
-  let ψ : (sq.map ((chainComplexFunctor C).obj R)).shortComplex ⟶
-      (sq'.map ((chainComplexFunctor C).obj R)).shortComplex :=
-    { τ₁ := chainComplexMap φ₁ R
-      τ₂ := biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
-      τ₃ := chainComplexMap φ₄ R
-      comm₁₂ := by
-        -- Expose the two `f` maps to check the square on both biproduct projections.
-        change chainComplexMap φ₁ R ≫
-            biprod.lift (chainComplexMap t' R) (-chainComplexMap l' R) =
-          biprod.lift (chainComplexMap t R) (-chainComplexMap l R) ≫
-            biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
-        apply biprod.hom_ext <;> simp [← Functor.map_comp, ht, hl]
-      comm₂₃ := by
-        -- Expose the two `g` maps to check the square on both biproduct inclusions.
-        change biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R) ≫
-            biprod.desc (chainComplexMap r' R) (chainComplexMap b' R) =
-          biprod.desc (chainComplexMap r R) (chainComplexMap b R) ≫ chainComplexMap φ₄ R
-        apply biprod.hom_ext' <;> simp [← Functor.map_comp, hr, hb] }
-  exact HomologicalComplex.HomologySequence.δ_naturality ψ _ _ n m h
+      SSet.homologyMap φ₄ R n ≫ mayerVietorisδ R sq' n m h :=
+  HomologicalComplex.HomologySequence.δ_naturality
+    (mayerVietorisShortComplexMap R sq sq' ht hl hr hb) _ _ n m h
+
+include sq in
+variable {φ₁ φ₂ φ₃ φ₄} in
+/-- **Comparison of Mayer–Vietoris sequences.** For a map of pushout squares of simplicial sets
+whose top maps are monomorphisms, if the maps of chains with coefficients in `R` induced on three
+corners `X₁`, `X₂` and `X₃` are quasi-isomorphisms, then so is the one induced on the fourth corner
+`X₄`. -/
+lemma quasiIso_chainComplexMap_of_isPushout (sq' : IsPushout t' l' r' b') [Mono t']
+    (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+    (hb : b ≫ φ₄ = φ₃ ≫ b') (h₁ : QuasiIso (chainComplexMap φ₁ R))
+    (h₂ : QuasiIso (chainComplexMap φ₂ R)) (h₃ : QuasiIso (chainComplexMap φ₃ R)) :
+    QuasiIso (chainComplexMap φ₄ R) := by
+  let ψ := mayerVietorisShortComplexMap R sq sq' ht hl hr hb
+  have hψ₂ : QuasiIso ψ.τ₂ := by
+    rw [mayerVietorisShortComplexMap_τ₂]
+    exact HomologicalComplex.quasiIso_biprod_map _ _
+  have hψ₃ : QuasiIso ψ.τ₃ := HomologicalComplex.HomologySequence.quasiIso_τ₃ ψ
+    (shortExact_mayerVietorisShortComplex R sq) (shortExact_mayerVietorisShortComplex R sq')
+    (by rwa [mayerVietorisShortComplexMap_τ₁]) hψ₂
+  rwa [mayerVietorisShortComplexMap_τ₃] at hψ₃
+
+section Subcomplex
+
+variable {X : SSet.{w}} {S A₁ A₂ A₃ A₄ : X.Subcomplex}
+
+/-- **Comparison of Mayer–Vietoris sequences of subcomplexes.** Let `A₁, A₂, A₃, A₄` be a
+bicartesian square of subcomplexes of `X`, so that `A₂ ⊔ A₃ = A₄` and `A₂ ⊓ A₃ = A₁`, and let `S`
+be a further subcomplex. If the inclusions `S ⊓ A₁ ⊆ A₁`, `S ⊓ A₂ ⊆ A₂` and `S ⊓ A₃ ⊆ A₃` induce
+quasi-isomorphisms on chains with coefficients in `R`, then so does `S ⊓ A₄ ⊆ A₄`. -/
+lemma quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq (hsq : Subcomplex.BicartSq A₁ A₂ A₃ A₄)
+    (h₁ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₁ ≤ A₁)) R))
+    (h₂ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₂ ≤ A₂)) R))
+    (h₃ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₃ ≤ A₃)) R)) :
+    QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₄ ≤ A₄)) R) :=
+  -- The inclusions `S ⊓ Aᵢ ⊆ Aᵢ` form a map of pushout squares; each square commutes because
+  -- both of its composites are the inclusion of a subcomplex.
+  quasiIso_chainComplexMap_of_isPushout R (Subcomplex.BicartSq.isPushout (hsq.inf_left S))
+    hsq.isPushout
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp]) h₁ h₂ h₃
+
+end Subcomplex
 
 end SSet

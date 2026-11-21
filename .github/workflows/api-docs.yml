@@ -45,11 +45,14 @@ env:
 
 jobs:
   build-docs:
-    # Keep hourly docs builds independent of the hosted-runner backlog.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-16x32-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    # The Fleet PR pool, as full-lint-label.yml and nightly-verify.yml use, so that the full
+    # re-analysis after a pin bump (about 5 h on a 4-core hosted runner) does not hold a scarce
+    # GitHub-hosted runner. Set vars.PICKER_GITHUB_FALLBACK='true'
+    # to return it to ubuntu-24.04 without a PR.
+    runs-on: ${{ (vars.FLEET_CI_ENABLED == 'true' && vars.PICKER_GITHUB_FALLBACK != 'true') && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet-pr"]}') || 'ubuntu-24.04' }}
     # A full rebuild (after a pin bump) analyzes all of TauCeti; everything else is far quicker.
+    # The doc-gen4 step has a shorter limit of its own, so that a build too long for one run still
+    # leaves time to save its progress for the next (see "Save the doc-gen4 build state").
     timeout-minutes: 300
     permissions:
       contents: read
@@ -84,10 +87,9 @@ jobs:
       # Pinned leanprover/elan release, verified by SHA-256; scripts/test_elan_pin.py keeps the
       # copies of the pin honest.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
           project-directory: .
       - name: Install elan (pinned + checksum)
         env:
@@ -135,7 +137,8 @@ jobs:
           restore-keys: |
             docs-build-v2-no-equations-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-
 
-      # doc-gen4 needs TauCeti's oleans. ci.yml publishes them, and ci.yml and pr-build.yml
+      # doc-gen4 needs TauCeti's oleans. Merge-queue staging publishes them before each landing
+      # (ci.yml only as a fallback for pushes outside the queue), and ci.yml and pr-build.yml
       # already restore them. Restore into the root project rather than docbuild: a path
       # dependency builds in its own directory.
       - name: Configure the Lake artifact cache (no-op unless the public endpoints are set)
@@ -175,8 +178,42 @@ jobs:
       # there is no second independently pinned copy to drift. The pinned doc-gen4 source still
       # uses Lean internals, though, and may need updating after a Lean bump. Compile it on its own
       # first so an incompatibility fails in minutes rather than near the end of the full build.
+      #
+      # The doc-gen4 executable's content hash is part of every module's doc-gen4 trace, so a
+      # different binary invalidates the whole database. Lean compiles reproducibly, but leansqlite,
+      # UnicodeBasic and MD4Lean compile C with the runner's system `cc`, so a runner image update
+      # can yield a different binary from the same sources, and the next run then re-analyzes every
+      # module (as after the move from image 20261111.127.1 to 20261111.370.1). Keep the
+      # executable's build, keyed on the pins alone, so it changes only when its sources do. The
+      # entry is saved as soon as it is built, before the long step that depends on it.
+      - name: Restore the doc-gen4 executable's build
+        id: docgen-exe
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .lake/packages/doc-gen4/.lake/build
+            .lake/packages/leansqlite/.lake/build
+            .lake/packages/UnicodeBasic/.lake/build
+            .lake/packages/MD4Lean/.lake/build
+            .lake/packages/BibtexQuery/.lake/build
+            .lake/packages/Cli/.lake/build
+          key: docgen-exe-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'docbuild/lake-manifest.json') }}
+
       - name: Verify doc-gen4 is compatible with TauCeti's toolchain
         run: lake build doc-gen4
+
+      - name: Save the doc-gen4 executable's build
+        if: steps.docgen-exe.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .lake/packages/doc-gen4/.lake/build
+            .lake/packages/leansqlite/.lake/build
+            .lake/packages/UnicodeBasic/.lake/build
+            .lake/packages/MD4Lean/.lake/build
+            .lake/packages/BibtexQuery/.lake/build
+            .lake/packages/Cli/.lake/build
+          key: docgen-exe-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'docbuild/lake-manifest.json') }}
 
       # doc-gen4 documents a library's root modules and their closure; TauCeti's root is empty
       # by design, so we regenerate a throwaway aggregator root that imports the whole glob.
@@ -192,6 +229,12 @@ jobs:
       # previous run's provenance marker goes too, since the step after this one writes it anew, and
       # so does the previous facts file, which describes the previous marker's commit.
       - name: Build the API documentation (doc-gen4)
+        id: docgen
+        # Below the job's limit, leaving time to save the build state after a timeout. A full
+        # analysis of TauCeti takes longer than one run; each run then continues where the last
+        # one stopped. The build stops itself at 255 minutes (see the run script); this limit is
+        # the backstop.
+        timeout-minutes: 270
         env:
           # Give doc-gen4 more memory without doubling Lake's runtime worker count.
           LEAN_NUM_THREADS: "8"
@@ -205,7 +248,29 @@ jobs:
         run: |
           rm -rf .lake/build/doc/TauCeti .lake/build/doc/SOURCE_SHA .lake/build/doc/facts.json.gz
           rm -f .lake/build/doc-data/*.docs_built
-          lake build TauCetiDocs:docs
+          # Stop the whole build, not just Lake, before the step limit. When GitHub's step limit
+          # fires it stops the shell but leaves Lake's doc-gen4 processes running, so they keep
+          # writing the database while the save below archives it, and tar refuses the archive
+          # ("file changed as we read it"): the progress is lost and the next run starts over.
+          # So the build runs in a session of its own, whose process group holds every process
+          # Lake starts; its id is recorded for the backstop step below.
+          group_file="$RUNNER_TEMP/docgen-process-group"
+          rm -f "$group_file"
+          setsid --wait bash -c 'echo "$$" > "$1" && exec lake build TauCetiDocs:docs' _ "$group_file" &
+          build=$!
+          until [ -s "$group_file" ] || ! kill -0 "$build" 2>/dev/null; do sleep 1; done
+          deadline=$((SECONDS + 255 * 60))
+          while kill -0 "$build" 2>/dev/null && [ "$SECONDS" -lt "$deadline" ]; do sleep 5; done
+          if kill -0 "$build" 2>/dev/null; then
+            echo "::warning title=Docs build stopped::not finished after 255 minutes; stopping it so its progress can be saved"
+            group=$(cat "$group_file")
+            kill -TERM -- "-$group" 2>/dev/null || true
+            for _ in $(seq 60); do pgrep -g "$group" >/dev/null || break; sleep 1; done
+            kill -KILL -- "-$group" 2>/dev/null || true
+            wait "$build" || true
+            exit 124
+          fi
+          wait "$build"
 
       # Stamp the tree with the commit it was generated from, BEFORE it is cached, so the
       # provenance travels with the tree wherever it is later restored. This is what makes the
@@ -248,6 +313,34 @@ jobs:
         if: steps.facts.outcome == 'failure'
         run: echo "::warning title=No documentation facts::this tree is saved without facts.json.gz; the next hourly run exports again"
 
+      # Backstop for the stop inside the build step: if that step was cancelled or hit its own
+      # limit, processes of the build's group may still be running. Stop them and confirm they
+      # have exited; the build state is saved only once nothing can still be writing it.
+      - name: Stop any doc-gen4 build still running
+        id: quiescent
+        if: ${{ always() && steps.docgen.outcome != 'skipped' && steps.docgen.outcome != '' }}
+        run: |
+          group_file="$RUNNER_TEMP/docgen-process-group"
+          # The build writes this file before it starts Lake, so without it nothing was started.
+          if [ -e "$group_file" ]; then
+            group=$(cat "$group_file")
+            case "$group" in
+              ''|*[!0-9]*) echo "::warning::unreadable docs build process group; not saving its state"; exit 0 ;;
+            esac
+            if pgrep -g "$group" >/dev/null; then
+              echo "::warning::the docs build was still running; stopping it"
+              kill -TERM -- "-$group" 2>/dev/null || true
+              for _ in $(seq 60); do pgrep -g "$group" >/dev/null || break; sleep 1; done
+              kill -KILL -- "-$group" 2>/dev/null || true
+              for _ in $(seq 60); do pgrep -g "$group" >/dev/null || break; sleep 1; done
+            fi
+            if pgrep -g "$group" >/dev/null; then
+              echo "::warning::the docs build is still running; not saving its state"
+              exit 0
+            fi
+          fi
+          echo "stopped=true" >> "$GITHUB_OUTPUT"
+
       # pages.yml publishes the most recently SAVED tree, which is not necessarily the newest one:
       # re-running an old run of this workflow would save its older tree last, and the next Pages
       # run would publish it. So a run saves nothing once a later run has succeeded. Its build state
@@ -255,6 +348,8 @@ jobs:
       # is what every run did before this check existed.
       - name: Check that no later run has already succeeded
         id: superseded
+        # Also after the doc-gen4 step fails or times out: the build state is saved then too.
+        if: ${{ always() && steps.docgen.outcome != 'skipped' && steps.docgen.outcome != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -280,10 +375,14 @@ jobs:
           path: docbuild/.lake/build/doc
           key: docs-html-v2-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
 
-      # Saved only after a successful build: a failed build may have left the database half
-      # updated, and the next run is better off restoring the last good state.
+      # Saved whenever the doc-gen4 step ran, including when it failed, timed out or was cancelled,
+      # so that the next run continues from here rather than from the last complete build. That
+      # state is safe to resume from: doc-gen4 writes each module's analysis to the database before
+      # Lake records that module as done, so a module interrupted mid-analysis is simply analyzed
+      # again, and every page is rendered afresh in each run. A partial tree is never published:
+      # "Save the generated API docs" above still requires every step before it to succeed.
       - name: Save the doc-gen4 build state
-        if: steps.superseded.outputs.superseded != 'true'
+        if: ${{ always() && steps.superseded.outcome == 'success' && steps.superseded.outputs.superseded != 'true' && steps.quiescent.outputs.stopped == 'true' }}
         uses: actions/cache/save@v4
         with:
           path: docbuild/.lake/build
@@ -295,13 +394,15 @@ jobs:
       # here costs cache space, not the docs. Caches belong to the ref that saved them, and main's
       # are the ones Pages restores, so each ref prunes only its own.
       - name: Prune superseded cache entries
+        # After a partial save too, or repeated timeouts would accumulate entries.
+        if: ${{ always() && steps.superseded.outcome == 'success' }}
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          for prefix in docs-build-v2-no-equations- docs-html-v2-; do
+          for prefix in docs-build-v2-no-equations- docs-html-v2- docgen-exe-v1-; do
             # Newest first; keep three so a Pages run that restored one just now still finds it.
             gh cache list -R "$REPO" --ref "$GITHUB_REF" --key "$prefix" --sort created_at --order desc --limit 100 --json id \
               --jq '.[3:][].id' |

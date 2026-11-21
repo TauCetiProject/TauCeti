@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
-public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.Topology.Sheaves.Cartan
 import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 import TauCeti.AlgebraicGeometry.Modules.Localization
-import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.AddCommGrp
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
-import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
 
 /-!
 # Serre's vanishing theorem on affine opens
@@ -70,9 +67,7 @@ induction on the number of members.
 
 public section
 
-noncomputable section
-
-open CategoryTheory Limits Opposite TopologicalSpace AlgebraicGeometry TauCeti.CategoryTheory
+open CategoryTheory Limits TauCeti.CategoryTheory
 
 universe u
 
@@ -109,15 +104,10 @@ private lemma exists_sub_eq {W A₀ A₁ A₀₁ : X.Opens} (hW : IsAffineOpen W
     rfl
   rw [hρ] at hy hy'
   -- `c ^ m` and `d ^ n` generate the unit ideal of `Γ(X, W)`
-  have hpow (f : Γ(X, W)) (k : ℕ) : X.basicOpen f ≤ X.basicOpen (f ^ k) := by
-    rcases k.eq_zero_or_pos with rfl | hk
-    · simpa using X.basicOpen_le f
-    · rw [Scheme.basicOpen_pow _ _ hk]
-  obtain ⟨p, q, hpq⟩ := Ideal.mem_span_pair.1 ((hW.self_le_iSup_basicOpen_iff
-    (s := {c ^ m, d ^ n})).1 (hcd.trans (sup_le
-      ((hpow c m).trans (le_iSup_of_le ⟨c ^ m, by simp⟩ le_rfl))
-      ((hpow d n).trans (le_iSup_of_le ⟨d ^ n, by simp⟩ le_rfl)))) ▸ Submodule.mem_top :
-        (1 : Γ(X, W)) ∈ Ideal.span {c ^ m, d ^ n})
+  have hspan : Ideal.span ({c, d} : Set Γ(X, W)) = ⊤ :=
+    hW.self_le_iSup_basicOpen_iff.mp (by simpa only [iSup_subtype, iSup_pair] using hcd)
+  have hcd' : IsCoprime c d := Ideal.mem_span_pair.mp (hspan ▸ Submodule.mem_top)
+  obtain ⟨p, q, hpq⟩ := hcd'.pow (m := m) (n := n)
   refine ⟨X.presheaf.map (homOfLE (X.basicOpen_le c)).op q • y,
     -(X.presheaf.map (homOfLE (X.basicOpen_le d)).op p • y'), ?_⟩
   -- the restriction of `p * c ^ m + q * d ^ n = 1` to `D(c) ∩ D(d)`
@@ -183,7 +173,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
   | singleton a =>
     exact quasiIso_cechAugmentation_prod_of_hom _ isTerminalTop _ Y
       (i₀ := ⟨a, Finset.mem_singleton_self a⟩) (homOfLE (by simpa using hYs))
-  | cons a s ha hs ih =>
+  | cons a s ha _ ih =>
     obtain ⟨V₁, hV₁, hYV₁, hV₁s⟩ := hU.exists_mem_range_basicOpen_le_sup hY (hV a) V hV s
       (by simpa [Finset.sup_cons] using hYs)
     let F := (SheafOfModules.toSheaf X.ringCatSheaf).obj M
@@ -204,8 +194,10 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
       (quasiIso_cechAugmentation_prod_of_hom W isTerminalTop _ (T 0 ⨯ T 1) (i₀ := ⟨a, ha'⟩)
         prod.fst)).2 (quasiIso_cechAugmentation_fin_two M hU hY T hT hYV₁)
     · -- the two-member cover, restricted to a finite intersection of members of `W`
-      exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ (Functor.isoWhiskerRight
-        (NatIso.op (prod.functorLeftComp _ _)) F.obj)).2
+      have e' : (prod.functor.obj (∏ᶜ fun j ↦ W (b j))).op ⋙ (prod.functor.obj Y).op ⋙ F.obj ≅
+          (prod.functor.obj (Y ⨯ ∏ᶜ fun j ↦ W (b j))).op ⋙ F.obj :=
+        Functor.isoWhiskerRight (NatIso.op (prod.functorLeftComp Y (∏ᶜ fun j ↦ W (b j)))) F.obj
+      exact (quasiIso_cechAugmentation_iff_of_iso T isTerminalTop _ e').2
         (quasiIso_cechAugmentation_fin_two M hU (Topology.prod_pi_mem_of_inf_mem (U := W)
           Scheme.inf_mem_range_basicOpen (fun i ↦ hV i) hY n b) T hT
           ((leOfHom prod.fst).trans hYV₁))
@@ -218,7 +210,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
           (ih _ (Topology.prod_pi_mem_of_inf_mem (U := W) Scheme.inf_mem_range_basicOpen
             (fun i ↦ hV i) hYT₁ n b) ((leOfHom (prod.fst ≫ prod.snd)).trans hV₁s))
       · exact quasiIso_cechAugmentation_prod_of_hom W isTerminalTop _ _
-          (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).2⟩) (Pi.π _ 0)
+          (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).property⟩) (Pi.π _ 0)
       · exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ e).2
           (ih _ hYT₁ ((leOfHom prod.snd).trans hV₁s))
 

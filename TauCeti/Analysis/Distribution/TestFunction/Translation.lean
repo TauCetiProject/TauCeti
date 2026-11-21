@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Topology.Algebra.Support
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
@@ -27,6 +27,10 @@ invariance of weak derivatives and distributional variation.
 * `TauCeti.lineDeriv_translateTestFunction`: directional derivatives commute with translation.
 * `TauCeti.exists_testFunction_eq_intervalIntegral`: segment averages of a test function are test
   functions.
+* `TauCeti.reflectTranslateTestFunction`: the reflected translate `t ↦ ρ (y - t)` of a smooth
+  compactly supported function, as a test function on `Omega`.
+* `TauCeti.fderiv_reflectTranslateTestFunction`, `TauCeti.lineDeriv_reflectTranslateTestFunction`:
+  derivatives of the reflected translate.
 -/
 
 public section
@@ -94,9 +98,9 @@ theorem exists_testFunction_eq_intervalIntegral
     rw [← contDiffOn_univ]
     refine (contDiffOn_integral_smul_of_contDiffOn (n := (⊤ : ℕ∞))
       (F := fun p : E × ℝ => g (p.1 - p.2 • h)) (μ := (volume : Measure unitInterval))
-      (integrable_const (1 : ℝ)) continuous_subtype_val isOpen_univ
+      (integrable_const (1 : ℝ)) continuous_subtypeVal isOpen_univ
       (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const))).contDiffOn
-      isOpen_univ fun _ _ _ => mem_univ _).congr fun y _ => ?_
+      fun _ _ _ => mem_univ _).congr fun y _ => ?_
     simp [hΦ_def, intervalIntegral_eq_integral_unitInterval]
   -- `Φ` vanishes off the compact set `C ⊆ Omega` swept out by `tsupport g` along `[0, 1] h`.
   set C : Set E := (fun p : E × ℝ => p.1 + p.2 • h) '' (tsupport g ×ˢ Icc 0 1)
@@ -116,5 +120,50 @@ theorem exists_testFunction_eq_intervalIntegral
     exact hy (hΦC y hyC)
   exact ⟨⟨Φ, hΦs, HasCompactSupport.intro hCc hΦC,
     (closure_minimal hsupp hCc.isClosed).trans hCO⟩, fun _ => rfl⟩
+
+/-- The reflected translate `t ↦ ρ (y - t)` of a smooth compactly supported function `ρ`, as a
+test function on `Omega`; this needs `y - t ∈ Omega` for every `t` in the support of `ρ`. Its
+pairing with a function `u` is the convolution `(ρ ⋆ u) y`. -/
+def reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega) :
+    𝓓(Omega, F) :=
+  ⟨ρ ∘ Homeomorph.subLeft y, hρ.comp (contDiff_const.sub contDiff_id),
+    hρc.comp_homeomorph _, fun t ht ↦ by
+      simpa using hy _ (tsupport_comp_subset_preimage ρ (Homeomorph.subLeft y).continuous ht)⟩
+
+/-- The reflected translate of `ρ` about `y` takes the value `ρ (y - t)` at `t`. -/
+@[simp]
+theorem reflectTranslateTestFunction_apply (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega)
+    (t : E) : reflectTranslateTestFunction ρ y hρ hρc hy t = ρ (y - t) :=
+  (rfl)
+
+/-- The reflected translate of `ρ` about `y` is the function `t ↦ ρ (y - t)`. -/
+theorem coe_reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega) :
+    ⇑(reflectTranslateTestFunction ρ y hρ hρc hy) = fun t ↦ ρ (y - t) :=
+  (rfl)
+
+/-- The Fréchet derivative of the reflected translate `t ↦ ρ (y - t)` is
+`t ↦ -fderiv ℝ ρ (y - t)`. -/
+@[simp]
+theorem fderiv_reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega)
+    (t : E) :
+    fderiv ℝ (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) t = -fderiv ℝ ρ (y - t) := by
+  rw [coe_reflectTranslateTestFunction]
+  simpa [Function.comp_def] using ((hρ.differentiable (by simp) (y - t)).hasFDerivAt.comp t
+    ((hasFDerivAt_id t).const_sub y)).fderiv
+
+/-- The directional derivative of the reflected translate `t ↦ ρ (y - t)` in the direction `v`
+is `-fderiv ℝ ρ (y - t) v`. -/
+@[simp]
+theorem lineDeriv_reflectTranslateTestFunction (ρ : E → F) (y : E)
+    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hy : ∀ t ∈ tsupport ρ, y - t ∈ Omega)
+    (t v : E) :
+    lineDeriv ℝ (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) t v =
+      -fderiv ℝ ρ (y - t) v := by
+  rw [((reflectTranslateTestFunction ρ y hρ hρc hy).contDiff.differentiable (by simp)
+    t).lineDeriv_eq_fderiv, fderiv_reflectTranslateTestFunction, neg_apply]
 
 end TauCeti

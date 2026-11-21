@@ -217,6 +217,16 @@ theorem norm_compSpatialL_le (e : E →L[ℝ] E') :
       rw [LinearMap.coe_mk, AddHom.coe_mk]
       exact norm_compSpatial_le e u
 
+variable (α F hab) in
+/-- If `‖e‖ ≤ K` with `1 ≤ K`, the change of spatial variables by `e` has operator norm at most
+`K ^ (2 + α)`. -/
+theorem norm_compSpatialL_le_of_norm_le {e : E →L[ℝ] E'} {K : ℝ} (hK : 1 ≤ K) (he : ‖e‖ ≤ K) :
+    ‖compSpatialL α F hab e‖ ≤ K ^ 2 * K ^ (α : ℝ) := by
+  exact (norm_compSpatialL_le α F hab e).trans
+    (mul_le_mul (pow_le_pow_left₀ (by positivity) (max_le he hK) 2)
+      (Real.rpow_le_rpow (by positivity) (max_le he hK) (by positivity))
+      (by positivity) (by positivity))
+
 /-- The change of spatial variables by the identity does nothing. -/
 @[simp]
 theorem compSpatialL_id (u : ParabolicC2HolderSpace α E F hab) :
@@ -237,10 +247,10 @@ variable (α F hab) in
 change of variables by `e⁻¹`. -/
 def compSpatialCLE (e : E ≃L[ℝ] E') :
     ParabolicC2HolderSpace α E' F hab ≃L[ℝ] ParabolicC2HolderSpace α E F hab :=
-  ContinuousLinearEquiv.equivOfInverse (compSpatialL α F hab (e : E →L[ℝ] E'))
+  ContinuousLinearEquiv.ofContinuousLinearMap (compSpatialL α F hab (e : E →L[ℝ] E'))
     (compSpatialL α F hab (e.symm : E' →L[ℝ] E))
-    (fun u ↦ by ext p; simp)
-    (fun v ↦ by ext p; simp)
+    (ContinuousLinearMap.ext fun v ↦ by ext p; simp)
+    (ContinuousLinearMap.ext fun u ↦ by ext p; simp)
 
 @[simp]
 theorem compSpatialCLE_apply (e : E ≃L[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab) :

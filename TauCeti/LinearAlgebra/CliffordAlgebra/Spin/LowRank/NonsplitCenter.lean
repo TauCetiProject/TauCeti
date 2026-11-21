@@ -48,10 +48,7 @@ noncomputable def spinGroupEquivQuaternionUnitaryOverCenter
     (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     spinGroup Q ≃* unitary ℍ[Subalgebra.center K (even Q),a,0,b] := by
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos hV0
-  let eK : even Q ≃ₐ[K] ℍ[Subalgebra.center K (even Q),a,0,b] :=
-    @AlgEquiv.restrictScalars K (Subalgebra.center K (even Q)) (even Q)
-      ℍ[Subalgebra.center K (even Q),a,0,b]
-      _ _ _ _ _ _ _ _ _ Subalgebra.isScalarTower_centerAlgebra (by infer_instance) e
+  let eK : even Q ≃ₐ[K] ℍ[Subalgebra.center K (even Q),a,0,b] := e.restrictScalars K
   exact spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour
     Q hQ hV0 hV eK (fun x ↦ by
       -- Restricting scalars changes only the bundled algebra map, so its value is definitionally
@@ -110,7 +107,7 @@ theorem normForm_spinGroupEquivQuaternionUnitaryOverCenter
       (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s :
         ℍ[Subalgebra.center K (even Q),a,0,b]) = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s).2
+    (spinGroupEquivQuaternionUnitaryOverCenter Q hQ hV0 hV e he s).property
 
 /-- Every regular quaternary Spin group whose even-Clifford center is a field is isomorphic to the
 norm-one group of a quaternion algebra over that center. -/

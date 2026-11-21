@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.QuadraticForm.OrthogonalGroup.Matrix
-public import TauCeti.LinearAlgebra.OrthogonalGroup
+public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 
 /-!
@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Real
 Every positive definite real quadratic form admits Euclidean coordinates, by Mathlib's Sylvester
 normal form `QuadraticForm.equivalent_one_zero_neg_one_weighted_sum_squared`. The coordinate
 comparison identifies its orthogonal group with the matrix orthogonal group as a topological
-group, and intertwines its action with `TauCeti.orthogonalGroupToLinearIsometryEquiv`.
+group, and intertwines its action with `Matrix.UnitaryGroup.toLinearIsometryEquiv`.
 
 Negating a form does not change its orthogonal group, so negative definite forms have the same
 matrix model. The statements include dimension zero and use the canonical forward-and-inverse
@@ -41,15 +41,15 @@ variable {V n : Type*} [AddCommGroup V] [Module ℝ V] [Fintype n] [DecidableEq 
 action of the associated orthogonal matrix. -/
 -- This is a named rewrite: simp already derives it from the matrix-action and coordinate
 -- comparison simp lemmas, so adding it to the simp set fails the simpNF linter.
-theorem orthogonalGroupToLinearIsometryEquiv_orthogonalGroupContinuousMulEquivMatrix_apply
+theorem toLinearIsometryEquiv_orthogonalGroupContinuousMulEquivMatrix_apply
     (e : Q.IsometryEquiv (Matrix.toQuadraticForm' (1 : Matrix n n ℝ)))
     (g : QuadraticMap.orthogonalGroup Q) (x : V) :
-    orthogonalGroupToLinearIsometryEquiv
+    Matrix.UnitaryGroup.toLinearIsometryEquiv
         (orthogonalGroupContinuousMulEquivMatrix
           ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) e g)
         ((EuclideanSpace.equiv n ℝ).symm (e x)) =
       (EuclideanSpace.equiv n ℝ).symm (e ((g : V ≃ₗ[ℝ] V) x)) := by
-  simp [orthogonalGroupToLinearIsometryEquiv_apply, LinearMap.toMatrix'_mulVec]
+  simp [Matrix.UnitaryGroup.toLinearIsometryEquiv_apply, LinearMap.toMatrix'_mulVec]
 
 variable [FiniteDimensional ℝ V]
 

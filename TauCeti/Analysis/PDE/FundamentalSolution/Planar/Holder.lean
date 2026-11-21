@@ -61,10 +61,8 @@ theorem holderOnWith_planarNewtonianKernel_convolution
     HolderOnWith
       ((∫ z, ‖(closedBall (0 : ℂ) (r + R)).indicator planarNewtonianKernel z‖).toNNReal * H)
       α (planarNewtonianKernel ⋆ f) (closedBall c R) := by
-  have hc := HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) hs
-  obtain ⟨M, hM⟩ := (hf.continuous hα).bounded_above_of_compact_support hc
   have h := (holderWith_integral_kernel_smul_sub
-    (integrable_indicator_planarNewtonianKernel (r + R)) hα hf hM).holderOnWith (closedBall c R)
+    (integrable_indicator_planarNewtonianKernel (r + R)) hα hf).holderOnWith (closedBall c R)
   intro w hw v hv
   rw [planarNewtonianKernel_convolution_eq_indicator hs hw,
     planarNewtonianKernel_convolution_eq_indicator hs hv]

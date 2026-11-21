@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Analysis.Complex.Order
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
+import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 /-!
 # Totally real and totally complex fields at infinite places
@@ -32,7 +34,8 @@ a place `v` of `k` exactly when its restriction to `k` is `v`. If `w` lies over 
 `w.embedding` and its conjugate restrict to `v.embedding` and its conjugate, in one order or the
 other.
 
-An infinite place is archimedean, since it takes the value `2` at `2`.
+An infinite place is archimedean, since it takes the value `2` at `2`, and is therefore never
+equivalent to a nonarchimedean absolute value.
 
 ## Main results
 
@@ -71,6 +74,10 @@ An infinite place is archimedean, since it takes the value `2` at `2`.
   embedding of a place and its conjugate restrict to the embedding of the place below and its
   conjugate, in one order or the other.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
+* `NumberField.InfinitePlace.not_isEquiv_of_isNonarchimedean`: an infinite place is never
+  equivalent to a nonarchimedean absolute value.
+* `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
+  places.
 -/
 
 public section
@@ -81,6 +88,11 @@ open scoped ComplexOrder
 namespace NumberField
 
 variable {K : Type*} [Field K]
+
+/-- A totally real field has no complex infinite places. -/
+instance IsTotallyReal.instIsEmptyIsComplex [IsTotallyReal K] :
+    IsEmpty {w : InfinitePlace K // w.IsComplex} :=
+  ⟨fun w ↦ not_isReal_iff_isComplex.mpr w.property (IsTotallyReal.isReal w.val)⟩
 
 /-- **An extension of a totally real field unramified at infinity is totally real.** If every
 infinite place of `K` is unramified over a totally real field `k`, then every infinite place of
@@ -283,7 +295,7 @@ theorem InfinitePlace.embedding_of_isReal_comap {k : Type*} [Field k] (f : k →
 Mathlib's `AbsoluteValue.LiesOver` instance is this statement for `AbsoluteValue.under`, which is
 not the spelling `InfinitePlace.comap` produces, so it is registered here. Constructions indexed by
 `w.comap (algebraMap k K)` that consume a `LiesOver` hypothesis, such as
-`NumberField.LiesOver.completionMap`, need it. -/
+`AbsoluteValue.Completion.map`, need it. -/
 instance InfinitePlace.liesOver_comap {k : Type*} [Field k] [Algebra k K]
     (w : InfinitePlace K) : w.LiesOver (w.comap (algebraMap k K)) :=
   ⟨rfl⟩
@@ -324,10 +336,19 @@ theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq
     exact (ComplexEmbedding.involutive_conjugate k _).symm
 
 /-- An infinite place is archimedean: it takes the value `2` at `2`. -/
-theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.1 := by
+theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.val := by
   intro h
   have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
   rw [← InfinitePlace.coe_apply, v.map_natCast] at this
   norm_num at this
+
+/-- An infinite place is never equivalent to a nonarchimedean absolute value. -/
+theorem InfinitePlace.not_isEquiv_of_isNonarchimedean (v : InfinitePlace K)
+    {w : AbsoluteValue K ℝ} (hw : IsNonarchimedean w) : ¬ v.val.IsEquiv w := by
+  intro h
+  obtain ⟨c, hc, hcw⟩ := AbsoluteValue.isEquiv_iff_exists_rpow_eq.mp h.symm
+  have hv : v.val = w.nonarchRpow hw hc :=
+    AbsoluteValue.ext fun x ↦ by rw [w.nonarchRpow_apply, ← congrFun hcw x]
+  exact v.not_isNonarchimedean (hv ▸ w.isNonarchimedean_nonarchRpow hw hc)
 
 end NumberField

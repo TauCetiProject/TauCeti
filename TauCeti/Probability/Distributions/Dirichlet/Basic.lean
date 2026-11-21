@@ -77,6 +77,14 @@ theorem measurable_dirichletNormalize : Measurable (dirichletNormalize (ι := ι
   exact (measurable_pi_apply i).div
     (Finset.measurable_sum _ fun j _ ↦ measurable_pi_apply j)
 
+/-- Coordinate normalization is continuous wherever the coordinate sum is nonzero. -/
+@[fun_prop]
+theorem continuousAt_dirichletNormalize {x : ι → ℝ} (hx : ∑ i, x i ≠ 0) :
+    ContinuousAt dirichletNormalize x := by
+  exact (EuclideanSpace.equiv ι ℝ).symm.continuous.continuousAt.comp <|
+    continuousAt_pi.mpr fun i ↦ (continuous_apply i).continuousAt.div
+      (continuous_finsetSum _ fun j _ ↦ continuous_apply j).continuousAt hx
+
 /-- A vector with zero coordinate sum is normalized to zero. -/
 theorem dirichletNormalize_eq_zero_of_sum_eq_zero {x : ι → ℝ} (hx : ∑ i, x i = 0) :
     dirichletNormalize x = 0 := by
@@ -136,6 +144,11 @@ theorem dirichletMeasure_of_pos [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < 
 theorem dirichletMeasure_eq_zero_of_invalid {a : ι → ℝ}
     (ha : ¬(Nonempty ι ∧ ∀ i, 0 < a i)) : dirichletMeasure a = 0 := by
   rw [dirichletMeasure, ite_eq_right ha]
+
+/-- On an empty coordinate type, the Dirichlet measure is zero. -/
+@[simp]
+theorem dirichletMeasure_of_isEmpty [IsEmpty ι] (a : ι → ℝ) : dirichletMeasure a = 0 :=
+  dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr ‹_›) h.1
 
 /-- On a one-element index type the Dirichlet law is the Dirac mass at the only point of the
 standard simplex. -/

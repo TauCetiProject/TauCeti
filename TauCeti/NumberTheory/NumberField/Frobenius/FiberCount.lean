@@ -56,21 +56,16 @@ namespace Ideal
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L]
 
--- Source. The count is specified by the Chebotarev roadmap:
--- `TauCetiRoadmap/Chebotarev/README.md` §8.2, which displays the fibre size as
--- `#G / (#C * f) = #Centralizer_G(σ) / f` with `f = orderOf σ`. The theorems below count the
--- primes of `𝓞 L`; the roadmap's own statement counts primes of the fixed field `L ^ ⟨σ⟩`, and
--- reaches this one through the residue degree of a fixed-field prime.
-
 /-- **The Frobenius fiber is an orbit of the centralizer.** Let `Q` be a prime of `𝓞 L` above an
 ideal `𝔭` of `𝓞 K`, unramified over `𝓞 K`, with `σ` an arithmetic Frobenius at `Q`. Then
 the primes above `𝔭` admitting `σ` as a Frobenius are exactly the translates of `Q` by elements
 commuting with `σ`.
 
-Both inclusions come from `Ideal.isArithFrobAt_pointwise_smul_iff_eq_conj`, which says the
-Frobenius elements at `τ • Q` are the conjugates `τ σ τ⁻¹`: an element of `Gal(L/K)` carries `Q`
-into the fiber exactly when conjugation by it fixes `σ`. Transitivity of the action on the primes
-above `𝔭` is what makes every member of the fiber such a translate. -/
+The Frobenius elements at `τ • Q` are the conjugates `τ σ τ⁻¹`
+(`Ideal.isArithFrobAt_pointwise_smul_iff_eq_conj`), so an element of `Gal(L/K)` carries `Q` into
+the fiber exactly when conjugation by it fixes `σ`; the translates by such elements lie in the
+fiber by `Ideal.exists_isArithFrobAt_smul`. Transitivity of the action on the primes above `𝔭` is
+what makes every member of the fiber such a translate. -/
 theorem frobenius_fiber_eq_orbit_centralizer (𝔭 : Ideal (𝓞 K)) {σ : L ≃ₐ[K] L}
     (Q : Ideal (𝓞 L)) [IsGalois K L] [Q.IsPrime] [Q.LiesOver 𝔭]
     [Algebra.IsUnramifiedAt (𝓞 K) Q]
@@ -90,8 +85,7 @@ theorem frobenius_fiber_eq_orbit_centralizer (𝔭 : Ideal (𝓞 K)) {σ : L ≃
     subst hP
     have hconj : τ * σ * τ⁻¹ = σ := by
       rw [mul_inv_eq_iff_eq_mul, Subgroup.mem_centralizer_singleton_iff.mp hτ]
-    exact ⟨inferInstance, inferInstance, by simpa using (MulAction.injective τ).ne hσ.ne_bot,
-      (Q.isArithFrobAt_pointwise_smul_iff_eq_conj hσ τ σ).mpr hconj.symm⟩
+    exact Ideal.exists_isArithFrobAt_smul hconj ⟨inferInstance, inferInstance, hσ.ne_bot, hσ⟩
 
 /-- **The size of a Frobenius fiber.** At an unramified prime `Q` above an ideal `𝔭` with
 arithmetic Frobenius `σ`, the number of primes above `𝔭` admitting `σ` as a Frobenius, times the
@@ -152,17 +146,17 @@ noncomputable def frobeniusFiberEquiv
           Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
         {Q : {Q : HeightOneSpectrum (𝓞 L) //
             Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
-          IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} :=
+          IsArithFrobAt (𝓞 K) sigma Q.val.asIdeal} :=
     (Equiv.subtypeEquivRight fun Q ↦ and_congr (hdiv Q) Iff.rfl).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
   let coreEquiv :
       {Q : {Q : HeightOneSpectrum (𝓞 L) //
           Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
-        IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} ≃
-        {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} :=
+        IsArithFrobAt (𝓞 K) sigma Q.val.asIdeal} ≃
+        {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.val} :=
     (HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot).subtypeEquiv fun _ ↦ Iff.rfl
   let codomainEquiv :
-      {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} ≃
+      {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.val} ≃
         {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
           IsArithFrobAt (𝓞 K) sigma Q} :=
     (Equiv.subtypeSubtypeEquivSubtypeInter
@@ -181,13 +175,13 @@ theorem frobeniusFiberEquiv_apply
     (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
     (Q : {Q : HeightOneSpectrum (𝓞 L) //
       Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal}) :
-    (p.frobeniusFiberEquiv sigma Q : Ideal (𝓞 L)) = Q.1.asIdeal := by
+    (p.frobeniusFiberEquiv sigma Q : Ideal (𝓞 L)) = Q.val.asIdeal := by
   -- `subtypeEquivRight` and `subtypeSubtypeEquivSubtypeInter` only reassociate predicates and
   -- proof fields, so they have no value-level application lemma. Reducing those identity-on-values
   -- wrappers is stable; the sole data-changing component is `equivPrimesOver`, whose public
   -- application lemma completes the proof below.
   change ((HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot) _ : Ideal (𝓞 L)) =
-    Q.1.asIdeal
+    Q.val.asIdeal
   rw [HeightOneSpectrum.equivPrimesOver_apply]
   rfl
 
@@ -196,13 +190,13 @@ theorem frobeniusFiberEquiv_symm_apply_asIdeal
     (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
     (Q : {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
       IsArithFrobAt (𝓞 K) sigma Q}) :
-    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal = Q.1 := by
+    ((p.frobeniusFiberEquiv sigma).symm Q).val.asIdeal = Q.val := by
   calc
-    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal =
+    ((p.frobeniusFiberEquiv sigma).symm Q).val.asIdeal =
         (p.frobeniusFiberEquiv sigma
           ((p.frobeniusFiberEquiv sigma).symm Q) : Ideal (𝓞 L)) :=
       (p.frobeniusFiberEquiv_apply sigma _).symm
-    _ = Q.1 := congrArg Subtype.val
+    _ = Q.val := congrArg Subtype.val
       ((p.frobeniusFiberEquiv sigma).apply_symm_apply Q)
 
 /-- **The absolute Frobenius fibre, counted.** The primes of `L` over `p` at which `σ` is an

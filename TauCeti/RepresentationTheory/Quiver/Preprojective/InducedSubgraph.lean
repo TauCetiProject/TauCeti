@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.Finite
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
+import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Signless preprojective algebras of induced subgraphs
@@ -18,21 +21,33 @@ vertices outside `H` and every arrow incident to them defines a surjective algeb
 ```
 
 Here `Π⁺` denotes the signless preprojective algebra.  At a retained vertex, the signless
-relation of `G` maps to the relation of `H`; at a deleted vertex it maps to zero.  Consequently
-finite-dimensionality descends from a graph to each of its induced subgraphs.  In particular,
-this reduction lets a finite-dimensionality calculation for the exceptional diagram `E₈` supply
-the corresponding results for `E₇` and `E₆` after deleting end vertices.
+relation of `G` maps to the relation of `H`; at a deleted vertex it maps to zero.  Composing with
+the graph-isomorphism equivalence `TauCeti.signlessPreprojectiveAlgebraEquiv` extends this
+quotient map to any induced-subgraph embedding `f : G ↪g H`.  Consequently finite-dimensionality
+descends from a graph to each of its induced subgraphs.  In particular, this reduction lets a
+finite-dimensionality calculation for the exceptional diagram `E₈` supply the corresponding
+results for `E₇` and `E₆` after deleting end vertices.
 
 ## Main definitions
 
 * `TauCeti.signlessPreprojectiveInducedSubgraphHom`: the quotient map from the signless
   preprojective algebra of a graph to that of an induced subgraph.
+* `TauCeti.signlessPreprojectiveEmbeddingHom`: the quotient map `Π⁺(H) →ₐ[k] Π⁺(G)` attached to an
+  induced-subgraph embedding `f : G ↪g H`.
 
 ## Main results
 
-* `TauCeti.signlessPreprojectiveInducedSubgraphHom_surjective`: the induced map is surjective.
-* `TauCeti.moduleFinite_signlessPreprojectiveAlgebra_induce`: finite generation over the
-  coefficient ring descends to an induced subgraph.
+* `TauCeti.signlessPreprojectiveInducedSubgraphHom_surjective` and
+  `TauCeti.signlessPreprojectiveEmbeddingHom_surjective`: both restriction maps are surjective.
+* `TauCeti.signlessPreprojectiveInducedSubgraphHom_mem_signlessPreprojectiveGrade`,
+  `TauCeti.signlessPreprojectiveEmbeddingHom_mem_signlessPreprojectiveGrade`,
+  `TauCeti.exists_mem_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom_eq`, and
+  `TauCeti.map_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom`: the restriction maps
+  preserve the path-length grading, and along `f : G ↪g H` the degree-`d` piece of `Π⁺(H)` maps
+  onto the degree-`d` piece of `Π⁺(G)`.
+* `TauCeti.moduleFinite_signlessPreprojectiveAlgebra_induce` and
+  `TauCeti.moduleFinite_signlessPreprojectiveAlgebra_of_embedding`: finite generation over the
+  coefficient ring descends along induced subgraphs and graph embeddings.
 
 ## References
 
@@ -46,12 +61,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-universe u w
+universe u v w
 
-/-- Neighbor sets in a graph on a finite vertex type are finite. -/
-noncomputable local instance inducedSubgraphNeighborSetFintype
-    {V : Type u} [Finite V] (G : SimpleGraph V) (v : V) : Fintype (G.neighborSet v) :=
-  Fintype.ofFinite _
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 section PathAlgebra
 
@@ -265,10 +277,10 @@ private theorem inducedSubgraphPathAlgebraHom_backtrackElem {i j : V} (h : G.Adj
 private theorem sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero {v : V} (hv : v ∈ S)
     [Fintype (G.neighborSet v)] :
     ∑ w : G.neighborSet v,
-      inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.2) = 0 := by
+      inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.property) = 0 := by
   classical
   let f : G.neighborSet v → InducedAlgebra k G S := fun w =>
-    inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.2)
+    inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.property)
   have hsum := Fintype.sum_subtype_add_sum_subtype
     (fun w : G.neighborSet v => (w : V) ∈ S) f
   have hcompl : ∑ w : {w : G.neighborSet v // (w : V) ∉ S}, f w = 0 := by
@@ -276,7 +288,7 @@ private theorem sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero {v : V} 
     intro w _
     simp only [f]
     rw [inducedSubgraphPathAlgebraHom_backtrackElem
-      (k := k) (G := G) (S := S) w.1.2]
+      (k := k) (G := G) (S := S) w.val.property]
     simp [w.property]
   rw [hcompl, add_zero] at hsum
   rw [← hsum]
@@ -285,15 +297,15 @@ private theorem sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero {v : V} 
         ∑ w : {w : G.neighborSet v // (w : V) ∈ S},
           signlessPreprojectiveMk k _
             (backtrackElem (G.induce S) k
-              (inducedAdj G S hv w.2 w.1.2)) := by
+              (inducedAdj G S hv w.property w.val.property)) := by
       apply Finset.sum_congr rfl
       intro w _
       simp only [f]
       rw [inducedSubgraphPathAlgebraHom_backtrackElem
-        (k := k) (G := G) (S := S) w.1.2]
+        (k := k) (G := G) (S := S) w.val.property]
       simp [hv, w.property]
     _ = ∑ w : (G.induce S).neighborSet ⟨v, hv⟩,
-          signlessPreprojectiveMk k _ (backtrackElem (G.induce S) k w.2) := by
+          signlessPreprojectiveMk k _ (backtrackElem (G.induce S) k w.property) := by
       let e : {w : G.neighborSet v // (w : V) ∈ S} ≃ (G.induce S).neighborSet ⟨v, hv⟩ :=
         (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ G.neighborSet v) (· ∈ S)).trans
           ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
@@ -323,35 +335,60 @@ private theorem inducedSubgraphPathAlgebraHom_signlessPreprojectiveRelator
   · apply Finset.sum_eq_zero
     intro w _
     rw [inducedSubgraphPathAlgebraHom_backtrackElem
-      (k := k) (G := G) (S := S) w.2]
+      (k := k) (G := G) (S := S) w.property]
     simp [hv]
+
+private theorem inducedSubgraphPath_mem_signlessPreprojectiveGrade
+    {a b : DoubledQuiver G} (p : Path a b) :
+    inducedSubgraphPath k G S p ∈
+      signlessPreprojectiveGrade k (DoubledQuiver (G.induce S)) p.length := by
+  induction p with
+  | nil =>
+      classical
+      simp only [inducedSubgraphPath, inducedSubgraphVertex, Path.length_nil]
+      split_ifs with hv
+      · exact signlessPreprojectiveMk_mem_grade k _ (vertexIdempotent_mem_grade_zero _)
+      · exact zero_mem _
+  | cons p e ih =>
+      have he : inducedSubgraphArrow k G S e ∈
+          signlessPreprojectiveGrade k (DoubledQuiver (G.induce S)) 1 := by
+        classical
+        simp only [inducedSubgraphArrow]
+        split_ifs
+        · exact signlessPreprojectiveMk_mem_grade k _ (ofArrow_mem_grade_one _)
+        all_goals exact zero_mem _
+      simpa only [inducedSubgraphPath, Path.length_cons, add_comm 1 p.length] using
+        mul_mem_signlessPreprojectiveGrade k _ he ih
 
 private theorem inducedSubgraphPathAlgebraHom_surjective_ofPath
     {a b : DoubledQuiver (G.induce S)} (p : Path a b) :
-    ∃ x, inducedSubgraphPathAlgebraHom k G S x =
+    ∃ x ∈ grade k (DoubledQuiver G) p.length, inducedSubgraphPathAlgebraHom k G S x =
       signlessPreprojectiveMk k _ (ofPath ⟨a, b, p⟩) := by
   induction p with
   | nil =>
       obtain ⟨v, rfl⟩ := exists_eq_vertex (G.induce S) a
-      refine ⟨vertexIdempotent k (vertex G v.1), ?_⟩
+      refine ⟨vertexIdempotent k (vertex G v.val), vertexIdempotent_mem_grade_zero _, ?_⟩
       rw [vertexIdempotent_eq_ofPath, inducedSubgraphPathAlgebraHom, liftAlgHom_ofPath]
       simp only [inducedSubgraphPath, inducedSubgraphVertex, vertexEquiv_symm_vertex]
       split_ifs with hv
       · rw [vertexIdempotent_eq_ofPath]
       · rw [vertexEquiv_symm_vertex] at hv
-        exact (hv v.2).elim
+        exact (hv v.property).elim
   | @cons b c p e ih =>
       obtain ⟨i, rfl⟩ := exists_eq_vertex (G.induce S) b
       obtain ⟨j, rfl⟩ := exists_eq_vertex (G.induce S) c
-      obtain ⟨x, hx⟩ := ih
-      let h : G.Adj i.1 j.1 := by
+      obtain ⟨x, hxgrade, hx⟩ := ih
+      let h : G.Adj i.val j.val := by
         have he := e.down
         rw [vertexEquiv_symm_vertex, vertexEquiv_symm_vertex] at he
         exact SimpleGraph.induce_adj.mp he
-      refine ⟨ofArrow (arrow G h) * x, ?_⟩
-      rw [map_mul, inducedSubgraphPathAlgebraHom_ofArrow, dite_eq_left i.2,
-        dite_eq_left j.2, hx]
-      have he : arrow (G.induce S) (inducedAdj G S i.2 j.2 h) = e :=
+      have hgrade : ofArrow (arrow G h) * x ∈ grade k (DoubledQuiver G) (p.cons e).length := by
+        simpa only [Path.length_cons, add_comm 1 p.length] using
+          grade_mul_grade_le 1 p.length (Submodule.mul_mem_mul (ofArrow_mem_grade_one _) hxgrade)
+      refine ⟨ofArrow (arrow G h) * x, hgrade, ?_⟩
+      rw [map_mul, inducedSubgraphPathAlgebraHom_ofArrow, dite_eq_left i.property,
+        dite_eq_left j.property, hx]
+      have he : arrow (G.induce S) (inducedAdj G S i.property j.property h) = e :=
         Subsingleton.elim _ _
       rw [he, ← map_mul, ofArrow_mul_ofPath]
 
@@ -369,7 +406,7 @@ private theorem inducedSubgraphPathAlgebraHom_surjective :
       exact ⟨x + y, by simp [hx, hy]⟩
   | single x c =>
       obtain ⟨a, b, p⟩ := x
-      obtain ⟨x, hx⟩ := inducedSubgraphPathAlgebraHom_surjective_ofPath k G S p
+      obtain ⟨x, -, hx⟩ := inducedSubgraphPathAlgebraHom_surjective_ofPath k G S p
       exact ⟨c • x, by simp only [map_smul, hx, single_eq_smul_ofPath]⟩
 
 /-- The surjective algebra homomorphism from the signless preprojective algebra of a finite graph
@@ -415,6 +452,45 @@ theorem signlessPreprojectiveInducedSubgraphHom_ofArrow {i j : V} (h : G.Adj i j
     signlessPreprojectiveLift_signlessPreprojectiveMk,
     inducedSubgraphPathAlgebraHom_ofArrow]
 
+/-- The induced-subgraph homomorphism preserves each path-length graded piece. -/
+theorem signlessPreprojectiveInducedSubgraphHom_mem_signlessPreprojectiveGrade
+    {d : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d) :
+    signlessPreprojectiveInducedSubgraphHom k G S x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver (G.induce S)) d := by
+  obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k _).1 hx
+  rw [signlessPreprojectiveInducedSubgraphHom, signlessPreprojectiveLift_signlessPreprojectiveMk]
+  rw [grade_eq_span_range] at hy
+  refine (Submodule.span_le
+    (p := (signlessPreprojectiveGrade k (DoubledQuiver (G.induce S)) d).comap
+      (inducedSubgraphPathAlgebraHom k G S).toLinearMap)).2 ?_ hy
+  rintro _ ⟨⟨⟨a, b, p⟩, rfl⟩, rfl⟩
+  simp only [SetLike.mem_coe, Submodule.mem_comap, AlgHom.toLinearMap_apply]
+  rw [inducedSubgraphPathAlgebraHom, liftAlgHom_ofPath]
+  exact inducedSubgraphPath_mem_signlessPreprojectiveGrade k G S p
+
+/-- **The induced-subgraph homomorphism is graded-surjective**: the image of the degree-`d` graded
+piece of `Π⁺(G)` is the degree-`d` graded piece of `Π⁺(G.induce S)`. -/
+theorem signlessPreprojectiveGrade_map_signlessPreprojectiveInducedSubgraphHom (d : ℕ) :
+    (signlessPreprojectiveGrade k (DoubledQuiver G) d).map
+        (signlessPreprojectiveInducedSubgraphHom k G S).toLinearMap =
+      signlessPreprojectiveGrade k (DoubledQuiver (G.induce S)) d := by
+  refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun _ =>
+    signlessPreprojectiveInducedSubgraphHom_mem_signlessPreprojectiveGrade k G S) ?_
+  intro y hy
+  obtain ⟨z, hz, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k _).1 hy
+  rw [grade_eq_span_range] at hz
+  refine (Submodule.span_le
+    (p := ((signlessPreprojectiveGrade k (DoubledQuiver G) d).map
+      (signlessPreprojectiveInducedSubgraphHom k G S).toLinearMap).comap
+        (signlessPreprojectiveMk k _).toLinearMap)).2 ?_ hz
+  rintro _ ⟨⟨⟨a, b, p⟩, rfl⟩, rfl⟩
+  obtain ⟨x, hxgrade, hx⟩ := inducedSubgraphPathAlgebraHom_surjective_ofPath k G S p
+  simp only [SetLike.mem_coe, Submodule.mem_comap, Submodule.mem_map, AlgHom.toLinearMap_apply]
+  refine ⟨signlessPreprojectiveMk k _ x, signlessPreprojectiveMk_mem_grade k _ hxgrade, ?_⟩
+  rw [signlessPreprojectiveInducedSubgraphHom, signlessPreprojectiveLift_signlessPreprojectiveMk,
+    hx]
+
 /-- The homomorphism from a signless preprojective algebra onto the algebra of an induced
 subgraph is surjective. -/
 theorem signlessPreprojectiveInducedSubgraphHom_surjective :
@@ -435,5 +511,160 @@ theorem moduleFinite_signlessPreprojectiveAlgebra_induce
     (signlessPreprojectiveInducedSubgraphHom_surjective k G S)
 
 end PathAlgebra
+
+section Embedding
+
+variable (k : Type w) [CommRing k] {V : Type u} {W : Type v} [Finite V] [Finite W]
+  {G : SimpleGraph V} {H : SimpleGraph W} [∀ i, Fintype (G.neighborSet i)]
+
+/-- The surjective algebra homomorphism from the signless preprojective algebra of a finite graph
+`H` to that of an embedded induced subgraph `G`, obtained by restricting to `Set.range f` and
+identifying it with `G` along `f.isoInduceRange.symm`. -/
+noncomputable def signlessPreprojectiveEmbeddingHom (f : G ↪g H) :
+    signlessPreprojectiveAlgebra k (DoubledQuiver H) →ₐ[k]
+      signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
+  (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange.symm).toAlgHom.comp
+    (signlessPreprojectiveInducedSubgraphHom k H (Set.range f))
+
+/-- The induced-embedding homomorphism sends the idempotent at `f i` to the idempotent at `i`. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_vertexIdempotent (f : G ↪g H) (i : V) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (vertexIdempotent k (vertex H (f i)))) =
+      signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G i)) := by
+  classical
+  have hi : f i ∈ Set.range f := ⟨i, rfl⟩
+  apply (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange).injective
+  simp only [signlessPreprojectiveEmbeddingHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
+    signlessPreprojectiveInducedSubgraphHom_vertexIdempotent, dite_eq_left hi,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_vertexIdempotent,
+    SimpleGraph.Embedding.isoInduceRange_apply]
+
+/-- The induced-embedding homomorphism kills every vertex idempotent outside `Set.range f`. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_vertexIdempotent_of_notMem (f : G ↪g H) {w : W}
+    (hw : w ∉ Set.range f) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (vertexIdempotent k (vertex H w))) = 0 := by
+  simp [signlessPreprojectiveEmbeddingHom, hw]
+
+/-- The induced-embedding homomorphism sends the doubled arrow along an image edge of `f` to the
+corresponding doubled arrow of `G`. Deliberately not a `simp` lemma, since
+`TauCeti.PathAlgebra.ofArrow_eq_ofPath` already rewrites its left-hand side. -/
+theorem signlessPreprojectiveEmbeddingHom_ofArrow (f : G ↪g H) {i j : V} (h : G.Adj i j) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (ofArrow (arrow H (f.map_adj_iff.mpr h)))) =
+      signlessPreprojectiveMk k _ (ofArrow (arrow G h)) := by
+  classical
+  have hi : f i ∈ Set.range f := ⟨i, rfl⟩
+  have hj : f j ∈ Set.range f := ⟨j, rfl⟩
+  apply (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange).injective
+  simp only [signlessPreprojectiveEmbeddingHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
+    signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
+  have hui : f.isoInduceRange i = ⟨f i, hi⟩ := f.isoInduceRange_apply i
+  have huj : f.isoInduceRange j = ⟨f j, hj⟩ := f.isoInduceRange_apply j
+  generalize h' : f.isoInduceRange.map_adj_iff.mpr h = h''
+  clear h'
+  revert h''
+  rw [hui, huj]
+  intro _
+  congr 2
+
+/-- Pushing a basis path of `DoubledQuiver G` forward along `f.toHom` and restricting along
+`signlessPreprojectiveEmbeddingHom k f` recovers its class in `Π⁺(G)`. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_ofPath_mapTotalPath (f : G ↪g H)
+    (x : Quiver.TotalPath (DoubledQuiver G)) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (ofPath ((DoubledQuiver.map f.toHom).mapTotalPath x))) =
+      signlessPreprojectiveMk k _ (ofPath x) := by
+  obtain ⟨a, b, p⟩ := x
+  induction p with
+  | nil =>
+    obtain ⟨i, rfl⟩ := exists_eq_vertex G a
+    rw [Prefunctor.mapTotalPath_mk, Prefunctor.mapPath_nil, map_obj,
+      ← vertexIdempotent_eq_ofPath, ← vertexIdempotent_eq_ofPath]
+    exact signlessPreprojectiveEmbeddingHom_vertexIdempotent k f i
+  | @cons b c q e ih =>
+    obtain ⟨i, rfl⟩ := exists_eq_vertex G b
+    obtain ⟨j, rfl⟩ := exists_eq_vertex G c
+    have h : G.Adj i j := (nonempty_hom_iff G).1 ⟨e⟩
+    have he : e = arrow G h := Subsingleton.elim _ _
+    subst he
+    rw [Prefunctor.mapTotalPath_mk, Prefunctor.mapPath_cons, ← ofArrow_mul_ofPath,
+      map_arrow, PathAlgebra.ofArrow_homOfEq, ← Prefunctor.mapTotalPath_mk,
+      map_mul, map_mul, ih, ← ofArrow_mul_ofPath, map_mul]
+    congr 1
+    exact signlessPreprojectiveEmbeddingHom_ofArrow k f h
+
+/-- The restriction homomorphism attached to an induced-subgraph embedding is surjective. -/
+theorem signlessPreprojectiveEmbeddingHom_surjective (f : G ↪g H) :
+    Function.Surjective (signlessPreprojectiveEmbeddingHom k f) :=
+  (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange.symm).surjective.comp
+    (signlessPreprojectiveInducedSubgraphHom_surjective k H (Set.range f))
+
+/-- The restriction homomorphism attached to an induced-subgraph embedding `f : G ↪g H` preserves
+the path-length grading of the signless preprojective algebra. -/
+theorem signlessPreprojectiveEmbeddingHom_mem_signlessPreprojectiveGrade (f : G ↪g H) {d : ℕ}
+    {x : signlessPreprojectiveAlgebra k (DoubledQuiver H)}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d) :
+    signlessPreprojectiveEmbeddingHom k f x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d := by
+  rw [signlessPreprojectiveEmbeddingHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff]
+  exact signlessPreprojectiveInducedSubgraphHom_mem_signlessPreprojectiveGrade k H (Set.range f) hx
+
+/-- Every homogeneous element of degree `d` in `Π⁺(G)` lifts along `f : G ↪g H` to a homogeneous
+element of the same degree `d` in `Π⁺(H)`. -/
+theorem exists_mem_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom_eq
+    (f : G ↪g H) {d : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d) :
+    ∃ z ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d,
+      signlessPreprojectiveEmbeddingHom k f z = x := by
+  obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver G)).mp hx
+  clear hx
+  rw [grade_eq_span_range] at hy
+  induction hy using Submodule.span_induction with
+  | mem _ hmem =>
+    obtain ⟨p, rfl⟩ := hmem
+    refine ⟨signlessPreprojectiveMk k _ (ofPath ((DoubledQuiver.map f.toHom).mapTotalPath p.val)),
+      signlessPreprojectiveMk_mem_grade k _ (ofPath_mem_grade_of_length ?_),
+      signlessPreprojectiveEmbeddingHom_ofPath_mapTotalPath k f p.val⟩
+    rw [Prefunctor.length_mapTotalPath]
+    exact p.property
+  | zero => exact ⟨0, zero_mem _, by simp⟩
+  | add u v _ _ hu hv =>
+    obtain ⟨zu, hzu, hfu⟩ := hu
+    obtain ⟨zv, hzv, hfv⟩ := hv
+    exact ⟨zu + zv, add_mem hzu hzv, by rw [map_add, map_add, hfu, hfv]⟩
+  | smul c u _ hu =>
+    obtain ⟨zu, hzu, hfu⟩ := hu
+    exact ⟨c • zu, Submodule.smul_mem _ c hzu, by rw [map_smul, map_smul, hfu]⟩
+
+/-- The restriction homomorphism attached to an induced-subgraph embedding `f : G ↪g H` maps each
+degree-`d` piece of `Π⁺(H)` onto the degree-`d` piece of `Π⁺(G)`. -/
+theorem map_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom (f : G ↪g H) (d : ℕ) :
+    (signlessPreprojectiveGrade k (DoubledQuiver H) d).map
+        (signlessPreprojectiveEmbeddingHom k f).toLinearMap =
+      signlessPreprojectiveGrade k (DoubledQuiver G) d := by
+  refine le_antisymm ?_ fun x hx => ?_
+  · rintro _ ⟨z, hz, rfl⟩
+    exact signlessPreprojectiveEmbeddingHom_mem_signlessPreprojectiveGrade k f hz
+  · obtain ⟨z, hz, rfl⟩ :=
+      exists_mem_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom_eq k f hx
+    exact ⟨z, hz, rfl⟩
+
+/-- Finite generation over the coefficient ring descends along any induced-subgraph embedding
+`f : G ↪g H`. -/
+theorem moduleFinite_signlessPreprojectiveAlgebra_of_embedding (f : G ↪g H)
+    [Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver H))] :
+    Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) :=
+  Module.Finite.of_surjective
+    (signlessPreprojectiveEmbeddingHom k f).toLinearMap
+    (signlessPreprojectiveEmbeddingHom_surjective k f)
+
+end Embedding
 
 end TauCeti

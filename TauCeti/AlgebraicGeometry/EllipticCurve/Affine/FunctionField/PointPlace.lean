@@ -49,13 +49,9 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   every place other than the place at infinity, for an arbitrary Weierstrass curve.
 * `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
   coordinate ring exactly when it is the place at infinity.
+* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an
+  equality of sets.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
-
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 0, **The point--place dictionary**: for elliptic
-`W`, identify `W.toAffine.Point` with the degree-one places, taking `O` to `infinityPlace` and an
-affine point to its maximal ideal.
 
 ## Provenance
 
@@ -180,22 +176,20 @@ theorem valuation_algebraMap_le_one_of_ne_infinity {Q : Place F W.FunctionField}
     hQ (Q.eq_of_isEquiv (W.isEquiv_infinityPlace_of_one_lt (v := Q.valuation) hx))) r
 
 /-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
--- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
--- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Forwards, a place that is not the place at infinity is regular on the whole coordinate ring
+-- (`valuation_algebraMap_le_one_of_ne_infinity`); backwards, `x` has a pole at infinity.
 -- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
 -- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
 -- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
 @[simp]
-theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity
     (Q : Place F W.FunctionField) :
     (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
       Q = infinity W := by
   constructor
   · rintro ⟨r, hr⟩
-    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
-    · exact h
-    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
-        (by simpa using hr)
+    by_contra hQ
+    exact absurd (valuation_algebraMap_le_one_of_ne_infinity hQ r) (not_le.mpr hr)
   · rintro rfl
     refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
     rw [valuation_infinity,
@@ -279,26 +273,26 @@ private noncomputable def affineOrInfinityToDegreeOnePlace :
       Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 } →
       { P : Place F W.FunctionField // P.degree = 1 }
   | none => ⟨infinity W, degree_infinity (W := W)⟩
-  | some 𝔭 => ⟨ofPrime F W.FunctionField 𝔭.1, by
+  | some 𝔭 => ⟨ofPrime F W.FunctionField 𝔭.val, by
       rw [degree_ofPrime]
-      exact 𝔭.2⟩
+      exact 𝔭.property⟩
 
 private theorem affineOrInfinityToDegreeOnePlace_bijective :
     Function.Bijective (affineOrInfinityToDegreeOnePlace W) := by
   constructor
   · rintro (_ | 𝔭) (_ | 𝔮) h
     · rfl
-    · exact (infinity_ne_ofPrime (W := W) 𝔮.1 (congrArg Subtype.val h)).elim
-    · exact (infinity_ne_ofPrime (W := W) 𝔭.1 (congrArg Subtype.val h).symm).elim
+    · exact (infinity_ne_ofPrime (W := W) 𝔮.val (congrArg Subtype.val h)).elim
+    · exact (infinity_ne_ofPrime (W := W) 𝔭.val (congrArg Subtype.val h).symm).elim
     · congr 1
       apply Subtype.ext
       exact ofPrime_injective F W.FunctionField (congrArg Subtype.val h)
   · intro P
-    rcases eq_infinity_or_existsUnique_eq_ofPrime P.1 with hP | ⟨𝔭, h𝔭, -⟩
+    rcases eq_infinity_or_existsUnique_eq_ofPrime P.val with hP | ⟨𝔭, h𝔭, -⟩
     · refine ⟨none, Subtype.ext hP.symm⟩
     · have hdegree : Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 := by
         rw [← degree_ofPrime F W.FunctionField 𝔭, h𝔭]
-        exact P.2
+        exact P.property
       exact ⟨some ⟨𝔭, hdegree⟩, Subtype.ext h𝔭⟩
 
 /-- The degree-one normalized places are exactly the place at infinity together with the
@@ -314,15 +308,15 @@ noncomputable def degreeOneAffineOrInfinityEquiv :
 theorem coe_degreeOneAffineOrInfinityEquiv_none :
     (degreeOneAffineOrInfinityEquiv W (0 : WithZero
       { 𝔭 : HeightOneSpectrum W.CoordinateRing //
-        Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 })).1 = infinity W := by
+        Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 })).val = infinity W := by
   rfl
 
 @[simp]
 theorem coe_degreeOneAffineOrInfinityEquiv_some
     (𝔭 : { 𝔭 : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ 𝔭.asIdeal) = 1 }) :
-    (degreeOneAffineOrInfinityEquiv W (𝔭 : WithZero _)).1 =
-      ofPrime F W.FunctionField 𝔭.1 := by
+    (degreeOneAffineOrInfinityEquiv W (𝔭 : WithZero _)).val =
+      ofPrime F W.FunctionField 𝔭.val := by
   rfl
 
 end Place
@@ -347,13 +341,13 @@ noncomputable def pointEquivDegreeOnePlace :
 /-- The point--place dictionary sends the point at infinity to the place at infinity. -/
 @[simp]
 theorem coe_pointEquivDegreeOnePlace_zero :
-    (pointEquivDegreeOnePlace W .zero).1 = Place.infinity W := by
+    (pointEquivDegreeOnePlace W .zero).val = Place.infinity W := by
   exact Place.coe_degreeOneAffineOrInfinityEquiv_none W
 
 /-- The point--place dictionary sends `(x, y)` to the normalized place of its maximal ideal. -/
 @[simp]
 theorem coe_pointEquivDegreeOnePlace_mk {x y : F} (h : W.Equation x y) :
-    (pointEquivDegreeOnePlace W (.mk h)).1 =
+    (pointEquivDegreeOnePlace W (.mk h)).val =
       Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h) := by
   rw [← CoordinateRing.equationEquivDegreeOnePlace_apply_coe ⟨(x, y), h⟩]
   exact Place.coe_degreeOneAffineOrInfinityEquiv_some W
@@ -363,7 +357,7 @@ theorem coe_pointEquivDegreeOnePlace_mk {x y : F} (h : W.Equation x y) :
 maximal ideal. -/
 @[simp]
 theorem coe_pointEquivDegreeOnePlace_some {x y : F} (h : W.Nonsingular x y) :
-    (pointEquivDegreeOnePlace W (.some x y h)).1 =
+    (pointEquivDegreeOnePlace W (.some x y h)).val =
       Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left) :=
   coe_pointEquivDegreeOnePlace_mk W h.left
 
@@ -387,6 +381,22 @@ theorem pointEquivDegreeOnePlace_symm_ofPrime {x y : F} (h : W.Equation x y) :
   apply (pointEquivDegreeOnePlace W).injective
   apply Subtype.ext
   simp
+
+end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve.Affine
+
+open TauCeti
+
+variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
+
+/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
+sets, the shape `Divisor.degreeZeroClassGroupEquiv`
+consumes. -/
+theorem setOf_exists_notMem_integers_eq_singleton_infinity :
+    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
+        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
+  Set.ext fun _ ↦ by simp
 
 end WeierstrassCurve.Affine
 

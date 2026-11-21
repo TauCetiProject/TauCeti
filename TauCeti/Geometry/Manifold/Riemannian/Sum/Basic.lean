@@ -65,7 +65,7 @@ def sumTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ Tange
   contMDiff
     | .inl x => by
       have h := g₁.contMDiff x
-      rw [contMDiffAt_section] at h ⊢
+      rw [contMDiffAt_section_iff] at h ⊢
       -- Near `inl x`, the section is read through the retraction of `M ⊕ M'` onto `M` which
       -- collapses `M'` to `x`.
       have hr : ContMDiff I I n (Sum.elim id fun _ : M' ↦ x) :=
@@ -85,7 +85,7 @@ def sumTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ Tange
             (trivializationAt E (TangentSpace I : M → Type _) x).symm z u := by
         rw [← Trivialization.symmL_apply (R := ℝ) _ hz',
           ← Trivialization.symmL_apply (R := ℝ) _ hzM]
-        exact DFunLike.congr_fun (TauCeti.Manifold.symmL_trivializationAt_sumInl hz) u
+        exact DFunLike.congr_fun (TauCeti.Manifold.symmL_trivializationAt_sumInl) u
       ext v w
       refine (inCoordinates_apply_eq₂ hz' hz' (by simp)).trans
         (Eq.trans ?_ (inCoordinates_apply_eq₂ hzM hzM (by simp)).symm)
@@ -97,7 +97,7 @@ def sumTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ Tange
       rfl
     | .inr y => by
       have h := g₂.contMDiff y
-      rw [contMDiffAt_section] at h ⊢
+      rw [contMDiffAt_section_iff] at h ⊢
       have hr : ContMDiff I I n (Sum.elim (fun _ : M ↦ y) id) :=
         contMDiff_const.sumElim contMDiff_id
       refine (h.comp (Sum.inr y) (hr (Sum.inr y))).congr_of_eventuallyEq ?_
@@ -115,7 +115,7 @@ def sumTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ Tange
             (trivializationAt E (TangentSpace I : M' → Type _) y).symm z u := by
         rw [← Trivialization.symmL_apply (R := ℝ) _ hz',
           ← Trivialization.symmL_apply (R := ℝ) _ hzM]
-        exact DFunLike.congr_fun (TauCeti.Manifold.symmL_trivializationAt_sumInr hz) u
+        exact DFunLike.congr_fun TauCeti.Manifold.symmL_trivializationAt_sumInr u
       ext v w
       refine (inCoordinates_apply_eq₂ hz' hz' (by simp)).trans
         (Eq.trans ?_ (inCoordinates_apply_eq₂ hzM hzM (by simp)).symm)

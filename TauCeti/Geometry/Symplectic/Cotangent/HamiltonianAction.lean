@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Action
 public import TauCeti.Geometry.Symplectic.Floer.Action
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -142,34 +142,20 @@ theorem tendsto_cotangentHamiltonianAction_of_tendstoUniformlyOn
     (hh₀ : ContinuousAt h₀ (x 0).1) (hh₁ : ContinuousAt h₁ (x 1).1) :
     Tendsto (fun i ↦ cotangentHamiltonianAction h₀ h₁ H (γ i)) l
       (𝓝 (cotangentHamiltonianAction h₀ h₁ H x)) := by
-  rcases l.eq_or_neBot with rfl | hl
-  · exact tendsto_bot
-  have hx : ContinuousOn x [[0, 1]] := hγ.continuousOn hγc.frequently
-  have hx' : ContinuousOn (fun t ↦ (deriv x t).1) [[0, 1]] := hγ'.continuousOn hγc'.frequently
-  -- The Liouville integrands converge uniformly: they evaluate the covectors of the paths on the
-  -- base components of their derivatives, and these pairs converge uniformly (`prodMk` converges
-  -- along `l ×ˢ l`, which we pull back along the diagonal).
+  -- The Liouville integrands converge: they evaluate the covectors of the paths on the base
+  -- components of their derivatives, and these pairs converge uniformly.
   have hpair : TendstoUniformlyOn (fun i t ↦ ((γ i t).2, (deriv (γ i) t).1))
-      (fun t ↦ ((x t).2, (deriv x t).1)) l [[0, 1]] := fun _ hu ↦
-    tendsto_diag.eventually (((uniformContinuous_snd.comp_tendstoUniformlyOn hγ).prodMk hγ') _ hu)
+      (fun t ↦ ((x t).2, (deriv x t).1)) l [[0, 1]] :=
+    (uniformContinuous_snd.comp_tendstoUniformlyOn hγ).prodMk_same hγ'
+  have hev : Continuous (uncurry fun (_ : ℝ) (p : StrongDual ℝ V × V) ↦ p.1 p.2) :=
+    isBoundedBilinearMap_apply.continuous.comp continuous_snd
   have hlio : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, (γ i t).2 (deriv (γ i) t).1) l
       (𝓝 (∫ t in (0 : ℝ)..1, (x t).2 (deriv x t).1)) :=
-    TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn
-      (hγc.and hγc' |>.mono fun i hi ↦ hi.1.snd.clm_apply hi.2)
-      ((isCompact_uIcc.image_of_continuousOn (hx.snd.prodMk hx')).comp_tendstoUniformlyOn
-        (g := fun p : StrongDual ℝ V × V ↦ p.1 p.2)
-        (fun _ _ ↦ isBoundedBilinearMap_apply.continuous.continuousAt) hpair)
-  -- The Hamiltonian integrands converge uniformly, as `H` is continuous.
-  have hid : TendstoUniformlyOn (fun (_ : ι) (t : ℝ) ↦ t) id l [[0, 1]] :=
-    fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
-  have hgraph : TendstoUniformlyOn (fun i t ↦ (t, γ i t)) (fun t ↦ (t, x t)) l [[0, 1]] :=
-    fun _ hu ↦ tendsto_diag.eventually ((hid.prodMk hγ) _ hu)
+    hpair.tendsto_intervalIntegral_comp hev (hγc.and hγc' |>.mono fun _ hi ↦ hi.1.snd.prodMk hi.2)
+  -- The Hamiltonian integrands converge, as `H` is continuous.
   have hHint : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, H t (γ i t)) l
       (𝓝 (∫ t in (0 : ℝ)..1, H t (x t))) :=
-    TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn
-      (hγc.mono fun i hi ↦ hH.comp_continuousOn (continuousOn_id.prodMk hi))
-      ((isCompact_uIcc.image_of_continuousOn (continuousOn_id.prodMk hx)).comp_tendstoUniformlyOn
-        (fun _ _ ↦ hH.continuousAt) hgraph)
+    hγ.tendsto_intervalIntegral_comp hH hγc
   have hstart : Tendsto (fun i ↦ h₀ (γ i 0).1) l (𝓝 (h₀ (x 0).1)) :=
     hh₀.tendsto.comp (continuousAt_fst.tendsto.comp (hγ.tendsto_at (by simp)))
   have hend : Tendsto (fun i ↦ h₁ (γ i 1).1) l (𝓝 (h₁ (x 1).1)) :=

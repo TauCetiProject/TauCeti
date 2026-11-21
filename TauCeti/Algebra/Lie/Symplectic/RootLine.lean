@@ -47,6 +47,44 @@ theorem tangentMatrix_apply_eq_zero_of_int_eq_zero (root : RootSubgroupIndex m) 
   have hsmul := congrFun (congrFun ((root.tangentMatrix (R := R)).map_smul c 1) a) b
   simpa [hone] using hsmul
 
+/-- The `positiveSum` case of `exists_eq_tangentMatrix_of_support`. -/
+private theorem exists_eq_tangentMatrix_of_support_positiveSum {i j : Fin m} (hij : i < j)
+    {A : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R}
+    (hA : A ∈ LieAlgebra.Symplectic.sp (Fin m) R)
+    (hs : ∀ a b, (RootSubgroupIndex.positiveSum i j hij).tangentMatrix (1 : ℤ) a b = 0 →
+      A a b = 0) :
+    ∃ c : R, A = (RootSubgroupIndex.positiveSum i j hij).tangentMatrix c := by
+  obtain ⟨hQ, -, -⟩ := (mem_symplecticLieAlgebra_iff A).mp hA
+  refine ⟨A (.inl i) (.inr j), ?_⟩
+  ext a b
+  by_cases h₁ : Sum.inl i = a ∧ Sum.inr j = b
+  · obtain ⟨rfl, rfl⟩ := h₁
+    simp [hij.ne']
+  by_cases h₂ : Sum.inl j = a ∧ Sum.inr i = b
+  · obtain ⟨rfl, rfl⟩ := h₂
+    simp [hij.ne, hQ j i]
+  · have hz := hs a b (by simp [h₁, h₂])
+    simp [h₁, h₂, hz]
+
+/-- The `negativeSum` case of `exists_eq_tangentMatrix_of_support`. -/
+private theorem exists_eq_tangentMatrix_of_support_negativeSum {i j : Fin m} (hij : i < j)
+    {A : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R}
+    (hA : A ∈ LieAlgebra.Symplectic.sp (Fin m) R)
+    (hs : ∀ a b, (RootSubgroupIndex.negativeSum i j hij).tangentMatrix (1 : ℤ) a b = 0 →
+      A a b = 0) :
+    ∃ c : R, A = (RootSubgroupIndex.negativeSum i j hij).tangentMatrix c := by
+  obtain ⟨-, hS, -⟩ := (mem_symplecticLieAlgebra_iff A).mp hA
+  refine ⟨A (.inr i) (.inl j), ?_⟩
+  ext a b
+  by_cases h₁ : Sum.inr i = a ∧ Sum.inl j = b
+  · obtain ⟨rfl, rfl⟩ := h₁
+    simp [hij.ne']
+  by_cases h₂ : Sum.inr j = a ∧ Sum.inl i = b
+  · obtain ⟨rfl, rfl⟩ := h₂
+    simp [hij.ne, hS j i]
+  · have hz := hs a b (by simp [h₁, h₂])
+    simp [h₁, h₂, hz]
+
 /-- Within the symplectic Lie algebra, integral root support forces the matrix to
 be a scalar multiple of the normalized root matrix. -/
 private theorem exists_eq_tangentMatrix_of_support (root : RootSubgroupIndex m)
@@ -54,7 +92,7 @@ private theorem exists_eq_tangentMatrix_of_support (root : RootSubgroupIndex m)
     (hA : A ∈ LieAlgebra.Symplectic.sp (Fin m) R)
     (hs : ∀ a b, root.tangentMatrix (1 : ℤ) a b = 0 → A a b = 0) :
     ∃ c : R, A = root.tangentMatrix c := by
-  obtain ⟨hQ, hS, hD⟩ := (mem_symplecticLieAlgebra_iff A).mp hA
+  obtain ⟨-, -, hD⟩ := (mem_symplecticLieAlgebra_iff A).mp hA
   -- The support leaves one entry for long roots and two related entries for short roots.
   cases root with
   | positiveLong i =>
@@ -84,28 +122,8 @@ private theorem exists_eq_tangentMatrix_of_support (root : RootSubgroupIndex m)
         simp [hD j i]
       · have hz := hs a b (by simp [h₁, h₂])
         simp [h₁, h₂, hz]
-  | positiveSum i j hij =>
-      refine ⟨A (.inl i) (.inr j), ?_⟩
-      ext a b
-      by_cases h₁ : Sum.inl i = a ∧ Sum.inr j = b
-      · obtain ⟨rfl, rfl⟩ := h₁
-        simp [hij.ne']
-      by_cases h₂ : Sum.inl j = a ∧ Sum.inr i = b
-      · obtain ⟨rfl, rfl⟩ := h₂
-        simp [hij.ne, hQ j i]
-      · have hz := hs a b (by simp [h₁, h₂])
-        simp [h₁, h₂, hz]
-  | negativeSum i j hij =>
-      refine ⟨A (.inr i) (.inl j), ?_⟩
-      ext a b
-      by_cases h₁ : Sum.inr i = a ∧ Sum.inl j = b
-      · obtain ⟨rfl, rfl⟩ := h₁
-        simp [hij.ne']
-      by_cases h₂ : Sum.inr j = a ∧ Sum.inl i = b
-      · obtain ⟨rfl, rfl⟩ := h₂
-        simp [hij.ne, hS j i]
-      · have hz := hs a b (by simp [h₁, h₂])
-        simp [h₁, h₂, hz]
+  | positiveSum i j hij => exact exists_eq_tangentMatrix_of_support_positiveSum hij hA hs
+  | negativeSum i j hij => exact exists_eq_tangentMatrix_of_support_negativeSum hij hA hs
 
 /-- A symplectic Lie matrix lies on a root line exactly when it vanishes outside
 the corresponding integral support. The scalar parameter is unique over every ring. -/

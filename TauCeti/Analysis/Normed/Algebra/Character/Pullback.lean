@@ -92,7 +92,7 @@ theorem exists_characterPullback_eq_of_ker_le (Φ : A →ₐ[𝕜] B) (hΦ : Den
     ∃ ψ : characterSpace 𝕜 B, Φ.characterPullback ψ = χ := by
   have hbound (a : A) : ‖χ a‖ ≤ ‖Φ a‖ :=
     quasispectrum.norm_le_norm_of_mem (spectrum_subset_quasispectrum 𝕜 (Φ a)
-      (Φ.apply_mem_spectrum_of_ker_le hUnits (CharacterSpace.toAlgHom χ) hχ a))
+      (apply_mem_spectrum_of_ker_le Φ hUnits (CharacterSpace.toAlgHom χ) hχ a))
   let e : B →L[𝕜] 𝕜 := (CharacterSpace.toAlgHom χ).toLinearMap.extendOfNorm Φ.toLinearMap
   have he (a : A) : e (Φ a) = χ a :=
     LinearMap.extendOfNorm_eq hΦ ⟨1, fun a => by simpa using hbound a⟩ a
@@ -174,3 +174,52 @@ theorem characterPullback_eq_compContinuousMap (Φ : A →⋆ₐ[𝕜] B) :
   rfl
 
 end StarAlgHom
+
+namespace AlgEquiv
+
+variable {𝕜 A B C : Type*} [NontriviallyNormedField 𝕜]
+  [NormedRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A]
+  [NormedRing B] [NormedAlgebra 𝕜 B] [CompleteSpace B]
+  [NormedRing C] [NormedAlgebra 𝕜 C] [CompleteSpace C]
+
+/-- An algebra equivalence `e : A ≃ₐ[𝕜] B` between unital Banach algebras induces a weak-star
+homeomorphism `characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A` by character pullback. -/
+noncomputable def characterSpaceHomeomorph (e : A ≃ₐ[𝕜] B) :
+    characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A where
+  toFun := e.toAlgHom.characterPullback
+  invFun := e.symm.toAlgHom.characterPullback
+  left_inv φ := by ext b; simp
+  right_inv χ := by ext a; simp
+  continuous_toFun := map_continuous _
+  continuous_invFun := map_continuous _
+
+@[simp]
+theorem characterSpaceHomeomorph_apply (e : A ≃ₐ[𝕜] B) (φ : characterSpace 𝕜 B) (a : A) :
+    e.characterSpaceHomeomorph φ a = φ (e a) :=
+  e.toAlgHom.characterPullback_apply φ a
+
+@[simp]
+theorem characterSpaceHomeomorph_symm (e : A ≃ₐ[𝕜] B) :
+    e.characterSpaceHomeomorph.symm = e.symm.characterSpaceHomeomorph := (rfl)
+
+@[simp]
+theorem coe_characterSpaceHomeomorph (e : A ≃ₐ[𝕜] B) :
+    (e.characterSpaceHomeomorph : C(characterSpace 𝕜 B, characterSpace 𝕜 A)) =
+      e.toAlgHom.characterPullback := by
+  ext φ a
+  simp
+
+@[simp]
+theorem characterSpaceHomeomorph_refl :
+    (AlgEquiv.refl : A ≃ₐ[𝕜] A).characterSpaceHomeomorph =
+      Homeomorph.refl (characterSpace 𝕜 A) := by
+  ext φ a
+  rfl
+
+theorem characterSpaceHomeomorph_trans (e₁ : A ≃ₐ[𝕜] B) (e₂ : B ≃ₐ[𝕜] C) :
+    (e₁.trans e₂).characterSpaceHomeomorph =
+      e₂.characterSpaceHomeomorph.trans e₁.characterSpaceHomeomorph := by
+  ext φ a
+  rfl
+
+end AlgEquiv

@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Basic
+import Mathlib.Order.Interval.Set.Basic
 
 /-!
 # Closed intervals in `pi`-space with an updated endpoint
 
-A point of the box `Icc a b` in `Π i, π i` stays in the box obtained by moving one coordinate of
-an endpoint past the point: lowering `b i` to some `s ≥ x i`, or raising `a i` to some `s ≤ x i`.
-These are the two halves of the box `Icc a b` cut along the coordinate `i` at `s`.
+A point `x` of the box `Icc a b` in `Π i, π i` stays in the box obtained by replacing `b i`
+with `s ≥ x i`, or by replacing `a i` with `s ≤ x i`. Only the indicated comparison with
+`x i` is required. When `π i` is linearly ordered and `s ∈ Icc (a i) (b i)`, the two updated
+boxes cover the original box and describe its cut along coordinate `i` at `s`.
 -/
 
 public section
@@ -21,6 +23,8 @@ public section
 open Function
 
 namespace Set
+
+section Preorder
 
 variable {ι : Type*} {π : ι → Type*} [DecidableEq ι] [∀ i, Preorder (π i)] {a b x : ∀ i, π i}
   {i : ι} {s : π i}
@@ -34,5 +38,26 @@ theorem mem_Icc_update_right (hx : x ∈ Icc a b) (hxs : x i ≤ s) : x ∈ Icc 
 lower endpoint has its `i`-th coordinate replaced by `s`. -/
 theorem mem_Icc_update_left (hx : x ∈ Icc a b) (hsx : s ≤ x i) : x ∈ Icc (update a i s) b :=
   ⟨update_le_iff.2 ⟨hsx, fun j _ ↦ hx.1 j⟩, hx.2⟩
+
+end Preorder
+
+section LinearOrder
+
+variable {ι : Type*} {π : ι → Type*} [DecidableEq ι] [∀ j, Preorder (π j)]
+
+/-- When the cut coordinate `π i` is linearly ordered, splitting a closed box `Icc a b` along
+coordinate `i` at `s ∈ Icc (a i) (b i)` decomposes it as the union of its lower and upper
+sub-boxes. -/
+theorem Icc_update_union_Icc_update (a b : ∀ j, π j) (i : ι) [Std.IsLinearOrder (π i)]
+    {s : π i} (hs : s ∈ Icc (a i) (b i)) :
+    Icc a (update b i s) ∪ Icc (update a i s) b = Icc a b := by
+  refine Subset.antisymm (union_subset
+      (Icc_subset_Icc le_rfl (update_le_iff.2 ⟨hs.2, fun _ _ ↦ le_rfl⟩))
+      (Icc_subset_Icc (le_update_iff.2 ⟨hs.1, fun _ _ ↦ le_rfl⟩) le_rfl)) fun x hx ↦ ?_
+  rcases Std.Total.total (r := (· ≤ ·)) (x i) s with hxs | hsx
+  · exact Or.inl (mem_Icc_update_right hx hxs)
+  · exact Or.inr (mem_Icc_update_left hx hsx)
+
+end LinearOrder
 
 end Set

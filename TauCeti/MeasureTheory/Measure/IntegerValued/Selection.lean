@@ -57,8 +57,8 @@ private lemma one_le_singleton_low_quantile {μ : Measure ℝ} [IsFiniteMeasure 
     · exact (inv_lt_one₀ (by positivity)).2 (by linarith)⟩
   have hscale (s : Set ℝ) : ν.real s = (μ.real univ)⁻¹ * μ.real s := by
     simp [ν, ENNReal.toReal_inv, Measure.real]
-  have hlo := ν.measureReal_Iio_quantile_le p.2.1
-  have hhi := ν.le_cdf_quantile p.2.2
+  have hlo := ν.measureReal_Iio_quantile_le p.property.1
+  have hhi := ν.le_cdf_quantile p.property.2
   rw [hscale] at hlo
   rw [ProbabilityTheory.cdf_eq_real, hscale] at hhi
   have hlo' : μ.real (Iio (ν.quantile p)) < 1 := by
@@ -71,14 +71,14 @@ private lemma one_le_singleton_low_quantile {μ : Measure ℝ} [IsFiniteMeasure 
     exact hbound.trans_lt hmul
   have hzero : μ (Iio (ν.quantile p)) = 0 := by
     by_contra h
-    have hone := hint.one_le_apply measurableSet_Iio h
+    have hone := hint.one_le_apply h
     have := (ENNReal.toReal_le_toReal (by simp) (measure_ne_top _ _)).2 hone
     exact (not_le_of_gt hlo') this
   have hclosed : μ (Iic (ν.quantile p)) ≠ 0 := by
     intro h
     simp only [Measure.real, h, ENNReal.toReal_zero, mul_zero] at hhi
-    exact (not_le_of_gt p.2.1) hhi
-  apply hint.one_le_apply (measurableSet_singleton _)
+    exact (not_le_of_gt p.property.1) hhi
+  apply hint.one_le_apply
   intro hsingle
   apply hclosed
   rw [← Iio_union_right, measure_union_null hzero hsingle]
@@ -167,8 +167,8 @@ theorem _root_.Measurable.exists_option_one_le_singleton {α X : Type*} [Measura
     have hs' : MeasurableSet {a | μ a univ = 0} :=
       measurableSet_eq_fun ((Measure.measurable_coe MeasurableSet.univ).comp hm) measurable_const
     exact hs'.compl.congr (Set.ext fun _ => measure_univ_ne_zero)
-  obtain ⟨g, hg, hmass⟩ := (hm.comp measurable_subtype_coe).exists_one_le_singleton
-    (fun a : s => hfinite a) (fun a : s => hint a) (fun a : s => a.2)
+  obtain ⟨g, hg, hmass⟩ := (hm.comp measurable_subtypeVal).exists_one_le_singleton
+    (fun a : s => hfinite a) (fun a : s => hint a) (fun a : s => a.property)
   refine ⟨fun a => if h : a ∈ s then some (g ⟨a, h⟩) else none,
     (Option.measurable_some.comp hg).dite measurable_const hs, ?_, ?_⟩
   · intro a

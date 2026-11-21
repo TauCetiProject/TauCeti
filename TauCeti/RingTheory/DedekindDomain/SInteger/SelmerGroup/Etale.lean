@@ -47,12 +47,11 @@ the `Set.Finite` hypotheses are converted to `Finite` instances with `Set.Finite
 ## References
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-`EllipticCurves` roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this
-follows. The names differ: that source abbreviates the quotient `Kˣ ⧸ (Kˣ)ⁿ` as `Units.modPow` and
-states the per-factor finiteness as an explicit `finite_selmerGroup`, whereas here the quotient is
-spelled out as Mathlib does and the finiteness is the instance
-`IsDedekindDomain.selmerGroup.finite`.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this follows. The names
+differ: that source abbreviates the quotient `Kˣ ⧸ (Kˣ)ⁿ` as `Units.modPow` and states the
+per-factor finiteness as an explicit `finite_selmerGroup`, whereas here the quotient is spelled out
+as Mathlib does and the finiteness is the instance `IsDedekindDomain.selmerGroup.finite`.
 -/
 
 public section
@@ -87,7 +86,7 @@ theorem finite_selmerGroupPi [Finite ι] [(i : ι) → Finite (ClassGroup (B i))
     Finite (selmerGroupPi L B S n) := by
   have (i : ι) : Finite (S i) := (hS i).to_subtype
   have (i : ι) : Finite (selmerGroup (R := B i) (K := L i) (S := S i) (n := n)) := inferInstance
-  exact .of_injective (fun x i ↦ (⟨x.1 i, (mem_selmerGroupPi_iff L B S n x.1).mp x.2 i⟩ :
+  exact .of_injective (fun x i ↦ (⟨x.val i, (mem_selmerGroupPi_iff L B S n x.val).mp x.property i⟩ :
     selmerGroup (R := B i) (K := L i) (S := S i) (n := n)))
     fun x y hxy ↦ Subtype.ext <| funext fun i ↦ congrArg Subtype.val (congrFun hxy i)
 
@@ -118,7 +117,7 @@ theorem finite_selmerGroupOfEquiv [Finite ι] [(i : ι) → Finite (ClassGroup (
       ((i : ι) → (L i)ˣ ⧸ (powMonoidHom n : (L i)ˣ →* (L i)ˣ).range)) :
     Finite (selmerGroupOfEquiv L B S n e) := by
   have := finite_selmerGroupPi L B S n hS
-  exact .of_injective (fun x ↦ (⟨e x.1, x.2⟩ : selmerGroupPi L B S n))
+  exact .of_injective (fun x ↦ (⟨e x.val, x.property⟩ : selmerGroupPi L B S n))
     fun x y hxy ↦ Subtype.ext <| e.injective <| congrArg Subtype.val hxy
 
 /-- The order of the Selmer group of a finite etale algebra is the product of the orders of the
@@ -130,8 +129,8 @@ theorem card_selmerGroupOfEquiv [Fintype ι]
       ∏ i, Nat.card (selmerGroup (R := B i) (K := L i) (S := S i) (n := n)) := by
   rw [← Nat.card_pi]
   exact Nat.card_congr
-    { toFun x i := ⟨e x.1 i, (mem_selmerGroupOfEquiv_iff L B S n e x.1).mp x.2 i⟩
-      invFun y := ⟨e.symm fun i ↦ (y i).1,
+    { toFun x i := ⟨e x.val i, (mem_selmerGroupOfEquiv_iff L B S n e x.val).mp x.property i⟩
+      invFun y := ⟨e.symm fun i ↦ (y i).val,
         (mem_selmerGroupOfEquiv_iff L B S n e _).mpr fun i ↦ by simp⟩
       left_inv x := Subtype.ext (by simp)
       right_inv y := funext fun i ↦ Subtype.ext (by simp) }

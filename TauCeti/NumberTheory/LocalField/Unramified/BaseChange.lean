@@ -79,7 +79,7 @@ theorem IsUnramified.of_adjoin_range_eq_top [IsUnramified K L] (ι : L →ₐ[K]
   · -- `M = F(b)`, because `L = K(a)`.
     have hKa : IntermediateField.adjoin K {algebraMap 𝒪[L] L a} = ⊤ :=
       TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top ha
-    rw [← h, TauCeti.IntermediateField.adjoin_range_eq_adjoin_image ι hKa, Set.image_singleton]
+    rw [← h, ι.adjoin_range_eq_adjoin_image hKa, Set.image_singleton]
     -- `algebraMap 𝒪[L] L` is the subring inclusion, and `b` is the image of `a`.
     rw [Algebra.algebraMap_ofSubsemiring_apply, Algebra.algebraMap_ofSubsemiring_apply,
       AlgHom.coe_integerRingHom_apply]
@@ -115,7 +115,7 @@ theorem IsUnramified.of_fieldRange_sup_fieldRange_eq_top [IsUnramified K L₁] [
   -- `M` is generated over `L₂` by the image of `L₁`, so `M/L₂` is unramified by base change, and
   -- `M/K` by transitivity.
   have := IsUnramified.of_adjoin_range_eq_top (F := L₂) ι₁
-    (IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top ι₁
+    (ι₁.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top.2
       ((sup_comm _ _).trans h))
   exact IsUnramified.trans K L₂ M
 

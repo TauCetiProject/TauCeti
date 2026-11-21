@@ -85,7 +85,8 @@ private theorem integrable_sq_mul_norm_gradient_sq_div_sq {u : W1p mu Omega 2}
     (hm : 0 < m) (hum : ∀ᵐ x ∂mu.restrict Omega, x ∈ tsupport ψ → m ≤ W1p.value u x) :
     Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 / W1p.value u x ^ 2)
       (mu.restrict Omega) := by
-  refine Integrable.mono' ((W1p.integrable_norm_gradient_sq u).const_mul ((M / m) ^ 2)) ?_ ?_
+  refine Integrable.mono'
+    ((Lp.memLp (W1p.gradient u)).norm.integrable_sq.const_mul ((M / m) ^ 2)) ?_ ?_
   · exact ((((hψ.pow 2).aestronglyMeasurable.mul
       ((Lp.aestronglyMeasurable (W1p.gradient u)).norm.pow 2)).aemeasurable).div
       ((Lp.aestronglyMeasurable (W1p.value u)).pow 2).aemeasurable).aestronglyMeasurable
@@ -257,7 +258,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_div_sq_le
   have hXint : Integrable X (mu.restrict Omega) :=
     integrable_sq_mul_norm_gradient_sq_div_sq hψ.continuous hψM hm hum'
   have hYint : Integrable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) :=
-    ((by have := ContDiff.continuous_gradient hψ; fun_prop :
+    ((by have := ContDiff.continuous_gradient hψ (by simp); fun_prop :
         Continuous fun x => ‖∇ ψ x‖ ^ 2).integrable_of_hasCompactSupport
       (hcpt.gradient.comp_left (g := fun w => ‖w‖ ^ 2) (by simp))).restrict
   -- Integrate the pointwise estimate, and absorb half of the left side.
@@ -420,7 +421,7 @@ theorem exists_setIntegral_ball_log_sub_setAverage_sq_le :
   -- The Poincaré–Wirtinger inequality for `w` on `B(x₀, R)`, then the logarithmic Caccioppoli
   -- inequality on the balls `B(x₀, R) ⊆ B(x₀, 2R)`, whose volume is `2ⁿ |B(x₀, R)|`.
   have hP := W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset
-    (Omega := ⟨ball x₀ R, isOpen_ball⟩) hR subset_rfl w
+    (Omega := ⟨ball x₀ R, isOpen_ball⟩) subset_rfl w
   have hcacc := hc h ha hu hR (by linarith : R < 2 * R) hball hm hum
   have hvol : mu.real (ball x₀ (2 * R)) = 2 ^ n * mu.real (ball x₀ R) := by
     have hb : ∀ ρ : ℝ, 0 < ρ → mu.real (ball x₀ ρ) = ρ ^ n * mu.real (ball 0 1) := fun ρ hρ =>
