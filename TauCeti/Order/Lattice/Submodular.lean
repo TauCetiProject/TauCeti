@@ -57,12 +57,14 @@ theorem isSubmodular_def [Add K] [LE K] [Lattice L] (f : L → K) :
     IsSubmodular f ↔ ∀ a b, f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b := Iff.rfl
 
 /-- A constant function on a lattice is submodular. -/
+@[simp]
 theorem isSubmodular_const [Add K] [LE K] [@Std.Refl K (· ≤ ·)] [Lattice L] (c : K) :
     IsSubmodular (fun _ : L ↦ c) :=
   fun _ _ ↦ Std.le_refl _
 
 /-- The sum of fixed weights over a finite set is submodular. In fact, its submodular inequality
 is always an equality. -/
+@[simp]
 theorem isSubmodular_finsetSum {V : Type*} [DecidableEq V] [AddCommMonoid K] [LE K]
     [@Std.Refl K (· ≤ ·)] (f : V → K) : IsSubmodular (fun S : Finset V ↦ ∑ v ∈ S, f v) :=
   fun _ _ ↦ by rw [Finset.sum_union_inter]; exact Std.le_refl _
@@ -74,8 +76,9 @@ protected theorem apply [Add K] [LE K] [Lattice L] {f : L → K} (hf : IsSubmodu
     (a b : L) : f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b :=
   (isSubmodular_def f).mp hf a b
 
-/-- The pointwise sum of two submodular functions is submodular. The order need only be
-transitive, not reflexive: the two submodular inequalities are added one side at a time. -/
+/-- The pointwise sum of two submodular functions is submodular, for values in a commutative
+additive semigroup with a transitive relation preserved by addition. Reflexivity is not
+required. -/
 theorem add [AddCommSemigroup K] [LE K] [IsTrans K (· ≤ ·)] [AddLeftMono K] [Lattice L]
     {f g : L → K} (hf : IsSubmodular f) (hg : IsSubmodular g) :
     IsSubmodular (fun a ↦ f a + g a) := fun a b ↦
@@ -97,8 +100,7 @@ theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] [FunLike F M L]
 /-- Let `a` minimize a submodular function over `s` and `b` minimize it over `t`. If the meet
 lies in `s` and the join lies in `t`, then the join minimizes over `t` and the meet minimizes
 over `s`. Addition need not be commutative: it must preserve and reflect the order on both
-sides, and the submodular inequality at `b` and `a` puts the summands in the order that each
-cancellation needs. -/
+sides. -/
 theorem isMinOn_sup_inf [Add K] [Preorder K] [AddLeftMono K] [AddRightMono K]
     [AddLeftReflectLE K] [AddRightReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {s t : Set L} {a b : L} (hamin : IsMinOn f s a) (hbmin : IsMinOn f t b) (hsup : a ⊔ b ∈ t)
@@ -107,9 +109,9 @@ theorem isMinOn_sup_inf [Add K] [Preorder K] [AddLeftMono K] [AddRightMono K]
   have hba : f (a ⊔ b) + f (a ⊓ b) ≤ f b + f a := by
     simpa only [sup_comm b a, inf_comm b a] using hf.apply b a
   have hsup_le : f (a ⊔ b) ≤ f b :=
-    le_of_add_le_add_right ((add_le_add_right (hamin _ hinf) _).trans hba)
+    le_of_add_le_add_right (add_le_of_add_le_left hba (hamin _ hinf))
   have hinf_le : f (a ⊓ b) ≤ f a :=
-    le_of_add_le_add_left ((add_le_add_left (hbmin _ hsup) _).trans hba)
+    le_of_add_le_add_left (add_le_of_add_le_right hba (hbmin _ hsup))
   exact ⟨fun _ hc ↦ hsup_le.trans (hbmin _ hc), fun _ hc ↦ hinf_le.trans (hamin _ hc)⟩
 
 /-- The minimizers of a submodular function over a sublattice form a sublattice. Membership in
