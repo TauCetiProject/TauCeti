@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lift
 
 /-!
 # The Weyl quotient of a Chevalley datum

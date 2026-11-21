@@ -8,8 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Action
-import TauCeti.GroupTheory.Coxeter.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Word
 import TauCeti.GroupTheory.Coxeter.Matrix
 
 /-!
