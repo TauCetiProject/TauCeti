@@ -27,9 +27,11 @@ A complex distribution `T` on `Ω` pulls back to the distribution `e^* T` on `U`
 
 (`Distribution.isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff`), so the `H^s` singular
 support transforms by `e`: `singsupp_s (e^* T) = U ∩ e⁻¹ (singsupp_s T)`
-(`Distribution.sobolevSingularSupport_compCLMOfOpenPartialHomeomorph`). This makes the local
-Sobolev spaces `H^s_loc` well defined on manifolds and for sections of vector bundles, chart by
-chart: chart transitions are such maps `e`.
+(`Distribution.sobolevSingularSupport_compCLMOfOpenPartialHomeomorph`). Since chart transitions
+are such maps `e`, this is the chart-change invariance needed to define the local Sobolev spaces
+`H^s_loc` on manifolds chart by chart. For sections of vector bundles, invariance under frame
+changes (multiplication by smooth matrix-valued functions) is needed in addition; this file does
+not prove it.
 
 ## The argument
 
