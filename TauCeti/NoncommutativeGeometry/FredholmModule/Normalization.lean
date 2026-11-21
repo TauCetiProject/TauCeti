@@ -12,6 +12,7 @@ public import TauCeti.NoncommutativeGeometry.FredholmModule.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Normalization of Fredholm modules
@@ -151,7 +152,8 @@ theorem sineReplacement_operator :
 theorem norm_sineReplacement_operator_le_one : ‖M.sineReplacement.operator‖ ≤ 1 :=
   norm_cfc_le zero_le_one fun x _ => by simpa using abs_sin_le_one (π * x / 2)
 
-/-- **The off-diagonal blocks of the doubling are compact.** `√(1 - F²) π(a)` is compact (with
+/-- **The off-diagonal blocks of the doubling are compact after multiplication by `π(a)`.**
+`√(1 - F²) π(a)` is compact (with
 `CFC.sqrt` returning `0` when `1 - F²` is not positive). -/
 theorem isCompactOperator_sqrt_mul_rep (a : A) :
     IsCompactOperator ⇑(CFC.sqrt (1 - M.operator * M.operator) * M.rep a) := by
@@ -167,8 +169,8 @@ theorem isCompactOperator_sqrt_mul_rep (a : A) :
   rw [← star_eq_adjoint, ← mul_def]
   have h : star (S * M.rep a) * (S * M.rep a) =
       -(M.rep (star a) * ((M.operator * M.operator - 1) * M.rep a)) := by
-    rw [star_mul, hS.star_eq, ← map_star, mul_assoc, ← mul_assoc S, hSS, ← neg_sub, neg_mul,
-      mul_neg]
+    rw [star_mul, hS.star_eq, ← map_star, ← sub_sub_cancel 1 (M.operator * M.operator), ← hSS]
+    noncomm_ring
   rw [h, FunLike.coe_neg]
   exact ((M.isCompactOperator_mul_self_sub_one_mul a).mul_left _).neg
 
@@ -280,7 +282,8 @@ def sineReplacement : EvenFredholmModule A H where
   isSelfAdjoint_grading := M.isSelfAdjoint_grading
   grading_mul_grading := M.grading_mul_grading
   commute_grading_rep := M.commute_grading_rep
-  grading_mul_operator := M.isSelfAdjoint_grading.mul_cfc_eq_neg_cfc_mul M.grading_mul_grading
+  grading_mul_operator := Unitary.mul_cfc_eq_neg_cfc_mul
+    (by rw [Unitary.mem_iff, M.star_grading, M.grading_mul_grading, and_self])
     M.isSelfAdjoint_operator M.grading_mul_operator fun x => by rw [mul_neg, neg_div, sin_neg]
 
 @[simp]
@@ -315,7 +318,7 @@ def double (hF₁ : ‖M.operator‖ ≤ 1) : EvenFredholmModule A (WithLp 2 (H 
       rwa [neg_mul_neg] at h
     have hγS : M.grading * CFC.sqrt (1 - M.operator * M.operator) =
         CFC.sqrt (1 - M.operator * M.operator) * M.grading :=
-      ((Commute.one_left _).sub_left hγF₂.symm).cfcSqrt.eq.symm
+      hγF₂.symm.cfcSqrt_one_sub.eq.symm
     rw [FredholmModule.double_operator, doublingOperator_def, ← WithLp.blockL2_zero_zero,
       WithLp.blockL2_mul_blockL2, WithLp.blockL2_mul_blockL2, WithLp.neg_blockL2]
     simp [← mul_def, M.grading_mul_operator, hγS]

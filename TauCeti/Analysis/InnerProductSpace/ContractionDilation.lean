@@ -18,11 +18,11 @@ public import TauCeti.Analysis.InnerProductSpace.ProdL2
 For an operator `F` on a complex Hilbert space `H`, the doubling operator
 `ContinuousLinearMap.doublingOperator F` is the block operator
 `[[F, √(1 - F²)], [√(1 - F²), -F]]` on the Hilbert direct sum `H ⊕ H`, whose upper left corner is
-`F`. When `F` is self-adjoint it is self-adjoint
-(`ContinuousLinearMap.isSelfAdjoint_doublingOperator`), and when `F` is moreover a contraction it
-is an involution
-(`ContinuousLinearMap.doublingOperator_mul_self`), because `√(1 - F²)` commutes with `F` and
-`F² + √(1 - F²)² = 1`. So a self-adjoint contraction is the compression of a self-adjoint unitary.
+`F` (`ContinuousLinearMap.fstL_comp_doublingOperator_comp_inlL2`). When `F` is self-adjoint it
+is self-adjoint (`ContinuousLinearMap.isSelfAdjoint_doublingOperator`), and when `F` is moreover
+a contraction it is an involution (`ContinuousLinearMap.doublingOperator_mul_self`), because
+`√(1 - F²)` commutes with `F` and `F² + √(1 - F²)² = 1`. So a self-adjoint contraction is the
+compression of a self-adjoint unitary.
 
 ## References
 
@@ -51,12 +51,17 @@ theorem doublingOperator_def (F : H →L[ℂ] H) :
       WithLp.blockL2 F (CFC.sqrt (1 - F * F)) (CFC.sqrt (1 - F * F)) (-F) :=
   (rfl)
 
+/-- The upper left corner of the doubling operator of `F` is `F`. -/
+@[simp]
+theorem fstL_comp_doublingOperator_comp_inlL2 (F : H →L[ℂ] H) :
+    WithLp.fstL 2 ℂ H H ∘L doublingOperator F ∘L WithLp.inlL2 ℂ H H = F :=
+  WithLp.fstL_comp_blockL2_comp_inlL2 ..
+
 /-- The doubling operator of a self-adjoint operator is self-adjoint. -/
 theorem isSelfAdjoint_doublingOperator {F : H →L[ℂ] H} (hF : IsSelfAdjoint F) :
     IsSelfAdjoint (doublingOperator F) := by
   have hS : IsSelfAdjoint (CFC.sqrt (1 - F * F)) := (CFC.sqrt_nonneg _).isSelfAdjoint
-  rw [IsSelfAdjoint, doublingOperator, WithLp.star_blockL2, ← star_eq_adjoint, hS.star_eq,
-    star_neg, hF.star_eq]
+  simp [IsSelfAdjoint, doublingOperator, ← star_eq_adjoint, hS.star_eq, hF.star_eq]
 
 /-- **The doubling operator is an involution.** For a self-adjoint contraction `F`,
 `[[F, √(1 - F²)], [√(1 - F²), -F]]² = 1`. -/
@@ -66,8 +71,7 @@ theorem doublingOperator_mul_self {F : H →L[ℂ] H} (hF : IsSelfAdjoint F) (hF
     ← WithLp.blockL2_zero_zero]
   set S := CFC.sqrt (1 - F * F)
   have hSS : S * S = 1 - F * F := CFC.sqrt_mul_sqrt_self _ (hF.one_sub_mul_self_nonneg hF₁)
-  have hFS : F * S = S * F :=
-    ((Commute.one_left F).sub_left ((Commute.refl F).mul_left (Commute.refl F))).cfcSqrt.eq.symm
+  have hFS : F * S = S * F := (Commute.refl F).cfcSqrt_one_sub_mul_self.eq.symm
   simp only [← mul_def, mul_neg, neg_mul, neg_neg, hSS, hFS, WithLp.blockL2_inj]
   refine ⟨?_, ?_, ?_, ?_⟩ <;> abel
 

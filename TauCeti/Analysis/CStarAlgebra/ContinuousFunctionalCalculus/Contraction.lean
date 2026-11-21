@@ -5,64 +5,62 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
 /-!
-# Self-adjoint contractions and symmetries in the continuous functional calculus
+# Contractions and symmetries in the continuous functional calculus
 
-For a self-adjoint contraction `a` of a unital C⋆-algebra, `1 - a²` is positive
-(`IsSelfAdjoint.one_sub_mul_self_nonneg`), so it has a positive square root `√(1 - a²)`. The
-square root `CFC.sqrt x` of any element commutes with every element commuting with `x`
-(`Commute.cfcSqrt`), so `√(1 - a²)` commutes with `a`. These are the entries of the self-adjoint
+For a contraction `a` of a unital C⋆-algebra, `1 - a⋆a` is positive
+(`CStarAlgebra.one_sub_star_mul_self_nonneg`); for a self-adjoint contraction this is `1 - a²`
+(`IsSelfAdjoint.one_sub_mul_self_nonneg`), so `a` has the positive square root `√(1 - a²)`, which
+commutes with `a` (`Commute.cfcSqrt_one_sub_mul_self`). These are the entries of the self-adjoint
 unitary `[[a, √(1 - a²)], [√(1 - a²), -a]]` dilating `a`.
 
-A self-adjoint unitary `γ` that anticommutes with a self-adjoint `a` conjugates `a` to `-a`, so it
-anticommutes with `f(a)` for every odd real function `f` (`IsSelfAdjoint.mul_cfc_eq_neg_cfc_mul`).
+A unitary `u` that anticommutes with a self-adjoint `a` conjugates `a` to `-a`, so it
+anticommutes with `f(a)` for every odd real function `f` (`Unitary.mul_cfc_eq_neg_cfc_mul`).
 This is how a grading passes through the functional calculus of an odd operator.
 -/
 
 public section
 
-/-- The square root `CFC.sqrt x` commutes with every element that commutes with `x`. -/
-protected theorem Commute.cfcSqrt {B : Type*} [PartialOrder B] [NonUnitalRing B]
-    [TopologicalSpace B] [StarRing B] [Module ℝ B] [SMulCommClass ℝ B B] [IsScalarTower ℝ B B]
-    [StarOrderedRing B] [NonUnitalContinuousFunctionalCalculus ℝ B IsSelfAdjoint]
-    [NonnegSpectrumClass ℝ B] [IsTopologicalRing B] [T2Space B] {x b : B} (h : Commute x b) :
-    Commute (CFC.sqrt x) b :=
-  h.cfcₙ_nnreal NNReal.sqrt
-
 variable {A : Type*} [CStarAlgebra A]
-
-namespace IsSelfAdjoint
 
 section Order
 
 variable [PartialOrder A] [StarOrderedRing A]
 
+/-- For a contraction `a`, the element `1 - a⋆a` is positive. -/
+theorem CStarAlgebra.one_sub_star_mul_self_nonneg {a : A} (ha : ‖a‖ ≤ 1) :
+    0 ≤ 1 - star a * a := by
+  rw [sub_nonneg]
+  refine (star_mul_le_algebraMap_norm_sq a).trans ?_
+  rw [← sub_nonneg, ← map_one (algebraMap ℝ A), ← map_sub]
+  exact algebraMap_nonneg A (sub_nonneg.2 (pow_le_one₀ (norm_nonneg a) ha))
+
 /-- For a self-adjoint contraction `a`, the element `1 - a²` is positive. -/
-theorem one_sub_mul_self_nonneg {a : A} (ha : IsSelfAdjoint a) (ha₁ : ‖a‖ ≤ 1) :
+theorem IsSelfAdjoint.one_sub_mul_self_nonneg {a : A} (ha : IsSelfAdjoint a) (ha₁ : ‖a‖ ≤ 1) :
     0 ≤ 1 - a * a := by
-  rw [sub_nonneg, ← CStarAlgebra.norm_le_one_iff_of_nonneg (a * a) ha.mul_self_nonneg,
-    ha.norm_mul_self]
-  nlinarith [norm_nonneg a]
+  simpa only [ha.star_eq] using CStarAlgebra.one_sub_star_mul_self_nonneg ha₁
 
 end Order
 
-/-- **A symmetry anticommutes with odd functions.** If `γ` is a self-adjoint unitary that
-anticommutes with a self-adjoint `a`, then `γ` anticommutes with `f(a)` for every odd real
-function `f`. -/
-theorem mul_cfc_eq_neg_cfc_mul {γ a : A} (hγ : IsSelfAdjoint γ) (hγγ : γ * γ = 1)
-    (ha : IsSelfAdjoint a) (hγa : γ * a = -(a * γ)) {f : ℝ → ℝ} (hf : ∀ x, f (-x) = -f x) :
-    γ * cfc f a = -(cfc f a * γ) := by
-  have hγu : γ ∈ unitary A := by rw [Unitary.mem_iff, hγ.star_eq, hγγ, and_self]
-  set φ := Unitary.conjStarAlgAut ℂ A ⟨γ, hγu⟩
-  have hφ (x : A) : φ x = γ * x * γ := by simp [φ, hγ.star_eq]
-  have hφa : φ a = -a := by rw [hφ, hγa, neg_mul, mul_assoc, hγγ, mul_one]
+namespace Unitary
+
+/-- **A unitary anticommuting with `a` anticommutes with odd functions of `a`.** If `u` is a
+unitary that anticommutes with a self-adjoint `a`, then `u` anticommutes with `f(a)` for every odd
+real function `f`. -/
+theorem mul_cfc_eq_neg_cfc_mul {u a : A} (hu : u ∈ unitary A) (ha : IsSelfAdjoint a)
+    (hua : u * a = -(a * u)) {f : ℝ → ℝ} (hf : ∀ x, f (-x) = -f x) :
+    u * cfc f a = -(cfc f a * u) := by
+  set φ := Unitary.conjStarAlgAut ℂ A ⟨u, hu⟩
+  have hφ (x : A) : φ x = u * x * star u := by simp [φ]
+  have hφa : φ a = -a := by
+    rw [hφ, hua, neg_mul, mul_assoc, Unitary.mul_star_self_of_mem hu, mul_one]
   have hφc : Continuous φ := by
-    rw [show (φ : A → A) = fun x => γ * x * γ from funext hφ]
+    rw [show (φ : A → A) = fun x => u * x * star u from funext hφ]
     fun_prop
   have h : φ (cfc f a) = -cfc f a := by
     by_cases hfc : ContinuousOn f (spectrum ℝ a)
@@ -76,7 +74,8 @@ theorem mul_cfc_eq_neg_cfc_mul {γ a : A} (hγ : IsSelfAdjoint γ) (hγγ : γ *
       exact cfc_congr fun x _ => hf x
     · rw [cfc_apply_of_not_continuousOn a hfc, map_zero, neg_zero]
   rw [hφ] at h
-  calc γ * cfc f a = γ * cfc f a * γ * γ := by rw [mul_assoc _ γ, hγγ, mul_one]
-    _ = -(cfc f a * γ) := by rw [h, neg_mul]
+  calc u * cfc f a = u * cfc f a * star u * u := by
+        rw [mul_assoc _ (star u), Unitary.star_mul_self_of_mem hu, mul_one]
+    _ = -(cfc f a * u) := by rw [h, neg_mul]
 
-end IsSelfAdjoint
+end Unitary

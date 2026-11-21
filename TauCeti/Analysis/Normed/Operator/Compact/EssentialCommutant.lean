@@ -56,7 +56,7 @@ def essentialCommutant (s : Set (E →L[𝕜] E)) : Subalgebra 𝕜 (E →L[𝕜
       FunLike.coe_add]
     exact (hS x hx).add (hT x hx)
   algebraMap_mem' r x _ := by
-    rw [Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul, mul_smul_comm, mul_one, sub_self]
+    rw [Algebra.commutes, sub_self]
     exact isCompactOperator_zero
 
 @[simp]

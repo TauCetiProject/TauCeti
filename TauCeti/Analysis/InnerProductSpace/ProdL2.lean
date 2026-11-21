@@ -23,11 +23,12 @@ of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inr
 
 An operator on `WithLp 2 (E × F)` is a `2 × 2` block matrix of operators between the factors:
 `WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`, and every operator is
-the block operator of its four blocks (`WithLp.blockL2_eta`). Block operators
-multiply as matrices (`WithLp.blockL2_mul_blockL2`), their adjoint is the conjugate transpose
-(`WithLp.adjoint_blockL2`), and a block operator with compact entries is compact
-(`WithLp.isCompactOperator_blockL2`). The block diagonal operators are the block sums
-`ContinuousLinearMap.withLpProdMap` (`WithLp.blockL2_zero_zero`).
+the block operator of its four blocks (`WithLp.blockL2_eta`), and the blocks of
+`WithLp.blockL2 a b c d` are `a`, `b`, `c` and `d` (`WithLp.fstL_comp_blockL2_comp_inlL2` and its
+three siblings). Block operators multiply as matrices (`WithLp.blockL2_mul_blockL2`), their
+adjoint is the conjugate transpose (`WithLp.adjoint_blockL2`), and a block operator with compact
+entries is compact (`WithLp.isCompactOperator_blockL2`). The block diagonal operators are the
+block sums `ContinuousLinearMap.withLpProdMap` (`WithLp.blockL2_zero_zero`).
 -/
 
 public section
@@ -123,6 +124,30 @@ theorem blockL2_inj {a a' : E →L[𝕜] E} {b b' : F →L[𝕜] E} {c c' : E �
   · simpa using congr(($h (WithLp.toLp 2 (0, x))).fst)
   · simpa using congr(($h (WithLp.toLp 2 (x, 0))).snd)
   · simpa using congr(($h (WithLp.toLp 2 (0, x))).snd)
+
+/-- The upper left block of `blockL2 a b c d` is `a`. -/
+@[simp]
+theorem fstL_comp_blockL2_comp_inlL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F)
+    (d : F →L[𝕜] F) : WithLp.fstL 2 𝕜 E F ∘L blockL2 a b c d ∘L inlL2 𝕜 E F = a :=
+  ContinuousLinearMap.ext fun _ => by simp
+
+/-- The upper right block of `blockL2 a b c d` is `b`. -/
+@[simp]
+theorem fstL_comp_blockL2_comp_inrL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F)
+    (d : F →L[𝕜] F) : WithLp.fstL 2 𝕜 E F ∘L blockL2 a b c d ∘L inrL2 𝕜 E F = b :=
+  ContinuousLinearMap.ext fun _ => by simp
+
+/-- The lower left block of `blockL2 a b c d` is `c`. -/
+@[simp]
+theorem sndL_comp_blockL2_comp_inlL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F)
+    (d : F →L[𝕜] F) : WithLp.sndL 2 𝕜 E F ∘L blockL2 a b c d ∘L inlL2 𝕜 E F = c :=
+  ContinuousLinearMap.ext fun _ => by simp
+
+/-- The lower right block of `blockL2 a b c d` is `d`. -/
+@[simp]
+theorem sndL_comp_blockL2_comp_inrL2 (a : E →L[𝕜] E) (b : F →L[𝕜] E) (c : E →L[𝕜] F)
+    (d : F →L[𝕜] F) : WithLp.sndL 2 𝕜 E F ∘L blockL2 a b c d ∘L inrL2 𝕜 E F = d :=
+  ContinuousLinearMap.ext fun _ => by simp
 
 /-- Every operator on `WithLp 2 (E × F)` is the block operator of its four blocks. -/
 theorem blockL2_eta (T : WithLp 2 (E × F) →L[𝕜] WithLp 2 (E × F)) :
