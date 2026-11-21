@@ -334,7 +334,7 @@ noncomputable def orthogonalAddₗᵢ (F : CStarSubmodule A E) :
       RingHom.id_apply, smul_add]
   norm_map' p := by
     have horth : inner A (p.1 : E) (p.2 : E) = 0 :=
-      inner_right_of_mem_orthogonal p.1.2 p.2.2
+      inner_right_of_mem_orthogonal p.1.property p.2.property
     have hnorm : ‖(p.1 : E) + (p.2 : E)‖ = ‖p‖ := by
       rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A),
         CStarModule.inner_add_self_of_inner_eq_zero horth, WithCStarModule.prod_norm]
@@ -348,8 +348,10 @@ theorem orthogonalAddₗᵢ_apply (F : CStarSubmodule A E) (p : C⋆ᵐᵒᵈ(A,
 
 theorem inner_orthogonalAddₗᵢ (F : CStarSubmodule A E) (p q : C⋆ᵐᵒᵈ(A, F × F.orthogonal)) :
     inner A (F.orthogonalAddₗᵢ p) (F.orthogonalAddₗᵢ q) = inner A p q := by
-  have h12 : inner A (p.1 : E) (q.2 : E) = 0 := inner_right_of_mem_orthogonal p.1.2 q.2.2
-  have h21 : inner A (p.2 : E) (q.1 : E) = 0 := inner_left_of_mem_orthogonal q.1.2 p.2.2
+  have h12 : inner A (p.1 : E) (q.2 : E) = 0 :=
+    inner_right_of_mem_orthogonal p.1.property q.2.property
+  have h21 : inner A (p.2 : E) (q.1 : E) = 0 :=
+    inner_left_of_mem_orthogonal q.1.property p.2.property
   simp [orthogonalAddₗᵢ_apply, CStarModule.inner_add_left, CStarModule.inner_add_right, h12, h21,
     WithCStarModule.prod_inner]
 
@@ -367,7 +369,7 @@ theorem range_orthogonalAddₗᵢ (F : CStarSubmodule A E) :
     mem_toSubmodule, mem_sup]
   constructor
   · rintro ⟨p, rfl⟩
-    exact ⟨p.1, p.1.2, p.2, p.2.2, rfl⟩
+    exact ⟨p.1, p.1.property, p.2, p.2.property, rfl⟩
   · rintro ⟨x, hx, y, hy, rfl⟩
     exact ⟨(WithCStarModule.equiv A (F × F.orthogonal)).symm (⟨x, hx⟩, ⟨y, hy⟩), rfl⟩
 

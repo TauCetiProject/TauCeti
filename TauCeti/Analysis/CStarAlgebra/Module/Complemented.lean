@@ -204,14 +204,15 @@ theorem isOrthogonallyComplemented_iff_exists_adjoint_subtype {F : CStarSubmodul
           F.orthogonal.toSubmodule.projection F.toSubmodule hF.isCompl_toSubmodule.symm x :=
         sub_eq_of_eq_add' hdecomp.symm
       exact heq ▸ Submodule.projection_apply_mem hF.isCompl_toSubmodule.symm x
-    have horth : inner A (u : E) (x - (P x : E)) = 0 := inner_right_of_mem_orthogonal u.2 hsub
+    have horth : inner A (u : E) (x - (P x : E)) = 0 :=
+      inner_right_of_mem_orthogonal u.property hsub
     rw [CStarModule.inner_sub_right, sub_eq_zero] at horth
     rw [subtype_apply, inner_coe]
     exact horth
   · rintro ⟨P, hP⟩
     rw [isOrthogonallyComplemented_iff_exists_add]
     intro x
-    refine ⟨P x, (P x).2, x - P x, ?_, add_sub_cancel _ _⟩
+    refine ⟨P x, (P x).property, x - P x, ?_, add_sub_cancel _ _⟩
     refine sub_mem_orthogonal_of_inner_right fun u hu ↦ ?_
     simpa only [subtype_apply, inner_coe] using hP.inner_eq_cstarModule ⟨u, hu⟩ x
 
@@ -374,7 +375,7 @@ theorem IsOrthogonallyComplemented.isAdjointPair_subtypeL_orthogonalProjectionOn
       (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtypeL hF.orthogonalProjectionOnto := by
   refine CStarModule.isAdjointPair_inner_iff.mpr fun u x ↦ ?_
   have horth : inner A (u : E) (x - hF.starProjection x) = 0 :=
-    inner_right_of_mem_orthogonal u.2 (hF.sub_starProjection_apply_mem x)
+    inner_right_of_mem_orthogonal u.property (hF.sub_starProjection_apply_mem x)
   rw [CStarModule.inner_sub_right, sub_eq_zero] at horth
   rw [subtypeL_apply, inner_coe, coe_orthogonalProjectionOnto_apply]
   exact horth
@@ -465,11 +466,11 @@ noncomputable def IsOrthogonallyComplemented.orthogonalAddEquiv {F : CStarSubmod
     ext
     · simp only [WithCStarModule.equiv_symm_fst, WithCStarModule.equiv_fst,
         orthogonalAddₗᵢ_apply, map_add, hF.orthogonalProjectionOnto_apply_self,
-        hF.orthogonalProjectionOnto_apply_eq_zero_iff.mpr p.2.2, add_zero]
+        hF.orthogonalProjectionOnto_apply_eq_zero_iff.mpr p.2.property, add_zero]
     · simp only [WithCStarModule.equiv_symm_snd, WithCStarModule.equiv_snd,
         orthogonalAddₗᵢ_apply, map_add, hF.orthogonal.orthogonalProjectionOnto_apply_self,
         hF.orthogonal.orthogonalProjectionOnto_apply_eq_zero_iff.mpr
-          (le_orthogonal_orthogonal F p.1.2), zero_add]
+          (le_orthogonal_orthogonal F p.1.property), zero_add]
   right_inv x := by
     simp only [orthogonalAddₗᵢ_apply, WithCStarModule.equiv_symm_fst,
       WithCStarModule.equiv_symm_snd, coe_orthogonalProjectionOnto_apply,

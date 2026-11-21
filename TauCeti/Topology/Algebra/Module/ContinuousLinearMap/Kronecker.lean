@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Kronecker products of operators on finite coordinates
@@ -20,7 +21,8 @@ For continuous linear maps `f : (Fin m → R) →L[R] (Fin m' → R)` and
 the coordinate pair `(i, j)` is the index `finProdFinEquiv (i, j)`. Viewing a vector as an
 `m × n` array, it applies `g` to every row and then `f` to every column. Its matrix is the
 reindexed Kronecker product of the matrices of `f` and `g`
-(`ContinuousLinearMap.toMatrix'_kronecker`).
+(`ContinuousLinearMap.toMatrix'_kronecker`), and as a linear map it is `TensorProduct.map f g`
+conjugated by `TauCeti.piTensorEquiv` (`ContinuousLinearMap.toLinearMap_kronecker_eq`).
 
 The product is functorial (`ContinuousLinearMap.kronecker_comp_kronecker`,
 `ContinuousLinearMap.id_kronecker_id`) and additive and homogeneous in each factor. These are
@@ -38,6 +40,10 @@ symmetric monoidal structure on bundles presented by finite coordinate charts.
 
 The matrix comparison uses Mathlib's `Matrix.kronecker` and `LinearMap.toMatrix'`; through it
 the mixed-product law is Mathlib's `Matrix.mul_kronecker_mul`.
+
+`ContinuousLinearMap.homCoordConj` conjugates operators encoded in `Fin (m * n) → R` by
+precomposition and postcomposition in coordinates, and `ContinuousLinearMap.kroneckerHomEv`
+evaluates a vector in `Fin m → R` against a coordinate-encoded operator in `Fin (m * n) → R`.
 -/
 
 public section
@@ -66,6 +72,19 @@ variable (f f₂ : (Fin m → R) →L[R] (Fin m' → R)) (g g₂ : (Fin n → R)
       f (fun i' ↦ g (fun j' ↦ v (finProdFinEquiv (i', j'))) j) i := by
   simp only [kronecker, coe_pi', coe_comp, Function.comp_apply, proj_apply,
     Equiv.symm_apply_apply]
+
+/-- A Kronecker product acts factorwise on pure-tensor coordinate vectors. -/
+theorem kronecker_apply_mul (u : Fin m → R) (c : Fin n → R) :
+    (f.kronecker g) (fun k ↦ u (finProdFinEquiv.symm k).1 * c (finProdFinEquiv.symm k).2) =
+      fun k ↦ f u (finProdFinEquiv.symm k).1 * g c (finProdFinEquiv.symm k).2 := by
+  ext k
+  obtain ⟨⟨i, l⟩, rfl⟩ := finProdFinEquiv.surjective k
+  have hrow (i' : Fin m) :
+      g (fun l' ↦ u i' * c l') l = u i' * g c l := by
+    simp only [← smul_eq_mul, ← Pi.smul_def, g.map_smul, Pi.smul_apply]
+  simp only [kronecker_apply, Equiv.symm_apply_apply, hrow]
+  have hcol : (fun i' ↦ u i' * g c l) = g c l • u := by ext i'; exact mul_comm _ _
+  rw [hcol, f.map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
 
 /-- The matrix of a Kronecker product is the reindexed Kronecker product of the matrices. -/
 theorem toMatrix'_kronecker :
@@ -375,5 +394,182 @@ theorem kroneckerComm_hexagon_reverse (m n p : ℕ) :
   obtain ⟨⟨k, j⟩, rfl⟩ := finProdFinEquiv.surjective k
   obtain ⟨⟨l, i⟩, rfl⟩ := finProdFinEquiv.surjective k
   simp
+
+open scoped TensorProduct in
+/-- As linear maps, `ContinuousLinearMap.kronecker` intertwines `TensorProduct.map` through
+`TauCeti.piTensorEquiv`. -/
+theorem toLinearMap_kronecker_comp_piTensorEquiv
+    (f : (Fin m → R) →L[R] (Fin m' → R)) (g : (Fin n → R) →L[R] (Fin n' → R)) :
+    (f.kronecker g : (Fin (m * n) → R) →ₗ[R] (Fin (m' * n') → R)) ∘ₗ
+      (TauCeti.piTensorEquiv R m n).toLinearMap =
+    (TauCeti.piTensorEquiv R m' n').toLinearMap ∘ₗ
+      TensorProduct.map (f : (Fin m → R) →ₗ[R] (Fin m' → R))
+        (g : (Fin n → R) →ₗ[R] (Fin n' → R)) := by
+  refine LinearMap.ext fun z ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, coe_coe, kronecker_apply,
+    TauCeti.piTensorEquiv_map_apply]
+
+open scoped TensorProduct in
+/-- `ContinuousLinearMap.kronecker` is `TensorProduct.map` conjugated by
+`TauCeti.piTensorEquiv`. -/
+theorem toLinearMap_kronecker_eq
+    (f : (Fin m → R) →L[R] (Fin m' → R)) (g : (Fin n → R) →L[R] (Fin n' → R)) :
+    (f.kronecker g : (Fin (m * n) → R) →ₗ[R] (Fin (m' * n') → R)) =
+      (TauCeti.piTensorEquiv R m' n').toLinearMap ∘ₗ
+        TensorProduct.map (f : (Fin m → R) →ₗ[R] (Fin m' → R))
+          (g : (Fin n → R) →ₗ[R] (Fin n' → R)) ∘ₗ
+        (TauCeti.piTensorEquiv R m n).symm.toLinearMap := by
+  refine LinearMap.ext fun v ↦ ?_
+  have h := DFunLike.congr_fun (toLinearMap_kronecker_comp_piTensorEquiv f g)
+    ((TauCeti.piTensorEquiv R m n).symm v)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.apply_symm_apply] at h ⊢
+  exact h
+
+end ContinuousLinearMap
+
+/-! ### Operator conjugation and coordinate evaluation -/
+
+namespace ContinuousLinearMap
+
+section HomEv
+
+variable (R : Type*) [Semiring R] [TopologicalSpace R] [ContinuousAdd R]
+
+/-- Coordinate evaluation `(Fin m → R) ⊗ ((Fin m → R) →L[R] (Fin n → R)) → (Fin n → R)`,
+summing the entries at `(i, (i, j))` into the `j`-th output coordinate. -/
+def kroneckerHomEv (m n : ℕ) : (Fin (m * (m * n)) → R) →L[R] (Fin n → R) :=
+  pi fun j ↦ ∑ i : Fin m, proj (finProdFinEquiv (i, finProdFinEquiv (i, j)))
+
+@[simp] theorem kroneckerHomEv_apply {R : Type*} [Semiring R] [TopologicalSpace R]
+    [ContinuousAdd R] {m n : ℕ} (w : Fin (m * (m * n)) → R) (j : Fin n) :
+    kroneckerHomEv R m n w j =
+      ∑ i : Fin m, w (finProdFinEquiv (i, finProdFinEquiv (i, j))) := by
+  simp only [kroneckerHomEv, coe_pi', sum_apply, proj_apply]
+
+end HomEv
+
+section HomCoordConj
+
+variable {R : Type*} [CommSemiring R] [TopologicalSpace R] [ContinuousAdd R]
+  {m m' m'' n n' n'' : ℕ}
+
+/-- Conjugate an operator encoded in `Fin (m * n) → R` (with `finProdFinEquiv (i, j)` storing
+column `i`, row `j`) by precomposing with `S` and postcomposing with `T`. -/
+def homCoordConj (S : (Fin m' → R) →L[R] (Fin m → R)) (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    (Fin (m * n) → R) →L[R] (Fin (m' * n') → R) :=
+  pi fun k ↦ (proj (finProdFinEquiv.symm k).2).comp <| T.comp <| pi fun j ↦
+    ∑ i : Fin m, ((proj i).comp (S.comp (single R (fun _ : Fin m' ↦ R)
+      (finProdFinEquiv.symm k).1))).comp (proj (finProdFinEquiv (i, j)))
+
+@[simp] theorem homCoordConj_apply (S : (Fin m' → R) →L[R] (Fin m → R))
+    (T : (Fin n → R) →L[R] (Fin n' → R)) (v : Fin (m * n) → R) (i' : Fin m') (j' : Fin n') :
+    homCoordConj S T v (finProdFinEquiv (i', j')) =
+      T (fun j ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) j' := by
+  simp only [homCoordConj, coe_pi', coe_comp, Function.comp_apply, proj_apply, sum_apply,
+    Equiv.symm_apply_apply, single_apply]
+  refine congrArg (fun u ↦ T u j') (funext fun j ↦ Finset.sum_congr rfl fun i _ ↦ ?_)
+  have hs : Pi.single (M := fun _ : Fin m' ↦ R) i' (v (finProdFinEquiv (i, j))) =
+      v (finProdFinEquiv (i, j)) • Pi.single i' 1 := by
+    rw [← Pi.single_smul, smul_eq_mul, mul_one]
+  rw [hs, S.map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
+
+@[simp] theorem id_homCoordConj_id :
+    homCoordConj (ContinuousLinearMap.id R (Fin m → R)) (ContinuousLinearMap.id R (Fin n → R)) =
+      ContinuousLinearMap.id R (Fin (m * n) → R) := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp [Pi.single_apply]
+
+/-- Operator conjugation is contravariant in the source map and covariant in the target map. -/
+theorem homCoordConj_comp_homCoordConj (S' : (Fin m'' → R) →L[R] (Fin m' → R))
+    (T' : (Fin n' → R) →L[R] (Fin n'' → R)) (S : (Fin m' → R) →L[R] (Fin m → R))
+    (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    (homCoordConj S' T').comp (homCoordConj S T) = homCoordConj (S.comp S') (T'.comp T) := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i'', j''⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [comp_apply, homCoordConj_apply]
+  refine congrArg (fun u ↦ T' u j'') ?_
+  have hT : (fun j' ↦ ∑ i' : Fin m', S' (Pi.single i'' 1) i' *
+      T (fun j ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) j') =
+      T (∑ i' : Fin m', S' (Pi.single i'' 1) i' •
+        fun j ↦ ∑ i : Fin m, S (Pi.single i' 1) i * v (finProdFinEquiv (i, j))) := by
+    rw [map_sum]
+    ext j'
+    simp [Finset.sum_apply, smul_eq_mul]
+  rw [hT]
+  refine congrArg T (funext fun j ↦ ?_)
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hS : S (S' (Pi.single i'' 1)) i =
+      ∑ i' : Fin m', S' (Pi.single i'' 1) i' * S (Pi.single i' 1) i := by
+    conv_lhs => rw [pi_eq_sum_univ' (S' (Pi.single i'' 1)), map_sum]
+    simp [Finset.sum_apply, smul_eq_mul]
+  rw [hS, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i' _ ↦ (mul_assoc _ _ _).symm
+
+@[simp] theorem add_homCoordConj (S S₂ : (Fin m' → R) →L[R] (Fin m → R))
+    (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    homCoordConj (S + S₂) T = homCoordConj S T + homCoordConj S₂ T := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [homCoordConj_apply, add_apply, Pi.add_apply, add_mul, Finset.sum_add_distrib]
+  rw [← Pi.add_def, T.map_add, Pi.add_apply]
+
+@[simp] theorem homCoordConj_add (S : (Fin m' → R) →L[R] (Fin m → R))
+    (T T₂ : (Fin n → R) →L[R] (Fin n' → R)) :
+    homCoordConj S (T + T₂) = homCoordConj S T + homCoordConj S T₂ := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp [homCoordConj_apply]
+
+@[simp] theorem zero_homCoordConj (T : (Fin n → R) →L[R] (Fin n' → R)) :
+    homCoordConj (0 : (Fin m' → R) →L[R] (Fin m → R)) T = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp only [homCoordConj_apply, zero_apply, Pi.zero_apply, zero_mul, Finset.sum_const_zero]
+  rw [← Pi.zero_def, T.map_zero, Pi.zero_apply]
+
+@[simp] theorem homCoordConj_zero (S : (Fin m' → R) →L[R] (Fin m → R)) :
+    homCoordConj S (0 : (Fin n → R) →L[R] (Fin n' → R)) = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i', j'⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp [homCoordConj_apply]
+
+/-- Dinaturality of coordinate evaluation: acting on the Hom factor by `homCoordConj S U` agrees
+with acting on the argument by `S` before evaluating and postcomposing with `U`. -/
+theorem kroneckerHomEv_comp_id_kronecker_homCoordConj (S : (Fin m' → R) →L[R] (Fin m → R))
+    (U : (Fin n → R) →L[R] (Fin n' → R)) :
+    (kroneckerHomEv R m' n').comp
+        ((ContinuousLinearMap.id R (Fin m' → R)).kronecker (homCoordConj S U)) =
+      U.comp ((kroneckerHomEv R m n).comp
+        (S.kronecker (ContinuousLinearMap.id R (Fin (m * n) → R)))) := by
+  refine ContinuousLinearMap.ext fun w ↦ funext fun j' ↦ ?_
+  simp only [comp_apply, kroneckerHomEv_apply, kronecker_apply, id_apply, homCoordConj_apply]
+  rw [← Finset.sum_apply, ← map_sum]
+  refine congrArg (fun u ↦ U u j') (funext fun j ↦ ?_)
+  simp only [Finset.sum_apply, kroneckerHomEv_apply, kronecker_apply, id_apply]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [pi_eq_sum_univ' (R := R) (fun i' : Fin m' ↦ w (finProdFinEquiv (i', finProdFinEquiv (i, j)))),
+    map_sum]
+  simp [Finset.sum_apply, smul_eq_mul, mul_comm]
+
+/-- When `S.comp T = id`, coordinate evaluation intertwines `T ⊗ homCoordConj S U` with `U`. -/
+theorem kroneckerHomEv_comp_kronecker_homCoordConj {S : (Fin m' → R) →L[R] (Fin m → R)}
+    {T : (Fin m → R) →L[R] (Fin m' → R)} (hST : S.comp T = ContinuousLinearMap.id R _)
+    (U : (Fin n → R) →L[R] (Fin n' → R)) :
+    (kroneckerHomEv R m' n').comp (T.kronecker (homCoordConj S U)) =
+      U.comp (kroneckerHomEv R m n) := by
+  have h : T.kronecker (homCoordConj S U) =
+      ((ContinuousLinearMap.id R (Fin m' → R)).kronecker (homCoordConj S U)).comp
+        (T.kronecker (ContinuousLinearMap.id R (Fin (m * n) → R))) := by
+    rw [kronecker_comp_kronecker, id_comp, comp_id]
+  rw [h, ← comp_assoc, kroneckerHomEv_comp_id_kronecker_homCoordConj, comp_assoc, comp_assoc,
+    kronecker_comp_kronecker, hST, id_comp, id_kronecker_id, comp_id]
+
+end HomCoordConj
 
 end ContinuousLinearMap

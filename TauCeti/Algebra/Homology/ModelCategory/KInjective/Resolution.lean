@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.SmallObject.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import TauCeti.Algebra.Homology.ModelCategory.MonoQuasiIso
 
@@ -28,6 +29,9 @@ modules over a sheaf of rings on a small site, which form a Grothendieck abelian
 * `CochainComplex.llp_rlp_monomorphisms_inf_quasiIso`: a morphism has the left lifting property
   with respect to the morphisms which have the right lifting property with respect to the
   monomorphic quasi-isomorphisms if and only if it is a monomorphic quasi-isomorphism.
+* `CochainComplex.exists_hasSmallObjectArgument_le_monomorphisms_inf_quasiIso_and_rlp_eq`: a
+  family of monomorphic quasi-isomorphisms to which the small object argument applies, with the
+  same right lifting property as all monomorphic quasi-isomorphisms.
 * `CochainComplex.monoQuasiIsoMapFactorizationDataRlp`: the functorial factorization.
 * `TauCeti.hasKInjectiveResolutions_of_isGrothendieckAbelian`: Grothendieck abelian categories
   have K-injective resolutions.
@@ -58,9 +62,11 @@ namespace CochainComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [IsGrothendieckAbelian.{w} C]
 
-/-- The small object argument applies to a family of monomorphic quasi-isomorphisms with the same
-right lifting property as all monomorphic quasi-isomorphisms. -/
-private lemma exists_hasSmallObjectArgument :
+/-- There is a family of monomorphic quasi-isomorphisms of cochain complexes over a Grothendieck
+abelian category to which the small object argument applies, and which has the same right lifting
+property as all monomorphic quasi-isomorphisms. In the injective model structure, it is a family
+of generating trivial cofibrations. -/
+theorem exists_hasSmallObjectArgument_le_monomorphisms_inf_quasiIso_and_rlp_eq :
     ∃ I : MorphismProperty (CochainComplex C ℤ), HasSmallObjectArgument.{w} I ∧
       I ≤ monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ) ∧
         I.rlp = (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
@@ -75,7 +81,8 @@ monomorphic quasi-isomorphisms if and only if it is a monomorphic quasi-isomorph
 theorem llp_rlp_monomorphisms_inf_quasiIso :
     (monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp.llp =
       monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ) := by
-  obtain ⟨I, _, hI, hIrlp⟩ := exists_hasSmallObjectArgument.{w} (C := C)
+  obtain ⟨I, _, hI, hIrlp⟩ :=
+    exists_hasSmallObjectArgument_le_monomorphisms_inf_quasiIso_and_rlp_eq.{w} (C := C)
   refine le_antisymm ?_ (le_llp_rlp _)
   rw [← hIrlp, llp_rlp_of_hasSmallObjectArgument, retracts_le_iff, transfiniteCompositions_le_iff,
     pushouts_le_iff, coproducts_le_iff]
@@ -87,7 +94,8 @@ respect to all monomorphic quasi-isomorphisms. -/
 instance : HasFunctorialFactorization
     (monomorphisms (CochainComplex C ℤ) ⊓ HomologicalComplex.quasiIso C (.up ℤ))
     (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp := by
-  obtain ⟨I, _, -, hIrlp⟩ := exists_hasSmallObjectArgument.{w} (C := C)
+  obtain ⟨I, _, -, hIrlp⟩ :=
+    exists_hasSmallObjectArgument_le_monomorphisms_inf_quasiIso_and_rlp_eq.{w} (C := C)
   rw [← hIrlp, ← llp_rlp_monomorphisms_inf_quasiIso.{w}, ← hIrlp]
   infer_instance
 

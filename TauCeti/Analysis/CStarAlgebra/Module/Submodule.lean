@@ -153,7 +153,7 @@ theorem op_smul_mem {B : Type*} [SMul Bᵐᵒᵖ E] (F : CStarSubmodule Bᵐᵒ�
 so that when `A = ℂ`, the standard complex scalar action is preferred (and both are definitionally
 equal). -/
 instance (priority := 40) instSMulCoeff (F : CStarSubmodule A E) : SMul A F where
-  smul a x := ⟨a • x.1, F.smul_mem_coeff' a x.2⟩
+  smul a x := ⟨a • x.val, F.smul_mem_coeff' a x.property⟩
 
 @[simp, norm_cast]
 theorem coe_smul_coeff {F : CStarSubmodule A E} (a : A) (x : F) :

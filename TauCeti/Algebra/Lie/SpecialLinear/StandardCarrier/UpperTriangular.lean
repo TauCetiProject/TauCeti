@@ -277,8 +277,7 @@ theorem isUpperTriangular_coe_weightTorusPoints
     (A : Type v) [CommRing A] (s : Fin r → Aˣ) :
     ((weightTorusPoints r A s : Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
       Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsUpperTriangular := by
-  rw [coe_weightTorusPoints,
-    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
+  rw [coe_weightTorusPoints, diagGL_coe]
   exact Matrix.blockTriangular_diagonal _
 
 /-! ## The positive pinning lies in the intersection -/
