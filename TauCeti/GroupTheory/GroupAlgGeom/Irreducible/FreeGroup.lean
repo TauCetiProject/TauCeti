@@ -180,7 +180,7 @@ theorem V_unionEquations_commutatorElement_of (x : X) (a b : α) :
   · -- In rank one `F` is abelian: every commutator vanishes and `⟨a⟩ = C(a) = F`.
     have hc : IsMulCommutative (FreeGroup α) := FreeGroup.isMulCommutative_iff_subsingleton.2 hα
     have htop (c : α) (g : FreeGroup α) : g ∈ zpowers (of c) := by
-      rw [← centralizer_singleton_of]
+      rw [← centralizer_of]
       exact mem_centralizer_singleton_iff.2 (mul_comm' _ _)
     ext v
     simp only [Set.mem_ofPred_eq, htop, or_self, iff_true, mem_V, mem_unionEquations]
