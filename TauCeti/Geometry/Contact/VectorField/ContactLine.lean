@@ -121,12 +121,12 @@ private theorem exists_local [T2Space M] (hD : IsContactDistribution I ∞ D)
     ext v
     rw [RoughForm.mem_ker, RoughForm.mem_ker, (hloc hy).self_of_nhds]
   -- The contact Hamiltonian vector field of `β(V)` solves the problem on `U`.
-  have hf := β.contMDiff_apply_vectorField hV
   refine ⟨U, hU, ⟨hx₀, b.eventuallyEq_one⟩, β.contactHamiltonianVectorField fun y ↦ β.val y ![V y],
     fun x hx ↦ ?_⟩
   have hc : ∀ᶠ y in 𝓝 x, IsContactFormAt β.val y := eventually_of_mem (hU.mem_nhds hx) hcontact
   have hXs : CMDiffAt ∞ (T% (β.contactHamiltonianVectorField fun y ↦ β.val y ![V y])) x :=
-    SmoothForm.contMDiffAt_contactHamiltonianVectorField le_rfl hc ((hf x).of_le (by simp))
+    SmoothForm.contMDiffAt_contactHamiltonianVectorField le_rfl hc
+      ((β.contMDiffAt_apply_vectorField (hV x)).of_le (by simp))
   refine ⟨hXs, preservesDistributionAt_iff.2 fun U' hU' hxU' W hW hWD ↦ ?_, ?_⟩
   · rw [← hker x hx]
     refine SmoothForm.mlieBracket_contactHamiltonianVectorField_mem_kerDistribution hc
