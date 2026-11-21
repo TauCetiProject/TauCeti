@@ -61,7 +61,7 @@ theorem card_ker_cliffordFullCoverToOrthogonal [Nontrivial V] (hQ : Q.Nondegener
   · refine spinGroup.negOne_ne_one Q hQ.ne_zero (spinToCliffordFullCover_injective Q ?_)
     rw [map_one]
     exact (congrArg Subtype.val h1).symm
-  · rcases (mem_ker_cliffordFullCoverToOrthogonal_iff hQ h x).1 x.2 with hx | hx
+  · rcases (mem_ker_cliffordFullCoverToOrthogonal_iff hQ h x).1 x.property with hx | hx
     · exact Or.inl (Subtype.ext hx)
     · exact Or.inr (Subtype.ext hx)
 

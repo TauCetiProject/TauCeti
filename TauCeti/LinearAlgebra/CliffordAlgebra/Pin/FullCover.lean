@@ -137,7 +137,7 @@ theorem mem_range_spinToCliffordFullCover_iff (x : cliffordFullCover Q) :
   constructor
   · rintro ⟨s, rfl⟩
     rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
-    exact s.2
+    exact s.property
   · intro h
     refine ⟨⟨_, h⟩, Subtype.ext (Subtype.ext (Units.ext ?_))⟩
     rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
@@ -165,7 +165,8 @@ theorem ker_cliffordFullCoverToOrthogonal_le_range_spinToCliffordFullCover
   rcases subsingleton_or_nontrivial V with hV | hV
   · intro x _
     have hx : (x : lipschitzGroup Q) = 1 :=
-      Subtype.ext ((Subgroup.mem_bot.1 (lipschitzGroup_eq_bot (Q := Q) ▸ (x : lipschitzGroup Q).2)))
+      Subtype.ext (Subgroup.mem_bot.1
+        (lipschitzGroup_eq_bot (Q := Q) ▸ (x : lipschitzGroup Q).property))
     exact ⟨1, Subtype.ext (by rw [map_one, hx, OneMemClass.coe_one])⟩
   · rw [ker_cliffordFullCoverToOrthogonal hQ h]
     exact Subgroup.map_le_range _ _
@@ -204,7 +205,7 @@ theorem cliffordNorm_eq_one_iff_orthogonalSpinorNorm_eq_one (hQ : Q.Nondegenerat
       orthogonalSpinorNorm Q hQ (cliffordFullCoverToOrthogonal Q x) = 1 := by
   rw [cliffordFullCoverToOrthogonal_apply, orthogonalSpinorNorm_lipschitzToOrthogonal,
     squareClassHom_eq_one_iff]
-  rcases (mem_cliffordFullCover_iff Q x).1 x.2 with h1 | h1 <;> rw [h1]
+  rcases (mem_cliffordFullCover_iff Q x).1 x.property with h1 | h1 <;> rw [h1]
   · simp
   · refine iff_of_false (fun h2 ↦ ?_) fun h2 ↦ h ?_
     · have h3 : (-1 : K) = 1 := by simpa using congrArg Units.val h2

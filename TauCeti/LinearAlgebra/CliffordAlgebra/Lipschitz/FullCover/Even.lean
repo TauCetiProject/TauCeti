@@ -58,7 +58,7 @@ reverse norm up to sign. -/
 theorem mem_cliffordFullCover_iff_lipschitzNorm (x : lipschitzGroup Q) :
     x ∈ cliffordFullCover Q ↔ lipschitzNorm Q x = 1 ∨ lipschitzNorm Q x = -1 := by
   rw [mem_cliffordFullCover_iff]
-  obtain ⟨p, hp⟩ := lipschitzGroup.exists_mem_evenOdd x.2
+  obtain ⟨p, hp⟩ := lipschitzGroup.exists_mem_evenOdd x.property
   fin_cases p
   · rw [lipschitzNorm_eq_cliffordNorm_of_mem_even x hp]
   · rw [lipschitzNorm_eq_neg_cliffordNorm_of_mem_odd x hp, neg_eq_iff_eq_neg, neg_inj, or_comm]
