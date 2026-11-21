@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
@@ -62,7 +63,11 @@ which is unique among weak solutions in `L²(E)`.
   solution of `-Δh + P h = 0` lies in `H²(E) ⊆ H¹(E)` and, by density of test functions
   (`TauCeti.W1p.denseRange_ofTestFunctionₗ_top`), is orthogonal to `H¹(E)` for this form, so it
   vanishes; two weak `L²` solutions for the same `g` thus agree almost everywhere
-  (`TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`).
+  (`TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`). The coercivity bound
+  `c' ‖w‖²_{H¹} ≤ schrodingerForm w w` leaves room for a perturbation: weak `L²` solutions of
+  `-Δh + V h = 0` still vanish when the bounded potential `V` satisfies `|V - P| ≤ c' / 2`, even
+  where `V` is negative
+  (`TauCeti.exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero`).
 
 Together, every `g ∈ L²(E)` has a weak solution `h ∈ H²(E)`
 (`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`). Solving
@@ -102,6 +107,10 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
   an `H²` weak solution for every `L²` right-hand side.
 * `TauCeti.ae_eq_of_integral_mul_neg_laplacian_add_mul_eq`: two weak `L²` solutions agree almost
   everywhere.
+* `TauCeti.exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero`: weak `L²`
+  solutions of `-Δh + V h = 0` vanish for every bounded potential `V` close enough to `P`.
+* `TauCeti.integral_mul_neg_laplacian_add_mul_eq_zero_of_laplacian_eq_mul`: a `C²` solution of
+  `Δh = V h` is a weak solution.
 * `TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`: real weak solutions
   for the real and imaginary parts combine into a complex weak solution.
 * `TauCeti.memLp_neg_laplacian_add_mul`: the Schrödinger operator with a bounded potential maps
@@ -381,6 +390,85 @@ private theorem schrodingerForm_eq_zero (hP : MemLp P ⊤ (volume : Measure E))
   rw [← integral_value_mul_eq_schrodingerForm hP]
   exact hweak φ φ.contDiff φ.hasCompactSupport
 
+/-- **Classical solutions are weak solutions.** If `h` is `C²` and `Δh = Q h` at every point,
+then `∫ h (-Δφ + Q φ) = 0` for every smooth compactly supported `φ`. No integrability of `h` and
+no regularity of `Q` is needed. -/
+theorem integral_mul_neg_laplacian_add_mul_eq_zero_of_laplacian_eq_mul {Q h : E → ℝ}
+    (hh : ContDiff ℝ 2 h) (hΔ : ∀ z, Δ h z = Q z * h z) (φ : E → ℝ)
+    (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+    ∫ z, h z * (-Δ φ z + Q z * φ z) = 0 := by
+  set ψ : TestFunction (⊤ : TopologicalSpace.Opens E) ℝ ⊤ := ⟨φ, hφ, hφc, by simp⟩
+  have hgreen := hh.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
+    (μ := volume) ψ
+  simp only [ψ, TestFunction.coe_mk, smul_eq_mul] at hgreen
+  have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
+  have i₁ : Integrable (fun z ↦ Δ φ z * h z) volume :=
+    (hφ2.continuous_laplacian.mul hh.continuous).integrable_of_hasCompactSupport
+      hφc.laplacian.mul_right
+  have i₂ : Integrable (fun z ↦ φ z * Δ h z) volume :=
+    (hφ.continuous.mul hh.continuous_laplacian).integrable_of_hasCompactSupport hφc.mul_right
+  calc ∫ z, h z * (-Δ φ z + Q z * φ z) = ∫ z, (φ z * Δ h z - Δ φ z * h z) := by
+        refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
+        simp only [hΔ z]
+        ring
+    _ = 0 := by rw [integral_sub i₂ i₁, hgreen, sub_self]
+
+/-- **Uniqueness of weak solutions is stable under small perturbations of the potential.** Let `P`
+be essentially bounded, almost everywhere nonnegative, and almost everywhere at least `a > 0`
+outside the closed ball of radius `R`. There is `ε > 0` such that for every essentially bounded
+potential `Q` with `|Q - P| ≤ ε` almost everywhere, a weak `L²` solution `h` of `-Δh + Q h = 0`,
+that is `∫ h (-Δφ + Q φ) = 0` for every smooth compactly supported function `φ`, vanishes almost
+everywhere. The potential `Q` need not be nonnegative: it may be negative where `P` is small. -/
+theorem exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero [Nontrivial E]
+    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
+    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z) :
+    ∃ ε > 0, ∀ {Q h : E → ℝ}, MemLp Q ⊤ volume → (∀ᵐ z ∂volume, |Q z - P z| ≤ ε) →
+      MemLp h 2 volume →
+      (∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+        ∫ z, h z * (-Δ (φ : E → ℝ) z + Q z * φ z) = 0) →
+      h =ᵐ[volume] 0 := by
+  obtain ⟨c, hc, hgap⟩ :=
+    exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq hP hP₀ ha hPa
+  refine ⟨c / 2, half_pos hc, fun {Q h} hQ hQP hh hweak ↦ ?_⟩
+  -- The solution lies in `H²(E) ⊆ H¹(E)`, so it is the value of some `w ∈ W^{1,2}(E)`.
+  have h2 := mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq hQ hh
+    (MemLp.zero : MemLp (0 : E → ℝ) 2 volume) fun φ hφ hφc ↦ by
+      simpa only [Pi.zero_apply, zero_mul, integral_zero] using hweak φ hφ hφc
+  obtain ⟨w, hw⟩ :=
+    exists_w1p_value_ae_eq_of_mem_realSobolevFunctions (by norm_num) (by norm_num) (by norm_num) h2
+  have hw0 : schrodingerForm hQ w w = 0 := schrodingerForm_eq_zero hQ (fun φ hφ hφc ↦ by
+    rw [← hweak φ hφ hφc]
+    exact integral_congr_ae (hw.mono fun z hz ↦ by simp only [hz])) w
+  rw [schrodingerForm_self] at hw0
+  -- Compare `∫ Q w²` with `∫ P w²`: they differ by at most `ε ‖w‖₂²`.
+  have hv : MemLp (W1p.value w : E → ℝ) 2 volume := W1p.memLp_value w
+  have hv2 : Integrable (fun z ↦ W1p.value w z ^ 2) volume :=
+    (hv.integrable_mul hv).congr (ae_of_all _ fun z ↦ (sq _).symm)
+  have hint {S : E → ℝ} (hS : MemLp S ⊤ volume) :
+      Integrable (fun z ↦ S z * W1p.value w z ^ 2) volume :=
+    memLp_one_iff_integrable.1 (hS.fun_mul (memLp_one_iff_integrable.2 hv2))
+  have hPQ : ∫ z, P z * W1p.value w z ^ 2 ≤
+      (∫ z, Q z * W1p.value w z ^ 2) + c / 2 * ∫ z, W1p.value w z ^ 2 := by
+    rw [← integral_const_mul, ← integral_add (hint hQ) (hv2.const_mul _)]
+    refine integral_mono_ae (hint hP) ((hint hQ).add (hv2.const_mul _)) ?_
+    filter_upwards [hQP] with z hz
+    nlinarith [(abs_le.1 hz).1, sq_nonneg (W1p.value w z)]
+  have hval := W1p.integral_value_sq_eq_norm_value_sq_top (mu := volume) w
+  have hnorm := W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq w
+  have hgap := hgap w
+  -- The Poincaré-type inequality `hgap` forces `w` to vanish: by `hPQ`, `hw0`, `hval` and
+  -- `hnorm`, `c ‖w‖² ≤ ‖∇w‖² + ∫ P w² ≤ ‖∇w‖² + ∫ Q w² + (c / 2) ‖w‖₂² = (c / 2) ‖w‖₂²`, and
+  -- `‖w‖₂² ≤ ‖w‖²`, so `(c / 2) ‖w‖² ≤ 0`.
+  have hw_zero : w = 0 := by
+    have hsq : ‖w‖ ^ 2 = 0 := le_antisymm (by nlinarith [sq_nonneg ‖W1p.gradient w‖])
+      (sq_nonneg _)
+    exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hsq)
+  have h0 : (W1p.value w : E → ℝ) =ᵐ[volume] 0 := by
+    rw [hw_zero, ← W1p.valueL_apply, map_zero]
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      Lp.coeFn_zero ℝ 2 ((volume : Measure E).restrict (⊤ : Opens E))
+  exact hw.symm.trans h0
+
 /-- **Uniqueness of weak solutions of the stationary Schrödinger equation.** Let `P` be
 essentially bounded, almost everywhere nonnegative, and almost everywhere at least `a > 0` outside
 the closed ball of radius `R`. If `h₁, h₂ ∈ L²(E)` both satisfy `-Δh + P h = g` weakly, that is
@@ -403,28 +491,10 @@ theorem ae_eq_of_integral_mul_neg_laplacian_add_mul_eq [Nontrivial E]
     rw [integral_sub (f := fun z ↦ h₁ z * (-Δ φ z + P z * φ z))
       (g := fun z ↦ h₂ z * (-Δ φ z + P z * φ z)) (hh₁.integrable_mul hT)
       (hh₂.integrable_mul hT), hw₁ φ hφ hc, hw₂ φ hφ hc, sub_self]
-  -- It lies in `H²(E) ⊆ H¹(E)`, so it is the value of some `w ∈ W^{1,2}(E)`.
-  have h2 := mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq hP
-    (hh₁.sub hh₂) (MemLp.zero : MemLp (0 : E → ℝ) 2 volume) fun φ hφ hc ↦ by
-      simpa only [Pi.zero_apply, zero_mul, integral_zero] using hd φ hφ hc
-  obtain ⟨w, hw⟩ :=
-    exists_w1p_value_ae_eq_of_mem_realSobolevFunctions (by norm_num) (by norm_num) (by norm_num) h2
-  -- The Poincaré inequality on `H¹(E)` forces `w` to vanish.
-  have hw0 : schrodingerForm hP w w = 0 := schrodingerForm_eq_zero hP (fun φ hφ hc ↦ by
-    rw [← hd φ hφ hc]
-    exact integral_congr_ae (hw.mono fun z hz ↦ by simp only [hz])) w
-  obtain ⟨c, hc, hgap⟩ :=
-    exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq hP hP₀ ha hPa
-  have hn : W1p.value w = 0 := by
-    have := hgap w
-    rw [← schrodingerForm_self hP, hw0] at this
-    have hsq : ‖w‖ ^ 2 = 0 := le_antisymm (nonpos_of_mul_nonpos_right this hc) (sq_nonneg _)
-    rw [← W1p.valueL_apply, norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hsq), map_zero]
-  have h0 : (W1p.value w : E → ℝ) =ᵐ[volume] 0 := by
-    rw [hn]
-    simpa only [Opens.coe_top, Measure.restrict_univ] using
-      Lp.coeFn_zero ℝ 2 ((volume : Measure E).restrict (⊤ : Opens E))
-  filter_upwards [hw.symm.trans h0] with z hz
+  obtain ⟨ε, hε, huniq⟩ :=
+    exists_pos_forall_ae_eq_zero_of_integral_mul_neg_laplacian_add_mul_eq_zero hP hP₀ ha hPa
+  filter_upwards [huniq hP (ae_of_all _ fun z ↦ by simpa using hε.le) (hh₁.sub hh₂) hd]
+    with z hz
   simpa [sub_eq_zero] using hz
 
 end Uniqueness
