@@ -24,6 +24,8 @@ neither a norm nor continuity of addition or scalar multiplication is required.
 
 * `TauCeti.isFredholm_zero_iff`: the zero operator is Fredholm exactly when its domain and
   codomain are finite dimensional.
+* `ContinuousLinearMap.instNonemptyIsFredholmOfFiniteDimensional`: between finite-dimensional
+  topological modules with `T₁` codomain, the Fredholm locus is nonempty since `0` is Fredholm.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
 A.1.
@@ -65,6 +67,13 @@ lemma isFredholm_zero_iff :
         finite_ker := inferInstance
         finite_coker := inferInstance
         closedComplemented_ker := by simp }
+
+/-- Between finite-dimensional topological modules over a nontrivially normed field with `T₁`
+codomain, the Fredholm locus `{T : E →L[𝕜] F // T.IsFredholm}` is nonempty since `0` is Fredholm. -/
+instance _root_.ContinuousLinearMap.instNonemptyIsFredholmOfFiniteDimensional
+    [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] :
+    Nonempty {T : E →L[𝕜] F // T.IsFredholm} :=
+  ⟨⟨0, isFredholm_zero_iff.2 ⟨inferInstance, inferInstance⟩⟩⟩
 
 end Topological
 

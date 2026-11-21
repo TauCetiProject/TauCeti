@@ -307,13 +307,13 @@ private noncomputable def assembleOffDiag {κ V : Type*} [Fintype V] [DecidableE
     (hrev : ∀ A B A' B', (blockSys A B A' B').rev = S.rev) :
     PairColorSystem κ V where
   color p :=
-    let u := p.1.1; let v := p.1.2
+    let u := p.val.1; let v := p.val.2
     let pA : P.parts := ⟨P.part u, P.part_mem.2 (mem_univ u)⟩
     let pB : P.parts := ⟨P.part v, P.part_mem.2 (mem_univ v)⟩
     if eP pA < eP pB then
-      (blockSys pA.1 pB.1 (Q.part u) (Q.part v)).color p
+      (blockSys pA.val pB.val (Q.part u) (Q.part v)).color p
     else if eP pB < eP pA then
-      (blockSys pB.1 pA.1 (Q.part v) (Q.part u)).color p
+      (blockSys pB.val pA.val (Q.part v) (Q.part u)).color p
     else S.color p
   rev := S.rev
   rev_involutive := S.rev_involutive
@@ -324,10 +324,10 @@ private noncomputable def assembleOffDiag {κ V : Type*} [Fintype V] [DecidableE
     by_cases h1 : eP pA < eP pB
     · have h2 : ¬ eP pB < eP pA := lt_asymm h1
       simpa [pA, pB, h1, h2, hrev] using
-        (blockSys pA.1 pB.1 (Q.part u) (Q.part v)).color_rev ⟨(u, v), huv⟩
+        (blockSys pA.val pB.val (Q.part u) (Q.part v)).color_rev ⟨(u, v), huv⟩
     · by_cases h2 : eP pB < eP pA
       · simpa [pA, pB, h1, h2, hrev] using
-          (blockSys pB.1 pA.1 (Q.part v) (Q.part u)).color_rev ⟨(u, v), huv⟩
+          (blockSys pB.val pA.val (Q.part v) (Q.part u)).color_rev ⟨(u, v), huv⟩
       · simpa [pA, pB, h1, h2] using S.color_rev ⟨(u, v), huv⟩
 
 /-- On a canonical fine block `A' ×ˢ B'` (`eP A < eP B`), `assembleOffDiag` agrees with
@@ -448,17 +448,18 @@ private theorem sum_regular_canonicalFineBlocks_le
     obtain ⟨h1, h2, hlt⟩ := mem_canonicalFineBlocks_elim hFB
     set pA := refinementParent hQP ⟨uv.1, h1⟩
     set pB := refinementParent hQP ⟨uv.2, h2⟩
-    have huv_sub1 : uv.1 ⊆ pA.1 := le_refinementParent hQP ⟨uv.1, h1⟩
-    have huv_sub2 : uv.2 ⊆ pB.1 := le_refinementParent hQP ⟨uv.2, h2⟩
-    have hpAB : pA.1 ≠ pB.1 := fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
+    have huv_sub1 : uv.1 ⊆ pA.val := le_refinementParent hQP ⟨uv.1, h1⟩
+    have huv_sub2 : uv.2 ⊆ pB.val := le_refinementParent hQP ⟨uv.2, h2⟩
+    have hpAB : pA.val ≠ pB.val := fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
     have hf : {x ∈ uv.1 ×ˢ uv.2 | T_off.colorOfPair x.1 x.2 ≠ S.colorOfPair x.1 x.2} =
         {x ∈ uv.1 ×ˢ uv.2 |
-          (blockSys pA.1 pB.1 uv.1 uv.2).colorOfPair x.1 x.2 ≠ S.colorOfPair x.1 x.2} :=
+          (blockSys pA.val pB.val uv.1 uv.2).colorOfPair x.1 x.2 ≠ S.colorOfPair x.1 x.2} :=
       filter_congr fun x hx ↦ by
-        rw [colorOfPair_assembleOffDiag pA.2 pB.2 hlt h1 h2 huv_sub1 huv_sub2 hx]
-    have hspec := hreg_edit pA.1 pA.2 pB.1 pB.2 hpAB uv.1 h1 huv_sub1 uv.2 h2 huv_sub2 hreg
+        rw [colorOfPair_assembleOffDiag pA.property pB.property hlt h1 h2 huv_sub1 huv_sub2 hx]
+    have hspec := hreg_edit pA.val pA.property pB.val pB.property hpAB uv.1 h1 huv_sub1 uv.2 h2
+        huv_sub2 hreg
     have hconst : ∑ c : κ, |(pairColorDensity S c uv.1 uv.2 : ℝ) -
-          pairColorDensity S c pA.1 pB.1| * (#uv.1 * #uv.2) =
+          pairColorDensity S c pA.val pB.val| * (#uv.1 * #uv.2) =
         ∑ x ∈ uv.1 ×ˢ uv.2, ∑ c : κ,
           |(pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -
             pairColorDensity S c (P.part x.1) (P.part x.2)| := by
@@ -467,11 +468,12 @@ private theorem sum_regular_canonicalFineBlocks_le
       have hpt : ∀ x ∈ uv.1 ×ˢ uv.2,
           |(pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -
             pairColorDensity S c (P.part x.1) (P.part x.2)| =
-          |(pairColorDensity S c uv.1 uv.2 : ℝ) - pairColorDensity S c pA.1 pB.1| :=
+          |(pairColorDensity S c uv.1 uv.2 : ℝ) - pairColorDensity S c pA.val pB.val| :=
         fun x hx ↦ by
           obtain ⟨hx1, hx2⟩ := mem_product.1 hx
           rw [Q.part_eq_of_mem h1 hx1, Q.part_eq_of_mem h2 hx2,
-            P.part_eq_of_mem pA.2 (huv_sub1 hx1), P.part_eq_of_mem pB.2 (huv_sub2 hx2)]
+            P.part_eq_of_mem pA.property (huv_sub1 hx1), P.part_eq_of_mem pB.property
+                (huv_sub2 hx2)]
       rw [sum_congr rfl hpt, sum_const, card_product, nsmul_eq_mul]
       push_cast; ring
     rw [hf]; linarith
@@ -489,11 +491,11 @@ private theorem sum_regular_canonicalFineBlocks_le
     obtain ⟨uv, huv, hxuv⟩ := mem_biUnion.1 hx
     obtain ⟨h1, h2, hlt⟩ := mem_canonicalFineBlocks_elim (mem_filter.1 huv).1
     obtain ⟨hx1, hx2⟩ := mem_product.1 hxuv
-    have hpAB : (refinementParent hQP ⟨uv.1, h1⟩).1 ≠ (refinementParent hQP ⟨uv.2, h2⟩).1 :=
+    have hpAB : (refinementParent hQP ⟨uv.1, h1⟩).val ≠ (refinementParent hQP ⟨uv.2, h2⟩).val :=
       fun h ↦ (ne_of_lt hlt) (congrArg eP (Subtype.ext h))
     exact mem_offDiag.2 ⟨mem_univ _, mem_univ _,
-      (P.disjoint (refinementParent hQP ⟨uv.1, h1⟩).2
-        (refinementParent hQP ⟨uv.2, h2⟩).2 hpAB).forall_ne_finset
+      (P.disjoint (refinementParent hQP ⟨uv.1, h1⟩).property
+        (refinementParent hQP ⟨uv.2, h2⟩).property hpAB).forall_ne_finset
         (le_refinementParent hQP ⟨uv.1, h1⟩ hx1) (le_refinementParent hQP ⟨uv.2, h2⟩ hx2)⟩
   have hL1_total : ∑ uv ∈ FB_reg, ∑ x ∈ uv.1 ×ˢ uv.2, ∑ c : κ,
         |(pairColorDensity S c (Q.part x.1) (Q.part x.2) : ℝ) -

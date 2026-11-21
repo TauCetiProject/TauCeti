@@ -85,7 +85,7 @@ private def ψ (a : k) :
     { toFun s := Multiplicative.ofAdd (θ S a s)
       map_one' := by simp [θ]
       map_mul' s t := by
-        simp only [Subgroup.coe_mul, θ_mul a s.2, ofAdd_add] }
+        simp only [Subgroup.coe_mul, θ_mul a s.property, ofAdd_add] }
 
 private theorem ψ_of (a : k) (s : S) : ψ S a (Group.Abelianization.of s) = .ofAdd (θ S a s) := by
   simp [ψ]

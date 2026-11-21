@@ -206,9 +206,9 @@ theorem decompose_mem_of_mem_span_sigma (G : InternalGrading R M ι) (C : ι →
   | mem x hx =>
     obtain ⟨i, rfl⟩ := hx
     by_cases hi : i.1 = p
-    · rw [DirectSum.decompose_of_mem_same _ (hi ▸ hCG _ (hsC _ i.2.2))]
-      exact hi ▸ hsC _ i.2.2
-    · rw [DirectSum.decompose_of_mem_ne _ (hCG _ (hsC _ i.2.2)) hi]
+    · rw [DirectSum.decompose_of_mem_same _ (hi ▸ hCG _ (hsC _ i.2.property))]
+      exact hi ▸ hsC _ i.2.property
+    · rw [DirectSum.decompose_of_mem_ne _ (hCG _ (hsC _ i.2.property)) hi]
       exact (C p).zero_mem
   | zero => simp
   | add x y _ _ hx hy => simpa using (C p).add_mem hx hy
@@ -358,7 +358,7 @@ theorem map_eq_map_decompose {N : Type w} [AddCommMonoid N] (G : InternalGrading
   conv_lhs => rw [← DirectSum.sum_support_decompose G.piece x]
   rw [map_sum]
   refine Finset.sum_eq_single i (fun j _ hj ↦ ?_) fun hi ↦ ?_
-  · exact hf j _ (DirectSum.decompose G.piece x j).2 hj
+  · exact hf j _ (DirectSum.decompose G.piece x j).property hj
   · rw [DFinsupp.notMem_support_iff.mp hi, Submodule.coe_zero, map_zero]
 
 end InternalGrading
@@ -387,7 +387,7 @@ theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
   -- The restrictions `ep p : ℳ p → 𝓝 p` assemble to a map of direct sums lying over
   -- `e`; it is surjective because `e` and both decompositions are, hence so is each `ep p`.
   let ep : (p : ι) → ℳ p →+ 𝓝 p := fun p ↦
-    { toFun := fun x ↦ ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem x.2⟩
+    { toFun := fun x ↦ ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem x.property⟩
       map_zero' := Subtype.ext (map_zero e.toLinearMap)
       map_add' := fun x y ↦ Subtype.ext (map_add e.toLinearMap (x : M) (y : M)) }
   have hcomm : (DirectSum.coeAddMonoidHom 𝓝).comp (DirectSum.map ep) =
@@ -410,7 +410,7 @@ theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
   have hxy : e.symm y = x := by
     rw [← e.symm_apply_apply (x : M)]
     exact congrArg e.symm (congrArg Subtype.val hx).symm
-  simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+  simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.property
 
 /-- A degree-zero equivalence of additive decompositions preserves and reflects each piece.
 The homogeneous pieces need only be additive subobjects. -/
@@ -445,7 +445,7 @@ theorem coe_pieceEquiv_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
     [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
     (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : ℳ p) :
-    (he.pieceEquiv p x : N) = e x.1 := by
+    (he.pieceEquiv p x : N) = e x.val := by
   rw [pieceEquiv, LinearEquiv.ofSubmodules_apply]
 
 /-- The inverse piece equivalence applies the original inverse to the underlying element. -/
@@ -454,7 +454,7 @@ theorem coe_pieceEquiv_symm_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
     [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
     (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : 𝓝 p) :
-    ((he.pieceEquiv p).symm x : M) = e.symm x.1 := by
+    ((he.pieceEquiv p).symm x : M) = e.symm x.val := by
   rw [pieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 section Decompose
@@ -512,9 +512,9 @@ theorem isHomogeneous_range {ι : Type*} [DecidableEq ι] [AddMonoid ι]
   | @homogeneous p x =>
     by_cases hpq : p + r = q
     · subst q
-      rw [DirectSum.decompose_of_mem_same H.piece (hf.map_mem x.2)]
+      rw [DirectSum.decompose_of_mem_same H.piece (hf.map_mem x.property)]
       exact ⟨x, rfl⟩
-    · rw [DirectSum.decompose_of_mem_ne H.piece (hf.map_mem x.2) hpq]
+    · rw [DirectSum.decompose_of_mem_ne H.piece (hf.map_mem x.property) hpq]
       exact Submodule.zero_mem _
   | add x y hx hy => simpa using Submodule.add_mem _ hx hy
 
@@ -600,7 +600,7 @@ theorem InternalGrading.sum_decompose_toFinset (G : InternalGrading R M ι)
   refine (Finset.sum_subset (fun p hp ↦ ?_) fun p _ hp ↦ ?_).symm
   · refine hG.mem_toFinset.mpr fun hbot ↦ DFinsupp.mem_support_iff.mp hp
       (Submodule.coe_eq_zero.mp
-        ((Submodule.eq_bot_iff _).mp hbot _ (DirectSum.decompose G.piece x p).2))
+        ((Submodule.eq_bot_iff _).mp hbot _ (DirectSum.decompose G.piece x p).property))
   · rw [DFinsupp.notMem_support_iff.mp hp]
     simp
 
@@ -793,7 +793,7 @@ theorem InternalGrading.map_koszulTwist_of_map_eq_zero {N : Type w} [AddCommMono
   have h0 := (G.isHomogeneous_koszulTwist q).map_decompose 0 x
   rw [add_zero] at h0
   rw [G.map_eq_map_decompose f hf, G.map_eq_map_decompose f hf x, ← h0,
-    G.koszulTwist_apply_of_mem_zero (DirectSum.decompose G.piece x 0).2 q]
+    G.koszulTwist_apply_of_mem_zero (DirectSum.decompose G.piece x 0).property q]
 
 namespace LinearMap.IsHomogeneous
 
@@ -807,8 +807,8 @@ theorem koszulTwist_apply {G : InternalGrading R M ℤ} {H : InternalGrading R N
   induction x using DirectSum.Decomposition.inductionOn G.piece with
   | zero => simp
   | @homogeneous p x =>
-    rw [H.koszulTwist_apply_of_mem (hf.map_mem x.2) q,
-      G.koszulTwist_apply_of_mem x.2 q, map_smul, smul_smul]
+    rw [H.koszulTwist_apply_of_mem (hf.map_mem x.property) q,
+      G.koszulTwist_apply_of_mem x.property q, map_smul, smul_smul]
     congr 1
     rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
     congr 2

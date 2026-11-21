@@ -10,15 +10,17 @@ public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.Normed
 
 /-!
-# Differentiation of a matrix transpose, trace and determinant
+# Differentiation of matrix curves
 
-The transpose and the trace commute with differentiation of a finite matrix curve over a
-nontrivially normed field (`HasDerivAt.matrix_transpose`, `HasDerivAt.matrix_trace`). Matrices
-carry the operator norm, and no completeness assumption is needed.
+The transpose and the trace commute with differentiation (`HasDerivAt.matrix_transpose`,
+`HasDerivAt.matrix_trace`), and the inverse has derivative `-A⁻¹ * A' * A⁻¹` at an invertible
+matrix (`HasDerivAt.matrix_inv`). These rules apply to finite matrix curves over a nontrivially
+normed field. Matrices carry the operator norm, and no completeness assumption is needed.
 
 Along a curve whose entries are differentiable, the determinant satisfies Jacobi's formula
 `(det A)' = trace (adjugate A * A')` (`Matrix.hasDerivWithinAt_det_of_entries_adjugate`), which
@@ -54,6 +56,15 @@ theorem HasDerivAt.matrix_transpose {𝕜 m n : Type*} [NontriviallyNormedField 
   let T : Matrix m n 𝕜 →L[𝕜] Matrix n m 𝕜 :=
     ⟨(Matrix.transposeLinearEquiv m n 𝕜 𝕜).toLinearMap, continuous_id.matrix_transpose⟩
   exact T.hasFDerivAt.comp_hasDerivAt t hf
+
+/-- The derivative of the inverse of a matrix curve at an invertible matrix is
+`-(A⁻¹ * A' * A⁻¹)`. No scalar completeness assumption is needed. -/
+theorem HasDerivAt.matrix_inv {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
+    [DecidableEq ι] {A : 𝕜 → Matrix ι ι 𝕜} {A' : Matrix ι ι 𝕜} {a : 𝕜}
+    (hA : HasDerivAt A A' a) (hdet : IsUnit (A a).det) :
+    HasDerivAt (fun t ↦ (A t)⁻¹) (-((A a)⁻¹ * A' * (A a)⁻¹)) a := by
+  simpa only [Function.comp_def, neg_apply, ContinuousLinearMap.mulLeftRight_apply] using!
+    (Matrix.hasFDerivAt_inv hdet).comp_hasDerivAt a hA
 
 namespace Matrix
 
