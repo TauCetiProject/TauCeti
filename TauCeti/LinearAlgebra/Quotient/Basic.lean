@@ -8,10 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
-# Surjectivity of induced maps on quotient modules
+# Quotient maps and transport
 
 A surjective linear map `f : M → M₂` sending `p` into `q` induces a surjective map
-`M ⧸ p → M₂ ⧸ q`.
+`M ⧸ p → M₂ ⧸ q` (`Submodule.mapQ_surjective`), and `Submodule.factor` commutes with
+`Submodule.quotEquivOfEq` (`Submodule.factor_quotEquivOfEq`, `Submodule.factor_comp_quotEquivOfEq`).
 -/
 
 public section
@@ -27,5 +28,22 @@ theorem mapQ_surjective (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ comap f q) (
   rintro ⟨y⟩
   obtain ⟨x, rfl⟩ := hf y
   exact ⟨Quotient.mk x, rfl⟩
+
+/-- `Submodule.factor` commutes with `Submodule.quotEquivOfEq`. -/
+theorem factor_quotEquivOfEq {p₁ p₂ q₁ q₂ : Submodule R M}
+    (hp : p₁ = p₂) (hq : q₁ = q₂) (h₁ : p₁ ≤ q₁) (h₂ : p₂ ≤ q₂) (x : M ⧸ p₁) :
+    Submodule.factor h₂ (Submodule.quotEquivOfEq p₁ p₂ hp x) =
+      Submodule.quotEquivOfEq q₁ q₂ hq (Submodule.factor h₁ x) := by
+  obtain ⟨m, rfl⟩ := p₁.mkQ_surjective x
+  rw [Submodule.factor_mk, Submodule.mkQ_apply, Submodule.quotEquivOfEq_mk,
+    ← Submodule.mkQ_apply, Submodule.factor_mk, Submodule.mkQ_apply, Submodule.mkQ_apply,
+    Submodule.quotEquivOfEq_mk]
+
+/-- `Submodule.factor` commutes with `Submodule.quotEquivOfEq` as linear maps. -/
+theorem factor_comp_quotEquivOfEq {p₁ p₂ q₁ q₂ : Submodule R M}
+    (hp : p₁ = p₂) (hq : q₁ = q₂) (h₁ : p₁ ≤ q₁) (h₂ : p₂ ≤ q₂) :
+    Submodule.factor h₂ ∘ₗ (Submodule.quotEquivOfEq p₁ p₂ hp).toLinearMap =
+      (Submodule.quotEquivOfEq q₁ q₂ hq).toLinearMap ∘ₗ Submodule.factor h₁ :=
+  LinearMap.ext (factor_quotEquivOfEq hp hq h₁ h₂)
 
 end Submodule

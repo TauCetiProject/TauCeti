@@ -86,17 +86,15 @@ covering Artinian valuation quotients `O ⧸ 𝔪 ^ n`. -/
 theorem Module.Baer.quotient_self_of_ne_bot {R : Type*} [CommRing R] [IsDomain R]
     [IsPrincipalIdealRing R] {I : Ideal R} (hI : I ≠ ⊥) :
     Module.Baer (R ⧸ I) (R ⧸ I) := by
-  obtain ⟨a, rfl⟩ : ∃ a : R, I = Ideal.span {a} :=
-    ⟨_, (Ideal.span_singleton_generator I).symm⟩
+  obtain ⟨a, rfl⟩ : ∃ a : R, I = Ideal.span {a} := ⟨_, (Ideal.span_singleton_generator I).symm⟩
   have ha : a ≠ 0 := mt Ideal.span_singleton_eq_bot.mpr hI
   let π := Ideal.Quotient.mk (Ideal.span {a})
   intro J g
   obtain ⟨d, hd_eq⟩ : ∃ d : R, J.comap π = Ideal.span {d} :=
     ⟨_, (Ideal.span_singleton_generator (J.comap π)).symm⟩
-  have hJ : J = Ideal.span {π d} := by
+  obtain rfl : J = Ideal.span {π d} := by
     rw [← Ideal.map_comap_of_surjective π Ideal.Quotient.mk_surjective J, hd_eq, Ideal.map_span,
       Set.image_singleton]
-  subst hJ
   have ha_mem : a ∈ Ideal.span {d} := by
     rw [← hd_eq, Ideal.mem_comap,
       Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self a)]
@@ -105,20 +103,14 @@ theorem Module.Baer.quotient_self_of_ne_bot {R : Type*} [CommRing R] [IsDomain R
   have hc : c ≠ 0 := right_ne_zero_of_mul (hac ▸ ha)
   have hd : π d ∈ Ideal.span {π d} := Ideal.mem_span_singleton_self (π d)
   obtain ⟨z, hz⟩ := Ideal.Quotient.mk_surjective (g ⟨π d, hd⟩)
-  -- Since `c * d = a` vanishes in the quotient, `π c` annihilates `g ⟨π d, hd⟩ = π z`.
   have hcz : π (c * z) = 0 := by
-    have hcd : π c • (⟨π d, hd⟩ : Ideal.span {π d}) = 0 := by
-      ext
+    have hcd : π c • (⟨π d, hd⟩ : Ideal.span {π d}) = 0 := Subtype.ext <| by
       simp only [SetLike.val_smul, smul_eq_mul, ZeroMemClass.coe_zero, ← map_mul, mul_comm c d,
         ← hac]
       exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self a)
     rw [map_mul, ← smul_eq_mul, hz, ← map_smul, hcd, map_zero]
   obtain ⟨k, hkz⟩ := Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hcz)
-  have hdz : d ∣ z := ⟨k, mul_left_cancel₀ hc <| by
-    calc c * z = a * k := hkz
-      _ = (d * c) * k := by rw [hac]
-      _ = c * (d * k) := by ring⟩
-  obtain ⟨y, rfl⟩ := hdz
+  obtain ⟨y, rfl⟩ : d ∣ z := ⟨k, mul_left_cancel₀ hc <| by rw [hkz, hac]; ring⟩
   refine ⟨LinearMap.toSpanSingleton _ _ (π y), fun x hx ↦ ?_⟩
   obtain ⟨s, rfl⟩ := Ideal.mem_span_singleton'.mp hx
   have hs : (⟨s * π d, hx⟩ : Ideal.span {π d}) = s • ⟨π d, hd⟩ := Subtype.ext (by simp)

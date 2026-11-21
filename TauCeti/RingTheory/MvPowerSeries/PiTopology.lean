@@ -11,14 +11,8 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 /-!
 # Coefficientwise continuous linear isomorphism for multivariate power series
 
-Mathlib's `MvPowerSeries.WithPiTopology` equips `MvPowerSeries σ S` with the topology of pointwise
-convergence of coefficients inherited from `(σ →₀ ℕ) → S` (activated via
-`open scoped MvPowerSeries.WithPiTopology`), without bundling the topological linear isomorphism
-with the coordinate product. For any scalar semiring `R` acting linearly on `S`, this file bundles
-`MvPowerSeries.coeff` as `MvPowerSeries.WithPiTopology.continuousLinearEquivPi :
-MvPowerSeries σ S ≃L[R] ((σ →₀ ℕ) → S)` so that product-module properties such as
-`TauCeti.IsCompactModule` and `TauCeti.IsProfiniteFlat` transfer directly from `(σ →₀ ℕ) → S` to
-`MvPowerSeries σ S`.
+Bundles `MvPowerSeries.coeff` as `MvPowerSeries.WithPiTopology.continuousLinearEquivPi :
+MvPowerSeries σ S ≃L[R] ((σ →₀ ℕ) → S)` under `open scoped MvPowerSeries.WithPiTopology`.
 -/
 
 public section
@@ -35,12 +29,7 @@ variable (σ R S : Type*) [Semiring R] [Semiring S] [Module R S] [TopologicalSpa
 def continuousLinearEquivPi : MvPowerSeries σ S ≃L[R] ((σ →₀ ℕ) → S) where
   toFun f d := MvPowerSeries.coeff d f
   map_add' f g := by ext d; simp
-  map_smul' r f := by
-    ext d
-    simp only [MvPowerSeries.coeff_apply, Pi.smul_apply]
-    -- `Module R (MvPowerSeries σ S)` is inherited from `Module R ((σ →₀ ℕ) → S)`.
-    rfl
-  -- Unlike `PowerSeries.mk`, `MvPowerSeries σ S` is `(σ →₀ ℕ) → S` with no `mk` constructor.
+  map_smul' r f := funext fun d ↦ rfl
   invFun c := c
   left_inv f := MvPowerSeries.ext fun d ↦ MvPowerSeries.coeff_apply f d
   right_inv c := funext fun d ↦ MvPowerSeries.coeff_apply c d

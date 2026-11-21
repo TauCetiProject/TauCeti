@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
+public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.RingTheory.Ideal.Colon
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -51,6 +52,11 @@ endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap
 
 Multiplication by `b` gives the exact sequence `B/(J : b) → B/J → B/(J + (b))` for any ideal
 `J`, without regularity of `b`. The first map `TauCeti.ColonQuotient.mulColon` is injective.
+
+`Submodule.quotEquivOfEq_ideal_mk` and `Ideal.Quotient.factor_quotEquivOfEq` transport ideal
+quotient constructors and factor maps across ideal equalities. For `Ideal.span {a} * I ≤ J`,
+`Ideal.Quotient.mulLeft a h : (R ⧸ I) →ₗ[R] (R ⧸ J)` is multiplication by `a`, compatible with
+`Ideal.Quotient.factor` and injective when `J ≤ Ideal.span {a} * I` and `a` is left-regular.
 
 -/
 
@@ -279,3 +285,75 @@ theorem exact_mulColon_factorₐ (J : Ideal B) (b : B) :
     exact (Submodule.sub_mem_iff_right _ hby).mp (Submodule.mem_sup_left hy)
 
 end TauCeti.ColonQuotient
+
+namespace Submodule
+
+/-- `Submodule.quotEquivOfEq` transports `Ideal.Quotient.mk I x` to `Ideal.Quotient.mk J x`. -/
+@[simp, grind =]
+theorem quotEquivOfEq_ideal_mk {R : Type*} [Ring R] {I J : Ideal R} [I.IsTwoSided]
+    [J.IsTwoSided] (h : I = J) (x : R) :
+    Submodule.quotEquivOfEq I J h (Ideal.Quotient.mk I x) = Ideal.Quotient.mk J x := by
+  rw [← Ideal.Quotient.mk_eq_mk, Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk]
+
+end Submodule
+
+namespace Ideal.Quotient
+
+section Factor
+
+variable {R : Type*} [Ring R]
+
+/-- `Ideal.Quotient.factor` commutes with `Ideal.quotEquivOfEq`. -/
+theorem factor_quotEquivOfEq {I₁ I₂ J₁ J₂ : Ideal R}
+    [I₁.IsTwoSided] [I₂.IsTwoSided] [J₁.IsTwoSided] [J₂.IsTwoSided]
+    (hI : I₁ = I₂) (hJ : J₁ = J₂) (h₁ : I₁ ≤ J₁) (h₂ : I₂ ≤ J₂) (x : R ⧸ I₁) :
+    Ideal.Quotient.factor h₂ (Ideal.quotEquivOfEq hI x) =
+      Ideal.quotEquivOfEq hJ (Ideal.Quotient.factor h₁ x) := by
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rfl
+
+end Factor
+
+section MulLeft
+
+variable {R : Type*} [CommRing R] {I J : Ideal R}
+
+/-- Multiplication by `a` induces `(R ⧸ I) →ₗ[R] (R ⧸ J)` whenever `Ideal.span {a} * I ≤ J`. -/
+def mulLeft (a : R) (h : Ideal.span {a} * I ≤ J) : (R ⧸ I) →ₗ[R] (R ⧸ J) :=
+  Submodule.mapQ I J (LinearMap.lsmul R R a) fun _ hr ↦
+    h (Ideal.mul_mem_mul (Ideal.mem_span_singleton_self a) hr)
+
+/-- Evaluating `Ideal.Quotient.mulLeft a h` on the residue class of `r` gives the class of
+`a * r`. -/
+@[simp, grind =]
+theorem mulLeft_mk (a : R) (h : Ideal.span {a} * I ≤ J) (r : R) :
+    mulLeft a h (mk I r) = mk J (a * r) := by
+  rw [mulLeft, ← mk_eq_mk, Submodule.mapQ_apply, LinearMap.lsmul_apply, smul_eq_mul, mk_eq_mk]
+
+/-- Composing `Ideal.Quotient.mulLeft a h` with the quotient transition map `factor hJI` is
+scalar multiplication by `a`. -/
+@[simp, grind =]
+theorem mulLeft_factor (a : R) (h : Ideal.span {a} * I ≤ J) (hJI : J ≤ I) (q : R ⧸ J) :
+    mulLeft a h (factor hJI q) = a • q := by
+  obtain ⟨r, rfl⟩ := mk_surjective q
+  rw [factor_mk, mulLeft_mk, ← mk_eq_mk, ← mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul]
+
+/-- `Ideal.Quotient.mulLeft a h` is injective if and only if `a * r ∈ J` implies `r ∈ I`. -/
+theorem mulLeft_injective_iff (a : R) (h : Ideal.span {a} * I ≤ J) :
+    Function.Injective (mulLeft a h) ↔ ∀ r : R, a * r ∈ J → r ∈ I := by
+  refine ⟨fun hker r hr ↦ eq_zero_iff_mem.mp (hker <| by simp [eq_zero_iff_mem.mpr hr]),
+    fun hdiv ↦ (injective_iff_map_eq_zero _).mpr fun q hq ↦ ?_⟩
+  obtain ⟨r, rfl⟩ := mk_surjective q
+  exact eq_zero_iff_mem.mpr (hdiv r (eq_zero_iff_mem.mp hq))
+
+/-- If `a` is left-regular and `J ≤ Ideal.span {a} * I` (so `J = Ideal.span {a} * I`), then
+`Ideal.Quotient.mulLeft a h` is injective. -/
+theorem mulLeft_injective {a : R} (h : Ideal.span {a} * I ≤ J) (hJI : J ≤ Ideal.span {a} * I)
+    (ha : IsLeftRegular a) : Function.Injective (mulLeft a h) :=
+  (mulLeft_injective_iff a h).mpr fun _ hr ↦ by
+    obtain ⟨s, hs, hsr⟩ := Ideal.mem_span_singleton_mul.mp (hJI hr)
+    exact ha hsr ▸ hs
+
+end MulLeft
+
+end Ideal.Quotient

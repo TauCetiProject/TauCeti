@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import Mathlib.Topology.Order
 public import TauCeti.Topology.PiCurry
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Order.Interval.Set.Pi
@@ -38,6 +39,10 @@ identifies the image of the unit cube under positive coordinatewise scaling.
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
 sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
 coordinatewise, so coordinate calculations can use both the homeomorphism and the linear API.
+
+`TauCeti.isEmpty_continuousLinearEquiv_pi_of_indiscreteTopology` shows that a nontrivial
+indiscretely topologized module cannot be continuously linearly equivalent to a product over a `T₂`
+ring.
 -/
 
 public section
@@ -316,5 +321,17 @@ theorem coe_piSigmaConstContinuousLinearEquiv_symm (R : Type*) [Semiring R] (E :
     ((piSigmaConstContinuousLinearEquiv R E e).symm : (ι' → E) → ∀ i, κ i → E) =
       (piSigmaConstHomeomorph E e).symm :=
   (rfl)
+
+/-- A nontrivial module `M` equipped with the indiscrete topology admits no continuous linear
+equivalence `M ≃L[R] (I → R)` over a `T₂` ring `R` (even when `M` is compact, linearly
+topologized, and flat). -/
+theorem isEmpty_continuousLinearEquiv_pi_of_indiscreteTopology (R M I : Type*)
+    [Ring R] [TopologicalSpace R] [T2Space R] [AddCommGroup M] [Module R M]
+    [TopologicalSpace M] [IndiscreteTopology M] [Nontrivial M] :
+    IsEmpty (M ≃L[R] (I → R)) := by
+  refine ⟨fun e ↦ ?_⟩
+  have := T2Space.of_injective_continuous e.injective e.continuous
+  have := subsingleton_iff_indiscreteTopology.mpr ‹IndiscreteTopology M›
+  exact false_of_nontrivial_of_subsingleton M
 
 end TauCeti

@@ -13,17 +13,12 @@ public import TauCeti.RingTheory.PowerSeries.CoeffProd
 /-!
 # Power series in the coefficientwise topology
 
-Mathlib's `PowerSeries.WithPiTopology` equips `S⟦X⟧` with the topology of coefficientwise
-convergence (activated via `open scoped PowerSeries.WithPiTopology`). This file provides tools
-for working with `S⟦X⟧` as a topological module and topological ring in that topology:
+Tools for `S⟦X⟧` under `open scoped PowerSeries.WithPiTopology`:
 
-* `PowerSeries.WithPiTopology.continuousLinearEquivPi`: for any scalar semiring `R` acting linearly
-  on `S`, `PowerSeries.coeff` and `PowerSeries.mk` identify `S⟦X⟧` with `ℕ → S` as a topological
-  `R`-module, allowing product-module properties such as `TauCeti.IsCompactModule` and
-  `TauCeti.IsProfiniteFlat` to transfer directly from `ℕ → S` to `S⟦X⟧`.
-* `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: if all but finitely many factors agree
-  with `1` modulo each power `X ^ (n + 1)`, their infinite product converges coefficientwise and
-  each degree-`n` coefficient is computed from the corresponding finite cutoff.
+* `PowerSeries.WithPiTopology.continuousLinearEquivPi`: topological `R`-linear isomorphism
+  `S⟦X⟧ ≃L[R] (ℕ → S)` via `PowerSeries.coeff` and `PowerSeries.mk`.
+* `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: infinite products through finite
+  cutoffs when factors converge to `1` `(X)`-adically.
 * `PowerSeries.WithPiTopology.isAdic_span_X`: over a discrete commutative ring, the
   coefficientwise topology on `R⟦X⟧` coincides with the `(X)`-adic topology.
 -/

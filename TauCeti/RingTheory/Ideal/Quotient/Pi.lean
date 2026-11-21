@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Ideal.Operations.Pi
 
 /-!
 # Componentwise quotient maps of products
@@ -31,8 +32,6 @@ injective and upgrades to a linear equivalence `Ideal.FG.quotPiSMulTopEquiv`.
 * `TauCeti.Ideal.Quotient.piFactorₐ_surjective`: it is surjective.
 * `TauCeti.Ideal.Quotient.bijective_pi_restrict_pow`: dropping the factors `A ⧸ I ^ 0 = 0` from
   `∏ i, A ⧸ I i ^ n i` is a linear bijection.
-* `Ideal.FG.smul_top_pi_eq_pi`: for a finitely generated ideal `J` of a commutative semiring `R`
-  and any family of `R`-modules `M`, `J • ⊤ = Submodule.pi Set.univ fun i ↦ J • ⊤`.
 * `Ideal.quotPiSMulTopToPiQuot`: the canonical surjective `R`-linear map
   `((ι → R) ⧸ (J • ⊤)) →ₗ[R] (ι → R ⧸ J)`.
 * `Ideal.FG.quotPiSMulTopToPiQuot_injective`, `Ideal.FG.quotPiSMulTopToPiQuot_bijective`,
@@ -93,67 +92,15 @@ end TauCeti
 
 namespace Ideal
 
-section CommSemiring
-
-open scoped Pointwise
-
-/-- A finitely generated ideal `J` of a commutative semiring commutes with arbitrary products of
-modules: `J • (⊤ : Submodule R (∀ i, M i))` equals the product of the submodules `J • ⊤`. -/
-theorem FG.smul_top_pi_eq_pi {R : Type*} [CommSemiring R] {ι : Type*}
-    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
-    {J : Ideal R} (hJ : J.FG) :
-    J • (⊤ : Submodule R (∀ i, M i)) =
-      Submodule.pi Set.univ fun i ↦ J • (⊤ : Submodule R (M i)) := by
-  refine le_antisymm ?_ ?_
-  · rw [Submodule.smul_le]
-    intro r hr x _ i _
-    exact Submodule.smul_mem_smul hr Submodule.mem_top
-  · obtain ⟨s, rfl⟩ := hJ
-    classical
-    induction s using Finset.induction_on with
-    | empty =>
-      intro x hx
-      have hx0 : x = 0 := funext fun i ↦ by
-        have hi := Submodule.mem_pi.mp hx i (Set.mem_univ i)
-        rw [Finset.coe_empty, Ideal.span_empty, Submodule.bot_smul, Submodule.mem_bot] at hi
-        rw [Pi.zero_apply]
-        exact hi
-      rw [hx0]
-      exact zero_mem _
-    | @insert a s _ ih =>
-      intro x hx
-      have hspan : Ideal.span (↑(insert a s) : Set R) =
-          Ideal.span {a} ⊔ Ideal.span (s : Set R) := by
-        rw [Finset.coe_insert, Set.insert_eq, Ideal.span_union]
-      rw [hspan, Submodule.sup_smul]
-      have hx' : ∀ i, ∃ u : M i, ∃ v ∈ Ideal.span (s : Set R) • (⊤ : Submodule R (M i)),
-          a • u + v = x i := fun i ↦ by
-        have hi := Submodule.mem_pi.mp hx i (Set.mem_univ i)
-        rw [hspan, Submodule.sup_smul] at hi
-        obtain ⟨y, hy, v, hv, hyv⟩ := Submodule.mem_sup.mp hi
-        rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hy
-        obtain ⟨u, _, rfl⟩ := hy
-        exact ⟨u, v, hv, hyv⟩
-      choose u v hv huv using hx'
-      have hx_eq : x = a • u + v := funext fun i ↦ (huv i).symm
-      rw [hx_eq]
-      refine Submodule.add_mem_sup ?_ (ih fun i _ ↦ hv i)
-      exact Submodule.smul_mem_smul (Ideal.mem_span_singleton_self a) Submodule.mem_top
-
-/-- For a finitely generated ideal `J` of a commutative semiring `R`,
-`J • (⊤ : Submodule R (ι → R))` consists of the tuples whose every coordinate lies in `J`. -/
-theorem FG.smul_top_pi_self_eq_pi {R : Type*} [CommSemiring R] {ι : Type*}
-    {J : Ideal R} (hJ : J.FG) :
-    J • (⊤ : Submodule R (ι → R)) = Submodule.pi Set.univ fun _ : ι ↦ J := by
-  simpa only [smul_eq_mul, Ideal.mul_top] using hJ.smul_top_pi_eq_pi (M := fun _ : ι ↦ R)
-
-end CommSemiring
-
 section QuotPiSMulTop
+
+section Ring
+
+variable {R : Type*} [Ring R] (J : Ideal R) [J.IsTwoSided]
 
 /-- Coordinatewise reduction modulo a two-sided ideal `J` on a product `ι → R`, factored through
 `(ι → R) ⧸ (J • ⊤)`. -/
-def quotPiSMulTopToPiQuot {R : Type*} [Ring R] (J : Ideal R) [J.IsTwoSided] (ι : Type*) :
+def quotPiSMulTopToPiQuot (ι : Type*) :
     ((ι → R) ⧸ (J • (⊤ : Submodule R (ι → R)))) →ₗ[R] (ι → R ⧸ J) :=
   (J • (⊤ : Submodule R (ι → R))).liftQ
     (LinearMap.pi fun i ↦ J.mkQ.comp (LinearMap.proj i)) <| by
@@ -165,62 +112,62 @@ def quotPiSMulTopToPiQuot {R : Type*} [Ring R] (J : Ideal R) [J.IsTwoSided] (ι 
         smul_eq_mul, Submodule.mkQ_apply, Pi.zero_apply, Submodule.Quotient.mk_eq_zero]
       exact Ideal.IsTwoSided.mul_mem_of_left (x i) hr
 
-/-- Evaluating `Ideal.quotPiSMulTopToPiQuot` on the residue class of `x : ι → R` reduces each
-coordinate modulo `J`. -/
+/-- Evaluating `Ideal.quotPiSMulTopToPiQuot` on `Submodule.Quotient.mk x` reduces each coordinate
+modulo `J`. -/
 @[simp, grind =]
-theorem quotPiSMulTopToPiQuot_mk {R : Type*} [Ring R] (J : Ideal R) [J.IsTwoSided]
-    {ι : Type*} (x : ι → R) (i : ι) :
+theorem quotPiSMulTopToPiQuot_mk {ι : Type*} (x : ι → R) (i : ι) :
     J.quotPiSMulTopToPiQuot ι (Submodule.Quotient.mk x) i = Ideal.Quotient.mk J (x i) := by
   rw [quotPiSMulTopToPiQuot, Submodule.liftQ_apply, LinearMap.pi_apply, LinearMap.comp_apply,
     LinearMap.proj_apply, Submodule.mkQ_apply, Ideal.Quotient.mk_eq_mk]
 
 /-- `Ideal.quotPiSMulTopToPiQuot J ι` is always surjective. -/
-theorem quotPiSMulTopToPiQuot_surjective {R : Type*} [Ring R] (J : Ideal R) [J.IsTwoSided]
-    (ι : Type*) : Function.Surjective (J.quotPiSMulTopToPiQuot ι) := by
-  intro y
+theorem quotPiSMulTopToPiQuot_surjective (ι : Type*) :
+    Function.Surjective (J.quotPiSMulTopToPiQuot ι) := fun y ↦ by
   choose x hx using fun i ↦ Ideal.Quotient.mk_surjective (y i)
-  exact ⟨Submodule.Quotient.mk x, funext fun i ↦ by rw [quotPiSMulTopToPiQuot_mk, hx i]⟩
+  exact ⟨Submodule.Quotient.mk x, funext fun i ↦ by simp [hx i]⟩
+
+end Ring
+
+section FG
+
+variable {R : Type*} [CommRing R] {J : Ideal R} (hJ : J.FG)
+include hJ
 
 /-- For a finitely generated ideal `J` of a commutative ring `R`, `Ideal.quotPiSMulTopToPiQuot J ι`
 is injective. -/
-theorem FG.quotPiSMulTopToPiQuot_injective {R : Type*} [CommRing R] {J : Ideal R}
-    (hJ : J.FG) (ι : Type*) :
+theorem FG.quotPiSMulTopToPiQuot_injective (ι : Type*) :
     Function.Injective (J.quotPiSMulTopToPiQuot ι) := by
   refine LinearMap.ker_eq_bot.mp (Submodule.ker_liftQ_eq_bot _ _ _ fun x hx ↦ ?_)
   rw [hJ.smul_top_pi_self_eq_pi]
   intro i _
-  have hi := congr_fun (LinearMap.mem_ker.mp hx) i
-  rw [LinearMap.pi_apply, LinearMap.comp_apply, LinearMap.proj_apply, Submodule.mkQ_apply,
-    Pi.zero_apply, Submodule.Quotient.mk_eq_zero] at hi
-  exact hi
+  exact Ideal.Quotient.eq_zero_iff_mem.mp (by simpa using congr_fun (LinearMap.mem_ker.mp hx) i)
 
 /-- For a finitely generated ideal `J` of a commutative ring `R`, `Ideal.quotPiSMulTopToPiQuot J ι`
 is bijective. -/
-theorem FG.quotPiSMulTopToPiQuot_bijective {R : Type*} [CommRing R] {J : Ideal R}
-    (hJ : J.FG) (ι : Type*) :
+theorem FG.quotPiSMulTopToPiQuot_bijective (ι : Type*) :
     Function.Bijective (J.quotPiSMulTopToPiQuot ι) :=
   ⟨hJ.quotPiSMulTopToPiQuot_injective ι, J.quotPiSMulTopToPiQuot_surjective ι⟩
 
 /-- For a finitely generated ideal `J` of a commutative ring `R`, the canonical `R`-linear
 equivalence `((ι → R) ⧸ (J • ⊤)) ≃ₗ[R] (ι → R ⧸ J)`. -/
-noncomputable def FG.quotPiSMulTopEquiv {R : Type*} [CommRing R] {J : Ideal R}
-    (hJ : J.FG) (ι : Type*) :
+noncomputable def FG.quotPiSMulTopEquiv (ι : Type*) :
     ((ι → R) ⧸ (J • (⊤ : Submodule R (ι → R)))) ≃ₗ[R] (ι → R ⧸ J) :=
   LinearEquiv.ofBijective (J.quotPiSMulTopToPiQuot ι) (hJ.quotPiSMulTopToPiQuot_bijective ι)
 
 /-- Underlying function of `Ideal.FG.quotPiSMulTopEquiv`. -/
 @[simp, grind =]
-theorem FG.quotPiSMulTopEquiv_apply {R : Type*} [CommRing R] {J : Ideal R} (hJ : J.FG)
-    {ι : Type*} (q : (ι → R) ⧸ (J • (⊤ : Submodule R (ι → R)))) :
+theorem FG.quotPiSMulTopEquiv_apply {ι : Type*}
+    (q : (ι → R) ⧸ (J • (⊤ : Submodule R (ι → R)))) :
     hJ.quotPiSMulTopEquiv ι q = J.quotPiSMulTopToPiQuot ι q :=
   LinearEquiv.ofBijective_apply _ q
 
 /-- Right-inverse identity for `Ideal.FG.quotPiSMulTopEquiv`. -/
 @[simp, grind =]
-theorem FG.quotPiSMulTopToPiQuot_quotPiSMulTopEquiv_symm {R : Type*} [CommRing R]
-    {J : Ideal R} (hJ : J.FG) {ι : Type*} (y : ι → R ⧸ J) :
+theorem FG.quotPiSMulTopToPiQuot_quotPiSMulTopEquiv_symm {ι : Type*} (y : ι → R ⧸ J) :
     J.quotPiSMulTopToPiQuot ι ((hJ.quotPiSMulTopEquiv ι).symm y) = y := by
   rw [← hJ.quotPiSMulTopEquiv_apply, LinearEquiv.apply_symm_apply]
+
+end FG
 
 end QuotPiSMulTop
 
