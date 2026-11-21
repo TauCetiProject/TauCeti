@@ -14,7 +14,8 @@ Forgetting scalar compatibility commutes with composition of semilinear maps
 (`LinearMap.toAddMonoidHom_comp`). Composites of injective or surjective semilinear maps are
 injective or surjective (`LinearMap.injective_comp`, `LinearMap.surjective_comp`); these restate
 `Function.Injective.comp` and `Function.Surjective.comp` for the coercion of `g.comp f`, so that
-they can be passed where a proof about exactly this coercion is expected.
+they can be passed where a proof about exactly this coercion is expected. Pasting a commutative
+square onto a factorization gives a factorization (`LinearMap.comp_comp_eq_comp_comp_of_comp_eq`).
 -/
 
 public section
@@ -41,5 +42,21 @@ theorem injective_comp {g : N →ₛₗ[τ] P} {f : M →ₛₗ[σ] N} (hg : Fun
 theorem surjective_comp {g : N →ₛₗ[τ] P} {f : M →ₛₗ[σ] N} (hg : Function.Surjective g)
     (hf : Function.Surjective f) : Function.Surjective (g.comp f : M →ₛₗ[υ] P) :=
   hg.comp hf
+
+section Paste
+
+variable {R U V W V' W' Y : Type*} [Semiring R] [AddCommMonoid U] [AddCommMonoid V]
+  [AddCommMonoid W] [AddCommMonoid V'] [AddCommMonoid W'] [AddCommMonoid Y] [Module R U]
+  [Module R V] [Module R W] [Module R V'] [Module R W'] [Module R Y]
+
+/-- **Pasting a commutative square onto a factorization.** If `ψ ∘ y = g ∘ q` and the square
+`b ∘ ψ = ψ' ∘ a` commutes, then `ψ' ∘ (a ∘ y) = (b ∘ g) ∘ q`: a lift of `g ∘ q` along `ψ`,
+followed by `a`, is a lift of `(b ∘ g) ∘ q` along `ψ'`. -/
+theorem comp_comp_eq_comp_comp_of_comp_eq {ψ : V →ₗ[R] W} {ψ' : V' →ₗ[R] W'} {a : V →ₗ[R] V'}
+    {b : W →ₗ[R] W'} (h : b ∘ₗ ψ = ψ' ∘ₗ a) {y : U →ₗ[R] V} {g : Y →ₗ[R] W} {q : U →ₗ[R] Y}
+    (hy : ψ ∘ₗ y = g ∘ₗ q) : ψ' ∘ₗ (a ∘ₗ y) = (b ∘ₗ g) ∘ₗ q := by
+  rw [← comp_assoc, ← h, comp_assoc, hy, comp_assoc]
+
+end Paste
 
 end LinearMap

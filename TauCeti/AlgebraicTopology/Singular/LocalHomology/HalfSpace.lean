@@ -114,10 +114,10 @@ private theorem isZero_localHomology_halfSpace_of_pos (hn : finrank ℝ E = n)
     {K : Set ↥{x : E | 0 ≤ f x}} (hKv : Convex ℝ (Subtype.val '' K)) (hKc : IsCompact K)
     (hKf : ∀ x ∈ K, 0 < f x) {k : ℕ} (hk : n < k) : IsZero (localHomology R K k) := by
   let O : Set ↥{x : E | 0 ≤ f x} := {x | 0 < f x}
-  have hO : IsOpen O := isOpen_lt continuous_const (f.continuous.comp continuous_subtype_val)
+  have hO : IsOpen O := isOpen_lt continuous_const (f.continuous.comp continuous_subtypeVal)
   -- The inclusions of the open half-space into `H` and into `E`.
-  let j : C(O, ↥{x : E | 0 ≤ f x}) := ⟨Subtype.val, continuous_subtype_val⟩
-  let j' : C(O, E) := ⟨fun z ↦ z.1.1, continuous_subtype_val.comp continuous_subtype_val⟩
+  let j : C(O, ↥{x : E | 0 ≤ f x}) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let j' : C(O, E) := ⟨fun z ↦ z.val.val, continuous_subtypeVal.comp continuous_subtypeVal⟩
   have hj : IsOpenEmbedding j := hO.isOpenEmbedding_subtypeVal
   have hj' : IsOpenEmbedding j' := by
     refine ⟨IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal, ?_⟩
@@ -125,21 +125,21 @@ private theorem isZero_localHomology_halfSpace_of_pos (hn : finrank ℝ E = n)
       ext y
       refine ⟨?_, fun (hy : 0 < f y) ↦ ⟨⟨⟨y, hy.le⟩, hy⟩, rfl⟩⟩
       rintro ⟨z, rfl⟩
-      exact z.2
+      exact z.property
     rw [this]
     exact isOpen_lt continuous_const f.continuous
   have hKj : j ⁻¹' K = j' ⁻¹' (Subtype.val '' K) := by
     ext z
-    exact (Subtype.val_injective.mem_set_image (a := z.1) (s := K)).symm
+    exact (Subtype.val_injective.mem_set_image (a := z.val) (s := K)).symm
   have hKE : IsZero (localHomology R (Subtype.val '' K) k) := by
     have := isZero_localHomology_symm_image_iUnion R (OpenPartialHomeomorph.refl E) hn
       (K := fun _ : Unit ↦ Subtype.val '' K) (fun _ ↦ hKv)
-      (fun _ ↦ hKc.image continuous_subtype_val) (fun _ ↦ subset_univ _) hk
+      (fun _ ↦ hKc.image continuous_subtypeVal) (fun _ ↦ subset_univ _) hk
     simpa [iUnion_const] using this
   refine (isZero_localHomology_iff_of_isOpenEmbedding R j hj rfl hKc.isClosed
     (fun x hx ↦ ⟨⟨x, hKf x hx⟩, rfl⟩) k).1 ?_
   exact (isZero_localHomology_iff_of_isOpenEmbedding R j' hj' hKj.symm
-    (hKc.image continuous_subtype_val).isClosed (fun y ⟨x, hx, hxy⟩ ↦ ⟨⟨x, hKf x hx⟩, hxy⟩)
+    (hKc.image continuous_subtypeVal).isClosed (fun y ⟨x, hx, hxy⟩ ↦ ⟨⟨x, hKf x hx⟩, hxy⟩)
     k).2 hKE
 
 /-- **Local homology of the half-space along a compact convex set vanishes above the
@@ -154,10 +154,10 @@ theorem isZero_localHomology_halfSpace_of_convex (hf : f ≠ 0) (hn : finrank �
   by_cases h : ∃ x ∈ K, f x = 0
   · obtain ⟨x, hx, hfx⟩ := h
     exact isZero_localHomology_halfSpace_of_starConvex R hf (hKv.starConvex ⟨x, hx, rfl⟩)
-      ⟨x, hx, rfl⟩ hfx (hKc.image continuous_subtype_val).isBounded k
+      ⟨x, hx, rfl⟩ hfx (hKc.image continuous_subtypeVal).isBounded k
   · simp only [not_exists, not_and] at h
     exact isZero_localHomology_halfSpace_of_pos R hn hKv hKc
-      (fun x hx ↦ x.2.lt_of_ne' (h x hx)) hk
+      (fun x hx ↦ x.property.lt_of_ne' (h x hx)) hk
 
 variable {M : Type w} [TopologicalSpace M] [T2Space M]
   (φ : OpenPartialHomeomorph M ↥{x : E | 0 ≤ f x})
@@ -171,7 +171,7 @@ theorem isZero_localHomology_symm_image_halfSpace (hf : f ≠ 0) (hn : finrank �
     {K : Set ↥{x : E | 0 ≤ f x}} (hKv : Convex ℝ (Subtype.val '' K)) (hKc : IsCompact K)
     (hKφ : K ⊆ φ.target) {k : ℕ} (hk : n < k) : IsZero (localHomology R (φ.symm '' K) k) := by
   -- The inclusion of the chart source into `M` and the chart itself on its source.
-  let j : C(φ.source, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  let j : C(φ.source, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   let j' : C(φ.source, ↥{x : E | 0 ≤ f x}) := ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩
   have hj : IsOpenEmbedding j := φ.open_source.isOpenEmbedding_subtypeVal
   have hj' : IsOpenEmbedding j' := φ.isOpenEmbedding_restrict
@@ -180,7 +180,7 @@ theorem isZero_localHomology_symm_image_halfSpace (hf : f ≠ 0) (hn : finrank �
   have hKj : j ⁻¹' (φ.symm '' K) = j' ⁻¹' K := by
     ext z
     rw [hL]
-    exact ⟨fun h ↦ h.2, fun h ↦ ⟨z.2, h⟩⟩
+    exact ⟨fun h ↦ h.2, fun h ↦ ⟨z.property, h⟩⟩
   refine (isZero_localHomology_iff_of_isOpenEmbedding R j hj rfl hLc.isClosed
     (fun x hx ↦ ⟨⟨x, (hL ▸ hx).1⟩, rfl⟩) k).1 ?_
   exact (isZero_localHomology_iff_of_isOpenEmbedding R j' hj' hKj.symm hKc.isClosed

@@ -130,7 +130,7 @@ theorem hasDerivAt_weierstrassZeta {z : ℂ} (hz : z ∉ L.lattice) :
   simpa only [Pi.neg_apply, Finset.sum_neg_distrib] using
     (HasDerivAt.fun_sum fun (l : L.lattice) (_ : l ∈ s) ↦
       hasDerivAt_weierstrassZeta_term
-        (l := (l : ℂ)) (z := w) (fun h ↦ hw (h ▸ l.2)))
+        (l := (l : ℂ)) (z := w) (fun h ↦ hw (h ▸ l.property)))
 
 /-- `ζ` is holomorphic away from the lattice. -/
 theorem differentiableOn_weierstrassZeta :

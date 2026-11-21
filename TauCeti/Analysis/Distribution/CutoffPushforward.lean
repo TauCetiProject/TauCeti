@@ -13,13 +13,13 @@ public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 /-!
 # Pushforward of compactly supported currents and distributions along smooth maps
 
-Let `Ω ⊆ E` and `Ω' ⊆ E'` be open subsets of real normed spaces, with `E` finite-dimensional, and
+Let `Ω ⊆ E` and `Ω' ⊆ E'` be open subsets of real normed spaces, and
 let `T` be a current on `Ω`: a continuous linear map on test `k`-forms. Pushing `T` forward along a
 map `Φ : E → E'` by `Φ_# T = T ∘ Φ^*` needs the pullback `Φ^* ω` of a test form on `Ω'` to be a
 test form on `Ω`, which holds when `Φ` is proper from `Ω` to `Ω'` (`TestFunction.pullbackCLM`).
 When the support of `T` is a compact subset of `Ω`, properness is not needed: choose a test
-function `χ` on `Ω` equal to one near the support of `T` (`TestFunction.exists_eventually_eq_one`)
-and put
+function `χ` on `Ω` equal to one near the support of `T` (when `E` is finite-dimensional,
+`TestFunction.exists_eventually_eq_one` supplies one) and put
 
 `Φ_# T = T ∘ (χ Φ^*)`,
 
@@ -101,7 +101,7 @@ private theorem eventually_cutoff_comp_eq_one_or_eq_zero {E E' : Type*} [NormedA
 
 namespace ContinuousLinearMap
 
-variable {E E' E'' F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' E'' F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup E''] [NormedSpace ℝ E'']
   [NormedAddCommGroup F] [NormedSpace ℝ F] [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   {Ω : Opens E} {Ω' : Opens E'} {Ω'' : Opens E''} {Φ : E → E'} {k : ℕ} {χ χ₁ χ₂ : 𝓓(Ω, ℝ)}
@@ -171,7 +171,7 @@ variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **The support of a composition with a cutoff operator**: if `P` takes test functions on `Ω'`
 to test functions on `Ω` supported in `tsupport χ ∩ Φ ⁻¹' tsupport φ`, then the support of `T ∘ P`
 lies in the image under `Φ` of the part of the support of `T` in the support of `χ`. -/
-theorem dsupport_comp_subset_image_of_tsupport_subset [FiniteDimensional ℝ E] {G G' : Type*}
+theorem dsupport_comp_subset_image_of_tsupport_subset {G G' : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
     [AddCommMonoid V] [FunLike 𝓕 𝓓(Ω, G) V] [AddMonoidHomClass 𝓕 𝓓(Ω, G) V] (T : 𝓕)
     (hΦc : ContinuousOn Φ Ω) {P : 𝓓(Ω', G') → 𝓓(Ω, G)}
@@ -190,7 +190,7 @@ theorem dsupport_comp_subset_image_of_tsupport_subset [FiniteDimensional ℝ E] 
 /-- **The support of a pushforward**: the support of `T ∘ (χ Φ^*)` lies in the image under `Φ` of
 the part of the support of `T` in the support of `χ`. In particular it is compact, and when `χ` is
 equal to one near the support of `T`, it lies in the image of the support of `T`. -/
-theorem dsupport_comp_cutoffPullbackCLM_subset [FiniteDimensional ℝ E] [AddCommMonoid V]
+theorem dsupport_comp_cutoffPullbackCLM_subset [AddCommMonoid V]
     [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     (T : 𝓕) :
     dsupport (T ∘ (cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ⊆
@@ -200,7 +200,7 @@ theorem dsupport_comp_cutoffPullbackCLM_subset [FiniteDimensional ℝ E] [AddCom
 
 /-- **The support of a proper pushforward**: if `Φ` is proper from `Ω` to `Ω'`, the support of
 `Φ_# T = T ∘ Φ^*` lies in the closure of the image under `Φ` of the support of `T` in `Ω`. -/
-theorem dsupport_comp_pullbackCLM_subset [FiniteDimensional ℝ E] [AddCommMonoid V]
+theorem dsupport_comp_pullbackCLM_subset [AddCommMonoid V]
     [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     (T : 𝓕) {hΦp : ∀ K : Set E', IsCompact K → K ⊆ Ω' → IsCompact ((Ω : Set E) ∩ Φ ⁻¹' K)} :
     dsupport (T ∘ (pullbackCLM Φ hΦ hΦp : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ⊆
@@ -269,7 +269,7 @@ theorem cutoffPushforwardCLM_apply (T : 𝓓'(Ω, F)) (f : 𝓓(Ω', ℝ)) :
 
 /-- **Independence of the cutoff**: the pushforward `T ∘ (χ Φ^*)` depends only on the germ of `χ`
 along the part of the support of `T` that `Φ` maps into `Ω'`. -/
-theorem cutoffPushforwardCLM_congr [FiniteDimensional ℝ E] (T : 𝓓'(Ω, F))
+theorem cutoffPushforwardCLM_congr (T : 𝓓'(Ω, F))
     (h : (χ₁ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T ∩ Φ ⁻¹' Ω')] χ₂) :
     (cutoffPushforwardCLM χ₁ Φ hΦ T : 𝓓'(Ω', F)) = cutoffPushforwardCLM χ₂ Φ hΦ T := by
   ext f
@@ -293,7 +293,7 @@ theorem cutoffPushforwardCLM_congr [FiniteDimensional ℝ E] (T : 𝓓'(Ω, F))
 /-- **The support of a pushforward**: the support of `T ∘ (χ Φ^*)` lies in the image under `Φ` of
 the part of the support of `T` in the support of `χ`. In particular it is compact, and when `χ` is
 equal to one near the support of `T`, it lies in the image of the support of `T`. -/
-theorem dsupport_cutoffPushforwardCLM_subset [FiniteDimensional ℝ E] (T : 𝓓'(Ω, F)) :
+theorem dsupport_cutoffPushforwardCLM_subset (T : 𝓓'(Ω, F)) :
     dsupport (cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', F)) ⊆ Φ '' (tsupport χ ∩ dsupport T) := by
   have h : ⇑(cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', F)) = T ∘ cutoffCompCLM χ Φ hΦ :=
     funext fun f ↦ cutoffPushforwardCLM_apply T f
@@ -317,7 +317,7 @@ theorem cutoffPushforwardCLM_const (T : 𝓓'(Ω, F)) (c : E') :
 
 /-- **The pushforward along the identity**: if `χ` is equal to one near the support of `T`, the
 pushforward of `T` along the identity is `T`. -/
-theorem cutoffPushforwardCLM_id [FiniteDimensional ℝ E] {hid : ContDiffOn ℝ (⊤ : ℕ∞) (id : E → E) Ω}
+theorem cutoffPushforwardCLM_id {hid : ContDiffOn ℝ (⊤ : ℕ∞) (id : E → E) Ω}
     (T : 𝓓'(Ω, F)) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
     (cutoffPushforwardCLM χ id hid T : 𝓓'(Ω, F)) = T := by
   ext f
@@ -347,7 +347,7 @@ theorem cutoffPushforwardCLM_cutoffPushforwardCLM {Ψ : E' → E''} {χ' : 𝓓(
 /-- **Functoriality of the pushforward**: `(Ψ ∘ Φ)_* T = Ψ_* (Φ_* T)` for the pushforwards of
 `χ T`, when `χ'` is equal to one near the image under `Φ` of the part of the support of `T` in the
 support of `χ`. -/
-theorem cutoffPushforwardCLM_cutoffPushforwardCLM_of_eventually_eq_one [FiniteDimensional ℝ E]
+theorem cutoffPushforwardCLM_cutoffPushforwardCLM_of_eventually_eq_one
     {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)} {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'}
     {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω} (T : 𝓓'(Ω, F))
     (hχ' : ∀ᶠ y in 𝓝ˢ (Φ '' (tsupport χ ∩ dsupport T)), χ' y = 1) :

@@ -30,6 +30,9 @@ Gauss norms.
   at unit radius `{1}`.
 * `TauCeti.Huber.weightedRestrictedIterateGaussEquiv`: the iterated completed Gauss comparison for
   multiplicative-unit weights `{uₗ}`.
+* `TauCeti.Huber.restrictedMvPowerSeriesIterateGaussAlgEquiv` and
+  `TauCeti.Huber.weightedRestrictedIterateGaussAlgEquiv`: the same comparisons as `R`-algebra
+  equivalences for the structure induced by `iterateStructureHom`.
 
 ## Main results
 
@@ -689,5 +692,211 @@ theorem norm_weightedRestrictedCompletionGaussAlgEquiv_iterateFirstBlockHom
     norm_restrictedFinAddFirstBlockAlgHom]
 
 end UnitWeight
+
+/-! ### Algebra equivalences for the iterated unit-radius Gauss comparison -/
+
+section OneWeightAlgEquiv
+
+variable {k m : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
+
+local notation "Inner₁" => IsRestricted.subring (R := R) (fun _ : Fin k ↦ (1 : ℝ))
+local notation "Iter₁" => IsRestricted.subring (R := Inner₁) (fun _ : Fin m ↦ (1 : ℝ))
+
+/-- On `algebraMap` from the inner completion, `restrictedMvPowerSeriesIterateGaussEquiv` acts via
+`restrictedMvPowerSeriesCompletionGaussEquiv`. -/
+theorem restrictedMvPowerSeriesIterateGaussEquiv_algebraMap
+    (b : restrictedMvPowerSeriesCompletion k R) :
+    restrictedMvPowerSeriesIterateGaussEquiv
+        (algebraMap (restrictedMvPowerSeriesCompletion k R)
+          (restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R)) b) =
+      algebraMap Inner₁ Iter₁ (restrictedMvPowerSeriesCompletionGaussEquiv b) := by
+  rw [algebraMap_completion_weightedRestrictedSubring_apply,
+    restrictedMvPowerSeriesIterateGaussEquiv_coe_weightedC]
+
+variable [IsHuberRing R]
+
+/-- `restrictedMvPowerSeriesIterateGaussEquiv` intertwines `iterateStructureHom` at trivial weights
+with `algebraMap R` into the iterated unit-radius Gauss-normed algebra. -/
+theorem restrictedMvPowerSeriesIterateGaussEquiv_iterateStructureHom (a : R) :
+    restrictedMvPowerSeriesIterateGaussEquiv
+        (iterateStructureHom (k := k) (m := m) isWeightFamily_one_weight
+          isWeightFamily_one_weight a) =
+      algebraMap R Iter₁ a := by
+  simp [← IsScalarTower.algebraMap_apply R Inner₁ Iter₁]
+
+/-- **Iterated unit-radius Gauss comparison as an `R`-algebra equivalence**, with respect to the
+`R`-algebra structure induced by `iterateStructureHom`. -/
+noncomputable def restrictedMvPowerSeriesIterateGaussAlgEquiv :
+    letI := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
+      isWeightFamily_one_weight).toAlgebra
+    restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R) ≃ₐ[R] Iter₁ :=
+  letI := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
+    isWeightFamily_one_weight).toAlgebra
+  AlgEquiv.ofRingEquiv (f := restrictedMvPowerSeriesIterateGaussEquiv) fun a ↦ by
+    rw [RingHom.algebraMap_toAlgebra,
+      restrictedMvPowerSeriesIterateGaussEquiv_iterateStructureHom]
+
+/-- The underlying `RingEquiv` of `restrictedMvPowerSeriesIterateGaussAlgEquiv` is
+`restrictedMvPowerSeriesIterateGaussEquiv`. -/
+@[simp]
+theorem restrictedMvPowerSeriesIterateGaussAlgEquiv_toRingEquiv :
+    letI := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
+      isWeightFamily_one_weight).toAlgebra
+    (restrictedMvPowerSeriesIterateGaussAlgEquiv (k := k) (m := m) (R := R)).toRingEquiv =
+      restrictedMvPowerSeriesIterateGaussEquiv := (rfl)
+
+/-- Pointwise coercion of `restrictedMvPowerSeriesIterateGaussAlgEquiv`. -/
+@[simp]
+theorem restrictedMvPowerSeriesIterateGaussAlgEquiv_apply
+    (x : restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R)) :
+    letI := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
+      isWeightFamily_one_weight).toAlgebra
+    restrictedMvPowerSeriesIterateGaussAlgEquiv x = restrictedMvPowerSeriesIterateGaussEquiv x :=
+  (rfl)
+
+/-- Pointwise coercion of `restrictedMvPowerSeriesIterateGaussAlgEquiv.symm`. -/
+@[simp]
+theorem restrictedMvPowerSeriesIterateGaussAlgEquiv_symm_apply (y : Iter₁) :
+    letI := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
+      isWeightFamily_one_weight).toAlgebra
+    (restrictedMvPowerSeriesIterateGaussAlgEquiv (k := k) (m := m) (R := R)).symm y =
+      restrictedMvPowerSeriesIterateGaussEquiv.symm y := (rfl)
+
+/-- **Commutative square of `R`-algebra equivalences** between trivial-weight `iterateAlgEquiv` and
+unit-radius `restrictedFinAddAlgEquiv`. -/
+theorem restrictedMvPowerSeriesIterateGaussAlgEquiv_iterateAlgEquiv
+    (hUW : ∀ j : Fin m,
+      algebraMap R (restrictedMvPowerSeriesCompletion k R) ''
+        (fun _ : Fin (k + m) ↦ ({1} : Set R)) (Fin.natAdd k j) =
+        ({1} : Set (restrictedMvPowerSeriesCompletion k R))) :
+    letI := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
+      isWeightFamily_one_weight).toAlgebra
+    (iterateAlgEquiv isWeightFamily_one_weight isWeightFamily_one_weight
+        isWeightFamily_one_weight (fun _ ↦ rfl) hUW).trans
+      restrictedMvPowerSeriesIterateGaussAlgEquiv =
+      restrictedMvPowerSeriesCompletionGaussAlgEquiv.trans
+        (restrictedFinAddAlgEquiv (S := R) (r := fun _ : Fin (k + m) ↦ (1 : ℝ))) := by
+  let _ := (iterateStructureHom (k := k) (m := m) (A := R) isWeightFamily_one_weight
+    isWeightFamily_one_weight).toAlgebra
+  exact AlgEquiv.ext fun x ↦ by simp
+
+/-- **Trivial-weight `(iterateRingEquiv ...).symm` commutes with `restrictedFinAddEquiv.symm`.** -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_iterateRingEquiv_symm
+    (hUW : ∀ j : Fin m,
+      algebraMap R (restrictedMvPowerSeriesCompletion k R) ''
+        (fun _ : Fin (k + m) ↦ ({1} : Set R)) (Fin.natAdd k j) =
+        ({1} : Set (restrictedMvPowerSeriesCompletion k R)))
+    (y : restrictedMvPowerSeriesCompletion m (restrictedMvPowerSeriesCompletion k R)) :
+    restrictedMvPowerSeriesCompletionGaussEquiv
+        ((iterateRingEquiv isWeightFamily_one_weight isWeightFamily_one_weight
+          isWeightFamily_one_weight (fun _ ↦ rfl) hUW).symm y) =
+      (restrictedFinAddEquiv (r := fun _ : Fin (k + m) ↦ (1 : ℝ))).symm
+        (restrictedMvPowerSeriesIterateGaussEquiv y) := by
+  rw [iterateRingEquiv_symm_apply, restrictedMvPowerSeriesCompletionGaussEquiv_iterateJoinHom]
+
+end OneWeightAlgEquiv
+
+/-! ### Algebra equivalences for the iterated multiplicative-unit Gauss comparison -/
+
+section UnitWeightAlgEquiv
+
+variable {k m : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
+  (u : Fin (k + m) → Rˣ) (hu : ∀ l, IsNormMulUnit (u l : R))
+  {c : Fin (k + m) → ℝ} [∀ l, Fact (0 < c l)] (hc : ∀ l, ‖(u l : R)‖ * c l = 1)
+  {W : Fin m → Set (Completion (weightedRestrictedSubring
+    (fun i ↦ ({(u (Fin.castAdd m i) : R)} : Set R))
+    (isWeightFamily_units fun i ↦ u (Fin.castAdd m i))))}
+  (hW : IsWeightFamily W)
+  (hUW : ∀ j,
+    algebraMap R (Completion (weightedRestrictedSubring
+      (fun i ↦ ({(u (Fin.castAdd m i) : R)} : Set R))
+      (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)))) ''
+      ({(u (Fin.natAdd k j) : R)} : Set R) = W j)
+
+local notation "Inner" => IsRestricted.subring (R := R) (c ∘ Fin.castAdd m)
+local notation "Iter" => IsRestricted.subring (R := Inner) (c ∘ Fin.natAdd k)
+
+/-- On `algebraMap` from the inner completion, `weightedRestrictedIterateGaussEquiv` acts via the
+inner Gauss comparison. -/
+theorem weightedRestrictedIterateGaussEquiv_algebraMap
+    (b : Completion (weightedRestrictedSubring
+      (fun i ↦ ({(u (Fin.castAdd m i) : R)} : Set R))
+      (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)))) :
+    weightedRestrictedIterateGaussEquiv u hu hc hW hUW
+        (algebraMap _ (Completion (weightedRestrictedSubring W hW)) b) =
+      algebraMap Inner Iter
+        (weightedRestrictedCompletionGaussAlgEquiv (fun i ↦ u (Fin.castAdd m i))
+          (fun i ↦ hu (Fin.castAdd m i)) (c := c ∘ Fin.castAdd m)
+          (fun i ↦ hc (Fin.castAdd m i)) b) := by
+  rw [algebraMap_completion_weightedRestrictedSubring_apply,
+    weightedRestrictedIterateGaussEquiv_coe_weightedC]
+
+variable [IsHuberRing R]
+
+/-- `weightedRestrictedIterateGaussEquiv` intertwines `iterateStructureHom` with `algebraMap R`
+into the iterated Gauss-normed algebra. -/
+theorem weightedRestrictedIterateGaussEquiv_iterateStructureHom (a : R) :
+    weightedRestrictedIterateGaussEquiv u hu hc hW hUW
+        (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW a) =
+      algebraMap R Iter a := by
+  simp [← IsScalarTower.algebraMap_apply R Inner Iter]
+
+/-- **Iterated unit-weight Gauss comparison as an `R`-algebra equivalence**, with respect to the
+`R`-algebra structure induced by `iterateStructureHom`. -/
+noncomputable def weightedRestrictedIterateGaussAlgEquiv :
+    letI := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
+    Completion (weightedRestrictedSubring W hW) ≃ₐ[R] Iter :=
+  letI := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
+  AlgEquiv.ofRingEquiv (f := weightedRestrictedIterateGaussEquiv u hu hc hW hUW) fun a ↦ by
+    rw [RingHom.algebraMap_toAlgebra,
+      weightedRestrictedIterateGaussEquiv_iterateStructureHom]
+
+/-- The underlying `RingEquiv` of `weightedRestrictedIterateGaussAlgEquiv` is
+`weightedRestrictedIterateGaussEquiv`. -/
+@[simp]
+theorem weightedRestrictedIterateGaussAlgEquiv_toRingEquiv :
+    letI := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
+    (weightedRestrictedIterateGaussAlgEquiv u hu hc hW hUW).toRingEquiv =
+      weightedRestrictedIterateGaussEquiv u hu hc hW hUW := (rfl)
+
+/-- Pointwise coercion of `weightedRestrictedIterateGaussAlgEquiv`. -/
+@[simp]
+theorem weightedRestrictedIterateGaussAlgEquiv_apply
+    (x : Completion (weightedRestrictedSubring W hW)) :
+    letI := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
+    weightedRestrictedIterateGaussAlgEquiv u hu hc hW hUW x =
+      weightedRestrictedIterateGaussEquiv u hu hc hW hUW x := (rfl)
+
+/-- Pointwise coercion of `weightedRestrictedIterateGaussAlgEquiv.symm`. -/
+@[simp]
+theorem weightedRestrictedIterateGaussAlgEquiv_symm_apply (y : Iter) :
+    letI := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
+    (weightedRestrictedIterateGaussAlgEquiv u hu hc hW hUW).symm y =
+      (weightedRestrictedIterateGaussEquiv u hu hc hW hUW).symm y := (rfl)
+
+/-- **Commutative square of `R`-algebra equivalences** between `iterateAlgEquiv` and
+`restrictedFinAddAlgEquiv` at multiplicative-unit weights. -/
+theorem weightedRestrictedIterateGaussAlgEquiv_iterateAlgEquiv :
+    letI := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
+    (iterateAlgEquiv (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
+        (isWeightFamily_units u) (fun _ ↦ rfl) hUW).trans
+      (weightedRestrictedIterateGaussAlgEquiv u hu hc hW hUW) =
+      (weightedRestrictedCompletionGaussAlgEquiv u hu hc).trans
+        (restrictedFinAddAlgEquiv (S := R)) := by
+  let _ := (iterateStructureHom (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW).toAlgebra
+  exact AlgEquiv.ext fun x ↦ by simp
+
+/-- **`(iterateRingEquiv ...).symm` commutes with `restrictedFinAddEquiv.symm`** at
+multiplicative-unit weights. -/
+theorem weightedRestrictedCompletionGaussAlgEquiv_iterateRingEquiv_symm
+    (y : Completion (weightedRestrictedSubring W hW)) :
+    weightedRestrictedCompletionGaussAlgEquiv u hu hc
+        ((iterateRingEquiv (isWeightFamily_units fun i ↦ u (Fin.castAdd m i)) hW
+          (isWeightFamily_units u) (fun _ ↦ rfl) hUW).symm y) =
+      (restrictedFinAddEquiv (r := c)).symm
+        (weightedRestrictedIterateGaussEquiv u hu hc hW hUW y) := by
+  rw [iterateRingEquiv_symm_apply, weightedRestrictedCompletionGaussAlgEquiv_iterateJoinHom]
+
+end UnitWeightAlgEquiv
 
 end TauCeti.Huber

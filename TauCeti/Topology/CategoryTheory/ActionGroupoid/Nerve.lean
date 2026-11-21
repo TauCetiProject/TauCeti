@@ -87,7 +87,8 @@ theorem continuous_nerve_iff {Y : Type*} [TopologicalSpace Y]
 labels, is continuous. -/
 theorem continuous_nerveEquiv_symm : Continuous (nerveEquiv G X n).symm :=
   continuous_nerve_iff.2
-    ⟨by simpa only [back_obj_nerveEquiv_symm, vertexLabel_zero, one_smul] using continuous_fst,
+    ⟨by simpa only [back_obj_nerveEquiv_symm, Fin.partialProd_zero, MulOpposite.unop_one, one_smul]
+        using continuous_fst,
       fun k ↦ ((continuous_apply k).comp continuous_snd).congr fun p ↦ by
         rw [label_nerveEquiv_symm, Function.comp_apply]⟩
 
@@ -114,7 +115,8 @@ theorem nerveHomeomorph_apply (F : ComposableArrows (ActionCategory G X) n) :
 `gᵢ₋₁ ⋯ g₀ • x`. -/
 @[simp]
 theorem back_obj_nerveHomeomorph_symm (p : X × (Fin n → G)) (i : Fin (n + 1)) :
-    (((nerveHomeomorph G X n).symm p).obj i).back = vertexLabel p.2 i • p.1 :=
+    (((nerveHomeomorph G X n).symm p).obj i).back =
+      (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) i).unop • p.1 :=
   back_obj_nerveEquiv_symm p i
 
 /-- The `k`-th consecutive label of the string with first point `x` and consecutive labels `g` is

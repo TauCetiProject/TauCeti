@@ -150,12 +150,12 @@ include hw hp hcomm
 complex `M`. -/
 @[no_expose]
 def descCokernelHom (i j : ι) : M.X i ⟶ M'.X j :=
-  (CokernelCofork.IsColimit.desc' (hp i) (HL.hom i j ≫ p'.f j) (hcomm i j)).1
+  (CokernelCofork.IsColimit.desc' (hp i) (HL.hom i j ≫ p'.f j) (hcomm i j)).val
 
 @[reassoc (attr := simp)]
 lemma π_descCokernelHom (i j : ι) :
     p.f i ≫ descCokernelHom HL u p p' hw hp hcomm i j = HL.hom i j ≫ p'.f j :=
-  (CokernelCofork.IsColimit.desc' (hp i) (HL.hom i j ≫ p'.f j) (hcomm i j)).2
+  (CokernelCofork.IsColimit.desc' (hp i) (HL.hom i j ≫ p'.f j) (hcomm i j)).property
 
 private lemma π_comp_dNext (i : ι) :
     p.f i ≫ dNext i (descCokernelHom HL u p p' hw hp hcomm) = dNext i HL.hom ≫ p'.f i := by
