@@ -15,8 +15,12 @@ import Mathlib.Data.List.GetD
 `h1_complete_movedNorm_fin_three` already gives `h1 (complete V) (movedNorm (Fin 3)) = card V / 3`
 for every `3 ≤ card V`. This file names the two specializations asked for by Layer 6:
 
-* `h1_complete_movedNorm_fin_three_of_four_dvd` (6.2): the same identity under the hypotheses
-  `4 ∣ card V` and `4 ≤ card V`;
+* `Sym3.replicatedSeed` (6.2): the seed `Sym3.w4` replicated on `Fin 4 ×ₗ Fin q`, with
+  defect `8 q ^ 3` and gauge distance `6 q ^ 2`, the identity gauge attaining that distance.
+  `replicatedSeedOfCardEq` carries it to any `V` with `card V = 4 q`, and
+  `replicatedSeedOfCardEq_attains` is `defect / gaugeDist = card V / 3 = h1`.
+  `h1_complete_movedNorm_fin_three_of_four_dvd` is that identity under `4 ∣ card V` and
+  `4 ≤ card V`;
 * `h1_complete_fin_five`, `h1_complete_fin_six`, `h1_complete_fin_seven` and
   `h1_complete_fin_eight` (6.3): the values `5 / 3`, `6 / 3`, `7 / 3` and `8 / 3`.
 
@@ -953,6 +957,21 @@ theorem witness8_attains :
     witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 8)) (movedNorm (Fin 3)) := by
   rw [witness8_defect, witness8_gaugeDist, h1_complete_fin_eight]
+  norm_num
+
+/-- At eight vertices the replicated seed `(64, 24)` and `witness8` `(72, 27)` both have ratio
+`8 / 3`. -/
+theorem replicatedSeed_two_and_witness8 :
+    (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) = 64 ∧
+      (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 24 ∧
+      witness8.defect (movedNorm (Fin 3)) = 72 ∧
+      witness8.gaugeDist (movedNorm (Fin 3)) = 27 ∧
+      (Sym3.replicatedSeed 2).defect (movedNorm (Fin 3)) /
+          (Sym3.replicatedSeed 2).gaugeDist (movedNorm (Fin 3)) = 8 / 3 ∧
+      witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) = 8 / 3 := by
+  refine ⟨Sym3.replicatedSeed_defect_two, Sym3.replicatedSeed_gaugeDist_two, witness8_defect,
+    witness8_gaugeDist, Sym3.replicatedSeed_ratio_two, ?_⟩
+  rw [witness8_defect, witness8_gaugeDist]
   norm_num
 
 end TauCeti
