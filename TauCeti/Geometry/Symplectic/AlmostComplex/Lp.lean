@@ -22,6 +22,7 @@ McDuff–Salamon, *J-holomorphic Curves and Symplectic Topology*, §A.2.
   `J` pointwise.
 * `TauCeti.AlmostComplexStructure.compLp_apply`, `TauCeti.AlmostComplexStructure.coeFn_compLp`:
   it is `ContinuousLinearMap.compLp J`, so its classes are almost everywhere `J` of the values.
+* `TauCeti.AlmostComplexStructure.continuous_compLp`: for `1 ≤ p` it is continuous.
 -/
 
 public noncomputable section
@@ -53,5 +54,10 @@ theorem coeFn_compLp (J : E →L[ℝ] E) (hJ : ∀ v, J (J v) = -v) (p : ENNReal
     (μ : Measure α) (g : Lp E p μ) : compLp J hJ p μ g =ᵐ[μ] fun z ↦ J (g z) := by
   rw [compLp_apply]
   exact J.coeFn_compLp g
+
+/-- For `1 ≤ p`, the pointwise almost complex structure of `Lp E p μ` is continuous. -/
+theorem continuous_compLp (J : E →L[ℝ] E) (hJ : ∀ v, J (J v) = -v) (p : ENNReal) [Fact (1 ≤ p)]
+    (μ : Measure α) : Continuous (compLp J hJ p μ) :=
+  (J.compLpL p μ).continuous
 
 end TauCeti.AlmostComplexStructure
