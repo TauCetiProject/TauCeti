@@ -32,9 +32,8 @@ such actions.
   `g • x` is followed by its translate under `g` without backtracking; the translates of the path
   by the powers of `g` then line up into a reduced path, so `d(x, gⁿ x) = n d(x, g x)`, and `g` is
   hyperbolic as soon as it moves `x`. In particular an element of finite order is elliptic. The
-  action maps convex sets of vertices to convex sets and
-  commutes with convex hulls; the segment from `x` to `(g h) x` lies in the union of `[x, g x]`
-  and `g [x, h x]`.
+  action maps convex sets of vertices to convex sets and commutes with convex hulls; the segment
+  from `x` to `(g h) x` lies in the union of `[x, g x]` and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
