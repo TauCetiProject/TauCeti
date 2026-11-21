@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.LinearAlgebra.Complex.LinearPart
 
 /-!
 # Pointwise and integrated energy for curves into almost complex manifolds
@@ -71,7 +72,9 @@ $J$-holomorphic curves.
 * `IsPseudoholomorphicWithinAt.mfderivWithin_stdComplexLineEnergyDensity_eq_two_mul_twoForm`:
   energy--area identity for the within-set derivative of a pseudoholomorphic curve.
 * `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm`: the Wirtinger
-  identity on manifolds.
+  identity on manifolds, and
+  `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add`: its
+  refinement `e(F) = 2 ω(F ∂s, F ∂t) + 2 e(∂bar F)` through the complex-antilinear part of `F`.
 * `TauCeti.SmoothTwoForm.Compatible.two_mul_twoForm_le_stdComplexLineEnergyDensity`: the Wirtinger
   inequality on manifolds, and
   `TauCeti.SmoothTwoForm.Compatible.stdComplexLineEnergyDensity_eq_two_mul_twoForm_iff`:
@@ -359,6 +362,50 @@ lemma Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm (hinv : form.Inv
   have halt2 := congrArg Neg.neg <|
     LinearMap.IsAlt.neg (SmoothForm.isAlt_bilinFormAt form x) w (J x w)
   simp only [SmoothForm.bilinFormAt_apply] at halt1 halt2
+  linarith
+
+/-- The energy density of a real-linear map `F` from the standard complex line into a tangent
+space, for a two-form invariant under `J`, is twice its symplectic area density plus twice the
+energy density of its complex-antilinear part:
+`e(F) = 2 ω(F ∂s, F ∂t) + 2 e(∂bar F)`. -/
+lemma Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add (hinv : form.Invariant J)
+    (x : M) (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I x) :
+    form.stdComplexLineEnergyDensity J x F =
+      2 * SmoothBundleForm.eval₂ form x (F stdComplexLineReal) (F stdComplexLineImag) +
+        2 * form.stdComplexLineEnergyDensity J x
+          (complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
+            (J.almostComplexStructureAt x).toLinearMap F) := by
+  set L := J.toEndomorphism x
+  -- Applying `J` at `x` is, by definition of its coercion, applying the endomorphism `L`.
+  have hJL (v : TangentSpace I x) : J x v = L v := (rfl)
+  have hLL (v : TangentSpace I x) : L (L v) = -v := by rw [← hJL, ← hJL, J.apply_apply]
+  -- The values of `∂bar F` on `∂s` and `∂t` are `b` and `-J b`, for `b = (F ∂s + J F ∂t) / 2`.
+  set b : TangentSpace I x := (2⁻¹ : ℝ) • (F stdComplexLineReal + L (F stdComplexLineImag))
+  have hAs : complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
+      (J.almostComplexStructureAt x).toLinearMap F stdComplexLineReal = b := by
+    simp only [complexAntilinearPart_apply, AlmostComplexStructure.product_apply_stdComplexLineReal,
+      SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+      ContinuousLinearMap.coe_coe, b, L]
+  have hAt : complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
+      (J.almostComplexStructureAt x).toLinearMap F stdComplexLineImag = -L b := by
+    simp only [complexAntilinearPart_apply, AlmostComplexStructure.product_apply_stdComplexLineImag,
+      SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+      ContinuousLinearMap.coe_coe, b, map_neg, map_smul, map_add, hLL]
+    module
+  -- So `e(∂bar F) = 2 ω(b, J b) = ω(a, J a) / 2` for `a = 2 b`, and by the Wirtinger identity
+  -- `e(F) - 2 ω(F ∂s, F ∂t) = ω(a, J a)`.
+  have hwirt := hinv.stdComplexLineEnergyDensity_sub_two_mul_twoForm x F
+  rw [stdComplexLineEnergyDensity_def form J x (complexAntilinearPart _ _ F), hAs, hAt]
+  simp only [hJL, map_neg, hLL, neg_neg] at hwirt ⊢
+  have hb : SmoothBundleForm.eval₂ form x b (L b) = (2⁻¹ : ℝ) * (2⁻¹ : ℝ) *
+      SmoothBundleForm.eval₂ form x (F stdComplexLineReal + L (F stdComplexLineImag))
+        (L (F stdComplexLineReal + L (F stdComplexLineImag))) := by
+    simp only [← SmoothForm.bilinFormAt_apply, b, map_smul, LinearMap.smul_apply, smul_eq_mul]
+    ring
+  have hneg : SmoothBundleForm.eval₂ form x (-L b) b = SmoothBundleForm.eval₂ form x b (L b) := by
+    simp only [← SmoothForm.bilinFormAt_apply, map_neg, LinearMap.neg_apply]
+    rw [LinearMap.IsAlt.neg (SmoothForm.isAlt_bilinFormAt form x) (L b) b]
+  rw [hneg, hb]
   linarith
 
 /-- **Wirtinger inequality on manifolds.** For a compatible pair `(form, J)`, twice the symplectic

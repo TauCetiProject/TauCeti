@@ -48,7 +48,8 @@ convention of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl
   `e(du) = 2 ω(∂s u, ∂t u) + 2 e(∂bar_J u)`
   (`TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_mfderiv_eq`), where
   `e = TauCeti.SmoothTwoForm.stdComplexLineEnergyDensity`; the linear statement behind it is
-  `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add`. Since
+  `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add` in
+  `TauCeti.Geometry.Symplectic.Manifold.Energy`. Since
   the energy is half the integral of `e`, this is the pointwise form of the identity
   `E(u) = ∫ u*ω + ∫ e(∂bar_J u)` of McDuff–Salamon: the energy of a curve is its symplectic area
   plus the integral of the energy density of its Cauchy–Riemann section, which is twice the
@@ -278,50 +279,6 @@ end ComplexVectorSpace
 namespace SmoothTwoForm
 
 variable {form : SmoothTwoForm I' M'} {J : SmoothAlmostComplexStructure I' M'}
-
-/-- The energy density of a real-linear map `F` from the standard complex line into a tangent
-space, for a two-form invariant under `J`, is twice its symplectic area density plus twice the
-energy density of its complex-antilinear part:
-`e(F) = 2 ω(F ∂s, F ∂t) + 2 e(∂bar F)`. -/
-theorem Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add (hinv : form.Invariant J)
-    (y : M') (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I' y) :
-    form.stdComplexLineEnergyDensity J y F =
-      2 * SmoothBundleForm.eval₂ form y (F stdComplexLineReal) (F stdComplexLineImag) +
-        2 * form.stdComplexLineEnergyDensity J y
-          (complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
-            (J.almostComplexStructureAt y).toLinearMap F) := by
-  set L := J.toEndomorphism y
-  -- Applying `J` at `y` is, by definition of its coercion, applying the endomorphism `L`.
-  have hJL (v : TangentSpace I' y) : J y v = L v := (rfl)
-  have hLL (v : TangentSpace I' y) : L (L v) = -v := by rw [← hJL, ← hJL, J.apply_apply]
-  -- The values of `∂bar F` on `∂s` and `∂t` are `b` and `-J b`, for `b = (F ∂s + J F ∂t) / 2`.
-  set b : TangentSpace I' y := (2⁻¹ : ℝ) • (F stdComplexLineReal + L (F stdComplexLineImag))
-  have hAs : complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
-      (J.almostComplexStructureAt y).toLinearMap F stdComplexLineReal = b := by
-    simp only [complexAntilinearPart_apply, AlmostComplexStructure.product_apply_stdComplexLineReal,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-      ContinuousLinearMap.coe_coe, b, L]
-  have hAt : complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
-      (J.almostComplexStructureAt y).toLinearMap F stdComplexLineImag = -L b := by
-    simp only [complexAntilinearPart_apply, AlmostComplexStructure.product_apply_stdComplexLineImag,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-      ContinuousLinearMap.coe_coe, b, map_neg, map_smul, map_add, hLL]
-    module
-  -- So `e(∂bar F) = 2 ω(b, J b) = ω(a, J a) / 2` for `a = 2 b`, and by the Wirtinger identity
-  -- `e(F) - 2 ω(F ∂s, F ∂t) = ω(a, J a)`.
-  have hwirt := hinv.stdComplexLineEnergyDensity_sub_two_mul_twoForm y F
-  rw [stdComplexLineEnergyDensity_def form J y (complexAntilinearPart _ _ F), hAs, hAt]
-  simp only [hJL, map_neg, hLL, neg_neg] at hwirt ⊢
-  have hb : SmoothBundleForm.eval₂ form y b (L b) = (2⁻¹ : ℝ) * (2⁻¹ : ℝ) *
-      SmoothBundleForm.eval₂ form y (F stdComplexLineReal + L (F stdComplexLineImag))
-        (L (F stdComplexLineReal + L (F stdComplexLineImag))) := by
-    simp only [← SmoothForm.bilinFormAt_apply, b, map_smul, LinearMap.smul_apply, smul_eq_mul]
-    ring
-  have hneg : SmoothBundleForm.eval₂ form y (-L b) b = SmoothBundleForm.eval₂ form y b (L b) := by
-    simp only [← SmoothForm.bilinFormAt_apply, map_neg, LinearMap.neg_apply]
-    rw [LinearMap.IsAlt.neg (SmoothForm.isAlt_bilinFormAt form y) (L b) b]
-  rw [hneg, hb]
-  linarith
 
 /-- **The energy identity.** For a two-form invariant under `J`, the energy density of the
 derivative of a curve `u` from the standard complex line is twice its symplectic area density
