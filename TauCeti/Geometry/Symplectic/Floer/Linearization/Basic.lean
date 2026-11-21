@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
@@ -36,7 +37,8 @@ direction there (`floerLinearization_congr_of_eventuallyEq`), and on the Floer d
 their values at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
-(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
+(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite, and its square
+is integrable on a compactly supported direction (`integrable_norm_floerLinearization_sq`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so two
@@ -437,6 +439,22 @@ theorem continuous_floerLinearization (ω : SymplecticForm V)
     (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
   continuous_iff_continuousAt.2 fun z ↦
     ω.continuousAt_floerLinearization (hJ z) (hKs z) (hKt z) hu.contDiffAt hξ.contDiffAt
+
+/-- **Square integrability of the linearization.** Let `u` and `ξ` be `C¹`, with `ξ` compactly
+supported, and let the coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every
+point `(z, u z)`. Then `‖D_u ξ‖²` is integrable for every measure finite on compact sets. -/
+theorem integrable_norm_floerLinearization_sq (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
+    {μ : MeasureTheory.Measure (ℝ × ℝ)} [MeasureTheory.IsFiniteMeasureOnCompacts μ]
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) :
+    MeasureTheory.Integrable (fun z ↦ ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) μ := by
+  refine (ω.continuous_floerLinearization hJ hKs hKt hu hξ).integrable_norm_sq_of_hasCompactSupport
+    (HasCompactSupport.intro hξc.isCompact fun z hz ↦ ?_)
+  rw [floerLinearization_congr_of_eventuallyEq _ _ _ _ _ (notMem_tsupport_iff_eventuallyEq.1 hz)]
+  simp
 
 /-- **Measurability of the Floer operator.** Let the coefficients `J` be jointly continuous and the
 Hamiltonians `Ks`, `Kt` jointly `C¹`. Then the Floer operator of an almost everywhere strongly

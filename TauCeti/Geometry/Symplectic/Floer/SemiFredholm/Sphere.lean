@@ -230,23 +230,6 @@ private theorem integral_le_of_eq_add {ξ ξ₁ χ : ℝ × ℝ → V} {R : ℝ}
   nlinarith [(inv_sq_mul_norm_sq_le hR hχR z).1, mul_le_mul_of_nonneg_left h0 hρ0,
     sq_nonneg ‖ξ₁ z‖, mul_le_mul_of_nonneg_right hρ1 (sq_nonneg ‖ξ₁ z‖)]
 
-/-- The square of the linearized operator on a compactly supported `C¹` section is integrable. -/
-private theorem integrable_norm_floerLinearization_sq
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {ψ : ℝ × ℝ → V} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
-    Integrable fun z ↦ ‖ω.floerLinearization
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ψ z‖ ^ 2 := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  refine (ω.continuous_floerLinearization
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu hψ
-      ).integrable_norm_sq_of_hasCompactSupport
-    (HasCompactSupport.intro hψc.isCompact fun z hz ↦ ?_)
-  rw [floerLinearization_congr_of_eventuallyEq _ _ _ _ _ (notMem_tsupport_iff_eventuallyEq.1 hz)]
-  simp
-
 /-- **Multiplying by a cutoff.** Let `γ` be a function with `|γ| ≤ 1` and `‖dγ‖ ≤ B`, whose
 derivative vanishes off a set `K` on which `‖J(z, u z)‖ ≤ N`. Then
 `‖D(γ ξ)‖² ≤ 2 ‖D ξ‖² + 2 (B (1 + N))² 1_K ‖ξ‖²` pointwise. -/
@@ -291,7 +274,8 @@ private theorem integral_norm_floerLinearization_sq_le
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
         c * ∫ z in K, ‖ξ z‖ ^ 2 := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hiD := (integrable_norm_floerLinearization_sq (ω := ω) hJ hKs hKt hu hξ hξc).const_mul 2
+  have hiD := (ω.integrable_norm_floerLinearization_sq (μ := volume)
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu hξ hξc).const_mul 2
   have hiξ := ((hξ.continuous.integrable_norm_sq_of_hasCompactSupport (μ := volume) hξc).indicator
     hK).const_mul c
   refine (integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ sq_nonneg _) (hiD.add hiξ)
@@ -319,7 +303,8 @@ private theorem integral_dirichlet_le_of_tsupport_subset
     ∫ z, (‖fderiv ℝ ξ₁ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ₁ z stdComplexLineImag‖ ^ 2) ≤
       C₁ * (c + d) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hiD₁ := integrable_norm_floerLinearization_sq (ω := ω) hJ hKs hKt hu
+  have hiD₁ := ω.integrable_norm_floerLinearization_sq (μ := volume)
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
     (hξ₁.of_le one_le_two) hξ₁c
   have hiξ₁ := hξ₁.continuous.integrable_norm_sq_of_hasCompactSupport (μ := volume) hξ₁c
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := K) fun z hz ↦ by
