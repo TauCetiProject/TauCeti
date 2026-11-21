@@ -8,7 +8,7 @@ module
 public import TauCeti.Dynamics.SymbolicDynamics.Subshift
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
 public import Mathlib.Probability.Kernel.Proper
-public import Mathlib.Probability.Kernel.Invariance
+public import TauCeti.Probability.Kernel.Invariance
 public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 
@@ -210,14 +210,12 @@ theorem isGibbs_iff_ae_eq_condExp [IsFiniteMeasure μ] :
         _ = (μ C).toReal := by simp [integral_indicator_one hC, measureReal_def]
 
 /-- A sum of Gibbs measures is Gibbs. -/
-theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ + ν) := by
-  rw [isGibbs_iff_invariant] at hμ hν ⊢
-  intro Λ
-  rw [Kernel.Invariant, Measure.comp_add, hμ Λ, hν Λ]
+theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ + ν) :=
+  isGibbs_iff_invariant.2 fun Λ => (isGibbs_iff_invariant.1 hμ Λ).add (isGibbs_iff_invariant.1 hν Λ)
 
 /-- A multiple of a Gibbs measure is Gibbs. -/
-theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) := fun Λ => by
-  rw [Measure.bind_smul _ _ (γ.measurable_kernel Λ).aemeasurable, hμ Λ]
+theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) :=
+  isGibbs_iff_invariant.2 fun Λ => (isGibbs_iff_invariant.1 hμ Λ).smul c
 
 /-- **Reweighting by a tail density.** If `μ` is Gibbs and `f` is measurable for the exterior
 σ-algebra of every finite set, as a tail-measurable density is, then `f • μ` is Gibbs. -/
@@ -243,7 +241,8 @@ theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
 
 /-- The zero measure is Gibbs. -/
 @[simp]
-theorem isGibbs_zero : γ.IsGibbs 0 := fun _ => Measure.bind_zero_left _
+theorem isGibbs_zero : γ.IsGibbs 0 :=
+  isGibbs_iff_invariant.2 fun _ => Kernel.Invariant.zero _
 
 variable (γ)
 
