@@ -64,6 +64,9 @@ of the structure sheaf of `Spec` over basic opens
   are given by `AlgebraicGeometry.Proj.val_toSpecZero_appTop_apply`.
 * `AlgebraicGeometry.Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top`: if `A` is generated in degree
   one over `A₀`, the standard opens of degree-one elements cover `Proj A`.
+* `ProjectiveSpectrum.basicOpen_proj_le` and
+  `ProjectiveSpectrum.exists_mem_basicOpen_proj_of_mem_basicOpen`: basic opens of homogeneous
+  projections refine and cover the basic open of any element.
 * `ProjectiveSpectrum.exists_le_mem_notMem`: a projective point misses homogeneous elements of
   arbitrarily large degree.
 * `ProjectiveSpectrum.ext_of_mem_pos`: positive-degree homogeneous elements determine a
@@ -329,6 +332,21 @@ namespace ProjectiveSpectrum
 
 variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A]
   {𝒜 : ℕ → σ} [GradedRing 𝒜]
+
+/-- The basic open of a homogeneous projection `GradedRing.proj 𝒜 d f` is contained in the basic
+open of `f`. -/
+theorem basicOpen_proj_le (f : A) (d : ℕ) :
+    basicOpen 𝒜 (GradedRing.proj 𝒜 d f) ≤ basicOpen 𝒜 f := by
+  rw [basicOpen_eq_union_of_projection 𝒜 f]
+  exact le_iSup (fun i ↦ basicOpen 𝒜 (GradedRing.proj 𝒜 i f)) d
+
+/-- Any point in `basicOpen 𝒜 f` lies in `basicOpen 𝒜 (GradedRing.proj 𝒜 d f)` for some degree
+`d`. -/
+theorem exists_mem_basicOpen_proj_of_mem_basicOpen {x : ProjectiveSpectrum 𝒜} {f : A}
+    (hx : x ∈ basicOpen 𝒜 f) :
+    ∃ d : ℕ, x ∈ basicOpen 𝒜 (GradedRing.proj 𝒜 d f) := by
+  rw [basicOpen_eq_union_of_projection 𝒜 f] at hx
+  exact TopologicalSpace.Opens.mem_iSup.mp hx
 
 /-- A relevant homogeneous prime ideal misses homogeneous elements of arbitrarily large degree: it
 misses a homogeneous element of positive degree, and hence all of its powers. -/

@@ -54,8 +54,7 @@ theorem isUnipotentPoint_expPointAt [CommRing B] [Algebra R B]
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t : B) :
     IsUnipotentPoint (Bialgebra.expPointAt d hd t) := by
   -- The counit pulls the `ℚ`-algebra structure of `H` to `R` and then to `B`.
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
   let : Algebra ℚ B :=
     ((algebraMap R B).comp (algebraMap ℚ R)).toAlgebra
   rw [isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one]

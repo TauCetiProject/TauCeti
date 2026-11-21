@@ -178,8 +178,7 @@ private theorem tensorComponent_expPoint_eq_sum
           LinearMap.tensorComponent
             (Coalgebra.counit (R := R) ∘ₗ
               (Bialgebra.leftInvariantDerivation d).toLinearMap ^ i) t := by
-  let : Algebra ℚ R :=
-    ((Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
   intro t
   induction t using TensorProduct.inductionOn with
   | tmul m h =>
@@ -266,8 +265,7 @@ private theorem smul_comm_lTensor_expPointAt_eq_sum {B : Type*} [CommRing B] [Al
             LinearMap.tensorComponent
               (Coalgebra.counit (R := R) ∘ₗ
                 (Bialgebra.leftInvariantDerivation d).toLinearMap ^ k) z) := by
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
   set D := Bialgebra.leftInvariantDerivation d
   induction z using TensorProduct.inductionOn with
   | tmul m h =>
@@ -310,8 +308,7 @@ theorem endOfPoint_expPointAt [Module.Finite R M] {B : Type*} [CommRing B] [Alge
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t : B) :
     endOfPoint M (Bialgebra.expPointAt d hd t).ofConv =
       IsNilpotent.exp (t • (differential (R := R) (H := H) (M := M) d).baseChange B) := by
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
   obtain ⟨K, hK⟩ := isNilpotent_smul_baseChange_differential (R := R) (H := H) (M := M) hd t
   apply LinearMap.ext_iff.mpr
   intro x

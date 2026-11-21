@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Nilpotent.Cone
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.GradeTwoOrbit
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 
@@ -29,8 +30,9 @@ assuming `G` is connected.
 
 * `TauCeti.exists_basePointsRepresentation_eq_smul_of_isNilpotent_ad`: every nonzero scalar
   multiple of an `ad`-nilpotent element lies in its rational adjoint orbit.
-* `TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_isNilpotent_ad`: zero lies in the closure of
-  every nilpotent adjoint orbit.
+* `TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_isNilpotent_ad` and
+  `TauCeti.Comodule.VectorOrbit.IsNilpotentAd.mk_zero_le`: zero lies in the closure of every
+  nilpotent adjoint orbit.
 
 ## References
 
@@ -80,6 +82,13 @@ theorem mk_zero_le_mk_of_isNilpotent_ad {e : 𝔤} (he : IsNilpotent (LieAlgebra
     (mk (0 : 𝔤) : VectorOrbit k H 𝔤) ≤ mk e :=
   mk_zero_le_mk_of_forall_smul fun _ ht ↦
     exists_basePointsRepresentation_eq_smul_of_isNilpotent_ad he ht
+
+/-- **Zero lies in the closure of every nilpotent adjoint orbit**, in orbit form. No connectedness
+of `G` is assumed. -/
+theorem IsNilpotentAd.mk_zero_le {O : VectorOrbit k H 𝔤} (hO : O.IsNilpotentAd) :
+    (mk (0 : 𝔤) : VectorOrbit k H 𝔤) ≤ O := by
+  induction O using VectorOrbit.ind with | h e
+  exact mk_zero_le_mk_of_isNilpotent_ad (isNilpotentAd_mk_iff.mp hO)
 
 end Comodule.VectorOrbit
 

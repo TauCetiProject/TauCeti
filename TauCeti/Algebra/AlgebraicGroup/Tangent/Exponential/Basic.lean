@@ -28,6 +28,8 @@ Taylor series, and its value at the identity is the exponential of the tangent v
 
 ## Main declarations
 
+* `TauCeti.Bialgebra.counitRatAlgebra`: the `ℚ`-algebra structure on the base ring `R` pulled
+  back along the counit of a `ℚ`-bialgebra `H`.
 * `TauCeti.Bialgebra.expPoint`: the exponential `ε ∘ exp D` of a tangent vector whose
   left-invariant derivation is locally nilpotent.
 * `TauCeti.Bialgebra.expPoint_zero`: the exponential of the zero tangent vector is the identity
@@ -51,6 +53,13 @@ namespace TauCeti.Bialgebra
 variable {R H : Type*} [CommRing R] [CommRing H] [_root_.Bialgebra R H]
 
 variable [Algebra ℚ H]
+
+variable (R H) in
+/-- Pull back the `ℚ`-algebra structure of a bialgebra `H` along its counit to equip the base
+ring `R` with a `ℚ`-algebra structure. -/
+@[instance_reducible]
+noncomputable def counitRatAlgebra : Algebra ℚ R :=
+  ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
 
 /-- The **exponential of a tangent vector** `d` whose left-invariant derivation `D` is locally
 nilpotent: the rational point `ε ∘ exp D`, where `exp D = ∑ Dⁿ / n!` is the Taylor exponential. -/
@@ -84,8 +93,7 @@ theorem taylorExp_leftInvariantDerivation_apply
   classical
   -- The counit makes `R` a `ℚ`-algebra, which lets the rational Taylor coefficients pass through
   -- the counit.
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := counitRatAlgebra R H
   set D := leftInvariantDerivation d
   let 𝓡 := Coalgebra.Repr.arbitrary R h
   -- A single truncation `N` computes the Taylor exponential of `h` and of every right

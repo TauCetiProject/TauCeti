@@ -10,9 +10,9 @@ public import TauCeti.Algebra.Lie.HighestWeight.TracePower
 public import TauCeti.Algebra.Lie.Killing.ChevalleyRestriction
 import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
 import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
+import TauCeti.LinearAlgebra.RootSystem.IntegralCoweight
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
-import TauCeti.RingTheory.Invariant.OrbitSeparation
 
 /-!
 # Chevalley's restriction theorem
@@ -234,24 +234,7 @@ theorem forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup {x y : H} :
       rw [← lift_eval_killingSymmetricEquiv_coe, ← lift_eval_killingSymmetricEquiv_coe]
       exact hp _ hr'
     -- Finite-group invariant separation on `S(H)` gives a Weyl group element relating `x` and `y`.
-    have : Finite (rootSystem H).weylGroup := RootPairing.finite_weylGroup (rootSystem H)
-    have : Finite (rootSystem H).weylGroup.op := Finite.of_equiv _ (Subgroup.equivOp _)
-    let ρ := (rootSystem H).weylGroupCorootRep
-    let := ρ.symmetricAlgebraMulSemiringAction
-    have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-    rw [linearInvariants_eq_symmetricAlgebraInvariants,
-      ρ.symmetricAlgebraInvariants_eq_fixedPoints] at hlin
-    obtain ⟨g, hg⟩ := FixedPoints.forall_mem_subalgebra_eq_iff.mp hlin
-    let w : (rootSystem H).weylGroup := (Subgroup.equivOp _).symm g
-    have hgw : g = Subgroup.equivOp _ w := ((Subgroup.equivOp _).apply_symm_apply g).symm
-    have hw : w • cartanEquivDual H x = cartanEquivDual H y := by
-      ext h
-      have hι := DFunLike.congr_fun hg (_root_.SymmetricAlgebra.ι K H h)
-      simp only [AlgHom.comp_apply, MulSemiringAction.toAlgHom_apply,
-        ρ.symmetricAlgebraMulSemiringAction_smul, Representation.symmetricAlgebra_apply,
-        map_apply_ι, lift_ι_apply, hgw] at hι
-      exact (RootPairing.Equiv.toLinearMap_weightEquiv (w : (rootSystem H).Aut)
-        (cartanEquivDual H x) h).trans hι
+    obtain ⟨w, hw⟩ := forall_mem_linearInvariants_lift_eq_iff.mp hlin
     refine ⟨w⁻¹, ?_⟩
     have hsym := weylGroupCorootRep_cartanEquivDual_symm w⁻¹ (cartanEquivDual H x)
     rw [inv_inv, hw, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply] at hsym
@@ -285,13 +268,7 @@ theorem eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant (b : (rootSystem
       lift (Dual.eval K L (x : L)) p = lift (Dual.eval K L (y : L)) p) :
     x = y := by
   obtain ⟨w, rfl⟩ := forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup.mp hp
-  obtain ⟨w', hw'⟩ := (rootSystem H).exists_flip_weylGroup_smul_eq_coweightEquiv w
-  have := (rootSystem H).flip_isReduced
-  have hdom : w' • x = x := weylGroup_smul_eq_self_of_dominantIntegral
-    (P := (rootSystem H).flip) (b := b.flip)
-    (fun i hi ↦ hx i (by simpa using hi))
-    (fun i hi ↦ by rw [hw']; exact hy i (by simpa using hi))
-  exact hdom.symm.trans (hw' x)
+  exact b.eq_of_coweightEquiv_eq_of_forall_exists_nat (by simpa using hx) (by simpa using hy) rfl
 
 end DominantUniqueness
 

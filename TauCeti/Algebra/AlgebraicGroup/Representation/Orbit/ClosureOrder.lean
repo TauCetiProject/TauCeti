@@ -10,6 +10,7 @@ import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrder
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 import TauCeti.RingTheory.GradedAlgebra.Homogenization
 import TauCeti.Topology.Constructible.Jacobson
@@ -91,38 +92,6 @@ section Conical
 variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
   [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
 
-omit [HopfAlgebra k H] [Comodule k H M] [Module.Finite k M] in
-/-- Restricting homogeneous coordinates on `M × k` to the affine line `t ↦ (t • v, 1)`. -/
-private noncomputable def lineRestrictionAlgHom (v : M) :
-    SymmetricAlgebra k (Module.Dual k (M × k)) →ₐ[k] Polynomial k :=
-  SymmetricAlgebra.lift
-    { toFun := fun φ ↦ Polynomial.C (φ (0, 1)) + Polynomial.X * Polynomial.C (φ (v, 0))
-      map_add' := fun φ ψ ↦ by
-        simp only [LinearMap.add_apply, map_add, mul_add]
-        ring
-      map_smul' := fun r φ ↦ by
-        simp only [LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply, map_mul,
-          Polynomial.smul_eq_C_mul]
-        ring }
-
-omit [HopfAlgebra k H] [Comodule k H M] [Module.Finite k M] in
-private theorem eval_lineRestrictionAlgHom (v : M) (t : k)
-    (q : SymmetricAlgebra k (Module.Dual k (M × k))) :
-    (lineRestrictionAlgHom (k := k) v q).eval t =
-      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) q := by
-  have hcomp : (Polynomial.aeval t).comp (lineRestrictionAlgHom (k := k) v) =
-      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) := by
-    ext φ
-    have hdecomp : (t • v, (1 : k)) = (0, (1 : k)) + t • (v, (0 : k)) := by
-      ext <;> simp
-    simp only [lineRestrictionAlgHom, LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp,
-      Polynomial.coe_aeval_eq_eval, Function.comp_apply, SymmetricAlgebra.lift_ι_apply,
-      LinearMap.coe_mk, AddHom.coe_mk, Polynomial.eval_add, Polynomial.eval_C,
-      Polynomial.eval_mul, Polynomial.eval_X, Module.Dual.eval_apply]
-    rw [hdecomp, map_add, map_smul, smul_eq_mul, mul_comm]
-  simpa only [AlgHom.comp_apply, Polynomial.coe_aeval_eq_eval] using
-    congrArg (fun g ↦ g q) hcomp
-
 /-- **Conical orbits contain zero in their closure.** Over an infinite field `k`, if the rational
 orbit of `v` contains every nonzero scalar multiple `t • v`, then the line through `(0, 1)` lies in
 the closure of the projective orbit image of `(v, 1)`. Neither algebraic closedness nor finite
@@ -140,41 +109,38 @@ theorem mem_closure_projectiveOrbitMap_zero_of_forall_smul [Infinite k] {v : M}
   intro U hU h0U
   obtain ⟨_, ⟨f, rfl⟩, h0f, hfU⟩ :=
     (ProjectiveSpectrum.isTopologicalBasis_basic_opens 𝒜).exists_subset_of_mem_open h0U hU
-  let x₀ : ProjectiveSpectrum 𝒜 :=
-    projectiveOrbitMap (H := H) ((0, 1) : M × k) (Module.isUnimodular_mk_one (0 : M))
-      (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H))
-  have hproj : ∃ d : ℕ, x₀ ∈ ProjectiveSpectrum.basicOpen 𝒜 (GradedRing.proj 𝒜 d f) := by
-    have h0f' : x₀ ∈ ⨆ i : ℕ, ProjectiveSpectrum.basicOpen 𝒜 (GradedRing.proj 𝒜 i f) := by
-      rw [← ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f]
-      exact h0f
-    exact TopologicalSpace.Opens.mem_iSup.mp h0f'
-  obtain ⟨d, h0q⟩ := hproj
+  -- Pick a homogeneous component `q` of `f` whose basic open still contains the origin point.
+  obtain ⟨d, h0q⟩ := ProjectiveSpectrum.exists_mem_basicOpen_proj_of_mem_basicOpen h0f
+  have hq_le := ProjectiveSpectrum.basicOpen_proj_le (𝒜 := 𝒜) f d
   set q := GradedRing.proj 𝒜 d f
   have hq_hom : q ∈ 𝒜 d := SetLike.coe_mem _
-  have hq_le : ProjectiveSpectrum.basicOpen 𝒜 q ≤ ProjectiveSpectrum.basicOpen 𝒜 f := by
-    rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f]
-    exact le_iSup (fun i ↦ ProjectiveSpectrum.basicOpen 𝒜 (GradedRing.proj 𝒜 i f)) d
-  let P : Polynomial k := lineRestrictionAlgHom (k := k) v q
+  -- Restrict `q` to the affine line `t ↦ (t • v, 1)` as a univariate polynomial `P`.
+  obtain ⟨P, hP⟩ := _root_.SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul q
+    (Module.Dual.eval k (M × k) (0, 1)) (Module.Dual.eval k (M × k) (v, 0))
+  have heval (t : k) :
+      P.eval t = SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) q := by
+    rw [hP, ← map_smul, ← map_add]
+    simp
   have hP0 : P.eval 0 ≠ 0 := by
-    rw [eval_lineRestrictionAlgHom, zero_smul]
+    rw [heval, zero_smul]
     intro hzero
     apply (ProjectiveSpectrum.mem_basicOpen 𝒜 q _).mp h0q
     have hmem := (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((0, 1) : M × k)
       (Module.isUnimodular_mk_one (0 : M)) 1 hq_hom).mpr (by simpa using hzero)
     simpa [AlgHom.convOne_def] using hmem
   have hPne : P ≠ 0 := fun h ↦ hP0 (by simp [h])
+  -- Choose a nonzero scalar `t` that is not a root of `P`.
   obtain ⟨t, ht⟩ := Infinite.exists_notMem_finset (insert (0 : k) P.roots.toFinset)
   have ht0 : t ≠ 0 := fun h ↦ ht (Finset.mem_insert.mpr (Or.inl h))
-  have hPt : P.eval t ≠ 0 := by
-    intro hzero
-    exact ht (Finset.mem_insert_of_mem (Multiset.mem_toFinset.mpr
-      ((Polynomial.mem_roots hPne).mpr hzero)))
+  have hPt : P.eval t ≠ 0 := fun hzero ↦
+    ht (Finset.mem_insert_of_mem
+      (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hPne).mpr hzero)))
   obtain ⟨g, hg⟩ := hv t ht0
   refine ⟨projectiveOrbitMap (H := H) ((t • v, 1) : M × k) (Module.isUnimodular_mk_one (t • v))
       (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)), hfU (hq_le ?_), ?_⟩
   · intro hmem
     apply hPt
-    rw [eval_lineRestrictionAlgHom]
+    rw [heval]
     have h := (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((t • v, 1) : M × k)
       (Module.isUnimodular_mk_one (t • v)) 1 hq_hom).mp (by simpa [AlgHom.convOne_def] using hmem)
     simpa using h
@@ -206,11 +172,12 @@ theorem disjoint_image_of_ne {O O' : VectorOrbit k H M} (h : O ≠ O') :
   rw [Set.not_disjoint_iff_nonempty_inter] at hdisj
   obtain ⟨x, ⟨hxO, hxO'⟩, hxc⟩ :=
     (O.isConstructible_image.inter O'.isConstructible_image).nonempty_inter_closedPoints hdisj
+  obtain ⟨u, rfl⟩ :=
+    exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd (H := H)
+      (O.image_subset_basicOpen_snd hxO) hxc
   induction O using VectorOrbit.ind with | h v
   induction O' using VectorOrbit.ind with | h w
   rw [image_mk] at hxO hxO'
-  obtain ⟨u, rfl⟩ := exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd (H := H)
-    (range_projectiveOrbitMap_subset_basicOpen_snd v hxO) hxc
   have huv : (mk u : VectorOrbit k H M) = mk v := image_injective <| by
     rw [image_mk, image_mk]
     exact (range_projectiveOrbitMap_eq_iff _ _ _ _).mpr hxO
@@ -374,11 +341,7 @@ theorem closure_image_inter_basicOpen_snd_eq_biUnion_le {O : VectorOrbit k H M}
       ((image_mk (k := k) (H := H) w).symm ▸ Set.mem_range_self _), hxc⟩
   · rintro ⟨hx, hxc⟩
     obtain ⟨O', hO'le, hxO'⟩ := Set.mem_iUnion₂.mp hx
-    have hxU : x ∈ U := by
-      induction O' using VectorOrbit.ind with | h u
-      rw [image_mk] at hxO'
-      exact range_projectiveOrbitMap_subset_basicOpen_snd u hxO'
-    exact ⟨⟨(le_iff_image_subset_closure.mp hO'le) hxO', hxU⟩, hxc⟩
+    exact ⟨⟨(le_iff_image_subset_closure.mp hO'le) hxO', O'.image_subset_basicOpen_snd hxO'⟩, hxc⟩
 
 /-- **Boundary decomposition for orbits with finite lower set.** When only finitely many rational
 orbits lie below `O` in the closure order, the boundary `closure O \ O` inside the affine chart

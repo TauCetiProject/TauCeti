@@ -115,9 +115,7 @@ theorem pointsMulEquiv_expPointAt
     pointsMulEquiv n (Bialgebra.expPointAt d hd t) =
       expSMulHom A (hX.map (algebraMap R A).mapMatrix) (Multiplicative.ofAdd t) := by
   -- The base ring is a retract of the coordinate algebra, so it inherits its `ℚ`-structure.
-  let : Algebra ℚ R :=
-    ((Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n)).toRingHom.comp
-      (algebraMap ℚ (coordinateHopfAlgebra R n))).toAlgebra
+  let : Algebra ℚ R := Bialgebra.counitRatAlgebra R (coordinateHopfAlgebra R n)
   rw [← Matrix.GeneralLinearGroup.map_aeval_expSMulHom hX t]
   ext i j
   rw [pointsMulEquiv_apply, pointToGeneralLinear_apply, Bialgebra.expPointAt_apply,

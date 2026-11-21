@@ -238,8 +238,7 @@ private theorem coeff_expPointAddPolynomial (h : H) (i j : ℕ) :
 private theorem expPointAddPolynomial_eq_expPointMulPolynomial (h : H) :
     expPointAddPolynomial d hd h = expPointMulPolynomial d hd h := by
   -- The counit supplies the rational scalars needed to compare divided coefficients.
-  let : Algebra ℚ R :=
-    ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
+  let : Algebra ℚ R := counitRatAlgebra R H
   classical
   let 𝓡 := Coalgebra.Repr.arbitrary R h
   ext j i

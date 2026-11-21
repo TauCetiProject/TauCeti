@@ -33,8 +33,7 @@ Moreover, this dominant coweight is **unique** in its Weyl orbit
 (`RootPairing.Base.eq_of_coweightEquiv_eq_of_forall_exists_nat`), over any integral domain of
 characteristic zero without an order: passing to the flipped root pairing `P.flip` via
 `RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` reduces coweight dominance directly to
-weight dominance (`TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`). Combining existence and
-uniqueness gives `RootPairing.Base.existsUnique_coweightEquiv_forall_exists_nat`.
+weight dominance (`TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`).
 
 In the Lie-theoretic application `x` is the neutral element `h` of an `sl₂` triple lying in a
 splitting Cartan subalgebra: its roots take integer values, a base making `h` dominant puts the
@@ -49,8 +48,6 @@ shows that each orbit has at most one dominant neutral element.
   carried by the Weyl group to a coweight that is dominant for a given base.
 * `RootPairing.Base.eq_of_coweightEquiv_eq_of_forall_exists_nat`: two dominant coweights in the
   same Weyl orbit are equal, over any integral domain of characteristic zero.
-* `RootPairing.Base.existsUnique_coweightEquiv_forall_exists_nat`: the Weyl orbit of an integral
-  coweight contains a unique dominant coweight.
 
 ## References
 
@@ -166,21 +163,5 @@ theorem Base.exists_forall_exists_nat_root'_coweightEquiv_apply (b : P.Base) (x 
   refine ⟨n, ?_⟩
   rw [← hn, ← (w : P.Aut).root'_coweightEquiv j x]
   simp
-
-variable {P} in
-/-- **Existence and uniqueness of a dominant coweight in the Weyl orbit of an integral coweight.**
-Fix a base `b`. If every root takes an integer value at `x`, then its Weyl-group orbit contains a
-unique coweight at which every simple root of `b` takes a natural-number value. -/
-theorem Base.existsUnique_coweightEquiv_forall_exists_nat (b : P.Base) (x : N)
-    (hx : ∀ i, ∃ z : ℤ, P.root' i x = z) :
-    ∃! y : N, (∃ w : P.weylGroup, (w : P.Aut).coweightEquiv x = y) ∧
-      ∀ i ∈ b.support, ∃ n : ℕ, P.root' i y = n := by
-  obtain ⟨w, hw⟩ := b.exists_forall_exists_nat_root'_coweightEquiv_apply x hx
-  refine ⟨(w : P.Aut).coweightEquiv x, ⟨⟨w, rfl⟩, hw⟩, ?_⟩
-  rintro y ⟨⟨v, rfl⟩, hy⟩
-  refine b.eq_of_coweightEquiv_eq_of_forall_exists_nat hy hw (w := v⁻¹ * w) ?_
-  rw [Subgroup.coe_mul, Equiv.mul_eq_comp, Equiv.coweightEquiv_comp_toLin, LinearEquiv.trans_apply,
-    Subgroup.coe_inv, Equiv.coweightEquiv_inv]
-  exact congrArg (w : P.Aut).coweightEquiv (LinearEquiv.symm_apply_apply _ x)
 
 end RootPairing

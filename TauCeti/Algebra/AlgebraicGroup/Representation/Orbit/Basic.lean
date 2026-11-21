@@ -54,6 +54,8 @@ of the Lie algebra as the homogeneous space of its centralizer.
   `Comodule.VectorOrbit.mk`, induction principle `Comodule.VectorOrbit.ind` and eliminator
   `Comodule.VectorOrbit.lift`.
 * `Comodule.VectorOrbit.image`: the geometric image of an orbit in `P(M × k)`.
+* `Comodule.VectorOrbit.image_subset_basicOpen_snd`: every orbit image lies in the affine chart
+  `M = {t ≠ 0}` of `P(M × k)`.
 * `Comodule.VectorOrbit.isConstructible_image`: the geometric image of an orbit is
   constructible.
 * `Comodule.coset_stabilizerHopfIdeal_eq_iff_exists_units_matrixCoefficient`: the matrix
@@ -258,6 +260,16 @@ theorem image_mk (v : M) :
     (mk v : VectorOrbit k H M).image =
       Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k) (Module.isUnimodular_mk_one v)) :=
   (rfl)
+
+/-- The geometric image of a rational orbit lies in the affine chart `M = {t ≠ 0}` of
+`P(M × k)`. -/
+theorem image_subset_basicOpen_snd (O : VectorOrbit k H M) :
+    O.image ⊆
+      (Proj.basicOpen (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))
+        (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _) := by
+  induction O using VectorOrbit.ind with | h v
+  rw [image_mk]
+  exact range_projectiveOrbitMap_subset_basicOpen_snd v
 
 /-- The geometric image of a rational orbit is constructible in `P(M × k)`. -/
 theorem isConstructible_image [Algebra.FiniteType k H] (O : VectorOrbit k H M) :
