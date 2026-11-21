@@ -394,7 +394,7 @@ theorem Integers.isUniformizer_algebraMap_of_irreducible [CommRing R] [IsDomain 
     v.IsUniformizer (algebraMap R K ϖ) := by
   refine isUniformizer_of_maximalIdeal_eq_span v (r := ⟨algebraMap R K ϖ, hvR.map_le_one ϖ⟩) ?_
   ext x
-  obtain ⟨r, hr⟩ := hvR.exists_of_le_one x.2
+  obtain ⟨r, hr⟩ := hvR.exists_of_le_one x.property
   rw [Valuation.mem_maximalIdeal_iff, Ideal.mem_span_singleton,
     (Valuation.valuationSubring.integers v).dvd_iff_le,
     ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply, ← hr]

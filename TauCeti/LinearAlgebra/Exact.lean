@@ -20,25 +20,26 @@ including the exactness of `U' → V → B × A` built from two exact stages `U'
 `U → V → A` (`Function.Exact.comp_prod`, with `LinearMap.surjective_prod_of_comp_eq_zero`), the
 exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_fst`,
 `Function.Exact.id_prodMap_comp_snd`), the left exactness of `Hom` over a noncommutative ring
-(`Function.Exact.lcomp_of_surjective`), the generators and relations of an extension
+(`Function.Exact.lcomp_of_surjective`), its covariant counterpart
+(`Function.Exact.compRight_of_injective`), the generators and relations of an extension
 (`Function.Exact.surjective_coprod`, `TauCeti.ker_coprod_eq_map_prod_top`), the horseshoe step
 `TauCeti.exists_surjective_ker_exact`, the short exact sequence of kernels
 `TauCeti.exact_ker_comp` attached to a surjection and a further map, the exact sequence
 `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
 (`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence `0 → ker f → M → range f → 0`
-of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and
-cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
+of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and cokernels
+induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
 `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
 middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.cokerToCokerComp`
 (`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension
-`dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of
-`α : X → T` and `β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the
-homology of a complex of finite-dimensional vector spaces in terms of the two cokernels
+`dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of `α : X → T` and
+`β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the homology of a complex of
+finite-dimensional vector spaces in terms of the two cokernels
 (`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of the alternating sum of
-dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced
-by a homology theory,
+dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced by
+a homology theory,
 
 ```text
 ⋯ ⟶ Aₙ ⟶ Bₙ ⟶ Cₙ ⟶ Aₙ₋₁ ⟶ ⋯ ⟶ A₀ ⟶ B₀ ⟶ C₀ ⟶ 0,
@@ -189,6 +190,31 @@ theorem lcomp_of_surjective {R T M₁ M₂ M₃ : Type*} (Q : Type*) [Ring R] [S
     simp
   · rw [← hy, LinearMap.comp_assoc, exac.linearMap_comp_eq_zero, LinearMap.comp_zero y]
 
+/-- **`Hom(P, -)` is left exact.** If `0 → M₁ → M₂ → M₃` is exact, so is
+`Hom(P, M₁) → Hom(P, M₂) → Hom(P, M₃)`, for any ring `T` of scalars acting on the `Hom` modules
+through the codomains. Together with the injectivity of postcomposition with `f`, this says that
+`0 → Hom(P, M₁) → Hom(P, M₂) → Hom(P, M₃)` is exact. -/
+theorem _root_.Function.Exact.compRight_of_injective {R T M₁ M₂ M₃ : Type*} (P : Type*) [Ring R]
+    [Semiring T] [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃] [AddCommGroup P]
+    [Module R M₁] [Module R M₂] [Module R M₃] [Module R P] [Module T M₁] [Module T M₂]
+    [Module T M₃] [SMulCommClass R T M₁] [SMulCommClass R T M₂] [SMulCommClass R T M₃]
+    [LinearMap.CompatibleSMul M₁ M₂ T R] [LinearMap.CompatibleSMul M₂ M₃ T R]
+    {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃} (exac : Function.Exact f g)
+    (inj : Function.Injective f) :
+    Function.Exact (f.compRight T : (P →ₗ[R] M₁) →ₗ[T] (P →ₗ[R] M₂))
+      (g.compRight T : (P →ₗ[R] M₂) →ₗ[T] (P →ₗ[R] M₃)) := by
+  intro h
+  refine ⟨fun hh ↦ ?_, ?_⟩
+  · have hmem : ∀ x, h x ∈ LinearMap.range f := fun x ↦
+      (exac (h x)).mp (by simpa using LinearMap.congr_fun hh x)
+    refine ⟨(LinearEquiv.ofInjective f inj).symm.toLinearMap.comp
+      (h.codRestrict (LinearMap.range f) hmem), ?_⟩
+    ext x
+    simp
+  · rintro ⟨u, rfl⟩
+    ext x
+    simp [exac.apply_apply_eq_zero]
+
 /-- Given an exact sequence `M₁ → M → M₂`, a surjection `π₁ : P₁ → M₁` and a lift `σ : P₂ → M`
 of a surjection `π₂ : P₂ → M₂`, the combined generator map `(x, y) ↦ f (π₁ x) + σ y` of `M` is
 surjective. -/
@@ -229,7 +255,7 @@ theorem bijective_restrict_ker_of_prod_coprod
       rw [mem_ker, ← LinearMap.comp_apply, h.comp_eq_comp_of_prod_coprod, LinearMap.comp_apply,
         mem_ker.1 hx, map_zero]) := by
   refine ⟨fun x y hxy ↦ Subtype.ext (hinj (Prod.ext (congrArg Subtype.val hxy) ?_)), ?_⟩
-  · simp [mem_ker.1 x.2, mem_ker.1 y.2]
+  · simp [mem_ker.1 x.property, mem_ker.1 y.property]
   · rintro ⟨c, hc⟩
     obtain ⟨x, hx⟩ := (h (c, 0)).1 (by simpa using hc)
     exact ⟨⟨x, mem_ker.2 (congrArg Prod.snd hx)⟩, Subtype.ext (congrArg Prod.fst hx)⟩
@@ -279,7 +305,7 @@ theorem exists_exact_codRestrict_mkQ {R : Type*} [Ring R] {M : Type*} [AddCommGr
     (hf : ∀ g : G, g ∈ range f ↔ (g : M) ∈ P) :
     ∃ q : G →ₗ[R] G.map P.mkQ, Function.Surjective q ∧ Function.Exact f q ∧
       (G.map P.mkQ).subtype ∘ₗ q = P.mkQ ∘ₗ G.subtype := by
-  refine ⟨(P.mkQ ∘ₗ G.subtype).codRestrict _ fun g ↦ mem_map_of_mem g.2, ?_,
+  refine ⟨(P.mkQ ∘ₗ G.subtype).codRestrict _ fun g ↦ mem_map_of_mem g.property, ?_,
     exact_iff.mpr <| ext fun g ↦ ?_, subtype_comp_codRestrict _ _ _⟩
   · rintro ⟨_, g, hg, rfl⟩
     exact ⟨⟨g, hg⟩, by ext; simp⟩
@@ -405,15 +431,15 @@ theorem exact_ker_comp {P : Type*} [AddCommGroup P] [Module R P] {π : P →ₗ[
 
 end ShortExact
 
-/-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are finite-dimensional, then so
-is `N`.
+/-- If `M --f--> N --g--> P` is exact at `N`, `M` is finite and `P` is a Noetherian module, then
+`N` is finite. For a division ring this is the finite-dimensional statement.
 
 This is deduced from `Module.Finite.of_exact`, which asks the second map to be surjective, by
-corestricting `g` to its range. -/
-theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
-    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P] {f : M →ₗ[k] N}
-    {g : N →ₗ[k] P} (h : Function.Exact f g) [FiniteDimensional k M] [FiniteDimensional k P] :
-    FiniteDimensional k N :=
+corestricting `g` to its range, a submodule of the Noetherian module `P`. -/
+theorem _root_.Function.Exact.moduleFinite {R M N P : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P] {f : M →ₗ[R] N}
+    {g : N →ₗ[R] P} (h : Function.Exact f g) [Module.Finite R M] [IsNoetherian R P] :
+    Module.Finite R N :=
   Module.Finite.of_exact h.rangeRestrict g.surjective_rangeRestrict
 
 /-- Let `A → B → C` and `A → B' → C'` be exact with `A → B` and `A → B'` injective, let
@@ -431,7 +457,7 @@ theorem finrank_range_eq_finrank_range_add_of_exact_comp {k : Type*} [DivisionRi
     (hjπ : Function.Exact j (π ∘ₗ g')) (hπg : Function.Surjective (π ∘ₗ g')) :
     Module.finrank k (LinearMap.range g') =
       Module.finrank k (LinearMap.range g) + Module.finrank k W := by
-  have : FiniteDimensional k B' := finiteDimensional_of_exact hjπ
+  have : FiniteDimensional k B' := hjπ.moduleFinite
   have e₁ := hfg.rangeRestrict.finrank_eq_add hf g.surjective_rangeRestrict
   have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
   have e₃ := hjπ.finrank_eq_add hj hπg
@@ -504,7 +530,7 @@ theorem sum_range_neg_one_pow_finrank_eq_of_exact (hfg : ∀ n, Function.Exact (
       finrank k (LinearMap.range (f i)) + finrank k (LinearMap.range (g i)) := by
     have := hA i hi
     have := hC i hi
-    have := finiteDimensional_of_exact (hfg i)
+    have := (hfg i).moduleFinite
     rw [← (g i).finrank_range_add_finrank_ker, (hfg i).linearMap_ker_eq, add_comm]
   have hC' (i : ℕ) (hi : i + 1 ≤ n) : finrank k (C (i + 1)) =
       finrank k (LinearMap.range (g (i + 1))) + finrank k (LinearMap.range (δ i)) := by
@@ -689,7 +715,7 @@ theorem finrank_sub_finrank_sub_finrank_of_exact
     (hfg : Function.Exact f g) (hgδ : Function.Exact g δ) (hδf : Function.Exact δ f') :
     (finrank k B : ℤ) - finrank k A - finrank k C =
       -(finrank k f.ker : ℤ) - finrank k f'.ker := by
-  have := TauCeti.finiteDimensional_of_exact hfg
+  have := hfg.moduleFinite
   have hB := f.finrank_eq_finrank_range_add_finrank_range_of_exact g hfg
   have hC := g.finrank_eq_finrank_range_add_finrank_range_of_exact δ hgδ
   have hA := f.finrank_range_add_finrank_ker

@@ -52,7 +52,7 @@ namespace ValidLieTypeIndex
 
 /-- The fixed subgroup is finite on the ordinary and graph-twisted families. -/
 private theorem finite_fixedSubgroup_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
-    (hd : ¬ d.1.UsesHalfFrobenius)
+    (hd : ¬ d.val.UsesHalfFrobenius)
     {F : d.AmbientGroup →* d.AmbientGroup} {r k : ℕ} (hk : k ≠ 0)
     (hF : ∀ g, (⇑F)^[r] g = (⇑d.frobenius)^[k] g) : Finite (fixedSubgroup F) := by
   -- On each constructor the Frobenius is that of the family carrier.
@@ -100,7 +100,7 @@ private theorem finite_fixedSubgroup_of_not_usesHalfFrobenius (d : ValidLieTypeI
 
 /-- The fixed subgroup is finite on the Suzuki, Ree and Tits families. -/
 private theorem finite_fixedSubgroup_of_usesHalfFrobenius (d : ValidLieTypeIndex)
-    (hd : d.1.UsesHalfFrobenius)
+    (hd : d.val.UsesHalfFrobenius)
     {F : d.AmbientGroup →* d.AmbientGroup} {r k : ℕ} (hk : k ≠ 0)
     (hF : ∀ g, (⇑F)^[r] g = (⇑d.frobenius)^[k] g) : Finite (fixedSubgroup F) := by
   -- On each constructor the Frobenius is that of the family carrier.
@@ -126,7 +126,7 @@ fixed points.** If `F ^ r = Frob_q ^ k` on the ambient group of a valid Lie-type
 theorem finite_fixedSubgroup_of_iterate_eq_iterate_frobenius (d : ValidLieTypeIndex)
     {F : d.AmbientGroup →* d.AmbientGroup} {r k : ℕ} (hk : k ≠ 0)
     (hF : ∀ g, (⇑F)^[r] g = (⇑d.frobenius)^[k] g) : Finite (fixedSubgroup F) := by
-  by_cases hd : d.1.UsesHalfFrobenius
+  by_cases hd : d.val.UsesHalfFrobenius
   · exact finite_fixedSubgroup_of_usesHalfFrobenius d hd hk hF
   · exact finite_fixedSubgroup_of_not_usesHalfFrobenius d hd hk hF
 
@@ -134,7 +134,7 @@ theorem finite_fixedSubgroup_of_iterate_eq_iterate_frobenius (d : ValidLieTypeIn
 endomorphism squares to the Frobenius on the Suzuki, Ree and Tits families, and its twist-order
 iterate is that iterate of the Frobenius on the ordinary and graph-twisted families. -/
 instance finite_fixedPoints (d : ValidLieTypeIndex) : Finite d.FixedPoints := by
-  by_cases h : d.1.UsesHalfFrobenius
+  by_cases h : d.val.UsesHalfFrobenius
   · exact d.finite_fixedSubgroup_of_iterate_eq_iterate_frobenius (r := 2) one_ne_zero
       (steinberg_steinberg_of_usesHalfFrobenius d h)
   · exact d.finite_fixedSubgroup_of_iterate_eq_iterate_frobenius

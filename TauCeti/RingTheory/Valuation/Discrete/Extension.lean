@@ -161,8 +161,10 @@ theorem intValuation_algebraMap (x : K) :
   have hequiv := HasExtension.val_isEquiv_comap (vR := v) (vA := w)
   have hu : (w.comap (algebraMap K L)).IsRankOneDiscrete := .of_isEquiv hequiv
   rcases eq_or_ne (v x) 0 with hx | hx
-  · rw [w.intValuation_eq_zero_iff.mpr (show w (algebraMap K L x) = 0 from hequiv.eq_zero.mp hx),
-      v.intValuation_eq_zero_iff.mpr hx, zero_pow (HasExtension.ramificationIdx_pos v w).ne']
+  · have hwx : w (algebraMap K L x) = 0 := by
+      simpa only [comap_apply] using hequiv.eq_zero.mp hx
+    rw [w.intValuation_eq_zero_iff.mpr hwx, v.intValuation_eq_zero_iff.mpr hx,
+      zero_pow (HasExtension.ramificationIdx_pos v w).ne']
   · set u := w.comap (algebraMap K L)
     set m := ord u.intValuation x
     have hux_val : u x = (hu.generator : ΓL) ^ m :=

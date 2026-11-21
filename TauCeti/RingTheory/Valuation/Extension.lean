@@ -275,7 +275,7 @@ private theorem exists_linearIndependent_quotient_valueGroup :
   set H := ((w.comap (algebraMap K L)).valueGroup).subgroupOf w.valueGroup
   have hex (q : w.valueGroup ⧸ H) : ∃ y : L, w y = ((q.out : Γˣ) : Γ) := by
     have hmem : (q.out : Γˣ) ∈ w.valueMonoid :=
-      (valueMonoid_eq_valueGroup (f := (w : L →*₀ Γ))).symm ▸ q.out.2
+      (valueMonoid_eq_valueGroup (f := (w : L →*₀ Γ))).symm ▸ q.out.property
     rw [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range] at hmem
     obtain ⟨y, hy⟩ := hmem
     exact ⟨y, by rwa [coe_toMonoidWithZeroHom] at hy⟩

@@ -435,12 +435,12 @@ private theorem lift_sideWord_eq_one_of_mem_macbeathRels (hmap : ∀ i, σ.map i
         r = 1 := by
   intro r hr
   obtain ⟨s, t, u, hu, hmeet, rfl⟩ := mem_macbeathRels.1 hr
-  have hs := s.2
+  have hs := s.property
   rw [mem_macbeathGenerators, Set.subtype_smul_set] at hs
   rw [Set.subtype_smul_set, Set.subtype_smul_set, hu, Subgroup.coe_mul] at hmeet
   rw [map_mul, map_mul, map_inv, FreeGroup.lift_apply_of, FreeGroup.lift_apply_of,
     FreeGroup.lift_apply_of, mul_inv_eq_one, hu, Subgroup.coe_mul]
-  exact σ.sideWord_mul_sideWord hmap hdisj (s : Γ).2 (t : Γ).2 hs hmeet
+  exact σ.sideWord_mul_sideWord hmap hdisj (s : Γ).property (t : Γ).property hs hmeet
 
 /-- **Poincaré's presentation theorem.** For a locally finite fundamental polygon, every word in
 the side generators evaluating to the identity is a consequence of the side relations and the

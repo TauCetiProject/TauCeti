@@ -62,16 +62,16 @@ variable {t n : ℤ}
 
 /-- Every weight vanishes on a fibre of nonpositive determinant. -/
 private theorem finsum_weight_traceDetFiber_of_nonpos (hn : n ≤ 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = 0 :=
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 :=
   finsum_eq_zero_of_forall_eq_zero fun M ↦ by
     by_contra hw
     have := det_pos_of_weight_ne_zero hw
-    rw [(mem_traceDetFiber.mp M.2).2] at this
+    rw [(mem_traceDetFiber.mp M.property).2] at this
     omega
 
 /-- At positive discriminant, the weights of a fibre of negative trace sum to zero. -/
 private theorem finsum_weight_traceDetFiber_of_neg (ht : t < 0) (hD : 0 < t ^ 2 - 4 * n) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
   -- translate upwards until the determinant is nonpositive
   induction hk : (-t).toNat using Nat.strong_induction_on generalizing t n with
   | _ k ih =>
@@ -195,7 +195,7 @@ private theorem sum_chainWeight₃_Icc {m : ℤ} (hm : 0 < m) :
 determinant `n` sum to `12 (n - 1)` if `t = n + 1`, and to `0` otherwise. -/
 private theorem finsum_weight_traceDetFiber_of_le (hn : 0 < n) (h : n + 1 ≤ t)
     (hD : 0 < t ^ 2 - 4 * n) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = if t = n + 1 then 12 * (n - 1) else 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = if t = n + 1 then 12 * (n - 1) else 0 := by
   classical
   split_ifs with ht
   · subst ht
@@ -204,15 +204,15 @@ private theorem finsum_weight_traceDetFiber_of_le (hn : 0 < n) (h : n + 1 ≤ t)
       ⟨!![1, b; 0, n], mem_traceDetFiber_fin_two.mpr ⟨by simp [add_comm], by simp⟩⟩
     have hφ : Function.Injective φ := fun b b' hb ↦ by
       simpa [φ] using congrFun (congrFun (congrArg Subtype.val hb) 0) 1
-    have hsub : (Function.support fun M : traceDetFiber (Fin 2) (n + 1) n ↦ weight M.1) ⊆
+    have hsub : (Function.support fun M : traceDetFiber (Fin 2) (n + 1) n ↦ weight M.val) ⊆
         (Finset.Icc 0 (n - 1)).image φ := by
       intro M hM
-      obtain ⟨-, hM'⟩ := eq_of_weight_ne_zero hn h hD M.2 hM
-      have hw : chainWeight₃ (1 - n) (-M.1 0 1) 0 ≠ 0 := by
+      obtain ⟨-, hM'⟩ := eq_of_weight_ne_zero hn h hD M.property hM
+      have hw : chainWeight₃ (1 - n) (-M.val 0 1) 0 ≠ 0 := by
         rw [← weight_upperTriangular hn, ← hM']
         exact hM
       obtain ⟨h₁, h₂⟩ := le_of_chainWeight₃_ne_zero hw
-      refine Finset.mem_image.mpr ⟨M.1 0 1, Finset.mem_Icc.mpr ⟨by omega, by omega⟩, ?_⟩
+      refine Finset.mem_image.mpr ⟨M.val 0 1, Finset.mem_Icc.mpr ⟨by omega, by omega⟩, ?_⟩
       exact Subtype.ext hM'.symm
     rw [finsum_eq_sum_of_support_subset _ hsub, Finset.sum_image fun b _ b' _ hb ↦ hφ hb,
       ← sum_chainWeight₃_Icc hn1]
@@ -220,15 +220,15 @@ private theorem finsum_weight_traceDetFiber_of_le (hn : 0 < n) (h : n + 1 ≤ t)
     rw [weight_upperTriangular hn, show 1 - n = -(n - 1) by ring]
   · refine finsum_eq_zero_of_forall_eq_zero fun M ↦ ?_
     by_contra hw
-    exact ht (eq_of_weight_ne_zero hn h hD M.2 hw).1
+    exact ht (eq_of_weight_ne_zero hn h hD M.property hw).1
 
 /-- At positive trace, determinant and discriminant, the sum of the weights over a fibre equals
 the sum over a fibre with the same discriminant and an eigenvalue in `(0, 1]`. -/
 private theorem exists_finsum_weight_traceDetFiber_eq (ht : 0 < t) (hn : 0 < n)
     (hD : 0 < t ^ 2 - 4 * n) :
     ∃ t' n' : ℤ, t' ^ 2 - 4 * n' = t ^ 2 - 4 * n ∧ 0 < n' ∧ n' + 1 ≤ t' ∧
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 =
-        ∑ᶠ M : traceDetFiber (Fin 2) t' n', weight M.1 := by
+      ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val =
+        ∑ᶠ M : traceDetFiber (Fin 2) t' n', weight M.val := by
   -- translate downwards while the determinant stays positive
   induction hk : t.toNat using Nat.strong_induction_on generalizing t n with
   | _ k ih =>
@@ -253,7 +253,7 @@ private theorem exists_finsum_weight_traceDetFiber_eq (ht : 0 < t) (hn : 0 < n)
 `n` sum to `12 u` if `t > 0`, and to `0` if `t < 0`. -/
 theorem finsum_weight_traceDetFiber_of_discrim_eq_sq {u : ℤ} (hn : 0 < n) (hu : 0 < u)
     (h : t ^ 2 - 4 * n = u ^ 2) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = if 0 < t then 12 * u else 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = if 0 < t then 12 * u else 0 := by
   have hD : 0 < t ^ 2 - 4 * n := h ▸ pow_pos hu 2
   rcases lt_trichotomy t 0 with ht | rfl | ht
   · rw [ite_eq_right (by omega)]
@@ -282,7 +282,7 @@ theorem finsum_weight_traceDetFiber_of_discrim_eq_sq {u : ℤ} (hn : 0 < n) (hu 
 square, the weights of the integral matrices of trace `t` and determinant `n` sum to `0`. -/
 theorem finsum_weight_traceDetFiber_of_not_isSquare (hD : 0 < t ^ 2 - 4 * n)
     (h : ¬IsSquare (t ^ 2 - 4 * n)) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
   rcases le_or_gt n 0 with hn | hn
   · exact finsum_weight_traceDetFiber_of_nonpos hn
   rcases lt_trichotomy t 0 with ht | rfl | ht

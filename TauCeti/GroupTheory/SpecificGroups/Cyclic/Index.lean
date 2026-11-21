@@ -36,6 +36,9 @@ long as the order of `N` is prime to the index of one of the two subgroups.
   form.
 * `IsCyclic.index_inf_eq_lcm`: in a cyclic group the index of `H ⊓ K` is the least common multiple
   of the indices of `H` and `K`.
+* `IsCyclic.index_zpowGroupHom_range`, `IsCyclic.index_zpowGroupHom_range_of_infinite`: in a cyclic
+  commutative group `G`, the `m`-th power subgroup has index `m.gcd (Nat.card G)` (and `m.natAbs`
+  when `G` is infinite), with additive versions for `zsmulAddGroupHom`.
 * `Subgroup.index_inf_eq_lcm_of_isCyclic_quotient`: the same holds in a group with a normal
   subgroup `N` whose quotient is cyclic, provided the order of `N` is prime to the index of one of
   the two subgroups. This is the group theory behind Abhyankar's lemma, where `N` is the wild
@@ -202,5 +205,31 @@ theorem isCyclic_of_isFiniteRelIndex {G : Type*} [CommGroup G] [IsMulTorsionFree
   have : IsCyclic (H.subgroupOf K) :=
     isCyclic_of_injective _ (K.subtype.subgroupComap_injective H K.subtype_injective)
   exact isCyclic_of_finiteIndex (H.subgroupOf K)
+
+/-- **Index of the `m`-th power subgroup of a cyclic group.** In a cyclic commutative group `G`,
+the image of `zpowGroupHom m : G →* G` has index `m.gcd (Nat.card G)`. This holds for both finite
+and infinite cyclic groups (with `Nat.card G = 0` when `G` is infinite, giving `m.natAbs`). -/
+@[to_additive
+/-- **Index of the `m`-th multiple subgroup of an additive cyclic group.** In an additive cyclic
+commutative group `G`, the image of `zsmulAddGroupHom m : G →+ G` has index
+`m.gcd (Nat.card G)`. -/]
+theorem _root_.IsCyclic.index_zpowGroupHom_range {G : Type*} [CommGroup G] [IsCyclic G] (m : ℤ) :
+    (zpowGroupHom m : G →* G).range.index = m.gcd (Nat.card G) := by
+  obtain ⟨g, hg⟩ := isCyclic_iff_exists_zpowers_eq_top.mp ‹_›
+  rw [MonoidHom.range_eq_map, ← hg, MonoidHom.map_zpowers, zpowGroupHom_apply,
+    Subgroup.index_zpowers_zpow hg, orderOf_eq_card_of_zpowers_eq_top hg]
+
+/-- **Index of the `m`-th power subgroup of an infinite cyclic group.** In an infinite cyclic
+commutative group `G` (such as `Multiplicative ℤ`), the image of `zpowGroupHom m : G →* G` has
+index `m.natAbs`. -/
+@[to_additive (attr := simp)
+/-- **Index of the `m`-th multiple subgroup of an infinite additive cyclic group.** In an infinite
+additive cyclic commutative group `G` (such as `ℤ`), the image of `zsmulAddGroupHom m : G →+ G` has
+index `m.natAbs`. -/]
+theorem _root_.IsCyclic.index_zpowGroupHom_range_of_infinite {G : Type*} [CommGroup G]
+    [IsCyclic G] [Infinite G] (m : ℤ) :
+    (zpowGroupHom m : G →* G).range.index = m.natAbs := by
+  rw [IsCyclic.index_zpowGroupHom_range, Nat.card_eq_zero_of_infinite, Int.natCast_zero,
+    Int.gcd_zero_right]
 
 end Subgroup
