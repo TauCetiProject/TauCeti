@@ -208,18 +208,19 @@ theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
       (eventually_of_mem hU fun y (hy : f y ∈ e₀.baseSet) ↦ ?_)
   simp [clutchingFunction_eq_mul_normalizedDet_inv (φ := φ) (ψ := ψ) hy]
 
-/-- If `φ` is a continuous frame along `f` and `ψ` a frame along `f` that is continuous over a set
-`s`, the normalized determinant of `(φ y)⁻¹ ∘ ψ y` is continuous on `s`. -/
+/-- If `φ` and `ψ` are frames along `f` that are continuous over a set `s`, the normalized
+determinant of `(φ y)⁻¹ ∘ ψ y` is continuous on `s`. -/
 theorem continuousOn_normalizedDet_trans_symm [VectorBundle ℂ F E] {s : Set B}
-    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
+    (hφ : ContinuousOn (fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) (s ×ˢ univ))
     (hψ : ContinuousOn (fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) (s ×ˢ univ)) :
     ContinuousOn (fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet) s := by
   rw [continuousOn_iff_continuous_domRestrict]
-  -- Restrict both frames to the subspace `s`, where `ψ` is continuous.
+  -- Restrict both frames to the subspace `s`, where they are continuous.
   have hval : Continuous fun q : s × F ↦ ((q.1 : B), q.2) :=
     (continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd
-  exact continuous_normalizedDet_trans_symm (f := fun y : s ↦ f y) (hφ.comp hval)
-    (hψ.comp_continuous hval fun q ↦ ⟨q.1.property, mem_univ _⟩)
+  have hs : ∀ q : s × F, ((q.1 : B), q.2) ∈ s ×ˢ univ := fun q ↦ ⟨q.1.property, mem_univ _⟩
+  exact continuous_normalizedDet_trans_symm (f := fun y : s ↦ f y)
+    (hφ.comp_continuous hval hs) (hψ.comp_continuous hval hs)
 
 end ClutchingFunction
 

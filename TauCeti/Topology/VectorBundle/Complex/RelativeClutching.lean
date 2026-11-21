@@ -164,7 +164,8 @@ theorem relativeClutchingNumber_trans (u : C(Fin 2 → I, X)) {τ : ∀ y, F ≃
     funext fun y ↦ ContinuousLinearEquiv.normalizedDet_trans (g y) ((τ y).trans (φ y).symm)
   rw [relativeClutchingNumber_eq_squareBoundaryDegree u _ hφ,
     relativeClutchingNumber_eq_squareBoundaryDegree u _ hφ, h,
-    squareBoundaryDegree_mul hg.normalizedDet (continuousOn_normalizedDet_trans_symm hφ hτ),
+    squareBoundaryDegree_mul hg.normalizedDet
+      (continuousOn_normalizedDet_trans_symm hφ.continuousOn hτ),
     add_comm]
 
 /-- **Homotopy invariance.** Let `H : I × I² → X` be a homotopy and `T` a family of frames along
@@ -184,7 +185,8 @@ theorem relativeClutchingNumber_eq_of_homotopy (H : C(I × (Fin 2 → I), X))
     relativeClutchingNumber_eq_squareBoundaryDegree (H.curry t) _ (φ := fun y ↦ Θ (t, y))
       (hΘ.comp ((Continuous.prodMk_right t).prodMap continuous_id))
   rw [hslice, hslice]
-  exact squareBoundaryDegree_eq_of_homotopy (continuousOn_normalizedDet_trans_symm hΘ hT)
+  exact squareBoundaryDegree_eq_of_homotopy
+    (continuousOn_normalizedDet_trans_symm hΘ.continuousOn hT)
 
 /-- **Subdivision.** If the boundary frame `τ` is also continuous along the vertical segment
 `s = 1/2`, the relative clutching number of `E` along `u` is the sum of those along the left and
@@ -202,7 +204,7 @@ theorem relativeClutchingNumber_eq_add (u : C(Fin 2 → I, X)) {τ : ∀ y, F �
       Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (u (k q.1)) (φ (k q.1) q.2) :=
     hφ.comp ((k.continuous.comp continuous_fst).prodMk continuous_snd)
   rw [relativeClutchingNumber_eq_squareBoundaryDegree u τ hφ,
-    squareBoundaryDegree_eq_add (continuousOn_normalizedDet_trans_symm hφ hτ),
+    squareBoundaryDegree_eq_add (continuousOn_normalizedDet_trans_symm hφ.continuousOn hτ),
     relativeClutchingNumber_eq_squareBoundaryDegree _ _
       (φ := fun y ↦ φ (cubeLeftHalf 0 y)) (hhalf (cubeLeftHalf 0)),
     relativeClutchingNumber_eq_squareBoundaryDegree _ _
@@ -225,7 +227,7 @@ theorem relativeClutchingNumber_eq_sub (u : C(Fin 2 → I, X)) {τ φ : ∀ y, F
         squareBoundaryDegree (clutchingFunction u τ e) := by
   have hc : ContinuousOn (clutchingFunction u φ e) (Cube.boundary (Fin 2)) :=
     (continuousOn_clutchingFunction hφ e).mono he
-  have hΓ := continuousOn_normalizedDet_trans_symm hφ hτ
+  have hΓ := continuousOn_normalizedDet_trans_symm hφ.continuousOn hτ
   -- On the boundary, the clutching function of `τ` is that of `φ` divided by the transition.
   have heq : EqOn (clutchingFunction u τ e)
       (clutchingFunction u φ e * (fun y ↦ ((τ y).trans (φ y).symm).normalizedDet)⁻¹)
