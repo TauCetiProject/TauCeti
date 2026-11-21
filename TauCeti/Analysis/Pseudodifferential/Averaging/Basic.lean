@@ -81,6 +81,54 @@ open scoped ContDiff SchwartzMap
 
 namespace TauCeti
 
+section TransportParams
+
+variable {G E V W : Type*} [Group G] [TopologicalSpace G] [ContinuousInv G]
+  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [NormedAddCommGroup V]
+  [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {ρ : G →* (E ≃L[ℝ] E)}
+  {σ : G →* (V ≃L[ℂ] V)} {τ : G →* (W ≃L[ℂ] W)}
+
+/-- The parameters `(ρ(g)⁻¹, ρ(g)ᵀ, τ(g), σ(g)⁻¹)` of the transport along `g ∈ G` depend
+continuously on `g` in the operator norm, for representations `ρ`, `σ` and `τ` that do. -/
+theorem continuous_symm_prodMk_adjointEquiv_prodMk
+    (hρ : Continuous fun g ↦ (ρ g : E →L[ℝ] E))
+    (hσ : Continuous fun g ↦ (σ g : V →L[ℂ] V)) (hτ : Continuous fun g ↦ (τ g : W →L[ℂ] W)) :
+    Continuous fun g ↦ ((((ρ g).symm : E →L[ℝ] E), ((ρ g).adjointEquiv : E →L[ℝ] E)),
+      ((τ g : W →L[ℂ] W), ((σ g).symm : V →L[ℂ] V))) :=
+  (hρ.continuous_symm_of_monoidHom.prodMk
+    (ContinuousLinearEquiv.continuous_adjointEquiv hρ)).prodMk
+    (hτ.prodMk hσ.continuous_symm_of_monoidHom)
+
+omit [TopologicalSpace G] [ContinuousInv G] in
+/-- **Averaged coefficients are invariant.** For a left-invariant measure `μ` and any coefficient
+function `c`, the average `∫ τ(g) ∘ c(ρ(g)⁻¹ x, ρ(g)ᵀ ξ) ∘ σ(g)⁻¹ dμ(g)` of its transports is
+fixed by the transport along any `h ∈ G`. This is the common core of the invariance of averaged
+symbols and averaged homogeneous symbols. -/
+theorem comp_integral_transport_comp [MeasurableSpace G] [MeasurableMul G] (μ : Measure G)
+    [μ.IsMulLeftInvariant] (c : E × E → V →L[ℂ] W) (h : G) (p : E × E) :
+    (τ h : W →L[ℂ] W) ∘L (∫ g, (τ g : W →L[ℂ] W) ∘L
+        c ((ρ g).symm ((ρ h).symm p.1), (ρ g).adjointEquiv ((ρ h).adjointEquiv p.2)) ∘L
+          ((σ g).symm : V →L[ℂ] V) ∂μ) ∘L ((σ h).symm : V →L[ℂ] V) =
+      ∫ g, (τ g : W →L[ℂ] W) ∘L c ((ρ g).symm p.1, (ρ g).adjointEquiv p.2) ∘L
+        ((σ g).symm : V →L[ℂ] V) ∂μ := by
+  -- Conjugation by `σ(h)`, `τ(h)` passes through the integral; then the transports compose and
+  -- the measure is invariant under `g ↦ h g`.
+  have hconj (T : V →L[ℂ] W) : (τ h : W →L[ℂ] W) ∘L T ∘L ((σ h).symm : V →L[ℂ] V) =
+      (σ h).arrowCongr (τ h) T :=
+    ContinuousLinearMap.ext fun v ↦ by simp
+  rw [hconj, ← ContinuousLinearEquiv.integral_comp_comm]
+  calc _ = ∫ g, (τ (h * g) : W →L[ℂ] W) ∘L
+        c ((ρ (h * g)).symm p.1, (ρ (h * g)).adjointEquiv p.2) ∘L
+          ((σ (h * g)).symm : V →L[ℂ] V) ∂μ := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+        refine ContinuousLinearMap.ext fun v ↦ ?_
+        simp [ContinuousLinearEquiv.mul_eq_trans, ContinuousLinearEquiv.adjointEquiv_apply,
+          ← ContinuousLinearEquiv.comp_coe, ContinuousLinearMap.adjoint_comp]
+    _ = _ := integral_mul_left_eq_self (fun g ↦ (τ g : W →L[ℂ] W) ∘L
+        c ((ρ g).symm p.1, (ρ g).adjointEquiv p.2) ∘L ((σ g).symm : V →L[ℂ] V)) h
+
+end TransportParams
+
 section SchwartzRep
 
 variable {G : Type*} [Group G] {n : ℕ} {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
@@ -322,7 +370,7 @@ omit [CompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- The jets of the transported symbols `g • a` are jointly continuous in `g` and the
 position-frequency variables. -/
-private theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : ℕ) :
+theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : ℕ) :
     Continuous fun q : G × (CoordinateSpace n × CoordinateSpace n) ↦
       iteratedFDeriv ℝ k (transport (ρ q.1) (σ q.1) (τ q.1) a).coefficient q.2 := by
   -- All transported coefficients are slices of one smooth function of the parameters
@@ -339,14 +387,9 @@ private theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : �
         |>.contDiff (n := ∞)).comp ((a.contDiff_coefficient.comp
           ((contDiff_fst.fst.fst.clm_apply contDiff_snd.fst).prodMk
             (contDiff_fst.fst.snd.clm_apply contDiff_snd.snd))).prodMk contDiff_fst.snd.snd)))
-  have hpar : Continuous fun g ↦ ((((ρ g).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n),
-      ((ρ g).adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n)),
-      ((τ g : W →L[ℂ] W), ((σ g).symm : V →L[ℂ] V))) := by
-    exact (hρ.continuous_symm_of_monoidHom.prodMk
-      (ContinuousLinearEquiv.continuous_adjointEquiv hρ)).prodMk
-      (hτ.prodMk hσ.continuous_symm_of_monoidHom)
   refine ((hU.continuous_iteratedFDeriv_prod_right k (by simp)).comp
-    ((hpar.comp continuous_fst).prodMk continuous_snd)).congr fun q ↦ ?_
+    (((continuous_symm_prodMk_adjointEquiv_prodMk hρ hσ hτ).comp continuous_fst).prodMk
+      continuous_snd)).congr fun q ↦ ?_
   have hfun : (fun y ↦ U (((((ρ q.1).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n),
       ((ρ q.1).adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n)),
       ((τ q.1 : W →L[ℂ] W), ((σ q.1).symm : V →L[ℂ] V))), y)) =
@@ -381,16 +424,9 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
   -- adjoint of `ρ(g⁻¹)`; all three have norm at most `c`.
   have hsymm : ‖((ρ g).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c := by
     simpa only [map_inv, ContinuousLinearEquiv.inv_eq_symm] using hρc g⁻¹
-  have hinv (ξ : CoordinateSpace n) : ‖ξ‖ ≤ c * ‖(ρ g).adjointEquiv ξ‖ := by
-    calc ‖ξ‖ = ‖((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-          ((ρ g).adjointEquiv ξ)‖ := by
-          rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
-      _ ≤ ‖((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ *
-          ‖(ρ g).adjointEquiv ξ‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ c * ‖(ρ g).adjointEquiv ξ‖ := by
-          gcongr
-          rwa [ContinuousLinearEquiv.adjointEquiv_symm, ContinuousLinearEquiv.norm_adjointEquiv]
-  have hM := hB _ _ hsymm ((ContinuousLinearEquiv.norm_adjointEquiv _).trans_le (hρc g)) hinv
+  have hM := hB _ _ hsymm ((ContinuousLinearEquiv.norm_adjointEquiv _).trans_le (hρc g))
+    (fun ξ ↦ ((ρ g).norm_le_norm_symm_mul_norm_adjointEquiv ξ).trans
+      (mul_le_mul_of_nonneg_right hsymm (norm_nonneg _)))
     x (fun α' β' η ↦ hC α' β' _ hx η) ξ
   rw [coefficient_transport_eq_comp, ContinuousLinearMap.mixedDeriv_comp_left _
     (a.contDiff_coefficient.comp (ContinuousLinearMap.contDiff _))]
@@ -411,7 +447,7 @@ omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- The transported symbols `g • a` satisfy the estimates of order `m` on each compact set of
 positions with constants independent of `g`. -/
-private theorem exists_bound_transport (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+theorem exists_bound_transport (a : Symbol n V W m) (K : Set (CoordinateSpace n))
     (hK : IsCompact K) (α β : List (Fin n)) :
     ∃ B, 0 ≤ B ∧ ∀ g, ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (transport (ρ g) (σ g) (τ g) a).coefficient x ξ‖ ≤
@@ -487,27 +523,10 @@ variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 /-- **The average is invariant.** For a left-invariant measure, transporting the average along
 the action of any `h ∈ G` gives the average back. -/
 theorem transport_average (a : Symbol n V W m) (h : G) :
-    transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a) = average μ hρ hσ hτ a := by
-  refine Symbol.ext (funext fun p ↦ ?_)
-  -- Conjugation by `σ(h)`, `τ(h)` passes through the integral; then the transports compose and
-  -- the measure is invariant under `g ↦ h g`.
-  have hconj (T : V →L[ℂ] W) : (τ h : W →L[ℂ] W) ∘L T ∘L ((σ h).symm : V →L[ℂ] V) =
-      (σ h).arrowCongr (τ h) T :=
-    ContinuousLinearMap.ext fun v ↦ by simp
-  have hgh (g : G) : (σ h).arrowCongr (τ h) ((transport (ρ g) (σ g) (τ g) a).coefficient
-      ((ρ h).symm p.1, (ρ h).adjointEquiv p.2)) =
-      (transport (ρ (h * g)) (σ (h * g)) (τ (h * g)) a).coefficient p := by
-    rw [← hconj, ← coefficient_transport, map_mul, map_mul, map_mul, transport_mul]
-  calc (transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a)).coefficient p
-      = (σ h).arrowCongr (τ h) (∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient
-          ((ρ h).symm p.1, (ρ h).adjointEquiv p.2) ∂μ) := by
-        rw [coefficient_transport, ← hconj, average, coefficient_integral]
-    _ = ∫ g, (transport (ρ (h * g)) (σ (h * g)) (τ (h * g)) a).coefficient p ∂μ := by
-        rw [← ContinuousLinearEquiv.integral_comp_comm]
-        exact integral_congr_ae (Filter.Eventually.of_forall hgh)
-    _ = ∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient p ∂μ :=
-        integral_mul_left_eq_self (fun g ↦ (transport (ρ g) (σ g) (τ g) a).coefficient p) h
-    _ = (average μ hρ hσ hτ a).coefficient p := by rw [average, coefficient_integral]
+    transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
+  Symbol.ext (funext fun p ↦ by
+    simpa only [coefficient_transport, coefficient_average] using
+      comp_integral_transport_comp μ a.coefficient h p)
 
 open scoped FourierTransform in
 /-- **The averaged operator is equivariant.** For a left-invariant measure, the quantization of
