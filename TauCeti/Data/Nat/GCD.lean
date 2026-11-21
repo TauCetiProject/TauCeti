@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 /-!
 # Coprimality and nonzero least common multiples
 
+Shifting an inner summand by `m` preserves coprimality with `m` (`Nat.coprime_add_self_add_right`).
 For `q ≠ 0` and `N ≠ 0`, the natural numbers `q` and `q ^ N - 1` are coprime, because any common
 divisor of `q` and `q ^ N - 1` also divides `q ^ N - (q ^ N - 1) = 1`. This is the coprimality
 needed to view `q` as a unit of `ZMod (q ^ N - 1)`.
@@ -25,10 +26,12 @@ coprime only to `1`.
 
 ## Main results
 
+* `Nat.coprime_add_self_add_right`: shifting an inner summand by `m` preserves coprimality with `m`.
 * `Nat.coprime_pow_sub_one`: `q` is coprime to `q ^ N - 1`.
 * `Nat.neZero_lcm`: `NeZero (lcm m n)` for nonzero `m` and `n`.
 * `Nat.Coprime.eq_one_of_exists_eq_zero`: coprime products and a zero entry in one family force the
   other family to be `1`.
+* `Nat.gcd_mul_right_div_gcd`: `m.gcd (n * k) = m.gcd n * (m / m.gcd n).gcd k`.
 -/
 
 public section
@@ -38,6 +41,11 @@ namespace Nat
 /-- The least common multiple of two nonzero natural numbers is nonzero. -/
 instance neZero_lcm (m n : ℕ) [NeZero m] [NeZero n] : NeZero (lcm m n) :=
   ⟨lcm_ne_zero (NeZero.ne m) (NeZero.ne n)⟩
+
+/-- Shifting an inner summand by `m` preserves coprimality with `m`. -/
+@[simp]
+theorem coprime_add_self_add_right {m n k : ℕ} : Coprime m (n + m + k) ↔ Coprime m (n + k) := by
+  rw [Nat.add_right_comm n m k, coprime_add_self_right]
 
 /-- If `q ≠ 0` and `N ≠ 0`, then `q` is coprime to `q ^ N - 1`. -/
 theorem coprime_pow_sub_one {q N : ℕ} (hq : q ≠ 0) (hN : N ≠ 0) : q.Coprime (q ^ N - 1) :=
@@ -53,5 +61,23 @@ theorem Coprime.eq_one_of_exists_eq_zero {ι : Type*} [Fintype ι] {x y : ι →
   have hx0 : (∏ i, x i) = 0 := Finset.prod_eq_zero (Finset.mem_univ i) hi
   have hy1 : (∏ i, y i) = 1 := (Nat.coprime_zero_left _).mp (hx0 ▸ hc)
   exact funext fun j ↦ Nat.dvd_one.mp (hy1 ▸ Finset.dvd_prod_of_mem y (Finset.mem_univ j))
+
+/-- Factoring `m.gcd n` out of `m.gcd (n * k)`: the remaining common divisor with `k` is the gcd
+with `m / m.gcd n`. -/
+theorem gcd_mul_right_div_gcd (m n k : ℕ) :
+    m.gcd (n * k) = m.gcd n * (m / m.gcd n).gcd k := by
+  rcases Nat.eq_zero_or_pos (m.gcd n) with hg0 | hg
+  · obtain ⟨rfl, rfl⟩ := Nat.gcd_eq_zero_iff.mp hg0
+    simp
+  have hm : m.gcd n * (m / m.gcd n) = m := Nat.mul_div_cancel' (Nat.gcd_dvd_left m n)
+  have hn : m.gcd n * (n / m.gcd n) = n := Nat.mul_div_cancel' (Nat.gcd_dvd_right m n)
+  have hcop : Nat.Coprime (n / m.gcd n) (m / m.gcd n) := (Nat.coprime_div_gcd_div_gcd hg).symm
+  calc m.gcd (n * k)
+      = (m.gcd n * (m / m.gcd n)).gcd (m.gcd n * ((n / m.gcd n) * k)) := by
+          rw [hm, ← mul_assoc, hn]
+    _ = m.gcd n * (m / m.gcd n).gcd ((n / m.gcd n) * k) :=
+          Nat.gcd_mul_left (m.gcd n) (m / m.gcd n) ((n / m.gcd n) * k)
+    _ = m.gcd n * (m / m.gcd n).gcd k := by
+          rw [hcop.gcd_mul_left_cancel_right k]
 
 end Nat

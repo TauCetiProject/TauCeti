@@ -101,7 +101,7 @@ theorem mem_affinePlaneBlowUpLowerCone_iff (x : (Fin 1 → ℝ) × (Fin 1 → �
   rw [affinePlaneBlowUpLowerCone_def, Submodule.mem_span_pair]
   constructor
   · rintro ⟨a, b, rfl⟩
-    simp [← Nonneg.coe_smul, a.2, b.2]
+    simp [← Nonneg.coe_smul, a.property, b.property]
   · rintro ⟨h0, h1⟩
     refine ⟨⟨x.1 0 - x.2 0, sub_nonneg.2 h1⟩, ⟨x.2 0, h0⟩, ?_⟩
     ext j <;> simp [Nonneg.mk_smul, Subsingleton.elim j 0]
@@ -113,7 +113,7 @@ theorem mem_affinePlaneBlowUpUpperCone_iff (x : (Fin 1 → ℝ) × (Fin 1 → �
   rw [affinePlaneBlowUpUpperCone_def, Submodule.mem_span_pair]
   constructor
   · rintro ⟨a, b, rfl⟩
-    simp [← Nonneg.coe_smul, a.2, b.2]
+    simp [← Nonneg.coe_smul, a.property, b.property]
   · rintro ⟨h0, h1⟩
     refine ⟨⟨x.2 0 - x.1 0, sub_nonneg.2 h1⟩, ⟨x.1 0, h0⟩, ?_⟩
     ext j <;> simp [Nonneg.mk_smul, Subsingleton.elim j 0]

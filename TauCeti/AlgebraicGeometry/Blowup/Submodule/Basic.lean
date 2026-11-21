@@ -143,9 +143,10 @@ theorem toSpec_preimage_basicOpen (h : C) :
 
 /-- **The standard opens `D₊(f T)` cover the blowup.** -/
 theorem iSup_basicOpen_eq_top :
-    ⨆ f : F, Proj.basicOpen (gradedRing C F) (monomialDegreeOne C f.2) = ⊤ :=
-  Proj.iSup_basicOpen_eq_top' (gradedRing C F) (fun f : F ↦ monomialDegreeOne C f.2)
-    (fun f ↦ ⟨1, monomialDegreeOne_mem_gradedRing C f.2⟩) (adjoin_monomialDegreeOne_eq_top C F)
+    ⨆ f : F, Proj.basicOpen (gradedRing C F) (monomialDegreeOne C f.property) = ⊤ :=
+  Proj.iSup_basicOpen_eq_top' (gradedRing C F) (fun f : F ↦ monomialDegreeOne C f.property)
+    (fun f ↦ ⟨1, monomialDegreeOne_mem_gradedRing C f.property⟩) (adjoin_monomialDegreeOne_eq_top C
+        F)
 
 /-- The second factor `Spec R(J)₀ ⟶ Spec C` of the structure morphism is a closed immersion. -/
 instance : IsClosedImmersion (Spec.map (R := .of C) (S := .of (gradedRing C F 0))
@@ -427,11 +428,11 @@ theorem isIso_toSpec_restrict (hF : Ideal.span F = ⊤) {U : (Spec (.of C)).Open
   -- Cover `U` by the basic opens `D(h)` contained in it.
   let V (h : {h : C // (PrimeSpectrum.basicOpen h : (Spec (.of C)).Opens) ≤ U}) :
       U.toScheme.Opens :=
-    U.ι ⁻¹ᵁ PrimeSpectrum.basicOpen h.1
+    U.ι ⁻¹ᵁ PrimeSpectrum.basicOpen h.val
   have hV : ⨆ h, V h = ⊤ := by
     refine top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ?_
     obtain ⟨_, ⟨h, rfl⟩, hxh, hhU⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp PrimeSpectrum.isBasis_basic_opens x.2
+      TopologicalSpace.Opens.isBasis_iff_nbhd.mp PrimeSpectrum.isBasis_basic_opens x.property
     exact ⟨⟨h, hhU⟩, hxh⟩
   rw [← MorphismProperty.isomorphisms.iff,
     IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme) V hV]
@@ -441,11 +442,11 @@ theorem isIso_toSpec_restrict (hF : Ideal.span F = ⊤) {U : (Spec (.of C)).Open
   -- Over `D(h) ⊆ U`, the morphism `Spec B ⟶ Spec C` is `Spec` of `C_h → B_h`, so this map is
   -- bijective.
   have hφ : IsIso
-      (Spec.map (CommRingCat.ofHom (algebraMap C B)) ∣_ PrimeSpectrum.basicOpen h.1) :=
+      (Spec.map (CommRingCat.ofHom (algebraMap C B)) ∣_ PrimeSpectrum.basicOpen h.val) :=
     (MorphismProperty.isomorphisms.iff _).mp (IsZariskiLocalAtTarget.restrict_of_le _
-      ((MorphismProperty.isomorphisms.iff _).mpr hU) h.2)
+      ((MorphismProperty.isomorphisms.iff _).mpr hU) h.property)
   have hb := isIso_SpecMap_iff.mp (((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap C B)) h.1)).mp hφ)
+    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap C B)) h.val)).mp hφ)
   exact (MorphismProperty.isomorphisms.iff _).mpr
     (isIso_toSpec_restrict_of_le_basicOpen hF hb (U.ι.image_preimage_le _))
 

@@ -13,7 +13,11 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 This file records closure of `MeasureTheory.NullSingletonClass` under the zero measure, finite
 addition, and scalar multiplication, characterizes when sums and scaled measures have null
 singletons, shows that Dirac measures never have null singletons, and proves that removing
-countably many inputs changes the image of an arbitrary map only on a null set.
+countably many inputs changes the image of an arbitrary map only on a null set. Dually, a map
+injective on a set meets a countable set at a null set of points of that set.
+
+On a metric space any bounded set of diameter zero is a subsingleton and therefore has zero
+restricted measure (`MeasureTheory.Measure.restrict_eq_zero_of_diam_eq_zero`).
 -/
 
 public section
@@ -86,3 +90,19 @@ theorem Set.Countable.image_sdiff_ae_eq {α β : Type*} [MeasurableSpace β]
     rintro y ⟨⟨x, hx, rfl⟩, hn⟩
     exact ⟨x, by by_contra hne; exact hn ⟨x, ⟨hx, hne⟩, rfl⟩, rfl⟩
   · rw [sdiff_eq_empty.mpr (image_mono sdiff_subset), measure_empty]
+
+/-- For a measure with null singletons on a metric space, a bounded set of diameter zero has zero
+restricted measure. -/
+theorem MeasureTheory.Measure.restrict_eq_zero_of_diam_eq_zero {α : Type*} [MetricSpace α]
+    [MeasurableSpace α] {μ : Measure α} [NullSingletonClass μ] {s : Set α}
+    (hs : Bornology.IsBounded s) (hd : Metric.diam s = 0) : μ.restrict s = 0 :=
+  Measure.restrict_eq_zero.2 <|
+    (Set.not_nontrivial_iff.1 fun hn => (Metric.diam_pos hn hs).ne' hd).measure_zero μ
+
+/-- A map injective on `A` meets a countable set `S` at a null set of points of `A`, for a
+measure with null singletons: those points form a countable set, at most one per point of `S`. -/
+theorem Set.InjOn.measure_setOf_mem_eq_zero {α β : Type*} [MeasurableSpace α] {f : α → β}
+    {A : Set α} (hf : InjOn f A) {S : Set β} (hS : S.Countable) {μ : Measure α}
+    [NullSingletonClass μ] : μ {x ∈ A | f x ∈ S} = 0 :=
+  (MapsTo.countable_of_injOn (s := {x ∈ A | f x ∈ S}) (fun _ hx => hx.2)
+    (hf.mono (sep_subset A _)) hS).measure_zero μ

@@ -95,12 +95,13 @@ theorem finite_setOf_nonneg_degree_le (hF : IsFunctionField k F) [Finite k] (n :
     exact hP (mod_cast (degree_le_degree_of_coeff_ne_zero (hle D hD) hne).trans hD.2)
   have : Finite E := by
     refine Finite.of_injective
-      (fun D : E ↦ fun P : S ↦ (⟨(D : Divisor k F).coeff P, hmem D D.2 P⟩ : Set.Icc (0 : ℤ) n)) ?_
+      (fun D : E ↦ fun P : S ↦ (⟨(D : Divisor k F).coeff P, hmem D D.property P⟩ : Set.Icc
+          (0 : ℤ) n)) ?_
     intro D₁ D₂ h
     refine Subtype.ext (WeilDivisor.ext fun P ↦ ?_)
     by_cases hP : P ∈ S
     · exact congrArg Subtype.val (congrFun h ⟨P, hP⟩)
-    · rw [hzero _ D₁.2 P hP, hzero _ D₂.2 P hP]
+    · rw [hzero _ D₁.property P hP, hzero _ D₂.property P hP]
   exact Set.toFinite E
 
 /-! ### The effective representative of a degree-zero class -/
@@ -158,7 +159,8 @@ theorem finite_ker_degreeClass (hF : IsFunctionField k F) [Finite k] :
   have hker : ∀ A : T, (Place.orderSystem hF).divisorClass ((A : Divisor k F) - n • B) ∈
       (Divisor.degreeClass hF).ker := by
     intro A
-    rw [AddMonoidHom.mem_ker, degreeClass_divisorClass, degree_sub, hnB, A.2.2, hmcast, sub_self]
+    rw [AddMonoidHom.mem_ker, degreeClass_divisorClass, degree_sub, hnB, A.property.2, hmcast,
+        sub_self]
   refine Finite.of_surjective (fun A : T ↦ (⟨_, hker A⟩ : (Divisor.degreeClass hF).ker)) ?_
   rintro ⟨c, hc⟩
   obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c

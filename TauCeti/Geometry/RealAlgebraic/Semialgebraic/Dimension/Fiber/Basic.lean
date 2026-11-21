@@ -48,7 +48,7 @@ theorem IsSemialgebraic.semialgebraicDim_image_tail_of_finite
   exact semialgebraicDim_le_of_isEmbedding
     (h𝒞.isEmbedding_tail_of_injOn hE.1
       (h𝒞.injOn_tail_of_finite hE.1 fun x ↦ (hfin x).subset fun _ ht ↦ hE.2 ht))
-    (by rintro _ ⟨x, rfl⟩; exact mem_image_of_mem _ (hE.2 x.2))
+    (by rintro _ ⟨x, rfl⟩; exact mem_image_of_mem _ (hE.2 x.property))
 
 /-- **Finite-fiber dimension theorem for coordinate projections.** A coordinate projection
 with finite fibers on a semialgebraic set preserves dimension. Coordinates may be repeated or

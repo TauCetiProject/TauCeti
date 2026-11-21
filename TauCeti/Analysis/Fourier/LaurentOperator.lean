@@ -87,7 +87,7 @@ theorem apply_fourierBasis_of_commute
     {W : Lp ℂ 2 (haarAddCircle (T := T)) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T))}
     (hW : Commute W (Lp.multiplicationOperator (fourierLp (T := T) ∞ 1))) (n : ℤ) :
     W (fourierBasis n) = fourierLp (T := T) ∞ n • W (fourierBasis 0) := by
-  set U := Lp.multiplicationOperator (E := ℂ) (fourierLp (T := T) ∞ 1)
+  set U := Lp.multiplicationOperator (E := ℂ) (p := 2) (fourierLp (T := T) ∞ 1)
   have hU (f : Lp ℂ 2 (haarAddCircle (T := T))) : U f = fourierLp (T := T) ∞ 1 • f :=
     Lp.multiplicationOperator_apply _ f
   have hU_inj : Function.Injective U :=

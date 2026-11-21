@@ -99,12 +99,12 @@ annihilate the tangent image `di_q (T_q Q)`. For an embedded submanifold this is
 bundle `N*Q ⊆ T*M`. -/
 def conormal (J : ModelWithCorners 𝕜 F H') (I : ModelWithCorners 𝕜 E H) (i : Q → M) :
     Set (CotangentBundle I M) :=
-  {w | ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0}
+  {w | ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0}
 
 /-- A covector is conormal to `i` when it lies over some `i q` and vanishes on the image of
 `di_q`. -/
 theorem mem_conormal_iff {i : Q → M} {w : CotangentBundle I M} :
-    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0 :=
+    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0 :=
   Iff.rfl
 
 /-- A covector is conormal to `i` exactly when the cotangent relation of `i` relates a zero

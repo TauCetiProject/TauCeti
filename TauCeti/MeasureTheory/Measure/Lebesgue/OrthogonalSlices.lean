@@ -332,7 +332,7 @@ theorem volume_hyperplaneSection_pos (e : E) (he : ‖e‖ = 1) {s : Set E} {c :
   dsimp only
   -- The transverse coordinate of `x` lies in the open preimage of the interior of `s`.
   have hU : IsOpen {y : (ℝ ∙ e)ᗮ | (y : E) + ⟪e, x⟫ • e ∈ interior s} :=
-    isOpen_interior.preimage (continuous_subtype_val.add continuous_const)
+    isOpen_interior.preimage (continuous_subtypeVal.add continuous_const)
   refine (hU.measure_pos volume ⟨((orthogonalLineEquiv e he).symm x).1, ?_⟩).trans_le
     (measure_mono fun y (hy : (y : E) + ⟪e, x⟫ • e ∈ interior s) ↦
       (interior_subset hy : (y : E) + ⟪e, x⟫ • e ∈ s))

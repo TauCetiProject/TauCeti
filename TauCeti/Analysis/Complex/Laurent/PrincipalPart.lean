@@ -224,7 +224,7 @@ theorem eventually_circleLaurentCoeff_zero_eq_eval_regularPart
     {c : ℂ} {φ : meromorphicGerms ℂ c} {f : ℂ → ℂ} (hφ : (φ : Germ (𝓝[≠] c) ℂ) = f) :
     ∀ᶠ ρ in 𝓝[>] (0 : ℝ), circleLaurentCoeff f c ρ 0 =
       holomorphicStructureSheaf.eval 𝓘(ℂ) ℂ c (holomorphicStructureSheaf.regularPart c φ) := by
-  have hm : MeromorphicAt f c := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
+  have hm : MeromorphicAt f c := coe_mem_meromorphicGerms.1 (hφ ▸ φ.property)
   obtain ⟨R, hR, han⟩ := EMetric.mem_nhdsWithin_iff.1 hm.eventually_analyticAt
   have hf : DifferentiableOn ℂ f (eball c R \ {c}) := fun z hz =>
     (han ⟨hz.1, hz.2⟩).differentiableAt.differentiableWithinAt
