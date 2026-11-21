@@ -54,47 +54,14 @@ def nonUnitalHolomorphicCalculus (a : A) :
   map_zero' := by simp
   map_add' g₁ g₂ := by simp
   map_mul' g₁ g₂ := by
-    refine ((WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).injective ?_).symm
-    have hvan (g : holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0
+    have hfst (g : holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0
         (quasispectrum.zero_mem ℂ a)) :
-        WithLp.unitizationInrL ℂ A (WithLp.unitizationSndL ℂ A
-          (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-            (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val))) =
-          holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-            (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val) :=
-      unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero a (by simp)
-    calc WithLp.toLp 1 (((WithLp.unitizationSndL ℂ A
-            (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-              (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g₁.val)) *
-            WithLp.unitizationSndL ℂ A
-              (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-                (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g₂.val)) : A) :
-              Unitization ℂ A))
-        = WithLp.unitizationInrL ℂ A (WithLp.unitizationSndL ℂ A
-            (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-              (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g₁.val))) *
-            WithLp.unitizationInrL ℂ A (WithLp.unitizationSndL ℂ A
-              (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-                (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g₂.val))) := by
-            rw [← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul]
-      _ = holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-            (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g₁.val) *
-            holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-              (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g₂.val) := by
-            rw [hvan g₁, hvan g₂]
-      _ = holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-            (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le (g₁ * g₂).val) := by
-            simp [MulMemClass.coe_mul]
-      _ = WithLp.unitizationInrL ℂ A (WithLp.unitizationSndL ℂ A
-            (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-              (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le
-                (g₁ * g₂).val))) :=
-            (hvan (g₁ * g₂)).symm
-      _ = WithLp.toLp 1 ((WithLp.unitizationSndL ℂ A
-            (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
-              (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le
-                (g₁ * g₂).val)) : A) : Unitization ℂ A) :=
-            WithLp.unitizationInrL_apply ℂ A _
+        (WithLp.ofLp (holomorphicCalculus (WithLp.unitizationInrL ℂ A a)
+          (holomorphicGerms.restrict (WithLp.spectrum_unitizationInrL a).le g.val))).fst = 0 := by
+      simpa only [WithLp.unitizationFstA_apply] using
+        (unitizationFstA_holomorphicCalculus_unitizationInrL a _).trans (by simp)
+    simp only [MulMemClass.coe_mul, map_mul, WithLp.unitizationSndL_apply,
+      WithLp.unitization_mul, Unitization.snd_mul, hfst g₁, hfst g₂, zero_smul, zero_add]
 
 /-- Formula for `nonUnitalHolomorphicCalculus a g` via the `ℓ¹` unitization. -/
 theorem nonUnitalHolomorphicCalculus_apply (a : A)

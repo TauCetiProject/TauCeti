@@ -246,6 +246,12 @@ theorem spectrum_unitizationInrL (a : A) :
   dsimp only [e]
   rw [unitizationAlgEquiv_apply, ofLp_toLp, Unitization.quasispectrum_eq_spectrum_inr]
 
+/-- The scalar coordinate of an element of the ℓ¹ unitization lies in its spectrum. -/
+theorem unitizationFstA_mem_spectrum (u : WithLp 1 (Unitization 𝕜 A)) :
+    unitizationFstA 𝕜 A u ∈ spectrum 𝕜 u :=
+  AlgHom.spectrum_apply_subset (unitizationFstA 𝕜 A).toAlgHom u
+    (by simp [spectrum.mem_iff])
+
 /-- Zero belongs to the spectrum of any element embedded into the ℓ¹ unitization. -/
 theorem zero_mem_spectrum_unitizationInrL {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedRing A]
     [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] (a : A) :

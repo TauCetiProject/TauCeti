@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.Spectrum
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
 
 /-!
@@ -13,10 +12,9 @@ public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basi
 
 For an element `a` of a complex Banach algebra, the holomorphic germ calculus
 `holomorphicCalculus a` reflects units: `f(a)` is invertible exactly when the germ `f` has no
-zero on the spectrum of `a`. Consequently the calculus commutes with `Ring.inverse`, it sends
-quotients to products with inverses and so agrees with rational functions whose poles lie off the
-spectrum, it sends `(μ - z)⁻¹` to the resolvent at `μ`, and it satisfies the spectral mapping
-theorem `σ(f(a)) = f(σ(a))`.
+zero on the spectrum of `a`. Consequently the calculus commutes with `Ring.inverse`, sends
+quotients to products with inverses (feeding `TauCeti.holomorphicCalculus_div_polynomial` in
+`Basic.lean`), and satisfies the spectral mapping theorem `σ(f(a)) = f(σ(a))`.
 
 The key step is that a germ vanishing at `λ ∈ σ(a)` factors as `(z - λ) h(z)`, so that
 `f(a) = (a - λ) h(a) = h(a) (a - λ)` cannot be invertible. The zero algebra, where the spectrum
@@ -52,7 +50,8 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 /-- The holomorphic calculus reflects units: if `f(a)` is invertible, then the germ `f` has no
 zero on the spectrum of `a`. -/
 instance isLocalHom_holomorphicCalculus (a : A) : IsLocalHom (holomorphicCalculus a) :=
-  AlgHom.isLocalHom_of_map_ofFun_id (holomorphicCalculus a) (holomorphicCalculus_id a)
+  AlgHom.isLocalHom_of_map_holomorphicGermsOfFun_id (holomorphicCalculus a)
+    (holomorphicCalculus_id a)
 
 /-- `f(a)` is invertible exactly when the germ `f` has no zero on the spectrum of `a`. -/
 theorem isUnit_holomorphicCalculus_iff (a : A) (g : holomorphicGerms (spectrum ℂ a)) :
@@ -96,7 +95,7 @@ theorem holomorphicCalculus_ofFun_div (a : A) {f g : ℂ → ℂ}
     holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ f z / g z) (hf.div hg hne)) =
       holomorphicCalculus a (holomorphicGerms.ofFun f hf) *
         Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun g hg)) :=
-  (holomorphicCalculus a).map_ofFun_div hf hg hne
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_div hf hg hne
 
 /-- **Spectral mapping theorem (open-domain form).** For `f : holomorphicFunctions U` with
 `spectrum ℂ a ⊆ U`, `spectrum ℂ (holomorphicCalculusOn a U ha f) = extend f '' spectrum ℂ a`. -/

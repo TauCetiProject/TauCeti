@@ -63,7 +63,8 @@ theorem toGerm_cauchyKernel {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
     (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
     {V : Opens ℂ} (haV : spectrum ℂ a ⊆ V) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
     Φ (toGerm haV (cauchyKernel V w hw)) = resolvent a w := by
-  rw [HolomorphicFunctions.toGerm_cauchyKernel, Φ.ofFun_sub_inv_eq_resolvent hid]
+  rw [HolomorphicFunctions.toGerm_cauchyKernel,
+    Φ.map_holomorphicGermsOfFun_sub_inv_eq_resolvent hid]
 
 /-- Image of `cauchyRiemannSum` under `Φ ∘ toGerm haV` for any unital complex-algebra homomorphism
 `Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A` sending the coordinate germ to `a`: every Cauchy

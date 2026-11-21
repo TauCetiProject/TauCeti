@@ -307,7 +307,7 @@ theorem holomorphicCalculus_polynomial (a : A) (p : Polynomial ℂ) :
     holomorphicCalculus a
       (holomorphicGerms.ofFun (fun z => p.eval z)
         ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) = Polynomial.aeval a p :=
-  (holomorphicCalculus a).map_ofFun_polynomial (holomorphicCalculus_id a) p
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_polynomial (holomorphicCalculus_id a) p
 
 end TauCeti
 
@@ -452,7 +452,8 @@ the holomorphic germ calculus maps `(w - ·)⁻¹` to `resolvent a w`. -/
 theorem holomorphicCalculus_sub_inv (a : A) (w : ℂ)
     (hf : AnalyticOnNhd ℂ (fun z ↦ (w - z)⁻¹) (spectrum ℂ a)) :
     holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf) = resolvent a w :=
-  (holomorphicCalculus a).ofFun_sub_inv_eq_resolvent (holomorphicCalculus_id a) hf
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_sub_inv_eq_resolvent
+    (holomorphicCalculus_id a) hf
 
 /-- On an open neighbourhood `U` of `spectrum ℂ a` avoiding `w` (witnessed by differentiability of
 `z ↦ (w - z)⁻¹` on `U`), `holomorphicCalculusOn` maps `(w - ·)⁻¹` to `resolvent a w`. -/
@@ -472,7 +473,7 @@ theorem holomorphicCalculus_div_polynomial (a : A) (p q : Polynomial ℂ)
         (((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)).div
           ((AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)) hq)) =
       Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q) := by
-  rw [(holomorphicCalculus a).map_ofFun_div
+  rw [(holomorphicCalculus a).map_holomorphicGermsOfFun_div
       ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))
       ((AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)) hq,
     holomorphicCalculus_polynomial, holomorphicCalculus_polynomial]
