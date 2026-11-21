@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv
 public import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
 
 /-!
 # The genus-one product of a native zero divisor

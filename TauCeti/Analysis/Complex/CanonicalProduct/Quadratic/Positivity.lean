@@ -15,7 +15,7 @@ import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
-import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
 import TauCeti.Analysis.Complex.IteratedDeriv
 
 /-!

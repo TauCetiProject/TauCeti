@@ -11,8 +11,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import TauCeti.Analysis.Analytic.Reflection
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
-import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic
-import TauCeti.Analysis.Complex.CanonicalProduct.QuadraticPositivity
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Positivity
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Factorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.Analysis.Complex.Hadamard.OrderOne

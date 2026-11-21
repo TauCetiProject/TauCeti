@@ -14,8 +14,7 @@ import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 When zeros of an even entire function occur in opposite pairs `±i γ_n` (`γ_n > 0`), the genus-one
 Weierstrass factors multiply to paired quadratic factors `1 + z ^ 2 / γ_n ^ 2`. Under totalized
 division (`z ^ 2 / 0 = 0`), this expression automatically evaluates to `1` at padded `γ_n = 0`
-entries (`z ^ 2 / 0 = 0`), avoiding conditional branching in convergence and
-coefficient proofs.
+entries, avoiding conditional branching in convergence and coefficient proofs.
 
 ## Main results
 
