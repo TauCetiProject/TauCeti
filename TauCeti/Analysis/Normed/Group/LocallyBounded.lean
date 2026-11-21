@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Continuity
-public import Mathlib.Topology.UniformSpace.CompactConvergence
+public import Mathlib.Analysis.Normed.Group.Bounded
+public import TauCeti.Topology.UniformSpace.CompactConvergence
 
 /-!
 # Local boundedness of families on compact sets
@@ -19,8 +19,8 @@ implies a uniform bound at each point.
 For seminormed group targets, total boundedness of the continuous restrictions, for the
 uniformity of compact convergence (whose topology is the compact-open topology), implies local
 boundedness; in particular relative compactness does. This works on an arbitrary topological
-domain: on each compact subset, finitely many continuous maps approximate the whole family
-uniformly, and each of them is bounded there.
+domain: on each compact subset, the values of a totally bounded family form a totally bounded,
+hence bounded, set (`ContinuousMap.totallyBounded_biUnion_image`).
 
 ## Main results
 
@@ -100,22 +100,11 @@ theorem isLocallyBoundedOn_of_totallyBounded_range
   refine isLocallyBoundedOn_def.mpr fun K hKΩ hK => ?_
   have hK' : IsCompact (Subtype.val ⁻¹' K : Set Ω) :=
     Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by rwa [Subtype.range_coe])
-  -- Finitely many continuous maps `g ∈ t` approximate every member of the family within `1`,
-  -- uniformly on `K`.
-  obtain ⟨t, ht, hft⟩ := ContinuousMap.hasBasis_compactConvergenceUniformity.totallyBounded_iff.mp
-    htb (_, _) ⟨hK', Metric.dist_mem_uniformity one_pos⟩
-  -- The values of these finitely many maps on `K` form a compact, hence norm-bounded, set.
-  obtain ⟨C, hC⟩ :=
-    ((ht.isCompact_biUnion fun g _ => hK'.image g.continuous).image continuous_norm).bddAbove
-  refine ⟨C + 1, fun i z hz => ?_⟩
-  obtain ⟨g, hg, hfg⟩ := mem_iUnion₂.mp (hft ⟨i, rfl⟩)
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp
+    (ContinuousMap.totallyBounded_biUnion_image htb hK').isBounded
+  refine ⟨C, fun i z hz => ?_⟩
   have hz' : (⟨z, hKΩ hz⟩ : Ω) ∈ Subtype.val ⁻¹' K := mem_preimage.2 hz
-  have hdist : dist (F i z) (g ⟨z, hKΩ hz⟩) < 1 := by
-    simpa [hf i, domRestrict_apply] using hfg _ hz'
-  calc ‖F i z‖ ≤ ‖g ⟨z, hKΩ hz⟩‖ + 1 := norm_le_norm_add_const_of_dist_le hdist.le
-    _ ≤ C + 1 := by
-      gcongr
-      exact hC (mem_image_of_mem _ (mem_biUnion hg (mem_image_of_mem g hz')))
+  simpa [hf i] using hC _ (mem_biUnion (mem_range_self i) (mem_image_of_mem (f i) hz'))
 
 end GeneralDomain
 

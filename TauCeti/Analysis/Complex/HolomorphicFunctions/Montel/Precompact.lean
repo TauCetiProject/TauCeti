@@ -19,8 +19,9 @@ The compactness equivalence supplies the input for the subsequence selection the
 `HolomorphicFunctions/Montel/Basic.lean`.
 
 The converse is proved in `TauCeti/Analysis/Normed/Group/LocallyBounded.lean` as
-`TauCeti.isLocallyBoundedOn_of_totallyBounded_range`: it is purely topological, holds on any
-topological domain, with values in any seminormed group, and needs only total boundedness.
+`TauCeti.isLocallyBoundedOn_of_totallyBounded_range`: it needs no holomorphicity, holds on any
+topological domain, with values in any seminormed group, and assumes only that the continuous
+restrictions are totally bounded for the uniformity of compact convergence.
 
 The theorems take an ambient family `F` and continuous restrictions `f`, related by
 `⇑(f i) = Ω.domRestrict (F i)`. Given `hF : ∀ i, ContinuousOn (F i) Ω`, one can take
