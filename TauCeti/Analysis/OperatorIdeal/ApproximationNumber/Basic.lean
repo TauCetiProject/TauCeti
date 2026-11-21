@@ -143,9 +143,8 @@ theorem singularValue_eq_zero_of_rank_domain_le (T : E →L[𝕜] F) {n : ℕ}
 @[simp]
 theorem singularValue_zero (T : E →L[𝕜] F) : T.singularValue 0 = ‖T‖₊ := by
   refine (T.singularValue_le_nnnorm 0).antisymm (le_singularValue_iff.mpr fun R hR ↦ ?_)
-  have hR0 : (R : E →ₗ[𝕜] F) = 0 := by
-    simpa [LinearMap.rank, Submodule.rank_eq_zero, LinearMap.range_eq_bot] using hR
-  simp [coe_injective (hR0.trans toLinearMap_zero.symm)]
+  obtain rfl : R = 0 := rank_eq_zero_iff.mp (by simpa using hR)
+  simp
 
 /-- The approximation numbers form an antitone sequence. -/
 theorem antitone_singularValue (T : E →L[𝕜] F) : Antitone T.singularValue :=
@@ -171,9 +170,8 @@ theorem zero_singularValue (n : ℕ) : (0 : E →L[𝕜] F).singularValue n = 0 
 theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
     (S + T).singularValue (m + n) ≤ S.singularValue m + T.singularValue n :=
   NNReal.le_iInf_add_iInf fun R₁ R₂ ↦
-    ((S + T).singularValue_le_nnnorm_sub (R := R₁.val + R₂.val) <| by
-      rw [Nat.cast_add]
-      exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.property R₂.property)).trans <| by
+    ((S + T).singularValue_le_nnnorm_sub (R := R₁.val + R₂.val) <|
+      (rank_add_le_of_le R₁.property R₂.property).trans_eq (Nat.cast_add m n).symm).trans <| by
       rw [add_sub_add_comm]
       exact nnNorm_add_le _ _
 
@@ -206,17 +204,15 @@ theorem continuous_singularValue (n : ℕ) : Continuous fun T : E →L[𝕜] F �
 /-- **Mixed-index product inequality.** `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`. -/
 theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
     (S.comp T).singularValue (m + n) ≤ S.singularValue m * T.singularValue n := by
-  unfold singularValue
-  rw [NNReal.iInf_mul]
+  rw [S.singularValue_def m, T.singularValue_def n, NNReal.iInf_mul]
   refine le_ciInf fun R₁ ↦ ?_
   rw [NNReal.mul_iInf]
   refine le_ciInf fun R₂ ↦ ?_
   -- `S T - (R₁ T + (S - R₁) R₂) = (S - R₁)(T - R₂)`, and the subtracted map has rank `≤ m + n`.
-  have h₂ := (S - R₁.val).rank_comp_le_of_rank_le R₂.property
-  have hrank : (R₁.val.comp T + (S - R₁.val).comp R₂.val).rank ≤ ↑(m + n) := by
-    rw [Nat.cast_add]
-    exact (LinearMap.rank_add_le _ _).trans
-      (add_le_add ((LinearMap.rank_comp_le_left _ _).trans R₁.property) h₂)
+  have h₁ : (R₁.val.comp T).rank ≤ m := (LinearMap.rank_comp_le_left _ _).trans R₁.property
+  have hrank : (R₁.val.comp T + (S - R₁.val).comp R₂.val).rank ≤ ↑(m + n) :=
+    (rank_add_le_of_le h₁ ((S - R₁.val).rank_comp_le_of_rank_le R₂.property)).trans_eq
+      (Nat.cast_add m n).symm
   refine ((S.comp T).singularValue_le_nnnorm_sub hrank).trans ?_
   have : S.comp T - (R₁.val.comp T + (S - R₁.val).comp R₂.val) = (S - R₁.val).comp (T - R₂.val)
       := by
