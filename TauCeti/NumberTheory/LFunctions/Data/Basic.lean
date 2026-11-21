@@ -59,6 +59,10 @@ imposed on the analytic record.
 * `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`, `exists_shift_norm_le`.
 * `HasDirichletAgreement.dual`, `HasMeromorphicContinuation.dual`, `HasFunctionalEquation.dual`.
 * `HasFunctionalEquation.eventuallyEq`: the functional equation as germs at every point.
+* `AnalyticLFunctionData.single_zero_add_single_one_conj`,
+  `AnalyticLFunctionData.single_zero_add_single_one_one_sub_conj`,
+  `AnalyticLFunctionData.hasMeromorphicContinuation_of_simple_poles_zero_one`: shared simple-pole
+  divisor and continuation helpers for `0` and `1`.
 
 ## References
 
@@ -309,6 +313,47 @@ theorem HasFunctionalEquation.eventuallyEq (h : d.HasFunctionalEquation) (s : �
   simp only [Set.mem_sdiff, Set.mem_univ, Set.mem_union, Finset.mem_coe, Finsupp.mem_support_iff,
     Set.mem_preimage, true_and, not_or, not_not] at hz
   exact h.completed_eq z hz.1 hz.2
+
+/-- The simple-pole divisor `Finsupp.single 0 1 + Finsupp.single 1 1` is invariant under complex
+conjugation. -/
+theorem single_zero_add_single_one_conj (s : ℂ) :
+    (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) (conj s) =
+      (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) s := by
+  simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
+    map_eq_one_iff _ (starRingEnd ℂ).injective]
+
+/-- The simple-pole divisor `Finsupp.single 0 1 + Finsupp.single 1 1` is invariant under
+`s ↦ 1 - conj s`. -/
+theorem single_zero_add_single_one_one_sub_conj (s : ℂ) :
+    (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) (1 - conj s) =
+      (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) s := by
+  have e0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
+  have e1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
+  rw [show (1 : ℂ) - conj s = conj (1 - s) by simp, single_zero_add_single_one_conj]
+  simp only [Finsupp.add_apply, Finsupp.single_apply, e0, e1]
+  rw [add_comm]
+
+/-- Construct `HasMeromorphicContinuation` for a card whose polar divisor is
+`Finsupp.single 0 1 + Finsupp.single 1 1` from global meromorphy, simple-pole orders at `0` and
+`1`, and analyticity away from `0` and `1`. -/
+theorem hasMeromorphicContinuation_of_simple_poles_zero_one
+    (hpolar : d.polarOrder = Finsupp.single 0 1 + Finsupp.single 1 1)
+    (hm : Meromorphic d.completed)
+    (h0 : meromorphicOrderAt d.completed 0 = (-1 : ℤ))
+    (h1 : meromorphicOrderAt d.completed 1 = (-1 : ℤ))
+    (ha : ∀ p : ℂ, p ≠ 0 → p ≠ 1 → AnalyticAt ℂ d.completed p) :
+    d.HasMeromorphicContinuation where
+  meromorphic := hm
+  meromorphicOrderAt_eq p hp := by
+    rw [hpolar] at hp ⊢
+    by_cases hp0 : p = 0
+    · subst hp0; simp [h0]
+    by_cases hp1 : p = 1
+    · subst hp1; simp [h1]
+    simp [Ne.symm hp0, Ne.symm hp1] at hp
+  analyticAt p hp := by
+    rw [hpolar] at hp
+    refine ha p ?_ ?_ <;> rintro rfl <;> simp at hp
 
 end AnalyticLFunctionData
 

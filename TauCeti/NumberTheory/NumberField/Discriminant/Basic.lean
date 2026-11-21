@@ -20,8 +20,9 @@ field, and supplies `0 < |(discr K : ℝ)|` directly to analytic class-number bo
 
 * `NumberField.instNeZeroDiscr`: `discr K ≠ 0`, as a `NeZero` instance.
 * `NumberField.instNeZeroNatAbsDiscr`: `(discr K).natAbs ≠ 0`, as a `NeZero` instance.
-* `NumberField.abs_discr_pos` and `NumberField.abs_cast_discr_pos`: `0 < |discr K|` in `ℤ` and in
-  any strict ordered ring.
+* `NumberField.abs_discr_pos`, `NumberField.abs_cast_discr_pos`, and
+  `NumberField.cast_abs_discr_ne_zero`: `0 < |discr K|` in `ℤ` and in any strict ordered ring,
+  and nonvanishing of `((|discr K| : ℤ) : R)` in characteristic zero.
 -/
 
 public section
@@ -49,5 +50,11 @@ theorem abs_cast_discr_pos (K : Type*) [Field K] [NumberField K]
     {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R] :
     0 < |(discr K : R)| :=
   abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K))
+
+/-- The cast of `|discr K|` into any characteristic-zero ring is nonzero. -/
+theorem cast_abs_discr_ne_zero (K : Type*) [Field K] [NumberField K]
+    {R : Type*} [AddGroupWithOne R] [CharZero R] :
+    ((|discr K| : ℤ) : R) ≠ 0 :=
+  Int.cast_ne_zero.mpr (abs_ne_zero.mpr (discr_ne_zero K))
 
 end NumberField
