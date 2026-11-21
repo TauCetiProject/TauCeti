@@ -136,7 +136,7 @@ theorem cubicIncl_mem_cubicFixed {N : ℕ} {x : CubicTorus N} (hx : x ∈ cubicF
 /-- **The restricted tower inclusion** `cubicFixed N →ₐ[ℂ] cubicFixed (N + 1)`. -/
 noncomputable def cubicFixedIncl (N : ℕ) : cubicFixed N →ₐ[ℂ] cubicFixed (N + 1) :=
   ((cubicIncl N).comp (cubicFixed N).val).codRestrict (cubicFixed (N + 1))
-    fun x ↦ cubicIncl_mem_cubicFixed x.2
+    fun x ↦ cubicIncl_mem_cubicFixed x.property
 
 @[simp] theorem coe_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :
     (cubicFixedIncl N x : CubicTorus (N + 1)) = cubicIncl N x := (rfl)
@@ -263,7 +263,7 @@ theorem map_star_mul_self_nonneg_sqrt_three
   rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicFixedHom, map_mul,
     Subalgebra.coe_mul, coe_cubicFixedHom_star, Complex.eq_re_of_ofReal_le hz0,
     ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.zero_le_real]
-  exact mul_nonneg (by positivity) (Complex.nonneg_iff.mp hz).1
+  exact mul_nonneg (by positivity) (Complex.nonneg_iff.mp hz).left
 
 /-- At `δ = √3`, `tr m (star x * x) = 0` if and only if `cubicFixedHom m x = 0`. -/
 theorem map_star_mul_self_eq_zero_iff_cubicFixedHom_eq_zero

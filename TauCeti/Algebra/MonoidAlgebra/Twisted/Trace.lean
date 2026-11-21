@@ -57,12 +57,12 @@ theorem scalarTrace_apply (x : twistedMonoidAlgebra k G α) :
     scalarTrace k G α x = (basis k G α).repr x 1 := (rfl)
 
 @[simp] theorem scalarTrace_one : scalarTrace k G α 1 = 1 := by
-  rw [← of_one, scalarTrace_apply, basis_repr_of, Finsupp.single_eq_same]
+  rw [← of_one, scalarTrace_apply, repr_of, Finsupp.single_eq_same]
 
 /-- On a basis element `of g`, `scalarTrace` detects `g = 1`. -/
 theorem scalarTrace_of (g : G) [Decidable (g = 1)] :
     scalarTrace k G α (of g) = if g = 1 then 1 else 0 := by
-  rw [scalarTrace_apply, basis_repr_of, Finsupp.single_apply]
+  rw [scalarTrace_apply, repr_of, Finsupp.single_apply]
 
 theorem scalarTrace_of_ne_one {g : G} (hg : g ≠ 1) : scalarTrace k G α (of g) = 0 := by
   classical simp [scalarTrace_of, hg]
@@ -99,7 +99,7 @@ variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFact
   induction (basis k G α).mem_span x using Submodule.span_induction with
   | mem _ hx₀ =>
     obtain ⟨h, rfl⟩ := hx₀
-    rw [basis_apply, of_mul_of, map_smul, smul_eq_mul, scalarTrace_of, basis_repr_of,
+    rw [basis_apply, of_mul_of, map_smul, smul_eq_mul, scalarTrace_of, repr_of,
       Finsupp.single_apply, mul_eq_one_iff_eq_inv]
     split_ifs with hh <;> simp [hh]
   | zero => simp
@@ -113,7 +113,7 @@ variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFact
   induction (basis k G α).mem_span x using Submodule.span_induction with
   | mem _ hx₀ =>
     obtain ⟨h, rfl⟩ := hx₀
-    rw [basis_apply, of_mul_of, map_smul, smul_eq_mul, scalarTrace_of, basis_repr_of,
+    rw [basis_apply, of_mul_of, map_smul, smul_eq_mul, scalarTrace_of, repr_of,
       Finsupp.single_apply, mul_eq_one_iff_inv_eq, eq_comm (a := g⁻¹) (b := h)]
     split_ifs with hh <;> simp [hh]
   | zero => simp

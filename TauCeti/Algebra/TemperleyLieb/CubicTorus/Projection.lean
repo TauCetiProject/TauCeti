@@ -442,7 +442,7 @@ theorem cubicFixedHom_surjective (m : ℕ) : Function.Surjective (cubicFixedHom 
         rwa [smul_smul, inv_mul_cancel₀ hsqrt, one_smul] at hres)
     exact hadj.trans (adjoin_range_cubicProjection (m - 1))
   intro y
-  obtain ⟨x, hx⟩ : (y : CubicTorus (m - 1)) ∈ Φ.range := hrange.symm ▸ y.2
+  obtain ⟨x, hx⟩ : (y : CubicTorus (m - 1)) ∈ Φ.range := hrange.symm ▸ y.property
   exact ⟨x, Subtype.ext hx⟩
 
 end TauCeti.TemperleyLieb

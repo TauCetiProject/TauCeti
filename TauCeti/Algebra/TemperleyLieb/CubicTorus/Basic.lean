@@ -629,20 +629,20 @@ theorem cubicAdjoint_mem_cubicFixed {N : ℕ} {x : CubicTorus N} (hx : x ∈ cub
 
 /-- Restriction of `cubicAdjoint N` to the inversion-fixed subalgebra `cubicFixed N`. -/
 noncomputable def cubicFixedAdjoint (N : ℕ) : cubicFixed N →ₗ⋆[ℂ] cubicFixed N where
-  toFun x := ⟨cubicAdjoint N x.1, cubicAdjoint_mem_cubicFixed x.2⟩
-  map_add' x y := Subtype.ext (map_add (cubicAdjoint N) x.1 y.1)
-  map_smul' c x := Subtype.ext (map_smulₛₗ (cubicAdjoint N) c x.1)
+  toFun x := ⟨cubicAdjoint N x.val, cubicAdjoint_mem_cubicFixed x.property⟩
+  map_add' x y := Subtype.ext (map_add (cubicAdjoint N) x.val y.val)
+  map_smul' c x := Subtype.ext (map_smulₛₗ (cubicAdjoint N) c x.val)
 
 @[simp] theorem coe_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
     (cubicFixedAdjoint N x : CubicTorus N) = cubicAdjoint N x := (rfl)
 
 @[simp] theorem cubicFixedAdjoint_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
     cubicFixedAdjoint N (cubicFixedAdjoint N x) = x :=
-  Subtype.ext (TwistedMonoidAlgebra.conjReverse_conjReverse x.1)
+  Subtype.ext (TwistedMonoidAlgebra.conjReverse_conjReverse x.val)
 
 theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
     cubicFixedAdjoint N (x * y) = cubicFixedAdjoint N y * cubicFixedAdjoint N x :=
-  Subtype.ext (cubicAdjoint_mul N x.1 y.1)
+  Subtype.ext (cubicAdjoint_mul N x.val y.val)
 
 /-- **Dimension of the inversion-fixed subalgebra**: `dim_ℂ (cubicFixed N) = (3 ^ N + 1) / 2`. -/
 @[simp] theorem finrank_cubicFixed (N : ℕ) : Module.finrank ℂ (cubicFixed N) = (3 ^ N + 1) / 2 := by
@@ -668,7 +668,7 @@ theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
     rw [_root_.LinearMap.toMatrix_apply, TwistedMonoidAlgebra.basis_apply]
     dsimp only [θ, σ, Equiv.Perm.permMatrix]
     rw [AlgHom.toLinearMap_apply, ← weyl_def, cubicInversion_weyl, weyl_def,
-      TwistedMonoidAlgebra.basis_repr_of, Finsupp.single_apply, PEquiv.toMatrix_apply]
+      TwistedMonoidAlgebra.repr_of, Finsupp.single_apply, PEquiv.toMatrix_apply]
     simp [Equiv.toPEquiv_apply, inv_eq_iff_eq_inv, eq_comm (a := i)]
   have hfix : Function.fixedPoints σ = {1} := by
     ext a
