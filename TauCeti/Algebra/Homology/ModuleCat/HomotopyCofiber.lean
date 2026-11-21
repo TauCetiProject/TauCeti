@@ -272,7 +272,7 @@ theorem homotopyCofiber.range_inrX_comp_subtype
   · -- Every cycle `z` of `C` is `ζ x` minus a boundary `d l`.
     rintro _ ⟨z, rfl⟩
     obtain ⟨x, hx⟩ := (hζ j).2 (C.homologyπ j
-      (C.moduleCatCyclesMk z (j - 1) (ChainComplex.next ℤ j) (LinearMap.mem_ker.1 z.2)))
+      (C.moduleCatCyclesMk z (j - 1) (ChainComplex.next ℤ j) (LinearMap.mem_ker.1 z.property)))
     rw [moduleCatHomologyClass_apply, C.moduleCat_homologyπ_eq_iff (ChainComplex.prev ℤ j),
       iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk] at hx
     obtain ⟨l, hl⟩ := hx

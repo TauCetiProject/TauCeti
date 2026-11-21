@@ -170,15 +170,15 @@ def mk (s : ∀ x, E x) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
 
 /-- A representative section of a class in `Lᵖ(E, μ)`. -/
 instance : CoeFun (LpSection 𝕜 F E p μ) (fun _ ↦ ∀ x, E x) :=
-  ⟨fun f ↦ (Quotient.out f : memLpSections 𝕜 F E p μ).1⟩
+  ⟨fun f ↦ (Quotient.out f : memLpSections 𝕜 F E p μ).val⟩
 
 variable (f g : LpSection 𝕜 F E p μ)
 
 theorem aestronglyMeasurableSection : AEStronglyMeasurableSection 𝕜 F μ f :=
-  (Quotient.out f : memLpSections 𝕜 F E p μ).2.1
+  (Quotient.out f : memLpSections 𝕜 F E p μ).property.1
 
 theorem memLp_norm : MemLp (fun x ↦ ‖f x‖) p μ :=
-  (Quotient.out f : memLpSections 𝕜 F E p μ).2.2
+  (Quotient.out f : memLpSections 𝕜 F E p μ).property.2
 
 theorem aestronglyMeasurable_norm : AEStronglyMeasurable (fun x ↦ ‖f x‖) μ :=
   (memLp_norm f).aestronglyMeasurable

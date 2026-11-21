@@ -136,7 +136,7 @@ theorem isUnit_iff_norm_ne_zero {x : mixedSpace K} :
   refine ⟨fun h ↦ (h.map mixedEmbedding.norm).ne_zero, fun hx ↦ ?_⟩
   rw [mixedEmbedding.norm_ne_zero_iff] at hx
   refine Prod.isUnit_iff.mpr ⟨Pi.isUnit_iff.mpr fun w ↦ ?_, Pi.isUnit_iff.mpr fun w ↦ ?_⟩
-  · simpa [normAtPlace_apply_of_isReal w.2] using hx w.1
-  · simpa [normAtPlace_apply_of_isComplex w.2] using hx w.1
+  · simpa [normAtPlace_apply_of_isReal w.property] using hx w.val
+  · simpa [normAtPlace_apply_of_isComplex w.property] using hx w.val
 
 end TauCeti.NumberField.mixedEmbedding

@@ -106,7 +106,8 @@ theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
     have hgram (W : unitaryGroup n ℂ) :
         (((Unitary.toUnits W : GL n ℂ) : Matrix n n ℂ)ᴴ * (Unitary.toUnits W : GL n ℂ)).map
           Complex.re = 1 := by
-      rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
+      rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose,
+          Unitary.star_mul_self_of_mem W.property,
         Matrix.map_one _ Complex.zero_re Complex.one_re]
     obtain ⟨N, hN, hVN⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
       (M := Unitary.toUnits U) (M' := Unitary.toUnits V)
@@ -160,7 +161,7 @@ noncomputable def realImagePath {U V : unitaryGroup n ℂ} (γ : Path U V) :
   exists_frame := ⟨TauCeti.realSubspace n, TauCeti.isMaximalTotallyReal_realSubspace,
     fun t ↦ (γ t : Matrix n n ℂ).toEuclideanCLE (det_isUnit (γ t)).ne_zero,
     by simpa only [coe_toEuclideanCLE, Function.comp_def] using
-      continuous_toEuclideanCLM.comp (continuous_subtype_val.comp γ.continuous),
+      continuous_toEuclideanCLM.comp (continuous_subtypeVal.comp γ.continuous),
     fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
 
 @[simp]

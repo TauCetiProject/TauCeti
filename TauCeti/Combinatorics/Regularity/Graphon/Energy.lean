@@ -99,11 +99,11 @@ theorem blockAverage_cellPartition_finiteGraphGraphon (G : SimpleGraph (Fin m))
     [DecidableRel G.Adj] (P : Finpartition (univ : Finset (Fin m))) (A B : P.parts) :
     blockAverage P.cellPartition (finiteGraphGraphon G)
         (P.partsCellPartitionEquiv A) (P.partsCellPartitionEquiv B) =
-      G.edgeDensityIcc A.1 B.1 := by
+      G.edgeDensityIcc A.val B.val := by
   apply Subtype.ext
   rw [coe_blockAverage, coe_edgeDensityIcc, P.partsCellPartitionEquiv_apply_coe,
     P.partsCellPartitionEquiv_apply_coe]
-  exact G.setAverage_finiteGraphGraphon_preimage A.1 B.1
+  exact G.setAverage_finiteGraphGraphon_preimage A.val B.val
 
 /-- **Compatibility of `stepGraphonAvg` and `stepGraphonOfFinpartition` on finite graphs.** Over
 `P.cellPartition`, the block-average step graphon of `finiteGraphGraphon G` is
@@ -112,8 +112,8 @@ theorem stepGraphonAvg_finiteGraphGraphon_eq_stepGraphonOfFinpartition (G : Simp
     [DecidableRel G.Adj] (P : Finpartition (univ : Finset (Fin m)))
     {hP : ∀ p ∈ P.cellPartition.parts, MeasurableSet p} :
     stepGraphonAvg (μ := volume) P.cellPartition hP (finiteGraphGraphon G) =
-      stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
-        (fun A B => G.edgeDensityIcc_comm A.1 B.1) := by
+      stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.val B.val)
+        (fun A B => G.edgeDensityIcc_comm A.val B.val) := by
   rw [stepGraphonAvg_cellPartition_eq_stepGraphonOfFinpartition]
   exact (stepGraphonOfFinpartition_inj P _ _ _ _).2
     (funext fun A => funext fun B => G.blockAverage_cellPartition_finiteGraphGraphon P A B)
@@ -123,7 +123,7 @@ recovers `finiteGraphGraphon G`. -/
 theorem stepGraphonOfFinpartition_bot_edgeDensityIcc (G : SimpleGraph (Fin m))
     [DecidableRel G.Adj] :
     stepGraphonOfFinpartition (⊥ : Finpartition (univ : Finset (Fin m)))
-        (fun A B => G.edgeDensityIcc A.1 B.1) (fun A B => G.edgeDensityIcc_comm A.1 B.1) =
+        (fun A B => G.edgeDensityIcc A.val B.val) (fun A B => G.edgeDensityIcc_comm A.val B.val) =
       finiteGraphGraphon G := by
   ext x y
   have hcell (z : I) : (⟨cellIdx m z, cellIdx_lt (NeZero.pos m) z⟩ : Fin m) = cellFin m z :=

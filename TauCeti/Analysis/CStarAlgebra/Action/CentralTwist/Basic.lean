@@ -419,11 +419,11 @@ def scalar (α : CStarAction G A) (c : G → G → unitary ℂ)
   strict_left a := by
     simp only [Unitary.coe_smul, Submonoid.coe_one, DoubleCentralizer.smul_fst,
       DoubleCentralizer.one_fst]
-    exact (continuous_subtype_val.comp hcont).smul continuous_const
+    exact (continuous_subtypeVal.comp hcont).smul continuous_const
   strict_right a := by
     simp only [Unitary.coe_smul, Submonoid.coe_one, DoubleCentralizer.smul_snd,
       DoubleCentralizer.one_snd]
-    exact (continuous_subtype_val.comp hcont).smul continuous_const
+    exact (continuous_subtypeVal.comp hcont).smul continuous_const
 
 @[simp]
 theorem scalar_value (α : CStarAction G A) (c : G → G → unitary ℂ)

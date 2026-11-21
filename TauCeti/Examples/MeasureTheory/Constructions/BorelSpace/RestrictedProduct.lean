@@ -142,7 +142,7 @@ theorem not_measurableSet_singleton_zero_generateFrom_cosets_zmod4 :
       rintro _ ⟨_, ⟨z, rfl⟩, rfl⟩
       let z' : Πʳ _ : ℕ, [ZMod 4, (twoZMod4 : Set (ZMod 4))]_[𝓟 S] :=
         RestrictedProduct.mk (fun k ↦ z k + 2)
-          (z.2.mono fun _ hk ↦ add_mem hk (AddSubgroup.mem_zmultiples 2))
+          (z.property.mono fun _ hk ↦ add_mem hk (AddSubgroup.mem_zmultiples 2))
       refine ⟨_, ⟨z', rfl⟩, ?_⟩
       ext k
       simp [z', c₂, add_assoc]

@@ -29,6 +29,8 @@ surjective, which removes the closure from Mathlib's general identity
   operator to the orthogonal complement of its kernel.
 * `ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range`: the
   closed-range theorem for adjoints.
+* `ContinuousLinearMap.range_eq_orthogonal_ker_adjoint_of_isClosed_range`: a closed range is the
+  orthogonal complement of the adjoint kernel.
 * `ContinuousLinearMap.isClosed_range_adjoint_iff`: an operator has closed range if and
   only if its adjoint does.
 * `ContinuousLinearMap.rank_adjoint_le_iff`: an operator has rank at most `n` if and only if
@@ -71,7 +73,7 @@ noncomputable def _root_.ContinuousLinearMap.orthogonalKerEquivRange (T : E →L
   letI : CompleteSpace R := hT.completeSpace_coe
   exact (LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] F)
     K.isCompl_orthogonal.symm).toContinuousLinearEquivOfContinuous
-      ((T.continuous.comp continuous_subtype_val).subtype_mk _)
+      ((T.continuous.comp continuous_subtypeVal).subtype_mk _)
 
 /-- The closed-range restriction equivalence acts by the original operator. -/
 @[simp]
@@ -86,7 +88,7 @@ theorem _root_.ContinuousLinearMap.orthogonalKerEquivRange_apply (T : E →L[�
   let e := LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] F)
     (LinearMap.ker (T : E →ₗ[𝕜] F)).isCompl_orthogonal.symm
   let he : Continuous e :=
-    (T.continuous.comp continuous_subtype_val).subtype_mk _
+    (T.continuous.comp continuous_subtypeVal).subtype_mk _
   -- Expose the `LinearEquiv` underlying the continuous wrapper so its application lemma applies.
   change ((e.toContinuousLinearEquivOfContinuous he x :
     LinearMap.range (T : E →ₗ[𝕜] F)) : F) = T x
@@ -154,6 +156,14 @@ theorem _root_.ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_r
     exact T.adjoint_apply_mem_orthogonal_ker y
   · obtain ⟨y, hy⟩ := ContinuousLinearMap.codRestrict_domRestrict_adjoint_surjective T hT ⟨x, hx⟩
     exact ⟨(y : F), congr_arg Subtype.val hy⟩
+
+/-- A continuous linear map with closed range has range equal to the orthogonal complement of
+the kernel of its adjoint. -/
+theorem _root_.ContinuousLinearMap.range_eq_orthogonal_ker_adjoint_of_isClosed_range
+    (T : E →L[𝕜] F) (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
+    LinearMap.range (T : E →ₗ[𝕜] F) = (LinearMap.ker (T† : F →ₗ[𝕜] E))ᗮ := by
+  have : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) := hT.completeSpace_coe
+  rw [← T.orthogonal_range, Submodule.orthogonal_orthogonal]
 
 /-- If a continuous linear map between Hilbert spaces has closed range, then so does its
 adjoint. -/
