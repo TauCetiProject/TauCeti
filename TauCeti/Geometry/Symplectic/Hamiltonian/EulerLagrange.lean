@@ -222,8 +222,9 @@ theorem energy_eq_of_eulerLagrange {L : E × E → ℝ} {q v : ℝ → E}
   -- The energy balance for the constant family `fun _ ↦ L`, whose time derivative vanishes.
   have hderiv (r : ℝ) : HasDerivAt
       (fun s ↦ fderiv ℝ (fun u ↦ L (q s, u)) (v s) (v s) - L (q s, v s)) 0 r := by
-    have hL' : DifferentiableAt ℝ (Function.uncurry fun _ : ℝ ↦ L) (r, (q r, v r)) :=
-      (hL r).comp (r, (q r, v r)) differentiableAt_snd
+    have hL' : DifferentiableAt ℝ (Function.uncurry fun _ : ℝ ↦ L) (r, (q r, v r)) := by
+      simpa only [Function.uncurry_def, Function.comp_def] using
+        (hL r).comp (r, (q r, v r)) differentiableAt_snd
     have h := hasDerivAt_energy_of_eulerLagrange (L := fun _ ↦ L) (hq r) (hEL r) hL' (hv r)
     rwa [(hasDerivAt_parameterCurve hL').unique (hasDerivAt_const r (L (q r, v r))),
       neg_zero] at h
