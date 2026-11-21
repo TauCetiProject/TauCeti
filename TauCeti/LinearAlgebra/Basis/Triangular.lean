@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
 # Flags of triangular bases
@@ -22,6 +22,8 @@ vanishing `b`-coordinates from the `j`-th on.
 For a linearly ordered index type, a family `v` is triangular with respect to a basis `b` with
 diagonal coefficients `c` when each `v i - c i • b i` is a combination of the `b j` with `j < i`.
 Its matrix in `b` is then upper triangular, so its determinant in `b` is the product of the `c i`.
+In the same way, an endomorphism `f` with each `f (b j) - c j • b j` in the span of the earlier
+basis vectors has an upper-triangular matrix in `b` with diagonal `c`.
 
 ## Main results
 
@@ -33,6 +35,10 @@ Its matrix in `b` is then upper triangular, so its determinant in `b` is the pro
   positive diagonal coefficients has positive determinant.
 * `Module.Basis.det_pos_of_sub_smul_mem_span_image_fst_lt`: the same for a family indexed by a
   product `ι × κ`, triangular with respect to the order on the first factor only.
+* `Module.Basis.toMatrix_isUpperTriangular_of_sub_smul_mem_flag` and
+  `Module.Basis.toMatrix_apply_self_of_sub_smul_mem_flag`: an endomorphism that is triangular with
+  respect to the flag of a basis has an upper-triangular matrix in that basis, with the given
+  diagonal.
 -/
 
 public section
@@ -113,5 +119,38 @@ theorem det_pos_of_sub_smul_mem_span_image_fst_lt (b : Basis (ι × κ) R M) {v 
   exact ⟨toLex q, Prod.Lex.toLex_lt_toLex.2 (.inl hq), by simp⟩
 
 end Prod
+
+section Flag
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ}
+  (b : Basis (Fin n) R M) {f : M →ₗ[R] M} {c : Fin n → R}
+
+/-- On and below the diagonal, the matrix of an endomorphism `f` that is triangular with respect to
+the flag of `b`, with diagonal coefficients `c`, is that of `j ↦ c j • b j`. -/
+private theorem toMatrix_apply_of_sub_smul_mem_flag
+    (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) {i j : Fin n} (hji : j ≤ i) :
+    LinearMap.toMatrix b b f i j = c j * Finsupp.single j 1 i := by
+  have hi := b.mem_flag_iff_repr_eq_zero.mp (h j) i (Fin.castSucc_le_castSucc_iff.mpr hji)
+  simp only [map_sub, map_smul, repr_self, Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul,
+    sub_eq_zero] at hi
+  rw [LinearMap.toMatrix_apply, hi]
+
+/-- The matrix of an endomorphism `f` in a basis `b` is upper triangular when each `f (b j)` is a
+multiple of `b j` modulo the span `b.flag j.castSucc` of the earlier basis vectors. -/
+theorem toMatrix_isUpperTriangular_of_sub_smul_mem_flag
+    (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) :
+    (LinearMap.toMatrix b b f).IsUpperTriangular := by
+  -- `IsUpperTriangular` is `BlockTriangular · id`, so its hypothesis `id j < id i` is `j < i`
+  intro i j (hji : j < i)
+  rw [toMatrix_apply_of_sub_smul_mem_flag b h hji.le, Finsupp.single_eq_of_ne hji.ne', mul_zero]
+
+/-- The diagonal of the matrix of an endomorphism `f` in a basis `b` is `c` when each
+`f (b j) - c j • b j` lies in the span `b.flag j.castSucc` of the earlier basis vectors. -/
+theorem toMatrix_apply_self_of_sub_smul_mem_flag
+    (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) (i : Fin n) :
+    LinearMap.toMatrix b b f i i = c i := by
+  rw [toMatrix_apply_of_sub_smul_mem_flag b h le_rfl, Finsupp.single_eq_same, mul_one]
+
+end Flag
 
 end Module.Basis
