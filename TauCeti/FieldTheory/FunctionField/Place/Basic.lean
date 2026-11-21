@@ -441,18 +441,6 @@ theorem isUnit_iff_ord_eq_zero {x : P.integers} (hx : (x : F) ≠ 0) :
     IsUnit x ↔ P.ord (x : F) = 0 :=
   Valuation.isUnit_iff_ord_eq_zero P.valuation hx
 
-/-- An element `x` of `F` has order zero at `P` if and only if both `x` and `x⁻¹` lie in `𝒪_P`
-(this also holds for `x = 0`, since `ord_P 0 = 0` and `0⁻¹ = 0 ∈ 𝒪_P`). -/
-theorem ord_eq_zero_iff_mem_integers_and_inv_mem {x : F} :
-    P.ord x = 0 ↔ x ∈ P.integers ∧ x⁻¹ ∈ P.integers := by
-  rw [P.mem_integers_iff_ord_nonneg, P.mem_integers_iff_ord_nonneg, P.ord_inv]
-  omega
-
-/-- If both `x` and `x⁻¹` lie in the valuation ring `𝒪_P`, then `ord_P x = 0`. -/
-theorem ord_eq_zero_of_mem_integers_of_inv_mem {x : F} (hx : x ∈ P.integers)
-    (hinv : x⁻¹ ∈ P.integers) : P.ord x = 0 :=
-  P.ord_eq_zero_iff_mem_integers_and_inv_mem.mpr ⟨hx, hinv⟩
-
 /-- **Existence half of Stichtenoth, Theorem 1.1.6(b)**: relative to a prime element `t` for
 `P`, every nonzero `f : F` is `t ^ (ord_P f)` times a unit of `𝒪_P`. -/
 theorem exists_eq_zpow_mul_unit {t : F} (ht : P.valuation.IsUniformizer t) {f : F} (hf : f ≠ 0) :

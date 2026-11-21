@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
 import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Decomposition
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
 
 /-!
@@ -62,6 +63,8 @@ coefficients of its minimal polynomial over `k(t)` are fixed by `U(X, P)`.
 * `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_le_finrank` and
   `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_ne_zero`: over a rational point the
   index of `U(X, P)` in `U(X)` is finite, at most the degree of `X`.
+* `TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois`: for a Galois pair
+  and a place over a rational point, `U(X, P) = U(X)`.
 * `TauCeti.AlgebraicBelyiPair.eq_of_smul_eq_self_of_snd_eq`: a semilinear automorphism fixing an
   unramified place of relative degree one is determined by its action on `k`.
 
@@ -379,6 +382,43 @@ theorem snd_pointedStabilizerEquiv_symm_apply (g : pointedStabilizer X P) :
   rw [← coe_pointedStabilizerEquiv_apply he hf, MulEquiv.apply_symm_apply]
 
 end Unramified
+
+/-! ### Galois Belyi pairs -/
+
+section Galois
+
+variable (X) [IsGalois (RatFunc k) X]
+
+/-- **For a Galois Belyi pair, the pointed stabilizer at any place over a rational point equals the
+full stabilizer of the isomorphism class.** Any semilinear automorphism moves `P` to another place
+in the same rational fibre, and Galois transitivity over `k(t)` restores `P`. -/
+theorem pointedStabilizer_eq_stabilizer_of_isGalois {P : Place k X} {q : ℚ}
+    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
+    X.pointedStabilizer P = MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X) := by
+  refine le_antisymm (X.pointedStabilizer_le_stabilizer P) fun g hg ↦ ?_
+  rw [← X.map_snd_semilinearAut, Subgroup.mem_map] at hg
+  obtain ⟨p, hp, hpg⟩ := hg
+  have hfib : ((⟨p, hp⟩ : X.semilinearAut) • P).restrict k (RatFunc k) =
+      P.restrict k (RatFunc k) := by
+    rw [restrict_smul, hPa, Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C,
+      map_ratCast]
+  obtain ⟨σ, hσ⟩ := Place.exists_smul_eq_of_restrict_eq hfib
+  have hs : (σ.toRingEquiv, (1 : k ≃ₐ[ℚ] k)) ∈ X.semilinearAut :=
+    mem_semilinearAut_iff.mpr fun r ↦ by
+      rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, AlgEquiv.toRingEquiv_one,
+        RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]
+  let s : X.semilinearAut := ⟨(σ.toRingEquiv, 1), hs⟩
+  have hs_smul : ∀ Q : Place k X, s • Q = σ • Q := fun Q ↦
+    Place.ext <| Valuation.ext fun z ↦ by
+      rw [valuation_smul, Place.valuation_smul]
+      dsimp only [s]
+      rw [← AlgEquiv.symm_toRingEquiv, AlgEquiv.coe_toRingEquiv]
+  rw [pointedStabilizer_def, Subgroup.mem_map]
+  refine ⟨s * ⟨p, hp⟩, ?_, ?_⟩
+  · rw [MulAction.mem_stabilizer_iff, mul_smul, hs_smul, hσ]
+  · simpa [s] using hpg
+
+end Galois
 
 end AlgebraicBelyiPair
 

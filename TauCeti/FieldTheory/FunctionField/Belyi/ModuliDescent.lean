@@ -5,16 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.FieldTheory.FunctionField.Belyi.CoefficientDescent
 public import TauCeti.FieldTheory.FunctionField.Belyi.Model
-import TauCeti.Algebra.Algebra.Equiv
-import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
-import TauCeti.FieldTheory.FunctionField.Place.Degree
+import TauCeti.FieldTheory.FunctionField.Belyi.Model.AdjoinSimple
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
-import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -29,7 +23,8 @@ lying over an unbranched rational point `t = q` (`q ∈ ℚ \ {0, 1}`). In
 `U(X, P) ≤ Aut(k)`.
 
 This file promotes that descended equation to a genuine **model** of `X` over `K`
-(`TauCeti.AlgebraicBelyiPair.pointedModel`) and deduces **Köck's Theorem 2.2**:
+(`TauCeti.AlgebraicBelyiPair.pointedModel`) via `TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple`
+and deduces **Köck's Theorem 2.2**:
 
 1. Because `[K(t)(z) : K(t)] = [F : k(t)]` and `K(t)(z) · k = F`, the image of `k` is linearly
    disjoint from `K(t)(z)` over `K` (`TauCeti.linearDisjoint_of_finrank_ratFunc_eq`),
@@ -44,12 +39,12 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
    defined over a finite extension of `c.fieldOfModuli` of degree at most `c.degree`
    (`TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`, Köck's
    Theorem 2.2(a)).
-4. When `F / k(t)` is Galois, deck automorphisms act transitively on the fibre over `t = q`, so
-   every semilinear automorphism of `X` can be corrected by a deck automorphism to fix `P`. Hence
-   `U(X, P) = U(X)` (`TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois`),
-   `K` is the field of moduli itself, and over an algebraically closed field `X` is defined over
-   its field of moduli (`TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`,
-   Köck's Theorem 2.2(b)).
+4. When `F / k(t)` is Galois, `U(X, P) = U(X)`
+   (`TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois`), so `K` is the field
+   of moduli itself
+   (`TauCeti.AlgebraicBelyiPair.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois`), and over an
+   algebraically closed field `X` is defined over its field of moduli
+   (`TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`, Köck's Theorem 2.2(b)).
 
 ## Main definitions
 
@@ -66,10 +61,6 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
   `TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`: **Köck's
   Theorem 2.2(a)**, every Belyi pair over an algebraically closed field of characteristic zero is
   defined over a finite extension of its field of moduli of degree at most the Belyi degree.
-* `TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois` and
-  `TauCeti.AlgebraicBelyiPair.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois`: for a Galois
-  Belyi pair and a place over a rational point, the pointed stabilizer and pointed field of moduli
-  agree with the unpointed ones.
 * `TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_fieldOfModuli_of_isGalois`: **Köck's
   Theorem 2.2(b)**, every Galois Belyi pair over an algebraically closed field of characteristic
@@ -94,59 +85,6 @@ variable {k : Type u} [Field k] [CharZero k]
 section PointedModel
 
 variable (X : AlgebraicBelyiPair k)
-
-/-- Auxiliary construction promoting a primitive element `z` of `X / k(t)` that is integral over
-`K(t)` of full degree `[K(t)⟮z⟯ : K(t)] = [X : k(t)]` to a model of `X` over `K`. -/
-private noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algebra K k]
-    [Algebra (RatFunc K) (RatFunc k)]
-    [Algebra (RatFunc K) X] [IsScalarTower (RatFunc K) (RatFunc k) X]
-    (hC : ∀ c : K,
-      algebraMap (RatFunc K) (RatFunc k) (algebraMap K (RatFunc K) c) =
-        algebraMap k (RatFunc k) (algebraMap K k c))
-    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
-    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤) (hz_int : IsIntegral (RatFunc K) z)
-    (hfinrank : Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
-    { M : Model K X // Module.finrank (RatFunc K) M.pair = Module.finrank (RatFunc k) X } :=
-  letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
-  haveI : IsScalarTower K k X := IsScalarTower.of_algebraMap_eq' rfl
-  haveI : IsScalarTower K (RatFunc K) X :=
-    IsScalarTower.of_algebraMap_eq (R := K) (S := RatFunc K) (A := X) fun c ↦ by
-      rw [IsScalarTower.algebraMap_apply K k X,
-        IsScalarTower.algebraMap_apply k (RatFunc k) X,
-        ← hC c, ← IsScalarTower.algebraMap_apply (RatFunc K) (RatFunc k) X]
-  let E : IntermediateField (RatFunc K) X := (RatFunc K)⟮z⟯
-  letI : Algebra K E := ((algebraMap (RatFunc K) E).comp (algebraMap K (RatFunc K))).toAlgebra
-  haveI : IsScalarTower K (RatFunc K) E := IsScalarTower.of_algebraMap_eq' rfl
-  haveI : IsScalarTower K E X :=
-    IsScalarTower.of_algebraMap_eq (R := K) (S := E) (A := X) fun c ↦ by
-      rw [IsScalarTower.algebraMap_apply K (RatFunc K) X,
-        IsScalarTower.algebraMap_apply (RatFunc K) E X,
-        ← IsScalarTower.algebraMap_apply K (RatFunc K) E]
-  haveI : FiniteDimensional (RatFunc K) E := IntermediateField.adjoin.finiteDimensional hz_int
-  have hX_E : algebraMap E X (algebraMap (RatFunc K) E RatFunc.X) =
-      algebraMap (RatFunc k) X RatFunc.X := by
-    rw [← IsScalarTower.algebraMap_apply (RatFunc K) E X,
-      IsScalarTower.algebraMap_apply (RatFunc K) (RatFunc k) X, hX]
-  have hcomp : constantCompositum E k X = ⊤ :=
-    constantCompositum_adjoin_simple_ratFunc_eq_top hX hgen
-  have hadj : IntermediateField.adjoin k (Set.range (algebraMap E X)) = ⊤ := by
-    have h := hcomp
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      constantCompositum_def, IntermediateField.adjoin_toSubfield] at h
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      IntermediateField.adjoin_toSubfield, Set.union_comm, h]
-  have hembed : ∀ c : K,
-      algebraMap E X (algebraMap K E c) = algebraMap k X (algebraMap K k c) := fun c ↦ by
-    rw [← IsScalarTower.algebraMap_apply K E X, IsScalarTower.algebraMap_apply K k X]
-  ⟨{ pair :=
-      { carrier := E
-        isAlgebraicBelyiPair :=
-          X.isAlgebraicBelyiPair.of_finrank_eq hcomp hX_E hfinrank }
-     embedding := algebraMap E X
-     embedding_algebraMap := hembed
-     embedding_algebraMap_X := hX_E
-     adjoin_range_embedding := hadj },
-   hfinrank⟩
 
 /-- Auxiliary packaging of the pointed model together with its degree over `K(t)`. -/
 private noncomputable def pointedModelAux {P : Place k X} {q : ℚ}
@@ -183,7 +121,8 @@ private noncomputable def pointedModelAux {P : Place k X} {q : ℚ}
   have hX : algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) RatFunc.X = RatFunc.X :=
     algebraMap_ratFuncAlgebraOfTranscendental_X hX_rf
   let h := X.exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP hC hX
-  X.modelOfAdjoinSimple hC₀ hX h.choose_spec.1 h.choose_spec.2.1 h.choose_spec.2.2.2
+  ⟨X.modelOfAdjoinSimple hC₀ hX h.choose_spec.1 h.choose_spec.2.1 h.choose_spec.2.2.2,
+    finrank_modelOfAdjoinSimple_pair X _ _ _ _ _⟩
 
 /-- **Pointed model descent**: at a place `P` of `X` of degree one over an unbranched rational
 point `t = q` (`q ∈ ℚ \ {0, 1}`), the subfield `K(t)⟮z⟯` generated over
@@ -297,43 +236,6 @@ end AlgClosed
 section Galois
 
 variable (X : AlgebraicBelyiPair k) [IsGalois (RatFunc k) X]
-
-/-- **For a Galois Belyi pair, the pointed stabilizer at any place over a rational point equals the
-full stabilizer of the isomorphism class.** Any semilinear automorphism moves `P` to another place
-in the same rational fibre, and Galois transitivity over `k(t)` restores `P`. -/
-theorem pointedStabilizer_eq_stabilizer_of_isGalois {P : Place k X} {q : ℚ}
-    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
-    X.pointedStabilizer P = MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X) := by
-  refine le_antisymm (X.pointedStabilizer_le_stabilizer P) fun g hg ↦ ?_
-  rw [← X.map_snd_semilinearAut, Subgroup.mem_map] at hg
-  obtain ⟨p, hp, hpg⟩ := hg
-  have hfib : ((⟨p, hp⟩ : X.semilinearAut) • P).restrict k (RatFunc k) =
-      P.restrict k (RatFunc k) := by
-    rw [restrict_smul, hPa, Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C,
-      map_ratCast]
-  obtain ⟨σ, hσ⟩ := Place.exists_smul_eq_of_restrict_eq hfib
-  have hs : (σ.toRingEquiv, (1 : k ≃ₐ[ℚ] k)) ∈ X.semilinearAut :=
-    mem_semilinearAut_iff.mpr fun r ↦ by
-      rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, AlgEquiv.toRingEquiv_one,
-        RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]
-  let s : X.semilinearAut := ⟨(σ.toRingEquiv, 1), hs⟩
-  have hs_smul : ∀ Q : Place k X, s • Q = σ • Q := fun Q ↦
-    Place.ext <| Valuation.ext fun z ↦ by
-      rw [valuation_smul, Place.valuation_smul]
-      dsimp only [s]
-      rw [← AlgEquiv.symm_toRingEquiv, AlgEquiv.coe_toRingEquiv]
-  rw [pointedStabilizer_def, Subgroup.mem_map]
-  refine ⟨s * ⟨p, hp⟩, ?_, ?_⟩
-  · rw [MulAction.mem_stabilizer_iff, mul_smul, hs_smul, hσ]
-  · simpa [s] using hpg
-
-/-- **For a Galois Belyi pair, the pointed field of moduli at any place over a rational point is
-the field of moduli of the pair.** -/
-theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois {P : Place k X} {q : ℚ}
-    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
-    X.pointedFieldOfModuli P = (IsoClass.mk X).fieldOfModuli := by
-  rw [pointedFieldOfModuli_def, IsoClass.fieldOfModuli_def,
-    X.pointedStabilizer_eq_stabilizer_of_isGalois hPa]
 
 /-- A Galois Belyi pair admitting a degree-one place over an unbranched rational point has a model
 over its field of moduli. -/

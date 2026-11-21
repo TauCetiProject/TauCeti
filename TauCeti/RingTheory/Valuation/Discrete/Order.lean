@@ -362,6 +362,18 @@ theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {
       valuation_eq_exp_neg_ord v (v.ne_zero_iff.mpr hf), ← WithZero.exp_zero, WithZero.exp_le_exp]
     omega
 
+/-- An element `f` of `F` has order zero for `v` if and only if both `f` and `f⁻¹` lie in
+`v.valuationSubring` (this also holds for `f = 0`, since `ord v 0 = 0` and `0⁻¹ = 0`). -/
+theorem ord_eq_zero_iff_mem_valuationSubring_and_inv_mem (v : _root_.Valuation F ℤᵐ⁰) {f : F} :
+    ord v f = 0 ↔ f ∈ v.valuationSubring ∧ f⁻¹ ∈ v.valuationSubring := by
+  rw [mem_valuationSubring_iff_ord_nonneg v, mem_valuationSubring_iff_ord_nonneg v, ord_inv]
+  omega
+
+/-- If both `f` and `f⁻¹` lie in `v.valuationSubring`, then `ord v f = 0`. -/
+theorem ord_eq_zero_of_mem_valuationSubring_of_inv_mem (v : _root_.Valuation F ℤᵐ⁰) {f : F}
+    (hf : f ∈ v.valuationSubring) (hinv : f⁻¹ ∈ v.valuationSubring) : ord v f = 0 :=
+  (ord_eq_zero_iff_mem_valuationSubring_and_inv_mem v).mpr ⟨hf, hinv⟩
+
 /-- The valuation ring of a surjective `ℤᵐ⁰`-valued valuation is a DVR. -/
 theorem valuationSubring_isDiscreteValuationRing_of_surjective
     (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
