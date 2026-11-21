@@ -422,7 +422,7 @@ theorem continuous_adjointEquiv [CompleteSpace E] [CompleteSpace F] {X : Type*}
     [TopologicalSpace X] {A : X → E ≃L[𝕜] F} (hA : Continuous fun x ↦ (A x : E →L[𝕜] F)) :
     Continuous fun x ↦ ((A x).adjointEquiv : F →L[𝕜] E) := by
   simp_rw [coe_adjointEquiv]
-  exact ContinuousLinearMap.adjoint.continuous.comp hA
+  exact hA.clm_adjoint
 
 /-- The adjoint equivalence has the same operator norm as the equivalence. -/
 @[simp]

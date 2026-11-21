@@ -194,12 +194,9 @@ theorem eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_ze
     exact ((hHs.continuous.comp hγ.continuous).clm_apply
       ((hf.continuous_gradient (by norm_num)).comp hγ.continuous)).memLp_of_hasCompactSupport
         hpath_supp
-  have hint : ⟪v, hmem.toLp _⟫ = ∫ s, ⟪H (γ s) (∇ f (γ s)), w s⟫
-      ∂volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ) :=
-    (L2.inner_toLp v hmem).trans (integral_congr_ae (hvw.mono fun s hs ↦
-      (congrArg (⟪·, H (γ s) (∇ f (γ s))⟫) hs).trans (real_inner_comm _ _)))
-  exact hpos.ne' ((hint.trans (by rw [hvol])).symm.trans
-    ((real_inner_comm _ _).trans (hvar _ ⟨H, hHs, hHc, hHU, hHsa, hmem.coeFn_toLp⟩)))
+  have hint : ∫ s, ⟪H (γ s) (∇ f (γ s)), w s⟫ = ⟪hmem.toLp _, v⟫ := by
+    rw [L2.toLp_inner_of_ae_eq hmem hvw, hvol]
+  exact hpos.ne' (hint.trans (hvar _ ⟨H, hHs, hHc, hHU, hHsa, hmem.coeFn_toLp⟩))
 
 /-! ### Surjectivity of the universal linearization -/
 

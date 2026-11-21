@@ -143,12 +143,12 @@ theorem eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker {π : E →L[ℝ] F}
     simpa [ContinuousLinearMap.adjoint_comp] using
       congrArg (fun T : E →L[ℝ] F ↦ ContinuousLinearMap.adjoint T y) (hAB s)
   -- The adjoint of `A(s)` preserves `(ker π)ᗮ`, so `w` stays in `(ker π)ᗮ`.
-  have hinv (s : ℝ) (x : E) (hx : x ∈ π.kerᗮ) : ContinuousLinearMap.adjoint (A s) x ∈ π.kerᗮ := by
-    refine (Submodule.mem_orthogonal _ _).2 fun y hy ↦ ?_
-    rw [ContinuousLinearMap.adjoint_inner_right]
-    have hy' : π y = 0 := LinearMap.mem_ker.1 hy
-    exact (Submodule.mem_orthogonal _ _).1 hx _
-      (by rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hπA, hy', map_zero])
+  have hinv (s : ℝ) (x : E) (hx : x ∈ π.kerᗮ) : ContinuousLinearMap.adjoint (A s) x ∈ π.kerᗮ :=
+    (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1
+      (ContinuousLinearMap.orthogonal_mem_invtSubmodule (T := ContinuousLinearMap.adjoint (A s))
+        ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun y hy ↦ by
+          have hy' : π y = 0 := LinearMap.mem_ker.1 hy
+          simp [hπA, hy'])) x hx
   have hmem (s : ℝ) : w s ∈ π.kerᗮ := hA.clm_adjoint.mem_of_hasDerivAt_clm_apply
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.isClosed_of_finiteDimensional _)) hinv hw hs₀ s
@@ -160,7 +160,8 @@ theorem eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker {π : E →L[ℝ] F}
   obtain ⟨L₀, hL₀⟩ := LinearMap.exists_leftInverse_of_injective
     (ContinuousLinearMap.adjoint π : F →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hinj)
   set L := LinearMap.toContinuousLinearMap L₀
-  have hL (y : F) : L (ContinuousLinearMap.adjoint π y) = y := LinearMap.congr_fun hL₀ y
+  have hL (y : F) : L (ContinuousLinearMap.adjoint π y) = y := by
+    simpa [L] using LinearMap.congr_fun hL₀ y
   have hrange (s : ℝ) : ContinuousLinearMap.adjoint π (L (w s)) = w s := by
     have h := hmem s
     rw [π.orthogonal_ker,
@@ -170,9 +171,9 @@ theorem eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker {π : E →L[ℝ] F}
     rw [← hy, hL]
   -- `u = L w` is a square-integrable solution of the base adjoint equation `u' = B† u`.
   set u : ℝ → F := fun s ↦ L (w s)
-  have hu (s : ℝ) : HasDerivAt u (ContinuousLinearMap.adjoint (B s) (u s)) s := by
-    have := L.hasFDerivAt.comp_hasDerivAt s (hw s)
-    rwa [← hrange s, hAπ, hL, ← hrange s, hL] at this
+  have hu (s : ℝ) : HasDerivAt u (ContinuousLinearMap.adjoint (B s) (u s)) s :=
+    -- `L (A(s)† w) = L (A(s)† π† u) = L (π† B(s)† u) = B(s)† u`
+    (L.hasFDerivAt.comp_hasDerivAt s (hw s)).congr_deriv (by rw [← hrange s, hAπ, hL])
   have hu0 : u 0 = 0 := by
     have : u 0 ∈ squareIntegrableSolutions fun s ↦ -ContinuousLinearMap.adjoint (B s) :=
       mem_squareIntegrableSolutions.2 ⟨u, rfl, fun s ↦ by simpa using hu s, L.comp_memLp' hw2⟩
@@ -247,12 +248,9 @@ theorem orthogonal_range_trajectoryOperator_sup_span_vectorFieldVariations_eq_bo
     have hmem : MemLp (fun s ↦ Y (γ s)) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
       rw [hvol]
       exact (hY.continuous.comp hγ).memLp_of_hasCompactSupport hpath
-    have hint : ⟪v, hmem.toLp _⟫ = ∫ s, ⟪Y (γ s), w s⟫
-        ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ) :=
-      (L2.inner_toLp v hmem).trans (integral_congr_ae (hvw.mono fun s hs ↦
-        (congrArg (⟪·, Y (γ s)⟫) hs).trans (real_inner_comm _ _)))
-    exact hpos.ne' ((hint.trans (by rw [hvol])).symm.trans
-      ((real_inner_comm _ _).trans (hvar _ ⟨Y, hY, hYc, hYU, hYK, hmem.coeFn_toLp⟩)))
+    have hint : ∫ s, ⟪Y (γ s), w s⟫ = ⟪hmem.toLp _, v⟫ := by
+      rw [L2.toLp_inner_of_ae_eq hmem hvw, hvol]
+    exact hpos.ne' (hint.trans (hvar _ ⟨Y, hY, hYc, hYU, hYK, hmem.coeFn_toLp⟩))
   have hw2 : MemLp w 2 := by
     simpa [hvol] using (Lp.memLp v).ae_eq hvw
   have hw0 := eq_zero_of_hasDerivAt_adjoint_of_mem_orthogonal_ker hπ hA hB hAB hBL hsurj hw hw2 hs₀

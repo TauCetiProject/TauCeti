@@ -287,9 +287,8 @@ theorem Continuous.mem_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X
     simp [Q, hP ⟨x, hx⟩]
   -- `Q w` solves `u' = Q B(t) u`, since `Q B(t)` kills `V`.
   have hQ (t : ℝ) (x : X) : Q (B t x) = (Q ∘L B t) (Q x) := by
-    have hx : Q x = x - P x := rfl
-    rw [ContinuousLinearMap.comp_apply, hx, map_sub, map_sub,
-      hQV (hV t _ (P x).property), sub_zero]
+    have hx : Q x = x - P x := by simp [Q]
+    simp [hx, hQV (hV t _ (P x).property)]
   have hQw : (fun t ↦ Q (w t)) = fun _ ↦ 0 :=
     (continuous_const.clm_comp hB).eq_of_hasDerivAt_clm_apply (B := fun t ↦ Q ∘L B t)
       (fun t ↦ (Q.hasFDerivAt.comp_hasDerivAt t (hw t)).congr_deriv (hQ t (w t)))
