@@ -27,11 +27,10 @@ identity follows from uniqueness of the polar decomposition, since `P_ℝ` is po
 As realification also commutes with real powers (`Matrix.realify_rpow`), it intertwines the polar
 contractions `A ↦ P ^ (1 - t) U` of `Matrix.GeneralLinearGroup.polarDeformation`.
 
-Consequently the realified group `(realify n 𝕜).range` contains both polar factors of each of its
-elements, and the polar deformation `P ^ (1 - t) U` of each of its elements stays inside it, ending
-at the realified unitary factor. For `𝕜 = ℂ` this is the
-polar decomposition of the realified `GL(n, ℂ)` inside `GL(2n, ℝ)`, whose orthogonal part is the
-realified `U(n)`.
+Consequently the realified group `(realify n 𝕜).range` contains the orthogonal polar factor of each
+of its elements, and the polar deformation `P ^ (1 - t) U` of each of its elements stays inside it,
+ending at the realified unitary factor. For `𝕜 = ℂ` this is the polar decomposition of the
+realified `GL(n, ℂ)` inside `GL(2n, ℝ)`, whose orthogonal part is the realified `U(n)`.
 
 ## Main results
 
