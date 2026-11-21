@@ -26,6 +26,8 @@ image of an integer, which transports the growth bound from `ℤ` to any ring.
 
 * `Polynomial.Chebyshev.S_eval_add_one_le`: `Sₙ(t) + 1 ≤ Sₙ₊₁(t)` for `t ≥ 2` and `n ≥ 0`.
 * `Polynomial.Chebyshev.natCast_add_one_le_S_eval`: `n + 1 ≤ Sₙ(t)` for `t ≥ 2` and `n ≥ 0`.
+* `Polynomial.Chebyshev.S_eval_prev_nonneg`: `Sₙ₋₁(t) ≥ 0` for natural `n` and `t ≥ 2`.
+* `Polynomial.Chebyshev.S_eval_sum_strictMono`: the consecutive-value sum grows strictly.
 * `Polynomial.Chebyshev.S_three_eval_one`: `S₃(1) = -1`.
 * `Polynomial.Chebyshev.S_eval_intCast`: `Sₙ` over `R` at the image of an integer `c` is the image
   of `Sₙ` over `ℤ` at `c`.
@@ -79,5 +81,31 @@ theorem S_eval_add_one_le (ht : 2 ≤ t) (n : ℕ) :
 theorem natCast_add_one_le_S_eval (ht : 2 ≤ t) (n : ℕ) :
     (n + 1 : R) ≤ (S R n).eval t :=
   (S_eval_add_one_le_and ht n).2
+
+/-- The predecessor rescaled Chebyshev value at a natural index is nonnegative for `t ≥ 2`. -/
+theorem S_eval_prev_nonneg (ht : 2 ≤ t) (n : ℕ) :
+    0 ≤ (S R ((n : ℤ) - 1)).eval t := by
+  cases n with
+  | zero => simp [S_neg_one]
+  | succ n =>
+    have h := natCast_add_one_le_S_eval (R := R) ht n
+    rw [Nat.cast_succ, add_sub_cancel_right]
+    linarith [show (0 : R) ≤ n from Nat.cast_nonneg n]
+
+/-- The sum of consecutive rescaled Chebyshev values grows strictly for `t ≥ 2`. -/
+theorem S_eval_sum_strictMono (ht : 2 ≤ t) :
+    StrictMono fun n : ℕ ↦ (S R (n : ℤ)).eval t + (S R ((n : ℤ) - 1)).eval t := by
+  apply strictMono_nat_of_lt_succ
+  intro n
+  have h := S_eval_add_one_le (R := R) ht n
+  rw [Nat.cast_succ, add_sub_cancel_right]
+  have hp : (S R ((n : ℤ) - 1)).eval t ≤ (S R (n : ℤ)).eval t := by
+    cases n with
+    | zero => simp [S_zero, S_neg_one]
+    | succ n =>
+      rw [Nat.cast_succ, add_sub_cancel_right]
+      have h' := S_eval_add_one_le (R := R) ht n
+      linarith
+  linarith
 
 end Polynomial.Chebyshev
