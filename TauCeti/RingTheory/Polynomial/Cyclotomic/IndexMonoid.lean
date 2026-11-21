@@ -161,7 +161,7 @@ theorem mem_cycloIndex_iff :
     obtain ⟨a, rfl⟩ := Submonoid.exists_finsupp_of_mem_closure_range _ _ hf
     refine ⟨a.mapDomain Subtype.val, fun n hn ↦ ?_, ?_⟩
     · obtain ⟨m, -, rfl⟩ := Finset.mem_image.mp (Finsupp.mapDomain_support hn)
-      exact m.2
+      exact m.property
     · exact (Finsupp.prod_mapDomain_index (h := fun n k ↦ cyclotomic n R ^ k) (fun _ ↦ pow_zero _)
         fun _ _ _ ↦ pow_add _ _ _).symm
   · rintro ⟨e, he, rfl⟩

@@ -126,11 +126,11 @@ variable [CommSemiring R] [StarRing R]
 the sum over all subregions `X` of `Λ` of the observables `Φ X` included into the local algebra
 of `Λ`. -/
 def localHamiltonian (Φ : Interaction R L S) (Λ : Finset L) : Matrix (Λ → S) (Λ → S) R :=
-  ∑ X ∈ Λ.powerset.attach, inclusion (Finset.mem_powerset.1 X.2) (Φ X)
+  ∑ X ∈ Λ.powerset.attach, inclusion (Finset.mem_powerset.1 X.property) (Φ X)
 
 theorem localHamiltonian_def (Φ : Interaction R L S) (Λ : Finset L) :
     Φ.localHamiltonian Λ =
-      ∑ X ∈ Λ.powerset.attach, inclusion (Finset.mem_powerset.1 X.2) (Φ X) :=
+      ∑ X ∈ Λ.powerset.attach, inclusion (Finset.mem_powerset.1 X.property) (Φ X) :=
   (rfl)
 
 /-- The local Hamiltonian is Hermitian. -/
@@ -158,16 +158,16 @@ into the local algebra of `Λ'`, plus the interactions of the subregions of `Λ'
 theorem localHamiltonian_eq_inclusion_add (Φ : Interaction R L S) (h : Λ ⊆ Λ') :
     Φ.localHamiltonian Λ' = inclusion h (Φ.localHamiltonian Λ) +
       ∑ X ∈ Λ'.powerset.attach.filter fun X : Λ'.powerset => ¬(X : Finset L) ⊆ Λ,
-        inclusion (Finset.mem_powerset.1 X.2) (Φ X) := by
+        inclusion (Finset.mem_powerset.1 X.property) (Φ X) := by
   rw [localHamiltonian_def,
     ← Finset.sum_filter_add_sum_filter_not _ fun X : Λ'.powerset => (X : Finset L) ⊆ Λ,
     localHamiltonian_def, map_sum]
   -- the subregions of `Λ'` contained in `Λ` are the subregions of `Λ`
   congr 1
   refine Finset.sum_bij' (fun X hX => ⟨X, Finset.mem_powerset.2 (Finset.mem_filter.1 hX).2⟩)
-    (fun X _ => ⟨X, Finset.mem_powerset.2 ((Finset.mem_powerset.1 X.2).trans h)⟩)
+    (fun X _ => ⟨X, Finset.mem_powerset.2 ((Finset.mem_powerset.1 X.property).trans h)⟩)
     (fun _ _ => Finset.mem_attach _ _) (fun X _ => Finset.mem_filter.2 ⟨Finset.mem_attach _ _,
-      Finset.mem_powerset.1 X.2⟩) (fun _ _ => rfl) (fun _ _ => rfl) fun X _ => ?_
+      Finset.mem_powerset.1 X.property⟩) (fun _ _ => rfl) (fun _ _ => rfl) fun X _ => ?_
   rw [inclusion_inclusion]
 
 end LocalHamiltonian
@@ -183,8 +183,8 @@ theorem localHamiltonian_mul_inclusion_sub_inclusion_mul (Φ : Interaction R L S
     (a : Matrix (Λ → S) (Λ → S) R) :
     Φ.localHamiltonian Λ' * inclusion h a - inclusion h a * Φ.localHamiltonian Λ' =
       ∑ X ∈ Λ'.powerset.attach.filter fun X : Λ'.powerset => ¬Disjoint (X : Finset L) Λ,
-        (inclusion (Finset.mem_powerset.1 X.2) (Φ X) * inclusion h a -
-          inclusion h a * inclusion (Finset.mem_powerset.1 X.2) (Φ X)) := by
+        (inclusion (Finset.mem_powerset.1 X.property) (Φ X) * inclusion h a -
+          inclusion h a * inclusion (Finset.mem_powerset.1 X.property) (Φ X)) := by
   rw [localHamiltonian_def, Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib,
     ← Finset.sum_filter_add_sum_filter_not _ fun X : Λ'.powerset => Disjoint (X : Finset L) Λ,
     Finset.sum_eq_zero (s := Finset.filter _ _) fun X hX => ?_, zero_add]
@@ -238,8 +238,8 @@ theorem generator_localDynamics_inclusion (Φ : Interaction ℂ L S) (h : Λ ⊆
     (a : Matrix (Λ → S) (Λ → S) ℂ) :
     (Φ.localDynamics Λ').generator ⟨inclusion h a, by simp⟩ =
       I • ∑ X ∈ Λ'.powerset.attach.filter fun X : Λ'.powerset => ¬Disjoint (X : Finset L) Λ,
-        (inclusion (Finset.mem_powerset.1 X.2) (Φ X) * inclusion h a -
-          inclusion h a * inclusion (Finset.mem_powerset.1 X.2) (Φ X)) := by
+        (inclusion (Finset.mem_powerset.1 X.property) (Φ X) * inclusion h a -
+          inclusion h a * inclusion (Finset.mem_powerset.1 X.property) (Φ X)) := by
   rw [generator_localDynamics, localHamiltonian_mul_inclusion_sub_inclusion_mul]
 
 variable [Nonempty S]

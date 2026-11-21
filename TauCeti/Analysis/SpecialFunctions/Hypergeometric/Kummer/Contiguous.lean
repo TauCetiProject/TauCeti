@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # Contiguous relations and derivative of the regularized Kummer function
@@ -68,22 +68,8 @@ theorem regularizedHGFunCoeff_singleton_zero (a b : ℂ) :
 `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)`, valid for all complex `a`, `b`, and `z`. -/
 theorem hasDerivAt_regularizedHGFun_singleton (a b z : ℂ) :
     HasDerivAt (regularizedHGFun {a} {b}) (a * regularizedHGFun {a + 1} {b + 1} z) z := by
-  have hcard : ({a} : Multiset ℂ).card ≤ ({b} : Multiset ℂ).card := by simp
-  have hcard' : ({a + 1} : Multiset ℂ).card ≤ ({b + 1} : Multiset ℂ).card := by simp
-  have hderiv : deriv (regularizedHGFun {a} {b}) z = a * regularizedHGFun {a + 1} {b + 1} z := by
-    refine (hasSum_deriv_regularizedHGFun hcard z).unique ?_
-    refine ((hasSum_regularizedHGFun hcard' z).mul_left a).congr_fun fun n => ?_
-    rw [regularizedHGFunCoeff_singleton, regularizedHGFunCoeff_singleton,
-      ascPochhammer_succ_left, eval_mul, eval_X, eval_comp, eval_add, eval_X, eval_one,
-      Nat.factorial_succ]
-    have hn : (n : ℂ) + 1 ≠ 0 := mod_cast n.succ_ne_zero
-    have hshift : b + ((n + 1 : ℕ) : ℂ) = b + 1 + n := by push_cast; ring
-    rw [hshift]
-    push_cast
-    simp only [div_eq_mul_inv, mul_inv]
-    linear_combination a * (ascPochhammer ℂ n).eval (a + 1) * (n ! : ℂ)⁻¹ *
-      (Gamma (b + 1 + n))⁻¹ * z ^ n * inv_mul_cancel₀ hn
-  exact hderiv ▸ (differentiable_regularizedHGFun_of_card_le hcard z).hasDerivAt
+  simpa using hasDerivAt_regularizedHGFun (a := {a}) (b := {b}) (z := z)
+    (by simp [radius_regularizedHGFunSeries_eq_top])
 
 /-- The derivative of `𝐌(a, b, ·)` as a function: `deriv (𝐌(a, b, ·)) = a 𝐌(a + 1, b + 1, ·)`. -/
 @[simp]

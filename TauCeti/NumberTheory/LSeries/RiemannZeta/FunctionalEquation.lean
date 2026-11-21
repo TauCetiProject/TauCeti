@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
+import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # The symmetric functional equation for the logarithmic derivative of zeta

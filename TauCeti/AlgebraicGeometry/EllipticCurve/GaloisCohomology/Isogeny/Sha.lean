@@ -97,7 +97,7 @@ of `f.pointH1Map` to the classes that are locally trivial along `τ`. -/
 def shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine) :
     W₁.shafarevichTateGroup τ →+ W₂.shafarevichTateGroup τ :=
   (f.pointH1Map.comp (W₁.shafarevichTateGroup τ).subtype).codRestrict _
-    fun c ↦ f.pointH1Map_mem_shafarevichTateGroup τ c.2
+    fun c ↦ f.pointH1Map_mem_shafarevichTateGroup τ c.property
 
 /-- The map on Shafarevich–Tate groups is the map on first cohomology. -/
 @[simp]

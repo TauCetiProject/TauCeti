@@ -63,13 +63,13 @@ variable (d : SuzukiLieIndex)
 noncomputable def symplecticSteinberg :
     d.toRankTwoBLieIndex.StandardGroup →* d.toRankTwoBLieIndex.StandardGroup :=
   HPow.hPow (α := Monoid.End d.toRankTwoBLieIndex.StandardGroup)
-    (TauCeti.specialIsogeny (R := d.1.Closure)) d.1.fieldExponent
+    (TauCeti.specialIsogeny (R := d.val.Closure)) d.val.fieldExponent
 
 /-- The special isogeny on the pinned symplectic scheme points. -/
 noncomputable def pinnedHalfFrobenius :
     d.toRankTwoBLieIndex.PinnedGroup →* d.toRankTwoBLieIndex.PinnedGroup :=
   d.toRankTwoBLieIndex.pinnedEquivSymplectic.symm.toMonoidHom.comp
-    ((TauCeti.specialIsogeny (R := d.1.Closure)).comp
+    ((TauCeti.specialIsogeny (R := d.val.Closure)).comp
       d.toRankTwoBLieIndex.pinnedEquivSymplectic.toMonoidHom)
 
 /-- **The independently defined Steinberg map on the pinned symplectic scheme points**: the odd
@@ -77,7 +77,7 @@ power `τ ^ (2m+1)` of the pinned special isogeny. -/
 noncomputable def pinnedSteinberg :
     d.toRankTwoBLieIndex.PinnedGroup →* d.toRankTwoBLieIndex.PinnedGroup :=
   HPow.hPow (α := Monoid.End d.toRankTwoBLieIndex.PinnedGroup) d.pinnedHalfFrobenius
-    d.1.fieldExponent
+    d.val.fieldExponent
 
 /-- The canonical matrix realization intertwines the pinned and matrix special isogenies. -/
 @[simp]
@@ -93,17 +93,17 @@ theorem pinnedEquivSymplectic_pinnedHalfFrobenius (g : d.toRankTwoBLieIndex.Pinn
 theorem pinnedEquivSymplectic_pinnedSteinberg (g : d.toRankTwoBLieIndex.PinnedGroup) :
     d.toRankTwoBLieIndex.pinnedEquivSymplectic (d.pinnedSteinberg g) =
       d.symplecticSteinberg (d.toRankTwoBLieIndex.pinnedEquivSymplectic g) := by
-  have hpinned : ⇑d.pinnedSteinberg = (⇑d.pinnedHalfFrobenius)^[d.1.fieldExponent] :=
+  have hpinned : ⇑d.pinnedSteinberg = (⇑d.pinnedHalfFrobenius)^[d.val.fieldExponent] :=
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.PinnedGroup) d.pinnedHalfFrobenius
-      d.1.fieldExponent
+      d.val.fieldExponent
   have hstandard : ⇑d.symplecticSteinberg =
-      (⇑(TauCeti.specialIsogeny (R := d.1.Closure)))^[d.1.fieldExponent] :=
+      (⇑(TauCeti.specialIsogeny (R := d.val.Closure)))^[d.val.fieldExponent] :=
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.StandardGroup)
-      (TauCeti.specialIsogeny (R := d.1.Closure)) d.1.fieldExponent
+      (TauCeti.specialIsogeny (R := d.val.Closure)) d.val.fieldExponent
   have hsemi : Function.Semiconj d.toRankTwoBLieIndex.pinnedEquivSymplectic d.pinnedHalfFrobenius
-      (TauCeti.specialIsogeny (R := d.1.Closure)) :=
+      (TauCeti.specialIsogeny (R := d.val.Closure)) :=
     d.pinnedEquivSymplectic_pinnedHalfFrobenius
-  have hiter := hsemi.iterate_right d.1.fieldExponent g
+  have hiter := hsemi.iterate_right d.val.fieldExponent g
   rwa [← hpinned, ← hstandard] at hiter
 
 /-! ## The comparison on a Suzuki index -/
@@ -123,17 +123,17 @@ power of their own special isogeny. -/
 theorem carrierEquivSymplectic_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.toRankTwoBLieIndex.carrierEquivSymplectic (d.steinberg g) =
       d.symplecticSteinberg (d.toRankTwoBLieIndex.carrierEquivSymplectic g) := by
-  have hcarrier : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] := by
+  have hcarrier : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.val.fieldExponent] := by
     rw [steinberg_def]
     exact Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius
-      d.1.fieldExponent
+      d.val.fieldExponent
   have hstandard : ⇑d.symplecticSteinberg =
-      (⇑(TauCeti.specialIsogeny (R := d.1.Closure)))^[d.1.fieldExponent] :=
+      (⇑(TauCeti.specialIsogeny (R := d.val.Closure)))^[d.val.fieldExponent] :=
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.StandardGroup)
-      (TauCeti.specialIsogeny (R := d.1.Closure)) d.1.fieldExponent
+      (TauCeti.specialIsogeny (R := d.val.Closure)) d.val.fieldExponent
   have hsemi : Function.Semiconj d.toRankTwoBLieIndex.carrierEquivSymplectic d.halfFrobenius
-      (TauCeti.specialIsogeny (R := d.1.Closure)) := d.carrierEquivSymplectic_halfFrobenius
-  have hiter := hsemi.iterate_right d.1.fieldExponent g
+      (TauCeti.specialIsogeny (R := d.val.Closure)) := d.carrierEquivSymplectic_halfFrobenius
+  have hiter := hsemi.iterate_right d.val.fieldExponent g
   rwa [← hcarrier, ← hstandard] at hiter
 
 /-- The carrier-to-pinned equivalence intertwines the two special isogenies. -/
@@ -179,8 +179,8 @@ theorem pinnedHalfFrobenius_pinnedHalfFrobenius (g : d.toRankTwoBLieIndex.Pinned
 symplectic matrix group**, raising the parameter to the index's exponent at that root, which is one
 at the long simple root and the defining characteristic at the short one. -/
 @[simp]
-theorem specialIsogeny_symplecticSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem specialIsogeny_symplecticSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     TauCeti.specialIsogeny (d.toRankTwoBLieIndex.symplecticSimpleRootSubgroup i u) =
       d.toRankTwoBLieIndex.symplecticSimpleRootSubgroup
           (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
@@ -193,8 +193,8 @@ theorem specialIsogeny_symplecticSimpleRootSubgroup (i : Fin d.1.rank)
 /-- **The special isogeny exchanges the two numbered simple root subgroups of the pinned symplectic
 scheme points**, with the same exponents. -/
 @[simp]
-theorem pinnedHalfFrobenius_pinnedSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem pinnedHalfFrobenius_pinnedSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.pinnedHalfFrobenius (d.toRankTwoBLieIndex.pinnedSimpleRootSubgroup i u) =
       d.toRankTwoBLieIndex.pinnedSimpleRootSubgroup
           (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)

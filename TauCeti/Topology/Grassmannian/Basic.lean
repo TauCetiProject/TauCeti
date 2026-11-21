@@ -64,32 +64,32 @@ variable {𝕜 r N}
 
 /-- A nonzero vector gives a one-vector full-rank frame. -/
 def ofNeZero (v : {v : Fin N → 𝕜 // v ≠ 0}) : finiteFullRankFrame 𝕜 1 N :=
-  ⟨fun _ ↦ v.1, linearIndependent_unique_iff.2 v.2⟩
+  ⟨fun _ ↦ v.val, linearIndependent_unique_iff.2 v.property⟩
 
 @[simp]
 theorem coe_ofNeZero (v : {v : Fin N → 𝕜 // v ≠ 0}) :
-    (ofNeZero v : Fin 1 → Fin N → 𝕜) = fun _ ↦ v.1 := (rfl)
+    (ofNeZero v : Fin 1 → Fin N → 𝕜) = fun _ ↦ v.val := (rfl)
 
 /-- The one-vector frame depends continuously on the nonzero vector. -/
 @[fun_prop]
 theorem continuous_ofNeZero [TopologicalSpace 𝕜] :
     Continuous (ofNeZero : {v : Fin N → 𝕜 // v ≠ 0} → finiteFullRankFrame 𝕜 1 N) :=
-  (continuous_pi fun _ ↦ continuous_subtype_val).subtype_mk _
+  (continuous_pi fun _ ↦ continuous_subtypeVal).subtype_mk _
 
 /-- The general linear group acts on frames by left multiplication of the matrix of row
 vectors: `A • f` has `j`th vector `∑ i, A j i • f i`. -/
 instance : SMul (GL (Fin r) 𝕜) (finiteFullRankFrame 𝕜 r N) where
-  smul A f := ⟨fun j => ∑ i, (A : Matrix (Fin r) (Fin r) 𝕜) j i • f.1 i, by
+  smul A f := ⟨fun j => ∑ i, (A : Matrix (Fin r) (Fin r) 𝕜) j i • f.val i, by
     -- The new vectors are the images of the rows of `A` under the injective map `c ↦ ∑ c i • f i`.
-    have hinj : (Fintype.linearCombination 𝕜 f.1).ker = ⊥ :=
-      LinearMap.ker_eq_bot.2 f.2.fintypeLinearCombination_injective
+    have hinj : (Fintype.linearCombination 𝕜 f.val).ker = ⊥ :=
+      LinearMap.ker_eq_bot.2 f.property.fintypeLinearCombination_injective
     convert (Matrix.linearIndependent_rows_of_isUnit (Units.isUnit A)).map' _ hinj using 1
     ext j : 1
-    exact (Fintype.linearCombination_apply 𝕜 f.1 _).symm⟩
+    exact (Fintype.linearCombination_apply 𝕜 f.val _).symm⟩
 
 @[simp] theorem coe_smul (A : GL (Fin r) 𝕜) (f : finiteFullRankFrame 𝕜 r N) :
     ((A • f : finiteFullRankFrame 𝕜 r N) : Fin r → Fin N → 𝕜) =
-      fun j => ∑ i, (A : Matrix (Fin r) (Fin r) 𝕜) j i • f.1 i := (rfl)
+      fun j => ∑ i, (A : Matrix (Fin r) (Fin r) 𝕜) j i • f.val i := (rfl)
 
 /-- Left multiplication of row vectors is an action of the general linear group on frames. -/
 instance : MulAction (GL (Fin r) 𝕜) (finiteFullRankFrame 𝕜 r N) where
@@ -107,7 +107,7 @@ instance [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] :
   continuous_const_smul A := by
     refine Continuous.subtype_mk (continuous_pi fun j => continuous_finsetSum _ fun i _ => ?_) _
     exact ((continuous_apply i : Continuous fun p : Fin r → Fin N → 𝕜 => p i).comp
-      continuous_subtype_val).const_smul ((A : Matrix (Fin r) (Fin r) 𝕜) j i)
+      continuous_subtypeVal).const_smul ((A : Matrix (Fin r) (Fin r) 𝕜) j i)
 
 end finiteFullRankFrame
 
@@ -117,10 +117,10 @@ variable {𝕜 r N}
 
 /-- The span of a frame, an `r`-dimensional subspace of `Fin N → 𝕜`. -/
 noncomputable def frameSpan (f : finiteFullRankFrame 𝕜 r N) : finiteGrassmannian 𝕜 r N :=
-  ⟨Submodule.span 𝕜 (range f.1), by rw [finrank_span_eq_card f.2, Fintype.card_fin]⟩
+  ⟨Submodule.span 𝕜 (range f.val), by rw [finrank_span_eq_card f.property, Fintype.card_fin]⟩
 
 @[simp] theorem coe_frameSpan (f : finiteFullRankFrame 𝕜 r N) :
-    (frameSpan f : Submodule 𝕜 (Fin N → 𝕜)) = Submodule.span 𝕜 (range f.1) := (rfl)
+    (frameSpan f : Submodule 𝕜 (Fin N → 𝕜)) = Submodule.span 𝕜 (range f.val) := (rfl)
 
 /-- Every `r`-dimensional subspace is spanned by a frame. -/
 theorem frameSpan_surjective :
@@ -133,7 +133,7 @@ theorem frameSpan_surjective :
 
 /-- The vectors of `A • f` lie in the span of `f`. -/
 private theorem span_range_smul_le (A : GL (Fin r) 𝕜) (f : finiteFullRankFrame 𝕜 r N) :
-    Submodule.span 𝕜 (range (A • f).1) ≤ Submodule.span 𝕜 (range f.1) :=
+    Submodule.span 𝕜 (range (A • f).val) ≤ Submodule.span 𝕜 (range f.val) :=
   Submodule.span_le.2 <| range_subset_iff.2 fun j => by
     rw [finiteFullRankFrame.coe_smul]
     exact Submodule.sum_mem _ fun i _ => Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
@@ -151,16 +151,17 @@ theorem frameSpan_eq_frameSpan_iff {f g : finiteFullRankFrame 𝕜 r N} :
     frameSpan f = frameSpan g ↔ g ∈ MulAction.orbit (GL (Fin r) 𝕜) f := by
   refine ⟨fun h => ?_, ?_⟩
   · -- Write each vector of `g` in terms of `f`; the coefficient matrix has independent rows.
-    have hg : ∀ j, ∃ c : Fin r → 𝕜, ∑ i, c i • f.1 i = g.1 j := fun j =>
+    have hg : ∀ j, ∃ c : Fin r → 𝕜, ∑ i, c i • f.val i = g.val j := fun j =>
       Submodule.mem_span_range_iff_exists_fun 𝕜 |>.1 <| by
         rw [← coe_frameSpan, h, coe_frameSpan]
         exact Submodule.subset_span (mem_range_self j)
     choose c hc using hg
-    have hcomp : Fintype.linearCombination 𝕜 f.1 ∘ c = g.1 := by
+    have hcomp : Fintype.linearCombination 𝕜 f.val ∘ c = g.val := by
       ext1 j
       simp [Fintype.linearCombination_apply, hc]
     have hrow : LinearIndependent 𝕜 c :=
-      LinearIndependent.of_comp (Fintype.linearCombination 𝕜 f.1) (by rw [hcomp]; exact g.2)
+      LinearIndependent.of_comp (Fintype.linearCombination 𝕜 f.val)
+          (by rw [hcomp]; exact g.property)
     exact ⟨(Matrix.linearIndependent_row_iff_isUnit.1 hrow).unit, Subtype.ext <| funext hc⟩
   · rintro ⟨A, rfl⟩
     exact (frameSpan_smul A f).symm
@@ -168,7 +169,7 @@ theorem frameSpan_eq_frameSpan_iff {f g : finiteFullRankFrame 𝕜 r N} :
 /-- There is an `r`-dimensional subspace of `Fin N → 𝕜` exactly when `r ≤ N`. -/
 theorem nonempty_iff_le : Nonempty (finiteGrassmannian 𝕜 r N) ↔ r ≤ N := by
   refine ⟨fun ⟨V⟩ => ?_, fun h => ⟨frameSpan ⟨fun i => Pi.single (Fin.castLE h i) 1, ?_⟩⟩⟩
-  · simpa [V.2] using Submodule.finrank_le V.1
+  · simpa [V.property] using Submodule.finrank_le V.val
   · simpa [Function.comp_def] using
       (Pi.basisFun 𝕜 (Fin N)).linearIndependent.comp _ (Fin.castLE_injective h)
 
@@ -183,7 +184,7 @@ theorem isEmpty_of_lt (h : N < r) : IsEmpty (finiteGrassmannian 𝕜 r N) :=
 /-- The zero subspace is the unique point of the rank-zero Grassmannian. -/
 instance : Unique (finiteGrassmannian 𝕜 0 N) where
   default := ⟨⊥, finrank_bot 𝕜 _⟩
-  uniq V := Subtype.ext (Submodule.finrank_eq_zero.1 V.2)
+  uniq V := Subtype.ext (Submodule.finrank_eq_zero.1 V.property)
 
 @[simp] theorem coe_default_zero :
     ((default : finiteGrassmannian 𝕜 0 N) : Submodule 𝕜 (Fin N → 𝕜)) = ⊥ := (rfl)
@@ -191,7 +192,7 @@ instance : Unique (finiteGrassmannian 𝕜 0 N) where
 /-- The only `N`-dimensional subspace of `Fin N → 𝕜` is the whole space. -/
 @[simp] theorem coe_eq_top (V : finiteGrassmannian 𝕜 N N) :
     (V : Submodule 𝕜 (Fin N → 𝕜)) = ⊤ :=
-  Submodule.eq_top_of_finrank_eq (V.2.trans (Module.finrank_fin_fun 𝕜).symm)
+  Submodule.eq_top_of_finrank_eq (V.property.trans (Module.finrank_fin_fun 𝕜).symm)
 
 /-- The full-rank Grassmannian has at most one point; it is nonempty by `nonempty_iff_le`. -/
 instance : Subsingleton (finiteGrassmannian 𝕜 N N) :=
@@ -199,8 +200,8 @@ instance : Subsingleton (finiteGrassmannian 𝕜 N N) :=
 
 /-- The quotient by an `r`-dimensional subspace of `Fin N → 𝕜` has dimension `N - r`. -/
 theorem finrank_quotient (V : finiteGrassmannian 𝕜 r N) :
-    Module.finrank 𝕜 ((Fin N → 𝕜) ⧸ V.1) = N - r := by
-  rw [Submodule.finrank_quotient, Module.finrank_fin_fun, V.2]
+    Module.finrank 𝕜 ((Fin N → 𝕜) ⧸ V.val) = N - r := by
+  rw [Submodule.finrank_quotient, Module.finrank_fin_fun, V.property]
 
 /-- The rank at every stalk of a quotient of `Fin N → 𝕜` is the dimension of the quotient. -/
 private theorem rankAtStalk_quotient (W : Submodule 𝕜 (Fin N → 𝕜)) (p : PrimeSpectrum 𝕜) :
@@ -215,10 +216,10 @@ quotient of rank `N - r`. The underlying submodule is unchanged. -/
 noncomputable def equivModuleGrassmannian (h : r ≤ N) :
     finiteGrassmannian 𝕜 r N ≃ Module.Grassmannian 𝕜 (Fin N → 𝕜) (N - r) where
   toFun V :=
-    { toSubmodule := V.1
+    { toSubmodule := V.val
       finite_quotient := inferInstance
       projective_quotient := inferInstance
-      rankAtStalk_eq := fun p => by rw [rankAtStalk_quotient, V.2] }
+      rankAtStalk_eq := fun p => by rw [rankAtStalk_quotient, V.property] }
   invFun W := ⟨W.toSubmodule, by
     have hW := W.rankAtStalk_eq (Nonempty.some inferInstance)
     rw [rankAtStalk_quotient] at hW
@@ -229,7 +230,7 @@ noncomputable def equivModuleGrassmannian (h : r ≤ N) :
 
 @[simp] theorem toSubmodule_equivModuleGrassmannian_apply (h : r ≤ N)
     (V : finiteGrassmannian 𝕜 r N) :
-    (equivModuleGrassmannian 𝕜 h V).toSubmodule = V.1 := (rfl)
+    (equivModuleGrassmannian 𝕜 h V).toSubmodule = V.val := (rfl)
 
 @[simp] theorem coe_equivModuleGrassmannian_symm_apply (h : r ≤ N)
     (W : Module.Grassmannian 𝕜 (Fin N → 𝕜) (N - r)) :

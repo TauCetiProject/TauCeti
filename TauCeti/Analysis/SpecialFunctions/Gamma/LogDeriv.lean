@@ -5,8 +5,9 @@ Authors: OpenAI Codex
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
+import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Logarithmic derivatives of the archimedean gamma factors
@@ -95,12 +96,6 @@ theorem analyticAt_logDeriv_Gammaℂ {s : ℂ} (hs : Gammaℂ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℂ) s := by
   have ha := analyticAt_Gammaℂ_of_ne_zero hs
   exact ha.deriv.div ha hs
-
-/-- The complex-place gamma factor is nonzero on the positive half-plane. -/
-theorem Gammaℂ_ne_zero_of_re_pos {s : ℂ} (hs : 0 < s.re) : Gammaℂ s ≠ 0 := by
-  rw [Gammaℂ_def]
-  exact mul_ne_zero (mul_ne_zero (by norm_num) (by simp [Real.pi_ne_zero]))
-    (Gamma_ne_zero_of_re_pos hs)
 
 /-- The real-place logarithmic derivative is continuous on the positive half-plane. -/
 theorem continuousOn_logDeriv_Gammaℝ :
