@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient.Form
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LevelShift
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent
@@ -418,46 +417,6 @@ variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDim
   [TopologicalSpace Q] [ChartedSpace H Q] [IsManifold I ∞ Q] [MulAction G Q]
   [ContMDiffSMul IG I ∞ G Q] [ProperSMul G Q] [IsCancelSMul G Q]
   {α : SmoothForm I Q ℝ 1} {ν : Module.Dual ℝ (GroupLieAlgebra IG G)}
-
-/-- **The magnetic term descends.** For a free proper action, the exterior derivative of a
-`G`-invariant one-form `α` pairing every fundamental vector field with a constant `c(ξ)` is the
-pullback along the orbit projection of a unique two-form on `Q ⧸ G`. -/
-theorem existsUnique_mpullback_quotientMk_eq_mextDerivₗ {c : Module.Dual ℝ (GroupLieAlgebra IG G)}
-    (hαinv : ∀ g : G, SmoothForm.mpullback (fun x : Q ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) g) α = α)
-    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = c ξ) :
-    letI := orbitRelQuotientChartedSpace IG G I Q
-    ∃! β : SmoothForm 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q) ℝ 2,
-      SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G Q))
-        (contMDiff_quotientMk (I := IG) (G := G) (I' := I) (M := Q)) β = mextDerivₗ I 1 α := by
-  have : T2Space G := IG.t2Space_of_lieGroup ∞
-  have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
-  refine existsUnique_mpullback_quotientMk_eq (fun g ↦ ?_) fun x v j hj ↦ ?_
-  · rw [← SmoothForm.mextDerivₗ_mpullback, hαinv]
-  -- `dα(ξ_Q, w) = 0` by Cartan's formula, since `α(ξ_Q)` is constant.
-  obtain ⟨ξ, hξ⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ _).1 hj
-  rw [InfinitesimalAction.fundamental_apply] at hξ
-  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-  rw [hv, ← SmoothBundleForm.eval₂_apply]
-  obtain rfl | rfl : j = 0 ∨ j = 1 := by fin_cases j <;> simp
-  · rw [← hξ, SmoothBundleForm.eval₂_apply]
-    exact mextDerivₗ_apply_fundamentalVectorField_eq_zero hαinv hα ξ x (v 1)
-  · rw [SmoothBundleForm.eval₂_swap, ← hξ, SmoothBundleForm.eval₂_apply,
-      mextDerivₗ_apply_fundamentalVectorField_eq_zero hαinv hα ξ x (v 0), neg_zero]
-
-/-- **The magnetic term is closed.** A two-form on `Q ⧸ G` whose pullback along the orbit
-projection is the exact form `dα` is closed. -/
-theorem isClosed_of_mpullback_quotientMk_eq_mextDerivₗ :
-    letI := orbitRelQuotientChartedSpace IG G I Q
-    ∀ {β : SmoothForm 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q) ℝ 2},
-      SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G Q))
-        (contMDiff_quotientMk (I := IG) (G := G) (I' := I) (M := Q)) β = mextDerivₗ I 1 α →
-      β.IsClosed := by
-  let _ := orbitRelQuotientChartedSpace IG G I Q
-  intro β hβ
-  rw [← (isSubmersion_quotientMk (I := IG) (G := G) (I' := I) (M := Q)).isClosed_mpullback_iff
-    Quotient.mk_surjective, hβ]
-  exact SmoothForm.isClosed_mextDerivₗ α
 
 /-- **Magnetic cotangent reduction: surjectivity.** For a free proper action and a one-form `α`
 pairing every fundamental vector field with `-ν`, every covector on the orbit space `Q ⧸ G` is the

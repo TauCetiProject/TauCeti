@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Submersion
+public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 
 /-!
@@ -29,6 +30,10 @@ of invariant forms is `TauCeti.SmoothForm.descend`.
 
 * `ProperSMul.existsUnique_mpullback_quotientMk_eq`: an invariant form vanishing on the orbit
   directions is the pullback of a unique smooth form on the orbit space.
+* `ProperSMul.existsUnique_mpullback_quotientMk_eq_mextDerivₗ`,
+  `ProperSMul.isClosed_of_mpullback_quotientMk_eq_mextDerivₗ`: the exterior derivative of an
+  invariant one-form pairing the fundamental vector fields with constants descends to a unique
+  closed two-form on the orbit space.
 
 ## References
 
@@ -90,5 +95,46 @@ theorem existsUnique_mpullback_quotientMk_eq {α : SmoothForm I' M F k}
       fun g ↦ by simpa only [SmoothForm.coe_mpullback] using congrArg Subtype.val (hinv g)
   exact ⟨SmoothForm.descendedForm hπ Quotient.mk_surjective α hbasic,
     SmoothForm.mpullback_descendedForm, fun β hβ ↦ SmoothForm.eq_descendedForm_iff.2 hβ⟩
+
+/-- **Descent of the exterior derivative of an invariant one-form.** For a free proper action, the
+exterior derivative of a `G`-invariant one-form `α` pairing every fundamental vector field with a
+constant `c(ξ)` is the pullback along the orbit projection of a unique two-form on `M ⧸ G`. -/
+theorem existsUnique_mpullback_quotientMk_eq_mextDerivₗ {α : SmoothForm I' M ℝ 1}
+    {c : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hαinv : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') g) α = α)
+    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I' ξ x] = c ξ) :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ∃! β : SmoothForm 𝓘(ℝ, QuotientModelSpace E E') (MulAction.orbitRel.Quotient G M) ℝ 2,
+      SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G M))
+        (contMDiff_quotientMk (I := I) (G := G) (I' := I') (M := M)) β = mextDerivₗ I' 1 α := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  refine existsUnique_mpullback_quotientMk_eq (fun g ↦ ?_) fun x v j hj ↦ ?_
+  · rw [← SmoothForm.mextDerivₗ_mpullback, hαinv]
+  -- `dα(ξ_M, w) = 0` by Cartan's formula, since `α(ξ_M)` is constant.
+  obtain ⟨ξ, hξ⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ _).1 hj
+  rw [InfinitesimalAction.fundamental_apply] at hξ
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv, ← SmoothBundleForm.eval₂_apply]
+  obtain rfl | rfl : j = 0 ∨ j = 1 := by fin_cases j <;> simp
+  · rw [← hξ, SmoothBundleForm.eval₂_apply]
+    exact mextDerivₗ_apply_fundamentalVectorField_eq_zero hαinv hα ξ x (v 1)
+  · rw [SmoothBundleForm.eval₂_swap, ← hξ, SmoothBundleForm.eval₂_apply,
+      mextDerivₗ_apply_fundamentalVectorField_eq_zero hαinv hα ξ x (v 0), neg_zero]
+
+/-- **The descended exterior derivative is closed.** A two-form on `M ⧸ G` whose pullback along
+the orbit projection is the exact form `dα` is closed. -/
+theorem isClosed_of_mpullback_quotientMk_eq_mextDerivₗ {α : SmoothForm I' M ℝ 1} :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ∀ {β : SmoothForm 𝓘(ℝ, QuotientModelSpace E E') (MulAction.orbitRel.Quotient G M) ℝ 2},
+      SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G M))
+        (contMDiff_quotientMk (I := I) (G := G) (I' := I') (M := M)) β = mextDerivₗ I' 1 α →
+      β.IsClosed := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  intro β hβ
+  rw [← (isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)).isClosed_mpullback_iff
+    Quotient.mk_surjective, hβ]
+  exact SmoothForm.isClosed_mextDerivₗ α
 
 end ProperSMul
