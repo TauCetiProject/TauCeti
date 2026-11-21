@@ -74,30 +74,31 @@ variable {D : ℕ} [NeZero D]
 /-- The root `(-b + i √D) / (2 a)` in the upper half-plane of a positive definite form
 `a x² + b x y + c y²` of discriminant `-D`. -/
 noncomputable def root (f : posDef D) : ℍ :=
-  ⟨⟨-(f.1.b : ℝ) / (2 * f.1.a), √(D : ℝ) / (2 * f.1.a)⟩,
-    by have := NeZero.pos D; have := (mem_posDef.1 f.2).2; positivity⟩
+  ⟨⟨-(f.val.b : ℝ) / (2 * f.val.a), √(D : ℝ) / (2 * f.val.a)⟩,
+    by have := NeZero.pos D; have := (mem_posDef.1 f.property).2; positivity⟩
 
 /-- The real part of the root of `a x² + b x y + c y²` is `-b / (2 a)`. -/
 @[simp]
-theorem re_root (f : posDef D) : (root f).re = -(f.1.b : ℝ) / (2 * f.1.a) :=
+theorem re_root (f : posDef D) : (root f).re = -(f.val.b : ℝ) / (2 * f.val.a) :=
   (rfl)
 
 /-- The imaginary part of the root of `a x² + b x y + c y²` is `√D / (2 a)`. -/
 @[simp]
-theorem im_root (f : posDef D) : (root f).im = √(D : ℝ) / (2 * f.1.a) :=
+theorem im_root (f : posDef D) : (root f).im = √(D : ℝ) / (2 * f.val.a) :=
   (rfl)
 
 /-- As a complex number, the root of `a x² + b x y + c y²` is `(-b + i √D) / (2 a)`. -/
-theorem coe_root (f : posDef D) : (root f : ℂ) = (-(f.1.b : ℂ) + √(D : ℝ) * I) / (2 * f.1.a) := by
+theorem coe_root (f : posDef D) : (root f : ℂ) = (-(f.val.b : ℂ) + √(D : ℝ) * I) / (2 * f.val.a)
+    := by
   simp [← (root f).re_add_im, add_div, mul_div_right_comm]
 
 /-- `root f` is the only point of the upper half-plane at which `a z² + b z + c` vanishes: the
 other root `(-b - i √D) / (2 a)` lies in the lower half-plane. -/
 theorem eq_root_iff (f : posDef D) (z : ℍ) :
-    z = root f ↔ (f.1.a : ℂ) * z ^ 2 + f.1.b * z + f.1.c = 0 := by
-  obtain ⟨hD, ha⟩ := mem_posDef.1 f.2
+    z = root f ↔ (f.val.a : ℂ) * z ^ 2 + f.val.b * z + f.val.c = 0 := by
+  obtain ⟨hD, ha⟩ := mem_posDef.1 f.property
   -- Over `ℂ` the discriminant `-D` of a form in `posDef D` is the square of `i √D`.
-  have hd : discrim (f.1.a : ℂ) f.1.b f.1.c = (√(D : ℝ) * I) * (√(D : ℝ) * I) := by
+  have hd : discrim (f.val.a : ℂ) f.val.b f.val.c = (√(D : ℝ) * I) * (√(D : ℝ) * I) := by
     rw [mul_mul_mul_comm, ← ofReal_mul, Real.mul_self_sqrt D.cast_nonneg]
     simpa [discrim, discrim_def] using congrArg (Int.cast : ℤ → ℂ) hD
   rw [sq, quadratic_eq_zero_iff (mod_cast ha.ne') hd, ← coe_root, UpperHalfPlane.ext_iff,
@@ -146,9 +147,9 @@ theorem root_injective : Function.Injective (root (D := D)) := by
 
 /-- The squared absolute value of the root of `a x² + b x y + c y²` is `c / a`. -/
 @[simp]
-theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := by
-  obtain ⟨hdf, hfa⟩ := mem_posDef.1 f.2
-  have hD : (f.1.b : ℝ) ^ 2 - 4 * f.1.a * f.1.c = -D := mod_cast hdf
+theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.val.c / f.val.a := by
+  obtain ⟨hdf, hfa⟩ := mem_posDef.1 f.property
+  have hD : (f.val.b : ℝ) ^ 2 - 4 * f.val.a * f.val.c = -D := mod_cast hdf
   rw [Complex.normSq_apply, coe_re, coe_im, re_root, im_root]
   field_simp
   linear_combination hD + Real.sq_sqrt D.cast_nonneg
@@ -156,15 +157,15 @@ theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := 
 /-- The product `conj (denom γ (root f)) · denom γ (root f)` equals the ratio `(γ • f).a / f.a` of
 leading coefficients. -/
 theorem conj_denom_mul_denom_root (f : posDef D) (γ : SL(2, ℤ)) :
-    conj (denom γ (root f)) * denom γ (root f) = ((γ • f).1.a : ℂ) / (f.1.a : ℂ) := by
-  have hfa : (f.1.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
-  have hgfa : ((γ • f).1.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp (γ • f).2).2.ne'
+    conj (denom γ (root f)) * denom γ (root f) = ((γ • f).val.a : ℂ) / (f.val.a : ℂ) := by
+  have hfa : (f.val.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.property).2.ne'
+  have hgfa : ((γ • f).val.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp (γ • f).property).2.ne'
   have hsqrt : √(D : ℝ) ≠ 0 := (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (NeZero.pos D))).ne'
   have hden : Complex.normSq (denom γ (root f)) ≠ 0 :=
     (Complex.normSq_pos.mpr (denom_ne_zero γ (root f))).ne'
   have him := congrArg UpperHalfPlane.im (root_smul γ f)
   rw [im_root, _root_.ModularGroup.im_smul_eq_div_normSq, im_root] at him
-  have hnorm : Complex.normSq (denom γ (root f)) = ((γ • f).1.a : ℝ) / (f.1.a : ℝ) := by
+  have hnorm : Complex.normSq (denom γ (root f)) = ((γ • f).val.a : ℝ) / (f.val.a : ℝ) := by
     field_simp at him ⊢; linarith
   rw [mul_comm, Complex.mul_conj, hnorm]; push_cast; rfl
 
@@ -177,7 +178,7 @@ theorem stabilizer_root (f : posDef D) :
 
 /-- The root of the reflected form `a x² - b x y + c y²` is the reflection `J • τ = -conj τ` of
 the root `τ` of `a x² + b x y + c y²`. -/
-theorem root_of_eq_reflected {f g : posDef D} (hg : g.1 = f.1.reflected) :
+theorem root_of_eq_reflected {f g : posDef D} (hg : g.val = f.val.reflected) :
     root g = J • root f := by
   refine UpperHalfPlane.ext_re_im ?_ ?_
   · rw [re_root, J_smul_re, re_root, hg, reflected_a, reflected_b]
@@ -188,21 +189,22 @@ theorem root_of_eq_reflected {f g : posDef D} (hg : g.1 = f.1.reflected) :
 /-- Positive definite forms related by scalar multiplication have the same root in the upper
 half-plane. -/
 theorem root_of_eq_smul {D' : ℕ} [NeZero D'] {f : posDef D} {g : posDef D'} {k : ℤ}
-    (hf : f.1 = k • g.1) : root f = root g := by
-  have hfa : 0 < f.1.a := (mem_posDef.mp f.2).2
+    (hf : f.val = k • g.val) : root f = root g := by
+  have hfa : 0 < f.val.a := (mem_posDef.mp f.property).2
   have hk0 : (k : ℂ) ≠ 0 := Int.cast_ne_zero.mpr fun hk ↦ by simp [hf, hk] at hfa
   refine (eq_root_iff g (root f)).mpr ?_
   have hrel := (eq_root_iff f (root f)).mp rfl
   simp only [hf, smul_a', smul_b', smul_c', smul_eq_mul, Int.cast_mul] at hrel
   exact (mul_eq_zero.mp (by linear_combination hrel :
-    (k : ℂ) * ((g.1.a : ℂ) * (root f : ℂ) ^ 2 + g.1.b * (root f : ℂ) + g.1.c) = 0)).resolve_left
+    (k : ℂ) * ((g.val.a : ℂ) * (root f : ℂ) ^ 2 + g.val.b *
+        (root f : ℂ) + g.val.c) = 0)).resolve_left
     hk0
 
 /-- A positive definite form and its primitive part have the same root in the upper half-plane. -/
 theorem root_eq_root_of_eq_primPart {D' : ℕ} [NeZero D'] {f : posDef D} {g : posDef D'}
-    (hg : g.1 = f.1.primPart) : root g = root f :=
-  (root_of_eq_smul (k := f.1.content)
-    (by rw [hg, natCast_zsmul, f.1.content_smul_primPart])).symm
+    (hg : g.val = f.val.primPart) : root g = root f :=
+  (root_of_eq_smul (k := f.val.content)
+    (by rw [hg, natCast_zsmul, f.val.content_smul_primPart])).symm
 
 end BinaryQuadraticForm
 

@@ -37,37 +37,37 @@ variable (ι) in
 def matrixSpecialOrthogonalContinuousMulEquivEuclidean :
     Matrix.specialOrthogonalGroup ι ℝ ≃ₜ* specialOrthogonalGroup (EuclideanSpace ℝ ι) where
   toFun A :=
-    ⟨matrixUnitaryContinuousMulEquivEuclidean ι ℝ ⟨A.1, A.2.1⟩,
+    ⟨matrixUnitaryContinuousMulEquivEuclidean ι ℝ ⟨A.val, A.property.1⟩,
       mem_specialOrthogonalGroup_iff.2 <| by
         rw [coe_matrixUnitaryContinuousMulEquivEuclidean, Matrix.det_toEuclideanCLM]
-        exact A.2.2⟩
+        exact A.property.2⟩
   invFun g :=
-    ⟨((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).symm g.1).1,
-      ((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).symm g.1).2,
+    ⟨((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).symm g.val).val,
+      ((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).symm g.val).property,
       MonoidHom.mem_mker.2 <| by
-        have hg : (g.1 : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι).det = 1 :=
-          mem_specialOrthogonalGroup_iff.1 g.2
+        have hg : (g.val : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι).det = 1 :=
+          mem_specialOrthogonalGroup_iff.1 g.property
         simpa [coe_matrixUnitaryContinuousMulEquivEuclidean_symm,
           ← Matrix.det_toEuclideanCLM (ι := ι) (𝕜 := ℝ)] using hg⟩
   left_inv A := Subtype.ext <| by
     simpa only [coe_matrixUnitaryContinuousMulEquivEuclidean,
       coe_matrixUnitaryContinuousMulEquivEuclidean_symm] using
-      StarAlgEquiv.symm_apply_apply (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) A.1
+      StarAlgEquiv.symm_apply_apply (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) A.val
   right_inv g := Subtype.ext <| Subtype.ext <| by
     simpa only [coe_matrixUnitaryContinuousMulEquivEuclidean,
       coe_matrixUnitaryContinuousMulEquivEuclidean_symm] using
-      StarAlgEquiv.apply_symm_apply (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) g.1.1
+      StarAlgEquiv.apply_symm_apply (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) g.val.val
   map_mul' A B := Subtype.ext <| Subtype.ext <| by
     simp only [Submonoid.coe_mul, Subgroup.coe_mul,
       coe_matrixUnitaryContinuousMulEquivEuclidean]
-    exact map_mul (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) A.1 B.1
+    exact map_mul (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)) A.val B.val
   continuous_toFun :=
     ((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).continuous.comp
-      (continuous_subtype_val.subtype_mk fun A ↦ A.2.1)).subtype_mk _
+      (continuous_subtypeVal.subtype_mk fun A ↦ A.property.1)).subtype_mk _
   continuous_invFun :=
-    (continuous_subtype_val.comp
+    (continuous_subtypeVal.comp
       ((matrixUnitaryContinuousMulEquivEuclidean ι ℝ).symm.continuous.comp
-        continuous_subtype_val)).subtype_mk _
+        continuous_subtypeVal)).subtype_mk _
 
 /-- The underlying continuous linear map of `matrixSpecialOrthogonalContinuousMulEquivEuclidean` is
 `Matrix.toEuclideanCLM`. -/
@@ -78,7 +78,7 @@ theorem coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean
         unitary (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) :
       EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) =
       Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ) (A : Matrix ι ι ℝ) :=
-  coe_matrixUnitaryContinuousMulEquivEuclidean ⟨A.1, A.2.1⟩
+  coe_matrixUnitaryContinuousMulEquivEuclidean ⟨A.val, A.property.1⟩
 
 /-- The underlying matrix of `(matrixSpecialOrthogonalContinuousMulEquivEuclidean ι).symm` is given
 by `Matrix.toEuclideanCLM.symm`. -/
@@ -90,6 +90,6 @@ theorem coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean_symm
       (Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)).symm
         ((g : unitary (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) :
           EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :=
-  coe_matrixUnitaryContinuousMulEquivEuclidean_symm g.1
+  coe_matrixUnitaryContinuousMulEquivEuclidean_symm g.val
 
 end TauCeti

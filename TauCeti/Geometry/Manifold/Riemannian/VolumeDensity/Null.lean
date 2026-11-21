@@ -105,7 +105,7 @@ private theorem riemannianVolume_eq_zero_iff_finBasis_image {α : M} {s : Set M}
     let A := toMeasurable μ (e '' s)
     let t := Subtype.val '' (e.source.domRestrict e ⁻¹' A)
     have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-      MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+      MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
     have htm : MeasurableSet t := hval.measurableSet_image.mpr
       ((measurableSet_toMeasurable _ _).preimage
         (measurableEmbedding_extChartAt_restrict α).measurable)

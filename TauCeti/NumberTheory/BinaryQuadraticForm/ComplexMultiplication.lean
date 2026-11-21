@@ -97,12 +97,13 @@ variable (n : ℕ) [NeZero n]
 /-- Proper equivalence of forms preserves the homothety class of `(root f).periodPair`. -/
 private theorem homothetyClass_periodPair_root_eq_of_orbitRel
     {f g : ↥(posDef n ⊓ primitiveForms (-n))} (h : orbitRel SL(2, ℤ) _ f g) :
-    PeriodPairHomothetyClass.mk (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩).periodPair =
+    PeriodPairHomothetyClass.mk (root ⟨f, inf_le_left (b := primitiveForms
+        (-n)) f.property⟩).periodPair =
       PeriodPairHomothetyClass.mk
-        (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩).periodPair := by
+        (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩).periodPair := by
   obtain ⟨γ, rfl⟩ := mem_orbit_iff.mp h
   rw [← PeriodPairHomothetyClass.mk_periodPair_smul γ
-    (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.2⟩), ← root_smul]
+    (root ⟨g, inf_le_left (b := primitiveForms (-n)) g.property⟩), ← root_smul]
   exact congrArg (fun z : ℍ ↦ PeriodPairHomothetyClass.mk z.periodPair)
     (congrArg root (Subtype.ext ((SubMulAction.val_smul γ g).trans
       (SubMulAction.val_smul γ _).symm)))
@@ -111,14 +112,14 @@ private theorem homothetyClass_periodPair_root_eq_of_orbitRel
 to the homothety class of `(root f).periodPair` (equivalently, of `f.complexOrderIdeal (-n)`). -/
 def posDefProperClassToHomothetyClass : PosDefProperClass n → PeriodPairHomothetyClass :=
   Quotient.lift (fun f ↦ PeriodPairHomothetyClass.mk
-    (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩).periodPair)
+    (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩).periodPair)
     fun _ _ ↦ homothetyClass_periodPair_root_eq_of_orbitRel n
 
 /-- Evaluation of `posDefProperClassToHomothetyClass` on a representative form. -/
 @[simp] theorem posDefProperClassToHomothetyClass_mk (f : ↥(posDef n ⊓ primitiveForms (-n))) :
     posDefProperClassToHomothetyClass n (Quotient.mk _ f) =
       PeriodPairHomothetyClass.mk
-        (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩).periodPair := (rfl)
+        (root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩).periodPair := (rfl)
 
 /-- The `j`-invariant of `posDefProperClassToHomothetyClass n q` is `singularModulus n q`. -/
 @[simp] theorem j_posDefProperClassToHomothetyClass (q : PosDefProperClass n) :
@@ -145,8 +146,8 @@ theorem leftOrder_posDefProperClassToHomothetyClass
   induction q using Quotient.inductionOn with | h f
   rw [posDefProperClassToHomothetyClass_mk, PeriodPairHomothetyClass.leftOrder_mk]
   exact leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive
-    ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
-    ((mem_posDef_inf_primitiveForms n).mp f.2).2.2
+    ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩
+    ((mem_posDef_inf_primitiveForms n).mp f.property).2.2
 
 /-- **Image of `posDefProperClassToHomothetyClass`**: a homothety class of complex period lattices
 lies in the image of `PosDefProperClass n` if and only if its left order is `complexOrder (-n)`. -/
@@ -196,7 +197,8 @@ recovers the underlying homothety class. -/
     (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1)
     (x : {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
       (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn}) :
-    posDefProperClassToHomothetyClass n (cmHomothetyClassEquivPosDefProperClass n hn x) = x.1 := by
+    posDefProperClassToHomothetyClass n (cmHomothetyClassEquivPosDefProperClass n hn x) = x.val
+        := by
   simpa only [coe_cmHomothetyClassEquivPosDefProperClass_symm] using
     congrArg Subtype.val ((cmHomothetyClassEquivPosDefProperClass n hn).symm_apply_apply x)
 
@@ -339,9 +341,9 @@ theorem eq_of_singularModulus_eq {m n : ℕ} [NeZero m] [NeZero n]
     (h : singularModulus m q₁ = singularModulus n q₂) : m = n := by
   obtain ⟨f₁, rfl⟩ := Quotient.exists_rep q₁; obtain ⟨f₂, rfl⟩ := Quotient.exists_rep q₂
   have hm : (-m : ℤ) % 4 = 0 ∨ (-m : ℤ) % 4 = 1 :=
-    ((mem_posDef_inf_primitiveForms m).mp f₁.2).1 ▸ f₁.1.discrim_emod_four_eq_zero_or_one
+    ((mem_posDef_inf_primitiveForms m).mp f₁.property).1 ▸ f₁.val.discrim_emod_four_eq_zero_or_one
   have hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1 :=
-    ((mem_posDef_inf_primitiveForms n).mp f₂.2).1 ▸ f₂.1.discrim_emod_four_eq_zero_or_one
+    ((mem_posDef_inf_primitiveForms n).mp f₂.property).1 ▸ f₂.val.discrim_emod_four_eq_zero_or_one
   have hx : posDefProperClassToHomothetyClass m (Quotient.mk _ f₁) =
       posDefProperClassToHomothetyClass n (Quotient.mk _ f₂) :=
     PeriodPairHomothetyClass.j_injective

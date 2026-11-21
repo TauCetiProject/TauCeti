@@ -83,7 +83,7 @@ local notation "U" => {w : EuclideanSpace ℝ (Fin n) // ‖w‖ = 1}
 
 /-- A unit vector is nonzero. -/
 private theorem unit_ne_zero (v : U) : (v : E) ≠ 0 :=
-  ne_of_apply_ne norm (by simp [v.2])
+  ne_of_apply_ne norm (by simp [v.property])
 
 /-- The bounding hyperplane `⟪v, ·⟫ = 0` of the half-space has dimension `n - 1`. -/
 private theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))ᗮ = n - 1 := by
@@ -96,7 +96,7 @@ private theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))�
 private def foot (v : U) (x : E) : (ℝ ∙ (v : E))ᗮ :=
   ⟨x - ⟪(v : E), x⟫ • (v : E), by
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_sub_right, inner_smul_right,
-      real_inner_self_eq_norm_sq, v.2]
+      real_inner_self_eq_norm_sq, v.property]
     ring⟩
 
 /-- On the hyperplane, the Poisson kernel with a pole `x` at height `t > 0` is a rescaled and
@@ -107,11 +107,12 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
       2 * ((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ *
         (⟪(v : E), x⟫ * (⟪(v : E), x⟫ ^ 2) ^ (-(n : ℝ) / 2)) *
         (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) ^ (-(n : ℝ) / 2) := by
-  have hy : ⟪(v : E), y⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
+  have hy : ⟪(v : E), y⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.property
   have hnorm : ‖y - foot v x‖ = ‖(y : E) - (x - ⟪(v : E), x⟫ • (v : E))‖ := rfl
   have h1 : ‖(y : E) - x‖ ^ 2 =
       ⟪(v : E), x⟫ ^ 2 * (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) := by
-    rw [norm_smul, mul_pow, hnorm, norm_sub_sq_eq_of_inner_eq_zero v.2 x hy, Real.norm_eq_abs,
+    rw [norm_smul, mul_pow, hnorm, norm_sub_sq_eq_of_inner_eq_zero v.property x hy,
+        Real.norm_eq_abs,
       abs_inv, abs_of_pos hx]
     field_simp
     ring
@@ -255,10 +256,11 @@ private theorem abs_halfSpacePoissonKernel_mul_sub_le (v : U) {g : (ℝ ∙ (v :
     |halfSpacePoissonKernel n v x y * (g y - g ξ)| ≤
       ε * halfSpacePoissonKernel n v x y +
         ⟪(v : E), x⟫ * (2 * (1 + δ⁻¹)) ^ n * C' * halfSpacePoissonKernel n v (ξ + v) y := by
-  have hv : ‖(v : E)‖ = 1 := v.2
-  have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
+  have hv : ‖(v : E)‖ = 1 := v.property
+  have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1
+      y.property
   have hx₁ : 0 < ⟪(v : E), (ξ : E) + v⟫ := by
-    rw [inner_add_right, Submodule.mem_orthogonal_singleton_iff_inner_right.1 ξ.2,
+    rw [inner_add_right, Submodule.mem_orthogonal_singleton_iff_inner_right.1 ξ.property,
       real_inner_self_eq_norm_sq, hv]
     norm_num
   have hK := (halfSpacePoissonKernel_pos_on_hyperplane (n := n) v hx y).le
@@ -281,7 +283,7 @@ private theorem abs_halfSpacePoissonKernel_mul_sub_le (v : U) {g : (ℝ ∙ (v :
       linarith [norm_sub_le_norm_sub_add_norm_sub (y : E) x ξ]
     nlinarith [mul_le_mul_of_nonneg_left h3 (by positivity : (0 : ℝ) ≤ 1 + δ⁻¹)]
   have hcomp := halfSpacePoissonKernel_le_mul (n := n) v hy hx.le hx₁ hfar
-  rw [inner_add_right, Submodule.mem_orthogonal_singleton_iff_inner_right.1 ξ.2,
+  rw [inner_add_right, Submodule.mem_orthogonal_singleton_iff_inner_right.1 ξ.property,
     real_inner_self_eq_norm_sq, hv, one_pow, zero_add, div_one] at hcomp
   calc halfSpacePoissonKernel n v x y * |g y - g ξ|
       ≤ (⟪(v : E), x⟫ * (2 * (1 + δ⁻¹)) ^ n * halfSpacePoissonKernel n v (ξ + v) y) * C' :=
@@ -297,9 +299,10 @@ theorem tendsto_halfSpacePoissonIntegral (v : U) {g : (ℝ ∙ (v : E))ᗮ → �
     (hg : AEStronglyMeasurable g) (hC : ∀ y, |g y| ≤ C) {ξ : (ℝ ∙ (v : E))ᗮ}
     (hξ : ContinuousAt g ξ) :
     Tendsto (halfSpacePoissonIntegral v g) (𝓝[{x | 0 < ⟪(v : E), x⟫}] (ξ : E)) (𝓝 (g ξ)) := by
-  have hξv : ⟪(v : E), (ξ : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 ξ.2
+  have hξv : ⟪(v : E), (ξ : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1
+      ξ.property
   have hx₁ : 0 < ⟪(v : E), (ξ : E) + v⟫ := by
-    rw [inner_add_right, hξv, real_inner_self_eq_norm_sq, v.2]
+    rw [inner_add_right, hξv, real_inner_self_eq_norm_sq, v.property]
     norm_num
   have hgC : ∀ y, |g y - g ξ| ≤ 2 * C := fun y ↦
     (abs_sub (g y) (g ξ)).trans (by linarith [hC y, hC ξ])
@@ -360,14 +363,16 @@ private theorem continuousOn_halfSpacePoissonIntegral (v : U) {g : (ℝ ∙ (v :
     exact (integrable_halfSpacePoissonKernel_mul v hg hC hy).aestronglyMeasurable
   · filter_upwards [hnear] with x hx
     refine ae_of_all _ fun y ↦ ?_
-    have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
+    have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1
+        y.property
     obtain ⟨hxpos, hK⟩ := halfSpacePoissonKernel_le_of_norm_sub_le (n := n) v hx₀
       (mem_closedBall_iff_norm.1 hx) hy
     rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs,
       abs_of_pos (halfSpacePoissonKernel_pos_on_hyperplane v hxpos y)]
     exact mul_le_mul hK (hC y) (abs_nonneg _)
       (mul_nonneg (by positivity) (halfSpacePoissonKernel_pos_on_hyperplane v hx₀ y).le)
-  · have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
+  · have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1
+      y.property
     exact ((harmonicAt_halfSpacePoissonKernel_left v hy
       fun h ↦ hx₀.ne' (by rwa [h])).1.continuousAt).mul continuousAt_const
 
@@ -385,7 +390,7 @@ private theorem setAverage_ball_halfSpacePoissonIntegral (v : U) {g : (ℝ ∙ (
     · filter_upwards [Measure.quasiMeasurePreserving_fst.ae (ae_restrict_mem measurableSet_ball)]
         with p hp
       have hy : ⟪(v : E), (p.2 : E)⟫ = 0 :=
-        Submodule.mem_orthogonal_singleton_iff_inner_right.1 p.2.2
+        Submodule.mem_orthogonal_singleton_iff_inner_right.1 p.2.property
       obtain ⟨hxpos, hK⟩ := halfSpacePoissonKernel_le_of_norm_sub_le (n := n) v hx₀
         ((mem_ball_iff_norm.1 hp).le.trans hr.2.le) hy
       simp only [Function.uncurry, F, norm_mul, Real.norm_eq_abs,
@@ -399,7 +404,8 @@ private theorem setAverage_ball_halfSpacePoissonIntegral (v : U) {g : (ℝ ∙ (
   have hmean : ∀ y : (ℝ ∙ (v : E))ᗮ, ∫ z in ball x₀ r, F z y =
       volume.real (ball x₀ r) * (halfSpacePoissonKernel n v x₀ y * g y) := by
     intro y
-    have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
+    have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1
+        y.property
     have hsub : closedBall x₀ r ⊆ {x | 0 < ⟪(v : E), x⟫} := fun z hz ↦
       (halfSpacePoissonKernel_le_of_norm_sub_le (n := n) v hx₀
         ((mem_closedBall_iff_norm.1 hz).trans hr.2.le) hy).1
@@ -444,7 +450,7 @@ theorem exists_harmonicOnNhd_continuousOn_halfSpace_eq (v : U) {g : (ℝ ∙ (v 
   have huP : ∀ x ∈ {x : E | 0 < ⟪(v : E), x⟫}, u =ᶠ[𝓝 x] halfSpacePoissonIntegral v g :=
     fun x hx ↦ eventually_of_mem (hΩ.mem_nhds hx) hu
   refine ⟨u, fun x hx ↦ (harmonicAt_congr_nhds (huP x hx)).2 (hP x hx), ?_,
-    fun y ↦ dite_eq_left y.2⟩
+    fun y ↦ dite_eq_left y.property⟩
   have hunion : {x : E | 0 ≤ ⟪(v : E), x⟫} = {x | 0 < ⟪(v : E), x⟫} ∪ S := by
     ext x
     simp only [mem_ofPred_eq, mem_union, S, SetLike.mem_coe,
@@ -458,7 +464,7 @@ theorem exists_harmonicOnNhd_continuousOn_halfSpace_eq (v : U) {g : (ℝ ∙ (v 
     · rw [ContinuousWithinAt, hux]
       exact (tendsto_halfSpacePoissonIntegral v hg.aestronglyMeasurable hC
         hg.continuousAt).congr' (eventually_of_mem self_mem_nhdsWithin fun y hy ↦ (hu hy).symm)
-    · have hres : S.domRestrict u = g := funext fun y ↦ dite_eq_left y.2
+    · have hres : S.domRestrict u = g := funext fun y ↦ dite_eq_left y.property
       exact (continuousOn_iff_continuous_domRestrict.2 (hres ▸ hg)) x hx
 
 end TauCeti

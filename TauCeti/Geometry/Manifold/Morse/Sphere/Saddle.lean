@@ -116,26 +116,13 @@ private theorem fderiv_fderiv_ambient (x a b : E) :
 /-! ### The critical points -/
 
 omit [Fact (finrank ℝ E = n + 1)] in
-/-- A point of the sphere whose components along the orthonormal vectors `u` and `v` have squares
-summing to `1` lies in the plane spanned by `u` and `v`. -/
-private theorem coe_eq_of_sq_add_sq_eq_one (huv : ⟪(u : E), (v : E)⟫ = 0) {x : sphere (0 : E) 1}
-    (hx : sphereHeight u x ^ 2 + sphereHeight v x ^ 2 = 1) :
-    (x : E) = sphereHeight u x • (u : E) + sphereHeight v x • (v : E) := by
-  have hx1 : ‖(x : E)‖ = 1 := norm_eq_of_mem_sphere x
-  rw [← sub_eq_zero, ← norm_eq_zero, ← sq_eq_zero_iff, norm_sub_sq_real, hx1]
-  simp only [sphereHeight_apply] at hx ⊢
-  simp only [inner_add_right, inner_smul_right, norm_add_sq_real, norm_smul, inner_smul_left,
-    Real.norm_eq_abs, mul_pow, sq_abs, norm_eq_of_mem_sphere, huv, RCLike.conj_to_real]
-  linear_combination -hx
-
-omit [Fact (finrank ℝ E = n + 1)] in
 /-- At a point with `hᵥ = t / 2` and `hᵤ² = 1 - t² / 4` the ambient gradient `2 ⟪p, u⟫ u + t v` is
 `2 p`. -/
 private theorem mem_span_of_sphereHeight_eq (huv : ⟪(u : E), (v : E)⟫ = 0)
     (h1 : sphereHeight v p = t / 2) (h2 : sphereHeight u p ^ 2 = 1 - t ^ 2 / 4) :
     (2 * ⟪(p : E), (u : E)⟫) • (u : E) + t • (v : E) ∈ ℝ ∙ (p : E) := by
   refine Submodule.mem_span_singleton.2 ⟨2, ?_⟩
-  have hx := coe_eq_of_sq_add_sq_eq_one huv (x := p) (by rw [h1, h2]; ring)
+  have hx := coe_eq_sphereHeight_smul_add_sphereHeight_smul huv (x := p) (by rw [h1, h2]; ring)
   rw [h1, sphereHeight_apply] at hx
   nth_rewrite 1 [hx]
   rw [smul_add, smul_smul, smul_smul]
@@ -245,10 +232,9 @@ private theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_self
           ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v b, (u : E)⟫ -
         t * ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v a,
           mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v b⟫ := by
-  have hvu : sphereHeight u v = 0 := by rw [sphereHeight_apply, real_inner_comm, huv]
   rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight_apply
     ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht).2 (Or.inl rfl)),
-    hvu, sphereHeight_self]
+    sphereHeight_eq_zero_of_inner_eq_zero huv, sphereHeight_self]
   ring
 
 /-- **The north pole of `hᵤ² + t hᵥ`.** For `t ≠ 0, 2`, the north pole `v` is a nondegenerate
@@ -292,7 +278,7 @@ theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self
   -- The Hessian is positive definite on the line through `b`.
   have hpos := finrank_add_manifoldMorseIndex_le_of_posDef_criticalHessian
     (f := sphereHeight u ^ 2 + t • sphereHeight v) (W := ℝ ∙ b) fun z hz ↦ by
-      obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 z.2
+      obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 z.property
       have hc0 : c ≠ 0 := by
         rintro rfl
         exact hz (Subtype.ext (by simpa using hc.symm))
@@ -314,7 +300,7 @@ theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self
     (f := sphereHeight u ^ 2 + t • sphereHeight v) (W := LinearMap.ker ℓ) fun z hz ↦ by
       have hzu : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v z, (u : E)⟫ = 0 := by
         rw [real_inner_comm]
-        simpa [ℓ, LinearMap.mem_ker] using z.2
+        simpa [ℓ, LinearMap.mem_ker] using z.property
       have hx := (map_ne_zero_iff _ (injective_mvfderiv_subtypeVal_sphere v)).2
         fun h : (z : TangentSpace (𝓡 n) v) = 0 ↦ hz (Subtype.ext h)
       simp only [QuadraticMap.restrict_apply, neg_apply,
@@ -466,7 +452,7 @@ private theorem encard_setOf_sphereHeight_eq (huv : ⟪(u : E), (v : E)⟫ = 0) 
   simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff]
   constructor
   · rintro ⟨h1, h2⟩
-    have hx := coe_eq_of_sq_add_sq_eq_one huv (x := x) (by rw [h1, h2]; ring)
+    have hx := coe_eq_sphereHeight_smul_add_sphereHeight_smul huv (x := x) (by rw [h1, h2]; ring)
     rw [h1] at hx
     rcases sq_eq_sq_iff_eq_or_eq_neg.1 (h2.trans hs.symm) with h | h
     · exact Or.inl (Subtype.ext (by rw [hx, h]))

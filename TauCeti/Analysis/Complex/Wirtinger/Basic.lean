@@ -22,6 +22,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # Wirtinger derivatives
@@ -365,6 +366,34 @@ theorem wirtingerDeriv_id : wirtingerDeriv (id : V → V) x = ContinuousLinearMa
 theorem conjWirtingerDeriv_id : conjWirtingerDeriv (id : V → V) x = 0 :=
   (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_eq_zero
 
+/-- Adding a complex differentiable map does not change the conjugate Wirtinger derivative:
+`\bar∂(g + f) = \bar∂f`. Where `f` is not real-differentiable, neither is `g + f`, and both sides
+vanish. -/
+theorem _root_.DifferentiableAt.conjWirtingerDeriv_add_left {g f : V → W} {y : V}
+    (hg : DifferentiableAt ℂ g y) :
+    conjWirtingerDeriv (fun z ↦ g z + f z) y = conjWirtingerDeriv f y := by
+  have hgR : DifferentiableAt ℝ g y := hg.restrictScalars ℝ
+  by_cases hf : DifferentiableAt ℝ f y
+  · exact (conjWirtingerDeriv_add hgR hf).trans (by rw [hg.conjWirtingerDeriv_eq_zero, zero_add])
+  · have hf' : ¬DifferentiableAt ℝ (fun z ↦ g z + f z) y := fun h ↦
+      hf (by simpa using h.fun_sub hgR)
+    ext v
+    simp only [conjWirtingerDeriv_apply, fderiv_zero_of_not_differentiableAt hf,
+      fderiv_zero_of_not_differentiableAt hf']
+
+/-- Adding the identity does not change the conjugate Wirtinger derivative:
+`\bar∂(z + f) = \bar∂f`. -/
+@[simp]
+theorem conjWirtingerDeriv_id_add (f : V → V) (y : V) :
+    conjWirtingerDeriv (fun z ↦ z + f z) y = conjWirtingerDeriv f y :=
+  (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_add_left
+
+/-- Adding the identity adds the identity to the Wirtinger derivative of a real-differentiable
+function: `∂(z + f) = 1 + ∂f`. -/
+theorem wirtingerDeriv_id_add {f : V → V} {y : V} (hf : DifferentiableAt ℝ f y) :
+    wirtingerDeriv (fun z ↦ z + f z) y = ContinuousLinearMap.id ℂ V + wirtingerDeriv f y :=
+  (wirtingerDeriv_add differentiableAt_id hf).trans (by rw [wirtingerDeriv_id])
+
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
 theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
@@ -456,6 +485,21 @@ theorem conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X] [NormedSpace 
   rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart,
     fderiv_comp x (hφ.restrictScalars ℝ) hg, hφ.fderiv_restrictScalars ℝ,
     ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp]
+
+/-- **The chain rule for the conjugate Wirtinger derivative** before a complex-linear change of
+variables: `\bar∂(g ∘ e) = \bar∂g(e x) ∘ e`. No differentiability is needed, since `e` is an
+isomorphism. -/
+theorem conjWirtingerDeriv_comp_continuousLinearEquiv {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] (e : X ≃L[ℂ] V) (g : V → W) (x : X) :
+    conjWirtingerDeriv (g ∘ e) x = (conjWirtingerDeriv g (e x)).comp (e : X →L[ℂ] V) := by
+  have h := (e.restrictScalars' ℝ).comp_right_fderiv (f := g) (x := x)
+  rw [ContinuousLinearEquiv.coe_restrictScalars'] at h
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart, h,
+    ← ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+  -- The real map underlying `e.restrictScalars' ℝ` is `e` with scalars restricted.
+  congr 2
+  ext
+  simp
 
 section Mul
 

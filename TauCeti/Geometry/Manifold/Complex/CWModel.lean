@@ -348,7 +348,7 @@ theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
       ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
     have hWempty (k m : ℕ) : IsEmpty (cell (W k : Set PEmpty.{u + 1}) m) :=
       ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
-    have (k : ℕ) : IsEmpty {x : M | ‖i x - 0‖ ^ 2 ≤ (k : ℝ)} := ⟨fun x ↦ hM.elim x.1⟩
+    have (k : ℕ) : IsEmpty {x : M | ‖i x - 0‖ ^ 2 ≤ (k : ℝ)} := ⟨fun x ↦ hM.elim x.val⟩
     refine ⟨0, Nat.cast, PEmpty.{u + 1}, inferInstance, inferInstance, inferInstance, W,
       Homeomorph.empty.toHomotopyEquiv, fun _ ↦ Homeomorph.empty.toHomotopyEquiv, ?_,
       Nat.strictMono_cast, tendsto_natCast_atTop_atTop,
@@ -358,12 +358,12 @@ theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
           ⟨fun ⟨n, j⟩ ↦ (hWempty k n).elim j⟩
         inferInstance),
       RelCWComplex.finiteDimensional_of_isEmpty_cell_gt _ (d := 0) fun m _ ↦ hempty m,
-      fun _ x ↦ PEmpty.elim x.1, fun _ x ↦ hM.elim x, fun m ↦ ⟨?_⟩,
+      fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x, fun m ↦ ⟨?_⟩,
       fun m _ ↦ hempty m, fun k m _ ↦ hWempty k m⟩
     · rw [← isMorseOn_univ, univ_eq_empty_iff.2 hM]
       exact isMorseOn_empty
     · have : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) |
-          manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) x = m} := ⟨fun x ↦ hM.elim x.1⟩
+          manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) x = m} := ⟨fun x ↦ hM.elim x.val⟩
       exact Equiv.equivOfIsEmpty _ _
   · have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
     have : FiniteDimensional ℂ E :=

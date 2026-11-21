@@ -88,7 +88,7 @@ theorem isRightAlmostSplit_ofHom_subtype_jacobson :
     have hx : ((s.hom.hom x : Module.jacobson A P) : P) = x :=
       congrArg (fun φ : of A P ⟶ of A P ↦ φ.hom.hom x)
         (IsSplitEpi.id (ofHom (Module.jacobson A P).subtype))
-    exact hx ▸ (s.hom.hom x).2
+    exact hx ▸ (s.hom.hom x).property
   · have hrange : LinearMap.range g.hom.hom ≠ ⊤ := fun htop ↦ hg ?_
     · have hle := le_jacobson_of_ne_top_of_isLocalRing_end hrange
       refine ⟨ObjectProperty.homMk (ModuleCat.ofHom

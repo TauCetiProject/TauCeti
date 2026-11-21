@@ -182,7 +182,7 @@ variable [Finite σ] {c : σ → ℝ} (hc : ∀ i, 1 < c i)
 `c` whose coordinates are all strictly greater than `1`. -/
 noncomputable def ofOneLt : IsRestricted.subring (R := R) c →ₐ[R] washnitzerAlgebra σ R where
   toRingHom := (IsRestricted.subring (R := R) c).subtype.codRestrict
-    (washnitzerAlgebra σ R).toSubring fun f ↦ f.2.mem_washnitzerAlgebra hc
+    (washnitzerAlgebra σ R).toSubring fun f ↦ f.property.mem_washnitzerAlgebra hc
   commutes' _ := (rfl)
 
 /-- The inclusion `ofOneLt` leaves the underlying formal power series unchanged. -/

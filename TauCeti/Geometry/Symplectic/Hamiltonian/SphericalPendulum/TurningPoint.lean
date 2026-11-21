@@ -70,6 +70,15 @@ theorem mem_sphericalPendulumTurningPointDomain_iff {c : ℝ × ℝ} :
     c ∈ sphericalPendulumTurningPointDomain ↔
       c.2 ≠ 0 ∧ ∃ z ∈ Ioo (-1) 1, sphericalPendulumEffectivePotential c.2 z < c.1 := (Iff.rfl)
 
+/-- A value `(h, j)` with `j ≠ 0` and `j² < 2 h` lies strictly above the curve of relative
+equilibria, since the effective potential at the equator is `V_j(0) = j² / 2 < h`. -/
+theorem mem_sphericalPendulumTurningPointDomain_of_sq_lt {h j : ℝ} (hj : j ≠ 0)
+    (hjh : j ^ 2 < 2 * h) : (h, j) ∈ sphericalPendulumTurningPointDomain :=
+  ⟨hj, 0, ⟨by norm_num, by norm_num⟩, by
+    rw [sphericalPendulumEffectivePotential_def,
+      show j ^ 2 / (2 * (1 - (0 : ℝ) ^ 2)) + 0 = j ^ 2 / 2 by ring]
+    linarith⟩
+
 /-- The **lower turning point** `z₋` of the spherical pendulum at energy `h` and vertical angular
 momentum `j`: the infimum of the heights `q₃` of the points of the fibre `F⁻¹(h, j)` of the
 energy–momentum map. -/

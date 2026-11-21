@@ -240,11 +240,11 @@ theorem isProperMap_iff_domRestrict_of_iUnion_eq_univ {ι : Type*} [Finite ι] {
       simp_rw [Set.image_domRestrict, ← Set.image_iUnion, ← Set.inter_iUnion, hcov, Set.inter_univ]
     rw [himg]
     exact isClosed_iUnion_of_finite fun i ↦
-      (hall i).isClosedMap _ (hE.preimage continuous_subtype_val)
+      (hall i).isClosedMap _ (hE.preimage continuous_subtypeVal)
   · intro y
     rw [hpre]
     exact isCompact_iUnion fun i ↦
-      ((hall i).isCompact_preimage isCompact_singleton).image continuous_subtype_val
+      ((hall i).isCompact_preimage isCompact_singleton).image continuous_subtypeVal
 
 /-- **Properness on a binary closed cover of the source.** If closed sets `s` and `t` cover `X`,
 then `f : X → Y` is proper if and only if its restrictions to `s` and to `t` are proper. -/

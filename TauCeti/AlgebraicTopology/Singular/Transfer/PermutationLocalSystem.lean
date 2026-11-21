@@ -88,14 +88,14 @@ private def liftSimplex (σ : (TopCat.toSSet.obj B).obj n)
   ((hp.bijOn_simplexMap_apply σ (SimplexCategory.toTopInitialVertex n.unop)).equiv _).symm e
 
 private lemma liftSimplex_initialSheet (τ : (TopCat.toSSet.obj E).obj n) :
-    (liftSimplex hp ((TopCat.toSSet.map p).app n τ) (initialSheet τ)).1 = τ :=
+    (liftSimplex hp ((TopCat.toSSet.map p).app n τ) (initialSheet τ)).val = τ :=
   -- Evaluating the lift `τ` at the initial vertex gives, by definition, its initial sheet.
   congrArg Subtype.val ((Equiv.symm_apply_eq _).2 rfl :
     liftSimplex hp ((TopCat.toSSet.map p).app n τ) (initialSheet τ) = ⟨τ, rfl⟩)
 
 private lemma simplexMap_liftSimplex (σ : (TopCat.toSSet.obj B).obj n)
     (e : p ⁻¹' {(initialVertex σ).as}) :
-    simplexMap (liftSimplex hp σ e).1
+    simplexMap (liftSimplex hp σ e).val
         (SimplexCategory.toTopInitialVertex n.unop) = e :=
   congrArg Subtype.val (Equiv.apply_symm_apply
     ((hp.bijOn_simplexMap_apply σ (SimplexCategory.toTopInitialVertex n.unop)).equiv _) e)
@@ -147,12 +147,12 @@ private def liftSum {k : ℕ} (σ : (TopCat.toSSet.obj B) _⦋k⦌) :
     (hp.permutationLocalSystem R).obj (initialVertex σ) ⟶
       ((TopCat.toSSet.obj E).chainComplex (ModuleCat.of R R)).X k :=
   ModuleCat.ofHom <| Finsupp.linearCombination R fun e ↦
-    ((TopCat.toSSet.obj E).ιChainComplex (R := ModuleCat.of R R) (liftSimplex hp σ e).1).hom 1
+    ((TopCat.toSSet.obj E).ιChainComplex (R := ModuleCat.of R R) (liftSimplex hp σ e).val).hom 1
 
 private lemma single_liftSum {k : ℕ} (σ : (TopCat.toSSet.obj B) _⦋k⦌)
     (e : p ⁻¹' {(initialVertex σ).as}) :
     hp.permutationLocalSystemSingle R _ e ≫ liftSum hp R σ =
-      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).1 := by
+      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).val := by
   ext : 1
   -- Both sides are linear maps out of `R`, the left one `r ↦ linearCombination (single e r)`.
   exact LinearMap.ext_ring <|
@@ -180,7 +180,7 @@ private lemma single_ιTwistedChainComplex_singularChainComplexPermutationInvX {
     hp.permutationLocalSystemSingle R _ e ≫
         ιTwistedChainComplex (hp.permutationLocalSystem R) k σ ≫
           singularChainComplexPermutationInvX hp R k =
-      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).1 := by
+      (TopCat.toSSet.obj E).ιChainComplex (liftSimplex hp σ e).val := by
   have h : ιTwistedChainComplex (hp.permutationLocalSystem R) k σ ≫
       singularChainComplexPermutationInvX hp R k = liftSum hp R σ :=
     Cofan.IsColimit.fac (isColimitTwistedChainComplexXCofan (hp.permutationLocalSystem R) k) _ σ
@@ -199,7 +199,7 @@ private def singularChainComplexPermutationIsoX (k : ℕ) :
   inv_hom_id := twistedChainComplex_hom_ext _ fun σ ↦ hp.permutationLocalSystem_hom_ext R fun e ↦ by
     rw [single_ιTwistedChainComplex_singularChainComplexPermutationInvX_assoc,
       ιChainComplex_singularChainComplexPermutationHomX, Category.comp_id]
-    exact single_initialSheet_ιTwistedChainComplex hp R (liftSimplex hp σ e).2
+    exact single_initialSheet_ιTwistedChainComplex hp R (liftSimplex hp σ e).property
       (simplexMap_liftSimplex hp σ e)
 
 /-- **Singular chains of a covering space as twisted chains of the base**: the singular chain
@@ -287,10 +287,10 @@ theorem transfer_comp_singularChainComplexPermutationIso_inv (hfin : ∀ b, Fini
       hp.permutationLocalSystemTransfer_app R hfin]
     refine (Preadditive.sum_comp _ _ _).trans ?_
     -- The sheets over the initial vertex of `σ` correspond to the lifts of `σ`.
-    refine Finset.sum_bij (fun e _ ↦ (liftSimplex hp σ e).1) (fun e _ ↦ ?_)
+    refine Finset.sum_bij (fun e _ ↦ (liftSimplex hp σ e).val) (fun e _ ↦ ?_)
       (fun e₁ _ e₂ _ h ↦ ?_) (fun τ hτ ↦ ?_)
       fun e _ ↦ single_ιTwistedChainComplex_singularChainComplexPermutationInvX hp R σ e
-    · exact (Set.Finite.mem_toFinset _).2 (liftSimplex hp σ e).2
+    · exact (Set.Finite.mem_toFinset _).2 (liftSimplex hp σ e).property
     · exact (Equiv.injective _) (Subtype.ext h)
     · refine ⟨_, Finset.mem_univ _, congrArg Subtype.val
         (((hp.bijOn_simplexMap_apply σ _).equiv _).symm_apply_apply ⟨τ, ?_⟩)⟩

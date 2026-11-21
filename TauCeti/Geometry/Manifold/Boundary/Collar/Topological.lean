@@ -70,7 +70,7 @@ private noncomputable def depthHomeomorph {ε : ℝ} (hε : 0 < ε) :
       EuclideanHalfSpace.mem_normalIio.trans EuclideanHalfSpace.mem_normalIioOpens.symm))
 
 private theorem depthHomeomorph_apply_coe_zero {ε : ℝ} (hε : 0 < ε) (t : ↥(Ico (0 : ℝ) 1)) :
-    (depthHomeomorph hε t : EuclideanHalfSpace 1).1 0 = ε * t := by
+    (depthHomeomorph hε t : EuclideanHalfSpace 1).val 0 = ε * t := by
   have ht : (depthHomeomorph hε t : EuclideanHalfSpace 1) =
       (EuclideanHalfSpace.homeomorphNormalIio ε).symm (icoScale hε t) :=
     rfl
@@ -94,7 +94,7 @@ private noncomputable def collarHomeomorph (h : IsProductCollarChart k φ V ε) 
 /-- The chart value of a point of the local collar has normal coordinate `ε t` at depth `t`. -/
 private theorem snd_collarHomeomorph (h : IsProductCollarChart k φ V ε)
     (p : h.sourceBoundaryOpens × ↥(Ico (0 : ℝ) 1)) :
-    (φ (h.collarHomeomorph p)).2.1 0 = ε * p.2 := by
+    (φ (h.collarHomeomorph p)).2.val 0 = ε * p.2 := by
   rw [← h.coe_homeomorphProdOpens_snd, collarHomeomorph, Homeomorph.trans_apply,
     Homeomorph.apply_symm_apply]
   exact depthHomeomorph_apply_coe_zero h.height_pos p.2
@@ -112,7 +112,7 @@ private theorem collarHomeomorph_zero (h : IsProductCollarChart k φ V ε)
     simpa [hz] using h.map_homeomorphProdOpens_fst z
   have hz0 : (φ z).2 = 0 := by
     rw [EuclideanHalfSpace.eq_zero_iff, h.snd_collarHomeomorph, mul_zero]
-  exact φ.injOn (h.mem_sourceOpens.1 z.2) (h.mem_sourceBoundaryOpens.1 y.2)
+  exact φ.injOn (h.mem_sourceOpens.1 z.property) (h.mem_sourceBoundaryOpens.1 y.property)
     ((show φ z = ((φ z).1, 0) from Prod.ext rfl hz0).trans hy.symm)
 
 /-- **The local collar of a product collar chart.** The boundary points of the source of a product
@@ -125,7 +125,7 @@ theorem exists_isCollar (h : IsProductCollarChart k φ V ε) :
   refine ⟨fun p ↦ h.collarHomeomorph p,
     ⟨h.sourceOpens.isOpen.isOpenEmbedding_subtypeVal.comp h.collarHomeomorph.isOpenEmbedding,
       h.collarHomeomorph_zero⟩, fun p hp ↦ ?_⟩
-  have hp0 := (h.mem_boundary_iff _ (h.mem_sourceOpens.1 (h.collarHomeomorph p).2)).1 hp
+  have hp0 := (h.mem_boundary_iff _ (h.mem_sourceOpens.1 (h.collarHomeomorph p).property)).1 hp
   rw [h.snd_collarHomeomorph] at hp0
   exact (mul_eq_zero.1 hp0).resolve_left h.height_pos.ne'
 
@@ -137,11 +137,11 @@ points of positive depth are interior points: the local collar of a product coll
 theorem isLocallyCollared_subtypeVal_boundary :
     IsLocallyCollared ((↑) : (𝓡∂ (n + 1)).boundary M → M) := by
   refine isLocallyCollared_iff.2 fun x ↦ ?_
-  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary (k := 0) x.2
+  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary (k := 0) x.property
   obtain ⟨c, hc, hc0⟩ := h.exists_isCollar
   exact ⟨h.sourceBoundaryOpens, h.sourceBoundaryOpens.isOpen, h.mem_sourceBoundaryOpens.2 hxφ,
     c, hc,
-    fun p ⟨y, hy⟩ ↦ hc0 p (hy ▸ y.2)⟩
+    fun p ⟨y, hy⟩ ↦ hc0 p (hy ▸ y.property)⟩
 
 /-- **The collar of a compact boundary.** If the boundary of a Hausdorff charted space over the
 half-space is compact, then it is collared: there is an open embedding `c : ∂M × [0, 1) → M` with
@@ -156,6 +156,6 @@ theorem isCollared_subtypeVal_boundary [T2Space M]
 the half-space, there is an open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`. -/
 theorem isCollared_subtypeVal_boundary_of_compactSpace [CompactSpace M] [T2Space M] :
     IsCollared ((↑) : (𝓡∂ (n + 1)).boundary M → M) :=
-  isCollared_subtypeVal_boundary (𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional.isCompact
+  isCollared_subtypeVal_boundary ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional M).isCompact
 
 end TauCeti

@@ -346,7 +346,7 @@ theorem isotypicTensorEquivOfCentral_symm_apply [Module.Finite k S] [Module.Proj
   apply (isotypicTensorEquivOfCentral hc heS hsurj hker).injective
   apply Subtype.ext
   have hx : e • (x : M) = x := by
-    simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using x.2
+    simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using x.property
   rw [LinearEquiv.apply_symm_apply, coe_isotypicTensorEquivOfCentral_apply]
   calc
     (x : M) = e • (x : M) := hx.symm
@@ -377,7 +377,7 @@ theorem isotypicTensorEquivOfCentral_symm_apply_map [Module.Finite k S] [Module.
     (isotypicTensorEquivOfCentral (M := N) hc heS hsurj hker).symm
         ⟨g x, by
           rw [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply, ← g.map_smul,
-            ← Module.End.smulLeft_apply e hc, LinearMap.mem_fixedSubmodule_iff.mp x.2]⟩ =
+            ← Module.End.smulLeft_apply e hc, LinearMap.mem_fixedSubmodule_iff.mp x.property]⟩ =
       AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
         (LinearMap.compRight (M := S) k g)
         ((isotypicTensorEquivOfCentral hc heS hsurj hker).symm x) := by
@@ -509,10 +509,10 @@ theorem isotypicProdEval_bijective_of_bijective_prod :
     Function.RightInverse.surjective (g := inv) fun m ↦ ?_⟩
   · have hx : prodIdempotentFst h • isotypicEval k x = isotypicEval k x := by
       rw [coe_e₁]
-      simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using (e₁ x).2
+      simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using (e₁ x).property
     have hy : prodIdempotentSnd h • isotypicEval k y = isotypicEval k y := by
       rw [coe_e₂]
-      simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using (e₂ y).2
+      simpa only [LinearMap.mem_fixedSubmodule_iff, Module.End.smulLeft_apply] using (e₂ y).property
     have hxy : prodIdempotentFst h • isotypicEval k y = 0 := by
       rw [← hy, ← mul_smul, prodIdempotent_mul_fst_snd h, zero_smul]
     have hyx : prodIdempotentSnd h • isotypicEval k x = 0 := by

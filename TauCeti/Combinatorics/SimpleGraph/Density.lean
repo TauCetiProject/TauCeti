@@ -90,7 +90,7 @@ theorem sum_sum_card_interedges_fiber {s : Finset α} {t : Finset β}
     (A : P.parts) (C : P'.parts) :
     ∑ B with Finpartition.refinementParent h B = A,
       ∑ D with Finpartition.refinementParent h' D = C,
-        #(Rel.interedges r B.1 D.1) = #(Rel.interedges r A.1 C.1) := by
+        #(Rel.interedges r B.val D.val) = #(Rel.interedges r A.val C.val) := by
   conv_rhs => rw [← Finpartition.biUnion_filter_refinementParent_eq h A,
     ← Finpartition.biUnion_filter_refinementParent_eq h' C,
     card_interedges_biUnion_left r _ _ _ (Q.pairwiseDisjoint_subtype_val _)]
@@ -103,7 +103,7 @@ theorem sum_sum_card_interedges_fiber_real {s : Finset α} {t : Finset β}
     (h : Q ≤ P) (h' : Q' ≤ P') (A : P.parts) (C : P'.parts) :
     ∑ B with Finpartition.refinementParent h B = A,
       ∑ D with Finpartition.refinementParent h' D = C,
-        (#(Rel.interedges r B.1 D.1) : ℝ) = #(Rel.interedges r A.1 C.1) := by
+        (#(Rel.interedges r B.val D.val) : ℝ) = #(Rel.interedges r A.val C.val) := by
   exact_mod_cast sum_sum_card_interedges_fiber r h h' A C
 
 /-- Between two singletons, `Rel.interedges` has cardinality `1` if the points are related and `0`
@@ -294,7 +294,7 @@ theorem sum_sum_card_interedges_fiber {s : Finset V} {P Q : Finpartition s} (h :
     (A C : P.parts) :
     ∑ B with Finpartition.refinementParent h B = A,
       ∑ D with Finpartition.refinementParent h D = C,
-        #(G.interedges B.1 D.1) = #(G.interedges A.1 C.1) :=
+        #(G.interedges B.val D.val) = #(G.interedges A.val C.val) :=
   Rel.sum_sum_card_interedges_fiber G.Adj h h A C
 
 /-- The real-valued form of `SimpleGraph.sum_sum_card_interedges_fiber`. -/
@@ -302,7 +302,7 @@ theorem sum_sum_card_interedges_fiber_real {s : Finset V} {P Q : Finpartition s}
     (A C : P.parts) :
     ∑ B with Finpartition.refinementParent h B = A,
       ∑ D with Finpartition.refinementParent h D = C,
-        (#(G.interedges B.1 D.1) : ℝ) = #(G.interedges A.1 C.1) :=
+        (#(G.interedges B.val D.val) : ℝ) = #(G.interedges A.val C.val) :=
   Rel.sum_sum_card_interedges_fiber_real G.Adj h h A C
 
 end SimpleGraph
