@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+public import TauCeti.Logic.Equiv.Set
 
 /-!
 # Composing smooth embeddings with diffeomorphisms
@@ -176,32 +177,6 @@ end ChangeOfModel
 
 end TauCeti
 
-section EquivOfRangeEq
-
-variable {M N N' : Type*}
-
-private noncomputable def equivOfRangeEq {f : M → N'} {g : N → N'}
-    (hf : Function.Injective f) (hg : Function.Injective g)
-    (h : Set.range f = Set.range g) :
-    M ≃ N :=
-  (Equiv.ofInjective f hf).trans ((Set.equivOfEq h).trans (Equiv.ofInjective g hg).symm)
-
-private theorem apply_equivOfRangeEq {f : M → N'} {g : N → N'}
-    (hf : Function.Injective f) (hg : Function.Injective g)
-    (h : Set.range f = Set.range g) (x : M) :
-    g (equivOfRangeEq hf hg h x) = f x := by
-  simp only [equivOfRangeEq, Equiv.trans_apply, Equiv.apply_ofInjective_symm,
-    Set.equivOfEq_apply, Equiv.ofInjective_apply]
-
-private theorem apply_equivOfRangeEq_symm {f : M → N'} {g : N → N'}
-    (hf : Function.Injective f) (hg : Function.Injective g)
-    (h : Set.range f = Set.range g) (y : N) :
-    f ((equivOfRangeEq hf hg h).symm y) = g y := by
-  simp only [equivOfRangeEq, Equiv.symm_trans_apply, Equiv.symm_symm,
-    Equiv.apply_ofInjective_symm, Set.equivOfEq_symm_apply, Equiv.ofInjective_apply]
-
-end EquivOfRangeEq
-
 namespace Manifold.IsSmoothEmbedding
 
 open scoped _root_.Manifold ContDiff
@@ -228,11 +203,11 @@ noncomputable def diffeomorphOfRangeEq {f : M → N'} {g : N → N'}
     (hg : Manifold.IsSmoothEmbedding J J' n g)
     (h : Set.range f = Set.range g) :
     M ≃ₘ^n⟮I, J⟯ N :=
-  let e := equivOfRangeEq hf.isEmbedding.injective hg.isEmbedding.injective h
+  let e := Equiv.ofRangeEq hf.isEmbedding.injective hg.isEmbedding.injective h
   have hcomp : g ∘ e = f :=
-    funext (apply_equivOfRangeEq hf.isEmbedding.injective hg.isEmbedding.injective h)
+    funext (Equiv.apply_ofRangeEq hf.isEmbedding.injective hg.isEmbedding.injective h)
   have hcomp_symm : f ∘ e.symm = g :=
-    funext (apply_equivOfRangeEq_symm hf.isEmbedding.injective hg.isEmbedding.injective h)
+    funext (Equiv.apply_ofRangeEq_symm hf.isEmbedding.injective hg.isEmbedding.injective h)
   { toEquiv := e
     contMDiff_toFun := hg.contMDiff_iff_comp.2 (hcomp ▸ hf.contMDiff)
     contMDiff_invFun := hf.contMDiff_iff_comp.2 (hcomp_symm ▸ hg.contMDiff) }
@@ -245,7 +220,7 @@ theorem apply_diffeomorphOfRangeEq {f : M → N'} {g : N → N'}
     (hg : Manifold.IsSmoothEmbedding J J' n g)
     (h : Set.range f = Set.range g) (x : M) :
     g (hf.diffeomorphOfRangeEq hg h x) = f x :=
-  apply_equivOfRangeEq hf.isEmbedding.injective hg.isEmbedding.injective h x
+  Equiv.apply_ofRangeEq hf.isEmbedding.injective hg.isEmbedding.injective h x
 
 /-- Applying `f` after the inverse of `hf.diffeomorphOfRangeEq hg h` recovers `g`.
 
@@ -255,7 +230,7 @@ theorem apply_diffeomorphOfRangeEq_symm {f : M → N'} {g : N → N'}
     (hg : Manifold.IsSmoothEmbedding J J' n g)
     (h : Set.range f = Set.range g) (y : N) :
     f ((hf.diffeomorphOfRangeEq hg h).symm y) = g y :=
-  apply_equivOfRangeEq_symm hf.isEmbedding.injective hg.isEmbedding.injective h y
+  Equiv.apply_ofRangeEq_symm hf.isEmbedding.injective hg.isEmbedding.injective h y
 
 /-- A `C^n` diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N` equals `hf.diffeomorphOfRangeEq hg h` if and
 only if it intertwines `g` and `f`, i.e. `g ∘ e = f`. -/
@@ -270,6 +245,24 @@ theorem eq_diffeomorphOfRangeEq_iff {f : M → N'} {g : N → N'}
   · ext x
     exact hg.isEmbedding.injective
       ((congrFun he x).trans (hf.apply_diffeomorphOfRangeEq hg h x).symm)
+
+/-- Composing two canonical equal-range comparisons gives the direct equal-range comparison. -/
+@[simp]
+theorem diffeomorphOfRangeEq_trans
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+    {f : M → N'} {g : N → N'} {k : P → N'}
+    (hf : Manifold.IsSmoothEmbedding I J' n f)
+    (hg : Manifold.IsSmoothEmbedding J J' n g)
+    (hk : Manifold.IsSmoothEmbedding K J' n k)
+    (h₁ : Set.range f = Set.range g) (h₂ : Set.range g = Set.range k) :
+    (hf.diffeomorphOfRangeEq hg h₁).trans (hg.diffeomorphOfRangeEq hk h₂) =
+      hf.diffeomorphOfRangeEq hk (h₁.trans h₂) := by
+  rw [eq_diffeomorphOfRangeEq_iff]
+  funext x
+  simp only [_root_.Diffeomorph.coe_trans, Function.comp_apply,
+    hg.apply_diffeomorphOfRangeEq hk h₂, hf.apply_diffeomorphOfRangeEq hg h₁]
 
 end Manifold.IsSmoothEmbedding
 
@@ -526,6 +519,19 @@ theorem eq_diffeomorphOfRangeEq_iff
     (h : Set.range f = Set.range g) (e : M ≃ₘ^n⟮I, J⟯ N) :
     e = f.diffeomorphOfRangeEq g h ↔ ⇑g ∘ ⇑e = ⇑f :=
   f.isSmoothEmbedding.eq_diffeomorphOfRangeEq_iff g.isSmoothEmbedding h e
+
+/-- Composing two canonical equal-range comparisons gives the direct equal-range comparison. -/
+@[simp]
+theorem diffeomorphOfRangeEq_trans
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
+    (k : SmoothEmbedding K J' n P N')
+    (h₁ : Set.range f = Set.range g) (h₂ : Set.range g = Set.range k) :
+    (f.diffeomorphOfRangeEq g h₁).trans (g.diffeomorphOfRangeEq k h₂) =
+      f.diffeomorphOfRangeEq k (h₁.trans h₂) :=
+  f.isSmoothEmbedding.diffeomorphOfRangeEq_trans g.isSmoothEmbedding k.isSmoothEmbedding h₁ h₂
 
 end RangeEq
 
