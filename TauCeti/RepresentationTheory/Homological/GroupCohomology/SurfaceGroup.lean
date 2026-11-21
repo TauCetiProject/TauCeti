@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.SurfaceGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Finrank
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.PresentedGroup
 public import TauCeti.RepresentationTheory.InvariantForm
+import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.Dual
 
 /-!
@@ -82,17 +83,6 @@ private theorem orientableRelator_eq_prod : orientableRelator g 0 = (List.ofFn h
   simp only [orientableRelator_def, orientableWord_def, List.ofFn_zero, List.prod_nil, mul_one]
   rfl
 
-private theorem orientableRelator_mem_commutator :
-    orientableRelator g 0 ∈ commutator (FreeGroup (OrientableGenerator g 0)) := by
-  rw [orientableRelator_eq_prod]
-  refine Subgroup.list_prod_mem _ fun x hx ↦ ?_
-  obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hx
-  have : handle i = ⁅(FreeGroup.of (OrientableGenerator.a i : OrientableGenerator g 0))⁻¹,
-      (FreeGroup.of (OrientableGenerator.b i : OrientableGenerator g 0))⁻¹⁆ := by
-    simp [handle, commutatorElement_def]
-  rw [this]
-  exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
-
 section Fox
 
 variable {V : Type*} [AddCommGroup V] [Module k V] (ρ : Representation k (Orientable g 0) V)
@@ -102,14 +92,12 @@ handle: the value of the free cocycle at the `i`-th commutator, moved by the pro
 earlier commutators. -/
 private theorem foxMap_orientableRelator_eq (i : Fin g) (v : OrientableGenerator g 0 → V)
     (hv : ∀ j ≠ i, v (.a j) = 0 ∧ v (.b j) = 0) :
-    ρ.foxMap (orientableRelator g 0) v =
+    foxMap (ρ.comp (PresentedGroup.mk _)) (orientableRelator g 0) v =
       ρ (PresentedGroup.mk _ ((List.ofFn handle).take i).prod)
         (freeCocycle (ρ.comp (PresentedGroup.mk _)) v (handle i)) := by
   set σ := ρ.comp (PresentedGroup.mk {orientableRelator g 0})
   let c := (freeCocycleEquiv σ).symm v
   have hc (w) : c w = freeCocycle σ v w := congrFun (coe_freeCocycleEquiv_symm_apply σ v) w
-  have hmul (w w' : FreeGroup (OrientableGenerator g 0)) : c (w * w') = σ w (c w') + c w :=
-    (mem_cocycles₁_iff (c : FreeGroup _ → V)).1 c.property w w'
   have hK (j : Fin g) (hj : j ≠ i) : c (handle j) = 0 := by
     rw [handle, cocycles₁_apply_inv_mul_inv_mul_mul]
     simp [hc, (hv j hj).1, (hv j hj).2]
@@ -129,9 +117,9 @@ private theorem foxMap_orientableRelator_eq (i : Fin g) (v : OrientableGenerator
       obtain ⟨j, hj, rfl⟩ := List.mem_drop_iff_getElem.1 hx
       rw [List.getElem_ofFn]
       exact hK _ fun h ↦ by simp [Fin.ext_iff] at h; omega
-  rw [foxMap_apply, ← hc, congrArg (⇑c) orientableRelator_eq_prod, hsplit, hmul, hmul, hdrop,
-    htake, map_zero, zero_add, add_zero, hc]
-  rfl
+  rw [foxMap_apply, ← hc, congrArg (⇑c) orientableRelator_eq_prod, hsplit, cocycles₁_map_mul,
+    cocycles₁_map_mul, hdrop, htake, map_zero, zero_add, add_zero, hc, Rep.of_ρ,
+    MonoidHom.comp_apply]
 
 /-- The value at the `i`-th commutator of the free cocycle with value `y` at `a_i` and zero at
 the other generators. -/
@@ -184,7 +172,8 @@ private theorem apply_eq_of_handle {ψ : Module.Dual k V} {a b : Orientable g 0}
 relator is invariant under the product `u_n` of the first `n` commutators and under the
 generators of the first `n` handles. -/
 private theorem apply_eq_of_forall_foxMap_take (ψ : Module.Dual k V)
-    (hψ : ∀ v, ψ (ρ.foxMap (orientableRelator g 0) v) = 0) (n : ℕ) (hn : n ≤ g) :
+    (hψ : ∀ v, ψ (foxMap (ρ.comp (PresentedGroup.mk _)) (orientableRelator g 0) v) = 0) (n : ℕ)
+    (hn : n ≤ g) :
     (∀ y, ψ (ρ (PresentedGroup.mk _ ((List.ofFn handle).take n).prod) y) = ψ y) ∧
       ∀ j : Fin g, (j : ℕ) < n →
         (∀ y, ψ (ρ (Orientable.a g 0 j) y) = ψ y) ∧ ∀ y, ψ (ρ (Orientable.b g 0 j) y) = ψ y := by
@@ -222,7 +211,8 @@ private theorem apply_eq_of_forall_foxMap_take (ψ : Module.Dual k V)
 
 /-- **A functional killing the range of the Fox map of the surface relator is invariant.** -/
 private theorem apply_eq_of_forall_foxMap_orientableRelator (ψ : Module.Dual k V)
-    (hψ : ∀ v, ψ (ρ.foxMap (orientableRelator g 0) v) = 0) (h : Orientable g 0) (y : V) :
+    (hψ : ∀ v, ψ (foxMap (ρ.comp (PresentedGroup.mk _)) (orientableRelator g 0) v) = 0)
+    (h : Orientable g 0) (y : V) :
     ψ (ρ h y) = ψ y := by
   have hgen := (apply_eq_of_forall_foxMap_take ρ ψ hψ g le_rfl).2
   induction (PresentedGroup.closure_range_of _).ge (Subgroup.mem_top h)
@@ -241,14 +231,16 @@ private theorem apply_eq_of_forall_foxMap_orientableRelator (ψ : Module.Dual k 
 `v ↦ c_v(r)` of the relator `r = [a₁, b₁] ⋯ [a_g, b_g]` of `S⁺(g, 0)` has range the span of the
 `ρ h y - y`. -/
 theorem range_foxMap_orientableRelator :
-    LinearMap.range (ρ.foxMap (orientableRelator g 0)) = Coinvariants.ker ρ := by
-  refine le_antisymm (range_foxMap_le_coinvariantsKer ρ orientableRelator_mem_commutator) ?_
-  rw [← Subspace.dualAnnihilator_le_dualAnnihilator_iff,
-    TauCeti.Representation.dualAnnihilator_coinvariantsKer]
-  intro ψ hψ
-  rw [Submodule.mem_dualAnnihilator] at hψ
-  exact TauCeti.Representation.mem_invariants_dual_iff.2 fun h y ↦
-    apply_eq_of_forall_foxMap_orientableRelator ρ ψ (fun v ↦ hψ _ ⟨v, rfl⟩) h y
+    LinearMap.range (foxMap (ρ.comp (PresentedGroup.mk _)) (orientableRelator g 0)) =
+      Coinvariants.ker ρ := by
+  refine le_antisymm ?_ ?_
+  · rw [← coinvariantsKer_comp_of_surjective _ _ (PresentedGroup.mk_surjective _)]
+    exact range_foxMap_le_coinvariantsKer _ (orientableRelator_mem_commutator g)
+  · rw [← Subspace.dualAnnihilator_le_dualAnnihilator_iff, dualAnnihilator_coinvariantsKer]
+    intro ψ hψ
+    rw [Submodule.mem_dualAnnihilator] at hψ
+    exact TauCeti.Representation.mem_invariants_dual_iff.2 fun h y ↦
+      apply_eq_of_forall_foxMap_orientableRelator ρ ψ (fun v ↦ hψ _ ⟨v, rfl⟩) h y
 
 variable [FiniteDimensional k V]
 
@@ -262,14 +254,16 @@ private theorem card_orientableGenerator : Fintype.card (OrientableGenerator g 0
 theorem finrank_cocycles₁_orientable_add_finrank :
     finrank k (cocycles₁ (Rep.of ρ)) + finrank k V =
       2 * g * finrank k V + finrank k ρ.Coinvariants := by
-  have hZ : finrank k (cocycles₁ (Rep.of ρ)) =
-      finrank k (LinearMap.ker (ρ.foxMap (orientableRelator g 0))) := by
+  have hZ : finrank k (cocycles₁ (Rep.of ρ)) = finrank k
+      (LinearMap.ker (foxMap (ρ.comp (PresentedGroup.mk _)) (orientableRelator g 0))) := by
     rw [(presentedCocyclesEquiv ρ).finrank_eq, iInf_singleton]
-  have hrn := LinearMap.finrank_range_add_finrank_ker (ρ.foxMap (orientableRelator g 0))
-  have hq := Submodule.finrank_quotient_add_finrank (Coinvariants.ker ρ)
+  have hrn := LinearMap.finrank_range_add_finrank_ker
+    (foxMap (ρ.comp (PresentedGroup.mk _)) (orientableRelator g 0))
+  -- `ρ.Coinvariants` is by definition the quotient `V ⧸ Coinvariants.ker ρ`.
+  have hq : finrank k ρ.Coinvariants + finrank k (Coinvariants.ker ρ) = finrank k V :=
+    Submodule.finrank_quotient_add_finrank (Coinvariants.ker ρ)
   rw [range_foxMap_orientableRelator, Module.finrank_pi_fintype] at hrn
   simp only [Finset.sum_const, Finset.card_univ, card_orientableGenerator, smul_eq_mul] at hrn
-  change finrank k ρ.Coinvariants + _ = _ at hq
   omega
 
 end Fox
@@ -279,9 +273,6 @@ section Cohomology
 variable {V : Type} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   (ρ : Representation k (Orientable g 0) V)
 
-instance : FiniteDimensional k (cocycles₁ (Rep.of ρ)) :=
-  LinearEquiv.finiteDimensional (presentedCocyclesEquiv ρ).symm
-
 /-- **The dimension of the first cohomology of a closed surface group.** For a representation of
 `S⁺(g, 0)` on a finite-dimensional space `V`,
 `dim H¹(S⁺(g, 0), V) + 2 dim V = 2g dim V + dim V^π + dim V_π`, where `V^π` and `V_π` are the
@@ -290,9 +281,10 @@ theorem finrank_H1_orientable_add_two_mul_finrank :
     finrank k (H1 (Rep.of ρ)) + 2 * finrank k V =
       2 * g * finrank k V + finrank k ρ.invariants + finrank k ρ.Coinvariants := by
   have h₁ := finrank_cocycles₁_orientable_add_finrank ρ
-  have h₂ := finrank_coboundaries₁_add_finrank_invariants (Rep.of ρ)
+  -- `Rep.of ρ` has carrier `V` and representation `ρ` by definition.
+  have h₂ : finrank k (coboundaries₁ (Rep.of ρ)) + finrank k ρ.invariants = finrank k V :=
+    finrank_coboundaries₁_add_finrank_invariants (Rep.of ρ)
   have h₃ := finrank_H1_add_finrank_coboundaries₁ (Rep.of ρ)
-  change finrank k _ + finrank k ρ.invariants = finrank k V at h₂
   omega
 
 variable {B : LinearMap.BilinForm k V}
@@ -306,7 +298,7 @@ theorem finrank_cocycles₁_orientable_add_finrank_of_isInvariantForm
     finrank k (cocycles₁ (Rep.of ρ)) + finrank k V =
       2 * g * finrank k V + finrank k ρ.invariants := by
   rw [finrank_cocycles₁_orientable_add_finrank,
-    TauCeti.Representation.finrank_coinvariants_eq_finrank_invariants_dual,
+    finrank_coinvariants_eq_finrank_invariants_dual,
     (hB.equivDual hB').invariantsLinearEquiv.finrank_eq]
 
 /-- **The Euler formula for the first cohomology of a closed surface group.** If `V` carries a
@@ -318,7 +310,7 @@ theorem finrank_H1_orientable_add_two_mul_finrank_of_isInvariantForm
     finrank k (H1 (Rep.of ρ)) + 2 * finrank k V =
       2 * g * finrank k V + 2 * finrank k ρ.invariants := by
   rw [finrank_H1_orientable_add_two_mul_finrank,
-    TauCeti.Representation.finrank_coinvariants_eq_finrank_invariants_dual,
+    finrank_coinvariants_eq_finrank_invariants_dual,
     (hB.equivDual hB').invariantsLinearEquiv.finrank_eq]
   ring
 

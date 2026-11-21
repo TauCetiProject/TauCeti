@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Fintype.Sum
+public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.PresentedGroup
 public import Mathlib.Tactic.DeriveFintype
 import Mathlib.Algebra.BigOperators.Fin
@@ -63,6 +64,8 @@ surface glued from two pieces along a boundary curve.
 
 ## Main results
 
+* `TauCeti.SurfaceGroup.orientableRelator_mem_commutator`: the relator `[a₁, b₁] ⋯ [a_g, b_g]` of
+  the closed orientable surface group `S⁺(g, 0)` lies in the commutator subgroup of the free group.
 * `TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`: two generators `cᵢ` and `cⱼ` of `S⁻(g, m)`
   commute only when they are equal.
 * `TauCeti.SurfaceGroup.Orientable.not_isMulCommutative_of_eulerChar_neg` and
@@ -287,6 +290,18 @@ def orientableRelator (g m : ℕ) : FreeGroup (OrientableGenerator g m) :=
 theorem orientableRelator_def (g m : ℕ) :
     orientableRelator g m =
       orientableWord (fun i ↦ of (.a i)) (fun i ↦ of (.b i)) fun j ↦ of (.peripheral j) := (rfl)
+
+/-- The relator `[a₁, b₁] ⋯ [a_g, b_g]` of the closed orientable surface group `S⁺(g, 0)` is a
+product of commutators. -/
+theorem orientableRelator_mem_commutator (g : ℕ) :
+    orientableRelator g 0 ∈ commutator (FreeGroup (OrientableGenerator g 0)) := by
+  rw [orientableRelator_def, orientableWord_def, List.ofFn_zero, List.prod_nil, mul_one,
+    commutator_def]
+  refine Subgroup.list_prod_mem _ fun x hx ↦ ?_
+  obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hx
+  simpa [commutatorElement_def] using Subgroup.commutator_mem_commutator
+    (Subgroup.mem_top (of (OrientableGenerator.a i : OrientableGenerator g 0))⁻¹)
+    (Subgroup.mem_top (of (OrientableGenerator.b i : OrientableGenerator g 0))⁻¹)
 
 /-- The defining relator `c₁ ^ 2 ⋯ c_g ^ 2 p₁ ⋯ p_m` of `S⁻(g, m)` in the free group on its
 generators. -/
