@@ -40,6 +40,8 @@ whose elements are determined by their action up to sign.
   the Spin action.
 * `CliffordAlgebra.gSpinToSpecialOrthogonal_gSpinScalarUnits`: the central cocharacter acts
   trivially.
+* `CliffordAlgebra.gSpinToSpecialOrthogonal_baseChange`: the vector action is compatible with
+  extension of scalars.
 * `CliffordAlgebra.ker_gSpinToSpecialOrthogonal`: over a field, the kernel of the vector action is
   the image of the central cocharacter.
 * `CliffordAlgebra.gSpinToSpecialOrthogonal_surjective`: over a field, the vector action is onto
@@ -55,7 +57,7 @@ whose elements are determined by their action up to sign.
 
 public section
 
-universe u v
+universe u v w
 
 namespace CliffordAlgebra
 
@@ -142,6 +144,37 @@ theorem range_gSpinScalarUnits_le_ker_gSpinToSpecialOrthogonal (hQ : ∃ v, IsUn
   exact gSpinToSpecialOrthogonal_gSpinScalarUnits hQ a
 
 end CommRing
+
+/-! ### Extension of scalars -/
+
+section BaseChange
+
+open scoped TensorProduct
+
+variable {R : Type u} {A : Type w} {M : Type v} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] [Invertible (2 : R)]
+  [Invertible (2 : A)]
+
+/-- **Extension of scalars commutes with the vector action of `GSpin`.** -/
+@[simp]
+theorem gSpinToSpecialOrthogonal_baseChange (Q : QuadraticForm R M) (x : gSpinGroup Q) :
+    TauCeti.QuadraticMap.specialOrthogonalGroupBaseChange (A := A) Q
+        (gSpinToSpecialOrthogonal Q x) =
+      gSpinToSpecialOrthogonal (Q.baseChange A) (gSpinGroupBaseChange (A := A) Q x) := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro z
+  induction z using TensorProduct.inductionOn with
+  | tmul a m =>
+      rw [TauCeti.QuadraticMap.specialOrthogonalGroupBaseChange_apply_tmul,
+        coe_gSpinToSpecialOrthogonal_apply, coe_gSpinToSpecialOrthogonal_apply,
+        gSpinToLipschitz_gSpinGroupBaseChange]
+      -- The Lipschitz lemma uses its own `Invertible (2 : A)` instance; any two agree.
+      convert (lipschitzVectorAction_baseChange_tmul Q (gSpinToLipschitz Q x) a m).symm
+      exact Subsingleton.elim _ _
+  | add z w hz hw => simp only [map_add, hz, hw]
+
+end BaseChange
 
 /-! ### The exact sequence over a field -/
 

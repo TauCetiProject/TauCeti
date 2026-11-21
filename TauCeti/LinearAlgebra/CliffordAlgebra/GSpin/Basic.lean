@@ -19,9 +19,10 @@ Lipschitz group, that is, of the units of the even Clifford algebra which are pr
 number of vectors of invertible norm. This is the classical description of the rational points of
 the reductive group `GSpin` attached to a nondegenerate quadratic space, one of the split classical
 groups alongside `Sp` and `SO`. Compared with the Spin group it keeps all scalar units instead of
-only the square roots of unity: over a field, `GSpin(Q)` is a central extension of `SO(Q)` by the
-multiplicative group, while `Spin(Q)` is a central extension by `{±1}`. That exact sequence is
-proved in `TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.SpecialOrthogonal`.
+only the square roots of unity: over a field, the vector action of `GSpin(Q)` is onto `SO(Q)` with
+kernel the multiplicative group, while on `Spin(Q)` it has kernel `{±1}` and image the kernel of
+the spinor norm. The exact sequence for `GSpin(Q)` is proved in
+`TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.SpecialOrthogonal`.
 
 This file defines the group and the structure attached to it.
 
@@ -56,6 +57,9 @@ This file defines the group and the structure attached to it.
   the central cocharacter is central, and injective when `2` is invertible.
 * `CliffordAlgebra.gSpinGroupBaseChange_gSpinScalarUnits`: extension of scalars is compatible with
   the central cocharacter.
+* `CliffordAlgebra.gSpinNorm_gSpinGroupBaseChange` and
+  `QuadraticMap.Isometry.gSpinNorm_gSpinGroupMap`: the Clifford norm is compatible with extension
+  of scalars and with quadratic isometries.
 
 ## References
 
@@ -314,6 +318,24 @@ theorem gSpinGroupBaseChange_gSpinScalarUnits (hQ : ∃ v, IsUnit (Q v)) (a : R�
     rw [gSpinToLipschitz_gSpinGroupBaseChange, gSpinToLipschitz_gSpinScalarUnits,
       gSpinToLipschitz_gSpinScalarUnits, lipschitzGroupBaseChange_scalarUnits]
 
+/-- **Extension of scalars is compatible with the Clifford norm**: the norm of the extension of
+`x` is the image of the norm of `x`. -/
+@[simp]
+theorem gSpinNorm_gSpinGroupBaseChange [Invertible (2 : A)] (x : gSpinGroup Q) :
+    gSpinNorm (Q.baseChange A) (gSpinGroupBaseChange (A := A) Q x) =
+      Units.map (algebraMap R A) (gSpinNorm Q x) :=
+  Units.ext <| algebraMap_injective (Q.baseChange A) <| by
+    rw [← star_mul_self_eq_algebraMap_gSpinNorm, coe_gSpinGroupBaseChange_apply,
+      ← ofBaseChangeAux_star, ← map_mul, star_mul_self_eq_algebraMap_gSpinNorm, AlgHom.commutes,
+      Units.coe_map, MonoidHom.coe_ofClass, ← IsScalarTower.algebraMap_apply]
+
+/-- Extension of scalars followed by the Clifford norm is the Clifford norm followed by the map
+on units induced by `algebraMap`. -/
+theorem gSpinNorm_comp_gSpinGroupBaseChange [Invertible (2 : A)] :
+    (gSpinNorm (Q.baseChange A)).comp (gSpinGroupBaseChange (A := A) Q) =
+      (Units.map (algebraMap R A)).comp (gSpinNorm Q) :=
+  MonoidHom.ext gSpinNorm_gSpinGroupBaseChange
+
 end BaseChange
 
 end CliffordAlgebra
@@ -383,6 +405,21 @@ theorem gSpinGroupMap_gSpinScalarUnits (f : Q₁ →qᵢ Q₂) (hQ₁ : ∃ v, I
     rw [coe_gSpinGroupMap_apply, coe_gSpinScalarUnits, coe_gSpinScalarUnits]
     exact (CliffordAlgebra.map f).commutes (a : R)
 
+/-- **The map induced on `GSpin` by a quadratic isometry preserves the Clifford norm.** -/
+@[simp]
+theorem gSpinNorm_gSpinGroupMap [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂) (x : gSpinGroup Q₁) :
+    gSpinNorm Q₂ (f.gSpinGroupMap x) = gSpinNorm Q₁ x :=
+  Units.ext <| algebraMap_injective Q₂ <| by
+    rw [← star_mul_self_eq_algebraMap_gSpinNorm, coe_gSpinGroupMap_apply,
+      ← CliffordAlgebra.map_star, ← map_mul, star_mul_self_eq_algebraMap_gSpinNorm,
+      AlgHom.commutes]
+
+/-- The map induced on `GSpin` by a quadratic isometry, followed by the Clifford norm, is the
+Clifford norm. -/
+theorem gSpinNorm_comp_gSpinGroupMap [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂) :
+    (gSpinNorm Q₂).comp f.gSpinGroupMap = gSpinNorm Q₁ :=
+  MonoidHom.ext (gSpinNorm_gSpinGroupMap f)
+
 end QuadraticMap.Isometry
 
 namespace QuadraticMap.IsometryEquiv
@@ -397,18 +434,14 @@ variable {R : Type u} [CommRing R]
 /-- The equivalence `GSpin(Q₁) ≃* GSpin(Q₂)` induced by a quadratic isometry equivalence. -/
 def gSpinGroupEquiv (e : Q₁.IsometryEquiv Q₂) : gSpinGroup Q₁ ≃* gSpinGroup Q₂ :=
   MonoidHom.toMulEquiv e.toIsometry.gSpinGroupMap e.symm.toIsometry.gSpinGroupMap
-    (by
-      rw [QuadraticMap.Isometry.gSpinGroupMap_comp]
-      have h : e.symm.toIsometry.comp e.toIsometry = QuadraticMap.Isometry.id Q₁ := by
-        ext m
-        exact e.symm_apply_apply m
-      rw [h, QuadraticMap.Isometry.gSpinGroupMap_id])
-    (by
-      rw [QuadraticMap.Isometry.gSpinGroupMap_comp]
-      have h : e.toIsometry.comp e.symm.toIsometry = QuadraticMap.Isometry.id Q₂ := by
-        ext m
-        exact e.apply_symm_apply m
-      rw [h, QuadraticMap.Isometry.gSpinGroupMap_id])
+    (MonoidHom.ext fun x ↦ Subtype.ext <| Units.ext <| by
+      rw [MonoidHom.comp_apply, QuadraticMap.Isometry.coe_gSpinGroupMap_apply,
+        QuadraticMap.Isometry.coe_gSpinGroupMap_apply, MonoidHom.id_apply]
+      exact (equivOfIsometry e).symm_apply_apply _)
+    (MonoidHom.ext fun x ↦ Subtype.ext <| Units.ext <| by
+      rw [MonoidHom.comp_apply, QuadraticMap.Isometry.coe_gSpinGroupMap_apply,
+        QuadraticMap.Isometry.coe_gSpinGroupMap_apply, MonoidHom.id_apply]
+      exact (equivOfIsometry e).apply_symm_apply _)
 
 /-- The equivalence induced on `GSpin` agrees with the forward isometry map. -/
 @[simp]
