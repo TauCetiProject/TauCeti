@@ -20,7 +20,8 @@ semiring.
 * `Matrix.GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq`: inverting a two-sided
   invertible transformation.
 * `Equiv.reindexGL`: reindexing the rows and columns of a general linear group along an
-  equivalence of index types, with identity, inverse, and composition laws.
+  equivalence of index types, with identity, inverse, and composition laws, and invariance of
+  the determinant over a commutative ring.
 -/
 
 namespace Matrix.GeneralLinearGroup
@@ -88,6 +89,12 @@ theorem reindexGL_symm_apply_reindexGL (M : GL n R) :
 theorem reindexGL_apply_symm_reindexGL (M : GL p R) :
     e.reindexGL R (e.symm.reindexGL R M) = M := by
   rw [← reindexGL_symm, MulEquiv.apply_symm_apply]
+
+/-- Over a commutative ring, reindexing does not change the determinant. -/
+@[simp]
+theorem det_reindexGL {S : Type*} [CommRing S] (M : GL n S) :
+    Matrix.GeneralLinearGroup.det (e.reindexGL S M) = Matrix.GeneralLinearGroup.det M :=
+  Units.ext (by simp [Matrix.GeneralLinearGroup.val_det_apply])
 
 end
 

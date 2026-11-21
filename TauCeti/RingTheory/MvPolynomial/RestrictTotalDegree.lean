@@ -14,6 +14,7 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.LinearAlgebra.Basis.Pi
+import TauCeti.Algebra.MvPolynomial.Monad
 
 /-!
 # The submodules of polynomials of bounded total degree
@@ -100,10 +101,7 @@ variable (σ R) in
 most `m`. -/
 theorem restrictTotalDegree_eq_restrictSupport (m : ℕ) :
     restrictTotalDegree σ R m = restrictSupport R {s : σ →₀ ℕ | s.degree ≤ m} := by
-  have hs : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s | s.degree ≤ m} := by
-    ext s
-    simp [Finsupp.sum, Finsupp.degree_apply]
-  rw [restrictTotalDegree, hs]
+  simp only [restrictTotalDegree, Finsupp.sum, Finsupp.degree_apply]
 
 variable (σ R) in
 /-- The polynomials of total degree at most `m` are spanned by the monomials of degree at most
@@ -130,13 +128,11 @@ theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree �
 /-- A monomial basis vector of the bounded-degree polynomials is the corresponding monomial. -/
 @[simp]
 theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
-    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.1 1 := by
-  classical
-  have h : basisRestrictTotalDegree σ R m s =
-      ⟨monomial s.1 1, monomial_mem_restrictTotalDegree s.2 1⟩ := by
-    refine (basisRestrictTotalDegree σ R m).repr.injective (Finsupp.ext fun t ↦ ?_)
-    simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
-  rw [h]
+    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.val 1 := by
+  rw [basisRestrictTotalDegree, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
+  -- As in `basisRestrictTotalDegree`, the index `s` is read as an element of the set
+  -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
+  exact basisRestrictSupport_apply_coe (s := {t : σ →₀ ℕ | t.degree ≤ m}) s
 
 /-- In one variable, `uniqueAlgEquiv` maps `restrictTotalDegree σ R d` onto
 `Polynomial.degreeLT R (d + 1)`. -/
@@ -169,13 +165,13 @@ noncomputable def restrictTotalDegreeEquivDegreeLT [Unique σ] (d : ℕ) :
 @[simp]
 theorem coe_restrictTotalDegreeEquivDegreeLT_apply [Unique σ] (d : ℕ)
     (p : restrictTotalDegree σ R d) :
-    (restrictTotalDegreeEquivDegreeLT σ R d p : Polynomial R) = uniqueAlgEquiv R σ p.1 := (rfl)
+    (restrictTotalDegreeEquivDegreeLT σ R d p : Polynomial R) = uniqueAlgEquiv R σ p.val := (rfl)
 
 @[simp]
 theorem coe_restrictTotalDegreeEquivDegreeLT_symm_apply [Unique σ] (d : ℕ)
     (q : Polynomial.degreeLT R (d + 1)) :
     ((restrictTotalDegreeEquivDegreeLT σ R d).symm q : MvPolynomial σ R) =
-      (uniqueAlgEquiv R σ).symm q.1 := (rfl)
+      (uniqueAlgEquiv R σ).symm q.val := (rfl)
 
 section Coordinates
 
@@ -257,7 +253,7 @@ theorem boundedCoefficientEquiv_inclusion_comp_eq_extendByZero [Finite σ]
     simp
   · rw [Function.extend_apply' _ _ _ ?_, Pi.zero_apply, boundedCoefficientEquiv_apply,
       Function.comp_apply, Submodule.coe_inclusion]
-    · exact h0 _ (v j).2 s hs
+    · exact h0 _ (v j).property s hs
     · rintro ⟨⟨j', s', hs''⟩, he⟩
       exact hs (by cases he; exact hs'')
 
@@ -317,19 +313,8 @@ variables does not raise the total degree. -/
 theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R}
     (hf : ∀ i, (f i).totalDegree ≤ 1) {m : ℕ} {p : MvPolynomial σ R}
     (hp : p ∈ restrictTotalDegree σ R m) : aeval f p ∈ restrictTotalDegree τ R m := by
-  rw [restrictTotalDegree_eq_span] at hp
-  induction hp using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨s, hs, rfl⟩ := h
-    rw [mem_restrictTotalDegree, aeval_monomial, map_one, one_mul, Finsupp.prod]
-    calc (∏ i ∈ s.support, f i ^ s i).totalDegree
-        ≤ ∑ i ∈ s.support, (f i ^ s i).totalDegree := totalDegree_finsetProd _ _
-      _ ≤ ∑ i ∈ s.support, s i := Finset.sum_le_sum fun i _ ↦
-          (totalDegree_pow _ _).trans (by simpa using Nat.mul_le_mul_left (s i) (hf i))
-      _ ≤ m := hs
-  | zero => simp
-  | add p q _ _ hp hq => simpa using add_mem hp hq
-  | smul a p _ hp => simpa using Submodule.smul_mem _ a hp
+  rw [mem_restrictTotalDegree] at hp ⊢
+  exact (totalDegree_bind₁_le hf p).trans ((mul_one _).trans_le hp)
 
 open Polynomial in
 /-- If each `q k` with `k ≤ m` is a combination of the `p j` with `j ≤ k`, then the products

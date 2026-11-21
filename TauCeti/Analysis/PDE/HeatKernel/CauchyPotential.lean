@@ -147,7 +147,7 @@ theorem heatCauchyPotential_eq_convolution (g : E → F) {t : ℝ} (ht : 0 < t) 
     (fun y => heatKernel 1 y • g (x - √t • y)) hst.le
   simp only [smul_inv_smul₀ hst.ne'] at hsub
   simp_rw [convolution_def, ContinuousLinearMap.lsmul_apply,
-    heatKernel_eq_mul_heatKernel_one_smul ht, mul_smul]
+    heatKernel_eq_mul_heatKernel_one_smul ht.le, mul_smul]
   rw [integral_smul, hsub, smul_smul, ← mul_pow, inv_mul_cancel₀ hst.ne', one_pow, one_smul,
     heatCauchyPotential_def]
 

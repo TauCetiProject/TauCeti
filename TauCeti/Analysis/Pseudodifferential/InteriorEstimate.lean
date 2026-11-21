@@ -66,62 +66,21 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m R : ℝ}
   {a : Symbol n V W m} {e : Symbol n W V (-m)}
 
-/-- The decomposition `F = q # a - (q ∘ a - F) - (q # a - q ∘ a)` behind the parametrix
-estimate, on `H^s`, with `Op(q # a) = Op(q) ∘ Op(a)`. -/
-private theorem toDistr_quantizeSobolev_eq_sub_sub (ha : a.HasCompactSpatialSupport)
-    {q : Symbol n W V (0 + -m)} (hq : q.HasCompactSpatialSupport) {F : Symbol n V V 0}
-    (hF : F.HasCompactSpatialSupport)
-    (hsmK : (q.comp a - Symbol.inclusion (le_of_eq (by ring)) F).HasCompactSpatialSupport) (s : ℝ)
-    (u : H^{s}(CoordinateSpace n, V)) :
-    (F.quantizeSobolev hF s u).toDistr =
-      (q.quantizeSobolev hq (s - m) (a.quantizeSobolev ha s u)).toDistr -
-        ((q.comp a - Symbol.inclusion (le_of_eq (by ring)) F).quantizeSobolev hsmK s u).toDistr -
-          ((q.sharp a ha - q.comp a).quantizeSobolev ((hq.sharp ha).sub (hq.comp_right a))
-            s u).toDistr := by
-  rw [← toDistr_quantizeSobolev_sharp hq ha,
-    ← toDistr_quantizeSobolev_sub_apply _ _ ((hq.sharp ha).sub hsmK),
-    ← toDistr_quantizeSobolev_sub_apply _ _
-      (((hq.sharp ha).sub hsmK).sub ((hq.sharp ha).sub (hq.comp_right a)))]
-  refine toDistr_quantizeSobolev_congr ?_ hF _ rfl
-  funext p
-  simp
-
 /-- One step of the interior estimate: the parametrix `q = φ e` of `a` gives
 `‖φ u‖_{H^s} ≤ C (‖Op(a) u‖_{H^{s - m}} + ‖χ u‖_{H^{s - 1}} + ‖u‖_{H^r})` for a cutoff `χ` equal
 to `1` near `tsupport φ`. -/
 private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport)
     {U : Set (CoordinateSpace n)}
     (he : ∀ x ∈ U, ∀ ξ, R ≤ ‖ξ‖ → e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V)
-    {φ χ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ) (hφU : tsupport φ ⊆ U)
+    {φ χ : 𝓢(CoordinateSpace n, ℂ)} (hφU : tsupport φ ⊆ U)
     (hχ : HasCompactSupport χ) (hχφ : ∀ᶠ x in 𝓝ˢ (tsupport φ), χ x = 1) {r s : ℝ}
     (hrs : r ≤ s) :
     ∃ C, ∀ u : H^{s}(CoordinateSpace n, V), ‖smulLeftCLM s φ u‖ ≤
       C * (‖a.quantizeSobolev ha s u‖ +
         ‖smulLeftCLM (s - 1) χ (BesselPotentialSpace.inclusion (sub_le_self s zero_le_one) u)‖ +
           ‖BesselPotentialSpace.inclusion hrs u‖) := by
-  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
-  set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
-  have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
-  -- The parametrix symbol `q = φ e`: `q ∘ a - φ` vanishes at large frequencies, and
-  -- `q # a - q ∘ a` is a symbol `rem` of order `-1` vanishing outside `tsupport φ`.
-  set q := F.comp e
-  have hq : q.HasCompactSpatialSupport := hF.comp_right e
-  set sm := q.comp a - Symbol.inclusion (le_of_eq (by ring)) F
-  have hsm : sm.IsSmoothing := isSmoothing_of_coefficient_eq_zero R fun x ξ hξ ↦ by
-    by_cases hx : x ∈ tsupport φ
-    · simp only [sm, q, F, coefficient_sub, coefficient_comp, coefficient_inclusion,
-        coefficient_ofSpatial, Pi.sub_apply, he x (hφU hx) ξ hξ, ContinuousLinearMap.smul_comp,
-        ContinuousLinearMap.id_comp, sub_self]
-    · simp [sm, q, F, hφ0 x hx]
-  have hsmK : sm.HasCompactSpatialSupport := (hq.comp_right a).sub (hF.inclusion _)
-  set rem := q.sharpRemainder a ha 1
-  have hrem : (q.sharp a ha - q.comp a).coefficient = rem.coefficient := by
-    rw [sharp_eq_comp_add_sharpRemainder_one ha, add_sub_cancel_left, coefficient_inclusion]
-  have hremK : rem.HasCompactSpatialSupport :=
-    ((hq.sharp ha).sub (hq.comp_right a)).of_coefficient_eq hrem.symm
-  have hrem0 : ∀ x ∉ tsupport φ, ∀ ξ, rem.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
-    rw [← hrem]
-    simp [q, F, hφ0 x hx]
+  obtain ⟨q, hq, sm, hsmK, rem, hremK, hsm, -, hrem0, hid⟩ :=
+    exists_isSmoothing_toDistr_smulLeftCLM_eq_quantizeSobolev_sub_sub ha he hφU
   obtain ⟨C₁, hC₁⟩ := exists_norm_quantizeSobolev_le_smulLeftCLM hremK hrem0 hχ hχφ
     (min_le_right r (s - 1))
   obtain ⟨T, hT⟩ := hsm.exists_continuousLinearMap_toDistr_quantizeSobolev_eq hsmK r s
@@ -134,13 +93,11 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
   have hφu : smulLeftCLM s φ u =
       BesselPotentialSpace.inclusion (le_of_eq (by ring))
           (q.quantizeSobolev hq (s - m) (a.quantizeSobolev ha s u)) - w -
-        BesselPotentialSpace.inclusion (le_of_eq (by push_cast; ring))
+        BesselPotentialSpace.inclusion (le_of_eq (by ring))
           (rem.quantizeSobolev hremK (s - 1) v) := by
     refine BesselPotentialSpace.ext ?_
-    rw [← toDistr_quantizeSobolev_ofSpatial_smul_id φ hF,
-      toDistr_quantizeSobolev_eq_sub_sub ha hq hF hsmK, toDistr_sub, toDistr_sub,
-      toDistr_inclusion, toDistr_inclusion, ← hw,
-      toDistr_quantizeSobolev_congr hrem _ hremK (toDistr_inclusion _ u).symm]
+    rw [hid s u, toDistr_sub, toDistr_sub, toDistr_inclusion, toDistr_inclusion, ← hw,
+      toDistr_quantizeSobolev_congr rfl hremK hremK (toDistr_inclusion _ u).symm]
   have hZ : ‖rem.quantizeSobolev hremK (s - 1) v‖ ≤
       max C₁ 0 * (‖smulLeftCLM (s - 1) χ v‖ + ‖BesselPotentialSpace.inclusion hrs u‖) := by
     refine (hC₁ v).trans ?_
@@ -179,7 +136,7 @@ private theorem exists_norm_smulLeftCLM_le_of_sub_le (ha : a.HasCompactSpatialSu
   | succ k ih =>
     intro s hrs hsr φ hφ hφU
     obtain ⟨χ, hχ, hχU, hχφ⟩ := hφ.isCompact.exists_schwartzMap_cutoff hU hφU
-    obtain ⟨C₁, hC₁⟩ := exists_norm_smulLeftCLM_le_step ha he hφ hφU hχ hχφ hrs
+    obtain ⟨C₁, hC₁⟩ := exists_norm_smulLeftCLM_le_step ha he hφU hχ hχφ hrs
     -- It remains to bound `χ u` in `H^{s - 1}`.
     obtain ⟨C₂, hC₂⟩ : ∃ C₂, ∀ u : H^{s}(CoordinateSpace n, V),
         ‖smulLeftCLM (s - 1) χ (BesselPotentialSpace.inclusion (sub_le_self s zero_le_one) u)‖ ≤

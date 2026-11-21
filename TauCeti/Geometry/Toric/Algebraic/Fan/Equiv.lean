@@ -181,12 +181,12 @@ theorem symm_trans_self (e : FanEquiv Φ Ψ) : e.symm.trans e = FanEquiv.refl Ψ
   simp
 
 private def coneMap (e : FanEquiv Φ Ψ) : Φ.cones → Ψ.cones := fun σ ↦
-  ⟨PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.1, (e.map_mem σ.1).2 σ.2⟩
+  ⟨PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.val, (e.map_mem σ.val).2 σ.property⟩
 
 @[simp]
 private theorem coneMap_coe (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
     (e.coneMap σ : PointedCone ℝ V') =
-      PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.1 :=
+      PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.val :=
   (rfl)
 
 /-- A fan equivalence induces an order isomorphism between the cones of its source and target.
@@ -198,13 +198,13 @@ def coneEquiv (e : FanEquiv Φ Ψ) : Φ.cones ≃o Ψ.cones :=
       left_inv σ := by
         apply Subtype.ext
         simp only [coneMap_coe, symm_realEquiv, PointedCone.map_map]
-        convert PointedCone.map_id σ.1
+        convert PointedCone.map_id σ.val
         ext x
         simp
       right_inv τ := by
         apply Subtype.ext
         simp only [coneMap_coe, symm_realEquiv, PointedCone.map_map]
-        convert PointedCone.map_id τ.1
+        convert PointedCone.map_id τ.val
         ext x
         simp }
     (fun _ _ ↦ Submodule.map_mono)
@@ -214,14 +214,14 @@ def coneEquiv (e : FanEquiv Φ Ψ) : Φ.cones ≃o Ψ.cones :=
 @[simp]
 theorem coneEquiv_apply_coe (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
     (e.coneEquiv σ : PointedCone ℝ V') =
-      PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.1 :=
+      PointedCone.map (e.realEquiv : V →ₗ[ℝ] V') σ.val :=
   e.coneMap_coe σ
 
 /-- The induced cone equivalence preserves the dimension of each cone's linear span. -/
 @[simp]
 theorem finrank_span_coneEquiv (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
     Module.finrank ℝ (Submodule.span ℝ (e.coneEquiv σ : Set V')) =
-      Module.finrank ℝ (Submodule.span ℝ (σ.1 : Set V)) := by
+      Module.finrank ℝ (Submodule.span ℝ (σ.val : Set V)) := by
   rw [e.coneEquiv_apply_coe, PointedCone.coe_map, Submodule.span_image,
     e.realEquiv.finrank_map_eq]
 
@@ -277,10 +277,10 @@ theorem toFanHom_trans (e : FanEquiv Φ Ψ) (e' : FanEquiv Ψ Ω) :
 /-- The least target cone of the underlying fan morphism is the image cone itself. -/
 @[simp]
 theorem toFanHom_leastCone (e : FanEquiv Φ Ψ) (σ : Φ.cones) :
-    e.toFanHom.leastCone σ.2 = e.coneEquiv σ := by
+    e.toFanHom.leastCone σ.property = e.coneEquiv σ := by
   apply le_antisymm
-  · exact e.toFanHom.leastCone_le σ.2 (e.coneEquiv σ).2 le_rfl
-  · exact e.toFanHom.map_le_leastCone σ.2
+  · exact e.toFanHom.leastCone_le σ.property (e.coneEquiv σ).property le_rfl
+  · exact e.toFanHom.map_le_leastCone σ.property
 
 /-- A finite fan is regular exactly when an equivalent fan is regular. -/
 theorem isRegular_iff (e : FanEquiv Φ Ψ) : Ψ.IsRegular ↔ Φ.IsRegular := by

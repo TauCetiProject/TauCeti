@@ -132,7 +132,7 @@ theorem exists_smul_eq_of_ne_zero {v w : n → K} (hv : v ≠ 0) (hw : w ≠ 0) 
 
 /-- The action of `GL n K` on the nonzero vectors of `n → K` is transitive. -/
 instance isPretransitive_nonzeroVectors : MulAction.IsPretransitive (GL n K) (nonzeroVectors n K) :=
-  ⟨fun v w ↦ (exists_smul_eq_of_ne_zero v.2 w.2).imp fun _ hg ↦ Subtype.ext hg⟩
+  ⟨fun v w ↦ (exists_smul_eq_of_ne_zero v.property w.property).imp fun _ hg ↦ Subtype.ext hg⟩
 
 end Field
 

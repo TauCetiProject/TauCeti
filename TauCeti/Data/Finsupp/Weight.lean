@@ -12,6 +12,8 @@ public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 
+import Mathlib.Algebra.BigOperators.Fin
+
 /-!
 # Weights of finitely supported functions
 
@@ -72,6 +74,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   `(card σ + n).choose n`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
+* `Finsupp.injOn_weight_pow`: uniqueness of base-`B` digits; the weight `i ↦ B ^ i` on `Fin m`,
+  `d ↦ ∑ i, d i * B ^ i`, is injective on the exponent vectors with entries `< B`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
   finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
   is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
@@ -287,35 +291,36 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
 of degree at most `n` with the exponent vectors on `Option σ` of degree `n`. -/
 noncomputable def degreeLeEquivOptionDegreeEq {σ : Type*} (n : ℕ) :
     {s : σ →₀ ℕ // s.degree ≤ n} ≃ {s : Option σ →₀ ℕ // s.degree = n} where
-  toFun s := ⟨s.1.optionElim (n - s.1.degree), by rw [degree_optionElim, Nat.sub_add_cancel s.2]⟩
-  invFun t := ⟨t.1.some, by
-    have h := t.2
-    rw [← optionElim_some t.1, degree_optionElim] at h
+  toFun s := ⟨s.val.optionElim (n - s.val.degree),
+    by rw [degree_optionElim, Nat.sub_add_cancel s.property]⟩
+  invFun t := ⟨t.val.some, by
+    have h := t.property
+    rw [← optionElim_some t.val, degree_optionElim] at h
     omega⟩
   left_inv s := Subtype.ext (some_optionElim _ _)
   right_inv t := by
     apply Subtype.ext
-    have h := t.2
-    rw [← optionElim_some t.1, degree_optionElim] at h
-    have hnone : n - t.1.some.degree = t.1 none := by omega
+    have h := t.property
+    rw [← optionElim_some t.val, degree_optionElim] at h
+    have hnone : n - t.val.some.degree = t.val none := by omega
     simp [hnone]
 
 @[simp]
 theorem coe_degreeLeEquivOptionDegreeEq {σ : Type*} (n : ℕ)
     (s : {s : σ →₀ ℕ // s.degree ≤ n}) :
-    (degreeLeEquivOptionDegreeEq n s).1 = s.1.optionElim (n - s.1.degree) := (rfl)
+    (degreeLeEquivOptionDegreeEq n s).val = s.val.optionElim (n - s.val.degree) := (rfl)
 
 @[simp]
 theorem coe_degreeLeEquivOptionDegreeEq_symm {σ : Type*} (n : ℕ)
     (t : {s : Option σ →₀ ℕ // s.degree = n}) :
-    ((degreeLeEquivOptionDegreeEq n).symm t).1 = t.1.some := (rfl)
+    ((degreeLeEquivOptionDegreeEq n).symm t).val = t.val.some := (rfl)
 
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
-form a fintype, enumerated by `Finset.finsuppAntidiag` over degrees `0, …, n`. -/
+form a fintype, enumerated degree by degree by `Finset.finsuppAntidiag`. -/
 instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree ≤ n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree ≤ n})
-    ((Finset.range (n + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·))
+    ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum, Nat.lt_succ_iff]
 
 /-- The number of exponent vectors on `σ` of degree `n` is `(card σ).multichoose n`. -/
@@ -356,6 +361,19 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
     simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
       congrArg (· / B) h
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
+
+/-- **Uniqueness of base-`B` digits.** The base-`B` weight `d ↦ ∑ i, d i * B ^ i` of exponent
+vectors in `m` variables is injective on the vectors all of whose entries are `< B`. For `B ≤ 1`
+this box has at most one element. -/
+theorem injOn_weight_pow (m B : ℕ) :
+    Set.InjOn (weight fun i : Fin m ↦ B ^ (i : ℕ)) {d | ∀ i, d i < B} := by
+  have key (d : Fin m →₀ ℕ) (hd : ∀ i, d i < B) :
+      weight (fun i : Fin m ↦ B ^ (i : ℕ)) d =
+        finFunctionFinEquiv fun i ↦ (⟨d i, hd i⟩ : Fin B) := by
+    simp [weight_eq_sum]
+  intro d hd d' hd' h
+  have := finFunctionFinEquiv.injective (Fin.ext ((key d hd).symm.trans (h.trans (key d' hd'))))
+  exact Finsupp.ext fun i ↦ congrArg Fin.val (congrFun this i)
 
 /-- The weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` of two-variable exponents is
 finite. It is empty when `B = 0`; otherwise both weights are nonzero. -/

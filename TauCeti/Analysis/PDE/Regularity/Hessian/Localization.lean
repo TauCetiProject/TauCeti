@@ -80,31 +80,30 @@ private theorem ae_extendByZeroₗᵢ_of_ae {Omega : Opens (EuclideanSpace ℝ (
     (∀ᵐ x, x ∉ K → Wkp.value 2 (Wkp0.extendByZeroₗᵢ le_top 2 w : Wkp volume ⊤ p 2) x = 0) ∧
       ∀ᵐ x, Matrix.contraction (a x)
           (Wkp.iteratedGradient 1 (Wkp0.extendByZeroₗᵢ le_top 2 w : Wkp volume ⊤ p 2) x) =
-        extendByZeroLpₗᵢ ℝ volume Omega.isOpen.measurableSet
+        extendByZeroLpₗᵢ ℝ volume Omega.isOpen.nullMeasurableSet
           (SetLike.coe_subset_coe.mpr le_top) g x := by
   have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ (Fin n))) := Omega.isOpen.measurableSet
-  have htop : ae ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n)))) = ae volume := by
-    rw [Opens.coe_top, Measure.restrict_univ]
+  have htop := Measure.ae_restrict_coe_opens_top (volume : Measure (EuclideanSpace ℝ (Fin n)))
   have hsub : (Omega : Set (EuclideanSpace ℝ (Fin n))) ⊆
       ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) :=
     SetLike.coe_subset_coe.mpr le_top
   rw [Wkp0.value_extendByZeroₗᵢ, Wkp0.iteratedGradient_extendByZeroₗᵢ]
   constructor
-  · have h1 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ hsub (Wkp.value 2 (w : Wkp volume Omega p 2))
-    have h2 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ hsub
+  · have h1 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ.nullMeasurableSet hsub
+      (Wkp.value 2 (w : Wkp volume Omega p 2))
+    have h2 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ.nullMeasurableSet hsub
       (Wkp.value 2 (w : Wkp volume Omega p 2))
     rw [htop] at h1 h2
     filter_upwards [h1, h2, (ae_restrict_iff' hΩ).1 hK] with x h1 h2 hK hxK
     by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
     · rw [h1 hxΩ, hK hxΩ hxK]
     · exact h2 hxΩ
-  · have h1 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ hsub
+  · have h1 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ.nullMeasurableSet hsub
       (Wkp.iteratedGradient 1 (w : Wkp volume Omega p 2))
-    have h2 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ hsub
+    have h2 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ.nullMeasurableSet hsub
       (Wkp.iteratedGradient 1 (w : Wkp volume Omega p 2))
-    have h3 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ hsub g
-    have h4 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ hsub g
+    have h3 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ.nullMeasurableSet hsub g
+    have h4 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ.nullMeasurableSet hsub g
     rw [htop] at h1 h2 h3 h4
     filter_upwards [h1, h2, h3, h4, (ae_restrict_iff' hΩ).1 hg] with x h1 h2 h3 h4 hg
     by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
