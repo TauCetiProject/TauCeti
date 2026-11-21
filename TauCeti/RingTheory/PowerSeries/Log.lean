@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Expand
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -215,6 +216,17 @@ theorem logOf_one_sub_C_mul_X (c : A) :
     logOf (1 - C c * X) = mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n := by
   rw [logOf_eq_mk_iff (by simp), mul_sub, mul_one, mul_comm _ (C c * X), mul_assoc]
   ext (_ | n) <;> simp [coeff_succ_X_mul, pow_succ, mul_comm]
+
+/-- The logarithm of `1 - c X ^ j` (`j ≠ 0`) is the `j`-fold expansion of `-∑ cⁿ Xⁿ / n`. -/
+theorem logOf_one_sub_C_mul_X_pow (c : A) {j : ℕ} (hj : j ≠ 0) :
+    logOf (1 - C c * X ^ j) = expand j hj (mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n) := by
+  have hsub : HasSubst (-(C c * X) : A⟦X⟧) := HasSubst.of_constantCoeff_zero' (by simp)
+  have h1 : (1 - C c * X - 1 : A⟦X⟧) = -(C c * X) := by ring
+  have h2 : (1 - C c * X ^ j - 1 : A⟦X⟧) = -(C c * X ^ j) := by ring
+  have hbase := congrArg (expand j hj) (logOf_one_sub_C_mul_X c)
+  rw [logOf_eq, h1] at hbase
+  rw [logOf_eq, h2, ← expand_X j hj, ← expand_C j hj, ← map_mul, ← map_neg]
+  exact (PowerSeries.expand_subst j hj hsub (log A)).symm.trans hbase
 
 /-- The logarithm of `1 - a X + q X²` is `-∑ tₙ Xⁿ / n`, where `t` is the sequence with `t₀ = 2`,
 `t₁ = a` and `tₙ₊₂ = a tₙ₊₁ - q tₙ`. If `1 - a X + q X²` factors as `(1 - α X)(1 - β X)`, then

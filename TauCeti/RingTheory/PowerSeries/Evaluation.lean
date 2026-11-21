@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import TauCeti.RingTheory.MvPowerSeries.Evaluation
+import Mathlib.RingTheory.PowerSeries.Order
 
 /-!
 # Evaluation of power series and division by `X - C c`
@@ -109,6 +110,21 @@ theorem constantCoeff_polynomial_aeval (f : A⟦X⟧) (p : Polynomial A) :
     Polynomial.eval₂_id]
 
 end AlgHom
+
+/-- Evaluating a polynomial over `R⟦X⟧` at a series `g` without constant term only uses terms of
+degree at most `k` for the `k`-th coefficient. -/
+theorem coeff_eval_eq_sum_range {R : Type*} [Semiring R] (p : Polynomial R⟦X⟧) {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) (k : ℕ) :
+    coeff k (p.eval g) = ∑ n ∈ Finset.range (k + 1), coeff k (p.coeff n * g ^ n) := by
+  rw [Polynomial.eval_eq_sum_range' (lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ (k + 1))),
+    map_sum]
+  symm
+  refine Finset.sum_subset (Finset.range_mono (le_max_right _ _)) fun n _ hn ↦ ?_
+  have hlt : k < n := by simp only [Finset.mem_range, not_lt] at hn; omega
+  exact coeff_of_lt_order k
+    ((Nat.cast_lt.mpr hlt).trans_le
+      ((le_order_pow_of_constantCoeff_eq_zero n hg).trans
+        (le_add_self.trans (le_order_mul (p.coeff n) (g ^ n)))))
 
 section Aeval
 

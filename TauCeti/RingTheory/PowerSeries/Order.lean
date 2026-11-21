@@ -144,4 +144,16 @@ theorem order_X_pow_mul_of_constantCoeff_ne_zero {f : R⟦X⟧} (hf : constantCo
   · rwa [coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
   · rw [coeff_X_pow_mul', ite_eq_right (not_le.2 hi)]
 
+/-- If `n` is strictly smaller than the order of `ψ`, then the `n`-th coefficient of
+`φ * (1 + ψ)` equals the `n`-th coefficient of `φ`. -/
+theorem coeff_mul_one_add_of_lt_order {φ ψ : R⟦X⟧} (n : ℕ) (h : (n : ℕ∞) < ψ.order) :
+    coeff n (φ * (1 + ψ)) = coeff n φ := by
+  rw [mul_add, mul_one, map_add, coeff_mul_of_lt_order h, add_zero]
+
+/-- Multiplying by `1 + X ^ m` preserves `coeff k` whenever `k < m`. -/
+theorem coeff_mul_one_add_X_pow (f : R⟦X⟧) {k m : ℕ} (h : k < m) :
+    coeff k (f * (1 + X ^ m)) = coeff k f :=
+  coeff_mul_one_add_of_lt_order k
+    ((Nat.cast_lt.mpr h).trans_le (le_order_pow_of_constantCoeff_eq_zero m constantCoeff_X))
+
 end PowerSeries

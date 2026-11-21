@@ -11,8 +11,10 @@ public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.QCalculus.Basic
 import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.PowerSeries.Evaluation
 import TauCeti.RingTheory.PowerSeries.Exp
 import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Formal q-exponential, infinite q-Pochhammer series, and Euler's identities
@@ -410,24 +412,6 @@ section IntegralPochhammer
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
-/-- In `R⟦X⟧`, every element `1 - X ^ (n + 1)` has constant coefficient `1` and is therefore a
-unit. -/
-private theorem isUnit_one_sub_X_pow (n : ℕ) : IsUnit (1 - (X : R⟦X⟧) ^ (n + 1)) :=
-  PowerSeries.isUnit_iff_constantCoeff.mpr (by simp)
-
-/-- Multiplying a double power series in `(R⟦X⟧)⟦X⟧` by `1 - X * C (X ^ i)` preserves the
-coefficient `[q ^ m t ^ k]` whenever `m < i`. -/
-private theorem coeff_coeff_mul_one_sub_X_mul_C_X_pow (f : (R⟦X⟧)⟦X⟧) {i m : ℕ} (h : m < i)
-    (k : ℕ) :
-    coeff m (coeff k (f * (1 - X * C (X : R⟦X⟧) ^ i))) = coeff m (coeff k f) := by
-  rw [mul_sub, mul_one, map_sub, map_sub]
-  suffices coeff m (coeff k (f * (X * C (X : R⟦X⟧) ^ i))) = 0 by rw [this, sub_zero]
-  rcases k with _ | k
-  · rw [← mul_assoc, mul_comm f X, mul_assoc, coeff_zero_X_mul, map_zero]
-  · rw [← mul_assoc, mul_comm f X, mul_assoc, coeff_succ_X_mul, ← map_pow, coeff_mul_C, mul_comm,
-      coeff_X_pow_mul']
-    simp [Nat.not_le.mpr h]
-
 /-- **Coefficientwise `q`-adic stabilization** of the finite `q`-Pochhammer product
 `∏_{i < N} (1 - q ^ i t)` in `(R⟦X⟧)⟦X⟧`: the `[q ^ m t ^ k]` coefficient stabilizes for all
 `N > m`. -/
@@ -438,8 +422,16 @@ theorem coeff_coeff_qPochhammer_eq_of_lt (m k : ℕ) {N : ℕ} (hN : m < N) :
   induction d with
   | zero => rfl
   | succ d ih =>
-    rw [← Nat.add_assoc, qPochhammer_succ, coeff_coeff_mul_one_sub_X_mul_C_X_pow _ (by omega),
-      ih (by omega)]
+    rw [← Nat.add_assoc, qPochhammer_succ]
+    have hmul (f : (R⟦X⟧)⟦X⟧) :
+        coeff m (coeff k (f * (1 - X * C (X : R⟦X⟧) ^ (m.succ + d)))) = coeff m (coeff k f) := by
+      rw [mul_sub, mul_one, map_sub, map_sub, sub_eq_self]
+      rcases k with _ | k
+      · rw [← mul_assoc, mul_comm f X, mul_assoc, coeff_zero_X_mul, map_zero]
+      · rw [← mul_assoc, mul_comm f X, mul_assoc, coeff_succ_X_mul, ← map_pow, coeff_mul_C,
+          mul_comm, coeff_X_pow_mul']
+        simp [Nat.not_le.mpr (by omega : m < m.succ + d)]
+    rw [hmul, ih (by omega)]
 
 variable (R) in
 /-- The **integral infinite `q`-Pochhammer product** `∏_{i ≥ 0} (1 - q ^ i t)` in `(R⟦X⟧)⟦X⟧`,
@@ -488,7 +480,7 @@ theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
 `qPochhammerSeries X` in `(R⟦X⟧)⟦X⟧`. -/
 theorem integralQPochhammer_eq_qPochhammerSeries :
     integralQPochhammer R = qPochhammerSeries (X : R⟦X⟧) :=
-  (eq_qPochhammerSeries_iff isUnit_one_sub_X_pow).mpr
+  (eq_qPochhammerSeries_iff fun _ ↦ isUnit_iff_constantCoeff.mpr (by simp)).mpr
     ⟨integralQPochhammer_eq_one_sub_X_mul_rescale, constantCoeff_integralQPochhammer⟩
 
 /-- **Euler's reciprocal identity** for the integral infinite `q`-Pochhammer product in
@@ -496,20 +488,21 @@ theorem integralQPochhammer_eq_qPochhammerSeries :
 theorem integralQPochhammer_mul_qPochhammerInvSeries :
     integralQPochhammer R * qPochhammerInvSeries (X : R⟦X⟧) = 1 := by
   rw [integralQPochhammer_eq_qPochhammerSeries]
-  exact qPochhammerSeries_mul_qPochhammerInvSeries isUnit_one_sub_X_pow
+  exact qPochhammerSeries_mul_qPochhammerInvSeries fun _ ↦ isUnit_iff_constantCoeff.mpr (by simp)
 
 /-- Base change of coefficients for `integralQPochhammer`. -/
 theorem map_integralQPochhammer (φ : R →+* S) :
     map (map φ) (integralQPochhammer R) = integralQPochhammer S := by
   rw [integralQPochhammer_eq_qPochhammerSeries, integralQPochhammer_eq_qPochhammerSeries,
-    map_qPochhammerSeries _ isUnit_one_sub_X_pow, map_X]
+    map_qPochhammerSeries _ (fun _ ↦ isUnit_iff_constantCoeff.mpr (by simp)), map_X]
 
 /-- Mapping `integralQPochhammer R` into Laurent-series coefficients `(R⸨X⸩)⟦X⟧` identifies it with
 `qPochhammerSeries (single 1 1)`. -/
 theorem map_ofPowerSeries_integralQPochhammer :
     map (HahnSeries.ofPowerSeries ℤ R) (integralQPochhammer R) =
       qPochhammerSeries (HahnSeries.single (1 : ℤ) (1 : R)) := by
-  rw [integralQPochhammer_eq_qPochhammerSeries, map_qPochhammerSeries _ isUnit_one_sub_X_pow,
+  rw [integralQPochhammer_eq_qPochhammerSeries,
+    map_qPochhammerSeries _ (fun _ ↦ isUnit_iff_constantCoeff.mpr (by simp)),
     HahnSeries.ofPowerSeries_X]
 
 /-- Mapping `integralQPochhammer R` along a coefficient homomorphism `φ : R →+* S` into
@@ -558,11 +551,6 @@ variable (R) in
 defined by coefficient stabilization. -/
 noncomputable def eulerOddProd : R⟦X⟧ :=
   PowerSeries.mk fun k ↦ coeff k (∏ i ∈ range (k + 1), (1 + (X : R⟦X⟧) ^ (2 * i + 1)))
-
-/-- Multiplying by `1 + X ^ m` preserves `coeff k` whenever `k < m`. -/
-private theorem coeff_mul_one_add_X_pow (f : R⟦X⟧) {k m : ℕ} (h : k < m) :
-    coeff k (f * (1 + X ^ m)) = coeff k f := by
-  rw [mul_add, mul_one, map_add, mul_comm f, coeff_X_pow_mul']; simp [Nat.not_le.mpr h]
 
 /-- **Stabilization of `eulerOddProd`**: the `k`-th coefficient equals that of the finite product
 over `i < N` whenever `k < 2 * N + 1`. -/
@@ -644,22 +632,6 @@ theorem coeff_eulerSqSeries_eq_sum_of_lt (k : ℕ) {N : ℕ} (hN : k < N ^ 2) :
   · exact lt_of_lt_of_le hN (Nat.pow_le_pow_left (Nat.le_of_not_lt (by simpa using hn)) 2)
   · have : k + 1 ≤ n := Nat.le_of_not_lt (by simpa using hn); nlinarith
 
-/-- Evaluating a polynomial over `R⟦X⟧` at `-X` only uses terms of degree `≤ k` for the `k`-th
-coefficient in `R⟦X⟧`. -/
-private theorem coeff_eval_neg_X_eq_sum_range (p : (R⟦X⟧)[X]) (k : ℕ) :
-    coeff k (p.eval (-X : R⟦X⟧)) =
-      ∑ n ∈ range (k + 1), coeff k ((-X : R⟦X⟧) ^ n * p.coeff n) := by
-  rw [Polynomial.eval_eq_sum_range' (lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ (k + 1))),
-    map_sum]
-  trans ∑ n ∈ range (k + 1), coeff k (p.coeff n * (-X : R⟦X⟧) ^ n)
-  · symm
-    refine Finset.sum_subset (range_mono (le_max_right _ _)) fun n _ hn ↦ ?_
-    have hlt : k < n := by simp only [mem_range, not_lt] at hn; omega
-    rw [neg_eq_neg_one_mul, mul_pow, mul_comm (p.coeff n), mul_comm ((-1 : R⟦X⟧) ^ n), mul_assoc,
-      coeff_X_pow_mul']
-    simp [Nat.not_le.mpr hlt]
-  · exact sum_congr rfl fun _ _ ↦ by rw [mul_comm]
-
 /-- Each summand `r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n` equals `(-r) ^ n` times the `n`-th coefficient
 of `qPochhammerSeries (r ^ 2)`. -/
 private theorem neg_X_pow_mul_coeff_qPochhammerSeries_sq (n : ℕ) :
@@ -686,7 +658,8 @@ private theorem coeff_coeff_qPochhammerSeries_sq_eq (k n j : ℕ) (hj : j ≤ k)
       coeff j ((qPochhammer Polynomial.X (Polynomial.C (X ^ 2 : R⟦X⟧)) (k + 1)).coeff n) := by
   let φ : R⟦X⟧ →+* R⟦X⟧ := (expand 2 two_ne_zero).toRingHom
   have hF : map φ (integralQPochhammer R) = qPochhammerSeries (X ^ 2 : R⟦X⟧) := by
-    rw [integralQPochhammer_eq_qPochhammerSeries, map_qPochhammerSeries _ isUnit_one_sub_X_pow]
+    rw [integralQPochhammer_eq_qPochhammerSeries,
+      map_qPochhammerSeries _ fun _ ↦ isUnit_iff_constantCoeff.mpr (by simp)]
     simp [φ, expand_X]
   have hp_coe :
       ((qPochhammer Polynomial.X (Polynomial.C (X ^ 2 : R⟦X⟧)) (k + 1) : (R⟦X⟧)[X]) :
@@ -712,11 +685,11 @@ theorem eulerSqSeries_eq_eulerOddProd : eulerSqSeries R = eulerOddProd R := by
     rw [Polynomial.eval_sub, Polynomial.eval_one, Polynomial.eval_mul, Polynomial.eval_X,
       Polynomial.eval_pow, Polynomial.eval_C, ← pow_mul, neg_mul, sub_neg_eq_add, ← pow_succ']
   rw [eulerSqSeries, eulerOddProd, coeff_mk, coeff_mk, ← hp_eval, map_sum,
-    coeff_eval_neg_X_eq_sum_range]
+    coeff_eval_eq_sum_range p (by simp)]
   refine sum_congr rfl fun n _ ↦ ?_
-  rw [← neg_X_pow_mul_coeff_qPochhammerSeries_sq n, neg_eq_neg_one_mul, mul_pow, mul_assoc,
-    mul_assoc, ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_C_mul, coeff_X_pow_mul',
-    coeff_X_pow_mul']
+  rw [mul_comm (p.coeff n), ← neg_X_pow_mul_coeff_qPochhammerSeries_sq n, neg_eq_neg_one_mul,
+    mul_pow, mul_assoc, mul_assoc, ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_C_mul,
+    coeff_X_pow_mul', coeff_X_pow_mul']
   split_ifs with hnk
   · rw [coeff_coeff_qPochhammerSeries_sq_eq k n (k - n) (by omega)]
   · rfl
