@@ -9,6 +9,7 @@ public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.FullyFaith
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Triangulated
 public import TauCeti.Algebra.Homology.GorensteinProjective.Hypersurface
+import TauCeti.CategoryTheory.Triangulated.Equivalence
 
 /-!
 # Matrix factorizations and stable Gorenstein-projective modules over a hypersurface
@@ -220,14 +221,9 @@ theorem quotientGorensteinProjectiveStableCokernelEquivalence_isTriangulated
   let := hE'.stableShiftFunctor_additive
   let := hE'.stablePretriangulated
   let := quotientGorensteinProjectiveStableCokernelCommShift hw
-  let e := eqToIso (quotientGorensteinProjectiveStableCokernelEquivalence_functor hw d hd).symm
-  let : (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).functor.CommShift ℤ :=
-    Functor.CommShift.ofIso e ℤ
-  let := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShiftInverse ℤ
-  let := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShift_of_functor ℤ
-  have := Functor.CommShift.ofIso_compatibility e ℤ
   have := quotientGorensteinProjectiveStableCokernel_isTriangulated hw
-  exact Equivalence.IsTriangulated.mk' _ (Functor.isTriangulated_of_iso e)
+  exact (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).isTriangulated_of_functor_eq
+    (quotientGorensteinProjectiveStableCokernelEquivalence_functor hw d hd)
 
 end HomotopyCategory
 

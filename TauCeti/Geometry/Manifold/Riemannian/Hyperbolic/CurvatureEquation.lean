@@ -47,6 +47,9 @@ for every constant negative scalar curvature `c`, the hyperbolic case being `c =
   the sign obstruction.
 * `Bundle.ContMDiffRiemannianMetric.eq_of_scalarCurvature_rescale_eq`: uniqueness of the metric
   of constant negative curvature in a conformal class of a closed surface.
+* `TauCeti.Manifold.eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero`: on a compact boundaryless
+  Riemannian manifold, the equation `-laplaceBeltrami I φ + K + e^(2φ) = 0` has at most one `C²`
+  solution.
 
 ## References
 
@@ -54,6 +57,12 @@ for every constant negative scalar curvature `c`, the hyperbolic case being `c =
   (1974), 14–47.
 * M. S. Berger, *Riemannian structures of prescribed Gaussian curvature for compact
   2-manifolds*, J. Differential Geom. 5 (1971), 325–332.
+
+## Attribution
+
+`TauCeti.Manifold.eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero` is adapted from the uniqueness
+argument of
+[TauCetiProject/TauCeti#40536](https://github.com/TauCetiProject/TauCeti/pull/40536).
 -/
 
 public section
@@ -194,3 +203,30 @@ theorem eq_of_scalarCurvature_rescale_eq [CompactSpace M] [I.Boundaryless]
   simpa [Real.log_injOn_pos.eq_iff (hf₁_pos x) (hf₂_pos x)] using this
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [CompactSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- **Uniqueness for the curvature equation.** On a compact boundaryless Riemannian manifold, two
+`C²` solutions of `Δ⁺φ + K + e^(2φ) = 0` coincide, for any function `K`. -/
+theorem eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero {K φ ψ : M → ℝ}
+    (hφ : ContMDiff I 𝓘(ℝ) 2 φ) (hψ : ContMDiff I 𝓘(ℝ) 2 ψ)
+    (hφK : ∀ x, -laplaceBeltrami I φ x + K x + Real.exp (2 * φ x) = 0)
+    (hψK : ∀ x, -laplaceBeltrami I ψ x + K x + Real.exp (2 * ψ x) = 0) : φ = ψ := by
+  -- Both solve `Δ u = K + e^(2u)`, whose right side is strictly increasing in `u`, so the
+  -- comparison principle applies in both directions.
+  have hmono (x : M) : StrictMono fun t : ℝ ↦ K x + Real.exp (2 * t) := fun s t hst ↦ by
+    have hexp := Real.exp_lt_exp.2 (mul_lt_mul_of_pos_left hst two_pos)
+    dsimp only
+    linarith
+  refine le_antisymm (le_of_le_laplaceBeltrami_of_laplaceBeltrami_le hmono hφ hψ
+    (fun x ↦ by linarith [hφK x]) (fun x ↦ by linarith [hψK x])) ?_
+  exact le_of_le_laplaceBeltrami_of_laplaceBeltrami_le hmono hψ hφ
+    (fun x ↦ by linarith [hψK x]) (fun x ↦ by linarith [hφK x])
+
+end TauCeti.Manifold

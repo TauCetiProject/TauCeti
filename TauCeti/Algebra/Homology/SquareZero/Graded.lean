@@ -214,21 +214,21 @@ def cohomologyProduct :
     D₁.cohomology G₁ i →ₗ[R] D₂.cohomology G₂ j →ₗ[R] D₀.cohomology G₀ k :=
   liftQ₂ _ _
     ((mk₂ R (fun (a : D₁.cocycles G₁ i) (b : D₂.cocycles G₂ j) =>
-        (⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.2 b.2⟩ : D₀.cocycles G₀ k))
+        (⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.property b.property⟩ : D₀.cocycles G₀ k))
       (fun _ _ _ => Subtype.ext (μ.map_add₂ _ _ _))
       (fun _ _ _ => Subtype.ext (μ.map_smul₂ _ _ _))
       (fun _ _ _ => Subtype.ext ((μ _).map_add _ _))
       (fun _ _ _ => Subtype.ext ((μ _).map_smul _ _))).compr₂ (Submodule.mkQ _))
     (fun _ ha => ext fun b => (Submodule.Quotient.mk_eq_zero _).2
-      (apply_mem_coboundaries_of_left μ hdeg hL hk ha b.2))
+      (apply_mem_coboundaries_of_left μ hdeg hL hk ha b.property))
     (fun _ hb => ext fun a => (Submodule.Quotient.mk_eq_zero _).2
-      (apply_mem_coboundaries_of_right μ hdeg hL hk a.2 hb))
+      (apply_mem_coboundaries_of_right μ hdeg hL hk a.property hb))
 
 /-- The product on cohomology of the classes of two cocycles is the class of their product. -/
 @[simp]
 theorem cohomologyProduct_mk (a : D₁.cocycles G₁ i) (b : D₂.cocycles G₂ j) :
     cohomologyProduct μ hdeg hL hk (Submodule.Quotient.mk a) (Submodule.Quotient.mk b) =
-      Submodule.Quotient.mk ⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.2 b.2⟩ :=
+      Submodule.Quotient.mk ⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.property b.property⟩ :=
   (rfl)
 
 end Product
@@ -267,7 +267,7 @@ def cohomologyMap : D₁.cohomology G₁ i →ₗ[R] D₀.cohomology G₀ i :=
 @[simp]
 theorem cohomologyMap_mk (a : D₁.cocycles G₁ i) :
     cohomologyMap f hdeg hD i (Submodule.Quotient.mk a) =
-      Submodule.Quotient.mk ⟨f a, apply_mem_cocycles_of_mem_cocycles f hdeg hD a.2⟩ :=
+      Submodule.Quotient.mk ⟨f a, apply_mem_cocycles_of_mem_cocycles f hdeg hD a.property⟩ :=
   (rfl)
 
 omit hdeg hD in
@@ -345,7 +345,7 @@ theorem cohomologyMap_eq_of_sub_mem_coboundaries
   refine LinearMap.ext fun x => ?_
   induction x using Submodule.Quotient.induction_on with | H a => ?_
   rw [cohomologyMap_mk, cohomologyMap_mk, cohomology_mk_eq_mk_iff]
-  exact hfg a.2
+  exact hfg a.property
 
 /-- **Homotopy invariance.** Chain homotopic maps induce the same map on cohomology: if
 `f - g = D₀ h + h D₁` on degree-`i` elements, for a map `h` lowering their degree by one, then `f`
@@ -382,7 +382,7 @@ theorem leftInverse_cohomologyMap :
   intro x
   induction x using Submodule.Quotient.induction_on with | H a => ?_
   rw [cohomologyMap_mk, cohomologyMap_mk, cohomology_mk_eq_mk_iff]
-  exact hgf a.2
+  exact hgf a.property
 
 /-- **The isomorphism on cohomology of a homotopy equivalence.** Let `f` and `g` be
 degree-preserving maps in opposite directions commuting with the endomorphisms, each a left
@@ -450,7 +450,7 @@ theorem cohomologyMap_cohomologyProduct {i j k : ℤ} (hk : i + j + ε = k)
   induction y using Submodule.Quotient.induction_on with | H b => ?_
   rw [cohomologyProduct_mk, cohomologyMap_mk, cohomologyMap_mk, cohomologyMap_mk,
     cohomologyProduct_mk, cohomology_mk_eq_mk_iff]
-  exact hnat a.2 b.2
+  exact hnat a.property b.property
 
 variable {g₁ : N₁ →ₗ[R] M₁} {g₂ : N₂ →ₗ[R] M₂} {g₀ : N₀ →ₗ[R] M₀}
   {hg₁ : ∀ {i : ℤ} {a : N₁}, a ∈ H₁ i → g₁ a ∈ G₁ i}
@@ -526,7 +526,7 @@ theorem cohomologyProduct_assoc {i j k l l' m : ℤ} (hl : i + j + ε = l) (hm :
   induction z using Submodule.Quotient.induction_on with | H c => ?_
   simp only [cohomologyProduct_mk]
   rw [cohomology_mk_eq_mk_iff]
-  exact hassoc a.2 b.2 c.2
+  exact hassoc a.property b.property c.property
 
 end Associativity
 
@@ -559,7 +559,7 @@ theorem cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct {i j k : ℤ}
   induction y using Submodule.Quotient.induction_on with | H b => ?_
   rw [cohomologyProduct_mk, cohomologyProduct_mk, ← Submodule.Quotient.mk_smul,
     cohomology_mk_eq_mk_iff]
-  exact hcomm a.2 b.2
+  exact hcomm a.property b.property
 
 end Commutativity
 

@@ -409,7 +409,7 @@ theorem exists_eq_forall_mem_Icc_hasDerivWithinAt_circleContinuationSlope {δ a 
     hm.trans_le (mul_one_sub_sq_le ha hb ht)
   set L : ℝ≥0 := ⟨2 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) hm.le⟩
   have hPL : IsPicardLindelof (circleContinuationSlope δ r) (tmin := a) (tmax := b) ⟨t₀, ht₀⟩ θ₀
-      ⟨2 * |δ| / (a * (1 - b ^ 2)) * (b - a), mul_nonneg L.2 (sub_nonneg.2 hab)⟩ 0 L
+      ⟨2 * |δ| / (a * (1 - b ^ 2)) * (b - a), mul_nonneg L.property (sub_nonneg.2 hab)⟩ 0 L
       ⟨4 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) hm.le⟩ := by
     refine ⟨fun t ht ↦ (lipschitzWith_circleContinuationSlope r hm (ha.trans_le ht.1)
         (ht.2.trans_lt hb) (mul_one_sub_sq_le ha hb ht)).lipschitzOnWith,

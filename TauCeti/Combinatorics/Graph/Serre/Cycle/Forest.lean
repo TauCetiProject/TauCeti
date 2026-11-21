@@ -222,7 +222,7 @@ theorem Path.reachable_supportGraph {S : Set Γ.E} {a b : Γ.V} (p : Γ.Path a b
     rcases eq_or_ne b c with rfl | hbc
     · rfl
     · exact SimpleGraph.Adj.reachable
-        ((Γ.supportGraph_adj S b c).mpr ⟨hbc, .inl ⟨e.1, hp e.1 (by simp), e.2⟩⟩)
+        ((Γ.supportGraph_adj S b c).mpr ⟨hbc, .inl ⟨e.val, hp e.val (by simp), e.property⟩⟩)
 
 /-- Two vertices are joined in the simple support of a reversal-closed set of darts exactly when
 they are joined by a path through those darts. -/

@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 
@@ -47,8 +48,11 @@ Gromov compactness: if `8 A ∫_{B_r(z₀)} ‖∂ₛu‖² < π`, then
 `π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`.
 
 For `J` that is `C²` on an open set containing a compact set `K`, one smallness threshold `δ > 0`
-works for all curves with image in `K`. As `∂ₜu = J(u) ∂ₛu`, these bounds control the full
-derivative of `u`.
+works for all curves with image in `K`. The threshold depends only on bounds for `J` and its first
+two derivatives on `K`, so it is also uniform over a family of structures `J p` depending `C²` on a
+parameter `p` in a compact set, such as the structures `J(z₀, ·)` frozen at the points `z₀` of a
+compact window of the domain of an inhomogeneous equation. As `∂ₜu = J(u) ∂ₛu`, these bounds
+control the full derivative of `u`.
 
 **Curves in a target with a translation symmetry.** Suppose that `J` is invariant under the
 translations along a vector `e₀`, so that `x ↦ x + τ e₀` maps solutions to solutions. Then the
@@ -74,6 +78,11 @@ trajectory: there `e₀ = (1, 0)`, `ζ = (0, ∂ₛu)`, and the inequality bound
   inequality for `J`-holomorphic curves, with explicit constants.
 * `TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`:
   the same with a smallness threshold that is uniform over curves with image in a compact set.
+* One threshold for a compact family of structures:
+  `exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric`.
+* `TauCeti.exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball`:
+  the same in a finite-dimensional normed space, as for the coordinate expressions of curves in a
+  chart of a manifold, with a constant depending on the norm in place of `8`.
 * `TauCeti.neg_mul_norm_fderiv_one_sub_sq_le_laplacian`: for `J` invariant under the translations
   along a vector `e₀`, the differential inequality `Δ ‖∂ₛu - e₀‖² ≥ -A m² ‖∂ₛu - e₀‖²`.
 * `exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul_setIntegral_ball`:
@@ -354,6 +363,41 @@ theorem pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball {z₀ : �
     (by simpa [measureReal_def, NNReal.coe_real_pi] using hsmall)
   simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
 
+/-- **The mean-value inequality for a compact family of structures.** Let `J p` be structures
+depending on a parameter `p` in a normed space, jointly `C²` in `(p, x)` on an open set `W`
+containing `C × K` for compact sets `C` and `K`, with `J p (x)² = -1` on `C × K`. There is one
+energy threshold `δ > 0` for all `p ∈ C`: every solution `u` of `∂ₜu = J p (u) ∂ₛu` that is `C³`
+on the open disk `ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and has
+energy `∫ ‖∂ₛu‖² < δ` over it, satisfies `π r² ‖∂ₛu(z₀)‖² ≤ 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`.
+
+Such families arise as the structures `J(z₀, ·)` frozen at the points `z₀` of a compact window of
+the domain of an inhomogeneous equation, possibly together with further parameters. -/
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {J : P → V → V →L[ℝ] V}
+    {W : Set (P × V)} {C : Set P} {K : Set V} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (Function.uncurry J) W) (hC : IsCompact C) (hK : IsCompact K)
+    (hCKW : C ×ˢ K ⊆ W) (hJsq : ∀ p ∈ C, ∀ x ∈ K, ∀ v, J p x (J p x v) = -v) :
+    ∃ δ > 0, ∀ ⦃p : P⦄, p ∈ C → ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r →
+      ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J p (u y) (fderiv ℝ u y 1)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  -- One nonnegative bound for `J p` and its first two derivatives on `K`, uniform in `p ∈ C`.
+  obtain ⟨A, hA0, hA⟩ :=
+    hJ.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen (n := 2) hW hC hK hCKW
+  set B := 4 * A * A + 2 * A ^ 2 + 8 * A ^ 2 * A ^ 2
+  refine ⟨π / (8 * (B + 1)), by positivity, fun p hp u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
+  have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
+  refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
+    (fun y hy ↦ (hA p hp _ (huK y hy)).1) (fun y hy ↦ hJsq p hp _ (huK y hy))
+    (fun y hy ↦ by simpa using (hA p hp _ (huK y hy)).2 0 (by norm_num))
+    (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using (hA p hp _ (huK y hy)).2 1 (by norm_num))
+    (fun y hy ↦ (hA p hp _ (huK y hy)).2 2 le_rfl) ?_
+  rw [lt_div_iff₀ (by positivity)] at hE
+  nlinarith
+
 /-- **The mean-value inequality for `J`-holomorphic curves in a compact set.** Let `J` be `C²` on an
 open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There is an energy threshold
 `δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is `C³` on the open disk
@@ -368,19 +412,12 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
       (∀ y ∈ ball z₀ r, u y ∈ K) →
       ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
       π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-  -- One nonnegative bound `C` for `J` and its first two derivatives on `K`.
-  obtain ⟨C, hC0, hC⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW hK hKW
-  set A := 4 * C * C + 2 * C ^ 2 + 8 * C ^ 2 * C ^ 2
-  refine ⟨π / (8 * (A + 1)), by positivity, fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
-  have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
-  refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
-    (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
-    (fun y hy ↦ hJsq _ (huK y hy))
-    (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
-    (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))
-    (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) ?_
-  rw [lt_div_iff₀ (by positivity)] at hE
-  nlinarith
+  obtain ⟨δ, hδ, h⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric
+      (J := fun (_ : Unit) ↦ J) (hW.preimage continuous_snd)
+      (hJ.comp contDiffOn_snd fun _ hq ↦ hq) isCompact_univ hK
+      (fun q hq ↦ hKW hq.2) fun _ _ ↦ hJsq
+  exact ⟨δ, hδ, h (Set.mem_univ ())⟩
 
 /-- **The mean-value inequality for `∂ₛu - e₀`.** Let `J` be invariant under the translations
 along a vector `e₀`, and let `u : ℂ → V` be `C³` on the open disk `ball z₀ r`, with `∂ₛu`
@@ -448,5 +485,81 @@ theorem exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul
     (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
     (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))
     (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) hm hm' hsmall
+
+section FiniteDimensional
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- **The mean-value inequality for `J`-holomorphic curves in a finite-dimensional normed space.**
+This is `TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`
+for a target `F` without an inner product; the constant `8` becomes a constant `A` depending on the
+norm of `F`. Let `J` be `C²`
+on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There are an energy
+threshold `δ > 0` and a constant `A > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is
+`C³` on the open disk `ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and
+has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies `π r² ‖∂ₛu(z₀)‖² ≤ A ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
+theorem exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_setIntegral_ball
+    {J : F → F →L[ℝ] F} {W K : Set F} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
+    (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∃ A > 0, ∀ ⦃u : ℂ → F⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r → ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ A * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  -- Conjugate `J` by `L = toEuclidean` and apply the inequality in the Euclidean space.
+  let L : F ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) := toEuclidean
+  set a := ‖(L : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)))‖
+  set b := ‖(L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] F)‖
+  obtain ⟨δ, hδ, hmean⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
+      (J := fun x ↦ (L : F →L[ℝ] _) ∘L J (L.symm x) ∘L (L.symm : _ →L[ℝ] F))
+      (hW.preimage L.symm.continuous)
+      (contDiffOn_const.clm_comp ((hJ.comp L.symm.contDiff.contDiffOn
+        (Set.mapsTo_preimage _ _)).clm_comp contDiffOn_const))
+      (hK.image L.continuous) (by rintro _ ⟨x, hx, rfl⟩; simpa using hKW hx)
+      (by rintro _ ⟨x, hx, rfl⟩ v; simp [hJsq x hx])
+  refine ⟨δ / (a ^ 2 + 1), by positivity, 8 * (b ^ 2 * a ^ 2 + 1), by positivity,
+    fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
+  have hd (y : ℂ) (w : ℂ) : fderiv ℝ (L ∘ u) y w = L (fderiv ℝ u y w) := by
+    rw [L.comp_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  have hLc : ContinuousOn (fun y ↦ L (fderiv ℝ u y 1)) (closedBall z₀ r) := by
+    simpa [Function.comp_def] using
+      L.toContinuousLinearMap.lipschitzWith.continuous.comp_continuousOn hu'
+  have hint : IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z₀ r) :=
+    (hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r) |>.mono_set
+      ball_subset_closedBall
+  have hintL : IntegrableOn (fun y ↦ ‖fderiv ℝ (L ∘ u) y 1‖ ^ 2) (ball z₀ r) := by
+    simp only [hd]
+    exact (hLc.norm.pow 2).integrableOn_compact
+      (isCompact_closedBall z₀ r) |>.mono_set ball_subset_closedBall
+  -- The Euclidean energy is at most `a²` times the energy in `F`.
+  have hEL : ∫ y in ball z₀ r, ‖fderiv ℝ (L ∘ u) y 1‖ ^ 2 ≤
+      a ^ 2 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+    rw [← integral_const_mul]
+    refine setIntegral_mono_on hintL (hint.const_mul _) measurableSet_ball fun y _ ↦ ?_
+    rw [hd, ← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      (by simpa using L.toContinuousLinearMap.le_opNorm (fderiv ℝ u y 1)) 2
+  have h := hmean (u := L ∘ u) hr (L.contDiff.comp_contDiffOn hu)
+    (by simpa only [hd] using hLc)
+    (fun y hy ↦ by simp [hd, hCR y hy])
+    (fun y hy ↦ ⟨u y, huK y hy, rfl⟩)
+    (by
+      refine hEL.trans_lt ?_
+      rw [lt_div_iff₀ (by positivity)] at hE
+      nlinarith [sq_nonneg a])
+  -- Back in `F`, `‖∂ₛu(z₀)‖ ≤ b ‖L ∂ₛu(z₀)‖`.
+  have hz₀ : ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ b ^ 2 * ‖fderiv ℝ (L ∘ u) z₀ 1‖ ^ 2 := by
+    rw [hd, ← mul_pow]
+    refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
+    simpa using (L.symm : _ →L[ℝ] F).le_opNorm (L (fderiv ℝ u z₀ 1))
+  -- `π r² ‖∂ₛu(z₀)‖² ≤ b² π r² ‖L ∂ₛu(z₀)‖² ≤ 8 b² ∫ ‖L ∂ₛu‖² ≤ 8 b² a² ∫ ‖∂ₛu‖²`.
+  have h1 := mul_le_mul_of_nonneg_left hz₀ (by positivity : 0 ≤ π * r ^ 2)
+  have h2 := mul_le_mul_of_nonneg_left (h.trans (mul_le_mul_of_nonneg_left hEL (by norm_num)))
+    (sq_nonneg b)
+  nlinarith [(by positivity : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2)]
+
+end FiniteDimensional
 
 end TauCeti

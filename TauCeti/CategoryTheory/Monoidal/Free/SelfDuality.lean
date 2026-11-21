@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Presentation
+public import TauCeti.CategoryTheory.Monoidal.Presentation.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!

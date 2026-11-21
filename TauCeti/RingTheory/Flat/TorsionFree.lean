@@ -78,7 +78,8 @@ private theorem mem_range_of_prime_smul_mem_range [Module.IsTorsionFree R N] {π
   obtain ⟨m', hm'⟩ := hx
   -- So `π • n = f m = π • f (-m')`, and `n = f (-m')` as `N` is torsion-free.
   refine ⟨-m', smul_right_injective N hπ.ne_zero ?_⟩
-  simp only [map_neg, smul_neg, ← map_smul, hm', map_sub, Submodule.subtype_apply, mem_ker.1 k.2,
+  simp only [map_neg, smul_neg, ← map_smul, hm', map_sub, Submodule.subtype_apply,
+      mem_ker.1 k.property,
     zero_sub, neg_neg, hm]
 
 /-- Over a principal ideal domain, for a linear map `f : M →ₗ[R] N` into a torsion-free module,

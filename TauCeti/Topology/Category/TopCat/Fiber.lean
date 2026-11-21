@@ -44,17 +44,17 @@ abbrev fiber (p : E ⟶ B) (b : B) : TopCat.{u} := TopCat.of (p ⁻¹' {b})
 def fiberι (p : E ⟶ B) (b : B) : p.fiber b ⟶ E := TopCat.ofHom ⟨Subtype.val, by fun_prop⟩
 
 @[simp]
-lemma fiberι_apply (p : E ⟶ B) (b : B) (x : p.fiber b) : p.fiberι b x = x.1 := (rfl)
+lemma fiberι_apply (p : E ⟶ B) (b : B) (x : p.fiber b) : p.fiberι b x = x.val := (rfl)
 
 /-- The morphism `p` sends every point of its fibre over `b` to `b`. -/
 @[simp]
-lemma apply_coe_fiber (p : E ⟶ B) (b : B) (x : p.fiber b) : p x.1 = b :=
-  x.2
+lemma apply_coe_fiber (p : E ⟶ B) (b : B) (x : p.fiber b) : p x.val = b :=
+  x.property
 
 @[reassoc (attr := simp)]
 lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b := by
   ext x
-  exact x.2
+  exact x.property
 
 /-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
 into the part of `E'` over it. -/
@@ -138,9 +138,9 @@ theorem preimageInclusion_comp_ofHom_restrictPreimageMap {E'' : Type u} [Topolog
 /-- The fibre `p⁻¹(y)` is the fibre over `y` of the restriction `p⁻¹(Y) → Y`. -/
 def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
     (p ⁻¹' {y}) ≃ₜ (p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) where
-  toFun e := ⟨⟨e.1, Set.mem_preimage.2 ((Set.mem_singleton_iff.1 e.2).symm ▸ hy)⟩,
-    Subtype.ext e.2⟩
-  invFun e := ⟨e.1.1, congrArg Subtype.val e.2⟩
+  toFun e := ⟨⟨e.val, Set.mem_preimage.2 ((Set.mem_singleton_iff.1 e.property).symm ▸ hy)⟩,
+    Subtype.ext e.property⟩
+  invFun e := ⟨e.val.val, congrArg Subtype.val e.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by fun_prop
@@ -148,13 +148,13 @@ def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
 
 @[simp]
 theorem coe_coe_preimageSingletonHomeomorphFiber_apply (p : C(E', B')) (hy : y ∈ Y)
-    (e : p ⁻¹' {y}) : ((p.preimageSingletonHomeomorphFiber hy e).1 : E') = e :=
+    (e : p ⁻¹' {y}) : ((p.preimageSingletonHomeomorphFiber hy e).val : E') = e :=
   (rfl)
 
 @[simp]
 theorem coe_preimageSingletonHomeomorphFiber_symm_apply (p : C(E', B')) (hy : y ∈ Y)
     (e : p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) :
-    ((p.preimageSingletonHomeomorphFiber hy).symm e : E') = e.1.1 :=
+    ((p.preimageSingletonHomeomorphFiber hy).symm e : E') = e.val.val :=
   (rfl)
 
 /-- The inclusion `p⁻¹(y) → p⁻¹(Y)` is the fibre inclusion of the restriction `p⁻¹(Y) → Y`, up to
@@ -178,12 +178,12 @@ variable {E B E' B' E'' B'' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B'} {p'' : 
 over `b` to the fibre of `p'` over `g b`. -/
 def fiberMap (sq : CommSq f p p' g) (b : B) : p.fiber b ⟶ p'.fiber (g b) :=
   TopCat.ofHom
-    { toFun x := ⟨f x.1, by simpa using ConcreteCategory.congr_hom sq.w x.1⟩
+    { toFun x := ⟨f x.val, by simpa using ConcreteCategory.congr_hom sq.w x.val⟩
       continuous_toFun := by fun_prop }
 
 @[simp]
 lemma fiberMap_apply_coe (sq : CommSq f p p' g) (b : B) (x : p.fiber b) :
-    (sq.fiberMap b x : E') = f x.1 := (rfl)
+    (sq.fiberMap b x : E') = f x.val := (rfl)
 
 @[reassoc (attr := simp)]
 lemma fiberMap_comp_fiberι (sq : CommSq f p p' g) (b : B) :
@@ -199,5 +199,10 @@ middle map `p'` cannot be recovered from the composite square, as for `eqToHom_t
 @[reassoc (attr := simp)]
 lemma fiberMap_comp_fiberMap (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g') (b : B) :
     sq.fiberMap b ≫ sq'.fiberMap (g b) = (sq.horiz_comp sq').fiberMap b := (rfl)
+
+/-- Underlying `ContinuousMap` commutativity `p'.hom.comp f.hom = g.hom.comp p.hom` of a
+commutative square `sq : CommSq f p p' g` in `TopCat`. -/
+theorem hom_comp_eq (sq : CommSq f p p' g) : p'.hom.comp f.hom = g.hom.comp p.hom := by
+  rw [← TopCat.hom_comp, ← TopCat.hom_comp, sq.w]
 
 end CategoryTheory.CommSq

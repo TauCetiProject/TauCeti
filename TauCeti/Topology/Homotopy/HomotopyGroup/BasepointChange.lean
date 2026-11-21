@@ -128,7 +128,7 @@ theorem homotopic_transport_of_homotopic (γ : Path x y) {f f' : Ω^ N X x}
   obtain ⟨K⟩ := h
   have hFG : ∀ s : I, ∀ z ∈ Cube.boundary N,
       K.toContinuousMap (s, z) = (γ.toContinuousMap.comp ContinuousMap.snd) (s, 0) :=
-    fun s z hz => (K.eq_fst s hz).trans ((f.2 z hz).trans γ.source.symm)
+    fun s z hz => (K.eq_fst s hz).trans ((f.property z hz).trans γ.source.symm)
   refine ⟨⟨⟨transportFamily K.toContinuousMap
     (γ.toContinuousMap.comp ContinuousMap.snd) hFG, ?_, ?_⟩, ?_⟩⟩
   · intro z
@@ -137,7 +137,7 @@ theorem homotopic_transport_of_homotopic (γ : Path x y) {f f' : Ω^ N X x}
     exact transportFamily_apply_eq_transport _ _ hFG (fun w => K.apply_one w) (fun _ => rfl) z
   · intro t z hz
     exact (transportFamily_apply_of_mem_boundary _ _ hFG t hz).trans
-      (γ.target.trans ((transport γ f).2 z hz).symm)
+      (γ.target.trans ((transport γ f).property z hz).symm)
 
 /-- Transport along homotopic paths gives homotopic generalized loops. -/
 theorem homotopic_transport_of_path_homotopic {γ δ : Path x y} (h : γ.Homotopic δ)
@@ -147,7 +147,7 @@ theorem homotopic_transport_of_path_homotopic {γ δ : Path x y} (h : γ.Homotop
   have h1 : (1 : I) ∈ ({0, 1} : Set I) := by simp
   have hFG : ∀ s : I, ∀ z ∈ Cube.boundary N,
       ((f : C(I^N, X)).comp ContinuousMap.snd) (s, z) = G.toContinuousMap (s, 0) :=
-    fun s z hz => (f.2 z hz).trans (γ.source.symm.trans (G.eq_fst s h0).symm)
+    fun s z hz => (f.property z hz).trans (γ.source.symm.trans (G.eq_fst s h0).symm)
   refine ⟨⟨⟨transportFamily ((f : C(I^N, X)).comp ContinuousMap.snd) G.toContinuousMap hFG,
     ?_, ?_⟩, ?_⟩⟩
   · intro w
@@ -156,7 +156,7 @@ theorem homotopic_transport_of_path_homotopic {γ δ : Path x y} (h : γ.Homotop
     exact transportFamily_apply_eq_transport _ _ hFG (fun _ => rfl) (fun u => G.apply_one u) w
   · intro t w hw
     exact (transportFamily_apply_of_mem_boundary _ _ hFG t hw).trans
-      ((G.eq_fst t h1).trans (γ.target.trans ((transport γ f).2 w hw).symm))
+      ((G.eq_fst t h1).trans (γ.target.trans ((transport γ f).property w hw).symm))
 
 /-! ### Functoriality of transport -/
 

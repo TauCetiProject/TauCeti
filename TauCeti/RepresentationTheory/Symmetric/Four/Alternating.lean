@@ -126,7 +126,7 @@ variable {k : Type*} [CommMonoid k]
 `κ((0 1 2)) = 1`. -/
 noncomputable def alternatingGroupFourLinearCharacter (ζ : rootsOfUnity 3 k) :
     alternatingGroup (Fin 4) →* kˣ :=
-  (AddChar.zmodChar 3 ((mem_rootsOfUnity 3 _).1 ζ.2)).toMonoidHom.comp
+  (AddChar.zmodChar 3 ((mem_rootsOfUnity 3 _).1 ζ.property)).toMonoidHom.comp
     alternatingGroupFourZModThreeHom
 
 /-- `L_ζ(g) = ζ ^ κ(g)`. -/
@@ -195,7 +195,7 @@ theorem complexEmbedding_alternatingGroupFourExactCharacterTable (ω : rootsOfUn
         (alternatingGroupFourStandard ℂ).character] : Fin 4 → alternatingGroup (Fin 4) → ℂ)
         (i.cast numClasses_alternatingGroupFourClassData)
         (alternatingGroupFourClassData.rep j) := by
-  have h3 : ((ω : ℂˣ) : ℂ) ^ 3 = 1 := (mem_rootsOfUnity' 3 _).1 ω.2
+  have h3 : ((ω : ℂˣ) : ℂ) ^ 3 = 1 := (mem_rootsOfUnity' 3 _).1 ω.property
   have h4 : (((ω : ℂˣ) : ℂ) ^ 2) ^ 2 = ((ω : ℂˣ) : ℂ) := by
     rw [← pow_mul]
     linear_combination ((ω : ℂˣ) : ℂ) * h3

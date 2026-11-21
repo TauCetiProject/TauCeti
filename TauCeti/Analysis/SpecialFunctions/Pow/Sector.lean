@@ -28,6 +28,9 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
   the power coordinate `I * w ^ (1 / β)`.
 * `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
   by a cone inequality, for `0 ≤ β ≤ 2`.
+* `TauCeti.cos_mul_norm_le_re_cpow` is the same cone inequality on the closed right half-plane.
+* `TauCeti.cos_mul_pi_div_two_pos`: the cone constant `cos (β π / 2)` is positive for
+  `0 ≤ β < 1`.
 * `TauCeti.cos_mul_norm_rpow_le_re_cpow` bounds the real part of `z ^ y` below by
   `cos (y π) ‖z‖ ^ y` on the whole plane, for `|y| ≤ 1`; for the principal fourth root,
   `TauCeti.norm_rpow_le_two_mul_re_cpow_quarter` gives `‖z‖ ^ (1/4) ≤ 2 Re (z ^ (1/4))`.
@@ -107,6 +110,22 @@ theorem im_I_mul_cpow_inv_eq_zero {w : ℂ} {β : ℝ} (hβ : 0 < β)
       field_simp [hβ.ne']
     simp only [I_mul_im, cpow_ofReal_re]
     rw [← Real.cos_abs, heq, Real.cos_pi_div_two, mul_zero]
+
+/-- For `0 ≤ β < 1`, the cone constant `cos (β π / 2)` is positive. -/
+theorem cos_mul_pi_div_two_pos {β : ℝ} (hβ : 0 ≤ β) (hβ1 : β < 1) :
+    0 < Real.cos (β * Real.pi / 2) :=
+  Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
+
+/-- In the closed right half-plane with `0 ≤ β ≤ 2`, the power `z ^ β` lies in the cone of real
+part at least `cos (β π / 2)` times the norm. -/
+theorem cos_mul_norm_le_re_cpow {z : ℂ} {β : ℝ} (hβ : 0 ≤ β) (hβ2 : β ≤ 2) (hz : 0 ≤ z.re) :
+    Real.cos (β * Real.pi / 2) * ‖z ^ (β : ℂ)‖ ≤ (z ^ (β : ℂ)).re := by
+  rw [cpow_ofReal_re, norm_cpow_real, mul_comm]
+  gcongr
+  have harg : |z.arg| ≤ Real.pi / 2 := abs_arg_le_pi_div_two_iff.mpr hz
+  rw [← Real.cos_abs (z.arg * β), abs_mul, abs_of_nonneg hβ]
+  refine Real.cos_le_cos_of_nonneg_of_le_pi (by positivity) (by nlinarith [Real.pi_pos]) ?_
+  nlinarith
 
 /-- In the closed upper half-plane with `0 ≤ β ≤ 2`, the power `z ^ β`, rotated by
 `exp (-(β π / 2) i)`, lies in the cone of real part at least `cos (β π / 2)` times the norm. -/

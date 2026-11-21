@@ -131,12 +131,12 @@ theorem locallyContractibleSpace (h : IsEquiconnecting W l) : LocallyContractibl
   refine ⟨V, hVU, hV.mem_nhds hxV, ⟨x, hU'U hxU'⟩, ⟨?_⟩⟩
   -- Run the connecting path from `x` to `y` backwards, from `y` to `x`.
   have hc : Continuous fun p : I × V => l (x, (p.2 : X)) (σ p.1) :=
-    h.continuous_comp continuous_const (by fun_prop) (by fun_prop) fun p => p.2.2.1
+    h.continuous_comp continuous_const (by fun_prop) (by fun_prop) fun p => p.2.property.1
   exact
-    { toFun := fun p => ⟨l (x, p.2) (σ p.1), hU'U (p.2.2.2 _)⟩
+    { toFun := fun p => ⟨l (x, p.2) (σ p.1), hU'U (p.2.property.2 _)⟩
       continuous_toFun := hc.subtype_mk _
-      map_zero_left := fun y => Subtype.ext <| by simp [h.apply_one _ y.2.1]
-      map_one_left := fun y => Subtype.ext <| by simp [h.apply_zero _ y.2.1] }
+      map_zero_left := fun y => Subtype.ext <| by simp [h.apply_one _ y.property.1]
+      map_one_left := fun y => Subtype.ext <| by simp [h.apply_zero _ y.property.1] }
 
 /-- Transport of an equiconnecting map to a neighbourhood retract. -/
 theorem retract (h : IsEquiconnecting W l) {e : Y → X} (he : Continuous e) {r : X → Y}
@@ -221,7 +221,7 @@ theorem _root_.IsOpen.locallyEquiconnectedSpace [LocallyEquiconnectedSpace X] {s
   let r : X → s := fun x => if hx : x ∈ s then ⟨x, hx⟩ else y₀
   have hr : ContinuousOn r s := by
     refine continuousOn_iff_continuous_domRestrict.mpr (continuous_id.congr fun x => ?_)
-    simp [r, x.2]
-  exact .of_retract continuous_subtype_val hs (by simp) hr fun y => by simp [r, y.2]
+    simp [r, x.property]
+  exact .of_retract continuous_subtypeVal hs (by simp) hr fun y => by simp [r, y.property]
 
 end TauCeti
