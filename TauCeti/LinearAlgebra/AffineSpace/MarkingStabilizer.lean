@@ -28,6 +28,7 @@ stabilization work, for a sphere with a special point at `∞`.
 Write the sphere as `K ∪ {∞}` for a field `K` (for curves, `K = ℂ`). The Möbius transformations
 fixing `∞` are the affine automorphisms `z ↦ a z + b` of `K`, the group `K ≃ᵃ[K] K`. A component
 with special points `∞` and `P ⊆ K`, for instance `P = ∅` or `P = {0}`, is a map `u : K → X`.
+The results below hold for the affine automorphisms `K ≃ᵃ[K] K` of any division ring `K`.
 
 * **Stability of the stabilized domain.** The automorphisms of the sphere fixing `∞` and every
   point of `P`, and mapping a finite set `C` onto itself, form the subgroup
@@ -79,7 +80,7 @@ namespace TauCeti
 
 section Marking
 
-variable {K : Type*} [Field K] {P C : Set K} {f : K ≃ᵃ[K] K}
+variable {K : Type*} [DivisionRing K] {P C : Set K} {f : K ≃ᵃ[K] K}
 
 /-- The automorphisms of the sphere `K ∪ {∞}` fixing `∞`, fixing each point of `P` and mapping
 the unordered marking `C` onto itself: the affine automorphisms `f` of `K` with `f p = p` for
@@ -163,7 +164,7 @@ end Marking
 
 section Isotropy
 
-variable {K : Type*} [Field K] {X : Type*} {u : K → X} {P : Set K} {f : K ≃ᵃ[K] K}
+variable {K : Type*} [DivisionRing K] {X : Type*} {u : K → X} {P : Set K} {f : K ≃ᵃ[K] K}
 
 /-- The isotropy group of a map `u` of the sphere `K ∪ {∞}` with the special point `∞` and the
 marked points `P`: the affine automorphisms `f` of `K` fixing each point of `P` with
