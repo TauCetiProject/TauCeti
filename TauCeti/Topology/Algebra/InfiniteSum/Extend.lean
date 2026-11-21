@@ -41,7 +41,7 @@ theorem Function.Injective.tprod_fiber_eq_extend {α β M : Type*}
 `{x ∈ s | p x}`. -/]
 theorem tprod_subtype_ite {α M : Type*} [CommMonoid M] [TopologicalSpace M]
     (s : Set α) (p : α → Prop) [DecidablePred p] (f : α → M) :
-    (∏' x : s, if p x.1 then f x.1 else 1) = ∏' x : {x ∈ s | p x}, f x.1 := by
+    (∏' x : s, if p x.val then f x.val else 1) = ∏' x : {x ∈ s | p x}, f x.val := by
   classical
   rw [tprod_subtype s (fun x ↦ if p x then f x else 1), tprod_subtype {x ∈ s | p x} f]
   refine tprod_congr fun x ↦ ?_

@@ -282,7 +282,7 @@ theorem iUnion_eisensteinBox_eq {n : ℕ} (hn : 0 < n) :
 /-- At every point of a discriminant box, the root counts over `σ_K(n)` sum to `n`. -/
 theorem tsum_rootCount_eq_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K}
     (ha : a ∈ eisensteinBox K n j) :
-    ∑' L : totallyRamifiedOfDegree K n, (L.1.rootCount a : ℝ≥0∞) = n := by
+    ∑' L : totallyRamifiedOfDegree K n, (L.val.rootCount a : ℝ≥0∞) = n := by
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.1 ha.2.1
   exact tsum_rootCount_eq_of_separable he hf (separable_monicOfCoeff_of_mem_eisensteinBox ha)
 

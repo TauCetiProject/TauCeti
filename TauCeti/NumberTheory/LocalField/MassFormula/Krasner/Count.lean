@@ -268,8 +268,8 @@ theorem encard_totallyRamifiedOfDegree_wildExponent_eq (n j : ℕ) :
       rw [← ENNReal.tsum_set_const,
         ← tsum_subtype_ite (totallyRamifiedOfDegree K n) (·.wildExponent = j) (fun _ ↦ W),
         ← tsum_congr fun L : totallyRamifiedOfDegree K n ↦
-          L.1.lintegral_rootCount_eisensteinBox L.2 μ hμ,
-        ← lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinBox μ L.2,
+          L.val.lintegral_rootCount_eisensteinBox L.property μ hμ,
+        ← lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinBox μ L.property,
         setLIntegral_congr_fun measurableSet_eisensteinBox
           fun _ ha ↦ tsum_rootCount_eq_of_mem_eisensteinBox ha,
         setLIntegral_const, krasnerCount_mul_weight_eq hO μ hμ]
@@ -313,8 +313,8 @@ theorem finite_totallyRamifiedOfDegree_discriminantExponent_le (n B : ℕ) :
 /-- Partitioning a `tsum` over `σ_K(n)` by wild exponent. -/
 private theorem tsum_totallyRamifiedOfDegree_eq_tsum_wildExponent (n : ℕ)
     (f : IntermediateField K (SeparableClosure K) → ℝ≥0∞) :
-    (∑' E : totallyRamifiedOfDegree K n, f E.1) =
-      ∑' j : ℕ, ∑' E : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}, f E.1 := by
+    (∑' E : totallyRamifiedOfDegree K n, f E.val) =
+      ∑' j : ℕ, ∑' E : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}, f E.val := by
   have hU : totallyRamifiedOfDegree K n =
       ⋃ j : ℕ, {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j} := by
     ext E; simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
@@ -322,7 +322,7 @@ private theorem tsum_totallyRamifiedOfDegree_eq_tsum_wildExponent (n : ℕ)
   have hdisj : Set.univ.PairwiseDisjoint
       (fun j : ℕ ↦ {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}) := fun _ _ _ _ hne ↦
     Set.disjoint_left.2 fun _ ⟨_, h1⟩ ⟨_, h2⟩ ↦ hne (h1.symm.trans h2)
-  exact (Equiv.tsum_eq (Set.equivOfEq hU) fun E ↦ f E.1).trans (tsum_iUnion (f := f) hdisj)
+  exact (Equiv.tsum_eq (Set.equivOfEq hU) fun E ↦ f E.val).trans (tsum_iUnion (f := f) hdisj)
 
 /-- **Consistency with Serre's first mass formula**: summing `krasnerCount K n j / q ^ j` over all
 wild exponents `j` yields `n`, in both mixed and equal characteristic. -/
@@ -332,7 +332,8 @@ theorem tsum_krasnerCount_div_natCard_residueField_pow (n : ℕ) :
   rw [tsum_totallyRamifiedOfDegree_eq_tsum_wildExponent n
     (fun E ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ E.wildExponent)] at hmain
   rw [← hmain]; refine tsum_congr fun j ↦ ?_
-  rw [tsum_congr fun E : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j} ↦ by rw [E.2.2],
+  rw [tsum_congr fun E : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j} ↦
+      by rw [E.property.2],
     ENNReal.tsum_set_const, encard_totallyRamifiedOfDegree_wildExponent_eq, ENat.toENNReal_coe,
     mul_one_div]
 
@@ -359,8 +360,8 @@ theorem mul_tsum_one_div_natCard_algEquiv_wildExponent_eq {n j : ℕ}
   rw [tsum_subtype_ite (totallyRamifiedOfDegree K n) (·.wildExponent = j) (fun _ ↦ 1),
     ENNReal.tsum_set_one, encard_totallyRamifiedOfDegree_wildExponent_eq, ENat.toENNReal_coe,
     tsum_congr fun M : R ↦ show (n : ℝ≥0∞) / Nat.card (M ≃ₐ[K] M) *
-        (if M.1.wildExponent = j then (1 : ℝ≥0∞) else 0) =
-      if M.1.wildExponent = j then (n : ℝ≥0∞) * ((1 : ℝ≥0∞) / Nat.card (M ≃ₐ[K] M)) else 0 by
+        (if M.val.wildExponent = j then (1 : ℝ≥0∞) else 0) =
+      if M.val.wildExponent = j then (n : ℝ≥0∞) * ((1 : ℝ≥0∞) / Nat.card (M ≃ₐ[K] M)) else 0 by
         split_ifs <;> simp [div_eq_mul_inv],
     tsum_subtype_ite R (·.wildExponent = j)
       (fun M ↦ (n : ℝ≥0∞) * ((1 : ℝ≥0∞) / Nat.card (M ≃ₐ[K] M))), ENNReal.tsum_mul_left] at hreg
