@@ -257,21 +257,7 @@ variable {E₁ E₂ F₁ F₂ : Type*}
   [TopologicalSpace E₂] [AddCommGroup E₂] [Module 𝕜 E₂]
   [TopologicalSpace F₁] [AddCommGroup F₁] [Module 𝕜 F₁] [IsTopologicalAddGroup F₁]
   [TopologicalSpace F₂] [AddCommGroup F₂] [Module 𝕜 F₂]
-
-private def blockShearEquiv (B : E₂ →L[𝕜] F₁) : (F₁ × E₂) ≃L[𝕜] (F₁ × E₂) :=
-  ((ContinuousLinearEquiv.prodComm 𝕜 F₁ E₂).trans
-    ((ContinuousLinearEquiv.refl 𝕜 E₂).skewProd (ContinuousLinearEquiv.refl 𝕜 F₁) B)).trans
-    (ContinuousLinearEquiv.prodComm 𝕜 E₂ F₁)
-
-private theorem upperTriangularBlock_eq_shear_comp
-    (A : E₁ →L[𝕜] F₁) (B : E₂ →L[𝕜] F₁) (D : E₂ →L[𝕜] F₂) :
-    upperTriangularBlock A B D =
-      ((ContinuousLinearMap.id 𝕜 F₁).prodMap D) ∘L
-        (blockShearEquiv B : F₁ × E₂ →L[𝕜] F₁ × E₂) ∘L
-          (A.prodMap (ContinuousLinearMap.id 𝕜 E₂)) := by
-  apply ContinuousLinearMap.ext; rintro ⟨x₁, x₂⟩; ext <;> simp [blockShearEquiv]
-
-variable [CompleteSpace 𝕜]
+  [CompleteSpace 𝕜]
   [IsTopologicalAddGroup E₁] [ContinuousSMul 𝕜 E₁] [T2Space E₁]
   [IsTopologicalAddGroup E₂] [ContinuousSMul 𝕜 E₂] [T2Space E₂]
   [ContinuousSMul 𝕜 F₁] [T2Space F₁]
@@ -283,8 +269,8 @@ continuous off-diagonal block `B`. -/
 theorem IsFredholm.upperTriangularBlock {A : E₁ →L[𝕜] F₁} (hA : A.IsFredholm) (B : E₂ →L[𝕜] F₁)
     {D : E₂ →L[𝕜] F₂} (hD : D.IsFredholm) :
     (ContinuousLinearMap.upperTriangularBlock A B D).IsFredholm := by
-  rw [upperTriangularBlock_eq_shear_comp]
-  exact (IsFredholm.id.prodMap hD).comp ((hA.prodMap .id).equiv_comp (blockShearEquiv B))
+  rw [A.upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap B D]
+  exact (IsFredholm.id.prodMap hD).comp ((hA.prodMap .id).equiv_comp B.upperTriangularBlockShear)
 
 /-- Two-out-of-three for upper-triangular blocks (bottom-right block): if
 `upperTriangularBlock A B D` and `A` are Fredholm between Hausdorff topological vector spaces over
@@ -293,8 +279,9 @@ theorem IsFredholm.of_upperTriangularBlock_right
     {A : E₁ →L[𝕜] F₁} {B : E₂ →L[𝕜] F₁} {D : E₂ →L[𝕜] F₂}
     (hM : (ContinuousLinearMap.upperTriangularBlock A B D).IsFredholm) (hA : A.IsFredholm) :
     D.IsFredholm := by
-  rw [upperTriangularBlock_eq_shear_comp] at hM
-  exact (((((hA.prodMap .id).equiv_comp (blockShearEquiv B)).comp_iff_left).mp hM)).of_prodMap_right
+  rw [A.upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap B D] at hM
+  exact (((((hA.prodMap .id).equiv_comp B.upperTriangularBlockShear).comp_iff_left).mp
+    hM)).of_prodMap_right
 
 /-- Two-out-of-three for upper-triangular blocks (top-left block): if `upperTriangularBlock A B D`
 and `D` are Fredholm between Hausdorff topological vector spaces over a complete
@@ -303,8 +290,8 @@ theorem IsFredholm.of_upperTriangularBlock_left
     {A : E₁ →L[𝕜] F₁} {B : E₂ →L[𝕜] F₁} {D : E₂ →L[𝕜] F₂}
     (hM : (ContinuousLinearMap.upperTriangularBlock A B D).IsFredholm) (hD : D.IsFredholm) :
     A.IsFredholm := by
-  rw [upperTriangularBlock_eq_shear_comp, ← comp_assoc] at hM
-  exact (((((IsFredholm.id.prodMap hD).comp_equiv (blockShearEquiv B)).comp_iff_right).mp
+  rw [A.upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap B D, ← comp_assoc] at hM
+  exact (((((IsFredholm.id.prodMap hD).comp_equiv B.upperTriangularBlockShear).comp_iff_right).mp
     hM)).of_prodMap_left
 
 end TVSBlock
@@ -322,16 +309,12 @@ with `index_compSnakeMiddle` and `index_upperTriangularBlock`, applying the snak
 `(S ∘L T).index = (compSnakeMiddle T S).index = T.index + S.index = S.index + T.index`. -/
 @[simp] theorem isFredholm_compSnakeMiddle_iff (T : E →L[𝕜] F) (S : F →L[𝕜] G) :
     (compSnakeMiddle T S).IsFredholm ↔ (S ∘L T).IsFredholm := by
-  let eCod : (F × G) ≃L[𝕜] (F × G) :=
-    (ContinuousLinearEquiv.refl 𝕜 F).skewProd (ContinuousLinearEquiv.refl 𝕜 G) S
-  let eDom : (F × E) ≃L[𝕜] (E × F) :=
-    (ContinuousLinearEquiv.prodComm 𝕜 F E).trans
-      ((ContinuousLinearEquiv.refl 𝕜 E).skewProd (ContinuousLinearEquiv.neg 𝕜) T)
-  have h := isFredholm_iff_of_comp_eq eDom.symm eCod
-    (T := compSnakeMiddle T S) (S := (ContinuousLinearMap.id 𝕜 F).prodMap (S ∘L T)) <| by
-    apply ContinuousLinearMap.ext; rintro ⟨x, y⟩
-    ext <;> simp [eCod, eDom, sub_eq_add_neg, add_comm]
-  rw [h, isFredholm_prodMap_iff]
+  obtain ⟨eCod, eDom, h⟩ := T.exists_compSnakeMiddle_eq_comp_prodMap_comp S
+  have hconj : (eCod.symm : F × G →L[𝕜] F × G) ∘L compSnakeMiddle T S =
+      ((ContinuousLinearMap.id 𝕜 F).prodMap (S ∘L T)) ∘L (eDom : E × F →L[𝕜] F × E) := by
+    rw [h]
+    ext x <;> simp
+  rw [isFredholm_iff_of_comp_eq eDom eCod.symm hconj, isFredholm_prodMap_iff]
   exact ⟨And.right, fun hST ↦ ⟨.id, hST⟩⟩
 
 end FredholmCompSnake

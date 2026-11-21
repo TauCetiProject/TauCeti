@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import Mathlib.Tactic.Abel
 
 /-!
@@ -20,6 +21,11 @@ Over a ring, given candidate one-sided inverses or parametrices `P_A : F₁ →L
 constructs `[[P_A, -P_A ∘ B ∘ P_D], [0, P_D]]` and expresses both `P ∘ M - 1` and `M ∘ P - 1` in
 upper-triangular block form (`ContinuousLinearMap.upperTriangularBlockParametrix_comp_sub_one`,
 `ContinuousLinearMap.comp_upperTriangularBlockParametrix_sub_one`).
+
+Over a semiring with `[IsTopologicalAddGroup F₁]` and `[AddCommGroup E₂]`,
+`ContinuousLinearMap.upperTriangularBlockShear` defines the shear equivalence
+`(y, x) ↦ (y + B x, x)` on `F₁ × E₂`, giving the factorization
+`ContinuousLinearMap.upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap`.
 
 ## References
 
@@ -84,6 +90,39 @@ theorem upperTriangularBlock_comp (A₁ : F₁ →L[R] G₁) (B₁ : F₂ →L[R
     snd R F₁ F₂ ∘L upperTriangularBlock A B D = D ∘L snd R E₁ E₂ := by ext x <;> simp
 
 end Semiring
+
+section Shear
+
+variable {R E₁ E₂ F₁ F₂ : Type*} [Semiring R]
+  [TopologicalSpace E₂] [AddCommGroup E₂] [Module R E₂]
+  [TopologicalSpace F₁] [AddCommGroup F₁] [Module R F₁] [IsTopologicalAddGroup F₁]
+
+/-- The **upper-triangular shear equivalence** `(y, x) ↦ (y + B x, x)` on `F₁ × E₂` associated
+to `B : E₂ →L[R] F₁`. -/
+def upperTriangularBlockShear (B : E₂ →L[R] F₁) : (F₁ × E₂) ≃L[R] F₁ × E₂ :=
+  ((ContinuousLinearEquiv.prodComm R F₁ E₂).trans
+    ((ContinuousLinearEquiv.refl R E₂).skewProd (ContinuousLinearEquiv.refl R F₁) B)).trans
+    (ContinuousLinearEquiv.prodComm R E₂ F₁)
+
+@[simp] theorem upperTriangularBlockShear_apply (B : E₂ →L[R] F₁) (y : F₁ × E₂) :
+    B.upperTriangularBlockShear y = (y.1 + B y.2, y.2) := (rfl)
+
+@[simp] theorem upperTriangularBlockShear_symm_apply (B : E₂ →L[R] F₁) (y : F₁ × E₂) :
+    B.upperTriangularBlockShear.symm y = (y.1 - B y.2, y.2) := (rfl)
+
+/-- **Shear factorization** of an upper-triangular block operator:
+`upperTriangularBlock A B D = (id.prodMap D) ∘L B.upperTriangularBlockShear ∘L (A.prodMap id)`. -/
+theorem upperTriangularBlock_eq_prodMap_comp_shear_comp_prodMap
+    [TopologicalSpace E₁] [AddCommMonoid E₁] [Module R E₁]
+    [TopologicalSpace F₂] [AddCommMonoid F₂] [Module R F₂]
+    (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (D : E₂ →L[R] F₂) :
+    upperTriangularBlock A B D =
+      ((ContinuousLinearMap.id R F₁).prodMap D) ∘L
+        (B.upperTriangularBlockShear : F₁ × E₂ →L[R] F₁ × E₂) ∘L
+          (A.prodMap (ContinuousLinearMap.id R E₂)) := by
+  apply ContinuousLinearMap.ext; rintro ⟨x₁, x₂⟩; ext <;> simp
+
+end Shear
 
 section Ring
 

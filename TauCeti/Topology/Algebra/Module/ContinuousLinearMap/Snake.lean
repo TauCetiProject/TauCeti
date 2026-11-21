@@ -32,7 +32,8 @@ continuous linear map in two settings:
 
 Specializing to `ContinuousLinearMap.upperTriangularBlock A B D` yields
 `ContinuousLinearMap.snakeδL_upperTriangularBlock_eq`, and specializing further to
-`ContinuousLinearMap.compSnakeMiddle T S = upperTriangularBlock T (-id) S` gives
+`ContinuousLinearMap.compSnakeMiddle T S = upperTriangularBlock T (-id) S` gives the coordinate
+factorization `ContinuousLinearMap.exists_compSnakeMiddle_eq_comp_prodMap_comp` and
 `(compSnakeMiddle T S).index = (S ∘L T).index` (`ContinuousLinearMap.index_compSnakeMiddle`).
 
 ## References
@@ -165,9 +166,11 @@ theorem cokerMapL_comp (h₁₂ : g₁ ∘L T₁ = T₂ ∘L f₁) (h₂₃ : g�
       rw [ContinuousLinearMap.comp_assoc, h₁₂, ← ContinuousLinearMap.comp_assoc, h₂₃,
         ContinuousLinearMap.comp_assoc]) :
     cokerMapL h₁₃ = cokerMapL h₂₃ ∘L cokerMapL h₁₂ := by
-  apply ContinuousLinearMap.ext; intro x
-  obtain ⟨y, rfl⟩ := T₁.range.mkQ_surjective x
-  simp only [ContinuousLinearMap.comp_apply, Submodule.mkQ_apply, cokerMapL_mk]
+  refine T₁.range.comp_mkQL_injective ?_
+  dsimp only
+  rw [cokerMapL_comp_mkQL, ContinuousLinearMap.comp_assoc, cokerMapL_comp_mkQL,
+    ← ContinuousLinearMap.comp_assoc (cokerMapL h₂₃), cokerMapL_comp_mkQL]
+  rfl
 
 /-- If `g` is surjective, then the induced continuous linear map on quotient cokernels is
 surjective. -/
@@ -499,6 +502,24 @@ theorem snakeδL_compSnakeMiddle_eq
       (T.compSnakeMiddle_comp_inl S).symm (T.snd_comp_compSnakeMiddle S) hσ hρ =
         -(T.range.mkQL ∘L S.ker.subtypeL) :=
   (snakeδL_upperTriangularBlock_eq T (-ContinuousLinearMap.id R F) S hσ hρ).trans (by ext; simp)
+
+/-- Up to continuous linear equivalences of its domain and codomain, `compSnakeMiddle T S` is
+`(ContinuousLinearMap.id R F).prodMap (S ∘L T)`, allowing consumers to transport kernels,
+cokernels, invertibility, and Fredholmness. -/
+theorem exists_compSnakeMiddle_eq_comp_prodMap_comp [IsTopologicalAddGroup G] :
+    ∃ (eCod : (F × G) ≃L[R] F × G) (eDom : (E × F) ≃L[R] F × E),
+      compSnakeMiddle T S =
+        (eCod : F × G →L[R] F × G) ∘L
+          ((ContinuousLinearMap.id R F).prodMap (S ∘L T)) ∘L
+            (eDom : E × F →L[R] F × E) := by
+  let eCod : (F × G) ≃L[R] F × G :=
+    (ContinuousLinearEquiv.refl R F).skewProd (ContinuousLinearEquiv.refl R G) (-S)
+  let eDom : (E × F) ≃L[R] F × E :=
+    ((ContinuousLinearEquiv.refl R E).skewProd (ContinuousLinearEquiv.neg R) T).trans
+      (ContinuousLinearEquiv.prodComm R E F)
+  refine ⟨eCod, eDom, ?_⟩
+  apply ContinuousLinearMap.ext; rintro ⟨x, y⟩
+  ext <;> simp [eCod, eDom, sub_eq_add_neg, add_comm]
 
 /-- `compSnakeMiddle T S` has the same index as the composite `S ∘L T`, with no finiteness or
 topological-group assumptions on `E` or `G`. -/
