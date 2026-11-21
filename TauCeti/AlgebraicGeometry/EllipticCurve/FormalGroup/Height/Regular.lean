@@ -49,8 +49,7 @@ onto its first two terms `(p, v₁)`, and hence onto `(p, A)`. Consequently:
 
 ## Main results
 
-* `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff`,
-  `WeierstrassCurve.forall_isWeaklyRegular_landweberSequence_formalGroup_iff`, and
+* `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff` and
   `WeierstrassCurve.isLandweberRegular_formalGroup_iff`: Landweber regularity of `formalGroup W` on
   an `R`-module `M` is equivalent to weak regularity of `(p, A)` on `M` at every prime `p`.
 * `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_Δ_eq_zero_of_isUnit_c₄`: for nodal
@@ -95,10 +94,10 @@ private theorem forall_isWeaklyRegular_landweberSequence_formalGroup_iff_of_heig
     (hI : (formalGroup W).heightIdeal p 3 = ⊤) :
     (∀ m : ℕ, IsWeaklyRegular M ((formalGroup W).landweberSequence p m)) ↔
       IsWeaklyRegular M
-        [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
-  rw [(formalGroup W).forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top
-    hp M hI, FormalGroup.landweberSequence_two]
-  exact W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp M
+        [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
+  ((formalGroup W).forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top
+    hp M hI).trans
+    (W.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M le_rfl hI)
 
 private theorem isLandweberRegular_formalGroup_iff_of_heightIdeal_three
     (M : Type*) [AddCommGroup M] [Module R M]
@@ -124,19 +123,6 @@ theorem isWeaklyRegular_landweberSequence_formalGroup_iff_of_span_eq_top
   W.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M hm
     ((W.heightIdeal_formalGroup_eq_top_iff hp le_rfl).mpr h)
 
-/-- **All-length regular-sequence Landweber criterion when `(p, c₄, Δ) = R`.** For a prime `p`, a
-Weierstrass curve `W` over `R` with `(p, c₄, Δ) = R`, and an `R`-module `M`,
-`(formalGroup W).landweberSequence p m` is weakly regular on `M` for every `m : ℕ` if and only if
-`(p, A)` is weakly regular on `M`. -/
-theorem forall_isWeaklyRegular_landweberSequence_formalGroup_iff_of_span_eq_top
-    (h : Ideal.span {(p : R), W.c₄, W.Δ} = ⊤) (hp : p.Prime) (M : Type*)
-    [AddCommGroup M] [Module R M] :
-    (∀ m : ℕ, IsWeaklyRegular M ((formalGroup W).landweberSequence p m)) ↔
-      IsWeaklyRegular M
-        [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
-  W.forall_isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M
-    ((W.heightIdeal_formalGroup_eq_top_iff hp le_rfl).mpr h)
-
 /-- **Landweber regularity criterion for smooth-or-nodal Weierstrass families.** If
 `(c₄, Δ) = R`, then `formalGroup W` is Landweber regular on an `R`-module `M` if and only if
 `(p, A)` is weakly regular on `M` for every prime `p`. -/
@@ -159,17 +145,6 @@ theorem isWeaklyRegular_landweberSequence_formalGroup_iff [W.IsElliptic] (hp : p
       IsWeaklyRegular M
         [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
   W.isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M hm
-    (W.heightIdeal_formalGroup_eq_top hp le_rfl)
-
-/-- **All-length regular-sequence Landweber criterion for an elliptic curve.** For a prime `p`, an
-elliptic curve `W` over `R`, and an `R`-module `M`, `(formalGroup W).landweberSequence p m` is
-weakly regular on `M` for every `m : ℕ` if and only if `(p, A)` is weakly regular on `M`. -/
-theorem forall_isWeaklyRegular_landweberSequence_formalGroup_iff [W.IsElliptic] (hp : p.Prime)
-    (M : Type*) [AddCommGroup M] [Module R M] :
-    (∀ m : ℕ, IsWeaklyRegular M ((formalGroup W).landweberSequence p m)) ↔
-      IsWeaklyRegular M
-        [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
-  W.forall_isWeaklyRegular_landweberSequence_formalGroup_iff_of_heightIdeal_three hp M
     (W.heightIdeal_formalGroup_eq_top hp le_rfl)
 
 /-- **Landweber regularity criterion for an elliptic Weierstrass curve.** For an elliptic

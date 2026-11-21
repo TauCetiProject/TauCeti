@@ -280,9 +280,11 @@ theorem isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p
   · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hm ⊢
     exact fun i hi ↦ hm i (hi.trans_le hnm)
   · have hn1 : IsWeaklyRegular M (F.landweberSequence p (n + 1)) := by
-      rw [F.landweberSequence_succ, isWeaklyRegular_append_iff', F.ofList_landweberSequence hp,
-        List.map_singleton, isWeaklyRegular_singleton_iff]
-      exact ⟨hn, ((F.isUnit_mk_coeff_nsmulSeries_iff hp n).mpr hI).isSMulRegular _⟩
+      rw [F.landweberSequence_succ, isWeaklyRegular_append_iff']
+      refine ⟨hn, ?_⟩
+      rw [F.ofList_landweberSequence hp]
+      simpa using ((F.isUnit_mk_coeff_nsmulSeries_iff hp n).mpr hI).isSMulRegular
+        (M ⧸ (F.heightIdeal p n • ⊤ : Submodule R M))
     exact (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).mpr hn1 m
 
 /-- If `I_(n+1)(F) = ⊤`, weak regularity of `F.landweberSequence p m` on `M` for every `m : ℕ`
