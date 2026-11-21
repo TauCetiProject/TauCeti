@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.DominantMinor
 public import TauCeti.Analysis.Normed.Operator.RowCompact.Diagonal
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Diagonal
 public import TauCeti.RingTheory.Valuation.NormNormalization
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Exact Fredholm slopes of diagonal operators
@@ -45,19 +46,6 @@ namespace TauCeti.DominantMinorExample
 
 variable {K : Type*} [NontriviallyNormedField K]
 
-/-- Normalising the rows of a diagonal matrix with nonzero entries gives the identity matrix, so
-every principal minor of the normalised matrix is one. -/
-theorem principalMinor_inv_mul_diagonal {d : ℕ → K} (hd : ∀ i, d i ≠ 0) (s : Finset ℕ) :
-    (Matrix.of fun i j ↦ (d i)⁻¹ * Matrix.diagonal d i j).principalMinor s = 1 := by
-  have hone : (Matrix.of fun i j ↦ (d i)⁻¹ * Matrix.diagonal d i j) = 1 := by
-    ext i j
-    by_cases hij : i = j
-    · subst hij
-      simp [hd i]
-    · simp [hij]
-  rw [hone, Matrix.principalMinor_def, Matrix.submatrix_one _ Subtype.val_injective,
-    Matrix.det_one]
-
 /-- For a scalar `π` with `‖π‖ < 1` and exponents `e`, the bounded diagonal entries
 `i ↦ π ^ e i` on `ℕ`. -/
 noncomputable def powEntries (π : K) (hπ : ‖π‖ < 1) (e : ℕ → ℕ) : ℕ →ᵇ K :=
@@ -81,7 +69,6 @@ theorem newtonSlopeMultiplicity_diagonalCLM (d : ℕ →ᵇ K) (hdec : StrictAnt
     (hd₀ : Tendsto d atTop (𝓝 0)) (σ : ℝ) :
     (diagonalCLM d).matrixCoeff.charPowerSeries.newtonSlopeMultiplicity v σ =
       {i | v (d i) = σ}.ncard := by
-  have hd (i : ℕ) : d i ≠ 0 := norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))
   refine IsRowCompact.newtonSlopeMultiplicity_charPowerSeries_matrixCoeff_eq_ncard v hb hv
     (isRowCompact_diagonalCLM (by rwa [Nat.cofinite_eq_atTop])) hdec (fun i j ↦ ?_)
       (fun n ↦ ?_) σ
@@ -89,7 +76,11 @@ theorem newtonSlopeMultiplicity_diagonalCLM (d : ℕ →ᵇ K) (hdec : StrictAnt
     · subst hij
       simp [matrixCoeff_diagonalCLM]
     · simp [matrixCoeff_diagonalCLM, hij]
-  · rw [matrixCoeff_diagonalCLM, principalMinor_inv_mul_diagonal hd, norm_one]
+  · -- The normalised matrix `(d i)⁻¹ * diag (d i)` has principal minors `∏ (d i)⁻¹ * d i = 1`.
+    rw [matrixCoeff_diagonalCLM, Matrix.principalMinor_mul_column, Matrix.principalMinor_diagonal,
+      ← Finset.prod_mul_distrib,
+      Finset.prod_eq_one fun i _ ↦ inv_mul_cancel₀ (TauCeti.ne_zero_of_strictAnti_norm hdec i),
+      norm_one]
 
 /-- **Slopes of a diagonal of powers.** For a scalar `π` of valuation `s > 0` and strictly
 increasing exponents `e`, the multiplicity of a slope `σ` of the Fredholm series of

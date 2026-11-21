@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.CharPowerSeries.DominantMinor
 public import TauCeti.Analysis.Normed.Operator.RowCompact
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Exact Fredholm coefficients of a row-compact operator with dominant minors
@@ -104,9 +105,9 @@ theorem IsRowCompact.norm_charCoeff_matrixCoeff_eq_prod [CompleteSpace K] (hu : 
     (hminor : ∀ n, ‖(Matrix.of fun i j ↦ (d i)⁻¹ * u.matrixCoeff i j).principalMinor
       (range n)‖ = 1) (n : ℕ) :
     ‖u.matrixCoeff.charCoeff n‖ = ∏ i ∈ range n, ‖d i‖ := by
-  have hd (i : ℕ) : d i ≠ 0 := norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))
   exact Matrix.norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one hdec
-    (hu.tendsto_norm_of_norm_principalMinor_eq_one hd hb hminor) hb (hminor n)
+    (hu.tendsto_norm_of_norm_principalMinor_eq_one (TauCeti.ne_zero_of_strictAnti_norm hdec) hb
+      hminor) hb (hminor n)
 
 section Valuation
 
@@ -125,8 +126,8 @@ theorem IsRowCompact.addValuation_charCoeff_matrixCoeff_eq_sum (hu : u.IsRowComp
       (range n)‖ = 1) (n : ℕ) :
     v (u.matrixCoeff.charCoeff n) = ∑ i ∈ range n, v (d i) :=
   Matrix.addValuation_charCoeff_eq_sum_of_norm_principalMinor_eq_one v hb hv hdec
-    (hu.tendsto_norm_of_norm_principalMinor_eq_one (fun i ↦
-      norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))) hA hminor) hA (hminor n)
+    (hu.tendsto_norm_of_norm_principalMinor_eq_one (TauCeti.ne_zero_of_strictAnti_norm hdec) hA
+      hminor) hA (hminor n)
 
 /-- **Exact Fredholm polygon.** Under the hypotheses of
 `ContinuousLinearMap.IsRowCompact.norm_charCoeff_matrixCoeff_eq_prod`, if the norm is recovered
@@ -138,8 +139,8 @@ theorem IsRowCompact.newtonPolygon_charPowerSeries_matrixCoeff_eq_sum (hu : u.Is
       (range n)‖ = 1) :
     u.matrixCoeff.charPowerSeries.newtonPolygon v = fun n ↦ ∑ i ∈ range n, v (d i) :=
   Matrix.newtonPolygon_charPowerSeries_eq_sum_of_norm_principalMinor_eq_one v hb hv hdec
-    (hu.tendsto_norm_of_norm_principalMinor_eq_one (fun i ↦
-      norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))) hA hminor) hA hminor
+    (hu.tendsto_norm_of_norm_principalMinor_eq_one (TauCeti.ne_zero_of_strictAnti_norm hdec) hA
+      hminor) hA hminor
 
 /-- **Exact Fredholm slopes.** Under the hypotheses of
 `ContinuousLinearMap.IsRowCompact.norm_charCoeff_matrixCoeff_eq_prod`, if the norm is recovered
@@ -153,8 +154,8 @@ theorem IsRowCompact.newtonSlopeMultiplicity_charPowerSeries_matrixCoeff_eq_ncar
       (range n)‖ = 1) (σ : ℝ) :
     u.matrixCoeff.charPowerSeries.newtonSlopeMultiplicity v σ = {i | v (d i) = σ}.ncard :=
   Matrix.newtonSlopeMultiplicity_charPowerSeries_eq_ncard_of_norm_principalMinor_eq_one v hb hv
-    hdec (hu.tendsto_norm_of_norm_principalMinor_eq_one (fun i ↦
-      norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))) hA hminor) hA hminor σ
+    hdec (hu.tendsto_norm_of_norm_principalMinor_eq_one (TauCeti.ne_zero_of_strictAnti_norm hdec)
+      hA hminor) hA hminor σ
 
 end Valuation
 

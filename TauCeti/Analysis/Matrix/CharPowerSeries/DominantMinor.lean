@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.CharPowerSeries.Basic
 public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.RingTheory.Valuation.AddValuation
 import TauCeti.RingTheory.Valuation.NormNormalization
 
@@ -72,7 +73,7 @@ theorem norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one [CompleteSpace K]
     (hminor : ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor (range n)‖ = 1) :
     ‖A.charCoeff n‖ = ∏ i ∈ range n, ‖d i‖ := by
   -- Strictly decreasing nonnegative norms are positive.
-  have hpos (i : ℕ) : 0 < ‖d i‖ := (norm_nonneg _).trans_lt (hdec i.lt_succ_self)
+  have hpos (i : ℕ) : 0 < ‖d i‖ := norm_pos_iff.2 (TauCeti.ne_zero_of_strictAnti_norm hdec i)
   rcases n with _ | n
   · simp
   let f : {s : Finset ℕ // #s = n + 1} → K := fun s ↦ A.principalMinor s
@@ -115,8 +116,8 @@ theorem addValuation_charCoeff_eq_sum_of_norm_principalMinor_eq_one [CompleteSpa
     (hA : ∀ i j, ‖A i j‖ ≤ ‖d i‖) {n : ℕ}
     (hminor : ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor (range n)‖ = 1) :
     v (A.charCoeff n) = ∑ i ∈ range n, v (d i) := by
-  have hprod : ∏ i ∈ range n, d i ≠ 0 := prod_ne_zero_iff.2 fun i _ ↦
-    norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))
+  have hprod : ∏ i ∈ range n, d i ≠ 0 :=
+    prod_ne_zero_iff.2 fun i _ ↦ TauCeti.ne_zero_of_strictAnti_norm hdec i
   -- The coefficient has the norm of the product `∏ i ∈ range n, d i`, hence its valuation.
   have hc : ‖A.charCoeff n‖ = b ^ (-(v (∏ i ∈ range n, d i)).untop₀) := by
     rw [norm_charCoeff_eq_prod_of_norm_principalMinor_eq_one hdec hd₀ hA hminor, ← norm_prod,
@@ -130,7 +131,7 @@ heights of the infinite slope data starting at the origin with slopes `v (d i)`.
 private theorem exists_infiniteSlopeData_heights_eq_sum (hdec : StrictAnti fun i ↦ ‖d i‖) :
     ∃ D : TauCeti.InfiniteSlopeData ℝ, (∀ i, D.slope i = (v (d i)).untop₀) ∧
       D.heights = fun n ↦ ∑ i ∈ range n, v (d i) := by
-  have hd (i : ℕ) : d i ≠ 0 := norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self))
+  have hd := TauCeti.ne_zero_of_strictAnti_norm hdec
   -- Strictly decreasing norms `b ^ (-v (d i))` mean strictly increasing valuations.
   have hmono : Monotone fun i ↦ (v (d i)).untop₀ := by
     refine StrictMono.monotone fun i j hij ↦ ?_
@@ -176,8 +177,7 @@ theorem newtonSlopeMultiplicity_charPowerSeries_eq_ncard_of_norm_principalMinor_
       hminor).symm)]
   congr 1
   ext i
-  have hd : v (d i) ≠ ⊤ :=
-    v.ne_top_iff.2 (norm_pos_iff.1 ((norm_nonneg _).trans_lt (hdec i.lt_succ_self)))
+  have hd : v (d i) ≠ ⊤ := v.ne_top_iff.2 (TauCeti.ne_zero_of_strictAnti_norm hdec i)
   rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, hslope, ← WithTop.coe_eq_coe,
     WithTop.coe_untop₀_of_ne_top hd]
 

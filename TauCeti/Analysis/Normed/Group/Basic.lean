@@ -36,6 +36,8 @@ Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
 
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 
+The terms of a sequence whose norms decrease strictly are nonzero.
+
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
 contains `0`.
 
@@ -62,6 +64,8 @@ The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to
   closed ball of radius `2 * M` around any of its values on `s`.
 * `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
+* `TauCeti.ne_zero_of_strictAnti_norm` -- the terms of a family with strictly decreasing norms,
+  indexed without a maximum, are nonzero.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
 * `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
@@ -144,6 +148,13 @@ theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ 
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
     z + a ≠ 0 :=
   fun h' ↦ h.ne' (by rw [eq_neg_of_add_eq_zero_left h', norm_neg])
+
+/-- If the norms of a family `d` indexed by an order without maximum decrease strictly, every
+term of `d` is nonzero: its norm exceeds the nonnegative norm of a later term. -/
+theorem ne_zero_of_strictAnti_norm {ι E : Type*} [Preorder ι] [NoMaxOrder ι]
+    [SeminormedAddGroup E] {d : ι → E} (hdec : StrictAnti fun i ↦ ‖d i‖) (i : ι) : d i ≠ 0 :=
+  have ⟨_, hj⟩ := exists_gt i
+  ne_zero_of_norm_ne_zero ((norm_nonneg _).trans_lt (hdec hj)).ne'
 
 /-- A continuous function `ℝ → F` into a seminormed group with limits at `±∞` is bounded. -/
 theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
