@@ -247,6 +247,7 @@ theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
 @[simp] theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
     ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id :=
   LinearMap.ext ε.reducedPart_coe
+
 private theorem coe_evalNat_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
     (x : ℕ → ε.augmentationIdeal) :
     ((MultilinearMap.evalNat (ε.reducedOperation n) x : ε.augmentationIdeal) : A) =
@@ -399,22 +400,6 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
   · simp [hx]
   · rw [coe_reducedPart]
     simp [hx]
-
-/-- Elements of an augmented `A∞` algebra agree iff their augmentations and reduced parts agree. -/
-theorem eq_iff_map_eq_and_reducedPart_eq (ε : 𝒜.Augmentation) {x y : A} :
-    x = y ↔ ε x = ε y ∧ ε.reducedPart x = ε.reducedPart y := by
-  refine ⟨fun h ↦ by subst h; exact ⟨rfl, rfl⟩, fun ⟨h1, h2⟩ ↦ ε.splitLinearEquiv.injective ?_⟩
-  rw [splitLinearEquiv_apply, splitLinearEquiv_apply, h1, h2]
-
-/-- Two linear maps into an augmented `A∞` algebra agree iff their compositions with the
-augmentation and reduced-part projection agree. -/
-theorem linearMap_eq_iff (ε : 𝒜.Augmentation) {M : Type*} [AddCommMonoid M] [Module R M]
-    {L₁ L₂ : M →ₗ[R] A} :
-    L₁ = L₂ ↔ ε.toLinearMap ∘ₗ L₁ = ε.toLinearMap ∘ₗ L₂ ∧
-      ε.reducedPart ∘ₗ L₁ = ε.reducedPart ∘ₗ L₂ :=
-  ⟨fun h ↦ h ▸ ⟨rfl, rfl⟩, fun ⟨h1, h2⟩ ↦ LinearMap.ext fun x ↦
-    ε.eq_iff_map_eq_and_reducedPart_eq.mpr
-      ⟨LinearMap.congr_fun h1 x, LinearMap.congr_fun h2 x⟩⟩
 
 end Augmentation
 

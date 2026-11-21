@@ -505,12 +505,6 @@ noncomputable abbrev envelopingMap (hf : f.IsAugmented ε ε') :
       ε'.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential :=
   hf.reducedHom.cobarBarMap
 
-/-- On a desuspended generator `s⁻¹ z`, `hf.envelopingMap` applies `hf.reducedHom.barMap`. -/
-theorem envelopingMap_ι (hf : f.IsAugmented ε ε')
-    (z : ReducedTensorWords R ε.augmentationIdeal) :
-    hf.envelopingMap (ι R z) = ι R (hf.reducedHom.barMap z) :=
-  hf.reducedHom.cobarBarMap_ι z
-
 /-- The induced enveloping DG algebra morphism intertwines canonical augmentations. -/
 @[simp] theorem envelopingAugmentation_comp_envelopingMap (hf : f.IsAugmented ε ε') :
     ε'.envelopingAugmentation.comp hf.envelopingMap = ε.envelopingAugmentation :=
@@ -693,16 +687,6 @@ theorem fromEnveloping_comp_envelopingMap {A : Type uA} [AddCommGroup A] [Module
   have h := ε.augmentedEnvelopingDGAlgHomEquiv_symm_comp_right hf e
     ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id e.toAInfinityAugmentation⟩
   simpa [fromEnveloping, AInfinityHom.id_comp] using h.symm
-
-/-- Naturality of `fromEnveloping` along an augmentation-preserving DG algebra morphism
-`g : (B, eB) ⟶ (C, eC)`. -/
-@[simp] theorem fromEnveloping_comp_envelopingMap_toAInfinityHom
-    (eB : DGAlgAugmentation hB) (eC : DGAlgAugmentation hC)
-    (g : DGAlgHom hB hC) (hg : eC.comp g = eB) :
-    eC.fromEnveloping.comp ((g.isAugmented_toAInfinityHom_iff eB eC).2 hg).envelopingMap =
-      g.comp eB.fromEnveloping :=
-  (fromEnveloping_naturality eB eC g
-    ((g.isAugmented_toAInfinityHom_iff eB eC).2 hg).envelopingMap_comp_toEnveloping).symm
 
 end DGAlgAugmentation
 
