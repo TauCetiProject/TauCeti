@@ -157,11 +157,12 @@ theorem IsMetricCompatible.twentyFour_mul_riemannCurvatureTensor_eq
       (cov.riemannCurvatureTensor x (v + z) (u + w) (u + w) (v + z) -
           cov.riemannCurvatureTensor x (v + z) (u - w) (u - w) (v + z) -
         cov.riemannCurvatureTensor x (v - z) (u + w) (u + w) (v - z) +
-          cov.riemannCurvatureTensor x (v - z) (u - w) (u - w) (v - z)) :=
-  LinearMap.twentyFour_mul_apply_eq_of_cyclic_eq_zero
-    (cov.riemannCurvatureTensor_antisymm_first x)
-    (hcov.riemannCurvatureTensor_antisymm_last cov x)
-    (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) u v w z
+          cov.riemannCurvatureTensor x (v - z) (u - w) (u - w) (v - z)) := by
+  simpa only [nsmul_eq_mul, Nat.cast_ofNat] using
+    LinearMap.twentyFour_nsmul_apply_eq_of_cyclic_eq_zero
+      (cov.riemannCurvatureTensor_antisymm_first x)
+      (hcov.riemannCurvatureTensor_antisymm_last cov x)
+      (cov.riemannCurvatureTensor_cyclic_eq_zero ht x) u v w z
 
 variable {cov} in
 /-- For a metric-compatible torsion-free connection, the Riemann curvature tensor at `x` is the

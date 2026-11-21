@@ -88,7 +88,7 @@ theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
     (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
     (h : ∀ u v, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
   toLinearMap₄_injective <| LinearMap.eq_of_cyclic_eq_zero
-    (IsRegular.of_ne_zero' (by norm_num : (6 : ℝ) ≠ 0)).left
+    (IsSMulRegular.of_ne_zero (by norm_num : (6 : ℕ) ≠ 0))
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.antisymm_first ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.antisymm_last ..)
     (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hr₁.cyclic_eq_zero ..)
