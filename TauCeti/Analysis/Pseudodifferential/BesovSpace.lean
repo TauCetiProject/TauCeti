@@ -426,7 +426,7 @@ private theorem IsUniform.exists_littlewoodPaleyBlock_quantizeTempered_eq_and_no
   have hrIn := φ.rIn_pos
   refine ⟨C₁ + C₂ * φ.rIn ^ N * (2 / φ.rIn) ^ N + C₀, by positivity,
     fun {p} _ j k u f hf ↦ ?_⟩
-  refine exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus φ (quantizeTempered F a ha)
+  refine exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le φ (quantizeTempered F a ha)
     hC₀ hC₁ (by positivity) (fun k u f hf ↦ h₀ k k f (hf ▸ isVanishingOn_offSpectrum φ k u))
     (fun hkj u f hf ↦ h₁ hkj f (hf ▸ isVanishingOn_offSpectrum φ _ u))
     (fun j k u f hf ↦ ?_) j k u f hf

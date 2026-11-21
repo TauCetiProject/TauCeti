@@ -111,7 +111,7 @@ hold when they hold for all `f` with spectrum in the ball of radius `2^k φ.rOut
 (`TauCeti.isVanishingOn_fourier_littlewoodPaleyBlock`), respectively in the annulus
 `2^{k'} φ.rIn ≤ ‖ξ‖ ≤ 2^{k'+1} φ.rOut` (`TauCeti.isVanishingOn_fourier_littlewoodPaleyBlock_succ`).
 -/
-theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus (φ : ContDiffBump (0 : E))
+theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le (φ : ContDiffBump (0 : E))
     {p : ℝ≥0∞} [Fact (1 ≤ p)] (T : 𝓢'(E, F) → 𝓢'(E, F)) {M : ℕ} {K₀ K₁ K₂ : ℝ} (hK₀ : 0 ≤ K₀)
     (hK₁ : 0 ≤ K₁) (hK₂ : 0 ≤ K₂)
     (h₀ : ∀ (k : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),
