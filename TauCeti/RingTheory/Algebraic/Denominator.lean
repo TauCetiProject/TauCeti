@@ -32,6 +32,9 @@ elements algebraic over `ℤ` (`Algebra.natDenominator_ne_zero_iff_isAlgebraic`)
   `x` is algebraic over `ℤ`.
 * `Algebra.natDenominator_ne_zero_iff_isAlgebraic_rat`: in a `ℚ`-algebra, the denominator of `x`
   is nonzero exactly when `x` is algebraic over `ℚ`.
+* `Algebra.exists_ne_zero_nsmul_isIntegral`,
+  `Algebra.exists_ne_zero_nsmul_isIntegral_of_isAlgebraic_rat`: a finite family of algebraic
+  elements admits a common nonzero natural scalar making every entry integral over `ℤ`.
 -/
 
 public section
@@ -64,5 +67,23 @@ theorem natDenominator_ne_zero_iff_isAlgebraic {S : Type*} [CommRing S] {x : S} 
 theorem natDenominator_ne_zero_iff_isAlgebraic_rat {S : Type*} [CommRing S] [Algebra ℚ S] {x : S} :
     natDenominator x ≠ 0 ↔ IsAlgebraic ℚ x :=
   natDenominator_ne_zero_iff_isAlgebraic.trans (IsFractionRing.isAlgebraic_iff ℤ ℚ S)
+
+/-- Given a finite family `x` over `s` of elements algebraic over `ℤ`, there is a nonzero natural
+number `n` (namely `∏ i ∈ s, natDenominator (x i)`) such that `n • x i` is integral over `ℤ` for
+every `i ∈ s`. -/
+theorem exists_ne_zero_nsmul_isIntegral {S ι : Type*} [CommRing S] (s : Finset ι) (x : ι → S)
+    (hx : ∀ i ∈ s, IsAlgebraic ℤ (x i)) :
+    ∃ n : ℕ, n ≠ 0 ∧ ∀ i ∈ s, IsIntegral ℤ (n • x i) :=
+  ⟨∏ i ∈ s, natDenominator (x i),
+    Finset.prod_ne_zero_iff.mpr fun i hi ↦ (hx i hi).natDenominator_ne_zero,
+    fun _ hi ↦ natDenominator_dvd_iff.mp (Finset.dvd_prod_of_mem _ hi)⟩
+
+/-- Given a finite family `x` over `s` of elements of a `ℚ`-algebra that are algebraic over `ℚ`,
+there is a nonzero natural number `n` such that `n • x i` is integral over `ℤ` for every
+`i ∈ s`. -/
+theorem exists_ne_zero_nsmul_isIntegral_of_isAlgebraic_rat {S ι : Type*} [CommRing S]
+    [Algebra ℚ S] (s : Finset ι) (x : ι → S) (hx : ∀ i ∈ s, IsAlgebraic ℚ (x i)) :
+    ∃ n : ℕ, n ≠ 0 ∧ ∀ i ∈ s, IsIntegral ℤ (n • x i) :=
+  exists_ne_zero_nsmul_isIntegral s x fun i hi ↦ (IsFractionRing.isAlgebraic_iff ℤ ℚ S).2 (hx i hi)
 
 end Algebra

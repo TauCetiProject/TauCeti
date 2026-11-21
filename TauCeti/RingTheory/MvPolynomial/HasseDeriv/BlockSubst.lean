@@ -159,12 +159,17 @@ theorem blockSubst_zero (P : MvPolynomial (κ × ι) R) :
   rw [blockSubst_eq_aeval]
   simp only [Matrix.zero_apply, h0, aeval_zero, algebraMap_eq, constantCoeff_eq]
 
+/-- Block substitution preserves the constant coefficient. -/
+@[simp]
+theorem constantCoeff_blockSubst (A : Matrix ι ι R) (P : MvPolynomial (κ × ι) R) :
+    constantCoeff (blockSubst A P) = constantCoeff P := by
+  rw [← eval_zero, eval_blockSubst]
+  simp
+
 @[simp]
 theorem coeff_zero_blockSubst (A : Matrix ι ι R) (P : MvPolynomial (κ × ι) R) :
-    (blockSubst A P).coeff 0 = P.coeff 0 := by
-  rw [← constantCoeff_eq, ← eval_zero, eval_blockSubst]
-  simpa only [Pi.zero_apply, mul_zero, sum_const_zero, constantCoeff_eq] using
-    DFunLike.congr_fun (eval_zero' (σ := κ × ι) (R := R)) P
+    (blockSubst A P).coeff 0 = P.coeff 0 :=
+  constantCoeff_blockSubst A P
 
 /-- Changing the coefficients commutes with block substitution, after mapping the matrix entries. -/
 theorem map_blockSubst {S : Type*} [CommSemiring S] (f : R →+* S) (A : Matrix ι ι R)

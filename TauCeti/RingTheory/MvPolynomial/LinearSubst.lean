@@ -51,8 +51,9 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
-* `MvPolynomial.linearSubst_zero`, `MvPolynomial.coeff_zero_linearSubst`: substituting the zero
-  matrix leaves the constant term, and any linear substitution preserves the constant coefficient.
+* `MvPolynomial.linearSubst_zero`, `MvPolynomial.constantCoeff_linearSubst`,
+  `MvPolynomial.coeff_zero_linearSubst`: substituting the zero matrix leaves the constant term,
+  and any linear substitution preserves the constant coefficient.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
 * `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: a substitution with nonzero
@@ -235,10 +236,15 @@ theorem linearSubst_zero (p : MvPolynomial σ R) :
 
 /-- A linear change of variables preserves the constant coefficient. -/
 @[simp]
+theorem constantCoeff_linearSubst (M : Matrix σ σ R) (p : MvPolynomial σ R) :
+    constantCoeff (linearSubst M p) = constantCoeff p := by
+  rw [← eval_zero, eval_linearSubst, Matrix.mulVec_zero, eval_zero]
+
+/-- A linear change of variables preserves the constant coefficient. -/
+@[simp]
 theorem coeff_zero_linearSubst (M : Matrix σ σ R) (p : MvPolynomial σ R) :
-    (linearSubst M p).coeff 0 = p.coeff 0 := by
-  rw [← constantCoeff_eq, ← eval_zero, eval_linearSubst, Matrix.mulVec_zero, eval_zero,
-    constantCoeff_eq]
+    (linearSubst M p).coeff 0 = p.coeff 0 :=
+  constantCoeff_linearSubst M p
 
 /-- The substitution is a right action of the matrix monoid: substituting along `M * N` is
 substituting along `M` and then along `N`. -/

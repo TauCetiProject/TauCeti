@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.BlockSubst
 import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.NumberTheory.Height.NumberField
 import TauCeti.NumberTheory.NumberField.SiegelsLemma
 import TauCeti.RingTheory.Algebraic.Denominator
@@ -159,23 +160,16 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
         house (((blockSubst (M_f f) (monomial u.val (1 : 𝓞 K))).coeff N : 𝓞 K) : K) ≤
           (Fintype.card ι * B_sys) ^ ∑ h, d h := by
   classical
-  have hA_ex (f : F') : ∃ A : Matrix ι ι K, IsUnit A.det ∧ A i₀ = f.val := by
-    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp (hF' f.val f.property)
-    let M : Matrix ι ι K := (1 : Matrix ι ι K).updateRow j₀ f.val
-    have hsum : (∑ k, f.val k • (1 : Matrix ι ι K) k) = f.val := by ext m; simp [Matrix.one_apply]
-    have hMdet : M.det = f.val j₀ := by
-      simpa [M, hsum] using det_updateRow_sum (1 : Matrix ι ι K) j₀ f.val
-    refine ⟨M.submatrix (Equiv.swap i₀ j₀) id, ?_, by ext m; simp [M]⟩
-    rw [det_permute, hMdet, isUnit_iff_ne_zero]
-    exact mul_ne_zero (Int.cast_ne_zero.mpr (Units.ne_zero _)) hj₀
+  have hA_ex (f : F') : ∃ A : Matrix ι ι K, IsUnit A.det ∧ A i₀ = f.val :=
+    let ⟨_, hj₀⟩ := Function.ne_iff.mp (hF' f.val f.property)
+    Matrix.exists_isUnit_det_row_eq i₀ (isUnit_iff_ne_zero.mpr hj₀)
   choose A_f hA_det hA_row using hA_ex
-  let c_f (f : F') : ℕ := ∏ q : ι × ι, Algebra.natDenominator ((A_f f)⁻¹ q.1 q.2)
-  have hc_ne (f : F') : c_f f ≠ 0 := prod_ne_zero_iff.mpr fun q _ ↦
-    Algebra.natDenominator_ne_zero_of_isAlgebraic_rat (Algebra.IsAlgebraic.isAlgebraic _)
-  have hint (f : F') (i j : ι) : IsIntegral ℤ ((c_f f : K) * (A_f f)⁻¹ i j) := by
-    simpa [c_f, nsmul_eq_mul] using Algebra.natDenominator_dvd_iff.mp
-      (dvd_prod_of_mem (fun q : ι × ι ↦ Algebra.natDenominator ((A_f f)⁻¹ q.1 q.2))
-        (mem_univ (i, j)))
+  have hc_ex (f : F') : ∃ c : ℕ, c ≠ 0 ∧ ∀ i j : ι, IsIntegral ℤ ((c : K) * (A_f f)⁻¹ i j) := by
+    obtain ⟨c, hc0, hint⟩ := Algebra.exists_ne_zero_nsmul_isIntegral_of_isAlgebraic_rat
+      (univ : Finset (ι × ι)) (fun q ↦ (A_f f)⁻¹ q.1 q.2)
+      fun _ _ ↦ Algebra.IsAlgebraic.isAlgebraic _
+    exact ⟨c, hc0, fun i j ↦ by simpa [nsmul_eq_mul] using hint (i, j) (mem_univ _)⟩
+  choose c_f hc_ne hint using hc_ex
   let M_f (f : F') : Matrix ι ι (𝓞 K) := fun i j ↦ ⟨(c_f f : K) * (A_f f)⁻¹ i j, hint f i j⟩
   let B_sys : ℝ := 1 + ∑ p : F' × ι × ι, house (M_f p.1 p.2.1 p.2.2 : K)
   have hB1 : 1 ≤ B_sys := le_add_of_nonneg_right (sum_nonneg fun _ _ ↦ house_nonneg _)
