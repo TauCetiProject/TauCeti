@@ -571,9 +571,13 @@ theorem _root_.TauCeti.span_ofBaseChangeAux_image_evenOdd (i : ZMod 2) :
       ofBaseChangeAux A Q '' evenOdd Q i := by
     rw [Submodule.map_coe, Set.image_image]
     exact Set.image_congr fun x _ ↦ ofBaseChange_one_tmul x
-  rw [← Submodule.map_comap_eq_of_surjective (f := (ofBaseChange A Q).toLinearMap)
-      (fun y ↦ ⟨toBaseChange A Q y, ofBaseChange_toBaseChange A Q y⟩) (evenOdd _ i),
-    hcomap, Submodule.baseChange_eq_span, Submodule.map_span, AlgHom.coe_toLinearMap, himage]
+  calc
+    _ = ((evenOdd Q i).baseChange A).map (ofBaseChange A Q).toLinearMap := by
+      rw [Submodule.baseChange_eq_span, Submodule.map_span, AlgHom.coe_toLinearMap, himage]
+    _ = _ := by
+      rw [← hcomap]
+      exact Submodule.map_comap_eq_of_surjective
+        (fun y ↦ ⟨toBaseChange A Q y, ofBaseChange_toBaseChange A Q y⟩) _
 
 end TensorCarrier
 

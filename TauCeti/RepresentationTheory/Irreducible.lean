@@ -9,7 +9,7 @@ public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.SimpleModule.Rank
--- Private: the span of the image of a monoid-algebra lift is used only inside proofs.
+-- Private: the range of a representation's monoid-algebra action is used only inside proofs.
 import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import TauCeti.RingTheory.Semisimple.DoubleCentralizer
@@ -62,11 +62,8 @@ intertwiners of a spanning set of an algebra are those of the whole algebra.
   subrepresentations carries an irreducible representation.
 * `Representation.isIrreducible_of_asAlgebraHom_surjective`: a representation whose
   algebra map exhausts the endomorphisms is irreducible.
-* `Representation.isIrreducible_comp_of_span_eq_top`: so is a monoid acting through a spanning
-  image in an algebra whose action exhausts the endomorphisms.
-* `Submodule.forall_map_le_iff_of_span_eq_top` and
-  `LinearMap.forall_comp_eq_comp_iff_of_span_eq_top`: for a linear action of `A` and a set `S`
-  spanning `A`, invariant subspaces and intertwiners for `S` are those for all of `A`.
+* `AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top`: so is a monoid acting through a
+  spanning image in an algebra whose action exhausts the endomorphisms.
 * `Representation.isIrreducible_of_finrank_intertwiningMap_self_eq_one`: a semisimple
   representation whose equivariant endomorphisms are the scalars is irreducible.
 * `Representation.IsIrreducible.eq_one_or_eq_neg_one_of_commute_of_mul_self_eq_one`: the
@@ -96,39 +93,6 @@ public section
 
 open TauCeti
 open scoped TensorProduct
-
-section SpanningSet
-
-variable {R A M N : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {S : Set A}
-
-/-- **Invariance under a spanning set is invariance under its span.** If `S` spans `A` and
-`F : A →ₗ[R] End R M` is linear, a submodule is invariant under every `F a` as soon as it is
-invariant under `F a` for `a ∈ S`, since the endomorphisms preserving a submodule form a submodule
-(`Submodule.compatibleMaps`). For `F` an algebra action and `S` the image of a monoid, this
-identifies the invariant subspaces of the monoid with those of the algebra. -/
-theorem Submodule.forall_map_le_iff_of_span_eq_top (p : Submodule R M) (F : A →ₗ[R] Module.End R M)
-    (hS : Submodule.span R S = ⊤) : (∀ a ∈ S, p.map (F a) ≤ p) ↔ ∀ a, p.map (F a) ≤ p := by
-  refine ⟨fun h a ↦ ?_, fun h a _ ↦ h a⟩
-  have hle : S ⊆ (Submodule.compatibleMaps p p).comap F := fun b hb ↦
-    Submodule.map_le_iff_le_comap.1 (h b hb)
-  exact Submodule.map_le_iff_le_comap.2 (Submodule.span_le.2 hle (hS ▸ Submodule.mem_top))
-
-/-- **Intertwining a spanning set is intertwining its span.** If `S` spans `A` and
-`F : A →ₗ[R] End R M` and `G : A →ₗ[R] End R N` are linear, a linear map `ψ : M → N` with
-`ψ ∘ F a = G a ∘ ψ` for `a ∈ S` satisfies this for every `a`, both sides being linear in `a`. For
-`F` and `G` algebra actions and `S` the image of a monoid, this identifies the intertwiners of the
-monoid with those of the algebra. -/
-theorem LinearMap.forall_comp_eq_comp_iff_of_span_eq_top (ψ : M →ₗ[R] N)
-    (F : A →ₗ[R] Module.End R M) (G : A →ₗ[R] Module.End R N) (hS : Submodule.span R S = ⊤) :
-    (∀ a ∈ S, ψ ∘ₗ F a = G a ∘ₗ ψ) ↔ ∀ a, ψ ∘ₗ F a = G a ∘ₗ ψ := by
-  refine ⟨fun h a ↦ ?_, fun h a _ ↦ h a⟩
-  -- Both sides are linear in `a`: `F a` postcomposed with `ψ`, and `G a` precomposed with `ψ`.
-  have hext : LinearMap.llcomp R M M N ψ ∘ₗ F = LinearMap.lcomp R N ψ ∘ₗ G :=
-    LinearMap.ext_on hS h
-  exact LinearMap.congr_fun hext a
-
-end SpanningSet
 
 namespace Representation
 
@@ -235,25 +199,18 @@ theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representa
 
 /-- **A monoid acting through a spanning image in an algebra of all endomorphisms acts
 irreducibly.** If the image of `φ : G →* A` spans the `k`-algebra `A` and `F : A →ₐ[k] End k V` is
-surjective, then the representation `g ↦ F (φ g)` is irreducible: its monoid-algebra action is
-`F` composed with the monoid-algebra lift of `φ`, which is surjective because its image is the span
-of the image of `φ` (`MonoidAlgebra.toSubmodule_range_lift`). -/
-theorem isIrreducible_comp_of_span_eq_top [Nontrivial V] {A : Type*} [Ring A] [Algebra k A]
-    (F : A →ₐ[k] Module.End k V) (hF : Function.Surjective F) (φ : G →* A)
-    (hφ : Submodule.span k (Set.range φ) = ⊤) :
+surjective, then the representation `g ↦ F (φ g)` is irreducible: the range of its monoid-algebra
+action is the span of its image (`Representation.toSubmodule_range_asAlgebraHom`), which is the
+image under `F` of the span of the image of `φ`. -/
+theorem _root_.AlgHom.isIrreducible_toMonoidHom_comp_of_span_eq_top [Nontrivial V] {A : Type*}
+    [Semiring A] [Algebra k A] (F : A →ₐ[k] Module.End k V) (hF : Function.Surjective F)
+    (φ : G →* A) (hφ : Submodule.span k (Set.range φ) = ⊤) :
     Representation.IsIrreducible (F.toMonoidHom.comp φ) := by
-  have hasAlgebraHom : Representation.asAlgebraHom (F.toMonoidHom.comp φ) =
-      F.comp (MonoidAlgebra.lift k A G φ) := by
-    apply MonoidAlgebra.algHom_ext
-    · intro g
-      simp
-    · ext
-  have hlift : Function.Surjective (MonoidAlgebra.lift k A G φ) := by
-    rw [← AlgHom.range_eq_top, ← Algebra.toSubmodule_eq_top,
-      MonoidAlgebra.toSubmodule_range_lift, hφ]
+  have hcomp : ⇑(F.toMonoidHom.comp φ) = F.toLinearMap ∘ φ := rfl
   refine isIrreducible_of_asAlgebraHom_surjective _ ?_
-  rw [hasAlgebraHom]
-  exact hF.comp hlift
+  rw [← AlgHom.range_eq_top, ← Algebra.toSubmodule_eq_top, toSubmodule_range_asAlgebraHom, hcomp,
+    Set.range_comp, Submodule.span_image, hφ, Submodule.map_top, LinearMap.range_eq_top]
+  exact hF
 
 /-- **A semisimple representation whose intertwiners are the scalars is irreducible.** If every
 subrepresentation has an invariant complement and the equivariant endomorphisms of `ρ` form a line,

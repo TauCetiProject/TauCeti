@@ -10,6 +10,8 @@ public import Mathlib.Data.Set.Countable
 public import Mathlib.LinearAlgebra.Span.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.Algebra.Algebra.Basic
+-- Private: the composition maps `LinearMap.llcomp` and `LinearMap.lcomp` are used only in proofs.
+import Mathlib.LinearAlgebra.BilinearMap
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Data.Fintype.BigOperators
@@ -29,8 +31,9 @@ well-founded order, where each `z j` is `x j` plus a combination of the earlier 
 the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
 as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
 Over a scalar extension, the image span of a semilinear map is spanned by its values on any
-spanning family of the domain. The span of any countable set admits a spanning sequence indexed
-by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
+spanning family of the domain. Invariant subspaces and intertwiners of a linear family of
+endomorphisms indexed by a set are those of the family indexed by its span. The span of any
+countable set admits a spanning sequence indexed by `ℕ` (`Set.Countable.exists_span_range_eq_top`).
 -/
 
 public section
@@ -205,7 +208,44 @@ theorem span_range_eq_span_range_comp_of_span_eq_top
 
 end SpanningFamily
 
+section SpanningSet
+
+variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
+  [AddCommMonoid M] [Module R M]
+
+/-- **Invariance under a set is invariance under its span.** For `F : A →ₗ[R] End R M` linear, a
+submodule is invariant under every `F a` with `a` in the span of `S` as soon as it is invariant
+under `F a` for `a ∈ S`, since the endomorphisms preserving a submodule form a submodule
+(`Submodule.compatibleMaps`). For `F` an algebra action and `S` the image of a monoid spanning
+the algebra, this identifies the invariant subspaces of the monoid with those of the algebra. -/
+theorem forall_map_le_iff_forall_mem_span (p : Submodule R M) (F : A →ₗ[R] Module.End R M)
+    (S : Set A) : (∀ a ∈ S, p.map (F a) ≤ p) ↔ ∀ a ∈ span R S, p.map (F a) ≤ p := by
+  refine ⟨fun h a ha ↦ ?_, fun h a ha ↦ h a (subset_span ha)⟩
+  have hle : S ⊆ (compatibleMaps p p).comap F := fun b hb ↦ map_le_iff_le_comap.1 (h b hb)
+  exact map_le_iff_le_comap.2 (span_le.2 hle ha)
+
+end SpanningSet
+
 end Submodule
+
+namespace LinearMap
+
+variable {R A M N : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- **Intertwining a set is intertwining its span.** For `F : A →ₗ[R] End R M` and
+`G : A →ₗ[R] End R N` linear, a linear map `ψ : M → N` with `ψ ∘ F a = G a ∘ ψ` for `a ∈ S`
+satisfies this for every `a` in the span of `S`, both sides being linear in `a`. For `F` and `G`
+algebra actions and `S` the image of a monoid spanning the algebra, this identifies the
+intertwiners of the monoid with those of the algebra. -/
+theorem forall_comp_eq_comp_iff_forall_mem_span (ψ : M →ₗ[R] N)
+    (F : A →ₗ[R] Module.End R M) (G : A →ₗ[R] Module.End R N) (S : Set A) :
+    (∀ a ∈ S, ψ ∘ₗ F a = G a ∘ₗ ψ) ↔ ∀ a ∈ Submodule.span R S, ψ ∘ₗ F a = G a ∘ₗ ψ :=
+  -- Both sides are linear in `a`: `F a` postcomposed with `ψ`, and `G a` precomposed with `ψ`.
+  ⟨fun h ↦ eqOn_span (f := llcomp R M M N ψ ∘ₗ F) (g := lcomp R N ψ ∘ₗ G) h,
+    fun h a ha ↦ h a (Submodule.subset_span ha)⟩
+
+end LinearMap
 
 section Countable
 

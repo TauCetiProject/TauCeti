@@ -15,8 +15,8 @@ import TauCeti.LinearAlgebra.QuadraticForm.Real
 # Definite real Spin groups span the even Clifford algebra
 
 Over `ℝ`, an anisotropic quadratic form is positive or negative definite
-(`QuadraticForm.anisotropic_iff_posDef_or_negDef`). Two vectors of nonzero norm therefore have
-norms of the same sign, so `(Q v)⁻¹ * (Q w)⁻¹` is positive and hence a real square
+(`QuadraticForm.anisotropic_iff_posDef_or_negDef`). Two nonzero vectors therefore have norms of the
+same sign, so `(Q v)⁻¹ * (Q w)⁻¹` is nonnegative and hence a real square
 (`QuadraticMap.Anisotropic.isSquare_inv_mul_inv`). This is the
 square normalization under which `CliffordAlgebra.span_spinGroup_eq_even_of_isSquare`
 lifts every product `ι v * ι w` of vectors into the linear span of the Spin group. No
@@ -35,8 +35,8 @@ the compact real group as under the whole even algebra.
 * `QuadraticMap.Anisotropic.span_spinGroup_eq_even`: the Spin group of an anisotropic real
   quadratic form spans its even Clifford algebra.
 * `QuadraticMap.Anisotropic.span_range_spinGroupBaseChange_eq_even`: after extension of scalars to
-  any real algebra, such as `ℂ`, the image of that Spin group spans the even Clifford algebra of
-  the extended form.
+  any commutative real algebra, such as `ℂ`, the image of that Spin group spans the even Clifford
+  algebra of the extended form.
 
 ## References
 
@@ -56,13 +56,14 @@ covers the compact group `Spin(n)` of a positive-definite form, and of a negativ
 the span includes the scalars, which is the whole even algebra in dimension zero. -/
 theorem span_spinGroup_eq_even (hQ : Q.Anisotropic) :
     Submodule.span ℝ (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule :=
-  span_spinGroup_eq_even_of_isSquare Q hQ.nondegenerate fun _ _ hv hw ↦
-    hQ.isSquare_inv_mul_inv hv hw
+  span_spinGroup_eq_even_of_isSquare Q hQ.nondegenerate fun v w _ _ ↦
+    hQ.isSquare_inv_mul_inv v w
 
 /-- **The complexified real Spin group spans the complex even Clifford algebra.** For an
 anisotropic real quadratic form, the `A`-linear span of the image of `spinGroup Q` in the Spin group
-of `Q_A` is the even Clifford algebra of `Q_A`; for `A = ℂ` and a positive-definite `Q` this is the
-complex-linear span of the compact group `Spin(n)` acting on complex spinors. -/
+of `Q_A` is the even Clifford algebra of `Q_A`. For `A = ℂ` and a positive-definite `Q`, the image
+of the compact group `Spin(n)` spans the even Clifford algebra inside the complexified Clifford
+algebra; applying a spinor action then gives the image of that algebra in the endomorphism ring. -/
 theorem span_range_spinGroupBaseChange_eq_even (hQ : Q.Anisotropic) {A : Type*} [CommRing A]
     [Algebra ℝ A] :
     Submodule.span A (Set.range fun g : spinGroup Q ↦

@@ -39,7 +39,7 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
 * `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
   positive and negative definite forms, including forms on the zero space.
 * `QuadraticMap.Anisotropic.isSquare_inv_mul_inv`: for an anisotropic real form, the product of
-  the inverse values of two vectors of nonzero value is a real square.
+  the inverse values of two vectors is a real square.
 * `QuadraticForm.anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero`: a real form with trivial
   radical on a finite-dimensional space is anisotropic exactly when one of its two indices of
   inertia vanishes.
@@ -189,13 +189,17 @@ theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
     · exact hQ.anisotropic
     · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
 
-/-- Two vectors of nonzero value for an anisotropic real form have values of the same sign, since
-the form is positive or negative definite, so the product of the inverse values is a real square. -/
+/-- For an anisotropic real form, the product of the inverse values of two vectors is a real
+square: nonzero vectors have values of the same sign, since the form is positive or negative
+definite, and the product is `0` as soon as one of the vectors is. -/
 theorem _root_.QuadraticMap.Anisotropic.isSquare_inv_mul_inv {Q : _root_.QuadraticForm ℝ M}
-    (hQ : Q.Anisotropic) {v w : M} (hv : Q v ≠ 0) (hw : Q w ≠ 0) :
-    IsSquare ((Q v)⁻¹ * (Q w)⁻¹) := by
-  have hv0 : v ≠ 0 := fun h ↦ hv (h ▸ QuadraticMap.map_zero Q)
-  have hw0 : w ≠ 0 := fun h ↦ hw (h ▸ QuadraticMap.map_zero Q)
+    (hQ : Q.Anisotropic) (v w : M) : IsSquare ((Q v)⁻¹ * (Q w)⁻¹) := by
+  rcases eq_or_ne v 0 with rfl | hv0
+  · rw [QuadraticMap.map_zero, inv_zero, zero_mul]
+    exact IsSquare.zero
+  rcases eq_or_ne w 0 with rfl | hw0
+  · rw [QuadraticMap.map_zero, inv_zero, mul_zero]
+    exact IsSquare.zero
   rw [Real.isSquare_iff]
   rcases (anisotropic_iff_posDef_or_negDef Q).1 hQ with h | h
   · exact (mul_pos (inv_pos.2 (h v hv0)) (inv_pos.2 (h w hw0))).le

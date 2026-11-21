@@ -16,6 +16,9 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.ReflectionLift
 -- proofs.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.End
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
+-- Private: the passage from intertwining a spanning set to intertwining its span is used only
+-- inside proofs.
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Invariant subspaces and intertwiners for the spinor and half-spin actions
@@ -189,31 +192,6 @@ private theorem spinGroupRepresentation_apply_mk {K : Type u} [Field K]
   rw [spinGroupRepresentation_apply]
   exact congrArg F (Subtype.ext (coe_spinGroupToEven_apply Q g))
 
-/-- The range of the inclusion of `H` in the even Clifford algebra, with its values spelled out as
-the subtype elements `⟨φ h, _⟩` that `Submodule.span_range_subtype_eq_top_iff` consumes. As for
-`TauCeti.spinGroupRepresentation_apply_mk`, only the coercion lemma
-`CliffordAlgebra.coe_spinGroupToEven_apply` is used, not the definition of the inclusion. -/
-private theorem range_spinGroupToEven_comp {K : Type u} [Field K]
-    {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
-    {H : Type*} [Monoid H] (φ : H →* spinGroup Q) :
-    Set.range ⇑((spinGroupToEven Q).comp φ) =
-      Set.range fun h : H ↦
-        (⟨φ h, spinGroup.mem_even (φ h).property⟩ : CliffordAlgebra.even Q) :=
-  congrArg Set.range (funext fun h ↦ Subtype.ext (coe_spinGroupToEven_apply Q (φ h)))
-
-/-- The spanning hypothesis, read inside the even Clifford algebra: if the elements `φ h` span the
-even part of the ambient Clifford algebra, then their images in the even subalgebra span it. -/
-private theorem span_range_spinGroupToEven_comp {K : Type u} [Field K]
-    {V : Type v} [AddCommGroup V] [Module K V]
-    {Q : QuadraticForm K V} {H : Type*} [Monoid H] {φ : H →* spinGroup Q}
-    (hspan : Submodule.span K (Set.range fun h : H ↦ (φ h : CliffordAlgebra Q)) =
-      (CliffordAlgebra.even Q).toSubmodule) :
-    Submodule.span K (Set.range ⇑((spinGroupToEven Q).comp φ)) = ⊤ := by
-  rw [range_spinGroupToEven_comp]
-  exact (Submodule.span_range_subtype_eq_top_iff
-    (CliffordAlgebra.even Q).toSubmodule
-      (fun h : H ↦ spinGroup.mem_even (φ h).property)).2 hspan
-
 /-- The spanning hypothesis for the Spin group itself, in the form taken by the restriction along
 the identity homomorphism. -/
 private theorem span_range_id_of_span {K : Type u} [Field K]
@@ -234,8 +212,8 @@ private theorem isIrreducible_spinGroupRepresentation_comp {K : Type u} [Field K
     (hF : Function.Surjective F) :
     Representation.IsIrreducible ((spinGroupRepresentation F).comp φ) :=
   -- `spinGroupRepresentation F` is `F` composed with the inclusion `spinGroupToEven Q`.
-  Representation.isIrreducible_comp_of_span_eq_top F hF ((spinGroupToEven Q).comp φ)
-    (span_range_spinGroupToEven_comp hspan)
+  F.isIrreducible_toMonoidHom_comp_of_span_eq_top hF ((spinGroupToEven Q).comp φ)
+    ((span_range_spinGroupToEven_comp_eq_top_iff φ).2 hspan)
 
 private theorem intertwines_even_of_intertwines_comp {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V]
@@ -249,15 +227,16 @@ private theorem intertwines_even_of_intertwines_comp {K : Type u} [Field K]
       ψ (F ⟨φ h, spinGroup.mem_even (φ h).property⟩ m) =
         G ⟨φ h, spinGroup.mem_even (φ h).property⟩ (ψ m))
     (x : CliffordAlgebra.even Q) (m : M) : ψ (F x m) = G x (ψ m) := by
-  refine LinearMap.congr_fun ((LinearMap.forall_comp_eq_comp_iff_of_span_eq_top ψ F.toLinearMap
-    G.toLinearMap (span_range_spinGroupToEven_comp hspan)).1 ?_ x) m
+  have hx : x ∈ Submodule.span K (Set.range ((spinGroupToEven Q).comp φ)) := by
+    rw [(span_range_spinGroupToEven_comp_eq_top_iff φ).2 hspan]
+    exact Submodule.mem_top
+  refine LinearMap.congr_fun ((LinearMap.forall_comp_eq_comp_iff_forall_mem_span ψ F.toLinearMap
+    G.toLinearMap _).1 ?_ x hx) m
   rintro _ ⟨h, rfl⟩
-  refine LinearMap.ext fun m ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-    AlgHom.toLinearMap_apply, MonoidHom.comp_apply, ← spinGroupRepresentation_apply,
-    ← spinGroupRepresentation_apply, spinGroupRepresentation_apply_mk,
-    spinGroupRepresentation_apply_mk]
-  exact hψ h m
+  have hmk : (spinGroupToEven Q).comp φ h = ⟨φ h, spinGroup.mem_even (φ h).property⟩ :=
+    Subtype.ext (coe_spinGroupToEven_apply Q (φ h))
+  exact LinearMap.ext fun m ↦ by
+    simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, hmk] using hψ h m
 
 /-! ### The spinor module is a simple Clifford module
 
@@ -428,15 +407,8 @@ private noncomputable def spinPlusSubrepEquiv (φ : H →* spinGroup Q) (hline :
     Representation.Equiv ((spinGroupRepresentation (spinPlusAction Q P hline)).comp φ)
       ((spinPlusSubrep P hline).toRepresentation.comp φ) :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm) fun h ↦
-    LinearMap.ext fun s ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, MonoidHom.comp_apply, MonoidHom.comp_apply,
-        spinGroupRepresentation_apply_mk]
-      refine Subtype.ext ?_
-      rw [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
-        coe_spinPlusAction_spinGroup_apply P hline (φ h) s]
-      -- the transported input is the subtype element `⟨s, _⟩` of the subrepresentation
-      exact congrArg (fun t ↦ ((spinPlusSubrep P hline).toRepresentation (φ h) t :
-        ExteriorAlgebra K P.W)) (Subtype.ext (LinearEquiv.coe_ofEq_apply _ s).symm)
+    LinearMap.ext fun s ↦ ((LinearEquiv.symm_apply_eq _).1
+      (spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction P hline (φ h) s)).symm
 
 /-- The odd half-spin action restricted along `φ` is equivalent to the restriction of
 `spinMinusSubrep`: both live on the same subspace `S⁻` of the exterior algebra. -/
@@ -445,14 +417,11 @@ private noncomputable def spinMinusSubrepEquiv (φ : H →* spinGroup Q) (hline 
       ((spinMinusSubrep P hline).toRepresentation.comp φ) :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm) fun h ↦
     LinearMap.ext fun s ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, MonoidHom.comp_apply, MonoidHom.comp_apply,
-        spinGroupRepresentation_apply_mk]
-      refine Subtype.ext ?_
-      rw [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
-        coe_spinMinusAction_spinGroup_apply P hline (φ h) s]
-      -- the transported input is the subtype element `⟨s, _⟩` of the subrepresentation
-      exact congrArg (fun t ↦ ((spinMinusSubrep P hline).toRepresentation (φ h) t :
-        ExteriorAlgebra K P.W)) (Subtype.ext (LinearEquiv.coe_ofEq_apply _ s).symm)
+      -- the subrepresentation statement, at the transported input
+      have hs := spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline (φ h)
+        (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm s)
+      rw [LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_eq] at hs
+      exact hs.symm
 
 /-- **The even half-spin representation stays irreducible on restriction along a monoid
 homomorphism into the Spin group whose image spans the even Clifford algebra.** For polarization

@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
-public import TauCeti.RepresentationTheory.Spin.Irreducible
+public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 -- Private: the real span theorem is used only to supply the spanning hypotheses.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Span
+-- Private: the irreducibility theorems for groups spanning the even Clifford algebra are used only
+-- inside proofs.
+import TauCeti.RepresentationTheory.Spin.Irreducible
 
 /-!
 # Real Spin groups acting on complex spinors
