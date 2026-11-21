@@ -190,7 +190,7 @@ theorem
         (clusterSetOn g (f '' U) a) :=
     isPreconnected_clusterSetOn
       hUb.isCompact_closure
-      (fun z hz ↦ subset_closure (hgU hz)) hgc (isPreconnectedApproachAt_def.mp hloc)
+      (fun z hz ↦ subset_closure (hgU hz)) hgc hloc
   rw [← IsInducing.subtypeVal.isPreconnected_image]
   have himage :
       Subtype.val '' {z : frontier U | F z = a} =
@@ -225,7 +225,7 @@ theorem isPreconnected_frontier_fiber_of_image_approach
       simp only [Set.mem_ofPred_eq,
         mem_empty_iff_false, iff_false]
       intro hz
-      exact ha (hboundary ⟨z, z.2, hz⟩)
+      exact ha (hboundary ⟨z, z.property, hz⟩)
     rw [hempty]
     exact isPreconnected_empty
 

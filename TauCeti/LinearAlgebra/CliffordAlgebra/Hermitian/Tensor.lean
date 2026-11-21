@@ -5,43 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Complexification
-public import TauCeti.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Representation
-public import TauCeti.LinearAlgebra.CliffordAlgebra.SpinorForms
--- Private: injectivity of `ι` and `1 ⊗ₜ ·` are used only inside proofs to derive
--- `FiniteDimensional ℝ V`.
-import Mathlib.RingTheory.Flat.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 
 /-!
-# The spinor endomorphism and spinor tensor metrics vs the exterior Gram metric
+# The spinor tensor metric and the exterior metric
 
-For a full complex spinor representation `ρ : Cl_ℂ(V) ≃ End_ℂ(S)` of a finite-dimensional real
-inner product space `V` with negative-definite quadratic form `Q(v) = -‖v‖²` and skew-adjoint real
-Clifford generators, the identification `ρ.cliffordFormsEquivEnd` of complexified exterior forms
-`ℂ ⊗[ℝ] ⋀ V` with spinor endomorphisms `End_ℂ(S)` is an isometry from the complexified Euclidean
-exterior Gram metric `LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra` to
-the normalized Hilbert–Schmidt pairing `2 ^ (-ℓ) tr(A† B)` (`dim V = 2ℓ`).
+For a full complex spinor representation `ρ : Cl(V) ≃ End(S)`, inverse evaluation identifies
+endomorphisms with `S ⊗ S*`. The ordinary tensor metric, using the positive Riesz dual metric,
+is the **unnormalized** Hilbert–Schmidt metric. Consequently the inverse Chevalley map,
+followed by `ρ` and inverse evaluation, multiplies the exterior Gram metric by `2 ^ ℓ`,
+where `dim V = 2ℓ`. The factor is one in dimension zero.
 
-Composing with inverse evaluation identifies endomorphisms with `S ⊗ S*` via
-`ρ.cliffordFormsEquivTensor`. Because the ordinary tensor/dual metric `tensorDualMetric ℂ S S`
-(using the positive Riesz dual metric on `S*`) equals the **unnormalized** Hilbert–Schmidt metric,
-`ρ.cliffordFormsEquivTensor` multiplies the exterior Gram metric by `2 ^ ℓ` (which is `1` in
-dimension zero). Both the basis-indexed statements on `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)` and the
-basis-free statements on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` are recorded below.
-
-## Main results
-
-* `CliffordAlgebra.tensorDualMetric_equivExterior_symm` and
-  `CliffordAlgebra.exteriorGram_eq_inv_two_pow_mul_tensorDualMetric`: basis-indexed comparisons on
-  `ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)`.
-* `AlgEquiv.inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_mul`: `ρ.cliffordFormsEquivEnd` is
-  an isometry from the complexified exterior Gram metric to `2 ^ (-dim V / 2) * tr(A† B)`.
-* `AlgEquiv.tensorDualMetric_cliffordFormsEquivTensor`,
-  `AlgEquiv.inv_two_pow_mul_tensorDualMetric_cliffordFormsEquivTensor`, and
-  `AlgEquiv.sesqComplexification_cliffordFormsEquivTensor_symm`: basis-free comparisons between the
-  complexified exterior Gram metric and `tensorDualMetric ℂ S S` under `ρ.cliffordFormsEquivTensor`.
+We state the comparison using Mathlib's existing evaluation equivalence and tensor
+commutor, rather than introducing a second forms-to-spinor-tensors equivalence. The two
+equations below give both the pullback of the tensor metric and the inverse metric comparison.
+They use the same increasing orthonormal wedge basis as the exterior Gram metric.
 
 ## References
 
@@ -57,7 +36,8 @@ open scoped TensorProduct
 
 namespace CliffordAlgebra
 
-variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
+variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] {Q : QuadraticForm ℝ V}
   [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
@@ -79,7 +59,6 @@ theorem tensorDualMetric_equivExterior_symm
       (2 ^ (finrank ℝ V / 2) : ℂ) * Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ)
         (e.toBasis.baseChange ℂ).ExteriorAlgebra (e.toBasis.baseChange ℂ).ExteriorAlgebra
         (1 : Matrix (Finset I) (Finset I) ℂ) a b := by
-  have : FiniteDimensional ℝ V := Module.Finite.of_basis e.toBasis
   rw [tensorDualMetric_eq_trace]
   simp only [TensorProduct.comm_comm, dualTensorHom_dualTensorHomEquiv_symm]
   have hpair := inv_two_pow_mul_trace_adjoint_map_equivExterior_symm_mul hQ ρ hρ e a b
@@ -104,7 +83,6 @@ theorem exteriorGram_eq_inv_two_pow_mul_tensorDualMetric
       (equivExterior (Q.baseChange ℂ)
         (ρ.symm (dualTensorHom ℂ S S (TensorProduct.comm ℂ S (Dual ℂ S) b)))) =
       (2 ^ (finrank ℝ V / 2) : ℂ)⁻¹ * tensorDualMetric ℂ S S a b := by
-  have : FiniteDimensional ℝ V := Module.Finite.of_basis e.toBasis
   rw [tensorDualMetric_eq_trace]
   have hpair := inv_two_pow_mul_trace_adjoint_map_equivExterior_symm_mul hQ ρ hρ e
     (equivExterior (Q.baseChange ℂ)
@@ -115,78 +93,3 @@ theorem exteriorGram_eq_inv_two_pow_mul_tensorDualMetric
     Module.End.mul_eq_comp] using hpair.symm
 
 end CliffordAlgebra
-
-namespace AlgEquiv
-
-open CliffordAlgebra
-
-variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
-  [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
-  (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S)
-  (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-  (hρ : ∀ v : V, (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v))).adjoint =
-    -ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)))
-
-include hQ hρ
-
-/-- **Isometry from complexified exterior forms to normalized Hilbert–Schmidt endomorphisms**:
-`ρ.cliffordFormsEquivEnd` carries the complexified Euclidean exterior Gram metric on
-`ℂ ⊗[ℝ] ExteriorAlgebra ℝ V` to `2 ^ (-dim V / 2) * tr(A† B)` on `End_ℂ(S)`. -/
-theorem inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_mul
-    (x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
-    (2 ^ (finrank ℝ V / 2) : ℂ)⁻¹ * LinearMap.trace ℂ S
-        ((ρ.cliffordFormsEquivEnd x).adjoint * ρ.cliffordFormsEquivEnd y) =
-      LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra x y := by
-  have : FiniteDimensional ℝ V := by
-    have : FiniteDimensional ℝ (Module.End ℂ S) := Module.Finite.trans ℂ (Module.End ℂ S)
-    let f : V →ₗ[ℝ] Module.End ℂ S :=
-      ((ρ.toLinearMap.comp (ι (Q.baseChange ℂ))).restrictScalars ℝ).comp
-        (TensorProduct.mk ℝ ℂ V 1)
-    exact FiniteDimensional.of_injective f
-      (ρ.injective.comp ((CliffordAlgebra.ι_injective (Q.baseChange ℂ)).comp
-        (Module.Flat.tensorProduct_mk_injective ℝ V ℂ)))
-  let e := stdOrthonormalBasis ℝ V
-  rw [ρ.cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv,
-    ρ.cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv,
-    inv_two_pow_mul_trace_adjoint_map_equivExterior_symm_mul hQ ρ hρ e,
-    e.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv]
-
-/-- **Spinor tensor metric comparison**: under `ρ.cliffordFormsEquivTensor`, the ordinary
-tensor/dual metric `tensorDualMetric ℂ S S` on `S ⊗[ℂ] Dual ℂ S` is `2 ^ (dim V / 2)` times the
-complexified Euclidean exterior Gram metric. -/
-theorem tensorDualMetric_cliffordFormsEquivTensor
-    (x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
-    tensorDualMetric ℂ S S (ρ.cliffordFormsEquivTensor x) (ρ.cliffordFormsEquivTensor y) =
-      (2 ^ (finrank ℝ V / 2) : ℂ) *
-        LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra x y := by
-  have hnonzero : (2 ^ (finrank ℝ V / 2) : ℂ) ≠ 0 := pow_ne_zero _ (by norm_num)
-  rw [tensorDualMetric_eq_trace, ← Module.End.mul_eq_comp,
-    ← toLinearMap_dualTensorHomEquiv, LinearEquiv.coe_toLinearMap,
-    ρ.dualTensorHomEquiv_comm_cliffordFormsEquivTensor,
-    ρ.dualTensorHomEquiv_comm_cliffordFormsEquivTensor,
-    ← ρ.inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_mul hQ hρ,
-    mul_inv_cancel_left₀ hnonzero]
-
-/-- **Normalized spinor tensor metric comparison**: `2 ^ (-dim V / 2)` times
-`tensorDualMetric ℂ S S` pulls back under `ρ.cliffordFormsEquivTensor` to the complexified
-Euclidean exterior Gram metric. -/
-theorem inv_two_pow_mul_tensorDualMetric_cliffordFormsEquivTensor
-    (x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
-    (2 ^ (finrank ℝ V / 2) : ℂ)⁻¹ *
-        tensorDualMetric ℂ S S (ρ.cliffordFormsEquivTensor x) (ρ.cliffordFormsEquivTensor y) =
-      LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra x y := by
-  have hnonzero : (2 ^ (finrank ℝ V / 2) : ℂ) ≠ 0 := pow_ne_zero _ (by norm_num)
-  rw [ρ.tensorDualMetric_cliffordFormsEquivTensor hQ hρ, inv_mul_cancel_left₀ hnonzero]
-
-/-- **Inverse spinor tensor metric comparison**: `ρ.cliffordFormsEquivTensor.symm` carries
-`2 ^ (-dim V / 2)` times `tensorDualMetric ℂ S S` to the complexified Euclidean exterior Gram
-metric. -/
-theorem sesqComplexification_cliffordFormsEquivTensor_symm
-    (a b : S ⊗[ℂ] Dual ℂ S) :
-    LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra
-        (ρ.cliffordFormsEquivTensor.symm a) (ρ.cliffordFormsEquivTensor.symm b) =
-      (2 ^ (finrank ℝ V / 2) : ℂ)⁻¹ * tensorDualMetric ℂ S S a b := by
-  rw [← ρ.inv_two_pow_mul_tensorDualMetric_cliffordFormsEquivTensor hQ hρ,
-    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-
-end AlgEquiv

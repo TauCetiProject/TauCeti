@@ -122,7 +122,7 @@ private theorem maxWeight_eq_of_support_subset {ρ : PartitionOfUnity ι X} {I :
     maxWeight ρ x = ⨆ i : I, ρ i x := by
   have hnonneg : 0 ≤ ⨆ i : I, ρ i x := Real.iSup_nonneg fun i ↦ ρ.nonneg i x
   refine le_antisymm (Real.iSup_le (fun i ↦ ?_) hnonneg)
-    (Real.iSup_le (fun i : I ↦ le_maxWeight ρ i.1 x) (maxWeight_nonneg ρ x))
+    (Real.iSup_le (fun i : I ↦ le_maxWeight ρ i.val x) (maxWeight_nonneg ρ x))
   by_cases hi : i ∈ I
   · exact le_ciSup (finite_range (fun j : I ↦ ρ j x)).bddAbove ⟨i, hi⟩
   · have h0 : ρ i x = 0 := by_contra fun hne ↦ hi (hI hne)

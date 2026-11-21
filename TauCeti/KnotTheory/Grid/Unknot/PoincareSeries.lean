@@ -57,7 +57,7 @@ theorem bigradedFullyBlockedHomologyPoincareSeries_unknot (n : ℕ) :
     rw [h, bigradedFullyBlockedHomologyPoincareSeries_twoByTwo, zero_add, pow_one]
   | succ n ih =>
     have h : GridDiagram.IsColumnCommutation
-        ((GridDiagram.isKnot_unknot n).toOddComponentGridDiagram.stabilizeX 0).1
+        ((GridDiagram.isKnot_unknot n).toOddComponentGridDiagram.stabilizeX 0).val
         (GridDiagram.unknot (n + 1)) := by
       rw [val_stabilizeX, GridDiagram.unknot_X_apply_eq_add_one, zero_add, Fin.castSucc_zero,
         Fin.castSucc_one]

@@ -103,7 +103,7 @@ private theorem coeff_weightMap_coeLinearMap
   induction y using DirectSum.induction_on with
   | zero => simp
   | of d z =>
-      rw [DirectSum.coeLinearMap_of, weightMap_of_mem z.2, coeff_monomial]
+      rw [DirectSum.coeLinearMap_of, weightMap_of_mem z.property, coeff_monomial]
       by_cases h : d = e
       · subst h
         simp

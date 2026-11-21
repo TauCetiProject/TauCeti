@@ -94,7 +94,7 @@ theorem discreteTopology_of_isClosed_of_forall_smul_mem {G : AddSubgroup E}
     simpa using (hdiff.comp hφ.tendsto_atTop).add (hlim.const_smul t)
   refine hG.mem_of_tendsto hmem (Eventually.of_forall fun k ↦ ?_)
   rw [Int.cast_smul_eq_zsmul]
-  exact G.zsmul_mem (g (φ k)).2 _
+  exact G.zsmul_mem (g (φ k)).property _
 
 /-- A full lattice `L` in a nonzero finite-dimensional real normed space admits a nonzero real
 linear functional taking integer values on `L`, for instance a coordinate functional of a
@@ -140,11 +140,11 @@ theorem exists_dual_ne_zero_of_isClosed {G : AddSubgroup E} (hG : IsClosed (G : 
   have hLmem : ∀ w : W, w ∈ L ↔ (w : E) ∈ G := fun _ ↦ by
     simp [L, ← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule]
   have : DiscreteTopology L := by
-    have hL : IsClosed (L : Set W) := hG.preimage continuous_subtype_val
+    have hL : IsClosed (L : Set W) := hG.preimage continuous_subtypeVal
     -- `L` and `L.toAddSubgroup` have the same underlying subtype.
     refine discreteTopology_of_isClosed_of_forall_smul_mem (G := L.toAddSubgroup) hL fun w hw ↦ ?_
     have hwV : (w : E) ∈ V := fun t ↦ (hLmem _).1 (hw t)
-    exact Subtype.ext ((Submodule.disjoint_def.1 hVW.disjoint) _ hwV w.2)
+    exact Subtype.ext ((Submodule.disjoint_def.1 hVW.disjoint) _ hwV w.property)
   have : IsZLattice ℝ L := by
     refine ⟨eq_top_iff.2 ?_⟩
     rw [← LinearMap.range_eq_top.2 (projectionOnto_surjective hVW.symm), LinearMap.range_eq_map,

@@ -7,13 +7,11 @@ module
 
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
-public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
-import Mathlib.LinearAlgebra.Basis.Bilinear
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 
@@ -45,6 +43,10 @@ definite, so is `h`. This is the positive Hermitian form that a Euclidean metric
   conjugate of `h (x, y)`.
 * `LinearMap.BilinForm.sesqComplexification_baseChange_baseChange`: complexified maps preserving
   `B` preserve `h`.
+* `LinearMap.BilinForm.sesqComplexification_toLinearMap₂` and
+  `LinearMap.BilinForm.sesqComplexification_toLinearMap₂_one`: the sesquilinear complexification
+  of `Matrix.toLinearMap₂ b b M` is `Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ)` in `b.baseChange ℂ`
+  of the entrywise complexified matrix (and of `1` when `M = 1`).
 * `LinearMap.BilinForm.sesqComplexification_eq_zero_of_mem_eigenspace`: eigenspaces of a
   complexified map preserving `B` are `h`-orthogonal unless `conj z * w = 1`.
 * `LinearMap.BilinForm.sesqComplexification_baseChange_left_of_skewAdjoint`: real
@@ -54,12 +56,11 @@ definite, so is `h`. This is the positive Hermitian form that a Euclidean metric
 * `LinearMap.BilinForm.IsSymm.sesqComplexification`: `h` is Hermitian when `B` is symmetric.
 * `LinearMap.BilinForm.sesqComplexification_one_tmul_add_I_tmul_self`: for symmetric `B`,
   `h (a + i b, a + i b) = B (a, a) + B (b, b)`.
+* `QuadraticForm.polar_baseChange_tmulConj_eq_two_mul_sesqComplexification`: for symmetric `B` and
+  `Q v = B v v`, `polar (Q.baseChange ℂ) (conj x) y = 2 * B.sesqComplexification x y`.
 * `LinearMap.BilinForm.IsPosSemidef.sesqComplexification` and
   `LinearMap.BilinForm.sesqComplexification_self_pos`: `h` is positive semidefinite, respectively
   positive definite, when `B` is.
-* `Matrix.toLinearMapₛₗ₂_baseChange_complex_one`: for a finite real basis `b`, the Hermitian
-  coordinate form making `b.baseChange ℂ` orthonormal is the sesquilinear complexification of
-  `Matrix.toLinearMap₂ b b 1`.
 -/
 
 public section
@@ -108,6 +109,12 @@ theorem sesqComplexification_tmul_tmul (z w : ℂ) (v u : V) :
     B.sesqComplexification (z ⊗ₜ v) (w ⊗ₜ u) = starRingEnd ℂ z * w * B v u := by
   rw [sesqComplexification_apply, tmulConj_tmul, baseChange_tmul, Complex.real_smul, mul_comm]
 
+/-- Negating a real bilinear form negates its sesquilinear complexification. -/
+@[simp]
+theorem sesqComplexification_neg : (-B).sesqComplexification = -B.sesqComplexification := by
+  have h : (-B).baseChange ℂ = -B.baseChange ℂ := by ext; simp
+  rw [sesqComplexification, sesqComplexification, h, LinearMap.neg_comp]
+
 /-- The sesquilinear complexification evaluated at a conjugate is the complex-bilinear
 extension: `h (conj x, y) = B_ℂ (x, y)`. -/
 @[simp]
@@ -131,6 +138,29 @@ theorem sesqComplexification_baseChange_baseChange {B' : BilinForm ℝ V'} {f : 
       B.sesqComplexification x y := by
   rw [sesqComplexification_apply, sesqComplexification_apply, tmulConj_baseChange,
     baseChange_baseChange_baseChange hf]
+
+/-- **The sesquilinear complexification of a matrix-represented real bilinear form** is the
+complex sesquilinear form of the entrywise complexified matrix in the complexified basis. -/
+theorem sesqComplexification_toLinearMap₂ {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ V) (M : Matrix ι ι ℝ) :
+    sesqComplexification (Matrix.toLinearMap₂ b b M) =
+      Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ) (b.baseChange ℂ)
+        (M.map (algebraMap ℝ ℂ)) := by
+  refine LinearMap.ext_basis (b.baseChange ℂ) (b.baseChange ℂ) fun i j ↦ ?_
+  rw [Matrix.toLinearMapₛₗ₂_apply_basis, Module.Basis.baseChange_apply,
+    Module.Basis.baseChange_apply, sesqComplexification_tmul_tmul, map_one, one_mul, one_mul,
+    Matrix.toLinearMap₂_apply_basis, Matrix.map_apply]
+  rfl
+
+/-- **The sesquilinear complexification of the form making a real basis `b` orthonormal** is the
+Hermitian form making `b.baseChange ℂ` orthonormal. -/
+@[simp]
+theorem sesqComplexification_toLinearMap₂_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ V) :
+    sesqComplexification (Matrix.toLinearMap₂ b b (1 : Matrix ι ι ℝ)) =
+      Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ) (b.baseChange ℂ)
+        (1 : Matrix ι ι ℂ) := by
+  rw [sesqComplexification_toLinearMap₂, Matrix.map_one _ (map_zero _) (map_one _)]
 
 /-- **Eigenspaces of a complexified map preserving a real bilinear form are orthogonal for its
 sesquilinear complexification** unless their eigenvalues satisfy `conj z * w = 1`: the
@@ -198,6 +228,19 @@ theorem sesqComplexification_one_tmul_add_I_tmul_self (hB : B.IsSymm) (a b : V) 
     Complex.conj_I, hba, Complex.ofReal_add]
   linear_combination (-(B b b : ℂ)) * Complex.I_mul_I
 
+/-- **The polar form of a complexified quadratic form against complex conjugation**: for a
+symmetric real bilinear form `B` and a quadratic form `Q` with `Q v = B v v`,
+`polar (Q.baseChange ℂ) (conj x) y = 2 * B.sesqComplexification x y`. -/
+theorem _root_.QuadraticForm.polar_baseChange_tmulConj_eq_two_mul_sesqComplexification
+    {Q : QuadraticForm ℝ V} (hB : B.IsSymm) (hQB : ∀ v, Q v = B v v) (x y : ℂ ⊗[ℝ] V) :
+    QuadraticMap.polar (Q.baseChange ℂ) (tmulConj V x) y =
+      2 * B.sesqComplexification x y := by
+  have hQ : Q = B.toQuadraticMap := QuadraticMap.ext hQB
+  rw [hQ, ← QuadraticMap.polarBilin_apply_apply, ← QuadraticMap.two_nsmul_associated ℂ,
+    QuadraticMap.coe_associatedHom, QuadraticForm.associated_baseChange,
+    QuadraticMap.associated_left_inverse ℝ hB.eq, LinearMap.smul_apply, LinearMap.smul_apply,
+    nsmul_eq_mul, Nat.cast_ofNat, ← sesqComplexification_apply]
+
 /-- **The sesquilinear complexification of a positive semidefinite form is positive
 semidefinite.** -/
 theorem IsPosSemidef.sesqComplexification (hB : B.IsPosSemidef) :
@@ -222,20 +265,3 @@ theorem sesqComplexification_self_pos (hB : B.IsSymm) (hpos : B.toQuadraticMap.P
   rcases hab with h | h <;> linarith [hpos' h, hnonneg a, hnonneg b]
 
 end LinearMap.BilinForm
-
-namespace Matrix
-
-/-- For a finite basis `b` of a real module `V`, the Hermitian form on `ℂ ⊗[ℝ] V` making
-`b.baseChange ℂ` orthonormal is the sesquilinear complexification of the real bilinear form making
-`b` orthonormal. -/
-theorem toLinearMapₛₗ₂_baseChange_complex_one {V I : Type*} [AddCommGroup V] [Module ℝ V]
-    [Fintype I] [DecidableEq I] (b : Module.Basis I ℝ V) :
-    toLinearMapₛₗ₂ (starRingEnd ℂ) (b.baseChange ℂ) (b.baseChange ℂ) (1 : Matrix I I ℂ) =
-      LinearMap.BilinForm.sesqComplexification (toLinearMap₂ b b (1 : Matrix I I ℝ)) := by
-  refine LinearMap.ext_basis (b.baseChange ℂ) (b.baseChange ℂ) fun i j ↦ ?_
-  rw [toLinearMapₛₗ₂_apply_basis, Module.Basis.baseChange_apply, Module.Basis.baseChange_apply,
-    LinearMap.BilinForm.sesqComplexification_tmul_tmul, toLinearMap₂_apply_basis, map_one, one_mul,
-    one_mul]
-  by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
-
-end Matrix

@@ -107,7 +107,7 @@ equivalence. -/
 theorem teichmuller_pow_card_sub_one (x : (ResidueField R)ˣ) :
     teichmuller R x ^ (Nat.card (ResidueField R) - 1) = 1 := by
   rw [← rootsOfUnityMulEquivUnitsResidueField_symm_apply]
-  exact (mem_rootsOfUnity _ _).1 ((rootsOfUnityMulEquivUnitsResidueField R).symm x).2
+  exact (mem_rootsOfUnity _ _).1 ((rootsOfUnityMulEquivUnitsResidueField R).symm x).property
 
 /-- The simplifier-normalized form of the torsion property of the Teichmüller lift, stated with
 `Fintype.card` rather than `Nat.card`. -/
@@ -270,9 +270,9 @@ theorem coe_unitsMulEquivRootsOfUnityProdKerResidue_apply_fst (u : Rˣ) :
   rw [unitsMulEquivRootsOfUnityProdKerResidue_symm_apply] at h
   symm
   rw [teichmuller_eq_iff]
-  refine ⟨(mem_rootsOfUnity _ _).mp (unitsMulEquivRootsOfUnityProdKerResidue R u).1.2, ?_⟩
+  refine ⟨(mem_rootsOfUnity _ _).mp (unitsMulEquivRootsOfUnityProdKerResidue R u).1.property, ?_⟩
   have h' := congrArg (Units.map (residue R : R →* ResidueField R)) h
-  rw [map_mul, MonoidHom.mem_ker.mp (unitsMulEquivRootsOfUnityProdKerResidue R u).2.2,
+  rw [map_mul, MonoidHom.mem_ker.mp (unitsMulEquivRootsOfUnityProdKerResidue R u).2.property,
     mul_one] at h'
   exact congrArg Units.val h'
 

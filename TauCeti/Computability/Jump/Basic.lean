@@ -42,7 +42,8 @@ of the set oracles.
 * `Set.oneOneReducible_jump`, `Set.turingReducible_jump`: `Z` reduces to its jump.
 * `Set.not_jump_turingReducible`: the jump of `Z` is not computable relative to `Z`.
 * `Set.not_computablePred_mem_jump`: in particular, no jump is computable.
-* `Set.rePred_mem_jump_empty`: the halting set `(∅ : Set ℕ).jump` is c.e.
+* `Set.rePred_mem_jump_of_computablePred`, `Set.rePred_mem_jump_empty`: the jump of a computable
+  set, and in particular the halting set `(∅ : Set ℕ).jump`, is c.e.
 * `Set.oneOneReducible_jump_jump`, `Set.turingReducible_jump_jump`: if `A` is Turing reducible to
   `B`, then `A'` reduces one-one, and hence Turing, to `B'`.
 * `Set.oneOneEquiv_jump_jump`, `Set.turingEquivalent_jump_jump`: Turing equivalent sets have
@@ -203,13 +204,17 @@ theorem recursiveIn_eval_diag :
     (Primrec.nat_iff.1 (Primrec₂.natPair.comp Primrec.id Primrec.id))).of_eq fun e => by
       rw [hZ, Code.eval_universal, id_eq]
 
+variable {A B : Set ℕ}
+
+/-- The jump of a computable set is c.e. -/
+theorem rePred_mem_jump_of_computablePred (hA : ComputablePred (· ∈ A)) :
+    REPred (· ∈ A.jump) :=
+  ((RecursiveIn.iff_nat.2 A.recursiveIn_eval_diag).partrec_of_oracle
+    (by rintro _ rfl; exact (A.partrec_oracle_iff).2 hA)).dom_re
+
 /-- **The halting set is c.e.:** membership in `(∅ : Set ℕ).jump` is an `REPred`. -/
 theorem rePred_mem_jump_empty : REPred (· ∈ (∅ : Set ℕ).jump) :=
-  (Partrec.nat_iff.2 <| (∅ : Set ℕ).recursiveIn_eval_diag.partrec_of_oracle fun g hg => by
-    rw [Set.mem_singleton_iff.1 hg, oracle_empty]
-    exact Partrec.nat_iff.1 (Partrec.const' _)).dom_re.of_eq fun _ => mem_jump.symm
-
-variable {A B : Set ℕ}
+  rePred_mem_jump_of_computablePred ((turingReducible_empty_iff ∅).1 .rfl)
 
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then `A'` reduces one-one to
 `B'`. -/

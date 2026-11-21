@@ -44,7 +44,7 @@ is `c(x) = √2 ε(x)` on `W` and `c(y) = (1/√2)` times contraction on `W'`, b
 
 The native action `TauCeti.spinAction`, which is `ε(v^(1,0)) - 2 ι(v^(0,1))`, is instead a
 `*`-representation for the pullback `H (T s) (T t)` of `H` along the degree scaling `T` by `√2`
-that intertwines the two actions. On `⋀^p W` this native metric is `2 ^ p` times `H`, so the wedge
+that intertwines the two actions. On `⋀^p W` that native metric is `2 ^ p` times `H`, so the wedge
 basis is orthogonal for it with squared norms `2 ^ p`.
 
 For a Euclidean space with `Q (v) = -‖v‖²` and an orthogonal complex structure, such a basis
@@ -64,13 +64,15 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
   the normalized Fock action is a `*`-representation for the exterior Gram form `H` and real
   vectors act skew-Hermitianly, without choosing a basis.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_apply_eq_polar`,
-  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_eq_domRestrict₁₂_sesqComplexification`, and
+  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_eq_domRestrict₁₂_sesqComplexification`,
+  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_apply_eq_sesqComplexification`, and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_eq_sesqExteriorAlgebra`: an
   orthonormal basis of `W` identifies the wedge-basis form with the exterior Gram form `H`.
-* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti` and
-  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti_eq_det_polar`:
-  the Gram-determinant formula `H (x₁ ∧ … ∧ x_p) (y₁ ∧ … ∧ y_p) = det (h (xᵢ, yⱼ))` in every
-  degree `p`.
+* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti`,
+  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_ιMulti_ιMulti_eq_det_polar`,
+  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti`, and
+  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti_eq_det_sesqComplexification`:
+  the Gram-determinant formulas in every degree `p`.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_wedge_left`,
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_contract_left`,
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_fockAction_left`,
@@ -88,7 +90,8 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed. (2020), §2.2.4 and §12.1.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed., World Scientific (2020),
+  §2.2.4 and §12.1.
 -/
 
 public section
@@ -113,7 +116,7 @@ bilinear form `g`, the polar pairing of `conj x ∈ W'` on `W` is `-2` times
 `((g.sesqComplexification).domRestrict₁₂ W W) x`. -/
 theorem pairingEquiv_tmulConj_eq_domRestrict₁₂ (x : (J.spinPolarizationData hQJ hQ).W) :
     (J.spinPolarizationData hQJ hQ).pairingEquiv
-        ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.2⟩ =
+        ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.property⟩ =
       (-2 : ℂ) • (LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
         (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W x := by
   have hpolar : (Q.baseChange ℂ).polarBilin = (-2 : ℂ) • g.baseChange ℂ := by
@@ -140,7 +143,7 @@ theorem sesqExteriorAlgebra_domRestrict₁₂_wedge_left (x : (J.spinPolarizatio
       ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
         (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra s
         ((-(2 : ℂ)⁻¹) • (J.spinPolarizationData hQJ hQ).contract
-          ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.2⟩ t) := by
+          ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.property⟩ t) := by
   rw [SpinPolarizationData.wedge_apply, LinearMap.sesqExteriorAlgebra_ι_mul_left,
     SpinPolarizationData.contract_apply, J.pairingEquiv_tmulConj_eq_domRestrict₁₂ hQJ hQ hg hQg]
   simp only [map_smul, LinearMap.smul_apply, smul_smul]
@@ -156,14 +159,14 @@ theorem sesqExteriorAlgebra_domRestrict₁₂_contract_left (y : (J.spinPolariza
       ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
         (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra s
         ((-2 : ℂ) • (J.spinPolarizationData hQJ hQ).wedge
-          ⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.2⟩ t) := by
+          ⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.property⟩ t) := by
   obtain ⟨x, rfl⟩ : ∃ x : (J.spinPolarizationData hQJ hQ).W,
-      ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.2⟩ = y :=
-    ⟨⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.2⟩,
+      ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.property⟩ = y :=
+    ⟨⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.property⟩,
       Subtype.ext (tmulConj_tmulConj V y)⟩
   have hx : (⟨tmulConj V (tmulConj V (x : ℂ ⊗[ℝ] V)),
       J.tmulConj_mem_spinPolarizationData_W hQJ hQ
-        (J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.2)⟩ :
+        (J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.property)⟩ :
       (J.spinPolarizationData hQJ hQ).W) = x :=
     Subtype.ext (tmulConj_tmulConj V x)
   have hsymm : ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
@@ -186,7 +189,7 @@ private theorem sesqExteriorAlgebra_domRestrict₁₂_fockAction_ι_coe_W_left
         (J.fockAction hQJ hQ
           (conjStar Q (CliffordAlgebra.ι (Q.baseChange ℂ) (x : ℂ ⊗[ℝ] V))) t) := by
   have hx : tmulConj V (x : ℂ ⊗[ℝ] V) =
-      ((⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.2⟩ :
+      ((⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.property⟩ :
         (J.spinPolarizationData hQJ hQ).W') : ℂ ⊗[ℝ] V) := (rfl)
   rw [conjStar_ι, map_neg, hx, fockAction_ι_coe_W', fockAction_ι_coe_W]
   simp only [LinearMap.smul_apply, LinearMap.neg_apply, LinearMap.map_smulₛₗ, map_smul, map_neg,
@@ -205,7 +208,7 @@ private theorem sesqExteriorAlgebra_domRestrict₁₂_fockAction_ι_coe_W'_left
         (J.fockAction hQJ hQ
           (conjStar Q (CliffordAlgebra.ι (Q.baseChange ℂ) (y : ℂ ⊗[ℝ] V))) t) := by
   have hy : tmulConj V (y : ℂ ⊗[ℝ] V) =
-      ((⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.2⟩ :
+      ((⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.property⟩ :
         (J.spinPolarizationData hQJ hQ).W) : ℂ ⊗[ℝ] V) := (rfl)
   rw [conjStar_ι, map_neg, hy, fockAction_ι_coe_W', fockAction_ι_coe_W]
   simp only [LinearMap.smul_apply, LinearMap.neg_apply, LinearMap.map_smulₛₗ, map_smul, map_neg,
@@ -232,7 +235,7 @@ theorem sesqExteriorAlgebra_domRestrict₁₂_fockAction_left (a : CliffordAlgeb
   | ι w =>
     obtain ⟨⟨⟨x, y⟩, z⟩, rfl⟩ := (J.spinPolarizationData hQJ hQ).decompositionEquiv.surjective w
     have hz : (z : ℂ ⊗[ℝ] V) = 0 := by
-      simpa only [spinPolarizationData_line, Submodule.mem_bot] using z.2
+      simpa only [spinPolarizationData_line, Submodule.mem_bot] using z.property
     rw [SpinPolarizationData.decompositionEquiv_apply]
     dsimp only
     rw [hz, add_zero]
@@ -272,7 +275,7 @@ theorem sesqExteriorAlgebra_domRestrict₁₂_realFockAction_left (a : CliffordA
 
 end GramMetric
 
-section BasisMetric
+section PolarizationMetric
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure V)
   {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
@@ -318,7 +321,16 @@ theorem toLinearMapₛₗ₂_eq_domRestrict₁₂_sesqComplexification {g : Line
   rw [J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb, hpair]
   ring
 
-end BasisMetric
+/-- In the geometric convention `Q (v) = -g (v, v)` for a symmetric real bilinear form `g`, the
+Hermitian form on `W` making `b` orthonormal is the restriction of `g.sesqComplexification`. -/
+theorem toLinearMapₛₗ₂_apply_eq_sesqComplexification {g : LinearMap.BilinForm ℝ V}
+    (hg : g.IsSymm) (hQg : ∀ v, Q v = -g v v) (x y : (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b b (1 : Matrix ι ι ℂ) x y =
+      g.sesqComplexification (x : ℂ ⊗[ℝ] V) y := by
+  rw [J.toLinearMapₛₗ₂_eq_domRestrict₁₂_sesqComplexification hQJ hQ b hb hg hQg,
+    LinearMap.domRestrict₁₂_apply]
+
+end PolarizationMetric
 
 section Metric
 
@@ -401,7 +413,7 @@ theorem toLinearMapₛₗ₂_wedge_left (x : (J.spinPolarizationData hQJ hQ).W)
       toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
         (1 : Matrix (Finset ι) (Finset ι) ℂ) s
         ((-(2 : ℂ)⁻¹) • (J.spinPolarizationData hQJ hQ).contract
-          ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.2⟩ t) := by
+          ⟨tmulConj V x, J.tmulConj_mem_spinPolarizationData_W' hQJ hQ x.property⟩ t) := by
   obtain ⟨_, hg, hQg, hEq⟩ := J.exists_bilinForm_toLinearMapₛₗ₂_exteriorAlgebra_eq hQJ hQ b hb
   rw [hEq]
   exact J.sesqExteriorAlgebra_domRestrict₁₂_wedge_left hQJ hQ hg hQg x s t
@@ -416,7 +428,7 @@ theorem toLinearMapₛₗ₂_contract_left (y : (J.spinPolarizationData hQJ hQ).
       toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
         (1 : Matrix (Finset ι) (Finset ι) ℂ) s
         ((-2 : ℂ) • (J.spinPolarizationData hQJ hQ).wedge
-          ⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.2⟩ t) := by
+          ⟨tmulConj V y, J.tmulConj_mem_spinPolarizationData_W hQJ hQ y.property⟩ t) := by
   obtain ⟨_, hg, hQg, hEq⟩ := J.exists_bilinForm_toLinearMapₛₗ₂_exteriorAlgebra_eq hQJ hQ b hb
   rw [hEq]
   exact J.sesqExteriorAlgebra_domRestrict₁₂_contract_left hQJ hQ hg hQg y s t
@@ -461,6 +473,35 @@ theorem toLinearMapₛₗ₂_realFockAction_left (a : CliffordAlgebra Q)
   rw [realFockAction_apply, realFockAction_apply, J.toLinearMapₛₗ₂_fockAction_left hQJ hQ b hb,
     conjStar_ofBaseChangeAux]
 
+/-- **The Gram-determinant formula for the Fock metric**: for an orthonormal basis `b` of `W` and
+the metric `H` making its wedge basis orthonormal, the pairing of two decomposable wedges of
+degree `p` is the determinant of `h (xᵢ, yⱼ) = -(1/2) polar Q_ℂ (conj xᵢ, yⱼ)`, in every degree
+`p` including degree zero and degrees above the rank. -/
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti (p : ℕ)
+    (x y : Fin p → (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ)
+        (ExteriorAlgebra.ιMulti ℂ p x) (ExteriorAlgebra.ιMulti ℂ p y) =
+      (Matrix.of fun i j ↦
+        -(2 : ℂ)⁻¹ * polar (Q.baseChange ℂ) (tmulConj V (x i)) (y j)).det := by
+  rw [ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti]
+  congr 1
+  ext i j
+  exact J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb (x i) (y j)
+
+/-- **The Gram-determinant formula in the geometric convention** `Q (v) = -g (v, v)`: for symmetric
+`g`, the normalized Fock metric is the exterior Gram metric of `g.sesqComplexification` restricted
+to `W`, evaluating on decomposable `p`-vectors as `det (g_ℂ (conj xᵢ, yⱼ))` in every degree `p`. -/
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti_eq_det_sesqComplexification {g : LinearMap.BilinForm ℝ V}
+    (hg : g.IsSymm) (hQg : ∀ v, Q v = -g v v) (p : ℕ)
+    (x y : Fin p → (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ)
+        (_root_.ExteriorAlgebra.ιMulti ℂ p x) (_root_.ExteriorAlgebra.ιMulti ℂ p y) =
+      (Matrix.of fun i j ↦ g.sesqComplexification (x i : ℂ ⊗[ℝ] V) (y j)).det := by
+  rw [_root_.ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti]
+  simp only [J.toLinearMapₛₗ₂_apply_eq_sesqComplexification hQJ hQ b hb hg hQg]
+
 /-- **The Fock metric does not depend on the orthonormal basis**: two bases of `W` orthonormal for
 `h (x, y) = -(1/2) polar Q_ℂ (conj x, y)` give the same metric on `⋀ W`. -/
 theorem toLinearMapₛₗ₂_exteriorAlgebra_eq {ι' : Type*} [Fintype ι'] [LinearOrder ι']
@@ -503,11 +544,10 @@ theorem toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower {p : ℕ}
         (1 : Matrix (Finset ι) (Finset ι) ℂ) (degreeScaling r s) (degreeScaling r t) =
       2 ^ p * toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
         (1 : Matrix (Finset ι) (Finset ι) ℂ) s t := by
-  have h2 : starRingEnd ℂ (r : ℂ) * r = 2 := by
-    rw [hr, Complex.conj_ofReal, ← Complex.ofReal_mul,
+  have h2 : star (r : ℂ) * r = 2 := by
+    rw [← starRingEnd_apply, hr, Complex.conj_ofReal, ← Complex.ofReal_mul,
       Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
-  rw [ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower b
-    (starRingEnd ℂ) r hs, h2]
+  rw [ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower b r hs, h2]
 
 /-- **The native action is a `*`-representation for the native Fock metric**: for an orthonormal
 basis `b` of `W`, the metric `H` making its wedge basis orthonormal and the degree scaling `T` by

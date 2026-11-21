@@ -83,8 +83,8 @@ private theorem exists_lieSubalgebra_isCompl_of_isCompl_map_mkQ [CharZero K] {L 
   -- The ideal `I ∩ P = A` of `P` is abelian with quotient `L ⧸ I`: apply the abelian case.
   have : IsLieAbelian (I.comap P.incl) := ⟨fun x y ↦ by
     ext
-    exact LieIdeal.lie_eq_zero_of_mem (hPI x.1.2 (LieIdeal.mem_comap.1 x.2))
-      (hPI y.1.2 (LieIdeal.mem_comap.1 y.2))⟩
+    exact LieIdeal.lie_eq_zero_of_mem (hPI x.val.property (LieIdeal.mem_comap.1 x.property))
+      (hPI y.val.property (LieIdeal.mem_comap.1 y.property))⟩
   have := I.isKilling_quotient_comap_incl hIP
   obtain ⟨T, hT⟩ := (I.comap P.incl).exists_lieSubalgebra_isCompl_of_isLieAbelian
   exact ⟨T.map P.incl, I.isCompl_map_incl hIP hT⟩

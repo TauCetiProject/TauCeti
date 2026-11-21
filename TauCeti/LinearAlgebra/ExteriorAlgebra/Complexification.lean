@@ -165,7 +165,7 @@ theorem sesqComplexification_sesqExteriorAlgebra_eq_zero_of_mem_baseChange_of_ne
     induction y' using TensorProduct.inductionOn with
     | add v₁ v₂ hv₁ hv₂ => simp only [map_add, hv₁, hv₂, add_zero]
     | tmul w v =>
-      simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq u.2 v.2]
+      simp [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq u.property v.property]
 
 /-- **Complexification commutes with exterior Gram forms on the exterior algebra**: under
 `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`, `B.sesqComplexification.sesqExteriorAlgebra` on
@@ -216,7 +216,7 @@ theorem sesqExteriorAlgebra_sesqComplexification_baseChangeEquiv (B : BilinForm 
         · rw [B.sesqComplexification.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
               (Subtype.prop _) (Subtype.prop _),
             sesqComplexification_tmul_tmul,
-            B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.2 t.2,
+            B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq s.property t.property,
             Complex.ofReal_zero, mul_zero]
   simpa [K, e, TauCeti.tmulConj_tmulConj] using LinearMap.congr_fun₂ h (K x) y
 
@@ -246,7 +246,8 @@ theorem toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one :
         (b.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ) =
       (LinearMap.BilinForm.sesqComplexification
         (toLinearMap₂ b b (1 : Matrix I I ℝ))).sesqExteriorAlgebra := by
-  rw [toLinearMapₛₗ₂_exteriorAlgebra_one, toLinearMapₛₗ₂_baseChange_complex_one]
+  rw [toLinearMapₛₗ₂_exteriorAlgebra_one,
+    ← LinearMap.BilinForm.sesqComplexification_toLinearMap₂_one]
 
 /-- Pulling the Hermitian wedge-basis form of `b.baseChange ℂ` back along
 `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ` gives the sesquilinear complexification of the real

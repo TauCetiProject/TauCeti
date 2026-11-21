@@ -199,7 +199,7 @@ theorem atomicPart_eq_sum_dirac (μ : Measure X) :
         (fun x y hxy ↦ disjoint_singleton.2 (fun h ↦ hxy (Subtype.ext h)))
         (by rw [hU]; exact h)).mono ?_
       intro x _
-      exact pos_iff_ne_zero.2 x.2.2
+      exact pos_iff_ne_zero.2 x.property.2
     rw [htop, hμ]
 
 /-- The diffuse part gives zero mass to every singleton. -/
