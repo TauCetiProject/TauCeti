@@ -10,8 +10,8 @@ public import Mathlib.Data.Nat.ModEq
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.ProperPower
 import TauCeti.Data.List.Infix
-import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
+import TauCeti.GroupTheory.FreeGroup.Periodic
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
@@ -158,7 +158,8 @@ theorem modEq_of_isStableOccurrence {W A : FreeGroup α} (hA : ¬Group.IsProperP
   · exact (this h₂ h₁ hji hij (by lia)).symm
   obtain ⟨-, u, v, hW, rfl⟩ := h₁
   obtain ⟨-, u', v', hW', rfl⟩ := h₂
-  refine (Nat.modEq_iff_dvd' hle).2 ((rotate_toWord_eq_self_iff hA).1 ?_)
+  refine (Nat.modEq_iff_dvd' hle).2
+    ((rotate_eq_self_iff_of_not_isProperPower (by rwa [mk_toWord])).1 ?_)
   -- the `|A|` letters of `W` from position `|u'|` are the first copy of `A` in the second block
   -- and the factor at offset `|u'| - |u|` of the first block
   have hX : u'.length - u.length + A.toWord.length ≤ (q + 2) * A.toWord.length := by

@@ -53,6 +53,8 @@ sections ([IFT], §5.4).
   word has the period `|P|` and begins with a cyclic permutation of `P` or of `P⁻¹`.
 * `FreeGroup.eq_length_of_hasPeriod`: a word that is not a proper power has no period properly
   dividing its length.
+* `FreeGroup.rotate_eq_self_iff_of_not_isProperPower`: a word that is not a proper power is fixed
+  only by the rotations by multiples of its length.
 * `FreeGroup.rotate_eq_rotate_iff_of_not_isProperPower`: the rotations of a word that is not a
   proper power are pairwise distinct.
 * `FreeGroup.modEq_of_prefix_drop_flatten_replicate`: uniqueness of the place where a periodic
@@ -181,11 +183,11 @@ theorem eq_length_of_hasPeriod {P : List (α × Bool)} (hP : ¬Group.IsProperPow
       Nat.mul_div_cancel_left k hd0] at this
     rw [pow_mk, this]
 
-/- A word that is not a proper power in the free group is fixed by a rotation only if the length
-of the word divides it: otherwise it would have two periods whose greatest common divisor properly
-divides its length. -/
-private theorem length_dvd_of_rotate_eq_self {P : List (α × Bool)}
-    (hP : ¬Group.IsProperPower (mk P)) {k : ℕ} (hk : P.rotate k = P) : P.length ∣ k := by
+/-- A word that is not a proper power in the free group is fixed by no nontrivial rotation:
+rotating it by `k` gives it back exactly when its length divides `k`. -/
+theorem rotate_eq_self_iff_of_not_isProperPower {P : List (α × Bool)}
+    (hP : ¬Group.IsProperPower (mk P)) {k : ℕ} : P.rotate k = P ↔ P.length ∣ k := by
+  refine ⟨fun hk => ?_, fun ⟨c, hc⟩ => by rw [hc, List.rotate_length_mul]⟩
   have hpos : 0 < P.length := List.length_pos_iff.2 fun h => hP (by simp [h, ← one_eq_mk])
   have hlt := Nat.mod_lt k hpos
   rw [← List.rotate_mod] at hk
@@ -217,8 +219,8 @@ theorem rotate_eq_rotate_iff_of_not_isProperPower {P : List (α × Bool)}
     · exact (this h.symm (by lia)).symm
     have hk : (P.rotate i).rotate (j - i) = P.rotate i := by
       rw [List.rotate_rotate, Nat.add_sub_cancel' hij, h]
-    have := length_dvd_of_rotate_eq_self
-      (by rwa [(List.IsRotated.forall P i).isProperPower_mk_iff]) hk
+    have := (rotate_eq_self_iff_of_not_isProperPower
+      (by rwa [(List.IsRotated.forall P i).isProperPower_mk_iff])).1 hk
     rw [List.length_rotate] at this
     exact (Nat.modEq_iff_dvd' hij).2 this
   · rw [← List.rotate_mod P i, h, List.rotate_mod]
