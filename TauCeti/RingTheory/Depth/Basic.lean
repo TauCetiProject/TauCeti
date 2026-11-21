@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
@@ -596,6 +596,19 @@ theorem depth_eq_depth_of_surjective [IsNoetherianRing R] {T : Type*} [CommRing 
       ⟨ts.map (Function.surjInv hsurj), by simp⟩
     obtain ⟨h, hm⟩ := (key rs).1 ⟨h, hm⟩
     exact ⟨rs, h, hm, by rw [← hn, List.length_map]⟩
+
+omit [Module R M] in
+/-- Restriction of scalars along a quotient `R → R ⧸ I` to a local quotient preserves depth of
+finite modules over a Noetherian local ring `R`. -/
+theorem depth_restrictScalars_quotient [IsNoetherianRing R] {I : Ideal R}
+    [IsLocalRing (R ⧸ I)] (M : ModuleCat.{v} (R ⧸ I)) [Module.Finite (R ⧸ I) M] :
+    depth ((ModuleCat.restrictScalars (Ideal.Quotient.mk I)).obj M) =
+      depth (ModuleCat.of (R ⧸ I) M) := by
+  let _ : Algebra R (R ⧸ I) := Ideal.Quotient.algebra R
+  let _ : Module R M := Module.compHom M (Ideal.Quotient.mk I)
+  have _ : IsScalarTower R (R ⧸ I) M := .of_algebraMap_smul fun _ _ ↦ rfl
+  have _ : Small.{v} (R ⧸ I) := small_of_surjective Ideal.Quotient.mk_surjective
+  exact depth_eq_depth_of_surjective Ideal.Quotient.mk_surjective
 
 /-- Restriction of scalars along a bijective homomorphism of local rings preserves depth,
 without finiteness or Noetherian hypotheses. -/

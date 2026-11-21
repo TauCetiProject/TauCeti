@@ -19,7 +19,8 @@ Minimality is essential: adjoining contractible disks can change the terms in ar
 high degrees without changing the homotopy type. We do not assert that strict periodicity
 of an arbitrary projective resolution is a homotopy invariant. The result applies to local
 rings, where minimality is the maximal-ideal criterion, without requiring finite projective
-dimension or a bound on the lengths of the resolutions.
+dimension or a bound on the lengths of the resolutions. Unfolding a periodic complex of modules
+preserves and reflects minimality (`TauCeti.PeriodicComplex.resolutionComplex_isMinimal_iff`).
 
 ## References
 
@@ -62,3 +63,29 @@ theorem hasPeriodicTail_iff_of_isMinimal
   (P.homotopyEquiv Q).hasPeriodicTail_iff_of_isMinimal hP hQ n p
 
 end CategoryTheory.ProjectiveResolution
+
+namespace TauCeti.PeriodicComplex
+
+private theorem zmod_sub_natCast_add_one {n : ℕ} (j : ℤ) (k : ℕ) :
+    ((j - (k + 1 : ℕ) : ℤ) : ZMod n) + 1 = ((j - k : ℤ) : ZMod n) := by
+  push_cast
+  ring
+
+/-- Unfolding a positive-period `ZMod n`-indexed complex of modules from any starting index `j : ℤ`
+gives a minimal chain complex if and only if the periodic complex is minimal. -/
+theorem resolutionComplex_isMinimal_iff {R : Type u} [CommRing R] {n : ℕ} [NeZero n]
+    (Q : HomologicalComplex (ModuleCat.{v} R) (ComplexShape.up (ZMod n))) (j : ℤ) :
+    (resolutionComplex Q j).IsMinimal ↔ Q.IsMinimal := by
+  rw [ChainComplex.isMinimal_iff_range_d_succ_le, HomologicalComplex.isMinimal_iff_forall_rel]
+  refine ⟨fun h a b hab ↦ ?_, fun h k ↦ ?_⟩
+  · obtain ⟨k, hk⟩ : ∃ k : ℕ, ((j - k : ℤ) : ZMod n) = b :=
+      ⟨((j : ZMod n) - b).val, by push_cast; simp⟩
+    have hk' : ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = a :=
+      add_right_cancel ((zmod_sub_natCast_add_one j k).trans (hk.trans hab.symm))
+    subst hk hk'
+    rintro _ ⟨x, rfl⟩
+    exact resolutionComplex_d Q j k ▸ h k ⟨x, rfl⟩
+  · rw [resolutionComplex_d]
+    exact h _ _ (zmod_sub_natCast_add_one j k)
+
+end TauCeti.PeriodicComplex

@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CohenMacaulay.RegularSequence
+import TauCeti.RingTheory.LocalRing.Quotient
 
 /-!
 # Quotients of the expected dimension
 
 In a Cohen–Macaulay local ring, equations cutting out the expected dimension form a regular
 sequence. Consequently their quotient is again Cohen–Macaulay. This criterion applies to
-local complete intersections without requiring a regular sequence as input.
+local complete intersections without requiring a regular sequence as input. Also included is the
+principal-ideal equivalence modulo a regular element
+(`Module.isCohenMacaulay_quotient_span_singleton_iff`,
+`Module.IsCohenMacaulay.quotient_span_singleton`).
 
 ## References
 
@@ -22,10 +26,40 @@ local complete intersections without requiring a regular sequence as input.
 public section
 
 open IsLocalRing
+open scoped Pointwise
 
-namespace Module.IsCohenMacaulay
+namespace Module
+
+section
+
+variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] {w : R}
+  [IsLocalRing (R ⧸ Ideal.span {w})]
+
+/-- **Cohen–Macaulayness modulo a regular element.** For an `R`-regular element `w` of a Noetherian
+local ring `R` with local quotient `R ⧸ (w)`, `R ⧸ (w)` is Cohen–Macaulay iff `R` is. -/
+theorem isCohenMacaulay_quotient_span_singleton_iff (hw : IsSMulRegular R w) :
+    IsCohenMacaulay (R ⧸ Ideal.span {w}) (R ⧸ Ideal.span {w}) ↔ IsCohenMacaulay R R := by
+  have hwm : w ∈ maximalIdeal R :=
+    (Ideal.span_singleton_le_iff_mem _).1
+      (le_maximalIdeal (TauCeti.IsLocalRing.isLocalRing_quotient_iff.1 inferInstance))
+  have hspan : w • (⊤ : Ideal R) = Ideal.span {w} := by
+    rw [← Submodule.ideal_span_singleton_smul, Ideal.smul_eq_mul, Ideal.mul_top]
+  rw [← isCohenMacaulay_iff_isCohenMacaulay_of_surjective Ideal.Quotient.mk_surjective,
+    ← (Submodule.quotEquivOfEq _ _ hspan).isCohenMacaulay_iff,
+    isCohenMacaulay_quotSMulTop_iff hw hwm]
+
+end
+
+namespace IsCohenMacaulay
 
 variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+
+/-- The quotient of a Noetherian Cohen–Macaulay local ring by a regular element with local
+quotient is Cohen–Macaulay. -/
+theorem quotient_span_singleton {w : R} [IsLocalRing (R ⧸ Ideal.span {w})]
+    (hR : IsCohenMacaulay R R) (hw : IsSMulRegular R w) :
+    IsCohenMacaulay (R ⧸ Ideal.span {w}) (R ⧸ Ideal.span {w}) :=
+  (isCohenMacaulay_quotient_span_singleton_iff hw).2 hR
 
 /-- A quotient of a Cohen–Macaulay local ring is Cohen–Macaulay if its dimension drops by
 the number of generators of the kernel. -/
@@ -57,4 +91,5 @@ theorem of_surjective_of_ringKrullDim_add_length_eq {S : Type*} [CommRing S] [Is
     ((Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective
       Ideal.Quotient.mk_surjective).1 hquot)
 
-end Module.IsCohenMacaulay
+end IsCohenMacaulay
+end Module

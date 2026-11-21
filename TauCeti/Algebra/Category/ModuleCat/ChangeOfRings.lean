@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.LinearAlgebra.TensorProduct.Cyclic
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
 # Change of rings
@@ -319,6 +320,32 @@ theorem ExtendScalars.span_singleton_one_tmul_eq_top
   exact ⟨s, key s⟩
 
 end Cyclic
+
+section QuotientRange
+
+variable {R : Type u} [CommRing R]
+
+/-- Extending scalars along `R → R ⧸ I` preserves and reflects having range contained in `J • ⊤`
+whenever `I ≤ J`. -/
+theorem ExtendScalars.range_map_quotient_le_map_smul_iff {I J : Ideal R} (hIJ : I ≤ J)
+    {P Q : ModuleCat.{v} R} (g : P ⟶ Q) :
+    LinearMap.range ((extendScalars (Ideal.Quotient.mk I)).map g).hom ≤
+        J.map (Ideal.Quotient.mk I) • ⊤ ↔
+      LinearMap.range g.hom ≤ J • ⊤ := by
+  let q := Ideal.Quotient.mk I
+  refine ⟨?_, ?_⟩
+  · rintro hg _ ⟨x, rfl⟩
+    exact (TensorProduct.one_tmul_mem_map_smul_top_iff hIJ _).1
+      (hg ⟨(1 : R ⧸ I) ⊗ₜ[R, q] x, ExtendScalars.map_tmul q g 1 x⟩)
+  · rintro hg _ ⟨z, rfl⟩
+    obtain ⟨x, rfl⟩ := TensorProduct.exists_one_tmul_eq (M := P) I z
+    change ((extendScalars q).map g) ((1 : R ⧸ I) ⊗ₜ[R, q] x) ∈ _
+    -- `((extendScalars q).map g).hom z` and `((extendScalars q).map g) z` agree by morphism
+    -- application; `change` exposes `DFunLike.coe` for `ExtendScalars.map_tmul`.
+    rw [ExtendScalars.map_tmul]
+    exact (TensorProduct.one_tmul_mem_map_smul_top_iff hIJ _).2 (hg ⟨x, rfl⟩)
+
+end QuotientRange
 
 end ModuleCat
 

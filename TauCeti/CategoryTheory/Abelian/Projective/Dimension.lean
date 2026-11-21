@@ -60,6 +60,17 @@ theorem projectiveDimension_le_of_hasProjectiveDimensionLT {D : Type*} [Category
     projectiveDimension Y ≤ projectiveDimension X :=
   sInf_le_sInf fun _ hd i hi ↦ h i (hd i hi)
 
+/-- A nonzero object of finite projective dimension has projective dimension equal to a natural
+number. -/
+theorem exists_projectiveDimension_eq_natCast {X : C} (hX : ¬ IsZero X)
+    (hpd : projectiveDimension X ≠ ⊤) : ∃ p : ℕ, projectiveDimension X = p := by
+  have hbot : projectiveDimension X ≠ ⊥ := fun h ↦
+    hX ((projectiveDimension_eq_bot_iff X).1 h)
+  obtain ⟨p₀, hp₀⟩ := WithBot.ne_bot_iff_exists.1 hbot
+  obtain ⟨p, rfl⟩ := (ENat.ne_top_iff_exists (n := p₀)).1 fun h ↦
+    hpd (hp₀.symm.trans (by rw [h, WithBot.coe_top]))
+  exact ⟨p, hp₀.symm⟩
+
 /-- A subobject of a projective object is projective if its quotient has projective dimension
 at most one. -/
 theorem projective_of_mono_of_hasProjectiveDimensionLE_one {X Y : C} (f : X ⟶ Y)

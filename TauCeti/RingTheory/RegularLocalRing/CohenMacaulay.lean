@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.Algebra.Module.SpanRank
 import TauCeti.RingTheory.CohenMacaulay.Height
+import TauCeti.RingTheory.CohenMacaulay.Quotient
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 import TauCeti.RingTheory.Regular.RegularSequence
 
@@ -30,6 +31,8 @@ regular local rings.
 * `TauCeti.IsRegularLocalRing.depth_eq_ringKrullDim`: the depth of a regular local ring over
   itself is its Krull dimension.
 * `TauCeti.IsRegularLocalRing.isCohenMacaulay`: a regular local ring is Cohen–Macaulay over itself.
+* `TauCeti.IsRegularLocalRing.isCohenMacaulay_quotient_span_singleton`: a local hypersurface
+  `R ⧸ (w)` (`w ≠ 0`) in a regular local ring `R` is Cohen–Macaulay.
 
 The proof is induction on the dimension: the first entry `x` of a regular system of parameters
 lies outside `𝔪²`, so it is a nonzero element of the domain `R` and `R ⧸ (x)` is a regular local
@@ -117,6 +120,13 @@ theorem depth_eq_ringKrullDim :
 theorem isCohenMacaulay : Module.IsCohenMacaulay R R := by
   rw [Module.isCohenMacaulay_iff_depth_eq, Module.supportDim_self_eq_ringKrullDim]
   exact depth_eq_ringKrullDim
+
+/-- A local hypersurface `R ⧸ (w)` (`w ≠ 0`) in a regular local ring `R` is Cohen–Macaulay. -/
+theorem isCohenMacaulay_quotient_span_singleton {w : R} [_root_.IsLocalRing (R ⧸ span {w})]
+    (hw : w ≠ 0) :
+    Module.IsCohenMacaulay (R ⧸ span {w}) (R ⧸ span {w}) :=
+  have := isDomain (R := R)
+  isCohenMacaulay.quotient_span_singleton (.of_ne_zero hw)
 
 end TauCeti.IsRegularLocalRing
 

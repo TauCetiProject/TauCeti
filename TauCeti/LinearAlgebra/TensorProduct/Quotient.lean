@@ -59,6 +59,8 @@ relations, for instance the rationalisation of a module over an integral group r
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
+* `TensorProduct.one_tmul_mem_map_smul_top_iff`: for `I ≤ J`, `1 ⊗ m ∈ (J.map q) • ⊤` iff
+  `m ∈ J • ⊤`.
 * `TensorProduct.ker_mk_one_of_surjective`: if `R → S` is surjective with kernel `I`, then
   `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`.
 * `TensorProduct.mk_one_bijective_of_ker_le_annihilator`: if `R → S` is surjective and its
@@ -136,6 +138,37 @@ theorem mk_one_bijective_of_ker_le_annihilator {S : Type*} [CommRing S] [Algebra
   rw [ker_mk_one_of_surjective hS, eq_bot_iff]
   refine (Submodule.smul_mono_left hM).trans_eq ?_
   rw [← Submodule.annihilator_top, Submodule.annihilator_smul]
+
+/-- If `I ≤ J`, a pure tensor `1 ⊗ m` in `(R ⧸ I) ⊗[R] M` lies in `(J.map q) • ⊤` if and only if
+`m` lies in `J • ⊤`. -/
+theorem one_tmul_mem_map_smul_top_iff {I J : Ideal R} (hIJ : I ≤ J) (m : M) :
+    (1 : R ⧸ I) ⊗ₜ[R] m ∈
+        (J.map (Ideal.Quotient.mk I) • ⊤ : Submodule (R ⧸ I) ((R ⧸ I) ⊗[R] M)) ↔
+      m ∈ (J • ⊤ : Submodule R M) := by
+  let q := Ideal.Quotient.mk I
+  constructor
+  · intro hm
+    obtain ⟨z, hz, heq⟩ : ∃ z ∈ (J • ⊤ : Submodule R M),
+        (1 : R ⧸ I) ⊗ₜ[R] z = (1 : R ⧸ I) ⊗ₜ[R] m :=
+      Submodule.smul_induction_on hm
+        (fun r hr t _ ↦ by
+          obtain ⟨s, hs, rfl⟩ := (Ideal.mem_map_iff_of_surjective _
+            Ideal.Quotient.mk_surjective).1 hr
+          obtain ⟨x, rfl⟩ := exists_one_tmul_eq I t
+          exact ⟨s • x, Submodule.smul_mem_smul hs Submodule.mem_top,
+            (smul_tmul s (1 : R ⧸ I) x).symm⟩)
+        (fun _ _ ⟨z₁, hz₁, h₁⟩ ⟨z₂, hz₂, h₂⟩ ↦
+          ⟨z₁ + z₂, add_mem hz₁ hz₂, by rw [tmul_add, h₁, h₂]⟩)
+    have hker : m - z ∈ LinearMap.ker (mk R (R ⧸ I) M 1) := by
+      rw [LinearMap.mem_ker, mk_apply, tmul_sub, sub_eq_zero]
+      exact heq.symm
+    rw [LinearMap.ker_tensorProductMk] at hker
+    exact add_sub_cancel z m ▸ add_mem hz (Submodule.smul_mono_left hIJ hker)
+  · exact fun hm ↦ Submodule.smul_induction_on hm
+      (fun s hs x _ ↦ by
+        rw [(smul_tmul s (1 : R ⧸ I) x).symm.trans (smul_tmul' (q s) (1 : R ⧸ I) x).symm]
+        exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem q hs) Submodule.mem_top)
+      (fun _ _ hx hy ↦ by rw [tmul_add]; exact add_mem hx hy)
 
 end TensorProduct
 

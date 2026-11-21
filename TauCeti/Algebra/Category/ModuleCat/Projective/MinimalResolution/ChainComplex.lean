@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
 public import TauCeti.Algebra.Homology.ModuleCat.Minimal
+import TauCeti.CategoryTheory.Abelian.Projective.Resolution
+import TauCeti.RingTheory.LocalRing.Module
 
 /-!
 # Bounded minimal free chain resolutions
@@ -21,7 +23,8 @@ resolution differentials.
 This file identifies the recursive minimality condition on a finite resolution with the
 condition on the differentials of its spliced chain complex. It then converts the minimal
 finite projective resolution into Mathlib's `CategoryTheory.ProjectiveResolution`, retaining
-both minimality and the length bound.
+both minimality and the length bound, and provides inductive step constructors
+`ModuleCat.exists_consProjectiveResolution` and `ModuleCat.exists_minimal_syzygy`.
 
 ## References
 
@@ -109,5 +112,51 @@ theorem exists_projectiveResolution_finite_free_minimal {R : Type u} [CommRing R
   · have := r.finite_toProjectiveResolution_X hP i
     exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
   · exact hmin.isMinimal_toProjectiveResolution_complex hP
+
+/-- Prepending a minimal finite-free presentation `0 → K --i--> F --p--> M → 0` to a minimal
+finite-free projective resolution `Q` of `K` yields a minimal finite-free projective resolution `P`
+of `M` whose truncation is isomorphic to `Q`. -/
+theorem exists_consProjectiveResolution {R : Type u} [CommRing R] [IsLocalRing R]
+    {K F M : ModuleCat.{u} R} [Module.Finite R F] [Module.Free R F]
+    (Q : ProjectiveResolution K) {i : K ⟶ F} {p : F ⟶ M}
+    (hi : Function.Injective i.hom) (hip : Function.Exact i.hom p.hom)
+    (hp : Function.Surjective p.hom) (hi_min : LinearMap.range i.hom ≤ maximalIdeal R • ⊤)
+    (hQ_ff : ∀ k, Module.Finite R (Q.complex.X k) ∧ Module.Free R (Q.complex.X k))
+    (hQ_min : Q.complex.IsMinimal) :
+    ∃ P : ProjectiveResolution M,
+      (∀ k, Module.Finite R (P.complex.X k) ∧ Module.Free R (P.complex.X k)) ∧
+      P.complex.IsMinimal ∧ Nonempty (ChainComplex.truncate.obj P.complex ≅ Q.complex) := by
+  have : Module.Projective R F := Module.Projective.of_free
+  have : Projective F := ModuleCat.projective_of_categoryTheory_projective F
+  have hip' : i ≫ p = 0 := ModuleCat.hom_ext (LinearMap.ext hip.apply_apply_eq_zero)
+  have hS : (ShortComplex.mk i p hip').ShortExact :=
+    { exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 hip
+      mono_f := (ModuleCat.mono_iff_injective i).2 hi
+      epi_g := (ModuleCat.epi_iff_surjective p).2 hp }
+  let P := Q.cons hS
+  refine ⟨P, fun k ↦ ?_, ?_, ⟨Q.consTruncateIso hS⟩⟩
+  · rcases k with _ | k
+    · exact ⟨‹_›, ‹_›⟩
+    · exact hQ_ff k
+  · rw [ChainComplex.isMinimal_iff_range_d_succ_le_maximalIdeal_smul]
+    rw [ChainComplex.isMinimal_iff_range_d_succ_le_maximalIdeal_smul] at hQ_min
+    rintro (_ | k)
+    · exact (LinearMap.range_comp_le_range Q.augZero.hom i.hom).trans hi_min
+    · exact hQ_min k
+
+/-- Every finite module `M` over a Noetherian local ring admits a minimal finite-free presentation
+`0 → K --i--> F --p--> M → 0` with `K` finite and `range i ≤ 𝔪 • F`. -/
+theorem exists_minimal_syzygy {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+    (M : ModuleCat.{u} R) [Module.Finite R M] :
+    ∃ (F K : ModuleCat.{u} R) (i : K ⟶ F) (p : F ⟶ M),
+      Module.Finite R F ∧ Module.Free R F ∧ Module.Finite R K ∧
+      Function.Injective i.hom ∧ Function.Exact i.hom p.hom ∧ Function.Surjective p.hom ∧
+      LinearMap.range i.hom ≤ maximalIdeal R • ⊤ := by
+  obtain ⟨p₀, hp₀, hker⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul R M
+  have : Module.Finite R (LinearMap.ker p₀) := Module.Finite.iff_fg.2 (IsNoetherian.noetherian _)
+  exact ⟨.of R _, .of R (LinearMap.ker p₀),
+    ModuleCat.ofHom (LinearMap.ker p₀).subtype, ModuleCat.ofHom p₀,
+    inferInstance, inferInstance, inferInstance, Subtype.val_injective,
+    LinearMap.exact_subtype_ker_map p₀, hp₀, (Submodule.range_subtype _).le.trans hker⟩
 
 end ModuleCat

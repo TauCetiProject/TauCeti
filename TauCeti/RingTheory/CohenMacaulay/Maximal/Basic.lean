@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
-public import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
-public import TauCeti.RingTheory.RegularLocalRing.Free
+public import TauCeti.RingTheory.CohenMacaulay.Basic
+import Mathlib.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.RingTheory.LocalRing.Module
 
 /-!
@@ -15,8 +15,7 @@ import TauCeti.RingTheory.LocalRing.Module
 
 A module `M` over a local ring `R` is *maximal Cohen–Macaulay* (`Module.IsMaximalCohenMacaulay R M`)
 if `M = 0` or `depth M = ringKrullDim R`. For finite modules over a Noetherian local ring this is
-equivalent to `ringKrullDim R ≤ depth M` (`isMaximalCohenMacaulay_iff_ringKrullDim_le_depth`), and
-over a regular local ring to freeness (`IsRegularLocalRing.isMaximalCohenMacaulay_iff_free`).
+equivalent to `ringKrullDim R ≤ depth M` (`isMaximalCohenMacaulay_iff_ringKrullDim_le_depth`).
 Closure under extensions, binary products, retracts, and syzygies equips the full subcategory
 `TauCeti.MaximalCohenMacaulayModuleCat R` with `MaximalCohenMacaulayModuleCat.exactStructure`.
 
@@ -214,19 +213,6 @@ theorem of_exact_left [IsNoetherianRing R] {M N Q : Type v} [AddCommGroup M] [Mo
   exact WithBot.coe_le_coe.2 (depth_min_snd_trd_add_one_le_fst_of_exact f g hfg hf hg)
 
 end Module.IsMaximalCohenMacaulay
-
-namespace TauCeti.IsRegularLocalRing
-
-variable {R : Type u} [CommRing R] [_root_.IsRegularLocalRing R] [Small.{v} R]
-
-/-- **Maximal Cohen–Macaulay modules over a regular local ring are free.** A finite module over a
-regular local ring is maximal Cohen–Macaulay if and only if it is free. -/
-theorem isMaximalCohenMacaulay_iff_free (M : Type v) [AddCommGroup M] [Module R M]
-    [Module.Finite R M] : Module.IsMaximalCohenMacaulay R M ↔ Module.Free R M :=
-  ⟨fun h ↦ free_of_ringKrullDim_le_depth M h.ringKrullDim_le_depth,
-    fun _ ↦ isCohenMacaulay.isMaximalCohenMacaulay_of_free M⟩
-
-end TauCeti.IsRegularLocalRing
 
 namespace TauCeti
 section Category

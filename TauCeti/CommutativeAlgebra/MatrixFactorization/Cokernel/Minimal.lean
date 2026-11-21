@@ -1,0 +1,228 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Minimal
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.PeriodicResolution
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
+public import TauCeti.Algebra.Homology.Periodic.Minimal
+import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+import TauCeti.Algebra.Category.ModuleCat.Projective.LocalRing
+import TauCeti.RingTheory.LocalRing.Quotient
+import TauCeti.RingTheory.LocalRing.Module
+
+/-!
+# Minimality of cokernel resolutions of matrix factorizations
+
+Over a local ring `(S, 𝔪)` with local quotient `R = S ⧸ (w)`, reducing a finite-projective
+matrix factorization `X` modulo `w` preserves and reflects minimality
+(`TauCeti.MatrixFactorization.quotientPeriodicComplex_obj_isMinimal_iff`), as does unfolding the
+reduced two-periodic complex (`resolutionComplex_quotientPeriodicComplex_isMinimal_iff`) and forming
+Eisenbud's periodic resolution (`quotientCokernelProjectiveResolution_complex_isMinimal_iff`).
+
+When `w ∈ nonZeroDivisors S`, the odd differential `d₁` maps into `𝔪 • X₀` if and only if the
+reduced cokernel has no nonzero projective `R`-retract
+(`range_d₁_le_maximalIdeal_smul_iff_forall_projective_retract_isZero`), and Eisenbud's factorization
+`ofInjective f` of a minimal length-one presentation `0 → P --f--> Q --g--> M → 0` is minimal if
+and only if `M` has no nonzero projective `R`-retract (`isMinimal_ofInjective_iff`).
+
+## References
+
+* D. Eisenbud, *Homological algebra on a complete intersection, with an application to group
+  representations*, Trans. Amer. Math. Soc. **260** (1980), Sections 5–6.
+-/
+
+public section
+noncomputable section
+
+universe u
+
+open CategoryTheory Limits IsLocalRing
+
+namespace TauCeti.MatrixFactorization
+
+variable {S : Type u} [CommRing S] {w : S}
+variable [IsLocalRing S] [IsLocalRing (S ⧸ Ideal.span {w})]
+
+section LocalReduction
+
+/-- Over a local ring `S` with local quotient `S ⧸ (w)`, the reduced two-periodic complex of `X`
+is minimal if and only if `X` is minimal. -/
+@[simp]
+theorem quotientPeriodicComplex_obj_isMinimal_iff (X : MatrixFactorization S w) :
+    (quotientPeriodicComplex.obj X).IsMinimal ↔ X.IsMinimal := by
+  let q := Ideal.Quotient.mk (Ideal.span {w})
+  have hle : Ideal.span {w} ≤ maximalIdeal S :=
+    le_maximalIdeal (TauCeti.IsLocalRing.isLocalRing_quotient_iff.1 inferInstance)
+  have hmax : (maximalIdeal S).map q = maximalIdeal (S ⧸ Ideal.span {w}) := by
+    have : IsLocalHom q := .of_surjective _ Ideal.Quotient.mk_surjective
+    exact map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective
+  have hrange {P Q : ModuleCat.{u} S} (g : P ⟶ Q) :
+      LinearMap.range ((ModuleCat.extendScalars q).map g).hom ≤
+          maximalIdeal (S ⧸ Ideal.span {w}) • ⊤ ↔
+        LinearMap.range g.hom ≤ maximalIdeal S • ⊤ :=
+    hmax ▸ ModuleCat.ExtendScalars.range_map_quotient_le_map_smul_iff hle g
+  rw [HomologicalComplex.isMinimal_iff_forall_rel, isMinimal_iff_range_le_maximalIdeal_smul,
+    ringJacobson_eq_maximalIdeal]
+  refine ⟨fun h ↦ ⟨(hrange X.obj.d₀.hom).1 (h 0 1 (zero_add 1)),
+      (hrange X.obj.d₁.hom).1 (h 1 0 (by decide))⟩, fun ⟨hd₀, hd₁⟩ i j hij ↦ ?_⟩
+  rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) i with rfl | rfl
+  · obtain rfl : j = 1 := hij.symm.trans (zero_add 1)
+    exact (hrange X.obj.d₀.hom).2 hd₀
+  · obtain rfl : j = 0 := hij.symm.trans (by decide)
+    exact (hrange X.obj.d₁.hom).2 hd₁
+
+/-- Unfolding the reduced two-periodic complex of `X` from any starting parity `j : ℤ` gives a
+minimal chain complex over `S ⧸ (w)` if and only if `X` is minimal. -/
+@[simp]
+theorem resolutionComplex_quotientPeriodicComplex_isMinimal_iff (X : MatrixFactorization S w)
+    (j : ℤ) :
+    (PeriodicComplex.resolutionComplex (quotientPeriodicComplex.obj X) j).IsMinimal ↔
+      X.IsMinimal :=
+  (PeriodicComplex.resolutionComplex_isMinimal_iff _ j).trans
+    (quotientPeriodicComplex_obj_isMinimal_iff X)
+
+/-- For a non-zero-divisor `w`, the periodic projective resolution of the reduced cokernel of `X`
+is minimal if and only if `X` is minimal. -/
+theorem quotientCokernelProjectiveResolution_complex_isMinimal_iff (hw : w ∈ nonZeroDivisors S)
+    (X : MatrixFactorization S w) :
+    (quotientCokernelProjectiveResolution hw X).complex.IsMinimal ↔ X.IsMinimal :=
+  resolutionComplex_quotientPeriodicComplex_isMinimal_iff X 1
+
+end LocalReduction
+
+section ProjectiveRetract
+
+private theorem not_nonempty_retract_self_of_range_d₁_le (hw : w ∈ nonZeroDivisors S)
+    {X : MatrixFactorization S w} (hd₁ : LinearMap.range X.obj.d₁.hom.hom ≤ maximalIdeal S • ⊤)
+    (retR : Retract (ModuleCat.of (S ⧸ Ideal.span {w}) (S ⧸ Ideal.span {w}))
+      (cokernelFunctor.obj
+        ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj) :
+    False := by
+  let q := Ideal.Quotient.mk (Ideal.span {w})
+  obtain ⟨y, hy⟩ := quotientCokernelπ_surjective X (retR.i.hom 1)
+  have hπy : retR.r.hom (quotientCokernelπ X y) = 1 :=
+    hy ▸ ConcreteCategory.congr_hom retR.retract 1
+  have : Module.Projective S X.obj.X₁ := X.property.2
+  let φ : X.obj.X₁ →ₗ[S] S ⧸ Ideal.span {w} :=
+    (quotientCokernelπ X ≫ (ModuleCat.restrictScalars q).map retR.r).hom
+  obtain ⟨β, hβ⟩ := Module.projective_lifting_property (Ideal.span {w}).mkQ φ
+    (Submodule.mkQ_surjective _)
+  have hβ_eq (z : X.obj.X₁) : q (β z) = φ z := congr($hβ z)
+  have hβy : β y ∉ maximalIdeal S := fun hm ↦ by
+    have : IsLocalHom q := .of_surjective _ Ideal.Quotient.mk_surjective
+    have h1 : (1 : S ⧸ Ideal.span {w}) ∈ maximalIdeal (S ⧸ Ideal.span {w}) := by
+      have hφy : φ y = 1 := hπy
+      rw [← hφy, ← hβ_eq y]; exact map_nonunit q (β y) hm
+    exact (maximalIdeal.isMaximal _).ne_top ((Ideal.eq_top_iff_one _).2 h1)
+  have hd₀_div (x : X.obj.X₀) : ∃ c : S, β (X.obj.d₀.hom.hom x) = w * c := by
+    refine Ideal.mem_span_singleton.1 (Ideal.Quotient.eq_zero_iff_mem.1 ?_)
+    have h0 : (quotientCokernelπ X).hom (X.obj.d₀.hom.hom x) = 0 :=
+      (exact_d₀_quotientCokernelπ X _).2 ⟨x, rfl⟩
+    exact (hβ_eq _).trans ((congrArg ((ModuleCat.restrictScalars q).map retR.r).hom h0).trans
+      (map_zero _))
+  obtain ⟨m, hm, hwm_eq⟩ : ∃ m ∈ maximalIdeal S,
+      β (X.obj.d₀.hom.hom (X.obj.d₁.hom.hom y)) = w * m :=
+    Submodule.smul_induction_on (hd₁ ⟨y, rfl⟩)
+      (fun a ha x₀ _ ↦ by
+        obtain ⟨c, hc⟩ := hd₀_div x₀
+        exact ⟨a * c, Ideal.mul_mem_right c _ ha, by
+          rw [map_smul, map_smul, smul_eq_mul, hc]; ring⟩)
+      (fun _ _ ⟨m₁, hm₁, h₁⟩ ⟨m₂, hm₂, h₂⟩ ↦
+        ⟨m₁ + m₂, add_mem hm₁ hm₂, by rw [map_add, map_add, h₁, h₂, mul_add]⟩)
+  have hwy : w * β y = w * m := by
+    rw [← smul_eq_mul, ← β.map_smul, ← d₁_comp_d₀_apply, hwm_eq]
+  exact hβy ((Module.Flat.isSMulRegular_of_nonZeroDivisors hw hwy) ▸ hm)
+
+private theorem isZero_projective_retract_of_range_d₁_le (hw : w ∈ nonZeroDivisors S)
+    {X : MatrixFactorization S w} (hd₁ : LinearMap.range X.obj.d₁.hom.hom ≤ maximalIdeal S • ⊤)
+    (P : ModuleCat.{u} (S ⧸ Ideal.span {w})) [Projective P]
+    (ret : Retract P (cokernelFunctor.obj
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj) : IsZero P := by
+  cases subsingleton_or_nontrivial P
+  · exact ModuleCat.isZero_of_subsingleton P
+  · obtain ⟨retR⟩ := TauCeti.IsLocalRing.nonempty_retract_self_of_nontrivial_projective_retract ret
+    exact False.elim (not_nonempty_retract_self_of_range_d₁_le hw hd₁ retR)
+
+omit [IsLocalRing (S ⧸ Ideal.span {w})] in
+private theorem nonempty_retract_self_of_not_range_d₁_le
+    {X : MatrixFactorization S w} (hnot : ¬ LinearMap.range X.obj.d₁.hom.hom ≤ maximalIdeal S • ⊤) :
+    Nonempty (Retract (ModuleCat.of (S ⧸ Ideal.span {w}) (S ⧸ Ideal.span {w}))
+      (cokernelFunctor.obj
+        ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj) := by
+  let q := Ideal.Quotient.mk (Ideal.span {w})
+  let X' := (baseChangeFunctor q).obj X
+  obtain ⟨_, ⟨y, rfl⟩, hy⟩ := Set.not_subset.1 hnot
+  have : Module.Projective S X.obj.X₀ := X.property.1
+  obtain ⟨α, hαy⟩ := TauCeti.IsLocalRing.exists_linearMap_eq_one_of_not_mem_maximalIdeal_smul hy
+  let R_mod := ModuleCat.of (S ⧸ Ideal.span {w}) (S ⧸ Ideal.span {w})
+  let g_lin : X.obj.X₀.obj →ₗ[S] (ModuleCat.restrictScalars q).obj R_mod :=
+    { toFun := fun x ↦ q (α x)
+      map_add' := fun _ _ ↦ map_add (q.toAddMonoidHom.comp α.toAddMonoidHom) _ _
+      map_smul' := fun s x ↦ by
+        rw [map_smul, smul_eq_mul, map_mul, RingHom.id_apply]
+        exact (ModuleCat.restrictScalars.smul_def (M := R_mod) q s (q (α x))).symm }
+  let g : X.obj.X₀.obj ⟶ (ModuleCat.restrictScalars q).obj R_mod := ModuleCat.ofHom g_lin
+  let r_hom : (cokernelFunctor.obj X').obj ⟶ R_mod :=
+    (cokernelDesc (Ideal.Quotient.mk_singleton_self w) X').hom ≫
+      ((ModuleCat.extendRestrictScalarsAdj.{u} q).homEquiv _ _).symm g
+  let m₀ : (cokernelFunctor.obj X').obj := quotientCokernelπ X y
+  have hr_apply : r_hom.hom m₀ = 1 := by
+    have hcomp : cokernelπ X' ≫ r_hom =
+        ((ModuleCat.extendRestrictScalarsAdj.{u} q).homEquiv _ _).symm (X.obj.d₁.hom ≫ g) :=
+      (cokernelπ_cokernelDesc_hom_assoc (Ideal.Quotient.mk_singleton_self w) X' _).trans
+        (Adjunction.homEquiv_naturality_left_symm
+          (ModuleCat.extendRestrictScalarsAdj.{u} q) X.obj.d₁.hom g).symm
+    refine (congrArg r_hom.hom (quotientCokernelπ_apply X y)).trans
+      ((ConcreteCategory.congr_hom hcomp _).trans ?_)
+    refine (ModuleCat.extendRestrictScalarsAdj_homEquiv_apply (M := X.obj.X₁.obj) _ y).symm.trans ?_
+    rw [Equiv.apply_symm_apply]
+    refine (CategoryTheory.comp_apply X.obj.d₁.hom g y).trans ?_
+    refine (ModuleCat.ofHom_apply g_lin _).trans ?_
+    exact (congrArg q hαy).trans (map_one q)
+  exact ⟨{ i := ModuleCat.ofHom (LinearMap.toSpanSingleton _ _ m₀), r := r_hom,
+           retract := ModuleCat.hom_ext <| LinearMap.ext fun r ↦ by simp [hr_apply] }⟩
+
+/-- **Eisenbud's projective-summand criterion.** For a non-zero-divisor `w` in a local ring `S`
+with local quotient `R = S ⧸ (w)`, `range d₁ ≤ 𝔪_S • X₀` holds if and only if the reduced cokernel
+of `X` has no nonzero projective `R`-retract. -/
+theorem range_d₁_le_maximalIdeal_smul_iff_forall_projective_retract_isZero
+    (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
+    LinearMap.range X.obj.d₁.hom.hom ≤ maximalIdeal S • ⊤ ↔
+      ∀ P : ModuleCat.{u} (S ⧸ Ideal.span {w}), Projective P →
+        Nonempty (Retract P
+          (cokernelFunctor.obj
+            ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj) →
+        IsZero P := by
+  refine ⟨fun hd₁ P _ ⟨ret⟩ ↦ isZero_projective_retract_of_range_d₁_le hw hd₁ P ret, fun h ↦ ?_⟩
+  by_contra hnot
+  exact not_subsingleton (S ⧸ Ideal.span {w}) <| ModuleCat.subsingleton_of_isZero <|
+    h (ModuleCat.of _ (S ⧸ Ideal.span {w})) inferInstance
+      (nonempty_retract_self_of_not_range_d₁_le hnot)
+
+/-- **Minimality of Eisenbud's matrix factorization.** For a minimal length-one `S`-projective
+resolution `0 → P --f--> Q --g--> M → 0` of an `S ⧸ (w)`-module `M`, `ofInjective f` is minimal if
+and only if `M` has no nonzero projective `S ⧸ (w)`-retract. -/
+theorem isMinimal_ofInjective_iff (hw : w ∈ nonZeroDivisors S)
+    {P Q : FGModuleCat.{u} S} [Module.Projective S P] [Module.Projective S Q]
+    {M : ModuleCat.{u} (S ⧸ Ideal.span {w})} {f : P ⟶ Q}
+    {g : Q.obj ⟶ (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M}
+    (hf : Function.Injective f.hom.hom) (hfg : Function.Exact f.hom.hom g.hom)
+    (hg : Function.Surjective g) (hf_min : LinearMap.range f.hom.hom ≤ maximalIdeal S • ⊤) :
+    (ofInjective f hf (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w))).IsMinimal ↔
+      ∀ R_proj : ModuleCat.{u} (S ⧸ Ideal.span {w}), Projective R_proj →
+        Nonempty (Retract R_proj M) → IsZero R_proj := by
+  have hf₀ : LinearMap.range (ofInjective f hf
+      (hfg.smul_mem_range (Ideal.Quotient.mk_singleton_self w))).obj.d₀.hom.hom ≤
+      maximalIdeal S • ⊤ := hf_min
+  rw [isMinimal_iff_range_le_maximalIdeal_smul,
+    range_d₁_le_maximalIdeal_smul_iff_forall_projective_retract_isZero hw, and_iff_right hf₀]
+  let e := quotientCokernelIsoOfExact hf hfg hg
+  exact forall₂_congr fun _ _ ↦ imp_congr_left
+    ⟨fun ⟨ret⟩ ↦ ⟨ret.trans e.retract⟩, fun ⟨ret⟩ ↦ ⟨ret.trans e.symm.retract⟩⟩
+
+end ProjectiveRetract
+end TauCeti.MatrixFactorization

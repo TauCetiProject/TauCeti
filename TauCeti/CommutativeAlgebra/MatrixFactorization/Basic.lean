@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.Homology.Curved.Duplex
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.RingTheory.Flat.TorsionFree
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
+import Mathlib.RingTheory.LocalRing.Module
 
 /-!
 # Finite-projective matrix factorizations
@@ -400,6 +402,29 @@ theorem quotientFunctor_map_eq_quotientFunctor_map_iff
         ∃ h₀ : X.obj.X₀ ⟶ Y.obj.X₁, ∃ h₁ : X.obj.X₁ ⟶ Y.obj.X₀,
           CurvedDuplex.nullHomotopicMap h₀ h₁ = (f - g).hom := by
   rw [MorphismIdeal.quotientFunctor_map_eq_iff, mem_nullHomotopic_iff]
+
+section LocalRing
+
+variable {S : Type u} [CommRing S] [IsLocalRing S] {w : S}
+
+/-- Over a local ring, a finite curved duplex lies in `MatrixFactorization S w` iff it is free. -/
+theorem isProjective_iff_free (X : CurvedDuplex (FGModuleCat.{u} S) w) :
+    isProjective S w X ↔ Module.Free S X.X₀ ∧ Module.Free S X.X₁ :=
+  ⟨fun ⟨h₀, h₁⟩ ↦ ⟨by have := h₀; exact Module.free_of_flat_of_isLocalRing,
+    by have := h₁; exact Module.free_of_flat_of_isLocalRing⟩,
+   fun ⟨_, _⟩ ↦ ⟨inferInstance, inferInstance⟩⟩
+
+/-- Over a local ring, the even component of a matrix factorization is free. -/
+instance free_X₀ (X : MatrixFactorization S w) : Module.Free S X.obj.X₀ :=
+  have : Module.Projective S X.obj.X₀ := X.property.1
+  Module.free_of_flat_of_isLocalRing
+
+/-- Over a local ring, the odd component of a matrix factorization is free. -/
+instance free_X₁ (X : MatrixFactorization S w) : Module.Free S X.obj.X₁ :=
+  have : Module.Projective S X.obj.X₁ := X.property.2
+  Module.free_of_flat_of_isLocalRing
+
+end LocalRing
 
 end MatrixFactorization
 

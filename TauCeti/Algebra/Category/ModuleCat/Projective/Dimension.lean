@@ -253,4 +253,12 @@ instance hasProjectiveDimensionLE_one_of_isPrincipalIdealRing {R : Type u} [Comm
   have : Module.Projective R X := Module.Projective.of_free
   exact ModuleCat.projective_of_categoryTheory_projective X
 
+/-- A nonzero module of finite projective dimension has projective dimension equal to a natural
+number. -/
+theorem exists_projectiveDimension_eq_natCast {R : Type u} [Ring R] {M : ModuleCat.{v} R}
+    [Nontrivial M] (hpd : projectiveDimension M ≠ ⊤) :
+    ∃ p : ℕ, projectiveDimension M = p :=
+  CategoryTheory.exists_projectiveDimension_eq_natCast
+    (fun h ↦ not_subsingleton M (ModuleCat.subsingleton_of_isZero h)) hpd
+
 end ModuleCat

@@ -43,6 +43,8 @@ covers is how minimal free resolutions are built.
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
 * `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
   `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
+* `TauCeti.IsLocalRing.exists_linearMap_eq_one_of_not_mem_maximalIdeal_smul`: an element of a
+  projective module `M` outside `𝔪 • M` is sent to `1` by a linear map `M → R`.
 * `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a local
   ring is free, for any `AddCommMonoid` module.
 
@@ -154,6 +156,20 @@ theorem exists_linearMap_quotient_eq_one {m : M}
   obtain ⟨φ, hφ⟩ :=
     Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
   exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
+
+/-- **Primitive elements of projective modules over a local ring admit a section.** If `M` is a
+projective module over a local ring `(R, 𝔪)` and `m ∉ 𝔪 • M`, then some linear functional
+`α : M →ₗ[R] R` sends `m` to `1`. -/
+theorem exists_linearMap_eq_one_of_not_mem_maximalIdeal_smul [Module.Projective R M] {m : M}
+    (hm : m ∉ _root_.IsLocalRing.maximalIdeal R • (⊤ : Submodule R M)) :
+    ∃ α : M →ₗ[R] R, α m = 1 := by
+  obtain ⟨φ₀, hφ₀⟩ := exists_linearMap_quotient_eq_one hm
+  obtain ⟨α₀, hα₀⟩ := Module.projective_lifting_property (_root_.IsLocalRing.maximalIdeal R).mkQ
+    φ₀ (Submodule.mkQ_surjective _)
+  have hu : IsUnit (α₀ m) := _root_.IsLocalRing.notMem_maximalIdeal.1 fun hmem ↦ zero_ne_one <| by
+    rw [← (Submodule.Quotient.mk_eq_zero _).2 hmem, ← Submodule.mkQ_apply,
+      ← LinearMap.comp_apply, hα₀, hφ₀]
+  exact ⟨((hu.unit⁻¹ : Rˣ) : R) • α₀, hu.val_inv_mul⟩
 
 /-- A scalar killing a nonzero element lies in the maximal ideal, since a unit kills only zero.
 This holds for any distributive action of a local semiring on an additive monoid, in particular
