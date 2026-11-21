@@ -1,0 +1,208 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.Cohomology.Excision
+public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Compl
+
+/-!
+# Relative classes supported on two disjoint closed sets
+
+Let `S` and `T` be disjoint closed subsets of a topological space `X`, and write `Hⁿ(-)` for
+relative singular cohomology. A class of `Hⁿ(X, X ∖ (S ∪ T))` is supported near `S ∪ T`; since `S`
+and `T` are disjoint, it splits as the sum of a class supported near `S` and a class supported near
+`T`. This file proves the splitting in the form in which it is used to add up local
+contributions: if `c ∈ Hⁿ(X, X ∖ (S ∪ T))`, `a ∈ Hⁿ(X, X ∖ S)` and `b ∈ Hⁿ(X, X ∖ T)` agree on the
+open set `X ∖ T` around `S`, and on the open set `X ∖ S` around `T`, then `c` is the sum of the
+restrictions of `a` and `b`
+(`TopCat.eq_singularCohomologyComplRestrict_add_of_disjoint`).
+
+Here `c` and `a` *agree on `X ∖ T`* when they have the same pull-back to the pair
+`(X ∖ T, (X ∖ T) ∖ S)`, along the inclusions into `(X, X ∖ (S ∪ T))`
+(`TopPair.interPairMapOfSubset`) and into `(X, X ∖ S)` (`TopPair.excisionMap`).
+
+The proof combines two exact sequences. Since `S ∩ T` is empty, `Hⁿ⁺¹(X, X ∖ (S ∩ T))` vanishes,
+so by the Mayer–Vietoris sequence of the pairs `(X, X ∖ S)` and `(X, X ∖ T)`
+(`TopCat.exists_sub_eq_of_singularCohomologyComplMayerVietorisδ_eq_zero`) the difference
+`c - a - b` is a difference of restrictions of classes `a'` and `b'`. Restricted to
+`(X ∖ T, (X ∖ T) ∖ S)`, every class of `Hⁿ(X, X ∖ T)` vanishes, as the inclusion factors through
+`X ∖ T`; so `a'` restricts to zero there, and `a' = 0` by excision of `T`
+(`TopPair.isIso_singularCohomologyMap_excisionMap_of_isClosed_subset`). Symmetrically `b' = 0`.
+
+## Main definitions
+
+* `TopPair.interPairMapOfSubset`: the inclusion of pairs `(A, A ∩ B) ⟶ (X, B')` for
+  `A ∩ B ⊆ B'`.
+
+## Main results
+
+* `TopCat.eq_singularCohomologyComplRestrict_add_of_disjoint`: the splitting of a relative class
+  supported on two disjoint closed sets.
+
+## References
+
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 3.3, the Mayer–Vietoris sequence of the pairs `(X, X ∖ K)` and `(X, X ∖ L)` in the proof
+  of Lemma 3.36.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits
+
+universe w v u
+
+namespace TopPair
+
+variable {X : TopCat.{w}} {A B B' : Set X}
+
+/-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, B')` for `A ∩ B ⊆ B'`. For `B' = B` it is the excision
+map `TopPair.excisionMap A B` (`TopPair.interPairMapOfSubset_eq_excisionMap`). -/
+def interPairMapOfSubset (h : A ∩ B ⊆ B') : interPair A B ⟶ ofSubset B' :=
+  ofSubsetMap (X := TopCat.of A) (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
+    fun x hx ↦ h ⟨x.property, hx⟩
+
+@[simp]
+lemma interPairMapOfSubset_fst_apply (h : A ∩ B ⊆ B') (x : (interPair A B).fst) :
+    Hom.fst (interPairMapOfSubset h) x = x.val :=
+  ofSubsetMap_fst_apply (X := TopCat.of A) _ _ x
+
+lemma interPairMapOfSubset_fst (h : A ∩ B ⊆ B') :
+    Hom.fst (interPairMapOfSubset h) = TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :=
+  ofSubsetMap_fst (X := TopCat.of A) _ _
+
+lemma interPairMapOfSubset_eq_excisionMap :
+    interPairMapOfSubset (Set.inter_subset_right : A ∩ B ⊆ B) = excisionMap A B :=
+  hom_ext_of_fst _ (TopCat.ext fun x ↦
+    (interPairMapOfSubset_fst_apply _ x).trans (excisionMap_fst_apply A B x).symm)
+
+/-- Following the inclusion `(A, A ∩ B) ⟶ (X, B')` by the restriction `(X, B') ⟶ (X, B'')` is the
+inclusion `(A, A ∩ B) ⟶ (X, B'')`. -/
+lemma interPairMapOfSubset_comp_ofSubsetMap_id {B'' : Set X} (h : A ∩ B ⊆ B')
+    (hB : Set.MapsTo (𝟙 X) B' B'') :
+    interPairMapOfSubset h ≫ ofSubsetMap (𝟙 X) hB =
+      interPairMapOfSubset (h.trans fun _ hx ↦ hB hx) :=
+  ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
+  {k : Type*} [Ring k] [Linear k C] {M : C}
+
+/-- If `A ⊆ B''`, the inclusion `(A, A ∩ B) ⟶ (X, B')` followed by the restriction
+`(X, B') ⟶ (X, B'')` factors through the subspace `B''`, so it induces zero on relative
+cohomology. -/
+lemma singularCohomologyMap_interPairMapOfSubset_comp_eq_zero {B'' : Set X} (h : A ∩ B ⊆ B')
+    (hB : Set.MapsTo (𝟙 X) B' B'') (hA : A ⊆ B'') (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (interPairMapOfSubset h ≫ ofSubsetMap (𝟙 X) hB) n = 0 :=
+  singularCohomologyMap_eq_zero_of_fac R k M _
+    (TopCat.ofHom ⟨fun x : A ↦ (⟨x.val, Set.mem_of_subset_of_mem hA x.property⟩ : B''),
+      by fun_prop⟩)
+    (by rw [interPairMapOfSubset_comp_ofSubsetMap_id, interPairMapOfSubset_fst, ofSubset_map]; rfl)
+    n
+
+end TopPair
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
+  {k : Type*} [Ring k] [Linear k C] {M : C} {X : TopCat.{w}} {S T : Set X}
+
+/-- Restricting a class of `Hⁿ(X, X ∖ S)` to `Hⁿ(X, X ∖ T)`, `S ⊆ T`, and then to a pair
+`(A, A ∩ B)` with `A ∩ B ⊆ X ∖ T` is restricting it to `(A, A ∩ B)` directly. -/
+lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict (hST : S ⊆ T)
+    {A B : Set X} (h : A ∩ B ⊆ Tᶜ) {n : ℕ}
+    (x : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset h) n
+        (singularCohomologyComplRestrict R k M hST n x) =
+      TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset
+        (h.trans (Set.compl_subset_compl.2 hST))) n x := by
+  dsimp only [singularCohomologyComplRestrict]
+  rw [← TopPair.singularCohomologyMap_comp_apply, TopPair.interPairMapOfSubset_comp_ofSubsetMap_id]
+
+/-- If moreover `A ⊆ X ∖ S`, that restriction vanishes: the inclusion of `(A, A ∩ B)` into
+`(X, X ∖ S)` factors through the subspace `X ∖ S`. -/
+lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero
+    (hST : S ⊆ T) {A B : Set X} (h : A ∩ B ⊆ Tᶜ) (hA : A ⊆ Sᶜ) {n : ℕ}
+    (x : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset h) n
+        (singularCohomologyComplRestrict R k M hST n x) = 0 := by
+  dsimp only [singularCohomologyComplRestrict]
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    TopPair.singularCohomologyMap_interPairMapOfSubset_comp_eq_zero h _ hA]
+  rfl
+
+/-- **A relative class supported on two disjoint closed sets is a sum.** Let `S` and `T` be
+disjoint closed subsets of `X`. If `c ∈ Hⁿ(X, X ∖ (S ∪ T))` has the same restriction as
+`a ∈ Hⁿ(X, X ∖ S)` to the pair `(X ∖ T, (X ∖ T) ∖ S)`, and the same restriction as
+`b ∈ Hⁿ(X, X ∖ T)` to the pair `(X ∖ S, (X ∖ S) ∖ T)`, then `c` is the sum of the restrictions of
+`a` and `b` to `Hⁿ(X, X ∖ (S ∪ T))`. -/
+theorem eq_singularCohomologyComplRestrict_add_of_disjoint (hS : IsClosed S) (hT : IsClosed T)
+    (hST : Disjoint S T) {n : ℕ} (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n)
+    (b : (TopPair.ofSubset Tᶜ).singularCohomology R k M n)
+    (c : (TopPair.ofSubset (S ∪ T)ᶜ).singularCohomology R k M n)
+    (ha : TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (TopPair.interPairMapOfSubset
+        ((Set.inter_comm Tᶜ Sᶜ).trans (Set.compl_union S T).symm).subset) n c =
+      TopPair.singularCohomologyMap (TopPair.excisionMap Tᶜ Sᶜ) n a)
+    (hb : TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (TopPair.interPairMapOfSubset
+        (Set.compl_union S T).symm.subset) n c =
+      TopPair.singularCohomologyMap (TopPair.excisionMap Sᶜ Tᶜ) n b) :
+    c = singularCohomologyComplRestrict R k M Set.subset_union_left n a +
+      singularCohomologyComplRestrict R k M Set.subset_union_right n b := by
+  set hTS : (Tᶜ ∩ Sᶜ : Set X) ⊆ (S ∪ T)ᶜ :=
+    ((Set.inter_comm Tᶜ Sᶜ).trans (Set.compl_union S T).symm).subset
+  set hST' : (Sᶜ ∩ Tᶜ : Set X) ⊆ (S ∪ T)ᶜ := (Set.compl_union S T).symm.subset
+  -- The class `d = c - a - b` is killed by the connecting morphism, whose target vanishes, so it
+  -- is a difference of restrictions of classes `a'` and `b'`.
+  set d := c - singularCohomologyComplRestrict R k M Set.subset_union_left n a -
+    singularCohomologyComplRestrict R k M Set.subset_union_right n b
+  have hzero : IsZero ((TopPair.ofSubset (S ∩ T)ᶜ).singularCohomology R k M (n + 1)) :=
+    TopPair.isZero_singularCohomology_of_surjective_map (R := R) (k := k) (M := M)
+      (P := TopPair.ofSubset (S ∩ T)ᶜ) (fun x ↦
+        ⟨⟨x, fun hx ↦ Set.disjoint_left.1 hST hx.1 hx.2⟩, by rw [TopPair.ofSubset_map]; rfl⟩) _
+  obtain ⟨a', b', hd⟩ := exists_sub_eq_of_singularCohomologyComplMayerVietorisδ_eq_zero hS hT rfl d
+    (by rw [hzero.eq_of_tgt (singularCohomologyComplMayerVietorisδ R k M hS hT n (n + 1)) 0]; rfl)
+  -- On `(X ∖ T, (X ∖ T) ∖ S)` the class `d` vanishes, and so does every class of `Hⁿ(X, X ∖ T)`.
+  have hdT : TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset hTS) n d = 0 := by
+    simp only [d, map_sub, ha,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero _ _
+        subset_rfl, TopPair.interPairMapOfSubset_eq_excisionMap, sub_self]
+  have hdS : TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset hST') n d = 0 := by
+    simp only [d, map_sub, hb,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero _ _
+        subset_rfl, TopPair.interPairMapOfSubset_eq_excisionMap, sub_self, sub_zero]
+  -- Hence `a'` and `b'` restrict to zero there, and vanish by excision.
+  have ha' : a' = 0 := by
+    have := TopPair.isIso_singularCohomologyMap_excisionMap_of_isClosed_subset R k M
+      hT.isOpen_compl hS (Set.subset_compl_iff_disjoint_right.2 hST) n
+    refine (ConcreteCategory.injective_of_mono_of_preservesPullback
+      (TopPair.singularCohomologyMap (TopPair.excisionMap Tᶜ Sᶜ) n)) ?_
+    have h := congrArg (TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset hTS) n) hd
+    rw [hdT, map_sub,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero _ _
+        subset_rfl, sub_zero,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict,
+      TopPair.interPairMapOfSubset_eq_excisionMap] at h
+    rw [h, map_zero]
+  have hb' : b' = 0 := by
+    have := TopPair.isIso_singularCohomologyMap_excisionMap_of_isClosed_subset R k M
+      hS.isOpen_compl hT (Set.subset_compl_iff_disjoint_left.2 hST) n
+    refine (ConcreteCategory.injective_of_mono_of_preservesPullback
+      (TopPair.singularCohomologyMap (TopPair.excisionMap Sᶜ Tᶜ) n)) ?_
+    have h := congrArg (TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset hST') n) hd
+    rw [hdS, map_sub,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero _ _
+        subset_rfl, zero_sub,
+      singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict,
+      TopPair.interPairMapOfSubset_eq_excisionMap, neg_eq_zero] at h
+    rw [h, map_zero]
+  rw [ha', hb', map_zero, map_zero, sub_zero] at hd
+  rw [← sub_eq_zero, ← sub_sub, hd]
+
+end TopCat
