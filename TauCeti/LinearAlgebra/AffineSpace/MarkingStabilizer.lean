@@ -53,8 +53,8 @@ with special points `∞` and `P ⊆ K`, for instance `P = ∅` or `P = {0}`, is
 
 Nothing here uses that `u` is pseudoholomorphic: for a nonconstant pseudoholomorphic sphere the
 finiteness of the isotropy also follows from `MDifferentiable.finite_setOf_comp_eq_iff_exists_ne`,
-but the stabilization by a cut bounds its order and identifies it with the automorphism group of
-a stable pointed domain.
+but the stabilization by a cut bounds its order and embeds it in the automorphism group of a
+stable pointed domain.
 
 ## References
 
