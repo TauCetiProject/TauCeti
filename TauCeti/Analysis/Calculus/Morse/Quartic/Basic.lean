@@ -172,6 +172,7 @@ private theorem quarticWellSum_eq :
   funext quarticWellSum_def
 
 /-- The Euclidean quartic is continuous. -/
+@[fun_prop, continuity]
 theorem continuous_quarticWellSum : Continuous (quarticWellSum : (ι → ℝ) → ℝ) := by
   have h : Continuous (intervalBasePotential 1) :=
     (contDiff_intervalBasePotential (n := 0) 1).continuous
