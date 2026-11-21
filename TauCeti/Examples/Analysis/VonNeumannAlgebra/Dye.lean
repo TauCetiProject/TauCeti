@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Complex.Basic
-public import Mathlib.Algebra.Group.Idempotent
+import Mathlib.Basic.Complex.Basic
 import Mathlib.Algebra.Star.Prod
-import Mathlib.Algebra.Star.StarRingHom
 import Mathlib.Algebra.Star.Orthogonal
 import TauCeti.Algebra.Group.Idempotent
 import TauCeti.LinearAlgebra.Matrix.StarProjection
@@ -18,10 +16,11 @@ import TauCeti.LinearAlgebra.Matrix.StarProjection
 
 Transposition on finite complex matrices and coordinate exchange on `ℂ × ℂ` preserve
 star projections and their orthogonality. In `ℂ × ℂ` the only projections are zero, one,
-and the two coordinate projections, which the swap interchanges.
+and the two coordinate projections. The swap interchanges the coordinate projections and
+extends to a complex-linear star algebra automorphism.
 
-These examples illustrate the hypothesis of Hamhalter, *Dye’s theorem and Gleason’s theorem
-for AW*-algebras* (2015), Theorem 4.3.
+These are concrete projection orthoisomorphisms in the sense of Hamhalter,
+*Dye’s theorem and Gleason’s theorem for AW*-algebras* (2015), §4.
 -/
 
 open scoped Matrix
@@ -39,24 +38,27 @@ example {n : Type*} [Fintype n] :
     ← (e p).property.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero (e q).property.isSelfAdjoint]
   exact Matrix.isStarOrtho_transpose_iff.symm
 
-namespace TauCeti.DyeExamples
-
-/-- The idempotents of `ℂ × ℂ` are zero, one, and the two coordinate projections. -/
-public theorem complexProd_isIdempotentElem_iff {x : ℂ × ℂ} :
-    IsIdempotentElem x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1 := by
-  simp only [Prod.isIdempotentElem_iff, IsIdempotentElem.iff_eq_zero_or_one, Prod.ext_iff,
-    Prod.fst_zero, Prod.snd_zero, Prod.fst_one, Prod.snd_one]
-  tauto
-
 example {x : ℂ × ℂ} :
     IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1 := by
-  refine ⟨fun h ↦ complexProd_isIdempotentElem_iff.mp h.isIdempotentElem, ?_⟩
-  rintro (rfl | rfl | rfl | rfl) <;> simp [isStarProjection_iff', Prod.ext_iff]
+  constructor
+  · intro h
+    have hIdem := h.isIdempotentElem
+    simp only [Prod.isIdempotentElem_iff, IsIdempotentElem.iff_eq_zero_or_one] at hIdem
+    simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Prod.fst_one, Prod.snd_one]
+    tauto
+  · rintro (rfl | rfl | rfl | rfl) <;> simp [isStarProjection_iff', Prod.ext_iff]
 
-end TauCeti.DyeExamples
-
-example : ∃ φ : ℂ × ℂ ≃⋆+* ℂ × ℂ, ∀ x, φ x = x.swap :=
-  ⟨{ RingEquiv.prodComm with map_star' := fun _ ↦ rfl }, fun _ ↦ rfl⟩
-
-example (p q : ℂ × ℂ) : IsStarOrtho p.swap q.swap ↔ IsStarOrtho p q := by
-  simp only [IsStarOrtho.prod_iff, Prod.fst_swap, Prod.snd_swap, and_comm]
+example :
+    ∃ (e : Equiv.Perm {p : ℂ × ℂ // IsStarProjection p})
+      (φ : ℂ × ℂ ≃⋆ₐ[ℂ] ℂ × ℂ),
+      (∀ x, φ x = x.swap) ∧ (∀ p, (e p).val = φ p.val) ∧
+        ∀ p q, p.val * q.val = 0 ↔ (e p).val * (e q).val = 0 := by
+  let φ : ℂ × ℂ ≃⋆ₐ[ℂ] ℂ × ℂ :=
+    { RingEquiv.prodComm with map_star' := fun _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
+  let e := φ.toEquiv.subtypeEquiv (p := IsStarProjection) (q := IsStarProjection) fun p ↦
+    ⟨fun hp ↦ hp.map φ, fun hp ↦ by
+      have hφ : IsStarProjection (φ p) := hp
+      simpa only [StarAlgEquiv.symm_apply_apply] using hφ.map φ.symm⟩
+  have hExt (p : {p : ℂ × ℂ // IsStarProjection p}) : (e p).val = φ p.val := rfl
+  refine ⟨e, φ, fun _ ↦ rfl, hExt, fun p q ↦ ?_⟩
+  simp only [hExt, ← map_mul, map_eq_zero_iff φ φ.injective]
