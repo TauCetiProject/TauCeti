@@ -279,24 +279,12 @@ theorem isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p
   refine ⟨fun hm ↦ ?_, fun hn ↦ ?_⟩
   · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hm ⊢
     exact fun i hi ↦ hm i (hi.trans_le hnm)
-  · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hn ⊢
-    intro i _
-    rcases lt_trichotomy i n with hin | rfl | hni
-    · exact hn i hin
-    · obtain ⟨u, hu⟩ := ((F.isUnit_mk_coeff_nsmulSeries_iff hp i).mpr hI).exists_left_inv
-      obtain ⟨c, hc⟩ := Ideal.Quotient.mk_surjective u
-      rw [isSMulRegular_quotient_iff_mem_of_smul_mem]
-      intro x hx
-      have h1 : (1 - c * PowerSeries.coeff (p ^ i) (F.nsmulSeries p)) • x ∈
-          F.heightIdeal p i • (⊤ : Submodule R M) := by
-        refine Submodule.smul_mem_smul ?_ Submodule.mem_top
-        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, map_mul, hc, hu, sub_self]
-      simpa [sub_smul, mul_smul] using
-        (F.heightIdeal p i • (⊤ : Submodule R M)).add_mem h1 (Submodule.smul_mem _ c hx)
-    · have htop : F.heightIdeal p i = ⊤ := top_unique (hI ▸ F.heightIdeal_mono hni)
-      have : Subsingleton (M ⧸ (F.heightIdeal p i • ⊤ : Submodule R M)) :=
-        Submodule.Quotient.subsingleton_iff.mpr (by simp [htop])
-      exact fun _ _ _ ↦ Subsingleton.elim _ _
+  · have hn1 : IsWeaklyRegular M (F.landweberSequence p (n + 1)) := by
+      rw [F.landweberSequence_succ, isWeaklyRegular_append_iff, F.ofList_landweberSequence hp,
+        isWeaklyRegular_singleton_iff]
+      exact ⟨hn, Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk _
+        ((F.isUnit_mk_coeff_nsmulSeries_iff hp n).mpr hI)⟩
+    exact (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).mpr hn1 m
 
 /-- If `I_(n+1)(F) = ⊤`, weak regularity of `F.landweberSequence p m` on `M` for every `m : ℕ`
 is equivalent to weak regularity at `m = n`. -/
@@ -304,11 +292,8 @@ theorem forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top 
     (M : Type*) [AddCommGroup M] [Module R M] {n : ℕ} (hI : F.heightIdeal p (n + 1) = ⊤) :
     (∀ m : ℕ, IsWeaklyRegular M (F.landweberSequence p m)) ↔
       IsWeaklyRegular M (F.landweberSequence p n) :=
-  ⟨fun h ↦ h n, fun hn m ↦ by
-    rcases le_total n m with hnm | hmn
-    · exact (F.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M hnm hI).mpr hn
-    · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hn ⊢
-      exact fun i hi ↦ hn i (hi.trans_le hmn)⟩
+  (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).trans
+    (F.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M n.le_succ hI)
 
 end Comm
 

@@ -24,8 +24,10 @@ in the local parameter `T = -x / y`. For any prime `p`, the second height ideal 
 smooth-or-nodal family (`(c₄, Δ) = R`) and every elliptic Weierstrass curve (`IsUnit Δ`) — all
 height ideals `I_n(Ê)` for `n ≥ 3` equal `R`
 (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff`),
-so Landweber's `v₂` is a unit modulo `(p, A)`
-(`WeierstrassCurve.isUnit_mk_span_coeff_sq_nsmulSeries_formalGroup_iff`).
+so Landweber's `v₂` is a unit modulo `I₂(Ê)`
+(`WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup_iff`,
+`WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup`), where
+`WeierstrassCurve.heightIdeal_formalGroup_two` rewrites `I₂(Ê)` to `(p, A)`.
 
 By `FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`, the unit
 condition on `v₂` modulo `I₂(Ê)` collapses the entire infinite Landweber sequence at prime `p`
@@ -51,9 +53,6 @@ onto its first two terms `(p, v₁)`, and hence onto `(p, A)`. Consequently:
 
 ## Main results
 
-* `WeierstrassCurve.isUnit_mk_span_coeff_sq_nsmulSeries_formalGroup_iff` and
-  `WeierstrassCurve.isUnit_mk_span_coeff_sq_nsmulSeries_formalGroup`: Landweber's `v₂` is a unit
-  modulo `(p, A)`.
 * `WeierstrassCurve.isWeaklyRegular_landweberSequence_formalGroup_iff`,
   `WeierstrassCurve.forall_isWeaklyRegular_landweberSequence_formalGroup_iff`, and
   `WeierstrassCurve.isLandweberRegular_formalGroup_iff`: Landweber regularity of `formalGroup W` on
@@ -84,25 +83,6 @@ namespace WeierstrassCurve
 section General
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p : ℕ}
-
-/-- **Landweber's `v₂` is a unit modulo `(p, A)`** if and only if `(p, c₄, Δ) = R`, where `A` is
-the Hasse invariant `coeff (p - 1) (formalGroup W).invariantDifferential`. -/
-theorem isUnit_mk_span_coeff_sq_nsmulSeries_formalGroup_iff (hp : p.Prime) :
-    IsUnit (Ideal.Quotient.mk
-      (Ideal.span {(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential})
-      (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) ↔
-      Ideal.span {(p : R), W.c₄, W.Δ} = ⊤ := by
-  rw [← W.heightIdeal_formalGroup_two hp]
-  exact W.isUnit_mk_coeff_nsmulSeries_formalGroup_iff hp
-
-/-- **Landweber's `v₂` is a unit modulo `(p, A)`** for every elliptic Weierstrass curve over a
-commutative ring `R` and every prime `p`. -/
-theorem isUnit_mk_span_coeff_sq_nsmulSeries_formalGroup [W.IsElliptic] (hp : p.Prime) :
-    IsUnit (Ideal.Quotient.mk
-      (Ideal.span {(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential})
-      (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) := by
-  rw [← W.heightIdeal_formalGroup_two hp]
-  exact W.isUnit_mk_coeff_nsmulSeries_formalGroup hp
 
 /-- **Regular-sequence Landweber criterion when `(p, c₄, Δ) = R`.** For `m ≥ 2`, a prime `p`, a
 Weierstrass curve `W` over `R` with `(p, c₄, Δ) = R`, and an `R`-module `M`, the Landweber
