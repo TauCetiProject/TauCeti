@@ -173,12 +173,8 @@ in a trivialization differ by the inverse normalized determinant of the automorp
 theorem clutchingFunction_eq_mul_normalizedDet_inv {y : B} (hy : f y ∈ e.baseSet) :
     clutchingFunction f ψ e y =
       clutchingFunction f φ e y * ((ψ y).trans (φ y).symm).normalizedDet⁻¹ := by
-  have h : (ψ y).trans (e.continuousLinearEquivAt ℂ (f y) hy) =
-      ((ψ y).trans (φ y).symm).trans ((φ y).trans (e.continuousLinearEquivAt ℂ (f y) hy)) := by
-    ext v
-    simp
-  rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy, h,
-    ContinuousLinearEquiv.normalizedDet_trans, mul_inv, mul_comm]
+  rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy,
+    ← ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans (ψ y) (φ y), mul_inv, mul_comm]
 
 omit [TopologicalSpace B] in
 /-- **Change of trivialization.** At a point where two trivializations `e` and `e'` are both
@@ -229,6 +225,20 @@ theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
     (continuousOn_clutchingFunction hφ e₀)).continuousAt hU).congr
       (eventually_of_mem hU fun y (hy : f y ∈ e₀.baseSet) ↦ ?_)
   simp [clutchingFunction_eq_mul_normalizedDet_inv (φ := φ) (ψ := ψ) hy]
+
+/-- If `φ` and `ψ` are frames along `f` that are continuous over a set `s`, the normalized
+determinant of `(φ y)⁻¹ ∘ ψ y` is continuous on `s`. -/
+theorem continuousOn_normalizedDet_trans_symm [VectorBundle ℂ F E] {s : Set B}
+    (hφ : ContinuousOn (fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) (s ×ˢ univ))
+    (hψ : ContinuousOn (fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) (s ×ˢ univ)) :
+    ContinuousOn (fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet) s := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  -- Restrict both frames to the subspace `s`, where they are continuous.
+  have hval : Continuous fun q : s × F ↦ ((q.1 : B), q.2) :=
+    (continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd
+  have hs : ∀ q : s × F, ((q.1 : B), q.2) ∈ s ×ˢ univ := fun q ↦ ⟨q.1.property, mem_univ _⟩
+  exact continuous_normalizedDet_trans_symm (f := fun y : s ↦ f y)
+    (hφ.comp_continuous hval hs) (hψ.comp_continuous hval hs)
 
 end ClutchingFunction
 
