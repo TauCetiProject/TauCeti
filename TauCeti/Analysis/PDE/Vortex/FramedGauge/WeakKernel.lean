@@ -134,8 +134,7 @@ theorem gaugeLp_one : gaugeLp μ 1 = LinearIsometryEquiv.refl ℝ _ := by
 /-- The `L²` gauge actions compose as the gauges multiply. -/
 theorem gaugeLp_mul (u v : C(ℂ, Circle)) :
     gaugeLp μ (u * v) = (gaugeLp μ v).trans (gaugeLp μ u) := by
-  rw [gaugeLp, map_mul]
-  exact map_mul Unitary.linearIsometryEquiv _ _
+  rw [gaugeLp, gaugeLp, gaugeLp, map_mul, map_mul, LinearIsometryEquiv.mul_def]
 
 /-- The inverse of the `L²` gauge action of `u` is the `L²` gauge action of `u⁻¹`. -/
 @[simp]

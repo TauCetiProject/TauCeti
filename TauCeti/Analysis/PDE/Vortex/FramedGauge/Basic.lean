@@ -162,6 +162,9 @@ theorem gaugeFrame_symm (c : Circle) : (gaugeFrame c).symm = gaugeFrame c⁻¹ :
   simp only [gaugeFrame, LinearIsometryEquiv.symm_trans, LinearIsometryEquiv.trans_apply,
     LinearIsometryEquiv.symm_symm, LinearIsometryEquiv.withLpProdCongr_symm_apply,
     LinearIsometryEquiv.withLpProdCongr_apply, rotation_symm]
+  -- The two sides differ only in `(LinearIsometryEquiv.refl ℝ ℂ).symm` against
+  -- `LinearIsometryEquiv.refl ℝ ℂ` on the first factor; these agree by definition, and Mathlib
+  -- has no rewrite lemma for the inverse of `LinearIsometryEquiv.refl`.
   rfl
 
 /-- The linear part of a charge-one gauge transformation. On variations it fixes the
@@ -257,8 +260,7 @@ theorem continuous_gaugeFrame :
     Continuous fun c : Circle ↦
       (gaugeFrame c : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) := by
   refine continuous_clm_apply.2 fun v ↦ ?_
-  rw [show (fun c : Circle ↦ (gaugeFrame c : _ →L[ℝ] _) v) = fun c ↦ gaugeFrame c v from rfl,
-    funext fun c ↦ gaugeFrame_apply c v]
+  simp only [LinearIsometryEquiv.coe_coe'', gaugeFrame_apply]
   refine (PiLp.continuous_toLp 2 _).comp <| continuous_pi fun i ↦ ?_
   fin_cases i <;> fun_prop
 
