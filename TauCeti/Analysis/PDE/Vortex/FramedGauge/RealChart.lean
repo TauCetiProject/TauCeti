@@ -83,8 +83,8 @@ variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} {s : ℝ}
 representatives of the real elements `u j` of `H^s(ℂ)`. For `s > 1` it is the continuous field
 almost everywhere equal to `u` (`coeFn_inclusionLp_ae_eq_continuousRepField`), and the field
 of `A_m^s` with real coordinates `u` is `x_m + continuousRepField u`
-(`SobolevFieldSpace.coe_ofRealSubRef`). It is real-linear in `u` (`continuousRepField_add`,
-`continuousRepField_smul`). -/
+(`SobolevFieldSpace.coe_ofRealSubRef`). It is real-linear in `u` (`continuousRepField_zero`,
+`continuousRepField_add`, `continuousRepField_smul`). -/
 def continuousRepField {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
     ℂ → EuclideanSpace ℝ (Fin 4) :=
   fun z ↦ WithLp.toLp 2 fun j ↦ continuousRep (u j) z
@@ -93,6 +93,12 @@ def continuousRepField {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
 theorem continuousRepField_apply {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) (z : ℂ)
     (j : Fin 4) : continuousRepField u z j = continuousRep (u j) z :=
   (rfl)
+
+@[simp]
+theorem continuousRepField_zero {h : 0 ≤ s} :
+    continuousRepField (0 : Fin 4 → realSubmodule ℂ h) = 0 := by
+  ext z j
+  simp
 
 @[simp]
 theorem continuousRepField_add {h : 0 ≤ s} (u v : Fin 4 → realSubmodule ℂ h) :
@@ -140,14 +146,21 @@ theorem contDiff_continuousRepField {n : ℕ} (hs : n + 1 < s) {h : 0 ≤ s}
   exact contDiff_piLp' (p := 2) fun j ↦ by
     simpa only [continuousRepField_apply] using contDiff_continuousRep hs' (u j)
 
-private theorem natCast_one_add_one_lt (hk : 2 ≤ k) : ((1 : ℕ) : ℝ) + 1 < k + 1 := by
+/-- For `k ≥ 2`, real `H^(k+1)` coordinates lie above the threshold for `C¹` fields. -/
+theorem natCast_one_add_one_lt (hk : 2 ≤ k) : ((1 : ℕ) : ℝ) + 1 < k + 1 := by
   have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   push_cast
   linarith
 
-private theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
+/-- For `k ≥ 2`, the order `k + 1` lies above the threshold `1` for continuous fields. -/
+theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
   have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   linarith
+
+/-- For `k ≥ 2`, the order `k` lies above the Sobolev embedding threshold of `H^k(ℂ)` into
+continuous functions. -/
+theorem finrank_real_complex_lt_two_mul_of_two_le (hk : 2 ≤ k) : (finrank ℝ ℂ : ℝ) < 2 * k :=
+  finrank_real_complex_lt_two_mul (by have : (2 : ℝ) ≤ k := (by exact_mod_cast hk); linarith)
 
 /-- For `s > 1`, the field of real `H^s` coordinates lies in `sobolevFields s`. -/
 theorem continuousRepField_mem_sobolevFields (hs : 1 < s) {h : 0 ≤ s}
