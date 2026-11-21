@@ -33,6 +33,8 @@ are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
   normalized finite sum.
 * `Finset.measureReal_map_uniformOn_finset_apply` and `Finset.cdf_map_uniformOn_finset`:
   label masses and cumulative masses are proportions of inputs.
+* `Set.integrable_map_uniformOn` and `Finset.integral_map_uniformOn_finset`:
+  every labelled observable is integrable, with expectation given by its average over inputs.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
@@ -123,13 +125,6 @@ end TauCeti.Probability
 
 namespace Finset
 
-/-- A function is integrable against a uniform law on a finite set. -/
-theorem integrable_uniformOn_finset [SeminormedAddGroup E] (s : Finset α) (f : α → E) :
-    Integrable f (uniformOn (s : Set α)) := by
-  rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset]
-  exact integrable_finsetSum_measure.2 fun _ hx ↦
-    (integrable_dirac (by simp)).smul_measure (by simp [s.ne_empty_of_mem hx])
-
 /-- Integration against a uniform law on a finite set is the normalized finite sum. -/
 theorem integral_uniformOn_finset [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     (s : Finset α) (f : α → E) :
@@ -140,15 +135,33 @@ theorem integral_uniformOn_finset [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
   exact fun _ hx ↦
     (integrable_dirac (by simp)).smul_measure (by simp [s.ne_empty_of_mem hx])
 
-variable [MeasurableSpace β]
-
-/-- Every function is almost everywhere measurable against a uniform law on a finite set. -/
-theorem aemeasurable_uniformOn_finset (s : Finset α) (f : α → β) :
-    AEMeasurable f (uniformOn (s : Set α)) := by
-  rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset, ← Measure.sum_coe_finset]
-  exact aemeasurable_sum_measure_iff.2 fun _ ↦ aemeasurable_dirac.smul_measure _
-
 end Finset
+
+namespace Set
+
+/-- Every function is integrable against `uniformOn`, which vanishes on infinite sets. -/
+@[simp]
+theorem integrable_uniformOn [SeminormedAddGroup E] (s : Set α) (f : α → E) :
+    Integrable f (uniformOn s) := by
+  by_cases hs : s.Finite
+  · rw [← hs.coe_toFinset, Finset.uniformOn_coe_finset_eq_uniformOfFinset,
+      Measure.uniformOfFinset]
+    exact integrable_finsetSum_measure.2 fun _ hx ↦
+      (integrable_dirac (by simp)).smul_measure (by simp [hs.toFinset.ne_empty_of_mem hx])
+  · simp [(uniformOn_eq_zero).2 (Or.inl hs)]
+
+/-- Every function is almost everywhere measurable against `uniformOn`, including on infinite
+sets, where the measure is zero. -/
+@[simp, fun_prop]
+theorem aemeasurable_uniformOn [MeasurableSpace β] (s : Set α) (f : α → β) :
+    AEMeasurable f (uniformOn s) := by
+  by_cases hs : s.Finite
+  · rw [← hs.coe_toFinset, Finset.uniformOn_coe_finset_eq_uniformOfFinset,
+      Measure.uniformOfFinset, ← Measure.sum_coe_finset]
+    exact aemeasurable_sum_measure_iff.2 fun _ ↦ aemeasurable_dirac.smul_measure _
+  · simp [(uniformOn_eq_zero).2 (Or.inl hs)]
+
+end Set
 
 namespace TauCeti.Probability
 
@@ -172,8 +185,7 @@ theorem map_uniformOn {f : α → β} {s : Set α} {t : Set β}
     (h : Set.BijOn f s t) : (uniformOn s).map f = uniformOn t := by
   by_cases hs : s.Finite
   · have ht : t.Finite := h.finite_iff_finite.mp hs
-    have hf : AEMeasurable f (uniformOn s) := by
-      simpa using Finset.aemeasurable_uniformOn_finset hs.toFinset f
+    have hf := s.aemeasurable_uniformOn f
     ext t' ht'
     have hinter : Set.BijOn f (s ∩ f ⁻¹' t') (t ∩ t') :=
       h.inter_mapsTo (fun _ hx ↦ hx) Set.inter_subset_right
@@ -276,30 +288,9 @@ theorem measureReal_map_uniformOn_finset_apply (s : Finset α) (f : α → β)
     ((uniformOn (s : Set α)).map f).real t =
       ((s.filter fun i ↦ f i ∈ t).card : ℝ) / s.card := by
   rw [← integral_indicator_one ht,
-    integral_map (s.aemeasurable_uniformOn_finset f) (by fun_prop), integral_uniformOn_finset]
+    integral_map (Set.aemeasurable_uniformOn (s : Set α) f) (by fun_prop),
+    integral_uniformOn_finset]
   simp [Set.indicator, sum_boole, div_eq_mul_inv, mul_comm]
-
-/-- Every function of the labels is integrable against a labelled finite uniform law. Neither
-the labelling nor the observable needs to be measurable. -/
-@[simp]
-theorem integrable_map_uniformOn_finset [MeasurableSingletonClass β] {E : Type*}
-    [SeminormedAddGroup E] (s : Finset α) (label : α → β) (f : β → E) :
-    Integrable f ((uniformOn (s : Set α)).map label) := by
-  have hlabel := s.aemeasurable_uniformOn_finset label
-  rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset] at hlabel ⊢
-  rw [Measure.map_finset_sum hlabel]
-  refine integrable_finsetSum_measure.2 fun i hi ↦ ?_
-  rw [Measure.map_smul _ (by fun_prop), Measure.map_dirac]
-  exact (integrable_dirac (by simp)).smul_measure (by simp [s.ne_empty_of_mem hi])
-
-/-- Integration against a labelled finite uniform law is the normalized finite sum over the
-sampling set, with repeated labels counted with their multiplicities. -/
-theorem integral_map_uniformOn_finset [MeasurableSingletonClass β] {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] (s : Finset α) (label : α → β)
-    (f : β → E) :
-    ∫ x, f x ∂(uniformOn (s : Set α)).map label = (s.card : ℝ)⁻¹ • ∑ i ∈ s, f (label i) := by
-  rw [integral_map (s.aemeasurable_uniformOn_finset label)
-    (s.integrable_map_uniformOn_finset label f).aestronglyMeasurable, integral_uniformOn_finset]
 
 open Classical in
 /-- The cdf of a finitely labeled uniform sample counts inputs with label at most the argument. -/
@@ -316,12 +307,51 @@ The labeling function need not be globally measurable. -/
 theorem ae_mem_image_map_uniformOn_finset [MeasurableSingletonClass β] (s : Finset α) (f : α → β) :
     ∀ᵐ x ∂(uniformOn (s : Set α)).map f, x ∈ s.image f := by
   classical
-  apply (ae_map_iff (s.aemeasurable_uniformOn_finset f) (s.image f).measurableSet).2
+  apply (ae_map_iff (Set.aemeasurable_uniformOn (s : Set α) f)
+    (s.image f).measurableSet).2
   rw [s.uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset,
     ae_finsetSum_measure_iff]
   intro i hi
   apply Measure.ae_smul_measure
   simpa using s.mem_image_of_mem f hi
+
+end Finset
+
+namespace Set
+
+/-- Every observable of a labelled uniform law is integrable, including on infinite sampling
+sets, where the law is zero. No global measurability assumptions are needed. -/
+@[simp]
+theorem integrable_map_uniformOn [MeasurableSpace β] [MeasurableSingletonClass β]
+    [SeminormedAddGroup E] (s : Set α) (f : α → β) (g : β → E) :
+    Integrable g ((uniformOn s).map f) := by
+  classical
+  by_cases hs : s.Finite
+  · have h : IntegrableOn g (hs.toFinset.image f : Set β) ((uniformOn s).map f) := by
+      rw [← (hs.toFinset.image f : Set β).biUnion_of_singleton]
+      simp only [Finset.mem_coe, integrableOn_finset_iUnion]
+      exact fun _ _ ↦ integrableOn_singleton
+    have hmem := hs.toFinset.ae_mem_image_map_uniformOn_finset f
+    rw [hs.coe_toFinset] at hmem
+    rwa [IntegrableOn, Measure.restrict_eq_self_of_ae_mem hmem] at h
+  · simp [(uniformOn_eq_zero).2 (Or.inl hs)]
+
+end Set
+
+namespace Finset
+
+variable [MeasurableSpace β]
+
+/-- The expectation of an observable of a finite uniform sample is its average over inputs.
+Repeated labels retain their multiplicities. -/
+theorem integral_map_uniformOn_finset [MeasurableSingletonClass β]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (s : Finset α) (f : α → β) (g : β → E) :
+    ∫ x, g x ∂(uniformOn (s : Set α)).map f =
+      (s.card : ℝ)⁻¹ • ∑ i ∈ s, g (f i) := by
+  rw [integral_map (Set.aemeasurable_uniformOn (s : Set α) f)
+    (Set.integrable_map_uniformOn (s : Set α) f g).aestronglyMeasurable,
+    integral_uniformOn_finset]
 
 open Classical in
 /-- Every label attained by a finite uniform sample has nonzero mass. -/
@@ -334,6 +364,70 @@ theorem map_uniformOn_finset_singleton_ne_zero (s : Finset α) (f : α → β)
     0 < uniformOn (s : Set α) {i} := by simp [hi]
     _ ≤ uniformOn (s : Set α) (f ⁻¹' {f i}) := measure_mono (by simp)
     _ ≤ (uniformOn (s : Set α)).map f {f i} :=
-      Measure.le_map_apply (s.aemeasurable_uniformOn_finset f) _
+      Measure.le_map_apply (Set.aemeasurable_uniformOn (s : Set α) f) _
 
 end Finset
+
+namespace TauCeti.Probability
+
+/-- The expectation of an observable of a labelled uniform sample from a finite type is its
+average over inputs, with repeated labels counted with their multiplicities. -/
+theorem integral_map_uniformOn_univ [Fintype α] [MeasurableSpace β]
+    [MeasurableSingletonClass β] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (f : α → β) (g : β → E) :
+    ∫ x, g x ∂(uniformOn (Set.univ : Set α)).map f =
+      (Fintype.card α : ℝ)⁻¹ • ∑ i, g (f i) := by
+  simpa using (Finset.univ : Finset α).integral_map_uniformOn_finset f g
+
+end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- The expectation of any observable of a native finite uniform sample is its average over
+the sampling set, without a global measurability assumption on the observable. -/
+theorem integral_comp_uniformOn_finset {s : Finset α} {X : Ω → α}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (hX : HasLaw X (uniformOn (s : Set α)) P) (g : α → E) :
+    ∫ ω, g (X ω) ∂P = (s.card : ℝ)⁻¹ • ∑ i ∈ s, g i :=
+  (hX.integral_comp (Set.integrable_uniformOn (s : Set α) g).aestronglyMeasurable).trans
+    (s.integral_uniformOn_finset g)
+
+/-- Every observable of a native uniform random variable is integrable, including for infinite
+sampling sets, where the law is zero. -/
+theorem integrable_comp_uniformOn {s : Set α} {X : Ω → α} [SeminormedAddGroup E]
+    (hX : HasLaw X (uniformOn s) P) (g : α → E) :
+    Integrable (fun ω ↦ g (X ω)) P :=
+  hX.integrable_comp (s.integrable_uniformOn g)
+
+/-- A native uniform random variable is integrable, including for infinite sampling sets. -/
+theorem integrable_uniformOn [SeminormedAddGroup α] {s : Set α} {X : Ω → α}
+    (hX : HasLaw X (uniformOn s) P) : Integrable X P :=
+  hX.integrable_comp_uniformOn id
+
+/-- Assigning arbitrary labels to a native uniform random variable gives the mapped uniform
+law, without requiring the labels to be globally measurable. -/
+theorem map_uniformOn {s : Set α} [MeasurableSpace β] {X : Ω → α}
+    (hX : HasLaw X (uniformOn s) P) (f : α → β) :
+    HasLaw (fun ω ↦ f (X ω)) ((uniformOn s).map f) P :=
+  (hasLaw_map (s.aemeasurable_uniformOn f)).fun_comp hX
+
+/-- Every observable of a random variable with a labelled uniform law is integrable. -/
+theorem integrable_comp_map_uniformOn {s : Set α} [MeasurableSpace β]
+    [MeasurableSingletonClass β] [SeminormedAddGroup E] {X : Ω → β} {f : α → β}
+    (hX : HasLaw X ((uniformOn s).map f) P) (g : β → E) :
+    Integrable (fun ω ↦ g (X ω)) P :=
+  hX.integrable_comp (s.integrable_map_uniformOn f g)
+
+/-- The expectation of any observable of a finitely labelled uniform random variable is its
+average over the sampling inputs, without global measurability assumptions. -/
+theorem integral_comp_map_uniformOn_finset {s : Finset α} [MeasurableSpace β]
+    [MeasurableSingletonClass β] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {X : Ω → β} {f : α → β}
+    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) (g : β → E) :
+    ∫ ω, g (X ω) ∂P = (s.card : ℝ)⁻¹ • ∑ i ∈ s, g (f i) :=
+  (hX.integral_comp (Set.integrable_map_uniformOn (s : Set α) f g).aestronglyMeasurable).trans
+    (s.integral_map_uniformOn_finset f g)
+
+end ProbabilityTheory.HasLaw
