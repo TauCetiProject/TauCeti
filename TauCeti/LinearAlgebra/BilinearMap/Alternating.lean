@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 # Alternating bilinear maps and two-forms
 
 The alternating bilinear maps form a submodule of the bilinear maps. The linear equivalence
-`LinearMap.alternatingBilinMapEquiv` identifies this submodule with alternating maps on `Fin 2`,
+`TauCeti.alternatingBilinMapEquiv` identifies this submodule with alternating maps on `Fin 2`,
 without multiplying by two. It packages the inverse conversions
 `LinearMap.IsAlt.toAlternatingMap` and `MultilinearMap.toBilinMap`.
 
@@ -22,10 +22,10 @@ this is the algebraic comparison needed to read a symplectic bilinear form as a 
 
 public section
 
-namespace LinearMap
-
 variable (R V N : Type*) [CommSemiring R] [AddCommMonoid V] [Module R V]
   [AddCommMonoid N] [Module R N]
+
+namespace TauCeti
 
 /-- The submodule of bilinear maps that vanish on every pair of equal arguments. -/
 def alternatingBilinMap : Submodule R (V →ₗ[R] V →ₗ[R] N) where
@@ -53,8 +53,8 @@ def alternatingBilinMapEquiv : alternatingBilinMap R V N ≃ₗ[R] V [⋀^Fin 2]
   left_inv B := Subtype.ext
     ((mem_alternatingBilinMap _).mp B.property).toBilinMap_toAlternatingMap
   right_inv A := A.toAlternatingMap_isAlt_toBilinMap
-  map_add' B C := by ext v; simp [IsAlt.toAlternatingMap_apply]
-  map_smul' a B := by ext v; simp [IsAlt.toAlternatingMap_apply]
+  map_add' B C := by ext v; simp [LinearMap.IsAlt.toAlternatingMap_apply]
+  map_smul' a B := by ext v; simp [LinearMap.IsAlt.toAlternatingMap_apply]
 
 variable {R V N}
 
@@ -70,7 +70,13 @@ theorem alternatingBilinMapEquiv_symm_apply (A : V [⋀^Fin 2]→ₗ[R] N) (x y 
     ((alternatingBilinMapEquiv R V N).symm A).val x y = A ![x, y] :=
   MultilinearMap.toBilinMap_apply _ x y
 
-variable {W U : Type*} [AddCommMonoid W] [Module R W] [AddCommMonoid U] [Module R U]
+end TauCeti
+
+namespace LinearMap
+
+open TauCeti
+
+variable {R V N} {W U : Type*} [AddCommMonoid W] [Module R W] [AddCommMonoid U] [Module R U]
 
 /-- Pullback of an alternating bilinear map, applying `L` in both arguments. -/
 def alternatingBilinMapPullback (L : W →ₗ[R] V) :
@@ -88,7 +94,7 @@ theorem alternatingBilinMapPullback_apply (L : W →ₗ[R] V)
 
 /-- Pullback by the identity is the identity. -/
 @[simp]
-theorem alternatingBilinMapPullback_id :
+theorem _root_.TauCeti.alternatingBilinMapPullback_id :
     alternatingBilinMapPullback (N := N) (LinearMap.id : V →ₗ[R] V) = LinearMap.id := by
   ext B x y
   rfl
