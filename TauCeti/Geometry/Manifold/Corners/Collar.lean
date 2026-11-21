@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.Collar.Brown
-public import TauCeti.Geometry.Manifold.Boundary.Invariance
+public import TauCeti.Geometry.Manifold.Boundary.Charts
+public import TauCeti.Geometry.Manifold.Boundary.Collar.Topological
 
 /-!
 # The collar of the boundary of a manifold with corners
@@ -33,10 +33,14 @@ with inverse sending `w` to `w - m • (1, …, 1)` and `m`, where `m` is the sm
 point reads the boundary in the boundary of the quadrant, by the topological invariance of the
 boundary (`OpenPartialHomeomorph.isBoundaryPoint_iff`); near the image of the point, the collar of
 the quadrant of small enough depth stays in the target of `e`, and `e.symm` carries it to a local
-collar of `∂M`, whose points of positive collar depth are interior points of `M`
-(`TauCeti.isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant`). Brown's
-collaring theorem (`TauCeti.IsLocallyCollared.isCollared`) assembles these local collars into a
-global one.
+collar of `∂M`, whose points of positive collar depth are interior points of `M`. This transport
+works for any finite-dimensional model with a collared boundary
+(`TauCeti.isLocallyCollared_subtypeVal_boundary_of_isCollared`), and gives
+`TauCeti.isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant`. Brown's
+collaring theorem (`TauCeti.IsLocallyCollared.isCollared`, in the form
+`TauCeti.isCollared_subtypeVal_boundary_of_isLocallyCollared`) assembles these local collars into a
+global one. In the quadrant, the boundary points are those with a vanishing coordinate
+(`TauCeti.ModelWithCorners.mem_boundary_euclideanQuadrant_iff`).
 
 ## Main definitions
 
@@ -45,8 +49,6 @@ global one.
 
 ## Main results
 
-* `TauCeti.ModelWithCorners.mem_boundary_euclideanQuadrant_iff`: on a charted space modelled on
-  the quadrant, every chart detects the boundary points as those with a vanishing coordinate.
 * `TauCeti.isCollared_subtypeVal_boundary_euclideanQuadrant`: the boundary of the quadrant is
   collared.
 * `TauCeti.isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant`: the boundary
@@ -71,18 +73,6 @@ open Set Topology
 open scoped Manifold
 
 namespace TauCeti
-
-/-- **Boundary points of a manifold with corners, in any chart.** A point `x` of a charted space
-modelled on the quadrant `[0, ∞)ⁿ` is a boundary point exactly when some coordinate of its image
-under a chart `e` around it, in the atlas or not, vanishes. -/
-theorem ModelWithCorners.mem_boundary_euclideanQuadrant_iff {n : ℕ} {M : Type*}
-    [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant n) M]
-    {e : OpenPartialHomeomorph M (EuclideanQuadrant n)} {x : M} (hx : x ∈ e.source) :
-    x ∈ (𝓡c n).boundary M ↔ ∃ i, (e x).val i = 0 := by
-  rw [ModelWithCorners.boundary, mem_ofPred_eq,
-    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx,
-    frontier_range_modelWithCornersEuclideanQuadrant, modelWithCornersEuclideanQuadrant_apply]
-  exact (and_iff_right (e x).property).trans (exists_congr fun _ ↦ eq_comm)
 
 section Model
 
@@ -217,79 +207,13 @@ section Manifold
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant n) M]
 
-/-- A chart `e` identifies the boundary points of `M` in its source read in `O ⊆ e.target` with the
-boundary points of the quadrant in `O`. -/
-private noncomputable def chartBoundaryHomeomorph
-    (e : OpenPartialHomeomorph M (EuclideanQuadrant n)) {O : Set (EuclideanQuadrant n)}
-    (hO : O ⊆ e.target) :
-    (Subtype.val ⁻¹' (e.source ∩ e ⁻¹' O) : Set ((𝓡c n).boundary M)) ≃ₜ
-      (Subtype.val ⁻¹' O : Set ((𝓡c n).boundary (EuclideanQuadrant n))) where
-  toFun p := ⟨⟨e p.val.val,
-    (e.isBoundaryPoint_iff (𝓡c n) (𝓡c n) rfl p.property.1).1 p.val.property⟩, p.property.2⟩
-  invFun z := ⟨⟨e.symm z.val.val,
-      (e.isBoundaryPoint_iff (𝓡c n) (𝓡c n) rfl (e.map_target (hO z.property))).2
-        (by rw [e.right_inv (hO z.property)]; exact z.val.property)⟩,
-    e.map_target (hO z.property), by
-      rw [mem_preimage, e.right_inv (hO z.property)]
-      exact z.property⟩
-  left_inv p := Subtype.ext (Subtype.ext (e.left_inv p.property.1))
-  right_inv z := Subtype.ext (Subtype.ext (e.right_inv (hO z.property)))
-  continuous_toFun := ((e.continuousOn.comp_continuous
-    (continuous_subtypeVal.comp continuous_subtypeVal) fun p ↦ p.property.1).subtype_mk
-      _).subtype_mk _
-  continuous_invFun := ((e.continuousOn_symm.comp_continuous
-    (continuous_subtypeVal.comp continuous_subtypeVal) fun z ↦ hO z.property).subtype_mk
-      _).subtype_mk _
-
 /-- **The boundary of a manifold with corners is locally collared.** For a charted space over the
 quadrant `[0, ∞)ⁿ`, every boundary point has an open neighbourhood in the boundary with a collar in
 `M` whose points of positive collar depth are interior points. -/
 theorem isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant :
-    IsLocallyCollared ((↑) : (𝓡c n).boundary M → M) := by
-  obtain ⟨C, hC⟩ := isCollared_iff.1 (isCollared_subtypeVal_boundary_euclideanQuadrant n)
-  refine isLocallyCollared_iff.2 fun x ↦ ?_
-  set e := chartAt (EuclideanQuadrant n) (x : M)
-  have hxe : (x : M) ∈ e.source := mem_chart_source _ _
-  -- The collar of the quadrant at small depth near `e x` stays in the target of `e`.
-  have hT : IsOpen {q | C q ∈ e.target} := e.open_target.preimage hC.isOpenEmbedding.continuous
-  obtain ⟨u, v, hu, hv, hxu, h0v, huv⟩ := isOpen_prod_iff.1 hT
-    ⟨e x, (e.isBoundaryPoint_iff (𝓡c n) (𝓡c n) rfl hxe).1 x.property⟩ ⟨0, le_rfl, zero_lt_one⟩
-    (by rw [mem_ofPred_eq, hC.apply_zero]; exact e.map_source hxe)
-  obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.1 hu
-  obtain ⟨r, hr, hrv⟩ := Metric.isOpen_iff.1 hv _ h0v
-  have hε : min r 1 ∈ Ioc (0 : ℝ) 1 := ⟨lt_min hr one_pos, min_le_right _ _⟩
-  have hεv (t : Ico (0 : ℝ) 1) : (⟨min r 1 * t, mul_nonneg hε.1.le t.property.1,
-      (mul_le_of_le_one_left t.property.1 hε.2).trans_lt t.property.2⟩ : Ico (0 : ℝ) 1) ∈ v := by
-    refine hrv ?_
-    rw [Metric.mem_ball, Subtype.dist_eq, Real.dist_eq, sub_zero,
-      abs_of_nonneg (mul_nonneg hε.1.le t.property.1)]
-    exact (mul_lt_of_lt_one_right hε.1 t.property.2).trans_le (min_le_left _ _)
-  -- Restrict the collar of the quadrant to `O ∩ e.target`, shrink its depth, read it in `M`.
-  have hOt : IsOpen (Subtype.val ⁻¹' (O ∩ e.target) :
-      Set ((𝓡c n).boundary (EuclideanQuadrant n))) :=
-    (hO.inter e.open_target).preimage continuous_subtypeVal
-  set a := chartBoundaryHomeomorph e (inter_subset_right : O ∩ e.target ⊆ e.target)
-  have hc := (((hC.restrict hOt).scale _ hε).comp_homeomorph a).openPartialHomeomorph_comp e.symm
-    (by
-      rintro _ ⟨⟨p, t⟩, rfl⟩
-      exact huv ⟨(a p).property.1, hεv t⟩)
-  have hfa : ⇑e.symm ∘ (Subtype.val ∘ Subtype.val) ∘ ⇑a = ((↑) : (𝓡c n).boundary M → M) ∘
-      ((↑) : (Subtype.val ⁻¹' (e.source ∩ e ⁻¹' (O ∩ e.target)) : Set ((𝓡c n).boundary M)) →
-        (𝓡c n).boundary M) :=
-    funext fun p ↦ e.left_inv p.property.1
-  rw [hfa] at hc
-  refine ⟨_, (e.isOpen_inter_preimage (hO.inter e.open_target)).preimage continuous_subtypeVal,
-    ⟨hxe, hxu, e.map_source hxe⟩, _, hc, ?_⟩
-  · -- A point of positive depth is read in `e` as a point of positive depth of the collar of the
-    -- quadrant, which is not a boundary point.
-    rintro ⟨p, t⟩ ⟨y, hy⟩
-    have hmem : C ((a p).val, _) ∈ e.target := huv ⟨(a p).property.1, hεv t⟩
-    have hyB := (e.isBoundaryPoint_iff (𝓡c n) (𝓡c n) rfl
-      (hy ▸ e.map_target hmem : (y : M) ∈ e.source)).1 y.property
-    simp only [Function.comp_apply, Prod.map_apply, id_eq] at hy
-    rw [hy, e.right_inv hmem] at hyB
-    have h0 := congrArg Subtype.val (hC.preimage_range.subset ⟨⟨_, hyB⟩, rfl⟩).2
-    exact (mul_eq_zero.1 h0).resolve_left hε.1.ne'
+    IsLocallyCollared ((↑) : (𝓡c n).boundary M → M) :=
+  isLocallyCollared_subtypeVal_boundary_of_isCollared
+    (isCollared_subtypeVal_boundary_euclideanQuadrant n)
 
 /-- **The collar of a compact boundary of a manifold with corners.** If the boundary of a Hausdorff
 charted space over the quadrant is compact, then it is collared: there is an open embedding
@@ -297,17 +221,16 @@ charted space over the quadrant is compact, then it is collared: there is an ope
 collars. -/
 theorem isCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant [T2Space M]
     (hK : IsCompact ((𝓡c n).boundary M)) : IsCollared ((↑) : (𝓡c n).boundary M → M) :=
-  have := isCompact_iff_compactSpace.1 hK
-  isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant.isCollared
-    Subtype.val_injective
+  isCollared_subtypeVal_boundary_of_isLocallyCollared
+    isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant hK
 
 /-- **The boundary of a compact manifold with corners is collared.** For a compact Hausdorff
 charted space over the quadrant, there is an open embedding `c : ∂M × [0, 1) → M` with
 `c (x, 0) = x`. -/
 theorem isCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant_of_compactSpace
     [CompactSpace M] [T2Space M] : IsCollared ((↑) : (𝓡c n).boundary M → M) :=
-  isCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant
-    ((𝓡c n).isClosed_boundary_of_finiteDimensional M).isCompact
+  isCollared_subtypeVal_boundary_of_isLocallyCollared_of_compactSpace
+    isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant
 
 end Manifold
 

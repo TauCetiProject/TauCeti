@@ -18,10 +18,13 @@ space `M` modelled on a real normed space `E` of finite dimension `n`, a topolog
 without boundary, oriented by `o`. Suppose that the complement of `ι(M)` is the image of a
 collared map `f : N → X` (`TauCeti.IsCollared`): there is an open embedding
 `c : N × [0, 1) → X` with `c (y, 0) = f y`. This is the situation of a compact topological
-manifold `X` with boundary `∂X = f(N)` and interior `M`, for instance a compact manifold with
-corners: the half-space charts collar the boundary locally, and Brown's collaring theorem
-(`TauCeti.IsLocallyCollared.isCollared`) assembles local collars of a compact boundary into a
-global one.
+manifold `X` with boundary `∂X = f(N)` and interior `M`. For a compact manifold with boundary the
+half-space charts collar the boundary locally (`TauCeti.isCollared_subtypeVal_boundary`), and for
+a compact manifold with corners the quadrant charts do
+(`TauCeti.isLocallyCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant`,
+`TauCeti.isCollared_subtypeVal_boundary_modelWithCornersEuclideanQuadrant`). In both cases Brown's
+collaring theorem (`TauCeti.IsLocallyCollared.isCollared`) assembles local collars of a compact
+boundary into a global one.
 
 Then there is a unique class `o.fundamentalClassRel hn hι hιf hf` of `Hₙ(X, ∂X; ℤ)`, the
 *fundamental class of `X` relative to its boundary*, whose image in the local homology

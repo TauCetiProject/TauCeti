@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
-public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.Topology.Instances.Real.IcoScale
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Tactic.NormNum
 import Mathlib.Topology.LocalAtTarget
 
@@ -147,14 +147,8 @@ theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
 collar of `e ∘ f`. Applied to `e.symm`, this moves a collar inside the target of a chart of a
 manifold into the manifold. -/
 theorem openPartialHomeomorph_comp (e : OpenPartialHomeomorph M P) (hc : range c ⊆ e.source) :
-    IsCollar (e ∘ f) (e ∘ c) := by
-  refine ⟨.of_continuous_injective_isOpenMap ?_ ?_ fun s hs ↦ ?_,
-    fun x ↦ congrArg e (h.apply_zero x)⟩
-  · exact e.continuousOn.comp_continuous h.isOpenEmbedding.continuous fun p ↦ hc ⟨p, rfl⟩
-  · exact fun p q hpq ↦ h.isOpenEmbedding.injective (e.injOn (hc ⟨p, rfl⟩) (hc ⟨q, rfl⟩) hpq)
-  · rw [image_comp]
-    exact e.isOpen_image_of_subset_source (h.isOpenEmbedding.isOpenMap s hs)
-      ((image_subset_range _ _).trans hc)
+    IsCollar (e ∘ f) (e ∘ c) :=
+  ⟨e.isOpenEmbedding_comp h.isOpenEmbedding hc, fun x ↦ congrArg e (h.apply_zero x)⟩
 
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :
