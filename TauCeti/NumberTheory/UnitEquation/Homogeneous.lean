@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Data.Set.Card
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.NumberTheory.UnitEquation.Nondegenerate
 
 /-!
@@ -27,9 +26,10 @@ solutions in two classes.
 * A *nondegenerate* solution has no such vanishing subsum. Dividing it by its coordinate `x_{i₀}`
   gives the normalized solution `x / x_{i₀}`, whose other coordinates form a nondegenerate
   solution of the inhomogeneous equation `∑_{i ≠ i₀} (-aᵢ / a_{i₀}) yᵢ = 1` in `n - 1` unknowns.
-  This map is injective, so there are at most as many normalized solutions as solutions of that
-  equation, and every nondegenerate solution lies on the line through one of them. For `n ≥ 3`
-  such a line is a proper subspace of `H`.
+  Dropping the coordinate `i₀` is injective on solutions already normalized to `y_{i₀} = 1`.
+  Thus there are at most as many normalized solutions as nondegenerate solutions of the
+  inhomogeneous equation. Every nondegenerate homogeneous solution lies on the line through
+  its normalization, and for `n ≥ 3` this line is a proper subspace of `H`.
 
 For a finitely generated `Γ` in characteristic zero the inhomogeneous equation has only finitely
 many nondegenerate solutions, by the finiteness theorem for unit equations (Evertse, Theorem 8.13;
@@ -45,15 +45,15 @@ is `0`, and in `Γ = ⟨2⟩ ≤ ℚˣ` the equation `x₁ - x₂ = 0` has the i
 
 ## Main results
 
-* `TauCeti.exists_finset_submodule_lt_ker_of_not_isNondegenerateHomogeneousSolution`: for nonzero
+* `TauCeti.exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions`: for nonzero
   coefficients, at most `2 ^ n` proper subspaces of the hyperplane `∑ aᵢyᵢ = 0` contain every
   degenerate solution of `∑ aᵢyᵢ = 0`.
 * `TauCeti.encard_setOf_apply_eq_one_and_isNondegenerateHomogeneousSolution_le`: the
   nondegenerate solutions `y ∈ Γⁿ` of `∑ aᵢyᵢ = 0` with `y_{i₀} = 1` are at most as many as the
   nondegenerate solutions in `Γⁿ⁻¹` of `∑_{i ≠ i₀} (-aᵢ / a_{i₀}) zᵢ = 1`.
-* `TauCeti.exists_set_submodule_lt_ker_of_sum_mul_eq_zero`: for `n ≥ 3`, all solutions `x ∈ Γⁿ`
-  of `∑ aᵢxᵢ = 0` lie in proper subspaces of the hyperplane `∑ aᵢyᵢ = 0`, at most `2 ^ n` plus
-  the number of nondegenerate solutions of that inhomogeneous equation.
+* `TauCeti.exists_set_submodule_lt_ker_cover_homogeneousUnitEquationSolutions`: for `n ≥ 3`, all
+  solutions `x ∈ Γⁿ` of `∑ aᵢxᵢ = 0` lie in proper subspaces of the hyperplane `∑ aᵢyᵢ = 0`, at
+  most `2 ^ n` plus the number of nondegenerate solutions of that inhomogeneous equation.
 
 ## References
 
@@ -73,23 +73,14 @@ variable {ι : Type*} [Fintype ι]
 
 section CommRing
 
-variable {R : Type*} [CommRing R] {a : ι → R}
-
-/-- For indices `j` and `k`, the vector with `a k` at `j`, minus the one with `a j` at `k`, lies
-on the hyperplane `∑ aᵢyᵢ = 0`. It witnesses that the subspaces of this hyperplane constructed
-below are proper. -/
-private theorem single_sub_single_mem_ker [DecidableEq ι] (j k : ι) :
-    Pi.single j (a k) - Pi.single k (a j) ∈ LinearMap.ker (Fintype.linearCombination R a) := by
-  simp [Fintype.linearCombination_apply, mul_sub, sum_sub_distrib, Pi.single_apply, mul_comm]
-
-variable [NoZeroDivisors R]
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] {a : ι → R}
 
 /-- **Degenerate solutions lie in boundedly many proper subspaces of the hyperplane.** If all `aᵢ`
 are nonzero, there are at most `2 ^ n` proper subspaces of the hyperplane `∑ aᵢyᵢ = 0` in `Rⁿ`,
 `n` the number of unknowns, such that every solution of `∑ aᵢyᵢ = 0` that is not nondegenerate
 lies in one of them. They are the intersections of the hyperplane with the kernels of the linear
 forms `y ↦ ∑ i ∈ I, aᵢyᵢ` for nonempty proper sets `I` of indices. -/
-theorem exists_finset_submodule_lt_ker_of_not_isNondegenerateHomogeneousSolution
+theorem exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions
     (ha : ∀ i, a i ≠ 0) :
     ∃ T : Finset (Submodule R (ι → R)), #T ≤ 2 ^ Fintype.card ι ∧
       (∀ V ∈ T, V < LinearMap.ker (Fintype.linearCombination R a)) ∧
@@ -97,9 +88,16 @@ theorem exists_finset_submodule_lt_ker_of_not_isNondegenerateHomogeneousSolution
         ∃ V ∈ T, y ∈ V := by
   classical
   -- The linear form `y ↦ ∑ i ∈ I, aᵢ yᵢ`.
-  let f : Finset ι → (ι → R) →ₗ[R] R := fun I ↦ ∑ i ∈ I, a i • LinearMap.proj i
+  let f (I : Finset ι) : (ι → R) →ₗ[R] R :=
+    Fintype.linearCombination R fun i ↦ if i ∈ I then a i else 0
   have hf : ∀ I y, f I y = ∑ i ∈ I, a i * y i := fun I y ↦ by
-    simp [f, LinearMap.sum_apply]
+    calc
+      f I y = ∑ i ∈ univ.filter (· ∈ I), a i * y i := by
+        rw [sum_filter]
+        simp only [f, Fintype.linearCombination_apply]
+        exact sum_congr rfl fun i _ ↦ by
+          by_cases hi : i ∈ I <;> simp [hi, mul_comm]
+      _ = ∑ i ∈ I, a i * y i := by rw [filter_mem_eq_inter, univ_inter]
   let s : Finset (Finset ι) := univ.filter fun I ↦ I.Nonempty ∧ I ≠ univ
   refine ⟨s.image fun I ↦ LinearMap.ker (Fintype.linearCombination R a) ⊓ LinearMap.ker (f I),
     ?_, ?_, ?_⟩
@@ -112,12 +110,12 @@ theorem exists_finset_submodule_lt_ker_of_not_isNondegenerateHomogeneousSolution
       by_contra! hall
       exact hIu (eq_univ_of_forall hall)
     refine IsConcreteLE.lt_iff_le_and_exists.mpr
-      ⟨inf_le_left, _, single_sub_single_mem_ker j k, fun hmem ↦ ?_⟩
+      ⟨inf_le_left, _, Fintype.single_sub_single_mem_ker_linearCombination j k, fun hmem ↦ ?_⟩
     -- The form `∑ i ∈ I, aᵢ yᵢ` takes the value `aⱼ aₖ ≠ 0` at the witness.
     have h0 := LinearMap.mem_ker.mp (Submodule.mem_inf.mp hmem).2
-    rw [hf] at h0
-    simp [mul_sub, Pi.single_apply, hj, hk] at h0
-    exact h0.elim (ha j) (ha k)
+    simp only [f, map_sub, Fintype.linearCombination_apply_single, ite_eq_left hj, ite_eq_right hk,
+      smul_eq_mul, mul_zero, sub_zero] at h0
+    exact mul_ne_zero (ha k) (ha j) h0
   · intro y h0 hy
     obtain ⟨I, hI, hIu, hI0⟩ :
         ∃ I : Finset ι, I.Nonempty ∧ I ≠ univ ∧ ∑ i ∈ I, a i * y i = 0 := by
@@ -132,56 +130,62 @@ section Field
 
 variable {K : Type*} [Field K] {a : ι → K}
 
+open scoped Classical in
 /-- **Normalized nondegenerate homogeneous solutions inject into unit equation solutions.** For
 `Γ ≤ Kˣ`, an index `i₀` and `a_{i₀} ≠ 0`, dropping the coordinate `i₀` sends each nondegenerate
 solution `y ∈ Γⁿ` of `∑ aᵢyᵢ = 0` with `y_{i₀} = 1` to a nondegenerate solution of
-`∑_{i ≠ i₀} (-aᵢ / a_{i₀}) zᵢ = 1` in `Γⁿ⁻¹`, injectively. So there are at most as many of the
-former as of the latter, and the unit equation theorem for `Γ` in `n - 1` unknowns makes them
-finitely many. Every nondegenerate solution in `Γⁿ` is a multiple of one of them. -/
-theorem encard_setOf_apply_eq_one_and_isNondegenerateHomogeneousSolution_le [DecidableEq ι]
+`∑_{i ≠ i₀} (-aᵢ / a_{i₀}) zᵢ = 1` in `Γⁿ⁻¹`, injectively. Thus the normalized solutions are at
+most as numerous as the nondegenerate solutions of the inhomogeneous equation. Every
+nondegenerate homogeneous solution in `Γⁿ` is a multiple of its normalization. -/
+theorem encard_setOf_apply_eq_one_and_isNondegenerateHomogeneousSolution_le
     {i₀ : ι} (ha₀ : a i₀ ≠ 0) (Γ : Subgroup Kˣ) :
     {y : ι → Γ | y i₀ = 1 ∧
         IsNondegenerateHomogeneousSolution a fun i ↦ ((y i : Kˣ) : K)}.encard ≤
-      {z : ↥(univ.erase i₀) → Γ |
-        IsNondegenerateSolution (fun j : ↥(univ.erase i₀) ↦ -a j / a i₀)
+      {z : {i : ι // i ≠ i₀} → Γ |
+        IsNondegenerateSolution (fun j : {i : ι // i ≠ i₀} ↦ -a j / a i₀)
           fun j ↦ ((z j : Kˣ) : K)}.encard := by
   refine Set.encard_le_encard_of_injOn (f := fun y j ↦ y j) ?_ ?_
   · rintro y ⟨hy1, hy⟩
     have h2 : 2 ≤ #(univ : Finset ι) := by
       -- With a single unknown, `a_{i₀} y_{i₀} = a_{i₀} ≠ 0` cannot vanish.
       by_contra! h
-      have huniv : (univ : Finset ι) = {i₀} := eq_singleton_iff_unique_mem.mpr
-        ⟨mem_univ _, fun j _ ↦ card_le_one.mp (by omega) _ (mem_univ _) _ (mem_univ _)⟩
+      have hpos : 0 < Fintype.card ι := Fintype.card_pos_iff.mpr ⟨i₀⟩
+      rw [card_univ] at h
+      have huniv := univ_eq_singleton_of_card_one i₀ (by omega)
       have hsum := hy.sum_eq_zero
       rw [huniv, sum_singleton, hy1] at hsum
       simp [ha₀] at hsum
     -- The whole sum is a minimal vanishing subsum; divide it by its term at `i₀`.
-    simpa [hy1] using isNondegenerateSolution_div_of_minimal (mem_univ i₀) h2 hy.sum_eq_zero
+    let e : {i : ι // i ≠ i₀} ≃ ↥(univ.erase i₀) :=
+      Equiv.subtypeEquivRight fun i ↦ by simp
+    have hdiv := isNondegenerateSolution_div_of_minimal (mem_univ i₀) h2 hy.sum_eq_zero
       fun J hJ hne ↦ hy.subsum_ne_zero hne hJ.ne
+    simpa [hy1, e, Function.comp_def, Equiv.subtypeEquivRight_apply] using hdiv.comp_equiv e
   · rintro y ⟨hy1, -⟩ y' ⟨hy1', -⟩ h
     funext i
     by_cases hi : i = i₀
     · rw [hi, hy1, hy1']
-    · exact congrFun h ⟨i, mem_erase.mpr ⟨hi, mem_univ i⟩⟩
+    · exact congrFun h ⟨i, hi⟩
 
+open scoped Classical in
 /-- **Solutions of a homogeneous unit equation lie in boundedly many proper subspaces.** Let
 `Γ ≤ Kˣ`, `n ≥ 3` the number of unknowns, all `aᵢ` nonzero and `i₀` an index. Then a set of proper
 subspaces of the hyperplane `∑ aᵢyᵢ = 0` in `Kⁿ` contains every solution `x ∈ Γⁿ` of
 `∑ aᵢxᵢ = 0`, and it has at most `2 ^ n` members plus as many as there are nondegenerate solutions
-`z ∈ Γⁿ⁻¹` of `∑_{i ≠ i₀} (-aᵢ / a_{i₀}) zᵢ = 1`. When the unit equation theorem makes the latter
-finite, the solutions lie in finitely many proper subspaces of the hyperplane. -/
-theorem exists_set_submodule_lt_ker_of_sum_mul_eq_zero [DecidableEq ι] (ha : ∀ i, a i ≠ 0)
+`z ∈ Γⁿ⁻¹` of `∑_{i ≠ i₀} (-aᵢ / a_{i₀}) zᵢ = 1`. The unit equation finiteness theorem supplies
+a finite bound when `K` has characteristic zero and `Γ` is finitely generated. -/
+theorem exists_set_submodule_lt_ker_cover_homogeneousUnitEquationSolutions (ha : ∀ i, a i ≠ 0)
     (hι : 3 ≤ Fintype.card ι) (Γ : Subgroup Kˣ) (i₀ : ι) :
     ∃ T : Set (Submodule K (ι → K)),
-      T.encard ≤ 2 ^ Fintype.card ι + {z : ↥(univ.erase i₀) → Γ |
-        IsNondegenerateSolution (fun j : ↥(univ.erase i₀) ↦ -a j / a i₀)
+      T.encard ≤ 2 ^ Fintype.card ι + {z : {i : ι // i ≠ i₀} → Γ |
+        IsNondegenerateSolution (fun j : {i : ι // i ≠ i₀} ↦ -a j / a i₀)
           fun j ↦ ((z j : Kˣ) : K)}.encard ∧
       (∀ V ∈ T, V < LinearMap.ker (Fintype.linearCombination K a)) ∧
       ∀ x : ι → Γ, ∑ i, a i * ((x i : Kˣ) : K) = 0 →
         ∃ V ∈ T, (fun i ↦ ((x i : Kˣ) : K)) ∈ V := by
   obtain ⟨j, k, l, hjk, hjl, hkl⟩ := Fintype.two_lt_card_iff.mp hι
   obtain ⟨T₀, hT₀card, hT₀, hcov₀⟩ :=
-    exists_finset_submodule_lt_ker_of_not_isNondegenerateHomogeneousSolution ha
+    exists_finset_submodule_lt_ker_cover_degenerateHomogeneousSolutions ha
   let N : Set (ι → Γ) :=
     {y | y i₀ = 1 ∧ IsNondegenerateHomogeneousSolution a fun i ↦ ((y i : Kˣ) : K)}
   refine ⟨↑T₀ ∪ (fun y : ι → Γ ↦ K ∙ fun i ↦ ((y i : Kˣ) : K)) '' N, ?_, fun V hV ↦ ?_,
@@ -191,11 +195,11 @@ theorem exists_set_submodule_lt_ker_of_sum_mul_eq_zero [DecidableEq ι] (ha : �
     rw [Set.encard_coe_eq_coe_finsetCard]
     exact_mod_cast hT₀card
   · rcases hV with hV | ⟨y, ⟨-, hy⟩, rfl⟩
-    · exact hT₀ V hV
+    · exact hT₀ V (Finset.mem_coe.mp hV)
     -- The line through a normalized nondegenerate solution `y` lies on the hyperplane, and misses
     -- the witness, which vanishes at `l` while `y` does not.
     refine IsConcreteLE.lt_iff_le_and_exists.mpr
-      ⟨?_, _, single_sub_single_mem_ker j k, fun hmem ↦ ?_⟩
+      ⟨?_, _, Fintype.single_sub_single_mem_ker_linearCombination j k, fun hmem ↦ ?_⟩
     · rw [Submodule.span_singleton_le_iff_mem, LinearMap.mem_ker]
       simpa [Fintype.linearCombination_apply, mul_comm] using hy.sum_eq_zero
     · obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hmem
@@ -213,9 +217,10 @@ theorem exists_set_submodule_lt_ker_of_sum_mul_eq_zero [DecidableEq ι] (ha : �
       have hmem : y ∈ N :=
         ⟨mul_inv_cancel _, by rw [hy]; exact hnd.smul (inv_ne_zero (Units.ne_zero _))⟩
       refine ⟨_, Or.inr ⟨y, hmem, rfl⟩, Submodule.mem_span_singleton.mpr ⟨((x i₀ : Kˣ) : K), ?_⟩⟩
-      rw [hy, smul_smul, mul_inv_cancel₀ (Units.ne_zero _), one_smul]
+      rw [hy]
+      exact smul_inv_smul₀ (Units.ne_zero _) _
     · obtain ⟨V, hV, hxV⟩ := hcov₀ _ hx hnd
-      exact ⟨V, Or.inl hV, hxV⟩
+      exact ⟨V, Or.inl (Finset.mem_coe.mpr hV), hxV⟩
 
 end Field
 

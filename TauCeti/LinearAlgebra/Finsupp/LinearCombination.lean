@@ -39,6 +39,8 @@ indexed by the elements of `s`.
   a linear combination of its predecessors.
 * `TauCeti.leftInverse_fintypeLinearCombination`: a linear map `M → (ι → R)` sending each `x i` to
   the `i`-th standard basis vector is a left inverse of `Fintype.linearCombination R x`.
+* `Fintype.single_sub_single_mem_ker_linearCombination`: the difference of two single-coordinate
+  vectors with exchanged coefficients lies in the kernel of the scalar linear combination.
 * `Fintype.linearCombination_intCast`: an additive map sends an integer linear combination to the
   linear combination of the images with the integer coefficients cast to the scalar ring.
 -/
@@ -142,6 +144,14 @@ theorem leftInverse_fintypeLinearCombination {ι R M : Type*} [Fintype ι] [Deci
   simp [Fintype.linearCombination_apply, hφ, Pi.single_apply]
 
 end TauCeti
+
+/-- The vector with `a k` at `j`, minus the vector with `a j` at `k`, lies in the kernel of
+the scalar linear combination with coefficients `a`. -/
+theorem Fintype.single_sub_single_mem_ker_linearCombination {ι R : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] {a : ι → R} (j k : ι) :
+    Pi.single j (a k) - Pi.single k (a j) ∈ LinearMap.ker (Fintype.linearCombination R a) := by
+  simp only [LinearMap.mem_ker, map_sub, Fintype.linearCombination_apply_single, smul_eq_mul,
+    mul_comm (a k) (a j), sub_self]
 
 /-- An additive map `f : N →+ M` into a module over a ring `R` sends the integer linear combination
 `∑ j, k j • u j` to the `R`-linear combination of the images `f (u j)` with the coefficients
