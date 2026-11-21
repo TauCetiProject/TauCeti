@@ -41,11 +41,15 @@ of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoO
 A morphism out of zeroth homology is determined by its values on the classes of points
 (`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
 constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
-`TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
+`TauCeti.singularHomology₀Section_singularHomology₀Desc`). A continuous map sends the class of a
+point to that of its image (`TauCeti.singularHomology₀Section_naturality`,
+`TauCeti.homologyMap_singularHomology₀Section_apply`). Points joined by a path have the same
 class (`TauCeti.singularHomology₀Section_eq_of_joined`), and with coefficients in a module the
 converse holds on every nonzero coefficient
-(`TauCeti.singularHomology₀Section_apply_eq_iff`). Multiplying the class of each point by a
-unit that is constant along paths is an automorphism (`TauCeti.singularHomology₀UnitsSmul`,
+(`TauCeti.singularHomology₀Section_apply_eq_iff`). More precisely, no scalar that does not kill a
+coefficient kills the difference of its classes at two points of different path components
+(`TauCeti.smul_sub_singularHomology₀Section_apply_ne_zero`). Multiplying the class of each point
+by a unit that is constant along paths is an automorphism (`TauCeti.singularHomology₀UnitsSmul`,
 `TauCeti.isIso_singularHomology₀UnitsSmul`). On a path-connected space the class of a
 point does not depend on the point, and with coefficients in a ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
@@ -146,6 +150,15 @@ lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x 
     (TopCat.toSSetObj₀Equiv.symm x)).trans
       (congrArg (SSet.ιHomology₀ R) (TopCat.toSSet_map_app_toSSetObj₀Equiv_symm f x))
 
+/-- With coefficients in a module, a continuous map sends the class of a point on a coefficient
+`r` to the class of its image on `r`. -/
+@[simp]
+theorem homologyMap_singularHomology₀Section_apply {k : Type v} [Ring k] {M : ModuleCat.{w} k}
+    {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) (r : M) :
+    (SSet.homologyMap (TopCat.toSSet.map f) M 0).hom ((singularHomology₀Section M x).hom r) =
+      (singularHomology₀Section M (f x)).hom r :=
+  ConcreteCategory.congr_hom (singularHomology₀Section_naturality M f x) r
+
 /-- Mathlib's identification of zeroth homology with the coproduct over path components sends the
 class of a point to the coproduct inclusion indexed by its path component. -/
 @[reassoc (attr := simp)]
@@ -222,24 +235,35 @@ instance isIso_singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C
     singularHomology₀_hom_ext _ fun x ↦ by simp [smul_smul],
     singularHomology₀_hom_ext _ fun x ↦ by simp [smul_smul]⟩
 
+/-- With coefficients in a module, the difference of the classes of two points that are not joined
+by a path is not killed by any scalar `c` that does not kill the coefficient `r`: the classes of
+`r` at points of different path components do not cancel under such a scalar. -/
+theorem smul_sub_singularHomology₀Section_apply_ne_zero {k : Type v} [Ring k]
+    {M : ModuleCat.{w} k} {X : TopCat.{w}} {x y : X} (hxy : ¬Joined x y) {c : k} {r : M}
+    (hr : c • r ≠ 0) :
+    c • ((singularHomology₀Section M x).hom r - (singularHomology₀Section M y).hom r) ≠ 0 := by
+  classical
+  -- The morphism out of zeroth homology which is the identity on the classes of the points of
+  -- the path component of `x` and zero on the others sends the difference to `r`.
+  let v : X → (M ⟶ M) := fun z ↦ if Joined x z then 𝟙 M else 0
+  have hv : ∀ ⦃z z' : X⦄, Path z z' → v z = v z' := fun z z' γ ↦ by
+    simp only [v, show Joined x z ↔ Joined x z' from ⟨(·.trans ⟨γ⟩), (·.trans ⟨γ.symm⟩)⟩]
+  intro h
+  have hd := congrArg (singularHomology₀Desc M v hv).hom h
+  rw [map_smul, map_sub, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    singularHomology₀Section_singularHomology₀Desc,
+    singularHomology₀Section_singularHomology₀Desc] at hd
+  exact hr (by simpa [v, hxy, Joined.refl] using hd)
+
 /-- With coefficients in a module, the classes of two points in zeroth singular homology agree
 on a nonzero coefficient `r` exactly when the points are joined by a path. -/
 theorem singularHomology₀Section_apply_eq_iff {k : Type v} [Ring k] {M : ModuleCat.{w} k}
     {X : TopCat.{w}} {x y : X} {r : M} (hr : r ≠ 0) :
     (singularHomology₀Section M x).hom r = (singularHomology₀Section M y).hom r ↔ Joined x y := by
-  classical
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [singularHomology₀Section_eq_of_joined M h]⟩
   by_contra hxy
-  -- The morphism out of zeroth homology which is the identity on the classes of the points of
-  -- the path component of `x` and zero on the others separates `[x] r` from `[y] r`.
-  let v : X → (M ⟶ M) := fun z ↦ if Joined x z then 𝟙 M else 0
-  have hv : ∀ ⦃z z' : X⦄, Path z z' → v z = v z' := fun z z' γ ↦ by
-    simp only [v, show Joined x z ↔ Joined x z' from ⟨(·.trans ⟨γ⟩), (·.trans ⟨γ.symm⟩)⟩]
-  have hd := congrArg (singularHomology₀Desc M v hv).hom h
-  rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-    singularHomology₀Section_singularHomology₀Desc,
-    singularHomology₀Section_singularHomology₀Desc] at hd
-  exact hr (by simpa [v, hxy, Joined.refl] using hd)
+  exact smul_sub_singularHomology₀Section_apply_ne_zero hxy (c := (1 : k)) (by rwa [one_smul])
+    (by rw [h, sub_self, smul_zero])
 
 variable [HasKernels C]
 
