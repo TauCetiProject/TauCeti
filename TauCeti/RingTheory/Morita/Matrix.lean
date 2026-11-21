@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.RingTheory.Morita.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Module
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -22,6 +23,10 @@ The column module uses the scoped `Matrix.Module.matrixModule` action. The scala
 on `M` used by the native inverse functor is restriction along `Matrix.scalar`; it agrees
 with any given `R`-action satisfying the scalar tower law by
 `IsScalarTower.algebraMap_smul`. No finiteness assumption is imposed on `M`.
+
+Also supplies `Functor.Additive` for `ModuleCat.toMatrixModCat`, identifies its value on `ι → R`
+with the regular `Matrix ι ι R`-module (`TauCeti.toMatrixModCatPiLinearEquiv`), and gives its
+universe-transport isomorphism across `ModuleCat.uliftFunctor` (`TauCeti.toMatrixModCatUliftIso`).
 
 ## References
 
@@ -179,3 +184,56 @@ theorem counitIso_hom_tensorEquivColumns (j : ι)
     exact (map_add ((counitIso R j).hom.app M).hom _ _).trans (congrArg₂ (· + ·) hx hy)
 
 end MatrixModCat
+
+universe u v w
+
+instance (R : Type u) (ι : Type v) [Ring R] [Fintype ι] [DecidableEq ι] :
+    (ModuleCat.toMatrixModCat.{u, v, w} R ι).Additive where
+  map_add {_ _ _ _} := ModuleCat.hom_ext <| LinearMap.ext fun _ ↦ funext fun _ ↦ rfl
+
+@[simp] theorem ModuleCat.toMatrixModCat_obj_smul_apply {R : Type u} [Ring R] {ι : Type v}
+    [Fintype ι] [DecidableEq ι] (M : ModuleCat.{w} R) (A : Matrix ι ι R)
+    (v : (ModuleCat.toMatrixModCat R ι).obj M) (i : ι) : (A • v) i = ∑ j : ι, A i j • v j := (rfl)
+
+namespace TauCeti
+
+variable (R : Type u) [Ring R] (ι : Type v) [Fintype ι] [DecidableEq ι]
+
+/-- Under `ModuleCat.toMatrixModCat`, `ι → R` is isomorphic to the regular `Matrix ι ι R`-module. -/
+def toMatrixModCatPiLinearEquiv :
+    ((ModuleCat.toMatrixModCat R ι).obj (ModuleCat.of R (ι → R))) ≃ₗ[Matrix ι ι R]
+      Matrix ι ι R where
+  toFun v := Matrix.of fun i k ↦ v i k; invFun M i k := M i k
+  left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl
+  map_smul' _ _ := by ext; simp [Matrix.mul_apply]
+
+@[simp] theorem toMatrixModCatPiLinearEquiv_apply (v) (i k : ι) :
+    toMatrixModCatPiLinearEquiv R ι v i k = v i k := (rfl)
+
+@[simp] theorem toMatrixModCatPiLinearEquiv_symm_apply (M : Matrix ι ι R) (i k : ι) :
+    (toMatrixModCatPiLinearEquiv R ι).symm M i k = M i k := (rfl)
+
+/-- Natural isomorphism comparing `ModuleCat.toMatrixModCat` before and after lifting the module
+universe across `ι : Type v`. -/
+def toMatrixModCatUliftIso : ModuleCat.toMatrixModCat.{u, v, w} R ι ≅
+    ModuleCat.uliftFunctor.{v, w, u} R ⋙ ModuleCat.toMatrixModCat.{u, v, max w v} R ι :=
+  NatIso.ofComponents (fun M ↦
+    ({ toFun f i := ULift.up (f i), invFun f i := (f i).down, left_inv _ := rfl,
+       right_inv _ := rfl, map_add' _ _ := rfl,
+       map_smul' _ _ := funext fun _ ↦ ULift.ext <|
+         (map_sum (ULift.moduleEquiv (R := R) (M := M)) _ Finset.univ).symm } :
+      ((ModuleCat.toMatrixModCat.{u, v, w} R ι).obj M) ≃ₗ[Matrix ι ι R]
+        ((ModuleCat.toMatrixModCat.{u, v, max w v} R ι).obj
+          ((ModuleCat.uliftFunctor.{v, w, u} R).obj M))).toModuleIso)
+    fun _ ↦ ModuleCat.hom_ext <| LinearMap.ext fun _ ↦ funext fun _ ↦ rfl
+
+theorem toMatrixModCatUliftIso_hom_app_apply (M : ModuleCat.{w} R)
+    (f : (ModuleCat.toMatrixModCat.{u, v, w} R ι).obj M) (i : ι) :
+    ((toMatrixModCatUliftIso.{u, v, w} R ι).hom.app M f) i = ULift.up (f i) := (rfl)
+
+theorem toMatrixModCatUliftIso_inv_app_apply (M : ModuleCat.{w} R)
+    (f : (ModuleCat.toMatrixModCat.{u, v, max w v} R ι).obj
+      ((ModuleCat.uliftFunctor.{v, w, u} R).obj M)) (i : ι) :
+    ((toMatrixModCatUliftIso.{u, v, w} R ι).inv.app M f) i = (f i).down := (rfl)
+
+end TauCeti

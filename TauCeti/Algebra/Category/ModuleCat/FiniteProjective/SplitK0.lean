@@ -1,0 +1,388 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.LocalRing.Basic
+public import Mathlib.RingTheory.PrincipalIdealDomain
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ExtendScalars
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Matrix
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
+public import TauCeti.Algebra.Category.ModuleCat.Finrank
+
+import TauCeti.Algebra.Group.Prod
+import TauCeti.LinearAlgebra.FreeModule.PID
+import TauCeti.RingTheory.LocalRing.Module
+
+/-!
+# Split `K₀` of finitely generated projective modules: Morita invariance, products, and rank
+
+For a possibly noncommutative ring `R`, this file develops `SplitK0` of
+`(finiteProjectiveModules R).FullSubcategory`: comparison with `ExactK0`, Morita and
+ring-isomorphism invariance (`finiteProjectiveModulesSplitK0Equiv`), binary product decomposition
+(`finiteProjectiveModulesProdSplitK0Equiv`), canonical universe-polymorphic matrix Morita
+invariance (`finiteProjectiveModulesMatrixSplitK0Equiv`), and rank isomorphisms `K₀(proj R) ≃+ ℤ`
+over division rings, PIDs, and commutative local rings.
+
+## References
+
+* C. A. Weibel, *The K-book*, Chapter II, §2, Lemma 2.1, Examples 2.1.1–2.1.2, Prop. 2.4, §2.8.
+-/
+
+public section
+
+open CategoryTheory CategoryTheory.Limits
+
+universe u u' v
+
+namespace TauCeti
+
+/-! ### Comparison between `SplitK0` and `ExactK0` of finitely generated projective modules -/
+
+/-- **Comparison between split and exact `K₀` of finitely generated projective modules.** Every
+short exact sequence splits (`TauCeti.finiteProjectiveModulesExactStructure_eq_split`). -/
+noncomputable def finiteProjectiveModulesSplitK0EquivExactK0 (R : Type u) [Ring R] :
+    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
+      ExactK0.{u} (finiteProjectiveModulesExactStructure R) :=
+  ExactK0.fromSplitEquiv.{u} fun {S} hS ↦ (ExactStructure.split_conflation S).mp
+    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_of (R : Type u) [Ring R] (P) :
+    finiteProjectiveModulesSplitK0EquivExactK0 R (SplitK0.of.{u} P) = ExactK0.of.{u} P := by
+  rw [finiteProjectiveModulesSplitK0EquivExactK0, ExactK0.fromSplitEquiv_apply.{u},
+    ExactK0.fromSplit_of.{u}]
+  exact fun hS ↦ (ExactStructure.split_conflation _).mp
+    (by rwa [finiteProjectiveModulesExactStructure_eq_split] at hS)
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_symm_of (R : Type u) [Ring R] (P) :
+    (finiteProjectiveModulesSplitK0EquivExactK0 R).symm (ExactK0.of.{u} P) = SplitK0.of.{u} P :=
+  (finiteProjectiveModulesSplitK0EquivExactK0 R).injective (by simp)
+
+/-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines extension of scalars on `SplitK0` and
+`ExactK0`. -/
+theorem finiteProjectiveModulesSplitK0EquivExactK0_comp_map_extendScalars {R S : Type u} [Ring R]
+    [Ring S] (f : R →+* S) : (finiteProjectiveModulesSplitK0EquivExactK0 S).toAddMonoidHom.comp
+      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars) =
+    f.finiteProjectiveModulesK0Extend.comp
+      (finiteProjectiveModulesSplitK0EquivExactK0 R).toAddMonoidHom :=
+  SplitK0.hom_ext fun _ ↦ by simp
+
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_map_extendScalars {R S : Type u} [Ring R]
+    [Ring S] (f : R →+* S) (x) : finiteProjectiveModulesSplitK0EquivExactK0 S
+      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
+    f.finiteProjectiveModulesK0Extend (finiteProjectiveModulesSplitK0EquivExactK0 R x) :=
+  DFunLike.congr_fun (finiteProjectiveModulesSplitK0EquivExactK0_comp_map_extendScalars f) x
+
+end TauCeti
+
+/-! ### Morita invariance and ring-isomorphism invariance on `SplitK0` -/
+
+namespace CategoryTheory.Equivalence
+
+open TauCeti
+
+variable {A : Type u} [Ring A] {B : Type u'} [Ring B] (e : ModuleCat.{u} A ≌ ModuleCat.{u'} B)
+
+/-- **Morita invariance of `SplitK0` of finitely generated projective modules.** -/
+noncomputable def finiteProjectiveModulesSplitK0Equiv :
+    SplitK0.{u} (finiteProjectiveModules A).FullSubcategory ≃+
+      SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory :=
+  SplitK0.mapEquiv.{u, u'} e.finiteProjectiveModulesEquivalence
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_of (P) :
+    e.finiteProjectiveModulesSplitK0Equiv (SplitK0.of.{u} P) =
+      SplitK0.of.{u'} (e.finiteProjectiveModulesEquivalence.functor.obj P) :=
+  SplitK0.mapEquiv_of.{u, u'} _ P
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_symm_of (Q) :
+    e.finiteProjectiveModulesSplitK0Equiv.symm (SplitK0.of.{u'} Q) =
+      SplitK0.of.{u} (e.finiteProjectiveModulesEquivalence.inverse.obj Q) :=
+  SplitK0.mapEquiv_symm_of.{u, u'} _ Q
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_toAddMonoidHom :
+    (e.finiteProjectiveModulesSplitK0Equiv :
+        SplitK0.{u} (finiteProjectiveModules A).FullSubcategory →+
+          SplitK0.{u'} (finiteProjectiveModules B).FullSubcategory) =
+      SplitK0.map.{u, u'} e.finiteProjectiveModulesEquivalence.functor :=
+  SplitK0.mapEquiv_toAddMonoidHom.{u, u'} _
+
+/-- `finiteProjectiveModulesSplitK0EquivExactK0` intertwines Morita equivalences on `SplitK0` and
+`ExactK0`. -/
+@[simp] theorem finiteProjectiveModulesSplitK0EquivExactK0_finiteProjectiveModulesSplitK0Equiv (x) :
+    TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 B (e.finiteProjectiveModulesSplitK0Equiv x) =
+      e.finiteProjectiveModulesK0Equiv (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 A x) :=
+  DFunLike.congr_fun (SplitK0.hom_ext
+    (f := (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 B).toAddMonoidHom.comp
+      e.finiteProjectiveModulesSplitK0Equiv.toAddMonoidHom)
+    (g := e.finiteProjectiveModulesK0Equiv.toAddMonoidHom.comp
+      (TauCeti.finiteProjectiveModulesSplitK0EquivExactK0 A).toAddMonoidHom) fun _ ↦ by simp) x
+
+end CategoryTheory.Equivalence
+
+namespace RingEquiv
+
+open TauCeti
+
+variable {R S T : Type u} [Ring R] [Ring S] [Ring T]
+
+/-- A ring isomorphism `e : R ≃+* S` induces an isomorphism on `SplitK0` by extension of scalars. -/
+noncomputable def finiteProjectiveModulesSplitK0Equiv (e : R ≃+* S) :
+    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
+      SplitK0.{u} (finiteProjectiveModules S).FullSubcategory :=
+  AddMonoidHom.toAddEquiv
+    (SplitK0.map.{u, u} e.toRingHom.finiteProjectiveModulesExtendScalars)
+    (SplitK0.map.{u, u} e.symm.toRingHom.finiteProjectiveModulesExtendScalars)
+    (AddMonoidHom.ext fun _ ↦ by simp) (AddMonoidHom.ext fun _ ↦ by simp)
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_apply (e : R ≃+* S) (x) :
+    e.finiteProjectiveModulesSplitK0Equiv x =
+      SplitK0.map.{u, u} e.toRingHom.finiteProjectiveModulesExtendScalars x := (rfl)
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_symm (e : R ≃+* S) :
+    e.finiteProjectiveModulesSplitK0Equiv.symm = e.symm.finiteProjectiveModulesSplitK0Equiv := (rfl)
+
+/-- **Extension and restriction of scalars agree along a ring isomorphism** on `SplitK0`. -/
+theorem map_finiteProjectiveModulesExtendScalars_eq (e : R ≃+* S) :
+    SplitK0.map.{u, u} e.toRingHom.finiteProjectiveModulesExtendScalars =
+      ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.finiteProjectiveModulesSplitK0Equiv
+        : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory →+
+          SplitK0.{u} (finiteProjectiveModules S).FullSubcategory) :=
+  SplitK0.hom_ext fun P ↦ by
+    simpa using SplitK0.of_congr.{u} <| ObjectProperty.isoMk _ <|
+      eqToIso (e.toRingHom.finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫
+        (BalancedExtension.functorRingEquivIso.{u, u, u} e).app P.obj ≪≫
+        eqToIso ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv
+          e).symm.finiteProjectiveModulesEquivalence_functor_obj_obj P).symm
+
+theorem finiteProjectiveModulesSplitK0Equiv_eq_restrictScalars (e : R ≃+* S) :
+    e.finiteProjectiveModulesSplitK0Equiv =
+    (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).symm.finiteProjectiveModulesSplitK0Equiv :=
+  AddEquiv.toAddMonoidHom_injective (map_finiteProjectiveModulesExtendScalars_eq e)
+
+@[simp] theorem finiteProjectiveModulesSplitK0Equiv_refl (R : Type u) [Ring R] :
+    (RingEquiv.refl R).finiteProjectiveModulesSplitK0Equiv = AddEquiv.refl _ := by ext; simp
+
+theorem finiteProjectiveModulesSplitK0Equiv_trans (e : R ≃+* S) (e' : S ≃+* T) :
+    (e.trans e').finiteProjectiveModulesSplitK0Equiv =
+      e.finiteProjectiveModulesSplitK0Equiv.trans e'.finiteProjectiveModulesSplitK0Equiv := by
+  ext; simp [RingEquiv.toRingHom_trans]
+
+end RingEquiv
+
+namespace TauCeti
+
+/-! ### Binary product rings, matrix rings, and rank isomorphisms on `SplitK0` -/
+
+section ProdRing
+variable (R S : Type u) [Ring R] [Ring S]
+
+/-- **`SplitK0` of finite projective modules commutes with binary products of rings.** -/
+noncomputable def finiteProjectiveModulesProdSplitK0Equiv :
+    SplitK0.{u} (finiteProjectiveModules (R × S)).FullSubcategory ≃+
+      SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ×
+        SplitK0.{u} (finiteProjectiveModules S).FullSubcategory :=
+  AddEquiv.ofProdCoprod
+    (SplitK0.map.{u, u} (RingHom.fst R S).finiteProjectiveModulesExtendScalars)
+    (SplitK0.map.{u, u} (RingHom.snd R S).finiteProjectiveModulesExtendScalars)
+    (SplitK0.map.{u, u} ((RingHom.fst R S).finiteProjectiveModulesRestrictScalars
+      (RingHom.finite_toModule_of_surjective _ Prod.fst_surjective)
+      (RingHom.projective_toModule_of_split _ (AddMonoidHom.inl R S) (by simp)
+        AddMonoidHom.mul_inl)))
+    (SplitK0.map.{u, u} ((RingHom.snd R S).finiteProjectiveModulesRestrictScalars
+      (RingHom.finite_toModule_of_surjective _ Prod.snd_surjective)
+      (RingHom.projective_toModule_of_split _ (AddMonoidHom.inr R S) (by simp)
+        AddMonoidHom.mul_inr)))
+    (SplitK0.hom_ext fun P ↦ by
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.prod_apply, AddMonoidHom.coprod_apply,
+        SplitK0.map_of, AddMonoidHom.id_apply]
+      let e {A : Type u} [Ring A] (p : R × S →+* A) hfin hproj :=
+        (((ModuleCat.restrictScalars.{u} p).mapIso
+          (eqToIso (p.finiteProjectiveModulesExtendScalars_obj_obj P).symm)) ≪≫ eqToIso
+            (p.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj _).symm).toLinearEquiv
+      exact (SplitK0.of_eq_add_of_linearEquiv_prod <|
+        (BalancedExtension.prodModuleLinearEquiv R S P.obj).trans <|
+          LinearEquiv.prodCongr (e _ _ _) (e _ _ _)).symm)
+    (SplitK0.map_extendScalars_comp_restrictScalars_self _ Prod.fst_surjective _ _)
+    (SplitK0.map_extendScalars_comp_restrictScalars_eq_zero _ _ _ _ (1, 0) rfl rfl)
+    (SplitK0.map_extendScalars_comp_restrictScalars_eq_zero _ _ _ _ (0, 1) rfl rfl)
+    (SplitK0.map_extendScalars_comp_restrictScalars_self _ Prod.snd_surjective _ _)
+
+@[simp] theorem finiteProjectiveModulesProdSplitK0Equiv_apply (x) :
+    finiteProjectiveModulesProdSplitK0Equiv R S x =
+      (SplitK0.map.{u, u} (RingHom.fst R S).finiteProjectiveModulesExtendScalars x,
+        SplitK0.map.{u, u} (RingHom.snd R S).finiteProjectiveModulesExtendScalars x) :=
+  AddEquiv.ofProdCoprod_apply _ _ _ _ _ _ _ _ _ x
+
+@[simp] theorem finiteProjectiveModulesProdSplitK0Equiv_symm_apply (x) :
+    (finiteProjectiveModulesProdSplitK0Equiv R S).symm x =
+      SplitK0.map.{u, u} ((RingHom.fst R S).finiteProjectiveModulesRestrictScalars
+          (RingHom.finite_toModule_of_surjective _ Prod.fst_surjective)
+          (RingHom.projective_toModule_of_split _ (AddMonoidHom.inl R S) (by simp)
+            AddMonoidHom.mul_inl)) x.1 +
+        SplitK0.map.{u, u} ((RingHom.snd R S).finiteProjectiveModulesRestrictScalars
+          (RingHom.finite_toModule_of_surjective _ Prod.snd_surjective)
+          (RingHom.projective_toModule_of_split _ (AddMonoidHom.inr R S) (by simp)
+            AddMonoidHom.mul_inr)) x.2 :=
+  AddEquiv.ofProdCoprod_symm_apply _ _ _ _ _ _ _ _ _ x
+end ProdRing
+
+section MatrixMorita
+variable (R : Type u) [Ring R]
+
+section Index
+variable (ι : Type v) [Fintype ι] [DecidableEq ι] [Nonempty ι]
+
+/-- **Matrix Morita invariance of `SplitK0`:** `P ↦ (ι → P)` induces a canonical isomorphism
+`K₀(proj R) ≃+ K₀(proj (Matrix ι ι R))`. -/
+noncomputable def finiteProjectiveModulesMatrixSplitK0Equiv :
+    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
+      SplitK0.{max u v} (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory :=
+  SplitK0.mapEquiv.{u, max u v} (finiteProjectiveModulesToMatrixFunctor R ι).asEquivalence
+
+theorem finiteProjectiveModulesMatrixSplitK0Equiv_apply (x) :
+    finiteProjectiveModulesMatrixSplitK0Equiv R ι x =
+      SplitK0.map.{u, max u v} (finiteProjectiveModulesToMatrixFunctor R ι) x :=
+  DFunLike.congr_fun (SplitK0.mapEquiv_toAddMonoidHom.{u, max u v} _) x
+
+@[simp] theorem finiteProjectiveModulesMatrixSplitK0Equiv_of (P) :
+    finiteProjectiveModulesMatrixSplitK0Equiv R ι (SplitK0.of.{u} P) =
+      SplitK0.of.{max u v} ((finiteProjectiveModulesToMatrixFunctor R ι).obj P) :=
+  SplitK0.mapEquiv_of.{u, max u v} _ P
+
+/-- Under `finiteProjectiveModulesMatrixSplitK0Equiv`, `|ι| • [R]` maps to `[Matrix ι ι R]`. -/
+@[simp] theorem
+    finiteProjectiveModulesMatrixSplitK0Equiv_card_nsmul_finiteProjectiveModulesRegular :
+    finiteProjectiveModulesMatrixSplitK0Equiv R ι
+        (Fintype.card ι • SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
+      SplitK0.of.{max u v} (finiteProjectiveModulesRegular (Matrix ι ι R)) := by
+  rw [← SplitK0.of_finFreeObj (R := R) (Fintype.card ι),
+    finiteProjectiveModulesMatrixSplitK0Equiv_of]
+  let P₀ : ModuleCat.{u} R := ModuleCat.of R (Fin (Fintype.card ι) → R)
+  exact SplitK0.of_congr <| ObjectProperty.isoMk _ <|
+    eqToIso (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι _) ≪≫
+      (ModuleCat.toMatrixModCat.{u, v, u} R ι).mapIso
+        (eqToIso (FiniteProjectiveModules.finFreeObj_obj R (Fintype.card ι))) ≪≫
+      (toMatrixModCatUliftIso.{u, v, u} R ι).app P₀ ≪≫
+      (ModuleCat.toMatrixModCat.{u, v, max u v} R ι).mapIso
+        ((ULift.moduleEquiv (R := R) (M := P₀)).trans
+          (LinearEquiv.funCongrLeft R R (Fintype.equivFin ι))).toModuleIso ≪≫
+      (toMatrixModCatPiLinearEquiv R ι).toModuleIso ≪≫
+      eqToIso (finiteProjectiveModulesRegular_obj (Matrix ι ι R)).symm
+end Index
+
+/-- For any `i : ι`, `finiteProjectiveModulesToMatrixFunctor` induces the same map on `SplitK0` as
+`ModuleCat.matrixEquivalence R i`. -/
+theorem map_finiteProjectiveModulesToMatrixFunctor_eq (ι : Type u) [Fintype ι] [DecidableEq ι]
+    [Nonempty ι] (i : ι) : SplitK0.map.{u, u} (finiteProjectiveModulesToMatrixFunctor R ι) =
+      ((ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesSplitK0Equiv :
+        SplitK0.{u} (finiteProjectiveModules R).FullSubcategory →+
+          SplitK0.{u} (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory) :=
+  (SplitK0.map_congr.{u, u} fun P ↦ ⟨ObjectProperty.isoMk _ (eqToIso
+    ((finiteProjectiveModulesToMatrixFunctor_obj_obj R ι P).trans
+      ((ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesEquivalence_functor_obj_obj
+        P).symm))⟩).trans (Equivalence.finiteProjectiveModulesSplitK0Equiv_toAddMonoidHom _).symm
+
+/-- For every `i : ι`, `finiteProjectiveModulesMatrixSplitK0Equiv` agrees with the Morita
+equivalence induced by `ModuleCat.matrixEquivalence R i`. -/
+theorem finiteProjectiveModulesMatrixSplitK0Equiv_eq (ι : Type u) [Fintype ι] [DecidableEq ι]
+    [Nonempty ι] (i : ι) : finiteProjectiveModulesMatrixSplitK0Equiv R ι =
+      (ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesSplitK0Equiv :=
+  AddEquiv.toAddMonoidHom_injective <| (SplitK0.mapEquiv_toAddMonoidHom.{u, u} _).trans
+    (map_finiteProjectiveModulesToMatrixFunctor_eq R ι i)
+end MatrixMorita
+
+/-- Over a division ring `D`, `TauCeti.FiniteProjectiveModules.rankEquiv` induces
+`K₀(proj D) ≃+ ℤ`. -/
+noncomputable def finiteProjectiveModulesFinrankSplitK0EquivDivisionRing (D : Type u)
+    [DivisionRing D] : SplitK0.{u} (finiteProjectiveModules D).FullSubcategory ≃+ ℤ :=
+  FiniteProjectiveModules.rankEquiv D fun _ ↦ inferInstance
+
+@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_of (D : Type u)
+    [DivisionRing D] (P) : finiteProjectiveModulesFinrankSplitK0EquivDivisionRing D
+      (SplitK0.of.{u} P) = (Module.finrank D P.obj : ℤ) :=
+  FiniteProjectiveModules.rankEquiv_of D _ P
+
+theorem finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_regular (D : Type u)
+    [DivisionRing D] : finiteProjectiveModulesFinrankSplitK0EquivDivisionRing D
+      (SplitK0.of.{u} (finiteProjectiveModulesRegular D)) = 1 :=
+  FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular D _
+
+@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivDivisionRing_symm_apply (D : Type u)
+    [DivisionRing D] (n : ℤ) : (finiteProjectiveModulesFinrankSplitK0EquivDivisionRing D).symm n =
+      n • SplitK0.of.{u} (finiteProjectiveModulesRegular D) :=
+  FiniteProjectiveModules.rankEquiv_symm_apply D _ n
+
+section PID
+variable (R : Type u) [Ring R] [Nontrivial R] [NoZeroDivisors R] [IsPrincipalIdealRing R]
+
+omit [Nontrivial R] in
+private theorem isStablyFree_of_isPrincipalIdealRing
+    (P : (finiteProjectiveModules R).FullSubcategory) : Module.IsStablyFree R P.obj :=
+  have : Module.Free R P.obj :=
+    Module.Free.of_injective_of_projective_of_isPrincipalIdealRing
+      (LinearMap.id : P.obj →ₗ[R] P.obj) Function.injective_id
+  inferInstance
+
+/-- Over a nontrivial principal left-ideal domain, `TauCeti.FiniteProjectiveModules.rankEquiv`
+induces `K₀(proj R) ≃+ ℤ`. -/
+noncomputable def finiteProjectiveModulesFinrankSplitK0EquivPID :
+    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+ ℤ :=
+  FiniteProjectiveModules.rankEquiv R (isStablyFree_of_isPrincipalIdealRing R)
+
+@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivPID_of (P) :
+    finiteProjectiveModulesFinrankSplitK0EquivPID R (SplitK0.of.{u} P) =
+      (Module.finrank R P.obj : ℤ) := by
+  have : Module.Free R P.obj :=
+    Module.Free.of_injective_of_projective_of_isPrincipalIdealRing
+      (LinearMap.id : P.obj →ₗ[R] P.obj) Function.injective_id
+  exact FiniteProjectiveModules.rankEquiv_of R _ P
+
+theorem finiteProjectiveModulesFinrankSplitK0EquivPID_regular :
+    finiteProjectiveModulesFinrankSplitK0EquivPID R
+      (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) = 1 :=
+  FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular R _
+
+@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivPID_symm_apply (n : ℤ) :
+    (finiteProjectiveModulesFinrankSplitK0EquivPID R).symm n =
+      n • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
+  FiniteProjectiveModules.rankEquiv_symm_apply R _ n
+
+end PID
+
+section LocalRing
+
+private theorem isStablyFree_of_isLocalRing (R : Type u) [CommRing R] [IsLocalRing R]
+    (P : (finiteProjectiveModules R).FullSubcategory) : Module.IsStablyFree R P.obj :=
+  have : Module.Free R P.obj := Module.free_of_projective_of_isLocalRing
+  inferInstance
+
+/-- Over a commutative local ring `R`, `TauCeti.FiniteProjectiveModules.rankEquiv` induces
+`K₀(proj R) ≃+ ℤ`. -/
+noncomputable def finiteProjectiveModulesFinrankSplitK0EquivLocalRing (R : Type u) [CommRing R]
+    [IsLocalRing R] : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+ ℤ :=
+  FiniteProjectiveModules.rankEquiv R (isStablyFree_of_isLocalRing R)
+
+@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivLocalRing_of (R : Type u) [CommRing R]
+    [IsLocalRing R] (P) : finiteProjectiveModulesFinrankSplitK0EquivLocalRing R (SplitK0.of.{u} P) =
+      (Module.finrank R P.obj : ℤ) := by
+  have : Module.Free R P.obj := Module.free_of_projective_of_isLocalRing
+  exact FiniteProjectiveModules.rankEquiv_of R _ P
+
+theorem finiteProjectiveModulesFinrankSplitK0EquivLocalRing_regular (R : Type u)
+    [CommRing R] [IsLocalRing R] : finiteProjectiveModulesFinrankSplitK0EquivLocalRing R
+      (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) = 1 :=
+  FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular R _
+
+@[simp] theorem finiteProjectiveModulesFinrankSplitK0EquivLocalRing_symm_apply (R : Type u)
+    [CommRing R] [IsLocalRing R] (n : ℤ) :
+    (finiteProjectiveModulesFinrankSplitK0EquivLocalRing R).symm n =
+      n • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
+  FiniteProjectiveModules.rankEquiv_symm_apply R _ n
+
+end LocalRing
+
+end TauCeti

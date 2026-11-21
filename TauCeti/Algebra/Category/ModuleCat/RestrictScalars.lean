@@ -47,6 +47,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   homomorphism, as a functor between the categories of finitely generated modules.
 * `RingHom.finiteModulesRestrictScalarsCompιIso`: the underlying module of an image under
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
+* `ModuleCat.restrictScalarsAddEquiv`: the additive equivalence
+  `M ≃+ (ModuleCat.restrictScalars f).obj M` transporting elements across the shared carrier.
 * `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
   `algebraMap R S` gives back its compatible `R`-module structure.
 * `ModuleCat.restrictScalarsOpOpIso`: restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries the
@@ -62,6 +64,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring homomorphism `f : R →+* S` making `S` a finitely generated `R`-module.
 * `RingHom.projective_restrictScalars_of_projective`: projectivity is preserved by restriction of
   scalars along a ring homomorphism `f : R →+* S` making `S` a projective `R`-module.
+* `RingHom.finite_toModule_of_surjective` and `RingHom.projective_toModule_of_split`: criteria for
+  `S` to be finitely generated or projective over `R` through a ring homomorphism `f : R →+* S`.
 * `RingEquiv.projective_restrictScalars_iff`: projectivity is invariant under restriction of
   scalars along a ring isomorphism.
 * `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
@@ -157,6 +161,21 @@ theorem projective_restrictScalars_of_projective (f : R →+* S)
   have hRM : Module.Projective R M := Module.Projective.trans R S M
   exact hRM
 
+/-- If `f : R →+* S` is surjective, then `S` is finitely generated as an `R`-module through `f`. -/
+theorem finite_toModule_of_surjective (f : R →+* S) (hf : Function.Surjective f) :
+    letI := f.toModule; Module.Finite R S :=
+  letI := f.toModule
+  Module.Finite.of_surjective ({ f with map_smul' := f.map_mul } : R →ₗ[R] S) hf
+
+/-- If `f : R →+* S` admits an additive right inverse `j : S →+ R` with `r * j s = j (f r * s)`,
+then `S` is projective as an `R`-module through `f`. -/
+theorem projective_toModule_of_split (f : R →+* S) (j : S →+ R)
+    (hfj : ∀ s, f (j s) = s) (hmul_left : ∀ r s, r * j s = j (f r * s)) :
+    letI := f.toModule; Module.Projective R S :=
+  letI := f.toModule
+  Module.Projective.of_split ({ j with map_smul' r s := (hmul_left r s).symm } : S →ₗ[R] R)
+    ({ f with map_smul' := f.map_mul } : R →ₗ[R] S) (LinearMap.ext hfj)
+
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
 `f : R →+* S` making `S` a finitely generated `R`-module induces a functor from the finitely
 generated `S`-modules to the finitely generated `R`-modules, sending a module to the same module
@@ -225,6 +244,35 @@ theorem smul_mem_range {P Q : Type*} [AddCommGroup P] [Module R P] [AddCommGroup
 end Function.Exact
 
 namespace ModuleCat
+
+section AddEquiv
+variable {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] (f : R →+* S)
+
+/-- Additive equivalence transporting elements between `M` and `(restrictScalars f).obj M`. -/
+def restrictScalarsAddEquiv (M : ModuleCat.{v} S) : M ≃+ (restrictScalars.{v} f).obj M where
+  toFun m := m; invFun m := m; left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl
+
+theorem restrictScalarsAddEquiv_apply (M : ModuleCat.{v} S) (m : M) :
+    restrictScalarsAddEquiv f M m = m := (rfl)
+
+theorem restrictScalarsAddEquiv_symm_apply (M : ModuleCat.{v} S) (x) :
+    (restrictScalarsAddEquiv f M).symm x = x := (rfl)
+
+theorem smul_restrictScalarsAddEquiv (M : ModuleCat.{v} S) (r : R) (m : M) :
+    r • restrictScalarsAddEquiv f M m = restrictScalarsAddEquiv f M (f r • m) := (rfl)
+
+theorem restrictScalarsAddEquiv_symm_smul (M : ModuleCat.{v} S) (r : R) (x) :
+    (restrictScalarsAddEquiv f M).symm (r • x) = f r • (restrictScalarsAddEquiv f M).symm x := (rfl)
+
+theorem restrictScalarsAddEquiv_map_apply {M N : ModuleCat.{v} S} (g : M ⟶ N) (m : M) :
+    restrictScalarsAddEquiv f N (g m) =
+      (restrictScalars f).map g (restrictScalarsAddEquiv f M m) := (rfl)
+
+theorem restrictScalarsAddEquiv_symm_map_apply {M N : ModuleCat.{v} S} (g : M ⟶ N) (x) :
+    (restrictScalarsAddEquiv f N).symm ((restrictScalars f).map g x) =
+      g ((restrictScalarsAddEquiv f M).symm x) := (rfl)
+
+end AddEquiv
 
 section SemilinearMap
 
