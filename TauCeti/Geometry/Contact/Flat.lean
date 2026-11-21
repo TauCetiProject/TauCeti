@@ -57,6 +57,8 @@ equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accomp
   invertibility is an open condition, this shows that the contact condition is open.
 * `TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`: the preimage of `α` is
   characterized by the Reeb equations.
+* `TauCeti.SmoothForm.IsContactForm.eq_of_mem_kerDistribution_of_forall_mextDeriv_eq`: `dα` is
+  nondegenerate on the contact hyperplane `ker α`.
 * `TauCeti.SmoothForm.contactFlatₗ`, `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`: the
   contact flat map on smooth sections, and its inverse for a contact form.
 * `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv_symm_self`,
@@ -225,6 +227,22 @@ theorem reebVectorField_eq_inverse_contactFlat [FiniteDimensional ℝ E] (x : M)
     α.reebVectorField x = (α.contactFlat x).inverse (degreeOneEquiv α x) := by
   rw [← hα.contactFlat_apply_eq_iff.2 ⟨hα.apply_reebVectorField x,
     hα.mextDeriv_reebVectorField_left x⟩, (hα.isInvertible_contactFlat x).inverse_apply_self]
+
+/-- **`dα` is nondegenerate on the contact hyperplane.** Two vectors of the contact hyperplane
+`ξ_x` with the same `dα_x`-pairing against `ξ_x` are equal. -/
+theorem eq_of_mem_kerDistribution_of_forall_mextDeriv_eq [FiniteDimensional ℝ E] {x : M}
+    {a b : TangentSpace I x} (ha : α.val x ![a] = 0) (hb : α.val x ![b] = 0)
+    (hab : ∀ u ∈ α.kerDistribution x, mextDeriv α.val x ![a, u] = mextDeriv α.val x ![b, u]) :
+    a = b := by
+  -- The contact flat maps of `a` and `b` agree on the component of `v` in `ξ_x` and on the Reeb
+  -- vector, which `dα_x` kills.
+  refine (hα.isInvertible_contactFlat x).injective (ContinuousLinearMap.ext fun v ↦ ?_)
+  have h := hab _ (hα.sub_smul_reebVectorField_mem_kerDistribution v)
+  have hRa := hα.mextDeriv_reebVectorField_right x a
+  have hRb := hα.mextDeriv_reebVectorField_right x b
+  simp only [mextDeriv_eq_bilinFormAt] at h hRa hRb
+  simp only [map_sub, map_smul, hRa, hRb, smul_zero, sub_zero] at h
+  simpa only [contactFlat_apply, ha, hb, zero_mul, add_zero, mextDeriv_eq_bilinFormAt] using h
 
 end IsContactForm
 

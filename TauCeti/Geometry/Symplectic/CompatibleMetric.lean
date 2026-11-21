@@ -48,7 +48,9 @@ against exactly this metric.
   `TauCeti.SymplecticForm.inner_apply_left_eq_neg_of_apply_apply_eq_inner`: for that inner
   product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
 * `TauCeti.AlmostComplexStructure.symplecticForm`: the symplectic form `ω(v, w) = ⟪J v, w⟫` of an
-  orthogonal almost complex structure `J` on a real inner product space.
+  orthogonal almost complex structure `J` on a real inner product space, compatible with `J`
+  (`TauCeti.AlmostComplexStructure.symplecticForm_compatible`) with the inner product as its
+  metric (`TauCeti.AlmostComplexStructure.symplecticForm_associatedBilinForm_apply`).
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
@@ -315,6 +317,22 @@ theorem symplecticForm_apply {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
     J.symplecticForm hJ v w = ⟪J v, w⟫ :=
   (rfl)
+
+/-- For an orthogonal almost complex structure `J`, the metric `ω(·, J ·)` associated with
+`ω = ⟪J ·, ·⟫` and `J` is the inner product. -/
+theorem symplecticForm_associatedBilinForm_apply {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
+    (J.symplecticForm hJ).associatedBilinForm J v w = ⟪v, w⟫ := by
+  simp [hJ]
+
+/-- The symplectic form `ω = ⟪J ·, ·⟫` of an orthogonal almost complex structure `J` is compatible
+with `J`. -/
+theorem symplecticForm_compatible {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : (J.symplecticForm hJ).Compatible J := by
+  refine .of_tames ((SymplecticForm.invariant_iff _ _).2 fun v w ↦ ?_) fun v hv ↦ ?_
+  · simp only [symplecticForm_apply, hJ]
+  · rw [symplecticForm_apply, hJ]
+    exact real_inner_self_pos.2 hv
 
 end AlmostComplexStructure
 

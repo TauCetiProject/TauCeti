@@ -33,9 +33,12 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `𝒪ₓ`-modules;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
   `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
-  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation.
+  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_tensorPow`: tensor powers of a quasi-coherent
-  `𝒪ₓ`-module are quasi-coherent.
+  `𝒪ₓ`-module are quasi-coherent;
+* `AlgebraicGeometry.Scheme.Modules.sectionsFunctor` and
+  `AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive`: sections over an open as a lax
+  braided monoidal, additive functor `X.Modules ⥤ ModuleCat Γ(X, U)`.
 
 -/
 
