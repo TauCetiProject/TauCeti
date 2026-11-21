@@ -61,10 +61,6 @@ variable {ι Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
 local notation "γ" => stdGaussian (EuclideanSpace ℝ ι)
 
-/-- Multiplying a real number by a sign preserves its absolute value. -/
-private theorem abs_units_zsmul (u : ℤˣ) (a : ℝ) : |u • a| = |a| := by
-  simpa only [Real.norm_eq_abs] using norm_units_zsmul u a
-
 /-- The coordinates of `g` of absolute value at most `t`, the others being replaced by `0`. -/
 private def lowPart (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) : ℝ :=
   if |g i| ≤ t then g i else 0
@@ -88,13 +84,13 @@ private theorem lowPart_add_highPart (t : ℝ) (g : EuclideanSpace ℝ ι) (i : 
 
 private theorem lowPart_signFlip [Fintype ι] (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
     lowPart t (signFlip ε g) i = ε i • lowPart t g i := by
-  simp only [lowPart, signFlip_apply, abs_units_zsmul]
+  simp only [lowPart, signFlip_apply, ← Real.norm_eq_abs, norm_units_zsmul]
   split_ifs <;> simp
 
 private theorem highPart_signFlip [Fintype ι] (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι)
     (i : ι) :
     highPart t (signFlip ε g) i = ε i • highPart t g i := by
-  simp only [highPart, PiLp.toLp_apply, signFlip_apply, abs_units_zsmul]
+  simp only [highPart, PiLp.toLp_apply, signFlip_apply, ← Real.norm_eq_abs, norm_units_zsmul]
   split_ifs <;> simp
 
 private theorem abs_lowPart_le (t : ℝ) (ht : 0 ≤ t) (g : EuclideanSpace ℝ ι) (i : ι) :

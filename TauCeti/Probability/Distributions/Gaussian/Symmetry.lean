@@ -150,6 +150,14 @@ theorem signFlip_apply (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) 
     signFlip ε g i = ε i • g i := by
   rcases Int.units_eq_one_or (ε i) with h | h <;> simp [signFlip, h]
 
+/-- Changing the signs of the coordinates is an involution. -/
+@[simp]
+theorem signFlip_symm (ε : ι → ℤˣ) : (signFlip ε).symm = signFlip ε := by
+  refine LinearIsometryEquiv.ext fun g ↦ ?_
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  simp [smul_smul, Int.units_mul_self]
+
 /-- A standard Gaussian integral equals the standard Gaussian integral of the average of the
 integrand over all coordinate sign changes. -/
 theorem integral_eq_integral_expect_signFlip [DecidableEq ι] {φ : EuclideanSpace ℝ ι → ℝ}
