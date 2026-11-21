@@ -79,8 +79,9 @@ noncomputable def reducedLightFreeHomEquiv
     (X : Under (LightProfinite.of PUnit.{u + 1})) (M : LightCondMod R) :
     ((reducedLightFree R).obj X ⟶ M) ≃+
       (M.obj.map X.hom.op).hom.toAddMonoidHom.ker := by
-  rw [reducedLightFree_obj]
   let F := lightProfiniteToLightCondSet ⋙ free R
+  -- Expose the definitional cokernel carrier so its equations match under tactic transparency.
+  change (cokernel (F.map X.hom) ⟶ M) ≃+ (M.obj.map X.hom.op).hom.toAddMonoidHom.ker
   refine
     { toFun := fun g ↦ ⟨X.right.freeModuleHomEquiv (cokernel.π (F.map X.hom) ≫ g), ?_⟩
       invFun := fun s ↦ cokernel.desc (F.map X.hom) (X.right.freeModuleHomEquiv.symm s.val) ?_
@@ -154,7 +155,8 @@ noncomputable def reducedLightFreeRetract (X : Under (LightProfinite.of PUnit.{u
   let F := lightProfiniteToLightCondSet ⋙ free R
   let t := CompHausLike.isTerminalPUnit (P := fun S ↦
     TotallyDisconnectedSpace S ∧ SecondCountableTopology S)
-  rw [reducedLightFree_obj]
+  -- Expose the definitional cokernel carrier so its descent equations match.
+  change Retract (cokernel (F.map X.hom)) (F.obj X.right)
   have ht : F.map X.hom ≫ F.map (t.from X.right) = 𝟙 _ := by
     rw [← F.map_comp, t.hom_ext (X.hom ≫ t.from X.right) (𝟙 _), F.map_id]
   -- The generic split-mono bicone chooses a retraction from an existence proof.

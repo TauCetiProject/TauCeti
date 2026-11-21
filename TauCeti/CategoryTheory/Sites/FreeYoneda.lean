@@ -88,14 +88,10 @@ noncomputable def freeYonedaSectionsAddEquiv (X : C) (M : Sheaf J D) :
   map_add' f g := by
     let : (presheafToSheaf J D).Additive :=
       (sheafificationAdjunction J D).left_adjoint_additive
-    simp only [Equiv.toFun_as_coe]
-    rw [freeYonedaSectionsEquiv_apply, freeYonedaSectionsEquiv_apply,
-      freeYonedaSectionsEquiv_apply]
-    simp only [Adjunction.homAddEquiv_add]
-    rw [yonedaEquiv_apply, yonedaEquiv_apply, yonedaEquiv_apply]
     -- The whiskered adjunction evaluates at the unit's universal element; `A` preserves sums.
-    rw [(adjA.whiskerRight Cᵒᵖ).homEquiv_unit,
-      (adjA.whiskerRight Cᵒᵖ).homEquiv_unit, (adjA.whiskerRight Cᵒᵖ).homEquiv_unit]
+    simp only [Equiv.toFun_as_coe, adjA.freeYonedaSectionsEquiv_apply J X M,
+      Adjunction.homAddEquiv_add,
+      yonedaEquiv_apply, (adjA.whiskerRight Cᵒᵖ).homEquiv_unit]
     simp [Functor.map_add]
 
 /-- The additive equivalence has the underlying free Yoneda equivalence. -/
