@@ -17,7 +17,7 @@ Building on the rectangular `CStarMatrix` calculus, this file develops `2 × 2` 
 standard corner/diagonal `⋆`-algebra embeddings for `CStarMatrix`:
 
 * Block matrices `CStarMatrix.fromBlocks`, their algebraic and star operations, block-diagonal
-  characterizations of idempotents, star projections, and unitaries, and reindexing under
+  characterizations of self-adjointness and unitarity, and reindexing under
   `Equiv.sumCongr`, `Equiv.sumComm`, and `Equiv.sumAssoc`.
 * Block-diagonal `⋆`-algebra embedding `CStarMatrix.blockDiagStarAlgHom`, corner embeddings
   `CStarMatrix.inl` and `CStarMatrix.inr`, matrix units `CStarMatrix.single` and
@@ -191,19 +191,6 @@ theorem isSelfAdjoint_fromBlocks_iff [InvolutiveStar A]
     {M : CStarMatrix m m A} {N : CStarMatrix n n A} :
     IsSelfAdjoint (fromBlocks M 0 0 N) ↔ IsSelfAdjoint M ∧ IsSelfAdjoint N := by
   simp [isSelfAdjoint_fromBlocks_iff]
-
-/-- A block-diagonal `CStarMatrix` is idempotent iff both diagonal blocks are idempotent. -/
-@[simp] theorem isIdempotentElem_fromBlocks_zero₁₂_zero₂₁ [Fintype m] [Fintype n]
-    [NonUnitalNonAssocSemiring A] {M : CStarMatrix m m A} {N : CStarMatrix n n A} :
-    IsIdempotentElem (fromBlocks M 0 0 N) ↔ IsIdempotentElem M ∧ IsIdempotentElem N := by
-  simp [IsIdempotentElem, fromBlocks_multiply]
-
-/-- A block-diagonal `CStarMatrix` is a star projection iff both diagonal blocks are. -/
-@[simp] theorem isStarProjection_fromBlocks_zero₁₂_zero₂₁ [Fintype m] [Fintype n]
-    [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
-    {M : CStarMatrix m m A} {N : CStarMatrix n n A} :
-    IsStarProjection (fromBlocks M 0 0 N) ↔ IsStarProjection M ∧ IsStarProjection N := by
-  simp [isStarProjection_iff, and_assoc, and_left_comm]
 
 /-- A block-diagonal `CStarMatrix` is unitary iff both diagonal blocks are unitary. -/
 @[simp] theorem fromBlocks_zero₁₂_zero₂₁_mem_unitary [Fintype m] [Fintype n] [DecidableEq m]
@@ -462,10 +449,8 @@ maximum of the operator norms of its diagonal blocks. -/
     ← norm_conjTranspose_mul_self]
   simp only [fromBlocks_conjTranspose, conjTranspose_zero, fromBlocks_multiply,
     CStarMatrix.mul_zero, CStarMatrix.zero_mul, add_zero, zero_add]
-  rw [hsq, norm_conjTranspose_mul_self, norm_conjTranspose_mul_self]
-  rcases le_total ‖M‖ ‖N‖ with h | h
-  · rw [max_eq_right h, max_eq_right (pow_le_pow_left₀ (norm_nonneg M) h 2)]
-  · rw [max_eq_left h, max_eq_left (pow_le_pow_left₀ (norm_nonneg N) h 2)]
+  rw [hsq, norm_conjTranspose_mul_self, norm_conjTranspose_mul_self,
+    max_pow_of_nonneg (norm_nonneg M) (norm_nonneg N) 2]
 
 /-- The operator norm of an anti-diagonal `2 × 2` block `CStarMatrix` is the maximum of the
 operator norms of its off-diagonal blocks. -/
@@ -476,10 +461,7 @@ operator norms of its off-diagonal blocks. -/
   simp only [fromBlocks_conjTranspose, conjTranspose_zero, fromBlocks_multiply,
     CStarMatrix.mul_zero, CStarMatrix.zero_mul, add_zero, zero_add]
   rw [norm_fromBlocks_zero₁₂_zero₂₁, norm_conjTranspose_mul_self, norm_conjTranspose_mul_self,
-    max_comm]
-  rcases le_total ‖M‖ ‖N‖ with h | h
-  · rw [max_eq_right h, max_eq_right (pow_le_pow_left₀ (norm_nonneg M) h 2)]
-  · rw [max_eq_left h, max_eq_left (pow_le_pow_left₀ (norm_nonneg N) h 2)]
+    max_comm, max_pow_of_nonneg (norm_nonneg M) (norm_nonneg N) 2]
 
 /-- The upper-left corner embedding `inl` preserves operator norms. -/
 theorem norm_inl [Semiring R] [Module R A] (M : CStarMatrix m m A) :

@@ -174,10 +174,9 @@ variable {l m n o R A : Type*} [NonUnitalCStarAlgebra A]
 composes the operators in reverse order. -/
 theorem toCLM_mul [Fintype l] [Fintype m] (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     toCLM (M * N) = (toCLM N).comp (toCLM M) := by
-  ext v k
-  simp only [ContinuousLinearMap.comp_apply, toCLM_apply_eq_sum,
-    WithCStarModule.equiv_symm_pi_apply, mul_apply, Finset.sum_mul, Finset.mul_sum]
-  rw [Finset.sum_comm]; simp_rw [mul_assoc]
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [ContinuousLinearMap.comp_apply, toCLM_apply]
+  exact congrArg (WithCStarModule.equiv A (n → A)).symm (Matrix.vecMul_vecMul _ M N).symm
 
 variable [PartialOrder A] [StarOrderedRing A]
 

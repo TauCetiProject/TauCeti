@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
 public import TauCeti.Algebra.Star.PartialIsometry
 import TauCeti.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Hermitian
@@ -138,14 +138,15 @@ theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
 
 /-- Padding a projection by a zero block does not change its rectangular equivalence class. -/
 theorem pad_zero (hp : IsStarProjection p) :
-    MurrayVonNeumannEquiv p
-      (ofMatrix (Matrix.fromBlocks (ofMatrix.symm p) 0 0 (0 : Matrix k k A))) := by
+    MurrayVonNeumannEquiv p (CStarMatrix.fromBlocks p 0 0 (0 : CStarMatrix k k A)) := by
   have hsa : (ofMatrix.symm p)ᴴ = ofMatrix.symm p := by
     simpa only [ofMatrix_symm_star] using congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq
   have hid : ofMatrix.symm p * ofMatrix.symm p = ofMatrix.symm p := by
     simpa only [ofMatrix_symm_mul] using congrArg ofMatrix.symm hp.isIdempotentElem.eq
-  refine ⟨hp, ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ .zero,
-    hp.isSelfAdjoint.isHermitian.fromBlocks (by simp) Matrix.isHermitian_zero⟩,
+  have hproj : IsStarProjection (CStarMatrix.fromBlocks p 0 0 (0 : CStarMatrix k k A)) :=
+    ⟨by simp [IsIdempotentElem, CStarMatrix.fromBlocks_multiply, hp.isIdempotentElem.eq],
+      by simp [hp.isSelfAdjoint]⟩
+  refine ⟨hp, hproj,
     ofMatrix (Matrix.fromRows (ofMatrix.symm p) (0 : Matrix k m A)), ?_, ?_⟩ <;>
     apply ofMatrix.symm.injective
   · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
