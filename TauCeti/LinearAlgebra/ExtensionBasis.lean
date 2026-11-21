@@ -130,7 +130,7 @@ theorem toMatrixAlgEquiv_extensionBasis_castAdd_castAdd (i j : Fin m) :
     LinearMap.toMatrixAlgEquiv (extensionBasis p bp bq) f (Fin.castAdd n i) (Fin.castAdd n j) =
       LinearMap.toMatrixAlgEquiv bp (f.restrict fun _ hx ↦ Submodule.mem_comap.mp (hf hx)) i j := by
   rw [LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrixAlgEquiv_apply, extensionBasis_castAdd,
-    extensionBasis_repr_castAdd_of_mem p bp bq _ (Submodule.mem_comap.mp (hf (bp j).2)),
+    extensionBasis_repr_castAdd_of_mem p bp bq _ (Submodule.mem_comap.mp (hf (bp j).property)),
     LinearMap.restrict_apply]
 
 include hf in
@@ -141,7 +141,7 @@ theorem toMatrixAlgEquiv_extensionBasis_natAdd_castAdd (i : Fin n) (j : Fin m) :
     LinearMap.toMatrixAlgEquiv (extensionBasis p bp bq) f (Fin.natAdd m i) (Fin.castAdd n j) =
       0 := by
   rw [LinearMap.toMatrixAlgEquiv_apply, extensionBasis_castAdd]
-  exact extensionBasis_repr_natAdd_of_mem p bp bq _ (Submodule.mem_comap.mp (hf (bp j).2)) i
+  exact extensionBasis_repr_natAdd_of_mem p bp bq _ (Submodule.mem_comap.mp (hf (bp j).property)) i
 
 /-- In the basis `extensionBasis p bp bq`, the diagonal block of an endomorphism `f` preserving `p`
 indexed by the basis `bq` of `V ⧸ p` is the matrix of the endomorphism of `V ⧸ p` induced by

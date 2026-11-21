@@ -52,9 +52,24 @@ universe u
 
 namespace Model
 
-variable {R K : Type u} [CommRing R] [Field K] [Algebra R K]
-variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
-variable {P : Scheme.{u}} {toR : P ⟶ Spec (.of R)} (i : C ⟶ (genericFiber R K toR).left)
+section GenericFiber
+
+variable {R K : Type u} [CommRing R] [CommRing K] [Algebra R K]
+variable {C P : Scheme.{u}} {toR : P ⟶ Spec (.of R)} (i : C ⟶ (genericFiber R K toR).left)
+
+/-- The generic fibre of the closure maps to the generic fibre of `P`, by base change of the
+closed immersion of the closure into `P`. -/
+private def genericFiberToGenericFiber :
+    (genericFiber R K ((i ≫ genericFiberι R K toR).imageι ≫ toR)).left ⟶
+      (genericFiber R K toR).left :=
+  (pullbackRightPullbackFstIso toR _ (i ≫ genericFiberι R K toR).imageι).inv ≫
+    pullback.snd _ _
+
+private instance : IsClosedImmersion (genericFiberToGenericFiber i) := by
+  rw [genericFiberToGenericFiber]
+  infer_instance
+
+variable {toK : C ⟶ Spec (.of K)}
 
 private lemma comp_genericFiberι_comp (hi : i ≫ (genericFiber R K toR).hom = toK) :
     (i ≫ genericFiberι R K toR) ≫ toR = toK ≫ Spec.map (CommRingCat.ofHom (algebraMap R K)) := by
@@ -81,18 +96,6 @@ private lemma toGenericFiber_hom :
       toK :=
   pullback.lift_snd _ _ _
 
-/-- The generic fibre of the closure maps to the generic fibre of `P`, by base change of the
-closed immersion of the closure into `P`. -/
-private def genericFiberToGenericFiber :
-    (genericFiber R K ((i ≫ genericFiberι R K toR).imageι ≫ toR)).left ⟶
-      (genericFiber R K toR).left :=
-  (pullbackRightPullbackFstIso toR _ (i ≫ genericFiberι R K toR).imageι).inv ≫
-    pullback.snd _ _
-
-private instance : IsClosedImmersion (genericFiberToGenericFiber i) := by
-  rw [genericFiberToGenericFiber]
-  infer_instance
-
 private lemma toGenericFiber_genericFiberToGenericFiber :
     toGenericFiber i hi ≫ genericFiberToGenericFiber i = i := by
   apply pullback.hom_ext
@@ -102,6 +105,13 @@ private lemma toGenericFiber_genericFiberToGenericFiber :
   · simp only [genericFiberToGenericFiber, Over.mk_left, Over.mk_hom, Over.pullback_obj_left,
       Category.assoc, pullbackRightPullbackFstIso_inv_snd_snd]
     exact (toGenericFiber_hom i hi).trans hi.symm
+
+end GenericFiber
+
+variable {R K : Type u} [CommRing R] [Field K] [Algebra R K]
+variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
+variable {P : Scheme.{u}} {toR : P ⟶ Spec (.of R)}
+variable (i : C ⟶ (genericFiber R K toR).left) (hi : i ≫ (genericFiber R K toR).hom = toK)
 
 private lemma isIso_toGenericFiber [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K]
     [IsClosedImmersion i] : IsIso (toGenericFiber i hi) := by

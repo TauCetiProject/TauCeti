@@ -37,6 +37,11 @@ local fields.
 * `IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt`: for `B`
   essentially of finite type over `R`, unramifiedness of `w` over `R` gives unramifiedness of
   `L_w / K_v`.
+* `IsDedekindDomain.HeightOneSpectrum.normalizedValuation_adicCompletionExtension`: `e(w | v)`-th
+  power relation for `normalizedValuation` under `adicCompletionExtension`.
+* `IsDedekindDomain.HeightOneSpectrum.normalizedValuation_adicCompletionExtension_of_isUnramifiedAt`
+  and `IsDedekindDomain.HeightOneSpectrum.isUniformizer_adicCompletionExtension`: preservation of
+  `normalizedValuation` and `IsUniformizer` under `adicCompletionExtension` at an unramified prime.
 
 ## References
 
@@ -118,6 +123,39 @@ theorem isUnramified_adicCompletion_of_isUnramifiedAt [Algebra.EssFiniteType R B
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt
+
+/-- The normalized valuation of the image of `x ∈ K_vˣ` under `adicCompletionExtension` is the
+`e(w | v)`-th power of its normalized valuation in `K_v`. -/
+theorem normalizedValuation_adicCompletionExtension (x : (v.adicCompletion K)ˣ) :
+    TauCeti.normalizedValuation (w.adicCompletion L)
+        (Units.map (adicCompletionExtension K L v w).toMonoidHom x) =
+      TauCeti.normalizedValuation (v.adicCompletion K) x ^ w.asIdeal.ramificationIdx R := by
+  have halg : (adicCompletionExtension K L v w).toMonoidHom =
+      (algebraMap (v.adicCompletion K) (w.adicCompletion L) :
+        v.adicCompletion K →* w.adicCompletion L) :=
+    congrArg RingHom.toMonoidHom (algebraMap_adicCompletionExtensionAlgebra K L v w).symm
+  rw [halg, TauCeti.normalizedValuation_algebraMap, ramificationIndex_adicCompletion v w]
+
+/-- Under an unramified extension of height-one primes `w | v`, `adicCompletionExtension` preserves
+the normalized valuation on units. -/
+theorem normalizedValuation_adicCompletionExtension_of_isUnramifiedAt [Algebra.EssFiniteType R B]
+    [Algebra.IsUnramifiedAt R w.asIdeal] (x : (v.adicCompletion K)ˣ) :
+    TauCeti.normalizedValuation (w.adicCompletion L)
+        (Units.map (adicCompletionExtension K L v w).toMonoidHom x) =
+      TauCeti.normalizedValuation (v.adicCompletion K) x := by
+  rw [normalizedValuation_adicCompletionExtension, Ideal.ramificationIdx_eq_one w.asIdeal R,
+    pow_one]
+
+/-- Under an unramified extension of height-one primes `w | v`, `adicCompletionExtension` maps a
+uniformizer of `K_v` to a uniformizer of `L_w`. -/
+theorem isUniformizer_adicCompletionExtension [Algebra.EssFiniteType R B]
+    [Algebra.IsUnramifiedAt R w.asIdeal] {π : (v.adicCompletion K)ˣ}
+    (hπ : TauCeti.IsUniformizer (v.adicCompletion K) π) :
+    TauCeti.IsUniformizer (w.adicCompletion L)
+      (Units.map (adicCompletionExtension K L v w).toMonoidHom π) := by
+  rw [TauCeti.isUniformizer_def,
+    normalizedValuation_adicCompletionExtension_of_isUnramifiedAt v w,
+    (TauCeti.isUniformizer_def π).1 hπ]
 
 end Extension
 
