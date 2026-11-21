@@ -161,8 +161,8 @@ theorem heckeSum_comp_of_mem {γ : G} (hγ : γ ∈ Γ₂) :
     -- `aᵥ γ = δ (γ⁻¹ τᵥ)⁻¹` is a `Γ₁`-multiple of the representative of the class of `γ⁻¹ τᵥ`,
     -- which is the class `γ⁻¹ • v`.
     obtain ⟨γ₁, hγ₁, hsplit⟩ :=
-      exists_mem_out_mul_inv_eq_mul_rightCosetRep D (mul_mem (inv_mem hγ) v.out.2)
-    have hmk : (QuotientGroup.mk ⟨γ⁻¹ * (v.out : G), mul_mem (inv_mem hγ) v.out.2⟩ :
+      exists_mem_out_mul_inv_eq_mul_rightCosetRep D (mul_mem (inv_mem hγ) v.out.property)
+    have hmk : (QuotientGroup.mk ⟨γ⁻¹ * (v.out : G), mul_mem (inv_mem hγ) v.out.property⟩ :
         DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) = (⟨γ, hγ⟩ : Γ₂)⁻¹ • v :=
       MulAction.Quotient.mk_smul_out _ (⟨γ, hγ⟩ : Γ₂)⁻¹ v
     have hprod : rightCosetRep D v * γ =

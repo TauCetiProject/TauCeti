@@ -107,19 +107,19 @@ theorem criticalHessian_apply_eq_eval₂_fderiv (h : σ.IsNondegenerate)
       fin_cases i
       exacts [h.mdifferentiable_hamiltonianVectorField hF p, hY]
     exact hW.differentiableAt_mpullbackWithin_extChartAt_symm
-  have hσ : DifferentiableAt ℝ (RoughForm.inChartAt σ.1 p) (extChartAt I p p) :=
-    RoughForm.differentiableAt_inChartAt σ.1 ((σ.contMDiff p).mdifferentiableAt (by simp))
+  have hσ : DifferentiableAt ℝ (RoughForm.inChartAt σ.val p) (extChartAt I p p) :=
+    RoughForm.differentiableAt_inChartAt σ.val ((σ.contMDiff p).mdifferentiableAt (by simp))
   -- The Hessian against `Y p = u` is the derivative of `dF(Y) = σ(X_F, Y)`.
   have h1 := criticalHessian_apply_eq_mvfderiv (hF p) hcrit hY w
   rw [hYp] at h1
-  have h2 : (fun y ↦ mvfderiv I F y (Y y)) = fun y ↦ σ.1 y (W · y) := by
+  have h2 : (fun y ↦ mvfderiv I F y (Y y)) = fun y ↦ σ.val y (W · y) := by
     funext y
     rw [← h.apply_hamiltonianVectorField F y (Y y)]
     congr 1
     funext i
     fin_cases i <;> rfl
   -- That derivative is the derivative of the coordinate expression of `σ(X_F, Y)`.
-  have h3 := fderivWithin_inChartAt_apply_mpullbackWithin (s := univ) (x := p) σ.1 W
+  have h3 := fderivWithin_inChartAt_apply_mpullbackWithin (s := univ) (x := p) σ.val W
     hσ.differentiableWithinAt (fun i ↦ (hV i).differentiableWithinAt)
   rw [mvfderivWithin_univ, preimage_univ, univ_inter,
     fderivWithin_of_mem_nhds (by rw [I.range_eq_univ]; exact univ_mem)] at h3
@@ -160,7 +160,7 @@ theorem criticalHessian_apply_eq_zero_iff (h : σ.IsNondegenerate) (hF : ContMDi
   · ext u
     rw [criticalHessian_apply_eq_eval₂_fderiv h hF hcrit, hw]
     exact (SmoothBundleForm.eval₂_apply σ p 0 u).trans
-      ((σ.1 p).map_coord_zero (m := ![0, u]) 0 rfl)
+      ((σ.val p).map_coord_zero (m := ![0, u]) 0 rfl)
 
 /-- **Nondegenerate critical points are the zeros of `X_F` with injective linearization.** For a
 nondegenerate two-form `σ` and a `C²` function `F` with a critical point `p`, the derivative at the

@@ -288,14 +288,14 @@ theorem contMDiff_cappedExchangeAlmostComplex {F G N : Type*} [NormedAddCommGrou
     let U : TopologicalSpace.Opens N :=
       ⟨{y | ‖f y‖ < 1}, isOpen_lt hf.continuous.norm continuous_const⟩
     have hU := contMDiff_cappingAlmostComplex h₀ J hJ hJp hJs (q := zero) (by decide)
-      (ℓ := fun _ : U => L) contMDiff_const (hf.comp contMDiff_subtype_val)
-      (hb.comp contMDiff_subtype_val) (fun _ => hL) fun y => by
+      (ℓ := fun _ : U => L) contMDiff_const (hf.comp contMDiff_subtypeVal)
+      (hb.comp contMDiff_subtypeVal) (fun _ => hL) fun y => by
         rcases eq_or_ne (f y) 0 with h | h
         · exact Or.inl (by rw [comp_apply, h, endCenter_zero])
         · exact Or.inr ⟨h, hf₁ y⟩
     refine contMDiffAt_subtype_iff (U := U) (x := ⟨y₀, hlt⟩) |>.mp ?_
     refine (hU _).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
-    have hy : ‖f y‖ < 1 := y.2
+    have hy : ‖f y‖ < 1 := y.property
     simp only [comp_apply, cappedExchangeAlmostComplex_of_norm_le h₀ J hJ
       (by linarith : (2 : ℝ) < L) (Ioo_subset_Icc_self (hcy y)) hy.le]
   · -- Off the disc `‖w‖ ≤ 1/2` the family is the input-exchange family.

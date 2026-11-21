@@ -57,14 +57,14 @@ sufficiently large `k`, the secant map `s` of `f` on the `k`-th edgewise subdivi
 the distance of their images in the barycentric coordinates of `|K|`. The constant does not
 depend on `k`. -/
 theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschitzWith
-    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hf : ∀ σ : Face K, ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights))
     {C : ℝ≥0}
     (hanti : AntilipschitzWith C (f ∘ (K.realizationHomeomorphRange (Set.toFinite K.faces)).symm)) :
     ∃ C' > 0, ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
-      ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k y).1‖ ≤
+      ‖((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).val‖ ≤
         C' * ‖(K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
           (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y‖ := by
   set e := K.realizationHomeomorphRange (Set.toFinite K.faces)
@@ -86,8 +86,8 @@ theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschit
       e.symm (Ψ x) = edgewiseSubdivisionRealizationMap K k x := by
     rw [Homeomorph.trans_apply, e.symm_apply_apply, edgewiseSubdivisionRealizationHomeomorph_apply]
   have hdist (x y : Realization (K.edgewiseSubdivision k)) : dist (Ψ x) (Ψ y) =
-      ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
-        (edgewiseSubdivisionRealizationMap K k y).1‖ := by
+      ‖((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ) -
+        (edgewiseSubdivisionRealizationMap K k y).val‖ := by
     rw [dist_eq_norm_realizationHomeomorphRange_symm _ (Set.toFinite _), hΨ, hΨ]
   have hlip : LipschitzWith (2 * C₁)⁻¹ (s ∘ Ψ.symm - f ∘ e.symm) :=
     LipschitzWith.of_dist_le_mul fun p q => by
@@ -103,9 +103,9 @@ realization of a complex on a finite vertex type which is `C¹` on every closed 
 anti-Lipschitz in barycentric coordinates. For all sufficiently large `k`, the secant map of `f`
 on the `k`-th edgewise subdivision is a closed embedding. -/
 theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_antilipschitzWith
-    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hf : ∀ σ : Face K, ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights))
     {C : ℝ≥0}
     (hanti : AntilipschitzWith C (f ∘ (K.realizationHomeomorphRange (Set.toFinite K.faces)).symm)) :
     ∀ᶠ k in atTop, Topology.IsClosedEmbedding
@@ -140,22 +140,22 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
       ((range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights).domRestrict F)) :
     ∀ᶠ k in atTop,
       let K : AbstractSimplicialComplex ι := ⊤
-      let f : Realization K → E := fun x => F (x.1 : ι → ℝ)
+      let f : Realization K → E := fun x => F (x.val : ι → ℝ)
       Topology.IsClosedEmbedding ((K.edgewiseSubdivision k).secantMap
         (f ∘ edgewiseSubdivisionRealizationMap K k)) := by
   classical
-  let f₀ : Realization (⊤ : AbstractSimplicialComplex ι) → E := fun x => F (x.1 : ι → ℝ)
+  let f₀ : Realization (⊤ : AbstractSimplicialComplex ι) → E := fun x => F (x.val : ι → ℝ)
   -- Extend face coordinates by zero to restrict the original map to every closed face.
   have hC1 (σ : Face (⊤ : AbstractSimplicialComplex ι)) :
-      ∃ G : (σ.1 → ℝ) → E,
-        (∀ x : StandardSimplex σ.1, G (fun a => x.1 a) = f₀ (faceInclusion ⊤ σ x)) ∧
-          ContDiffOn ℝ 1 G (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) := by
-    let L := (Function.ExtendByZero.linearMap ℝ ℝ (Subtype.val : σ.1 → ι)).toContinuousLinearMap
-    have hL (x : StandardSimplex σ.1) : L (fun a => x.1 a) = (x.1 : ι → ℝ) := by
+      ∃ G : (σ.val → ℝ) → E,
+        (∀ x : StandardSimplex σ.val, G (fun a => x.val a) = f₀ (faceInclusion ⊤ σ x)) ∧
+          ContDiffOn ℝ 1 G (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights) := by
+    let L := (Function.ExtendByZero.linearMap ℝ ℝ (Subtype.val : σ.val → ι)).toContinuousLinearMap
+    have hL (x : StandardSimplex σ.val) : L (fun a => x.val a) = (x.val : ι → ℝ) := by
       ext i
       rw [LinearMap.coe_toContinuousLinearMap', Function.ExtendByZero.linearMap_apply,
         extend_val_standardSimplex]
-    have hmap : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights)
+    have hmap : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights)
         (range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights) := by
       rw [← Finset.range_standardSimplex_coordinates]
       rintro _ ⟨x, rfl⟩
@@ -169,9 +169,9 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
       (f₀ ∘ ((⊤ : AbstractSimplicialComplex ι).realizationHomeomorphRange (Set.toFinite _)).symm) :=
     AntilipschitzWith.of_le_mul_dist fun p q => by
       have hp : (p : ι → ℝ) ∈ range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights :=
-        range_realization_coe_top (ι := ι) ▸ p.2
+        range_realization_coe_top (ι := ι) ▸ p.property
       have hq : (q : ι → ℝ) ∈ range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights :=
-        range_realization_coe_top (ι := ι) ▸ q.2
+        range_realization_coe_top (ι := ι) ▸ q.property
       simpa only [Subtype.dist_eq, Function.comp_apply, f₀,
         coe_realizationHomeomorphRange_symm_apply, Set.domRestrict_apply] using
         hsep.le_mul_dist ⟨p, hp⟩ ⟨q, hq⟩

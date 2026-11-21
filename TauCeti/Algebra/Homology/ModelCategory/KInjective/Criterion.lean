@@ -248,16 +248,17 @@ private lemma quasiIso_transfiniteIterate_arrow (hA₀ : QuasiIso A₀.arrow) (j
     have hF : ((Set.principalSegIio m).monotone.functor ⋙ functor hS A₀ J ⋙ H)
         |>.IsEventuallyConstantFrom i₀ := fun k φ ↦ by
       have : QuasiIso ((functor hS A₀ J).map ((Set.principalSegIio m).monotone.functor.map φ)) :=
-        (Subobject.quasiIso_ofLE_iff _ (ih _ k.2)).2 (ih _ i₀.2)
+        (Subobject.quasiIso_ofLE_iff _ (ih _ k.property)).2 (ih _ i₀.property)
       rw [Functor.comp_map, Functor.comp_map, HomologicalComplex.homologyFunctor_map]
       exact (quasiIsoAt_iff_isIso_homologyMap _ n).1 ((quasiIso_iff _).1 this n)
     have hι := hF.isIso_ι_of_isColimit (isColimitOfPreserves H hc)
     rw [Functor.mapCocone_ι_app, PrincipalSeg.cocone_ι_app, HomologicalComplex.homologyFunctor_map,
       functor_map] at hι
-    have := ih _ i₀.2
-    have : QuasiIsoAt (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)) n :=
+    have := ih _ i₀.property
+    have : QuasiIsoAt (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.property.le)) n :=
       (quasiIsoAt_iff_isIso_homologyMap _ n).2 hι
-    rw [← quasiIsoAt_iff_comp_left (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)),
+    rw [← quasiIsoAt_iff_comp_left (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J
+        i₀.property.le)),
       Subobject.ofLE_arrow]
     infer_instance
 
@@ -274,17 +275,17 @@ private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : Quasi
     have := isWellOrderContinuous_functor hS A₀ J
     infer_instance
   incl :=
-    { app k := (functor hS A₀ J).map (homOfLE k.2)
+    { app k := (functor hS A₀ J).map (homOfLE k.property)
       naturality k k' h := by
         simp only [Functor.comp_map, Functor.const_obj_map]
         exact (Subobject.ofLE_comp_ofLE _ _ _ _ _).trans (Category.comp_id _).symm }
   isColimit := colimitOfDiagramTerminal isTerminalTop _
   map_mem k hk := by
-    have hk' : k.1 < j := lt_of_le_of_ne k.2 fun h ↦ hk fun l _ ↦ by
+    have hk' : k.val < j := lt_of_le_of_ne k.property fun h ↦ hk fun l _ ↦ by
       rw [← Subtype.coe_le_coe, h]
-      exact l.2
-    have heq : supTransfiniteIterate (largerSubobject hS) (Order.succ k).1 A₀ =
-        largerSubobject hS (supTransfiniteIterate (largerSubobject hS) k.1 A₀) := by
+      exact l.property
+    have heq : supTransfiniteIterate (largerSubobject hS) (Order.succ k).val A₀ =
+        largerSubobject hS (supTransfiniteIterate (largerSubobject hS) k.val A₀) := by
       rw [Set.Iic.succ_eq_of_not_isMax hk,
         supTransfiniteIterate_succ_of_not_isMax _ _ (Set.not_isMax_coe _ hk)]
     refine (S.monoWithCokernel.arrow_mk_iso_iff
@@ -293,7 +294,7 @@ private noncomputable def transfiniteCompositionOfShapeMapFromBot (hA₀ : Quasi
           Arrow.mk (((Set.initialSegIic j).monotone.functor ⋙ functor hS A₀ J).map
             (homOfLE (Order.le_succ k))))).1
       (prop_ofLE_largerSubobject hS _ (hj _ hk')
-        (quasiIso_transfiniteIterate_arrow hS A₀ J hA₀ k.1))
+        (quasiIso_transfiniteIterate_arrow hS A₀ J hA₀ k.val))
     exact (Category.id_comp _).trans (Subobject.ofLE_comp_ofLE _ _ _ _ _).symm
 
 /-- The transfinite iteration of `largerSubobject` reaches `⊤`. -/
@@ -352,7 +353,7 @@ complexes in a Grothendieck abelian category such that every nonzero acyclic com
 nonzero acyclic subcomplex satisfying `S`. If `I` is a complex of injective objects such that every
 `1`-cocycle from a complex satisfying `S` to `I` is a coboundary, then `I` is K-injective. -/
 theorem isKInjective_of_forall_eq_δ (I : CochainComplex C ℤ) [∀ n, Injective (I.X n)]
-    (hI : ∀ N, S N → ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.1) :
+    (hI : ∀ N, S N → ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.val) :
     IsKInjective I := by
   refine ((rlp_monomorphisms_inf_quasiIso_iff_of_isZero (0 : I ⟶ 0) (isZero_zero _)).1
     fun A X f ⟨_, (_ : QuasiIso f)⟩ ↦ ?_).2
@@ -386,7 +387,7 @@ theorem exists_isKInjective_iff {G : C} (hG : IsSeparator G) :
     ∃ B : ℕ → C, ∀ (I : CochainComplex C ℤ) [∀ n, Injective (I.X n)],
       IsKInjective I ↔ ∀ N : CochainComplex C ℤ, N.Acyclic → (∃ n : ℤ, N.IsStrictlyLE n) →
         (∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p) →
-          ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.1 := by
+          ∀ z : Cocycle N I 1, ∃ α : Cochain N I 0, δ 0 1 α = z.val := by
   obtain ⟨B, hB⟩ := hG.exists_bounded_nonzero_acyclic_subcomplex
   let S : ObjectProperty (CochainComplex C ℤ) := fun N ↦
     N.Acyclic ∧ (∃ n : ℤ, N.IsStrictlyLE n) ∧ ∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p

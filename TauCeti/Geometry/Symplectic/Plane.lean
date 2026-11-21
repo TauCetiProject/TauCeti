@@ -122,7 +122,7 @@ theorem exists_eq_smul_of_commute (hV : finrank ℝ V = 2)
   obtain ⟨v, hv⟩ : ∃ v, LinearIndependent ℝ ![v, (A : Module.End ℝ V) v] := by
     by_contra! h
     obtain ⟨c, hc⟩ := LinearMap.exists_eq_smul_id_of_forall_notLinearIndependent h
-    have hc0 : c = 0 := eq_zero_of_smul_one_mem (hc ▸ A.2)
+    have hc0 : c = 0 := eq_zero_of_smul_one_mem (hc ▸ A.property)
     exact hA (Subtype.ext (by simpa [hc0] using hc))
   let b := basisOfLinearIndependentOfCardEqFinrank hv (by simp [hV])
   have hb0 : b 0 = v := by simp [b]
@@ -146,7 +146,7 @@ theorem exists_eq_smul_of_commute (hV : finrank ℝ V = 2)
       abel
   have ha : a = 0 := eq_zero_of_smul_one_mem (by
     rw [← hBeq]
-    exact sub_mem B.2 (Submodule.smul_mem _ t A.2))
+    exact sub_mem B.property (Submodule.smul_mem _ t A.property))
   refine ⟨t, Subtype.ext ?_⟩
   rw [ha, zero_smul, sub_eq_zero] at hBeq
   simpa using hBeq

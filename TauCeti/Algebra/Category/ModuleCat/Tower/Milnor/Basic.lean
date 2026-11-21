@@ -563,7 +563,7 @@ theorem homologyToLim_surjective (j : ι) : Function.Surjective (C.homologyToLim
     apply (C.productHomologyEquiv j).injective
     rw [productHomologyEquiv_homologyMap_productComplexShift, LinearEquiv.apply_symm_apply,
       map_zero]
-    exact LinearMap.mem_ker.1 (by rw [← ModuleTower.lim_eq_ker]; exact y.2)
+    exact LinearMap.mem_ker.1 (by rw [← ModuleTower.lim_eq_ker]; exact y.property)
   obtain ⟨x, hx⟩ := (exact_homologyMap_limComplexι_productComplexShift hC j _).1 hy
   refine ⟨x, Subtype.ext ?_⟩
   rw [coe_homologyToLim]

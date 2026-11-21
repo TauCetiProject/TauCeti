@@ -24,7 +24,8 @@ series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
-norm. Finite products of geometric series converge unconditionally over all exponent vectors,
+norm; the affine case `∑ (a k + b) xᵏ` holds more generally in a normed division ring.
+Finite products of geometric series converge unconditionally over all exponent vectors,
 giving the product Cauchy kernel expansion. Over a complete normed field, the Lambert series
 `∑_{n ≥ 1} f(qⁿw)` is the power series `∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)` in `w` for every
 power series `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients grow slowly enough. This applies
@@ -208,6 +209,21 @@ theorem hasSum_succ_sq_mul_geometric_of_norm_lt_one {x : K} (hx : ‖x‖ < 1) :
     field_simp
     ring
 
+/-- The geometric series with affine coefficients `a k + b` sums to
+`(b + (a - b) x) / (1 - x)²`, in any normed division ring. -/
+theorem hasSum_affine_mul_geometric_of_norm_lt_one {D : Type*} [NormedDivisionRing D] {x : D}
+    (hx : ‖x‖ < 1) (a b : D) :
+    HasSum (fun k : ℕ ↦ (a * k + b) * x ^ k) ((b + (a - b) * x) / (1 - x) ^ 2) := by
+  have hx1 : 1 - x ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [← h] at hx
+  convert ((hasSum_coe_mul_geometric_of_norm_lt_one hx).mul_left a).add
+    ((hasSum_geometric_of_norm_lt_one hx).mul_left b) using 1
+  · ext k
+    rw [add_mul, mul_assoc]
+  · have hc : (1 - x) * ((1 - x) ^ 2)⁻¹ = (1 - x)⁻¹ := by
+      rw [pow_two, mul_inv_rev, ← mul_assoc, mul_inv_cancel₀ hx1, one_mul]
+    rw [div_eq_mul_inv, div_eq_mul_inv, ← hc]
+    noncomm_ring
+
 /-- The geometric series with coefficient and exponent both shifted by one. -/
 theorem tsum_natCast_succ_mul_pow_succ (r : K) (hr : ‖r‖ < 1) :
     (∑' d : ℕ, ((d + 1 : ℕ) : K) * r ^ (d + 1)) = r / (1 - r) ^ 2 := by
@@ -337,10 +353,10 @@ mean `q / (1 - q)`: `∑ₖ (1 - q) qᵏ (c k + B) = c q / (1 - q) + B`, for `�
 theorem hasSum_one_sub_mul_geometric_mul_affine {q : K} (hq : ‖q‖ < 1) (c B : K) :
     HasSum (fun k : ℕ ↦ (1 - q) * q ^ k * (c * k + B)) (c * q / (1 - q) + B) := by
   have hq1 : 1 - q ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [← h] at hq
-  convert ((hasSum_coe_mul_geometric_of_norm_lt_one hq).mul_left ((1 - q) * c)).add
-    ((hasSum_geometric_of_norm_lt_one hq).mul_left ((1 - q) * B)) using 1
+  convert (hasSum_affine_mul_geometric_of_norm_lt_one hq c B).mul_left (1 - q) using 1
   · ext k; ring
   · field_simp
+    ring
 
 variable [CompleteSpace K]
 

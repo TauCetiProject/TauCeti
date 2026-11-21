@@ -99,14 +99,14 @@ theorem mem_range_sectionFrameCoordinates_iff
       apply ((e i).contMDiffAt_section_iff (hU i hi)).mpr
       apply (contMDiffAt_subtype_iff (x := (⟨x, hi⟩ : U i))).mp
       have heq : (fun y : U i ↦ (e i ⟨(y : M), s y⟩).2) = f i :=
-        funext fun y ↦ hs i y y.2
+        funext fun y ↦ hs i y y.property
       rw [heq]
       exact (f i).contMDiff _
     refine ⟨⟨s, hsm⟩, ?_⟩
     funext i
     ext x
     rw [sectionFrameCoordinates_apply]
-    exact hs i x x.2
+    exact hs i x x.property
 
 section Closed
 

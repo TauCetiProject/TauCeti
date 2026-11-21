@@ -65,10 +65,10 @@ variable {G α : Type*} [SMul G α] {B : Set α}
 
 /-- An element of `G` carrying `B` onto the translate `C`. -/
 private noncomputable def blockTransversal (C : orbit G B) : G :=
-  (mem_orbit_iff.1 C.2).choose
+  (mem_orbit_iff.1 C.property).choose
 
 private theorem blockTransversal_smul (C : orbit G B) : blockTransversal C • B = C :=
-  (mem_orbit_iff.1 C.2).choose_spec
+  (mem_orbit_iff.1 C.property).choose_spec
 
 end Transversal
 
@@ -96,7 +96,7 @@ noncomputable def _root_.MulAction.IsBlock.imprimitivityEquiv (hB : IsBlock G B)
   right_inv y := by
     have hmem : blockTransversal y.1 • (y.2 : α) ∈ (y.1 : Set α) := by
       rw [← blockTransversal_smul y.1]
-      exact Set.smul_mem_smul_set y.2.2
+      exact Set.smul_mem_smul_set y.2.property
     have hblock : blockOf hB hBne (blockTransversal y.1 • (y.2 : α)) = y.1 :=
       (hB.existsUnique_mem_orbit hBne _).unique (mem_blockOf hB hBne _) hmem
     refine Prod.ext hblock (Subtype.ext ?_)

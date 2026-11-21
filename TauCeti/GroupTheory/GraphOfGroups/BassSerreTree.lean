@@ -32,7 +32,9 @@ alternating `𝔸`-path `g₀, e₁, g₁, …, e_k, g_k` from `b`: the darts of
 vertex group element, which by the normal form theorem forces `k = 0`.
 
 The stabilizer of the vertex `p A_b` is the conjugate `p A_b p⁻¹` of the vertex group, and the
-stabilizer of the dart `p α_e(A_e)` is the conjugate `p α_e(A_e) p⁻¹` of the edge group.
+stabilizer of the dart `p α_e(A_e)` is the conjugate `p α_e(A_e) p⁻¹` of the edge group. Over a
+graph without edges, every `𝔸`-path from `a` is homotopic to an element of `A_a`, so `X(𝔸, a)` is a
+single vertex.
 
 Sending `p A_b` to `b` and `p α_e(A_e)` to `e` projects `X(𝔸, a)` onto `Γ`, and `π₁(𝔸, a)` acts
 transitively on each fibre: `q p⁻¹` carries `p A_b` to `q A_b`. Hence the quotient graph
@@ -61,6 +63,11 @@ connected, the quotient graph is `Γ`.
 * `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex`,
   `TauCeti.GraphOfGroups.stabilizer_bassSerreDart`: the vertex and dart stabilizers are the
   conjugates of the vertex groups and of the edge group images.
+* `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreDart_eq_self_iff`,
+  `TauCeti.GraphOfGroups.vertexHom_cons_smul_bassSerreDart_eq_self_iff`: which elements of the
+  stabilizers of the endpoints of a dart fix the dart.
+* `TauCeti.GraphOfGroups.instUniqueVBassSerreTreeOfIsEmptyE`: over a graph without edges, the
+  Bass–Serre tree has exactly one vertex.
 * `TauCeti.GraphOfGroups.exists_smul_bassSerreVertex_eq`,
   `TauCeti.GraphOfGroups.exists_smul_bassSerreDart_eq`: the action is transitive on the fibres of
   the projection to `Γ`.
@@ -247,7 +254,7 @@ private def bassSerreGraph : SerreGraph.{max u v w, max u v w} where
   rev := BSDart.rev
   rev_rev := BSDart.rev_rev
   rev_ne d h :=
-    Γ.rev_ne d.2.2.1.1 ((Γ.reverse_val _).symm.trans (congrArg (fun d ↦ d.2.2.1.1) h))
+    Γ.rev_ne d.2.2.1.val ((Γ.reverse_val _).symm.trans (congrArg (fun d ↦ d.2.2.1.val) h))
 
 variable {𝔸 a}
 
@@ -361,7 +368,8 @@ private theorem exists_alternatingPath_of_isReduced {x y : (bassSerreGraph 𝔸 
       ∀ (d : Γ.V) (e : c ⟶ d) (g : 𝔸.vertexGroup c), (r.setLast (r.last * g)).Cancels e →
         ∃ (y₀ : (bassSerreGraph 𝔸 a).V) (P₀ : (bassSerreGraph 𝔸 a).Path x y₀) (f : y₀ ⟶ y),
           P = P₀.cons f ∧
-            f.1 = (bassSerreGraph 𝔸 a).rev (bsDart (p.comp (r.setLast (r.last * g)).toPath) e) := by
+            f.val = (bassSerreGraph 𝔸 a).rev (bsDart (p.comp (r.setLast (r.last * g)).toPath) e)
+                := by
   induction P with
   | nil =>
     refine ⟨b, .single 1, AlternatingPath.isReduced_single 1, by simp, ?_,
@@ -369,9 +377,9 @@ private theorem exists_alternatingPath_of_isReduced {x y : (bassSerreGraph 𝔸 
     rw [hx, AlternatingPath.toPath_single, Path.comp_ofVertex, bsVertex_cons_vertex]
   | cons P f ih =>
     obtain ⟨c, r, hr, hlen, hy, hgood⟩ := ih (SerreGraph.Path.IsReduced.of_cons _ hP)
-    obtain ⟨c', d, q, e, hf⟩ := bsDart_surjective f.1
+    obtain ⟨c', d, q, e, hf⟩ := bsDart_surjective f.val
     have hsrc : bsVertex q = bsVertex (p.comp r.toPath) := by
-      rw [← hy, ← f.2.1, ← hf, src_bsDart]
+      rw [← hy, ← f.property.1, ← hf, src_bsDart]
     obtain rfl := eq_of_bsVertex_eq hsrc
     obtain ⟨g, hq⟩ := bsVertex_eq_bsVertex_iff.1 hsrc.symm
     have hS : Path.Homotopic (p.comp (r.setLast (r.last * g)).toPath) q :=
@@ -384,7 +392,7 @@ private theorem exists_alternatingPath_of_isReduced {x y : (bassSerreGraph 𝔸 
       rw [bsDart_congr hS, hf] at hf₀
       exact ((SerreGraph.Path.isReduced_cons_cons _ _ _ _).1 hP).2
         (by rw [hf₀, SerreGraph.rev_rev])
-    · rw [← f.2.2, ← hf, tgt_bsDart, AlternatingPath.toPath_cons]
+    · rw [← f.property.2, ← hf, tgt_bsDart, AlternatingPath.toPath_cons]
       exact (bsVertex_congr (hS.symm.cons _)).trans (bsVertex_cons_vertex _ 1).symm
     · -- Backtracking after the new dart `e` means `e' = rev e`, and the path ends with `e`.
       simp only [AlternatingPath.last_cons, AlternatingPath.setLast_cons, one_mul,
@@ -468,8 +476,8 @@ def bassSerreTree : GTree.{max u v w, max u v w} (π₁ 𝔸 a) where
     rw [bassSerreAction_equivE] at h
     -- The action keeps the dart `e` of `Γ` underlying a dart, while reversal (`BSDart.rev`)
     -- reverses it.
-    exact Γ.rev_ne e.1
-      ((Γ.reverse_val e).symm.trans (congrArg (fun d : BSDart 𝔸 a ↦ d.2.2.1.1) h).symm)
+    exact Γ.rev_ne e.val
+      ((Γ.reverse_val e).symm.trans (congrArg (fun d : BSDart 𝔸 a ↦ d.2.2.1.val) h).symm)
 
 variable {𝔸 a}
 
@@ -541,7 +549,7 @@ theorem bassSerreDart_congr {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : 
 
 /-- Right multiplication by an element of `α_e(A_e)` does not change the dart `p α_e(A_e)`. -/
 @[simp] theorem bassSerreDart_cons_vertex_αArrow {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
-    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     bassSerreDart (p.cons (.vertex (𝔸.αArrow e c₀))) e = bassSerreDart p e :=
   (bassSerreDart_eq_bassSerreDart_iff.2 ⟨c₀, .refl _⟩).symm
 
@@ -591,6 +599,26 @@ theorem stabilizer_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e
   exact sigma_mk_injective.eq_iff.trans <| sigma_mk_injective.eq_iff.trans
     sigma_mk_injective.eq_iff
 
+/-- The element `p g p⁻¹` with `g ∈ A_b` fixes the dart `p α_e(A_e)` exactly when
+`g ∈ α_e(A_e)`. -/
+@[simp]
+theorem vertexHom_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup b) :
+    π₁.vertexHom p g • bassSerreDart p e = bassSerreDart p e ↔ g ∈ (𝔸.αArrow e).range := by
+  rw [← mem_stabilizer_iff, stabilizer_bassSerreDart,
+    Subgroup.mem_map_iff_mem (π₁.vertexHom_injective p)]
+
+/-- The element `(p e) h (p e)⁻¹` with `h ∈ A_c` fixes the dart `p α_e(A_e)` exactly when
+`h ∈ ω_e(A_e)`: it fixes the reverse dart `(p e) α_{rev e}(A_e)`, and
+`α_{rev e}(A_e) = ω_e(A_e)`. -/
+@[simp]
+theorem vertexHom_cons_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
+    (e : b ⟶ c) (h : 𝔸.vertexGroup c) :
+    π₁.vertexHom (p.cons (.dart e)) h • bassSerreDart p e = bassSerreDart p e ↔
+      h ∈ (𝔸.ωArrow e).range := by
+  rw [← mem_stabilizer_iff, ← GTree.stabilizer_rev, rev_bassSerreDart, stabilizer_bassSerreDart,
+    range_αArrow_reverse, Subgroup.mem_map_iff_mem (π₁.vertexHom_injective _)]
+
 /-- `π₁(𝔸, a)` acts transitively on the vertices `p A_b` over a vertex `b` of `Γ`: the class of
 `q p⁻¹` carries `p A_b` to `q A_b`. -/
 theorem exists_smul_bassSerreVertex_eq {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
@@ -606,6 +634,19 @@ theorem exists_smul_bassSerreDart_eq {b c : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b�
     rw [smul_bassSerreDart]
     exact bassSerreDart_congr (Path.Homotopic.comp_reverse_comp q p) e⟩
 
+/-! ### Graphs without edges -/
+
+/-- Over a graph without edges, for instance for the trivial splitting of a group as a single
+vertex group, the Bass–Serre tree is a point: every `𝔸`-path from `a` stays at `a` and is homotopic
+to a single element of `A_a`. -/
+noncomputable instance [IsEmpty Γ.E] : Unique (bassSerreTree 𝔸 a).V where
+  default := bassSerreVertex (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩)
+  uniq y := by
+    obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective y
+    obtain rfl : a = b := Γ.eq_of_path_of_forall_src_eq_tgt isEmptyElim (Path.edgePath p)
+    obtain ⟨g, hg⟩ := π₁.exists_homotopic_ofVertex_of_isEmpty p
+    rw [bassSerreVertex_congr hg, Path.ofVertex_eq_nil_cons, bassSerreVertex_cons_vertex]
+
 /-! ### The quotient graph -/
 
 variable (𝔸 a)
@@ -614,8 +655,8 @@ variable (𝔸 a)
 `p α_e(A_e)` to `e`. -/
 noncomputable def bassSerreProjection : (bassSerreTree 𝔸 a).Hom Γ where
   mapV y := y.1
-  mapE d := d.2.2.1.1
-  map_src d := d.2.2.1.2.1
+  mapE d := d.2.2.1.val
+  map_src d := d.2.2.1.property.1
   map_rev d := Γ.reverse_val d.2.2.1
 
 variable {𝔸 a}
@@ -625,7 +666,7 @@ variable {𝔸 a}
   (rfl)
 
 @[simp] theorem bassSerreProjection_mapE_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
-    (e : b ⟶ c) : (bassSerreProjection 𝔸 a).mapE (bassSerreDart p e) = e.1 :=
+    (e : b ⟶ c) : (bassSerreProjection 𝔸 a).mapE (bassSerreDart p e) = e.val :=
   (rfl)
 
 /-- The projection to `Γ` is invariant under the action on vertices. -/
@@ -717,7 +758,7 @@ theorem range_bassSerreQuotientHom_mapE :
   · rintro ⟨d, rfl⟩
     obtain ⟨d, rfl⟩ := (bassSerreTree 𝔸 a).quotientMap_mapE_surjective d
     obtain ⟨b, c, p, e, rfl⟩ := bassSerreDart_surjective d
-    exact ⟨by simpa [e.2.1] using p.edgePath⟩
+    exact ⟨by simpa [e.property.1] using p.edgePath⟩
   · refine ⟨(bassSerreTree 𝔸 a).quotientMap.mapE
       (bassSerreDart ((dartPrefunctor 𝔸).mapPath q) (Γ.dart e)), ?_⟩
     simp

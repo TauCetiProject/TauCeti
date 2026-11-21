@@ -46,9 +46,9 @@ variable {M Q : Type*} [TopologicalSpace M] [SeminormedAddCommGroup Q] [NormedSp
 along `e`. -/
 def closedBallContraction (z : unitInterval × M) : M :=
   e.symm ⟨(1 - (z.1 : ℝ)) • (e z.2 : Q), by
-    rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr z.1.2.2)]
-    exact (mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.mp (e z.2).2)
-      (sub_nonneg.mpr z.1.2.2)).trans (by simp [z.1.2.1])⟩
+    rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr z.1.property.2)]
+    exact (mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.mp (e z.2).property)
+      (sub_nonneg.mpr z.1.property.2)).trans (by simp [z.1.property.1])⟩
 
 /-- In the coordinates given by `e`, the contraction at time `s` is multiplication by `1 - s`. -/
 @[simp, grind =]
@@ -61,8 +61,8 @@ theorem coe_apply_closedBallContraction (s : unitInterval) (x : M) :
 theorem continuous_closedBallContraction : Continuous e.closedBallContraction := by
   apply e.symm.continuous.comp
   apply Continuous.subtype_mk
-  exact (continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
-    (continuous_subtype_val.comp (e.continuous.comp continuous_snd))
+  exact (continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
+    (continuous_subtypeVal.comp (e.continuous.comp continuous_snd))
 
 /-- At time zero the contraction is the identity. -/
 @[simp, grind =]
@@ -107,14 +107,14 @@ theorem closedBallContraction_eq_self_iff (s : unitInterval) (x : M) :
 theorem norm_apply_closedBallContraction (s : unitInterval) (x : M) :
     ‖(e (e.closedBallContraction (s, x)) : Q)‖ = (1 - (s : ℝ)) * ‖(e x : Q)‖ := by
   rw [coe_apply_closedBallContraction, norm_smul,
-    Real.norm_of_nonneg (sub_nonneg.mpr s.2.2)]
+    Real.norm_of_nonneg (sub_nonneg.mpr s.property.2)]
 
 /-- At positive times the contraction moves all of `M` into the preimage of the open ball. -/
 theorem norm_apply_closedBallContraction_lt_one {s : unitInterval} (hs : 0 < s) (x : M) :
     ‖(e (e.closedBallContraction (s, x)) : Q)‖ < 1 := by
   rw [norm_apply_closedBallContraction]
-  have h := mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.mp (e x).2)
-    (sub_nonneg.mpr s.2.2)
+  have h := mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.mp (e x).property)
+    (sub_nonneg.mpr s.property.2)
   have hs' : 0 < (s : ℝ) := unitInterval.coe_pos.mpr hs
   nlinarith
 
@@ -122,7 +122,7 @@ theorem norm_apply_closedBallContraction_lt_one {s : unitInterval} (hs : 0 < s) 
 theorem norm_apply_closedBallContraction_le (s : unitInterval) (x : M) :
     ‖(e (e.closedBallContraction (s, x)) : Q)‖ ≤ ‖(e x : Q)‖ := by
   rw [norm_apply_closedBallContraction]
-  exact mul_le_of_le_one_left (norm_nonneg _) (by linarith [s.2.1])
+  exact mul_le_of_le_one_left (norm_nonneg _) (by linarith [s.property.1])
 
 omit [NormedSpace ℝ Q] in
 /-- Every neighbourhood of the centre contains the preimage of a ball of positive radius. -/

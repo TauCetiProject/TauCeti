@@ -311,7 +311,7 @@ private theorem toZMod_eq_zero_of_zpowHat_eq_one {τ : inertiaSubgroup K}
   have : NeZero (n : ℕ) := ⟨n.ne_zero⟩
   have : NeZero ((n : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
     (IsLocalRing.isUnit_natCast_iff_not_dvd.2
-      ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 m.2.2.symm))⟩
+      ((CharP.prime_ringChar 𝓀[K]).coprime_iff_not_dvd.1 m.property.2.symm))⟩
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (n : ℕ)
   obtain ⟨σ, hσ⟩ := proj_inertiaTameCharacter_surjective K m hζ.toRootsOfUnity
   -- The level-`n` projection is a continuous homomorphism to the finite discrete group `μ_n`.
@@ -341,7 +341,7 @@ private def iwasawaGroupToTameQuotient (hσ : IsArithFrobeniusLift K σ) (τ : i
   presentedProfiniteGroup.lift (freeProfiniteGroup.lift fun i : ULift.{u} (Fin 2) ↦
     ![toTameQuotient K σ, toTameQuotient K τ] i.down) fun r hr ↦ by
       rw [Set.mem_singleton_iff.1 hr]
-      simp [iwasawaRelator, hσ.toTameQuotient_mul_toTameQuotient_mul_inv τ.2]
+      simp [iwasawaRelator, hσ.toTameQuotient_mul_toTameQuotient_mul_inv τ.property]
 
 private theorem iwasawaGroupToTameQuotient_iwasawaSigma (hσ : IsArithFrobeniusLift K σ) :
     iwasawaGroupToTameQuotient hσ τ (iwasawaSigma K) = toTameQuotient K σ := by

@@ -82,6 +82,6 @@ theorem mdifferentiable_restrict_comp_chart {e : OpenPartialHomeomorph N H'}
     {g : H' → M} (hg : ∀ x ∈ W, MDifferentiableAt J I g (e x)) :
     MDifferentiable J I fun x : W ↦ g (e x) := fun x ↦
   mdifferentiableAt_comp_subtype_val_iff.2
-    ((hg x x.2).comp (x : N) (mdifferentiableAt_of_mem_maximalAtlas he (hW x.2)))
+    ((hg x x.property).comp (x : N) (mdifferentiableAt_of_mem_maximalAtlas he (hW x.property)))
 
 end TauCeti.Manifold

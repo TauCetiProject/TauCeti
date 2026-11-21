@@ -295,7 +295,7 @@ private theorem subtype_rTensor_injective_of_surjective
   let π' : N.comap π →ₗ[R] N := π.restrict fun _ hx ↦ hx
   have hπ' : Function.Surjective π' := fun n ↦
     let ⟨x, hx⟩ := hπ n
-    ⟨⟨x, Submodule.mem_comap.mpr (hx ▸ n.2)⟩, Subtype.ext hx⟩
+    ⟨⟨x, Submodule.mem_comap.mpr (hx ▸ n.property)⟩, Subtype.ext hx⟩
   have hsq : π ∘ₗ (N.comap π).subtype = N.subtype ∘ₗ π' := (subtype_comp_restrict _).symm
   refine (injective_iff_map_eq_zero _).mpr fun t ht ↦ ?_
   obtain ⟨s, rfl⟩ := rTensor_surjective M hπ' t
@@ -309,7 +309,7 @@ private theorem subtype_rTensor_injective_of_surjective
   rw [hsu, ← rTensor_comp_apply]
   have : π' ∘ₗ Submodule.inclusion hker = 0 := by
     ext x
-    exact mem_ker.mp x.2
+    exact mem_ker.mp x.property
   rw [this, rTensor_zero, LinearMap.zero_apply]
 
 /-- Let `M ⧸ I M` be flat over `R ⧸ I` and `I ⊗[R] M → M` injective. If `L ⧸ N` is killed by `I`,
@@ -337,7 +337,7 @@ theorem subtype_rTensor_injective_of_pow_smul_top_le
     set N' := N ⊔ I ^ n • ⊤
     have hle : N ≤ N' := le_sup_left
     have hN₀ : I • ⊤ ≤ N.comap N'.subtype := Submodule.smul_le.mpr fun i hi x _ ↦ by
-      obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.mp x.2
+      obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.mp x.property
       have hiz : i • z ∈ I ^ (n + 1) • (⊤ : Submodule R L) := by
         rw [pow_succ', Submodule.mul_smul]
         exact Submodule.smul_mem_smul hi hz

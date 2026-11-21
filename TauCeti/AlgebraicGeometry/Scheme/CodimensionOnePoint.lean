@@ -72,14 +72,14 @@ lemma finite_setOfPred_notMem {X : Scheme.{u}} [IrreducibleSpace X]
   have hU := U.isOpen.isClosed_compl
   have : QuasiSober ((U : Set X)ᶜ : Set X) := hU.isClosedEmbedding_subtypeVal.quasiSober
   refine ((NoetherianSpace.finite_coheight_one_of_closure_ne_univ (p := (U : Set X)ᶜ) ?_).preimage
-    Subtype.val_injective.injOn).subset fun x hx ↦ ⟨hx, x.2⟩
+    Subtype.val_injective.injOn).subset fun x hx ↦ ⟨hx, x.property⟩
   rw [hU.closure_eq]
   exact fun h ↦ (Set.nonempty_coe_sort.mp ‹Nonempty U›).ne_empty (compl_eq_top.mp h)
 
 /-- Pushforward of a codimension-one point along an open immersion. -/
 def mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
     (y : CodimensionOnePoint U) : CodimensionOnePoint X :=
-  ⟨j y, (coheight_eq_of_isOpenImmersion j).trans y.2⟩
+  ⟨j y, (coheight_eq_of_isOpenImmersion j).trans y.property⟩
 
 /-- Coercing `CodimensionOnePoint.mapOfIsOpenImmersion j y` to `X` gives `j y`. -/
 @[simp] theorem coe_mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
@@ -102,7 +102,7 @@ theorem mem_range_mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenI
     {η : CodimensionOnePoint X} :
     η ∈ Set.range (mapOfIsOpenImmersion j) ↔ (η : X) ∈ Set.range j :=
   ⟨fun ⟨y, hy⟩ ↦ ⟨y, congrArg Subtype.val hy⟩, fun ⟨u, hu⟩ ↦
-    ⟨⟨u, (coheight_eq_of_isOpenImmersion j).symm.trans (hu.symm ▸ η.2)⟩, Subtype.ext hu⟩⟩
+    ⟨⟨u, (coheight_eq_of_isOpenImmersion j).symm.trans (hu.symm ▸ η.property)⟩, Subtype.ext hu⟩⟩
 
 /-- The range of `mapOfIsOpenImmersion j` is the preimage of `Set.range j` under coercion. -/
 @[simp] theorem range_mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j] :
@@ -117,7 +117,7 @@ theorem mem_range_mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenI
 @[simp] theorem mapOfIsOpenImmersion_comp {U V X : Scheme.{u}} (f : U ⟶ V) (g : V ⟶ X)
     [IsOpenImmersion f] [IsOpenImmersion g] (y : CodimensionOnePoint U) :
     mapOfIsOpenImmersion (f ≫ g) y = mapOfIsOpenImmersion g (mapOfIsOpenImmersion f y) :=
-  Subtype.ext (Scheme.Hom.comp_apply f g y.1)
+  Subtype.ext (Scheme.Hom.comp_apply f g y.val)
 
 end CodimensionOnePoint
 

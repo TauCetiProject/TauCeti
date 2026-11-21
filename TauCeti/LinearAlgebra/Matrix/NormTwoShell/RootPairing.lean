@@ -79,35 +79,35 @@ variable (hB : B.PosDef) (k : Type*) [CommRing k] [CharZero k]
 
 /-- The roots of the norm-two shell, as vectors of `I → k`. -/
 private def shellRoot : B.normTwoShell ↪ (I → k) :=
-  ⟨fun a i ↦ (a.1 i : k), fun _ _ h ↦ Subtype.ext (Int.cast_injective.comp_left h)⟩
+  ⟨fun a i ↦ (a.val i : k), fun _ _ h ↦ Subtype.ext (Int.cast_injective.comp_left h)⟩
 
 private theorem shellRoot_apply (a : B.normTwoShell) :
-    shellRoot k a = fun i ↦ (a.1 i : k) := (rfl)
+    shellRoot k a = fun i ↦ (a.val i : k) := (rfl)
 
 include hB in
 /-- The coroots of the norm-two shell, the vectors `B *ᵥ a` of `I → k`; they are distinct because
 `B` is nondegenerate. -/
 private def shellCoroot : B.normTwoShell ↪ (I → k) :=
-  ⟨fun a i ↦ ((B *ᵥ a.1) i : k),
+  ⟨fun a i ↦ ((B *ᵥ a.val) i : k),
     fun _ _ h ↦ Subtype.ext (hB.mulVec_injective (Int.cast_injective.comp_left h))⟩
 
 private theorem shellCoroot_apply (a : B.normTwoShell) :
-    shellCoroot hB k a = fun i ↦ ((B *ᵥ a.1) i : k) := (rfl)
+    shellCoroot hB k a = fun i ↦ ((B *ᵥ a.val) i : k) := (rfl)
 
 include hB in
 /-- Reflection of the norm-two shell in its vector `a`, the involution `b ↦ b - ⟪b, a⟫ a`. -/
 private def shellReflection (a : B.normTwoShell) : Equiv.Perm B.normTwoShell :=
   Involutive.toPerm
-    (fun b ↦ ⟨b.1 - (b.1 ⬝ᵥ B *ᵥ a.1) • a.1,
-      hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩)
+    (fun b ↦ ⟨b.val - (b.val ⬝ᵥ B *ᵥ a.val) • a.val,
+      hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.property b.property⟩)
     fun b ↦ Subtype.ext <| by
-      have ha : a.1 ⬝ᵥ B *ᵥ a.1 = 2 := mem_normTwoShell.mp a.2
+      have ha : a.val ⬝ᵥ B *ᵥ a.val = 2 := mem_normTwoShell.mp a.property
       ext i
       simp only [sub_dotProduct, smul_dotProduct, ha, smul_eq_mul, Pi.sub_apply, Pi.smul_apply]
       ring
 
 private theorem coe_shellReflection_apply (a b : B.normTwoShell) :
-    (shellReflection hB a b : I → ℤ) = b.1 - (b.1 ⬝ᵥ B *ᵥ a.1) • a.1 := (rfl)
+    (shellReflection hB a b : I → ℤ) = b.val - (b.val ⬝ᵥ B *ᵥ a.val) • a.val := (rfl)
 
 /-- **The root pairing of the norm-two shell.** For a positive definite integer matrix `B`, the
 vectors `a` with `a ⬝ᵥ B *ᵥ a = 2`, read in `I → k`, are the roots, and the vector `B *ᵥ a` is the
@@ -119,7 +119,7 @@ def normTwoShellRootPairing : RootPairing B.normTwoShell k (I → k) (I → k) w
   coroot := shellCoroot hB k
   root_coroot_two a := by
     rw [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply, intCast_dotProduct,
-      mem_normTwoShell.mp a.2, Int.cast_ofNat]
+      mem_normTwoShell.mp a.property, Int.cast_ofNat]
   reflectionPerm := shellReflection hB
   reflectionPerm_root a b := by
     simp only [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply, intCast_dotProduct,
@@ -129,13 +129,13 @@ def normTwoShellRootPairing : RootPairing B.normTwoShell k (I → k) (I → k) w
   reflectionPerm_coroot a b := by
     simp only [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply, intCast_dotProduct,
       coe_shellReflection_apply, mulVec_sub, mulVec_smul,
-      hB.isHermitian.isSymm.dotProduct_mulVec_comm (x := a.1) (y := b.1)]
+      hB.isHermitian.isSymm.dotProduct_mulVec_comm (x := a.val) (y := b.val)]
     ext i
     simp
 
 @[simp]
 theorem root_normTwoShellRootPairing (a : B.normTwoShell) :
-    (hB.normTwoShellRootPairing k).root a = fun i ↦ (a.1 i : k) :=
+    (hB.normTwoShellRootPairing k).root a = fun i ↦ (a.val i : k) :=
   (rfl)
 
 /-- An integral vector occurs as a root exactly when it belongs to the norm-two shell. -/
@@ -144,14 +144,14 @@ theorem exists_root_normTwoShellRootPairing_eq_iff (d : I → ℤ) :
   constructor
   · rintro ⟨a, ha⟩
     rw [root_normTwoShellRootPairing] at ha
-    have had : a.1 = d := Int.cast_injective.comp_left ha
-    exact had ▸ a.2
+    have had : a.val = d := Int.cast_injective.comp_left ha
+    exact had ▸ a.property
   · intro hd
     exact ⟨⟨d, hd⟩, root_normTwoShellRootPairing hB k _⟩
 
 @[simp]
 theorem coroot_normTwoShellRootPairing (a : B.normTwoShell) :
-    (hB.normTwoShellRootPairing k).coroot a = fun i ↦ ((B *ᵥ a.1) i : k) :=
+    (hB.normTwoShellRootPairing k).coroot a = fun i ↦ ((B *ᵥ a.val) i : k) :=
   (rfl)
 
 @[simp]
@@ -162,7 +162,7 @@ theorem toLinearMap_normTwoShellRootPairing (x y : I → k) :
 /-- The pairing of two roots of the norm-two shell is their lattice pairing. -/
 @[simp]
 theorem pairing_normTwoShellRootPairing (a b : B.normTwoShell) :
-    (hB.normTwoShellRootPairing k).pairing a b = ((a.1 ⬝ᵥ B *ᵥ b.1 : ℤ) : k) := by
+    (hB.normTwoShellRootPairing k).pairing a b = ((a.val ⬝ᵥ B *ᵥ b.val : ℤ) : k) := by
   rw [RootPairing.pairing, toLinearMap_normTwoShellRootPairing,
     root_normTwoShellRootPairing, coroot_normTwoShellRootPairing, intCast_dotProduct]
 
@@ -170,17 +170,17 @@ theorem pairing_normTwoShellRootPairing (a b : B.normTwoShell) :
 @[simp]
 theorem coe_reflectionPerm_normTwoShellRootPairing (a b : B.normTwoShell) :
     ((hB.normTwoShellRootPairing k).reflectionPerm a b : I → ℤ) =
-      b.1 - (b.1 ⬝ᵥ B *ᵥ a.1) • a.1 :=
+      b.val - (b.val ⬝ᵥ B *ᵥ a.val) • a.val :=
   coe_shellReflection_apply hB a b
 
 instance : (hB.normTwoShellRootPairing k).IsCrystallographic where
-  exists_value a b := ⟨a.1 ⬝ᵥ B *ᵥ b.1, by
+  exists_value a b := ⟨a.val ⬝ᵥ B *ᵥ b.val, by
     rw [pairing_normTwoShellRootPairing, algebraMap_int_eq, eq_intCast]⟩
 
 /-- **The Cartan integer of two roots of the norm-two shell is their lattice pairing.** -/
 @[simp]
 theorem pairingIn_normTwoShellRootPairing (a b : B.normTwoShell) :
-    (hB.normTwoShellRootPairing k).pairingIn ℤ a b = a.1 ⬝ᵥ B *ᵥ b.1 := by
+    (hB.normTwoShellRootPairing k).pairingIn ℤ a b = a.val ⬝ᵥ B *ᵥ b.val := by
   apply FaithfulSMul.algebraMap_injective ℤ k
   rw [RootPairing.algebraMap_pairingIn, pairing_normTwoShellRootPairing, algebraMap_int_eq,
     eq_intCast]
@@ -190,7 +190,7 @@ theorem pairingIn_normTwoShellRootPairing (a b : B.normTwoShell) :
 theorem rootSpan_normTwoShellRootPairing_eq_top (hspan : span ℤ B.normTwoShell = ⊤) :
     (hB.normTwoShellRootPairing k).rootSpan k = ⊤ := by
   have hroot : ⇑(hB.normTwoShellRootPairing k).root =
-      fun a : B.normTwoShell ↦ Pi.algebraMap I ℤ k a.1 := by
+      fun a : B.normTwoShell ↦ Pi.algebraMap I ℤ k a.val := by
     ext a i
     simp [TauCeti.piAlgebraMap_apply]
   rw [RootPairing.rootSpan, hroot]
@@ -214,7 +214,7 @@ theorem root_comp_normTwoShellSimple :
 vector. -/
 theorem root_normTwoShellRootPairing_eq_sum (a : B.normTwoShell) :
     (hB.normTwoShellRootPairing k).root a =
-      ∑ i, a.1 i • (hB.normTwoShellRootPairing k).root (normTwoShellSimple hdiag i) := by
+      ∑ i, a.val i • (hB.normTwoShellRootPairing k).root (normTwoShellSimple hdiag i) := by
   ext j
   simp [Finset.sum_apply, Pi.single_apply]
 
@@ -222,7 +222,7 @@ theorem root_normTwoShellRootPairing_eq_sum (a : B.normTwoShell) :
 the integer vector of its root. -/
 theorem coroot_normTwoShellRootPairing_eq_sum (a : B.normTwoShell) :
     (hB.normTwoShellRootPairing k).coroot a =
-      ∑ i, a.1 i • (hB.normTwoShellRootPairing k).coroot (normTwoShellSimple hdiag i) := by
+      ∑ i, a.val i • (hB.normTwoShellRootPairing k).coroot (normTwoShellSimple hdiag i) := by
   ext j
   simp [Finset.sum_apply, mulVec, dotProduct, Pi.single_apply, mul_comm]
 
@@ -296,12 +296,12 @@ theorem normTwoShellBaseEquiv_symm_mk (i : I)
 /-- The height relative to the coordinate base is the sum of the integer coordinates. -/
 @[simp]
 theorem height_normTwoShellBase (a : B.normTwoShell) :
-    (hB.normTwoShellBase k hdiag hoff).height a = ∑ i, a.1 i := by
+    (hB.normTwoShellBase k hdiag hoff).height a = ∑ i, a.val i := by
   have hs := hB.support_normTwoShellBase k hdiag hoff
   have hinj := (normTwoShellSimple_injective hdiag).injOn (s := (Finset.univ : Finset I))
   have hexp : (hB.normTwoShellRootPairing k).root a =
       ∑ b ∈ (hB.normTwoShellBase k hdiag hoff).support,
-        (a.1 ⬝ᵥ b.1) • (hB.normTwoShellRootPairing k).root b := by
+        (a.val ⬝ᵥ b.val) • (hB.normTwoShellRootPairing k).root b := by
     rw [hs, Finset.sum_image hinj]
     simpa using hB.root_normTwoShellRootPairing_eq_sum k hdiag a
   rw [RootPairing.Base.height_eq_sum hexp, hs, Finset.sum_image hinj]
@@ -310,12 +310,12 @@ theorem height_normTwoShellBase (a : B.normTwoShell) :
 /-- A shell root is positive relative to the coordinate base exactly when it is nonnegative. -/
 @[simp]
 theorem isPos_normTwoShellBase_iff (a : B.normTwoShell) :
-    (hB.normTwoShellBase k hdiag hoff).IsPos a ↔ 0 ≤ a.1 := by
+    (hB.normTwoShellBase k hdiag hoff).IsPos a ↔ 0 ≤ a.val := by
   constructor
   · intro hsum
     rw [RootPairing.Base.isPos_iff, height_normTwoShellBase] at hsum
     refine (hB.nonneg_or_nonpos_of_mem_normTwoShell (fun i ↦ hdiag i ▸ even_two) hoff
-      a.2).resolve_right fun hneg ↦ hsum.not_ge (Finset.sum_nonpos fun i _ ↦ hneg i)
+      a.property).resolve_right fun hneg ↦ hsum.not_ge (Finset.sum_nonpos fun i _ ↦ hneg i)
   · intro hpos
     rw [RootPairing.Base.isPos_iff', height_normTwoShellBase]
     exact Finset.sum_nonneg fun i _ ↦ hpos i

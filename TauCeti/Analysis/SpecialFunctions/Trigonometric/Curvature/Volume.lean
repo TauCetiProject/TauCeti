@@ -364,7 +364,7 @@ theorem setLIntegral_ball_curvatureSine_pow {F : Type*} [NormedAddCommGroup F]
           (Metric.ball (0 : F) r).indicator
             (fun x ↦ ENNReal.ofReal (curvatureSine (κ * ‖x‖ ^ 2) 1 ^ (n - 1))) (t • (u : F)) =
         ENNReal.ofReal (modelBallVolume κ n r) := by
-    have hu : ‖(u : F)‖ = 1 := mem_sphere_zero_iff_norm.mp u.2
+    have hu : ‖(u : F)‖ = 1 := mem_sphere_zero_iff_norm.mp u.property
     have hcongr : ∀ t ∈ Ioi (0 : ℝ),
         ENNReal.ofReal (t ^ (n - 1)) *
           (Metric.ball (0 : F) r).indicator

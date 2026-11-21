@@ -104,11 +104,11 @@ theorem alternatingFormEquiv_symm_neg_realAlternatingDerivation_two
     (letI : FiniteDimensional ℝ (TangentSpace I x) :=
       VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
      (alternatingFormEquiv (TangentSpace I x) 2).symm
-       ((-J.toEndomorphism.realAlternatingDerivation η).1 x)) =
+       ((-J.toEndomorphism.realAlternatingDerivation η).val x)) =
       (letI : FiniteDimensional ℝ (TangentSpace I x) :=
         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
        exteriorPower.lieMap 2 (J.almostComplexStructureAt x).toLinearMap
-         ((alternatingFormEquiv (TangentSpace I x) 2).symm (η.1 x))) := by
+         ((alternatingFormEquiv (TangentSpace I x) 2).symm (η.val x))) := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
   have hJ' : ∀ u w : TangentSpace I x,
@@ -201,7 +201,7 @@ def kahlerTwoForm (J : SmoothAlmostComplexStructure I M)
 
 theorem kahlerTwoForm_apply (J : SmoothAlmostComplexStructure I M)
     (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M) :
-    (J.kahlerTwoForm hJ).1 x =
+    (J.kahlerTwoForm hJ).val x =
       (letI : FiniteDimensional ℝ (TangentSpace I x) :=
         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
        alternatingFormEquiv (TangentSpace I x) 2 (J.almostComplexStructureAt x).kahlerForm) :=
@@ -212,7 +212,7 @@ theorem alternatingFormEquiv_symm_kahlerTwoForm (J : SmoothAlmostComplexStructur
     (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M) :
     (letI : FiniteDimensional ℝ (TangentSpace I x) :=
       VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-     (alternatingFormEquiv (TangentSpace I x) 2).symm ((J.kahlerTwoForm hJ).1 x)) =
+     (alternatingFormEquiv (TangentSpace I x) 2).symm ((J.kahlerTwoForm hJ).val x)) =
       (letI : FiniteDimensional ℝ (TangentSpace I x) :=
         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
        (J.almostComplexStructureAt x).kahlerForm) := by
@@ -224,7 +224,7 @@ theorem alternatingFormEquiv_symm_kahlerTwoForm (J : SmoothAlmostComplexStructur
 theorem kahlerTwoForm_apply_two (J : SmoothAlmostComplexStructure I M)
     (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M)
     (u w : TangentSpace I x) :
-    (J.kahlerTwoForm hJ).1 x ![u, w] = ⟪J x u, w⟫ := by
+    (J.kahlerTwoForm hJ).val x ![u, w] = ⟪J x u, w⟫ := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
   have hJ' : ∀ u' w' : TangentSpace I x,

@@ -15,7 +15,7 @@ Mathlib's `ArithmeticFunction.LSeriesHasSum_mul`, `ArithmeticFunction.LSeries_mu
 `ArithmeticFunction.LSeries_mul` and `ArithmeticFunction.LSeriesSummable_mul` relate the binary
 Dirichlet convolution product in `ArithmeticFunction ℂ` to pointwise multiplication of `L`-series.
 This file extends those statements to finite `Finset` products, starting from the convolution
-identity `1`, whose `L`-series is the constant `1`.
+identity `1`, whose `L`-series is the constant `1`, and to convolution powers `f ^ k`.
 
 ## Main results
 
@@ -28,6 +28,8 @@ identity `1`, whose `L`-series is the constant `1`.
 * `ArithmeticFunction.LSeriesSummable_prod`: finite convolution products preserve `LSeriesSummable`.
 * `ArithmeticFunction.LSeries_prod'`, `ArithmeticFunction.LSeries_prod`: the `L`-series of a finite
   convolution product of `ℂ`-valued arithmetic functions is the product of their `L`-series.
+* `ArithmeticFunction.LSeriesHasSum_pow`: if the `L`-series of `f` has sum `a` at `s`, then the
+  `L`-series of the convolution power `f ^ k` has sum `a ^ k`.
 -/
 
 public section
@@ -83,5 +85,17 @@ theorem LSeries_prod {t : Finset ι} {f : ι → ArithmeticFunction ℂ} {s : �
     (hf : ∀ i ∈ t, LSeries.abscissaOfAbsConv ↗(f i) < s.re) :
     LSeries ↗(∏ i ∈ t, f i) s = ∏ i ∈ t, LSeries ↗(f i) s :=
   LSeries_prod' fun i hi ↦ LSeriesSummable_of_abscissaOfAbsConv_lt_re (hf i hi)
+
+/-- **Convolution power of `LSeriesHasSum`.** If the `L`-series of `f` has sum `a` at `s`, then the
+`L`-series of the convolution power `f ^ k` has sum `a ^ k` at `s`. -/
+theorem LSeriesHasSum_pow {f : ArithmeticFunction ℂ} {s a : ℂ} (hf : LSeriesHasSum ↗f s a)
+    (k : ℕ) : LSeriesHasSum ↗(f ^ k) s (a ^ k) := by
+  induction k with
+  | zero =>
+    rw [pow_zero, pow_zero]
+    exact ArithmeticFunction.LSeriesHasSum_one s
+  | succ k ih =>
+    rw [pow_succ, pow_succ]
+    exact LSeriesHasSum_mul ih hf
 
 end ArithmeticFunction

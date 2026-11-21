@@ -472,6 +472,12 @@ theorem circleTimesSphereGenerator_snd_zero (r : Fin 3) (x : (circleTimesSphere 
     circleTimesSphereGenerator r (x.2 0) = x :=
   HeegaardIntersectionSystem.point_injective _ (funext fun i => by simp [Subsingleton.elim i 0])
 
+/-- The generators of `circleTimesSphere r` are exactly `p₀` and `p₁`. -/
+theorem circleTimesSphereGenerator_bijective (r : Fin 3) :
+    Function.Bijective (circleTimesSphereGenerator r) :=
+  ⟨fun a b h => by simpa using congrFun (congrArg (circleTimesSphere r).point h) 0,
+    fun x => ⟨_, circleTimesSphereGenerator_snd_zero r x⟩⟩
+
 /-- With the basepoint in the annulus, the domains counted by the hat differential from `p₀` to
 `p₁` are the two bigons. -/
 theorem hatDomains_circleTimesSphere_zero_zero_one :

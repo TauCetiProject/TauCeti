@@ -134,7 +134,7 @@ def tangentEquiv : tangent p ≃L[ℝ] E where
   right_inv v := by simp
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  continuous_toFun := continuous_snd.comp continuous_subtype_val
+  continuous_toFun := continuous_snd.comp continuous_subtypeVal
   continuous_invFun := (tangentLift p).continuous.subtype_mk _
 
 /-- The tangent equivalence is spatial projection. -/
