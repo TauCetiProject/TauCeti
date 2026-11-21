@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Monoidal.EqToHom
 public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Coupons
 public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Hom
+public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Interpretation
 
 /-!
 # Substitution of tensor expressions for coupons
@@ -28,10 +29,12 @@ across arbitrary signature universes, satisfying strict two-sided unit and assoc
 Signature morphisms `TensorSignature.Hom` embed faithfully into substitutions via
 `Hom.toSubstitution` compatibly with identities and composition. On free monoidal categories,
 identity and composite substitutions induce canonical monoidal natural isomorphisms
-`Substitution.toFunctorIdIso` and `Substitution.toFunctorCompIso`, and composing a substitution
-with a universal interpretation `FreeMonoidal.lift` in an arbitrary (not necessarily strict)
-monoidal category is canonically monoidally isomorphic to the pulled-back lift
-(`Substitution.toFunctorCompLiftIso`).
+`Substitution.toFunctorIdIso` and `Substitution.toFunctorCompIso` satisfying the two-sided unit
+and associativity coherence laws, and composing a substitution with a universal interpretation
+`FreeMonoidal.lift` in an arbitrary (not necessarily strict) monoidal category is canonically
+monoidally isomorphic to the pulled-back lift (`Substitution.toFunctorCompLiftIso`).
+Pullback acts functorially on the interpretation groupoid (`Substitution.pullback`) naturally
+with respect to extension (`Substitution.extensionPullbackIso`).
 
 ## Main definitions and results
 
@@ -46,15 +49,17 @@ monoidal category is canonically monoidally isomorphic to the pulled-back lift
   `TauCeti.TensorSignature.Hom.toFunctor_injective`, `TauCeti.TensorSignature.Hom.toFunctorIdIso`,
   and `TauCeti.TensorSignature.Hom.toFunctorCompIso`: faithful functorial embedding of signature
   morphisms into substitutions and induced strong monoidal functors between free monoidal
-  categories.
+  categories, with unit and associativity coherence laws.
 * `TauCeti.TensorSignature.Substitution.toFunctor`,
   `TauCeti.TensorSignature.Substitution.toFunctorIdIso`, and
   `TauCeti.TensorSignature.Substitution.toFunctorCompIso`: strong monoidal functoriality of
-  substitution on free monoidal categories.
+  substitution on free monoidal categories, with unit and associativity coherence laws.
 * `TauCeti.TensorSignature.Substitution.pullbackObj`,
-  `TauCeti.TensorSignature.Substitution.pullbackCoupon`, and
-  `TauCeti.TensorSignature.Substitution.toFunctorCompLiftIso`: change-of-signature monoidal
-  natural isomorphism for `FreeMonoidal.lift` into any monoidal category.
+  `TauCeti.TensorSignature.Substitution.pullbackCoupon`,
+  `TauCeti.TensorSignature.Substitution.pullback`,
+  `TauCeti.TensorSignature.Substitution.toFunctorCompLiftIso`, and
+  `TauCeti.TensorSignature.Substitution.extensionPullbackIso`: functorial change of signature on
+  interpretations and naturality/coherence of the extension comparison.
 
 ## References
 
@@ -193,52 +198,59 @@ theorem ext_cast {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, 
 
 /-- The identity substitution on a tensor signature `S`, sending each generating object to itself
 and each coupon to itself. -/
-@[expose] def id (S : TensorSignature.{u, v}) : Substitution S S where
+def id (S : TensorSignature.{u, v}) : Substitution S S where
   obj := FreeMonoidal.of
   coupon g := (FreeMonoidal.Hom.coupon g).cast
     (projectObj_of_as (S.src g)).symm (projectObj_of_as (S.tgt g)).symm
 
 @[simp]
 theorem id_obj (S : TensorSignature.{u, v}) (a : S.Obj) :
-    (id S).obj a = FreeMonoidal.of a :=
+    (id S).obj a = FreeMonoidal.of a := by
   rfl
+
+/-- Evaluating a formal tensor word along the identity substitution returns the same word. -/
+@[simp]
+theorem id_projectObj_as (S : TensorSignature.{u, v}) (X : FreeMonoidalCategory S.Obj) :
+    (projectObj (id S).obj X).as = X :=
+  projectObj_of_as X
 
 @[simp]
 theorem id_coupon (S : TensorSignature.{u, v}) (g : S.Coupon) :
     (id S).coupon g =
       (FreeMonoidal.Hom.coupon g).cast
-        (projectObj_of_as (S.src g)).symm (projectObj_of_as (S.tgt g)).symm :=
+        (id_projectObj_as S (S.src g)).symm (id_projectObj_as S (S.tgt g)).symm := by
   rfl
-
-/-- Evaluating a formal tensor word along `σ` and then `τ` unwraps to the same tensor word as
-evaluating along the composite object assignment `fun a ↦ projectObj τ.obj (σ.obj a).as`. -/
-theorem comp_projectObj_as {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
-    {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U)
-    (W : FreeMonoidalCategory S.Obj) :
-    (projectObj τ.obj (projectObj σ.obj W).as).as =
-      (projectObj (fun a ↦ projectObj τ.obj (σ.obj a).as) W).as :=
-  congrArg FreeMonoidal.as (projectObj_projectObj_as τ.obj σ.obj W)
 
 /-- Diagrammatic composition of substitutions across independent signature universes: first apply
 `σ : Substitution S T`, then apply `τ : Substitution T U` to the resulting expressions. -/
-@[expose] def comp {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+def comp {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U) :
     Substitution S U where
   obj a := projectObj τ.obj (σ.obj a).as
   coupon g := ((σ.coupon g).subst τ).cast
-    (comp_projectObj_as σ τ (S.src g)) (comp_projectObj_as σ τ (S.tgt g))
+    (congrArg FreeMonoidal.as (projectObj_projectObj_as τ.obj σ.obj (S.src g)))
+    (congrArg FreeMonoidal.as (projectObj_projectObj_as τ.obj σ.obj (S.tgt g)))
 
 @[simp]
 theorem comp_obj {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U) (a : S.Obj) :
-    (σ.comp τ).obj a = projectObj τ.obj (σ.obj a).as :=
+    (σ.comp τ).obj a = projectObj τ.obj (σ.obj a).as := by
   rfl
+
+/-- Evaluating a formal tensor word along `σ` and then `τ` unwraps to the same tensor word as
+evaluating along the composite substitution `σ.comp τ`. -/
+theorem comp_projectObj_as {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U)
+    (W : FreeMonoidalCategory S.Obj) :
+    (projectObj τ.obj (projectObj σ.obj W).as).as =
+      (projectObj (σ.comp τ).obj W).as :=
+  congrArg FreeMonoidal.as (projectObj_projectObj_as τ.obj σ.obj W)
 
 @[simp]
 theorem comp_coupon {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U) (g : S.Coupon) :
     (σ.comp τ).coupon g = ((σ.coupon g).subst τ).cast
-      (comp_projectObj_as σ τ (S.src g)) (comp_projectObj_as σ τ (S.tgt g)) :=
+      (comp_projectObj_as σ τ (S.src g)) (comp_projectObj_as σ τ (S.tgt g)) := by
   rfl
 
 end Substitution
@@ -246,11 +258,13 @@ end Substitution
 namespace FreeMonoidal
 
 /-- Substituting the identity substitution into any raw formal morphism returns that morphism,
-transported along `projectObj_of_as`. -/
+transported along `Substitution.id_projectObj_as`. -/
+@[simp 1100]
 theorem Hom.id_subst {S : TensorSignature.{u, v}} {X Y : FreeMonoidalCategory S.Obj}
     (f : Hom X Y) :
     f.subst (Substitution.id S) =
-      f.cast (projectObj_of_as X).symm (projectObj_of_as Y).symm := by
+      f.cast (Substitution.id_projectObj_as S X).symm
+        (Substitution.id_projectObj_as S Y).symm := by
   induction f with
   | id X => exact (Hom.cast_id _ _).symm
   | α_hom X Y Z => exact (Hom.cast_α_hom _ _).symm
@@ -259,7 +273,7 @@ theorem Hom.id_subst {S : TensorSignature.{u, v}} {X Y : FreeMonoidalCategory S.
   | l_inv X => exact (Hom.cast_l_inv _ _).symm
   | ρ_hom X => exact (Hom.cast_ρ_hom _ _).symm
   | ρ_inv X => exact (Hom.cast_ρ_inv _ _).symm
-  | coupon g => rfl
+  | coupon g => exact (Substitution.id_coupon S g).symm
   | comp f g ihf ihg =>
     rw [Hom.subst_comp, ihf, ihg]
     exact Hom.cast_comp_cast _ _ _ f g
@@ -275,6 +289,7 @@ theorem Hom.id_subst {S : TensorSignature.{u, v}} {X Y : FreeMonoidalCategory S.
 
 /-- Applying two raw substitutions successively agrees with applying their composite
 `σ.comp τ`. -/
+@[simp]
 theorem Hom.subst_subst {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U)
     {X Y : FreeMonoidalCategory S.Obj} (f : Hom X Y) :
@@ -289,22 +304,24 @@ theorem Hom.subst_subst {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.
   | l_inv X => exact (Hom.cast_l_inv _ _).symm
   | ρ_hom X => exact (Hom.cast_ρ_hom _ _).symm
   | ρ_inv X => exact (Hom.cast_ρ_inv _ _).symm
-  | coupon g => simp
+  | coupon g => simp [Substitution.comp_coupon]
   | comp f g ihf ihg =>
-    dsimp only [Hom.subst]
-    rw [ihf, ihg]
+    rw [Hom.subst_comp, Hom.subst_comp, ihf, ihg]
     exact Hom.cast_comp_cast _ _ _ _ _
   | whiskerLeft X f ih =>
-    dsimp only [Hom.subst]
-    rw [ih]
+    refine (congrArg (Hom.subst τ) (Hom.subst_whiskerLeft σ X f)).trans
+      ((Hom.subst_whiskerLeft τ (projectObj σ.obj X).as (f.subst σ)).trans ?_)
+    rw [ih, Hom.subst_whiskerLeft]
     exact Hom.whiskerLeft_cast _ _ _ _ _
   | whiskerRight f X ih =>
-    dsimp only [Hom.subst]
-    rw [ih]
+    refine (congrArg (Hom.subst τ) (Hom.subst_whiskerRight σ f X)).trans
+      ((Hom.subst_whiskerRight τ (f.subst σ) (projectObj σ.obj X).as).trans ?_)
+    rw [ih, Hom.subst_whiskerRight]
     exact Hom.whiskerRight_cast _ _ _ _ _
   | tensor f g ihf ihg =>
-    dsimp only [Hom.subst]
-    rw [ihf, ihg]
+    refine (congrArg (Hom.subst τ) (Hom.subst_tensor σ f g)).trans
+      ((Hom.subst_tensor τ (f.subst σ) (g.subst σ)).trans ?_)
+    rw [ihf, ihg, Hom.subst_tensor]
     exact Hom.cast_tensor_cast _ _ _ _ _ _ _ _
 
 end FreeMonoidal
@@ -316,35 +333,26 @@ open FreeMonoidal
 @[simp]
 theorem id_comp {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     (σ : Substitution S T) : (id S).comp σ = σ := by
-  refine ext_cast (fun _ ↦ rfl) fun g ↦ ?_
-  change ((((FreeMonoidal.Hom.coupon g).cast _ _).subst σ).cast _ _).cast _ _ = σ.coupon g
-  generalize_proofs
-  simp
+  refine ext_cast (fun a ↦ by simp) fun g ↦ ?_
+  rw [comp_coupon, id_coupon, Hom.subst_cast, Hom.subst_coupon, Hom.cast_cast, Hom.cast_cast]
+  exact Hom.cast_rfl _
 
 @[simp]
 theorem comp_id {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     (σ : Substitution S T) : σ.comp (id T) = σ := by
-  refine ext_cast (fun a ↦ projectObj_of_self (σ.obj a)) fun g ↦ ?_
-  change (((σ.coupon g).subst (id T)).cast _ _).cast _ _ = σ.coupon g
-  generalize_proofs
-  rw [Hom.id_subst]
-  change (((σ.coupon g).cast _ _).cast _ _).cast _ _ = σ.coupon g
-  generalize_proofs
-  simp
+  refine ext_cast (fun a ↦ by simp [projectObj_congr (id_obj T)]) fun g ↦ ?_
+  rw [comp_coupon, Hom.id_subst, Hom.cast_cast, Hom.cast_cast]
+  exact Hom.cast_rfl _
 
 theorem comp_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} {V : TensorSignature.{u₄, v₄}}
     (σ : Substitution S T) (τ : Substitution T U) (ρ : Substitution U V) :
     (σ.comp τ).comp ρ = σ.comp (τ.comp ρ) := by
-  refine ext_cast (fun a ↦ projectObj_projectObj_as ρ.obj τ.obj (σ.obj a).as) fun g ↦ ?_
-  change (((((σ.coupon g).subst τ).cast _ _).subst ρ).cast _ _).cast _ _ =
-    ((σ.coupon g).subst (τ.comp ρ)).cast _ _
-  generalize_proofs
-  rw [Hom.subst_cast, Hom.subst_subst]
-  change (((((σ.coupon g).subst (τ.comp ρ)).cast _ _).cast _ _).cast _ _).cast _ _ =
-    ((σ.coupon g).subst (τ.comp ρ)).cast _ _
-  generalize_proofs
-  simp
+  refine ext_cast (fun a ↦ ?_) fun g ↦ ?_
+  · rw [comp_obj, comp_obj, comp_obj, projectObj_projectObj_as]
+    exact projectObj_congr (fun b ↦ (comp_obj τ ρ b).symm) (σ.obj a).as
+  · rw [comp_coupon, comp_coupon, comp_coupon, Hom.subst_cast, Hom.subst_subst,
+      Hom.cast_cast, Hom.cast_cast, Hom.cast_cast]
 
 end Substitution
 
@@ -354,37 +362,38 @@ namespace Hom
 
 open FreeMonoidal
 
+/-- View a tensor-signature morphism as a substitution sending each generating object `a` to
+`FreeMonoidal.of (φ.obj a)` and each coupon `g` to `Hom.coupon (φ.coupon g)`. -/
+def toSubstitution {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (φ : Hom S T) : Substitution S T where
+  obj := FreeMonoidal.of ∘ φ.obj
+  coupon g := (FreeMonoidal.Hom.coupon (φ.coupon g)).cast
+    ((φ.src_coupon g).trans (projectObj_as (FreeMonoidal.of ∘ φ.obj) (S.src g)).symm)
+    ((φ.tgt_coupon g).trans (projectObj_as (FreeMonoidal.of ∘ φ.obj) (S.tgt g)).symm)
+
+@[simp]
+theorem toSubstitution_obj {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (φ : Hom S T) (a : S.Obj) :
+    φ.toSubstitution.obj a = FreeMonoidal.of (φ.obj a) := by
+  rfl
+
 /-- Boundary compatibility for embedding a signature morphism `φ : Hom S T` as a substitution. -/
 theorem src_coupon_projectObj_as {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     (φ : Hom S T) (g : S.Coupon) :
-    T.src (φ.coupon g) = (projectObj (FreeMonoidal.of ∘ φ.obj) (S.src g)).as :=
+    T.src (φ.coupon g) = (projectObj φ.toSubstitution.obj (S.src g)).as :=
   (φ.src_coupon g).trans (projectObj_as (FreeMonoidal.of ∘ φ.obj) (S.src g)).symm
 
 /-- Target compatibility for embedding a signature morphism `φ : Hom S T` as a substitution. -/
 theorem tgt_coupon_projectObj_as {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     (φ : Hom S T) (g : S.Coupon) :
-    T.tgt (φ.coupon g) = (projectObj (FreeMonoidal.of ∘ φ.obj) (S.tgt g)).as :=
+    T.tgt (φ.coupon g) = (projectObj φ.toSubstitution.obj (S.tgt g)).as :=
   (φ.tgt_coupon g).trans (projectObj_as (FreeMonoidal.of ∘ φ.obj) (S.tgt g)).symm
-
-/-- View a tensor-signature morphism as a substitution sending each generating object `a` to
-`FreeMonoidal.of (φ.obj a)` and each coupon `g` to `Hom.coupon (φ.coupon g)`. -/
-@[expose] def toSubstitution {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
-    (φ : Hom S T) : Substitution S T where
-  obj := FreeMonoidal.of ∘ φ.obj
-  coupon g := (FreeMonoidal.Hom.coupon (φ.coupon g)).cast
-    (φ.src_coupon_projectObj_as g) (φ.tgt_coupon_projectObj_as g)
-
-@[simp]
-theorem toSubstitution_obj {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
-    (φ : Hom S T) (a : S.Obj) :
-    φ.toSubstitution.obj a = FreeMonoidal.of (φ.obj a) :=
-  rfl
 
 @[simp]
 theorem toSubstitution_coupon {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     (φ : Hom S T) (g : S.Coupon) :
     φ.toSubstitution.coupon g = (FreeMonoidal.Hom.coupon (φ.coupon g)).cast
-      (φ.src_coupon_projectObj_as g) (φ.tgt_coupon_projectObj_as g) :=
+      (φ.src_coupon_projectObj_as g) (φ.tgt_coupon_projectObj_as g) := by
   rfl
 
 /-- The embedding of signature morphisms into substitutions is injective. -/
@@ -392,10 +401,13 @@ theorem toSubstitution_injective {S : TensorSignature.{u₁, v₁}} {T : TensorS
     Function.Injective (toSubstitution (S := S) (T := T)) := by
   intro φ ψ h
   ext a
-  · exact FreeMonoidal.of_injective (congrArg (fun σ ↦ σ.obj a) h)
+  · have ho := congrArg (fun σ : Substitution S T ↦ σ.obj a) h
+    simp only [toSubstitution_obj] at ho
+    exact FreeMonoidal.of_injective ho
   · have hc := congrArg (fun σ : Substitution S T ↦ (σ.coupon a).coupons) h
-    dsimp only [toSubstitution] at hc
-    simpa using hc
+    simp only [toSubstitution_coupon, FreeMonoidal.Hom.coupons_cast,
+      FreeMonoidal.Hom.coupons_coupon, List.cons.injEq, and_true] at hc
+    exact hc
 
 @[simp]
 theorem toSubstitution_inj {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
@@ -406,36 +418,21 @@ theorem toSubstitution_inj {S : TensorSignature.{u₁, v₁}} {T : TensorSignatu
 theorem toSubstitution_id (S : TensorSignature.{u, v}) :
     (Hom.id S).toSubstitution = Substitution.id S := by
   refine Substitution.ext_cast (fun a ↦ by simp) fun g ↦ ?_
-  change ((FreeMonoidal.Hom.coupon ((Hom.id S).coupon g)).cast _ _).cast _ _ =
-    (FreeMonoidal.Hom.coupon g).cast _ _
-  generalize_proofs
-  rw [Hom.cast_cast]
-  generalize_proofs h₁ h₂
-  have hg : (Hom.id S).coupon g = g := Hom.id_coupon S g
-  revert h₁ h₂
-  rw [hg]
-  intro h₁ h₂
-  rfl
+  rw [toSubstitution_coupon, Substitution.id_coupon, Hom.cast_cast]
+  exact Hom.cast_coupon_congr (Hom.id_coupon S g) _ _ _ _
 
 @[simp]
 theorem toSubstitution_comp {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (φ : Hom S T) (ψ : Hom T U) :
     (φ.comp ψ).toSubstitution = φ.toSubstitution.comp ψ.toSubstitution := by
-  refine Substitution.ext_cast (fun a ↦ by simp) fun g ↦ ?_
-  change ((FreeMonoidal.Hom.coupon ((φ.comp ψ).coupon g)).cast _ _).cast _ _ =
-    (((FreeMonoidal.Hom.coupon (φ.coupon g)).cast _ _).subst ψ.toSubstitution).cast _ _
-  generalize_proofs
-  rw [Hom.subst_cast, Hom.subst_coupon]
-  change ((FreeMonoidal.Hom.coupon ((φ.comp ψ).coupon g)).cast _ _).cast _ _ =
-    (((FreeMonoidal.Hom.coupon (ψ.coupon (φ.coupon g))).cast _ _).cast _ _).cast _ _
-  generalize_proofs
-  rw [Hom.cast_cast, Hom.cast_cast, Hom.cast_cast]
-  generalize_proofs h₁ h₂
-  have hg : (φ.comp ψ).coupon g = ψ.coupon (φ.coupon g) := Hom.comp_coupon φ ψ g
-  revert h₁ h₂
-  rw [hg]
-  intro h₁ h₂
-  rfl
+  have hobj : ∀ a, (φ.comp ψ).toSubstitution.obj a =
+      (φ.toSubstitution.comp ψ.toSubstitution).obj a :=
+    fun a ↦ by simp [Substitution.comp_obj]
+  refine Substitution.ext_cast hobj fun g ↦ ?_
+  rw [toSubstitution_coupon, Substitution.comp_coupon, toSubstitution_coupon,
+    Hom.subst_cast, Hom.subst_coupon, toSubstitution_coupon, Hom.cast_cast, Hom.cast_cast,
+    Hom.cast_cast]
+  exact Hom.cast_coupon_congr (Hom.comp_coupon φ ψ g) _ _ _ _
 
 /-- Precomposing a substitution `σ : Substitution T U` with a signature morphism `φ : Hom S T`
 replaces each coupon `g` of `S` by `σ.coupon (φ.coupon g)` up to boundary transport. -/
@@ -446,8 +443,8 @@ theorem toSubstitution_comp_coupon {S : TensorSignature.{u₁, v₁}} {T : Tenso
         (Substitution.comp_projectObj_as φ.toSubstitution σ (S.src g)))
       ((congrArg (fun W ↦ (projectObj σ.obj W).as) (φ.tgt_coupon_projectObj_as g)).trans
         (Substitution.comp_projectObj_as φ.toSubstitution σ (S.tgt g))) := by
-  dsimp only [Substitution.comp, toSubstitution]
-  rw [Hom.subst_cast, Hom.subst_coupon, Hom.cast_cast]
+  rw [Substitution.comp_coupon, toSubstitution_coupon, Hom.subst_cast, Hom.subst_coupon,
+    Hom.cast_cast]
 
 end Hom
 
@@ -534,13 +531,17 @@ end ToFunctor
 
 section Functoriality
 
-/-- The strong monoidal functor induced by the identity substitution is monoidally naturally
-isomorphic to the identity functor on `S.FreeMonoidal`. -/
+/-- The strong monoidal functor induced by `Substitution.id S` agrees on objects with the
+identity functor. -/
+theorem toFunctor_id_obj (S : TensorSignature.{u, v}) (X : S.FreeMonoidal) :
+    (Substitution.id S).toFunctor.obj X = X :=
+  congrArg FreeMonoidal.mk (id_projectObj_as S X.as)
+
+/-- The strong monoidal functor induced by `Substitution.id S` is monoidally naturally isomorphic
+to the identity functor on `S.FreeMonoidal`. -/
 def toFunctorIdIso (S : TensorSignature.{u, v}) :
     (Substitution.id S).toFunctor ≅ 𝟭 S.FreeMonoidal :=
-  have hobj : ∀ X, (Substitution.id S).toFunctor.obj X = (𝟭 S.FreeMonoidal).obj X :=
-    fun X ↦ projectObj_of_self X
-  monoidalNatIsoOfEqObj hobj
+  monoidalNatIsoOfEqObj (toFunctor_id_obj S)
     (by
       simp only [toFunctor_obj, tensorUnit_as, projectObj_tensorUnit, Functor.id_obj, toFunctor_η,
         Functor.LaxMonoidal.id_ε, Category.comp_id]
@@ -550,32 +551,37 @@ def toFunctorIdIso (S : TensorSignature.{u, v}) :
         Functor.LaxMonoidal.id_μ, Category.comp_id, Category.id_comp]
       exact TauCeti.eqToHom_tensorHom_eqToHom _ _)
     (fun g ↦ by
-      rw [comp_eqToHom_iff, Category.assoc, toFunctor_map_coupon]
-      dsimp only [Substitution.id]
-      rw [homMk_cast, homMk_coupon, Functor.id_map]
-      rfl)
+      rw [comp_eqToHom_iff, Category.assoc, toFunctor_map_coupon, id_coupon, homMk_cast,
+        homMk_coupon, Functor.id_map]
+      simp)
 
 instance (S : TensorSignature.{u, v}) : NatTrans.IsMonoidal (toFunctorIdIso S).hom :=
   monoidalNatIsoOfEqObj_hom_isMonoidal _ _ _ _
 
 @[simp]
 theorem toFunctorIdIso_hom_app (S : TensorSignature.{u, v}) (X : S.FreeMonoidal) :
-    (toFunctorIdIso S).hom.app X = eqToHom (projectObj_of_self X) :=
+    (toFunctorIdIso S).hom.app X = eqToHom (toFunctor_id_obj S X) :=
   monoidalNatIsoOfEqObj_hom_app _ _ _ _ X
 
 @[simp]
 theorem toFunctorIdIso_inv_app (S : TensorSignature.{u, v}) (X : S.FreeMonoidal) :
-    (toFunctorIdIso S).inv.app X = eqToHom (projectObj_of_self X).symm :=
+    (toFunctorIdIso S).inv.app X = eqToHom (toFunctor_id_obj S X).symm :=
   monoidalNatIsoOfEqObj_inv_app _ _ _ _ X
+
+/-- The strong monoidal functor induced by `σ.comp τ` agrees on objects with the composite functor
+`σ.toFunctor ⋙ τ.toFunctor`. -/
+theorem toFunctor_comp_obj {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U)
+    (X : S.FreeMonoidal) :
+    (σ.comp τ).toFunctor.obj X = (σ.toFunctor ⋙ τ.toFunctor).obj X :=
+  congrArg FreeMonoidal.mk (comp_projectObj_as σ τ X.as).symm
 
 /-- The strong monoidal functor induced by a composite substitution `σ.comp τ` is monoidally
 naturally isomorphic to the composite functor `σ.toFunctor ⋙ τ.toFunctor`. -/
 def toFunctorCompIso {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U) :
     (σ.comp τ).toFunctor ≅ σ.toFunctor ⋙ τ.toFunctor :=
-  have hobj : ∀ X, (σ.comp τ).toFunctor.obj X = (σ.toFunctor ⋙ τ.toFunctor).obj X :=
-    fun X ↦ (projectObj_projectObj_as τ.obj σ.obj X.as).symm
-  monoidalNatIsoOfEqObj hobj
+  monoidalNatIsoOfEqObj (toFunctor_comp_obj σ τ)
     (by
       simp only [toFunctor_obj, tensorUnit_as, projectObj_tensorUnit, Functor.comp_obj, toFunctor_η,
         Functor.LaxMonoidal.comp_ε, toFunctor_ε, Functor.map_id, Category.comp_id]
@@ -585,10 +591,27 @@ def toFunctorCompIso {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u�
         Functor.LaxMonoidal.comp_μ, toFunctor_μ, Functor.map_id, Category.comp_id, Category.id_comp]
       exact TauCeti.eqToHom_tensorHom_eqToHom _ _)
     (fun g ↦ by
-      rw [comp_eqToHom_iff, Category.assoc, toFunctor_map_coupon]
-      dsimp only [Substitution.comp]
-      rw [homMk_cast]
-      simp)
+      have hl : (σ.comp τ).toFunctor.map (FreeMonoidal.coupon g) =
+          eqToHom (toFunctor_comp_obj σ τ ⟨S.src g⟩) ≫
+            FreeMonoidal.homMk ((σ.coupon g).subst τ) ≫
+            eqToHom (toFunctor_comp_obj σ τ ⟨S.tgt g⟩).symm :=
+        (toFunctor_map_coupon (σ.comp τ) g).trans
+          ((congrArg FreeMonoidal.homMk (comp_coupon σ τ g)).trans (homMk_cast _ _ _))
+      have hr : (σ.toFunctor ⋙ τ.toFunctor).map (FreeMonoidal.coupon g) =
+          FreeMonoidal.homMk ((σ.coupon g).subst τ) := by
+        rw [Functor.comp_map, toFunctor_map_coupon]
+        exact toFunctor_map_homMk τ (σ.coupon g)
+      have heq : (eqToHom (toFunctor_comp_obj σ τ ⟨S.src g⟩) ≫
+            FreeMonoidal.homMk ((σ.coupon g).subst τ) ≫
+            eqToHom (toFunctor_comp_obj σ τ ⟨S.tgt g⟩).symm) ≫
+          eqToHom (toFunctor_comp_obj σ τ ⟨S.tgt g⟩) =
+          eqToHom (toFunctor_comp_obj σ τ ⟨S.src g⟩) ≫
+            FreeMonoidal.homMk ((σ.coupon g).subst τ) :=
+        (Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+          ((Category.assoc _ _ _).trans
+            ((congrArg (_ ≫ ·) ((eqToHom_trans _ _).trans (eqToHom_refl _ _))).trans
+              (Category.comp_id _))))
+      exact (congrArg (· ≫ _) hl).trans (heq.trans (congrArg (_ ≫ ·) hr.symm)))
 
 instance {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U) :
@@ -599,17 +622,56 @@ instance {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
 theorem toFunctorCompIso_hom_app {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U)
     (X : S.FreeMonoidal) :
-    (toFunctorCompIso σ τ).hom.app X =
-      eqToHom (projectObj_projectObj_as τ.obj σ.obj X.as).symm :=
+    (toFunctorCompIso σ τ).hom.app X = eqToHom (toFunctor_comp_obj σ τ X) :=
   monoidalNatIsoOfEqObj_hom_app _ _ _ _ X
 
 @[simp]
 theorem toFunctorCompIso_inv_app {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (σ : Substitution S T) (τ : Substitution T U)
     (X : S.FreeMonoidal) :
-    (toFunctorCompIso σ τ).inv.app X =
-      eqToHom (projectObj_projectObj_as τ.obj σ.obj X.as) :=
+    (toFunctorCompIso σ τ).inv.app X = eqToHom (toFunctor_comp_obj σ τ X).symm :=
   monoidalNatIsoOfEqObj_inv_app _ _ _ _ X
+
+/-- Left unit coherence for `Substitution.toFunctor`: composing `toFunctorCompIso (id S) σ` with
+`toFunctorIdIso S` agrees with `Substitution.id_comp σ`. -/
+theorem toFunctorCompIso_id_left {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (σ : Substitution S T) :
+    toFunctorCompIso (id S) σ ≪≫ Functor.isoWhiskerRight (toFunctorIdIso S) σ.toFunctor ≪≫
+        Functor.leftUnitor σ.toFunctor =
+      eqToIso (congrArg toFunctor (id_comp σ)) := by
+  ext X
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
+    toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, eqToIso.hom, eqToHom_app, eqToHom_map,
+    eqToHom_trans, Category.comp_id]
+
+/-- Right unit coherence for `Substitution.toFunctor`: composing `toFunctorCompIso σ (id T)` with
+`toFunctorIdIso T` agrees with `Substitution.comp_id σ`. -/
+theorem toFunctorCompIso_id_right {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (σ : Substitution S T) :
+    toFunctorCompIso σ (id T) ≪≫ Functor.isoWhiskerLeft σ.toFunctor (toFunctorIdIso T) ≪≫
+        Functor.rightUnitor σ.toFunctor =
+      eqToIso (congrArg toFunctor (comp_id σ)) := by
+  ext X
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
+    toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, eqToIso.hom, eqToHom_app, eqToHom_trans,
+    Category.comp_id]
+
+/-- Associativity coherence (pentagon) for `Substitution.toFunctorCompIso`. -/
+theorem toFunctorCompIso_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    {U : TensorSignature.{u₃, v₃}} {V : TensorSignature.{u₄, v₄}}
+    (σ : Substitution S T) (τ : Substitution T U) (ρ : Substitution U V) :
+    toFunctorCompIso (σ.comp τ) ρ ≪≫
+        Functor.isoWhiskerRight (toFunctorCompIso σ τ) ρ.toFunctor ≪≫
+        Functor.associator σ.toFunctor τ.toFunctor ρ.toFunctor =
+      eqToIso (congrArg toFunctor (comp_assoc σ τ ρ)) ≪≫ toFunctorCompIso σ (τ.comp ρ) ≪≫
+        Functor.isoWhiskerLeft σ.toFunctor (toFunctorCompIso τ ρ) := by
+  ext X
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app, Functor.associator_hom_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, Functor.comp_obj, toFunctorCompIso_hom_app, eqToIso.hom,
+    eqToHom_app, eqToHom_map, eqToHom_trans, Category.comp_id]
 
 end Functoriality
 
@@ -622,7 +684,7 @@ variable {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
 
 /-- Pull back a generator-object assignment `fo : T.Obj → D` along a substitution
 `σ : Substitution S T` by evaluating each replacing tensor word `σ.obj a` in `D`. -/
-def pullbackObj (σ : Substitution S T) (fo : T.Obj → D) : S.Obj → D :=
+@[expose] def pullbackObj (σ : Substitution S T) (fo : T.Obj → D) : S.Obj → D :=
   fun a ↦ projectObj fo (σ.obj a).as
 
 @[simp]
@@ -711,6 +773,511 @@ theorem toFunctorCompLiftIso_inv_app (σ : Substitution S T) (fo : T.Obj → D)
       eqToHom (σ.projectObj_pullbackObj fo X.as) :=
   monoidalNatIsoOfEqObj_inv_app _ _ _ _ X
 
+private theorem projectObjIso_pullbackObj (σ : Substitution S T) {I J : Interpretation T D}
+    (α : I ⟶ J) (X : FreeMonoidalCategory S.Obj) :
+    projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) X =
+      eqToIso (σ.projectObj_pullbackObj I.obj X) ≪≫
+        projectObjIso α.iso (projectObj σ.obj X).as ≪≫
+        eqToIso (σ.projectObj_pullbackObj J.obj X).symm := by
+  induction X with
+  | of a =>
+    ext
+    have hL : (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) (.of a)).hom =
+        (projectObjIso α.iso (σ.obj a).as).hom :=
+      congrArg Iso.hom (projectObjIso_of _ a)
+    have hR : (eqToIso (σ.projectObj_pullbackObj I.obj (.of a)) ≪≫
+          projectObjIso α.iso (projectObj σ.obj (.of a)).as ≪≫
+          eqToIso (σ.projectObj_pullbackObj J.obj (.of a)).symm).hom =
+        (projectObjIso α.iso (σ.obj a).as).hom := by
+      rw [Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom]
+      exact (congrArg (· ≫ _) (eqToHom_refl (projectObj I.obj (σ.obj a).as) _)).trans
+        ((Category.id_comp _).trans
+          ((congrArg (_ ≫ ·) (eqToHom_refl (projectObj J.obj (σ.obj a).as) _)).trans
+            (Category.comp_id _)))
+    exact hL.trans hR.symm
+  | unit =>
+    ext
+    have hL : (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) .unit).hom = 𝟙 (𝟙_ D) :=
+      congrArg Iso.hom (projectObjIso_tensorUnit _)
+    have hR : (eqToIso (σ.projectObj_pullbackObj I.obj .unit) ≪≫
+          projectObjIso α.iso (projectObj σ.obj .unit).as ≪≫
+          eqToIso (σ.projectObj_pullbackObj J.obj .unit).symm).hom = 𝟙 (𝟙_ D) := by
+      rw [Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom]
+      have h1 : eqToHom (σ.projectObj_pullbackObj I.obj .unit) = 𝟙 (𝟙_ D) :=
+        eqToHom_refl (𝟙_ D) rfl
+      have hr : (projectObjIso α.iso (projectObj σ.obj .unit).as).hom = 𝟙 (𝟙_ D) :=
+        congrArg Iso.hom (projectObjIso_tensorUnit α.iso)
+      have h2 : eqToHom (σ.projectObj_pullbackObj J.obj .unit).symm = 𝟙 (𝟙_ D) :=
+        eqToHom_refl (𝟙_ D) rfl
+      exact (congrArg₂ (· ≫ ·) h1 (congrArg₂ (· ≫ ·) hr h2)).trans
+        ((congrArg (𝟙 (𝟙_ D) ≫ ·) (Category.id_comp _)).trans (Category.id_comp _))
+    exact hL.trans hR.symm
+  | tensor X Y ihX ihY =>
+    ext
+    have hX := congrArg Iso.hom ihX
+    have hY := congrArg Iso.hom ihY
+    rw [Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom] at hX hY
+    have hL : (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) (X.tensor Y)).hom =
+        (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) X).hom ⊗ₘ
+          (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) Y).hom :=
+      congrArg Iso.hom (projectObjIso_tensor _ X Y)
+    have hR : (projectObjIso α.iso (projectObj σ.obj (X.tensor Y)).as).hom =
+        (projectObjIso α.iso (projectObj σ.obj X).as).hom ⊗ₘ
+          (projectObjIso α.iso (projectObj σ.obj Y).as).hom :=
+      congrArg Iso.hom (projectObjIso_tensor α.iso (projectObj σ.obj X).as (projectObj σ.obj Y).as)
+    have hsplit : (eqToHom (σ.projectObj_pullbackObj I.obj X) ≫
+          (projectObjIso α.iso (projectObj σ.obj X).as).hom ≫
+          eqToHom (σ.projectObj_pullbackObj J.obj X).symm) ⊗ₘ
+        (eqToHom (σ.projectObj_pullbackObj I.obj Y) ≫
+          (projectObjIso α.iso (projectObj σ.obj Y).as).hom ≫
+          eqToHom (σ.projectObj_pullbackObj J.obj Y).symm) =
+        (eqToHom (σ.projectObj_pullbackObj I.obj X) ⊗ₘ
+          eqToHom (σ.projectObj_pullbackObj I.obj Y)) ≫
+        ((projectObjIso α.iso (projectObj σ.obj X).as).hom ⊗ₘ
+          (projectObjIso α.iso (projectObj σ.obj Y).as).hom) ≫
+        (eqToHom (σ.projectObj_pullbackObj J.obj X).symm ⊗ₘ
+          eqToHom (σ.projectObj_pullbackObj J.obj Y).symm) := by
+      simp only [MonoidalCategory.tensorHom_comp_tensorHom]
+    have hmerge : (eqToHom (σ.projectObj_pullbackObj I.obj X) ⊗ₘ
+          eqToHom (σ.projectObj_pullbackObj I.obj Y)) ≫
+        ((projectObjIso α.iso (projectObj σ.obj X).as).hom ⊗ₘ
+          (projectObjIso α.iso (projectObj σ.obj Y).as).hom) ≫
+        (eqToHom (σ.projectObj_pullbackObj J.obj X).symm ⊗ₘ
+          eqToHom (σ.projectObj_pullbackObj J.obj Y).symm) =
+        (eqToIso (σ.projectObj_pullbackObj I.obj (X.tensor Y)) ≪≫
+          projectObjIso α.iso (projectObj σ.obj (X.tensor Y)).as ≪≫
+          eqToIso (σ.projectObj_pullbackObj J.obj (X.tensor Y)).symm).hom := by
+      rw [TauCeti.eqToHom_tensorHom_eqToHom, TauCeti.eqToHom_tensorHom_eqToHom,
+        Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom, hR]
+      rfl
+    exact (hL.trans (congrArg₂ (· ⊗ₘ ·) hX hY)).trans (hsplit.trans hmerge)
+
+private theorem projectObjIso_eqToIso {A : Type*} {f g : A → D} (h : ∀ a, f a = g a)
+    (X : FreeMonoidalCategory A) :
+    projectObjIso (fun a ↦ eqToIso (h a)) X = eqToIso (projectObj_congr h X) := by
+  induction X with
+  | of a =>
+    ext
+    rw [projectObjIso_of, eqToIso.hom, eqToIso.hom]
+    dsimp only [projectObj]
+  | unit =>
+    ext
+    have hL : (projectObjIso (fun a ↦ eqToIso (h a)) .unit).hom = 𝟙 (𝟙_ D) :=
+      congrArg Iso.hom (projectObjIso_tensorUnit _)
+    have hR : eqToHom (projectObj_congr h .unit) = 𝟙 (𝟙_ D) := eqToHom_refl (𝟙_ D) rfl
+    exact hL.trans hR.symm
+  | tensor X Y ihX ihY =>
+    ext
+    have hX := congrArg Iso.hom ihX
+    have hY := congrArg Iso.hom ihY
+    rw [eqToIso.hom] at hX hY
+    rw [show X.tensor Y = X ⊗ Y from rfl, projectObjIso_tensor, MonoidalCategory.tensorIso_hom,
+      hX, hY, eqToIso.hom]
+    exact eqToHom_tensorHom_eqToHom _ _
+
+variable (D) in
+/-- Pull back interpretations of `T` in `D` and their isomorphisms along a substitution
+`σ : Substitution S T`. -/
+@[expose] def pullback (σ : Substitution S T) : Interpretation T D ⥤ Interpretation S D where
+  obj I := ⟨σ.pullbackObj I.obj, σ.pullbackCoupon I.obj I.coupon⟩
+  map {I J} α :=
+    { iso a := projectObjIso α.iso (σ.obj a).as
+      comm g := by
+        -- Expose `projectObj` so `eqToHom` rewrites avoid implicit transparency mismatch.
+        change σ.pullbackCoupon I.obj I.coupon g ≫
+            (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) (S.tgt g)).hom =
+          (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) (S.src g)).hom ≫
+            σ.pullbackCoupon J.obj J.coupon g
+        have hnat := ((Interpretation.extension T D).map α).iso.hom.hom.hom.naturality
+          (FreeMonoidal.homMk (X := projectObj σ.obj (S.src g))
+            (Y := projectObj σ.obj (S.tgt g)) (σ.coupon g))
+        simp only [Interpretation.extension_map_iso_hom_hom_hom_app] at hnat
+        have hsrc : (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) (S.src g)).hom =
+            eqToHom (σ.projectObj_pullbackObj I.obj (S.src g)) ≫
+              (projectObjIso α.iso (projectObj σ.obj (S.src g)).as).hom ≫
+              eqToHom (σ.projectObj_pullbackObj J.obj (S.src g)).symm := by
+          rw [projectObjIso_pullbackObj, Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom]
+        have htgt : (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) (S.tgt g)).hom =
+            eqToHom (σ.projectObj_pullbackObj I.obj (S.tgt g)) ≫
+              (projectObjIso α.iso (projectObj σ.obj (S.tgt g)).as).hom ≫
+              eqToHom (σ.projectObj_pullbackObj J.obj (S.tgt g)).symm := by
+          rw [projectObjIso_pullbackObj, Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom]
+        rw [hsrc, htgt]
+        have hcancelL : ∀ {A₁ A₂ B₁ B₂ C₁ C₂ : D}
+            (p₁ : A₁ = A₂) (p₂ : B₁ = B₂) (p₃ : B₂ = B₁) (p₄ : C₁ = C₂)
+            (f : A₂ ⟶ B₁) (k : B₁ ⟶ C₁),
+            (eqToHom p₁ ≫ f ≫ eqToHom p₂) ≫ eqToHom p₃ ≫ k ≫ eqToHom p₄ =
+              eqToHom p₁ ≫ (f ≫ k) ≫ eqToHom p₄ := by
+          intro _ _ _ _ _ _ p₁ p₂ p₃ p₄ f k; subst p₁ p₂ p₄; simp
+        have hcancelR : ∀ {A₁ A₂ B₁ B₂ C₁ C₂ : D}
+            (p₁ : A₁ = A₂) (p₂ : B₁ = B₂) (p₃ : B₂ = B₁) (p₄ : C₁ = C₂)
+            (k : A₂ ⟶ B₁) (f : B₁ ⟶ C₁),
+            (eqToHom p₁ ≫ k ≫ eqToHom p₂) ≫ eqToHom p₃ ≫ f ≫ eqToHom p₄ =
+              eqToHom p₁ ≫ (k ≫ f) ≫ eqToHom p₄ := by
+          intro _ _ _ _ _ _ p₁ p₂ p₃ p₄ k f; subst p₁ p₂ p₄; simp
+        refine ((congrArg (· ≫ _) (σ.pullbackCoupon_def I.obj I.coupon g)).trans
+          (hcancelL _ _ _ _ _ _)).trans ?_
+        refine (congrArg (fun k ↦ eqToHom _ ≫ k ≫ eqToHom _) hnat).trans ?_
+        exact ((congrArg (_ ≫ ·) (σ.pullbackCoupon_def J.obj J.coupon g)).trans
+          (hcancelR _ _ _ _ _ _)).symm }
+  map_id I := Interpretation.hom_ext fun a ↦ by
+    dsimp
+    rw [show Interpretation.Hom.iso (𝟙 I) = fun b ↦ Iso.refl (I.obj b) from
+        funext (Interpretation.id_iso I), projectObjIso_refl, Iso.refl_hom]
+    rfl
+  map_comp α β := Interpretation.hom_ext fun a ↦ by
+    dsimp
+    rw [show Interpretation.Hom.iso (α ≫ β) = fun b ↦ α.iso b ≪≫ β.iso b from
+        funext (Interpretation.comp_iso α β), projectObjIso_trans, Iso.trans_hom]
+    rfl
+
+@[simp]
+theorem pullback_obj_obj (σ : Substitution S T) (I : Interpretation T D) :
+    ((σ.pullback D).obj I).obj = σ.pullbackObj I.obj :=
+  rfl
+
+@[simp]
+theorem pullback_obj_coupon (σ : Substitution S T) (I : Interpretation T D) :
+    ((σ.pullback D).obj I).coupon = σ.pullbackCoupon I.obj I.coupon :=
+  rfl
+
+@[simp]
+theorem pullback_map_iso (σ : Substitution S T) {I J : Interpretation T D} (α : I ⟶ J)
+    (a : S.Obj) :
+    ((σ.pullback D).map α).iso a = projectObjIso α.iso (σ.obj a).as :=
+  rfl
+
+/-- Naturality of `Substitution.toFunctorCompLiftIso` in `I : Interpretation T D`: whiskering the
+extension of an interpretation isomorphism `α : I ⟶ J` with `σ.toFunctor` commutes with
+`toFunctorCompLiftIso` and the extension of `(σ.pullback D).map α`. -/
+theorem toFunctorCompLiftIso_natural (σ : Substitution S T) {I J : Interpretation T D}
+    (α : I ⟶ J) :
+    Functor.whiskerLeft σ.toFunctor ((Interpretation.extension T D).map α).iso.hom.hom.hom ≫
+        (σ.toFunctorCompLiftIso J.obj J.coupon).hom =
+      (σ.toFunctorCompLiftIso I.obj I.coupon).hom ≫
+        ((Interpretation.extension S D).map ((σ.pullback D).map α)).iso.hom.hom.hom := by
+  ext X
+  -- Align `Interpretation.extension` object projections with `FreeMonoidal.lift` transparency.
+  change ((Interpretation.extension T D).map α).iso.hom.hom.hom.app (σ.toFunctor.obj X) ≫
+      (σ.toFunctorCompLiftIso J.obj J.coupon).hom.app X =
+    (σ.toFunctorCompLiftIso I.obj I.coupon).hom.app X ≫
+      ((Interpretation.extension S D).map ((σ.pullback D).map α)).iso.hom.hom.hom.app X
+  have h1 := Interpretation.extension_map_iso_hom_hom_hom_app α (σ.toFunctor.obj X)
+  have h2 := σ.toFunctorCompLiftIso_hom_app J.obj J.coupon X
+  have h3 := σ.toFunctorCompLiftIso_hom_app I.obj I.coupon X
+  have h4 := Interpretation.extension_map_iso_hom_hom_hom_app ((σ.pullback D).map α) X
+  have hiso : (projectObjIso ((σ.pullback D).map α).iso X.as).hom =
+      eqToHom (σ.projectObj_pullbackObj I.obj X.as) ≫
+        (projectObjIso α.iso (projectObj σ.obj X.as).as).hom ≫
+        eqToHom (σ.projectObj_pullbackObj J.obj X.as).symm := by
+    -- Expose `fun a ↦ projectObjIso α.iso (σ.obj a).as` at `projectObj` transparency.
+    change (projectObjIso (fun a ↦ projectObjIso α.iso (σ.obj a).as) X.as).hom = _
+    rw [projectObjIso_pullbackObj, Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom]
+  have hcancel : ∀ {A₁ A₂ B₁ B₂ : D} (p : A₁ = A₂) (q : B₁ = B₂) (f : A₂ ⟶ B₂),
+      f ≫ eqToHom q.symm = eqToHom p.symm ≫ eqToHom p ≫ f ≫ eqToHom q.symm := by
+    intro _ _ _ _ p q f; subst p; simp
+  refine (congrArg₂ (· ≫ ·) h1 h2).trans ?_
+  refine (hcancel (σ.projectObj_pullbackObj I.obj X.as)
+    (σ.projectObj_pullbackObj J.obj X.as)
+    (projectObjIso α.iso (σ.toFunctor.obj X).as).hom).trans ?_
+  exact congrArg₂ (· ≫ ·) h3.symm (h4.trans hiso).symm
+
+variable (D) in
+/-- Precomposition of bundled strong monoidal functors and monoidal natural isomorphisms with
+`σ.toFunctor`. -/
+@[expose] def precomp (σ : Substitution S T) :
+    Core (MonoidalFunctor T.FreeMonoidal D) ⥤ Core (MonoidalFunctor S.FreeMonoidal D) where
+  obj F := ⟨MonoidalFunctor.of (σ.toFunctor ⋙ F.of.toFunctor)⟩
+  map {F G} α := ⟨@MonoidalFunctor.isoMk _ _ _ _ _ _ (.of _) (.of _)
+    (Functor.isoWhiskerLeft σ.toFunctor (MonoidalFunctor.toFunctorIso α.iso))
+    (inferInstanceAs (NatTrans.IsMonoidal
+      (σ.toFunctor.whiskerLeft (MonoidalFunctor.toFunctorIso α.iso).hom)))⟩
+  map_id F := Core.hom_ext <| MonoidalFunctor.hom_ext <| by ext X; rfl
+  map_comp α β := Core.hom_ext <| MonoidalFunctor.hom_ext <| by ext X; rfl
+
+@[simp]
+theorem precomp_obj_of (σ : Substitution S T) (F : Core (MonoidalFunctor T.FreeMonoidal D)) :
+    ((σ.precomp D).obj F).of = MonoidalFunctor.of (σ.toFunctor ⋙ F.of.toFunctor) :=
+  rfl
+
+@[simp]
+theorem precomp_map_iso_hom_hom_hom (σ : Substitution S T)
+    {F G : Core (MonoidalFunctor T.FreeMonoidal D)} (α : F ⟶ G) :
+    ((σ.precomp D).map α).iso.hom.hom.hom =
+      Functor.whiskerLeft σ.toFunctor α.iso.hom.hom.hom :=
+  rfl
+
+variable (D) in
+/-- Naturality of extension under pullback: precomposing `Interpretation.extension` with
+`σ.toFunctor` is naturally isomorphic to pulling back interpretations along `σ` and extending. -/
+def extensionPullbackIso (σ : Substitution S T) :
+    Interpretation.extension T D ⋙ σ.precomp D ≅
+      σ.pullback D ⋙ Interpretation.extension S D :=
+  NatIso.ofComponents
+    (fun I ↦ (Groupoid.isoEquivHom _ _).symm <|
+      ⟨@MonoidalFunctor.isoMk _ _ _ _ _ _ (.of _) (.of _) (σ.toFunctorCompLiftIso I.obj I.coupon)
+        (inferInstanceAs (NatTrans.IsMonoidal (σ.toFunctorCompLiftIso I.obj I.coupon).hom))⟩)
+    (fun α ↦ Core.hom_ext <| MonoidalFunctor.hom_ext <| by
+      -- Unfold `Core`/`MonoidalFunctor` composition to match `toFunctorCompLiftIso_natural`.
+      change Functor.whiskerLeft σ.toFunctor
+          ((Interpretation.extension T D).map α).iso.hom.hom.hom ≫
+          (σ.toFunctorCompLiftIso _ _).hom =
+        (σ.toFunctorCompLiftIso _ _).hom ≫
+          ((Interpretation.extension S D).map ((σ.pullback D).map α)).iso.hom.hom.hom
+      exact toFunctorCompLiftIso_natural σ α)
+
+@[simp]
+theorem extensionPullbackIso_hom_app_iso_hom_hom_hom (σ : Substitution S T)
+    (I : Interpretation T D) :
+    ((σ.extensionPullbackIso D).hom.app I).iso.hom.hom.hom =
+      (σ.toFunctorCompLiftIso I.obj I.coupon).hom := by
+  rw [extensionPullbackIso]
+  simp only [NatIso.ofComponents_hom_app]
+  rfl
+
+/-- Pulling back a generator-object assignment along `Substitution.id S` returns the same
+assignment. -/
+theorem pullback_id_obj (fo : S.Obj → D) : (id S).pullbackObj fo = fo :=
+  funext fun a ↦ by simp [pullbackObj]
+
+variable (D) in
+/-- Pulling back interpretations along `Substitution.id S` is naturally isomorphic to the identity
+functor on `Interpretation S D`. -/
+def pullbackIdIso : (id S).pullback D ≅ 𝟭 (Interpretation S D) :=
+  NatIso.ofComponents
+    (fun I ↦ (Groupoid.isoEquivHom _ _).symm
+      { iso a := eqToIso (congrFun (pullback_id_obj I.obj) a)
+        comm g := by
+          -- Expose `projectObj` so `eqToHom` rewrites avoid implicit transparency mismatch.
+          change (id S).pullbackCoupon I.obj I.coupon g ≫
+              (projectObjIso (fun a ↦ eqToIso (congrFun (pullback_id_obj I.obj) a))
+                (S.tgt g)).hom =
+            (projectObjIso (fun a ↦ eqToIso (congrFun (pullback_id_obj I.obj) a))
+                (S.src g)).hom ≫ I.coupon g
+          rw [projectObjIso_eqToIso, projectObjIso_eqToIso, eqToIso.hom, eqToIso.hom]
+          have hmid : (FreeMonoidal.lift I.obj I.coupon).map
+              (FreeMonoidal.homMk (X := projectObj (id S).obj (S.src g))
+                (Y := projectObj (id S).obj (S.tgt g)) ((id S).coupon g)) =
+              eqToHom (congrArg (FreeMonoidal.lift I.obj I.coupon).obj
+                  (congrArg FreeMonoidal.mk (id_projectObj_as S (S.src g)))) ≫
+                I.coupon g ≫
+                eqToHom (congrArg (FreeMonoidal.lift I.obj I.coupon).obj
+                  (congrArg FreeMonoidal.mk (id_projectObj_as S (S.tgt g)).symm)) := by
+            refine (congrArg (FreeMonoidal.lift I.obj I.coupon).map
+              ((congrArg FreeMonoidal.homMk (id_coupon S g)).trans
+                (FreeMonoidal.homMk_cast _ _ _))).trans ?_
+            rw [Functor.map_comp, Functor.map_comp, eqToHom_map, eqToHom_map]
+            exact congrArg (_ ≫ ·) (congrArg (· ≫ _) (lift_map_coupon _ _ g))
+          have hmerge : ∀ {A₁ A₂ A₃ B₁ B₂ B₃ : D}
+              (p₁ : A₁ = A₂) (p₂ : A₂ = A₃) (p₃ : A₁ = A₃)
+              (q₁ : B₃ = B₂) (q₂ : B₂ = B₁) (q₃ : B₁ = B₃) (f : A₃ ⟶ B₃),
+              (eqToHom p₁ ≫ (eqToHom p₂ ≫ f ≫ eqToHom q₁) ≫ eqToHom q₂) ≫ eqToHom q₃ =
+                eqToHom p₃ ≫ f := by
+            intro _ _ _ _ _ _ p₁ p₂ p₃ q₁ q₂ q₃ f; subst p₁ p₂ q₁ q₂; simp
+          refine (congrArg (· ≫ _) ((pullbackCoupon_def _ _ _ g).trans
+            (congrArg (fun k ↦ _ ≫ k ≫ _) hmid))).trans ?_
+          exact hmerge _ _ _ _ _ _ _ })
+    (fun {I J} α ↦ Interpretation.hom_ext fun a ↦ by
+      -- Expose `projectObj` and unfold `eqToIso.hom` to avoid implicit transparency mismatch.
+      change (projectObjIso α.iso ((id S).obj a).as).hom ≫
+          eqToHom (congrFun (pullback_id_obj J.obj) a) =
+        eqToHom (congrFun (pullback_id_obj I.obj) a) ≫ (α.iso a).hom
+      have hof : ∀ {X₁ X₂ : Interpretation S D} (β : X₁ ⟶ X₂) (w : FreeMonoidalCategory S.Obj)
+          (hw : w = .of a),
+          (projectObjIso β.iso w).hom =
+            eqToHom (congrArg (projectObj X₁.obj) hw) ≫ (β.iso a).hom ≫
+              eqToHom (congrArg (projectObj X₂.obj) hw).symm := by
+        intro X₁ X₂ β w hw; subst hw
+        have h1 : eqToHom (congrArg (projectObj X₁.obj) (rfl : .of a = .of a)) =
+            𝟙 (X₁.obj a) :=
+          eqToHom_refl _ rfl
+        have h2 : eqToHom (congrArg (projectObj X₂.obj) (rfl : .of a = .of a)).symm =
+            𝟙 (X₂.obj a) :=
+          eqToHom_refl _ rfl
+        exact (congrArg Iso.hom (projectObjIso_of β.iso a)).trans
+          ((Category.id_comp _).symm.trans (congrArg₂ (· ≫ ·) h1.symm
+            ((Category.comp_id _).symm.trans (congrArg (_ ≫ ·) h2.symm))))
+      have hconj : ∀ {A₁ A₂ B₁ B₂ : D} (p p' : A₁ = A₂) (q : B₂ = B₁) (q' : B₁ = B₂) (f : A₂ ⟶ B₂),
+          (eqToHom p ≫ f ≫ eqToHom q) ≫ eqToHom q' = eqToHom p' ≫ f := by
+        intro _ _ _ _ p p' q q' f; subst p q; simp
+      rw [hof α ((id S).obj a).as (congrArg FreeMonoidal.as (id_obj S a))]
+      exact hconj _ _ _ _ _)
+
+@[simp]
+theorem pullbackIdIso_hom_app_iso (I : Interpretation S D) (a : S.Obj) :
+    ((pullbackIdIso D).hom.app I).iso a = eqToIso (congrFun (pullback_id_obj I.obj) a) := by
+  rw [pullbackIdIso]
+  simp only [NatIso.ofComponents_hom_app]
+  rfl
+
+/-- Pulling back a generator-object assignment along `σ.comp τ` agrees with pulling back along `τ`
+and then along `σ`. -/
+theorem comp_pullbackObj {U : TensorSignature.{u₄, v₄}} (σ : Substitution S T)
+    (τ : Substitution T U) (fo : U.Obj → D) :
+    (σ.comp τ).pullbackObj fo = σ.pullbackObj (τ.pullbackObj fo) :=
+  funext fun a ↦ by
+    rw [pullbackObj_apply, comp_obj, pullbackObj_apply, projectObj_projectObj_as]
+    exact projectObj_congr (fun b ↦ (pullbackObj_apply τ fo b).symm) (σ.obj a).as
+
+variable (D) in
+/-- Pulling back interpretations along `σ.comp τ` is naturally isomorphic to pulling back along `τ`
+and then along `σ`. -/
+def pullbackCompIso {U : TensorSignature.{u₄, v₄}} (σ : Substitution S T)
+    (τ : Substitution T U) :
+    (σ.comp τ).pullback D ≅ τ.pullback D ⋙ σ.pullback D :=
+  NatIso.ofComponents
+    (fun I ↦ (Groupoid.isoEquivHom _ _).symm
+      { iso a := eqToIso (congrFun (comp_pullbackObj σ τ I.obj) a)
+        comm g := by
+          -- Expose `projectObj` so `eqToHom` rewrites avoid implicit transparency mismatch.
+          change (σ.comp τ).pullbackCoupon I.obj I.coupon g ≫
+              (projectObjIso (fun a ↦ eqToIso (congrFun (comp_pullbackObj σ τ I.obj) a))
+                (S.tgt g)).hom =
+            (projectObjIso (fun a ↦ eqToIso (congrFun (comp_pullbackObj σ τ I.obj) a))
+                (S.src g)).hom ≫
+              σ.pullbackCoupon (τ.pullbackObj I.obj) (τ.pullbackCoupon I.obj I.coupon) g
+          have hnat := (τ.toFunctorCompLiftIso I.obj I.coupon).hom.naturality
+            (FreeMonoidal.homMk (X := projectObj σ.obj (S.src g))
+              (Y := projectObj σ.obj (S.tgt g)) (σ.coupon g))
+          simp only [Functor.comp_map, toFunctor_map_homMk, toFunctorCompLiftIso_hom_app] at hnat
+          rw [projectObjIso_eqToIso, projectObjIso_eqToIso, eqToIso.hom, eqToIso.hom]
+          have hmap : (FreeMonoidal.lift I.obj I.coupon).map
+              (FreeMonoidal.homMk (X := projectObj τ.obj (projectObj σ.obj (S.src g)).as)
+                (Y := projectObj τ.obj (projectObj σ.obj (S.tgt g)).as)
+                ((σ.coupon g).subst τ)) =
+              eqToHom (τ.projectObj_pullbackObj I.obj (projectObj σ.obj (S.src g)).as).symm ≫
+                (FreeMonoidal.lift (τ.pullbackObj I.obj) (τ.pullbackCoupon I.obj I.coupon)).map
+                  (FreeMonoidal.homMk (X := projectObj σ.obj (S.src g))
+                    (Y := projectObj σ.obj (S.tgt g)) (σ.coupon g)) ≫
+                eqToHom (τ.projectObj_pullbackObj I.obj (projectObj σ.obj (S.tgt g)).as) :=
+            ((comp_eqToHom_iff _ _ _).mp hnat).trans (Category.assoc _ _ _)
+          have hmerge : ∀ {A₁ A₂ A₃ A₄ A₅ B₁ B₂ B₃ B₄ B₅ : D}
+              (p₁ : A₁ = A₂) (p₂ : A₂ = A₃) (p₃ : A₃ = A₄) (p₄ : A₁ = A₅) (p₅ : A₅ = A₄)
+              (q₁ : B₄ = B₃) (q₂ : B₃ = B₂) (q₃ : B₂ = B₁) (q₄ : B₁ = B₅) (q₅ : B₄ = B₅)
+              (f : A₄ ⟶ B₄),
+              (eqToHom p₁ ≫ (eqToHom p₂ ≫ (eqToHom p₃ ≫ f ≫ eqToHom q₁) ≫ eqToHom q₂) ≫
+                  eqToHom q₃) ≫ eqToHom q₄ =
+                eqToHom p₄ ≫ eqToHom p₅ ≫ f ≫ eqToHom q₅ := by
+            intro _ _ _ _ _ _ _ _ _ _ p₁ p₂ p₃ p₄ p₅ q₁ q₂ q₃ q₄ q₅ f
+            subst p₁ p₂ p₃ p₄ q₁ q₂ q₃ q₄; simp
+          have hmid : (FreeMonoidal.lift I.obj I.coupon).map
+              (FreeMonoidal.homMk (X := projectObj (σ.comp τ).obj (S.src g))
+                (Y := projectObj (σ.comp τ).obj (S.tgt g)) ((σ.comp τ).coupon g)) =
+              eqToHom (congrArg (FreeMonoidal.lift I.obj I.coupon).obj
+                  (congrArg FreeMonoidal.mk (comp_projectObj_as σ τ (S.src g)).symm)) ≫
+                (eqToHom (τ.projectObj_pullbackObj I.obj (projectObj σ.obj (S.src g)).as).symm ≫
+                  (FreeMonoidal.lift (τ.pullbackObj I.obj)
+                    (τ.pullbackCoupon I.obj I.coupon)).map
+                    (FreeMonoidal.homMk (X := projectObj σ.obj (S.src g))
+                      (Y := projectObj σ.obj (S.tgt g)) (σ.coupon g)) ≫
+                  eqToHom (τ.projectObj_pullbackObj I.obj (projectObj σ.obj (S.tgt g)).as)) ≫
+                eqToHom (congrArg (FreeMonoidal.lift I.obj I.coupon).obj
+                  (congrArg FreeMonoidal.mk (comp_projectObj_as σ τ (S.tgt g)))) := by
+            rw [comp_coupon, FreeMonoidal.homMk_cast, Functor.map_comp, Functor.map_comp,
+              eqToHom_map, eqToHom_map]
+            exact congrArg (_ ≫ ·) (congrArg (· ≫ _) hmap)
+          refine (congrArg (· ≫ _) ((pullbackCoupon_def _ _ _ g).trans
+            (congrArg (fun k ↦ _ ≫ k ≫ _) hmid))).trans ?_
+          refine Eq.trans ?_ (congrArg (eqToHom _ ≫ ·)
+            (σ.pullbackCoupon_def (τ.pullbackObj I.obj) (τ.pullbackCoupon I.obj I.coupon) g).symm)
+          exact hmerge _ _ _ _ _ _ _ _ _ _ _ })
+    (fun {I J} α ↦ Interpretation.hom_ext fun a ↦ by
+      -- Expose `projectObj` and unfold `eqToIso.hom` to avoid implicit transparency mismatch.
+      change (projectObjIso α.iso ((σ.comp τ).obj a).as).hom ≫
+          eqToHom (congrFun (comp_pullbackObj σ τ J.obj) a) =
+        eqToHom (congrFun (comp_pullbackObj σ τ I.obj) a) ≫
+          (projectObjIso ((τ.pullback D).map α).iso (σ.obj a).as).hom
+      have hcomp : ∀ {X₁ X₂ : Interpretation U D} (β : X₁ ⟶ X₂)
+          (w : FreeMonoidalCategory U.Obj) (hw : w = (projectObj τ.obj (σ.obj a).as).as),
+          (projectObjIso β.iso w).hom =
+            eqToHom (congrArg (projectObj X₁.obj) hw) ≫
+              (projectObjIso β.iso (projectObj τ.obj (σ.obj a).as).as).hom ≫
+              eqToHom (congrArg (projectObj X₂.obj) hw).symm := by
+        intro X₁ X₂ β w hw; subst hw; simp
+      have hpull : (projectObjIso (fun b ↦ projectObjIso α.iso (τ.obj b).as) (σ.obj a).as).hom =
+          eqToHom (τ.projectObj_pullbackObj I.obj (σ.obj a).as) ≫
+            (projectObjIso α.iso (projectObj τ.obj (σ.obj a).as).as).hom ≫
+            eqToHom (τ.projectObj_pullbackObj J.obj (σ.obj a).as).symm := by
+        rw [projectObjIso_pullbackObj, Iso.trans_hom, Iso.trans_hom, eqToIso.hom, eqToIso.hom]
+      have hjoin : ∀ {A₁ A₂ A₃ B₁ B₂ B₃ : D}
+          (p : A₁ = A₂) (p' : A₁ = A₃) (p'' : A₃ = A₂)
+          (q : B₂ = B₁) (q' : B₁ = B₃) (q₁ : B₂ = B₃) (f : A₂ ⟶ B₂),
+          (eqToHom p ≫ f ≫ eqToHom q) ≫ eqToHom q' =
+            eqToHom p' ≫ eqToHom p'' ≫ f ≫ eqToHom q₁ := by
+        intro _ _ _ _ _ _ p p' p'' q q' q₁ f; subst p p'' q; simp
+      rw [hcomp α ((σ.comp τ).obj a).as (congrArg FreeMonoidal.as (comp_obj σ τ a)),
+        show (projectObjIso ((τ.pullback D).map α).iso (σ.obj a).as).hom =
+          (projectObjIso (fun b ↦ projectObjIso α.iso (τ.obj b).as) (σ.obj a).as).hom from rfl,
+        hpull]
+      exact hjoin _ _ _ _ _ _ _)
+
+@[simp]
+theorem pullbackCompIso_hom_app_iso {U : TensorSignature.{u₄, v₄}} (σ : Substitution S T)
+    (τ : Substitution T U) (I : Interpretation U D) (a : S.Obj) :
+    ((pullbackCompIso D σ τ).hom.app I).iso a =
+      eqToIso (congrFun (comp_pullbackObj σ τ I.obj) a) := by
+  rw [pullbackCompIso]
+  simp only [NatIso.ofComponents_hom_app]
+  rfl
+
+/-- Compatibility of `Substitution.toFunctorCompLiftIso` with the identity substitution. -/
+theorem toFunctorCompLiftIso_id (fo : S.Obj → D)
+    (fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g)) :
+    (id S).toFunctorCompLiftIso fo fc ≪≫
+        MonoidalFunctor.toFunctorIso
+          ((Interpretation.extension S D).map ((pullbackIdIso D).hom.app ⟨fo, fc⟩)).iso =
+      Functor.isoWhiskerRight (toFunctorIdIso S) (FreeMonoidal.lift fo fc) ≪≫
+        Functor.leftUnitor (FreeMonoidal.lift fo fc) := by
+  ext X
+  have h1 := toFunctorCompLiftIso_hom_app (id S) fo fc X
+  have h2 := (Interpretation.extension_map_iso_hom_hom_hom_app
+      ((pullbackIdIso D).hom.app ⟨fo, fc⟩) X).trans
+    ((congrArg Iso.hom (projectObjIso_eqToIso _ X.as)).trans (eqToIso.hom _))
+  have hLHS := (congrArg₂ (· ≫ ·) h1 h2).trans (eqToHom_trans _ _)
+  have hRHS : (Functor.isoWhiskerRight (toFunctorIdIso S) (FreeMonoidal.lift fo fc) ≪≫
+        Functor.leftUnitor (FreeMonoidal.lift fo fc)).hom.app X =
+      eqToHom (congrArg (FreeMonoidal.lift fo fc).obj (toFunctor_id_obj S X)) := by
+    simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+      Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.id_obj,
+      toFunctorIdIso_hom_app, eqToHom_map]
+    exact Category.comp_id _
+  exact hLHS.trans hRHS.symm
+
+/-- Compatibility of `Substitution.toFunctorCompLiftIso` with successive pullback along a composite
+substitution `σ.comp τ`. -/
+theorem toFunctorCompLiftIso_comp {U : TensorSignature.{u₄, v₄}} (σ : Substitution S T)
+    (τ : Substitution T U) (fo : U.Obj → D)
+    (fc : ∀ h : U.Coupon, projectObj fo (U.src h) ⟶ projectObj fo (U.tgt h)) :
+    (σ.comp τ).toFunctorCompLiftIso fo fc ≪≫
+        MonoidalFunctor.toFunctorIso
+          ((Interpretation.extension S D).map ((pullbackCompIso D σ τ).hom.app ⟨fo, fc⟩)).iso =
+      Functor.isoWhiskerRight (toFunctorCompIso σ τ) (FreeMonoidal.lift fo fc) ≪≫
+        Functor.associator σ.toFunctor τ.toFunctor (FreeMonoidal.lift fo fc) ≪≫
+        Functor.isoWhiskerLeft σ.toFunctor (τ.toFunctorCompLiftIso fo fc) ≪≫
+        σ.toFunctorCompLiftIso (τ.pullbackObj fo) (τ.pullbackCoupon fo fc) := by
+  ext X
+  have h1 := toFunctorCompLiftIso_hom_app (σ.comp τ) fo fc X
+  have h2 := (Interpretation.extension_map_iso_hom_hom_hom_app
+      ((pullbackCompIso D σ τ).hom.app ⟨fo, fc⟩) X).trans
+    ((congrArg Iso.hom (projectObjIso_eqToIso _ X.as)).trans (eqToIso.hom _))
+  have hLHS := (congrArg₂ (· ≫ ·) h1 h2).trans (eqToHom_trans _ _)
+  have htriple : ∀ {A₁ A₂ A₃ A₄ : D} (p₁ : A₁ = A₂) (p₂ : A₂ = A₃) (p₃ : A₃ = A₄),
+      eqToHom p₁ ≫ eqToHom p₂ ≫ eqToHom p₃ = eqToHom (p₁.trans (p₂.trans p₃)) := by
+    intro _ _ _ _ p₁ p₂ p₃; subst p₁ p₂ p₃; simp
+  have hRHS : (Functor.isoWhiskerRight (toFunctorCompIso σ τ) (FreeMonoidal.lift fo fc) ≪≫
+        Functor.associator σ.toFunctor τ.toFunctor (FreeMonoidal.lift fo fc) ≪≫
+        Functor.isoWhiskerLeft σ.toFunctor (τ.toFunctorCompLiftIso fo fc) ≪≫
+        σ.toFunctorCompLiftIso (τ.pullbackObj fo) (τ.pullbackCoupon fo fc)).hom.app X =
+      eqToHom ((congrArg (FreeMonoidal.lift fo fc).obj (toFunctor_comp_obj σ τ X)).trans
+        ((τ.projectObj_pullbackObj fo (projectObj σ.obj X.as).as).symm.trans
+          (σ.projectObj_pullbackObj (τ.pullbackObj fo) X.as).symm)) := by
+    simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+      Functor.whiskerRight_app, Functor.associator_hom_app, Functor.isoWhiskerLeft_hom,
+      Functor.whiskerLeft_app, toFunctorCompIso_hom_app, toFunctorCompLiftIso_hom_app,
+      Functor.comp_obj, eqToHom_map, Category.id_comp]
+    exact htriple _ _ _
+  exact hLHS.trans hRHS.symm
+
 end Pullback
 
 /-- Equal substitutions have a monoidal `eqToIso` between their induced functors. -/
@@ -737,9 +1304,8 @@ theorem toFunctor_map_coupon {S : TensorSignature.{u₁, v₁}} {T : TensorSigna
       eqToHom (congrArg FreeMonoidal.mk (φ.src_coupon_projectObj_as g).symm) ≫
         FreeMonoidal.coupon (φ.coupon g) ≫
           eqToHom (congrArg FreeMonoidal.mk (φ.tgt_coupon_projectObj_as g)) := by
-  rw [Substitution.toFunctor_map_coupon]
-  dsimp only [toFunctor, toSubstitution, Substitution.toFunctor, FreeMonoidal.lift]
-  simp
+  rw [Substitution.toFunctor_map_coupon, toSubstitution_coupon, FreeMonoidal.homMk_cast,
+    FreeMonoidal.homMk_coupon]
 
 /-- The assignment of free monoidal categories `φ ↦ φ.toFunctor` is injective on signature
 morphisms: distinct morphisms of tensor signatures induce distinct functors
@@ -756,19 +1322,32 @@ theorem toFunctor_injective {S : TensorSignature.{u₁, v₁}} {T : TensorSignat
   let ψ : Hom S T := ⟨o₁, c₂, hs₂, ht₂⟩
   have hsrc : T.src (c₁ a) = T.src (c₂ a) := (hs₁ a).trans (hs₂ a).symm
   have htgt : T.tgt (c₁ a) = T.tgt (c₂ a) := (ht₁ a).trans (ht₂ a).symm
-  have hmap : φ.toFunctor.map (FreeMonoidal.coupon a) =
-      ψ.toFunctor.map (FreeMonoidal.coupon a) := by
-    simpa only [eqToHom_refl, Category.id_comp, Category.comp_id] using
-      (show φ.toFunctor.map (FreeMonoidal.coupon a) =
-          eqToHom rfl ≫ ψ.toFunctor.map (FreeMonoidal.coupon a) ≫ eqToHom rfl from
-        Functor.congr_hom h (FreeMonoidal.coupon a))
-  have heq := (φ.toFunctor_map_coupon a).symm.trans (hmap.trans (ψ.toFunctor_map_coupon a))
+  have hcongr := Functor.congr_hom h (FreeMonoidal.coupon a)
   refine (FreeMonoidal.coupon_eq_iff hsrc htgt).mp ?_
-  have hcancel := congrArg
-    (fun k ↦ eqToHom (congrArg FreeMonoidal.mk (φ.src_coupon_projectObj_as a)) ≫ k ≫
-      eqToHom (congrArg FreeMonoidal.mk (φ.tgt_coupon_projectObj_as a)).symm) heq
-  simpa only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, Category.comp_id] using hcancel
+  have hconj : ∀ {X X' Y Y' : T.FreeMonoidal} (p : X = X') (q : Y = Y') (f : X ⟶ Y),
+      eqToHom p ≫ (eqToHom p.symm ≫ f ≫ eqToHom q) ≫ eqToHom q.symm = f := by
+    intro _ _ _ _ p q f; subst p q; simp
+  have htriple : ∀ {X₁ X₂ X₃ X₄ Y₁ Y₂ Y₃ Y₄ : T.FreeMonoidal}
+      (p₁ : X₁ = X₂) (p₂ : X₂ = X₃) (p₃ : X₃ = X₄)
+      (q₁ : Y₄ = Y₃) (q₂ : Y₃ = Y₂) (q₃ : Y₂ = Y₁) (f : X₄ ⟶ Y₄),
+      eqToHom p₁ ≫ (eqToHom p₂ ≫ (eqToHom p₃ ≫ f ≫ eqToHom q₁) ≫ eqToHom q₂) ≫ eqToHom q₃ =
+        eqToHom (p₁.trans (p₂.trans p₃)) ≫ f ≫ eqToHom (q₁.trans (q₂.trans q₃)) := by
+    intro _ _ _ _ _ _ _ _ p₁ p₂ p₃ q₁ q₂ q₃ f; subst p₁ p₂ p₃ q₁ q₂ q₃; simp
+  have hl : eqToHom (congrArg FreeMonoidal.mk (φ.src_coupon_projectObj_as a)) ≫
+      φ.toFunctor.map (FreeMonoidal.coupon a) ≫
+      eqToHom (congrArg FreeMonoidal.mk (φ.tgt_coupon_projectObj_as a)).symm =
+      FreeMonoidal.coupon (c₁ a) :=
+    (congrArg (fun k ↦ _ ≫ k ≫ _) (φ.toFunctor_map_coupon a)).trans (hconj _ _ _)
+  have hr : eqToHom (congrArg FreeMonoidal.mk (φ.src_coupon_projectObj_as a)) ≫
+      (eqToHom (congrArg (fun F : S.FreeMonoidal ⥤ T.FreeMonoidal ↦ F.obj ⟨S.src a⟩) h) ≫
+        ψ.toFunctor.map (FreeMonoidal.coupon a) ≫
+        eqToHom (congrArg (fun F : S.FreeMonoidal ⥤ T.FreeMonoidal ↦ F.obj ⟨S.tgt a⟩) h).symm) ≫
+      eqToHom (congrArg FreeMonoidal.mk (φ.tgt_coupon_projectObj_as a)).symm =
+      eqToHom (congrArg FreeMonoidal.mk hsrc) ≫ FreeMonoidal.coupon (c₂ a) ≫
+        eqToHom (congrArg FreeMonoidal.mk htgt).symm :=
+    (congrArg (fun k ↦ _ ≫ (_ ≫ k ≫ _) ≫ _) (ψ.toFunctor_map_coupon a)).trans
+      (htriple _ _ _ _ _ _ _)
+  exact hl.symm.trans ((congrArg (fun k ↦ _ ≫ k ≫ _) hcongr).trans hr)
 
 @[simp]
 theorem toFunctor_inj {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
@@ -802,16 +1381,14 @@ instance (S : TensorSignature.{u, v}) : NatTrans.IsMonoidal (toFunctorIdIso S).h
 @[simp]
 theorem toFunctorIdIso_hom_app (S : TensorSignature.{u, v}) (X : S.FreeMonoidal) :
     (toFunctorIdIso S).hom.app X = eqToHom (toFunctor_id_obj S X) := by
-  simp only [toFunctorIdIso, Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app,
-    Substitution.toFunctorIdIso_hom_app]
-  exact eqToHom_trans _ _
+  rw [toFunctorIdIso, Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app,
+    Substitution.toFunctorIdIso_hom_app, eqToHom_trans]
 
 @[simp]
 theorem toFunctorIdIso_inv_app (S : TensorSignature.{u, v}) (X : S.FreeMonoidal) :
     (toFunctorIdIso S).inv.app X = eqToHom (toFunctor_id_obj S X).symm := by
-  simp only [toFunctorIdIso, Iso.trans_inv, NatTrans.comp_app, eqToIso.inv, eqToHom_app,
-    Substitution.toFunctorIdIso_inv_app]
-  exact eqToHom_trans _ _
+  rw [toFunctorIdIso, Iso.trans_inv, NatTrans.comp_app, eqToIso.inv, eqToHom_app,
+    Substitution.toFunctorIdIso_inv_app, eqToHom_trans]
 
 /-- The strong monoidal functor induced by a composite signature morphism `φ.comp ψ` is monoidally
 naturally isomorphic to `φ.toFunctor ⋙ ψ.toFunctor`. -/
@@ -831,17 +1408,56 @@ instance {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
 theorem toFunctorCompIso_hom_app {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (φ : Hom S T) (ψ : Hom T U) (X : S.FreeMonoidal) :
     (toFunctorCompIso φ ψ).hom.app X = eqToHom (toFunctor_comp_obj φ ψ X) := by
-  simp only [toFunctorCompIso, Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app,
-    Substitution.toFunctorCompIso_hom_app]
-  exact eqToHom_trans _ _
+  rw [toFunctorCompIso, Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app,
+    Substitution.toFunctorCompIso_hom_app, eqToHom_trans]
 
 @[simp]
 theorem toFunctorCompIso_inv_app {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
     {U : TensorSignature.{u₃, v₃}} (φ : Hom S T) (ψ : Hom T U) (X : S.FreeMonoidal) :
     (toFunctorCompIso φ ψ).inv.app X = eqToHom (toFunctor_comp_obj φ ψ X).symm := by
-  simp only [toFunctorCompIso, Iso.trans_inv, NatTrans.comp_app, eqToIso.inv, eqToHom_app,
-    Substitution.toFunctorCompIso_inv_app]
-  exact eqToHom_trans _ _
+  rw [toFunctorCompIso, Iso.trans_inv, NatTrans.comp_app, eqToIso.inv, eqToHom_app,
+    Substitution.toFunctorCompIso_inv_app, eqToHom_trans]
+
+/-- Left unit coherence for `Hom.toFunctor`: composing `toFunctorCompIso (Hom.id S) φ` with
+`toFunctorIdIso S` agrees with `Hom.id_comp φ`. -/
+theorem toFunctorCompIso_id_left {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (φ : Hom S T) :
+    toFunctorCompIso (Hom.id S) φ ≪≫ Functor.isoWhiskerRight (toFunctorIdIso S) φ.toFunctor ≪≫
+        Functor.leftUnitor φ.toFunctor =
+      eqToIso (congrArg toFunctor (Hom.id_comp φ)) := by
+  ext X
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
+    toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, eqToIso.hom, eqToHom_app, eqToHom_map,
+    eqToHom_trans, Category.comp_id]
+
+/-- Right unit coherence for `Hom.toFunctor`: composing `toFunctorCompIso φ (Hom.id T)` with
+`toFunctorIdIso T` agrees with `Hom.comp_id φ`. -/
+theorem toFunctorCompIso_id_right {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    (φ : Hom S T) :
+    toFunctorCompIso φ (Hom.id T) ≪≫ Functor.isoWhiskerLeft φ.toFunctor (toFunctorIdIso T) ≪≫
+        Functor.rightUnitor φ.toFunctor =
+      eqToIso (congrArg toFunctor (Hom.comp_id φ)) := by
+  ext X
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
+    toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, eqToIso.hom, eqToHom_app, eqToHom_trans,
+    Category.comp_id]
+
+/-- Associativity coherence (pentagon) for `Hom.toFunctorCompIso`. -/
+theorem toFunctorCompIso_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
+    {U : TensorSignature.{u₃, v₃}} {V : TensorSignature.{u₄, v₄}}
+    (φ : Hom S T) (ψ : Hom T U) (θ : Hom U V) :
+    toFunctorCompIso (φ.comp ψ) θ ≪≫
+        Functor.isoWhiskerRight (toFunctorCompIso φ ψ) θ.toFunctor ≪≫
+        Functor.associator φ.toFunctor ψ.toFunctor θ.toFunctor =
+      eqToIso (congrArg toFunctor (Hom.comp_assoc φ ψ θ)) ≪≫ toFunctorCompIso φ (ψ.comp θ) ≪≫
+        Functor.isoWhiskerLeft φ.toFunctor (toFunctorCompIso ψ θ) := by
+  ext X
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app, Functor.associator_hom_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, Functor.comp_obj, toFunctorCompIso_hom_app, eqToIso.hom,
+    eqToHom_app, eqToHom_map, eqToHom_trans, Category.comp_id]
 
 end Hom
 

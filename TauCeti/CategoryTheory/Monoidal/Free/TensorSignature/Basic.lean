@@ -462,6 +462,15 @@ theorem Hom.cast_tensor_cast {W W' X X' Y Y' Z Z' : FreeMonoidalCategory S.Obj}
   subst hW hX hY hZ
   rfl
 
+/-- Equal coupons transported to the same endpoints are equal. -/
+theorem Hom.cast_coupon_congr {g₁ g₂ : S.Coupon} (hg : g₁ = g₂)
+    {X Y : FreeMonoidalCategory S.Obj}
+    (hsrc₁ : S.src g₁ = X) (htgt₁ : S.tgt g₁ = Y)
+    (hsrc₂ : S.src g₂ = X) (htgt₂ : S.tgt g₂ = Y) :
+    (Hom.coupon g₁).cast hsrc₁ htgt₁ = (Hom.coupon g₂).cast hsrc₂ htgt₂ := by
+  subst hg
+  rfl
+
 @[simp]
 theorem homMk_cast {X Y : FreeMonoidalCategory S.Obj} {X' Y' : S.FreeMonoidal}
     (hX : X = X'.as) (hY : Y = Y'.as) (f : Hom (S := S) X Y) :
