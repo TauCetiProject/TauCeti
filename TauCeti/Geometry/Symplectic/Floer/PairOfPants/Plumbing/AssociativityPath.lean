@@ -41,7 +41,11 @@ discs `‖w - c_i‖ < ‖a_i‖ / 2` of the three input ends are pairwise disjo
 (`TauCeti.Floer.pairwise_add_le_norm_associativityCenter_sub`) and lie in the disc
 `‖w‖ ≤ 2 exp (2π)` on which the output datum vanishes
 (`TauCeti.Floer.norm_associativityCenter_add_le`), and for `0 < f` the scales do not vanish
-(`TauCeti.Floer.associativityScale_ne_zero`). Therefore the data
+(`TauCeti.Floer.associativityScale_ne_zero`). The same holds for the smaller discs
+`‖w - c_i‖ < ‖a_i‖ exp (-2π) / 2` on which the input data are supported
+(`TauCeti.Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub`,
+`TauCeti.Floer.norm_associativityCenter_add_mul_exp_le`), the separation hypotheses of the data
+on spheres with moving input ends. Therefore the data
 `K_τ = puncturedSpherePerturbation (associativityCenter f τ) (associativityScale f τ) H Hout`
 form a family that is smooth jointly in `f` and `τ`
 (`TauCeti.Floer.contMDiffAt_puncturedSpherePerturbation_associativity`), which is `H_i(t) dt` far
@@ -447,6 +451,32 @@ theorem norm_associativityCenter_add_le (hf : 0 ≤ f) (hf₁ : f ≤ 1) (τ : �
     · exact norm_associativityScale_two_le_one hf hf₁
   linarith
 
+/-- The disc `‖w - c‖ < ‖a‖ exp (-2π) / 2`, on which the datum of an input end of center `c` and
+scale `a` is supported, lies in the disc `‖w - c‖ < ‖a‖ / 2`. -/
+private theorem norm_mul_exp_div_two_le (a : ℂ) : ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖a‖ / 2 := by
+  have := norm_nonneg a
+  nlinarith [exp_neg_two_pi_lt_one]
+
+/-- **The supports of the input data stay disjoint along the associativity path.** For `0 ≤ f` and
+`3 f ≤ 1`, the discs `‖w - c_i‖ < ‖a_i‖ exp (-2π) / 2` of the three input ends, on which their
+data are supported, are pairwise disjoint at every point of the path. -/
+theorem pairwise_mul_exp_add_le_norm_associativityCenter_sub (hf : 0 ≤ f) (hf₃ : 3 * f ≤ 1)
+    (τ : ℝ) :
+    Pairwise fun i j => ‖associativityScale f τ i‖ * Real.exp (-(2 * π)) / 2 +
+      ‖associativityScale f τ j‖ * Real.exp (-(2 * π)) / 2 ≤
+        ‖associativityCenter f τ i - associativityCenter f τ j‖ := fun _ _ hij =>
+  (add_le_add (norm_mul_exp_div_two_le _) (norm_mul_exp_div_two_le _)).trans
+    (pairwise_add_le_norm_associativityCenter_sub hf hf₃ τ hij)
+
+/-- **The supports of the input data stay inside the disc where the output datum vanishes.** For
+`0 ≤ f ≤ 1`, every disc `‖w - c_i‖ < ‖a_i‖ exp (-2π) / 2` along the associativity path lies in the
+disc `‖w‖ ≤ 2 exp (2π)`. -/
+theorem norm_associativityCenter_add_mul_exp_le (hf : 0 ≤ f) (hf₁ : f ≤ 1) (τ : ℝ) (i : Fin 3) :
+    ‖associativityCenter f τ i‖ + ‖associativityScale f τ i‖ * Real.exp (-(2 * π)) / 2 ≤
+      2 * Real.exp (2 * π) :=
+  (add_le_add_right (norm_mul_exp_div_two_le _) _).trans
+    (norm_associativityCenter_add_le hf hf₁ τ i)
+
 end Path
 
 /-! ### The two compositions at the ends of the path -/
@@ -561,18 +591,10 @@ theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_associa
           Hout (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ puncturedSpherePerturbation (associativityCenter f τ) (associativityScale f τ) H
           Hout (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ ≤
-      ∑ i, ENNReal.ofReal (B i) + ENNReal.ofReal Bout := by
-  have hf₁ : f ≤ 1 := by linarith
-  -- The supports of the input end data lie in the input discs.
-  have hexp : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  have hr (i : Fin 3) : ‖associativityScale f τ i‖ * Real.exp (-(2 * π)) / 2 ≤
-      ‖associativityScale f τ i‖ / 2 := by
-    have := norm_nonneg (associativityScale f τ i)
-    nlinarith
-  refine lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le ω hH hHs hHout hHouts
-    (associativityScale_ne_zero hf τ) (fun i j hij => ?_) (fun i => ?_) hB hBout u
-  · exact (add_le_add (hr i) (hr j)).trans
-      (pairwise_add_le_norm_associativityCenter_sub hf.le hf₃ τ hij)
-  · linarith [hr i, norm_associativityCenter_add_le hf.le hf₁ τ i]
+      ∑ i, ENNReal.ofReal (B i) + ENNReal.ofReal Bout :=
+  lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le ω hH hHs hHout hHouts
+    (associativityScale_ne_zero hf τ)
+    (pairwise_mul_exp_add_le_norm_associativityCenter_sub hf.le hf₃ τ)
+    (norm_associativityCenter_add_mul_exp_le hf.le (by linarith) τ) hB hBout u
 
 end TauCeti.SmoothTwoForm
