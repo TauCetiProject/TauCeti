@@ -81,15 +81,6 @@ private abbrev swapEval (X : C) [Simple X] : X ⊗ Xᘁ ⟶ 𝟙_ C :=
 private abbrev swapCoeval (X : C) [Simple X] : 𝟙_ C ⟶ Xᘁ ⊗ X :=
   @ExactPairing.coevaluation C _ _ Xᘁ X (simpleSwapExactPairing X)
 
-omit [Abelian C] [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] in
-@[reassoc]
-private theorem rightDualUnitIso_inv_whiskerRight_evaluation [RightRigidCategory C] :
-    (rightDualUnitIso C).inv ▷ 𝟙_ C ≫
-      @ExactPairing.evaluation C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)).exact =
-    (ρ_ (𝟙_ C)).hom := by
-  rw [rightDualUnitIso_inv, ExactPairing.rightDualIso_inv_whiskerRight_evaluation,
-    TauCeti.ExactPairing.unit_evaluation]
-
 omit [IsFiniteSemisimpleCategory C] in
 /-- Canonical isomorphism `S₀.reprᘁ ≅ (RightRigidCategory.rightDual (𝟙_ C)).rightDual` for
 `S₀ = SimpleClasses.classOf (𝟙_ C)`, using the right dual assigned to `𝟙_ C` by
@@ -248,20 +239,13 @@ private theorem unitLF_comp_counitF [∀ S : SimpleClasses C, FiniteDimensional 
 /-- Underlying morphism `inductionObj A ⟶ A` of
 `(inductionForgetAdjunction k C).counit.app ⟨A, b⟩`. -/
 private def counitLF {A : C} (b : HalfBraiding A) : inductionObj A ⟶ A :=
-  ∑ S : SimpleClasses C, biproduct.π (inductionSummand A) S ≫ counitLFComponent b S
+  biproduct.desc (counitLFComponent b)
 
 omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
 @[reassoc]
 private theorem ι_comp_counitLF {A : C} (b : HalfBraiding A) (S : SimpleClasses C) :
-    biproduct.ι (inductionSummand A) S ≫ counitLF b = counitLFComponent b S := by
-  classical
-  dsimp only [counitLF]
-  simp only [Preadditive.comp_sum, biproduct.ι_π_assoc]
-  rw [Finset.sum_eq_single S]
-  · simp
-  · intro T _ hTS
-    simp [Ne.symm hTS]
-  · simp
+    biproduct.ι (inductionSummand A) S ≫ counitLF b = counitLFComponent b S :=
+  biproduct.ι_desc _ S
 
 omit [Field k] [IsAlgClosed k] [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
 private theorem counitLF_naturality {A A' : C} {b : HalfBraiding A} {b' : HalfBraiding A'}
@@ -642,7 +626,7 @@ private theorem counitLF_comm {A : C} (b : HalfBraiding A) (U : C) :
             monoidal
   have hrhs : biproduct.ι (inductionSummand A) S ▷ U ≫ (inductionβHom k A U ≫ U ◁ counitLF b) =
       ∑ T : SimpleClasses C, inductionβComponent k A U S T ≫ U ◁ counitLFComponent b T := by
-    dsimp only [counitLF]
+    rw [counitLF, biproduct.desc_eq]
     simp only [whiskerLeft_sum, Preadditive.comp_sum, whiskerLeft_comp,
       ι_whiskerRight_inductionβHom_whiskerLeft_π_assoc]
   rw [hlhs, hrhs, ← sum_counitTerm_eq k U S]

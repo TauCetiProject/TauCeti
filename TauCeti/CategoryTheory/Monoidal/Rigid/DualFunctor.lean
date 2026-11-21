@@ -49,9 +49,10 @@ the double right dual functor is a monoidal autoequivalence.
   `TauCeti.rightDualTensorIso_inv_whiskerRight_evaluation` and
   `TauCeti.coevaluation_comp_whiskerLeft_rightDualTensorIso_hom`: it carries the evaluation and
   coevaluation of `(X ⊗ Y, (X ⊗ Y)ᘁ)` to those of the tensor product pairing;
-* `TauCeti.rightDualUnitIso` and `TauCeti.coevaluation_comp_whiskerLeft_rightDualUnitIso_hom`: the
-  canonical identification `(𝟙_ C)ᘁ ≅ 𝟙_ C` of the chosen right dual of the tensor unit with the
-  unit and its interaction with coevaluation;
+* `TauCeti.rightDualUnitIso`, `TauCeti.coevaluation_comp_whiskerLeft_rightDualUnitIso_hom`, and
+  `TauCeti.rightDualUnitIso_inv_whiskerRight_evaluation`: the canonical identification
+  `(𝟙_ C)ᘁ ≅ 𝟙_ C` of the chosen right dual of the tensor unit with the unit and its
+  interaction with coevaluation and evaluation;
 * `TauCeti.rightDualFunctorCoreMonoidal` and the instance `TauCeti.rightDualFunctorMonoidal`: the
   strong monoidal structure on `rightDualFunctor C`, with structure morphisms given by
   `TauCeti.rightDualFunctor_ε`, `TauCeti.rightDualFunctor_η`, `TauCeti.rightDualFunctor_μ` and
@@ -201,6 +202,16 @@ theorem coevaluation_comp_whiskerLeft_rightDualUnitIso_hom :
       𝟙_ C ◁ (rightDualUnitIso C).hom = (ρ_ (𝟙_ C)).inv := by
   rw [rightDualUnitIso_hom, rightDualIso_hom, coevaluation_comp_rightMate, id_whiskerRight,
     Category.comp_id, TauCeti.ExactPairing.unit_coevaluation]
+
+/-- Through `TauCeti.rightDualUnitIso`, the evaluation of the chosen right dual of `𝟙_ C` is the
+right unitor of `𝟙_ C`. -/
+@[reassoc]
+theorem rightDualUnitIso_inv_whiskerRight_evaluation :
+    (rightDualUnitIso C).inv ▷ 𝟙_ C ≫
+      @ExactPairing.evaluation C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)).exact =
+    (ρ_ (𝟙_ C)).hom := by
+  rw [rightDualUnitIso_inv, ExactPairing.rightDualIso_inv_whiskerRight_evaluation,
+    TauCeti.ExactPairing.unit_evaluation]
 
 /-! In `(Cᵒᵖ)ᴹᵒᵖ`, composition and tensor products are those of `C` in the reverse order, by
 definition. So after `Quiver.Hom.unmop_inj` and `Quiver.Hom.unop_inj`, each coherence condition

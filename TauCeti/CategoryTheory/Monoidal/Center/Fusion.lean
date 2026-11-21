@@ -310,16 +310,6 @@ theorem rightDim_inductionObj [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)] (X : C
   rw [rightDim_tensor_eq_comp_of_simple k, rightDim_tensor_eq_comp_of_simple k, rightDim_rightDual,
     scalar_comm (rightDim S.repr), Category.assoc]
 
-private theorem endAlgEquivOfSimple_rightDim_eq_sum (X : C) :
-    endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim X)) =
-      ∑ S : SimpleClasses C,
-        (simpleMultiplicities X S : k) *
-          endAlgEquivOfSimple k (𝟙_ C) (End.of (rightDim S.repr)) := by
-  have : EssentiallySmall.{max u v} C := essentiallySmall_of_small_of_locallySmall C
-  rw [← SplitK0.rightDimChar_of, SplitK0.of_eq_sum, map_finsuppSum,
-    Finsupp.sum_fintype _ _ (by simp)]
-  simp [SplitK0.rightDimChar_of, nsmul_eq_mul]
-
 private theorem endAlgEquivOfSimple_leftDim_mul_globalDim
     [IsFiniteSemisimpleCategory (Center C)] [Fintype (SimpleClasses (Center C))]
     (S : SimpleClasses C) :

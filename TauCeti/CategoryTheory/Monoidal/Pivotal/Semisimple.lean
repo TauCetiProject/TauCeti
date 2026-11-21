@@ -37,7 +37,10 @@ pivotal structures and their traces are controlled by what happens on simple obj
 * `TauCeti.sphericalCategory_iff_leftDim_eq_rightDim`: a pivotal structure is spherical if and
   only if its left and right dimensions agree on simple objects.
 * `TauCeti.coevaluation_comp_simpleSwapExactPairing_evaluation`: `η_ X Xᘁ` composed with the
-  evaluation of `simpleSwapExactPairing X` equals `leftDim X ≫ rightDim X`.
+  evaluation of `simpleSwapExactPairing X` equals `leftDim X ≫ rightDim X`;
+* `TauCeti.leftDim_eq_sum_simpleMultiplicities` and
+  `TauCeti.rightDim_eq_sum_simpleMultiplicities`: the left and right dimensions of an object
+  are the sums of those of the simple representatives weighted by their multiplicities.
 
 ## References
 
@@ -136,5 +139,37 @@ theorem coevaluation_comp_simpleSwapExactPairing_evaluation [Simple (𝟙_ C)] (
     leftTrace_inv_comp_rightTrace_hom k (rightDualIso p₁ p₂)]
 
 end Spherical
+
+section Multiplicity
+
+/-- In a finite semisimple pivotal category, the left dimension of an object is the sum of the
+left dimensions of the simple representatives weighted by their multiplicities in the object. -/
+theorem leftDim_eq_sum_simpleMultiplicities [PivotalCategory C] [MonoidalPreadditive C] (X : C) :
+    leftDim X = (simpleMultiplicities X).sum fun S n ↦ n • leftDim S.repr := by
+  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+  let := hι
+  let := hf
+  let := hbf
+  rw [leftDim_congr e, leftDim_biproduct, simpleMultiplicities_eq_of_iso_biproduct f e,
+    ← Finsupp.sum_finsetSum_index (by simp) (by simp [add_smul])]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Finsupp.sum_single_index (by simp), one_smul,
+    leftDim_congr (SimpleClasses.classOfReprIso (f i))]
+
+/-- In a finite semisimple pivotal category, the right dimension of an object is the sum of the
+right dimensions of the simple representatives weighted by their multiplicities in the object. -/
+theorem rightDim_eq_sum_simpleMultiplicities [PivotalCategory C] [MonoidalPreadditive C] (X : C) :
+    rightDim X = (simpleMultiplicities X).sum fun S n ↦ n • rightDim S.repr := by
+  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
+  let := hι
+  let := hf
+  let := hbf
+  rw [rightDim_congr e, rightDim_biproduct, simpleMultiplicities_eq_of_iso_biproduct f e,
+    ← Finsupp.sum_finsetSum_index (by simp) (by simp [add_smul])]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Finsupp.sum_single_index (by simp), one_smul,
+    rightDim_congr (SimpleClasses.classOfReprIso (f i))]
+
+end Multiplicity
 
 end TauCeti
