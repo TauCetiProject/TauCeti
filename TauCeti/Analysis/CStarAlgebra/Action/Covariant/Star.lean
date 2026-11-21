@@ -145,4 +145,14 @@ theorem norm_integratedStarAlgHomL1_le (x : Completion (ConvolutionAlgebra α μ
     ‖P.integratedStarAlgHomL1 μ x‖ ≤ ‖x‖ :=
   P.norm_integratedOperatorL1_le μ x
 
+/-- The `L¹` integrated ⋆-homomorphism has dense span of ranges precisely when the coefficient
+representation is nondegenerate. -/
+theorem dense_span_integratedStarAlgHomL1_iff [μ.IsOpenPosMeasure] :
+    Dense (Submodule.span ℂ
+      (⋃ x : Completion (ConvolutionAlgebra α μ),
+        Set.range (P.integratedStarAlgHomL1 μ x)) : Set H) ↔
+      P.coefficient.IsNondegenerate := by
+  simp_rw [integratedStarAlgHomL1_apply]
+  exact P.dense_span_integratedOperatorL1_iff μ
+
 end TauCeti.CStarAction.CovariantRepresentation
