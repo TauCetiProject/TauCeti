@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Matrix.HardThreshold
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.RandomMatrix.Perturbation
 public import TauCeti.Probability.Moments.CenteredTruncation
@@ -23,6 +24,9 @@ entries. Independence is needed only to assert independence of the approximating
 and is not used in the error estimates. This is the bounded-approximation reduction used when
 extending the moment method to finite-second-moment entry laws.
 
+For zero-diagonal corners, the matrix of discarded entries is the entrywise hard threshold
+of the original corner at the normalized cutoff.
+
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*,
@@ -37,6 +41,41 @@ open MeasureTheory ProbabilityTheory Matrix Filter
 open scoped Topology NNReal Matrix.Norms.Frobenius
 
 namespace TauCeti.Probability
+
+section HardThreshold
+
+open Set
+
+variable {Ω : Type*} {ξ : StrictUpper → Ω → ℂ}
+
+private theorem div_lt_norm_wignerMatrix_apply_iff {n : ℕ} (ω : Ω)
+    {i j : Fin n} (hij : i ≠ j) (R : ℝ) :
+    R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i j‖ ↔
+      R < ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne hij)⟩ ω‖ := by
+  rw [norm_wignerMatrix_apply_of_ne _ _ _ hij, inv_mul_eq_div,
+    div_lt_div_iff_of_pos_right (Real.sqrt_pos.2 (Nat.cast_pos.2 (Nat.zero_lt_of_lt i.isLt)))]
+
+/-- The discarded part of a zero-diagonal Wigner corner is exactly the entrywise
+hard threshold at the cutoff divided by the square root of the dimension. -/
+theorem wignerMatrix_sub_indicator_eq_hardThreshold {n : ℕ}
+    (r : ℝ≥0) (ω : Ω) :
+    wignerMatrix ξ (fun _ _ ↦ 0) n ω -
+      wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ r}.indicator (ξ ij)) (fun _ _ ↦ 0) n ω =
+    (wignerMatrix ξ (fun _ _ ↦ 0) n ω).hardThreshold (r / Real.sqrt n) := by
+  ext i j
+  by_cases hij : i = j
+  · subst j
+    simp [Matrix.hardThreshold_apply]
+  simp only [wignerMatrix_sub, Matrix.hardThreshold_apply, div_lt_norm_wignerMatrix_apply_iff _ hij]
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
+  · simp only [wignerMatrix_apply_of_lt _ _ _ h, min_eq_left h.le, max_eq_right h.le,
+      indicator_apply, mem_ofPred_eq, ← not_lt, ite_not]
+    split_ifs <;> simp
+  · simp only [wignerMatrix_apply_of_gt _ _ _ h, min_eq_right h.le, max_eq_left h.le,
+      indicator_apply, mem_ofPred_eq, ← not_lt, ite_not]
+    split_ifs <;> simp
+
+end HardThreshold
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}

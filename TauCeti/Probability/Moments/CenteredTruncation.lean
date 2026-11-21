@@ -112,6 +112,52 @@ variable [CompleteSpace E]
 
 end Normed
 
+section TruncationMean
+
+variable [NormedSpace ℝ E] {X : Ω → E} {P : Measure Ω} [IsFiniteMeasure P]
+
+/-- For a centered variable, the norm of its truncated mean is bounded by the absolute
+moment of order `k+1` divided by the `k`-th power of the cutoff. -/
+theorem _root_.MeasureTheory.MemLp.norm_integral_indicator_norm_le_of_integral_eq_zero
+    {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P) (hmean : ∫ ω, X ω ∂P = 0) {r : ℝ} (hr : 0 < r) :
+    ‖∫ ω, {ω' | ‖X ω'‖ ≤ r}.indicator X ω ∂P‖ ≤
+      (∫ ω, ‖X ω‖ ^ (k + 1) ∂P) / r ^ k := by
+  have hint := hX.integrable (by exact_mod_cast Nat.succ_pos k)
+  let S := {ω | r < ‖X ω‖}
+  have hS : NullMeasurableSet S P :=
+    nullMeasurableSet_lt aemeasurable_const hX.aestronglyMeasurable.norm.aemeasurable
+  have hsplit : (∫ ω, Sᶜ.indicator X ω ∂P) = -(∫ ω, S.indicator X ω ∂P) := by
+    rw [integral_indicator₀ hS.compl, integral_indicator₀ hS,
+      setIntegral_compl₀ hS hint, hmean, zero_sub]
+  have hcomp : Sᶜ = {ω | ‖X ω‖ ≤ r} := by ext ω; simp [S]
+  rw [← hcomp, hsplit, norm_neg, ← integral_div]
+  refine norm_integral_le_of_norm_le
+    ((hX.integrable_norm_pow (Nat.succ_ne_zero k)).div_const _) (.of_forall fun ω ↦ ?_)
+  by_cases hω : ω ∈ S
+  · rw [indicator_of_mem hω, le_div_iff₀ (pow_pos hr _), pow_succ, mul_comm]
+    simp only [S, Set.mem_ofPred_eq] at hω
+    exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hr.le hω.le _) (norm_nonneg _)
+  · rw [indicator_of_notMem hω, norm_zero]
+    positivity
+
+/-- The weighted truncated mean tends to zero when the weight divided by the
+cutoff to the power `k` tends to zero and the centered variable has moment `k + 1`. -/
+theorem _root_.MeasureTheory.MemLp.tendsto_mul_norm_integral_indicator_norm_le_nhds_zero
+    {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P) (hmean : ∫ ω, X ω ∂P = 0)
+    {ι : Type*} {l : Filter ι} {R w : ι → ℝ} (hR : ∀ i, 0 < R i) (hw : ∀ i, 0 ≤ w i)
+    (hlim : Tendsto (fun i ↦ w i / R i ^ k) l (𝓝 0)) :
+    Tendsto (fun i ↦ w i * ‖∫ ω, {ω' | ‖X ω'‖ ≤ R i}.indicator X ω ∂P‖) l (𝓝 0) := by
+  let C := ∫ ω, ‖X ω‖ ^ (k + 1) ∂P
+  refine squeeze_zero (fun i ↦ mul_nonneg (hw i) (norm_nonneg _)) (fun i ↦ ?_)
+    (by simpa only [mul_zero] using hlim.const_mul C)
+  calc
+    _ ≤ w i * (C / R i ^ k) :=
+      mul_le_mul_of_nonneg_left
+        (hX.norm_integral_indicator_norm_le_of_integral_eq_zero hmean (hR i)) (hw i)
+    _ = C * (w i / R i ^ k) := by rw [mul_div_left_comm, ← mul_div_assoc]
+
+end TruncationMean
+
 section Hilbert
 
 variable [InnerProductSpace ℝ E] [CompleteSpace E] {X : Ω → E} {P : Measure Ω}
@@ -142,6 +188,39 @@ theorem _root_.MeasureTheory.MemLp.integral_norm_sub_centeredTruncation_sq_le (h
       apply integral_congr_ae
       exact .of_forall fun ω ↦ by
         by_cases h : ‖X ω‖ ≤ R <;> simp [Y, T, indicator, h, not_lt.mpr, not_le.mp]
+
+/-- Centering after norm truncation does not increase the second absolute moment. -/
+theorem _root_.MeasureTheory.MemLp.integral_norm_centeredTruncation_sq_le
+    (hX : MemLp X 2 P) (R : ℝ≥0) :
+    ∫ ω, ‖centeredTruncation X P R ω‖ ^ 2 ∂P ≤ ∫ ω, ‖X ω‖ ^ 2 ∂P := by
+  let S := {ω | ‖X ω‖ ≤ R}
+  let T := S.indicator X
+  have hT : MemLp T 2 P := hX.indicator
+    (nullMeasurableSet_le hX.aestronglyMeasurable.norm.aemeasurable aemeasurable_const)
+  have hnorm (ω : Ω) : ‖T ω‖ ≤ ‖X ω‖ := norm_indicator_le_norm_self X ω
+  rw [centeredTruncation_def, hT.integral_norm_sub_integral_sq]
+  refine (sub_le_self _ (sq_nonneg _)).trans ?_
+  exact integral_mono (hT.integrable_norm_pow (by decide)) (hX.integrable_norm_pow (by decide))
+    fun ω ↦ pow_le_pow_left₀ (norm_nonneg _) (hnorm ω) _
+
+/-- Higher absolute moments of the centered truncation are bounded by the original second
+moment times the corresponding power of the uniform bound `2*R`. -/
+theorem _root_.MeasureTheory.MemLp.integral_norm_centeredTruncation_pow_le
+    (hX : MemLp X 2 P) (R : ℝ≥0) (k : ℕ) :
+    ∫ ω, ‖centeredTruncation X P R ω‖ ^ (k + 2) ∂P ≤
+      (2 * (R : ℝ)) ^ k * ∫ ω, ‖X ω‖ ^ 2 ∂P := by
+  have hR (p : ℕ) : MemLp (centeredTruncation X P R) p P :=
+    hX.aestronglyMeasurable.memLp_centeredTruncation R
+  calc
+    _ ≤ ∫ ω, (2 * (R : ℝ)) ^ k * ‖centeredTruncation X P R ω‖ ^ 2 ∂P := by
+      refine integral_mono (hR _).integrable_norm_pow'
+        ((hR 2).integrable_norm_pow'.const_mul _) fun ω ↦ ?_
+      rw [pow_add]
+      exact mul_le_mul_of_nonneg_right
+        (pow_le_pow_left₀ (norm_nonneg _) (norm_centeredTruncation_le R ω) _) (sq_nonneg _)
+    _ ≤ _ := by
+      rw [integral_const_mul]
+      exact mul_le_mul_of_nonneg_left (hX.integral_norm_centeredTruncation_sq_le R) (by positivity)
 
 /-- Centered truncations approximate a centered square-integrable variable in mean square. -/
 theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_sub_centeredTruncation_sq

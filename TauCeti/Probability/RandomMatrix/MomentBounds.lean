@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.TraceWord.Counting
 public import TauCeti.Data.Fintype.SmallRange
 public import TauCeti.MeasureTheory.Integral.MeanInequalities
+public import TauCeti.Probability.Moments.CenteredTruncation
 public import TauCeti.Probability.RandomMatrix.TraceWord
 
 /-!
@@ -32,12 +33,12 @@ and do not require identical distributions or any second-moment normalization.
 public section
 
 open MeasureTheory ProbabilityTheory Matrix Finset Filter
-open scoped Topology
+open scoped Topology NNReal
 
 namespace TauCeti
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
-  {η : ℕ → Ω → ℝ}
+  {η : ℕ → Ω → ℝ} {X : Ω → ℂ}
 
 /-- A bound on the `k`th absolute moments of the entries in the `n × n` corner passes to Wigner
 entries with normalization factor `(√n)⁻ᵏ`. -/
@@ -57,6 +58,45 @@ theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
   · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hc,
       integral_const_mul]
     exact mul_le_mul_of_nonneg_left (hξ _ i.isLt) (by positivity)
+
+open TauCeti.Probability in
+/-- For a centered truncated Wigner corner, the absolute entry moment of order
+`k+2` is bounded by the common second-moment bound divided by the dimension, times
+`(2 * R / √n)^k`. Here `2 * R / √n` bounds the entries after centering. -/
+theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
+    [IsProbabilityMeasure P] {n : ℕ} {M : ℝ} (hM : 0 ≤ M)
+    (hLp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) 2 P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ M)
+    (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
+    ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
+      (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
+      (2 * (R : ℝ) / Real.sqrt n) ^ k * (M / n) := by
+  have hupper (ij : StrictUpper) (hij : ij.val.2 < n) :
+      ∫ ω, ‖centeredTruncation (ξ ij) P R ω‖ ^ (k + 2) ∂P ≤ (2 * (R : ℝ)) ^ k * M := by
+    exact ((hLp ij hij).integral_norm_centeredTruncation_pow_le R k).trans
+      (mul_le_mul_of_nonneg_left (hξ ij hij) (by positivity))
+  have hdiag (i : ℕ) (_ : i < n) :
+      ∫ _ : Ω, ‖(0 : ℝ)‖ ^ (k + 2) ∂P ≤ (2 * (R : ℝ)) ^ k * M := by
+    simpa only [norm_zero, zero_pow (Nat.succ_ne_zero (k + 1)), integral_zero] using
+      mul_nonneg (by positivity) hM
+  refine (integral_norm_wignerMatrix_apply_pow_le hupper hdiag i j).trans_eq ?_
+  rw [pow_add, inv_pow, inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), div_pow]
+  ring
+
+open TauCeti.Probability in
+/-- With a common upper-entry law, the original second moment of that law bounds
+the absolute entry moments of the centered truncated Wigner corner. -/
+theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le_of_identDistrib
+    [IsProbabilityMeasure P] {n : ℕ}
+    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
+    (hX : MemLp X 2 P) (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
+    ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
+      (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
+      (2 * (R : ℝ) / Real.sqrt n) ^ k * ((∫ ω, ‖X ω‖ ^ 2 ∂P) / n) :=
+  integral_norm_wignerMatrix_centeredTruncation_apply_pow_le (integral_nonneg fun _ ↦ sq_nonneg _)
+    (fun ij hij ↦ (hid ij hij).symm.memLp_snd hX)
+    (fun ij hij ↦ ((hid ij hij).comp
+      (by fun_prop : Measurable (fun z : ℂ ↦ ‖z‖ ^ 2))).integral_eq.le) R i j k
 
 /-- Uniform `k`th absolute moments on the `n × n` corner bound every expected product of `k`
 entries of the `n × n` Wigner matrix, indexed by a finite nonempty type `ι` of cardinality `k`.

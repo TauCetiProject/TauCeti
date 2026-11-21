@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -110,6 +110,18 @@ theorem norm_hermitianOffDiagonal_apply_le [SeminormedAddCommGroup 𝕜] [StarAd
     ‖hermitianOffDiagonal c n i j‖ ≤ ‖c‖ := by
   simp only [hermitianOffDiagonal_apply]
   split_ifs <;> simp
+
+open scoped Matrix.Norms.L2Operator in
+/-- The Euclidean operator norm of a constant Hermitian off-diagonal completion is
+at most the dimension times the absolute value of the coefficient. -/
+theorem l2_opNorm_hermitianOffDiagonal_le [RCLike 𝕜] (c : 𝕜) (n : ℕ) :
+    ‖hermitianOffDiagonal c n‖ ≤ n * ‖c‖ := by
+  apply (isHermitian_hermitianOffDiagonal c n).l2_opNorm_le_of_row_sum_le (by positivity)
+  intro i
+  calc
+    _ ≤ ∑ _j : Fin n, ‖c‖ :=
+      Finset.sum_le_sum fun j _ ↦ norm_hermitianOffDiagonal_apply_le c n i j
+    _ = _ := by rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
 variable [RCLike 𝕜]
 

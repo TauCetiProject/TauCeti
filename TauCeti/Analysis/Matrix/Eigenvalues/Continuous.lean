@@ -33,6 +33,9 @@ public section
 
 noncomputable section
 
+open Filter
+open scoped Topology
+
 namespace Matrix
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
@@ -74,6 +77,21 @@ theorem continuousAt_eigenvalues₀ {X : Type*} [TopologicalSpace X] {M : X → 
   ((continuous_apply i).comp continuous_eigenvalues₀).continuousAt.comp
     (f := fun x ↦ (⟨M x, hM x⟩ : {A : Matrix n n 𝕜 // A.IsHermitian}))
     (tendsto_subtype_rng.2 (continuousAt_pi.2 fun a ↦ continuousAt_pi.2 fun b ↦ h a b))
+
+/-- If the selected ordered eigenvalues of `B` converge and `‖A - B‖` tends to zero in
+operator norm, the corresponding eigenvalues of `A` converge to the same limit.
+The index type may vary. -/
+theorem tendsto_eigenvalues₀_of_tendsto_norm_sub_zero
+    {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)]
+    {A B : (i : ι) → Matrix (m i) (m i) 𝕜} (hA : ∀ i, (A i).IsHermitian)
+    (hB : ∀ i, (B i).IsHermitian) (j : (i : ι) → Fin (Fintype.card (m i)))
+    {l : Filter ι} {c : ℝ} (hd : Tendsto (fun i ↦ ‖A i - B i‖) l (𝓝 0))
+    (h : Tendsto (fun i ↦ (hB i).eigenvalues₀ (j i)) l (𝓝 c)) :
+    Tendsto (fun i ↦ (hA i).eigenvalues₀ (j i)) l (𝓝 c) := by
+  apply h.congr_dist
+  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun i ↦ ?_) hd
+  rw [dist_comm, Real.dist_eq]
+  exact (hA i).abs_eigenvalues₀_sub_le_norm (hB i) (j i)
 
 variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 

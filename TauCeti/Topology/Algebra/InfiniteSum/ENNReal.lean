@@ -36,6 +36,7 @@ product type of the products of terms (`ENNReal.prod_tsum`).
 
 public section
 
+open Filter
 open scoped ENNReal
 
 /-- Applying `ENNReal.toReal` termwise preserves a series with finite sum. -/
@@ -44,6 +45,18 @@ theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
   have hfin : ∑' i, f i ≠ ∞ := by rwa [h.tsum_eq]
   simpa only [← ENNReal.tsum_toReal_eq (_root_.ne_top_of_tsum_ne_top hfin), h.tsum_eq]
     using ENNReal.hasSum_toReal hfin
+
+/-- A series of finite extended nonnegative reals has finite sum if it is eventually
+bounded by a series with finite sum. -/
+theorem ENNReal.tsum_lt_top_of_eventually_le {f b : ℕ → ℝ≥0∞}
+    (hf : ∀ n, f n ≠ ∞) (hb : (∑' n, b n) < ∞)
+    (h : ∀ᶠ n in atTop, f n ≤ b n) : (∑' n, f n) < ∞ := by
+  obtain ⟨N, hN⟩ := eventually_atTop.1 h
+  rw [← sum_add_tsum_compl (Finset.range N) f]
+  refine ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun n _ ↦ (hf n).lt_top, ?_⟩
+  refine (tsum_le_tsum (g := fun n : {n // n ∉ Finset.range N} ↦ b n) fun n ↦
+    hN n (by simpa only [Finset.mem_range, not_lt] using n.property)).trans_lt ?_
+  exact (tsum_comp_le_tsum_of_injective Subtype.val_injective b).trans_lt hb
 
 /-- Summing the indicator of a set with value one counts its elements. -/
 theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
