@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Decomposition
 import Mathlib.Tactic.Module
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 
 /-!
 # The Böhm–Wilking deformation of algebraic curvature tensors
@@ -269,28 +270,23 @@ theorem IsAlgebraicCurvature.boehmWilkingDeformation {r : FourTensor V}
 def algebraicCurvatureBoehmWilkingEquiv {a b : ℝ}
     (ha : 1 + 2 * ((Module.finrank ℝ V : ℝ) - 1) * a ≠ 0)
     (hb : 1 + ((Module.finrank ℝ V : ℝ) - 2) * b ≠ 0) :
-    algebraicCurvatureSubmodule V ≃L[ℝ] algebraicCurvatureSubmodule V where
-  toFun r := ⟨boehmWilkingDeformation a b r,
-    mem_algebraicCurvatureSubmodule.mpr <|
-      (mem_algebraicCurvatureSubmodule.mp r.property).boehmWilkingDeformation a b⟩
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
-  invFun r := ⟨boehmWilkingDeformationEquiv ha hb |>.symm r,
-    mem_algebraicCurvatureSubmodule.mpr <|
-      (mem_algebraicCurvatureSubmodule.mp r.property).boehmWilkingDeformation _ _⟩
-  left_inv r := Subtype.ext ((boehmWilkingDeformationEquiv ha hb).symm_apply_apply r)
-  right_inv r := Subtype.ext ((boehmWilkingDeformationEquiv ha hb).apply_symm_apply r)
-  continuous_toFun := Continuous.subtype_mk ((boehmWilkingDeformationEquiv ha hb).continuous.comp
-    continuous_subtypeVal) _
-  continuous_invFun := Continuous.subtype_mk
-    ((boehmWilkingDeformationEquiv ha hb).symm.continuous.comp continuous_subtypeVal) _
+    algebraicCurvatureSubmodule V ≃L[ℝ] algebraicCurvatureSubmodule V :=
+  ContinuousLinearEquiv.ofSubmodules (boehmWilkingDeformationEquiv ha hb) _ _ <| le_antisymm
+    (Submodule.map_le_iff_le_comap.mpr fun r hr ↦ mem_algebraicCurvatureSubmodule.mpr <|
+      (mem_algebraicCurvatureSubmodule.mp hr).boehmWilkingDeformation a b)
+    fun r hr ↦ ⟨(boehmWilkingDeformationEquiv ha hb).symm r, by
+      rw [SetLike.mem_coe, boehmWilkingDeformationEquiv_symm_apply]
+      exact mem_algebraicCurvatureSubmodule.mpr <|
+        (mem_algebraicCurvatureSubmodule.mp hr).boehmWilkingDeformation _ _,
+      (boehmWilkingDeformationEquiv ha hb).apply_symm_apply r⟩
 
 /-- `algebraicCurvatureBoehmWilkingEquiv` applies `ℓ_(a,b)`. -/
 @[simp] theorem coe_algebraicCurvatureBoehmWilkingEquiv_apply {a b : ℝ}
     (ha : 1 + 2 * ((Module.finrank ℝ V : ℝ) - 1) * a ≠ 0)
     (hb : 1 + ((Module.finrank ℝ V : ℝ) - 2) * b ≠ 0) (r : algebraicCurvatureSubmodule V) :
     (algebraicCurvatureBoehmWilkingEquiv ha hb r : FourTensor V) =
-      boehmWilkingDeformation a b r := (rfl)
+      boehmWilkingDeformation a b r := by
+  simp [algebraicCurvatureBoehmWilkingEquiv]
 
 /-- The inverse of `algebraicCurvatureBoehmWilkingEquiv` applies
 `ℓ_(-a / (1 + 2 (n - 1) a), -b / (1 + (n - 2) b))`. -/
@@ -299,7 +295,8 @@ def algebraicCurvatureBoehmWilkingEquiv {a b : ℝ}
     (hb : 1 + ((Module.finrank ℝ V : ℝ) - 2) * b ≠ 0) (r : algebraicCurvatureSubmodule V) :
     ((algebraicCurvatureBoehmWilkingEquiv ha hb).symm r : FourTensor V) =
       boehmWilkingDeformation (-a / (1 + 2 * ((Module.finrank ℝ V : ℝ) - 1) * a))
-        (-b / (1 + ((Module.finrank ℝ V : ℝ) - 2) * b)) r := (rfl)
+        (-b / (1 + ((Module.finrank ℝ V : ℝ) - 2) * b)) r := by
+  simp [algebraicCurvatureBoehmWilkingEquiv]
 
 end TauCeti.FourTensor
 
