@@ -389,9 +389,8 @@ theorem rpow_approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K))
 7.5.30, toward Lemma 7.5.31). Let `μ` be the successive minima over `K` of an approximation domain
 of level `0 < Q ≠ 1` with forms independent at the infinite places and at `S₀`. For `0 < p`,
 `k + p = card ι` and `0 < C`, `Q ^ approxWeight` of the wedge exponents is at most
-`A ^ e · C ^ (M · [K : ℚ]) · (μ (k - 1) / μ k) ^ [K : ℚ]`, where
-`A = 2 ^ ([K : ℚ] · card ι) · ∏ v ∈ S₀, N 𝔭_v ^ card ι / approxConst S₀ L` is the constant of
-Minkowski's second theorem for the domain, `e = (card ι - 1).choose (p - 1)` and
+`A ^ e · C ^ (M · [K : ℚ]) · (μ (k - 1) / μ k) ^ [K : ℚ]`, where `A = approxUpperConst S₀ L` is
+the constant of Minkowski's second theorem for the domain, `e = (card ι - 1).choose (p - 1)` and
 `M = (card ι).choose p`. -/
 theorem rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
@@ -401,24 +400,14 @@ theorem rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
     (hC : 0 < C) (hQ₀ : 0 < Q) (hQ₁ : Q ≠ 1) :
     Q ^ approxWeight S₀ (wedgeExponent c p k σ
         ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
-      ((2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) *
-          (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) /
-            approxConst S₀ L) ^ (Fintype.card ι - 1).choose (p - 1) *
+      approxUpperConst S₀ L ^ (Fintype.card ι - 1).choose (p - 1) *
         C ^ ((Fintype.card ι).choose p * finrank ℚ K) *
           ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
             (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ₀.ne'
-  have hB : 0 ∈ interior (approxBody L c Q) :=
-    mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ₀)
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLinf c Q,
-      ⟨0, interior_subset hB⟩⟩
   have hμ (l : ℕ) (hl : l < Fintype.card ι) : 0 < μ l :=
-    Submodule.successiveMinimum_pos (B := B) hB hl
-  set A := (2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) *
-    (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L
+    successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
+  set A := approxUpperConst S₀ L
   set e := (Fintype.card ι - 1).choose (p - 1)
   set d := finrank ℚ K
   -- Minkowski's second theorem: `Q ^ weight · ∏ l, μ l ^ d ≤ A`.

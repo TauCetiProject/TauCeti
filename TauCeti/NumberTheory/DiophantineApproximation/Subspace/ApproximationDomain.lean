@@ -143,6 +143,16 @@ theorem mem_approxModule [NumberField K] {S₀ : Finset (FinitePlace K)}
       ∀ v : FinitePlace K, v ∉ S₀ → ∀ j : ι, v (x j) ≤ 1 :=
   Iff.rfl
 
+/-- **An approximation domain lies in its finite part**, at every real level `Q`: the bounds
+`Q ^ c v i` at the places of `S₀` are at most `|Q| ^ c v i`. -/
+theorem approxDomain_subset_approxModule [NumberField K] {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ} {Q : ℝ} :
+    approxDomain S₀ L c Q ⊆ approxModule S₀ L c Q := by
+  intro x hx
+  obtain ⟨-, hfin, hout⟩ := mem_approxDomain.1 hx
+  exact mem_approxModule.2 ⟨fun v hv i ↦ (hfin v hv i).trans
+    ((le_abs_self _).trans (Real.abs_rpow_le_abs_rpow _ _)), hout⟩
+
 variable [Fintype ι]
 
 /-- **The infinite part of an approximation domain**: the body in `ι → mixedSpace K` cut out at
@@ -439,10 +449,8 @@ theorem finite_approxDomain {S₀ : Finset (FinitePlace K)}
     Function.Injective.piMap fun _ ↦ mixedEmbedding_injective K
   refine (hfinite.preimage hinj.injOn).subset ?_
   intro x hx
-  obtain ⟨hinf, hfin, hout⟩ := mem_approxDomain.mp hx
-  refine ⟨(mixedEmbedding_mem_approxBody_iff).2 hinf,
-    Submodule.mem_mixedImage.mpr ⟨x, mem_approxModule.2 ⟨fun v hv i ↦ ?_, hout⟩, rfl⟩⟩
-  exact (hfin v hv i).trans ((le_abs_self _).trans (Real.abs_rpow_le_abs_rpow _ _))
+  exact ⟨(mixedEmbedding_mem_approxBody_iff).2 (mem_approxDomain.mp hx).1,
+    Submodule.mem_mixedImage.mpr ⟨x, approxDomain_subset_approxModule hx, rfl⟩⟩
 
 omit [Finite ι] in
 /-- A domain at a level between two positive bounds is contained in one fixed domain with

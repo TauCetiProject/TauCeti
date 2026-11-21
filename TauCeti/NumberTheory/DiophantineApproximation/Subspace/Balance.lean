@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Rank
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SmallInteger
 
+import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima
+
 /-!
 # Successive minima concentrated at one infinite place
 
@@ -108,26 +110,17 @@ theorem exists_balance {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ 
         ∀ i : ι, w₀ (L w₀.val i (y l)) ≤ unitConst K ^ ((finrank ℚ K : ℝ)⁻¹) *
           (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^
             ((finrank ℚ K : ℝ) / mult w₀) * Q ^ c w₀.val i := by
-  let _ := discreteTopology_mixedImage_approxModule hLFin c Q
-  let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
   set Λ := approxModule S₀ L c Q
   set μ := Λ.successiveMinimum (approxBody L c Q)
-  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLInf c hQ
   -- A family realizing the successive minima, each of which is positive.
-  obtain ⟨x, hx, hxB⟩ := Λ.exists_linearIndependent_mem_smul_successiveMinimum hB
-  have hμ (l : Fin (Fintype.card ι)) : 0 < μ l := by
-    have h := Λ.successiveMinimum_pos hB l.isLt
-    rwa [hcoe] at h
-  rw [hcoe] at hxB
+  obtain ⟨x, hx, hxB⟩ :=
+    exists_linearIndependent_mem_smul_successiveMinimum_approx hLInf hLFin c hQ
+  have hμ (l : Fin (Fintype.card ι)) : 0 < μ l :=
+    successiveMinimum_approx_pos hLInf hLFin c hQ l.isLt
   -- Membership in `μ l • approxBody L c Q`, read at the infinite places.
   have hxL (l : Fin (Fintype.card ι)) (v : InfinitePlace K) (i : ι) :
-      v (L v.val i (x l)) ≤ μ l * Q ^ c v.val i := by
-    have h := (hxB l).2
-    rw [Set.mem_smul_set_iff_inv_smul_mem₀ (hμ l).ne'] at h
-    have h' := (mem_approxBody.1 h) v i
-    simp only [Pi.smul_apply, mul_smul_comm, ← Finset.smul_sum, normAtPlace_smul,
-      sum_mixedEmbedding_mul_mixedEmbedding, normAtPlace_apply, abs_inv, abs_of_pos (hμ l)] at h'
-    exact (inv_mul_le_iff₀ (hμ l)).1 h'
+      v (L v.val i (x l)) ≤ μ l * Q ^ c v.val i :=
+    (mixedEmbedding_mem_smul_approxBody_iff (hμ l)).1 (hxB l).2 v i
   choose a ha hne h₀ using fun l ↦
     exists_ne_zero_forall_apply_smul_le w₀ (L := fun v ↦ L v.val) (b := fun v i ↦ Q ^ c v.val i)
       (hμ l) (hxL l)
