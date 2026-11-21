@@ -67,7 +67,7 @@ private theorem hasSum_rpow_mul_exp_neg_mul {p c y : ℝ} (hc : 0 < c) (hy : 0 <
   have hr1 : exp (-(c * y)) < 1 := exp_lt_one_iff.mpr (neg_lt_zero.mpr hcy)
   convert (hasSum_geometric_of_lt_one (exp_pos _).le hr1).mul_left
     (y ^ (p - 1) * exp (-(c * y))) using 1
-  · ext n; rw [← exp_nat_mul, mul_assoc (y ^ (p - 1)), ← exp_add]; ring_nf
+  · ext n; rw [← exp_natCast_mul, mul_assoc (y ^ (p - 1)), ← exp_add]; ring_nf
   · have : exp (c * y) - 1 ≠ 0 := sub_ne_zero.mpr (one_lt_exp_iff.mpr hcy).ne'
     have h1 : 1 - exp (-(c * y)) ≠ 0 := sub_ne_zero.mpr hr1.ne'
     symm

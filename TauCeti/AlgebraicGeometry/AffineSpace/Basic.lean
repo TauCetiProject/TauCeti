@@ -98,7 +98,7 @@ lemma homOfAlgebra_inj {x y : n → A} :
 @[simp]
 lemma homOfAlgebra_X :
     homOfAlgebra R (MvPolynomial.X : n → MvPolynomial n R) = (SpecIso n (.of R)).inv := by
-  simp [homOfAlgebra_def]
+  simp [homOfAlgebra_def, MvPolynomial.aeval_X_left]
 
 /-- `homOfAlgebra R x` agrees with `homOfVector` applied to the global sections corresponding to
 `x`. -/

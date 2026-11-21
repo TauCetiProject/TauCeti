@@ -16,7 +16,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import TauCeti.Analysis.Complex.VerticalStrip
+import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.BoseEinstein
 
 /-!

@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Submodule
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
@@ -46,6 +47,9 @@ interior source points with the same ambient image, intertwining the two integra
   dimension equals the rank of the distribution at any image point.
 * `TauCeti.isIntegralManifold_id`: the identity is an integral manifold of the full tangent
   distribution.
+* `TauCeti.IsIntegralManifold.comp_isLocalDiffeomorph` and
+  `TauCeti.IsIntegralManifold.comp_subtypeVal`: precomposition with a local diffeomorphism and
+  restriction to a nonempty open subset preserve `IsIntegralManifold` for `n ≠ 0`.
 * `TauCeti.IsIntegralManifold.eventually_sub_mem`: an integral immersion, of regularity at least
   one, of a finite-dimensional constant distribution locally stays in one affine plaque, including
   at boundary source points.
@@ -143,6 +147,23 @@ theorem isIntegralManifold_id [IsManifold I n M] [Nonempty M] :
   refine ⟨inferInstance, Manifold.IsImmersion.id, fun x ↦ ?_⟩
   rw [mfderiv_id]
   exact LinearMap.range_id
+
+/-- Precomposing an integral manifold of regularity `n ≠ 0` with a `C^n` local diffeomorphism of a
+nonempty `C^n` manifold with the same source model gives an integral manifold. -/
+theorem IsIntegralManifold.comp_isLocalDiffeomorph
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace H' N'] [IsManifold J n N'] [Nonempty N']
+    {g : N' → N} (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) (hg : IsLocalDiffeomorph J J n g) :
+    IsIntegralManifold J n D (f ∘ g) :=
+  ⟨inferInstance, isImmersion_comp_isLocalDiffeomorph hg hf.isImmersion,
+    fun y ↦ ((hg y).range_mfderiv_comp hn).trans (hf.range_mfderiv (g y))⟩
+
+/-- Restricting an integral manifold of regularity `n ≠ 0` of a `C^n` manifold to a nonempty open
+subset gives an integral manifold. -/
+theorem IsIntegralManifold.comp_subtypeVal [IsManifold J n N]
+    {U : TopologicalSpace.Opens N} [Nonempty U]
+    (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) :
+    IsIntegralManifold J n D (f ∘ (Subtype.val : U → N)) :=
+  hf.comp_isLocalDiffeomorph hn isLocalDiffeomorph_subtype_val
 
 end Unbundled
 

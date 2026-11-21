@@ -29,7 +29,7 @@ example (H H' : Colored3Graph Bool Empty) : H.editDiscrepancy3 H' = 0 := by
 example (H H' : Colored3Graph Bool (Fin 2)) : H.editDiscrepancy3 H' = 0 := by
   have : IsEmpty (Set.powersetCard (Fin 2) 3) := by
     rw [← not_nonempty_iff, Set.powersetCard.nonempty_iff]
-    simp
+    norm_num
   simp [editDiscrepancy3_def, Set.eq_empty_of_isEmpty]
 
 -- Recoloring the single triple of a three-vertex host has discrepancy `6 / 27`.
