@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LowPass
 public import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.PlaneWave
@@ -17,8 +17,8 @@ The constant function `1` belongs to `B^s_{∞,q}` for every `s : ℝ` and `1 �
 underlying tempered distribution `(volume : Measure E).toTemperedDistribution`, zeroth
 Littlewood–Paley block `1 ∈ L^∞`, vanishing higher blocks, and Besov norm `1`
 (`NormOneClass (TauCeti.BesovSpace ℂ φ s ∞ q)`). This module collects the `One` and
-`NormOneClass` instances along with their compatibility lemmas for `inclusion`, `inclusionOfLT`,
-`bumpEquiv`, `ofLpCLM`, and `toLpCLM`.
+`NormOneClass` instances along with their compatibility lemmas for `lowPass`, `inclusion`,
+`inclusionOfLT`, `bumpEquiv`, `ofLpCLM`, and `toLpCLM`.
 -/
 
 public section
@@ -59,6 +59,16 @@ theorem block_one (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block j = if j = 0
 
 @[simp] theorem block_one_succ (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block (j + 1) = 0 := by
   simp [block_one]
+
+/-- For every `m ≥ 1`, the low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` equals `1 ∈ L^∞`. -/
+@[simp] theorem lowPass_one_succ (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass (m + 1) = 1 := by
+  induction m with
+  | zero => rw [lowPass_succ, lowPass_zero_right, block_one_zero, zero_add]
+  | succ m ih => rw [lowPass_succ, ih, block_one_succ, add_zero]
+
+/-- The low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` is `0` at `m = 0` and `1` for `m ≥ 1`. -/
+theorem lowPass_one (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass m = if m = 0 then 0 else 1 := by
+  rcases m with _ | m <;> simp
 
 /-- The Besov norm of `1 ∈ B^s_{∞,q}` is `1`. -/
 instance [Fact (1 ≤ q)] : NormOneClass (BesovSpace ℂ φ s ∞ q) where

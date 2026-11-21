@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.One
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Ball
@@ -27,10 +28,12 @@ for `0 < α + β` yields Bahouri–Chemin–Danchin, Theorem 2.85:
 * `TauCeti.BesovSpace.resonantCLM`: `B^α_{p₁,q₁} × B^β_{p₂,q₂} →L[ℂ] B^{α + β}_{r,q}` for
   `0 < α + β`, `1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`, with uniform norm bound, truncated-sum
   convergence (`tendsto_sum_block_smul_sum_resonantCLM`), and scalar symmetry
-  (`toDistr_resonantCLM_comm`).
+  (`toDistr_resonantCLM_comm`), together with the weighted-block term bound
+  `TauCeti.BesovSpace.rpow_mul_norm_block_smul_sum_block_le` and unconstrained-fine-index
+  existential estimate `TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`.
 * Single-block (`toDistr_resonantCLM_of_block_eq_zero`) and constant-`1`
   (`toDistr_resonantCLM_one_left`, `toDistr_resonantCLM_one_right`) identities; companion
-  paraproduct checks live in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate`,
+  paraproduct estimates live in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate`,
   and the Bony products (`smulL` and `bonyProductPosCLM`) live in
   `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Product`.
 
@@ -155,6 +158,26 @@ private theorem two_rpow_mul_norm_block_smul_sum_le (N j : ℕ) {t : Finset ℕ}
         mul_le_mul_of_nonneg_left hsum (norm_nonneg _)
     _ = _ := by ring
 
+/-- **The terms of the resonant part.** For `u ∈ B^α_{p₁,q₁}`, `v ∈ B^β_{p₂,q}` and a set `t` of
+block indices with `|k - j| ≤ N` for `k ∈ t`, with `L = N + 1`,
+`2^{j(α+β)} ‖Δⱼ u · ∑_{k ∈ t} Δₖ v‖_r ≤ ‖u‖ 2^{|β| L} ∑_{j - L ≤ k < j + L} 2^{kβ} ‖Δₖ v‖`.
+For `t = [j - N, j + N]` this bounds the `j`-th term of `R(u, v)` with gap `N`. -/
+theorem rpow_mul_norm_block_smul_sum_block_le {α β : ℝ} {p₁ p₂ r q q₁ : ℝ≥0∞}
+    [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r]
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q) {N j : ℕ} {t : Finset ℕ}
+    (ht : t ⊆ Finset.Icc (j - N) (j + N)) :
+    2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖ ≤
+      ‖u‖ * (2 ^ (|β| * (N + 1 : ℕ)) *
+        ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖) := by
+  have h := two_rpow_mul_norm_block_smul_sum_le (r := r) N j ht u v
+  simp only [norm_weightedBlocks_apply] at h
+  have hu : 2 ^ (α * j) * ‖u.block j‖ ≤ ‖u‖ := u.rpow_mul_norm_block_le j
+  calc 2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖
+      ≤ 2 ^ (|β| * (N + 1 : ℕ)) * ‖u‖ *
+          ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖ :=
+        h.trans (by gcongr)
+    _ = _ := by ring
+
 end Term
 
 variable {φ : ContDiffBump (0 : E)} {α β : ℝ} {p₁ p₂ r q₁ q₂ q : ℝ≥0∞}
@@ -195,6 +218,25 @@ private theorem exists_resonant (N : ℕ) (α β : ℝ) (hαβ : 0 < α + β) :
         exact (lp.norm_mulL_apply_apply_le ℝ ℝ q a b).trans
           (mul_le_mul_of_nonneg_left hb (norm_nonneg a))
     _ = C₀ * K * (2 * (N + 1 : ℕ)) * ‖u‖ * ‖v‖ := by rw [ha, hb₀]; ring
+
+variable (φ) in
+/-- **The resonant estimate** (Bahouri–Chemin–Danchin, Theorem 2.85). Let `0 < α + β` and let `N`
+be a gap. There is `C ≥ 0`, depending only on `φ`, `N`, `α` and `β`, with the following property
+for all exponents `1 ≤ p₁, p₂, r, q, q₁ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and
+`v ∈ B^β_{p₂,q}`, then the resonant part `R(u, v) = ∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` converges in
+the tempered distributions to an element of `B^{α+β}_{r,q}` of norm at most `C ‖u‖ ‖v‖`. -/
+theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 < α + β) (N : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₁ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [Fact (1 ≤ q)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q₁)
+      (v : BesovSpace F φ β p₂ q), ∃ w : BesovSpace F φ (α + β) r q,
+        HasSum (fun j ↦ ((u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k :
+          Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC, hres⟩ := exists_resonant (F := F) (φ := φ) N α β hαβ
+  refine ⟨C, hC, fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
+  set u' : BesovSpace ℂ φ α p₁ ∞ := inclusion ℂ φ p₁ le_rfl le_top u
+  obtain ⟨w, hw, hwn⟩ := hres (r := r) (q := q) u' v
+  refine ⟨w, by simpa only [u', block_inclusion, resonantTerm_eq_smul_sum] using hw,
+    hwn.trans (by gcongr; exact norm_inclusion_le _ _ u)⟩
 
 variable (r q) in
 /-- **Bony's resonant remainder** (Bahouri–Chemin–Danchin, Theorem 2.85). For any gap `N : ℕ`,

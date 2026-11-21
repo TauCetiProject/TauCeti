@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.One
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Reindex
@@ -40,7 +39,6 @@ itself is bounded uniformly in `m` when `u` is an `Lᵖ` function (in particular
   `TauCeti.BesovSpace.exists_lp_lowPass_le_of_neg`, and
   `TauCeti.BesovSpace.exists_lp_lowPass_sub_le_of_neg`: the size and convergence of the
   low-frequency cut-offs.
-* `TauCeti.BesovSpace.lowPass_one_succ`, `TauCeti.BesovSpace.lowPass_one`: the cut-offs of `1`.
 
 ## References
 
@@ -175,16 +173,6 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
 theorem norm_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) (m : ℕ) :
     ‖u.lowPass m‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ :=
   (norm_sum_le _ _).trans (sum_norm_block_le_of_neg hs u m)
-
-/-- For every `m ≥ 1`, the low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` equals `1 ∈ L^∞`. -/
-@[simp] theorem lowPass_one_succ (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass (m + 1) = 1 := by
-  induction m with
-  | zero => rw [lowPass_succ, lowPass_zero_right, block_one_zero, zero_add]
-  | succ m ih => rw [lowPass_succ, ih, block_one_succ, add_zero]
-
-/-- The low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` is `0` at `m = 0` and `1` for `m ≥ 1`. -/
-theorem lowPass_one (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass m = if m = 0 then 0 else 1 := by
-  rcases m with _ | m <;> simp
 
 /-- For `s > 0`, the low-frequency cut-offs `S_m u` converge in `Lᵖ` to `toLpCLM F φ p q hs u`. -/
 theorem tendsto_lowPass [Fact (1 ≤ q)] (hs : 0 < s) (u : BesovSpace F φ s p q) :
