@@ -48,10 +48,9 @@ essentially surjective (`not_essSurj_finiteSectionsTower_mvPolynomial`).
 
 When `R` is moreover `I`-adically complete and Noetherian, finite `I`-adic systems are the
 reductions of finite `R`-modules (`TauCeti.ModuleTower.finiteReductionEquiv`), giving the
-equivalence `CoherentFormalModule.spfEquiv` for `spf I`, and
-`CoherentFormalModule.spfEquivFGModuleCat` for a Noetherian adic ring `A` (`Spf A`) (Stacks,
-Lemma 30.23.1). Applied to the completion `Â` of a Noetherian ring along an ideal, this describes
-the coherent formal modules on `Spf Â`.
+equivalence `CoherentFormalModule.spfEquivFGModuleCat` for a Noetherian adic ring `A` (`Spf A`)
+(Stacks, Lemma 30.23.1). Applied to the completion `Â` of a Noetherian ring along an ideal, this
+describes the coherent formal modules on `Spf Â`.
 
 ## Main definitions
 
@@ -61,9 +60,6 @@ the coherent formal modules on `Spf Â`.
   same functor, valued in `I`-adic systems with finite first term.
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.sectionsLim`,
   `finiteSectionsLim`: the inverse limit `lim Γ(M n)` of levelwise global sections.
-* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.spfEquiv`: equivalence
-  between finite modules over a Noetherian `I`-adically complete ring and coherent formal modules on
-  `spf I`.
 * `CoherentFormalModule.spfEquivFGModuleCat`: for an adic ring `A` with noetherian
   underlying ring, the equivalence between coherent formal modules on `Spf A` and finite
   `A`-modules, with `spfEquivFGModuleCatFunctorCompFiniteReductionIso` identifying the
@@ -531,20 +527,6 @@ theorem finiteSectionsLim_map_hom (I : Ideal R) [IsPrecomplete I R]
       ModuleCat.ofHom (TauCeti.ModuleTower.limMap ((sectionsTower I).map f)) :=
   (rfl)
 
-/-- **Coherent formal modules on `spf I` over a complete Noetherian ring** (Stacks, Lemma 30.23.1):
-for an `I`-adically complete Noetherian ring `R`, coherent formal modules on `spf I` are equivalent
-to finite `R`-modules via finite `I`-adic systems, with inverse functor `finiteSectionsLim I` taking
-the inverse limit of levelwise global sections. -/
-@[stacks 087W]
-def spfEquiv (I : Ideal R) [IsNoetherianRing R] [IsAdicComplete I R] :
-    FGModuleCat.{u} R ≌ CoherentFormalModule (spf I) :=
-  (ModuleTower.finiteReductionEquiv I).trans (finiteSectionsTower I).asEquivalence.symm
-
-@[simp]
-theorem spfEquiv_inverse (I : Ideal R) [IsNoetherianRing R] [IsAdicComplete I R] :
-    (spfEquiv I).inverse = finiteSectionsLim I := by
-  simp [spfEquiv, finiteSectionsLim]
-
 end
 
 end TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
@@ -584,8 +566,8 @@ noncomputable def spfEquivFGModuleCatFunctorCompFiniteReductionIso (A : AdicRing
 @[simp]
 theorem spfEquivFGModuleCat_functor (A : AdicRing.{u})
     [IsNoetherianRing A.carrier] :
-    (spfEquivFGModuleCat A).functor =
-      CoherentFormalModule.finiteSectionsTower A.ideal ⋙ ModuleTower.finiteLim A.ideal := (rfl)
+    (spfEquivFGModuleCat A).functor = CoherentFormalModule.finiteSectionsLim A.ideal :=
+  (rfl)
 
 /-- The reductions-to-sections comparison is induced by the projections from the inverse limit. -/
 @[simp]
@@ -612,8 +594,7 @@ noncomputable def spfEquivFGModuleCatInverseCompFiniteSectionsTowerIso
 
 /-- The equivalence with finite modules preserves addition of morphisms. -/
 instance (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
-    (spfEquivFGModuleCat A).functor.Additive := by
-  exact inferInstanceAs (CoherentFormalModule.finiteSectionsTower A.ideal ⋙
-    ModuleTower.finiteLim A.ideal).Additive
+    (spfEquivFGModuleCat A).functor.Additive :=
+  inferInstanceAs (CoherentFormalModule.finiteSectionsLim A.ideal).Additive
 
 end TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule

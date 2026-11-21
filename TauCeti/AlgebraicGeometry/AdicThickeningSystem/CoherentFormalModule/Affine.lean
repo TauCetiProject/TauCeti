@@ -305,13 +305,49 @@ def coherentFormalModuleEquivSpecSelf (J : Ideal R) [IsNoetherianRing R] [IsAdic
       CoherentFormalModule
         ((Spec (CommRingCat.of R)).formalCompletion
           (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom))) :=
-  (CoherentFormalModule.spfEquiv J).trans (CoherentFormalModule.pullbackEquiv (specIso J))
+  (CoherentFormalModule.spfEquivFGModuleCat ⟨R, J, IsNoetherian.noetherian J⟩).symm.trans
+    (CoherentFormalModule.pullbackEquiv (specIso J))
 
 @[simp]
 theorem coherentFormalModuleEquivSpecSelf_inverse (J : Ideal R) [IsNoetherianRing R]
     [IsAdicComplete J R] :
     (coherentFormalModuleEquivSpecSelf J).inverse = specFiniteSectionsLim J := by
-  simp [coherentFormalModuleEquivSpecSelf, specFiniteSectionsLim_eq]
+  rw [coherentFormalModuleEquivSpecSelf, Equivalence.trans_inverse, Equivalence.symm_inverse,
+    CoherentFormalModule.spfEquivFGModuleCat_functor, specFiniteSectionsLim_eq]
+  exact congrArg (· ⋙ CoherentFormalModule.finiteSectionsLim J)
+    (CoherentFormalModule.pullbackEquiv_inverse (specIso J))
+
+/-- Under `coherentFormalModuleEquivSpecSelf J`, the global-sections tower of the coherent formal
+module associated to a finite `R`-module `M` is naturally isomorphic to the reduction tower
+`(M ⧸ J ^ (n + 1) M)ₙ`. -/
+def coherentFormalModuleEquivSpecSelfFunctorCompSpecFiniteSectionsTowerIso (J : Ideal R)
+    [IsNoetherianRing R] [IsAdicComplete J R] :
+    (coherentFormalModuleEquivSpecSelf J).functor ⋙ specFiniteSectionsTower J ≅
+      TauCeti.ModuleTower.finiteReduction J :=
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _
+      (Functor.isoWhiskerLeft _
+        (Functor.isoWhiskerRight
+          (eqToIso (CoherentFormalModule.pullbackEquiv_inverse (specIso J)).symm) _) ≪≫
+        (Functor.associator _ _ _).symm ≪≫
+        Functor.isoWhiskerRight
+          (CoherentFormalModule.pullbackEquiv (specIso J)).unitIso.symm _ ≪≫
+        Functor.leftUnitor _) ≪≫
+    CoherentFormalModule.spfEquivFGModuleCatInverseCompFiniteSectionsTowerIso
+      ⟨R, J, IsNoetherian.noetherian J⟩
+
+/-- Under `coherentFormalModuleEquivSpecSelf J`, the reduction tower of the finite `R`-module
+corresponding to a coherent formal module on `(Spec R)/V(J)` is naturally isomorphic to
+`specFiniteSectionsTower J`. -/
+def coherentFormalModuleEquivSpecSelfInverseCompFiniteReductionIso (J : Ideal R)
+    [IsNoetherianRing R] [IsAdicComplete J R] :
+    (coherentFormalModuleEquivSpecSelf J).inverse ⋙ TauCeti.ModuleTower.finiteReduction J ≅
+      specFiniteSectionsTower J :=
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _
+      (CoherentFormalModule.spfEquivFGModuleCatFunctorCompFiniteReductionIso
+        ⟨R, J, IsNoetherian.noetherian J⟩) ≪≫
+    Functor.isoWhiskerRight (eqToIso (CoherentFormalModule.pullbackEquiv_inverse (specIso J))) _
 
 /-- **Coherent formal modules on `(Spec R)/V(J)` for a finitely generated ideal with Noetherian
 quotient** (Stacks, Lemma 30.23.1): if `J` is finitely generated and `R ⧸ J` is Noetherian, then
@@ -327,6 +363,63 @@ def coherentFormalModuleEquivSpecOfFG (J : Ideal R) (fg : J.FG) [IsNoetherianRin
   (CoherentFormalModule.spfEquivFGModuleCat (AdicRing.completion J fg)).symm.trans
     (CoherentFormalModule.pullbackEquiv (specIsoSpfCompletion J fg))
 
+/-- The inverse of `coherentFormalModuleEquivSpecOfFG J fg` transports along
+`(specIsoSpfCompletion J fg).inv` and takes the inverse limit of levelwise global sections over
+the completed ring. -/
+@[simp]
+theorem coherentFormalModuleEquivSpecOfFG_inverse (J : Ideal R) (fg : J.FG)
+    [IsNoetherianRing (R ⧸ J)] :
+    (coherentFormalModuleEquivSpecOfFG J fg).inverse =
+      CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv ⋙
+        @CoherentFormalModule.finiteSectionsLim _ _ (AdicRing.completion J fg).ideal
+          (AdicCompletion.isAdicComplete_self J fg).toIsPrecomplete := by
+  let := Ideal.isNoetherianRing_adicCompletion_of_fg J fg
+  rw [coherentFormalModuleEquivSpecOfFG, Equivalence.trans_inverse, Equivalence.symm_inverse,
+    CoherentFormalModule.spfEquivFGModuleCat_functor]
+  exact congrArg (· ⋙ @CoherentFormalModule.finiteSectionsLim _ _
+      (AdicRing.completion J fg).ideal (AdicCompletion.isAdicComplete_self J fg).toIsPrecomplete)
+    (CoherentFormalModule.pullbackEquiv_inverse (specIsoSpfCompletion J fg))
+
+/-- Under `coherentFormalModuleEquivSpecOfFG J fg`, transporting the coherent formal module
+associated to a finite `AdicCompletion J R`-module `M` along `(specIsoSpfCompletion J fg).inv` has
+global-sections tower naturally isomorphic to the reduction tower of `M` over the completed ring. -/
+def coherentFormalModuleEquivSpecOfFGFunctorCompFiniteSectionsTowerIso (J : Ideal R) (fg : J.FG)
+    [IsNoetherianRing (R ⧸ J)] :
+    (coherentFormalModuleEquivSpecOfFG J fg).functor ⋙
+        CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv ⋙
+          CoherentFormalModule.finiteSectionsTower (AdicRing.completion J fg).ideal ≅
+      TauCeti.ModuleTower.finiteReduction (AdicRing.completion J fg).ideal :=
+  letI := Ideal.isNoetherianRing_adicCompletion_of_fg J fg
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _
+      (Functor.isoWhiskerLeft _
+        (Functor.isoWhiskerRight
+          (eqToIso (CoherentFormalModule.pullbackEquiv_inverse (specIsoSpfCompletion J fg)).symm)
+          _) ≪≫
+        (Functor.associator _ _ _).symm ≪≫
+        Functor.isoWhiskerRight
+          (CoherentFormalModule.pullbackEquiv (specIsoSpfCompletion J fg)).unitIso.symm _ ≪≫
+        Functor.leftUnitor _) ≪≫
+    CoherentFormalModule.spfEquivFGModuleCatInverseCompFiniteSectionsTowerIso
+      (AdicRing.completion J fg)
+
+/-- Under `coherentFormalModuleEquivSpecOfFG J fg`, the reduction tower of the finite
+`AdicCompletion J R`-module corresponding to a coherent formal module on `(Spec R)/V(J)` is
+naturally isomorphic to the global-sections tower over the completed ring. -/
+def coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso (J : Ideal R) (fg : J.FG)
+    [IsNoetherianRing (R ⧸ J)] :
+    (coherentFormalModuleEquivSpecOfFG J fg).inverse ⋙
+        TauCeti.ModuleTower.finiteReduction (AdicRing.completion J fg).ideal ≅
+      CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv ⋙
+        CoherentFormalModule.finiteSectionsTower (AdicRing.completion J fg).ideal :=
+  letI := Ideal.isNoetherianRing_adicCompletion_of_fg J fg
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _
+      (CoherentFormalModule.spfEquivFGModuleCatFunctorCompFiniteReductionIso
+        (AdicRing.completion J fg)) ≪≫
+    Functor.isoWhiskerRight
+      (eqToIso (CoherentFormalModule.pullbackEquiv_inverse (specIsoSpfCompletion J fg))) _
+
 /-- **Coherent formal modules on `(Spec R)/V(J)` over a Noetherian ring** (Stacks, Lemma 30.23.1):
 for any ideal `J` of a Noetherian ring `R`, coherent formal modules on the formal completion of
 `Spec R` along `V(J)` are equivalent to finite modules over the `J`-adic completion
@@ -338,6 +431,44 @@ def coherentFormalModuleEquivSpec (J : Ideal R) [IsNoetherianRing R] :
         ((Spec (CommRingCat.of R)).formalCompletion
           (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom))) :=
   coherentFormalModuleEquivSpecOfFG J (IsNoetherian.noetherian J)
+
+/-- The inverse of `coherentFormalModuleEquivSpec J` transports along
+`(specIsoSpfCompletion J _).inv` and takes the inverse limit of levelwise global sections over
+the completed ring. -/
+@[simp]
+theorem coherentFormalModuleEquivSpec_inverse (J : Ideal R) [IsNoetherianRing R] :
+    (coherentFormalModuleEquivSpec J).inverse =
+      CoherentFormalModule.pullback (specIsoSpfCompletion J (IsNoetherian.noetherian J)).inv ⋙
+        @CoherentFormalModule.finiteSectionsLim _ _
+          (AdicRing.completion J (IsNoetherian.noetherian J)).ideal
+          (AdicCompletion.isAdicComplete_self J (IsNoetherian.noetherian J)).toIsPrecomplete :=
+  coherentFormalModuleEquivSpecOfFG_inverse J (IsNoetherian.noetherian J)
+
+/-- Under `coherentFormalModuleEquivSpec J`, transporting the coherent formal module associated to
+a finite `AdicCompletion J R`-module `M` along `(specIsoSpfCompletion J _).inv` has
+global-sections tower naturally isomorphic to the reduction tower of `M` over the completed ring. -/
+def coherentFormalModuleEquivSpecFunctorCompFiniteSectionsTowerIso (J : Ideal R)
+    [IsNoetherianRing R] :
+    (coherentFormalModuleEquivSpec J).functor ⋙
+        CoherentFormalModule.pullback (specIsoSpfCompletion J (IsNoetherian.noetherian J)).inv ⋙
+          CoherentFormalModule.finiteSectionsTower
+            (AdicRing.completion J (IsNoetherian.noetherian J)).ideal ≅
+      TauCeti.ModuleTower.finiteReduction
+        (AdicRing.completion J (IsNoetherian.noetherian J)).ideal :=
+  coherentFormalModuleEquivSpecOfFGFunctorCompFiniteSectionsTowerIso J (IsNoetherian.noetherian J)
+
+/-- Under `coherentFormalModuleEquivSpec J`, the reduction tower of the finite
+`AdicCompletion J R`-module corresponding to a coherent formal module on `(Spec R)/V(J)` is
+naturally isomorphic to the global-sections tower over the completed ring. -/
+def coherentFormalModuleEquivSpecInverseCompFiniteReductionIso (J : Ideal R)
+    [IsNoetherianRing R] :
+    (coherentFormalModuleEquivSpec J).inverse ⋙
+        TauCeti.ModuleTower.finiteReduction
+          (AdicRing.completion J (IsNoetherian.noetherian J)).ideal ≅
+      CoherentFormalModule.pullback (specIsoSpfCompletion J (IsNoetherian.noetherian J)).inv ⋙
+        CoherentFormalModule.finiteSectionsTower
+          (AdicRing.completion J (IsNoetherian.noetherian J)).ideal :=
+  coherentFormalModuleEquivSpecOfFGInverseCompFiniteReductionIso J (IsNoetherian.noetherian J)
 
 end
 
