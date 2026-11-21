@@ -47,8 +47,10 @@ This file supplements Mathlib's basic API for moments and moment-generating func
   `∑ i ∈ s, (p i)⁻¹ = 1`, without independence.
 * `TauCeti.integrable_exp_mul_add_of_integrable_exp_two_mul`: `exp (θ (X + Y))` is integrable
   when `exp (2θX)` and `exp (2θY)` are, without independence.
-* `TauCeti.mgf_add_le_of_mgf_two_mul_le`, `TauCeti.mgf_add_le_exp_half_add`: AM-GM and
-  geometric-mean bounds for `mgf (X + Y)` without independence.
+* `TauCeti.mgf_add_le_sqrt_mgf_two_mul_mul`: by the Cauchy-Schwarz inequality,
+  `mgf (X + Y) μ θ ≤ √(mgf X μ (2θ) * mgf Y μ (2θ))` without independence.
+* `TauCeti.mgf_add_le_of_mgf_two_mul_le`, `TauCeti.mgf_add_le_exp_half_add`: its AM-GM and
+  exponential consequences.
 -/
 
 public section
@@ -214,54 +216,57 @@ theorem integrable_exp_mul_add_of_integrable_exp_two_mul {Y : Ω → ℝ} {θ : 
     (X := ![X, Y]) (s := Finset.univ) (p := fun _ ↦ 2) (t := θ) (fun _ _ ↦ two_pos)
     (by norm_num) (by simp [Fin.forall_fin_two, hX_int, hY_int])
 
-/-- **AM-GM bound for the moment-generating function of a sum** without independence. -/
+/-- **Cauchy-Schwarz bound for the moment-generating function of a sum** without independence:
+if `exp (2θX)` and `exp (2θY)` are integrable, then `mgf (X + Y) μ θ` is at most the geometric
+mean `√(mgf X μ (2θ) * mgf Y μ (2θ))`. The measure need not be finite. -/
+theorem mgf_add_le_sqrt_mgf_two_mul_mul {Y : Ω → ℝ} {θ : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ) :
+    mgf (fun ω ↦ X ω + Y ω) μ θ ≤ √(mgf X μ (2 * θ) * mgf Y μ (2 * θ)) := by
+  have hLX := memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ θ * X ω) two_pos
+    (by simpa only [mul_assoc] using hX_int)
+  have hLY := memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ θ * Y ω) two_pos
+    (by simpa only [mul_assoc] using hY_int)
+  have hsq (Z : Ω → ℝ) : ∫ ω, exp (θ * Z ω) ^ (2 : ℝ) ∂μ = mgf Z μ (2 * θ) := by
+    simp only [mgf, rpow_two, ← exp_natCast_mul 2, Nat.cast_ofNat, mul_assoc]
+  calc mgf (fun ω ↦ X ω + Y ω) μ θ = ∫ ω, exp (θ * X ω) * exp (θ * Y ω) ∂μ := by
+        simp only [mgf, mul_add, exp_add]
+    _ ≤ (∫ ω, exp (θ * X ω) ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) *
+          (∫ ω, exp (θ * Y ω) ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) :=
+        integral_mul_le_Lp_mul_Lq_of_nonneg HolderConjugate.two_two
+          (.of_forall fun _ ↦ (exp_pos _).le) (.of_forall fun _ ↦ (exp_pos _).le) hLX hLY
+    _ = √(mgf X μ (2 * θ) * mgf Y μ (2 * θ)) := by
+        rw [hsq, hsq, sqrt_mul mgf_nonneg, sqrt_eq_rpow, sqrt_eq_rpow]
+
+/-- **AM-GM bound for the moment-generating function of a sum** without independence: if
+`mgf X μ (2θ) ≤ M₁` and `mgf Y μ (2θ) ≤ M₂`, then `mgf (X + Y) μ θ ≤ (M₁ + M₂) / 2`. It follows
+from `mgf_add_le_sqrt_mgf_two_mul_mul` and the AM-GM inequality. -/
 theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
     (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
     (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ)
     (hX_le : mgf X μ (2 * θ) ≤ M₁) (hY_le : mgf Y μ (2 * θ) ≤ M₂) :
     Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
       mgf (fun ω ↦ X ω + Y ω) μ θ ≤ (M₁ + M₂) / 2 := by
-  have hint := integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int
-  have hpt (ω : Ω) : exp (θ * (X ω + Y ω)) ≤ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2 := by
-    have hsq (z : ℝ) : exp (2 * θ * z) = exp (θ * z) ^ 2 := by rw [sq, ← exp_add]; ring_nf
-    rw [mul_add, exp_add, hsq (X ω), hsq (Y ω)]
-    linarith [two_mul_le_add_sq (exp (θ * X ω)) (exp (θ * Y ω))]
-  have hdom : Integrable (fun ω ↦ (exp (2 * θ * X ω) + exp (2 * θ * Y ω)) / 2) μ :=
-    (hX_int.add hY_int).div_const 2
-  refine ⟨hint, ?_⟩; rw [mgf]; refine (integral_mono hint hdom hpt).trans ?_
-  rw [integral_div, integral_add hX_int hY_int, ← mgf, ← mgf]; linarith
+  refine ⟨integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int,
+    (mgf_add_le_sqrt_mgf_two_mul_mul hX_int hY_int).trans ?_⟩
+  have hX0 : 0 ≤ mgf X μ (2 * θ) := mgf_nonneg
+  have hY0 : 0 ≤ mgf Y μ (2 * θ) := mgf_nonneg
+  rw [sqrt_mul hX0]
+  nlinarith [two_mul_le_add_sq √(mgf X μ (2 * θ)) √(mgf Y μ (2 * θ)), sq_sqrt hX0, sq_sqrt hY0]
 
 /-- **Geometric-mean bound for the moment-generating function of a sum** without independence:
 if `mgf X μ (2θ) ≤ exp a` and `mgf Y μ (2θ) ≤ exp b`, then `mgf (X + Y) μ θ ≤ exp ((a + b) / 2)`.
-The proof is the Cauchy-Schwarz inequality for `exp (θX)` and `exp (θY)`. -/
+It follows from `mgf_add_le_sqrt_mgf_two_mul_mul`. -/
 theorem mgf_add_le_exp_half_add {Y : Ω → ℝ} {θ a b : ℝ}
     (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
     (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ)
     (hX_le : mgf X μ (2 * θ) ≤ exp a) (hY_le : mgf Y μ (2 * θ) ≤ exp b) :
     Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
       mgf (fun ω ↦ X ω + Y ω) μ θ ≤ exp ((a + b) / 2) := by
-  have hL2 {Z : Ω → ℝ} (hZ : Integrable (fun ω ↦ exp (2 * θ * Z ω)) μ) :
-      MemLp (fun ω ↦ exp (θ * Z ω)) (ENNReal.ofReal 2) μ :=
-    memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ θ * Z ω) two_pos
-      (by simpa only [mul_assoc] using hZ)
-  have hroot {Z : Ω → ℝ} {c : ℝ} (hZ : mgf Z μ (2 * θ) ≤ exp c) :
-      (∫ ω, exp (θ * Z ω) ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) ≤ exp (c / 2) := by
-    have hsq (ω : Ω) : exp (θ * Z ω) ^ (2 : ℝ) = exp (2 * θ * Z ω) := by
-      rw [← exp_mul]; ring_nf
-    simp_rw [hsq]
-    rw [← mgf, div_eq_mul_one_div c, exp_mul]
-    exact rpow_le_rpow mgf_nonneg hZ (by norm_num)
-  refine ⟨integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int, ?_⟩
-  calc mgf (fun ω ↦ X ω + Y ω) μ θ = ∫ ω, exp (θ * X ω) * exp (θ * Y ω) ∂μ := by
-        simp only [mgf, mul_add, exp_add]
-    _ ≤ (∫ ω, exp (θ * X ω) ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) *
-          (∫ ω, exp (θ * Y ω) ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) :=
-        integral_mul_le_Lp_mul_Lq_of_nonneg HolderConjugate.two_two
-          (.of_forall fun _ ↦ (exp_pos _).le) (.of_forall fun _ ↦ (exp_pos _).le)
-          (hL2 hX_int) (hL2 hY_int)
-    _ ≤ exp (a / 2) * exp (b / 2) :=
-        mul_le_mul (hroot hX_le) (hroot hY_le) (by positivity) (exp_pos _).le
-    _ = exp ((a + b) / 2) := by rw [← exp_add, add_div]
+  refine ⟨integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int,
+    (mgf_add_le_sqrt_mgf_two_mul_mul hX_int hY_int).trans ?_⟩
+  rw [exp_half, exp_add]
+  exact sqrt_le_sqrt (mul_le_mul hX_le hY_le mgf_nonneg (exp_pos _).le)
 
 end AddBounds
 

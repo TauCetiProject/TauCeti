@@ -183,17 +183,19 @@ theorem gaussian_x_exp_integrable (a : ℝ) :
       simp
     simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet ha 1
 
-/-- A linear combination `∑ i ∈ s, y i * X i` of real Gaussian variables `X i` on a finite measure
-space has finite exponential moments of every real order `r`: the function
-`ω ↦ exp (r * ∑ i ∈ s, y i * X i ω)` is integrable. The variables need not be independent, and
-only those indexed by `s` need be Gaussian. -/
+/-- A linear combination `∑ i ∈ s, y i * X i` of real Gaussian variables `X i` has finite
+exponential moments of every real order `r`: the function `ω ↦ exp (r * ∑ i ∈ s, y i * X i ω)` is
+integrable. The variables need not be independent, and only those indexed by `s` need be Gaussian.
+The measure need be finite only for the empty sum, whose integrand is the constant `1`; otherwise
+the law of any summand makes it a probability measure. -/
 theorem integrable_exp_mul_sum_mul_gaussianReal {Ω γ : Type*} {mΩ : MeasurableSpace Ω}
-    {P : Measure Ω} [IsFiniteMeasure P] {X : γ → Ω → ℝ} {μ : γ → ℝ} {v : γ → ℝ≥0}
-    (s : Finset γ) (hLaw : ∀ i ∈ s, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (y : γ → ℝ)
-    (r : ℝ) :
+    {P : Measure Ω} {X : γ → Ω → ℝ} {μ : γ → ℝ} {v : γ → ℝ≥0}
+    (s : Finset γ) (hfinite : s = ∅ → IsFiniteMeasure P)
+    (hLaw : ∀ i ∈ s, HasLaw (X i) (gaussianReal (μ i) (v i)) P) (y : γ → ℝ) (r : ℝ) :
     Integrable (fun ω ↦ Real.exp (r * ∑ i ∈ s, y i * X i ω)) P := by
   rcases s.eq_empty_or_nonempty with rfl | hs
-  · simp
+  · have := hfinite rfl
+    simp
   -- Hölder's inequality with every exponent equal to the number of summands.
   have hcard : (0 : ℝ) < s.card := mod_cast hs.card_pos
   refine integrable_exp_mul_sum_of_integrable_exp_mul (p := fun _ ↦ (s.card : ℝ))
