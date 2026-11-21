@@ -51,6 +51,9 @@ whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
 (`Complex.dist_equivRealProdCLM_le`).
+
+On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
+(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 -/
 
 public section
@@ -313,5 +316,13 @@ theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
     dist (equivRealProdCLM y) z₀ ≤ dist y (equivRealProdCLM.symm z₀) := by
   conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
   exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has real part at least `1`. -/
+theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
+  simp [hz]
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has norm at least `1`. -/
+theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
+  (one_le_re_one_add hz).trans (re_le_norm _)
 
 end Complex

@@ -20,6 +20,8 @@ terms for `r ≥ 0`, since `log (2 + r) ≥ log 2 ≥ 1/2`.
   `A r log (1 + r) + B r ≤ (A + 2 B) (1 + r) log (2 + r)`.
 * `Real.log_mul_two_mul_add_le`: for `q ≥ 1`, `r ≥ 0` and `c ≥ 1`,
   `log (q (2 r + c)) ≤ 2 log (q (r + c))`.
+* `Real.mul_log_le_mul_log_one_add`: for `1 ≤ t` and any `p : ℝ`,
+  `p log t ≤ p log (1 + t) + |p| log 2`.
 -/
 
 public section
@@ -58,5 +60,24 @@ theorem log_mul_two_mul_add_le {q r c : ℝ} (hq : 1 ≤ q) (hr : 0 ≤ r) (hc :
       _ ≤ q ^ 2 * (r + c) ^ 2 := mul_le_mul_of_nonneg_right (by nlinarith) (sq_nonneg _)
       _ = (q * (r + c)) ^ 2 := (mul_pow _ _ _).symm
   exact (log_le_log (by positivity) hsq).trans_eq (by rw [log_pow]; push_cast; rfl)
+
+/-- For `t ≥ 1` and any real exponent `p`, replacing `log t` by `log (1 + t)` changes `p * log t`
+by at most `|p| * log 2`. -/
+theorem mul_log_le_mul_log_one_add (p : ℝ) {t : ℝ} (ht : 1 ≤ t) :
+    p * log t ≤ p * log (1 + t) + |p| * log 2 := by
+  have ht0 : 0 < t := zero_lt_one.trans_le ht
+  have hlo : log t ≤ log (1 + t) := log_le_log ht0 (by linarith)
+  have hhi : log (1 + t) - log t ≤ log 2 := by
+    have h1 : log (1 + t) ≤ log (2 * t) := log_le_log (by linarith) (by linarith)
+    rw [log_mul two_ne_zero ht0.ne'] at h1
+    linarith
+  have habs : |log t - log (1 + t)| ≤ log 2 := by
+    rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.mpr hlo)]
+    exact hhi
+  have hmul : p * (log t - log (1 + t)) ≤ |p| * log 2 :=
+    (le_abs_self _).trans <| by
+      rw [abs_mul]
+      exact mul_le_mul_of_nonneg_left habs (abs_nonneg p)
+  linarith
 
 end Real

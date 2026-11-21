@@ -28,6 +28,7 @@ weighted coefficient norms at radius `r` to weighted coefficient norms at radius
 ## Main results
 
 * `PowerSeries.rescale_C`: rescaling the variable fixes constant power series.
+* `PowerSeries.rescale_neg_one_rescale_neg_one`: rescaling the variable by `-1` is an involution.
 * `PowerSeries.exists_rescale_eq_C_mul`: `f(c X) = a c · g(X)` with `g(X) = X + ⋯` when `f` has no
   constant term and its linear coefficient `a` divides `c`.
 * `PowerSeries.coeff_multiset_prod_rescale_C_mul_rescale`: replacing `Q(t)` by `a Q(b t)`
@@ -47,6 +48,12 @@ theorem rescale_C {R : Type*} [CommSemiring R] (a b : R) :
   ext n
   rw [coeff_rescale, coeff_C]
   split_ifs with h <;> simp [h]
+
+/-- Rescaling the power-series variable by `-1` is an involution: `F(-(-X)) = F(X)`. -/
+@[simp]
+theorem rescale_neg_one_rescale_neg_one {R : Type*} [CommRing R] (F : R⟦X⟧) :
+    rescale (-1) (rescale (-1) F) = F := by
+  simp [rescale_rescale]
 
 /-- A series without constant term, rescaled by a multiple `c` of its linear coefficient `a`, is
 `a c` times a series of the form `X + ⋯`: `f(c X) = a c · g(X)`. -/
