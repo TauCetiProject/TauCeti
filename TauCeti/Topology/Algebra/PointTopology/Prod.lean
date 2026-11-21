@@ -14,23 +14,16 @@ public import TauCeti.Topology.Algebra.PointTopology.Group
 # Point spaces and convolution groups over products of coefficient algebras
 
 For a `k`-algebra `A` and topological `k`-algebras, the point topology on `A →ₐ[k] R × S` and
-`A →ₐ[k] ∀ i, R i` agrees with the product of the factor point topologies
-(`TauCeti.PointTopology.prodHomeomorph` and `TauCeti.PointTopology.piHomeomorph`). When the source
-is a bialgebra `H` over `k` and the factors are commutative `k`-algebras, conjugating these
-homeomorphisms by `WithConv.ofConv` upgrades `AlgHom.prodPointsMulEquiv` and
+`A →ₐ[k] ∀ i, R i` agrees with the product topology (`prodHomeomorph` and `piHomeomorph`).
+For a `k`-bialgebra `H`, conjugating by `WithConv.ofConv` upgrades `AlgHom.prodPointsMulEquiv` and
 `AlgHom.piPointsMulEquiv` to topological multiplicative equivalences
-`TauCeti.PointTopology.prodPointsContinuousMulEquiv` and
-`TauCeti.PointTopology.piPointsContinuousMulEquiv` (topological group isomorphisms when `H` is a
-Hopf algebra). Applied to `AdeleRing R K = InfiniteAdeleRing K × FiniteAdeleRing R K`, this splits
-`AdelicPoints R K H` into its infinite and finite adelic factors.
+`prodPointsContinuousMulEquiv` and `piPointsContinuousMulEquiv`.
 
 ## Main declarations
 
-* `TauCeti.PointTopology.prodHomeomorph`, `TauCeti.PointTopology.piHomeomorph`: homeomorphisms of
-  point spaces over binary and indexed products.
+* `TauCeti.PointTopology.prodHomeomorph`, `TauCeti.PointTopology.piHomeomorph`
 * `TauCeti.PointTopology.prodPointsContinuousMulEquiv`,
-  `TauCeti.PointTopology.piPointsContinuousMulEquiv`: topological multiplicative equivalences of
-  convolution point spaces over binary and indexed products.
+  `TauCeti.PointTopology.piPointsContinuousMulEquiv`
 
 ## References
 
@@ -117,17 +110,15 @@ convolution point spaces. -/
 noncomputable def prodPointsContinuousMulEquiv :
     WithConv (H →ₐ[k] R × S) ≃ₜ* WithConv (H →ₐ[k] R) × WithConv (H →ₐ[k] S) where
   toMulEquiv := AlgHom.prodPointsMulEquiv
-  continuous_toFun := continuous_prodMk.2
-    ⟨isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-      ((continuous_fst.comp (prodHomeomorph k H R S).continuous).comp
-        isHomeomorph_ofConv.continuous).congr fun _ ↦ by ext; simp,
-     isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-      ((continuous_snd.comp (prodHomeomorph k H R S).continuous).comp
-        isHomeomorph_ofConv.continuous).congr fun _ ↦ by ext; simp⟩
-  continuous_invFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-    ((prodHomeomorph k H R S).symm.continuous.comp
-      (isHomeomorph_ofConv.continuous.prodMap isHomeomorph_ofConv.continuous)).congr fun _ ↦ by
-        ext <;> simp
+  continuous_toFun :=
+    ((AlgHom.continuous_mapValue (ψ := AlgHom.fst k R S) continuous_fst).prodMk
+      (AlgHom.continuous_mapValue (ψ := AlgHom.snd k R S) continuous_snd)).congr fun _ ↦
+        Prod.ext (AlgHom.prodPointsMulEquiv_apply_fst _).symm
+          (AlgHom.prodPointsMulEquiv_apply_snd _).symm
+  continuous_invFun := continuous_withConv_iff.2 fun h ↦
+    (((continuous_eval_ofConv h).comp continuous_fst).prodMk
+      ((continuous_eval_ofConv h).comp continuous_snd)).congr fun p ↦
+        (AlgHom.prodPointsMulEquiv_symm_apply_ofConv p h).symm
 
 variable {k H R S}
 
@@ -163,13 +154,11 @@ noncomputable def piPointsContinuousMulEquiv :
     WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
   toMulEquiv := AlgHom.piPointsMulEquiv
   continuous_toFun := continuous_pi fun i ↦
-    isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-      (((continuous_apply i).comp (piHomeomorph k H R).continuous).comp
-        isHomeomorph_ofConv.continuous).congr fun _ ↦ by ext; simp
-  continuous_invFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-    ((piHomeomorph k H R).symm.continuous.comp
-      (continuous_pi fun i ↦ isHomeomorph_ofConv.continuous.comp (continuous_apply i))).congr
-        fun _ ↦ by ext; simp
+    (AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)).congr
+      fun x ↦ (AlgHom.piPointsMulEquiv_apply x i).symm
+  continuous_invFun := continuous_withConv_iff.2 fun h ↦
+    (continuous_pi fun i ↦ (continuous_eval_ofConv h).comp (continuous_apply i)).congr fun f ↦
+      funext fun i ↦ (AlgHom.piPointsMulEquiv_symm_apply_ofConv f h i).symm
 
 variable {k H R}
 

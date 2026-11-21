@@ -238,11 +238,14 @@ theorem sigmaEquivPi_apply {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
     sigmaEquivPi A B ⟨i, φ⟩ = φ.comp (Pi.evalAlgHom R A i) :=
   (rfl)
 
+section PiEquiv
+
+variable {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+  [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)]
+
 /-- Algebra homomorphisms from `A` into `∀ i, R i` correspond to families of homomorphisms into
 the factors. -/
-def piEquiv {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A] [Algebra k A]
-    [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)] :
-    (A →ₐ[k] ∀ i, R i) ≃ ∀ i, A →ₐ[k] R i where
+def piEquiv : (A →ₐ[k] ∀ i, R i) ≃ ∀ i, A →ₐ[k] R i where
   toFun x i := (Pi.evalAlgHom k R i).comp x
   invFun := AlgHom.pi
   left_inv x := by ext a i; rfl
@@ -250,21 +253,19 @@ def piEquiv {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A] [A
 
 /-- Evaluating `AlgHom.piEquiv` at index `i` postcomposes with the `i`-th projection. -/
 @[simp]
-theorem piEquiv_apply {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A] [Algebra k A]
-    [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)] (x : A →ₐ[k] ∀ i, R i) (i : ι) :
+theorem piEquiv_apply (x : A →ₐ[k] ∀ i, R i) (i : ι) :
     AlgHom.piEquiv x i = (Pi.evalAlgHom k R i).comp x := (rfl)
 
 /-- Evaluating `AlgHom.piEquiv x i` on `a : A` reads off the `i`-th coordinate of `x a`. -/
-theorem piEquiv_apply_apply {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A]
-    [Algebra k A] [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)]
-    (x : A →ₐ[k] ∀ i, R i) (i : ι) (a : A) :
+theorem piEquiv_apply_apply (x : A →ₐ[k] ∀ i, R i) (i : ι) (a : A) :
     AlgHom.piEquiv x i a = x a i := (rfl)
 
 /-- The inverse of `AlgHom.piEquiv` is `AlgHom.pi`. -/
 @[simp]
-theorem piEquiv_symm_apply {k A ι : Type*} {R : ι → Type*} [CommSemiring k] [Semiring A]
-    [Algebra k A] [∀ i, Semiring (R i)] [∀ i, Algebra k (R i)] (f : ∀ i, A →ₐ[k] R i) :
+theorem piEquiv_symm_apply (f : ∀ i, A →ₐ[k] R i) :
     AlgHom.piEquiv.symm f = AlgHom.pi f := (rfl)
+
+end PiEquiv
 
 end AlgHom
 

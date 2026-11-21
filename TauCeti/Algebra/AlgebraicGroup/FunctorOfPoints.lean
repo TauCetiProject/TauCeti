@@ -294,8 +294,7 @@ theorem mapValue_snd_prodPointsMulEquiv_symm (p : WithConv (H →ₐ[R] A) × Wi
 /-- `prodPointsMulEquiv` sends `mapValue (φ.prod ψ) x` to `(mapValue φ x, mapValue ψ x)`. -/
 theorem prodPointsMulEquiv_mapValue_prod (φ : C →ₐ[R] A) (ψ : C →ₐ[R] B)
     (x : WithConv (H →ₐ[R] C)) :
-    prodPointsMulEquiv (mapValue (φ.prod ψ) x) = (mapValue φ x, mapValue ψ x) := by
-  ext <;> simp
+    prodPointsMulEquiv (mapValue (φ.prod ψ) x) = (mapValue φ x, mapValue ψ x) := by ext <;> simp
 
 end BialgebraProd
 

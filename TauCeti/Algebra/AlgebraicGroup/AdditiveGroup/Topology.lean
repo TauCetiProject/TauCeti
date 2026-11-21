@@ -12,11 +12,9 @@ public import TauCeti.Topology.Algebra.PointTopology.Group
 /-!
 # The point topology on the additive group
 
-For a commutative topological `R`-algebra `A`, the points of `𝔾ₐ = Spec (SymmetricAlgebra R R)`
-valued in `A` are identified with `Multiplicative A` by evaluation at `SymmetricAlgebra.ι R R 1`
-(`TauCeti.AdditiveGroup.gaPointsMulEquiv`). Since `SymmetricAlgebra R R` is generated as an
-`R`-algebra by that single coordinate, this upgrades `gaPointsMulEquiv` to a topological
-multiplicative equivalence `TauCeti.AdditiveGroup.gaPointsContinuousMulEquiv`.
+For a commutative topological `R`-algebra `A`, evaluation at `SymmetricAlgebra.ι R R 1` upgrades
+`TauCeti.AdditiveGroup.gaPointsMulEquiv` to a topological multiplicative equivalence
+`TauCeti.AdditiveGroup.gaPointsContinuousMulEquiv`.
 
 ## References
 
@@ -40,20 +38,14 @@ as topological monoids (and topological groups when `R`, `A` are commutative rin
 noncomputable def gaPointsContinuousMulEquiv :
     WithConv (SymmetricAlgebra R R →ₐ[R] A) ≃ₜ* Multiplicative A where
   toMulEquiv := gaPointsMulEquiv
-  continuous_toFun :=
-    (continuous_ofAdd.comp (continuous_eval_ofConv (ι R R 1))).congr fun F ↦ by
-      rw [Function.comp_apply, MulEquiv.toFun_eq_coe, ← ofAdd_toAdd (gaPointsMulEquiv F),
-        toAdd_gaPointsMulEquiv]
+  continuous_toFun := (continuous_ofAdd.comp (continuous_eval_ofConv (ι R R 1))).congr fun F ↦
+    (congrArg Multiplicative.ofAdd (toAdd_gaPointsMulEquiv F).symm).trans (ofAdd_toAdd _)
   continuous_invFun := continuous_withConv_iff.2 fun s ↦ by
-    -- Induct on `SymmetricAlgebra R R`; on `ι R R r`, the inverse evaluates to `r • toAdd x`.
     induction s using SymmetricAlgebra.induction with
     | algebraMap r => simpa only [MulEquiv.invFun_eq_symm, AlgHom.commutes] using continuous_const
-    | ι r =>
-      have hι (x : Multiplicative A) :
-          ((gaPointsMulEquiv (R := R) (A := A)).symm x).ofConv (ι R R r) =
-            algebraMap R A r * Multiplicative.toAdd x := by
-        rw [ι_self_eq_smul_ι_one, map_smul, gaPointsMulEquiv_symm_apply_ι, Algebra.smul_def]
-      simpa only [MulEquiv.invFun_eq_symm, hι] using continuous_const.fun_mul continuous_toAdd
+    | ι r => exact (continuous_const.fun_mul continuous_toAdd).congr fun x ↦
+        (Eq.symm <| by rw [MulEquiv.invFun_eq_symm, ι_self_eq_smul_ι_one, map_smul,
+          gaPointsMulEquiv_symm_apply_ι, Algebra.smul_def])
     | add p q hp hq => simpa only [MulEquiv.invFun_eq_symm, map_add] using hp.fun_add hq
     | mul p q hp hq => simpa only [MulEquiv.invFun_eq_symm, map_mul] using hp.fun_mul hq
 

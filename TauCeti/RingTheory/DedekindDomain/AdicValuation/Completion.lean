@@ -143,20 +143,13 @@ instance adicCompletion_charZero [CharZero K] (v : HeightOneSpectrum R) :
     CharZero (v.adicCompletion K) :=
   charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
 
-/-- On `K`, the valuation on `v.adicCompletion K` agrees with `v.valuation K`. -/
-@[simp]
-theorem valued_algebraMap_adicCompletion (v : HeightOneSpectrum R) (k : K) :
-    Valued.v (algebraMap K (v.adicCompletion K) k) = v.valuation K k :=
-  -- `algebraMap K (v.adicCompletion K) k` is definitionally `(k : v.adicCompletion K)` by
-  -- `algebraMap_adicCompletion` (`rfl`).
-  valuedAdicCompletion_eq_valuation' v k
-
 /-- An element of `K` maps into `v.adicCompletionIntegers K` if and only if its `v`-adic valuation
 is at most `1`. -/
 @[simp]
 theorem algebraMap_mem_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (k : K) :
     algebraMap K (v.adicCompletion K) k ∈ v.adicCompletionIntegers K ↔ v.valuation K k ≤ 1 := by
-  rw [mem_adicCompletionIntegers, v.valued_algebraMap_adicCompletion]
+  rw [mem_adicCompletionIntegers, algebraMap_adicCompletion, Function.comp_apply,
+    valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
 
 /-- The prime of `R` lying under the maximal ideal of the ring of integers of the completion of
 `K` at `v` is `v` itself. -/
