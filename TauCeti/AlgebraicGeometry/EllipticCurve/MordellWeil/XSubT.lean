@@ -20,7 +20,6 @@ public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
-import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -335,18 +334,20 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
   rw [← EquivLike.apply_eq_iff_eq <| W.equivProdA' hx]
   simpa only [equivProdA'_apply] using Prod.mk_inj
 
+/-- At a root `x` of `f`, the class of `p` is a unit of `W.A` exactly when `p.eval x` is a unit
+of `R` and the class of `p` is a unit modulo the cofactor `fCofactor x`. Unlike the
+decomposition `equivProdA'`, this holds over any commutative ring, with no ellipticity or normal
+form hypothesis on `W`. -/
 lemma isUnit_mk_iff {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
     IsUnit (AdjoinRoot.mk W.f p) ↔
       IsUnit (p.eval x) ∧ IsUnit (AdjoinRoot.mk (W.fCofactor x) p) := by
-  have key (q : R[X]) : IsUnit (AdjoinRoot.mk q p) ↔ IsCoprime p q := by
-    rw [AdjoinRoot.mk]
-    exact (Ideal.Quotient.isUnit_mk_iff).trans (Ideal.sup_eq_top_iff_isCoprime _ _)
-  have hlin : IsUnit (p.eval x) ↔ IsCoprime p (X - C x) := by
-    rw [← key]
-    exact (MulEquiv.isUnit_map (quotientSpanXSubCAlgEquiv x).toRingEquiv.toMulEquiv
-      (x := AdjoinRoot.mk (X - C x) p))
-  rw [key W.f, key (W.fCofactor x), hlin, W.f_eq_mul_of_eval_eq_zero hx,
-    IsCoprime.mul_right_iff, and_comm]
+  -- `quotientSpanXSubCAlgEquiv x : R[X]/(X - x) ≃ R` is by definition evaluation at `x`
+  -- (`quotientSpanXSubCAlgEquiv_mk`), so `p.eval x` is a unit iff `p` is a unit mod `X - x`.
+  have hlin : IsUnit (p.eval x) ↔ IsCoprime (X - C x) p :=
+    (MulEquiv.isUnit_map (quotientSpanXSubCAlgEquiv x).toRingEquiv.toMulEquiv
+      (x := AdjoinRoot.mk (X - C x) p)).trans AdjoinRoot.isUnit_mk_iff_isCoprime
+  rw [AdjoinRoot.isUnit_mk_iff_isCoprime, W.f_eq_mul_of_eval_eq_zero hx, IsCoprime.mul_left_iff]
+  exact and_comm.trans (and_congr hlin.symm AdjoinRoot.isUnit_mk_iff_isCoprime.symm)
 
 /-! ### Square classes of the cubic quotient algebra -/
 
