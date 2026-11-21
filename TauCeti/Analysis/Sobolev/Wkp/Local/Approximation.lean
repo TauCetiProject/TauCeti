@@ -250,19 +250,12 @@ theorem exists_testFunction_approximation_restrictL (hp : p ≠ ∞)
     simpa only [chiTest, TestFunction.coe_mk] using
       (hchi_one x (subset_closure hx)).self_of_nhds
   obtain ⟨δ, hδ, hδO⟩ := hcompact.exists_cthickening_subset_open Omega.isOpen hclosure
-  let phi : ℕ → ContDiffBump (0 : E) := fun j =>
-    ⟨(δ / ((j : ℝ) + 1)) / 2, δ / ((j : ℝ) + 1), by positivity,
-      half_lt_self (by positivity)⟩
-  have hphi : Tendsto (fun j => (phi j).rOut) atTop (𝓝 0) := by
-    simpa only [phi, div_eq_mul_inv, one_mul, mul_zero] using
-      (tendsto_const_nhds (x := δ)).mul tendsto_one_div_add_atTop_nhds_zero_nat
+  let phi : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hδ
   refine ⟨fun j => localTest chiTest (phi j) k u,
-    tendsto_restrict_localTest hp _ chiTest hchiU hphi ?_ k u⟩
+    tendsto_restrict_localTest hp _ chiTest hchiU (ContDiffBump.tendsto_rOut_shrinking hδ) ?_ k u⟩
   intro j x hx
-  exact (Metric.closedBall_subset_closedBall (by
-    dsimp [phi]
-    exact div_le_self hδ.le (by nlinarith [Nat.cast_nonneg (α := ℝ) j]))).trans
-      ((Metric.closedBall_subset_cthickening (subset_closure hx) δ).trans hδO)
+  exact (Metric.closedBall_subset_closedBall (ContDiffBump.rOut_shrinking_le hδ j)).trans
+    ((Metric.closedBall_subset_cthickening (subset_closure hx) δ).trans hδO)
 
 /-- The restriction of a `W^{k,p}(Ω)` function to an open subdomain compactly contained in `Ω`
 is in the Sobolev-norm closure of restrictions of test functions on the larger domain. -/
