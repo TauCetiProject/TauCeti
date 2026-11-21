@@ -36,6 +36,9 @@ flat degeneration of `k[c]` to the semigroup algebra of its initial algebra.
   lies in the toric ideal.
 * `MonomialOrder.IsSAGBIBasis.exists_aeval_eq_aeval_sub`: if `c` is a SAGBI basis of `k[c]`, then
   every binomial `Y^u - Y^v` with `A u = A v` has a bounded zero subduction.
+* `MonomialOrder.linearCombination_sub_weightedHomogeneousComponent_add_sum_lt`: subtracting
+  the weight-`δ` component of `P` and adding combinations `g j * Q j` of weights `A x + e j = δ`
+  with `A y ≺ e j` strictly lowers the weight bound below `δ`.
 * `MonomialOrder.exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent`: if all
   exponents `w` of `P` have `A w ≼ δ` and the coefficient of `X^δ` in `φ P` vanishes, then the
   weight-`δ` component of `P` is a combination `∑ j, g j * (Y^(u j) - Y^(v j))` with every
@@ -101,6 +104,39 @@ theorem weightedHomogeneousComponent_mem_toricIdeal (hc : ∀ i, m.Monic (c i))
   rw [hδ, map_zero]
 
 end CommSemiring
+
+section Ring
+
+variable {R J : Type*} [CommRing R]
+
+/-- **Support-weight bound after subtracting a top-weight component.** If every exponent `w` of `P`
+satisfies `A w ≼ δ` for the additive weight `A = Finsupp.linearCombination ℕ a`, every exponent `x`
+of `g j` satisfies `A x + e j = δ`, and every exponent `y` of `Q j` satisfies `A y ≺ e j`, then
+every exponent `w` of `(P - weightedHomogeneousComponent a δ P) + ∑ j, g j * Q j` satisfies
+`A w ≺ δ`. -/
+theorem linearCombination_sub_weightedHomogeneousComponent_add_sum_lt
+    (a : ι → σ →₀ ℕ) (e : J → σ →₀ ℕ)
+    {P : MvPolynomial ι R} {δ : σ →₀ ℕ} {g : J →₀ MvPolynomial ι R} {Q : J → MvPolynomial ι R}
+    (hPδ : ∀ w ∈ P.support, Finsupp.linearCombination ℕ a w ≼[m] δ)
+    (hg : ∀ j ∈ g.support, ∀ x ∈ (g j).support, Finsupp.linearCombination ℕ a x + e j = δ)
+    (hQ : ∀ j ∈ g.support, ∀ y ∈ (Q j).support, Finsupp.linearCombination ℕ a y ≺[m] e j)
+    {w : ι →₀ ℕ}
+    (hw : w ∈ (P - weightedHomogeneousComponent a δ P + g.sum fun j q ↦ q * Q j).support) :
+    Finsupp.linearCombination ℕ a w ≺[m] δ := by
+  classical
+  rcases Finset.mem_union.1 (support_add hw) with hw | hw
+  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent,
+      Finsupp.weight_apply, ← Finsupp.linearCombination_apply] at hw
+    have hwδ : Finsupp.linearCombination ℕ a w ≠ δ := fun h ↦ hw (by simp [h])
+    have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
+    exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
+  · -- An exponent of `g j * Q j` is a sum `x + y` with `A x + e j = δ` and `A y ≺ e j`.
+    obtain ⟨j, hj, hwg⟩ := Finset.mem_biUnion.1 (support_sum hw)
+    obtain ⟨x, hx, y, hy, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hwg)
+    rw [map_add, ← hg j hj x hx, map_add, map_add]
+    exact add_lt_add_right (hQ j hj y hy) _
+
+end Ring
 
 section CommRing
 
@@ -185,17 +221,8 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     rw [hsub, hgP₀]
     ring
   rw [heq] at hw
-  rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent,
-      Finsupp.weight_apply, ← Finsupp.linearCombination_apply] at hw
-    have hwδ : A w ≠ δ := fun h ↦ hw (by simp [A, a, h])
-    have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
-    exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
-  -- An exponent of `g j * Q j` is a sum `x + y` with `A x + A (u j) = δ` and `A y ≺ A (u j)`.
-  obtain ⟨j, -, hj⟩ := Finset.mem_biUnion.1 (support_sum hw)
-  obtain ⟨x, hx, y, hy, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hj)
-  rw [map_add, ← hgA j x hx, map_add, map_add]
-  exact add_lt_add_right (hQ j y hy) _
+  exact linearCombination_sub_weightedHomogeneousComponent_add_sum_lt a (fun j ↦ A (u j))
+    hPδ (fun j _ ↦ hgA j) (fun j _ ↦ hQ j) hw
 
 end CommRing
 

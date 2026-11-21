@@ -217,6 +217,18 @@ theorem pos_apply_zero_of_mem_leadingExponents_robbianoSweedler {a : Fin 2 →�
   exact Nat.pos_of_ne_zero fun h0 ↦
     ha0 (degree_eq_zero_of_mem_robbianoSweedlerSubalgebra hf h0)
 
+/-- The additive submonoid of exponents `x : Fin 2 →₀ ℕ` satisfying `x 1 ≤ M * x 0`. -/
+private def slopeSubmonoid (M : ℕ) : AddSubmonoid (Fin 2 →₀ ℕ) where
+  carrier := {x | x 1 ≤ M * x 0}
+  zero_mem' := by simp
+  add_mem' {x y} hx hy := by
+    simp only [Set.mem_ofPred_eq, Finsupp.coe_add, Pi.add_apply, mul_add] at hx hy ⊢
+    omega
+
+private theorem mem_slopeSubmonoid_iff {M : ℕ} {x : Fin 2 →₀ ℕ} :
+    x ∈ slopeSubmonoid M ↔ x 1 ≤ M * x 0 :=
+  Iff.rfl
+
 /-- The monoid of `lex`-leading exponents of `robbianoSweedlerSubalgebra R` is not finitely
 generated, even though `robbianoSweedlerSubalgebra R` is generated as an `R`-algebra by three
 polynomials. -/
@@ -225,29 +237,23 @@ theorem not_fg_leadingExponents_robbianoSweedler :
   intro hfg
   obtain ⟨S, hS⟩ := AddSubmonoid.isAddFG_iff.1 hfg
   set M := S.sup fun s ↦ s 1
-  -- Every generator `s ∈ S` satisfies `s 1 ≤ M * s 0`, and that linear inequality is preserved
-  -- under sums, so it holds across `AddSubmonoid.closure S`, contradicting `(1, M + 1)`.
-  have hbound : ∀ x ∈ AddSubmonoid.closure (S : Set (Fin 2 →₀ ℕ)), x 1 ≤ M * x 0 := by
-    intro x hx
-    induction hx using AddSubmonoid.closure_induction with
-    | mem s hs =>
-      have hs' : s ∈ lex.leadingExponents (robbianoSweedlerSubalgebra R) :=
-        hS ▸ AddSubmonoid.subset_closure hs
-      rcases eq_or_ne s 0 with rfl | hs0
-      · simp
-      · calc
-          s 1 ≤ M := Finset.le_sup (f := fun t : Fin 2 →₀ ℕ ↦ t 1) hs
-          _ ≤ M * s 0 := Nat.le_mul_of_pos_right M
-            (pos_apply_zero_of_mem_leadingExponents_robbianoSweedler hs' hs0)
-    | zero => simp
-    | add x y _ _ ihx ihy =>
-      simp only [Finsupp.coe_add, Pi.add_apply, mul_add]
-      omega
+  -- Every generator `s ∈ S` satisfies `s 1 ≤ M * s 0`, so `AddSubmonoid.closure S` lies in
+  -- `slopeSubmonoid M`, contradicting `(1, M + 1)`.
+  have hbound : AddSubmonoid.closure (S : Set (Fin 2 →₀ ℕ)) ≤ slopeSubmonoid M := by
+    refine AddSubmonoid.closure_le.2 fun s hs ↦ mem_slopeSubmonoid_iff.2 ?_
+    have hs' : s ∈ lex.leadingExponents (robbianoSweedlerSubalgebra R) :=
+      hS ▸ AddSubmonoid.subset_closure hs
+    rcases eq_or_ne s 0 with rfl | hs0
+    · simp
+    · calc
+        s 1 ≤ M := Finset.le_sup (f := fun t : Fin 2 →₀ ℕ ↦ t 1) hs
+        _ ≤ M * s 0 := Nat.le_mul_of_pos_right M
+          (pos_apply_zero_of_mem_leadingExponents_robbianoSweedler hs' hs0)
   have hmem : Finsupp.single (0 : Fin 2) 1 + Finsupp.single 1 (M + 1) ∈
       AddSubmonoid.closure (S : Set (Fin 2 →₀ ℕ)) := by
     rw [hS]
     exact single_add_single_mem_leadingExponents_robbianoSweedler M
-  have hle := hbound _ hmem
+  have hle := mem_slopeSubmonoid_iff.1 (hbound hmem)
   simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
     Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,
     add_zero, zero_add, mul_one] at hle
@@ -415,20 +421,15 @@ theorem isSubduction_robbianoSweedlerStage {R : Type*} [CommRing R] [Nontrivial 
     lex.IsSubduction (robbianoSweedlerStage R n)
       (aeval (robbianoSweedlerStage R n) (robbianoSweedlerBinomial R n))
       0 (X 0 * X 1 ^ (n + 3)) := by
-  have hbound : ∀ x ∈ AddSubmonoid.closure
-      (Set.range (lex.degree ∘ robbianoSweedlerStage R n)), x 1 ≤ (n + 2) * x 0 := by
-    intro x hx
-    induction hx using AddSubmonoid.closure_induction with
-    | mem _ ha =>
-      obtain ⟨i, rfl⟩ := ha
-      simp only [Function.comp_apply, degree_robbianoSweedlerStage, Finsupp.coe_add, Pi.add_apply,
-        Finsupp.single_eq_same, Finsupp.single_eq_of_ne Fin.zero_ne_one,
-        Finsupp.single_eq_of_ne Fin.zero_ne_one.symm, add_zero, zero_add, mul_one]
-      omega
-    | zero => simp
-    | add _ _ _ _ ihx ihy =>
-      simp only [Finsupp.coe_add, Pi.add_apply, mul_add]
-      omega
+  have hbound : AddSubmonoid.closure
+      (Set.range (lex.degree ∘ robbianoSweedlerStage R n)) ≤ slopeSubmonoid (n + 2) := by
+    refine AddSubmonoid.closure_le.2 ?_
+    rintro _ ⟨i, rfl⟩
+    simp only [Function.comp_apply, degree_robbianoSweedlerStage, SetLike.mem_coe,
+      mem_slopeSubmonoid_iff, Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
+      Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,
+      add_zero, zero_add, mul_one]
+    omega
   refine ⟨by simp [aeval_robbianoSweedlerStage_binomial], by simp, fun a ha hmem ↦ ?_,
     by simp [aeval_robbianoSweedlerStage_binomial]⟩
   have hmon : (X 0 * X 1 ^ (n + 3) : MvPolynomial (Fin 2) R) =
@@ -436,7 +437,7 @@ theorem isSubduction_robbianoSweedlerStage {R : Type*} [CommRing R] [Nontrivial 
     rw [monomial_add_single, ← X]
   rw [hmon] at ha
   have ha' := Finset.mem_singleton.1 (support_monomial_subset ha)
-  have hle := hbound a hmem
+  have hle := mem_slopeSubmonoid_iff.1 (hbound hmem)
   rw [ha'] at hle
   simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same,
     Finsupp.single_eq_of_ne Fin.zero_ne_one, Finsupp.single_eq_of_ne Fin.zero_ne_one.symm,

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Adjoin.FG
 
+import Mathlib.Algebra.Algebra.Subalgebra.Directed
+
 /-!
 # Finite subsets generating `Algebra.adjoin`
 
@@ -38,21 +40,13 @@ theorem mem_adjoin_iff_exists_finset_subset {s : Set A} {x : A} :
       ∃ t : Finset A, (t : Set A) ⊆ s ∧ x ∈ Algebra.adjoin R (t : Set A) where
   mp hx := by
     classical
-    induction hx using Algebra.adjoin_induction with
-    | mem y hy => exact ⟨{y}, by simpa using hy, Algebra.subset_adjoin (by simp)⟩
-    | algebraMap r => exact ⟨∅, by simp, Subalgebra.algebraMap_mem _ r⟩
-    | add x y _ _ ihx ihy =>
-      obtain ⟨u, hus, hxu⟩ := ihx
-      obtain ⟨v, hvs, hyv⟩ := ihy
-      exact ⟨u ∪ v, by simp [hus, hvs],
-        add_mem (Algebra.adjoin_mono (Finset.coe_subset.2 Finset.subset_union_left) hxu)
-          (Algebra.adjoin_mono (Finset.coe_subset.2 Finset.subset_union_right) hyv)⟩
-    | mul x y _ _ ihx ihy =>
-      obtain ⟨u, hus, hxu⟩ := ihx
-      obtain ⟨v, hvs, hyv⟩ := ihy
-      exact ⟨u ∪ v, by simp [hus, hvs],
-        mul_mem (Algebra.adjoin_mono (Finset.coe_subset.2 Finset.subset_union_left) hxu)
-          (Algebra.adjoin_mono (Finset.coe_subset.2 Finset.subset_union_right) hyv)⟩
+    have hs : s = ⋃ y : s, {y.val} := by ext; simp
+    rw [hs, Algebra.adjoin_iUnion, ← SetLike.mem_coe,
+      Subalgebra.coe_iSup_eq_iUnion_finset_coe_biSup, Set.mem_iUnion] at hx
+    obtain ⟨u, hxu⟩ := hx
+    refine ⟨u.image Subtype.val, by simp, ?_⟩
+    exact (iSup₂_le fun y hy ↦ Algebra.adjoin_mono <| by
+      simpa using Finset.mem_image_of_mem Subtype.val hy) hxu
   mpr := by
     rintro ⟨t, hts, hxt⟩
     exact Algebra.adjoin_mono hts hxt
@@ -69,14 +63,11 @@ theorem fg_adjoin_iff_exists_finset_subset_adjoin_eq {s : Set A} :
       mem_adjoin_iff_exists_finset_subset.1 (hT ▸ Algebra.subset_adjoin t.property)
     have hsub : ((T.attach.biUnion u : Finset A) : Set A) ⊆ s := by
       intro x hx
-      obtain ⟨t, -, hxt⟩ := Finset.mem_biUnion.1 hx
-      exact hus t hxt
+      obtain ⟨a, -, hxa⟩ := Finset.mem_biUnion.1 (Finset.mem_coe.1 hx)
+      exact hus a hxa
     refine ⟨T.attach.biUnion u, hsub, le_antisymm (Algebra.adjoin_mono hsub) ?_⟩
-    rw [← hT, Algebra.adjoin_le_iff]
-    intro x hx
-    exact Algebra.adjoin_mono
-      (Finset.coe_subset.2 (Finset.subset_biUnion_of_mem u (Finset.mem_attach _ ⟨x, hx⟩)))
-      (htu ⟨x, hx⟩)
+    rw [Algebra.adjoin_attach_biUnion, ← hT, Algebra.adjoin_le_iff]
+    exact fun x hx ↦ le_iSup (fun t : T ↦ Algebra.adjoin R (u t : Set A)) ⟨x, hx⟩ (htu ⟨x, hx⟩)
   mpr := by
     rintro ⟨t, -, ht⟩
     exact ⟨t, ht⟩
