@@ -121,6 +121,63 @@ theorem indep_sub_tilted_mul_eval (hW : IsFilteredPreBrownianReal ℱ W P) (θ :
     ← (hW.hasLaw_sub_tilted_mul_eval θ hst htT).map_eq,
     Measure.map_apply (hW.adapted.measurable.sub hW.adapted.measurable) hBmeas, mul_comm]
 
+private theorem integral_tilted_mul_eval (hW : IsFilteredPreBrownianReal ℱ W P)
+    (θ : ℝ) (T : ℝ≥0) (f : Ω → ℝ) :
+    ∫ ω, f ω ∂(P.tilted (fun ω ↦ θ * W T ω)) =
+      ∫ ω, exponentialMartingale θ W T ω * f ω ∂P := by
+  have hm := (hW.adapted.stronglyAdapted_exponentialMartingale θ T).measurable.mono (ℱ.le T) le_rfl
+  rw [hW.tilted_mul_eval_eq_withDensity,
+    integral_withDensity_eq_integral_toReal_smul hm.ennreal_ofReal (by simp)]
+  simp only [ENNReal.toReal_ofReal (exponentialMartingale_pos θ W T _).le, smul_eq_mul]
+
+/-- Pairing the terminal exponential with a Brownian increment weighted by a past-measurable
+variable factors through the increment's mean under the terminal tilt. -/
+theorem integral_exponentialMartingale_mul_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
+    (θ : ℝ) {s t T : ℝ≥0} (hst : s ≤ t) (htT : t ≤ T)
+    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    ∫ ω, exponentialMartingale θ W T ω * (ξ ω * (W t ω - W s ω)) ∂P =
+      θ * ((t : ℝ) - s) * ∫ ω, exponentialMartingale θ W s ω * ξ ω ∂P := by
+  let Q := P.tilted (fun ω ↦ θ * W T ω)
+  let Qs := P.tilted (fun ω ↦ θ * W s ω)
+  have hind : IndepFun ξ (W t - W s) Q :=
+    indep_of_indep_of_le (hW.indep_sub_tilted_mul_eval θ hst htT).symm
+      hξ.measurable.comap_le le_rfl
+  have htrim : Q.trim (ℱ.le s) = Qs.trim (ℱ.le s) := by
+    apply @Measure.ext Ω (ℱ s)
+    intro A hA
+    rw [trim_measurableSet_eq _ hA, trim_measurableSet_eq _ hA,
+      show Q = P.tilted (fun ω ↦ θ * W T ω) from rfl,
+      show Qs = P.tilted (fun ω ↦ θ * W s ω) from rfl,
+      hW.tilted_mul_eval_apply θ (hst.trans htT) hA, hW.tilted_mul_eval_apply θ le_rfl hA]
+  have hmean : ∫ ω, (W t - W s) ω ∂Q = θ * ((t : ℝ) - s) :=
+    (hW.hasLaw_sub_tilted_mul_eval θ hst htT).integral_eq.trans integral_id_gaussianReal
+  calc
+    _ = ∫ ω, ξ ω * (W t - W s) ω ∂Q := (integral_tilted_mul_eval hW θ T _).symm
+    _ = (∫ ω, ξ ω ∂Q) * (θ * ((t : ℝ) - s)) := by
+      rw [hind.integral_fun_mul_eq_mul_integral (hξ.mono (ℱ.le s)).aestronglyMeasurable
+        (hW.adapted.measurable.sub hW.adapted.measurable).aestronglyMeasurable, hmean]
+    _ = _ := by
+      rw [integral_trim (μ := Q) (ℱ.le s) hξ, htrim, ← integral_trim (μ := Qs) (ℱ.le s) hξ,
+        integral_tilted_mul_eval hW θ s, mul_comm]
+
+/-- On a past event, the terminal exponential pairs with an increment by multiplying the past
+density integral by the tilted mean `θ (t-s)`. -/
+theorem setIntegral_exponentialMartingale_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
+    (θ : ℝ) {s t T : ℝ≥0} (hst : s ≤ t) (htT : t ≤ T)
+    {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    ∫ ω in A, exponentialMartingale θ W T ω * (W t ω - W s ω) ∂P =
+      θ * ((t : ℝ) - s) * ∫ ω in A, exponentialMartingale θ W s ω ∂P := by
+  have h := hW.integral_exponentialMartingale_mul_mul_sub θ hst htT
+    (stronglyMeasurable_const.indicator hA : StronglyMeasurable[ℱ s] (A.indicator fun _ ↦ (1 : ℝ)))
+  rw [← integral_indicator (ℱ.le s A hA)]
+  convert h using 2
+  · funext ω
+    by_cases hω : ω ∈ A <;> simp [hω]
+  · rw [← integral_indicator (ℱ.le s A hA)]
+    congr 1
+    funext ω
+    by_cases hω : ω ∈ A <;> simp [hω]
+
 /-- Subtracting the acquired drift centers every increment under the terminal tilt. With
 `θ = -κ` this is the Gaussian increment law of `W t + κ t` on `[0,T]`. -/
 theorem hasLaw_sub_drift_tilted_mul_eval (hW : IsFilteredPreBrownianReal ℱ W P) (θ : ℝ)
