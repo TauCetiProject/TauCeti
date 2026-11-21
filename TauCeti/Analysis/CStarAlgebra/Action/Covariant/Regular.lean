@@ -231,10 +231,7 @@ private theorem indicatorConstLp_mem_topologicalClosure_span (hρ : ρ.IsNondege
   -- vectors `ρ(b) w`.
   have hcompact {K : Set G} (hK : MeasurableSet K) (hKc : IsCompact K) (hμK : μ K ≠ ∞) :
       indicatorConstLp 2 hK hμK v ∈ M := by
-    let L : H →L[ℂ] Lp H 2 μ := LinearMap.mkContinuous
-      { toFun := indicatorConstLp 2 hK hμK
-        map_add' _ _ := indicatorConstLp_add.symm
-        map_smul' := indicatorConstLp_smul hK hμK }
+    let L : H →L[ℂ] Lp H 2 μ := LinearMap.mkContinuous (indicatorConstLpₗ ℂ 2 hK hμK)
       (μ.real K ^ (1 / (2 : ℝ≥0∞).toReal))
       fun v => by simp [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, mul_comm]
     have hspan : Submodule.span ℂ (⋃ a, Set.range (ρ a)) ≤ M.comap (L : H →ₗ[ℂ] Lp H 2 μ) := by
