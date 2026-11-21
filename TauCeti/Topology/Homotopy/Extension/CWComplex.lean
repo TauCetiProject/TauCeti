@@ -10,6 +10,9 @@ public import TauCeti.Topology.CWComplex.Classical.Subcomplex
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Induction
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
+import TauCeti.Topology.CWComplex.Classical.OpenCells
+import TauCeti.Topology.Homotopy.Extension.Segment
+
 /-!
 # Relative CW inclusions are closed cofibrations
 
@@ -18,6 +21,16 @@ do every skeleton and every subcomplex of `C`.  As `X` is Hausdorff, these subse
 (`TauCeti.HasHomotopyExtensionProperty.isClosed`), so their inclusions are closed cofibrations.
 This is what makes skeletal induction and homotopy-invariance arguments for CW pairs work: maps
 and homotopies can be modified on the base or on a skeleton and extended over the whole complex.
+
+Every point outside the base `D` also has the homotopy extension property inside `C`
+(`TauCeti.hasHomotopyExtensionProperty_singleton_of_notMem_base`), regardless of the dimension of
+the open cell containing it: inside the `n`-skeleton `skeletonLT C (n + 1)` the open `n`-cell is
+the source of a Euclidean chart `Topology.RelCWComplex.openCellChart`, so the point has the
+homotopy extension property there by
+`OpenPartialHomeomorph.hasHomotopyExtensionProperty_singleton`, and composing with the cofibration
+`skeletonLT C (n + 1) ⊆ C` extends it to `C`. In particular, every point of a Hausdorff CW complex
+is a well-pointed base point (`TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex` and
+`TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex_univ`).
 
 ## Main results
 
@@ -32,6 +45,11 @@ and homotopies can be modified on the base or on a skeleton and extended over th
 * `TauCeti.hasHomotopyExtensionProperty_range_of_coe_map_eq`: the range of a map between CW
   complexes carrying every cell onto a cell, characteristic maps included, has the homotopy
   extension property, being a subcomplex.
+* `TauCeti.hasHomotopyExtensionProperty_singleton_of_notMem_base`,
+  `TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex`,
+  `TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex_univ`: **every point outside the
+  base of a relative CW complex, and every point of a Hausdorff CW complex, has the homotopy
+  extension property.**
 
 ## Related results
 
@@ -196,5 +214,45 @@ theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [Topologi
   have h := E.hasHomotopyExtensionProperty.image (Homeomorph.Set.univ Y)
   rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter]
     at h
+
+/-- **Every point outside the base of a relative CW complex has the homotopy extension property.**
+The point lies in an open `n`-cell `openCell n i`, which is the source of the Euclidean chart
+`openCellChart n i` on the `n`-skeleton `skeletonLT C (n + 1)`. Inside that skeleton the singleton
+has the homotopy extension property by
+`OpenPartialHomeomorph.hasHomotopyExtensionProperty_singleton`, and composing with the cofibration
+`skeletonLT C (n + 1) ⊆ C` extends it to `C`. -/
+theorem hasHomotopyExtensionProperty_singleton_of_notMem_base (x : C) (hx : (x : X) ∉ D) :
+    HasHomotopyExtensionProperty ({x} : Set C) := by
+  have hx' : (x : X) ∈ D ∪ ⋃ (n : ℕ) (i : cell C n), openCell (C := C) n i := by
+    rw [union_iUnion_openCell_eq_complex]
+    exact x.2
+  obtain ⟨n, i, hxi⟩ := mem_iUnion₂.1 (hx'.resolve_left hx)
+  let S : Set X := (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)
+  have hSC : S ⊆ C := (skeletonLT C _).subset_complex
+  have hxS : (x : X) ∈ S := openCell_subset_skeletonLT n i hxi
+  have hhepS : HasHomotopyExtensionProperty ({(⟨(x : X), hxS⟩ : S)} : Set S) :=
+    (openCellChart (C := C) n i).hasHomotopyExtensionProperty_singleton (x := ⟨(x : X), hxS⟩)
+      (by simpa [openCellChart_source] using hxi)
+  have hrange : range (inclusion hSC) = (Subtype.val ⁻¹' S : Set C) := by
+    ext y
+    exact ⟨by rintro ⟨z, rfl⟩; exact z.2, fun hy ↦ ⟨⟨y, hy⟩, rfl⟩⟩
+  have h := hhepS.image_of_isEmbedding (IsEmbedding.inclusion hSC) <| by
+    rw [hrange]
+    exact hasHomotopyExtensionProperty_skeletonLT (C := C) (n + 1)
+  simpa [image_singleton] using h
+
+/-- **Every point of a Hausdorff CW complex has the homotopy extension property**, regardless of the
+dimension of the cell containing it. -/
+theorem hasHomotopyExtensionProperty_singleton_of_cwComplex {C : Set X} [CWComplex C] (x : C) :
+    HasHomotopyExtensionProperty ({x} : Set C) :=
+  hasHomotopyExtensionProperty_singleton_of_notMem_base (D := ∅) x (notMem_empty _)
+
+/-- **Every point of a Hausdorff space carrying a CW structure on `univ` has the homotopy extension
+property.** -/
+theorem hasHomotopyExtensionProperty_singleton_of_cwComplex_univ [CWComplex (univ : Set X)]
+    (x : X) : HasHomotopyExtensionProperty ({x} : Set X) := by
+  have h := (hasHomotopyExtensionProperty_singleton_of_cwComplex
+    (C := (univ : Set X)) ⟨x, mem_univ x⟩).image (Homeomorph.Set.univ X)
+  simpa [image_singleton] using h
 
 end TauCeti

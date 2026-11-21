@@ -47,6 +47,8 @@ The proof produces NDR data through `TauCeti.NDRPair.ofHomotopyRel`.
 
 * `OpenPartialHomeomorph.hasHomotopyExtensionProperty_symm_image_segment`: the image of a segment
   in the target of `e` has the homotopy extension property.
+* `OpenPartialHomeomorph.hasHomotopyExtensionProperty_singleton`: every point in the source of `e`
+  has the homotopy extension property (degenerate case `x = y`).
 
 ## References
 
@@ -222,5 +224,15 @@ theorem hasHomotopyExtensionProperty_symm_image_segment [T2Space X] [ProperSpace
   obtain ⟨r, ⟨D⟩⟩ := e.exists_homotopyRel_segment hℓ hδ h hδt
   obtain ⟨f, hf, hfU⟩ := e.exists_control_segment hℓ hδ h hδt
   exact (NDRPair.ofHomotopyRel _ D f hf hfU).hasHomotopyExtensionProperty
+
+/-- **A point in the source of an open partial homeomorphism has the homotopy extension property.**
+Special case of `OpenPartialHomeomorph.hasHomotopyExtensionProperty_symm_image_segment` for the
+degenerate segment `[e x, e x] = {e x}`. -/
+theorem hasHomotopyExtensionProperty_singleton [T2Space X] [ProperSpace E]
+    {x : X} (hx : x ∈ e.source) :
+    HasHomotopyExtensionProperty ({x} : Set X) := by
+  have h := e.hasHomotopyExtensionProperty_symm_image_segment (x := e x) (y := e x)
+    (by simp [e.map_source hx])
+  simpa [segment_same, e.left_inv hx] using h
 
 end OpenPartialHomeomorph
