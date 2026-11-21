@@ -21,8 +21,7 @@ combinations `s a + t b - r` with real weights and subtrahend behave, and that n
 distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
 installing a coercion; it is additive. Finally, the adjunction `a + b ≤ c ↔ b ≤ c - a` is
-recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`;
-consequently, subtracting any extended real commutes with suprema.
+recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`.
 
 ## Main results
 
@@ -68,7 +67,6 @@ consequently, subtracting any extended real commutes with suprema.
 * `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`;
 * `EReal.add_le_iff_le_ite` — `a + b ≤ c` is equivalent to `b ≤ c - a` with no finiteness
   hypothesis, once `c - a` is replaced by `⊤` when `c = ⊤` or `a = ⊥`;
-* `EReal.iSup_sub` — consequently, subtracting any extended real commutes with a supremum;
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -338,14 +336,6 @@ theorem add_le_iff_le_ite {a b c : EReal} :
   by_cases h : c = ⊤ ∨ a = ⊥
   · rcases h with rfl | rfl <;> simp
   · rw [ite_eq_right h, le_sub_iff_add_le (.inl (not_or.mp h).2) (.inr (not_or.mp h).1), add_comm]
-
-/-- Subtracting any extended real `a` commutes with a supremum in `EReal`, including `a = ⊤`
-(both sides are `⊥`) and `a = ⊥`; both sides are `⊥` when the index type is empty. -/
-theorem iSup_sub {ι : Sort*} (f : ι → EReal) (a : EReal) :
-    (⨆ i, (f i - a)) = (⨆ i, f i) - a := by
-  simp only [sub_eq_add_neg, add_comm _ (-a)]
-  -- adding `-a` on the left is a left adjoint, by `add_le_iff_le_ite`
-  exact (GaloisConnection.l_iSup fun _ _ ↦ add_le_iff_le_ite).symm
 
 end EReal
 
