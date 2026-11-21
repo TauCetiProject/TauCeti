@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
@@ -52,6 +53,29 @@ converges locally uniformly on `Ω` off a finite set `Z` of bubbling points, wit
 applies it to the structures of the capping family. The regularity of the limit, the bubbles at
 the points of `Z`, breaking at the two ends and the long-neck end `L → ∞` of the family are not
 treated here.
+
+**Manifold targets.** For a target manifold `M` with a nondegenerate two-form `ω`, such as a
+closed symplectic manifold, the family is built from the structures
+`TauCeti.SmoothTwoForm.Compatible.cappingAlmostComplex` on the tangent bundle. The limiting actions
+of loops are not defined on `M`; their role is played by the change of capped action. Read a
+solution `u` in the coordinates `(s, t)` of the end at `0`, with asymptotic loops `x₀` as `s → ∞`
+and `x_∞` as `s → -∞`. In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`, its Floer energy
+over every measurable subset of the capped plane is at most
+`∫ (u ∘ φ_0)^*ω + ∫₀¹ H_0(t, x₀(t)) dt - ∫₀¹ H_∞(t, x_∞(t)) dt + B_1 + (B_0 + B_1 + B_∞)`
+(`setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le`), whose first three terms are
+the capped action of the input minus that of the output, for caps related by `u`. The
+compactness theorem over a compact parameter window in a symplectic chart `φ : M ⊇ U → V`, such
+as a Darboux chart (`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`, in
+the same namespace), then applies to solutions whose images of `Ω` stay in a compact subset `K`
+of the chart source
+(`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappingAlmostComplex`),
+with `#Z * δ` bounded by the change of capped action plus `B_1 + (B_0 + B_1 + B_∞)`. The
+Hamiltonians read in the chart are `C³` in `(L, z, y)` by the smoothness of the family; the
+structures read in the chart are supplied, as for fixed data, by any family `J'_L` with
+`dφ_x ∘ J_L(z, x) = J'_L(z, φ x) ∘ dφ_x` that is `C²` in `(L, z, y)` on an open set containing
+`C × D × φ(K)`. The limit is read in `M`: the coordinate maps converge locally uniformly off the
+bubbling points, and the maps themselves converge pointwise to a continuous limit with values in
+`K`. Covering `M` by several charts is not treated here.
 
 ## References
 
@@ -244,3 +268,161 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     contMDiff_prodMap_equivRealProdCLM_symm.contMDiffAt).contDiffAt.contDiffWithinAt
 
 end TauCeti.SymplecticForm
+
+namespace TauCeti.SmoothTwoForm.IsNondegenerate
+
+open Floer
+
+variable {E G M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  [IsManifold I ⊤ M] [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {Hb : Puncture → ℝ → M → ℝ}
+  {J₀ : SmoothAlmostComplexStructure I M} {Jb : Puncture → ℝ → SmoothAlmostComplexStructure I M}
+
+omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] [FiniteDimensional ℝ V] in
+/-- The capping datum read in a chart `φ` of the target is `C³` jointly in the neck length
+`L > 4`, the point `z` of the capped plane and the chart coordinate `y`: it is the smooth datum on
+`ℝ × (ℂ × M)` composed with `(L, z, y) ↦ (L, (z, φ⁻¹ y))`. -/
+private theorem contDiffOn_plumbedPerturbation_single_inf_symm (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (Hb r)))
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) (w : ℂ) :
+    ContDiffOn ℝ 3 (fun q : ℝ × ((ℝ × ℝ) × V) ↦
+      plumbedPerturbation (Pi.single inf (Hb one)) Hb one q.1 (equivRealProdCLM.symm q.2.1)
+        (φ.symm q.2.2) w) (Ioi 4 ×ˢ ({z | equivRealProdCLM.symm z ≠ 0} ×ˢ φ.target)) := by
+  have hg : ContMDiffOn 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 3
+      (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (q.1, (equivRealProdCLM.symm q.2.1, φ.symm q.2.2)))
+      (univ ×ˢ (univ ×ˢ φ.target)) :=
+    contDiff_fst.contMDiff.contMDiffOn.prodMk
+      ((equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.contMDiffOn
+        |>.prodMk ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
+          (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffOn fun _ hq ↦ hq.2.2))
+  rintro ⟨l, z, y⟩ ⟨hl, hz, hy⟩
+  have hK := contMDiffAt_plumbedPerturbation_single_inf_family (n := 3) (q := one) (by simp) hHb
+    hHbs hl (eq_endCenter_one_or_of_ne_zero hz) (φ.symm y)
+  exact contMDiffWithinAt_iff_contDiffWithinAt.1 ((hK.comp_contMDiffWithinAt (l, z, y)
+    ((hg (l, z, y) ⟨trivial, trivial, hy⟩).mono (prod_mono (subset_univ _)
+      (prod_mono (subset_univ _) subset_rfl)))).clm_apply contMDiffWithinAt_const)
+
+/-- **Solutions of the capping family in a symplectic chart of a manifold converge off finitely
+many bubbling points.** Let `ω` be a nondegenerate two-form on `M`, let `Hb` be period-one `C³`
+Hamiltonians with `|Hb r| ≤ Bb r`, let `J₀` be `ω`-compatible and let `Jb r t` be `ω`-tame end
+structures. The structures `J_L` of the capping family plumb the negative plane with end structure
+`Jb 1` into the input end at `1` of the pair of pants with end structures `Jb`, along a neck of
+length `L`, over the base structure `J₀`. Let `φ` be a smooth partial diffeomorphism from `M` onto
+an open subset of `V` pulling the symplectic form `ω₀` back to `ω` on a compact set
+`K ⊆ φ.source`, such as a Darboux chart, and let `J'_L(z, y)` be the structures `J_L` read in the
+chart, `dφ_x ∘ J_L(z, x) = J'_L(z, φ x) ∘ dφ_x` for `L ∈ C`, `z ∈ D` and `x ∈ K`, and `C²` jointly
+in `(L, z, y)` on an open set `W` containing `C × D × φ(K)`, where `C ⊆ (4, ∞)` is a compact
+window of neck lengths and `D` is a compact subset of the capped plane `ℂ ∖ {0}`, in real
+coordinates. There is a threshold `δ > 0` with the following property.
+
+Let `uₖ` be `C³` maps on the capped plane into `M` solving the Floer equation
+`(du - X_{K_{Lₖ}})^{0,1} = 0` there for the structures `J_{Lₖ}(z, u)` and the datum `K_{Lₖ}`
+obtained by plumbing the negative plane with Hamiltonian `Hb 1` into the input end at `1` of the
+pair of pants with Hamiltonians `Hb`, with `Lₖ ∈ C`. Read `uₖ` in the coordinates `(s, t)` of the
+end at `0`, and suppose that its loops converge pointwise to `x₀ₖ` as `s → ∞` and to `x_infₖ` as
+`s → -∞`, that its energy, area and curvature densities in these coordinates are integrable over
+the strip `ℝ × [0, 1]`, that the change of capped action
+`∫ (uₖ ∘ φ_0)^*ω + ∫₀¹ Hb 0 (t, x₀ₖ(t)) dt - ∫₀¹ Hb ∞ (t, x_infₖ(t)) dt` is at most `A`, and that
+`uₖ(Ω) ⊆ K` for an open `Ω ⊆ D`. Then there are a subsequence `ψ`, a limit `L₀ ∈ C` of `L_{ψ n}`,
+a finite set `Z ⊆ Ω` with `#Z * δ ≤ A + Bb 1 + ∑ r, Bb r`, and a map `v`, continuous on `Ω \ Z`
+with values in `K`, such that along `ψ` every disc about a point of `Z` eventually carries Floer
+energy at least `δ`, the differentials of the coordinate maps `φ ∘ u_{ψ n}` are uniformly bounded
+on every compact subset of `Ω \ Z`, the coordinate maps converge to `φ ∘ v` locally uniformly on
+`Ω \ Z`, and `u_{ψ n} → v` pointwise on `Ω \ Z`. -/
+theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappingAlmostComplex
+    (hω : ω.IsNondegenerate) (h₀ : ω.Compatible J₀) (hJb : ∀ r t, ω.Tames (Jb r t))
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (Hb r)))
+    {Bb : Puncture → ℝ} (hBb : ∀ r t x, |Hb r t x| ≤ Bb r)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
+    {J' : ℝ → ℝ × ℝ → V → AlmostComplexStructure V} {C : Set ℝ} {D : Set (ℝ × ℝ)} {K : Set M}
+    (hφ : ∀ x ∈ K, ∀ v w : TangentSpace I x,
+      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    (hJJ' : ∀ L ∈ C, ∀ z ∈ D, ∀ x ∈ K, IsComplexLinearMap
+      ((h₀.cappingAlmostComplex Jb hJb one L (equivRealProdCLM.symm z)).almostComplexStructureAt x)
+      (J' L z (φ x)) (mvfderiv I φ x).toLinearMap)
+    {W : Set (ℝ × ((ℝ × ℝ) × V))} (hW : IsOpen W)
+    (hJ' : ContDiffOn ℝ 2
+      (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (J' q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
+    (hC : IsCompact C) (hC₄ : C ⊆ Ioi 4) (hD : IsCompact D)
+    (hDS : ∀ z ∈ D, equivRealProdCLM.symm z ≠ 0) (hK : IsCompact K) (hKφ : K ⊆ φ.source)
+    (hCDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃L : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃x₀ x_inf : ℕ → ℝ → M⦄ ⦃A : ℝ⦄,
+      IsOpen Ω → Ω ⊆ D → (∀ k, L k ∈ C) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) {z | equivRealProdCLM.symm z ≠ 0}) →
+      (∀ k z, equivRealProdCLM.symm z ≠ 0 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        ((h₀.cappingAlmostComplex Jb hJb one (L k)
+          (equivRealProdCLM.symm z)).almostComplexStructureAt (u k z))
+        (ω.perturbedMFDeriv
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+            (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+            (equivRealProdCLM.symm z) x Complex.I)
+          (u k) z).toLinearMap) →
+      (∀ k t, Tendsto (fun s ↦ u k (endChart zero (s, t))) atTop (𝓝 (x₀ k t))) →
+      (∀ k t, Tendsto (fun s ↦ u k (endChart zero (s, t))) atBot (𝓝 (x_inf k t))) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb (L k) 1)
+        (cappedCylinderComponent Hb (L k) Complex.I) (u k ∘ endChart zero)) (univ ×ˢ Icc 0 1)) →
+      (∀ k, IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω ((u k ∘ endChart zero) z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k ∘ endChart zero) z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k ∘ endChart zero) z stdComplexLineImag) : ℝ))
+        (univ ×ˢ Icc 0 1)) →
+      (∀ k, IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb (L k) 1)
+        (cappedCylinderComponent Hb (L k) Complex.I) z ((u k ∘ endChart zero) z))
+        (univ ×ˢ Icc 0 1)) →
+      (∀ k, (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω ((u k ∘ endChart zero) z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k ∘ endChart zero) z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u k ∘ endChart zero) z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, Hb zero t (x₀ k t)) - (∫ t in 0..1, Hb inf t (x_inf k t)) ≤ A) →
+      (∀ k, MapsTo (u k) Ω K) →
+      ∃ (ψ : ℕ → ℕ) (L₀ : ℝ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), StrictMono ψ ∧ L₀ ∈ C ∧
+        Tendsto (fun n ↦ L (ψ n)) atTop (𝓝 L₀) ∧ ↑Z ⊆ Ω ∧
+        Z.card * δ ≤ A + Bb one + ∑ r, Bb r ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L (ψ n))
+            (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L (ψ n))
+            (equivRealProdCLM.symm z) x Complex.I) (u (ψ n)) y) ∧
+        (∀ L', IsCompact L' → L' ⊆ Ω \ ↑Z →
+          ∃ M', ∀ n, ∀ y ∈ L', ‖fderiv ℝ (φ ∘ u (ψ n)) y‖ ≤ M') ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
+        ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
+  set S : Set (ℝ × ℝ) := {z | equivRealProdCLM.symm z ≠ 0}
+  have hS : IsOpen S := isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
+  have hJt (l : ℝ) (w : ℂ) (x : M) : (hω.symplecticFormAt x).Tames
+      ((h₀.cappingAlmostComplex Jb hJb one l w).almostComplexStructureAt x) :=
+    hω.tames_iff.1 (h₀.tames_cappingAlmostComplex Jb hJb w) x
+  set W' : Set (ℝ × ((ℝ × ℝ) × V)) := W ∩ Ioi 4 ×ˢ (S ×ˢ φ.target)
+  have hW' : IsOpen W' := hW.inter (isOpen_Ioi.prod (hS.prod φ.open_target))
+  have hCDKW' : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W' := by
+    intro q hq
+    obtain ⟨x, hx, hxq⟩ := hq.2.2
+    exact ⟨hCDKW hq, hC₄ hq.1, hDS _ hq.2.1, hxq ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩
+  obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
+    φ (Ks := fun l z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one l
+      (equivRealProdCLM.symm z) x 1)
+    (Kt := fun l z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one l
+      (equivRealProdCLM.symm z) x Complex.I)
+    (J := fun l z x ↦
+      (h₀.cappingAlmostComplex Jb hJb one l (equivRealProdCLM.symm z)).almostComplexStructureAt x)
+    hφ hJJ' hW' ((contDiffOn_plumbedPerturbation_single_inf_symm hHb hHbs φ 1).mono
+      inter_subset_right)
+    ((contDiffOn_plumbedPerturbation_single_inf_symm hHb hHbs φ Complex.I).mono inter_subset_right)
+    (hJ'.mono inter_subset_left) hC hD hK hKφ hCDKW' fun l _ z _ x _ ↦ hJt l _ x
+  refine ⟨δ, hδ, fun Ω L u x₀ x_inf A hΩ hΩD hLC hu hfl hx₀ hx_inf hE hA hR hAc huK ↦ ?_⟩
+  have hΩS : ∀ z ∈ Ω, equivRealProdCLM.symm z ≠ 0 := fun z hz ↦ hDS z (hΩD hz)
+  -- The Floer energy over `Ω` is at most the change of capped action plus the curvature
+  -- allowance `Bb 1 + ∑ r, Bb r`.
+  refine hconv hΩ hΩD hLC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS z hz)) huK
+    (fun k ↦ ω.integrableOn_floerEnergyDensity_plumbedPerturbation_single_inf hHb
+      (fun r ↦ (hHbs r).of_le (by norm_num)) (hC₄ (hLC k)) hΩ.measurableSet hΩS
+      (fun z hz ↦ ((hu k).contMDiffAt (hS.mem_nhds (hΩS z hz))).mdifferentiableAt (by norm_num))
+      (hE k)) fun k ↦ ?_
+  have hEk := hω.setIntegral_floerEnergyDensity_plumbedPerturbation_single_inf_le hHb
+    (fun r ↦ (hHbs r).of_le (by norm_num)) (hC₄ (hLC k)) hBb ((hu k).of_le (by norm_num))
+    (fun z _ ↦ hJt _ _ _) (hfl k) (hx₀ k) (hx_inf k) (hE k) (hA k) (hR k) hΩ.measurableSet hΩS
+  linarith [hAc k]
+
+end TauCeti.SmoothTwoForm.IsNondegenerate

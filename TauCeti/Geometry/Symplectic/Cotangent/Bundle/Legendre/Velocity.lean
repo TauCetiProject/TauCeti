@@ -63,8 +63,8 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
 `(q, v) ↦ (q, Df(v))`. -/
 @[simp]
 theorem legendreMap_comp_snd (v : TangentBundle 𝓘(𝕜, E) E) :
-    legendreMap (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) v =
-      TotalSpace.mk' (E →L[𝕜] 𝕜) v.proj (fderiv 𝕜 f v.2) :=
+    legendreMap (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) v =
+      TotalSpace.mk' (E →L[𝕜] 𝕜) v.proj (fderiv 𝕜 f v.snd) :=
   -- On the fibre over `v.proj` the Lagrangian is `w ↦ f w`, which is `f` itself.
   legendreMap_def _ v
 
@@ -72,13 +72,14 @@ theorem legendreMap_comp_snd (v : TangentBundle 𝓘(𝕜, E) E) :
 derivative of `f`. -/
 @[simp]
 theorem fiberHessian_comp_snd (v : TangentBundle 𝓘(𝕜, E) E) :
-    fiberHessian (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) v = fderiv 𝕜 (fderiv 𝕜 f) v.2 :=
+    fiberHessian (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) v = fderiv 𝕜 (fderiv 𝕜 f) v.snd :=
   fiberHessian_def _ v
 
 /-- The energy of a Lagrangian `f(v)` depending only on the velocity is `Df(v)(v) - f(v)`. -/
 @[simp]
 theorem lagrangianEnergy_comp_snd (v : TangentBundle 𝓘(𝕜, E) E) :
-    lagrangianEnergy (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) v = fderiv 𝕜 f v.2 v.2 - f v.2 := by
+    lagrangianEnergy (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) v = fderiv 𝕜 f v.snd v.snd - f
+        v.snd := by
   rw [lagrangianEnergy_apply, legendreMap_comp_snd]
   -- The sides differ only in the fibre types `TangentSpace 𝓘(𝕜, E) v.proj` and
   -- `TangentSpace 𝓘(𝕜, E) v.proj →L[𝕜] 𝕜`, which are `E` and `E →L[𝕜] 𝕜` by definition.
@@ -87,20 +88,20 @@ theorem lagrangianEnergy_comp_snd (v : TangentBundle 𝓘(𝕜, E) E) :
 /-- A Lagrangian `f(v)` depending only on the velocity is regular exactly when every second
 derivative of `f` is invertible. -/
 theorem isRegularLagrangian_comp_snd_iff :
-    IsRegularLagrangian (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) ↔
+    IsRegularLagrangian (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) ↔
       ∀ w : E, (fderiv 𝕜 (fderiv 𝕜 f) w).IsInvertible := by
   simp only [isRegularLagrangian_iff, fiberHessian_comp_snd]
-  exact ⟨fun h w ↦ h (TotalSpace.mk' E 0 w), fun h v ↦ h v.2⟩
+  exact ⟨fun h w ↦ h (TotalSpace.mk' E 0 w), fun h v ↦ h v.snd⟩
 
 /-- The Legendre map of a Lagrangian `f(v)` depending only on the velocity takes as values the
 covectors in the range of the derivative `Df : E → E'`, at every base point. -/
 theorem range_legendreMap_comp_snd :
-    range (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) =
-      {z | z.2 ∈ range (fderiv 𝕜 f)} := by
+    range (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) =
+      {z | z.snd ∈ range (fderiv 𝕜 f)} := by
   ext z
   refine ⟨?_, fun ⟨w, hw⟩ ↦ ⟨TotalSpace.mk' E z.proj w, ?_⟩⟩
   · rintro ⟨v, rfl⟩
-    exact ⟨v.2, by rw [legendreMap_comp_snd]⟩
+    exact ⟨v.snd, by rw [legendreMap_comp_snd]⟩
   · rw [legendreMap_comp_snd]
     -- `hw` applies to `u : TangentSpace 𝓘(𝕜, E) z.proj` because the fibre types
     -- `TangentSpace 𝓘(𝕜, E) z.proj` and its dual are `E` and `E →L[𝕜] 𝕜` by definition.
@@ -109,7 +110,7 @@ theorem range_legendreMap_comp_snd :
 /-- The Legendre map of a Lagrangian `f(v)` depending only on the velocity is injective exactly
 when the derivative `Df : E → E'` is. -/
 theorem injective_legendreMap_comp_snd_iff :
-    Injective (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) ↔
+    Injective (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) ↔
       Injective (fderiv 𝕜 f) := by
   refine ⟨fun h w w' hww' ↦ ?_, fun h v v' hvv' ↦ ?_⟩
   · have := @h (TotalSpace.mk' E 0 w) (TotalSpace.mk' E 0 w')
@@ -128,16 +129,16 @@ theorem injective_legendreMap_comp_snd_iff :
 /-- The Legendre map of a Lagrangian `f(v)` depending only on the velocity is surjective exactly
 when the derivative `Df : E → E'` is. -/
 theorem surjective_legendreMap_comp_snd_iff :
-    Surjective (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) ↔
+    Surjective (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) ↔
       Surjective (fderiv 𝕜 f) := by
   -- Every covector at every base point is a value of `Df`.
   simp only [← range_eq_univ, range_legendreMap_comp_snd, eq_univ_iff_forall]
-  exact ⟨fun h p ↦ h (TotalSpace.mk' (E →L[𝕜] 𝕜) (0 : E) p), fun h z ↦ h z.2⟩
+  exact ⟨fun h p ↦ h (TotalSpace.mk' (E →L[𝕜] 𝕜) (0 : E) p), fun h z ↦ h z.snd⟩
 
 /-- A Lagrangian `f(v)` depending only on the velocity is hyperregular exactly when every second
 derivative of `f` is invertible and the derivative `Df : E → E'` is a bijection. -/
 theorem isHyperregularLagrangian_comp_snd_iff :
-    IsHyperregularLagrangian (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) ↔
+    IsHyperregularLagrangian (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.snd) ↔
       (∀ w : E, (fderiv 𝕜 (fderiv 𝕜 f) w).IsInvertible) ∧ Bijective (fderiv 𝕜 f) := by
   refine ⟨fun h ↦ ⟨(isRegularLagrangian_comp_snd_iff f).1 h.isRegularLagrangian,
     (injective_legendreMap_comp_snd_iff f).1 h.bijective_legendreMap.1,
@@ -151,7 +152,7 @@ section Exp
 
 /-- **`L(q, v) = e^v` is regular**: its fibre Hessian is `e^v`, which is never zero. -/
 theorem isRegularLagrangian_exp_snd :
-    IsRegularLagrangian (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.2) := by
+    IsRegularLagrangian (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.snd) := by
   rw [isRegularLagrangian_comp_snd_iff]
   intro w
   rw [isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero, iteratedDeriv_eq_iterate,
@@ -161,11 +162,11 @@ theorem isRegularLagrangian_exp_snd :
 /-- The Legendre map `(q, v) ↦ (q, e^v)` of `L(q, v) = e^v` takes as values exactly the positive
 covectors: those `p` with `p(1) > 0`. -/
 theorem range_legendreMap_exp_snd :
-    range (legendreMap fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.2) =
-      {z | 0 < z.2 (1 : ℝ)} := by
+    range (legendreMap fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.snd) =
+      {z | 0 < z.snd (1 : ℝ)} := by
   rw [range_legendreMap_comp_snd]
   ext z
-  refine ⟨fun ⟨w, hw⟩ ↦ ?_, fun hz ↦ ⟨Real.log (z.2 (1 : ℝ)), ?_⟩⟩
+  refine ⟨fun ⟨w, hw⟩ ↦ ?_, fun hz ↦ ⟨Real.log (z.snd (1 : ℝ)), ?_⟩⟩
   · have hpos : 0 < fderiv ℝ Real.exp w 1 := by
       rw [fderiv_eq_smul_deriv, Real.deriv_exp, one_smul]
       exact Real.exp_pos w
@@ -179,10 +180,10 @@ theorem range_legendreMap_exp_snd :
 /-- **`L(q, v) = e^v` is not hyperregular**: its Legendre map `(q, v) ↦ (q, e^v)` misses the
 covectors `p ≤ 0`, so it is not onto `T*ℝ`, and `H = E_L ∘ FL⁻¹` is not defined on `T*ℝ`. -/
 theorem not_isHyperregularLagrangian_exp_snd :
-    ¬IsHyperregularLagrangian (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.2) := by
+    ¬IsHyperregularLagrangian (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.snd) := by
   intro h
   have h0 : TotalSpace.mk' (ℝ →L[ℝ] ℝ) (0 : ℝ) 0 ∈
-      range (legendreMap fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.2) :=
+      range (legendreMap fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ Real.exp v.snd) :=
     h.bijective_legendreMap.2 _
   rw [range_legendreMap_exp_snd] at h0
   simp only [Set.mem_ofPred_eq] at h0

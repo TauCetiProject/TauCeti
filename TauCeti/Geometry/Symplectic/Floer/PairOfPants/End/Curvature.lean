@@ -116,13 +116,8 @@ theorem hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (ω : SmoothTwoForm I
   have hev : ∀ᶠ z' in 𝓝 z, ∀ q : Puncture,
       q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re < 1 := by
     refine Filter.eventually_all.2 fun q ↦ ?_
-    have hc : ContinuousAt
-        (fun z' ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re) z :=
-      continuousAt_const.mul
-        (((q.contDiffAt_re_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
-          (n := 0)).continuousAt).comp
-          Complex.equivRealProdCLM.symm.continuous.continuousAt)
-    exact hc.eventually (gt_mem_nhds (h q))
+    exact (continuousAt_endSign_mul_re_endCoord q
+      (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)).eventually (gt_mem_nhds (h q))
   have hK' : ∀ᶠ z' in 𝓝 z, ∀ y, K (Complex.equivRealProdCLM.symm z') y = 0 :=
     hev.mono fun z' hz' ↦ hK _ fun q ↦ (hz' q).le
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)

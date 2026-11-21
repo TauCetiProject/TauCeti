@@ -63,9 +63,9 @@ theorem isPseudoholomorphic_affineParam (i : Fin 2) :
 theorem coe_mpullback_affineParam_apply_of_ne_zero {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℂ F] {k : ℕ} (α : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F k)
     {i j : Fin 2} (hij : i ≠ j) {s : ℂ} (hs : s ≠ 0) :
-    (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α).1 s =
+    (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α).val s =
       TauCeti.mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun y : ℂ ↦ y⁻¹)
-        (SmoothForm.mpullback (affineParam j) (contMDiff_affineParam_real j) α).1 s := by
+        (SmoothForm.mpullback (affineParam j) (contMDiff_affineParam_real j) α).val s := by
   have heq : affineParam i =ᶠ[𝓝 s] affineParam j ∘ fun y ↦ y⁻¹ := by
     filter_upwards [eventually_ne_nhds hs] with y hy using affineParam_inv hij hy
   have hinv := (hasDerivAt_inv hs).hasFDerivAt.restrictScalars ℝ
@@ -88,7 +88,7 @@ theorem mpullback_affineParam_injective {F : Type*} [NormedAddCommGroup F]
     obtain ⟨t, rfl⟩ : ∃ t, affineParam i t = x := ⟨_, affineParam_affineChart hi⟩
     ext v
     choose w hw using fun m ↦ surjective_mfderiv_affineParam i t (v m)
-    have h' := congrArg (fun γ : SmoothForm 𝓘(ℝ, ℂ) ℂ F k ↦ γ.1 t w) (h i)
+    have h' := congrArg (fun γ : SmoothForm 𝓘(ℝ, ℂ) ℂ F k ↦ γ.val t w) (h i)
     simp only [SmoothForm.mpullback_apply, hw] at h'
     exact h'
   -- Pullbacks along the other coordinate agree off `0`, hence everywhere by continuity.
@@ -98,7 +98,7 @@ theorem mpullback_affineParam_injective {F : Type*} [NormedAddCommGroup F]
   obtain rfl | rfl : l = i ∨ l = j := by omega
   · exact h
   let Θ (γ : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F k) : ℂ → ℂ [⋀^Fin k]→L[ℝ] F :=
-    fun s ↦ (SmoothForm.mpullback (affineParam l) (contMDiff_affineParam_real l) γ).1 s
+    fun s ↦ (SmoothForm.mpullback (affineParam l) (contMDiff_affineParam_real l) γ).val s
   have hcont (γ : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F k) : Continuous (Θ γ) :=
     (isSmoothForm_modelSpace_iff.1 (SmoothForm.mpullback _ _ γ).isSmoothForm).continuous
   have hΘ : Θ α = Θ β := (hcont α).ext_on (dense_compl_singleton 0) (hcont β) fun s hs ↦ by
@@ -122,8 +122,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 private theorem IsOfType.mpullback_affineParam_apply_inv
     (hα : α.IsOfType (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))) 1 0) {i j : Fin 2}
     (hij : i ≠ j) {s : ℂ} (hs : s ≠ 0) :
-    (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α).1 s ![(1 : ℂ)] =
-      -(s ^ 2)⁻¹ • (SmoothForm.mpullback (affineParam j) (contMDiff_affineParam_real j) α).1 s⁻¹
+    (SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α).val s ![(1 : ℂ)] =
+      -(s ^ 2)⁻¹ • (SmoothForm.mpullback (affineParam j) (contMDiff_affineParam_real j) α).val s⁻¹
         ![(1 : ℂ)] := by
   have hinv := (hasDerivAt_inv hs).hasFDerivAt.restrictScalars ℝ
   have hD : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun y : ℂ ↦ y⁻¹) s (1 : ℂ) = (-(s ^ 2)⁻¹ : ℂ) := by
@@ -148,12 +148,12 @@ theorem IsOfType.eq_zero_of_delBar_eq_zero_projectivization
     SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α
   have hη (i : Fin 2) : (η i).IsOfType (ofComplexManifold ℂ ℂ) 1 0 :=
     hα.mpullback _ (isPseudoholomorphic_affineParam i)
-  have hc (i : Fin 2) : Differentiable ℂ fun y ↦ (η i).1 y ![(1 : ℂ)] := by
+  have hc (i : Fin 2) : Differentiable ℂ fun y ↦ (η i).val y ![(1 : ℂ)] := by
     refine (hη i).delBar_eq_zero_iff.1 ?_
     rw [← (ofComplexManifold ℂ ℂ).mpullback_delBar (contMDiff_affineParam_real i)
       (isPseudoholomorphic_affineParam i), hd, map_zero]
   -- By Liouville's theorem and the transformation law, the coefficients vanish.
-  have hc₀ {i j : Fin 2} (hij : i ≠ j) (t : ℂ) : (η i).1 t ![(1 : ℂ)] = 0 :=
+  have hc₀ {i j : Fin 2} (hij : i ≠ j) (t : ℂ) : (η i).val t ![(1 : ℂ)] = 0 :=
     (hc i).eq_zero_of_eq_neg_inv_sq_smul (hc j).continuous.continuousAt
       (fun _ hs ↦ hα.mpullback_affineParam_apply_inv hij hs) t
   -- Every point `x` is `[t : 1]` or `[1 : s]`, and `α` vanishes on the nonzero derivative there.

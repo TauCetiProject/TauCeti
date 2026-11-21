@@ -81,7 +81,7 @@ theorem isSemialgebraic_setOf_eval_sumElim_star_eq_zero (q : MvPolynomial (κ �
   have h (a : κ ⊕ κ → ℝ) :
       eval (Sum.elim (fun k ↦ (a (.inl k) : ℂ) + a (.inr k) * I)
         (fun k ↦ star ((a (.inl k) : ℂ) + a (.inr k) * I))) q =
-        eval (fun s ↦ (a s : ℂ)) (bind₁ L q) := by
+        eval (fun s ↦ (a s : ℂ)) (aeval L q) := by
     have hL : (fun t ↦ eval (fun s ↦ (a s : ℂ)) (L t)) =
         Sum.elim (fun k ↦ (a (.inl k) : ℂ) + a (.inr k) * I)
           (fun k ↦ star ((a (.inl k) : ℂ) + a (.inr k) * I)) := by
@@ -89,7 +89,7 @@ theorem isSemialgebraic_setOf_eval_sumElim_star_eq_zero (q : MvPolynomial (κ �
       cases t <;> simp [L, sub_eq_add_neg]
     rw [← hL]
     simp only [← coe_aeval_eq_eval]
-    exact (aeval_bind₁ _ L q).symm
+    exact (comp_aeval_apply L (aeval _) q).symm
   simp only [h]
   exact isSemialgebraic_setOf_eval_ofReal_eq_zero _
 

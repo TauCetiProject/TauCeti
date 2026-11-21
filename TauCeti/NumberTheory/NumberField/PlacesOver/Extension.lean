@@ -43,7 +43,7 @@ section Infinite
 extension `E / F`. -/
 theorem InfinitePlace.exists_liesOver_of_liesOver {K F E : Type*} [Field K] [Field F] [Field E]
     [Algebra K F] [Algebra F E] [Algebra.IsAlgebraic F E]
-    (v : InfinitePlace K) (w : AbsoluteValue F ℝ) [w.LiesOver v.1] :
+    (v : InfinitePlace K) (w : AbsoluteValue F ℝ) [w.LiesOver v.val] :
     ∃ u : AbsoluteValue E ℝ, u.LiesOver w := by
   obtain ⟨w', -, rfl⟩ := (existsUnique_infinitePlace_of_liesOver v w).exists
   exact nonempty_setOf_liesOver_infinitePlace E w'
@@ -57,21 +57,21 @@ variable {F E : Type*} [Field F] [NumberField F] [Field E] [NumberField E] [Alge
 /-- An absolute value equivalent to a finite place extends to every further number field,
 with equality on the base, not merely equivalence. -/
 theorem FinitePlace.exists_liesOver_of_isEquiv (v : FinitePlace F) {w : AbsoluteValue F ℝ}
-    (hw : v.1.IsEquiv w) : ∃ u : AbsoluteValue E ℝ, u.LiesOver w := by
+    (hw : v.val.IsEquiv w) : ∃ u : AbsoluteValue E ℝ, u.LiesOver w := by
   obtain ⟨t, ht, htw⟩ := isEquiv_iff_exists_rpow_eq.mp hw
   obtain ⟨u, hu⟩ := nonempty_setOf_liesOver_finitePlace_mk E v.maximalIdeal
-  have hu' : u.LiesOver v.1 := by
+  have hu' : u.LiesOver v.val := by
     simpa only [Set.mem_ofPred_eq, v.mk_maximalIdeal] using hu
   have huNA : IsNonarchimedean u := isNonarchimedean_of_liesOver v.add_le
   refine ⟨u.nonarchRpow huNA ht, ⟨AbsoluteValue.ext fun x ↦ ?_⟩⟩
-  rw [under_def, comp_apply, nonarchRpow_apply, LiesOver.apply_algebraMap v.1]
+  rw [under_def, comp_apply, nonarchRpow_apply, LiesOver.apply_algebraMap v.val]
   exact congrFun htw x
 
 /-- An absolute value of a number field lying over a finite place of a smaller number field
 extends to every further number field. The extension restricts to the given absolute value
 exactly, including its root-of-place normalization. -/
 theorem FinitePlace.exists_liesOver_of_liesOver {K : Type*} [Field K] [NumberField K]
-    [Algebra K F] (v : FinitePlace K) (w : AbsoluteValue F ℝ) [w.LiesOver v.1] :
+    [Algebra K F] (v : FinitePlace K) (w : AbsoluteValue F ℝ) [w.LiesOver v.val] :
     ∃ u : AbsoluteValue E ℝ, u.LiesOver w := by
   obtain ⟨𝔓, t, ht, -, hw⟩ := exists_finitePlace_rpow_inv_eq_of_liesOver w v
   apply (FinitePlace.mk 𝔓).exists_liesOver_of_isEquiv

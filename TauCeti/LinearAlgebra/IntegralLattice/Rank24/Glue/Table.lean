@@ -221,7 +221,7 @@ rotated block of `TauCeti.GluePattern.cyclic`, and `[even permutations of (0123)
 /-- **The `𝔽₄`-linear span mode is valid**: it is used only for rows all of whose components are
 `D₄`, so that the `𝔽₄` scalars act on every glue label. -/
 theorem eq_D_four_of_spanMode_eq_f4Linear {r : RootfulNiemeierType}
-    (hr : r.spanMode = .f4Linear) : ∀ c ∈ r.components, c.1 = .D 4 := by
+    (hr : r.spanMode = .f4Linear) : ∀ c ∈ r.components, c.val = .D 4 := by
   rw [spanMode_eq_f4Linear_iff] at hr
   subst hr
   intro c hc
