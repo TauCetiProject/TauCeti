@@ -279,7 +279,7 @@ theorem cokerEquivKerAdjoint_symm_apply (hπ : π.IsUnitary) (hρ : ρ.IsUnitary
     (T.cokerEquivKerAdjoint hπ hρ).symm v = Submodule.Quotient.mk (v : F) := by
   have hv : (v : F) ∈ T.toContinuousLinearMap.rangeᗮ := by
     rw [T.toContinuousLinearMap.orthogonal_range, ← toContinuousLinearMap_adjoint T hπ hρ]
-    exact v.2
+    exact v.property
   apply EquivLike.injective (T.cokerEquivKerAdjoint hπ hρ)
   ext
   rw [ContRepresentation.Equiv.apply_symm_apply, coe_cokerEquivKerAdjoint_apply_mk,

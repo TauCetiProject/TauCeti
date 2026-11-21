@@ -141,7 +141,7 @@ theorem IsMulDistinguished.exists_isEntirePreparation [CompleteSpace R]
   obtain ⟨e, ω, he, hω, hωd, heω⟩ :=
     hF.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq hc (hFe.isRestricted c)
   have heE : (e : R⟦X⟧).IsEntire :=
-    hωd.isEntire_of_isEntire_coe_mul hc hω e.2 (by rw [mul_comm, heω]; exact hFe)
+    hωd.isEntire_of_isEntire_coe_mul hc hω e.property (by rw [mul_comm, heω]; exact hFe)
   obtain ⟨a, U, hP0, hd, ha, hU0, hU, hPU, hUe⟩ :=
     exists_normalized_factors_of_mul_eq he hω heω hF0
   have hUE : (U : R⟦X⟧).IsEntire := hUe ▸ heE.smul _
@@ -182,7 +182,7 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   -- so `ω * (G * q)` is entire, and hence so is `G * q`.
   obtain ⟨H, hGH⟩ := h.isUnit.exists_right_inv
   have hGH' : G * (H : R⟦X⟧) = 1 := congrArg Subtype.val hGH
-  obtain ⟨q, b, hq, hb, hqb⟩ := hωd.exists_mul_add_eq hc (isRestricted_polynomial ω) H.2
+  obtain ⟨q, b, hq, hb, hqb⟩ := hωd.exists_mul_add_eq hc (isRestricted_polynomial ω) H.property
   have hbE : b.IsEntire := isEntire_iff.mpr fun _ ↦ isRestricted_of_forall_coeff_eq_zero hb
   have hωGq : (ω : R⟦X⟧) * (G * q) = 1 - G * b := by linear_combination hGH' + G * hqb
   have hGq : (G * q).IsEntire := hωd.isEntire_of_isEntire_coe_mul hc hω

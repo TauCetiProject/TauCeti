@@ -308,9 +308,12 @@ end InnerFrame
 section Kernel
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W]
-  {J₀ : W →L[ℝ] W} {Φ : ℝ → W →L[ℝ] V} {K : ℝ → V →L[ℝ] V} {P : V →L[ℝ] V}
-  {ℓ d ε₁ ε₂ : ℝ}
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+
+section CompleteSpace
+
+variable [CompleteSpace W] {J₀ : W →L[ℝ] W} {Φ : ℝ → W →L[ℝ] V} {K : ℝ → V →L[ℝ] V}
+  {P : V →L[ℝ] V} {ℓ d ε₁ ε₂ : ℝ}
 
 /-- **Transport of twisted kernels along a frame.** For a `C²` frame with invertible values,
 intertwining `J₀` with `K(t)` and compatible with the seam, the vertical operator `∂s + K(t) ∂t`
@@ -401,7 +404,12 @@ private theorem det_smul_one_sub_dysonSeriesLeft_pow (hJ₀sq : ∀ x, J₀ (J�
     simp [-toLinearMap_pow, hx]
   rw [hconj, LinearMap.det_conj]
 
-variable [FiniteDimensional ℝ W]
+end CompleteSpace
+
+section FiniteDimensional
+
+variable [FiniteDimensional ℝ W] {J₀ : W →L[ℝ] W} {Φ : ℝ → W →L[ℝ] V} {K : ℝ → V →L[ℝ] V}
+  {P : V →L[ℝ] V} {ℓ d : ℝ}
 
 /-- **Kernels of the twisted normal operators of an orbit torus on finite covers.** Let `W` be
 finite-dimensional with an orthogonal complex structure `J₀`, and let `Φ` be a unitary frame for
@@ -412,7 +420,7 @@ deck group spanned by `(k ℓ, 0)` and `(a ℓ, n d)`, `k, n ≥ 1`, the vertica
 return map `P`, has a nonzero `C²` kernel element exactly when `ε₁ = 1` and
 `det (ε₂ - P ^ n) = 0`. -/
 theorem exists_ne_zero_orbitTorusVerticalOperator_eq_zero_iff_eq_one_and_det_eq_zero
-    (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫)
+    {ε₁ ε₂ : ℝ} (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫)
     (hJ₀sq : ∀ x, J₀ (J₀ x) = -x) (hΦ2 : ContDiff ℝ 2 Φ) (hΦ : ∀ t, (Φ t).IsInvertible)
     (hK : ∀ t, K t ∘L Φ t = Φ t ∘L J₀) {ω : V →L[ℝ] V →L[ℝ] ℝ}
     (hω : ∀ t x y, ω (Φ t x) (Φ t y) = ⟪J₀ x, y⟫) (hseam : ∀ t, P ∘L Φ (t + d) = Φ t)
@@ -467,6 +475,8 @@ theorem forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_iff_det_ne_zero
     by_contra hne
     obtain ⟨w, hw, hwne, hws, hwt, hwD⟩ := htr.1 ⟨v, hv, hne, hs, ht, hD⟩
     exact hwne (h w hw hws hwt hwD)
+
+end FiniteDimensional
 
 end Kernel
 

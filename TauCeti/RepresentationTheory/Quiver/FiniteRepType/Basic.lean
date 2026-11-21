@@ -155,12 +155,12 @@ theorem isFiniteRepType_of_map {Q' : Type v'} [Quiver.{w'} Q']
     exact (ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso P (hM a) (hM b)).mpr hab
   -- the classes outside `E` embed in the classes of `Q'`
   have hreg : Finite {a // ¬ E (M a)} := h.finite_of_pairwise_nonisomorphic
-    (M := fun a ↦ F (M a.1)) (fun a ↦ (hF _ (hM a).1 (hM a).2 a.2).1)
-    (fun a ↦ (hF _ (hM a).1 (hM a).2 a.2).2) fun a b hab hiso ↦
-      hab (Subtype.ext (heq _ _ (hFiso _ _ (hM a).2 (hM b).2 a.2 b.2 hiso)))
+    (M := fun a ↦ F (M a.val)) (fun a ↦ (hF _ (hM a).1 (hM a).2 a.property).1)
+    (fun a ↦ (hF _ (hM a).1 (hM a).2 a.property).2) fun a b hab hiso ↦
+      hab (Subtype.ext (heq _ _ (hFiso _ _ (hM a).2 (hM b).2 a.property b.property hiso)))
   -- the classes in `E` are a single one
   have hexc : Subsingleton {a // E (M a)} :=
-    ⟨fun a b ↦ Subtype.ext (heq _ _ (hE _ _ (hM a).2 (hM b).2 a.2 b.2))⟩
+    ⟨fun a b ↦ Subtype.ext (heq _ _ (hE _ _ (hM a).2 (hM b).2 a.property b.property))⟩
   exact isFiniteRepType_iff.mpr (Finite.of_equiv _ (Equiv.sumCompl fun a ↦ E (M a)))
 
 /-- **Finite representation type descends to a smaller universe of vertex spaces.** Lifting the

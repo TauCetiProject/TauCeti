@@ -224,13 +224,13 @@ private def capHomologyOfCycles (p q n : ℕ) (h : p + q = n)
   (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp))
     (capCycles k D a p q n h φ ≫ B'.homologyπ q)
     (by rw [← Category.assoc, toCycles_capCycles, Category.assoc, toCycles_comp_homologyπ,
-      comp_zero])).1
+      comp_zero])).val
 
 private lemma homologyπ_capHomologyOfCycles (p q n : ℕ) (h : p + q = n)
     (φ : (A.linearYonedaObj k M).cycles p) :
     E.homologyπ n ≫ capHomologyOfCycles k D a p q n h φ =
       capCycles k D a p q n h φ ≫ B'.homologyπ q :=
-  (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp)) _ _).2
+  (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp)) _ _).property
 
 /-- Capping with a coboundary is zero on homology. -/
 private lemma capHomologyOfCycles_toCycles (p q n : ℕ) (h : p + q = n) (i : ℕ)
@@ -272,7 +272,7 @@ a cycle `x`, the class of `x ⌢ φ` (`TauCeti.ChainComplex.cap_homologyπ`). -/
 def cap (p q n : ℕ) (h : p + q = n) :
     (A.linearYonedaObj k M).homology p →ₗ[k] (E.homology n ⟶ B'.homology q) :=
   (CokernelCofork.IsColimit.desc' ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl)
-    (capCyclesHomology k D a p q n h) (toCycles_comp_capCyclesHomology D a p q n h)).1.hom
+    (capCyclesHomology k D a p q n h) (toCycles_comp_capCyclesHomology D a p q n h)).val.hom
 
 /-- **The cap product on classes**: capping the class of a cycle with the class of a cocycle `φ`
 is the class of the cap product of the cycle with `φ`. -/
@@ -282,7 +282,7 @@ lemma cap_homologyπ (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M)
       capCycles k D a p q n h φ ≫ B'.homologyπ q := by
   have hfac := ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl) (capCyclesHomology k D a p q n h)
-    (toCycles_comp_capCyclesHomology D a p q n h)).2 φ
+    (toCycles_comp_capCyclesHomology D a p q n h)).property φ
   rw [cap]
   exact (congrArg (E.homologyπ n ≫ ·) hfac).trans (homologyπ_capHomologyOfCycles D a p q n h φ)
 

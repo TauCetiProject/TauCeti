@@ -70,9 +70,9 @@ theorem IsUnitNatCast.isUnit {X : Scheme.{u}} {n : ℕ} (h : X.IsUnitNatCast n)
 
 /-- It suffices to test invertibility on the rings of sections of affine opens. -/
 theorem isUnitNatCast_iff_forall_isUnit_affineOpens :
-    X.IsUnitNatCast n ↔ ∀ U : X.affineOpens, IsUnit (n : Γ(X, U.1)) := by
+    X.IsUnitNatCast n ↔ ∀ U : X.affineOpens, IsUnit (n : Γ(X, U.val)) := by
   constructor
-  · exact fun h U ↦ h.isUnit U.1
+  · exact fun h U ↦ h.isUnit U.val
   · intro h x
     obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (x := x) (U := ⊤) trivial
     simpa using (h ⟨U, hU⟩).map (X.presheaf.germ U x hxU).hom
