@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
+public import TauCeti.LinearAlgebra.Matrix.Signature
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 import TauCeti.LinearAlgebra.QuadraticForm.Real
@@ -69,6 +70,11 @@ Morse complex.
 * `TauCeti.morseIndex_eq_zero_of_posDef`: a positive-definite Hessian forces index zero.
 * `TauCeti.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank`: in finite dimensions, full
   index characterizes a negative-definite Hessian at every point.
+* `TauCeti.isHermitian_toMatrix_toBilinForm_fderiv_fderiv`,
+  `TauCeti.IsNondegenerateCriticalPoint.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv` and
+  `TauCeti.IsNondegenerateCriticalPoint.signature_toMatrix_toBilinForm_fderiv_fderiv`: in any
+  basis, the Hessian matrix is symmetric, and at a nondegenerate critical point it is invertible
+  with signature `dim E - 2 ind_x(f)`.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weightedSumSquares`:
   the Hessian has a diagonal `±1` normal form.
 * `TauCeti.exists_continuousLinearEquiv_inv_two_mul_fderiv_fderiv_eq_sum`: an invertible Hessian
@@ -439,6 +445,40 @@ theorem neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank [FiniteDimensi
   rw [QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot, QuadraticMap.radical_neg,
     sigNeg_neg, ← Submodule.finrank_eq_zero (R := ℝ), morseIndex_def]
   omega
+
+section Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- In any basis, the matrix of the second derivative of a function which is `C²` at `x` is
+symmetric. -/
+theorem isHermitian_toMatrix_toBilinForm_fderiv_fderiv (b : Basis ι ℝ E)
+    (hf : ContDiffAt ℝ 2 f x) :
+    (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm).IsHermitian :=
+  Matrix.isHermitian_iff_isSymm.2 <| (LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2 <|
+    ContinuousLinearMap.isSymm_toBilinForm_iff.2 (hf.isSymmSndFDerivAt (by norm_num))
+
+/-- At a nondegenerate critical point, the matrix of the second derivative in any basis is
+invertible. -/
+theorem IsNondegenerateCriticalPoint.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv
+    (b : Basis ι ℝ E) (h : IsNondegenerateCriticalPoint f x) :
+    IsUnit (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm).det := by
+  have := Module.Finite.of_basis b
+  exact isUnit_iff_ne_zero.2 ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).1
+    (LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft h.separatingLeft))
+
+/-- At a nondegenerate critical point, the matrix of the second derivative in any basis has
+signature `dim E - 2 ind_x(f)`, since the positive index of the Hessian and the Morse index add up
+to the dimension. -/
+theorem IsNondegenerateCriticalPoint.signature_toMatrix_toBilinForm_fderiv_fderiv
+    (b : Basis ι ℝ E) (h : IsNondegenerateCriticalPoint f x) :
+    Matrix.signature (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm) =
+      Module.finrank ℝ E - 2 * morseIndex f x := by
+  have hsum := h.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
+  rw [LinearMap.BilinForm.signature_toMatrix, ← hessianQuadraticForm_def, ← morseIndex_def]
+  omega
+
+end Matrix
 
 /-- At a nondegenerate critical point, the Hessian quadratic form has a diagonal normal form with
 every weight equal to `-1` or `1`.  The returned equivalence can be passed to

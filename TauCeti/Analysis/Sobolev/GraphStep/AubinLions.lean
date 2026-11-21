@@ -163,7 +163,7 @@ private def pieceMean (a b : ℝ) (N k : ℕ) : Lp D p (volume.restrict (Omega :
 /-- The indicator of the `k`-th piece times a constant, as a continuous linear map
 `H → Lᵖ((a, b), H)`. -/
 private def pieceIndicator (a b : ℝ) (N k : ℕ) : H →L[ℝ] Lp H p (volume.restrict (Ioo a b)) :=
-  indicatorConstLpL (𝕜 := ℝ) (measurableSet_Ico (a := node a b N k) (b := node a b N (k + 1)))
+  indicatorConstLpL ℝ p (measurableSet_Ico (a := node a b N k) (b := node a b N (k + 1)))
     ((Measure.restrict_apply_le _ _).trans_lt measure_Ico_lt_top).ne
 
 /-- The step approximation of `ι ∘ u` on `(a, b)` by its means over the `N` pieces. -/

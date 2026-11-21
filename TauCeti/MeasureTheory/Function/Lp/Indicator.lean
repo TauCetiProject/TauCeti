@@ -16,7 +16,8 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 The class `MeasureTheory.indicatorConstLp p hs hμs c` of `s.indicator fun _ => c` is linear in the
 constant `c`: Mathlib provides additivity, `MeasureTheory.indicatorConstLp_add`, and this file adds
-compatibility with scalar multiplication. Together with the norm formula
+compatibility with scalar multiplication, bundling both as the linear map
+`TauCeti.indicatorConstLpₗ`. Together with the norm formula
 `MeasureTheory.norm_indicatorConstLp`, this makes `c ↦ indicatorConstLp p hs hμs c` a bounded
 linear map, so closed subspaces of `Lᵖ` can be tested on indicator classes of a dense set of
 constants.
@@ -38,8 +39,10 @@ constant indicator classes it intersects the supporting sets.
 * `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
   the set has measure zero or the constant is zero.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
-* `TauCeti.indicatorConstLpL`: the indicator class `c ↦ indicatorConstLp p hs hμs c` as a
-  continuous linear map.
+* `TauCeti.indicatorConstLpₗ`: the indicator class `indicatorConstLp p hs hμs c` as a linear map
+  in `c`.
+* `TauCeti.indicatorConstLpL`: the same map `c ↦ indicatorConstLp p hs hμs c` as a continuous
+  linear map.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
@@ -98,22 +101,27 @@ theorem indicatorConstLp_smul (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (a : 
   rw [h₁, h₂, Pi.smul_apply, h₃]
   by_cases hx : x ∈ s <;> simp [hx]
 
-/-- The indicator class `c ↦ indicatorConstLp p hs hμs c` as a continuous linear map from the
-constants to `Lᵖ`. Its norm is at most `μ(s) ^ (1 / p)`, by
-`MeasureTheory.norm_indicatorConstLp_le`. -/
+variable (𝕜 p) in
+/-- `MeasureTheory.indicatorConstLp` as a linear map in the constant. -/
+@[expose, simps]
+noncomputable def indicatorConstLpₗ (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    E →ₗ[𝕜] Lp E p μ where
+  toFun := indicatorConstLp p hs hμs
+  map_add' _ _ := indicatorConstLp_add.symm
+  map_smul' := indicatorConstLp_smul hs hμs
+
+variable (𝕜 p) in
+/-- `TauCeti.indicatorConstLpₗ` as a continuous linear map from the constants to `Lᵖ`. Its norm
+is at most `μ(s) ^ (1 / p)`, by `MeasureTheory.norm_indicatorConstLp_le`. -/
 noncomputable def indicatorConstLpL [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
     E →L[𝕜] Lp E p μ :=
-  LinearMap.mkContinuous
-    { toFun := indicatorConstLp p hs hμs
-      map_add' := fun _ _ ↦ indicatorConstLp_add.symm
-      map_smul' := indicatorConstLp_smul hs hμs }
-    (μ.real s ^ (1 / p.toReal)) fun c ↦
-      (norm_indicatorConstLp_le (hs := hs) (hμs := hμs) (c := c)).trans_eq (mul_comm _ _)
+  (indicatorConstLpₗ 𝕜 p hs hμs).mkContinuous (μ.real s ^ (1 / p.toReal)) fun c ↦
+    (norm_indicatorConstLp_le (hs := hs) (hμs := hμs) (c := c)).trans_eq (mul_comm _ _)
 
 /-- `TauCeti.indicatorConstLpL` sends a constant to its indicator class. -/
 @[simp]
 theorem indicatorConstLpL_apply [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E) :
-    indicatorConstLpL (𝕜 := 𝕜) hs hμs c = indicatorConstLp p hs hμs c := by
+    indicatorConstLpL 𝕜 p hs hμs c = indicatorConstLp p hs hμs c := by
   simp [indicatorConstLpL]
 
 section Disjoint

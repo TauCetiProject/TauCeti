@@ -739,8 +739,8 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
     aestronglyMeasurable_const aestronglyMeasurable_const
     (fun x hx => ha.upper_bound hx) (fun _ _ => by simp) (fun _ _ => by simp)
   refine (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2 fun φ => ?_
-  rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn hsmooth
-    hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
+  rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn
+    (fun i j => (hsmooth i j).of_le (by simp)) hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
   exact integral_congr_ae (hFn.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
 
 /-- **The tangential derivative solves the differentiated Dirichlet problem on a half-space.** Let

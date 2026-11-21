@@ -226,7 +226,7 @@ theorem isInvertible_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0
     (hx : (x.2 : ℂ).im ≠ 0) :
     (mfderiv ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1))) stiefelRotationFamily
       x).IsInvertible := by
-  refine isInvertible_mfderiv_of_injective ?_ (injective_mfderiv_stiefelRotationFamily hx)
+  refine (isInvertible_mfderiv_iff_injective ?_).2 (injective_mfderiv_stiefelRotationFamily hx)
   rw [finrank_prod, finrank_prod, finrank_stiefelTwoModel (n := n), finrank_euclideanSpace_fin,
     finrank_euclideanSpace_fin]
   ring

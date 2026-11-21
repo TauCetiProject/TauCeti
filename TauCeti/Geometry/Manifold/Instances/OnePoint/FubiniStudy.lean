@@ -45,7 +45,9 @@ sphere, multiplication by `i` on each tangent space
 integrates to `1` over the affine chart
 (`OnePoint.integral_fubiniStudyDensity`), which is the whole sphere except the point `∞`. The area
 `π` of the unit disc and the polar integral `∫₀^∞ 2r / (1 + r²)² dr = 1` give this value. The
-comparison with the integral of the form over the oriented sphere is not carried out here.
+integral of the form itself over the sphere with its complex orientation is then `1`
+(`OnePoint.integralTopForm_fubiniStudyForm`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere`).
 
 This is the area form with which symplectic and holomorphic-curve arguments on the sphere are
 normalized; other areas are obtained by scaling it.
