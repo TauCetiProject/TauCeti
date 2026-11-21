@@ -40,8 +40,9 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   limits and colimits;
 * `TauCeti.whiskerLeft_zero_of_hasLeftDual` and `TauCeti.zero_whiskerRight_of_hasRightDual`:
   whiskering by an object with a left (resp. right) dual preserves zero morphisms;
-* `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` of an exact pairing is nonzero when `X`
-  is not a zero object, by the zigzag identity;
+* `TauCeti.coevaluation_ne_zero` and `TauCeti.evaluation_ne_zero`: the coevaluation `η_ X Y` and
+  evaluation `ε_ X Y` of an exact pairing are nonzero when `X` is not a zero object, by the zigzag
+  identities;
 * `TauCeti.ExactPairing.homUnitEquiv`: for an exact pairing of `X` and `Y`, morphisms `X ⟶ 𝟙_ C`
   correspond to morphisms `𝟙_ C ⟶ Y`;
 * `TauCeti.tensorRightHomEquiv_whiskerRight_comp`, `TauCeti.tensorRightHomEquiv_symm_comp`, and
@@ -265,6 +266,18 @@ theorem coevaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
   have := (tensorRightAdjunction X Y).isLeftAdjoint
   have h0 : (0 : 𝟙_ C ⟶ X ⊗ Y) ▷ X = 0 := (tensorRight X).map_zero _ _
   rw [h, h0, zero_comp] at hz
+  exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
+
+open Limits in
+/-- The evaluation of an exact pairing of `X` with `Y` is nonzero when `X` is nonzero: otherwise
+the zigzag identity would make the identity of `X` zero. Only zero morphisms are needed. -/
+theorem evaluation_ne_zero [HasZeroMorphisms C] {X Y : C} [ExactPairing X Y]
+    (hX : ¬IsZero X) : ε_ X Y ≠ 0 := by
+  intro h
+  have hz := ExactPairing.evaluation_coevaluation X Y
+  have := (tensorLeftAdjunction X Y).isRightAdjoint
+  have h0 : X ◁ (0 : Y ⊗ X ⟶ 𝟙_ C) = 0 := (tensorLeft X).map_zero _ _
+  rw [h, h0, comp_zero] at hz
   exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
 
 /-- Naturality of `CategoryTheory.tensorRightHomEquiv` in its first argument. -/
