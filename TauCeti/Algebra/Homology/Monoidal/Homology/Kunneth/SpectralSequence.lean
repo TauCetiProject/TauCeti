@@ -207,6 +207,21 @@ def kunnethTorSumComplexXIso (q p : ℕ) :
       (fun x ↦ (kunnethTorComplexXIso K L x.val.1 x.val.2 p).symm) ≪≫
     ((HomologicalComplex.eval _ _ p).mapBiproduct _).symm
 
+/-- On the summand `Hᵢ(K) ⊗ Hⱼ(Q.X p)`, the identification
+`HomologicalComplex.kunnethTorSumComplexXIso` is the inclusion of the summand
+`kunnethTorComplex K L i j` of `kunnethTorSumComplex K L q`, in degree `p`. -/
+@[reassoc (attr := simp)]
+lemma ιTensorObj_kunnethTorSumComplexXIso_hom (q p i j : ℕ) (h : i + j = q) :
+    GradedObject.Monoidal.ιTensorObj (fun i ↦ K.homology i)
+        (fun j ↦ ((cartanEilenbergResolution L).X p).homology j) i j q h ≫
+      (kunnethTorSumComplexXIso K L q p).hom =
+    (kunnethTorComplexXIso K L i j p).inv ≫
+      (biproduct.ι (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K L x.val.1 x.val.2)
+        ⟨(i, j), Finset.mem_antidiagonal.2 h⟩).f p := by
+  simp only [kunnethTorSumComplexXIso, kunnethTensorObjIsoBiproduct, Iso.trans_hom,
+    Iso.symm_hom, biproduct.mapIso_hom, GradedObject.Monoidal.ι_tensorObjDesc_assoc]
+  rw [biproduct.ι_map_assoc, Functor.mapBiproduct_inv, biproduct.ι_desc, eval_map]
+
 /-- Under the identifications `HomologicalComplex.kunnethTorSumComplexXIso`, the differential of
 `kunnethTorSumComplex K L q` is induced by the maps `homologyMap (Q.d (p + 1) p) j`. -/
 @[reassoc]
@@ -216,14 +231,10 @@ lemma kunnethTorSumComplexXIso_hom_d (q p : ℕ) :
           (fun j ↦ homologyMap ((cartanEilenbergResolution L).d (p + 1) p) j) q ≫
         (kunnethTorSumComplexXIso K L q p).hom := by
   refine GradedObject.Monoidal.tensorObj_ext _ _ fun i j h ↦ ?_
-  simp only [kunnethTorSumComplexXIso, kunnethTensorObjIsoBiproduct, Iso.trans_hom,
-    Iso.symm_hom, biproduct.mapIso_hom, Category.assoc, GradedObject.Monoidal.ι_tensorObjDesc_assoc,
+  simp only [ιTensorObj_kunnethTorSumComplexXIso_hom_assoc, Hom.comm,
     GradedObject.Monoidal.ι_tensorHom_assoc]
-  rw [biproduct.ι_map_assoc, biproduct.ι_map_assoc, Functor.mapBiproduct_inv,
-    Functor.mapBiproduct_inv, biproduct.ι_desc_assoc, biproduct.ι_desc, eval_map, eval_map,
-    Hom.comm]
-  dsimp only
-  rw [kunnethTorComplexXIso_inv_d_assoc, Pi.id_apply, id_tensorHom]
+  rw [ιTensorObj_kunnethTorSumComplexXIso_hom, kunnethTorComplexXIso_inv_d_assoc, Pi.id_apply,
+    id_tensorHom]
 
 /-- The homology of `kunnethTorSumComplex K L q` in degree `p` is
 `⨁_{i + j = q} Torₚ(Hᵢ(K), Hⱼ(L))`. -/
@@ -261,17 +272,6 @@ lemma kunnethSpectralSequence_page_two_d_kunnethFirstPageXIsoTorSum (p q : ℕ) 
     kunnethTorSumComplexXIso_hom_d]
   rw [reassoc_of% h, Preadditive.zsmul_comp, Preadditive.comp_zsmul]
 
-/-- `(-1)^k` times an isomorphism, as an isomorphism. -/
-private def negOnePowSMulIso {X Y : ModuleCat.{u} R} (e : X ≅ Y) (k : ℕ) : X ≅ Y where
-  hom := ((-1 : ℤ) ^ k) • e.hom
-  inv := ((-1 : ℤ) ^ k) • e.inv
-  hom_inv_id := by simp [smul_smul, ← mul_pow]
-  inv_hom_id := by simp [smul_smul, ← mul_pow]
-
-/-- The morphism of `negOnePowSMulIso e k` is `(-1)^k • e.hom`. -/
-private lemma negOnePowSMulIso_hom {X Y : ModuleCat.{u} R} (e : X ≅ Y) (k : ℕ) :
-    (negOnePowSMulIso e k).hom = ((-1 : ℤ) ^ k) • e.hom := (rfl)
-
 /-- The third component of the comparison of the first page around column `p` with
 `kunnethTorSumComplex K L q`: zero for `p = 0`, where the first page vanishes, and otherwise
 `(-1)^q` times the identification `HomologicalComplex.kunnethFirstPageXIsoTorSum` at `p - 1`. -/
@@ -279,9 +279,9 @@ private def kunnethSecondPageτ₃ (q : ℕ) : (p : ℕ) →
     (((kunnethSpectralSequence K L).page 2).X (-(q : ℤ) - 2 * p + 2, (p : ℤ) - 1) ⟶
       (kunnethTorSumComplex K L q).X (p - 1))
   | 0 => 0
-  | s + 1 => (negOnePowSMulIso (((kunnethSpectralSequence K L).page 2).XIsoOfEq
+  | s + 1 => (((-1 : ℤˣ) ^ q) • (((kunnethSpectralSequence K L).page 2).XIsoOfEq
       (Prod.ext (by omega) (by omega)) ≪≫ kunnethFirstPageXIsoTorSum K L s q ≪≫
-      (kunnethTorSumComplex K L q).XIsoOfEq (by omega)) q).hom
+      (kunnethTorSumComplex K L q).XIsoOfEq (by omega))).hom
 
 /-- The third component `kunnethSecondPageτ₃` is a monomorphism: its source is zero for `p = 0`,
 and it is an isomorphism otherwise. -/
@@ -291,7 +291,7 @@ private instance (q p : ℕ) : Mono (kunnethSecondPageτ₃ K L q p) := by
     refine ⟨fun _ _ _ ↦ IsZero.eq_of_tgt ?_ _ _⟩
     exact (kunnethBicomplex K L).flip.isZero_rowFiltrationSpectralSequence_page_two_X_of_neg _ _
       (by omega)
-  | succ s => exact inferInstanceAs (Mono (negOnePowSMulIso _ q).hom)
+  | succ s => exact inferInstanceAs (Mono (((-1 : ℤˣ) ^ q) • _ : _ ≅ _).hom)
 
 /-- The comparison of the first page of the Künneth spectral sequence around column `p`, in
 degree `q`, with `kunnethTorSumComplex K L q` around degree `p`. Its components are, up to the
@@ -302,13 +302,13 @@ private def kunnethSecondPageShortComplexHom (p q : ℕ) :
         (-(q : ℤ) - 2 * ((p + 1 : ℕ) : ℤ), (p + 1 : ℕ)) (-(q : ℤ) - 2 * p, p)
         (-(q : ℤ) - 2 * p + 2, (p : ℤ) - 1) ⟶
       (kunnethTorSumComplex K L q).sc' (p + 1) p (p - 1) where
-  τ₁ := (negOnePowSMulIso (kunnethFirstPageXIsoTorSum K L (p + 1) q) q).hom
+  τ₁ := (((-1 : ℤˣ) ^ q) • kunnethFirstPageXIsoTorSum K L (p + 1) q).hom
   τ₂ := (kunnethFirstPageXIsoTorSum K L p q).hom
   τ₃ := kunnethSecondPageτ₃ K L q p
   comm₁₂ := by
     dsimp only [shortComplexFunctor'_obj_f]
-    rw [negOnePowSMulIso_hom, Preadditive.zsmul_comp]
-    exact (kunnethSpectralSequence_page_two_d_kunnethFirstPageXIsoTorSum K L p q).symm
+    rw [kunnethSpectralSequence_page_two_d_kunnethFirstPageXIsoTorSum]
+    simp [Units.smul_def]
   comm₂₃ := by
     dsimp only [shortComplexFunctor'_obj_g]
     cases p with
@@ -316,17 +316,16 @@ private def kunnethSecondPageShortComplexHom (p q : ℕ) :
       rw [(kunnethTorSumComplex K L q).shape _ _ (by simp), comp_zero]
       simp only [kunnethSecondPageτ₃, comp_zero]
     | succ s =>
-      simp only [kunnethSecondPageτ₃, negOnePowSMulIso_hom, Iso.trans_hom, Preadditive.comp_zsmul]
-      rw [d_comp_XIsoOfEq_hom_assoc,
-        kunnethSpectralSequence_page_two_d_kunnethFirstPageXIsoTorSum_assoc,
-        Preadditive.zsmul_comp, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul,
-        Category.assoc, d_comp_XIsoOfEq_hom]
+      simp only [kunnethSecondPageτ₃, Preadditive.smul_iso_hom, Units.smul_def, Iso.trans_hom,
+        Preadditive.comp_zsmul, d_comp_XIsoOfEq_hom_assoc]
+      rw [kunnethSpectralSequence_page_two_d_kunnethFirstPageXIsoTorSum_assoc]
+      simp [smul_smul, ← mul_pow]
 
 /-- The comparison `kunnethSecondPageShortComplexHom` induces an isomorphism on homology: its first
 two components are isomorphisms and its third is a monomorphism. -/
 private instance (p q : ℕ) : ShortComplex.QuasiIso (kunnethSecondPageShortComplexHom K L p q) := by
   have : IsIso (kunnethSecondPageShortComplexHom K L p q).τ₁ :=
-    inferInstanceAs (IsIso (negOnePowSMulIso _ q).hom)
+    inferInstanceAs (IsIso (((-1 : ℤˣ) ^ q) • _ : _ ≅ _).hom)
   have : IsIso (kunnethSecondPageShortComplexHom K L p q).τ₂ :=
     inferInstanceAs (IsIso (kunnethFirstPageXIsoTorSum K L p q).hom)
   have : Mono (kunnethSecondPageShortComplexHom K L p q).τ₃ :=
