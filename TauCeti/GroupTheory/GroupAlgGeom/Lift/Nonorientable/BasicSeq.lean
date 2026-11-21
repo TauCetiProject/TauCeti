@@ -16,13 +16,14 @@ import TauCeti.Data.List.ProdOfFn
 For pairwise distinct variables `xᵢ`, `yᵢ` (`i = 1, …, n`), `zⱼ` (`j = 1, …, m`), `uₖ`
 (`k = 1, …, r`) and coefficients `cⱼ`, the basic sequence of the word
 `S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²` (`basicMixedWordSeq`) is the orientable basic sequence of
-`S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]` (`TauCeti.GroupAlgGeom.Lift.basicWordSeq`), followed by the
-automorphism linking the last atom of `S₀` with the first square (`basicCommSq` if there is a
-commutator, `basicLinkSq` otherwise) and, if there are two squares, by the two automorphisms
-`basicSqMul` and `basicSqConj` of the two squares. For two squares this is the basic sequence
-`Γ = (γ₁, …, γ_K)` of [IFT], §7.5, with `K = m + 2` when `n = 0` and `K = m + 4n + 2` when
-`n ≥ 1`. [IFT] considers only two squares; for one square the sequence stops after the linking
-automorphism, with `K = m + 4n`.
+`S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]` (`TauCeti.GroupAlgGeom.Lift.basicWordSeq`), followed, if there
+is a square and `S₀` has an atom, by the automorphism linking the last atom of `S₀` with the first
+square (`basicCommSq` if there is a commutator, `basicLinkSq` if there is none), and, if there are
+at least two squares, by the two automorphisms `basicSqMul` and `basicSqConj` of the first two
+squares. For two squares this is the basic sequence `Γ = (γ₁, …, γ_K)` of [IFT], §7.5, with
+`K = m + 2` when `n = 0` and `K = m + 4n + 2` when `n ≥ 1`. [IFT] considers only two squares; for
+one square the sequence has `K = m + 4n` terms: it ends with the linking automorphism when `S₀`
+has an atom, and it is empty for `S₁ = u₁²`.
 
 For a non-orientable standard quadratic equation `S = 1`, `mixedBasicSeq S` is the basic sequence
 of its mixed form (`TauCeti.GroupAlgGeom.Quadratic.Standard.mixedWord`). Its automorphisms fix the
@@ -71,11 +72,12 @@ variable {x y : Fin n → X} {z : Fin m → X} {u : Fin r → X}
   (inj : (Sum.elim (Sum.elim (Sum.elim x y) z) u).Injective) (c : Fin m → G)
 
 /-- The basic sequence of automorphisms of `G[X]` fixing `S₁ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] ∏ₖ uₖ²`
-([IFT], §7.5): the orientable basic sequence of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]`, then the
-automorphism of the first square and the last commutator (or, if there is no commutator, the last
-coefficient atom), then, if there are two squares, the two automorphisms of the first two squares.
-The mixed form of a standard equation has one or two squares; for three or more squares only the
-first two get automorphisms of their own. -/
+([IFT], §7.5): the orientable basic sequence of `S₀ = ∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ]`; then, if there
+is a square and `S₀` has an atom, the automorphism of the first square and the last commutator
+(or, if there is no commutator, the last coefficient atom); then, if there are at least two
+squares, the two automorphisms of the first two squares. The mixed form of a standard equation
+has one or two squares; for three or more squares only the first two get automorphisms of their
+own. -/
 noncomputable def basicMixedWordSeq : List (MulAut (GX G X)) :=
   basicWordSeq (Sum.elim_injective.1 inj).1 c ++
     (if h : 0 < n ∧ 0 < r then [basicCommSq inj ⟨n - 1, by lia⟩ ⟨0, h.2⟩]
@@ -95,7 +97,7 @@ theorem basicMixedWordSeq_def :
 
 /-- The length of the basic sequence of `S₁`: the length `K(m, n)` of the orientable basic sequence
 of `S₀`, plus one linking automorphism when there is a square and `S₀` has an atom, plus two when
-there are at least two squares. With two squares and `S₀` nonempty this is `K(m, n) + 3`. -/
+there are at least two squares. With two squares and an atom in `S₀` this is `K(m, n) + 3`. -/
 @[simp]
 theorem length_basicMixedWordSeq :
     (basicMixedWordSeq inj c).length =
@@ -105,9 +107,10 @@ theorem length_basicMixedWordSeq :
   split_ifs <;> simp <;> lia
 
 /-- The members of the basic sequence of `S₁`: the members of the orientable basic sequence of
-`S₀`, the automorphism of the last commutator and the first square, the automorphism of the last
-coefficient atom and the first square when there is no commutator, and the two automorphisms of
-the first two squares. -/
+`S₀`; the automorphism of the last commutator and the first square, if there are a commutator and
+a square; the automorphism of the last coefficient atom and the first square, if there is no
+commutator but a coefficient atom and a square; and the two automorphisms of the first two
+squares, if there are at least two squares. -/
 theorem mem_basicMixedWordSeq_iff {γ : MulAut (GX G X)} :
     γ ∈ basicMixedWordSeq inj c ↔
       γ ∈ basicWordSeq (Sum.elim_injective.1 inj).1 c ∨
