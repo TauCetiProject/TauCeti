@@ -70,6 +70,9 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m i` are eventually
   uniformly bounded and converge to `m₀` almost everywhere along a countably generated filter,
   then `T_{m i} f → T_{m₀} f` in `L²`.
+* `MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_of_tendsto`: if the partial sums of the
+  symbols are uniformly bounded and converge to `1` almost everywhere, the partial sums of the
+  multipliers converge to the identity in `L²`.
 * `MeasureTheory.Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply`: if symbols `m s` depending on a
   real parameter are differentiable in `s` at almost every frequency, with derivative `a ξ m' ξ`
   and increments bounded by `C ‖a ξ‖ |s - t|`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` in
@@ -450,6 +453,39 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
+
+/-- If the partial sums `∑_{i ∈ t N} ψᵢ` of symbols are uniformly bounded by `C` and converge
+to `1` almost everywhere, then the partial sums `∑_{i ∈ t N} T_{m i} f` of the Fourier multipliers
+with these symbols converge to `f` in `L²` for every `f ∈ L²`. -/
+theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*}
+    {ψ : ι → E → ℂ} {m : ι → Lp ℂ ∞ (volume : Measure E)}
+    (hm : ∀ i, m i =ᵐ[volume] ψ i) (t : ℕ → Finset ι) {C : ℝ}
+    (hle : ∀ N ξ, ‖∑ i ∈ t N, ψ i ξ‖ ≤ C)
+    (hlim : ∀ᵐ ξ ∂(volume : Measure E), Tendsto (fun N ↦ ∑ i ∈ t N, ψ i ξ) atTop (𝓝 1))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun N ↦ ∑ i ∈ t N, fourierMultiplierCLM F (m i) f) atTop (𝓝 f) := by
+  -- The partial sums are the multipliers with the symbols `∑_{i ∈ t N} ψᵢ`.
+  have hae : ∀ᵐ ξ ∂(volume : Measure E), ∀ N, (∑ i ∈ t N, m i) ξ = ∑ i ∈ t N, ψ i ξ := by
+    refine ae_all_iff.2 fun N ↦ ?_
+    filter_upwards [coeFn_fun_finsetSum (t N) m, (eventually_all_finset (t N)).2 fun i _ ↦ hm i]
+      with ξ h₁ h₂
+    rw [h₁]
+    exact Finset.sum_congr rfl fun i hi ↦ h₂ i hi
+  have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
+  have h := tendsto_fourierMultiplierCLM_apply (F := F) (l := atTop)
+    (m := fun N ↦ ∑ i ∈ t N, m i) (m₀ := h1.toLp _) (C := C) ?_ ?_ f
+  · rw [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp] at h
+    simpa only [one_smul, id_apply, fourierMultiplierCLM_sum, FunLike.coe_sum,
+      Finset.sum_apply] using h
+  · refine Eventually.of_forall fun N ↦ ?_
+    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
+    refine ENNReal.toReal_le_of_le_ofReal ((norm_nonneg _).trans (hle 0 0))
+      (eLpNormEssSup_le_of_ae_bound ?_)
+    filter_upwards [hae] with ξ hξ
+    rw [hξ N]
+    exact hle N ξ
+  · filter_upwards [hae, h1.coeFn_toLp, hlim] with ξ h₁ h₂ h₃
+    simpa only [h₁, h₂] using h₃
 
 /-- The `L²` distance between a difference quotient of `s ↦ T_{m s} f` and `T_{m'} h`, computed on
 the Fourier side. -/
