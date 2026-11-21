@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Binomial
 public import TauCeti.Analysis.Polynomial.L1Norm
 import Mathlib.Data.Nat.Choose.Bounds
 import TauCeti.Algebra.Polynomial.Lifts
+import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -52,6 +53,7 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 
 * `TauCeti.degree_multichoose_X_add_one`: `Δ(X; k)` has degree `k`.
 * `TauCeti.multichoose_X_add_one_ne_zero`: Baker's binomial polynomials are nonzero.
+* `TauCeti.natDegree_multichoose_X_add_one_comp_C_mul_X_le`: `Δ(q X; k)` has degree at most `k`.
 * `TauCeti.multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts`: `Δ(a + L X; k)` has integral
   coefficients.
 * `TauCeti.pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: Baker's
@@ -68,6 +70,8 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 * `TauCeti.l1Norm_taylor_multichoose_X_add_one_le`: the coefficient length of `Δ(X + x; k)` is
   at most `(n + k + 1 choose k)` when `|x| ≤ n`.
 * `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_le`: the size bound.
+* `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le`: the size bound for
+  `Δ(q X; k)`, at points `x` with `|q x| ≤ n`.
 
 ## References
 
@@ -115,6 +119,14 @@ theorem multichoose_X_add_one_ne_zero (k : ℕ) : Ring.multichoose (X + 1 : ℚ[
 theorem natDegree_multichoose_X_add_one (k : ℕ) :
     (Ring.multichoose (X + 1 : ℚ[X]) k).natDegree = k :=
   natDegree_eq_of_degree_eq_some (degree_multichoose_X_add_one k)
+
+/-- The rescaled binomial polynomial `Δ(q X; k)` has natural degree at most `k`. -/
+theorem natDegree_multichoose_X_add_one_comp_C_mul_X_le (k : ℕ) (q : ℚ) :
+    ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C q * X)).natDegree ≤ k :=
+  natDegree_comp_le.trans (by
+    rw [natDegree_multichoose_X_add_one]
+    exact (Nat.mul_le_mul_left _ ((natDegree_C_mul_le _ _).trans natDegree_X_le)).trans
+      (by rw [mul_one]))
 
 /-- Composition with `q` is the binomial-ring specialisation `X ↦ q`: `Δ(q; n)` is
 `Ring.multichoose (q + 1) n`. -/
@@ -341,5 +353,16 @@ theorem abs_eval_hasseDeriv_multichoose_X_add_one_pow_le {x : ℚ} {n : ℕ} (hx
       (by exact_mod_cast Nat.choose_le_two_pow _ _)
   rw [← Rat.cast_le (K := ℝ)]
   simpa [← Rat.norm_cast_real, Real.norm_eq_abs] using h
+
+/-- **The size bound for `Δ(q X; k)`.** If `|q x| ≤ n`, then for all `k, l, m` the `m`-th Hasse
+derivative of `Δ(q X; k) ^ l` at `x` is at most `|q| ^ m 2 ^ (l (n + k + 1))` in absolute value:
+by the rescaling `Polynomial.eval_hasseDeriv_comp_C_mul_X` it is `q ^ m Δ(q x; k, l, m)`. -/
+theorem abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le {q x : ℚ} {n : ℕ}
+    (hx : |q * x| ≤ n) (k l m : ℕ) :
+    |(hasseDeriv m ((Ring.multichoose (X + 1 : ℚ[X]) k ^ l).comp (C q * X))).eval x| ≤
+      |q| ^ m * 2 ^ (l * (n + k + 1)) := by
+  rw [eval_hasseDeriv_comp_C_mul_X, abs_mul, abs_pow]
+  gcongr
+  exact abs_eval_hasseDeriv_multichoose_X_add_one_pow_le hx k l m
 
 end TauCeti

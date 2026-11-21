@@ -125,16 +125,6 @@ theorem abs_intCast_mul_waldschmidtPoint_waldschmidtNormalize_le (a₀ : ℤ) {a
       gcongr
       exact hs' _
 
-/-- The Hasse derivatives of the rescaled binomial polynomial `Δ(q X; τ)` at `x`, for
-`|q x| ≤ N`: the `k`-th one is at most `|q| ^ k 2 ^ (N + τ + 1)`. -/
-private theorem abs_eval_hasseDeriv_multichoose_comp_C_mul_X_le {q : ℤ} {x : ℚ} {N : ℕ}
-    (hx : |(q : ℚ) * x| ≤ N) (τ k : ℕ) :
-    |(Polynomial.hasseDeriv k ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) τ).comp
-      (Polynomial.C (q : ℚ) * Polynomial.X))).eval x| ≤ |(q : ℚ)| ^ k * 2 ^ (N + τ + 1) := by
-  rw [Polynomial.eval_hasseDeriv_comp_C_mul_X, abs_mul, abs_pow]
-  gcongr
-  simpa using abs_eval_hasseDeriv_multichoose_X_add_one_pow_le hx τ 1 k
-
 /-- The rational factor of the entry of `P(∂/∂z₀)` on the delta row `∏ᵢ Δ(q zᵢ; τᵢ)`, by the
 formula `TauCeti.waldschmidtOperatorEntry_prod_aeval_X` for separated rows with `α = 1`. -/
 private theorem eval_waldschmidtEntryPolynomial_waldschmidtDelta (b : Fin (n + 1) → ℚ) (t : ℤ)
@@ -170,10 +160,7 @@ private theorem abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le {q : ℤ}
     have hQ : Polynomial.hasseDeriv k Q = 0 := by
       refine Polynomial.hasseDeriv_eq_zero_of_lt_natDegree _ _
         (lt_of_le_of_lt ?_ (by simpa [Nat.lt_succ_iff] using hk))
-      refine Polynomial.natDegree_comp_le.trans ?_
-      rw [natDegree_multichoose_X_add_one]
-      exact (Nat.mul_le_mul_left _ ((Polynomial.natDegree_C_mul_le _ _).trans
-        Polynomial.natDegree_X_le)).trans (by rw [mul_one])
+      exact natDegree_multichoose_X_add_one_comp_C_mul_X_le τ _
     simp [f, hQ]
   calc |∑ k ∈ range (P.natDegree + 1), f k|
       ≤ ∑ k ∈ range (P.natDegree + 1) ∪ range (τ + 1), |f k| :=
@@ -186,7 +173,9 @@ private theorem abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le {q : ℤ}
         simp only [hfdef]
         rw [Polynomial.eval_iterate_derivative_eq_factorial_mul, abs_mul, abs_mul, Nat.abs_cast]
         have h₁ := hP k (Nat.lt_succ_iff.1 (mem_range.1 hk))
-        have h₂ := abs_eval_hasseDeriv_multichoose_comp_C_mul_X_le hx τ k
+        have h₂ : |(Polynomial.hasseDeriv k Q).eval x| ≤ |(q : ℚ)| ^ k * 2 ^ (N + τ + 1) := by
+          simpa only [pow_one, one_mul] using
+            abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le hx τ 1 k
         calc (k.factorial : ℚ) * |(Polynomial.hasseDeriv k P).eval (t : ℚ)| *
               |(Polynomial.hasseDeriv k Q).eval x|
             ≤ k.factorial * H * (|(q : ℚ)| ^ k * 2 ^ (N + τ + 1)) := by gcongr
@@ -216,8 +205,8 @@ theorem abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_le {b : Fin (n + 1)
       ∏ i : Fin n, (2 : ℚ) ^ (N i.succ + τ i.succ + 1) := by
     rw [abs_prod]
     exact prod_le_prod₀ (fun _ _ ↦ abs_nonneg _) fun i _ ↦ by
-      simpa only [Polynomial.hasseDeriv_zero', pow_zero, one_mul] using
-        abs_eval_hasseDeriv_multichoose_comp_C_mul_X_le (hx i.succ) (τ i.succ) 0
+      simpa only [Polynomial.hasseDeriv_zero', pow_zero, pow_one, one_mul] using
+        abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le (hx i.succ) (τ i.succ) 1 0
   rw [eval_waldschmidtEntryPolynomial_waldschmidtDelta, abs_mul, Fin.sum_univ_succ, pow_add,
     ← mul_assoc]
   exact mul_le_mul (abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le (hx 0) hP)
