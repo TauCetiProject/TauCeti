@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -49,6 +50,11 @@ form
   existence of oriented unitary frames and completion of a unit vector in dimension four.
 * `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
   an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
+* `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasis`: for such a frame, `e₀, e₂` is a
+  basis of the complex vector space `(V, J)`, with coordinates `⟪e₀, x⟫ + i ⟪e₁, x⟫` and
+  `⟪e₂, x⟫ + i ⟪e₃, x⟫`.
+* `TauCeti.AlmostComplexStructure.det_eq_of_orthonormalBasis`: the determinant of a complex-linear
+  map of `(V, J)` from its coordinates in that basis.
 
 ## References
 
@@ -248,6 +254,121 @@ theorem exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientatio
   exact ⟨e, he, h₀, h₂⟩
 
 end DimensionFour
+
+section Det
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {J : AlmostComplexStructure V} {e : OrthonormalBasis (Fin 4) ℝ V}
+
+/-- The two complex frame coordinates `⟪e₀, x⟫ + i ⟪e₁, x⟫` and `⟪e₂, x⟫ + i ⟪e₃, x⟫` of
+`s e₀ + t e₂` in `(V, J)` are `s` and `t`. -/
+private theorem frameCoord_smul_add_smul (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (s t : ℂ) :
+    letI := J.complexModule
+    ((⟪e 0, s • e 0 + t • e 2⟫ : ℂ) + Complex.I * ⟪e 1, s • e 0 + t • e 2⟫ = s) ∧
+      ((⟪e 2, s • e 0 + t • e 2⟫ : ℂ) + Complex.I * ⟪e 3, s • e 0 + t • e 2⟫ = t) := by
+  let := J.complexModule
+  have ho (i j : Fin 4) : ⟪e i, e j⟫ = if i = j then 1 else 0 :=
+    orthonormal_iff_ite.1 e.orthonormal i j
+  simp only [J.complexModule_smul_def, h₀, h₂, inner_add_right, inner_smul_right, ho]
+  refine ⟨Complex.ext ?_ ?_, Complex.ext ?_ ?_⟩ <;> simp
+
+/-- In `(V, J)`, every vector is `z₀ e₀ + z₂ e₂` for its two complex frame coordinates. -/
+private theorem eq_frameCoord_smul_add_smul (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (x : V) :
+    letI := J.complexModule
+    x = ((⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫) • e 0 +
+      ((⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫) • e 2 := by
+  let := J.complexModule
+  simp only [J.complexModule_smul_def, h₀, h₂]
+  conv_lhs => rw [← e.sum_repr' x, Fin.sum_univ_four]
+  simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, Complex.ofReal_im,
+    Complex.I_im, Complex.add_im, Complex.mul_im]
+  module
+
+/-- **The complex basis of a unitary frame.** If `e` is an orthonormal basis with `J e₀ = e₁` and
+`J e₂ = e₃`, then `e₀, e₂` is a basis of the complex vector space `(V, J)`. The coordinates of `x`
+in it are `z₀(x) = ⟪e₀, x⟫ + i ⟪e₁, x⟫` and `z₂(x) = ⟪e₂, x⟫ + i ⟪e₃, x⟫`
+(`basisOfOrthonormalBasis_repr_apply_zero`, `basisOfOrthonormalBasis_repr_apply_one`). -/
+noncomputable def basisOfOrthonormalBasis (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    letI := J.complexModule
+    Basis (Fin 2) ℂ V :=
+  letI := J.complexModule
+  Basis.mk (v := ![e 0, e 2])
+    (LinearIndependent.pair_iff.2 fun s t hst ↦ by
+      have h := frameCoord_smul_add_smul h₀ h₂ s t
+      simp only [hst, inner_zero_right, Complex.ofReal_zero, mul_zero, add_zero] at h
+      exact ⟨h.1.symm, h.2.symm⟩)
+    fun x _ ↦ by
+      rw [eq_frameCoord_smul_add_smul h₀ h₂ x]
+      exact Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
+        (Submodule.smul_mem _ _ (Submodule.subset_span ⟨1, rfl⟩))
+
+/-- The first vector of the basis `(e₀, e₂)` of `(V, J)` is `e₀`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    letI := J.complexModule
+    basisOfOrthonormalBasis h₀ h₂ 0 = e 0 := by
+  simp [basisOfOrthonormalBasis]
+
+/-- The second vector of the basis `(e₀, e₂)` of `(V, J)` is `e₂`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    letI := J.complexModule
+    basisOfOrthonormalBasis h₀ h₂ 1 = e 2 := by
+  simp [basisOfOrthonormalBasis]
+
+/-- The coordinates of `x` in the basis `(e₀, e₂)` of `(V, J)` are its two complex frame
+coordinates. -/
+private theorem basisOfOrthonormalBasis_repr_apply (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (x : V) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasis h₀ h₂).repr x 0 = (⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫ ∧
+      (basisOfOrthonormalBasis h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ := by
+  let := J.complexModule
+  set b := basisOfOrthonormalBasis h₀ h₂
+  have hx : b.repr x = b.repr (((⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫) • b 0 +
+      ((⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫) • b 1) := by
+    rw [basisOfOrthonormalBasis_zero, basisOfOrthonormalBasis_one,
+      ← eq_frameCoord_smul_add_smul h₀ h₂ x]
+  rw [hx, map_add, map_smul, map_smul, b.repr_self, b.repr_self]
+  simp only [Finsupp.add_apply, Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
+  norm_num
+
+/-- The first coordinate of `x` in the basis `(e₀, e₂)` of `(V, J)` is
+`z₀(x) = ⟪e₀, x⟫ + i ⟪e₁, x⟫`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_repr_apply_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (x : V) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasis h₀ h₂).repr x 0 = (⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫ :=
+  (basisOfOrthonormalBasis_repr_apply h₀ h₂ x).1
+
+/-- The second coordinate of `x` in the basis `(e₀, e₂)` of `(V, J)` is
+`z₂(x) = ⟪e₂, x⟫ + i ⟪e₃, x⟫`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_repr_apply_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (x : V) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasis h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ :=
+  (basisOfOrthonormalBasis_repr_apply h₀ h₂ x).2
+
+/-- **The complex determinant in a unitary frame.** If `e` is an orthonormal basis with
+`J e₀ = e₁` and `J e₂ = e₃`, the determinant of a complex-linear map `F` of `(V, J)` is
+`z₀(F e₀) z₂(F e₂) - z₂(F e₀) z₀(F e₂)`, where `z₀` and `z₂` are the coordinates in the basis
+`(e₀, e₂)` of `(V, J)` (`basisOfOrthonormalBasis`). -/
+theorem det_eq_of_orthonormalBasis (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+    (F : letI := J.complexModule; V →ₗ[ℂ] V) :
+    letI := J.complexModule
+    LinearMap.det F =
+      (basisOfOrthonormalBasis h₀ h₂).repr (F (e 0)) 0 *
+          (basisOfOrthonormalBasis h₀ h₂).repr (F (e 2)) 1 -
+        (basisOfOrthonormalBasis h₀ h₂).repr (F (e 0)) 1 *
+          (basisOfOrthonormalBasis h₀ h₂).repr (F (e 2)) 0 := by
+  let := J.complexModule
+  rw [← LinearMap.det_toMatrix (basisOfOrthonormalBasis h₀ h₂), Matrix.det_fin_two]
+  simp only [LinearMap.toMatrix_apply, basisOfOrthonormalBasis_zero, basisOfOrthonormalBasis_one]
+  ring
+
+end Det
 
 end TauCeti.AlmostComplexStructure
 

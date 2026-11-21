@@ -37,6 +37,7 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   vectors.
 * `OrthonormalBasis.map_ι_apply_map_ι_apply`, `OrthonormalBasis.map_ι_apply_map_ι_apply_comm`: in
   a Clifford module, `c(bᵢ)² = -1`, and `c(bᵢ)` and `c(bⱼ)` anticommute for `i ≠ j`.
+* `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)` in a Clifford module.
 * `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
@@ -111,6 +112,13 @@ theorem map_ι_apply_map_ι_apply_comm {i j : ι} (hij : i ≠ j) (ψ : W) :
       -ρ (CliffordAlgebra.ι Q (b j)) (ρ (CliffordAlgebra.ι Q (b i)) ψ) := by
   simpa [mul_apply_eq_comp] using
     congrArg (fun x ↦ ρ x ψ) (CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij))
+
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis: `c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ`. -/
+theorem map_ι_apply_eq_sum (v : V) (ψ : W) :
+    ρ (CliffordAlgebra.ι Q v) ψ = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) ψ := by
+  conv_lhs => rw [← b.sum_repr' v]
+  simp [map_sum, map_smul, LinearMap.sum_apply]
 
 end Module
 
