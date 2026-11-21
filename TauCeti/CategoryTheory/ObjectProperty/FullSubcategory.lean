@@ -20,6 +20,9 @@ leaves underlying objects and morphisms unchanged, commutes with the inclusions,
 linear whenever the ambient category is linear. No closure under isomorphisms is needed.
 
 The construction uses Mathlib's `ObjectProperty.lift` and `ObjectProperty.ιOfLE`.
+
+The file also records `CategoryTheory.ObjectProperty.lift_comp_ι`: a lift through a full
+subcategory, followed by the inclusion, is the original functor.
 -/
 
 public section
@@ -31,6 +34,17 @@ variable {C : Type*} [Category* C] (P Q : ObjectProperty C)
 /-- A full subcategory of a groupoid is a groupoid, without any closure condition on objects. -/
 instance FullSubcategory.isGroupoid [IsGroupoid C] : IsGroupoid P.FullSubcategory :=
   isGroupoid_of_reflects_iso P.ι
+
+/-- The lift of a functor through a full subcategory, followed by the inclusion, is the original
+functor. This is the equality form of Mathlib's isomorphism
+`CategoryTheory.ObjectProperty.liftCompιIso`, assembled from its componentwise lemmas
+`CategoryTheory.ObjectProperty.ι_obj_lift_obj` and `CategoryTheory.ObjectProperty.ι_obj_lift_map`.
+-/
+theorem lift_comp_ι {E : Type*} [Category* E] (F : E ⥤ C) (hF : ∀ A, P (F.obj A)) :
+    P.lift F hF ⋙ P.ι = F :=
+  Functor.ext (P.ι_obj_lift_obj F hF) fun _ _ f ↦ by
+    rw [Functor.comp_map, P.ι_obj_lift_map F hF f]
+    simp
 
 /-- Two successive full-subcategory restrictions agree with restriction to the intersection.
 The comparison and its inverse leave the underlying objects and morphisms unchanged. -/

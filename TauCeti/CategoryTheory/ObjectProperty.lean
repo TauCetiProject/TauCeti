@@ -5,20 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Equivalence
-public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
-public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
-public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
-public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
-public import Mathlib.CategoryTheory.ObjectProperty.Small
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # Object properties: transport along equivalences, and closure properties
 
 This file contains general lemmas about object properties: transporting them along an
 equivalence, comparing Mathlib's closure type classes with one another in the presence of a
-zero object and of binary biproducts, smallness of full subcategories, and additivity of the
+terminal object and of binary biproducts, smallness of full subcategories, and additivity of the
 standard functors between full subcategories.
 
 ## Main declarations
@@ -75,24 +70,14 @@ theorem inverseImage_functor_inverseImage_inverse
   exact (P.prop_iff_of_iso (e.unitIso.app X)).symm
 
 /-- **A property holding for a zero object and closed under binary products is closed under
-isomorphisms.** An isomorphism `e : X ≅ Y` exhibits `Y` as a product of a zero object with `X`,
-the two projections being the zero morphism and `e.inv`.
-
-Mathlib's `CategoryTheory.ObjectProperty.IsClosedUnderBinaryProducts.closedUnderIsomorphisms` is
-the same argument run on a terminal object, but it assumes closure under the empty limit, which
-`CategoryTheory.ObjectProperty.ContainsZero` — the property for *one* zero object — does not
-supply before repleteness is known. -/
+isomorphisms.** This is `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerminal`
+for the zero object supplied by `CategoryTheory.ObjectProperty.ContainsZero`, so that it applies
+by type class inference alone. -/
 theorem isClosedUnderIsomorphisms_of_containsZero {C : Type u₁} [Category.{v₁} C]
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderBinaryProducts] :
-    P.IsClosedUnderIsomorphisms where
-  of_iso {X Y} e hX := by
-    obtain ⟨Z, hZ, hZP⟩ := P.exists_prop_of_containsZero
-    let B : BinaryFan Z X := BinaryFan.mk (hZ.from_ Y) e.inv
-    have hB : IsLimit B := BinaryFan.IsLimit.mk B (fun _ g => g ≫ e.hom)
-      (fun _ _ => hZ.eq_of_tgt _ _)
-      (fun _ _ => by simp [B])
-      (fun _ _ _ _ hg => by simpa [B] using congrArg (fun k => k ≫ e.hom) hg)
-    exact P.prop_of_isLimit_binaryFan hB hZP hX
+    P.IsClosedUnderIsomorphisms := by
+  obtain ⟨Z, hZ, hZP⟩ := P.exists_prop_of_containsZero
+  exact P.isClosedUnderIsomorphisms_of_isTerminal hZ.isTerminal hZP
 
 /-- **For a replete property, closure under binary products only has to be checked on
 biproducts**, since in a category with binary biproducts every binary product is one. -/
@@ -151,8 +136,7 @@ theorem lift_map_hom_of_eq {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [
     (hB : (G.obj B).obj = F.obj B) :
     (G.map f).hom = eqToHom hA ≫ F.map f ≫ eqToHom hB.symm := by
   subst hG
-  rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id, ObjectProperty.lift_map,
-    ObjectProperty.homMk_hom]
+  simp
 
 /-- The lift of a functor through a full subcategory is essentially surjective exactly when every
 object satisfying the property lies in the essential image of the original functor. -/
@@ -176,9 +160,7 @@ theorem congrFullSubcategory_functor_comp_ι
     (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).functor ⋙ Q.ι = P.ι ⋙ e.functor := by
   rw [congrFullSubcategory_functor]
-  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
-    simp only [Functor.comp_map, ObjectProperty.ι_obj_lift_map, eqToHom_refl, Category.id_comp,
-      Category.comp_id]
+  exact ObjectProperty.lift_comp_ι ..
 
 /-- The inverse functor on corresponding full subcategories, followed by the inclusion, is the
 inclusion followed by the original inverse. -/
@@ -188,9 +170,7 @@ theorem congrFullSubcategory_inverse_comp_ι
     (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).inverse ⋙ P.ι = Q.ι ⋙ e.inverse := by
   rw [congrFullSubcategory_inverse]
-  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
-    simp only [Functor.comp_map, ObjectProperty.ι_obj_lift_map, eqToHom_refl, Category.id_comp,
-      Category.comp_id]
+  exact ObjectProperty.lift_comp_ι ..
 
 section Evaluation
 
@@ -201,9 +181,7 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 /-- The forward functor on corresponding full subcategories acts on objects as the original
 functor. Not a simp lemma: `congrFullSubcategory_functor` already unfolds the left-hand side. -/
 theorem congrFullSubcategory_functor_obj_obj (X : P.FullSubcategory) :
-    ((e.congrFullSubcategory h).functor.obj X).obj = e.functor.obj X.obj := by
-  rw [congrFullSubcategory_functor, ObjectProperty.lift_obj_obj, Functor.comp_obj,
-    ObjectProperty.ι_obj]
+    ((e.congrFullSubcategory h).functor.obj X).obj = e.functor.obj X.obj := by simp
 
 /-- The forward functor on corresponding full subcategories acts on morphisms as the original
 functor, up to the identifications of `congrFullSubcategory_functor_obj_obj`. -/
@@ -217,9 +195,7 @@ theorem congrFullSubcategory_functor_map_hom {X Y : P.FullSubcategory} (f : X �
 /-- The inverse functor on corresponding full subcategories acts on objects as the original
 inverse. Not a simp lemma: `congrFullSubcategory_inverse` already unfolds the left-hand side. -/
 theorem congrFullSubcategory_inverse_obj_obj (Y : Q.FullSubcategory) :
-    ((e.congrFullSubcategory h).inverse.obj Y).obj = e.inverse.obj Y.obj := by
-  rw [congrFullSubcategory_inverse, ObjectProperty.lift_obj_obj, Functor.comp_obj,
-    ObjectProperty.ι_obj]
+    ((e.congrFullSubcategory h).inverse.obj Y).obj = e.inverse.obj Y.obj := by simp
 
 /-- The inverse functor on corresponding full subcategories acts on morphisms as the original
 inverse, up to the identifications of `congrFullSubcategory_inverse_obj_obj`. -/
