@@ -327,7 +327,7 @@ private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n �
   have hγ (t : I) : (souriau (((expPath X hXsp).map continuous_graphUnitaryFrame) t) :
       Matrix (n ⊕ n) (n ⊕ n) ℂ) = cayley ((cayleyGen S t).map ((↑) : ℝ → ℂ)) := by
     have h := coe_souriau_graphUnitaryFrame_eq_cayley (A := expPath X hXsp t)
-      (by rw [coe_expPath_apply]; exact (isUnit_iff_isUnit_det _).1 (hunit t t.2))
+      (by rw [coe_expPath_apply]; exact (isUnit_iff_isUnit_det _).1 (hunit t t.property))
     simpa only [coe_expPath_apply, cayleyGen, Path.map_coe, Function.comp_apply] using h
   -- The only crossing is at `t = 0`, where `cayleyGen S` vanishes with derivative `S / 2`.
   have hmas := Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley
@@ -369,7 +369,7 @@ private theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two
         ((LieAlgebra.Symplectic.sp n ℝ).smul_mem _ hXsp)
       continuous_toFun :=
         continuous_expOfMemSp
-          (((continuous_const.add continuous_subtype_val).div_const _).smul continuous_const) _
+          (((continuous_const.add continuous_subtypeVal).div_const _).smul continuous_const) _
       source' := by
         refine Subtype.ext (Units.ext ?_)
         simp [hX']
@@ -397,9 +397,9 @@ private theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two
     linarith
   -- Along `δ` the matrices `exp (t X)`, `t ∈ [1/2, 1]`, have no eigenvalue `1`.
   have hδ1 (s : I) : IsUnit (((δ s : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) - (1 : ℝ) • 1) := by
-    have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]
+    have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.property.1]
     rw [one_smul, hδ]
-    exact isUnit_exp_smul_J_mul_sub_one hdet hs (by nlinarith [s.2.2, norm_nonneg S])
+    exact isUnit_exp_smul_J_mul_sub_one hdet hs (by nlinarith [s.property.2, norm_nonneg S])
   rw [← hsplit, conleyZehnderIndex_trans,
     conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi hS' hdet' hnorm,
     signature_smul_of_pos (by norm_num), conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq δ

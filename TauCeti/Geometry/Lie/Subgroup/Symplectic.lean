@@ -148,7 +148,7 @@ def expPath (X : Matrix (l ⊕ l) (l ⊕ l) 𝕜) (hX : X ∈ LieAlgebra.Symplec
     Path (1 : GLSymplectic l 𝕜) (expOfMemSp X hX) where
   toFun t := expOfMemSp ((t : ℝ) • X) ((LieAlgebra.Symplectic.sp l 𝕜).toSubmodule.smul_of_tower_mem
     (t : ℝ) hX)
-  continuous_toFun := continuous_expOfMemSp (continuous_subtype_val.smul continuous_const) _
+  continuous_toFun := continuous_expOfMemSp (continuous_subtypeVal.smul continuous_const) _
   source' := by
     refine Subtype.ext (Units.ext ?_)
     simp
