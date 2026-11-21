@@ -136,8 +136,7 @@ theorem map_stabilizer_bassSerreVertex (e : π₁ 𝔸 a →* P) {b : Γ.V} (p q
     (stabilizer (π₁ 𝔸 a) (bassSerreVertex p)).map e =
       ((π₁.vertexHom q).range.map e).map (MulAut.conj (e (π₁.mk (p.comp q.reverse))) : P →* P) := by
   -- The vertex `p A_b` is the translate of `q A_b` by the class of `p q⁻¹`.
-  rw [← map_stabilizer_smul_bassSerreVertex, smul_bassSerreVertex,
-    bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp p q)]
+  rw [← map_stabilizer_smul_bassSerreVertex, mk_comp_reverse_smul_bassSerreVertex]
 
 /-- Let `e` be a homomorphism out of `π₁(𝔸, a)` and, for each vertex `b` joined to `a` by an
 `𝔸`-path, let `K b` be the image under `e` of a conjugate `q A_b q⁻¹` of the vertex group `A_b`

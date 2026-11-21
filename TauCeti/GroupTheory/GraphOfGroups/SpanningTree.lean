@@ -178,7 +178,8 @@ theorem π₁Equiv_apply (g : π₁ 𝔸 v₀) : π₁Equiv 𝔸 v₀ T g = π�
 @[simp↓] theorem cast_π₁Equiv_apply {S : Set Γ.E} (h : T.darts = S) (g : π₁ 𝔸 v₀) :
     MulEquiv.cast (M := π₁Tree 𝔸) h (π₁Equiv 𝔸 v₀ T g) = π₁.toπ₁Tree 𝔸 v₀ S g := by
   subst h
-  rfl
+  -- The cast along `rfl` is the identity by definition.
+  exact π₁Equiv_apply 𝔸 v₀ T g
 
 /-- The inverse of `π₁Equiv` sends `g ∈ A_v` to the class of `[v₀, v]_T g [v, v₀]_T`. -/
 @[simp] theorem π₁Equiv_symm_of (v : Γ.V) (g : 𝔸.vertexGroup v) :

@@ -307,8 +307,8 @@ theorem equivPushoutI_mk (a : SerreGraph.segment.V) (p : (segment f g hf hg).Pat
 @[simp] theorem equivPushoutI_mk_ofVertex (a : SerreGraph.segment.V)
     (x : (segment f g hf hg).vertexGroup a) :
     equivPushoutI f g hf hg a (mk (Path.ofVertex x)) = Monoid.PushoutI.of a x := by
-  -- `π₁Tree.equivPushoutI_of` does not fire as a `simp` lemma on this term; apply it directly.
-  simpa using π₁Tree.equivPushoutI_of _ a x
+  rw [equivPushoutI_mk, Path.toπ₁Tree_ofVertex]
+  exact π₁Tree.equivPushoutI_of _ a x
 
 /-- The inverse sends the factor `A_a` at the base vertex `a` to the vertex group at `a`. -/
 @[simp] theorem equivPushoutI_symm_of_self (a : SerreGraph.segment.V)
@@ -321,8 +321,26 @@ theorem equivPushoutI_mk (a : SerreGraph.segment.V) (p : (segment f g hf hg).Pat
 @[simp] theorem equivPushoutI_vertexHom_ofDart {a b : SerreGraph.segment.V} (d : a ⟶ b)
     (x : (segment f g hf hg).vertexGroup b) :
     equivPushoutI f g hf hg a (vertexHom (Path.ofDart d) x) = Monoid.PushoutI.of b x := by
-  -- The dart reads `1` in `π₁(𝔸, T)`, which leaves the image of `x` in the factor `A_b`.
-  simpa [equivPushoutI_apply] using π₁Tree.equivPushoutI_of _ b x
+  -- The dart lies in the tree `T` of all darts, so it reads `1` in `π₁(𝔸, T)`, which leaves the
+  -- image of `x` in the factor `A_b`.
+  rw [equivPushoutI_apply, toπ₁Tree_vertexHom, Path.toπ₁Tree_ofDart,
+    π₁Tree.edge_eq_one (Set.mem_univ _), one_mul, inv_one, mul_one]
+  exact π₁Tree.equivPushoutI_of _ b x
+
+/-- Along the empty path, the vertex group at the base vertex `a` maps to the factor `A_a` by the
+identity: as homomorphisms, `π₁.equivPushoutI ∘ π₁.vertexHom .nil` is the inclusion of `A_a`. -/
+@[simp] theorem equivPushoutI_comp_vertexHom_nil (a : SerreGraph.segment.V) :
+    (MonoidHom.ofClass (equivPushoutI f g hf hg a)).comp
+      (vertexHom (Quiver.Path.nil : (segment f g hf hg).Path ⟨a⟩ ⟨a⟩)) = Monoid.PushoutI.of a :=
+  MonoidHom.ext fun x ↦ (congrArg _ (vertexHom_nil_apply x)).trans (equivPushoutI_mk_ofVertex a x)
+
+/-- Along a dart `d` from the base vertex `a` to `b`, the vertex group at `b` maps to the factor
+`A_b` by the identity: as homomorphisms, `π₁.equivPushoutI ∘ π₁.vertexHom d` is the inclusion of
+`A_b`. -/
+@[simp] theorem equivPushoutI_comp_vertexHom_ofDart {a b : SerreGraph.segment.V} (d : a ⟶ b) :
+    (MonoidHom.ofClass (equivPushoutI f g hf hg a)).comp
+      (vertexHom (Path.ofDart (𝔸 := segment f g hf hg) d)) = Monoid.PushoutI.of b :=
+  MonoidHom.ext (equivPushoutI_vertexHom_ofDart d)
 
 /-- The inverse sends the factor `A_b` at the other vertex `b = !a` to the vertex group at `b`,
 conjugated into `π₁(𝔸, a)` along the dart from `a` to `b`. -/
@@ -508,6 +526,15 @@ theorem equivHNNExtension_mk (v : (SerreGraph.rose Unit).V) (p : (loop f g hf hg
   -- `Path.toπ₁Tree_ofVertex` here; it is instantiated explicitly.
   rw [equivHNNExtension_mk, Path.toπ₁Tree_ofVertex (𝔸 := loop f g hf hg) ∅ (a := v) x]
   exact π₁Tree.equivHNNExtension_of f g hf hg x
+
+/-- Along the empty path, the vertex group maps to the base group of the HNN extension by the
+identity: as homomorphisms, `π₁.equivHNNExtension ∘ π₁.vertexHom .nil` is the inclusion of the
+base group. -/
+@[simp] theorem equivHNNExtension_comp_vertexHom_nil (v : (SerreGraph.rose Unit).V) :
+    (MonoidHom.ofClass (equivHNNExtension f g hf hg v)).comp
+      (vertexHom (Quiver.Path.nil : (loop f g hf hg).Path ⟨v⟩ ⟨v⟩)) = HNNExtension.of :=
+  MonoidHom.ext fun x ↦
+    (congrArg _ (vertexHom_nil_apply x)).trans (equivHNNExtension_mk_ofVertex v x)
 
 /-- The loop traversing the dart `((), b)` maps to the image of the generator of that dart in
 `π₁(𝔸, ∅)`. -/

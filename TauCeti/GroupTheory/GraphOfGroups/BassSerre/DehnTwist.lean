@@ -93,7 +93,11 @@ theorem exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_segment {a : Serr
       H.map (Monoid.PushoutI.dehnTwist (segmentMaps f g hf hg) z).toMonoidHom =
         H.map (MulAut.conj x).toMonoidHom := by
   obtain ⟨x, hx⟩ := exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_segment z hH
-  exact ⟨x, hx.subgroup_map_eq⟩
+  -- `Monoid.PushoutI.dehnTwist` is indexed by `Bool`, only definitionally the vertex type of the
+  -- segment, so instance search fails on the group read off `hx`; the group and twist are named.
+  exact ⟨x, hx.subgroup_map_eq (G := Monoid.PushoutI (segmentMaps f g hf hg))
+    (N := Monoid.PushoutI (segmentMaps f g hf hg))
+    (f := (Monoid.PushoutI.dehnTwist (segmentMaps f g hf hg) z).toMonoidHom)⟩
 
 end segment
 

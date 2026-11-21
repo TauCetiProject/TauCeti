@@ -38,9 +38,12 @@ theorem Set.EqOn.submonoid_map_eq {M N F F' : Type*} [MulOneClass M] [MulOneClas
 variable {G N : Type*} [Group G] [Group N]
 
 /-- Two homomorphisms that agree on a subgroup `H` have the same image of `H`. -/
-theorem Set.EqOn.subgroup_map_eq {f g : G →* N} {H : Subgroup G} (h : Set.EqOn f g H) :
-    H.map f = H.map g :=
-  Subgroup.toSubmonoid_injective (h.submonoid_map_eq (S := H.toSubmonoid))
+theorem Set.EqOn.subgroup_map_eq {F F' : Type*} [FunLike F G N] [MonoidHomClass F G N]
+    [FunLike F' G N] [MonoidHomClass F' G N] {f : F} {g : F'} {H : Subgroup G}
+    (h : Set.EqOn f g H) : H.map (f : G →* N) = H.map (g : G →* N) := by
+  refine Subgroup.toSubmonoid_injective ?_
+  rw [Subgroup.map_toSubmonoid, Subgroup.map_toSubmonoid]
+  exact Set.EqOn.submonoid_map_eq (f := (f : G →* N)) (g := (g : G →* N)) h
 
 /-- If an endomorphism `f` agrees on a set `s` with the inner automorphism by `c`, then on the
 conjugate `w s w⁻¹` it agrees with the inner automorphism by `f(w) c w⁻¹`. -/

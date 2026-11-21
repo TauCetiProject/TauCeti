@@ -62,9 +62,10 @@ theorem exists_path_map_range_vertexHom_segment (a b : SerreGraph.segment.V) :
       (π₁.vertexHom q).range.map (π₁.equivPushoutI f g hf hg a).toMonoidHom =
         (Monoid.PushoutI.of b).range := by
   obtain rfl | rfl := Bool.eq_or_eq_not b a
-  · exact ⟨.nil, (MonoidHom.map_range _ _).trans (congrArg _ (MonoidHom.ext fun x => by simp))⟩
+  · exact ⟨.nil, (MonoidHom.map_range _ _).trans
+      (congrArg _ (π₁.equivPushoutI_comp_vertexHom_nil _))⟩
   · exact ⟨Path.ofDart (SerreGraph.segment.dart a), (MonoidHom.map_range _ _).trans
-      (congrArg _ (MonoidHom.ext (π₁.equivPushoutI_vertexHom_ofDart _)))⟩
+      (congrArg _ (π₁.equivPushoutI_comp_vertexHom_ofDart _))⟩
 
 /-- A subgroup `H` of `A ∗_C B` is elliptic in the Bass–Serre tree of the segment exactly when it
 lies in a conjugate of one of the two factors. -/
@@ -101,8 +102,8 @@ theorem exists_path_map_range_vertexHom_loop (v b : (SerreGraph.rose Unit).V) :
       (π₁.vertexHom q).range.map (π₁.equivHNNExtension f g hf hg v).toMonoidHom =
         (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range := by
   obtain rfl : v = b := Subsingleton.elim _ _
-  refine ⟨.nil, (MonoidHom.map_range _ _).trans (congrArg _ (MonoidHom.ext fun x => ?_))⟩
-  exact (congrArg _ (π₁.vertexHom_nil_apply x)).trans (π₁.equivHNNExtension_mk_ofVertex v x)
+  exact ⟨.nil, (MonoidHom.map_range _ _).trans
+    (congrArg _ (π₁.equivHNNExtension_comp_vertexHom_nil v))⟩
 
 /-- A subgroup `H` of the HNN extension is elliptic in the Bass–Serre tree of the loop exactly when
 it lies in a conjugate of the base group. -/
