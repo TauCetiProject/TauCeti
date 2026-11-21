@@ -26,9 +26,11 @@ exponential weight shifts `e^{±δ s}` on cylindrical ends, feeding
 When `F` is a finite-dimensional complex inner product space and `S` is infinitesimally symplectic
 (`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S` is `ι`-symmetric and index-`0`
 Fredholm, yielding unconditional injectivity, equivalence of closed range / Fredholmness /
-invertibility with `loopOperator T S` invertibility, the Pythagorean identity and inverse bound
-`√(1 + ‖(loopOperator T S)⁻¹‖²)`, uniform weighted inverses over compact families (adapting
-`TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode intertwining (`w' + λ w`).
+invertibility with `loopOperator T S` invertibility, invertibility of the opposite-sign
+operator `∂s - I • loopOperator T S`, the Pythagorean identity and inverse bounds
+`√(1 + ‖(loopOperator T S)⁻¹‖²)` and `max ‖(loopOperator T S)⁻¹‖ 1`, uniform weighted inverses over
+compact families (adapting `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode
+intertwining (`w' + λ w`).
 
 ## References
 
@@ -236,6 +238,31 @@ theorem norm_inverse_cylinderOperator_le {S : C(AddCircle T, F →L[ℝ] F)}
       (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)
       (real_inner_I_smul_loopOperator_comm T S hS)
       ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
+
+/-- Sharp inverse norm bound `‖(cylinderOperator T S).inverse‖ ≤ max ‖(loopOperator T S).inverse‖ 1`
+for infinitesimally symplectic nondegenerate `S`. -/
+theorem norm_inverse_cylinderOperator_le_max {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
+    (hL : (loopOperator T S).IsInvertible) :
+    ‖(cylinderOperator T S).inverse‖ ≤ max ‖(loopOperator T S).inverse‖ 1 := by
+  simpa only [cylinderOperator, ContinuousLinearMap.norm_inverse_I_smul] using
+    WeakDerivStep.norm_inverse_domainTrajectoryOperator_le_max
+      (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)
+      (real_inner_I_smul_loopOperator_comm T S hS)
+      ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
+
+/-- Invertibility of the opposite-sign stationary Floer cylinder operator
+`∂s ∘ ι - I • loopOperator T S` for infinitesimally symplectic nondegenerate `S`. -/
+theorem isInvertible_domainTrajectoryOperator_neg_I_smul_loopOperator
+    {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
+    (hL : (loopOperator T S).IsInvertible) :
+    (WeakDerivStep.domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2)
+      ((inclusion (E := F) zero_le_one).restrictScalars ℝ)
+      (-(I • loopOperator T S))).IsInvertible :=
+  WeakDerivStep.isInvertible_domainTrajectoryOperator_neg
+    (real_inner_I_smul_loopOperator_comm T S hS)
+    ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
 
 /-- If `S` is infinitesimally symplectic and `c ‖ι a‖ ≤ ‖loopOperator T S a‖` (`c > 0`), then
 `‖ι ∘ u‖_{L²} ≤ c⁻¹ ‖cylinderOperator T S u‖_{L²}`. -/

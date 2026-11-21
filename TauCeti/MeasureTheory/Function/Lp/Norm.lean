@@ -103,6 +103,8 @@ bounds.
 * `ContinuousLinearMap.norm_apply_one_compLp` and
   `ContinuousLinearMap.norm_apply_one_compLpL_apply`: evaluating an `Lᵖ` family of linear maps
   `𝕜 →L[𝕜] E` at `1` preserves its `Lᵖ` norm.
+* `ContinuousLinearMap.norm_compLp_toSpanSingleton`: postcomposing a scalar `Lᵖ` class `f` with
+  `toSpanSingleton 𝕜 v` gives `Lᵖ` norm `‖f‖ * ‖v‖`.
 -/
 
 public section
@@ -745,6 +747,19 @@ norm. -/
 theorem norm_apply_one_compLpL_apply [Fact (1 ≤ p)] (f : Lp (𝕜 →L[𝕜] E) p μ) :
     ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLpL p μ f‖ = ‖f‖ :=
   norm_apply_one_compLp f
+
+/-- Postcomposing a scalar `Lᵖ` class `f` with `toSpanSingleton 𝕜 v` (`x ↦ f x • v`) gives `Lᵖ`
+norm `‖f‖ * ‖v‖`. -/
+@[simp]
+theorem norm_compLp_toSpanSingleton (v : E) (f : Lp 𝕜 p μ) :
+    ‖(ContinuousLinearMap.toSpanSingleton 𝕜 v).compLp f‖ = ‖f‖ * ‖v‖ := by
+  have he : eLpNorm ((toSpanSingleton 𝕜 v).compLp f) p μ = ‖v‖ₑ * eLpNorm f p μ := by
+    rw [← eLpNorm_norm f (Lp.aestronglyMeasurable f), ← eNorm_norm, ← eLpNorm_const_smul]
+    refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+      ((Lp.aestronglyMeasurable f).norm.const_smul ‖v‖) ?_
+    filter_upwards [(toSpanSingleton 𝕜 v).coeFn_compLp f] with x hx
+    simp [hx, norm_smul, Real.norm_of_nonneg (mul_nonneg (norm_nonneg v) (norm_nonneg _)), mul_comm]
+  rw [Lp.norm_def, Lp.norm_def, he, ENNReal.toReal_mul, toReal_eNorm, mul_comm]
 
 end ContinuousLinearMap
 
