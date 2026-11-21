@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.Basis.Submodule
+public import Mathlib.LinearAlgebra.Basis.Flag
+public import TauCeti.LinearAlgebra.Unimodular
 
 /-!
 # The top exterior line of a subspace
@@ -22,6 +24,15 @@ This supplies the linear-algebra step in Chevalley's realization of a closed sub
 line stabilizer. The line is described intrinsically by a submodule power, independently of
 an adapted basis. Its comparison with scalar extension of the original exterior representation
 is a separate construction.
+
+## Main declarations
+
+* `Module.Basis.prefixExteriorVector`: the wedge of a nonempty basis prefix.
+* `Module.Basis.isUnimodular_prefixExteriorVector`: this prefix wedge is unimodular.
+* `Module.Basis.span_singleton_prefixExteriorVector`: its line is the top exterior image
+  of the corresponding basis flag subspace.
+* `Submodule.map_topExteriorLine_baseChange_eq_iff`: top exterior lines detect subspaces
+  under automorphisms after scalar extension.
 
 ## References
 
@@ -130,3 +141,38 @@ theorem map_topExteriorLine_baseChange_eq_iff (W : Submodule k V)
   exact (b.baseChange A).map_span_exteriorAlgebra_eq_iff s f
 
 end Submodule
+
+namespace Module.Basis
+
+variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] {n : ℕ}
+
+noncomputable section
+
+/-- The prefix wedge through the `i`-th vector of a basis, in exterior degree `i + 1`. -/
+def prefixExteriorVector (b : Module.Basis (Fin n) k V) (i : Fin n) : ⋀[k]^(i.val + 1) V :=
+  b.exteriorPower (i.val + 1) ⟨Finset.Iic i, Fin.card_Iic i⟩
+
+/-- A prefix wedge of a basis is unimodular. -/
+theorem isUnimodular_prefixExteriorVector (b : Module.Basis (Fin n) k V) (i : Fin n) :
+    Module.IsUnimodular k (prefixExteriorVector b i) :=
+  (b.exteriorPower (i.val + 1)).isUnimodular _
+
+/-- A prefix wedge spans the top exterior image of the corresponding basis flag subspace. -/
+theorem span_singleton_prefixExteriorVector (b : Module.Basis (Fin n) k V) (i : Fin n) :
+    k ∙ prefixExteriorVector b i =
+      LinearMap.range (_root_.exteriorPower.map (i.val + 1) (b.flag i.succ).subtype) := by
+  apply (Submodule.map_injective_of_injective
+    (Submodule.subtype_injective (⋀[k]^(i.val + 1) V))).eq_iff.mp
+  rw [Submodule.map_span, Set.image_singleton, ← LinearMap.range_comp,
+    _root_.exteriorPower.subtype_comp_map_eq, LinearMap.range_comp, Submodule.range_subtype,
+    TauCeti.ExteriorAlgebra.exteriorPower_map_map, Submodule.range_subtype]
+  have hflag : b.flag i.succ = Submodule.span k (b '' (Finset.Iic i : Set (Fin n))) := by
+    simp only [Module.Basis.flag, Fin.castSucc_lt_succ_iff, Finset.coe_Iic, Set.Iic]
+  rw [hflag]
+  simpa only [prefixExteriorVector, Submodule.coe_subtype,
+    ← ExteriorAlgebra.basis_eq_coe_basis, Fin.card_Iic] using
+    (b.map_ι_span_pow_eq_span_exteriorAlgebra (Finset.Iic i)).symm
+
+end
+
+end Module.Basis
