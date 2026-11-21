@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Nu
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Add
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 
 /-!
 # Isogenies on Shafarevich–Tate groups
@@ -45,6 +46,8 @@ it enters the isogeny invariance of the Birch–Swinnerton-Dyer quotient (Cassel
 ## Main definitions
 
 * `TauCeti.Isogeny.Hom.shafarevichTateMap`: the map `Sha(W₁) → Sha(W₂)` induced by a morphism.
+* `TauCeti.Isogeny.Hom.shafarevichTateMapEquivOfDegreeEqOne`: the group isomorphism
+  `Sha(W₁) ≃+ Sha(W₂)` induced by a degree-one morphism.
 
 ## Main results
 
@@ -58,6 +61,9 @@ it enters the isogeny invariance of the Birch–Swinnerton-Dyer quotient (Cassel
   when the degree-torsion of both Shafarevich–Tate groups is finite.
 * `TauCeti.Isogeny.Hom.finite_sha_iff`: over a number field, `Sha(W₁/K)` is finite if and only if
   `Sha(W₂/K)` is, for any nonzero morphism `W₁ → W₂`.
+* `TauCeti.Isogeny.Hom.card_sha_eq_of_degree_eq_one`: degree-one morphisms preserve `#Sha(E/K)`.
+* `WeierstrassCurve.VariableChange.finite_sha_smul_iff`: finiteness of `Sha(E/K)` is invariant
+  under a change of Weierstrass variables.
 
 ## References
 
@@ -236,6 +242,30 @@ theorem finite_shafarevichTateGroup_iff (f : Hom W₁.toAffine W₂.toAffine)
     rwa [degree_dual]
   exact f.dual.finite_shafarevichTateGroup_of_finite τ
 
+/-- **A degree-one morphism induces an isomorphism on Shafarevich–Tate groups**, with inverse
+induced by its dual. -/
+def shafarevichTateMapEquivOfDegreeEqOne (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1) :
+    W₁.shafarevichTateGroup τ ≃+ W₂.shafarevichTateGroup τ where
+  toFun := f.shafarevichTateMap τ
+  invFun := f.dual.shafarevichTateMap τ
+  left_inv c := by rw [dual_shafarevichTateMap_shafarevichTateMap, hf, one_smul]
+  right_inv c := by rw [shafarevichTateMap_dual_shafarevichTateMap, hf, one_smul]
+  map_add' := (f.shafarevichTateMap τ).map_add'
+
+/-- Applying `shafarevichTateMapEquivOfDegreeEqOne` is `shafarevichTateMap`. -/
+@[simp]
+theorem shafarevichTateMapEquivOfDegreeEqOne_apply (f : Hom W₁.toAffine W₂.toAffine)
+    (hf : f.degree = 1) (c : W₁.shafarevichTateGroup τ) :
+    f.shafarevichTateMapEquivOfDegreeEqOne τ hf c = f.shafarevichTateMap τ c :=
+  (rfl)
+
+/-- Applying the inverse of `shafarevichTateMapEquivOfDegreeEqOne` is the dual map. -/
+@[simp]
+theorem shafarevichTateMapEquivOfDegreeEqOne_symm_apply (f : Hom W₁.toAffine W₂.toAffine)
+    (hf : f.degree = 1) (c : W₂.shafarevichTateGroup τ) :
+    (f.shafarevichTateMapEquivOfDegreeEqOne τ hf).symm c = f.dual.shafarevichTateMap τ c :=
+  (rfl)
+
 /-- **An isogeny killing Sha in both directions**: if `Sha(W₂)` is finite, then for every nonzero
 morphism `f : W₁ → W₂` the multiple `ψ = #Sha(W₂) • f` is an isogeny such that both `ψ` and its
 dual `ψ̂` induce the zero map on Shafarevich–Tate groups. -/
@@ -276,6 +306,33 @@ theorem finite_sha_iff (f : Hom W₁.toAffine W₂.toAffine) (hf : f ≠ 0) :
   rw [W₂.sha_eq_shafarevichTateGroup τ] at h₂ ⊢
   exact f.finite_shafarevichTateGroup_iff τ
 
+/-- **Degree-one morphisms preserve the order of `Sha(E/K)`** over any number field `K`. -/
+theorem card_sha_eq_of_degree_eq_one (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1) :
+    Nat.card W₁.sha = Nat.card W₂.sha := by
+  let τ (v : GlobalNumberFields.Place K) :
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion := IsSepClosed.lift
+  rw [W₁.sha_eq_shafarevichTateGroup τ, W₂.sha_eq_shafarevichTateGroup τ]
+  exact Nat.card_congr (f.shafarevichTateMapEquivOfDegreeEqOne τ hf).toEquiv
+
 end NumberField
 
 end TauCeti.Isogeny.Hom
+
+namespace WeierstrassCurve.VariableChange
+
+/-- **Finiteness of `Sha(E/K)` is invariant under a change of Weierstrass variables** over any
+number field `K`. -/
+@[simp]
+theorem finite_sha_smul_iff {K : Type*} [Field K] [NumberField K]
+    (C : VariableChange K) (E : WeierstrassCurve K) [E.IsElliptic] :
+    Finite (C • E).sha ↔ Finite E.sha :=
+  ((TauCeti.Isogeny.Hom.ofIsogeny (TauCeti.Isogeny.variableChangeIsogeny C rfl)).finite_sha_iff
+    (TauCeti.Isogeny.Hom.ofIsogeny_ne_zero _)).symm
+
+/-- Finiteness of `Sha(E/K)` transfers across a change of Weierstrass variables. -/
+instance finite_sha_smul {K : Type*} [Field K] [NumberField K]
+    (C : VariableChange K) (E : WeierstrassCurve K) [E.IsElliptic] [Finite E.sha] :
+    Finite (C • E).sha :=
+  (finite_sha_smul_iff C E).2 inferInstance
+
+end WeierstrassCurve.VariableChange

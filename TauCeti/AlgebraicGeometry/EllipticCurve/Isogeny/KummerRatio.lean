@@ -52,6 +52,13 @@ theorem kummerRatio_def [d : DecidableEq F] (φ : Isogeny W₁ W₂) :
   cases Subsingleton.elim d (Classical.typeDecidableEq F)
   rfl
 
+/-- Clearing the nonzero kernel order from the Kummer ratio recovers the cokernel index. -/
+theorem kummerRatio_mul_card_ker [DecidableEq F] (φ : Isogeny W₁ W₂) :
+    φ.kummerRatio * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker =
+      (Hom.ofIsogeny φ).pointMapHom.range.index := by
+  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  rw [kummerRatio_def, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
+
 /-- The Kummer ratio is positive exactly when the cokernel on rational points is finite. -/
 theorem kummerRatio_pos_iff [DecidableEq F] (φ : Isogeny W₁ W₂) :
     0 < φ.kummerRatio ↔ (Hom.ofIsogeny φ).pointMapHom.range.FiniteIndex := by
