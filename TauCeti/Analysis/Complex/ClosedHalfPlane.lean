@@ -18,9 +18,14 @@ exactly when the function is analytic at every point of `re s = σ`
 (`TauCeti.exists_isOpen_differentiableOn_iff_analyticAt`). The open set can then be taken to be
 the set of points at which the function is analytic, which is open by Mathlib's
 `isOpen_analyticAt`.
+
+Limits at points of the closed half-plane taken within the open half-plane are well defined, since
+the open half-plane accumulates at each of them (`TauCeti.nhdsWithin_setOfPred_lt_re_neBot`).
 -/
 
 public section
+
+open scoped Topology
 
 namespace TauCeti
 
@@ -39,5 +44,11 @@ theorem exists_isOpen_differentiableOn_iff_analyticAt {F : ℂ → E} {σ : ℝ}
   rcases hs.eq_or_lt with hs | hs
   · exact h s hs.symm
   · exact hF.analyticAt ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
+
+/-- The open half-plane `σ < re s` accumulates at every point of the closed half-plane
+`σ ≤ re s`, in particular at every point of its boundary line. -/
+theorem nhdsWithin_setOfPred_lt_re_neBot {σ : ℝ} {s : ℂ} (hs : σ ≤ s.re) :
+    (𝓝[{z : ℂ | σ < z.re}] s).NeBot :=
+  mem_closure_iff_nhdsWithin_neBot.1 (by simpa using hs)
 
 end TauCeti

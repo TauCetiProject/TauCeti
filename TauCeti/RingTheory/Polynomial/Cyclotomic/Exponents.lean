@@ -20,6 +20,12 @@ primitive root without having its cyclotomic conjugates. No simplicity of the ro
 assumed, so repeated exponents are permitted. This is the arithmetic step that turns
 integral characteristic polynomials into constraints on their lists of eigenvalue exponents.
 
+Rationality also makes such a factorization independent of the primitive root: a rational
+polynomial equal to `∏ i, (X - ζ ^ e i)` is equal to `∏ i, (X - ξ ^ e i)` for every primitive
+`h`-th root of unity `ξ` (`IsPrimitiveRoot.map_eq_prod_of_map_eq_prod`). Each coefficient of the
+product is a rational polynomial expression in `ζ`, and agreeing with a rational number at `ζ` it
+does so at every root of the cyclotomic polynomial, the minimal polynomial of `ζ`.
+
 The ambient ring can be any domain that is a rational algebra. The proof uses Mathlib's
 `IsPrimitiveRoot.minpoly_eq_cyclotomic_of_irreducible` and irreducibility of cyclotomic
 polynomials over the rationals.
@@ -65,6 +71,35 @@ theorem exists_eq_of_isRoot_of_map_eq_prod {h : ℕ} {ζ ξ : K}
   obtain ⟨i, -, hi⟩ := Finset.prod_eq_zero_iff.mp hroot
   have hi' : ζ ^ a = ζ ^ e i := sub_eq_zero.mp (by simpa using hi)
   exact ⟨i, (hζ.pow_inj ha (he i) hi').symm⟩
+
+/-- **A rational factorization into powers of a primitive root does not depend on the root.** If a
+rational polynomial factors as `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of unity `ζ`, then
+it factors as `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ`. The exponents are
+unrestricted and may repeat. -/
+theorem map_eq_prod_of_map_eq_prod {h : ℕ} (hh : 0 < h) {ζ ξ : K}
+    (hζ : IsPrimitiveRoot ζ h) (hξ : IsPrimitiveRoot ξ h) {p : ℚ[X]} {e : ι → ℕ}
+    (hprod : p.map (algebraMap ℚ K) = ∏ i, (X - C (ζ ^ e i))) :
+    p.map (algebraMap ℚ K) = ∏ i, (X - C (ξ ^ e i)) := by
+  have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
+  -- The same product with the root replaced by a variable, whose coefficients lie in `ℚ[X]`.
+  let F : ℚ[X][X] := ∏ i, (X - C (X ^ e i))
+  have hF (μ : K) : F.map (aeval μ).toRingHom = ∏ i, (X - C (μ ^ e i)) := by
+    simp [F, Polynomial.map_prod]
+  -- Each coefficient of `F`, minus the matching coefficient of `p`, vanishes at `ζ`, so it is
+  -- divisible by the minimal polynomial of `ζ`, the cyclotomic polynomial, which also kills `ξ`.
+  ext j
+  have hj := congr(($hprod).coeff j)
+  rw [← hF ζ, coeff_map, coeff_map] at hj
+  rw [← hF ξ, coeff_map, coeff_map]
+  obtain ⟨q, hq⟩ : cyclotomic h ℚ ∣ F.coeff j - C (p.coeff j) := by
+    rw [hζ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]
+    exact minpoly.dvd ℚ ζ (by simpa [sub_eq_zero] using hj.symm)
+  have hcy : aeval ξ (cyclotomic h ℚ) = 0 := by
+    rw [aeval_def, eval₂_eq_eval_map, map_cyclotomic]
+    exact (hξ.isRoot_cyclotomic hh).eq_zero
+  have hξq := congr(aeval ξ $hq)
+  rw [map_mul, hcy, zero_mul, map_sub, aeval_C, sub_eq_zero] at hξq
+  simpa using hξq.symm
 
 end Rational
 
