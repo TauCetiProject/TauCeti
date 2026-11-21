@@ -162,8 +162,8 @@ theorem normalizedCoord_coord_symm_linearFlow (t : ℝ) (v : E) :
     φ.normalizedCoord (φ.coord.symm (φ.linearFlow (2 * t) (φ.coord v))) =
       normalizedLinearFlow (manifoldMorseIndex 𝓘(ℝ, E) f x) t (φ.normalizedCoord v) := by
   ext i
-  rw [normalizedCoord_apply, LinearEquiv.apply_symm_apply, linearFlow_apply, φ.weight_sort_apply,
-    normalizedLinearFlow_apply, normalizedCoord_apply]
+  rw [normalizedCoord_apply, LinearEquiv.apply_symm_apply, MorseBottChart.linearFlow_apply,
+    φ.weight_sort_apply, normalizedLinearFlow_apply, normalizedCoord_apply]
   split_ifs <;> ring_nf
 
 variable [RiemannianBundle (fun y : M ↦ TangentSpace 𝓘(ℝ, E) y)]

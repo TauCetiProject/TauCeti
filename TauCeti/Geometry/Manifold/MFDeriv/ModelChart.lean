@@ -50,6 +50,9 @@ open set.
   homeomorphisms into the model space, read through the preferred chart.
 * `TauCeti.trans_mem_maximalAtlas_of_contDiffAt`: a chart of the `C^n` maximal atlas followed by a
   `C^n` chart of the model space with `C^n` inverse is again in the maximal atlas.
+* `TauCeti.exists_trans_mem_maximalAtlas_of_contDiffOn`: in particular, so is a chart of the
+  maximal atlas followed by a `C^n` partial diffeomorphism between other normed spaces, conjugated
+  by linear isomorphisms and composed with a translation.
 * `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
@@ -211,6 +214,35 @@ theorem trans_mem_maximalAtlas_of_contDiffAt {e : OpenPartialHomeomorph E E}
     rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.coe_trans]
     exact ((contMDiffAt_symm_of_mem_maximalAtlas hq hz.2).comp z
       (contMDiffAt_iff_contDiffAt.2 (hes _ hz.1))).contMDiffWithinAt
+
+/-- A chart `q` of the maximal atlas, followed by the inverse of a linear isomorphism `L`, a
+partial homeomorphism `ψ` that is `C^n` with `C^n` inverse, the translation by `-b` and a linear
+isomorphism `K` back to the model, is again a chart of the maximal atlas. -/
+theorem exists_trans_mem_maximalAtlas_of_contDiffOn {E₁ E₂ : Type*} [NormedAddCommGroup E₁]
+    [NormedSpace 𝕜 E₁] [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (L : E₁ ≃L[𝕜] E)
+    (ψ : OpenPartialHomeomorph E₁ E₂) (hψ : ContDiffOn 𝕜 n ψ ψ.source)
+    (hψinv : ContDiffOn 𝕜 n ψ.symm ψ.target) (K : E₂ ≃L[𝕜] E) (b : E₂) :
+    ∃ Φ : OpenPartialHomeomorph E E, (∀ w, Φ w = K (ψ (L.symm w) - b)) ∧
+      Φ.source = L.symm ⁻¹' ψ.source ∧ q.trans Φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M := by
+  let Φ : OpenPartialHomeomorph E E :=
+    (L.symm.toHomeomorph.toOpenPartialHomeomorph.trans ψ).trans
+      ((Homeomorph.subRight b).trans K.toHomeomorph).toOpenPartialHomeomorph
+  have hΦsrc : Φ.source = L.symm ⁻¹' ψ.source := by simp [Φ]
+  have hΦtgt : Φ.target = (fun w ↦ K.symm w + b) ⁻¹' ψ.target := by
+    ext w
+    simp [Φ]
+  refine ⟨Φ, fun _ ↦ rfl, hΦsrc, trans_mem_maximalAtlas_of_contDiffAt hq (fun z hz ↦ ?_)
+    (fun z hz ↦ ?_)⟩
+  · rw [hΦsrc] at hz
+    have hψz : ContDiffAt 𝕜 n ψ (L.symm z) := (hψ _ hz).contDiffAt (ψ.open_source.mem_nhds hz)
+    exact K.contDiff.contDiffAt.comp z ((hψz.comp z L.symm.contDiff.contDiffAt).sub
+      contDiffAt_const)
+  · rw [hΦtgt] at hz
+    have hψz : ContDiffAt 𝕜 n ψ.symm (K.symm z + b) :=
+      (hψinv _ hz).contDiffAt (ψ.open_target.mem_nhds hz)
+    exact L.contDiff.contDiffAt.comp z
+      (hψz.comp z (K.symm.contDiff.contDiffAt.add contDiffAt_const))
 
 end MaximalAtlas
 
