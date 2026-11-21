@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
 # Hamiltonian vector fields on symplectic vector spaces
@@ -39,7 +41,9 @@ for all times.
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
-(`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`).
+(`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`). When `g` is the
+inner product of `V`, this says `J X_H = ∇H`
+(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`).
 
 Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
 family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
@@ -528,5 +532,22 @@ theorem poissonBracket_comb (ω : SymplecticForm V) (F G : V → ℝ) (a b c d :
       · simp [hzero _ hA]
 
 end PoissonBracket
+
+section Gradient
+
+open scoped Gradient RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **`J X_H` is the gradient of `H`.** If the inner product of `E` is the metric `ω(·, J ·)`, then
+`J X_H(x) = ∇H(x)`. -/
+theorem apply_hamiltonianVectorField_eq_gradient {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (H : E → ℝ) (x : E) :
+    J (ω.hamiltonianVectorField H x) = ∇ H x :=
+  ext_inner_right ℝ fun w ↦ by
+    rw [inner_gradient_left, ← hg, ← associatedBilinForm_apply]
+    exact (ω.invariant_of_apply_apply_eq_inner hg).associatedBilinForm_hamiltonianVectorField H x w
+
+end Gradient
 
 end TauCeti.SymplecticForm

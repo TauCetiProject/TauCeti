@@ -20,7 +20,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
-# Positivity and derivative of the integral of `|u| ^ p`
+# Positivity, derivative and exponent dependence of the integral of `|u| ^ p`
 
 For `p ≥ 1` and `u ∈ Lᵖ(μ)` on any measure space, the signed power `|u| ^ (p - 2) u` belongs to the
 Hölder conjugate space `L^{p'}(μ)` (`MeasureTheory.MemLp.abs_rpow_sub_two_mul`), so
@@ -33,6 +33,12 @@ For `p > 1` and `u, v ∈ Lᵖ(μ)`, differentiating under the integral sign giv
 specialization `TauCeti.hasDerivAt_integral_abs_add_mul_rpow` on a compact space. For continuous
 `u ≠ 0` on a compact space with an open-positive finite measure, `∫ |u| ^ p dμ > 0` for `p > 0`
 (`TauCeti.integral_abs_rpow_pos`).
+
+On a finite measure space the moments of `u ∈ Lᵖ(μ)` are compared and vary continuously with the
+exponent: for `0 < s ≤ p`, Hölder's inequality gives
+`∫ |u| ^ s dμ ≤ (∫ |u| ^ p dμ) ^ (s / p) μ(X) ^ (1 - s / p)`
+(`MeasureTheory.MemLp.integral_abs_rpow_le_mul_measureReal_univ_rpow`), and `s ↦ ∫ |u| ^ s dμ` is
+continuous on `(0, p]` (`MeasureTheory.MemLp.continuousOn_integral_abs_rpow`).
 -/
 
 public section
@@ -112,6 +118,48 @@ theorem hasDerivAt_integral_abs_add_mul_rpow {u v : X → ℝ} {p : ℝ}
         (hasDerivAt_abs_rpow (u x + t * v x) hp).comp t
           (((hasDerivAt_id t).mul_const (v x)).const_add (u x)))
   simpa only [zero_mul, add_zero, integral_const_mul] using h.2
+
+/-- **Hölder comparison of moments on a finite measure.** For `0 < s ≤ p` and `u ∈ Lᵖ(μ)` on a
+finite measure space, `∫ |u| ^ s dμ ≤ (∫ |u| ^ p dμ) ^ (s / p) μ(X) ^ (1 - s / p)`. -/
+theorem integral_abs_rpow_le_mul_measureReal_univ_rpow [IsFiniteMeasure μ] {u : X → ℝ}
+    {s p : ℝ} (hu : MemLp u (ENNReal.ofReal p) μ) (hs : 0 < s) (hsp : s ≤ p) :
+    ∫ x, |u x| ^ s ∂μ ≤ (∫ x, |u x| ^ p ∂μ) ^ (s / p) * μ.real Set.univ ^ (1 - s / p) := by
+  rcases hsp.eq_or_lt with rfl | hsp
+  · rw [div_self hs.ne', sub_self, Real.rpow_zero, mul_one, Real.rpow_one]
+  have hr : 1 < p / s := (one_lt_div hs).2 hsp
+  have hconj := Real.HolderConjugate.conjExponent hr
+  have hf : MemLp (fun x ↦ |u x| ^ s) (ENNReal.ofReal (p / s)) μ := by
+    simpa only [ENNReal.toReal_ofReal hs.le, ← ENNReal.ofReal_div_of_pos hs, Real.norm_eq_abs]
+      using hu.norm_rpow_div (ENNReal.ofReal s)
+  have h := integral_mul_le_Lp_mul_Lq_of_nonneg hconj
+    (.of_forall fun x ↦ Real.rpow_nonneg (abs_nonneg (u x)) s) (.of_forall fun _ ↦ zero_le_one)
+    hf (memLp_const 1)
+  have hpow (x : X) : (|u x| ^ s) ^ (p / s) = |u x| ^ p := by
+    rw [← Real.rpow_mul (abs_nonneg _), mul_div_cancel₀ _ hs.ne']
+  have hinv : 1 / Real.conjExponent (p / s) = 1 - s / p := by
+    rw [one_div, eq_sub_iff_add_eq', ← inv_div, ← hconj.inv_add_inv_eq_one]
+  simpa only [mul_one, Real.one_rpow, integral_const, smul_eq_mul, hpow, one_div_div, hinv]
+    using h
+
+/-- **Continuity of moments in the exponent.** For `u ∈ Lᵖ(μ)` on a finite measure space, the
+moment `s ↦ ∫ |u| ^ s dμ` is continuous on `(0, p]`. -/
+theorem continuousOn_integral_abs_rpow [IsFiniteMeasure μ] {u : X → ℝ} {p : ℝ}
+    (hu : MemLp u (ENNReal.ofReal p) μ) :
+    ContinuousOn (fun s ↦ ∫ x, |u x| ^ s ∂μ) (Set.Ioc 0 p) := by
+  rcases le_or_gt p 0 with hp | hp
+  · simp [Set.Ioc_eq_empty_of_le hp]
+  have hint : Integrable (fun x ↦ |u x| ^ p) μ := by
+    simpa only [ENNReal.toReal_ofReal hp.le, Real.norm_eq_abs] using
+      hu.integrable_norm_rpow (ENNReal.ofReal_ne_zero_iff.2 hp) ENNReal.ofReal_ne_top
+  refine continuousOn_of_dominated (bound := fun x ↦ 1 + |u x| ^ p)
+    (fun s _ ↦ (hu.aestronglyMeasurable.norm.aemeasurable.pow_const s).aestronglyMeasurable)
+    (fun s hs ↦ .of_forall fun x ↦ ?_) ((integrable_const 1).add hint)
+    (.of_forall fun x s hs ↦ (Real.continuousAt_const_rpow' hs.1.ne').continuousWithinAt)
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (abs_nonneg _) _)]
+  rcases le_total |u x| 1 with hx | hx
+  · linarith [Real.rpow_le_one (abs_nonneg (u x)) hx hs.1.le,
+      Real.rpow_nonneg (abs_nonneg (u x)) p]
+  · linarith [Real.rpow_le_rpow_of_exponent_le hx hs.2]
 
 end MeasureTheory.MemLp
 

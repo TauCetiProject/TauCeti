@@ -74,16 +74,17 @@ Lie-algebra theory.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
   matrices are closed under products and natural powers.
+* `Matrix.isNilpotent_of_apply_eq_zero_of_le` — a matrix that is strictly block triangular for a
+  ranking of its indices, not necessarily injective, is nilpotent.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
 * `Matrix.blockDiagonalPart` — the entries of a matrix between indices of equal rank for a
   ranking `b`, and `Matrix.BlockTriangular.isIdempotentElem_blockDiagonalPart`: it is idempotent
   for a block triangular idempotent, and `Matrix.BlockTriangular.bijOn_range_blockDiagonalPart`:
   the idempotent maps the range of its block-diagonal part bijectively onto its own range.
-* `Matrix.isNilpotent_of_apply_eq_zero_of_le` — more generally, a matrix vanishing wherever a
-  ranking of its indices does not strictly increase is nilpotent; by
-  `Matrix.BlockTriangular.mul_apply_eq_zero_of_le` and its primed form, this condition survives
-  multiplication by block triangular matrices on either side.
+* `Matrix.BlockTriangular.mul_apply_eq_zero_of_le` and its primed form — vanishing wherever a
+  ranking of the indices does not strictly increase survives multiplication by block triangular
+  matrices on either side.
 * `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
   product with an upper-triangular right factor leaves the earlier columns of the product
   unchanged.
@@ -199,76 +200,82 @@ theorem IsUpperUnitriangular.map {S F : Type*} [LT m] [Zero R] [One R] [Zero S] 
 
 section Nilpotence
 
-variable {S α : Type*} [Semiring S] [LinearOrder α] {b : m → α}
+variable {S : Type*} [Semiring S] {n : ℕ}
 
-/-- The product of a matrix that is block triangular for a ranking `b` with one that vanishes
-wherever `b` does not strictly increase from row to column again vanishes there. -/
-theorem BlockTriangular.mul_apply_eq_zero_of_le [Fintype m] {M N : Matrix m m S}
-    (hM : M.BlockTriangular b) (hN : ∀ ⦃i j⦄, b j ≤ b i → N i j = 0) ⦃i j : m⦄
-    (hij : b j ≤ b i) : (M * N) i j = 0 := by
-  rw [Matrix.mul_apply]
-  refine Finset.sum_eq_zero fun l _ ↦ ?_
-  rcases lt_or_ge (b l) (b i) with h | h
-  · rw [hM h, zero_mul]
-  · rw [hN (hij.trans h), mul_zero]
-
-/-- The product of a matrix that vanishes wherever a ranking `b` does not strictly increase from
-row to column with one that is block triangular for `b` again vanishes there. -/
-theorem BlockTriangular.mul_apply_eq_zero_of_le' [Fintype m] {M N : Matrix m m S}
-    (hN : N.BlockTriangular b) (hM : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) ⦃i j : m⦄
-    (hij : b j ≤ b i) : (M * N) i j = 0 := by
-  rw [Matrix.mul_apply]
-  refine Finset.sum_eq_zero fun l _ ↦ ?_
-  rcases lt_or_ge (b j) (b l) with h | h
-  · rw [hN h, mul_zero]
-  · rw [hM (h.trans hij), zero_mul]
-
-/-- A matrix that vanishes wherever a ranking `b` of its indices does not strictly increase from
-row to column has vanishing power at the size of the matrix. This is strict block triangularity
-for `b`; the ranking need not be injective. -/
-theorem pow_card_eq_zero_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {M : Matrix m m S}
-    (h : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) : M ^ Fintype.card m = 0 := by
-  classical
-  -- Rank each index by the number of indices strictly below it; `M` strictly raises this rank.
-  let ρ : m → ℕ := fun i ↦ (Finset.univ.filter fun k ↦ b k < b i).card
-  have hρ {i j : m} (hij : b i < b j) : ρ i < ρ j := by
-    refine Finset.card_lt_card ⟨fun k hk ↦ ?_, fun hsub ↦ ?_⟩
-    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
-      exact hk.trans hij
-    · exact lt_irrefl _
-        (Finset.mem_filter.1 (hsub (Finset.mem_filter.2 ⟨Finset.mem_univ _, hij⟩))).2
-  have hρlt (j : m) : ρ j < Fintype.card m :=
-    Finset.card_lt_card ⟨Finset.subset_univ _, fun hsub ↦ by simpa using hsub (Finset.mem_univ j)⟩
-  have key (r : ℕ) : ∀ i j, ρ j < ρ i + r → (M ^ r) i j = 0 := by
-    induction r with
-    | zero =>
-      intro i j hij
-      rw [pow_zero, one_apply_ne]
-      rintro rfl
+/-- For a strictly upper-triangular matrix, `(M ^ k) i j = 0` whenever `j < i + k`. -/
+theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
+    {M : Matrix (Fin n) (Fin n) S} (htri : M.IsUpperTriangular)
+    (hdiag : ∀ i, M i i = 0) (k : ℕ) (i j : Fin n)
+    (hji : j.val < i.val + k) : (M ^ k) i j = 0 := by
+  have hstrict : ∀ a b : Fin n, b ≤ a → M a b = 0 := by
+    intro a b hba
+    obtain hba | rfl := hba.lt_or_eq
+    · exact htri hba
+    · exact hdiag b
+  induction k generalizing i j with
+  | zero =>
+      simp only [pow_zero]
+      rw [one_apply_ne]
+      intro hij
+      subst j
       omega
-    | succ r ih =>
-      intro i j hij
+  | succ k ih =>
+      rw [pow_succ, Matrix.mul_apply]
+      apply Finset.sum_eq_zero
+      intro l _
+      by_cases hil : i.val + k ≤ l.val
+      · rw [hstrict l j (by omega), mul_zero]
+      · rw [ih (i := i) (j := l) (by omega), zero_mul]
+
+/-- Let `M` be strictly block triangular for a ranking `b` of its indices: `M i j = 0` unless
+`b i < b j`. An entry `(M ^ k) i j` is a sum over chains `i = z₀, …, z_k = j` with strictly
+increasing ranks, all but the last ranked strictly below `j`, so it vanishes once `k` exceeds the
+number of indices ranked strictly below `j`. -/
+theorem pow_apply_eq_zero_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {α : Type*}
+    [LinearOrder α] {b : m → α} {M : Matrix m m S} (hM : ∀ i j, b j ≤ b i → M i j = 0) {k : ℕ}
+    (i j : m) (hk : (Finset.univ.filter fun z ↦ b z < b j).card < k) : (M ^ k) i j = 0 := by
+  induction k generalizing j with
+  | zero => exact absurd hk (Nat.not_lt_zero _)
+  | succ k ih =>
       rw [pow_succ, Matrix.mul_apply]
       refine Finset.sum_eq_zero fun l _ ↦ ?_
-      by_cases hl : ρ l < ρ i + r
-      · rw [ih i l hl, zero_mul]
-      · rw [h (le_of_not_gt fun hlj ↦ by have := hρ hlj; omega), mul_zero]
-  ext i j
-  exact key _ i j (by have := hρlt j; omega)
+      by_cases hl : b l < b j
+      · -- `l` is ranked below `j` but not below itself, so fewer indices are ranked below `l`.
+        have hlt : (Finset.univ.filter fun z ↦ b z < b l).card <
+            (Finset.univ.filter fun z ↦ b z < b j).card := by
+          refine Finset.card_lt_card ⟨fun z hz ↦ ?_, fun hsub ↦ ?_⟩
+          · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hz ⊢
+            exact hz.trans hl
+          · have := hsub (by simpa using hl)
+            simp at this
+        rw [ih l (by omega), zero_mul]
+      · rw [hM l j (not_lt.1 hl), mul_zero]
 
-/-- A matrix that vanishes wherever a ranking `b` of its indices does not strictly increase from
-row to column is nilpotent. -/
-theorem isNilpotent_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {M : Matrix m m S}
-    (h : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) : _root_.IsNilpotent M :=
-  ⟨Fintype.card m, pow_card_eq_zero_of_apply_eq_zero_of_le h⟩
+/-- A strictly block-triangular matrix, `M i j = 0` unless `b i < b j` for a ranking `b` of its
+indices, has power equal to zero at the cardinality of its index type. -/
+theorem pow_card_eq_zero_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {α : Type*}
+    [LinearOrder α] {b : m → α} {M : Matrix m m S} (hM : ∀ i j, b j ≤ b i → M i j = 0) :
+    M ^ Fintype.card m = 0 := by
+  ext i j
+  refine pow_apply_eq_zero_of_apply_eq_zero_of_le hM i j ?_
+  exact Finset.card_lt_univ_of_notMem (x := j) (by simp)
+
+/-- A strictly block-triangular matrix, `M i j = 0` unless `b i < b j` for a ranking `b` of its
+indices, is nilpotent. Neither commutativity of the entries nor injectivity of `b` is needed. -/
+theorem isNilpotent_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {α : Type*}
+    [LinearOrder α] {b : m → α} {M : Matrix m m S} (hM : ∀ i j, b j ≤ b i → M i j = 0) :
+    _root_.IsNilpotent M :=
+  ⟨Fintype.card m, pow_card_eq_zero_of_apply_eq_zero_of_le hM⟩
 
 /-- A strictly upper-triangular matrix has power equal to zero at the cardinality of its index
 type. -/
 theorem pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
     {M : Matrix m m S} (htri : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
     M ^ Fintype.card m = 0 :=
-  pow_card_eq_zero_of_apply_eq_zero_of_le (b := id) fun i _ h ↦
-    h.lt_or_eq.elim (htri ·) fun hji ↦ (congrArg (M i) hji).trans (hdiag i)
+  pow_card_eq_zero_of_apply_eq_zero_of_le (b := id) fun i j hji ↦
+    hji.lt_or_eq.elim (fun h ↦ htri h) fun h ↦ by
+      obtain rfl : j = i := h
+      exact hdiag j
 
 /-- A strictly upper-triangular square matrix is nilpotent. -/
 theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
@@ -300,6 +307,28 @@ theorem blockDiagonalPart_map [Zero S] [DecidableEq α] {T : Type*} [Zero T] (M 
   by_cases h : b i = b j <;> simp [h, hf]
 
 variable [LinearOrder α]
+
+/-- The product of a matrix that is block triangular for a ranking `b` with one that vanishes
+wherever `b` does not strictly increase from row to column again vanishes there. -/
+theorem BlockTriangular.mul_apply_eq_zero_of_le [Semiring S] [Fintype m] {M N : Matrix m m S}
+    (hM : M.BlockTriangular b) (hN : ∀ ⦃i j⦄, b j ≤ b i → N i j = 0) ⦃i j : m⦄
+    (hij : b j ≤ b i) : (M * N) i j = 0 := by
+  rw [Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun l _ ↦ ?_
+  rcases lt_or_ge (b l) (b i) with h | h
+  · rw [hM h, zero_mul]
+  · rw [hN (hij.trans h), mul_zero]
+
+/-- The product of a matrix that vanishes wherever a ranking `b` does not strictly increase from
+row to column with one that is block triangular for `b` again vanishes there. -/
+theorem BlockTriangular.mul_apply_eq_zero_of_le' [Semiring S] [Fintype m] {M N : Matrix m m S}
+    (hN : N.BlockTriangular b) (hM : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) ⦃i j : m⦄
+    (hij : b j ≤ b i) : (M * N) i j = 0 := by
+  rw [Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun l _ ↦ ?_
+  rcases lt_or_ge (b j) (b l) with h | h
+  · rw [hN h, mul_zero]
+  · rw [hM (h.trans hij), zero_mul]
 
 theorem blockTriangular_blockDiagonalPart [Zero S] (M : Matrix m m S) :
     (M.blockDiagonalPart b).BlockTriangular b :=
