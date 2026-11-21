@@ -29,8 +29,8 @@ homotopy lifting of
 homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), passes from open subsets along open
 embeddings (`TauCeti.HasHomotopyLiftingProperty.of_isOpenEmbedding`), and a map with it lifts paths
 (`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`). By uniqueness of lifts, a covering map
-also lifts a free homotopy of loops to a free homotopy of loops starting at any lift of the first
-loop (`IsCoveringMap.exists_lift_freeHomotopy`).
+also lifts a free homotopy of loops to a free homotopy of loops starting at any loop lifting the
+first loop (`IsCoveringMap.exists_lift_freeHomotopy`).
 
 Serre fibrations, the maps with the homotopy lifting property with respect to every disk, are in
 `TauCeti.Topology.Homotopy.SerreFibration.Basic`.
