@@ -81,7 +81,7 @@ variable (r m) in
 orthogonal matrix to its first `r` columns. -/
 def specialOrthogonalFrameMap (A : specialOrthogonalGroup (Fin (r + m)) ℝ) :
     finiteOrthonormalFrame ℝ r (r + m) :=
-  unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ (Nat.le_add_right r m))
+  unitaryMap ⟨A.val, A.property.1⟩ (standard ℝ (Nat.le_add_right r m))
 
 /-- In coordinates, the `i`-th vector of `specialOrthogonalFrameMap r m A` is the column
 `A e_i` of `A`. -/
@@ -97,13 +97,13 @@ theorem coe_specialOrthogonalFrameMap (A : specialOrthogonalGroup (Fin (r + m)) 
 variable (r m) in
 /-- The frame map `SO(r + m) → V_r(ℝ^(r + m))` is continuous. -/
 theorem continuous_specialOrthogonalFrameMap : Continuous (specialOrthogonalFrameMap r m) :=
-  continuous_unitaryMap.comp ((continuous_subtype_val.subtype_mk _).prodMk continuous_const)
+  continuous_unitaryMap.comp ((continuous_subtypeVal.subtype_mk _).prodMk continuous_const)
 
 /-- The frame map is equivariant: `(A B) • e = A • (B • e)`. -/
 theorem specialOrthogonalFrameMap_mul (A B : specialOrthogonalGroup (Fin (r + m)) ℝ) :
     specialOrthogonalFrameMap r m (A * B) =
-      unitaryMap ⟨A.1, A.2.1⟩ (specialOrthogonalFrameMap r m B) :=
-  unitaryMap_mul ⟨A.1, A.2.1⟩ ⟨B.1, B.2.1⟩ _
+      unitaryMap ⟨A.val, A.property.1⟩ (specialOrthogonalFrameMap r m B) :=
+  unitaryMap_mul ⟨A.val, A.property.1⟩ ⟨B.val, B.property.1⟩ _
 
 /-- The frame map of the identity is the standard frame. -/
 @[simp]
@@ -199,13 +199,13 @@ private theorem exists_specialOrthogonalFrameMap_localSection :
   obtain ⟨U, hU, hstd, s, hs, hs1, hsec⟩ := exists_unitaryFrameMap_localSection (𝕜 := ℝ) (r := r)
     (m := m)
   have hdet : ContinuousOn (fun f ↦ (s f : Matrix (Fin (r + m)) (Fin (r + m)) ℝ).det) U :=
-    continuous_id.matrix_det.comp_continuousOn (continuous_subtype_val.comp_continuousOn hs)
+    continuous_id.matrix_det.comp_continuousOn (continuous_subtypeVal.comp_continuousOn hs)
   let V := U ∩ (fun f ↦ (s f : Matrix (Fin (r + m)) (Fin (r + m)) ℝ).det) ⁻¹' Ioi 0
   -- A real unitary matrix has determinant `±1`, so positive determinant means determinant `1`.
   have hmem {f} (hf : f ∈ V) :
       (s f : Matrix (Fin (r + m)) (Fin (r + m)) ℝ) ∈ specialOrthogonalGroup (Fin (r + m)) ℝ := by
-    refine ⟨(s f).2, ?_⟩
-    rcases mul_self_eq_one_iff.1 (by simpa using (det_of_mem_unitary (s f).2).2) with h | h
+    refine ⟨(s f).property, ?_⟩
+    rcases mul_self_eq_one_iff.1 (by simpa using (det_of_mem_unitary (s f).property).2) with h | h
     · exact h
     · have := hf.2
       simp only [mem_preimage, mem_Ioi, h] at this
@@ -214,10 +214,10 @@ private theorem exists_specialOrthogonalFrameMap_localSection :
   refine ⟨V, hdet.isOpen_inter_preimage hU isOpen_Ioi, ⟨hstd, by simp [hs1]⟩,
     fun f ↦ if hf : f ∈ V then ⟨s f, hmem hf⟩ else 1, ?_, fun f hf ↦ ?_⟩
   · rw [IsInducing.subtypeVal.continuousOn_iff]
-    exact (continuous_subtype_val.comp_continuousOn (hs.mono inter_subset_left)).congr
+    exact (continuous_subtypeVal.comp_continuousOn (hs.mono inter_subset_left)).congr
       fun f (hf : f ∈ V) ↦ by simp [hf]
   · refine Subtype.ext (funext fun i ↦ ?_)
-    have h := congrArg (fun g : finiteOrthonormalFrame ℝ r (r + m) ↦ g.1 i) (hsec f hf.1)
+    have h := congrArg (fun g : finiteOrthonormalFrame ℝ r (r + m) ↦ g.val i) (hsec f hf.1)
     simp only [coe_unitaryFrameMap] at h
     simp [hf, h]
 
@@ -233,10 +233,12 @@ theorem exists_trivialization_specialOrthogonalFrameMap [NeZero m]
   -- section near `b`.
   obtain ⟨g, hg⟩ := surjective_specialOrthogonalFrameMap (r := r) (m := m) b
   let t : finiteOrthonormalFrame ℝ r (r + m) → finiteOrthonormalFrame ℝ r (r + m) :=
-    unitaryMap ⟨(g⁻¹ : specialOrthogonalGroup (Fin (r + m)) ℝ).1, (g⁻¹).2.1⟩
+    unitaryMap ⟨(g⁻¹ : specialOrthogonalGroup (Fin (r + m)) ℝ).val, (g⁻¹).property.1⟩
   have ht : Continuous t := continuous_unitaryMap.comp (continuous_const.prodMk continuous_id)
-  have hgt (f : finiteOrthonormalFrame ℝ r (r + m)) : unitaryMap ⟨g.1, g.2.1⟩ (t f) = f := by
-    have h1 : (⟨g.1, g.2.1⟩ : unitaryGroup (Fin (r + m)) ℝ) * ⟨(g⁻¹).1, (g⁻¹).2.1⟩ = 1 :=
+  have hgt (f : finiteOrthonormalFrame ℝ r (r + m)) : unitaryMap ⟨g.val, g.property.1⟩ (t f) = f
+      := by
+    have h1 : (⟨g.val, g.property.1⟩ : unitaryGroup (Fin (r + m)) ℝ) * ⟨(g⁻¹).val,
+        (g⁻¹).property.1⟩ = 1 :=
       Subtype.ext ((Submonoid.coe_mul _ g g⁻¹).symm.trans
         (by rw [mul_inv_cancel, OneMemClass.coe_one]; rfl))
     rw [← unitaryMap_mul, h1, unitaryMap_one]

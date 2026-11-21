@@ -34,15 +34,15 @@ signed simple root `k`, the ideal divided-square column of the reversed label is
 at the special-isogeny image of that simple root itself. -/
 private theorem f4ShortRootIdealDividedSquareColumn_opposite_of_long
     (k : Fin 4 ⊕ Fin 4) (i j : F4ShortRootIndex)
-    (hi : i.1 = f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)))
-    (hj : j.1 = f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) :
+    (hi : i.val = f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)))
+    (hj : j.val = f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) :
     f4ShortRootIdealDividedSquareColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
       f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl j)) := by
-  have htargetSource : f4SignedSimpleRootIndex (isogenyReverse k) = j.1 := by
+  have htargetSource : f4SignedSimpleRootIndex (isogenyReverse k) = j.val := by
     rw [hj]
     exact (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
-  have htargetInput : f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) = i.1 := by
+  have htargetInput : f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) = i.val := by
     rw [hi]
     exact (f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex k).symm
   simp only [f4ShortRootIdealDividedSquareColumn_apply]
@@ -52,7 +52,7 @@ private theorem f4ShortRootIdealDividedSquareColumn_opposite_of_long
           (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) :
             f4ModularChevalleyLieAlgebra) :=
       (f4ModularDividedAdjointSquare_basis (isogenyReverse k) _).symm
-    _ = f4ModularRootVector j.1 := by
+    _ = f4ModularRootVector j.val := by
       rw [coe_f4ShortRootLieIdealBasis_symm_inl i, ← htargetInput,
         f4ModularDividedAdjointSquare_rootVector_opposite, htargetSource]
     _ = _ := (coe_f4ShortRootLieIdealBasis_symm_inl j).symm

@@ -148,6 +148,14 @@ theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
     EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   nlinarith [sq_nonneg (x z 0), sq_nonneg (x z 1)]
 
+/-- The section of a field is bounded by its section coordinates: `|α| ≤ 2 (|p| + |q|)`. -/
+theorem norm_sectionValue_le_two_mul_abs_add_abs (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ≤ 2 * (|x z 2| + |x z 3|) := by
+  rw [sectionValue_apply, norm_mul, Complex.norm_two]
+  gcongr
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_mul, norm_I, mul_one, norm_real, norm_real, Real.norm_eq_abs, Real.norm_eq_abs]
+
 /-- The section of a field vanishes exactly where `p ^ 2 + q ^ 2` does, for `p, q` its real
 coordinates. -/
 theorem sectionValue_eq_zero_iff (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -228,6 +236,12 @@ theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : With
   rw [sectionValue_eq_ofRealCLM]
   exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
     ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
+
+/-- The section of a continuous field is continuous. -/
+theorem continuous_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) :
+    Continuous (sectionValue x) :=
+  (contDiff_sectionValue (n := 0) (contDiff_zero.2 ((EuclideanSpace.proj 2).continuous.comp hx))
+    (contDiff_zero.2 ((EuclideanSpace.proj 3).continuous.comp hx))).continuous
 
 /-- The section `α = 2 (p + i q)` is differentiable wherever its real coordinates are. -/
 theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}

@@ -31,6 +31,8 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.HolderSpace.holderWith`, `TauCeti.HolderSpace.holderWith_nnnorm`: the Hölder bound
   with the canonical seminorm, and with the Hölder-space norm.
+* `TauCeti.HolderSpace.holderOnWith_of_apply_eq`: a function agreeing on `s` with an element of
+  the Hölder space of `s` is Hölder on `s` with constant its Hölder-space norm.
 * `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set, which is
   closed (`TauCeti.isClosed_supportedHolderSubmodule`) and hence complete for a complete codomain.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
@@ -74,10 +76,10 @@ namespace HolderSpace
 variable {α : ℝ≥0} {X : Type u} {Y : Type v} [MetricSpace X]
   [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
-instance : CoeFun (HolderSpace α X Y) fun _ ↦ X → Y := ⟨fun f ↦ f.1.1⟩
+instance : CoeFun (HolderSpace α X Y) fun _ ↦ X → Y := ⟨fun f ↦ f.toHolderSubmodule.val⟩
 
 /-- The underlying bounded continuous function. -/
-def toBoundedContinuousFunction (f : HolderSpace α X Y) : X →ᵇ Y := f.1.1
+def toBoundedContinuousFunction (f : HolderSpace α X Y) : X →ᵇ Y := f.toHolderSubmodule.val
 
 /-- Promote a bounded continuous Hölder function to the Hölder space. -/
 def ofBoundedContinuousFunction (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y)) :
@@ -109,7 +111,7 @@ theorem continuous (f : HolderSpace α X Y) : Continuous (f : X → Y) := by
 /-- A Hölder-space element satisfies the global Hölder condition. -/
 theorem memHolder (f : HolderSpace α X Y) :
     MemHolder α (f.toBoundedContinuousFunction : X → Y) :=
-  (mem_holderSubmodule_iff f.toHolderSubmodule.1).mp f.toHolderSubmodule.2
+  (mem_holderSubmodule_iff f.toHolderSubmodule.val).mp f.toHolderSubmodule.property
 
 @[simp]
 theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace α X Y) :
@@ -130,17 +132,17 @@ theorem ext {f g : HolderSpace α X Y} (h : ∀ x, f x = g x) : f = g := by
 
 instance : Zero (HolderSpace α X Y) := ⟨⟨0⟩⟩
 
-instance : Add (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.1 + g.1⟩⟩
+instance : Add (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.toHolderSubmodule + g.toHolderSubmodule⟩⟩
 
-instance : Neg (HolderSpace α X Y) := ⟨fun f ↦ ⟨-f.1⟩⟩
+instance : Neg (HolderSpace α X Y) := ⟨fun f ↦ ⟨-f.toHolderSubmodule⟩⟩
 
-instance : Sub (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.1 - g.1⟩⟩
+instance : Sub (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.toHolderSubmodule - g.toHolderSubmodule⟩⟩
 
-instance : SMul ℝ (HolderSpace α X Y) := ⟨fun c f ↦ ⟨c • f.1⟩⟩
+instance : SMul ℝ (HolderSpace α X Y) := ⟨fun c f ↦ ⟨c • f.toHolderSubmodule⟩⟩
 
-instance : SMul ℕ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
+instance : SMul ℕ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.toHolderSubmodule⟩⟩
 
-instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
+instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.toHolderSubmodule⟩⟩
 
 @[simp] theorem toBoundedContinuousFunction_zero :
     (0 : HolderSpace α X Y).toBoundedContinuousFunction = 0 := (rfl)
@@ -422,6 +424,16 @@ theorem nnHolderNorm_le (f : HolderSpace α X Y) :
 theorem holderWith_nnnorm (f : HolderSpace α X Y) : HolderWith ‖f‖₊ α f :=
   f.holderWith.mono f.nnHolderNorm_le
 
+/-- A function equal on `s` to an element `f` of the Hölder space of `s` is `α`-Hölder on `s` with
+constant the Hölder-space norm of `f`. This reads Hölder bounds on a subset off Hölder-space
+elements on that subset. -/
+theorem holderOnWith_of_apply_eq {s : Set X} {g : X → Y} (f : HolderSpace α s Y)
+    (hf : ∀ x : s, f x = g x) : HolderOnWith ‖f‖₊ α g s := by
+  rw [← HolderWith.restrict_iff]
+  have he : s.domRestrict g = ⇑f := funext fun x ↦ (hf x).symm
+  rw [he]
+  exact f.holderWith_nnnorm
+
 /-- A constant function as an element of the bounded Hölder space. -/
 def const (c : Y) : HolderSpace α X Y :=
   ofBoundedContinuousFunction (BoundedContinuousFunction.const X c) memHolder_const
@@ -662,6 +674,20 @@ theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace
       LinearIsometry.norm_map]
   rw [norm_def, norm_def, hsup, hcoe, nnHolderNorm, nnHolderNorm, eHolderNorm, eHolderNorm]
   simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
+
+/-- If the values of `f` are those of `g` under a `1`-Lipschitz map `e` that does not increase
+norms, then `‖f‖ ≤ ‖g‖`. The map `e` need not be linear. -/
+theorem norm_le_norm_of_apply_eq_comp {f : HolderSpace α X Y'} {g : HolderSpace α X Y}
+    {e : Y → Y'} (he : LipschitzWith 1 e) (hn : ∀ y, ‖e y‖ ≤ ‖y‖) (h : ∀ x, f x = e (g x)) :
+    ‖f‖ ≤ ‖g‖ := by
+  rw [norm_def g, coe_toBoundedContinuousFunction]
+  refine norm_le_of_norm_le_of_holderWith (norm_nonneg _) (fun x ↦ ?_) fun x y ↦ ?_
+  · rw [h, ← toBoundedContinuousFunction_apply]
+    exact (hn _).trans (g.toBoundedContinuousFunction.norm_coe_le_norm x)
+  · have he' := he (g x) (g y)
+    rw [ENNReal.coe_one, one_mul] at he'
+    rw [h, h]
+    exact he'.trans (g.holderWith x y)
 
 end compLeft
 

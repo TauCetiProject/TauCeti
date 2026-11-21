@@ -89,7 +89,7 @@ theorem exists_mvPolynomial_sub_mem_weightedNhd_of_mem_weightedSubring {R : Subr
       f - weightedPolynomialHom T hT p ∈ weightedNhd T hT U.toAddSubgroup := by
   classical
   -- truncate `f` at the finitely many indices where its coefficient escapes `Tν · U`
-  have hbad := (mem_weightedRestrictedSubring.mp f.2).finite_coeff_notMem U
+  have hbad := (mem_weightedRestrictedSubring.mp f.property).finite_coeff_notMem U
   refine ⟨MvPowerSeries.truncFinset A hbad.toFinset (f : MvPowerSeries (Fin k) A),
     fun ν ↦ ?_, mem_weightedNhd.mpr fun ν ↦ ?_⟩
   · rw [MvPowerSeries.coeff_truncFinset]

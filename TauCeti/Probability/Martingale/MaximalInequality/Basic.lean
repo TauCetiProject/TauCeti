@@ -120,7 +120,7 @@ theorem mul_measure_exists_mem_le_le_setIntegral [IsFiniteMeasure μ]
       obtain ⟨i, rfl⟩ : t ∈ range e := by
         rw [Finset.range_orderEmbOfFin]
         exact ht
-      exact ⟨i, Finset.mem_range.2 i.2, by simpa [τ, min_eq_left (by omega : (i : ℕ) ≤ n)]⟩
+      exact ⟨i, Finset.mem_range.2 i.isLt, by simpa [τ, min_eq_left (by omega : (i : ℕ) ≤ n)]⟩
     · rintro ⟨j, _, hεj⟩
       exact ⟨τ j, hmem j, hεj⟩
   have hmeas : MeasurableSet[ℱ (τ n)] {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} := by

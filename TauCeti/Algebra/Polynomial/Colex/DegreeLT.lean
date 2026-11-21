@@ -157,7 +157,8 @@ theorem degreeLTEquiv_symm_apply_coeff {n : ℕ} (v : Lex (Fin n → R)) (i : �
   split_ifs with h
   · simpa only [Pi.ofLex_apply, degreeLTEquiv_apply, Fin.rev_rev, Fin.val_mk] using
       congrFun (congrArg ofLex ((degreeLTEquiv R n).apply_symm_apply v)) (Fin.rev ⟨i, h⟩)
-  · exact coeff_eq_zero_of_degree_lt <| (mem_degreeLT.1 ((degreeLTEquiv R n).symm v).2).trans_le
+  · exact coeff_eq_zero_of_degree_lt <| (mem_degreeLT.1
+      ((degreeLTEquiv R n).symm v).property).trans_le
       (by exact_mod_cast not_lt.1 h)
 
 end Colex

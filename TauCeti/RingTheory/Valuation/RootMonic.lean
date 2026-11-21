@@ -152,7 +152,7 @@ theorem exists_map_eval_eq_leadingCoeff_mul_pow {K : Type*} [DivisionRing K] (ν
     rintro rfl
     simp at hi
   have hlc : 0 < ν p.leadingCoeff := by
-    rw [zero_lt_iff, ne_eq, ν.zero_iff, leadingCoeff_eq_zero]
+    rw [pos_iff_ne_zero, ne_eq, ν.zero_iff, leadingCoeff_eq_zero]
     exact hp
   have hi' := (hM _ (Finset.mem_image_of_mem _ (Finset.mem_range.mpr hi))).trans_lt
     ((le_max_right _ _).trans_lt ht)

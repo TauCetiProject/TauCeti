@@ -15,7 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 # Almost diagonal operators on Besov spaces
 
 Let `T` be a continuous linear map of tempered distributions which moves frequencies between the
-Littlewood–Paley blocks only a little: for a natural number `N`, the block `Δⱼ T Δₖ u` is an `Lᵖ`
+Littlewood–Paley blocks only a little: for a real number `N`, the block `Δⱼ T Δₖ u` is an `Lᵖ`
 function with
 
 `‖Δⱼ T Δₖ u‖_p ≤ K 2^{-N |j - k|} ‖Δₖ u‖_p`.
@@ -160,11 +160,11 @@ namespace BesovSpace
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
 /-- **Almost diagonal operators are bounded on Besov spaces.** Let `T` be a continuous linear map
-of tempered distributions, `N` a natural number with `|s| < N` and `u ∈ B^s_{p,q}`. If every block
+of tempered distributions, `N` a real number with `|s| < N` and `u ∈ B^s_{p,q}`. If every block
 `Δⱼ T Δₖ u` is an `Lᵖ` function of norm at most `K 2^{-N |j - k|} ‖Δₖ u‖_p`, then `T u` lies in
 `B^s_{p,q}`, with norm at most `K ∑_{d ∈ ℤ} r^{|d|} ‖u‖` for `r = 2^{|s| - N} < 1`. -/
 theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_le
-    (T : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) {N : ℕ} (hN : |s| < N) {K : ℝ} (hK : 0 ≤ K)
+    (T : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) {N : ℝ} (hN : |s| < N) {K : ℝ} (hK : 0 ≤ K)
     (u : BesovSpace F φ s p q)
     (hT : ∀ j k : ℕ, ∃ v : Lp F p (volume : Measure E),
       littlewoodPaleyBlock F φ j (T (u.block k : 𝓢'(E, F))) = v ∧
