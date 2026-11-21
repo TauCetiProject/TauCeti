@@ -16,12 +16,12 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 Let `f : E → F` be a map between Banach spaces and `K ⊆ E` compact. Call a zero `x` of `f` in `K`
 *nondegenerate* if `x` is an interior point of `K` and the derivative of `f` at `x` is invertible.
-Zeros with invertible derivative are isolated, so a map continuous on `K` has only finitely many of
-them in `K` (`IsCompact.finite_inter_preimage_of_hasFDerivAt`). If `f` is continuous on `K`, all
-its zeros in `K` are nondegenerate and its derivative is continuous at each of them, then these
-zeros persist under perturbations that are small in `C¹` on `K`: every such perturbation `g` again
-has only nondegenerate zeros in `K`, and they correspond bijectively to those of `f`, each moving
-by an arbitrarily small distance. In particular the number of zeros in `K` does not change.
+If every zero of a map continuous on `K` has invertible derivative, there are only finitely many
+zeros in `K` (`IsCompact.finite_sep_eq_zero_of_isInvertible_fderiv`). If `f` is continuous on
+`K`, all its zeros in `K` are nondegenerate and its derivative is continuous at each of them, then
+these zeros persist under perturbations that are small in `C¹` on `K`: every such perturbation `g`
+again has only nondegenerate zeros in `K`, and they correspond bijectively to those of `f`, each
+moving by an arbitrarily small distance. In particular the number of zeros in `K` does not change.
 
 This is how a count of transverse intersection points is shown to be locally constant along a
 family of maps. For instance, near an intersection point of a map `u` with a codimension-two
@@ -35,16 +35,19 @@ connected parameter space, as long as every member of the family has only nondeg
 The local step is a quantitative inverse function theorem (`TauCeti.exists_zero_perturbation`):
 near a point where the derivative of `f` is continuous and invertible, a map whose derivative
 stays close to that of `f` on a small closed ball, and which is small at the centre, has exactly
-one zero in the ball, and that zero is nondegenerate. It rests on Mathlib's local surjectivity and
-injectivity of maps approximating a linear equivalence, through
-`ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le`. Away from the zeros of `f`, the norm of
-`f` is bounded below on the compact remainder of `K`, so a uniformly close `g` has no zeros there.
+one zero in the ball, and that zero is nondegenerate, at distance from the centre linearly
+controlled by the value there. It rests on Mathlib's local surjectivity and injectivity of maps
+approximating a linear equivalence, through
+`ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le`. The persistence of a nondegenerate
+critical point, `TauCeti.IsNondegenerateCriticalPoint.exists_criticalPoint_perturbation`, is its
+case `f := fderiv ℝ h`. Away from the zeros of `f`, the norm of `f` is bounded below on the compact
+remainder of `K`, so a uniformly close `g` has no zeros there.
 
 ## Main results
 
 * `TauCeti.exists_zero_perturbation`: a map `C¹`-close to `f` on a small ball around a point
   where `fderiv f` is continuous and invertible, and small at its centre, has a unique zero in the
-  ball, and it is nondegenerate.
+  ball, it is nondegenerate, and its distance to the centre is linearly controlled.
 * `IsCompact.exists_pos_forall_exists_equiv_sep_eq_zero`: a `C¹`-small perturbation of `f` on `K`
   has only nondegenerate zeros in `K`, in a bijection with those of `f` moving each by at most
   any prescribed `ε > 0`.
@@ -70,7 +73,7 @@ open Filter Metric Set
 open scoped NNReal Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
-  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [CompleteSpace E]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {K : Set E}
 
 namespace TauCeti
@@ -80,16 +83,25 @@ namespace TauCeti
 Let `fderiv 𝕜 f` be continuous and invertible at `z`. For every sufficiently small radius `r`
 there is `δ > 0` with the following property. If `g` is differentiable on the closed ball of
 radius `r` around `z`, `‖g z‖ ≤ δ`, and the derivatives of `g` and `f` differ by at most `δ` on
-that ball, then `g` has a zero `a` in the ball, it is the only one there, and the derivative of
-`g` at `a` is invertible. The map `f` need not vanish at `z`. -/
+that ball, then `g` has a zero `a` in the ball, it is the only one there, the derivative of
+`g` at `a` is invertible, and `a` lies within `C * ‖g z‖` of `z`, for a constant `C` depending only
+on `f` and `z`. The map `f` need not vanish at `z`.
+
+The argument was first written in Tau Ceti for critical points, in
+`TauCeti.IsNondegenerateCriticalPoint.exists_criticalPoint_perturbation`; here `fderiv ℝ g` is
+replaced by `g`, and that theorem is derived from this one. -/
 theorem exists_zero_perturbation {z : E} (hc : ContinuousAt (fderiv 𝕜 f) z)
     (hz : (fderiv 𝕜 f z).IsInvertible) :
-    ∀ᶠ r in 𝓝[>] 0, ∃ δ > 0, ∀ g : E → F, (∀ y ∈ closedBall z r, DifferentiableAt 𝕜 g y) →
+    ∃ C : ℝ, ∀ᶠ r in 𝓝[>] 0, ∃ δ > 0, ∀ g : E → F,
+      (∀ y ∈ closedBall z r, DifferentiableAt 𝕜 g y) →
       ‖g z‖ ≤ δ → (∀ y ∈ closedBall z r, ‖fderiv 𝕜 g y - fderiv 𝕜 f y‖ ≤ δ) →
-      ∃ a ∈ closedBall z r, g a = 0 ∧ (fderiv 𝕜 g a).IsInvertible ∧
+      ∃ a ∈ closedBall z r, g a = 0 ∧ (fderiv 𝕜 g a).IsInvertible ∧ dist a z ≤ C * ‖g z‖ ∧
         ∀ y ∈ closedBall z r, g y = 0 → y = a := by
   -- On a small ball, `g` approximates the invertible derivative `L` of `f` at `z`, so it has a
   -- unique zero there by `ApproximatesLinearOn.exists_eq_zero_of_two_mul_norm_le`.
+  -- The mean value inequality on the ball uses the underlying real structure of `E`.
+  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   obtain ⟨L, hL⟩ := hz
   -- `C` bounds the inverse of `L` and is positive even on the zero space.
   let C : ℝ := ‖(L.symm : F →L[𝕜] E)‖ + 1
@@ -101,6 +113,7 @@ theorem exists_zero_perturbation {z : E} (hc : ContinuousAt (fderiv 𝕜 f) z)
   have hκC : 2 * C * κ ≤ 1 := (mul_inv_cancel₀ (by positivity)).le
   obtain ⟨ρ, hρ, hρf⟩ := Metric.eventually_nhds_iff.1
     (hc.eventually_mem (Metric.ball_mem_nhds (fderiv 𝕜 f z) (half_pos hκ)))
+  refine ⟨2 * C, ?_⟩
   filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
   refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun g hg hgz hgf ↦ ?_⟩
   have hclose : ∀ y ∈ closedBall z r, ‖fderiv 𝕜 g y - (L : E →L[𝕜] F)‖ ≤ κ := fun y hy ↦ by
@@ -120,7 +133,7 @@ theorem exists_zero_perturbation {z : E} (hc : ContinuousAt (fderiv 𝕜 f) z)
     rwa [le_div_iff₀ (by positivity), mul_comm] at this
   obtain ⟨a, ha, ha0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hLsymm hκC hεr
   have haz : a ∈ closedBall z r := closedBall_subset_closedBall hεr ha
-  refine ⟨a, haz, ha0, ?_, huniq⟩
+  refine ⟨a, haz, ha0, ?_, mem_closedBall.1 ha, huniq⟩
   -- The derivative of `g` at `a` is within `κ = (2 C)⁻¹` of `L`, and `‖L⁻¹‖ ≤ C`.
   have hinv : ‖(L : E →L[𝕜] F).inverse‖ ≤ C := by
     rw [ContinuousLinearMap.inverse_equiv]
@@ -140,37 +153,19 @@ private theorem eventually_closedBall_subset_interior_and_zero_perturbation {z :
       (∀ y ∈ closedBall z r, DifferentiableAt 𝕜 g y) → ‖g z‖ ≤ δ →
       (∀ y ∈ closedBall z r, ‖fderiv 𝕜 g y - fderiv 𝕜 f y‖ ≤ δ) →
       ∃ a ∈ closedBall z r, g a = 0 ∧ (fderiv 𝕜 g a).IsInvertible ∧
-        ∀ y ∈ closedBall z r, g y = 0 → y = a :=
-  ((eventually_closedBall_subset (isOpen_interior.mem_nhds hzK)).filter_mono
-    nhdsWithin_le_nhds).and
-    (exists_zero_perturbation hc hz)
+        ∀ y ∈ closedBall z r, g y = 0 → y = a := by
+  obtain ⟨_, h⟩ := exists_zero_perturbation hc hz
+  filter_upwards [(eventually_closedBall_subset (isOpen_interior.mem_nhds hzK)).filter_mono
+    nhdsWithin_le_nhds, h] with r hr hpert
+  obtain ⟨δ, hδ, hpert⟩ := hpert
+  exact ⟨hr, δ, hδ, fun g hg hgz hgf ↦ (hpert g hg hgz hgf).imp fun _ ⟨ha, ha0, hinv, _, hu⟩ ↦
+    ⟨ha, ha0, hinv, hu⟩⟩
 
 end TauCeti
 
 namespace IsCompact
 
-omit [IsRCLikeNormedField 𝕜] [NormedSpace ℝ E] [CompleteSpace E] in
-/-- Zeros with invertible derivative of a map continuous on a compact set `K` are finitely many
-there, by `IsCompact.finite_inter_preimage_of_hasFDerivAt`: an invertible `fderiv` is a genuine
-derivative unless `E` is trivial. -/
-private theorem finite_sep_eq_zero (hK : IsCompact K) (hf : ContinuousOn f K)
-    (hz : ∀ x ∈ K, f x = 0 → (fderiv 𝕜 f x).IsInvertible) :
-    {x ∈ K | f x = 0}.Finite := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · exact Set.toFinite _
-  have hd (x) (hx : x ∈ K ∩ f ⁻¹' {0}) : DifferentiableAt 𝕜 f x := by
-    by_contra h
-    have h0 := hz x hx.1 hx.2
-    rw [fderiv_zero_of_not_differentiableAt h, ContinuousLinearMap.isInvertible_zero_iff] at h0
-    exact not_subsingleton E h0.1
-  exact (hK.of_isClosed_subset (hf.preimage_isClosed_of_isClosed hK.isClosed isClosed_singleton)
-    inter_subset_left).finite_inter_preimage_of_hasFDerivAt (fun x hx ↦ (hd x hx).hasFDerivAt)
-    fun x hx ↦ by
-      obtain ⟨L, hL⟩ := hz x hx.1 hx.2
-      rw [← hL]
-      exact ⟨_, L.antilipschitzWith⟩
-
-omit [IsRCLikeNormedField 𝕜] [NormedSpace ℝ E] [CompleteSpace E] in
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] in
 /-- The zeros of `g` in `K` once each zero `z` of `f` in `K` has a unique zero `a z` of `g` in the
 ball of radius `r` around it, these balls lie in the interior of `K` and are pairwise disjoint,
 and every zero of `g` in `K` lies in one of them. -/
@@ -216,7 +211,8 @@ theorem exists_pos_forall_exists_equiv_sep_eq_zero (hK : IsCompact K) (hf : Cont
       (∀ x ∈ K, g x = 0 → x ∈ interior K ∧ (fderiv 𝕜 g x).IsInvertible) ∧
       ∃ e : {x ∈ K | f x = 0} ≃ {x ∈ K | g x = 0}, ∀ x, dist (e x : E) x ≤ ε := by
   set Z := {x ∈ K | f x = 0}
-  have hZ : Z.Finite := hK.finite_sep_eq_zero hf fun x hx hx0 ↦ (hz x hx hx0).2.2
+  have hZ : Z.Finite :=
+    hK.finite_sep_eq_zero_of_isInvertible_fderiv hf fun x hx hx0 ↦ (hz x hx hx0).2.2
   -- One radius `r < ε` for which the balls of radius `r` around the zeros of `f` are pairwise
   -- disjoint, lie in the interior of `K` and carry the local perturbation statement.
   have hsep (p) (_ : p ∈ Z ×ˢ Z) : ∀ᶠ r in 𝓝[>] (0 : ℝ), p.1 ≠ p.2 → r + r < dist p.1 p.2 := by
