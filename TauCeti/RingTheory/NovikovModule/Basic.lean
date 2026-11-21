@@ -136,6 +136,12 @@ def ofFinsupp : (S →₀ R) →ₗ[R] NovikovModule R F where
 theorem ofFinsupp_apply_val (a : S →₀ R) (s : S) : (ofFinsupp F a).val s = a s :=
   (rfl)
 
+/-- A finite combination with a single nonzero coefficient is the point mass at its generator. -/
+@[simp]
+theorem ofFinsupp_single [DecidableEq S] (s : S) (r : R) :
+    ofFinsupp F (Finsupp.single s r) = single s r :=
+  Subtype.ext (Finsupp.single_eq_pi_single s r)
+
 theorem ofFinsupp_injective : Function.Injective (ofFinsupp (R := R) F) :=
   fun _ _ h => DFunLike.coe_injective (congrArg Subtype.val h)
 
