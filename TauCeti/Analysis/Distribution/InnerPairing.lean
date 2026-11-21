@@ -129,6 +129,11 @@ theorem innerPairing_neg_right (T : 𝓓'^{n}(Ω, V)) (g : 𝓓^{n}(Ω, V)) :
     T.innerPairing (-g) = -T.innerPairing g := by
   simpa using T.innerPairing_smul_right (-1) g
 
+@[simp]
+theorem innerPairing_sub_right (T : 𝓓'^{n}(Ω, V)) (g h : 𝓓^{n}(Ω, V)) :
+    T.innerPairing (g - h) = T.innerPairing g - T.innerPairing h := by
+  simp [sub_eq_add_neg]
+
 theorem innerPairing_sum_right {ι : Type*} (T : 𝓓'^{n}(Ω, V)) (s : Finset ι)
     (g : ι → 𝓓^{n}(Ω, V)) : T.innerPairing (∑ i ∈ s, g i) = ∑ i ∈ s, T.innerPairing (g i) := by
   classical
@@ -149,6 +154,25 @@ theorem innerPairing_smul_left (c : ℂ) (T : 𝓓'^{n}(Ω, V)) (g : 𝓓^{n}(Ω
     ext φ
     simp
   simp only [innerPairing, h, complexPairing_smul, Finset.mul_sum]
+
+@[simp]
+theorem innerPairing_zero_left (g : 𝓓^{n}(Ω, V)) : (0 : 𝓓'^{n}(Ω, V)).innerPairing g = 0 := by
+  simpa using innerPairing_smul_left 0 0 g
+
+@[simp]
+theorem innerPairing_neg_left (T : 𝓓'^{n}(Ω, V)) (g : 𝓓^{n}(Ω, V)) :
+    (-T).innerPairing g = -T.innerPairing g := by
+  simpa using innerPairing_smul_left (-1) T g
+
+@[simp]
+theorem innerPairing_sub_left (T S : 𝓓'^{n}(Ω, V)) (g : 𝓓^{n}(Ω, V)) :
+    (T - S).innerPairing g = T.innerPairing g - S.innerPairing g := by
+  simp [sub_eq_add_neg]
+
+/-- The pairing is continuous in the test function. -/
+theorem continuous_innerPairing (T : 𝓓'^{n}(Ω, V)) : Continuous T.innerPairing :=
+  continuous_finsetSum _ fun _ _ ↦ (ContinuousLinearMap.continuous _).comp
+    (postcompCLM (𝕜 := ℝ) _).continuous
 
 /-- **The pairing on `φ • v`.** For a real test function `φ` and a vector `v`, the pairing of `T`
 with the test function `x ↦ φ x • v` is `⟪v, T φ⟫`. Since every `V`-valued test function is a
