@@ -187,7 +187,7 @@ algebra `𝕜` over `ℝ` with a bounded action on the coefficients of `ψ` give
 the term `dc ∧ ω` in the Leibniz rule `TauCeti.extDerivWithin_function_smul` with the paired wedge;
 for `𝕜 = ℂ` it covers complex covectors such as the coordinate forms `dz_j` acting on
 complex-valued forms. The degree `1 + l` is identified with `l + 1` by `Fin.cast`. -/
-theorem alternatizeUncurryFin_smulRight_apply {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜]
+theorem alternatizeUncurryFin_smulRight_apply {𝕜 : Type*} [SeminormedRing 𝕜] [NormedAlgebra ℝ 𝕜]
     [Module 𝕜 F₂] [IsBoundedSMul 𝕜 F₂] [IsScalarTower ℝ 𝕜 F₂]
     (a : E →L[ℝ] 𝕜) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
     (v : Fin (l + 1) → E) :
