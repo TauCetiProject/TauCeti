@@ -182,6 +182,14 @@ theorem norm_alternatingFormEquiv_ιMulti (u : Fin k → E) :
 theorem norm_alternatingFormEquiv_one (η : ⋀[ℝ]^1 E) : ‖alternatingFormEquiv E 1 η‖ = ‖η‖ := by
   rw [← (oneEquiv ℝ E).symm_apply_apply η, oneEquiv_symm_apply, norm_alternatingFormEquiv_ιMulti]
 
+/-- The linear map on `⋀ᵏ E` induced by the form of a `k`-vector `a` is the inner product with
+`a`. -/
+theorem continuousAlternatingMapLinearEquiv_alternatingFormEquiv (a : ⋀[ℝ]^k E) :
+    continuousAlternatingMapLinearEquiv ℝ E k ℝ (alternatingFormEquiv E k a) =
+      innerₗ (⋀[ℝ]^k E) a := by
+  ext v
+  simp
+
 end TauCeti
 
 namespace exteriorPower
@@ -190,11 +198,8 @@ namespace exteriorPower
 @[simp]
 theorem formDualEquiv_alternatingFormEquiv (ξ η : ⋀[ℝ]^k E) :
     formDualEquiv ℝ E k ξ (TauCeti.alternatingFormEquiv E k η) = ⟪η, ξ⟫ := by
-  rw [formDualEquiv_apply]
-  suffices h : continuousAlternatingMapLinearEquiv ℝ E k ℝ (TauCeti.alternatingFormEquiv E k η) =
-      innerₗ (⋀[ℝ]^k E) η from congr($h ξ)
-  ext v
-  simp
+  rw [formDualEquiv_apply, TauCeti.continuousAlternatingMapLinearEquiv_alternatingFormEquiv,
+    innerₗ_apply_apply]
 
 /-- The inner product pairing is bounded by the mass of `ξ` times the comass of the form
 associated to `η`. -/
