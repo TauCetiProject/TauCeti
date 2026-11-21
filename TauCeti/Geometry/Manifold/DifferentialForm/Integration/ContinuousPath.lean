@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
+public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.Topology
 public import Mathlib.Topology.Homotopy.Lifting
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Algebra.BigOperators.Fin
 
 /-!
@@ -58,11 +60,13 @@ base point supplying the global primitive
   `TauCeti.continuousPathIntegral_eq_of_homotopic`: additivity, reversal, and homotopy invariance.
 * `TauCeti.continuousPathIntegral_mpullback`, `TauCeti.continuousPathIntegral_mapCoeff`:
   naturality under differentiable maps and coefficient maps.
-* `TauCeti.continuousPathIntegral_eq_pathIntegral`,
+* `TauCeti.pathIntegral_eq_sub_of_isPrimitiveOn`,
+  `TauCeti.continuousPathIntegral_eq_pathIntegral`,
   `TauCeti.continuousPathIntegral_ofSubsingleton_eq_curveIntegral`,
   `TauCeti.continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_curveIntegral`:
-  agreement with `TauCeti.pathIntegral` and Mathlib's `curveIntegral` for continuous forms along
-  `C¹` curves with complete coefficients.
+  local fundamental theorem of calculus for `TauCeti.pathIntegral` and agreement with
+  `TauCeti.pathIntegral` and Mathlib's `curveIntegral` for continuous forms along `C¹` curves with
+  complete coefficients.
 * `TauCeti.exists_isPrimitiveOn_univ_and_eq_continuousPathIntegral_iff`,
   `TauCeti.exists_isPrimitiveOn_univ_iff_forall_continuousPathIntegral_loop_eq_zero`:
   characterization of global primitives by vanishing loop integrals (both unbased and with a
@@ -493,6 +497,28 @@ theorem continuousPathIntegral_sub
 /-! ### Comparison with `TauCeti.pathIntegral` and `curveIntegral` -/
 
 section Comparison
+
+omit [IsManifold I 1 M] in
+/-- **Local fundamental theorem of calculus for `IsPrimitiveOn`.** If `g` is a primitive of `φ` on
+an open set `U` containing the curve `c` on `uIcc a b`, `c` is differentiable at every point of
+`uIcc a b`, and the integrand is interval integrable, then
+`pathIntegral φ c a b = g (c b) - g (c a)`. No `C¹` regularity of `g` or `c` is needed. -/
+theorem pathIntegral_eq_sub_of_isPrimitiveOn [CompleteSpace F]
+    {φ : RoughForm I M F 1} {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U)
+    {c : ℝ → M} {a b : ℝ} (hc : ∀ t ∈ uIcc a b, MDifferentiableAt 𝓘(ℝ, ℝ) I c t)
+    (hcU : ∀ t ∈ uIcc a b, c t ∈ U)
+    (hint : IntervalIntegrable (fun t ↦ φ (c t) fun _ ↦ Manifold.curveVelocity I c t)
+      volume a b) :
+    pathIntegral φ c a b = g (c b) - g (c a) := by
+  rw [pathIntegral_def]
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := g ∘ c) (fun t ht ↦ ?_) hint
+  have hgt := (hgU.mdifferentiableOn (c t) (hcU t ht)).mdifferentiableAt
+    (hgU.isOpen.mem_nhds (hcU t ht))
+  have hd : HasDerivAt (g ∘ c) (mextDeriv (RoughForm.ofFunction I g) (c t)
+      fun _ ↦ Manifold.curveVelocity I c t) t := by
+    rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+    exact Manifold.hasDerivAt_comp_curve hgt (Manifold.hasMFDerivAt_curveVelocity (hc t ht))
+  rwa [hgU.mextDeriv_eq (c t) (hcU t ht)] at hd
 
 /-- **Comparison with smooth path integrals.** For a continuous `1`-form `φ` with local primitives
 and complete coefficients `F`, the continuous path integral along a path `γ` following a `C¹` curve
