@@ -68,7 +68,7 @@ private theorem integral_inv_sq_norm_sq_mul_norm_sq_eq (f : ℂ → V) :
   rw [h]
   congr 1
   ext z
-  rw [deriv_inv, norm_neg, norm_inv, norm_pow, inv_pow, inv_inv, smul_eq_mul]
+  simp [deriv_inv]
 
 /-- **The Dirichlet energy does not grow under the inversion.** For a `C¹` map `f` of `ℂ` with
 integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in the direction `i` is
@@ -88,11 +88,11 @@ private theorem integral_norm_fderiv_comp_inv_I_sq_le {f : ℂ → V}
       ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 ≤ ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹ := by
     have ha : -(z ^ 2)⁻¹ * I = (-(z ^ 2)⁻¹ * I).re • (1 : ℂ) + (-(z ^ 2)⁻¹ * I).im • I := by
       rw [Complex.real_smul, Complex.real_smul, mul_one, Complex.re_add_im]
-    have hn : ‖-(z ^ 2)⁻¹‖ ^ 2 = (-(z ^ 2)⁻¹ * I).re ^ 2 + (-(z ^ 2)⁻¹ * I).im ^ 2 := by
-      rw [← mul_one ‖-(z ^ 2)⁻¹‖, ← Complex.norm_I, ← norm_mul, Complex.sq_norm,
-        Complex.normSq_apply]
+    have hn (w : ℂ) : ‖w‖ ^ 2 = (w * I).re ^ 2 + (w * I).im ^ 2 := by
+      simp [Complex.sq_norm, Complex.normSq_apply]
       ring
-    rw [fderiv_comp_inv_apply hz, ha, map_add, map_smul, map_smul, deriv_inv, smul_eq_mul, hn]
+    rw [fderiv_comp_inv_apply hz, ha, map_add, map_smul, map_smul, deriv_inv, smul_eq_mul,
+      hn (-(z ^ 2)⁻¹)]
     exact norm_smul_add_smul_sq_le _ _ _ _
   have hEi : IntegrableOn (fun z ↦ ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹) {0}ᶜ :=
     (integrableOn_image_iff_integrableOn_norm_deriv_sq_smul hd hs inv_injective.injOn E).1
@@ -142,8 +142,8 @@ private theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq {η : ℂ → 
   have hdη (p : ℝ × ℝ) : fderiv ℝ (η ∘ equivRealProdCLM.symm) p (0, 1) =
       fderiv ℝ η (equivRealProdCLM.symm p) I := by
     rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe]
-    congr 1
+      ContinuousLinearEquiv.coe_coe,
+      show equivRealProdCLM.symm (0, 1) = I by simp [Complex.ext_iff]]
   simp only [hdη, Function.comp_apply] at hpoinc
   rw [← hT fun p ↦ ‖η (equivRealProdCLM.symm p)‖ ^ 2,
     ← hT fun p ↦ ‖fderiv ℝ η (equivRealProdCLM.symm p) I‖ ^ 2] at hpoinc

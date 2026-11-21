@@ -401,8 +401,7 @@ theorem integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd {u : ℝ × �
     ∫ z, ‖u z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ u z (0, 1)‖ ^ 2 := by
   rcases le_or_gt r 0 with hr0 | hr0
   · have hu0 : ∀ z, u z = 0 := fun z ↦ hr z (hr0.trans (abs_nonneg _))
-    simp only [hu0, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
-      integral_zero]
+    simp only [hu0, norm_zero, zero_pow two_ne_zero, integral_zero]
     exact mul_nonneg (sq_nonneg _) (integral_nonneg fun _ ↦ sq_nonneg _)
   have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   -- Off the closed strip `|t| ≤ r` the map and its derivative vanish.
