@@ -91,27 +91,32 @@ theorem weightReesSymbol_def :
       (TauCeti.MvPolynomial.weightReesSymbol R w).comp
         ((A.weightReesInclusion w).restrictScalars R) := (rfl)
 
+/-- Evaluating `A.weightReesSymbol w` on `g` evaluates the ambient symbol map on
+`A.weightReesInclusion w g`. -/
+theorem weightReesSymbol_apply (g : A.weightReesAlgebra w) :
+    A.weightReesSymbol w g =
+      TauCeti.MvPolynomial.weightReesSymbol R w (A.weightReesInclusion w g) := by
+  simp [weightReesSymbol_def]
+
 /-- The coefficient of `X^v` in the symbol of `g` is the coefficient of `X^v` in the `weight w v`
 term of `g`. -/
 theorem coeff_weightReesSymbol (g : A.weightReesAlgebra w) (v : σ →₀ ℕ) :
     (A.weightReesSymbol w g).coeff v =
       (((g : A[X]).coeff (Finsupp.weight w v) : A) : MvPolynomial σ R).coeff v := by
-  rw [weightReesSymbol_def, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
-    TauCeti.MvPolynomial.coeff_weightReesSymbol, coe_weightReesInclusion, Polynomial.coeff_map,
-    AlgHom.coe_toRingHom, Subalgebra.coe_val]
+  rw [weightReesSymbol_apply, TauCeti.MvPolynomial.coeff_weightReesSymbol,
+    coe_weightReesInclusion, Polynomial.coeff_map, AlgHom.coe_toRingHom, Subalgebra.coe_val]
 
 @[simp]
 theorem weightReesSymbol_monomial {n : ℕ} {b : A} (hb : b ∈ A.weightFiltration w n) :
     A.weightReesSymbol w (coeffSubalgebra.monomial _ n b hb) =
       weightedHomogeneousComponent w n (b : MvPolynomial σ R) := by
-  rw [weightReesSymbol_def, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
-    weightReesInclusion_monomial, TauCeti.MvPolynomial.weightReesSymbol_monomial]
+  rw [weightReesSymbol_apply, weightReesInclusion_monomial,
+    TauCeti.MvPolynomial.weightReesSymbol_monomial]
 
 @[simp]
 theorem weightReesSymbol_X :
     A.weightReesSymbol w (coeffSubalgebra.X _ (A.one_mem_weightFiltration_one w)) = 0 := by
-  rw [weightReesSymbol_def, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
-    weightReesInclusion_X, TauCeti.MvPolynomial.weightReesSymbol_X]
+  rw [weightReesSymbol_apply, weightReesInclusion_X, TauCeti.MvPolynomial.weightReesSymbol_X]
 
 end
 
@@ -193,6 +198,35 @@ theorem coe_weightReesSymbolToInitial (A : Subalgebra R (MvPolynomial σ R)) (w 
     (A.weightReesSymbolToInitial w g : MvPolynomial σ R) = A.weightReesSymbol w g := by
   simp [weightReesSymbolToInitial]
 
+theorem weightedHomogeneousComponent_mem_weightInitialAlgebra
+    (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) {n : ℕ} {b : A}
+    (hb : b ∈ A.weightFiltration w n) :
+    weightedHomogeneousComponent w n (b : MvPolynomial σ R) ∈ A.weightInitialAlgebra w := by
+  rw [← A.weightReesSymbol_monomial w hb, ← A.coe_weightReesSymbolToInitial w]
+  exact SetLike.coe_mem _
+
+@[simp]
+theorem weightReesSymbolToInitial_monomial (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ)
+    {n : ℕ} {b : A} (hb : b ∈ A.weightFiltration w n) :
+    A.weightReesSymbolToInitial w (coeffSubalgebra.monomial _ n b hb) =
+      ⟨weightedHomogeneousComponent w n (b : MvPolynomial σ R),
+        A.weightedHomogeneousComponent_mem_weightInitialAlgebra w hb⟩ :=
+  Subtype.ext (by simp)
+
+theorem weightReesSymbolToInitial_monomial_weightedTotalDegree
+    (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) {f : MvPolynomial σ R} (hf : f ∈ A)
+    (hb : (⟨f, hf⟩ : A) ∈ A.weightFiltration w (f.weightedTotalDegree w)) :
+    A.weightReesSymbolToInitial w
+      (coeffSubalgebra.monomial (A.weightFiltration w) (f.weightedTotalDegree w) ⟨f, hf⟩ hb) =
+      ⟨weightInitialForm w f, A.weightInitialForm_mem_weightInitialAlgebra w hf⟩ :=
+  Subtype.ext (by simp [weightInitialForm_def])
+
+@[simp]
+theorem weightReesSymbolToInitial_X (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) :
+    A.weightReesSymbolToInitial w
+      (coeffSubalgebra.X _ (A.one_mem_weightFiltration_one w)) = 0 :=
+  Subtype.ext (by simp)
+
 theorem weightReesSymbolToInitial_surjective (A : Subalgebra R (MvPolynomial σ R)) (w : σ → ℕ) :
     Function.Surjective (A.weightReesSymbolToInitial w) :=
   ((Subalgebra.equivOfEq _ _ (A.range_weightReesSymbol w)).surjective.comp
@@ -213,8 +247,7 @@ theorem ker_weightReesSymbol (A : Subalgebra R (MvPolynomial σ R)) (w : σ → 
     -- see that the constant term in `t` vanishes and `(g : A[X]).divX` stays filtered.
     have hg' : A.weightReesInclusion w g ∈
         RingHom.ker (TauCeti.MvPolynomial.weightReesSymbol R w) := by
-      rwa [RingHom.mem_ker, weightReesSymbol_def, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
-        ← RingHom.mem_ker] at hg
+      rwa [RingHom.mem_ker, ← A.weightReesSymbol_apply w]
     rw [TauCeti.MvPolynomial.ker_weightReesSymbol, Ideal.mem_span_singleton] at hg'
     obtain ⟨q, hq⟩ := hg'
     have hmap : (g : A[X]).map A.val = Polynomial.X * (q : (MvPolynomial σ R)[X]) := by
@@ -301,8 +334,8 @@ theorem quotientSpanXWeightReesAlgebraEquiv_symm_weightInitialForm
         (f.weightedTotalDegree w) ⟨f, hf⟩
         ((A.mem_weightFiltration_iff w).mpr
           (mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl))) := by
-  rw [AlgEquiv.symm_apply_eq, Subtype.ext_iff]
-  simp [weightInitialForm_def]
+  rw [AlgEquiv.symm_apply_eq, quotientSpanXWeightReesAlgebraEquiv_mk,
+    weightReesSymbolToInitial_monomial_weightedTotalDegree]
 
 /-- **Special fibre at `t = 0`, base-change form.** Tensor base change of `A.weightReesAlgebra w`
 along evaluation `R[t] → R` at `0` recovers the weight-initial algebra of `A`. -/
@@ -350,8 +383,8 @@ theorem baseChangeZeroWeightReesAlgebraEquiv_symm_weightInitialForm
         ((A.mem_weightFiltration_iff w).mpr
           (mem_weightFiltration_iff_weightedTotalDegree_le.mpr le_rfl)) := by
   let := Algebra.compHom R (Polynomial.evalRingHom (0 : R))
-  rw [AlgEquiv.symm_apply_eq, Subtype.ext_iff]
-  simp [weightInitialForm_def]
+  rw [AlgEquiv.symm_apply_eq, baseChangeZeroWeightReesAlgebraEquiv_tmul, one_smul,
+    weightReesSymbolToInitial_monomial_weightedTotalDegree]
 
 /-- **Fibre at `t = 1`, quotient form.** Quotienting `A.weightReesAlgebra w` by `t - 1` recovers
 `A`. -/

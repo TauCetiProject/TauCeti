@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.Decomposition
 public import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Subsemiring
 

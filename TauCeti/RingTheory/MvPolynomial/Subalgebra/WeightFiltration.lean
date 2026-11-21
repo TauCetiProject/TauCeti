@@ -290,17 +290,26 @@ private noncomputable def weightReesAevalLiftAux :
 noncomputable def weightReesAevalLift : (MvPolynomial ι R)[X] →ₐ[R[X]] A.weightReesAlgebra w :=
   (weightReesAevalLiftAux hcA hc).toPolynomialAlgHom (by simp [weightReesAevalLiftAux])
 
+/-- The lift `weightReesAevalLift hcA hc` composed with `A.weightReesInclusion w` and the ambient
+subalgebra inclusion recovers `weightReesAeval c d` as an `R`-algebra homomorphism. -/
+theorem val_comp_weightReesInclusion_comp_weightReesAevalLift :
+    ((TauCeti.MvPolynomial.weightReesAlgebra R w).val.comp
+        ((A.weightReesInclusion w).restrictScalars R)).comp
+      ((weightReesAevalLift hcA hc).restrictScalars R) = weightReesAeval c d := by
+  refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_
+  · simp [weightReesAevalLift, weightReesAevalLiftAux, Polynomial.C_mul_X_pow_eq_monomial]
+  · simp [weightReesAevalLift, weightReesAevalLiftAux]
+
+theorem coe_weightReesInclusion_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
+    (A.weightReesInclusion w (weightReesAevalLift hcA hc f) : (MvPolynomial σ R)[X]) =
+      weightReesAeval c d f :=
+  congr($(val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc) f)
+
 @[simp]
 theorem map_val_coe_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
     ((weightReesAevalLift hcA hc f : A.weightReesAlgebra w) : A[X]).map A.val =
       weightReesAeval c d f := by
-  have h : (Polynomial.mapAlgHom A.val).comp
-        ((A.weightReesAlgebra w).val.comp (weightReesAevalLiftAux hcA hc)) =
-      weightReesAeval c d := by
-    refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_
-    · simp [weightReesAevalLiftAux, Polynomial.C_mul_X_pow_eq_monomial]
-    · simp [weightReesAevalLiftAux]
-  simpa [weightReesAevalLift] using congr($h f)
+  rw [← A.coe_weightReesInclusion w, coe_weightReesInclusion_weightReesAevalLift]
 
 @[simp]
 theorem weightReesAevalLift_C {p : MvPolynomial ι R} :
@@ -326,16 +335,15 @@ theorem weightReesAevalLift_weightHomogenization {n : ℕ} {P : MvPolynomial ι 
         ((A.mem_weightFiltration_iff w).mpr (aeval_mem_weightFiltration hc hP)) := by
   apply A.weightReesInclusion_injective w
   apply Subtype.ext
-  rw [A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift,
-    weightReesAeval_weightHomogenization hP, A.weightReesInclusion_monomial,
-    coeffSubalgebra.coe_monomial]
+  rw [coe_weightReesInclusion_weightReesAevalLift, weightReesAeval_weightHomogenization hP,
+    A.weightReesInclusion_monomial, coeffSubalgebra.coe_monomial]
 
 @[simp]
 theorem coe_eval_weightReesAevalLift (r : R) (f : (MvPolynomial ι R)[X]) :
     (coeffSubalgebra.eval (A.weightFiltration w) r (weightReesAevalLift hcA hc f) :
       MvPolynomial σ R) = (weightReesAeval c d f).eval (C r) := by
   rw [← A.eval_weightReesInclusion w r, coeffSubalgebra.eval_apply,
-    A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift, MvPolynomial.algebraMap_eq]
+    coe_weightReesInclusion_weightReesAevalLift, MvPolynomial.algebraMap_eq]
 
 @[simp]
 theorem coe_evalOne_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
@@ -351,11 +359,14 @@ theorem coe_evalOne_weightReesAevalLift (f : (MvPolynomial ι R)[X]) :
 /-- The kernel of `weightReesAevalLift hcA hc` equals the kernel of `weightReesAeval c d`. -/
 theorem ker_weightReesAevalLift :
     RingHom.ker (weightReesAevalLift hcA hc) = RingHom.ker (weightReesAeval c d) := by
+  have hinj : Function.Injective
+      ((TauCeti.MvPolynomial.weightReesAlgebra R w).val.comp
+        ((A.weightReesInclusion w).restrictScalars R)) :=
+    Subtype.val_injective.comp (A.weightReesInclusion_injective w)
   ext f
-  rw [RingHom.mem_ker, RingHom.mem_ker, ← map_val_coe_weightReesAevalLift hcA hc f,
-    ← A.coe_weightReesInclusion w]
-  exact ⟨fun h ↦ by rw [h, map_zero, ZeroMemClass.coe_zero],
-    fun h ↦ A.weightReesInclusion_injective w (Subtype.ext (by simpa using h))⟩
+  rw [RingHom.mem_ker, RingHom.mem_ker,
+    ← val_comp_weightReesInclusion_comp_weightReesAevalLift hcA hc,
+    AlgHom.comp_apply, map_eq_zero_iff _ hinj, AlgHom.restrictScalars_apply]
 
 end ReesLift
 

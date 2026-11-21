@@ -231,6 +231,6 @@ theorem weightReesAevalLift_surjective {σ ι J R : Type*} [CommRing R]
       ⟨y, y.property, by rw [Polynomial.coe_mapAlgHom, A.coe_weightReesInclusion]⟩
   obtain ⟨f, hf⟩ := (weightReesAeval c d).mem_range.mp hy
   refine ⟨f, A.weightReesInclusion_injective w (Subtype.ext ?_)⟩
-  rwa [A.coe_weightReesInclusion, map_val_coe_weightReesAevalLift]
+  rwa [coe_weightReesInclusion_weightReesAevalLift]
 
 end TauCeti.MvPolynomial

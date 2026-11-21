@@ -18,12 +18,11 @@ families over a field `k`.
 
 For an unnormalized family `b : ι → MvPolynomial σ k` over a field `k` with leading coefficients
 `ℓ i = m.leadingCoeff (b i)` and monic normalizations `c i = m.monicNormalize (b i)` for a
-monomial order `m`, the Rees presentation map of `b` factors through that of `c` by the diagonal
-rescaling `D_ℓ = MvPolynomial.rescale ℓ` in the presentation variables
-(`MonomialOrder.weightReesAeval_monicNormalize_comp_mapAlgHom_rescale`), leaving the image
-unchanged (`MonomialOrder.range_weightReesAeval_monicNormalize`). When every `b i` is nonzero, the
-Rees relations of `b` are obtained from the Rees kernel of `c` by applying
-`D_ℓ⁻¹ = MvPolynomial.rescale ℓ⁻¹` (`MonomialOrder.ker_weightReesAeval_eq_map`).
+monomial order `m`, `TauCeti.RingTheory.MvPolynomial.SAGBI.Rees` transports the Rees presentation
+map of `b` to that of `c` via the diagonal rescaling `D_ℓ = MvPolynomial.rescale ℓ`
+(`MonomialOrder.weightReesAeval_monicNormalize_comp_mapAlgHom_rescale`,
+`MonomialOrder.range_weightReesAeval_monicNormalize`, and
+`MonomialOrder.ker_weightReesAeval_eq_map`).
 
 Under *monic toric weight certificates*—where each `c i` has `w`-weight at most
 `d i = Finsupp.weight w (m.degree (b i))` with weight-`d i` component `X^(m.degree (b i))` (forcing
@@ -40,10 +39,8 @@ subalgebra `A` over a field, with no monicity or finite-variable hypothesis.
 
 ## Main declarations
 
-* `MonomialOrder.weightReesAeval_monicNormalize_comp_mapAlgHom_rescale`,
-  `MonomialOrder.range_weightReesAeval_monicNormalize`, `MonomialOrder.ker_weightReesAeval_eq_map`,
-  and `MonomialOrder.ker_weightReesAeval_eq_span_rescale`: range invariance under `monicNormalize`
-  and `D_ℓ⁻¹` transport of Rees relations for nonzero nonmonic families.
+* `MonomialOrder.ker_weightReesAeval_eq_span_rescale`: `D_ℓ⁻¹` transport of homogenized Rees
+  relations under monic toric weight certificates.
 * `MonomialOrder.weightInitialIdeal_ker_aeval_of_toricIdeal_eq_span`,
   `MonomialOrder.weightInitialAlgebra_adjoin_eq_of_toricIdeal_eq_span`,
   `MonomialOrder.map_weightReesAlgebra_eq_range_weightReesAeval_of_toricIdeal_eq_span`,
@@ -71,54 +68,7 @@ namespace MonomialOrder
 
 open _root_.MvPolynomial TauCeti TauCeti.MvPolynomial
 
-variable {σ ι J k : Type*} [Field k] (m : MonomialOrder σ)
-
-/-- The Rees presentation map of `b` factors through that of the monic normalization
-`m.monicNormalize ∘ b` by the diagonal rescaling `Y i ↦ m.leadingCoeff (b i) * Y i` on the
-presentation variables. -/
-theorem weightReesAeval_monicNormalize_comp_mapAlgHom_rescale
-    (b : ι → MvPolynomial σ k) (d : ι → ℕ) :
-    (weightReesAeval (fun i ↦ m.monicNormalize (b i)) d).comp
-        (Polynomial.mapAlgHom (rescale fun i ↦ m.leadingCoeff (b i))) =
-      weightReesAeval b d := by
-  rw [weightReesAeval_comp_mapAlgHom_rescale]
-  congr 1
-  funext i
-  rw [Algebra.smul_def, algebraMap_eq, m.C_leadingCoeff_mul_monicNormalize]
-
-/-- Normalizing the generators of a polynomial family over a field does not change the image of the
-Rees presentation map. -/
-theorem range_weightReesAeval_monicNormalize (b : ι → MvPolynomial σ k) (d : ι → ℕ) :
-    (weightReesAeval (fun i ↦ m.monicNormalize (b i)) d).range = (weightReesAeval b d).range := by
-  classical
-  let a : ι → k := fun i ↦ if b i = 0 then 1 else m.leadingCoeff (b i)
-  have ha : ∀ i, IsUnit (a i) := fun i ↦ by
-    dsimp only [a]
-    split_ifs with hb
-    · exact isUnit_one
-    · exact (m.leadingCoeff_ne_zero_iff.mpr hb).isUnit
-  have hsmul : (fun i ↦ a i • m.monicNormalize (b i)) = b := funext fun i ↦ by
-    dsimp only [a]
-    split_ifs with hb
-    · simp [hb]
-    · rw [Algebra.smul_def, algebraMap_eq, m.C_leadingCoeff_mul_monicNormalize]
-  conv_rhs => rw [← hsmul]
-  exact (range_weightReesAeval_smul_eq ha (fun i ↦ m.monicNormalize (b i)) d).symm
-
-variable {m}
-
-/-- **Nonmonic Rees kernel transport.** For a family of nonzero polynomials `b`, the kernel of
-`weightReesAeval b d` is the image of the Rees kernel of the monic normalization under the inverse
-leading-coefficient rescaling `Y i ↦ (m.leadingCoeff (b i))⁻¹ * Y i`. -/
-theorem ker_weightReesAeval_eq_map {b : ι → MvPolynomial σ k} (hb : ∀ i, b i ≠ 0) (d : ι → ℕ) :
-    RingHom.ker (weightReesAeval b d) =
-      (RingHom.ker (weightReesAeval (fun i ↦ m.monicNormalize (b i)) d)).map
-        (Polynomial.mapAlgHom (rescale fun i ↦ (m.leadingCoeff (b i))⁻¹)) := by
-  have hsmul : b = fun i ↦ m.leadingCoeff (b i) • m.monicNormalize (b i) :=
-    funext fun i ↦ by rw [Algebra.smul_def, algebraMap_eq, m.C_leadingCoeff_mul_monicNormalize]
-  conv_lhs => rw [hsmul]
-  exact ker_weightReesAeval_smul_eq_map
-    (fun i ↦ mul_inv_cancel₀ (m.leadingCoeff_ne_zero_iff.mpr (hb i))) _ d
+variable {σ ι J k : Type*} [Field k] {m : MonomialOrder σ}
 
 section MonicToric
 
@@ -227,7 +177,7 @@ noncomputable def quotientSpanWeightHomogenizationRescaleEquiv :
           (rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹)
             (monomial (u j) 1 - monomial (v j) 1 - Q j)))) ≃ₐ[k[X]]
       A.weightReesAlgebra w :=
-  have hcert := nonmonic_certificates hc ha hJ hQ hQc
+  let ⟨hc', hg', hJ', hr', hQ', hQc'⟩ := nonmonic_certificates hc ha hJ hQ hQc
   have hspan : Ideal.span (Set.range fun j ↦
         weightHomogenization k (fun i ↦ Finsupp.weight w (m.degree (b i)))
           (Finsupp.weight (fun i ↦ Finsupp.weight w (m.degree (b i))) (u j))
@@ -240,8 +190,7 @@ noncomputable def quotientSpanWeightHomogenizationRescaleEquiv :
             rescale (fun i ↦ (m.leadingCoeff (b i))⁻¹) (Q j))) := by
     simp only [map_sub]
   (Ideal.quotientEquivAlgOfEq k[X] hspan).trans
-    (quotientSpanWeightHomogenizationEquiv hA
-      hcert.1 hcert.2.1 hcert.2.2.1 hcert.2.2.2.1 hcert.2.2.2.2.1 hcert.2.2.2.2.2)
+    (quotientSpanWeightHomogenizationEquiv hA hc' hg' hJ' hr' hQ' hQc')
 
 @[simp]
 theorem quotientSpanWeightHomogenizationRescaleEquiv_mk (f : (MvPolynomial ι k)[X]) :

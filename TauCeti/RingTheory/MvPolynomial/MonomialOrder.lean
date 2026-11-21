@@ -591,6 +591,12 @@ theorem C_leadingCoeff_mul_monicNormalize (f : MvPolynomial σ k) :
   rw [monicNormalize_def, ← mul_assoc, ← C_mul, mul_inv_cancel₀ (m.leadingCoeff_ne_zero_iff.2 hf),
     C_1, one_mul]
 
+/-- Scaling the normalization of `f` by the leading coefficient of `f` recovers `f`. -/
+@[simp]
+theorem leadingCoeff_smul_monicNormalize (f : MvPolynomial σ k) :
+    m.leadingCoeff f • m.monicNormalize f = f := by
+  rw [smul_eq_C_mul, m.C_leadingCoeff_mul_monicNormalize]
+
 /-- A monic polynomial is its own normalization. -/
 theorem Monic.monicNormalize_eq (hf : m.Monic f) : m.monicNormalize f = f := by
   simp [monicNormalize_def, hf.leadingCoeff_eq_one]
@@ -615,7 +621,7 @@ contains `f`. -/
 theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
     [SMulMemClass S k (MvPolynomial σ k)] {A : S} : m.monicNormalize f ∈ A ↔ f ∈ A := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← C_leadingCoeff_mul_monicNormalize (m := m) f, ← smul_eq_C_mul]
+  · rw [← leadingCoeff_smul_monicNormalize (m := m) f]
     exact SMulMemClass.smul_mem _ h
   · rw [monicNormalize_def, ← smul_eq_C_mul]
     exact SMulMemClass.smul_mem _ h
@@ -639,8 +645,9 @@ theorem weightedHomogeneousComponent_eq_leadingTerm_of_monicNormalize
       (m.monicNormalize f) = monomial (m.degree f) 1) :
     weightedHomogeneousComponent w (Finsupp.weight w (m.degree f)) f = m.leadingTerm f := by
   have h := congrArg (weightedHomogeneousComponent w (Finsupp.weight w (m.degree f)))
-    (m.C_leadingCoeff_mul_monicNormalize f)
-  simpa [← smul_eq_C_mul, map_smul, hf, smul_monomial, leadingTerm] using h.symm
+    (m.leadingCoeff_smul_monicNormalize f)
+  rw [map_smul, hf, smul_monomial] at h
+  simpa [leadingTerm] using h.symm
 
 end MonicNormalize
 

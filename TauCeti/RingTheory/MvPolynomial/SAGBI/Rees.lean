@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
+public import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 public import TauCeti.Data.Finsupp.MonomialOrder.Weight
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
@@ -65,6 +65,10 @@ the lifted relations `Y^(u j) - Y^(v j) - Q j` of `R[c]` at `t = 1`.
   `t`-saturated.
 * `TauCeti.MvPolynomial.ker_weightReesAeval_eq_span_of_toricIdeal_eq_span`: the case of monomial
   initial forms and toric binomial relations.
+* `MonomialOrder.weightReesAeval_monicNormalize_comp_mapAlgHom_rescale`,
+  `MonomialOrder.range_weightReesAeval_monicNormalize`, and
+  `MonomialOrder.ker_weightReesAeval_eq_map`: factorization, range invariance, and inverse-rescaling
+  kernel transport for unnormalized (possibly nonmonic) families over a field.
 * `MonomialOrder.exists_pos_weight_forall_mem_weightFiltrationLT`: for a finite monic family and
   finitely many bounded subduction certificates, a positive weight vector whose initial forms are
   the leading monomials and for which the certificates have smaller weight.
@@ -322,5 +326,58 @@ theorem exists_pos_weight_forall_mem_weightFiltrationLT [Finite ι] [Finite J]
       Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a y
     rw [hW, hW]
     exact hwlt (Sum.inr ⟨j, x, hx⟩)
+
+section Rescale
+
+variable {k : Type*} [Field k] (m : MonomialOrder σ)
+
+/-- The Rees presentation map of `b` factors through that of the monic normalization
+`m.monicNormalize ∘ b` by the diagonal rescaling `Y i ↦ m.leadingCoeff (b i) * Y i` on the
+presentation variables. -/
+theorem weightReesAeval_monicNormalize_comp_mapAlgHom_rescale
+    (b : ι → MvPolynomial σ k) (d : ι → ℕ) :
+    (weightReesAeval (fun i ↦ m.monicNormalize (b i)) d).comp
+        (Polynomial.mapAlgHom (rescale fun i ↦ m.leadingCoeff (b i))) =
+      weightReesAeval b d := by
+  rw [weightReesAeval_comp_mapAlgHom_rescale]
+  congr 1
+  funext i
+  exact m.leadingCoeff_smul_monicNormalize (b i)
+
+/-- Normalizing the generators of a polynomial family over a field does not change the image of the
+Rees presentation map. -/
+theorem range_weightReesAeval_monicNormalize (b : ι → MvPolynomial σ k) (d : ι → ℕ) :
+    (weightReesAeval (fun i ↦ m.monicNormalize (b i)) d).range = (weightReesAeval b d).range := by
+  classical
+  let a : ι → k := fun i ↦ if b i = 0 then 1 else m.leadingCoeff (b i)
+  have ha : ∀ i, IsUnit (a i) := fun i ↦ by
+    dsimp only [a]
+    split_ifs with hb
+    · exact isUnit_one
+    · exact (m.leadingCoeff_ne_zero_iff.mpr hb).isUnit
+  have hsmul : (fun i ↦ a i • m.monicNormalize (b i)) = b := funext fun i ↦ by
+    dsimp only [a]
+    split_ifs with hb
+    · simp [hb]
+    · exact m.leadingCoeff_smul_monicNormalize (b i)
+  conv_rhs => rw [← hsmul]
+  exact (range_weightReesAeval_smul_eq ha (fun i ↦ m.monicNormalize (b i)) d).symm
+
+variable {m}
+
+/-- **Nonmonic Rees kernel transport.** For a family of nonzero polynomials `b`, the kernel of
+`weightReesAeval b d` is the image of the Rees kernel of the monic normalization under the inverse
+leading-coefficient rescaling `Y i ↦ (m.leadingCoeff (b i))⁻¹ * Y i`. -/
+theorem ker_weightReesAeval_eq_map {b : ι → MvPolynomial σ k} (hb : ∀ i, b i ≠ 0) (d : ι → ℕ) :
+    RingHom.ker (weightReesAeval b d) =
+      (RingHom.ker (weightReesAeval (fun i ↦ m.monicNormalize (b i)) d)).map
+        (Polynomial.mapAlgHom (rescale fun i ↦ (m.leadingCoeff (b i))⁻¹)) := by
+  have hsmul : b = fun i ↦ m.leadingCoeff (b i) • m.monicNormalize (b i) :=
+    funext fun i ↦ (m.leadingCoeff_smul_monicNormalize (b i)).symm
+  conv_lhs => rw [hsmul]
+  exact ker_weightReesAeval_smul_eq_map
+    (fun i ↦ mul_inv_cancel₀ (m.leadingCoeff_ne_zero_iff.mpr (hb i))) _ d
+
+end Rescale
 
 end MonomialOrder
