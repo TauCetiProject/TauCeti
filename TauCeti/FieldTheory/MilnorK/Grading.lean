@@ -107,10 +107,11 @@ theorem isHomogeneous_ker_mkRingHom (R : Type u) [CommSemiring R] :
 `MilnorK R`. -/
 theorem isInternal_degree (R : Type u) [CommSemiring R] :
     DirectSum.IsInternal (degree R) := by
-  rw [show degree R = fun n ↦
+  have hdeg : degree R = fun n ↦
       Submodule.map (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom.toLinearMap
-        ((TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) from
-    funext fun _ ↦ Submodule.ext fun _ ↦ mem_degree_iff]
+        ((TensorAlgebra.ι ℤ : Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n) :=
+    funext fun _ ↦ Submodule.ext fun _ ↦ mem_degree_iff
+  rw [hdeg]
   exact TauCeti.GradedAlgebra.isInternal_map
     (fun n : ℕ ↦ (TensorAlgebra.ι ℤ :
       Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n)
@@ -174,6 +175,7 @@ theorem gradedLift_ofUnit {A : Type v} {σ : Type*} [Ring A] [SetLike σ A] [Add
   lift_ofUnit f hf_rel a
 
 /-- Evaluating `MilnorK.gradedLift` on a symbol multiplies the images of its entries. -/
+@[simp]
 theorem gradedLift_symbol {A : Type v} {σ : Type*} [Ring A] [SetLike σ A] [AddSubgroupClass σ A]
     (𝒜 : ℕ → σ) [SetLike.GradedMonoid 𝒜] (f : Additive Rˣ →+ A)
     (hf_deg : ∀ a : Rˣ, f (Additive.ofMul a) ∈ 𝒜 1)
@@ -340,18 +342,24 @@ theorem tensorRel_eq_iSup (R : Type u) [CommSemiring R] (n : ℕ) :
     refine congrArg (PiTensorProduct.tprod ℤ) (funext fun p ↦ ?_)
     dsimp only [Function.comp_apply]
     by_cases h1 : p.1 < k
-    · rw [show Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.castAdd 2 ⟨p.1, h1⟩) from rfl,
-        Fin.append_left, Fin.append_left]
+    · have hidx : Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.castAdd 2 ⟨p.1, h1⟩) :=
+        Fin.ext rfl
+      rw [hidx, Fin.append_left, Fin.append_left]
     · by_cases h2 : p.1 = k
-      · rw [show Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.natAdd k (0 : Fin 2)) from
-          Fin.ext (by dsimp; omega), Fin.append_left, Fin.append_right,
-          show p = ⟨k, by omega⟩ from Fin.ext h2, hxk]; rfl
+      · have hidx : Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.natAdd k (0 : Fin 2)) :=
+          Fin.ext (by dsimp; omega)
+        have hp : p = ⟨k, by omega⟩ := Fin.ext h2
+        rw [hidx, Fin.append_left, Fin.append_right, hp, hxk]
+        simp only [Matrix.cons_val_zero]
       · by_cases h3 : p.1 = k + 1
-        · rw [show Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.natAdd k (1 : Fin 2)) from
-            Fin.ext (by dsimp; omega), Fin.append_left, Fin.append_right,
-            show p = ⟨k + 1, hk⟩ from Fin.ext h3, hxk1]; rfl
-        · rw [show Fin.cast hsum.symm p = Fin.natAdd (k + 2) ⟨p.1 - (k + 2), by omega⟩ from
-            Fin.ext (by dsimp; omega), Fin.append_right]
+        · have hidx : Fin.cast hsum.symm p = Fin.castAdd (n - (k + 2)) (Fin.natAdd k (1 : Fin 2)) :=
+            Fin.ext (by dsimp; omega)
+          have hp : p = ⟨k + 1, hk⟩ := Fin.ext h3
+          rw [hidx, Fin.append_left, Fin.append_right, hp, hxk1]
+          simp only [Matrix.cons_val_one, Matrix.cons_val_zero]
+        · have hidx : Fin.cast hsum.symm p = Fin.natAdd (k + 2) ⟨p.1 - (k + 2), by omega⟩ :=
+            Fin.ext (by dsimp; omega)
+          rw [hidx, Fin.append_right]
           exact congrArg x (Fin.ext (by dsimp; omega))
   · rintro _ ⟨u, r, hr, v, rfl⟩
     exact cast_mem_tensorRel h (gMul_mem_tensorRel_left (gMul_mem_tensorRel_right hr))
@@ -485,9 +493,9 @@ theorem ker_mkRingHom_comp_toTensorAlgebra (R : Type u) [CommSemiring R] (n : �
     rintro _ ⟨x, k, hk, a, b, hab, hxk, hxk1, rfl⟩
     rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.comp_apply,
       TensorPower.toTensorAlgebra_tprod, AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_apply]
-    change RingQuot.mkRingHom (milnorRel R)
-      (TensorAlgebra.tprod ℤ (Additive Rˣ) n (Additive.ofMul ∘ (Additive.toMul ∘ x))) = 0
-    rw [mkRingHom_tprod]
+    have hx : x = Additive.ofMul ∘ (Additive.toMul ∘ x) :=
+      funext fun _ ↦ (ofMul_toMul _).symm
+    rw [hx, mkRingHom_tprod]
     set l : List Rˣ := List.ofFn (Additive.toMul ∘ x)
     have hlen : l.length = n := List.length_ofFn
     have hsplit : l = l.take k ++ a :: b :: l.drop (k + 2) := by
@@ -590,8 +598,11 @@ theorem coe_degreeZeroEquiv_symm (k : ℤ) : ((degreeZeroEquiv R).symm k : Milno
   have h1 : ((degreeZeroEquiv R).symm 1 : MilnorK R) = 1 := by
     simpa only [degreeZeroEquiv_one] using congrArg Subtype.val
       ((degreeZeroEquiv R).symm_apply_apply ⟨1, one_mem_degree_zero⟩)
-  conv_lhs => rw [show k = k • (1 : ℤ) by simp, map_zsmul, Submodule.coe_smul, h1]
-  simp
+  calc
+    ((degreeZeroEquiv R).symm k : MilnorK R)
+        = ((degreeZeroEquiv R).symm (k • (1 : ℤ)) : MilnorK R) := by rw [smul_eq_mul, mul_one]
+    _ = k • ((degreeZeroEquiv R).symm 1 : MilnorK R) := by rw [map_zsmul, Submodule.coe_smul]
+    _ = k := by rw [h1, zsmul_one]
 
 /-- `MilnorK R` is always nontrivial: `1 ≠ 0`, witnessed by `degreeZeroEquiv : K₀ᴹ(R) ≃ ℤ`. -/
 instance instNontrivial (R : Type u) [CommSemiring R] : Nontrivial (MilnorK R) :=

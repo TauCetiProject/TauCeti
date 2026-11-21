@@ -316,6 +316,7 @@ theorem lift_ofUnit {A : Type v} [Ring A] (f : Additive Rˣ →+ A)
   exact (RingQuot.liftAlgHom_mkAlgHom_apply ℤ _ _ _).trans (by simp)
 
 /-- Evaluating `MilnorK.lift f hf` on a symbol multiplies the images of its entries. -/
+@[simp]
 theorem lift_symbol {A : Type v} [Ring A] (f : Additive Rˣ →+ A)
     (hf : ∀ a b : Rˣ, (a : R) + b = 1 → f (Additive.ofMul a) * f (Additive.ofMul b) = 0)
     (l : List Rˣ) :
