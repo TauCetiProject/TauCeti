@@ -58,72 +58,7 @@ namespace TauCeti.Vortex
 open Complex Filter MeasureTheory Module TemperedDistribution BesselPotentialSpace
 open scoped SchwartzMap BesselPotentialSpace Manifold ContDiff
 
-/-! ### The real and imaginary parts of a gauge -/
-
-namespace SobolevTopologicalGaugeGroup
-
-variable {s : ℝ} {hs : 1 < s}
-
-/-- **`u ↦ Re u - 1` is smooth** from `G_s` to `H^s(ℂ)`, since
-`Re u - 1 = ((u - 1) + (u⁻¹ - 1)) / 2` and inversion is smooth. -/
-theorem contMDiff_reSubOne :
-    ContMDiff 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) 𝓘(ℝ, H^{s}(ℂ)) ∞
-      (reSubOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
-  convert (((2 : ℂ)⁻¹ • ContinuousLinearMap.id ℂ H^{s}(ℂ)).restrictScalars ℝ).contDiff
-    |>.comp_contMDiff
-            (contMDiff_subOne.add (contMDiff_subOne.comp (contMDiff_inv _ _))) using 1
-  funext u
-  simp [reSubOne_def]
-
-/-- **`u ↦ Im u` is smooth** from `G_s` to `H^s(ℂ)`, since `Im u = -i ((u - 1) - (u⁻¹ - 1)) / 2`
-and inversion is smooth. -/
-theorem contMDiff_imPart :
-    ContMDiff 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) 𝓘(ℝ, H^{s}(ℂ)) ∞
-      (imPart : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
-  convert ((-(I / 2) • ContinuousLinearMap.id ℂ H^{s}(ℂ)).restrictScalars ℝ).contDiff
-    |>.comp_contMDiff
-      (contMDiff_subOne.sub (contMDiff_subOne.comp (contMDiff_inv _ _))) using 1
-  funext u
-  simp [imPart_def]
-
-end SobolevTopologicalGaugeGroup
-
 open SobolevTopologicalGaugeGroup
-
-variable {s : ℝ} {hs : 1 < s}
-
-/-- `u⁻¹ - 1` at `u = exp (i F)` has derivative `G ↦ -i G` at `F = 0`. -/
-private theorem hasFDerivAt_subOne_inv_expGauge_zero :
-    HasFDerivAt (fun F ↦ subOne (expGauge hs F)⁻¹)
-      (-(I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL)) 0 := by
-  have hg : HasFDerivAt (fun F ↦ subOne (expGauge hs F))
-      (I • (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL) (-0) := by
-    rw [neg_zero]
-    exact hasFDerivAt_subOne_expGauge_zero
-  have h := hg.comp (0 : realSubmodule ℂ (zero_le_one.trans hs.le)) (hasFDerivAt_id 0).neg
-  simp only [Function.comp_def, AddChar.map_neg_eq_inv] at h
-  exact h.congr_fderiv (ContinuousLinearMap.ext fun G ↦ by simp)
-
-/-- At `F = 0` the map `F ↦ Re (exp (i F)) - 1` from the real phases to `H^s(ℂ)` has derivative
-zero. -/
-theorem hasFDerivAt_reSubOne_expGauge_zero :
-    HasFDerivAt (fun F ↦ reSubOne (expGauge hs F))
-      (0 : realSubmodule ℂ (zero_le_one.trans hs.le) →L[ℝ] H^{s}(ℂ)) 0 := by
-  simp only [reSubOne_def]
-  exact ((hasFDerivAt_subOne_expGauge_zero.add hasFDerivAt_subOne_inv_expGauge_zero).const_smul
-    (2 : ℂ)⁻¹).congr_fderiv (by simp)
-
-/-- At `F = 0` the map `F ↦ Im (exp (i F))` from the real phases to `H^s(ℂ)` has derivative the
-inclusion `G ↦ G` of the real phases. -/
-theorem hasFDerivAt_imPart_expGauge_zero :
-    HasFDerivAt (fun F ↦ imPart (expGauge hs F))
-      (realSubmodule ℂ (zero_le_one.trans hs.le)).subtypeL 0 := by
-  simp only [imPart_def]
-  refine ((hasFDerivAt_subOne_expGauge_zero.sub hasFDerivAt_subOne_inv_expGauge_zero).const_smul
-    (-(I / 2))).congr_fderiv ?_
-  refine ContinuousLinearMap.ext fun G ↦ ?_
-  have hI : -(I / 2 * (2 * I)) = 1 := by linear_combination (-1 : ℂ) * I_sq
-  simp [← two_smul ℂ, smul_smul, hI]
 
 /-! ### The infinitesimal gauge action on the Sobolev scale -/
 
@@ -155,11 +90,13 @@ variable (hs' : (finrank ℝ ℂ : ℝ) < 2 * (k : ℝ)) (y : Fin 4 → H^{(k : 
   (G : H^{(k : ℝ) + 1}(ℂ))
 
 /-- The first connection coordinate of `d₀ G` is `-∂₁ G`. -/
+@[simp]
 theorem sobolevGaugeDirection_apply_zero :
     sobolevGaugeDirection f m y G 0 = -lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 G :=
   (rfl)
 
 /-- The second connection coordinate of `d₀ G` is `-∂₂ G`. -/
+@[simp]
 theorem sobolevGaugeDirection_apply_one :
     sobolevGaugeDirection f m y G 1 = -lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I G :=
   (rfl)
@@ -273,13 +210,13 @@ theorem hasFDerivAt_smulCoord_expGauge_zero (y : Fin 4 → H^{(k : ℝ)}(ℂ)) :
     refine ((hy 0).sub (((hD 1).add (M.hasFDerivAt_of_bilinear hιR (hD 1))).sub
       (M.hasFDerivAt_of_bilinear hιJ (hDR 1)))).congr_fderiv ?_
     refine ContinuousLinearMap.ext fun p ↦ ?_
-    simp [hM, sobolevGaugeDirection_apply_zero]
+    simp [hM]
     abel
   · simp only [Fin.mk_one, smulCoord_one hs']
     refine ((hy 1).sub (((hD I).add (M.hasFDerivAt_of_bilinear hιR (hD I))).sub
       (M.hasFDerivAt_of_bilinear hιJ (hDR I)))).congr_fderiv ?_
     refine ContinuousLinearMap.ext fun p ↦ ?_
-    simp [hM, sobolevGaugeDirection_apply_one]
+    simp [hM]
     abel
   · simp only [Fin.reduceFinMk, smulCoord_two hs']
     refine (((((hy 2).add (M.hasFDerivAt_of_bilinear hιR (hy 2))).sub
