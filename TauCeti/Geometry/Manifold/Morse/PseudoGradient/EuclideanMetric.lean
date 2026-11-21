@@ -74,7 +74,7 @@ namespace MorseChart
 
 section EuclideanForm
 
-variable [FiniteDimensional ℝ E] (φ : MorseChart E f x)
+variable (φ : MorseChart E f x)
 
 /-- The dot product of the coordinates of a Morse chart, as a bilinear form on the model space. -/
 private noncomputable def coordDot : E →L[ℝ] E →L[ℝ] ℝ :=
