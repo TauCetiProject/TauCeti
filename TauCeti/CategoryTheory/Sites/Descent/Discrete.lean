@@ -114,7 +114,6 @@ variable {P}
 
 /-- The objects of the fibre of the discrete pseudofunctor of `P` over `X` are the elements of
 `P.obj X`. -/
-@[simps]
 def objEquiv (X : Cᵒᵖ) : (ofPresheaf.{w'} P).obj (.mk X) ≃ P.obj X where
   toFun M := M.down.as
   invFun x := ⟨⟨x⟩⟩
