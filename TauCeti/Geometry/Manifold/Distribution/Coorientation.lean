@@ -81,7 +81,7 @@ namespace IsContMDiffDistribution
 /-- **A one-form proportional to a nonzero annihilating covector defines the hyperplane.** If the
 value at `x` of a smooth one-form `α` is a nonzero multiple of a nonzero covector `σ_x` annihilating
 the hyperplane `D x`, then `α` does not vanish at `x` and its kernel there is `D x`. -/
-theorem ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul (hD : IsContMDiffDistribution I ∞ k D)
+private theorem ne_zero_and_ker_eq_of_degreeOneEquiv_eq_smul (hD : IsContMDiffDistribution I ∞ k D)
     (hk : k + 1 = finrank ℝ E) {α : SmoothForm I M ℝ 1} {x : M} {c : ℝ} (hc : c ≠ 0)
     (hσ₀ : σ x ≠ 0) (hσD : σ x ∈ CotangentBundle.annihilatorSpace I D x)
     (hαc : SmoothForm.degreeOneEquiv α x = c • σ x) :
