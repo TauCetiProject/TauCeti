@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
-import Mathlib.FieldTheory.RatFunc.IntermediateField
 import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
@@ -48,8 +47,7 @@ absolute Galois group, acts on the rational function field.
 * `RatFunc.mapRingHom_algebraMap`: Mathlib's `RatFunc.mapRingHom φ` restricts to `φ` on
   polynomials.
 * `TauCeti.RatFunc.algebraMap_mapAlgebra`, `TauCeti.RatFunc.isScalarTower_mapAlgebra`,
-  `TauCeti.RatFunc.algebraMap_mapAlgebra_X`, `TauCeti.RatFunc.adjoin_range_algebraMap_eq_top`:
-  basic properties of `mapAlgebra` and generation of `K(X)` over `F(X)` by `K`.
+  `TauCeti.RatFunc.algebraMap_mapAlgebra_X`: basic properties of `mapAlgebra`.
 -/
 
 public section
@@ -366,16 +364,5 @@ theorem algebraMap_mapAlgebra_X :
   rw [← algebraMap_X, algebraMap_mapAlgebra_algebraMap, Polynomial.map_X, algebraMap_X]
 
 end MapAlgebra
-
-/-- For any `F(X)`-algebra structure on `K(X)` fixing `X`, `K` generates `K(X)` over `F(X)`. -/
-theorem adjoin_range_algebraMap_eq_top {F K : Type*} [Field F] [Field K]
-    [Algebra (RatFunc F) (RatFunc K)] (hX : algebraMap (RatFunc F) (RatFunc K) X = X) :
-    IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K))) = ⊤ := by
-  set S := IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K)))
-  let E : IntermediateField K (RatFunc K) :=
-    S.toSubfield.toIntermediateField fun c ↦ IntermediateField.subset_adjoin _ _ ⟨c, rfl⟩
-  have hE : E = ⊤ := eq_top_iff.mpr <| _root_.RatFunc.adjoin_X.symm.le.trans
-    (IntermediateField.adjoin_simple_le_iff.mpr (hX ▸ S.algebraMap_mem X))
-  exact eq_top_iff.mpr fun f _ ↦ (hE ▸ IntermediateField.mem_top : f ∈ E)
 
 end TauCeti.RatFunc

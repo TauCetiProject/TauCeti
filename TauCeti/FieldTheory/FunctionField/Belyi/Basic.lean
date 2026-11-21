@@ -68,8 +68,9 @@ automorphism of `k(t)` permutes the three marked places
 * `TauCeti.isAlgebraicBelyiPair_iff_of_isScalarTower`: for a tower `k(t) ⊆ E ⊆ F`, the branch
   places of `E / k(t)` and the places below the branch places of `F / E` are all marked exactly
   when `F` is an algebraic Belyi pair with constant field `k`.
-* `TauCeti.IsAlgebraicBelyiPair.tower_bot`, `TauCeti.IsAlgebraicBelyiPair.of_le`: subextensions of
-  algebraic Belyi pairs are algebraic Belyi pairs.
+* `TauCeti.IsAlgebraicBelyiPair.tower_bot`, `TauCeti.IsAlgebraicBelyiPair.of_le`,
+  `TauCeti.IsAlgebraicBelyiPair.of_algHom`: subextensions and embedded subfields of algebraic
+  Belyi pairs are algebraic Belyi pairs.
 * `TauCeti.isAlgebraicBelyiPair_iff_of_isAlgClosed`, `TauCeti.isAlgebraicBelyiPair_sup_iff`,
   `TauCeti.isAlgebraicBelyiPair_iSup_iff`, `TauCeti.isAlgebraicBelyiPair_normalClosure_iff`:
   lattice and Galois-closure stability over an algebraically closed constant field.
@@ -376,5 +377,20 @@ theorem isAlgebraicBelyiPair_normalClosure_iff (E : IntermediateField (RatFunc k
 end IsAlgClosed
 
 end Subextensions
+
+section AlgHom
+
+/-- **Being an algebraic Belyi pair pulls back along `k(t)`-embeddings.** -/
+theorem IsAlgebraicBelyiPair.of_algHom {k E F : Type*} [Field k] [CharZero k]
+    [Field E] [Algebra k E] [Algebra (RatFunc k) E] [IsScalarTower k (RatFunc k) E]
+    [FiniteDimensional (RatFunc k) E]
+    [Field F] [Algebra k F] [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+    [FiniteDimensional (RatFunc k) F]
+    (hF : IsAlgebraicBelyiPair k F) (h : E →ₐ[RatFunc k] F) : IsAlgebraicBelyiPair k E :=
+  letI : Algebra E F := h.toRingHom.toAlgebra
+  haveI : IsScalarTower (RatFunc k) E F := .of_algebraMap_eq fun x ↦ (h.commutes x).symm
+  hF.tower_bot
+
+end AlgHom
 
 end TauCeti

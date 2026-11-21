@@ -54,9 +54,12 @@ correspond to finite (Galois) algebraic Belyi extensions of `k(t)`.
   `BelyiGeometricFundamentalGroup.instInfinite`: radical elements, infinite degree, infinite order.
 * `TauCeti.map_maximalBelyiExtension_of_mapRingEquiv`,
   `TauCeti.map_maximalBelyiExtension_of_branchPointAut`: semilinear and `S₃` invariance.
-* `BelyiGeometricFundamentalGroup.exists_fixingOpenSubgroup_eq`,
-  `BelyiGeometricFundamentalGroup.exists_restrictNormalOpenNormalSubgroup_eq`: open (normal)
-  subgroup correspondence over algebraically closed `k`.
+* `BelyiGeometricFundamentalGroup.fixedField_fixingOpenSubgroup`,
+  `BelyiGeometricFundamentalGroup.fixedField_restrictNormalOpenNormalSubgroup`,
+  `BelyiGeometricFundamentalGroup.restrictNormalHom_restrictNormalHom`,
+  `BelyiGeometricFundamentalGroup.exists_fixingOpenSubgroup_eq`,
+  `BelyiGeometricFundamentalGroup.exists_restrictNormalOpenNormalSubgroup_eq`: fixed-field
+  recovery, tower compatibility, and open (normal) subgroup correspondence.
 
 ## References
 
@@ -467,6 +470,13 @@ theorem mem_fixingOpenSubgroup_iff {γ : BelyiG} :
   rw [← OpenSubgroup.mem_toSubgroup, fixingOpenSubgroup_toSubgroup,
     IntermediateField.mem_fixingSubgroup_iff]; simp
 
+/-- The fixed field of `fixingOpenSubgroup hF f` in
+`maximalBelyiExtension k (AlgebraicClosure (RatFunc k))` is the field range of
+`liftMaximalBelyiExtension hF f`. -/
+theorem fixedField_fixingOpenSubgroup :
+    IntermediateField.fixedField (fixingOpenSubgroup hF f).toSubgroup = (liftF).fieldRange := by
+  rw [fixingOpenSubgroup_toSubgroup, InfiniteGalois.fixedField_fixingSubgroup]
+
 section Normal
 
 variable [Normal (RatFunc k) F]
@@ -510,11 +520,33 @@ noncomputable def restrictNormalOpenNormalSubgroup : OpenNormalSubgroup BelyiG w
 theorem restrictNormalOpenNormalSubgroup_toSubgroup :
     (restrictNormalOpenNormalSubgroup hF f).toSubgroup = (restrictNormalHom hF f).ker := (rfl)
 
+/-- The fixed field of `restrictNormalOpenNormalSubgroup hF f` in
+`maximalBelyiExtension k (AlgebraicClosure (RatFunc k))` is the field range of
+`liftMaximalBelyiExtension hF f`. -/
+theorem fixedField_restrictNormalOpenNormalSubgroup :
+    IntermediateField.fixedField (restrictNormalOpenNormalSubgroup hF f).toSubgroup =
+      (liftF).fieldRange := by
+  rw [restrictNormalOpenNormalSubgroup_toSubgroup, ker_restrictNormalHom,
+    InfiniteGalois.fixedField_fixingSubgroup]
+
 /-- Precomposing the base-point embedding `f` with `τ ∈ Gal(F/RatFunc k)` conjugates
 `restrictNormalHom hF f` by `τ`. -/
 theorem restrictNormalHom_comp (τ : Gal(F/RatFunc k)) (γ : BelyiG) :
     restrictNormalHom hF (f.comp (τ : F →ₐ[RatFunc k] F)) γ =
       τ⁻¹ * restrictNormalHom hF f γ * τ := (liftF).restrictNormalHom_comp τ γ
+
+/-- **Restriction is transitive along composed embeddings of finite normal Belyi extensions**:
+restricting `γ` along `f : F → AlgebraicClosure (RatFunc k)` and then along `h : E → F` is
+restricting `γ` along `f ∘ h`. -/
+@[simp]
+theorem restrictNormalHom_restrictNormalHom {E : Type*} [Field E] [Algebra k E]
+    [Algebra (RatFunc k) E] [IsScalarTower k (RatFunc k) E] [FiniteDimensional (RatFunc k) E]
+    [Normal (RatFunc k) E] (h : E →ₐ[RatFunc k] F) (γ : BelyiG) :
+    h.restrictNormalHom (restrictNormalHom hF f γ) =
+      restrictNormalHom (hF.of_algHom h) (f.comp h) γ := by
+  have hcomp : liftMaximalBelyiExtension (hF.of_algHom h) (f.comp h) = (liftF).comp h :=
+    AlgHom.ext fun _ ↦ Subtype.ext rfl
+  rw [restrictNormalHom, restrictNormalHom, hcomp, AlgHom.restrictNormalHom_restrictNormalHom]
 
 /-- Topological quotient isomorphism
 `BelyiGeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker ≃ₜ* Gal(F/RatFunc k)`. -/

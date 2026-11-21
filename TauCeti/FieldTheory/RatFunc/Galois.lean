@@ -11,9 +11,11 @@ public import TauCeti.Algebra.Polynomial.Lifts
 public import TauCeti.FieldTheory.RatFunc.Map
 public import TauCeti.FieldTheory.RatFunc.NumDenom
 -- Proof-only: `isIntegrallyClosedIn_ratFunc` shows `F(X)`-automorphisms of `K(X)` preserve `K`,
--- and `ConstantExtension.Algebraic` supplies `isAlgebraic_of_constantCompositum_eq_top` and
--- `isSeparable_of_constantCompositum_eq_top`.
+-- `ConstantExtension.Algebraic` supplies `isAlgebraic_of_constantCompositum_eq_top` and
+-- `isSeparable_of_constantCompositum_eq_top`, and `ConstantExtension.RatFunc` supplies
+-- `constantCompositum_ratFunc_eq_top`.
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -151,20 +153,20 @@ include hX
 theorem isAlgebraic_of_isAlgebraic [Algebra.IsAlgebraic F K] :
     Algebra.IsAlgebraic (RatFunc F) (RatFunc K) :=
   TauCeti.isAlgebraic_of_constantCompositum_eq_top (k := F) (k' := K)
-    ((TauCeti.constantCompositum_def _ _ _).trans (adjoin_range_algebraMap_eq_top hX))
+    (TauCeti.constantCompositum_ratFunc_eq_top hX)
 
 /-- If `K / F` is separable, then `K(X) / F(X)` is separable. -/
 theorem isSeparable_of_isSeparable [Algebra.IsSeparable F K] :
     Algebra.IsSeparable (RatFunc F) (RatFunc K) :=
   TauCeti.isSeparable_of_constantCompositum_eq_top (k := F) (k' := K)
-    ((TauCeti.constantCompositum_def _ _ _).trans (adjoin_range_algebraMap_eq_top hX))
+    (TauCeti.constantCompositum_ratFunc_eq_top hX)
 
 /-- If `K / F` is normal, then `K(X) / F(X)` is normal. -/
 theorem normal_of_normal [hN : Normal F K] : Normal (RatFunc F) (RatFunc K) := by
   have := isAlgebraic_of_isAlgebraic hX
   refine ⟨fun z ↦ IntermediateField.splits_of_mem_adjoin (RatFunc F) (RatFunc K)
     (L := RatFunc K) (S := Set.range (algebraMap K (RatFunc K))) ?_ (by
-      rw [adjoin_range_algebraMap_eq_top hX]; trivial)⟩
+      rw [← TauCeti.constantCompositum_def, TauCeti.constantCompositum_ratFunc_eq_top hX]; trivial)⟩
   rintro _ ⟨c, rfl⟩
   have hdvd : minpoly (RatFunc F) (algebraMap K (RatFunc K) c) ∣
       (minpoly F c).map (algebraMap F (RatFunc F)) :=
