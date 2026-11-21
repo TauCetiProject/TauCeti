@@ -540,7 +540,7 @@ theorem continuousAt (hf : IsPuncturedSymbol ℓ f) (hℓ : 0 < ℓ) (h0 : f 0 =
 derivative `0`. -/
 theorem hasFDerivAt (hf : IsPuncturedSymbol ℓ f) (hℓ : 1 < ℓ) (h0 : f 0 = 0) :
     HasFDerivAt f (0 : E →L[ℝ] F) 0 :=
-  hasFDerivAt_zero_of_isBigO_rpow h0 hf.isBigO hℓ
+  hasFDerivAt_zero_of_isBigO_rpow h0 (by simpa using hf.isBigO) hℓ
 
 universe u v in
 /-- `IsPuncturedSymbol.contDiffAt` for a codomain in a universe at least that of `E`, where the
