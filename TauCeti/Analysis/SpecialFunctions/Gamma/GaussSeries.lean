@@ -11,7 +11,9 @@ public import Mathlib.Analysis.Complex.HalfPlane
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
 # Gauss' series for digamma
@@ -27,9 +29,21 @@ then extend it to every regular complex point. Telescoping the finite partial su
 the Euler–Gauss limit representation `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹ → digamma s`
 (`Complex.tendsto_log_add_sub_sum_inv_add`).
 
+Subtracting Gauss' series at two regular arguments cancels Euler's constant and expresses
+`digamma s - digamma w` as the absolutely convergent series
+`∑' n, (s - w) / ((w + n) * (s + n))`. This yields analyticity of `Complex.digamma` away from the
+nonpositive integers, the sharp Lipschitz bound `π² / 6` on `{s : ℂ | 1 ≤ s.re}`, strict
+monotonicity of `Real.digamma`, strict antitonicity and antitonicity of
+`t ↦ ψ(t + b) - ψ(t + a)` when `a < b` (resp. `a ≤ b`), uniform upper bounds on shifted
+differences, and Euler's integral representation
+`∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = ψ(1) - ψ(a)` for `0 < a`.
+
 ## References
 
-* [NIST DLMF, equation 5.7.6](https://dlmf.nist.gov/5.7.E6).
+* [NIST DLMF, equation 5.7.6](https://dlmf.nist.gov/5.7.E6),
+  [equation 5.9.16](https://dlmf.nist.gov/5.9.E16).
+* F. Calegari, V. Dimitrov and Y. Tang (CDT), *The unbounded denominators conjecture*,
+  J. Amer. Math. Soc. 38 (2025), Lemma 5.2.9, p. 676.
 * T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
   for the Gauss series theorem statements.
 -/
@@ -277,6 +291,61 @@ theorem digamma_eq_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
       ∑' n : ℕ, (1 / ((n : ℂ) + 1) - 1 / (s + n)) := by
   simpa only [gaussSeries, gaussTerm] using digamma_eq_gaussSeries_regular hs
 
+/-- The termwise difference `(s - w) / ((w + n) * (s + n))` of two Gauss digamma series is
+summable for all complex `s` and `w`. -/
+theorem summable_sub_div_add_mul_add (s w : ℂ) :
+    Summable fun n : ℕ ↦ (s - w) / ((w + n) * (s + n)) := by
+  refine ((summable_gaussSeries s).sub (summable_gaussSeries w)).congr_cofinite ?_
+  rw [Nat.cofinite_eq_atTop]
+  filter_upwards [eventually_ge_atTop (⌈‖s‖⌉₊ + ⌈‖w‖⌉₊ + 1)] with n hn
+  have hnR : (⌈‖s‖⌉₊ : ℝ) + ⌈‖w‖⌉₊ + 1 ≤ n := by exact_mod_cast hn
+  have hns : ‖s‖ < (n : ℝ) := by linarith [Nat.le_ceil ‖s‖, Nat.cast_nonneg (α := ℝ) ⌈‖w‖⌉₊]
+  have hnw : ‖w‖ < (n : ℝ) := by linarith [Nat.le_ceil ‖w‖, Nat.cast_nonneg (α := ℝ) ⌈‖s‖⌉₊]
+  have hs0 : s + n ≠ 0 := fun h ↦ hns.ne' (by simp [add_eq_zero_iff_eq_neg.mp h])
+  have hw0 : w + n ≠ 0 := fun h ↦ hnw.ne' (by simp [add_eq_zero_iff_eq_neg.mp h])
+  rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
+  ring
+
+/-- Away from the nonpositive integers, `digamma s - digamma w` equals the reciprocal-product
+series `∑' n, (s - w) / ((w + n) * (s + n))`. -/
+theorem digamma_sub_digamma_eq_tsum {s w : ℂ}
+    (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (hw : ∀ m : ℕ, w ≠ -(m : ℂ)) :
+    digamma s - digamma w = ∑' n : ℕ, (s - w) / ((w + n) * (s + n)) := by
+  rw [digamma_eq_gaussSeries hs, digamma_eq_gaussSeries hw,
+    add_sub_add_left_eq_sub, ← (summable_gaussSeries s).tsum_sub (summable_gaussSeries w)]
+  refine tsum_congr fun n ↦ ?_
+  have hs0 : s + n ≠ 0 := fun h ↦ hs n (add_eq_zero_iff_eq_neg.mp h)
+  have hw0 : w + n ≠ 0 := fun h ↦ hw n (add_eq_zero_iff_eq_neg.mp h)
+  rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
+  ring
+
+/-- Complex digamma is analytic away from the nonpositive integers. -/
+theorem analyticAt_digamma {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) : AnalyticAt ℂ digamma s := by
+  have hΓ := Complex.analyticAt_Gamma hs
+  simpa only [digamma_def, logDeriv, Pi.div_def] using hΓ.deriv.div hΓ (Gamma_ne_zero hs)
+
+/-- Sharp Lipschitz bound for complex digamma on the closed half-plane `{s : ℂ | 1 ≤ s.re}`:
+`‖digamma s - digamma w‖ ≤ ‖s - w‖ * (π² / 6)`. -/
+theorem norm_digamma_sub_digamma_le_of_one_le_re {s w : ℂ}
+    (hs : 1 ≤ s.re) (hw : 1 ≤ w.re) :
+    ‖digamma s - digamma w‖ ≤ ‖s - w‖ * (Real.pi ^ 2 / 6) := by
+  have hp2 : HasSum (fun n : ℕ ↦ 1 / ((n : ℝ) + 1) ^ 2) (Real.pi ^ 2 / 6) := by
+    simpa [Nat.cast_add, Nat.cast_one] using (hasSum_nat_add_iff' 1).mpr hasSum_zeta_two
+  have hsum := hp2.mul_left ‖s - w‖
+  have hbd (n : ℕ) : ‖(s - w) / ((w + n) * (s + n))‖ ≤ ‖s - w‖ * (1 / ((n : ℝ) + 1) ^ 2) := by
+    have hsn : (n : ℝ) + 1 ≤ ‖s + n‖ := by
+      have := Complex.re_le_norm (s + n); simp at this; linarith
+    have hwn : (n : ℝ) + 1 ≤ ‖w + n‖ := by
+      have := Complex.re_le_norm (w + n); simp at this; linarith
+    rw [norm_div, norm_mul, mul_one_div]
+    exact div_le_div_of_nonneg_left (norm_nonneg _) (by positivity)
+      (by nlinarith [n.cast_nonneg (α := ℝ)])
+  rw [digamma_sub_digamma_eq_tsum (ne_neg_natCast_of_re_pos (by linarith))
+    (ne_neg_natCast_of_re_pos (by linarith)), ← hsum.tsum_eq]
+  exact (norm_tsum_le_tsum_norm (summable_sub_div_add_mul_add s w).norm).trans
+    ((Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hbd hsum.summable).tsum_le_tsum
+      hbd hsum.summable)
+
 private theorem tendsto_log_add_natCast_sub_log (s : ℂ) :
     Tendsto (fun N : ℕ ↦ Complex.log (s + N) - Complex.log (((N : ℝ) + 2 : ℝ) : ℂ))
       atTop (𝓝 0) := by
@@ -335,3 +404,197 @@ theorem tendsto_log_add_sub_sum_inv_add {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n :
   · simp
 
 end Complex
+
+namespace Real
+
+private theorem gaussTerm_ofReal_re (x : ℝ) (n : ℕ) :
+    (1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n)).re = 1 / ((n : ℝ) + 1) - 1 / (x + n) := by
+  have h : 1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n) =
+      ((1 / ((n : ℝ) + 1) - 1 / (x + n) : ℝ) : ℂ) := by
+    push_cast; rfl
+  rw [h, Complex.ofReal_re]
+
+/-- The paired summands in Gauss' real digamma series are summable at every real `x`. -/
+theorem summable_gaussSeries (x : ℝ) :
+    Summable fun n : ℕ ↦ 1 / ((n : ℝ) + 1) - 1 / (x + n) :=
+  (Complex.reCLM.summable (Complex.summable_gaussSeries (x : ℂ))).congr fun n ↦ by
+    rw [Complex.reCLM_apply, gaussTerm_ofReal_re]
+
+/-- Gauss' paired reciprocal series equals real digamma away from the nonpositive integers. -/
+theorem digamma_eq_gaussSeries {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    digamma x = -eulerMascheroniConstant +
+      ∑' n : ℕ, (1 / ((n : ℝ) + 1) - 1 / (x + n)) := by
+  have h := congrArg Complex.re
+    (Complex.digamma_eq_gaussSeries (s := x) fun m hm ↦ hx m (by exact_mod_cast hm))
+  rw [Complex.digamma_ofReal, Complex.ofReal_re, Complex.add_re, Complex.neg_re, Complex.ofReal_re,
+    ← Complex.reCLM_apply, Complex.reCLM.map_tsum (Complex.summable_gaussSeries (x : ℂ))] at h
+  exact h.trans <| congrArg (-eulerMascheroniConstant + ·) <| tsum_congr fun n ↦ by
+    rw [Complex.reCLM_apply, gaussTerm_ofReal_re]
+
+/-- The real reciprocal-product series `(x - y) / ((y + n) * (x + n))` is summable for all
+real `x` and `y`. -/
+theorem summable_sub_div_add_mul_add (x y : ℝ) :
+    Summable fun n : ℕ ↦ (x - y) / ((y + n) * (x + n)) :=
+  (Complex.reCLM.summable (Complex.summable_sub_div_add_mul_add (x : ℂ) (y : ℂ))).congr fun n ↦ by
+    rw [Complex.reCLM_apply]; norm_cast
+
+/-- Away from the nonpositive integers, `Real.digamma x - Real.digamma y` equals
+`∑' n, (x - y) / ((y + n) * (x + n))`. -/
+theorem digamma_sub_digamma_eq_tsum {x y : ℝ}
+    (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (hy : ∀ m : ℕ, y ≠ -(m : ℝ)) :
+    digamma x - digamma y = ∑' n : ℕ, (x - y) / ((y + n) * (x + n)) := by
+  have h := congrArg Complex.re (Complex.digamma_sub_digamma_eq_tsum
+    (s := x) (w := y) (fun m hm ↦ hx m (by exact_mod_cast hm))
+    (fun m hm ↦ hy m (by exact_mod_cast hm)))
+  rw [Complex.digamma_ofReal, Complex.digamma_ofReal, ← Complex.ofReal_sub, Complex.ofReal_re,
+    ← Complex.reCLM_apply,
+    Complex.reCLM.map_tsum (Complex.summable_sub_div_add_mul_add (x : ℂ) (y : ℂ))] at h
+  exact h.trans <| tsum_congr fun n ↦ by rw [Complex.reCLM_apply]; norm_cast
+
+/-- Real digamma is strictly monotone on the positive real axis. -/
+theorem strictMonoOn_digamma : StrictMonoOn digamma (Ioi 0) := by
+  intro x hx y hy hxy
+  rw [← sub_pos, digamma_sub_digamma_eq_tsum
+    (fun m ↦ by linarith [mem_Ioi.mp hy, m.cast_nonneg (α := ℝ)])
+    (fun m ↦ by linarith [mem_Ioi.mp hx, m.cast_nonneg (α := ℝ)])]
+  refine (summable_sub_div_add_mul_add y x).tsum_pos (fun n ↦ div_nonneg (sub_nonneg.mpr hxy.le)
+    (mul_pos (by linarith [mem_Ioi.mp hx, n.cast_nonneg (α := ℝ)])
+      (by linarith [mem_Ioi.mp hy, n.cast_nonneg (α := ℝ)])).le) 0 ?_
+  simpa using div_pos (sub_pos.mpr hxy) (mul_pos (mem_Ioi.mp hx) (mem_Ioi.mp hy))
+
+/-- When `a < b`, the shifted digamma difference `t ↦ ψ(t + b) - ψ(t + a)` is strictly antitone
+on `(-a, ∞)`. -/
+theorem strictAntiOn_digamma_add_sub_digamma_add {a b : ℝ} (hab : a < b) :
+    StrictAntiOn (fun t : ℝ ↦ digamma (t + b) - digamma (t + a)) (Ioi (-a)) := by
+  intro t₁ ht₁ t₂ _ ht
+  have hreg {u : ℝ} (hu : 0 < u) (m : ℕ) : u ≠ -(m : ℝ) := by linarith [m.cast_nonneg (α := ℝ)]
+  have h0 := mem_Ioi.mp ht₁
+  dsimp only
+  rw [digamma_sub_digamma_eq_tsum (hreg (by linarith)) (hreg (by linarith)),
+    digamma_sub_digamma_eq_tsum (hreg (by linarith)) (hreg (by linarith))]
+  refine (summable_sub_div_add_mul_add (t₂ + b) (t₂ + a)).tsum_lt_tsum (i := 0) (fun n ↦ ?_) ?_
+    (summable_sub_div_add_mul_add (t₁ + b) (t₁ + a))
+  · simp only [add_sub_add_left_eq_sub]
+    have _ := n.cast_nonneg (α := ℝ)
+    exact div_le_div_of_nonneg_left (sub_nonneg.mpr hab.le) (mul_pos (by linarith) (by linarith))
+      (mul_le_mul (by linarith) (by linarith) (by linarith) (by linarith))
+  · simp only [add_sub_add_left_eq_sub, Nat.cast_zero, add_zero]
+    exact div_lt_div_of_pos_left (sub_pos.mpr hab) (mul_pos (by linarith) (by linarith))
+      (mul_lt_mul'' (by linarith) (by linarith) (by linarith) (by linarith))
+
+/-- When `a ≤ b`, the shifted digamma difference `t ↦ ψ(t + b) - ψ(t + a)` is antitone on
+`(-a, ∞)`. -/
+theorem antitoneOn_digamma_add_sub_digamma_add {a b : ℝ} (hab : a ≤ b) :
+    AntitoneOn (fun t : ℝ ↦ digamma (t + b) - digamma (t + a)) (Ioi (-a)) := by
+  rcases hab.eq_or_lt with rfl | hlt
+  · intro _ _ _ _ _; simp
+  · exact (strictAntiOn_digamma_add_sub_digamma_add hlt).antitoneOn
+
+/-- Uniform upper bound on shifted digamma differences: for `t₀ ≤ t`, `-t₀ < c`, `c ≤ a`, and
+`c ≤ b`, `ψ(t + b) - ψ(t + a) ≤ ψ(t₀ + b) - ψ(t₀ + c)` (generalizing CDT Lemma 5.2.9). -/
+theorem digamma_add_sub_digamma_add_le {t₀ t c a b : ℝ}
+    (ht : t₀ ≤ t) (hc : -t₀ < c) (hca : c ≤ a) (hcb : c ≤ b) :
+    digamma (t + b) - digamma (t + a) ≤ digamma (t₀ + b) - digamma (t₀ + c) :=
+  (sub_le_sub_left (monotoneOn_digamma
+    (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) (by linarith)) _).trans <|
+    antitoneOn_digamma_add_sub_digamma_add hcb
+      (mem_Ioi.mpr (by linarith)) (mem_Ioi.mpr (by linarith)) ht
+
+section EulerIntegral
+
+open MeasureTheory
+
+private theorem abs_rpow_sub_one_div_one_sub_le {a w : ℝ} (ha : 0 < a) (hw : w ∈ Ioo (0 : ℝ) 1) :
+    |(w ^ (a - 1) - 1) / (1 - w)| ≤ w ^ (a - 1) + (⌈a⌉₊ : ℝ) := by
+  have h1w : 0 < 1 - w := sub_pos.mpr hw.2
+  rw [abs_div, abs_of_pos h1w, div_le_iff₀ h1w]
+  rcases le_or_gt a 1 with ha1 | ha1
+  · have hge : 1 ≤ w ^ (a - 1) := by
+      simpa using rpow_le_rpow_of_exponent_ge hw.1 hw.2.le (by linarith : a - 1 ≤ 0)
+    have hwa : w ^ (a - 1) * w = w ^ a := by rw [← rpow_add_one hw.1.ne', sub_add_cancel]
+    have hle1 : w ^ a ≤ 1 := rpow_le_one hw.1.le hw.2.le ha.le
+    rw [abs_of_nonneg (sub_nonneg.mpr hge)]
+    nlinarith [Nat.cast_nonneg (α := ℝ) ⌈a⌉₊]
+  · have hle : w ^ (a - 1) ≤ 1 := rpow_le_one hw.1.le hw.2.le (by linarith)
+    have hpow : w ^ ⌈a⌉₊ ≤ w ^ (a - 1) := by
+      rw [← rpow_natCast]
+      exact rpow_le_rpow_of_exponent_ge hw.1 hw.2.le (by linarith [Nat.le_ceil a])
+    have hgeom := geom_sum_mul w ⌈a⌉₊
+    have hsum_le : ∑ i ∈ Finset.range ⌈a⌉₊, w ^ i ≤ (⌈a⌉₊ : ℝ) :=
+      (Finset.sum_le_card_nsmul _ _ 1 fun i _ ↦ pow_le_one₀ hw.1.le hw.2.le).trans_eq (by simp)
+    rw [abs_of_nonpos (sub_nonpos.mpr hle), neg_sub]
+    nlinarith [rpow_nonneg hw.1.le (a - 1)]
+
+/-- For every `0 < a`, the Euler digamma kernel `(w ^ (a - 1) - 1) / (1 - w)` is interval
+integrable on `[0, 1]`. -/
+theorem intervalIntegrable_rpow_sub_one_div_one_sub {a : ℝ} (ha : 0 < a) :
+    IntervalIntegrable (fun w : ℝ ↦ (w ^ (a - 1) - 1) / (1 - w)) volume 0 1 := by
+  have hdom : IntervalIntegrable (fun w : ℝ ↦ w ^ (a - 1) + (⌈a⌉₊ : ℝ)) volume 0 1 :=
+    (intervalIntegral.intervalIntegrable_rpow' (by linarith)).add intervalIntegrable_const
+  rw [intervalIntegrable_iff, IntegrableOn, uIoc_of_le zero_le_one,
+    ← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hdom ⊢
+  refine hdom.mono' ((((ContinuousOn.rpow_const (s := Ioo (0 : ℝ) 1) continuousOn_id
+    fun w hw ↦ Or.inl hw.1.ne').sub continuousOn_const).div (continuousOn_const.sub continuousOn_id)
+      fun w hw ↦ sub_ne_zero.mpr hw.2.ne').aestronglyMeasurable measurableSet_Ioo) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with w hw
+  simpa only [Real.norm_eq_abs] using abs_rpow_sub_one_div_one_sub_le ha hw
+
+private theorem integral_finset_rpow_sub_pow {a : ℝ} (ha : 0 < a) (N : ℕ) :
+    ∫ w in (0 : ℝ)..1, (∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k)) =
+      ∑ k ∈ Finset.range N, (1 / ((k : ℝ) + a) - 1 / ((k : ℝ) + 1)) := by
+  rw [intervalIntegral.integral_finsetSum fun k _ ↦
+    (intervalIntegral.intervalIntegrable_rpow' (by linarith [k.cast_nonneg (α := ℝ)])).sub
+      (Continuous.intervalIntegrable (by fun_prop) 0 1)]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  have hka : (0 : ℝ) < (k : ℝ) + a := by linarith [k.cast_nonneg (α := ℝ)]
+  rw [intervalIntegral.integral_sub (intervalIntegral.intervalIntegrable_rpow' (by linarith))
+      (Continuous.intervalIntegrable (by fun_prop) 0 1),
+    integral_rpow (Or.inl (by linarith)), integral_pow, sub_add_cancel, one_rpow,
+    zero_rpow hka.ne']
+  simp [zero_pow (Nat.succ_ne_zero k)]
+
+/-- **Euler's integral representation of real digamma** (DLMF 5.9.16): for every `0 < a`,
+`∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = digamma 1 - digamma a`
+(equivalently `-eulerMascheroniConstant - digamma a`). -/
+theorem integral_rpow_sub_one_div_one_sub {a : ℝ} (ha : 0 < a) :
+    ∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = digamma 1 - digamma a := by
+  let F : ℕ → ℝ → ℝ := fun N w ↦ ∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k)
+  have hrpow_mul {w : ℝ} (hw : 0 < w) (k : ℕ) :
+      w ^ ((k : ℝ) + a - 1) - w ^ k = (w ^ (a - 1) - 1) * w ^ k := by
+    rw [sub_mul, one_mul, (by ring : (k : ℝ) + a - 1 = (a - 1) + k), rpow_add hw, rpow_natCast]
+  have hdct : Tendsto (fun N ↦ ∫ w in (0 : ℝ)..1, F N w) atTop
+      (𝓝 (∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w))) := by
+    refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (F := F)
+      (fun w ↦ w ^ (a - 1) + (⌈a⌉₊ : ℝ)) (Eventually.of_forall fun N ↦ ?_)
+      (Eventually.of_forall fun N ↦ ?_)
+      ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).add intervalIntegrable_const) ?_
+    · exact (intervalIntegrable_iff.mp (IntervalIntegrable.sum (Finset.range N) fun k _ ↦
+        (intervalIntegral.intervalIntegrable_rpow' (by linarith [k.cast_nonneg (α := ℝ)])).sub
+          (Continuous.intervalIntegrable (by fun_prop) 0 1))).aestronglyMeasurable.congr
+        (Eventually.of_forall fun w ↦ Finset.sum_apply w _ _)
+    · filter_upwards [Measure.ae_ne volume (1 : ℝ)] with w hw1 hw
+      rw [uIoc_of_le zero_le_one] at hw
+      have hwoo : w ∈ Ioo (0 : ℝ) 1 := ⟨hw.1, lt_of_le_of_ne hw.2 hw1⟩
+      have hFN : F N w = (w ^ (a - 1) - 1) * ∑ k ∈ Finset.range N, w ^ k := by
+        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun k _ ↦ hrpow_mul hwoo.1 k
+      rw [hFN, Real.norm_eq_abs, abs_mul,
+        abs_of_nonneg (Finset.sum_nonneg fun k _ ↦ pow_nonneg hwoo.1.le k)]
+      refine (mul_le_mul_of_nonneg_left (sum_le_hasSum _ (fun _ _ ↦ pow_nonneg hwoo.1.le _)
+        (hasSum_geometric_of_lt_one hwoo.1.le hwoo.2)) (abs_nonneg _)).trans ?_
+      rw [← abs_of_pos (inv_pos.mpr (sub_pos.mpr hwoo.2)), ← abs_mul, ← div_eq_mul_inv]
+      exact abs_rpow_sub_one_div_one_sub_le ha hwoo
+    · filter_upwards [Measure.ae_ne volume (1 : ℝ)] with w hw1 hw
+      rw [uIoc_of_le zero_le_one] at hw
+      exact (div_eq_mul_inv (w ^ (a - 1) - 1) (1 - w) ▸
+        ((hasSum_geometric_of_lt_one hw.1.le (lt_of_le_of_ne hw.2 hw1)).mul_left _).congr_fun
+          fun k ↦ hrpow_mul hw.1 k).tendsto_sum_nat
+  simp_rw [F, integral_finset_rpow_sub_pow ha] at hdct
+  have hd := digamma_eq_gaussSeries (x := a) fun m ↦ by linarith [m.cast_nonneg (α := ℝ)]
+  have hgauss := (summable_gaussSeries a).hasSum.neg
+  rw [(by rw [digamma_one]; linarith :
+    -(∑' n : ℕ, (1 / ((n : ℝ) + 1) - 1 / (a + n))) = digamma 1 - digamma a)] at hgauss
+  exact tendsto_nhds_unique hdct (hgauss.congr_fun fun k ↦ by ring).tendsto_sum_nat
+
+end EulerIntegral
+
+end Real
