@@ -208,16 +208,35 @@ theorem ofDeflation_comp {X Y Z : C} (p : X ⟶ Y) (q : Y ⟶ Z) (hp : E.IsDefla
 reversed deflation `X ⟶ M` followed by the inflation `M ⟶ Y`. Together with
 `homMk_eq_homMk_iff` and `exists_eq_homMk`, every morphism of `Q(E)` factors in this way, uniquely
 up to an isomorphism of the middle object. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem ofDeflation_comp_ofInflation {X Y M : C} (p : M ⟶ X) (i : M ⟶ Y) (hp : E.IsDeflation p)
     (hi : E.IsInflation i) :
     ofDeflation p hp ≫ ofInflation i hi = homMk p i hp hi := by
   rw [ofDeflation, ofInflation, homMk_comp_homMk _ _ _ _ (IsPullback.of_id_fst (f := 𝟙 M))]
   simp
 
+/-- A reversed deflation followed by the morphism of a span is the morphism of the span whose
+deflation leg is the composite deflation. -/
+@[reassoc (attr := simp)]
+theorem ofDeflation_comp_homMk {X X' Y M : C} (q : X' ⟶ X) (p : M ⟶ X') (i : M ⟶ Y)
+    (hq : E.IsDeflation q) (hp : E.IsDeflation p) (hi : E.IsInflation i) :
+    ofDeflation q hq ≫ homMk p i hp hi = homMk (p ≫ q) i (E.isDeflation_comp p q hp hq) hi := by
+  rw [ofDeflation, homMk_comp_homMk _ _ _ _ (IsPullback.of_id_fst (f := p))]
+  simp
+
+/-- The morphism of a span followed by an inflation is the morphism of the span whose inflation
+leg is the composite inflation. -/
+@[reassoc (attr := simp)]
+theorem homMk_comp_ofInflation {X Y Y' M : C} (p : M ⟶ X) (i : M ⟶ Y) (j : Y ⟶ Y')
+    (hp : E.IsDeflation p) (hi : E.IsInflation i) (hj : E.IsInflation j) :
+    homMk p i hp hi ≫ ofInflation j hj = homMk p (i ≫ j) hp (E.isInflation_comp i j hi hj) := by
+  rw [ofInflation, homMk_comp_homMk _ _ _ _ (IsPullback.of_id_snd (f := i))]
+  simp
+
 /-- **The basic relation in `Q(E)`.** For a pullback square of an inflation `i` along a
 deflation `q`, the inflation `i` followed by the reversed deflation `q` is the reversed base
 change of `q` followed by the base change of `i`. -/
+@[reassoc]
 theorem ofInflation_comp_ofDeflation {Y M N P : C} {i : M ⟶ Y} {q : N ⟶ Y} {c : P ⟶ N}
     {a : P ⟶ M} (hi : E.IsInflation i) (hq : E.IsDeflation q) (sq : IsPullback c a q i) :
     ofInflation i hi ≫ ofDeflation q hq =
@@ -272,10 +291,18 @@ theorem ofIso_inv {X Y : C} (e : X ≅ Y) :
 
 /-- For an isomorphism `e` of `C`, the reversed deflation `e.hom` is the inverse of
 `ofIso e`. -/
+@[simp]
 theorem ofDeflation_hom {X Y : C} (e : X ≅ Y) :
     ofDeflation e.hom (E.deflations.of_isIso _) = (ofIso e).inv := by
   rw [ofDeflation, ofIso_inv, ofInflation, homMk_eq_homMk_iff]
   exact ⟨e, by simp, by simp⟩
+
+/-- For an isomorphism `e` of `C`, the reversed deflation `e.inv` is `ofIso e`. -/
+@[simp]
+theorem ofDeflation_inv {X Y : C} (e : X ≅ Y) :
+    ofDeflation e.inv (E.deflations.of_isIso _) = (ofIso e).hom := by
+  rw [ofDeflation, ofIso_hom, ofInflation, homMk_eq_homMk_iff]
+  exact ⟨e.symm, by simp, by simp⟩
 
 /-- If the composite of two spans is the identity, the inflation leg of the second span is an
 isomorphism. -/
