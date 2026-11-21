@@ -9,13 +9,10 @@ public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Artinian.Defs
 public import Mathlib.RingTheory.Length
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.CategoryTheory.Abelian.LengthFunction
 public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
-import Mathlib.Algebra.Category.FGModuleCat.Colimits
-import Mathlib.Algebra.Category.FGModuleCat.Limits
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
-import TauCeti.Algebra.Category.ModuleCat.Length
+import TauCeti.Algebra.Category.FGModuleCat.Length
 import TauCeti.CategoryTheory.Abelian.HaradaSai
 
 /-!
@@ -33,8 +30,6 @@ assumes only the length bound, not representation-finiteness.
 
 ## Main results
 
-* `FGModuleCat.isLengthFunction_length`: over a left Noetherian ring, the length of modules is a
-  length function on the abelian category `FGModuleCat A`.
 * `FGModuleCat.jacobsonRadicalIdeal_pow_eq_bot_of_length_le`: over a left Artinian ring whose
   finitely generated indecomposable modules have length at most `b`, the `(2 ^ b - 1)`-th power
   of the radical of `FGModuleCat A` vanishes.
@@ -43,10 +38,10 @@ assumes only the length bound, not representation-finiteness.
 
 Over a left Artinian ring, hence left Noetherian ring (Hopkins–Levitzki), `FGModuleCat A` is
 abelian, and it is Krull-Schmidt (`FGModuleCat.isKrullSchmidt_of_isArtinianRing`). The radical
-bound is the case of the length of modules of the bound for Krull-Schmidt abelian categories with
-a length function (`TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_length_le`), which rests on the
-Harada–Sai lemma. The length of modules is a length function on `FGModuleCat A` because the
-inclusion into `ModuleCat A` preserves short exact sequences and reflects zero objects.
+bound is the case of `FGModuleCat A` of the bound for Krull-Schmidt abelian categories whose
+indecomposable objects have bounded length (`TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_length_le`),
+which rests on the Harada–Sai lemma. The length of a finitely generated module as an object of
+`FGModuleCat A` is its length as a module (`FGModuleCat.length_eq`).
 
 ## References
 
@@ -66,24 +61,13 @@ open CategoryTheory CategoryTheory.Limits TauCeti
 
 universe w v
 
-/-- **The length of modules is a length function on `FGModuleCat A`** over a left Noetherian ring
-`A`: it is additive on short exact sequences of finitely generated modules and vanishes exactly on
-the zero module. -/
-theorem isLengthFunction_length (A : Type v) [Ring A] [IsNoetherianRing A] :
-    IsLengthFunction (fun X : FGModuleCat.{w} A ↦ Module.length A X.obj) where
-  add _ hS := (ModuleCat.isLengthFunction_length A).add _
-    (hS.map_of_exact (forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A)))
-  eq_zero_iff X := ((ModuleCat.isLengthFunction_length A).eq_zero_iff X.obj).trans
-    ⟨IsZero.of_full_of_faithful_of_isZero (ObjectProperty.ι _) X,
-      (ObjectProperty.ι _).map_isZero⟩
-
 /-- **The radical of `mod A` is nilpotent of index at most `2 ^ b - 1`** when every finitely
 generated indecomposable module over the left Artinian ring `A` has length at most `b`: the
 `(2 ^ b - 1)`-th power of the radical of `FGModuleCat A` vanishes. -/
 theorem jacobsonRadicalIdeal_pow_eq_bot_of_length_le {A : Type v} [Ring A] [IsArtinianRing A]
     {b : ℕ} (h : ∀ X : FGModuleCat.{w} A, Indecomposable X.obj → Module.length A X.obj ≤ b) :
     jacobsonRadicalIdeal (FGModuleCat.{w} A) ^ (2 ^ b - 1) = ⊥ :=
-  TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_length_le (isLengthFunction_length A)
-    fun X hX ↦ h X ((indecomposable_obj_iff X).mpr hX)
+  TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_length_le
+    fun X hX ↦ (length_eq X).trans_le (h X ((indecomposable_obj_iff X).mpr hX))
 
 end FGModuleCat

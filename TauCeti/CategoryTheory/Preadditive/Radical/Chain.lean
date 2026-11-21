@@ -22,8 +22,8 @@ objects lies in the `n`-th power of the radical
 In a Krull-Schmidt category these composites detect the powers of the radical: `radⁿ` vanishes
 exactly when every composite of a chain of `n` non-isomorphisms between objects with local
 endomorphism rings vanishes (`TauCeti.jacobsonRadicalIdeal_pow_eq_bot_iff`). This is the form in
-which the Harada–Sai lemma, a statement about such chains in an abelian category with a length
-function, bounds the nilpotency index of the radical
+which the Harada–Sai lemma, a statement about such chains between objects of bounded length in an
+abelian category, bounds the nilpotency index of the radical
 (`TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_length_le`).
 
 ## Main results
