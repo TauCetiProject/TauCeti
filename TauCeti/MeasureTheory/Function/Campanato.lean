@@ -101,6 +101,8 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `norm_setAverage_closedBall_restrict_sub_setAverage_closedBall_le`,
   `norm_setAverage_closedBall_sub_setAverage_closedBall_le`: mean oscillation decaying like `r^α`
   at `x` keeps the averages over concentric balls within `O(r^α)` of each other.
+* `setAverage_closedBall_restrict_norm_sub_le`: by Jensen's inequality, square mean oscillation
+  of order `r^{n+2κ}` gives mean oscillation of order `r^κ`, on a set with density bounded below.
 * `exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`: square mean oscillation decaying like
   `r^{n+2κ}` at `x` keeps the averages bounded, so that `∫_{B(x, r) ∩ Ω} ‖f‖²` decays like `rⁿ`,
   on a set with density bounded below in the balls around `x`.
@@ -549,7 +551,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 `c` in `closedBall z t`, and let `∫_{B(z, t) ∩ Ω} ‖g - g_t‖² ≤ C V ((t / R)ⁿ (t / R)^{2κ})`, where
 `g_t` is the average of `g` over `ball z t ∩ Ω`. Then the mean oscillation of `g` on
 `closedBall z t` for `μ.restrict Ω` is at most `√(C V / (μ(B(z, R)) c)) R^{-κ} t^κ`. -/
-private lemma setAverage_closedBall_restrict_norm_sub_le {κ C V R t : ℝ} (hc : 0 < c)
+theorem setAverage_closedBall_restrict_norm_sub_le {κ C V R t : ℝ} (hc : 0 < c)
     (hR : 0 < R) (ht : 0 < t)
     (hd : (c : ℝ≥0∞) * μ (closedBall z t) ≤ μ (closedBall z t ∩ Ω))
     (hg : MemLp g 2 (μ.restrict (ball z t ∩ Ω)))
