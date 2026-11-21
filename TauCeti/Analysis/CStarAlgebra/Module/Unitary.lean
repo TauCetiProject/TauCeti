@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.Module.Action
 public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable
 
 /-!
@@ -55,6 +56,11 @@ is its adjoint if and only if it is surjective and preserves the `A`-valued inne
   (Theorem 3.5) for adjointable operators and for plain functions.
 * `TauCeti.AdjointableMap.mem_unitary_iff`: `U ∈ unitary (AdjointableMap A E E)` iff `U` is
   surjective and preserves the `A`-valued inner product.
+* `LinearMap.isometryOfInnerCStarModule`, `LinearEquiv.isometryOfInnerCStarModule`: construct
+  linear isometries and isometric equivalences from inner-product preservation.
+* `LinearIsometryEquiv.inner_map_map_of_map_smul_cstarModule`,
+  `LinearIsometryEquiv.inner_map_map_cstarModule`: every `A`-linear isometric equivalence
+  preserves `⟪·, ·⟫_A`.
 
 ## References
 
@@ -729,3 +735,138 @@ theorem exists_adjoint_comp_eq_id_iff {f : E → F} :
 end AdjointableMap
 
 end TauCeti
+
+namespace LinearMap
+
+variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E →ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
+
+/-- An `R`-linear map between Hilbert C⋆-modules preserving self-inner products is an `R`-linear
+isometry. -/
+def isometryOfInnerCStarModule : E →ₗᵢ[R] F where
+  toLinearMap := f
+  norm_map' x := CStarModule.norm_eq_of_inner_self_eq (hf x)
+
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
+
+@[simp] theorem isometryOfInnerCStarModule_toLinearMap :
+    (f.isometryOfInnerCStarModule hf).toLinearMap = f := (rfl)
+
+end LinearMap
+
+namespace LinearEquiv
+
+variable {R A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [Semiring R] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [Module R E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [Module R F] [CStarModule A F]
+  (f : E ≃ₗ[R] F) (hf : ∀ x : E, inner A (f x) (f x) = inner A x x)
+
+/-- An `R`-linear equivalence between Hilbert C⋆-modules preserving self-inner products is a linear
+isometric equivalence. -/
+def isometryOfInnerCStarModule : E ≃ₗᵢ[R] F where
+  toLinearEquiv := f
+  norm_map' := (f.toLinearMap.isometryOfInnerCStarModule hf).norm_map
+
+@[simp] theorem coe_isometryOfInnerCStarModule : ⇑(f.isometryOfInnerCStarModule hf) = f := (rfl)
+
+@[simp] theorem isometryOfInnerCStarModule_toLinearEquiv :
+    (f.isometryOfInnerCStarModule hf).toLinearEquiv = f := (rfl)
+
+@[simp] theorem coe_symm_isometryOfInnerCStarModule :
+    ⇑(f.isometryOfInnerCStarModule hf).symm = f.symm := (rfl)
+
+end LinearEquiv
+
+namespace LinearIsometryEquiv
+
+section NonUnital
+
+variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [CStarModule A F]
+
+/-- **Lance's theorem** (Lance, Theorem 3.5) over a (possibly non-unital) C⋆-algebra `A`: every
+`f : E ≃ₗᵢ[ℂ] F` commuting with the `A`-action preserves `⟪·, ·⟫_A`. -/
+theorem inner_map_map_of_map_smul_cstarModule (f : E ≃ₗᵢ[ℂ] F)
+    (hf : ∀ (a : A) (x : E), f (a • x) = a • f x) (x y : E) :
+    inner A (f x) (f y) = inner A x y := by
+  let : NormedSpace ℂ E := .ofCore (CStarModule.normedSpaceCore A)
+  let : NormedSpace ℂ F := .ofCore (CStarModule.normedSpaceCore A)
+  have hfsymm (a : A) (z : F) : f.symm (a • z) = a • f.symm z :=
+    f.injective (by rw [f.apply_symm_apply, hf, f.apply_symm_apply])
+  let fCLM : E →L[ℂ] F := f.toLinearIsometry.toContinuousLinearMap
+  let fSymmCLM : F →L[ℂ] E := f.symm.toLinearIsometry.toContinuousLinearMap
+  have hf_norm : ‖fCLM‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z ↦ by simp [fCLM]
+  have hfsymm_norm : ‖fSymmCLM‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z ↦ by simp [fSymmCLM]
+  refine (CStarModule.inner_map_map_iff_forall_inner_map_map_self f).mpr (fun z ↦ ?_) x y
+  refine le_antisymm ?_ ?_
+  · calc inner A (f z) (f z)
+        ≤ ‖fCLM‖ ^ 2 • inner A z z :=
+          CStarModule.inner_map_map_le_norm_sq_smul fCLM hf z
+      _ ≤ (1 : ℝ) ^ 2 • inner A z z := by
+          gcongr; exact CStarModule.inner_self_nonneg
+      _ = inner A z z := by simp
+  · calc inner A z z
+        = inner A (f.symm (f z)) (f.symm (f z)) := by simp
+      _ ≤ ‖fSymmCLM‖ ^ 2 • inner A (f z) (f z) :=
+          CStarModule.inner_map_map_le_norm_sq_smul fSymmCLM hfsymm (f z)
+      _ ≤ (1 : ℝ) ^ 2 • inner A (f z) (f z) := by
+          gcongr; exact CStarModule.inner_self_nonneg
+      _ = inner A (f z) (f z) := by simp
+
+end NonUnital
+
+section Left
+
+variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [Module A F] [CStarModule A F]
+
+/-- **Lance's theorem** (Lance, Theorem 3.5): every surjective `A`-linear isometry `f : E ≃ₗᵢ[A] F`
+over a unital C⋆-algebra preserves `⟪·, ·⟫_A`. -/
+@[simp] theorem inner_map_map_cstarModule (f : E ≃ₗᵢ[A] F) (x y : E) :
+    inner A (f x) (f y) = inner A x y := by
+  have : IsScalarTower ℂ A E := CStarModule.isScalarTower A E
+  have : IsScalarTower ℂ A F := CStarModule.isScalarTower A F
+  let fC : E ≃ₗᵢ[ℂ] F :=
+    { toLinearEquiv := f.toLinearEquiv.restrictScalars ℂ
+      norm_map' := f.norm_map }
+  exact fC.inner_map_map_of_map_smul_cstarModule f.map_smul x y
+
+/-- A surjective `A`-linear isometry `f : E ≃ₗᵢ[A] F` preserves diagonal inner products
+`⟪x, x⟫_A`. -/
+theorem inner_map_map_self_cstarModule (f : E ≃ₗᵢ[A] F) (x : E) :
+    inner A (f x) (f x) = inner A x x := f.inner_map_map_cstarModule x x
+
+/-- Moving a surjective `A`-linear isometry `f : E ≃ₗᵢ[A] F` across the `A`-valued inner
+product: `⟪f x, y⟫_A = ⟪x, f.symm y⟫_A`. -/
+theorem inner_map_eq_flip_cstarModule (f : E ≃ₗᵢ[A] F) (x : E) (y : F) :
+    inner A (f x) y = inner A x (f.symm y) := by
+  conv_lhs => rw [← f.apply_symm_apply y, f.inner_map_map_cstarModule]
+
+end Left
+
+section Right
+
+variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
+
+/-- A surjective right `A`-linear isometry `f : E ≃ₗᵢ[Aᵐᵒᵖ] F` preserves `⟨x, y⟩_A`. -/
+theorem unop_inner_map_map_cstarModule (f : E ≃ₗᵢ[Aᵐᵒᵖ] F) (x y : E) :
+    unop (inner Aᵐᵒᵖ (f x) (f y)) = unop (inner Aᵐᵒᵖ x y) :=
+  congrArg unop (f.inner_map_map_cstarModule x y)
+
+/-- Moving a surjective right `A`-linear isometry `f : E ≃ₗᵢ[Aᵐᵒᵖ] F` across the `A`-valued
+inner product: `⟨f x, y⟩_A = ⟨x, f.symm y⟩_A`. -/
+theorem unop_inner_map_eq_flip_cstarModule (f : E ≃ₗᵢ[Aᵐᵒᵖ] F) (x : E) (y : F) :
+    unop (inner Aᵐᵒᵖ (f x) y) = unop (inner Aᵐᵒᵖ x (f.symm y)) :=
+  congrArg unop (f.inner_map_eq_flip_cstarModule x y)
+
+end Right
+
+end LinearIsometryEquiv

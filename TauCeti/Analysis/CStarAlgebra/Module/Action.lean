@@ -8,19 +8,25 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Module.Basic
 
 /-!
-# Algebraic laws of the coefficient action on C⋆-modules
+# Algebraic and analytic properties of the coefficient action on C⋆-modules
 
 The inner-product axioms force the given coefficient action to be additive, associative,
 and compatible with complex scalars. For a right Hilbert `B`-module, take `A = Bᵐᵒᵖ`:
 then associativity of the left `A`-action gives the usual right-action law.
 
-The structures here are reducible non-instances, preserving the caller's existing `SMul A E`.
-Install them locally, for example with `letI := CStarModule.module A E` when `A` is unital,
-to use the ordinary module laws. For nonunital coefficients, use `distribSMul`,
+The algebraic structures here are reducible non-instances, preserving the caller's existing
+`SMul A E`. Install them locally, for example with `letI := CStarModule.module A E` when `A` is
+unital, to use the ordinary module laws. For nonunital coefficients, use `distribSMul`,
 `smulWithZero`, and `semigroupAction`, together with `add_smul`, `neg_smul`, `sub_smul`,
 and `sum_smul`. Keeping these structures explicit avoids a typeclass-search cycle through
 the action required by `CStarModule` itself.
 Neither completeness nor the analytic C⋆-algebra axioms are needed for these algebraic laws.
+
+Over a (possibly non-unital) C⋆-algebra `A`, combining these algebraic laws with
+`CStarModule.norm_smul_le` bundles the action `a ↦ a • x` at a fixed vector `x : E` as a bounded
+complex-linear map `CStarModule.smulCLM A x : A →L[ℂ] E` (and
+`CStarModule.opSMulCLM A x : A →L[ℂ] E` for right Hilbert `A`-modules) of operator norm at most
+`‖x‖`.
 
 ## References
 
@@ -129,5 +135,50 @@ abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A]
   smul_add := (distribSMul A E).smul_add
   add_smul := CStarModule.add_smul
   zero_smul := (smulWithZero A E).zero_smul
+
+section Analytic
+
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- Left scalar multiplication `a ↦ a • x` for a fixed vector `x : E`, bundled as a bounded
+complex-linear map `A →L[ℂ] E`. -/
+noncomputable def smulCLM (A : Type*) [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
+    [CStarModule A E] (x : E) : A →L[ℂ] E :=
+  have : IsScalarTower ℂ A E := CStarModule.isScalarTower A E
+  LinearMap.mkContinuous
+    { toFun := (· • x)
+      map_add' := fun a b ↦ CStarModule.add_smul a b x
+      map_smul' := fun c a ↦ by simp [smul_assoc] }
+    ‖x‖ fun a ↦ (CStarModule.norm_smul_le a x).trans_eq (mul_comm ‖a‖ ‖x‖)
+
+@[simp]
+theorem smulCLM_apply [SMul A E] [CStarModule A E] (x : E) (a : A) :
+    smulCLM A x a = a • x := (rfl)
+
+/-- The operator norm of `a ↦ a • x` is at most `‖x‖`. -/
+theorem norm_smulCLM_le [SMul A E] [CStarModule A E] (x : E) :
+    ‖smulCLM A x‖ ≤ ‖x‖ :=
+  (smulCLM A x).opNorm_le_bound (norm_nonneg x) fun a ↦
+    (CStarModule.norm_smul_le a x).trans_eq (mul_comm ‖a‖ ‖x‖)
+
+/-- Right scalar multiplication `a ↦ MulOpposite.op a • x` for a fixed vector `x : E` in a right
+Hilbert `A`-module, bundled as a bounded complex-linear map `A →L[ℂ] E`. -/
+noncomputable def opSMulCLM (A : Type*) [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E]
+    [CStarModule Aᵐᵒᵖ E] (x : E) : A →L[ℂ] E :=
+  (smulCLM Aᵐᵒᵖ x).comp (MulOpposite.opContinuousLinearEquiv ℂ).toContinuousLinearMap
+
+@[simp]
+theorem opSMulCLM_apply [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) (a : A) :
+    opSMulCLM A x a = MulOpposite.op a • x := by simp [opSMulCLM]
+
+/-- The operator norm of `a ↦ MulOpposite.op a • x` is at most `‖x‖`. -/
+theorem norm_opSMulCLM_le [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) :
+    ‖opSMulCLM A x‖ ≤ ‖x‖ :=
+  (opSMulCLM A x).opNorm_le_bound (norm_nonneg x) fun a ↦ norm_op_smul_le a x
+
+end Analytic
 
 end CStarModule

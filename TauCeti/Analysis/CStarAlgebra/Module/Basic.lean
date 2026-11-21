@@ -33,6 +33,8 @@ Riesz theorem.
 * `CStarModule.inner_zero_left'`, `CStarModule.inner_zero_right'`, `CStarModule.inner_neg_left'`,
   `CStarModule.inner_neg_right'`: zero and negation inner-product identities without
   `[StarModule ℂ A]`.
+* `CStarModule.parallelogram_law`, `CStarModule.inner_add_add_self_le`: the parallelogram identity
+  and the order bound `⟪x + y, x + y⟫_A ≤ 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)`.
 * `CStarModule.inner_map_polarization`, `CStarModule.inner_polarization`: polarization identities
   expressing `⟪S x, T y⟫_A` and `⟪x, y⟫_A` through diagonal inner products.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
@@ -41,6 +43,8 @@ Riesz theorem.
   `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
   determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
+* `CStarModule.induced`, `Submodule.instCStarModule`: pullback `CStarModule` structures along
+  norm-preserving module injections and on `A`-submodules.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
@@ -50,12 +54,13 @@ Riesz theorem.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.
 * `CStarModule.isGreatest_norm_unop_inner`, `CStarModule.norm_op_smul_le`,
-  `CStarModule.tendsto_op_smul`: norm recovery, `‖x a‖ ≤ ‖x‖ ‖a‖`, and essentiality of the
-  action for right modules.
+  `CStarModule.unop_inner_map_map_le_norm_sq_smul`, `CStarModule.tendsto_op_smul`: norm recovery,
+  `‖x a‖ ≤ ‖x‖ ‖a‖`, Paschke's inequality, and essentiality of the action for right modules.
 
 ## References
 
-* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 1.
+* E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapters 1–2.
+* William L. Paschke, *Inner product modules over B*-algebras*, Proposition 2.6.
 * Iain Raeburn and Dana P. Williams, *Morita Equivalence and Continuous-Trace C⋆-Algebras*,
   Chapter 2.
 -/
@@ -121,6 +126,20 @@ theorem inner_neg_left' {x y : E} : inner A (-x) y = -inner A x y :=
 theorem inner_neg_right' {x y : E} : inner A x (-y) = -inner A x y :=
   eq_neg_of_add_eq_zero_left <| by
     rw [← inner_add_right, neg_add_cancel, inner_zero_right']
+
+/-- The parallelogram law in a C⋆-module:
+`⟪x + y, x + y⟫_A + ⟪x - y, x - y⟫_A = 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)`. -/
+lemma parallelogram_law (x y : E) :
+    inner A (x + y) (x + y) + inner A (x - y) (x - y) = 2 • (inner A x x + inner A y y) := by
+  simp only [sub_eq_add_neg, inner_add_left, inner_add_right, inner_neg_left', inner_neg_right',
+    two_nsmul]
+  abel
+
+/-- In an ordered coefficient ring, `⟪x + y, x + y⟫_A ≤ 2 • (⟪x, x⟫_A + ⟪y, y⟫_A)` by dropping
+the nonnegative difference term in the parallelogram law. -/
+lemma inner_add_add_self_le [IsOrderedAddMonoid A] (x y : E) :
+    inner A (x + y) (x + y) ≤ 2 • (inner A x x + inner A y y) :=
+  (le_add_of_nonneg_right inner_self_nonneg).trans_eq (parallelogram_law x y)
 
 /-- Vectors are determined by their inner products against all vectors in the first slot. -/
 theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
@@ -198,7 +217,55 @@ theorem norm_eq_of_inner_self_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SM
 
 end Algebraic
 
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+section Induced
+
+variable {A M E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup M] [Module ℂ M] [SMul A M] [Norm M]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Pull back a `CStarModule` structure along an injective complex-linear map that commutes with
+the coefficient action and preserves the norm. -/
+@[instance_reducible]
+def induced (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
+    (hA : ∀ (a : A) (x : M), g (a • x) = a • g x)
+    (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) : CStarModule A M where
+  inner x y := inner A (g x) (g y)
+  inner_add_right := by simp
+  inner_self_nonneg := inner_self_nonneg
+  inner_self {x} := by simp [inner_self, map_eq_zero_iff g hg]
+  inner_op_smul_right := by simp [hA]
+  inner_smul_right_complex := by simp
+  star_inner x y := star_inner (g x) (g y)
+  norm_eq_sqrt_norm_inner_self x :=
+    (hnorm x).trans (norm_eq_sqrt_norm_inner_self (A := A) (x := g x))
+
+/-- The inner product of the pullback `CStarModule.induced` structure is the pullback along `g`. -/
+@[simp]
+theorem induced_inner (g : M →ₗ[ℂ] E) (hg : Function.Injective g)
+    (hA : ∀ (a : A) (x : M), g (a • x) = a • g x)
+    (hnorm : ∀ x : M, ‖x‖ = ‖g x‖) (x y : M) :
+    @inner A M (induced g hg hA hnorm).toInner x y = inner A (g x) (g y) := (rfl)
+
+end Induced
+
+section Submodule
+
+variable {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E] [CStarModule A E]
+
+/-- Any `A`-submodule of a `CStarModule` over a unital coefficient ring inherits a `CStarModule`
+structure by restricting the inner product. -/
+instance _root_.Submodule.instCStarModule (S : Submodule A E) : CStarModule A S :=
+  CStarModule.induced (S.subtype.restrictScalars ℂ) Subtype.val_injective
+    (fun _ _ ↦ rfl) fun _ ↦ rfl
+
+/-- The `A`-valued inner product on a submodule agrees with that of the ambient `CStarModule`. -/
+@[simp] theorem _root_.Submodule.coe_inner_cstarModule (S : Submodule A E) (x y : S) :
+    inner A x y = inner A (x : E) (y : E) := (rfl)
+
+end Submodule
+
+variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 /-! ### Norm recovery and the norm of the action -/
 
@@ -265,6 +332,14 @@ end Norm
 section Right
 
 variable [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
+
+/-- Right-module form of `inner_add_add_self_le`:
+`⟨x + y, x + y⟩_A ≤ (2 : ℝ) • (⟨x, x⟩_A + ⟨y, y⟩_A)`. -/
+lemma unop_inner_add_add_self_le (x y : E) :
+    unop (inner Aᵐᵒᵖ (x + y) (x + y)) ≤
+      (2 : ℝ) • (unop (inner Aᵐᵒᵖ x x) + unop (inner Aᵐᵒᵖ y y)) := by
+  simpa only [unop_smul, ← ofNat_smul_eq_nsmul ℝ 2, unop_add] using
+    unop_le_unop.mpr (inner_add_add_self_le (A := Aᵐᵒᵖ) x y)
 
 /-- The Cauchy–Schwarz inequality for a right Hilbert C⋆-module, in the C⋆-algebra:
 `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A`. -/
@@ -437,6 +512,16 @@ theorem inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E] [
       (𝓝[>] 0) (𝓝 (‖T‖ ^ 2 • q)) := by
     simpa only [map_zero, add_zero] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall hle)
+
+/-- Right-module form of Paschke's inequality: `⟨T x, T x⟩_A ≤ ‖T‖ ^ 2 • ⟨x, x⟩_A`. -/
+theorem unop_inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] [SeminormedAddCommGroup F]
+    [NormedSpace ℂ F] [SMul Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (op a • x) = op a • T x) (x : E) :
+    unop (inner Aᵐᵒᵖ (T x) (T x)) ≤ ‖T‖ ^ 2 • unop (inner Aᵐᵒᵖ x x) := by
+  rw [← unop_smul]
+  exact unop_le_unop.mpr <|
+    inner_map_map_le_norm_sq_smul (A := Aᵐᵒᵖ) T (fun a y ↦ hT (unop a) y) x
 
 end Paschke
 
