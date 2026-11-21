@@ -12,13 +12,14 @@ import TauCeti.Data.ZMod.Units
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.Norm
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
-import TauCeti.NumberTheory.LocalField.AlgebraicExtension.ValuativeExtension
+import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.Norm.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.RingTheory.Valuation.ValuativeRel.Henselian
 
 /-!
 # The cyclotomic character of the local Artin symbols of `ℚ_p`

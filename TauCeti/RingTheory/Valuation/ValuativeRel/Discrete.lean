@@ -27,11 +27,8 @@ large primes `k`.
 * `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq`: in `ValueGroupWithZero R`
   with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, a nonzero element that is a
   `k`-th power for arbitrarily large `k : ℕ` equals `1`.
-* `ValuativeRel.ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq_pow`: the same conclusion
-  when a positive power `γ ^ m` is a `k`-th power for arbitrarily large `k : ℕ`.
-* `ValuativeRel.valuation_eq_one_of_forall_exists_le_pow_eq` and
-  `ValuativeRel.valuation_eq_one_of_forall_exists_le_pow_eq_pow`: the corresponding statements
-  for ring elements of nonzero valuation.
+* `ValuativeRel.valuation_eq_one_of_forall_exists_le_pow_eq`: the corresponding statement for ring
+  elements of nonzero valuation.
 -/
 
 public section
@@ -72,15 +69,6 @@ theorem eq_one_of_forall_exists_le_pow_eq {γ : ValueGroupWithZero R} (hγ : γ 
       exact ⟨k, hkn, δ⁻¹, by rw [inv_pow, hδ]⟩
   exact le_antisymm ((one_le_inv₀ (zero_lt_iff.mpr hγ)).mp hge_inv) hge
 
-/-- In a semiring `R` with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, if a positive
-power `γ ^ m` of a nonzero `γ : ValueGroupWithZero R` is a `k`-th power for arbitrarily large
-`k : ℕ`, then `γ = 1`. -/
-theorem eq_one_of_forall_exists_le_pow_eq_pow {γ : ValueGroupWithZero R} (hγ : γ ≠ 0) {m : ℕ}
-    (hm : m ≠ 0) (h : ∀ n : ℕ, ∃ k ≥ n, ∃ δ : ValueGroupWithZero R, δ ^ k = γ ^ m) :
-    γ = 1 :=
-  (pow_eq_one_iff_of_nonneg zero_le hm).mp
-    (eq_one_of_forall_exists_le_pow_eq (pow_ne_zero m hγ) h)
-
 end ValueGroupWithZero
 
 section Ring
@@ -97,16 +85,6 @@ theorem valuation_eq_one_of_forall_exists_le_pow_eq {x : R} (hx : valuation R x 
   ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq hx fun n ↦ by
     obtain ⟨k, hkn, y, hy⟩ := h n
     exact ⟨k, hkn, valuation R y, by rw [← map_pow, hy]⟩
-
-/-- In a ring `R` with `[IsDiscrete R] [MulArchimedean (ValueGroupWithZero R)]`, if `x : R` has
-nonzero valuation and a positive power `x ^ m` is a `k`-th power in `R` for arbitrarily large
-`k : ℕ`, then `valuation R x = 1`. -/
-theorem valuation_eq_one_of_forall_exists_le_pow_eq_pow {x : R} (hx : valuation R x ≠ 0)
-    {m : ℕ} (hm : m ≠ 0) (h : ∀ n : ℕ, ∃ k ≥ n, ∃ y : R, y ^ k = x ^ m) :
-    valuation R x = 1 :=
-  ValueGroupWithZero.eq_one_of_forall_exists_le_pow_eq_pow hx hm fun n ↦ by
-    obtain ⟨k, hkn, y, hy⟩ := h n
-    exact ⟨k, hkn, valuation R y, by rw [← map_pow, hy, map_pow]⟩
 
 end Ring
 

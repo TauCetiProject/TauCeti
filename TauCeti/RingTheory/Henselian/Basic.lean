@@ -8,8 +8,10 @@ module
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Data.Nat.Prime.Infinite
 import Mathlib.Tactic.ComputeDegree
+import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.CharP.LocalRing
 
 /-!
 # Henselian rings
@@ -61,6 +63,8 @@ algebra already lie in the ring.
   maximal ideal lifts each solution of its residue equation to a solution over the ring.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
+* `TauCeti.HenselianRing.exists_le_pow_eq_one_add`: in a local ring Henselian at its maximal
+  ideal, `1 + m` with `m ∈ 𝓂` is a `k`-th power for arbitrarily large `k : ℕ`.
 * `TauCeti.HenselianRing.exists_quadratic_root_of_isUnit_discrim`: a root modulo `I` of a monic
   quadratic `X ^ 2 + b X + c` with unit discriminant lifts to a root in `R` with unit derivative.
 * `TauCeti.HenselianRing.mem_range_algebraMap_of_isUnit_discrim`: when such a quadratic has a root
@@ -306,6 +310,23 @@ theorem exists_pow_eq_and_sub_one_mem_of_sub_one_mem {I J : Ideal R} [HenselianR
     rw [← hpow, ← geom_sum_mul, ← hu, Units.inv_mul_cancel_left]
   rw [hsub]
   exact I.mul_mem_left _ hw
+
+/-- In a local ring `R` that is Henselian at its maximal ideal, every element `1 + m` with
+`m ∈ IsLocalRing.maximalIdeal R` is a `k`-th power for arbitrarily large `k : ℕ`, obtained from
+primes exceeding the residue characteristic. -/
+theorem exists_le_pow_eq_one_add [IsLocalRing R] [HenselianRing R (IsLocalRing.maximalIdeal R)]
+    {m : R} (hm : m ∈ IsLocalRing.maximalIdeal R) (n : ℕ) :
+    ∃ k ≥ n, ∃ a : R, a ^ k = 1 + m := by
+  obtain ⟨k, hk, hkprime⟩ :=
+    Nat.exists_infinite_primes (max n (ringChar (IsLocalRing.ResidueField R) + 1))
+  have hkunit : IsUnit (k : R) :=
+    IsLocalRing.isUnit_natCast_iff_not_dvd.2 fun hdvd ↦ by
+      have := (hkprime.dvd_iff_eq CharP.ringChar_ne_one).1 hdvd
+      omega
+  obtain ⟨a, ha, -⟩ := exists_pow_eq_and_sub_one_mem_of_sub_one_mem
+    (I := IsLocalRing.maximalIdeal R) (J := IsLocalRing.maximalIdeal R) le_rfl hkunit
+    (w := 1 + m) (by simpa using hm)
+  exact ⟨k, (le_max_left _ _).trans hk, a, ha⟩
 
 /-- In a ring Henselian at `J`, an element `c ∈ J` has the form `t² + t` for some `t ∈ J`.
 This is the simple-root form of Hensel's lemma that also works in residue characteristic two. -/
