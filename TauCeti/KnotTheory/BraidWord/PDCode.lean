@@ -79,36 +79,36 @@ variable {n : ℕ} (w : BraidWord n)
 /-- The crossings of a braid word involving the strand position `p`, listed from the bottom: the
 letters `(i, ε)` with `p = i` or `p = i + 1`. -/
 def crossingsAt (p : Fin n) : List (Fin w.length) :=
-  (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1
+  (List.finRange w.length).filter fun j ↦ p = strand w[j.val].1 ∨ p = strandSucc w[j.val].1
 
 /-- The crossings involving a strand position are the indices of the letters with that position
 as one of their two strands, in increasing order. -/
 theorem crossingsAt_def (p : Fin n) :
     w.crossingsAt p =
-      (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1 :=
+      (List.finRange w.length).filter fun j ↦ p = strand w[j.val].1 ∨ p = strandSucc w[j.val].1 :=
   (rfl)
 
 /-- A crossing involves a strand position exactly when that position is one of its two strands. -/
 @[simp]
 theorem mem_crossingsAt {p : Fin n} {j : Fin w.length} :
-    j ∈ w.crossingsAt p ↔ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1 := by
+    j ∈ w.crossingsAt p ↔ p = strand w[j.val].1 ∨ p = strandSucc w[j.val].1 := by
   simp [crossingsAt]
 
 /-- A crossing involves the lower position of its letter. -/
 theorem mem_crossingsAt_strand (j : Fin w.length) :
-    j ∈ w.crossingsAt (strand w[j.1].1) := by
+    j ∈ w.crossingsAt (strand w[j.val].1) := by
   simp
 
 /-- A crossing involves the upper position of its letter. -/
 theorem mem_crossingsAt_strandSucc (j : Fin w.length) :
-    j ∈ w.crossingsAt (strandSucc w[j.1].1) := by
+    j ∈ w.crossingsAt (strandSucc w[j.val].1) := by
   simp
 
 /-- A strand position is involved in no crossing exactly when it is neither position of any
 letter. -/
 theorem crossingsAt_eq_nil_iff {p : Fin n} :
     w.crossingsAt p = [] ↔
-      ∀ j : Fin w.length, p ≠ strand w[j.1].1 ∧ p ≠ strandSucc w[j.1].1 := by
+      ∀ j : Fin w.length, p ≠ strand w[j.val].1 ∧ p ≠ strandSucc w[j.val].1 := by
   simp [List.eq_nil_iff_forall_not_mem, not_or]
 
 /-- The crossings involving a strand position are listed from the bottom. -/
@@ -212,33 +212,33 @@ theorem pow_nextCrossing_mem_crossingsAt {j : Fin w.length} {p : Fin n}
 /-- The slot of the crossing `j` at which a strand enters it from below on the position `p`:
 slot `3` on the lower position `i` of the letter, slot `0` on the upper position `i + 1`. -/
 def incomingSlot (j : Fin w.length) (p : Fin n) : Fin 4 :=
-  if p = strand w[j.1].1 then 3 else 0
+  if p = strand w[j.val].1 then 3 else 0
 
 /-- The slot of the crossing `j` at which a strand leaves it upwards on the position `p`:
 slot `2` on the lower position `i` of the letter, slot `1` on the upper position `i + 1`. -/
 def outgoingSlot (j : Fin w.length) (p : Fin n) : Fin 4 :=
-  if p = strand w[j.1].1 then 2 else 1
+  if p = strand w[j.val].1 then 2 else 1
 
 /-- A strand enters a crossing on the lower position of its letter at slot `3`. -/
 @[simp]
-theorem incomingSlot_strand (j : Fin w.length) : w.incomingSlot j (strand w[j.1].1) = 3 := by
+theorem incomingSlot_strand (j : Fin w.length) : w.incomingSlot j (strand w[j.val].1) = 3 := by
   simp [incomingSlot]
 
 /-- A strand enters a crossing on the upper position of its letter at slot `0`. -/
 @[simp]
 theorem incomingSlot_strandSucc (j : Fin w.length) :
-    w.incomingSlot j (strandSucc w[j.1].1) = 0 := by
+    w.incomingSlot j (strandSucc w[j.val].1) = 0 := by
   simp [incomingSlot, (strand_ne_strandSucc _).symm]
 
 /-- A strand leaves a crossing on the lower position of its letter at slot `2`. -/
 @[simp]
-theorem outgoingSlot_strand (j : Fin w.length) : w.outgoingSlot j (strand w[j.1].1) = 2 := by
+theorem outgoingSlot_strand (j : Fin w.length) : w.outgoingSlot j (strand w[j.val].1) = 2 := by
   simp [outgoingSlot]
 
 /-- A strand leaves a crossing on the upper position of its letter at slot `1`. -/
 @[simp]
 theorem outgoingSlot_strandSucc (j : Fin w.length) :
-    w.outgoingSlot j (strandSucc w[j.1].1) = 1 := by
+    w.outgoingSlot j (strandSucc w[j.val].1) = 1 := by
   simp [outgoingSlot, (strand_ne_strandSucc _).symm]
 
 /-- A strand enters a crossing at slot `0` or slot `3`. -/
@@ -257,25 +257,25 @@ theorem outgoingSlot_eq_one_or_two (j : Fin w.length) (p : Fin n) :
 theorem eq_of_outgoingSlot_eq {j : Fin w.length} {p q : Fin n} (hp : j ∈ w.crossingsAt p)
     (hq : j ∈ w.crossingsAt q) (h : w.outgoingSlot j p = w.outgoingSlot j q) : p = q := by
   rw [mem_crossingsAt] at hp hq
-  have hne := strand_ne_strandSucc w[j.1].1
+  have hne := strand_ne_strandSucc w[j.val].1
   unfold outgoingSlot at h
   rcases hp with rfl | rfl <;> rcases hq with hq | hq <;> simp_all
 
 /-- The incoming slot at a crossing depends only on the letter of that crossing. -/
 theorem incomingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
-    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.incomingSlot j p = w.incomingSlot i p := by
+    (h : w'[j.val] = w[i.val]) (p : Fin n) : w'.incomingSlot j p = w.incomingSlot i p := by
   rw [incomingSlot, incomingSlot, h]
 
 /-- The outgoing slot at a crossing depends only on the letter of that crossing. -/
 theorem outgoingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
-    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.outgoingSlot j p = w.outgoingSlot i p := by
+    (h : w'[j.val] = w[i.val]) (p : Fin n) : w'.outgoingSlot j p = w.outgoingSlot i p := by
   rw [outgoingSlot, outgoingSlot, h]
 
 /-! ### The arcs of the closure -/
 
 /-- The strand position of a slot of the crossing `j`. -/
 private def slotStrand (j : Fin w.length) (slot : Fin 4) : Fin n :=
-  if slot = 0 ∨ slot = 1 then strandSucc w[j.1].1 else strand w[j.1].1
+  if slot = 0 ∨ slot = 1 then strandSucc w[j.val].1 else strand w[j.val].1
 
 /-- Whether a slot is one at which a strand leaves its crossing upwards. -/
 private def IsOutgoing (slot : Fin 4) : Prop := slot = 1 ∨ slot = 2
@@ -302,14 +302,14 @@ private theorem slotStrand_outgoingSlot {j : Fin w.length} {p : Fin n}
 
 private theorem incomingSlot_slotStrand (j : Fin w.length) {slot : Fin 4}
     (hslot : ¬IsOutgoing slot) : w.incomingSlot j (w.slotStrand j slot) = slot := by
-  have hne := (strand_ne_strandSucc w[j.1].1).symm
+  have hne := (strand_ne_strandSucc w[j.val].1).symm
   unfold IsOutgoing at hslot
   unfold incomingSlot slotStrand
   fin_cases slot <;> simp_all
 
 private theorem outgoingSlot_slotStrand (j : Fin w.length) {slot : Fin 4}
     (hslot : IsOutgoing slot) : w.outgoingSlot j (w.slotStrand j slot) = slot := by
-  have hne := (strand_ne_strandSucc w[j.1].1).symm
+  have hne := (strand_ne_strandSucc w[j.val].1).symm
   unfold IsOutgoing at hslot
   unfold outgoingSlot slotStrand
   fin_cases slot <;> simp_all
@@ -391,7 +391,7 @@ def closure : OrientedPDCode w.length where
   halfEdge := 1
   edgePair := PerfectMatching.congr (crossingSlotEquiv w.length) w.arcMatching
   crossinglessComponentCount := (Finset.univ.filter fun p ↦ w.crossingsAt p = []).card
-  overPair j := decide (w[j.1].2 = 1)
+  overPair j := decide (w[j.val].2 = 1)
   orientation h := decide (IsOutgoing ((crossingSlotEquiv w.length).symm h).2)
   orientation_edgePair h := by
     rw [PerfectMatching.congr_val_apply, Equiv.symm_apply_apply]
@@ -441,8 +441,9 @@ leaves the previous crossing along that position upwards. -/
 @[simp]
 theorem edgePair_closure_crossingSlotEquiv_zero (j : Fin w.length) :
     w.closure.edgePair.val (crossingSlotEquiv w.length (j, 0)) =
-      crossingSlotEquiv w.length ((w.nextCrossing (strandSucc w[j.1].1)).symm j,
-        w.outgoingSlot ((w.nextCrossing (strandSucc w[j.1].1)).symm j) (strandSucc w[j.1].1)) := by
+      crossingSlotEquiv w.length ((w.nextCrossing (strandSucc w[j.val].1)).symm j,
+        w.outgoingSlot ((w.nextCrossing (strandSucc w[j.val].1)).symm j) (strandSucc w[j.val].1))
+            := by
   simpa [crossing_closure] using w.edgePair_closure_incomingSlot (w.mem_crossingsAt_strandSucc j)
 
 /-- The arc at slot `1` of a crossing, leaving it upwards on the upper position of its letter,
@@ -450,8 +451,8 @@ enters the next crossing along that position from below. -/
 @[simp]
 theorem edgePair_closure_crossingSlotEquiv_one (j : Fin w.length) :
     w.closure.edgePair.val (crossingSlotEquiv w.length (j, 1)) =
-      crossingSlotEquiv w.length (w.nextCrossing (strandSucc w[j.1].1) j,
-        w.incomingSlot (w.nextCrossing (strandSucc w[j.1].1) j) (strandSucc w[j.1].1)) := by
+      crossingSlotEquiv w.length (w.nextCrossing (strandSucc w[j.val].1) j,
+        w.incomingSlot (w.nextCrossing (strandSucc w[j.val].1) j) (strandSucc w[j.val].1)) := by
   simpa [crossing_closure] using w.edgePair_closure_outgoingSlot (w.mem_crossingsAt_strandSucc j)
 
 /-- The arc at slot `2` of a crossing, leaving it upwards on the lower position of its letter,
@@ -459,8 +460,8 @@ enters the next crossing along that position from below. -/
 @[simp]
 theorem edgePair_closure_crossingSlotEquiv_two (j : Fin w.length) :
     w.closure.edgePair.val (crossingSlotEquiv w.length (j, 2)) =
-      crossingSlotEquiv w.length (w.nextCrossing (strand w[j.1].1) j,
-        w.incomingSlot (w.nextCrossing (strand w[j.1].1) j) (strand w[j.1].1)) := by
+      crossingSlotEquiv w.length (w.nextCrossing (strand w[j.val].1) j,
+        w.incomingSlot (w.nextCrossing (strand w[j.val].1) j) (strand w[j.val].1)) := by
   simpa [crossing_closure] using w.edgePair_closure_outgoingSlot (w.mem_crossingsAt_strand j)
 
 /-- The arc at slot `3` of a crossing, entering it from below on the lower position of its letter,
@@ -468,14 +469,14 @@ leaves the previous crossing along that position upwards. -/
 @[simp]
 theorem edgePair_closure_crossingSlotEquiv_three (j : Fin w.length) :
     w.closure.edgePair.val (crossingSlotEquiv w.length (j, 3)) =
-      crossingSlotEquiv w.length ((w.nextCrossing (strand w[j.1].1)).symm j,
-        w.outgoingSlot ((w.nextCrossing (strand w[j.1].1)).symm j) (strand w[j.1].1)) := by
+      crossingSlotEquiv w.length ((w.nextCrossing (strand w[j.val].1)).symm j,
+        w.outgoingSlot ((w.nextCrossing (strand w[j.val].1)).symm j) (strand w[j.val].1)) := by
   simpa [crossing_closure] using w.edgePair_closure_incomingSlot (w.mem_crossingsAt_strand j)
 
 /-- The strand entering the crossing of a letter on the lower position of the letter is over
 exactly for a positive letter. -/
 @[simp]
-theorem overPair_closure (j : Fin w.length) : w.closure.overPair j = decide (w[j.1].2 = 1) := by
+theorem overPair_closure (j : Fin w.length) : w.closure.overPair j = decide (w[j.val].2 = 1) := by
   simp [closure]
 
 /-- A half-edge of the closure points away from its crossing exactly at the slots `1` and `2`,
@@ -527,14 +528,14 @@ theorem crossinglessComponents_closure :
 the strand positions crossed by no letter, numbered in increasing order. -/
 def crossinglessPosition (c : Fin w.closure.crossinglessComponentCount) : Fin n :=
   ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
-    w.crossinglessComponentCount_closure.symm c).1
+    w.crossinglessComponentCount_closure.symm c).val
 
 /-- No letter crosses the strand position of a crossing-free circle. -/
 @[simp]
 theorem crossingsAt_crossinglessPosition (c : Fin w.closure.crossinglessComponentCount) :
     w.crossingsAt (w.crossinglessPosition c) = [] :=
   (Finset.mem_filter.1 ((Finset.univ.filter fun p ↦ w.crossingsAt p = []).orderIsoOfFin
-    w.crossinglessComponentCount_closure.symm c).2).2
+    w.crossinglessComponentCount_closure.symm c).property).2
 
 /-- The crossing-free circles are numbered in increasing order of their strand positions. -/
 theorem crossinglessPosition_strictMono : StrictMono w.crossinglessPosition :=
@@ -561,10 +562,10 @@ theorem range_crossinglessPosition :
 
 /-- The sign of each crossing of the closure is the sign of its letter. -/
 @[simp]
-theorem crossingSign_closure (j : Fin w.length) : w.closure.crossingSign j = w[j.1].2 := by
+theorem crossingSign_closure (j : Fin w.length) : w.closure.crossingSign j = w[j.val].2 := by
   rw [OrientedPDCode.crossingSign_def]
   simp only [crossing_closure, orientation_closure, overPair_closure]
-  rcases Int.units_eq_one_or w[j.1].2 with h | h <;> simp [h]
+  rcases Int.units_eq_one_or w[j.val].2 with h | h <;> simp [h]
 
 /-- The writhe of the closure of a braid word is the exponent sum of the braid it represents. -/
 @[simp]

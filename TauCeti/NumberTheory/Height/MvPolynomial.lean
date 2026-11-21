@@ -13,6 +13,7 @@ public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.Box
+import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.NumberTheory.Height.Basic
 
 /-!
@@ -56,6 +57,10 @@ of a Hasse derivative at a point `α` is a linear condition on that vector with 
 `MvPolynomial.hasseDerivRow d α μ`, and `MvPolynomial.mulHeight_hasseDerivRow_le` bounds the height
 of the row by `(2 ^ ∑ j, d j) ^ totalWeight K * ∏ j, mulHeight₁ (α j) ^ d j`. These are the heights
 that Siegel's lemma charges when it produces a polynomial of prescribed index at given points.
+Conversely, any operation that only selects a subfamily of nonzero coefficients — such as
+`divMonomial` or `modMonomial` — cannot increase `mulHeight` or `logHeight`
+(`MvPolynomial.mulHeight_le_of_forall_exists_coeff_eq`, `MvPolynomial.mulHeight_divMonomial_le`,
+`MvPolynomial.mulHeight_modMonomial_le`).
 
 ## References
 
@@ -68,11 +73,12 @@ that Siegel's lemma charges when it produces a polynomial of prescribed index at
 * The determinant bound follows `DiophantineApproximation/PolynomialDeterminantHeight.lean` in
   Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0). The height
   of a product in disjoint variables adapts `DiophantineApproximation/DisjointVariables.lean` of
-  the same snapshot. The heights of coefficient vectors on the box and of the rows of the
-  vanishing conditions follow `DiophantineApproximation/BoxMonomial.lean` and
-  `DiophantineApproximation/MonomialHeight.lean` of the same repository, commit
-  `09835cb23557ae5ae0cf55a9c4ab9055f5d60338`; the row bound there assumes the order lies in the
-  box, which is not needed here. See also Bombieri–Gubler, Lemma 6.3.4.
+  the same snapshot. The heights of coefficient vectors on the box, of the rows of the vanishing
+  conditions, and under coefficient selection follow `DiophantineApproximation/BoxMonomial.lean`,
+  `DiophantineApproximation/MonomialHeight.lean`, and
+  `DiophantineApproximation/GeneralizedRothLemma.lean` of the same repository, commit
+  `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0); the row bound there assumes the order
+  lies in the box, which is not needed here. See also Bombieri–Gubler, Lemma 6.3.4.
 -/
 
 public section
@@ -497,17 +503,17 @@ theorem mulHeight_hasseDeriv_le (I : σ →₀ ℕ) (P : MvPolynomial σ K) :
     (fun v _ ↦ Real.iSup_le (fun m ↦ ?_) (mul_nonneg (zero_le_one.trans hC) (by simpa using hM0 v)))
     fun v hv ↦ Real.iSup_le (fun m ↦ ?_) (by simpa using hM0 v)).trans_eq (by rw [pow_one])
   · rw [pow_one]
-    by_cases hm : P.coeff (m.1 + I) = 0
+    by_cases hm : P.coeff (m.val + I) = 0
     · rw [hasseDeriv_coeff, hm, mul_zero, map_zero]
       exact mul_nonneg (zero_le_one.trans hC) (hM0 v)
-    · have hdeg : (m.1 + I).degree ≤ P.totalDegree := by
+    · have hdeg : (m.val + I).degree ≤ P.totalDegree := by
         simpa only [Finsupp.degree_apply, Finsupp.sum] using le_totalDegree (mem_support_iff.mpr hm)
-      exact (abv_coeff_hasseDeriv_le v I m.1 P).trans
-        (mul_le_mul (pow_le_pow_right₀ one_le_two hdeg) (hM v (m.1 + I)) (v.nonneg _)
+      exact (abv_coeff_hasseDeriv_le v I m.val P).trans
+        (mul_le_mul (pow_le_pow_right₀ one_le_two hdeg) (hM v (m.val + I)) (v.nonneg _)
           (zero_le_one.trans hC))
   · rw [pow_one]
-    exact (abv_coeff_hasseDeriv_le_of_isNonarchimedean (isNonarchimedean v hv) I m.1 P).trans
-      (hM v (m.1 + I))
+    exact (abv_coeff_hasseDeriv_le_of_isNonarchimedean (isNonarchimedean v hv) I m.val P).trans
+      (hM v (m.val + I))
 
 /-- **The logarithmic height of a Hasse derivative:**
 `h(∂^I P) ≤ h(P) + totalWeight K * (P.totalDegree * log 2)`. -/
@@ -628,5 +634,50 @@ theorem logHeight_hasseDerivRow_le (d : σ → ℕ) (α : σ → K) (μ : σ →
     Real.log_prod fun j _ ↦ by positivity]
   simp only [Real.log_pow, Nat.cast_sum, logHeight₁_eq_log_mulHeight₁]
   ring
+
+end MvPolynomial
+
+namespace MvPolynomial
+
+variable {K σ τ : Type*} [Field K] [Height.AdmissibleAbsValues K]
+
+/-- If every nonzero coefficient of `q` occurs among the coefficients of `p`, then
+`q.mulHeight ≤ p.mulHeight`. -/
+theorem mulHeight_le_of_forall_exists_coeff_eq {p : MvPolynomial σ K} {q : MvPolynomial τ K}
+    (h : ∀ m ∈ q.support, ∃ n, q.coeff m = p.coeff n) :
+    q.mulHeight ≤ p.mulHeight := by
+  rw [mulHeight_eq_finsupp, mulHeight_eq_finsupp]
+  exact Finsupp.mulHeight_le_of_forall_exists_eq
+    (by simpa only [finsupp_support_eq_support] using h)
+
+/-- If every nonzero coefficient of `q` occurs among the coefficients of `p`, then
+`q.logHeight ≤ p.logHeight`. -/
+theorem logHeight_le_of_forall_exists_coeff_eq {p : MvPolynomial σ K} {q : MvPolynomial τ K}
+    (h : ∀ m ∈ q.support, ∃ n, q.coeff m = p.coeff n) :
+    q.logHeight ≤ p.logHeight := by
+  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight]
+  exact Real.log_le_log (mulHeight_pos q) (mulHeight_le_of_forall_exists_coeff_eq h)
+
+/-- Dividing by a monomial selects a subset of coefficients, so it cannot increase the
+multiplicative height. -/
+theorem mulHeight_divMonomial_le (p : MvPolynomial σ K) (s : σ →₀ ℕ) :
+    (p.divMonomial s).mulHeight ≤ p.mulHeight :=
+  mulHeight_le_of_forall_exists_coeff_eq fun m _ ↦ ⟨s + m, coeff_divMonomial s p m⟩
+
+/-- Dividing by a monomial cannot increase the logarithmic height. -/
+theorem logHeight_divMonomial_le (p : MvPolynomial σ K) (s : σ →₀ ℕ) :
+    (p.divMonomial s).logHeight ≤ p.logHeight :=
+  logHeight_le_of_forall_exists_coeff_eq fun m _ ↦ ⟨s + m, coeff_divMonomial s p m⟩
+
+/-- Taking the remainder modulo a monomial selects a subset of coefficients, so it cannot increase
+the multiplicative height. -/
+theorem mulHeight_modMonomial_le (p : MvPolynomial σ K) (s : σ →₀ ℕ) :
+    (p.modMonomial s).mulHeight ≤ p.mulHeight :=
+  mulHeight_le_of_forall_exists_coeff_eq fun m hm ↦ ⟨m, coeff_modMonomial_of_mem_support hm⟩
+
+/-- Taking the remainder modulo a monomial cannot increase the logarithmic height. -/
+theorem logHeight_modMonomial_le (p : MvPolynomial σ K) (s : σ →₀ ℕ) :
+    (p.modMonomial s).logHeight ≤ p.logHeight :=
+  logHeight_le_of_forall_exists_coeff_eq fun m hm ↦ ⟨m, coeff_modMonomial_of_mem_support hm⟩
 
 end MvPolynomial

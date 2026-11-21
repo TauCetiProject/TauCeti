@@ -17,7 +17,8 @@ and `I`, and these control its norm: `‖L z‖ ≤ (‖L 1‖ + ‖L I‖) * �
 equation into a bound on the full differential: if `L I = A (L 1)` with `‖A‖ ≤ M`, then
 `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖` (`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`); with
 `‖L 1‖ ≤ B` this bounds the operator norm by `(1 + M) * B`
-(`ContinuousLinearMap.norm_le_of_apply_I_eq`).
+(`ContinuousLinearMap.norm_le_of_apply_I_eq`), and such an `L` vanishes exactly when `L 1` does
+(`ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`).
 
 For `K = ℝ` the imaginary unit is `0` and the first bound reduces to `‖L z‖ ≤ ‖L 1‖ * ‖z‖`; the
 other two keep their factor `1 + M`.
@@ -55,6 +56,15 @@ theorem norm_le_of_apply_I_eq (f : K →L[ℝ] V) {L : V →L[ℝ] V} {M B : ℝ
   have hM : 0 ≤ M := (norm_nonneg _).trans hL
   refine opNorm_le_bound _ (by positivity) fun w ↦ ?_
   grw [norm_apply_le_of_apply_I_eq hCR hL w, hreal]
+
+/-- If a real-linear map `f : K → V` out of an `RCLike` field satisfies `f I = L (f 1)`, then it
+vanishes exactly when `f 1` does. -/
+theorem eq_zero_iff_apply_one_eq_zero_of_apply_I_eq {f : K →L[ℝ] V} {L : V →L[ℝ] V}
+    (hCR : f RCLike.I = L (f 1)) : f = 0 ↔ f 1 = 0 := by
+  refine ⟨fun h ↦ by simp [h], fun h ↦ ?_⟩
+  ext z
+  conv_lhs => rw [← RCLike.re_add_im z]
+  simp [RCLike.ofReal_alg, hCR, h]
 
 end ContinuousLinearMap
 

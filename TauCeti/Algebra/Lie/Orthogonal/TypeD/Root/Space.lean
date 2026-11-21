@@ -378,7 +378,7 @@ theorem toEnd_typeDDiagonalCartan_matrix_eq_toLin_diagonal (A : typeDDiagonalCar
   simp only [LieSubalgebra.coe_bracket_of_module]
   have hA : (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈ diagonalCartan K (ι ⊕ ι) := by
     rw [mem_diagonalCartan_iff_isDiag]
-    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.2
+    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.property
   rw [lie_single_of_mem_diagonalCartan hA]
 
 /-- Over a reduced ring, the root spaces for the split diagonal Cartan are honest simultaneous
@@ -418,7 +418,7 @@ theorem typeDDiagonalCartan_lie_apply (A : typeDDiagonalCartan K ι)
         X⁆ a b = typeDMatrixWeight a b A * X a b := by
   have hA : (A : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ∈ diagonalCartan K (ι ⊕ ι) := by
     rw [mem_diagonalCartan_iff_isDiag]
-    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.2
+    exact mem_typeDDiagonalCartan_iff_isDiag.mp A.property
   rw [lie_apply_of_mem_diagonalCartan hA, typeDMatrixWeight_apply]
 
 /-- An entry of a generalized root vector vanishes when its weight difference from the root is

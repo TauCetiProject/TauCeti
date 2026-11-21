@@ -253,7 +253,7 @@ theorem exists_ne_zero_mulVec_eq_zero_house_le_rpow :
         · simpa using (house_intCast (K := K) 1).le
         all_goals simpa using (house_intCast (K := K) 0).trans_le (by norm_num))
     obtain ⟨j₁, hj₁⟩ := Function.ne_iff.mp hξ₁0
-    have hle := (one_le_house_of_isIntegral (ξ₁ j₁).2
+    have hle := (one_le_house_of_isIntegral (ξ₁ j₁).property
       (RingOfIntegers.coe_ne_zero_iff.mpr hj₁)).trans (hξ₁le j₁)
     rw [show ((1 : ℕ) : ℝ) / ((3 : ℕ) - (1 : ℕ)) = 1 / 2 by norm_num, ← Real.sqrt_eq_rpow] at hle
     nlinarith [Real.sqrt_nonneg (C₀ * (3 : ℕ) * 1)]

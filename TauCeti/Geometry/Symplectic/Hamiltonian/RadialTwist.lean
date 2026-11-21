@@ -348,14 +348,13 @@ theorem hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id {K : NNReal}
       fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w))
     (hGR : ∀ j ∈ s, ∀ x, R ≤ x → G j x = 0) {w : ℂ} (hw : ∀ j ∈ s, R < ‖w - p j‖ ^ 2)
     (t : ℝ) : stdComplexSymplecticForm.hamiltonianFlow _ hX t =ᶠ[𝓝 w] id := by
-  -- The sum vanishes near `w`, so every point near `w` is a critical point.
+  -- The sum vanishes near `w`, so `w` is outside its support.
   have h : (fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w) =ᶠ[𝓝 w] fun _ ↦ 0 := by
     filter_upwards [(Filter.eventually_all_finset s).2 fun j hj ↦
       radialHamiltonian_eventuallyEq_zero (hGR j hj) (hw j hj)] with z hz
     exact Finset.sum_eq_zero hz
-  filter_upwards [h.eventuallyEq_nhds] with z hz
-  refine (stdComplexSymplecticForm.forall_hamiltonianFlow_apply_eq_self_iff _ hX z).2 ?_ t
-  rw [hz.fderiv_eq, fderiv_const_apply]
+  exact stdComplexSymplecticForm.hamiltonianFlow_eventuallyEq_id_of_notMem_tsupport _ hX
+    (notMem_tsupport_iff_eventuallyEq.2 h) t
 
 /-- **A sum of radial twists fixes the points outside their discs.** If the profiles vanish on
 `[R, ∞)`, every point at distance more than `√R` from all the centres is fixed by the flow of the

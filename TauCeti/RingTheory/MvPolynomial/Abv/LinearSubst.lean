@@ -85,7 +85,7 @@ theorem abv_coeff_aeval_monomial_le [CommSemiring S] [PartialOrder S] [IsOrdered
     (hB : ∀ i ∈ s.support, ∀ m, v ((f i).coeff m) ≤ B) (a : R) (t : τ →₀ ℕ) :
     v ((aeval f (monomial s a)).coeff t) ≤ (k * B) ^ s.degree * v a := by
   classical
-  rw [aeval_monomial, algebraMap_eq, ← smul_eq_C_mul, coeff_smul, smul_eq_mul, map_mul,
+  rw [aeval_monomial, algebraMap_eq, coeff_C_mul, map_mul,
     mul_comm (v a), s.prod_pow_eq_prod_sigma f]
   refine mul_le_mul_of_nonneg_right ?_ (v.nonneg a)
   refine (abv_coeff_prod_le (s := s.support.sigma fun i ↦ range (s i)) (fun q ↦ f q.1)
@@ -103,7 +103,7 @@ theorem abv_coeff_aeval_monomial_le_of_isNonarchimedean [CommSemiring S] [Linear
     (hB : ∀ i ∈ s.support, ∀ m, v ((f i).coeff m) ≤ B) (a : R) (t : τ →₀ ℕ) :
     v ((aeval f (monomial s a)).coeff t) ≤ B ^ s.degree * v a := by
   classical
-  rw [aeval_monomial, algebraMap_eq, ← smul_eq_C_mul, coeff_smul, smul_eq_mul, map_mul,
+  rw [aeval_monomial, algebraMap_eq, coeff_C_mul, map_mul,
     mul_comm (v a), s.prod_pow_eq_prod_sigma f, ← s.card_sigma_range_eq_degree, ← prod_const]
   exact mul_le_mul_of_nonneg_right
     (abv_coeff_prod_le_of_isNonarchimedean (fun q ↦ f q.1) hv

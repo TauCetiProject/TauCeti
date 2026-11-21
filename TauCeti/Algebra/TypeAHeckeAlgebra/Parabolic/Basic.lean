@@ -138,7 +138,7 @@ variable (q) in
 parabolic subgroup `W_J` of `J`. -/
 noncomputable def parabolicBasis (J : Set (Fin (n - 1))) :
     Module.Basis (cs.parabolic J) R (parabolic (R := R) q J) :=
-  .mk (v := fun w ↦ ⟨Tw q cs w, Tw_mem_parabolic cs w.2⟩)
+  .mk (v := fun w ↦ ⟨Tw q cs w, Tw_mem_parabolic cs w.property⟩)
     (LinearIndependent.of_comp (parabolic q J).val.toLinearMap
       ((linearIndependent_Tw cs).comp _ Subtype.val_injective)) <| by
     refine (Submodule.map_injective_of_injective (f := (parabolic q J).val.toLinearMap)
@@ -164,7 +164,7 @@ theorem parabolicBasis_repr_apply (J : Set (Fin (n - 1))) (x : parabolic (R := R
     (w : cs.parabolic J) :
     (parabolicBasis q cs J).repr x w = (basisTw q cs).repr x w := by
   have key : Finsupp.lapply w ∘ₗ (parabolicBasis q cs J).repr.toLinearMap =
-      Finsupp.lapply w.1 ∘ₗ (basisTw q cs).repr.toLinearMap ∘ₗ
+      Finsupp.lapply w.val ∘ₗ (basisTw q cs).repr.toLinearMap ∘ₗ
         (parabolic (R := R) q J).val.toLinearMap :=
     (parabolicBasis q cs J).ext fun v ↦ by
       have h := (basisTw (R := R) q cs).repr_self (v : W)
@@ -199,7 +199,7 @@ theorem parabolicCosetEquivRight_apply (J : Set (Fin (n - 1)))
         LinearMap.mulLeft R (Tw q cs d) ∘ₗ (parabolic (R := R) q J).val.toLinearMap := by
     refine (Finsupp.basis fun _ ↦ parabolicBasis q cs J).ext fun ⟨d, v⟩ ↦ ?_
     rw [parabolicCosetEquivRight, LinearEquiv.coe_coe, Module.Basis.equiv_apply]
-    simp [Tw_mul_Tw cs (cs.length_mul_of_isMinimalCosetRep d.2 v.2)]
+    simp [Tw_mul_Tw cs (cs.length_mul_of_isMinimalCosetRep d.property v.property)]
   exact LinearMap.congr_fun key h
 
 /-- The right coset isomorphism sends the coefficient `b` at a single representative `d` to
@@ -259,7 +259,7 @@ theorem parabolicCosetEquiv_apply (J : Set (Fin (n - 1)))
         LinearMap.mulRight R (Tw q cs d) ∘ₗ (parabolic (R := R) q J).val.toLinearMap := by
     refine (Finsupp.basis fun _ ↦ parabolicBasis q cs J).ext fun ⟨d, v⟩ ↦ ?_
     rw [parabolicCosetEquiv, LinearEquiv.coe_coe, Module.Basis.equiv_apply]
-    simp [Tw_mul_Tw cs (cs.length_mul_of_forall_not_isLeftDescent v.2 d.2)]
+    simp [Tw_mul_Tw cs (cs.length_mul_of_forall_not_isLeftDescent v.property d.property)]
   exact LinearMap.congr_fun key h
 
 /-- The left coset isomorphism sends the coefficient `b` at a single representative `d` to

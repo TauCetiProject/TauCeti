@@ -109,11 +109,11 @@ private lemma mulHeight_le_of_abv_coeff_le [Finite ι] [Nonempty ι] {A : Matrix
     fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (by simpa using hw0 v)).trans_eq (by rw [pow_one])
   · obtain ⟨B, C, -, hAB, hPC, hBC⟩ := hlocal v
     rw [pow_one]
-    exact (harch v hAB hPC t.1).trans
+    exact (harch v hAB hPC t.val).trans
       ((by rw [mul_pow, mul_assoc] : (k * B : ℝ) ^ D * C = (k : ℝ) ^ D * (B ^ D * C)).trans_le
         (mul_le_mul_of_nonneg_left hBC (zero_le_one.trans hC)))
   · obtain ⟨B, C, hB0, hAB, hPC, hBC⟩ := hlocal v
-    simpa only [pow_one] using (hnon v (isNonarchimedean v hv) hB0 hAB hPC t.1).trans hBC
+    simpa only [pow_one] using (hnon v (isNonarchimedean v hv) hB0 hAB hPC t.val).trans hBC
 
 private lemma logHeight_le_of_mulHeight_le [Finite ι] {A : Matrix ι ι K}
     {P : MvPolynomial σ K} {Q : MvPolynomial τ K} {D : ℕ} {c : ℝ}

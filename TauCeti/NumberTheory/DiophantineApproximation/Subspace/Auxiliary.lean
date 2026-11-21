@@ -151,20 +151,20 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
     [Fintype ι] [DecidableEq ι] (i₀ : ι) (F' : Finset (ι → K)) (hF' : ∀ f ∈ F', f ≠ 0) :
     ∃ (A_f : F' → Matrix ι ι K) (c_f : F' → ℕ) (M_f : F' → Matrix ι ι (𝓞 K)) (B_sys : ℝ),
       1 ≤ B_sys ∧
-      (∀ f, IsUnit (A_f f).det ∧ A_f f i₀ = f.1 ∧ c_f f ≠ 0) ∧
+      (∀ f, IsUnit (A_f f).det ∧ A_f f i₀ = f.val ∧ c_f f ≠ 0) ∧
       ∀ {κ : Type*} [Fintype κ] [DecidableEq κ] (d : κ → ℕ) (f : F') (u : multiMons ι d)
         (N : κ × ι →₀ ℕ),
-        (((blockSubst (M_f f) (monomial u.1 (1 : 𝓞 K))).coeff N : 𝓞 K) : K) =
-          (c_f f : K) ^ (∑ h, d h) * (blockSubst (A_f f)⁻¹ (monomial u.1 (1 : K))).coeff N ∧
-        house (((blockSubst (M_f f) (monomial u.1 (1 : 𝓞 K))).coeff N : 𝓞 K) : K) ≤
+        (((blockSubst (M_f f) (monomial u.val (1 : 𝓞 K))).coeff N : 𝓞 K) : K) =
+          (c_f f : K) ^ (∑ h, d h) * (blockSubst (A_f f)⁻¹ (monomial u.val (1 : K))).coeff N ∧
+        house (((blockSubst (M_f f) (monomial u.val (1 : 𝓞 K))).coeff N : 𝓞 K) : K) ≤
           (Fintype.card ι * B_sys) ^ ∑ h, d h := by
   classical
-  have hA_ex (f : F') : ∃ A : Matrix ι ι K, IsUnit A.det ∧ A i₀ = f.1 := by
-    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp (hF' f.1 f.2)
-    let M : Matrix ι ι K := (1 : Matrix ι ι K).updateRow j₀ f.1
-    have hsum : (∑ k, f.1 k • (1 : Matrix ι ι K) k) = f.1 := by ext m; simp [Matrix.one_apply]
-    have hMdet : M.det = f.1 j₀ := by
-      simpa [M, hsum] using det_updateRow_sum (1 : Matrix ι ι K) j₀ f.1
+  have hA_ex (f : F') : ∃ A : Matrix ι ι K, IsUnit A.det ∧ A i₀ = f.val := by
+    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp (hF' f.val f.property)
+    let M : Matrix ι ι K := (1 : Matrix ι ι K).updateRow j₀ f.val
+    have hsum : (∑ k, f.val k • (1 : Matrix ι ι K) k) = f.val := by ext m; simp [Matrix.one_apply]
+    have hMdet : M.det = f.val j₀ := by
+      simpa [M, hsum] using det_updateRow_sum (1 : Matrix ι ι K) j₀ f.val
     refine ⟨M.submatrix (Equiv.swap i₀ j₀) id, ?_, by ext m; simp [M]⟩
     rw [det_permute, hMdet, isUnit_iff_ne_zero]
     exact mul_ne_zero (Int.cast_ne_zero.mpr (Units.ne_zero _)) hj₀
@@ -188,15 +188,16 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
     ext i j
     rw [Matrix.map_apply, Matrix.smul_apply, smul_eq_mul]
     exact RingOfIntegers.map_mk _ _
-  have hcoe : (((blockSubst (M_f f) (monomial u.1 (1 : 𝓞 K))).coeff N : 𝓞 K) : K) =
-      (blockSubst ((M_f f).map (algebraMap (𝓞 K) K)) (monomial u.1 (1 : K))).coeff N := by
+  have hcoe : (((blockSubst (M_f f) (monomial u.val (1 : 𝓞 K))).coeff N : 𝓞 K) : K) =
+      (blockSubst ((M_f f).map (algebraMap (𝓞 K) K)) (monomial u.val (1 : K))).coeff N := by
     rw [RingOfIntegers.coe_eq_algebraMap, ← coeff_map, map_blockSubst, map_monomial, map_one]
-  have hu_hom : IsMultiHomogeneous d (monomial u.1 (1 : K)) :=
-    isMultiHomogeneous_monomial (mem_multiMons.mp u.2) 1
-  have hu_deg : u.1.degree = ∑ h, d h := by
+  have hu_hom : IsMultiHomogeneous d (monomial u.val (1 : K)) :=
+    isMultiHomogeneous_monomial (mem_multiMons.mp u.property) 1
+  have hu_deg : u.val.degree = ∑ h, d h := by
     rw [Finsupp.degree_eq_weight_one (R := ℕ)]
     exact hu_hom.isHomogeneous (by simp)
-  refine ⟨by rw [hcoe, hmap, hu_hom.isHomogeneous.blockSubst_smul, coeff_smul, smul_eq_mul], ?_⟩
+  refine ⟨by rw [hcoe, hmap, hu_hom.isHomogeneous.blockSubst_smul,
+    AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul], ?_⟩
   rw [house_eq_sup', ← NNReal.coe_mk ((Fintype.card ι * B_sys) ^ ∑ h, d h) (by positivity),
     NNReal.coe_le_coe]
   refine sup'_le univ_nonempty _ fun φ _ ↦ NNReal.coe_le_coe.mp ?_
@@ -206,7 +207,7 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
       (A := (M_f f).map (algebraMap (𝓞 K) K))
       (fun i j ↦ by
         rw [← InfinitePlace.coe_apply, InfinitePlace.apply, Matrix.map_apply]
-        exact (norm_embedding_le_house (M_f f i j : K) φ).trans (hM_house f i j)) u.1 1 N
+        exact (norm_embedding_le_house (M_f f i j : K) φ).trans (hM_house f i j)) u.val 1 N
 
 /-- Assembling a nonzero coefficient vector `ξ : multiMons ι d → 𝓞 K` of bounded house into a
 nonzero multihomogeneous polynomial `P` and bounding its projective logarithmic height. -/
@@ -217,15 +218,16 @@ private lemma logHeight_sum_multiMons_le_of_house_le {K ι κ : Type*} [Field K]
     (hξ_house : ∀ u,
       house (ξ u : K) ≤ C_siegel * Fintype.card (multiMons ι d) *
         (Fintype.card ι * B_sys) ^ ∑ h, d h) :
-    let P : MvPolynomial (κ × ι) K := ∑ u : multiMons ι d, monomial u.1 (ξ u : K)
+    let P : MvPolynomial (κ × ι) K := ∑ u : multiMons ι d, monomial u.val (ξ u : K)
     P ≠ 0 ∧ IsMultiHomogeneous d P ∧
       P.logHeight ≤
         (Module.finrank ℚ K * Real.log (C_siegel * Fintype.card ι ^ 2 * B_sys)) *
           ∑ h, (d h : ℝ) := by
   intro P
   have hP_hom : IsMultiHomogeneous d P :=
-    IsMultiHomogeneous.sum univ _ fun u _ ↦ isMultiHomogeneous_monomial (mem_multiMons.mp u.2) _
-  have hP_coeff (u : multiMons ι d) : P.coeff u.1 = (ξ u : K) := by
+    IsMultiHomogeneous.sum univ _ fun u _ ↦
+      isMultiHomogeneous_monomial (mem_multiMons.mp u.property) _
+  have hP_coeff (u : multiMons ι d) : P.coeff u.val = (ξ u : K) := by
     simp only [P, coeff_sum, coeff_monomial]
     rw [sum_eq_single u (fun v _ hvu ↦ ite_eq_right fun h ↦ hvu (Subtype.ext h)) (by simp)]
     simp
@@ -259,9 +261,9 @@ private lemma exists_isMultiHomogeneous_coeff_blockSubst_eq_zero {K ι κ : Type
     {F' : Finset (ι → K)} {A_f : F' → Matrix ι ι K} {c_f : F' → ℕ} {M_f : F' → Matrix ι ι (𝓞 K)}
     {B_sys : ℝ} (hB1 : 1 ≤ B_sys) (hc_ne : ∀ f, c_f f ≠ 0)
     (hM_sys : ∀ (d : κ → ℕ) (f : F') (u : multiMons ι d) (N : κ × ι →₀ ℕ),
-      (((blockSubst (M_f f) (monomial u.1 (1 : 𝓞 K))).coeff N : 𝓞 K) : K) =
-        (c_f f : K) ^ (∑ h, d h) * (blockSubst (A_f f)⁻¹ (monomial u.1 (1 : K))).coeff N ∧
-      house (((blockSubst (M_f f) (monomial u.1 (1 : 𝓞 K))).coeff N : 𝓞 K) : K) ≤
+      (((blockSubst (M_f f) (monomial u.val (1 : 𝓞 K))).coeff N : 𝓞 K) : K) =
+        (c_f f : K) ^ (∑ h, d h) * (blockSubst (A_f f)⁻¹ (monomial u.val (1 : K))).coeff N ∧
+      house (((blockSubst (M_f f) (monomial u.val (1 : 𝓞 K))).coeff N : 𝓞 K) : K) ≤
         (Fintype.card ι * B_sys) ^ ∑ h, d h) :
     ∃ C₂ : ℝ, 0 ≤ C₂ ∧ ∀ {d : κ → ℕ} {θ : ℝ}, 0 < ∑ h, d h →
       2 * (#F' * #{N ∈ multiMons ι d | ∑ h, (N (h, i₀) : ℝ) / d h ≤ θ}) ≤ #(multiMons ι d) →
@@ -284,12 +286,12 @@ private lemma exists_isMultiHomogeneous_coeff_blockSubst_eq_zero {K ι κ : Type
       mem_multiMons.mpr fun h ↦ by simp⟩
   let bad : Finset (κ × ι →₀ ℕ) := {N ∈ multiMons ι d | ∑ h, (N (h, i₀) : ℝ) / d h ≤ θ}
   let sys : Matrix (F' × bad) (multiMons ι d) (𝓞 K) :=
-    fun r u ↦ (blockSubst (M_f r.1) (monomial u.1 (1 : 𝓞 K))).coeff r.2.1
+    fun r u ↦ (blockSubst (M_f r.1) (monomial u.val (1 : 𝓞 K))).coeff r.2.val
   obtain ⟨ξ, hξ0, hsys_eq, hξ_house⟩ := hsiegel sys (by simpa using hcard_pos)
     (by simpa [Fintype.card_prod] using hcount)
     (one_le_pow₀ (one_le_mul_of_one_le_of_one_le (by exact_mod_cast Fintype.card_pos) hB1))
-    fun r u ↦ (hM_sys d r.1 u r.2.1).2
-  let P : MvPolynomial (κ × ι) K := ∑ u : multiMons ι d, monomial u.1 (ξ u : K)
+    fun r u ↦ (hM_sys d r.1 u r.2.val).2
+  let P : MvPolynomial (κ × ι) K := ∑ u : multiMons ι d, monomial u.val (ξ u : K)
   obtain ⟨hP0, hP_hom, hP_log⟩ :=
     logHeight_sum_multiMons_le_of_house_le hD_pos hCs1 hB1 hξ0 hξ_house
   refine ⟨P, hP0, hP_hom, hP_log, fun f N hN ↦ ?_⟩
@@ -302,10 +304,10 @@ private lemma exists_isMultiHomogeneous_coeff_blockSubst_eq_zero {K ι κ : Type
         (ξ u : K) = (c_f f : K) ^ (∑ h, d h) * (blockSubst (A_f f)⁻¹ P).coeff N := by
       simp only [P, map_sum, coeff_sum, mul_sum]
       refine sum_congr rfl fun u _ ↦ ?_
-      have hmon : monomial u.1 (ξ u : K) = (ξ u : K) • monomial u.1 (1 : K) := by
+      have hmon : monomial u.val (ξ u : K) = (ξ u : K) • monomial u.val (1 : K) := by
         rw [smul_monomial, smul_eq_mul, mul_one]
       dsimp only [sys]
-      rw [(hM_sys d f u N).1, hmon, map_smul, coeff_smul, smul_eq_mul]; ring
+      rw [(hM_sys d f u N).1, hmon, map_smul, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]; ring
     exact (mul_eq_zero.mp (hexp ▸ hrow0)).resolve_left
       (pow_ne_zero _ (Nat.cast_ne_zero.mpr (hc_ne f)))
   · exact notMem_support_iff.mp fun hs ↦

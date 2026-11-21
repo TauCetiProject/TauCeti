@@ -123,10 +123,10 @@ private theorem preservesCyclicOrder_finRotate_symm : PreservesCyclicOrder (finR
 def rotate (n : ℕ) :
     NoncrossingPartition (univ : Finset (Fin n)) ≃o NoncrossingPartition (univ : Finset (Fin n))
     where
-  toFun π := ⟨(π.1.copy (image_univ_equiv (finRotate n).symm).symm).comap (finRotate n).symm,
-    isNoncrossing_comap_copy π.2 preservesCyclicOrder_finRotate_symm⟩
-  invFun π := ⟨(π.1.copy (image_univ_equiv (finRotate n)).symm).comap (finRotate n),
-    isNoncrossing_comap_copy π.2 preservesCyclicOrder_finRotate⟩
+  toFun π := ⟨(π.val.copy (image_univ_equiv (finRotate n).symm).symm).comap (finRotate n).symm,
+    isNoncrossing_comap_copy π.property preservesCyclicOrder_finRotate_symm⟩
+  invFun π := ⟨(π.val.copy (image_univ_equiv (finRotate n)).symm).comap (finRotate n),
+    isNoncrossing_comap_copy π.property preservesCyclicOrder_finRotate⟩
   left_inv π := Subtype.ext <| Finpartition.ext <| by
     simp only [Finpartition.parts_comap_copy_equiv, image_image, Function.comp_def, map_map]
     simp
@@ -139,21 +139,22 @@ def rotate (n : ℕ) :
 `finRotate n`. -/
 @[simp]
 theorem parts_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) :
-    (rotate n π).1.parts = π.1.parts.image fun B => B.map (finRotate n).toEmbedding :=
-  Finpartition.parts_comap_copy_equiv π.1 (finRotate n).symm
+    (rotate n π).val.parts = π.val.parts.image fun B => B.map (finRotate n).toEmbedding :=
+  Finpartition.parts_comap_copy_equiv π.val (finRotate n).symm
 
 /-- The parts of the inverse rotation `(rotate n).symm π` are the images of the parts of `π` under
 `(finRotate n).symm`. -/
 @[simp]
 theorem parts_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n))) :
-    ((rotate n).symm π).1.parts = π.1.parts.image fun B => B.map (finRotate n).symm.toEmbedding :=
-  Finpartition.parts_comap_copy_equiv π.1 (finRotate n)
+    ((rotate n).symm π).val.parts = π.val.parts.image fun B => B.map (finRotate n).symm.toEmbedding
+        :=
+  Finpartition.parts_comap_copy_equiv π.val (finRotate n)
 
 /-- Two positions lie in a common part of the rotation `rotate n π` exactly when the positions
 before them lie in a common part of `π`. -/
 @[simp]
 theorem mem_part_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) {x y : Fin n} :
-    y ∈ (rotate n π).1.part x ↔ (finRotate n).symm y ∈ π.1.part ((finRotate n).symm x) := by
+    y ∈ (rotate n π).val.part x ↔ (finRotate n).symm y ∈ π.val.part ((finRotate n).symm x) := by
   simp only [Finpartition.mem_part_iff_exists, parts_rotate, mem_image, exists_exists_and_eq_and,
     mem_map_equiv]
 
@@ -161,7 +162,7 @@ theorem mem_part_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) {x y
 the positions after them lie in a common part of `π`. -/
 @[simp]
 theorem mem_part_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n))) {x y : Fin n} :
-    y ∈ ((rotate n).symm π).1.part x ↔ finRotate n y ∈ π.1.part (finRotate n x) := by
+    y ∈ ((rotate n).symm π).val.part x ↔ finRotate n y ∈ π.val.part (finRotate n x) := by
   simp only [Finpartition.mem_part_iff_exists, parts_rotate_symm, mem_image,
     exists_exists_and_eq_and, mem_map_equiv, Equiv.symm_symm]
 
@@ -169,7 +170,7 @@ theorem mem_part_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n)))
 evaluated at the rotated parts `finRotate n '' B`. -/
 theorem prod_parts_rotate {M : Type*} [CommMonoid M]
     (π : NoncrossingPartition (univ : Finset (Fin n))) (g : Finset (Fin n) → M) :
-    ∏ B ∈ (rotate n π).1.parts, g B = ∏ B ∈ π.1.parts, g (B.map (finRotate n).toEmbedding) := by
+    ∏ B ∈ (rotate n π).val.parts, g B = ∏ B ∈ π.val.parts, g (B.map (finRotate n).toEmbedding) := by
   rw [parts_rotate, prod_image fun B _ C _ h => map_injective _ h]
 
 end TauCeti.NoncrossingPartition
