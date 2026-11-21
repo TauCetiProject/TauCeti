@@ -27,6 +27,8 @@ for every finite index type. In sizes `0` and `1` both groups are trivial.
 
 * `TauCeti.specialAlgebraicK1_eq_bot_of_hasStableRangeLE_one`: `SK₁(R) = 1` for a commutative
   ring of stable range at most `1`.
+* `TauCeti.AlgebraicK1.mk_eq_one_iff_det_eq_one_of_hasStableRangeLE_one`: over such a ring the
+  class of an invertible matrix in `K₁(R)` is trivial exactly when its determinant is one.
 * `TauCeti.elementarySubgroup_eq_ker_det_of_hasStableRangeLE_one`: over such a ring an invertible
   matrix is a product of elementary matrices exactly when its determinant is one.
 * `TauCeti.specialAlgebraicK1_eq_bot_of_finite_maximalSpectrum` and
@@ -60,6 +62,14 @@ theorem specialAlgebraicK1_eq_bot_of_hasStableRangeLE_one (hR : HasStableRangeLE
   rw [GeneralLinearGroup.ker_det_eq_bot_of_subsingleton, Subgroup.mem_bot] at hg
   rw [hg, map_one]
 
+/-- In stable range one, the class of an invertible matrix in `K₁(R)` is trivial exactly when its
+determinant is one, since `SK₁(R)` vanishes. -/
+theorem AlgebraicK1.mk_eq_one_iff_det_eq_one_of_hasStableRangeLE_one (hR : HasStableRangeLE R 1)
+    {n : ℕ} {u : GL (Fin n) R} :
+    AlgebraicK1.mk R n u = 1 ↔ GeneralLinearGroup.det u = 1 := by
+  rw [← AlgebraicK1.mk_mem_specialAlgebraicK1_iff,
+    specialAlgebraicK1_eq_bot_of_hasStableRangeLE_one hR, Subgroup.mem_bot]
+
 /-- **Elementary reduction in stable range one.** Over a commutative ring of Bass stable range at
 most `1`, an invertible matrix of any finite size is a product of elementary matrices exactly when
 its determinant is one: `E n R = SL n R`. -/
@@ -76,8 +86,7 @@ theorem elementarySubgroup_eq_ker_det_of_hasStableRangeLE_one (hR : HasStableRan
     rw [← (Fintype.equivFin n).symm.map_reindexGL_elementarySubgroup]
     refine ⟨(Fintype.equivFin n).reindexGL R g, ?_, by simp⟩
     rw [← AlgebraicK1.ker_mk_eq_elementarySubgroup hR hn, SetLike.mem_coe, MonoidHom.mem_ker,
-      ← Subgroup.mem_bot, ← specialAlgebraicK1_eq_bot_of_hasStableRangeLE_one hR,
-      AlgebraicK1.mk_mem_specialAlgebraicK1_iff, Equiv.det_reindexGL]
+      AlgebraicK1.mk_eq_one_iff_det_eq_one_of_hasStableRangeLE_one hR, Equiv.det_reindexGL]
     exact hg
 
 /-- **`SK₁` of a semilocal ring vanishes.** For a commutative ring with finitely many maximal
