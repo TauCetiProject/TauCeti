@@ -89,7 +89,7 @@ theorem posLog_le_sqrt_two_mul_abs (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * 
 theorem sq_log_mul_exp_one_le_sixteen_mul_sqrt {x : ℝ} (hx : 1 ≤ x) :
     (log x * exp 1) ^ 2 ≤ 16 * √x := by
   have hsqrt : √x = exp (log x / 4) ^ 2 := by
-    rw [sqrt_eq_iff_mul_self_eq_of_pos (by positivity), ← pow_add, ← exp_nat_mul,
+    rw [sqrt_eq_iff_mul_self_eq_of_pos (by positivity), ← pow_add, ← exp_natCast_mul,
       show ((2 + 2 : ℕ) : ℝ) * (log x / 4) = log x by push_cast; ring, exp_log (by linarith)]
   have h := pow_le_pow_left₀ (by have := log_nonneg hx; positivity)
     (exp_one_mul_le_exp (x := log x / 4)) 2
