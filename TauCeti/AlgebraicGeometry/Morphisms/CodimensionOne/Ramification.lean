@@ -147,7 +147,7 @@ theorem isUnramifiedInCodimOne_of_isOpenImmersion [IsOpenImmersion f]
     f.IsUnramifiedInCodimOne := by
   intro ξ hξ y h
   have := hX ξ hξ
-  have hne : (f ≫ U.ι) y ≠ ξ := fun he ↦ hξ (he ▸ (f y).2)
+  have hne : (f ≫ U.ι) y ≠ ξ := fun he ↦ hξ (he ▸ (f y).property)
   -- The residue field at the image of `y` is the fraction field of `𝒪_{X,ξ}`.
   let := (X.presheaf.stalkSpecializes h ≫ X.residue _).hom.toAlgebra
   have := Scheme.isFractionRing_residueField_of_specializes h hne
@@ -226,7 +226,7 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
     (X.presheaf.stalkSpecializes h ≫ X.residue _ ≫ (f ≫ U.ι).residueFieldMap y).hom.toAlgebra
   have : IsScalarTower (X.presheaf.stalk ξ) K L := .of_algebraMap_eq fun _ ↦ rfl
   have hξU : (ξ : X) ∉ U := by simpa [ξ] using hξ'
-  have hne : (f ≫ U.ι) y ≠ ξ := fun e ↦ hξU (e ▸ (f y).2)
+  have hne : (f ≫ U.ι) y ≠ ξ := fun e ↦ hξU (e ▸ (f y).property)
   have := Scheme.isFractionRing_residueField_of_specializes h hne
   have : FormallyUnramified (f ≫ U.ι) := MorphismProperty.comp_mem _ _ _ ‹_› inferInstance
   -- The fields `K' ⊆ L'` over `A'`, with the algebra structure of the conclusion.
@@ -238,7 +238,7 @@ theorem IsUnramifiedInCodimOne.baseChange [FormallyUnramified f] [LocallyOfFinit
     (pullback.snd f (g ∣_ U) ≫ (g ⁻¹ᵁ U).ι).residueFieldMap y').hom.toAlgebra
   have : IsScalarTower (X'.presheaf.stalk ξ') K' L' := .of_algebraMap_eq fun _ ↦ rfl
   have := Scheme.isFractionRing_residueField_of_specializes h'
-    (fun e ↦ hξ' (e ▸ (pullback.snd f (g ∣_ U) y').2) : x' ≠ ξ')
+    (fun e ↦ hξ' (e ▸ (pullback.snd f (g ∣_ U) y').property) : x' ≠ ξ')
   -- The maps `A ⟶ A'` and `K ⟶ K'` induced by `g`, and their compatibility.
   let : Algebra (X.presheaf.stalk ξ) (X'.presheaf.stalk ξ') := (g.stalkMap ξ').hom.toAlgebra
   let : Algebra (X.presheaf.stalk ξ) K' :=

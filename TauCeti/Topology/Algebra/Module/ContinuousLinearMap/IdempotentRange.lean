@@ -63,7 +63,7 @@ variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R 
 @[simp]
 theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
   (LinearMap.IsIdempotentElem.mem_range_iff
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.2
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.property
 
 variable [IsTopologicalAddGroup M]
 
@@ -125,12 +125,12 @@ private theorem inverse_intertwiner_mem_range (hp : IsIdempotentElem p)
 of `p` onto the range of `q`, with inverse the restriction of `U⁻¹`. -/
 noncomputable def rangeEquiv (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (q * p + (1 - q) * (1 - p))) : p.range ≃L[R] q.range :=
-  .equivOfInverse ((intertwiner p q ∘L p.range.subtypeL).codRestrict q.range
+  .ofContinuousLinearMap ((intertwiner p q ∘L p.range.subtypeL).codRestrict q.range
       (intertwiner_mem_range hp hq))
     (((intertwiner p q)⁻¹ʳ ∘L q.range.subtypeL).codRestrict p.range
       (inverse_intertwiner_mem_range hp hq hU))
-    (fun w ↦ Subtype.ext (congr($(Ring.inverse_mul_cancel _ hU) (w : M))))
-    (fun w ↦ Subtype.ext (congr($(Ring.mul_inverse_cancel _ hU) (w : M))))
+    (ContinuousLinearMap.ext fun w ↦ Subtype.ext (congr($(Ring.mul_inverse_cancel _ hU) (w : M))))
+    (ContinuousLinearMap.ext fun w ↦ Subtype.ext (congr($(Ring.inverse_mul_cancel _ hU) (w : M))))
 
 variable (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
   (hU : IsUnit (q * p + (1 - q) * (1 - p)))

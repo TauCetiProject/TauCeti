@@ -251,8 +251,8 @@ theorem norm_sum_le_of_almost_orthogonal (s : Finset ι) (hA : 0 ≤ A)
     ‖∑ i ∈ s, T i‖ ≤ A := by
   rw [← sum_coe_sort s]
   refine norm_sum_le_of_almost_orthogonal_fintype (fun i : s ↦ T i) hA (fun i ↦ ?_) fun i ↦ ?_
-  · simpa only [sum_coe_sort s (fun j ↦ √‖(T i)† ∘L T j‖)] using h₁ i i.2
-  · simpa only [sum_coe_sort s (fun j ↦ √‖T i ∘L (T j)†‖)] using h₂ i i.2
+  · simpa only [sum_coe_sort s (fun j ↦ √‖(T i)† ∘L T j‖)] using h₁ i i.property
+  · simpa only [sum_coe_sort s (fun j ↦ √‖T i ∘L (T j)†‖)] using h₂ i i.property
 
 /-- On the range of `(T j)†`, the series `∑ i, T i x` converges absolutely: the norm of
 `T i ∘L (T j)†` is at most `A * √‖T j ∘L (T i)†‖` when every `‖T i‖ ≤ A`. -/

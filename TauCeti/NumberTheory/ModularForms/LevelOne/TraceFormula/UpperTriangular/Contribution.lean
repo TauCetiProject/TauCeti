@@ -106,11 +106,11 @@ Popa--Zagier's explicit Hecke element. Interior matrices have coefficient `1`, n
 endpoints have coefficient `1/2`, a scalar matrix has coefficient `1/6`, and all other matrices
 have coefficient `0`. -/
 theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatrix n)
-    (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) :
+    (hc : A.val 1 0 = 0) (ha : 0 < A.val 0 0) :
     (popaZagierElement ℚ n).coeff (mk A) =
-      PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) := by
+      PopaZagier.upperTriangularCoeff (A.val 0 0) (A.val 0 1) (A.val 1 1) := by
   rw [coeff_popaZagierElement_mk_of_pos A (Or.inr ⟨hc, ha⟩)]
-  have hm : A.1 = !![A.1 0 0, A.1 0 1; 0, A.1 1 1] := by
+  have hm : A.val = !![A.val 0 0, A.val 0 1; 0, A.val 1 1] := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [hc]
   conv_lhs =>
@@ -121,12 +121,12 @@ theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatri
 /-- The contribution of one upper-triangular matrix with positive upper-left entry to the trace of
 Popa--Zagier's explicit element on the ambient binary-form space. -/
 theorem trace_popaZagierElement_single_upperTriangular {n : ℤ}
-    (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) :
+    (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (hc : A.val 1 0 = 0) (ha : 0 < A.val 0 0) :
     LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
         (periodAction hw
           (single (mk A) ((popaZagierElement ℚ n).coeff (mk A)))) =
-      PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) *
-        (Polynomial.dickson 2 (n : ℚ) w).eval ((A.1 0 0 + A.1 1 1 : ℤ) : ℚ) := by
+      PopaZagier.upperTriangularCoeff (A.val 0 0) (A.val 0 1) (A.val 1 1) *
+        (Polynomial.dickson 2 (n : ℚ) w).eval ((A.val 0 0 + A.val 1 1 : ℤ) : ℚ) := by
   rw [trace_periodAction_single_eq_dickson_eval w hw A, Matrix.trace_fin_two,
     coeff_popaZagierElement_upperTriangular A hc ha]
 

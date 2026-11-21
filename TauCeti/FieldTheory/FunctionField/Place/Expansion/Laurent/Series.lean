@@ -211,7 +211,7 @@ theorem completionLaurentCoeff_coe_integer_eq_zero (z : P.completionPlace.intege
   rw [completionLaurentCoeff_apply]
   apply LaurentSeries.coeff_zero_of_lt_valuation k (D := 0) _ hn
   rw [valuation_completionEquivLaurentSeries]
-  simpa using P.completionPlace.mem_integers_iff.mp z.2
+  simpa using P.completionPlace.mem_integers_iff.mp z.property
 
 /-- The completed residue with respect to `t`, given by the coefficient of exponent `-1`. -/
 noncomputable def completionResidue : P.Completion →ₗ[k] k :=

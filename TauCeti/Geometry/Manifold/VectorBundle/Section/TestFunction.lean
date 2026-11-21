@@ -118,20 +118,20 @@ def chartTestSection : 𝓓^{n}(⟨c.target, c.open_target⟩, F) →ₗ[ℝ]
 /-- On the chart source, extension is the inverse frame applied to the coefficient value. -/
 theorem chartTestSection_apply_of_mem (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
     {x : M} (hx : x ∈ c.source) :
-    (e.chartTestSection c hc hce φ).1 x = e.symmL ℝ x (φ (c x)) :=
+    (e.chartTestSection c hc hce φ).val x = e.symmL ℝ x (φ (c x)) :=
   testSection_of_mem e c φ hx
 
 /-- The section vanishes outside the chart source. -/
 @[simp]
 theorem chartTestSection_apply_of_notMem (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
-    {x : M} (hx : x ∉ c.source) : (e.chartTestSection c hc hce φ).1 x = 0 := by
+    {x : M} (hx : x ∉ c.source) : (e.chartTestSection c hc hce φ).val x = 0 := by
   simp [chartTestSection, testSection, hx]
 
 /-- Reading the extended section in its defining frame recovers the native test function. -/
 @[simp]
 theorem continuousLinearMapAt_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
     {x : M} (hx : x ∈ c.source) :
-    e.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).1 x) = φ (c x) := by
+    e.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).val x) = φ (c x) := by
   rw [chartTestSection_apply_of_mem e c hc hce φ hx, e.continuousLinearMapAt_symmL (hce hx)]
 
 /-- Native test functions are determined by their extended bundle sections. -/
@@ -140,14 +140,14 @@ theorem chartTestSection_injective : Function.Injective (e.chartTestSection c hc
   ext y
   by_cases hy : y ∈ c.target
   · have hval := congrArg (fun s : ContMDiffSection.compactlySupported I F n V ↦
-      e.continuousLinearMapAt ℝ (c.symm y) (s.1 (c.symm y))) h
+      e.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y))) h
     simpa [continuousLinearMapAt_chartTestSection e c hc hce _ (c.map_target hy),
       c.right_inv hy] using hval
   · exact (φ.zero_on_compl hy).trans (ψ.zero_on_compl hy).symm
 
 /-- Extension preserves the exact nonzero locus, transported by the inverse chart. -/
 theorem support_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
-    {x | (e.chartTestSection c hc hce φ).1 x ≠ 0} = c.symm '' Function.support φ := by
+    {x | (e.chartTestSection c hc hce φ).val x ≠ 0} = c.symm '' Function.support φ := by
   ext x
   by_cases hx : x ∈ c.source
   · rw [mem_ofPred_eq, chartTestSection_apply_of_mem e c hc hce φ hx]
@@ -169,7 +169,7 @@ theorem support_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F
 /-- Extension preserves the exact closed support, transported by the inverse chart. -/
 @[simp]
 theorem tsupport_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
-    (e.chartTestSection c hc hce φ).1.tsupport = c.symm '' tsupport φ := by
+    (e.chartTestSection c hc hce φ).val.tsupport = c.symm '' tsupport φ := by
   apply le_antisymm
   · exact tsupport_testSection_subset e c hc hce φ
   · rw [ContMDiffSection.tsupport_def, support_chartTestSection]
@@ -177,14 +177,14 @@ theorem tsupport_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, 
 
 /-- The closed support of an extended test lies entirely in the chart source. -/
 theorem tsupport_chartTestSection_subset_source (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
-    (e.chartTestSection c hc hce φ).1.tsupport ⊆ c.source := by
+    (e.chartTestSection c hc hce φ).val.tsupport ⊆ c.source := by
   rw [tsupport_chartTestSection]
   exact image_subset_iff.2 fun _ hy ↦ c.map_target (φ.tsupport_subset hy)
 
 /-- A support bound in an arbitrary set `K` becomes a support bound in `c.symm '' K`. -/
 theorem chartTestSection_mem_supportedIn (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
     {K : Set E} (hφ : tsupport φ ⊆ K) :
-    (e.chartTestSection c hc hce φ).1 ∈ ContMDiffSection.supportedIn I F n V (c.symm '' K) := by
+    (e.chartTestSection c hc hce φ).val ∈ ContMDiffSection.supportedIn I F n V (c.symm '' K) := by
   rw [ContMDiffSection.mem_supportedIn, tsupport_chartTestSection]
   exact image_mono hφ
 
@@ -194,7 +194,7 @@ theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
     (e' : Trivialization F (π F V)) [e'.IsLinear ℝ]
     (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) {x : M}
     (hx : x ∈ c.source) (hx' : x ∈ e'.baseSet) :
-    e'.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).1 x) =
+    e'.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).val x) =
       e.coordChangeL ℝ e' x (φ (c x)) := by
   rw [chartTestSection_apply_of_mem e c hc hce φ hx,
     e.symmL_apply (hce hx), e'.continuousLinearMapAt_apply_of_mem (R := ℝ) hx',

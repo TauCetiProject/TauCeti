@@ -199,7 +199,7 @@ theorem cupCochain_assoc (m n p : ℕ) (a : (homogeneousCochains A).X m)
   rw [coe_cupCochain, coe_cupCochain,
     ContinuousCohomology.coe_homogeneousCochains_XIsoOfEq_hom_apply, coe_cupCochain,
     coe_cupCochain]
-  exact resolutionCupPairing_assoc μ₁ μ₂ ν₁ ν₂ hcoeff m n p a.1 b.1 c.1
+  exact resolutionCupPairing_assoc μ₁ μ₂ ν₁ ν₂ hcoeff m n p a.val b.val c.val
 
 /-- **Associativity of the cup product on continuous cohomology**: for compatible pairings
 `μ₂ (μ₁ a b) c = ν₂ a (ν₁ b c)` and classes `x ∈ Hᵐ(G, A)`, `y ∈ Hⁿ(G, B)`, `z ∈ Hᵖ(G, C)`,

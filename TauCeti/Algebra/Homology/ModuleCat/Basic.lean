@@ -266,13 +266,13 @@ theorem Hom.exact_comapBoundaryMap_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} (i 
   intro b
   constructor
   · intro hb
-    have hb' : (ψ.f j).hom b.1 = 0 := by simpa [ψ.coe_boundaryMap] using congrArg Subtype.val hb
-    obtain ⟨a, ha⟩ := (hj b.1).1 hb'
-    exact ⟨⟨a, by simpa only [Submodule.mem_comap, ha] using b.2⟩, Subtype.ext ha⟩
+    have hb' : (ψ.f j).hom b.val = 0 := by simpa [ψ.coe_boundaryMap] using congrArg Subtype.val hb
+    obtain ⟨a, ha⟩ := (hj b.val).1 hb'
+    exact ⟨⟨a, by simpa only [Submodule.mem_comap, ha] using b.property⟩, Subtype.ext ha⟩
   · rintro ⟨a, rfl⟩
     refine Subtype.ext ?_
     rw [ψ.coe_boundaryMap, φ.coe_comapBoundaryMap]
-    exact hj.apply_apply_eq_zero a.1
+    exact hj.apply_apply_eq_zero a.val
 
 end BoundaryMap
 
@@ -432,12 +432,12 @@ variable {n} {m : ι} (hm : c.next n = m)
 
 /-- The homology class of an element of the kernel of the outgoing differential `K.d n m`. -/
 noncomputable def moduleCatKerHomologyClass : LinearMap.ker (K.d n m).hom →ₗ[R] K.homology n :=
-  K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.2
+  K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.property
 
 /-- The kernel class map is the homology class map of the kernel's inclusion into the term. -/
 lemma moduleCatKerHomologyClass_eq_moduleCatHomologyClass :
     K.moduleCatKerHomologyClass hm =
-      K.moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.2) :=
+      K.moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.property) :=
   (rfl)
 
 /-- The homology class of the kernel element given by a cycle `y` is the class of `y`. -/
@@ -463,7 +463,7 @@ lemma homologyMap_moduleCatKerHomologyClass {L : HomologicalComplex (ModuleCat R
     (z : LinearMap.ker (K.d n m).hom) :
     homologyMap φ n (K.moduleCatKerHomologyClass hm z) =
       L.moduleCatKerHomologyClass hm
-        ⟨φ.f n z, φ.d_apply_eq_zero_of_d_apply_eq_zero n m z z.2⟩ := by
+        ⟨φ.f n z, φ.d_apply_eq_zero_of_d_apply_eq_zero n m z z.property⟩ := by
   rw [moduleCatKerHomologyClass, moduleCatKerHomologyClass]
   exact homologyMap_moduleCatHomologyClass hm _ _ φ _ _
     ((φ.f n).hom.restrict (φ.d_apply_eq_zero_of_d_apply_eq_zero n m)) (fun _ ↦ rfl) z
@@ -541,19 +541,19 @@ end Differential
 homology class map of the cocycles transported through the chosen identifications of the terms. -/
 noncomputable def moduleCatCohomologyClassOfIso (n : ℕ) : Z n →ₗ[R] K.homology n :=
   K.moduleCatHomologyClass (CochainComplex.next ℕ n) ((e n).inv.hom ∘ₗ (Z n).subtype)
-    fun z ↦ (hZ n z.1).1 z.2
+    fun z ↦ (hZ n z.val).1 z.property
 
 /-- The class of a cocycle is the homology class of the cocycle transported into the complex. -/
 lemma moduleCatCohomologyClassOfIso_apply (n : ℕ) (z : Z n) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z =
-      K.homologyπ n (K.moduleCatCyclesMk ((e n).inv z.1) (n + 1) (CochainComplex.next ℕ n)
-        ((hZ n z.1).1 z.2)) :=
+      K.homologyπ n (K.moduleCatCyclesMk ((e n).inv z.val) (n + 1) (CochainComplex.next ℕ n)
+        ((hZ n z.val).1 z.property)) :=
   (rfl)
 
 /-- The class of a cocycle `z` is the homology class of any cycle whose underlying element
 corresponds to `z` under the identification of the term. -/
 lemma moduleCatCohomologyClassOfIso_eq_homologyπ {n : ℕ} (z : Z n) (y : K.cycles n)
-    (hy : (e n).hom (K.iCycles n y) = z.1) :
+    (hy : (e n).hom (K.iCycles n y) = z.val) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z = K.homologyπ n y := by
   rw [moduleCatCohomologyClassOfIso_apply]
   congr 1
@@ -571,22 +571,22 @@ differential from the degree preceding it. -/
 lemma moduleCatCohomologyClassOfIso_eq_zero_iff_exists {n m : ℕ}
     (hm : (ComplexShape.up ℕ).prev n = m) (z : Z n) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔
-      ∃ y, K.d m n y = (e n).inv z.1 :=
+      ∃ y, K.d m n y = (e n).inv z.val :=
   K.moduleCatHomologyClass_eq_zero_iff _ _ _ hm z
 
 include hB
 
 /-- The class of a cocycle is zero exactly when its underlying element is a coboundary. -/
 lemma moduleCatCohomologyClassOfIso_eq_zero_iff (n : ℕ) (z : Z n) :
-    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔ z.1 ∈ B n := by
+    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔ z.val ∈ B n := by
   rw [K.moduleCatCohomologyClassOfIso_eq_zero_iff_exists V Z e hZ rfl]
-  exact (hB n z.1).symm
+  exact (hB n z.val).symm
 
 /-- Two cocycles represent the same cohomology class exactly when their difference is a
 coboundary. -/
 lemma moduleCatCohomologyClassOfIso_eq_iff (n : ℕ) (z w : Z n) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z =
-        K.moduleCatCohomologyClassOfIso V Z e hZ n w ↔ (z - w).1 ∈ B n := by
+        K.moduleCatCohomologyClassOfIso V Z e hZ n w ↔ (z - w).val ∈ B n := by
   rw [← sub_eq_zero, ← map_sub, moduleCatCohomologyClassOfIso_eq_zero_iff K V Z B e hZ hB]
 
 end CochainPresentation

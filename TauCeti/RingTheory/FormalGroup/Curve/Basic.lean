@@ -61,7 +61,8 @@ yields Cartier's relations over every commutative ring:
 * `FormalGroup.Curve.map`: base change of curves along a ring homomorphism `R →+* S`.
 * `TauCeti.FormalGroupHom.mapCurve` and `TauCeti.FormalGroupIso.curveEquiv`: pushforward of curves
   along homomorphisms and isomorphisms of formal group laws.
-* `TauCeti.FormalCoordinate.toCurve`: a formal coordinate viewed as a curve on `F`.
+* `TauCeti.FormalCoordinate.toCurve`: a formal coordinate viewed as a curve on `F`, compatible
+  with coordinate-change pushforwards under `FormalGroup.smulIso`.
 * `FormalGroup.verschiebungCurve`: Cartier's Verschiebung operator `V_n : F.Curve →+ F.Curve`.
 * `FormalGroup.frobeniusCurve`: Cartier's Frobenius operator `f_n : F.Curve →+ F.Curve`.
 
@@ -598,6 +599,12 @@ theorem toCurve_injective (F : FormalGroup R) :
     Function.Injective (fun φ : FormalCoordinate R ↦ φ.toCurve F) :=
   fun _ _ h ↦ FormalCoordinate.ext (congrArg FormalGroup.Curve.toPowerSeries h)
 
+/-- Two formal coordinates give the same curve on `F` if and only if they are equal. -/
+@[simp]
+theorem toCurve_inj {φ ψ : FormalCoordinate R} (F : FormalGroup R) :
+    φ.toCurve F = ψ.toCurve F ↔ φ = ψ :=
+  (toCurve_injective F).eq_iff
+
 /-- Viewing a formal coordinate as a curve commutes with base change. -/
 @[simp]
 theorem toCurve_map (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
@@ -611,6 +618,34 @@ end TauCeti
 namespace FormalGroup
 
 variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- The forward homomorphism of `smulIso ψ F` pushes `φ.toCurve F` forward to
+`(ψ * φ).toCurve (ψ • F)`. -/
+@[simp]
+theorem smulIso_toHom_mapCurve_toCurve (ψ φ : TauCeti.FormalCoordinate R) (F : FormalGroup R) :
+    (smulIso ψ F).toHom.mapCurve (φ.toCurve F) = (ψ * φ).toCurve (ψ • F) :=
+  Curve.ext (by simp)
+
+/-- The inverse homomorphism of `smulIso ψ F` pushes `φ.toCurve (ψ • F)` forward to
+`(ψ⁻¹ * φ).toCurve F`. -/
+@[simp]
+theorem smulIso_invHom_mapCurve_toCurve (ψ φ : TauCeti.FormalCoordinate R) (F : FormalGroup R) :
+    (smulIso ψ F).invHom.mapCurve (φ.toCurve (ψ • F)) = (ψ⁻¹ * φ).toCurve F :=
+  Curve.ext (by simp)
+
+/-- The forward homomorphism of `smulIso φ F` sends the tautological curve of `F` to `φ` viewed as
+a curve on `φ • F`. -/
+theorem smulIso_toHom_mapCurve_tautologicalCurve (φ : TauCeti.FormalCoordinate R)
+    (F : FormalGroup R) :
+    (smulIso φ F).toHom.mapCurve F.tautologicalCurve = φ.toCurve (φ • F) := by
+  rw [← TauCeti.FormalCoordinate.toCurve_one, smulIso_toHom_mapCurve_toCurve, mul_one]
+
+/-- The inverse homomorphism of `smulIso φ F` sends the tautological curve of `φ • F` to `φ⁻¹`
+viewed as a curve on `F`. -/
+theorem smulIso_invHom_mapCurve_tautologicalCurve (φ : TauCeti.FormalCoordinate R)
+    (F : FormalGroup R) :
+    (smulIso φ F).invHom.mapCurve (φ • F).tautologicalCurve = φ⁻¹.toCurve F := by
+  rw [← TauCeti.FormalCoordinate.toCurve_one, smulIso_invHom_mapCurve_toCurve, mul_one]
 
 /-! ### Cartier's Verschiebung operator -/
 
@@ -701,11 +736,11 @@ noncomputable def frobeniusCurve (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : 
     let : NeZero n := ⟨hn⟩
     let s : Fin 2 → symmetricSubalgebra (Fin n) R :=
       ![Curve.symmSum F (Fin n) γ₁, Curve.symmSum F (Fin n) γ₂]
-    have hs0 : ∀ j, constantCoeff (s j).1 = 0 :=
+    have hs0 : ∀ j, constantCoeff (s j).val = 0 :=
       Fin.forall_fin_two.mpr ⟨Curve.constantCoeff_symmSum F (Fin n) γ₁,
         Curve.constantCoeff_symmSum F (Fin n) γ₂⟩
     have hsum : Curve.symmSum F (Fin n) (γ₁ + γ₂) =
-        ⟨F.toPowerSeries.subst (fun t ↦ (s t).1),
+        ⟨F.toPowerSeries.subst (fun t ↦ (s t).val),
           (mem_symmetricSubalgebra _).mpr <| IsSymmetric.subst (hasSubst_of_constantCoeff_zero hs0)
             (fun j ↦ symmetricSubalgebra.isSymmetric (s j))⟩ :=
       Subtype.ext <| (Curve.coe_symmSum_add F (Fin n) γ₁ γ₂).trans <|
@@ -729,8 +764,8 @@ private theorem truncTotal_val_symmSum_congr (F : FormalGroup R) [F.IsComm] {n N
     {γ₁ γ₂ : F.Curve}
     (h : ∀ i < N,
       PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
-    truncTotal N (Curve.symmSum F (Fin n) γ₁).1 =
-      truncTotal N (Curve.symmSum F (Fin n) γ₂).1 := by
+    truncTotal N (Curve.symmSum F (Fin n) γ₁).val =
+      truncTotal N (Curve.symmSum F (Fin n) γ₂).val := by
   have hcoord : ∀ i : Fin n,
       truncTotal N (Curve.coordPointHom F i γ₁).val =
         truncTotal N (Curve.coordPointHom F i γ₂).val := fun i ↦ by
@@ -824,13 +859,13 @@ theorem _root_.TauCeti.FormalGroupHom.mapCurve_frobeniusCurve {F G : FormalGroup
       TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
       PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.toMvPowerSeries_eq_subst,
       PowerSeries.subst_comp_subst_apply γ.hasSubst (PowerSeries.HasSubst.X (S := R) i)]
-  have hv : (Curve.symmSum G (Fin n) (f.mapCurve γ)).1 =
-      MvPowerSeries.subst (fun _ : Unit ↦ s.1) f.toPowerSeries := by
+  have hv : (Curve.symmSum G (Fin n) (f.mapCurve γ)).val =
+      MvPowerSeries.subst (fun _ : Unit ↦ s.val) f.toPowerSeries := by
     dsimp only [s]
     rw [Curve.coe_symmSum, Curve.coe_symmSum, ← hpoint, TauCeti.FormalGroupHom.toAddMonoidHom_apply,
       TauCeti.FormalGroupHom.applyPoint_val, PowerSeries.subst_def]
   have hsub : Curve.symmSum G (Fin n) (f.mapCurve γ) =
-      ⟨MvPowerSeries.subst (fun _ : Unit ↦ s.1) f.toPowerSeries,
+      ⟨MvPowerSeries.subst (fun _ : Unit ↦ s.val) f.toPowerSeries,
         (mem_symmetricSubalgebra _).mpr <| IsSymmetric.subst
           (hasSubst_of_constantCoeff_zero fun _ ↦ Curve.constantCoeff_symmSum F (Fin n) γ)
           (fun _ ↦ symmetricSubalgebra.isSymmetric s)⟩ := Subtype.ext hv
@@ -943,7 +978,7 @@ theorem Curve.exists_lift_of_isUnit_natCast (F : FormalGroup R) [F.IsComm] (γ :
       (by
         rintro _ ⟨n, hnS, rfl⟩
         have hq : IsUnit (n : ℚ) := Ne.isUnit (Nat.cast_ne_zero.mpr (hS0 n hnS))
-        simpa [IsUnit.mem_submonoid_iff] using hq.map (algebraMap ℚ Q)) m.2
+        simpa [IsUnit.mem_submonoid_iff] using hq.map (algebraMap ℚ Q)) m.property
   let j : A →+* Q := IsLocalization.lift (M := M) (S := A) hjM
   have hj : Function.Injective j := IsLocalization.lift_injective_of_injective (S := A) hjM hjU
   have hSA : ∀ n ∈ S, IsUnit (n : A) := fun n hnS ↦ by
@@ -960,7 +995,7 @@ theorem Curve.exists_lift_of_isUnit_natCast (F : FormalGroup R) [F.IsComm] (γ :
       (fun k : ℕ ↦ PowerSeries.coeff k γ.toPowerSeries)
   have hπM : ∀ m : M, IsUnit (πU m) := fun m ↦
     (Submonoid.closure_le (S := (IsUnit.submonoid R).comap πU.toMonoidHom)).mpr
-      (by rintro _ ⟨n, hnS, rfl⟩; simpa [IsUnit.mem_submonoid_iff] using hSR n hnS) m.2
+      (by rintro _ ⟨n, hnS, rfl⟩; simpa [IsUnit.mem_submonoid_iff] using hSR n hnS) m.property
   let π : A →+* R := IsLocalization.lift (M := M) (S := A) hπM
   have hπ_comp : π.comp (algebraMap U A) = πU := IsLocalization.lift_comp hπM
   let F₀ : FormalGroup A := F_U.map (algebraMap U A)

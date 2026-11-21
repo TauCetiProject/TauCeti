@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.RankOne
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Classical
 
 /-!
-# The entries of the classical complex with local coefficients
+# The classical complex with local coefficients
 
 Let `m` be a twisting cocycle with values in the chain algebra `C_*(Ω_b B; R)` of the Moore loops
 and `𝓕` a DG local system on `(B, b)`, a right DG module over that algebra. The second page of the
@@ -22,9 +22,19 @@ computes, under these identifications, the entries and the components of the dif
 classical complex: componentwise, the entry between generators `x` and `y` is `(-1)^k` times the
 degree-zero truncation of `m x y` in the group ring `R[π₁(B, b)]`, acting on `H^k(𝓕)` through the
 representation of the fundamental group on the homology of `𝓕`
-(`TauCeti.IsDGRightModule.cohomologyRepresentation`). It does not construct an isomorphism of the
-classical complex with the complex of the generators with coefficients in the local system
-`H^k(𝓕)`, nor of the second page with the `E²` term of BDHO.
+(`TauCeti.IsDGRightModule.cohomologyRepresentation`).
+
+The classical complex is isomorphic to the complex `TauCeti.TwistingCocycle.indexCohomologyComplex`
+of families indexed by the generators with values in `H^k(𝓕)`
+(`TauCeti.TwistingCocycle.indexClassicalComplexIso`), whose homology is therefore the second page
+(`TauCeti.TwistingCocycle.indexSpectralSequenceSecondPageXIsoCohomology`). The last results of this
+file compute its differential: it is `(-1)^k` times the classical differential with coefficients
+in the local system `H^k(𝓕)` of the truncated cocycle
+`m.map (loopChainToGroupAlgebraDGAlgHom B b R)`, the twisting cocycle over `R[π₁(B, b)]` whose
+entries are the truncations of those of `m`. So the second page is the homology of the classical
+complex of the generators with local coefficients `H^k(𝓕)`. This does not identify that homology
+with the homology of `B` with local coefficients, which needs the comparison of the generators with
+a cell structure of `B`.
 
 An entry `m x y` of index difference one is a chain of degree zero of `C_*(Ω_b B; R)`, and its
 class in the cohomology of the chain algebra is the class of its truncation
@@ -49,6 +59,10 @@ that is as `(-1)^k ∑ u_g ρ(g⁻¹)`
   `∑ u_g g` of the entries of the cocycle.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalD_π_eq_smul_sum`: the
   components of the classical differential are `(-1)^k ∑ₓ ∑_g u^{xy}_g ρ(g⁻¹) c x`.
+* `TauCeti.TwistingCocycle.coe_indexCohomologyEntry_apply_eq_smul_linearCombination`,
+  `TauCeti.TwistingCocycle.coe_indexCohomologyD_apply_eq_smul_sum`: the same formulas for the
+  entries and the differential of `indexCohomologyComplex`, with the entries `ū` of the truncated
+  cocycle `m.map (loopChainToGroupAlgebraDGAlgHom B b R)`.
 
 ## References
 
@@ -131,6 +145,37 @@ theorem shiftedModuleComplexHomologyEquiv_indexClassicalD_π_eq_smul_sum (q : �
   rw [shiftedModuleComplexHomologyEquiv_indexClassicalD_π]
   simp only [indexClassicalClass_eq_groupAlgebraToLoopChainCohomology,
     hM.cohomologyAction_groupAlgebraToLoopChainCohomology]
+
+/-- **The classical complex with local coefficients `H^k(𝓕)`, entrywise**: the entry of
+`indexCohomologyComplex` between generators `x` and `y` whose indices differ by one sends a class
+`c ∈ H^k(𝓕)` to `(-1)^k ∑ ū_g ρ(g⁻¹) c`, where `ū = ∑ ū_g g` is the entry of the truncated cocycle
+`m.map (loopChainToGroupAlgebraDGAlgHom B b R)` in the group ring `R[π₁(B, b)]` and `ρ` is the
+representation of the fundamental group on the homology of `𝓕`. -/
+theorem coe_indexCohomologyEntry_apply_eq_smul_linearCombination {x y : P}
+    (hxy : ind x = ind y + 1) (c : hM.cohomologyGrading k) :
+    (m.indexCohomologyEntry hM k hxy c : hM.Cohomology) =
+      k.negOnePow • Finsupp.linearCombination R (fun g ↦ hM.cohomologyRepresentation g⁻¹ c)
+        ((m.map (loopChainToGroupAlgebraDGAlgHom B b R)).m x y).coeff := by
+  have h₁ := m.indexClassicalClass_eq_groupAlgebraToLoopChainCohomology hxy
+  rw [coe_indexCohomologyEntry_apply]
+  -- `rw [h₁]` times out unifying the instance arguments of the class; `simp only` does not.
+  simp only [h₁]
+  rw [hM.cohomologyAction_groupAlgebraToLoopChainCohomology, map_m,
+    loopChainToGroupAlgebraDGAlgHom_apply]
+
+/-- **The classical differential with local coefficients `H^k(𝓕)`**: the component at a
+generator `y` of index `q` of the differential of `indexCohomologyComplex` on a family `c` is
+`(-1)^k ∑ₓ ∑_g ū^{xy}_g ρ(g⁻¹) (c x)`, for the entries `ū^{xy}` of the truncated cocycle
+`m.map (loopChainToGroupAlgebraDGAlgHom B b R)` in the group ring. -/
+theorem coe_indexCohomologyD_apply_eq_smul_sum (q : ℤ)
+    (c : {x : P // ind x = q + 1} → hM.cohomologyGrading k) (y : {y : P // ind y = q}) :
+    (m.indexCohomologyD hM k q c y : hM.Cohomology) =
+      k.negOnePow • ∑ x : {x : P // ind x = q + 1}, Finsupp.linearCombination R
+        (fun g ↦ hM.cohomologyRepresentation g⁻¹ (c x))
+          ((m.map (loopChainToGroupAlgebraDGAlgHom B b R)).m x y).coeff := by
+  rw [indexCohomologyD_apply, Submodule.coe_sum, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun x _ ↦
+    m.coe_indexCohomologyEntry_apply_eq_smul_linearCombination hM k _ (c x)
 
 end TwistingCocycle
 
