@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.InvolutionCount
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
 public import TauCeti.RepresentationTheory.CharacterTable.RealClasses
 
 /-!
@@ -20,7 +21,7 @@ The one computation behind everything is that an irreducible representation carr
 one-dimensional space of invariant bilinear forms when its character is inversion-invariant, and
 none otherwise.  That is a comparison of two facts already in the library.  On one side the
 invariant forms are as many as the invariants of the tensor square
-(`TauCeti.Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self_cast`), and
+(`Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self`), and
 Mathlib's `Representation.card_inv_mul_sum_char_eq_finrank` counts those invariants as the average
 `|G|⁻¹ ∑_g χ(g)²` of the squared character.  On the other side
 `TauCeti.card_inv_mul_sum_irreducibleCharacter_sq` evaluates that very average, for a row of the
@@ -79,8 +80,8 @@ declared into the root `Representation` namespace rather than into `TauCeti.Repr
 Everything indexed by a row of the character table is named in plain `TauCeti`, as in the sibling
 module `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/InvolutionCount.lean`.
 
-The field is taken in `Type` rather than an arbitrary universe, matching
-`TauCeti.frobeniusSchurIndicatorRow`.
+The results about the rows of the character table take the field in `Type` rather than an arbitrary
+universe, matching `TauCeti.frobeniusSchurIndicatorRow`.
 
 ## References
 
@@ -92,13 +93,13 @@ public section
 
 open Module (finrank)
 
-universe v w
+universe v
 
 namespace Representation
 
 open TauCeti TauCeti.Representation
 
-variable {k : Type} {G : Type v} {V : Type w} [Field k] [Group G] [AddCommGroup V] [Module k V]
+variable {k : Type*} {G : Type*} {V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
   [FiniteDimensional k V] [Fintype G] [Invertible (Nat.card G : k)]
 
 /-- **The average of the squared character counts the invariant bilinear forms**:
@@ -106,12 +107,12 @@ variable {k : Type} {G : Type v} {V : Type w} [Field k] [Group G] [AddCommGroup 
 
 This is Mathlib's `Representation.card_inv_mul_sum_char_eq_finrank` applied to the tensor square
 `ρ ⊗ ρ`, whose character is `χ²`, together with
-`TauCeti.Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self_cast`, which
-identifies the invariant forms of `ρ` with the invariants of that tensor square.  As with the
-latter, in characteristic `p` this is an identity of residues only. -/
+`Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self`, which counts the
+invariant forms of `ρ` as the invariants of that tensor square.  As with the character average, in
+characteristic `p` this is an identity of residues only. -/
 theorem card_inv_mul_sum_character_sq_eq_finrank_invariantForms (ρ : Representation k G V) :
     (Nat.card G : k)⁻¹ * ∑ g : G, ρ.character g ^ 2 = finrank k (invariantForms ρ) := by
-  rw [finrank_invariantForms_eq_finrank_invariants_tprod_self_cast ρ,
+  rw [finrank_invariantForms_eq_finrank_invariants_tprod_self ρ,
     ← Representation.card_inv_mul_sum_char_eq_finrank (ρ.tprod ρ)]
   refine congrArg _ (Finset.sum_congr rfl fun g _ => ?_)
   rw [Representation.char_tensor, Pi.mul_apply, sq]

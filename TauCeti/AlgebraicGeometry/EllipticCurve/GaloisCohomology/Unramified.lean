@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
+public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 
 /-!
 # Unramified Kummer classes at good reduction
@@ -48,8 +48,12 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- The unramified classes in `H¹(K, E[m])`: the kernel of restriction to inertia, transported
 to the automorphisms of the separable closure used by `W.TorsionCoeff m`. -/
 def unramifiedTorsionCohomology : AddSubgroup (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :=
-  (explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-    ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom)).ker
+  unramifiedH1 K (W.TorsionCoeff m)
+
+/-- `unramifiedTorsionCohomology` is `TauCeti.unramifiedH1` on `W.TorsionCoeff m`. -/
+theorem unramifiedTorsionCohomology_eq_unramifiedH1 :
+    W.unramifiedTorsionCohomology m = unramifiedH1 K (W.TorsionCoeff m) :=
+  (rfl)
 
 /-- A class is unramified exactly when its restriction to inertia is zero. -/
 @[simp]
@@ -57,8 +61,8 @@ theorem mem_unramifiedTorsionCohomology_iff
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} :
     c ∈ W.unramifiedTorsionCohomology m ↔
       explicitRes1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-        ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom) c = 0 :=
-  (Iff.rfl)
+        (separableClosureInertiaSubgroup K) c = 0 := by
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1, mem_unramifiedH1_iff]
 
 /-- **Unramified classes restrict to unramified classes.** For an extension `L/K` of
 nonarchimedean local fields and a `K`-embedding `τ : Kˢ → Lˢ` of separable closures, restriction
@@ -70,9 +74,10 @@ theorem torsionRes_mem_unramifiedTorsionCohomology {L : Type*} [Field L] [Valuat
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)}
     (hc : c ∈ W.unramifiedTorsionCohomology m) :
     W.torsionRes τ m c ∈ (W⁄L).unramifiedTorsionCohomology m := by
-  rw [mem_unramifiedTorsionCohomology_iff, torsionRes_eq_explicitMap1]
-  exact (absoluteGaloisGroupMap τ).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
-    (τ.map_absoluteGaloisGroupMap_inertiaSubgroup_le) hc
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1] at hc ⊢
+  rw [torsionRes_eq_explicitMap1]
+  exact τ.explicitMap1_mem_unramifiedH1 (W.torsionCoeffBaseChange τ m)
+    continuous_of_discreteTopology (W.torsionCoeffBaseChange_smul τ m) hc
 
 variable [IsIntegral 𝒪[K] W] [(integralModel 𝒪[K] W).IsElliptic]
 
@@ -133,20 +138,11 @@ theorem kummerMap_mem_unramifiedTorsionCohomology
   rename_i hm
   obtain ⟨Q, hQ⟩ := (W.kummerShortExact m hm).proj_surjective (W.basePointCoeff P)
   rw [kummerShortExact_proj, nsmulAddMonoidHom_apply] at hQ
-  rw [mem_unramifiedTorsionCohomology_iff, kummerMap_eq_H1pi hm hQ]
-  have hzero : cocyclesMap1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-      ((inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom)
-      (W.TorsionCoeff m) (ContinuousMonoidHom.subgroupSubtype _)
-      (AddMonoidHom.id _) continuous_id
-      (ContinuousMonoidHom.id_subgroupSubtype_smul _ _)
-      ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩ = 0 := by
-    apply Subtype.ext
-    funext σ
-    rw [cocyclesMap1_apply, AddMonoidHom.id_apply, ContinuousMonoidHom.subgroupSubtype_apply]
-    obtain ⟨τ, hτ, hτσ⟩ := σ.2
-    rw [← hτσ]
-    exact kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hτ
-  exact (explicitRes1_mk _ _ _ _).trans (congrArg (H1pi _ _) hzero)
+  rw [unramifiedTorsionCohomology_eq_unramifiedH1, kummerMap_eq_H1pi hm hQ,
+    QuotientAddGroup.mk'_apply]
+  exact mk_mem_unramifiedH1_of_forall_mem_inertiaSubgroup
+    (f := ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩)
+    fun _ hσ ↦ kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hσ
 
 open scoped Classical in
 /-- At good reduction away from the multiplier, the local Kummer condition is contained in

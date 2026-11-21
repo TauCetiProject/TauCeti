@@ -56,12 +56,12 @@ theorem wassersteinEDist_one_bernoulliMeasure_le {X : Type*} [MeasurableSpace X]
   let movedMass : Measure X := ENNReal.ofReal ((t : ℝ) - s) • Measure.dirac y
   have hleft : ENNReal.ofReal (1 - (t : ℝ)) + ENNReal.ofReal ((t : ℝ) - s) =
       ENNReal.ofReal (1 - (s : ℝ)) := by
-    rw [← ENNReal.ofReal_add (sub_nonneg.2 t.2.2) (sub_nonneg.2 hst)]
+    rw [← ENNReal.ofReal_add (sub_nonneg.2 t.property.2) (sub_nonneg.2 hst)]
     congr 1
     ring
   have hright : ENNReal.ofReal (s : ℝ) + ENNReal.ofReal ((t : ℝ) - s) =
       ENNReal.ofReal (t : ℝ) := by
-    rw [← ENNReal.ofReal_add s.2.1 (sub_nonneg.2 hst)]
+    rw [← ENNReal.ofReal_add s.property.1 (sub_nonneg.2 hst)]
     congr 1
     ring
   have hs : Ber(x, y, s) = commonMass + movedMass := by

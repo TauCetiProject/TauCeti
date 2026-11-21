@@ -67,7 +67,7 @@ theorem unblockedHomologyRotateEquiv_unblockedHomologyClass
       G.rotate.unblockedHomologyClass R
         ⟨GridChain.halfTurnRenameEquiv R z,
           G.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_rotate_halfTurnRenameEquiv R) z.2⟩ :=
+            (G.unblockedDifferential_rotate_halfTurnRenameEquiv R) z.property⟩ :=
   G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 /-- The inverse of the half-turn also moves the class of a cycle `w` of `GC⁻(G.rotate)` by the
@@ -79,7 +79,7 @@ theorem unblockedHomologyRotateEquiv_symm_unblockedHomologyClass
       G.unblockedHomologyClass R
         ⟨GridChain.halfTurnRenameEquiv R w,
           G.rotate.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_halfTurnRenameEquiv R) w.2⟩ := by
+            (G.unblockedDifferential_halfTurnRenameEquiv R) w.property⟩ := by
   rw [LinearEquiv.symm_apply_eq, unblockedHomologyRotateEquiv_unblockedHomologyClass]
   exact congrArg _ (Subtype.ext (GridChain.halfTurnRenameEquiv_halfTurnRenameEquiv R _).symm)
 
@@ -102,7 +102,7 @@ theorem halfTurnRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : Gr
   rw [GridChain.halfTurnRenameEquiv_apply,
     support_rename_of_injective Fin.rev_injective, Finset.mem_image] at he
   obtain ⟨e, he, rfl⟩ := he
-  have hM := G.1.maslovOℤ_rotate_halfTurn x.halfTurn
+  have hM := G.val.maslovOℤ_rotate_halfTurn x.halfTurn
   have hA := G.alexanderℤ_rotate_halfTurn x.halfTurn
   rw [GridState.halfTurn_halfTurn] at hM hA
   have hdegree : G.rotate.monomialBidegree x (e.mapDomain Fin.rev) =
@@ -134,9 +134,9 @@ end Chains
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
 
 /-- The equivalence induced by the half-turn preserves the Alexander grading on homology. -/
-theorem unblockedHomologyRotateEquiv_mem_piece {a : ℤ} {y : G.1.unblockedHomology R}
+theorem unblockedHomologyRotateEquiv_mem_piece {a : ℤ} {y : G.val.unblockedHomology R}
     (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.1.unblockedHomologyRotateEquiv R y ∈
+    G.val.unblockedHomologyRotateEquiv R y ∈
       (G.rotate.alexanderUnblockedHomologyGrading R).piece a :=
   G.unblockedHomologyEquivOfIntertwining_mem_piece R G.rotate _ _
     (fun _ _ hc => G.halfTurnRenameEquiv_mem_alexanderChainMinusPiece R hc) hy

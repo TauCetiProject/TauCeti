@@ -112,7 +112,7 @@ private noncomputable def actionV (n p q : ℤ) (hpq : p + n = q) :
   LinearMap.mk₂ R
     (fun a x ↦ ⟨(n * p).negOnePow • op (a : A) • (x : M), by
       rw [Units.smul_def]
-      exact zsmul_mem (hpq ▸ op_smul_mem_of_mem_graded a.2 x.2) _⟩)
+      exact zsmul_mem (hpq ▸ op_smul_mem_of_mem_graded a.property x.property) _⟩)
     (fun a a' x ↦ Subtype.ext <| by
       simp only [Submodule.coe_add, MulOpposite.op_add, add_smul, smul_add])
     (fun r a x ↦ Subtype.ext <| by
@@ -164,7 +164,7 @@ theorem actionCochain_eq_δ {n : ℤ} (a : 𝒜 n) (a' : 𝒜 (n + 1)) (ha : (a'
     LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply, map_add, map_zsmul,
     Submodule.coe_add, Submodule.coe_smul_of_tower, gradedCochainComplexXEquiv_d,
     actionCochain_v_apply, ha]
-  rw [M.isDGRightModule.leibniz (gradedCochainComplexXEquiv p x).2]
+  rw [M.isDGRightModule.leibniz (gradedCochainComplexXEquiv p x).property]
   have h₁ : ((n * p).negOnePow : ℤ) * p.negOnePow = ((n + 1) * p).negOnePow := by
     rw [← Units.val_mul, ← Int.negOnePow_add]
     congr 2
@@ -437,7 +437,7 @@ private theorem totalMap_differential {z : Cochain M.toCochainComplex N.toCochai
   | zero => rw [map_zero, map_zero, map_zero, map_zero]
   | @homogeneous p x =>
     have hd : (gradedCochainComplexXEquiv (p + 1)).symm
-        ⟨M.differential x, M.isDGRightModule.isHomogeneous.map_mem x.2⟩ =
+        ⟨M.differential x, M.isDGRightModule.isHomogeneous.map_mem x.property⟩ =
           (M.toCochainComplex.d p (p + 1)).hom ((gradedCochainComplexXEquiv p).symm x) := by
       apply (gradedCochainComplexXEquiv (p + 1)).injective
       apply Subtype.ext
@@ -448,7 +448,8 @@ private theorem totalMap_differential {z : Cochain M.toCochainComplex N.toCochai
     simp only [δ_zero_cochain_v, Cochain.zero_v, ModuleCat.hom_sub, ModuleCat.hom_comp,
       LinearMap.sub_apply, LinearMap.comp_apply, ModuleCat.hom_zero, LinearMap.zero_apply,
       sub_eq_zero] at hzd
-    rw [totalMap_of_mem z x.2, totalMap_of_mem z (M.isDGRightModule.isHomogeneous.map_mem x.2),
+    rw [totalMap_of_mem z x.property, totalMap_of_mem z (M.isDGRightModule.isHomogeneous.map_mem
+        x.property),
       ← gradedCochainComplexXEquiv_d, hd, hzd]
   | add x y hx hy => rw [map_add, map_add, map_add, map_add, hx, hy]
 
@@ -466,7 +467,7 @@ private theorem totalMap_op_smul {z : Cochain M.toCochainComplex N.toCochainComp
     | zero => rw [smul_zero, map_zero, smul_zero]
     | add x y hx hy => rw [smul_add, map_add, map_add, hx, hy, smul_add]
     | @homogeneous p x =>
-      have hax := op_smul_mem_of_mem_graded a.2 x.2
+      have hax := op_smul_mem_of_mem_graded a.property x.property
       have key := congrArg (fun g ↦ (gradedCochainComplexXEquiv (p + n)
         (g.hom ((gradedCochainComplexXEquiv p).symm x)) : N))
         (Cochain.congr_v (hnat n a) p (p + n) rfl)
@@ -480,7 +481,7 @@ private theorem totalMap_op_smul {z : Cochain M.toCochainComplex N.toCochainComp
         apply Subtype.ext
         simp
       rw [hy] at key
-      rw [totalMap_of_mem z hax, totalMap_of_mem z x.2]
+      rw [totalMap_of_mem z hax, totalMap_of_mem z x.property]
       simpa using congrArg (fun y : N ↦ (n * p).negOnePow • y) key
 
 /-- The morphism of right DG modules assembled from a closed degree-zero cochain commuting with
@@ -538,7 +539,7 @@ instance : (singleObjFunctor (h := h)).Full where
     apply (gradedCochainComplexXEquiv p).injective
     apply Subtype.ext
     rw [Cochain.ofHom_v, toCochainMap_f_apply, homOfCochain_apply,
-      totalMap_of_mem z (gradedCochainComplexXEquiv p x).2]
+      totalMap_of_mem z (gradedCochainComplexXEquiv p x).property]
     simp [z]
 
 end DGRightModuleCat

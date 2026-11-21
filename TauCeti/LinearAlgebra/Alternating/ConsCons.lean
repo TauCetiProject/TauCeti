@@ -20,11 +20,32 @@ orientation sign of a rotation in the plane spanned by `p` and `v`. When the sec
 is instead the last argument, moving it to the second place contributes the sign `(-1)ⁿ` of a
 cycle (`AlternatingMap.map_cons_snoc_add_smul`), and scaling the remaining `n` arguments by `t`
 contributes `tⁿ` (`AlternatingMap.map_cons_snoc_smul_add_smul`).
+
+Exchanging the first argument `x` of `f (Fin.cons x w)` with the argument `y` in slot `i + 1`
+changes the sign of the value (`AlternatingMap.map_cons_update_add`).
 -/
 
 public section
 
 namespace AlternatingMap
+
+open Function in
+/-- Exchanging the first argument of an alternating map with the argument in slot `i + 1` changes
+the sign: `f (x, w with y at i) + f (y, w with x at i) = 0`. -/
+theorem map_cons_update_add {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] {n : ℕ} (f : M [⋀^Fin (n + 1)]→ₗ[R] N) (w : Fin n → M)
+    (i : Fin n) (x y : M) : f (Fin.cons x (update w i y)) + f (Fin.cons y (update w i x)) = 0 := by
+  have hv : (Fin.cons y (update w i x) : Fin (n + 1) → M) ∘ Equiv.swap 0 i.succ =
+      Fin.cons x (update w i y) := by
+    ext k
+    refine Fin.cases ?_ (fun j => ?_) k
+    · simp [-Fin.cons_update]
+    · rcases eq_or_ne j i with rfl | hj
+      · simp [-Fin.cons_update]
+      · rw [comp_apply, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero j)
+          ((Fin.succ_injective _).ne hj)]
+        simp [update_of_ne hj]
+  simpa only [hv] using f.map_swap_add (v := Fin.cons y (update w i x)) (Fin.succ_ne_zero i).symm
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {n : ℕ}

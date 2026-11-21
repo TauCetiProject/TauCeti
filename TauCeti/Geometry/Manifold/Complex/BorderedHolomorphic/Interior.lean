@@ -42,6 +42,9 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
   of a Riemann surface with boundary is an analytic manifold modelled on `ℂ`.
 * `TauCeti.mem_borderedInterior_iff_im_pos`: a point is in the interior exactly when one, or any,
   chart of the maximal atlas sends it to a point of positive imaginary part.
+* `TauCeti.im_eq_zero_iff_notMem_borderedInterior`: a chart of the maximal atlas is real exactly
+  at the boundary points of its source; `TauCeti.conj_apply_eq_iff_notMem_borderedInterior`
+  restates this as invariance under complex conjugation.
 * `TauCeti.subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas`: a bordered holomorphic chart
   of a Riemann surface with boundary, restricted to the interior and read in `ℂ`, is a holomorphic
   chart of the interior. Its image and inverse are
@@ -65,7 +68,7 @@ public section
 noncomputable section
 
 open Set Complex Filter TopologicalSpace
-open scoped Manifold ContDiff Topology
+open scoped Manifold ContDiff Topology ComplexConjugate
 
 namespace TauCeti
 
@@ -133,6 +136,23 @@ theorem mem_borderedInterior_iff_im_pos {e : OpenPartialHomeomorph M ClosedUpper
   simpa [hx] using im_pos_iff_of_mem_contDiffGroupoid hc one_ne_zero
     (z := chartAt ClosedUpperHalfPlane x x) (by simp [hx])
 
+/-- A chart of the maximal atlas is real exactly at the boundary points of its source. -/
+theorem im_eq_zero_iff_notMem_borderedInterior {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M) {x : M}
+    (hx : x ∈ e.source) :
+    (e x : ℂ).im = 0 ↔ x ∉ borderedInterior M := by
+  rw [mem_borderedInterior_iff_im_pos he hx, not_lt]
+  exact ⟨le_of_eq, fun h ↦ le_antisymm h (e x).property⟩
+
+/-- A chart of the maximal atlas is fixed by complex conjugation exactly at the boundary points of
+its source. -/
+theorem conj_apply_eq_iff_notMem_borderedInterior
+    {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M)
+    {x : M} (hx : x ∈ e.source) :
+    conj (e x : ℂ) = e x ↔ x ∉ borderedInterior M :=
+  conj_eq_iff_im.trans (im_eq_zero_iff_notMem_borderedInterior he hx)
+
 /-- The interior of a `C^1` manifold modelled on the closed upper half-plane is a charted space
 modelled on `ℂ`: the chart at `x` restricts the chart of `M` at `x` to the interior and reads it
 in `ℂ`. -/
@@ -143,7 +163,7 @@ instance instChartedSpaceBorderedInterior : ChartedSpace ℂ (borderedInterior M
   mem_chart_source x := by
     refine ⟨mem_chart_source _ x, ?_⟩
     simpa [Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_coe] using
-      mem_borderedInterior_iff_im_chartAt_pos.1 x.2
+      mem_borderedInterior_iff_im_chartAt_pos.1 x.property
   chart_mem_atlas x := mem_range_self x
 
 /-- The chart of the interior at `x` is the open-subset chart at `x` read in `ℂ`. -/
@@ -167,7 +187,7 @@ theorem chartAt_borderedInterior_source (x : borderedInterior M) :
     mem_preimage, TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
     upperHalfPlaneChart_source, mem_ofPred_eq]
   refine ⟨And.left, fun hy ↦ ⟨hy, ?_⟩⟩
-  exact (mem_borderedInterior_iff_im_pos (IsManifold.chart_mem_maximalAtlas _) hy).1 y.2
+  exact (mem_borderedInterior_iff_im_pos (IsManifold.chart_mem_maximalAtlas _) hy).1 y.property
 
 /-- The restriction of a chart `e` of the maximal atlas of `M` to the interior, read in `ℂ`, takes
 values in the points of positive imaginary part whose model inverse lies in the target of `e`. -/
@@ -243,12 +263,12 @@ theorem subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas
           borderedHolomorphicGroupoid := fun x ↦
     ⟨borderedHolomorphicGroupoid.mem_of_eqOnSource (closedUnderRestriction'
         (he _ (chart_mem_atlas _ (x : M))).1
-          (e.isOpen_inter_preimage_symm (borderedInterior M).2))
+          (e.isOpen_inter_preimage_symm (borderedInterior M).is_open'))
         (e.subtypeRestr_symm_trans_subtypeRestr hs _),
       borderedHolomorphicGroupoid.mem_of_eqOnSource (closedUnderRestriction'
         (he _ (chart_mem_atlas _ (x : M))).2
           ((chartAt ClosedUpperHalfPlane (x : M)).isOpen_inter_preimage_symm
-            (borderedInterior M).2))
+            (borderedInterior M).is_open'))
         ((chartAt ClosedUpperHalfPlane (x : M)).subtypeRestr_symm_trans_subtypeRestr hs e)⟩
   rintro _ ⟨x, rfl⟩
   have h₁ := upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid (key x).1

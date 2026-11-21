@@ -283,8 +283,8 @@ def relativeDifferentialsSpecIso :
     (congrArg _ (fromTilde_toOpen R A ω)).trans (toTilde_liftKaehlerDifferential R A ω)
 
 /-- The isomorphism `Ω_{Spec A/R} ≅ Ω[A⁄R]~` sends the differential `d a` of `a ∈ A` to the
-section `D a` of `Ω[A⁄R]~`. -/
-@[simp]
+section `D a` of `Ω[A⁄R]~`. Not a simp lemma: simp first rewrites the restriction out of the
+differential with `PresheafOfModulesOfCommRing.Derivation.d_map`. -/
 lemma relativeDifferentialsSpecIso_hom_app_d (U : (Spec A).Opens) (a : A) :
     (relativeDifferentialsSpecIso R A).hom.val.app (op U)
         (((Spec A).universalDerivation R).d
@@ -297,11 +297,11 @@ lemma relativeDifferentialsSpecIso_hom_app_d (U : (Spec A).Opens) (a : A) :
 
 /-- The inverse of `Ω_{Spec A/R} ≅ Ω[A⁄R]~` sends the section `D a` of `Ω[A⁄R]~` to the
 differential `d a`. -/
-@[simp]
 lemma relativeDifferentialsSpecIso_inv_app_toOpen (U : (Spec A).Opens) (a : A) :
-    (relativeDifferentialsSpecIso R A).inv.val.app (op U)
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((relativeDifferentialsSpecIso R A).inv.val.app (op U)
         (tilde.toOpen (ModuleCat.of A Ω[A⁄R]) U (KaehlerDifferential.D R A a)) =
-      ((Spec A).universalDerivation R).d (algebraMap A Γ(Spec A, U) a) := by
+      ((Spec A).universalDerivation R).d (algebraMap A Γ(Spec A, U) a)) := by
   rw [← relativeDifferentialsSpecIso_hom_app_d]
   exact congr($((relativeDifferentialsSpecIso R A).hom_inv_id).val.app (op U) _)
 
