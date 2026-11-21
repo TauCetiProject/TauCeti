@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.CartanCompanion
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -84,14 +83,6 @@ theorem bipartiteMatrix_apply_self (i : I) : A.bipartiteMatrix c i i = 0 := by
 theorem bipartiteMatrix_apply_of_ne {i j : I} (hij : i ≠ j) :
     A.bipartiteMatrix c i j = if c i then -A.cartan i j else A.cartan i j := by
   simp [bipartiteMatrix_apply, hij]
-
-omit [DecidableEq I] in
-/-- Two distinct vertices of the same colour have zero Cartan entry. -/
-theorem cartan_apply_eq_zero_of_color_eq {i j : I} (hij : i ≠ j) (hc : c i = c j) :
-    A.cartan i j = 0 := by
-  by_contra h
-  have hji : A.cartan j i ≠ 0 := fun hji ↦ h ((A.zero_comm i j).mpr hji)
-  exact c.valid (diagramGraph_adj.mpr ⟨hij, h, hji⟩) hc
 
 /-- No entry joins two vertices in one colour class. -/
 theorem bipartiteMatrix_apply_eq_zero_of_color_eq {i j : I} (hc : c i = c j) :
