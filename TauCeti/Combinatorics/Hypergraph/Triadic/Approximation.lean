@@ -181,58 +181,56 @@ theorem regularityBound3_def (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ 
   (rfl)
 
 private theorem six_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
-    6 ≤ regularityBound3 q₃ ε F R t₀ :=
-  (le_max_right t₀ 6).trans ((le_max_left _ _).trans (le_max_left _ _))
+    6 ≤ regularityBound3 q₃ ε F R t₀ := by
+  unfold regularityBound3
+  omega
 
 private theorem max_one_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
-    max t₀ 1 ≤ regularityBound3 q₃ ε F R t₀ :=
-  (max_le_max_left t₀ (by decide : 1 ≤ 6)).trans
-    ((le_max_left _ _).trans (le_max_left _ _))
+    max t₀ 1 ≤ regularityBound3 q₃ ε F R t₀ := by
+  unfold regularityBound3
+  omega
 
 private theorem triadicCoarseBound_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ)
-    (t₀ : ℕ) : triadicCoarseBound q₃ ε F R t₀ ≤ regularityBound3 q₃ ε F R t₀ :=
-  (le_max_left _ _).trans ((le_max_right _ _).trans (le_max_left _ _))
+    (t₀ : ℕ) : triadicCoarseBound q₃ ε F R t₀ ≤ regularityBound3 q₃ ε F R t₀ := by
+  unfold regularityBound3
+  omega
 
 private theorem triadicCompCap_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ)
-    (t₀ : ℕ) : triadicCompCap q₃ ε F R t₀ ≤ regularityBound3 q₃ ε F R t₀ :=
-  (le_max_right _ _).trans ((le_max_right _ _).trans (le_max_left _ _))
+    (t₀ : ℕ) : triadicCompCap q₃ ε F R t₀ ≤ regularityBound3 q₃ ε F R t₀ := by
+  unfold regularityBound3
+  omega
 
 private theorem triadicHostCap_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ)
-    (t₀ : ℕ) : triadicHostCap q₃ ε F R t₀ ≤ regularityBound3 q₃ ε F R t₀ :=
-  le_max_right _ _
+    (t₀ : ℕ) : triadicHostCap q₃ ε F R t₀ ≤ regularityBound3 q₃ ε F R t₀ := by
+  unfold regularityBound3
+  omega
 
 private theorem topRegularRefinementBound_le_triadicRefinementCap {q₃ : ℕ} {ε : ℝ} {F : ℕ → ℝ}
     {R : ℕ → ℕ} {t₀ t m k : ℕ} (ht : t ≤ triadicCoarseBound q₃ ε F R t₀)
     (hm : m ≤ triadicCoarseBound q₃ ε F R t₀) (hk : k ≤ triadicCompCap q₃ ε F R t₀) :
     topRegularRefinementBound t 1 (triadicFineTol q₃ F R k) (triadicFineMass ε F R k) m ≤
-      triadicRefinementCap q₃ ε F R t₀ :=
-  (Finset.le_sup (f := fun k ↦ topRegularRefinementBound t 1
-      (triadicFineTol q₃ F R k) (triadicFineMass ε F R k) m)
-    (mem_range.2 (Nat.lt_succ_of_le hk))).trans <|
-  (Finset.le_sup (f := fun m ↦ (range (triadicCompCap q₃ ε F R t₀ + 1)).sup fun k ↦
-      topRegularRefinementBound t 1 (triadicFineTol q₃ F R k) (triadicFineMass ε F R k) m)
-    (mem_range.2 (Nat.lt_succ_of_le hm))).trans <|
-  Finset.le_sup (f := fun t ↦ (range (triadicCoarseBound q₃ ε F R t₀ + 1)).sup fun m ↦
-      (range (triadicCompCap q₃ ε F R t₀ + 1)).sup fun k ↦
-        topRegularRefinementBound t 1 (triadicFineTol q₃ F R k) (triadicFineMass ε F R k) m)
-    (mem_range.2 (Nat.lt_succ_of_le ht))
+      triadicRefinementCap q₃ ε F R t₀ := by
+  unfold triadicRefinementCap
+  refine le_trans ?_ (Finset.le_sup (mem_range.2 (Nat.lt_succ_of_le ht)))
+  refine le_trans ?_ (Finset.le_sup (mem_range.2 (Nat.lt_succ_of_le hm)))
+  refine le_trans ?_ (Finset.le_sup (mem_range.2 (Nat.lt_succ_of_le hk)))
+  rfl
 
 private theorem ceil_le_triadicHostCap {q₃ : ℕ} {ε : ℝ} {F : ℕ → ℝ} {R : ℕ → ℕ} {t₀ k : ℕ}
     (hk : k ≤ triadicCompCap q₃ ε F R t₀) :
     ⌈2 * ((triadicCoarseBound q₃ ε F R t₀ : ℝ) ^ 3 *
         (triadicRefinementCap q₃ ε F R t₀ : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) /
       (triadicFineBeta q₃ ε F R k ^ 2 * triadicFineMass ε F R k)⌉₊ ≤
-      triadicHostCap q₃ ε F R t₀ :=
-  Finset.le_sup (f := fun k ↦
-      ⌈2 * ((triadicCoarseBound q₃ ε F R t₀ : ℝ) ^ 3 *
-          (triadicRefinementCap q₃ ε F R t₀ : ℝ) ^ 3) * 221 * ((q₃ : ℝ) + 10) /
-        (triadicFineBeta q₃ ε F R k ^ 2 * triadicFineMass ε F R k)⌉₊)
-    (mem_range.2 (Nat.lt_succ_of_le hk))
+      triadicHostCap q₃ ε F R t₀ := by
+  unfold triadicHostCap
+  refine le_trans ?_ (Finset.le_sup (mem_range.2 (Nat.lt_succ_of_le hk)))
+  rfl
 
 /-- `regularityBound3` is always at least the requested vertex-cell floor `t₀`. -/
 theorem le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
-    t₀ ≤ regularityBound3 q₃ ε F R t₀ :=
-  (le_max_left t₀ 6).trans ((le_max_left _ _).trans (le_max_left _ _))
+    t₀ ≤ regularityBound3 q₃ ε F R t₀ := by
+  unfold regularityBound3
+  omega
 
 /-- `regularityBound3` is always at least `4`. -/
 theorem four_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
