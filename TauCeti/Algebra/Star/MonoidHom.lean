@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.MonoidHom
 public import Mathlib.Algebra.Star.StarAlgHom
-import TauCeti.Algebra.Ring.Hom
+public import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Corner unitization of non-unital `⋆`-algebra homomorphisms as `⋆`-monoid homomorphisms
@@ -15,13 +15,16 @@ import TauCeti.Algebra.Ring.Hom
 Given a possibly non-unital `⋆`-algebra homomorphism `ρ : A →⋆ₙₐ[R] B` from a unital `⋆`-semiring
 `A` into a unital `⋆`-ring `B`, the image `ρ 1` is an idempotent self-adjoint element and
 `a ↦ ρ a + (1 - ρ 1)` extends `ρ` by the identity on the complementary corner `1 - ρ 1` to a
-`StarMonoidHom` `A →⋆* B` (`NonUnitalStarAlgHom.unitizeStarMonoidHom`). Composing with
-`Unitary.map` pushes unitaries of `A` to unitaries of `B` whose conjugation action on `ρ b` sends
-`ρ b` to `ρ (u * b * star u)` (`NonUnitalStarAlgHom.unitizeStarMonoidHom_mul_apply_mul_star`).
+`StarMonoidHom` `A →⋆* B` (`NonUnitalStarAlgHom.unitizeStarMonoidHom`), built on `MulHom.unitize`.
+Composing with `Unitary.map` pushes unitaries of `A` to unitaries of `B` whose conjugation action on
+`ρ b` sends `ρ b` to `ρ (u * b * star u)`
+(`NonUnitalStarAlgHom.unitizeStarMonoidHom_mul_apply_mul_star`).
 
 ## Main definitions and results
 
 * `NonUnitalStarAlgHom.unitizeStarMonoidHom`: the `⋆`-monoid homomorphism `a ↦ ρ a + (1 - ρ 1)`.
+* `NonUnitalStarAlgHom.toMonoidHom_unitizeStarMonoidHom`: forgetting `star` identifies
+  `ρ.unitizeStarMonoidHom` with `MulHom.unitize`.
 * `NonUnitalStarAlgHom.unitizeStarMonoidHom_mul_apply` and
   `NonUnitalStarAlgHom.apply_mul_unitizeStarMonoidHom`: absorption against `ρ b` on either side.
 * `NonUnitalStarAlgHom.unitizeStarMonoidHom_mul_apply_mul_star`: conjugation of `ρ b` by
@@ -45,26 +48,22 @@ variable {R A B : Type*} [Monoid R]
 `⋆`-rings to a `StarMonoidHom` `A →⋆* B` via `a ↦ ρ a + (1 - ρ 1)`, acting as the identity on the
 complementary corner `1 - ρ 1` so that `Unitary.map` sends unitaries of `A` to unitaries of `B`. -/
 def unitizeStarMonoidHom (ρ : A →⋆ₙₐ[R] B) : A →⋆* B where
-  toFun a := ρ a + (1 - ρ 1)
-  map_one' := add_sub_cancel (ρ 1) 1
-  map_mul' a b := by
-    symm
-    have hidem : (1 - ρ 1) * (1 - ρ 1) = 1 - ρ 1 := by
-      rw [mul_sub, mul_one, TauCeti.one_sub_map_one_mul_apply, sub_zero]
-    calc
-      (ρ a + (1 - ρ 1)) * (ρ b + (1 - ρ 1))
-        = ρ a * ρ b + ρ a * (1 - ρ 1) + ((1 - ρ 1) * ρ b + (1 - ρ 1) * (1 - ρ 1)) := by
-          rw [add_mul, mul_add, mul_add]
-      _ = ρ (a * b) + (1 - ρ 1) := by
-          rw [← map_mul, TauCeti.apply_mul_one_sub_map_one, TauCeti.one_sub_map_one_mul_apply,
-            hidem, add_zero, zero_add]
+  toMonoidHom := MulHom.unitize (ρ : A →ₙ* B)
   map_star' a := by
-    rw [star_add, star_sub, star_one, ← map_star, ← map_star, star_one]
+    change (MulHom.unitize (ρ : A →ₙ* B)) (star a) = star ((MulHom.unitize (ρ : A →ₙ* B)) a)
+    simp only [MulHom.unitize_apply, MulHom.coe_coe, star_add, star_sub, star_one, ← map_star]
+
+/-- Forgetting `star` identifies `ρ.unitizeStarMonoidHom` with `MulHom.unitize`. -/
+@[simp]
+theorem toMonoidHom_unitizeStarMonoidHom (ρ : A →⋆ₙₐ[R] B) :
+    ρ.unitizeStarMonoidHom.toMonoidHom = MulHom.unitize (ρ : A →ₙ* B) := by
+  rfl
 
 /-- Explicit formula `ρ.unitizeStarMonoidHom a = ρ a + (1 - ρ 1)`. -/
 theorem unitizeStarMonoidHom_apply (ρ : A →⋆ₙₐ[R] B) (a : A) :
-    ρ.unitizeStarMonoidHom a = ρ a + (1 - ρ 1) :=
-  (rfl)
+    ρ.unitizeStarMonoidHom a = ρ a + (1 - ρ 1) := by
+  rw [← StarMonoidHom.coe_toMonoidHom, toMonoidHom_unitizeStarMonoidHom, MulHom.unitize_apply]
+  rfl
 
 /-- When `ρ 1 = 1`, `ρ.unitizeStarMonoidHom` agrees pointwise with `ρ`. -/
 theorem unitizeStarMonoidHom_apply_of_map_one {ρ : A →⋆ₙₐ[R] B} (hρ : ρ 1 = 1) (a : A) :

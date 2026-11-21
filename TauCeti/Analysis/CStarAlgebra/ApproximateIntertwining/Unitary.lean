@@ -108,20 +108,6 @@ variable {A B : ℕ → Type*} [∀ n, CStarAlgebra (A n)] [∀ n, CStarAlgebra 
   {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1)}
   {φ₀ : ∀ n, A n →⋆ₙₐ[ℂ] B (n + 1)} {ψ₀ : ∀ n, B n →⋆ₙₐ[ℂ] A n}
 
-private theorem exists_conjHom_comp_sub_le {X Y Z : Type*}
-    [NonUnitalCStarAlgebra X] [CStarAlgebra Y] [CStarAlgebra Z]
-    {f : X →⋆ₙₐ[ℂ] Y} {g : Y →⋆ₙₐ[ℂ] Z} {h : X →⋆ₙₐ[ℂ] Z}
-    (hgf : ApproximatelyUnitarilyEquivalent (g.comp f) h)
-    (w : unitary Y) (S : Finset X) {ε : ℝ} (hε : 0 < ε) :
-    ∃ u : unitary Z, ∀ x ∈ S, ‖conjHom u g (conjHom w f x) - h x‖ ≤ ε := by
-  have hEq : ApproximatelyUnitarilyEquivalent (g.comp (conjHom w f)) h :=
-    ((ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp w f).postcomp_nonUnital g).trans hgf
-  obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hEq S ε hε
-  refine ⟨u, fun x hx ↦ ?_⟩
-  simpa only [conjHom, NonUnitalStarAlgHom.comp_apply,
-    StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
-    Unitary.coe_star] using (hu x hx).le
-
 open Classical in
 private noncomputable def zigZagZero
     (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
@@ -131,12 +117,13 @@ private noncomputable def zigZagZero
   let G₀ : Finset (B 0) := denseSeed β 0
   let u₀ : unitary (A 0) := 1
   let F₀ : Finset (A 0) := G₀.image (conjHom u₀ (ψ₀ 0)) ∪ denseSeed α 0
-  let hv := exists_conjHom_comp_sub_le (hφψ 0) u₀ G₀ (ε := (1 / 2 : ℝ) ^ 0) (by positivity)
+  let hv := (hφψ 0).exists_norm_conjStarAlgAut_comp_sub_lt u₀ G₀ (ε := (1 / 2 : ℝ) ^ 0)
+    (by positivity)
   { u := u₀
     v := hv.choose
     F := F₀
     G := G₀
-    norm_φ_ψ_sub_le := hv.choose_spec }
+    norm_φ_ψ_sub_le := fun b hb ↦ (hv.choose_spec b hb).le }
 
 open Classical in
 private theorem zigZagZero_G
@@ -165,17 +152,18 @@ private noncomputable def zigZagSucc
     (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) : ZigZagStage β φ₀ ψ₀ (n + 1) :=
   let G' : Finset (B (n + 1)) :=
     s.G.image (β n) ∪ s.F.image (conjHom s.v (φ₀ n)) ∪ denseSeed β (n + 1)
-  let hu := exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n) (by positivity)
+  let hu := (hψφ n).exists_norm_conjStarAlgAut_comp_sub_lt s.v s.F (ε := (1 / 2 : ℝ) ^ n)
+    (by positivity)
   let u' : unitary (A (n + 1)) := hu.choose
   let F' : Finset (A (n + 1)) :=
     s.F.image (α n) ∪ G'.image (conjHom u' (ψ₀ (n + 1))) ∪ denseSeed α (n + 1)
-  let hv := exists_conjHom_comp_sub_le (hφψ (n + 1)) u' G'
+  let hv := (hφψ (n + 1)).exists_norm_conjStarAlgAut_comp_sub_lt u' G'
     (ε := (1 / 2 : ℝ) ^ (n + 1)) (by positivity)
   { u := u'
     v := hv.choose
     F := F'
     G := G'
-    norm_φ_ψ_sub_le := hv.choose_spec }
+    norm_φ_ψ_sub_le := fun b hb ↦ (hv.choose_spec b hb).le }
 
 open Classical in
 private theorem zigZagSucc_u
@@ -185,7 +173,7 @@ private theorem zigZagSucc_u
     (hφψ : ∀ n, ApproximatelyUnitarilyEquivalent ((φ₀ n).comp (ψ₀ n)) (β n))
     (n : ℕ) (s : ZigZagStage β φ₀ ψ₀ n) :
     (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).u =
-      (exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n)
+      ((hψφ n).exists_norm_conjStarAlgAut_comp_sub_lt s.v s.F (ε := (1 / 2 : ℝ) ^ n)
         (by positivity)).choose :=
   rfl
 
@@ -223,8 +211,8 @@ private theorem zigZagSucc_norm_ψ_φ_sub_le
     ‖conjHom (zigZagSucc α β φ₀ ψ₀ hψφ hφψ n s).u (ψ₀ (n + 1)) (conjHom s.v (φ₀ n) a) - α n a‖ ≤
       (1 / 2 : ℝ) ^ n := by
   rw [zigZagSucc_u]
-  exact (exists_conjHom_comp_sub_le (hψφ n) s.v s.F (ε := (1 / 2 : ℝ) ^ n)
-    (by positivity)).choose_spec a ha
+  exact (((hψφ n).exists_norm_conjStarAlgAut_comp_sub_lt s.v s.F (ε := (1 / 2 : ℝ) ^ n)
+    (by positivity)).choose_spec a ha).le
 
 private noncomputable def zigZag
     (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1))
@@ -340,14 +328,14 @@ theorem elliott_intertwining_of_isSeqColimitCocone
       ((ιB (m + 1)).comp
         ((Unitary.conjStarAlgAut ℂ (B (m + 1)) (v m)).toNonUnitalStarAlgHom.comp (φ₀ m)))
       ((ιB (m + 1)).comp (φ₀ m)) :=
-    (ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp (v m) (φ₀ m)).postcomp_nonUnital
+    (ApproximatelyUnitarilyEquivalent.conjStarAlgAut_comp (v m) (φ₀ m)).postcomp
       (ιB (m + 1))
   have hstep₀ (m : ℕ) : ApproximatelyUnitarilyEquivalent
       (((ιB (m + 2)).comp (φ₀ (m + 1))).comp (α m)) ((ιB (m + 1)).comp (φ₀ m)) := by
-    have h₁ := (hψφ m).symm.postcomp_nonUnital (φ₀ (m + 1))
+    have h₁ := (hψφ m).symm.postcomp (φ₀ (m + 1))
     have h₂ := (hφψ (m + 1)).precomp (φ₀ m)
     rw [NonUnitalStarAlgHom.comp_assoc] at h₂
-    have h₃ := (h₁.trans h₂).postcomp_nonUnital (ιB (m + 2))
+    have h₃ := (h₁.trans h₂).postcomp (ιB (m + 2))
     rwa [← NonUnitalStarAlgHom.comp_assoc, ← NonUnitalStarAlgHom.comp_assoc,
       hιB.comp_eq (m + 1)] at h₃
   have hθ (n : ℕ) : ApproximatelyUnitarilyEquivalent
@@ -358,7 +346,7 @@ theorem elliott_intertwining_of_isSeqColimitCocone
     exact ((hconj (m + 1)).precomp (α m)).trans ((hstep₀ m).trans (hconj m).symm)
   refine ⟨θ, hθ, fun n ↦ (ApproximatelyUnitarilyEquivalent.symm_comp_iff θ).mpr ?_⟩
   rw [← NonUnitalStarAlgHom.comp_assoc, ← hιB.comp_eq n]
-  exact ((hθ n).precomp (ψ₀ n)).trans ((hφψ n).postcomp_nonUnital (ιB (n + 1)))
+  exact ((hθ n).precomp (ψ₀ n)).trans ((hφψ n).postcomp (ιB (n + 1)))
 
 end ColimitIntertwining
 

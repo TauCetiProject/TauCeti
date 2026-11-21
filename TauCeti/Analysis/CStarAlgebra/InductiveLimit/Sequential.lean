@@ -32,7 +32,8 @@ a `⋆`-homomorphism `hι.lift ξ hξ : C →⋆ₙₐ[ℂ] D`.
   `const`, `of_nonUnitalStarSubalgebra`, and `of_starSubalgebra`, and extensionality principles
   `hom_ext` and `hom_ext_of_approx`.
 * `TauCeti.IsSeqColimitCocone.lift`: universal lift `C →⋆ₙₐ[ℂ] D` of any compatible cocone `ξ`,
-  characterized by `lift_apply`, `lift_comp`, and `lift_unique`.
+  characterized by `lift_apply`, `lift_comp`, and `lift_unique`, and the canonical comparison
+  `⋆`-isomorphism `IsSeqColimitCocone.equiv` between two colimit realizations.
 
 ## References
 
@@ -114,13 +115,15 @@ theorem of_norm_eq_ciInf (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
 /-- Any compatible cocone of isometric `⋆`-homomorphisms whose ranges have dense union is a
 sequential colimit cocone. -/
 theorem of_isometry (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
-    (hdense : Dense (⋃ n, Set.range (ι n))) (hiso : ∀ n a, ‖ι n a‖ = ‖a‖) :
+    (hdense : Dense (⋃ n, Set.range (ι n))) (hiso : ∀ n, Isometry (ι n)) :
     IsSeqColimitCocone α ι where
   comp_eq := hcomp
   dense_iUnion_range := hdense
   tendsto_norm n a := by
+    have hnorm_eq (m : ℕ) (x : A m) : ‖ι m x‖ = ‖x‖ := by
+      simpa only [dist_zero_right, map_zero] using (hiso m).dist_eq x 0
     have hnorm (k : ℕ) : ‖seqTransHom α (Nat.le_add_right n k) a‖ = ‖ι n a‖ := by
-      rw [← hiso (n + k), comp_seqTransHom_apply_of_comp_eq hcomp]
+      rw [← hnorm_eq (n + k), comp_seqTransHom_apply_of_comp_eq hcomp]
     simp_rw [hnorm]
     exact tendsto_const_nhds
 
@@ -128,7 +131,7 @@ theorem of_isometry (hcomp : ∀ n, (ι (n + 1)).comp (α n) = ι n)
 cocone. -/
 theorem const (C : Type*) [NonUnitalCStarAlgebra C] :
     IsSeqColimitCocone (A := fun _ ↦ C) (fun _ ↦ .id ℂ C) (fun _ ↦ .id ℂ C) :=
-  of_isometry (fun _ ↦ rfl) (by simp [Set.iUnion_const]) (fun _ _ ↦ rfl)
+  of_isometry (fun _ ↦ rfl) (by simp [Set.iUnion_const]) (fun _ ↦ isometry_id)
 
 /-- An increasing sequence of closed non-unital `⋆`-subalgebras with dense union forms a sequential
 colimit cocone under subtype inclusions. -/
@@ -136,7 +139,7 @@ theorem of_nonUnitalStarSubalgebra {S : ℕ → NonUnitalStarSubalgebra ℂ C}
     [∀ n, IsClosed (S n : Set C)] (hS : Monotone S) (hdense : Dense (⋃ n, (S n : Set C))) :
     IsSeqColimitCocone (fun n ↦ NonUnitalStarSubalgebra.inclusion (hS (Nat.le_succ n)))
       (fun n ↦ NonUnitalStarSubalgebraClass.subtype (S n)) := by
-  refine of_isometry (fun _ ↦ rfl) ?_ (fun _ _ ↦ rfl)
+  refine of_isometry (fun _ ↦ rfl) ?_ (fun _ ↦ isometry_subtypeVal)
   have hr (n : ℕ) : Set.range ⇑(NonUnitalStarSubalgebraClass.subtype (S n)) = (S n : Set C) := by
     ext x
     simp
@@ -150,7 +153,7 @@ theorem of_starSubalgebra {E : Type*} [CStarAlgebra E] {S : ℕ → StarSubalgeb
     IsSeqColimitCocone
       (fun n ↦ (StarSubalgebra.inclusion (hS (Nat.le_succ n))).toNonUnitalStarAlgHom)
       (fun n ↦ (S n).subtype.toNonUnitalStarAlgHom) := by
-  refine of_isometry (fun _ ↦ rfl) ?_ (fun _ _ ↦ rfl)
+  refine of_isometry (fun _ ↦ rfl) ?_ (fun _ ↦ isometry_subtypeVal)
   have hr (n : ℕ) : Set.range ⇑(S n).subtype.toNonUnitalStarAlgHom = (S n : Set E) := by
     ext x
     simp
@@ -325,6 +328,42 @@ theorem lift_unique {D : Type*} [NonUnitalCStarAlgebra D] (hι : IsSeqColimitCoc
     {Φ : C →⋆ₙₐ[ℂ] D} (hΦ : ∀ n a, Φ (ι n a) = ξ n a) :
     Φ = hι.lift ξ hξ :=
   hι.hom_ext fun n a ↦ (hΦ n a).trans (hι.lift_apply ξ hξ n a).symm
+
+/-- Canonical `⋆`-isomorphism between two sequential colimit realizations of the same system. -/
+noncomputable def equiv {D : Type*} [NonUnitalCStarAlgebra D] {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D}
+    (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) : C ≃⋆ₐ[ℂ] D :=
+  StarAlgEquiv.ofNonUnitalStarAlgHom (hι.lift ι₂ hι₂.comp_eq) (hι₂.lift ι hι.comp_eq)
+    (hι.hom_ext fun n a ↦ by simp)
+    (hι₂.hom_ext fun n a ↦ by simp)
+
+/-- The forward `⋆`-homomorphism underlying `hι.equiv hι₂` is `hι.lift ι₂ hι₂.comp_eq`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_equiv {D : Type*} [NonUnitalCStarAlgebra D]
+    {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) :
+    (hι.equiv hι₂).toNonUnitalStarAlgHom = hι.lift ι₂ hι₂.comp_eq :=
+  StarAlgEquiv.toNonUnitalStarAlgHom_ofNonUnitalStarAlgHom ..
+
+/-- The inverse `⋆`-homomorphism underlying `(hι.equiv hι₂).symm` is `hι₂.lift ι hι.comp_eq`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_equiv_symm {D : Type*} [NonUnitalCStarAlgebra D]
+    {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D} (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) :
+    (hι.equiv hι₂).symm.toNonUnitalStarAlgHom = hι₂.lift ι hι.comp_eq :=
+  StarAlgEquiv.toNonUnitalStarAlgHom_symm_ofNonUnitalStarAlgHom ..
+
+/-- Applying the canonical comparison `⋆`-isomorphism `hι.equiv hι₂` to a stage image `ι n a`
+yields `ι₂ n a`. -/
+@[simp]
+theorem equiv_apply {D : Type*} [NonUnitalCStarAlgebra D] {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D}
+    (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) (n : ℕ) (a : A n) :
+    hι.equiv hι₂ (ι n a) = ι₂ n a :=
+  hι.lift_apply ι₂ hι₂.comp_eq n a
+
+/-- Applying the inverse `(hι.equiv hι₂).symm` to a stage image `ι₂ n a` yields `ι n a`. -/
+@[simp]
+theorem equiv_symm_apply {D : Type*} [NonUnitalCStarAlgebra D] {ι₂ : ∀ n, A n →⋆ₙₐ[ℂ] D}
+    (hι : IsSeqColimitCocone α ι) (hι₂ : IsSeqColimitCocone α ι₂) (n : ℕ) (a : A n) :
+    (hι.equiv hι₂).symm (ι₂ n a) = ι n a :=
+  hι₂.lift_apply ι hι.comp_eq n a
 
 end IsSeqColimitCocone
 
