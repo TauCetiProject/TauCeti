@@ -14,7 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
 involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane.
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and packages the principal square
+root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
 -/
 
 public section
@@ -95,5 +96,18 @@ theorem sqrt_add_sqrt_re_pos_iff (x y : ℂ) :
     by_contra! hn
     linarith
   · rintro (h | h) <;> linarith
+
+/-- The principal square root of a nonzero complex number, as a unit. -/
+noncomputable def sqrtUnit {z : ℂ} (hz : z ≠ 0) : ℂˣ :=
+  Units.mk0 (sqrt z) (sqrt_eq_zero_iff.not.2 hz)
+
+/-- The value of `Complex.sqrtUnit` is the principal square root. -/
+@[simp]
+theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
+  Units.val_mk0 _
+
+/-- The unit principal square root of `z` squares to `z`. -/
+theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
+  rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
 
 end Complex
