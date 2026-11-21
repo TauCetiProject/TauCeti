@@ -31,10 +31,11 @@ differentiate.
   restricted to the summand `X.X p ⊗ Y.X q`, for cochain complexes indexed by `ℤ` whose tensor
   product exists, and `HomologicalComplex.ιTensorObj_d'`, the same formula with arbitrary names
   for the successor degrees.
+* `HomologicalComplex.tensor_d`: the differential of the monoidal tensor product `X ⊗ Y` is that
+  of `HomologicalComplex.tensorObj X Y`, for complexes of any shape with tensor signs.
 * `HomologicalComplex.ιTensorObj_tensor_d` and `HomologicalComplex.ιTensorObj_tensor_d'`: the same
-  two formulas for the monoidal tensor product `X ⊗ Y`, through
-  `HomologicalComplex.tensor_d`, which identifies its differential with that of
-  `HomologicalComplex.tensorObj X Y`.
+  two formulas for the monoidal tensor product `X ⊗ Y` of cochain complexes indexed by `ℤ`,
+  through `HomologicalComplex.tensor_d`.
 * `ChainComplex.ιTensorObj_D₁_succ`, `ChainComplex.ιTensorObj_D₁_zero`,
   `ChainComplex.ιTensorObj_D₂_succ` and `ChainComplex.ιTensorObj_D₂_zero`: the two parts of the
   differential of `HomologicalComplex.tensorObj K₁ K₂` on a homogeneous summand, for chain
@@ -49,9 +50,10 @@ complexes of finite-dimensional vector spaces, the tensor product of two arbitra
 can need infinite coproducts. The corollaries `HomologicalComplex.ιTensorObj_tensor_d` and
 `HomologicalComplex.ιTensorObj_tensor_d'` restate them for `X ⊗ Y` in Mathlib's
 `HomologicalComplex.monoidalCategoryStruct`, because `rw` and `simp` do not see through `X ⊗ Y` to
-`HomologicalComplex.tensorObj X Y`. Their section variables are exactly the instances that
-structure takes: a zero object, the coproducts `GradedObject.HasTensor`, preservation of the
-initial object by `- ⊗ X₂`, and the conditions `GradedObject.HasGoodTensor₁₂Tensor` and
+`HomologicalComplex.tensorObj X Y`; `HomologicalComplex.tensor_d` records that identification for
+complexes of any shape. Their section variables are exactly the instances that structure takes:
+a zero object, the coproducts `GradedObject.HasTensor`, preservation of the initial object by
+`- ⊗ X₂`, and the conditions `GradedObject.HasGoodTensor₁₂Tensor` and
 `GradedObject.HasGoodTensorTensor₂₃`. For `ModuleCat R`, instance search finds all of them once
 `Mathlib.Algebra.Category.ModuleCat.Colimits`, `Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed`
 and `Mathlib.CategoryTheory.Monoidal.Closed.Braided` are imported.
@@ -100,16 +102,27 @@ lemma ιTensorObj_d' {p q j p' q' j' : ℤ}
 
 end HasTensor
 
-variable [HasZeroObject C] [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
+section Monoidal
+
+variable {I : Type*} [AddMonoid I] [DecidableEq I] {c : ComplexShape I} [c.TensorSigns]
+  [HasZeroObject C] [∀ X₁ X₂ : GradedObject I C, GradedObject.HasTensor X₁ X₂]
   [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
-  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
-  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+  [∀ X₁ X₂ X₃ : GradedObject I C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ X₁ X₂ X₃ : GradedObject I C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
 
 /-- The differential of the monoidal tensor product `X ⊗ Y` of
 `HomologicalComplex.monoidalCategoryStruct` is the differential of
 `HomologicalComplex.tensorObj X Y`. -/
-lemma tensor_d (X Y : CochainComplex C ℤ) (i j : ℤ) : (X ⊗ Y).d i j = (tensorObj X Y).d i j :=
+lemma tensor_d (X Y : HomologicalComplex C c) (i j : I) :
+    (X ⊗ Y).d i j = (tensorObj X Y).d i j :=
   (rfl)
+
+end Monoidal
+
+variable [HasZeroObject C] [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
+  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
+  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
 
 /-- `HomologicalComplex.ιTensorObj_d` for the monoidal tensor product `X ⊗ Y` of
 `HomologicalComplex.monoidalCategoryStruct`. -/

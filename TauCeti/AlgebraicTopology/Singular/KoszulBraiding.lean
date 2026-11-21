@@ -65,8 +65,8 @@ braiding, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree `(p, q)`, is chain homo
 braiding `R ⊗ S ⟶ S ⊗ R` followed by the map induced by the swap `X × Y ⟶ Y × X` and the
 Alexander–Whitney map of `Y × X`. -/
 def alexanderWhitneyKoszulBraidingHomotopy (X Y : TopCat.{w}) (R S : C) :
-    Homotopy (alexanderWhitney X Y R S ≫ TauCeti.NatChainComplex.koszulBraidingHom
-        ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S))
+    Homotopy (alexanderWhitney X Y R S ≫ (HomologicalComplex.koszulBraiding
+        ((toSSet.obj X).chainComplex R) ((toSSet.obj Y).chainComplex S)).hom)
       (((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
         SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R) ≫ alexanderWhitney Y X S R) :=
   (Homotopy.ofEq (by rw [alexanderWhitney_def, Category.assoc])).trans <|
@@ -100,8 +100,8 @@ braiding `C(X; R) ⊗ C(Y; S) ⟶ C(Y; S) ⊗ C(X; R)`, `x ⊗ y ↦ (-1)^(p * q
 followed by the maps induced by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap
 `X × Y ⟶ Y × X`. -/
 def koszulBraidingShuffleHomotopy (X Y : TopCat.{w}) (R S : C) :
-    Homotopy (TauCeti.NatChainComplex.koszulBraidingHom ((toSSet.obj X).chainComplex R)
-        ((toSSet.obj Y).chainComplex S) ≫ shuffle Y X S R)
+    Homotopy ((HomologicalComplex.koszulBraiding ((toSSet.obj X).chainComplex R)
+        ((toSSet.obj Y).chainComplex S)).hom ≫ shuffle Y X S R)
       (shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app (toSSet.obj (X ⊗ Y)) ≫
         SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R)) := by
   -- the shuffle map is a homotopy inverse of the Alexander–Whitney map on both sides, and the
@@ -119,8 +119,8 @@ variable {R S T : C}
 the Alexander–Whitney diagonal `C(X; T) ⟶ C(X; R) ⊗ C(X; S)` of `u : T ⟶ R ⊗ S` followed by the
 Koszul braiding is chain homotopic to the Alexander–Whitney diagonal of `u ≫ (β_ R S).hom`. -/
 def alexanderWhitneyDiagonalKoszulBraidingHomotopy (X : TopCat.{w}) (u : T ⟶ R ⊗ S) :
-    Homotopy (X.alexanderWhitneyDiagonal u ≫ TauCeti.NatChainComplex.koszulBraidingHom
-        ((toSSet.obj X).chainComplex R) ((toSSet.obj X).chainComplex S))
+    Homotopy (X.alexanderWhitneyDiagonal u ≫ (HomologicalComplex.koszulBraiding
+        ((toSSet.obj X).chainComplex R) ((toSSet.obj X).chainComplex S)).hom)
       (X.alexanderWhitneyDiagonal (u ≫ (β_ R S).hom)) :=
   (Homotopy.ofEq (by simp only [TauCeti.alexanderWhitneyDiagonal_def, Category.assoc])).trans <|
     ((alexanderWhitneyKoszulBraidingHomotopy X X R S).compLeft

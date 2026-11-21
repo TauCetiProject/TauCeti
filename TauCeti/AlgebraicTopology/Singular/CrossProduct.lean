@@ -51,7 +51,7 @@ In a braided coefficient category the cross product is graded commutative: the s
 (`TopCat.singularHomologyCross_comp_map_braiding`).  At chain level, the shuffle map commutes
 with the interchange of factors up to homotopy, with the Koszul sign
 (`TopCat.koszulBraidingShuffleHomotopy`); on homology this sign is that of the algebraic cross
-product (`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom`).  With
+product (`TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraiding_hom`).  With
 coefficients in the monoidal unit, such as `k` in `ModuleCat k`, and `𝟙_ C ⊗ 𝟙_ C` identified
 with `𝟙_ C` through the left unitor, the statement needs no coefficient braiding
 (`TopCat.singularHomologyCross_comp_map_leftUnitor_comp_map_braiding`).
@@ -355,7 +355,8 @@ lemma singularHomologyCross_comp_map_braiding :
     (homologyCross _ _ p q n h ≫=
       (koszulBraidingShuffleHomotopy X Y R S).homologyMap_eq n).symm.trans <|
       (homologyCross _ _ p q n h ≫= homologyMap_comp _ _ n).trans <|
-        TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraidingHom_assoc _ _ p q n h _
+        TauCeti.NatChainComplex.homologyCross_comp_homologyMap_koszulBraiding_hom_assoc
+          _ _ p q n h _
   simp only [homologyMap_comp, Preadditive.zsmul_comp, Category.assoc] at key
   exact (Category.assoc _ _ _).trans key
 

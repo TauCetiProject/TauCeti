@@ -58,7 +58,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [Mo
 private def alexanderWhitneyKoszulBraidingShuffle :
     (K ⊗ L).chainComplex (R ⊗ S) ⟶ (K ⊗ L).chainComplex (S ⊗ R) :=
   alexanderWhitney K L R S ≫
-    TauCeti.NatChainComplex.koszulBraidingHom (K.chainComplex R) (L.chainComplex S) ≫
+    (HomologicalComplex.koszulBraiding (K.chainComplex R) (L.chainComplex S)).hom ≫
       shuffle L K S R ≫ chainComplexMap (β_ L K).hom (S ⊗ R)
 
 variable {K L} in
@@ -68,10 +68,10 @@ private lemma alexanderWhitneyKoszulBraidingShuffle_naturality {K' L' : SSet.{w}
       alexanderWhitneyKoszulBraidingShuffle K L R S ≫ chainComplexMap (f ⊗ₘ g) (S ⊗ R) := by
   -- `⊗ₘ` of chain complexes is `HomologicalComplex.tensorHom` by definition
   have hκ : (chainComplexMap f R ⊗ₘ chainComplexMap g S) ≫
-      TauCeti.NatChainComplex.koszulBraidingHom (K'.chainComplex R) (L'.chainComplex S) =
-        TauCeti.NatChainComplex.koszulBraidingHom (K.chainComplex R) (L.chainComplex S) ≫
+      (HomologicalComplex.koszulBraiding (K'.chainComplex R) (L'.chainComplex S)).hom =
+        (HomologicalComplex.koszulBraiding (K.chainComplex R) (L.chainComplex S)).hom ≫
           (chainComplexMap g S ⊗ₘ chainComplexMap f R) :=
-    TauCeti.NatChainComplex.koszulBraidingHom_naturality _ _ _ _
+    HomologicalComplex.koszulBraiding_hom_naturality _ _ _ _
   simp only [alexanderWhitneyKoszulBraidingShuffle, alexanderWhitney_naturality_assoc,
     reassoc_of% hκ, shuffle_naturality_assoc, Category.assoc, ← Functor.map_comp,
     BraidedCategory.braiding_naturality]
@@ -88,7 +88,7 @@ private lemma alexanderWhitneyKoszulBraidingShuffle_f_zero :
     SSet.ιChainComplex_chainComplexFunctor_map_app_f]
   simp only [Fin.val_zero, Nat.sub_zero, TauCeti.SimplexCategory.subinterval_zero_eq_id, op_id,
     Functor.map_id_apply, Category.assoc,
-    TauCeti.NatChainComplex.ιTensorObj_koszulBraidingHom_f_assoc, mul_zero, pow_zero, one_smul,
+    TauCeti.NatChainComplex.ιTensorObj_koszulBraiding_hom_f_assoc, mul_zero, pow_zero, one_smul,
     BraidedCategory.braiding_naturality_assoc,
     reassoc_of% ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero]
   -- the swap sends the vertex `(x.2, x.1)` of `L × K` to `(x.1, x.2) = x`, by definition
@@ -100,7 +100,7 @@ Alexander–Whitney map `C(K × L; R ⊗ S) ⟶ C(K; R) ⊗ C(L; S)` followed by
 `R ⊗ S ⟶ S ⊗ R` followed by the swap `K × L ⟶ L × K` and the Alexander–Whitney map of `L × K`. -/
 def alexanderWhitneyKoszulBraidingHomotopy :
     Homotopy (alexanderWhitney K L R S ≫
-        TauCeti.NatChainComplex.koszulBraidingHom (K.chainComplex R) (L.chainComplex S))
+        (HomologicalComplex.koszulBraiding (K.chainComplex R) (L.chainComplex S)).hom)
       (((chainComplexFunctor C).map (β_ R S).hom).app (K ⊗ L) ≫
         chainComplexMap (β_ K L).hom (S ⊗ R) ≫ alexanderWhitney L K S R) :=
   (Homotopy.ofEq (Category.comp_id _).symm).trans <|
@@ -132,12 +132,12 @@ lemma alexanderWhitneyKoszulBraidingHomotopy_hom_naturality {K' L' : SSet.{w}} (
     Preadditive.comp_add, Preadditive.add_comp, Preadditive.comp_neg, Preadditive.neg_comp,
     Category.assoc]
   have h₁ : chainComplexMap (f ⊗ₘ g) (R ⊗ S) ≫ K'.alexanderWhitney L' R S ≫
-      TauCeti.NatChainComplex.koszulBraidingHom (K'.chainComplex R) (L'.chainComplex S) =
+      (HomologicalComplex.koszulBraiding (K'.chainComplex R) (L'.chainComplex S)).hom =
       (K.alexanderWhitney L R S ≫
-        TauCeti.NatChainComplex.koszulBraidingHom (K.chainComplex R) (L.chainComplex S)) ≫
+        (HomologicalComplex.koszulBraiding (K.chainComplex R) (L.chainComplex S)).hom) ≫
         (chainComplexMap g S ⊗ₘ chainComplexMap f R) := by
     rw [alexanderWhitney_naturality_assoc, Category.assoc]
-    exact congrArg (_ ≫ ·) (TauCeti.NatChainComplex.koszulBraidingHom_naturality _ _ _ _)
+    exact congrArg (_ ≫ ·) (HomologicalComplex.koszulBraiding_hom_naturality _ _ _ _)
   have h₂ : chainComplexMap (f ⊗ₘ g) (S ⊗ R) ≫ chainComplexMap (β_ K' L').hom (S ⊗ R) ≫
       L'.alexanderWhitney K' S R =
       (chainComplexMap (β_ K L).hom (S ⊗ R) ≫ L.alexanderWhitney K S R) ≫
