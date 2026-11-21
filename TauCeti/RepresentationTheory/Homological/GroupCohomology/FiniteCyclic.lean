@@ -222,7 +222,7 @@ theorem groupCohomologyTrivialLinearEquivOdd_symm_apply (i : ℕ) (hi : Odd i)
         ⟨x, by
           rw [LinearMap.mem_ker]
           exact (norm_trivial_asHom_apply k M (x : M)).trans
-            ((Submodule.mem_torsionBy_iff ..).1 x.2)⟩ :=
+            ((Submodule.mem_torsionBy_iff ..).1 x.property)⟩ :=
   (LinearEquiv.symm_apply_eq _).2 (Subtype.ext
     (coe_groupCohomologyTrivialLinearEquivOdd_groupCohomologyπOdd k g hg M i hi ⟨x, _⟩).symm)
 
@@ -245,7 +245,7 @@ private theorem groupCohomologyTrivialπEven_surjective (i : ℕ) [NeZero i] (hi
     Function.Surjective (groupCohomologyTrivialπEven k g hg M i hi) := by
   intro y
   obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective (Rep.trivial k G M) g hg i hi y
-  exact ⟨x.1, groupCohomologyTrivialπEven_apply k g hg M i hi x.1⟩
+  exact ⟨x.val, groupCohomologyTrivialπEven_apply k g hg M i hi x.val⟩
 
 private theorem ker_groupCohomologyTrivialπEven (i : ℕ) [NeZero i] (hi : Even i) :
     LinearMap.ker (groupCohomologyTrivialπEven k g hg M i hi) =
