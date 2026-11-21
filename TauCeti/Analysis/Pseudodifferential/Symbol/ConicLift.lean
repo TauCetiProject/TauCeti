@@ -336,7 +336,7 @@ private theorem exists_bound_mixedDeriv_conicLift_of_cone (hε : ε ≠ 0) (hR :
     (hb.of_le (mod_cast le_top)) (by
       obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_conicLiftCutoff_le (P := P) (χ := χ) (φ := φ)
         hε hR t.length
-      obtain ⟨C', hC'⟩ := L.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+      obtain ⟨C', hC'⟩ := L.exists_norm_iteratedFDeriv_comp_left_le
         (hc.of_le (mod_cast le_top)) ⟨C, hC⟩
       exact ⟨C', fun ξ ↦ by simpa [zero_sub, neg_div] using hC' ξ⟩) s
   refine ⟨(β.sublists'.revzip.map fun t ↦
