@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
@@ -41,7 +41,7 @@ image of the corresponding relation on `σ` under the homomorphism
 
 The group of node permutations that the construction consumes is
 `TauCeti.DynkinType.diagramSymmetry`, pinned in
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean`.
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean`.
 
 ## Main definitions
 
@@ -234,7 +234,7 @@ private theorem funCongrLeft_dualMap_comp_toPerfPair :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.dualMap_apply,
     LinearMap.toPerfPair_apply, LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply, RootPairing.flip_toLinearMap, LinearMap.flip_apply,
-    toLinearMap_simplyConnectedRootDatum, dotProduct]
+    toLinearMap_simplyConnectedRootDatum_apply_apply, dotProduct]
   exact (Equiv.sum_comp σ fun i => x (σ.symm i) * y i).symm.trans
     (Finset.sum_congr rfl fun i _ => by rw [Equiv.symm_apply_apply])
 
@@ -369,7 +369,7 @@ particular, the construction is faithful on diagram symmetries. -/
       RootPairing.Equiv.toHom_one, RootPairing.Hom.indexEquiv_one, Equiv.refl_apply] at hindex
     have hval := congrArg Fin.val hindex
     apply Fin.ext
-    simpa only [simpleIndex_val, Equiv.Perm.one_def, Equiv.refl_apply] using hval
+    simpa only [val_simpleIndex, Equiv.Perm.one_def, Equiv.refl_apply] using hval
   · rintro rfl
     exact diagramAut_one ht
 
@@ -402,12 +402,12 @@ automorphism, so it inherits multiplicativity from `TauCeti.DynkinType.diagramAu
 of the Bourbaki-numbered Cartan matrix. This is what converts a relation satisfied by a node
 permutation into the same relation for the automorphism it induces. -/
 def diagramAutHom : t.diagramSymmetry →* (t.simplyConnectedRootDatum ht).Aut where
-  toFun g := diagramAut ht g.2
+  toFun g := diagramAut ht g.property
   map_one' := diagramAut_one ht
-  map_mul' g₁ g₂ := diagramAut_mul ht g₁.2 g₂.2
+  map_mul' g₁ g₂ := diagramAut_mul ht g₁.property g₂.property
 
 @[simp] theorem diagramAutHom_apply (g : t.diagramSymmetry) :
-    diagramAutHom ht g = diagramAut ht g.2 :=
+    diagramAutHom ht g = diagramAut ht g.property :=
   (rfl)
 
 /-- The diagram automorphism attached to the inverse node permutation is the inverse

@@ -148,7 +148,7 @@ private noncomputable def dHom (P Q : DGKaroubi R C) (i j : ℤ) :
   ((dgHomComplex R P.X Q.X).d i j).hom.restrict fun _ hf ↦ d_mem_homSubmodule hf
 
 private theorem dHom_apply (P Q : DGKaroubi R C) (i j : ℤ) (f : homSubmodule P Q i) :
-    (dHom P Q i j f).1 = ((dgHomComplex R P.X Q.X).d i j).hom f.1 :=
+    (dHom P Q i j f).val = ((dgHomComplex R P.X Q.X).d i j).hom f.val :=
   (rfl)
 
 private theorem dHom_eq_zero (P Q : DGKaroubi R C) {i j : ℤ}
@@ -176,11 +176,12 @@ private noncomputable def homComplex (P Q : DGKaroubi R C) :
 /-- Composition of morphisms of the Karoubi envelope, computed in `C`. -/
 private noncomputable def comp {P Q S : DGKaroubi R C} (p q n : ℤ) (h : p + q = n) :
     homSubmodule P Q p →ₗ[R] homSubmodule Q S q →ₗ[R] homSubmodule P S n :=
-  LinearMap.mk₂ R (fun f g ↦ ⟨dgComp R f.1 g.1 h, dgComp_mem_homSubmodule f.2 g.2 h⟩)
-    (fun f f' g ↦ Subtype.ext (add_dgComp R f.1 f'.1 g.1 h))
-    (fun r f g ↦ Subtype.ext (smul_dgComp R r f.1 g.1 h))
-    (fun f g g' ↦ Subtype.ext (dgComp_add R f.1 g.1 g'.1 h))
-    (fun r f g ↦ Subtype.ext (dgComp_smul R r f.1 g.1 h))
+  LinearMap.mk₂ R (fun f g ↦ ⟨dgComp R f.val g.val h, dgComp_mem_homSubmodule f.property g.property
+      h⟩)
+    (fun f f' g ↦ Subtype.ext (add_dgComp R f.val f'.val g.val h))
+    (fun r f g ↦ Subtype.ext (smul_dgComp R r f.val g.val h))
+    (fun f g g' ↦ Subtype.ext (dgComp_add R f.val g.val g'.val h))
+    (fun r f g ↦ Subtype.ext (dgComp_smul R r f.val g.val h))
 
 variable (R C) in
 /-- The **Hom-complex data of the DG Karoubi envelope**: the subcomplexes of morphisms absorbing
@@ -190,10 +191,10 @@ noncomputable def homComplexData : DGCategoryData R (DGKaroubi R C) where
   hom := homComplex
   comp := comp
   id P := ⟨P.p, p_mem_homSubmodule P⟩
-  d_comp h f g := Subtype.ext (dgDifferential_dgComp R f.1 g.1 h)
-  comp_assoc hpq hqr h f g k := Subtype.ext (dgComp_assoc R f.1 g.1 k.1 hpq hqr h)
-  id_comp g := Subtype.ext g.2.1
-  comp_id f := Subtype.ext f.2.2
+  d_comp h f g := Subtype.ext (dgDifferential_dgComp R f.val g.val h)
+  comp_assoc hpq hqr h f g k := Subtype.ext (dgComp_assoc R f.val g.val k.val hpq hqr h)
+  id_comp g := Subtype.ext g.property.1
+  comp_id f := Subtype.ext f.property.2
 
 /-- **The DG Karoubi envelope is a differential graded category.** -/
 noncomputable instance instDGCategory : DGCategory R (DGKaroubi R C) :=
@@ -213,20 +214,20 @@ noncomputable def dgHomVal {P Q : DGKaroubi R C} (n : ℤ) :
   (homSubmodule P Q n).subtype ∘ₗ (dgHomEquiv P Q n).toLinearMap
 
 theorem dgHomVal_apply {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :
-    dgHomVal n f = (dgHomEquiv P Q n f).1 :=
+    dgHomVal n f = (dgHomEquiv P Q n f).val :=
   (rfl)
 
 /-- The morphism of the Karoubi envelope determined by a morphism absorbing the idempotents has
 that morphism as its underlying morphism. -/
 @[simp]
 theorem dgHomVal_dgHomEquiv_symm_apply {P Q : DGKaroubi R C} {n : ℤ}
-    (f : homSubmodule P Q n) : dgHomVal n ((dgHomEquiv P Q n).symm f) = f.1 :=
+    (f : homSubmodule P Q n) : dgHomVal n ((dgHomEquiv P Q n).symm f) = f.val :=
   (rfl)
 
 /-- The underlying morphism of a morphism of the Karoubi envelope absorbs both idempotents. -/
 theorem dgHomVal_mem {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :
     dgHomVal n f ∈ homSubmodule P Q n :=
-  (dgHomEquiv P Q n f).2
+  (dgHomEquiv P Q n f).property
 
 @[simp]
 theorem p_dgComp_dgHomVal {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :

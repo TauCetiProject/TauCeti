@@ -140,7 +140,7 @@ private theorem k_mul_generator_mul_k_neg (y : Y) (g : Generator ι Y) :
   cases g with
   | e i => simp [k_mul_e_mul_k_neg]
   | f i => simp [k_mul_f_mul_k_neg]
-  | k z => simp [← k_add, add_comm y z]
+  | k z => simp [add_right_comm y z (-y)]
 
 private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
     k D q y * (l.map (generator D q)).prod * k D q (-y) =
@@ -155,13 +155,13 @@ private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
       | k z =>
         simp only [List.map_cons, List.prod_cons, generator_k, generatorDegree_k, List.sum_cons,
           zero_add]
-        rw [← mul_assoc (k D (0 : K) y), ← k_add, add_comm y z, k_add,
+        rw [← mul_assoc (k D (0 : K) y), k_mul_k, add_comm y z, ← k_mul_k,
           mul_assoc (k D (0 : K) z), mul_assoc (k D (0 : K) z), ih, mul_smul_comm]
     · simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
       have h : k D q y * (generator D q g * (l.map (generator D q)).prod) * k D q (-y) =
           (k D q y * generator D q g * k D q (-y)) *
             (k D q y * (l.map (generator D q)).prod * k D q (-y)) := by
-        simp only [mul_assoc, k_neg_mul_k_mul]
+        simp only [mul_assoc, ← mul_assoc (k D q (-y)), k_neg_mul_k, one_mul]
       rw [h, k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm, ← zpow_add₀ hq]
 
 /-- Conjugating `x ∈ gradedPiece D q c` by `K_y` multiplies it by `q^⟨∑ cᵢ αᵢ, y⟩`. -/
@@ -177,7 +177,7 @@ theorem k_mul_mul_k_neg_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
 theorem k_mul_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
     {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
     k D q y * x = q ^ D.pairing (Finsupp.linearCombination ℤ D.root c) y • (x * k D q y) := by
-  rw [← mul_one (k D q y * x), ← k_neg_mul_k (D := D) (q := q) y, ← mul_assoc,
+  rw [← mul_one (k D q y * x), ← k_neg_mul_k D q y, ← mul_assoc,
     k_mul_mul_k_neg_of_mem_gradedPiece y hx, smul_mul_assoc]
 theorem mul_k_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
     {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
@@ -185,17 +185,18 @@ theorem mul_k_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
       q ^ (-D.pairing (Finsupp.linearCombination ℤ D.root c) y) • (k D q y * x) := by
   have h := k_mul_mul_k_neg_of_mem_gradedPiece (-y) hx
   rw [neg_neg, map_neg] at h
-  rw [← k_mul_k_neg_mul y (x * k D q y), ← mul_assoc (k D q (-y)), h, mul_smul_comm]
+  rw [← one_mul (x * k D q y), ← k_mul_k_neg D q y, mul_assoc (k D q y),
+    ← mul_assoc (k D q (-y)), h, mul_smul_comm]
 
 private theorem serreTerm_mem_gradedPiece (u : K) (m r : ℕ) (hr : r ≤ m) {c d : ι →₀ ℤ}
     (x : gradedPiece D q c) (y : gradedPiece D q d) :
-    (-1 : K) ^ r • (quantumDividedPower u x.1 r * y.1 * quantumDividedPower u x.1 (m - r)) ∈
+    (-1 : K) ^ r • (quantumDividedPower u x.val r * y.val * quantumDividedPower u x.val (m - r)) ∈
       gradedPiece D q (m • c + d) := by
   have hdeg : r • c + d + (m - r) • c = m • c + d := by
     rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le hr]
   exact Submodule.smul_mem _ _ <| hdeg ▸ mul_mem_gradedPiece
-    (mul_mem_gradedPiece (quantumDividedPower_mem_gradedPiece u x.2 r) y.2)
-    (quantumDividedPower_mem_gradedPiece u x.2 (m - r))
+    (mul_mem_gradedPiece (quantumDividedPower_mem_gradedPiece u x.property r) y.property)
+    (quantumDividedPower_mem_gradedPiece u x.property (m - r))
 
 end Pieces
 
@@ -213,40 +214,50 @@ private theorem ofGradedPiece_eq {c₁ c₂ : ι →₀ ℤ} {x : gradedPiece D 
   of_eq_of_gradedMonoid_eq (Sigma.subtype_ext hc hxy)
 private theorem ofGradedPiece_mul {c d : ι →₀ ℤ} (x : gradedPiece D q c) (y : gradedPiece D q d) :
     ofGradedPiece c x * ofGradedPiece d y =
-      ofGradedPiece (c + d) ⟨x.1 * y.1, mul_mem_gradedPiece x.2 y.2⟩ := by
+      ofGradedPiece (c + d) ⟨x.val * y.val, mul_mem_gradedPiece x.property y.property⟩ := by
   simp only [lof_eq_of, of_mul_of]; rfl
 private theorem ofGradedPiece_mul_eq {c d m : ι →₀ ℤ}
     (x : gradedPiece D q c) (y : gradedPiece D q d) (h : c + d = m) :
     ofGradedPiece c x * ofGradedPiece d y =
-      ofGradedPiece m ⟨x.1 * y.1, h ▸ mul_mem_gradedPiece x.2 y.2⟩ :=
+      ofGradedPiece m ⟨x.val * y.val, h ▸ mul_mem_gradedPiece x.property y.property⟩ :=
   (ofGradedPiece_mul x y).trans (ofGradedPiece_eq h rfl)
 
-private theorem quantumSerre_ofGradedPiece (u : K) (m : ℕ)
-    {c d : ι →₀ ℤ} (x : gradedPiece D q c) (y : gradedPiece D q d) :
-    quantumSerre u m (ofGradedPiece c x) (ofGradedPiece d y) =
-      ofGradedPiece (m • c + d) ⟨quantumSerre u m x.1 y.1, by
-        rw [quantumSerre_def]
-        exact Submodule.sum_mem _ fun r hr =>
-          serreTerm_mem_gradedPiece u m r (Finset.mem_range_succ_iff.mp hr) x y⟩ := by
-  have hdp (n : ℕ) : quantumDividedPower u (ofGradedPiece c x) n =
-      ofGradedPiece (n • c)
-        ⟨quantumDividedPower u x.1 n, quantumDividedPower_mem_gradedPiece u x.2 n⟩ := by
+private theorem serreSum_ofGradedPiece (D : CartanDatum ι X Y) (q : K) (i j : ι)
+    {c : ι → (ι →₀ ℤ)} (x : ∀ l, gradedPiece D q (c l)) :
+    serreSum D q (fun l => ofGradedPiece (c l) (x l)) i j =
+      ofGradedPiece (D.serreLength i j • c i + c j)
+        ⟨serreSum D q (fun l => (x l).val) i j, by
+          rw [serreSum_def]
+          exact Submodule.sum_mem _ fun r hr =>
+            serreTerm_mem_gradedPiece (q ^ D.symmetrizer i) (D.serreLength i j) r
+              (Finset.mem_range_succ_iff.mp hr) (x i) (x j)⟩ := by
+  set u := q ^ D.symmetrizer i
+  set m := D.serreLength i j
+  have hdp (n : ℕ) : quantumDividedPower u (ofGradedPiece (c i) (x i)) n =
+      ofGradedPiece (n • c i)
+        ⟨quantumDividedPower u (x i).val n,
+          quantumDividedPower_mem_gradedPiece u (x i).property n⟩ := by
     simp only [quantumDividedPower_def, lof_eq_of, ofPow, ← of_smul]; rfl
   have hterm (r : {r // r ∈ Finset.range (m + 1)}) :
-      (-1 : K) ^ r.1 • (quantumDividedPower u (ofGradedPiece c x) r.1 * ofGradedPiece d y *
-        quantumDividedPower u (ofGradedPiece c x) (m - r.1)) =
-      ofGradedPiece (m • c + d) ⟨(-1 : K) ^ r.1 •
-        (quantumDividedPower u x.1 r.1 * y.1 * quantumDividedPower u x.1 (m - r.1)),
-        serreTerm_mem_gradedPiece u m r.1 (Finset.mem_range_succ_iff.mp r.2) x y⟩ := by
-    rw [hdp r.1, hdp (m - r.1), ofGradedPiece_mul, ofGradedPiece_mul, ← LinearMap.map_smul]
+      (-1 : K) ^ r.val • (quantumDividedPower u (ofGradedPiece (c i) (x i)) r.val *
+        ofGradedPiece (c j) (x j) *
+        quantumDividedPower u (ofGradedPiece (c i) (x i)) (m - r.val)) =
+      ofGradedPiece (m • c i + c j) ⟨(-1 : K) ^ r.val •
+        (quantumDividedPower u (x i).val r.val * (x j).val *
+          quantumDividedPower u (x i).val (m - r.val)),
+        serreTerm_mem_gradedPiece u m r.val (Finset.mem_range_succ_iff.mp r.property)
+          (x i) (x j)⟩ := by
+    rw [hdp r.val, hdp (m - r.val), ofGradedPiece_mul, ofGradedPiece_mul, ← LinearMap.map_smul]
     exact ofGradedPiece_eq
-      (by rw [add_right_comm, ← add_nsmul, Nat.add_sub_of_le (Finset.mem_range_succ_iff.mp r.2)])
+      (by rw [add_right_comm, ← add_nsmul,
+        Nat.add_sub_of_le (Finset.mem_range_succ_iff.mp r.property)])
       rfl
-  rw [quantumSerre_def, ← Finset.sum_attach, Finset.sum_congr rfl fun r _ => hterm r, ← map_sum]
+  rw [serreSum_def, ← Finset.sum_attach, Finset.sum_congr rfl fun r _ => hterm r, ← map_sum]
   exact ofGradedPiece_eq rfl (by
-    simp only [Submodule.coe_sum, quantumSerre_def]
+    simp only [Submodule.coe_sum, serreSum_def]
     exact Finset.sum_attach _ fun r =>
-      (-1 : K) ^ r • (quantumDividedPower u x.1 r * y.1 * quantumDividedPower u x.1 (m - r)))
+      (-1 : K) ^ r • (quantumDividedPower u (x i).val r * (x j).val *
+        quantumDividedPower u (x i).val (m - r)))
 
 private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ c, gradedPiece D q c :=
@@ -256,28 +267,30 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
       k y := ofGradedPiece 0 ⟨k D q y, k_mem_gradedPiece y⟩
       k_zero := by
         simp only [lof_eq_of, one_def]
-        exact of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl k_zero)
-      k_add y z := by rw [ofGradedPiece_mul]; exact ofGradedPiece_eq (zero_add 0).symm (k_add y z)
-      k_mul_e i y := by
+        exact of_eq_of_gradedMonoid_eq (Sigma.subtype_ext rfl (k_zero D q))
+      k_mul_k y z := by
+        rw [ofGradedPiece_mul]
+        exact ofGradedPiece_eq (zero_add 0) (k_mul_k D q y z)
+      conjugate_e y i := by
         rw [ofGradedPiece_mul, ofGradedPiece_mul, ← map_smul (ofGradedPiece _)]
-        exact ofGradedPiece_eq ((zero_add _).trans (add_zero _).symm) (k_mul_e i y)
-      k_mul_f i y := by
+        exact ofGradedPiece_eq (by simp) (k_mul_e_mul_k_neg D q y i)
+      conjugate_f y i := by
         rw [ofGradedPiece_mul, ofGradedPiece_mul, ← map_smul (ofGradedPiece _)]
-        exact ofGradedPiece_eq ((zero_add _).trans (add_zero _).symm) (k_mul_f i y)
+        exact ofGradedPiece_eq (by simp) (k_mul_f_mul_k_neg D q y i)
       commutator_self i := by
         rw [ofGradedPiece_mul_eq _ _ (add_neg_cancel _),
           ofGradedPiece_mul_eq _ _ (neg_add_cancel _), ← map_sub (ofGradedPiece 0),
           ← map_sub (ofGradedPiece 0), ← map_smul (ofGradedPiece 0)]
         exact ofGradedPiece_eq rfl (by
           simpa only [Submodule.coe_sub, SetLike.val_smul, simpleK_def, simpleKInv_def] using
-            e_mul_f_sub_f_mul_e_self (D := D) (q := q) i)
-      commutator_of_ne hij := by
+            e_mul_f_sub_f_mul_e_self D q i)
+      commutator_ne {i j} hij := by
         rw [ofGradedPiece_mul, ofGradedPiece_mul_eq _ _ (add_comm _ _), sub_eq_zero]
-        exact ofGradedPiece_eq rfl (e_mul_f_of_ne hij)
-      serre_e hij := (quantumSerre_ofGradedPiece _ _ _ _).trans <|
-        (ofGradedPiece_eq rfl (quantumSerre_e_eq_zero_of_ne hij)).trans (map_zero _)
-      serre_f hij := (quantumSerre_ofGradedPiece _ _ _ _).trans <|
-        (ofGradedPiece_eq rfl (quantumSerre_f_eq_zero_of_ne hij)).trans (map_zero _) }
+        exact ofGradedPiece_eq rfl (commute_e_f D q hij).eq
+      serre_e {i j} hij := (serreSum_ofGradedPiece D q i j _).trans <|
+        (ofGradedPiece_eq rfl (serreE_eq_zero D q hij)).trans (map_zero _)
+      serre_f {i j} hij := (serreSum_ofGradedPiece D q i j _).trans <|
+        (ofGradedPiece_eq rfl (serreF_eq_zero D q hij)).trans (map_zero _) }
 
 private theorem decomposeAlgHom_word {D : CartanDatum ι X Y} {q : K} (l : List (Generator ι Y)) :
     decomposeAlgHom D q (l.map (generator D q)).prod =
@@ -307,7 +320,8 @@ private theorem decomposeAlgHom_apply_of_mem {D : CartanDatum ι X Y} {q : K} {c
 giving unique finite homogeneous decompositions and a genuine `(ι →₀ ℤ)`-grading. -/
 theorem isInternal_gradedPiece (D : CartanDatum ι X Y) (q : K) : IsInternal (gradedPiece D q) := by
   let := GradedAlgebra.ofAlgHom (gradedPiece D q) (decomposeAlgHom D q)
-    (by ext <;> simp [decomposeAlgHom, lof_eq_of]) (fun _ x => decomposeAlgHom_apply_of_mem x.2)
+    (by ext <;> simp [decomposeAlgHom, lof_eq_of])
+    (fun _ x => decomposeAlgHom_apply_of_mem x.property)
   exact Decomposition.isInternal (gradedPiece D q)
 
 /-- `QuantizedEnvelopingAlgebra D q` is internally `(ι →₀ ℤ)`-graded by `gradedPiece D q`. -/

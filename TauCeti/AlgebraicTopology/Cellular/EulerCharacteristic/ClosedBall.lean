@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+public import TauCeti.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Topology.CWComplex.Classical.ClosedBall
 
 /-!
 # The Euler characteristic of a closed ball
 
 A closed ball of nonnegative radius in a real normed space is contractible, so it has Euler
-characteristic one. Its finite CW type is `TauCeti.finiteCWType_closedBall`.
+characteristic one. Its finite CW type is `TauCeti.finiteCWType_closedBall`. In particular the
+closed unit disc `Complex.UnitClosedDisc` has Euler characteristic one.
 
 ## Main declarations
 
 * `TauCeti.eulerChar_closedBall`: a closed ball of nonnegative radius has `χ = 1`.
+* `Complex.UnitClosedDisc.eulerChar_eq_one`: the closed unit disc has `χ = 1`.
 
 ## References
 
@@ -39,3 +42,15 @@ theorem eulerChar_closedBall (x : E) {r : ℝ} (hr : 0 ≤ r) : eulerChar (close
   eulerChar_of_contractibleSpace
 
 end TauCeti
+
+namespace Complex.UnitClosedDisc
+
+open TauCeti
+open scoped Complex.UnitDisc
+
+/-- The Euler characteristic of the closed unit disc is `1`, the disc being contractible. -/
+@[simp]
+theorem eulerChar_eq_one : eulerChar 𝕔𝔻 = 1 :=
+  eulerChar_of_contractibleSpace
+
+end Complex.UnitClosedDisc
