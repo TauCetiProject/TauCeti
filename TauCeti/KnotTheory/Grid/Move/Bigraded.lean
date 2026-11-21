@@ -23,10 +23,10 @@ rules `unblockedHomologyPieceFinrank_eq_of_toGridLink_eq` and
 
 On `GridLink.unknot`, evaluating on the standard `2 × 2` unknot diagram over any commutative ring
 `K` of characteristic two shows that every bidegree outside the monomial cone of the two states
-`(0, 0)` and `(-1, -1)` has piece `finrank` zero (`unblockedHomologyPieceFinrank_unknot_eq_zero`)
-and that the `(0, 0)` piece has `finrank` `1` (`unblockedHomologyPieceFinrank_unknot_zero`). When
-`K` is also Noetherian, the `U`-tower `U^k • λ⁻` gives positive `finrank` in every bidegree
-`(-2k, -k)` (`unblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos`).
+`(0, 0)` and `(-1, -1)` has piece `finrank` zero (`unblockedHomologyPieceFinrank_unknot_eq_zero`),
+that the `(0, 0)` piece has `finrank` `1` (`unblockedHomologyPieceFinrank_unknot_zero`), and that
+the `U`-tower `U^k • λ⁻` gives positive `finrank` in every bidegree `(-2k, -k)`
+(`unblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos`).
 
 ## References
 
@@ -172,14 +172,8 @@ theorem unblockedHomologyPieceFinrank_unknot_zero :
       exact hzc
     rw [← hzw, hzX, GridDiagram.XMarkingClass_def, map_smul, algebraMap_smul]
 
-end CommRing
-
-section Noetherian
-
-variable (K : Type*) [CommRing K] [CharP K 2] [IsNoetherianRing K]
-
-/-- Over a Noetherian commutative ring of characteristic two, `GH⁻` of the unknot has positive
-`finrank` in every bidegree `(-2k, -k)` along the `U`-tower (`k : ℕ`). -/
+/-- Over any commutative ring of characteristic two, `GH⁻` of the unknot has positive `finrank`
+in every bidegree `(-2k, -k)` along the `U`-tower (`k : ℕ`). -/
 theorem unblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos (k : ℕ) :
     0 < isKnot_unknot.unblockedHomologyPieceFinrank K (-2 * (k : ℤ), -(k : ℤ)) := by
   rw [unblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
@@ -193,7 +187,7 @@ theorem unblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos (k : ℕ) :
     exact Prod.ext (by simp) (by simp)
   rwa [hb] at h
 
-end Noetherian
+end CommRing
 
 end GridLink
 

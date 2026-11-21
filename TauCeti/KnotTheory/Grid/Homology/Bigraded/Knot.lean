@@ -24,7 +24,7 @@ their second coordinate recovers `GridDiagram.IsKnot.alexanderUnblockedHomologyG
 
 On any grid diagram with an odd number of components whose `X`-marking state receives an even
 number of counted rectangles from every grid state, each monomial multiple `V^e • λ⁻` witnesses
-positive ground-ring `finrank` in bidegree `bidegree X - (2 |e|, |e|)` over a Noetherian ring of
+positive ground-ring `finrank` in bidegree `bidegree X - (2 |e|, |e|)` over a commutative ring of
 characteristic two (`OddComponentGridDiagram.finrank_bigradedUnblockedHomologyPiece_pos`), giving a
 positive-`finrank` `U`-tower on knot grids
 (`GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_pos`).
@@ -73,10 +73,9 @@ theorem XMarkingClass_mem_bigradedUnblockedHomologyPiece {n : ℕ}
 
 /-- On an odd-component grid diagram whose `X`-marking state receives an even number of counted
 rectangles from every grid state, every monomial multiple `V^e • λ⁻` witnesses positive `finrank`
-in bidegree `bidegree X - (2 |e|, |e|)` over any Noetherian commutative ring of characteristic
-two. -/
+in bidegree `bidegree X - (2 |e|, |e|)` over any commutative ring of characteristic two. -/
 theorem finrank_bigradedUnblockedHomologyPiece_pos {n : ℕ} (G : OddComponentGridDiagram n)
-    (K : Type*) [CommRing K] [CharP K 2] [IsNoetherianRing K]
+    (K : Type*) [CommRing K] [CharP K 2]
     (hX : ∀ x : GridState n, Even (G.val.unblockedRectangles x G.val.X).card) (e : Fin n →₀ ℕ) :
     0 < Module.finrank K
       (G.bigradedUnblockedHomologyPiece K
@@ -100,7 +99,28 @@ theorem finrank_bigradedUnblockedHomologyPiece_pos {n : ℕ} (G : OddComponentGr
       rwa [← algebraMap_smul (MvPolynomial (Fin n) K), smul_smul, algebraMap_eq,
         C_mul_monomial, mul_one] at hval
     exact sub_eq_zero.mp (G.val.eq_zero_of_monomial_smul_XMarkingClass_eq_zero K hX hr')
-  have hle := LinearMap.finrank_le_finrank_of_injective hinj
+  have hrank :
+      Module.rank K
+          (G.bigradedUnblockedHomologyPiece K
+            (G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ)))) <
+        Cardinal.aleph0 := by
+    let g := G.bidegree G.val.X - (2 * (e.degree : ℤ), (e.degree : ℤ))
+    have h1 : Module.rank K (G.bigradedUnblockedHomologyPiece K g) ≤
+        Module.rank K (G.bigradedUnblockedCyclesPiece K g) := by
+      rw [G.bigradedUnblockedHomologyPiece_eq_map K g]
+      exact rank_map_le _ _
+    have h2 : Module.rank K (G.bigradedUnblockedCyclesPiece K g) ≤
+        Module.rank K (G.bigradedChainMinusPiece K g) := by
+      let _ : AddCommGroup (GridChainMinus K n) := inferInstance
+      exact LinearMap.rank_le_of_injective
+        (((LinearMap.ker (G.val.unblockedDifferential K)).subtype.restrictScalars K).restrict
+          fun _ hz ↦ (G.mem_bigradedUnblockedCyclesPiece K).mp hz)
+        fun _ _ h ↦
+          Subtype.ext (Subtype.ext (congrArg (Subtype.val : G.bigradedChainMinusPiece K g → _) h))
+    exact lt_of_le_of_lt (h1.trans h2)
+      (Module.rank_lt_aleph0 K (G.bigradedChainMinusPiece K g))
+  have hle := Module.finrank_le_finrank_of_rank_le_rank
+    (LinearMap.lift_rank_le_of_injective _ hinj) hrank
   rw [Module.finrank_self] at hle
   exact Nat.lt_of_lt_of_le Nat.zero_lt_one hle
 
@@ -195,8 +215,8 @@ theorem XMarkingClass_mem_bigradedUnblockedHomologyGrading_piece :
 
 /-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from every
 grid state, each `U ^ k • λ⁻` witnesses positive `finrank` in bidegree `bidegree X - (2k, k)` over
-any Noetherian commutative ring of characteristic two. -/
-theorem finrank_bigradedUnblockedHomologyGrading_piece_pos [IsNoetherianRing R]
+any commutative ring of characteristic two. -/
+theorem finrank_bigradedUnblockedHomologyGrading_piece_pos
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (k : ℕ) :
     0 < Module.finrank R ((hG.bigradedUnblockedHomologyGrading R).piece
       (hG.toOddComponentGridDiagram.bidegree G.X - (2 * (k : ℤ), (k : ℤ)))) := by
