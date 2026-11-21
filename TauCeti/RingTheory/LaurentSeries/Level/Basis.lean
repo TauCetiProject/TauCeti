@@ -302,6 +302,11 @@ noncomputable instance moduleFinite (K : Type*) [Field K] (d : ℕ+) :
     Module.Finite K⸨X⸩ (Level K d) :=
   (powerBasis K d).finite
 
+/-- The ramified Laurent-series level `d` has degree `d` over `K⸨X⸩`. -/
+theorem finrank_eq (K : Type*) [Field K] (d : ℕ+) :
+    Module.finrank K⸨X⸩ (Level K d) = d := by
+  rw [(powerBasis K d).finrank, powerBasis_dim]
+
 /-- The `K⸨X⸩`-algebra embedding of level `d` into the Puiseux field. -/
 noncomputable def toPuiseux (K : Type*) [Field K] (d : ℕ+) :
     Level K d →ₐ[K⸨X⸩] TauCeti.puiseuxField K where
@@ -397,6 +402,11 @@ theorem levelPowerBasis_basis (K : Type*) [Field K] (d : ℕ+) :
   ext i : 1
   rw [Module.Basis.reindex_apply]
   congr
+
+/-- The actual level-`d` Puiseux subfield is finite-dimensional over `K⸨X⸩`. -/
+noncomputable instance level_moduleFinite (K : Type*) [Field K] (d : ℕ+) :
+    Module.Finite K⸨X⸩ (level K d) :=
+  (levelPowerBasis K d).finite
 
 /-- The level-`d` Puiseux subfield has degree `d` over `K⸨X⸩`. -/
 theorem level_finrank (K : Type*) [Field K] (d : ℕ+) :

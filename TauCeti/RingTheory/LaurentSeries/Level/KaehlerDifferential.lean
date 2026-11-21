@@ -43,6 +43,8 @@ level-parameter derivation `TauCeti.LaurentSeries.Level.parameterDerivation K d`
   `Ω¹_cont(L/K)` of level `d`.
 * `Level.ContinuousKaehlerDifferential.equivLevel K d`: the `L`-linear
   equivalence `Ω¹_cont(L/K) ≃ L`, `g du ↦ g`.
+* `Level.ContinuousKaehlerDifferential.D K d`: the continuous differential `d_u : L → Ω¹_cont(L/K)`
+  in the level parameter `u`.
 * `Level.ContinuousKaehlerDifferential.map K d`: the pullback
   `Ω¹_cont(F/K) → Ω¹_cont(L/K)` along `t = u ^ d`.
 * `Level.ContinuousKaehlerDifferential.tensorEquiv K d`: for `d` nonzero in
@@ -54,8 +56,7 @@ level-parameter derivation `TauCeti.LaurentSeries.Level.parameterDerivation K d`
 
 ## Main results
 
-* `Level.ContinuousKaehlerDifferential.addEquivContinuousKaehlerDifferential_map_D`: the
-  pullback of `d f` is `d (f (u ^ d))`.
+* `Level.ContinuousKaehlerDifferential.map_D`: the pullback of `d f` is `d_u (f (u ^ d))`.
 * `Level.ContinuousKaehlerDifferential.equivLevel_map`: the pullback of `f dt` is
   `f (u ^ d) d u ^ (d - 1) du`.
 * `Level.ContinuousKaehlerDifferential.map_eq_zero_iff`: the pullback vanishes exactly when `d`
@@ -224,6 +225,29 @@ theorem ringEquivLaurentSeries_equivLevel (ω : Level.ContinuousKaehlerDifferent
         (addEquivContinuousKaehlerDifferential K d ω) :=
   (ringEquivLaurentSeries K d).apply_symm_apply _
 
+variable (K d) in
+/-- The continuous differential `d_u : L → Ω¹_cont(L/K)` of level `d`, read in the level variable
+`u`. -/
+noncomputable def D : Derivation K (Level K d) (Level.ContinuousKaehlerDifferential K d) :=
+  (equivLevel K d).symm.toLinearMap.compDer (Level.derivation K d)
+
+/-- In coordinates, `d_u x` has coefficient `dx / du` in `du`. -/
+@[simp]
+theorem equivLevel_D (x : Level K d) :
+    equivLevel K d (D K d x) =
+      (ringEquivLaurentSeries K d).symm (derivative K (ringEquivLaurentSeries K d x)) := by
+  apply (ringEquivLaurentSeries K d).injective
+  simp [D]
+
+/-- In the level variable `u`, `D K d` is the continuous differential of `K⸨X⸩`. -/
+@[simp]
+theorem addEquivContinuousKaehlerDifferential_D (x : Level K d) :
+    addEquivContinuousKaehlerDifferential K d (D K d x) =
+      TauCeti.ContinuousKaehlerDifferential.D K (ringEquivLaurentSeries K d x) := by
+  apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
+  rw [← ringEquivLaurentSeries_equivLevel, equivLevel_D,
+    TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D, RingEquiv.apply_symm_apply]
+
 /-! ### Pulling back one-forms along `t = u ^ d` -/
 
 variable (K d)
@@ -250,14 +274,15 @@ theorem addEquivContinuousKaehlerDifferential_map (ω : TauCeti.ContinuousKaehle
         (by simp) (pow_ne_zero _ PowerSeries.X_ne_zero) ω :=
   (addEquivContinuousKaehlerDifferential K d).apply_symm_apply _
 
-/-- **The pullback of `d f` is `d (f (u ^ d))`.** -/
+/-- Pulling back `d f` along `t = u ^ d` yields the level differential of the image of `f`. -/
 @[simp]
-theorem addEquivContinuousKaehlerDifferential_map_D (f : K⸨X⸩) :
-    addEquivContinuousKaehlerDifferential K d
-        (map K d (TauCeti.ContinuousKaehlerDifferential.D K f)) =
-      TauCeti.ContinuousKaehlerDifferential.D K (expand K d f) := by
+theorem map_D (f : K⸨X⸩) :
+    map K d (TauCeti.ContinuousKaehlerDifferential.D K f) =
+      D K d (Algebra.algebraMap K⸨X⸩ (Level K d) f) := by
+  apply (addEquivContinuousKaehlerDifferential K d).injective
   rw [addEquivContinuousKaehlerDifferential_map, TauCeti.ContinuousKaehlerDifferential.subst_D,
-    TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand]
+    TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand, addEquivContinuousKaehlerDifferential_D,
+    algebraMap_apply]
 
 /-- In coordinates, the pullback sends `f dt` to `f (u ^ d) d u ^ (d - 1) du`. -/
 @[simp]

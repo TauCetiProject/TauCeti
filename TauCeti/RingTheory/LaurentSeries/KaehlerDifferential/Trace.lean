@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Etale
 
 import TauCeti.LinearAlgebra.Trace.RestrictScalars
 import TauCeti.RingTheory.Derivation.Determinant
+import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
 # Differential traces and residues on formally étale Laurent extensions
@@ -242,6 +243,7 @@ theorem trace_D (x : L) :
 
 variable (K L) in
 /-- When `L` carries the `K⸨X⸩`-module topology, the differential trace is continuous. -/
+@[fun_prop]
 theorem continuous_trace [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
     Continuous (trace K L) := by
   by_cases h : Module.Finite K⸨X⸩ L
@@ -339,6 +341,16 @@ theorem residue_inv_smul_D {F' : Type*} [Field F'] [Algebra K⸨X⸩ F'] [Algebr
     · simp [Algebra.norm_eq_one_of_not_module_finite hF]
   · simpa [Units.val_inv_eq_inv_val] using residue_units_inv_smul_D (K := K) (Units.mk0 x hx)
 
+variable (K L) in
+/-- The `K`-linear residue on a formally étale `K⸨X⸩`-algebra carrying the `K⸨X⸩`-module topology
+is continuous for every topology on `K`. -/
+@[fun_prop]
+theorem continuous_residue [TopologicalSpace K] [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
+    Continuous (residue K L) :=
+  (_root_.LaurentSeries.continuous_coeff (-1)).comp
+    ((TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).continuous.comp
+      (continuous_trace K L))
+
 end TraceAndResidue
 
 /-! ### Transitivity in towers -/
@@ -408,6 +420,17 @@ theorem trace_traceTower [Module.Free M L] (ω : ContinuousKaehlerDifferential K
 theorem residue_traceTower [Module.Free M L] (ω : ContinuousKaehlerDifferential K L) :
     residue K M (traceTower K M L ω) = residue K L ω := by
   rw [residue_apply, residue_apply, trace_traceTower]
+
+/-- On a tower `K⸨X⸩ → M → L` where `L` is finite over `K⸨X⸩` with the `K⸨X⸩`-module topology and
+scalar multiplication by `K⸨X⸩` on `M` is continuous, the relative differential trace is
+continuous. -/
+@[fun_prop]
+theorem continuous_traceTower [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
+    [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] [Module.Finite K⸨X⸩ L] :
+    Continuous (traceTower K M L) := by
+  have : ContinuousSMul K⸨X⸩ (ContinuousKaehlerDifferential K M) :=
+    IsScalarTower.continuousSMul M
+  exact IsModuleTopology.continuous_of_linearMap ((traceTower K M L).restrictScalars K⸨X⸩)
 
 end Tower
 

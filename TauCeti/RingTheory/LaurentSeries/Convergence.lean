@@ -36,6 +36,8 @@ limit is replaced here by the assumed pointwise agreement with the prescribed li
 * `TauCeti.tendsto_laurentSeries_iff_orderTop_sub` gives the equivalent order formulation.
 * `TauCeti.LaurentSeries.continuous_mapRingHom`: applying a field embedding to the coefficients
   is continuous.
+* `LaurentSeries.continuous_coeff`: extracting any fixed coefficient is continuous into any
+  topology on the coefficient field.
 * `TauCeti.laurentSeries_eventually_coeff_single_neg_succ_eq_zero` and
   `TauCeti.laurentSeries_not_tendsto_single_neg_succ` exhibit the coefficientwise counterexample.
 -/
@@ -154,3 +156,19 @@ theorem laurentSeries_not_tendsto_single_neg_succ :
   simp at hzero
 
 end TauCeti
+
+namespace LaurentSeries
+
+/-- Extracting any fixed coefficient of a formal Laurent series is continuous from the valuation
+topology into any topology on the coefficient field `K`, since it is already continuous into the
+discrete topology. -/
+@[fun_prop]
+theorem continuous_coeff {K : Type*} [Field K] [TopologicalSpace K] (d : ℤ) :
+    Continuous (fun f : K⸨X⸩ ↦ f.coeff d) := by
+  have h : @Continuous K⸨X⸩ K _ ⊥ (fun f ↦ f.coeff d) := by
+    rw [← UniformSpace.toTopologicalSpace_bot]
+    exact @UniformContinuous.continuous _ _ _ ⊥ _
+      (uniformContinuous_coeff (uK := ⊥) d)
+  exact continuous_le_rng bot_le h
+
+end LaurentSeries
