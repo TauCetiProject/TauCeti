@@ -31,7 +31,9 @@ with the same Gram matrix in some bases have the same covolume.
 
 The covolume of the dual lattice `L^∨ = ZLattice.dual L` is the inverse of the covolume of `L`
 (`ZLattice.covolume_dual`): in an `ℤ`-basis of `L` and the dual basis of `L^∨`, the Gram matrices
-are inverse to each other.
+are inverse to each other. The same holds in lower rank: a discrete subgroup `L` is a full lattice
+in its real span `W`, and `L^∨ ∩ W`, its dual inside `W`, has the reciprocal covolume for the volume
+of `W` (`ZLattice.covolume_comap_dual_span`).
 
 Independently of any inner product, pulling a full lattice back along a continuous linear
 automorphism `A` of a finite-dimensional real normed space divides its covolume by `|det A|`, for
@@ -61,6 +63,8 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
 * `ZLattice.covolume_span_sq_eq_det_gram`: in particular `covolume (span ℤ (range b)) ^ 2` is the
   Gram determinant of the basis `b` of the ambient space.
 * `ZLattice.covolume_dual`: `covolume L^∨ = (covolume L)⁻¹`.
+* `ZLattice.covolume_comap_dual_span`: for a discrete subgroup `L` with real span `W`, the
+  covolumes of `L^∨ ∩ W` and `L` in `W` are reciprocal.
 * `ZLattice.covolume_comap_continuousLinearEquiv`: the covolume of the pullback of `L` along a
   continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
 * `ZLattice.volume_image_eq_measure_div_covolume`: the image of `s` under the coordinates of a
@@ -294,6 +298,16 @@ theorem _root_.ZLattice.covolume_dual (L : Submodule ℤ E) [DiscreteTopology L]
   have hpos := mul_pos (ZLattice.covolume_pos (ZLattice.dual L) volume)
     (ZLattice.covolume_pos L volume)
   exact eq_inv_of_mul_eq_one_left ((pow_eq_one_iff_of_nonneg hpos.le two_ne_zero).mp hsq)
+
+/-- **The reciprocal dual covolume in lower rank.** A discrete subgroup `L` is a full lattice in
+its real span `W`, and the ambient dual `L^∨` meets `W` in the dual of `L` taken inside `W`. The
+covolumes of `L` and of `L^∨ ∩ W`, both for the volume of `W`, are reciprocal. -/
+@[simp]
+theorem _root_.ZLattice.covolume_comap_dual_span (L : Submodule ℤ E) [DiscreteTopology L] :
+    ZLattice.covolume (ZLattice.comap ℝ (ZLattice.dual L) (span ℝ (L : Set E)).subtype) =
+      (ZLattice.covolume (ZLattice.comap ℝ L (span ℝ (L : Set E)).subtype))⁻¹ := by
+  convert ZLattice.covolume_dual (ZLattice.comap ℝ L (span ℝ (L : Set E)).subtype) using 2
+  exact (ZLattice.dual_comap_subtype_of_le _ subset_span).symm
 
 /-- **The covolume is at most the volume of any lattice parallelepiped.** If a real basis `b` of
 `E` consists of vectors of a discrete `ℤ`-submodule `L`, then `covolume L ≤ |det_o b|` for any
