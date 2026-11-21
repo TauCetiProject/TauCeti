@@ -101,8 +101,11 @@ theorem IsLabeling.comp_addHom [Add Λ'] {ℓ : W.Edge → Λ} (h : W.IsLabeling
 /-- Mirror reversal exchanges the two ordered inputs of the vertex rule. -/
 theorem isLabeling_mirror_iff {ℓ : W.Edge → Λ} :
     W.mirror.IsLabeling ℓ ↔
-      ∀ v, ℓ (W.ends (v, 2)).1 + ℓ (W.ends (v, 1)).1 = ℓ (W.ends (v, 0)).1 :=
-  Iff.rfl
+      ∀ v, ℓ (W.ends (v, 2)).1 + ℓ (W.ends (v, 1)).1 = ℓ (W.ends (v, 0)).1 := by
+  rw [isLabeling_def]
+  refine forall_congr' fun v ↦ ?_
+  rw [mirror_ends_apply, mirror_ends_apply, mirror_ends_apply, Equiv.swap_apply_left,
+    Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne (by decide) (by decide)]
 
 /-- Mirror reversal corresponds to passing to the opposite label addition. -/
 @[simp] theorem isLabeling_mirror_op_comp_iff {ℓ : W.Edge → Λ} :
@@ -233,6 +236,15 @@ def trans {U : LabeledClosedWeb Λ} (f : W.Iso V) (g : V.Iso U) : W.Iso U where
   ext1
   simp
 
+@[simp] theorem refl_symm : (refl W).symm = refl W := by
+  ext1
+  simp
+
+@[simp] theorem symm_trans {U : LabeledClosedWeb Λ} (f : W.Iso V) (g : V.Iso U) :
+    (f.trans g).symm = g.symm.trans f.symm := by
+  ext1
+  simp
+
 @[simp] theorem refl_trans (f : W.Iso V) : (refl W).trans f = f := by
   ext1
   simp
@@ -352,6 +364,28 @@ theorem sum_edgeLabel (V : LabeledClosedWeb.{v} Λ) (e : W.Edge ⊕ V.Edge) :
 
 theorem sum_circleLabel (V : LabeledClosedWeb.{v} Λ) (c : W.Circle ⊕ V.Circle) :
     (W.sum V).circleLabel c = Sum.elim W.circleLabel V.circleLabel c := (rfl)
+
+@[simp] theorem reverse_sum (V : LabeledClosedWeb.{v} Λ) :
+    (W.sum V).reverse = W.reverse.sum V.reverse := by
+  rcases W with ⟨W, ℓ, c, h⟩
+  rcases V with ⟨V, ℓ', c', h'⟩
+  dsimp only [reverse, sum]
+  congr 1
+  · exact W.reverse_sum V
+  · exact proof_irrel_heq _ _
+
+@[simp] theorem mirror_sum (V : LabeledClosedWeb.{v} Λ) :
+    (W.sum V).mirror = W.mirror.sum V.mirror := by
+  rcases W with ⟨W, ℓ, c, h⟩
+  rcases V with ⟨V, ℓ', c', h'⟩
+  dsimp only [mirror, sum]
+  congr 1
+  · exact W.mirror_sum V
+  · funext e
+    rcases e with e | e <;> rfl
+  · funext c
+    rcases c with c | c <;> rfl
+  · exact proof_irrel_heq _ _
 
 /-- The disjoint-union left unit isomorphism of labelled webs. -/
 def emptySum : (empty.{v}.sum W).Iso W where
