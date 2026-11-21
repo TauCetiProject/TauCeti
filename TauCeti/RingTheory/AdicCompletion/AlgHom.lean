@@ -18,6 +18,11 @@ onto `I'` induces an isomorphism of completions. This is what is needed to compa
 completions of isomorphic local rings, for instance of two models of the localization of a ring
 at a prime.
 
+We also record an elementary adic uniqueness principle for `k`-algebra homomorphisms into an
+adically separated ring (`IsHausdorff J S`): if every element of `R` is congruent to a scalar in
+`k` modulo `Ideal.span G`, then two `k`-algebra homomorphisms `R →ₐ[k] S` that agree on `G` and
+send `G` into `J` are congruent modulo every power `J ^ n`, hence equal.
+
 ## Main definitions and results
 
 * `AdicCompletion.factor_evalₐ`: the projections `evalₐ I n` are compatible with the transition
@@ -33,6 +38,9 @@ at a prime.
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
   `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
   `AdicCompletion.congrₐ_refl`, `AdicCompletion.congrₐ_symm` and `AdicCompletion.congrₐ_trans`.
+* `AlgHom.sub_mem_pow_of_eqOn`, `AlgHom.ext_of_isHausdorff`: adic congruences to every order and
+  uniqueness of `k`-algebra homomorphisms into an adically separated ring from agreement on
+  generators of an augmentation ideal.
 -/
 
 public section
@@ -229,3 +237,43 @@ theorem congrₐ_symm_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S') :
   mapₐ_of (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) x
 
 end AdicCompletion
+
+namespace AlgHom
+
+/-- **Adic congruences from generators of an augmentation ideal.** Suppose every element of `R` is
+congruent to a scalar in `k` modulo `Ideal.span G`, and `φ, ψ : R →ₐ[k] S` agree on `G` and map `G`
+into an ideal `J` of `S`. Then `φ r - ψ r ∈ J ^ n` for every `n : ℕ` and `r : R`. -/
+theorem sub_mem_pow_of_eqOn {k R S : Type*} [CommSemiring k] [CommRing R] [CommRing S]
+    [Algebra k R] [Algebra k S] {φ ψ : R →ₐ[k] S} {G : Set R} {J : Ideal S}
+    (haug : ∀ r : R, ∃ c : k, r - algebraMap k R c ∈ Ideal.span G)
+    (hGJ : ∀ g ∈ G, φ g ∈ J) (hG : Set.EqOn φ ψ G) :
+    ∀ (n : ℕ) (r : R), φ r - ψ r ∈ J ^ n
+  | 0, _ => by simp
+  | n + 1, r => by
+    have hψJ : Ideal.span G ≤ J.comap ψ.toRingHom :=
+      Ideal.span_le.2 fun g hg ↦ Ideal.mem_comap.2 (hG hg ▸ hGJ g hg)
+    obtain ⟨c, hc⟩ := haug r
+    have hrc : φ r - ψ r = φ (r - algebraMap k R c) - ψ (r - algebraMap k R c) := by simp
+    rw [hrc]
+    refine Submodule.span_induction (p := fun x _ ↦ φ x - ψ x ∈ J ^ (n + 1))
+      (fun g hg ↦ by simp [hG hg]) (by simp)
+      (fun x y _ _ hx hy ↦ by simpa only [map_add, sub_add_sub_comm] using add_mem hx hy)
+      (fun a x hx ihx ↦ ?_) hc
+    have hsplit : φ (a • x) - ψ (a • x) = φ a * (φ x - ψ x) + (φ a - ψ a) * ψ x := by
+      simp only [smul_eq_mul, map_mul, mul_sub, sub_mul, sub_add_sub_cancel]
+    rw [hsplit]
+    exact add_mem (Ideal.mul_mem_left _ (φ a) ihx)
+      (pow_succ J n ▸ Ideal.mul_mem_mul (sub_mem_pow_of_eqOn haug hGJ hG n a) (hψJ hx))
+
+/-- **Uniqueness of `k`-algebra homomorphisms into an adically separated ring.** Suppose every
+element of `R` is congruent to a scalar in `k` modulo `Ideal.span G`, and `S` is `IsHausdorff J S`
+for an ideal `J` of `S`. If `φ, ψ : R →ₐ[k] S` agree on `G` and map `G` into `J`, then `φ = ψ`. -/
+theorem ext_of_isHausdorff {k R S : Type*} [CommSemiring k] [CommRing R] [CommRing S]
+    [Algebra k R] [Algebra k S] {φ ψ : R →ₐ[k] S} {G : Set R} (J : Ideal S) [IsHausdorff J S]
+    (haug : ∀ r : R, ∃ c : k, r - algebraMap k R c ∈ Ideal.span G)
+    (hGJ : ∀ g ∈ G, φ g ∈ J) (hG : Set.EqOn φ ψ G) :
+    φ = ψ :=
+  ext fun r ↦ sub_eq_zero.1 <| IsHausdorff.haus ‹_› (φ r - ψ r) fun n ↦ by
+    simpa only [SModEq.zero, smul_eq_mul, Ideal.mul_top] using sub_mem_pow_of_eqOn haug hGJ hG n r
+
+end AlgHom

@@ -53,8 +53,9 @@ scalar `a ≠ 1` only when `n ≠ 0`.
   `AlgHom.toRingHom` in both directions.
 * `AlgHom.units_map_units_map_algebraMap`: an algebra homomorphism sends the image of a unit of
   the base ring to the image of the same unit.
-* `AlgHom.ker_isMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
-  ideal, for any (not necessarily commutative) `k`-algebra `H`.
+* `AlgHom.surjective_to_ring`, `AlgHom.ker_isMaximal`: any augmentation `R →ₐ[k] k` to the base
+  semiring is surjective, and when `k` is a field its kernel is a maximal ideal, for any (not
+  necessarily commutative) `k`-algebra.
 * `AlgHom.algEquivOfFinrankEq`: an algebra homomorphism from a finite-dimensional division algebra
   to an algebra of the same finrank is an algebra equivalence. It is the algebra analogue of
   Mathlib's `LinearMap.linearEquivOfInjective`, with injectivity supplied by the division-ring
@@ -162,12 +163,16 @@ theorem AlgHom.units_map_units_map_algebraMap {R A B : Type*} [CommSemiring R] [
 
 /-! ### The kernel of an augmentation -/
 
+/-- Every `k`-algebra homomorphism `R →ₐ[k] k` to the base semiring is surjective. -/
+theorem AlgHom.surjective_to_ring {k R : Type*} [CommSemiring k] [Semiring R] [Algebra k R]
+    (ε : R →ₐ[k] k) : Function.Surjective ε :=
+  fun c ↦ ⟨algebraMap k R c, ε.commutes c⟩
+
 /-- The kernel of an augmentation to a field is a maximal ideal, even when the algebra is
 not commutative. -/
 instance AlgHom.ker_isMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
     (f : H →ₐ[k] k) : (RingHom.ker (f : H →+* k)).IsMaximal :=
-  RingHom.ker_isMaximal_of_surjective (f : H →+* k)
-    (fun r ↦ ⟨algebraMap k H r, f.commutes r⟩)
+  RingHom.ker_isMaximal_of_surjective (f : H →+* k) f.surjective_to_ring
 
 /-! ### Algebra equivalences from equal finrank -/
 

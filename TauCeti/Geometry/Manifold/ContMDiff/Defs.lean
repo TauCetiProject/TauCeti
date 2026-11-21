@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import Mathlib.Geometry.Manifold.ContMDiff.Basic
 
 /-!
 # The set of points where a map is `C^n`
@@ -25,6 +26,8 @@ and analytic manifolds.
   open.
 * `ContMDiffAt.eventually_mdifferentiableAt`: `C^n` regularity at a point, with `n ≠ 0`,
   implies differentiability throughout a neighbourhood.
+* `TauCeti.eventually_contMDiffAt_comp`: composition of maps that are `C^n` near a point and its
+  image is `C^n` near the point.
 * The instances `NeZero (∞ : ℕ∞ω)` and `NeZero (ω : ℕ∞ω)`.
 -/
 
@@ -66,6 +69,18 @@ theorem _root_.ContMDiffAt.eventually_mdifferentiableAt [IsManifold I 1 M] [IsMa
   ((contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).1
     (hf.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn))).mono fun _ hy ↦
       hy.mdifferentiableAt one_ne_zero
+
+/-- If `f` is `C^n` near `x` with `f x = y` and `g` is `C^n` near `y`, then `g ∘ f` is `C^n`
+near `x`. -/
+theorem eventually_contMDiffAt_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {M'' : Type*} [TopologicalSpace M''] [ChartedSpace H'' M'']
+    {g : M' → M''} {x : M} {y : M'}
+    (hg : ∀ᶠ v in 𝓝 y, ContMDiffAt I' I'' n g v)
+    (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I I' n f w) (hfx : f x = y) :
+    ∀ᶠ w in 𝓝 x, ContMDiffAt I I'' n (g ∘ f) w :=
+  (hf.and ((hfx ▸ hf.self_of_nhds.continuousAt.tendsto).eventually hg)).mono fun w hw ↦
+    ContMDiffAt.comp w hw.2 hw.1
 
 end TauCeti
 

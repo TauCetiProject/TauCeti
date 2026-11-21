@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Filter.Germ.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
+public import TauCeti.Order.Filter.Germ
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 
@@ -17,7 +17,8 @@ An element of the stalk at `x` of the holomorphic structure sheaf is represented
 function on some open neighbourhood of `x`. Forgetting everything but its values near `x` gives a
 germ of functions in Mathlib's sense, along `𝓝 x` or along any finer filter, for instance the
 punctured neighbourhood filter `𝓝[≠] x`. This file constructs that comparison as a ring
-homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and proves:
+homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and `ℂ`-algebra
+homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGermAlgHom I X x l hl` and proves:
 
 * `toFilterGerm_germ`: the germ of a section is the germ of any function agreeing with it on
   the domain of the section;
@@ -44,7 +45,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   This computes local rings of analytic subsets that are locally graphs.
   The inverse is composition with `σ` (`toFilterGerm_eq_comp_of_quotientMk_stalkPrecomp_eq`).
 
-The holomorphic germ of a globally analytic function is `germOfContMDiff`.
+The holomorphic germ of a globally analytic function is `germOfContMDiff`, with constants sent to
+scalars in the stalk (`germOfContMDiff_const`).
 
 This is the bridge between the categorical stalk and concrete function germs, used to compare
 holomorphic germs with meromorphic germs on punctured neighbourhoods.
@@ -130,6 +132,41 @@ theorem toFilterGerm_germ {x : X} {l : Filter X} (hl : l ≤ 𝓝 x) {U : Opens 
   rw [toFilterGerm, ← CommRingCat.comp_apply, germ_toFilterGermHom]
   exact coe_extend_eq I X hx hl f g hfg
 
+section AlgHom
+
+variable (I X)
+
+/-- The filter germ of a constant holomorphic germ is the constant filter germ. -/
+@[simp]
+theorem toFilterGerm_algebraMap (x : X) (l : Filter X) (hl : l ≤ 𝓝 x) (c : ℂ) :
+    toFilterGerm I X x l hl (algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) c) =
+      algebraMap ℂ (Germ l ℂ) c := by
+  rw [← germ_algebraMap I X ⊤ x trivial c, Germ.algebraMap_eq]
+  simp_rw [Algebra.algebraMap_self_apply]
+  exact toFilterGerm_germ hl trivial _ (fun _ ↦ c) fun y ↦ algebraMap_apply (op ⊤) c y
+
+/-- Comparison of holomorphic germs with function germs along `l ≤ 𝓝 x`, as a `ℂ`-algebra
+homomorphism. -/
+def toFilterGermAlgHom (x : X) (l : Filter X) (hl : l ≤ 𝓝 x) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x →ₐ[ℂ] Germ l ℂ where
+  __ := toFilterGerm I X x l hl
+  commutes' := toFilterGerm_algebraMap I X x l hl
+
+/-- Coercing `toFilterGermAlgHom` to a ring homomorphism recovers `toFilterGerm`. -/
+@[simp]
+theorem toRingHom_toFilterGermAlgHom (x : X) (l : Filter X) (hl : l ≤ 𝓝 x) :
+    (toFilterGermAlgHom I X x l hl :
+      (holomorphicStructureSheaf I X).presheaf.stalk x →+* Germ l ℂ) =
+      toFilterGerm I X x l hl := (rfl)
+
+/-- `toFilterGermAlgHom` acts on germs by `toFilterGerm`. -/
+@[simp]
+theorem toFilterGermAlgHom_apply (x : X) (l : Filter X) (hl : l ≤ 𝓝 x)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    toFilterGermAlgHom I X x l hl s = toFilterGerm I X x l hl s := (rfl)
+
+end AlgHom
+
 /-- The holomorphic germ at `x` of a function which is complex analytic on all of `X`. -/
 def germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     (holomorphicStructureSheaf I X).presheaf.stalk x :=
@@ -198,6 +235,15 @@ theorem toFilterGerm_nhds_injective (x : X) :
   rw [map_apply, map_apply, zero_apply]
   exact (Subtype.val_injective.extend_apply _ (0 : X → ℂ) (Opens.inclusion hWU y)).symm.trans
     (ht y y.property).1
+
+/-- The holomorphic germ of a constant function is the corresponding scalar in the stalk. -/
+@[simp]
+theorem germOfContMDiff_const (c : ℂ) (x : X) :
+    germOfContMDiff (fun _ : X ↦ c) contMDiff_const x =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) c :=
+  toFilterGerm_nhds_injective x <| by
+    rw [toFilterGerm_germOfContMDiff, toFilterGerm_algebraMap, Germ.algebraMap_eq]
+    simp_rw [Algebra.algebraMap_self_apply]
 
 /-- A holomorphic germ vanishes exactly when a function with the same germ along `𝓝 x` vanishes
 near `x`. -/
