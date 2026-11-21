@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Multiset
 /-!
 # Absolute-value bounds for multiset sums
 
-For a multiset in a linearly ordered additive commutative group, bounding each element in absolute
+For a multiset in a lattice-ordered additive commutative group, bounding each element in absolute
 value by `B` bounds the absolute value of the sum by `s.card • B`. These are the `Multiset`
 counterparts of `Finset.abs_sum_le_card_nsmul`
 (`TauCeti/Algebra/Order/BigOperators/Sum/UnitWeights.lean`).
