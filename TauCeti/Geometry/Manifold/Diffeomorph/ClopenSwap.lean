@@ -56,7 +56,7 @@ private theorem clopenSwapFun_of_mem_left (φ : U ≃ₘ^n⟮I, I⟯ V) (x : U) 
 
 private theorem clopenSwapFun_of_mem_right (φ : U ≃ₘ^n⟮I, I⟯ V) (hUV : Disjoint U V) (y : V) :
     clopenSwapFun φ y = φ.symm y := by
-  have hyU : (y : M) ∉ U := (Opens.coe_disjoint.2 hUV).symm.notMem_of_mem_left y.2
+  have hyU : (y : M) ∉ U := (Opens.coe_disjoint.2 hUV).symm.notMem_of_mem_left y.property
   simp [clopenSwapFun, hyU]
 
 private theorem clopenSwapFun_of_notMem {φ : U ≃ₘ^n⟮I, I⟯ V} {x : M} (hU : x ∉ U) (hV : x ∉ V) :
@@ -80,14 +80,14 @@ private theorem contMDiff_clopenSwapFun (φ : U ≃ₘ^n⟮I, I⟯ V) (hU : IsCl
     have : (fun y : U ↦ clopenSwapFun φ y) = fun y ↦ (φ y : M) :=
       funext (clopenSwapFun_of_mem_left φ)
     rw [this]
-    exact (contMDiff_subtype_val.comp φ.contMDiff).contMDiffAt
+    exact (contMDiff_subtypeVal.comp φ.contMDiff).contMDiffAt
   by_cases hxV : x ∈ V
   · -- On the open set `V` the map is `φ⁻¹`.
     rw [← contMDiffAt_subtype_iff (x := (⟨x, hxV⟩ : V))]
     have : (fun y : V ↦ clopenSwapFun φ y) = fun y ↦ (φ.symm y : M) :=
       funext (clopenSwapFun_of_mem_right φ hUV)
     rw [this]
-    exact (contMDiff_subtype_val.comp φ.symm.contMDiff).contMDiffAt
+    exact (contMDiff_subtypeVal.comp φ.symm.contMDiff).contMDiffAt
   · -- Off the closed set `U ∪ V` the map is the identity.
     refine contMDiffAt_id.congr_of_eventuallyEq ?_
     filter_upwards [(hU.union hV).isOpen_compl.mem_nhds (by simp [hxU, hxV])] with y hy

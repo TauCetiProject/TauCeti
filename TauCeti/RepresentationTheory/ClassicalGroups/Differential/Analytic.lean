@@ -215,9 +215,9 @@ theorem mvfderiv_toContinuousLinearMap_one (hσ : IsRationalRep σ)
 with the named highest-weight module that intertwines the manifold derivative of its action. -/
 theorem exists_linearEquiv_mvfderiv_glIrreducible (hσ : IsRationalRep σ)
     [σ.IsIrreducible] {l : DominantWeight n} {w : V} (hw0 : w ≠ 0)
-    (hwl : w ∈ weightSpace σ l.1)
+    (hwl : w ∈ weightSpace σ l.val)
     (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), σ (transvectionUnit hij.ne c) w = w) :
-    ∃ e : V ≃ₗ[ℂ] glIrreducible n (fun i ↦ (l.1 i : ℂ)),
+    ∃ e : V ≃ₗ[ℂ] glIrreducible n (fun i ↦ (l.val i : ℂ)),
       ∀ (X : Matrix (Fin n) (Fin n) ℂ) (v : V),
         e (mvfderiv 𝓘(ℂ, Matrix (Fin n) (Fin n) ℂ)
           (fun g : GL (Fin n) ℂ => σ g v) 1 X) = ⁅X, e v⁆ := by

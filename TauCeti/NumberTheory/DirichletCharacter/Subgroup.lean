@@ -49,13 +49,13 @@ variable {R : Type*} [CommMonoidWithZero R] {n : ℕ}
 conductors of all its members. -/
 noncomputable def dirichletConductor (Y : Subgroup (DirichletCharacter R n)) [Finite Y] : ℕ := by
   letI : Fintype Y := Fintype.ofFinite Y
-  exact Finset.lcm Finset.univ fun χ : Y ↦ conductor χ.1
+  exact Finset.lcm Finset.univ fun χ : Y ↦ conductor χ.val
 
 /-- The conductor of every character in a subgroup divides the subgroup conductor. -/
 theorem conductor_dvd_dirichletConductor (Y : Subgroup (DirichletCharacter R n))
     [Finite Y] {χ : DirichletCharacter R n} (hχ : χ ∈ Y) : conductor χ ∣ Y.dirichletConductor := by
   let _ : Fintype Y := Fintype.ofFinite Y
-  exact Finset.dvd_lcm (f := fun ψ : Y ↦ conductor ψ.1) (Finset.mem_univ ⟨χ, hχ⟩)
+  exact Finset.dvd_lcm (f := fun ψ : Y ↦ conductor ψ.val) (Finset.mem_univ ⟨χ, hχ⟩)
 
 /-- A subgroup conductor divides `m` exactly when every character in the subgroup has conductor
 dividing `m`. -/

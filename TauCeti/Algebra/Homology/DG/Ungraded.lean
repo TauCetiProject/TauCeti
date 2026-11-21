@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Kronecker
+public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
 
 /-!
 # Ungraded differential algebras and modules, and matrices over them
@@ -29,10 +33,27 @@ Leibniz rule for matrix products (`TauCeti.IsUngradedDGAlgebra.map_mul_matrix`) 
 (`TauCeti.IsUngradedDGRightModule.map_continuationMap`). Matrices are how type `D` structures and
 their morphisms are written in a basis.
 
+The tensor product `A ⊗[R] B` of two algebras with ungraded differentials `d` and `d'` carries the
+differential `d ⊗ 1 + 1 ⊗ d'` (`TauCeti.ungradedTensorDifferential`). It always satisfies the
+Leibniz rule, and over a ring of characteristic two, where the Koszul sign of the graded tensor
+product disappears, it also squares to zero (`TauCeti.IsUngradedDGAlgebra.tensorProduct`). This is
+the algebra over which bordered Heegaard Floer homology writes its type `DD` bimodules.
+
+The balanced tensor product `M ⊗_A N` of a right module `(M, dM)` and a left module `(N, dN)`
+satisfying the ungraded Leibniz rules carries the differential
+`d (m ⊗ n) = dM m ⊗ n + m ⊗ dN n` (`TauCeti.BalancedTensorProduct.ungradedDifferential`). The
+two Leibniz rules are what make this formula balanced; its square is `dM² ⊗ 1 + 1 ⊗ dN²` plus
+twice `dM ⊗ dN`, so it squares to zero over a ring of characteristic two. This is the
+characteristic-two counterpart of the signed tensor differential of
+`TauCeti.Algebra.Homology.DG.Module.TensorProduct.Differential`.
+
 ## Main definitions
 
 * `TauCeti.IsUngradedDGAlgebra`: an ungraded differential on an algebra.
 * `TauCeti.IsUngradedDGRightModule`: an ungraded differential on a right module.
+* `TauCeti.ungradedTensorDifferential`: the differential `d ⊗ 1 + 1 ⊗ d'` of a tensor product.
+* `TauCeti.BalancedTensorProduct.ungradedDifferential`: the tensor differential
+  `dM ⊗ 1 + 1 ⊗ dN` on a balanced tensor product.
 
 ## Main results
 
@@ -40,12 +61,22 @@ their morphisms are written in a basis.
   ungraded differential right module over itself.
 * `TauCeti.IsUngradedDGAlgebra.map_mul_matrix`: `d (F * G) = d F * G + F * d G` for matrices.
 * `TauCeti.IsUngradedDGRightModule.map_continuationMap`: `dM (φ ⬝ F) = dM φ ⬝ F + φ ⬝ d F`.
+* `TauCeti.IsUngradedDGAlgebra.tensorProduct`: in characteristic two, the tensor product of
+  ungraded differential algebras is an ungraded differential algebra.
+* `Matrix.kroneckerTMul_map_ungradedTensorDifferential`: `d (F ⊗ₖₜ G) = d F ⊗ₖₜ G + F ⊗ₖₜ d' G`.
+* `TauCeti.BalancedTensorProduct.ungradedDifferential_ungradedDifferential`: over a ring of
+  characteristic two the tensor differential squares to zero.
+* `TauCeti.BalancedTensorProduct.ungradedDifferential_comp_map`: tensoring equivariant maps
+  which commute with the differentials commutes with the tensor differential.
 
 ## References
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
   Chapter 2 (differential algebras and modules over `𝔽₂`).
+* R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bimodules in bordered Heegaard Floer homology*,
+  Geom. Topol. **19** (2015), 525–724, [arXiv:1003.0598](https://arxiv.org/abs/1003.0598), §2.2
+  (type `DD` structures as type `D` structures over a tensor product of algebras).
 -/
 
 public section
@@ -126,4 +157,146 @@ theorem map_continuationMap (hM : IsUngradedDGRightModule d dM) (φ : m → M) (
 
 end IsUngradedDGRightModule
 
+/-! ### Tensor products -/
+
+section TensorProduct
+
+open scoped TensorProduct
+
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B]
+
+/-- The map `d ⊗ 1 + 1 ⊗ d'` on the tensor product `A ⊗[R] B` of two modules with linear
+endomorphisms `d` and `d'`, with no Koszul sign. For algebras with differentials it satisfies the
+Leibniz rule (`TauCeti.ungradedTensorDifferential_mul`), and in characteristic two it is an
+ungraded differential (`TauCeti.IsUngradedDGAlgebra.tensorProduct`). -/
+noncomputable def ungradedTensorDifferential (d : A →ₗ[R] A) (d' : B →ₗ[R] B) :
+    A ⊗[R] B →ₗ[R] A ⊗[R] B :=
+  TensorProduct.map d LinearMap.id + TensorProduct.map LinearMap.id d'
+
+@[simp]
+theorem ungradedTensorDifferential_tmul (d : A →ₗ[R] A) (d' : B →ₗ[R] B) (a : A) (b : B) :
+    ungradedTensorDifferential d d' (a ⊗ₜ b) = d a ⊗ₜ b + a ⊗ₜ d' b := by
+  simp [ungradedTensorDifferential]
+
+end TensorProduct
+
+section TensorProductAlgebra
+
+open scoped TensorProduct
+
+variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+
+/-- **The Leibniz rule on a tensor product.** If `d` and `d'` satisfy the ungraded Leibniz rule,
+then so does `d ⊗ 1 + 1 ⊗ d'`; no hypothesis on the characteristic is needed. -/
+theorem ungradedTensorDifferential_mul {d : A →ₗ[R] A} {d' : B →ₗ[R] B}
+    (hd : ∀ a a', d (a * a') = d a * a' + a * d a')
+    (hd' : ∀ b b', d' (b * b') = d' b * b' + b * d' b') (x y : A ⊗[R] B) :
+    ungradedTensorDifferential d d' (x * y) =
+      ungradedTensorDifferential d d' x * y + x * ungradedTensorDifferential d d' y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' =>
+    simp only [add_mul, map_add, hx, hx']
+    abel
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' =>
+      simp only [mul_add, map_add, hy, hy']
+      abel
+    | tmul a' b' =>
+      simp only [Algebra.TensorProduct.tmul_mul_tmul, ungradedTensorDifferential_tmul, hd, hd',
+        add_mul, mul_add, TensorProduct.add_tmul, TensorProduct.tmul_add]
+      abel
+
+/-- **The tensor product of ungraded differential algebras.** Over a ring of characteristic two,
+`d ⊗ 1 + 1 ⊗ d'` is an ungraded differential on `A ⊗[R] B`. Its square is `2 (d ⊗ d')`, which is
+why the characteristic matters. -/
+theorem IsUngradedDGAlgebra.tensorProduct [CharP R 2] {d : A →ₗ[R] A} {d' : B →ₗ[R] B}
+    (hd : IsUngradedDGAlgebra d) (hd' : IsUngradedDGAlgebra d') :
+    IsUngradedDGAlgebra (ungradedTensorDifferential d d') where
+  map_mul := ungradedTensorDifferential_mul hd.map_mul hd'.map_mul
+  map_map x := by
+    induction x using TensorProduct.inductionOn with
+    | add x x' hx hx' => simp only [map_add, hx, hx', add_zero]
+    | tmul a b =>
+      simp only [ungradedTensorDifferential_tmul, map_add, hd.map_map, hd'.map_map,
+        TensorProduct.zero_tmul, TensorProduct.tmul_zero, zero_add, add_zero]
+      exact add_self_eq_zero_of_charTwo R _
+
+end TensorProductAlgebra
+
+namespace BalancedTensorProduct
+
+/-! ### The tensor differential -/
+
+variable {R A M N : Type*} [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [AddCommGroup N] [Module R N] [Module A N]
+  {d : A →ₗ[R] A} {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
+  (hM : ∀ (a : A) (m : M), dM (op a • m) = op a • dM m + op (d a) • m)
+  (hN : ∀ (a : A) (n : N), dN (a • n) = d a • n + a • dN n)
+
+/-- The **tensor differential** `d (m ⊗ n) = dM m ⊗ n + m ⊗ dN n` on the balanced tensor product
+`M ⊗_A N` of a right module and a left module whose differentials obey the ungraded Leibniz
+rules `dM (m * a) = dM m * a + m * d a` and `dN (a * n) = d a * n + a * dN n`. These rules make
+the formula balanced; no square law is needed to define it. -/
+noncomputable def ungradedDifferential : Module.End R (BalancedTensorProduct R A M N) :=
+  lift ((mk R A).comp dM + (mk R A).compl₂ dN) fun a m n => by
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.compl₂_apply, mk_apply, hM,
+      hN, add_tmul, tmul_add, balance]
+    abel
+
+@[simp]
+theorem ungradedDifferential_tmul (m : M) (n : N) :
+    ungradedDifferential hM hN (tmul R A m n) = tmul R A (dM m) n + tmul R A m (dN n) := by
+  simp [ungradedDifferential]
+
+/-- **The tensor differential squares to zero** over a ring of characteristic two, when `dM` and
+`dN` do: the two mixed terms `dM m ⊗ dN n` cancel. -/
+@[simp]
+theorem ungradedDifferential_ungradedDifferential [CharP R 2] (hM₂ : ∀ m, dM (dM m) = 0)
+    (hN₂ : ∀ n, dN (dN n) = 0) (z : BalancedTensorProduct R A M N) :
+    ungradedDifferential hM hN (ungradedDifferential hM hN z) = 0 := by
+  induction z using induction_on with
+  | ht m n =>
+    simp only [ungradedDifferential_tmul, map_add, hM₂, hN₂, zero_tmul, tmul_zero, zero_add,
+      add_zero]
+    exact add_self_eq_zero_of_charTwo R _
+  | ha x y hx hy => simp only [map_add, hx, hy, add_zero]
+
+variable {M' N' : Type*} [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M'] [AddCommGroup N']
+  [Module R N'] [Module A N'] {dM' : M' →ₗ[R] M'} {dN' : N' →ₗ[R] N'}
+  (hM' : ∀ (a : A) (m : M'), dM' (op a • m) = op a • dM' m + op (d a) • m)
+  (hN' : ∀ (a : A) (n : N'), dN' (a • n) = d a • n + a • dN' n)
+
+/-- **Naturality**: tensoring equivariant maps `f`, `g` which commute with the differentials
+commutes with the tensor differentials. -/
+theorem ungradedDifferential_comp_map (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
+    ungradedDifferential hM' hN' ∘ₗ map f g hf hg = map f g hf hg ∘ₗ ungradedDifferential hM hN :=
+  hom_ext fun m n => by
+    simp only [LinearMap.comp_apply, map_tmul, ungradedDifferential_tmul, map_add,
+      ← LinearMap.comp_apply dM' f, ← LinearMap.comp_apply dN' g, hfd, hgd]
+
+end BalancedTensorProduct
+
 end TauCeti
+
+namespace Matrix
+
+open scoped Kronecker TensorProduct
+
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B]
+
+/-- **The Leibniz rule for Kronecker products.** The entrywise differential `d ⊗ 1 + 1 ⊗ d'` of
+the Kronecker product `F ⊗ₖₜ G` of matrices over `A` and over `B` is `d F ⊗ₖₜ G + F ⊗ₖₜ d' G`. -/
+@[simp]
+theorem kroneckerTMul_map_ungradedTensorDifferential {l m n p : Type*} {d : A →ₗ[R] A}
+    {d' : B →ₗ[R] B} (F : Matrix l m A) (G : Matrix n p B) :
+    (F ⊗ₖₜ[R] G).map (TauCeti.ungradedTensorDifferential d d') =
+      F.map d ⊗ₖₜ[R] G + F ⊗ₖₜ[R] G.map d' := by
+  ext ⟨i, k⟩ ⟨j, o⟩
+  simp
+
+end Matrix

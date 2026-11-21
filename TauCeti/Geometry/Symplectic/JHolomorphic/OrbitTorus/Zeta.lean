@@ -46,6 +46,16 @@ zeta function `exp (∑_γ ∑_{n ≥ 1} sgn det (1 - P_γ ^ n) e^(n [γ]) / n)`
 homology-indexed form of the local identity
 `TauCeti.X_mul_derivative_torusWeightSeries_of_det_eq_one`.
 
+A count truncated at a period cutoff `C` only needs the iterates of period below `C` to be
+nondegenerate, which is what a perturbation of a degenerate map can achieve. Below `C` the orbit
+zeta function only sees the signs of those iterates
+(`TauCeti.NovikovSeries.orbitZeta_sub_orbitZeta_mem_periodFiltration`), which still follow the
+geometric pattern, and every orbit of period at least `C` contributes a factor equal to `1` below
+`C`. So the product of the substituted torus series and the orbit zeta function agree at every
+class of period below `C`
+(`TauCeti.orbitZeta_sub_mapRingHom_tprod_ofPowerSeries_torusWeightSeries_mem_periodFiltration`);
+the identity above is the case of all cutoffs.
+
 The tori of distinct orbits are disjoint, so every multiplicity assignment on them is a compatible
 configuration, and the generating series `∑_A Gr(A) e^A` of their weighted configuration counts
 (`TauCeti.configurationCountSeries`) is the product of their substituted local series
@@ -63,8 +73,11 @@ those signs prescribe.
   series of an orbit torus is its Euler factor.
 * `TauCeti.hasProd_ofPowerSeries_torusWeightSeries`: the product of the substituted local series
   converges to the integral Euler product.
-* `TauCeti.orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries`: that product is the
-  orbit zeta function.
+* `TauCeti.orbitZeta_sub_mapRingHom_tprod_ofPowerSeries_torusWeightSeries_mem_periodFiltration`:
+  when only the iterates of period below `C` are nondegenerate, that product agrees with the orbit
+  zeta function below `C`.
+* `TauCeti.orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries`: when every iterate is
+  nondegenerate, that product is the orbit zeta function.
 * `TauCeti.configurationCountSeries_eq_eulerProduct`,
   `TauCeti.orbitZeta_eq_mapRingHom_configurationCountSeries`: the generating series of the weighted
   configuration counts of pairwise compatible orbit tori is the Euler product and the orbit zeta
@@ -171,6 +184,63 @@ theorem hasProd_ofPowerSeries_torusWeightSeries (hP : ∀ i, (1 - P i).det ≠ 0
     ofPowerSeries_torusWeightSeries_eq_zpow_unitsOneSubSingle (hpos i) (hdet i) (hP i)
 
 include hfin hdet in
+/-- **Below a period cutoff, the orbit-torus weights give the orbit zeta function.** For a family
+of orbits of classes `γ i` of positive period, finitely many below each cutoff, whose return maps
+`P i` have determinant one, suppose that every iterate of period below `C` is nondegenerate:
+`det (1 - P i ^ n) ≠ 0` whenever `n ≠ 0` and `n * N (γ i) < C`. Then, over any `ℚ`-algebra `K`,
+the product over the orbits of the labelled local series at `t = e^(γ i)` agrees below the period
+`C` with the orbit zeta function `exp (∑ᵢ ∑_{n ≥ 1} sgn det (1 - P i ^ n) e^(n • γ i) / n)`: their
+difference lies in `periodFiltration K N C`, so their coefficients at every class of period below
+`C` coincide. Iterates of period at least `C` may be degenerate, and so may the orbits themselves
+when `N (γ i) ≥ C`. -/
+theorem orbitZeta_sub_mapRingHom_tprod_ofPowerSeries_torusWeightSeries_mem_periodFiltration
+    {C : ℝ} (hP : ∀ i (n : ℕ), n ≠ 0 → n * N (γ i) < C → (1 - P i ^ n).det ≠ 0)
+    (K : Type*) [CommRing K] [Algebra ℚ K] :
+    orbitZeta K N γ (fun i n => SignType.sign (1 - P i ^ n).det) -
+      mapRingHom (Int.castRingHom K) (AddMonoidHom.id H) ⟨1, one_pos, by simp⟩
+        (∏' i, ofPowerSeries (γ i) (hpos i) (torusWeightSeries (decide (0 < (1 - P i).det))
+          (if (1 + P i).det < 0 then 1 else 0))) ∈ periodFiltration K N C := by
+  let σ (i : ι) : ℤˣ := if (1 + P i).det < 0 then -1 else 1
+  have hσ (i : ι) : ((σ i : ℤˣ) : ℤ) = if (1 + P i).det < 0 then -1 else 1 := by
+    simp only [σ]
+    split_ifs <;> rfl
+  -- The geometric signs `sgn det (1 - P i) * σ i ^ (n - 1)` agree with the actual signs on every
+  -- iterate of period below `C`, and their orbit zeta function is an Euler product.
+  let ε (i : ι) (n : ℕ) : ℤ := SignType.sign (1 - P i).det * ↑(σ i ^ (n - 1))
+  have hε (i : ι) (k : ℕ) : ε i (k + 1) = ε i 1 * ↑(σ i ^ k) := by simp [ε]
+  have hagree (i : ι) (n : ℕ) (hn : n ≠ 0) (hnC : n * N (γ i) < C) :
+      (SignType.sign (1 - P i ^ n).det : ℤ) = ε i n := by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+    rw [sign_det_one_sub_pow_succ_of_det_eq_one (hdet i) (hP i _ hn hnC)]
+    simp [ε, hσ]
+  have hzeta := orbitZeta_sub_orbitZeta_mem_periodFiltration (K := K) hpos hfin hagree
+  rw [orbitZeta_eq_mapRingHom_eulerProduct hpos hfin ε σ hε] at hzeta
+  -- Below `C` the Euler product and the product of the orbit-torus series have the same factors:
+  -- an orbit of period below `C` is nondegenerate, and every other factor is `1` below `C`.
+  let f (i : ι) : nonnegSubring ℤ N := ⟨ofPowerSeries (γ i) (hpos i)
+    (torusWeightSeries (decide (0 < (1 - P i).det)) (if (1 + P i).det < 0 then 1 else 0)),
+    ofPowerSeries_mem_nonnegSubring _ _⟩
+  have hf (i : ι) : (f i : NovikovSeries ℤ H N) - 1 ∈ periodFiltration ℤ N (N (γ i)) := by
+    have h := ofPowerSeries_mem_periodFiltration (hpos i) (n := 1)
+      (f := torusWeightSeries (decide (0 < (1 - P i).det)) (if (1 + P i).det < 0 then 1 else 0) - 1)
+      (by rw [pow_one, PowerSeries.X_dvd_iff, map_sub, constantCoeff_torusWeightSeries,
+        _root_.map_one, sub_self])
+    simpa [f] using h
+  have hdiff : eulerProduct γ hpos (fun i => (σ i : ℤ)) (fun i => -(ε i 1 * σ i)) -
+      ∏' i, (f i : NovikovSeries ℤ H N) ∈ periodFiltration ℤ N C := by
+    rw [← (hasProd_eulerProduct hfin _ _).tprod_eq]
+    refine tprod_sub_tprod_mem_periodFiltration hfin
+      (fun i => coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration _ _ _) hf fun i hi => ?_
+    have hP₁ : (1 - P i).det ≠ 0 := by simpa using hP i 1 one_ne_zero (by simpa using hi)
+    simp only [f]
+    rw [ofPowerSeries_torusWeightSeries_eq_zpow_unitsOneSubSingle (hpos i) (hdet i) hP₁]
+    simp [ε, hσ]
+  have hmap := map_mem_periodFiltration (Int.castRingHom K : ℤ →+ K) (AddMonoidHom.id H)
+    ⟨1, one_pos, by simp⟩ zero_le_one (fun _ => (one_mul _).symm) hdiff
+  rw [one_mul, ← mapRingHom_apply (Int.castRingHom K), map_sub] at hmap
+  simpa [f] using add_mem hzeta hmap
+
+include hfin hdet in
 /-- **The product of the orbit-torus weights is the orbit zeta function.** For a family of
 orbits of classes `γ i` of positive period, finitely many below each cutoff, whose return maps
 `P i` have determinant one and nondegenerate nonzero powers, the product over the orbits of the
@@ -181,19 +251,10 @@ theorem orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries
     orbitZeta K N γ (fun i n => SignType.sign (1 - P i ^ n).det) =
       mapRingHom (Int.castRingHom K) (AddMonoidHom.id H) ⟨1, one_pos, by simp⟩
         (∏' i, ofPowerSeries (γ i) (hpos i) (torusWeightSeries (decide (0 < (1 - P i).det))
-          (if (1 + P i).det < 0 then 1 else 0))) := by
-  let σ (i : ι) : ℤˣ := if (1 + P i).det < 0 then -1 else 1
-  have hσ (i : ι) : ((σ i : ℤˣ) : ℤ) = if (1 + P i).det < 0 then -1 else 1 := by
-    simp only [σ]
-    split_ifs <;> rfl
-  have hε (i : ι) (k : ℕ) : (SignType.sign (1 - P i ^ (k + 1)).det : ℤ) =
-      SignType.sign (1 - P i ^ 1).det * ↑(σ i ^ k) := by
-    rw [pow_one, Units.val_pow_eq_pow_val, hσ]
-    exact sign_det_one_sub_pow_succ_of_det_eq_one (hdet i) (hP i) k
-  rw [orbitZeta_eq_mapRingHom_eulerProduct hpos hfin _ σ hε,
-    (hasProd_ofPowerSeries_torusWeightSeries hpos hfin hdet fun i => by
-      simpa using hP i 1 one_ne_zero).tprod_eq]
-  simp only [hσ, pow_one]
+          (if (1 + P i).det < 0 then 1 else 0))) :=
+  sub_eq_zero.1 (eq_zero_of_forall_mem_periodFiltration fun _ =>
+    orbitZeta_sub_mapRingHom_tprod_ofPowerSeries_torusWeightSeries_mem_periodFiltration hpos hfin
+      hdet (fun i n hn _ => hP i n hn) K)
 
 include hdet in
 /-- **The configuration count of the orbit tori is an integral Euler product.** Let the orbit

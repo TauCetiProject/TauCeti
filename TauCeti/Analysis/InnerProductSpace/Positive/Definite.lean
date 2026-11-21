@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
@@ -40,6 +41,9 @@ half-space.
 * `ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`: a
   positive-definite symmetric operator factors as `e e†`, with `e†` fixing the direction of a
   given vector.
+* `TauCeti.exists_linearEquiv_inner_eq_of_posDef`: a symmetric positive-definite bilinear form on a
+  finite-dimensional real vector space transfers along a linear equivalence to the inner product of
+  any real inner product space of the same dimension.
 
 Only the existence of `e` is exported, since `e` is determined only up to a unitary automorphism:
 with `e`, every `e ∘ U` for a unitary `U` works as well. The operator is
@@ -168,5 +172,28 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_
     refine e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => ?_) x
     have h := hRn (O y)
     rwa [← he, O.norm_map] at h
+
+/-- A symmetric positive-definite bilinear form on a finite-dimensional real vector space `W`
+transfers along a linear equivalence to the inner product of any real inner product space `E` of
+the same finite dimension. -/
+theorem exists_linearEquiv_inner_eq_of_posDef {W E : Type*} [AddCommGroup W] [Module ℝ W]
+    [FiniteDimensional ℝ W] [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    (hdim : Module.finrank ℝ W = Module.finrank ℝ E) {B : LinearMap.BilinForm ℝ W}
+    (hpos : B.toQuadraticMap.PosDef) (hsymm : B.IsSymm) :
+    ∃ φ : W ≃ₗ[ℝ] E, ∀ x y, ⟪φ x, φ y⟫_ℝ = B x y := by
+  let core : InnerProductSpace.Core ℝ W :=
+    { inner x y := B x y
+      conj_inner_symm x y := by simp [hsymm.eq y x]
+      re_inner_nonneg x := hpos.nonneg x
+      add_left x y z := by simp
+      smul_left x y r := by simp
+      definite x hx := hpos.anisotropic x hx }
+  let _ : NormedAddCommGroup W := core.toNormedAddCommGroup
+  let _ : InnerProductSpace ℝ W := InnerProductSpace.ofCore core.toCore
+  let φ : W ≃ₗᵢ[ℝ] E :=
+    (stdOrthonormalBasis ℝ W).equiv (stdOrthonormalBasis ℝ E) (finCongr hdim)
+  refine ⟨φ.toLinearEquiv, fun x y ↦ ?_⟩
+  rw [LinearIsometryEquiv.coe_toLinearEquiv]
+  exact φ.inner_map_map x y
 
 end TauCeti

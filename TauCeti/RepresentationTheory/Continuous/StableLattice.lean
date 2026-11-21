@@ -23,7 +23,7 @@ lattice, which is the starting point for integral models of `ℓ`-adic Galois re
 Over a nonarchimedean local field this gives the classical criterion: a subgroup `K` of
 `GL(V) = V ≃ₗ[E] V` stabilizes a lattice exactly when its closure is compact. The converse
 direction uses that the stabilizer of a lattice is compact
-(`Submodule.IsLattice.isCompact_stabilizer`).
+(`Submodule.IsFullLattice.isCompact_stabilizer`).
 
 ## Main results
 
@@ -59,8 +59,8 @@ variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [CompactSpace Γ]
 /-- **Stable lattices for compact groups.** A representation of a compact group whose orbit
 maps are continuous stabilizes a lattice containing any given lattice `L`. -/
 theorem exists_le_stable_lattice (ρ : Representation E Γ V)
-    (hρ : ∀ x, Continuous fun g => ρ g x) (L : Submodule 𝒪[E] V) [IsLattice E L] :
-    ∃ L' : Submodule 𝒪[E] V, L ≤ L' ∧ IsLattice E L' ∧ ∀ g, ∀ x ∈ L', ρ g x ∈ L' := by
+    (hρ : ∀ x, Continuous fun g => ρ g x) (L : Submodule 𝒪[E] V) [IsFullLattice E L] :
+    ∃ L' : Submodule 𝒪[E] V, L ≤ L' ∧ IsFullLattice E L' ∧ ∀ g, ∀ x ∈ L', ρ g x ∈ L' := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
   let r : Γ → V →ₗ[𝒪[E]] V := fun g => (ρ g).restrictScalars 𝒪[E]
   have hr (g h : Γ) : r (g * h) = (r g).comp (r h) := LinearMap.ext fun x => by simp [r]
@@ -68,7 +68,8 @@ theorem exists_le_stable_lattice (ρ : Representation E Γ V)
   -- `ρ h` maps `L` into `ρ g L` for `h` in the open neighbourhood `W g` of `g`.
   let W : Γ → Set Γ := fun g => ⋂ v ∈ s, (fun h => ρ g⁻¹ (ρ h v)) ⁻¹' L
   have hWo (g : Γ) : IsOpen (W g) := isOpen_biInter_finset fun v _ =>
-    (IsLattice.isOpen L).preimage ((IsModuleTopology.continuous_of_linearMap (ρ g⁻¹)).comp (hρ v))
+    (IsFullLattice.isOpen L).preimage
+      ((IsModuleTopology.continuous_of_linearMap (ρ g⁻¹)).comp (hρ v))
   have hWm (g : Γ) : g ∈ W g := mem_iInter₂.mpr fun v hv => by
     simpa [← mul_apply_eq_comp, ← map_mul] using hs ▸ subset_span hv
   obtain ⟨t, ht⟩ :=
@@ -89,8 +90,8 @@ theorem exists_le_stable_lattice (ρ : Representation E Γ V)
   have hfg : L'.FG := by
     rw [show L' = ⨆ g ∈ t, L.map (r g) from
       le_antisymm (iSup_le hle) (iSup₂_le fun g _ => le_iSup_of_le g le_rfl)]
-    exact fg_biSup t _ fun g _ => IsLattice.fg.map (r g)
-  refine ⟨L', hLL', IsLattice.of_le_of_isLattice_of_fg E hLL' hfg, fun g x hx => ?_⟩
+    exact fg_biSup t _ fun g _ => (IsLattice.fg E L).map (r g)
+  refine ⟨L', hLL', IsFullLattice.of_le_of_fg E hLL' hfg, fun g x hx => ?_⟩
   have hL' : L' ≤ L'.comap (r g) := iSup_le fun h => by
     rw [← map_le_iff_le_comap, ← map_comp, ← hr]
     exact le_iSup_of_le (g * h) le_rfl
@@ -99,8 +100,8 @@ theorem exists_le_stable_lattice (ρ : Representation E Γ V)
 /-- **A representation of a compact group with continuous orbit maps stabilizes a lattice.** -/
 theorem exists_stable_lattice [FiniteDimensional E V] (ρ : Representation E Γ V)
     (hρ : ∀ x, Continuous fun g => ρ g x) :
-    ∃ L : Submodule 𝒪[E] V, IsLattice E L ∧ ∀ g, ∀ x ∈ L, ρ g x ∈ L := by
-  have := isLattice_span (R := 𝒪[E]) (finite_range (Module.finBasis E V))
+    ∃ L : Submodule 𝒪[E] V, IsFullLattice E L ∧ ∀ g, ∀ x ∈ L, ρ g x ∈ L := by
+  have := isFullLattice_span (R := 𝒪[E]) (finite_range (Module.finBasis E V))
     (Module.finBasis E V).span_eq
   obtain ⟨L, -, hL⟩ := ρ.exists_le_stable_lattice hρ (span 𝒪[E] (range (Module.finBasis E V)))
   exact ⟨L, hL⟩
@@ -113,7 +114,7 @@ variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [CompactSpace Γ]
 
 /-- **A jointly continuous representation of a compact group has a stable lattice.** -/
 theorem exists_stable_lattice [FiniteDimensional E V] (ρ : ContinuousRep Γ E V) :
-    ∃ L : Submodule 𝒪[E] V, IsLattice E L ∧ ∀ g, ∀ x ∈ L, ρ g x ∈ L :=
+    ∃ L : Submodule 𝒪[E] V, IsFullLattice E L ∧ ∀ g, ∀ x ∈ L, ρ g x ∈ L :=
   ρ.toRepresentation.exists_stable_lattice ρ.continuous_orbit
 
 end TauCeti.ContinuousRep
@@ -132,7 +133,7 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
 the group `V ≃ₗ[E] V` of linear automorphisms with its natural topology. -/
 theorem isCompact_closure_iff_exists_stable_lattice (K : Subgroup (V ≃ₗ[E] V)) :
     IsCompact (_root_.closure (K : Set (V ≃ₗ[E] V))) ↔
-      ∃ L : Submodule 𝒪[E] V, IsLattice E L ∧ ∀ k ∈ K, ∀ x ∈ L, k x ∈ L := by
+      ∃ L : Submodule 𝒪[E] V, IsFullLattice E L ∧ ∀ k ∈ K, ∀ x ∈ L, k x ∈ L := by
   constructor
   · intro hK
     have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
@@ -143,11 +144,11 @@ theorem isCompact_closure_iff_exists_stable_lattice (K : Subgroup (V ≃ₗ[E] V
     have hρ (x : V) : Continuous fun g : H => ρ g x :=
       (IsModuleTopology.continuous_of_linearMap
         (LinearMap.applyₗ x : Module.End E V →ₗ[E] V)).comp
-        (TauCeti.continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+        (TauCeti.continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
     obtain ⟨L, hL, hρL⟩ := ρ.exists_stable_lattice hρ
     exact ⟨L, hL, fun k hk => hρL ⟨k, K.le_topologicalClosure hk⟩⟩
   · rintro ⟨L, hL, hKL⟩
-    have hS := IsLattice.isCompact_stabilizer L
+    have hS := IsFullLattice.isCompact_stabilizer L
     have hKS : (K : Set (V ≃ₗ[E] V)) ⊆ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) :=
       fun k hk => TauCeti.mem_stabilizer_set_iff_mapsTo.mpr
         ⟨fun x => hKL k hk x, fun x => hKL k⁻¹ (K.inv_mem hk) x⟩

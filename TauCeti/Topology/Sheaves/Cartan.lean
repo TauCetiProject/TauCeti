@@ -232,7 +232,7 @@ private lemma surjective_app_cokernel_π (hF : IsCechAcyclicOn B F) {Y : Opens X
     Function.Surjective ((cokernel.π (Injective.ι F)).hom.app (op Y)) := by
   intro s
   choose V hVB hxV hVY t ht using fun x : Y ↦
-    TopCat.Sheaf.exists_mem_lift_of_epi hbasis (cokernel.π (Injective.ι F)) hY s x.1 x.2
+    TopCat.Sheaf.exists_mem_lift_of_epi hbasis (cokernel.π (Injective.ι F)) hY s x.val x.property
   obtain ⟨c, hc⟩ := (hcpt Y hY).elim_finite_subcover (fun x : Y ↦ (V x : Set X))
     (fun x ↦ (V x).isOpen) (fun x hx ↦ Set.mem_iUnion.2 ⟨⟨x, hx⟩, hxV _⟩)
   -- an empty subcover only covers the empty open, over which every section vanishes
