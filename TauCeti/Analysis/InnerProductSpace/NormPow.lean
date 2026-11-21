@@ -46,9 +46,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
-* `hasFDerivAt_norm_rpow_smul_self`, `norm_rpow_smul_id_add_smulRight_le`: for `r ≥ 0` the map
-  `y ↦ ‖y‖ ^ r • y` is differentiable everywhere, with derivative of norm at most
-  `(1 + r) ‖y‖ ^ r`.
+* `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
+  everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `hasFDerivAt_norm_rpow_smul_self_of_ne`, `norm_rpow_smul_id_add_smulRight_le`,
   `trace_rpow_smul_id_add_smulRight`: the derivative of the radial field `x ↦ ‖x‖ ^ p • x` away
