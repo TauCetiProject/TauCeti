@@ -59,9 +59,8 @@ theorem setLIntegral_indicator_le_setLIntegral_indicator_inter
     calc ∫⁻ x in S, R.indicator f x ∂μ
         ≤ ∫⁻ x in S, f x ∂μ := lintegral_mono fun x ↦ indicator_le_self _ _ _
       _ ≤ ∫⁻ x in S, T.indicator w x ∂μ := hmass
-      _ = ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := lintegral_congr_ae <|
-        (ae_restrict_mem₀ hS).mono fun x hx ↦
-          indicator_eq_indicator ⟨fun hxT ↦ ⟨hTR (a := ⟨x, hx⟩) hxT, hxT⟩, And.right⟩ rfl
+      _ = ∫⁻ x in S, (R ∩ T).indicator w x ∂μ := setLIntegral_congr_fun₀ hS fun x hx ↦
+        indicator_eq_indicator ⟨fun hxT ↦ ⟨hTR (a := ⟨x, hx⟩) hxT, hxT⟩, And.right⟩ rfl
   · -- The part of `S` in `R` lies in `T`: use `f ≤ w` almost everywhere on `S`.
     refine lintegral_mono_ae ?_
     filter_upwards [ae_restrict_mem₀ hS, hf] with x hx hfx
