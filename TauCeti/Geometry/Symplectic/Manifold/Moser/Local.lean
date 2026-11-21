@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Moser
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype.Cutoff
 
 /-!
 # Moser's lemma for families over an open set of times
@@ -108,7 +108,7 @@ theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
   -- Read the family through a smooth map `g : ℝ → J` which is the identity near the times
   -- between `s` and `t`, so as to obtain the family `σ' = (g × id)^* σ` on `ℝ × M`.
   obtain ⟨g, hg, hgid⟩ :=
-    Opens.exists_contMDiff_eventuallyEq_id (convex_uIcc s t) isCompact_uIcc nonempty_uIcc hst
+    J.exists_contMDiff_eventuallyEq_id (convex_uIcc s t) isCompact_uIcc nonempty_uIcc hst
   have hgu {u : ℝ} (hu : u ∈ uIcc s t) : g u = ⟨u, hst hu⟩ :=
     Subtype.ext (hgid u hu).self_of_nhds
   set σ' := SmoothForm.mpullback (Prod.map g id) (hg.prodMap contMDiff_id) σ
@@ -153,7 +153,7 @@ theorem exists_contMDiff_interior_eq_neg (σ : SmoothForm (𝓘(ℝ, ℝ).prod I
         -(SmoothForm.mpullback (Prod.mk (⟨u, hab hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
             α).val := by
   obtain ⟨g, hg, hgid⟩ :=
-    Opens.exists_contMDiff_eventuallyEq_id (convex_uIcc a b) isCompact_uIcc nonempty_uIcc hab
+    J.exists_contMDiff_eventuallyEq_id (convex_uIcc a b) isCompact_uIcc nonempty_uIcc hab
   refine ⟨fun u ↦ (hσ (g u)).interiorEquiv.symm
     (SmoothForm.mpullback (Prod.mk (g u)) (contMDiff_const.prodMk contMDiff_id) (-α)),
     (contMDiff_interiorEquiv_symm_mpullback_prodMk σ hσ (-α)).comp (hg.prodMap contMDiff_id),

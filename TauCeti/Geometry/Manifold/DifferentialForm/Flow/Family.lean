@@ -126,31 +126,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 
 /-! ### Slices of Lie derivatives -/
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I 2 M] in
-/-- The slices `ι_v^* β` of a form `β` on `N` have velocity `ι_u^* η` at `x` at time `u` when the
-inclusions are `ι_v = ψ_{v - u} ∘ ι_u` for maps `ψ_r` of `N` along which `β` has velocity `η` at
-`ι_u x` at time `0`. -/
-private theorem hasDerivAt_mpullback_of_comp_sub {E' H' N : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
-    [ChartedSpace H' N] {β η : RoughForm I' N F k} {ι : ℝ → M → N}
-    {ψ : ℝ → N → N} {u : ℝ} (x : M) (hι : MDifferentiableAt I I' (ι u) x)
-    (hψ : ∀ r, MDifferentiableAt I' I' (ψ r) (ι u x)) (hcomp : ∀ v, ι v = ψ (v - u) ∘ ι u)
-    (hτ : HasDerivAt (F := E' [⋀^Fin k]→L[ℝ] F) (fun r ↦ mpullback I' I' (ψ r) β (ι u x))
-      (η (ι u x)) 0) :
-    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun v ↦ mpullback I I' (ι v) β x)
-      (mpullback I I' (ι u) η x) u := by
-  set L : E →L[ℝ] E' := mfderiv I I' (ι u) x
-  have hslice (v : ℝ) : mpullback I I' (ι v) β x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
-        (mpullback I' I' (ψ (v - u)) β (ι u x)) := by
-    rw [hcomp v, mpullback_comp_at hι (hψ _)]
-    exact mpullback_apply_eq_compContinuousLinearMapCLM _ _ x
-  have h0 := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
-    (0 : ℝ) hτ
-  have h := HasDerivAt.comp_sub_const (x := u) (a := u) (by rwa [sub_self])
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall hslice)).congr_deriv ?_
-  exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
-
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **Time derivatives of slices.** For a form `α` on `ℝ × M` differentiable at `(t, x)`, the
 slices `ι_u^* α`, pulled back along the inclusions `ι_u : y ↦ (u, y)`, have velocity
@@ -180,15 +155,14 @@ theorem hasDerivAt_mpullback_prodMk (t : ℝ) (x : M)
     (Eventually.of_forall fun p ↦ by simp) hτsmooth.contMDiffAt
     (Eventually.of_forall hτvel) hα
   -- Since `ι_u = τ_{u - t} ∘ ι_t`, the slice at time `u` is `ι_t^* τ_{u - t}^* α`.
-  refine hasDerivAt_mpullback_of_comp_sub x
+  refine hasDerivAt_mpullback_of_eq_comp (χ := fun u p ↦ (p.1 + (u - t), p.2))
+    (Eventually.of_forall fun u ↦ EventuallyEq.of_eq (funext fun y ↦ by simp))
     ((contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) 1
       (Prod.mk t : M → ℝ × M)).mdifferentiableAt one_ne_zero)
-    (fun r ↦ ((contMDiff_fst.add contMDiff_const).prodMk contMDiff_snd :
+    (Eventually.of_forall fun u ↦ ((contMDiff_fst.add contMDiff_const).prodMk contMDiff_snd :
       ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I) 2
-        (fun p : ℝ × M ↦ (p.1 + r, p.2))).mdifferentiableAt (by norm_num))
-    (fun u ↦ ?_) hτ
-  funext y
-  simp
+        (fun p : ℝ × M ↦ (p.1 + (u - t), p.2))).mdifferentiableAt (by norm_num))
+    (HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self]))
 
 /-! ### Families over an open set of times -/
 
@@ -230,10 +204,15 @@ private theorem hasMFDerivAt_prodMk_comp_add {g : ℝ → J} (hg : ContMDiff �
       filter_upwards [ht.eventually ha] with r hr
       exact hr
     rw [heq.fderiv_eq, fderiv_const_add, fderiv_fun_id]
+    -- `mfderiv_eq_fderiv` reads the tangent spaces as `ℝ` through
+    -- `NormedSpace.fromTangentSpace`, which is the identity by definition and has no simp lemmas.
     rfl
-  exact ((hhs.mdifferentiableAt (by norm_num)).hasMFDerivAt.prodMk
-    (hasMFDerivAt_const y (0 : ℝ))).congr_mfderiv <| ContinuousLinearMap.ext fun r ↦
-      Prod.ext ((hhd r).trans (mul_one (M := ℝ) r).symm) (smul_zero _).symm
+  refine ((hhs.mdifferentiableAt (by norm_num)).hasMFDerivAt.prodMk
+    (hasMFDerivAt_const y (0 : ℝ))).congr_mfderiv (ContinuousLinearMap.ext fun (r : ℝ) ↦ ?_)
+  -- The velocity `∂_t = (1, 0)` is computed in `ℝ × E`, the tangent space of `ℝ × M` read in the
+  -- model.
+  have hv : ((1 : ℝ →L[ℝ] ℝ).smulRight (((1 : ℝ), (0 : E)) : ℝ × E)) r = (r, 0) := by simp
+  exact Eq.trans (b := ((r, 0) : ℝ × E)) (Prod.ext (hhd r) rfl) hv.symm
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **Time derivatives of slices over an open set of times.** Let `β` be a form on `J × M`, for an
@@ -280,12 +259,12 @@ theorem hasDerivAt_mpullback_prodMk_comp {β : RoughForm (𝓘(ℝ, ℝ).prod I)
   have hτ := hasDerivAt_mpullback_of_eq_id (I := 𝓘(ℝ, ℝ).prod I) (ψ := ψ)
     (V := fun _ ↦ ((1 : ℝ), (0 : E))) (t := 0) p₀ hid hsmooth hvel hβ
   -- Since `ι_{g v} = ψ_{v - u} ∘ ι_{g u}`, the slice at time `g v` is `ι_{g u}^* ψ_{v - u}^* β`.
-  refine hasDerivAt_mpullback_of_comp_sub (ι := fun v ↦ Prod.mk (g v)) x
+  refine hasDerivAt_mpullback_of_eq_comp (χ := fun v ↦ ψ (v - u))
+    (Eventually.of_forall fun v ↦ EventuallyEq.of_eq (funext fun y ↦ by simp [ψ, hgu]))
     ((contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) 1
       (Prod.mk (g u) : M → J × M)).mdifferentiableAt one_ne_zero)
-    (fun r ↦ (hψs r).mdifferentiableAt (by norm_num)) (fun v ↦ ?_) hτ
-  funext y
-  simp [ψ, hgu]
+    (Eventually.of_forall fun v ↦ (hψs (v - u)).mdifferentiableAt (by norm_num))
+    (HasDerivAt.comp_sub_const (x := u) (a := u) (by rwa [sub_self]))
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **Reading a family over an open set of times through a map of `ℝ`.** For a smooth map
