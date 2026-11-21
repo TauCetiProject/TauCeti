@@ -152,8 +152,7 @@ theorem sub_mulLeft_inv_mul_pow (δ : Derivation R A A) (u : Aˣ) (n : ℕ) :
 derivative `u⁻¹ * δ u`. -/
 theorem sub_mulLeft_apply_eq_zero_iff (δ : Derivation R A A) (a : A) (u : Aˣ) :
     (δ.toLinearMap - LinearMap.mulLeft R a) u = 0 ↔ a = ↑u⁻¹ * δ u := by
-  rw [LinearMap.sub_apply, LinearMap.mulLeft_apply, coeFn_coe, sub_eq_zero, eq_comm,
-    Units.eq_inv_mul_iff_mul_eq, mul_comm]
+  simpa [sub_eq_zero, Units.eq_inv_mul_iff_mul_eq, mul_comm] using eq_comm
 
 end Derivation
 
