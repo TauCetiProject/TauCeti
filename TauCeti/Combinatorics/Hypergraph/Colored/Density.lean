@@ -24,17 +24,26 @@ contributes once for each of its supported orderings, both to the count and to t
 The relative density is `0` on the empty support.
 
 Relative densities lie between `0` and `1`, and on a nonempty support the densities of all colors
-sum to one. Recoloring changes `relDensityOn`, multiplied by the support size, by at most
-the number of supported edited triples `editedOn`, defined in
-`TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy`.
+sum to one. Splitting a color by a labelling of the triples splits its density: the densities of
+the split colors `(c, i)` sum to the density of `c`, and each lies within `b` of a `1 / |ι|` share
+of it once the count discrepancy `splitDiscrepancy` is at most `b` times the support size.
+Recoloring changes `relDensityOn`,
+multiplied by the support size, by at most the number of supported edited triples `editedOn`,
+defined in `TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy`.
 
 ## Main definitions
 
 * `TauCeti.Colored3Graph.relDensityOn`: the relative density of a color over a support.
+* `TauCeti.Colored3Graph.splitDiscrepancy`: the count of a split color on a support minus a
+  `1 / |ι|` share of the count of its parent color.
 
 ## Main results
 
 * `TauCeti.Colored3Graph.sum_relDensityOn`: on a nonempty support the densities sum to one.
+* `TauCeti.Colored3Graph.sum_relDensityOn_split`: the split densities of a color sum to its
+  density.
+* `TauCeti.Colored3Graph.abs_relDensityOn_split_sub_le`: a small count discrepancy of a split
+  color gives a small density discrepancy.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_mul_card_le_card_editedOn`: the count-scaled
   density change is bounded by the supported edit count.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_le_div_of_card_editedOn_le`: an `η`-fraction
@@ -406,6 +415,65 @@ theorem sum_card_mul_sq_relDensityOn_sub_le [Fintype κ] (H : Colored3Graph κ V
   linarith
 
 end Perturbation
+
+/-- Merging the split colors `(c, i)` over all labels `i` recovers the relative density of `c`. -/
+theorem sum_relDensityOn_split {ι : Type*} [Fintype ι] [DecidableEq ι] (H : Colored3Graph κ V)
+    (f : Set.powersetCard V 3 → ι) (c : κ)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ i, (H.split f).relDensityOn (c, i) supp = H.relDensityOn c supp := by
+  simp only [relDensityOn_def, ← sum_div, color_split, Prod.mk.injEq]
+  congr 1
+  rw [card_eq_sum_card_fiberwise
+    (f := fun x ↦ f (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩))
+    (t := univ) fun _ _ ↦ mem_univ _]
+  simp [filter_filter]
+
+section Split
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The count discrepancy of the split color `(c, i)` on a set `s` of injective triples: the
+number of triples of `s` of split color `(c, i)` minus a `1 / |ι|` share of the number of triples
+of color `c`. -/
+noncomputable def splitDiscrepancy (H : Colored3Graph κ V) (f : Set.powersetCard V 3 → ι) (c : κ)
+    (i : ι) (s : Finset {x : Fin 3 → V // Function.Injective x}) : ℝ :=
+  #{x ∈ s | (H.split f).color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = (c, i)} -
+    (#{x ∈ s | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) /
+      Fintype.card ι
+
+theorem splitDiscrepancy_def (H : Colored3Graph κ V) (f : Set.powersetCard V 3 → ι) (c : κ)
+    (i : ι) (s : Finset {x : Fin 3 → V // Function.Injective x}) :
+    H.splitDiscrepancy f c i s =
+      #{x ∈ s | (H.split f).color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = (c, i)} -
+        (#{x ∈ s | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) /
+          Fintype.card ι :=
+  (rfl)
+
+/-- The density discrepancy of a split color, multiplied by the support size, is its count
+discrepancy. -/
+theorem relDensityOn_split_sub_mul_card (H : Colored3Graph κ V) (f : Set.powersetCard V 3 → ι)
+    (c : κ) (i : ι) (s : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (((H.split f).relDensityOn (c, i) s : ℝ) - H.relDensityOn c s / Fintype.card ι) * #s =
+      H.splitDiscrepancy f c i s := by
+  have h₁ := congrArg (fun q : ℚ ↦ (q : ℝ)) ((H.split f).relDensityOn_mul_card (c, i) s)
+  have h₂ := congrArg (fun q : ℚ ↦ (q : ℝ)) (H.relDensityOn_mul_card c s)
+  push_cast at h₁ h₂
+  rw [sub_mul, div_mul_eq_mul_div, h₁, h₂, splitDiscrepancy_def]
+
+/-- A bound on the count discrepancy of a split color, relative to the size of a set of
+injective triples, bounds its density discrepancy. -/
+theorem abs_relDensityOn_split_sub_le (H : Colored3Graph κ V) (f : Set.powersetCard V 3 → ι)
+    (c : κ) (i : ι) (s : Finset {x : Fin 3 → V // Function.Injective x}) {b : ℝ} (hb : 0 ≤ b)
+    (h : |H.splitDiscrepancy f c i s| ≤ b * #s) :
+    |((H.split f).relDensityOn (c, i) s : ℝ) - H.relDensityOn c s / Fintype.card ι| ≤ b := by
+  obtain rfl | hs := s.eq_empty_or_nonempty
+  · simpa using hb
+  have hs' : (0 : ℝ) < #s := by exact_mod_cast hs.card_pos
+  rw [← mul_le_mul_iff_of_pos_right hs', ← abs_of_pos hs', ← abs_mul,
+    relDensityOn_split_sub_mul_card, abs_of_pos hs']
+  exact h
+
+end Split
 
 end Colored3Graph
 

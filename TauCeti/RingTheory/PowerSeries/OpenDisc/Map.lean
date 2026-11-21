@@ -130,6 +130,13 @@ theorem mapHom_mapHom {T : Type*} [NormedRing T] (ψ : S →+* T) {C₂ : ℝ}
           (norm_nonneg _)).trans <| mul_le_mul_of_nonneg_left (hφ x) (le_max_right C₂ 0)) f :=
   Subtype.ext <| PowerSeries.ext fun _ ↦ by simp
 
+/-- Bounded coefficient maps act on scalar multiples by applying `φ` to the scalar, over any
+normed rings. -/
+@[simp]
+theorem mapHom_smul (a : R) (f : OnOpenDisc.subring R R₀) :
+    mapHom φ hφ (a • f) = φ a • mapHom φ hφ f :=
+  Subtype.ext <| PowerSeries.ext fun n ↦ by simp
+
 /-- `mapHom` intertwines polynomial inclusions with `Polynomial.map`. -/
 @[simp]
 theorem mapHom_polynomialHom (p : Polynomial R) :
@@ -181,12 +188,6 @@ variable {R S : Type*} [NormedCommRing R] [NormedCommRing S] {R₀ : ℝ}
 theorem mapHom_algebraMap (a : R) :
     mapHom (R₀ := R₀) φ hφ (algebraMap R _ a) = algebraMap S _ (φ a) :=
   Subtype.ext (by simp)
-
-/-- Bounded coefficient maps act on scalar multiples by applying `φ` to the scalar. -/
-@[simp]
-theorem mapHom_smul (a : R) (f : OnOpenDisc.subring R R₀) :
-    mapHom φ hφ (a • f) = φ a • mapHom φ hφ f :=
-  Subtype.ext <| PowerSeries.ext fun n ↦ by simp
 
 end NormedCommRing
 

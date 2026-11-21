@@ -26,7 +26,7 @@ For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps ev
 and the darts in `S`. More generally, a set `A` of vertices together with a reversal-closed set
 `D` of darts starting in `A` forms the subgraph `Γ.subgraph A D hsrc hrev`. For a set `C` of
 vertices, `Γ.inducedDarts C` is the set of darts with both endpoints in `C`: the darts of the
-subgraph induced on `C`.
+subgraph `Γ.induce C` induced on `C`.
 
 A map of vertices that joins the two ends of every dart by a path joins the two ends of every path
 (`SerreGraph.nonempty_path_of_path`).
@@ -699,6 +699,20 @@ theorem inducedDarts_mono {C D : Set Γ.V} (h : C ⊆ D) : Γ.inducedDarts C ⊆
 
 end InducedDarts
 
+section Induce
+
+/-- The subgraph induced on a set of vertices: its vertices are those of the set and its darts
+are the darts of `Γ` with both endpoints in the set. -/
+abbrev induce (C : Set Γ.V) : SerreGraph.{u, v} :=
+  Γ.subgraph C (Γ.inducedDarts C) (fun _ he => (mem_inducedDarts_iff.1 he).1)
+    fun _ => rev_mem_inducedDarts_iff.2
+
+/-- The inclusion of an induced subgraph. -/
+abbrev induceInclusion (C : Set Γ.V) : (Γ.induce C).Hom Γ :=
+  Γ.subgraphInclusion _ _ _ _
+
+end Induce
+
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where
   V := PUnit
@@ -878,6 +892,19 @@ instance : Unique segment.GeomEdge where
 instance (v : segment.V) : Unique {e : segment.E // segment.src e = v} where
   default := ⟨v, segment_src v⟩
   uniq e := Subtype.ext ((segment_src e.val).symm.trans e.property)
+
+/-- The dart of the segment leaving the vertex `b`, the dart with the same Boolean label, as an
+arrow from `b` to the other vertex. Its source is `b` itself, rather than `segment.src b` as for
+`SerreGraph.dart`, so that it extends paths ending at `b` without a cast. -/
+def segmentArrow (b : segment.V) : b ⟶ segment.tgt b :=
+  ⟨b, rfl, rfl⟩
+
+theorem segmentArrow_val (b : segment.V) : (segmentArrow b).val = b :=
+  (rfl)
+
+/-- A vertex of the segment other than `b` is the target of the dart leaving `b`. -/
+theorem segment_tgt_eq_of_ne {b v : segment.V} (h : b ≠ v) : segment.tgt b = v := by
+  cases b <;> cases v <;> first | rfl | exact absurd rfl h
 
 end SerreGraph
 

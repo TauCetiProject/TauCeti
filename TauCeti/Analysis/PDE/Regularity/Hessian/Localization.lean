@@ -83,9 +83,7 @@ private theorem ae_extendByZeroₗᵢ_of_ae {Omega : Opens (EuclideanSpace ℝ (
         extendByZeroLpₗᵢ ℝ volume Omega.isOpen.nullMeasurableSet
           (SetLike.coe_subset_coe.mpr le_top) g x := by
   have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ (Fin n))) := Omega.isOpen.measurableSet
-  have htop : ae ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n)))) = ae volume := by
-    rw [Opens.coe_top, Measure.restrict_univ]
+  have htop := Measure.ae_restrict_coe_opens_top (volume : Measure (EuclideanSpace ℝ (Fin n)))
   have hsub : (Omega : Set (EuclideanSpace ℝ (Fin n))) ⊆
       ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) :=
     SetLike.coe_subset_coe.mpr le_top

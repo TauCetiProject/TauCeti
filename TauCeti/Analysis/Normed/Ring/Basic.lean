@@ -11,9 +11,10 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 # Elementary inequalities in seminormed rings
 
 This file records elementary consequences of the submultiplicativity of the norm (including bounds
-on powers, finite products, and commutators), exact positive-power norms without `NormOneClass`,
-an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, convergence to `0` of
-finite partial products when factors tend to `0` cofinitely
+on powers, finite products, and commutators, as well as `IsIdempotentElem.one_le_norm` for a
+nonzero idempotent), exact positive-power norms without `NormOneClass`, an estimate for `‖w - 1‖`
+with `‖w‖ = 1` when the norm is multiplicative, convergence to `0` of finite partial products when
+factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
 with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
@@ -298,5 +299,15 @@ theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {
   exact hs.not_gt hprod
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+/-- A nonzero idempotent in a normed ring has norm at least `1`. -/
+theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempotentElem p)
+    (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
+  (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
+    simpa only [hp.eq] using norm_mul_le p p
+
+end IsIdempotentElem
 
 end

@@ -47,6 +47,8 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   orbits `X_H = (L / (m ‖q‖²)) X_L`.
 * `TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`: the critical values.
 * `TauCeti.puncturedPhaseSpace`: the open set `{(q, p) | q ≠ 0}`.
+* `TauCeti.contMDiff_centralForceHamiltonian_comp_subtypeVal`: a central-force Hamiltonian is as
+  smooth on the punctured phase space as its potential is on `r > 0`.
 * `TauCeti.coe_smul_puncturedPhaseSpace`: a group acting linearly on `V` acts on the punctured
   phase space by acting on positions and momenta alike, smoothly if it acts smoothly on `V`.
 * `TauCeti.poissonBracket_centralForceEnergyMomentum_comp_subtypeVal`: `H` and `L` Poisson-commute
@@ -373,19 +375,24 @@ theorem contDiffAt_centralForceEnergyMomentum {m : ℝ} {U : ℝ → ℝ} {n : W
     ContDiffAt ℝ n (centralForceEnergyMomentum b m U) x := by
   refine contDiffAt_pi.2 fun i ↦ ?_
   fin_cases i
-  · have hn : ContDiffAt ℝ n (fun y : V × V ↦ U ‖y.1‖) x :=
-      hU.comp x ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst)
-    have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 0) =
-        fun y ↦ ‖y.2‖ ^ 2 / (2 * m) + U ‖y.1‖ :=
-      funext fun y ↦ centralForceHamiltonian_apply m U y.1 y.2
-    rw [Fin.zero_eta, h]
-    exact ((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.div_const _ |>.add hn
+  · simp only [Fin.zero_eta, centralForceEnergyMomentum_zero]
+    exact contDiffAt_centralForceHamiltonian hU hq
   · have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 1) =
         fun y ↦ ⟪y.1, b 0⟫_ℝ * ⟪y.2, b 1⟫_ℝ - ⟪y.1, b 1⟫_ℝ * ⟪y.2, b 0⟫_ℝ :=
       funext fun y ↦ angularMomentum_apply (b 0) (b 1) y.1 y.2
     rw [Fin.mk_one, h]
     exact (((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)).sub
       ((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const))).contDiffAt
+
+/-- A central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)` is `C^n` on the punctured phase space when
+the potential `U` is `C^n` on `r > 0`. -/
+theorem contMDiff_centralForceHamiltonian_comp_subtypeVal {m : ℝ} {U : ℝ → ℝ} {n : WithTop ℕ∞}
+    (hU : ∀ r, 0 < r → ContDiffAt ℝ n U r) :
+    ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ) n
+      (centralForceHamiltonian m U ∘ (Subtype.val : puncturedPhaseSpace V → V × V)) := fun x ↦
+  have hq := mem_puncturedPhaseSpace.1 x.property
+  (contDiffAt_centralForceHamiltonian (hU _ (norm_pos_iff.2 hq)) hq).contMDiffAt.comp x
+    (contMDiff_subtypeVal x)
 
 /-- The points of the punctured phase space with nonzero radial momentum, `⟪q, p⟫ ≠ 0`, are
 dense. -/
