@@ -81,6 +81,45 @@ theorem weierstrassFactor_one_left (z : ℂ) :
     weierstrassFactor 1 z = (1 - z) * exp z := by
   simp [weierstrassFactor_eq_mul_exp_sum]
 
+/-- Stepping from genus `p` to genus `p + 1` multiplies by `exp (z ^ (p + 1) / (p + 1))`. -/
+theorem weierstrassFactor_succ (p : ℕ) (z : ℂ) :
+    weierstrassFactor (p + 1) z = weierstrassFactor p z * exp (z ^ (p + 1) / (p + 1)) := by
+  rw [weierstrassFactor_eq_mul_exp_sum, Finset.sum_range_succ, exp_add, ← mul_assoc,
+    ← weierstrassFactor_eq_mul_exp_sum]
+
+/-- Symmetric pairing for primary factors: `E_p(z) * E_p(-z) = E_{p / 2}(z ^ 2)`. -/
+theorem weierstrassFactor_mul_neg (p : ℕ) (z : ℂ) :
+    weierstrassFactor p z * weierstrassFactor p (-z) = weierstrassFactor (p / 2) (z ^ 2) := by
+  induction p with
+  | zero =>
+    simp only [Nat.zero_div, weierstrassFactor_zero_left]
+    ring
+  | succ p ih =>
+    rw [weierstrassFactor_succ, weierstrassFactor_succ, mul_mul_mul_comm, ih, ← exp_add]
+    rcases Nat.even_or_odd (p + 1) with ⟨k, hk⟩ | ⟨k, hk⟩
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : k ≠ 0)
+      have hp2 : p / 2 = m := by omega
+      have hsucc2 : (p + 1) / 2 = m + 1 := by omega
+      have h2m : 2 * (m + 1) = p + 1 := by omega
+      have heven : (-z) ^ (p + 1) = z ^ (p + 1) := Even.neg_pow ⟨m + 1, hk⟩ z
+      have hterm : z ^ (p + 1) / ((p : ℂ) + 1) + (-z) ^ (p + 1) / ((p : ℂ) + 1) =
+          (z ^ 2) ^ (m + 1) / ((m : ℂ) + 1) := by
+        rw [heven, ← pow_mul, h2m]
+        have hm0 : ((m : ℂ) + 1) ≠ 0 := Nat.cast_add_one_ne_zero m
+        have hp1 : ((p : ℂ) + 1) = 2 * ((m : ℂ) + 1) := by exact_mod_cast h2m.symm
+        rw [hp1]
+        field_simp
+        ring
+      rw [hterm, hp2, hsucc2, ← weierstrassFactor_succ]
+    · have hp2 : (p + 1) / 2 = p / 2 := by omega
+      have hodd : (-z) ^ (p + 1) = -(z ^ (p + 1)) := Odd.neg_pow ⟨k, hk⟩ z
+      rw [hp2, hodd, neg_div, add_neg_cancel, exp_zero, mul_one]
+
+/-- Symmetric genus-one pairing: `E₁(z) * E₁(-z) = 1 - z ^ 2`. -/
+theorem weierstrassFactor_one_mul_neg (z : ℂ) :
+    weierstrassFactor 1 z * weierstrassFactor 1 (-z) = 1 - z ^ 2 := by
+  simpa using weierstrassFactor_mul_neg 1 z
+
 /-- Every elementary factor is normalized to one at the origin. -/
 @[simp]
 theorem weierstrassFactor_zero (p : ℕ) : weierstrassFactor p 0 = 1 := by
@@ -134,6 +173,14 @@ theorem analyticOrderAt_weierstrassFactor_one (p : ℕ) :
   apply (analyticAt_weierstrassFactor p 1).analyticOrderAt_eq_one_of_zero_deriv_ne_zero
     (weierstrassFactor_one p)
   simp [deriv_weierstrassFactor]
+
+/-- Analytic order of `weierstrassFactor p` at an arbitrary complex point `z`. -/
+theorem analyticOrderAt_weierstrassFactor (p : ℕ) (z : ℂ) :
+    analyticOrderAt (weierstrassFactor p) z = if z = 1 then 1 else 0 := by
+  split_ifs with hz
+  · exact hz ▸ analyticOrderAt_weierstrassFactor_one p
+  · exact (analyticAt_weierstrassFactor p z).analyticOrderAt_eq_zero.mpr
+      (mt (weierstrassFactor_eq_zero_iff p).mp hz)
 
 /-- The rational logarithmic derivative, using total division at the unique zero. -/
 theorem logDeriv_weierstrassFactor (p : ℕ) (z : ℂ) :
@@ -311,6 +358,21 @@ theorem analyticOrderAt_weierstrassFactor_mul (p : ℕ) {c z : ℂ} (h : c * z =
       weierstrassFactor p ∘ (fun w ↦ c * w) := rfl
   rw [heq, analyticOrderAt_comp_of_deriv_ne_zero hg (by rwa [hd.deriv]), h]
   exact analyticOrderAt_weierstrassFactor_one p
+
+/-- Analytic order of `w ↦ weierstrassFactor p (c * w)` at an arbitrary point `z : ℂ`. -/
+theorem analyticOrderAt_weierstrassFactor_mul_eq_ite (p : ℕ) (c z : ℂ) :
+    analyticOrderAt (fun w ↦ weierstrassFactor p (c * w)) z = if c * z = 1 then 1 else 0 := by
+  split_ifs with h
+  · exact analyticOrderAt_weierstrassFactor_mul p h
+  · have hana : AnalyticAt ℂ (fun w ↦ weierstrassFactor p (c * w)) z := by fun_prop
+    exact hana.analyticOrderAt_eq_zero.mpr (mt (weierstrassFactor_eq_zero_iff p).mp h)
+
+/-- For a nonzero root location `a`, `w ↦ weierstrassFactor p (w / a)` has analytic order `1` at `a`
+and `0` everywhere else. -/
+theorem analyticOrderAt_weierstrassFactor_div (p : ℕ) {a : ℂ} (ha : a ≠ 0) (z : ℂ) :
+    analyticOrderAt (fun w ↦ weierstrassFactor p (w / a)) z = if z = a then 1 else 0 := by
+  simpa only [div_eq_inv_mul, inv_mul_eq_one₀ ha, eq_comm] using
+    analyticOrderAt_weierstrassFactor_mul_eq_ite p a⁻¹ z
 
 /-- The rational logarithmic derivative of the genus-one factor with slope `a`,
 using total division at its pole. -/
