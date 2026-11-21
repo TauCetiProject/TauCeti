@@ -56,6 +56,11 @@ analogue of the power-rule integral identity for tails.
   the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
 * `TauCeti.cauchySeq_of_eventually_dist_le_of_summable`: a sequence whose steps are eventually
   bounded by a summable sequence is Cauchy.
+
+## References
+
+* W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw-Hill, 1987, Theorem 15.9 (indexed
+  geometric-tail exponent selection for Weierstrass canonical products).
 -/
 
 public section
@@ -268,9 +273,14 @@ theorem cauchySeq_of_eventually_dist_le_of_summable {α : Type*} [PseudoMetricSp
 
 end TauCeti
 
-/-- If `r : ι → ℝ` tends to infinity along the cofinite filter, then for any multiplicity function
-`m : ι → ℕ` there exist exponents `p : ι → ℕ` such that `∑' i, m i * (R / r i) ^ (p i + 1) < ∞`
-for every `R > 0`. -/
+/-- **Weierstrass genus selection** (extending the geometric-tail exponent choice of Rudin,
+Theorem 15.9, to arbitrary natural multiplicities). If `r : ι → ℝ` tends to infinity along the
+cofinite filter, then for any multiplicity function `m : ι → ℕ` there exist exponents `p : ι → ℕ`
+such that `∑' i, m i * (R / r i) ^ (p i + 1) < ∞` for every `R > 0`. Given an injection
+`idx : ι ↪ ℕ` (obtained from `hr` via `Filter.Tendsto.countable_compl_preimage_ker`), setting
+`p i := idx i + m i` augments Rudin's indexed exponent `idx i` with a multiplicity correction
+`m i` so that `m i * (1 / 2) ^ m i ≤ 1`, reducing the tail bound to
+`∑' i, (1 / 2) ^ (idx i + 1)`. -/
 theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
     (hr : Tendsto r cofinite atTop) (m : ι → ℕ) :
     ∃ p : ι → ℕ, ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / r i) ^ (p i + 1) := by

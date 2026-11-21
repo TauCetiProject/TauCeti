@@ -10,6 +10,7 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.Topology.Algebra.InfiniteSum.Group
 import TauCeti.Order.Filter.AtTopBot.Finset
+import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
 # Empty-domain, finite-support, Cauchy-vanishing, and regrouping lemmas for `HasProdUniformlyOn`
@@ -154,11 +155,8 @@ theorem HasProdUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*
     {f : (Σ i, γ i) → β → α} {g : β → α} {s : Set β}
     (h : HasProdUniformlyOn f g s) :
     HasProdUniformlyOn (fun i x ↦ ∏ c, f ⟨i, c⟩ x) g s := by
-  classical
-  rw [hasProdUniformlyOn_iff_tendstoUniformlyOn] at h ⊢
-  intro u hu
-  filter_upwards [TauCeti.tendsto_finset_sigma_univ_atTop.eventually (h u hu)] with S hS y hy
-  simpa only [Finset.prod_sigma] using hS y hy
+  simpa [HasProdUniformlyOn, Function.comp_def, ← UniformOnFun.ofFun_prod, Finset.prod_fn] using
+    HasProd.sigma_of_finite (f := UniformOnFun.ofFun {s} ∘ f) h
 
 /-- **Regrouping a locally uniformly convergent product along finite fibres.** If a family over a
 sigma type with finite fibres has product `g` locally uniformly on `s`, then so does the family of

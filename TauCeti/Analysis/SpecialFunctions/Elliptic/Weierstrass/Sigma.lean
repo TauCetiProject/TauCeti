@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Analytic.Order
 import Mathlib.Analysis.Calculus.LogDerivUniformlyOn
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Algebra.Group.Int.Even
+import TauCeti.Analysis.Complex.CanonicalProduct.PrimaryProduct
 
 /-!
 # The Weierstrass `σ` function
@@ -86,75 +87,43 @@ private theorem weierstrassSigma_eq :
     L.weierstrassSigma = fun z ↦ z * ∏' l : L.lattice, weierstrassFactor 2 (z / l) :=
   funext L.weierstrassSigma_def
 
-/-- The factor of `σ` at `l` is within `‖z‖³ ‖l‖⁻³` of one as long as `‖z‖ ≤ ‖l‖`; for `l = 0`
-both sides vanish. -/
-private theorem norm_weierstrassFactor_two_div_sub_one_le {z l : ℂ} (h : ‖z‖ ≤ ‖l‖) :
-    ‖weierstrassFactor 2 (z / l) - 1‖ ≤ ‖z‖ ^ 3 * ‖l‖ ^ (-3 : ℝ) := by
-  rcases eq_or_ne l 0 with rfl | hl
-  · simp [weierstrassFactor_zero]
-  have hl' : 0 < ‖l‖ := norm_pos_iff.mpr hl
-  calc ‖weierstrassFactor 2 (z / l) - 1‖ ≤ ‖z / l‖ ^ 3 :=
-        norm_weierstrassFactor_sub_one_le 2 (by rw [norm_div]; exact div_le_one_of_le₀ h hl'.le)
-    _ = ‖z‖ ^ 3 * ‖l‖ ^ (-3 : ℝ) := by
-        rw [norm_div, div_pow, Real.rpow_neg hl'.le, div_eq_mul_inv]
-        norm_cast
-
-/-- On the ball of radius `r`, all but finitely many factors of `σ` are within `r³ ‖l‖⁻³` of
-one. -/
-private theorem eventually_norm_weierstrassFactor_two_div_sub_one_le (r : ℝ) :
-    ∀ᶠ l : L.lattice in cofinite, ∀ z : ℂ, ‖z‖ ≤ r →
-      ‖weierstrassFactor 2 (z / l) - 1‖ ≤ r ^ 3 * ‖(l : ℂ)‖ ^ (-3 : ℝ) := by
-  filter_upwards [(tendsto_norm_cocompact_atTop.comp (tendsto_cofinite_cocompact_of_discrete
-    (X := L.lattice) (f := Subtype.val)
-    L.isClosed_lattice.isClosedEmbedding_subtypeVal.tendsto_cocompact)).eventually_ge_atTop r]
-    with l hl z hz
-  exact (norm_weierstrassFactor_two_div_sub_one_le (hz.trans hl)).trans (by gcongr)
-
 /-- The majorant `c ‖l‖⁻³` of the factors of `σ` is summable over the lattice. -/
 private theorem summable_mul_norm_rpow_neg_three (c : ℝ) :
     Summable fun l : L.lattice ↦ c * ‖(l : ℂ)‖ ^ (-3 : ℝ) :=
   (ZLattice.summable_norm_rpow L.lattice (-3) (by norm_num)).mul_left c
 
+/-- The genus-two canonical-product summability hypothesis for the lattice `Λ`. -/
+private theorem summable_div_pow_three (R : ℝ) (_hR : 0 < R) :
+    Summable fun l : L.lattice ↦ (R / ‖(l : ℂ)‖) ^ (2 + 1) := by
+  have heq (l : L.lattice) : (R / ‖(l : ℂ)‖) ^ (2 + 1) = R ^ 3 * ‖(l : ℂ)‖ ^ (-3 : ℝ) := by
+    rcases eq_or_ne l 0 with rfl | hl
+    · simp
+    have hl' : 0 < ‖(l : ℂ)‖ := norm_pos_iff.mpr (by simpa using hl)
+    rw [div_pow, Real.rpow_neg hl'.le, div_eq_mul_inv]
+    norm_cast
+  simpa only [heq] using L.summable_mul_norm_rpow_neg_three (R ^ 3)
+
 /-- The canonical product of `σ` converges uniformly on every compact set. -/
 theorem hasProdUniformlyOn_weierstrassFactor_two_div {K : Set ℂ} (hK : IsCompact K) :
     HasProdUniformlyOn (fun (l : L.lattice) z ↦ weierstrassFactor 2 (z / l))
-      (fun z ↦ ∏' l : L.lattice, weierstrassFactor 2 (z / l)) K := by
-  obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
-  have h := Summable.hasProdUniformlyOn_one_add
-    (f := fun (l : L.lattice) z ↦ weierstrassFactor 2 (z / l) - 1) hK
-    (L.summable_mul_norm_rpow_neg_three (r ^ 3)) ?_ fun l ↦
-      (((differentiable_weierstrassFactor 2).continuous.comp (continuous_id.div_const _)).sub
-        continuous_const).continuousOn
-  · simpa only [add_sub_cancel] using h
-  · filter_upwards [L.eventually_norm_weierstrassFactor_two_div_sub_one_le r] with l hl z hz
-    exact hl z (by simpa using hr hz)
+      (fun z ↦ ∏' l : L.lattice, weierstrassFactor 2 (z / l)) K :=
+  hasProdUniformlyOn_weierstrassFactor_div L.summable_div_pow_three hK
 
 /-- The canonical product of `σ` converges locally uniformly on `ℂ`. -/
 theorem hasProdLocallyUniformlyOn_weierstrassFactor_two_div :
     HasProdLocallyUniformlyOn (fun (l : L.lattice) z ↦ weierstrassFactor 2 (z / l))
       (fun z ↦ ∏' l : L.lattice, weierstrassFactor 2 (z / l)) Set.univ :=
-  hasProdLocallyUniformlyOn_of_forall_compact isOpen_univ fun _ _ hK ↦
-    L.hasProdUniformlyOn_weierstrassFactor_two_div hK
+  hasProdLocallyUniformlyOn_weierstrassFactor_div L.summable_div_pow_three
 
 private theorem differentiable_tprod_weierstrassFactor_two_div :
-    Differentiable ℂ fun z ↦ ∏' l : L.lattice, weierstrassFactor 2 (z / l) := by
-  rw [← differentiableOn_univ]
-  refine L.hasProdLocallyUniformlyOn_weierstrassFactor_two_div.differentiableOn
-    (.of_forall fun s ↦ ?_) isOpen_univ
-  exact Differentiable.differentiableOn (by fun_prop)
+    Differentiable ℂ fun z ↦ ∏' l : L.lattice, weierstrassFactor 2 (z / l) :=
+  differentiable_tprod_weierstrassFactor_div L.summable_div_pow_three
 
 /-- **`σ` is entire.** -/
 @[fun_prop]
 theorem differentiable_weierstrassSigma : Differentiable ℂ L.weierstrassSigma := by
   rw [weierstrassSigma_eq]
   exact differentiable_id.mul L.differentiable_tprod_weierstrassFactor_two_div
-
-private theorem summable_norm_weierstrassFactor_two_div_sub_one (z : ℂ) :
-    Summable fun l : L.lattice ↦ ‖weierstrassFactor 2 (z / l) - 1‖ := by
-  refine (L.summable_mul_norm_rpow_neg_three (‖z‖ ^ 3)).of_norm_bounded_eventually ?_
-  filter_upwards [L.eventually_norm_weierstrassFactor_two_div_sub_one_le ‖z‖] with l hl
-  rw [Real.norm_eq_abs, abs_norm]
-  exact hl z le_rfl
 
 private theorem weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattice) (l : L.lattice) :
     weierstrassFactor 2 (z / l) ≠ 0 := by
@@ -165,27 +134,39 @@ private theorem weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattic
     simp [hl] at h
   exact hz ((div_eq_one_iff_eq hl).mp h ▸ l.property)
 
-private theorem tprod_weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattice) :
-    ∏' l : L.lattice, weierstrassFactor 2 (z / l) ≠ 0 := by
-  have hne : ∀ l : L.lattice, 1 + (weierstrassFactor 2 (z / l) - 1) ≠ 0 := fun l ↦ by
-    simpa only [add_sub_cancel] using L.weierstrassFactor_two_div_ne_zero hz l
-  simpa only [add_sub_cancel] using
-    tprod_one_add_ne_zero_of_summable hne (L.summable_norm_weierstrassFactor_two_div_sub_one z)
+private theorem tprod_weierstrassFactor_two_div_eq_subtype (z : ℂ) :
+    (∏' l : L.lattice, weierstrassFactor 2 (z / l)) =
+      ∏' l : {l : L.lattice // l ≠ 0}, weierstrassFactor 2 (z / l) := by
+  refine (tprod_subtype_eq_of_mulSupport_subset (s := {l : L.lattice | l ≠ 0}) fun l hl ↦ ?_).symm
+  by_contra hl0
+  simp only [Set.mem_ofPred_eq, not_not] at hl0
+  exact hl (by simp [hl0])
 
 /-- **The zeros of `σ` are the lattice points.** -/
 theorem weierstrassSigma_eq_zero_iff {z : ℂ} : L.weierstrassSigma z = 0 ↔ z ∈ L.lattice := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · by_contra hz
-    have hz0 : z ≠ 0 := fun h0 ↦ hz (h0 ▸ zero_mem _)
-    exact mul_ne_zero hz0 (L.tprod_weierstrassFactor_two_div_ne_zero hz) h
-  · rcases eq_or_ne z 0 with rfl | hz0
-    · simp [weierstrassSigma_def]
-    · rw [weierstrassSigma_def,
-        tprod_of_exists_eq_zero ⟨⟨z, h⟩, by simp [div_self hz0, weierstrassFactor_one]⟩, mul_zero]
+  rw [weierstrassSigma_def, mul_eq_zero, L.tprod_weierstrassFactor_two_div_eq_subtype z,
+    Complex.tprod_weierstrassFactor_div_eq_zero_iff
+      (a := fun l : {l : L.lattice // l ≠ 0} ↦ (l : ℂ)) (p := fun _ ↦ 2)
+      (fun l ↦ Subtype.coe_ne_coe.mpr l.property)
+      (fun R hR ↦ (L.summable_div_pow_three R hR).subtype _)]
+  constructor
+  · rintro (rfl | ⟨l, rfl⟩)
+    · exact zero_mem _
+    · exact l.val.property
+  · intro hz
+    rcases eq_or_ne z 0 with rfl | hz0
+    · exact Or.inl rfl
+    · exact Or.inr ⟨⟨⟨z, hz⟩, fun h ↦ hz0 (by simpa using h)⟩, rfl⟩
 
 /-- `σ` does not vanish off the lattice. -/
 theorem weierstrassSigma_ne_zero {z : ℂ} (hz : z ∉ L.lattice) : L.weierstrassSigma z ≠ 0 :=
   fun h ↦ hz (L.weierstrassSigma_eq_zero_iff.mp h)
+
+private theorem tprod_weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattice) :
+    ∏' l : L.lattice, weierstrassFactor 2 (z / l) ≠ 0 := by
+  have hs := L.weierstrassSigma_ne_zero hz
+  rw [weierstrassSigma_def] at hs
+  exact right_ne_zero_of_mul hs
 
 @[simp]
 theorem weierstrassSigma_coe (l : L.lattice) : L.weierstrassSigma l = 0 :=

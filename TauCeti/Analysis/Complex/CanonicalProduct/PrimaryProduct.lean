@@ -30,11 +30,9 @@ each fiber follow automatically from the summability hypothesis, with no countab
 `ι`.
 
 Reindexing by an equivalence `κ ≃ ι` and grouping finite multiplicity fibers `m : ι → ℕ` under
-`∑' i, m i * (R / ‖a i‖) ^ (p i + 1) < ∞` preserve the product and its locally uniform
-convergence (via `Equiv.hasProdLocallyUniformlyOn_iff` and
-`HasProdLocallyUniformlyOn.sigma_of_finite`). The weighted sigma-fiber construction and
-multiplicity proofs generalize the genus-one formalization in
-`TauCeti.Analysis.Complex.CanonicalProduct.Convergence`.
+`∑' i, m i * (R / ‖a i‖) ^ (p i + 1) < ∞` preserve the product and its compact-uniform convergence
+(via `HasProdUniformlyOn.sigma_of_finite`, whence locally uniform convergence follows by
+`hasProdLocallyUniformlyOn_of_forall_compact`).
 
 Combining variable-genus products with `Filter.Tendsto.exists_summable_mul_div_pow` and
 `Differentiable.exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq` yields Weierstrass's
@@ -66,6 +64,31 @@ without any growth hypothesis on `f`.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow`: Weierstrass's entire
   factorization theorem for an arbitrary nonzero entire function without growth hypotheses.
 
+## Provenance
+
+* Compact-uniform convergence, zero characterization, and root-fiber finiteness build on
+  `HasSumUniformlyOn.of_norm_le_summable_eventually` (Mathlib) together with
+  `SummableUniformlyOn.hasProdUniformlyOn_one_add_of_isCompact`,
+  `SummableUniformlyOn.tprod_one_add_eq_zero_iff`, and
+  `SummableUniformlyOn.finite_setOf_exists_mem_one_add_eq_zero` in
+  `TauCeti.Analysis.Normed.Module.MultipliableUniformlyOn`, plus
+  `hasProdLocallyUniformlyOn_of_forall_compact` (Mathlib).
+* Holomorphy and order additivity of the primary product are supplied by
+  `TauCeti.differentiableOn_tprod_one_add` and `TauCeti.analyticOrderAt_tprod_one_add` in
+  `TauCeti.Analysis.Complex.InfiniteProd`, with whole-plane divisor translation via
+  `Differentiable.divisor_univ_eq_analyticOrderNatAt` in
+  `TauCeti.Analysis.Complex.DivisorFactorization`.
+* The weighted sigma-fiber construction and multiplicity proofs generalize the genus-one
+  formalization in `TauCeti.Analysis.Complex.CanonicalProduct.Convergence` using
+  `TauCeti.summable_sigma_fin_iff` (`TauCeti.Topology.Algebra.InfiniteSum.Real`) and
+  `HasProdUniformlyOn.sigma_of_finite` (`TauCeti.Topology.Algebra.InfiniteSum.UniformOn`).
+* Weierstrass's general entire factorization combines these products with
+  `AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`
+  (`TauCeti.Analysis.Analytic.IsolatedZeros`), `Filter.Tendsto.exists_summable_mul_div_pow`
+  (`TauCeti.Topology.Algebra.InfiniteSum.Real`), and
+  `Differentiable.exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq`
+  (`TauCeti.Analysis.Complex.DivisorFactorization`).
+
 ## References
 
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw-Hill, 1987, Theorems 15.9 and 15.10.
@@ -79,6 +102,11 @@ open Complex Filter Function Metric Set Topology
 open scoped BigOperators
 
 namespace Complex
+
+private theorem divisor_univ_eq_of_analyticOrderAt_eq {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    {z : ℂ} {n : ℕ} (hord : analyticOrderAt f z = n) :
+    MeromorphicOn.divisor f Set.univ z = (n : ℤ) := by
+  rw [hf.divisor_univ_eq_analyticOrderNatAt z, analyticOrderNatAt, hord, ENat.toNat_natCast]
 
 section Unweighted
 
@@ -214,9 +242,9 @@ theorem analyticOrderAt_tprod_weierstrassFactor_div (ha : ∀ i, a i ≠ 0)
 theorem divisor_tprod_weierstrassFactor_div (ha : ∀ i, a i ≠ 0)
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
     MeromorphicOn.divisor (fun w ↦ ∏' i, weierstrassFactor (p i) (w / a i)) Set.univ z =
-      ({i | a i = z}.ncard : ℤ) := by
-  rw [(differentiable_tprod_weierstrassFactor_div hsum).divisor_univ_eq_analyticOrderNatAt z,
-    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div ha hsum z, ENat.toNat_natCast]
+      ({i | a i = z}.ncard : ℤ) :=
+  divisor_univ_eq_of_analyticOrderAt_eq (differentiable_tprod_weierstrassFactor_div hsum)
+    (analyticOrderAt_tprod_weierstrassFactor_div ha hsum z)
 
 end Unweighted
 
@@ -260,12 +288,9 @@ theorem hasProdUniformlyOn_weierstrassFactor_div_pow
 theorem hasProdLocallyUniformlyOn_weierstrassFactor_div_pow
     (hm : ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / ‖a i‖) ^ (p i + 1)) :
     HasProdLocallyUniformlyOn (fun i z ↦ weierstrassFactor (p i) (z / a i) ^ m i)
-      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) Set.univ := by
-  have h := (hasProdLocallyUniformlyOn_weierstrassFactor_div
-    (a := fun q : Σ i, Fin (m i) ↦ a q.1) (p := fun q : Σ i, Fin (m i) ↦ p q.1)
-    (summable_sigma_div_pow m hm)).sigma_of_finite
-  simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    ← tprod_weierstrassFactor_div_pow_eq_sigma hm] using h
+      (fun z ↦ ∏' i, weierstrassFactor (p i) (z / a i) ^ m i) Set.univ :=
+  hasProdLocallyUniformlyOn_of_forall_compact isOpen_univ fun _ _ hK ↦
+    hasProdUniformlyOn_weierstrassFactor_div_pow hm hK
 
 /-- A weighted variable-genus primary product is entire. -/
 @[fun_prop]
@@ -352,9 +377,9 @@ theorem analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero
 theorem divisor_tprod_weierstrassFactor_div_pow (ha : ∀ j, m j ≠ 0 → a j ≠ 0)
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) (z : ℂ) :
     MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z =
-      ({q : Σ j, Fin (m j) | a q.1 = z}.ncard : ℤ) := by
-  rw [(differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_analyticOrderNatAt z,
-    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm z, ENat.toNat_natCast]
+      ({q : Σ j, Fin (m j) | a q.1 = z}.ncard : ℤ) :=
+  divisor_univ_eq_of_analyticOrderAt_eq (differentiable_tprod_weierstrassFactor_div_pow hm)
+    (analyticOrderAt_tprod_weierstrassFactor_div_pow ha hm z)
 
 /-- When `a` is injective and `a j ≠ 0` whenever `m j ≠ 0`, the whole-plane divisor of the
 weighted primary product at `a i` is the prescribed multiplicity `m i`. -/
@@ -363,11 +388,9 @@ theorem divisor_tprod_weierstrassFactor_div_pow_of_injective
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1))
     (hinj : Function.Injective a) (i : ι) :
     MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ (a i) =
-      (m i : ℤ) := by
-  rw [(differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_analyticOrderNatAt (a i),
-    analyticOrderNatAt,
-    analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective ha hm hinj i,
-    ENat.toNat_natCast]
+      (m i : ℤ) :=
+  divisor_univ_eq_of_analyticOrderAt_eq (differentiable_tprod_weierstrassFactor_div_pow hm)
+    (analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective ha hm hinj i)
 
 /-- Outside the active roots (`∀ j, m j ≠ 0 → a j ≠ z`), a weighted primary product has
 whole-plane divisor `0`. -/
@@ -377,9 +400,9 @@ theorem divisor_tprod_weierstrassFactor_div_pow_eq_zero
     (hz : ∀ j, m j ≠ 0 → a j ≠ z) :
     MeromorphicOn.divisor
       (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z = 0 := by
-  rw [(differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_analyticOrderNatAt z,
-    analyticOrderNatAt, analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero ha hm hz,
-    ENat.toNat_zero, Nat.cast_zero]
+  simpa using divisor_univ_eq_of_analyticOrderAt_eq
+    (differentiable_tprod_weierstrassFactor_div_pow hm) (n := 0)
+    (by simpa using analyticOrderAt_tprod_weierstrassFactor_div_pow_eq_zero ha hm hz)
 
 end Weighted
 

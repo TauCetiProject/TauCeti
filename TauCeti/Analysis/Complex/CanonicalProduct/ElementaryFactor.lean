@@ -115,11 +115,6 @@ theorem weierstrassFactor_mul_neg (p : ℕ) (z : ℂ) :
       have hodd : (-z) ^ (p + 1) = -(z ^ (p + 1)) := Odd.neg_pow ⟨k, hk⟩ z
       rw [hp2, hodd, neg_div, add_neg_cancel, exp_zero, mul_one]
 
-/-- Symmetric genus-one pairing: `E₁(z) * E₁(-z) = 1 - z ^ 2`. -/
-theorem weierstrassFactor_one_mul_neg (z : ℂ) :
-    weierstrassFactor 1 z * weierstrassFactor 1 (-z) = 1 - z ^ 2 := by
-  simpa using weierstrassFactor_mul_neg 1 z
-
 /-- Every elementary factor is normalized to one at the origin. -/
 @[simp]
 theorem weierstrassFactor_zero (p : ℕ) : weierstrassFactor p 0 = 1 := by
