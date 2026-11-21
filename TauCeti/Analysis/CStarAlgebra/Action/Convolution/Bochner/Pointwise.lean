@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Integral.DominatedConvergence
 On a locally compact topological group `G` with a regular left-invariant Borel measure `μ`,
 `TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1` identifies
 `Completion (ConvolutionAlgebra α μ)` isometrically with `Lp A 1 μ` via
-`ConvolutionAlgebra.completionEquivL1` and defines `CStarAction.convolutionL1` and
+`ConvolutionAlgebra.completionEquivL1` and defines `CStarAction.convolutionLp` and
 `CStarAction.twistedInvolutionL1`.
 
 This file derives pointwise almost-everywhere formulas for arbitrary Bochner-integrable functions
@@ -25,15 +25,16 @@ functions (`ConvolutionAlgebra.exists_hasSum_toL1`), without assuming second cou
 or σ-finiteness of `μ`. It extends `CStarAction.coeFn_twistedInvolutionL1` from Haar measures to
 arbitrary regular left-invariant measures (`μ = 0` included) and proves that for any integrable
 `f, g : G → A`, the twisted convolution integrand `r ↦ f r * α r (g (r⁻¹ * s))` is
-Bochner-integrable for almost every `s` and integrates to `CStarAction.convolutionL1`.
+Bochner-integrable for almost every `s` and integrates to `CStarAction.convolutionLp` at `p = 1`.
 
 ## Main results
 
 * `TauCeti.CStarAction.coeFn_twistedInvolutionL1_of_regular`: pointwise almost-everywhere formula
   for `twistedInvolutionL1` without `IsOpenPosMeasure`.
 * `TauCeti.CStarAction.ae_integrable_convolution_integrand`,
-  `TauCeti.CStarAction.convolutionL1_toL1_ae_eq`, `TauCeti.CStarAction.coeFn_convolutionL1`:
-  almost-everywhere integrability and pointwise Bochner integral formula for `convolutionL1`.
+  `TauCeti.CStarAction.convolutionLp_toL1_ae_eq`, `TauCeti.CStarAction.coeFn_convolutionLp`:
+  almost-everywhere integrability and pointwise Bochner integral formula for `convolutionLp` at
+  `p = 1`.
 
 ## References
 
@@ -151,7 +152,7 @@ private theorem ae_hasSum_ofConv_mul_of_hasSum_toL1
     (hψ_sum : HasSum (fun n => ConvolutionAlgebra.toL1 (ψ n)) v)
     (hψ_norm : Summable fun n => ‖ψ n‖) :
     ∀ᵐ s ∂μ, HasSum (fun p : ℕ × ℕ => (φ p.1 * ψ p.2).ofConv s)
-      (α.convolutionL1 μ u v s) := by
+      (α.convolutionLp μ 1 ENNReal.one_ne_top u v s) := by
   have hsymm {χ : ℕ → ConvolutionAlgebra α μ} {w : Lp A 1 μ}
       (h : HasSum (fun n => ConvolutionAlgebra.toL1 (χ n)) w) :
       HasSum (fun n => (χ n : Completion (ConvolutionAlgebra α μ)))
@@ -174,19 +175,19 @@ private theorem ae_hasSum_ofConv_mul_of_hasSum_toL1
     simpa only [Completion.coe_mul'] using (hsymm hφ_sum).mul (hsymm hψ_sum)
       (by simpa only [← Completion.coe_mul'] using hxy_summable)
   have huv_sum : HasSum (fun p : ℕ × ℕ => ConvolutionAlgebra.toL1 (φ p.1 * ψ p.2))
-      (α.convolutionL1 μ u v) := by
+      (α.convolutionLp μ 1 ENNReal.one_ne_top u v) := by
     simpa only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
       ConvolutionAlgebra.completionEquivL1_coe,
-      ← ConvolutionAlgebra.completionEquivL1_symm_convolutionL1,
+      ← ConvolutionAlgebra.completionEquivL1_symm_convolutionLp,
       LinearIsometryEquiv.apply_symm_apply] using
       (ConvolutionAlgebra.completionEquivL1 α μ).toLinearIsometry.toContinuousLinearMap.hasSum
         hxy_sum
   exact (α.ae_hasSum_ofConv_of_hasSum_toL1 huv_sum hxy_norm).mono fun _ hs => hs.1
 
-private theorem ae_integrable_and_convolutionL1_toL1_ae_eq {f g : G → A}
+private theorem ae_integrable_and_convolutionLp_toL1_ae_eq {f g : G → A}
     (hf : Integrable f μ) (hg : Integrable g μ) :
     ∀ᵐ s ∂μ, Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ ∧
-      α.convolutionL1 μ (hf.toL1 f) (hg.toL1 g) s =
+      α.convolutionLp μ 1 ENNReal.one_ne_top (hf.toL1 f) (hg.toL1 g) s =
         ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ := by
   rcases eq_zero_or_neZero μ with rfl | hμ
   · simp
@@ -232,23 +233,23 @@ Bochner-integrable `f, g : G → A` on a locally compact group with a regular le
 theorem ae_integrable_convolution_integrand {f g : G → A}
     (hf : Integrable f μ) (hg : Integrable g μ) :
     ∀ᵐ s ∂μ, Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
-  (α.ae_integrable_and_convolutionL1_toL1_ae_eq hf hg).mono fun _ hs => hs.1
+  (α.ae_integrable_and_convolutionLp_toL1_ae_eq hf hg).mono fun _ hs => hs.1
 
 /-- **Pointwise formula for twisted `L¹` convolution**: for any Bochner-integrable `f, g : G → A`
-on a locally compact group with a regular left-invariant measure, `convolutionL1` of their `L¹`
-classes is represented almost everywhere by `s ↦ ∫ r, f r * α r (g (r⁻¹ * s)) dμ`. -/
-theorem convolutionL1_toL1_ae_eq {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
-    α.convolutionL1 μ (hf.toL1 f) (hg.toL1 g) =ᵐ[μ]
+on a locally compact group with a regular left-invariant measure, `convolutionLp` at `p = 1` of
+their `L¹` classes is represented almost everywhere by `s ↦ ∫ r, f r * α r (g (r⁻¹ * s)) dμ`. -/
+theorem convolutionLp_toL1_ae_eq {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
+    α.convolutionLp μ 1 ENNReal.one_ne_top (hf.toL1 f) (hg.toL1 g) =ᵐ[μ]
       fun s => ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ :=
-  (α.ae_integrable_and_convolutionL1_toL1_ae_eq hf hg).mono fun _ hs => hs.2
+  (α.ae_integrable_and_convolutionLp_toL1_ae_eq hf hg).mono fun _ hs => hs.2
 
 /-- For arbitrary `u, v ∈ Lp A 1 μ` on a locally compact group with a regular left-invariant
-measure, `convolutionL1` is represented almost everywhere by
+measure, `convolutionLp` at `p = 1` is represented almost everywhere by
 `s ↦ ∫ r, u r * α r (v (r⁻¹ * s)) dμ`. -/
-theorem coeFn_convolutionL1 (u v : Lp A 1 μ) :
-    α.convolutionL1 μ u v =ᵐ[μ]
+theorem coeFn_convolutionLp (u v : Lp A 1 μ) :
+    α.convolutionLp μ 1 ENNReal.one_ne_top u v =ᵐ[μ]
       fun s => ∫ r, u r * α r (v (r⁻¹ * s)) ∂μ := by
-  simpa using α.convolutionL1_toL1_ae_eq (L1.integrable_coeFn u) (L1.integrable_coeFn v)
+  simpa using α.convolutionLp_toL1_ae_eq (L1.integrable_coeFn u) (L1.integrable_coeFn v)
 
 end RegularLeftInvariant
 

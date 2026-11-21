@@ -51,25 +51,6 @@ open scoped CompactlySupported CStarAlgebra ENNReal InnerProductSpace
 
 namespace TauCeti.CStarAction.CovariantRepresentation
 
-/-! ### Norm bound for integrable representatives -/
-
-section NormBound
-
-variable {G A H : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
-  [R1Space G] [BorelSpace G] [NonUnitalCStarAlgebra A]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {α : CStarAction G A} (P : CovariantRepresentation α H)
-  (μ : Measure G) [μ.InnerRegularCompactLTTop]
-
-/-- For an integrable `f : G → A`, `‖(π ⋊ U)(f)‖ ≤ ∫ g, ‖f g‖ dμ(g)`. -/
-theorem norm_integratedOperatorBochnerL1_toL1_le {f : G → A} (hf : Integrable f μ) :
-    ‖P.integratedOperatorBochnerL1 μ (hf.toL1 f)‖ ≤ ∫ g, ‖f g‖ ∂μ := by
-  refine (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq ?_
-  rw [L1.norm_eq_integral_norm]
-  exact integral_congr_ae (hf.coeFn_toL1.fun_comp norm)
-
-end NormBound
-
 /-! ### Intertwiners, nondegeneracy, uniqueness, and commutants -/
 
 section Intertwiner
