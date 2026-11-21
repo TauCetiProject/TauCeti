@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Stabilization
-public import TauCeti.Algebra.Homology.SpectralObject.Abutment
+public import TauCeti.Algebra.Homology.SpectralObject.Naturality
 
 /-!
 # Convergence of the spectral sequence of a filtered complex
@@ -27,6 +28,14 @@ filtration of `H^n(K)` vanishes at `a` and is everything at `b`
 graded piece `F_{q+1} H^{p+q} / F_q H^{p+q}` on every page `r` with `q - r + 2 ≤ a` and
 `b ≤ q + r - 1` (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite`).
 
+These identifications are natural in morphisms of filtered complexes. A morphism `f : K ⟶ L`
+sending each `F_q` into `G_q` induces, through `filtrationAbutmentIso`, the map `H^n(f)` on the
+abutments (`CochainComplex.filtrationAbutmentIso_hom_naturality`), and the maps
+`H^n(F_q) ⟶ H^n(G_q)` on the pieces of their filtrations
+(`CochainComplex.toFiltrationAbutmentFiltration_naturality`). For finite filtrations, the
+morphism of spectral sequences induced by a morphism of filtrations is the induced map on the
+graded pieces (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite_hom_naturality`).
+
 ## Main results
 
 * `CochainComplex.filtrationAbutmentIso`: the abutment is `H^n(K)`.
@@ -36,11 +45,15 @@ graded piece `F_{q+1} H^{p+q} / F_q H^{p+q}` on every page `r` with `q - r + 2 �
   of the abutment is the image filtration of `H^n(K)`.
 * `CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite`: strong convergence for a
   finite filtration.
+* `CochainComplex.filtrationAbutmentIso_hom_naturality`,
+  `CochainComplex.toFiltrationAbutmentFiltration_naturality`,
+  `CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite_hom_naturality`: naturality in
+  morphisms of filtered complexes.
 -/
 
 public section
 
-open CategoryTheory Limits ComposableArrows
+open CategoryTheory Limits ComposableArrows Abelian.SpectralObject
 
 namespace CochainComplex
 
@@ -130,5 +143,66 @@ noncomputable def filtrationSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (
         (pq.1 + pq.2)) :=
   filtrationSpectralSequencePageXIsoEInftyOfFinite F hF ha hb r hr pq hra hrb ≪≫
     (spectralObject _).EInftyIsoCokernel _ _
+
+section Naturality
+
+variable {F hF} {L : CochainComplex C ℤ} {G : ℤ → Subobject L} {hG : Monotone G}
+
+/-- **The identification of the abutment with the cohomology of the complex is natural.** Let
+`f : K ⟶ L` send each piece `F_q` into `G_q`. Through `filtrationAbutmentIso`, the map induced by
+`f` on the abutments `H^n(⊥ ≤ ⊤)` is the map `H^n(K) ⟶ H^n(L)` induced by `f`. -/
+@[reassoc]
+lemma filtrationAbutmentIso_hom_naturality (f : K ⟶ L)
+    (hf : ∀ q, (G q).Factors ((F q).arrow ≫ f)) (n : ℤ) :
+    ((spectralObjectMap (filtrationFunctorMap hF hG f hf)).hom n).app
+        (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫ (filtrationAbutmentIso G hG n).hom =
+      (filtrationAbutmentIso F hF n).hom ≫ HomologicalComplex.homologyMap f n := by
+  rw [filtrationAbutmentIso_hom, filtrationAbutmentIso_hom,
+    reassoc_of% spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom, Category.assoc,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  congr 2
+  refine coequalizer.hom_ext ?_
+  simp
+
+/-- **The filtration of the abutment is natural.** Let `f : K ⟶ L` send each piece `F_q` into
+`G_q`. The epimorphisms `toFiltrationAbutmentFiltration` from `H^n(F_q)` and `H^n(G_q)` onto the
+`q`th pieces of the filtrations of the abutments intertwine the map `H^n(F_q) ⟶ H^n(G_q)` induced
+by the restriction of `f` with the map induced by `f` on these pieces. -/
+@[reassoc]
+lemma toFiltrationAbutmentFiltration_naturality (f : K ⟶ L)
+    (hf : ∀ q, (G q).Factors ((F q).arrow ≫ f)) (q n : ℤ) :
+    HomologicalComplex.homologyMap ((G q).factorThru _ (hf q)) n ≫
+        toFiltrationAbutmentFiltration G hG q n =
+      toFiltrationAbutmentFiltration F hF q n ≫
+        opcyclesMapOfHom (spectralObjectMap (filtrationFunctorMap hF hG f hf))
+          (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (le_top : (q : EInt) ≤ ⊤)) n := by
+  rw [← cancel_mono ((spectralObject (filtrationFunctor G hG)).abutmentFiltrationι q n ≫
+    (filtrationAbutmentIso G hG n).hom)]
+  simp only [Category.assoc, toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom,
+    abutmentFiltrationι_naturality_assoc, filtrationAbutmentIso_hom_naturality,
+    toFiltrationAbutmentFiltration_comp_filtrationAbutmentIso_hom_assoc,
+    ← HomologicalComplex.homologyMap_comp, Subobject.factorThru_arrow]
+
+/-- **Strong convergence for finite filtrations is natural.** Let `α` be a morphism between the
+functors of increasing filtrations `F` of `K` and `G` of `L` with `F_a = G_a = ⊥` and
+`F_b = G_b = ⊤`. Through `filtrationSpectralSequencePageXIsoGradedOfFinite`, the morphism of
+spectral sequences induced by `α` is, on the object at `(p, q)` of every page `r ≥ 2` with
+`q - r + 2 ≤ a` and `b ≤ q + r - 1`, the map induced by `α` on the graded pieces
+`F_{q+1} H^{p+q} / F_q H^{p+q}` of the filtrations of the abutments. -/
+@[reassoc]
+lemma filtrationSpectralSequencePageXIsoGradedOfFinite_hom_naturality
+    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) {a b : ℤ} (hFa : F a = ⊥)
+    (hGa : G a = ⊥) (hFb : F b = ⊤) (hGb : G b = ⊤) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (hra : pq.2 - r + 2 ≤ a) (hrb : b ≤ pq.2 + r - 1) :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom r hr).f pq ≫
+        (filtrationSpectralSequencePageXIsoGradedOfFinite G hG hGa hGb r hr pq hra hrb).hom =
+      (filtrationSpectralSequencePageXIsoGradedOfFinite F hF hFa hFb r hr pq hra hrb).hom ≫
+        abutmentGradedMap (spectralObjectMap α) pq.2 (pq.1 + pq.2) := by
+  simp only [filtrationSpectralSequencePageXIsoGradedOfFinite, Iso.trans_hom,
+    filtrationSpectralSequencePageXIsoEInftyOfFinite_hom, spectralSequenceMap_hom,
+    spectralSequencePageMap_f]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
+
+end Naturality
 
 end CochainComplex
