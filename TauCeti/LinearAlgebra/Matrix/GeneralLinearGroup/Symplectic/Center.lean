@@ -75,7 +75,7 @@ theorem mem_range_scalar_of_commute_symplectic
       (hM (TauCeti.GLSymplecticFin.differenceShortRootUnit hiz (1 : R))).eq
     rw [TauCeti.GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single] at he
     have hcross (a b : Fin m) : Fin.castAdd m a ≠ b.addNat m := by
-      simpa using TauCeti.GLSymplecticFin.finSumFinEquiv_inl_ne_inr a b
+      simpa using finSumFinEquiv_inl_ne_inr a b
     simpa [mul_sub, sub_mul, mul_add, add_mul, hoff, hiz,
       mul_single_apply_of_ne _ _ _ _ _ (hcross z i),
       single_mul_apply_of_ne _ _ _ _ _ (hcross i z)] using he

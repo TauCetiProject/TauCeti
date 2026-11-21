@@ -11,7 +11,7 @@ public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
-import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Finite sums and finite types
@@ -124,5 +124,15 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_two :
 theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}
     (hn : ∑ i, m i = n) : Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
   ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
+
+/-- An upper-block and a lower-block index have distinct images under `finSumFinEquiv`. -/
+theorem _root_.finSumFinEquiv_inl_ne_inr {m n : ℕ} (i : Fin m) (j : Fin n) :
+    finSumFinEquiv (Sum.inl i) ≠ finSumFinEquiv (Sum.inr j) :=
+  finSumFinEquiv.injective.ne Sum.inl_ne_inr
+
+/-- A lower-block and an upper-block index have distinct images under `finSumFinEquiv`. -/
+theorem _root_.finSumFinEquiv_inr_ne_inl {m n : ℕ} (i : Fin n) (j : Fin m) :
+    finSumFinEquiv (Sum.inr i) ≠ finSumFinEquiv (Sum.inl j) :=
+  finSumFinEquiv.injective.ne Sum.inr_ne_inl
 
 end TauCeti
