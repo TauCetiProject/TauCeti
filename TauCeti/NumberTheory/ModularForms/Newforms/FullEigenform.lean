@@ -110,7 +110,7 @@ theorem heckeUCuspNat_eq_qExpansion_coeff_smul (f : Newform N k) {p : ℕ} (hp :
       HeckeCosetModule.mul_comm_of_antiInvolution ℤ (atkinLehnerAntiInvolution N)
         (atkinLehnerAntiInvolution_onHeckeCoset_eq_self N),
       map_mul, mul_apply_eq_comp, hq', map_smul]
-  have hc := f.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul G.2 hGeig
+  have hc := f.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul G.property hGeig
   rw [hGcoe] at hc
   -- the scalar is `a_p(f)`: the first coefficient of `U_p f`
   have hc' := (heckeUCuspNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul k hp hpN _).mp hc 1

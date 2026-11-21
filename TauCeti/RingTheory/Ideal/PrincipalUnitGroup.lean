@@ -53,6 +53,8 @@ so `1 + I` is an iterated extension of additive groups.
   is the kernel of the induced map on units.
 * `Ideal.unitsMap_quotientMk_surjective`: reduction of units modulo an ideal in the Jacobson
   radical is surjective.
+* `Ideal.unitsMap_quotientMk_surjective_of_ne_top`: over a local ring, reduction of units modulo a
+  proper ideal is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
 
 ## References
@@ -132,6 +134,13 @@ theorem unitsMap_quotientMk_surjective {I : Ideal R} (hI : I ≤ jacobson ⊥) :
   IsLocalRing.surjective_units_map_of_local_ringHom _ Quotient.mk_surjective
     (_root_.isLocalHom_of_le_jacobson (by simpa only [Ideal.jacobson_bot] using hI))
 
+/-- Over a local ring, reduction of units modulo a proper ideal is surjective: a proper ideal lies
+in the maximal ideal, which is the Jacobson radical. -/
+theorem unitsMap_quotientMk_surjective_of_ne_top [IsLocalRing R] {I : Ideal R} (hI : I ≠ ⊤) :
+    Function.Surjective (Units.map (Quotient.mk I).toMonoidHom) :=
+  unitsMap_quotientMk_surjective ((IsLocalRing.le_maximalIdeal hI).trans_eq
+    (IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top).symm)
+
 /-- For an ideal `I` contained in the Jacobson radical, the units of `R` modulo the principal
 unit group of `I` are the units of `R ⧸ I`. -/
 noncomputable def unitsQuotientPrincipalUnitGroupEquiv {I : Ideal R} (hI : I ≤ jacobson ⊥) :
@@ -151,7 +160,8 @@ unit group of `J` to the additive group of `J ⧸ (J ∩ J')` (written `Submodul
 this is `J ⧸ J'` when `J' ≤ J`): `(1 + x)(1 + y) = 1 + (x + y) + x y` with `x y ∈ J'`. -/
 def principalUnitGroupToQuotient (J J' : Ideal R) (h : J * J ≤ J') :
     J.principalUnitGroup →* Multiplicative (J ⧸ Submodule.comap J.subtype J') where
-  toFun u := .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.2⟩)
+  toFun u := .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1,
+      mem_principalUnitGroup.mp u.property⟩)
   map_one' := by
     rw [ofAdd_eq_one, Submodule.Quotient.mk_eq_zero]
     simp
@@ -159,7 +169,8 @@ def principalUnitGroupToQuotient (J J' : Ideal R) (h : J * J ≤ J') :
     rw [← ofAdd_add, ← Submodule.Quotient.mk_add]
     congr 1
     rw [Submodule.Quotient.eq, Submodule.mem_comap]
-    convert h (mul_mem_mul (mem_principalUnitGroup.mp u.2) (mem_principalUnitGroup.mp v.2))
+    convert h (mul_mem_mul (mem_principalUnitGroup.mp u.property)
+        (mem_principalUnitGroup.mp v.property))
       using 1
     simp only [Subgroup.coe_mul, Units.val_mul, Submodule.coe_sub, Submodule.subtype_apply,
       Submodule.coe_add]
@@ -169,7 +180,7 @@ def principalUnitGroupToQuotient (J J' : Ideal R) (h : J * J ≤ J') :
 theorem principalUnitGroupToQuotient_apply {J J' : Ideal R} (h : J * J ≤ J')
     (u : J.principalUnitGroup) :
     principalUnitGroupToQuotient J J' h u =
-      .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.2⟩) :=
+      .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.property⟩) :=
   (rfl)
 
 theorem ker_principalUnitGroupToQuotient {J J' : Ideal R} (h : J * J ≤ J') :
@@ -227,7 +238,7 @@ noncomputable def principalUnitGroupPowQuotientEquiv {I : Ideal R} (hI : I ≤ j
 theorem principalUnitGroupPowQuotientEquiv_mk {I : Ideal R} (hI : I ≤ jacobson ⊥) (n : ℕ)
     (u : (I ^ (n + 1)).principalUnitGroup) :
     principalUnitGroupPowQuotientEquiv hI n u =
-      .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.2⟩) :=
+      .ofAdd (Submodule.Quotient.mk ⟨((u : Rˣ) : R) - 1, mem_principalUnitGroup.mp u.property⟩) :=
   principalUnitGroupQuotientEquiv_mk _ _ u
 
 end CommRing

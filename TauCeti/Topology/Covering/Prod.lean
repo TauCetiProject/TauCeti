@@ -34,7 +34,7 @@ theorem IsEvenlyCovered.prodMap (hf : IsEvenlyCovered f x A) (hg : IsEvenlyCover
       ((H.prodCongr K).trans ((Homeomorph.prodProdProdComm U A V B).trans
         ((Homeomorph.Set.prod U V).symm.prodCongr (Homeomorph.refl (A × B)))))
   · intro z
-    exact Prod.ext (hH ⟨z.1.1, z.2.1⟩) (hK ⟨z.1.2, z.2.2⟩)
+    exact Prod.ext (hH ⟨z.val.1, z.property.1⟩) (hK ⟨z.val.2, z.property.2⟩)
 
 /-- Products of covering maps are covering maps. Surjectivity of the factors is not required. -/
 theorem IsCoveringMap.prodMap (hf : IsCoveringMap f) (hg : IsCoveringMap g) :

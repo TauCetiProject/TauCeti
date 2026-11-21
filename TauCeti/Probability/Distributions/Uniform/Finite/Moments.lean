@@ -19,12 +19,11 @@ means, mgfs and characteristic functions are finite averages; the cgf is the log
 average exponential, and variance is the average square minus the square of the average.
 For natural-valued labels, the pgf is the average monomial at every real argument.
 
-The formulas cover both mapped and native laws on finite sets, with finite-type specializations.
-The integration results in `Uniform.Finite.Basic` apply even to labels and observables that are
-not globally measurable. All formulas hold for the empty sampling set, where the law is zero.
-Real observables have full exponential-integrability domain even on arbitrary sampling sets:
-on infinite sets `uniformOn` is zero. The `HasLaw` corollaries allow any source measure with the
-stated law.
+For a finite type, take the sampling set to be `Finset.univ`. The integration results in
+`Uniform.Finite.Basic` apply even to labels and observables that are not globally measurable.
+The formulas hold for the empty sampling set, where the law is zero. Real observables have
+full exponential-integrability domain even on arbitrary sampling sets: on infinite sets
+`uniformOn` is zero. The `HasLaw` corollaries allow any source measure with the stated law.
 -/
 
 public section
@@ -60,8 +59,7 @@ namespace Finset
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
-/-- Every natural raw moment of a finitely labelled uniform law is the average label power.
-Its integrability follows from `Set.integrable_map_uniformOn`. -/
+/-- Every natural raw moment of a finitely labelled uniform law is the average label power. -/
 theorem integral_pow_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) (n : ℕ) :
     ∫ x : ℝ, x ^ n ∂(uniformOn (s : Set α)).map f =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ n := by
@@ -119,134 +117,13 @@ theorem pgf_map_uniformOn_finset (s : Finset α) (f : α → ℕ) (z : ℝ) :
   simpa only [pgf_def, id_eq, smul_eq_mul] using
     s.integral_map_uniformOn_finset f (fun k : ℕ ↦ z ^ k)
 
-/-- The variance of an observable of a finite uniform sample is its average square minus the
-square of its average, including for the empty sampling set. -/
-theorem variance_uniformOn_finset (s : Finset α) (f : α → ℝ) :
-    variance f (uniformOn (s : Set α)) =
-      (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ 2 - ((s.card : ℝ)⁻¹ * ∑ i ∈ s, f i) ^ 2 := by
-  rw [← variance_id_map (Set.aemeasurable_uniformOn (s : Set α) f),
-    s.variance_id_map_uniformOn_finset]
-
-/-- The mgf of an observable of a finite uniform sample is the average exponential. -/
-theorem mgf_uniformOn_finset (s : Finset α) (f : α → ℝ) (t : ℝ) :
-    mgf f (uniformOn (s : Set α)) t =
-      (s.card : ℝ)⁻¹ * ∑ i ∈ s, Real.exp (t * f i) := by
-  simpa only [mgf, smul_eq_mul] using
-    s.integral_uniformOn_finset (fun i ↦ Real.exp (t * f i))
-
-/-- The cgf of an observable of a finite uniform sample is the logarithm of the average
-exponential. -/
-theorem cgf_uniformOn_finset (s : Finset α) (f : α → ℝ) (t : ℝ) :
-    cgf f (uniformOn (s : Set α)) t =
-      Real.log ((s.card : ℝ)⁻¹ * ∑ i ∈ s, Real.exp (t * f i)) := by
-  rw [cgf, s.mgf_uniformOn_finset]
-
 /-- The pgf of a natural-valued observable of a finite uniform sample is the average monomial,
 at every real argument. -/
 theorem pgf_uniformOn_finset (s : Finset α) (f : α → ℕ) (z : ℝ) :
     pgf f (uniformOn (s : Set α)) z = (s.card : ℝ)⁻¹ * ∑ i ∈ s, z ^ f i := by
   simpa only [pgf_def, smul_eq_mul] using s.integral_uniformOn_finset (fun i ↦ z ^ f i)
 
-/-- Natural raw moments of a uniform law on a finite real set are average powers. -/
-theorem integral_pow_uniformOn_finset (s : Finset ℝ) (n : ℕ) :
-    ∫ x, x ^ n ∂uniformOn (s : Set ℝ) = (s.card : ℝ)⁻¹ * ∑ i ∈ s, i ^ n := by
-  simpa only [smul_eq_mul] using s.integral_uniformOn_finset (fun x ↦ x ^ n)
-
-/-- The mean of a uniform law on a finite real set is the average of its elements. -/
-theorem integral_id_uniformOn_finset (s : Finset ℝ) :
-    ∫ x, x ∂uniformOn (s : Set ℝ) = (s.card : ℝ)⁻¹ * ∑ i ∈ s, i := by
-  simpa only [id_eq, smul_eq_mul] using s.integral_uniformOn_finset id
-
-/-- The characteristic function of a uniform law on a finite real set is the average complex
-exponential. -/
-theorem charFun_uniformOn_finset (s : Finset ℝ) (t : ℝ) :
-    charFun (uniformOn (s : Set ℝ)) t =
-      (s.card : ℝ)⁻¹ • ∑ i ∈ s, Complex.exp (↑(t * i) * Complex.I) := by
-  rw [charFun_apply_real, s.integral_uniformOn_finset]
-  simp only [Complex.ofReal_mul]
-
 end Finset
-
-namespace TauCeti.Probability
-
-variable {α : Type*} [Fintype α] [MeasurableSpace α] [MeasurableSingletonClass α]
-
-/-- Raw moments of a labelled uniform sample from a finite type are average label powers. -/
-theorem integral_pow_map_uniformOn_univ (f : α → ℝ) (n : ℕ) :
-    ∫ x : ℝ, x ^ n ∂(uniformOn (Set.univ : Set α)).map f =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, f i ^ n := by
-  simpa using (Finset.univ : Finset α).integral_pow_id_map_uniformOn_finset f n
-
-/-- The mean of a labelled uniform sample from a finite type is the average label. -/
-theorem integral_id_map_uniformOn_univ (f : α → ℝ) :
-    ∫ x : ℝ, x ∂(uniformOn (Set.univ : Set α)).map f =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, f i := by
-  simpa using (Finset.univ : Finset α).integral_id_map_uniformOn_finset f
-
-/-- The variance of a labelled uniform sample from a finite type is the average squared label
-minus the square of the average label. -/
-theorem variance_id_map_uniformOn_univ (f : α → ℝ) :
-    variance id ((uniformOn (Set.univ : Set α)).map f) =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, f i ^ 2 -
-        ((Fintype.card α : ℝ)⁻¹ * ∑ i, f i) ^ 2 := by
-  simpa using (Finset.univ : Finset α).variance_id_map_uniformOn_finset f
-
-/-- The mgf of a labelled uniform sample from a finite type is the average exponential label. -/
-theorem mgf_id_map_uniformOn_univ (f : α → ℝ) (t : ℝ) :
-    mgf id ((uniformOn (Set.univ : Set α)).map f) t =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, Real.exp (t * f i) := by
-  simpa using (Finset.univ : Finset α).mgf_id_map_uniformOn_finset f t
-
-/-- The cgf of a labelled uniform sample from a finite type is the logarithm of the average
-exponential label. -/
-theorem cgf_id_map_uniformOn_univ (f : α → ℝ) (t : ℝ) :
-    cgf id ((uniformOn (Set.univ : Set α)).map f) t =
-      Real.log ((Fintype.card α : ℝ)⁻¹ * ∑ i, Real.exp (t * f i)) := by
-  simpa using (Finset.univ : Finset α).cgf_id_map_uniformOn_finset f t
-
-/-- The characteristic function of a labelled uniform sample from a finite type is the average
-complex exponential label. -/
-theorem charFun_map_uniformOn_univ (f : α → ℝ) (t : ℝ) :
-    charFun ((uniformOn (Set.univ : Set α)).map f) t =
-      (Fintype.card α : ℂ)⁻¹ * ∑ i, Complex.exp (t * f i * Complex.I) := by
-  simpa using (Finset.univ : Finset α).charFun_map_uniformOn_finset f t
-
-/-- The pgf of a natural-valued labelled uniform sample from a finite type is the average
-monomial. -/
-theorem pgf_map_uniformOn_univ (f : α → ℕ) (z : ℝ) :
-    pgf id ((uniformOn (Set.univ : Set α)).map f) z =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, z ^ f i := by
-  simpa using (Finset.univ : Finset α).pgf_map_uniformOn_finset f z
-
-/-- The variance of an observable of a uniform sample from a finite type is its average square
-minus the square of its average. -/
-theorem variance_uniformOn_univ (f : α → ℝ) :
-    variance f (uniformOn (Set.univ : Set α)) =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, f i ^ 2 -
-        ((Fintype.card α : ℝ)⁻¹ * ∑ i, f i) ^ 2 := by
-  simpa using (Finset.univ : Finset α).variance_uniformOn_finset f
-
-/-- The mgf of an observable of a uniform sample from a finite type is the average exponential. -/
-theorem mgf_uniformOn_univ (f : α → ℝ) (t : ℝ) :
-    mgf f (uniformOn (Set.univ : Set α)) t =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, Real.exp (t * f i) := by
-  simpa using (Finset.univ : Finset α).mgf_uniformOn_finset f t
-
-/-- The cgf of an observable of a uniform sample from a finite type is the logarithm of the
-average exponential. -/
-theorem cgf_uniformOn_univ (f : α → ℝ) (t : ℝ) :
-    cgf f (uniformOn (Set.univ : Set α)) t =
-      Real.log ((Fintype.card α : ℝ)⁻¹ * ∑ i, Real.exp (t * f i)) := by
-  simpa using (Finset.univ : Finset α).cgf_uniformOn_finset f t
-
-/-- The pgf of a natural-valued observable of a uniform sample from a finite type is the average
-monomial. -/
-theorem pgf_uniformOn_univ (f : α → ℕ) (z : ℝ) :
-    pgf f (uniformOn (Set.univ : Set α)) z =
-      (Fintype.card α : ℝ)⁻¹ * ∑ i, z ^ f i := by
-  simpa using (Finset.univ : Finset α).pgf_uniformOn_finset f z
-
-end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
 
@@ -267,15 +144,6 @@ theorem integral_map_uniformOn_finset
     (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) :
     ∫ ω, X ω ∂P = (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i := by
   simpa only [id_eq, smul_eq_mul] using hX.integral_comp_map_uniformOn_finset id
-
-/-- Variance of a random variable with a finitely labelled uniform law, including the empty
-sampling set. -/
-theorem variance_map_uniformOn_finset
-    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) :
-    variance X P =
-      (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ 2 - ((s.card : ℝ)⁻¹ * ∑ i ∈ s, f i) ^ 2 := by
-  rw [hX.variance_eq]
-  exact s.variance_id_map_uniformOn_finset f
 
 variable {Y : Ω → α}
 

@@ -375,7 +375,7 @@ theorem retract_subtypeVal_comp {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularC
     D.retract hm ((ContinuousMap.subtypeVal A).comp c) = c := by
   have hc : range ((ContinuousMap.subtypeVal A).comp c) ⊆ A := by
     rintro _ ⟨y, rfl⟩
-    exact (c y).2
+    exact (c y).property
   ext y
   simp [D.homotopy_of_range_subset hc]
 

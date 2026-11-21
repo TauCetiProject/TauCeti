@@ -48,6 +48,9 @@ model vector space, so the naming records a difference of setting, not of mathem
   reversing both structures changes nothing.
 * `TauCeti.isPseudoholomorphicAt_stdComplexLine_iff`: for a curve out of the standard complex
   line the equation reduces to the single coordinate identity `∂_t w = J(w) ∂_s w`.
+* `TauCeti.isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq`: a curve satisfying the
+  Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` for `mfderiv` at a point has complex-linear `mfderiv`
+  there.
 * `TauCeti.isPseudoholomorphicAt_iff_isJHolomorphicAt` and its within-set, setwise, and global
   analogues: on model vector spaces the predicate is the normed-space one.
 * `TauCeti.isPseudoholomorphicAt_constSmooth_iff` and its within-set, setwise, and global
@@ -535,6 +538,19 @@ theorem IsPseudoholomorphicAt.mfderiv_stdComplexLineImag {J : SmoothAlmostComple
       stdComplexLineReal_snd, neg_zero, stdComplexLineImag]
     rfl
   simpa only [hz] using hw.mfderiv_apply_commute stdComplexLineReal
+
+/-- A curve `u` from the standard complex line satisfying the Cauchy--Riemann equation
+`∂ₜu = J(u) ∂ₛu` for `mfderiv` at `z` has complex-linear `mfderiv` at `z`. No differentiability is
+assumed: `mfderiv` is zero where `u` is not differentiable. -/
+theorem isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq
+    {J : SmoothAlmostComplexStructure I' M'} {u : ℝ × ℝ → M'} {z : ℝ × ℝ}
+    (hCR : mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z stdComplexLineReal)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J.almostComplexStructureAt (u z))
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I' u z).toLinearMap :=
+  (isComplexLinearMap_stdComplexLine_iff _).2 (by
+    simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+    exact hCR)
 
 end StandardLine
 

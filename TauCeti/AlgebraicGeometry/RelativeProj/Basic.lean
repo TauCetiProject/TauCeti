@@ -142,7 +142,7 @@ theorem irrelevant_le_map_restrictGradedSections_toOpensFunctor
         (A.restrictGradedSectionsGradedHom ((toOpensFunctor X).map i)) := by
   obtain ⟨U, hU⟩ := U
   obtain ⟨f, rfl⟩ := leOfHom i
-  exact A.irrelevant_le_map_restrictGradedSectionsGradedHom f V.2 _
+  exact A.irrelevant_le_map_restrictGradedSectionsGradedHom f V.property _
 
 /-- The schemes `Proj (⨁ n, Γ(Aₙ, U))` over the affine opens `U` of `X`, with the morphisms
 induced by restriction of sections to basic opens. -/
@@ -170,7 +170,7 @@ def relativeProjToSpec :
   naturality U V i := by
     obtain ⟨U, hU⟩ := U
     obtain ⟨f, rfl⟩ := leOfHom i
-    exact (A.isPullback_proj_restrictGradedSections f V.2 _).w
+    exact (A.isPullback_proj_restrictGradedSections f V.property _).w
 
 /-- The coefficient projections of the charts of the relative `Proj` form an equifibered natural
 transformation: every naturality square is cartesian. -/
@@ -179,7 +179,7 @@ theorem equifibered_relativeProjToSpec :
   intro U V i
   obtain ⟨U, hU⟩ := U
   obtain ⟨f, rfl⟩ := leOfHom i
-  exact A.isPullback_proj_restrictGradedSections f V.2 _
+  exact A.isPullback_proj_restrictGradedSections f V.property _
 
 /-- The relative gluing datum of the relative `Proj` of `A`: the schemes `Proj (⨁ n, Γ(Aₙ, U))`
 over the affine opens `U` of `X`. -/
@@ -205,7 +205,7 @@ theorem relativeProjGluingData_functor_map
 theorem relativeProjGluingData_natTrans_app
     (U : X.AffineZariskiSite) :
     A.relativeProjGluingData.natTrans.app U =
-      Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ U.2.isoSpec.inv :=
+      Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ U.property.isoSpec.inv :=
   (rfl)
 
 /-- The gluing diagram of the relative `Proj` is locally directed. -/
@@ -253,7 +253,7 @@ projection `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Spec Γ(X, U)` followed by the chart `
 theorem relativeProjCover_f_relativeProjToBase
     (U : X.AffineZariskiSite) :
     A.relativeProjCover.f U ≫ A.relativeProjToBase =
-      Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ U.2.fromSpec := by
+      Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ U.property.fromSpec := by
   -- the gluing datum's map to `U` is the coefficient projection followed by `U.2.isoSpec.inv`,
   -- and `U.2.isoSpec.inv ≫ U.ι = U.2.fromSpec` (`IsAffineOpen.isoSpec_inv_ι`) by definition
   exact (A.relativeProjGluingData.ι_toBase U).trans (Category.assoc _ _ _)
@@ -269,7 +269,7 @@ theorem relativeProjToBase_preimage (U : X.AffineZariskiSite) :
 /-- **Over an affine open `U` of `X`, the relative `Proj` is `Proj (⨁ n, Γ(Aₙ, U))`**: the chart
 of the relative `Proj` over `U` is the base change of its structure morphism along `U ⟶ X`. -/
 theorem isPullback_relativeProjCover (U : X.AffineZariskiSite) :
-    IsPullback (Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ U.2.isoSpec.inv)
+    IsPullback (Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ U.property.isoSpec.inv)
       (A.relativeProjCover.f U) U.toOpens.ι A.relativeProjToBase :=
   A.relativeProjGluingData.isPullback_natTrans_ι_toBase U
 

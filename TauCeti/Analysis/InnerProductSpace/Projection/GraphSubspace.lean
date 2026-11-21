@@ -161,7 +161,7 @@ norms on `U`. -/
 theorem completeSpace_graphSubspace [CompleteSpace U] : CompleteSpace (U.graphSubspace X) := by
   let f : U →L[𝕜] E := (1 + X) ∘L U.subtypeL
   have hf : AntilipschitzWith 1 f := AddMonoidHomClass.antilipschitz_of_bound f fun u => by
-    simpa [f] using hX.norm_le_norm_add_apply u.2
+    simpa [f] using hX.norm_le_norm_add_apply u.property
   have hrange : Set.range f = U.graphSubspace X := by
     ext y
     simp [f, eq_comm]
@@ -189,7 +189,7 @@ theorem isAngularOperator_zero : U.IsAngularOperator 0 :=
 theorem isAngularOperator_subtypeL_comp_comp_orthogonalProjectionOnto (Y : U →L[𝕜] Uᗮ) :
     U.IsAngularOperator (Uᗮ.subtypeL ∘L Y ∘L U.orthogonalProjectionOnto) := by
   rw [isAngularOperator_iff]
-  exact ⟨fun x hx => by simp [orthogonalProjectionOnto_eq_zero_iff.mpr hx], fun x => (Y _).2⟩
+  exact ⟨fun x hx => by simp [orthogonalProjectionOnto_eq_zero_iff.mpr hx], fun x => (Y _).property⟩
 
 end Angular
 

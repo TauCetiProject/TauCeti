@@ -50,7 +50,7 @@ theorem mem_span_range_iff_exists_aeval {ι : Type*} [Fintype ι] {v : ι → N}
   rw [Submodule.mem_span_range_iff_exists_fun]
   constructor
   · rintro ⟨c, rfl⟩
-    choose u hu using fun i ↦ (hmem (c i)).mp (c i).2
+    choose u hu using fun i ↦ (hmem (c i)).mp (c i).property
     exact ⟨u, Finset.sum_congr rfl fun i _ ↦ by rw [hu, Subalgebra.smul_def]⟩
   · rintro ⟨u, rfl⟩
     exact ⟨fun i ↦ ⟨aeval F (u i), (hmem _).mpr ⟨u i, rfl⟩⟩, rfl⟩

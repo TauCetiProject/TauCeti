@@ -56,6 +56,8 @@ measures given only through a domination bound, such as the variation of a sum o
   a finite sum of outer (weakly) regular measures is outer (weakly) regular.
 * `MeasureTheory.Measure.InnerRegularCompactLTTop.comap'`: compact inner regularity on sets of
   finite measure pulls back along an open embedding between Borel spaces.
+* `MeasureTheory.Measure.InnerRegularCompactLTTop.map_ofMul`: compact inner regularity on sets of
+  finite measure transfers to `Additive α` for Borel spaces.
 * `MeasureTheory.NullMeasurableSet.exists_isSigmaCompact_subset_ae_eq`: a null measurable set
   contains a σ-compact subset of full measure.
 * `MeasureTheory.Measure.dirac.innerRegular`: a Dirac measure is inner regular; on an `R₁` space
@@ -170,6 +172,12 @@ protected theorem InnerRegularCompactLTTop.comap' {β : Type*} [BorelSpace α]
       (fun s ⟨hs, htop⟩ ↦ ⟨hf.measurableEmbedding.measurableSet_image' hs, by
         rwa [← hf.measurableEmbedding.comap_apply]⟩)
       (fun _ hKrange hK ↦ hf.isInducing.isCompact_preimage' hK hKrange)
+
+/-- Pushing forward a compactly inner regular measure on a Borel space to `Additive α` preserves
+compact inner regularity on sets of finite measure. -/
+instance InnerRegularCompactLTTop.map_ofMul [BorelSpace α] [μ.InnerRegularCompactLTTop] :
+    (μ.map Additive.ofMul).InnerRegularCompactLTTop :=
+  .map_of_continuous continuous_ofMul
 
 /-- A Dirac measure is inner regular: a measurable set containing the point contains the compact
 singleton, which carries the full mass. On an `R₁` space with its Borel σ-algebra, Mathlib's

@@ -58,15 +58,10 @@ set. -/
 theorem uniformOn_coe_finset_eq_uniformOfFinset (s : Finset α) :
     uniformOn (s : Set α) = Measure.uniformOfFinset s := by
   ext t _
-  rw [uniformOn, cond_apply s.measurableSet, Measure.uniformOfFinset_apply]
-  rw [Measure.count_apply_finset]
-  rw [Measure.count_apply_finite _ (s.finite_toSet.inter_of_left t)]
-  rw [ENNReal.div_eq_inv_mul]
-  congr 1
-  norm_cast
-  apply congrArg Finset.card
-  ext x
-  simp
+  classical
+  rw [uniformOn, cond_apply s.measurableSet, Measure.uniformOfFinset_apply, ENNReal.div_eq_inv_mul]
+  -- Both sides count the points of `s` lying in `t`.
+  simp [← Measure.count_apply_finset, Set.inter_def]
 
 open scoped Classical in
 /-- Every point of a finite set has mass the reciprocal of its cardinality, and points outside
@@ -81,19 +76,10 @@ theorem uniformOn_coe_finset_apply_singleton (s : Finset α) (a : α) :
 @[simp]
 theorem support_uniformOn_coe_finset [TopologicalSpace α] [T1Space α] (s : Finset α) :
     (uniformOn (s : Set α)).support = s := by
-  classical
-  ext x
-  rw [Measure.mem_support_iff_forall]
-  constructor
-  · intro h
-    by_contra hx
-    have hpos := h _ (s.finite_toSet.isClosed.isOpen_compl.mem_nhds hx)
-    rw [← uniformOn_inter_self s.finite_toSet, inter_compl_self, measure_empty] at hpos
-    exact lt_irrefl 0 hpos
-  · intro hx U hU
-    have hatom : 0 < uniformOn (s : Set α) {x} := by
-      rw [uniformOn_coe_finset_apply_singleton, ite_eq_left (mem_coe.mp hx)]
-      exact ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _)
+  refine (Measure.support_subset_of_isClosed s.finite_toSet.isClosed ?_).antisymm fun x hx ↦ ?_
+  · rw [mem_ae_iff, ← uniformOn_inter_self s.finite_toSet, inter_compl_self, measure_empty]
+  · refine (Measure.mem_support_iff_forall x).2 fun U hU ↦ ?_
+    have hatom : 0 < uniformOn (s : Set α) {x} := by simp [mem_coe.mp hx]
     exact hatom.trans_le (measure_mono (Set.singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-- The real mass of a finite set under the uniform law on a finite type is its cardinality
@@ -103,27 +89,6 @@ theorem uniformOn_univ_real_finset [Fintype α] (s : Finset α) :
   classical
   rw [measureReal_def, ← Finset.coe_univ, uniformOn_apply_finset]
   simp [ENNReal.toReal_div]
-
-end Finset
-
-namespace TauCeti.Probability
-
-/-- The cdf after assigning real labels to a uniform sample from a nonempty finite type is the
-proportion of labels no larger than the cutoff. Equal labels are counted with their full
-multiplicity. -/
-theorem cdf_map_uniformOn_univ [Fintype α] [Nonempty α] (label : α → ℝ) (x : ℝ) :
-    cdf ((uniformOn (Set.univ : Set α)).map label) x =
-      ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
-  rw [Measure.cdf_map _ label (measurable_of_finite label).aemeasurable]
-  have hpreimage : label ⁻¹' Set.Iic x =
-      (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
-    ext i
-    simp
-  rw [hpreimage, Finset.uniformOn_univ_real_finset]
-
-end TauCeti.Probability
-
-namespace Finset
 
 /-- Integration against a uniform law on a finite set is the normalized finite sum. -/
 theorem integral_uniformOn_finset [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -176,9 +141,7 @@ end TauCeti.Probability
 
 namespace Set.BijOn
 
-variable [MeasurableSpace β]
-
-variable [MeasurableSingletonClass β]
+variable [MeasurableSpace β] [MeasurableSingletonClass β]
 
 /-- A bijection between sets transports one uniform law to the other. -/
 theorem map_uniformOn {f : α → β} {s : Set α} {t : Set β}
@@ -217,7 +180,8 @@ variable {γ δ : Type*}
     [MeasurableSpace (Finset δ)] [MeasurableSingletonClass (Finset δ)]
 
 /-- An embedding sends a uniform `n`-element subset of a finset `s` to a uniform `n`-element
-subset of the image of `s`. This moves positions indexed by `Fin N` into `ℕ`. -/
+subset of the image of `s`. For example, `Fin.valEmbedding` moves positions indexed by `Fin N`
+into `ℕ`. -/
 theorem map_finsetMap_uniformOn_powersetCard (f : γ ↪ δ) (s : Finset γ) (n : ℕ) :
     (uniformOn (s.powersetCard n : Set (Finset γ))).map (Finset.map f) =
       uniformOn ((s.map f).powersetCard n : Set (Finset δ)) := by
@@ -265,20 +229,16 @@ instance isProbabilityMeasure_uniformOfFinset_univ {α : Type*} [Fintype α] [No
 theorem uniformOfFinset_univ_fin_two_prod_offDiagonal :
     ((Measure.uniformOfFinset (Finset.univ : Finset (Fin 2))).prod
       (Measure.uniformOfFinset (Finset.univ : Finset (Fin 2)))) {q | q.1 ≠ q.2} = (2 : ℝ≥0∞)⁻¹ := by
-  have h : {q : Fin 2 × Fin 2 | q.1 ≠ q.2} = {(0, 1), (1, 0)} := by
-    ext ⟨i, j⟩
-    fin_cases i <;> fin_cases j <;> simp
-  rw [h, ← singleton_union, measure_union (by simp) (measurableSet_singleton _)]
-  simp only [← singleton_prod_singleton, Measure.prod_prod,
-    Measure.uniformOfFinset_apply_singleton_of_mem (Finset.mem_univ _), Finset.card_univ,
-    Fintype.card_fin, Nat.cast_ofNat]
-  rw [← mul_two, mul_assoc, ENNReal.inv_mul_cancel (by norm_num) (by norm_num), mul_one]
+  -- Sum the masses `2⁻¹ * 2⁻¹` of the two off-diagonal points `(0, 1)` and `(1, 0)`.
+  rw [← Finset.coe_filter_univ, ← sum_measure_singleton]
+  simp [← singleton_prod_singleton, Measure.prod_prod, Finset.sum_filter, Fintype.sum_prod_type,
+    ← mul_add, ENNReal.inv_two_add_inv_two]
 
 end TauCeti.Probability
 
 namespace Finset
 
-variable {α β : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [MeasurableSpace β]
+variable [MeasurableSpace β]
 
 open Classical in
 /-- The real mass of a set of labels under finite uniform sampling is the proportion of inputs
@@ -306,9 +266,7 @@ open Classical in
 The labeling function need not be globally measurable. -/
 theorem ae_mem_image_map_uniformOn_finset [MeasurableSingletonClass β] (s : Finset α) (f : α → β) :
     ∀ᵐ x ∂(uniformOn (s : Set α)).map f, x ∈ s.image f := by
-  classical
-  apply (ae_map_iff (Set.aemeasurable_uniformOn (s : Set α) f)
-    (s.image f).measurableSet).2
+  apply (ae_map_iff (Set.aemeasurable_uniformOn (s : Set α) f) (s.image f).measurableSet).2
   rw [s.uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset,
     ae_finsetSum_measure_iff]
   intro i hi
@@ -357,7 +315,6 @@ open Classical in
 /-- Every label attained by a finite uniform sample has nonzero mass. -/
 theorem map_uniformOn_finset_singleton_ne_zero (s : Finset α) (f : α → β)
     {x : β} (hx : x ∈ s.image f) : (uniformOn (s : Set α)).map f {x} ≠ 0 := by
-  classical
   obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
   apply ne_of_gt
   calc
@@ -370,14 +327,13 @@ end Finset
 
 namespace TauCeti.Probability
 
-/-- The expectation of an observable of a labelled uniform sample from a finite type is its
-average over inputs, with repeated labels counted with their multiplicities. -/
-theorem integral_map_uniformOn_univ [Fintype α] [MeasurableSpace β]
-    [MeasurableSingletonClass β] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-    (f : α → β) (g : β → E) :
-    ∫ x, g x ∂(uniformOn (Set.univ : Set α)).map f =
-      (Fintype.card α : ℝ)⁻¹ • ∑ i, g (f i) := by
-  simpa using (Finset.univ : Finset α).integral_map_uniformOn_finset f g
+/-- The cdf after assigning real labels to a uniform sample from a nonempty finite type is the
+proportion of labels no larger than the cutoff. Equal labels are counted with their full
+multiplicity. -/
+theorem cdf_map_uniformOn_univ [Fintype α] [Nonempty α] (label : α → ℝ) (x : ℝ) :
+    cdf ((uniformOn (Set.univ : Set α)).map label) x =
+      ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
+  simpa using Finset.univ.cdf_map_uniformOn_finset Finset.univ_nonempty label x
 
 end TauCeti.Probability
 

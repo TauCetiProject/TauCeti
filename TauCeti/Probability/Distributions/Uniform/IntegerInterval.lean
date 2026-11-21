@@ -194,8 +194,8 @@ theorem variance_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) :
 normalized finite geometric sum. -/
 theorem pgf_uniformOn_Iio (N : ℕ) (z : ℝ) :
     pgf id (uniformOn (Iio N : Set ℕ)) z = (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N, z ^ j := by
-  rw [pgf_def, ← Finset.coe_range, Finset.integral_uniformOn_finset, Finset.card_range]
-  simp
+  simpa only [Finset.coe_range, Finset.card_range, id_eq] using
+    (Finset.range N).pgf_uniformOn_finset id z
 
 /-- Away from `z = 1`, the probability generating function of the uniform law on
 `{0, …, N - 1}` is `(z ^ N - 1) / (N (z - 1))`. -/
@@ -212,12 +212,12 @@ theorem mgf_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) {t : ℝ} (ht : t �
   have hexp : exp t ≠ 1 := fun h ↦ ht (Real.exp_eq_one_iff t |>.mp h)
   rw [mgf, integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : exp (t * ((a + j : ℤ) : ℝ)) = exp (t * a) * exp t ^ j := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     push_cast
     ring_nf
   simp only [hterm, ← Finset.mul_sum, smul_eq_mul]
   have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
-  rw [geom_sum_eq hexp, ← Real.exp_nat_mul, hN,
+  rw [geom_sum_eq hexp, ← Real.exp_natCast_mul, hN,
     mul_comm (b - a + 1 : ℝ) t]
   have hpos : (b - a + 1 : ℝ) ≠ 0 := by
     have : (a : ℝ) ≤ b := by exact_mod_cast h
@@ -270,13 +270,13 @@ theorem charFun_map_intCast_uniformOn_Icc_of_exp_ne_one {a b : ℤ} (h : a ≤ b
     integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : Complex.exp ((t : ℂ) * (((a + j : ℤ) : ℝ) : ℂ) * Complex.I) =
       Complex.exp ((t : ℂ) * a * Complex.I) * Complex.exp ((t : ℂ) * Complex.I) ^ j := by
-    rw [← Complex.exp_nat_mul, ← Complex.exp_add]
+    rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
     push_cast
     ring_nf
   have hN : ((((b + 1 - a).toNat : ℕ) : ℝ) : ℂ) = (b : ℂ) - a + 1 := by norm_cast; omega
   have hpow : Complex.exp ((t : ℂ) * Complex.I) ^ (b + 1 - a).toNat =
       Complex.exp ((t : ℂ) * (b - a + 1) * Complex.I) := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     rw [← Complex.ofReal_natCast, hN]
     ring

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Basic
+public import TauCeti.RingTheory.DedekindDomain.Different.Completion
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Different.Hilbert
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegralClosure
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Multiplicity
 import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
@@ -214,23 +215,6 @@ theorem differentExponent_adicCompletion_eq_multiplicity_differentIdeal :
   rw [IsLocalRing.map_ringEquiv_maximalIdeal,
     map_differentIdeal_integerEquivAdicCompletionIntegers v w]
 
-/-- The exponent of the completed different at the maximal ideal is the exponent of the global
-different at `w`. -/
-@[simp]
-theorem multiplicity_differentIdeal_adicCompletionIntegers_eq_multiplicity_asIdeal :
-    multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
-        (differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) =
-      multiplicity w.asIdeal (differentIdeal (𝓞 K) (𝓞 L)) := by
-  calc
-    multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
-        (differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) =
-      multiplicity (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L))
-        ((differentIdeal (𝓞 K) (𝓞 L)).map
-          (algebraMap (𝓞 L) (w.adicCompletionIntegers L))) := by
-        rw [map_differentIdeal_eq_differentIdeal_adicCompletionIntegers v w]
-    _ = _ := w.multiplicity_map_adicCompletionIntegers (K := L)
-      (differentIdeal (𝓞 K) (𝓞 L)) differentIdeal_ne_bot
-
 variable [IsGalois K L]
 
 /-- **Hilbert's formula for a number-field different exponent.** For a finite Galois extension
@@ -241,7 +225,7 @@ theorem multiplicity_differentIdeal_eq_finsum_card_ramificationGroup_sub_one :
         (differentIdeal (NumberField.RingOfIntegers K) (NumberField.RingOfIntegers L)) =
       ∑ᶠ i : ℕ, (Nat.card (w.asIdeal.ramificationGroup (L ≃ₐ[K] L) i) - 1) := by
   let v := w.under (NumberField.RingOfIntegers K)
-  rw [← multiplicity_differentIdeal_adicCompletionIntegers_eq_multiplicity_asIdeal v w]
+  rw [← multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w]
   rw [← differentExponent_adicCompletion_eq_multiplicity_differentIdeal v w,
     TauCeti.differentExponent_eq_finsum_lowerRamificationGroup]
   apply finsum_congr

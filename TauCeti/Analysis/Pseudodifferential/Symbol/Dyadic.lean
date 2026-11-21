@@ -44,6 +44,8 @@ the pieces with constants independent of `j`.
   integrated estimates `∫ ‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - |β| + n)`. For `m = 0` they
   read `∫ ‖∂_ξ^β aⱼ(x, ξ)‖ dξ ≤ A R ^ |β|` with `A = C 2^{jn}` and `R = 2^{-j}`, the
   scale-invariant form in which they control the kernels of the pieces.
+* `TauCeti.Symbol.IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_le`: the case
+  `α = β = []`, `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)`.
 
 `ContDiffBump.littlewoodPaleyPiece` is the analogous decomposition of a Fourier multiplier
 satisfying Mihlin's condition, with the homogeneous partition of `ℝⁿ \ {0}`.
@@ -270,6 +272,15 @@ theorem IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le {a : S
     _ = C * φ.rOut ^ n * v * ((2 : ℝ) ^ j) ^ (m - β.length + n) := by
         rw [Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
         ring
+
+/-- **Integrated size of the pieces.** For a uniform symbol of order `m` on `ℝⁿ`, the pieces
+satisfy `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)` uniformly in `x` and `j`: the case `α = β = []` of
+`IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le`. -/
+theorem IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_le {a : Symbol n V W m}
+    (ha : a.IsUniform) :
+    ∃ C, 0 ≤ C ∧ ∀ (j : ℕ) x,
+      ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ ≤ C * ((2 : ℝ) ^ j) ^ (m + n) := by
+  simpa using ha.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le φ [] []
 
 end Symbol
 

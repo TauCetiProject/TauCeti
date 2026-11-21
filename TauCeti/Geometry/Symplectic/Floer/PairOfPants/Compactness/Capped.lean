@@ -47,8 +47,9 @@ gives a threshold `δ > 0` such that every sequence of solutions for parameters 
 areas at most `A` and images of an open `Ω ⊆ D` in a compact `K ⊆ V`, has a subsequence whose
 parameters converge to some `R₀ ∈ C` and which converges locally uniformly on `Ω` off a finite set
 `Z` of bubbling points, with `#Z * δ ≤ A + 2 (B₀ + B₁ + B_∞)`. The regularity of the limit, the
-bubbles at the points of `Z`, the behaviour near the pole `∞`, and the long-neck end `R → ∞` of
-the family are not treated here.
+bubbles at the points of `Z` and the behaviour near the pole `∞` are not treated here. Interior
+compactness at the long-neck end `R → ∞`, on the pair of pants and the caps of the PSS planes, is
+in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`.
 
 **Manifold targets.** For a target manifold `M` with a nondegenerate two-form `ω`, such as a
 closed symplectic manifold, the family is built from the structures
@@ -161,16 +162,10 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
   refine ⟨δ, hδ, fun Ω R u A hΩ hΩD hRC hu hfl huK hint harea ↦ ?_⟩
   -- The Floer energy over `Ω` is at most the energy over the plane, which exceeds the area by at
   -- most `2 (B₀ + B₁ + B_∞)`.
-  have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x I) (u k) z ≤
-        A + 2 * ∑ q, B q := by
-    have habs := ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH
-      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num))
-      (hint k)
-    refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
-      ω.floerEnergyDensity_nonneg (hJt _ _ _) (hfl k z))).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, harea k]
+  have hE (k : ℕ) :=
+    ω.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le h₀ hJ hH
+      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num)) (hfl k)
+      (hint k) (harea k) Ω
   exact hconv hΩ hΩD hRC (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK
     (fun k ↦ (hint k).integrableOn) hE
 
@@ -275,10 +270,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     exact hω.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ _ _ w) x
   have hWt : IsOpen (W ∩ univ ×ˢ (univ ×ˢ φ.target)) :=
     hW.inter (isOpen_univ.prod (isOpen_univ.prod φ.open_target))
-  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) := by
-    intro q hq
-    obtain ⟨x, hx, hxq⟩ := hq.2.2
-    exact ⟨hCDKW hq, trivial, trivial, hxq ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩
+  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) :=
+    subset_inter hCDKW (prod_mono (subset_univ _)
+      (prod_mono (subset_univ _) (φ.toPartialEquiv.mapsTo.mono_left hKφ).image_subset))
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     φ (Ks := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
     (Kt := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x Complex.I)
