@@ -86,7 +86,6 @@ def extendedReesAlgebra : Subalgebra R R[T;T⁻¹] where
 variable {I}
 
 /-- The defining property of the extended Rees algebra. -/
-@[simp]
 theorem mem_extendedReesAlgebra_iff {f : R[T;T⁻¹]} :
     f ∈ I.extendedReesAlgebra ↔ ∀ n : ℤ, f.coeff n ∈ I ^ n.toNat :=
   Iff.rfl
