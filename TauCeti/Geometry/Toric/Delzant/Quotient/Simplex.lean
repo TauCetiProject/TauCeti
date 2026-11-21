@@ -288,6 +288,17 @@ theorem simplexHomeomorph_mk (ha : 0 < a)
         (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha x.property) :=
   lift_mk _ _ x
 
+/-- The inverse of `simplexHomeomorph` sends the line `[z]` of `z = q + i p` to the class of
+`(q, p)`. -/
+@[simp]
+theorem simplexHomeomorph_symm_mk (ha : 0 < a)
+    (x : delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)) :
+    (simplexHomeomorph ha).symm
+        (Projectivization.mk ℂ ⇑((complexEuclideanEquivRealProd (Option κ)).symm x)
+          (complexEuclideanEquivRealProd_symm_ne_zero_of_mem_delzantLevel_simplex ha x.property)) =
+      mk x :=
+  (simplexHomeomorph ha).symm_apply_eq.2 (simplexHomeomorph_mk ha x).symm
+
 /-- **The moment map of `ℂPⁿ`.** Under `simplexHomeomorph`, the reduced moment map of the residual
 torus sends the line `[v]` of `ℂ^(Option κ)` to the covector with coordinates
 `a |v_(some k)|² / ∑ o, |v_o|²`, the diagonal entries of `a` times the orthogonal projector onto
