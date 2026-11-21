@@ -11,7 +11,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 /-!
 # Telescoping strings in a group algebra
 
-Let `g` and `y` be elements of a commutative group `G`. Multiplying the string
+Let `g` and `y` be commuting elements of a group `G`. Multiplying the string
 `y + y g⁻¹ + ⋯ + y g⁻⁽ⁿ⁻¹⁾` of basis elements of `R[G]` by `1 - g⁻¹` telescopes to
 `y - y g⁻ⁿ`, and multiplying `y g + ⋯ + y gⁿ` by `1 - g⁻¹` telescopes to `y gⁿ - y`. In additive
 notation, with `e^x` for the basis element at `x`, these are the identities
@@ -21,25 +21,26 @@ algebra of a weight lattice.
 
 ## Main statements
 
-* `TauCeti.one_sub_single_inv_mul_sum_div`: the descending string telescopes; its additive
-  form is `TauCeti.one_sub_single_neg_mul_sum_sub`.
-* `TauCeti.one_sub_single_inv_mul_sum_mul`: the ascending string telescopes; its additive
-  form is `TauCeti.one_sub_single_neg_mul_sum_add`.
+* `Commute.one_sub_single_inv_mul_sum_div`: the descending string telescopes; its additive
+  form is `AddCommute.one_sub_single_neg_mul_sum_sub`.
+* `Commute.one_sub_single_inv_mul_sum_mul`: the ascending string telescopes; its additive
+  form is `AddCommute.one_sub_single_neg_mul_sum_add`.
 -/
 
 public section
 
-namespace TauCeti
+open MonoidAlgebra
 
-open _root_.MonoidAlgebra
+variable {R : Type*} [Ring R] {G : Type*} [Group G]
 
-variable {R : Type*} [Ring R] {G : Type*} [CommGroup G]
+namespace Commute
 
-/-- Multiplying the descending string `y + y g⁻¹ + ⋯ + y g⁻⁽ⁿ⁻¹⁾` by `1 - g⁻¹` telescopes. -/
+/-- For commuting `g` and `y`, multiplying the descending string `y + y g⁻¹ + ⋯ + y g⁻⁽ⁿ⁻¹⁾` by
+`1 - g⁻¹` telescopes. -/
 @[to_additive (dont_translate := R) one_sub_single_neg_mul_sum_sub
-  /-- Multiplying the descending string `e^y + e^{y - α} + ⋯ + e^{y - (n - 1) α}` by
-  `1 - e^{-α}` telescopes. -/]
-theorem one_sub_single_inv_mul_sum_div (g y : G) (n : ℕ) :
+  /-- For commuting `α` and `y`, multiplying the descending string
+  `e^y + e^{y - α} + ⋯ + e^{y - (n - 1) α}` by `1 - e^{-α}` telescopes. -/]
+theorem one_sub_single_inv_mul_sum_div {g y : G} (hgy : Commute g y) (n : ℕ) :
     (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y / g ^ j) 1 =
       single y 1 - single (y / g ^ n) 1 := by
   have h := Finset.sum_range_sub' (fun j ↦ single (y / g ^ j) (1 : R)) n
@@ -47,14 +48,15 @@ theorem one_sub_single_inv_mul_sum_div (g y : G) (n : ℕ) :
   rw [Finset.mul_sum, ← h]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hj : g⁻¹ * (y / g ^ j) = y / g ^ (j + 1) := by
-    rw [pow_succ, div_mul_eq_div_div, div_eq_mul_inv _ g, mul_comm]
+    rw [pow_succ, div_mul_eq_div_div_swap, div_eq_mul_inv y g, ← hgy.inv_left.eq, mul_div_assoc]
   rw [sub_mul, one_mul, single_mul_single, mul_one, hj]
 
-/-- Multiplying the ascending string `y g + ⋯ + y gⁿ` by `1 - g⁻¹` telescopes. -/
+/-- For commuting `g` and `y`, multiplying the ascending string `y g + ⋯ + y gⁿ` by `1 - g⁻¹`
+telescopes. -/
 @[to_additive (dont_translate := R) one_sub_single_neg_mul_sum_add
-  /-- Multiplying the ascending string `e^{y + α} + ⋯ + e^{y + n α}` by `1 - e^{-α}`
-  telescopes. -/]
-theorem one_sub_single_inv_mul_sum_mul (g y : G) (n : ℕ) :
+  /-- For commuting `α` and `y`, multiplying the ascending string
+  `e^{y + α} + ⋯ + e^{y + n α}` by `1 - e^{-α}` telescopes. -/]
+theorem one_sub_single_inv_mul_sum_mul {g y : G} (hgy : Commute g y) (n : ℕ) :
     (1 - single g⁻¹ (1 : R)) * ∑ j ∈ Finset.range n, single (y * g ^ (j + 1)) 1 =
       single (y * g ^ n) 1 - single y 1 := by
   have h := Finset.sum_range_sub (fun j ↦ single (y * g ^ j) (1 : R)) n
@@ -62,7 +64,7 @@ theorem one_sub_single_inv_mul_sum_mul (g y : G) (n : ℕ) :
   rw [Finset.mul_sum, ← h]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hj : g⁻¹ * (y * g ^ (j + 1)) = y * g ^ j := by
-    rw [pow_succ', mul_left_comm, inv_mul_cancel_left]
+    rw [pow_succ', ← mul_assoc y, ← hgy.eq, mul_assoc, inv_mul_cancel_left]
   rw [sub_mul, one_mul, single_mul_single, mul_one, hj]
 
-end TauCeti
+end Commute
