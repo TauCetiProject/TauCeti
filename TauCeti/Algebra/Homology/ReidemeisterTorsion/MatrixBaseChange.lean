@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ModuleCat.MatrixBaseChange
-public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Basic
 
 /-!
 # The torsion of the coordinate base change of a based complex

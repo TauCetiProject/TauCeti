@@ -118,7 +118,7 @@ coordinate at `f`. -/
 theorem algHomOfDvd_proj {f g : cycloIndex R S} (h : (f : R[X]) ∣ g) (x : CycloCompletion R S) :
     AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h (proj R S g x) = proj R S f x := by
   rw [proj_apply, proj_apply]
-  exact mem_compatSubalgebra.mp x.2 f g h
+  exact mem_compatSubalgebra.mp x.property f g h
 
 /-- An element of the completion is determined by its projections. -/
 @[ext]
@@ -192,7 +192,7 @@ theorem subsingleton_of_subset_zero (hS : S ⊆ {0}) : Subsingleton (CycloComple
   refine ⟨fun x y ↦ ext fun f ↦ ?_⟩
   have : Subsingleton (AdjoinRoot (f : R[X])) := by
     have hf : (f : R[X]) ∈ (⊥ : Submonoid R[X]) :=
-      cycloIndex_eq_bot_of_subset_zero (R := R) hS ▸ f.2
+      cycloIndex_eq_bot_of_subset_zero (R := R) hS ▸ f.property
     rw [Submonoid.mem_bot.mp hf]
     exact subsingleton_of_zero_eq_one (AdjoinRoot.mk_self.symm.trans (map_one (AdjoinRoot.mk 1)))
   exact Subsingleton.elim _ _
@@ -258,7 +258,8 @@ theorem isRegular_fromPoly (f : cycloIndex R S) : IsRegular (fromPoly R S (f : R
   have hfg := congrArg (proj R S (f * g)) hx
   rw [map_mul, proj_fromPoly, ← hp, ← map_mul, map_zero, AdjoinRoot.mk_eq_zero,
     Submonoid.coe_mul] at hfg
-  have hg : (g : R[X]) ∣ p := (monic_of_mem_cycloIndex f.2).isRegular.left.dvd_cancel_left.mp hfg
+  have hg : (g : R[X]) ∣ p := (monic_of_mem_cycloIndex f.property).isRegular.left.dvd_cancel_left.mp
+      hfg
   rw [map_zero, proj_eq_mk_of_dvd (f := g) (g := f * g) (dvd_mul_left (g : R[X]) f) hp.symm,
     AdjoinRoot.mk_eq_zero.mpr hg]
 
@@ -284,7 +285,7 @@ theorem ker_proj (f : cycloIndex R S) :
       rw [AdjoinRoot.algHomOfDvd_mk, AdjoinRoot.mk_eq_mk]
       have hfg := proj_eq_mk_of_dvd (f := f * g) (g := f * g') (mul_dvd_mul_left _ h) (hb g')
       rw [hb g, eq_comm, AdjoinRoot.mk_eq_mk, Submonoid.coe_mul, ← mul_sub] at hfg
-      exact (monic_of_mem_cycloIndex f.2).isRegular.left.dvd_cancel_left.mp hfg
+      exact (monic_of_mem_cycloIndex f.property).isRegular.left.dvd_cancel_left.mp hfg
     refine Ideal.mem_span_singleton'.mpr ⟨⟨_, hc⟩, ext fun g ↦ ?_⟩
     rw [map_mul, proj_fromPoly, proj_mk, ← map_mul, mul_comm,
       proj_eq_mk_of_dvd (dvd_mul_left (g : R[X]) f) (hb g)]

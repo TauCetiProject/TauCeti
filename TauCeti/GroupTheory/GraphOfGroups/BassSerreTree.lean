@@ -247,7 +247,7 @@ private def bassSerreGraph : SerreGraph.{max u v w, max u v w} where
   rev := BSDart.rev
   rev_rev := BSDart.rev_rev
   rev_ne d h :=
-    Γ.rev_ne d.2.2.1.1 ((Γ.reverse_val _).symm.trans (congrArg (fun d ↦ d.2.2.1.1) h))
+    Γ.rev_ne d.2.2.1.val ((Γ.reverse_val _).symm.trans (congrArg (fun d ↦ d.2.2.1.val) h))
 
 variable {𝔸 a}
 
@@ -361,7 +361,8 @@ private theorem exists_alternatingPath_of_isReduced {x y : (bassSerreGraph 𝔸 
       ∀ (d : Γ.V) (e : c ⟶ d) (g : 𝔸.vertexGroup c), (r.setLast (r.last * g)).Cancels e →
         ∃ (y₀ : (bassSerreGraph 𝔸 a).V) (P₀ : (bassSerreGraph 𝔸 a).Path x y₀) (f : y₀ ⟶ y),
           P = P₀.cons f ∧
-            f.1 = (bassSerreGraph 𝔸 a).rev (bsDart (p.comp (r.setLast (r.last * g)).toPath) e) := by
+            f.val = (bassSerreGraph 𝔸 a).rev (bsDart (p.comp (r.setLast (r.last * g)).toPath) e)
+                := by
   induction P with
   | nil =>
     refine ⟨b, .single 1, AlternatingPath.isReduced_single 1, by simp, ?_,
@@ -369,9 +370,9 @@ private theorem exists_alternatingPath_of_isReduced {x y : (bassSerreGraph 𝔸 
     rw [hx, AlternatingPath.toPath_single, Path.comp_ofVertex, bsVertex_cons_vertex]
   | cons P f ih =>
     obtain ⟨c, r, hr, hlen, hy, hgood⟩ := ih (SerreGraph.Path.IsReduced.of_cons _ hP)
-    obtain ⟨c', d, q, e, hf⟩ := bsDart_surjective f.1
+    obtain ⟨c', d, q, e, hf⟩ := bsDart_surjective f.val
     have hsrc : bsVertex q = bsVertex (p.comp r.toPath) := by
-      rw [← hy, ← f.2.1, ← hf, src_bsDart]
+      rw [← hy, ← f.property.1, ← hf, src_bsDart]
     obtain rfl := eq_of_bsVertex_eq hsrc
     obtain ⟨g, hq⟩ := bsVertex_eq_bsVertex_iff.1 hsrc.symm
     have hS : Path.Homotopic (p.comp (r.setLast (r.last * g)).toPath) q :=
@@ -384,7 +385,7 @@ private theorem exists_alternatingPath_of_isReduced {x y : (bassSerreGraph 𝔸 
       rw [bsDart_congr hS, hf] at hf₀
       exact ((SerreGraph.Path.isReduced_cons_cons _ _ _ _).1 hP).2
         (by rw [hf₀, SerreGraph.rev_rev])
-    · rw [← f.2.2, ← hf, tgt_bsDart, AlternatingPath.toPath_cons]
+    · rw [← f.property.2, ← hf, tgt_bsDart, AlternatingPath.toPath_cons]
       exact (bsVertex_congr (hS.symm.cons _)).trans (bsVertex_cons_vertex _ 1).symm
     · -- Backtracking after the new dart `e` means `e' = rev e`, and the path ends with `e`.
       simp only [AlternatingPath.last_cons, AlternatingPath.setLast_cons, one_mul,
@@ -468,8 +469,8 @@ def bassSerreTree : GTree.{max u v w, max u v w} (π₁ 𝔸 a) where
     rw [bassSerreAction_equivE] at h
     -- The action keeps the dart `e` of `Γ` underlying a dart, while reversal (`BSDart.rev`)
     -- reverses it.
-    exact Γ.rev_ne e.1
-      ((Γ.reverse_val e).symm.trans (congrArg (fun d : BSDart 𝔸 a ↦ d.2.2.1.1) h).symm)
+    exact Γ.rev_ne e.val
+      ((Γ.reverse_val e).symm.trans (congrArg (fun d : BSDart 𝔸 a ↦ d.2.2.1.val) h).symm)
 
 variable {𝔸 a}
 
@@ -541,7 +542,7 @@ theorem bassSerreDart_congr {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : 
 
 /-- Right multiplication by an element of `α_e(A_e)` does not change the dart `p α_e(A_e)`. -/
 @[simp] theorem bassSerreDart_cons_vertex_αArrow {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
-    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     bassSerreDart (p.cons (.vertex (𝔸.αArrow e c₀))) e = bassSerreDart p e :=
   (bassSerreDart_eq_bassSerreDart_iff.2 ⟨c₀, .refl _⟩).symm
 
@@ -614,8 +615,8 @@ variable (𝔸 a)
 `p α_e(A_e)` to `e`. -/
 noncomputable def bassSerreProjection : (bassSerreTree 𝔸 a).Hom Γ where
   mapV y := y.1
-  mapE d := d.2.2.1.1
-  map_src d := d.2.2.1.2.1
+  mapE d := d.2.2.1.val
+  map_src d := d.2.2.1.property.1
   map_rev d := Γ.reverse_val d.2.2.1
 
 variable {𝔸 a}
@@ -625,7 +626,7 @@ variable {𝔸 a}
   (rfl)
 
 @[simp] theorem bassSerreProjection_mapE_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
-    (e : b ⟶ c) : (bassSerreProjection 𝔸 a).mapE (bassSerreDart p e) = e.1 :=
+    (e : b ⟶ c) : (bassSerreProjection 𝔸 a).mapE (bassSerreDart p e) = e.val :=
   (rfl)
 
 /-- The projection to `Γ` is invariant under the action on vertices. -/
@@ -717,7 +718,7 @@ theorem range_bassSerreQuotientHom_mapE :
   · rintro ⟨d, rfl⟩
     obtain ⟨d, rfl⟩ := (bassSerreTree 𝔸 a).quotientMap_mapE_surjective d
     obtain ⟨b, c, p, e, rfl⟩ := bassSerreDart_surjective d
-    exact ⟨by simpa [e.2.1] using p.edgePath⟩
+    exact ⟨by simpa [e.property.1] using p.edgePath⟩
   · refine ⟨(bassSerreTree 𝔸 a).quotientMap.mapE
       (bassSerreDart ((dartPrefunctor 𝔸).mapPath q) (Γ.dart e)), ?_⟩
     simp

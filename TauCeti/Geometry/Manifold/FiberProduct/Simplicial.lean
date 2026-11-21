@@ -67,12 +67,12 @@ variable {Y M : Type*} {π : Y → M}
 `y` to `y ∘ α`. -/
 def reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂) :
     IteratedFiberProduct π k₁ :=
-  ⟨y.1 ∘ α, fun i j ↦ y.2 (α i) (α j)⟩
+  ⟨y.val ∘ α, fun i j ↦ y.property (α i) (α j)⟩
 
 /-- The underlying tuple of `reindex α y` is `y.1 ∘ α`. -/
 @[simp]
 theorem coe_reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂) :
-    (reindex α y : Fin k₁ → Y) = y.1 ∘ α := (rfl)
+    (reindex α y : Fin k₁ → Y) = y.val ∘ α := (rfl)
 
 /-- Evaluating `reindex α y` at `i` evaluates `y` at `α i`. -/
 theorem eval_reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂)
@@ -114,7 +114,7 @@ theorem baseProj_reindex {m₁ m₂ : ℕ} (α : Fin (m₁ + 1) → Fin (m₂ + 
     (y : IteratedFiberProduct π (m₂ + 1)) :
     baseProj (reindex α y) = baseProj y := by
   rw [baseProj_eq_apply _ 0, baseProj_eq_apply _ 0]
-  exact (y.2 0 (α 0)).symm
+  exact (y.property 0 (α 0)).symm
 
 /-- Reindexing along an injective map between nonempty index sets is surjective: unassigned
 coordinates can be filled with coordinate `0` of the given tuple, which lies in the same fibre. -/
@@ -122,7 +122,7 @@ theorem surjective_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1) �
     (hα : Injective α) :
     Surjective (reindex (π := π) α) := by
   intro x
-  let g : Fin (m₂ + 1) → Y := extend α x.1 (fun _ ↦ x.1 0)
+  let g : Fin (m₂ + 1) → Y := extend α x.val (fun _ ↦ x.val 0)
   have hg_base : ∀ j : Fin (m₂ + 1), π (g j) = baseProj x := by
     intro j
     by_cases hj : ∃ i, α i = j
@@ -133,7 +133,7 @@ theorem surjective_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1) �
       rw [extend_apply' _ _ _ hj, baseProj_eq_apply x 0]
   refine ⟨⟨g, fun j₁ j₂ ↦ (hg_base j₁).trans (hg_base j₂).symm⟩, ext fun i ↦ ?_⟩
   rw [eval_apply, eval_apply]
-  exact hα.extend_apply x.1 (fun _ ↦ x.1 0) i
+  exact hα.extend_apply x.val (fun _ ↦ x.val 0) i
 
 /-- Reindexing along a surjective map is injective. -/
 theorem injective_reindex_of_surjective {k₁ k₂ : ℕ} {α : Fin k₁ → Fin k₂}
@@ -157,7 +157,7 @@ theorem face_eq_reindex {m : ℕ} (i : Fin (m + 2)) :
 /-- The underlying tuple of `face i y` is `y.1 ∘ i.succAbove`. -/
 @[simp]
 theorem coe_face {m : ℕ} (i : Fin (m + 2)) (y : IteratedFiberProduct π (m + 2)) :
-    (face i y : Fin (m + 1) → Y) = y.1 ∘ i.succAbove := (rfl)
+    (face i y : Fin (m + 1) → Y) = y.val ∘ i.succAbove := (rfl)
 
 /-- Evaluating `face i y` at `j` evaluates `y` at `i.succAbove j`. -/
 theorem eval_face {m : ℕ} (i : Fin (m + 2)) (j : Fin (m + 1))
@@ -206,7 +206,7 @@ theorem degeneracy_eq_reindex {m : ℕ} (i : Fin (m + 1)) :
 /-- The underlying tuple of `degeneracy i y` is `y.1 ∘ i.predAbove`. -/
 @[simp]
 theorem coe_degeneracy {m : ℕ} (i : Fin (m + 1)) (y : IteratedFiberProduct π (m + 1)) :
-    (degeneracy i y : Fin (m + 2) → Y) = y.1 ∘ i.predAbove := (rfl)
+    (degeneracy i y : Fin (m + 2) → Y) = y.val ∘ i.predAbove := (rfl)
 
 /-- Evaluating `degeneracy i y` at `j` evaluates `y` at `i.predAbove j`. -/
 theorem eval_degeneracy {m : ℕ} (i : Fin (m + 1)) (j : Fin (m + 2))
@@ -481,16 +481,17 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
   let x : IteratedFiberProduct π (m₁ + 1) := IteratedFiberProduct.reindex α y
   let u := mfderiv K₁ PI₁ Subtype.val x η
   have hu : ∀ i₁ i₂ : Fin (m₁ + 1),
-      mfderiv IY IM π (y.1 (α i₁)) (u i₁) =
-        tangentSpaceCast IM (π (y.1 (α i₂))) (π (y.1 (α i₁)))
-          (mfderiv IY IM π (y.1 (α i₂)) (u i₂)) :=
+      mfderiv IY IM π (y.val (α i₁)) (u i₁) =
+        tangentSpaceCast IM (π (y.val (α i₂))) (π (y.val (α i₁)))
+          (mfderiv IY IM π (y.val (α i₂)) (u i₂)) :=
     (mem_range_mfderiv_coe_iteratedFiberProduct_iff hn hπ m₁ x u).1 ⟨η, rfl⟩
-  let w₀ : TangentSpace IM (π (y.1 (α 0))) := mfderiv IY IM π (y.1 (α 0)) (u 0)
+  let w₀ : TangentSpace IM (π (y.val (α 0))) := mfderiv IY IM π (y.val (α 0)) (u 0)
   have hsurj : ∀ j : Fin (m₂ + 1),
-      ∃ v_j : TangentSpace IY (y.1 j),
+      ∃ v_j : TangentSpace IY (y.val j),
         (∀ i : Fin (m₁ + 1), α i = j →
-          tangentSpaceCast IY (y.1 j) (y.1 (α i)) v_j = u i) ∧
-        tangentSpaceCast IM (π (y.1 j)) (π (y.1 (α 0))) (mfderiv IY IM π (y.1 j) v_j) = w₀ := by
+          tangentSpaceCast IY (y.val j) (y.val (α i)) v_j = u i) ∧
+        tangentSpaceCast IM (π (y.val j)) (π (y.val (α 0))) (mfderiv IY IM π (y.val j) v_j) = w₀
+            := by
     intro j
     by_cases hj : ∃ i, α i = j
     · obtain ⟨i₀, rfl⟩ := hj
@@ -498,15 +499,15 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
       cases hα hi
       rfl
     · obtain ⟨v_j, hv_j⟩ :=
-        ((tangentSpaceCast IM (π (y.1 j)) (π (y.1 (α 0)))).surjective.comp
-          (hπ.surjective_mfderiv hn0 (y.1 j))) w₀
+        ((tangentSpaceCast IM (π (y.val j)) (π (y.val (α 0)))).surjective.comp
+          (hπ.surjective_mfderiv hn0 (y.val j))) w₀
       exact ⟨v_j, fun i hi ↦ (hj ⟨i, hi⟩).elim, hv_j⟩
   choose v hv_hit hv_map using hsurj
   have hcompat : ∀ j₁ j₂ : Fin (m₂ + 1),
-      mfderiv IY IM π (y.1 j₁) (v j₁) =
-        tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁)) (mfderiv IY IM π (y.1 j₂) (v j₂)) :=
+      mfderiv IY IM π (y.val j₁) (v j₁) =
+        tangentSpaceCast IM (π (y.val j₂)) (π (y.val j₁)) (mfderiv IY IM π (y.val j₂) (v j₂)) :=
     fun j₁ j₂ ↦
-      (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.2 j₁ (α 0)) (y.2 j₂ (α 0))).2
+      (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.property j₁ (α 0)) (y.property j₂ (α 0))).2
         ((hv_map j₁).trans (hv_map j₂).symm)
   have hemb₁ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₁
   have hemb₂ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₂
@@ -516,14 +517,14 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
     (((contMDiff_reindex hn hπ le_rfl α) y).mdifferentiableAt hn0)
   rw [← ContinuousLinearMap.comp_apply, ← hc_lhs]
   funext i
-  have hc₁ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply i x.1).mdifferentiableAt
+  have hc₁ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply i x.val).mdifferentiableAt
     (((hemb₁.contMDiff.comp (contMDiff_reindex hn hπ le_rfl α)) y).mdifferentiableAt hn0)
   rw [TauCeti.mfderiv_apply] at hc₁
   have hfn : ((fun f : Fin (m₁ + 1) → Y ↦ f i) ∘
       (Subtype.val ∘ IteratedFiberProduct.reindex α :
         IteratedFiberProduct π (m₂ + 1) → (Fin (m₁ + 1) → Y))) =
       (fun g : Fin (m₂ + 1) → Y ↦ g (α i)) ∘ Subtype.val := rfl
-  have hc₂ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply (α i) y.1).mdifferentiableAt
+  have hc₂ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply (α i) y.val).mdifferentiableAt
     ((hemb₂.contMDiff y).mdifferentiableAt hn0)
   rw [TauCeti.mfderiv_apply] at hc₂
   have hlhs := (DFunLike.congr_fun hc₁ ξ).symm

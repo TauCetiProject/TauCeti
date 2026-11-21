@@ -228,7 +228,7 @@ theorem exists_hasSum_localFourier_of_eq_mul (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(
   -- A lattice none of whose nonzero translates of `K` meet `K`.
   obtain ⟨L, _, _, hL⟩ := ZLattice.exists_forall_add_mem_eq_zero_of_isBounded hK₂.isBounded
   have hexp := ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L f χ
-    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) hχ
+    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.property h)) hχ
   refine ⟨ZLattice.dual L, fun m ↦ (ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (f : E → ℂ) m,
     fun j ↦ ?_, fun η ↦ ?_⟩
   · have hdecay := ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier
@@ -348,7 +348,7 @@ private theorem exists_compacts_cutoff_lattice {x : E} (hx : x ∈ Ω) {U : Set 
   refine ⟨⟨K₂, hK₂⟩, K₁, hK₂U, hK₁x, hK₁K₂.trans interior_subset,
     ⟨ContDiffMapSupportedIn.of_support_subset (ofRealCLM.contDiff.comp hχ₀)
       fun y hy ↦ interior_subset (hχ₀s (subset_tsupport _ (by simpa using hy))), fun y hy ↦ ?_⟩,
-    L, hLd, hLz, fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.2 h)⟩
+    L, hLd, hLz, fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.property h)⟩
   have h1 : χ₀ y = 1 := interior_subset (hχ₀1 hy)
   exact (ContDiffMapSupportedIn.coe_of_support_subset _ _ y).trans (by simp [h1])
 
@@ -420,7 +420,7 @@ theorem exists_isOpen_cone_forall_decay_of_isCompact {T : 𝓓'(Ω, ℂ)} {K : S
       ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ W ∪ (dsupport T)ᶜ →
         ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
   -- Finitely many of the neighbourhoods given by `exists_nhds_cone` cover `K`.
-  choose U hU Γ hΓ hξΓ hcone hdecay using fun x : K ↦ (h x x.2).exists_nhds_cone
+  choose U hU Γ hΓ hξΓ hcone hdecay using fun x : K ↦ (h x x.property).exists_nhds_cone
   obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K ↦ interior (U x))
     (fun _ ↦ isOpen_interior) fun x hx ↦
       mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
@@ -448,7 +448,7 @@ theorem exists_isOpen_cone_forall_decay_of_isCompact {T : 𝓓'(Ω, ℂ)} {K : S
           (disjoint_left.2 fun _ hz ↦ hψs ⟨none, hi⟩ hz)]⟩
     | some x =>
       obtain ⟨C, hC⟩ := hdecay x (ψs ⟨some x, hi⟩) ((hψs _).trans interior_subset) N
-      exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη x x.2)⟩
+      exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη x x.property)⟩
   choose C hC using hpiece
   refine ⟨∑ i, C i, fun η hη ↦ ?_⟩
   rw [← hsum, localFourier_sum_cutoff]

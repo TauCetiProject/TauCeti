@@ -104,7 +104,7 @@ theorem gradedCochainComplex_d_apply (p : ℤ) (x : ℳ p) :
     eqToHom (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) (p + 1))
         ((gradedCochainComplex ℳ dM hdeg hsq).d p (p + 1)
           (eqToHom (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p).symm x)) =
-      (⟨dM x, hdeg.map_mem x.2⟩ : ℳ (p + 1)) :=
+      (⟨dM x, hdeg.map_mem x.property⟩ : ℳ (p + 1)) :=
   by
     rw [gradedCochainComplex_d]
     rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
@@ -237,7 +237,7 @@ theorem gradedCochainComplexHom_comp {P : Type uM} [AddCommGroup P] [Module R P]
       (g ∘ₗ f) (by simpa only [add_zero] using hg.comp hf)
       (fun p x ↦ by
         rw [LinearMap.comp_apply, LinearMap.comp_apply,
-          hcommg p ⟨f x, by simpa only [add_zero] using hf.map_mem x.2⟩, hcommf p x]) =
+          hcommg p ⟨f x, by simpa only [add_zero] using hf.map_mem x.property⟩, hcommf p x]) =
       gradedCochainComplexHom (hdegN := hdegN) (hsqN := hsqN) f hf hcommf ≫
         gradedCochainComplexHom g hg hcommg :=
   gradedCochainComplex_hom_ext fun _ _ ↦ by
@@ -389,7 +389,7 @@ theorem mem_range_gradedCochainComplexInclusion_f_iff (h : ∀ n, ℳ n ≤ 𝒩
   constructor
   · rintro ⟨y, rfl⟩
     rw [gradedCochainComplexInclusion_apply]
-    exact (gradedCochainComplexXEquiv n y).2
+    exact (gradedCochainComplexXEquiv n y).property
   · intro hx
     refine ⟨(gradedCochainComplexXEquiv n).symm ⟨_, hx⟩,
       (gradedCochainComplexXEquiv n).injective (Subtype.ext ?_)⟩
@@ -557,7 +557,7 @@ theorem gradedCochainComplexMap_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P)
         (by simpa using hg.comp hf)
         (fun p x ↦ by
           have hfx : f x ∈ 𝒩 p := by
-            simpa only [add_zero] using hf.map_mem x.2
+            simpa only [add_zero] using hf.map_mem x.property
           rw [LinearMap.comp_apply, hcommg p ⟨f x, hfx⟩,
             hcommf p x, LinearMap.comp_apply]) =
         gradedCochainComplexMap.{uR, uM, max uP uExtra, uN} (hdeg := hdeg) (hsq := hsq)

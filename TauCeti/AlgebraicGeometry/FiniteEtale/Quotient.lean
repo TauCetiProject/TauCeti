@@ -177,7 +177,7 @@ instance isFinite_relativeSpecToBase :
   refine (CommMon.SubalgebraPresheaf.relativeSpecToBase_iff _ @IsFinite).mpr fun U ↦ ?_
   rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.finite_algebraMap,
     CommMon.invariantSubalgebraPresheaf_sections]
-  exact (finite_and_etale_invariantSections F U.2).1
+  exact (finite_and_etale_invariantSections F U.property).1
 
 /-- The relative invariant quotient of a finite étale scheme by a finite group is étale over the
 base. -/
@@ -188,7 +188,7 @@ instance etale_relativeSpecToBase :
   refine (CommMon.SubalgebraPresheaf.relativeSpecToBase_iff _ @Etale).mpr fun U ↦ ?_
   rw [HasRingHomProperty.Spec_iff (P := @Etale), CommRingCat.hom_ofHom, RingHom.etale_algebraMap,
     CommMon.invariantSubalgebraPresheaf_sections]
-  exact (finite_and_etale_invariantSections F U.2).2
+  exact (finite_and_etale_invariantSections F U.property).2
 
 /-- **The quotient of a finite étale scheme by a finite group.** For a finite group `G` acting on
 a finite étale `S`-scheme `p : Y ⟶ S` through `F : SingleObj G ⥤ FiniteEtaleScheme S`, this is the

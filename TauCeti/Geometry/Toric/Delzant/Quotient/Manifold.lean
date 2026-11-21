@@ -9,74 +9,49 @@ public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Manifold.Algebra.Pi
 public import TauCeti.Geometry.Manifold.Algebra.TypeTags
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
-public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import TauCeti.Geometry.Manifold.PullbackGroupoid
+public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Smooth
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Basic
-import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
-import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Smooth
-import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
 # The Delzant quotient is a smooth manifold
 
-Let `i : N →+ V` be an integral lattice and `(u, c)` a facet presentation of a Delzant polytope
-`Δ`. Delzant's construction realizes `Δ` as the moment polytope of the reduced space
+Let `i : N →+ V` be an integral lattice and `(u, c)` the facet presentation of a Delzant polytope
+`Δ`. Delzant's construction realizes `Δ` as the moment polytope of the quotient
+`M_Δ = Z / N_Δ` (`TauCeti.Toric.DelzantQuotient i u c`) of the zero level `Z ⊆ ℂ^ι` of the moment
+map of the kernel torus `N_Δ ⊆ (ℝ / 2πℤ)^ι`. This file makes `M_Δ` a smooth manifold for which the
+projection `Z → M_Δ` is a smooth submersion, by the quotient manifold theorem for free proper
+actions of Lie groups.
 
-`M_Δ = Z / N_Δ` (`TauCeti.Toric.DelzantQuotient i u c`),
+* **The kernel torus is a Lie group.** The torus `(ℝ / 2πℤ)^ι` is a Lie group, a finite product
+  of circles. For an integral lattice the kernel torus is a closed subgroup
+  (`TauCeti.Toric.isClosed_kernelTorus`), so the closed-subgroup theorem makes it an embedded Lie
+  subgroup (`TauCeti.Toric.kernelTorusData`), modelled on its Lie algebra. Lie groups are
+  multiplicative in the quotient manifold theorem, so the kernel torus is taken in the
+  multiplicative copy of `(ℝ / 2πℤ)^ι` (`TauCeti.Toric.kernelTorus`).
+* **Its action on the level is smooth, free and proper.** The level `Z` is a smooth manifold by
+  the implicit function theorem (`TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`). The rotation
+  action of `(ℝ / 2πℤ)^ι` on `ℂ^ι` is smooth (`TauCeti.contMDiff_torusRotation`) and preserves
+  `Z`, so the kernel torus acts smoothly on `Z`
+  (`TauCeti.Toric.IsDelzant.contMDiffSMul_kernelTorus`). It acts freely because the normals at
+  each vertex of `Δ` form a lattice basis (`TauCeti.Toric.IsDelzant.isCancelSMul_kernelTorus`),
+  and properly because it is compact.
+* **The quotient.** The orbit space of this action is the Delzant quotient, up to the
+  homeomorphism `TauCeti.Toric.DelzantQuotient.homeomorphOrbitRelQuotient` comparing the orbit
+  relations of the additive and the multiplicative actions. The slice charts of the quotient
+  manifold theorem, pulled back along it, are the atlas
+  `TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`. For it, `M_Δ` is a smooth manifold
+  (`TauCeti.Toric.IsDelzant.isManifold_delzantQuotient`) and the projection `Z → M_Δ` is a smooth
+  submersion (`TauCeti.Toric.IsDelzant.isSubmersion_delzantQuotientMk`) whose vertical tangent
+  vectors are exactly the directions of the orbits of the kernel torus
+  (`TauCeti.Toric.IsDelzant.ker_mfderiv_delzantQuotientMk`). The reduced moment map
+  `μ_Δ : M_Δ → V*` is smooth (`TauCeti.Toric.IsDelzant.contMDiff_reducedMomentMap`), because its
+  composite with the projection is a restriction of the moment map of the torus.
 
-where the kernel torus `N_Δ = ker ((ℝ / 2πℤ)^ι → V / 2π i(N))` acts on the zero level `Z` of its
-moment map through the rotations `z_j ↦ exp(-i θ_j) z_j` of `ℂ^ι`. The level is a compact
-manifold of dimension `d + n`, where `d = #ι` and `n = dim V`
-(`TauCeti.Toric.IsDelzant.isManifold_delzantLevel`). This file makes `M_Δ` a smooth manifold for
-which the projection `Z → M_Δ` is a smooth submersion, by the quotient manifold theorem
-(`ProperSMul.instIsManifoldOrbitRelQuotient`).
-
-* **Smoothness of the rotations.** The rotation action `(θ, z) ↦ θ • z` of the torus
-  `(ℝ / 2πℤ)^ι` on `ℂ^ι`, with the torus a manifold modelled on `ℝ^ι`, is smooth
-  (`TauCeti.contMDiff_torusRotation`).
-* **The kernel torus as a Lie group.** The torus is a Lie group (`TauCeti.instLieAddGroupPi`) and
-  the kernel torus is a closed subgroup of it
-  (`TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`), so by the closed-subgroup
-  theorem (`TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`) it is an embedded Lie subgroup,
-  modelled on its Lie algebra. Since these theorems are stated for multiplicative groups, the
-  kernel torus enters as the subgroup `TauCeti.Toric.kernelTorus i u` of `Multiplicative` of the
-  torus.
-* **The action on the level.** The kernel torus acts smoothly on `Z`: a smooth map with values
-  in the regular level set `Z` is smooth into `Z` (`ContMDiff.codRestrict_levelSet`). It acts
-  freely, because the vertices of `Δ` are smooth
-  (`TauCeti.Toric.IsDelzant.weightRotation_neg_eq_self_iff`), and properly, because it is
-  compact.
-* **The quotient.** The orbit space of this action is the Delzant quotient up to the identity of
-  points (`TauCeti.Toric.DelzantQuotient.kernelTorusQuotientHomeomorph`), along which the slice
-  charts of the quotient manifold theorem are carried to `M_Δ`.
-
-The model space is `ℝ^(d + n - k)`, where `k` is the dimension of the Lie algebra of the kernel
-torus as a closed subgroup, so `M_Δ` has dimension `d + n - k`.
-
-## Main definitions
-
-* `TauCeti.Toric.kernelTorus i u`: the kernel torus `N_Δ`, as a subgroup of the multiplicative
-  torus.
-* `TauCeti.Toric.IsIntegralLattice.kernelTorusChartedSpace`: the charts of the kernel torus as an
-  embedded Lie subgroup, modelled on its Lie algebra.
-* `TauCeti.Toric.DelzantQuotient.kernelTorusQuotientHomeomorph`: the identification of `M_Δ` with
-  the orbit space of `TauCeti.Toric.kernelTorus i u` acting on `Z`.
-* `TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`: the slice charts of `M_Δ`.
-
-## Main results
-
-* `TauCeti.Toric.IsDelzant.isManifold_delzantQuotient`: the Delzant quotient is a smooth
-  manifold.
-* `TauCeti.Toric.IsDelzant.isSubmersion_delzantQuotientMk`: the projection from the level onto
-  the Delzant quotient is a smooth submersion.
-* `TauCeti.Toric.IsDelzant.contMDiff_delzantQuotientMk`: this projection is smooth.
-* `TauCeti.Toric.IsDelzant.contMDiff_reducedMomentMap`: the reduced moment map `μ_Δ` is smooth.
-* `TauCeti.Toric.IsIntegralLattice.lieGroup_kernelTorus`: the kernel torus is a Lie group.
-* `TauCeti.Toric.IsDelzant.contMDiffSMul_kernelTorus`,
-  `TauCeti.Toric.IsDelzant.isCancelSMul_kernelTorus`,
-  `TauCeti.Toric.IsIntegralLattice.properSMul_kernelTorus`: the kernel torus acts smoothly, freely
-  and properly on the level.
+The atlas is modelled on `ℝ^(d + n - k)`, where `d` is the number of facets, `n = dim V` and `k`
+is the dimension of the Lie algebra of the kernel torus.
 
 ## References
 
@@ -92,296 +67,301 @@ public section
 
 noncomputable section
 
-open Set Real Manifold Module
+open Manifold Module Set Real TauCeti.Lie
 open scoped Manifold ContDiff
 
-namespace TauCeti
-
-variable {ι : Type*} [Fintype ι]
+namespace TauCeti.Toric
 
 local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
-namespace Toric
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {ι N V : Type*} [Fintype ι] [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {u : ι → N} {c : ι → ℝ}
 
 /-! ### The kernel torus as a Lie group -/
 
 variable (i u) in
-/-- The kernel torus `N_Δ = ker ((ℝ / 2πℤ)^ι → V / 2π i(N))` of `TauCeti.Toric.facetTorusHom`, as a
-subgroup of `Multiplicative` of the torus `(ℝ / 2πℤ)^ι`. This is the form in which the
-closed-subgroup theorem and the quotient manifold theorem apply to it. -/
-def kernelTorus : Subgroup (Multiplicative (ι → AddCircle (2 * π))) :=
+/-- The kernel torus `N_Δ = ker (facetTorusHom i u (2π))`, as a subgroup of the multiplicative copy
+of the torus `(ℝ / 2πℤ)^ι`, so that it can act as a Lie group. -/
+abbrev kernelTorus : Subgroup (Multiplicative (ι → AddCircle (2 * π))) :=
   AddSubgroup.toSubgroup (facetTorusHom i u (2 * π)).ker
 
-/-- An element of the multiplicative torus lies in the kernel torus exactly when its underlying
-angles lie in the kernel of `TauCeti.Toric.facetTorusHom`. -/
-@[simp]
-theorem mem_kernelTorus_iff {k : Multiplicative (ι → AddCircle (2 * π))} :
-    k ∈ kernelTorus i u ↔ Multiplicative.toAdd k ∈ (facetTorusHom i u (2 * π)).ker :=
-  (Iff.rfl)
+/-- An element of the multiplicative copy of `(ℝ / 2πℤ)^ι` lies in the kernel torus exactly when
+its angles lie in the kernel of `facetTorusHom i u (2π)`. -/
+theorem mem_kernelTorus {θ : Multiplicative (ι → AddCircle (2 * π))} :
+    θ ∈ kernelTorus i u ↔ θ.toAdd ∈ (facetTorusHom i u (2 * π)).ker :=
+  Multiplicative.mem_toSubgroup _ _
 
-/-- For an integral lattice, the kernel torus is closed. -/
-theorem IsIntegralLattice.isClosed_kernelTorus (hi : IsIntegralLattice i) :
-    IsClosed (kernelTorus i u : Set (Multiplicative (ι → AddCircle (2 * π)))) :=
-  hi.isClosed_ker_facetTorusHom u (2 * π)
-
-variable (u) in
-/-- **The charts of the kernel torus**, modelled on its Lie algebra: the embedded Lie-subgroup
-structure that the closed-subgroup theorem (`TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`)
-selects for the closed subgroup `TauCeti.Toric.kernelTorus i u` of the torus `(ℝ / 2πℤ)^ι`. -/
-@[instance_reducible]
-def IsIntegralLattice.kernelTorusChartedSpace (hi : IsIntegralLattice i) :
-    ChartedSpace (Lie.lieSubalgebraOfSubgroup (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (kernelTorus i u)).toSubmodule (kernelTorus i u) :=
-  (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-    (hi.isClosed_kernelTorus (u := u))).chartedSpace
-
-/-- **The kernel torus is a Lie group** for the charts
-`TauCeti.Toric.IsIntegralLattice.kernelTorusChartedSpace`. -/
-theorem IsIntegralLattice.lieGroup_kernelTorus (hi : IsIntegralLattice i) :
-    letI := hi.kernelTorusChartedSpace u
-    LieGroup 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (kernelTorus i u)).toSubmodule) ∞ (kernelTorus i u) :=
-  (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-    (hi.isClosed_kernelTorus (u := u))).lieGroup
-
-/-- The kernel torus acts on the level through the rotations of `ℂ^ι`. -/
-@[simp]
-theorem coe_smul_delzantLevel (k : kernelTorus i u) (x : delzantLevel i u c) :
-    ((k • x : delzantLevel i u c) : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
-      torusRotation (Multiplicative.toAdd (k : Multiplicative (ι → AddCircle (2 * π)))) x :=
-  (rfl)
-
-/-- Two points of the level lie in one orbit of the kernel torus, acting as a subgroup of the
-multiplicative torus, exactly when they have the same class in the Delzant quotient. -/
-theorem DelzantQuotient.mk_eq_mk_iff_orbitRel {x y : delzantLevel i u c} :
-    DelzantQuotient.mk x = DelzantQuotient.mk y ↔
-      MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c) x y := by
-  rw [DelzantQuotient.mk_eq_mk_iff, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  exact ⟨fun ⟨θ, hθ, h⟩ ↦ ⟨⟨Multiplicative.ofAdd θ, mem_kernelTorus_iff.2 hθ⟩, h⟩,
-    fun ⟨k, hk⟩ ↦ ⟨Multiplicative.toAdd (k : Multiplicative (ι → AddCircle (2 * π))),
-      mem_kernelTorus_iff.1 k.2, hk⟩⟩
-
-/-- The orbit space of the kernel torus, acting on the level as a subgroup of the multiplicative
-torus, is the Delzant quotient: the two orbit relations agree
-(`TauCeti.Toric.DelzantQuotient.mk_eq_mk_iff_orbitRel`), and the identity of points descends to a
-homeomorphism. -/
-def DelzantQuotient.kernelTorusQuotientHomeomorph :
-    DelzantQuotient i u c ≃ₜ MulAction.orbitRel.Quotient (kernelTorus i u) (delzantLevel i u c) :=
-  have hf (θ : ι → AddCircle (2 * π)) (hθ : θ ∈ (facetTorusHom i u (2 * π)).ker)
-      (x : delzantLevel i u c) :
-      Quotient.mk (MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c)) (θ +ᵥ x) =
-        Quotient.mk _ x :=
-    Quotient.sound
-      (DelzantQuotient.mk_eq_mk_iff_orbitRel.1 (DelzantQuotient.mk_vadd_of_mem_ker hθ x))
-  { toFun := DelzantQuotient.lift (Quotient.mk _) hf
-    invFun := Quotient.lift DelzantQuotient.mk fun _ _ h ↦
-      DelzantQuotient.mk_eq_mk_iff_orbitRel.2 h
-    left_inv q := DelzantQuotient.inductionOn q fun x ↦ by
-      rw [DelzantQuotient.lift_mk, Quotient.lift_mk]
-    right_inv q := Quotient.inductionOn q fun x ↦ by
-      rw [Quotient.lift_mk, DelzantQuotient.lift_mk]
-    continuous_toFun := DelzantQuotient.continuous_lift hf continuous_quotient_mk'
-    continuous_invFun := continuous_quot_lift _ DelzantQuotient.continuous_mk }
-
-@[simp]
-theorem DelzantQuotient.kernelTorusQuotientHomeomorph_mk (x : delzantLevel i u c) :
-    DelzantQuotient.kernelTorusQuotientHomeomorph (DelzantQuotient.mk x) =
-      Quotient.mk (MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c)) x :=
-  DelzantQuotient.lift_mk _ _ x
-
-@[simp]
-theorem DelzantQuotient.kernelTorusQuotientHomeomorph_symm_mk (x : delzantLevel i u c) :
-    DelzantQuotient.kernelTorusQuotientHomeomorph.symm
-        (Quotient.mk (MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c)) x) =
-      DelzantQuotient.mk x :=
-  (rfl)
-
-/-! ### The Delzant quotient as a manifold -/
+/-- For an integral lattice the kernel torus is a closed subgroup of `(ℝ / 2πℤ)^ι`. -/
+theorem isClosed_kernelTorus (hi : IsIntegralLattice i) :
+    IsClosed (kernelTorus i u : Set (Multiplicative (ι → AddCircle (2 * π)))) := by
+  have h : (kernelTorus i u : Set (Multiplicative (ι → AddCircle (2 * π)))) =
+      Multiplicative.toAdd ⁻¹'
+        ((facetTorusHom i u (2 * π)).ker : Set (ι → AddCircle (2 * π))) := by
+    ext θ
+    exact mem_kernelTorus
+  rw [h]
+  exact (hi.isClosed_ker_facetTorusHom u (2 * π)).preimage continuous_toAdd
 
 variable (i u) in
-/-- The model space of the Delzant quotient, `ℝ^(d + n - k)`, where `d` is the number of facets,
-`n = dim V` and `k` is the dimension of the Lie algebra of the kernel torus. -/
-abbrev DelzantQuotientModel : Type :=
-  ProperSMul.QuotientModelSpace
-    (Lie.lieSubalgebraOfSubgroup (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (kernelTorus i u)).toSubmodule
-    (Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+/-- The Lie algebra of the kernel torus, the model space of its Lie group structure
+`TauCeti.Toric.kernelTorusData`. -/
+abbrev kernelTorusLieAlgebra :
+    Submodule ℝ (LeftInvariantDerivation (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (Multiplicative (ι → AddCircle (2 * π)))) :=
+  (lieSubalgebraOfSubgroup (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+    (kernelTorus i u)).toSubmodule
 
-/-- **The kernel torus acts properly on the level**: it is a compact group acting continuously on
-the Hausdorff space `Z`. -/
-theorem IsIntegralLattice.properSMul_kernelTorus (hi : IsIntegralLattice i) :
+variable (i u) in
+/-- **The kernel torus is a Lie group.** For an integral lattice, the embedded Lie subgroup
+structure of the closed subgroup `N_Δ` of `(ℝ / 2πℤ)^ι` given by the closed-subgroup theorem,
+modelled on its Lie algebra. -/
+def kernelTorusData (hi : IsIntegralLattice i) :
+    EmbeddedLieSubgroupData (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (kernelTorus i u)
+      (kernelTorusLieAlgebra i u) :=
+  EmbeddedLieSubgroupData.ofIsClosed (isClosed_kernelTorus hi)
+
+/-! ### The action of the kernel torus on the level -/
+
+/-- An element of the kernel torus acts on the level through its angles. -/
+@[simp]
+theorem coe_kernelTorus_smul (θ : kernelTorus i u) (x : delzantLevel i u c) :
+    ((θ • x : delzantLevel i u c) : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
+      torusRotation (θ : Multiplicative (ι → AddCircle (2 * π))).toAdd x := by
+  rw [Subgroup.smul_def, ← toAdd_vadd, coe_vadd_delzantLevel]
+
+/-- The kernel torus acts continuously on the level. -/
+instance : ContinuousSMul (kernelTorus i u) (delzantLevel i u c) :=
+  ⟨continuous_induced_rng.2 (continuous_torusRotation.comp
+    ((continuous_toAdd.comp (continuous_subtypeVal.comp continuous_fst)).prodMk
+      (continuous_subtypeVal.comp continuous_snd)))⟩
+
+/-- For an integral lattice the kernel torus is compact, so it acts properly on the level. -/
+theorem properSMul_kernelTorus (hi : IsIntegralLattice i) :
     ProperSMul (kernelTorus i u) (delzantLevel i u c) :=
   have : CompactSpace (kernelTorus i u) :=
-    isCompact_iff_compactSpace.1 hi.isClosed_kernelTorus.isCompact
-  -- An element of the kernel torus acts through its underlying angles.
-  have hsmul : (fun p : kernelTorus i u × delzantLevel i u c ↦ p.1 • p.2) =
-      fun p ↦ Multiplicative.toAdd (p.1 : Multiplicative (ι → AddCircle (2 * π))) +ᵥ p.2 :=
-    funext fun p ↦ Subtype.ext ((coe_smul_delzantLevel p.1 p.2).trans
-      (coe_vadd_delzantLevel _ p.2).symm)
-  have : ContinuousSMul (kernelTorus i u) (delzantLevel i u c) := ⟨by
-    rw [hsmul]
-    exact continuous_vadd.comp
-      ((continuous_toAdd.comp (continuous_subtype_val.comp continuous_fst)).prodMk continuous_snd)⟩
-  properSMul_of_compactSpace (kernelTorus i u) (delzantLevel i u c)
+    isCompact_iff_compactSpace.1 (isClosed_kernelTorus hi).isCompact
+  properSMul_of_compactSpace _ _
+
+/-! ### The Delzant quotient as an orbit space of a Lie group -/
+
+namespace DelzantQuotient
+
+/-- Two points of the level have the same class in the Delzant quotient exactly when an element
+of the multiplicative copy of the kernel torus carries one to the other. -/
+theorem mk_eq_mk_iff_exists_smul {x y : delzantLevel i u c} :
+    mk x = mk y ↔ ∃ θ : kernelTorus i u, θ • y = x := by
+  rw [mk_eq_mk_iff]
+  refine ⟨fun ⟨θ, hθ, h⟩ ↦ ⟨⟨Multiplicative.ofAdd θ, mem_kernelTorus.2 hθ⟩, h⟩,
+    fun ⟨θ, h⟩ ↦
+      ⟨(θ : Multiplicative (ι → AddCircle (2 * π))).toAdd, mem_kernelTorus.1 θ.property, h⟩⟩
+
+variable (i u c) in
+/-- The Delzant quotient is homeomorphic to the orbit space of the multiplicative copy of the
+kernel torus acting on the level: both are quotients of the level by the same orbit relation. -/
+def homeomorphOrbitRelQuotient :
+    DelzantQuotient i u c ≃ₜ
+      MulAction.orbitRel.Quotient (kernelTorus i u) (delzantLevel i u c) where
+  toFun := lift (Quotient.mk _) fun θ hθ x ↦ Quotient.sound (MulAction.orbitRel_apply.2
+    (MulAction.mem_orbit_iff.2 ⟨⟨Multiplicative.ofAdd θ, mem_kernelTorus.2 hθ⟩, rfl⟩))
+  invFun := Quotient.lift mk fun x y hxy ↦
+    mk_eq_mk_iff_exists_smul.2 (MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hxy))
+  left_inv q := DelzantQuotient.inductionOn q fun x ↦ by rw [lift_mk, Quotient.lift_mk]
+  right_inv q := Quotient.inductionOn q fun x ↦ by rw [Quotient.lift_mk, lift_mk]
+  continuous_toFun := continuous_lift _ continuous_quot_mk
+  continuous_invFun := continuous_quot_lift _ continuous_mk
+
+@[simp]
+theorem homeomorphOrbitRelQuotient_mk (x : delzantLevel i u c) :
+    homeomorphOrbitRelQuotient i u c (mk x) = Quotient.mk _ x :=
+  lift_mk _ _ x
+
+@[simp]
+theorem homeomorphOrbitRelQuotient_symm_mk (x : delzantLevel i u c) :
+    (homeomorphOrbitRelQuotient i u c).symm (Quotient.mk _ x) = mk x :=
+  (rfl)
+
+end DelzantQuotient
+
+variable [FiniteDimensional ℝ V]
 
 namespace IsDelzant
 
-variable [FiniteDimensional ℝ V] (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
-
+variable (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
 include hΔ hi
 
-/-- **The kernel torus acts smoothly on the level**, for the charts
-`TauCeti.Toric.IsIntegralLattice.kernelTorusChartedSpace` of the kernel torus and the regular-level
-atlas `TauCeti.Toric.IsDelzant.delzantLevelChartedSpace` of the level. -/
+/-- **The kernel torus acts freely on the level.** -/
+theorem isCancelSMul_kernelTorus : IsCancelSMul (kernelTorus i u) (delzantLevel i u c) := by
+  refine isCancelSMul_iff_eq_one_of_smul_eq.2 fun θ x hθx ↦ Subtype.ext ?_
+  obtain ⟨t, ht⟩ : ∃ t : ι → ℝ, (fun j ↦ (t j : AddCircle (2 * π))) =
+      (θ : Multiplicative (ι → AddCircle (2 * π))).toAdd := by
+    choose t ht using fun j ↦ QuotientAddGroup.mk_surjective
+      ((θ : Multiplicative (ι → AddCircle (2 * π))).toAdd j)
+    exact ⟨t, funext ht⟩
+  have hker : (fun j ↦ (t j : AddCircle (2 * π))) ∈ (facetTorusHom i u (2 * π)).ker :=
+    ht ▸ mem_kernelTorus.1 θ.property
+  have hrot : weightRotation (-t) x = x := by
+    rw [← torusRotation_coe, ht, ← coe_kernelTorus_smul, hθx]
+  have h0 := (hΔ.weightRotation_neg_eq_self_iff hi x.property hker).1 hrot
+  rwa [ht] at h0
+
+/-- **The kernel torus acts smoothly on the level**, for the implicit-function atlas of the level
+and the Lie group structure of the kernel torus. -/
 theorem contMDiffSMul_kernelTorus :
-    letI := hi.kernelTorusChartedSpace u
     letI := hΔ.delzantLevelChartedSpace hi
-    ContMDiffSMul 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup
-        (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (kernelTorus i u)).toSubmodule)
-      𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) ∞ (kernelTorus i u) (delzantLevel i u c) := by
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed
-    (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (hi.isClosed_kernelTorus (u := u))
-  let _ := hi.kernelTorusChartedSpace u
+    letI := (kernelTorusData i u hi).chartedSpace
+    ContMDiffSMul 𝓘(ℝ, kernelTorusLieAlgebra i u) 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) ∞
+      (kernelTorus i u) (delzantLevel i u c) := by
   let _ := hΔ.delzantLevelChartedSpace hi
-  -- The action map, followed by the inclusion of the level, is the rotation of `ℂ^ι` by the
-  -- underlying angles, which is smooth.
-  have hg : ContMDiff (𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup
-        (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (kernelTorus i u)).toSubmodule).prod
+  let _ := (kernelTorusData i u hi).chartedSpace
+  refine ⟨?_⟩
+  -- The action is the restriction to the level of the smooth rotation action on `ℂ^ι`.
+  have hg : ContMDiff (𝓘(ℝ, kernelTorusLieAlgebra i u).prod
       𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ))
       𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞
       fun p : kernelTorus i u × delzantLevel i u c ↦
-        torusRotation (Multiplicative.toAdd (p.1 : Multiplicative (ι → AddCircle (2 * π))))
-          (p.2 : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
+        torusRotation (p.1 : Multiplicative (ι → AddCircle (2 * π))).toAdd p.2 :=
     contMDiff_torusRotation.comp
-      ((d.contMDiff_subtypeVal.comp contMDiff_fst).prodMk
+      ((Multiplicative.contMDiff_toAdd.comp
+        ((kernelTorusData i u hi).contMDiff_subtypeVal.comp contMDiff_fst)).prodMk
         ((hΔ.contMDiff_coe_delzantLevel hi).comp contMDiff_snd))
-  have hsmul : (fun p : kernelTorus i u × delzantLevel i u c ↦ p.1 • p.2) =
-      fun p ↦ ⟨torusRotation (Multiplicative.toAdd (p.1 : Multiplicative (ι → AddCircle (2 * π))))
-        p.2, (torusRotation_mem_delzantLevel_iff _).2 p.2.2⟩ :=
-    funext fun p ↦ Subtype.ext (coe_smul_delzantLevel p.1 p.2)
-  refine ⟨?_⟩
-  rw [hsmul]
-  exact hΔ.contMDiff_codRestrict_delzantLevel hi hg _
+  exact hΔ.contMDiff_codRestrict_delzantLevel hi hg fun p ↦ (p.1 • p.2).property
 
-/-- **The kernel torus acts freely on the level**, because every vertex of the Delzant polytope is
-smooth. -/
-theorem isCancelSMul_kernelTorus : IsCancelSMul (kernelTorus i u) (delzantLevel i u c) := by
-  refine isCancelSMul_iff_stabilizer_eq_bot.2 fun x ↦ (Subgroup.eq_bot_iff_forall _).2 fun k hk ↦ ?_
-  set θ := Multiplicative.toAdd (k : Multiplicative (ι → AddCircle (2 * π)))
-  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-  have htθ : (fun j ↦ (t j : AddCircle (2 * π))) = θ := funext ht
-  have hfix : weightRotation (-t) x = x := by
-    rw [← torusRotation_coe, htθ]
-    exact congrArg Subtype.val (MulAction.mem_stabilizer_iff.1 hk)
-  have hθ : θ = 0 := by
-    rw [← htθ]
-    exact (hΔ.weightRotation_neg_eq_self_iff hi x.2 (htθ ▸ mem_kernelTorus_iff.1 k.2)).1 hfix
-  exact Subtype.ext (congrArg Multiplicative.ofAdd hθ)
+/-! ### The smooth structure of the Delzant quotient -/
 
-/-- The slice charts of the quotient manifold theorem on the orbit space of the kernel torus. -/
-@[instance_reducible]
-private def orbitRelQuotientChartedSpace :
-    ChartedSpace (DelzantQuotientModel i u)
-      (MulAction.orbitRel.Quotient (kernelTorus i u) (delzantLevel i u c)) :=
-  letI := hi.kernelTorusChartedSpace u
-  letI := hΔ.delzantLevelChartedSpace hi
-  haveI := hi.lieGroup_kernelTorus (u := u)
-  haveI := hΔ.isManifold_delzantLevel hi ∞
-  haveI := hΔ.contMDiffSMul_kernelTorus hi
-  haveI := hi.properSMul_kernelTorus (u := u) (c := c)
-  haveI := hΔ.isCancelSMul_kernelTorus hi
-  ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup
-      (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (kernelTorus i u)).toSubmodule)
-    (kernelTorus i u) 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) (delzantLevel i u c)
+-- Installs the hypotheses of the quotient manifold theorem for the kernel torus acting on the
+-- level (the atlases of the level and of the kernel torus, its Lie group structure, and the
+-- smooth, proper and free action) and the resulting slice atlas of the orbit space, which every
+-- result below needs.
+local macro "kernel_torus_quotient_instances" ι:ident V:ident i:ident u:ident c:ident hΔ:ident
+    hi:ident : tactic => `(tactic| (
+  let _ := ($hΔ).delzantLevelChartedSpace $hi
+  let _ := (kernelTorusData $i $u $hi).chartedSpace
+  have := (kernelTorusData $i $u $hi).lieGroup
+  have := ($hΔ).isManifold_delzantLevel $hi ∞
+  have := ($hΔ).contMDiffSMul_kernelTorus $hi
+  have := properSMul_kernelTorus (u := $u) (c := $c) $hi
+  have := ($hΔ).isCancelSMul_kernelTorus $hi
+  let _ := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, kernelTorusLieAlgebra $i $u)
+    (kernelTorus $i $u) 𝓘(ℝ, Fin (Fintype.card $ι + finrank ℝ $V) → ℝ)
+    (delzantLevel $i $u $c)))
 
-/-- By the quotient manifold theorem, the orbit space of the kernel torus is a smooth manifold and
-the orbit projection is a smooth submersion. -/
-private theorem isManifold_and_isSubmersion_orbitRelQuotient :
-    letI := hΔ.delzantLevelChartedSpace hi
-    letI := hΔ.orbitRelQuotientChartedSpace hi
-    IsManifold 𝓘(ℝ, DelzantQuotientModel i u) ∞
-        (MulAction.orbitRel.Quotient (kernelTorus i u) (delzantLevel i u c)) ∧
-      IsSubmersion 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) 𝓘(ℝ, DelzantQuotientModel i u) ∞
-        (Quotient.mk (MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c))) := by
-  let _ := hi.kernelTorusChartedSpace u
-  let _ := hΔ.delzantLevelChartedSpace hi
-  have := hi.lieGroup_kernelTorus (u := u)
-  have := hΔ.isManifold_delzantLevel hi ∞
-  have := hΔ.contMDiffSMul_kernelTorus hi
-  have := hi.properSMul_kernelTorus (u := u) (c := c)
-  have := hΔ.isCancelSMul_kernelTorus hi
-  exact ⟨ProperSMul.instIsManifoldOrbitRelQuotient, ProperSMul.isSubmersion_quotientMk⟩
-
-/-- **The atlas of the Delzant quotient** `M_Δ = Z / N_Δ`, modelled on `ℝ^(d + n - k)`: the slice
-charts of the quotient manifold theorem for the free and proper action of the kernel torus `N_Δ`,
-with its closed-subgroup structure, on the level `Z`, with its regular-level atlas
-`TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`. -/
+/-- **The atlas of the Delzant quotient.** The slice charts of the quotient manifold theorem for
+the free proper smooth action of the kernel torus on the level, pulled back to the Delzant
+quotient along `TauCeti.Toric.DelzantQuotient.homeomorphOrbitRelQuotient`. It is modelled on
+`ℝ^(d + n - k)`, where `d` is the number of facets, `n = dim V` and `k` is the dimension of the
+Lie algebra of the kernel torus. -/
 @[instance_reducible]
 def delzantQuotientChartedSpace :
-    ChartedSpace (DelzantQuotientModel i u) (DelzantQuotient i u c) :=
-  letI := hΔ.orbitRelQuotientChartedSpace hi
-  DelzantQuotient.kernelTorusQuotientHomeomorph.pullbackChartedSpace
+    ChartedSpace (ProperSMul.QuotientModelSpace
+      (kernelTorusLieAlgebra i u) (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
+      (DelzantQuotient i u c) := by
+  kernel_torus_quotient_instances ι V i u c hΔ hi
+  exact (DelzantQuotient.homeomorphOrbitRelQuotient i u c).pullbackChartedSpace
 
 /-- **The Delzant quotient is a smooth manifold**, for the atlas
 `TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`. -/
 theorem isManifold_delzantQuotient :
     letI := hΔ.delzantQuotientChartedSpace hi
-    IsManifold 𝓘(ℝ, DelzantQuotientModel i u) ∞ (DelzantQuotient i u c) :=
-  letI := hΔ.orbitRelQuotientChartedSpace hi
-  haveI := (hΔ.isManifold_and_isSubmersion_orbitRelQuotient hi).1
-  DelzantQuotient.kernelTorusQuotientHomeomorph.pullback_isManifold _ _
+    IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace
+      (kernelTorusLieAlgebra i u) (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) ∞
+      (DelzantQuotient i u c) := by
+  kernel_torus_quotient_instances ι V i u c hΔ hi
+  exact (DelzantQuotient.homeomorphOrbitRelQuotient i u c).pullback_isManifold
+    (I := 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+      (Fin (Fintype.card ι + finrank ℝ V) → ℝ))) (n := ∞)
 
-/-- **The projection onto the Delzant quotient is a smooth submersion**, from the level `Z` with
-its regular-level atlas to `M_Δ` with the atlas
-`TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`. In particular a map out of `M_Δ` is smooth
-exactly when its composite with the projection is (`Manifold.IsSubmersion.contMDiff_comp_iff`). -/
+omit [FiniteDimensional ℝ V] hΔ hi in
+/-- The projection onto the Delzant quotient is the orbit projection of the kernel torus acting on
+the level, followed by the inverse of the diffeomorphism pulled back along
+`TauCeti.Toric.DelzantQuotient.homeomorphOrbitRelQuotient`. -/
+private theorem mk_eq_comp {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+    [ChartedSpace H (MulAction.orbitRel.Quotient (kernelTorus i u) (delzantLevel i u c))] :
+    letI := (DelzantQuotient.homeomorphOrbitRelQuotient i u c).pullbackChartedSpace (H := H)
+    (DelzantQuotient.mk : delzantLevel i u c → DelzantQuotient i u c) =
+      ((DelzantQuotient.homeomorphOrbitRelQuotient i u c).pullbackDiffeomorph I ∞).symm ∘
+        Quotient.mk (MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c)) := by
+  rw [Homeomorph.coe_pullbackDiffeomorph_symm]
+  exact funext fun x ↦ (DelzantQuotient.homeomorphOrbitRelQuotient_symm_mk x).symm
+
+/-- **The projection onto the Delzant quotient is a smooth submersion**, for the atlases
+`TauCeti.Toric.IsDelzant.delzantLevelChartedSpace` and
+`TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`. In particular a map out of the Delzant
+quotient is smooth exactly when its composite with the projection is
+(`Manifold.IsSubmersion.contMDiff_comp_iff`). -/
 theorem isSubmersion_delzantQuotientMk :
     letI := hΔ.delzantLevelChartedSpace hi
     letI := hΔ.delzantQuotientChartedSpace hi
-    IsSubmersion 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) 𝓘(ℝ, DelzantQuotientModel i u) ∞
-      (DelzantQuotient.mk (i := i) (u := u) (c := c)) := by
-  let _ := hΔ.delzantLevelChartedSpace hi
-  let _ := hΔ.orbitRelQuotientChartedSpace hi
+    IsSubmersion 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) ∞
+      (DelzantQuotient.mk : delzantLevel i u c → DelzantQuotient i u c) := by
+  kernel_torus_quotient_instances ι V i u c hΔ hi
   let _ := hΔ.delzantQuotientChartedSpace hi
-  have := hΔ.isManifold_delzantLevel hi ∞
-  have := (hΔ.isManifold_and_isSubmersion_orbitRelQuotient hi).1
   have := hΔ.isManifold_delzantQuotient hi
-  -- The homeomorphism onto the orbit space is a diffeomorphism for the pulled-back charts.
-  have he := ((DelzantQuotient.kernelTorusQuotientHomeomorph (i := i) (u := u)
-    (c := c)).pullbackDiffeomorph 𝓘(ℝ, DelzantQuotientModel i u) ∞).symm.isLocalDiffeomorph
-  rw [Homeomorph.coe_pullbackDiffeomorph_symm] at he
-  have hF := (hΔ.isManifold_and_isSubmersion_orbitRelQuotient hi).2
-  -- The projection is the orbit projection followed by the inverse homeomorphism.
-  have hmk : (DelzantQuotient.mk : delzantLevel i u c → DelzantQuotient i u c) =
-      DelzantQuotient.kernelTorusQuotientHomeomorph.symm ∘
-        Quotient.mk (MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c)) :=
-    funext fun x ↦ (DelzantQuotient.kernelTorusQuotientHomeomorph_symm_mk x).symm
-  refine (isSubmersionOfComplement_iff
-    (F := hF.complement).2 fun x ↦ ?_).isSubmersion
-  rw [hmk]
-  exact (he _).comp_isSubmersionAtOfComplement
-    (isSubmersionOfComplement_iff.1 hF.isSubmersionOfComplement_complement x)
+  let e := (DelzantQuotient.homeomorphOrbitRelQuotient i u c).pullbackDiffeomorph
+    𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+      (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) ∞
+  have hq := ProperSMul.isSubmersion_quotientMk (I := 𝓘(ℝ, kernelTorusLieAlgebra i u))
+    (G := kernelTorus i u) (I' := 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ))
+    (M := delzantLevel i u c)
+  have h := hq.isSubmersionOfComplement_complement
+  rw [mk_eq_comp 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+    (Fin (Fintype.card ι + finrank ℝ V) → ℝ))]
+  exact IsSubmersionOfComplement.isSubmersion (F := hq.complement)
+    (isSubmersionOfComplement_iff.2 fun x ↦
+      (e.symm.isLocalDiffeomorph _).comp_isSubmersionAtOfComplement (h.isSubmersionAt x))
 
-/-- The projection from the level onto the Delzant quotient is smooth. -/
-theorem contMDiff_delzantQuotientMk :
+/-- **The vertical tangent vectors of the projection are the orbit directions.** The kernel of
+the differential at `x` of the projection from the level onto the Delzant quotient is the
+tangent space `𝔫 · x` of the orbit of the kernel torus through `x`. -/
+theorem ker_mfderiv_delzantQuotientMk (x : delzantLevel i u c) :
     letI := hΔ.delzantLevelChartedSpace hi
+    letI := (kernelTorusData i u hi).chartedSpace
+    haveI := (kernelTorusData i u hi).lieGroup
+    haveI := hΔ.isManifold_delzantLevel hi ∞
+    haveI := hΔ.contMDiffSMul_kernelTorus hi
     letI := hΔ.delzantQuotientChartedSpace hi
-    ContMDiff 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) 𝓘(ℝ, DelzantQuotientModel i u) ∞
-      (DelzantQuotient.mk (i := i) (u := u) (c := c)) := by
-  let _ := hΔ.delzantLevelChartedSpace hi
+    (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
+      (DelzantQuotient.mk : delzantLevel i u c → DelzantQuotient i u c) x).ker =
+      (InfinitesimalAction.fundamental 𝓘(ℝ, kernelTorusLieAlgebra i u) (kernelTorus i u)
+        𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) (delzantLevel i u c)).orbitTangent x := by
+  kernel_torus_quotient_instances ι V i u c hΔ hi
   let _ := hΔ.delzantQuotientChartedSpace hi
-  exact (hΔ.isSubmersion_delzantQuotientMk hi).contMDiff
+  have := hΔ.isManifold_delzantQuotient hi
+  let e : MulAction.orbitRel.Quotient (kernelTorus i u) (delzantLevel i u c) ≃ₘ⟮
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)),
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ))⟯ DelzantQuotient i u c :=
+    ((DelzantQuotient.homeomorphOrbitRelQuotient i u c).pullbackDiffeomorph _ ∞).symm
+  -- The projection is the orbit projection followed by the diffeomorphism `e`, whose
+  -- differential is invertible.
+  have hcomp := (e.isLocalDiffeomorph _).ker_mfderiv_comp (by simp)
+    ((ProperSMul.contMDiff_quotientMk (I := 𝓘(ℝ, kernelTorusLieAlgebra i u))
+      (G := kernelTorus i u) x).mdifferentiableAt (by simp))
+  -- Rewriting `mk_eq_comp` inside the goal is slow, so it is transported by `congrArg` instead.
+  have hmk := congrArg (fun f : delzantLevel i u c → DelzantQuotient i u c ↦
+    (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) f x).ker)
+    (mk_eq_comp 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+      (Fin (Fintype.card ι + finrank ℝ V) → ℝ)))
+  exact hmk.trans (hcomp.trans (ProperSMul.ker_mfderiv_quotientMk x))
 
-/-- **The reduced moment map is smooth** for the atlas
+/-- **The reduced moment map is smooth**, for the atlas
 `TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`. Its composite with the projection from the
-level is `z ↦ μ(z) ∘ s` for a right inverse `s` of `β_ℝ : ℝ^ι → V`, by `μ(z) = β_ℝ^* μ_Δ [z]`. -/
+level is `z ↦ μ(z) ∘ s` for a right inverse `s` of `β_ℝ : ℝ^ι → V`, since `μ(z) = β_ℝ^* μ_Δ [z]`
+(`TauCeti.Toric.DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap`). -/
 theorem contMDiff_reducedMomentMap
     (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j))) :
     letI := hΔ.delzantQuotientChartedSpace hi
-    ContMDiff 𝓘(ℝ, DelzantQuotientModel i u) 𝓘(ℝ, StrongDual ℝ V) ∞
+    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) 𝓘(ℝ, StrongDual ℝ V) ∞
       (DelzantQuotient.reducedMomentMap hβ (c := c)) := by
   let _ := hΔ.delzantLevelChartedSpace hi
   let _ := hΔ.delzantQuotientChartedSpace hi
@@ -392,17 +372,13 @@ theorem contMDiff_reducedMomentMap
   have h : DelzantQuotient.reducedMomentMap hβ ∘ DelzantQuotient.mk = fun x : delzantLevel i u c ↦
       (delzantMomentMap c x).comp (LinearMap.toContinuousLinearMap s) := by
     funext x
-    rw [Function.comp_apply, DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap hβ x]
     ext v
-    simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
-      LinearMap.coe_toContinuousLinearMap']
-    rw [← LinearMap.comp_apply, hs, LinearMap.id_apply]
+    simp [DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap hβ x, ← LinearMap.comp_apply,
+      hs]
   rw [h]
   exact ((contDiff_delzantMomentMap c).contMDiff.comp (hΔ.contMDiff_coe_delzantLevel hi)).clm_comp
     contMDiff_const
 
 end IsDelzant
 
-end Toric
-
-end TauCeti
+end TauCeti.Toric
