@@ -10,12 +10,13 @@ public import Mathlib.Topology.Compactness.Lindelof
 /-!
 # Products of Lindelöf spaces with compact spaces
 
-The product of a Lindelöf space `X` and a compact space `Y` is Lindelöf. Each vertical slice
-`{x} × t` is compact, so it is covered by finitely many members of an open cover, and by the
-tube lemma (`generalized_tube_lemma`) so is a whole tube `u ×ˢ v` around it. Countably many of
-these tubes cover `s ×ˢ t`, since `s` is Lindelöf (`IsLindelof.prod_isCompact`, and symmetrically
-`IsCompact.prod_isLindelof`), yielding the whole-space instances `LindelofSpace.prod_compactSpace`
-and `LindelofSpace.compactSpace_prod`.
+The product `s ×ˢ t` of a Lindelöf set `s : Set X` and a compact set `t : Set Y` is Lindelöf
+(`IsLindelof.prod_isCompact`, and symmetrically `IsCompact.prod_isLindelof`). Each vertical slice
+`{x} ×ˢ t` is compact, so it is covered by finitely many members of an open cover, and by the
+tube lemma (`generalized_tube_lemma_left`) so is a whole tube `u ×ˢ t` around it. Countably many
+of these tubes cover `s ×ˢ t`, since `s` is Lindelöf. Specializing to `univ` yields the
+whole-space instances `LindelofSpace.prod_compactSpace` and
+`TauCeti.lindelofSpace_prod_of_compactSpace_left`.
 
 Products of two Lindelöf spaces need not be Lindelöf (the Sorgenfrey plane), so some
 compactness assumption on one factor is needed. This is used for the levels `Xₙ × Δⁿ` of
@@ -38,33 +39,30 @@ theorem IsLindelof.prod_isCompact {s : Set X} {t : Set Y} (hs : IsLindelof s) (h
     IsLindelof (s ×ˢ t) := by
   rw [isLindelof_iff_countable_subcover]
   intro ι U hUo hU
-  -- For each `x ∈ s`, cover `{x} × t` by finitely many members of `U`, then thicken `{x}` to
-  -- an open neighbourhood `u x` using the generalized tube lemma.
-  have hslice (x : s) :
-      ∃ (u : Set X) (v : Set Y) (f : Finset ι),
-        IsOpen u ∧ x.val ∈ u ∧ t ⊆ v ∧ u ×ˢ v ⊆ ⋃ i ∈ f, U i := by
+  -- For each `x ∈ s`, cover `{x} ×ˢ t` by finitely many members of `U`, then thicken `{x}` to
+  -- a neighbourhood `u x hx` using `generalized_tube_lemma_left`.
+  have hslice (x : X) (hx : x ∈ s) :
+      ∃ (u : Set X) (f : Finset ι), u ∈ 𝓝 x ∧ u ×ˢ t ⊆ ⋃ i ∈ f, U i := by
     obtain ⟨f, hf⟩ :=
-      (isCompact_singleton (x := x.val) |>.prod ht).elim_finite_subcover U hUo <|
-        (prod_mono_left (singleton_subset_iff.2 x.property)).trans hU
-    obtain ⟨u, v, huo, -, hxu, htv, huv⟩ :=
-      generalized_tube_lemma isCompact_singleton ht (isOpen_biUnion fun i _ ↦ hUo i) hf
-    exact ⟨u, v, f, huo, hxu rfl, htv, huv⟩
-  choose u v f huo hxu htv huv using hslice
-  obtain ⟨c, hc, hsc⟩ :=
-    hs.elim_countable_subcover u huo fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hxu _⟩
-  refine ⟨⋃ x ∈ c, (f x : Set ι), hc.biUnion fun x _ ↦ (f x).countable_toSet, ?_⟩
+      (isCompact_singleton (x := x) |>.prod ht).elim_finite_subcover U hUo <|
+        (prod_mono_left (singleton_subset_iff.2 hx)).trans hU
+    obtain ⟨u, hu, huf⟩ := generalized_tube_lemma_left isCompact_singleton ht (s' := univ) <|
+      Filter.mem_inf_of_left ((isOpen_biUnion fun i _ ↦ hUo i).mem_nhdsSet.2 hf)
+    rw [nhdsSetWithin_univ, nhdsSet_singleton] at hu
+    exact ⟨u, f, hu, huf⟩
+  choose u f hu huf using hslice
+  obtain ⟨c, hc, hsc⟩ := hs.elim_nhds_subcover' u hu
+  refine ⟨⋃ x ∈ c, (f x.val x.property : Set ι),
+    hc.biUnion fun x _ ↦ (f x.val x.property).countable_toSet, ?_⟩
   rintro ⟨a, b⟩ ⟨ha, hb⟩
   obtain ⟨x, hxc, hax⟩ := mem_iUnion₂.1 (hsc ha)
-  obtain ⟨i, hif, hi⟩ := mem_iUnion₂.1 (huv x ⟨hax, htv x hb⟩)
+  obtain ⟨i, hif, hi⟩ := mem_iUnion₂.1 (huf x.val x.property ⟨hax, hb⟩)
   exact mem_iUnion₂.2 ⟨i, mem_iUnion₂.2 ⟨x, hxc, hif⟩, hi⟩
 
 /-- The product of a compact set and a Lindelöf set is Lindelöf. -/
 theorem IsCompact.prod_isLindelof {s : Set X} {t : Set Y} (hs : IsCompact s) (ht : IsLindelof t) :
     IsLindelof (s ×ˢ t) := by
-  have h : s ×ˢ t = Prod.swap '' (t ×ˢ s) := by
-    ext ⟨a, b⟩
-    simp
-  rw [h]
+  rw [← Set.image_swap_prod t s]
   exact (ht.prod_isCompact hs).image continuous_swap
 
 /-- The product of a Lindelöf space and a compact space is Lindelöf. -/
@@ -75,7 +73,7 @@ instance LindelofSpace.prod_compactSpace [LindelofSpace X] [CompactSpace Y] :
     exact isLindelof_univ.prod_isCompact isCompact_univ
 
 /-- The product of a compact space and a Lindelöf space is Lindelöf. -/
-instance LindelofSpace.compactSpace_prod [CompactSpace X] [LindelofSpace Y] :
+instance TauCeti.lindelofSpace_prod_of_compactSpace_left [CompactSpace X] [LindelofSpace Y] :
     LindelofSpace (X × Y) where
   isLindelof_univ := by
     rw [← univ_prod_univ]
