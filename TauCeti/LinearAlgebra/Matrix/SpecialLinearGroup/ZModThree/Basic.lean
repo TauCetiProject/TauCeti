@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Quaternion
 public import Mathlib.GroupTheory.Sylow
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.GroupTheory.Complement.Local
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import Mathlib.Tactic.FinCases
@@ -21,6 +19,7 @@ import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.OrderOf
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Perfect
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Subgroup and Sylow structure of `SL(2, ZMod 3)`
@@ -94,13 +93,10 @@ theorem natCard_sl2_zmod_three : Nat.card SL(2, ZMod 3) = 24 := by
   rw [Matrix.card_SL_field, Fin.prod_univ_two, ZMod.card]
   decide
 
-/-- In `SL(2, ZMod 3)`, `-1` is distinct from `1`. -/
-theorem sl2_zmod_three_neg_one_ne_one : (-1 : SL(2, ZMod 3)) ≠ 1 := by decide
-
 /-- The centre of `SL(2, ZMod 3)` has cardinality `2`. -/
 theorem natCard_center_sl2_zmod_three : Nat.card (Subgroup.center SL(2, ZMod 3)) = 2 := by
-  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  exact Matrix.SpecialLinearGroup.card_center_eq_two sl2_zmod_three_neg_one_ne_one
+  have : NeZero (2 : ZMod 3) := ⟨by decide⟩
+  exact Matrix.SpecialLinearGroup.card_center_eq_two Matrix.SpecialLinearGroup.neg_one_ne_one
 
 /-- `SL(2, ZMod 3)` has no subgroup of cardinality `12`. -/
 theorem not_exists_subgroup_sl2_zmod_three_card_twelve :
@@ -377,71 +373,32 @@ noncomputable instance instUniqueSylowTwoSL2ZModThree : Unique (Sylow 2 SL(2, ZM
   sl2ZModThreeSylowTwo.unique_of_normal
     (coe_sl2ZModThreeSylowTwo.symm ▸ sl2ZModThreeQuaternionSubgroup_normal)
 
-private theorem mem_sl2ZModThreeQuaternionSubgroup_of_trace_eq_zero {g : SL(2, ZMod 3)}
-    (htr : (g : Matrix (Fin 2) (Fin 2) (ZMod 3)).trace = 0) :
-    g ∈ sl2ZModThreeQuaternionSubgroup := by
-  have hd : g 1 1 = -g 0 0 := eq_neg_of_add_eq_zero_right (by rwa [Matrix.trace_fin_two] at htr)
-  have hdet : g 0 0 * (-g 0 0) - g 0 1 * g 1 0 = 1 := by
-    simpa [hd] using g.fin_two_mul_sub_mul_eq_one
-  have hcases : ∀ a b c : ZMod 3, a * (-a) - b * c = 1 →
-      (a = 0 ∧ b = 1 ∧ c = 2) ∨ (a = 0 ∧ b = 2 ∧ c = 1) ∨
-      (a = 1 ∧ b = 1 ∧ c = 1) ∨ (a = 1 ∧ b = 2 ∧ c = 2) ∨
-      (a = 2 ∧ b = 1 ∧ c = 1) ∨ (a = 2 ∧ b = 2 ∧ c = 2) := by decide
-  have hmem (q : QuaternionGroup 2) {a b c d : ZMod 3}
-      (h00 : g 0 0 = a) (h01 : g 0 1 = b) (h10 : g 1 0 = c) (h11 : g 1 1 = d)
-      (hq : (sl2ZModThreeQuaternionHom q : Matrix (Fin 2) (Fin 2) (ZMod 3)) = !![a, b; c, d]) :
-      g ∈ sl2ZModThreeQuaternionSubgroup := by
-    refine ⟨q, Subtype.ext ?_⟩
-    rw [hq]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [h00, h01, h10, h11]
-  rcases hcases (g 0 0) (g 0 1) (g 1 0) hdet with
-    ⟨h00, h01, h10⟩ | ⟨h00, h01, h10⟩ | ⟨h00, h01, h10⟩ |
-    ⟨h00, h01, h10⟩ | ⟨h00, h01, h10⟩ | ⟨h00, h01, h10⟩
-  · exact hmem (.a 3) h00 h01 h10 (by rw [hd, h00])
-      (by rw [sl2ZModThreeQuaternionHom_a]; decide)
-  · exact hmem (.a 1) h00 h01 h10 (by rw [hd, h00])
-      (by rw [sl2ZModThreeQuaternionHom_a]; decide)
-  · exact hmem (.xa 0) h00 h01 h10 (by rw [hd, h00])
-      (by rw [sl2ZModThreeQuaternionHom_xa]; decide)
-  · exact hmem (.xa 1) h00 h01 h10 (by rw [hd, h00])
-      (by rw [sl2ZModThreeQuaternionHom_xa]; decide)
-  · exact hmem (.xa 3) h00 h01 h10 (by rw [hd, h00])
-      (by rw [sl2ZModThreeQuaternionHom_xa]; decide)
-  · exact hmem (.xa 2) h00 h01 h10 (by rw [hd, h00])
-      (by rw [sl2ZModThreeQuaternionHom_xa]; decide)
+/-- **Fourth-power characterization of `Q₈ ≤ SL(2, ZMod 3)`**:
+`TauCeti.sl2ZModThreeQuaternionSubgroup` consists precisely of the elements of `SL(2, ZMod 3)`
+whose fourth power is `1`. -/
+theorem mem_sl2ZModThreeQuaternionSubgroup_iff_pow_four {g : SL(2, ZMod 3)} :
+    g ∈ sl2ZModThreeQuaternionSubgroup ↔ g ^ 4 = 1 := by
+  constructor
+  · intro hg
+    have hexp : Monoid.exponent sl2ZModThreeQuaternionSubgroup = 4 :=
+      (Monoid.exponent_eq_of_mulEquiv sl2ZModThreeQuaternionEquiv).symm.trans
+        exponent_quaternionGroup_two
+    simpa [hexp] using Subgroup.pow_exponent_eq_one hg
+  · intro h4
+    have h3 : g ^ 3 ∈ sl2ZModThreeQuaternionSubgroup := by
+      simpa [index_sl2ZModThreeQuaternionSubgroup] using
+        sl2ZModThreeQuaternionSubgroup.pow_index_mem g
+    have hinv : (g ^ 3)⁻¹ = g := inv_eq_of_mul_eq_one_right (by simpa [← pow_succ] using h4)
+    exact hinv ▸ inv_mem h3
 
 /-- **Trace characterization of `Q₈ ≤ SL(2, ZMod 3)`**: a matrix in `SL(2, ZMod 3)` belongs
 to `TauCeti.sl2ZModThreeQuaternionSubgroup` if and only if it is `1`, `-1`, or traceless. -/
 theorem mem_sl2ZModThreeQuaternionSubgroup_iff_eq_or_trace_eq_zero {g : SL(2, ZMod 3)} :
     g ∈ sl2ZModThreeQuaternionSubgroup ↔
       g = 1 ∨ g = -1 ∨ (g : Matrix (Fin 2) (Fin 2) (ZMod 3)).trace = 0 := by
-  constructor
-  · rintro ⟨q, rfl⟩
-    cases q with
-    | a i => rw [sl2ZModThreeQuaternionHom_a]; fin_cases i <;> decide
-    | xa i => rw [sl2ZModThreeQuaternionHom_xa]; fin_cases i <;> decide
-  · rintro (rfl | rfl | htr)
-    · exact sl2ZModThreeQuaternionSubgroup.one_mem
-    · exact neg_one_mem_sl2ZModThreeQuaternionSubgroup
-    · exact mem_sl2ZModThreeQuaternionSubgroup_of_trace_eq_zero htr
-
-/-- **Fourth-power characterization of `Q₈ ≤ SL(2, ZMod 3)`**:
-`TauCeti.sl2ZModThreeQuaternionSubgroup` consists precisely of the elements of `SL(2, ZMod 3)`
-whose fourth power is `1`. -/
-theorem mem_sl2ZModThreeQuaternionSubgroup_iff_pow_four {g : SL(2, ZMod 3)} :
-    g ∈ sl2ZModThreeQuaternionSubgroup ↔ g ^ 4 = 1 := by
   have : NeZero (2 : ZMod 3) := ⟨by decide⟩
-  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  rw [mem_sl2ZModThreeQuaternionSubgroup_iff_eq_or_trace_eq_zero]
+  rw [mem_sl2ZModThreeQuaternionSubgroup_iff_pow_four]
   constructor
-  · rintro (rfl | rfl | htr)
-    · simp
-    · decide
-    · have hsq : g ^ 2 = -1 :=
-        (Matrix.SpecialLinearGroup.sq_eq_neg_one_iff_trace_eq_zero g).mpr htr
-      calc g ^ 4 = (g ^ 2) ^ 2 := by rw [← pow_mul]
-        _ = 1 := by rw [hsq]; decide
   · intro h4
     have hsq2 : (g ^ 2) ^ 2 = 1 := by rwa [← pow_mul]
     rcases (Matrix.SpecialLinearGroup.sq_eq_one_iff (g ^ 2)).mp hsq2 with hsq | hsq
@@ -450,6 +407,12 @@ theorem mem_sl2ZModThreeQuaternionSubgroup_iff_pow_four {g : SL(2, ZMod 3)} :
       · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr
         ((Matrix.SpecialLinearGroup.sq_eq_neg_one_iff_trace_eq_zero g).mp hsq))
+  · rintro (rfl | rfl | htr)
+    · simp
+    · rw [show (4 : ℕ) = 2 * 2 by rfl, pow_mul, neg_one_sq, one_pow]
+    · have hsq : g ^ 2 = -1 :=
+        (Matrix.SpecialLinearGroup.sq_eq_neg_one_iff_trace_eq_zero g).mpr htr
+      rw [show (4 : ℕ) = 2 * 2 by rfl, pow_mul, hsq, neg_one_sq]
 
 /-- **The derived subgroup of `SL(2, ZMod 3)` is `TauCeti.sl2ZModThreeQuaternionSubgroup`.**
 The quotient has prime order `3` (hence is abelian), while conjugating `sl2ZModThreeI` and
@@ -463,9 +426,11 @@ theorem commutator_sl2_zmod_three_eq_sl2ZModThreeQuaternionSubgroup :
       index_sl2ZModThreeQuaternionSubgroup
     exact (isCyclic_of_prime_card hcard).isMulCommutative
   · rw [sl2ZModThreeQuaternionSubgroup_eq_closure, Subgroup.closure_le]
-    have hTJ : ⁅sl2ZModThreeT, sl2ZModThreeJ⁆ = sl2ZModThreeI := by decide
+    have hTJ : ⁅sl2ZModThreeT, sl2ZModThreeJ⁆ = sl2ZModThreeI := by
+      rw [commutatorElement_def, sl2ZModThreeT_conj_sl2ZModThreeJ, mul_inv_cancel_right]
     have hTIJ : ⁅sl2ZModThreeT, sl2ZModThreeI⁆ * ⁅sl2ZModThreeT, sl2ZModThreeJ⁆ =
-        sl2ZModThreeJ := by decide
+        sl2ZModThreeJ := by
+      rw [hTJ, commutatorElement_def, sl2ZModThreeT_conj_sl2ZModThreeI, inv_mul_cancel_right]
     have hI : sl2ZModThreeI ∈ commutator SL(2, ZMod 3) :=
       hTJ ▸ Subgroup.commutator_mem_commutator (Subgroup.mem_top sl2ZModThreeT)
         (Subgroup.mem_top sl2ZModThreeJ)

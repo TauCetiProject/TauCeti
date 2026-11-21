@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Baer's non-abelian counterexample to Gaschütz's splitting theorem
@@ -97,8 +98,9 @@ theorem baerCentralGen_sq : baerCentralGen ^ 2 = 1 :=
   Prod.ext neg_one_sq (by decide)
 
 /-- `TauCeti.baerCentralGen` is distinct from `1`. -/
-theorem baerCentralGen_ne_one : baerCentralGen ≠ 1 :=
-  fun h => sl2_zmod_three_neg_one_ne_one (congrArg Prod.fst h)
+theorem baerCentralGen_ne_one : baerCentralGen ≠ 1 := by
+  have : NeZero (2 : ZMod 3) := ⟨by decide⟩
+  exact fun h => Matrix.SpecialLinearGroup.neg_one_ne_one (congrArg Prod.fst h)
 
 /-- `TauCeti.baerCentralGen` has order `2`. -/
 @[simp]
@@ -214,7 +216,8 @@ theorem baerRightHom_injective : Function.Injective baerRightHom := by
   rw [baerRightHom_apply, ← MonoidHom.mem_ker, ker_baerQuotientHom, mem_baerCentralKernel_iff] at hc
   rcases hc with h1 | h2
   · exact congrArg Prod.snd h1
-  · exact absurd (congrArg Prod.fst h2).symm sl2_zmod_three_neg_one_ne_one
+  · have : NeZero (2 : ZMod 3) := ⟨by decide⟩
+    exact absurd (congrArg Prod.fst h2).symm Matrix.SpecialLinearGroup.neg_one_ne_one
 
 /-- `TauCeti.baerQuotientHom` factors on pairs as the product of `TauCeti.baerLeftHom` and
 `TauCeti.baerRightHom`. -/
@@ -520,8 +523,10 @@ private theorem lift_involution_notMem_baerQuaternionSubgroup {w : BaerCentralPr
     · have hsnd : Multiplicative.ofAdd (2 : ZMod 4) = 1 := congrArg Prod.snd h1
       exact absurd hsnd (by decide)
     · exact congrArg Prod.fst h2
+  have : NeZero (2 : ZMod 3) := ⟨by decide⟩
   refine ⟨q, c, rfl, hq, ?_, ?_⟩ <;> rintro rfl <;>
-    exact sl2_zmod_three_neg_one_ne_one (by simpa using hq2.symm)
+    exact Matrix.SpecialLinearGroup.neg_one_ne_one
+      (by simpa only [one_pow, neg_one_sq] using hq2.symm)
 
 private theorem conj_ne_of_notMem_baerSylowSubgroup {u : BaerCentralProduct}
     (huS : u ∉ baerSylowSubgroup) {q : SL(2, ZMod 3)} {c : Multiplicative (ZMod 4)}

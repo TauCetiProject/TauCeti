@@ -9,6 +9,8 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
+import Mathlib.LinearAlgebra.Matrix.CharP
+import TauCeti.Algebra.CharP.Unipotent
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 
@@ -37,6 +39,10 @@ of the two matrices and of their product:
 trace of a commutator differs from `2` by minus the determinant of the additive commutator:
 `tr ⁅A, B⁆ - 2 = -det (A B - B A)`, since `⁅A, B⁆ - 1 = (A B - B A) A⁻¹ B⁻¹` and
 `det (M - 1) = 2 - tr M` for `M ∈ SL(2, R)`.
+
+In `SL(2, R)` over any commutative ring, `g ^ 2 = -1 ↔ trace g = 0`; over a reduced commutative ring
+of exponential characteristic `p`, elements of `p`-power order have trace `2`, and when `2` is
+left-regular no nontrivial element of trace `2` commutes with a traceless element.
 
 These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
 from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
@@ -75,6 +81,12 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_fin_two`: the Fricke trace identity.
 * `Matrix.SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two`: the trace of a commutator
   through the determinant of the additive commutator.
+* `Matrix.SpecialLinearGroup.sq_eq_neg_one_iff_trace_eq_zero`: `g ^ 2 = -1 ↔ trace g = 0` in
+  `SL(2, R)`.
+* `Matrix.SpecialLinearGroup.trace_eq_two_of_pow_expChar_pow_eq_one`: an element of `SL(2, R)`
+  killed by a power of the exponential characteristic has trace `2`.
+* `Matrix.SpecialLinearGroup.eq_one_of_commute_of_trace_eq_two_of_trace_eq_zero`: an element of
+  `SL(2, R)` of trace `2` commuting with a traceless element of `SL(2, R)` is `1`.
 
 ## References
 
@@ -352,5 +364,101 @@ theorem SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two {R : Type*} [
       Fin.sum_univ_two, of_apply,
     cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
   linear_combination 2 * (A 0 0 * A 1 1 - A 0 1 * A 1 0) * hB + 2 * hA
+
+namespace SpecialLinearGroup
+
+open scoped MatrixGroups
+
+variable {R : Type*} [CommRing R]
+
+/-- **Square roots of `-1` in `SL(2, R)` are the traceless matrices**: over any commutative ring,
+`g ^ 2 = -1` holds if and only if `trace g = 0`, by the `2 × 2` Cayley–Hamilton identity
+`g ^ 2 = (trace g) • g - 1`. -/
+theorem sq_eq_neg_one_iff_trace_eq_zero (g : SL(2, R)) :
+    g ^ 2 = -1 ↔ (g : Matrix (Fin 2) (Fin 2) R).trace = 0 := by
+  set A : Matrix (Fin 2) (Fin 2) R := g.val
+  have hch : A ^ 2 = A.trace • A - 1 := by
+    simpa [A, g.det_coe] using Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two A
+  constructor
+  · intro hsq
+    have hmat : A ^ 2 = -1 := by simpa [A, coe_pow] using congrArg Subtype.val hsq
+    have hsmul : A.trace • A = 0 := by
+      rw [hmat, eq_sub_iff_add_eq, neg_add_cancel] at hch
+      exact hch.symm
+    have hone : A.trace • (1 : Matrix (Fin 2) (Fin 2) R) = 0 := by
+      calc A.trace • (1 : Matrix (Fin 2) (Fin 2) R)
+          = (A.trace • A) * ((g⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) := by
+            rw [Matrix.smul_mul, ← coe_mul, mul_inv_cancel, coe_one]
+        _ = 0 := by rw [hsmul, Matrix.zero_mul]
+    simpa [A] using congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M 0 0) hone
+  · intro htr
+    apply Subtype.ext
+    rw [coe_pow, coe_neg, coe_one, hch, htr, zero_smul, zero_sub]
+
+/-- Over a reduced commutative ring of exponential characteristic `p`, every element `g ∈ SL(2, R)`
+satisfying `g ^ (p ^ k) = 1` has `trace g = 2`.
+
+Reducedness is needed: over `(ZMod 3)[ε]/(ε³)`, the diagonal matrix `diag(1 + ε, 1 - ε + ε²)` lies
+in `SL(2, R)` and has cube `1`, but its trace is `2 + ε² ≠ 2`. -/
+theorem trace_eq_two_of_pow_expChar_pow_eq_one [IsReduced R] {p : ℕ} [ExpChar R p] {k : ℕ}
+    {g : SL(2, R)} (hg : g ^ p ^ k = 1) :
+    (g : Matrix (Fin 2) (Fin 2) R).trace = 2 := by
+  set A : Matrix (Fin 2) (Fin 2) R := g.val
+  have hApow : A ^ p ^ k = 1 := by simpa [A, coe_pow] using congrArg Subtype.val hg
+  have hnil : IsNilpotent (A - 1) := TauCeti.isNilpotent_sub_one_of_pow_expChar_pow_eq_one hApow
+  have htr : (A - 1).trace = 0 := (Matrix.isNilpotent_trace_of_isNilpotent hnil).eq_zero
+  rw [Matrix.trace_sub, Matrix.trace_one, Fintype.card_fin] at htr
+  exact sub_eq_zero.mp (by simpa [A] using htr)
+
+/-- **Trace rigidity for commuting matrices in `SL(2, R)`**: over a reduced commutative ring in
+which `2` is left-regular, an element of `SL(2, R)` of trace `2` that commutes with a traceless
+element of `SL(2, R)` must be `1`.
+
+Both ring hypotheses are needed: over the dual numbers `ℚ[ε]/(ε²)` (not reduced), `1 + ε • B` has
+trace `2` and commutes with the traceless matrix `B = !![0, -1; 1, 0]`; over `ZMod 6` (reduced,
+but `2` is not left-regular), `(!![1, 1; 0, 1], 1)` and `(!![1, 1; 0, 1], !![0, -1; 1, 0])` in
+`SL(2, ZMod 2) × SL(2, ZMod 3)` commute with traces `2` and `0`. -/
+theorem eq_one_of_commute_of_trace_eq_two_of_trace_eq_zero [IsReduced R]
+    (h2 : IsLeftRegular (2 : R)) {a b : SL(2, R)} (hcomm : Commute a b)
+    (ha : (a : Matrix (Fin 2) (Fin 2) R).trace = 2)
+    (hb : (b : Matrix (Fin 2) (Fin 2) R).trace = 0) : a = 1 := by
+  set A : Matrix (Fin 2) (Fin 2) R := a.val
+  set B : Matrix (Fin 2) (Fin 2) R := b.val
+  set N : Matrix (Fin 2) (Fin 2) R := A - 1
+  have hNtr : N.trace = 0 := by simp [N, A, ha]
+  have hNdet : N.det = 0 := by
+    have hneg : N = -(1 - A) := (neg_sub 1 A).symm
+    rw [hneg, Matrix.det_neg, Fintype.card_fin, neg_one_sq, one_mul,
+      Matrix.det_one_sub_eq_two_sub_trace_of_det_eq_one a.det_coe, ha, sub_self]
+  have hNsq : N ^ 2 = 0 := by
+    rw [Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two, hNtr, hNdet, zero_smul, zero_smul,
+      sub_zero]
+  have hcommNB : Commute N B := by
+    refine Commute.sub_left ?_ (Commute.one_left B)
+    simpa [Commute, SemiconjBy, A, B, coe_mul] using congrArg Subtype.val hcomm.eq
+  -- Any two traceless `2 × 2` matrices satisfy `N * B + B * N = trace (N * B) • 1`.
+  have hanti : N * B + B * N = (N * B).trace • (1 : Matrix (Fin 2) (Fin 2) R) := by
+    have hadj : adjugate (N * B) = B * N := by
+      rw [Matrix.adjugate_mul_distrib, Matrix.adjugate_fin_two_eq_trace_smul_one_sub,
+        Matrix.adjugate_fin_two_eq_trace_smul_one_sub, hb, hNtr, zero_smul, zero_sub, zero_sub,
+        neg_mul_neg]
+    rw [Matrix.adjugate_fin_two_eq_trace_smul_one_sub] at hadj
+    exact eq_sub_iff_add_eq'.mp hadj.symm
+  have htwoNB : (2 : R) • (N * B) = (N * B).trace • (1 : Matrix (Fin 2) (Fin 2) R) := by
+    rw [two_smul, ← hanti, hcommNB.eq]
+  have hNBtr : (N * B).trace = 0 := by
+    have hsq : (N * B) ^ 2 = 0 := by
+      rw [hcommNB.mul_pow, hNsq, Matrix.zero_mul]
+    exact (Matrix.isNilpotent_trace_of_isNilpotent ⟨2, hsq⟩).eq_zero
+  rw [hNBtr, zero_smul] at htwoNB
+  have htwoN : (2 : R) • N = 0 := by
+    calc (2 : R) • N
+        = ((2 : R) • (N * B)) * ((b⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) := by
+          rw [Matrix.smul_mul, Matrix.mul_assoc, ← coe_mul, mul_inv_cancel, coe_one, Matrix.mul_one]
+      _ = 0 := by rw [htwoNB, Matrix.zero_mul]
+  exact Subtype.ext (sub_eq_zero.mp (Matrix.ext fun i j ↦ h2
+    (by simpa [N, A] using congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M i j) htwoN)))
+
+end SpecialLinearGroup
 
 end Matrix
