@@ -62,40 +62,6 @@ theorem centralizer_of_eq_map {g : G} (hg : ∀ k : G, k * g * k⁻¹ ∉ centra
   exact Monoid.PushoutI.centralizer_of_eq_map (centralizerExtMap_injective u n) (i := false)
     fun k hk => hg k (by simpa only [centralizerExtMap_false, range_subtype] using hk)
 
-/-- In `G(u, ℤⁿ)`, if `C_G(u)` is malnormal in `G` and the factor `C_G(u) × ℤⁿ` is abelian, an
-element commuting with a nonidentity element `c` of `C_G(u)` lies in that factor. -/
-private theorem mem_range_ofProd_of_mem_centralizer (hT : TauCeti.IsTISubgroup (centralizer {u}))
-    (hA : ∀ q r : centralizer {u} × (Fin n → Multiplicative ℤ), Commute q r) {c : centralizer {u}}
-    (hc : (c : G) ≠ 1) {x : CentralizerExt u n}
-    (hx : x ∈ centralizer {(of c : CentralizerExt u n)}) :
-    x ∈ (ofProd : _ →* CentralizerExt u n).range := by
-  -- Write `x = a * w` with `a` in the factor and `w` a reduced word not starting in it.
-  obtain ⟨a, L, hL, hred, hhead, rfl⟩ :=
-    Monoid.PushoutI.exists_eq_of_mul_list_prod (φ := centralizerExtMap u n) true x
-  rcases L with _ | ⟨⟨_ | _, g⟩, L⟩
-  · exact ⟨a, by simp [ofProd_def]⟩
-  swap
-  · exact absurd rfl (hhead _ rfl)
-  -- `w = g * w'` with `g ∈ G ∖ C_G(u)`, and `w'⁻¹ * (g⁻¹ * c * g) * w' = c` is impossible.
-  exfalso
-  have hcb : Monoid.PushoutI.of (φ := centralizerExtMap u n) false (c : G) =
-      Monoid.PushoutI.base _ c := by
-    rw [← Monoid.PushoutI.of_apply_eq_base _ false, centralizerExtMap_false, coe_subtype]
-  rw [← ofProd_inl] at hx
-  have hw := ((hA a (c, 1)).map ofProd).inv_left.mul_left (mem_centralizer_singleton_iff.1 hx)
-  rw [ofProd_inl, of_def, hcb, ofProd_def, inv_mul_cancel_left] at hw
-  simp only [List.map_cons, List.prod_cons] at hw
-  -- `show` retypes the letter `g : CentralizerExtFactor u n false` as an element of `G`.
-  have hg : (show G from g) ∉ centralizer {u} := by
-    simpa only [centralizerExtMap_false, range_subtype] using hred _ List.mem_cons_self
-  refine Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_base
-    (centralizerExtMap_injective u n) hL.tail (fun l hl => hred l (List.mem_cons_of_mem _ hl))
-    (i := false) (g := (show G from g)⁻¹ * (c : G) * show G from g) ?_
-    (fun l hl => ((List.isChain_cons.1 hL).1 l hl).symm) ⟨c, ?_⟩
-  · simpa only [centralizerExtMap_false, range_subtype, inv_inv] using
-      hT.conj_notMem (inv_mem_iff.not.2 hg) c.property hc
-  · simpa [hcb, mul_assoc] using hw.inv_mul_cancel.symm
-
 /-- **Centralizers of elements of the factor `C_G(u) × ℤⁿ`.** If the centralizer `C_G(u)` of `u`
 is abelian and malnormal in `G`, then the centralizer in `G(u, ℤⁿ)` of a nonidentity element of
 the factor `C_G(u) × ℤⁿ` is that factor. -/
@@ -104,25 +70,14 @@ theorem centralizer_ofProd_eq_range_ofProd (hC : IsMulCommutative (centralizer {
     {p : centralizer {u} × (Fin n → Multiplicative ℤ)} (hp : p ≠ 1) :
     centralizer {(ofProd p : CentralizerExt u n)} =
       (ofProd : _ →* CentralizerExt u n).range := by
-  -- The factor `C_G(u) × ℤⁿ` is abelian.
-  have hA (q r : centralizer {u} × (Fin n → Multiplicative ℤ)) : Commute q r :=
-    Prod.ext (isMulCommutative_iff.1 hC q.1 r.1) (mul_comm q.2 r.2)
-  refine le_antisymm (fun x hx => ?_) ?_
-  · by_cases hp2 : p.2 = 1
-    · rw [show p = (p.1, 1) from Prod.ext rfl hp2, ofProd_inl] at hx
-      exact mem_range_ofProd_of_mem_centralizer hT hA
-        (fun h => hp (Prod.ext (Subtype.ext h) hp2)) hx
-    · -- `p` lies outside `C_G(u)`, and its conjugates in the abelian factor are `p` itself.
-      have hg : ∀ k : centralizer {u} × (Fin n → Multiplicative ℤ),
-          k * p * k⁻¹ ∉ (centralizerExtMap u n true).range := by
-        rintro k ⟨c, hc⟩
-        rw [(hA k p).eq, mul_inv_cancel_right] at hc
-        exact hp2 (by rw [← hc, centralizerExtMap_true, MonoidHom.inl_apply])
-      rw [ofProd_def] at hx ⊢
-      exact map_le_range _ _ <| (Monoid.PushoutI.centralizer_of_eq_map
-        (centralizerExtMap_injective u n) (i := true) (g := p) hg).le hx
-  · rintro _ ⟨q, rfl⟩
-    exact mem_centralizer_singleton_iff.2 ((hA q p).map ofProd).eq
+  -- The factor `C_G(u) × ℤⁿ` is abelian, so it centralizes `p`; and `C_G(u)` is malnormal in `G`.
+  have hA : centralizer {p} = ⊤ := eq_top_iff.2 fun q _ => mem_centralizer_singleton_iff.2
+    (Prod.ext (isMulCommutative_iff.1 hC q.1 p.1) (mul_comm q.2 p.2))
+  rw [ofProd_def, Monoid.PushoutI.centralizer_of_eq_map_of_isTISubgroup
+    (centralizerExtMap_injective u n) (i := true) ?_ hp, hA, ← MonoidHom.range_eq_map]
+  rintro (_ | _) h
+  · simpa using hT
+  · exact absurd rfl h
 
 section IsFreeGroup
 
