@@ -329,9 +329,15 @@ lemma twistedHomologyMap_excisionMap_comp_twistedHomologyComplIsoOfRestrictIso_h
           (eqToHom (pullback_obj_fst_excisionMap U Kᶜ L) ≫ e.hom ≫
             eqToHom (pullback_obj_fst_excisionMap U Kᶜ L').symm) m ≫
         twistedHomologyMap (excisionMap U Kᶜ) L' m := by
-  simp [twistedHomologyComplIsoOfRestrictIso]
-  -- `simp` leaves the `hom` of the composite coefficient isomorphism folded; it is the stated
-  -- composite of `eqToHom`s and `e.hom` by definition of `Iso.trans`.
+  simp only [twistedHomologyComplIsoOfRestrictIso, HomologicalComplex.homologyFunctor_obj,
+    Iso.trans_hom, Iso.symm_hom, asIso_inv, Functor.mapIso_hom,
+    twistedChainComplexCoefficientIso_hom, HomologicalComplex.homologyFunctor_map, asIso_hom,
+    IsIso.hom_inv_id_assoc]
+  -- The `hom` of the composite coefficient isomorphism stays folded: the ambient spaces of the
+  -- excision inclusion are `U` and `X` only up to unfolding `TopPair.interPair` and
+  -- `TopPair.ofSubset`, so the goal is not type-correct at the transparency used by `rw` and
+  -- `simp`, and `Iso.trans_hom` cannot rewrite it. It is the stated composite of `eqToHom`s and
+  -- `e.hom` by definition of `Iso.trans`.
   rfl
 
 /-- The inverse of `TopPair.twistedHomologyComplIsoOfRestrictIso` after the excision inclusion of
@@ -349,7 +355,10 @@ lemma twistedHomologyMap_excisionMap_comp_twistedHomologyComplIsoOfRestrictIso_i
           (eqToHom (pullback_obj_fst_excisionMap U Kᶜ L') ≫ e.inv ≫
             eqToHom (pullback_obj_fst_excisionMap U Kᶜ L).symm) m ≫
         twistedHomologyMap (excisionMap U Kᶜ) L m := by
-  simp [twistedHomologyComplIsoOfRestrictIso]
+  simp only [twistedHomologyComplIsoOfRestrictIso, HomologicalComplex.homologyFunctor_obj,
+    Iso.trans_inv, asIso_inv, Functor.mapIso_inv, twistedChainComplexCoefficientIso_inv,
+    HomologicalComplex.homologyFunctor_map, Iso.symm_inv, asIso_hom, Category.assoc,
+    IsIso.hom_inv_id_assoc]
   -- As in the `hom` lemma, the `inv` of the composite coefficient isomorphism is unfolded by
   -- definition of `Iso.trans`.
   rfl
@@ -367,15 +376,12 @@ lemma twistedHomologyComplIsoOfRestrictIso_hom_of_iso (hU : IsOpen U) (hKU : clo
   refine Eq.trans ?_ (twistedHomologyMap_naturality (excisionMap U Kᶜ) L φ.hom m).symm
   congr 2
   -- The restriction of `φ` to `U` is transported along the equation of the ambient map of the
-  -- excision inclusion with the inclusion of `U`; generalize that equation to discharge it.
-  have key : ∀ {f g : C(TopCat.of U, X)} (h : f = g),
-      eqToHom (congrArg (fun f ↦ (pullback (R := R) f).obj L) h) ≫ (pullback g).map φ.hom ≫
-          eqToHom (congrArg (fun f ↦ (pullback (R := R) f).obj L') h).symm =
-        (pullback f).map φ.hom := by
-    rintro f g rfl
-    simp
-  exact key (ContinuousMap.ext (excisionMap_fst_apply U Kᶜ) :
-    (Hom.fst (excisionMap U Kᶜ)).hom = ⟨Subtype.val, continuous_subtype_val⟩)
+  -- excision inclusion with the inclusion of `U`.
+  exact ((conj_eqToHom_iff_heq _ _ (pullback_obj_fst_excisionMap U Kᶜ L)
+    (pullback_obj_fst_excisionMap U Kᶜ L')).2
+    (congr_arg_heq (fun f ↦ (pullback (R := R) f).map φ.hom)
+    (ContinuousMap.ext (excisionMap_fst_apply U Kᶜ) :
+      (Hom.fst (excisionMap U Kᶜ)).hom = ⟨Subtype.val, continuous_subtype_val⟩))).symm
 
 end RestrictIso
 
