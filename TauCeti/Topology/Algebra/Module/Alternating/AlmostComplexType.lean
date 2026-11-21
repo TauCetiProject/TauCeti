@@ -80,6 +80,9 @@ differential forms on an almost complex manifold.
   `(1,0)` are complex-linear and one-forms of type `(0,1)` are conjugate-linear.
 * `ContinuousAlternatingMap.eq_zero_of_alternatingDerivation_eq_smul`: for `J² = -1`, the
   derivation has no eigenvalues other than the type eigenvalues.
+* `ContinuousAlternatingMap.IsOfType.curryLeftTopological_sub_I_smul` and
+  `ContinuousAlternatingMap.IsOfType.curryLeftTopological_add_I_smul`: inserting `2 v^(1,0)`,
+  respectively `2 v^(0,1)`, lowers the holomorphic, respectively antiholomorphic, degree by one.
 * `ContinuousAlternatingMap.IsOfType.apply_update_eq_neg_I_smul` and
   `ContinuousAlternatingMap.IsOfType.map_update_smul_conj`: forms of type `(0,k)` are
   conjugate-linear in each argument.
@@ -1048,5 +1051,45 @@ theorem conjCoordForm_apply_single_eq_zero [DecidableEq ι] (e : Fin k → ι) {
 end Coordinates
 
 end TypeZero
+
+section Contraction
+
+variable [ContinuousConstSMul ℝ F] {J : V →L[ℝ] V} {n p q : ℕ} {ω : V [⋀^Fin (n + 1)]→L[ℝ] F}
+
+/-- For `J² = -1`, inserting the vector `v` into a form of type `(p+1,q)` through the combination
+`ι_v - I • ι_{J v}` gives a form of type `(p,q)`. For an almost complex structure this is the
+interior product with `2 v^(1,0)`, where `v^(1,0) = (v - I • J v) / 2`. -/
+theorem IsOfType.curryLeftTopological_sub_I_smul (hJ : ∀ v, J (J v) = -v)
+    (h : ω.IsOfType J (p + 1) q) (v : V) :
+    (ω.curryLeftTopological v - I • ω.curryLeftTopological (J v)).IsOfType J p q := by
+  have key := LinearMap.congr_fun
+    (ContinuousLinearMap.interior_sub_comp_alternatingDerivation (F := F) (n := n) hJ v) ω
+  simp only [LinearMap.comp_apply, h.alternatingDerivation_eq, map_smul, LinearMap.add_apply,
+    Module.algebraMap_end_apply, LinearMap.sub_apply, LinearMap.smul_apply,
+    curryLeftTopologicalLinear_apply] at key
+  refine ⟨by have := h.add_eq; omega, ?_⟩
+  rw [eq_sub_of_add_eq key.symm, ← sub_smul]
+  congr 1
+  push_cast
+  ring
+
+/-- For `J² = -1`, inserting the vector `v` into a form of type `(p,q+1)` through the combination
+`ι_v + I • ι_{J v}` gives a form of type `(p,q)`. For an almost complex structure this is the
+interior product with `2 v^(0,1)`, where `v^(0,1) = (v + I • J v) / 2`. -/
+theorem IsOfType.curryLeftTopological_add_I_smul (hJ : ∀ v, J (J v) = -v)
+    (h : ω.IsOfType J p (q + 1)) (v : V) :
+    (ω.curryLeftTopological v + I • ω.curryLeftTopological (J v)).IsOfType J p q := by
+  have key := LinearMap.congr_fun
+    (ContinuousLinearMap.interior_add_comp_alternatingDerivation (F := F) (n := n) hJ v) ω
+  simp only [LinearMap.comp_apply, h.alternatingDerivation_eq, map_smul, LinearMap.sub_apply,
+    Module.algebraMap_end_apply, LinearMap.add_apply, LinearMap.smul_apply,
+    curryLeftTopologicalLinear_apply] at key
+  refine ⟨by have := h.add_eq; omega, ?_⟩
+  rw [eq_add_of_sub_eq key.symm, ← add_smul]
+  congr 1
+  push_cast
+  ring
+
+end Contraction
 
 end ContinuousAlternatingMap
