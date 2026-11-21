@@ -104,6 +104,16 @@ instance [Subsingleton Ω[A⁄K]] : Subsingleton (Omega K A) :=
   (ofKaehler_surjective K A).subsingleton
 
 variable {K A} in
+/-- Universally finite differentials vanish when the structure map is surjective. -/
+theorem subsingleton_of_surjective (h : Function.Surjective (algebraMap K A)) :
+    Subsingleton (Omega K A) :=
+  have := KaehlerDifferential.subsingleton_of_surjective K A h; inferInstance
+
+/-- Universally finite differentials of a ring over itself vanish. -/
+instance instSubsingletonSelf : Subsingleton (Omega K K) :=
+  subsingleton_of_surjective Function.surjective_id
+
+variable {K A} in
 /-- A Kähler differential vanishes in `Omega K A` iff it lies in every submodule of `Ω[A⁄K]` with
 finite quotient. -/
 theorem ofKaehler_eq_zero_iff {x : Ω[A⁄K]} :
