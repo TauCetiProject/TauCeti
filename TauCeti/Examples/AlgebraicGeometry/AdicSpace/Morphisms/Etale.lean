@@ -196,14 +196,17 @@ example :
     let toPS : restrictedMvPowerSeriesCompletion 1 ℚ_[p] →+* PowerSeries ℚ_[p] :=
       (PowerSeries.IsRestricted.subring 1).subtype.comp
         restrictedMvPowerSeriesCompletionOneEquiv.toRingHom
+    have htoPS_X : toPS X = PowerSeries.X := by
+      simp [toPS, X, Pair.polydiscVar]
     have hps := congrArg (PowerSeries.coeff 1 ∘ toPS) hg
-    simp only [Function.comp_apply, map_mul, show toPS X = PowerSeries.X by
-      simp [toPS, X, Pair.polydiscVar], pow_two, mul_assoc] at hps
+    simp only [Function.comp_apply, map_mul, htoPS_X, pow_two, mul_assoc] at hps
     rw [PowerSeries.coeff_one_X, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_zero_X_mul] at hps
     exact one_ne_zero hps
   let J : Ideal D := Ideal.span {ε}
   have hJ_sq : J ^ 2 = ⊥ := by rw [Ideal.span_singleton_pow, hε_sq, Ideal.span_singleton_eq_bot]
-  have hεJ : Ideal.Quotient.mk J ε = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
+  have hεJ : (dualPair.quotientHom J).toRingHom ε = 0 := by
+    rw [Pair.Hom.toRingHom_quotientHom, Ideal.Quotient.eq_zero_iff_mem]
+    exact Ideal.subset_span rfl
   have hJ := IsNoetherianType.isClosed_ideal J
   have hQ := isSheafyForEveryPresentation_quotient_of_isStronglyNoetherian J hJ
     (dualPair.quotient J).isRingOfIntegralElements
@@ -212,6 +215,30 @@ example :
     ((basePair p).weightedCompletionHom isWeightFamily_one_weight)
   let σ₀ := Pair.polydisc.evalHom baseHom (fun _ : Fin 1 ↦ (0 : dualPair.plus))
   let σ_ε := Pair.polydisc.evalHom baseHom (fun _ : Fin 1 ↦ ⟨ε, hε_plus⟩)
+  have hσ₀_base : σ₀.comp ((basePair p).weightedCompletionHom isWeightFamily_one_weight) =
+      baseHom := Pair.polydisc.evalHom_comp_weightedCompletionHom baseHom _
+  have hσε_base : σ_ε.comp ((basePair p).weightedCompletionHom isWeightFamily_one_weight) =
+      baseHom := Pair.polydisc.evalHom_comp_weightedCompletionHom baseHom _
+  have hσ₀_X : σ₀.toRingHom X = 0 :=
+    (Pair.polydisc.toRingHom_evalHom_polydiscVar baseHom _ (0 : Fin 1)).trans
+      (ZeroMemClass.coe_zero _)
+  have hσε_X : σ_ε.toRingHom X = ε :=
+    Pair.polydisc.toRingHom_evalHom_polydiscVar baseHom _ (0 : Fin 1)
+  have hsq_base : sqPair.comp ((basePair p).weightedCompletionHom isWeightFamily_one_weight) =
+      (basePair p).weightedCompletionHom isWeightFamily_one_weight :=
+    Pair.polydisc.evalHom_comp_weightedCompletionHom _ _
+  have hsq_X : sqPair.toRingHom X = X ^ 2 :=
+    Pair.polydisc.toRingHom_evalHom_polydiscVar _ _ (0 : Fin 1)
+  have horigin_base :
+      originPair.comp ((basePair p).weightedCompletionHom isWeightFamily_one_weight) =
+        Pair.Hom.id (basePair p) :=
+    Pair.polydisc.evalHom_comp_weightedCompletionHom (Pair.Hom.id (basePair p)) _
+  have horigin_X : originPair.toRingHom X = 0 :=
+    (Pair.polydisc.toRingHom_evalHom_polydiscVar (Pair.Hom.id (basePair p)) _ (0 : Fin 1)).trans
+      (ZeroMemClass.coe_zero _)
+  have hcomp_origin_X (φ : Pair.Hom (basePair p) dualPair) :
+      (φ.comp originPair).toRingHom X = 0 := by
+    rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, horigin_X, map_zero]
   have hom_eq {C : Type} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
       [T0Space C] {T : Pair C} {φ₁ φ₂ : Pair.Hom (discPair p) T}
       (h0 : φ₁.comp ((basePair p).weightedCompletionHom isWeightFamily_one_weight) =
@@ -223,30 +250,41 @@ example :
     let g₂ := AdicSpace.comapOfPair (isSheafy_discPair p) hD σ_ε
     have hf_eq : g₁ ≫ sq = g₂ ≫ sq := by
       rw [← AdicSpace.comapOfPair_comp, ← AdicSpace.comapOfPair_comp]; congr 1; apply hom_eq
-      · simp [Pair.Hom.comp_assoc, sqPair, σ₀, σ_ε]
-      · simp [sqPair, σ₀, σ_ε, X, hε_sq]
+      · rw [Pair.Hom.comp_assoc, hsq_base, hσ₀_base, Pair.Hom.comp_assoc, hsq_base, hσε_base]
+      · rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, hsq_X, map_pow, hσ₀_X,
+          zero_pow two_ne_zero, Pair.Hom.toRingHom_comp, RingHom.comp_apply, hsq_X, map_pow,
+          hσε_X, hε_sq]
     have hι_eq : AdicSpace.comapOfPair hD hQ (dualPair.quotientHom J) ≫ g₁ =
         AdicSpace.comapOfPair hD hQ (dualPair.quotientHom J) ≫ g₂ := by
       rw [← AdicSpace.comapOfPair_comp, ← AdicSpace.comapOfPair_comp]; congr 1; apply hom_eq
-      · simp [Pair.Hom.comp_assoc, σ₀, σ_ε]
-      · simp [σ₀, σ_ε, X, hεJ]
+      · rw [Pair.Hom.comp_assoc, hσ₀_base, Pair.Hom.comp_assoc, hσε_base]
+      · rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, hσ₀_X, map_zero,
+          Pair.Hom.toRingHom_comp, RingHom.comp_apply, hσε_X]
+        exact hεJ.symm
     have hσ_eq : σ₀ = σ_ε := by
-      simpa only [g₁, g₂, AdicSpace.ofPairHomEquiv_comapOfPair] using congrArg
-        (AdicSpace.ofPairHomEquiv (isSheafy_discPair p) hD)
+      have h := congrArg (AdicSpace.ofPairHomEquiv (isSheafy_discPair p) hD)
         (hsq.eq_of_sqZero_quotient dualPair hD J hJ_sq hQ hf_eq hι_eq)
-    exact hε_ne (by simpa [σ₀, σ_ε, X] using congrArg (Pair.Hom.toRingHom · X) hσ_eq.symm)
+      rwa [AdicSpace.ofPairHomEquiv_comapOfPair, AdicSpace.ofPairHomEquiv_comapOfPair] at h
+    have hX_eq := congrArg (Pair.Hom.toRingHom · X) hσ_eq.symm
+    rw [hσε_X, hσ₀_X] at hX_eq
+    exact hε_ne hX_eq
   -- Obstruct `origin` via `exists_of_sqZero_quotient` against `σ_ε`
   have hnot_orig : ¬ IsEtaleLocalDescription origin := fun horig ↦ by
     let g₀ := AdicSpace.comapOfPair (isSheafy_basePair p) hQ ((dualPair.quotientHom J).comp baseHom)
     let h := AdicSpace.comapOfPair (isSheafy_discPair p) hD σ_ε
     have hcomm : g₀ ≫ origin = AdicSpace.comapOfPair hD hQ (dualPair.quotientHom J) ≫ h := by
       rw [← AdicSpace.comapOfPair_comp, ← AdicSpace.comapOfPair_comp]; congr 1; apply hom_eq
-      · simp [Pair.Hom.comp_assoc, originPair, σ_ε]
-      · simp [originPair, σ_ε, X, hεJ]
+      · rw [Pair.Hom.comp_assoc, horigin_base, Pair.Hom.comp_id, Pair.Hom.comp_assoc, hσε_base]
+      · rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, horigin_X, map_zero,
+          Pair.Hom.toRingHom_comp, RingHom.comp_apply, hσε_X]
+        exact hεJ.symm
     obtain ⟨g, _, hgf⟩ := horig.exists_of_sqZero_quotient dualPair hD J hJ_sq hQ g₀ h hcomm
     have hpair := congrArg (AdicSpace.ofPairHomEquiv (isSheafy_discPair p) hD) hgf
-    exact hε_ne <| by
-      simpa [origin, h, originPair, σ_ε, X] using congrArg (Pair.Hom.toRingHom · X) hpair.symm
+    rw [AdicSpace.ofPairHomEquiv_comp, AdicSpace.ofPairHomEquiv_comapOfPair,
+      AdicSpace.ofPairHomEquiv_comapOfPair] at hpair
+    have hX_eq := congrArg (Pair.Hom.toRingHom · X) hpair.symm
+    rw [hσε_X, hcomp_origin_X] at hX_eq
+    exact hε_ne hX_eq
   exact ⟨⟨hnot_sq, mt .of_isFiniteEtale hnot_sq⟩, ⟨hnot_orig, mt .of_isFiniteEtale hnot_orig⟩⟩
 
 end TauCeti.AdicSpace.Examples

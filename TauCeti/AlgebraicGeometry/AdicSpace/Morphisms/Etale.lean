@@ -154,8 +154,11 @@ theorem IsEtaleLocalDescription.isOpenImmersion_comp {f : Y ⟶ X}
     rw [ObjectProperty.homMk_hom, IsOpenImmersion.range_pullback_snd_of_left]; exact ⟨u₀, hu₀⟩
   refine ⟨U', V, W, u', i, l ≫ j, g, inferInstance, hz, hi, ?_, hg, ?_⟩
   · rw [ObjectProperty.FullSubcategory.comp_hom]; infer_instance
-  · rw [← Category.assoc, show u' ≫ v = l ≫ u from InducedCategory.Hom.ext pullback.condition.symm,
-      Category.assoc, hfac, Category.assoc]
+  · have huv : u' ≫ v = l ≫ u := by
+      ext1
+      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, u', l]
+      exact pullback.condition.symm
+    rw [← Category.assoc, huv, Category.assoc, hfac, Category.assoc]
 
 /-- **Postcomposing an étale morphism with an open immersion into an analytic target gives an étale
 morphism.** -/
@@ -234,20 +237,23 @@ theorem IsEtaleLocalDescription.of_iSup_eq_top {f : Y ⟶ X} {ι : Type*} (V : �
           isAdic_restrict _ Y.property⟩ : AdicSpace.{u}) ⟶
         ⟨X.obj.restrict (V k).isOpenEmbedding, isAdic_restrict _ X.property⟩)) :
     IsEtaleLocalDescription f := by
-  let v : ∀ k, (⟨X.obj.restrict (V k).isOpenEmbedding, isAdic_restrict _ X.property⟩ :
-      AdicSpace.{u}) ⟶ X := fun k ↦ ObjectProperty.homMk (X.obj.ofRestrict (V k).isOpenEmbedding)
+  let v : ∀ k, X.restrict (V k) ⟶ X := fun k ↦ X.ofRestrict (V k)
   have _ (k) : PreAdicSpace.IsOpenImmersion (v k).hom := inferInstance
   have hX : X.IsAnalytic := .of_jointly_surjective v (fun k ↦ (hf k).isAnalytic_target)
-    fun x ↦ let ⟨k, hx⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : x ∈ iSup V); ⟨k, ⟨x, hx⟩, rfl⟩
+    fun x ↦ let ⟨k, hx⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : x ∈ iSup V)
+      ⟨k, ⟨x, hx⟩, X.ofRestrict_base_apply (V k) ⟨x, hx⟩⟩
   let U : ι → Opens Y.obj := fun k ↦ (Opens.map f.hom.base).obj (V k)
   have hU : iSup U = ⊤ := eq_top_iff.mpr fun y _ ↦
     let ⟨k, hk⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : f.hom.base y ∈ iSup V)
     Opens.mem_iSup.mpr ⟨k, hk⟩
   refine .of_iSup_eq_top_source hX U hU fun k ↦ ?_
-  rw [show (ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
-      (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ : AdicSpace.{u}) ⟶ Y) ≫
-      f = ObjectProperty.homMk (f.hom.restrictPreimage (V k)) ≫ v k from
-    InducedCategory.Hom.ext (Hom.restrictPreimage_ofRestrict f.hom (V k)).symm]
+  have hu_eq : (ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
+      Y.restrict (U k) ⟶ Y) = Y.ofRestrict (U k) :=
+    InducedCategory.Hom.ext (Y.ofRestrict_hom (U k)).symm
+  have hres_eq : (ObjectProperty.homMk (f.hom.restrictPreimage (V k)) :
+      Y.restrict (U k) ⟶ X.restrict (V k)) = AdicSpace.restrictPreimage f (V k) :=
+    InducedCategory.Hom.ext (AdicSpace.restrictPreimage_hom f (V k)).symm
+  rw [hu_eq, ← AdicSpace.restrictPreimage_ofRestrict f (V k), ← hres_eq]
   exact (hf k).comp_isOpenImmersion (v k) hX
 
 /-! ### Refinement to affinoid middle factors and finiteness properties -/
@@ -296,13 +302,16 @@ theorem IsEtaleLocalDescription.locallyOfFiniteType {f : Y ⟶ X} (hf : IsEtaleL
   let O : Y.obj → Opens Y.obj := fun y ↦ ⟨Set.range (u y).hom.base, (hu y).base_open.isOpen_range⟩
   refine PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top O
     (eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, hy y⟩) fun y ↦ ?_
+  have huf : PreAdicSpace.LocallyOfFiniteType ((u y).hom ≫ f.hom) := by
+    have hfac' : (u y).hom ≫ f.hom = ((j y).hom ≫ (g y).hom) ≫ (i y).hom := by
+      simpa only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc] using
+        congrArg InducedCategory.Hom.hom (hfac y)
+    rw [hfac']
+    exact ((hg y).locallyOfFiniteType.comp_of_isOpenImmersion _).isOpenImmersion_comp _
   rw [← IsOpenImmersion.isoOfRangeEq_inv_comp (u y).hom (Y.obj.ofRestrict (O y).isOpenEmbedding)
       (Opens.set_range_inclusion' (O y)).symm, Category.assoc,
-    MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u},
-    ← ObjectProperty.FullSubcategory.comp_hom, congrArg InducedCategory.Hom.hom (hfac y),
-    ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
-    ← Category.assoc]
-  exact ((hg y).locallyOfFiniteType.comp_of_isOpenImmersion _).isOpenImmersion_comp _
+    MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u}]
+  exact huf
 
 /-- **Locally noetherian analytic structure ascends along étale morphisms.** -/
 theorem IsEtaleLocalDescription.isLocallyNoetherianAnalytic_source {f : Y ⟶ X}
@@ -449,6 +458,17 @@ variable {f : Y ⟶ X} (R : Pair C) (hR : IsSheafyForEveryPresentation R.plus) (
 private noncomputable abbrev sqZeroQuotHom : ofPair (R.quotient I) hRI ⟶ ofPair R hR :=
   comapOfPair hR hRI (Pair.quotientHom R I)
 
+private theorem comm_restrictPreimage_of_square {W W₀ Z Z₀ : AdicSpace.{u}}
+    {k : W₀ ⟶ W} {v : W ⟶ Z} {u : W₀ ⟶ Z₀} {ι : Z₀ ⟶ Z} (hsq : k ≫ v = u ≫ ι)
+    (O : Opens Z.obj) {vO : W.obj ⟶ Z.obj.restrict O.isOpenEmbedding}
+    (hvO : vO ≫ Z.obj.ofRestrict O.isOpenEmbedding = v.hom)
+    {uO : W₀.obj ⟶ Z₀.obj.restrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding}
+    (huO : uO ≫ Z₀.obj.ofRestrict ((Opens.map ι.hom.base).obj O).isOpenEmbedding = u.hom) :
+    k.hom ≫ vO = uO ≫ ι.hom.restrictPreimage O := by
+  rw [← cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding), Category.assoc, hvO,
+    ← ObjectProperty.FullSubcategory.comp_hom, hsq, ObjectProperty.FullSubcategory.comp_hom,
+    Category.assoc, Hom.restrictPreimage_ofRestrict, reassoc_of% huO]
+
 private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescription f)
     (hI : I ^ 2 = ⊥) (hsq : g₀ ≫ f = sqZeroQuotHom R hR I hRI ≫ h) (z : (ofPair R hR).obj) :
     ∃ (O : Opens (ofPair R hR).obj), z ∈ O ∧
@@ -482,13 +502,11 @@ private theorem exists_local_lift_of_sqZero_quotient (hf : IsEtaleLocalDescripti
     hu'_range.trans (Opens.set_range_inclusion' ((Opens.map ι.hom.base).obj O)).symm
   let ev := IsOpenImmersion.isoOfRangeEq v.hom (Z.obj.ofRestrict O.isOpenEmbedding) hrv
   let eu' := IsOpenImmersion.isoOfRangeEq u'.hom (Z₀.obj.ofRestrict _) hru'
-  have hKv' := congrArg InducedCategory.Hom.hom hKv
-  simp only [ObjectProperty.FullSubcategory.comp_hom] at hKv'
   have hres_ι : ι.hom.restrictPreimage O =
-      eu'.inv ≫ (comapOfPair hS₁ hSK (Pair.quotientHom S₁ K)).hom ≫ ev.hom := by
-    rw [← cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding), Hom.restrictPreimage_ofRestrict,
-      Category.assoc, Category.assoc, IsOpenImmersion.isoOfRangeEq_hom_comp, hKv',
-      IsOpenImmersion.isoOfRangeEq_inv_comp_assoc]
+      eu'.inv ≫ (comapOfPair hS₁ hSK (Pair.quotientHom S₁ K)).hom ≫ ev.hom :=
+    (Iso.eq_inv_comp eu').mpr (comm_restrictPreimage_of_square hKv O
+      (IsOpenImmersion.isoOfRangeEq_hom_comp _ _ hrv)
+      (IsOpenImmersion.isoOfRangeEq_hom_comp _ _ hru')).symm
   refine ⟨O, hzO, ev.inv ≫ gloc.hom, ?_, ?_⟩
   · rw [Category.assoc, ← ObjectProperty.FullSubcategory.comp_hom, hgloc_f,
       ObjectProperty.FullSubcategory.comp_hom, IsOpenImmersion.isoOfRangeEq_inv_comp_assoc]
@@ -542,10 +560,8 @@ private theorem pullback_fst_comp_eq_of_sqZero_quotient (hf : IsEtaleLocalDescri
       (Set.range_subset_iff.mpr fun r ↦ Set.mem_range.mpr
         ⟨⟨u'.hom.base r, hWO (hOW (Set.mem_preimage.mp (by rw [← hu'_range]; exact ⟨r, rfl⟩)))⟩,
           rfl⟩)
-    have hcomm : πK.hom ≫ vO = u'O ≫ ι.hom.restrictPreimage O := by
-      rw [← cancel_mono (Z.obj.ofRestrict O.isOpenEmbedding), Category.assoc, hvO,
-        ← ObjectProperty.FullSubcategory.comp_hom, hKv, ObjectProperty.FullSubcategory.comp_hom,
-        Category.assoc, Hom.restrictPreimage_ofRestrict, IsOpenImmersion.lift_fac_assoc]
+    have hcomm : πK.hom ≫ vO = u'O ≫ ι.hom.restrictPreimage O :=
+      comm_restrictPreimage_of_square hKv O hvO (IsOpenImmersion.lift_fac _ _ _)
     rw [← Category.assoc, hcomm, Category.assoc, hgO_ι, IsOpenImmersion.lift_fac_assoc]
   have hv₁ : (vP ≫ pullback.fst _ _) ≫ Z.obj.ofRestrict O₁.isOpenEmbedding = v.hom := by
     rw [Category.assoc]; exact IsOpenImmersion.lift_fac pZ v.hom hvP_sub

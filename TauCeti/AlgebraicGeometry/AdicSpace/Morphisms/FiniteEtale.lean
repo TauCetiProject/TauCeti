@@ -178,12 +178,10 @@ theorem IsFiniteEtale.exists_ofPair_chart {f : Y ⟶ X} (hf : IsFiniteEtale f) (
   let iT := (ObjectProperty.ι isAdic).mapIso (ofPairIsoOfPresentation T hT P' hP')
   have hcomp_pre : iT.inv ≫ (comapOfPair hS hT φ).hom ≫ iS.hom =
       presentationLimitPreAdicSpacePairComap P P' hP hP' hsheafT φ := by
-    simpa [iS, iT, comapOfPresentation_hom] using congrArg InducedCategory.Hom.hom
-      (by rw [← comapOfPresentation_ofPairIsoOfPresentation_inv_assoc, Iso.inv_hom_id,
-            Category.comp_id] :
-        (ofPairIsoOfPresentation T hT P' hP').inv ≫ comapOfPair hS hT φ ≫
-          (ofPairIsoOfPresentation S hS P hP).hom =
-          AdicSpace.comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ)
+    have hconj := congrArg InducedCategory.Hom.hom
+      (comapOfPresentation_eq_ofPairIsoOfPresentation hS hT P hP P' hP' φ).symm
+    simpa only [iS, iT, Functor.mapIso_hom, Functor.mapIso_inv, ObjectProperty.ι_map,
+      ObjectProperty.FullSubcategory.comp_hom, comapOfPresentation_hom] using hconj
   refine ⟨V, hx, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, S, hS, B, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, T, hT, φ, hφ,
@@ -312,11 +310,8 @@ theorem IsFiniteEtale.comapOfPair {A : Type u} [CommRing A] [UniformSpace A] [Is
     (φ : Pair.Hom S T) (hφ : φ.IsFiniteEtale) : IsFiniteEtale (AdicSpace.comapOfPair hS hT φ) := by
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
-  have hfac : AdicSpace.comapOfPair hS hT φ = (ofPairIsoOfPresentation T hT P' hP').hom ≫
-      AdicSpace.comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ ≫
-      (ofPairIsoOfPresentation S hS P hP).inv := by
-    rw [comapOfPresentation_ofPairIsoOfPresentation_inv, Iso.hom_inv_id_assoc]
-  exact hfac ▸ ((IsFiniteEtale.comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP'
+  rw [comapOfPair_eq_ofPairIsoOfPresentation hS hT P hP P' hP' φ]
+  exact ((IsFiniteEtale.comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP'
     (hT.isSheaf P' hP') φ hφ).comp_iso_hom (ofPairIsoOfPresentation S hS P hP).symm).iso_hom_comp
     (ofPairIsoOfPresentation T hT P' hP')
 
@@ -446,7 +441,7 @@ theorem IsFiniteEtale.quasiCompact {f : Y ⟶ X} (hf : IsFiniteEtale f) : QuasiC
   have hB : Opens.IsBasis {W : Opens X.obj | W ∈ X.obj.affinoidOpens ∧ ∃ x : X.obj, W ≤ V x} :=
     Opens.isBasis_iff_nbhd.mpr fun {U z} hzU ↦ by
       obtain ⟨W, hW, hzW, hWle⟩ := (Opens.isBasis_iff_nbhd.mp
-        (isBasis_affinoidOpens X.property.isLocallyAffinoid)) (show z ∈ U ⊓ V z from ⟨hzU, hx z⟩)
+        (isBasis_affinoidOpens X.property.isLocallyAffinoid)) (Opens.mem_inf.mpr ⟨hzU, hx z⟩)
       exact ⟨W, ⟨hW, z, hWle.trans inf_le_right⟩, hzW, hWle.trans inf_le_left⟩
   refine (quasiCompact_iff_isSpectralMap f).mpr
     (isSpectralMap_of_isTopologicalBasis hB f.hom.base.hom.continuous ?_)

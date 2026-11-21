@@ -430,6 +430,31 @@ theorem comapOfPresentation_ofPairIsoOfPresentation_inv {S : Pair A} {T : Pair B
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
   exact ofPairIsoOfPresentation_hom_comapOfPresentation hS hT P hP P' hP' φ
 
+/-- Factoring `comapOfPair` through `comapOfPresentation` via `ofPairIsoOfPresentation`. -/
+theorem comapOfPair_eq_ofPairIsoOfPresentation {S : Pair A} {T : Pair B}
+    (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
+    (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+    (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
+    (φ : Pair.Hom S T) :
+    comapOfPair hS hT φ =
+      (ofPairIsoOfPresentation T hT P' hP').hom ≫
+        comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ ≫
+        (ofPairIsoOfPresentation S hS P hP).inv := by
+  rw [comapOfPresentation_ofPairIsoOfPresentation_inv, Iso.hom_inv_id_assoc]
+
+/-- Expressing `comapOfPresentation` as the conjugate of `comapOfPair` by
+`ofPairIsoOfPresentation`. -/
+theorem comapOfPresentation_eq_ofPairIsoOfPresentation {S : Pair A} {T : Pair B}
+    (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
+    (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+    (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
+    (φ : Pair.Hom S T) :
+    comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ =
+      (ofPairIsoOfPresentation T hT P' hP').inv ≫
+        comapOfPair hS hT φ ≫
+        (ofPairIsoOfPresentation S hS P hP).hom := by
+  rw [← comapOfPresentation_ofPairIsoOfPresentation_inv_assoc, Iso.inv_hom_id, Category.comp_id]
+
 /-- For complete Hausdorff `B`, `comapOfPair` is adic if and only if the underlying ring
 homomorphism is adic. -/
 theorem isAdic_comapOfPair_iff {B : Type u} [CommRing B] [UniformSpace B]
@@ -525,12 +550,8 @@ private theorem comapOfPair_toCompletionLocHom_spec (P : PairOfDefinition A) (S 
       rw [comapOfPresentation_eq_homMk_presentationLimitPreAdicSpaceComap]
       exact isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom P hP F s L hden
         hF (hSloc.isSheaf Ploc hPloc)
-    have hfac : comapOfPair hS hSloc φ =
-        (ofPairIsoOfPresentation Sloc hSloc Ploc hPloc).hom ≫
-          comapOfPresentation S P hP (hS.isSheaf P hP) Sloc Ploc hPloc (hSloc.isSheaf Ploc hPloc)
-            φ ≫ (ofPairIsoOfPresentation S hS P hP).inv := by
-      rw [comapOfPresentation_ofPairIsoOfPresentation_inv, Iso.hom_inv_id_assoc]
-    rw [hfac, ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom]
+    rw [comapOfPair_eq_ofPairIsoOfPresentation hS hSloc P hP Ploc hPloc φ,
+      ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom]
     have : IsIso (ofPairIsoOfPresentation Sloc hSloc Ploc hPloc).hom.hom :=
       ((ObjectProperty.ι isAdic).mapIso (ofPairIsoOfPresentation Sloc hSloc Ploc hPloc)).isIso_hom
     have : IsIso (ofPairIsoOfPresentation S hS P hP).inv.hom :=
