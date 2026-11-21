@@ -38,7 +38,8 @@ Lebesgue measure.
   laws obtained by conditioning on the chi-squared factor.
 * `TauCeti.Probability.noncentralTMeasure_zero_noncentrality` — zero noncentrality gives
   Student's t law.
-* `TauCeti.Probability.noncentralTMeasure_map_neg` — reflection negates the noncentrality.
+* `TauCeti.Probability.noncentralTMeasure_map_neg`,
+  `ProbabilityTheory.HasLaw.neg_noncentralTMeasure` — reflection negates the noncentrality.
 * `TauCeti.Probability.noncentralTMeasure_map_sq` — the square law is noncentral F with
   degrees `1` and `ν` and noncentrality `δ ^ 2`.
 * `TauCeti.Probability.absolutelyContinuous_noncentralTMeasure` — the law has a density with
@@ -167,6 +168,12 @@ theorem noncentralTMeasure_map_neg (ν δ : ℝ) :
   congr 1
   funext z
   simp [neg_div]
+
+/-- Negating a noncentral t random variable negates its noncentrality. -/
+theorem _root_.ProbabilityTheory.HasLaw.neg_noncentralTMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} (hX : HasLaw X (noncentralTMeasure ν δ) P) :
+    HasLaw (fun ω ↦ -X ω) (noncentralTMeasure ν (-δ)) P :=
+  HasLaw.comp ⟨by fun_prop, noncentralTMeasure_map_neg ν δ⟩ hX
 
 /-- The square of a noncentral t variable with `ν` degrees of freedom and noncentrality `δ` is a
 noncentral F variable with degrees `1` and `ν` and noncentrality `δ ^ 2`. Both sides are zero for

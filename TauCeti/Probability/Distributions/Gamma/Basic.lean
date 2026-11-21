@@ -71,7 +71,8 @@ exactly the half-line on which the shifted rate is still positive.
   there, the real logarithm of the previous formula;
 * `TauCeti.Probability.gammaMeasure_conv_gammaMeasure` — convolution at a common rate adds the shape
   parameters;
-* `TauCeti.Probability.gammaMeasure_map_const_mul` — scaling by `c > 0` sends the rate `r` to
+* `TauCeti.Probability.gammaMeasure_map_const_mul`,
+  `ProbabilityTheory.HasLaw.const_mul_gammaMeasure` — scaling by `c > 0` sends the rate `r` to
   `r / c`;
 * `TauCeti.Probability.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against
   Lebesgue
@@ -516,5 +517,11 @@ theorem gammaMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
         rw [Real.map_volume_mul_left hc.ne', setLIntegral_smul_measure, smul_eq_mul, ← mul_assoc,
           ← ENNReal.ofReal_mul hc.le, abs_of_pos (inv_pos.mpr hc), mul_inv_cancel₀ hc.ne',
           ENNReal.ofReal_one, one_mul]
+
+/-- Multiplying a gamma random variable by `c > 0` divides its rate by `c`. -/
+theorem _root_.ProbabilityTheory.HasLaw.const_mul_gammaMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} (hX : HasLaw X (gammaMeasure a r) P) {c : ℝ} (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (gammaMeasure a (r / c)) P :=
+  HasLaw.comp ⟨by fun_prop, gammaMeasure_map_const_mul hc⟩ hX
 
 end TauCeti.Probability

@@ -59,7 +59,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
-* `expMeasure_map_const_mul` — positive scaling divides the rate;
+* `expMeasure_map_const_mul`, `ProbabilityTheory.HasLaw.const_mul_expMeasure` — positive
+  scaling divides the rate;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
 * `map_sub_cond_expMeasure` — conditional on exceeding a nonnegative threshold, the excess
   has the original exponential law;
@@ -160,6 +161,12 @@ theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Me
 theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
   simpa only [expMeasure] using gammaMeasure_map_const_mul hc
+
+/-- Multiplying an exponential random variable by `c > 0` divides its rate by `c`. -/
+theorem _root_.ProbabilityTheory.HasLaw.const_mul_expMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) {c : ℝ} (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (expMeasure (r / c)) P :=
+  HasLaw.comp ⟨by fun_prop, expMeasure_map_const_mul hc⟩ hX
 
 /-- `expMeasure r` presented by its real-valued density, the form in which the real-density
 `withDensity` lemmas of `TauCeti/MeasureTheory/Integral/Bochner/WithDensity.lean` apply. -/

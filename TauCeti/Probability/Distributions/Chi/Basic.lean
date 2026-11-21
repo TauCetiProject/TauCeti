@@ -279,6 +279,12 @@ theorem chiMeasure_map_const_mul (hc : 0 < c) :
   ext x
   exact (mul_assoc c s (√x)).symm
 
+/-- Multiplying a chi random variable by `c > 0` multiplies its scale by `c`. -/
+theorem _root_.ProbabilityTheory.HasLaw.const_mul_chiMeasure
+    (hX : HasLaw X (chiMeasure k s) P) (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (chiMeasure k (c * s)) P :=
+  HasLaw.comp ⟨by fun_prop, chiMeasure_map_const_mul hc⟩ hX
+
 /-- Taking a scaled square root of a chi-squared variable gives the chi law. -/
 theorem hasLaw_chiMeasure_of_hasLaw_chiSquaredMeasure (hs : 0 < s)
     (hX : HasLaw X (chiSquaredMeasure k) P) :

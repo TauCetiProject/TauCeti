@@ -40,7 +40,8 @@ hypothesis.
 * `isProbabilityMeasure_studentTMeasure` — it is a probability measure when `0 < ν`;
 * `hasPDF_of_hasLaw_studentTMeasure`, `pdf_eq_studentTPDF_of_hasLaw_studentTMeasure` and
   `rnDeriv_studentTMeasure` — the `HasPDF` bridge, the density, and the Radon–Nikodym derivative;
-* `studentTMeasure_map_neg` — the law is invariant under reflection in the origin;
+* `studentTMeasure_map_neg`, `ProbabilityTheory.HasLaw.neg_studentTMeasure` — the law is
+  invariant under reflection in the origin;
 * `studentTMeasure_one` — one degree of freedom gives the standard Cauchy law
   `ProbabilityTheory.cauchyMeasure 0 1`;
 * `measurable_studentTMeasure` — the family is measurable in its parameter, so it can be used as a
@@ -297,6 +298,12 @@ theorem studentTMeasure_map_neg (ν : ℝ) :
   have h := (Measure.measurePreserving_neg (volume : Measure ℝ)).setLIntegral_comp_preimage_emb
     (Homeomorph.neg ℝ).measurableEmbedding (studentTPDF ν) t
   simpa only [studentTPDF_neg] using h
+
+/-- The negative of a Student's t random variable has the same Student's t law. -/
+theorem _root_.ProbabilityTheory.HasLaw.neg_studentTMeasure
+    (hX : HasLaw X (studentTMeasure ν) P) :
+    HasLaw (fun ω ↦ -X ω) (studentTMeasure ν) P :=
+  HasLaw.comp ⟨by fun_prop, studentTMeasure_map_neg ν⟩ hX
 
 /-- Student's t law is invariant under negation, including its invalid zero-measure branch. -/
 instance isNegInvariant_studentTMeasure (ν : ℝ) : (studentTMeasure ν).IsNegInvariant :=

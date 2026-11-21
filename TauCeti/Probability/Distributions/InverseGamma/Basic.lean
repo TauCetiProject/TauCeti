@@ -34,7 +34,8 @@ map.
   the law and its density;
 * `inverseGammaMeasure_eq_withDensity`, `hasPDF_of_hasLaw_inverseGammaMeasure`, and
   `rnDeriv_inverseGammaMeasure` identify the density;
-* `inverseGammaMeasure_map_const_mul` multiplies the scale under positive scaling;
+* `inverseGammaMeasure_map_const_mul` and `ProbabilityTheory.HasLaw.const_mul_inverseGammaMeasure`
+  multiply the scale under positive scaling;
 * `measurable_inverseGammaMeasure` makes the parameterized family available to kernels.
 
 ## References
@@ -294,6 +295,13 @@ theorem inverseGammaMeasure_map_const_mul {b : ℝ} (hb : 0 < b) (a r : ℝ) :
       gammaMeasure_map_const_mul (inv_pos.mpr hb), div_inv_eq_mul, mul_comm]
   · have h' : ¬ (0 < a ∧ 0 < b * r) := fun h' ↦ h ⟨h'.1, pos_of_mul_pos_right h'.2 hb.le⟩
     rw [inverseGammaMeasure_of_not_pos h, inverseGammaMeasure_of_not_pos h', Measure.map_zero]
+
+/-- Multiplying an inverse-gamma random variable by `b > 0` multiplies its scale by `b`. -/
+theorem _root_.ProbabilityTheory.HasLaw.const_mul_inverseGammaMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} (hX : HasLaw X (inverseGammaMeasure a r) P)
+    {b : ℝ} (hb : 0 < b) :
+    HasLaw (fun ω ↦ b * X ω) (inverseGammaMeasure a (b * r)) P :=
+  HasLaw.comp ⟨by fun_prop, inverseGammaMeasure_map_const_mul hb a r⟩ hX
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
