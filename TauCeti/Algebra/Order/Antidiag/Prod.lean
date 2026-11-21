@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.Algebra.Order.Monoid.Canonical.Defs
 public import Mathlib.Algebra.Order.Sub.Defs
 public import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Algebra.Order.Sub.Unbundled.Basic
 
 /-!
-# Sigma-product bijection for initial intervals under ordered subtraction
+# Antidiagonals as fibres, and initial intervals under ordered subtraction
 
 In a canonically ordered additive type `α` with ordered subtraction and locally finite initial
 segments, pairs `(b, c) : α × α` with `b + c = a` are parametrized by `b ∈ Finset.Iic a` via
@@ -19,7 +20,13 @@ segments, pairs `(b, c) : α × α` with `b + c = a` are parametrized by `b ∈ 
 serving as the `Finset.Iic` counterpart of `Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd` for
 types such as `ι → ℕ` that carry no `Finset.HasAntidiagonal` instance.
 
+For a type with an addition and antidiagonals, `Finset.antidiagonal n` is the fibre over `n` of the
+addition map `α × α → α` (`Finset.fiberEquivAntidiagonal`), as a type.
+
 ## Main definitions
+
+* `Finset.fiberEquivAntidiagonal`: the equivalence between the fibre of the addition map over `n`
+  and `Finset.antidiagonal n`.
 
 * `Finset.sigmaIicEquivProd`: the equivalence `(Σ a : α, Iic a) ≃ α × α` sending `(a, b)` to
   `(b, a - b)` and `(b, c)` to `(b + c, b)`.
@@ -28,6 +35,26 @@ types such as `ι → ℕ` that carry no `Finset.HasAntidiagonal` instance.
 public section
 
 namespace Finset
+
+section FiberEquivAntidiagonal
+
+variable {α : Type*} [Add α] [HasAntidiagonal α]
+
+-- The body is exposed so that the underlying pair of `fiberEquivAntidiagonal n x` is `x` by
+-- definition, which reindexing coproducts along it uses.
+/-- The fibre over `n` of the addition map `α × α → α` is `Finset.antidiagonal n`. -/
+@[expose]
+def fiberEquivAntidiagonal (n : α) :
+    ((fun x : α × α ↦ x.1 + x.2) ⁻¹' {n}) ≃ antidiagonal n :=
+  Equiv.subtypeEquivRight fun x ↦ by simp
+
+/-- `Finset.fiberEquivAntidiagonal n` does not change the underlying pair. -/
+@[simp]
+lemma coe_fiberEquivAntidiagonal_apply (n : α) (x : (fun x : α × α ↦ x.1 + x.2) ⁻¹' {n}) :
+    (fiberEquivAntidiagonal n x : α × α) = x :=
+  (rfl)
+
+end FiberEquivAntidiagonal
 
 variable {α : Type*} [AddCommSemigroup α] [PartialOrder α] [CanonicallyOrderedAdd α]
   [Sub α] [OrderedSub α] [AddLeftReflectLE α] [LocallyFiniteOrderBot α]
