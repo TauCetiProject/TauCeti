@@ -11,9 +11,8 @@ public import Mathlib.Analysis.Complex.HalfPlane
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
-import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
+import Mathlib.NumberTheory.ZetaValues
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
 # Gauss' series for digamma
@@ -31,9 +30,8 @@ the Euler–Gauss limit representation `log (s + N) - ∑_{k ≤ N} (s + k)⁻¹
 
 Subtracting Gauss' series at two regular arguments cancels Euler's constant and expresses
 `digamma s - digamma w` as the absolutely convergent series
-`∑' n, (s - w) / ((w + n) * (s + n))`. This yields analyticity of `Complex.digamma` away from the
-nonpositive integers, the sharp Lipschitz bound `π² / 6` on `{s : ℂ | 1 ≤ s.re}`, strict
-monotonicity of `Real.digamma`, strict antitonicity and antitonicity of
+`∑' n, (s - w) / ((w + n) * (s + n))`. This yields the sharp Lipschitz bound `π² / 6` on
+`{s : ℂ | 1 ≤ s.re}`, strict monotonicity of `Real.digamma`, strict antitonicity and antitonicity of
 `t ↦ ψ(t + b) - ψ(t + a)` when `a < b` (resp. `a ≤ b`), uniform upper bounds on shifted
 differences, and Euler's integral representation
 `∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = ψ(1) - ψ(a)` for `0 < a`.
@@ -318,11 +316,6 @@ theorem digamma_sub_digamma_eq_tsum {s w : ℂ}
   have hw0 : w + n ≠ 0 := fun h ↦ hw n (add_eq_zero_iff_eq_neg.mp h)
   rw [sub_sub_sub_cancel_left, div_sub_div _ _ hw0 hs0]
   ring
-
-/-- Complex digamma is analytic away from the nonpositive integers. -/
-theorem analyticAt_digamma {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) : AnalyticAt ℂ digamma s := by
-  have hΓ := Complex.analyticAt_Gamma hs
-  simpa only [digamma_def, logDeriv, Pi.div_def] using hΓ.deriv.div hΓ (Gamma_ne_zero hs)
 
 /-- Sharp Lipschitz bound for complex digamma on the closed half-plane `{s : ℂ | 1 ≤ s.re}`:
 `‖digamma s - digamma w‖ ≤ ‖s - w‖ * (π² / 6)`. -/

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -62,6 +64,10 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
+
+The complement `{s : ℂ | ∀ n : ℕ, s ≠ -(n : ℂ)}` of the nonpositive integers is open and
+connected (`Complex.isOpen_ne_neg_natCast`, `Complex.isConnected_ne_neg_natCast`,
+`Complex.isPreconnected_ne_neg_natCast`).
 -/
 
 public section
@@ -358,5 +364,31 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- The complement of the nonpositive integers in `ℂ` is open. -/
+theorem isOpen_ne_neg_natCast : IsOpen {s : ℂ | ∀ n : ℕ, s ≠ -(n : ℂ)} := by
+  have hcl : IsClosed (Set.range fun n : ℕ ↦ -(n : ℂ)) := by
+    have hnat : IsClosed (Set.range fun n : ℕ ↦ ((n : ℝ) : ℂ)) :=
+      (isometry_ofReal.isClosedEmbedding.comp Nat.isClosedEmbedding_coe_real).isClosed_range
+    convert hnat.preimage continuous_neg using 1
+    ext z
+    simp only [Set.mem_range, Set.mem_preimage, ofReal_natCast]
+    exact exists_congr fun _ ↦ neg_eq_iff_eq_neg
+  convert hcl.isOpen_compl using 1
+  ext s
+  simp [eq_comm]
+
+/-- The complement of the nonpositive integers in `ℂ` is connected. -/
+theorem isConnected_ne_neg_natCast : IsConnected {s : ℂ | ∀ n : ℕ, s ≠ -(n : ℂ)} := by
+  have heq : {s : ℂ | ∀ n : ℕ, s ≠ -(n : ℂ)} = (Set.range fun n : ℕ ↦ -(n : ℂ))ᶜ := by
+    ext s
+    simp [eq_comm]
+  rw [heq]
+  exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
+    (rank_real_complex ▸ Nat.one_lt_ofNat)
+
+/-- The complement of the nonpositive integers in `ℂ` is preconnected. -/
+theorem isPreconnected_ne_neg_natCast : IsPreconnected {s : ℂ | ∀ n : ℕ, s ≠ -(n : ℂ)} :=
+  isConnected_ne_neg_natCast.isPreconnected
 
 end Complex

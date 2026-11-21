@@ -6,6 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.Meromorphic.Complex
@@ -19,8 +20,9 @@ with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such 
 leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
 `Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. In particular,
-`Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)` are analytic
-wherever the Gamma argument avoids the nonpositive integers (`Complex.analyticAt_Gamma`,
+`Complex.Gamma`, `Complex.digamma`, and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)`
+are analytic wherever the Gamma argument avoids the nonpositive integers
+(`Complex.analyticAt_Gamma`, `Complex.analyticAt_digamma`,
 `Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
 factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
 nonpositive: none has a zero as a meromorphic germ.
@@ -122,6 +124,12 @@ theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma
 theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
   have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
   simpa only [Pi.inv_def, inv_inv] using h
+
+/-- Complex digamma is analytic away from the nonpositive integers. -/
+@[fun_prop]
+theorem analyticAt_digamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ digamma s := by
+  have hΓ := analyticAt_Gamma hs
+  simpa only [digamma_def, logDeriv, Pi.div_def] using hΓ.deriv.div hΓ (Gamma_ne_zero hs)
 
 /-- For any complex base `x` and shift `β`, the shifted Gamma–power kernel
 `s ↦ Γ(s - β) * x ^ (β - s)` is analytic at every `s₀` where `s₀ - β` is not a nonpositive

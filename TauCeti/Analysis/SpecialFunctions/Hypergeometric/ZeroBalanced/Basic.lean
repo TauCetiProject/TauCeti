@@ -10,9 +10,12 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
+import TauCeti.RingTheory.Binomial
 
 /-!
 # The zero-balanced hypergeometric logarithmic series and its remainder estimates
@@ -23,7 +26,7 @@ gives `TauCeti.zeroBalancedSeries a x`,
 Mathlib's principal logarithm `Complex.log`, together with its `k ≥ 1` inner tail
 `TauCeti.zeroBalancedTail`:
 
-* `zeroBalancedSeries` is analytic on `Metric.ball 0 1 \ {x | x.re ≤ 0 ∧ x.im = 0}`, analytic in `a`
+* `zeroBalancedSeries` is analytic on `Metric.ball 0 1 ∩ Complex.slitPlane`, analytic in `a`
   away from `2a ∈ -ℕ` for `‖x‖ < 1`, and on `0 < ‖x‖ < 1` equals its limit from `{z | 0 < z.im}`.
 * Splitting off `k = 0` writes `zeroBalancedSeries a x` on `‖x‖ < 1` as
   `Γ(2a) / Γ(a)² * (-log x - 2γ - 2ψ(a) + zeroBalancedTail a x)` with explicit
@@ -42,7 +45,7 @@ The lens identity with `₂F₁(a, a; 2a; 1 - x)` is proved in
 public section
 
 open Complex Filter Metric Set
-open scoped Nat Real Topology
+open scoped ENNReal Nat Real Topology
 
 namespace TauCeti
 
@@ -99,61 +102,25 @@ private theorem zeroBalancedSeries_eq_tsum_term (a x : ℂ) :
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 * ∑' k : ℕ, zeroBalancedTerm a x k := (rfl)
 
-private theorem norm_ascPochhammer_div_factorial_le {a : ℂ} {R : ℝ}
-    (ha : ‖a‖ ≤ R) (hR : 0 ≤ R) (k : ℕ) :
-    ‖Polynomial.eval a (ascPochhammer ℂ k) / (k.factorial : ℂ)‖ ≤ Ring.multichoose R k := by
-  have hnum : ‖Polynomial.eval a (ascPochhammer ℂ k)‖ ≤ Polynomial.eval R (ascPochhammer ℝ k) ∧
-      0 ≤ Polynomial.eval R (ascPochhammer ℝ k) := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval, norm_mul]
-      exact ⟨mul_le_mul ih.1 ((norm_add_le a k).trans
-          (by simpa [Complex.norm_natCast] using add_le_add_right ha (k : ℝ)))
-          (norm_nonneg _) ih.2,
-        mul_nonneg ih.2 (add_nonneg hR (Nat.cast_nonneg k))⟩
-  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer R k
-  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-  rw [norm_div, Complex.norm_natCast, div_le_iff₀ (by positivity)]
-  linarith [hnum.1]
-
-private theorem norm_ascPochhammer_div_factorial_le_one {a : ℂ} (ha : ‖a‖ ≤ 1) (k : ℕ) :
-    ‖Polynomial.eval a (ascPochhammer ℂ k) / (k.factorial : ℂ)‖ ≤ 1 :=
-  (norm_ascPochhammer_div_factorial_le ha zero_le_one k).trans_eq (Ring.multichoose_one k)
-
-private theorem summable_multichoose_sq_mul_pow {R r : ℝ}
-    (hR : 0 < R) (hr0 : 0 ≤ r) (hr1 : r < 1) :
-    Summable fun k : ℕ ↦ (Ring.multichoose R k) ^ 2 * r ^ k := by
-  have hs : Summable fun k : ℕ ↦ Ring.multichoose R k * (Real.sqrt r) ^ k :=
-    (summable_multichoose_mul_geometric_iff_norm_lt_one (𝕂 := ℝ) hR).mpr <| by
-      rw [Real.norm_of_nonneg (Real.sqrt_nonneg r)]
-      nlinarith [Real.sqrt_nonneg r, Real.sq_sqrt hr0]
-  refine hs.of_norm_bounded_eventually_nat ?_
-  filter_upwards [hs.tendsto_atTop_zero.eventually (closedBall_mem_nhds 0 zero_lt_one)] with k hk
-  have hmc0 : 0 ≤ Ring.multichoose R k := (norm_nonneg _).trans
-    (norm_ascPochhammer_div_factorial_le (a := (R : ℂ))
-      (by rw [Complex.norm_real, Real.norm_of_nonneg hR.le]) hR.le k)
-  have hu0 := mul_nonneg hmc0 (pow_nonneg (Real.sqrt_nonneg r) k)
-  have hsq : (Ring.multichoose R k * (Real.sqrt r) ^ k) ^ 2 =
-      (Ring.multichoose R k) ^ 2 * r ^ k := by
-    rw [mul_pow, ← pow_mul, mul_comm k 2, pow_mul, Real.sq_sqrt hr0]
-  rw [Real.norm_of_nonneg (by positivity), ← hsq, sq]
-  exact mul_le_of_le_one_right hu0
-    (by simpa [Real.norm_of_nonneg hu0] using mem_closedBall_zero_iff.mp hk)
-
-private theorem norm_zeroBalancedCoeff_le {a : ℂ} {R : ℝ}
-    (ha : ‖a‖ ≤ R) (hR : 0 ≤ R) (k : ℕ) :
+private theorem norm_zeroBalancedCoeff_le {a : ℂ} {R : ℝ} (ha : ‖a‖ ≤ R) (k : ℕ) :
     ‖zeroBalancedCoeff a k‖ ≤ (Ring.multichoose R k) ^ 2 := by
   rw [zeroBalancedCoeff, ← div_pow, norm_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (norm_ascPochhammer_div_factorial_le ha hR k) 2
+  have hdiv : Polynomial.eval a (ascPochhammer ℂ k) / (k.factorial : ℂ) =
+      Ring.multichoose a k := by
+    rw [Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, div_eq_inv_mul]
+  rw [hdiv]
+  exact pow_le_pow_left₀ (norm_nonneg _) (norm_multichoose_le_of_norm_le ha k) 2
 
-private theorem summable_zeroBalancedCoeff_mul_pow (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
-    Summable fun k : ℕ ↦ zeroBalancedCoeff a k * x ^ k := by
-  refine (summable_multichoose_sq_mul_pow (R := max ‖a‖ 1) (by positivity)
-    (norm_nonneg x) hx).of_norm_bounded fun k ↦ ?_
+/-- On the open unit disc, the squared Pochhammer component series in
+`zeroBalancedSeries_eq_log_mul_add` is summable. -/
+theorem summable_zeroBalancedSeries_pochhammer (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
+    Summable fun k : ℕ ↦
+      (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) * x ^ k := by
+  refine (summable_multichoose_sq_mul_pow (max ‖a‖ 1) (r := ‖x‖)
+    (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).of_norm_bounded fun k ↦ ?_
   rw [norm_mul, norm_pow]
   exact mul_le_mul_of_nonneg_right
-    (norm_zeroBalancedCoeff_le (le_max_left _ _) (by positivity) k) (pow_nonneg (norm_nonneg x) k)
+    (norm_zeroBalancedCoeff_le (le_max_left _ _) k) (pow_nonneg (norm_nonneg x) k)
 
 private theorem norm_two_mul_digamma_sub_le {b : ℂ} {R : ℝ} {k : ℕ}
     (hb : ‖b‖ ≤ R) (hk : ⌈R⌉₊ + 1 ≤ k) :
@@ -169,33 +136,65 @@ private theorem norm_two_mul_digamma_sub_le {b : ℂ} {R : ℝ} {k : ℕ}
   rw [norm_mul, Complex.norm_ofNat]
   nlinarith [Real.pi_pos]
 
-private theorem summable_zeroBalancedDigammaSeries (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
+/-- On the open unit disc, the digamma-weighted component series in
+`zeroBalancedSeries_eq_log_mul_add` is summable. -/
+theorem summable_zeroBalancedSeries_digamma (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     Summable fun k : ℕ ↦
-      zeroBalancedCoeff a k *
+      (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
         (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k := by
   let R := max ‖a‖ 1
-  refine ((summable_multichoose_sq_mul_pow (R := R) (by positivity) (norm_nonneg x) hx).mul_left
+  refine ((summable_multichoose_sq_mul_pow R (r := ‖x‖)
+      (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).mul_left
     (2 * (1 + R) * (Real.pi ^ 2 / 6))).of_norm_bounded_eventually_nat ?_
   filter_upwards [eventually_ge_atTop (⌈R⌉₊ + 1)] with k hk
   rw [norm_mul, norm_mul, norm_pow]
   exact (mul_le_mul_of_nonneg_right
-    (mul_le_mul (norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) (by positivity) k)
+    (mul_le_mul (norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) k)
       (norm_two_mul_digamma_sub_le (le_max_left ‖a‖ 1) hk) (norm_nonneg _) (by positivity))
     (pow_nonneg (norm_nonneg x) k)).trans_eq (by ring)
 
-private theorem summable_zeroBalancedTerm (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
-    Summable (zeroBalancedTerm a x) :=
-  (((summable_zeroBalancedCoeff_mul_pow a hx).mul_right (-Complex.log x)).add
-    (summable_zeroBalancedDigammaSeries a hx)).congr fun k ↦ by dsimp [zeroBalancedTerm]; ring
+/-- On the open unit disc, the inner series of `zeroBalancedSeries` is summable. -/
+theorem summable_zeroBalancedSeries (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
+    Summable fun k : ℕ ↦
+      (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) * x ^ k *
+        (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) :=
+  (((summable_zeroBalancedSeries_pochhammer a hx).mul_right (-Complex.log x)).add
+    (summable_zeroBalancedSeries_digamma a hx)).congr fun k ↦ by ring
+
+/-- On the open unit disc, the `zeroBalancedSeries` summand has sum `zeroBalancedSeries a x`. -/
+theorem hasSum_zeroBalancedSeries (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
+    HasSum (fun k : ℕ ↦
+      Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
+        ((Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) * x ^ k *
+          (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a)))))
+      (zeroBalancedSeries a x) :=
+  (summable_zeroBalancedSeries a hx).hasSum.mul_left _
+
+/-- On the open unit disc, the `zeroBalancedTail` series is summable. -/
+theorem summable_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
+    Summable fun k : ℕ ↦
+      (Polynomial.eval a (ascPochhammer ℂ (k + 1))) ^ 2 / (((k + 1).factorial : ℂ) ^ 2) *
+        x ^ (k + 1) * (-Complex.log x +
+          2 * (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a))) :=
+  (summable_nat_add_iff 1).mpr (summable_zeroBalancedSeries a hx)
+
+/-- On the open unit disc, the `zeroBalancedTail` series sums to `zeroBalancedTail a x`. -/
+theorem hasSum_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
+    HasSum (fun k : ℕ ↦
+      (Polynomial.eval a (ascPochhammer ℂ (k + 1))) ^ 2 / (((k + 1).factorial : ℂ) ^ 2) *
+        x ^ (k + 1) * (-Complex.log x +
+          2 * (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a))))
+      (zeroBalancedTail a x) :=
+  (summable_zeroBalancedTail a hx).hasSum
 
 private theorem tsum_zeroBalancedTerm_eq_split (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     ∑' k : ℕ, zeroBalancedTerm a x k =
       -Complex.log x * (∑' k : ℕ, zeroBalancedCoeff a k * x ^ k) +
         ∑' k : ℕ, zeroBalancedCoeff a k *
           (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k :=
-  ((((summable_zeroBalancedCoeff_mul_pow a hx).hasSum.mul_left (-Complex.log x)).add
-    (summable_zeroBalancedDigammaSeries a hx).hasSum).congr_fun fun k ↦ by
-      dsimp [zeroBalancedTerm]; ring).tsum_eq
+  ((((summable_zeroBalancedSeries_pochhammer a hx).hasSum.mul_left (-Complex.log x)).add
+    (summable_zeroBalancedSeries_digamma a hx).hasSum).congr_fun fun k ↦ by
+      dsimp [zeroBalancedTerm, zeroBalancedCoeff]; ring).tsum_eq
 
 /-- On the open unit disc, `zeroBalancedSeries a x` separates into `-log x` times the squared
 Pochhammer power series plus the holomorphic digamma-weighted power series. -/
@@ -216,7 +215,9 @@ theorem zeroBalancedSeries_eq_add_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
         (-Complex.log x - 2 * Real.eulerMascheroniConstant - 2 * Complex.digamma a +
           zeroBalancedTail a x) := by
-  rw [zeroBalancedSeries_eq_tsum_term, (summable_zeroBalancedTerm a hx).tsum_eq_zero_add]
+  rw [zeroBalancedSeries_eq_tsum_term]
+  have hsum : Summable (zeroBalancedTerm a x) := summable_zeroBalancedSeries a hx
+  rw [hsum.tsum_eq_zero_add]
   congr 1
   rw [(by simp [zeroBalancedTerm, zeroBalancedCoeff, Complex.digamma_one]; ring :
     zeroBalancedTerm a x 0 =
@@ -235,9 +236,8 @@ theorem norm_zeroBalancedTail_le {a x : ℂ} (hre : 0 ≤ a.re) (ha : ‖a‖ �
       fun k ↦ by rw [← pow_succ']) using 1
     dsimp [M]; ring
   have hterm (k : ℕ) : ‖zeroBalancedTerm a x (k + 1)‖ ≤ ‖x‖ ^ (k + 1) * M := by
-    have hc : ‖zeroBalancedCoeff a (k + 1)‖ ≤ 1 := by
-      rw [zeroBalancedCoeff, ← div_pow, norm_pow]
-      exact pow_le_one₀ (norm_nonneg _) (norm_ascPochhammer_div_factorial_le_one ha (k + 1))
+    have hc : ‖zeroBalancedCoeff a (k + 1)‖ ≤ 1 :=
+      (norm_zeroBalancedCoeff_le ha (k + 1)).trans_eq (by simp [Ring.multichoose_one])
     have h1 := Complex.norm_digamma_sub_digamma_le_of_one_le_re
       (s := ((k + 1 : ℕ) : ℂ) + 1) (w := ((k + 1 : ℕ) : ℂ) + a)
       (by simp; linarith [k.cast_nonneg (α := ℝ)]) (by simp; linarith)
@@ -260,13 +260,11 @@ theorem norm_zeroBalancedTail_le {a x : ℂ} (hre : 0 ≤ a.re) (ha : ‖a‖ �
   exact (norm_tsum_le_tsum_norm hns).trans (hns.tsum_le_tsum hterm hgeom.summable)
 
 private theorem isOpen_ne_neg_succ : IsOpen {b : ℂ | ∀ m : ℕ, b ≠ -((m + 1 : ℕ) : ℂ)} := by
-  have hcl : IsClosed (Set.range fun m : ℕ ↦ ((m : ℝ) : ℂ)) :=
-    (Complex.isometry_ofReal.isClosedEmbedding.comp Nat.isClosedEmbedding_coe_real).isClosed_range
-  convert hcl.isOpen_compl.preimage (by fun_prop : Continuous fun b : ℂ ↦ -b - 1) using 1
-  ext b; simp only [Set.mem_ofPred, mem_preimage, mem_compl_iff, mem_range, not_exists]
+  convert Complex.isOpen_ne_neg_natCast.preimage
+    (by fun_prop : Continuous fun b : ℂ ↦ b + 1) using 1
+  ext b
   exact forall_congr' fun m ↦ not_congr
-    ⟨fun h ↦ by rw [Complex.ofReal_natCast]; push_cast at h; linear_combination h,
-     fun h ↦ by rw [Complex.ofReal_natCast] at h; push_cast; linear_combination h⟩
+    ⟨fun h ↦ by rw [h]; push_cast; ring, fun h ↦ by push_cast; linear_combination h⟩
 
 /-- For fixed `‖x‖ < 1`, `b ↦ zeroBalancedTail b x` is complex analytic away from the negative
 integers `-1, -2, …`. -/
@@ -282,7 +280,8 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
     let C := ‖Complex.log x‖ + 2 * (1 + R) * (Real.pi ^ 2 / 6)
     apply HasSumUniformlyOn.of_norm_le_summable_eventually
       (((summable_nat_add_iff 1).mpr
-        (summable_multichoose_sq_mul_pow (R := R) (by positivity) (norm_nonneg x) hx)).mul_left C)
+        (summable_multichoose_sq_mul_pow R (r := ‖x‖)
+          (by simpa [abs_of_nonneg (norm_nonneg x)] using hx))).mul_left C)
     rw [Nat.cofinite_eq_atTop]
     filter_upwards [eventually_ge_atTop (⌈R⌉₊ + 1)] with k hk b hbK
     have hbR : ‖b‖ ≤ R := (hB b hbK).trans (le_max_left _ _)
@@ -293,7 +292,7 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
         linarith [norm_two_mul_digamma_sub_le (k := k + 1) hbR (by omega)])
     rw [zeroBalancedTerm, norm_mul, norm_mul, norm_pow]
     exact (mul_le_mul (mul_le_mul_of_nonneg_right
-      (norm_zeroBalancedCoeff_le hbR (by positivity) (k + 1)) (pow_nonneg (norm_nonneg x) _))
+      (norm_zeroBalancedCoeff_le hbR (k + 1)) (pow_nonneg (norm_nonneg x) _))
       hlog (norm_nonneg _) (by positivity)).trans_eq (by ring)
   refine ((hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp hloc).differentiableOn
     (Eventually.of_forall fun _ ↦ DifferentiableOn.fun_sum fun k _ b hb ↦ ?_)
@@ -304,12 +303,6 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
     _).mul ((differentiableAt_const _).add <| (differentiableAt_const 2).mul <|
       (differentiableAt_const _).sub <| (Complex.analyticAt_digamma hbp).differentiableAt.comp b
         (differentiableAt_id.const_add _)))).differentiableWithinAt
-
-private theorem ne_neg_succ_of_re_nonneg {b : ℂ} (hb : 0 ≤ b.re) (m : ℕ) :
-    b ≠ -((m + 1 : ℕ) : ℂ) := fun hm ↦ by
-  have h := congrArg Complex.re hm
-  simp only [neg_re, Nat.cast_add, Nat.cast_one, add_re, natCast_re, one_re] at h
-  linarith [m.cast_nonneg (α := ℝ)]
 
 /-- Cauchy derivative estimate for `b ↦ zeroBalancedTail b x` on `closedBall (1 / 2 : ℂ) (3 / 8)`
 and `‖x‖ < 1`. -/
@@ -327,8 +320,9 @@ theorem norm_deriv_zeroBalancedTail_le {a x : ℂ}
     simp only [sub_re] at hbre; norm_num at hbre hbn
     exact ⟨by linarith, by linarith⟩
   have hdiff : DifferentiableOn ℂ (fun b : ℂ ↦ zeroBalancedTail b x) (closedBall a (1 / 8)) :=
-    ((analyticOnNhd_zeroBalancedTail_left hx).mono fun _ hb ↦
-      ne_neg_succ_of_re_nonneg (hmem hb).1).differentiableOn
+    ((analyticOnNhd_zeroBalancedTail_left hx).mono fun b hb m hm ↦
+      Complex.ne_neg_natCast_of_re_pos (b := b + 1) (by simp; linarith [(hmem hb).1]) m
+        (by rw [hm]; push_cast; ring)).differentiableOn
   exact (norm_deriv_le_of_forall_mem_sphere_norm_le (by norm_num : (0 : ℝ) < 1 / 8)
     (hdiff.mono closure_ball_subset_closedBall).diffContOnCl
     (C := 8 / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖)) fun _ hb ↦
@@ -341,8 +335,9 @@ theorem norm_deriv_ofReal_zeroBalancedTail_le {a : ℝ}
     ‖deriv (fun b : ℝ ↦ zeroBalancedTail b x) a‖ ≤
       64 / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖) := by
   have hd : DifferentiableAt ℂ (fun b : ℂ ↦ zeroBalancedTail b x) a :=
-    (analyticOnNhd_zeroBalancedTail_left hx a
-      (ne_neg_succ_of_re_nonneg (by simp; linarith))).differentiableAt
+    (analyticOnNhd_zeroBalancedTail_left hx a fun m hm ↦
+      Complex.ne_neg_natCast_of_re_pos (b := (a : ℂ) + 1) (by simp; linarith) m
+        (by rw [hm]; push_cast; ring)).differentiableAt
   rw [hd.hasDerivAt.comp_ofReal.deriv]
   refine norm_deriv_zeroBalancedTail_le (mem_closedBall_iff_norm.mpr ?_) hx
   rw [(by push_cast; rfl : (a : ℂ) - 1 / 2 = ((a - 1 / 2 : ℝ) : ℂ)),
@@ -358,9 +353,9 @@ theorem norm_zeroBalancedTail_sub_le {a₁ a₂ : ℝ}
       64 / (1 - ‖x‖) * |a₁ - a₂| * ‖x‖ * (1 + ‖Complex.log x‖) :=
   ((convex_Icc (1 / 8 : ℝ) (7 / 8)).norm_image_sub_le_of_norm_deriv_le
     (f := fun b : ℝ ↦ zeroBalancedTail b x) (fun b hb ↦
-      (analyticOnNhd_zeroBalancedTail_left hx b
-        (ne_neg_succ_of_re_nonneg
-          (by simp; linarith [hb.1]))).differentiableAt.hasDerivAt.comp_ofReal.differentiableAt)
+      (analyticOnNhd_zeroBalancedTail_left hx b fun m hm ↦
+        Complex.ne_neg_natCast_of_re_pos (b := (b : ℂ) + 1) (by simp; linarith [hb.1]) m
+          (by rw [hm]; push_cast; ring)).differentiableAt.hasDerivAt.comp_ofReal.differentiableAt)
     (fun _ (hb : _ ∈ Icc (1 / 8 : ℝ) (7 / 8)) ↦
       norm_deriv_ofReal_zeroBalancedTail_le hb.1 hb.2 hx) ha₂ ha₁).trans_eq
     (by rw [Real.norm_eq_abs]; ring)
@@ -420,9 +415,10 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
       (closedBall (a : ℂ) (1 / 16)) :=
     ((analyticOnNhd_gammaRatio_closedBall.mono
       fun _ hb ↦ (closedBall_real_mem_bounds ha hb).1).differentiableOn).mul
-      (((analyticOnNhd_zeroBalancedTail_left hx).mono fun _ hb ↦
-        ne_neg_succ_of_re_nonneg
-          (by linarith [(closedBall_real_mem_bounds ha hb).2.1])).differentiableOn)
+      (((analyticOnNhd_zeroBalancedTail_left hx).mono fun b hb m hm ↦
+        Complex.ne_neg_natCast_of_re_pos (b := b + 1)
+          (by simp; linarith [(closedBall_real_mem_bounds ha hb).2.1]) m
+          (by rw [hm]; push_cast; ring)).differentiableOn)
   refine ⟨(hbound a (mem_closedBall_self (by norm_num))).trans
     (by have : 0 < 1 - ‖x‖ := sub_pos.mpr hx; gcongr; linarith), ?_⟩
   rw [(hdiff.differentiableAt (closedBall_mem_nhds _ (by norm_num))).hasDerivAt.comp_ofReal.deriv]
@@ -432,56 +428,43 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
 
 /-! ### Analyticity in `x` and `a` and upper-half-plane boundary limit -/
 
-private theorem slitBall_eq_inter :
-    Metric.ball (0 : ℂ) 1 \ {x : ℂ | x.re ≤ 0 ∧ x.im = 0} =
-      Metric.ball (0 : ℂ) 1 ∩ Complex.slitPlane := by
-  ext x; simp only [Set.mem_sdiff, mem_inter_iff, Complex.mem_slitPlane_iff, Set.mem_ofPred,
-    not_and_or, not_le]
-
 private theorem isOpen_two_mul_ne_neg_nat :
-    IsOpen {a : ℂ | ∀ n : ℕ, 2 * a ≠ -(n : ℂ)} := by
-  convert isOpen_ne_neg_succ.preimage (by fun_prop : Continuous fun a : ℂ ↦ 2 * a - 1) using 1
-  ext a; simp only [Set.mem_ofPred, mem_preimage]
-  exact forall_congr' fun n ↦ not_congr
-    ⟨fun h ↦ by push_cast; linear_combination h, fun h ↦ by push_cast at h; linear_combination h⟩
+    IsOpen {a : ℂ | ∀ n : ℕ, 2 * a ≠ -(n : ℂ)} :=
+  Complex.isOpen_ne_neg_natCast.preimage (continuous_const.mul continuous_id)
 
 private theorem analyticOnNhd_tsum_pow_of_eventually_le {c : ℕ → ℂ} {R C : ℝ} {N : ℕ}
-    (hR : 0 < R) (hC : 0 ≤ C)
     (hc : ∀ k : ℕ, N ≤ k → ‖c k‖ ≤ C * (Ring.multichoose R k) ^ 2) :
     AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, c k * z ^ k) (Metric.ball 0 1) := by
-  have hloc : HasSumLocallyUniformlyOn (fun k z ↦ c k * z ^ k)
-      (fun z ↦ ∑' k : ℕ, c k * z ^ k) (Metric.ball 0 1) := by
-    apply hasSumLocallyUniformlyOn_of_forall_compact Metric.isOpen_ball
-    intro K hKU hK
-    rcases K.eq_empty_or_nonempty with rfl | hKne
-    · exact hasSumUniformlyOn_iff_tendstoUniformlyOn.mpr tendstoUniformlyOn_empty
-    obtain ⟨z₀, hz₀K, hz₀max⟩ := hK.exists_isMaxOn hKne continuous_norm.continuousOn
-    apply HasSumUniformlyOn.of_norm_le_summable_eventually
-      ((summable_multichoose_sq_mul_pow hR (norm_nonneg z₀) (by simpa using hKU hz₀K)).mul_left C)
-    rw [Nat.cofinite_eq_atTop]
-    filter_upwards [eventually_ge_atTop N] with k hk z hz
-    rw [norm_mul, norm_pow]
-    exact (mul_le_mul (hc k hk) (pow_le_pow_left₀ (norm_nonneg z) (isMaxOn_iff.mp hz₀max z hz) k)
-      (pow_nonneg (norm_nonneg z) k) (by positivity)).trans_eq (by ring)
-  exact ((hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp hloc).differentiableOn
-    (Eventually.of_forall fun _ ↦ DifferentiableOn.fun_sum fun _ _ _ _ ↦ by fun_prop)
-    Metric.isOpen_ball).analyticOnNhd Metric.isOpen_ball
+  have h1 : (1 : ℝ≥0∞) ≤ (FormalMultilinearSeries.ofScalars ℂ c).radius := by
+    refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+    rw [ENNReal.coe_lt_one_iff] at hr
+    refine FormalMultilinearSeries.le_radius_ofScalars_of_eventually_le (r := r)
+      ((summable_multichoose_sq_mul_pow R (r := (r : ℝ))
+        (by simpa [abs_of_nonneg r.coe_nonneg] using NNReal.coe_lt_one.mpr hr)).mul_left C) ?_
+    filter_upwards [eventually_ge_atTop N] with k hk
+    exact (mul_le_mul_of_nonneg_right (hc k hk) (pow_nonneg r.coe_nonneg k)).trans_eq
+      (mul_assoc _ _ _)
+  simp_rw [← smul_eq_mul]
+  rw [← FormalMultilinearSeries.ofScalarsSum_eq_tsum (E := ℂ) (c := c)]
+  intro z hz
+  exact ((FormalMultilinearSeries.ofScalars ℂ c).hasFPowerSeriesOnBall
+    (zero_lt_one.trans_le h1)).analyticAt_of_mem
+      (Metric.eball_subset_eball h1 (by
+        simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hz))
 
 private theorem analyticOnNhd_zeroBalancedCoeffSeries (a : ℂ) :
     AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, zeroBalancedCoeff a k * z ^ k) (Metric.ball 0 1) :=
-  analyticOnNhd_tsum_pow_of_eventually_le (R := max ‖a‖ 1) (C := 1) (N := 0) (by positivity)
-    zero_le_one fun k _ ↦ by
-      simpa using norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) (by positivity) k
+  analyticOnNhd_tsum_pow_of_eventually_le (R := max ‖a‖ 1) (C := 1) (N := 0) fun k _ ↦ by
+    simpa using norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) k
 
 private theorem analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) :
     AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, zeroBalancedCoeff a k *
       (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * z ^ k) (Metric.ball 0 1) := by
   let R := max ‖a‖ 1
   refine analyticOnNhd_tsum_pow_of_eventually_le (R := R)
-    (C := 2 * (1 + R) * (Real.pi ^ 2 / 6)) (N := ⌈R⌉₊ + 1) (by positivity) (by positivity)
-    fun k hk ↦ ?_
+    (C := 2 * (1 + R) * (Real.pi ^ 2 / 6)) (N := ⌈R⌉₊ + 1) fun k hk ↦ ?_
   rw [norm_mul]
-  exact (mul_le_mul (norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) (by positivity) k)
+  exact (mul_le_mul (norm_zeroBalancedCoeff_le (le_max_left ‖a‖ 1) k)
     (norm_two_mul_digamma_sub_le (le_max_left ‖a‖ 1) hk) (norm_nonneg _)
     (by positivity)).trans_eq (by ring)
 
@@ -503,11 +486,10 @@ theorem analyticOnNhd_zeroBalancedSeries_left {x : ℂ} (hx : ‖x‖ < 1) :
   exact (zeroBalancedSeries_eq_add_zeroBalancedTail b hx).symm
 
 /-- For every `a : ℂ`, `zeroBalancedSeries a` is complex analytic on the slit unit disc
-`ball 0 1 \ (-∞, 0]`. -/
+`Metric.ball 0 1 ∩ Complex.slitPlane`. -/
 theorem analyticOnNhd_zeroBalancedSeries (a : ℂ) :
-    AnalyticOnNhd ℂ (zeroBalancedSeries a)
-      (Metric.ball 0 1 \ {x : ℂ | x.re ≤ 0 ∧ x.im = 0}) := by
-  rw [slitBall_eq_inter]; intro x hx
+    AnalyticOnNhd ℂ (zeroBalancedSeries a) (Metric.ball 0 1 ∩ Complex.slitPlane) := by
+  intro x hx
   refine ((analyticAt_const (v := Complex.Gamma (2 * a) / Complex.Gamma a ^ 2)).mul
     (((analyticAt_clog hx.2).neg.mul
       (analyticOnNhd_zeroBalancedCoeffSeries a x hx.1)).add

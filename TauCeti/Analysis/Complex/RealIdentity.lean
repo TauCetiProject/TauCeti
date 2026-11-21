@@ -18,8 +18,10 @@ line—are equal (`Differentiable.eq_of_frequently_ofReal_eq`, `Differentiable.e
 `Differentiable.eq_of_ofReal_eq`). This is the identity principle
 `AnalyticOnNhd.eq_of_frequently_eq`, applied at an accumulation point on the real axis. It is the
 uniqueness statement behind analytic continuation of real one-parameter orbits to complex time.
-On the complex slit plane, agreement on the positive real axis likewise determines a
-holomorphic function uniquely.
+Every point of a real open interval `(a, b)` (or any neighborhood in `ℝ`) is an accumulation point
+in `ℂ` of its real image (`Complex.accPt_ofReal_Ioo`, `Complex.accPt_ofReal_of_mem_nhds`). On the
+complex slit plane, agreement on the positive real axis likewise determines a holomorphic function
+uniquely.
 
 At a real point, the order of vanishing of a holomorphic function equals the order of vanishing
 of its restriction to the real line (`AnalyticAt.analyticOrderAt_comp_ofReal`). This lets the
@@ -58,6 +60,23 @@ theorem Differentiable.eq_of_ofReal_gt_eq {f g : ℂ → E} (hf : Differentiable
 theorem Differentiable.eq_of_ofReal_eq {f g : ℂ → E} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (h : ∀ t : ℝ, f t = g t) : f = g :=
   hf.eq_of_ofReal_gt_eq hg (a := 0) fun t _ => h t
+
+/-- Every point of a real set whose interior contains `t₀` (more generally, any neighborhood of `t₀`
+in `ℝ`) has `(t₀ : ℂ)` as an accumulation point of its image under `Complex.ofReal`. -/
+theorem Complex.accPt_ofReal_of_mem_nhds {s : Set ℝ} {t₀ : ℝ} (hs : s ∈ 𝓝 t₀) :
+    AccPt (t₀ : ℂ) (𝓟 ((↑) '' s)) := by
+  rw [accPt_iff_frequently_nhdsNE]
+  have hreal : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] t₀) (𝓝[≠] (t₀ : ℂ)) :=
+    Complex.continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin fun _ ht =>
+      Complex.ofReal_inj.not.mpr ht
+  exact hreal.frequently
+    ((eventually_nhdsWithin_of_eventually_nhds hs).frequently.mono fun x hx => ⟨x, hx, rfl⟩)
+
+/-- Every point of a real open interval `(a, b)` is an accumulation point in `ℂ` of the interval's
+image under `Complex.ofReal`. -/
+theorem Complex.accPt_ofReal_Ioo {a b t₀ : ℝ} (ht₀ : t₀ ∈ Set.Ioo a b) :
+    AccPt (t₀ : ℂ) (𝓟 ((↑) '' Set.Ioo a b)) :=
+  Complex.accPt_ofReal_of_mem_nhds (isOpen_Ioo.mem_nhds ht₀)
 
 /-- Two holomorphic functions on the slit plane agreeing on the positive real axis agree
 throughout the slit plane. -/

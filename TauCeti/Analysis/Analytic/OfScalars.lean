@@ -188,6 +188,18 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars {𝕂 : Type*}
   refine (hasSum_nat_add_iff' 1).mp ?_
   simpa [ofScalars_apply_eq, pow_succ, mul_comm, mul_left_comm, mul_assoc] using h
 
+/-- **Second-order Euler operator on a scalar power series.** If `f` is the sum of the scalar
+power series `∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
+`y ^ 2 * f'' y = ∑ n * (n - 1) * c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_mul_sq_deriv_deriv_ofScalars {𝕂 : Type*}
+    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+    HasSum (fun n : ℕ ↦ (n : 𝕂) * ((n : 𝕂) - 1) * c n * y ^ n)
+      (y ^ 2 * deriv (deriv f) y) := by
+  have h := (hf.deriv_ofScalars.hasSum_mul_deriv_ofScalars hy).mul_left y
+  refine (hasSum_nat_add_iff' 1).mp ?_
+  simpa [sq, pow_succ, mul_comm, mul_left_comm, mul_assoc] using h
+
 /-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
 with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
 `∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0` in `A`, then for `0 < m` the function
@@ -245,6 +257,45 @@ theorem le_radius_ofScalars_of_ofScalarsSum_ne_zero {𝕜 : Type*} [DenselyNorme
     simpa only [ofScalarsSum_eq_tsum, smul_eq_mul] using tsum_eq_zero_of_not_summable h
   refine (ENNReal.coe_le_coe.mpr htz.le).trans (le_radius_of_tendsto _ (l := 0) ?_)
   simpa [ofScalars_norm] using hsum.tendsto_atTop_zero.norm
+
+/-- **Eventual summable majorant radius criterion.** If `‖c k‖ * r ^ k` is eventually bounded by
+a summable sequence, then `r` is at most the radius of convergence of `ofScalars E c`. -/
+theorem le_radius_ofScalars_of_eventually_le {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing E] [NormedAlgebra 𝕜 E] {c : ℕ → 𝕜} {u : ℕ → ℝ} {r : NNReal}
+    (hu : Summable u) (hc : ∀ᶠ k in Filter.atTop, ‖c k‖ * (r : ℝ) ^ k ≤ u k) :
+    (r : ℝ≥0∞) ≤ (ofScalars E c).radius := by
+  refine le_radius_of_summable_norm _ (hu.of_norm_bounded_eventually_nat ?_)
+  filter_upwards [hc, Filter.eventually_ge_atTop 1] with k hck hk
+  rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (pow_nonneg r.coe_nonneg k))]
+  exact (mul_le_mul_of_nonneg_right (ofScalars_norm_le E c k hk) (pow_nonneg r.coe_nonneg k)).trans
+    hck
+
+/-- **Polynomial-growth radius criterion.** If the coefficients `c : ℕ → 𝕜` satisfy an eventual
+polynomial bound `‖c k‖ ≤ C * (k + 1) ^ m`, then the scalar series `ofScalars E c` has
+convergence radius at least `1`. -/
+theorem one_le_radius_ofScalars_of_eventually_norm_le_mul_pow {𝕜 E : Type*}
+    [NontriviallyNormedField 𝕜] [NormedRing E] [NormedAlgebra 𝕜 E]
+    {c : ℕ → 𝕜} {C : ℝ} {m : ℕ}
+    (hc : ∀ᶠ k in Filter.atTop, ‖c k‖ ≤ C * ((k : ℝ) + 1) ^ m) :
+    1 ≤ (ofScalars E c).radius := by
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+  rw [ENNReal.coe_lt_one_iff] at hr
+  have hC : 0 ≤ max C 0 := le_max_right C 0
+  have hu : Summable fun k : ℕ ↦ (max C 0 * 2 ^ m) * ((k : ℝ) ^ m * (r : ℝ) ^ k) :=
+    (summable_pow_mul_geometric_of_norm_lt_one m (r := (r : ℝ))
+      (by simpa [Real.norm_of_nonneg r.coe_nonneg] using NNReal.coe_lt_one.mpr hr)).mul_left _
+  refine le_radius_ofScalars_of_eventually_le (r := r) hu ?_
+  filter_upwards [hc, Filter.eventually_ge_atTop 1] with k hck hk
+  have hk1 : (k : ℝ) + 1 ≤ 2 * (k : ℝ) := by
+    have : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+    linarith
+  have hck' : ‖c k‖ ≤ max C 0 * 2 ^ m * (k : ℝ) ^ m := by
+    refine hck.trans ((mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity)).trans ?_)
+    calc
+      max C 0 * ((k : ℝ) + 1) ^ m ≤ max C 0 * (2 * (k : ℝ)) ^ m :=
+        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hk1 m) hC
+      _ = max C 0 * 2 ^ m * (k : ℝ) ^ m := by rw [mul_pow, mul_assoc]
+  exact (mul_le_mul_of_nonneg_right hck' (pow_nonneg r.coe_nonneg k)).trans_eq (mul_assoc _ _ _)
 
 end FormalMultilinearSeries
 
