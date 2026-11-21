@@ -439,8 +439,10 @@ theorem simplyBlockedSpecializationLinearMap_apply (c : GridChainMinus R n) :
 
 /-- The linear specialization at `V_i = 0` is surjective. -/
 theorem simplyBlockedSpecializationLinearMap_surjective :
-    Function.Surjective (simplyBlockedSpecializationLinearMap (n := n) R i) :=
-  simplyBlockedSpecialization_surjective R i
+    Function.Surjective (simplyBlockedSpecializationLinearMap (n := n) R i) := by
+  intro y
+  simpa only [simplyBlockedSpecializationLinearMap_apply] using
+    simplyBlockedSpecialization_surjective R i y
 
 /-- Multiplication by the blocked variable `V_i` is injective on the unblocked grid chain
 module. -/
@@ -486,8 +488,11 @@ specialization at `V_i = 0` as linear maps over the ground semiring. -/
 theorem exact_X_smul_simplyBlockedSpecializationLinearMap :
     Function.Exact
       (DistribSMul.toLinearMap R (GridChainMinus R n) (MvPolynomial.X i : MvPolynomial (Fin n) R))
-      (simplyBlockedSpecializationLinearMap R i) :=
-  exact_X_smul_simplyBlockedSpecialization R i
+      (simplyBlockedSpecializationLinearMap R i) := by
+  intro c
+  simpa only [simplyBlockedSpecializationLinearMap_apply, Set.mem_range,
+    DistribSMul.toLinearMap_apply] using
+    exact_X_smul_simplyBlockedSpecialization R i c
 
 /-- Specialization at `V_i = 0` kills multiples of `V_i`. -/
 @[simp]
