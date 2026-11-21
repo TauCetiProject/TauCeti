@@ -29,8 +29,8 @@ pseudodifferential operators with symbols of order zero (Calderón–Vaillancour
 operator is decomposed dyadically, and the pieces are almost orthogonal in the above sense.
 
 The simplest almost-orthogonality bound, for vectors rather than operators, expands a square:
-if `y` is the limit of the symmetric partial sums `∑_{-N ≤ k < N} xₖ` of a family indexed by `ℤ`,
-then `‖y‖² ≤ ∑_{k, l} |⟪xₖ, xₗ⟫|`. The `TT*` argument for the endpoint Strichartz estimate
+if `y` is a limit of finite partial sums `∑_{k ∈ s a} xₖ` of a family `x`,
+then `‖y‖² ≤ ∑_{i, j} |⟪xᵢ, xⱼ⟫|`. The `TT*` argument for the endpoint Strichartz estimate
 applies it to the dual integrals of the dyadic layers of a function.
 
 ## Main results
@@ -39,8 +39,8 @@ applies it to the dual integrals of the dyadic layers of a function.
 * `TauCeti.exists_hasSum_apply_of_almost_orthogonal`: the Cotlar–Stein lemma for an arbitrary
   family; the series converges in the strong operator topology to an operator of norm at
   most `A`.
-* `TauCeti.enorm_rpow_two_le_tsum_tsum_enorm_inner`: `‖y‖² ≤ ∑_{k, l} |⟪xₖ, xₗ⟫|` for the limit `y`
-  of the symmetric partial sums of `x : ℤ → V`.
+* `TauCeti.enorm_rpow_two_le_tsum_tsum_enorm_inner`: `‖y‖² ≤ ∑_{i, j} |⟪xᵢ, xⱼ⟫|` for a limit `y`
+  of finite partial sums of `x : ι → V`.
 
 ## Implementation notes
 
@@ -73,27 +73,22 @@ open scoped InnerProduct InnerProductSpace Topology
 
 namespace TauCeti
 
-/-- If `y` is the limit of the symmetric partial sums `∑_{-N ≤ k < N} xₖ`, then
-`‖y‖² ≤ ∑_{k, l} |⟪xₖ, xₗ⟫|`. -/
-theorem enorm_rpow_two_le_tsum_tsum_enorm_inner {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
-    [InnerProductSpace 𝕜 V] (x : ℤ → V) {y : V}
-    (hy : Tendsto (fun N : ℕ ↦ ∑ i ∈ range (2 * N), x ((i : ℤ) - N)) atTop (𝓝 y)) :
-    ‖y‖ₑ ^ (2 : ℝ) ≤ ∑' k, ∑' l, ‖⟪x k, x l⟫_𝕜‖ₑ := by
+/-- If `y` is a limit of finite partial sums `∑_{k ∈ s a} xₖ`, then
+`‖y‖² ≤ ∑_{i, j} |⟪xᵢ, xⱼ⟫|`. -/
+theorem enorm_rpow_two_le_tsum_tsum_enorm_inner {𝕜 V ι α : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] (x : ι → V) {y : V} {s : α → Finset ι}
+    {l : Filter α} [l.NeBot] (hy : Tendsto (fun a ↦ ∑ k ∈ s a, x k) l (𝓝 y)) :
+    ‖y‖ₑ ^ (2 : ℝ) ≤ ∑' i, ∑' j, ‖⟪x i, x j⟫_𝕜‖ₑ := by
   have hsq (v : V) : ‖v‖ₑ ^ (2 : ℝ) = ‖⟪v, v⟫_𝕜‖ₑ := by
     rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
     simp
   have hlim := ((ENNReal.continuous_rpow_const (y := 2)).tendsto _).comp hy.eNorm
-  refine le_of_tendsto' hlim fun N ↦ ?_
-  set g : ℕ → ℤ := fun i ↦ (i : ℤ) - N
-  have hg : Set.InjOn g (range (2 * N)) := fun i _ i' _ h ↦ by
-    simpa [g] using h
+  refine le_of_tendsto' hlim fun a ↦ ?_
   simp only [Function.comp_apply]
   rw [hsq, sum_inner]
   simp_rw [inner_sum]
-  refine (eNorm_sum_le _ _).trans ((sum_le_sum fun i _ ↦ eNorm_sum_le _ _).trans ?_)
-  rw [← sum_image (g := g) (f := fun k ↦ ∑ i' ∈ range (2 * N), ‖⟪x k, x (g i')⟫_𝕜‖ₑ) hg]
+  refine (eNorm_sum_le _ _).trans ((sum_le_sum fun k _ ↦ eNorm_sum_le _ _).trans ?_)
   refine (sum_le_sum fun k _ ↦ ?_).trans (_root_.sum_le_tsum _)
-  rw [← sum_image (g := g) (f := fun l ↦ ‖⟪x k, x l⟫_𝕜‖ₑ) hg]
   exact _root_.sum_le_tsum _
 
 variable {𝕜 E F ι : Type*} [RCLike 𝕜]

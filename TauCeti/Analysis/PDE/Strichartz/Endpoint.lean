@@ -487,7 +487,9 @@ private theorem enorm_integral_adjoint_rpow_two_le {σ : ℝ} (hσ : 1 < σ) {p 
   -- `TT*` on the layer decomposition, the shell bounds, Schur's test and the level sums.
   refine (enorm_rpow_two_le_tsum_tsum_enorm_inner (𝕜 := 𝕜)
     (fun k ↦ ∫ t, ((U t)†) (Lp.dyadicLayer k (F t)))
-    (tendsto_sum_range_integral_dyadicLayer hM hUm hF hUF)).trans ?_
+    (s := fun N : ℕ ↦ (Finset.range (2 * N)).image fun i : ℕ ↦ (i : ℤ) - N)
+    ((tendsto_sum_range_integral_dyadicLayer hM hUm hF hUF).congr fun N ↦
+      (Finset.sum_image fun i _ i' _ h ↦ by simpa using h).symm)).trans ?_
   calc _ ≤ ∑' k : ℤ, ∑' l : ℤ, c * (2 ^ (δ / 2) * S) * (w (k - l) * (y k * y l)) :=
         tsum_le_tsum fun k ↦ tsum_le_tsum fun l ↦
           (enorm_inner_integral_le_tsum (hUF k) (hUF l)).trans
