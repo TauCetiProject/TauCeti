@@ -39,9 +39,9 @@ variables `X 1, X 2, …` given by the recursion
 `γₘ = [m]_Q * X m - ∑ (0 < i < m), γᵢ * X (m - i)`,
 
 which records that `1 + (Q - 1) * ∑ (m > 0), γₘ * x ^ m` is `E (Q x) / E x` for
-`E x = 1 + ∑ (k > 0), X k * x ^ k`. First establish this identity at the universal
-Laurent parameter, where `Q - 1` is regular, then specialize its polynomial coefficients.
-Thus the formula for `γₘ` does not require division by `Q - 1` in the target ring.
+`E x = 1 + ∑ (k > 0), X k * x ^ k`. At the universal Laurent parameter `u`, regularity of
+`u ^ 2 - 1` allows cancellation to obtain `tr (ζₘ) = γₘ(e₁, …, eₙ)`. Specializing `u` to `q`
+gives the trace formula without dividing by `Q - 1` in the target ring.
 
 So the lowest-degree part of `γₘ` is `[m]_Q * X m`, and the lowest-degree part of the product
 `γ_λ = ∏ᵢ γ_(λᵢ)` is the monomial `∏ᵢ [λᵢ]_Q * X λᵢ`, of total degree the number of parts of
@@ -148,8 +148,9 @@ section Atomic
 variable {R : Type*} [CommRing R] {ι : Type*} [LinearOrder ι] [Fintype ι]
 
 open PowerSeries in
-/-- On an alphabet of negative letters only, the atomic trace of the cycle word `ζₘ`, `m > 0`, is
-the universal cycle value at the elementary symmetric functions of the weights. -/
+/-- If `q ^ 2 - 1` is left-regular, the atomic trace of `ζₘ` for `m > 0` on an alphabet of
+negative letters equals `cycleValue (q ^ 2)` at the elementary symmetric functions of the
+weights. -/
 private theorem atomicTrace_cycleWord_eq_cycleValue_of_regular (q : Rˣ)
     (hq : IsLeftRegular ((q : R) ^ 2 - 1)) (p : ι → R) {m : ℕ} (hm : 0 < m) :
     atomicTrace (fun _ ↦ False) q p m (cycleWord q m) =
@@ -172,8 +173,9 @@ private theorem atomicTrace_cycleWord_eq_cycleValue_of_regular (q : Rˣ)
       Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, coeff_mk, hscale] at hcoeff
     simpa only [coeff_mk] using hcoeff
 
-/-- The cycle-value identity specializes from the Laurent parameter without dividing by
-`q² - 1`, so it remains valid at the group-algebra fibers. -/
+/-- Over any commutative ring and for any unit `q`, the atomic trace of `ζₘ` for `m > 0` on an
+alphabet of negative letters equals `cycleValue (q ^ 2)` at the elementary symmetric functions
+of the weights. -/
 private theorem atomicTrace_cycleWord_eq_cycleValue (q : Rˣ) (p : ι → R)
     {m : ℕ} (hm : 0 < m) :
     atomicTrace (fun _ ↦ False) q p m (cycleWord q m) =
