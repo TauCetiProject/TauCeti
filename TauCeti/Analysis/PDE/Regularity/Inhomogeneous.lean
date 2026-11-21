@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
+import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
@@ -138,11 +139,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
 namespace PDE
 
 /-! ### Comparison with a solution of the homogeneous equation -/
-
-/-- Absorbing the constant `K` of the datum: `Q + K P ≤ max 1 K (Q + P)` for `Q, P ≥ 0`. -/
-private theorem add_mul_le_max_mul_add {Q P K : ℝ} (hQ : 0 ≤ Q) (hP : 0 ≤ P) :
-    Q + K * P ≤ max 1 K * (Q + P) := by
-  nlinarith [le_max_left 1 K, le_max_right 1 K]
 
 /-- **Local boundedness near a solution of the homogeneous equation.** Let `n ≥ 1` be the
 dimension. There is `D > 0`, depending only on `λ`, `Λ`, `n` and the normalization of `mu`, such
@@ -490,7 +486,7 @@ private theorem exists_ae_abs_value_le_mul_add_of_exists_ae_abs_sub_le [Nonempty
   filter_upwards [hbound h ha hg hug hR hball] with x hx
   set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   set P := R ^ γ * N / lam
-  have hmax := add_mul_le_max_mul_add (K := K) (by positivity : 0 ≤ Q)
+  have hmax := add_mul_le_max_one_mul_add (c := K) (by positivity : 0 ≤ Q)
     (div_nonneg (mul_nonneg (Real.rpow_nonneg hR.le γ) hN) hlam.le : 0 ≤ P)
   calc |W1p.value u x| ≤ D * (Q + K * P) := hx.trans_eq (by simp only [P]; ring)
     _ ≤ D * (max 1 K * (Q + P)) := by gcongr
@@ -541,7 +537,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le
     refine Real.toNNReal_le_toNNReal ?_
     set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
     set P := R ^ γ * N Omega / lam
-    have hmax := add_mul_le_max_mul_add (K := K₀) (by positivity : 0 ≤ Q)
+    have hmax := add_mul_le_max_one_mul_add (c := K₀) (by positivity : 0 ≤ Q)
       (div_nonneg (mul_nonneg (Real.rpow_nonneg hR.le γ) hN) hlam.le : 0 ≤ P)
     calc C * R ^ (-(α : ℝ)) * (Q + R ^ γ * (K₀ * N Omega / lam)) =
           C * R ^ (-(α : ℝ)) * (Q + K₀ * P) := by simp only [P]; ring
@@ -1178,7 +1174,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_add_divergence [No
   set P := (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
     R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam
   have hlen : C * (s / R) ^ α * (Q + K * P) ≤ C * max 1 K * (s / R) ^ α * (Q + P) :=
-    (mul_le_mul_of_nonneg_left (add_mul_le_max_mul_add (by positivity)
+    (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
       (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
   filter_upwards [hm'] with x hx
   rw [rpow_min_mul_eq hR] at hx
@@ -1230,7 +1226,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence [Nonem
     ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
     subset_rfl) hR hRK).mono_const (Real.toNNReal_le_toNNReal ?_)
   rw [rpow_min_mul_eq hR]
-  exact (mul_le_mul_of_nonneg_left (add_mul_le_max_mul_add (by positivity)
+  exact (mul_le_mul_of_nonneg_left (add_mul_le_max_one_mul_add (by positivity)
     (by have := h.pos; positivity)) (by positivity)).trans_eq (by ring)
 
 /-! ### Continuity for a locally integrable right-hand side -/
