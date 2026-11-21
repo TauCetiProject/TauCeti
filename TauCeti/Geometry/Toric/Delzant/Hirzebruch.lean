@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Toric.Delzant.Simplex
 
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Toric.Delzant.Equiv
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Hirzebruch trapezoids as Delzant polytopes
@@ -378,22 +379,22 @@ private theorem extremePoints_facetPolyhedron_hirzebruch_subset (hb : 0 < b) (ha
   · refine .inl ?_
     have h₀ := zero_mem_activeSet_hirzebruch_iff.1 hi
     have h₁ := one_mem_activeSet_hirzebruch_iff.1 hj
-    exact strongDual_ext fun l ↦ by fin_cases l <;> simp [h₀, h₁]
+    exact ContinuousLinearMap.pi_ext_single_one fun l ↦ by fin_cases l <;> simp [h₀, h₁]
   · refine .inr <| .inr <| .inl ?_
     have h₀ := zero_mem_activeSet_hirzebruch_iff.1 hi
     have h₂ := two_mem_activeSet_hirzebruch_iff.1 hj
-    exact strongDual_ext fun l ↦ by fin_cases l <;> simp [h₀, h₂]
+    exact ContinuousLinearMap.pi_ext_single_one fun l ↦ by fin_cases l <;> simp [h₀, h₂]
   · refine .inr <| .inl ?_
     have h₁ := one_mem_activeSet_hirzebruch_iff.1 hi
     have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
     rw [h₁] at h₃
-    exact strongDual_ext fun l ↦ by
+    exact ContinuousLinearMap.pi_ext_single_one fun l ↦ by
       fin_cases l <;> simp [h₁, show x (Pi.single 0 1) = a by linarith]
   · refine .inr <| .inr <| .inr ?_
     have h₂ := two_mem_activeSet_hirzebruch_iff.1 hi
     have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
     rw [h₂] at h₃
-    exact strongDual_ext fun l ↦ by
+    exact ContinuousLinearMap.pi_ext_single_one fun l ↦ by
       fin_cases l <;> simp [h₂, show x (Pi.single 0 1) = a - k * b by linarith]
 
 /-- **The vertices of the Hirzebruch trapezoid.** For `0 < b`, `0 < a` and `k b < a`, the
@@ -422,7 +423,7 @@ theorem extremePoints_facetPolyhedron_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab 
     exact hw j hj
   -- A functional on `ℝ²` vanishing on `e₁` and `e₂` is zero.
   suffices w (Pi.single 0 1) = 0 ∧ w (Pi.single 1 1) = 0 from
-    strongDual_ext fun l ↦ by fin_cases l <;> simp [this.1, this.2]
+    ContinuousLinearMap.pi_ext_single_one fun l ↦ by fin_cases l <;> simp [this.1, this.2]
   rcases hx with rfl | rfl | rfl | rfl
   · have h₀ := hw' 0 (zero_mem_activeSet_hirzebruch_iff.2 (by simp))
     have h₁ := hw' 1 (one_mem_activeSet_hirzebruch_iff.2 (by simp))
