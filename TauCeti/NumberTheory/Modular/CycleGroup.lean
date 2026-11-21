@@ -54,8 +54,9 @@ Admissibility is invariant under every permutation of the list, in particular un
 * `TauCeti.ModularGroup.cycleGroup_eq_closure_succ`: the generating set with the centres
   `N₁, …, N_ℓ` gives the same group.
 * `TauCeti.ModularGroup.map_conj_cycleGroup_rotate`: `Γ(n.rotate r) = T^(-N_r) Γ(n) T^(N_r)`.
-* `TauCeti.ModularGroup.exists_map_conj_map_cycleGroup_eq_of_isRotated`: cyclic rotations give
-  subgroups conjugate in `PSL(2, ℝ)`.
+* `List.IsRotated.exists_map_conj_cycleGroup_eq`,
+  `List.IsRotated.exists_map_conj_map_cycleGroup_eq`: cyclic rotations give subgroups conjugate
+  in `PSL(2, ℤ)` and in `PSL(2, ℝ)`.
 
 ## References
 
@@ -156,6 +157,13 @@ theorem conj_T_zpow_halfTurn (a c : ℤ) :
   simp only [halfTurn_def, MulAut.conj_apply]
   group
 
+/-- A subgroup containing the translation `Tᵃ` and the half-turn about `c + i` contains the
+half-turn about `a + c + i`. -/
+theorem halfTurn_add_mem {H : Subgroup PSL(2, ℤ)} {a c : ℤ} (ha : (T : PSL(2, ℤ)) ^ a ∈ H)
+    (hc : halfTurn c ∈ H) : halfTurn (a + c) ∈ H := by
+  rw [← conj_T_zpow_halfTurn, MulAut.conj_apply]
+  exact mul_mem (mul_mem ha hc) (inv_mem ha)
+
 @[simp]
 theorem halfTurn_mul_self (c : ℤ) : halfTurn c * halfTurn c = 1 := by
   rw [halfTurn_eq_conj, ← map_mul, ← sq, TauCeti.ModularGroup.coe_S_sq, map_one]
@@ -177,12 +185,11 @@ theorem halfTurn_ne_one (c : ℤ) : halfTurn c ≠ 1 := by
 theorem coe_halfTurn_smul (c : ℤ) (z : ℍ) :
     ((halfTurn c • z : ℍ) : ℂ) = c - 1 / ((z : ℂ) - c) := by
   have h : halfTurn c = ((T ^ c * S * T ^ (-c) : SL(2, ℤ)) : PSL(2, ℤ)) := by
-    rw [halfTurn_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_zpow,
-      QuotientGroup.mk_zpow]
-  rw [h, pslMk_smul, mul_smul, mul_smul, modular_T_zpow_smul, modular_S_smul,
-    modular_T_zpow_smul, coe_vadd, coe_mk, coe_vadd]
+    simp only [halfTurn_def, QuotientGroup.mk_mul, QuotientGroup.mk_zpow]
+  rw [h]
+  simp only [pslMk_smul, mul_smul, modular_T_zpow_smul, modular_S_smul, coe_vadd]
   push_cast
-  rw [show -(-(c : ℂ) + z) = -((z : ℂ) - c) by ring, inv_neg, one_div]
+  rw [neg_add_eq_sub, inv_neg, one_div]
   ring
 
 /-- The half-turn about `c + i` fixes `c + i`. -/
@@ -227,9 +234,8 @@ theorem halfTurn_mem_cycleGroup {k : ℕ} (hk : k < n.length) :
 cycle group. -/
 theorem halfTurn_add_mul_sum_mem_cycleGroup {k : ℕ} (hk : k < n.length) (j : ℤ) :
     halfTurn ((n.take k).sum + j * n.sum) ∈ cycleGroup n := by
-  rw [add_comm, ← conj_T_zpow_halfTurn, MulAut.conj_apply]
-  exact Subgroup.mul_mem _ (Subgroup.mul_mem _ (T_zpow_mul_sum_mem_cycleGroup n j)
-    (halfTurn_mem_cycleGroup hk)) (inv_mem (T_zpow_mul_sum_mem_cycleGroup n j))
+  rw [add_comm]
+  exact halfTurn_add_mem (T_zpow_mul_sum_mem_cycleGroup n j) (halfTurn_mem_cycleGroup hk)
 
 /-- For a nonempty list, the half-turn about the final centre `N_ℓ + i = m + i` lies in the cycle
 group. -/
@@ -263,30 +269,30 @@ theorem cycleGroup_eq_closure_succ (n : List ℕ) :
         Set.range fun k : Fin n.length ↦ halfTurn (n.take (k + 1)).sum) := by
   rcases eq_or_ne n [] with rfl | hn
   · simp [Subgroup.closure_singleton_one]
+  set H := Subgroup.closure ({(T : PSL(2, ℤ)) ^ n.sum} ∪
+    Set.range fun k : Fin n.length ↦ halfTurn (n.take (k + 1)).sum)
   refine le_antisymm (cycleGroup_le_iff.mpr ⟨Subgroup.subset_closure (Or.inl rfl), ?_⟩) ?_
   · rintro (_ | k) hk
     · -- the half-turn about `i` is the conjugate by `T⁻ᵐ` of the one about `m + i = N_ℓ + i`
-      have hT : (T : PSL(2, ℤ)) ^ (-(n.sum : ℤ)) ∈ Subgroup.closure
-          ({(T : PSL(2, ℤ)) ^ n.sum} ∪
-            Set.range fun k : Fin n.length ↦ halfTurn (n.take (k + 1)).sum) := by
+      have hT : (T : PSL(2, ℤ)) ^ (-(n.sum : ℤ)) ∈ H := by
         rw [zpow_neg, zpow_natCast]
         exact inv_mem (Subgroup.subset_closure (Or.inl rfl))
-      have hm : halfTurn n.sum ∈ Subgroup.closure
-          ({(T : PSL(2, ℤ)) ^ n.sum} ∪
-            Set.range fun k : Fin n.length ↦ halfTurn (n.take (k + 1)).sum) :=
+      have hm : halfTurn n.sum ∈ H :=
         Subgroup.subset_closure (Or.inr ⟨⟨n.length - 1, by omega⟩, by
           simp [Nat.sub_add_cancel hk]⟩)
-      have h0 : halfTurn (n.take 0).sum =
-          MulAut.conj ((T : PSL(2, ℤ)) ^ (-(n.sum : ℤ))) (halfTurn n.sum) := by
-        rw [conj_T_zpow_halfTurn, neg_add_cancel, List.take_zero, List.sum_nil, Nat.cast_zero]
-      rw [h0, MulAut.conj_apply]
-      exact Subgroup.mul_mem _ (Subgroup.mul_mem _ hT hm) (inv_mem hT)
+      simpa using halfTurn_add_mem hT hm
     · exact Subgroup.subset_closure (Or.inr ⟨⟨k, by omega⟩, rfl⟩)
   · rw [Subgroup.closure_le, Set.union_subset_iff, Set.singleton_subset_iff,
       Set.range_subset_iff]
     exact ⟨T_pow_sum_mem_cycleGroup n, fun k ↦ halfTurn_mem_cycleGroup_of_le hn k.isLt⟩
 
 /-! ### Rotation of the digit list -/
+
+/-- Translations commute, so conjugating `Tᵐ` by `Tᵃ` fixes it. -/
+private theorem conj_T_zpow_T_pow (a : ℤ) (m : ℕ) :
+    MulAut.conj ((T : PSL(2, ℤ)) ^ a) ((T : PSL(2, ℤ)) ^ m) = (T : PSL(2, ℤ)) ^ m := by
+  rw [MulAut.conj_apply]
+  group
 
 /-- Moving the first digit `a` of a list to its end conjugates the cycle group by `T⁻ᵃ`. -/
 private theorem map_conj_cycleGroup_cons (a : ℕ) (t : List ℕ) :
@@ -303,8 +309,7 @@ private theorem map_conj_cycleGroup_cons (a : ℕ) (t : List ℕ) :
   apply le_antisymm
   · rw [Subgroup.map_le_iff_le_comap, cycleGroup_le_iff]
     refine ⟨?_, ?_⟩
-    · rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
-        (((Commute.refl _).zpow_left _).pow_right _).mul_inv_cancel, ← hsum]
+    · rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, conj_T_zpow_T_pow, ← hsum]
       exact T_pow_sum_mem_cycleGroup _
     · rintro (_ | k) hk <;>
         rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, conj_T_zpow_halfTurn]
@@ -321,8 +326,7 @@ private theorem map_conj_cycleGroup_cons (a : ℕ) (t : List ℕ) :
     refine ⟨?_, fun k hk ↦ ?_⟩
     · have h := Subgroup.mem_map_of_mem (MulAut.conj ((T : PSL(2, ℤ)) ^ (-(a : ℤ)))).toMonoidHom
         (T_pow_sum_mem_cycleGroup (a :: t))
-      rwa [MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
-        (((Commute.refl _).zpow_left _).pow_right _).mul_inv_cancel, ← hsum] at h
+      rwa [MulEquiv.coe_toMonoidHom, conj_T_zpow_T_pow, ← hsum] at h
     · rw [hcentre k (by simpa using hk), ← conj_T_zpow_halfTurn]
       exact Subgroup.mem_map_of_mem _
         (halfTurn_mem_cycleGroup_of_le (List.cons_ne_nil a t) (by simp at hk ⊢; omega))
