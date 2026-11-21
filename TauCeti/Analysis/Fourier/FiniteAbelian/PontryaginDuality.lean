@@ -21,7 +21,7 @@ A primitive complex additive character `ψ` of a finite commutative ring `R` ind
 complex additive characters of `R` in the same way: the shifts `a ↦ ψ.mulShift a` are injective
 (Mathlib's `AddChar.to_mulShift_inj_of_isPrimitive`), and `R` has exactly `#R` complex additive
 characters (Mathlib's `AddChar.card_eq`), so the shifts are an isomorphism. For `R = ZMod n` and
-`ψ = ZMod.stdAddChar` this is a canonical form of Mathlib's noncanonical `AddChar.zmodAddEquiv`;
+`ψ = ZMod.stdAddChar` this agrees pointwise with Mathlib's `AddChar.zmodAddEquiv`;
 over a finite field it says that every additive character is a shift of a fixed nontrivial one.
 
 ## Main definitions
