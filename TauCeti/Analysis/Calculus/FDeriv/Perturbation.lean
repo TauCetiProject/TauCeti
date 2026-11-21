@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Topology.MetricSpace.Lebesgue
 import Mathlib.Analysis.Normed.Group.Bounded
-import Mathlib.Topology.MetricSpace.Thickening
-import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # `C¹`-small perturbations of compositions and iterates
@@ -21,8 +21,8 @@ are uniformly close to those of `f₁` there, and `g₂` is `C¹`-close to `f₂
 (`IsCompact.exists_pos_forall_differentiableAt_comp_and_norm_sub_le`). Only the derivative of
 `f₁` has to be continuous on `K`, and only the value and the derivative of `f₂` have to be
 continuous at the points of `f₁ '' K`: by compactness they are then uniformly continuous at these
-sets, which controls the error made by evaluating `f₂` and its derivative at `g₁ x` instead of
-`f₁ x`.
+sets (`IsCompact.exists_pos_forall_mem_and_dist_lt`), which controls the error made by evaluating
+`f₂` and its derivative at `g₁ x` instead of `f₁ x`.
 
 Iterating, if `f : E → E` is `C¹` near the first `k` points of the orbits of the points of `K`,
 then every map `g` which is `C¹`-close enough to `f` on a given neighbourhood `U` of these orbit
@@ -32,12 +32,10 @@ makes conditions on the iterates of a map, such as nondegeneracy of all its peri
 period at most `k` in a compact set, open in the `C¹` topology, and so it is what a Baire argument
 making all periodic points of a map nondegenerate up to a period cutoff needs.
 
-The iterate of a map which is `Cⁿ` along an orbit is `Cⁿ` at its starting point
-(`TauCeti.contDiffAt_iterate`), as in the differentiable case `TauCeti.differentiableAt_iterate`.
+The induction uses that `f^[k]` is `C¹` along the orbit (`TauCeti.contDiffAt_iterate`).
 
 ## Main results
 
-* `TauCeti.contDiffAt_iterate`: iterates are `Cⁿ` along `Cⁿ` orbits.
 * `IsCompact.exists_pos_forall_differentiableAt_comp_and_norm_sub_le`: composition of `C¹`-close
   maps.
 * `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`: iterates of `C¹`-close
@@ -58,38 +56,6 @@ open ContinuousLinearMap Filter Metric Set Topology
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-namespace TauCeti
-
-/-- **Iterates are `Cⁿ` along `Cⁿ` orbits.** If `f` is `Cⁿ` at the first `k` points `f^[j] x`,
-`j < k`, of the orbit of `x`, then `f^[k]` is `Cⁿ` at `x`. The point `x` need not be fixed. -/
-theorem contDiffAt_iterate {n : WithTop ℕ∞} {f : E → E} {x : E} :
-    ∀ {k : ℕ}, (∀ j < k, ContDiffAt 𝕜 n f (f^[j] x)) → ContDiffAt 𝕜 n f^[k] x
-  | 0, _ => contDiffAt_id
-  | k + 1, h => by
-    rw [Function.iterate_succ']
-    exact (h k (by omega)).comp x (contDiffAt_iterate fun j hj ↦ h j (by omega))
-
-end TauCeti
-
-/-- Points within a common distance `η` of a compact set `L` lie in a given neighbourhood `U` of
-`L`, and two maps continuous at the points of `L` move from there by less than `ε₁` and `ε₂`. -/
-private theorem exists_pos_forall_dist_lt {X Y₁ Y₂ : Type*} [PseudoMetricSpace X]
-    [PseudoMetricSpace Y₁] [PseudoMetricSpace Y₂] {L U : Set X} (hL : IsCompact L)
-    (hU : U ∈ 𝓝ˢ L) {h₁ : X → Y₁} {h₂ : X → Y₂} (hh₁ : ∀ y ∈ L, ContinuousAt h₁ y)
-    (hh₂ : ∀ y ∈ L, ContinuousAt h₂ y) {ε₁ ε₂ : ℝ} (hε₁ : 0 < ε₁) (hε₂ : 0 < ε₂) :
-    ∃ η > 0, ∀ y ∈ L, ∀ z, dist y z < η →
-      z ∈ U ∧ dist (h₁ y) (h₁ z) < ε₁ ∧ dist (h₂ y) (h₂ z) < ε₂ := by
-  obtain ⟨r, hr, hrU⟩ := (hasBasis_nhdsSet_thickening hL).mem_iff.1 hU
-  obtain ⟨η₁, hη₁, H₁⟩ := mem_uniformity_dist.1 <|
-    hL.uniformContinuousAt_of_continuousAt h₁ hh₁ (dist_mem_uniformity hε₁)
-  obtain ⟨η₂, hη₂, H₂⟩ := mem_uniformity_dist.1 <|
-    hL.uniformContinuousAt_of_continuousAt h₂ hh₂ (dist_mem_uniformity hε₂)
-  refine ⟨min r (min η₁ η₂), lt_min hr (lt_min hη₁ hη₂), fun y hy z hyz ↦ ⟨?_, ?_, ?_⟩⟩
-  · rw [dist_comm] at hyz
-    exact hrU (mem_thickening_iff.2 ⟨y, hy, hyz.trans_le (min_le_left _ _)⟩)
-  · exact H₁ (hyz.trans_le ((min_le_right _ _).trans (min_le_left _ _))) hy
-  · exact H₂ (hyz.trans_le ((min_le_right _ _).trans (min_le_right _ _))) hy
 
 /-- **Compositions of `C¹`-close maps are `C¹`-close.** Let `K` be compact, let `f₁` be
 differentiable on `K` with derivative continuous on `K`, and let `f₂` be differentiable at the
@@ -115,32 +81,33 @@ theorem IsCompact.exists_pos_forall_differentiableAt_comp_and_norm_sub_le {K : S
     hK.image_of_continuousOn fun x hx ↦ (hf₁ x hx).continuousAt.continuousWithinAt
   -- Bounds for the derivatives of `f₁` on `K` and of `f₂` on `f₁ '' K`, made nonnegative.
   obtain ⟨M₁, hM₁⟩ := hK.exists_bound_of_continuousOn hf₁'
-  obtain ⟨M₂, hM₂⟩ :=
-    hL.exists_bound_of_continuousOn (continuousOn_of_forall_continuousAt hf₂')
+  obtain ⟨M₂, hM₂⟩ := hL.exists_bound_of_continuousOn (continuousOn_of_forall_continuousAt hf₂')
   set B : ℝ := |M₁| + 1
   have hB : 0 < B := by positivity
   set τ : ℝ := ε / (2 * B)
   have hτ : 0 < τ := by positivity
   have hτB : τ * B = ε / 2 := by simp only [τ]; field_simp
-  -- A distance `η` within which points near `f₁ '' K` stay in `U`, and `f₂` and its derivative
-  -- move by less than `ε / 2` and `τ`.
-  obtain ⟨η, hη, hηL⟩ := exists_pos_forall_dist_lt hL hU (fun y hy ↦ (hf₂ y hy).continuousAt) hf₂'
-    (half_pos hε) hτ
+  -- Radii near `f₁ '' K` for staying in `U` and for the continuity of `f₂` and its derivative.
+  obtain ⟨η₁, hη₁, H₁⟩ := hL.exists_pos_forall_mem_and_dist_lt hU
+    (fun y hy ↦ (hf₂ y hy).continuousAt) (half_pos hε)
+  obtain ⟨η₂, hη₂, H₂⟩ := hL.exists_pos_forall_mem_and_dist_lt hU hf₂' hτ
   set A : ℝ := B + |M₂|
-  set δ : ℝ := min (min 1 (ε / 2)) (min (η / 2) (ε / (2 * A)))
+  set δ : ℝ := min (min 1 (ε / 2)) (min (min η₁ η₂ / 2) (ε / (2 * A)))
   have hδ : 0 < δ := by positivity
   have hδ1 : δ ≤ 1 := (min_le_left _ _).trans (min_le_left _ _)
   have hδε : δ ≤ ε / 2 := (min_le_left _ _).trans (min_le_right _ _)
-  have hδη : δ < η := (min_le_right _ _).trans_lt <| (min_le_left _ _).trans_lt (half_lt_self hη)
+  have hδη : δ < min η₁ η₂ :=
+    (min_le_right _ _).trans_lt <| (min_le_left _ _).trans_lt (half_lt_self (lt_min hη₁ hη₂))
   have hδA : δ * A ≤ ε / 2 := by
     have : δ ≤ ε / (2 * A) := (min_le_right _ _).trans (min_le_right _ _)
     rw [le_div_iff₀ (by positivity)] at this
     linarith
   refine ⟨δ, hδ, fun g₁ g₂ hg₁ hg₁₀ hg₁₁ hg₂ hg₂₀ hg₂₁ x hx ↦ ?_⟩
   have hy : f₁ x ∈ f₁ '' K := mem_image_of_mem f₁ hx
-  obtain ⟨hz, hf₂z, hDf₂z⟩ := hηL (f₁ x) hy (g₁ x) (by
-    rw [dist_comm, dist_eq_norm]; exact (hg₁₀ x hx).trans_lt hδη)
-  rw [dist_comm, dist_eq_norm] at hf₂z hDf₂z
+  have hd : dist (g₁ x) (f₁ x) < min η₁ η₂ := by rw [dist_eq_norm]; exact (hg₁₀ x hx).trans_lt hδη
+  obtain ⟨hz, hf₂z⟩ := H₁ (f₁ x) hy (g₁ x) (hd.trans_le (min_le_left _ _))
+  obtain ⟨-, hDf₂z⟩ := H₂ (f₁ x) hy (g₁ x) (hd.trans_le (min_le_right _ _))
+  rw [dist_eq_norm] at hf₂z hDf₂z
   refine ⟨(hg₂ _ hz).comp x (hg₁ x hx), ?_, ?_⟩
   · -- The value: compare `g₂ (g₁ x)` with `f₂ (g₁ x)`, and that with `f₂ (f₁ x)`.
     calc ‖(g₂ ∘ g₁) x - (f₂ ∘ f₁) x‖
