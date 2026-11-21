@@ -68,7 +68,7 @@ theorem contractibleTriangle_mem_stableDistinguishedTriangles (X : E.ProjectiveS
     (hE.stableConflationTriangle_mem _ (E.conflation_id_zero X)) ?_
   rw [hE.stableConflationTriangle_eq_mk]
   -- The object `⟨X⟩` of the quotient is `q.obj X` only up to structure eta, whence the `rfl`.
-  exact Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) h₃.isoZero (by simp; rfl)
+  exact Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) h₃.isoZero (by simp)
     ((isZero_zero _).eq_of_tgt _ _)
     (h₃.eq_of_src _ _)
 

@@ -117,7 +117,7 @@ point the pulled-back covector `(e^* β)_x` is a positive multiple of `α_x`. Fo
 forms this says that `e` is a contactomorphism carrying the coorientation of `ker α` given by `α`
 to the coorientation of `ker β` given by `β`. -/
 def PreservesCoorientation : Prop :=
-  ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).1 x = c • α.1 x
+  ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).val x = c • α.val x
 
 /-- A diffeomorphism `e : M ≃ N` is a **strict contactomorphism** from `α` to `β` when it pulls
 `β` back to `α`. -/
@@ -136,7 +136,7 @@ theorem isContactomorphism_def :
 every point. -/
 theorem preservesCoorientation_def :
     e.PreservesCoorientation α β ↔
-      ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).1 x = c • α.1 x :=
+      ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).val x = c • α.val x :=
   Iff.rfl
 
 /-- A strict contactomorphism is a diffeomorphism pulling `β` back to `α`. -/
@@ -213,10 +213,10 @@ theorem isContactomorphism_smul_right {c : ℝ} (hc : c ≠ 0) :
 
 /-- For a nowhere vanishing form `α`: a diffeomorphism is a contactomorphism exactly when it pulls
 `β` back to `f α` for a unique nowhere vanishing smooth function `f`. -/
-theorem isContactomorphism_iff_existsUnique_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
+theorem isContactomorphism_iff_existsUnique_fun_smul (hα : ∀ x, α.val x ≠ 0) :
     e.IsContactomorphism α β ↔
       ∃! f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, f x ≠ 0) ∧
-        ∀ x, (SmoothForm.mpullback e e.contMDiff β).1 x = f x • α.1 x :=
+        ∀ x, (SmoothForm.mpullback e e.contMDiff β).val x = f x • α.val x :=
   SmoothForm.kerDistribution_eq_iff_existsUnique_fun_smul hα
 
 /-- A contactomorphism preserves and reflects contactness. -/
@@ -260,10 +260,10 @@ theorem PreservesCoorientation.symm (h : e.PreservesCoorientation α β) :
 
 /-- For a nowhere vanishing form `α`: a diffeomorphism preserves the coorientation exactly when
 it pulls `β` back to `f α` for a positive smooth function `f`. -/
-theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
+theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.val x ≠ 0) :
     e.PreservesCoorientation α β ↔
       ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, 0 < f x) ∧
-        ∀ x, (SmoothForm.mpullback e e.contMDiff β).1 x = f x • α.1 x := by
+        ∀ x, (SmoothForm.mpullback e e.contMDiff β).val x = f x • α.val x := by
   refine ⟨fun h ↦ ?_, fun ⟨f, _, hf, hmul⟩ x ↦ ⟨f x, hf x, hmul x⟩⟩
   obtain ⟨f, ⟨hf, -, hmul⟩, -⟩ :=
     (isContactomorphism_iff_existsUnique_fun_smul hα).mp h.isContactomorphism
@@ -276,7 +276,7 @@ theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
 the coorientation given by `β` or the opposite coorientation given by `-β`: its multiplier is a
 continuous nowhere vanishing function, so it has constant sign. -/
 theorem IsContactomorphism.preservesCoorientation_or_neg [PreconnectedSpace M]
-    (h : e.IsContactomorphism α β) (hα : ∀ x, α.1 x ≠ 0) :
+    (h : e.IsContactomorphism α β) (hα : ∀ x, α.val x ≠ 0) :
     e.PreservesCoorientation α β ∨ e.PreservesCoorientation α (-β) := by
   obtain ⟨f, ⟨hf, hf₀, hmul⟩, -⟩ := (isContactomorphism_iff_existsUnique_fun_smul hα).mp h
   by_cases hpos : ∀ x, 0 < f x
@@ -348,9 +348,10 @@ every point of `e.source` the differential of `e` pulls `β` back to `α`. -/
 theorem isStrictContactomorphism_toDiffeomorphSourceTarget_iff
     (e : PartialDiffeomorph I J M N ∞) (α : SmoothForm I M ℝ 1) (β : SmoothForm J N ℝ 1) :
     e.toDiffeomorphSourceTarget.IsStrictContactomorphism
-        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
-        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val β) ↔
-      ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.1 (e x) ![mfderiv I J e x v] = α.1 x ![v] := by
+        (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal α)
+        (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal β) ↔
+      ∀ x ∈ e.source, ∀ v : TangentSpace I x,
+        β.val (e x) ![mfderiv I J e x v] = α.val x ![v] := by
   rw [Diffeomorph.isStrictContactomorphism_def, Subtype.ext_iff, SmoothForm.coe_mpullback,
     SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
     e.mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val_eq_iff (by simp)]
@@ -366,9 +367,9 @@ theorem isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff
     (e : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞) (α : SmoothForm I M ℝ 1)
     (β : SmoothForm 𝓘(ℝ, F) F ℝ 1) :
     e.toDiffeomorphSourceTarget.IsStrictContactomorphism
-        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
-        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val β) ↔
-      ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.1 (e x) ![mvfderiv I e x v] = α.1 x ![v] := by
+        (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal α)
+        (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal β) ↔
+      ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.val (e x) ![mvfderiv I e x v] = α.val x ![v] := by
   simp only [e.isStrictContactomorphism_toDiffeomorphSourceTarget_iff α β,
     mvfderiv_apply_eq_mfderiv_apply]
 
@@ -419,7 +420,7 @@ theorem isStrictContactomorphism_innerProductContactForm_iff_of_coe_eq {c : ℝ}
       c = 1 := by
   rw [Diffeomorph.IsStrictContactomorphism, mpullback_innerProductContactForm_of_coe_eq he]
   refine ⟨fun h ↦ ?_, fun hc ↦ by rw [hc, one_smul]⟩
-  have h₀ := congrArg (fun β : SmoothForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1 ↦ β.1 0) h
+  have h₀ := congrArg (fun β : SmoothForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1 ↦ β.val 0) h
   rw [SmoothForm.smul_toRoughForm, Pi.smul_apply] at h₀
   exact smul_left_injective ℝ ((isContactForm_innerProductContactForm V).apply_ne_zero 0)
     (h₀.trans (one_smul ℝ _).symm)
@@ -468,16 +469,16 @@ theorem SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] {α : SmoothForm I M ℝ 1} {n : WithTop ℕ∞}
     {chart : PartialDiffeomorph I 𝓘(ℝ, V × V × ℝ) M (V × V × ℝ) n} (hn : 2 ≤ n)
     (hchart : ∀ x ∈ chart.source, ∀ v : TangentSpace I x,
-      (innerProductContactForm V).1 (chart x) ![mvfderiv I chart x v] = α.1 x ![v])
+      (innerProductContactForm V).val (chart x) ![mvfderiv I chart x v] = α.val x ![v])
     {x : M} (hx : x ∈ chart.source) :
     mvfderiv I chart x (α.reebVectorField x) = (0, 0, 1) := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  have hc : IsContactFormAt (innerProductContactForm V).1 (chart x) :=
+  have hc : IsContactFormAt (innerProductContactForm V).val (chart x) :=
     SmoothForm.isContactForm_iff_forall_isContactFormAt.1
       (isContactForm_innerProductContactForm V) (chart x)
   have hpull : ∀ᶠ y in 𝓝 x, ∀ v : TangentSpace I y,
-      (innerProductContactForm V).1 (chart y) ![mfderiv I 𝓘(ℝ, V × V × ℝ) chart y v] =
-        α.1 y ![v] := by
+      (innerProductContactForm V).val (chart y) ![mfderiv I 𝓘(ℝ, V × V × ℝ) chart y v] =
+        α.val y ![v] := by
     filter_upwards [chart.open_source.mem_nhds hx] with y hy v
     simpa only [mvfderiv_apply_eq_mfderiv_apply] using hchart y hy v
   rw [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,

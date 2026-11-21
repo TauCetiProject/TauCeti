@@ -29,6 +29,9 @@ carries the local orientation of `ω` to that of `ω.map f`
 isomorphism of pairs `(F, F ∖ {0}) ≅ (G, G ∖ {0})` it induces
 (`ContinuousLinearEquiv.complZeroPairIso`). The opposite
 orientation selects the opposite local orientation (`Orientation.localOrientation_neg`).
+Since `Hₙ₊₁(F, F ∖ {0}; ℤ)` is a copy of `ℤ`, it has exactly two generators, so the selection is a
+bijection between the two orientations of `F` and its two local orientations at the origin
+(`Orientation.localOrientationEquiv`).
 
 These are the fibrewise normalizations of the Thom class of an oriented real vector bundle: the
 fibres of the bundle are identified with a model fibre by linear equivalences, an orientation of
@@ -38,6 +41,8 @@ on the identification used.
 ## Main definitions
 
 * `Orientation.localOrientation`: the local orientation at the origin selected by an orientation.
+* `Orientation.localOrientationEquiv`: orientations correspond bijectively to local orientations
+  at the origin.
 
 ## Main results
 
@@ -46,6 +51,8 @@ on the identification used.
 * `Orientation.localOrientation_neg`: reversing the orientation reverses the local orientation.
 * `Orientation.localOrientation_euclideanSpace`: on the Euclidean model it is the oriented-chart
   generator of the identity chart.
+* `Orientation.localOrientation_injective`, `Orientation.localOrientation_surjective`: the
+  selection is a bijection; `Orientation.localOrientation_inj` is the injectivity as an iff.
 
 ## References
 
@@ -192,5 +199,65 @@ theorem localOrientation_neg (ω : Orientation ℝ F (Fin (n + 1))) (hF : finran
     (-ω).localOrientation hF = -ω.localOrientation hF := by
   simp only [localOrientation, localOrientationVia, Orientation.map_neg, modelLocalOrientation_neg,
     LocalOrientation.map_neg]
+
+/-- The integral local homology of `F` at the origin in the top degree is one copy of `ℤ`. -/
+private def complZeroIso (hF : finrank ℝ F = n + 1) :
+    localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({0} : Set F) (n + 1) ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ) :=
+  singularHomologyComplSingletonIsoOfFinrankEq _ (OpenPartialHomeomorph.refl F)
+    (Set.mem_univ (0 : F)) hF
+
+/-- Distinct orientations select distinct local orientations. -/
+theorem localOrientation_injective (hF : finrank ℝ F = n + 1) :
+    Function.Injective fun ω : Orientation ℝ F (Fin (n + 1)) ↦ ω.localOrientation hF := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  intro ω ω' h
+  simp only at h
+  rcases ω.eq_or_eq_neg ω' (by rw [Nat.card_fin, hF]) with h' | h'
+  · exact h'
+  · rw [h', localOrientation_neg] at h
+    exact absurd (congrArg Subtype.val h)
+      ((ω'.localOrientation hF).property.neg_ne (complZeroIso hF))
+
+/-- Two orientations select the same local orientation exactly when they are equal. -/
+@[simp]
+theorem localOrientation_inj {ω ω' : Orientation ℝ F (Fin (n + 1))} (hF : finrank ℝ F = n + 1) :
+    ω.localOrientation hF = ω'.localOrientation hF ↔ ω = ω' :=
+  (localOrientation_injective hF).eq_iff
+
+/-- Every local orientation of `F` at the origin is selected by an orientation of `F`. -/
+theorem localOrientation_surjective (hF : finrank ℝ F = n + 1) :
+    Function.Surjective fun ω : Orientation ℝ F (Fin (n + 1)) ↦ ω.localOrientation hF := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  intro z
+  let ω : Orientation ℝ F (Fin (n + 1)) := (Module.finBasisOfFinrankEq ℝ F hF).orientation
+  rcases (ω.localOrientation hF).property.eq_or_eq_neg (complZeroIso hF) z.property with h | h
+  · exact ⟨ω, Subtype.ext h.symm⟩
+  · exact ⟨-ω, Subtype.ext (by simp [h])⟩
+
+/-- **Orientations and local orientations of a vector space.** For a real normed space `F` of
+dimension `n + 1`, `Orientation.localOrientation` is a bijection between the orientations of `F`
+and the generators of `Hₙ₊₁(F, F ∖ {0}; ℤ)`. -/
+def localOrientationEquiv (hF : finrank ℝ F = n + 1) :
+    Orientation ℝ F (Fin (n + 1)) ≃ LocalOrientation F 0 (n + 1) :=
+  Equiv.ofBijective _ ⟨localOrientation_injective hF, localOrientation_surjective hF⟩
+
+@[simp]
+theorem localOrientationEquiv_apply (hF : finrank ℝ F = n + 1)
+    (ω : Orientation ℝ F (Fin (n + 1))) :
+    localOrientationEquiv hF ω = ω.localOrientation hF :=
+  (rfl)
+
+@[simp]
+theorem localOrientation_localOrientationEquiv_symm (hF : finrank ℝ F = n + 1)
+    (z : LocalOrientation F 0 (n + 1)) :
+    ((localOrientationEquiv hF).symm z).localOrientation hF = z :=
+  (localOrientationEquiv hF).apply_symm_apply z
+
+@[simp]
+theorem localOrientationEquiv_symm_localOrientation (hF : finrank ℝ F = n + 1)
+    (ω : Orientation ℝ F (Fin (n + 1))) :
+    (localOrientationEquiv hF).symm (ω.localOrientation hF) = ω :=
+  (localOrientationEquiv hF).symm_apply_apply ω
 
 end Orientation

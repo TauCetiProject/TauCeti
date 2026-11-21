@@ -107,17 +107,18 @@ differential at `x`, `β` is a smooth one-form on `N` that is contact at `f x`, 
 back to `α` on a neighborhood of `x`, then `mfderiv I J f x` sends `α.reebVectorField x` to
 `β.reebVectorField (f x)`. Neither finite-dimensionality nor global contactness is needed. -/
 theorem IsContactFormAt.mfderiv_reebVectorField_eq {α : SmoothForm I M ℝ 1}
-    {β : SmoothForm J N ℝ 1} {f : M → N} {x : M} (hc : IsContactFormAt β.1 (f x))
+    {β : SmoothForm J N ℝ 1} {f : M → N} {x : M} (hc : IsContactFormAt β.val (f x))
     (hf : ContMDiffAt I J 2 f x) (hdf : Function.Bijective (mfderiv I J f x))
-    (hpull : ∀ᶠ y in 𝓝 x, ∀ v : TangentSpace I y, β.1 (f y) ![mfderiv I J f y v] = α.1 y ![v]) :
+    (hpull : ∀ᶠ y in 𝓝 x, ∀ v : TangentSpace I y, β.val (f y) ![mfderiv I J f y v] = α.val y ![v]) :
     mfderiv I J f x (α.reebVectorField x) = β.reebVectorField (f x) := by
-  have hev : ∀ᶠ y in 𝓝 x, α.1 y = mpullback I J f β.1 y :=
+  have hev : ∀ᶠ y in 𝓝 x, α.val y = mpullback I J f β.val y :=
     hpull.mono fun y hy ↦ ContinuousAlternatingMap.ext_fin_one fun v ↦ by
       rw [mpullback_apply_one, hy v]
-  have hval (u : TangentSpace I x) : α.1 x ![u] = β.1 (f x) ![mfderiv I J f x u] :=
+  have hval (u : TangentSpace I x) : α.val x ![u] = β.val (f x) ![mfderiv I J f x u] :=
     (hpull.self_of_nhds u).symm
   have hd (u w : TangentSpace I x) :
-      mextDeriv α.1 x ![u, w] = mextDeriv β.1 (f x) ![mfderiv I J f x u, mfderiv I J f x w] := by
+      mextDeriv α.val x ![u, w] =
+        mextDeriv β.val (f x) ![mfderiv I J f x u, mfderiv I J f x w] := by
     rw [mextDeriv_congr_of_eventuallyEq hev,
       ← mpullback_mextDeriv_at hf (β.contMDiff.of_le (by simp) (f x)), mpullback_apply_pair]
   set e : TangentSpace I x ≃ₗ[ℝ] TangentSpace J (f x) :=
@@ -161,7 +162,7 @@ of a one-form `α` exactly when it pulls `α` back to zero. -/
 theorem isHorizontalMap_kerDistribution_iff_mpullback_eq_zero {f : M → N}
     (α : SmoothForm J N ℝ 1) (hf : ContMDiff I J ∞ f) :
     IsHorizontalMap I α.kerDistribution f ↔ mpullback f hf α = 0 := by
-  have h (x : M) : (mpullback f hf α).1 x = 0 ↔
+  have h (x : M) : (mpullback f hf α).val x = 0 ↔
       LinearMap.range (mfderiv I J f x).toLinearMap ≤ α.kerDistribution (f x) := by
     rw [LinearMap.range_le_iff_comap, ← kerDistribution_mpullback f hf α x, kerDistribution_eq_ker,
       RoughForm.ker_eq_top_iff]
@@ -224,7 +225,7 @@ theorem finiteDimensional_of_isContactForm_mpullback [FiniteDimensional ℝ F]
     refine (isContactForm_iff.1 hα x).2 w ?_ fun w' _ ↦ ?_
     · rw [SmoothForm.mpullback_apply_one, hw, ← degreeOneEquiv_coe_apply, map_zero]
     · rw [mextDeriv_mpullback_apply_two, hw]
-      exact (mextDeriv α.1 (f x)).map_coord_zero 0 rfl
+      exact (mextDeriv α.val (f x)).map_coord_zero 0 rfl
   exact Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] F).toLinearMap hinj
 
 /-- The differential of a smooth map whose differential at `x` is bijective carries the Reeb field

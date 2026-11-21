@@ -9,12 +9,14 @@ public import Mathlib.Data.Set.Lattice.Indexed
 public import Mathlib.Logic.Equiv.PartialEquiv
 
 /-!
-# Image transport for compositions and restrictions of partial equivalences
+# Image transport and intertwining for partial equivalences
 
 This file supplements `PartialEquiv.image_source_inter_eq'` and `PartialEquiv.image_trans_source` in
 `Mathlib.Logic.Equiv.PartialEquiv` with equational formulas for source-restricted images under
 compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate transitions
-`e.symm.trans e'` (with or without restriction to a subset `u` of the intermediate space).
+`e.symm.trans e'` (with or without restriction to a subset `u` of the intermediate space). It also
+shows that if `e` intertwines a self-map of its source with a map `A`, then `e.symm` intertwines
+them in the other direction.
 
 ## Main declarations
 
@@ -34,6 +36,8 @@ compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate trans
 * `PartialEquiv.mem_source_of_symm_eq_coe`, `PartialEquiv.apply_coe_eq_of_symm_eq_coe`: source
   membership and forward agreement with a partial equivalence on a subtype whose inverse matches
   the ambient inverse on the ambient target.
+* `PartialEquiv.symm_map_of_intertwines`: if `e` intertwines a self-map `f` of its source with a
+  map `A`, then `A` preserves the target and `e.symm` intertwines `A` with `f`.
 -/
 
 public section
@@ -131,5 +135,15 @@ theorem apply_coe_eq_of_symm_eq_coe {P : α → Prop} (Φ : PartialEquiv (Subtyp
   have hsp : Φ.symm (e p) = p :=
     Subtype.ext ((hesymm (e p) (e.map_source hp)).symm.trans (e.left_inv hp))
   exact (hsp ▸ Φ.right_inv (het (e.map_source hp))).symm
+
+/-- If a partial equivalence `e` intertwines a map `f` of its source into itself with a map `A`,
+then `A` maps the target of `e` into itself and `e.symm` intertwines `A` with `f` there. -/
+theorem symm_map_of_intertwines (e : PartialEquiv α β) {f : α → α} {A : β → β}
+    (hA : ∀ x ∈ e.source, f x ∈ e.source ∧ e (f x) = A (e x)) {z : β} (hz : z ∈ e.target) :
+    A z ∈ e.target ∧ e.symm (A z) = f (e.symm z) := by
+  obtain ⟨hfs, hfe⟩ := hA (e.symm z) (e.map_target hz)
+  rw [e.right_inv hz] at hfe
+  rw [← hfe]
+  exact ⟨e.map_source hfs, e.left_inv hfs⟩
 
 end PartialEquiv
