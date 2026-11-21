@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.NumberTheory.NumberField.Basic
+public import TauCeti.Algebra.Algebra.Hom.Rat
 public import TauCeti.NumberTheory.NumberField.CMType.Basic
 import Mathlib.RingTheory.Trace.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
@@ -27,6 +28,10 @@ The complementary type has the conjugate type trace, `typeTrace_{ιΦ} = conj �
 sum is the full sum over all embeddings, the trace `Tr_{E/ℚ}` when `E` is a number field, which
 is rational; hence `Φ` and `ιΦ` have the same reflex field. Inducing a type from a subfield `K ⊆ L`
 composes the type trace with the trace `Tr_{L/K}`, so it does not change the reflex field.
+
+Both constructions assume finitely many complex embeddings. This holds for every
+finite-dimensional `ℚ`-algebra, such as a finite product of CM fields, by the instance
+`RingHom.finite_of_moduleFinite_rat`.
 
 ## Main definitions
 
@@ -60,8 +65,7 @@ namespace TauCeti.CMType
 
 variable {E : Type*} [CommRing E] [Finite (E →+* ℂ)]
 
-/-- The **type trace** `a ↦ ∑_{φ ∈ Φ} φ a` of a CM type `Φ`, an additive (hence `ℚ`-linear) map
-`E → ℂ`. -/
+/-- The **type trace** `a ↦ ∑_{φ ∈ Φ} φ a` of a CM type `Φ`, an additive map `E → ℂ`. -/
 noncomputable def typeTrace (Φ : CMType E) : E →+ ℂ where
   toFun a := ∑ᶠ φ ∈ (Φ : Set (E →+* ℂ)), φ a
   map_zero' := by simp
@@ -82,10 +86,12 @@ theorem typeTrace_eq_sum [Fintype (E →+* ℂ)] (Φ : CMType E) [DecidablePred 
   simp
 
 /-- The type trace of the complementary type is the complex conjugate of the type trace. -/
+@[simp]
 theorem typeTrace_star (Φ : CMType E) (a : E) :
     (star Φ).typeTrace a = conj (Φ.typeTrace a) := by
   rw [typeTrace_apply, coe_star_eq_image, finsum_mem_image star_injective.injOn, typeTrace_apply]
   -- `star φ a` is `conj (φ a)`, and `conj` commutes with the finite sum.
+  simp_rw [RingHom.star_apply]
   exact ((starRingEnd ℂ : ℂ →+ ℂ).map_finsum_mem _ (Set.toFinite _)).symm
 
 /-- The type traces of `Φ` and of its complementary type add up to the sum over all complex
@@ -143,9 +149,11 @@ theorem mem_fixingSubgroup_reflexField_iff (Φ : CMType E) (σ : ℂ ≃ₐ[ℚ]
   refine ⟨fun h ↦ ?_, fun h x hx ↦ ?_⟩
   · -- The sums over `σΦ` and `Φ` agree as functions of `a`, so `σΦ = Φ` by Dedekind.
     let m : (E →+* ℂ) ↪ (E →* ℂ) := ⟨_, RingHom.toMonoidHom_injective⟩
+    have hsum (a : E) : ∑ ψ with e.symm ψ ∈ Φ, ψ a = ∑ ψ with ψ ∈ Φ, ψ a := by
+      rw [← key, ← typeTrace_eq_sum]
+      exact h _ (typeTrace_mem_reflexField Φ a)
     have hst : ({ψ | e.symm ψ ∈ Φ} : Finset _).map m = ({ψ | ψ ∈ Φ} : Finset _).map m :=
-      MonoidHom.finset_eq_of_forall_sum_apply_eq fun a ↦ by
-        simpa [m, ← key, ← typeTrace_eq_sum] using h _ (typeTrace_mem_reflexField Φ a)
+      MonoidHom.finset_eq_of_forall_sum_apply_eq fun a ↦ by simpa [m] using hsum a
     intro φ
     have := Finset.ext_iff.mp (Finset.map_inj.mp hst) (e φ)
     rw [mem_filter, mem_filter, e.symm_apply_apply] at this
@@ -165,6 +173,7 @@ theorem mem_fixingSubgroup_reflexField_iff (Φ : CMType E) (σ : ℂ ≃ₐ[ℚ]
 
 /-- A CM type on a number field and its complementary type have the same reflex field, since their
 type traces add up to the rational trace. -/
+@[simp]
 theorem reflexField_star {K : Type*} [Field K] [NumberField K] (Φ : CMType K) :
     (star Φ).reflexField = Φ.reflexField := by
   have key (Ψ : CMType K) : (star Ψ).reflexField ≤ Ψ.reflexField :=
@@ -194,6 +203,7 @@ theorem typeTrace_induced (Φ₀ : CMType K) (b : L) :
   exact finsum_mem_congr rfl fun φ₀ _ ↦ (RingHom.apply_trace_eq_finsum φ₀ b).symm
 
 /-- **An induced type has the reflex field of the type it is induced from.** -/
+@[simp]
 theorem reflexField_induced (Φ₀ : CMType K) :
     (Φ₀.induced (algebraMap K L)).reflexField = Φ₀.reflexField := by
   refine le_antisymm (reflexField_le_iff.mpr fun b ↦ ?_) (reflexField_le_iff.mpr fun a ↦ ?_)

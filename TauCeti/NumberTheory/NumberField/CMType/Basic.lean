@@ -19,8 +19,8 @@ real subalgebra; for an abelian variety with complex multiplication by `E` it re
 characters through which `E` acts on the tangent space.
 
 Imposing the partition condition on an arbitrary commutative ring keeps the definition free of
-the structure of `E`. It already forces every embedding to differ from its
-conjugate (`TauCeti.CMType.star_ne_self`), and CM types exist exactly when no embedding is real
+the structure of `E`. It already forces every embedding to differ from its conjugate
+(`TauCeti.CMType.ringHom_star_ne_self`), and CM types exist exactly when no embedding is real
 (`TauCeti.CMType.nonempty_iff`), so a number field carries a CM type exactly when it is totally
 complex.
 
@@ -93,23 +93,23 @@ theorem star_mem_iff (Φ : CMType E) (φ : E →+* ℂ) : star φ ∈ Φ ↔ φ 
   Φ.star_mem_iff' φ
 
 /-- No embedding is its own conjugate when `E` carries a CM type. -/
-theorem star_ne_self (Φ : CMType E) (φ : E →+* ℂ) : star φ ≠ φ := fun h ↦
+theorem ringHom_star_ne_self (Φ : CMType E) (φ : E →+* ℂ) : star φ ≠ φ := fun h ↦
   iff_not_self (h ▸ Φ.star_mem_iff φ)
 
 /-- **Existence of CM types.** A commutative ring carries a CM type exactly when no complex
 embedding is its own conjugate: choose one embedding from each conjugate pair. -/
 theorem nonempty_iff : Nonempty (CMType E) ↔ ∀ φ : E →+* ℂ, star φ ≠ φ := by
-  refine ⟨fun ⟨Φ⟩ ↦ Φ.star_ne_self, fun h ↦ ?_⟩
+  refine ⟨fun ⟨Φ⟩ ↦ Φ.ringHom_star_ne_self, fun h ↦ ?_⟩
   -- Identify each embedding with its conjugate and keep the chosen representative of each pair.
   let s : Setoid (E →+* ℂ) := Setoid.ker fun φ ↦ s(φ, star φ)
   let r : (E →+* ℂ) → (E →+* ℂ) := fun φ ↦ (Quotient.mk s φ).out
   have hr (φ : E →+* ℂ) : r φ = φ ∨ r φ = star φ := by
-    have : s(r φ, star (r φ)) = s(φ, star φ) := Quotient.mk_out (s := s) φ
+    have : s(r φ, star (r φ)) = s(φ, star φ) := Setoid.ker_def.mp (Quotient.mk_out (s := s) φ)
     rcases Sym2.eq_iff.mp this with ⟨h₁, -⟩ | ⟨h₁, -⟩ <;> simp [h₁]
   have hr_star (φ : E →+* ℂ) : r (star φ) = r φ :=
     congrArg Quotient.out (Quotient.sound (s := s) (by simp [s, Sym2.eq_swap]))
   refine ⟨⟨{φ | r φ = φ}, fun φ ↦ ?_⟩⟩
-  change r (star φ) = star φ ↔ ¬r φ = φ
+  simp only [Set.mem_ofPred_eq]
   rw [hr_star]
   rcases hr φ with h₁ | h₁ <;> rw [h₁]
   · simpa using (h φ).symm
@@ -154,7 +154,7 @@ theorem coe_star_eq_image (Φ : CMType E) :
   simpa using hψ
 
 /-- A CM type and its complement are different whenever `E` has a complex embedding. -/
-theorem star_ne [Nonempty (E →+* ℂ)] (Φ : CMType E) : star Φ ≠ Φ := fun h ↦ by
+theorem star_ne_self [Nonempty (E →+* ℂ)] (Φ : CMType E) : star Φ ≠ Φ := fun h ↦ by
   obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
   have := SetLike.ext_iff.mp h φ
   simp at this
@@ -190,7 +190,7 @@ restricting into `Φ₀`. -/
 def induced (Φ₀ : CMType E₀) (f : E₀ →+* E) : CMType E where
   carrier := {φ | φ.comp f ∈ Φ₀}
   star_mem_iff' φ := by
-    have : (star φ).comp f = star (φ.comp f) := RingHom.ext fun _ ↦ rfl
+    have : (star φ).comp f = star (φ.comp f) := RingHom.ext fun _ ↦ by simp [RingHom.star_apply]
     simp [this]
 
 @[simp]
