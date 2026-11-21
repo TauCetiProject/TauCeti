@@ -72,7 +72,7 @@ functions whose gradient vanishes outside a small ball, so the work is the local
   bounded measurable coefficients. A cutoff of the solution, extended by zero, solves a
   whole-space equation whose scalar forcing has mean zero.
 * `TauCeti.PDE.exists_wholeSpace_cutoff`: given a divergence representation of mean-zero functions
-  on balls, that whole-space equation in pure divergence form, with an `Lᵖ` bound on its datum.
+  on a ball, that whole-space equation in pure divergence form, with an `Lᵖ` bound on its datum.
 
 ## References
 
@@ -444,23 +444,21 @@ private theorem setIntegral_inner_add_mul_eq {p q : ℝ≥0∞} [Fact (1 ≤ p)]
 /-- **A cutoff of a local solution solves a problem on the whole space.** Let `u` solve
 `-div(a ∇u) = -div G` weakly in `Ω ⊇ B = B(x₀, t)`, with `u`, `∇u`, `G` in `Lᵖ(B)`, and let `ζ` be a
 cutoff supported in `B` with `|ζ| ≤ 1` and `‖∇ζ‖ ≤ L`. Given the divergence representation `hD` of
-mean-zero functions on `B`, the extension by zero of `ζ (u - c)` solves `-div(a ∇w) = -div F` on
-the whole space, for an explicit field `F ∈ Lᵖ`: the divergence datum of the cutoff plus a field
-`H` with `-div H` the scalar forcing of the cutoff. -/
+mean-zero functions on `B`, with norm bound `K`, the extension by zero of `ζ (u - c)` solves
+`-div(a ∇w) = -div F` on the whole space, for an explicit field `F ∈ Lᵖ`: the divergence datum of
+the cutoff plus a field `H` with `-div H` the scalar forcing of the cutoff. -/
 theorem exists_wholeSpace_cutoff
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a volume) {Lam : ℝ}
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-    (hp2 : 2 ≤ p) (hqp : q ≤ p) {δ : ℝ} {CD : ℝ≥0}
-    (hD : ∀ {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ}, 0 < t →
-      ∀ {h : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}, MemLp h q volume →
+    (hp2 : 2 ≤ p) (hqp : q ≤ p) {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ} {K : ℝ≥0∞}
+    (hD : ∀ {h : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}, MemLp h q volume →
       (∀ᵐ x, x ∉ ball x₀ t → h x = 0) → ∫ x, h x = 0 →
       ∃ H : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)), MemLp H p volume ∧
-        eLpNorm H p volume ≤ CD * ENNReal.ofReal t * volume (ball x₀ t) ^ (-δ) *
-          eLpNorm h q volume ∧
+        eLpNorm H p volume ≤ K * eLpNorm h q volume ∧
         ∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
           ∫ x, h x * φ x = ∫ x, ⟪H x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
-    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ} (ht : 0 < t) (hball : ball x₀ t ⊆ (Ω : Set _))
+    (hball : ball x₀ t ⊆ (Ω : Set _))
     (u : W1p volume Ω 2) {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     (hu : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       ∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
@@ -481,10 +479,8 @@ theorem exists_wholeSpace_cutoff
       eLpNorm F p volume ≤ eLpNorm G p (volume.restrict (ball x₀ t)) +
           ENNReal.ofReal (Lam * L) *
             eLpNorm (fun x => W1p.value u x - c) p (volume.restrict (ball x₀ t)) +
-        CD * ENNReal.ofReal t * volume (ball x₀ t) ^ (-δ) *
-          (ENNReal.ofReal L * eLpNorm G q (volume.restrict (ball x₀ t)) +
-            ENNReal.ofReal (Lam * L) *
-              eLpNorm (W1p.gradient u) q (volume.restrict (ball x₀ t))) := by
+        K * (ENNReal.ofReal L * eLpNorm G q (volume.restrict (ball x₀ t)) +
+          ENNReal.ofReal (Lam * L) * eLpNorm (W1p.gradient u) q (volume.restrict (ball x₀ t))) := by
   set U : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ t, isOpen_ball⟩
   have hUΩ : U ≤ Ω := hball
   have hU : MeasurableSet (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) := measurableSet_ball
@@ -513,7 +509,7 @@ theorem exists_wholeSpace_cutoff
     hhle.trans_lt (ENNReal.add_lt_top.2 ⟨ENNReal.mul_lt_top ENNReal.ofReal_lt_top
       (hG.mono_exponent hqp).eLpNorm_lt_top,
       ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hg.mono_exponent hqp).eLpNorm_lt_top⟩)
-  obtain ⟨H, hH, hHle, hHφ⟩ := hD ht hh (ae_of_all _ fun x hx => indicator_of_notMem hx _)
+  obtain ⟨H, hH, hHle, hHφ⟩ := hD hh (ae_of_all _ fun x hx => indicator_of_notMem hx _)
     (by rw [integral_indicator measurableSet_ball]; exact hmean)
   refine ⟨w, G₁ + H, hw, hG₁.add hH, fun φ => ?_, ?_⟩
   · exact (heq φ).trans (setIntegral_inner_add_mul_eq measurableSet_ball hG₁ hh hH φ (hHφ φ))
@@ -676,8 +672,8 @@ private theorem exists_eLpNorm_gradient_ball_le_step {p q : ℝ≥0∞} [Fact (1
   have hv' := hv.mono_measure hle
   have hg' := hg.mono_measure hle
   have hG' := hG.mono_measure hle
-  obtain ⟨w, F, hw, hF, hweq, hFle⟩ := exists_wholeSpace_cutoff ha hbd hp.le hqp hD ht
-    hballt u hu
+  obtain ⟨w, F, hw, hF, hweq, hFle⟩ := exists_wholeSpace_cutoff ha hbd hp.le hqp
+    (hD (x₀ := x₀) ht) hballt u hu
     hv' hg' hG' hζ hζc htsb hζabs hgrad (⨍ y in ball x₀ t, W1p.value u y)
   -- The whole-space estimate applies to `w`, and `∇w = ∇u` on `B_s`.
   obtain ⟨hwp, hwint⟩ := memLp_integrable_of_ae_eq_indicator_cutoff u hv' hg' hζ hζabs hgrad _ hw
