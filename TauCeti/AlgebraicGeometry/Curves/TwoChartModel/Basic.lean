@@ -358,17 +358,8 @@ over `k`. It identifies the germ of a function on the finite chart with that fun
 (`TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_germToFunctionField`). -/
 noncomputable def functionFieldEquiv (hxt : Transcendental k x) :
     (twoChartModel hF hx).functionField ≃ₐ[k] F :=
-  haveI := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top hF hx)
   haveI := isFractionRing_holomorphyRing_setOf_mem hF hxt
-  AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv (finiteChartSectionsEquiv hF hx))
-    fun c ↦ by
-      rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
-        Scheme.baseRingToFunctionField_eq_comp_appLE k _ (ιFinite hF hx ''ᵁ ⊤),
-        RingHom.comp_apply]
-      -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
-      refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
-      rw [CommRingCat.comp_apply, finiteChartSectionsEquiv_appLE, Iso.inv_hom_id_apply]
-      exact (IsScalarTower.algebraMap_apply k _ F c).symm
+  (ιFinite hF hx).functionFieldAlgEquivOfIsOpenImmersion (ιFinite_over hF hx) F
 
 /-- `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv` sends the germ of a function on
 the finite chart to the corresponding function of `F`. -/
@@ -376,11 +367,9 @@ the finite chart to the corresponding function of `F`. -/
 theorem functionFieldEquiv_germToFunctionField (hxt : Transcendental k x)
     (a : Γ(twoChartModel hF hx, ιFinite hF hx ''ᵁ ⊤)) :
     functionFieldEquiv hxt ((twoChartModel hF hx).germToFunctionField _ a) =
-      finiteChartSectionsEquiv hF hx a := by
-  have := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top hF hx)
-  have := isFractionRing_holomorphyRing_setOf_mem hF hxt
-  -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
-  exact IsFractionRing.ringEquivOfRingEquiv_algebraMap _ a
+      finiteChartSectionsEquiv hF hx a :=
+  haveI := isFractionRing_holomorphyRing_setOf_mem hF hxt
+  Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion_germToFunctionField _ (ιFinite_over hF hx) F a
 
 end twoChartModel
 

@@ -22,7 +22,8 @@ integral closure of `R[u, u⁻¹] = R[u⁻¹, u]`, along which they are glued. N
 `B` is needed: all three rings are subrings of `B`, in which `u` is already invertible.
 
 The localization statements accept any algebra structure between the two subrings that is
-compatible with their inclusions into `B`, as Mathlib's `IsLocalization.integralClosure` does.
+compatible with their inclusions into `B`, as Mathlib's `IsLocalization.Away.integralClosure`
+does.
 
 ## Main definitions
 
@@ -41,11 +42,11 @@ compatible with their inclusions into `B`, as Mathlib's `IsLocalization.integral
   `Units.isLocalization_away_inv_integralClosure_adjoin_insert_inv` is the same statement for
   the integral closure of `R[u⁻¹]`, away from `u⁻¹`.
 
-The integrality statement is the case of a single inverted element of the fact that integral
-closure commutes with localization; its proof uses Mathlib's
-`IsIntegral.exists_multiple_integral_of_isLocalization`, and Mathlib's
-`IsLocalization.integralClosure` is the corresponding statement for a localization of the ambient
-ring as well.
+The localization of the integral closures is Mathlib's `IsLocalization.Away.integralClosure`
+(integral closure commutes with localization away from one element), applied with `B` as its own
+localization away from the unit `u`. Mathlib's
+`IsIntegral.exists_multiple_integral_of_isLocalization` gives the integrality statements
+`Units.exists_isIntegral_adjoin_pow_mul` and `Units.isIntegral_adjoin_insert_inv_iff`.
 
 ## References
 
