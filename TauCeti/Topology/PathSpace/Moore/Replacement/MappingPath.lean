@@ -229,7 +229,8 @@ private theorem toMappingPathFiber_unitHomotopyAct_zero (q : Fiber p b × MooreL
     rw [MoorePath.unitHomotopy_apply_zero, MappingPathFiber.toMoorePath_toPath,
       toMappingPathFiber_val]
   have hω : MoorePath.unitHomotopy (0, q.2.toMoorePath) = q.2.toPath.toMoorePath := by
-    rw [MoorePath.unitHomotopy_apply_zero, MooreLoopSpace.toMoorePath_toPath_eq_ofUnitPath]
+    rw [← MooreLoopSpace.toMoorePath_unitHomotopy, MooreLoopSpace.unitHomotopy_apply_zero,
+      Path.toMoorePath_toMooreLoop]
   refine Subtype.ext (Prod.ext (by
     rw [toMappingPathFiber_val, MappingPathFiber.transLoop_val_fst, toMappingPathFiber_val,
       point_unitHomotopyAct]) ?_)

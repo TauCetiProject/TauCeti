@@ -496,12 +496,6 @@ theorem toMoorePath_toPath (γ : MooreLoopSpace X x) :
     γ.toPath.toMoorePath = γ.toMoorePath.rescale 1 :=
   MoorePath.toLengthOne_eq_rescale_one γ.toMoorePath
 
-/-- A Moore loop reparametrized to the unit interval, as a Moore path, is `MoorePath.ofUnitPath`
-of the normalization of its Moore path. -/
-theorem toMoorePath_toPath_eq_ofUnitPath (γ : MooreLoopSpace X x) :
-    γ.toPath.toMoorePath = MoorePath.ofUnitPath γ.toMoorePath.toUnitPath :=
-  (rfl)
-
 /-- The homotopy from `toLengthOne` to the identity of the Moore loops at `x`: the restriction of
 `MoorePath.unitHomotopy`, which preserves the end points, to the loops. -/
 def unitHomotopy :
