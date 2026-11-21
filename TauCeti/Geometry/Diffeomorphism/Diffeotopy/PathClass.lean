@@ -75,31 +75,22 @@ variable (S) in
 are joined by a homotopy fixing both time ends all of whose intermediate maps lie in `S`. That is,
 a `C^n` map `G : (M × [0, 1]) × [0, 1] → M` joins the motion `(x, t) ↦ φ_t x` of `Φ` at `s = 0` to
 the motion of `Ψ` at `s = 1`, fixes both time ends, `G ((x, 0), s) = x` and `G ((x, 1), s) = φ₁ x`,
-has a `C^n` inverse `G'` in the space variable, and every map `x ↦ G ((x, t), s)` is an element of
-`S`. Forgetting the last condition gives `TauCeti.Diffeotopy.Homotopic`. -/
+has a `C^n` inverse `G'` in the space variable (`TauCeti.Diffeotopy.IsHomotopy`), and every map
+`x ↦ G ((x, t), s)` is an element of `S`. Forgetting the last condition gives
+`TauCeti.Diffeotopy.Homotopic`. -/
 def HomotopicWith (Φ Ψ : Diffeotopy J n M) : Prop :=
-  ∃ G G' : (M × I) × I → M, ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G ∧
-    (∀ p, G (p, 0) = Φ.cylinderMap p) ∧ (∀ p, G (p, 1) = Ψ.cylinderMap p) ∧
-    (∀ x s, G ((x, 0), s) = x) ∧ (∀ x s, G ((x, 1), s) = Φ.final x) ∧
-    ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G' ∧
-    (∀ x t s, G' ((G ((x, t), s), t), s) = x) ∧ (∀ x t s, G ((G' ((x, t), s), t), s) = x) ∧
-    ∀ t s, ∃ f ∈ S, ⇑f = fun x ↦ G ((x, t), s)
+  ∃ G G' : (M × I) × I → M, IsHomotopy Φ Ψ G G' ∧ ∀ t s, ∃ f ∈ S, ⇑f = fun x ↦ G ((x, t), s)
 
 /-- Unfold homotopy through `S`: a homotopy of diffeotopies fixing both time ends, with a `C^n`
 inverse in the space variable, all of whose intermediate maps lie in `S`. -/
 theorem homotopicWith_iff : HomotopicWith S Φ Ψ ↔
-    ∃ G G' : (M × I) × I → M, ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G ∧
-      (∀ p, G (p, 0) = Φ.cylinderMap p) ∧ (∀ p, G (p, 1) = Ψ.cylinderMap p) ∧
-      (∀ x s, G ((x, 0), s) = x) ∧ (∀ x s, G ((x, 1), s) = Φ.final x) ∧
-      ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G' ∧
-      (∀ x t s, G' ((G ((x, t), s), t), s) = x) ∧ (∀ x t s, G ((G' ((x, t), s), t), s) = x) ∧
-      ∀ t s, ∃ f ∈ S, ⇑f = fun x ↦ G ((x, t), s) :=
+    ∃ G G' : (M × I) × I → M, IsHomotopy Φ Ψ G G' ∧ ∀ t s, ∃ f ∈ S, ⇑f = fun x ↦ G ((x, t), s) :=
   Iff.rfl
 
 /-- Diffeotopies homotopic through `S` are homotopic. -/
 theorem HomotopicWith.homotopic (h : HomotopicWith S Φ Ψ) : Φ.Homotopic Ψ := by
-  obtain ⟨G, G', hG, hG₀, hG₁, h₀, h₁, hG', hl, hr, -⟩ := h
-  exact homotopic_iff.2 ⟨G, G', hG, hG₀, hG₁, h₀, h₁, hG', hl, hr⟩
+  obtain ⟨G, G', h, -⟩ := h
+  exact h.homotopic
 
 /-- Diffeotopies homotopic through `S` have the same final diffeomorphism. -/
 theorem HomotopicWith.final_eq (h : HomotopicWith S Φ Ψ) : Φ.final = Ψ.final :=
@@ -108,92 +99,48 @@ theorem HomotopicWith.final_eq (h : HomotopicWith S Φ Ψ) : Φ.final = Ψ.final
 /-- A homotopy through a smaller subgroup is a homotopy through a larger one. -/
 theorem HomotopicWith.mono {S' : Subgroup (M ≃ₘ^n⟮J, J⟯ M)} (hS : S ≤ S')
     (h : HomotopicWith S Φ Ψ) : HomotopicWith S' Φ Ψ := by
-  obtain ⟨G, G', hG, hG₀, hG₁, h₀, h₁, hG', hl, hr, hS'⟩ := h
-  refine ⟨G, G', hG, hG₀, hG₁, h₀, h₁, hG', hl, hr, fun t s ↦ ?_⟩
+  obtain ⟨G, G', h, hS'⟩ := h
+  refine ⟨G, G', h, fun t s ↦ ?_⟩
   obtain ⟨f, hf, hfG⟩ := hS' t s
   exact ⟨f, hS hf, hfG⟩
 
 /-- A diffeotopy through `S` is homotopic through `S` to itself, through the constant
 homotopy. -/
 theorem HomotopicWith.refl (hΦ : Φ ∈ sliceSubgroup S) : HomotopicWith S Φ Φ :=
-  ⟨fun q ↦ Φ.cylinderMap q.1, fun q ↦ Φ.symm.cylinderMap q.1,
-    Φ.contMDiff_cylinderMap.comp contMDiff_fst, fun _ ↦ rfl,
-    fun _ ↦ rfl, fun x _ ↦ by dsimp only; rw [cylinderMap_apply, apply_zero],
-    fun x _ ↦ by dsimp only; rw [cylinderMap_apply, final_apply],
-    Φ.symm.contMDiff_cylinderMap.comp contMDiff_fst,
-    fun x t _ ↦ by dsimp only; rw [cylinderMap_apply, cylinderMap_apply, symm_apply_apply_mk],
-    fun x t _ ↦ by dsimp only; rw [cylinderMap_apply, cylinderMap_apply, apply_symm_apply_mk],
-    fun t _ ↦ ⟨Φ.timeSlice t, mem_sliceSubgroup.1 hΦ t, funext fun x ↦ by
-      dsimp only
-      rw [cylinderMap_apply, timeSlice_apply]⟩⟩
+  ⟨_, _, IsHomotopy.refl Φ, fun t _ ↦ ⟨Φ.timeSlice t, mem_sliceSubgroup.1 hΦ t, funext fun x ↦ by
+    dsimp only
+    rw [cylinderMap_apply, timeSlice_apply]⟩⟩
 
 /-- Homotopy through `S` is symmetric: run the homotopy backwards. -/
 theorem HomotopicWith.symm (h : HomotopicWith S Φ Ψ) : HomotopicWith S Ψ Φ := by
-  have hfinal := h.final_eq
-  obtain ⟨G, K, hG, hG₀, hG₁, h₀, h₁, hK, hl, hr, hS⟩ := h
-  have hσ : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) n
-      fun q : (M × I) × I ↦ (q.1, σ q.2) :=
-    contMDiff_fst.prodMk (contMDiff_symm.comp contMDiff_snd)
-  refine ⟨fun q ↦ G (q.1, σ q.2), fun q ↦ K (q.1, σ q.2), hG.comp hσ, fun p ↦ ?_, fun p ↦ ?_,
-    fun x s ↦ h₀ x _, fun x s ↦ by dsimp only; rw [h₁, hfinal], hK.comp hσ,
-    fun x t s ↦ hl x t _, fun x t s ↦ hr x t _, fun t s ↦ hS t (σ s)⟩
-  · dsimp only
-    rw [symm_zero, hG₁]
-  · dsimp only
-    rw [symm_one, hG₀]
+  obtain ⟨G, K, h, hS⟩ := h
+  exact ⟨_, _, h.symm, fun t s ↦ hS t (σ s)⟩
 
 /-- **Homotopy through `S` is transitive**, at finite regularity and at `C^∞`: glue the two
 homotopies, each reparametrized to be stationary near the joining time. -/
 theorem HomotopicWith.trans (h : HomotopicWith S Φ Ψ) (h' : HomotopicWith S Ψ Θ) (hn : n ≤ ∞) :
     HomotopicWith S Φ Θ := by
-  have hfinal := h.final_eq
-  obtain ⟨G, K, hG, hG₀, hG₁, h₀, h₁, hK, hl, hr, hS⟩ := h
-  obtain ⟨G', K', hG', hG'₀, hG'₁, h'₀, h'₁, hK', hl', hr', hS'⟩ := h'
-  -- At the seam both inverses invert the motion of `Ψ`, so they agree there.
-  have hseam (p : M × I) : K (p, 1) = K' (p, 0) := by
-    rw [← hl' (K (p, 1)) p.2 0, hG'₀, ← hG₁, hr]
-  refine ⟨_, _, hG.glue_collaredHalves hG' (fun p ↦ (hG₁ p).trans (hG'₀ p).symm) hn,
-    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_, hK.glue_collaredHalves hK' hseam hn,
-    fun x t s ↦ ?_, fun x t s ↦ ?_, fun t s ↦ ?_⟩
-  · rw [ite_eq_left (by norm_num [Set.Icc.coe_zero]), collaredFirstHalf_zero, hG₀]
-  · rw [ite_eq_right (by norm_num [Set.Icc.coe_one]), collaredSecondHalf_one, hG'₁]
-  · split_ifs
-    exacts [h₀ x _, h'₀ x _]
-  · split_ifs
-    exacts [h₁ x _, by rw [h'₁, hfinal]]
-  · split_ifs
-    exacts [hl x t _, hl' x t _]
-  · split_ifs
-    exacts [hr x t _, hr' x t _]
+  obtain ⟨G, K, h, hS⟩ := h
+  obtain ⟨G', K', h', hS'⟩ := h'
+  refine ⟨_, _, h.trans h' hn, fun t s ↦ ?_⟩
   -- At a fixed homotopy time the glued map is a slice of one of the two homotopies.
-  · dsimp only
-    split_ifs
-    exacts [hS t _, hS' t _]
+  dsimp only
+  split_ifs
+  exacts [hS t _, hS' t _]
 
 /-- **Homotopy through `S` is compatible with the pointwise product.** If `Φ` is homotopic through
 `S` to `Φ'` and `Ψ` to `Ψ'`, then `φ_t ∘ ψ_t` is homotopic through `S` to `φ'_t ∘ ψ'_t`. -/
 theorem HomotopicWith.mul_congr (h : HomotopicWith S Φ Φ') (h' : HomotopicWith S Ψ Ψ') :
     HomotopicWith S (Φ * Ψ) (Φ' * Ψ') := by
-  obtain ⟨G, K, hG, hG₀, hG₁, h₀, h₁, hK, hl, hr, hS⟩ := h'
-  obtain ⟨G', K', hG', hG'₀, hG'₁, h'₀, h'₁, hK', hl', hr', hS'⟩ := h
-  refine ⟨fun q ↦ G' ((G q, q.1.2), q.2), fun q ↦ K ((K' q, q.1.2), q.2),
-    hG'.comp ((hG.prodMk (contMDiff_snd.comp contMDiff_fst)).prodMk contMDiff_snd),
-    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ by dsimp only; rw [h₀, h'₀], fun x s ↦ ?_,
-    hK.comp ((hK'.prodMk (contMDiff_snd.comp contMDiff_fst)).prodMk contMDiff_snd),
-    fun x t s ↦ by dsimp only; rw [hl', hl], fun x t s ↦ by dsimp only; rw [hr, hr'],
-    fun t s ↦ ?_⟩
-  · dsimp only
-    rw [hG₀, hG'₀, mul_def, cylinderMap_trans, Function.comp_apply]
-  · dsimp only
-    rw [hG₁, hG'₁, mul_def, cylinderMap_trans, Function.comp_apply]
-  · dsimp only
-    rw [h₁, h'₁, final_mul, Diffeomorph.coe_mul, Function.comp_apply]
+  obtain ⟨G, K, h', hS⟩ := h'
+  obtain ⟨G', K', h, hS'⟩ := h
+  refine ⟨_, _, mul_def Φ Ψ ▸ mul_def Φ' Ψ' ▸ h'.trans_congr h, fun t s ↦ ?_⟩
   -- The intermediate maps are the composites of those of the two homotopies.
-  · obtain ⟨f, hf, hfG⟩ := hS t s
-    obtain ⟨f', hf', hf'G⟩ := hS' t s
-    refine ⟨f' * f, S.mul_mem hf' hf, ?_⟩
-    rw [Diffeomorph.coe_mul, hfG, hf'G]
-    rfl
+  obtain ⟨f, hf, hfG⟩ := hS t s
+  obtain ⟨f', hf', hf'G⟩ := hS' t s
+  refine ⟨f' * f, S.mul_mem hf' hf, ?_⟩
+  rw [Diffeomorph.coe_mul, hfG, hf'G]
+  rfl
 
 variable (S) in
 /-- **Homotopy through `S` as a congruence** on the group of diffeotopies through `S`, for

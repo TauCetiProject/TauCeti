@@ -93,6 +93,11 @@ theorem one_apply (p : I × M) : (1 : Diffeotopy J n M) p = p.2 :=
 theorem mul_apply (Φ Ψ : Diffeotopy J n M) (p : I × M) : (Φ * Ψ) p = Φ (p.1, Ψ p) :=
   trans_apply Ψ Φ p
 
+/-- The inverse of a diffeotopy applies the inverse of its diffeomorphism of `[0, 1] × M`. -/
+@[simp]
+theorem inv_apply (Φ : Diffeotopy J n M) (p : I × M) : Φ⁻¹ p = (Φ.toDiffeomorph.symm p).2 :=
+  symm_apply Φ p
+
 /-- The time slice of a product of diffeotopies is the product of the time slices. -/
 @[simp]
 theorem timeSlice_mul (Φ Ψ : Diffeotopy J n M) (t : I) :
@@ -157,6 +162,7 @@ def sliceSubgroup (S : Subgroup (M ≃ₘ^n⟮J, J⟯ M)) : Subgroup (Diffeotopy
   ⨅ t, S.comap (timeSliceHom J n M t)
 
 /-- A diffeotopy lies in `sliceSubgroup S` exactly when every time slice lies in `S`. -/
+@[simp]
 theorem mem_sliceSubgroup {S : Subgroup (M ≃ₘ^n⟮J, J⟯ M)} {Φ : Diffeotopy J n M} :
     Φ ∈ sliceSubgroup S ↔ ∀ t, Φ.timeSlice t ∈ S := by
   simp [sliceSubgroup, Subgroup.mem_iInf]
