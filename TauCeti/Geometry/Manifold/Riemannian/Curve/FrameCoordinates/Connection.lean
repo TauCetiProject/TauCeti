@@ -19,7 +19,7 @@ frame of a surface, and let `ω(X) = ⟪e₁, ∇_X e₀⟫` be the connection o
 connection `∇`. Differentiating the coordinates gives
 `z' = (∇_t γ')₀ + i (∇_t γ')₁ - i ω(γ') z`
 (`IsLocalFrameOn.hasDerivAt_frameVelocityCoordinates`). The curve only needs to be differentiable
-at the parameter with differentiable velocity coordinates there.
+at `t`, with its velocity differentiable in the tangent-bundle trivialization centered at `γ t`.
 
 ## References
 
@@ -44,7 +44,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- The derivative of the complex velocity coordinates in an orthonormal local frame is the
 coordinate covariant acceleration minus `i ω(γ') z`. This holds for any metric connection, and
-only needs `γ` differentiable at `t` with differentiable velocity coordinates there. -/
+only needs `γ` differentiable at `t`, with its velocity differentiable in the tangent-bundle
+trivialization centered at `γ t`. -/
 theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
     (hu : IsOpen u) (ho : ∀ x ∈ u, Orthonormal ℝ (fun i ↦ s i x))
     {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}

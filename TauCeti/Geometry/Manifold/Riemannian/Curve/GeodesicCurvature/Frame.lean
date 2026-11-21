@@ -21,9 +21,9 @@ form. This is the boundary identity used with the surface structure equation `d�
 Gauss–Bonnet.
 
 The formula allows arbitrary parametrizations, including stationary points, where both sides
-vanish. It needs the curve differentiable at the parameter with differentiable velocity
-coordinates there, and the frame only on an open neighborhood of the point on the curve. The
-derivative of `z` itself holds for any metric connection
+vanish. It needs the curve differentiable at `t`, with its velocity differentiable in the
+tangent-bundle trivialization centered at `γ t`, and the frame only on an open neighborhood of
+the point on the curve. The derivative of `z` itself holds for any metric connection
 (`IsLocalFrameOn.hasDerivAt_frameVelocityCoordinates`).
 
 ## References
@@ -49,9 +49,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- **The boundary moving-frame formula.** In a positively oriented orthonormal local frame,
 geodesic curvature times speed is the turning rate `Im(z' / z)` plus the Levi-Civita connection
-one-form evaluated on the velocity. The curve need only be differentiable at `t` with
-differentiable velocity coordinates there, and no unit-speed assumption is needed. At a
-stationary point both sides are zero with the totalized division convention. -/
+one-form evaluated on the velocity. The curve need only be differentiable at `t`, with its
+velocity differentiable in the tangent-bundle trivialization centered at `γ t`, and no unit-speed
+assumption is needed. At a stationary point both sides are zero with the totalized division
+convention. -/
 theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s u)
     (hu : IsOpen u) (ho : ∀ x ∈ u, Orthonormal ℝ (fun i ↦ s i x))
     (o : TauCeti.Manifold.Orientation I M (Fin 2)) (ht : γ t ∈ u)
@@ -63,19 +64,19 @@ theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s
       (deriv (frameVelocityCoordinates s γ) t / frameVelocityCoordinates s γ t).im +
         hs.connectionForm (leviCivitaConnection I M) 0 1 (γ t) ![curveVelocity I γ t] := by
   by_cases hv : curveVelocity I γ t = 0
-  · have hz : frameVelocityCoordinates s γ t = 0 := by
-      rw [← norm_eq_zero, norm_frameVelocityCoordinates hs ht (ho _ ht), hv, norm_zero]
-    simp [hv, hz, connectionForm_apply]
+  · simp [hv, connectionForm_apply]
   -- The connection term of `z' / z` is `-i ω(γ')`, which cancels against `ω(γ')`.
   rw [(hs.hasDerivAt_frameVelocityCoordinates hu ho
       (isMetricCompatible_leviCivitaConnection (I := I) (M := M)) ht hγ hγv).deriv,
-    sub_div, mul_div_cancel_right₀ _ (frameVelocityCoordinates_ne_zero hs ht (ho _ ht) hv),
+    sub_div, mul_div_cancel_right₀ _
+      (frameVelocityCoordinates_ne_zero (ho _ ht) (hs.generating ht) hv),
     Complex.sub_im, Complex.I_mul_im, Complex.ofReal_re, sub_add_cancel]
   -- What remains is the normal component of the acceleration, read in the frame.
   have hnorm : Complex.normSq (frameVelocityCoordinates s γ t) =
       ‖curveVelocity I γ t‖ ^ 2 := by
-    rw [Complex.normSq_eq_norm_sq, norm_frameVelocityCoordinates hs ht (ho _ ht)]
-  rw [geodesicCurvature_def, orientedUnitNormal_eq_frameVelocityCoordinates o (ho _ ht) hor,
+    rw [Complex.normSq_eq_norm_sq, norm_frameVelocityCoordinates (ho _ ht) (hs.generating ht)]
+  rw [geodesicCurvature_def,
+    orientedUnitNormal_eq_frameVelocityCoordinates o ((ho _ ht).norm_eq_one 0) hor,
     inner_add_right, real_inner_smul_right, real_inner_smul_right, acceleration_def,
     Complex.div_im, hnorm]
   simp only [frameVelocityCoordinates_re, frameVelocityCoordinates_im, real_inner_comm,
