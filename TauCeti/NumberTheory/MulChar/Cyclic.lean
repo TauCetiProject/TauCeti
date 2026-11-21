@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.NumberTheory.MulChar.Duality
-public import Mathlib.NumberTheory.MulChar.Lemmas
 
 /-!
 # Generators of the character group of a monoid with cyclic unit group
@@ -28,28 +26,32 @@ there is a character of order `d` if the target ring has a primitive `d`-th root
 
 ## Main results
 
-* `MulChar.orderOf_ofRootOfUnity`: the character `ofRootOfUnity hζ hg` has the order of `ζ`.
-* `MulChar.orderOf_ofRootOfUnity_of_isPrimitiveRoot`: for a primitive `n`-th root of unity `ζ`,
+* `TauCeti.orderOf_ofRootOfUnity`: the character `ofRootOfUnity hζ hg` has the order of `ζ`.
+* `TauCeti.orderOf_ofRootOfUnity_of_isPrimitiveRoot`: for a primitive `n`-th root of unity `ζ`,
   it has order `n`.
-* `MulChar.existsUnique_pow_eq`: with values in a domain, every character is `ω ^ m` for exactly
-  one `m < n`, for any character `ω` of order `n`.
+* `MulChar.existsUnique_lt_and_pow_eq`: with values in a domain, every character is `ω ^ m` for
+  exactly one `m < n`, for any character `ω` of order `n`.
 -/
 
 public section
 
-namespace MulChar
+namespace TauCeti
+
+open MulChar
 
 section CommMonoidWithZero
 
 variable {M : Type*} [CommMonoid M] [Fintype M] [DecidableEq M] {R : Type*} [CommMonoidWithZero R]
 
 /-- The character that sends a generator of `Mˣ` to a root of unity `ζ` has the order of `ζ`. -/
+@[simp]
 theorem orderOf_ofRootOfUnity {ζ : Rˣ} (hζ : ζ ∈ rootsOfUnity (Fintype.card Mˣ) R) {g : Mˣ}
     (hg : ∀ x, x ∈ Subgroup.zpowers g) :
     orderOf (ofRootOfUnity hζ hg) = orderOf ζ := by
+  -- A power of the character is trivial if and only if it is trivial at the generator `g`.
   refine orderOf_eq_orderOf_iff.mpr fun k ↦ ?_
-  rw [eq_iff hg, pow_apply_coe, one_apply_coe, ofRootOfUnity_spec, ← Units.val_pow_eq_pow_val,
-    Units.val_eq_one]
+  rw [eq_iff hg]
+  simp [pow_apply_coe, ofRootOfUnity_spec, ← Units.val_pow_eq_pow_val]
 
 /-- The character that sends a generator of `Mˣ` to a primitive `#Mˣ`-th root of unity has order
 `#Mˣ`. -/
@@ -61,34 +63,38 @@ theorem orderOf_ofRootOfUnity_of_isPrimitiveRoot {ζ : Rˣ}
 
 end CommMonoidWithZero
 
-variable {M : Type*} [CommMonoid M] [Finite M] {R : Type*} [CommRing R] [IsDomain R]
+end TauCeti
+
+namespace MulChar
+
+variable {M : Type*} [CommMonoid M] [Finite Mˣ] {R : Type*} [CommRing R] [IsDomain R]
 
 /-- With values in a domain, a character `ω` whose order is `#Mˣ` generates the character group:
 every character is `ω ^ m` for exactly one `m < #Mˣ`. Such an `ω` exists only if `Mˣ` is cyclic,
 so this is not a hypothesis. -/
-theorem existsUnique_pow_eq {ω : MulChar M R} (hω : orderOf ω = Nat.card Mˣ)
+theorem existsUnique_lt_and_pow_eq {ω : MulChar M R} (hω : orderOf ω = Nat.card Mˣ)
     (χ : MulChar M R) : ∃! m : ℕ, m < Nat.card Mˣ ∧ ω ^ m = χ := by
-  classical
-  have : Fintype M := Fintype.ofFinite M
-  -- `ω ^ exponent Mˣ = 1`, so `#Mˣ ∣ exponent Mˣ` and `Mˣ` is cyclic.
+  -- The exponent of `Mˣ` kills every unit, so it kills `ω`; hence `Mˣ` is cyclic.
   have hexp : orderOf ω ∣ Monoid.exponent Mˣ := orderOf_dvd_of_pow_eq_one <| ext fun u ↦ by
-    rw [pow_apply_coe, one_apply_coe, ← map_pow, ← Units.val_pow_eq_pow_val,
-      Monoid.pow_exponent_eq_one, Units.val_one, map_one]
-  have : IsCyclic Mˣ :=
-    IsCyclic.of_exponent_eq_card (Nat.dvd_antisymm Group.exponent_dvd_nat_card (hω ▸ hexp))
-  have htop : Subgroup.zpowers ω = ⊤ := by
-    refine Subgroup.eq_top_of_le_card _ ?_
-    rw [Nat.card_zpowers, hω, Nat.card_congr (equiv_rootsOfUnity M R).toEquiv,
-      Nat.card_eq_fintype_card (α := Mˣ)]
-    have : NeZero (Fintype.card Mˣ) := ⟨Fintype.card_ne_zero⟩
-    exact card_rootsOfUnity R _
+    simpa [pow_apply_coe] using congrArg (fun v : Mˣ ↦ ω v) (Monoid.pow_exponent_eq_one u)
+  obtain ⟨g, hg⟩ := (IsCyclic.of_exponent_eq_card
+    (Nat.dvd_antisymm Group.exponent_dvd_nat_card (hω ▸ hexp))).exists_generator
+  -- Evaluation at `g` embeds the characters into the `#Mˣ`-th roots of unity.
+  let e : MulChar M R → rootsOfUnity (Nat.card Mˣ) R := fun ψ ↦
+    ⟨equivToUnitHom ψ g, by rw [mem_rootsOfUnity, ← map_pow, pow_card_eq_one', map_one]⟩
+  have he : Function.Injective e := fun ψ₁ ψ₂ h ↦
+    (eq_iff hg ψ₁ ψ₂).mpr (by simpa [e, Units.ext_iff] using congrArg Subtype.val h)
+  have : NeZero (Nat.card Mˣ) := ⟨Nat.card_pos.ne'⟩
   have hχ : χ ∈ Submonoid.powers ω := by
-    rw [mem_powers_iff_mem_zpowers, htop]
+    rw [mem_powers_iff_mem_zpowers, Subgroup.eq_top_of_le_card (Subgroup.zpowers ω) (by
+      rw [Nat.card_zpowers, hω]
+      exact (Nat.card_le_card_of_injective e he).trans (card_rootsOfUnity R _))]
     exact Subgroup.mem_top χ
-  obtain ⟨k, rfl⟩ := hχ
-  have hpos : 0 < orderOf ω := hω ▸ Nat.card_pos
-  refine ⟨k % orderOf ω, ⟨hω ▸ Nat.mod_lt _ hpos, pow_mod_orderOf ω k⟩, fun j hj ↦ ?_⟩
-  exact pow_injOn_Iio_orderOf (hω ▸ hj.1 : j < orderOf ω) (Nat.mod_lt _ hpos)
-    (hj.2.trans (pow_mod_orderOf ω k).symm)
+  -- The powers `ω ^ m` with `m < orderOf ω` list the elements of `powers ω` once each.
+  have hfin : IsOfFinOrder ω := orderOf_pos_iff.mp (hω ▸ Nat.card_pos)
+  obtain ⟨m, hm⟩ := (finEquivPowers hfin).surjective ⟨χ, hχ⟩
+  refine ⟨m, ⟨hω ▸ m.isLt, congrArg Subtype.val hm⟩, fun j hj ↦ ?_⟩
+  have hj' : finEquivPowers hfin ⟨j, hω ▸ hj.1⟩ = ⟨χ, hχ⟩ := Subtype.ext hj.2
+  exact congrArg Fin.val ((finEquivPowers hfin).injective (hj'.trans hm.symm))
 
 end MulChar

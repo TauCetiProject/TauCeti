@@ -42,6 +42,9 @@ A quadratic character takes the value `1` or `-1` at every unit
 coefficient ring (`MulChar.IsQuadratic.eq_one_of_two_eq_zero`). Quadratic characters are closed
 under multiplication (`MulChar.IsQuadratic.mul`), and hence a
 finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
+
+A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units
+(`MulChar.pow_eq_one_iff_forall_mem_range`).
 -/
 
 public section
@@ -150,6 +153,15 @@ theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
     {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
     (∏ i ∈ s, χ i).IsQuadratic :=
   Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
+
+/-- A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units. -/
+theorem pow_eq_one_iff_forall_mem_range {M R : Type*} [CommMonoid M] [CommMonoidWithZero R]
+    (χ : MulChar M R) (d : ℕ) :
+    χ ^ d = 1 ↔ ∀ h ∈ (powMonoidHom d : Mˣ →* Mˣ).range, χ h = 1 := by
+  simp only [MonoidHom.mem_range, powMonoidHom_apply, forall_exists_index, forall_apply_eq_imp_iff]
+  refine ⟨fun hχ y ↦ ?_, fun hχ ↦ ext fun y ↦ ?_⟩
+  · simpa [pow_apply_coe] using congr_fun (congrArg DFunLike.coe hχ) (y : M)
+  · simpa [pow_apply_coe] using hχ y
 
 section Transport
 
