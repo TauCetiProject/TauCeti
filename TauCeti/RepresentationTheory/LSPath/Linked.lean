@@ -334,6 +334,33 @@ theorem Linked.exists_sum_take_sub_mul_eq_intCast
   rw [Finset.sum_range_succ, ← hhgt j hj.le, hτl j hj, ht_succ j hj] at hz
   exact ⟨z, by linear_combination hz⟩
 
+/-- Along a linked list starting at time `0`, if the height at the `j`-th break lies strictly
+between two consecutive integers, then `a_j g(τ_j λ)` is not an integer. -/
+theorem Linked.not_exists_sum_take_mul_eq_intCast
+    (hlam : lam ∈ dominantChamber P b) {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam 0 l)
+    (g : Module.Dual ℤ M) {j : ℕ} (hj : j < l.length) {z : ℤ}
+    (h₁ : z < ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum)
+    (h₂ : ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum < z + 1) :
+    ¬∃ m : ℤ, ((l.take j).map Prod.snd).sum * g (l[j].1 • lam) = m := by
+  rintro ⟨m, hm⟩
+  obtain ⟨m', hm'⟩ := hl.exists_sum_take_sub_mul_eq_intCast hlam g hj
+  rw [hm, sub_eq_iff_eq_add, ← Int.cast_add] at hm'
+  rw [hm'] at h₁ h₂
+  have h₁' : z < m' + m := by exact_mod_cast h₁
+  have h₂' : m' + m < z + 1 := by exact_mod_cast h₂
+  omega
+
+/-- Along a linked list starting at time `0`, if the height reaches an integer after the fraction
+`θ` of the `j`-th segment, then `(a_j + θ d_j) g(τ_j λ)` is an integer. -/
+theorem Linked.exists_sum_take_add_mul_mul_eq_intCast
+    (hlam : lam ∈ dominantChamber P b) {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam 0 l)
+    (g : Module.Dual ℤ M) {j : ℕ} (hj : j < l.length) (θ : ℚ) {z : ℤ}
+    (h : ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum +
+      θ * (l[j].2 * g (l[j].1 • lam)) = z) :
+    ∃ m : ℤ, (((l.take j).map Prod.snd).sum + θ * l[j].2) * g (l[j].1 • lam) = m := by
+  obtain ⟨m, hm⟩ := hl.exists_sum_take_sub_mul_eq_intCast hlam g hj
+  exact ⟨z - m, by push_cast; linear_combination h - hm⟩
+
 /-! ### Merging linked lists -/
 
 /-- If `x` is joined to the first entry of a linked list, then also to the first entry after
@@ -451,6 +478,19 @@ durations. -/
 theorem map_snd_timed (π : LSPath P b lam) (f : M →+ V) :
     (π.timed 𝕜 f).map Prod.snd = π.dirDurations.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam) := by
   simp [timed_def, dirDurations, List.map_ofFn, Function.comp_def]
+
+omit [Finite ι] [P.IsReduced] in
+/-- For a form `F` inducing an integral linear form `g` through `f`, the height under `F` after
+the first `k` segments presented by a list of directions and durations is the rational height
+`∑_{m < k} d_m g(τ_m λ)`. -/
+theorem apply_sum_take_map_smul (l : List (P.weylGroup × ℚ)) (f : M →+ V) (F : Module.Dual 𝕜 V)
+    (g : Module.Dual ℤ M) (hF : ∀ m, F (f m) = (g m : 𝕜)) (k : ℕ) :
+    F ((l.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)).take k).sum =
+      (((l.take k).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum : 𝕜) := by
+  simp only [← List.map_take, map_list_sum, List.map_map, Rat.cast_list_sum]
+  congr 1
+  refine List.map_congr_left fun p _ ↦ ?_
+  simp [hF]
 
 /-- The LS path presented by a linked list `[(τ₀, d₀), …, (τ_l, d_l)]`, starting at time `0`, of
 minimal coset representatives with nonnegative durations adding up to `1`. Its directions are

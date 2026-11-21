@@ -20,49 +20,60 @@ points have codimension at most two, such as a proper regular model of a curve o
 `H¹` of the structure sheaf of every `Cᵢ` are finite-dimensional over `k`
 (`AlgebraicGeometry.Scheme.Hom.finiteDimensional_cohomology_trivial_subscheme_closure_singleton`).
 
-When the special fibre is connected, the data
-
-* the multiplicities `mᵢ` of the components in the special fibre
-  (`AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity`),
-* the weights `wᵢ = [κᵢ : k]` of their constant fields `κᵢ = H⁰(Cᵢ, 𝒪_{Cᵢ})`
-  (`AlgebraicGeometry.Scheme.Hom.specialFiberWeight`),
-* the intersection matrix `aᵢⱼ = (Cⱼ · Cᵢ)`
-  (`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`), and
-* the genera `gᵢ = dim_{κᵢ} H¹(Cᵢ, 𝒪_{Cᵢ})` of the components over their constant fields
-
-form a numerical type in the sense of [Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z),
-the **numerical type of the regular model**
+Following [Stacks, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), the special fibre
+then defines a numerical type in the sense of
+[Stacks, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z)
 (`AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType`), independent of the generator `π`
-(`AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_congr`). Its weighted Picard group
-`TauCeti.NumericalType.Pic` and signed genus `TauCeti.NumericalType.arithmeticGenus` are the
-combinatorial invariants through which the prime-to-residue-characteristic Picard torsion of the
-generic fibre controls the special fibre in the proof of semistable reduction in genus at least
-two ([Stacks, Tag 0CEI](https://stacks.math.columbia.edu/tag/0CEI)).
+(`AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_congr`), with
 
-Connectedness of the special fibre is a hypothesis here. It is equivalent to the connectedness
-axiom of the numerical type
-(`AlgebraicGeometry.Scheme.Hom.isPreconnected_preimage_closedPoint_iff_reflTransGen`), and over a
-discrete valuation ring it holds for instance when the generic fibre is geometrically connected,
-by Zariski's connectedness theorem. The genera are taken over the constant fields `κᵢ` rather than
-over `k`, and are not the genera of the normalizations of the `Cᵢ`; over `k` they give
-`dim_k H¹(Cᵢ, 𝒪_{Cᵢ}) = wᵢ gᵢ`
-(`AlgebraicGeometry.Scheme.Hom.weight_mul_genus_specialFiberNumericalType`).
+* components the irreducible components `Cᵢ` of the special fibre;
+* multiplicities `mᵢ`, the orders of vanishing of `π` along the `Cᵢ`
+  (`AlgebraicGeometry.Scheme.Hom.specialFiberMultiplicity`);
+* weights `wᵢ = [κᵢ : k] = dim_k H⁰(Cᵢ, 𝒪_{Cᵢ})`, where `κᵢ = H⁰(Cᵢ, 𝒪_{Cᵢ})` is the constant
+  field of `Cᵢ` (`AlgebraicGeometry.Scheme.Hom.specialFiberWeight`);
+* genera `gᵢ = dim_{κᵢ} H¹(Cᵢ, 𝒪_{Cᵢ})`, taken over the constant field;
+* intersection matrix `aᵢⱼ = (Cⱼ · Cᵢ)`
+  (`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`).
+
+The axioms of a numerical type are the properties of these data proved in
+`TauCeti.AlgebraicGeometry.IntersectionNumber.Matrix` and
+`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight`: the intersection matrix is symmetric with
+nonnegative off-diagonal entries and kills the multiplicity vector, its graph is connected
+because the special fibre is
+(`AlgebraicGeometry.Scheme.Hom.isPreconnected_preimage_closedPoint_iff_reflTransGen`), and `wᵢ`
+divides its `i`-th row. The component set is nonempty by
+`AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint`.
+
+The combinatorial theory of `TauCeti.NumericalType`, such as its signed genus
+`TauCeti.NumericalType.arithmeticGenus` and its weighted Picard group
+`TauCeti.NumericalType.Pic`, thereby applies to regular models.
 
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType`: the numerical type of the special
-  fibre of a regular model, with its data described by
-  `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_multiplicity`,
+  fibre of a regular model.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_multiplicity`,
   `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight`,
   `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_intersection` and
-  `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_genus`, and its independence of `π`
-  proved in `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_congr`.
+  `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_genus`: its data, and its independence of
+  `π` proved in `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_congr`.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight_mul_genus`:
+  `wᵢ gᵢ = dim_k H¹(Cᵢ, 𝒪_{Cᵢ})`, comparing the genus over the constant field with the genus
+  over the residue field.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_adj_iff`: two distinct components are
+  adjacent exactly when they intersect.
+
+## Implementation notes
+
+The definition is exposed so that its component type is, definitionally, the type of
+codimension-one points of `X` in the special fibre that indexes
+`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`.
 
 ## References
 
-* [The Stacks Project, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z), for numerical types,
-  and [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y), for the numerical type
-  attached to a regular model.
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y),
+  [Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z), and
+  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y).
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
 
@@ -78,8 +89,9 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
-  {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsIntegral X] [IsNoetherian X]
+variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+
+variable [Ring.DimensionLEOne R] [IsIntegral X] [IsNoetherian X]
   [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] [Flat toBase]
   [ConnectedSpace (specialFiber R toBase).left]
 
@@ -110,7 +122,7 @@ def specialFiberNumericalType (hX : ∀ x : X, coheight x ≤ 2)
   have hπ0 : π ≠ 0 := toBase.ne_zero_of_base_ne_closedPoint hη hπ
   letI : DecidableEq (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset := Classical.decEq _
   letI : Nonempty (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset := by
-    obtain ⟨η, hc⟩ := toBase.exists_codimensionOnePoint_base_eq_closedPoint hη
+    obtain ⟨η, hc⟩ := toBase.nonempty_setOf_base_eq_closedPoint hη
     exact ⟨⟨η, (Set.Finite.mem_toFinset _).mpr hc⟩⟩
   { Component := (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset
     multiplicity j := ⟨toBase.specialFiberMultiplicity π j,
@@ -151,8 +163,8 @@ theorem base_eq_closedPoint_of_specialFiberNumericalType
     (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
     toBase (i.val : X) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.property
 
-/-- The multiplicity of a component of the numerical type of a regular model is its multiplicity
-in the divisor of `π`. -/
+/-- The multiplicity of a component of the special fibre in the numerical type of a regular model
+is the order of vanishing of `π` along it. -/
 @[simp]
 theorem specialFiberNumericalType_multiplicity
     (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
@@ -160,8 +172,8 @@ theorem specialFiberNumericalType_multiplicity
       toBase.specialFiberMultiplicity π i.val :=
   rfl
 
-/-- The weight of a component of the numerical type of a regular model is the degree
-`dim_k H⁰(C, 𝒪_C)` of its constant field over the residue field. -/
+/-- The weight of a component `C` of the special fibre in the numerical type of a regular model is
+`dim_k H⁰(C, 𝒪_C)`, the degree of the constant field of `C` over the residue field `k`. -/
 @[simp]
 theorem specialFiberNumericalType_weight
     (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
@@ -170,8 +182,8 @@ theorem specialFiberNumericalType_weight
         (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i) :=
   rfl
 
-/-- The intersection matrix of the numerical type of a regular model is the intersection matrix
-of its special fibre. -/
+/-- The intersection matrix of the numerical type of a regular model is the intersection matrix of
+its special fibre. -/
 @[simp]
 theorem specialFiberNumericalType_intersection :
     (toBase.specialFiberNumericalType hX hπ hreg).intersection =
@@ -194,7 +206,17 @@ theorem specialFiberNumericalType_intersection_apply
             hX j.val.property).toInvertibleSheaf)⁻¹ :=
   toBase.specialFiberIntersectionMatrix_apply hX _ i j
 
-/-- The genus of a component `C` of the numerical type of a regular model is
+/-- Two components are adjacent in the numerical type of a regular model exactly when they are
+distinct and their closures meet. -/
+theorem specialFiberNumericalType_adj_iff
+    (i j : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
+    (toBase.specialFiberNumericalType hX hπ hreg).Adj i j ↔
+      i ≠ j ∧ (closure {(i.val : X)} ∩ closure {(j.val : X)}).Nonempty :=
+  (NumericalType.adj_iff
+    (T := toBase.specialFiberNumericalType hX hπ hreg) (i := i) (j := j)).trans
+      (and_congr_right fun hij ↦ toBase.specialFiberIntersectionMatrix_pos_iff hX _ hij)
+
+/-- The genus of a component `C` of the special fibre in the numerical type of a regular model is
 `dim_{κ_C} H¹(C, 𝒪_C)`, over the ring `κ_C = H⁰(C, 𝒪_C)` of global functions on `C`, which is its
 constant field. -/
 @[simp]
@@ -206,8 +228,10 @@ theorem specialFiberNumericalType_genus
         (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 1) :=
   rfl
 
-/-- On every component `Cᵢ`, `wᵢ * gᵢ = dim_k H¹(Cᵢ, 𝒪_{Cᵢ})`. -/
-theorem weight_mul_genus_specialFiberNumericalType
+/-- **Weight times genus is the genus over the residue field.** For a component `C` of the special
+fibre of a regular model, with weight `w = [κ : k]` and genus `g = dim_κ H¹(C, 𝒪_C)` over its
+constant field `κ` in the numerical type, `w g = dim_k H¹(C, 𝒪_C)` over the residue field `k`. -/
+theorem specialFiberNumericalType_weight_mul_genus
     (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
     letI := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
       (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i))
