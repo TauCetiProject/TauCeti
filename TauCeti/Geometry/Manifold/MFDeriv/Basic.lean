@@ -26,6 +26,9 @@ manifold-derivative API.
   image has injective derivative.
 * `TauCeti.mfderiv_apply_mfderiv_of_eventuallyEq_comp`: if `Φ ∘ Ψ = κ` near `x`, then `dΦ` takes
   `dΨ(u)` to `dκ(u)`.
+* `TauCeti.mfderiv_mfderiv_of_eventuallyEq_id`,
+  `TauCeti.mfderiv_comp_mfderiv_eq_id_of_eventuallyEq`: if `g ∘ f =ᶠ[𝓝 x] id`, then
+  `dg_(f x) ∘ df_x = id` on `T_x M`.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
@@ -104,6 +107,28 @@ theorem mfderiv_apply_mfderiv_of_eventuallyEq_comp {Ψ : M → N} {Φ : N → P}
   rw [← mfderiv_comp_apply x hΦ hΨ, hΦΨ.mfderiv_eq]
   -- The cast between the tangent spaces at `(Φ ∘ Ψ) x` and `κ x` is definitionally the identity.
   rfl
+
+section EventuallyEqId
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` and both maps are differentiable, then `dg_(f x) (df_x v) = v`. -/
+theorem mfderiv_mfderiv_of_eventuallyEq_id {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) (v : TangentSpace I x) :
+    mfderiv J I g (f x) (mfderiv I J f x v) = v := by
+  simpa using mfderiv_apply_mfderiv_of_eventuallyEq_comp hgf hg hf v
+
+/-- Continuous-linear-map form of `mfderiv_mfderiv_of_eventuallyEq_id`: `dg_(f x) ∘ df_x = id`. -/
+theorem mfderiv_comp_mfderiv_eq_id_of_eventuallyEq {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) :
+    (mfderiv J I g (f x)).comp (mfderiv I J f x) =
+      ContinuousLinearMap.id 𝕜 (TangentSpace I x) :=
+  ContinuousLinearMap.ext (mfderiv_mfderiv_of_eventuallyEq_id hg hf hgf)
+
+end EventuallyEqId
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
 /-- **The derivative of an affine reparametrization.** For a map `u` from a normed space, the

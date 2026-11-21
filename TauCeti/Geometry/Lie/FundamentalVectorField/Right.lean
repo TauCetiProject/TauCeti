@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 public import TauCeti.Geometry.Manifold.Algebra.LeftToRight
+import TauCeti.Geometry.Lie.Interior
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.VectorField.Related
 
 /-!
@@ -56,15 +58,22 @@ vector field `-mulRightInvariantVectorField ξ`, which preserves the Lie bracket
   `m + 1 ≤ n`.
 * `TauCeti.rightFundamentalVectorField_eq_mulInvariantVectorField`: for `G` acting on itself by
   right multiplication, `ξ♯` is the left-invariant vector field `mulInvariantVectorField ξ`.
-* `TauCeti.mfderiv_op_smul_mulInvariantVectorField`: each orbit map `g ↦ x · g` relates
-  `mulInvariantVectorField ξ` on `G` to `ξ♯` on `M`.
+* `TauCeti.mfderiv_op_smul_mulInvariantVectorField`,
+  `TauCeti.mfderiv_op_smul_const_apply`, `TauCeti.injective_mfderiv_op_smul_const_iff`: each orbit
+  map `g ↦ x · g` relates `mulInvariantVectorField ξ` on `G` to `ξ♯` on `M`, and its differential at
+  `g` reduces to that of `x · g` at `1` along left multiplication by `g⁻¹`.
 * `TauCeti.mfderiv_op_smul_rightFundamentalVectorField`: right-translation equivariance
   `d(R_g)_x (ξ♯ x) = (Ad(g⁻¹) ξ)♯ (x · g)`.
 * `TauCeti.mlieBracket_rightFundamentalVectorField`: Lie bracket homomorphism
   `[ξ♯, η♯] = ⁅ξ, η⁆♯`.
 * `TauCeti.isMIntegralCurve_op_mulInvariantExp_smul`,
-  `TauCeti.tangentMap_op_mulInvariantExp_smul_zero`: exponential flow and initial velocity at `0`,
-  together with `lieExp` and `LeftInvariantDerivation` compatibility bridges.
+  `TauCeti.tangentMap_op_mulInvariantExp_smul_zero`,
+  `TauCeti.op_mulInvariantExp_smul_eq_self_of_rightFundamentalVectorField_eq_zero`,
+  `TauCeti.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp`,
+  `ContMDiff.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp`: exponential flow, initial
+  velocity at `0`, constancy of exponential orbits of vanishing generators, and injectivity of the
+  orbit differential at free points without separation assumptions on `M`, together with `lieExp`
+  and `LeftInvariantDerivation` compatibility bridges.
 * `TauCeti.LeftToRightAction.mfderiv_equiv_symm_rightFundamentalVectorField`,
   `TauCeti.LeftToRightAction.mpullback_equiv_rightFundamentalVectorField`,
   `TauCeti.LeftToRightAction.mpullback_equiv_rightFundamentalVectorField_self`: converting a left
@@ -238,6 +247,44 @@ theorem mfderiv_op_smul_mulInvariantVectorField [ContMDiffMul I 1 G] {x : M} {g 
   funext h
   simp [op_mul, mul_smul]
 
+/-- The derivative at `g` of the right orbit map `h ↦ op h • x` is that of the right orbit map of
+`op g • x` at `1`, precomposed with the derivative of left multiplication by `g⁻¹`. -/
+theorem mfderiv_op_smul_const_apply [ContMDiffMul I 1 G] {x : M} {g : G} (v : TangentSpace I g) :
+    mfderiv I I' (fun h : G => op h • x) g v =
+      mfderiv I I' (fun h : G => op h • (op g • x)) 1 (mfderiv I I (g⁻¹ * ·) g v) := by
+  by_cases horbit : MDifferentiableAt I I' (fun h : G => op h • (op g • x)) 1
+  · have hfun : (fun h : G => op h • x) =
+        (fun h : G => op h • (op g • x)) ∘ ((g⁻¹ * ·) : G → G) :=
+      funext fun h => by simp [← mul_smul, ← op_mul]
+    rw [hfun]
+    exact mfderiv_comp_apply_of_eq g horbit (mdifferentiableAt_mul_left (a := g⁻¹))
+      (inv_mul_cancel g) v
+  · have hnot : ¬ MDifferentiableAt I I' (fun h : G => op h • x) g := fun hdiff => by
+      apply horbit
+      have hfun : (fun h : G => op h • (op g • x)) =
+          (fun h : G => op h • x) ∘ ((g * ·) : G → G) :=
+        funext fun h => by simp [← mul_smul, ← op_mul]
+      rw [hfun]
+      exact (by simpa [mul_one] using hdiff :
+          MDifferentiableAt I I' (fun h : G => op h • x) (g * 1)).comp (1 : G)
+        (mdifferentiableAt_mul_left (a := g))
+    rw [mfderiv_zero_of_not_mdifferentiableAt hnot, mfderiv_zero_of_not_mdifferentiableAt horbit]
+    -- Both sides evaluate the zero linear map into the same model space `E'`.
+    exact Eq.refl _
+
+/-- For a `C¹` group manifold `G`, the derivative at `g` of `h ↦ op h • x` is injective if and only
+if the derivative at `1` of `h ↦ op h • (op g • x)` is injective. -/
+theorem injective_mfderiv_op_smul_const_iff [ContMDiffMul I 1 G] {x : M} {g : G} :
+    Injective (mfderiv I I' (fun h : G => op h • x) g) ↔
+      Injective (mfderiv I I' (fun h : G => op h • (op g • x)) 1) := by
+  have hbij : Bijective (mfderiv I I (g⁻¹ * ·) g) :=
+    (((Diffeomorph.smul I I 1 g⁻¹).isLocalDiffeomorph g).isInvertible_mfderiv one_ne_zero).bijective
+  have hcomp : ⇑(mfderiv I I' (fun h : G => op h • x) g) =
+      ⇑(mfderiv I I' (fun h : G => op h • (op g • x)) 1) ∘ ⇑(mfderiv I I (g⁻¹ * ·) g) :=
+    funext mfderiv_op_smul_const_apply
+  rw [hcomp]
+  exact Injective.of_comp_iff' _ hbij
+
 /-- **Equivariance under right translation.** For a `C¹` Lie group `G`, the derivative of right
 translation `y ↦ op g • y` at `x` carries the right fundamental vector field of `ξ` at `x` to that
 of `Ad(g⁻¹) ξ` at `op g • x`. -/
@@ -350,6 +397,25 @@ section MulInvariantExp
 variable [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
   [BoundarylessManifold I G]
 
+/-- The right exponential orbit `t ↦ op (mulInvariantExp (t • ξ)) • x` has manifold derivative
+`(1 : ℝ →L[ℝ] ℝ).smulRight (rightFundamentalVectorField I' ξ x)` at `0`. -/
+private theorem hasMFDerivAt_op_mulInvariantExp_smul_zero {x : M}
+    (horbit : MDifferentiableAt I I' (fun k : G => op k • x) 1) (ξ : GroupLieAlgebra I G) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I' (fun t : ℝ => op (mulInvariantExp (t • ξ)) • x) 0
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (rightFundamentalVectorField I' ξ x)) := by
+  have horbit0 : MDifferentiableAt I I' (fun k : G => op k • x)
+      (mulInvariantExp ((0 : ℝ) • ξ)) := by
+    simpa only [zero_smul, mulInvariantExp_zero] using horbit
+  refine (horbit0.hasMFDerivAt.comp (0 : ℝ)
+    (hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) ξ)).congr_mfderiv ?_
+  have key : ∀ e : G, e = 1 →
+      mfderiv I I' (fun k : G => op k • x) e (((1 : ℝ →L[ℝ] ℝ).smulRight ξ) 1) =
+        rightFundamentalVectorField I' ξ x := by
+    rintro e rfl
+    simp [rightFundamentalVectorField_apply]
+  refine ContinuousLinearMap.ext_ring ?_
+  exact (key (mulInvariantExp ((0 : ℝ) • ξ)) (by simp)).trans (one_smul ℝ _).symm
+
 /-- **Initial velocity of a right exponential orbit.** In the tangent bundle, the tangent map of
 `t ↦ op (exp(t ξ)) • x` sends the unit tangent vector `⟨0, 1⟩` at `0 : ℝ` to
 `⟨x, rightFundamentalVectorField I' ξ x⟩`. -/
@@ -357,20 +423,10 @@ theorem tangentMap_op_mulInvariantExp_smul_zero {x : M}
     (horbit : MDifferentiableAt I I' (fun k : G => op k • x) 1) (ξ : GroupLieAlgebra I G) :
     tangentMap 𝓘(ℝ, ℝ) I' (fun t : ℝ => op (mulInvariantExp (t • ξ)) • x) ⟨0, 1⟩ =
       ⟨x, rightFundamentalVectorField I' ξ x⟩ := by
-  have horbit0 : MDifferentiableAt I I' (fun k : G => op k • x)
-      (mulInvariantExp ((0 : ℝ) • ξ)) := by
-    simpa only [zero_smul, mulInvariantExp_zero] using horbit
-  have hcomp := (horbit0.hasMFDerivAt.comp (0 : ℝ)
-    (hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) ξ)).mfderiv
   have key : mfderiv 𝓘(ℝ, ℝ) I' (fun t : ℝ => op (mulInvariantExp (t • ξ)) • x) 0 (1 : ℝ) =
-      rightFundamentalVectorField I' ξ x := by
-    have h1 := DFunLike.congr_fun hcomp (1 : ℝ)
-    have h2 : ∀ e : G, e = 1 →
-        mfderiv I I' (fun k : G => op k • x) e (((1 : ℝ →L[ℝ] ℝ).smulRight ξ) 1) =
-          rightFundamentalVectorField I' ξ x := by
-      rintro e rfl
-      simp [rightFundamentalVectorField_apply]
-    exact h1.trans (h2 (mulInvariantExp ((0 : ℝ) • ξ)) (by simp))
+      rightFundamentalVectorField I' ξ x :=
+    (DFunLike.congr_fun (hasMFDerivAt_op_mulInvariantExp_smul_zero horbit ξ).mfderiv (1 : ℝ)).trans
+      (one_smul ℝ _)
   have hmk : ∀ (y : M) (v : E'), y = x → v = rightFundamentalVectorField I' ξ x →
       (⟨y, v⟩ : TangentBundle I' M) = ⟨x, rightFundamentalVectorField I' ξ x⟩ := by
     rintro y v rfl rfl
@@ -430,7 +486,87 @@ theorem isMIntegralCurve_op_mulInvariantExp_smul
     (one_smul ℝ _)).trans (key (mulInvariantExp ((t - t) • ξ)) (by simp))).trans
       (one_smul ℝ _).symm
 
+/-- **Constancy of a right exponential orbit with zero generator.** On a `C¹` manifold `M` (with no
+separation or completeness assumption on `M`), if `rightFundamentalVectorField I' ξ x = 0`, the
+orbit map `k ↦ op k • x` is differentiable at `1`, and right translation `y ↦ op g • y` is
+differentiable at `x` for every `g`, then the one-parameter subgroup `t ↦ exp(t ξ)` fixes `x`. -/
+theorem op_mulInvariantExp_smul_eq_self_of_rightFundamentalVectorField_eq_zero [IsManifold I' 1 M]
+    {x : M} (horbit : MDifferentiableAt I I' (fun k : G => op k • x) 1)
+    (hsmul : ∀ g : G, MDifferentiableAt I' I' (fun y : M => op g • y) x)
+    {ξ : GroupLieAlgebra I G} (hξ : rightFundamentalVectorField I' ξ x = 0) (t : ℝ) :
+    op (mulInvariantExp (t • ξ)) • x = x := by
+  let γ : ℝ → M := fun s => op (mulInvariantExp (s • ξ)) • x
+  have hγ0 : HasMFDerivAt 𝓘(ℝ, ℝ) I' γ 0 0 :=
+    (hasMFDerivAt_op_mulInvariantExp_smul_zero horbit ξ).congr_mfderiv <|
+      ContinuousLinearMap.ext_ring <| (one_smul ℝ _).trans hξ
+  -- Near any `s`, `γ u = op (exp(s ξ)) • γ (u - s)`, so its differential at `s` vanishes too.
+  have hγ : ∀ s : ℝ, HasMFDerivAt 𝓘(ℝ, ℝ) I' γ s 0 := fun s => by
+    have hshift : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun u : ℝ => u - s) s
+        (ContinuousLinearMap.id ℝ ℝ) :=
+      ((hasFDerivAt_id s).sub_const s).hasMFDerivAt
+    have hγsub : HasMFDerivAt 𝓘(ℝ, ℝ) I' γ (s - s) 0 := by rw [sub_self]; exact hγ0
+    have hsmul_s : MDifferentiableAt I' I' (fun y : M => op (mulInvariantExp (s • ξ)) • y)
+        (γ (s - s)) := by
+      simpa only [γ, sub_self, zero_smul, mulInvariantExp_zero, op_one, one_smul] using
+        hsmul (mulInvariantExp (s • ξ))
+    have hcomp := hsmul_s.hasMFDerivAt.comp s (hγsub.comp (f := fun u : ℝ => u - s) s hshift)
+    have hfun : ((fun y : M => op (mulInvariantExp (s • ξ)) • y) ∘ γ ∘ fun u : ℝ => u - s) = γ := by
+      funext u
+      simp only [comp_apply, γ, ← mul_smul, ← op_mul, ← mulInvariantExp_add_smul, sub_add_cancel]
+    rw [hfun] at hcomp
+    exact hcomp.congr_mfderiv <| ContinuousLinearMap.ext_ring <|
+      map_zero (mfderiv I' I' (fun y : M => op (mulInvariantExp (s • ξ)) • y) (γ (s - s)))
+  exact (MDifferentiable.apply_eq_of_mfderiv_eq_zero (fun s => (hγ s).mdifferentiableAt)
+    (fun s => (hγ s).mfderiv) t 0).trans (by simp [γ])
+
 end MulInvariantExp
+
+/-- **At a free point of a differentiable right action of a real `C^n` Banach Lie group (`3 ≤ n`),
+the orbit differential at `1` is injective.** On a `C¹` manifold `M` (requiring neither `T2Space M`
+nor completeness or boundarylessness of `M`), if the orbit map `k ↦ op k • x` is differentiable at
+`1`, right translation `y ↦ op g • y` is differentiable at `x` for every `g : G`, and
+`∀ g : G, op g • x = x → g = 1`, then `mfderiv I I' (fun k : G => op k • x) 1` is injective. -/
+theorem injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp {n : ℕ∞ω} [LieGroup I n G]
+    (hn : 3 ≤ n) [IsManifold I' 1 M] {x : M}
+    (horbit : MDifferentiableAt I I' (fun k : G => op k • x) 1)
+    (hsmul : ∀ g : G, MDifferentiableAt I' I' (fun y : M => op g • y) x)
+    (hfree : ∀ g : G, op g • x = x → g = 1) :
+    Injective (mfderiv I I' (fun k : G => op k • x) 1) := by
+  have hn1 : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 3).trans hn
+  have : LieGroup I 1 G := LieGroup.of_le hn1
+  have : LieGroup I (minSmoothness ℝ 3) G := by
+    rw [minSmoothness_of_isRCLikeNormedField]
+    exact LieGroup.of_le hn
+  let _ : T2Space G := I.t2Space_of_lieGroup n
+  have : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+  rw [injective_iff_map_eq_zero]
+  intro ξ hξ
+  exact forall_mulInvariantExp_smul_eq_one_iff.1 fun t => hfree _ <|
+    op_mulInvariantExp_smul_eq_self_of_rightFundamentalVectorField_eq_zero horbit hsmul hξ t
+
+/-- Evaluation of `rightFundamentalVectorField` at a free point `x` of a differentiable right action
+of a real `C^n` Banach Lie group (`3 ≤ n`) is injective on `GroupLieAlgebra I G`. -/
+theorem injective_rightFundamentalVectorField_of_op_smul_eq_self_imp {n : ℕ∞ω} [LieGroup I n G]
+    (hn : 3 ≤ n) [IsManifold I' 1 M] {x : M}
+    (horbit : MDifferentiableAt I I' (fun k : G => op k • x) 1)
+    (hsmul : ∀ g : G, MDifferentiableAt I' I' (fun y : M => op g • y) x)
+    (hfree : ∀ g : G, op g • x = x → g = 1) :
+    Injective (fun ξ : GroupLieAlgebra I G => rightFundamentalVectorField I' ξ x) :=
+  injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp hn horbit hsmul hfree
+
+/-- For a jointly `C^m` (`m ≠ 0`) right action of a real `C^n` Banach Lie group (`3 ≤ n`) on a
+`C¹` manifold `M`, the orbit differential `mfderiv I I' (fun g : G => op g • x) 1` is injective at
+any point `x : M` with trivial stabilizer (`∀ g : G, op g • x = x → g = 1`), without separation,
+completeness, or boundarylessness assumptions on `M`. -/
+theorem _root_.ContMDiff.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp {m n : ℕ∞ω}
+    [LieGroup I n G] [IsManifold I' 1 M] {x : M}
+    (hsmul : ContMDiff (I'.prod I) I' m fun q : M × G => op q.2 • q.1)
+    (hm : m ≠ 0) (hn : 3 ≤ n) (hfree : ∀ g : G, op g • x = x → g = 1) :
+    Injective (mfderiv I I' (fun g : G => op g • x) 1) :=
+  TauCeti.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp hn
+    ((hsmul.comp (contMDiff_const.prodMk contMDiff_id) 1).mdifferentiableAt hm)
+    (fun _ => (hsmul.comp (contMDiff_id.prodMk contMDiff_const) x).mdifferentiableAt hm)
+    hfree
 
 section LieExp
 
