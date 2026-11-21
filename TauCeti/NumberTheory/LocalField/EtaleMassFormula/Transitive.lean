@@ -13,6 +13,7 @@ import Mathlib.Tactic.FieldSimp
 import TauCeti.Algebra.BigOperators.Group.Finset.Defs
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Splitting symbols of Galois sets and the transitive mass
@@ -227,7 +228,7 @@ theorem splittingSymbol_eq_of_equiv {m : ℕ} (ρ : GaloisSet K n) (τ : GaloisS
   dsimp only [Function.comp_def, Equiv.coe_toEmbedding]
   rw [τ.orbitSymbol_of_mk_eq hE, ρ.orbitSymbol_def]
   dsimp only
-  rw [MulAction.stabilizer_eq_of_injective e e.injective he]
+  rw [MulAction.stabilizer_eq_of_injective e e.injective (he · _)]
 
 /-- Relabelling a Galois set does not change its splitting symbol. -/
 @[simp]
@@ -431,7 +432,7 @@ theorem splittingSymbol_sum {m l : ℕ} (ρ₁ : GaloisSet K m) (ρ₂ : GaloisS
     rw [(sum ρ₁ ρ₂ e).orbitSymbol_of_mk_eq hE, ρ₁.orbitSymbol_def]
     dsimp only
     rw [MulAction.stabilizer_eq_of_injective (fun a ↦ e (Sum.inl a))
-      (e.injective.comp Sum.inl_injective) (fun σ i ↦ by simp) ω.out]
+      (e.injective.comp Sum.inl_injective) (x := ω.out) (fun σ ↦ by simp)]
   · refine Multiset.map_congr rfl fun ω _ ↦ ?_
     have hE : (Quotient.mk'' (e (Sum.inr ω.out)) :
         orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n)) = E (Sum.inr ω) := by
@@ -441,7 +442,7 @@ theorem splittingSymbol_sum {m l : ℕ} (ρ₁ : GaloisSet K m) (ρ₂ : GaloisS
     rw [(sum ρ₁ ρ₂ e).orbitSymbol_of_mk_eq hE, ρ₂.orbitSymbol_def]
     dsimp only
     rw [MulAction.stabilizer_eq_of_injective (fun a ↦ e (Sum.inr a))
-      (e.injective.comp Sum.inr_injective) (fun σ j ↦ by simp) ω.out]
+      (e.injective.comp Sum.inr_injective) (x := ω.out) (fun σ ↦ by simp)]
 
 end GaloisSet
 
