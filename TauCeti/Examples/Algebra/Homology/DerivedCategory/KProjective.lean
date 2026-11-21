@@ -17,7 +17,10 @@ These examples exercise `TauCeti.Algebra.Homology.DerivedCategory.KProjective`:
 
 * for any K-projective cochain complex `K` in an `A`-linear abelian category over a commutative
   ring `A`, `CochainComplex.IsKProjective.homotopyToDerivedEndEquivQ` provides an `A`-algebra
-  equivalence between homotopy endomorphisms of `K` and derived endomorphisms of `Q.obj K`;
+  equivalence between homotopy endomorphisms of `K` and derived endomorphisms of `Q.obj K`, and
+  for any chain-level action `α : H →ₐ[A] End K` the descended action images compare via
+  `TauCeti.quotientActionRangeMap`, `TauCeti.derivedActionRangeMap`, and
+  `CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquivQ`;
 * the mapping cone of `𝟙 K` on a single complex `K = ℤ[0]` is nonzero at the chain level
   (`𝟙 (mappingCone (𝟙 K)) ≠ 0`), yet its identity vanishes in both the homotopy category and the
   derived category, illustrating why `Q.mapEndAlgHom` is surjective rather than injective on chain
@@ -26,12 +29,24 @@ These examples exercise `TauCeti.Algebra.Homology.DerivedCategory.KProjective`:
 
 open CategoryTheory Limits DerivedCategory CochainComplex.IsKProjective
 
-universe t w v u
+universe t' t w v u
 
 example {A : Type u} [CommRing A] {C : Type v} [Category.{w} C] [Abelian C] [Linear A C]
     [HasDerivedCategory.{t} C] (K : CochainComplex C ℤ) [K.IsKProjective] :
     Nonempty (End ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K) ≃ₐ[A] End (Q.obj K)) :=
   ⟨homotopyToDerivedEndEquivQ A K⟩
+
+example {A : Type u} [CommRing A] {C : Type v} [Category.{w} C] [Abelian C] [Linear A C]
+    [HasDerivedCategory.{t} C] {H : Type t'} [Semiring H] [Algebra A H]
+    (K : CochainComplex C ℤ) [K.IsKProjective] (α : H →ₐ[A] End K) (h : H) :
+    Function.Surjective (TauCeti.quotientActionRangeMap A K α) ∧
+    Function.Surjective (TauCeti.derivedActionRangeMap A K α) ∧
+    homotopyToDerivedActionRangeEquivQ A K α
+      (TauCeti.quotientActionRangeMap A K α (α.rangeRestrict h)) =
+      TauCeti.derivedActionRangeMap A K α (α.rangeRestrict h) :=
+  ⟨TauCeti.quotientActionRangeMap_surjective A K α,
+    TauCeti.derivedActionRangeMap_surjective A K α,
+    homotopyToDerivedActionRangeEquivQ_apply_quotientActionRangeMap A K α (α.rangeRestrict h)⟩
 
 attribute [local instance] HasDerivedCategory.standard
 

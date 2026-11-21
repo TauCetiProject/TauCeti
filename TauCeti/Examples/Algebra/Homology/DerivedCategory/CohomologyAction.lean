@@ -32,7 +32,7 @@ objects in `DerivedCategory (ModuleCat ℤ)`:
   `imageGhostIdeal = ⊥`);
 * `(ℤ × ℤ)[0]` with noncommuting endomorphisms `E₀₁, E₁₀`, distinguishing `E₀₁ * E₁₀` from
   `E₁₀ * E₀₁` on `H^0`;
-* `TauCeti.Examples.CohomologyAction.exists_nonzero_sq_zero_ghost`: `(ℤ/2)[0] ⊞ (ℤ/2)[1]` admits a
+* `TauCeti.Examples.CohomologyAction.exists_nonzero_sq_zero_ghost`: `(ℤ/2)[0] ⊞ (ℤ/2)[-1]` admits a
   nonzero square-zero ghost constructed from the non-split extension
   `0 → ℤ/2 → ℤ/4 → ℤ/2 → 0`, giving `RingHom.ker α = (2, X^2)` strictly contained in
   `actionGhostKer α = (2, X)`, a nonzero square-zero `α.imageGhostIdeal`, and a nontrivial
@@ -428,6 +428,7 @@ quotient `α.imageGhostIdealQuotientEquivCohomologyImage`. -/
 theorem exists_nonzero_sq_zero_ghost :
     ∃ (X : DerivedCategory (ModuleCat.{0} ℤ)) (α : Polynomial ℤ →ₐ[ℤ] End X) (g : End X),
       X.IsGE 0 ∧ X.IsLE 1 ∧
+      α Polynomial.X = g ∧
       g ≠ 0 ∧ g ^ 2 = 0 ∧
       X.cohomologyAction ℤ g = 0 ∧ g ∈ X.ghostIdeal ∧
       RingHom.ker α = Ideal.span {(2 : Polynomial ℤ), Polynomial.X ^ 2} ∧
@@ -458,7 +459,8 @@ theorem exists_nonzero_sq_zero_ghost :
         (homologyFunctor (ModuleCat.{0} ℤ) 0).map biprod.fst) (End.isGhost_iff.mp h1g 0)
       simpa [Category.id_comp, ← Functor.map_comp] using this
     exact hid0 ((homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE _ 0).mp hidH)
-  exact ⟨zmod2M, zmod2Action, zmod2Ghost, hge, hle, hxne, zmod2_ghost_sq, hcohx,
+  exact ⟨zmod2M, zmod2Action, zmod2Ghost, hge, hle, Polynomial.aeval_X zmod2Ghost,
+    hxne, zmod2_ghost_sq, hcohx,
     mem_ghostIdeal_iff.mpr hghostx, zmod2_ghost_ker, hghostker, by simpa using hghostx,
     fun h ↦ hxne (by simpa using congrArg Subtype.val h),
     zmod2Action.imageGhostIdeal_pow_eq_bot 0 1 2 (by omega),

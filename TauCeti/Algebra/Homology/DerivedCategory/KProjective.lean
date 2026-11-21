@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.CategoryTheory.Linear.Conj
@@ -24,7 +25,13 @@ induces `R`-algebra equivalences from the homotopy endomorphism algebra of `K` t
 and, via `quotientCompQhIso`, to `End (Q.obj K)`
 (`CochainComplex.IsKProjective.homotopyToDerivedEndEquivQ`), while `Q` induces a surjective
 `R`-algebra homomorphism from chain endomorphisms `End K` onto `End (Q.obj K)`
-(`CochainComplex.IsKProjective.Q_mapEndAlgHom_surjective`).
+(`CochainComplex.IsKProjective.Q_mapEndAlgHom_surjective`). For any chain-level `R`-algebra action
+`α : H →ₐ[R] End K`, descending through `quotient` and `Q` gives surjective `R`-algebra
+homomorphisms from `α.range` onto the descended action ranges (`TauCeti.quotientActionRangeMap`
+and `TauCeti.derivedActionRangeMap`), and for K-projective `K` the homotopy-to-derived equivalences
+restrict to `R`-algebra equivalences on the descended action ranges
+(`CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquiv` and
+`CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquivQ`).
 
 A quasi-isomorphism between `ℕ`-graded chain complexes of projective objects is a chain homotopy
 equivalence (Mathlib's `ChainComplex.quasiIso_iff_of_projective`). So the contravariant functor
@@ -39,7 +46,7 @@ public section
 
 open CategoryTheory DerivedCategory
 
-universe t w v u
+universe t' t w v u
 
 namespace TauCeti
 
@@ -56,6 +63,64 @@ theorem conjAlgEquiv_comp_Qh_mapEndAlgHom_comp_quotient_mapEndAlgHom (R : Type t
       Q.mapEndAlgHom R K := by
   ext f
   simp [Iso.conjAlgEquiv_apply, quotientCompQhIso_hom_naturality]
+
+/-- Descending a chain-level `R`-algebra action `α : H →ₐ[R] End K` through
+`HomotopyCategory.quotient` restricts to an `R`-algebra homomorphism from `α.range` onto the range
+of the descended homotopy action. -/
+noncomputable def quotientActionRangeMap (R : Type t) [CommSemiring R] {C : Type u}
+    [Category.{v} C] [Abelian C] [Linear R C] (K : CochainComplex C ℤ) {H : Type t'} [Semiring H]
+    [Algebra R H] (α : H →ₐ[R] End K) :
+    α.range →ₐ[R]
+      (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range :=
+  (Subalgebra.equivOfEq _ _ (AlgHom.range_comp α _).symm).toAlgHom.comp
+    (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).subalgebraMap α.range)
+
+/-- Applying `quotientActionRangeMap` sends `x : α.range` to its homotopy class. -/
+@[simp]
+theorem quotientActionRangeMap_coe (R : Type t) [CommSemiring R] {C : Type u} [Category.{v} C]
+    [Abelian C] [Linear R C] (K : CochainComplex C ℤ) {H : Type t'} [Semiring H] [Algebra R H]
+    (α : H →ₐ[R] End K) (x : α.range) :
+    (quotientActionRangeMap R K α x :
+      End ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K)) =
+      (HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K x.1 := by
+  simp [quotientActionRangeMap]
+
+/-- `quotientActionRangeMap` is surjective onto the range of the descended homotopy action. -/
+theorem quotientActionRangeMap_surjective (R : Type t) [CommSemiring R] {C : Type u}
+    [Category.{v} C] [Abelian C] [Linear R C] (K : CochainComplex C ℤ) {H : Type t'} [Semiring H]
+    [Algebra R H] (α : H →ₐ[R] End K) :
+    Function.Surjective (quotientActionRangeMap R K α) :=
+  (Subalgebra.equivOfEq _ _ (AlgHom.range_comp α _).symm).surjective.comp
+    (AlgHom.subalgebraMap_surjective _ _)
+
+/-- Descending a chain-level `R`-algebra action `α : H →ₐ[R] End K` through `DerivedCategory.Q`
+restricts to an `R`-algebra homomorphism from `α.range` onto the range of the descended derived
+action. -/
+noncomputable def derivedActionRangeMap (R : Type t) [CommSemiring R] {C : Type u}
+    [Category.{v} C] [Abelian C] [Linear R C] [HasDerivedCategory.{w} C]
+    [Linear R (DerivedCategory C)] [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) {H : Type t'}
+    [Semiring H] [Algebra R H] (α : H →ₐ[R] End K) :
+    α.range →ₐ[R] ((Q.mapEndAlgHom R K).comp α).range :=
+  (Subalgebra.equivOfEq _ _ (AlgHom.range_comp α _).symm).toAlgHom.comp
+    ((Q.mapEndAlgHom R K).subalgebraMap α.range)
+
+/-- Applying `derivedActionRangeMap` sends `x : α.range` to `Q.mapEndAlgHom R K x.1`. -/
+@[simp]
+theorem derivedActionRangeMap_coe (R : Type t) [CommSemiring R] {C : Type u} [Category.{v} C]
+    [Abelian C] [Linear R C] [HasDerivedCategory.{w} C] [Linear R (DerivedCategory C)]
+    [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) {H : Type t'} [Semiring H] [Algebra R H]
+    (α : H →ₐ[R] End K) (x : α.range) :
+    (derivedActionRangeMap R K α x : End (Q.obj K)) = Q.mapEndAlgHom R K x.1 := by
+  simp [derivedActionRangeMap]
+
+/-- `derivedActionRangeMap` is surjective onto the range of the descended derived action. -/
+theorem derivedActionRangeMap_surjective (R : Type t) [CommSemiring R] {C : Type u}
+    [Category.{v} C] [Abelian C] [Linear R C] [HasDerivedCategory.{w} C]
+    [Linear R (DerivedCategory C)] [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) {H : Type t'}
+    [Semiring H] [Algebra R H] (α : H →ₐ[R] End K) :
+    Function.Surjective (derivedActionRangeMap R K α) :=
+  (Subalgebra.equivOfEq _ _ (AlgHom.range_comp α _).symm).surjective.comp
+    (AlgHom.subalgebraMap_surjective _ _)
 
 end TauCeti
 
@@ -144,6 +209,89 @@ theorem Q_mapEndAlgHom_surjective [(Q (C := C)).Linear R]
   intro g
   obtain ⟨f, hf⟩ := Q_map_surjective K K g.asHom
   exact ⟨End.of f, End.ext (by simpa using hf)⟩
+
+/-- For a K-projective cochain complex `K` and a chain-level `R`-algebra action
+`α : H →ₐ[R] End K`, `Qh` induces an `R`-algebra equivalence from the descended homotopy action
+image onto the descended `Qh`-derived action image. -/
+noncomputable def homotopyToDerivedActionRangeEquiv [(Qh (C := C)).Linear R]
+    (K : CochainComplex C ℤ) [K.IsKProjective] {H : Type t'} [Semiring H] [Algebra R H]
+    (α : H →ₐ[R] End K) :
+    (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range ≃ₐ[R]
+      ((Qh.mapEndAlgHom R ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K)).comp
+        (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α)).range :=
+  ((homotopyToDerivedEndEquiv R K).subalgebraMap _).trans
+    (Subalgebra.equivOfEq _ _ (by
+      rw [← AlgHom.range_comp]
+      rfl))
+
+/-- Applying `homotopyToDerivedActionRangeEquiv` sends `x` to `Qh.mapEndAlgHom R _ x.1`. -/
+@[simp]
+theorem homotopyToDerivedActionRangeEquiv_coe [(Qh (C := C)).Linear R]
+    (K : CochainComplex C ℤ) [K.IsKProjective] {H : Type t'} [Semiring H] [Algebra R H]
+    (α : H →ₐ[R] End K)
+    (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
+    (homotopyToDerivedActionRangeEquiv R K α x :
+      End (Qh.obj ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K))) =
+      Qh.mapEndAlgHom R ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K) x.1 := by
+  apply End.ext
+  simp [homotopyToDerivedActionRangeEquiv]
+
+/-- Applying `homotopyToDerivedActionRangeEquiv` acts by `Qh.map` on underlying morphisms. -/
+theorem homotopyToDerivedActionRangeEquiv_apply_asHom [(Qh (C := C)).Linear R]
+    (K : CochainComplex C ℤ) [K.IsKProjective] {H : Type t'} [Semiring H] [Algebra R H]
+    (α : H →ₐ[R] End K)
+    (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
+    (homotopyToDerivedActionRangeEquiv R K α x :
+      End (Qh.obj ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K))).asHom =
+      Qh.map x.1.asHom := by
+  simp
+
+/-- For a K-projective cochain complex `K` and a chain-level `R`-algebra action
+`α : H →ₐ[R] End K`, `homotopyToDerivedEndEquivQ` restricts to an `R`-algebra equivalence from the
+descended homotopy action image onto the descended derived action image on `Q.obj K`. -/
+noncomputable def homotopyToDerivedActionRangeEquivQ [(Qh (C := C)).Linear R]
+    [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) [K.IsKProjective]
+    {H : Type t'} [Semiring H] [Algebra R H] (α : H →ₐ[R] End K) :
+    (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range ≃ₐ[R]
+      ((Q.mapEndAlgHom R K).comp α).range :=
+  ((homotopyToDerivedEndEquivQ R K).subalgebraMap _).trans
+    (Subalgebra.equivOfEq _ _ (by
+      rw [← AlgHom.range_comp]
+      congr 1
+      ext h
+      simp))
+
+/-- Applying `homotopyToDerivedActionRangeEquivQ` sends `x` to
+`homotopyToDerivedEndEquivQ R K x.1`. -/
+@[simp]
+theorem homotopyToDerivedActionRangeEquivQ_coe [(Qh (C := C)).Linear R] [(Q (C := C)).Linear R]
+    (K : CochainComplex C ℤ) [K.IsKProjective] {H : Type t'} [Semiring H] [Algebra R H]
+    (α : H →ₐ[R] End K)
+    (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
+    (homotopyToDerivedActionRangeEquivQ R K α x : End (Q.obj K)) =
+      homotopyToDerivedEndEquivQ R K x.1 := by
+  simp [homotopyToDerivedActionRangeEquivQ]
+
+/-- Applying `homotopyToDerivedActionRangeEquivQ` applies `Qh.map` and conjugates by
+`quotientCompQhIso`. -/
+theorem homotopyToDerivedActionRangeEquivQ_apply_asHom [(Qh (C := C)).Linear R]
+    [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) [K.IsKProjective]
+    {H : Type t'} [Semiring H] [Algebra R H] (α : H →ₐ[R] End K)
+    (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
+    (homotopyToDerivedActionRangeEquivQ R K α x : End (Q.obj K)).asHom =
+      ((quotientCompQhIso C).app K).inv ≫ Qh.map x.1.asHom ≫ ((quotientCompQhIso C).app K).hom := by
+  simp
+
+/-- Applying `homotopyToDerivedActionRangeEquivQ` to the homotopy class of `x : α.range` gives
+`TauCeti.derivedActionRangeMap R K α x`. -/
+@[simp]
+theorem homotopyToDerivedActionRangeEquivQ_apply_quotientActionRangeMap
+    [(Qh (C := C)).Linear R] [(Q (C := C)).Linear R] (K : CochainComplex C ℤ) [K.IsKProjective]
+    {H : Type t'} [Semiring H] [Algebra R H] (α : H →ₐ[R] End K) (x : α.range) :
+    homotopyToDerivedActionRangeEquivQ R K α (TauCeti.quotientActionRangeMap R K α x) =
+      TauCeti.derivedActionRangeMap R K α x := by
+  apply Subtype.ext
+  simp
 
 end Endomorphism
 
