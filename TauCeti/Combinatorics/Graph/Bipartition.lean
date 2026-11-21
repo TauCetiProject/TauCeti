@@ -10,6 +10,8 @@ public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.Isomorphism
 public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
+import TauCeti.Combinatorics.SimpleGraph.Bipartite
+
 /-!
 # Bipartitions of multigraphs
 
@@ -439,25 +441,20 @@ theorem IsBipartiteWith.exists_isBipartition_ofSimpleGraph [Finite α] {H : Simp
   let L : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ x.val ∈ s
   let R : Finset V(Graph.ofSimpleGraph H) := Lᶜ
   have hL : Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) = s := by
-    ext x
-    simp only [Set.mem_image, Finset.mem_coe, L, Finset.mem_filter, Finset.mem_univ, true_and]
-    exact ⟨fun ⟨_, hy, hxy⟩ ↦ hxy ▸ hy, fun hx ↦ ⟨⟨x, Set.mem_univ x⟩, hx, rfl⟩⟩
+    change Subtype.val '' ((Finset.univ.filter fun x : V(Graph.ofSimpleGraph H) ↦ x.val ∈ s :
+        Finset V(Graph.ofSimpleGraph H)) : Set V(Graph.ofSimpleGraph H)) = s
+    rw [Finset.coe_filter_univ]
+    exact Set.image_preimage_eq s (Equiv.Set.univ α).surjective
   have hR : Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = sᶜ := by
-    ext x
-    simp only [Set.mem_image, Finset.mem_coe, R, Finset.mem_compl, L, Finset.mem_filter,
-      Finset.mem_univ, true_and, Set.mem_compl_iff]
-    exact ⟨fun ⟨_, hy, hxy⟩ ↦ hxy ▸ hy, fun hx ↦ ⟨⟨x, Set.mem_univ x⟩, hx, rfl⟩⟩
-  have htR : t ⊆ Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) := by
-    rw [hR]
-    exact h.disjoint.subset_compl_left
-  refine ⟨L, R, (isBipartition_ofSimpleGraph_iff H L R).2 ⟨⟨?_, ?_⟩, ?_⟩, hL, htR⟩
-  · rw [hL, hR]
-    exact disjoint_compl_right
-  · intro x y hxy
-    rw [hL, hR]
-    exact (h.mem_of_adj hxy).imp (fun ⟨hx, hy⟩ ↦ ⟨hx, h.disjoint.subset_compl_left hy⟩)
-      (fun ⟨hx, hy⟩ ↦ ⟨h.disjoint.subset_compl_left hx, hy⟩)
+    have hbij : Function.Bijective (Subtype.val : V(Graph.ofSimpleGraph H) → α) :=
+      ⟨Subtype.val_injective, (Equiv.Set.univ α).surjective⟩
+    change Subtype.val '' ((Lᶜ : Finset V(Graph.ofSimpleGraph H)) :
+        Set V(Graph.ofSimpleGraph H)) = sᶜ
+    rw [Finset.coe_compl, Set.image_compl_eq hbij, hL]
+  refine ⟨L, R, (isBipartition_ofSimpleGraph_iff H L R).2 ⟨hL ▸ hR ▸ h.compl_right, ?_⟩, hL, ?_⟩
   · rw [hL, hR, Set.union_compl_self]
+  · rw [hR]
+    exact h.disjoint.subset_compl_left
 
 /-- A finite bipartite simple graph admits a displayed bipartition of its associated
 edge-labelled multigraph. -/
@@ -465,22 +462,9 @@ theorem IsBipartite.exists_isBipartition_ofSimpleGraph [Finite α]
     {H : SimpleGraph α} (hH : H.IsBipartite) :
     ∃ L R : Finset V(Graph.ofSimpleGraph H),
       (Graph.ofSimpleGraph H).IsBipartition L R := by
-  classical
-  let _ := Fintype.ofFinite α
-  obtain ⟨c⟩ := hH
-  let b := H.recolorOfEquiv finTwoEquiv c
-  let L : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ b x.val = false
-  let R : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ b x.val = true
-  refine ⟨L, R, ⟨?_, ?_, ?_⟩⟩
-  · exact Finset.disjoint_filter.2 fun _ _ hfalse htrue ↦
-      Bool.false_ne_true (hfalse.symm.trans htrue)
-  · intro x
-    cases hx : b x.val <;> simp [L, R, hx]
-  · intro e x y he
-    have hxy : H.Adj x.val y.val :=
-      (Graph.ofSimpleGraph_adj_iff x.val y.val).1 ⟨e, he⟩
-    have hb := b.valid hxy
-    cases hx : b x.val <;> cases hy : b y.val <;> simp_all [L, R]
+  obtain ⟨_, _, hst⟩ := hH.exists_isBipartiteWith
+  obtain ⟨L, R, hLR, -⟩ := hst.exists_isBipartition_ofSimpleGraph
+  exact ⟨L, R, hLR⟩
 
 /-- A finite simple graph is bipartite if and only if its associated multigraph admits a covering
 bipartition. -/
