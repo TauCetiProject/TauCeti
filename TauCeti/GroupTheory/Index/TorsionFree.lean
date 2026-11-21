@@ -59,7 +59,7 @@ theorem isCancelSMul_quotient_iff {H K : Subgroup G} :
     rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at hkq
     have hmem : g⁻¹ * (k : G)⁻¹ * g ∈ H := by
       simpa [mul_assoc] using hkq
-    exact Subtype.ext (inv_eq_one.mp (hconj (k : G)⁻¹ (inv_mem k.2) g hmem))
+    exact Subtype.ext (inv_eq_one.mp (hconj (k : G)⁻¹ (inv_mem k.property) g hmem))
 
 /-- If a subgroup `K` meets every conjugate of `H` trivially, then `Nat.card K` divides `H.index`.
 No finiteness assumption is needed since `H.index` vanishes when `G ⧸ H` is infinite. -/
@@ -107,7 +107,7 @@ theorem orderOf_dvd_index_of_forall_isOfFinOrder {H : Subgroup G}
     orderOf x ∣ H.index := by
   have : IsMulTorsionFree H :=
     .of_not_isOfFinOrder fun y hy hfin ↦
-      hy (Subtype.ext (hH y.1 y.2 (H.subtype.isOfFinOrder hfin)))
+      hy (Subtype.ext (hH y.val y.property (H.subtype.isOfFinOrder hfin)))
   exact orderOf_dvd_index_of_isMulTorsionFree H hx
 
 end Subgroup

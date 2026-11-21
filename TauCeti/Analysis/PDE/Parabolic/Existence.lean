@@ -150,21 +150,17 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
   have hC₂ : ∀ᵐ t ∂μ, ‖deriv φ t‖ ≤ C₂ := ae_le_lpNorm_exponent_top <|
     hφ'.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
       Ioo_subset_Icc_self
-  set K := |Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂
+  set K := Λ * C₁ + ‖ι‖ * ‖ι‖ * C₂
   -- The integrand is dominated by `K ‖u‖`.
   have hdom : ∀ u : Lp V 2 μ,
       ∀ᵐ t ∂μ, ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ ≤ K * ‖u t‖ := by
     intro u
     filter_upwards [hA_bound, hC₁, hC₂] with t hAt h₁ h₂
     calc ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖
-        ≤ ‖A t (u t) (φ t)‖ + ‖⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ := norm_sub_le _ _
-      _ ≤ ‖A t‖ * ‖u t‖ * ‖φ t‖ + ‖ι (u t)‖ * ‖ι (deriv φ t)‖ :=
-          add_le_add ((A t).le_opNorm₂ _ _) (norm_inner_le_norm _ _)
-      _ ≤ |Λ| * ‖u t‖ * C₁ + ‖ι‖ * ‖u t‖ * (‖ι‖ * C₂) := by
-          gcongr
-          · exact hAt.trans (le_abs_self Λ)
-          · exact ι.le_opNorm _
-          · exact (ι.le_opNorm _).trans (by gcongr)
+        ≤ Λ * ‖u t‖ * C₁ + ‖ι‖ * ‖u t‖ * (‖ι‖ * C₂) :=
+          (norm_sub_le _ _).trans <| add_le_add ((A t).le_of_opNorm₂_le_of_le hAt le_rfl h₁) <|
+            (norm_inner_le_norm _ _).trans <|
+              mul_le_mul (ι.le_opNorm _) (ι.le_opNorm_of_le h₂) (norm_nonneg _) (by positivity)
       _ = K * ‖u t‖ := by ring
   refine ⟨K * (μ univ ^ (1 - 1 / (2 : ℝ≥0∞).toReal)).toReal, fun u => ⟨?_, ?_⟩⟩
   · refine (((Lp.memLp u).integrable one_le_two).norm.const_mul K).mono' ?_ (hdom u)
@@ -202,28 +198,21 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
     rw [hφb, map_zero, norm_zero, intervalIntegral.integral_const_mul,
       intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo] at h
     linarith
-  -- `t ↦ A(t) φ(t) φ(t)` is bounded and strongly measurable, hence integrable.
-  have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) := by
-    set C := lpNorm φ ∞ (volume.restrict (Ioo a b))
-    have hC : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖φ t‖ ≤ C := ae_le_lpNorm_exponent_top <|
-      hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
-        measurableSet_Ioo Ioo_subset_Icc_self
-    refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
-      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuousAt
-        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2)
-        (ae_of_all _ fun t => (A t).continuous₂.continuousAt))
-      (Λ * C * C) ?_).integrable le_rfl
-    filter_upwards [hA_bound, hC] with t hAt hφt
-    have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt
-    have hC0 : 0 ≤ C := (norm_nonneg _).trans hφt
-    calc ‖A t (φ t) (φ t)‖ ≤ ‖A t‖ * ‖φ t‖ * ‖φ t‖ := (A t).le_opNorm₂ _ _
-      _ ≤ Λ * C * C := by gcongr
+  -- The integrand on the right is integrable, as the integrand of the variational formulation at
+  -- `u = φ ∈ L²(a, b; V)`.
+  have hφL2 : MemLp φ 2 (volume.restrict (Ioo a b)) :=
+    (hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
+      measurableSet_Ioo Ioo_subset_Icc_self).mono_exponent le_top
+  obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound hφ
+  have hEφ : Integrable (fun t => A t (φ t) (φ t) - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ)
+      (volume.restrict (Ioo a b)) :=
+    (hK (hφL2.toLp φ)).1.congr <| by filter_upwards [hφL2.coeFn_toLp] with t ht; rw [ht]
   calc α * (∫ t in Ioo a b, ‖φ t‖ ^ 2) + ‖ι (φ a)‖ ^ 2 / 2
       = ∫ t in Ioo a b, (α * ‖φ t‖ ^ 2 - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ) := by
         rw [integral_sub (hint hcont₁) (hint hcont₂), integral_const_mul, hftc]
         ring
     _ ≤ ∫ t in Ioo a b, (A t (φ t) (φ t) - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ) := by
-        refine integral_mono_ae (hint (hcont₁.sub hcont₂)) (hAφφ.sub (hint hcont₂)) ?_
+        refine integral_mono_ae (hint (hcont₁.sub hcont₂)) hEφ ?_
         filter_upwards [hA_coercive] with t ht
         linarith [ht (φ t)]
 
@@ -242,7 +231,7 @@ private theorem mem_testFunctions {φ : ℝ → V} :
 
 private theorem memLp_testFunctions (φ : testFunctions V b) :
     MemLp (φ : ℝ → V) 2 (volume.restrict (Ioo a b)) := by
-  exact (φ.2.1.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
+  exact (φ.property.1.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
     measurableSet_Ioo Ioo_subset_Icc_self).mono_exponent le_top
 
 variable (a) in
@@ -268,7 +257,7 @@ private noncomputable def variationalForm (ι : V →L[ℝ] H)
     { toFun := fun u =>
         ∫ t in Ioo a b, (A t (u t) ((φ : ℝ → V) t) - ⟪ι (u t), ι (deriv (φ : ℝ → V) t)⟫_ℝ)
       map_add' := fun u v => by
-        obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.2.1
+        obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.property.1
         rw [← integral_add (hK u).1 (hK v).1]
         refine integral_congr_ae ?_
         filter_upwards [Lp.coeFn_add u v] with t ht
@@ -282,18 +271,18 @@ private noncomputable def variationalForm (ι : V →L[ℝ] H)
           inner_smul_left, RCLike.conj_to_real]
         ring }
     (by
-      obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.2.1
+      obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.property.1
       exact ⟨K, fun u => (hK u).2⟩)
   map_add' φ ψ := by
     ext u
-    obtain ⟨K₁, hK₁⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.2.1
-    obtain ⟨K₂, hK₂⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound ψ.2.1
+    obtain ⟨K₁, hK₁⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.property.1
+    obtain ⟨K₂, hK₂⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound ψ.property.1
     simp only [add_apply, LinearMap.mkContinuousOfExistsBound_apply,
       LinearMap.coe_mk, AddHom.coe_mk]
     rw [← integral_add (hK₁ u).1 (hK₂ u).1]
     refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
-    have hφ := φ.2.1.differentiable one_ne_zero t
-    have hψ := ψ.2.1.differentiable one_ne_zero t
+    have hφ := φ.property.1.differentiable one_ne_zero t
+    have hψ := ψ.property.1.differentiable one_ne_zero t
     simp only [Submodule.coe_add, Pi.add_apply, deriv_add hφ hψ, map_add, inner_add_right]
     ring
   map_smul' c φ := by
@@ -303,7 +292,7 @@ private noncomputable def variationalForm (ι : V →L[ℝ] H)
     rw [← integral_const_mul]
     refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
     simp only [Submodule.coe_smul, Pi.smul_apply,
-      deriv_const_smul c (φ.2.1.differentiable one_ne_zero t), map_smul, inner_smul_right,
+      deriv_const_smul c (φ.property.1.differentiable one_ne_zero t), map_smul, inner_smul_right,
       smul_eq_mul]
     ring
 
@@ -329,7 +318,8 @@ private theorem mul_norm_sq_add_le_variationalForm (ι : V →L[ℝ] H) (hab : a
     filter_upwards [coeFn_testFunctionsToL2 φ] with t ht
     rw [ht, real_inner_self_eq_norm_sq]
   rw [← hnorm, variationalForm_apply]
-  refine (mul_setIntegral_norm_sq_add_le ι hab hA hA_bound hA_coercive φ.2.1 φ.2.2).trans_eq
+  refine (mul_setIntegral_norm_sq_add_le ι hab hA hA_bound hA_coercive φ.property.1
+      φ.property.2).trans_eq
     (integral_congr_ae ?_)
   filter_upwards [coeFn_testFunctionsToL2 φ] with t ht
   rw [ht]
