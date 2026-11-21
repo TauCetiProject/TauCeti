@@ -85,7 +85,7 @@ noncomputable def orbitRelQuotientDeckMulEquiv [PreconnectedSpace E] :
 /-- The deck transformation attached to `l` is translation by `l`. -/
 @[simp]
 theorem orbitRelQuotientDeckMulEquiv_apply [PreconnectedSpace E] (l : Multiplicative L) (v : E) :
-    (L.orbitRelQuotientDeckMulEquiv l).1 v = (l.toAdd : E) + v :=
+    (L.orbitRelQuotientDeckMulEquiv l).val v = (l.toAdd : E) + v :=
   (L.isAddQuotientCoveringMap_quotientMk.toMultiplicative _).deckMulEquiv_apply l v
 
 end AddGroup

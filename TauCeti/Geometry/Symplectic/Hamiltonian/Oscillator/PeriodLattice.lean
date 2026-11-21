@@ -369,9 +369,10 @@ phase space. -/
 private def oscillatorRotationHom (hm : ∀ i, m i ≠ 0) (hν : ∀ i, ν i ≠ 0) :
     (ι → ℝ) →+ Additive ((𝕍 × 𝕍) ≃ₘ^∞⟮𝓘(ℝ, 𝕍 × 𝕍), 𝓘(ℝ, 𝕍 × 𝕍)⟯ (𝕍 × 𝕍)) where
   toFun v := Additive.ofMul
-    (ContinuousLinearEquiv.equivOfInverse (oscillatorRotation m ν v) (oscillatorRotation m ν (-v))
-      (oscillatorRotation_neg_apply hm hν v)
-      fun x ↦ by simpa using oscillatorRotation_neg_apply hm hν (-v) x).toDiffeomorph
+    (ContinuousLinearEquiv.ofContinuousLinearMap (oscillatorRotation m ν v)
+      (oscillatorRotation m ν (-v))
+      (ContinuousLinearMap.ext fun x ↦ by simpa using oscillatorRotation_neg_apply hm hν (-v) x)
+      (ContinuousLinearMap.ext (oscillatorRotation_neg_apply hm hν v))).toDiffeomorph
   map_zero' := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by simp
   map_add' v w := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by
     simp [oscillatorRotation_add hm hν]
@@ -394,7 +395,7 @@ theorem hamiltonianFlowAction_oscillatorEnergies_apply (hm : ∀ i, m i ≠ 0) (
   · simp [oscillatorRotationHom]
   · refine Additive.toMul.injective <| Diffeomorph.ext fun y ↦ ?_
     simp only [oscillatorRotationHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, toMul_ofMul,
-      ContinuousLinearEquiv.coe_toDiffeomorph, ContinuousLinearEquiv.equivOfInverse_apply,
+      ContinuousLinearEquiv.coe_toDiffeomorph, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
       toMul_globalFlowDiffeomorphHom, globalFlowDiffeomorph_apply]
     have h := globalFlow_eq_of_isMIntegralCurve (hv i |>.of_le (by simp))
       (isCompleteVectorField_hamiltonianVectorField_oscillatorEnergies (hm i) (hν i))

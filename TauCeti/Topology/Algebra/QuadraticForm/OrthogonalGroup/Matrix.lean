@@ -56,7 +56,7 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
         LinearMap.toMatrix' (C (g : Module.End R V)) :=
       (IsModuleTopology.continuous_of_linearMap LinearMap.toMatrix'.toLinearMap).comp
         ((IsModuleTopology.continuous_of_linearMap C).comp
-          (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val))
+          (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal))
     exact h.congr fun g ↦ by simp [E, hC]
   let D := (e.toLinearEquiv.symm.conjAlgEquiv (R := R)).toLinearMap
   have hD (A : Matrix.orthogonalGroup n R) :
@@ -73,7 +73,7 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
       (E.symm A : Module.End R V) := by
     exact ((IsModuleTopology.continuous_of_linearMap D).comp
       ((IsModuleTopology.continuous_of_linearMap Matrix.toLin'.toLinearMap).comp
-        continuous_subtype_val)).congr hD
+        continuous_subtypeVal)).congr hD
   refine { E with continuous_toFun := hforward, continuous_invFun := ?_ }
   apply continuous_induced_rng.mpr
   apply continuous_linearEquiv_iff.mpr

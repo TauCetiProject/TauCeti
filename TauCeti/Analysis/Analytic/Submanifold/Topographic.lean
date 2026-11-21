@@ -292,6 +292,6 @@ theorem dist_le_mul_dist_tail_of_mem_image_horizontalShear
     _ = A * ((1 - A * ‖z‖) * dist (Fin.tail v) (Fin.tail w)) := by ring
     _ ≤ A * dist (Fin.tail (horizontalShear z v)) (Fin.tail (horizontalShear z w)) :=
         mul_le_mul_of_nonneg_left
-          (mul_dist_tail_le_dist_tail_horizontalShear z (h v hv w hw)) A.2
+          (mul_dist_tail_le_dist_tail_horizontalShear z (h v hv w hw)) A.property
 
 end TauCeti

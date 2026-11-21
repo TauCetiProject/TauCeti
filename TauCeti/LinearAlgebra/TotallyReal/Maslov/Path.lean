@@ -132,8 +132,9 @@ theorem symm_apply (Λ : TotallyRealPath E) (t : I) : Λ.symm t = Λ (σ t) :=
 through `Γ`, each at double speed, as `Path.trans` does. -/
 noncomputable def trans (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : TotallyRealPath E where
   toFun t :=
-    if ht : (t : ℝ) ≤ 1 / 2 then Λ ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, ht⟩⟩
-    else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩
+    if ht : (t : ℝ) ≤ 1 / 2 then Λ ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2
+        ⟨t.property.1, ht⟩⟩
+    else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.property.2⟩⟩
   exists_frame := by
     obtain ⟨L₀, hL₀, A, hAc, hA⟩ := Λ.exists_frame
     obtain ⟨L₁, _, B, hBc, hB⟩ := Γ.exists_frame
@@ -157,8 +158,8 @@ noncomputable def trans (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : TotallyR
     let c : Path (A 1 : E →L[ℂ] E) (C 1) :=
       ⟨⟨fun s => C s, hCc ▸ hBc.clm_comp_const _⟩, by ext x; simp [C], rfl⟩
     refine ⟨L₀, hL₀, fun t => if ht : (t : ℝ) ≤ 1 / 2 then
-      A ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, ht⟩⟩
-      else C ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩,
+      A ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.property.1, ht⟩⟩
+      else C ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.property.2⟩⟩,
       ?_, fun t => ?_⟩
     · convert (a.trans c).continuous using 1
       ext1 t
@@ -174,8 +175,8 @@ noncomputable def trans (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) : TotallyR
 theorem trans_apply (Λ Γ : TotallyRealPath E) (h : Λ 1 = Γ 0) (t : I) :
     Λ.trans Γ h t =
       if ht : (t : ℝ) ≤ 1 / 2 then
-        Λ ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, ht⟩⟩
-      else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.2.2⟩⟩ :=
+        Λ ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.property.1, ht⟩⟩
+      else Γ ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht).le, t.property.2⟩⟩ :=
   (rfl)
 
 /-- The catenation starts where its first path starts. -/

@@ -156,7 +156,7 @@ def realDetLieLinearEquiv : (LinearMap.ker d × ℝ) ≃ₗ[ℝ] 𝔤 :=
       ⟨realDetLieLift n hQ, by
         apply LinearMap.ext
         intro a
-        exact lieWeight_detContinuousMonoidHom_realDetLieLift n hQ a⟩).1.symm
+        exact lieWeight_detContinuousMonoidHom_realDetLieLift n hQ a⟩).val.symm
 
 /-- Reconstruction adds the kernel component to the half-speed central lift. -/
 @[simp]

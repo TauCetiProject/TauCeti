@@ -89,13 +89,13 @@ abbrev nConnectedCoverProj : nConnectedCover n X x ⟶ X :=
 
 /-- The base point of the `n`-connected cover: the point `x` with the constant path. -/
 abbrev nConnectedCoverBasepoint : nConnectedCover n X x :=
-  ((killHomotopyGroupsIncl (n + 1) X x).homotopyFiberBasepoint x).1
+  ((killHomotopyGroupsIncl (n + 1) X x).homotopyFiberBasepoint x).val
 
 /-- The base point of the `n`-connected cover lies over `x`. -/
 @[simp]
 theorem nConnectedCoverProj_nConnectedCoverBasepoint :
     nConnectedCoverProj n X x (nConnectedCoverBasepoint n X x) = x :=
-  Set.mem_singleton_iff.1 (TopCat.Hom.homotopyFiberBasepoint _ x).2
+  Set.mem_singleton_iff.1 (TopCat.Hom.homotopyFiberBasepoint _ x).property
 
 /-- **The projection of the `n`-connected cover is a Hurewicz fibration**, for test spaces in
 every universe. -/
@@ -117,7 +117,7 @@ def nConnectedCoverFiberHomeomorph :
 
 @[simp]
 theorem nConnectedCoverFiberHomeomorph_apply (p : (nConnectedCoverProj n X x).fiber x) (t : I) :
-    nConnectedCoverFiberHomeomorph n X x p t = p.1.val.2 t :=
+    nConnectedCoverFiberHomeomorph n X x p t = p.val.val.2 t :=
   TopCat.Hom.homotopyFiberFiberHomeomorph_apply _ x p t
 
 /-! ### The endpoint fibration -/
@@ -224,7 +224,7 @@ theorem bijective_homotopyGroupMap_nConnectedCoverProj (y : nConnectedCover n X 
   -- bijective on `πₖ`.
   let ψ := (nConnectedCoverHomeomorphFiber n X x).toHomotopyEquiv
   have hψ (y : nConnectedCover n X x) : nConnectedCoverProj n X x y =
-      MappingPathSpace.proj (killHomotopyGroupsIncl (n + 1) X x).hom (ψ.toFun y).1 := by
+      MappingPathSpace.proj (killHomotopyGroupsIncl (n + 1) X x).hom (ψ.toFun y).val := by
     rw [TopCat.Hom.homotopyFiberProj_apply, MappingPathSpace.proj_apply]
     exact congrArg Prod.fst (MappingPathFiber.endpointHomeomorph_val _ _ y).symm
   have hcomp : (MappingPathSpace.proj (killHomotopyGroupsIncl (n + 1) X x).hom).comp
@@ -238,7 +238,7 @@ theorem bijective_homotopyGroupMap_nConnectedCoverProj (y : nConnectedCover n X 
         MappingPathSpace.proj _ :=
       ContinuousMap.ext (MappingPathSpace.homotopyEquiv_symm_apply _)
     exact h ▸ (MappingPathSpace.homotopyEquiv _).symm.isWeakHomotopyEquivalence
-  have h := (hproj.bijective (j + 1) (ψ.toFun y).1).comp
+  have h := (hproj.bijective (j + 1) (ψ.toFun y).val).comp
     ((TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations
       (endpointHom_mem_serreFibrations n X x) (hK j hk) (hK (j + 1) (by omega)) (ψ.toFun y)).comp
         (ψ.isWeakHomotopyEquivalence.bijective (j + 1) y))

@@ -57,7 +57,7 @@ side. -/
 theorem edgeEquiv_mem_edgeCut_mapVertexSet_iff (f : Iso G H) (S : Set α)
     (e : G.edgeSet) :
     (f.edgeEquiv e : β') ∈ H.edgeCut (f.mapVertexSet S) ↔ (e : β) ∈ G.edgeCut S := by
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   rw [(f.map_isLink hxy).mem_edgeCut_iff, hxy.mem_edgeCut_iff]
   simp
 
@@ -118,7 +118,7 @@ theorem isEdgeCut_mapEdgeSet_iff (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
 /-- Bridge status is invariant under graph isomorphism. -/
 theorem isBridge_edgeEquiv_iff (f : Iso G H) (e : G.edgeSet) :
     H.IsBridge (f.edgeEquiv e) ↔ G.IsBridge e := by
-  have hcut := f.isEdgeCut_mapEdgeSet_iff (singleton_subset_iff.mpr e.2)
+  have hcut := f.isEdgeCut_mapEdgeSet_iff (singleton_subset_iff.mpr e.property)
   simpa only [Graph.IsBridge, f.mapEdgeSet_singleton e] using hcut
 
 /-- A graph isomorphism sends bonds to bonds. -/
@@ -170,11 +170,11 @@ theorem isForest_iff (f : Iso G H) : H.IsForest ↔ G.IsForest := by
   rw [H.isForest_iff_forall_isBridge, G.isForest_iff_forall_isBridge]
   constructor
   · intro hH e he
-    exact (f.isBridge_edgeEquiv_iff ⟨e, he⟩).mp (hH (f.edgeEquiv ⟨e, he⟩).2)
+    exact (f.isBridge_edgeEquiv_iff ⟨e, he⟩).mp (hH (f.edgeEquiv ⟨e, he⟩).property)
   · intro hG e he
     let e' : H.edgeSet := ⟨e, he⟩
     simpa [e'] using (f.isBridge_edgeEquiv_iff (f.edgeEquiv.symm e')).mpr
-      (hG (f.edgeEquiv.symm e').2)
+      (hG (f.edgeEquiv.symm e').property)
 
 /-- Edge reachability at every natural threshold is invariant under multigraph isomorphism. -/
 @[simp]
@@ -201,11 +201,11 @@ theorem isEdgeConnected_iff (f : Iso G H) (k : ℕ) :
   constructor
   · intro h x hx y hy
     exact (f.isEdgeReachable_iff k ⟨x, hx⟩ ⟨y, hy⟩).mp
-      (h (f.vertexEquiv ⟨x, hx⟩).2 (f.vertexEquiv ⟨y, hy⟩).2)
+      (h (f.vertexEquiv ⟨x, hx⟩).property (f.vertexEquiv ⟨y, hy⟩).property)
   · intro h x hx y hy
     have hr := (f.isEdgeReachable_iff k (f.vertexEquiv.symm ⟨x, hx⟩)
       (f.vertexEquiv.symm ⟨y, hy⟩)).mpr
-        (h (f.vertexEquiv.symm ⟨x, hx⟩).2 (f.vertexEquiv.symm ⟨y, hy⟩).2)
+        (h (f.vertexEquiv.symm ⟨x, hx⟩).property (f.vertexEquiv.symm ⟨y, hy⟩).property)
     simpa using hr
 
 /-- Local numerical edge reachability is unchanged by a multigraph isomorphism. -/
@@ -267,7 +267,7 @@ noncomputable def connectedComponentEquiv (f : Iso G H) :
 @[simp]
 theorem connectedComponentEquiv_connectedComponentOf (f : Iso G H) {x : α} (hx : x ∈ V(G)) :
     f.connectedComponentEquiv (G.connectedComponentOf x hx) =
-      H.connectedComponentOf (f.vertexEquiv ⟨x, hx⟩) (f.vertexEquiv ⟨x, hx⟩).2 := by
+      H.connectedComponentOf (f.vertexEquiv ⟨x, hx⟩) (f.vertexEquiv ⟨x, hx⟩).property := by
   apply H.connectedComponentEquiv.injective
   simp [connectedComponentEquiv]
 
@@ -276,7 +276,7 @@ original component. -/
 @[simp]
 theorem vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff (f : Iso G H)
     (C : G.ConnectedComponent) (x : V(G)) :
-    (f.vertexEquiv x : α') ∈ V((f.connectedComponentEquiv C).1) ↔ (x : α) ∈ V(C.1) := by
+    (f.vertexEquiv x : α') ∈ V((f.connectedComponentEquiv C).val) ↔ (x : α) ∈ V(C.val) := by
   obtain ⟨z, hz⟩ := C.property.nonempty
   rw [ConnectedComponent.eq_connectedComponentOf (C := C) hz,
     mem_vertexSet_connectedComponentOf_iff, connectedComponentEquiv_connectedComponentOf,
@@ -288,8 +288,8 @@ original component. -/
 @[simp]
 theorem edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff (f : Iso G H)
     (C : G.ConnectedComponent) (e : E(G)) :
-    (f.edgeEquiv e : β') ∈ E((f.connectedComponentEquiv C).1) ↔ (e : β) ∈ E(C.1) := by
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+    (f.edgeEquiv e : β') ∈ E((f.connectedComponentEquiv C).val) ↔ (e : β) ∈ E(C.val) := by
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   have hfxy := f.map_isLink hxy
   rw [Subtype.coe_eta] at hfxy
   exact (((f.connectedComponentEquiv C).property.isClosedSubgraph.mem_tfae_of_isLink hfxy).out
@@ -298,7 +298,7 @@ theorem edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff (f : Iso G H)
 
 /-- The vertices of a transported component are the transported vertices of the component. -/
 theorem vertexSet_connectedComponentEquiv (f : Iso G H) (C : G.ConnectedComponent) :
-    V((f.connectedComponentEquiv C).1) = f.mapVertexSet V(C.1) := by
+    V((f.connectedComponentEquiv C).val) = f.mapVertexSet V(C.val) := by
   ext y
   by_cases hy : y ∈ V(H)
   · let y' : V(H) := ⟨y, hy⟩
@@ -310,7 +310,7 @@ theorem vertexSet_connectedComponentEquiv (f : Iso G H) (C : G.ConnectedComponen
 
 /-- The edges of a transported component are the transported edges of the component. -/
 theorem edgeSet_connectedComponentEquiv (f : Iso G H) (C : G.ConnectedComponent) :
-    E((f.connectedComponentEquiv C).1) = f.mapEdgeSet E(C.1) := by
+    E((f.connectedComponentEquiv C).val) = f.mapEdgeSet E(C.val) := by
   ext e
   by_cases he : e ∈ E(H)
   · let e' : E(H) := ⟨e, he⟩
@@ -340,7 +340,7 @@ theorem connectedComponentEquiv_symm_connectedComponentOf (f : Iso G H) {y : α'
     (hy : y ∈ V(H)) :
     f.connectedComponentEquiv.symm (H.connectedComponentOf y hy) =
       G.connectedComponentOf (f.vertexEquiv.symm ⟨y, hy⟩)
-        (f.vertexEquiv.symm ⟨y, hy⟩).2 := by
+        (f.vertexEquiv.symm ⟨y, hy⟩).property := by
   simpa using f.symm.connectedComponentEquiv_connectedComponentOf hy
 
 /-- An actual vertex lies in the component pulled back along the isomorphism exactly when its
@@ -348,8 +348,8 @@ image lies in the original component. -/
 @[simp]
 theorem vertexEquiv_symm_mem_vertexSet_connectedComponentEquiv_symm_iff (f : Iso G H)
     (D : H.ConnectedComponent) (y : V(H)) :
-    (f.vertexEquiv.symm y : α) ∈ V((f.connectedComponentEquiv.symm D).1) ↔
-      (y : α') ∈ V(D.1) := by
+    (f.vertexEquiv.symm y : α) ∈ V((f.connectedComponentEquiv.symm D).val) ↔
+      (y : α') ∈ V(D.val) := by
   simpa using f.symm.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff D y
 
 /-- An actual edge lies in the component pulled back along the isomorphism exactly when its image
@@ -357,8 +357,8 @@ lies in the original component. -/
 @[simp]
 theorem edgeEquiv_symm_mem_edgeSet_connectedComponentEquiv_symm_iff (f : Iso G H)
     (D : H.ConnectedComponent) (e : E(H)) :
-    (f.edgeEquiv.symm e : β) ∈ E((f.connectedComponentEquiv.symm D).1) ↔
-      (e : β') ∈ E(D.1) := by
+    (f.edgeEquiv.symm e : β) ∈ E((f.connectedComponentEquiv.symm D).val) ↔
+      (e : β') ∈ E(D.val) := by
   simpa using f.symm.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff D e
 
 /-- Composing isomorphisms composes their equivalences of connected components. -/

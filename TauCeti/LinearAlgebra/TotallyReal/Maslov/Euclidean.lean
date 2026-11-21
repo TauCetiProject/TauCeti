@@ -52,7 +52,7 @@ theorem maslovPhase_realImage_exp_smul_one (θ : ℝ) :
       (isMaximalTotallyReal_realImage_smul_one (n := n) (Complex.exp_ne_zero (θ * Complex.I))) =
       Complex.exp ((2 * Fintype.card n * θ : ℝ) * Complex.I) := by
   rw [maslovPhase_realImage_smul_one (Complex.exp_ne_zero _), ← Complex.exp_conj, ← Complex.exp_sub,
-    ← Complex.exp_nat_mul]
+    ← Complex.exp_natCast_mul]
   congr 1
   simp [Complex.conj_ofReal]
   ring

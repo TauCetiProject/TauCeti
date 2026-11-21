@@ -176,7 +176,7 @@ theorem spinCCircle_mem_canonicalLineFixingSubgroup (z : Circle) :
       (e.map_apply_mul_map_apply hQ 2 3) z ∈ canonicalLineFixingSubgroup o ρ J hQ₀ := by
   intro ψ hψ
   rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂, map_add, LinearMap.add_apply,
-    map_ι_mul_ι_two_three_apply e hQ ρ he ψ.2, one_smul] at hψ
+    map_ι_mul_ι_two_three_apply e hQ ρ he ψ.property, one_smul] at hψ
   have h : ρ (ι Q (e 0) * ι Q (e 1)) ψ = -Complex.I • (ψ : W) := by
     linear_combination (norm := module) (2⁻¹ : ℂ) • hψ
   exact Subtype.ext
@@ -329,13 +329,13 @@ def canonicalLineFixingSubgroupEquiv (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
   MulEquiv.ofBijective (((spinCGroup.toSpecialOrthogonal Q hQ₀).comp
       (canonicalLineFixingSubgroup o ρ J hQ₀).subtype).codRestrict (J.unitaryGroup Q)
         fun x ↦ toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
-          hQ he h₀ h₂ hQ₀ hW x.2) <| by
+          hQ he h₀ h₂ hQ₀ hW x.property) <| by
     refine ⟨(injective_iff_map_eq_one _).2 fun x hx ↦ Subtype.ext ?_, fun A ↦ ?_⟩
     · exact eq_one_of_mem_canonicalLineFixingSubgroup_of_toSpecialOrthogonal_eq_one hQ he h₀ h₂
-        hQ₀ hW x.2 (congrArg Subtype.val hx)
+        hQ₀ hW x.property (congrArg Subtype.val hx)
     · obtain ⟨x, hx, hxA⟩ :=
         exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_unitaryGroup
-          hQ he h₀ h₂ hQ₀ hW hρ A.2
+          hQ he h₀ h₂ hQ₀ hW hρ A.property
       exact ⟨⟨x, hx⟩, Subtype.ext hxA⟩
 
 /-- The isomorphism `canonicalLineFixingSubgroupEquiv` is the rotation homomorphism. -/
@@ -365,7 +365,7 @@ variable (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 @[simp]
 theorem unitaryLift_mem_canonicalLineFixingSubgroup (A : J.unitaryGroup Q) :
     unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A ∈ canonicalLineFixingSubgroup o ρ J hQ₀ :=
-  ((canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ).symm A).2
+  ((canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ).symm A).property
 
 /-- **The canonical lift lifts the inclusion `U(V, J) ⊆ SO(4)`**: the rotation of
 `unitaryLift A` is `A`. -/
@@ -542,7 +542,8 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
     letI := J.complexModule
     (spinCGroup.det Q hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) : ℂ) =
       LinearMap.det
-        (AlmostComplexStructure.isComplexLinearMap_of_mem_unitaryGroup A.2).toComplexLinearMap := by
+        (AlmostComplexStructure.isComplexLinearMap_of_mem_unitaryGroup
+            A.property).toComplexLinearMap := by
   let := J.complexModule
   have := J.complexModule_isScalarTower
   have : FiniteDimensional ℂ V := .of_restrictScalars_finite ℝ ℂ V
@@ -556,7 +557,7 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
     (finrank_eigenspace_chirality_neg o ρ 1).trans hW₁
   -- The real isomorphism `v ↦ c(v) u` from `V` onto the negative half-spinors is `ℂ`-linear for
   -- the complex structure `J` on `V`.
-  let E := cliffordMulEquiv o hQ u.2 (by simpa using hu₀) hW₁
+  let E := cliffordMulEquiv o hQ u.property (by simpa using hu₀) hW₁
   have hE (v : V) : E v = halfSpinCliffordMul o ρ 1 v u :=
     Subtype.ext (by rw [coe_cliffordMulEquiv_apply, coe_halfSpinCliffordMul_apply_apply])
   let Te : V ≃ₗ[ℂ] eigenspace (ρ (chirality Q o)) (-1) :=
