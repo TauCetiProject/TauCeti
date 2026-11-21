@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Faces of subintervals in the simplex category
 
@@ -52,13 +54,17 @@ namespace TauCeti.SimplexCategory
 
 open _root_.SimplexCategory
 
-/-- The coface map `δ k` fixes the vertices before `k` and shifts the others up by one. -/
+/-- The coface map `δ k` fixes the vertices before `k` and shifts the others up by one.
+
+This is `SimplexCategory.δ_apply` read under `Fin.val` with `Fin.val_succAbove`.  It is stated for
+the underlying monotone map `(δ k).toOrderHom`, the form the face proofs below reach after `ext`;
+`δ_apply` is stated for the concrete-category application `δ k x`, which is by definition
+`(δ k).toOrderHom x` (the concrete-category structure of `SimplexCategory` has
+`hom := Hom.toOrderHom`). -/
 private lemma val_δ_toOrderHom_apply {n : ℕ} (k : Fin (n + 2)) (x : Fin (n + 1)) :
     ((δ k).toOrderHom x : ℕ) = if (x : ℕ) < k then (x : ℕ) else x + 1 := by
-  rw [show (δ k).toOrderHom x = k.succAbove x from δ_apply k x]
-  split_ifs with hx
-  · rw [Fin.succAbove_of_castSucc_lt _ _ hx, Fin.val_castSucc]
-  · rw [Fin.succAbove_of_le_castSucc _ _ (not_lt.1 hx), Fin.val_succ]
+  -- The concrete-category application `δ k x` of `δ_apply` unfolds to `(δ k).toOrderHom x`.
+  rw [show (δ k).toOrderHom x = k.succAbove x from δ_apply k x, Fin.val_succAbove]
 
 /-- A face of a subinterval is a subinterval of the corresponding face: the `i`-th face of the
 subinterval `j, …, j + q + 1`, which omits its vertex `k = j + i`, is the subinterval `j, …, j + q`
@@ -79,7 +85,8 @@ lemma subinterval_comp_δ_of_le {n j q : ℕ} (k : Fin (n + 2)) (hk : (k : ℕ) 
     subinterval j q h ≫ δ k = subinterval (j + 1) q (by omega) := by
   ext l : 3
   rw [Fin.ext_iff]
-  simp [val_δ_toOrderHom_apply, show ¬(l : ℕ) + j < k by omega]
+  have hnot : ¬(l : ℕ) + j < k := by omega
+  simp [val_δ_toOrderHom_apply, hnot]
   omega
 
 /-- Deleting a vertex after a subinterval does not change it. -/
@@ -96,7 +103,7 @@ lemma subinterval_comp_δ_of_lt {n j q : ℕ} (k : Fin (n + 2)) (hk : j + q < k)
 @[simp]
 lemma δ_last_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
     δ (Fin.last (q + 1)) ≫ subinterval j (q + 1) h = subinterval j q (by omega) := by
-  obtain ⟨n, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (n := n) (by omega)
   rw [δ_comp_subinterval _ ⟨j + q + 1, by omega⟩ (by simp; omega),
     subinterval_comp_δ_of_lt _ (by simp)]
 
@@ -104,7 +111,7 @@ lemma δ_last_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
 @[simp]
 lemma δ_zero_comp_subinterval {n j q : ℕ} (h : j + (q + 1) ≤ n) :
     δ 0 ≫ subinterval j (q + 1) h = subinterval (j + 1) q (by omega) := by
-  obtain ⟨n, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (n := n) (by omega)
   rw [δ_comp_subinterval _ ⟨j, by omega⟩ (by simp), subinterval_comp_δ_of_le (j := j) _ le_rfl]
 
 /-- A subinterval of a subinterval is a subinterval: the vertices `i, …, i + l` of the
