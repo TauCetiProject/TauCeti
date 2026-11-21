@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Regular
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 
 /-!
@@ -39,6 +40,8 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`: the product `f • g` of an
   a.e. finitely strongly measurable `f` (for instance an integrable one) and a continuous `g` is
   a.e. strongly measurable.
+* `MeasureTheory.Integrable.smul_continuous_of_norm_le`: the product `f • g` of an integrable
+  weight `f` and a norm-bounded continuous map `g` is integrable.
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`: a continuous family of
   continuous linear maps `g` applied to an a.e. finitely strongly measurable `f`, for instance an
   `Lᵖ` function with `p < ∞`, is a.e. strongly measurable.
@@ -113,6 +116,16 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul {𝕜 : 
     ((AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
       hf.ae_eq_mk⟩).smul hg.aestronglyMeasurable_of_sigmaFinite)
     fun x hx ↦ by simp [hx]
+
+/-- The pointwise scalar product `x ↦ f x • g x` of an integrable weight `f` and a norm-bounded
+continuous map `g` is integrable for a measure inner regular with respect to compact sets on sets
+of finite measure, without assuming σ-finiteness of `μ` or second countability. -/
+theorem MeasureTheory.Integrable.smul_continuous_of_norm_le {𝕜 E : Type*}
+    [NormedAddCommGroup 𝕜] [NormedAddCommGroup E] [SMulWithZero 𝕜 E] [IsBoundedSMul 𝕜 E]
+    {f : α → 𝕜} (hf : Integrable f μ) {g : α → E} (hg : Continuous g) {C : ℝ}
+    (hC : ∀ x, ‖g x‖ ≤ C) : Integrable (fun x ↦ f x • g x) μ :=
+  (hf.norm.mul_const C).mono' (hf.aefinStronglyMeasurable.aestronglyMeasurable_smul hg)
+    (.of_forall fun x ↦ (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _)))
 
 /-- A continuous family `g` of continuous linear maps applied to an a.e. finitely strongly
 measurable function `f`, for instance an `Lᵖ` function with `p < ∞`, is a.e. strongly measurable,

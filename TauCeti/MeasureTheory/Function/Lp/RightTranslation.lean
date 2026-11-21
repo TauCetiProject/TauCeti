@@ -387,11 +387,9 @@ right-translate orbit `z ↦ k z • R_(z⁻¹) h` is `μ`-integrable; on `L¹(G
 the convolution `h ⋆ k`. -/
 theorem integrable_smul_rightTranslation_inv (hp : p ≠ ∞) {k : G → 𝕜} (hk : Integrable k μ)
     (h : Lp E p μ) :
-    Integrable (fun z => k z • rightTranslation μ p 𝕜 z⁻¹ h) μ := by
-  refine (hk.norm.mul_const ‖h‖).mono' (hk.aefinStronglyMeasurable.aestronglyMeasurable_smul
-    ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp h).comp continuous_inv))
-    (.of_forall fun z => ?_)
-  exact (norm_smul_le _ _).trans_eq (by rw [LinearIsometryEquiv.norm_map])
+    Integrable (fun z => k z • rightTranslation μ p 𝕜 z⁻¹ h) μ :=
+  hk.smul_continuous_of_norm_le ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp h).comp
+    continuous_inv) fun _ => (LinearIsometryEquiv.norm_map _ _).le
 
 /-- Modular inversion commutes with pointwise `star` on `Lᵖ`. -/
 theorem modularInversion_star [StarAddMonoid E] [NormedStarGroup E] [StarModule ℝ E]

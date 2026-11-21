@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
+public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
 import Mathlib.Analysis.Normed.Module.WeakDual
@@ -40,9 +41,11 @@ Banach algebras are automatically continuous.
   nonunital characters of Banach algebras are contractive, hence continuous linear functionals of
   operator norm at most `1`.
 * `NonUnitalAlgHom.tendsto_one_of_tendsto_mul_right`,
-  `NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_tendsto_mul_right`: a nonzero character
-  tends to `1` along any one-sided approximate identity, and has operator norm `1` when that
-  approximate identity is eventually bounded by `1`.
+  `NonUnitalAlgHom.tendsto_one_of_isApproximateUnit`,
+  `NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_tendsto_mul_right`,
+  `NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_isApproximateUnit`: a nonzero character
+  tends to `1` along any one-sided approximate identity or `Filter.IsApproximateUnit`, and has
+  operator norm `1` when that approximate identity is eventually bounded by `1`.
 * `WeakDual.CharacterSpace.isCompact_union_zero`,
   `WeakDual.CharacterSpace.instLocallyCompactSpace`: the character space of any nonunital Banach
   algebra over a proper nontrivially normed field is locally compact, realized inside the weak-star
@@ -92,6 +95,12 @@ theorem tendsto_one_of_tendsto_mul_left {l : Filter A} {φ : F} {a : A} (ha : φ
     ((continuous_const_mul (φ a)⁻¹).tendsto (φ a)).comp hmul
 
 end Class
+
+/-- Along any two-sided approximate unit `l`, a nonzero character `φ` tends to `1`. -/
+theorem tendsto_one_of_isApproximateUnit {l : Filter A} (hl : l.IsApproximateUnit)
+    {φ : A →ₙₐ[𝕜] 𝕜} (hφ : φ ≠ 0) : Tendsto φ l (𝓝 1) := by
+  obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
+  exact tendsto_one_of_tendsto_mul_right ha (hl.tendsto_mul_right a)
 
 /-- A nonunital algebra homomorphism from a Banach algebra into the base field, bundled as a
 continuous linear functional via its automatic contractivity. This is the nonunital counterpart of
@@ -169,6 +178,14 @@ theorem norm_toContinuousLinearMap_eq_one_of_tendsto_mul_left {l : Filter A} [l.
   obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
   exact norm_toContinuousLinearMap_eq_one_of_tendsto_one
     (tendsto_one_of_tendsto_mul_left ha (he a)) hb
+
+/-- Every nonzero character of a Banach algebra admitting a two-sided approximate unit eventually
+contained in the closed unit ball has operator norm `1`. -/
+theorem norm_toContinuousLinearMap_eq_one_of_isApproximateUnit {l : Filter A}
+    (hl : l.IsApproximateUnit) {φ : A →ₙₐ[𝕜] 𝕜} (hφ : φ ≠ 0) (hb : ∀ᶠ e in l, ‖e‖ ≤ 1) :
+    ‖φ.toContinuousLinearMap‖ = 1 :=
+  have := hl.neBot
+  norm_toContinuousLinearMap_eq_one_of_tendsto_one (tendsto_one_of_isApproximateUnit hl hφ) hb
 
 end NonUnitalAlgHom
 

@@ -310,20 +310,17 @@ instance instFaithfulSMulMulOpposite :
 /-- Every nonzero algebraic character `χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜` tends to `1` along the
 chosen approximate identity. -/
 theorem tendsto_character_approximateIdentity {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
-    Tendsto (fun U ↦ χ (approximateIdentity 𝕜 μ U)) atBot (𝓝 1) := by
-  obtain ⟨f, hf⟩ : ∃ f, χ f ≠ 0 := by simpa [DFunLike.ext_iff] using hχ
-  exact tendsto_map'_iff.1 <|
-    NonUnitalAlgHom.tendsto_one_of_tendsto_mul_right hf
-      ((isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).tendsto_mul_right f)
+    Tendsto (fun U ↦ χ (approximateIdentity 𝕜 μ U)) atBot (𝓝 1) :=
+  tendsto_map'_iff.1 <|
+    NonUnitalAlgHom.tendsto_one_of_isApproximateUnit isApproximateUnit_map_approximateIdentity hχ
 
 /-- **Every nonzero algebraic character of `L¹(G)` is bounded of operator norm `1`.** No continuity
 is assumed on `χ`. -/
 theorem norm_character_toContinuousLinearMap {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
-    ‖χ.toContinuousLinearMap‖ = 1 := by
-  have := (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).neBot
-  exact NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_tendsto_mul_right hχ
+    ‖χ.toContinuousLinearMap‖ = 1 :=
+  NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_isApproximateUnit
+    isApproximateUnit_map_approximateIdentity hχ
     (eventually_norm_eq_one_map_approximateIdentity.mono fun _ hu ↦ hu.le)
-    (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).tendsto_mul_right
 
 @[simp]
 theorem toContinuousLinearMap_integralNonUnitalAlgHom :

@@ -123,10 +123,9 @@ omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
 `convolutionL_apply`, this lets continuous linear maps pass through the integral defining
 `h ⋆ f`. -/
 theorem integrable_smul_leftTranslation (hp : p ≠ ∞) {h : G → 𝕜} (hh : Integrable h μ)
-    (f : Lp E p μ) : Integrable (fun y ↦ h y • leftTranslation μ p 𝕜 y f) μ := by
-  refine (hh.norm.mul_const ‖f‖).mono' (hh.aefinStronglyMeasurable.aestronglyMeasurable_smul
-    (continuous_leftTranslation_apply hp f)) (.of_forall fun y ↦ ?_)
-  rw [norm_smul, LinearIsometryEquiv.norm_map]
+    (f : Lp E p μ) : Integrable (fun y ↦ h y • leftTranslation μ p 𝕜 y f) μ :=
+  hh.smul_continuous_of_norm_le (continuous_leftTranslation_apply hp f) fun _ ↦
+    (LinearIsometryEquiv.norm_map _ _).le
 
 omit [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [SMulCommClass ℝ 𝕜 E] in
 /-- The integral defining a convolution is bounded by the product of the norms. -/

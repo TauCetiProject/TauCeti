@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Amenable.Convolution
 public import TauCeti.GroupTheory.Amenable.Linfty
 public import TauCeti.MeasureTheory.Integral.PeakFunction
+import TauCeti.MeasureTheory.Group.Convolution.ApproximateIdentity
 
 /-!
 # Amenable locally compact groups and invariant means on Haar `L∞`
@@ -30,7 +31,8 @@ left invariant once `m (k ⋆ φ)` is known not to depend on the choice of kerne
 rests on the identity `m ((h ⋆ e) ⋆ φ) = (∫ h) * m (e ⋆ φ)` for left-invariant means
 (`TauCeti.Mean.IsLeftInvariant.apply_convolutionUCB_convolutionL`) together with a **right
 approximate identity** in `L¹(G, μ)`: `h ⋆ e` is close to `h` in `L¹` when `e` is a nonnegative
-kernel of integral one vanishing outside a small neighbourhood of `1`.
+kernel of integral one vanishing outside a small neighbourhood of `1`
+(`MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le`).
 
 The right approximate identity comes from writing a convolution as an average of right
 translates, `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ`
@@ -45,9 +47,6 @@ continuity of right translation on `L¹`.
 
 ## Main results
 
-* `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le`: **right approximate
-  identity**, quantitatively: `‖h ⋆ k - h‖₁` is small for nonnegative kernels `k` of integral one
-  concentrated near `1` (compare `MeasureTheory.Lp.tendsto_convolutionL_right`).
 * `TauCeti.Mean.IsLeftInvariant.apply_convolutionUCB_eq_of_integral_eq`: for a left-invariant
   mean, `m (h ⋆ φ) = m (k ⋆ φ)` whenever `∫ h = ∫ k`.
 * `TauCeti.Mean.IsLeftInvariant.ofLpTop_convolutionLpTop`: the functional `φ ↦ m (k ⋆ φ)`
@@ -73,37 +72,6 @@ open scoped ENNReal BoundedContinuousFunction
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
   [μ.IsHaarMeasure] [μ.Regular]
-
-namespace MeasureTheory.Lp
-
-open TauCeti
-
-/-- **Right approximate identity estimate.** If `k ∈ L¹(G, μ)` is nonnegative of integral one and
-vanishes almost everywhere outside `U`, then `‖h ⋆ k - h‖₁` is at most any bound `C` for
-`‖R_(z⁻¹) h - h‖₁` over `z ∈ U`. -/
-theorem norm_convolutionL_sub_le_of_rightTranslation {h k : Lp ℝ 1 μ} (hk : 0 ≤ k)
-    (hk₁ : ∫ z, k z ∂μ = 1) {U : Set G} (hkU : ∀ᵐ z ∂μ, z ∉ U → k z = 0) {C : ℝ}
-    (hC : ∀ z ∈ U, ‖rightTranslation μ 1 ℝ z⁻¹ h - h‖ ≤ C) :
-    ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ C := by
-  rw [convolutionL_eq_integral_smul_rightTranslation_inv, ← mul_one C,
-    ← (L1.norm_eq_integral_of_nonneg hk).trans hk₁]
-  exact norm_integral_smul_sub_le hk₁ hkU
-    (Integrable.aestronglyMeasurable
-      (integrable_smul_rightTranslation_inv ENNReal.one_ne_top (L1.integrable_coeFn k) h))
-    (ae_of_all _ hC)
-
-/-- **Right approximate identity**, quantitatively. For `h ∈ L¹(G, μ)` and `ε > 0` there is a
-neighbourhood `U` of `1` such that `‖h ⋆ k - h‖₁ ≤ ε` for every nonnegative `k ∈ L¹(G, μ)` of
-integral one vanishing almost everywhere outside `U`. -/
-theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le (h : Lp ℝ 1 μ) {ε : ℝ}
-    (hε : 0 < ε) : ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp ℝ 1 μ, 0 ≤ k → ∫ z, k z ∂μ = 1 →
-      (∀ᵐ z ∂μ, z ∉ U → k z = 0) → ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ ε := by
-  refine ⟨_, Metric.tendsto_nhds.1
-    (tendsto_rightTranslation_inv (𝕜 := ℝ) ENNReal.one_ne_top h) ε hε, fun k hk hk₁ hkU => ?_⟩
-  exact norm_convolutionL_sub_le_of_rightTranslation hk hk₁ hkU fun z hz =>
-    le_of_lt (by rw [← dist_eq_norm_sub]; exact hz)
-
-end MeasureTheory.Lp
 
 namespace TauCeti
 

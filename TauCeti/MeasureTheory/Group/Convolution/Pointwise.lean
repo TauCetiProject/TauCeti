@@ -74,9 +74,6 @@ arbitrary locally compact Hausdorff group `G`:
   `T2Space G`), and `Lᵖ` membership (`1 ≤ p ≤ ∞`), integrability, and the integral product formula
   for `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` with respect to a regular Haar measure `μ` on any locally
   compact Hausdorff group.
-* `TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul`: the right-variable change of
-  variables `∫ y, g y • u (y⁻¹ * x) ∂μ = ∫ z, c(z) • (g (x * z⁻¹) • u z) ∂μ` for a regular left
-  Haar measure.
 
 ## Non-Hausdorff σ-compact groups
 
@@ -874,22 +871,3 @@ theorem Integrable.integral_integral_smul_comp_inv_mul {𝕜 E : Type*} [RCLike 
 end PointwiseIntegral
 
 end MeasureTheory
-
-namespace TauCeti
-
-/-- **Right-variable form of a pointwise group convolution integral.** For a regular left Haar
-measure `μ` on a locally compact group `G`, substituting `y = x * z⁻¹` using left invariance and
-the modular inversion formula transforms `∫ y, g y • u (y⁻¹ * x) ∂μ` into
-`∫ z, c(z) • (g (x * z⁻¹) • u z) ∂μ`, where `c` is the modular character. -/
-theorem integral_smul_inv_mul_eq_integral_modularCharacter_smul
-    {G α E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
-    [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [SMul α E] (g : G → α) (u : G → E) (x : G) :
-    ∫ y, g y • u (y⁻¹ * x) ∂μ =
-      ∫ z, (Measure.modularCharacter z : ℝ) • (g (x * z⁻¹) • u z) ∂μ := by
-  rw [← integral_mul_left_eq_self (fun y => g y • u (y⁻¹ * x)) x]
-  simpa only [mul_inv_rev, inv_mul_cancel_right, inv_inv] using
-    integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
-      fun z => g (x * z⁻¹) • u z
-
-end TauCeti
