@@ -115,8 +115,7 @@ convergence `‖x‖ < p ^ (-1 / (p - 1))` of the `p`-adic exponential. -/
 theorem one_lt_sub_one_mul_padicUnitsDepth : 1 < (p - 1) * padicUnitsDepth p :=
   one_lt_sub_one_mul_padicUnitsDepth_add 0
 
-/-- The distance of a `p`-adic unit from `1` is the same in `ℤ_[p]` and in `ℚ_[p]`. -/
-theorem norm_coe_sub_one (u : ℤ_[p]ˣ) :
+private theorem norm_coe_sub_one (u : ℤ_[p]ˣ) :
     ‖((u : ℤ_[p]) : ℚ_[p]) - 1‖ = ‖(u : ℤ_[p]) - 1‖ := by
   rw [PadicInt.norm_def, PadicInt.coe_sub, PadicInt.coe_one]
 

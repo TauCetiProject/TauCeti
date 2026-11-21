@@ -115,7 +115,7 @@ series. -/
 private theorem norm_coe_pow_sub_one_lt_one (x : ℤ_[p]ˣ) :
     ‖((x : ℤ_[p]) : ℚ_[p]) ^ (2 * (p - 1)) - 1‖ < 1 := by
   have h := mem_unitsPrincipal_iff_norm.mp (unitsToZModPow_eq_one_iff.mp (unitsToZModPow_pow x))
-  rw [← norm_coe_sub_one] at h
+  rw [PadicInt.norm_def] at h
   push_cast at h
   exact h.trans_lt (zpow_lt_one_of_neg₀ (by exact_mod_cast hp.out.one_lt)
     (by simpa using padicUnitsDepth_pos p))
