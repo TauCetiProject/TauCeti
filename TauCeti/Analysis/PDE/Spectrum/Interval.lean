@@ -270,25 +270,15 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain_iff (hab : a < b) {kappa 
     exact isDirichletEigenvalue_laplacian_intervalDomain hab hk
   by_contra hne
   push Not at hne
-  obtain ⟨u, hu0, hu⟩ := (isDirichletEigenvalue_iff_setIntegral kappa).1 hkappa
+  obtain ⟨u, hu0, hu⟩ := (isDirichletEigenvalue_iff kappa).1 hkappa
   refine hu0 (Subtype.ext (W1p.ext_value ?_))
-  have hzero : W1p.value ((0 : W1p0 volume (intervalDomain a b) 2) :
-      W1p volume (intervalDomain a b) 2) = 0 := by
-    rw [← W1p0.valueL_apply, map_zero]
-  rw [hzero]
+  rw [ZeroMemClass.coe_zero, W1p.value_zero]
   -- `u` is orthogonal to every sine mode, since `κ` differs from each of their eigenvalues.
   refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun k hk => ?_
   obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_sin_and_energyFormH1_eq hab k
-  have hsymm := energyFormH1_comm_of_isSymm_ae (mu := volume) (Omega := intervalDomain a b)
-    (c := 0) (ae_of_all _ fun _ => Matrix.isSymm_one) (u : W1p volume (intervalDomain a b) 2)
-    (s : W1p volume (intervalDomain a b) 2)
-  have key := (hu s).symm.trans (hsymm.trans (hseq u))
-  rw [real_inner_comm, W1p.inner_value_eq_setIntegral] at key
-  have hint : ∫ x in intervalDomain a b, W1p.value (u : W1p volume (intervalDomain a b) 2) x *
-      W1p.value (s : W1p volume (intervalDomain a b) 2) x = 0 := by
-    have := sub_eq_zero.2 key
-    rw [← sub_mul, mul_eq_zero] at this
-    exact this.resolve_left (sub_ne_zero.2 (hne k hk))
+  have hint := inner_value_eq_zero_of_energyFormH1_eq_of_ne
+    (ae_of_all _ fun _ => Matrix.isSymm_one) (hne k hk) hu hseq
+  rw [W1p.inner_value_eq_setIntegral] at hint
   refine (integral_congr_ae ?_).trans hint
   filter_upwards [hs] with x hx
   rw [hx]

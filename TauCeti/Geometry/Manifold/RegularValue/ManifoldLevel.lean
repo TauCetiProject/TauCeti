@@ -69,15 +69,15 @@ private def domain (hf : ContMDiff I J m f) (φ : PartialDiffeomorph J 𝓘(ℝ,
 private theorem coordinate_eq_iff (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
     (x : domain hf φ) : φ (f x) = φ c ↔ f x = c :=
-  ⟨fun h ↦ φ.toPartialEquiv.injOn x.2 hc h, congrArg φ⟩
+  ⟨fun h ↦ φ.toPartialEquiv.injOn x.property hc h, congrArg φ⟩
 
 /-- The coordinate level in the open preimage is the original fibre, with the same topology. -/
 private def levelHomeomorph (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source) :
     {x : M // f x = c} ≃ₜ {x : domain hf φ // φ (f x) = φ c} where
   toFun x := ⟨⟨x, by simpa only [domain, TopologicalSpace.Opens.mem_mk,
-    mem_preimage, x.2] using hc⟩, congrArg φ x.2⟩
-  invFun x := ⟨x.1, (coordinate_eq_iff hf φ hc x.1).1 x.2⟩
+    mem_preimage, x.property] using hc⟩, congrArg φ x.property⟩
+  invFun x := ⟨x.val, (coordinate_eq_iff hf φ hc x.val).1 x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by fun_prop
@@ -85,13 +85,13 @@ private def levelHomeomorph (hf : ContMDiff I J m f)
 
 private theorem coe_levelHomeomorph (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
-    (x : {x : M // f x = c}) : (levelHomeomorph hf φ hc x).1.1 = x.1 :=
+    (x : {x : M // f x = c}) : (levelHomeomorph hf φ hc x).val.val = x.val :=
   (rfl)
 
 private theorem contMDiff_coordinate (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) :
     ContMDiff I 𝓘(ℝ, F) m (fun x : domain hf φ ↦ φ (f x)) :=
-  φ.contMDiffOn.comp_contMDiff (hf.comp contMDiff_subtype_val) fun x ↦ x.2
+  φ.contMDiffOn.comp_contMDiff (hf.comp contMDiff_subtypeVal) fun x ↦ x.property
 
 /-- Target coordinates and the open inclusion both have invertible differential, so regularity
 is unchanged by passing to the coordinate level. -/
@@ -103,7 +103,7 @@ private theorem regularValue_coordinate (hm : 1 ≤ m) (hf : ContMDiff I J m f)
   intro x hx
   have hm0 : m ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp hm
   have hi := isLocalDiffeomorph_subtype_val (I := I) (n := m) (U := domain hf φ) x
-  have hφ := φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) m x.2
+  have hφ := φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) m x.property
   exact IsRegularPoint.comp (isRegularPoint_iff.2 (hφ.isInvertible_mfderiv hm0).surjective)
     ((hreg.isRegularPoint ((coordinate_eq_iff hf φ hc x).1 hx)).comp
       (isRegularPoint_iff.2 (hi.isInvertible_mfderiv hm0).surjective))
@@ -151,8 +151,8 @@ private theorem isManifold_and_isSmoothEmbedding_of_chart (hm : 1 ≤ m)
   rw [Homeomorph.coe_pullbackDiffeomorph] at hpre
   have hpost := isImmersionOfComplement_isLocalDiffeomorphAt_comp
     (fun x ↦ isLocalDiffeomorph_subtype_val (I := I) (n := m)
-      (U := domain hf φ) (e x).1) hpre
-  have heq : (fun x : {x : M // f x = c} ↦ ((e x).1 : M)) = Subtype.val :=
+      (U := domain hf φ) (e x).val) hpre
+  have heq : (fun x : {x : M // f x = c} ↦ ((e x).val : M)) = Subtype.val :=
     funext (coe_levelHomeomorph hf φ hc)
   simp only [comp_def] at hpost
   rw [heq] at hpost
@@ -234,13 +234,13 @@ theorem range_mfderiv_coe_regularFiber (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     letI := regularFiberChartedSpace hm hf hc hreg
     ∀ z : {x : M // f x = c},
       (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I Subtype.val z).range =
-        (mfderiv I J f z.1).ker := by
+        (mfderiv I J f z.val).ker := by
   let := regularFiberChartedSpace hm hf hc hreg
   have := isManifold_regularFiber hm hf hc hreg
   intro z
-  have hdim := (hreg.isRegularPoint z.2).finrank_ker_mfderiv_add_finrank
-  refine (hreg.isRegularPoint z.2).range_mfderiv_eq_ker_mfderiv
-    (.of_forall fun w : {x : M // f x = c} ↦ w.2)
+  have hdim := (hreg.isRegularPoint z.property).finrank_ker_mfderiv_add_finrank
+  refine (hreg.isRegularPoint z.property).range_mfderiv_eq_ker_mfderiv
+    (.of_forall fun w : {x : M // f x = c} ↦ w.property)
     ((isSmoothEmbedding_coe_regularFiber hm hf hc hreg).isImmersion.mfderiv_injective
       (ENat.one_le_iff_ne_zero_withTop.mp hm) z) ?_
   rw [finrank_fin_fun]
@@ -260,7 +260,7 @@ theorem exists_regularFiber_smoothEmbedding (hm : 1 ≤ m) (hf : ContMDiff I J m
         (Subtype.val : {x : M // f x = c} → M) ∧
       ∀ z : {x : M // f x = c},
         (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I Subtype.val z).range =
-          (mfderiv I J f z.1).ker := by
+          (mfderiv I J f z.val).ker := by
   exact ⟨regularFiberChartedSpace hm hf hc hreg, isManifold_regularFiber hm hf hc hreg,
     isSmoothEmbedding_coe_regularFiber hm hf hc hreg,
     range_mfderiv_coe_regularFiber hm hf hc hreg⟩

@@ -55,7 +55,7 @@ variable {L' M' : Type*} [LieRing L'] [LieAlgebra R L'] [AddCommGroup M'] [Modul
 `e` of coefficients: `(x, y) ↦ e (c (φ x) (φ y))`. -/
 def twoCochainMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L) :
     twoCochain R L M →ₗ[R] twoCochain R L' M' where
-  toFun c := ⟨(c.1.compl₁₂ φ.toLinearMap φ.toLinearMap).compr₂ e, fun x ↦ by simp⟩
+  toFun c := ⟨(c.val.compl₁₂ φ.toLinearMap φ.toLinearMap).compr₂ e, fun x ↦ by simp⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
 
@@ -132,11 +132,11 @@ theorem exists_d₁₂_eq_of_forall_dual [LieModule.IsTrivial L M] [Module.Proje
       (by rintro _ ⟨x, y, rfl⟩; exact ⟨x ⊗ₜ y, hB_apply x y⟩)
       (TauCeti.LieAlgebra.mem_span_lie_of_derivedSeries_one_eq_top hL u)
   -- The kernel of the bracket is killed by every functional applied to `c`, hence by `c`.
-  have hker : LinearMap.ker B ≤ LinearMap.ker (TensorProduct.lift c.1) := by
+  have hker : LinearMap.ker B ≤ LinearMap.ker (TensorProduct.lift c.val) := by
     intro w hw
     refine LinearMap.mem_ker.mpr ((Module.forall_dual_apply_eq_zero_iff R _).mp fun φ ↦ ?_)
     obtain ⟨g, hg⟩ := hc φ
-    have hφ : φ ∘ₗ TensorProduct.lift c.1 = -(g ∘ₗ B) :=
+    have hφ : φ ∘ₗ TensorProduct.lift c.val = -(g ∘ₗ B) :=
       TensorProduct.ext' fun x y ↦ by simp [hB_apply, hg]
     simpa [LinearMap.mem_ker.mp hw] using LinearMap.congr_fun hφ w
   refine ⟨-B.liftOfSurjective hB ⟨_, hker⟩, Subtype.ext (LinearMap.ext₂ fun x y ↦ ?_)⟩

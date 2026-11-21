@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
-public import TauCeti.LinearAlgebra.Dual.Contragredient
+public import TauCeti.LinearAlgebra.Dual.ContragredientDual
 public import TauCeti.Algebra.Module.Presentation.Quadratic
 
 import Mathlib.RingTheory.Flat.Stability
@@ -16,6 +16,7 @@ import TauCeti.Algebra.Module.AuslanderReiten.BaseChange
 import TauCeti.Algebra.Module.AuslanderReiten.FinitePresentation
 import TauCeti.RingTheory.FittingIdeal.BaseChange
 import TauCeti.RingTheory.FittingIdeal.Matrix
+import TauCeti.RingTheory.FittingIdeal.Semilinear
 
 /-!
 # Transposed presentations and their Fitting ideals
@@ -521,7 +522,7 @@ private theorem fittingIdeal_eq_map_arTranspose (σ : S ≃+* R)
       Ideal.map σ.symm (TauCeti.fittingIdeal R (AuslanderReitenTranspose f) k) := by
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ
-  exact (toARTransposeLinearEquiv σ f).symm.fittingIdeal_eq_map k
+  exact TauCeti.fittingIdeal_eq_map_of_semilinearEquiv (toARTransposeLinearEquiv σ f).symm k
 
 end PresentationTranspose
 
@@ -648,20 +649,13 @@ theorem fittingIdeal_toLin'_eq_map_minorsIdeal (σ : S ≃+* R) {m t : ℕ}
     constructor
     · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
       refine ⟨Qσ w, funext fun i ↦ ?_⟩
-      rw [Matrix.mulVecLin_apply, Matrix.mulVecLin_apply]
-      simp only [LinearEquiv.coe_coe, Matrix.mulVec, dotProduct, Matrix.transpose_apply,
-        Matrix.map_apply]
-      -- Evaluate `Pσ` and `Qσ` componentwise via `σ.symm`.
-      change ∑ j, σ.symm (A j i) * σ.symm (w j) = σ.symm (∑ j, A j i * w j)
-      simp [map_sum, map_mul]
+      exact ((σ.symm : R →+* S).map_mulVec Aᵀ w i).symm
     · rintro ⟨w, rfl⟩
       refine ⟨Aᵀ.mulVecLin (Qσ.symm w), ⟨Qσ.symm w, rfl⟩, funext fun i ↦ ?_⟩
-      rw [Matrix.mulVecLin_apply, Matrix.mulVecLin_apply]
-      simp only [LinearEquiv.coe_coe, Matrix.mulVec, dotProduct, Matrix.transpose_apply,
-        Matrix.map_apply]
-      -- Evaluate `Pσ` via `σ.symm` and `Qσ.symm` via `σ`.
-      change σ.symm (∑ j, A j i * σ (w j)) = ∑ j, σ.symm (A j i) * w j
-      simp [map_sum, map_mul]
+      have h : Pσ (Aᵀ.mulVecLin (Qσ.symm w)) i =
+          ((Aᵀ.map σ.symm).mulVecLin (Qσ (Qσ.symm w))) i :=
+        (σ.symm : R →+* S).map_mulVec Aᵀ (Qσ.symm w) i
+      simpa only [LinearEquiv.coe_coe, Qσ.apply_symm_apply] using h
   rw [← hmap, Submodule.minorsIdeal_map_semilinearEquiv]
   rfl
 

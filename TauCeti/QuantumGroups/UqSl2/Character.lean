@@ -132,9 +132,10 @@ theorem formalCharacter_pi {ι : Type*} [Fintype ι] {N : ι → Type*} [∀ i, 
   simp only [formalCharacter_coeff]
   -- The weight space of the product is the product of the weight spaces.
   let e : weightSpace q (∀ i, N i) μ ≃ₗ[ℂ] ∀ i, weightSpace q (N i) μ :=
-    { toFun x i := ⟨x.1 i, mem_weightSpace_iff.mpr (congrFun (mem_weightSpace_iff.mp x.2) i)⟩
-      invFun y := ⟨fun i ↦ (y i).1, mem_weightSpace_iff.mpr
-        (funext fun i ↦ mem_weightSpace_iff.mp (y i).2)⟩
+    { toFun x i := ⟨x.val i, mem_weightSpace_iff.mpr (congrFun (mem_weightSpace_iff.mp x.property)
+        i)⟩
+      invFun y := ⟨fun i ↦ (y i).val, mem_weightSpace_iff.mpr
+        (funext fun i ↦ mem_weightSpace_iff.mp (y i).property)⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl
       left_inv _ := rfl
@@ -150,10 +151,11 @@ theorem formalCharacter_prod :
   -- The weight space of the product is the product of the weight spaces.
   let e : weightSpace q (V × W) μ ≃ₗ[ℂ] weightSpace q V μ × weightSpace q W μ :=
     { toFun x :=
-        (⟨x.1.1, mem_weightSpace_iff.mpr (congrArg Prod.fst (mem_weightSpace_iff.mp x.2))⟩,
-          ⟨x.1.2, mem_weightSpace_iff.mpr (congrArg Prod.snd (mem_weightSpace_iff.mp x.2))⟩)
-      invFun y := ⟨(y.1.1, y.2.1), mem_weightSpace_iff.mpr
-        (Prod.ext (mem_weightSpace_iff.mp y.1.2) (mem_weightSpace_iff.mp y.2.2))⟩
+        (⟨x.val.1, mem_weightSpace_iff.mpr (congrArg Prod.fst (mem_weightSpace_iff.mp x.property))⟩,
+          ⟨x.val.2, mem_weightSpace_iff.mpr (congrArg Prod.snd
+              (mem_weightSpace_iff.mp x.property))⟩)
+      invFun y := ⟨(y.1.val, y.2.val), mem_weightSpace_iff.mpr
+        (Prod.ext (mem_weightSpace_iff.mp y.1.property) (mem_weightSpace_iff.mp y.2.property))⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl
       left_inv _ := rfl

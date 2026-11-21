@@ -28,7 +28,9 @@ module this says two things:
 
 In a Hausdorff space compact sets are closed, so the neighbourhoods of any set `A` form such a
 family (`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq` and
-`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq_zero`).  For a compact subset `A` of a
+`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq_zero`), and local homology along `A`
+vanishes once it vanishes along sets between `A` and any of its neighbourhoods
+(`TauCeti.isZero_localHomology_of_forall_mem_nhdsSet`).  For a compact subset `A` of a
 manifold this is the compactness step in the computation of `Hₖ(M, M ∖ A)`: it reduces statements
 about `A` to statements about neighbourhoods of `A` that are finite unions of compact convex sets
 in charts, the input to the fundamental class.
@@ -87,9 +89,9 @@ private def isColimitComplPairCocone :
   · refine ⟨Classical.arbitrary ι, fun x _ ↦ ⟨x, ?_⟩⟩
     rw [hfst]
     rfl
-  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtype_val)
-      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.2)
-    exact ⟨i, fun x hx ↦ ⟨⟨x.1, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
+  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtypeVal)
+      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.property)
+    exact ⟨i, fun x hx ↦ ⟨⟨x.val, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
       Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩⟩
 
 /-- The colimit of `isColimitComplPairCocone`, with its components written as local homology
@@ -137,11 +139,28 @@ theorem exists_mem_nhdsSet_localHomologyRestriction_eq
     ∃ U, ∃ hU : U ∈ 𝓝ˢ A, ∃ y : (localHomology N U k : ModuleCat.{w} Λ),
       localHomologyRestriction N (subset_of_mem_nhdsSet hU) k y = x := by
   obtain ⟨U, y, hy⟩ := exists_localHomologyRestriction_eq N k
-    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
-    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).2)
+    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).val) (fun _ _ h ↦ h)
+    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).property)
     (fun T hT hTA ↦ ⟨OrderDual.toDual ⟨Tᶜ,
       hT.isClosed.isOpen_compl.mem_nhdsSet.2 hTA.subset_compl_left⟩, disjoint_compl_right⟩) x
-  exact ⟨_, (OrderDual.ofDual U).2, y, hy⟩
+  exact ⟨_, (OrderDual.ofDual U).property, y, hy⟩
+
+variable {k} in
+/-- **Vanishing of local homology from larger sets.**  In a Hausdorff space, local homology
+along `A` vanishes in degree `k` if every neighbourhood of `A` contains a set `K ⊇ A` along which
+it vanishes in degree `k`: every class along `A` is restricted from a class along a neighbourhood
+of `A` (`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq`), hence from a class along such
+a `K`. -/
+theorem isZero_localHomology_of_forall_mem_nhdsSet
+    (h : ∀ U ∈ 𝓝ˢ A, ∃ K, A ⊆ K ∧ K ⊆ U ∧ IsZero (localHomology N K k)) :
+    IsZero (localHomology N A k) := by
+  have h0 (α : (localHomology N A k : ModuleCat.{w} Λ)) : α = 0 := by
+    obtain ⟨U, hU, β, rfl⟩ := exists_mem_nhdsSet_localHomologyRestriction_eq N k α
+    obtain ⟨K, hAK, hKU, hK⟩ := h U hU
+    rw [← localHomologyRestriction_comp_apply N hAK hKU,
+      (ModuleCat.subsingleton_of_isZero hK).elim (localHomologyRestriction N hKU k β) 0, map_zero]
+  rw [ModuleCat.isZero_iff_subsingleton]
+  exact ⟨fun α β ↦ (h0 α).trans (h0 β).symm⟩
 
 /-- **Vanishing of local homology classes is detected on a neighbourhood.**  In a Hausdorff
 space, a class of `Hₖ(M, M ∖ U)` for a neighbourhood `U` of `A` whose restriction to `A` vanishes
@@ -151,12 +170,12 @@ theorem exists_mem_nhdsSet_localHomologyRestriction_eq_zero {U : Set M} (hU : U 
     (hy : localHomologyRestriction N (subset_of_mem_nhdsSet hU) k y = 0) :
     ∃ V, ∃ _ : V ∈ 𝓝ˢ A, ∃ hVU : V ⊆ U, localHomologyRestriction N hVU k y = 0 := by
   obtain ⟨V, hUV, hV⟩ := exists_localHomologyRestriction_eq_zero N k
-    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
-    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).2)
+    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).val) (fun _ _ h ↦ h)
+    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).property)
     (fun T hT hTA ↦ ⟨OrderDual.toDual ⟨Tᶜ,
       hT.isClosed.isOpen_compl.mem_nhdsSet.2 hTA.subset_compl_left⟩, disjoint_compl_right⟩)
     (i := OrderDual.toDual ⟨U, hU⟩) y hy
-  exact ⟨_, (OrderDual.ofDual V).2, hUV, hV⟩
+  exact ⟨_, (OrderDual.ofDual V).property, hUV, hV⟩
 
 end Nhds
 

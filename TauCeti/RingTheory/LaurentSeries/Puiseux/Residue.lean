@@ -157,7 +157,7 @@ variable (K) in
 /-- **Termwise integration of Puiseux series**, `t ^ q ↦ t ^ (q + 1) / (q + 1)`, discarding the
 residue term `t⁻¹`: the restriction of `TauCeti.ratHahnSeriesPrimitive K`. -/
 noncomputable def primitive : puiseuxField K →ₗ[K] puiseuxField K where
-  toFun x := ⟨ratHahnSeriesPrimitive K x, ratHahnSeriesPrimitive_mem_puiseuxField x.2⟩
+  toFun x := ⟨ratHahnSeriesPrimitive K x, ratHahnSeriesPrimitive_mem_puiseuxField x.property⟩
   map_add' x y := Subtype.ext ((ratHahnSeriesPrimitive K).map_add x y)
   map_smul' c x := Subtype.ext <| by
     -- The scalar action of `K` on the Puiseux field is multiplication by the image of `K`, which

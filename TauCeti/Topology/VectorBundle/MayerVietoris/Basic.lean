@@ -155,13 +155,9 @@ theorem singularHomology_thomPairOver_hom_ext {T : C}
   -- Transport `g` and `g'` to the product bundle and compare them there, fibre by fibre.
   rw [← cancel_epi (TopPair.singularHomologyMap φ.inv R (finrank ℝ F))]
   refine singularHomology_prodThomPair_hom_ext fun b ↦ ?_
-  have hφ : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
-  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc, hφ,
-    TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.2]
+  rw [← TopPair.singularHomologyMap_comp_assoc, ← TopPair.singularHomologyMap_comp_assoc,
+    e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
+    TopPair.singularHomologyMap_comp_assoc, TopPair.singularHomologyMap_comp_assoc, h b b.property]
 
 end Bundle.Trivialization
 
@@ -181,7 +177,8 @@ theorem isZero_singularHomology_thomPairOver_empty (n : ℕ) :
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
     (TopCat.ofHom (X := π F E ⁻¹' (∅ : Set B))
       (Y := ↥(π F E ⁻¹' (∅ : Set B) ∩ zeroSectionCompl F E))
-      ⟨fun v ↦ v.2.elim, continuous_of_const fun v ↦ v.2.elim⟩) (by ext v; exact v.2.elim) n
+      ⟨fun v ↦ v.property.elim, continuous_of_const fun v ↦ v.property.elim⟩)
+          (by ext v; exact v.property.elim) n
 
 end Empty
 
@@ -204,7 +201,7 @@ private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V
       TotalSpace F E) ⁻¹' (π F E ⁻¹' V ∩ zeroSectionCompl F E)) := by
   have hopen {W : Set B} (hW : IsOpen W) (T : Set (TotalSpace F E)) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W)) :=
-    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtype_val
+    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtypeVal
   have hopen₀ {W : Set B} (hW : IsOpen W) {T : Set (TotalSpace F E)}
       (hT : T ⊆ zeroSectionCompl F E) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W ∩ zeroSectionCompl F E)) := by
