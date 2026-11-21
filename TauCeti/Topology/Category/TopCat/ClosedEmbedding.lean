@@ -195,7 +195,7 @@ theorem isClosedEmbedding_map_of_isWellOrderContinuous (F : J ⥤ TopCat.{u})
       simpa using IsClosedEmbedding.id
   | isSuccLimit j hj ih =>
     obtain hij | rfl := hij.lt_or_eq
-    · exact isClosedEmbedding_ι_of_isColimit (fun a b hab ↦ ih b.1 b.2 _)
+    · exact isClosedEmbedding_ι_of_isColimit (fun a b hab ↦ ih b.val b.property _)
         (F.isColimitOfIsWellOrderContinuous j hj) ⟨i, hij⟩
     · simpa using IsClosedEmbedding.id
 

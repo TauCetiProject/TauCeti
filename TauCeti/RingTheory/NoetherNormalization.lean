@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.KrullDimension.FiniteType
+import Mathlib.RingTheory.Localization.Free
 import Mathlib.LinearAlgebra.Matrix.Invertible
 import Mathlib.LinearAlgebra.Matrix.Module
 import TauCeti.LinearAlgebra.Matrix.BlockSucc
@@ -46,6 +47,10 @@ normalizing matrix `C` remains valid after extending scalars along any flat alge
 `K` (in particular, any field extension `K / k`;
 `TauCeti.linear_normalization_tensorProduct_field`).
 
+For an arbitrary field, Noether normalization followed by generic freeness supplies a
+nonzero principal localization on which the finite algebra is free
+(`Algebra.FiniteType.exists_injective_finite_free_localizedModule_powers`).
+
 ## Main results
 
 * `TauCeti.isIntegralElem_aeval_shear_self`, `TauCeti.isIntegralElem_aeval_shear`,
@@ -67,6 +72,7 @@ normalizing matrix `C` remains valid after extending scalars along any flat alge
   Remark 2.47.
 * J. S. Milne, *A Primer of Commutative Algebra*, Theorem 8.3 and Remark 8.4.
 * [Stacks Project, Tag 00OW](https://stacks.math.columbia.edu/tag/00OW)
+* [Stacks Project, Tag 051R](https://stacks.math.columbia.edu/tag/051R)
 * [Stacks Project, Tag 00OY](https://stacks.math.columbia.edu/tag/00OY)
 -/
 
@@ -325,3 +331,30 @@ theorem linear_normalization_tensorProduct_field {ι κ k A : Type*} [Finite ι]
 end BaseChange
 
 end TauCeti
+
+/-- Noether normalization can be chosen with a nonzero polynomial whose localization
+makes the finite algebra free. Its image generates a submonoid avoiding zero. -/
+theorem Algebra.FiniteType.exists_injective_finite_free_localizedModule_powers
+    (k A : Type*) [Field k] [CommRing A] [Nontrivial A] [Algebra k A]
+    [Algebra.FiniteType k A] :
+    ∃ (n : ℕ) (g : MvPolynomial (Fin n) k →ₐ[k] A), Function.Injective g ∧
+      ∃ r : MvPolynomial (Fin n) k, r ≠ 0 ∧
+        letI := g.toRingHom.toAlgebra
+        Module.Finite (MvPolynomial (Fin n) k) A ∧
+        Module.Free (Localization.Away r) (LocalizedModule (.powers r) A) ∧
+        (0 : A) ∉ Algebra.algebraMapSubmonoid A (.powers r) := by
+  obtain ⟨n, g, hg, hfin⟩ := exists_finite_inj_algHom_of_fg k A
+  let := g.toRingHom.toAlgebra
+  have : Module.Finite (MvPolynomial (Fin n) k) A := hfin
+  have : Module.FinitePresentation (MvPolynomial (Fin n) k) A :=
+    Module.finitePresentation_of_finite _ _
+  obtain ⟨r, hr, hfree, -⟩ := Module.FinitePresentation.exists_free_localizedModule_powers
+    (nonZeroDivisors (MvPolynomial (Fin n) k))
+    (LocalizedModule.mkLinearMap (nonZeroDivisors (MvPolynomial (Fin n) k)) A)
+    (FractionRing (MvPolynomial (Fin n) k))
+  have hr : r ≠ 0 := nonZeroDivisors.ne_zero hr
+  refine ⟨n, g, hg, r, hr, hfin, hfree, ?_⟩
+  rintro ⟨_, ⟨m, rfl⟩, hp⟩
+  rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+    map_eq_zero_iff g hg] at hp
+  exact pow_ne_zero m hr hp

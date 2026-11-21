@@ -5,36 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.RingTheory.Finiteness.Small
-public import Mathlib.RingTheory.HopfAlgebra.Basic
 public import TauCeti.Algebra.Category.HopfModuleCat.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Frobenius
-import TauCeti.Algebra.HopfAlgebra.LarsonSweedler
+public import TauCeti.Algebra.Category.ModuleCat.Frobenius.Basic
+public import TauCeti.Algebra.HopfAlgebra.Frobenius
+import Mathlib.RingTheory.Finiteness.Small
 
 /-!
-# Modules over a finite-dimensional Hopf algebra form a Frobenius category
+# Frobenius exact structure on `HopfModuleCat`
 
-By the Larson–Sweedler theorem (`TauCeti.exists_isFrobeniusFunctional`), every finite-dimensional
-Hopf algebra `H` over a field `k` admits a Frobenius functional. Consequently, the canonical exact
-structure on the abelian category of **all** left `H`-modules — not only the finitely generated
-ones — is a Frobenius exact structure: projective and injective objects coincide, and there are
-enough of both.
+Let `H` be a finite-dimensional algebra over a field `k`. When `H` carries a Frobenius functional
+`φ`, smallness of `H` in the universe of `k` holds automatically by finite-dimensionality over `k`,
+so `ModuleCat.projective_iff_injective_of_isFrobeniusFunctional` and `ModuleCat.abelian_isFrobenius`
+transport directly to `TauCeti.HopfModuleCat k H`:
 
-We state this both for `ModuleCat.{w} H` in an arbitrary universe `w` with `[Small.{w} H]`, and
-for `TauCeti.HopfModuleCat k H` (whose carrier universe is that of `k`, so `Small.{u} H` holds
-automatically from finite-dimensionality). In particular, the stable category of all left
-`H`-modules is triangulated by `TauCeti.ExactStructure.IsFrobenius.stableIsTriangulated`.
+* an object of `HopfModuleCat k H` (not necessarily finite-dimensional) is projective if and only if
+  it is injective (`TauCeti.HopfModuleCat.projective_iff_injective_of_isFrobeniusFunctional`);
+* the canonical abelian exact structure on `HopfModuleCat k H` is Frobenius
+  (`TauCeti.HopfModuleCat.abelian_isFrobenius_of_isFrobeniusFunctional`).
 
-## Main results
+When `H` is a finite-dimensional Hopf algebra over `k`, the Larson–Sweedler theorem
+(`TauCeti.exists_isFrobeniusFunctional_of_hopfAlgebra`) supplies such a Frobenius functional
+unconditionally, giving `TauCeti.HopfModuleCat.projective_iff_injective` and
+`TauCeti.HopfModuleCat.abelian_isFrobenius`. Together with
+`TauCeti.ExactStructure.IsFrobenius.stableIsTriangulated`, the `ProjectiveStableCategory` of
+`HopfModuleCat k H` is Khovanov's stable module category of all `H`-modules as a triangulated
+category.
 
-* `ModuleCat.projective_iff_injective_of_hopfAlgebra`: over a finite-dimensional Hopf algebra, an
-  object of `ModuleCat H` is projective if and only if it is injective.
-* `ModuleCat.abelian_isFrobenius_of_hopfAlgebra`: the canonical exact structure on `ModuleCat H`
-  is Frobenius.
-* `TauCeti.HopfModuleCat.projective_iff_injective`: over a finite-dimensional Hopf algebra, an
-  object of `HopfModuleCat k H` is projective if and only if it is injective.
-* `TauCeti.HopfModuleCat.abelian_isFrobenius`: the canonical exact structure on
-  `HopfModuleCat k H` is Frobenius.
+## Main declarations
+
+* `TauCeti.HopfModuleCat.projective_iff_injective_of_isFrobeniusFunctional` and
+  `TauCeti.HopfModuleCat.abelian_isFrobenius_of_isFrobeniusFunctional`: Frobenius exact structure on
+  `HopfModuleCat k H` from a Frobenius functional on a finite-dimensional `k`-algebra `H`.
+* `TauCeti.HopfModuleCat.projective_iff_injective` and `TauCeti.HopfModuleCat.abelian_isFrobenius`:
+  unconditional specialization to any finite-dimensional Hopf algebra `H` over `k`.
 
 ## References
 
@@ -42,63 +45,61 @@ automatically from finite-dimensionality). In particular, the stable category of
   J. Knot Theory Ramifications 25 (2016), Proposition 1.
 * R. G. Larson and M. E. Sweedler, *An associative orthogonal bilinear form for Hopf algebras*,
   Amer. J. Math. 91 (1969), 75–94.
+* D. Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional Algebras*,
+  Chapter I, Section 2.
 -/
 
 public section
 
-namespace ModuleCat
-
-open CategoryTheory TauCeti
-
-universe u v w
-
-variable (k : Type u) [Field k] {H : Type v} [Ring H] [HopfAlgebra k H]
-  [FiniteDimensional k H] [Small.{w} H]
-
-include k in
-/-- **Projective and injective modules over a finite-dimensional Hopf algebra coincide.** Over a
-finite-dimensional Hopf algebra `H`, an object of `ModuleCat H` (not necessarily finitely
-generated) is projective if and only if it is injective. -/
-theorem projective_iff_injective_of_hopfAlgebra (X : ModuleCat.{w} H) :
-    Projective X ↔ Injective X := by
-  obtain ⟨_, hφ⟩ := exists_isFrobeniusFunctional k H
-  exact projective_iff_injective_of_isFrobeniusFunctional hφ X
-
-include k in
-/-- **All modules over a finite-dimensional Hopf algebra form a Frobenius category.** For a
-finite-dimensional Hopf algebra `H` over a field `k`, the canonical exact structure on the abelian
-category `ModuleCat H` of all left `H`-modules is Frobenius. -/
-theorem abelian_isFrobenius_of_hopfAlgebra :
-    (ExactStructure.abelian (ModuleCat.{w} H)).IsFrobenius := by
-  obtain ⟨_, hφ⟩ := exists_isFrobeniusFunctional k H
-  exact abelian_isFrobenius hφ
-
-end ModuleCat
+open CategoryTheory
 
 namespace TauCeti.HopfModuleCat
 
-open CategoryTheory
-
 universe u v
 
-variable {k : Type u} [Field k] {H : Type v} [Ring H] [HopfAlgebra k H]
-  [FiniteDimensional k H]
+section Frobenius
 
-/-- **Projective and injective objects of `HopfModuleCat k H` coincide.** Over a
-finite-dimensional Hopf algebra `H`, a left `H`-module in `HopfModuleCat k H` (not necessarily
-finitely generated) is projective if and only if it is injective. -/
+variable {k : Type u} [Field k] {H : Type v} [Ring H] [Algebra k H] [FiniteDimensional k H]
+  {φ : H →ₗ[k] k}
+
+/-- Over a finite-dimensional `k`-algebra `H` equipped with a Frobenius functional, an object of
+`HopfModuleCat k H` (not necessarily finite-dimensional) is projective if and only if it is
+injective. -/
+theorem projective_iff_injective_of_isFrobeniusFunctional (hφ : φ.IsFrobeniusFunctional)
+    (X : HopfModuleCat k H) : Projective X ↔ Injective X := by
+  have := Module.Finite.small k H
+  exact ModuleCat.projective_iff_injective_of_isFrobeniusFunctional hφ (X : ModuleCat.{u} H)
+
+/-- Over a finite-dimensional `k`-algebra `H` equipped with a Frobenius functional, the canonical
+abelian exact structure on `HopfModuleCat k H` is Frobenius, with no universe-smallness hypothesis
+needed beyond finite-dimensionality of `H` over `k`. -/
+theorem abelian_isFrobenius_of_isFrobeniusFunctional (hφ : φ.IsFrobeniusFunctional) :
+    (ExactStructure.abelian (HopfModuleCat k H)).IsFrobenius := by
+  have := Module.Finite.small k H
+  exact ModuleCat.abelian_isFrobenius hφ
+
+end Frobenius
+
+section HopfAlgebra
+
+variable {k : Type u} [Field k] {H : Type v} [Ring H] [HopfAlgebra k H] [FiniteDimensional k H]
+
+/-- Over a finite-dimensional Hopf algebra `H` over `k`, an object of `HopfModuleCat k H` (not
+necessarily finite-dimensional) is projective if and only if it is injective. -/
 theorem projective_iff_injective (X : HopfModuleCat k H) :
     Projective X ↔ Injective X := by
-  have : Small.{u} H := Module.Finite.small k H
-  exact ModuleCat.projective_iff_injective_of_hopfAlgebra k X
+  obtain ⟨_, hφ⟩ := exists_isFrobeniusFunctional_of_hopfAlgebra k H
+  exact projective_iff_injective_of_isFrobeniusFunctional hφ X
 
 variable (k H) in
-/-- **All modules over a finite-dimensional Hopf algebra form a Frobenius category.** For a
-finite-dimensional Hopf algebra `H` over a field `k`, the canonical exact structure on
-`HopfModuleCat k H` is Frobenius. -/
+/-- **All modules over a finite-dimensional Hopf algebra form a Frobenius category**: the canonical
+abelian exact structure on `HopfModuleCat k H` is Frobenius, with no universe-smallness hypothesis
+needed beyond finite-dimensionality of `H` over `k`. -/
 theorem abelian_isFrobenius :
     (ExactStructure.abelian (HopfModuleCat k H)).IsFrobenius := by
-  have : Small.{u} H := Module.Finite.small k H
-  exact ModuleCat.abelian_isFrobenius_of_hopfAlgebra k (H := H)
+  obtain ⟨_, hφ⟩ := exists_isFrobeniusFunctional_of_hopfAlgebra k H
+  exact abelian_isFrobenius_of_isFrobeniusFunctional hφ
+
+end HopfAlgebra
 
 end TauCeti.HopfModuleCat

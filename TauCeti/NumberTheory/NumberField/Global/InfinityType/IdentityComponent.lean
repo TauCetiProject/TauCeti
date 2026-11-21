@@ -134,7 +134,7 @@ theorem agreesOnIdentityComponent_toContinuous_iff {n m : AlgebraicInfinityType 
   refine ⟨fun ⟨hr, hc, hk⟩ ↦ toContinuous_injective ?_, fun h ↦ h ▸ ⟨rfl, rfl, rfl⟩⟩
   apply ContinuousInfinityType.ext <;> funext w
   · exact congrFun hr w
-  · have hw : n w.1.embedding = m w.1.embedding := by
+  · have hw : n w.val.embedding = m w.val.embedding := by
       simpa using congrFun hr w
     simp [hw]
   · exact congrFun hc w

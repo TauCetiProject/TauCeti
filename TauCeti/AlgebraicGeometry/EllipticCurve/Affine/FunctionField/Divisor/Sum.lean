@@ -111,11 +111,11 @@ variable [W.IsElliptic]
 
 /-- The divisor `(P) - (Q)` of two points has degree zero. -/
 theorem ofPoint_sub_ofPoint_mem_ker_degree (P Q : W.Point) :
-    WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace P).1 -
-        WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace Q).1 ∈
+    WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace P).val -
+        WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace Q).val ∈
       (Divisor.degree (k := F) (F := W.FunctionField)).ker := by
   rw [AddMonoidHom.mem_ker, map_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint,
-    (W.pointEquivDegreeOnePlace P).2, (W.pointEquivDegreeOnePlace Q).2, sub_self]
+    (W.pointEquivDegreeOnePlace P).property, (W.pointEquivDegreeOnePlace Q).property, sub_self]
 
 variable [DecidableEq F]
 
@@ -142,9 +142,9 @@ addition function `ℓ / v`, for `ℓ` the line through `P` and `Q` (the tangent
 `v` the vertical line through `P + Q`. -/
 theorem exists_principal_eq_ofPoint_add_sub (P Q : W.Point) :
     ∃ z : W.FunctionFieldˣ, Divisor.principal W.isFunctionField z =
-      WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace (P + Q)).1 -
-        WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace P).1 -
-        (WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace Q).1 -
+      WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace (P + Q)).val -
+        WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace P).val -
+        (WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace Q).val -
           WeilDivisor.ofPoint (Place.infinity W)) := by
   rw [← coe_pointEquivDegreeOnePlace_zero]
   exact W.divisorSum_eq_zero_iff (D := ⟨_, W.ofPoint_sub_ofPoint_mem_ker_degree (P + Q) P⟩ -

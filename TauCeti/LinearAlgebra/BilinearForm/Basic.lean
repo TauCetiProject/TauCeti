@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Tactic.LinearCombination
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import Mathlib.RingTheory.FiniteType
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -49,8 +51,13 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
+  has no nonzero zeros meets every subspace of isotropic vectors trivially.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
+* `LinearMap.BilinForm.sum_apply_smul_eq_of_forall`: a finite left-side reconstruction formula
+  for a bilinear form over a commutative ring implies the partner right-side reconstruction
+  formula.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
@@ -150,6 +157,13 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
   ext x y
   simp
 
+/-- Divisibility of self-pairings transports across a rescaling by a non-zero-divisor. -/
+theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B C : LinearMap.BilinForm R M} {a : R} (ha : IsLeftRegular a) (hC : a • C = B) (r : R) :
+    (∀ x, r ∣ C x x) ↔ ∀ x, r * a ∣ B x x := by
+  subst B
+  simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
+
 /-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
 form. -/
 theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M]
@@ -163,6 +177,48 @@ theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMono
   · obtain ⟨c, hc⟩ := h x y
     exact LinearMap.mem_range.mpr ⟨c, by simp [hc]⟩
   · simpa using B.codRestrict₂_apply _ hi _ x y
+
+/-- A subspace on whose nonzero vectors the diagonal of a bilinear form does not vanish meets every
+subspace of isotropic vectors (those `x` with `B x x = 0`) trivially. -/
+theorem inf_eq_bot_of_forall_apply_self_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {N W : Submodule R M}
+    (hN : ∀ x ∈ N, x ≠ 0 → B x x ≠ 0) (hW : ∀ x ∈ W, B x x = 0) : N ⊓ W = ⊥ :=
+  (Submodule.eq_bot_iff _).2 fun x hx ↦ by_contra fun hx0 ↦
+    hN x (Submodule.mem_inf.1 hx).1 hx0 (hW x (Submodule.mem_inf.1 hx).2)
+
+/-- If a bilinear form `B` on an `R`-module `M` over a commutative ring satisfies a finite
+left-side reconstruction formula `∑ i ∈ s, B (a i) y • b i = y`, then it satisfies the partner
+formula `∑ i ∈ s, B x (b i) • a i = x`. -/
+theorem sum_apply_smul_eq_of_forall {R M ι : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    (B : LinearMap.BilinForm R M) (s : Finset ι) (a b : ι → M)
+    (h : ∀ y : M, ∑ i ∈ s, B (a i) y • b i = y) (x : M) :
+    ∑ i ∈ s, B x (b i) • a i = x := by
+  have : Module.Finite R M :=
+    Module.Finite.of_surjective (Fintype.linearCombination R fun i : s ↦ b i.val)
+      fun y ↦ ⟨fun i ↦ B (a i.val) y, by
+        rw [Fintype.linearCombination_apply, Finset.univ_eq_attach,
+          s.sum_attach fun i ↦ B (a i) y • b i]
+        exact h y⟩
+  let Ψ : Module.Dual R M →ₗ[R] M :=
+    { toFun := fun α ↦ ∑ i ∈ s, α (a i) • b i
+      map_add' := fun α β ↦ by simp [add_smul, Finset.sum_add_distrib]
+      map_smul' := fun r α ↦ by simp [smul_smul, Finset.smul_sum] }
+  let Ψ' : Module.Dual R M →ₗ[R] M :=
+    { toFun := fun β ↦ ∑ i ∈ s, β (b i) • a i
+      map_add' := fun α β ↦ by simp [add_smul, Finset.sum_add_distrib]
+      map_smul' := fun r α ↦ by simp [smul_smul, Finset.smul_sum] }
+  have hΨ : Function.Surjective Ψ := fun y ↦ ⟨B.flip y, h y⟩
+  have hBΨ' (β : Module.Dual R M) : B (Ψ' β) = β := by
+    ext y
+    calc
+      B (∑ i ∈ s, β (b i) • a i) y
+        = ∑ i ∈ s, β (b i) * B (a i) y := by simp [map_sum]
+      _ = β (∑ i ∈ s, B (a i) y • b i) := by simp [map_sum, mul_comm]
+      _ = β y := by rw [h y]
+  have hB : Function.Surjective B := fun β ↦ ⟨Ψ' β, hBΨ' β⟩
+  have hinj : Function.Injective (Ψ ∘ₗ B) :=
+    OrzechProperty.injective_of_surjective_endomorphism (Ψ ∘ₗ B) (hΨ.comp hB)
+  exact hinj (congrArg Ψ (hBΨ' (B x)))
 
 end LinearMap.BilinForm
 
@@ -264,7 +320,8 @@ end LinearMap
 
 namespace LinearMap.BilinForm
 
-variable {H : Type*} [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t x : H} {a c : ℤ}
+variable {H : Type*} [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H} {v t x : H}
+  {a c : ℤ}
 
 /-- A class `x = a v + c t` modulo torsion, for a hyperbolic pair `v, t` of a `ℤ`-valued form,
 has square `2ac`. -/

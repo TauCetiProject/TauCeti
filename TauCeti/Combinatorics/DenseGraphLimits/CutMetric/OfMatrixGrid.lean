@@ -89,7 +89,7 @@ def gridIndex (N : ℕ) (t : Set.Icc (0 : ℝ) 1) : Fin (N + 2) :=
   ⟨⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊, by
     have h : (t : ℝ) * ((N : ℝ) + 1) ≤ ((N + 1 : ℕ) : ℝ) := by
       push_cast
-      nlinarith [t.2.1, t.2.2, Nat.cast_nonneg (α := ℝ) N]
+      nlinarith [t.property.1, t.property.2, Nat.cast_nonneg (α := ℝ) N]
     exact Nat.lt_succ_of_le ((Nat.floor_mono h).trans_eq (Nat.floor_natCast _))⟩
 
 @[simp]
@@ -100,7 +100,7 @@ theorem coe_gridIndex (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
 theorem abs_sub_gridValue_gridIndex_le (N : ℕ) (t : Set.Icc (0 : ℝ) 1) :
     |(t : ℝ) - gridValue N (gridIndex N t)| ≤ 1 / ((N : ℝ) + 1) := by
   have hN : (0 : ℝ) < (N : ℝ) + 1 := by positivity
-  have hx : (0 : ℝ) ≤ (t : ℝ) * ((N : ℝ) + 1) := mul_nonneg t.2.1 hN.le
+  have hx : (0 : ℝ) ≤ (t : ℝ) * ((N : ℝ) + 1) := mul_nonneg t.property.1 hN.le
   have hfloor : ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) ≤ (t : ℝ) * ((N : ℝ) + 1) := Nat.floor_le hx
   have hfloor' : (t : ℝ) * ((N : ℝ) + 1) < ((⌊(t : ℝ) * ((N : ℝ) + 1)⌋₊ : ℕ) : ℝ) + 1 :=
     Nat.lt_floor_add_one _

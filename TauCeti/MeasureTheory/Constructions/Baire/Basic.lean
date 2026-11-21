@@ -133,7 +133,7 @@ pullback of `baire X`. -/
 theorem _root_.IsClopen.baire_subtype {s : Set X} (hs : IsClopen s) :
     TauCeti.baire s = (TauCeti.baire X).comap ((↑) : s → X) := by
   refine le_antisymm (baire_le_iff.2 fun g u hu => ?_)
-    continuous_subtype_val.measurable_baire.comap_le
+    continuous_subtypeVal.measurable_baire.comap_le
   classical
   let F : C(X, ℝ) :=
     { toFun x := if hx : x ∈ s then g ⟨x, hx⟩ else 0
@@ -147,7 +147,7 @@ theorem _root_.IsClopen.baire_subtype {s : Set X} (hs : IsClopen s) :
             simp
           · simp [hxs]
         rw [hpre]
-        refine (hs.2.isOpenMap_subtype_val _ (g.continuous.isOpen_preimage V hV)).union ?_
+        refine (hs.2.isOpenMap_subtypeVal _ (g.continuous.isOpen_preimage V hV)).union ?_
         split_ifs
         · exact hs.1.isOpen_compl
         · exact isOpen_empty }
@@ -160,7 +160,7 @@ theorem _root_.IsClopen.baire_subtype {s : Set X} (hs : IsClopen s) :
 theorem _root_.IsClopen.measurableEmbedding_baire_subtype_coe {s : Set X} (hs : IsClopen s) :
     @MeasurableEmbedding s X (TauCeti.baire s) (TauCeti.baire X) ((↑) : s → X) := by
   let _ : MeasurableSpace X := TauCeti.baire X
-  exact hs.baire_subtype ▸ MeasurableEmbedding.subtype_coe hs.measurableSet_baire
+  exact hs.baire_subtype ▸ MeasurableEmbedding.subtypeVal hs.measurableSet_baire
 
 /-- A continuous map from a product `X × Y` with `X` σ-compact and `Y` compact into any topological
 space `Z` is measurable from the product σ-algebra into the Baire σ-algebra `TauCeti.baire Z`. -/
@@ -220,7 +220,7 @@ theorem _root_.IsCompact.exists_baire_hull [T2Space X] [LocallyCompactSpace X]
   have hbound (n : ℕ) : μ (B \ K) ≤ ENNReal.ofReal (1 / ((n : ℝ) + 1)) :=
     (measure_mono (sdiff_subset_sdiff_left ((hBV n).trans inter_subset_left))).trans
       (hVerr n).le
-  apply le_zero_iff.1
+  apply nonpos_iff_eq_zero.1
   simpa only [ENNReal.ofReal_zero] using ge_of_tendsto'
     (ENNReal.tendsto_ofReal tendsto_one_div_add_atTop_nhds_zero_nat) hbound
 
