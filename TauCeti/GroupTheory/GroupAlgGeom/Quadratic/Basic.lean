@@ -114,8 +114,8 @@ independently, and the values of each atom are closed under conjugation: standar
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_eval_eq_of_mem_atoms_of_isConj`: complete
   spectrum, the values of an atom are closed under conjugation. This holds for every word in the
   variables alone (`FreeGroup.exists_lift_eq_of_isConj`) and for every conjugate `z⁻¹ c z` of a
-  coefficient by a variable
-  (`TauCeti.GroupAlgGeom.Quadratic.exists_eval_inv_mul_inl_mul_eq_of_isConj`).
+  coefficient by a variable, whose values are exactly the conjugates of the image of `c`
+  (`TauCeti.GroupAlgGeom.Quadratic.exists_eval_inv_mul_inl_mul_eq_iff_isConj`).
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isDegenerate_iff_of_genus_eq_zero`,
   `TauCeti.GroupAlgGeom.Quadratic.Standard.not_isDegenerate_of_genus_eq_zero_of_injective`: a
   point is degenerate for an equation of genus `0` exactly when a coefficient `cⱼ` is mapped to
@@ -448,14 +448,14 @@ section Spectrum
 
 variable {ι : G →* H}
 
-/-- The values in `H` of the conjugate `z⁻¹ c z` of a coefficient by a variable are closed under
-conjugation. -/
-theorem exists_eval_inv_mul_inl_mul_eq_of_isConj {z : X} {c : G} (v : X → H) {a : H}
-    (ha : IsConj (eval ι v ((inr (FreeGroup.of z))⁻¹ * inl c * inr (FreeGroup.of z))) a) :
-    ∃ w : X → H, eval ι w ((inr (FreeGroup.of z))⁻¹ * inl c * inr (FreeGroup.of z)) = a := by
+/-- The values in `H` of the conjugate `z⁻¹ c z` of a coefficient by a variable are exactly the
+conjugates of the image `ι c` of the coefficient. -/
+theorem exists_eval_inv_mul_inl_mul_eq_iff_isConj {z : X} {c : G} {a : H} :
+    (∃ w : X → H, eval ι w ((inr (FreeGroup.of z))⁻¹ * inl c * inr (FreeGroup.of z)) = a) ↔
+      IsConj (ι c) a := by
+  refine ⟨fun ⟨w, hw⟩ => isConj_iff.2 ⟨(w z)⁻¹, by simpa using hw⟩, fun ha => ?_⟩
   obtain ⟨t, rfl⟩ := isConj_iff.1 ha
-  -- Multiply the value of every variable on the right by `t⁻¹`.
-  exact ⟨fun u => v u * t⁻¹, by simp [mul_assoc]⟩
+  exact ⟨fun _ => t⁻¹, by simp⟩
 
 end Spectrum
 
@@ -925,7 +925,8 @@ theorem exists_eval_eq_of_mem_atoms_of_isConj {r : GX G X} (hr : r ∈ S.atoms) 
   obtain ⟨u, rfl⟩ | ⟨z, c, rfl⟩ := exists_inr_eq_or_exists_conj_eq_of_mem_atoms r hr
   · rw [eval_inr] at ha
     simpa only [eval_inr] using FreeGroup.exists_lift_eq_of_isConj v ha
-  · exact exists_eval_inv_mul_inl_mul_eq_of_isConj v ha
+  · exact exists_eval_inv_mul_inl_mul_eq_iff_isConj.2
+      ((exists_eval_inv_mul_inl_mul_eq_iff_isConj.1 ⟨v, rfl⟩).trans ha)
 
 end Atoms
 
