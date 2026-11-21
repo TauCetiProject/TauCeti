@@ -163,7 +163,7 @@ private theorem horizontalFactor_sq_add_deriv {a : ℝ} (ha : -1 < a) :
       horizontalFactor_sq_mul_add_heightProfile_sq hx
   have := (((hA.pow 2).mul (hasDerivAt_id a)).add (hB.pow 2)).unique
     ((hasDerivAt_const a (1 : ℝ)).congr_of_eventuallyEq hc)
-  simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, id, mul_one, Pi.pow_apply] at this
+  simp at this
   linear_combination this
 
 private theorem deriv_heightProfile_of_one_lt {a : ℝ} (ha : 1 < a) : deriv heightProfile a = 0 := by
@@ -256,19 +256,9 @@ private theorem fderiv_collapseVec_apply (p v : ℝ × ℝ) :
       fderiv ℝ collapseVec p v i = D v :=
     congrArg (· v) (((EuclideanSpace.proj i : ℝ³ →L[ℝ] ℝ).hasFDerivAt.comp p hd).unique hD)
   ext i
-  fin_cases i
-  · refine (key 0 _ (hA.mul hasFDerivAt_fst)).trans ?_
-    simp only [Function.comp_apply, smul_add, add_apply, smul_apply, ContinuousLinearMap.coe_fst',
-      smul_eq_mul, ContinuousLinearMap.coe_snd', Fin.zero_eta, cons_val_zero]
-    ring
-  · refine (key 1 _ (hA.mul hasFDerivAt_snd)).trans ?_
-    simp only [Function.comp_apply, smul_add, add_apply, smul_apply, ContinuousLinearMap.coe_snd',
-      smul_eq_mul, ContinuousLinearMap.coe_fst', Fin.mk_one, cons_val_one, cons_val_zero]
-    ring
-  · refine (key 2 _ hB).trans ?_
-    simp only [smul_add, add_apply, smul_apply, ContinuousLinearMap.coe_fst', smul_eq_mul,
-      ContinuousLinearMap.coe_snd', Fin.reduceFinMk, cons_val]
-    ring
+  fin_cases i <;> [refine (key 0 _ (hA.mul hasFDerivAt_fst)).trans ?_;
+    refine (key 1 _ (hA.mul hasFDerivAt_snd)).trans ?_; refine (key 2 _ hB).trans ?_] <;>
+    simp <;> ring
 
 /-- The triple product of the collapse map with two of its derivatives: `Φ` pulls the area form
 back to `-2 B'(a) dp₁ ∧ dp₂`. -/
@@ -380,7 +370,8 @@ private theorem mvfderiv_coe_mfderiv_collapseSphere (z w : ℝ × ℝ) :
   rw [← mvfderiv_comp_apply z ((contMDiff_coe_sphere (n := 2) (m := 1) _).mdifferentiableAt
       one_ne_zero) ((contMDiff_collapseSphere z).mdifferentiableAt (by simp)) w,
     mvfderiv_eq_fderiv_apply (((↑) : S² → ℝ³) ∘ collapseSphere) z w]
-  have hcomp : ((↑) : S² → ℝ³) ∘ collapseSphere = collapseVec ∘ squareCoord := (rfl)
+  have hcomp : ((↑) : S² → ℝ³) ∘ collapseSphere = collapseVec ∘ squareCoord :=
+    funext fun z ↦ coe_collapse (squareCoord z)
   rw [hcomp, fderiv_comp z (contDiff_collapseVec.differentiable (by simp) _)
     (contDiff_squareCoord.differentiable (by simp) _), ContinuousLinearMap.comp_apply,
     fderiv_squareCoord_apply]
@@ -553,6 +544,10 @@ private def collapseLoop : Ω^ (Fin 2) S² (sphereNorthPole 2) :=
       nlinarith [norm_sq_le_radSq (squareCoord (cubePoint y)),
         norm_squareCoord_cubePoint_of_mem_boundary hy])⟩
 
+private theorem collapseLoop_apply (y : Fin 2 → I) :
+    collapseLoop y = collapseSphere (cubePoint y) :=
+  (rfl)
+
 /-- The generalized loop `y ↦ Φ(squareToDisc (2 y - 1))`, which identifies only points of the
 boundary of the cube. -/
 private def discLoop : Ω^ (Fin 2) S² (sphereNorthPole 2) :=
@@ -658,7 +653,8 @@ private theorem sphereIntegral_zsmul_discClass (k : ℤ) :
   have h1 : sphereIntegral sphereAreaForm.val (sphereNorthPole 2) discClass = -4 * π := by
     rw [discClass, ← Quotient.sound homotopic_collapseLoop_discLoop,
       sphereIntegral_mk_of_contMDiff isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm
-        contMDiff_collapseSphere (fun _ ↦ rfl), rectangleIntegral_collapseSphere]
+        contMDiff_collapseSphere (fun y ↦ by rw [collapseLoop_apply, cubePoint]),
+      rectangleIntegral_collapseSphere]
   have h := (sphereIntegralHom (sphereNorthPole 2) isSmoothForm_sphereAreaForm
     mextDeriv_sphereAreaForm).map_zsmul k (Additive.ofMul discClass)
   rw [sphereIntegralHom_apply isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm,
@@ -742,6 +738,16 @@ def sphereAreaHom :
     mextDeriv_sphereAreaForm).comp
     (hurewiczAddEquiv (n := 0) subsingleton_homotopyGroup_of_lt).symm.toAddMonoidHom
 
+/-- The area homomorphism of the two-sphere is the sphere integral on Hurewicz classes at the north
+pole, where it is defined. -/
+private theorem sphereAreaHom_hurewiczIntHom_sphereNorthPole
+    (a : Additive (HomotopyGroup (Fin 2) S² (sphereNorthPole 2))) :
+    sphereAreaHom (hurewiczIntHom S² (sphereNorthPole 2) 1 a) =
+      sphereIntegralHom (sphereNorthPole 2) isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm
+        a := by
+  rw [← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0) subsingleton_homotopyGroup_of_lt,
+    sphereAreaHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply]
+
 /-- **The area homomorphism of the two-sphere is the sphere integral on Hurewicz classes**, at
 every base point. This is the hypothesis under which the capped action of the area form descends to
 cap classes (`TauCeti.Floer.SphericalCapClass.action`). -/
@@ -749,13 +755,12 @@ cap classes (`TauCeti.Floer.SphericalCapClass.action`). -/
 theorem sphereAreaHom_hurewiczIntHom (x : S²) (a : Additive (HomotopyGroup (Fin 2) S² x)) :
     sphereAreaHom (hurewiczIntHom S² x 1 a) =
       sphereIntegralHom x isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm a := by
+  -- Transport the class to the north pole along a path; both sides are invariant.
   let γ : Path x (sphereNorthPole 2) := PathConnectedSpace.somePath _ _
-  rw [sphereIntegralHom_apply, ← sphereIntegral_homotopyGroupTransport isSmoothForm_sphereAreaForm
-    mextDeriv_sphereAreaForm γ,
-    ← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
-    ← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0) subsingleton_homotopyGroup_of_lt,
-    sphereAreaHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    AddEquiv.symm_apply_apply, sphereIntegralHom_apply, toMul_ofMul, toMul_ofMul]
+  rw [← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
+    sphereAreaHom_hurewiczIntHom_sphereNorthPole, sphereIntegralHom_apply, sphereIntegralHom_apply,
+    toMul_ofMul, toMul_ofMul,
+    sphereIntegral_homotopyGroupTransport isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm]
 
 /-- **The generator of `H₂(S²; ℤ)` has area `±4π`.** -/
 theorem abs_sphereAreaHom_hurewicz_sphereGenLoop :
@@ -765,7 +770,7 @@ theorem abs_sphereAreaHom_hurewicz_sphereGenLoop :
         (Additive.ofMul (⟦sphereGenLoop 2⟧ : HomotopyGroup (Fin 2) S² (sphereNorthPole 2))) :=
     (hurewiczAddEquiv_ofMul_mk (n := 0) subsingleton_homotopyGroup_of_lt _).symm.trans
       (hurewiczAddEquiv_apply_eq_hurewiczIntHom _ _)
-  rw [h, sphereAreaHom_hurewiczIntHom, sphereIntegralHom_apply]
+  rw [h, sphereAreaHom_hurewiczIntHom_sphereNorthPole, sphereIntegralHom_apply]
   exact abs_sphereIntegral_sphereAreaForm_sphereGenLoop
 
 end TauCeti
