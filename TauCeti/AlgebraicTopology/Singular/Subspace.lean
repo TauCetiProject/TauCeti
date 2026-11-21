@@ -66,7 +66,7 @@ viewed in `X`. -/
 @[simp]
 lemma coe_toSSetObjEquiv_toSSetObjCodRestrict (σ : (toSSet.obj X).obj n)
     (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) (z : Convexity.StdSimplex ℝ (Fin (n.unop.len + 1))) :
-    (toSSetObjEquiv _ n (toSSetObjCodRestrict σ h) z).1 = X.toSSetObjEquiv n σ z := by
+    (toSSetObjEquiv _ n (toSSetObjCodRestrict σ h) z).val = X.toSSetObjEquiv n σ z := by
   rw [toSSetObjCodRestrict, Equiv.apply_symm_apply]
   -- Evaluating a corestriction and coercing back to `X` evaluates the original map.
   rfl
@@ -76,7 +76,7 @@ lemma range_toSSetObjEquiv_toSSet_map_inclusion'_subset
     (τ : (toSSet.obj ((Opens.toTopCat X).obj V)).obj n) :
     Set.range (X.toSSetObjEquiv n ((toSSet.map (Opens.inclusion' V)).app n τ)) ⊆ V := by
   rintro _ ⟨z, rfl⟩
-  exact (toSSetObjEquiv _ n τ z).2
+  exact (toSSetObjEquiv _ n τ z).property
 
 /-- The corestriction of a singular simplex to an open set `V`, followed by the inclusion of `V`,
 is the singular simplex itself. -/

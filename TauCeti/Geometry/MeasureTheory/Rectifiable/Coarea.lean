@@ -268,7 +268,7 @@ openness nor measurability of `s` is required. -/
 theorem ae_countablyRectifiable_inter_preimage {f : E → F} {s : Set E}
     (hf : LocallyLipschitzOn s f) :
     ∀ᵐ y ∂μ, CountablyRectifiable (finrank ℝ E - finrank ℝ F) (s ∩ f ⁻¹' {y}) := by
-  obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
+  obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith (.of_separableSpace s)
   filter_upwards [ae_all_iff.2 fun n ↦ (hK n).ae_countablyRectifiable_inter_preimage μ] with y hy
   rw [← inter_eq_left.2 hcov, inter_iUnion, iUnion_inter]
   exact CountablyRectifiable.iUnion hy

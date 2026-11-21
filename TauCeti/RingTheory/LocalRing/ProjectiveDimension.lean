@@ -186,7 +186,7 @@ theorem finrank_cotangentSpace_le_of_hasProjectiveDimensionLE {R : Type u} [Comm
   have hφb (i : Fin n) : φ (b i) = x i := by simp [φ, b]
   have hφm (y : Fin n → R) : φ y ∈ 𝔪 := by
     simp only [φ, Fintype.linearCombination_apply]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (x i).2
+    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (x i).property
   have hφ (i : Fin n) : φ (b i) ∈ 𝔪 := hφm (b i)
   have hli : LinearIndependent (R ⧸ 𝔪) fun i ↦ 𝔪.toCotangent ⟨φ (b i), hφ i⟩ := by
     have : (fun i ↦ 𝔪.toCotangent ⟨φ (b i), hφ i⟩) = v :=

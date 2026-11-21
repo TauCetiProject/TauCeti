@@ -54,7 +54,7 @@ theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_etale (f : X ⟶ Y) [Etale 
     obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
       Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
     obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-      X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.2.preimage f.continuous)
+      X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
     have het := f.etale_appLE hU hV hVU
     algebraize [(f.appLE U V hVU).hom]
     set q := (hV.primeIdealOf ⟨x, hxV⟩).asIdeal

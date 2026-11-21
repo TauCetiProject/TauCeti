@@ -75,7 +75,7 @@ variable {α : Type*} [MeasurableSpace α]
 /-- **The tautological Markov kernel.** It sends each bundled probability measure to its
 underlying measure on `α`, so the fibre at `P` is `P` itself. -/
 def samplingKernel (α : Type*) [MeasurableSpace α] : Kernel (ProbabilityMeasure α) α :=
-  ⟨fun P => (P : Measure α), measurable_subtype_coe⟩
+  ⟨fun P => (P : Measure α), measurable_subtypeVal⟩
 
 @[simp]
 theorem samplingKernel_apply (P : ProbabilityMeasure α) :
@@ -83,7 +83,7 @@ theorem samplingKernel_apply (P : ProbabilityMeasure α) :
   (rfl)
 
 instance : IsMarkovKernel (samplingKernel α) :=
-  ⟨fun P => P.2⟩
+  ⟨fun P => P.property⟩
 
 end Probability
 

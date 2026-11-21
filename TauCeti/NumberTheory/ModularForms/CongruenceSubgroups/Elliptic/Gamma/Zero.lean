@@ -133,22 +133,22 @@ private noncomputable def ellipticEquivOfIsRatio (z₀ : ℍ) (e : ℕ) (P : ZMo
     {x : ZMod N // P x} ≃
       {q : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = e} :=
   Equiv.ofBijective
-    (fun x ↦ ⟨Quotient.mk'' (lowerRep x.1 • z₀), by
+    (fun x ↦ ⟨Quotient.mk'' (lowerRep x.val • z₀), by
       rw [cardStabilizerOnOrbit_mk]
-      exact (hcard _).mpr ⟨x.1, x.2, isRatio_lowerRep x.1⟩⟩)
+      exact (hcard _).mpr ⟨x.val, x.property, isRatio_lowerRep x.val⟩⟩)
     ⟨fun x y hxy ↦ by
       obtain ⟨g, hg, hgz⟩ := (Subgroup.orbitRel_map_sl2zToPSL2R_iff _).mp
         (Quotient.exact' (congrArg Subtype.val hxy))
       -- `s` fixes `z₀`, and transports the residue of `y` to the representative of `x`
-      set s := (lowerRep x.1)⁻¹ * g * lowerRep y.1
+      set s := (lowerRep x.val)⁻¹ * g * lowerRep y.val
       have hs : s⁻¹ • z₀ = z₀ := by
         rw [inv_smul_eq_iff, mul_smul, mul_smul, hgz, inv_smul_smul]
-      have hrep : g * lowerRep y.1 * s⁻¹ = lowerRep x.1 := by
+      have hrep : g * lowerRep y.val * s⁻¹ = lowerRep x.val := by
         simp only [s]
         group
-      have h := hinv y.1 _ s⁻¹ y.2 ((isRatio_lowerRep y.1).mul_left hg) hs
+      have h := hinv y.val _ s⁻¹ y.property ((isRatio_lowerRep y.val).mul_left hg) hs
       rw [hrep] at h
-      exact Subtype.ext ((isRatio_lowerRep x.1).eq h),
+      exact Subtype.ext ((isRatio_lowerRep x.val).eq h),
     fun ⟨q, hq⟩ ↦ by
       induction q using Quotient.inductionOn' with
       | h z =>
@@ -247,10 +247,10 @@ noncomputable def gamma0OrderTwoEllipticEquiv :
 /-- The orbit attached to a square root `x` of `-1` modulo `N` is that of `γ • i`, for any `γ`
 whose bottom row `(c, d)` satisfies `c ≡ x d` modulo `N`. -/
 theorem gamma0OrderTwoEllipticEquiv_apply (x : {x : ZMod N // x ^ 2 + 1 = 0}) (γ : SL(2, ℤ))
-    (hγ : ((γ 1 0 : ℤ) : ZMod N) = x.1 * (γ 1 1 : ℤ)) :
+    (hγ : ((γ 1 0 : ℤ) : ZMod N) = x.val * (γ 1 1 : ℤ)) :
     (gamma0OrderTwoEllipticEquiv N x : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ) =
       Quotient.mk'' (γ • I) :=
-  quotientMk_eq_of_isRatio I (isRatio_lowerRep x.1) hγ
+  quotientMk_eq_of_isRatio I (isRatio_lowerRep x.val) hγ
 
 variable (N) in
 /-- **The elliptic points of order three of `Γ₀(N)`.** The orbits of the effective image of
@@ -269,10 +269,10 @@ noncomputable def gamma0OrderThreeEllipticEquiv :
 /-- The orbit attached to a root `x` of `x² - x + 1` modulo `N` is that of `γ • ρ`, for any `γ`
 whose bottom row `(c, d)` satisfies `c ≡ x d` modulo `N`. -/
 theorem gamma0OrderThreeEllipticEquiv_apply (x : {x : ZMod N // x ^ 2 - x + 1 = 0})
-    (γ : SL(2, ℤ)) (hγ : ((γ 1 0 : ℤ) : ZMod N) = x.1 * (γ 1 1 : ℤ)) :
+    (γ : SL(2, ℤ)) (hγ : ((γ 1 0 : ℤ) : ZMod N) = x.val * (γ 1 1 : ℤ)) :
     (gamma0OrderThreeEllipticEquiv N x : orbitRel.Quotient ((Gamma0 N).map sl2zToPSL2R) ℍ) =
       Quotient.mk'' (γ • ρ) :=
-  quotientMk_eq_of_isRatio ρ (isRatio_lowerRep x.1) hγ
+  quotientMk_eq_of_isRatio ρ (isRatio_lowerRep x.val) hγ
 
 variable (N) in
 /-- **The count `ε₂(Γ₀(N))`**: the number of elliptic points of order two of `Γ₀(N)` is the number

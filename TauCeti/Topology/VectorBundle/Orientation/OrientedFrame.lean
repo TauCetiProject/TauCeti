@@ -190,11 +190,11 @@ variable [Fact (Fintype.card ι = finrank ℝ V)]
 /-- The right action of the special orthogonal group of `V` on the positively oriented frames, by
 precomposition. -/
 instance : MulAction (specialOrthogonalGroup V)ᵐᵒᵖ (orientedFrames s o) where
-  smul g p := ⟨op (g.unop : unitary (V →L[ℝ] V)) • p.1,
-    (smul_mem_orientedFrames_iff Fact.out p.2).2 g.unop.2⟩
-  one_smul p := Subtype.ext (one_smul _ p.1)
+  smul g p := ⟨op (g.unop : unitary (V →L[ℝ] V)) • p.val,
+    (smul_mem_orientedFrames_iff Fact.out p.property).2 g.unop.property⟩
+  one_smul p := Subtype.ext (one_smul _ p.val)
   mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : unitary (V →L[ℝ] V)))
-    (op (h.unop : unitary (V →L[ℝ] V))) p.1)
+    (op (h.unop : unitary (V →L[ℝ] V))) p.val)
 
 /-- The action on positively oriented frames is the action on all orthonormal frames. -/
 @[simp]
@@ -214,9 +214,9 @@ theorem orientedFrames_smul_eq_self_iff {g : specialOrthogonalGroup V} {p : orie
 fibres: two positively oriented frames differ by a special orthogonal transformation exactly when
 they lie over the same base point. -/
 theorem exists_orientedFrames_smul_eq_iff {p q : orientedFrames s o} :
-    (∃ g : specialOrthogonalGroup V, op g • p = q) ↔ p.1.proj = q.1.proj := by
+    (∃ g : specialOrthogonalGroup V, op g • p = q) ↔ p.val.proj = q.val.proj := by
   refine ⟨fun ⟨g, h⟩ ↦ by rw [← h, coe_orientedFrames_smul, proj_smul], fun h ↦ ?_⟩
-  obtain ⟨g, hg, hgq⟩ := exists_mem_specialOrthogonalGroup_smul_eq Fact.out p.2 q.2 h
+  obtain ⟨g, hg, hgq⟩ := exists_mem_specialOrthogonalGroup_smul_eq Fact.out p.property q.property h
   exact ⟨⟨g, hg⟩, Subtype.ext hgq⟩
 
 end Action
@@ -228,8 +228,8 @@ variable [FiniteDimensional ℝ V] [Fact (Fintype.card ι = finrank ℝ V)]
 /-- The right action of the special orthogonal group on positively oriented frames is
 continuous. -/
 instance : ContinuousSMul (specialOrthogonalGroup V)ᵐᵒᵖ (orientedFrames s o) where
-  continuous_smul := ((continuous_op.comp ((continuous_subtype_val.comp continuous_unop).comp
-    continuous_fst)).smul (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+  continuous_smul := ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp
+    continuous_fst)).smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
 
 end ContinuousSMul
 
@@ -399,7 +399,7 @@ private theorem coe_orientedTrivializationInv (hT : IsEquivariant T)
   have hmem : T.toOpenPartialHomeomorph.symm (q.1, (correction s o T r q.1)⁻¹ * q.2) ∈
       orientedFrames s o := by
     rw [symm_apply_eq_smul hT hq]
-    exact inv_correction_mul_smul_localFrame_mem hr q.1 q.2.2
+    exact inv_correction_mul_smul_localFrame_mem hr q.1 q.2.property
   rw [orientedTrivializationInv, dite_eq_left hmem]
 
 variable (s o r) in
@@ -413,36 +413,36 @@ private def orientedTrivialization
     (hr : r ∉ specialOrthogonalGroup V) (p₀ : orientedFrames s o) :
     Trivialization (specialOrthogonalGroup V)
       (fun p : orientedFrames s o ↦ (p : OrthonormalFrameBundle ℝ F E V).proj) where
-  toFun p := (p.1.proj, toSpecialOrthogonal (correction s o T r p.1.proj * (T p.1).2))
+  toFun p := (p.val.proj, toSpecialOrthogonal (correction s o T r p.val.proj * (T p.val).2))
   invFun := orientedTrivializationInv s o T r p₀
-  source := {p | p.1.proj ∈ T.baseSet}
+  source := {p | p.val.proj ∈ T.baseSet}
   target := T.baseSet ×ˢ univ
   map_source' _ hp := ⟨hp, mem_univ _⟩
   map_target' q hq := by
     rw [mem_ofPred_eq, coe_orientedTrivializationInv hT hr p₀ hq.1, T.proj_symm_apply' hq.1]
     exact hq.1
   left_inv' p hp := by
-    have hm := correction_mul_mem_of_mem hT hr hp p.2
+    have hm := correction_mul_mem_of_mem hT hr hp p.property
     apply Subtype.ext
-    rw [coe_orientedTrivializationInv (q := (p.1.proj, _)) hT hr p₀ hp,
+    rw [coe_orientedTrivializationInv (q := (p.val.proj, _)) hT hr p₀ hp,
       coe_toSpecialOrthogonal hm, inv_mul_cancel_left]
     exact T.symm_apply_mk_proj (T.mem_source.2 hp)
   right_inv' := by
     rintro ⟨y, g⟩ hq
     rw [Prod.mk.injEq, coe_orientedTrivializationInv hT hr p₀ hq.1,
       T.proj_symm_apply' hq.1, T.apply_symm_apply' hq.1, mul_inv_cancel_left]
-    exact ⟨rfl, Subtype.ext (coe_toSpecialOrthogonal g.2)⟩
-  open_source := T.open_baseSet.preimage (continuous_proj.comp continuous_subtype_val)
+    exact ⟨rfl, Subtype.ext (coe_toSpecialOrthogonal g.property)⟩
+  open_source := T.open_baseSet.preimage (continuous_proj.comp continuous_subtypeVal)
   open_target := T.open_baseSet.prod isOpen_univ
   continuousOn_toFun :=
-    (continuous_proj.comp continuous_subtype_val).continuousOn.prodMk <|
+    (continuous_proj.comp continuous_subtypeVal).continuousOn.prodMk <|
       continuous_toSpecialOrthogonal.comp_continuousOn <|
         ContinuousOn.mul
           (fun _ hp ↦ ((continuousAt_correction id hp).comp
-            (f := fun p : orientedFrames s o ↦ p.1.proj)
-            (continuous_proj.comp continuous_subtype_val).continuousAt).continuousWithinAt)
+            (f := fun p : orientedFrames s o ↦ p.val.proj)
+            (continuous_proj.comp continuous_subtypeVal).continuousAt).continuousWithinAt)
           (continuous_snd.comp_continuousOn (T.continuousOn_toFun.comp
-            continuous_subtype_val.continuousOn fun _ hp ↦ T.mem_source.2 hp))
+            continuous_subtypeVal.continuousOn fun _ hp ↦ T.mem_source.2 hp))
   continuousOn_invFun := by
     refine Topology.IsInducing.subtypeVal.continuousOn_iff.2 (ContinuousOn.congr
       (f := fun q : B × specialOrthogonalGroup V ↦
@@ -453,7 +453,7 @@ private def orientedTrivialization
     exact ContinuousOn.mul
       (fun _ hq ↦ ((continuousAt_correction (·⁻¹) hq.1).comp
         continuous_fst.continuousAt).continuousWithinAt)
-      (continuous_subtype_val.comp continuous_snd).continuousOn
+      (continuous_subtypeVal.comp continuous_snd).continuousOn
   baseSet := T.baseSet
   open_baseSet := T.open_baseSet
   source_eq := rfl
@@ -464,7 +464,7 @@ private theorem orientedTrivialization_apply
     (hT : IsEquivariant T)
     (hr : r ∉ specialOrthogonalGroup V) (p₀ : orientedFrames s o) (p : orientedFrames s o) :
     orientedTrivialization s o r hT hr p₀ p =
-      (p.1.proj, toSpecialOrthogonal (correction s o T r p.1.proj * (T p.1).2)) :=
+      (p.val.proj, toSpecialOrthogonal (correction s o T r p.val.proj * (T p.val).2)) :=
   rfl
 
 /-- The trivialization `orientedTrivialization` is equivariant over its base set. -/
@@ -478,8 +478,8 @@ private theorem orientedTrivialization_smul
   have hgp : ((op g • p : orientedFrames s o) : OrthonormalFrameBundle ℝ F E V).proj ∈
       T.baseSet := by
     rwa [coe_orientedFrames_smul, proj_smul]
-  have h₁ := correction_mul_mem_of_mem hT hr hp p.2
-  have h₂ := correction_mul_mem_of_mem hT hr hgp (op g • p).2
+  have h₁ := correction_mul_mem_of_mem hT hr hp p.property
+  have h₂ := correction_mul_mem_of_mem hT hr hgp (op g • p).property
   rw [coe_orientedFrames_smul, unop_op] at h₂
   simp only [orientedTrivialization_apply, coe_orientedFrames_smul, unop_op, proj_smul]
   refine Prod.ext rfl (Subtype.ext ?_)

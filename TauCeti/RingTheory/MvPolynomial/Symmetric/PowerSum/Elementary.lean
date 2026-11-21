@@ -88,9 +88,9 @@ expresses the elementary symmetric function `e_n` over a `ℚ`-algebra: `E₀ = 
 noncomputable def esymmPsumPoly : ℕ → MvPolynomial ℕ R
   | 0 => 1
   | n + 1 => algebraMap ℚ R ((n : ℚ) + 1)⁻¹ •
-      ∑ x ∈ (antidiagonal n).attach, (-1) ^ x.1.2 * esymmPsumPoly x.1.1 * X x.1.2
+      ∑ x ∈ (antidiagonal n).attach, (-1) ^ x.val.2 * esymmPsumPoly x.val.1 * X x.val.2
 decreasing_by
-  have := Nat.antidiagonal.fst_lt x.2
+  have := Nat.antidiagonal.fst_lt x.property
   omega
 
 @[simp]

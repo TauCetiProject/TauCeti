@@ -131,6 +131,11 @@ theorem coe_toSchwartzMapCLM (φ : 𝓓(Ω, F)) : ⇑(toSchwartzMapCLM 𝕜 φ) 
 theorem toSchwartzMapCLM_apply (φ : 𝓓(Ω, F)) (x : E) : toSchwartzMapCLM 𝕜 φ x = φ x :=
   (rfl)
 
+/-- A test function, read as a Schwartz function, still has compact support. -/
+theorem hasCompactSupport_toSchwartzMapCLM (φ : 𝓓(Ω, F)) :
+    HasCompactSupport (toSchwartzMapCLM 𝕜 φ) :=
+  φ.hasCompactSupport
+
 theorem toSchwartzMapCLM_injective : Function.Injective (toSchwartzMapCLM 𝕜 : 𝓓(Ω, F) → _) :=
   fun _ _ h ↦ TestFunction.ext fun x ↦ by
     simpa using congrArg (fun f : 𝓢(E, F) ↦ f x) h

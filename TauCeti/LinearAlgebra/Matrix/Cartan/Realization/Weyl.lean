@@ -433,7 +433,7 @@ theorem apply_mem_weightLattice_iff_of_mem_weylGroup {w : Dual ℚ H ≃ₗ[ℚ]
 theorem simpleCoreflection_mem_lattice_iff (i : I) {h : H} :
     R.simpleCoreflection hA i h ∈ L.lattice ↔ h ∈ L.lattice := by
   have key {h : H} (hh : h ∈ L.lattice) : R.simpleCoreflection hA i h ∈ L.lattice := by
-    obtain ⟨n, hn⟩ := (L.mem_weightLattice_iff _).mp (L.root i).2 h hh
+    obtain ⟨n, hn⟩ := (L.mem_weightLattice_iff _).mp (L.root i).property h hh
     rw [simpleCoreflection_apply, ← L.coe_root, ← hn, Int.cast_smul_eq_zsmul ℚ n (R.coroot i)]
     exact sub_mem hh (zsmul_mem (L.coroot_mem i) n)
   refine ⟨fun hh ↦ ?_, key⟩

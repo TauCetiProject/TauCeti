@@ -256,7 +256,7 @@ theorem frobeniusVonMangoldtWeight_idealPrimePower (C : ConjClasses (L ≃ₐ[K]
     (A : IdealPrimePower K) :
     frobeniusVonMangoldtWeight K L C (A : (Ideal (𝓞 K))⁰) =
       frobeniusPrimePowerWeight K L C A := by
-  simp [frobeniusVonMangoldtWeight, A.2]
+  simp [frobeniusVonMangoldtWeight, A.property]
 
 /-- The ideal weight vanishes away from prime-power ideals. -/
 @[simp]
