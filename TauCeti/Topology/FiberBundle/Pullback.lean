@@ -28,7 +28,10 @@ Four facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is t
   total space of `f *ᵖ E` is determined by its projection and its lift
   (`Bundle.Pullback.totalSpace_ext`).
 * A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
-  the total space of `E` are (`Bundle.Pullback.continuous_iff`).
+  the total space of `E` are (`Bundle.Pullback.continuous_iff`); base-preserving continuous maps on
+  total spaces pull back along any map (`Bundle.Pullback.continuous_totalSpaceMap`), and
+  `Bundle.Pullback.compHomeomorph` identifies an iterated pullback `g *ᵖ (f *ᵖ E)` with the
+  composite pullback `(f ∘ g) *ᵖ E`.
 -/
 
 public section
@@ -98,6 +101,52 @@ theorem Bundle.Pullback.continuous_iff {Z : Type*} [TopologicalSpace Z] {f : B' 
     {g : Z → TotalSpace F (f *ᵖ E)} :
     Continuous g ↔ Continuous (fun z ↦ (g z).proj) ∧ Continuous (fun z ↦ Pullback.lift f (g z)) :=
   (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.trans continuous_prodMk
+
+omit [TopologicalSpace B] in
+/-- Pulling back a base-preserving continuous map between total spaces along any map `f` yields a
+continuous map between the pulled-back total spaces. -/
+theorem Bundle.Pullback.continuous_totalSpaceMap {F₁ F₂ : Type*}
+    {E₁ : B → Type*} {E₂ : B → Type*}
+    [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+    {ϕ : ∀ b, E₁ b → E₂ b}
+    (hϕ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (ϕ v.proj v.snd))
+    (f : B' → B) :
+    Continuous fun v : TotalSpace F₁ (f *ᵖ E₁) ↦
+      TotalSpace.mk' F₂ (E := f *ᵖ E₂) v.proj (ϕ (f v.proj) v.snd) :=
+  Bundle.Pullback.continuous_iff.2
+    ⟨Pullback.continuous_proj F₁ E₁ f, hϕ.comp (Pullback.continuous_lift F₁ E₁ f)⟩
+
+omit [TopologicalSpace B] in
+/-- The canonical homeomorphism identifying an iterated pullback `g *ᵖ (f *ᵖ E)` with the
+composite pullback `(f ∘ g) *ᵖ E`. -/
+def Bundle.Pullback.compHomeomorph {B'' : Type*} [TopologicalSpace B'']
+    {f : B' → B} {g : B'' → B'} (hg : Continuous g) :
+    TotalSpace F (g *ᵖ (f *ᵖ E)) ≃ₜ TotalSpace F ((f ∘ g) *ᵖ E) where
+  toFun p := ⟨p.proj, p.snd⟩
+  invFun p := ⟨p.proj, p.snd⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := Bundle.Pullback.continuous_iff.2
+    ⟨Pullback.continuous_proj F (f *ᵖ E) g,
+      (Pullback.continuous_lift F E f).comp (Pullback.continuous_lift F (f *ᵖ E) g)⟩
+  continuous_invFun := Bundle.Pullback.continuous_iff.2
+    ⟨Pullback.continuous_proj F E (f ∘ g), Bundle.Pullback.continuous_iff.2
+      ⟨hg.comp (Pullback.continuous_proj F E (f ∘ g)),
+        Pullback.continuous_lift F E (f ∘ g)⟩⟩
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem Bundle.Pullback.compHomeomorph_apply {B'' : Type*} [TopologicalSpace B'']
+    {f : B' → B} {g : B'' → B'} (hg : Continuous g) (p : TotalSpace F (g *ᵖ (f *ᵖ E))) :
+    Bundle.Pullback.compHomeomorph hg p = ⟨p.proj, p.snd⟩ :=
+  (rfl)
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem Bundle.Pullback.compHomeomorph_symm_apply {B'' : Type*} [TopologicalSpace B'']
+    {f : B' → B} {g : B'' → B'} (hg : Continuous g) (p : TotalSpace F ((f ∘ g) *ᵖ E)) :
+    (Bundle.Pullback.compHomeomorph (F := F) (E := E) (f := f) hg).symm p = ⟨p.proj, p.snd⟩ :=
+  (rfl)
 
 /-- If `f` is a topological inducing map and the projection `π F E` is continuous, then
 `Pullback.lift f` is a topological inducing map. -/
