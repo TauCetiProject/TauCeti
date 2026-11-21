@@ -471,11 +471,29 @@ namespace Rep
 open CategoryTheory
 open scoped MonoidAlgebra
 
+/-- Evaluating `ρ(g) - 𝟙` at a vector `x` gives `A.ρ g x - x`. -/
+@[simp]
+theorem applyAsHom_sub_id_apply {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
+    (x : A) :
+    (applyAsHom A g - 𝟙 A).hom.toLinearMap x = A.ρ g x - x := by
+  rw [Rep.sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
+    Representation.IntertwiningMap.coe_sub, Pi.sub_apply, Rep.applyAsHom_apply, Rep.hom_id,
+    Representation.IntertwiningMap.id_apply]
+
+/-- Evaluating the norm endomorphism `A.norm.asHom` at a vector `x` gives `A.ρ.norm x`. Not
+`@[simp]`: `simp` already simplifies the left-hand side. -/
+theorem norm_asHom_apply {k G : Type*} [Semiring k] [Group G] [Fintype G] (A : Rep k G)
+    (x : A) :
+    A.norm.asHom.hom.toLinearMap x = A.ρ.norm x := by
+  simp
+
 /-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
 @[simp]
 theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
     (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.val = x.val := by
-  simpa [sub_hom, sub_eq_zero] using x.property
+  have hx := LinearMap.mem_ker.1 x.property
+  rw [applyAsHom_sub_id_apply, sub_eq_zero] at hx
+  exact hx
 
 variable {k G : Type*} [CommRing k] [Group G]
 

@@ -156,6 +156,14 @@ theorem inl_smul [MulDistribMulAction G M] (σ : S.Section) (hact : InducesActio
   rw [GroupExtension.Section.rightHom_section] at h
   rw [← h, GroupExtension.inl_conjAct_comm]
 
+/-- If `S.inl a = e ^ n`, then `S.rightHom e` fixes `a` under the induced action, because `e`
+commutes with `e ^ n`. -/
+theorem smul_eq_self_of_inl_eq_pow [MulDistribMulAction G M] (hact : InducesAction S)
+    {e : E} {a : M} {n : ℕ} (ha : S.inl a = e ^ n) : S.rightHom e • a = a := by
+  apply S.inl_injective
+  rw [← (inducesAction_iff.1 hact) e a, GroupExtension.inl_conjAct_comm, ha, ← pow_succ',
+    pow_succ, mul_inv_cancel_right]
+
 end Conj
 
 section ConjAct
@@ -257,6 +265,20 @@ theorem _root_.GroupExtension.Section.factorSetFun_one_right (σ : S.Section)
     factorSetFun σ (g, 1) = 1 := by
   apply S.inl_injective
   simp [hσ]
+
+/-- Relabelling a section transforms its bare factor set by precomposing with `eG.symm` and
+postcomposing with `eM.symm`. -/
+theorem _root_.GroupExtension.Section.factorSetFun_relabel {M' G' : Type*} [Group M'] [Group G']
+    (σ : S.Section) (eM : M' ≃* M) (eG : G ≃* G') (g' h' : G') :
+    factorSetFun (σ.relabel eM eG) (g', h') =
+      eM.symm (factorSetFun σ (eG.symm g', eG.symm h')) := by
+  apply eM.injective
+  rw [MulEquiv.apply_symm_apply]
+  apply S.inl_injective
+  have h := inl_factorSetFun (σ.relabel eM eG) g' h'
+  rw [GroupExtension.relabel_inl, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h
+  rw [h, inl_factorSetFun]
+  simp
 
 /-- Section factors satisfy the noncommutative cocycle law, with conjugation by the section.
 No abelian-kernel hypothesis is required. -/

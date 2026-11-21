@@ -7,6 +7,8 @@ module
 
 public import TauCeti.GroupTheory.GroupExtension.Cohomology
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
+public import TauCeti.RepresentationTheory.Rep.OfMulDistribMulAction
+import TauCeti.Data.ZMod.OrderOf
 import TauCeti.GroupTheory.GroupExtension.Splitting
 
 /-!
@@ -30,7 +32,7 @@ set of the power section as an additive `2`-cocycle gives literally
 `Rep.FiniteCyclicGroup.groupCohomologyπEven_two_apply` and section-independence of the extension
 class, the cohomology class of any normalized section of `S` in `H²(G, M)` is
 `groupCohomologyπEven ... 2 even_two ⟨(Rep.toAdditive.symm (Additive.ofMul a)), _⟩`
-(`TauCeti.GroupExtension.cohomologyClass_factorSet_eq_groupCohomologyπEven`). Consequently:
+(`GroupExtension.Section.cohomologyClass_factorSet_eq_groupCohomologyπEven`). Consequently:
 
 * `S` splits if and only if `a` is a norm `∏ x : G, x • m`
   (`TauCeti.GroupExtension.nonempty_splitting_iff_exists_prod_smul_eq`);
@@ -39,7 +41,10 @@ class, the cohomology class of any normalized section of `S` in `H²(G, M)` is
 * when `orderOf g` is even and `g` acts on `M` by inversion (`g • m = m⁻¹`), the norm vanishes,
   `Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy` evaluates the extension class directly
   to `Additive.ofMul a ∈ M[2]`, and `S` splits if and only if `a = 1`, equivalently `e ^ n = 1`
-  (`TauCeti.GroupExtension.nonempty_splitting_iff_pow_orderOf_eq_one_of_smul_eq_inv`).
+  (`TauCeti.GroupExtension.nonempty_splitting_iff_pow_orderOf_eq_one_of_smul_eq_inv`);
+* for `G = C₂` acting on `C_{2n}` by inversion, `TauCeti.cohomologyInvEquivZModTwo` evaluates the
+  extension class directly to the unique `x : ZMod 2` with `x.val * n = a`
+  (`GroupExtension.Section.cohomologyInvEquivZModTwo_cohomologyClass_factorSet_iff`).
 
 ## Main definitions
 
@@ -49,17 +54,18 @@ class, the cohomology class of any normalized section of `S` in `H²(G, M)` is
 
 * `TauCeti.GroupExtension.factorSetFun_cyclicPowerSection`: the factor set of the power section is
   the carry cocycle of `a`, where `S.inl a = e ^ orderOf g`.
-* `TauCeti.GroupExtension.smul_eq_self_of_inl_eq_pow`: `a` is fixed by the action of `g`.
-* `TauCeti.GroupExtension.cohomologyClass_factorSet_eq_groupCohomologyπEven`: the extension class
+* `GroupExtension.Section.cohomologyClass_factorSet_eq_groupCohomologyπEven`: the extension class
   in `H²(G, M)` is the periodic-resolution class of `a`.
 * `TauCeti.GroupExtension.nonempty_splitting_iff_exists_prod_smul_eq`: norm criterion for
   splitting of a cyclic-quotient extension.
 * `TauCeti.GroupExtension.nonempty_equiv_iff_exists_prod_smul_eq`: norm criterion for equivalence
   of cyclic-quotient extensions.
-* `TauCeti.GroupExtension.groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet`,
+* `GroupExtension.Section.groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet`,
+  `GroupExtension.Section.cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv`,
   `TauCeti.GroupExtension.nonempty_splitting_iff_pow_orderOf_eq_one_of_smul_eq_inv`,
-  `TauCeti.GroupExtension.nonempty_equiv_iff_eq_of_smul_eq_inv`: explicit evaluation, splitting,
-  and equivalence criteria for even-order inversion actions.
+  `TauCeti.GroupExtension.nonempty_equiv_iff_eq_of_smul_eq_inv`,
+  `GroupExtension.Section.cohomologyInvEquivZModTwo_cohomologyClass_factorSet_iff`: explicit
+  evaluation, splitting, and equivalence criteria for even-order inversion actions.
 
 ## References
 
@@ -105,12 +111,6 @@ theorem cyclicPowerSection_pow {e : E} (he : S.rightHom e = g) (i : ℕ) :
     S.cyclicPowerSection g hg he (g ^ i) = e ^ (i % orderOf g) := by
   rw [cyclicPowerSection_apply, cyclicLog_pow]
 
-omit [Finite G] in
-/-- The `(orderOf g)`-th power of any lift of `g` lies in the kernel `S.inl.range`. -/
-theorem pow_orderOf_mem_range_inl {e : E} (he : S.rightHom e = g) :
-    e ^ orderOf g ∈ S.inl.range := by
-  rw [S.range_inl_eq_ker_rightHom, MonoidHom.mem_ker, map_pow, he, pow_orderOf_eq_one]
-
 end PowerSection
 
 end GroupExtension
@@ -143,68 +143,11 @@ theorem factorSetFun_cyclicPowerSection {e : E} (he : S.rightHom e = g) {a : M}
 
 end FactorSetFun
 
-section Action
-
-variable {G M E : Type*} [Group G] [Group M] [MulDistribMulAction G M] [Group E]
-  {S : GroupExtension M E G}
-
-/-- If `S.inl a = e ^ n`, then `S.rightHom e` fixes `a` under the induced action, because `e`
-commutes with `e ^ n`. -/
-theorem smul_eq_self_of_inl_eq_pow (hact : InducesAction S) {e : E} {a : M} {n : ℕ}
-    (ha : S.inl a = e ^ n) : S.rightHom e • a = a := by
-  apply S.inl_injective
-  rw [← (inducesAction_iff.1 hact) e a, GroupExtension.inl_conjAct_comm, ha, ← pow_succ',
-    pow_succ, mul_inv_cancel_right]
-
-end Action
-
-section RepOfAction
-
-variable {G M : Type} [Group G] [CommGroup M] [MulDistribMulAction G M]
-
-/-- On `Rep.ofMulDistribMulAction G M`, the norm sends `Additive.ofMul m` to
-`Additive.ofMul (∏ x : G, x • m)`. -/
-theorem norm_ofMulDistribMulAction_apply [Fintype G] (m : M) :
-    (Rep.ofMulDistribMulAction G M).norm.asHom.hom.toLinearMap
-        ((Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul m)) =
-      (Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul (∏ x : G, x • m)) := by
-  rw [Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Representation.norm,
-    LinearMap.sum_apply]
-  exact (ofMul_prod Finset.univ (fun x : G ↦ x • m)).symm
-
-/-- If `g : G` acts on `M` by inversion, then `g` acts by negation on the additive representation
-`Rep.ofMulDistribMulAction G M`. -/
-theorem ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv {g : G} (hinv : ∀ m : M, g • m = m⁻¹)
-    (x : Rep.ofMulDistribMulAction G M) :
-    (Rep.ofMulDistribMulAction G M).ρ g x = -x := by
-  apply (Rep.toAdditive (M := G) (G := M)).injective
-  rw [map_neg]
-  exact congrArg Additive.ofMul (hinv (Additive.toMul (Rep.toAdditive x)))
-
-end RepOfAction
-
 section Cohomology
 
 open CategoryTheory _root_.groupCohomology Rep.FiniteCyclicGroup
 
 variable {G M : Type} [CommGroup G] [CommGroup M] [MulDistribMulAction G M]
-
-/-- An element `a : M` fixed by `g : G` defines an element in the kernel of `ρ(g) - 𝟙` on
-`Rep.ofMulDistribMulAction G M`. -/
-theorem mem_ker_applyAsHom_sub_of_smul_eq_self {g : G} {a : M} (ha : g • a = a) :
-    (Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul a) ∈ LinearMap.ker
-      (Rep.applyAsHom (Rep.ofMulDistribMulAction G M) g - 𝟙 _).hom.toLinearMap := by
-  rw [LinearMap.mem_ker, Rep.sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
-    Representation.IntertwiningMap.coe_sub, Pi.sub_apply, Rep.applyAsHom_apply, Rep.hom_id,
-    Representation.IntertwiningMap.id_apply]
-  apply (Rep.toAdditive (M := G) (G := M)).injective
-  have hρ : Rep.toAdditive (M := G) (G := M)
-      ((Rep.ofMulDistribMulAction G M).ρ g
-        ((Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul a))) =
-      Additive.ofMul (g • a) :=
-    Rep.ofMulDistribMulAction_ρ_apply_apply g (Additive.ofMul a)
-  rw [map_sub, map_zero, hρ, AddEquiv.apply_symm_apply, ha, sub_self]
-
 variable {E : Type*} [Group E] {S : GroupExtension M E G}
 
 /-- **The factor set of the power section is the carry cocycle.** Reading the factor set of
@@ -216,7 +159,7 @@ theorem toCocycles₂_factorSet_cyclicPowerSection [Finite G] (hact : InducesAct
     (factorSet (S.cyclicPowerSection g hg he) (S.cyclicPowerSection_one g hg he) hact).toCocycles₂ =
       carryCocycle (Rep.ofMulDistribMulAction G M) g hg
         ⟨(Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul a),
-          mem_ker_applyAsHom_sub_of_smul_eq_self
+          Rep.mem_ker_applyAsHom_sub_of_smul_eq_self
             (by simpa [he] using smul_eq_self_of_inl_eq_pow hact ha)⟩ := by
   refine cocycles₂_ext fun x y ↦ ?_
   rw [FactorSet.coe_toCocycles₂, coe_factorSet, carryCocycle_apply]
@@ -228,13 +171,14 @@ theorem toCocycles₂_factorSet_cyclicPowerSection [Finite G] (hact : InducesAct
 generated by `g`, let `e : E` lift `g`, and let `S.inl a = e ^ orderOf g`. Then the cohomology
 class of any normalized section of `S` in `H²(G, M)` is `groupCohomologyπEven` of
 `Additive.ofMul a`. -/
-theorem cohomologyClass_factorSet_eq_groupCohomologyπEven [Fintype G] (σ : S.Section) (hσ : σ 1 = 1)
-    (hact : InducesAction S) {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g)
-    {e : E} (he : S.rightHom e = g) {a : M} (ha : S.inl a = e ^ orderOf g) :
+theorem _root_.GroupExtension.Section.cohomologyClass_factorSet_eq_groupCohomologyπEven [Fintype G]
+    (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S) {g : G}
+    (hg : ∀ x, x ∈ Subgroup.zpowers g) {e : E} (he : S.rightHom e = g) {a : M}
+    (ha : S.inl a = e ^ orderOf g) :
     (factorSet σ hσ hact).cohomologyClass =
       groupCohomologyπEven (Rep.ofMulDistribMulAction G M) g hg 2 even_two
         ⟨(Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul a),
-          mem_ker_applyAsHom_sub_of_smul_eq_self
+          Rep.mem_ker_applyAsHom_sub_of_smul_eq_self
             (by simpa [he] using smul_eq_self_of_inl_eq_pow hact ha)⟩ := by
   rw [cohomologyClass_factorSet_eq σ (S.cyclicPowerSection g hg he) hσ
     (S.cyclicPowerSection_one g hg he) hact, FactorSet.cohomologyClass_def,
@@ -242,22 +186,13 @@ theorem cohomologyClass_factorSet_eq_groupCohomologyπEven [Fintype G] (σ : S.S
 
 /-- The class of a cyclic-quotient extension in `H²(G, M)` vanishes if and only if `a` (where
 `S.inl a = e ^ orderOf g`) is a norm `∏ x : G, x • m`. -/
-theorem cohomologyClass_factorSet_eq_zero_iff_exists_prod_smul_eq [Fintype G]
-    (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
+theorem _root_.GroupExtension.Section.cohomologyClass_factorSet_eq_zero_iff_exists_prod_smul_eq
+    [Fintype G] (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
     {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g) {e : E} (he : S.rightHom e = g)
     {a : M} (ha : S.inl a = e ^ orderOf g) :
     (factorSet σ hσ hact).cohomologyClass = 0 ↔ ∃ m : M, ∏ x : G, x • m = a := by
-  rw [cohomologyClass_factorSet_eq_groupCohomologyπEven σ hσ hact hg he ha,
-    groupCohomologyπEven_eq_zero_iff, LinearMap.mem_range]
-  constructor
-  · rintro ⟨m, hm⟩
-    let m' : M := Additive.toMul (Rep.toAdditive (M := G) (G := M) m)
-    refine ⟨m', Additive.ofMul.injective ((Rep.toAdditive (M := G) (G := M)).symm.injective ?_)⟩
-    rw [← norm_ofMulDistribMulAction_apply (G := G) m']
-    exact hm
-  · rintro ⟨m, rfl⟩
-    exact ⟨(Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul m),
-      norm_ofMulDistribMulAction_apply (G := G) m⟩
+  rw [σ.cohomologyClass_factorSet_eq_groupCohomologyπEven hσ hact hg he ha,
+    groupCohomologyπEven_eq_zero_iff, Rep.mem_range_norm_ofMulDistribMulAction_iff]
 
 /-- **Norm criterion for splitting of a cyclic-quotient extension.** An extension of a finite
 cyclic group `G = ⟨g⟩` by an abelian group `M` splits if and only if `a` (where
@@ -270,7 +205,7 @@ theorem nonempty_splitting_iff_exists_prod_smul_eq [Fintype G] (hact : InducesAc
   have hσ := S.cyclicPowerSection_one g hg he
   rw [(factorSetToGroupExtensionEquiv σ hσ hact).nonempty_splitting_iff.symm,
     FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero,
-    cohomologyClass_factorSet_eq_zero_iff_exists_prod_smul_eq σ hσ hact hg he ha]
+    σ.cohomologyClass_factorSet_eq_zero_iff_exists_prod_smul_eq hσ hact hg he ha]
 
 /-- **Norm criterion for equivalence of cyclic-quotient extensions.** Two extensions `S`, `S'` of
 a finite cyclic group `G = ⟨g⟩` by `M` inducing the same action, with lifts `e`, `e'` of `g` and
@@ -285,19 +220,12 @@ theorem nonempty_equiv_iff_exists_prod_smul_eq [Fintype G] {E' : Type*} [Group E
   rw [nonempty_equiv_iff_cohomologyClass_factorSet_eq (S.cyclicPowerSection g hg he)
       (S'.cyclicPowerSection g hg he') (S.cyclicPowerSection_one g hg he)
       (S'.cyclicPowerSection_one g hg he') hact hact',
-    cohomologyClass_factorSet_eq_groupCohomologyπEven _ _ hact hg he ha,
-    cohomologyClass_factorSet_eq_groupCohomologyπEven _ _ hact' hg he' ha',
-    groupCohomologyπEven_eq_iff, LinearMap.mem_range]
-  constructor
-  · rintro ⟨m, hm⟩
-    let m' : M := Additive.toMul (Rep.toAdditive (M := G) (G := M) m)
-    refine ⟨m', Additive.ofMul.injective ((Rep.toAdditive (M := G) (G := M)).symm.injective ?_)⟩
-    rw [← norm_ofMulDistribMulAction_apply (G := G) m', ofMul_div, map_sub]
-    exact hm
-  · rintro ⟨m, hm⟩
-    refine ⟨(Rep.toAdditive (M := G) (G := M)).symm (Additive.ofMul m), ?_⟩
-    rw [norm_ofMulDistribMulAction_apply (G := G) m, hm]
-    exact congrArg (Rep.toAdditive (M := G) (G := M)).symm (ofMul_div a a')
+    (S.cyclicPowerSection g hg he).cohomologyClass_factorSet_eq_groupCohomologyπEven
+      (S.cyclicPowerSection_one g hg he) hact hg he ha,
+    (S'.cyclicPowerSection g hg he').cohomologyClass_factorSet_eq_groupCohomologyπEven
+      (S'.cyclicPowerSection_one g hg he') hact' hg he' ha',
+    groupCohomologyπEven_eq_iff, ← map_sub, ← ofMul_div,
+    Rep.mem_range_norm_ofMulDistribMulAction_iff]
 
 /-! ### Even-order cyclic quotients acting by inversion -/
 
@@ -306,34 +234,34 @@ section InversionAction
 /-- When `g` has even order and acts on `M` by inversion, `groupCohomologyEvenEquivTorsionBy`
 evaluates the cohomology class of a cyclic-quotient extension `S` (with `S.inl a = e ^ orderOf g`)
 directly to `Additive.ofMul a` in the `2`-torsion of `Additive M`. -/
-theorem groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet [Fintype G]
-    (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
+theorem _root_.GroupExtension.Section.groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet
+    [Fintype G] (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
     {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g) (hord : Even (orderOf g))
     (hinv : ∀ m : M, g • m = m⁻¹) {e : E} (he : S.rightHom e = g)
     {a : M} (ha : S.inl a = e ^ orderOf g) :
     Rep.toAdditive (M := G) (G := M)
         ((groupCohomologyEvenEquivTorsionBy (Rep.ofMulDistribMulAction G M) g hg hord
-          (ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv hinv) 2 even_two
+          (Rep.ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv hinv) 2 even_two
           (factorSet σ hσ hact).cohomologyClass).val) =
       Additive.ofMul a := by
-  rw [cohomologyClass_factorSet_eq_groupCohomologyπEven σ hσ hact hg he ha,
+  rw [σ.cohomologyClass_factorSet_eq_groupCohomologyπEven hσ hact hg he ha,
     groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven]
   exact (Rep.toAdditive (M := G) (G := M)).apply_symm_apply (Additive.ofMul a)
 
 /-- When `G = ⟨g⟩` has even order and `g` acts by inversion on `M`, the cohomology class of a
 cyclic-quotient extension `S` with `S.inl a = e ^ orderOf g` vanishes if and only if `a = 1`. -/
-theorem cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv [Finite G]
-    (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
+theorem _root_.GroupExtension.Section.cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv
+    [Finite G] (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
     {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g) (hord : Even (orderOf g))
     (hinv : ∀ m : M, g • m = m⁻¹) {e : E} (he : S.rightHom e = g)
     {a : M} (ha : S.inl a = e ^ orderOf g) :
     (factorSet σ hσ hact).cohomologyClass = 0 ↔ a = 1 := by
   let _ : Fintype G := Fintype.ofFinite G
   let Φ := groupCohomologyEvenEquivTorsionBy (Rep.ofMulDistribMulAction G M) g hg hord
-    (ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv hinv) 2 even_two
+    (Rep.ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv hinv) 2 even_two
   rw [← map_eq_zero_iff Φ Φ.injective, Subtype.ext_iff, Submodule.coe_zero,
     ← (Rep.toAdditive (M := G) (G := M)).injective.eq_iff, map_zero,
-    groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet σ hσ hact hg hord hinv he ha,
+    σ.groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet hσ hact hg hord hinv he ha,
     ← ofMul_one, Additive.ofMul.injective.eq_iff]
 
 /-- **Splitting criterion for even-order inversion actions.** When `G = ⟨g⟩` has even order and `g`
@@ -348,7 +276,7 @@ theorem nonempty_splitting_iff_pow_orderOf_eq_one_of_smul_eq_inv [Finite G]
   have hσ := S.cyclicPowerSection_one g hg he
   rw [(factorSetToGroupExtensionEquiv σ hσ hact).nonempty_splitting_iff.symm,
     FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero,
-    cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv σ hσ hact hg hord hinv he ha,
+    σ.cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv hσ hact hg hord hinv he ha,
     ← ha, ← map_one S.inl, S.inl_injective.eq_iff]
 
 /-- **Equivalence criterion for even-order inversion actions.** When `G = ⟨g⟩` has even order and
@@ -363,15 +291,41 @@ theorem nonempty_equiv_iff_eq_of_smul_eq_inv [Finite G] {E' : Type*} [Group E']
     Nonempty (S.Equiv S') ↔ a = a' := by
   let _ : Fintype G := Fintype.ofFinite G
   let Φ := groupCohomologyEvenEquivTorsionBy (Rep.ofMulDistribMulAction G M) g hg hord
-    (ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv hinv) 2 even_two
+    (Rep.ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv hinv) 2 even_two
   rw [nonempty_equiv_iff_cohomologyClass_factorSet_eq (S.cyclicPowerSection g hg he)
       (S'.cyclicPowerSection g hg he') (S.cyclicPowerSection_one g hg he)
       (S'.cyclicPowerSection_one g hg he') hact hact',
     ← Φ.injective.eq_iff, Subtype.ext_iff,
     ← (Rep.toAdditive (M := G) (G := M)).injective.eq_iff,
-    groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet _ _ hact hg hord hinv he ha,
-    groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet _ _ hact' hg hord hinv he' ha',
+    (S.cyclicPowerSection g hg he).groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet
+      _ hact hg hord hinv he ha,
+    (S'.cyclicPowerSection g hg he').groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet
+      _ hact' hg hord hinv he' ha',
     Additive.ofMul.injective.eq_iff]
+
+/-- **Evaluation of `cohomologyInvEquivZModTwo` on an extension class.** For any extension `S` of
+`C₂` by `C_{2n}` inducing the inversion action, if `e` lifts `ofAdd 1` and
+`S.inl (ofAdd a) = e ^ 2`, then `cohomologyInvEquivZModTwo n` maps the cohomology class of any
+normalized section of `S` to the unique `x : ZMod 2` satisfying `x.val * n = a` in
+`ZMod (2 * n)`. -/
+theorem _root_.GroupExtension.Section.cohomologyInvEquivZModTwo_cohomologyClass_factorSet_iff
+    {n : ℕ} [NeZero n] {E : Type*} [Group E]
+    {S : GroupExtension (Multiplicative (ZMod (2 * n))) E (Multiplicative (ZMod 2))}
+    (σ : S.Section) (hσ : σ 1 = 1)
+    (hact : letI := TauCeti.invMulDistribMulAction (Multiplicative (ZMod (2 * n)))
+      InducesAction S)
+    {e : E} (he : S.rightHom e = Multiplicative.ofAdd 1) {a : ZMod (2 * n)}
+    (ha : S.inl (Multiplicative.ofAdd a) = e ^ 2) (x : ZMod 2) :
+    letI := TauCeti.invMulDistribMulAction (Multiplicative (ZMod (2 * n)))
+    TauCeti.cohomologyInvEquivZModTwo n (factorSet σ hσ hact).cohomologyClass = x ↔
+      (x.val * n : ℕ) = a := by
+  let _ := TauCeti.invMulDistribMulAction (Multiplicative (ZMod (2 * n)))
+  have ha' : S.inl (Multiplicative.ofAdd a) = e ^ orderOf (Multiplicative.ofAdd (1 : ZMod 2)) := by
+    rw [Multiplicative.orderOf_ofAdd_one, ha]
+  rw [σ.cohomologyClass_factorSet_eq_groupCohomologyπEven hσ hact
+      Multiplicative.mem_zpowers_ofAdd_one he ha',
+    TauCeti.cohomologyInvEquivZModTwo_groupCohomologyπEven]
+  simp
 
 end InversionAction
 

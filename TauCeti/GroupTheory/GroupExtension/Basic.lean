@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupExtension.Defs
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Basic operations on group extensions
@@ -21,6 +22,9 @@ This file provides operations on an existing group extension.
 * `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
 * `GroupExtension.relabelEquivOfMulEquiv`: packages compatible multiplicative equivalences on all
   three terms of two extensions into a `GroupExtension.Equiv` after relabelling.
+* `GroupExtension.Section.relabel`: transports a section along `GroupExtension.relabel`.
+* `GroupExtension.pow_orderOf_mem_range_inl`: the `(orderOf g)`-th power of a lift of `g` lies
+  in the kernel `S.inl.range`.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
@@ -193,6 +197,41 @@ theorem relabelEquivOfMulEquiv_symm_apply (S : GroupExtension N E G) {N' E' G' :
     (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) (y : E') :
     (S.relabelEquivOfMulEquiv S' eN eE eG hinl hright).symm y = eE.symm y :=
   (rfl)
+
+/-- Transport a section of `S` to a section of `S.relabel eN eG` by precomposing with
+`eG.symm`. -/
+@[to_additive
+  /-- Transport a section of an additive extension `S` to a section of `S.relabel eN eG` by
+  precomposing with `eG.symm`. -/]
+def Section.relabel {N' G' : Type*} [Group N'] [Group G'] {S : GroupExtension N E G}
+    (σ : S.Section) (eN : N' ≃* N) (eG : G ≃* G') : (S.relabel eN eG).Section where
+  toFun g' := σ (eG.symm g')
+  rightInverse_rightHom g' := by
+    simp [GroupExtension.relabel_rightHom]
+
+/-- Evaluating a relabelled section at `g'` evaluates the original section at `eG.symm g'`. -/
+@[to_additive (attr := simp)
+  /-- Evaluating a relabelled additive section at `g'` evaluates the original section at
+  `eG.symm g'`. -/]
+theorem Section.relabel_apply {N' G' : Type*} [Group N'] [Group G'] {S : GroupExtension N E G}
+    (σ : S.Section) (eN : N' ≃* N) (eG : G ≃* G') (g' : G') :
+    σ.relabel eN eG g' = σ (eG.symm g') :=
+  (rfl)
+
+/-- A relabelled section is normalized if and only if the original section is normalized. -/
+@[to_additive
+  /-- A relabelled additive section is normalized if and only if the original section is
+  normalized. -/]
+theorem Section.relabel_one_eq_one_iff {N' G' : Type*} [Group N'] [Group G']
+    {S : GroupExtension N E G} (σ : S.Section) (eN : N' ≃* N) (eG : G ≃* G') :
+    σ.relabel eN eG 1 = 1 ↔ σ 1 = 1 := by
+  simp [Section.relabel_apply]
+
+/-- The `(orderOf g)`-th power of any lift of `g` lies in the kernel `S.inl.range`. -/
+theorem pow_orderOf_mem_range_inl (S : GroupExtension N E G) (g : G) {e : E}
+    (he : S.rightHom e = g) :
+    e ^ orderOf g ∈ S.inl.range := by
+  rw [S.range_inl_eq_ker_rightHom, MonoidHom.mem_ker, map_pow, he, pow_orderOf_eq_one]
 
 section Hom
 

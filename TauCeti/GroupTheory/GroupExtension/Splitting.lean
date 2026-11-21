@@ -14,11 +14,13 @@ public import TauCeti.GroupTheory.GroupExtension.Basic
 
 The range of a splitting complements the included kernel of an extension, and the range
 determines the splitting uniquely. Equivalences of extensions and compatible multiplicative
-equivalences on the middle and quotient groups transport splittings in both directions. These
-results allow splitting criteria to be interpreted as existence criteria for actual subgroup
-complements. This file also supplies the evaluation and inverse formulas for Mathlib's
-`GroupExtension.Splitting.semidirectProductMulEquiv`, expressing the semidirect-product components
-of an extension element `e` in terms of `S.rightHom e` and `e * (s (S.rightHom e))⁻¹`.
+equivalences on the middle and quotient groups transport splittings in both directions, as does
+relabelling the kernel and quotient (`GroupExtension.Splitting.relabel`,
+`GroupExtension.nonempty_splitting_relabel_iff`). These results allow splitting criteria to be
+interpreted as existence criteria for actual subgroup complements. This file also supplies the
+evaluation and inverse formulas for Mathlib's `GroupExtension.Splitting.semidirectProductMulEquiv`,
+expressing the semidirect-product components of an extension element `e` in terms of
+`S.rightHom e` and `e * (s (S.rightHom e))⁻¹`.
 -/
 
 public section
@@ -222,5 +224,53 @@ theorem splittingEquivOfMulEquiv_symm_apply {N' E' G' : Type*} [Group N'] [Group
   (rfl)
 
 end MulEquiv
+
+section Relabel
+
+variable {N' G' : Type*} [Group N'] [Group G']
+
+/-- Transport a splitting of `S` to a splitting of `S.relabel eN eG` by precomposing with
+`eG.symm`. -/
+@[to_additive
+  /-- Transport a splitting of an additive extension `S` to a splitting of `S.relabel eN eG` by
+  precomposing with `eG.symm`. -/]
+def Splitting.relabel (s : S.Splitting) (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).Splitting where
+  toMonoidHom := s.toMonoidHom.comp eG.symm.toMonoidHom
+  rightInverse_rightHom g' := by
+    rw [GroupExtension.relabel_rightHom]
+    exact (congrArg eG (s.rightInverse_rightHom (eG.symm g'))).trans (eG.apply_symm_apply g')
+
+/-- Evaluating a relabelled splitting at `g'` evaluates the original splitting at `eG.symm g'`. -/
+@[to_additive (attr := simp)
+  /-- Evaluating a relabelled additive splitting at `g'` evaluates the original splitting at
+  `eG.symm g'`. -/]
+theorem Splitting.relabel_apply (s : S.Splitting) (eN : N' ≃* N) (eG : G ≃* G') (g' : G') :
+    s.relabel eN eG g' = s (eG.symm g') :=
+  (rfl)
+
+/-- The underlying section of a relabelled splitting is the relabelled underlying section. -/
+@[to_additive (attr := simp)
+  /-- The underlying section of a relabelled additive splitting is the relabelled underlying
+  section. -/]
+theorem Splitting.relabel_toSection (s : S.Splitting) (eN : N' ≃* N) (eG : G ≃* G') :
+    (s.relabel eN eG).toSection = s.toSection.relabel eN eG :=
+  DFunLike.ext _ _ fun g' ↦
+    (Splitting.relabel_apply s eN eG g').trans (Section.relabel_apply s.toSection eN eG g').symm
+
+/-- A relabelled extension splits if and only if the original extension splits. -/
+@[to_additive
+  /-- A relabelled additive extension splits if and only if the original additive extension
+  splits. -/]
+theorem nonempty_splitting_relabel_iff (S : GroupExtension N E G) (eN : N' ≃* N) (eG : G ≃* G') :
+    Nonempty (S.relabel eN eG).Splitting ↔ Nonempty S.Splitting := by
+  refine ⟨fun ⟨s⟩ ↦ ⟨⟨s.toMonoidHom.comp eG.toMonoidHom, fun g ↦ ?_⟩⟩,
+    fun ⟨s⟩ ↦ ⟨s.relabel eN eG⟩⟩
+  have h := s.rightInverse_rightHom (eG g)
+  rw [GroupExtension.relabel_rightHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at h
+  exact eG.injective (by
+    simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MonoidHom.toFun_eq_coe] using h)
+
+end Relabel
 
 end GroupExtension

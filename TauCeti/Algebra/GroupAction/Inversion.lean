@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Data.ZMod.Basic
 
 /-!
