@@ -107,27 +107,28 @@ def extendUnitization (ω : A →P[ℂ] ℂ) : Unitization ℂ A →P[ℂ] ℂ :
         simp [extendUnitizationCLM] }
 
 /-- Explicit evaluation formula for `ω.extendUnitization`. -/
-@[simp]
 theorem extendUnitization_apply (ω : A →P[ℂ] ℂ) (x : Unitization ℂ A) :
     ω.extendUnitization x = x.fst * (‖(ω : A →L[ℂ] ℂ)‖ : ℂ) + ω x.snd :=
   (rfl)
 
 /-- `ω.extendUnitization` agrees with `ω` on elements of `A`. -/
+@[simp]
 theorem extendUnitization_inr (ω : A →P[ℂ] ℂ) (a : A) :
     ω.extendUnitization (a : Unitization ℂ A) = ω a := by
-  simp
+  simp [extendUnitization_apply]
 
 /-- `ω.extendUnitization` evaluates to `‖ω‖` at `1`. -/
+@[simp]
 theorem extendUnitization_one (ω : A →P[ℂ] ℂ) :
     ω.extendUnitization 1 = (‖(ω : A →L[ℂ] ℂ)‖ : ℂ) := by
-  simp
+  simp [extendUnitization_apply]
 
 /-- Extending the zero functional yields the zero functional on `Unitization ℂ A`. -/
 @[simp]
 theorem extendUnitization_zero :
     (0 : A →P[ℂ] ℂ).extendUnitization = 0 := by
   ext x
-  simp [PositiveContinuousLinearMap.toContinuousLinearMap_zero]
+  simp [extendUnitization_apply, PositiveContinuousLinearMap.toContinuousLinearMap_zero]
 
 /-- The canonical unitization extension is additive on positive continuous linear functionals. -/
 @[simp]
@@ -164,9 +165,12 @@ theorem eq_extendUnitization_iff {ω : A →P[ℂ] ℂ} {ψ : Unitization ℂ A 
   have h1 : ψ 1 = (‖(ω : A →L[ℂ] ℂ)‖ : ℂ) := by
     rw [← hnorm, ← PositiveContinuousLinearMap.ofReal_opNorm_eq_map_one]
   ext x
-  nth_rw 1 [← Unitization.inl_fst_add_inr_snd_eq x]
-  rw [← Unitization.algebraMap_eq_inl, Algebra.algebraMap_eq_smul_one, map_add, map_smul,
-    smul_eq_mul, h1, hinr, extendUnitization_apply]
+  calc ψ x
+      = ψ (x.fst • 1 + (x.snd : Unitization ℂ A)) := by
+        rw [Unitization.fst_smul_one_add_inr_snd]
+    _ = x.fst • ψ 1 + ψ (x.snd : Unitization ℂ A) := by rw [map_add, map_smul]
+    _ = ω.extendUnitization x := by
+        rw [smul_eq_mul, h1, hinr, extendUnitization_apply]
 
 end PositiveContinuousLinearMap
 

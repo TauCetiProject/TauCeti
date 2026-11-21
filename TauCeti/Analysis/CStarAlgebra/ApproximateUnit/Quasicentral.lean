@@ -14,9 +14,10 @@ import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Decomposition
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Unitization
-import TauCeti.Analysis.CStarAlgebra.Representation.Multiplier
+import TauCeti.Analysis.CStarAlgebra.Representation.Ideal
 import TauCeti.Analysis.LocallyConvex.Mazur
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Analysis.Normed.Operator.Mul
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -37,12 +38,12 @@ The proof follows Arveson's Hahn–Banach / Mazur convexification argument:
    `TwoSidedIdeal.tendsto_toWeakSpace_commutator_of_isIncreasingApproximateUnit`).
    By the positive-functional characterization of weak convergence
    (`TauCeti.CStarAlgebra.tendsto_toWeakSpace_iff_forall_positiveContinuousLinearMap`), it suffices
-   to test against positive continuous linear functionals `ω : A →P[ℂ] ℂ`. Extending `ω` to the
-   unitization `A⁺¹` and passing to its GNS representation `π`, the restriction `π_I` to `I`
-   converges strongly along `l` to the orthogonal projection `P` onto the essential subspace of
-   `π_I` (`NonUnitalStarAlgHom.tendsto_multiplierExtension_apply` on
-   `π_I.restrictEssentialSubspace`). Because `I` is a two-sided ideal, `P` commutes with
-   `π (a : A⁺¹)`, so `ω (e * a - a * e) → 0`.
+   to test against positive continuous linear functionals `ω : A →P[ℂ] ℂ`. Passing to the
+   restricted GNS representation `ω.gnsInr`, its further restriction `πS` to `I` converges strongly
+   along `l` to the essential projection `P := πS.nonUnitalMultiplierExtension 1`
+   (`NonUnitalStarAlgHom.tendsto_nonUnitalMultiplierExtension_apply`). Because `I` is a two-sided
+   ideal, `P` commutes with `ω.gnsInr a`
+   (`NonUnitalStarAlgHom.commute_nonUnitalMultiplierExtension_one`), so `ω (e * a - a * e) → 0`.
 2. Applying Mazur's lemma (`TauCeti.mem_closure_convexHull_range_of_tendsto_weak`) in the finite
    product `F → A` produces positive strict contractions in `I` above any given positive strict
    contraction `e₀ ∈ I` whose commutators with all elements of `F` have norm `< ε`
@@ -61,7 +62,8 @@ The proof follows Arveson's Hahn–Banach / Mazur convexification argument:
 * `TwoSidedIdeal.exists_ge_norm_lt_one_commutator_lt`: finite-set commutator approximation by a
   positive strict contraction above a given positive strict contraction in a closed two-sided ideal.
 * `TwoSidedIdeal.quasicentralApproximateUnit`: the canonical quasicentral approximate unit filter
-  of a closed two-sided ideal, with basis `TwoSidedIdeal.hasBasis_quasicentralApproximateUnit`.
+  of a closed two-sided ideal, with basis `TwoSidedIdeal.hasBasis_quasicentralApproximateUnit` and
+  universal property `TwoSidedIdeal.le_quasicentralApproximateUnit_iff`.
 * `TwoSidedIdeal.exists_quasicentral_approximateUnit`: existence of a positive contractive
   quasicentral approximate unit filter for any closed two-sided ideal.
 * `TwoSidedIdeal.exists_seq_quasicentral_approximateUnit`: in a separable C⋆-algebra, every closed
@@ -88,44 +90,6 @@ section WeakConvergence
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
 
-/-- For a Hilbert-space representation `π` of `A` restricted to a closed two-sided ideal `I`,
-the orthogonal projection `πS.nonUnitalMultiplierExtension 1` onto the essential subspace of `πS`
-commutes with every `π a`. -/
-private theorem commute_nonUnitalMultiplierExtension_one {H : Type*}
-    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (a : A) :
-    let πS := π.comp (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra)
-    πS.nonUnitalMultiplierExtension 1 * π a = π a * πS.nonUnitalMultiplierExtension 1 := by
-  let S := I.toNonUnitalStarSubalgebra
-  let πS : S →⋆ₙₐ[ℂ] (H →L[ℂ] H) := π.comp (NonUnitalStarSubalgebraClass.subtype S)
-  let P : H →L[ℂ] H := πS.nonUnitalMultiplierExtension 1
-  let T : H →L[ℂ] H := π a
-  have hmul_left : ∀ x : S,
-      T * πS x = πS ⟨a * (x : A),
-        I.mem_toNonUnitalStarSubalgebra.mpr (I.mul_mem_left a x
-          (I.mem_toNonUnitalStarSubalgebra.mp x.property))⟩ := fun x => by
-    simp only [T, πS, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype,
-      ← map_mul]
-  have hmul_right : ∀ x : S,
-      πS x * T = πS ⟨(x : A) * a,
-        I.mem_toNonUnitalStarSubalgebra.mpr (I.mul_mem_right x a
-          (I.mem_toNonUnitalStarSubalgebra.mp x.property))⟩ := fun x => by
-    simp only [T, πS, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype,
-      ← map_mul]
-  refine πS.ext_of_orthogonal_essentialSubspace (fun x => ?_) (fun η hη => ?_)
-  · rw [mul_assoc, hmul_left x, mul_assoc]
-    have hPmul : ∀ y : S, P * πS y = πS y := fun y => by
-      simpa [P, DoubleCentralizer.one_fst] using πS.nonUnitalMultiplierExtension_mul_eq_fst 1 y
-    rw [hPmul, hPmul, hmul_left x]
-  · have hTη : T η ∈ πS.essentialSubspaceᗮ := by
-      rw [πS.mem_orthogonal_essentialSubspace_iff]
-      intro x
-      rw [← mul_apply_eq_comp, hmul_right x]
-      exact πS.apply_eq_zero_of_mem_orthogonal_essentialSubspace hη _
-    rw [mul_apply_eq_comp, mul_apply_eq_comp,
-      πS.nonUnitalMultiplierExtension_apply_eq_zero 1 hTη,
-      πS.nonUnitalMultiplierExtension_apply_eq_zero 1 hη, map_zero]
-
 /-- Along any eventually norm-bounded left approximate unit of a closed two-sided ideal `I`, the
 commutators `e * a - a * e` converge weakly to `0` in `A` for every `a : A`. -/
 theorem tendsto_toWeakSpace_commutator {l : Filter I.toNonUnitalStarSubalgebra} [l.NeBot] {C : ℝ}
@@ -141,34 +105,21 @@ theorem tendsto_toWeakSpace_commutator {l : Filter I.toNonUnitalStarSubalgebra} 
   intro ω
   rw [map_zero]
   let f : A⁺¹ →ₚ[ℂ] ℂ := ω.extendUnitization.toPositiveLinearMap
-  let πA : A →⋆ₙₐ[ℂ] (f.GNS →L[ℂ] f.GNS) :=
-    f.gnsNonUnitalStarAlgHom.comp (Unitization.inrNonUnitalStarAlgHom ℂ A)
-  let πS : S →⋆ₙₐ[ℂ] (f.GNS →L[ℂ] f.GNS) := πA.comp (NonUnitalStarSubalgebraClass.subtype S)
+  let πS : S →⋆ₙₐ[ℂ] (f.GNS →L[ℂ] f.GNS) :=
+    ω.gnsInr.comp (NonUnitalStarSubalgebraClass.subtype S)
   let P : f.GNS →L[ℂ] f.GNS := πS.nonUnitalMultiplierExtension 1
-  let T : f.GNS →L[ℂ] f.GNS := πA a
-  have hPT : P * T = T * P := I.commute_nonUnitalMultiplierExtension_one πA a
-  -- In the GNS representation of `ω.extendUnitization`, `πS e → P` strongly along `l`.
+  let T : f.GNS →L[ℂ] f.GNS := ω.gnsInr a
+  have hPT : P * T = T * P :=
+    (ω.gnsInr.commute_nonUnitalMultiplierExtension_one I.mul_mem_toNonUnitalStarSubalgebra a).eq
+  -- In the GNS representation `ω.gnsInr`, `πS e → P` strongly along `l`.
   have hstrong : ∀ ξ : f.GNS, Tendsto (fun e : S => πS e ξ) l (𝓝 (P ξ)) := fun ξ => by
-    have hlim := (πS.essentialSubspace.subtypeL.continuous.tendsto _).comp
-      (NonUnitalStarAlgHom.tendsto_multiplierExtension_apply
-        πS.isNondegenerate_restrictEssentialSubspace hC hl 1
-        (πS.essentialSubspace.orthogonalProjectionOnto ξ))
-    dsimp only [P]
-    rw [πS.nonUnitalMultiplierExtension_eq_extendByZero, Submodule.extendByZero_apply]
-    refine hlim.congr fun e => ?_
-    simp only [Function.comp_apply, DoubleCentralizer.one_fst, one_apply_eq_self,
-      Submodule.coe_subtypeL, Submodule.coe_subtype,
-      πS.coe_restrictEssentialSubspace_apply, Submodule.coe_orthogonalProjectionOnto_apply]
-    rw [← add_zero (πS e (πS.essentialSubspace.starProjection ξ)),
-      ← πS.apply_eq_zero_of_mem_orthogonal_essentialSubspace
-        (πS.essentialSubspace.sub_starProjection_mem_orthogonal ξ) e,
-      ← map_add, add_sub_cancel]
+    simpa only [DoubleCentralizer.one_fst, one_apply_eq_self] using
+      πS.tendsto_nonUnitalMultiplierExtension_apply hC hl 1 ξ
   -- Evaluate `ω (e * a - a * e)` as a difference of inner products and pass to the limit.
   have hterm : ∀ e : S, ω ((e : A) * a - a * (e : A)) =
       ⟪f.gnsVector, πS e (T f.gnsVector)⟫_ℂ - ⟪f.gnsVector, T (πS e f.gnsVector)⟫_ℂ := fun e => by
     simp only [πS, T, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype]
-    rw [map_sub, ← ω.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr,
-      ← ω.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr,
+    rw [map_sub, ← ω.inner_gnsVector_gnsInr, ← ω.inner_gnsVector_gnsInr,
       map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp]
   have hinner₁ : Tendsto (fun e : S => ⟪f.gnsVector, πS e (T f.gnsVector)⟫_ℂ) l
       (𝓝 ⟪f.gnsVector, P (T f.gnsVector)⟫_ℂ) :=
@@ -210,6 +161,7 @@ private theorem exists_ge_norm_le_one_commutator_lt {e₀ : A} (he₀I : e₀ �
     (he₀₁ : ‖e₀‖ < 1) (F : Finset A) {ε : ℝ} (hε : 0 < ε) :
     ∃ e ∈ I, e₀ ≤ e ∧ ‖e‖ ≤ 1 ∧ ∀ a ∈ F, ‖e * a - a * e‖ < ε := by
   classical
+  -- 1. Weak convergence of commutators along the approximate-unit tail `U = {e ≥ e₀ | ‖e‖ ≤ 1}`.
   let S := I.toNonUnitalStarSubalgebra
   let s₀ : S := ⟨e₀, I.mem_toNonUnitalStarSubalgebra.mpr he₀I⟩
   let U : Set S := {e : S | s₀ ≤ e ∧ ‖e‖ ≤ 1}
@@ -228,6 +180,7 @@ private theorem exists_ge_norm_le_one_commutator_lt {e₀ : A} (he₀I : e₀ �
     TauCeti.tendsto_toWeakSpace_pi_iff.mpr fun a =>
       (I.tendsto_toWeakSpace_commutator_of_isIncreasingApproximateUnit
         (CStarAlgebra.increasingApproximateUnit S) a.val).comp tendsto_comap
+  -- 2. Apply Mazur's lemma to find a convex combination with small commutator norms on `F`.
   have h0_mem : (0 : F → A) ∈ closure (convexHull ℝ (Set.range φ)) :=
     TauCeti.mem_closure_convexHull_range_of_tendsto_weak hweak
   obtain ⟨y, hy_ball, hy_hull⟩ :=
@@ -235,6 +188,7 @@ private theorem exists_ge_norm_le_one_commutator_lt {e₀ : A} (he₀I : e₀ �
   rw [convexHull_range_eq_exists_affineCombination] at hy_hull
   obtain ⟨s, w, hw, hsum, rfl⟩ := hy_hull
   rw [Finset.affineCombination_eq_linear_combination _ _ _ hsum] at hy_ball
+  -- 3. Verify that the convex combination lies in `I`, dominates `e₀`, and is a contraction.
   let e : S := ∑ i ∈ s, w i • i.val
   have he_ge : s₀ ≤ e := by
     have h1 : s₀ = ∑ i ∈ s, w i • s₀ := by rw [← Finset.sum_smul, hsum, one_smul]
@@ -413,6 +367,34 @@ theorem tendsto_commutator_quasicentralApproximateUnit (a : A) :
   intro e he
   simpa [dist_zero_right] using he.2.2.2 a (Finset.mem_singleton_self a)
 
+/-- A filter `l` on `A` refines `I.quasicentralApproximateUnit` if and only if it refines the image
+of `CStarAlgebra.approximateUnit I.toNonUnitalStarSubalgebra` under coercion and every ambient
+commutator `e * a - a * e` tends to `0` along `l`. -/
+theorem le_quasicentralApproximateUnit_iff {l : Filter A} :
+    l ≤ I.quasicentralApproximateUnit ↔
+      l ≤ (CStarAlgebra.approximateUnit I.toNonUnitalStarSubalgebra).map
+          ((↑) : I.toNonUnitalStarSubalgebra → A) ∧
+        ∀ a : A, Tendsto (fun e => e * a - a * e) l (𝓝 0) := by
+  refine ⟨fun hle => ⟨hle.trans ?_,
+      fun a => (I.tendsto_commutator_quasicentralApproximateUnit a).mono_left hle⟩, ?_⟩
+  · exact I.map_comap_quasicentralApproximateUnit ▸
+      Filter.map_mono I.comap_quasicentralApproximateUnit_le
+  · rintro ⟨hle, hcomm⟩
+    refine I.hasBasis_quasicentralApproximateUnit.ge_iff.mpr
+      fun ⟨⟨e₀, he₀I, he₀₀, he₀₁⟩, F, ε⟩ hε => ?_
+    let S := I.toNonUnitalStarSubalgebra
+    let s₀ : S := ⟨e₀, I.mem_toNonUnitalStarSubalgebra.mpr he₀I⟩
+    have hs₀_mem : ((↑) '' ({x : S | s₀ ≤ x} ∩ Metric.closedBall 0 1) : Set A) ∈ l :=
+      hle (Filter.image_mem_map ((CStarAlgebra.hasBasis_approximateUnit S).mem_of_mem ⟨he₀₀, he₀₁⟩))
+    have hcomm_mem : ∀ᶠ e in l, ∀ a ∈ F, ‖e * a - a * e‖ < ε := by
+      rw [Filter.eventually_all_finset]
+      intro a _
+      simpa [dist_zero_right] using Metric.tendsto_nhds.mp (hcomm a) ε hε
+    filter_upwards [hs₀_mem, hcomm_mem] with e he₁ he₂
+    rcases he₁ with ⟨x, hx, rfl⟩
+    exact ⟨I.mem_toNonUnitalStarSubalgebra.mp x.property, hx.1,
+      by simpa [Metric.mem_closedBall] using hx.2, he₂⟩
+
 /-- **Arveson's theorem**: every closed two-sided ideal of a (possibly nonunital) C⋆-algebra
 admits a positive contractive approximate unit that is quasicentral in the ambient algebra. -/
 theorem exists_quasicentral_approximateUnit :
@@ -507,31 +489,22 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
       x
   have hu_mul_right : ∀ a ∈ I, Tendsto (fun n => u n * a) atTop (𝓝 a) := fun a ha =>
     (continuous_subtypeVal.tendsto _).comp (hS_lim ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)
-  have hS_lim_left : ∀ x : S, Tendsto (fun n => x * (seq n).val) atTop (𝓝 x) := by
-    have hselfadj : ∀ᶠ e in atTop.map (fun n => (seq n).val), IsSelfAdjoint e :=
-      eventually_map.mpr (Eventually.of_forall fun n =>
-        IsSelfAdjoint.of_nonneg (seq n).property.1)
-    intro x
-    exact tendsto_map'_iff.mp
-      ((CStarAlgebra.tendsto_mul_left_iff_tendsto_mul_right hselfadj).mpr
-        (fun y => tendsto_map'_iff.mpr (hS_lim y)) x)
+  have hS_approx : (atTop.map (fun n => (seq n).val)).IsIncreasingApproximateUnit :=
+    .of_tendsto_mul_right
+      (eventually_map.mpr (Eventually.of_forall fun n => (seq n).property.1))
+      (eventually_map.mpr (Eventually.of_forall fun n => (seq n).property.2.le))
+      (fun x => tendsto_map'_iff.mpr (hS_lim x))
   have hu_mul_left : ∀ a ∈ I, Tendsto (fun n => a * u n) atTop (𝓝 a) := fun a ha =>
     (continuous_subtypeVal.tendsto _).comp
-      (hS_lim_left ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)
+      (tendsto_map'_iff.mp
+        (hS_approx.tendsto_mul_left ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩))
   -- Extend commutator convergence from `dA` to all of `A`.
   have hu_comm : ∀ a : A, Tendsto (fun n => u n * a - a * u n) atTop (𝓝 0) := fun a =>
     ContinuousLinearMap.tendsto_apply_of_dense hdA (C := 2)
       (f := fun n => ContinuousLinearMap.mul ℂ A (u n) - (ContinuousLinearMap.mul ℂ A).flip (u n))
       (g := 0)
-      (.of_forall fun n => (norm_sub_le _ _).trans <| by
-        have h1 : ‖ContinuousLinearMap.mul ℂ A (u n)‖ ≤ 1 :=
-          (ContinuousLinearMap.opNorm_mul_apply_le ℂ A (u n)).trans (hu_prop n).2.2.le
-        have h2 : ‖(ContinuousLinearMap.mul ℂ A).flip (u n)‖ ≤ 1 :=
-          ((ContinuousLinearMap.mul ℂ A).flip.le_opNorm (u n)).trans <| by
-            rw [ContinuousLinearMap.opNorm_flip]
-            exact (mul_le_of_le_one_left (norm_nonneg _)
-              (ContinuousLinearMap.opNorm_mul_le ℂ A)).trans (hu_prop n).2.2.le
-        linarith)
+      (.of_forall fun n => (ContinuousLinearMap.opNorm_mul_sub_flip_le (u n)).trans
+        (by linarith [(hu_prop n).2.2]))
       (by
         rintro _ ⟨k, rfl⟩
         exact tendsto_zero_of_norm_succ_lt_inv fun m hm =>

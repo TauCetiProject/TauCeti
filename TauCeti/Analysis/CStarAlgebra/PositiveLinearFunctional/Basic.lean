@@ -41,6 +41,8 @@ consequences:
 * `PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero` and
   `PositiveLinearMap.map_eq_zero_of_map_mul_star_self_eq_zero`: on a C⋆-algebra, a positive linear
   functional vanishing on `star x * x` or `x * star x` vanishes on `x`.
+* `PositiveLinearMap.map_eq_zero_of_re_eq_zero`: a positive map vanishing in real part on a
+  nonnegative element vanishes on that element.
 
 ## Positive functionals in the weak-* dual
 
@@ -157,6 +159,16 @@ theorem map_mul_eq_zero_of_map_star_mul_self_eq_zero (f : F) {y : A} (hy : f (st
   exact norm_eq_zero.mp (le_antisymm hcs (norm_nonneg _))
 
 end StarOrdered
+
+section Order
+
+/-- A positive map vanishing in real part on a nonnegative element vanishes on that element. -/
+theorem map_eq_zero_of_re_eq_zero {A : Type*} [Preorder A] [Zero A]
+    {F : Type*} [FunLike F A ℂ] [ZeroHomClass F A ℂ] [OrderHomClass F A ℂ]
+    (f : F) {x : A} (hx : 0 ≤ x) (hre : (f x).re = 0) : f x = 0 :=
+  Complex.ext hre (Complex.nonneg_iff.mp (map_nonneg f hx)).2.symm
+
+end Order
 
 section CStar
 

@@ -38,7 +38,9 @@ that `x * e → x` along an increasing approximate unit of a closed `⋆`-subalg
 `star x * x ≤ star y * y`, drive the quotient C⋆-identity and order-heredity arguments.
 
 `Filter.IsIncreasingApproximateUnit.mono` records that any proper filter finer than an increasing
-approximate unit is again an increasing approximate unit.
+approximate unit is again an increasing approximate unit, and
+`Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right` shows that any proper filter of positive
+contractions forming a left approximate unit is an increasing approximate unit.
 -/
 
 public section
@@ -60,6 +62,19 @@ theorem mono {l l' : Filter A} (hl : l.IsIncreasingApproximateUnit) (hle : l' �
   tendsto_mul_right m := (hl.tendsto_mul_right m).mono_left hle
   eventually_nonneg := hl.eventually_nonneg.filter_mono hle
   eventually_norm := hl.eventually_norm.filter_mono hle
+
+/-- A proper filter of positive contractions on a C⋆-algebra that forms a left approximate unit
+is an increasing approximate unit. -/
+theorem of_tendsto_mul_right [StarOrderedRing A] {l : Filter A} [l.NeBot]
+    (hnonneg : ∀ᶠ e in l, 0 ≤ e) (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    (hmul : ∀ a : A, Tendsto (· * a) l (𝓝 a)) :
+    l.IsIncreasingApproximateUnit where
+  tendsto_mul_left := (CStarAlgebra.tendsto_mul_left_iff_tendsto_mul_right
+    (hnonneg.mono fun _ => IsSelfAdjoint.of_nonneg)).mpr hmul
+  tendsto_mul_right := hmul
+  neBot := ‹_›
+  eventually_nonneg := hnonneg
+  eventually_norm := hnorm
 
 /-- Along an increasing approximate unit, two-sided compression `e * a * e` tends to `a`. -/
 theorem tendsto_mul_self {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (a : A) :

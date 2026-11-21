@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Unitization
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Basic
 
 /-!
@@ -24,10 +25,9 @@ For a positive continuous linear functional `ω : A →P[ℂ] ℂ` extended cano
 `Unitization ℂ A`, the GNS classes `[e]` along any increasing approximate unit `e` of `A` converge
 in norm to the cyclic vector `[1]` of `ω.extendUnitization`
 (`PositiveContinuousLinearMap.tendsto_toGNS_inr_extendUnitization`), so restricting the GNS
-representation of `ω.extendUnitization` to `A` remains nondegenerate
-(`PositiveContinuousLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr`),
-and its vector functional at `gnsVector` recovers `ω`
-(`PositiveContinuousLinearMap.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr`).
+representation of `ω.extendUnitization` to `A` (`PositiveContinuousLinearMap.gnsInr ω`) remains
+nondegenerate (`PositiveContinuousLinearMap.isNondegenerate_gnsInr`), and its vector functional at
+`gnsVector` recovers `ω` (`PositiveContinuousLinearMap.inner_gnsVector_gnsInr`).
 
 The zero functional is included: its GNS Hilbert space is zero and the representation is
 still nondegenerate. Faithfulness is sufficient, not necessary, for injectivity of the GNS
@@ -102,6 +102,29 @@ namespace PositiveContinuousLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+/-- The restriction to `A` of the GNS representation of `ω.extendUnitization` on
+`ω.extendUnitization.toPositiveLinearMap.GNS`. -/
+def gnsInr (ω : A →P[ℂ] ℂ) :
+    A →⋆ₙₐ[ℂ]
+      (ω.extendUnitization.toPositiveLinearMap.GNS →L[ℂ]
+        ω.extendUnitization.toPositiveLinearMap.GNS) :=
+  ω.extendUnitization.toPositiveLinearMap.gnsNonUnitalStarAlgHom.comp
+    (Unitization.inrNonUnitalStarAlgHom ℂ A)
+
+/-- Definitional characterization of `ω.gnsInr` as the restriction of the GNS representation of
+`ω.extendUnitization` along `Unitization.inrNonUnitalStarAlgHom ℂ A`. -/
+theorem gnsInr_def (ω : A →P[ℂ] ℂ) :
+    ω.gnsInr =
+      ω.extendUnitization.toPositiveLinearMap.gnsNonUnitalStarAlgHom.comp
+        (Unitization.inrNonUnitalStarAlgHom ℂ A) :=
+  (rfl)
+
+/-- Evaluation of `ω.gnsInr` at `a : A` as the GNS operator of `(a : Unitization ℂ A)`. -/
+@[simp]
+theorem gnsInr_apply (ω : A →P[ℂ] ℂ) (a : A) :
+    ω.gnsInr a = ω.extendUnitization.toPositiveLinearMap.gnsNonUnitalStarAlgHom (a : A⁺¹) :=
+  (rfl)
+
 /-- Along any increasing approximate unit `e` of `A`, the GNS classes `[e]` converge in norm to
 the cyclic GNS vector `[1]` of `ω.extendUnitization`. -/
 theorem tendsto_toGNS_inr_extendUnitization (ω : A →P[ℂ] ℂ) {l : Filter A}
@@ -128,7 +151,9 @@ theorem tendsto_toGNS_inr_extendUnitization (ω : A →P[ℂ] ℂ) {l : Filter A
       rw [Unitization.inr_mul, two_smul]
       noncomm_ring
     rw [hexp, map_add, map_sub, map_smul]
-    simp [f]
+    simp only [f, PositiveContinuousLinearMap.coe_toPositiveLinearMap,
+      PositiveContinuousLinearMap.extendUnitization_inr,
+      PositiveContinuousLinearMap.extendUnitization_one, smul_eq_mul]
   have hlimC : Tendsto (fun e : A => (‖f.toGNS (e : A⁺¹) - f.gnsVector‖ ^ 2 : ℂ)) l (𝓝 0) := by
     refine Tendsto.congr' (hval.mono fun _ h => h.symm) ?_
     have h := ((ω.tendsto_mul_self_nhds_opNorm hl).sub
@@ -142,18 +167,16 @@ theorem tendsto_toGNS_inr_extendUnitization (ω : A →P[ℂ] ℂ) {l : Filter A
 
 /-- Restricting the GNS representation of `ω.extendUnitization` to `A` yields a nondegenerate
 representation on `ω.extendUnitization.toPositiveLinearMap.GNS`. -/
-theorem isNondegenerate_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr (ω : A →P[ℂ] ℂ) :
-    (ω.extendUnitization.toPositiveLinearMap.gnsNonUnitalStarAlgHom.comp
-      (Unitization.inrNonUnitalStarAlgHom ℂ A)).IsNondegenerate := by
+theorem isNondegenerate_gnsInr (ω : A →P[ℂ] ℂ) : ω.gnsInr.IsNondegenerate := by
   set f := ω.extendUnitization.toPositiveLinearMap
   rw [NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero]
   intro ξ hξ
   have hinner_inr : ∀ a : A, ⟪f.toGNS (a : A⁺¹), ξ⟫_ℂ = 0 := fun a => by
     have h := hξ (star a)
-    simp only [NonUnitalStarAlgHom.comp_apply, Unitization.inrNonUnitalStarAlgHom_apply] at h
+    rw [gnsInr_apply, Unitization.inr_star, map_star] at h
     rw [PositiveLinearMap.toGNS_apply, ← f.gnsNonUnitalStarAlgHom_apply_gnsVector,
       ← ContinuousLinearMap.adjoint_inner_right, ← ContinuousLinearMap.star_eq_adjoint,
-      ← map_star, ← Unitization.inr_star, h, inner_zero_right]
+      h, inner_zero_right]
   have hinner_one : ⟪f.gnsVector, ξ⟫_ℂ = 0 := by
     have hl := CStarAlgebra.increasingApproximateUnit A
     have := hl.neBot
@@ -165,29 +188,27 @@ theorem isNondegenerate_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr (ω : 
       simpa [Function.comp_def] using hconj
     exact tendsto_nhds_unique hlim' <|
       (tendsto_const_nhds (x := (0 : ℂ))).congr fun e => (hinner_inr e).symm
-  have hinner_all : ∀ x : A⁺¹, ⟪f.toGNS x, ξ⟫_ℂ = 0 := fun x => by
-    nth_rw 1 [← Unitization.inl_fst_add_inr_snd_eq x]
-    have hinl : Unitization.inl x.fst = x.fst • (1 : A⁺¹) := by
-      rw [← Unitization.algebraMap_eq_inl, Algebra.algebraMap_eq_smul_one]
-    rw [hinl, map_add, map_smul, inner_add_left, inner_smul_left,
-      PositiveLinearMap.toGNS_apply, ← PositiveLinearMap.gnsVector_def, hinner_one,
-      hinner_inr, mul_zero, add_zero]
+  have hinner_all : ∀ x : A⁺¹, ⟪f.toGNS x, ξ⟫_ℂ = 0 := fun x =>
+    calc ⟪f.toGNS x, ξ⟫_ℂ
+        = ⟪f.toGNS (x.fst • 1 + (x.snd : A⁺¹)), ξ⟫_ℂ := by
+          rw [Unitization.fst_smul_one_add_inr_snd]
+      _ = star x.fst * ⟪f.gnsVector, ξ⟫_ℂ + ⟪f.toGNS (x.snd : A⁺¹), ξ⟫_ℂ := by
+          rw [map_add, map_smul, inner_add_left, inner_smul_left,
+            PositiveLinearMap.toGNS_apply, ← PositiveLinearMap.gnsVector_def,
+            ← Complex.star_def]
+      _ = 0 := by rw [hinner_one, hinner_inr, mul_zero, add_zero]
   refine ext_inner_left ℂ fun η => ?_
   rw [inner_zero_right]
   refine f.denseRange_toGNS.induction_on η ?_ hinner_all
   exact isClosed_eq ((continuous_star.comp (innerSL ℂ ξ).continuous).congr fun v => by simp)
     continuous_const
 
-/-- In the restricted GNS representation of `ω.extendUnitization`, the vector functional at
-`gnsVector` recovers `ω`. -/
-theorem inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr (ω : A →P[ℂ] ℂ)
-    (b : A) :
+/-- In the restricted GNS representation `ω.gnsInr`, the vector functional at `gnsVector` recovers
+`ω`. -/
+theorem inner_gnsVector_gnsInr (ω : A →P[ℂ] ℂ) (b : A) :
     ⟪ω.extendUnitization.toPositiveLinearMap.gnsVector,
-      (ω.extendUnitization.toPositiveLinearMap.gnsNonUnitalStarAlgHom.comp
-        (Unitization.inrNonUnitalStarAlgHom ℂ A)) b
-        ω.extendUnitization.toPositiveLinearMap.gnsVector⟫_ℂ = ω b := by
-  rw [NonUnitalStarAlgHom.comp_apply, Unitization.inrNonUnitalStarAlgHom_apply,
-    PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_gnsVector,
+      ω.gnsInr b ω.extendUnitization.toPositiveLinearMap.gnsVector⟫_ℂ = ω b := by
+  rw [gnsInr_apply, PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_gnsVector,
     PositiveLinearMap.inner_gnsVector_coe,
     PositiveContinuousLinearMap.coe_toPositiveLinearMap,
     ω.extendUnitization_inr]

@@ -30,6 +30,8 @@ to extend with the same unitary group representation.
 * `NonUnitalStarAlgHom.essentialSubspace_idealExtension` and
   `NonUnitalStarAlgHom.isNondegenerate_idealExtension_iff`: preservation of essential subspaces and
   nondegeneracy.
+* `NonUnitalStarAlgHom.commute_nonUnitalMultiplierExtension_one`: the essential projection of a
+  representation restricted to a closed two-sided star ideal commutes with every ambient operator.
 
 ## References
 
@@ -142,6 +144,39 @@ theorem eq_idealExtension_of_apply_coe (hπ : π.IsNondegenerate)
   · rw [← hψ, ← map_mul, ← hψ ⟨a * x, hmul a x x.property⟩]
   · rw [π.orthogonal_essentialSubspace_eq_bot_of_isNondegenerate hπ, Submodule.mem_bot] at hξ
     simp [hξ]
+
+/-- For a Hilbert-space representation `π` of `A` restricted to a closed two-sided star ideal `I`,
+the orthogonal projection `πS.nonUnitalMultiplierExtension 1` onto the essential subspace of
+`πS := π.comp (NonUnitalStarSubalgebraClass.subtype I)` commutes with every `π a`. -/
+theorem commute_nonUnitalMultiplierExtension_one
+    (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (a : A) :
+    Commute
+      ((π.comp (NonUnitalStarSubalgebraClass.subtype I)).nonUnitalMultiplierExtension 1)
+      (π a) := by
+  let πS : I →⋆ₙₐ[ℂ] (H →L[ℂ] H) := π.comp (NonUnitalStarSubalgebraClass.subtype I)
+  let P : H →L[ℂ] H := πS.nonUnitalMultiplierExtension 1
+  let T : H →L[ℂ] H := π a
+  have hmul_left : ∀ x : I, T * πS x = πS ⟨a * (x : A), hmul a x x.property⟩ := fun x => by
+    simp only [T, πS, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype,
+      ← map_mul]
+  have hmul_right : ∀ x : I,
+      πS x * T = πS ⟨(x : A) * a, StarMemClass.mul_mem_right_of_mul_mem_left hmul a x.property⟩ :=
+    fun x => by
+      simp only [T, πS, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype,
+        ← map_mul]
+  refine πS.ext_of_orthogonal_essentialSubspace (fun x => ?_) (fun η hη => ?_)
+  · rw [mul_assoc, hmul_left x, mul_assoc]
+    have hPmul : ∀ y : I, P * πS y = πS y := fun y => by
+      simpa [P, DoubleCentralizer.one_fst] using πS.nonUnitalMultiplierExtension_mul_eq_fst 1 y
+    rw [hPmul, hPmul, hmul_left x]
+  · have hTη : T η ∈ πS.essentialSubspaceᗮ := by
+      rw [πS.mem_orthogonal_essentialSubspace_iff]
+      intro x
+      rw [← mul_apply_eq_comp, hmul_right x]
+      exact πS.apply_eq_zero_of_mem_orthogonal_essentialSubspace hη _
+    rw [mul_apply_eq_comp, mul_apply_eq_comp,
+      πS.nonUnitalMultiplierExtension_apply_eq_zero 1 hTη,
+      πS.nonUnitalMultiplierExtension_apply_eq_zero 1 hη, map_zero]
 
 end IdealExtension
 

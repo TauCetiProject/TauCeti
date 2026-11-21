@@ -34,6 +34,8 @@ of the unitization implementing the same conjugation on `B`.
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
+* `Unitization.fst_smul_one_add_inr_snd`: decomposition of elements of `Unitization R A` as
+  `x.fst • 1 + (x.snd : Unitization R A)`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
 -/
@@ -59,6 +61,16 @@ theorem inr_mul_eq_inr (a : A) (x : Unitization R A) :
   Unitization.ext (zero_mul x.fst) <| by simp
 
 end MulInr
+
+section Decomposition
+
+/-- Every element of `Unitization R A` decomposes as `x.fst • 1 + (x.snd : Unitization R A)`. -/
+theorem fst_smul_one_add_inr_snd {R A : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+    (x : Unitization R A) :
+    x.fst • (1 : Unitization R A) + (x.snd : Unitization R A) = x :=
+  Unitization.ext (by simp) (by simp)
+
+end Decomposition
 
 section Map
 

@@ -158,6 +158,13 @@ theorem strictlyPositiveApproximateUnit_zero (n : ℕ) :
     strictlyPositiveApproximateUnit (0 : A) n = 0 := by
   simp [strictlyPositiveApproximateUnit]
 
+/-- At a nonpositive element, every term of `strictlyPositiveApproximateUnit` vanishes. -/
+@[simp]
+theorem strictlyPositiveApproximateUnit_of_not_nonneg {h : A} (hh : ¬ 0 ≤ h) (n : ℕ) :
+    strictlyPositiveApproximateUnit h n = 0 := by
+  rw [strictlyPositiveApproximateUnit_def]
+  exact cfcₙ_apply_of_not_predicate _ hh
+
 /-- Each term of `strictlyPositiveApproximateUnit h` is nonnegative. -/
 theorem strictlyPositiveApproximateUnit_nonneg (h : A) (n : ℕ) :
     0 ≤ strictlyPositiveApproximateUnit h n :=
@@ -205,10 +212,12 @@ theorem map_strictlyPositiveApproximateUnit {B F : Type*} [NonUnitalCStarAlgebra
     (Continuous.continuousOn (by fun_prop (disch := intro x; positivity))) (by simp)
     (map_continuous f) hh (map_nonneg f hh)
 
-/-- Quantitative right-approximation error on `h`:
-`‖h - h * strictlyPositiveApproximateUnit h n‖ ≤ (n + 1)⁻¹`. -/
-theorem norm_sub_mul_strictlyPositiveApproximateUnit_le {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    ‖h - h * strictlyPositiveApproximateUnit h n‖ ≤ ((n + 1 : ℕ) : ℝ)⁻¹ := by
+/-- Algebraic `cfcₙ` identity for the approximation error
+`h - h * strictlyPositiveApproximateUnit h n`. -/
+private theorem sub_mul_strictlyPositiveApproximateUnit_eq {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    h - h * strictlyPositiveApproximateUnit h n =
+      cfcₙ (fun t : ℝ≥0 =>
+        t * (((n + 1 : ℕ) : ℝ≥0)⁻¹ * (((n + 1 : ℕ) : ℝ≥0)⁻¹ + t)⁻¹)) h := by
   let c : ℝ≥0 := ((n + 1 : ℕ) : ℝ≥0)⁻¹
   have hc_pos : 0 < c := by positivity
   have hf_cont : Continuous (fun t : ℝ≥0 => t * (c + t)⁻¹) := by
@@ -225,22 +234,27 @@ theorem norm_sub_mul_strictlyPositiveApproximateUnit_le {h : A} (hh : 0 ≤ h) (
       _ = cfcₙ (fun t : ℝ≥0 => t * (t * (c + t)⁻¹)) h := by
           rw [← cfcₙ_mul (fun t : ℝ≥0 => t) _ h (continuousOn_id' _) rfl hf_cont.continuousOn
             (by simp)]
-  have hdiff : h - h * strictlyPositiveApproximateUnit h n =
-      cfcₙ (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) h := by
-    have hsum : cfcₙ (fun t : ℝ≥0 => t * (t * (c + t)⁻¹)) h +
-        cfcₙ (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) h = h := by
-      rw [← cfcₙ_add (fun t : ℝ≥0 => t * (t * (c + t)⁻¹))
-        (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) h htf_cont.continuousOn (by simp)
-        hg_cont.continuousOn (by simp)]
-      conv_rhs => rw [← cfcₙ_id' ℝ≥0 h hh]
-      refine cfcₙ_congr fun t _ => ?_
-      have hden : c + t ≠ 0 := (add_pos_of_pos_of_nonneg hc_pos t.property).ne'
-      calc t * (t * (c + t)⁻¹) + t * (c * (c + t)⁻¹)
-          = t * ((c + t) * (c + t)⁻¹) := by ring
-        _ = t * 1 := by rw [mul_inv_cancel₀ hden]
-        _ = t := mul_one t
-    rw [hmul, sub_eq_iff_eq_add', hsum]
-  rw [hdiff]
+  have hsum : cfcₙ (fun t : ℝ≥0 => t * (t * (c + t)⁻¹)) h +
+      cfcₙ (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) h = h := by
+    rw [← cfcₙ_add (fun t : ℝ≥0 => t * (t * (c + t)⁻¹))
+      (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) h htf_cont.continuousOn (by simp)
+      hg_cont.continuousOn (by simp)]
+    conv_rhs => rw [← cfcₙ_id' ℝ≥0 h hh]
+    refine cfcₙ_congr fun t _ => ?_
+    have hden : c + t ≠ 0 := (add_pos_of_pos_of_nonneg hc_pos t.property).ne'
+    calc t * (t * (c + t)⁻¹) + t * (c * (c + t)⁻¹)
+        = t * ((c + t) * (c + t)⁻¹) := by ring
+      _ = t * 1 := by rw [mul_inv_cancel₀ hden]
+      _ = t := mul_one t
+  rw [hmul, sub_eq_iff_eq_add', hsum]
+
+/-- Quantitative right-approximation error on `h`:
+`‖h - h * strictlyPositiveApproximateUnit h n‖ ≤ (n + 1)⁻¹`. -/
+theorem norm_sub_mul_strictlyPositiveApproximateUnit_le {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    ‖h - h * strictlyPositiveApproximateUnit h n‖ ≤ ((n + 1 : ℕ) : ℝ)⁻¹ := by
+  let c : ℝ≥0 := ((n + 1 : ℕ) : ℝ≥0)⁻¹
+  have hc_pos : 0 < c := by positivity
+  rw [sub_mul_strictlyPositiveApproximateUnit_eq hh n]
   have hle : ‖cfcₙ (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) h‖₊ ≤ c := by
     refine nnNorm_cfcₙ_nnreal_le fun t _ => ?_
     have hden : (0 : ℝ≥0) < c + t := add_pos_of_pos_of_nonneg hc_pos t.property
@@ -294,9 +308,8 @@ theorem inr_strictlyPositiveApproximateUnit_eq (h : A) (n : ℕ) :
         cfc_mul (fun t : ℝ≥0 => t) (fun t : ℝ≥0 => (c + t)⁻¹) (h : A⁺¹)
           (continuousOn_id' _) hr_cont, cfc_id' ℝ≥0 (h : A⁺¹) hh']
     exact ⟨hL, hL.trans ((Commute.refl (h : A⁺¹)).cfc_nnreal _).symm.eq⟩
-  · have hh' : ¬ 0 ≤ (h : A⁺¹) := fun h1 => hh ((Unitization.inr_nonneg_iff ℂ).mp h1)
-    simp [strictlyPositiveApproximateUnit_def, cfcₙ_apply_of_not_predicate _ hh,
-      cfc_apply_of_not_predicate _ hh']
+  · simp [strictlyPositiveApproximateUnit_of_not_nonneg hh,
+      cfc_apply_of_not_predicate _ fun h1 => hh ((Unitization.inr_nonneg_iff ℂ).mp h1)]
 
 /-- Every left multiple `strictlyPositiveApproximateUnit h n * a` belongs to `h * A`. -/
 theorem strictlyPositiveApproximateUnit_mul_mem_range (h : A) (n : ℕ) (a : A) :
@@ -380,6 +393,15 @@ theorem tendsto_mul_strictlyPositiveApproximateUnit_of_mem_closure_range_mul_rig
   rw [star_mul, star_star,
     (IsSelfAdjoint.of_nonneg (strictlyPositiveApproximateUnit_nonneg h n)).star_eq]
 
+omit [StarOrderedRing A] in
+private theorem eq_zero_of_forall_re_apply_pos {h : A}
+    (hpos : ∀ φ : A →P[ℂ] ℂ, φ ≠ 0 → 0 < (φ h).re) {φ : A →P[ℂ] ℂ} (hφh : φ h = 0) :
+    φ = 0 := by
+  by_contra hne
+  have hlt := hpos φ hne
+  rw [hφh, Complex.zero_re] at hlt
+  exact lt_irrefl 0 hlt
+
 /-- If `0 ≤ h` is strictly positive on every nonzero positive functional of `A`, then `π h` has
 dense range in any nondegenerate Hilbert-space representation `π` of `A`. -/
 private theorem dense_range_of_isNondegenerate {H : Type*}
@@ -397,11 +419,8 @@ private theorem dense_range_of_isNondegenerate {H : Type*}
     ((ContinuousLinearMap.innerPositiveLinearMap ℂ v).comp (.ofClass π))
   have hφv_apply : ∀ b, φv b = ⟪v, π b v⟫_ℂ := fun b => by
     simp [φv, PositiveLinearMap.ofClass]
-  have hφv0 : φv = 0 := by
-    by_contra hne
-    have hlt := hpos φv hne
-    rw [hφv_apply h, hπhv, inner_zero_right, Complex.zero_re] at hlt
-    exact lt_irrefl 0 hlt
+  have hφv0 : φv = 0 := eq_zero_of_forall_re_apply_pos hpos <| by
+    rw [hφv_apply h, hπhv, inner_zero_right]
   refine (NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero.mp hπ) v fun b => ?_
   have hinner0 : ⟪π b v, π b v⟫_ℂ = 0 := by
     have hval : ⟪v, π (star b * b) v⟫_ℂ = 0 := by
@@ -452,21 +471,18 @@ private theorem dense_range_mul_left_of_forall_pos {h : A} (hh : 0 ≤ h)
     (fun n => subset_closure (strictlyPositiveApproximateUnit_mul_mem_range h n a)) ?_
   rw [tendsto_toWeakSpace_iff_forall_positiveContinuousLinearMap]
   intro ω
-  let f : A⁺¹ →ₚ[ℂ] ℂ := ω.extendUnitization.toPositiveLinearMap
-  let πA : A →⋆ₙₐ[ℂ] (f.GNS →L[ℂ] f.GNS) :=
-    f.gnsNonUnitalStarAlgHom.comp (Unitization.inrNonUnitalStarAlgHom ℂ A)
-  have hstrong : Tendsto (fun n => πA (strictlyPositiveApproximateUnit h n) (πA a f.gnsVector))
-      atTop (𝓝 (πA a f.gnsVector)) :=
-    tendsto_apply_strictlyPositiveApproximateUnit_of_isNondegenerate πA
-      ω.isNondegenerate_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr hh hpos (πA a f.gnsVector)
+  let ξ := ω.extendUnitization.toPositiveLinearMap.gnsVector
+  have hstrong : Tendsto (fun n => ω.gnsInr (strictlyPositiveApproximateUnit h n) (ω.gnsInr a ξ))
+      atTop (𝓝 (ω.gnsInr a ξ)) :=
+    tendsto_apply_strictlyPositiveApproximateUnit_of_isNondegenerate ω.gnsInr
+      ω.isNondegenerate_gnsInr hh hpos (ω.gnsInr a ξ)
   have hinner : Tendsto
-      (fun n => ⟪f.gnsVector, πA (strictlyPositiveApproximateUnit h n) (πA a f.gnsVector)⟫_ℂ)
-      atTop (𝓝 ⟪f.gnsVector, πA a f.gnsVector⟫_ℂ) :=
+      (fun n => ⟪ξ, ω.gnsInr (strictlyPositiveApproximateUnit h n) (ω.gnsInr a ξ)⟫_ℂ)
+      atTop (𝓝 ⟪ξ, ω.gnsInr a ξ⟫_ℂ) :=
     ((continuous_const.inner continuous_id).tendsto _).comp hstrong
-  rw [← ω.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr a]
+  rw [← ω.inner_gnsVector_gnsInr a]
   refine hinner.congr fun n => ?_
-  rw [← ω.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr, map_mul,
-    mul_apply_eq_comp]
+  rw [← ω.inner_gnsVector_gnsInr, map_mul, mul_apply_eq_comp]
 
 /-- Characterizations of strictly positive elements in a (possibly nonunital) C⋆-algebra
 (Blackadar II.4.2.1): for `0 ≤ h`, strict positivity, density of `h * A`, density of `A * h`,
@@ -484,9 +500,9 @@ theorem isStrictlyPositive_tfae {h : A} (hh : 0 ≤ h) :
     hh.isSelfAdjoint.image_star_range_mul_left ▸
       star_involutive.surjective.denseRange.dense_image continuous_star hd
   tfae_have 3 → 4 := fun hd φ hφ => by
-    have hφh : 0 ≤ φ h := φ.map_nonneg hh
-    refine lt_of_le_of_ne (Complex.nonneg_iff.mp hφh).1 fun hzero => ?_
-    have hφh0 : φ h = 0 := Complex.ext hzero.symm (Complex.nonneg_iff.mp hφh).2.symm
+    have hre : 0 ≤ (φ h).re := (Complex.nonneg_iff.mp (φ.map_nonneg hh)).1
+    refine lt_of_le_of_ne hre fun hzero => ?_
+    have hφh0 : φ h = 0 := PositiveLinearMap.map_eq_zero_of_re_eq_zero φ hh hzero.symm
     let r : A := CFC.sqrt h
     have hr_star : star r = r := (CFC.sqrt_nonneg h).isSelfAdjoint.star_eq
     have hrr : r * r = h := CFC.sqrt_mul_sqrt_self h
@@ -499,22 +515,11 @@ theorem isStrictlyPositive_tfae {h : A} (hh : 0 ≤ h) :
     exact hφ (DFunLike.ext _ _ fun a => congrFun hzero_fn a)
   tfae_have 4 → 5 := fun hpos => by
     have hdense := dense_range_mul_left_of_forall_pos hh hpos
-    have hmul_right : ∀ a : A,
-        Tendsto (· * a) (atTop.map (strictlyPositiveApproximateUnit h)) (𝓝 a) := fun a => by
-      rw [tendsto_map'_iff]
-      exact tendsto_strictlyPositiveApproximateUnit_mul_of_mem_closure_range_mul_left hh (hdense a)
-    have hselfadj : ∀ᶠ e in atTop.map (strictlyPositiveApproximateUnit h), IsSelfAdjoint e :=
-      eventually_map.mpr (Eventually.of_forall fun n =>
-        IsSelfAdjoint.of_nonneg (strictlyPositiveApproximateUnit_nonneg h n))
-    exact
-      { tendsto_mul_left := (CStarAlgebra.tendsto_mul_left_iff_tendsto_mul_right hselfadj).mpr
-          hmul_right
-        tendsto_mul_right := hmul_right
-        neBot := map_neBot
-        eventually_nonneg := eventually_map.mpr (Eventually.of_forall
-          (strictlyPositiveApproximateUnit_nonneg h))
-        eventually_norm := eventually_map.mpr (Eventually.of_forall
-          (norm_strictlyPositiveApproximateUnit_le_one h)) }
+    refine Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right
+      (eventually_map.mpr (Eventually.of_forall (strictlyPositiveApproximateUnit_nonneg h)))
+      (eventually_map.mpr (Eventually.of_forall (norm_strictlyPositiveApproximateUnit_le_one h)))
+      fun a => tendsto_map'_iff.mpr ?_
+    exact tendsto_strictlyPositiveApproximateUnit_mul_of_mem_closure_range_mul_left hh (hdense a)
   tfae_have 5 → 1 := fun hl => by
     refine isStrictlyPositive_def.mpr ⟨hh, Set.eq_univ_of_forall fun a => ?_⟩
     exact mem_closure_of_tendsto (tendsto_map'_iff.mp (hl.tendsto_mul_self a))
@@ -548,11 +553,9 @@ theorem isStrictlyPositive_iff_isIncreasingApproximateUnit {h : A} :
     · intro hsp
       exact (hh hsp.nonneg).elim
     · intro hl
-      have hzero : ∀ n, strictlyPositiveApproximateUnit h n = 0 := fun n => by
-        rw [strictlyPositiveApproximateUnit_def]
-        exact cfcₙ_apply_of_not_predicate _ hh
       have hlim := tendsto_map'_iff.mp (hl.tendsto_mul_right h)
-      have hh0 : (0 : A) = h := by simpa [Function.comp_def, hzero] using hlim
+      have hh0 : (0 : A) = h := by
+        simpa [Function.comp_def, strictlyPositiveApproximateUnit_of_not_nonneg hh] using hlim
       exact (hh (hh0 ▸ le_rfl)).elim
 
 /-- Every nonzero positive continuous linear functional takes a strictly positive real value on a
@@ -563,11 +566,8 @@ theorem IsStrictlyPositive.re_apply_pos_of_ne_zero {h : A}
 
 /-- A positive continuous linear functional vanishing on a strictly positive element is zero. -/
 theorem IsStrictlyPositive.eq_zero_of_apply_eq_zero {h : A}
-    (hh : CStarAlgebra.IsStrictlyPositive h) {φ : A →P[ℂ] ℂ} (hφh : φ h = 0) : φ = 0 := by
-  by_contra hne
-  have hlt := hh.re_apply_pos_of_ne_zero hne
-  rw [hφh, Complex.zero_re] at hlt
-  exact lt_irrefl 0 hlt
+    (hh : CStarAlgebra.IsStrictlyPositive h) {φ : A →P[ℂ] ℂ} (hφh : φ h = 0) : φ = 0 :=
+  eq_zero_of_forall_re_apply_pos (fun _ hne => hh.re_apply_pos_of_ne_zero hne) hφh
 
 /-- If `h` is strictly positive, then `strictlyPositiveApproximateUnit h` is an increasing
 approximate unit of `A`. -/
@@ -602,7 +602,7 @@ theorem IsStrictlyPositive.smul {h : A} (hh : CStarAlgebra.IsStrictlyPositive h)
   rintro _ ⟨a, rfl⟩
   refine ⟨(c⁻¹ * c⁻¹) • a, ?_⟩
   simp only [smul_mul_assoc, mul_smul_comm, smul_smul]
-  rw [show c * (c⁻¹ * c⁻¹ * c) = 1 by field_simp, one_smul]
+  rw [mul_assoc c⁻¹, inv_mul_cancel₀ hc.ne', mul_one, mul_inv_cancel₀ hc.ne', one_smul]
 
 /-- A nonunital *-algebra homomorphism with dense range sends strictly positive elements to
 strictly positive elements. -/
@@ -638,8 +638,7 @@ theorem isStrictlyPositive_tsum_of_forall_apply_eq_zero_imp_eq_zero {ι : Type*}
       have := hsum_re.le_tsum i (fun k _ => hterm_nonneg k)
       rwa [hhas.tsum_eq, ← hzero] at this
     have hre0 : (φ (b i)).re = 0 := le_antisymm hle (hterm_nonneg i)
-    have him0 : (φ (b i)).im = 0 := (Complex.nonneg_iff.mp (φ.map_nonneg (hb i))).2.symm
-    exact Complex.ext hre0 him0
+    exact PositiveLinearMap.map_eq_zero_of_re_eq_zero φ (hb i) hre0
   exact hφ (hsep φ hterm0)
 
 /-- If `b : ι → A` is a countable family of nonnegative elements such that no nonzero positive

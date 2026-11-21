@@ -12,7 +12,9 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 # Multiplication operators in seminormed algebras
 
 This file identifies the underlying linear maps of bounded left and right multiplication,
-and evaluates their powers. These identities connect the bounded-operator API with the
+bounds the right-multiplication and commutator operators
+(`opNorm_flip_mul_apply_le`, `opNorm_mul_sub_flip_le`), and evaluates their powers. These
+identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
@@ -56,6 +58,17 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
     ((mul 𝕜 R).flip x).toLinearMap = LinearMap.mulRight 𝕜 x := by
   ext y
   simp
+
+/-- Bounded right multiplication by `x` has operator norm at most `‖x‖`. -/
+theorem opNorm_flip_mul_apply_le (x : R) : ‖(mul 𝕜 R).flip x‖ ≤ ‖x‖ :=
+  ((mul 𝕜 R).flip.le_opNorm x).trans <| by
+    rw [opNorm_flip]
+    exact mul_le_of_le_one_left (norm_nonneg x) (opNorm_mul_le 𝕜 R)
+
+/-- The commutator operator `y ↦ x * y - y * x` has operator norm at most `2 * ‖x‖`. -/
+theorem opNorm_mul_sub_flip_le (x : R) : ‖mul 𝕜 R x - (mul 𝕜 R).flip x‖ ≤ 2 * ‖x‖ :=
+  (norm_sub_le _ _).trans <| by
+    linarith [opNorm_mul_apply_le 𝕜 R x, opNorm_flip_mul_apply_le (𝕜 := 𝕜) x]
 
 /-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
 bounded endomorphism ring are subsingletons. -/

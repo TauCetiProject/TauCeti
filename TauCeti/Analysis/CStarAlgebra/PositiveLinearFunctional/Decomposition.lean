@@ -71,8 +71,9 @@ private theorem toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one
   have hre_eq : ∀ (η : D →L[ℂ] ℂ), (∀ a, η (star a) = star (η a)) →
       (η h).re = (η x).re := fun η hη => by
     have h1 : η h = ((η x).re : ℂ) := by
-      rw [show h = (2 : ℝ)⁻¹ • (x + star x) from realPart_apply_coe x,
-        map_smul_of_tower, map_add, hη x, Complex.star_def, Complex.add_conj, Complex.real_smul]
+      dsimp only [h]
+      rw [realPart_apply_coe x, map_smul_of_tower, map_add, hη x, Complex.star_def,
+        Complex.add_conj, Complex.real_smul]
       push_cast
       ring
     rw [h1, Complex.ofReal_re]
