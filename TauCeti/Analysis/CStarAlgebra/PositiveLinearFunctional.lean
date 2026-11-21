@@ -70,9 +70,7 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
 `‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖`. -/
 theorem map_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
     (ha : ω (star a * a) = 0) : ω a = 0 := by
-  have h := ω.norm_map_sq_le_opNorm_mul a
-  rw [ha, norm_zero, mul_zero] at h
-  exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm h (by positivity)))
+  simpa [ha] using ω.norm_map_sq_le_opNorm_mul a
 
 end PositiveContinuousLinearMap
 

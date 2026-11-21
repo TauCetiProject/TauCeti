@@ -138,8 +138,7 @@ theorem mem_traceKernel_iff_forall_map_mul_eq_zero {a : A} :
   -- the forward direction is the Cauchy–Schwarz inequality
   -- `|τ (b * a)| ^ 2 ≤ τ (b * star b) τ (star a * a)`, the converse takes `b = star a`
   refine ⟨fun ha b => ?_, fun h => by rw [hτ]; exact h (star a)⟩
-  have h := PositiveLinearMap.norm_map_star_mul_le τ (star b) a
-  rw [star_star, ha, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
+  have h : τ (b * a) = 0 := by simpa [ha] using PositiveLinearMap.norm_map_star_mul_le τ (star b) a
   rw [hτ, h]
 
 /-- The trace kernel is the kernel of the GNS representation of `τ`. -/
