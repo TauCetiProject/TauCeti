@@ -55,6 +55,11 @@ open Complex Set MeasureTheory Filter
 
 namespace TauCeti
 
+/-- Away from `0`, `exp (y * log x)` is the principal power `x ^ y`; this rewrites the terms
+`exp (-s * log (n + c))` of the Hurwitz series as powers `(n + c) ^ (-s)`. -/
+theorem exp_mul_log_eq_cpow {x : ℂ} (hx : x ≠ 0) (y : ℂ) : exp (y * log x) = x ^ y := by
+  rw [cpow_def_of_ne_zero hx, mul_comm]
+
 /-- The Hurwitz series `ζ_H(s, c) = ∑_{n ≥ 0} exp (-s log (n + c))` with a complex parameter `c`,
 using Mathlib's principal logarithm. It converges absolutely on `1 < re s`
 (`TauCeti.hasSum_complexHurwitzSeries`); outside that half-plane the sum carries no meaning. -/
@@ -108,7 +113,7 @@ theorem complexHurwitzSeries_eq_tsum_cpow (s : ℂ) {c : ℂ} (hc : ∀ n : ℕ,
   have hw : (n : ℂ) + c ≠ 0 := by
     rw [add_comm, ← sub_neg_eq_add]
     exact sub_ne_zero.mpr (hc n)
-  rw [cpow_def_of_ne_zero hw, mul_comm]
+  exact exp_mul_log_eq_cpow hw _
 
 /-- Shifting the parameter by `k : ℕ` removes the first `k` terms of the Hurwitz series. -/
 theorem complexHurwitzSeries_add_natCast (c : ℂ) {s : ℂ} (hs : 1 < s.re) (k : ℕ) :
@@ -133,14 +138,14 @@ theorem complexHurwitzSeries_ofReal {a : ℝ} (ha : 0 < a) (ha' : a ≤ 1) {s : 
   refine tsum_congr fun n ↦ ?_
   have hw : (n : ℂ) + a ≠ 0 := by
     rw [← ofReal_natCast, ← ofReal_add, ofReal_ne_zero]; positivity
-  rw [one_div, ← cpow_neg, cpow_def_of_ne_zero hw, mul_comm]
+  rw [one_div, ← cpow_neg, exp_mul_log_eq_cpow hw]
 
 /-- At `c = 1` the Hurwitz series is the Riemann zeta function. -/
 theorem complexHurwitzSeries_one {s : ℂ} (hs : 1 < s.re) :
     complexHurwitzSeries s 1 = riemannZeta s := by
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
   refine tsum_congr fun n ↦ ?_
-  rw [one_div, ← cpow_neg, cpow_def_of_ne_zero (Nat.cast_add_one_ne_zero n), mul_comm]
+  rw [one_div, ← cpow_neg, exp_mul_log_eq_cpow (Nat.cast_add_one_ne_zero n)]
 
 /-- At `c = 1 / 2` the Hurwitz series is `(2 ^ s - 1) ζ(s)`: the odd terms of `ζ(s)` contribute
 `(1 - 2 ^ (-s)) ζ(s)`, and `(n + 1 / 2) ^ (-s) = 2 ^ s (2 n + 1) ^ (-s)`. -/
@@ -150,8 +155,8 @@ theorem complexHurwitzSeries_one_half {s : ℂ} (hs : 1 < s.re) :
   -- `ζ(s) = ∑ (m + 1) ^ (-s)`, split into odd and even `m + 1`.
   have hζ : HasSum (fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s)) (riemannZeta s) := by
     rw [← complexHurwitzSeries_one hs]
-    refine (hasSum_complexHurwitzSeries 1 hs).congr_fun fun m ↦ ?_
-    rw [cpow_def_of_ne_zero (Nat.cast_add_one_ne_zero m), mul_comm]
+    exact (hasSum_complexHurwitzSeries 1 hs).congr_fun fun m ↦
+      (exp_mul_log_eq_cpow (Nat.cast_add_one_ne_zero m) _).symm
   have hodd : HasSum (fun k : ℕ ↦ (((2 * k + 1 : ℕ) : ℂ) + 1) ^ (-s))
       ((2 : ℂ) ^ (-s) * riemannZeta s) := by
     refine (hζ.mul_left _).congr_fun fun k ↦ ?_
@@ -225,7 +230,7 @@ theorem complexHurwitzSeries_eq_integral {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c
       complexHurwitzSeries, ← tsum_mul_left]
     refine tsum_congr fun n ↦ ?_
     rw [integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs0 (hnc n),
-      cpow_def_of_ne_zero (fun h ↦ by simpa [h] using hnc n), mul_comm (log _)]
+      exp_mul_log_eq_cpow (fun h ↦ by simpa [h] using hnc n)]
   rw [← hΓ, inv_mul_cancel_left₀ (Gamma_ne_zero_of_re_pos hs0)]
 
 end TauCeti
