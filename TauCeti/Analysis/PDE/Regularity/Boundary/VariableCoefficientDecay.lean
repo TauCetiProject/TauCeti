@@ -521,7 +521,7 @@ private theorem exists_setIntegral_ball_inter_norm_gradient_sub_le_rpow {α : �
   obtain ⟨A, hA, hcomp⟩ := exists_comparison_ball_inter n lam Lam
   obtain ⟨C, hC, hit⟩ :=
     exists_le_mul_mul_div_rpow_of_le_mul_div_rpow_mul_add_of_le_mul_mul_div_rpow (α := α)
-      (κ := (n : ℝ) + 1 + 2 * γ) (d := (n : ℝ) + 1) (M := M / lam) hA hτβ hτγ (by linarith) hθ
+      (κ := (n : ℝ) + 1 + 2 * γ) (δ := (n : ℝ) + 1 + 2) (M := M / lam) hA hτβ hτγ (by linarith) hθ
       hθ1 hL
   refine ⟨C, hC, ?_⟩
   intro U H u a G f s ν z c₀ R V Ka KG h hz hν hH hzc haK hGK hu0 hu hf hball hR hM hD hΦR hΦ

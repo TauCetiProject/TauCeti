@@ -32,16 +32,16 @@ estimates, provided that `K R^α ≤ M` and the data decay like `D r ≤ V (r / 
   balls of radius at most `θ R` the coefficient term is a small perturbation of the decay factor.
 * **Campanato decay**
   (`TauCeti.exists_le_mul_mul_div_rpow_of_le_mul_div_rpow_mul_add_of_le_mul_mul_div_rpow`): for
-  `δ = d + 2` and a known Morrey bound `Φ t ≤ L V (t / R)^β` on `(0, θ R]`, the coefficient term
-  is an inhomogeneity of order `(r / R)^{2α+β}`, and `φ ρ ≤ C V (ρ / R)^τ` for `ρ ≤ θ R` and every
-  `τ < d + 2` with `τ ≤ 2α + β` and `τ ≤ κ`.
+  any `δ` (in the applications `δ = d + 2`) and a known Morrey bound `Φ t ≤ L V (t / R)^β` on
+  `(0, θ R]`, the coefficient term is an inhomogeneity of order `(r / R)^{2α+β}`, and
+  `φ ρ ≤ C V (ρ / R)^τ` for `ρ ≤ θ R` and every `τ < δ` with `τ ≤ 2α + β` and `τ ≤ κ`.
 
 The Morrey step alone only reaches exponents `d - γ` with `γ > 0`. Combined with the
 bounded-averages step `TauCeti.MeasureTheory.exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`
 (Campanato decay with exponent `d + γ` keeps the averages bounded, hence gives Morrey decay with
 the full exponent `d`), the two steps raise the decay exponent of the mean oscillation to `d + 2γ`
 through the chain: Morrey `d - γ`, Campanato `d + γ`, Morrey `d`, Campanato `d + 2γ`. This works
-for every `γ ≤ α` with `γ < 1`, since the Campanato step needs `τ < d + 2`; so for `α < 1` it
+for every `γ ≤ α` with `γ < 1`, since the Campanato step needs `τ < δ = d + 2`; so for `α < 1` it
 reaches `d + 2α`. Campanato's characterization turns this into the Hölder continuity of `∇u` with
 exponent `γ`. The steps only use the inequalities above, so they serve the comparison on balls
 in the interior as well as the comparison on half-balls centred on a flat boundary.
@@ -165,17 +165,17 @@ private theorem le_mul_add_mul_rpow_of_le_of_le_mul_rpow
     _ = _ := by ring
 
 /-- **Campanato decay from a perturbed comparison and a Morrey bound.** Let `A ≥ 0`, `θ ∈ (0, 1]`
-and `τ < d + 2` with `τ ≤ 2α + β` and `τ ≤ κ`. There is `C ≥ 0`, depending only on `A`, `θ`, `τ`,
-`d`, `M` and `L`, such that the following holds. Let `φ` be nonnegative and nondecreasing on
+and `τ < δ` with `τ ≤ 2α + β` and `τ ≤ κ`. There is `C ≥ 0`, depending only on `A`, `θ`, `τ`,
+`δ`, `M` and `L`, such that the following holds. Let `φ` be nonnegative and nondecreasing on
 `(0, θ R]` with `φ (θ R) ≤ V`, let `Φ` be nonnegative on `(0, θ R]` with the Morrey bound
 `Φ t ≤ L V (t / R)^β` there, let `K ≥ 0` with `K R^α ≤ M`, and let `D r ≤ V (r / R)^κ` for
 `0 < r ≤ θ R`. If
 
-`φ ρ ≤ A (ρ / r)^{d+2} φ r + A (r^{2α} K² Φ r + D r)` whenever `0 < ρ ≤ r ≤ θ R`,
+`φ ρ ≤ A (ρ / r)^δ φ r + A (r^{2α} K² Φ r + D r)` whenever `0 < ρ ≤ r ≤ θ R`,
 
 then `φ ρ ≤ C V (ρ / R)^τ` for `0 < ρ ≤ θ R`. -/
 theorem exists_le_mul_mul_div_rpow_of_le_mul_div_rpow_mul_add_of_le_mul_mul_div_rpow
-    {A α β τ κ d M θ L : ℝ} (hA : 0 ≤ A) (hτβ : τ ≤ 2 * α + β) (hτκ : τ ≤ κ) (hτ : τ < d + 2)
+    {A α β τ κ δ M θ L : ℝ} (hA : 0 ≤ A) (hτβ : τ ≤ 2 * α + β) (hτκ : τ ≤ κ) (hτ : τ < δ)
     (hθ : 0 < θ) (hθ1 : θ ≤ 1) (hL : 0 ≤ L) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {φ Φ D : ℝ → ℝ} {K R V : ℝ}, 0 < R → 0 ≤ K → K * R ^ α ≤ M →
       MonotoneOn φ (Ioc 0 (θ * R)) → (∀ r ∈ Ioc 0 (θ * R), 0 ≤ φ r) → φ (θ * R) ≤ V →
@@ -183,16 +183,16 @@ theorem exists_le_mul_mul_div_rpow_of_le_mul_div_rpow_mul_add_of_le_mul_mul_div_
       (∀ t, 0 < t → t ≤ θ * R → Φ t ≤ L * V * (t / R) ^ β) →
       (∀ r, 0 < r → r ≤ θ * R → D r ≤ V * (r / R) ^ κ) →
       (∀ ρ r, 0 < ρ → ρ ≤ r → r ≤ θ * R →
-        φ ρ ≤ A * (ρ / r) ^ (d + 2) * φ r + A * (r ^ (2 * α) * K ^ 2 * Φ r + D r)) →
+        φ ρ ≤ A * (ρ / r) ^ δ * φ r + A * (r ^ (2 * α) * K ^ 2 * Φ r + D r)) →
       ∀ ρ, 0 < ρ → ρ ≤ θ * R → φ ρ ≤ C * V * (ρ / R) ^ τ := by
   obtain ⟨ε₀, C₀, hε₀, hC₀, hit⟩ := exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hA hτ hτ
   refine ⟨C₀ * (θ ^ (-τ) + A * (M ^ 2 * L + 1)), by positivity, ?_⟩
   intro φ Φ D K R V hR hK hM hmono hφ0 hφV hΦ0 hΦ hD hcomp ρ hρ hρθ
   have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
   have hV0 : 0 ≤ V := (hφ0 (θ * R) ⟨by positivity, le_rfl⟩).trans hφV
-  -- One step of the decay: `φ(ρ) ≤ A (ρ / r)^{d+2} φ(r) + B r^τ` for `ρ ≤ r ≤ θ R`.
+  -- One step of the decay: `φ(ρ) ≤ A (ρ / r)^δ φ(r) + B r^τ` for `ρ ≤ r ≤ θ R`.
   have hstep : ∀ ρ r, 0 < ρ → ρ ≤ r → r ≤ θ * R →
-      φ ρ ≤ A * ((ρ / r) ^ (d + 2) + 0) * φ r + A * (M ^ 2 * L + 1) * V * R ^ (-τ) * r ^ τ :=
+      φ ρ ≤ A * ((ρ / r) ^ δ + 0) * φ r + A * (M ^ 2 * L + 1) * V * R ^ (-τ) * r ^ τ :=
     fun ρ r hρ hρr hrθ => le_mul_add_mul_rpow_of_le_of_le_mul_rpow hA (hρ.trans_le hρr) hR
       (hrθ.trans hθR) hK hM (hD r (hρ.trans_le hρr) hrθ) hV0 (hΦ0 r ⟨hρ.trans_le hρr, hrθ⟩)
       (hΦ r (hρ.trans_le hρr) hrθ) hτβ hτκ ((hcomp ρ r hρ hρr hrθ).trans_eq (by ring))

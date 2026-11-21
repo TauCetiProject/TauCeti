@@ -293,7 +293,7 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
   obtain ⟨A, hA, hcomp⟩ := exists_comparison n lam Lam
   obtain ⟨C, hC, hit⟩ :=
     exists_le_mul_mul_div_rpow_of_le_mul_div_rpow_mul_add_of_le_mul_mul_div_rpow (α := α)
-      (κ := (n : ℝ) + 1 + 2 * γ) (d := (n : ℝ) + 1) (M := M / lam) hA hτβ hτγ (by linarith) hθ
+      (κ := (n : ℝ) + 1 + 2 * γ) (δ := (n : ℝ) + 1 + 2) (M := M / lam) hA hτβ hτγ (by linarith) hθ
       hθ1 hL
   refine ⟨C, hC, ?_⟩
   intro Omega u a G f s z R V Ka KG h hz haK hGK hu hf hball hR hM hD hΦR hΦ
