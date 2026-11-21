@@ -91,25 +91,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The **correction one-form** `A` of the symplectic part,
 `A_v u = (1 / 2) (Ω♭)⁻¹ ((∇_v Ω)(u, ·))`, characterised where `Ω♭` is invertible by
 `Ω(A_v u, τ) = (1 / 2) (∇_v Ω)(u, τ)` (`CovariantDerivative.symplecticCorrection_apply`). Where
-`Ω♭` is not invertible it is zero, by the convention of `ContinuousLinearMap.inverse`. The fibre
-is finite-dimensional and Hausdorff, so the linear map `u ↦ A u` is continuous. -/
+`Ω♭` is not invertible it is zero, by the convention of `ContinuousLinearMap.inverse`. -/
 def symplecticCorrection (x : M) : V x →L[ℝ] TangentSpace I x →L[ℝ] V x :=
-  -- Transfer normability, the Hausdorff property and finite dimension from the model fibre.
+  -- Transfer normability from the model fibres, as for `CovariantDerivative.complexLinearPart`,
+  -- and choose compatible seminorms, which `ContinuousLinearMap.flipₗᵢ` needs.
   letI := (VectorBundle.continuousLinearEquivAt ℝ F V x).isNormableSpace
   letI := (VectorBundle.continuousLinearEquivAt ℝ E (TangentSpace I) x).isNormableSpace
-  haveI := FiberBundle.t2Space F V x
-  haveI := VectorBundle.finiteDimensional ℝ F V x
-  LinearMap.toContinuousLinearMap
-    { toFun u := (Ω x).inverse ∘L ((2⁻¹ : ℝ) • (cov.derivBilinearTensor Ω x u).flip)
-      map_add' u u' := ContinuousLinearMap.ext fun v ↦ by
-        have : (cov.derivBilinearTensor Ω x (u + u')).flip v =
-            (cov.derivBilinearTensor Ω x u).flip v + (cov.derivBilinearTensor Ω x u').flip v := by
-          ext τ
-          simp
-        rw [add_apply]
-        simp only [ContinuousLinearMap.comp_apply, smul_apply]
-        rw [this, smul_add, map_add]
-      map_smul' c u := ContinuousLinearMap.ext fun v ↦ by simp [smul_comm c] }
+  letI := IsNormableSpace.toSeminormedAddCommGroup ℝ (V x)
+  letI := IsNormableSpace.toNormedSpace ℝ (V x)
+  letI := IsNormableSpace.toSeminormedAddCommGroup ℝ (TangentSpace I x)
+  letI := IsNormableSpace.toNormedSpace ℝ (TangentSpace I x)
+  (ContinuousLinearMap.postcomp (TangentSpace I x) ((2⁻¹ : ℝ) • (Ω x).inverse)).comp
+    ((ContinuousLinearMap.flipₗᵢ ℝ (V x) (TangentSpace I x) ℝ).toContinuousLinearEquiv
+      |>.toContinuousLinearMap.comp (cov.derivBilinearTensor Ω x))
 
 /-- The **symplectic part** `∇ˢ_v σ = ∇_v σ + A_v σ` of a covariant derivative `∇` with respect
 to a field `Ω` of bilinear forms, where `A` is `CovariantDerivative.symplecticCorrection`,
