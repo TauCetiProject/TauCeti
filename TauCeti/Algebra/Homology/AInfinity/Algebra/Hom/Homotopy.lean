@@ -237,6 +237,12 @@ theorem linearHomotopy_mem (h : Homotopy f g) {p : ℤ} {a : A}
   -- This index is not definitionally equal to `p - 1`, so normalize it explicitly with `ring`.
   rwa [InternalGrading.shift_piece, show p - 1 + -1 + 1 = p - 1 by ring] at hh
 
+/-- The arity-one component of a homotopy is homogeneous of internal degree `-1`. -/
+theorem isHomogeneous_linearHomotopy (h : Homotopy f g) :
+    LinearMap.IsHomogeneous h.linearHomotopy AA.grading.piece BB.grading.piece (-1) :=
+  LinearMap.isHomogeneous_def.2 fun _ _ ha ↦ by
+    simpa only [sub_eq_add_neg] using h.linearHomotopy_mem ha
+
 /-- **The arity-one component is a chain homotopy between the linear parts**:
 `f₁ - g₁ = m₁ h₁ + h₁ m₁`.  This is the arity-one component of the homotopy equation. -/
 theorem linearPart_sub_linearPart (h : Homotopy f g) (a : A) :
@@ -246,6 +252,14 @@ theorem linearPart_sub_linearPart (h : Homotopy f g) (a : A) :
     (h.barMap_sub_barMap_apply (ReducedTensorWords.ofLetter R A a))
   simpa only [map_sub, map_add, barMap_ofLetter, barHomotopy_ofLetter,
     AInfinityAlgebra.barDifferential_ofLetter, ReducedTensorWords.letter_ofLetter] using e
+
+/-- Linear-map form of `Homotopy.linearPart_sub_linearPart`. -/
+theorem linearPart_sub_linearPart_eq (h : Homotopy f g) :
+    f.linearPart - g.linearPart =
+      BB.differential ∘ₗ h.linearHomotopy + h.linearHomotopy ∘ₗ AA.differential :=
+  LinearMap.ext fun a ↦ by
+    simpa only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
+      AInfinityAlgebra.differential_apply] using h.linearPart_sub_linearPart a
 
 /-! ### Cohomology -/
 
@@ -280,6 +294,25 @@ theorem barHomotopy_refl (f : AInfinityHom AA BB) : (refl f).barHomotopy = 0 := 
 @[simp]
 theorem taylor_refl (f : AInfinityHom AA BB) : (refl f).taylor = 0 := by
   simp only [taylor_def, barHomotopy_refl, LinearMap.comp_zero]
+
+/-- The zero homotopy has zero arity-one component. -/
+@[simp] theorem linearHomotopy_refl (f : AInfinityHom AA BB) : (refl f).linearHomotopy = 0 := by
+  simp only [linearHomotopy, taylor_refl, LinearMap.zero_comp]
+
+/-- An equality of `A∞` morphisms induces a homotopy with zero bar homotopy. -/
+def ofEq {f g : AInfinityHom AA BB} (h : f = g) : Homotopy f g := h ▸ refl f
+
+/-- The homotopy induced by an equality has zero bar homotopy. -/
+@[simp] theorem barHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
+    (ofEq h).barHomotopy = 0 := by cases h; rfl
+
+/-- The homotopy induced by an equality has zero Taylor map. -/
+@[simp] theorem taylor_ofEq {f g : AInfinityHom AA BB} (h : f = g) : (ofEq h).taylor = 0 := by
+  cases h; exact taylor_refl f
+
+/-- The homotopy induced by an equality has zero arity-one component. -/
+@[simp] theorem linearHomotopy_ofEq {f g : AInfinityHom AA BB} (h : f = g) :
+    (ofEq h).linearHomotopy = 0 := by cases h; exact linearHomotopy_refl f
 
 /-- A homotopy from `f` to `g` followed by an `A∞` morphism `k`: a homotopy from `k ∘ f` to
 `k ∘ g`. -/
