@@ -15,6 +15,7 @@ import Mathlib.Dynamics.BirkhoffSum.Maximal
 import Mathlib.Dynamics.BirkhoffSum.QuasiMeasurePreserving
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Instances.EReal.Lemmas
@@ -55,8 +56,8 @@ Birkhoff averages in `TauCeti.Probability.Ergodic.BirkhoffLp`, and the pre-ergod
 expectation collapse in `TauCeti.Probability.Ergodic.InvariantSigma`.
 
 For ergodic transformations, the invariant σ-algebra is `μ`-trivial, so the conditional expectation
-collapses to the space average `⨍ y, f y ∂μ` (or the integral `∫ y, f y ∂μ` on a probability space),
-yielding the ergodic pointwise, `Lᵖ`, `L¹`, and visiting-frequency theorems.
+collapses to the space average `⨍ y, f y ∂μ`, yielding the ergodic pointwise, `Lᵖ`, `L¹`, and
+visiting-frequency theorems.
 
 ## Main results
 
@@ -66,16 +67,12 @@ yielding the ergodic pointwise, `Lᵖ`, `L¹`, and visiting-frequency theorems.
   theorem** (`1 ≤ p < ∞`) for Banach-valued observables on a finite measure space.
 * `MeasureTheory.MeasurePreserving.tendsto_integral_norm_birkhoffAverage_sub_condExp` — **`L¹`
   ergodic theorem** in integral-norm form.
-* `Ergodic.ae_tendsto_birkhoffAverage_average`,
-  `Ergodic.ae_tendsto_birkhoffAverage_integral` — pointwise ergodic theorem for ergodic maps.
-* `Ergodic.tendsto_eLpNorm_birkhoffAverage_sub_average`,
-  `Ergodic.tendsto_eLpNorm_birkhoffAverage_sub_integral`,
-  `Ergodic.tendsto_integral_norm_birkhoffAverage_sub_average`,
-  `Ergodic.tendsto_integral_norm_birkhoffAverage_sub_integral` — `Lᵖ` and `L¹` ergodic convergence
+* `Ergodic.ae_tendsto_birkhoffAverage_average` — pointwise ergodic theorem for ergodic maps.
+* `Ergodic.tendsto_eLpNorm_birkhoffAverage_sub_average` and
+  `Ergodic.tendsto_integral_norm_birkhoffAverage_sub_average` — `Lᵖ` and `L¹` ergodic convergence
   for ergodic maps.
-* `Ergodic.ae_tendsto_card_filter_iterate_mem_div`,
-  `Ergodic.ae_tendsto_card_filter_iterate_mem_div_of_isProbabilityMeasure` — almost-everywhere
-  convergence of orbit visiting frequencies to normalized / probability measure.
+* `Ergodic.ae_tendsto_card_filter_iterate_mem_div` — almost-everywhere convergence of orbit
+  visiting frequencies to normalized measure.
 -/
 
 public section
@@ -111,7 +108,7 @@ private lemma mul_measureReal_le_setIntegral_of_lt_limsup {Ω : Type*} [Measurab
       rw [birkhoffAverage, smul_eq_mul, lt_inv_mul_iff₀ hnpos] at hbn'
       linarith
     exact (EReal.coe_pos.mpr hsum_pos).trans_le
-      (TauCeti.le_birkhoffSumSup T (g - fun _ ↦ b) n x)
+      (le_iSup (fun k ↦ ((birkhoffSum T (g - fun _ ↦ b) k x : ℝ) : EReal)) n)
   have hnonneg : 0 ≤ ∫ x in {x | 0 < birkhoffSumSup T (g - fun _ ↦ b) x}, (g x - b) ∂ν :=
     setIntegral_birkhoffSumSup_nonneg ν hTν (hg.sub (integrable_const b)).integrableOn
   have hrestrict : ν.restrict {x | 0 < birkhoffSumSup T (g - fun _ ↦ b) x} = μ.restrict E :=
@@ -200,9 +197,8 @@ private lemma ae_tendsto_birkhoffAverage_real_limit {Ω : Type*} [MeasurableSpac
     simpa [Real.norm_eq_abs] using TauCeti.norm_birkhoffAverage_le_birkhoffAverage_norm T g n x
   have htop : L < ⊤ := by
     refine lt_of_le_of_lt ?_ hfin
-    refine limsup_le_of_le (by isBoundedDefault) (Eventually.of_forall fun n ↦ ?_)
-    exact (EReal.coe_le_coe_iff.mpr ((le_abs_self _).trans (hbound n))).trans
-      (TauCeti.le_birkhoffAverageSup T (fun y ↦ ‖g y‖) n x)
+    exact (limsup_le_limsup (Eventually.of_forall fun n ↦
+      EReal.coe_le_coe_iff.mpr ((le_abs_self _).trans (hbound n)))).trans limsup_le_iSup
   have hbot : ⊥ < L := by
     have hle : -(birkhoffAverageSup T (fun y ↦ ‖g y‖) x) ≤ L := by
       rw [← heq]
@@ -212,7 +208,7 @@ private lemma ae_tendsto_birkhoffAverage_real_limit {Ω : Type*} [MeasurableSpac
         rw [← EReal.coe_neg, EReal.coe_le_coe_iff]
         linarith [neg_abs_le (birkhoffAverage ℝ T g n x), hbound n]
       exact (EReal.neg_le_neg_iff.mpr
-        (TauCeti.le_birkhoffAverageSup T (fun y ↦ ‖g y‖) n x)).trans h1
+        (le_iSup (fun k ↦ ((birkhoffAverage ℝ T (fun y ↦ ‖g y‖) k x : ℝ) : EReal)) n)).trans h1
     have hneg_bot : (⊥ : EReal) < -(birkhoffAverageSup T (fun y ↦ ‖g y‖) x) := by
       rw [← EReal.neg_top, EReal.neg_lt_neg_iff]
       exact hfin
@@ -233,28 +229,14 @@ private lemma integrable_real_birkhoffLimit_and_norm_le {Ω : Type*} [Measurable
     measurable_ereal_toReal.comp
       (Measurable.limsup fun _ ↦
         measurable_coe_real_ereal.comp (measurable_birkhoffAverage hT.measurable hg_meas))
-  have hlim_eNorm : ∀ᵐ x ∂μ, ‖L x‖ₑ ≤ liminf (fun n ↦ ‖birkhoffAverage ℝ T g n x‖ₑ) atTop := by
-    filter_upwards [ae_tendsto_birkhoffAverage_real_limit hT hg_meas hg] with x hx
-    exact (hx.eNorm.liminf_eq).ge
-  have hfatou : ∫⁻ x, ‖L x‖ₑ ∂μ ≤ ∫⁻ x, ‖g x‖ₑ ∂μ := by
-    calc
-      ∫⁻ x, ‖L x‖ₑ ∂μ ≤ ∫⁻ x, liminf (fun n ↦ ‖birkhoffAverage ℝ T g n x‖ₑ) atTop ∂μ :=
-        lintegral_mono_ae hlim_eNorm
-      _ ≤ liminf (fun n ↦ ∫⁻ x, ‖birkhoffAverage ℝ T g n x‖ₑ ∂μ) atTop :=
-        lintegral_liminf_le fun _ ↦
-          (measurable_birkhoffAverage hT.measurable hg_meas).eNorm
-      _ ≤ ∫⁻ x, ‖g x‖ₑ ∂μ := by
-        refine liminf_le_of_frequently_le' (Frequently.of_forall fun n ↦ ?_)
-        have hmeas_n : AEStronglyMeasurable (birkhoffAverage ℝ T g n) μ :=
-          (measurable_birkhoffAverage hT.measurable hg_meas).aestronglyMeasurable
-        rw [← eLpNorm_one_eq_lintegral_eNorm hmeas_n,
-          ← eLpNorm_one_eq_lintegral_eNorm hg.aestronglyMeasurable]
-        exact hT.eLpNorm_birkhoffAverage_le le_rfl g n
+  have hle : eLpNorm L 1 μ ≤ eLpNorm g 1 μ :=
+    Lp.eLpNorm_le_of_ae_tendsto
+      (Eventually.of_forall fun n ↦ hT.eLpNorm_birkhoffAverage_le le_rfl g n)
+      (fun _ ↦ (measurable_birkhoffAverage hT.measurable hg_meas).aestronglyMeasurable)
+      hL_meas.aestronglyMeasurable (ae_tendsto_birkhoffAverage_real_limit hT hg_meas hg)
   have hL_int : Integrable L μ :=
-    ⟨hL_meas.aestronglyMeasurable, hfatou.trans_lt hg.hasFiniteIntegral⟩
-  refine ⟨hL_int, integral_norm_le_integral_norm_of_eLpNorm_one_le hg ?_⟩
-  rwa [eLpNorm_one_eq_lintegral_eNorm hL_int.aestronglyMeasurable,
-    eLpNorm_one_eq_lintegral_eNorm hg.aestronglyMeasurable]
+    memLp_one_iff_integrable.mp (hle.trans_lt (memLp_one_iff_integrable.mpr hg).eLpNorm_lt_top)
+  exact ⟨hL_int, integral_norm_le_integral_norm_of_eLpNorm_one_le hg hle⟩
 
 private lemma setIntegral_real_birkhoffLimit_eq_of_bounded {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
@@ -401,6 +383,18 @@ private lemma ae_tendsto_birkhoffAverage_condExp_simpleFunc {Ω E : Type*} [Meas
     rw [← Pi.add_apply, ← hadd] at hsum
     exact hsum.congr fun n ↦ (birkhoffAverage_add_apply ℝ n x).symm
 
+private lemma ae_birkhoffAverage_sub_condExp_decomp {Ω E : Type*} [MeasurableSpace Ω]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {μ : Measure Ω} (T : Ω → Ω) {f g : Ω → E} (hf : Integrable f μ) (hg : Integrable g μ) :
+    ∀ᵐ x ∂μ, ∀ n : ℕ,
+      birkhoffAverage ℝ T f n x - μ[f | MeasurableSpace.invariants T] x =
+        birkhoffAverage ℝ T (f - g) n x +
+          (birkhoffAverage ℝ T g n x - μ[g | MeasurableSpace.invariants T] x) -
+          μ[f - g | MeasurableSpace.invariants T] x := by
+  filter_upwards [condExp_sub hf hg (MeasurableSpace.invariants T)] with x hce_sub n
+  rw [birkhoffAverage_sub_apply, hce_sub, Pi.sub_apply]
+  abel
+
 private lemma ae_mem_union_of_lt_limsup_norm_birkhoffAverage_sub_condExp {Ω E : Type*}
     [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {μ : Measure Ω} [IsFiniteMeasure μ] {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
@@ -414,7 +408,7 @@ private lemma ae_mem_union_of_lt_limsup_norm_birkhoffAverage_sub_condExp {Ω E :
         δ / 3 ≤ ‖μ[f - ⇑s | MeasurableSpace.invariants T] x‖ := by
   have hs_int : Integrable (s : Ω → E) μ := s.integrable_of_isFiniteMeasure
   filter_upwards [ae_tendsto_birkhoffAverage_condExp_simpleFunc hT s,
-    condExp_sub hf hs_int (MeasurableSpace.invariants T)] with x hs_lim hce_sub hxD
+    ae_birkhoffAverage_sub_condExp_decomp T hf hs_int] with x hs_lim hdecomp hxD
   have hfreq : ∃ᶠ n in atTop,
       (δ : EReal) <
         ((‖birkhoffAverage ℝ T f n x - μ[f | MeasurableSpace.invariants T] x‖ : ℝ) : EReal) :=
@@ -425,17 +419,11 @@ private lemma ae_mem_union_of_lt_limsup_norm_birkhoffAverage_sub_condExp {Ω E :
   obtain ⟨n, hδn, hsn⟩ := (hfreq.and_eventually hs_small).exists
   have hδn' : δ < ‖birkhoffAverage ℝ T f n x - μ[f | MeasurableSpace.invariants T] x‖ :=
     EReal.coe_lt_coe_iff.mp hδn
-  have hdecomp : birkhoffAverage ℝ T f n x - μ[f | MeasurableSpace.invariants T] x =
-      birkhoffAverage ℝ T (f - ⇑s) n x +
-        (birkhoffAverage ℝ T s n x - μ[s | MeasurableSpace.invariants T] x) -
-        μ[f - ⇑s | MeasurableSpace.invariants T] x := by
-    rw [birkhoffAverage_sub_apply, hce_sub, Pi.sub_apply]
-    abel
   have htri : ‖birkhoffAverage ℝ T f n x - μ[f | MeasurableSpace.invariants T] x‖ ≤
       birkhoffAverage ℝ T (fun y ↦ ‖(f - ⇑s) y‖) n x +
         ‖birkhoffAverage ℝ T s n x - μ[s | MeasurableSpace.invariants T] x‖ +
         ‖μ[f - ⇑s | MeasurableSpace.invariants T] x‖ := by
-    rw [hdecomp]
+    rw [hdecomp n]
     refine (norm_sub_le _ _).trans (add_le_add ?_ le_rfl)
     exact (norm_add_le _ _).trans
       (add_le_add (TauCeti.norm_birkhoffAverage_le_birkhoffAverage_norm T (f - ⇑s) n x) le_rfl)
@@ -444,7 +432,7 @@ private lemma ae_mem_union_of_lt_limsup_norm_birkhoffAverage_sub_condExp {Ω E :
   · left
     have hAn : δ / 3 < birkhoffAverage ℝ T (fun y ↦ ‖(f - ⇑s) y‖) n x := by linarith
     exact (EReal.coe_lt_coe_iff.mpr hAn).trans_le
-      (TauCeti.le_birkhoffAverageSup T (fun y ↦ ‖(f - ⇑s) y‖) n x)
+      (le_iSup (fun k ↦ ((birkhoffAverage ℝ T (fun y ↦ ‖(f - ⇑s) y‖) k x : ℝ) : EReal)) n)
 
 private lemma measure_lt_limsup_norm_birkhoffAverage_sub_condExp_eq_zero {Ω E : Type*}
     [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -566,20 +554,14 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_condExp (hT : MeasurePreserving T μ
   have hs_lim := tendsto_eLpNorm_birkhoffAverage_sub_condExp_simpleFunc hT hp s
   obtain ⟨N, hN⟩ := eventually_atTop.mp (hs_lim.eventually (gt_mem_nhds hε3))
   refine ⟨N, fun n hn ↦ ?_⟩
-  have hdecomp :
-      birkhoffAverage ℝ T f n - μ[f | MeasurableSpace.invariants T] =ᵐ[μ]
-        birkhoffAverage ℝ T (f - ⇑s) n +
-          (birkhoffAverage ℝ T s n - μ[s | MeasurableSpace.invariants T]) -
-          μ[f - ⇑s | MeasurableSpace.invariants T] := by
-    filter_upwards [condExp_sub (hf.integrable hp1) s.integrable_of_isFiniteMeasure
-      (MeasurableSpace.invariants T)] with x hce
-    simp only [Pi.sub_apply, Pi.add_apply, birkhoffAverage_sub_apply, hce]
-    abel
   calc
     eLpNorm (birkhoffAverage ℝ T f n - μ[f | MeasurableSpace.invariants T]) p μ
       = eLpNorm (birkhoffAverage ℝ T (f - ⇑s) n +
           (birkhoffAverage ℝ T s n - μ[s | MeasurableSpace.invariants T]) -
-          μ[f - ⇑s | MeasurableSpace.invariants T]) p μ := eLpNorm_congr_ae hdecomp
+          μ[f - ⇑s | MeasurableSpace.invariants T]) p μ :=
+        eLpNorm_congr_ae
+          ((ae_birkhoffAverage_sub_condExp_decomp T (hf.integrable hp1)
+            s.integrable_of_isFiniteMeasure).mono fun _ h ↦ h n)
     _ ≤ eLpNorm (birkhoffAverage ℝ T (f - ⇑s) n) p μ +
           eLpNorm (birkhoffAverage ℝ T s n - μ[s | MeasurableSpace.invariants T]) p μ +
           eLpNorm (μ[f - ⇑s | MeasurableSpace.invariants T]) p μ :=
@@ -629,14 +611,6 @@ theorem ae_tendsto_birkhoffAverage_average [IsFiniteMeasure μ] (hT : Ergodic T 
     hT.toPreErgodic.condExp_invariants_ae_eq_average f] with x hx hce
   rwa [hce] at hx
 
-/-- **Birkhoff's pointwise ergodic theorem (ergodic case, probability space).** For an ergodic map
-`T` on a probability space `(Ω, μ)` and an integrable Banach-valued observable `f`, the Birkhoff
-time averages converge almost everywhere to `∫ y, f y ∂μ`. -/
-theorem ae_tendsto_birkhoffAverage_integral [IsProbabilityMeasure μ] (hT : Ergodic T μ)
-    {f : Ω → E} (hf : Integrable f μ) :
-    ∀ᵐ x ∂μ, Tendsto (fun n ↦ birkhoffAverage ℝ T f n x) atTop (𝓝 (∫ y, f y ∂μ)) := by
-  simpa only [average_eq_integral] using hT.ae_tendsto_birkhoffAverage_average hf
-
 /-- **`Lᵖ` ergodic theorem (ergodic case, finite measure, `1 ≤ p < ∞`).** For an ergodic map `T`
 on a finite measure space `(Ω, μ)`, the Birkhoff time averages of an `Lᵖ` Banach-valued observable
 converge in `Lᵖ` to the constant space average `⨍ y, f y ∂μ`. -/
@@ -649,15 +623,6 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_average [IsFiniteMeasure μ] (hT : E
   filter_upwards [hT.toPreErgodic.condExp_invariants_ae_eq_average f] with x hx
   simp only [Pi.sub_apply, hx]
 
-/-- **`Lᵖ` ergodic theorem (ergodic case, probability space, `1 ≤ p < ∞`).** For an ergodic map `T`
-on a probability space `(Ω, μ)`, the Birkhoff time averages of an `Lᵖ` Banach-valued observable
-converge in `Lᵖ` to the constant integral `∫ y, f y ∂μ`. -/
-theorem tendsto_eLpNorm_birkhoffAverage_sub_integral [IsProbabilityMeasure μ] (hT : Ergodic T μ)
-    {p : ℝ≥0∞} (hp1 : 1 ≤ p) (hp : p ≠ ∞) {f : Ω → E} (hf : MemLp f p μ) :
-    Tendsto (fun n ↦ eLpNorm (birkhoffAverage ℝ T f n - fun _ ↦ ∫ y, f y ∂μ) p μ)
-      atTop (𝓝 0) := by
-  simpa only [average_eq_integral] using hT.tendsto_eLpNorm_birkhoffAverage_sub_average hp1 hp hf
-
 /-- **`L¹` ergodic theorem (ergodic case, finite measure).** For an ergodic map `T` on a finite
 measure space `(Ω, μ)` and an integrable Banach-valued observable `f`, the mean norm deviation of
 `birkhoffAverage ℝ T f n` from the space average `⨍ y, f y ∂μ` converges to `0`. -/
@@ -667,14 +632,6 @@ theorem tendsto_integral_norm_birkhoffAverage_sub_average [IsFiniteMeasure μ] (
   TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm le_rfl
     (hT.tendsto_eLpNorm_birkhoffAverage_sub_average le_rfl ENNReal.one_ne_top
       (memLp_one_iff_integrable.mpr hf))
-
-/-- **`L¹` ergodic theorem (ergodic case, probability space).** For an ergodic map `T` on a
-probability space `(Ω, μ)` and an integrable Banach-valued observable `f`, the mean norm deviation
-of `birkhoffAverage ℝ T f n` from `∫ y, f y ∂μ` converges to `0`. -/
-theorem tendsto_integral_norm_birkhoffAverage_sub_integral [IsProbabilityMeasure μ]
-    (hT : Ergodic T μ) {f : Ω → E} (hf : Integrable f μ) :
-    Tendsto (fun n ↦ ∫ x, ‖birkhoffAverage ℝ T f n x - ∫ y, f y ∂μ‖ ∂μ) atTop (𝓝 0) := by
-  simpa only [average_eq_integral] using hT.tendsto_integral_norm_birkhoffAverage_sub_average hf
 
 /-- **Ergodic visiting frequencies (finite measure).** For an ergodic map `T` on a finite measure
 space `(Ω, μ)` and a null-measurable set `s`, the fraction of the first `n` orbit points landing in
@@ -694,16 +651,6 @@ theorem ae_tendsto_card_filter_iterate_mem_div [IsFiniteMeasure μ] (hT : Ergodi
   refine hx.congr fun n ↦ ?_
   simp only [birkhoffAverage, birkhoffSum, smul_eq_mul, Set.indicator,
     Finset.sum_boole, div_eq_inv_mul]
-
-/-- **Ergodic visiting frequencies (probability space).** For an ergodic map `T` on a probability
-space `(Ω, μ)` and a null-measurable set `s`, the fraction of the first `n` orbit points landing in
-`s` converges almost everywhere to `μ.real s`. -/
-theorem ae_tendsto_card_filter_iterate_mem_div_of_isProbabilityMeasure [IsProbabilityMeasure μ]
-    (hT : Ergodic T μ) {s : Set Ω} [DecidablePred (· ∈ s)] (hs : NullMeasurableSet s μ) :
-    ∀ᵐ x ∂μ, Tendsto
-      (fun n : ℕ ↦ (((Finset.range n).filter (fun k ↦ T^[k] x ∈ s)).card : ℝ) / (n : ℝ))
-      atTop (𝓝 (μ.real s)) := by
-  simpa using hT.ae_tendsto_card_filter_iterate_mem_div hs
 
 end Ergodic
 

@@ -10,16 +10,12 @@ public import Mathlib.Dynamics.BirkhoffSum.Maximal
 /-!
 # Companion lemmas for the maximal ergodic operator
 
-Complements `Mathlib.Dynamics.BirkhoffSum.Maximal` with explicit upper-bound inequalities for
-`birkhoffSumSup` and `birkhoffAverageSup` (avoiding implicit unfolding through `le_iSup`) and
-almost-everywhere finiteness of `birkhoffAverageSup T (‖f ·‖)` for an integrable observable under a
-measure-preserving endomorphism of a finite measure space.
+Complements `Mathlib.Dynamics.BirkhoffSum.Maximal` with almost-everywhere finiteness of
+`birkhoffAverageSup T (‖f ·‖)` for an integrable observable under a measure-preserving
+endomorphism of a finite measure space.
 
 ## Main results
 
-* `TauCeti.le_birkhoffSumSup` — `((birkhoffSum f g n x : ℝ) : EReal) ≤ birkhoffSumSup f g x`.
-* `TauCeti.le_birkhoffAverageSup` —
-  `((birkhoffAverage ℝ f g n x : ℝ) : EReal) ≤ birkhoffAverageSup f g x`.
 * `MeasureTheory.MeasurePreserving.ae_birkhoffAverageSup_norm_lt_top` — almost-everywhere
   finiteness of `birkhoffAverageSup T (‖f ·‖)` for an integrable observable on a finite measure
   space, derived from Mathlib's `mul_measureReal_lt_birkhoffAverageSup_le_norm`.
@@ -29,23 +25,6 @@ public section
 
 open Filter MeasureTheory
 open scoped Topology
-
-namespace TauCeti
-
-/-- Every Birkhoff sum `birkhoffSum f g n x` is bounded above by `birkhoffSumSup f g x`. -/
-theorem le_birkhoffSumSup {α : Type*} (f : α → α) (g : α → ℝ) (n : ℕ) (x : α) :
-    ((birkhoffSum f g n x : ℝ) : EReal) ≤ birkhoffSumSup f g x := by
-  rw [birkhoffSumSup]
-  exact le_iSup (fun k ↦ ((birkhoffSum f g k x : ℝ) : EReal)) n
-
-/-- Every Birkhoff average `birkhoffAverage ℝ f g n x` is bounded above by
-`birkhoffAverageSup f g x`. -/
-theorem le_birkhoffAverageSup {α : Type*} (f : α → α) (g : α → ℝ) (n : ℕ) (x : α) :
-    ((birkhoffAverage ℝ f g n x : ℝ) : EReal) ≤ birkhoffAverageSup f g x := by
-  rw [birkhoffAverageSup]
-  exact le_iSup (fun k ↦ ((birkhoffAverage ℝ f g k x : ℝ) : EReal)) n
-
-end TauCeti
 
 namespace MeasureTheory.MeasurePreserving
 
@@ -58,8 +37,7 @@ theorem ae_birkhoffAverageSup_norm_lt_top {Ω E : Type*} [MeasurableSpace Ω]
   rw [ae_iff]
   have hreal : μ.real {x | ¬ birkhoffAverageSup T (fun y ↦ ‖f y‖) x < ⊤} = 0 := by
     refine le_antisymm ?_ measureReal_nonneg
-    refine ge_of_tendsto (tendsto_const_nhds.div_atTop tendsto_natCast_atTop_atTop :
-      Tendsto (fun n : ℕ ↦ (∫ y, ‖f y‖ ∂μ) / (n : ℝ)) atTop (𝓝 0)) ?_
+    refine ge_of_tendsto (tendsto_const_div_atTop_nhds_zero_nat (∫ y, ‖f y‖ ∂μ)) ?_
     filter_upwards [eventually_gt_atTop 0] with n hn
     have hn' : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
     have hsub : {x | ¬ birkhoffAverageSup T (fun y ↦ ‖f y‖) x < ⊤} ⊆

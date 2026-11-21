@@ -8,7 +8,7 @@ module
 public import Mathlib.Dynamics.BirkhoffSum.Average
 public import Mathlib.Data.EReal.Operations
 public import Mathlib.Order.LiminfLimsup
-import Mathlib.Order.Filter.AtTopBot.Archimedean
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
@@ -56,15 +56,13 @@ theorem limsup_birkhoffAverage_comp {Ω : Type*} (T : Ω → Ω) (g : Ω → ℝ
   let u : ℕ → EReal := fun n ↦ ((birkhoffAverage ℝ T g n (T x) : ℝ) : EReal)
   let a : ℕ → EReal := fun n ↦ ((((n + 1 : ℕ) : ℝ)⁻¹ * g x : ℝ) : EReal)
   let b : ℕ → EReal := fun n ↦ (((n : ℝ) / ((n + 1 : ℕ) : ℝ) : ℝ) : EReal)
-  have hinv : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) :=
-    (tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop).comp (tendsto_add_atTop_nat 1)
+  have hinv : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) := by
+    simpa only [Nat.cast_add, Nat.cast_one, one_div] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
   have ha : Tendsto a atTop (𝓝 0) :=
     EReal.tendsto_coe.mpr (by simpa using hinv.mul_const (g x))
-  have hb : Tendsto b atTop (𝓝 1) := EReal.tendsto_coe.mpr <|
-    (by simpa using tendsto_const_nhds.sub hinv :
-      Tendsto (fun n : ℕ ↦ (1 : ℝ) - ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 1)).congr fun n ↦ by
-      have hn : ((n + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
-      push_cast; field_simp [hn]; ring
+  have hb : Tendsto b atTop (𝓝 1) := EReal.tendsto_coe.mpr <| by
+    simpa only [Nat.cast_add, Nat.cast_one] using tendsto_natCast_div_add_atTop (1 : ℝ)
   have hb0 : 0 ≤ᶠ[atTop] b := Eventually.of_forall fun n ↦ EReal.coe_nonneg.mpr (by positivity)
   have heq : (fun n ↦ ((birkhoffAverage ℝ T g (n + 1) x : ℝ) : EReal)) =ᶠ[atTop] u * b + a := by
     filter_upwards [eventually_ne_atTop 0] with n hn
