@@ -114,9 +114,9 @@ theorem range_eq_span_image_of_apply_eq_zero {𝕜' F : Type*} [Semiring 𝕜'] 
     rw [ContinuousLinearMap.coe_coe, (b.hasSum_inner_smul_apply T x).eq_sum_of_ne_finset_zero
       fun i hi ↦ by rw [hT i hi, smul_zero]]
     exact Submodule.sum_smul_mem _ _ fun i hi ↦ Submodule.subset_span ⟨i, hi, rfl⟩
-  · refine Submodule.span_le.2 (Set.image_subset_iff.2 fun i _ ↦ ?_)
-    simpa only [Set.mem_preimage, SetLike.mem_coe, ContinuousLinearMap.coe_coe] using
-      LinearMap.mem_range_self (T : E →ₛₗ[σ] F) (b i)
+  · rw [Submodule.span_le, LinearMap.coe_range, ContinuousLinearMap.coe_coe,
+      ← Set.image_image T b]
+    exact Set.image_subset_range T _
 
 /-- A continuous linear map into a module with a T1 topology that vanishes on every vector of a
 Hilbert basis outside a finite set of indices has finite rank. Its range is computed by
