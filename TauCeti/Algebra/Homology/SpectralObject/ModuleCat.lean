@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.SpectralObject.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
+import Mathlib.Algebra.Homology.SpectralObject.Page
+
 /-!
 # Spectral objects of modules indexed by a preorder, on elements
 
@@ -25,6 +27,9 @@ elements, for the arrows `i ≤ j ≤ k` of `ι`.
   sequence `⋯ ⟶ H^n(i ≤ j) ⟶ H^n(i ≤ k) ⟶ H^n(j ≤ k) ⟶ H^{n+1}(i ≤ j) ⟶ ⋯`, on elements.
 * `CategoryTheory.Abelian.SpectralObject.range_H_map_twoδ₁Toδ₀'_le`: the images of the maps
   `H^n(i ≤ b) ⟶ H^n(s ≤ b)` decrease as `i` decreases.
+* `CategoryTheory.Abelian.SpectralObject.mem_range_of_H_map_δ_eq_zero`: if the image of `δ x` in
+  `H^{n+1}(a ≤ t)` vanishes, for `x ∈ H^n(b ≤ u)`, then the image of `x` in `H^n(t ≤ u)` comes from
+  `H^n(a ≤ u)`.
 -/
 
 public section
@@ -93,5 +98,40 @@ lemma range_H_map_twoδ₁Toδ₀'_le {n : ℤ} {i i' s b : ι} (hi : i' ≤ i) 
       LinearMap.range ((X.H n).map (twoδ₁Toδ₀' i s b his hsb)).hom := by
   rintro _ ⟨y, rfl⟩
   exact ⟨(X.H n).map (twoδ₁Toδ₀' i' i b hi (his.trans hsb)) y, X.H_map_map_apply _ _ _ y⟩
+
+/-- Let `i₀ ≤ a ≤ b ≤ t ≤ u` and `x ∈ H^n(b ≤ u)`. If the image of `δ x ∈ H^{n+1}(i₀ ≤ b)` in
+`H^{n+1}(a ≤ t)` vanishes, then the image of `x` in `H^n(t ≤ u)` comes from `H^n(a ≤ u)`. -/
+lemma mem_range_of_H_map_δ_eq_zero {n : ℤ} {i₀ a b t u : ι} (h₀a : i₀ ≤ a) (hab : a ≤ b)
+    (hbt : b ≤ t) (htu : t ≤ u) (φ : mk₁ (homOfLE (h₀a.trans hab)) ⟶ mk₁ (homOfLE (hab.trans hbt)))
+    (x : (X.H n).obj (mk₁ (homOfLE (hbt.trans htu))))
+    (hx : (X.H (n + 1)).map φ
+      (X.δ (homOfLE (h₀a.trans hab)) (homOfLE (hbt.trans htu)) n (n + 1) rfl x) = 0) :
+    (X.H n).map (twoδ₁Toδ₀' b t u hbt htu) x ∈
+      LinearMap.range ((X.H n).map (twoδ₁Toδ₀' a t u (hab.trans hbt) htu)).hom := by
+  -- The image `y` of `δ x` in `H^{n+1}(a ≤ b)` vanishes in `H^{n+1}(a ≤ t)`, so it is `δ v` for
+  -- some `v ∈ H^n(b ≤ t)`.
+  let α : mk₁ (homOfLE (h₀a.trans hab)) ⟶ mk₁ (homOfLE hab) :=
+    homMk₁ (homOfLE h₀a) (𝟙 _) (Subsingleton.elim _ _)
+  obtain ⟨v, hv⟩ := X.exists_δ_eq hab hbt
+    ((X.H (n + 1)).map α (X.δ (homOfLE (h₀a.trans hab)) (homOfLE (hbt.trans htu)) n (n + 1) rfl x))
+    (by rw [X.H_map_map_apply _ _ φ, hx])
+  -- So `x` minus the image of `v` has vanishing `δ` into `H^{n+1}(a ≤ b)`.
+  let β : mk₁ (homOfLE hbt) ⟶ mk₁ (homOfLE (hbt.trans htu)) :=
+    homMk₁ (𝟙 _) (homOfLE htu) (Subsingleton.elim _ _)
+  obtain ⟨w, hw⟩ := X.exists_H_map_twoδ₁Toδ₀'_eq hab (hbt.trans htu) (x - (X.H n).map β v) (by
+    rw [map_sub, X.δ_naturality_apply (homOfLE hab) (homOfLE hbt) _ _ (𝟙 _) β v,
+      CategoryTheory.Functor.map_id, ModuleCat.id_apply, hv,
+      ← X.δ_naturality_apply (homOfLE (h₀a.trans hab)) _ (homOfLE hab) _ α (𝟙 _) x,
+      CategoryTheory.Functor.map_id, ModuleCat.id_apply, sub_self])
+  refine ⟨w, ?_⟩
+  rw [eq_sub_iff_add_eq] at hw
+  rw [← hw, map_add, X.H_map_map_apply _ _ (twoδ₁Toδ₀' a t u (hab.trans hbt) htu)]
+  -- The image of `v` in `H^n(t ≤ u)` factors through `H^n(t ≤ t) = 0`.
+  have hz : (X.H n).map (twoδ₁Toδ₀' b t t hbt le_rfl) v = 0 :=
+    have := (ModuleCat.isZero_iff_subsingleton).1 (X.isZero_H_obj_of_isIso (homOfLE (le_refl t))
+      (by rw [Subsingleton.elim (homOfLE (le_refl t)) (𝟙 t)]; infer_instance) n)
+    Subsingleton.elim _ _
+  rw [X.H_map_map_apply _ _ (twoδ₁Toδ₀' b t t hbt le_rfl ≫ twoδ₂Toδ₁' t t u le_rfl htu),
+    Functor.map_comp, ConcreteCategory.comp_apply, hz, map_zero, add_zero]
 
 end CategoryTheory.Abelian.SpectralObject
