@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Basic
 
 /-!
 # Translation by a point of a group object
@@ -26,12 +27,18 @@ of `G` to `Y`, by `(g, y) ↦ (φ y * g, y)`. For a group scheme `G` over `S` an
 moves points of `G` that are not defined over the base, such as the tautological point `Y = G`,
 `φ = 𝟙 G`.
 
+Finally, a morphism `c : X ⟶ G` to a monoid object gives the **universal shift**
+`G ⊗ X ⟶ G ⊗ G`, `(y, x) ↦ (y, y * c x)`, over the first factor `G`. With `c = 1` it is the
+diagonal shift `(y, x) ↦ (y, y)`. It commutes with a monoidal functor `F` through the product
+comparison maps, with `F.obj G` carrying the image monoid structure.
+
 ## Main definitions
 
 * `TauCeti.rightTranslation x`: right translation by a global point, as an isomorphism.
 * `TauCeti.leftTranslation x`: left translation by `x`, as an isomorphism `G ≅ G`.
 * `TauCeti.leftTranslationProd φ`: left translation by a point `φ : Y ⟶ G`, as an isomorphism
   `G ⊗ Y ≅ G ⊗ Y`.
+* `TauCeti.GrpObj.universalShift c`: the morphism `(y, x) ↦ (y, y * c x)`.
 
 ## Main results
 
@@ -42,6 +49,14 @@ moves points of `G` that are not defined over the base, such as the tautological
   `G ⊗ Y` to `((b ≫ φ) * a, b)`.
 * `TauCeti.leftTranslationProd_hom_comp_whiskerRight`: a homomorphism `i` intertwines translation
   by `φ` with translation by `φ ≫ i`.
+* `TauCeti.GrpObj.lift_comp_universalShift`: the universal shift on points with values in an
+  object.
+* `TauCeti.GrpObj.map_universalShift_comp_prodComparison`: compatibility with monoidal functors.
+
+## References
+
+* X. Yuan, *Arithmetic bigness and a uniform Bogomolov-type result*, arXiv:2108.05625v4, §4.6.2,
+  for the universal shift.
 -/
 
 public section
@@ -160,3 +175,52 @@ theorem leftTranslationProd_hom_comp_whiskerRight {H : C} [GrpObj H] (i : G ⟶ 
 end Prod
 
 end TauCeti
+
+/-! ### The universal shift -/
+
+namespace TauCeti.GrpObj
+
+universe u u' v v'
+
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] {X G : C} [MonObj G]
+
+/-- The **universal shift** of a morphism `c : X ⟶ G` to a monoid object: the morphism
+`G ⊗ X ⟶ G ⊗ G` sending `(y, x)` to `(y, y * c x)` (`lift_comp_universalShift`). It is a morphism
+over the first factor `G` (`universalShift_fst`). -/
+noncomputable def universalShift (c : X ⟶ G) : G ⊗ X ⟶ G ⊗ G :=
+  lift (fst G X) (fst G X * snd G X ≫ c)
+
+/-- The universal shift keeps the first factor. -/
+@[reassoc (attr := simp)]
+theorem universalShift_fst (c : X ⟶ G) : universalShift c ≫ fst G G = fst G X := by
+  simp [universalShift]
+
+/-- The second coordinate of the universal shift is `y * c x`. -/
+@[reassoc (attr := simp)]
+theorem universalShift_snd (c : X ⟶ G) :
+    universalShift c ≫ snd G G = fst G X * snd G X ≫ c := by
+  simp [universalShift]
+
+/-- The universal shift sends a pair of points `(y, x)` to `(y, y * c x)`. -/
+@[reassoc (attr := simp)]
+theorem lift_comp_universalShift {T : C} (y : T ⟶ G) (x : T ⟶ X) (c : X ⟶ G) :
+    lift y x ≫ universalShift c = lift y (y * x ≫ c) := by
+  ext <;> simp [MonObj.comp_mul]
+
+/-- The universal shift of the trivial morphism is the diagonal shift `(y, x) ↦ (y, y)`. -/
+@[simp]
+theorem universalShift_one : universalShift (1 : X ⟶ G) = lift (fst G X) (fst G X) := by
+  simp [universalShift]
+
+open scoped CategoryTheory.Obj in
+/-- A monoidal functor commutes with the universal shift through the product comparison maps,
+where `F.obj G` carries the image monoid structure. -/
+@[reassoc]
+theorem map_universalShift_comp_prodComparison {D : Type u'} [Category.{v'} D]
+    [CartesianMonoidalCategory D] (F : C ⥤ D) [F.Monoidal] (c : X ⟶ G) :
+    F.map (universalShift c) ≫ prodComparison F G G =
+      prodComparison F G X ≫ universalShift (F.map c) := by
+  rw [universalShift, Functor.map_lift_comp_prodComparison]
+  ext <;> simp [Functor.map_mul, MonObj.comp_mul]
+
+end TauCeti.GrpObj
