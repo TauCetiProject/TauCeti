@@ -255,7 +255,7 @@ theorem continuous_convexCombination {P : Type*} [TopologicalSpace P]
     exact iteratedFDeriv_chartMetric_convexCombination _ _ _ _ _ q.2.property
   rw [hformula]
   have hc : Continuous (fun q : P × (extChartAt I x).target ↦ (t q.1 : ℝ)) :=
-    ht.subtype_val.comp continuous_fst
+    ht.subtypeVal.comp continuous_fst
   have hleft := ((continuous_const (y := (1 : ℝ))).sub hc).smul (hg x m hm)
   have hright := hc.smul (hh x m hm)
   exact hleft.add hright

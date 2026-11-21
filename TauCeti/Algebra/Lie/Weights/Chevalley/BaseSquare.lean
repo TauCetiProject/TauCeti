@@ -258,7 +258,8 @@ theorem exists_isChevalleySystem_simple_eq_lieBasis
     by_cases hji : j = i
     · subst hji
       exact absurd h (Weight.ne_neg_of_isNonZero (H.isNonZero_coe_root j))
-    · refine absurd ?_ (b.base.root_ne_neg_of_ne j.2 i.2 fun h' ↦ hji (Subtype.ext h'))
+    · refine absurd ?_ (b.base.root_ne_neg_of_ne j.property i.property fun h' ↦ hji
+        (Subtype.ext h'))
       simpa using congrArg (Weight.toLinear K H L) h
   -- The sign at `α` is that of `αᵢ` when `α = ±αᵢ`, and `1` at the other weights.
   let u : Weight K H L → K := fun α ↦

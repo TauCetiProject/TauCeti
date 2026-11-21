@@ -39,19 +39,19 @@ noncomputable section
 variable (d : TypeTrialityD4LieIndex)
 
 /-- The fundamental-weight torus of the tripled carrier, in the index's Bourbaki coordinates. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (D4Tripled.weightTorusPoints d.1.Closure).comp
-    (MulEquiv.arrowCongr (finCongr d.rank_eq_four) (MulEquiv.refl d.1.Closureˣ)).toMonoidHom
+def weightTorus : (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  (D4Tripled.weightTorusPoints d.val.Closure).comp
+    (MulEquiv.arrowCongr (finCongr d.rank_eq_four) (MulEquiv.refl d.val.Closureˣ)).toMonoidHom
 
 /-- The indexed torus is the native tripled-carrier torus after the rank-four coordinate cast. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.weightTorus s = D4Tripled.weightTorusPoints d.1.Closure
+theorem weightTorus_apply (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.weightTorus s = D4Tripled.weightTorusPoints d.val.Closure
       (fun i => s (finCongr d.rank_eq_four.symm i)) :=
   (rfl)
 
 /-- Triality relabels the torus parameters by the inverse native diagram permutation. -/
 @[simp]
-theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem graphAut_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
     d.graphAut (d.weightTorus s) = d.weightTorus
       (fun i => s (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm.symm i)) := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of
@@ -65,10 +65,10 @@ theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 
 /-- Frobenius raises each fundamental-weight torus parameter to the recorded field order. -/
 @[simp]
-theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
+theorem frobenius_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.val.fieldOrder) := by
   rw [frobenius_def, weightTorus_apply, D4Tripled.frobenius_weightTorusPoints,
-    weightTorus_apply, d.1.fieldOrder_eq_characteristic_pow]
+    weightTorus_apply, d.val.fieldOrder_eq_characteristic_pow]
   -- Coordinate reindexing commutes with pointwise powers.
   rfl
 
@@ -84,7 +84,7 @@ theorem isCharacterMap_graphAut :
 
 /-- The root-datum Frobenius is the character pullback of the represented Frobenius. -/
 theorem isCharacterMap_frobenius :
-    IsCharacterMap d.weightTorus d.frobenius d.1.datumFrobenius.weightMap := by
+    IsCharacterMap d.weightTorus d.frobenius d.val.datumFrobenius.weightMap := by
   apply isCharacterMap_iff.mpr
   intro s
   rw [ValidLieTypeIndex.datumFrobenius_weightMap, ← Module.End.one_eq_id,
@@ -94,9 +94,9 @@ theorem isCharacterMap_frobenius :
 /-- The independently defined Steinberg map of the tripled carrier has exactly the character
 pullback of the native uniform root-datum Steinberg map, with the contravariant orientation. -/
 theorem isCharacterMap_steinberg :
-    IsCharacterMap d.weightTorus d.steinberg d.1.datumSteinberg.weightMap := by
+    IsCharacterMap d.weightTorus d.steinberg d.val.datumSteinberg.weightMap := by
   rw [ValidLieTypeIndex.datumSteinberg_of_not_usesHalfFrobenius
-    d.1 d.toTypeDDiagramLieIndex.toGraphTwistedIndex.2,
+    d.val d.toTypeDDiagramLieIndex.toGraphTwistedIndex.property,
     GraphTwistedIndex.datumSteinberg_weightMap, LinearMap.comp_smul, LinearMap.comp_id,
     steinberg_def]
   simpa only [ValidLieTypeIndex.datumFrobenius_weightMap, ← Module.End.one_eq_id,

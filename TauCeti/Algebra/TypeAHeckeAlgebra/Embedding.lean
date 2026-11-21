@@ -41,6 +41,9 @@ injective.
 
 * `TauCeti.TypeAHeckeAlgebra.regularRep_toInfinite_Tw_apply_single_one`: the image of `T_w` in the
   infinite algebra takes the basis vector of `1` to that of the image of `w`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.T_ne_algebraMap` and
+  `TauCeti.TypeAHeckeAlgebra.T_ne_algebraMap`: over a nontrivial ring a generator is never a
+  scalar, whatever the unit `q`.
 * `TauCeti.TypeAHeckeAlgebra.toInfinite_injective`: **the finite Hecke algebra embeds in the
   infinite one.**
 * `TauCeti.TypeAHeckeAlgebra.strandIncl_injective`: the tower maps are injective.
@@ -95,6 +98,21 @@ theorem regularRep_T (i : ℕ) :
     regularRep q cs' (T q i) = cs'.heckeLeftMul ((q : R) - ↑q⁻¹) i :=
   lift_T _ _ _ _ i
 
+/-- **A generator is never a scalar** over a nontrivial ring, whatever the unit `q`, including the
+repeated-root case `q ^ 2 = -1`: in the regular representation `T i` sends the basis vector of `1`
+to that of the simple reflection `s i`, while a scalar sends it to a multiple of itself. -/
+theorem T_ne_algebraMap [Nontrivial R] (i : ℕ) (r : R) : T q i ≠ algebraMap R _ r := by
+  intro h
+  let cs'' := coxeterMatrixAInfty.toCoxeterSystem
+  have := congrArg (fun x ↦ regularRep q cs'' x (single 1 1)) h
+  simp only [regularRep_T, AlgHom.commutes, Module.algebraMap_end_apply] at this
+  rw [heckeLeftMul_single_of_not_isLeftDescent] at this
+  · have h2 := congrArg (fun f : coxeterMatrixAInfty.Group →₀ R ↦ f (cs''.simple i)) this
+    simp only [mul_one, single_eq_same, smul_single, smul_eq_mul] at h2
+    rw [single_eq_of_ne (cs''.simple_ne_one i)] at h2
+    exact one_ne_zero h2
+  · simp [IsLeftDescent]
+
 end InfiniteTypeAHeckeAlgebra
 
 namespace TypeAHeckeAlgebra
@@ -102,6 +120,12 @@ namespace TypeAHeckeAlgebra
 variable {n : ℕ} {W W' : Type*} [Group W] [Group W']
 variable (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
 variable (cs' : CoxeterSystem coxeterMatrixAInfty W')
+
+/-- A generator of the type-A Hecke algebra on `n` strands is never a scalar over a nontrivial
+ring, whatever the unit `q`. -/
+theorem T_ne_algebraMap [Nontrivial R] (i : Fin (n - 1)) (r : R) : T q i ≠ algebraMap R _ r :=
+  fun h ↦ InfiniteTypeAHeckeAlgebra.T_ne_algebraMap i r <| by
+    simpa using congrArg (toInfinite R q n) h
 
 /-- The image of `T_w` in the infinite type-A Hecke algebra takes, in the regular representation
 of the infinite algebra, the basis vector of `1` to the basis vector of the image of `w` under the

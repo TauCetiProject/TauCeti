@@ -174,7 +174,7 @@ theorem coe_realEquivOfRingEquiv (e : K ≃+* L) (w : {w : InfinitePlace K // w.
 @[simp]
 theorem realEquivOfRingEquiv_refl_apply (w : {w : InfinitePlace K // w.IsReal}) :
     realEquivOfRingEquiv (RingEquiv.refl K) w = w :=
-  Subtype.ext (equivOfRingEquiv_refl_apply w.1)
+  Subtype.ext (equivOfRingEquiv_refl_apply w.val)
 
 -- Not `@[simp]`: `realEquivOfRingEquiv_refl_apply` is the simp form.
 /-- The identity ring isomorphism induces `Equiv.refl` on the real places of `K`. -/
@@ -195,7 +195,7 @@ theorem realEquivOfRingEquiv_symm (e : K ≃+* L) :
 theorem realEquivOfRingEquiv_trans_apply (e : K ≃+* L) (e' : L ≃+* M)
     (w : {w : InfinitePlace K // w.IsReal}) :
     realEquivOfRingEquiv e' (realEquivOfRingEquiv e w) = realEquivOfRingEquiv (e.trans e') w :=
-  Subtype.ext (equivOfRingEquiv_trans_apply e e' w.1)
+  Subtype.ext (equivOfRingEquiv_trans_apply e e' w.val)
 
 -- Not `@[simp]`: `realEquivOfRingEquiv_trans_apply` is the simp form, rewriting in the opposite
 -- direction.

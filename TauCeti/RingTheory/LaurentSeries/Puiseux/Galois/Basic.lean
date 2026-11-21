@@ -101,7 +101,7 @@ theorem continuous_kummer : Continuous (kummer K) := by
       (map_one _)) fun ζ (hζ : proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ = 1) ↦
     hEs fun x ↦ ?_
   rw [AlgEquiv.smul_def]
-  exact (kummer_coe_level ζ (⟨x, hn x.2⟩ : level K n)).trans
+  exact (kummer_coe_level ζ (⟨x, hn x.property⟩ : level K n)).trans
     (by rw [hζ, map_one, AlgEquiv.one_apply])
 
 section RootsOfUnity
@@ -155,9 +155,9 @@ private theorem levelRootOfUnity_pow_div (σ : Gal(puiseuxField K/K⸨X⸩)) {n 
 component is the root of unity of the restriction to level `n`. -/
 private noncomputable def toTateModule : Gal(puiseuxField K/K⸨X⸩) →* PrimeToPTateModule 1 K :=
   lift (fun m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1} ↦
-      levelRootOfUnity ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.2.1)))
-    fun m n σ h ↦ levelRootOfUnity_pow_div σ (n := (n : ℕ).toPNat (Nat.pos_of_ne_zero n.2.1))
-      (m := (m : ℕ).toPNat (Nat.pos_of_ne_zero m.2.1)) (PNat.dvd_iff.mpr h)
+      levelRootOfUnity ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.property.1)))
+    fun m n σ h ↦ levelRootOfUnity_pow_div σ (n := (n : ℕ).toPNat (Nat.pos_of_ne_zero n.property.1))
+      (m := (m : ℕ).toPNat (Nat.pos_of_ne_zero m.property.1)) (PNat.dvd_iff.mpr h)
 
 /-- The level-`n` component of `toTateModule σ` is the level-`n` root of unity of `σ`. -/
 private theorem proj_toTateModule (σ : Gal(puiseuxField K/K⸨X⸩)) (n : ℕ+) :
@@ -182,11 +182,11 @@ private theorem kummer_toTateModule (σ : Gal(puiseuxField K/K⸨X⸩)) :
 a finite level, whose Galois group is discrete. -/
 private theorem continuous_toTateModule : Continuous (toTateModule (K := K)) := by
   refine continuous_iff.2 fun m ↦ ?_
-  have : FiniteDimensional K⸨X⸩ (level K ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.2.1))) :=
+  have : FiniteDimensional K⸨X⸩ (level K ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.property.1))) :=
     (levelPowerBasis K _).finite
   -- As in `proj_toTateModule`, the component is computed by `proj_lift` up to unfolding.
   have h : (fun σ ↦ proj m (toTateModule σ)) = fun σ ↦ levelGalEquivRootsOfUnity K _
-      (AlgEquiv.restrictNormalHom (level K ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.2.1))) σ) :=
+      (AlgEquiv.restrictNormalHom (level K ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.property.1))) σ) :=
     funext fun σ ↦ proj_lift _ _ m σ
   rw [h]
   exact (IsLocallyConstant.of_discrete _).comp_continuous

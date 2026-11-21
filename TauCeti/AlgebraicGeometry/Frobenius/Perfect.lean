@@ -89,7 +89,7 @@ theorem isIso_frobenius_iff_perfectRing_stalk (hX : (p : Γ(X, ⊤)) = 0) :
     IsIso (X.frobenius p hX) ↔ ∀ x : X, PerfectRing (X.presheaf.stalk x) p := by
   rw [← isomorphisms.iff, isomorphisms_eq_stalkwise]
   refine ⟨fun h x ↦ ⟨(bijective_frobenius_stalkMap_iff hX x).1 (h.2 x)⟩,
-    fun h ↦ ⟨?_, fun x ↦ (bijective_frobenius_stalkMap_iff hX x).2 (h x).1⟩⟩
+    fun h ↦ ⟨?_, fun x ↦ (bijective_frobenius_stalkMap_iff hX x).2 (h x).bijective_frobenius⟩⟩
   -- The image of `F_X` under `forgetToTop` is by definition its underlying continuous map, which
   -- is the identity.
   have : IsIso (X.frobenius p hX).base := by rw [frobenius_base]; infer_instance
@@ -104,7 +104,7 @@ theorem isIso_frobenius_iff_perfectRing_affineOpens (hX : (p : Γ(X, ⊤)) = 0) 
   refine forall_congr' fun U ↦ ?_
   -- `F_X` is integral, hence affine, so over the affine open `U` it is an isomorphism exactly
   -- when it is one on sections over `U`.
-  rw [isomorphisms.iff, isIso_morphismRestrict_iff_isIso_app _ U.2, isIso_frobenius_app_iff]
+  rw [isomorphisms.iff, isIso_morphismRestrict_iff_isIso_app _ U.property, isIso_frobenius_app_iff]
   exact ⟨fun h ↦ ⟨h⟩, fun ⟨h⟩ ↦ h⟩
 
 /-- **A scheme is perfect if and only if `p` vanishes on it and all its local rings are perfect

@@ -249,8 +249,9 @@ section Examples
 variable {ζ : K} (hζ : IsPrimitiveRoot ζ 3)
 include hζ
 
-/- `-1 - 3ω`, of norm `7`, is primary, while `3 + ω`, an associate of its conjugate `2 + 3ω`, and
-the element `2 + ω` are not; `1 - ω`, the prime above `3`, is not primary. -/
+/- `-1 - 3ω`, of norm `7`, is primary, while `3 + ω` (whose conjugate is `2 - ω` and whose primary
+associate is `2 + 3ω = -ω²(3 + ω)`) and the element `2 + ω` are not; `1 - ω`, the prime above
+`3`, is not primary. -/
 example : IsPrimaryEisenstein (((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger) := by
   rw [hζ.isPrimaryEisenstein_add_mul_iff]; decide
 

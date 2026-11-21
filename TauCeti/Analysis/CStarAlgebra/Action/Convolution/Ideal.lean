@@ -66,7 +66,7 @@ theorem mem_range_convolutionMap_subtypeHom_iff {f : CStarAction.ConvolutionAlge
   rw [(hI.subtypeHom.convolutionMap μ).mem_range]
   refine ⟨?_, fun hf => ?_⟩
   · rintro ⟨g, rfl⟩ s
-    simpa only [CStarAction.Hom.convolutionMap_apply, subtypeHom_apply] using (g.ofConv s).2
+    simpa only [CStarAction.Hom.convolutionMap_apply, subtypeHom_apply] using (g.ofConv s).property
   · have hsupp : HasCompactSupport (fun s : G => (⟨f.ofConv s, hf s⟩ : I)) := by
       have hEq : Function.support (fun s : G => (⟨f.ofConv s, hf s⟩ : I)) =
           Function.support f.ofConv := by
@@ -90,7 +90,7 @@ private theorem mul_mem_range_convolutionMap_subtypeHom_of_forall_mem
   have hint : (∫ r, f.ofConv r * α r (g.ofConv (r⁻¹ * s)) ∂μ) = ((∫ r, φ r ∂μ : I) : A) :=
     I.toSubmodule.subtypeₗᵢ.integral_comp_comm φ
   rw [CStarAction.ConvolutionAlgebra.ofConv_mul, CStarAction.convolution_apply, hint]
-  exact (∫ r, φ r ∂μ).2
+  exact (∫ r, φ r ∂μ).property
 
 /-- When `I` is a closed invariant two-sided star ideal of `A`, the range of
 `hI.subtypeHom.convolutionMap μ` absorbs left twisted convolution by arbitrary elements of
