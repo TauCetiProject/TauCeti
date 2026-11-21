@@ -31,6 +31,9 @@ automorphism of a tree acting on its axis, parametrized by the integers, is an e
 Finally, for two elements `x, y` of a monoid with a compatible scalar action satisfying
 `y * x = c • (x * y)`, straightening `(x * y) ^ n` gives `c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n)`.
 
+If the action of `g` commutes with an action of scalars and `g • v = μ • v`, then the powers of
+`g` act on `v` by the powers of `μ`.
+
 ## Main results
 
 * `TauCeti.exists_pow_smul_ne_zero_and_smul_eq_zero`: if `xⁿ • w = 0` for some `n` and `w ≠ 0`,
@@ -41,6 +44,7 @@ Finally, for two elements `x, y` of a monoid with a compatible scalar action sat
   all `n`, then `gᵏ • c n = c (n + k • t)`.
 * `TauCeti.mul_pow_eq_pow_smul_mul_pow`: if `y * x = c • (x * y)`, then
   `(x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n)`.
+* `TauCeti.pow_smul_eq_of_smul_eq`: if `g • v = μ • v`, then `gˡ • v = μˡ • v`.
 -/
 
 public section
@@ -108,5 +112,14 @@ theorem mul_pow_eq_pow_smul_mul_pow {R A : Type*} [Monoid R] [Monoid A] [MulActi
     rw [pow_succ, ih, Nat.triangle_succ, pow_add, smul_mul_assoc, mul_assoc (x ^ n),
       ← mul_assoc (y ^ n), hpow, smul_mul_assoc, mul_smul_comm, smul_smul]
     simp only [pow_succ, mul_assoc]
+
+/-- If the action of `g` commutes with the scalars and `g • v = μ • v`, then the powers of `g` act
+on `v` by the powers of `μ`. -/
+theorem pow_smul_eq_of_smul_eq {G K α : Type*} [Monoid G] [Monoid K] [MulAction G α]
+    [MulAction K α] [SMulCommClass G K α] {g : G} {v : α} {μ : K} (hg : g • v = μ • v) (l : ℕ) :
+    g ^ l • v = μ ^ l • v := by
+  induction l with
+  | zero => simp
+  | succ l ih => rw [pow_succ', mul_smul, ih, smul_comm, hg, smul_smul, pow_succ]
 
 end TauCeti
