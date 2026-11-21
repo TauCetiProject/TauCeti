@@ -16,52 +16,26 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 /-!
 # Root counts, Coxeter numbers, and classification-free Coxeter invariants
 
-For a finite reduced crystallographic root pairing `P` carrying a base `b` of valid Cartan type `t`,
-the simple-root coefficient columns of the roots of `P` are the `columnReflectionGroup` orbits of
-the coordinate columns (`RootPairing.Base.iUnion_orbit_single_eq_range_rootCoefficients`). Matching
-those orbits along the Cartan-matrix relabelling to the orbits of the pinned simply connected root
-datum of `t` (`TauCeti.DynkinType.iUnion_orbit_single_eq_range_simpleRootCoefficients`) identifies
-the root count of `P` with `t.numRoots` without assuming that the roots of `P` span the ambient
-module.
-
-Combined with `TauCeti.DynkinType.numRoots_eq_rank_mul_coxeterNumber` (`t.numRoots = r * h`),
-`TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType` (`orderOf c = h`), and the Cartan-Killing
-classification (`TauCeti.classifiedDynkinType`), this yields the classical root-count and
-eigenvalue theorems both for bases of a prescribed valid Cartan type and unconditionally for any
-finite irreducible reduced crystallographic root system:
-
-* `|Φ| = r * h` and `h = |Φ| / r`, where `r = b.support.card` is the rank and
-  `h = orderOf (wordProd P b l)` is the order of any Coxeter element;
-* `2 * |Φ⁺| = r * h` and `|Φ⁺| = ∑ mᵢ`;
-* all Coxeter elements across all bases and all orderings of the simple reflections have the same
-  order `h ≥ 2`;
-* every primitive `h`-th root of unity `exp (2πi e / h)` (`e < h`, `gcd(e, h) = 1`) — in particular
-  `exp (2πi / h)` — is a complex eigenvalue of the matrix of every Coxeter element on the simple
-  roots.
+Combines simple-root coefficient orbit counting (`TauCeti.HasCartanType.natCard_eq_numRoots`,
+requiring no spanning assumption) with `t.numRoots = t.rank * t.coxeterNumber`,
+`TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType`, and `TauCeti.classifiedDynkinType` to deduce
+`|Φ| = r * h`, `h = |Φ| / r`, `2 * |Φ⁺| = r * h`, `|Φ⁺| = ∑ mᵢ`, base- and order-independence of
+Coxeter order (`h ≥ 2`), and containment of all primitive `h`-th roots of unity as eigenvalues.
 
 ## Main results
 
 * `TauCeti.HasCartanType.nonempty_equiv_fin_numRoots` and
-  `TauCeti.HasCartanType.natCard_eq_numRoots`: a finite reduced crystallographic root pairing with a
-  base of valid Cartan type `t` has `t.numRoots` roots (no spanning hypothesis needed).
+  `TauCeti.HasCartanType.natCard_eq_numRoots`: `t.numRoots` roots without assuming spanning.
 * `TauCeti.HasCartanType.ncard_posRoots_eq_sum_exponents`,
-  `TauCeti.HasCartanType.natCard_eq_card_support_mul_coxeterNumber`, and
-  `TauCeti.HasCartanType.coxeterNumber_eq_natCard_div_card_support`: positive-root count `∑ mᵢ` and
-  the identity `h = |Φ| / r` for any base of valid Cartan type `t`.
-* `TauCeti.Coxeter.natCard_eq_card_support_mul_orderOf_wordProd` and
-  `TauCeti.Coxeter.orderOf_wordProd_eq_natCard_div_card_support`: **`|Φ| = r * h` and
-  `h = |Φ| / r`** for every finite irreducible reduced crystallographic root system.
-* `TauCeti.Coxeter.orderOf_wordProd_eq_orderOf_wordProd`: any two Coxeter elements, relative to any
-  two bases, have the same order.
-* `TauCeti.Coxeter.roots_charpoly_of_actsBy` and
-  `TauCeti.Coxeter.mem_roots_charpoly_of_actsBy_of_coprime`: the complex eigenvalue multiset of any
-  Coxeter element on the simple roots, and containment of all primitive `h`-th roots of unity.
+  `natCard_eq_card_support_mul_coxeterNumber`, and `coxeterNumber_eq_natCard_div_card_support`.
+* `TauCeti.Coxeter.natCard_eq_card_support_mul_orderOf_wordProd`,
+  `orderOf_wordProd_eq_natCard_div_card_support`, `orderOf_wordProd_eq_orderOf_wordProd`,
+  `roots_charpoly_of_actsBy`, and `mem_roots_charpoly_of_actsBy_of_coprime`.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, no. 2, and Ch. VI, §1.11.
-* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge University Press (1990),
-  §§ 3.16--3.18.
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge (1990), §§ 3.16--3.18.
 -/
 
 public section
@@ -176,7 +150,11 @@ theorem HasCartanType.coxeterNumber_eq_natCard_div_card_support {b : P.Base} {t 
 
 end HasCartanType
 
+end TauCeti
+
 /-! ### Invariants of classified finite irreducible root systems -/
+
+namespace RootPairing.Base
 
 section Classified
 
@@ -184,38 +162,42 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Finite ι]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
 
-/-- The number of roots of a finite irreducible reduced crystallographic root system is the
-`numRoots` of its classified Dynkin type. -/
+open TauCeti
+
+/-- `Nat.card ι` equals `(classifiedDynkinType b).numRoots`. -/
 theorem natCard_eq_numRoots_classifiedDynkinType (b : P.Base) :
     Nat.card ι = (classifiedDynkinType b).numRoots :=
   (hasCartanType_classifiedDynkinType b).natCard_eq_numRoots (valid_classifiedDynkinType b)
 
-/-- The number of positive roots of any base equals the sum of the exponents of its classified
-Dynkin type. -/
+/-- The number of positive roots equals the sum of exponents of `classifiedDynkinType b`. -/
 theorem ncard_posRoots_eq_sum_exponents_classifiedDynkinType (b : P.Base) :
     (posRoots P b).ncard = (classifiedDynkinType b).exponents.sum :=
   (hasCartanType_classifiedDynkinType b).ncard_posRoots_eq_sum_exponents
     (valid_classifiedDynkinType b)
 
-/-- Finset version of `TauCeti.ncard_posRoots_eq_sum_exponents_classifiedDynkinType`. -/
+/-- Finset version of `RootPairing.Base.ncard_posRoots_eq_sum_exponents_classifiedDynkinType`. -/
 theorem card_posRootsFinset_eq_sum_exponents_classifiedDynkinType (b : P.Base) :
     (posRootsFinset P b).card = (classifiedDynkinType b).exponents.sum :=
   (hasCartanType_classifiedDynkinType b).card_posRootsFinset_eq_sum_exponents
     (valid_classifiedDynkinType b)
 
-/-- The sum of the fundamental degrees of the classified Dynkin type equals `|Φ⁺| + r`. -/
+/-- The sum of fundamental degrees of `classifiedDynkinType b` equals `|Φ⁺| + r`. -/
 theorem sum_degrees_classifiedDynkinType (b : P.Base) :
     (classifiedDynkinType b).degrees.sum = (posRoots P b).ncard + b.support.card :=
   (hasCartanType_classifiedDynkinType b).sum_degrees_eq_ncard_posRoots_add_card_support
     (valid_classifiedDynkinType b)
 
-/-- The Coxeter number of the classified Dynkin type is `|Φ| / r`. -/
+/-- The Coxeter number of `classifiedDynkinType b` is `|Φ| / r`. -/
 theorem coxeterNumber_classifiedDynkinType_eq_natCard_div_card_support (b : P.Base) :
     (classifiedDynkinType b).coxeterNumber = Nat.card ι / b.support.card :=
   (hasCartanType_classifiedDynkinType b).coxeterNumber_eq_natCard_div_card_support
     (valid_classifiedDynkinType b)
 
 end Classified
+
+end RootPairing.Base
+
+namespace TauCeti
 
 namespace Coxeter
 

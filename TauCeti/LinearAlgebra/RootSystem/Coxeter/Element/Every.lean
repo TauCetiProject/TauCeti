@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Charpoly
-public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
+public import TauCeti.LinearAlgebra.RootSystem.CoxeterNumber
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 
@@ -35,13 +35,8 @@ The statements are phrased with `TauCeti.HasCartanType`, so they apply to any ba
 classification has matched to a type. TauCeti's `G₂` Cartan matrix is the transpose of Mathlib's
 `CartanMatrix.G₂`.
 
-## Main definitions
-
-* `TauCeti.DynkinType.coxeterNumber`: the Coxeter number `h` of a Dynkin type.
-
 ## Main results
 
-* `TauCeti.DynkinType.numRoots_eq_rank_mul_coxeterNumber`: `t.numRoots = t.rank * t.coxeterNumber`.
 * `TauCeti.Coxeter.orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType` and
   `TauCeti.Coxeter.charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy`: for a base of
   Cartan type `t` with a one-degenerate order, every Coxeter element has the order and the
@@ -62,53 +57,6 @@ classification has matched to a type. TauCeti's `G₂` Cartan matrix is the tran
 -/
 
 public section
-
-namespace TauCeti.DynkinType
-
-/-- The **Coxeter number** `h` of a Dynkin type: for a valid Dynkin type, this is the order of
-every Coxeter element (`TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType`). -/
-def coxeterNumber : DynkinType → ℕ
-  | .A n => n + 1
-  | .B n | .C n => 2 * n
-  | .D n => 2 * (n - 1)
-  | .E6 => 12
-  | .E7 => 18
-  | .E8 => 30
-  | .F4 => 12
-  | .G2 => 6
-
-@[simp] lemma coxeterNumber_A (n : ℕ) : (A n).coxeterNumber = n + 1 := (rfl)
-@[simp] lemma coxeterNumber_B (n : ℕ) : (B n).coxeterNumber = 2 * n := (rfl)
-@[simp] lemma coxeterNumber_C (n : ℕ) : (C n).coxeterNumber = 2 * n := (rfl)
-@[simp] lemma coxeterNumber_D (n : ℕ) : (D n).coxeterNumber = 2 * (n - 1) := (rfl)
-@[simp] lemma coxeterNumber_E6 : E6.coxeterNumber = 12 := (rfl)
-@[simp] lemma coxeterNumber_E7 : E7.coxeterNumber = 18 := (rfl)
-@[simp] lemma coxeterNumber_E8 : E8.coxeterNumber = 30 := (rfl)
-@[simp] lemma coxeterNumber_F4 : F4.coxeterNumber = 12 := (rfl)
-@[simp] lemma coxeterNumber_G2 : G2.coxeterNumber = 6 := (rfl)
-
-/-- Every valid Dynkin type has Coxeter number at least `2`. -/
-lemma two_le_coxeterNumber {t : DynkinType} (ht : t.Valid) : 2 ≤ t.coxeterNumber := by
-  cases t with
-  | A n => have := valid_A.mp ht; simp; omega
-  | B n => have := valid_B.mp ht; simp; omega
-  | C n => have := valid_C.mp ht; simp; omega
-  | D n => have := valid_D.mp ht; simp; omega
-  | E6 | E7 | E8 | F4 | G2 => simp
-
-/-- Every valid Dynkin type has positive Coxeter number. -/
-lemma coxeterNumber_pos {t : DynkinType} (ht : t.Valid) : 0 < t.coxeterNumber :=
-  lt_of_lt_of_le (by norm_num) (two_le_coxeterNumber ht)
-
-/-- **For every Dynkin type, the number of roots equals the rank times the Coxeter number**:
-`|Φ| = r h`. -/
-theorem numRoots_eq_rank_mul_coxeterNumber (t : DynkinType) :
-    t.numRoots = t.rank * t.coxeterNumber := by
-  cases t with
-  | A n | E6 | E7 | E8 | F4 | G2 => rfl
-  | B n | C n | D n => simp; ring
-
-end TauCeti.DynkinType
 
 open Matrix RootPairing TauCeti
 
@@ -375,21 +323,24 @@ theorem orderOf_wordProd_of_hasCartanType [Finite ι] {t : DynkinType} (ht : t.V
     (h : HasCartanType P b t) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = t.coxeterNumber := by
   cases t with
-  | A n => exact orderOf_wordProd_of_hasCartanType_A h hnd hall
+  | A n => rw [DynkinType.coxeterNumber_A]; exact orderOf_wordProd_of_hasCartanType_A h hnd hall
   | B n =>
+    rw [DynkinType.coxeterNumber_B]
     exact orderOf_wordProd_of_hasCartanType_B (by have := DynkinType.valid_B.mp ht; omega)
       h hnd hall
   | C n =>
+    rw [DynkinType.coxeterNumber_C]
     exact orderOf_wordProd_of_hasCartanType_C (by have := DynkinType.valid_C.mp ht; omega)
       h hnd hall
   | D n =>
+    rw [DynkinType.coxeterNumber_D]
     exact orderOf_wordProd_of_hasCartanType_D (by have := DynkinType.valid_D.mp ht; omega)
       h hnd hall
-  | E6 => exact orderOf_wordProd_of_hasCartanType_E6 h hnd hall
-  | E7 => exact orderOf_wordProd_of_hasCartanType_E7 h hnd hall
-  | E8 => exact orderOf_wordProd_of_hasCartanType_E8 h hnd hall
-  | F4 => exact orderOf_wordProd_of_hasCartanType_F4 h hnd hall
-  | G2 => exact orderOf_wordProd_of_hasCartanType_G2 h hnd hall
+  | E6 => rw [DynkinType.coxeterNumber_E6]; exact orderOf_wordProd_of_hasCartanType_E6 h hnd hall
+  | E7 => rw [DynkinType.coxeterNumber_E7]; exact orderOf_wordProd_of_hasCartanType_E7 h hnd hall
+  | E8 => rw [DynkinType.coxeterNumber_E8]; exact orderOf_wordProd_of_hasCartanType_E8 h hnd hall
+  | F4 => rw [DynkinType.coxeterNumber_F4]; exact orderOf_wordProd_of_hasCartanType_F4 h hnd hall
+  | G2 => rw [DynkinType.coxeterNumber_G2]; exact orderOf_wordProd_of_hasCartanType_G2 h hnd hall
 
 end TauCeti.Coxeter
 
