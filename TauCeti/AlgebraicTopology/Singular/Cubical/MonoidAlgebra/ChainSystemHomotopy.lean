@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.ContinuationChainSystem
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RepresentingChainSystem
+import TauCeti.Algebra.Homology.DG.Twisted.Invertible
 import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.Order.WellFounded.Basic
 
@@ -57,6 +58,8 @@ makes it a boundary.
   right-hand side of the homotopy equation is a cycle.
 * `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`: two representing chain systems of
   the same classes are joined by a homotopy.
+* `TauCeti.TwistingChainSystem.Homotopy.isUnit_continuationCocycle`: the continuation cocycle of a
+  homotopy whose chains vanish on the pairs of equal index is invertible.
 
 ## References
 
@@ -212,6 +215,19 @@ theorem continuationCocycle_ν (T : S.Homotopy S')
       (1 : Matrix P P (normalizedCubicalChainAlgebra G R)) x y +
         cubicalChainSumMap R (q x y) (T.chain x y) :=
   (rfl)
+
+/-- **The continuation cocycle of a homotopy is invertible** when the chains of the homotopy
+vanish on the pairs of equal index, for instance when the spaces `M x y` with `ind x = ind y` are
+empty: the matrix `1 + q_* h` is then unitriangular for the ranking by `ind`. Through
+`TauCeti.ContinuationCocycle.continuationIsoOfIsUnit`, the twisting cocycles of push-forwards of
+`S` and `S'` then have isomorphic twisted complexes. -/
+theorem isUnit_continuationCocycle (T : S.Homotopy S')
+    (hq : ∀ x z y (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v)
+    (hT : ∀ x y, ind x = ind y → T.chain x y = 0) :
+    IsUnit (Matrix.of (T.continuationCocycle q hq).ν) :=
+  (T.continuationCocycle q hq).isUnit_of_eq_one_of_le fun x y hxy ↦ by
+    rw [continuationCocycle_ν, hxy.lt_or_eq.elim T.chain_eq_zero_of_lt (hT x y), map_zero,
+      add_zero]
 
 end Homotopy
 

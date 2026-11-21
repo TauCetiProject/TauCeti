@@ -32,6 +32,9 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
+* `MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero`,
+  `MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero`: along a tangent vector of one factor,
+  the derivative on a product is the derivative of the slice through the point.
 * `MDifferentiableAt.mfderiv_prodMk_id_apply`: the derivative of the graph map `y ↦ (y, u y)`
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
@@ -206,6 +209,28 @@ theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
     (mfderiv_prod_eq_add_apply hf (v := v))
   simpa only [mvfderiv, ContinuousLinearMap.coe_comp, Function.comp_def,
     ContinuousLinearEquiv.coe_coe, map_add] using h
+
+/-- Along a tangent vector of the first factor, the vector-valued derivative of a function on a
+product is the derivative of its slice through the point. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p)
+    {v : TangentSpace (I.prod I') p} (hv : v.2 = (0 : TangentSpace I' p.2)) :
+    mvfderiv (I.prod I') f p v = mvfderiv I (fun y ↦ f (y, p.2)) p.1 v.1 := by
+  rw [hf.mvfderiv_prod_eq_add_apply, hv, map_zero, add_zero]
+
+/-- Along a tangent vector of the second factor, the vector-valued derivative of a function on a
+product is the derivative of its slice through the point. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_apply_of_fst_eq_zero
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p)
+    {v : TangentSpace (I.prod I') p} (hv : v.1 = (0 : TangentSpace I p.1)) :
+    mvfderiv (I.prod I') f p v = mvfderiv I' (fun y ↦ f (p.1, y)) p.2 v.2 := by
+  rw [hf.mvfderiv_prod_eq_add_apply, hv, map_zero, zero_add]
 
 /-- The derivative of a graph map, evaluated in the product tangent space. -/
 theorem _root_.MDifferentiableAt.mfderiv_prodMk_id_apply {u : F → M} {x : F}
