@@ -30,7 +30,8 @@ term is `0`, by the junk value of `0 ^ (-t)`.
 
 The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and the summability over `ℤ` of
 the shifted weights `(1 + |n|) ^ r` for `r < -1`, the form in which the `p`-series enters
-weighted sequence spaces.
+weighted sequence spaces. That shift is an instance of a general comparison: shifting an
+eventually positive base by a constant keeps a summable family of nonpositive powers summable.
 
 A weighted family of radii with finite sublevel sets also has summable reciprocal powers
 when its weighted counts grow at a smaller exponent. The proof partitions the radii into
@@ -40,6 +41,8 @@ dyadic annuli and compares their contributions with a geometric series.
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
+* `Summable.const_add_rpow` — if `∑ a i ^ r` converges for `r ≤ 0` and `a` is eventually
+  positive, so does `∑ (c + a i) ^ r` for every real `c`.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 * `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
   when sublevel counts grow at a smaller exponent.
@@ -82,15 +85,33 @@ theorem hasSum_int_inv_sq : HasSum (fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) (Real.
   simp only [Int.cast_zero, zero_pow two_ne_zero, inv_zero, sub_zero]
   ring
 
+/-- **Shifted bases keep nonpositive powers summable.** If `a i ^ r` is summable for some `r ≤ 0`
+and `a` is eventually positive along the cofinite filter, then `(c + a i) ^ r` is summable for
+every real `c`. -/
+theorem _root_.Summable.const_add_rpow {ι : Type*} {a : ι → ℝ} {r : ℝ}
+    (h : Summable fun i ↦ a i ^ r) (hr : r ≤ 0) (ha : ∀ᶠ i in Filter.cofinite, 0 < a i)
+    (c : ℝ) : Summable fun i ↦ (c + a i) ^ r := by
+  rcases hr.eq_or_lt with rfl | hr
+  · simpa only [Real.rpow_zero] using h
+  -- Summability forces `a i → ∞`: eventually `a i ^ r < (2 |c| + 1) ^ r`, i.e. `2 |c| + 1 < a i`.
+  -- Then `a i / 2 ≤ c + a i`, so `(c + a i) ^ r ≤ (1 / 2) ^ r * a i ^ r`.
+  have hlt : ∀ᶠ i in Filter.cofinite, a i ^ r < (2 * |c| + 1) ^ r :=
+    h.tendsto_cofinite_zero.eventually (gt_mem_nhds (by positivity))
+  refine Summable.of_norm_bounded_eventually (h.mul_left ((1 / 2) ^ r)) ?_
+  filter_upwards [ha, hlt] with i hi hlt
+  have hca := (Real.rpow_lt_rpow_iff_of_neg hi (by positivity) hr).1 hlt
+  have hle : 1 / 2 * a i ≤ c + a i := by linarith [neg_abs_le c]
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (by linarith) _),
+    ← Real.mul_rpow (by norm_num) hi.le]
+  exact Real.rpow_le_rpow_of_nonpos (by positivity) hle hr.le
+
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
 theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
     Summable fun n : ℤ ↦ (1 + |(n : ℝ)|) ^ r := by
-  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith))
-    ?_
-  filter_upwards [Filter.eventually_cofinite_ne 0] with n hn
-  rw [neg_neg, Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
-    (le_add_of_nonneg_left zero_le_one) (by linarith)
+  have h := Real.summable_abs_int_rpow (b := -r) (by linarith)
+  rw [neg_neg] at h
+  exact h.const_add_rpow (by linarith) ((Filter.eventually_cofinite_ne 0).mono fun n hn ↦
+    abs_pos.2 (Int.cast_ne_zero.2 hn)) 1
 
 open Filter Topology
 

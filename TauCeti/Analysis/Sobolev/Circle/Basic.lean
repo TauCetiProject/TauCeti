@@ -12,6 +12,7 @@ public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.PSeries
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
@@ -173,12 +174,8 @@ theorem weight_le_of_le_abs {s : ℝ} (hs : s ≤ 0) {N : ℕ} {n : ℤ} (hn : (
   Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hs
 
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
-theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) := by
-  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith)) ?_
-  filter_upwards [eventually_cofinite_ne 0] with n hn
-  rw [neg_neg, norm_weight]
-  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
-    (le_add_of_nonneg_left zero_le_one) (by linarith)
+theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) :=
+  (summable_one_add_abs_int_rpow hr).congr fun n ↦ (weight_def r n).symm
 
 /-- Exponential decay beats every polynomial weight: `∑ₙ (1 + |n|) ^ r e^{-a |n|} < ∞` for
 `a > 0` and every real `r`. -/

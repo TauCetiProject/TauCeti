@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Summable
 import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 import TauCeti.Analysis.Normed.Group.Int
+import TauCeti.Analysis.PSeries
 import TauCeti.Topology.DiscreteSubset
 
 /-!
@@ -92,13 +93,9 @@ theorem summable_exp_neg_mul_norm_add_sq {c : ℝ} (hc : 0 < c) (x : E) :
 /-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ r` is
 summable for every real `r < -rank L`. -/
 theorem summable_one_add_norm_rpow (r : ℝ) (hr : r < -Module.finrank ℤ L) :
-    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ r := by
-  refine Summable.of_norm_bounded_eventually (summable_norm_rpow L r hr) ?_
-  -- Away from `0`, `(1 + ‖ℓ‖) ^ r ≤ ‖ℓ‖ ^ r` since `r < 0`.
-  filter_upwards [Set.Finite.compl_mem_cofinite (Set.finite_singleton (0 : L))] with ℓ hℓ
-  have hℓ : 0 < ‖(ℓ : E)‖ := by simpa using hℓ
-  rw [Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_rpow_of_nonpos hℓ (by simp) (hr.le.trans (neg_nonpos.2 (Nat.cast_nonneg _)))
+    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ r :=
+  (summable_norm_rpow L r hr).const_add_rpow (hr.le.trans (neg_nonpos.2 (Nat.cast_nonneg _)))
+    ((eventually_cofinite_ne 0).mono fun ℓ hℓ ↦ by simpa using hℓ) 1
 
 /-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ (-r)` is
 summable as soon as the natural number `r` exceeds the rank of `L`. -/

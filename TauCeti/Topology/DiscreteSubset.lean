@@ -28,8 +28,8 @@ at `x` and nonzero there is one such `f`, with `y = 0`.
   `x ∈ U ∩ S`.
 * `IsOpen.sdiff_mem_nhdsNE_of_isDiscrete`: `U \ S ∈ 𝓝[≠] x` whenever `U` is open, `U ∩ S` is
   discrete, and `x ∈ U ∩ S`.
-* `Filter.Tendsto.isOpen_singleton_of_cofinite`: `{x}` is open if some `f` with `f → y` along the
-  cofinite filter is continuous at `x` with `f x ≠ y`.
+* `Filter.Tendsto.isOpen_singleton_of_cofinite`: in a T1 space, `{x}` is open if some `f` into a
+  Hausdorff space with `f → y` along the cofinite filter is continuous at `x` with `f x ≠ y`.
 -/
 
 public section
