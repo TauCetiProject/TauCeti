@@ -97,6 +97,20 @@ theorem apply_flatEquiv_symm_apply (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ
     ω (ω.flatEquiv.symm φ) w = φ w := by
   rw [← flatEquiv_apply, ContinuousLinearEquiv.apply_symm_apply]
 
+/-- As a continuous linear map, `ω♭` is the contraction map
+`ω.toBilinForm.toContinuousBilinearMap`. -/
+theorem coe_flatEquiv (ω : SymplecticForm V) :
+    (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)) = ω.toBilinForm.toContinuousBilinearMap := by
+  ext v w
+  simp
+
+/-- As a continuous linear map, `ω♭⁻¹` is the inverse
+`ω.toBilinForm.toContinuousBilinearMap.inverse` used to define Hamiltonian vector fields. -/
+theorem coe_flatEquiv_symm (ω : SymplecticForm V) :
+    (ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V) =
+      ω.toBilinForm.toContinuousBilinearMap.inverse := by
+  rw [← coe_flatEquiv, ContinuousLinearMap.inverse_equiv]
+
 omit [FiniteDimensional ℝ V] in
 /-- Two endomorphisms that pair in the same way under `ω` are equal. -/
 theorem continuousLinearMap_ext_of_apply_eq (ω : SymplecticForm V) {L L' : V →L[ℝ] V}
