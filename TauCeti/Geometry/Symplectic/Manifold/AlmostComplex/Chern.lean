@@ -185,10 +185,8 @@ private def holomorphicTangentEquiv (n : ℕ∞) (x : M) :
       have hJ : J x w = Complex.I • w :=
         ((ContMDiffAlmostComplexStructure.toContinuousComplexStructure_apply _ x w).trans
           (toContMDiff_apply _ n x w)).trans (ofComplexManifold_apply x w)
-      have key : z.re • w + z.im • (Complex.I • w) = z • w := by
-        conv_rhs => rw [← Complex.re_add_im z]
-        rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
-      exact (J.fiberEquiv_smul x z v).trans ((congrArg (z.re • w + z.im • ·) hJ).trans key)
+      exact (J.fiberEquiv_smul x z v).trans
+        ((congrArg (z.re • w + z.im • ·) hJ).trans (Complex.re_smul_add_im_smul z w))
     left_inv v := (J.fiberEquiv x).symm_apply_apply v
     right_inv v := (J.fiberEquiv x).apply_symm_apply v
     continuous_toFun := (J.fiberEquiv x).continuous
