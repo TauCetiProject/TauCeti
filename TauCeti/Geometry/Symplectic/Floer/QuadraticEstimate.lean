@@ -661,7 +661,7 @@ end Lp
 section Jet
 
 open MeasureTheory Set
-open StripSobolev (jet stripMeasure jet_sub norm_le_norm_jet
+open StripSobolev (jet stripMeasure jet_sub eLpNorm_le_eLpNorm_jet
   eLpNorm_fderiv_zero_one_le_eLpNorm_jet)
 open scoped NNReal ENNReal
 
@@ -679,17 +679,6 @@ private theorem norm_le_mul_toReal_eLpNorm_jet {M p : ℝ≥0} {η : ℝ × ℝ 
         rw [ENNReal.toReal_mul, ENNReal.coe_toReal]
         gcongr
         exact_mod_cast le_add_of_nonneg_right zero_le_one
-
-/-- A multiple of the larger of two finite norms is at most the same multiple of their sum. -/
-private theorem ofReal_mul_max_toReal_le {c : ℝ≥0} {E₁ E₂ : ℝ≥0∞} (hE₁ : E₁ ≠ ∞) (hE₂ : E₂ ≠ ∞) :
-    ENNReal.ofReal (c * max E₁.toReal E₂.toReal) ≤ c * (E₁ + E₂) := by
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal]
-  gcongr
-  calc ENNReal.ofReal (max E₁.toReal E₂.toReal) ≤ ENNReal.ofReal (E₁.toReal + E₂.toReal) :=
-        ENNReal.ofReal_le_ofReal (max_le (by simp) (by simp))
-    _ = E₁ + E₂ := by
-        rw [ENNReal.ofReal_add ENNReal.toReal_nonneg ENNReal.toReal_nonneg,
-          ENNReal.ofReal_toReal hE₁, ENNReal.ofReal_toReal hE₂]
 
 /-- The arithmetic combining the three terms of the `Lᵖ` quadratic estimate into a product of
 norms of jets. -/
@@ -763,8 +752,7 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinea
     hper₁ hper₂ hK' h₁ h₂ hA ↦ ?_⟩
   have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast (one_le_two.trans hp.le)
   have hξ := hξ₁.sub hξ₂
-  have hper : ∀ s t, (ξ₁ - ξ₂) (s, t + 1) = (ξ₁ - ξ₂) (s, t) := fun s t ↦ by
-    simp [hper₁, hper₂]
+  have hper : ∀ s t, (ξ₁ - ξ₂) (s, t + 1) = (ξ₁ - ξ₂) (s, t) := by simp [hper₁, hper₂]
   have hE₁ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top h₁
   have hE₂ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top h₂
   have hE : eLpNorm (jet (ξ₁ - ξ₂)) p stripMeasure ≠ ∞ := by
@@ -788,9 +776,10 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinea
     (fun z _ ↦ norm_le_mul_toReal_eLpNorm_jet (hM hξ hper) hE z) hA
   refine hQ.trans (mul_add_add_le_of_ofReal_le (by positivity)
     ((norm_nonneg _).trans (hA (0, 0) ⟨mem_univ _, left_mem_Icc.2 zero_le_one⟩)) ?_ ?_
-    (eLpNorm_mono hξ.continuous.aestronglyMeasurable (norm_le_norm_jet _))
-    ?_ ?_)
-  · exact ofReal_mul_max_toReal_le hE₁ hE₂
+    (eLpNorm_le_eLpNorm_jet hξ.continuous.aestronglyMeasurable _) ?_ ?_)
+  · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, ← ENNReal.toReal_max hE₁ hE₂]
+    gcongr
+    exact ENNReal.ofReal_toReal_le.trans (max_le le_self_add le_add_self)
   · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal]
     exact congrArg _ (ENNReal.ofReal_toReal hE)
   · rw [stdComplexLineImag_eq]

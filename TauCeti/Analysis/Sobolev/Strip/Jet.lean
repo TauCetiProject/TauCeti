@@ -265,6 +265,11 @@ theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ)
   linarith [(fderiv ℝ ξ z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one,
     norm_fderiv_one_zero_le_norm_jet ξ z, norm_fderiv_zero_one_le_norm_jet ξ z]
 
+/-- The `Lᵖ` norm of a map is at most the `Lᵖ` norm of its jet. -/
+theorem eLpNorm_le_eLpNorm_jet {μ : Measure (ℝ × ℝ)} (hξ : AEStronglyMeasurable ξ μ)
+    (p : ℝ≥0∞) : eLpNorm ξ p μ ≤ eLpNorm (jet ξ) p μ :=
+  eLpNorm_mono hξ (norm_le_norm_jet ξ)
+
 /-- The `Lᵖ` norm of the `t`-derivative is at most the `Lᵖ` norm of the jet. -/
 theorem eLpNorm_fderiv_zero_one_le_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
     (hξ : AEStronglyMeasurable (fun z ↦ fderiv ℝ ξ z (0, 1)) μ) (p : ℝ≥0∞) :

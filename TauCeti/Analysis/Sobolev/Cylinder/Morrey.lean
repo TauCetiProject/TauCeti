@@ -60,7 +60,7 @@ public section
 namespace TauCeti.CylinderSobolev
 
 open MeasureTheory Metric Set Module
-open StripSobolev (jet stripMeasure norm_le_norm_jet eLpNorm_fderiv_le_two_mul_eLpNorm_jet
+open StripSobolev (jet stripMeasure eLpNorm_le_eLpNorm_jet eLpNorm_fderiv_le_two_mul_eLpNorm_jet
   continuous_jet)
 open scoped ENNReal NNReal
 
@@ -150,9 +150,8 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   -- The derivative and the section are controlled by the jet.
   have hder := eLpNorm_fderiv_le_two_mul_eLpNorm_jet (μ := volume.restrict (ball z 1))
     (hξ.continuous_fderiv one_ne_zero).aestronglyMeasurable p
-  have hval : eLpNorm ξ p (volume.restrict (ball z 1)) ≤
-      eLpNorm (jet ξ) p (volume.restrict (ball z 1)) :=
-    eLpNorm_mono hξ.continuous.aestronglyMeasurable (norm_le_norm_jet ξ)
+  have hval := eLpNorm_le_eLpNorm_jet (μ := volume.restrict (ball z 1))
+    hξ.continuous.aestronglyMeasurable p
   set N := eLpNorm (jet ξ) p (volume.restrict (ball z 1))
   calc ‖ξ z‖ₑ = ‖(ξ z - ⨍ y in ball z 1, ξ y) + ⨍ y in ball z 1, ξ y‖ₑ := by
         rw [sub_add_cancel]
