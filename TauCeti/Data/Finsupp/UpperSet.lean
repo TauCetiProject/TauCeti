@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Order
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Set.Card
 public import Mathlib.Order.PiLex

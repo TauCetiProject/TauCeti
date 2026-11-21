@@ -8,9 +8,10 @@ module
 public import Mathlib.Order.PiLex
 public import Mathlib.Order.WellFoundedSet
 public import TauCeti.RingTheory.LocalRing.HilbertSamuel.Basic
-public import TauCeti.RingTheory.MvPowerSeries.FormalDivision
+public import TauCeti.RingTheory.MvPowerSeries.InitialDiagram
+import TauCeti.Algebra.Order.Antidiag.FinsuppEquiv
 import TauCeti.Data.Finsupp.UpperSet
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPowerSeries.FormalDivision
 import TauCeti.RingTheory.MvPowerSeries.Length
 
 /-!

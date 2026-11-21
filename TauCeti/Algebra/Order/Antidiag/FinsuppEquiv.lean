@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Set.Card
 
 /-!
@@ -24,6 +25,8 @@ simplex, which is how the count enters Mahler's reduction in Diophantine approxi
 
 * `TauCeti.finite_setOf_sum_le`: the tuples with `∑ a, c a ≤ N` form a finite set.
 * `TauCeti.ncard_setOf_sum_le`: there are `(N + card A).choose (card A)` of them.
+* `Finsupp.ncard_degree_le`: in finitely many variables,
+  `{α : σ →₀ ℕ | α.degree ≤ ℓ}.ncard = (Fintype.card σ + ℓ).choose (Fintype.card σ)`.
 -/
 
 public section
@@ -67,3 +70,22 @@ theorem ncard_setOf_sum_le (A : Type*) [Fintype A] (N : ℕ) :
   rw [Set.ncard_eq_toFinset_card _ hfin, hbij, hcount, harith, Nat.choose_symm_add]
 
 end TauCeti
+
+namespace Finsupp
+
+/-- In finitely many variables, there are `(card σ + ℓ).choose (card σ)` multi-indices of total
+degree at most `ℓ`. -/
+theorem ncard_degree_le (σ : Type*) [Fintype σ] (ℓ : ℕ) :
+    {α : σ →₀ ℕ | α.degree ≤ ℓ}.ncard = (Fintype.card σ + ℓ).choose (Fintype.card σ) := by
+  have himg : (equivFunOnFinite : (σ →₀ ℕ) ≃ (σ → ℕ)) '' {α : σ →₀ ℕ | α.degree ≤ ℓ} =
+      {c : σ → ℕ | ∑ a, c a ≤ ℓ} := by
+    ext c
+    simp only [Set.mem_image, Set.mem_ofPred_eq]
+    refine ⟨?_, fun hc ↦ ⟨equivFunOnFinite.symm c, ?_, equivFunOnFinite.apply_symm_apply c⟩⟩
+    · rintro ⟨α, hα, rfl⟩
+      simpa [degree_eq_sum] using hα
+    · simpa [degree_eq_sum] using hc
+  rw [← Set.ncard_image_of_injective _ equivFunOnFinite.injective, himg,
+    TauCeti.ncard_setOf_sum_le, add_comm]
+
+end Finsupp
