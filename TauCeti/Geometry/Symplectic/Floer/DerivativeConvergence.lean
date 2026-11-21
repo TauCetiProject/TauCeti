@@ -31,10 +31,7 @@ Let `J` and `X` be `C¹` on an open `W ⊆ ℂ × V`, and let `Ω ⊆ ℂ` be op
 solutions on `Ω` along which `J² = -1`, with derivatives bounded on each compact subset of `Ω`
 uniformly in `n`, converging pointwise to a `v` whose graph over `Ω` lies in `W`. Then `v` is `C¹`
 on `Ω`, `Duₙ → Dv` locally uniformly on `Ω`, and `v` solves the equation at every point of `Ω`
-(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`). The same conclusion holds along a
-converging sequence of parameters `pₙ → p₀` in a finite-dimensional real normed space `P` when
-`J_p` and `X_p` are jointly `C¹`
-(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_parametric`).
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`).
 
 Since `J² = -1`, the equation is `∂ₛu + J(z, u) ∂ₜu = X(z, u) 1 + J(z, u) X(z, u) i`. The
 interior second-derivative estimates of `TauCeti.Analysis.Complex.Wirtinger.SecondDerivative` apply
@@ -302,97 +299,5 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer {J : ℂ × V → V →L[ℝ] 
   -- Pass to the limit in the equation.
   exact ⟨hv, hconv, fun y hy ↦ fderiv_I_sub_eq_of_tendsto hW hJ.continuousOn hX.continuousOn
     (hvW y hy) (hconv.tendsto_at hy) (hlim y hy) fun n ↦ hCR n y hy⟩
-
-/-- **The derivatives of Floer solutions converge along a converging parameter sequence.** Let
-`J_p` and `X_p` depend jointly `C¹` on a parameter `p` in a finite-dimensional real normed space
-`P` and `(z, x)` on an open set `W ⊆ P × (ℂ × V)`, and let `Ω ⊆ ℂ` be open. Let `uₙ` be smooth
-solutions on `Ω` for parameters `pₙ → p₀`, along which `J_{pₙ}² = -1`, whose derivatives are
-bounded on each compact subset of `Ω` uniformly in `n`, and which converge pointwise on `Ω` to a
-`v` with `(p₀, (y, v y)) ∈ W` for all `y ∈ Ω`. Then `v` is `C¹` on `Ω`, `Duₙ → Dv` locally
-uniformly on `Ω`, and `v` solves the Floer equation for the limit parameter `p₀` on `Ω`.
-
-This reduces to `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer` by adjoining the
-parameter to the target as a constant coordinate `(pₙ, 0) ∈ P × P`, with the standard complex
-structure `(a, b) ↦ (-b, a)` on the parameter block. -/
-theorem tendstoLocallyUniformlyOn_fderiv_of_floer_parametric
-    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
-    {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V}
-    {W : Set (P × (ℂ × V))} {Ω : Set ℂ} (hW : IsOpen W)
-    (hJ : ContDiffOn ℝ 1 (Function.uncurry J) W) (hX : ContDiffOn ℝ 1 (Function.uncurry X) W)
-    (hΩ : IsOpen Ω) {p : ℕ → P} {p₀ : P} {u : ℕ → ℂ → V} {v : ℂ → V}
-    (hp : Tendsto p atTop (𝓝 p₀)) (hvW : ∀ y ∈ Ω, (p₀, (y, v y)) ∈ W)
-    (hu : ∀ n, ContDiffOn ℝ ∞ (u n) Ω)
-    (hJsq : ∀ n, ∀ y ∈ Ω, ∀ w, J (p n) (y, u n y) (J (p n) (y, u n y) w) = -w)
-    (hCR : ∀ n, ∀ y ∈ Ω, fderiv ℝ (u n) y I - X (p n) (y, u n y) I =
-      J (p n) (y, u n y) (fderiv ℝ (u n) y 1 - X (p n) (y, u n y) 1))
-    (hbd : ∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n) y‖ ≤ M)
-    (hlim : ∀ y ∈ Ω, Tendsto (fun n ↦ u n y) atTop (𝓝 (v y))) :
-    ContDiffOn ℝ 1 v Ω ∧ TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
-      ∀ y ∈ Ω, fderiv ℝ v y I - X p₀ (y, v y) I =
-        J p₀ (y, v y) (fderiv ℝ v y 1 - X p₀ (y, v y) 1) := by
-  -- Adjoin the parameter block `P × P` with the complex structure `(a, b) ↦ (-b, a)`.
-  let JP : P × P →L[ℝ] P × P :=
-    (-ContinuousLinearMap.snd ℝ P P).prod (ContinuousLinearMap.fst ℝ P P)
-  let π : ℂ × ((P × P) × V) →L[ℝ] P × (ℂ × V) :=
-    ((ContinuousLinearMap.fst ℝ P P).comp
-        ((ContinuousLinearMap.fst ℝ (P × P) V).comp (ContinuousLinearMap.snd ℝ ℂ _))).prod
-      ((ContinuousLinearMap.fst ℝ ℂ _).prod
-        ((ContinuousLinearMap.snd ℝ (P × P) V).comp (ContinuousLinearMap.snd ℝ ℂ _)))
-  let J' : ℂ × ((P × P) × V) → ((P × P) × V) →L[ℝ] ((P × P) × V) := fun q ↦
-    (ContinuousLinearMap.inl ℝ (P × P) V).comp (JP.comp (ContinuousLinearMap.fst ℝ (P × P) V)) +
-      (ContinuousLinearMap.inr ℝ (P × P) V).comp
-        ((Function.uncurry J (π q)).comp (ContinuousLinearMap.snd ℝ (P × P) V))
-  let X' : ℂ × ((P × P) × V) → ℂ →L[ℝ] ((P × P) × V) := fun q ↦
-    (ContinuousLinearMap.inr ℝ (P × P) V).comp (Function.uncurry X (π q))
-  have hJ' : ContDiffOn ℝ 1 J' (π ⁻¹' W) :=
-    contDiffOn_const.add (contDiffOn_const.clm_comp
-      ((hJ.comp π.contDiff.contDiffOn (mapsTo_preimage _ _)).clm_comp contDiffOn_const))
-  have hX' : ContDiffOn ℝ 1 X' (π ⁻¹' W) :=
-    contDiffOn_const.clm_comp (hX.comp π.contDiff.contDiffOn (mapsTo_preimage _ _))
-  let g : ℕ → ℂ → (P × P) × V := fun n y ↦ ((p n, (0 : P)), u n y)
-  let g₀ : ℂ → (P × P) × V := fun y ↦ ((p₀, (0 : P)), v y)
-  have hfg (n : ℕ) {y : ℂ} (hy : y ∈ Ω) :
-      fderiv ℝ (g n) y = (0 : ℂ →L[ℝ] P × P).prod (fderiv ℝ (u n) y) :=
-    ((hasFDerivAt_const (p n, (0 : P)) y).prodMk
-      (((hu n).differentiableOn (by simp) y hy).differentiableAt
-        (hΩ.mem_nhds hy)).hasFDerivAt).fderiv
-  obtain ⟨hg₀, hconv, hCR₀⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer
-    (hW.preimage π.continuous) hJ' hX' hΩ
-    (u := g) (v := g₀) (fun y hy ↦ hvW y hy)
-    (fun n ↦ contDiffOn_const.prodMk (hu n))
-    (fun n y hy w ↦ by
-      ext
-      · simp [J', JP]
-      · simp [J', JP]
-      · simpa [J', π, g] using hJsq n y hy w.2)
-    (fun n y hy ↦ by
-      ext
-      · simp [hfg n hy, J', X', JP]
-      · simp [hfg n hy, J', X', JP]
-      · simpa [hfg n hy, J', X', π, g] using hCR n y hy)
-    (fun C hC hCΩ ↦ by
-      obtain ⟨M, hM⟩ := hbd C hC hCΩ
-      refine ⟨max M 0, fun n y hy ↦ ?_⟩
-      rw [hfg n (hCΩ hy)]
-      refine ContinuousLinearMap.opNorm_le_bound _ (le_max_right _ _) fun ξ ↦ ?_
-      simpa [Prod.norm_def] using ((fderiv ℝ (u n) y).le_opNorm ξ).trans
-        (mul_le_mul_of_nonneg_right ((hM n y hy).trans (le_max_left _ _)) (norm_nonneg ξ)))
-    (fun y hy ↦ (hp.prodMk_nhds tendsto_const_nhds).prodMk_nhds (hlim y hy))
-  have hv : ContDiffOn ℝ 1 v Ω :=
-    (ContinuousLinearMap.snd ℝ (P × P) V).contDiff.comp_contDiffOn hg₀
-  have hfg₀ {y : ℂ} (hy : y ∈ Ω) :
-      fderiv ℝ g₀ y = (0 : ℂ →L[ℝ] P × P).prod (fderiv ℝ v y) :=
-    ((hasFDerivAt_const (p₀, (0 : P)) y).prodMk
-      ((hv.differentiableOn one_ne_zero y hy).differentiableAt (hΩ.mem_nhds hy)).hasFDerivAt).fderiv
-  let proj : (ℂ →L[ℝ] (P × P) × V) →L[ℝ] (ℂ →L[ℝ] V) :=
-    (ContinuousLinearMap.compL ℝ ℂ ((P × P) × V) V) (ContinuousLinearMap.snd ℝ (P × P) V)
-  refine ⟨hv, ?_, fun y hy ↦ ?_⟩
-  · have h := proj.uniformContinuous.comp_tendstoLocallyUniformlyOn hconv
-    refine (h.congr_right fun y hy ↦ ?_).congr (fun n y hy ↦ ?_)
-    · ext ξ
-      simp [proj, hfg₀ hy]
-    · ext ξ
-      simp [proj, hfg n hy]
-  · simpa [hfg₀ hy, J', X', π, g₀] using congrArg Prod.snd (hCR₀ y hy)
 
 end TauCeti.Floer

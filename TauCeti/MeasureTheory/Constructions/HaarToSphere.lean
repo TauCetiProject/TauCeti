@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen, Giada Franz
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -65,9 +66,14 @@ Public formalization references:
   integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
-* `TauCeti.integral_toSphere_coe_eq_zero`: the surface measure has barycenter zero.
+* `MeasureTheory.Measure.isNegInvariant_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`:
+  the sphere measure is antipodally invariant and has barycentre zero.
+* `MeasureTheory.Measure.toSphere_singleton`: points are null in dimension at least two.
 * `ContinuousOn.hasDerivAt_setIntegral_ball`: the derivative in the radius of the integral of a
   continuous function over a ball is its integral over the sphere of that radius.
+
+The antipodal-invariance and singleton lemmas are adapted from Giada Franz's local
+formalization of Hersch's balancing lemma.
 -/
 
 public section
@@ -407,6 +413,59 @@ end Isometry
 
 end LinearIsometryEquiv
 
+namespace MeasureTheory.Measure
+
+open Metric Set Module
+open scoped Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+
+/-- The sphere measure of a negation-invariant measure is invariant under `x ↦ -x`. -/
+instance isNegInvariant_toSphere [μ.IsNegInvariant] : μ.toSphere.IsNegInvariant := by
+  constructor
+  rw [Measure.neg_def]
+  have hneg :
+      (Subtype.map (LinearIsometryEquiv.neg ℝ (E := E)) (fun x hx ↦ by simpa using hx) :
+        sphere (0 : E) 1 → sphere (0 : E) 1) = Neg.neg := by
+    funext x
+    apply Subtype.ext
+    simp
+  have h := (LinearIsometryEquiv.neg ℝ (E := E)).map_toSphere μ
+  rw [hneg] at h
+  simpa using h
+
+/-- The sphere measure of a negation-invariant measure has barycentre zero. -/
+theorem integral_coe_toSphere [μ.IsNegInvariant] :
+    ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
+  have h := integral_map_equiv (μ := μ.toSphere)
+    (MeasurableEquiv.neg (sphere (0 : E) 1)) (fun x : sphere (0 : E) 1 ↦ (x : E))
+  simp only [MeasurableEquiv.neg_apply, Measure.map_neg_eq_self] at h
+  simp only [coe_neg_sphere, integral_neg] at h
+  have h2 : (2 : ℝ) • ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
+    rw [two_smul]
+    nth_rewrite 2 [h]
+    exact add_neg_cancel _
+  exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+
+/-- In dimension at least two, the points of the sphere are null for the sphere measure. -/
+theorem toSphere_singleton [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
+    (hE : 1 < finrank ℝ E) (p : sphere (0 : E) 1) :
+    μ.toSphere {p} = 0 := by
+  rw [μ.toSphere_apply' (measurableSet_singleton p), image_singleton]
+  have hp : (p : E) ≠ 0 := ne_zero_of_mem_unit_sphere p
+  have hspan : (ℝ ∙ (p : E)) ≠ ⊤ := by
+    intro htop
+    have h1 := finrank_span_singleton (K := ℝ) hp
+    rw [htop, finrank_top] at h1
+    omega
+  refine mul_eq_zero_of_right _ (measure_mono_null ?_ (Measure.addHaar_submodule μ _ hspan))
+  rw [Set.smul_singleton]
+  rintro _ ⟨r, -, rfl⟩
+  exact Submodule.smul_mem _ r (Submodule.mem_span_singleton_self _)
+
+end MeasureTheory.Measure
+
 namespace TauCeti
 
 open MeasureTheory Measure Metric Set Module Filter
@@ -490,7 +549,7 @@ theorem _root_.MeasureTheory.Measure.ae_toSphere_ae_Ioi_of_ae (μ : Measure E) [
   filter_upwards [hp] with θ hθ
   exact (ae_volumeIoiPow_iff _ (fun t ↦ P (t • (θ : E)))).mp hθ
 
-/-! ### The barycenter of the sphere and the radial derivative of ball integrals -/
+/-! ### The radial derivative of ball integrals -/
 
 section Radial
 
@@ -531,29 +590,6 @@ theorem _root_.ContinuousOn.hasDerivAt_setIntegral_ball {F : Type*} [NormedAddCo
   refine (hg.integral_hasDerivAt_of_mem_Ioo hσ).congr_of_eventuallyEq ?_
   filter_upwards [isOpen_Ioo.mem_nhds hσ] with s hs
   exact heq s (Ioo_subset_Icc_self hs)
-
-/-- **The surface measure of the unit sphere has barycenter zero**: `∫ θ dμ.toSphere = 0`, since
-`μ.toSphere` is invariant under `θ ↦ -θ`. -/
-theorem integral_toSphere_coe_eq_zero :
-    ∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere = 0 := by
-  set ι : E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.neg ℝ
-  set g : sphere (0 : E) 1 → sphere (0 : E) 1 := Subtype.map ι fun x hx ↦ by simpa using hx
-  have hmap : μ.toSphere.map g = μ.toSphere := by
-    rw [LinearIsometryEquiv.map_toSphere ι μ]
-    -- `ι` is negation, so `μ.map ι = μ` is the reflection invariance of the Haar measure.
-    rw [show (ι : E → E) = Neg.neg from LinearIsometryEquiv.coe_neg, Measure.map_neg_eq_self]
-  have hg : Measurable g := ι.continuous.measurable.subtype_map _
-  have h := integral_map (μ := μ.toSphere) hg.aemeasurable
-    (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtypeVal.aestronglyMeasurable
-  rw [hmap] at h
-  have hg' : ∀ θ : sphere (0 : E) 1, (g θ : E) = -(θ : E) := fun θ ↦ by
-    simp only [g]
-    rw [Subtype.map_coe]
-    simp [ι]
-  -- `h : ∫ θ = -∫ θ`.
-  simp_rw [hg', integral_neg] at h
-  rw [eq_neg_iff_add_eq_zero, ← two_smul ℝ] at h
-  exact (smul_eq_zero.mp h).resolve_left two_ne_zero
 
 end Radial
 

@@ -262,16 +262,7 @@ theorem BFSmall.mk_isoClasses_le_aleph_one {K : Set (RelationalConfiguration L �
     #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
   refine mk_isoClasses_le_aleph_one_of_countable_levels K fun α hα => ?_
   have := @BFSmall.countable_quotient L _ K (fun _ => ℕ) (fun c => c.val.toStructure) h α hα 0
-  -- At arity `0` both relations compare the empty tuples of the decoded structures, so the
-  -- level-`α` relation on `K` is the pullback of the depth-`α` relation of the family.
-  have hcomap : (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _) =
-      (@bfTupleSetoid L _ K (fun _ => ℕ) (fun c => c.val.toStructure) α 0).comap
-        fun c => ⟨c, Fin.elim0⟩ :=
-    Setoid.ext fun c d => by
-      simp only [Setoid.comap_rel]
-      exact bfEquivSetoid_apply.trans (@bfTupleSetoid_apply L _ K (fun _ => ℕ)
-        (fun c => c.val.toStructure) α 0 ⟨c, Fin.elim0⟩ ⟨d, Fin.elim0⟩).symm
-  rw [hcomap]
+  rw [comap_bfEquivSetoid_eq_comap_bfTupleSetoid]
   exact Countable.of_equiv _ (Setoid.comapQuotientEquiv _ _).symm
 
 end TauCeti

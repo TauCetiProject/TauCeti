@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.HasGroupoid
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
+public import TauCeti.Topology.Sets.Opens
 
 /-!
 # Integral and rational fundamental classes of an oriented manifold
@@ -76,6 +78,9 @@ homology isomorphism directly, without requiring Poincaré duality.
 
 * `TauCeti.HomologicalOrientation.localHomologyMap_fundamentalClassOn_comap`: open embeddings
   carry fundamental classes along compact sets to fundamental classes.
+* `TauCeti.HomologicalOrientation.fundamentalClassOn_eq_sum_localHomologyMap`: the fundamental
+  class along a compact set covered by finitely many pairwise disjoint open sets is the sum of the
+  fundamental classes of those open sets along the parts of the set they contain.
 * `TauCeti.HomologicalOrientation.eq_fundamentalClass`: the fundamental class is the only class
   restricting to the orientation at every point.
 * `TauCeti.HomologicalOrientation.fundamentalClass_neg`: the fundamental class of the reversed
@@ -263,7 +268,56 @@ theorem localHomologyMap_fundamentalClassOn_comap {j : C(U, M)} (hj : IsOpenEmbe
     ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
     localHomologyMap_comp_localHomologyRestriction, localHomologyRestriction_comp_localHomologyMap]
 
+/-- Let `j : U → M` be an open embedding and `K ⊆ U` compact, and push the fundamental class of `U`
+along `K` into `Hₙ(M, M ∖ T; ℤ)` for a set `T` with `j⁻¹(T) ⊆ K`. At a point `j x` of `T` this class
+restricts to the local orientation `o (j x)`. -/
+theorem localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap {j : C(U, M)}
+    (hj : IsOpenEmbedding j) {K : Set U} (hK : IsCompact K) {T : Set M} (hT : j ⁻¹' T ⊆ K)
+    {x : U} (hx : j x ∈ T) :
+    localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n
+        (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j hT n
+          ((o.comap hj).fundamentalClassOn hn hK)) =
+      (o (j x)).val := by
+  have hxK : j x ∈ j '' K := mem_image_of_mem j (hT hx)
+  -- Both classes restrict at `j x` to the image of the fundamental class of `U` along `K`.
+  have h₁ := localHomologyMap_comp_localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) j
+    (singleton_subset_iff.2 hx) hT n
+  have h₂ := localHomologyMap_comp_localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) j
+    (singleton_subset_iff.2 hxK) (hj.injective.preimage_image K).subset n
+  rw [← ConcreteCategory.comp_apply, h₁, ← h₂, ConcreteCategory.comp_apply,
+    o.localHomologyMap_fundamentalClassOn_comap hn hj hK,
+    o.localHomologyRestriction_fundamentalClassOn hn _ hxK]
+
 end OpenEmbedding
+
+section DisjointOpens
+
+variable {ι : Type*} {U : ι → TopologicalSpace.Opens M}
+
+/-- **The fundamental class along a compact set split by disjoint open sets.** Let the compact set
+`A` be covered by finitely many pairwise disjoint open sets `U i`. Then the fundamental class along
+`A` is the sum over `i` of the fundamental classes of `U i`, oriented by restricting `o`, along the
+parts of `A` in `U i`, pushed into `Hₙ(M, M ∖ A; ℤ)` by the inclusions. -/
+theorem fundamentalClassOn_eq_sum_localHomologyMap [Fintype ι] {A : Set M} (hA : IsCompact A)
+    (hU : Pairwise fun i k ↦ Disjoint (U i : Set M) (U k)) (hAU : A ⊆ ⋃ i, (U i : Set M)) :
+    o.fundamentalClassOn hn hA = ∑ i, localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+      ⟨Subtype.val, continuous_subtypeVal⟩ (subset_refl _) n
+      ((o.comap (U i).isOpenEmbedding').fundamentalClassOn hn
+        (hA.preimage_val_of_pairwise_disjoint hU hAU i)) := by
+  refine (o.eq_fundamentalClassOn hn hA fun x hx ↦ ?_).symm
+  obtain ⟨k, hxk⟩ := mem_iUnion.1 (hAU hx)
+  rw [map_sum, Finset.sum_eq_single k]
+  · exact o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hn
+      (j := ⟨Subtype.val, continuous_subtypeVal⟩) (U k).isOpenEmbedding' _ _ (x := ⟨x, hxk⟩) hx
+  · refine fun i _ hik ↦ ?_
+    rw [← ConcreteCategory.comp_apply,
+      localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range _ _ _ hx ?_]
+    · simp
+    rintro ⟨z, rfl⟩
+    exact disjoint_left.1 (hU hik) z.property hxk
+  · simp
+
+end DisjointOpens
 
 section Finite
 
@@ -310,17 +364,12 @@ theorem localHomologyRestriction_localOrientationAlong_of_ne {z : M} {U : Set M}
     (hz : z ∈ U) (hUZ : ∀ x ∈ U, x ∈ Z → x = z) {x : M} (hx : x ∈ Z) (hxz : x ≠ z) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n
       (o.localOrientationAlong hU hz hUZ) = 0 := by
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  -- No point of `U` lies over `x ≠ z`, so the map factors through `Hₙ(U, U) = 0`.
-  have h : (Subtype.val : U → M) ⁻¹' {x} ⊆ ∅ := fun y (hy : y.val = x) ↦
-    hxz (hy.symm.trans (hUZ y.val y.property (hy ▸ hx)))
-  have h₁ := localHomologyMap_comp_localHomologyRestriction R ⟨Subtype.val, continuous_subtypeVal⟩
-    (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hx) (fun x hx ↦ Subtype.ext
-        (hUZ x.val x.property hx)) n
-  have h₂ := localHomologyRestriction_comp_localHomologyMap R ⟨Subtype.val, continuous_subtypeVal⟩
-    (empty_subset {(⟨z, hz⟩ : U)}) h n
-  rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h₁, ← h₂, ConcreteCategory.comp_apply,
-    (isZero_localHomology_empty R n).eq_zero_of_tgt (localHomologyRestriction R _ _)]
+  -- No point of `U` lies over `x ≠ z`.
+  have h := localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtypeVal⟩ (S := {(⟨z, hz⟩ : U)})
+    (fun x hx ↦ Subtype.ext (hUZ x.val x.property hx)) hx
+    (by rintro ⟨y, rfl⟩; exact hxz (hUZ y.val y.property hx)) n
+  rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h]
   simp
 
 /-- **The fundamental class along a finite set is a sum of local orientations.** For a finite set
@@ -487,16 +536,9 @@ theorem singularHomologyπ_mapFundamentalClass (f : C(M, X)) :
       (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.mapFundamentalClass hn f) =
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_univ _) n
         (o.fundamentalClassOn hn isCompact_univ) := by
-  have h := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hn))
-    (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap (X := TopCat.of M)
-      (Y := TopCat.of X) (B := (univ : Set M)ᶜ) (B' := (univ : Set X)ᶜ) (TopCat.ofHom f)
-      fun _ hx ↦ (hx (mem_univ _)).elim) (ModuleCat.of ℤ (ULift.{0} ℤ)) n)
-  -- The ambient map of `ofSubsetMap` is `f` itself; its source is read as `(ofSubset _).fst`,
-  -- which `rw` does not identify with `TopCat.of M`.
-  erw [TopPair.ofSubsetMap_fst] at h
-  rw [← o.singularHomologyπ_fundamentalClass hn, localHomologyMap_def, mapFundamentalClass_def,
-    TauCeti.singularHomologyFunctor_obj_map]
-  exact h
+  rw [← o.singularHomologyπ_fundamentalClass hn, mapFundamentalClass_def,
+    singularHomologyFunctor_obj_map_hom_apply]
+  exact singularHomologyπ_univ_singularHomologyMap _ f _
 
 /-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : N ≃ₜ M`
 carries the fundamental class of the pulled-back orientation `o.comap` of `N` to the fundamental
@@ -508,15 +550,11 @@ theorem mapFundamentalClass_comap {N : Type} [TopologicalSpace N] [T2Space N] [C
   -- `f_*[N]` lies in the singular homology of `TopCat.of M`, read as `SSet.homology` here.
   refine o.eq_fundamentalClass hn
     (γ := (o.comap e.isOpenEmbedding).mapFundamentalClass hn (e : C(N, M))) fun y ↦ ?_
-  obtain ⟨x, rfl⟩ := e.surjective y
-  have hx : (e : C(N, M)) ⁻¹' {e x} ⊆ {x} := fun z hz ↦ e.injective hz
-  refine (singularHomologyToLocalHomology_apply _ (e x) _).trans ?_
-  rw [singularHomologyπ_mapFundamentalClass, ← ConcreteCategory.comp_apply,
-    localHomologyMap_comp_localHomologyRestriction,
-    ← localHomologyRestriction_comp_localHomologyMap (hS := singleton_subset_iff.2 (mem_univ x))
-      (h := hx),
-    ConcreteCategory.comp_apply, localHomologyRestriction_fundamentalClassOn (hx := mem_univ x),
-    comap_apply]
+  obtain ⟨x, rfl⟩ : ∃ x, (e : C(N, M)) x = y := e.surjective y
+  have hx : (e : C(N, M)) ⁻¹' {(e : C(N, M)) x} ⊆ {x} := fun z hz ↦ e.injective hz
+  rw [mapFundamentalClass_def, singularHomologyFunctor_obj_map_hom_apply,
+    singularHomologyToLocalHomology_singularHomologyMap _ _ hx,
+    singularHomologyToLocalHomology_fundamentalClass, comap_apply]
   exact e.isOpenEmbedding.localHomologyMap_localOrientationEquiv_symm x (o (e x)) hx
 
 /-- The image of the fundamental class of the pulled-back orientation `o.comap` under a composite
