@@ -31,7 +31,7 @@ theorem vectorBundleOfContinuousLinearEquiv (𝕜 : Type*) [NontriviallyNormedFi
     [∀ b, TopologicalSpace (E b)] [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)]
     [∀ b, TopologicalSpace (E' b)] [FiberBundle F E] [VectorBundle 𝕜 F E]
     (φ : ∀ b, E' b ≃L[𝕜] E b)
-    (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.2⟩ : TotalSpace F E))) :
+    (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace F E))) :
     let _ : FiberBundle F E' := fiberBundleOfHomeomorph F (fun b ↦ (φ b).toHomeomorph) ht
     VectorBundle 𝕜 F E' := by
   let _ : FiberBundle F E' := fiberBundleOfHomeomorph F (fun b ↦ (φ b).toHomeomorph) ht

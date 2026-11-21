@@ -27,25 +27,25 @@ variable {B : Type u} (F : Type v) {E : B → Type w} {E' : B → Type w'}
 
 section Homeomorph
 variable (φ : ∀ b, E' b ≃ E b)
-  (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.2⟩ : TotalSpace F E)))
+  (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace F E)))
 /-- A family of bijections on fibres induces a homeomorphism on total spaces whenever the forward
 total-space map is topological-inducing. -/
 -- Expose the base projection so `e.compHomeomorph` has projection `π F E'` definitionally.
 @[expose] def totalSpaceHomeomorphOfIsInducing : TotalSpace F E' ≃ₜ TotalSpace F E :=
-  ({ toFun p := ⟨p.proj, φ p.proj p.2⟩, invFun p := ⟨p.proj, (φ p.proj).symm p.2⟩
+  ({ toFun p := ⟨p.proj, φ p.proj p.snd⟩, invFun p := ⟨p.proj, (φ p.proj).symm p.snd⟩
      left_inv := fun ⟨_, _⟩ ↦ by simp only [Equiv.symm_apply_apply]
      right_inv := fun ⟨_, _⟩ ↦ by simp only [Equiv.apply_symm_apply] } :
     TotalSpace F E' ≃ TotalSpace F E).toHomeomorphOfIsInducing ht
 @[simp] theorem totalSpaceHomeomorphOfIsInducing_apply (p : TotalSpace F E') :
-    totalSpaceHomeomorphOfIsInducing F φ ht p = ⟨p.proj, φ p.proj p.2⟩ := (rfl)
+    totalSpaceHomeomorphOfIsInducing F φ ht p = ⟨p.proj, φ p.proj p.snd⟩ := (rfl)
 @[simp] theorem totalSpaceHomeomorphOfIsInducing_symm_apply (p : TotalSpace F E) :
-    (totalSpaceHomeomorphOfIsInducing F φ ht).symm p = ⟨p.proj, (φ p.proj).symm p.2⟩ := (rfl)
+    (totalSpaceHomeomorphOfIsInducing F φ ht).symm p = ⟨p.proj, (φ p.proj).symm p.snd⟩ := (rfl)
 end Homeomorph
 
 section FiberBundle
 variable [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)]
   [∀ b, TopologicalSpace (E' b)] [FiberBundle F E] (φ : ∀ b, E' b ≃ₜ E b)
-  (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.2⟩ : TotalSpace F E)))
+  (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace F E)))
 /-- Transfer a `FiberBundle` structure along fibrewise homeomorphisms whose total-space map is
 inducing. -/
 @[instance_reducible] noncomputable def fiberBundleOfHomeomorph : FiberBundle F E' :=

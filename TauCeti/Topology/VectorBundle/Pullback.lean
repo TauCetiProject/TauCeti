@@ -21,9 +21,7 @@ linear trivialization also induces the original fibre equivalence at the image p
 (`Bundle.Trivialization.linearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearEquivAt_pullback`). Hom coordinates between pullbacks by two
 different base maps agree with the original source and target coordinates
-(`ContinuousLinearMap.inCoordinates_pullback_of_mem`). Pulling back a bundle to a universally true
-subtype `{b // P b}` and back to `B` recovers the original total-space topology
-(`Bundle.Pullback.subtypeHomeomorph`).
+(`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
 -/
 
 public section
@@ -73,37 +71,6 @@ instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
     [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)] (x : B') :
     InnerProductSpace 𝕜 ((f *ᵖ E) x) :=
   inferInstanceAs (InnerProductSpace 𝕜 (E (f x)))
-
-section Subtype
-variable (F : Type*) (E : B → Type*) [TopologicalSpace B] {P : B → Prop} (hP : ∀ b, P b)
-  [TopologicalSpace (TotalSpace F E)] (hproj : Continuous (π F E))
-
-/-- Restricting a bundle to a universally satisfied subtype `{b : B // P b}` and pulling back along
-`b ↦ ⟨b, hP b⟩` produces a total space homeomorphic to the original total space over `B`. -/
-def subtypeHomeomorph : TotalSpace F ((fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})) *ᵖ
-    ((Subtype.val : {b : B // P b} → B) *ᵖ E)) ≃ₜ TotalSpace F E where
-  toFun q := ⟨q.proj, q.2⟩
-  invFun p := ⟨p.proj, p.2⟩
-  left_inv := fun ⟨_, _⟩ ↦ rfl
-  right_inv := fun ⟨_, _⟩ ↦ rfl
-  continuous_toFun := (Pullback.continuous_lift F E (Subtype.val : {b : B // P b} → B)).comp
-    (Pullback.continuous_lift F ((Subtype.val : {b : B // P b} → B) *ᵖ E)
-      fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b}))
-  continuous_invFun := by
-    let val : {b : B // P b} → B := Subtype.val
-    rw [(inducing_pullbackTotalSpaceEmbedding F (val *ᵖ E)
-      (fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b}))).continuous_iff]
-    refine hproj.prodMk ?_
-    rw [(inducing_pullbackTotalSpaceEmbedding F E val).continuous_iff]
-    exact (hproj.subtype_mk fun p ↦ hP p.proj).prodMk continuous_id
-
-@[simp] theorem subtypeHomeomorph_apply
-    (q : TotalSpace F ((fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})) *ᵖ
-      ((Subtype.val : {b : B // P b} → B) *ᵖ E))) :
-    subtypeHomeomorph F E hP hproj q = ⟨q.proj, q.2⟩ := by rfl
-@[simp] theorem subtypeHomeomorph_symm_apply (p : TotalSpace F E) :
-    (subtypeHomeomorph F E hP hproj).symm p = ⟨p.proj, p.2⟩ := by rfl
-end Subtype
 
 end Bundle.Pullback
 

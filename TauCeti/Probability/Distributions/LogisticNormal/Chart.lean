@@ -87,12 +87,12 @@ def logisticNormalChartHomeomorph (r : ι) :
   toFun z := ⟨logisticNormalChart r z, logisticNormalChart_pos r z, sum_logisticNormalChart r z⟩
   invFun x := logisticNormalLogRatio r x
   left_inv := logisticNormalLogRatio_chart r
-  right_inv x := Subtype.ext (logisticNormalChart_logRatio r x.2.1 x.2.2)
+  right_inv x := Subtype.ext (logisticNormalChart_logRatio r x.property.1 x.property.2)
   continuous_toFun := (continuous_logisticNormalChart r).subtype_mk _
   continuous_invFun := by
     refine (contDiffOn_logisticNormalLogRatio r (n := 0)).continuousOn.comp_continuous
-      continuous_subtype_val fun x ↦ ?_
-    exact fun i ↦ (x.2.1 i).ne'
+      continuous_subtypeVal fun x ↦ ?_
+    exact fun i ↦ (x.property.1 i).ne'
 
 /-- The logistic-chart homeomorphism is the logistic chart. -/
 @[simp]

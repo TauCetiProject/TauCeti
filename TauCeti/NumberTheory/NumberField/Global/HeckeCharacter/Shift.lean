@@ -154,7 +154,7 @@ private lemma coe_ideleNorm_diagonalIdele (t : ℝ) :
     Units.ext (by simp [IdeleGroup.coe_toFiniteIdele, coe_diagonalIdele])
   rw [← mixedEmbedding_norm_eq_ideleNorm (h1 ▸ one_mem _), coe_diagonalIdele,
     RingEquiv.apply_symm_apply, Algebra.algebraMap_eq_smul_one, mixedEmbedding.norm_smul,
-    map_one, mul_one, abs_of_pos (Real.exp_pos t), ← Real.exp_nat_mul]
+    map_one, mul_one, abs_of_pos (Real.exp_pos t), ← Real.exp_natCast_mul]
 
 /-- The absolute value of a Hecke character is a real power of the idele class norm. -/
 private theorem exists_norm_apply_eq_rpow (χ : HeckeCharacter K) :
@@ -335,6 +335,12 @@ theorem unitaryPart_mul_normPow {ψ : HeckeCharacter K} (hψ : ψ.shift = 0) (σ
     (ψ * normPow K σ).unitaryPart = ψ := by
   rw [unitaryPart_def, shift_mul, shift_normPow, hψ, zero_add, Complex.ofReal_re, mul_assoc ψ,
     ← normPow_add, add_neg_cancel, normPow_zero, mul_one ψ]
+
+/-- Every real norm-power Hecke character `‖·‖ ^ σ` has trivial unitary part. -/
+@[simp]
+theorem unitaryPart_normPow_ofReal (σ : ℝ) : (normPow K σ).unitaryPart = 1 := by
+  have h := unitaryPart_mul_normPow (K := K) (ψ := 1) shift_one σ
+  rwa [one_mul (normPow K σ)] at h
 
 /-- A Hecke character is its own unitary part exactly when its shift vanishes. -/
 theorem unitaryPart_eq_self_iff (χ : HeckeCharacter K) : χ.unitaryPart = χ ↔ χ.shift = 0 := by

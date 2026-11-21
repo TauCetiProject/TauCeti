@@ -66,13 +66,13 @@ noncomputable def toAtlasTotalSpaceHomeomorph :
   ((FiniteRankAtlas.reconstructionHomeomorph 𝕜 V.rank V.StratumFiber).trans
     (totalSpaceHomeomorph V)).symm
 @[simp] theorem toAtlasTotalSpaceHomeomorph_apply (p : TotalSpace Unit V.Fiber) :
-    V.toAtlasTotalSpaceHomeomorph p = ⟨p.proj, V.preferredChartEquiv p.proj p.2⟩ := by
+    V.toAtlasTotalSpaceHomeomorph p = ⟨p.proj, V.preferredChartEquiv p.proj p.snd⟩ := by
   simp only [toAtlasTotalSpaceHomeomorph, Homeomorph.symm_trans_apply,
     FiniteRankVectorBundle.totalSpaceHomeomorph_symm_apply,
     FiniteRankAtlas.reconstructionHomeomorph_symm_apply, pointIndexedCoreFiberEquiv_stratumFiber]
   exact FiniteRankAtlas.totalSpaceHomeomorph_rfl_apply V.toAtlas p.proj _
 @[simp] theorem toAtlasTotalSpaceHomeomorph_symm_apply (q : TotalSpace Unit V.toAtlas.Fiber) :
-    V.toAtlasTotalSpaceHomeomorph.symm q = ⟨q.proj, (V.preferredChartEquiv q.proj).symm q.2⟩ := by
+    V.toAtlasTotalSpaceHomeomorph.symm q = ⟨q.proj, (V.preferredChartEquiv q.proj).symm q.snd⟩ := by
   simp only [toAtlasTotalSpaceHomeomorph, Homeomorph.symm_symm, Homeomorph.trans_apply,
     FiniteRankAtlas.reconstructionHomeomorph_apply,
     FiniteRankVectorBundle.totalSpaceHomeomorph_apply, pointIndexedCoreFiberEquiv_stratumFiber]
@@ -151,14 +151,14 @@ end FiniteRankVectorBundle
 
 namespace FiniteRankAtlas
 variable (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}]
-/-- Continuous linear equivalence between the shrunk coordinate fibre over `y.1` and the native
+/-- Continuous linear equivalence between the shrunk coordinate fibre over `y.val` and the native
 `n`-stratum coordinate fibre over `y`. -/
 noncomputable def toBundleStratumEquiv (n : ℕ) (y : {x : X // A.rank x = n}) :
-    Shrink.{w} (A.Fiber y.1) ≃L[𝕜] (A.charts n).Fiber y :=
-  (Shrink.continuousLinearEquiv 𝕜 (A.Fiber y.1)).trans
+    Shrink.{w} (A.Fiber y.val) ≃L[𝕜] (A.charts n).Fiber y :=
+  (Shrink.continuousLinearEquiv 𝕜 (A.Fiber y.val)).trans
     { (stratumFiberEquiv A y).symm with
-      continuous_toFun := continuous_pi fun i ↦ continuous_apply (Fin.cast y.2.symm i)
-      continuous_invFun := continuous_pi fun i ↦ continuous_apply (Fin.cast y.2 i) }
+      continuous_toFun := continuous_pi fun i ↦ continuous_apply (Fin.cast y.property.symm i)
+      continuous_invFun := continuous_pi fun i ↦ continuous_apply (Fin.cast y.property i) }
 @[simp] theorem toBundleStratumEquiv_rfl_apply (x : X) (u : Shrink.{w} (A.Fiber x)) :
     A.toBundleStratumEquiv (A.rank x) ⟨x, rfl⟩ u =
       Shrink.continuousLinearEquiv 𝕜 (A.Fiber x) u := by rfl
@@ -173,12 +173,13 @@ with fibres in `Type w` whenever `UnivLE.{v, w}` holds. -/
 @[expose, implicit_reducible] noncomputable def toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X :=
   let φ := toBundleStratumEquiv.{u, v, w} A
   let ts (n : ℕ) : TopologicalSpace
-      (TotalSpace (Fin n → 𝕜) (fun y : {x : X // A.rank x = n} ↦ Shrink.{w} (A.Fiber y.1))) :=
+      (TotalSpace (Fin n → 𝕜) (fun y : {x : X // A.rank x = n} ↦ Shrink.{w} (A.Fiber y.val))) :=
     TopologicalSpace.induced
-      (fun p ↦ (⟨p.proj, φ n p.proj p.2⟩ : TotalSpace (Fin n → 𝕜) (A.charts n).Fiber)) inferInstance
+      (fun p ↦ (⟨p.proj, φ n p.proj p.snd⟩ : TotalSpace (Fin n → 𝕜) (A.charts n).Fiber))
+      inferInstance
   { rank := A.rank, Fiber x := Shrink.{w} (A.Fiber x), topologicalSpaceStratumTotalSpace := ts
     fiberBundleStratum n := @fiberBundleOfHomeomorph _ (Fin n → 𝕜) (A.charts n).Fiber
-      (fun y ↦ Shrink.{w} (A.Fiber y.1)) _ (ts n) _ _ _ _ _ (fun y ↦ (φ n y).toHomeomorph) ⟨rfl⟩
+      (fun y ↦ Shrink.{w} (A.Fiber y.val)) _ (ts n) _ _ _ _ _ (fun y ↦ (φ n y).toHomeomorph) ⟨rfl⟩
     vectorBundleStratum n := by
       let _ := ts n; exact vectorBundleOfContinuousLinearEquiv 𝕜 (φ n) ⟨rfl⟩ }
 @[simp] theorem rank_toBundle :
@@ -199,19 +200,19 @@ noncomputable def toBundleTotalSpaceHomeomorph :
 @[simp] theorem toBundleTotalSpaceHomeomorph_apply
     (p : TotalSpace Unit (A.toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X).Fiber) :
     A.toBundleTotalSpaceHomeomorph p =
-      ⟨p.proj, Shrink.continuousLinearEquiv 𝕜 (A.Fiber p.proj) p.2⟩ := by
+      ⟨p.proj, Shrink.continuousLinearEquiv 𝕜 (A.Fiber p.proj) p.snd⟩ := by
   simp only [toBundleTotalSpaceHomeomorph, Homeomorph.trans_apply, Homeomorph.sigmaCongrRight_apply,
     FiniteRankVectorBundle.totalSpaceHomeomorph_symm_apply, totalSpaceHomeomorphOfIsInducing_apply]
   exact (totalSpaceHomeomorph_rfl_apply A p.proj _).trans
-    (congrArg (TotalSpace.mk p.proj) (toBundleStratumEquiv_rfl_apply A p.proj p.2))
+    (congrArg (TotalSpace.mk p.proj) (toBundleStratumEquiv_rfl_apply A p.proj p.snd))
 @[simp] theorem toBundleTotalSpaceHomeomorph_symm_apply (q : TotalSpace Unit A.Fiber) :
     (A.toBundleTotalSpaceHomeomorph :
       TotalSpace Unit (A.toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X).Fiber ≃ₜ _).symm q =
-      ⟨q.proj, (Shrink.continuousLinearEquiv 𝕜 (A.Fiber q.proj)).symm q.2⟩ := by
+      ⟨q.proj, (Shrink.continuousLinearEquiv 𝕜 (A.Fiber q.proj)).symm q.snd⟩ := by
   simp only [toBundleTotalSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
     Homeomorph.sigmaCongrRight_symm_apply, totalSpaceHomeomorph_symm_apply,
     totalSpaceHomeomorphOfIsInducing_symm_apply, FiniteRankVectorBundle.totalSpaceHomeomorph_apply]
-  exact congrArg (TotalSpace.mk q.proj) (toBundleStratumEquiv_rfl_symm_apply A q.proj q.2)
+  exact congrArg (TotalSpace.mk q.proj) (toBundleStratumEquiv_rfl_symm_apply A q.proj q.snd)
 end FiniteRankAtlas
 
 namespace FiniteRankVectorBundle
@@ -317,14 +318,14 @@ noncomputable def uliftTotalSpaceHomeomorph :
       (VariableRankBundle.totalSpaceHomeomorph V))
 @[simp] theorem uliftTotalSpaceHomeomorph_apply
     (p : TotalSpace Unit (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).Fiber) :
-    V.uliftTotalSpaceHomeomorph p = ⟨p.proj, p.2.down⟩ := by
+    V.uliftTotalSpaceHomeomorph p = ⟨p.proj, p.snd.down⟩ := by
   simp only [uliftTotalSpaceHomeomorph, Homeomorph.trans_apply, Homeomorph.sigmaCongrRight_apply,
     FiniteRankVectorBundle.totalSpaceHomeomorph_symm_apply, TauCeti.uliftTotalSpaceHomeomorph_apply,
     FiniteRankVectorBundle.totalSpaceHomeomorph_apply]
 @[simp] theorem uliftTotalSpaceHomeomorph_symm_apply (p : TotalSpace Unit V.Fiber) :
     (V.uliftTotalSpaceHomeomorph : TotalSpace Unit
       (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).Fiber ≃ₜ _).symm p =
-      ⟨p.proj, ULift.up p.2⟩ := by
+      ⟨p.proj, ULift.up p.snd⟩ := by
   simp only [uliftTotalSpaceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
     Homeomorph.sigmaCongrRight_symm_apply, FiniteRankVectorBundle.totalSpaceHomeomorph_symm_apply,
     TauCeti.uliftTotalSpaceHomeomorph_symm_apply, FiniteRankVectorBundle.totalSpaceHomeomorph_apply]

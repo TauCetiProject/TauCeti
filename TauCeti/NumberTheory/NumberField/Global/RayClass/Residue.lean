@@ -79,11 +79,11 @@ variable {K : Type*} [Field K] [NumberField K]
 class does not depend on the presentation (`residue_eq`). -/
 noncomputable def residue (𝔪 : Modulus K) : primeToSubgroup 𝔪 →* 𝓞 K ⧸ 𝔪.finitePart where
   toFun x := 𝔪.finitePart.sIntegerToQuotient (K := K)
-    ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.2 v (by simpa using hv)).le⟩
+    ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.property v (by simpa using hv)).le⟩
   map_one' := map_one (𝔪.finitePart.sIntegerToQuotient (K := K))
   map_mul' x y := map_mul (𝔪.finitePart.sIntegerToQuotient (K := K))
-    ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.2 v (by simpa using hv)).le⟩
-    ⟨((y : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp y.2 v (by simpa using hv)).le⟩
+    ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.property v (by simpa using hv)).le⟩
+    ⟨((y : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp y.property v (by simpa using hv)).le⟩
 
 /-- **The reduction is computed by any presentation with denominator congruent to one.** -/
 theorem residue_eq {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) {a b : 𝓞 K}
@@ -111,12 +111,12 @@ theorem residue_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
       v.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ)) := by
   simp only [Modulus.exponent_def]
   exact 𝔪.finitePart.sIntegerToQuotient_eq_one_iff 𝔪.finitePart_ne_bot
-      ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.2 v (by simpa using hv)).le⟩
+      ⟨((x : Kˣ) : K), fun v hv ↦ (mem_primeToSubgroup.mp x.property v (by simpa using hv)).le⟩
 
 /-- **An element reducing to one and positive at the real places of `𝔪` is congruent to one.** -/
 theorem isCongrOne_of_residue_eq_one {𝔪 : Modulus K} {x : Kˣ} (hx : x ∈ primeToSubgroup 𝔪)
     (hres : residue 𝔪 ⟨x, hx⟩ = 1)
-    (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
+    (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K)) :
     IsCongrOne 𝔪 x :=
   isCongrOne_iff.mpr ⟨(residue_eq_one_iff ⟨x, hx⟩).mp hres, hpos⟩
 
@@ -127,7 +127,7 @@ the finite conditions of one modulus are read off the reduction attached to anot
 theorem isCongrOne_iff_residueHom_eq_one_of_finitePart_eq {𝔪 𝔫 : Modulus K}
     (hfin : 𝔪.finitePart = 𝔫.finitePart) {x : Kˣ} (hx : x ∈ primeToSubgroup 𝔫) :
     IsCongrOne 𝔪 x ↔ residueHom 𝔫 ⟨x, hx⟩ = 1 ∧
-      ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+      ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K) := by
   have hexp : ∀ v, 𝔪.exponent v = 𝔫.exponent v := fun v ↦ by
     rw [Modulus.exponent_def, Modulus.exponent_def, hfin]
   rw [isCongrOne_iff, Units.ext_iff, coe_residueHom, Units.val_one, residue_eq_one_iff]
@@ -254,7 +254,7 @@ theorem finiteUnitsMap_residueHom {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart �
       residueHom 𝔪 (Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x) := by
   obtain ⟨a, b, hb, hab⟩ :=
     𝔫.finitePart.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
-      (fun v hv ↦ (mem_primeToSubgroup.mp x.2 v hv).le)
+      (fun v hv ↦ (mem_primeToSubgroup.mp x.property v hv).le)
   have hbm : b - 1 ∈ 𝔪.finitePart :=
     (Ideal.le_of_dvd h) hb
   have habm : algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b *

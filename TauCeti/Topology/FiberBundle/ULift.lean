@@ -28,14 +28,14 @@ on fibres. -/
 instance instTopologicalSpaceTotalSpaceULift :
     TopologicalSpace (TotalSpace F (fun b ↦ ULift.{w'} (E b))) :=
   TopologicalSpace.induced (fun p : TotalSpace F (fun b ↦ ULift.{w'} (E b)) ↦
-    (⟨p.proj, p.2.down⟩ : TotalSpace F E)) inferInstance
+    (⟨p.proj, p.snd.down⟩ : TotalSpace F E)) inferInstance
 /-- The total space of `fun b ↦ ULift.{w'} (E b)` is homeomorphic to `TotalSpace F E` over `B`. -/
 def uliftTotalSpaceHomeomorph : TotalSpace F (fun b ↦ ULift.{w'} (E b)) ≃ₜ TotalSpace F E :=
   totalSpaceHomeomorphOfIsInducing F (fun _ ↦ Equiv.ulift) ⟨rfl⟩
 @[simp] theorem uliftTotalSpaceHomeomorph_apply (p : TotalSpace F (fun b ↦ ULift.{w'} (E b))) :
-    uliftTotalSpaceHomeomorph F E p = ⟨p.proj, p.2.down⟩ := (rfl)
+    uliftTotalSpaceHomeomorph F E p = ⟨p.proj, p.snd.down⟩ := (rfl)
 @[simp] theorem uliftTotalSpaceHomeomorph_symm_apply (p : TotalSpace F E) :
-    (uliftTotalSpaceHomeomorph.{u, v, w, w'} F E).symm p = ⟨p.proj, ULift.up p.2⟩ := (rfl)
+    (uliftTotalSpaceHomeomorph.{u, v, w, w'} F E).symm p = ⟨p.proj, ULift.up p.snd⟩ := (rfl)
 
 section ULiftFiberBundle
 variable [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
@@ -48,7 +48,7 @@ noncomputable instance instFiberBundleULift : FiberBundle F (fun b ↦ ULift.{w'
 trivialization at `ULift.down` on the fibre. -/
 theorem trivializationAt_ulift_apply (b : B) (p : TotalSpace F (fun x ↦ ULift.{w'} (E x))) :
     trivializationAt F (fun x ↦ ULift.{w'} (E x)) b p =
-      trivializationAt F E b ⟨p.proj, p.2.down⟩ :=
+      trivializationAt F E b ⟨p.proj, p.snd.down⟩ :=
   congrArg (fun e ↦ e p)
     (trivializationAt_fiberBundleOfHomeomorph F (fun _ ↦ Homeomorph.ulift) ⟨rfl⟩ b)
 end ULiftFiberBundle
@@ -60,16 +60,16 @@ variable [∀ b, Small.{w'} (E b)]
 noncomputable instance instTopologicalSpaceTotalSpaceShrink :
     TopologicalSpace (TotalSpace F (fun b ↦ Shrink.{w'} (E b))) :=
   TopologicalSpace.induced (fun p : TotalSpace F (fun b ↦ Shrink.{w'} (E b)) ↦
-    (⟨p.proj, (equivShrink (E p.proj)).symm p.2⟩ : TotalSpace F E)) inferInstance
+    (⟨p.proj, (equivShrink (E p.proj)).symm p.snd⟩ : TotalSpace F E)) inferInstance
 /-- The total space of `fun b ↦ Shrink.{w'} (E b)` is homeomorphic to `TotalSpace F E` over `B`. -/
 noncomputable def shrinkTotalSpaceHomeomorph :
     TotalSpace F (fun b ↦ Shrink.{w'} (E b)) ≃ₜ TotalSpace F E :=
   totalSpaceHomeomorphOfIsInducing F (fun b ↦ (equivShrink (E b)).symm) ⟨rfl⟩
 @[simp] theorem shrinkTotalSpaceHomeomorph_apply (p : TotalSpace F (fun b ↦ Shrink.{w'} (E b))) :
-    shrinkTotalSpaceHomeomorph F E p = ⟨p.proj, (equivShrink (E p.proj)).symm p.2⟩ := (rfl)
+    shrinkTotalSpaceHomeomorph F E p = ⟨p.proj, (equivShrink (E p.proj)).symm p.snd⟩ := (rfl)
 @[simp] theorem shrinkTotalSpaceHomeomorph_symm_apply (p : TotalSpace F E) :
     (shrinkTotalSpaceHomeomorph.{u, v, w, w'} F E).symm p =
-      ⟨p.proj, equivShrink (E p.proj) p.2⟩ := (rfl)
+      ⟨p.proj, equivShrink (E p.proj) p.snd⟩ := (rfl)
 
 variable [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
 /-- Transport a `FiberBundle` structure to the shrunk fibre family `Shrink (E ·)`. -/
@@ -81,7 +81,7 @@ noncomputable instance instFiberBundleShrink : FiberBundle F (fun b ↦ Shrink.{
 trivialization at `(equivShrink _).symm` on the fibre. -/
 theorem trivializationAt_shrink_apply (b : B) (p : TotalSpace F (fun x ↦ Shrink.{w'} (E x))) :
     trivializationAt F (fun x ↦ Shrink.{w'} (E x)) b p =
-      trivializationAt F E b ⟨p.proj, (equivShrink (E p.proj)).symm p.2⟩ :=
+      trivializationAt F E b ⟨p.proj, (equivShrink (E p.proj)).symm p.snd⟩ :=
   congrArg (fun e ↦ e p)
     (trivializationAt_fiberBundleOfHomeomorph F (fun b ↦ (Shrink.homeomorph (E b)).symm) ⟨rfl⟩ b)
 end Shrink
