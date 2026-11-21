@@ -495,8 +495,7 @@ private theorem dirichletForm_eq_energyFormH1_of_eq (p : M)
     (Φ.contMDiff.mdifferentiable (by simp)) _
   rw [W1p.gradient_ofTestFunctionₗ, hgφ, hgu,
     inner_mgradient_eq_matrixBilinearForm p (hΩt hy) hdu hdΦ, hgradΦ]
-  simp [chartMatrix, PDE.matrixBilinearForm_apply, Matrix.smul_mulVec, dotProduct_smul,
-    smul_eq_mul]
+  simp [chartMatrix, PDE.matrixBilinearForm_apply, smul_eq_mul]
 
 /-- Transplant a Euclidean test function `φ ∈ 𝓓(Ω, ℝ)` along `coordEquiv E ∘ extChartAt I p` to
 `Φ ∈ C^∞(M)`, transforming both `dirichletForm` and `L²(M)` pairings into coordinates. -/

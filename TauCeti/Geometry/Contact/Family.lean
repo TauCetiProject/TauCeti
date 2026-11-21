@@ -49,7 +49,8 @@ constructions then depend smoothly on the parameter
   every slice is contact.
 * `TauCeti.SmoothForm.contMDiff_apply_reebVectorField_mpullback_prodMk`: when every slice is
   contact, the Reeb components `(t, y) ↦ β_t(R_(α_t)(y))` of a second family form a smooth
-  function.
+  function; `TauCeti.SmoothForm.contMDiffAt_apply_reebVectorField_mpullback_prodMk` is the version
+  at a point, for slices that are contact for parameters near it.
 
 ## References
 
@@ -62,7 +63,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti.SmoothForm
 
@@ -98,6 +99,27 @@ theorem contMDiff_reebVectorField_mpullback_prodMk (α : SmoothForm (J.prod I) (
   rw [← contMDiffOn_univ, ← Set.univ_prod_univ]
   exact contMDiffOn_reebVectorField_mpullback_prodMk α isOpen_univ fun t _ ↦ hc t
 
+/-- **Reeb components of a smooth family of one-forms, at a point.** If the slices
+`α_t = ι_t^* α` of a smooth one-form `α` on `N × M` are contact forms for all parameters near
+`p.1`, and `β` is a second smooth one-form on `N × M` with slices `β_t`, then the function
+`(t, y) ↦ β_t(R_(α_t)(y))` on `N × M` is smooth at `p`. -/
+theorem contMDiffAt_apply_reebVectorField_mpullback_prodMk
+    (α β : SmoothForm (J.prod I) (N × M) ℝ 1) {p : N × M}
+    (hc : ∀ᶠ t in 𝓝 p.1,
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
+    ContMDiffAt (J.prod I) 𝓘(ℝ) ∞ (fun q : N × M ↦
+      (mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β).val q.2
+        ![(mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+          q.2]) p := by
+  have hβ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
+    (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β)).2
+    (contMDiff_mpullback_prodMk β p)
+  have hR := contMDiffAt_sectionAlong_reebVectorField (b := Prod.snd)
+    (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)
+    (continuous_fst.continuousAt.eventually hc) (contMDiff_mpullback_prodMk α p)
+    (contMDiff_mextDeriv_mpullback_prodMk α p)
+  simpa [degreeOneEquiv_apply_apply_vec] using hβ.clm_bundle_apply_scalar hR
+
 /-- **Reeb components of a smooth family of one-forms.** If every slice `α_t = ι_t^* α` of a
 smooth one-form `α` on `N × M` is a contact form, and `β` is a second smooth one-form on `N × M`
 with slices `β_t`, then the function `(t, y) ↦ β_t(R_(α_t)(y))` on `N × M` is smooth. -/
@@ -105,15 +127,10 @@ theorem contMDiff_apply_reebVectorField_mpullback_prodMk
     (α β : SmoothForm (J.prod I) (N × M) ℝ 1)
     (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
     ContMDiff (J.prod I) 𝓘(ℝ) ∞ fun p : N × M ↦
-      (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) β).1 p.2
+      (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) β).val p.2
         ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
-          p.2] := by
-  intro p
-  have hβ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
-    (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β)).2
-    (contMDiff_mpullback_prodMk β p)
-  simpa [degreeOneEquiv_apply_apply_vec] using
-    hβ.clm_bundle_apply_scalar (contMDiff_reebVectorField_mpullback_prodMk α hc p)
+          p.2] := fun _ ↦
+  contMDiffAt_apply_reebVectorField_mpullback_prodMk α β (.of_forall hc)
 
 /-- **Contact-Moser vector fields of a smooth family of contact forms.** If the slices
 `α_t = ι_t^* α` of a smooth one-form `α` on `N × M` are contact forms for all `t` in an open set

@@ -246,10 +246,10 @@ variable {ι K : Type*} [Fintype ι] [Field K] [StarRing K]
 /-- The Hermitian projector of a line of `ι → K`: the matrix `x x* / (x* x)` for any nonzero
 vector `x` spanning the line. -/
 def hermitianProjector (p : ℙ K (ι → K)) : Matrix ι ι K :=
-  p.lift (fun x ↦ rankOneHermitianProjector x.1) fun x y c h ↦ by
+  p.lift (fun x ↦ rankOneHermitianProjector x.val) fun x y c h ↦ by
     rw [h, rankOneHermitianProjector_smul]
     rintro rfl
-    exact x.2 (by simp [h])
+    exact x.property (by simp [h])
 
 @[simp]
 theorem hermitianProjector_mk (x : ι → K) (hx : x ≠ 0) :
@@ -272,7 +272,7 @@ theorem hermitianProjector_unitary_smul [DecidableEq ι] (p : ℙ K (ι → K))
   induction p using ind with
   | h x hx =>
     rw [smul_mk, hermitianProjector_mk, hermitianProjector_mk, Units.smul_def, smul_eq_mulVec]
-    exact rankOneHermitianProjector_unitary_mulVec U.2 x
+    exact rankOneHermitianProjector_unitary_mulVec U.property x
 
 end Field
 

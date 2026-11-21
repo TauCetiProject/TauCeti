@@ -50,7 +50,7 @@ theorem isHomeomorph_unitsMeasureAmiceEquiv_weak :
     exact (hA.1.comp (continuous_abstractMeasure_map_weak (R := ℤ_[p]) (E := ℤ_[p])
       (⟨Units.val, Units.continuous_val⟩ : C(ℤ_[p]ˣ, ℤ_[p])))).congr fun ν ↦
         (amiceTransformEquiv_apply _).trans (unitsMeasureAmiceEquiv_apply ν).symm
-  · exact (continuous_restrictUnits_weak.comp (hA.2.comp continuous_subtype_val)).congr
+  · exact (continuous_restrictUnits_weak.comp (hA.2.comp continuous_subtypeVal)).congr
       fun F ↦ (unitsMeasureAmiceEquiv_symm_apply F).symm
 
 -- The atom at two has its usual binomial transform, without a derivative or inverse factor.

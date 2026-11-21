@@ -319,10 +319,12 @@ def fiberProductAssoc :
       ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))) where
   -- Without `map_coe_ker`, `simp` unfolds each membership hypothesis instead of reducing it to
   -- `True` through the membership of an inner component.
-  toFun r := ⟨(r.1.1.1.1, ⟨(r.1.1.1.2, r.1.2), by simpa [-map_coe_ker] using mem_ker.1 r.2⟩),
-    by simpa [-map_coe_ker] using mem_ker.1 r.1.1.2⟩
-  invFun r := ⟨(⟨(r.1.1, r.1.2.1.1), by simpa [-map_coe_ker] using mem_ker.1 r.2⟩, r.1.2.1.2),
-    by simpa [-map_coe_ker] using mem_ker.1 r.1.2.2⟩
+  toFun r := ⟨(r.val.1.val.1, ⟨(r.val.1.val.2, r.val.2),
+      by simpa [-map_coe_ker] using mem_ker.1 r.property⟩),
+    by simpa [-map_coe_ker] using mem_ker.1 r.val.1.property⟩
+  invFun r := ⟨(⟨(r.val.1, r.val.2.val.1),
+      by simpa [-map_coe_ker] using mem_ker.1 r.property⟩, r.val.2.val.2),
+    by simpa [-map_coe_ker] using mem_ker.1 r.val.2.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -334,28 +336,28 @@ variable {α β γ δ}
 @[simp]
 theorem fiberProductAssoc_apply_fst
     (r : ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
-    (fiberProductAssoc α β γ δ r).1.1 = r.1.1.1.1 :=
+    (fiberProductAssoc α β γ δ r).val.1 = r.val.1.val.1 :=
  (rfl)
 
 /-- The `Y ×_S Z`-component of the reassociation of `((ξ, η), ζ)` is `(η, ζ)`. -/
 @[simp]
 theorem fiberProductAssoc_apply_snd
     (r : ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
-    ((fiberProductAssoc α β γ δ r).1.2 : Y × Z) = (r.1.1.1.2, r.1.2) :=
+    ((fiberProductAssoc α β γ δ r).val.2 : Y × Z) = (r.val.1.val.2, r.val.2) :=
  (rfl)
 
 /-- The `X ×_T Y`-component of the inverse reassociation of `(ξ, (η, ζ))` is `(ξ, η)`. -/
 @[simp]
 theorem fiberProductAssoc_symm_apply_fst
     (r : ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
-    (((fiberProductAssoc α β γ δ).symm r).1.1 : X × Y) = (r.1.1, r.1.2.1.1) :=
+    (((fiberProductAssoc α β γ δ).symm r).val.1 : X × Y) = (r.val.1, r.val.2.val.1) :=
  (rfl)
 
 /-- The `Z`-component of the inverse reassociation of `(ξ, (η, ζ))` is `ζ`. -/
 @[simp]
 theorem fiberProductAssoc_symm_apply_snd
     (r : ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
-    ((fiberProductAssoc α β γ δ).symm r).1.2 = r.1.2.1.2 :=
+    ((fiberProductAssoc α β γ δ).symm r).val.2 = r.val.2.val.2 :=
  (rfl)
 
 /-- The reassociation is the restriction of `(X × Y) × Z ≃ X × (Y × Z)`: viewed in `X × (Y × Z)`,
@@ -469,8 +471,8 @@ theorem mem_range_fiberProductInclusionLeft {p : Submodule R X} {v : ker (α.cop
     v ∈ range (fiberProductInclusionLeft α β p) ↔ (v : X × Y).1 ∈ p := by
   refine ⟨fun ⟨z, hz⟩ ↦ ?_, fun h ↦ ⟨⟨(⟨_, h⟩, (v : X × Y).2), ?_⟩, Subtype.ext (by simp)⟩⟩
   · rw [← hz, coe_fiberProductInclusionLeft_apply]
-    exact (z : p × Y).1.2
-  · have hv := mem_ker.1 v.2
+    exact (z : p × Y).1.property
+  · have hv := mem_ker.1 v.property
     rw [coprod_apply] at hv
     simpa using hv
 
@@ -480,8 +482,8 @@ theorem mem_range_fiberProductInclusionRight {p : Submodule R Y} {v : ker (α.co
     v ∈ range (fiberProductInclusionRight α β p) ↔ (v : X × Y).2 ∈ p := by
   refine ⟨fun ⟨z, hz⟩ ↦ ?_, fun h ↦ ⟨⟨((v : X × Y).1, ⟨_, h⟩), ?_⟩, Subtype.ext (by simp)⟩⟩
   · rw [← hz, coe_fiberProductInclusionRight_apply]
-    exact (z : X × p).2.2
-  · have hv := mem_ker.1 v.2
+    exact (z : X × p).2.property
+  · have hv := mem_ker.1 v.property
     rw [coprod_apply] at hv
     simpa using hv
 
