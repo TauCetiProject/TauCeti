@@ -12,35 +12,40 @@ public import TauCeti.RingTheory.TrivSqZeroExt
 /-!
 # Double points in affine space
 
-For finitely many points `Pᵢ : σ → R`, `TauCeti.doubleIdeal P` is the square `(⋂ᵢ 𝔪_{Pᵢ})²` of the
+For a family of points `Pᵢ : σ → R`, `TauCeti.doubleIdeal P` is the square `(⋂ᵢ 𝔪_{Pᵢ})²` of the
 ideal of polynomials vanishing at all of them, `𝔪_P = ker (eval P)`. The quotient
 `R[X] ⧸ doubleIdeal P` is the coordinate ring of the affine scheme of the doubled points `2Pᵢ`.
 
-Over a field and for distinct points, the ideals `𝔪_{Pᵢ}` are pairwise coprime, so `doubleIdeal P`
-is the intersection `⋂ᵢ 𝔪_{Pᵢ}²` of the squared point ideals, and the Chinese remainder theorem
-splits the quotient into the local factors `k[X] ⧸ 𝔪_{Pᵢ}²`. For finitely many variables, each
-factor is the algebra of first jets `TrivSqZeroExt k (σ → k)` (`TauCeti.ker_jetAlgebra`), so
-`k[X] ⧸ doubleIdeal P ≃ₐ[k] ∏ᵢ TrivSqZeroExt k (σ → k)`, sending the class of `f` to its values
-and gradients at the points. In particular values and first derivatives at distinct points can be
-prescribed independently by some polynomial, and with `r` variables and `n` points the quotient
-has dimension `n (r + 1)`, the length of `n` distinct double points in `r`-space. The product of
-square-zero algebras keeps the nilpotents: it is not the product of the residue fields.
+For finitely many points over a commutative ring whose evaluation ideals `𝔪_{Pᵢ}` are pairwise
+comaximal (for example, distinct points over a field), `doubleIdeal P` is the intersection
+`⋂ᵢ 𝔪_{Pᵢ}²` of the squared point ideals, and the Chinese remainder theorem splits the quotient
+into the local factors `R[X] ⧸ 𝔪_{Pᵢ}²`. For finitely many variables, each factor is the algebra of
+first jets `TrivSqZeroExt R (σ → R)` (`TauCeti.ker_jetAlgebra`), so
+`R[X] ⧸ doubleIdeal P ≃ₐ[R] ∏ᵢ TrivSqZeroExt R (σ → R)`, sending the class of `f` to its values
+and gradients at the points. In particular values and first derivatives can be prescribed
+independently by a single polynomial, and with `r` variables and `n` points over a ring satisfying
+the strong rank condition the quotient has rank `n (r + 1)`, the length of `n` double points in
+`r`-space. The product of square-zero algebras keeps the nilpotents: it is not the product of the
+residue rings.
 
 ## Main definitions
 
 * `TauCeti.doubleIdeal P`: the square of the ideal of the points `Pᵢ`.
-* `TauCeti.doublePointQuotientEquiv`: for distinct points over a field, the quotient by
-  `doubleIdeal P` is the product of the first-jet algebras at the points.
+* `TauCeti.doublePointQuotientEquiv`: for finitely many points with pairwise comaximal ideals over
+  a commutative ring, the quotient by `doubleIdeal P` is the product of the first-jet algebras at
+  the points.
 
 ## Main results
 
-* `TauCeti.doubleIdeal_eq_iInf`: for distinct points over a field, `doubleIdeal P = ⋂ᵢ 𝔪_{Pᵢ}²`.
-* `TauCeti.mem_doubleIdeal_iff`: a polynomial lies in `doubleIdeal P` exactly when its value and
-  first partial derivatives vanish at every point.
-* `TauCeti.exists_forall_jetAlgebra_eq`: first jets at distinct points can be prescribed
-  independently.
-* `TauCeti.finrank_quotient_doubleIdeal`: `n` distinct double points in `r`-space have length
-  `n (r + 1)`.
+* `TauCeti.doubleIdeal_eq_iInf`: for finitely many points with pairwise comaximal ideals,
+  `doubleIdeal P = ⋂ᵢ 𝔪_{Pᵢ}²`.
+* `TauCeti.mem_doubleIdeal_iff`: for finitely many points with pairwise comaximal ideals, a
+  polynomial lies in `doubleIdeal P` exactly when its value and first partial derivatives vanish at
+  every point.
+* `TauCeti.exists_forall_jetAlgebra_eq`: first jets at finitely many points with pairwise comaximal
+  ideals can be prescribed independently.
+* `TauCeti.finrank_quotient_doubleIdeal`: `n` double points in `r`-space with pairwise comaximal
+  ideals have length `n (r + 1)`.
 
 ## References
 
@@ -51,7 +56,7 @@ public section
 
 namespace TauCeti
 
-open MvPolynomial Function
+open MvPolynomial
 
 variable {σ ι : Type*}
 
@@ -71,86 +76,97 @@ theorem doubleIdeal_comp {R ι' : Type*} [CommSemiring R] (P : ι → σ → R) 
   simp only [doubleIdeal_def, Function.comp_apply]
   rw [e.iInf_comp (g := fun i ↦ RingHom.ker (eval (P i)))]
 
-section Field
+section CommRing
 
-variable {k : Type*} [Field k] {P : ι → σ → k}
+variable {R : Type*} [CommRing R] {P : ι → σ → R}
 
-/-- For finitely many distinct points over a field, the square of the ideal of the points is the
-intersection of the squares of the ideals of the individual points. -/
-theorem doubleIdeal_eq_iInf [Finite ι] (hP : Function.Injective P) :
+/-- For a finite family of points whose evaluation ideals are pairwise comaximal, the square of the
+ideal of the points is the intersection of the squares of the ideals of the individual points. -/
+theorem doubleIdeal_eq_iInf [Finite ι]
+    (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)))) :
     doubleIdeal P = ⨅ i, RingHom.ker (eval (P i)) ^ 2 := by
   cases nonempty_fintype ι
-  have hcop {f : ι → Ideal (MvPolynomial σ k)} (hf : Pairwise (IsCoprime on f)) :
+  have hcop {f : ι → Ideal (MvPolynomial σ R)} (hf : Pairwise (Function.onFun IsCoprime f)) :
       ∏ i, f i = ⨅ i, f i := by
     simpa using Ideal.prod_eq_iInf_of_pairwise_isCoprime (s := Finset.univ) fun i _ j _ h ↦ hf h
-  rw [doubleIdeal_def, ← hcop fun i j h ↦ isCoprime_ker_eval (hP.ne h),
-    ← hcop fun i j h ↦ isCoprime_ker_eval_sq (hP.ne h), Finset.prod_pow]
+  rw [doubleIdeal_def, ← hcop hP, ← hcop fun _ _ hij ↦ (hP hij).pow, Finset.prod_pow]
 
 section JetAlgebra
 
-variable [DecidableEq σ] [Finite σ]
+variable [DecidableEq σ]
 
-/-- For finitely many distinct points over a field, the ideal of the doubled points is the
-intersection of the kernels of the first jets at the points. -/
-theorem doubleIdeal_eq_iInf_ker_jetAlgebra [Finite ι] (hP : Function.Injective P) :
+/-- For a finite family of points whose evaluation ideals are pairwise comaximal, the ideal of the
+doubled points is the intersection of the kernels of the first jets at the points. -/
+theorem doubleIdeal_eq_iInf_ker_jetAlgebra [Finite ι]
+    (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)))) :
     doubleIdeal P = ⨅ i, RingHom.ker (jetAlgebra (P i)) := by
   simp only [doubleIdeal_eq_iInf hP, ker_jetAlgebra]
 
-/-- **Simultaneous first-jet interpolation.** At finitely many distinct points in finitely many
-variables over a field, any values and gradients are the values and gradients of a single
-polynomial. -/
-theorem exists_forall_jetAlgebra_eq [Finite ι] (hP : Function.Injective P)
-    (y : ι → TrivSqZeroExt k (σ → k)) : ∃ f : MvPolynomial σ k, ∀ i, jetAlgebra (P i) f = y i := by
-  choose g hg using fun i ↦ jetAlgebra_surjective (P i) (y i)
-  have hcop : Pairwise (IsCoprime on fun i ↦ RingHom.ker (jetAlgebra (P i))) := fun i j h ↦ by
-    simpa only [ker_jetAlgebra] using isCoprime_ker_eval_sq (hP.ne h)
-  obtain ⟨f, hf⟩ := Ideal.exists_forall_sub_mem_ideal hcop g
-  refine ⟨f, fun i ↦ ?_⟩
-  rw [← hg i, ← sub_eq_zero, ← map_sub]
-  exact hf i
-
-/-- For finitely many distinct points in finitely many variables over a field, the coordinate ring
-of the doubled points is the product of the first-jet algebras at the points: the class of `f` is
-sent to the values and gradients of `f` at the points (`TauCeti.doublePointQuotientEquiv_mk`). -/
-noncomputable def doublePointQuotientEquiv [Finite ι] (hP : Function.Injective P) :
-    (MvPolynomial σ k ⧸ doubleIdeal P) ≃ₐ[k] (ι → TrivSqZeroExt k (σ → k)) :=
-  (Ideal.quotientEquivAlgOfEq k <| by
-      rw [doubleIdeal_eq_iInf_ker_jetAlgebra hP]
-      ext f
-      simp [RingHom.mem_ker, funext_iff]).trans
-    (Ideal.quotientKerAlgEquivOfSurjective
-      (f := AlgHom.pi fun i ↦ jetAlgebra (P i)) <| show Surjective _ from fun y ↦ by
-        obtain ⟨f, hf⟩ := exists_forall_jetAlgebra_eq hP y
-        exact ⟨f, funext hf⟩)
+/-- **Chinese remainder for double points.** For finitely many points in finitely many variables
+over a commutative ring whose evaluation ideals are pairwise comaximal, the coordinate ring of the
+doubled points is isomorphic as an `R`-algebra to the product of the first-jet algebras at the
+points: the class of `f` is sent to the values and gradients of `f` at the points
+(`TauCeti.doublePointQuotientEquiv_mk`). -/
+noncomputable def doublePointQuotientEquiv [Finite σ] [Finite ι]
+    (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)))) :
+    (MvPolynomial σ R ⧸ doubleIdeal P) ≃ₐ[R] (ι → TrivSqZeroExt R (σ → R)) :=
+  let hpow : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)) ^ 2) :=
+    fun _ _ hij ↦ (hP hij).pow
+  let crt : (MvPolynomial σ R ⧸ ⨅ i, RingHom.ker (eval (P i)) ^ 2) ≃ₐ[R]
+      ((i : ι) → MvPolynomial σ R ⧸ RingHom.ker (eval (P i)) ^ 2) :=
+    AlgEquiv.ofRingEquiv (f := Ideal.quotientInfRingEquivPiQuotient _ hpow) fun r ↦ by
+      funext i
+      exact Ideal.quotientInfRingEquivPiQuotient_mk_apply hpow (C r) i
+  (Ideal.quotientEquivAlgOfEq R (doubleIdeal_eq_iInf hP)).trans <|
+    crt.trans <| AlgEquiv.piCongrRight fun i ↦ jetAlgebraEquiv (P i)
 
 /-- The class of `f` modulo the ideal of the doubled points corresponds to the first jets of `f`
 at the points. -/
 @[simp]
-theorem doublePointQuotientEquiv_mk [Finite ι] (hP : Function.Injective P)
-    (f : MvPolynomial σ k) :
+theorem doublePointQuotientEquiv_mk [Finite σ] [Finite ι]
+    (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i))))
+    (f : MvPolynomial σ R) :
     doublePointQuotientEquiv hP (Ideal.Quotient.mk _ f) = fun i ↦ jetAlgebra (P i) f := by
   funext i
-  simp [doublePointQuotientEquiv]
+  unfold doublePointQuotientEquiv
+  simp only [AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk, AlgEquiv.piCongrRight_apply,
+    AlgEquiv.ofRingEquiv_apply]
+  rw [Ideal.quotientInfRingEquivPiQuotient_mk_apply (fun _ _ hij ↦ (hP hij).pow) f i,
+    jetAlgebraEquiv_mk]
+
+/-- **Simultaneous first-jet interpolation.** At finitely many points in finitely many variables
+over a commutative ring whose evaluation ideals are pairwise comaximal, any values and gradients are
+the values and gradients of a single polynomial. -/
+theorem exists_forall_jetAlgebra_eq [Finite σ] [Finite ι]
+    (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i))))
+    (y : ι → TrivSqZeroExt R (σ → R)) : ∃ f : MvPolynomial σ R, ∀ i, jetAlgebra (P i) f = y i := by
+  obtain ⟨q, hq⟩ := (doublePointQuotientEquiv hP).surjective y
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective q
+  exact ⟨f, fun i ↦ by simpa using congrFun hq i⟩
 
 end JetAlgebra
 
-/-- For finitely many distinct points over a field, a polynomial lies in the ideal of the doubled
-points exactly when its value and all its first partial derivatives vanish at every point. -/
-theorem mem_doubleIdeal_iff [Finite σ] [Finite ι] (hP : Function.Injective P)
-    {f : MvPolynomial σ k} :
+/-- For finitely many points with pairwise comaximal evaluation ideals, a polynomial lies in the
+ideal of the doubled points exactly when its value and all its first partial derivatives vanish at
+every point. -/
+theorem mem_doubleIdeal_iff [Finite ι]
+    (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i))))
+    {f : MvPolynomial σ R} :
     f ∈ doubleIdeal P ↔ ∀ i, eval (P i) f = 0 ∧ ∀ j, eval (P i) (pderiv j f) = 0 := by
   classical
   simp [doubleIdeal_eq_iInf_ker_jetAlgebra hP, RingHom.mem_ker, jetAlgebra_eq_zero_iff]
 
-/-- **Length of distinct double points.** Over a field, `n` distinct doubled points in affine
-`r`-space have length `n (r + 1)`: the quotient by their ideal has dimension `n (r + 1)`. -/
-theorem finrank_quotient_doubleIdeal [Fintype ι] [Fintype σ] (hP : Function.Injective P) :
-    Module.finrank k (MvPolynomial σ k ⧸ doubleIdeal P) =
+/-- **Length of distinct double points.** Over a commutative ring satisfying the strong rank
+condition, `n` doubled points in affine `r`-space with pairwise comaximal evaluation ideals have
+length `n (r + 1)`: the quotient by their ideal has rank `n (r + 1)`. -/
+theorem finrank_quotient_doubleIdeal [StrongRankCondition R] [Fintype ι] [Fintype σ]
+    (hP : Pairwise (Function.onFun IsCoprime fun i ↦ RingHom.ker (eval (P i)))) :
+    Module.finrank R (MvPolynomial σ R ⧸ doubleIdeal P) =
       Fintype.card ι * (Fintype.card σ + 1) := by
   classical
   rw [(doublePointQuotientEquiv hP).toLinearEquiv.finrank_eq, Module.finrank_pi_fintype]
   simp [TrivSqZeroExt.finrank_eq_finrank_add_one]
 
-end Field
+end CommRing
 
 end TauCeti

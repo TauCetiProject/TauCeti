@@ -41,6 +41,8 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 ## Main definitions
 
 * `MvPolynomial.taylor`: the Taylor shift `p ↦ p(X + a)`.
+* `MvPolynomial.taylorEquiv`: the Taylor shift as an `R`-algebra automorphism over a commutative
+  ring.
 * `MvPolynomial.orderAt`: the order of vanishing of `p` at `a`.
 
 ## Main results
@@ -327,6 +329,30 @@ variable [CommRing R]
 @[simp]
 theorem taylor_neg_taylor (a : σ → R) (p : MvPolynomial σ R) : taylor (-a) (taylor a p) = p := by
   rw [taylor_taylor, neg_add_cancel, taylor_zero]
+
+/-- The Taylor shift `p ↦ p(X + a)` as an `R`-algebra automorphism of `MvPolynomial σ R`, with
+inverse `taylor (-a)`. -/
+noncomputable def taylorEquiv (a : σ → R) : MvPolynomial σ R ≃ₐ[R] MvPolynomial σ R :=
+  AlgEquiv.ofAlgHom (taylor a) (taylor (-a))
+    (AlgHom.ext fun p ↦ by rw [AlgHom.comp_apply, taylor_taylor, add_neg_cancel, taylor_zero,
+      AlgHom.id_apply])
+    (AlgHom.ext fun p ↦ by rw [AlgHom.comp_apply, taylor_neg_taylor, AlgHom.id_apply])
+
+@[simp]
+theorem taylorEquiv_apply (a : σ → R) (p : MvPolynomial σ R) :
+    taylorEquiv a p = taylor a p := by
+  simp [taylorEquiv]
+
+@[simp]
+theorem toAlgHom_taylorEquiv (a : σ → R) :
+    (taylorEquiv a : MvPolynomial σ R →ₐ[R] MvPolynomial σ R) = taylor a :=
+  AlgEquiv.toAlgHom_ofAlgHom _ _ _ _
+
+@[simp]
+theorem taylorEquiv_symm (a : σ → R) :
+    (taylorEquiv a).symm = taylorEquiv (-a) := by
+  ext p
+  simp [taylorEquiv, AlgEquiv.ofAlgHom_symm]
 
 /-- The Taylor shift preserves the total degree. -/
 @[simp]

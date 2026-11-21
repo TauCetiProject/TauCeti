@@ -40,18 +40,11 @@ variable {σ k : Type*} [Field k]
 its Taylor order there is at least `n`. -/
 theorem mem_pow_vanishingIdeal_singleton_iff (f : MvPolynomial σ k) (a : σ → k) (n : ℕ) :
     f ∈ vanishingIdeal k {a} ^ n ↔ (n : ℕ∞) ≤ f.orderAt a := by
-  have hbij : Function.Bijective (taylor a) :=
-    ⟨taylor_injective a, fun g ↦ ⟨taylor (-a) g, by simp [taylor_taylor]⟩⟩
-  have hker : vanishingIdeal k {a} = (idealOfVars σ k).comap (taylor a) := by
+  have hvan : vanishingIdeal k {a} = RingHom.ker (eval a) := by
     ext g
-    rw [mem_vanishingIdeal_singleton_iff, Ideal.mem_comap, ← ker_constantCoeff,
-      RingHom.mem_ker, constantCoeff_taylor]
-    simp
-  have hmap : (vanishingIdeal k {a}).map (taylor a) = idealOfVars σ k := by
-    rw [hker, Ideal.map_comap_of_surjective _ hbij.2]
-  rw [← Ideal.comap_map_of_bijective (taylor a) hbij
-    (I := vanishingIdeal k {a} ^ n), Ideal.mem_comap, Ideal.map_pow, hmap,
-    mem_pow_idealOfVars_iff', le_orderAt_iff]
+    simp [RingHom.mem_ker]
+  rw [hvan, pow_ker_eval_eq_comap_taylor, Ideal.mem_comap, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe, mem_pow_idealOfVars_iff', le_orderAt_iff]
   simp only [Nat.cast_lt]
 
 end MvPolynomial
