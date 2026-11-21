@@ -293,8 +293,8 @@ private theorem measurable_apply_dualBall [MeasurableSpace (WeakDual 𝕜 E)]
   have hev : Measurable fun q : S × dualBall 𝕜 E ↦ (q.2 : WeakDual 𝕜 E) (q.1 : E) :=
     measurable_uncurry_of_continuous_of_measurable
       (u := fun (x : S) (f : dualBall 𝕜 E) ↦ (f : WeakDual 𝕜 E) (x : E))
-      (fun f ↦ (WeakDual.toStrongDual (f : WeakDual 𝕜 E)).continuous.comp continuous_subtype_val)
-      (fun x ↦ ((WeakDual.eval_continuous (x : E)).comp continuous_subtype_val).measurable)
+      (fun f ↦ (WeakDual.toStrongDual (f : WeakDual 𝕜 E)).continuous.comp continuous_subtypeVal)
+      (fun x ↦ ((WeakDual.eval_continuous (x : E)).comp continuous_subtypeVal).measurable)
   exact hev.comp ((hX.measurable.subtype_mk (h := Set.mem_range_self)).prodMap measurable_id)
 
 /-- **Pietsch domination, integrated form.** If `πₚ(U) ≤ C` with `1 ≤ p < ∞`, then for every
@@ -321,7 +321,7 @@ theorem integral_norm_apply_rpow_le_of_summingENorm_le (hp : p ≠ ∞) {U : E �
   have hGle (ω : Ω) (f : dualBall 𝕜 E) : G ω f ≤ ‖X' ω‖ ^ p.toReal :=
     Real.rpow_le_rpow (norm_nonneg _)
       ((WeakDual.toStrongDual (f : WeakDual 𝕜 E)).le_of_opNorm_le
-        (mem_closedBall_zero_iff.1 f.2) _ |>.trans_eq (one_mul _)) hq.le
+        (mem_closedBall_zero_iff.1 f.property) _ |>.trans_eq (one_mul _)) hq.le
   have hGint : Integrable (Function.uncurry G) (μ.prod ν) := by
     refine Integrable.mono' (hX'int.comp_fst ν) hGm.aestronglyMeasurable (ae_of_all _ fun q ↦ ?_)
     exact (Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)).trans_le (hGle q.1 q.2)
@@ -342,7 +342,7 @@ theorem integral_norm_apply_rpow_le_of_summingENorm_le (hp : p ≠ ∞) {U : E �
             = ∫ ω, ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E) (X ω)‖ ^ p.toReal ∂μ :=
               integral_congr_ae (hXX'.mono fun ω h ↦ by
                 simp only [G, h, WeakDual.toStrongDual_apply])
-          _ ≤ M := hM _ (mem_closedBall_zero_iff.1 f.2)
+          _ ≤ M := hM _ (mem_closedBall_zero_iff.1 f.property)
     _ = C ^ p.toReal * M := by simp
 
 end Integral

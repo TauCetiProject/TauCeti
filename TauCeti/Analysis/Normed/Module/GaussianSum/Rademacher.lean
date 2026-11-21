@@ -225,7 +225,7 @@ private theorem gaussianSecondMoment_sq_le (h : HasGaussianCotype Y 2 C) (y : ι
   have htail : ∫ g, ‖U (highPart t g)‖ ^ 2 ∂γ ≤
       (C * gaussianSecondMoment y) ^ 2 * (3 / t ^ 2) := by
     simpa using U.integral_norm_apply_rpow_le_of_summingENorm_le (p := 2) (by simp)
-      (mul_nonneg C.2 (gaussianSecondMoment_nonneg y)) hπ (memLp_highPart t)
+      (mul_nonneg C.coe_nonneg (gaussianSecondMoment_nonneg y)) hπ (memLp_highPart t)
       (M := 3 / t ^ 2) fun f hf ↦ by simpa using integral_norm_apply_highPart_sq_le ht f hf
   have hsplit (g : EuclideanSpace ℝ ι) :
       ∑ i, g i • y i = ∑ i, lowPart t g i • y i + U (highPart t g) := by
@@ -303,7 +303,7 @@ theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype (U :
   refine (U.summingENorm_two_le_of_hasGaussianCotype b h).trans (ENNReal.ofReal_le_ofReal ?_)
   calc (C : ℝ) * gaussianSecondMoment (fun i ↦ U (b i))
       ≤ C * (4 * √3 * C * rademacherSecondMoment fun i ↦ U (b i)) :=
-        mul_le_mul_of_nonneg_left (h.gaussianSecondMoment_le _) C.2
+        mul_le_mul_of_nonneg_left (h.gaussianSecondMoment_le _) C.coe_nonneg
     _ = _ := by ring
 
 /-- **The cotype-`2` summing bound.** If `Y` has Rademacher cotype `2` with constant `C`, every
