@@ -30,6 +30,9 @@ respect to `e`: `c ‖d e v‖² ≤ ω(v, J v)` for a constant `c > 0`.
   density (`TauCeti.SmoothTwoForm.IsNondegenerate.norm_fderiv_comp_le`). Writing
   `a = ∂ₛu - X_{K_s}`, the Floer equation says `∂ₜu - X_{K_t} = J a`, and `ρ = ω(a, J a)` bounds
   both `c ‖d e a‖²` and `c ‖d e (J a)‖² ≤ ω(J a, J J a) = ρ`.
+* **Lipschitz bounds where the energy density is bounded.** On a convex set where the density is at
+  most `A`, the map `e ∘ u` is Lipschitz with constant `2 (√(A / c) + B)`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.lipschitzOnWith_comp_of_floerEnergyDensity_le`).
 * **Compactness where the energy density is bounded.** A sequence of solutions on an open set
   `Ω` of the domain with values in a compact set `K ⊆ M`, on which `e` is injective, and with
   energy densities bounded on every compact subset of `Ω`, has a subsequence converging locally
@@ -136,6 +139,29 @@ theorem IsNondegenerate.norm_fderiv_comp_le_of_floerEnergyDensity_le (hω : ω.I
     ‖fderiv ℝ (e ∘ u) z‖ ≤ 2 * (√(A / c) + B) :=
   (hω.norm_fderiv_comp_le hc he hu hJc hBs hBt h).trans (by gcongr)
 
+/-- **Where the energy density is bounded, solutions are Lipschitz through `e`.** Let `u` solve
+the Floer equation `(du - X_K)^{0,1} = 0` on a convex set `s ⊆ ℝ × ℝ`, for structures `J` uniformly
+tame with respect to `e : M → F`, `c ‖d e v‖² ≤ ω(v, J v)` with `c > 0`, and with the pushforwards
+`d e (X_{K_s})`, `d e (X_{K_t})` along `u` at most `B`. If the Floer energy density of `u` is at
+most `A` on `s`, then `e ∘ u` is Lipschitz on `s` with constant `2 (√(A / c) + B)`. -/
+theorem IsNondegenerate.lipschitzOnWith_comp_of_floerEnergyDensity_le (hω : ω.IsNondegenerate)
+    {s : Set (ℝ × ℝ)} (hs : Convex ℝ s) (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    {c A B : ℝ} (hc : 0 < c) (he : ∀ z ∈ s, MDifferentiableAt I 𝓘(ℝ, F) e (u z))
+    (hu : ∀ z ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
+    (hJc : ∀ z ∈ s, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hBs : ∀ z ∈ s, ‖mvfderiv I e (u z) (ω.hamiltonianVectorField (Ks z) (u z))‖ ≤ B)
+    (hBt : ∀ z ∈ s, ‖mvfderiv I e (u z) (ω.hamiltonianVectorField (Kt z) (u z))‖ ≤ B)
+    (hfloer : ∀ z ∈ s, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap)
+    (hρ : ∀ z ∈ s, ω.floerEnergyDensity Ks Kt u z ≤ A) :
+    LipschitzOnWith (2 * (√(A / c) + B)).toNNReal (e ∘ u) s := by
+  refine hs.lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ) (fun z hz ↦ ?_) (fun z hz ↦ ?_)
+  · exact mdifferentiableAt_iff_differentiableAt.1 ((he z hz).comp z (hu z hz))
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
+    exact (hω.norm_fderiv_comp_le_of_floerEnergyDensity_le hc (he z hz) (hu z hz) (hJc z hz)
+      (hBs z hz) (hBt z hz) (hfloer z hz) (hρ z hz)).trans (Real.le_coe_toNNReal _)
+
 /-- **Floer solutions in a manifold converge where their energy density is bounded.** Let `uₙ`
 solve the Floer equation `(du - X_{Kₙ})^{0,1} = 0` on an open set `Ω ⊆ ℝ × ℝ`, for perturbations
 `Kₙ = K_{s,n} ds + K_{t,n} dt` and structures `Jₙ`, with values in a compact set `K ⊆ M`. Let
@@ -224,15 +250,9 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp (hω : ω
   -- The energy density bounds the derivatives of the `e ∘ uₙ` on the discs, which are convex, so
   -- these maps are uniformly Lipschitz there.
   have hL (n : ℕ) : LipschitzOnWith (2 * (√(A / c) + B)).toNNReal (e ∘ u n)
-      (Metric.closedBall 0 (R n)) := by
-    refine (convex_closedBall 0 (R n)).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
-      (fun z hz ↦ ?_) (fun z hz ↦ ?_)
-    · exact mdifferentiableAt_iff_differentiableAt.1
-        ((he _ (huK n hz)).comp z (hu n z hz))
-    · rw [← NNReal.coe_le_coe, coe_nnNorm]
-      exact (hω.norm_fderiv_comp_le_of_floerEnergyDensity_le hc (he _ (huK n hz)) (hu n z hz)
-        (hJc n z hz) (hBs n z hz) (hBt n z hz) (hfloer n z hz) (hρ n z hz)).trans
-        (Real.le_coe_toNNReal _)
+      (Metric.closedBall 0 (R n)) :=
+    hω.lipschitzOnWith_comp_of_floerEnergyDensity_le (convex_closedBall 0 (R n)) (J n) hc
+      (fun z hz ↦ he _ (huK n hz)) (hu n) (hJc n) (hBs n) (hBt n) (hfloer n) (hρ n)
   -- Arzelà–Ascoli along the exhausting discs, for maps with values in the compact set `e(K)`.
   have hec : ContinuousOn e K := fun x hx ↦ (he x hx).continuousAt.continuousWithinAt
   have hKe : IsCompact (e '' K) := hK.image_of_continuousOn hec

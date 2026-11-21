@@ -35,6 +35,8 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
 * `TauCeti.Manifold.integral_mul_divergence`,
   `TauCeti.Manifold.integral_mul_divergence_of_hasCompactSupport_right`:
   `∫ f div X dV = -∫ df(X) dV` when `f` or `X` has compact support.
+* `TauCeti.Manifold.integral_mvfderiv_mul`: integration by parts along a vector field,
+  `∫ df(X) g dV = -∫ f (dg(X) + (div X) g) dV` when `f` or `g` has compact support.
 * `TauCeti.Manifold.integral_mul_laplaceBeltrami`: Green's first identity
   `∫ f Δg dV = -∫ ⟪grad f, grad g⟫ dV`.
 * `TauCeti.Manifold.integral_mul_laplaceBeltrami_right_eq_left`: Green's second identity
@@ -296,6 +298,34 @@ theorem integral_mul_divergence_of_hasCompactSupport_right {f : M → ℝ}
     ((hf.continuous.mul (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num)
       (by norm_num) (by simpa using hX)).continuous).integrable_of_hasCompactSupport
       (hXc.divergence I).mul_left)
+
+/-- **Integration by parts along a vector field**: for `C¹` functions `f` and `g`, one of which
+has compact support, and a `C¹` vector field `X` on a manifold without boundary,
+`∫ df(X) g dV = -∫ f (dg(X) + (div X) g) dV`. Thus the formal transpose of differentiation along
+`X` is `g ↦ -dg(X) - (div X) g`. -/
+theorem integral_mvfderiv_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hg : ContMDiff I 𝓘(ℝ) 1 g) (hX : ContMDiff I I.tangent 1 (T% X))
+    (hfg : HasCompactSupport f ∨ HasCompactSupport g) :
+    ∫ x, mvfderiv I f x (X x) * g x ∂riemannianVolume I M =
+      -∫ x, f x * (mvfderiv I g x (X x) + divergence I X x * g x) ∂riemannianVolume I M := by
+  have hgX : ContMDiff I I.tangent 1 (T% (fun x ↦ g x • X x)) := hg.smul_section hX
+  have h : ∫ x, f x * divergence I (fun x ↦ g x • X x) x ∂riemannianVolume I M =
+      -∫ x, mvfderiv I f x (g x • X x) ∂riemannianVolume I M := by
+    rcases hfg with hfc | hgc
+    · exact integral_mul_divergence hf hfc hgX
+    · exact integral_mul_divergence_of_hasCompactSupport_right hf hgX
+        (hgc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
+  have hpt (x : M) : f x * divergence I (fun x ↦ g x • X x) x =
+      f x * (mvfderiv I g x (X x) + divergence I X x * g x) := by
+    have hdiv : divergence I (fun x ↦ g x • X x) x =
+        g x * divergence I X x + mvfderiv I g x (X x) :=
+      divergence_smul_function I g X x ((hg x).mdifferentiableAt one_ne_zero)
+        ((hX x).mdifferentiableAt one_ne_zero)
+    rw [hdiv]
+    ring
+  simp_rw [hpt, map_smul, smul_eq_mul] at h
+  rw [h, neg_neg]
+  simp_rw [mul_comm (g _)]
 
 /-- The Laplace--Beltrami operator of a compactly supported `C²` function on a manifold
 without boundary has integral zero against the Riemannian volume. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
 
 /-!
 # The cubical and singular Hurewicz maps in degree one
