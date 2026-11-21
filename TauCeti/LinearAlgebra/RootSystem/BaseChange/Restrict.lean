@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced
-public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectionPerm
 
 /-!
@@ -25,9 +25,10 @@ central in applications:
 * `K = ℚ` (or `ℝ` inside `ℂ`) for crystallographic pairings (`RootPairing.restrictScalars`), which
   simultaneously passes to the root span and descends the scalar field.
 
-This file transports the structural, combinatorial, and geometric invariants of `P` to
-`P.restrictScalars' K`, and connects `P.restrictScalars' L` back to the ambient weight space via the
-root-span projection `P.rootSpanProj` from `TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced`.
+This file transports the morphisms, automorphisms, Weyl group, bases, Cartan matrices, root
+heights, and positive/negative root sets of `P` to `P.restrictScalars' K`, and connects
+`P.restrictScalars' L` back to the ambient weight space via the root-span projection
+`P.rootSpanProj` from `TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced`.
 
 ## Main definitions
 
@@ -50,21 +51,8 @@ root-span projection `P.rootSpanProj` from `TauCeti.LinearAlgebra.RootSystem.Bas
   `RootPairing.Base.height_restrictScalars'`, `RootPairing.Base.isPos_restrictScalars'_iff`, and
   `RootPairing.posRoots_restrictScalars'`: the Cartan matrix, root heights, and positive roots of
   `b.restrictScalars' K` agree with those of `b`.
-* `RootPairing.Base.mem_basedAut_restrictScalars'_iff`: an automorphism of `P` is based for `b` if
-  and only if its restriction to `P.restrictScalars' K` is based for `b.restrictScalars' K`.
-* `RootPairing.mem_posRootCone_restrictScalars'_iff` and `RootPairing.rootLE_restrictScalars'_iff`:
-  the positive root cone and integral root dominance in `P.restrictScalars' K` are the restrictions
-  of those of `P`.
-* `RootPairing.isRegularWeight_restrictScalars'_iff`,
-  `RootPairing.mem_dominantChamber_restrictScalars'_iff_of_nonneg_iff`, and
-  `RootPairing.mem_openDominantChamber_restrictScalars'_iff_of_pos_iff`: regularity and chamber
-  membership on `span K (range P.root)` agree with those in `P`.
-* `RootPairing.orbitIndices_restrictScalars'` and `RootPairing.coe_orbitSum_restrictScalars'`:
-  root orbits and root-orbit sums under a restricted automorphism agree with those in `P`.
-* `RootPairing.restrictScalars'_self_smul_rootSpanProj`,
-  `RootPairing.rootLE_restrictScalars'_self_rootSpanProj_of_rootLE`, and
-  `RootPairing.rootLE_restrictScalars'_self_rootSpanProj_iff_of_sub_mem`: compatibility of
-  `P.restrictScalars' L` with the ambient projection `P.rootSpanProj`.
+* `RootPairing.restrictScalars'_self_smul_rootSpanProj`: compatibility of `P.restrictScalars' L`
+  with the ambient projection `P.rootSpanProj`.
 
 ## References
 
@@ -582,13 +570,6 @@ theorem negRootsFinset_restrictScalars' [Finite ι] [CharZero K] [CharZero L] :
   ext i
   simp only [mem_negRootsFinset, negRoots_restrictScalars']
 
-/-- An automorphism of `P` is based for `b` if and only if its restriction to
-`P.restrictScalars' K` is based for `b.restrictScalars' K`. -/
-theorem Base.mem_basedAut_restrictScalars'_iff {g : P.Aut} :
-    Equiv.restrictScalars'Hom P K g ∈ (b.restrictScalars' K).basedAut ↔ g ∈ b.basedAut := by
-  simp only [Base.mem_basedAut_iff, Base.support_restrictScalars',
-    Equiv.restrictScalars'Hom_apply, Equiv.indexEquiv_restrictScalars']
-
 end Valued
 
 /-- Restriction of a base for a crystallographic balanced root pairing. -/
@@ -598,131 +579,5 @@ noncomputable abbrev Base.restrictScalars [P.IsCrystallographic] (b : P.Base) :
   b.restrictScalars' K
 
 end Base
-
-section ConeAndChamber
-
-variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
-  (P : RootPairing ι L M N) (K : Type*) [Field K] [Algebra K L]
-  [Module K M] [Module K N] [IsScalarTower K L M] [IsScalarTower K L N]
-  [P.IsBalanced] [P.IsValuedIn K]
-
-/-- Membership in the positive root cone of `P.restrictScalars' K` agrees with membership in that
-of `P`. -/
-@[simp]
-theorem mem_posRootCone_restrictScalars'_iff (b : P.Base) (x : span K (range P.root)) :
-    x ∈ posRootCone (P.restrictScalars' K) (b.restrictScalars' K) ↔
-      (x : M) ∈ posRootCone P b := by
-  simp only [mem_posRootCone, Base.support_restrictScalars', Subtype.ext_iff,
-    Submodule.coe_sum, AddSubmonoidClass.coe_nsmul, restrictScalars_coe_root]
-
-/-- Integral root dominance in `P.restrictScalars' K` agrees with integral root dominance in `P`. -/
-@[simp]
-theorem rootLE_restrictScalars'_iff (b : P.Base) (x y : span K (range P.root)) :
-    (P.restrictScalars' K).rootLE (b.restrictScalars' K) x y ↔
-      P.rootLE b (x : M) (y : M) := by
-  rw [rootLE_iff_sub_mem_posRootCone, rootLE_iff_sub_mem_posRootCone,
-    mem_posRootCone_restrictScalars'_iff, Submodule.coe_sub]
-
-/-- Weight regularity in `P.restrictScalars' K` agrees with weight regularity in `P`. -/
-@[simp]
-theorem isRegularWeight_restrictScalars'_iff (x : span K (range P.root)) :
-    (P.restrictScalars' K).IsRegularWeight x ↔ P.IsRegularWeight (x : M) := by
-  simp only [isRegularWeight_iff, ← P.algebraMap_restrictScalars'_coroot'_apply K, ne_eq,
-    FaithfulSMul.algebraMap_eq_zero_iff]
-
-/-- When `algebraMap K L` preserves and reflects nonnegativity (for example when `K` and `L` are
-linearly ordered fields and `algebraMap K L` is order-preserving, or when `K = L`), membership in
-the closed dominant chamber of `P.restrictScalars' K` agrees with that in `P`. -/
-theorem mem_dominantChamber_restrictScalars'_iff_of_nonneg_iff [Preorder K] [Preorder L]
-    (h : ∀ a : K, 0 ≤ algebraMap K L a ↔ 0 ≤ a) (b : P.Base) (x : span K (range P.root)) :
-    x ∈ dominantChamber (P.restrictScalars' K) (b.restrictScalars' K) ↔
-      (x : M) ∈ dominantChamber P b := by
-  simp only [mem_dominantChamber, Base.support_restrictScalars',
-    ← P.algebraMap_restrictScalars'_coroot'_apply K, h]
-
-/-- When `algebraMap K L` preserves and reflects strict positivity, membership in the open dominant
-chamber of `P.restrictScalars' K` agrees with that in `P`. -/
-theorem mem_openDominantChamber_restrictScalars'_iff_of_pos_iff [Preorder K] [Preorder L]
-    (h : ∀ a : K, 0 < algebraMap K L a ↔ 0 < a) (b : P.Base) (x : span K (range P.root)) :
-    x ∈ openDominantChamber (P.restrictScalars' K) (b.restrictScalars' K) ↔
-      (x : M) ∈ openDominantChamber P b := by
-  simp only [mem_openDominantChamber, Base.support_restrictScalars',
-    ← P.algebraMap_restrictScalars'_coroot'_apply K, h]
-
-end ConeAndChamber
-
-section SelfChamber
-
-variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
-  (P : RootPairing ι L M N) [P.IsBalanced] (b : P.Base)
-
-/-- Membership in the closed dominant chamber of `P.restrictScalars' L` agrees with that in `P`. -/
-theorem mem_dominantChamber_restrictScalars'_self_iff [Preorder L] (x : span L (range P.root)) :
-    x ∈ dominantChamber (P.restrictScalars' L) (b.restrictScalars' L) ↔
-      (x : M) ∈ dominantChamber P b :=
-  P.mem_dominantChamber_restrictScalars'_iff_of_nonneg_iff L (fun _ ↦ Iff.rfl) b x
-
-/-- Membership in the open dominant chamber of `P.restrictScalars' L` agrees with that in `P`. -/
-theorem mem_openDominantChamber_restrictScalars'_self_iff [Preorder L]
-    (x : span L (range P.root)) :
-    x ∈ openDominantChamber (P.restrictScalars' L) (b.restrictScalars' L) ↔
-      (x : M) ∈ openDominantChamber P b :=
-  P.mem_openDominantChamber_restrictScalars'_iff_of_pos_iff L (fun _ ↦ Iff.rfl) b x
-
-/-- Integral root dominance in `P` implies integral root dominance of the root-span projections in
-`P.restrictScalars' L`. -/
-theorem rootLE_restrictScalars'_self_rootSpanProj_of_rootLE {x y : M} (h : P.rootLE b x y) :
-    (P.restrictScalars' L).rootLE (b.restrictScalars' L) (P.rootSpanProj x) (P.rootSpanProj y) :=
-  (P.rootLE_restrictScalars'_iff L b _ _).mpr (P.rootLE_coe_rootSpanProj_of_rootLE b h)
-
-/-- For weights with the same central component (`y - x ∈ P.rootSpan L`), integral root dominance
-of their projections in `P.restrictScalars' L` is equivalent to integral root dominance in `P`. -/
-theorem rootLE_restrictScalars'_self_rootSpanProj_iff_of_sub_mem {x y : M}
-    (h : y - x ∈ P.rootSpan L) :
-    (P.restrictScalars' L).rootLE (b.restrictScalars' L) (P.rootSpanProj x) (P.rootSpanProj y) ↔
-      P.rootLE b x y :=
-  (P.rootLE_restrictScalars'_iff L b _ _).trans (P.rootLE_coe_rootSpanProj_iff_of_sub_mem b h)
-
-end SelfChamber
-
-section OrbitSum
-
-variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
-  (P : RootPairing ι L M N) [Finite ι] (K : Type*) [Field K] [Algebra K L]
-  [Module K M] [Module K N] [IsScalarTower K L M] [IsScalarTower K L N]
-  [P.IsBalanced] [P.IsValuedIn K] (σ : P.Aut)
-
-/-- Root orbits under a restricted automorphism in `P.restrictScalars' K` coincide with those in
-`P`. -/
-@[simp]
-theorem orbitIndices_restrictScalars' (i : ι) :
-    (P.restrictScalars' K).orbitIndices (σ.restrictScalars' K) i =
-      P.orbitIndices σ i := by
-  ext j
-  rw [mem_orbitIndices, mem_orbitIndices]
-  rfl
-
-/-- Each root-orbit sum in `P.restrictScalars' K` coerces to the corresponding root-orbit sum in
-`P`. -/
-@[simp]
-theorem coe_orbitSum_restrictScalars' (i : ι) :
-    ((P.restrictScalars' K).orbitSum (σ.restrictScalars' K) i : M) =
-      P.orbitSum σ i := by
-  simp only [orbitSum_def, orbitIndices_restrictScalars', Submodule.coe_sum,
-    restrictScalars_coe_root]
-
-/-- The set of folded root-orbit sums in `P.restrictScalars' K` maps under coercion onto
-`P.foldedIndices σ`. -/
-@[simp]
-theorem image_subtype_foldedIndices_restrictScalars' :
-    Subtype.val '' (P.restrictScalars' K).foldedIndices (σ.restrictScalars' K) =
-      P.foldedIndices σ := by
-  ext x
-  simp only [mem_image, mem_foldedIndices]
-  refine ⟨?_, fun ⟨i, hi⟩ ↦ ⟨_, ⟨i, rfl⟩, (P.coe_orbitSum_restrictScalars' K σ i).trans hi⟩⟩
-  rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-  exact ⟨i, (P.coe_orbitSum_restrictScalars' K σ i).symm⟩
-
-end OrbitSum
 
 end RootPairing

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
@@ -74,6 +75,8 @@ preserving the Cartan matrix extends uniquely to a based automorphism
 * `RootPairing.Base.map_semidirectProductMulEquiv` and
   `RootPairing.Base.map_semidirectProductMulEquiv_symm_left`: the Weyl factor of an automorphism
   `g` is the Weyl-group element carrying `b` to `b.map g`.
+* `RootPairing.Base.mem_basedAut_restrictScalars'_iff`: an automorphism is based if and only if
+  its scalar restriction is based.
 
 ## References
 
@@ -288,5 +291,25 @@ it is the unique Weyl-group element doing so. -/
 theorem map_semidirectProductMulEquiv_symm_left (b : P.Base) (g : P.Aut) :
     b.map ((b.semidirectProductMulEquiv.symm g).left : P.Aut) = b.map g := by
   rw [← map_semidirectProductMulEquiv, MulEquiv.apply_symm_apply]
+
+end RootPairing.Base
+
+namespace RootPairing.Base
+
+section RestrictScalars
+
+variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
+  {P : RootPairing ι L M N} (K : Type*) [Field K] [Algebra K L]
+  [Module K M] [Module K N] [IsScalarTower K L M] [IsScalarTower K L N]
+  [P.IsBalanced] [P.IsValuedIn K] (b : P.Base)
+
+/-- An automorphism of `P` is based for `b` if and only if its restriction to
+`P.restrictScalars' K` is based for `b.restrictScalars' K`. -/
+theorem mem_basedAut_restrictScalars'_iff {g : P.Aut} :
+    Equiv.restrictScalars'Hom P K g ∈ (b.restrictScalars' K).basedAut ↔ g ∈ b.basedAut := by
+  simp only [Base.mem_basedAut_iff, Base.support_restrictScalars',
+    Equiv.restrictScalars'Hom_apply, Equiv.indexEquiv_restrictScalars']
+
+end RestrictScalars
 
 end RootPairing.Base

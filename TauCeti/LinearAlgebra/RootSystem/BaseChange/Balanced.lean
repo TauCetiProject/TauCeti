@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.RootSystem.BaseChange
-public import TauCeti.LinearAlgebra.RootSystem.Chamber
-public import TauCeti.LinearAlgebra.RootSystem.Dominance
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.LinearAlgebra.Dimension.Finrank
 
@@ -34,32 +33,22 @@ its own root) while fixing `P.corootKer` pointwise, forcing `Disjoint (P.rootSpa
 When `P` is balanced, the direct-sum decomposition `M = P.rootSpan R ⊕ P.corootKer` yields a linear
 projection `P.rootSpanProj : M →ₗ[R] P.rootSpan R` along `P.corootKer`. Subtracting
 `P.rootSpanProj x` from `x` changes `x` only by an element of `P.corootKer`, so `P.rootSpanProj`
-preserves every coroot evaluation, commutes with root reflections and with equivalences of balanced
-root pairings, and preserves and reflects regularity and membership in the closed and open dominant
-chambers. It also preserves integral root dominance `P.rootLE b`, and reflects it whenever the two
-weights have the same central component (`y - x ∈ P.rootSpan R`).
+preserves every coroot evaluation and commutes with root reflections and with equivalences of
+balanced root pairings.
 
 ## Main definitions
 
-* `RootPairing.corootKer`: the common kernel `⨅ i, LinearMap.ker (P.coroot' i)` of the coroot
-  functionals.
 * `RootPairing.rootSpanProj`: the linear projection `M →ₗ[R] P.rootSpan R` along `P.corootKer` for
   a balanced root pairing.
 
 ## Main results
 
-* `RootPairing.Base.iInf_ker_coroot'_support_eq_corootKer`: for any base `b`, the common kernel of
-  the simple coroot functionals already equals `P.corootKer`.
 * `RootPairing.isCompl_rootSpan_corootKer` and `RootPairing.isBalanced_iff_isCompl`: a root pairing
   is balanced if and only if `P.rootSpan R` complements `P.corootKer` and `P.corootSpan R`
   complements `P.flip.corootKer`.
 * `RootPairing.disjoint_rootSpan_corootKer` and `RootPairing.instIsBalancedOfCharZero`: every
   finite root pairing over a field of characteristic zero is balanced.
-* `RootPairing.coroot'_coe_rootSpanProj`: `P.rootSpanProj` preserves all coroot evaluations, hence
-  regularity and membership in the closed and open dominant chambers.
-* `RootPairing.rootLE_coe_rootSpanProj_of_rootLE` and
-  `RootPairing.rootLE_coe_rootSpanProj_iff_of_sub_mem`: `P.rootSpanProj` preserves integral root
-  dominance, and reflects it on pairs whose difference lies in `P.rootSpan R`.
+* `RootPairing.coroot'_coe_rootSpanProj`: `P.rootSpanProj` preserves all coroot evaluations.
 * `RootPairing.weylGroupToPerm_injective_of_isBalanced`: in a balanced root pairing, the Weyl group
   acts faithfully on root indices.
 * `RootPairing.Equiv.coe_rootSpanProj_weightMap`: equivalences of balanced root pairings commute
@@ -73,64 +62,9 @@ weights have the same central component (`y - x ∈ P.rootSpan R`).
 
 public section
 
-open Function Module Set Submodule TauCeti
+open Function Module Set Submodule
 
 namespace RootPairing
-
-section CorootKer
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
-
-/-- The **central kernel** of a root pairing: the common kernel of all coroot functionals
-`P.coroot' i`. Under the perfect pairing between `M` and `N`, this is the dual annihilator of the
-coroot span (`RootPairing.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot'`). -/
-def corootKer : Submodule R M :=
-  ⨅ i, LinearMap.ker (P.coroot' i)
-
-/-- The defining equation of `RootPairing.corootKer` as an infimum of kernels. -/
-theorem corootKer_def : P.corootKer = ⨅ i, LinearMap.ker (P.coroot' i) :=
-  (rfl)
-
-variable {P} in
-/-- Membership in the central kernel means vanishing under every coroot functional. -/
-@[simp]
-theorem mem_corootKer {x : M} : x ∈ P.corootKer ↔ ∀ i, P.coroot' i x = 0 := by
-  simp [corootKer_def]
-
-/-- For any base `b`, the common kernel of the *simple* coroot functionals equals `P.corootKer`. -/
-theorem Base.iInf_ker_coroot'_support_eq_corootKer {P : RootPairing ι R M N} (b : P.Base) :
-    (⨅ i ∈ b.support, LinearMap.ker (P.coroot' i)) = P.corootKer := by
-  ext x
-  simp only [Submodule.mem_iInf, LinearMap.mem_ker, mem_corootKer]
-  exact ⟨fun hx ↦ P.coroot'_eq_zero_of_forall_mem_support b hx, fun hx i _ ↦ hx i⟩
-
-/-- The central kernel of a root system is trivial. -/
-@[simp]
-theorem corootKer_eq_bot [P.IsRootSystem] : P.corootKer = ⊥ := by
-  rw [corootKer_def, ← P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot']
-  simp [corootSpan]
-
-variable {P}
-
-/-- Every root reflection fixes `P.corootKer` pointwise. -/
-theorem reflection_apply_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer) (i : ι) :
-    P.reflection i x = x := by
-  rw [reflection_apply, mem_corootKer.mp hx i, zero_smul, sub_zero]
-
-/-- The Weyl group fixes `P.corootKer` pointwise. -/
-theorem weylGroup_smul_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer) (w : P.weylGroup) :
-    w • x = x := by
-  obtain ⟨g, hg⟩ := w
-  induction hg using weylGroup.induction with
-  | mem i =>
-    rw [Subgroup.mk_smul, Equiv.reflection_smul, reflection_apply_of_mem_corootKer hx]
-  | one => exact one_smul _ x
-  | mul g₁ g₂ _ _ h₁ h₂ =>
-    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
-    rw [mul_smul, h₂, h₁]
-
-end CorootKer
 
 section IsBalanced
 
@@ -155,6 +89,7 @@ theorem isBalanced_iff_isCompl :
       IsCompl (P.rootSpan R) P.corootKer ∧ IsCompl (P.corootSpan R) P.flip.corootKer := by
   refine ⟨fun _ ↦ ⟨P.isCompl_rootSpan_corootKer, P.flip.isCompl_rootSpan_corootKer⟩, ?_⟩
   rintro ⟨h₁, h₂⟩
+  rw [corootKer_def] at h₁ h₂
   refine ⟨⟨?_, ?_⟩⟩
   · exact P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot'.symm ▸ h₁
   · exact P.rootSpan_dualAnnihilator_map_eq_iInf_ker_root'.symm ▸ h₂
@@ -348,24 +283,6 @@ theorem coe_rootSpanProj_reflection (i : ι) (x : M) :
   rw [reflection_apply, map_sub, map_smul, Submodule.coe_sub, SetLike.val_smul,
     rootSpanProj_root, reflection_apply, coroot'_coe_rootSpanProj]
 
-/-- Projecting onto the root span preserves and reflects weight regularity. -/
-@[simp]
-theorem isRegularWeight_coe_rootSpanProj_iff (x : M) :
-    P.IsRegularWeight (P.rootSpanProj x : M) ↔ P.IsRegularWeight x := by
-  simp only [isRegularWeight_iff, coroot'_coe_rootSpanProj]
-
-/-- Projecting onto the root span preserves and reflects membership in the closed dominant
-chamber. -/
-theorem coe_rootSpanProj_mem_dominantChamber_iff [Preorder R] (b : P.Base) (x : M) :
-    (P.rootSpanProj x : M) ∈ dominantChamber P b ↔ x ∈ dominantChamber P b := by
-  simp only [mem_dominantChamber, coroot'_coe_rootSpanProj]
-
-/-- Projecting onto the root span preserves and reflects membership in the open dominant
-chamber. -/
-theorem coe_rootSpanProj_mem_openDominantChamber_iff [Preorder R] (b : P.Base) (x : M) :
-    (P.rootSpanProj x : M) ∈ openDominantChamber P b ↔ x ∈ openDominantChamber P b := by
-  simp only [mem_openDominantChamber, coroot'_coe_rootSpanProj]
-
 /-- When two weights differ by an element of the root span, projecting onto the root span
 preserves their difference. -/
 theorem coe_rootSpanProj_sub_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
@@ -380,22 +297,6 @@ theorem rootSpanProj_eq_iff_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
   have hsub := P.coe_rootSpanProj_sub_of_sub_mem h
   rw [heq, sub_self, ZeroMemClass.coe_zero] at hsub
   exact (sub_eq_zero.mp hsub.symm).symm
-
-/-- Projecting onto the root span preserves integral root dominance. -/
-theorem rootLE_coe_rootSpanProj_of_rootLE (b : P.Base) {x y : M} (h : P.rootLE b x y) :
-    P.rootLE b (P.rootSpanProj x : M) (P.rootSpanProj y : M) := by
-  have hmem := P.sub_mem_rootSpan_of_rootLE b h
-  rw [rootLE_iff_sub_mem_posRootCone] at h ⊢
-  simpa only [← Submodule.coe_sub, P.coe_rootSpanProj_sub_of_sub_mem hmem] using h
-
-/-- For weights whose difference lies in the root span (that is, weights with the same central
-component), integral root dominance after projecting onto the root span is equivalent to integral
-root dominance of the original weights. -/
-theorem rootLE_coe_rootSpanProj_iff_of_sub_mem (b : P.Base) {x y : M}
-    (h : y - x ∈ P.rootSpan R) :
-    P.rootLE b (P.rootSpanProj x : M) (P.rootSpanProj y : M) ↔ P.rootLE b x y := by
-  rw [rootLE_iff_sub_mem_posRootCone, rootLE_iff_sub_mem_posRootCone, ← Submodule.coe_sub,
-    P.coe_rootSpanProj_sub_of_sub_mem h]
 
 /-- In a balanced root pairing, the permutation action of the Weyl group on root indices is
 faithful. -/
@@ -418,29 +319,6 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
-
-/-- An equivalence of root pairings preserves and reflects membership in the central kernel. -/
-theorem Equiv.weightMap_mem_corootKer_iff (e : P.Equiv Q) {x : M} :
-    e.weightMap x ∈ Q.corootKer ↔ x ∈ P.corootKer := by
-  simp only [mem_corootKer, ← e.weightEquiv_apply]
-  refine ⟨fun h i ↦ ?_, fun h j ↦ ?_⟩
-  · rw [← e.coroot'_weightEquiv i x]
-    exact h (e.indexEquiv i)
-  · obtain ⟨i, rfl⟩ := e.indexEquiv.surjective j
-    rw [e.coroot'_weightEquiv i x]
-    exact h i
-
-/-- An equivalence of root pairings maps the source central kernel onto the target central
-kernel. -/
-theorem Equiv.map_corootKer (e : P.Equiv Q) :
-    P.corootKer.map e.weightMap = Q.corootKer := by
-  ext y
-  simp only [Submodule.mem_map]
-  refine ⟨?_, fun hy ↦ ⟨e.weightEquiv.symm y, ?_, e.weightMap_weightEquiv_symm y⟩⟩
-  · rintro ⟨x, hx, rfl⟩
-    exact e.weightMap_mem_corootKer_iff.mpr hx
-  · rw [← e.weightMap_mem_corootKer_iff, e.weightMap_weightEquiv_symm]
-    exact hy
 
 /-- **Equivalences of balanced root pairings commute with `rootSpanProj`.** -/
 theorem Equiv.coe_rootSpanProj_weightMap [P.IsBalanced] [Q.IsBalanced] (e : P.Equiv Q) (x : M) :

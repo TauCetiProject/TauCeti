@@ -33,6 +33,7 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.smul_eq_self_of_mem_ker_indexHom` and
   `RootPairing.smul_eq_self_of_mem_ker_weylGroupToPerm` say an automorphism (in particular, a
   Weyl-group element) fixing every root index fixes the root span pointwise.
+* `RootPairing.weylGroup_smul_of_mem_corootKer` says the Weyl group fixes `P.corootKer` pointwise.
 * `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
@@ -204,6 +205,19 @@ theorem smul_eq_self_of_mem_ker_weylGroupToPerm {k : P.weylGroup}
     (hk : k ∈ P.weylGroupToPerm.ker) {x : M} (hx : x ∈ P.rootSpan R) :
     k • x = x :=
   P.smul_eq_self_of_mem_ker_indexHom hk hx
+
+variable {P} in
+/-- The Weyl group fixes `P.corootKer` pointwise. -/
+theorem weylGroup_smul_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer) (w : P.weylGroup) :
+    w • x = x := by
+  obtain ⟨g, hg⟩ := w
+  induction hg using weylGroup.induction with
+  | mem i =>
+    rw [Subgroup.mk_smul, Equiv.reflection_smul, reflection_apply_of_mem_corootKer hx]
+  | one => exact one_smul _ x
+  | mul g₁ g₂ _ _ h₁ h₂ =>
+    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
+    rw [mul_smul, h₂, h₁]
 
 /-- The Weyl-group permutation is the root-index equivalence of the underlying automorphism.
 Use this explicitly: `MonoidHom.domRestrict_apply` already simplifies its left-hand side. -/

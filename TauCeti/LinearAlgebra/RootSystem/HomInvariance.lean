@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.RootSystem.Basic
 
 import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
@@ -37,6 +38,8 @@ weight-space vectors.
 * `RootPairing.Hom.weightMap_mem_rootSpan` and `RootPairing.Hom.coweightMap_mem_corootSpan`:
   the weight map carries the `S`-span of roots into that of the target, and the coweight map
   carries the `S`-span of target coroots into that of the source.
+* `RootPairing.Equiv.weightMap_mem_corootKer_iff` and `RootPairing.Equiv.map_corootKer`:
+  an equivalence of root pairings maps the central kernel onto the target central kernel.
 * `RootPairing.Hom.isValuedIn`: the target root pairing takes values in any coefficient ring in
   which the source root pairing takes values.
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
@@ -189,5 +192,32 @@ theorem chainBotCoeff_indexEquiv (i j : ι) :
 end Chain
 
 end Hom
+
+section Equiv
+
+/-- An equivalence of root pairings preserves and reflects membership in the central kernel. -/
+theorem Equiv.weightMap_mem_corootKer_iff (e : P.Equiv P₂) {x : M} :
+    e.weightMap x ∈ P₂.corootKer ↔ x ∈ P.corootKer := by
+  simp only [mem_corootKer, ← e.weightEquiv_apply]
+  refine ⟨fun h i ↦ ?_, fun h j ↦ ?_⟩
+  · rw [← e.coroot'_weightEquiv i x]
+    exact h (e.indexEquiv i)
+  · obtain ⟨i, rfl⟩ := e.indexEquiv.surjective j
+    rw [e.coroot'_weightEquiv i x]
+    exact h i
+
+/-- An equivalence of root pairings maps the source central kernel onto the target central
+kernel. -/
+theorem Equiv.map_corootKer (e : P.Equiv P₂) :
+    P.corootKer.map e.weightMap = P₂.corootKer := by
+  ext y
+  simp only [Submodule.mem_map]
+  refine ⟨?_, fun hy ↦ ⟨e.weightEquiv.symm y, ?_, e.weightMap_weightEquiv_symm y⟩⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact e.weightMap_mem_corootKer_iff.mpr hx
+  · rw [← e.weightMap_mem_corootKer_iff, e.weightMap_weightEquiv_symm]
+    exact hy
+
+end Equiv
 
 end RootPairing
