@@ -392,20 +392,12 @@ theorem rightTranslation_apply (a : A) (f : AddUCB A) (x : A) :
     (rightTranslation a f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (x + a) :=
   DFunLike.congr_fun (coe_rightTranslation a f) x
 
-/-- The inverse of `R_a` is precomposition with `x ↦ x + (-a)`. -/
-theorem coe_rightTranslation_symm (a : A) (f : AddUCB A) :
-    ((rightTranslation a).symm f : A →ᵇ ℝ) =
-      (f : A →ᵇ ℝ).compContinuous (ContinuousMap.addRight (-a)) :=
-  BoundedContinuousFunction.compContinuousₗᵢ_symm_apply ..
-
-theorem rightTranslation_symm_apply (a : A) (f : AddUCB A) (x : A) :
-    ((rightTranslation a).symm f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (x + -a) :=
-  DFunLike.congr_fun (coe_rightTranslation_symm a f) x
-
 @[simp]
 theorem rightTranslation_symm (a : A) : (rightTranslation a).symm = rightTranslation (-a) := by
-  ext
-  simp [rightTranslation_symm_apply]
+  ext f x
+  rw [rightTranslation_apply]
+  exact DFunLike.congr_fun (BoundedContinuousFunction.compContinuousₗᵢ_symm_apply
+    (addUcb A) (ContinuousMap.addRight a) (ContinuousMap.addRight (-a)) _ _ _ _ f) x
 
 @[simp]
 theorem rightTranslation_zero :

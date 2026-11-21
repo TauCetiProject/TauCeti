@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Mean
 public import TauCeti.Topology.Algebra.Group.UCB.CompRight
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Amenable topological groups
@@ -208,8 +209,10 @@ theorem Amenable.of_denseRange [Amenable G] (φ : G →ₜ* H) (hφ : DenseRange
 
 /-- Every quotient of an amenable topological group by a normal subgroup is amenable. -/
 instance Amenable.quotient [Amenable G] (N : Subgroup G) [N.Normal] : Amenable (G ⧸ N) :=
-  .of_denseRange ⟨QuotientGroup.mk' N, continuous_quot_mk⟩
-    (QuotientGroup.mk'_surjective N).denseRange
+  .of_denseRange (Subgroup.quotientMkContinuousMonoidHom N) <|
+    Function.Surjective.denseRange <| by
+      simpa only [Function.Surjective, Subgroup.quotientMkContinuousMonoidHom_apply,
+        QuotientGroup.mk'_apply] using QuotientGroup.mk'_surjective N
 
 omit [TopologicalSpace G] [IsTopologicalGroup G] in
 /-- Amenability passes from a finer group topology to a coarser group topology. -/

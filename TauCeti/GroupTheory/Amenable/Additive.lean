@@ -315,8 +315,7 @@ attribute [to_additive existing] Amenable.of_ker_le_range
 theorem addAmenable_iff_addSubgroup_quotient (N : AddSubgroup A) [N.Normal] :
     AddAmenable A ↔ AddAmenable N ∧ AddAmenable (A ⧸ N) := by
   have := QuotientAddGroup.discreteTopology (isOpen_discrete (N : Set A))
-  exact ⟨fun _ => ⟨inferInstance,
-      .of_surjective (QuotientAddGroup.mk' N) (QuotientAddGroup.mk'_surjective N)⟩,
+  exact ⟨fun _ => ⟨inferInstance, inferInstance⟩,
     fun ⟨_, _⟩ => .of_ker_le_range N.subtype (QuotientAddGroup.mk' N) (by simp)⟩
 
 attribute [to_additive existing addAmenable_iff_addSubgroup_quotient] amenable_iff_subgroup_quotient
