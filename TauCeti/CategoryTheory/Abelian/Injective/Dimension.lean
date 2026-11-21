@@ -11,24 +11,28 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 /-!
 # Global symmetry of projective and injective dimension bounds
 
-In an abelian category `C`, both `HasProjectiveDimensionLT X n` and `HasInjectiveDimensionLT Y n`
-express the vanishing of `Abelian.Ext X Y i` for all `n ≤ i`. Quantifying universally over all
-objects of `C` therefore identifies uniform bounds on projective and injective dimension.
+In an abelian category `C`, `HasProjectiveDimensionLT X n` fixes `X` and expresses the vanishing
+of `Abelian.Ext X Y i` for every `Y` and `n ≤ i`, while `HasInjectiveDimensionLT Y n` fixes `Y`
+and expresses the vanishing of `Abelian.Ext X Y i` for every `X` and `n ≤ i`. Quantifying
+universally over all objects of `C` therefore identifies uniform bounds on projective and
+injective dimension.
 
 ## Main results
 
-* `CategoryTheory.hasInjectiveDimensionLE_of_forall_hasProjectiveDimensionLE` and
-  `CategoryTheory.hasProjectiveDimensionLE_of_forall_hasInjectiveDimensionLE`: a uniform
-  projective (resp. injective) dimension bound on all objects implies the same injective
-  (resp. projective) dimension bound.
-* `CategoryTheory.forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT` and
-  `CategoryTheory.forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE`: uniform
-  projective and injective dimension bounds on all objects of `C` are equivalent.
+* `TauCeti.hasInjectiveDimensionLE_of_forall_hasProjectiveDimensionLE` and
+  `TauCeti.hasProjectiveDimensionLE_of_forall_hasInjectiveDimensionLE`: a uniform projective
+  (resp. injective) dimension bound on all objects implies the same injective (resp. projective)
+  dimension bound.
+* `TauCeti.forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT` and
+  `TauCeti.forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE`: uniform projective
+  and injective dimension bounds on all objects of `C` are equivalent.
 -/
 
 public section
 
-namespace CategoryTheory
+open CategoryTheory
+
+namespace TauCeti
 
 variable {C : Type*} [Category* C] [Abelian C]
 
@@ -71,4 +75,4 @@ theorem forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE (n : 
     (∀ X : C, HasProjectiveDimensionLE X n) ↔ ∀ Y : C, HasInjectiveDimensionLE Y n :=
   forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT (n + 1)
 
-end CategoryTheory
+end TauCeti

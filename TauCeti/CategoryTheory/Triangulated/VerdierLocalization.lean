@@ -63,10 +63,10 @@ consequences for Verdier quotients:
   `CategoryTheory.ObjectProperty.TrWLocalization.exists_comp_eq_zero_of_map_eq_zero`: morphisms
   out of an object approximated by morphisms `δᵢ` as above, and their kernel.
 * `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE` and
-  `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff`: when
+  `TauCeti.isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff`: when
   `P ≤ Q` and `Q ≤ P`, `trWLocalizerMorphismOfLE` is a localized equivalence, and for thick
   triangulated `P ≤ Q` it is a localized equivalence if and only if `P = Q`.
-* `CategoryTheory.ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff`:
+* `TauCeti.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff`:
   for thick triangulated `P ≤ Q`, the comparison functor between Verdier localizations is an
   equivalence if and only if `P = Q`.
 
@@ -224,23 +224,38 @@ theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE {h : P ≤ Q} (h' : Q �
   obtain rfl := le_antisymm h h'
   exact inferInstanceAs (LocalizerMorphism.id P.trW).IsLocalizedEquivalence
 
+end ObjectProperty
+
+end CategoryTheory
+
+namespace TauCeti
+
+open CategoryTheory Pretriangulated
+
+section
+
+variable {C : Type*} [Category* C] [Limits.HasZeroObject C] [Preadditive C] [HasShift C ℤ]
+  [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
+  {P Q : CategoryTheory.ObjectProperty C}
+
 /-- When `P` is a thick triangulated subcategory of a triangulated category and `P ≤ Q`,
 `trWLocalizerMorphismOfLE h` is a localized equivalence if and only if `P = Q`. -/
 theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff
     [IsTriangulated C] [P.IsTriangulated] [P.IsStableUnderRetracts] (h : P ≤ Q) :
-    (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence ↔ P = Q := by
+    (ObjectProperty.trWLocalizerMorphismOfLE h).IsLocalizedEquivalence ↔ P = Q := by
   refine ⟨fun hEqv ↦ le_antisymm h fun X hX ↦ ?_, fun hEq ↦ ?_⟩
-  · have : ((trWLocalizerMorphismOfLE h).functor ⋙ Q.trW.Q).IsLocalization P.trW :=
-      LocalizerMorphism.IsLocalizedEquivalence.isLocalization (trWLocalizerMorphismOfLE h) Q.trW.Q
+  · have : ((ObjectProperty.trWLocalizerMorphismOfLE h).functor ⋙ Q.trW.Q).IsLocalization P.trW :=
+      LocalizerMorphism.IsLocalizedEquivalence.isLocalization
+        (ObjectProperty.trWLocalizerMorphismOfLE h) Q.trW.Q
     have : Q.trW.Q.IsLocalization P.trW :=
       Functor.IsLocalization.of_iso (W := P.trW)
-        (Functor.isoWhiskerRight (eqToIso (trWLocalizerMorphismOfLE_functor h)) Q.trW.Q ≪≫
-          Functor.leftUnitor Q.trW.Q)
+        (Functor.isoWhiskerRight (eqToIso (ObjectProperty.trWLocalizerMorphismOfLE_functor h))
+          Q.trW.Q ≪≫ Functor.leftUnitor Q.trW.Q)
     let : Preadditive Q.trW.Localization := Localization.preadditive Q.trW.Q P.trW
     have : Q.trW.Q.Additive := Localization.functor_additive Q.trW.Q P.trW
-    exact (TrWLocalization.isZero_obj_iff P Q.trW.Q X).1
-      (TrWLocalization.isZero_obj Q Q.trW.Q hX)
-  · exact isLocalizedEquivalence_trWLocalizerMorphismOfLE (h := h) hEq.ge
+    exact (ObjectProperty.TrWLocalization.isZero_obj_iff P Q.trW.Q X).1
+      (ObjectProperty.TrWLocalization.isZero_obj Q Q.trW.Q hX)
+  · exact ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE (h := h) hEq.ge
 
 /-- When `P` is a thick triangulated subcategory of a triangulated category and `P ≤ Q`, the
 comparison functor induced by `trWLocalizerMorphismOfLE h` between Verdier localizations at `P` and
@@ -250,14 +265,14 @@ theorem isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
     {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
     (L₁ : C ⥤ D₁) [L₁.IsLocalization P.trW]
     (L₂ : C ⥤ D₂) [L₂.IsLocalization Q.trW] :
-    ((trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂).IsEquivalence ↔ P = Q :=
+    ((ObjectProperty.trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂).IsEquivalence ↔ P = Q :=
   ⟨fun _ ↦ (isLocalizedEquivalence_trWLocalizerMorphismOfLE_iff h).1
-    (LocalizerMorphism.IsLocalizedEquivalence.mk' (trWLocalizerMorphismOfLE h) L₁ L₂
-      ((trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂)),
+    (LocalizerMorphism.IsLocalizedEquivalence.mk' (ObjectProperty.trWLocalizerMorphismOfLE h) L₁ L₂
+      ((ObjectProperty.trWLocalizerMorphismOfLE h).localizedFunctor L₁ L₂)),
    fun hEq ↦ by
-     have := isLocalizedEquivalence_trWLocalizerMorphismOfLE (h := h) hEq.ge
+     have := ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE (h := h) hEq.ge
      infer_instance⟩
 
-end ObjectProperty
+end
 
-end CategoryTheory
+end TauCeti

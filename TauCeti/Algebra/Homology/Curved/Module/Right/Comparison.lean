@@ -103,14 +103,14 @@ noncomputable def toContraderivedFactors :
 absolutely acyclic and coacyclic classes coincide. -/
 theorem isEquivalence_toCoderived_iff :
     (toCoderived R h).IsEquivalence ↔ absolutelyAcyclic R h = coacyclic R h :=
-  ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
+  _root_.TauCeti.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
     (absolutelyAcyclic_le_coacyclic R h) (Q R h) (CoderivedCategory.Q R h)
 
 /-- The comparison functor to the contraderived category is an equivalence if and only if the
 absolutely acyclic and contraacyclic classes coincide. -/
 theorem isEquivalence_toContraderived_iff :
     (toContraderived R h).IsEquivalence ↔ absolutelyAcyclic R h = contraacyclic R h :=
-  ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
+  _root_.TauCeti.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
     (absolutelyAcyclic_le_contraacyclic R h) (Q R h) (ContraderivedCategory.Q R h)
 
 variable {R h}

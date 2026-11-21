@@ -454,18 +454,9 @@ def freeDesc (f : V ⟶ toGradedModuleCat M) :
   have hsmul (a : A) (v : V) :
       M.differential (f' (op a • v)) - f' (op (d a) • V.grading.koszulTwist 1 v) =
         op a • M.differential (f' v) := by
-    induction v using DirectSum.Decomposition.inductionOn V.grading.piece with
-    | zero => simp
-    | add v₁ v₂ hv₁ hv₂ =>
-      simp only [smul_add, map_add, ← hv₁, ← hv₂]
-      abel
-    | @homogeneous q v =>
-      rcases v with ⟨v, hv⟩
-      have hfv : f' v ∈ M.grading q := by
-        simpa only [toGradedModuleCat_piece] using GradedModuleCat.map_mem f hv
-      rw [f'.map_smul, M.isCurvedDGRightModule.leibniz hfv a,
-        V.grading.koszulTwist_one_eq_negOnePow_smul hv, smul_comm (op (d a)) q.negOnePow]
-      simp only [Units.smul_def, map_zsmul, f'.map_smul, add_sub_cancel_right]
+    rw [f'.map_smul, M.differential_smul, ← toGradedModuleCat_grading]
+    dsimp only [f', unop_op]
+    rw [GradedModuleCat.koszulTwist_hom_apply f 1 v, ← f.hom.map_smul, add_sub_cancel_right]
   refine closedHomOf
     { toFun := fun x : FreeCarrier h V ↦ f' x.fst + M.differential (f' x.snd)
       map_add' := fun x y ↦ by

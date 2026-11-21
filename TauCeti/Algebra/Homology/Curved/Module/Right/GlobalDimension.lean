@@ -7,44 +7,44 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Comparison
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Coinduced
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Free
 public import TauCeti.CategoryTheory.Abelian.Injective.Dimension
-import Mathlib.CategoryTheory.Abelian.Exact
 
 /-!
 # Coincidence of curved acyclic classes in finite graded global dimension
 
-Let `(A, d, w)` be a curved differential graded algebra in the right-module convention. In general
-the absolutely acyclic class `absolutelyAcyclic R h` is strictly smaller than the coacyclic and
-contraacyclic classes, and no comparison connects `coacyclic R h` with `contraacyclic R h`.
+Let `(A, d, w)` be a curved differential graded algebra in the right-module convention over a
+commutative ring `R`, in the common universe `R, A : Type u` with curved module carriers in
+`Type u`. In general the absolutely acyclic class `absolutelyAcyclic R h` is strictly smaller than
+the coacyclic and contraacyclic classes, and no comparison connects `coacyclic R h` with
+`contraacyclic R h`.
 
-This file proves **Positselski's Theorem 7.8(a)** for curved right modules: when the category of
-graded right `A`-modules has finite global dimension (every graded right module has projective
+This file proves **Positselski's Theorem 7.8(a)** for curved right modules in this common-universe
+setting: when the category `GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece`
+of graded right `A`-modules has finite global dimension (every graded right module has projective
 dimension `< d`, or equivalently injective dimension `< d`, which for `d = n + 1` is
 `HasProjectiveDimensionLE _ n` / `HasInjectiveDimensionLE _ n`), the three acyclic classes of the
 second kind coincide and the canonical comparison triangle functors
 `AbsoluteDerivedCategory.toCoderived` and `AbsoluteDerivedCategory.toContraderived` are
 equivalences of categories.
 
-The argument proceeds in two steps (with a dual objectwise argument on the injective side):
+The argument proceeds in two steps:
 
-1. **Contraacyclic implies absolutely acyclic object-by-object.** Any curved right module `M`
-   admits an epimorphism `Q ⟶ M` in the closed category from a contractible graded-projective
-   module `Q = freeObj h P`. If `M` is contraacyclic, its kernel `K` is again contraacyclic by
-   two-out-of-three (`prop_X₁_of_shortExact`), while dimension shifting drops the graded projective
-   dimension by one. Iterating until the syzygy is graded-projective — where right orthogonality
-   (`contraacyclic_le_rightOrthogonal_gradedProjective`) forces a contraacyclic graded-projective
-   module to be contractible — resolves `M` in finitely many steps by contractible curved right
-   modules, hence places `M` in `absolutelyAcyclic R h`. Dually, coinduction `coinducedObj h I`
-   yields objectwise upgrading of coacyclic modules of finite graded injective dimension.
-2. **Closure of `absolutelyAcyclic` under arbitrary coproducts.** Under a uniform graded
-   projective-dimension bound `< d`, every absolutely acyclic curved right module is a fortiori
-   contraacyclic and therefore admits a contractible resolution of uniform length `d`. Since direct
-   sums of curved right modules are exact in the closed category (`shortExact_closedDirectSumMap`)
-   and preserve contractibility (`isZero_homotopy_directSum`), direct sums of length-`d`
-   contractible resolutions remain length-`d` contractible resolutions. Thus `absolutelyAcyclic R h`
-   is closed under arbitrary coproducts indexed by `Type u`, so
-   `coacyclic R h ≤ absolutelyAcyclic R h` by the universal property of `localizingClosure`.
+1. **Object-by-object comparison on both sides.** Any curved right module `M` admits an
+   epimorphism `Q ⟶ M` in the closed category from a contractible graded-projective module
+   `Q = freeObj h P`, and dually a monomorphism `M ⟶ G⁻ I` into a contractible graded-injective
+   module `coinducedObj h I`. Using two-out-of-three (`prop_X₁_of_shortExact` and
+   `prop_X₃_of_shortExact`), dimension shifting, and orthogonality at dimension `< 1`
+   (`contraacyclic_le_rightOrthogonal_gradedProjective` and
+   `coacyclic_le_leftOrthogonal_gradedInjective`), every contraacyclic module of finite graded
+   projective dimension and every coacyclic module of finite graded injective dimension lies in
+   `absolutelyAcyclic R h`.
+2. **Global coincidence and closure properties.** Under a uniform graded injective-dimension bound
+   `< n`, every coacyclic module is absolutely acyclic by Step 1, giving
+   `absolutelyAcyclic R h = coacyclic R h`. Upgrading a uniform projective-dimension bound `< n` to
+   a uniform injective-dimension bound via
+   `TauCeti.hasInjectiveDimensionLT_of_forall_hasProjectiveDimensionLT` yields the same equality
+   on the projective side, from which closure of `absolutelyAcyclic R h` under arbitrary coproducts
+   indexed by `Type u` follows directly because `coacyclic R h` is localizing.
 
 ## Main results
 
@@ -54,17 +54,20 @@ The argument proceeds in two steps (with a dual objectwise argument on the injec
 * `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT`:
   a coacyclic curved right module whose underlying graded module has finite injective dimension is
   absolutely acyclic.
-* `isClosedUnderColimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT`:
+* `isClosedUnderColimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT` and
+  `isClosedUnderLimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT`:
   under a uniform graded projective-dimension bound, `absolutelyAcyclic R h` is closed under
-  coproducts indexed by `Type u`.
+  coproducts and products indexed by `Type u`.
 * `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT`,
   `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT`,
   `TauCeti.CurvedDGRightModuleCat.coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLT`,
-  `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT`:
+  `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT`,
+  `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_eq_contraacyclic_of_hasInjectiveDimensionLT`,
+  and `TauCeti.CurvedDGRightModuleCat.coacyclic_eq_contraacyclic_of_hasInjectiveDimensionLT`:
   coincidence of the three acyclic classes of the second kind.
 * `AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasProjectiveDimensionLT`,
   `AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDimensionLT`,
-  `AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasInjectiveDimensionLT`,
+  `AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasInjectiveDimensionLT`, and
   `AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasInjectiveDimensionLT`:
   the comparison triangle functors `D_abs → D_co` and `D_abs → D_ctr` are equivalences.
 
@@ -143,18 +146,6 @@ private theorem hasContractibleResolution_of_contraacyclic_of_hasProjectiveDimen
     exact ⟨K, Q, kernelι g, g, kernelι_comp g, hS, hQ0,
       hasContractibleResolution_of_contraacyclic_of_hasProjectiveDimensionLT_succ m K hKc hKdim⟩
 
-private theorem hasContractibleResolution_directSum {J : Type u} :
-    ∀ (m : ℕ) (M : J → CurvedDGRightModuleCat.{u, u, u} h),
-      (∀ j, HasContractibleResolution (R := R) m (M j)) →
-      HasContractibleResolution (R := R) m (directSum M)
-  | 0, _, hM => isZero_homotopy_directSum hM
-  | m + 1, M, hM => by
-    choose K Q f g hfg hS hQ hK using hM
-    exact ⟨directSum K, directSum Q, closedDirectSumMap f, closedDirectSumMap g, _,
-      shortExact_closedDirectSumMap f g hfg hS,
-      isZero_homotopy_directSum hQ,
-      hasContractibleResolution_directSum m K hK⟩
-
 /-! ### Per-object acyclicity comparison -/
 
 /-- A contraacyclic curved right module whose underlying graded right module has finite projective
@@ -181,108 +172,6 @@ theorem coacyclic_of_contraacyclic_of_hasProjectiveDimensionLT (n : ℕ)
   absolutelyAcyclic_le_coacyclic R h X
     (absolutelyAcyclic_of_contraacyclic_of_hasProjectiveDimensionLT n hX)
 
-/-! ### Positselski's Theorem 7.8(a): finite graded global dimension -/
-
-section FiniteGlobalDimension
-
-variable (n : ℕ)
-  (hn : ∀ V : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece,
-    HasProjectiveDimensionLT V n)
-include hn
-
-/-- Under a uniform graded projective-dimension bound `< n`, the absolutely acyclic class is closed
-under coproducts indexed by `Type u`. -/
-theorem isClosedUnderColimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT
-    (J : Type u) :
-    (absolutelyAcyclic R h).IsClosedUnderColimitsOfShape (Discrete J) := by
-  refine ObjectProperty.IsClosedUnderColimitsOfShape.mk' ?_
-  rintro _ ⟨F, hF⟩
-  let M : J → CurvedDGRightModuleCat.{u, u, u} h := fun j ↦ (F.obj ⟨j⟩).underlying
-  have hMres (j : J) : HasContractibleResolution (R := R) n (M j) := by
-    have : HasProjectiveDimensionLT (toGradedModuleCat (M j)) n := hn _
-    have hMc : contraacyclic R h (DGHomotopyCategory.of R (M j)) := by
-      rw [DGHomotopyCategory.of_underlying]
-      exact absolutelyAcyclic_le_contraacyclic R h _ (hF ⟨j⟩)
-    exact hasContractibleResolution_of_contraacyclic_of_hasProjectiveDimensionLT_succ
-      n (M j) hMc (hasProjectiveDimensionLT_of_ge _ n (n + 1) (Nat.le_succ n))
-  have hsum : absolutelyAcyclic R h (DGHomotopyCategory.of R (directSum M)) :=
-    absolutelyAcyclic_of_hasContractibleResolution (hasContractibleResolution_directSum n M hMres)
-  let e : Discrete.functor (fun j ↦ DGHomotopyCategory.of R (M j)) ≅ F :=
-    Discrete.natIso fun ⟨j⟩ ↦ eqToIso (DGHomotopyCategory.of_underlying R (F.obj ⟨j⟩))
-  let hc := (IsColimit.precomposeInvEquiv e _).symm (homotopyDirectSumCofanIsColimit M)
-  exact (absolutelyAcyclic R h).prop_of_iso (hc.coconePointUniqueUpToIso (colimit.isColimit F)) hsum
-
-/-- **Positselski's Theorem 7.8(a) (contraacyclic vs. absolutely acyclic).** Under a uniform
-graded projective-dimension bound `< n`, the absolutely acyclic and contraacyclic classes of
-curved right modules coincide. -/
-theorem absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT :
-    absolutelyAcyclic R h = contraacyclic R h :=
-  le_antisymm (absolutelyAcyclic_le_contraacyclic R h) fun X hX ↦
-    have := hn (toGradedModuleCat X.underlying)
-    absolutelyAcyclic_of_contraacyclic_of_hasProjectiveDimensionLT n hX
-
-/-- **Positselski's Theorem 7.8(a) (coacyclic vs. absolutely acyclic).** Under a uniform graded
-projective-dimension bound `< n`, the absolutely acyclic and coacyclic classes of curved right
-modules coincide. -/
-theorem absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT :
-    absolutelyAcyclic R h = coacyclic R h :=
-  le_antisymm (absolutelyAcyclic_le_coacyclic R h) <| by
-    have := isClosedUnderColimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT
-      (R := R) (h := h) n hn
-    exact coacyclic_le_iff.mpr (totalizations_le_absolutelyAcyclic R h)
-
-/-- **Positselski's Theorem 7.8(a) (coacyclic vs. contraacyclic).** Under a uniform graded
-projective-dimension bound `< n`, the coacyclic and contraacyclic classes of curved right modules
-coincide. -/
-theorem coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLT :
-    coacyclic R h = contraacyclic R h :=
-  (absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn).symm.trans
-    (absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn)
-
-/-- Under a uniform graded projective-dimension bound `< n`, the absolutely acyclic class is also
-closed under products indexed by `Type u`. -/
-theorem isClosedUnderLimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT
-    (J : Type u) :
-    (absolutelyAcyclic R h).IsClosedUnderLimitsOfShape (Discrete J) := by
-  rw [absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn]
-  infer_instance
-
-/-- **Positselski's Theorem 7.8(a) (coderived equivalence).** Under a uniform graded
-projective-dimension bound `< n`, the canonical comparison triangle functor from the absolute
-derived category to the coderived category is an equivalence of categories. -/
-theorem AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasProjectiveDimensionLT :
-    (AbsoluteDerivedCategory.toCoderived R h).IsEquivalence := by
-  let Φ := ObjectProperty.trWLocalizerMorphismOfLE (absolutelyAcyclic_le_coacyclic R h)
-  have : Φ.IsLocalizedEquivalence :=
-    ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE
-      (absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn).ge
-  have : CatCommSq Φ.functor (AbsoluteDerivedCategory.Q R h)
-      (CoderivedCategory.Q R h) (AbsoluteDerivedCategory.toCoderived R h) :=
-    ⟨Functor.isoWhiskerRight (eqToIso (ObjectProperty.trWLocalizerMorphismOfLE_functor _)) _ ≪≫
-      Functor.leftUnitor _ ≪≫ (AbsoluteDerivedCategory.toCoderivedFactors R h).symm⟩
-  exact Φ.isEquivalence (AbsoluteDerivedCategory.Q R h)
-    (CoderivedCategory.Q R h) (AbsoluteDerivedCategory.toCoderived R h)
-
-/-- **Positselski's Theorem 7.8(a) (contraderived equivalence).** Under a uniform graded
-projective-dimension bound `< n`, the canonical comparison triangle functor from the absolute
-derived category to the contraderived category is an equivalence of categories. -/
-theorem AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDimensionLT :
-    (AbsoluteDerivedCategory.toContraderived R h).IsEquivalence := by
-  let Φ := ObjectProperty.trWLocalizerMorphismOfLE (absolutelyAcyclic_le_contraacyclic R h)
-  have : Φ.IsLocalizedEquivalence :=
-    ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE
-      (absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn).ge
-  have : CatCommSq Φ.functor (AbsoluteDerivedCategory.Q R h)
-      (ContraderivedCategory.Q R h) (AbsoluteDerivedCategory.toContraderived R h) :=
-    ⟨Functor.isoWhiskerRight (eqToIso (ObjectProperty.trWLocalizerMorphismOfLE_functor _)) _ ≪≫
-      Functor.leftUnitor _ ≪≫ (AbsoluteDerivedCategory.toContraderivedFactors R h).symm⟩
-  exact Φ.isEquivalence (AbsoluteDerivedCategory.Q R h)
-    (ContraderivedCategory.Q R h) (AbsoluteDerivedCategory.toContraderived R h)
-
-end FiniteGlobalDimension
-
-section InjectiveDimension
-
 private theorem absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT_succ :
     ∀ (m : ℕ) (M : CurvedDGRightModuleCat.{u, u, u} h),
       coacyclic R h (DGHomotopyCategory.of R M) →
@@ -304,7 +193,7 @@ private theorem absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT_succ :
       ((hS.map_of_exact (forgetDifferential (h := h))).hasInjectiveDimensionLT_X₃_iff m
         (inferInstanceAs (Injective (toGradedModuleCat (coinducedObj h I))))).2 hM
     have hI₀ : IsZero (DGHomotopyCategory.of R (coinducedObj h I)) :=
-      isZero_homotopy_freeObj h (I.shiftObj (-1))
+      isZero_homotopy_coinducedObj h I
     have hCc : coacyclic R h (DGHomotopyCategory.of R (ForgetEnrichment.to _ S.X₃)) :=
       prop_X₃_of_shortExact (coacyclic R h) (totalizations_le_coacyclic R h) hS hMc
         ((coacyclic R h).prop_of_isZero hI₀)
@@ -335,20 +224,90 @@ theorem contraacyclic_of_coacyclic_of_hasInjectiveDimensionLT (n : ℕ)
   absolutelyAcyclic_le_contraacyclic R h X
     (absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT n hX)
 
+/-! ### Positselski's Theorem 7.8(a): finite graded global dimension -/
+
+/-- Under a uniform graded injective-dimension bound `< n`, the absolutely acyclic and coacyclic
+classes of curved right modules coincide. -/
+theorem absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT (n : ℕ)
+    (hn : ∀ V : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece,
+      HasInjectiveDimensionLT V n) :
+    absolutelyAcyclic R h = coacyclic R h :=
+  le_antisymm (absolutelyAcyclic_le_coacyclic R h) fun X hX ↦
+    have := hn (toGradedModuleCat X.underlying)
+    absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT n hX
+
+section FiniteGlobalDimension
+
+variable (n : ℕ)
+  (hn : ∀ V : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece,
+    HasProjectiveDimensionLT V n)
+include hn
+
+/-- **Positselski's Theorem 7.8(a) (contraacyclic vs. absolutely acyclic).** Under a uniform
+graded projective-dimension bound `< n`, the absolutely acyclic and contraacyclic classes of
+curved right modules coincide. -/
+theorem absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT :
+    absolutelyAcyclic R h = contraacyclic R h :=
+  le_antisymm (absolutelyAcyclic_le_contraacyclic R h) fun X hX ↦
+    have := hn (toGradedModuleCat X.underlying)
+    absolutelyAcyclic_of_contraacyclic_of_hasProjectiveDimensionLT n hX
+
+/-- **Positselski's Theorem 7.8(a) (coacyclic vs. absolutely acyclic).** Under a uniform graded
+projective-dimension bound `< n`, the absolutely acyclic and coacyclic classes of curved right
+modules coincide. -/
+theorem absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT :
+    absolutelyAcyclic R h = coacyclic R h :=
+  absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT (R := R) (h := h) n
+    (hasInjectiveDimensionLT_of_forall_hasProjectiveDimensionLT hn)
+
+/-- Under a uniform graded projective-dimension bound `< n`, the absolutely acyclic class is closed
+under coproducts indexed by `Type u`. -/
+theorem isClosedUnderColimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT
+    (J : Type u) :
+    (absolutelyAcyclic R h).IsClosedUnderColimitsOfShape (Discrete J) := by
+  rw [absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn]
+  infer_instance
+
+/-- **Positselski's Theorem 7.8(a) (coacyclic vs. contraacyclic).** Under a uniform graded
+projective-dimension bound `< n`, the coacyclic and contraacyclic classes of curved right modules
+coincide. -/
+theorem coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLT :
+    coacyclic R h = contraacyclic R h :=
+  (absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn).symm.trans
+    (absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn)
+
+/-- Under a uniform graded projective-dimension bound `< n`, the absolutely acyclic class is also
+closed under products indexed by `Type u`. -/
+theorem isClosedUnderLimitsOfShape_discrete_absolutelyAcyclic_of_hasProjectiveDimensionLT
+    (J : Type u) :
+    (absolutelyAcyclic R h).IsClosedUnderLimitsOfShape (Discrete J) := by
+  rw [absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn]
+  infer_instance
+
+/-- **Positselski's Theorem 7.8(a) (coderived equivalence).** Under a uniform graded
+projective-dimension bound `< n`, the canonical comparison triangle functor from the absolute
+derived category to the coderived category is an equivalence of categories. -/
+theorem AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasProjectiveDimensionLT :
+    (AbsoluteDerivedCategory.toCoderived R h).IsEquivalence :=
+  (isEquivalence_toCoderived_iff R h).2
+    (absolutelyAcyclic_eq_coacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn)
+
+/-- **Positselski's Theorem 7.8(a) (contraderived equivalence).** Under a uniform graded
+projective-dimension bound `< n`, the canonical comparison triangle functor from the absolute
+derived category to the contraderived category is an equivalence of categories. -/
+theorem AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDimensionLT :
+    (AbsoluteDerivedCategory.toContraderived R h).IsEquivalence :=
+  (isEquivalence_toContraderived_iff R h).2
+    (absolutelyAcyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n hn)
+
+end FiniteGlobalDimension
+
 section FiniteInjectiveGlobalDimension
 
 variable (n : ℕ)
   (hn : ∀ V : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece,
     HasInjectiveDimensionLT V n)
 include hn
-
-/-- Under a uniform graded injective-dimension bound `< n`, the absolutely acyclic and coacyclic
-classes of curved right modules coincide. -/
-theorem absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT :
-    absolutelyAcyclic R h = coacyclic R h :=
-  le_antisymm (absolutelyAcyclic_le_coacyclic R h) fun X hX ↦
-    have := hn (toGradedModuleCat X.underlying)
-    absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT n hX
 
 /-- Under a uniform graded injective-dimension bound `< n`, the absolutely acyclic and
 contraacyclic classes of curved right modules coincide. -/
@@ -361,27 +320,25 @@ theorem absolutelyAcyclic_eq_contraacyclic_of_hasInjectiveDimensionLT :
 of curved right modules coincide. -/
 theorem coacyclic_eq_contraacyclic_of_hasInjectiveDimensionLT :
     coacyclic R h = contraacyclic R h :=
-  (absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT (R := R) (h := h) n hn).symm.trans
-    (absolutelyAcyclic_eq_contraacyclic_of_hasInjectiveDimensionLT (R := R) (h := h) n hn)
+  coacyclic_eq_contraacyclic_of_hasProjectiveDimensionLT (R := R) (h := h) n
+    (hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT hn)
 
 /-- Under a uniform graded injective-dimension bound `< n`, the canonical comparison triangle
 functor from the absolute derived category to the coderived category is an equivalence of
 categories. -/
 theorem AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasInjectiveDimensionLT :
     (AbsoluteDerivedCategory.toCoderived R h).IsEquivalence :=
-  (isEquivalence_toCoderived_iff R h).2
-    (absolutelyAcyclic_eq_coacyclic_of_hasInjectiveDimensionLT (R := R) (h := h) n hn)
+  AbsoluteDerivedCategory.isEquivalence_toCoderived_of_hasProjectiveDimensionLT (R := R) (h := h) n
+    (hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT hn)
 
 /-- Under a uniform graded injective-dimension bound `< n`, the canonical comparison triangle
 functor from the absolute derived category to the contraderived category is an equivalence of
 categories. -/
 theorem AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasInjectiveDimensionLT :
     (AbsoluteDerivedCategory.toContraderived R h).IsEquivalence :=
-  (isEquivalence_toContraderived_iff R h).2
-    (absolutelyAcyclic_eq_contraacyclic_of_hasInjectiveDimensionLT (R := R) (h := h) n hn)
+  AbsoluteDerivedCategory.isEquivalence_toContraderived_of_hasProjectiveDimensionLT
+    (R := R) (h := h) n (hasProjectiveDimensionLT_of_forall_hasInjectiveDimensionLT hn)
 
 end FiniteInjectiveGlobalDimension
-
-end InjectiveDimension
 
 end TauCeti.CurvedDGRightModuleCat

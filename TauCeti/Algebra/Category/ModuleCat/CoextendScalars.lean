@@ -38,6 +38,11 @@ coinduced module.
 
 ## Main definitions
 
+* `AlgHom.coextendScalarsLinearEquiv`: `k`-linear identification of
+  `(ModuleCat.coextendScalars f.toRingHom).obj M` with
+  `(ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S) →ₗ[R] M`.
+* `TauCeti.coextendScalarsBaseEquiv`: specialization identifying
+  `(ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)` with `A →ₗ[k] V`.
 * `AlgHom.finiteModulesCoextendScalars`: coextension of scalars as a functor between the
   categories of finitely generated modules.
 
@@ -88,6 +93,79 @@ namespace AlgHom
 variable {k : Type*} [CommRing k] {R : Type u₁} {S : Type u₂} [Ring R] [Ring S] [Algebra k R]
   [Algebra k S] (f : R →ₐ[k] S)
 
+private theorem coextendScalars_equiv_algebraMap_smul_apply (M : ModuleCat.{v} R)
+    [Module k M] [IsScalarTower k R M]
+    (c : k) (x : (ModuleCat.coextendScalars f.toRingHom).obj M)
+    (s : (ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S)) :
+    ModuleCat.CoextendScalars.equiv f.toRingHom M (algebraMap k S c • x) s =
+      c • ModuleCat.CoextendScalars.equiv f.toRingHom M x s := by
+  have hs : algebraMap k R c • s =
+      haveI this : (ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S) := s
+      (show S from this) * algebraMap k S c := by
+    rw [ModuleCat.restrictScalars.smul_def]
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
+    exact Algebra.commutes c (show S from s)
+  have hmul :=
+    ModuleCat.CoextendScalars.smul_apply f.toRingHom M x (algebraMap k S c) (show S from s)
+  rw [hmul, ← algebraMap_smul R c]
+  exact (congrArg (ModuleCat.CoextendScalars.equiv f.toRingHom M x) hs.symm).trans
+    (map_smul _ _ _)
+
+/-- Over `k`, the coextension of scalars `(ModuleCat.coextendScalars f.toRingHom).obj M` is
+`k`-linearly equivalent to `(ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S) →ₗ[R] M`.
+-/
+noncomputable def coextendScalarsLinearEquiv (M : ModuleCat.{v} R)
+    [Module k M] [IsScalarTower k R M] :
+    letI : Module k ((ModuleCat.coextendScalars (f : R →+* S)).obj M) :=
+      Module.restrictScalars k S ((ModuleCat.coextendScalars (f : R →+* S)).obj M)
+    (ModuleCat.coextendScalars (f : R →+* S)).obj M ≃ₗ[k]
+      ((ModuleCat.restrictScalars (f : R →+* S)).obj (ModuleCat.of S S) →ₗ[R] M) :=
+  letI : Module k ((ModuleCat.coextendScalars (f : R →+* S)).obj M) :=
+    Module.restrictScalars k S ((ModuleCat.coextendScalars (f : R →+* S)).obj M)
+  { ModuleCat.CoextendScalars.equiv (f : R →+* S) M with
+    map_smul' := fun c x ↦ LinearMap.ext fun s ↦
+      coextendScalars_equiv_algebraMap_smul_apply f M c x s }
+
+/-- Evaluating `AlgHom.coextendScalarsLinearEquiv` recovers `ModuleCat.CoextendScalars.equiv`. -/
+@[simp]
+theorem coextendScalarsLinearEquiv_apply (M : ModuleCat.{v} R)
+    [Module k M] [IsScalarTower k R M]
+    (x : (ModuleCat.coextendScalars (f : R →+* S)).obj M)
+    (s : (ModuleCat.restrictScalars (f : R →+* S)).obj (ModuleCat.of S S)) :
+    f.coextendScalarsLinearEquiv M x s =
+      ModuleCat.CoextendScalars.equiv f.toRingHom M x s := by
+  rw [coextendScalarsLinearEquiv]; rfl
+
+/-- Evaluating the inverse of `AlgHom.coextendScalarsLinearEquiv` recovers the inverse of
+`ModuleCat.CoextendScalars.equiv`. -/
+@[simp]
+theorem coextendScalarsLinearEquiv_symm_apply (M : ModuleCat.{v} R)
+    [Module k M] [IsScalarTower k R M]
+    (φ : (ModuleCat.restrictScalars (f : R →+* S)).obj (ModuleCat.of S S) →ₗ[R] M) :
+    (f.coextendScalarsLinearEquiv M).symm φ =
+      (ModuleCat.CoextendScalars.equiv f.toRingHom M).symm φ := by
+  rw [coextendScalarsLinearEquiv]; rfl
+
+/-- Applying `AlgHom.coextendScalarsLinearEquiv` to `algebraMap k S c • x` scales by `c`. -/
+theorem coextendScalarsLinearEquiv_algebraMap_smul (M : ModuleCat.{v} R)
+    [Module k M] [IsScalarTower k R M] (c : k)
+    (x : (ModuleCat.coextendScalars (f : R →+* S)).obj M) :
+    f.coextendScalarsLinearEquiv M (algebraMap k S c • x) =
+      c • f.coextendScalarsLinearEquiv M x :=
+  LinearMap.ext fun s ↦ coextendScalars_equiv_algebraMap_smul_apply f M c x s
+
+/-- Applying the inverse of `AlgHom.coextendScalarsLinearEquiv` to `c • φ` multiplies by
+`algebraMap k S c`. -/
+theorem coextendScalarsLinearEquiv_symm_smul (M : ModuleCat.{v} R)
+    [Module k M] [IsScalarTower k R M] (c : k)
+    (φ : (ModuleCat.restrictScalars (f : R →+* S)).obj (ModuleCat.of S S) →ₗ[R] M) :
+    (f.coextendScalarsLinearEquiv M).symm (c • φ) =
+      algebraMap k S c • (f.coextendScalarsLinearEquiv M).symm φ :=
+  (f.coextendScalarsLinearEquiv M).injective (by
+    rw [(f.coextendScalarsLinearEquiv M).apply_symm_apply,
+      coextendScalarsLinearEquiv_algebraMap_smul,
+      (f.coextendScalarsLinearEquiv M).apply_symm_apply])
+
 /-- **Finite generation under coextension of scalars.** Let `f : R →ₐ[k] S` be a homomorphism of
 algebras over a commutative ring `k`, with `R` finitely generated over `k` and `S` finitely
 generated and projective over `R` through `f`. Then `Hom_R(S, M)` is a finitely generated
@@ -97,31 +175,18 @@ theorem isFG_coextendScalars [Module.Finite k R]
     (hfin : letI := f.toRingHom.toModule; Module.Finite R S)
     {M : ModuleCat.{max v u₂} R} (hM : ModuleCat.isFG R M) :
     ModuleCat.isFG S ((ModuleCat.coextendScalars f.toRingHom).obj M) := by
-  let S' := (ModuleCat.restrictScalars f.toRingHom).obj (ModuleCat.of S S)
-  let X := (ModuleCat.coextendScalars f.toRingHom).obj M
+  let S' := (ModuleCat.restrictScalars (f : R →+* S)).obj (ModuleCat.of S S)
+  let X := (ModuleCat.coextendScalars (f : R →+* S)).obj M
   have : Module.Projective R S' := hproj
   have : Module.Finite R S' := hfin
   have : Module.Finite R M := hM
   -- The `k`-module structures on `M` and on `Hom_R(S, M)` come from those of `R` and `S`.
-  let : Module k M := Module.compHom M (algebraMap k R)
-  have : IsScalarTower k R M := ⟨fun c r m ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
+  let : Module k M := Module.restrictScalars k R M
+  have : IsScalarTower k R M := IsScalarTower.restrictScalars k R M
   have : Module.Finite k M := .trans R M
-  let : Module k X := Module.compHom X (algebraMap k S)
-  have : IsScalarTower k S X := ⟨fun c s x ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
-  -- Over `k`, the action of `S` on `Hom_R(S, M)` is the pointwise action on values.
-  let e : X ≃ₗ[k] (S' →ₗ[R] M) :=
-    { ModuleCat.CoextendScalars.equiv f.toRingHom M with
-      map_smul' := fun c x ↦ LinearMap.ext fun s ↦ by
-        have hs : algebraMap k R c • s = (show S from s) * algebraMap k S c := by
-          rw [ModuleCat.restrictScalars.smul_def]
-          simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
-          exact Algebra.commutes c (show S from s)
-        -- Both `k`-actions are defined through `Module.compHom`; unfold them to the actions of
-        -- `algebraMap k S c` and `algebraMap k R c`.
-        change ModuleCat.CoextendScalars.equiv f.toRingHom M (algebraMap k S c • x) s =
-          algebraMap k R c • ModuleCat.CoextendScalars.equiv f.toRingHom M x s
-        exact (congrArg (ModuleCat.CoextendScalars.equiv f.toRingHom M x) hs.symm).trans
-          (map_smul _ _ _) }
+  let : Module k X := Module.restrictScalars k S X
+  have : IsScalarTower k S X := IsScalarTower.restrictScalars k S X
+  let e : X ≃ₗ[k] (S' →ₗ[R] M) := f.coextendScalarsLinearEquiv M
   -- `S` is a direct summand of some `R^n`, so `Hom_R(S, M)` is a quotient of `Hom_R(R^n, M)`,
   -- which is finitely generated over `k` because `M` is.
   obtain ⟨n, π, σ, _, -, hσ⟩ := Module.Finite.exists_comp_eq_id_of_projective R S'
@@ -167,3 +232,56 @@ theorem finiteModulesCoextendScalars_obj_obj [Module.Finite k R]
   (rfl)
 
 end AlgHom
+
+namespace TauCeti
+
+/-- For a `k`-algebra `A` and a `k`-module `V`, coextension of scalars
+`(ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)` is `k`-linearly equivalent
+to `A →ₗ[k] V`. -/
+noncomputable def coextendScalarsBaseEquiv (k : Type u₁) (A : Type u₂) (V : Type v)
+    [CommRing k] [Ring A] [Algebra k A] [AddCommGroup V] [Module k V] :
+    let M := (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)
+    letI : Module k M := Module.restrictScalars k A M
+    M ≃ₗ[k] (A →ₗ[k] V) :=
+  -- `ModuleCat.restrictScalars (algebraMap k A)` wraps `A` with the restricted `k`-action;
+  -- `ModuleCat.restrictScalars.smul_def` identifies it with the `Algebra k A` scalar action.
+  let eA : (ModuleCat.restrictScalars (algebraMap k A)).obj (ModuleCat.of A A) ≃ₗ[k] A :=
+    { toFun := fun b ↦ b
+      invFun := fun b ↦ b
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun c b ↦ by
+        rw [ModuleCat.restrictScalars.smul_def, RingHom.id_apply]
+        exact (smul_eq_mul _ _).trans (Algebra.smul_def c (show A from b)).symm }
+  ((Algebra.ofId k A).coextendScalarsLinearEquiv (ModuleCat.of k V)).trans
+    (LinearEquiv.congrLeft (ModuleCat.of k V) k eA)
+
+/-- Evaluating `TauCeti.coextendScalarsBaseEquiv` on a functional agrees with pointwise
+evaluation. -/
+@[simp]
+theorem coextendScalarsBaseEquiv_apply (k : Type u₁) (A : Type u₂) (V : Type v)
+    [CommRing k] [Ring A] [Algebra k A] [AddCommGroup V] [Module k V]
+    (ψ : (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)) (b : A) :
+    coextendScalarsBaseEquiv k A V ψ b = ψ b := by
+  rw [coextendScalarsBaseEquiv]; rfl
+
+/-- Applying `TauCeti.coextendScalarsBaseEquiv` to `algebraMap k A c • ψ` scales by `c`. -/
+theorem coextendScalarsBaseEquiv_algebraMap_smul (k : Type u₁) (A : Type u₂) (V : Type v)
+    [CommRing k] [Ring A] [Algebra k A] [AddCommGroup V] [Module k V] (c : k)
+    (ψ : (ModuleCat.coextendScalars (algebraMap k A)).obj (ModuleCat.of k V)) :
+    coextendScalarsBaseEquiv k A V (algebraMap k A c • ψ) =
+      c • coextendScalarsBaseEquiv k A V ψ :=
+  congrArg (LinearEquiv.congrLeft (ModuleCat.of k V) k _).toLinearMap
+    ((Algebra.ofId k A).coextendScalarsLinearEquiv_algebraMap_smul (ModuleCat.of k V) c ψ)
+
+/-- Applying the inverse of `TauCeti.coextendScalarsBaseEquiv` to `c • φ` multiplies by
+`algebraMap k A c`. -/
+theorem coextendScalarsBaseEquiv_symm_smul (k : Type u₁) (A : Type u₂) (V : Type v)
+    [CommRing k] [Ring A] [Algebra k A] [AddCommGroup V] [Module k V] (c : k) (φ : A →ₗ[k] V) :
+    (coextendScalarsBaseEquiv k A V).symm (c • φ) =
+      algebraMap k A c • (coextendScalarsBaseEquiv k A V).symm φ :=
+  (coextendScalarsBaseEquiv k A V).injective (by
+    rw [(coextendScalarsBaseEquiv k A V).apply_symm_apply,
+      coextendScalarsBaseEquiv_algebraMap_smul,
+      (coextendScalarsBaseEquiv k A V).apply_symm_apply])
+
+end TauCeti
