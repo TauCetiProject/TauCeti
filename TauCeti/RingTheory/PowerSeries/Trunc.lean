@@ -45,8 +45,8 @@ This file collects facts used to compare power series to a finite order `m`:
   a ring homomorphism to power series.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
-* `PowerSeries.eval_trunc`: the value of the truncation below `n` at `x` is the partial sum
-  `∑_{i < n} cᵢ xⁱ`.
+* `PowerSeries.eval_trunc`, `PowerSeries.aeval_trunc`: the value of the truncation below `n` at
+  `x` is the partial sum `∑_{i < n} cᵢ xⁱ`.
 * `Polynomial.exists_natDegree_le_forall_coeff_eq`: every polynomial agrees up to index `m` with
   one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
@@ -215,6 +215,12 @@ end Ring
 section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
+
+/-- The value of the truncation below degree `n` at an element `x` of an `R`-algebra is the
+partial sum `∑_{i < n} cᵢ • xⁱ` of the series. -/
+theorem aeval_trunc {A : Type*} [Semiring A] [Algebra R A] (n : ℕ) (f : R⟦X⟧) (x : A) :
+    Polynomial.aeval x (trunc n f) = ∑ i ∈ Finset.range n, coeff i f • x ^ i := by
+  simp [Polynomial.aeval_def, eval₂_trunc_eq_sum_range, Algebra.smul_def]
 
 /-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
 power series only through its coefficients below `n`: any polynomial with the same coefficients
