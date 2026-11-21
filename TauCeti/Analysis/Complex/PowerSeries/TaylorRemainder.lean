@@ -116,6 +116,52 @@ theorem norm_apply_le {f : E → V} {p : FormalMultilinearSeries ℂ E V} {x : E
   refine hf.norm_apply_le_of_forall_mem_eball hM n ?_
   rwa [Metric.eball_coe, mem_ball_zero_iff]
 
+/-- **Cauchy's inequality for homogeneous terms (homogeneous scaling form).** If `f : E → V` has
+formal power series `p` on `Metric.ball x R` and satisfies `‖f w‖ ≤ M` there, then
+`‖p n (fun _ ↦ v)‖ * R ^ n ≤ M * ‖v‖ ^ n` for every `n : ℕ` and `v : E`. Neither `E` nor `V` is
+assumed complete. -/
+theorem norm_apply_mul_pow_le {f : E → V} {p : FormalMultilinearSeries ℂ E V} {x : E} {R : ℝ≥0}
+    (hf : HasFPowerSeriesOnBall f p x R) {M : ℝ} (hM : ∀ w ∈ Metric.ball x R, ‖f w‖ ≤ M)
+    (n : ℕ) (v : E) : ‖p n (fun _ ↦ v)‖ * (R : ℝ) ^ n ≤ M * ‖v‖ ^ n := by
+  have hR : 0 < (R : ℝ) := mod_cast ENNReal.coe_pos.1 hf.r_pos
+  rcases eq_or_ne v 0 with rfl | hv
+  · rcases n.eq_zero_or_pos with rfl | hn
+    · simpa [hf.coeff_zero] using hM x (mem_ball_self hR)
+    · have h0 : p n (fun _ ↦ (0 : E)) = 0 := (p n).map_coord_zero ⟨0, hn⟩ rfl
+      simp [h0, zero_pow hn.ne']
+  · have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
+    have hsub (r : ℝ) (hr : r ∈ Set.Ioo (0 : ℝ) R) :
+        ‖p n (fun _ ↦ v)‖ * r ^ n ≤ M * ‖v‖ ^ n := by
+      have hc0 : 0 < r / ‖v‖ := div_pos hr.1 hv0
+      have hy_norm : ‖((r / ‖v‖ : ℝ) : ℂ) • v‖ = r := by
+        rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg hc0.le, div_mul_cancel₀ _ hv0.ne']
+      have hy : ‖((r / ‖v‖ : ℝ) : ℂ) • v‖ < R := hy_norm.symm ▸ hr.2
+      have hle := hf.norm_apply_le hM n hy
+      have hsmul : p n (fun _ ↦ ((r / ‖v‖ : ℝ) : ℂ) • v) =
+          ((r / ‖v‖ : ℝ) : ℂ) ^ n • p n (fun _ ↦ v) := by
+        simpa [div_pow] using (p n).map_smul_univ (fun _ ↦ ((r / ‖v‖ : ℝ) : ℂ)) (fun _ ↦ v)
+      rw [hsmul, norm_smul, norm_pow, Complex.norm_real, Real.norm_of_nonneg hc0.le,
+        div_pow] at hle
+      calc ‖p n (fun _ ↦ v)‖ * r ^ n
+          = (r ^ n / ‖v‖ ^ n * ‖p n (fun _ ↦ v)‖) * ‖v‖ ^ n := by
+            field_simp [hv0.ne']
+        _ ≤ M * ‖v‖ ^ n := mul_le_mul_of_nonneg_right hle (pow_nonneg hv0.le n)
+    have hcont : Continuous fun r : ℝ ↦ ‖p n (fun _ ↦ v)‖ * r ^ n := by fun_prop
+    refine le_of_tendsto (hcont.continuousWithinAt (s := Set.Iio (R : ℝ))) ?_
+    filter_upwards [Ioo_mem_nhdsLT hR] with r hr using hsub r hr
+
+/-- **Cauchy's inequality on the closed ball of radius `R`.** If `f : E → V` has formal power
+series `p` on `Metric.ball x R` and `‖f w‖ ≤ M` there, then `‖p n (fun _ ↦ v)‖ ≤ M` whenever
+`‖v‖ ≤ R`. -/
+theorem norm_apply_le_of_norm_le {f : E → V} {p : FormalMultilinearSeries ℂ E V} {x : E}
+    {R : ℝ≥0} (hf : HasFPowerSeriesOnBall f p x R) {M : ℝ} (hM : ∀ w ∈ Metric.ball x R, ‖f w‖ ≤ M)
+    (n : ℕ) {v : E} (hv : ‖v‖ ≤ R) : ‖p n (fun _ ↦ v)‖ ≤ M := by
+  have hR : 0 < (R : ℝ) := mod_cast ENNReal.coe_pos.1 hf.r_pos
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x (mem_ball_self hR))
+  have h := (hf.norm_apply_mul_pow_le hM n v).trans
+    (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg v) hv n) hM0)
+  exact le_of_mul_le_mul_right h (pow_pos hR n)
+
 /-- **Truncated Taylor remainder estimate** about an arbitrary centre `x`: if `f` has the power
 series `p` on `Metric.ball x R` and `‖f‖ ≤ M` there, then
 `‖f (x + z) - p.partialSum T z‖ ≤ (1 + T) * M * (‖z‖ / R) ^ T` for every `T : ℕ` and `‖z‖ < R`. -/

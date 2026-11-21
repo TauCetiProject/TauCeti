@@ -48,8 +48,10 @@ at `z` keeps its order as that exponent. The finiteness of the zero set itself o
   `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order at least `n`
   exactly when it is `O((z - z₀) ^ n)`, order `n` exactly when it is comparable to `(z - z₀) ^ n`,
   and infinite order exactly when it is `O((z - z₀) ^ n)` for every `n`.
-* `TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`: a function of analytic order at least
-  `T ≥ 1` at `z₀` satisfies `g w - g z₀ = o(‖w - z₀‖ ^ (T - 1))`.
+* `TauCeti.isBigO_sub_pow_of_le_analyticOrderAt` and
+  `TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`: a positive lower bound `T` on
+  `analyticOrderAt g z₀` forces `g =O[𝓝 z₀] (· - z₀) ^ T` and
+  `(g · - g z₀) =o[𝓝 z₀] (‖· - z₀‖ ^ (T - 1))`, without assuming analyticity separately.
 * `TauCeti.isTheta_pow_sub_pow_sub_iff`: powers of `z - z₀` of different exponents are not
   comparable near `z₀`.
 * `AnalyticAt.analyticOrderAt_dslope_add_one`: at a zero `a` of `f`, the divided difference
@@ -378,5 +380,15 @@ theorem TauCeti.exists_analyticOrderAt_monomial_sub_eq_min {𝕜 : Type*}
     have hsum := analyticOrderAt_add_of_ne hne
     rw [analyticOrderAt_neg, hmono c hc] at hsum
     simpa only [Pi.add_def, Pi.neg_def, sub_eq_add_neg] using hsum
+
+/-- If `g` has analytic order at least `T ≥ 1` at `z₀`, then `g` is `O((w - z₀) ^ T)` near `z₀`.
+Analyticity of `g` at `z₀` need not be assumed separately, since a non-analytic function has
+`analyticOrderAt g z₀ = 0`. -/
+theorem TauCeti.isBigO_sub_pow_of_le_analyticOrderAt {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {g : 𝕜 → E} {z₀ : 𝕜} {T : ℕ}
+    (hT : 1 ≤ T) (h : (T : ℕ∞) ≤ analyticOrderAt g z₀) :
+    g =O[𝓝 z₀] fun w ↦ (w - z₀) ^ T := by
+  have hne : analyticOrderAt g z₀ ≠ 0 := ne_of_gt (lt_of_lt_of_le (by positivity) h)
+  exact ((analyticOrderAt_ne_zero.1 hne).1.natCast_le_analyticOrderAt_iff_isBigO).1 h
 
 end

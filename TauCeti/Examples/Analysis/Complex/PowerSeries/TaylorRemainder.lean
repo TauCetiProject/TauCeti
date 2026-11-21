@@ -31,8 +31,8 @@ Concrete checks of the constants and normalisations in
 
 public section
 
-open Finset Metric
-open scoped ENNReal NNReal
+open Filter Finset Metric
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti.TaylorRemainderExample
 
@@ -177,11 +177,68 @@ example {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ < 2) :
   simpa using hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_pow_le
     (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1] hρ0 (by simpa using hρ)
 
+-- Multi-index Cauchy inequality at the boundary radius `ρ = 2` attains `4 = 4`.
+example :
+    ‖prodCoordSeries.mvCoeff ![1, 1]‖ * (2 : ℝ) ^ (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) ≤ 4 ∧
+      ‖prodCoordSeries.mvCoeff ![1, 1]‖ * (2 : ℝ) ^ (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 4 := by
+  refine ⟨hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_pow_le_of_le
+    (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1] (by positivity)
+    (by norm_num), ?_⟩
+  have hdeg : (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 2 := by decide
+  rw [mvCoeff_prodCoordSeries_one_one, hdeg]
+  norm_num
+
+-- Unequal-polyradii Cauchy inequality on `Fin 2 → ℂ` at `ρ = ![1, 2]`.
+example :
+    ‖prodCoordSeries.mvCoeff ![1, 1]‖ *
+      ∏ i : Fin 2, (![1, 2] : Fin 2 → ℝ) i ^ (![1, 1] : Fin 2 → ℕ) i ≤ 4 :=
+  hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_prod_pow_le
+    (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1]
+    (fun i ↦ by fin_cases i <;> norm_num) (fun i ↦ by fin_cases i <;> norm_num)
+
 -- Multi-index truncated Taylor bound at `T = 2` on `Fin 2 → ℂ`, `R = 2`, `r = 1`.
 example {z : Fin 2 → ℂ} (hz : ‖z‖ ≤ 1) :
     ‖z 0 * z 1‖ ≤ (1 + (2 : ℕ)) * 4 * ((1 : ℝ) / 2) ^ 2 +
       ∑ k ∈ range 2, ∑ α ∈ univ.piAntidiag k, ‖prodCoordSeries.mvCoeff α‖ * (1 : ℝ) ^ k :=
   hasFPowerSeriesOnBall_prodCoordSeries.norm_le_add_sum_mvCoeff
     (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) 2 hz (by norm_num)
+
+/-! ### Boundary counterexamples for `‖z‖ < R` and `1 ≤ T` -/
+
+/-- `hz : ‖z‖ < R` cannot be weakened to `‖z‖ ≤ R` in
+`HasFPowerSeriesOnBall.norm_sub_partialSum_le`: `f z = if ‖z‖ < 1 then 0 else 1` has formal power
+series `0` on `ball 0 1` (`M = 0`), yet at `z = 1` the remainder norm is `1`. -/
+example : ∃ (f : ℂ → ℂ) (z : ℂ),
+    HasFPowerSeriesOnBall f (0 : FormalMultilinearSeries ℂ ℂ ℂ) 0 (1 : ℝ≥0) ∧
+      (∀ y ∈ ball (0 : ℂ) (1 : ℝ≥0), ‖f y‖ ≤ 0) ∧ ‖z‖ ≤ (1 : ℝ≥0) ∧
+      ¬(‖f z - (0 : FormalMultilinearSeries ℂ ℂ ℂ).partialSum 1 z‖ ≤
+        (1 + (1 : ℕ)) * 0 * (‖z‖ / (1 : ℝ≥0)) ^ 1) := by
+  classical
+  refine ⟨fun z ↦ if ‖z‖ < 1 then 0 else 1, 1, ?_, ?_, by simp,
+    by simp [FormalMultilinearSeries.partialSum]⟩
+  · exact
+      { r_le := by simp
+        r_pos := by simp
+        hasSum := fun {y} hy ↦ by
+          rw [eball_coe] at hy
+          have hy' : ‖y‖ < 1 := by simpa using hy
+          simp [hy'] }
+  · intro y hy
+    have hy' : ‖y‖ < 1 := by simpa using hy
+    simp [hy']
+
+/-- `hT : 1 ≤ T` cannot be dropped at `T = 0` in
+`TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`: `g w = if w = 0 then 0 else 1` trivially
+satisfies `(0 : ℕ∞) ≤ analyticOrderAt g 0`, yet `g w - g 0` is not `o(1)` as `w → 0`. -/
+example : ∃ g : ℂ → ℂ, (0 : ℕ∞) ≤ analyticOrderAt g 0 ∧
+    ¬((fun w ↦ g w - g 0) =o[𝓝 (0 : ℂ)] fun w ↦ ‖w - 0‖ ^ ((0 : ℕ) - 1)) := by
+  classical
+  refine ⟨fun w ↦ if w = 0 then 0 else 1, OrderBot.bot_le _, fun ho ↦ ?_⟩
+  have hlim : Tendsto (fun w : ℂ ↦ (if w = 0 then (0 : ℂ) else 1) - 0) (𝓝[≠] 0) (𝓝 0) :=
+    (Asymptotics.isLittleO_one_iff ℂ).1 (by simpa using ho) |>.mono_left nhdsWithin_le_nhds
+  have hlim1 : Tendsto (fun w : ℂ ↦ (if w = 0 then (0 : ℂ) else 1) - 0) (𝓝[≠] 0) (𝓝 1) :=
+    tendsto_const_nhds.congr' <| eventually_nhdsWithin_iff.2 <| .of_forall fun w (hw : w ≠ 0) ↦ by
+      simp [hw]
+  exact zero_ne_one (tendsto_nhds_unique hlim hlim1)
 
 end TauCeti.TaylorRemainderExample

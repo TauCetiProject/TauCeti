@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Pi.Interval
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
@@ -20,6 +21,7 @@ import TauCeti.Algebra.Order.Antidiag.Prod
 import TauCeti.Algebra.Order.Antidiag.Tendsto
 import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.GroupTheory.Perm.FiberSubgroup
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Multi-index coefficients of formal multilinear series
@@ -39,8 +41,9 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 
 * `FormalMultilinearSeries.mvCoeff`: the multi-index coefficient of a formal multilinear series,
   together with `FormalMultilinearSeries.mvCoeff_sum`,
-  `ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries` and
-  `FormalMultilinearSeries.mvCoeff_constFormalMultilinearSeries`.
+  `ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries`,
+  `FormalMultilinearSeries.mvCoeff_constFormalMultilinearSeries`, and
+  `FormalMultilinearSeries.mvCoeff_compContinuousLinearMap_piCongrLeft`.
 * `FormalMultilinearSeries.apply_eq_sum_mvCoeff`: the degree-`k` term is
   `∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α`.
 * `FormalMultilinearSeries.prod_factorial_smul_mvCoeff`: factorial permutation-counting formula
@@ -171,6 +174,32 @@ theorem _root_.ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries
     (g.compFormalMultilinearSeries p).mvCoeff α = g (p.mvCoeff α) := by
   classical
   simp [mvCoeff_eq_sum _ rfl, map_sum]
+
+/-- Reindexing coordinates along `e : κ ≃ ι` pulls back the multi-index coefficients of `p`: the
+coefficient of `p.compContinuousLinearMap (piCongrLeft 𝕜 (fun _ ↦ 𝕜) e)` at `α ∘ e` is
+`p.mvCoeff α`. -/
+theorem mvCoeff_compContinuousLinearMap_piCongrLeft {κ : Type*} [Fintype κ]
+    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (e : κ ≃ ι) (α : ι → ℕ) :
+    (p.compContinuousLinearMap
+      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : ι ↦ 𝕜) e : (κ → 𝕜) →L[𝕜] (ι → 𝕜))).mvCoeff
+        (α ∘ e) = p.mvCoeff α := by
+  classical
+  set k := ∑ i, α i
+  have hk : ∑ j, (α ∘ e) j = k := e.sum_comp α
+  rw [mvCoeff_eq_sum _ hk, mvCoeff_eq_sum p (k := k) rfl]
+  refine sum_equiv (Equiv.arrowCongr (Equiv.refl (Fin k)) e) (fun a ↦ ?_) (fun a _ ↦ ?_)
+  · simp only [mem_filter, mem_univ, true_and, Function.comp_apply, Equiv.arrowCongr_apply,
+      Equiv.refl_symm]
+    refine ⟨fun h i ↦ ?_, fun h j ↦ ?_⟩
+    · rw [← e.apply_symm_apply i, ← h (e.symm i)]
+      exact Fintype.card_congr (Equiv.subtypeEquivRight fun r ↦ e.apply_eq_iff_eq)
+    · rw [← h (e j)]
+      exact Fintype.card_congr (Equiv.subtypeEquivRight fun r ↦ e.apply_eq_iff_eq.symm)
+  · rw [compContinuousLinearMap_apply]
+    congr 1
+    ext r i
+    simp [Equiv.arrowCongr_apply, ContinuousLinearEquiv.piCongrLeft_apply, Pi.single_apply,
+      e.symm_apply_eq]
 
 /-- The multi-index coefficient at `α` is the sum over the tuples `a : Fin k → ι` whose
 coordinate counts are `α`, for `α` of total degree `k`. -/

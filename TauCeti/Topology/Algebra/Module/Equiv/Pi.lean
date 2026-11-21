@@ -29,6 +29,8 @@ into its restrictions to `S` and to `T`, `ContinuousLinearEquiv.sumPiEquivProdPi
 `ContinuousLinearEquiv.sumPiEquivProdPi_symm_apply` evaluate the equivalence and its inverse, and
 `ContinuousLinearEquiv.piProdEquivPiSumUnique` identifies `(σ → M) × M` with `σ ⊕ τ → M` for any
 unique index type `τ`.
+Similarly, `ContinuousLinearEquiv.piCongrLeft_apply` evaluates Mathlib's
+`ContinuousLinearEquiv.piCongrLeft` via `Equiv.piCongrLeft`.
 `ContinuousLinearEquiv.negCoord` negates a single coordinate of a dependent product while leaving
 the remaining coordinates fixed; `TauCeti.image_single_add_negCoord_univ_pi`,
 `TauCeti.image_single_add_negCoord_Icc`, and `TauCeti.image_single_add_negCoord_pi_Ioo` record
@@ -129,6 +131,18 @@ def piProdEquivPiSumUnique (σ τ N : Type*) [Unique τ]
   (rfl)
 
 end SumPi
+
+section PiCongrLeft
+
+variable {ι ι' : Type*} (φ : ι → Type*) [∀ i, AddCommMonoid (φ i)] [∀ i, Module R (φ i)]
+  [∀ i, TopologicalSpace (φ i)]
+
+/-- Mathlib's `ContinuousLinearEquiv.piCongrLeft` evaluates via `Equiv.piCongrLeft`. -/
+theorem piCongrLeft_apply (e : ι' ≃ ι) (x : (i' : ι') → φ (e i')) (i : ι) :
+    piCongrLeft R φ e x i = e.apply_symm_apply i ▸ x (e.symm i) :=
+  rfl
+
+end PiCongrLeft
 
 section NegCoord
 
