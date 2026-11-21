@@ -194,12 +194,14 @@ theorem cocyclesEvalOf_injective : Function.Injective (cocyclesEvalOf ρ) := fun
     rintro _ ⟨x, rfl⟩
     exact congrFun h x
 
-/-- **The one-cocycles of a finitely generated group are finite.** For a presented group with
-finitely many generators and a finite module `V` over a Noetherian ring, `Z¹(⟨X | R⟩, V)` embeds
-into `X → V` by evaluation at the generators. -/
+/-- **The one-cocycles of a presented group on finitely many generators are finite.** Such a
+group is finitely generated, so for a finite module `V` over a Noetherian ring `Z¹(⟨X | R⟩, V)` is
+finite by the instance for finitely generated groups. -/
 instance [IsNoetherianRing k] [Finite X] [Module.Finite k V] :
     Module.Finite k (cocycles₁ (Rep.of ρ)) :=
-  Module.Finite.of_injective (cocyclesEvalOf ρ) (cocyclesEvalOf_injective ρ)
+  have : Group.FG (PresentedGroup rels) :=
+    Group.fg_of_surjective (PresentedGroup.mk_surjective rels)
+  inferInstance
 
 /-- **The Fox map evaluates a cocycle of the presented group.** The Fox map of a word `w`, for
 the representation pulled back to the free group, sends the generator values of a cocycle `f`

@@ -46,7 +46,8 @@ For the bundled one-cocycles `groupCohomology.cocycles₁ A` of a representation
   identity `f (g * h) = ρ g (f h) + f g` and the inverse formula `f g⁻¹ = -ρ g⁻¹ (f g)`.
 * `groupCohomology.cocycles₁_ext_of_closure_eq_top`: a one-cocycle is determined by its values
   on a generating set; `groupCohomology.cocycles₁_list_prod_eq_zero`: it vanishes on a product of
-  elements at which it vanishes.
+  elements at which it vanishes. Hence `Z¹(G, A)` is a finite module when `G` is finitely
+  generated and `A` is a finite module over a Noetherian ring (an instance).
 * `groupCohomology.cocycles₁_apply_inv_mul_inv_mul_mul`: the value of a one-cocycle at a
   commutator `a⁻¹ b⁻¹ a b`, given by the Fox derivatives of the commutator.
 * `groupCohomology.cocycles₁_apply_mem_coinvariantsKer_of_mem_commutator`: modulo the coinvariant
@@ -169,6 +170,18 @@ theorem cocycles₁_ext_of_closure_eq_top {s : Set G} (hs : Subgroup.closure s =
   | one => simp
   | mul g g' _ _ hg hg' => rw [cocycles₁_map_mul, cocycles₁_map_mul f', hg, hg']
   | inv g _ hg => rw [cocycles₁_apply_inv, cocycles₁_apply_inv f', hg]
+
+/-- **The one-cocycles of a finitely generated group are finite.** For a finite module `A` over
+a Noetherian ring, evaluation on a finite generating set `S` embeds `Z¹(G, A)` into `S → A`. -/
+instance [IsNoetherianRing k] [Group.FG G] [Module.Finite k A] : Module.Finite k (cocycles₁ A) := by
+  obtain ⟨S, hS, hfin⟩ := Group.fg_iff.1 ‹Group.FG G›
+  have := hfin.to_subtype
+  let ev : cocycles₁ A →ₗ[k] (S → A) :=
+    { toFun f x := f x
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+  exact Module.Finite.of_injective ev fun f f' h ↦
+    cocycles₁_ext_of_closure_eq_top hS fun g hg ↦ congrFun h ⟨g, hg⟩
 
 /-- A one-cocycle vanishing at every element of a list vanishes at its product. -/
 theorem cocycles₁_list_prod_eq_zero (f : cocycles₁ A) {l : List G} (hl : ∀ x ∈ l, f x = 0) :
