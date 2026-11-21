@@ -52,7 +52,9 @@ variables (`CategoryTheory.Functor.hasLeftDerivedFunctor₂_tensor_of_inverts`).
   complex `𝟙_ (CochainComplex C ℤ)` on either side is naturally isomorphic to the identity
   (`TauCeti.leftDerivedTensorLeftUnitor`, `TauCeti.leftDerivedTensorRightUnitor`), and the
   Koszul braiding induces a natural symmetry isomorphism `LF.flip ≅ LF`
-  (`TauCeti.leftDerivedTensorFlipIso`), which is involutive over symmetric coefficients.
+  (`TauCeti.leftDerivedTensorFlipIso`), which is involutive over symmetric coefficients
+  (`TauCeti.leftDerivedTensorFlipIso_inv_app_app`,
+  `TauCeti.leftDerivedTensorFlipIso_hom_app_app_comp`).
 
 ## References
 
@@ -79,7 +81,10 @@ variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPre
   [∀ (X₁ X₂ X₃ X₄ : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
   [∀ (X₁ X₂ X₃ : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
-  [BraidedCategory C]
+
+section
+
+variable [BraidedCategory C]
 
 namespace CategoryTheory.Functor
 
@@ -585,6 +590,8 @@ end TauCeti
 
 end ModelComparison
 
+end
+
 section Symmetry
 
 variable [HasDerivedCategory C]
@@ -597,84 +604,67 @@ variable [HasDerivedCategory C]
 
 namespace TauCeti
 
-/-- The Koszul braiding as a natural transformation from `LF.flip` to the ordinary total tensor
-product, postcomposed with `DerivedCategory.Q`. -/
-private def koszulBraidingCounit :
-    (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj
-      DerivedCategory.Q).obj LF.flip ⟶
-      MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
-        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)) where
-  app K :=
-    { app L := (α.app L).app K ≫ DerivedCategory.Q.map (β_ L K).hom
-      naturality L₁ L₂ g := by
-        have h := congr_app (α.naturality g) K
-        dsimp at h ⊢
-        rw [reassoc_of% h, Category.assoc, ← DerivedCategory.Q.map_comp,
-          ← DerivedCategory.Q.map_comp, BraidedCategory.braiding_naturality_left] }
-  naturality K₁ K₂ f := by
-    ext L
-    have h := (α.app L).naturality f
-    dsimp at h ⊢
-    rw [reassoc_of% h, Category.assoc, ← DerivedCategory.Q.map_comp,
-      ← DerivedCategory.Q.map_comp, BraidedCategory.braiding_naturality_right]
+section Braided
 
-/-- The inverse Koszul braiding as a natural transformation from `LF.flip` to the ordinary total
-tensor product, postcomposed with `DerivedCategory.Q`. -/
-private def koszulBraidingInvCounit :
+variable [BraidedCategory C]
+
+/-- Postcompose the flipped counit `(flipFunctor _ _ _).map α` with a natural transformation
+`γ : (curriedTensor (CochainComplex C ℤ)).flip ⟶ curriedTensor (CochainComplex C ℤ)`. -/
+private def koszulFlipCounit
+    (γ : (MonoidalCategory.curriedTensor (CochainComplex C ℤ)).flip ⟶
+      MonoidalCategory.curriedTensor (CochainComplex C ℤ)) :
     (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj
       DerivedCategory.Q).obj LF.flip ⟶
       MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
-        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)) where
-  app K :=
-    { app L := (α.app L).app K ≫ DerivedCategory.Q.map (β_ K L).inv
-      naturality L₁ L₂ g := by
-        have h := congr_app (α.naturality g) K
-        dsimp at h ⊢
-        rw [reassoc_of% h, Category.assoc, ← DerivedCategory.Q.map_comp,
-          ← DerivedCategory.Q.map_comp, BraidedCategory.braiding_inv_naturality_left] }
-  naturality K₁ K₂ f := by
-    ext L
-    have h := (α.app L).naturality f
-    dsimp at h ⊢
-    rw [reassoc_of% h, Category.assoc, ← DerivedCategory.Q.map_comp,
-      ← DerivedCategory.Q.map_comp, BraidedCategory.braiding_inv_naturality_right]
+        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)) :=
+  (flipFunctor _ _ _).map α ≫ Functor.whiskerRight γ ((whiskeringRight _ _ _).obj DerivedCategory.Q)
+
+private def leftDerivedTensorFlipHom : LF.flip ⟶ LF :=
+  LF.leftDerived₂Lift α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) LF.flip
+    (koszulFlipCounit LF α
+      ((flipFunctor _ _ _).map (BraidedCategory.curriedBraidingNatIso (CochainComplex C ℤ)).hom))
+
+private def leftDerivedTensorFlipInv : LF.flip ⟶ LF :=
+  LF.leftDerived₂Lift α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) LF.flip
+    (koszulFlipCounit LF α (BraidedCategory.curriedBraidingNatIso (CochainComplex C ℤ)).inv)
+
+@[reassoc (attr := simp)]
+private lemma leftDerivedTensorFlipHom_app_app_Q (K L : CochainComplex C ℤ) :
+    ((leftDerivedTensorFlipHom LF α).app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) ≫ (α.app K).app L =
+      (α.app L).app K ≫ DerivedCategory.Q.map (β_ L K).hom := by
+  simp [leftDerivedTensorFlipHom, koszulFlipCounit]
+
+@[reassoc (attr := simp)]
+private lemma leftDerivedTensorFlipInv_app_app_Q (K L : CochainComplex C ℤ) :
+    ((leftDerivedTensorFlipInv LF α).app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) ≫ (α.app K).app L =
+      (α.app L).app K ≫ DerivedCategory.Q.map (β_ K L).inv := by
+  simp [leftDerivedTensorFlipInv, koszulFlipCounit]
+
+private lemma leftDerivedTensorFlipInv_comp_hom :
+    (flipFunctor _ _ _).map (leftDerivedTensorFlipInv LF α) ≫ leftDerivedTensorFlipHom LF α =
+      𝟙 LF :=
+  LF.leftDerived₂_ext α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) (hγ := by
+    ext K L
+    simp [← DerivedCategory.Q.map_comp])
+
+private lemma leftDerivedTensorFlipHom_comp_inv :
+    (flipFunctor _ _ _).map (leftDerivedTensorFlipHom LF α) ≫ leftDerivedTensorFlipInv LF α =
+      𝟙 LF :=
+  LF.leftDerived₂_ext α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) (hγ := by
+    ext K L
+    simp [← DerivedCategory.Q.map_comp])
 
 /-- **Symmetry of the derived tensor product.** The Koszul braiding induces a natural isomorphism
 `LF.flip ≅ LF` on any left derived tensor bifunctor `(LF, α)`. -/
-def leftDerivedTensorFlipIso : LF.flip ≅ LF :=
-  let φ : LF.flip ⟶ LF :=
-    LF.leftDerived₂Lift α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-      LF.flip (koszulBraidingCounit LF α)
-  let ψ' : LF.flip ⟶ LF :=
-    LF.leftDerived₂Lift α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-      LF.flip (koszulBraidingInvCounit LF α)
-  let ψ : LF ⟶ LF.flip := (flipFunctor _ _ _).map ψ'
-  have hψφ : ψ ≫ φ = 𝟙 LF :=
-    LF.leftDerived₂_ext α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) (hγ := by
-      ext K L
-      have h₁ := LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingCounit LF α) K L
-      have h₂ := LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingInvCounit LF α) L K
-      dsimp [φ, ψ, ψ', koszulBraidingCounit, koszulBraidingInvCounit] at h₁ h₂ ⊢
-      rw [Category.assoc, h₁, ← Category.assoc, h₂, Category.assoc, ← DerivedCategory.Q.map_comp,
-        Iso.inv_hom_id, DerivedCategory.Q.map_id, Category.comp_id, Category.id_comp])
-  have hφψ' : (flipFunctor _ _ _).map φ ≫ ψ' = 𝟙 LF :=
-    LF.leftDerived₂_ext α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) (hγ := by
-      ext K L
-      have h₁ := LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingInvCounit LF α) K L
-      have h₂ := LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingCounit LF α) L K
-      dsimp [φ, ψ', koszulBraidingCounit, koszulBraidingInvCounit] at h₁ h₂ ⊢
-      rw [Category.assoc, h₁, ← Category.assoc, h₂, Category.assoc, ← DerivedCategory.Q.map_comp,
-        Iso.hom_inv_id, DerivedCategory.Q.map_id, Category.comp_id, Category.id_comp])
-  { hom := φ
-    inv := ψ
-    hom_inv_id := by
-      ext X Y
-      exact congr_app (congr_app hφψ' Y) X
-    inv_hom_id := hψφ }
+def leftDerivedTensorFlipIso : LF.flip ≅ LF where
+  hom := leftDerivedTensorFlipHom LF α
+  inv := (flipFunctor _ _ _).map (leftDerivedTensorFlipInv LF α)
+  hom_inv_id := by
+    ext X Y
+    exact congr_app (congr_app (leftDerivedTensorFlipHom_comp_inv LF α) Y) X
+  inv_hom_id := leftDerivedTensorFlipInv_comp_hom LF α
 
 /-- Compatibility of `leftDerivedTensorFlipIso` with the Koszul braiding on images of complexes. -/
 @[reassoc (attr := simp)]
@@ -682,54 +672,45 @@ lemma leftDerivedTensorFlipIso_hom_app_app_Q (K L : CochainComplex C ℤ) :
     ((leftDerivedTensorFlipIso LF α).hom.app (DerivedCategory.Q.obj K)).app
         (DerivedCategory.Q.obj L) ≫ (α.app K).app L =
       (α.app L).app K ≫ DerivedCategory.Q.map (β_ L K).hom :=
-  LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-    LF.flip (koszulBraidingCounit LF α) K L
+  leftDerivedTensorFlipHom_app_app_Q LF α K L
 
 /-- Compatibility of the inverse of `leftDerivedTensorFlipIso` with the inverse Koszul braiding on
 images of complexes. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma leftDerivedTensorFlipIso_inv_app_app_Q (K L : CochainComplex C ℤ) :
     ((leftDerivedTensorFlipIso LF α).inv.app (DerivedCategory.Q.obj K)).app
         (DerivedCategory.Q.obj L) ≫ (α.app L).app K =
       (α.app K).app L ≫ DerivedCategory.Q.map (β_ L K).inv :=
-  LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-    LF.flip (koszulBraidingInvCounit LF α) L K
+  leftDerivedTensorFlipInv_app_app_Q LF α L K
 
-/-- When the Koszul braiding on `CochainComplex C ℤ` is involutive, the inverse of
-`leftDerivedTensorFlipIso` at `(X, Y)` equals its forward map at `(Y, X)`. -/
-lemma leftDerivedTensorFlipIso_inv_app_app_of_symmetry
-    (hβ : ∀ K L : CochainComplex C ℤ, (β_ K L).hom ≫ (β_ L K).hom = 𝟙 _)
-    (X Y : DerivedCategory C) :
+end Braided
+
+section Symmetric
+
+variable [SymmetricCategory C]
+
+/-- Over symmetric coefficients, the inverse of `leftDerivedTensorFlipIso` at `(X, Y)` equals its
+forward map at `(Y, X)`. -/
+@[simp]
+lemma leftDerivedTensorFlipIso_inv_app_app (X Y : DerivedCategory C) :
     ((leftDerivedTensorFlipIso LF α).inv.app X).app Y =
       ((leftDerivedTensorFlipIso LF α).hom.app Y).app X := by
-  have heq :
-      LF.leftDerived₂Lift α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingInvCounit LF α) =
-      LF.leftDerived₂Lift α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingCounit LF α) :=
+  have heq : leftDerivedTensorFlipInv LF α = leftDerivedTensorFlipHom LF α :=
     LF.leftDerived₂_ext α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ)) (hγ := by
       ext K L
-      have h₁ := LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingInvCounit LF α) K L
-      have h₂ := LF.leftDerived₂_fac_app_app α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))
-        LF.flip (koszulBraidingCounit LF α) K L
-      dsimp [koszulBraidingCounit, koszulBraidingInvCounit] at h₁ h₂ ⊢
-      have hinv : (β_ K L).inv = (β_ L K).hom := by
-        rw [← cancel_epi (β_ K L).hom, Iso.hom_inv_id, hβ]
-      rw [h₁, h₂, hinv])
+      simp [SymmetricCategory.braiding_swap_eq_inv_braiding])
   exact congr_app (congr_app heq Y) X
 
-/-- When the Koszul braiding on `CochainComplex C ℤ` is involutive, `leftDerivedTensorFlipIso` is
-involutive. -/
-@[reassoc]
-lemma leftDerivedTensorFlipIso_hom_app_app_comp_of_symmetry
-    (hβ : ∀ K L : CochainComplex C ℤ, (β_ K L).hom ≫ (β_ L K).hom = 𝟙 _)
-    (X Y : DerivedCategory C) :
+/-- Over symmetric coefficients, `leftDerivedTensorFlipIso` is involutive. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_hom_app_app_comp (X Y : DerivedCategory C) :
     ((leftDerivedTensorFlipIso LF α).hom.app X).app Y ≫
       ((leftDerivedTensorFlipIso LF α).hom.app Y).app X = 𝟙 ((LF.obj Y).obj X) := by
   have h := congr_app (congr_app (leftDerivedTensorFlipIso LF α).hom_inv_id X) Y
   dsimp at h
-  rwa [leftDerivedTensorFlipIso_inv_app_app_of_symmetry LF α hβ] at h
+  rwa [leftDerivedTensorFlipIso_inv_app_app] at h
+
+end Symmetric
 
 end TauCeti
 

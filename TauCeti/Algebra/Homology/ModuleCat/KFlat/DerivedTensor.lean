@@ -33,9 +33,6 @@ the ordinary totalized tensor product followed by `DerivedCategory.Q`.
   `TauCeti.leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat`: for a bounded-above complex of flat
   `R`-modules in the left or right variable, the natural isomorphism between the derived tensor
   functor on complex models and the ordinary totalized tensor functor followed by `Q`.
-* `TauCeti.leftDerivedTensorFlipIso_inv_app_app` and
-  `TauCeti.leftDerivedTensorFlipIso_hom_app_app_comp`: involutivity of the Koszul braiding
-  symmetry `TauCeti.leftDerivedTensorFlipIso` for complexes of `R`-modules.
 
 ## References
 
@@ -116,25 +113,6 @@ theorem leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat_hom
       Functor.bifunctorCounit₂ α Q := by
   have : Q.IsKFlat := Q.isKFlat_of_boundedAbove_flat b
   simp [leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat]
-
-/-- For complexes of `R`-modules, the inverse of `leftDerivedTensorFlipIso` at `(X, Y)` equals its
-forward map at `(Y, X)`. -/
-@[simp]
-lemma leftDerivedTensorFlipIso_inv_app_app
-    (X Y : DerivedCategory (ModuleCat.{u} R)) :
-    ((leftDerivedTensorFlipIso LF α).inv.app X).app Y =
-      ((leftDerivedTensorFlipIso LF α).hom.app Y).app X :=
-  leftDerivedTensorFlipIso_inv_app_app_of_symmetry LF α
-    (fun _ _ ↦ SymmetricCategory.symmetry _ _) X Y
-
-/-- For complexes of `R`-modules, `leftDerivedTensorFlipIso` is involutive. -/
-@[reassoc (attr := simp)]
-lemma leftDerivedTensorFlipIso_hom_app_app_comp
-    (X Y : DerivedCategory (ModuleCat.{u} R)) :
-    ((leftDerivedTensorFlipIso LF α).hom.app X).app Y ≫
-      ((leftDerivedTensorFlipIso LF α).hom.app Y).app X = 𝟙 ((LF.obj Y).obj X) :=
-  leftDerivedTensorFlipIso_hom_app_app_comp_of_symmetry LF α
-    (fun _ _ ↦ SymmetricCategory.symmetry _ _) X Y
 
 end ModelComparison
 
