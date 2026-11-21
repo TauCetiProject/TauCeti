@@ -274,13 +274,9 @@ theorem puncturedSphereAlmostComplex_cylindricalEndLift_inf (hJoutp : Periodic J
 
 /-- **Relabelling the inputs does not change the structure.** Listing the input ends in another
 order, through a bijection `e : κ ≃ ι`, gives the same structure. -/
-theorem puncturedSphereAlmostComplex_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι)
-    (hJe : ∀ k t, σ.Tames ((J ∘ e) k t))
-    (hsepe : Pairwise fun k l => ‖(a ∘ e) k‖ * Real.exp (-(2 * π)) / 2 +
-      ‖(a ∘ e) l‖ * Real.exp (-(2 * π)) / 2 ≤ ‖(c ∘ e) k - (c ∘ e) l‖)
-    (houte : ∀ k, ‖(c ∘ e) k‖ + ‖(a ∘ e) k‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π))
-    (w : ℂ) :
-    h₀.puncturedSphereAlmostComplex (J ∘ e) hJe Jout hJout (c ∘ e) (a ∘ e) hsepe houte w =
+theorem puncturedSphereAlmostComplex_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (w : ℂ) :
+    h₀.puncturedSphereAlmostComplex (J ∘ e) (fun k t => hJ (e k) t) Jout hJout (c ∘ e) (a ∘ e)
+        (hsep.comp_of_injective e.injective) (fun k => hout (e k)) w =
       h₀.puncturedSphereAlmostComplex J hJ Jout hJout c a hsep hout w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x =>
     (h₀.compatibleAt x).eq_of_cayley_eq
@@ -304,15 +300,14 @@ sphere with the input ends of centers `0` and `1` and scales `1` and `-1`, with 
 the two inputs, and with its output structure. -/
 theorem puncturedSphereAlmostComplex_eq_pairOfPantsAlmostComplex
     (J : Puncture → ℝ → SmoothAlmostComplexStructure I M) (hJ : ∀ q t, σ.Tames (J q t))
-    (hJ' : ∀ i t, σ.Tames ((![J zero, J one] : Fin 2 → ℝ → SmoothAlmostComplexStructure I M) i t))
     (hsep : Pairwise fun i j => ‖(![1, -1] : Fin 2 → ℂ) i‖ * Real.exp (-(2 * π)) / 2 +
       ‖(![1, -1] : Fin 2 → ℂ) j‖ * Real.exp (-(2 * π)) / 2 ≤
         ‖(![0, 1] : Fin 2 → ℂ) i - (![0, 1] : Fin 2 → ℂ) j‖)
     (hout : ∀ i, ‖(![0, 1] : Fin 2 → ℂ) i‖ + ‖(![1, -1] : Fin 2 → ℂ) i‖ * Real.exp (-(2 * π)) / 2 ≤
       2 * Real.exp (2 * π))
     (w : ThricePuncturedSphere) :
-    h₀.puncturedSphereAlmostComplex ![J zero, J one] hJ' (J inf) (hJ inf) ![0, 1] ![1, -1]
-        hsep hout w =
+    h₀.puncturedSphereAlmostComplex ![J zero, J one] (fun i => by fin_cases i <;> exact hJ _)
+        (J inf) (hJ inf) ![0, 1] ![1, -1] hsep hout w =
       h₀.pairOfPantsAlmostComplex J hJ w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_puncturedSphereAlmostComplex,
@@ -367,9 +362,6 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex
     (hrq : r ≠ q) (hr : r ≠ inf) {L : ℝ} (hL : 0 ≤ L)
     (hJa : ∀ p t, σ.Tames (update Ja inf (fun _ => J₀) p t))
     (hJb : ∀ p t, σ.Tames (update Jb q (fun _ => J₀) p t))
-    (hJ : ∀ i t, σ.Tames ((![Ja zero, Ja one, Jb r] : Fin 3 → ℝ → SmoothAlmostComplexStructure I M)
-      i t))
-    (hJout : ∀ t, σ.Tames (Jb inf t))
     (hsep : Pairwise fun i j =>
       ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) i‖ *
           Real.exp (-(2 * π)) / 2 +
@@ -383,7 +375,12 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex
     {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
     h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb q fun _ => J₀) hJa hJb q L
         w hw =
-      h₀.puncturedSphereAlmostComplex ![Ja zero, Ja one, Jb r] hJ (Jb inf) hJout
+      h₀.puncturedSphereAlmostComplex ![Ja zero, Ja one, Jb r]
+        (fun i t => by
+          fin_cases i
+          exacts [by simpa using hJa zero t, by simpa using hJa one t,
+            by simpa [update_of_ne hrq] using hJb r t])
+        (Jb inf) (fun t => by simpa [update_of_ne hq.symm] using hJb inf t)
         ![q.endCenter, q.plumbingMap L 1, r.endCenter]
         ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] hsep hout w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
@@ -471,21 +468,18 @@ theorem puncturedSphereAlmostComplex_associativity_of_nonpos {τ L : ℝ} (hτ :
     {Ja Jb : Puncture → ℝ → SmoothAlmostComplexStructure I M}
     (hJa : ∀ p t, σ.Tames (update Ja inf (fun _ => J₀) p t))
     (hJb : ∀ p t, σ.Tames (update Jb zero (fun _ => J₀) p t))
-    (hJ : ∀ i t, σ.Tames
-      ((![Ja zero, Ja one, Jb one] : Fin 3 → ℝ → SmoothAlmostComplexStructure I M) i t))
-    (hJout : ∀ t, σ.Tames (Jb inf t))
-    (hsep : Pairwise fun i j =>
-      ‖Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ * Real.exp (-(2 * π)) / 2 +
-        ‖Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ j‖ * Real.exp (-(2 * π)) / 2 ≤
-        ‖Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i -
-          Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ j‖)
-    (hout : ∀ i, ‖Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i‖ +
-      ‖Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ * Real.exp (-(2 * π)) / 2 ≤
-        2 * Real.exp (2 * π))
     {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1) :
-    h₀.puncturedSphereAlmostComplex ![Ja zero, Ja one, Jb one] hJ (Jb inf) hJout
+    h₀.puncturedSphereAlmostComplex ![Ja zero, Ja one, Jb one]
+        (fun i t => by
+          fin_cases i
+          exacts [by simpa using hJa zero t, by simpa using hJa one t, by simpa using hJb one t])
+        (Jb inf) (fun t => by simpa using hJb inf t)
         (Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-        (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ) hsep hout w =
+        (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ)
+        (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub (by positivity)
+          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ)
+        (Floer.norm_associativityCenter_add_mul_exp_le (by positivity)
+          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ) w =
       h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb zero fun _ => J₀) hJa hJb
         zero L w hw :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
@@ -509,27 +503,22 @@ theorem puncturedSphereAlmostComplex_associativity_of_one_le {τ L : ℝ} (hτ :
     {Ja Jb : Puncture → ℝ → SmoothAlmostComplexStructure I M}
     (hJa : ∀ p t, σ.Tames (update Ja inf (fun _ => J₀) p t))
     (hJb : ∀ p t, σ.Tames (update Jb one (fun _ => J₀) p t))
-    (hJ : ∀ i t, σ.Tames
-      ((![Jb zero, Ja zero, Ja one] : Fin 3 → ℝ → SmoothAlmostComplexStructure I M) i t))
-    (hJout : ∀ t, σ.Tames (Jb inf t))
-    (hsep : Pairwise fun i j =>
-      ‖Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ * Real.exp (-(2 * π)) / 2 +
-        ‖Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ j‖ * Real.exp (-(2 * π)) / 2 ≤
-        ‖Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i -
-          Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ j‖)
-    (hout : ∀ i, ‖Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i‖ +
-      ‖Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ * Real.exp (-(2 * π)) / 2 ≤
-        2 * Real.exp (2 * π))
     {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ one.plumbingMap L 1) :
-    h₀.puncturedSphereAlmostComplex ![Jb zero, Ja zero, Ja one] hJ (Jb inf) hJout
+    h₀.puncturedSphereAlmostComplex ![Jb zero, Ja zero, Ja one]
+        (fun i t => by
+          fin_cases i
+          exacts [by simpa using hJb zero t, by simpa using hJa zero t, by simpa using hJa one t])
+        (Jb inf) (fun t => by simpa using hJb inf t)
         (Floer.associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
-        (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ) hsep hout w =
+        (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ)
+        (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub (by positivity)
+          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ)
+        (Floer.norm_associativityCenter_add_mul_exp_le (by positivity)
+          (by linarith [Real.exp_le_one_iff.2 (by nlinarith [pi_pos] : -(2 * π * L) ≤ 0)]) τ) w =
       h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb one fun _ => J₀) hJa hJb
         one L w hw :=
   -- The two structures list the same three input ends in the orders `a, b, c` and `b, c, a`.
-  (h₀.puncturedSphereAlmostComplex_comp_equiv _ hJ _ hJout hsep hout (finRotate 3)
-    (fun _ t => hJ _ t) (hsep.comp_of_injective (finRotate 3).injective) (fun _ => hout _)
-    w).symm.trans <|
+  (h₀.puncturedSphereAlmostComplex_comp_equiv _ _ _ _ _ _ (finRotate 3) w).symm.trans <|
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_plumbedAlmostComplex_update_base h₀ (r := zero) (by simp)
       (by simp) (by simp) hL hJa hJb hw, almostComplexStructureAt_puncturedSphereAlmostComplex,
