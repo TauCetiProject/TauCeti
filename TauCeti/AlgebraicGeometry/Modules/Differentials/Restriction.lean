@@ -51,7 +51,6 @@ def pushforwardDerivation {M : X.Modules} (d : M.Derivation R) :
       M.val.map ((TopologicalSpace.Opens.map f.base).map i.unop).op (d.d (f.app U.unop a))
     rw [← ConcreteCategory.comp_apply, f.naturality i, ConcreteCategory.comp_apply,
       d.d_map]
-    rfl
   d_app {U} r := by
     -- The composition in the field `d` is an additive-hom composition.
     change d.d (f.app U.unop ((Y.baseRingToStructurePresheaf R).app U r)) = 0

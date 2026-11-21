@@ -106,9 +106,9 @@ private theorem resolutionMap_augmentation [LinearOrder (G ⧸ U)]
     (x : ((toSmoothDiscrete R G).obj
       (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.V) :
     ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom
-        (((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1) =
+        (((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val) =
       (((smoothTensorInducedGradedResolutionContraction U hU s B hB).ι.hom
-        (((smoothTensorInductionFunctor R G U hU s).map f).hom.hom x)).1) := by
+        (((smoothTensorInductionFunctor R G U hU s).map f).hom.hom x)).val) := by
   have h := (smoothTensorInducedGradedResolutionAugmentation U hU s).naturality f
   rw [smoothTensorInducedGradedResolutionAugmentation_app,
     smoothTensorInducedGradedResolutionAugmentation_app] at h

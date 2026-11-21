@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPolynomial.Harmonic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.ContinuousMap.Algebra
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.Topology.Sphere.Coord
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -38,23 +39,17 @@ namespace MvPolynomial
 
 variable {σ : Type*} [Fintype σ]
 
-private def sphereCoord (i : σ) : C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
-  ⟨fun x ↦ x.val i, (EuclideanSpace.proj i).continuous.comp continuous_subtype_val⟩
-
-@[simp]
-private theorem sphereCoord_apply (i : σ)
-    (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) : sphereCoord i x = x.val i := (rfl)
-
 /-- Restriction of a real polynomial to the Euclidean unit sphere, as a continuous function. -/
 def sphereEval : MvPolynomial σ ℝ →ₐ[ℝ] C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
-  aeval sphereCoord
+  aeval (TauCeti.sphereCoord ℝ)
 
 @[simp]
 theorem sphereEval_apply (p : MvPolynomial σ ℝ)
     (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
     sphereEval p x = eval (fun i ↦ x.val i) p := by
   rw [sphereEval, ← ContinuousMap.evalAlgHom_apply ℝ ℝ x, comp_aeval_apply]
-  simp only [ContinuousMap.evalAlgHom_apply, sphereCoord_apply, aeval_eq_eval]
+  simp only [ContinuousMap.evalAlgHom_apply, TauCeti.sphereCoord_apply, Algebra.algebraMap_self,
+    RingHom.id_apply, aeval_eq_eval]
 
 /-- The squared-norm polynomial restricts to the constant function one. -/
 @[simp]

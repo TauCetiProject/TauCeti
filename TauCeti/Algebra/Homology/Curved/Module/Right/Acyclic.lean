@@ -104,7 +104,7 @@ def totalizations : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat
   ObjectProperty.ofObj fun S : {S : ShortComplex
       (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) //
       S.ShortExact} ↦
-    DGHomotopyCategory.of R (totalization S.1)
+    DGHomotopyCategory.of R (totalization S.val)
 
 variable {S} in
 /-- The totalization of a short exact sequence belongs to the class of totalizations. -/
@@ -122,7 +122,7 @@ theorem totalizations_le_iff
         (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)),
         S.ShortExact → Q (DGHomotopyCategory.of R (totalization S)) := by
   rw [totalizations, ObjectProperty.ofObj_le_iff]
-  exact ⟨fun H S hS ↦ H ⟨S, hS⟩, fun H S ↦ H S.1 S.2⟩
+  exact ⟨fun H S hS ↦ H ⟨S, hS⟩, fun H S ↦ H S.val S.property⟩
 
 open ZeroObject in
 instance : (totalizations R h).Nonempty :=

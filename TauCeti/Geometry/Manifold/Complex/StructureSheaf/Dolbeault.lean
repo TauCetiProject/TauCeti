@@ -80,9 +80,9 @@ private def planeSet (V : Opens (TopCat.of U)) : Set ℂ :=
   Subtype.val '' (V : Set U)
 
 private lemma isOpen_planeSet (V : Opens (TopCat.of U)) : IsOpen (planeSet V) :=
-  U.isOpen.isOpenMap_subtype_val _ V.isOpen
+  U.isOpen.isOpenMap_subtypeVal _ V.isOpen
 
-private lemma mem_planeSet (y : V) : ((y : U) : ℂ) ∈ planeSet V := ⟨y, y.2, rfl⟩
+private lemma mem_planeSet (y : V) : ((y : U) : ℂ) ∈ planeSet V := ⟨y, y.property, rfl⟩
 
 private lemma planeSet_nhds (y : V) : planeSet V ∈ 𝓝 ((y : U) : ℂ) :=
   (isOpen_planeSet V).mem_nhds (mem_planeSet y)
@@ -194,21 +194,21 @@ private abbrev secE (V : Opens (TopCat.of U)) :=
 private def dbarLinear (V : Opens (TopCat.of U)) :
     (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op V) →ₗ[ℂ]
       (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op V) where
-  toFun s := (secE U V).symm ⟨dbarFun (secE U V s).1,
-    mem_smoothSections_iff.2 (contMDiff_dbarFun (mem_smoothSections_iff.1 (secE U V s).2))⟩
+  toFun s := (secE U V).symm ⟨dbarFun (secE U V s).val,
+    mem_smoothSections_iff.2 (contMDiff_dbarFun (mem_smoothSections_iff.1 (secE U V s).property))⟩
   map_add' s t := by
     refine smoothSheafModule.ext fun y ↦ ?_
     simp only [LinearEquiv.apply_symm_apply, map_add, Submodule.coe_add]
-    rw [dbarFun_add (mem_smoothSections_iff.1 (secE U V s).2)
-      (mem_smoothSections_iff.1 (secE U V t).2)]
+    rw [dbarFun_add (mem_smoothSections_iff.1 (secE U V s).property)
+      (mem_smoothSections_iff.1 (secE U V t).property)]
   map_smul' c s := by
     refine smoothSheafModule.ext fun y ↦ ?_
     simp only [LinearEquiv.apply_symm_apply, map_smul, Submodule.coe_smul, RingHom.id_apply]
-    rw [dbarFun_smul c (mem_smoothSections_iff.1 (secE U V s).2)]
+    rw [dbarFun_smul c (mem_smoothSections_iff.1 (secE U V s).property)]
 
 private lemma secE_dbarLinear (V : Opens (TopCat.of U))
     (s : (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op V)) :
-    (secE U V (dbarLinear U V s)).1 = dbarFun (secE U V s).1 := by
+    (secE U V (dbarLinear U V s)).val = dbarFun (secE U V s).val := by
   simp [dbarLinear]
 
 /-- **The Cauchy-Riemann operator** `f ↦ \bar∂ f` on the sheaf of smooth functions on an open set
@@ -234,14 +234,14 @@ def dolbeaultDbar :
 function `f` on `V`, computed after extending `f` by zero to the plane. -/
 theorem sectionsEquiv_dolbeaultDbar_app (V : Opens (TopCat.of U))
     (s : (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op V)) (y : V) :
-    (smoothSheafModule.sectionsEquiv 𝓘(ℝ, ℂ) ℂ ℂ V ((dolbeaultDbar U).app (op V) s)).1 y =
+    (smoothSheafModule.sectionsEquiv 𝓘(ℝ, ℂ) ℂ ℂ V ((dolbeaultDbar U).app (op V) s)).val y =
       conjWirtingerDeriv (Subtype.val.extend (Subtype.val.extend
-        (smoothSheafModule.sectionsEquiv 𝓘(ℝ, ℂ) ℂ ℂ V s).1 0 : U → ℂ) 0) ((y : U) : ℂ) 1 :=
+        (smoothSheafModule.sectionsEquiv 𝓘(ℝ, ℂ) ℂ ℂ V s).val 0 : U → ℂ) 0) ((y : U) : ℂ) 1 :=
   congrFun (secE_dbarLinear U V s) y
 
 private lemma secE_dolbeaultDbar_app (V : Opens (TopCat.of U))
     (s : (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op V)) :
-    (secE U V ((dolbeaultDbar U).app (op V) s)).1 = dbarFun (secE U V s).1 :=
+    (secE U V ((dolbeaultDbar U).app (op V) s)).val = dbarFun (secE U V s).val :=
   secE_dbarLinear U V s
 
 /-- The inclusion of the holomorphic sections over `V` into the smooth sections. -/
@@ -259,7 +259,7 @@ private def inclLinear (V : Opens (TopCat.of U)) :
 
 private lemma secE_inclLinear (V : Opens (TopCat.of U))
     (s : (holomorphicStructureSheafModules 𝓘(ℂ) U).obj.obj (op V)) :
-    (secE U V (inclLinear U V s)).1 = s := by
+    (secE U V (inclLinear U V s)).val = s := by
   simp [inclLinear]
 
 /-- **The inclusion of holomorphic into smooth functions** on an open set `U` of the complex
@@ -283,7 +283,7 @@ def dolbeaultInclusion :
 @[simp]
 theorem sectionsEquiv_dolbeaultInclusion_app (V : Opens (TopCat.of U))
     (s : (holomorphicStructureSheafModules 𝓘(ℂ) U).obj.obj (op V)) :
-    (smoothSheafModule.sectionsEquiv 𝓘(ℝ, ℂ) ℂ ℂ V ((dolbeaultInclusion U).app (op V) s)).1 =
+    (smoothSheafModule.sectionsEquiv 𝓘(ℝ, ℂ) ℂ ℂ V ((dolbeaultInclusion U).app (op V) s)).val =
       s :=
   secE_inclLinear U V s
 
@@ -304,8 +304,8 @@ instance : Mono (dolbeaultSequence U).f := by
   have (V : (Opens (TopCat.of U))ᵒᵖ) : Mono ((dolbeaultSequence U).f.app V) := by
     refine (ModuleCat.mono_iff_injective _).2 fun s t h ↦ ?_
     induction V using Opposite.rec with | op V
-    have h' : (secE U V (inclLinear U V s)).1 = (secE U V (inclLinear U V t)).1 :=
-      congrArg (fun r ↦ (secE U V r).1) h
+    have h' : (secE U V (inclLinear U V s)).val = (secE U V (inclLinear U V t)).val :=
+      congrArg (fun r ↦ (secE U V r).val) h
     exact holomorphicStructureSheafModules.ext (congrFun
       ((secE_inclLinear U V s).symm.trans (h'.trans (secE_inclLinear U V t))))
   exact NatTrans.mono_of_mono_app _
@@ -350,12 +350,12 @@ theorem dolbeaultSequence_exact : (dolbeaultSequence U).Exact := by
   induction V using Opposite.rec with | op V
   rw [ShortComplex.moduleCat_exact_iff]
   intro s hs
-  have hs' : dbarFun (secE U V s).1 = 0 := by
-    have h : (secE U V (dbarLinear U V s)).1 = (secE U V 0).1 :=
-      congrArg (fun r ↦ (secE U V r).1) hs
+  have hs' : dbarFun (secE U V s).val = 0 := by
+    have h : (secE U V (dbarLinear U V s)).val = (secE U V 0).val :=
+      congrArg (fun r ↦ (secE U V r).val) hs
     exact (secE_dbarLinear U V s).symm.trans (h.trans (by rw [map_zero]; rfl))
-  refine ⟨holomorphicStructureSheafModules.ofContMDiff (secE U V s).1
-    (contMDiff_of_dbarFun_eq_zero (mem_smoothSections_iff.1 (secE U V s).2) hs'),
+  refine ⟨holomorphicStructureSheafModules.ofContMDiff (secE U V s).val
+    (contMDiff_of_dbarFun_eq_zero (mem_smoothSections_iff.1 (secE U V s).property) hs'),
     smoothSheafModule.ext fun y ↦ ?_⟩
   exact (congrFun (sectionsEquiv_dolbeaultInclusion_app U V _) y).trans
     (holomorphicStructureSheafModules.ofContMDiff_apply _ _ y)
@@ -376,7 +376,7 @@ private lemma contDiffOn_amb {f : (⊤ : Opens (TopCat.of U)) → ℂ}
 private lemma contMDiff_restrict {g : ℂ → ℂ} (hg : ContDiffOn ℝ ∞ g U) :
     ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ fun y : (⊤ : Opens (TopCat.of U)) ↦ g ((y : U) : ℂ) :=
   fun y ↦ (contMDiffAt_iff _ y).2 <|
-    (hg.contDiffAt (U.isOpen.mem_nhds (y : U).2)).congr_of_eventuallyEq (by
+    (hg.contDiffAt (U.isOpen.mem_nhds (y : U).property)).congr_of_eventuallyEq (by
       filter_upwards [planeSet_nhds y] with z hz
       obtain ⟨w, rfl⟩ := exists_of_mem_planeSet hz
       exact amb_apply _ w)
@@ -388,13 +388,13 @@ private lemma surjective_dolbeaultDbar_app_top
       ∃ g : ℂ → ℂ, ContDiffOn ℝ ∞ g U ∧ ∀ z ∈ U, conjWirtingerDeriv g z 1 = f z) :
     Function.Surjective ((dolbeaultSequence U).g.app (op ⊤)) := by
   intro (s : (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op ⊤))
-  obtain ⟨g, hg, hgf⟩ := hU _ (contDiffOn_amb U (mem_smoothSections_iff.1 (secE U ⊤ s).2))
+  obtain ⟨g, hg, hgf⟩ := hU _ (contDiffOn_amb U (mem_smoothSections_iff.1 (secE U ⊤ s).property))
   refine ⟨(secE U ⊤).symm ⟨_, mem_smoothSections_iff.2 (contMDiff_restrict U hg)⟩,
     smoothSheafModule.ext fun y ↦ ?_⟩
   have h : (secE U ⊤ (dbarLinear U ⊤ ((secE U ⊤).symm
-      ⟨_, mem_smoothSections_iff.2 (contMDiff_restrict U hg)⟩))).1 y = (secE U ⊤ s).1 y := by
-    rw [secE_dbarLinear, LinearEquiv.apply_symm_apply, dbarFun, ← amb_apply (secE U ⊤ s).1 y,
-      ← hgf _ (y : U).2]
+      ⟨_, mem_smoothSections_iff.2 (contMDiff_restrict U hg)⟩))).val y = (secE U ⊤ s).val y := by
+    rw [secE_dbarLinear, LinearEquiv.apply_symm_apply, dbarFun, ← amb_apply (secE U ⊤ s).val y,
+      ← hgf _ (y : U).property]
     -- the extension by zero of the restriction of `g` agrees with `g` near `y`
     refine congrFun (congrArg DFunLike.coe (Filter.EventuallyEq.conjWirtingerDeriv_eq ?_)) 1
     filter_upwards [planeSet_nhds y] with z hz

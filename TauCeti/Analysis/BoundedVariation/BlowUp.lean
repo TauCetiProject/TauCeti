@@ -256,7 +256,7 @@ private theorem eventually_integrable_and_integral_inner_sub_le_integral_diverge
     refine image_eq_zero_of_notMem_tsupport fun h => hy ?_
     rw [mem_preimage, mul_comm, ← inv_smul_sub_mem_closedBall_zero_iff hr]
     exact closedBall_subset_closedBall (le_max_left _ _) (hR h)
-  have hSm : MeasurableSet S := (isClosed_closedBall.preimage continuous_subtype_val).measurableSet
+  have hSm : MeasurableSet S := (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet
   -- The perimeter measure of `S` is bounded by the upper density estimate.
   have hSfin : lam S ≠ ∞ := ne_top_of_le_ne_top (by finiteness) h2
   have hlamS : lam.real S ≤ 2 * (n * (R' * r) ^ (n - 1) * ω) := by
@@ -375,7 +375,7 @@ private theorem perimeter_ball_zero_preimage_add_smul_le_of_le [Nontrivial E] {s
       t * ENNReal.ofReal (finrank ℝ E * (r * R) ^ (finrank ℝ E - 1) * μ.real (ball 0 1))) :
     perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s') ≤
       t * ENNReal.ofReal (finrank ℝ E * R ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
-  rw [perimeter_ball_zero_preimage_add_smul hr]
+  rw [perimeter_ball_zero_preimage_add_smul, abs_of_pos hr]
   refine (mul_le_mul_right h _).trans_eq ?_
   obtain ⟨m, hm⟩ : ∃ m, finrank ℝ E = m + 1 := ⟨_, (Nat.sub_add_cancel finrank_pos).symm⟩
   rw [mul_left_comm, ← ENNReal.ofReal_mul (by positivity)]
@@ -450,7 +450,7 @@ private theorem exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul_o
       perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r i • y) ⁻¹' s')
     have hB : B ≠ ∞ := by
       refine ENNReal.sum_ne_top.2 fun i _ => ?_
-      rw [perimeter_ball_zero_preimage_add_smul (hpos i)]
+      rw [perimeter_ball_zero_preimage_add_smul]
       exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
         (ne_top_of_le_ne_top hfin (perimeter_mono le_top))
     refine ⟨(A + B).toNNReal, fun i => ?_⟩
@@ -773,7 +773,7 @@ private theorem perimeter_ball_setOf_inner_lt_le_liminf (hn : 2 ≤ finrank ℝ 
     tendsto_id (measurableSet_lt (by fun_prop) measurable_const).nullMeasurableSet
     (fun _ hK => tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter hn hx hK)
     one_pos).trans_eq (liminf_congr (eventually_nhdsWithin_of_forall fun _ hr => by
-      rw [perimeter_ball_zero_preimage_add_smul_eq_div hr, mul_one]))
+      rw [perimeter_ball_zero_preimage_add_smul_eq_div, abs_of_pos hr, mul_one]))
 
 /-- **The perimeter measure of small balls is bounded by the blow-up pairings.** Let `φ` be a test
 vector field on `E` with `⟪φ, ν⟫ ≥ 1` on `closedBall 0 1` and `⟪φ, ν⟫ ≥ 0` elsewhere, where
@@ -804,7 +804,7 @@ private theorem eventually_variationMeasure_closedBall_div_le_integral_divergenc
     self_mem_nhdsWithin] with r ⟨hint, h⟩ h2 (hr : 0 < r)
   set S₁ := ((↑) : Ω → E) ⁻¹' closedBall x r
   have hS₁m : MeasurableSet S₁ :=
-    (isClosed_closedBall.preimage continuous_subtype_val).measurableSet
+    (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet
   have hS₁fin : lam S₁ ≠ ∞ := ne_top_of_le_ne_top (by finiteness) h2
   -- `|Dχ_s|(S₁) ≤ ∫ ⟪φ((· - x) / r), ν⟫ d|Dχ_s|`, since `y ∈ S₁` exactly when
   -- `(y - x) / r ∈ closedBall 0 1`.
@@ -906,8 +906,8 @@ private theorem limsup_variationMeasure_closedBall_div_le_perimeter_ball_one
       ext y
       simp only [H, mem_preimage, mem_ofPred_eq, zero_add, real_inner_smul_left]
       exact ⟨fun h => neg_of_mul_neg_right h hρ0.le, mul_neg_of_pos_of_neg hρ0⟩
-    have h := perimeter_ball_zero_preimage_add_smul (μ := μ) (s := H) (x := 0) hρ0 1
-    rw [hpre, mul_one] at h
+    have h := perimeter_ball_zero_preimage_add_smul (μ := μ) (s := H) (x := 0) (r := ρ) 1
+    rw [hpre, abs_of_pos hρ0, mul_one] at h
     rw [h]
     exact mul_le_mul_right (limsup_variationMeasure_closedBall_div_le hn hx hρ) _
   have hlim : Tendsto (fun ρ => ENNReal.ofReal (ρ / ρ ^ finrank ℝ E) * L) (𝓝[>] 1) (𝓝 L) := by

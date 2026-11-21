@@ -94,7 +94,7 @@ variable {C D : G.BridgeComponent}
 identified with the bridge components of the prescribed vertices. -/
 @[simp]
 theorem toBridgeForest_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
-    (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
+    (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) :
     (q.liftBridgeForest hx hy).toBridgeForest (BridgeComponent.mem_vertexSet hx)
       (BridgeComponent.mem_vertexSet hy) =
       q.copy (BridgeComponent.eq_bridgeComponentOf hx)
@@ -107,14 +107,14 @@ open Classical in
 /-- The bridges in the canonical lift are exactly the edges of the forest path, in order. -/
 @[simp]
 theorem filter_edges_liftBridgeForest (q : G.bridgeForest.Walk C D) (hq : q.IsPath)
-    (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
+    (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) :
     (q.liftBridgeForest hx hy).edges.filter (fun e ↦ decide (G.IsBridge e)) = q.edges := by
   simpa only [edges_toBridgeForest, edges_copy] using
     congrArg Walk.edges (toBridgeForest_liftBridgeForest q hq hx hy)
 
 /-- A path lift of a bridge-forest path traverses every bridge displayed by that forest path. -/
 theorem IsPath.mem_edges_liftBridgeForest {e : β}
-    {q : G.bridgeForest.Walk C D} (hq : q.IsPath) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1))
+    {q : G.bridgeForest.Walk C D} (hq : q.IsPath) (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val))
     (he : e ∈ q.edges) : e ∈ (q.liftBridgeForest hx hy).edges := by
   classical
   rw [← filter_edges_liftBridgeForest q hq hx hy] at he
@@ -123,7 +123,7 @@ theorem IsPath.mem_edges_liftBridgeForest {e : β}
 /-- For a bridge-forest path, the bridge identities in its lift are exactly its displayed
 edges. -/
 theorem IsPath.mem_edges_liftBridgeForest_iff {e : β}
-    {q : G.bridgeForest.Walk C D} (hq : q.IsPath) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
+    {q : G.bridgeForest.Walk C D} (hq : q.IsPath) (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) :
     e ∈ (q.liftBridgeForest hx hy).edges ∧ G.IsBridge e ↔ e ∈ q.edges := by
   classical
   rw [← filter_edges_liftBridgeForest q hq hx hy, List.mem_filter, decide_eq_true_eq]
@@ -131,9 +131,9 @@ theorem IsPath.mem_edges_liftBridgeForest_iff {e : β}
 /-- The canonical lift stays in the union of the components on the forest walk. -/
 theorem exists_mem_support_of_mem_support_liftBridgeForest
     (q : G.bridgeForest.Walk C D)
-    (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) {a : α}
+    (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) {a : α}
     (ha : a ∈ (q.liftBridgeForest hx hy).support) :
-    ∃ E ∈ q.support, a ∈ V(E.1) := by
+    ∃ E ∈ q.support, a ∈ V(E.val) := by
   have haG := (q.liftBridgeForest hx hy).support_subset_vertexSet
     (BridgeComponent.mem_vertexSet hx) a ha
   refine ⟨G.bridgeComponentOf a haG, ?_, mem_vertexSet_bridgeComponentOf_self haG⟩
