@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.LocalCoefficient.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
 
@@ -23,12 +24,11 @@ base. This file computes the local homology `Hₖ(E, E ∖ F; p*L)` of `E` along
 * hence `Hₙ₊ᵣ(E, E ∖ F; p*L) ≅ Hₙ(F; L_b)` (`TauCeti.TopCat.twistedHomologyComplFiberIso`), and
   `Hₘ(E, E ∖ F; p*L) = 0` for `m < r` (`TauCeti.TopCat.isZero_twistedHomology_complFiber`).
 
-The composite `Hₙ₊ᵣ(E; p*L) → Hₙ₊ᵣ(E, E ∖ F; p*L) ≅ Hₙ(F; L_b)` is the shriek map of the
-inclusion of the point `b` with twisted coefficients on the total space. Taking for `L` the
-orientation local system `or_B` of a manifold base, this is the shriek map
-`H_*(E; p*or_B) → H_{*-r}(F) ⊗ (or_B)_b` used to detect classes living over the fundamental class
-of a base which need not be orientable, where the untwisted shriek map
-(`TauCeti.TopCat.singularHomologyComplFiberIso`) is not available.
+Composing with the map of pairs `(E, ∅) → (E, E ∖ F)` gives a map
+`Hₙ₊ᵣ(E; p*L) → Hₙ(F; L_b)`; this file does not define the composite. For `L` the orientation
+local system `or_B` of a manifold base, it is the twisted form of the shriek map of the inclusion
+of the point `b`. This form is needed when `B` is not orientable, since `B` then has a fundamental
+class only in `H_r(B; or_B)`.
 
 ## The computation
 
@@ -39,10 +39,12 @@ with the local homology of the open set `p⁻¹(U)` along `F`, with coefficients
 `p*L`. That restriction is the pullback of `L` along the restriction of `p` to `p⁻¹(U)`, a map into
 `U`, and straight lines to `e b` in the chart contract every map into `U` onto the constant map at
 `b` (`OpenPartialHomeomorph.chartBallHomotopy`). So the restricted system is constant, with fibre
-`L_b` (`TauCeti.TopCat.chartBallPullbackIsoConstant`): at a point `z` the identification is
-transport by `L` along the path from `p z` to `b` traced by that homotopy. Twisted homology with
-constant coefficients is ordinary homology (`TopPair.twistedHomologyConstantIso`), and excision for
-ordinary homology returns to `Hₖ(E, E ∖ F; L_b)`. The untwisted local homology along the fibre is
+`L_b` (`TauCeti.TopCat.chartBallPullbackIsoConstant`, an instance of
+`TauCeti.LocalCoefficientSystem.pullbackIsoConstantOfHomotopy`): at a point `z` the
+identification is transport by `L` along the path from `p z` to `b` traced by that homotopy.
+Twisted homology with constant coefficients is ordinary homology
+(`TopPair.twistedHomologyConstantIso`), and excision for ordinary homology returns to
+`Hₖ(E, E ∖ F; L_b)`. The untwisted local homology along the fibre is
 then `TauCeti.TopCat.singularHomologyComplFiberIso`.
 
 ## Main definitions
@@ -110,15 +112,15 @@ def chartBallPullbackIsoConstant :
         (TopPair.interPair (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ).fst).obj
         (L.obj (FundamentalGroupoid.mk b)) :=
   ((pullbackCompIso _ p.hom).app L).symm ≪≫
-    (pullbackHomotopyIso (e.chartBallHomotopy hb hε
+    pullbackIsoConstantOfHomotopy (e.chartBallHomotopy hb hε
       (g := p.hom.comp (TopPair.Hom.fst
         (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)).hom)
-      (comp_excisionMap_fst_mem_chartBall e))).app L ≪≫
-    pullbackConstIso _ b L
+      (comp_excisionMap_fst_mem_chartBall e)) L
 
 /-- At a point `z` over the chart ball, `TauCeti.TopCat.chartBallPullbackIsoConstant` is transport
 by `L` along the path from `p z` to `b` traced by the straight-line contraction of the chart
 ball. -/
+@[simp]
 lemma chartBallPullbackIsoConstant_hom_app
     (z : FundamentalGroupoid
       (TopPair.interPair (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ).fst) :
@@ -127,18 +129,15 @@ lemma chartBallPullbackIsoConstant_hom_app
         (g := p.hom.comp (TopPair.Hom.fst
           (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)).hom)
         (comp_excisionMap_fst_mem_chartBall e)).evalAt z.as⟧ := by
-  -- The components of `pullbackCompIso` and `pullbackConstIso` are identities between objects
-  -- which are only definitionally equal, so the composite is split by `rfl` rather than by
-  -- rewriting `Iso.trans_hom`.
+  -- The component of `pullbackCompIso` is an identity between objects which are only
+  -- definitionally equal, so the composite is split by `rfl` rather than by rewriting
+  -- `Iso.trans_hom`, and the unit law is applied by `exact`.
   calc _ = ((pullbackCompIso _ p.hom).inv.app L).app z ≫
-        ((pullbackHomotopyIso (e.chartBallHomotopy hb hε
-          (comp_excisionMap_fst_mem_chartBall e))).hom.app L).app z ≫
-        (pullbackConstIso _ b L).hom.app z := rfl
+        (pullbackIsoConstantOfHomotopy (e.chartBallHomotopy hb hε
+          (comp_excisionMap_fst_mem_chartBall e)) L).hom.app z := rfl
     _ = _ := by
       refine (congrArg (· ≫ _) (pullbackCompIso_inv_app_app _ _ L z)).trans ?_
-      refine (Category.id_comp _).trans ?_
-      refine (congrArg (· ≫ _) (pullbackHomotopyIso_hom_app_app _ L z)).trans ?_
-      exact (congrArg (_ ≫ ·) (pullbackConstIso_hom_app _ b L z)).trans (Category.comp_id _)
+      exact (Category.id_comp _).trans (pullbackIsoConstantOfHomotopy_hom_app _ L z)
 
 variable [T1Space B]
 

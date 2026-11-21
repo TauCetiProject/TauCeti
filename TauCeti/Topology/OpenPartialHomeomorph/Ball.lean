@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
@@ -93,14 +93,6 @@ variable {X M V : Type*} [TopologicalSpace X] [TopologicalSpace M] [SeminormedAd
   [NormedSpace ℝ V] (e : OpenPartialHomeomorph M V) {b : M} (hb : b ∈ e.source) {ε : ℝ}
   (hε : ball (e b) ε ⊆ e.target)
 
-/-- A point of the segment from `e b` to `e x`, for `x` in the chart ball, lies in the ball of
-radius `ε` about `e b`. -/
-lemma add_smul_sub_mem_ball {x : M} (hx : x ∈ chartBall e b ε) {t : ℝ} (ht₀ : 0 ≤ t)
-    (ht₁ : t ≤ 1) : e b + t • (e x - e b) ∈ ball (e b) ε := by
-  rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg ht₀,
-    ← dist_eq_norm]
-  exact (mul_le_of_le_one_left dist_nonneg ht₁).trans_lt hx.2
-
 include hb hε in
 /-- **Maps into a chart ball are nullhomotopic.** A continuous map `g` into the chart ball
 `chartBall e b ε`, for a ball about `e b` inside the target of `e`, is homotopic to the constant
@@ -115,8 +107,8 @@ def chartBallHomotopy {g : C(X, M)} (hg : ∀ x, g x ∈ chartBall e b ε) :
     refine e.continuousOn_symm.comp_continuous (continuous_const.add
       ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
         ((heg.comp continuous_snd).sub continuous_const))) fun z ↦ hε ?_
-    exact add_smul_sub_mem_ball e (hg z.2) (unitInterval.one_sub_nonneg z.1)
-      (unitInterval.one_sub_le_one z.1)
+    exact (convex_ball (e b) ε).add_smul_sub_mem (mem_ball_self (pos_of_mem_ball (hg z.2).2))
+      (hg z.2).2 ⟨unitInterval.one_sub_nonneg z.1, unitInterval.one_sub_le_one z.1⟩
   map_zero_left x := by simp [e.left_inv (hg x).1]
   map_one_left x := by simp [e.left_inv hb]
 
