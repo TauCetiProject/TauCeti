@@ -79,11 +79,15 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
+* `TauCeti.laplacian_smul_comp_smul_right`: the rescaling `c⁻² f(c ·)` has Laplacian
+  `(Δ f)(c ·)`.
 * `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a bilinear map, as a continuous linear
   functional.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
+* `TauCeti.laplacian_fun_sum`: the Laplacian of a finite sum of `C²` functions is the sum of
+  their Laplacians.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
   differences are bounded by `dim E` times the second derivative and its differences;
   `TauCeti.norm_laplacian_le_norm_iteratedFDeriv_two` states the first bound with the second
@@ -168,6 +172,13 @@ theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
     Δ f x = (∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
       ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (iteratedFDeriv ℝ 2 f x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+
+/-- The Laplacian at `x` of a finite sum of functions that are `C²` at `x` is the sum of their
+Laplacians. -/
+theorem laplacian_fun_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
+    (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
+    Δ (fun y ↦ ∑ i ∈ s, f i y) x = ∑ i ∈ s, Δ (f i) x := by
+  simp only [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_fun_sum_apply hf, map_sum]
 
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
@@ -431,6 +442,16 @@ theorem laplacian_comp_smul_right (c : ℝ) (f : E → F) :
     -- `map_smul_univ` then pulls the two scalar factors out of the bilinear map.
     change M (fun j => c • v j) = c ^ 2 • M v
     simpa [M, v, pow_two] using M.map_smul_univ (fun _ : Fin 2 => c) v
+
+/-- **Scale-invariant rescaling.** The rescaling `c⁻² f(c ·)` of a function `f` that is `C²` at
+`c • x` has Laplacian `(Δ f)(c • x)` at `x`. -/
+theorem laplacian_smul_comp_smul_right {f : E → F} {c : ℝ} (hc : c ≠ 0) {x : E}
+    (hf : ContDiffAt ℝ 2 f (c • x)) :
+    Δ ((c ^ 2)⁻¹ • fun y ↦ f (c • y)) x = Δ f (c • x) := by
+  have hcomp : ContDiffAt ℝ 2 (fun y ↦ f (c • y)) x :=
+    hf.comp x (contDiff_const_smul c).contDiffAt
+  rw [laplacian_smul _ hcomp, laplacian_comp_smul_right, smul_smul,
+    inv_mul_cancel₀ (pow_ne_zero 2 hc), one_smul]
 
 /-- **Scaling law for the Laplacian under a homothety.**
 
