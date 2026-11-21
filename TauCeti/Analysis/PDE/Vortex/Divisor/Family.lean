@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 public import TauCeti.Analysis.PDE.Vortex.Existence
 public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
-import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.Fredholm
 import TauCeti.Analysis.PDE.Vortex.Reduced.Continuity
