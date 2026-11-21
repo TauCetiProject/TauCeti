@@ -55,7 +55,8 @@ differentiation commutes with this extension.
   differentiable section.
 * `TauCeti.mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self`: a form whose
   coordinate expression in its own preferred chart is differentiable is a differentiable section.
-* `TauCeti.mextDeriv_sum`: exterior differentiation commutes with finite sums of `C¹` forms.
+* `TauCeti.mextDeriv_sum`, `TauCeti.IsSmoothForm.mextDeriv_add`: exterior differentiation
+  commutes with finite sums of `C¹` forms.
 * `TauCeti.isSmoothForm_zeroDim`, `TauCeti.isSmoothForm_modelSpace_iff`: over a zero-dimensional
   model every form is smooth, and over the model space a form is a `C^n` section exactly when it
   is a `C^n` function.
@@ -295,6 +296,14 @@ theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
       (hi'.differentiableWithinAt one_ne_zero) (hs'.differentiableWithinAt one_ne_zero)]
     exact congrArg (fun ψ : RoughForm I M F (k + 1) ↦ TauCeti.mextDeriv (φ i) x + ψ x)
       (ih hrest)
+
+/-- Exterior differentiation is additive on `C¹` forms. -/
+theorem IsSmoothForm.mextDeriv_add [IsManifold I 1 M] {φ ψ : RoughForm I M F k}
+    (hφ : IsSmoothForm I 1 φ) (hψ : IsSmoothForm I 1 ψ) :
+    mextDeriv (φ + ψ) = mextDeriv φ + mextDeriv ψ :=
+  funext fun x ↦ TauCeti.mextDeriv_add
+    ((hφ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
+    ((hψ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
 
 /-- Coordinate regularity of a form transfers between preferred charts: regularity within the
 model range in the chart at `β`, at the image of a point of the overlap, gives the same regularity

@@ -122,17 +122,6 @@ theorem mk_mem_iff (a d : Rˣ) (b : R) : GL2Borel.mk a d b ∈ GL2Mirabolic R �
   simp only [mem_iff, GL2Borel.coe_mk]
   simp [Units.val_eq_one]
 
-/-- Two mirabolic matrices in normal form agree exactly when their affine coordinates agree. -/
-@[simp]
-theorem mk_one_inj {a c : Rˣ} {b d : R} :
-    GL2Borel.mk a 1 b = GL2Borel.mk c 1 d ↔ a = c ∧ b = d := by
-  constructor
-  · intro h
-    exact ⟨Units.ext (by simpa using congrArg (fun g : GL (Fin 2) R ↦ g 0 0) h),
-      by simpa using congrArg (fun g : GL (Fin 2) R ↦ g 0 1) h⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
-
 variable (R) in
 /-- **The mirabolic subgroup is the affine group of the line**: the affine map `x ↦ a x + b`,
 the element `(b, a)` of `R ⋊ Rˣ`, corresponds to the matrix `!![a, b; 0, 1]`. -/
@@ -152,7 +141,7 @@ def affineGroupMulEquiv : AffineGroup R ≃* GL2Mirabolic R where
   right_inv g := by
     apply GL2Mirabolic.ext <;> simp
   map_mul' g h := by
-    apply GL2Mirabolic.ext <;> simp [Matrix.mul_apply, Fin.sum_univ_two, add_comm]
+    apply GL2Mirabolic.ext <;> simp [add_comm]
 
 /-- The affine coordinates `(b, a)` give the upper-triangular matrix `!![a, b; 0, 1]`. -/
 @[simp]
@@ -160,35 +149,6 @@ theorem coe_affineGroupMulEquiv_apply (g : AffineGroup R) :
     ((affineGroupMulEquiv R g : GL2Mirabolic R) : GL (Fin 2) R) =
       GL2Borel.mk g.right 1 g.left.toAdd :=
   (rfl)
-
-/-- Multiplication of mirabolic matrices is the affine multiplication law. -/
-@[simp]
-theorem mk_one_mul_mk_one (a c : Rˣ) (b d : R) :
-    GL2Borel.mk a 1 b * GL2Borel.mk c 1 d = GL2Borel.mk (a * c) 1 (b + (a : R) * d) := by
-  have h := ((GL2Mirabolic R).subtype.comp (affineGroupMulEquiv R).toMonoidHom).map_mul
-    (⟨Multiplicative.ofAdd b, a⟩ : AffineGroup R) ⟨Multiplicative.ofAdd d, c⟩
-  simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom,
-    coe_affineGroupMulEquiv_apply, SemidirectProduct.mul_right, SemidirectProduct.mul_left,
-    toAdd_mul, toAdd_ofAdd, affineAction_apply_toAdd] using h.symm
-
-/-- The mirabolic matrix with unit scaling and zero translation is the identity. -/
-@[simp]
-theorem mk_one_one_zero : GL2Borel.mk (1 : Rˣ) 1 0 = 1 := by
-  simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom,
-    coe_affineGroupMulEquiv_apply, SemidirectProduct.one_left, SemidirectProduct.one_right,
-    toAdd_one] using
-    ((GL2Mirabolic R).subtype.comp (affineGroupMulEquiv R).toMonoidHom).map_one
-
-/-- Inversion of a mirabolic matrix in affine coordinates. -/
-@[simp]
-theorem inv_mk_one (a : Rˣ) (b : R) :
-    (GL2Borel.mk a 1 b)⁻¹ = GL2Borel.mk a⁻¹ 1 (-(↑a⁻¹ * b)) := by
-  have h := ((GL2Mirabolic R).subtype.comp (affineGroupMulEquiv R).toMonoidHom).map_inv
-    (⟨Multiplicative.ofAdd b, a⟩ : AffineGroup R)
-  simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom,
-    coe_affineGroupMulEquiv_apply, SemidirectProduct.inv_right, SemidirectProduct.inv_left,
-    affineAction_apply_toAdd, toAdd_inv, toAdd_ofAdd, mul_neg]
-    using h.symm
 
 /-- The translation part of the affine map attached to a mirabolic matrix `!![a, b; 0, 1]` is its
 upper-right entry `b`. -/
@@ -250,12 +210,8 @@ theorem det_eq {g : GL (Fin 2) R} (hg : g ∈ GL2Mirabolic R) :
 @[simp]
 theorem mk_det_one_apply_zero_one (g : GL2Mirabolic R) :
     GL2Borel.mk (GeneralLinearGroup.det (g : GL (Fin 2) R)) 1 ((g : GL (Fin 2) R) 0 1) = g := by
-  obtain ⟨a, b, hg⟩ := mem_iff_exists_mk.mp g.property
-  rw [hg]
-  have ha : GeneralLinearGroup.det (GL2Borel.mk a 1 b) = a := by
-    apply Units.ext
-    simp [GeneralLinearGroup.val_det_apply, Matrix.det_fin_two]
-  simp [ha]
+  refine Units.ext (Matrix.ext fun i j ↦ ?_)
+  fin_cases i <;> fin_cases j <;> simp [GeneralLinearGroup.val_det_apply, det_eq g.property]
 
 variable (R) in
 /-- The mirabolic subgroup lies in the Borel subgroup. -/

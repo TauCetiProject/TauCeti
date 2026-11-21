@@ -69,6 +69,12 @@ inclusion.
   `TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt` restates the bound for
   nonnegative functions decaying at every rate below a threshold. The pointwise overlap bounds
   are in `TauCeti.Analysis.SpecialFunctions.Exp.Overlap`.
+* `TauCeti.integral_mul_le_mul_exp_of_forall_le_norm_sub`: the same for functions decaying in the
+  distance to two finite multisets of centres at distance at least `δ` from each other: their
+  overlap integral is `O(exp (-(c δ)))`, with a constant depending only on the decay constants and
+  the number of centres. It integrates the radial exponentials about finitely many centres,
+  `TauCeti.integrable_sum_map_exp_neg_mul_norm_sub` and
+  `TauCeti.integral_sum_map_exp_neg_mul_norm_sub`.
 * `TauCeti.integrable_norm_mul_norm_comp_add`, `TauCeti.integrable_mul_comp_add`: the overlap of
   an exponentially decaying function with a translate of a bounded one is integrable, and
   `TauCeti.integrable_mul_comp_add_of_forall_lt` restates this for nonnegative functions decaying
@@ -338,6 +344,62 @@ theorem integrable_mul_comp_add_of_forall_lt {f g : E → ℝ} {r : ℝ}
   exact integrable_mul_comp_add μ (half_pos hr) hfm hgm
     (fun z ↦ (Real.norm_of_nonneg (hf₀ z)).trans_le (hKf z))
     (fun z ↦ (Real.norm_of_nonneg (hg₀ z)).trans_le (by simpa using hKg z)) a
+
+/-- **Radial exponentials about finitely many centres are integrable.** For `0 < a` and a finite
+multiset `S` of centres, `z ↦ ∑_{x ∈ S} exp (-(a ‖z - x‖))` is integrable on a finite-dimensional
+space for every additive Haar measure. -/
+theorem integrable_sum_map_exp_neg_mul_norm_sub {a : ℝ} (ha : 0 < a) (S : Multiset E) :
+    Integrable (fun z ↦ (S.map fun x ↦ Real.exp (-(a * ‖z - x‖))).sum) μ := by
+  induction S using Multiset.induction_on with
+  | empty => simp
+  | cons x S ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons]
+    exact ((integrable_exp_neg_mul_norm μ ha).comp_sub_right x).add ih
+
+/-- **The integral of radial exponentials about finitely many centres.** For `0 < a` and a finite
+multiset `S` of centres, `∫ ∑_{x ∈ S} exp (-(a ‖z - x‖)) = card S ∫ exp (-(a ‖z‖))` on a
+finite-dimensional space, for every additive Haar measure. -/
+theorem integral_sum_map_exp_neg_mul_norm_sub {a : ℝ} (ha : 0 < a) (S : Multiset E) :
+    ∫ z, (S.map fun x ↦ Real.exp (-(a * ‖z - x‖))).sum ∂μ =
+      Multiset.card S * ∫ z, Real.exp (-(a * ‖z‖)) ∂μ := by
+  induction S using Multiset.induction_on with
+  | empty => simp
+  | cons x S ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.card_cons]
+    rw [integral_add ((integrable_exp_neg_mul_norm μ ha).comp_sub_right x)
+      (integrable_sum_map_exp_neg_mul_norm_sub μ ha S), ih,
+      integral_sub_right_eq_self (fun z ↦ Real.exp (-(a * ‖z‖)))]
+    push_cast
+    ring
+
+/-- **Overlap of functions decaying away from separated finite sets of centres, integrated.**
+Let `0 ≤ c < b`. Suppose that `0 ≤ f z ≤ K exp (-(b ρ))` whenever every point of the multiset
+`S` is at distance at least `ρ` from `z`, that `0 ≤ g z ≤ L exp (-(b ρ))` whenever every point of
+`T` is, and that every point of `S` is at distance at least `δ` from every point of `T`. Then on a
+finite-dimensional space, for every additive Haar measure,
+
+`∫ f z g z ≤ K L (card S ∫ exp (-((b - c) ‖z‖))) exp (-(c δ))`.
+
+The constant depends on `f`, `g`, `S` and `T` only through `K`, `L` and the number of points
+of `S`. -/
+theorem integral_mul_le_mul_exp_of_forall_le_norm_sub {f g : E → ℝ} {S T : Multiset E}
+    {b δ : ℝ} (hc : 0 ≤ c) (hcb : c < b) (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ z ρ, (∀ a ∈ S, ρ ≤ ‖z - a‖) → f z ≤ K * Real.exp (-(b * ρ)))
+    (hg : ∀ z ρ, (∀ a ∈ T, ρ ≤ ‖z - a‖) → g z ≤ L * Real.exp (-(b * ρ)))
+    (hST : ∀ a ∈ S, ∀ a' ∈ T, δ ≤ ‖a - a'‖) :
+    ∫ z, f z * g z ∂μ ≤
+      K * L * (Multiset.card S * ∫ z, Real.exp (-((b - c) * ‖z‖)) ∂μ) *
+        Real.exp (-(c * δ)) := by
+  have hint := integrable_sum_map_exp_neg_mul_norm_sub μ (sub_pos.2 hcb) S
+  calc ∫ z, f z * g z ∂μ
+      ≤ ∫ z, K * L * Real.exp (-(c * δ)) *
+          (S.map fun a ↦ Real.exp (-((b - c) * ‖z - a‖))).sum ∂μ :=
+        integral_mono_of_nonneg (.of_forall fun z ↦ mul_nonneg (hf₀ z) (hg₀ z))
+          (hint.const_mul _)
+          (.of_forall (mul_le_mul_exp_mul_sum_exp_of_forall_le_norm_sub hc hcb hf₀ hg₀ hf hg hST))
+    _ = _ := by
+      rw [integral_const_mul, integral_sum_map_exp_neg_mul_norm_sub μ (sub_pos.2 hcb)]
+      ring
 
 end Overlap
 
