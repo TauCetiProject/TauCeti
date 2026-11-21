@@ -125,11 +125,10 @@ theorem coindDiscreteFunctor_map_apply {A B : DiscreteRep.{u, v, w} R U}
         ((show (coindDiscreteRep R G U A).ρ.IntertwiningMap
             ((coindDiscreteFunctor R G U).obj A).ρ from
             eqToHom (coindDiscreteFunctor_obj R G U A).symm) a)) g)) =
-        f.toLinearMap (a g) :=
-  by
-    simpa only [DiscreteRep.comp_toLinearMap, LinearMap.coe_comp,
-      Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply] using
-        coindDiscreteFunctor_map_apply_impl R G U f a g
+        f.toLinearMap (a g) := by
+  simpa only [DiscreteRep.comp_toLinearMap, LinearMap.coe_comp,
+    Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply] using
+      coindDiscreteFunctor_map_apply_impl R G U f a g
 
 /-- The locally constant coinduced module, bundled as a smooth discrete representation of `G`. -/
 noncomputable abbrev coindTopRep (A : SmoothDiscreteTopRep.{u, v, w} R U) :

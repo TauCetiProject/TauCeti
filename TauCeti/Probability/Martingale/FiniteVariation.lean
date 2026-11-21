@@ -10,7 +10,7 @@ public import Mathlib.Probability.Process.Indistinguishable
 public import TauCeti.Analysis.QuadraticSums.BoundedVariation
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.MeasureTheory.Function.DeLaValleePoussin
-import TauCeti.Topology.Instances.NNReal
+import TauCeti.Topology.Instances.NNReal.UniformGrid
 
 /-!
 # Bounded continuous martingales of finite variation

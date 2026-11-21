@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Trivializations over the whole base
@@ -42,7 +44,9 @@ satisfy the identity and cocycle laws over the relevant base sets
 `Bundle.Trivialization.coordChangeL_coordChangeL_apply`), equal the identity outside the overlap
 (`Bundle.Trivialization.coordChangeL_of_notMem`), and send the coordinate of a point in
 the first trivialization to its coordinate in the second
-(`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
+(`Bundle.Trivialization.coordChangeL_apply_snd`); the fibrewise inverse of the second, after the
+coordinate change from the first, is the fibrewise inverse of the first
+(`Bundle.Trivialization.symmL_coordChangeL`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
 point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
 linear maps on the model fibre back to a fibre through a linear trivialization is injective
@@ -54,7 +58,9 @@ bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear t
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
 fields has the same continuous linear map at every point over either field
-(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`). Subspaces of
+the fibres of a vector bundle with finite-dimensional model fibre are closed
+(`VectorBundle.isClosed_submodule`).
 -/
 
 public section
@@ -226,6 +232,13 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
 
+/-- Over the intersection of the base sets of two linear trivializations `e'` and `e`, the
+fibrewise inverse `e.symmL` after the coordinate change from `e'` to `e` is `e'.symmL`. -/
+theorem symmL_coordChangeL (hb : b ∈ e'.baseSet ∩ e.baseSet) (v : F) :
+    e.symmL 𝕜 b (e'.coordChangeL 𝕜 e b v) = e'.symmL 𝕜 b v := by
+  rw [e'.coordChangeL_apply e hb, e.symmL_apply hb.2, e.symm_apply_apply_mk hb.2,
+    e'.symmL_apply hb.1]
+
 end FiberBundle
 
 section CoordChangeL
@@ -351,5 +364,16 @@ protected theorem continuousSMul [∀ x, AddCommMonoid (E x)] [∀ x, Module �
   let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
     (FiberBundle.mem_baseSet_trivializationAt' b)
   e.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ e.map_smul c x
+
+/-- A subspace of a fibre of a topological vector bundle with finite-dimensional model fibre over a
+complete field is closed: the preferred trivialization at `b` maps it onto a finite-dimensional
+subspace of the model fibre. -/
+theorem isClosed_submodule [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [∀ x, AddCommGroup (E x)]
+    [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] (b : B) (L : Submodule 𝕜 (E b)) :
+    IsClosed (L : Set (E b)) := by
+  let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
+    (FiberBundle.mem_baseSet_trivializationAt' b)
+  rw [← e.toHomeomorph.isClosed_image]
+  exact (L.map (e : E b →ₗ[𝕜] F)).isClosed_of_finiteDimensional
 
 end VectorBundle

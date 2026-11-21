@@ -245,26 +245,12 @@ theorem exists_epi_free_of_finite [IsAffine X] (N : X.Modules) [N.IsQuasicoheren
     -- The sections functor applies `Hom.app ⊤`; state surjectivity in terms of the latter.
     change ∀ x : Γ(N, ⊤), ∃ y, (image.ι φ).app ⊤ y = x
     intro x
-    have hx : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)) := hS ▸ Submodule.mem_top
-    induction hx using Submodule.span_induction with
-    | mem s hs =>
-      refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
-        ?_⟩
-      rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac,
-        ← sectionsEquivTop_sectionsMap]
-      -- `freeHomEquiv_apply` is stated in sheaves of modules; restate it for `X.Modules`.
-      have : SheafOfModules.sectionsMap φ (SheafOfModules.freeSection ⟨s, hs⟩) =
-          N.freeHomEquiv φ ⟨s, hs⟩ :=
-        (SheafOfModules.freeHomEquiv_apply (M := N) φ ⟨s, hs⟩).symm
-      rw [this, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-    | zero => exact ⟨0, map_zero _⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨a, rfl⟩ := hx
-      obtain ⟨b, rfl⟩ := hy
-      exact ⟨a + b, map_add _ _ _⟩
-    | smul r x _ hx =>
-      obtain ⟨a, rfl⟩ := hx
-      exact ⟨r • a, Hom.app_smul _ _ _⟩
+    refine (image.ι φ).exists_app_eq_of_mem_span (fun s hs ↦ ?_)
+      (hS ▸ Submodule.mem_top : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)))
+    refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
+      ?_⟩
+    rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac]
+    exact app_freeHomEquiv_symm_freeSection N (fun s : (S : Set Γ(N, ⊤)) ↦ s.val) ⟨s, hs⟩
   refine ⟨(S : Set Γ(N, ⊤)), inferInstance, φ, ?_⟩
   have := epi_comp (factorThruImage φ) (image.ι φ)
   rwa [image.fac] at this
