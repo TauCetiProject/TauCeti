@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
 import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Restricting the scalars of manifold derivatives
@@ -49,9 +50,10 @@ fields and intertwines their manifold and vector-valued derivatives.
   `MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply`: derivative comparison through this
   fibre equivalence.
 * `ContinuousLinearMap.restrictScalarsTangent`: the scalar restriction of a map between tangent
-  spaces, as a map between the tangent spaces for the scalar restrictions of the models. It
-  preserves composition, identities, zero and addition, and for self models it is
-  `ContinuousLinearMap.restrictScalars`
+  spaces, as a map between the tangent spaces for the scalar restrictions of the models. As a
+  function it is the map (`ContinuousLinearMap.coe_restrictScalarsTangent`); it preserves
+  composition, identities, zero, addition, negation, subtraction and multiplication by scalars of
+  the base field, and for self models it is `ContinuousLinearMap.restrictScalars`
   (`ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf`).
 * `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: the scalar restriction of a
   derivative for boundaryless models over `𝕜'` is a derivative for their scalar restrictions.
@@ -108,9 +110,17 @@ noncomputable def ContinuousLinearMap.restrictScalarsTangent {y : N}
     (tangentSpaceCastModel (I.restrictScalars 𝕜) x : _ →L[𝕜] E)
 
 variable {𝕜} in
+/-- As a function, the scalar restriction of a map between tangent spaces is the map: both tangent
+spaces are the model space. -/
+@[simp]
+theorem ContinuousLinearMap.coe_restrictScalarsTangent {y : N}
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    ⇑(f'.restrictScalarsTangent 𝕜) = ⇑f' :=
+  (rfl)
+
+variable {𝕜} in
 /-- The scalar restriction of a map between tangent spaces acts as the map: both tangent spaces
 are the model space. -/
-@[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_apply {y : N}
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) (v : TangentSpace (I.restrictScalars 𝕜) x) :
     f'.restrictScalarsTangent 𝕜 v = f' v :=
@@ -119,7 +129,6 @@ theorem ContinuousLinearMap.restrictScalarsTangent_apply {y : N}
 variable {𝕜} in
 /-- The scalar restriction of a map between tangent spaces is injective if and only if the map is
 injective. -/
-@[simp]
 theorem ContinuousLinearMap.injective_restrictScalarsTangent_iff {y : N}
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     Function.Injective (f'.restrictScalarsTangent 𝕜) ↔ Function.Injective f' :=
@@ -158,9 +167,33 @@ theorem ContinuousLinearMap.restrictScalarsTangent_add {y : N}
       f'.restrictScalarsTangent 𝕜 + g'.restrictScalarsTangent 𝕜 :=
   ContinuousLinearMap.ext fun _ ↦ rfl
 
+/-- Restricting the scalars of maps between tangent spaces preserves negation. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_neg {y : N}
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    (-f').restrictScalarsTangent 𝕜 = -f'.restrictScalarsTangent 𝕜 :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+/-- Restricting the scalars of maps between tangent spaces preserves subtraction. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_sub {y : N}
+    (f' g' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    (f' - g').restrictScalarsTangent 𝕜 =
+      f'.restrictScalarsTangent 𝕜 - g'.restrictScalarsTangent 𝕜 :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+/-- Restricting the scalars of maps between tangent spaces turns multiplication by the image
+`algebraMap 𝕜 𝕜' c` of a scalar `c` of the base field into multiplication by `c`. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_algebraMap_smul {y : N} (c : 𝕜)
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    (algebraMap 𝕜 𝕜' c • f').restrictScalarsTangent 𝕜 = c • f'.restrictScalarsTangent 𝕜 :=
+  ContinuousLinearMap.ext fun v ↦ (algebraMap_smul (M := E') 𝕜' c (f' v) :)
+
 /-- For the self models `𝓘(𝕜', E)` and `𝓘(𝕜', E')`, whose tangent spaces are `E` and `E'`, the
 scalar restriction of a map between tangent spaces is its ordinary scalar restriction
 `ContinuousLinearMap.restrictScalars`. -/
+@[simp]
 theorem ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf {M₀ : Type*}
     [TopologicalSpace M₀] [ChartedSpace E M₀] {N₀ : Type*} [TopologicalSpace N₀]
     [ChartedSpace E' N₀] {x₀ : M₀} {y₀ : N₀} (f' : E →L[𝕜'] E') :
@@ -286,10 +319,7 @@ theorem MDifferentiableAt.injective_mvfderiv_restrictScalars_iff {g : M → E'}
       Function.Injective (mvfderiv I g x) := by
   have H := h.injective_mfderiv_restrictScalars_iff 𝕜
   rw [modelWithCornersSelf_restrictScalars] at H
-  rwa [mvfderiv, mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
-    (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (g x)).injective.of_comp_iff,
-    (NormedSpace.fromTangentSpace (𝕜 := 𝕜') (g x)).injective.of_comp_iff]
+  simpa only [TauCeti.injective_mvfderiv_iff] using H
 
 end Boundaryless
 
