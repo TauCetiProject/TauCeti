@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
+public import TauCeti.Geometry.Symplectic.Floer.Cap.Action
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Loop
 public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.Geometry.Symplectic.Floer.Laurent
+public import TauCeti.Geometry.Symplectic.Manifold.Sphere.SphericalArea
 import TauCeti.Algebra.Group.ZMultiples
 
 /-!
@@ -58,10 +60,24 @@ these are `a` and `χ(S²) = 2`, up to the orientation of the generator.
   the comparison out of `H₂(S²; ℤ)` sends `q^(k [S²])` to the Laurent monomial `X^k`
   (`TauCeti.Floer.NovikovRing.toLaurentSeries_coefficientComparison_sphere_single`).
 
-The homomorphisms `ω` and `c` are arbitrary: identifying them with the integrals of an actual
-symplectic form and the first Chern class of an actual almost complex structure on `S²` is not
-done here, and the action of an actual smooth cap is related to its cap class only through the
-recapping laws.
+The homomorphisms `ω` and `c` are arbitrary in the results above. For the area form
+`σ_x(v, w) = x ⬝ (v × w)` of the unit sphere (`TauCeti.sphereAreaForm`), the area homomorphism is
+`TauCeti.sphereAreaHom`, which agrees with the integral of `σ` on the Hurewicz class of every
+sphere (`TauCeti.sphereAreaHom_hurewiczIntHom`), the hypothesis under which the capped action
+descends to cap classes.
+
+* **The actual area.** The sphere class has area `±4π`
+  (`SphericalPeriodGroup.abs_area_sphereGenerator_sphereAreaHom`). So for every Chern
+  homomorphism `c` the hypothesis `ω [S²] ≠ 0 ∨ c [S²] ≠ 0` of the results above holds, the period
+  group is infinite cyclic, and area is injective on it
+  (`SphericalPeriodGroup.area_injective_sphereAreaHom`): recapping by `k • σ` changes the action
+  by `∓4πk`.
+* **Cap classes are determined by their action.** For every time-dependent Hamiltonian, the
+  capped action of `σ` is injective on the cap classes of every loop with a smooth based cap
+  (`SphericalCapClass.action_injective_sphereAreaHom`).
+
+Identifying `c` with the first Chern number of an actual almost complex structure on `S²` is not
+done here.
 
 ## References
 
@@ -76,7 +92,7 @@ public section
 noncomputable section
 
 open AlgebraicTopology CategoryTheory HomotopyGroup Metric
-open scoped Topology.Homotopy
+open scoped Manifold Topology.Homotopy
 
 namespace TauCeti.Floer
 
@@ -334,5 +350,47 @@ theorem existsUnique_zsmul_sphereGenerator_vadd_eq
   simp only [hk, ← hl, vadd_vsub]
 
 end SphericalCapClass
+
+/-! ### The area form of the round sphere -/
+
+section RoundSphere
+
+variable (c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
+  (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) →+ ℤ)
+
+namespace SphericalPeriodGroup
+
+/-- **The sphere class has area `±4π`** for the area form of the round sphere. -/
+theorem abs_area_sphereGenerator_sphereAreaHom :
+    |PeriodGroup.area _ _ (sphereGenerator sphereAreaHom c)| = 4 * Real.pi := by
+  rw [area_sphereGenerator]
+  exact abs_sphereAreaHom_hurewicz_sphereGenLoop
+
+/-- **On the round sphere, area is injective on the period group**, whatever the Chern
+homomorphism `c`. -/
+theorem area_injective_sphereAreaHom :
+    Function.Injective (PeriodGroup.area _ _ : SphericalPeriodGroup sphereAreaHom c → ℝ) :=
+  area_injective_of_area_sphereGenerator_ne_zero fun h ↦ Real.pi_pos.ne' (by
+    linarith [abs_area_sphereGenerator_sphereAreaHom c, abs_eq_zero.2 h])
+
+end SphericalPeriodGroup
+
+namespace SphericalCapClass
+
+variable {x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1}
+  {γ : Ω (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) x}
+  {hσ : IsSmoothForm (𝓡 2) 1 sphereAreaForm.val} {hdσ : mextDeriv sphereAreaForm.val = 0}
+
+/-- **On the round sphere a cap class is determined by its action.** For the area form of the
+unit sphere, any Chern homomorphism `c` and any time-dependent Hamiltonian, the capped action is
+injective on the cap classes of a loop with a smooth based cap. -/
+theorem action_injective_sphereAreaHom (Ham : ℝ → sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 → ℝ)
+    (h : ∃ u, IsSmoothBasedCap (𝓡 2) γ u) :
+    Function.Injective (action (c := c) hσ hdσ (sphereAreaHom_hurewiczIntHom x hσ hdσ) Ham h) :=
+  action_injective _ Ham h (SphericalPeriodGroup.area_injective_sphereAreaHom c)
+
+end SphericalCapClass
+
+end RoundSphere
 
 end TauCeti.Floer
