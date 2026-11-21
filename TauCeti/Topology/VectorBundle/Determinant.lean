@@ -129,6 +129,14 @@ basis `Module.finBasis 𝕜 F`. -/
 abbrev modelCoord : detLine 𝕜 F ≃ₗ[𝕜] 𝕜 :=
   (Module.finBasis 𝕜 F).exteriorPowerTopEquiv
 
+omit [TopologicalSpace B] [TopologicalSpace (TotalSpace F E)] in
+private theorem modelCoord_exteriorPower_symm (φ : F ≃ₗ[𝕜] F) (c : 𝕜) :
+    modelCoord F (φ.exteriorPower (finrank 𝕜 F) ((modelCoord F).symm c)) =
+      LinearMap.det (φ : F →ₗ[𝕜] F) * c := by
+  rw [← LinearEquiv.coe_toLinearMap (φ.exteriorPower (finrank 𝕜 F)),
+    LinearEquiv.exteriorPower_toLinearMap, Module.Basis.exteriorPowerTopEquiv_map,
+    LinearEquiv.apply_symm_apply]
+
 /-- The coordinate on the fibre of `det E` over `x` induced by a linear trivialization `e` of
 `E`: the isomorphism `⋀ʳ (E x) ≃ ⋀ʳ F` induced by `e` on the fibre, followed by the fixed
 coordinate `TauCeti.DetBundle.modelCoord` of the determinant line of the model fibre. -/
@@ -180,10 +188,7 @@ theorem chartCoord_chartCoord_symm (e e' : Trivialization F (π F E)) [e.IsLinea
       LinearEquiv.trans_apply]
   simp only [chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply,
     LinearEquiv.apply_symm_apply, LinearEquiv.exteriorPower_symm]
-  rw [h, ← LinearEquiv.coe_toLinearMap
-      ((e.coordChangeL 𝕜 e' x).toLinearEquiv.exteriorPower (finrank 𝕜 F)),
-    LinearEquiv.exteriorPower_toLinearMap, Module.Basis.exteriorPowerTopEquiv_map,
-    LinearEquiv.apply_symm_apply]
+  rw [h, modelCoord_exteriorPower_symm]
   rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- A chart coordinate is an inducing map. -/
@@ -479,11 +484,7 @@ private theorem continuousAt_chartCoord_congrEquiv (e : ∀ x, E x ≃L[𝕜] E'
     simp only [LinearEquiv.trans_apply, LinearEquiv.exteriorPower_trans,
       LinearEquiv.exteriorPower_symm]
     rw [linearEquiv_apply, linearEquiv_apply, linearEquiv_symm_apply, linearEquiv_symm_apply]
-  rw [key, ← LinearEquiv.coe_toLinearMap
-      (((t.linearEquivAt 𝕜 x hx).symm ≪≫ₗ (e x).toLinearEquiv ≪≫ₗ
-        t'.linearEquivAt 𝕜 x hx').exteriorPower (finrank 𝕜 F)),
-    LinearEquiv.exteriorPower_toLinearMap, Module.Basis.exteriorPowerTopEquiv_map, hdet,
-    LinearEquiv.apply_symm_apply]
+  rw [key, modelCoord_exteriorPower_symm, hdet]
 
 /-- **Functoriality of the determinant line in bundle isomorphisms.** A continuous fibrewise
 linear isomorphism `e` between vector bundles with the same finite-dimensional model fibre `F`
