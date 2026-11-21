@@ -20,6 +20,10 @@ This file also records `CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullb
 the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
 projection in `Over R`, then the restriction of `f.left` to the fibre of
 `pullback.snd X.hom Y.hom` over `y : R ⟶ Y.left` factors through the projection to `R`.
+
+Finally, `CategoryTheory.Over.mapGrpPullbackComp` lifts Mathlib's `Over.pullbackComp` to group
+objects: base change of group objects along `f ≫ g` is base change along `g` followed by base change
+along `f`.
 -/
 
 public section
@@ -97,5 +101,27 @@ theorem exists_pullback_snd_comp_eq_of_pullback {R : C} {X Y Z : Over S} (f : X 
     _ = pullback.snd c y ≫ yR ≫ gR.left ≫ pullback.fst Z.hom s := by
       rw [hgR, Over.comp_left]
       simp [φ, F, s, Category.assoc]
+
+/-- Base change of group objects along a composite `f ≫ g` is base change along `g` followed by
+base change along `f`: the lift of `Over.pullbackComp` to group objects. -/
+noncomputable def mapGrpPullbackComp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (Over.pullback (f ≫ g)).mapGrp ≅ (Over.pullback g).mapGrp ⋙ (Over.pullback f).mapGrp :=
+  Functor.mapGrpNatIso (Over.pullbackComp f g) ≪≫ Functor.mapGrpCompIso
+
+/-- The morphism in `Over X` underlying a component of `mapGrpPullbackComp` is the corresponding
+component of `Over.pullbackComp`. -/
+@[simp]
+theorem mapGrpPullbackComp_hom_app_hom_hom {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (G : Grp (Over Z)) :
+    ((mapGrpPullbackComp f g).hom.app G).hom.hom = (Over.pullbackComp f g).hom.app G.X :=
+  Category.comp_id _
+
+/-- The morphism in `Over X` underlying a component of the inverse of `mapGrpPullbackComp` is the
+corresponding component of the inverse of `Over.pullbackComp`. -/
+@[simp]
+theorem mapGrpPullbackComp_inv_app_hom_hom {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (G : Grp (Over Z)) :
+    ((mapGrpPullbackComp f g).inv.app G).hom.hom = (Over.pullbackComp f g).inv.app G.X :=
+  Category.id_comp _
 
 end CategoryTheory.Over

@@ -126,14 +126,9 @@ theorem baseChangeCoordinateHopfAlgebraIso_hom_naturality
     CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap k f).hom ≫
         (baseChangeCoordinateHopfAlgebraIso k K H).hom =
       (baseChangeCoordinateHopfAlgebraIso k K G).hom ≫ (coordinateMap K f).hom := by
-  ext x
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp_all
-  | tmul a p =>
-    induction p using MonoidAlgebra.induction_linear with
-    | zero => simp
-    | add p q hp hq => simp_all [TensorProduct.tmul_add]
-    | single g r => simp
+  ext x : 2
+  exact (DFunLike.congr_fun
+    (MonoidAlgebra.mapDomainBialgHom_comp_scalarTensorBialgEquiv k K f.hom.hom) x).symm
 
 /-- The `A`-points of the base change `K ⊗[k] k[G]` of the diagonalizable group `D(G)` are
 the character group `G →* Aˣ`.

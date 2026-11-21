@@ -8,7 +8,10 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.BaseChange.Coordinate
+public import TauCeti.AlgebraicGeometry.GroupScheme.Surjective
 public import Mathlib.AlgebraicGeometry.Noetherian
+import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
+import TauCeti.RingTheory.Noetherian.ULift
 
 /-!
 # Diagonalizable group schemes over a base
@@ -20,9 +23,10 @@ group scheme `Spec ℤ[M]` of `TauCeti.DiagonalizableGroup.groupScheme`; for ins
 the spectrum of `O_S[t, t⁻¹]` and `D_S(ℤ/n)` that of `O_S[t]/(tⁿ - 1)`. A homomorphism
 `φ : N →+ M` induces `D(φ) : D_S(M) ⟶ D_S(N)`, contravariantly.
 
-The structure morphism of `D_S(M)` is affine, flat, surjective and locally of finite presentation,
-and `D_S(M)` is commutative: each property is stable under base change and holds over `Spec ℤ`,
-where `ℤ[M]` is a free `ℤ`-module and a finitely generated algebra over a Noetherian ring. The
+The structure morphism of `D_S(M)` is affine, flat and locally of finite presentation, and `D_S(M)`
+is commutative: each property is stable under base change and holds over `Spec ℤ`, where `ℤ[M]` is
+a free `ℤ`-module and a finitely generated algebra over a Noetherian ring. Like every group scheme,
+`D_S(M)` is also surjective over `S`, by `TauCeti.GroupScheme.surjective_hom_of_monObj`. The
 formation of `D_S(M)` commutes with base change, over an affine base `Spec R` it is `Spec R[M]`, and
 so its fibre at a point `s` is `Spec κ(s)[M]`; these identifications are natural in `M`.
 
@@ -32,9 +36,9 @@ so its fibre at a point `s` is `Spec κ(s)[M]`; these identifications are natura
 * `TauCeti.GroupScheme.diagonalizableMap`: the homomorphism `D_S(M) ⟶ D_S(N)` induced by
   `N →+ M`, with `diagonalizableMap_id` and `diagonalizableMap_comp`.
 * `TauCeti.GroupScheme.isCommMonObj_diagonalizable`, `isAffineHom_diagonalizable`,
-  `flat_diagonalizable`, `surjective_diagonalizable` and
-  `locallyOfFinitePresentation_diagonalizable`: `D_S(M)` is commutative, affine, faithfully flat
-  and of finite presentation over `S`.
+  `flat_diagonalizable` and `locallyOfFinitePresentation_diagonalizable`: `D_S(M)` is
+  commutative, affine, flat and of finite presentation over `S`. With
+  `TauCeti.GroupScheme.surjective_hom_of_monObj`, it is faithfully flat over `S`.
 * `TauCeti.GroupScheme.diagonalizableBaseChangeIso`: the base change of `D_S(M)` along
   `S' ⟶ S` is `D_{S'}(M)`.
 * `TauCeti.GroupScheme.diagonalizableSpecIso`: `D_{Spec R}(M)` is
@@ -90,7 +94,7 @@ theorem diagonalizableMap_def (φ : N →+ M) :
 @[simp]
 theorem diagonalizableMap_id : diagonalizableMap S (AddMonoidHom.id M) = 𝟙 _ := by
   have : FGCommGrpCat.ofHom (AddMonoidHom.toMultiplicative (AddMonoidHom.id M)) = 𝟙 _ :=
-    FGCommGrpCat.hom_ext (MonoidHom.ext fun _ ↦ rfl)
+    FGCommGrpCat.hom_ext AddMonoidHom.toMultiplicative_id
   rw [diagonalizableMap_def, this, DiagonalizableGroup.groupSchemeMap_id,
     CategoryTheory.Functor.map_id]
 
@@ -137,18 +141,7 @@ algebra over the Noetherian ring `ℤ`. -/
 instance locallyOfFinitePresentation_diagonalizable :
     LocallyOfFinitePresentation (diagonalizable S M).X.hom :=
   diagonalizable_X_hom_of_isStableUnderBaseChange (P := @LocallyOfFinitePresentation) S M <| by
-    have : IsNoetherianRing (ULift.{u} ℤ) := isNoetherianRing_of_ringEquiv ℤ ULift.ringEquiv.symm
     infer_instance
-
-/-- `D_S(M)` is surjective over `S`, since its unit section is a section of its structure
-morphism. With `flat_diagonalizable`, `D_S(M)` is faithfully flat over `S`. -/
-instance surjective_diagonalizable : Surjective (diagonalizable S M).X.hom := by
-  have : Surjective (η[(diagonalizable S M).X].left ≫ (diagonalizable S M).X.hom) := by
-    rw [Over.w, Over.tensorUnit_hom]
-    -- The rewritten goal states `𝟙 S` through the category instance of `Over S`; the ascription
-    -- restates it in `Scheme`, where the instance for isomorphisms applies.
-    exact (inferInstance : Surjective (𝟙 S))
-  exact .of_comp η[(diagonalizable S M).X].left _
 
 section BaseChange
 
@@ -159,9 +152,8 @@ variable {S} {S' : Scheme.{u}} (f : S' ⟶ S)
 private noncomputable def mapGrpPullbackFromCompIso :
     (Over.pullback (specULiftZIsTerminal.from S)).mapGrp ⋙ (Over.pullback f).mapGrp ≅
       (Over.pullback (specULiftZIsTerminal.from S')).mapGrp :=
-  Functor.mapGrpCompIso.symm ≪≫ Functor.mapGrpNatIso
-    ((Over.pullbackComp f (specULiftZIsTerminal.from S)).symm ≪≫
-      eqToIso (by congr 1; exact specULiftZIsTerminal.hom_ext _ _))
+  (Over.mapGrpPullbackComp f (specULiftZIsTerminal.from S)).symm ≪≫
+    Functor.mapGrpNatIso (eqToIso (by congr 1; exact specULiftZIsTerminal.hom_ext _ _))
 
 /-- The formation of `D_S(M)` commutes with base change: pulling `D_S(M)` back along
 `f : S' ⟶ S` gives `D_{S'}(M)`. -/

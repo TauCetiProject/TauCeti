@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Noetherian
+import TauCeti.RingTheory.Noetherian.ULift
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 
@@ -37,8 +38,6 @@ universe u
 
 /-- The terminal scheme is locally Noetherian since it is the spectrum of the integers. -/
 instance isLocallyNoetherian_terminal : IsLocallyNoetherian (Limits.terminal Scheme.{u}) := by
-  have : IsNoetherianRing (ULift.{u} ℤ) :=
-    isNoetherianRing_of_ringEquiv ℤ ULift.ringEquiv.symm
   let t : Spec (.of (ULift.{u} ℤ)) ⟶ Limits.terminal Scheme.{u} := Limits.terminal.from _
   have : IsIso t := Limits.isIso_of_isTerminal specULiftZIsTerminal Limits.terminalIsTerminal t
   exact isLocallyNoetherian_of_isOpenImmersion (inv t)
