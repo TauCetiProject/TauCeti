@@ -24,9 +24,10 @@ characteristic.
 
 On a finite field of order `p ^ 2` the Frobenius automorphism `frobeniusEquiv K p`, sending `x`
 to `x ^ p`, is an involution. This is the field automorphism behind Hermitian duality of codes
-over the field of four elements. More generally, on a field of order `p ^ (2 n)` the iterated
-Frobenius `x ↦ x ^ p ^ n` is an involution, the conjugation of the field with `q²` elements over
-the field with `q = p ^ n` elements behind the finite unitary groups.
+over the field of four elements. More generally, on a field of order `q ^ 2` any ring endomorphism
+acting as `x ↦ x ^ q` is an involution (`involutive_of_natCard_eq_sq`), specializing on a field of
+order `p ^ (2 n)` to the iterated Frobenius `x ↦ x ^ p ^ n`, the conjugation of the field with `q²`
+elements over the field with `q = p ^ n` elements behind the finite unitary groups.
 
 ## Main definitions
 
@@ -44,6 +45,8 @@ the field with `q = p ^ n` elements behind the finite unitary groups.
   only finitely many elements.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
+* `TauCeti.FiniteField.involutive_of_natCard_eq_sq`: on a field of order `q ^ 2`, any ring
+  endomorphism acting as `x ↦ x ^ q` is an involution.
 * `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of order `p ^ 2`, the Frobenius
   automorphism `x ↦ x ^ p` is an involution.
 * `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of order `p ^ (2 n)`, the iterated
@@ -138,9 +141,20 @@ theorem isPurelyInseparable_fieldRange_frobeniusAlgHom :
   use x
   rw [FiniteField.coe_frobeniusAlgHom, hcard]
 
-/-! ### The Frobenius of a field of order `p ^ 2` or `p ^ (2 n)` -/
+/-! ### The Frobenius of a field of order `q ^ 2`, `p ^ 2`, or `p ^ (2 n)` -/
 
 section Involutive
+
+/-- In a field of order `q ^ 2`, any ring endomorphism acting as `a ↦ a ^ q` is an involution. -/
+theorem involutive_of_natCard_eq_sq {K : Type*} [Field K] {σ : K →+* K} {q : ℕ}
+    (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
+    Function.Involutive σ := by
+  have hq : q ≠ 0 := fun h ↦ by simpa [h] using hσ 0
+  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
+  let _ := Fintype.ofFinite K
+  intro a
+  rw [hσ, hσ, ← pow_mul, ← sq, ← hK, Nat.card_eq_fintype_card]
+  exact _root_.FiniteField.pow_card a
 
 variable {K : Type*} [Field K] [Finite K] {p : ℕ} [Fact p.Prime] [CharP K p]
 
@@ -160,13 +174,8 @@ variable {K : Type*} [Field K] {p : ℕ} [ExpChar K p]
 /-- On a field of order `p ^ (2 n)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution. For
 the field with `q²` elements, `q = p ^ n`, this is the involution `x ↦ x ^ q`. -/
 theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
-    Function.Involutive (iterateFrobenius K p n) := by
-  have : Finite K := Nat.finite_of_card_ne_zero
-    (by rw [hK]; exact (pow_pos (expChar_pos K p) _).ne')
-  let := Fintype.ofFinite K
-  intro x
-  rw [iterateFrobenius_def, iterateFrobenius_def, ← pow_mul, ← pow_add, ← mul_two, ← hK,
-    Nat.card_eq_fintype_card, FiniteField.pow_card]
+    Function.Involutive (iterateFrobenius K p n) :=
+  involutive_of_natCard_eq_sq (by rw [hK, pow_mul]) (iterateFrobenius_def p n)
 
 /-- An iterate of Frobenius is not the identity on a domain with more than `p ^ n` elements,
 provided `1 < p ^ n`. -/

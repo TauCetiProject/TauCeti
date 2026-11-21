@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Field.Basic
+import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.Tactic.Abel
 
@@ -22,7 +23,10 @@ unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational func
 `x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
 relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`. A square root in a field extension of a
 non-square of the base field does not lie in the base field
-(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`).
+(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`). For an involutive endomorphism `σ` of
+a division ring, having a single element `y` with nonzero trace `y + σ y ≠ 0` makes the trace map
+`t ↦ t + σ t` surjective onto the `σ`-fixed elements
+(`TauCeti.exists_add_map_eq_of_add_map_ne_zero`).
 -/
 
 public section
@@ -54,6 +58,16 @@ theorem notMem_range_algebraMap_of_sq_eq_of_not_isSquare {K L : Type*} [Field K]
   rintro ⟨y, rfl⟩
   rw [← map_pow, (algebraMap K L).injective.eq_iff] at hx2
   exact hsq ⟨y, by simpa only [sq] using hx2.symm⟩
+
+/-- If an involutive ring endomorphism `σ` of a division ring has an element `y` with
+`y + σ y ≠ 0`, then the trace `t ↦ t + σ t` is surjective onto the `σ`-fixed elements. -/
+theorem exists_add_map_eq_of_add_map_ne_zero {K : Type*} [DivisionRing K] {σ : K →+* K}
+    (hσ : Function.Involutive σ) {y : K} (hy : y + σ y ≠ 0) {s : K} (hs : σ s = s) :
+    ∃ t : K, t + σ t = s := by
+  refine ⟨s * (y + σ y)⁻¹ * y, ?_⟩
+  have hσy : σ (y + σ y) = y + σ y := by rw [map_add, hσ y, add_comm]
+  have hσinv : σ (y + σ y)⁻¹ = (y + σ y)⁻¹ := by rw [map_inv₀, hσy]
+  rw [map_mul, map_mul, hs, hσinv, ← mul_add, mul_assoc, inv_mul_cancel₀ hy, mul_one]
 
 variable {K : Type*} [DivisionRing K]
 

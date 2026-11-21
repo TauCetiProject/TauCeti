@@ -22,6 +22,8 @@ characteristic: multiplication by `q` is injective on such torsion.
 * `TauCeti.FiniteField.odd_card_of_not_isSquare`: a finite field with a nonsquare has odd order.
 * `TauCeti.FiniteField.ringChar_ne_two_of_odd_card`: a finite field of odd order does not have
   characteristic two.
+* `TauCeti.FiniteField.exists_eq_pow_of_dvd_natCard`: every divisor of the cardinality of a finite
+  field is a power of its characteristic.
 -/
 
 public section
@@ -52,5 +54,15 @@ theorem ringChar_ne_two_of_odd_card (hodd : Odd (Nat.card F)) : ringChar F ≠ 2
   rw [Nat.card_eq_fintype_card, Nat.odd_iff] at hodd
   intro h
   simp [FiniteField.even_card_of_char_two h] at hodd
+
+/-- Every divisor of the cardinality of a finite field `F` of characteristic `p` is a power of
+`p`. -/
+theorem exists_eq_pow_of_dvd_natCard {p d : ℕ} [CharP F p] (hd : d ∣ Nat.card F) :
+    ∃ m : ℕ, d = p ^ m := by
+  have := Fintype.ofFinite F
+  obtain ⟨_, hp, hcard⟩ := FiniteField.card F p
+  rw [Nat.card_eq_fintype_card, hcard] at hd
+  obtain ⟨m, -, hm⟩ := (Nat.dvd_prime_pow hp).mp hd
+  exact ⟨m, hm⟩
 
 end TauCeti.FiniteField
