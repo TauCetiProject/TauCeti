@@ -87,7 +87,7 @@ theorem isProbabilityMeasure_powerBias {μ : Measure ℝ} {q : ℝ}
     (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
     IsProbabilityMeasure (μ.powerBias q) := by
   rw [powerBias_def]
-  exact Measure.isProbabilityMeasure_weighted hpos hfin
+  exact Measure.isProbabilityMeasure_weighted_iff.2 ⟨hpos, hfin⟩
 
 /-- A law carried by `(0, ∞)` whose power moment `∫⁻ x ^ q` vanishes is the zero measure. -/
 theorem eq_zero_of_lintegral_powerBiasWeight_eq_zero {μ : Measure ℝ} {q : ℝ}
@@ -155,11 +155,8 @@ theorem powerBias_powerBias {μ : Measure ℝ} {q r : ℝ}
     (hμ : ∀ᵐ x ∂μ, 0 < x)
     (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
     (μ.powerBias q).powerBias r = μ.powerBias (q + r) := by
-  rcases eq_zero_or_pos (∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ) with hZ | hpos
-  · obtain rfl := eq_zero_of_lintegral_powerBiasWeight_eq_zero hμ hZ
-    simp [powerBias_def]
   simp only [powerBias_def]
-  rw [Measure.weighted_weighted (measurable_powerBiasWeight q).aemeasurable hpos hfin]
+  rw [Measure.weighted_weighted (measurable_powerBiasWeight q).aemeasurable hfin]
   apply Measure.weighted_congr
   filter_upwards [hμ] with x hx
   apply NNReal.eq
