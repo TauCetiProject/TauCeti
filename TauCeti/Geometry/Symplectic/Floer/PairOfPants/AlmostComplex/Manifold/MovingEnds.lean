@@ -502,19 +502,14 @@ theorem puncturedSphereAlmostComplex_associativity_of_nonpos {τ L : ℝ} (hτ :
       h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb zero fun _ => J₀) hJa hJb
         zero L w hw :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    have hf : zero.plumbingFactor L = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
-      rw [plumbingFactor_eq_mul_ofReal, endScale_zero]
-      push_cast
-      ring
     rw [almostComplexStructureAt_plumbedAlmostComplex_update_base h₀ (r := one) (by simp) (by simp)
       (by simp) hL hJa hJb hw, almostComplexStructureAt_puncturedSphereAlmostComplex,
-      Floer.associativityCenter_of_nonpos hτ, Floer.associativityScale_of_nonpos hτ,
-      plumbingMap_apply, hf]
+      Floer.associativityCenter_of_nonpos_eq_plumbingMap hτ,
+      Floer.associativityScale_of_nonpos_eq_plumbingFactor hτ]
+    -- The configurations agree; it remains to match the end structures entry by entry.
     congr 1
-    · norm_num
-    · norm_num
-    · funext i
-      fin_cases i <;> rfl
+    funext i
+    fin_cases i <;> rfl
 
 /-- **At its end the family is the composition `a ⋆ (b ⋆ c)`.** For `τ ≥ 1` and the plumbing
 factor `f = exp (-2πL) / 4` of a neck length `L ≥ 0`, the structure on the sphere with the input
@@ -544,22 +539,19 @@ theorem puncturedSphereAlmostComplex_associativity_of_one_le {τ L : ℝ} (hτ :
         (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ) hsep hout w =
       h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb one fun _ => J₀) hJa hJb
         one L w hw :=
+  -- The two structures list the same three input ends in the orders `a, b, c` and `b, c, a`.
+  (h₀.puncturedSphereAlmostComplex_comp_equiv _ hJ _ hJout hsep hout (finRotate 3)
+    (fun _ t => hJ _ t) (hsep.comp_of_injective (finRotate 3).injective) (fun _ => hout _)
+    w).symm.trans <|
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    have hf : one.plumbingFactor L = -((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
-      rw [plumbingFactor_eq_mul_ofReal, endScale_one]
-      push_cast
-      ring
     rw [almostComplexStructureAt_plumbedAlmostComplex_update_base h₀ (r := zero) (by simp)
       (by simp) (by simp) hL hJa hJb hw, almostComplexStructureAt_puncturedSphereAlmostComplex,
-      Floer.associativityCenter_of_one_le hτ, Floer.associativityScale_of_one_le hτ,
-      plumbingMap_apply, hf]
-    -- The two structures list the same three input ends in the orders `a, b, c` and `b, c, a`.
-    refine Floer.puncturedSphereAlmostComplex_congr _ ?_
-    simp only [Floer.puncturedSphereCayley_def, Fin.sum_univ_three, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, endCenter_one,
-      endCenter_zero, endScale_zero, neg_neg, mul_one]
-    rw [show (2 : ℂ) * (1 / 2) = 1 by norm_num, ← sub_eq_add_neg]
-    abel
+      Floer.associativityCenter_of_one_le_comp_finRotate hτ,
+      Floer.associativityScale_of_one_le_comp_finRotate hτ]
+    -- The configurations agree; it remains to match the end structures entry by entry.
+    congr 1
+    funext i
+    fin_cases i <;> rfl
 
 variable {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
   {I' : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]

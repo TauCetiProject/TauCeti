@@ -54,7 +54,14 @@ out on each input end and `Hout(t) dt` far out on the output end at every `τ`
 `TauCeti.Floer.puncturedSpherePerturbation_cylindricalEndLift_inf`), and whose integrated curvature
 along any map into a manifold is bounded uniformly in `τ`
 (`SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_associativity_le`).
-At `τ ≤ 0` it is the plumbed datum of `(a ⋆ b) ⋆ c` with the neck switched off
+For the plumbing factor `f = exp (-2πL) / 4` of a neck length `L`, the configuration at `τ ≤ 0` is
+that of the plumbed sphere of `(a ⋆ b) ⋆ c`
+(`TauCeti.Floer.associativityCenter_of_nonpos_eq_plumbingMap`,
+`TauCeti.Floer.associativityScale_of_nonpos_eq_plumbingFactor`), and at `τ ≥ 1`, with the inputs
+relabelled by `finRotate 3`, that of `a ⋆ (b ⋆ c)`
+(`TauCeti.Floer.associativityCenter_of_one_le_comp_finRotate`,
+`TauCeti.Floer.associativityScale_of_one_le_comp_finRotate`). So at `τ ≤ 0` the datum is the plumbed
+datum of `(a ⋆ b) ⋆ c` with the neck switched off
 (`TauCeti.Floer.puncturedSpherePerturbation_associativity_of_nonpos`), and at `τ ≥ 1` that of
 `a ⋆ (b ⋆ c)` (`TauCeti.Floer.puncturedSpherePerturbation_associativity_of_one_le`).
 
@@ -485,6 +492,57 @@ section Ends
 
 variable {τ L : ℝ}
 
+/-- The plumbing factor of the input end `0` is the real number `exp (-2πL) / 4`. -/
+private theorem plumbingFactor_zero_eq_ofReal (L : ℝ) :
+    zero.plumbingFactor L = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
+  rw [plumbingFactor_eq_mul_ofReal, endScale_zero]
+  push_cast
+  ring
+
+/-- **The path starts at the plumbed configuration of `(a ⋆ b) ⋆ c`.** For `τ ≤ 0` and the
+plumbing factor `f = exp (-2πL) / 4`, the centers of the associativity path are the centers `c_0`,
+`ψ(1)` and `c_1` of the sphere obtained by plumbing the output end of a pair of pants into the
+input end `0` of another, where `ψ` is the plumbing map. -/
+theorem associativityCenter_of_nonpos_eq_plumbingMap (hτ : τ ≤ 0) :
+    associativityCenter (Real.exp (-(2 * π * L)) / 4) τ =
+      ![zero.endCenter, zero.plumbingMap L 1, one.endCenter] := by
+  rw [associativityCenter_of_nonpos hτ, plumbingMap_apply, plumbingFactor_zero_eq_ofReal]
+  simp
+
+/-- **The path starts at the plumbed configuration of `(a ⋆ b) ⋆ c`.** For `τ ≤ 0` and the
+plumbing factor `f = exp (-2πL) / 4`, the scales of the associativity path are the scales `f`,
+`-f` and `2 b_1` of the sphere obtained by plumbing the output end of a pair of pants into the
+input end `0` of another, where `b_1` is the scale of the end `1`. -/
+theorem associativityScale_of_nonpos_eq_plumbingFactor (hτ : τ ≤ 0) :
+    associativityScale (Real.exp (-(2 * π * L)) / 4) τ =
+      ![zero.plumbingFactor L, -zero.plumbingFactor L, 2 * one.endScale] := by
+  rw [associativityScale_of_nonpos hτ, plumbingFactor_zero_eq_ofReal]
+  simp
+
+/-- **The path ends at the plumbed configuration of `a ⋆ (b ⋆ c)`.** For `τ ≥ 1` and the plumbing
+factor `f = exp (-2πL) / 4`, the centers of the associativity path, listed from the input `b`
+(`finRotate 3`), are the centers `c_1`, `ψ(1)` and `c_0` of the sphere obtained by plumbing the
+output end of a pair of pants into the input end `1` of another, where `ψ` is the plumbing map. -/
+theorem associativityCenter_of_one_le_comp_finRotate (hτ : 1 ≤ τ) :
+    associativityCenter (Real.exp (-(2 * π * L)) / 4) τ ∘ finRotate 3 =
+      ![one.endCenter, one.plumbingMap L 1, zero.endCenter] := by
+  rw [associativityCenter_of_one_le hτ, plumbingMap_apply, plumbingFactor_one,
+    plumbingFactor_zero_eq_ofReal]
+  funext i
+  fin_cases i <;> simp [sub_eq_add_neg]
+
+/-- **The path ends at the plumbed configuration of `a ⋆ (b ⋆ c)`.** For `τ ≥ 1` and the plumbing
+factor `f = exp (-2πL) / 4`, the scales of the associativity path, listed from the input `b`
+(`finRotate 3`), are the scales `-f`, `f` and `2 b_0` of the sphere obtained by plumbing the
+output end of a pair of pants into the input end `1` of another, where `b_0` is the scale of the
+end `0`. -/
+theorem associativityScale_of_one_le_comp_finRotate (hτ : 1 ≤ τ) :
+    associativityScale (Real.exp (-(2 * π * L)) / 4) τ ∘ finRotate 3 =
+      ![one.plumbingFactor L, -one.plumbingFactor L, 2 * zero.endScale] := by
+  rw [associativityScale_of_one_le hτ, plumbingFactor_one, plumbingFactor_zero_eq_ofReal]
+  funext i
+  fin_cases i <;> simp
+
 /-- **At its start the family is the composition `(a ⋆ b) ⋆ c`.** For `τ ≤ 0` and the plumbing
 factor `f = exp (-2πL) / 4` of a neck length `L ≥ 0`, the datum of the sphere with the input ends
 of the associativity path is the plumbed datum of the output end of a pair of pants with
@@ -496,14 +554,9 @@ theorem puncturedSpherePerturbation_associativity_of_nonpos (hτ : τ ≤ 0) (hL
         (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) ![Ha zero, Ha one, Hb one]
         (Hb inf) =
       plumbedPerturbation (update Ha inf 0) (update Hb zero 0) zero L := by
-  have hf : zero.plumbingFactor L = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
-    rw [plumbingFactor_eq_mul_ofReal, endScale_zero]
-    push_cast
-    ring
   rw [plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (r := one) (by simp)
-    (by simp) (by simp) hL, associativityCenter_of_nonpos hτ, associativityScale_of_nonpos hτ,
-    plumbingMap_apply, hf]
-  norm_num
+    (by simp) (by simp) hL, associativityCenter_of_nonpos_eq_plumbingMap hτ,
+    associativityScale_of_nonpos_eq_plumbingFactor hτ]
 
 /-- **At its end the family is the composition `a ⋆ (b ⋆ c)`.** For `τ ≥ 1` and the plumbing
 factor `f = exp (-2πL) / 4` of a neck length `L ≥ 0`, the datum of the sphere with the input ends
@@ -517,20 +570,14 @@ theorem puncturedSpherePerturbation_associativity_of_one_le (hτ : 1 ≤ τ) (hL
         (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) ![Hb zero, Ha zero, Ha one]
         (Hb inf) =
       plumbedPerturbation (update Ha inf 0) (update Hb one 0) one L := by
-  have hf : one.plumbingFactor L = -((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
-    rw [plumbingFactor_eq_mul_ofReal, endScale_one]
-    push_cast
-    ring
   rw [plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (r := zero) (by simp)
-    (by simp) (by simp) hL, associativityCenter_of_one_le hτ, associativityScale_of_one_le hτ,
-    plumbingMap_apply, hf]
+    (by simp) (by simp) hL, ← associativityCenter_of_one_le_comp_finRotate hτ,
+    ← associativityScale_of_one_le_comp_finRotate hτ]
   -- The two data list the same three input ends in the orders `a, b, c` and `b, c, a`.
   funext w x
-  simp only [puncturedSpherePerturbation_def, Fin.sum_univ_three, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, endCenter_one,
-    endCenter_zero, endScale_zero, neg_neg, mul_one]
-  rw [show (2 : ℂ) * (1 / 2) = 1 by norm_num, ← sub_eq_add_neg]
-  abel
+  rw [puncturedSpherePerturbation_def, puncturedSpherePerturbation_def]
+  congr 1
+  exact (Fintype.sum_equiv (finRotate 3) _ _ fun i => by fin_cases i <;> rfl).symm
 
 end Ends
 
