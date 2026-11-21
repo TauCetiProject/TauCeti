@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Jump.Index
+public import TauCeti.Computability.Jump.Compiler.Index
 import TauCeti.Computability.SingleOracle.Universal
 import TauCeti.Computability.RecursiveIn
 public import TauCeti.Computability.TuringDegree

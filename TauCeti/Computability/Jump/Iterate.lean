@@ -117,10 +117,8 @@ theorem turingReducible_iterate_jump_iterate_jump (h : TuringReducible A.oracle 
 reduction into a one-one reduction. -/
 theorem oneOneReducible_iterate_jump_iterate_jump (h : TuringReducible A.oracle B.oracle)
     (n : ℕ) : OneOneReducible (· ∈ jump^[n + 1] A) (· ∈ jump^[n + 1] B) := by
-  obtain ⟨d, hd⟩ := Code.turingReducible_iff_exists_code.1 h
-  let c := Code.jumpProgram^[n] d
-  exact ⟨c.jumpIndex, (Code.primrec₂_jumpIndex.comp (Primrec.const c) Primrec.id).to_comp,
-    c.jumpIndex_injective, fun e => (jumpIndex_mem_iterate_jump_iff hd n e).symm⟩
+  rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
+  exact oneOneReducible_jump_jump (turingReducible_iterate_jump_iterate_jump h n)
 
 /-- Turing equivalent sets have Turing equivalent iterated jumps. -/
 theorem turingEquivalent_iterate_jump_iterate_jump (h : TuringEquivalent A.oracle B.oracle)
