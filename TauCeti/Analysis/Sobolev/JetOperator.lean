@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.Holder
+public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.Prod
 
@@ -16,8 +16,8 @@ The jet of a section `ξ : ℝ × ℝ → V` of a trivial bundle over a domain o
 `ℝ × ℝ → V × V × V` collecting a zeroth-order term and the two first partial derivatives of `ξ`.
 A first-order operator with coefficient field `M : ℝ × ℝ → L(V × V × V, W)` acts on jets
 pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` essentially bounded for
-`μ`, this is a bounded operator `L²(μ, V × V × V) → L²(μ, W)` (`TauCeti.jetOperator`), built
-from Mathlib's Hölder pairing `ContinuousLinearMap.holderL`.
+`μ`, this is a bounded operator `L²(μ, V × V × V) → L²(μ, W)` (`TauCeti.jetOperator`), the
+operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`.
 
 The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.jetCoeff`), whose norm is
@@ -53,7 +53,7 @@ coefficients `M`. If `M` is not essentially bounded for `μ`, it is `0` by conve
 def jetOperator (μ : Measure (ℝ × ℝ)) (M : ℝ × ℝ → V × V × V →L[ℝ] W) :
     Lp (V × V × V) 2 μ →L[ℝ] Lp W 2 μ :=
   if hM : MemLp M ∞ μ then
-    (ContinuousLinearMap.id ℝ (V × V × V →L[ℝ] W)).holderL μ ∞ 2 2 (hM.toLp M)
+    Lp.operatorMultiplication 2 (hM.toLp M)
   else 0
 
 /-- The first-order operator of a coefficient field that is not essentially bounded is `0`. -/
@@ -66,10 +66,9 @@ theorem jetOperator_of_not_memLp {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ →
 theorem coeFn_jetOperator {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ μ) (f : Lp (V × V × V) 2 μ) :
     jetOperator μ M f =ᵐ[μ] fun z ↦ M z (f z) := by
-  simp only [jetOperator, hM, ↓reduceDIte, ContinuousLinearMap.holderL_apply_apply]
-  filter_upwards [(ContinuousLinearMap.id ℝ (V × V × V →L[ℝ] W)).coeFn_holder (r := 2)
-    (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
-  rw [h₁, ContinuousLinearMap.id_apply, h₂]
+  simp only [jetOperator, hM, ↓reduceDIte]
+  filter_upwards [Lp.operatorMultiplication_ae (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
+  rw [h₁, h₂]
 
 /-- The coefficient field `(a, b, c) ↦ b + A c + C a` on jets `(a, b, c)` of the operator
 `∂s + A ∂t + C`, where `b` and `c` are the slots of the partial derivatives `∂s` and `∂t`. -/
