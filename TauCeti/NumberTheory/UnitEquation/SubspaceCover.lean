@@ -50,12 +50,13 @@ nondegenerate solutions that depends only on `n` and `r`.
 
 ## Main definitions and results
 
+* `TauCeti.IsUnitEquationCoverBound K N`: the nondegenerate solutions of `y₁ + ⋯ + yₘ = 1` in
+  every subgroup of `(Kˣ)ᵐ` of rank at most `s` are covered by at most `N m s` proper subspaces.
 * `TauCeti.unitEquationNondegenerateBound N n r`: the recursive bound obtained from the cover
   bound `N`.
-* `TauCeti.encard_isNondegenerateSolution_le_of_subspaceCover`: if the nondegenerate solutions of
-  `y₁ + ⋯ + yₘ = 1` in every subgroup of `(Kˣ)ᵐ` of rank at most `s` are covered by at most
-  `N m s` proper subspaces, then `∑ aᵢxᵢ = 1` has at most `unitEquationNondegenerateBound N n r`
-  nondegenerate solutions in a group `Γ ≤ (Kˣ)ⁿ` of rank at most `r`.
+* `TauCeti.encard_isNondegenerateSolution_le_of_subspaceCover`: if `IsUnitEquationCoverBound K N`,
+  then `∑ aᵢxᵢ = 1` has at most `unitEquationNondegenerateBound N n r` nondegenerate solutions in
+  a group `Γ ≤ (Kˣ)ⁿ` of rank at most `r`.
 
 ## References
 
@@ -115,6 +116,16 @@ in rank `r + 1`: each proper subspace of `K²` meets the line `y₁ + y₂ = 1` 
 theorem unitEquationNondegenerateBound_two (r : ℕ) :
     unitEquationNondegenerateBound N 2 r = N 2 (r + 1) := by
   simp [unitEquationNondegenerateBound_add_two]
+
+/-- `N` bounds the subspace covers for unit equations over `K`: for every `m ≥ 2` and every
+subgroup `Γ ≤ (Fin m → Kˣ)` of rank at most `s` over `ℤ`, the nondegenerate solutions `y ∈ Γ` of
+`y₁ + ⋯ + yₘ = 1` lie in the union of at most `N m s` proper subspaces of `Fin m → K`. This is the
+conclusion of the subspace theorem of Evertse, Schlickewei and Schmidt (their Theorem 2.1). -/
+def IsUnitEquationCoverBound (K : Type u) [Field K] (N : ℕ → ℕ → ℕ) : Prop :=
+  ∀ m : ℕ, 2 ≤ m → ∀ (s : ℕ) (Γ : Subgroup (Fin m → Kˣ)),
+    Module.rank ℤ (Additive Γ) ≤ s → ∃ 𝒲 : Finset (Submodule K (Fin m → K)),
+      #𝒲 ≤ N m s ∧ (∀ W ∈ 𝒲, W ≠ ⊤) ∧ ∀ y ∈ Γ, IsNondegenerateSolution 1 (fun i ↦ (y i : K)) →
+        ∃ W ∈ 𝒲, (fun i ↦ (y i : K)) ∈ W
 
 variable {K : Type u} [Field K]
 
@@ -288,10 +299,7 @@ private theorem encard_isNondegenerateSolution_le_sup_zpowers {ι : Type*} [Fint
 /-- A subspace-cover hypothesis for subgroups of `Fin m → Kˣ` transfers to subgroups of `ι → Kˣ`
 for every index type `ι` with `m` elements. -/
 private theorem exists_subspaceCover {N : ℕ → ℕ → ℕ}
-    (hN : ∀ m : ℕ, 2 ≤ m → ∀ (s : ℕ) (Γ : Subgroup (Fin m → Kˣ)),
-      Module.rank ℤ (Additive Γ) ≤ s → ∃ 𝒲 : Finset (Submodule K (Fin m → K)),
-        #𝒲 ≤ N m s ∧ (∀ W ∈ 𝒲, W ≠ ⊤) ∧ ∀ y ∈ Γ, IsNondegenerateSolution 1 (fun i ↦ (y i : K)) →
-          ∃ W ∈ 𝒲, (fun i ↦ (y i : K)) ∈ W)
+    (hN : IsUnitEquationCoverBound K N)
     {ι : Type v} [Fintype ι] (hι : 2 ≤ Fintype.card ι) {s : ℕ} (Γ : Subgroup (ι → Kˣ))
     (hΓ : Module.rank ℤ (Additive Γ) ≤ s) :
     ∃ 𝒲 : Finset (Submodule K (ι → K)), #𝒲 ≤ N (Fintype.card ι) s ∧ (∀ W ∈ 𝒲, W ≠ ⊤) ∧
@@ -324,7 +332,8 @@ private theorem exists_subspaceCover {N : ℕ → ℕ → ℕ}
       simp [L, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, hφ]
     rwa [hL]
 
-/-- **Nondegenerate solutions from a subspace cover.** Suppose that for every `m ≥ 2` and every
+/-- **Nondegenerate solutions from a subspace cover.** Suppose that `N` bounds the subspace covers
+for unit equations over `K` (`TauCeti.IsUnitEquationCoverBound`): for every `m ≥ 2` and every
 subgroup `Γ ≤ (Fin m → Kˣ)` of rank at most `s` over `ℤ`, the nondegenerate solutions `y ∈ Γ` of
 `∑ yᵢ = 1` lie in the union of at most `N m s` proper subspaces of `Fin m → K`. Then for every
 subgroup `Γ ≤ (ι → Kˣ)` of rank at most `r` and all coefficients `a`, the equation `∑ aᵢxᵢ = 1`
@@ -333,10 +342,7 @@ the combinatorial induction by which Evertse, Schlickewei and Schmidt deduce the
 their subspace-cover theorem, Theorem 2.1; the explicit form of the resulting bound is not
 computed here. -/
 theorem encard_isNondegenerateSolution_le_of_subspaceCover {N : ℕ → ℕ → ℕ}
-    (hN : ∀ m : ℕ, 2 ≤ m → ∀ (s : ℕ) (Γ : Subgroup (Fin m → Kˣ)),
-      Module.rank ℤ (Additive Γ) ≤ s → ∃ 𝒲 : Finset (Submodule K (Fin m → K)),
-        #𝒲 ≤ N m s ∧ (∀ W ∈ 𝒲, W ≠ ⊤) ∧ ∀ y ∈ Γ, IsNondegenerateSolution 1 (fun i ↦ (y i : K)) →
-          ∃ W ∈ 𝒲, (fun i ↦ (y i : K)) ∈ W)
+    (hN : IsUnitEquationCoverBound K N)
     {ι : Type v} [Fintype ι] (Γ : Subgroup (ι → Kˣ)) {r : ℕ}
     (hΓ : Module.rank ℤ (Additive Γ) ≤ r) (a : ι → K) :
     {x | x ∈ Γ ∧ IsNondegenerateSolution a fun i ↦ (x i : K)}.encard ≤
