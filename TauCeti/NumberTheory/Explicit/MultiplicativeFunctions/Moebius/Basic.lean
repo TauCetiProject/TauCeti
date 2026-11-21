@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.NumberTheory.AbelSummation
 import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.AbelSummation
+import TauCeti.Topology.Algebra.Order.Floor
 
 /-!
 # The summatory functions of the Möbius function at a real argument
@@ -107,16 +108,16 @@ theorem moebiusLogSum_def (x : ℝ) :
 /-! ### Values below `1` and at the natural numbers -/
 
 /-- `M(x) = 0` for `x < 1`: the sum is empty. -/
-theorem moebiusSum_of_lt_one (hx : x < 1) : moebiusSum x = 0 := by
-  simp [moebiusSum, Nat.floor_eq_zero.mpr hx]
+theorem moebiusSum_of_lt_one (hx : x < 1) : moebiusSum x = 0 :=
+  sum_Icc_one_natFloor_eq_zero _ hx
 
 /-- `m(x) = 0` for `x < 1`: the sum is empty. -/
-theorem moebiusDivSum_of_lt_one (hx : x < 1) : moebiusDivSum x = 0 := by
-  simp [moebiusDivSum, Nat.floor_eq_zero.mpr hx]
+theorem moebiusDivSum_of_lt_one (hx : x < 1) : moebiusDivSum x = 0 :=
+  sum_Icc_one_natFloor_eq_zero _ hx
 
 /-- `ℓ(x) = 0` for `x < 1`: the sum is empty. -/
-theorem moebiusLogSum_of_lt_one (hx : x < 1) : moebiusLogSum x = 0 := by
-  simp [moebiusLogSum, Nat.floor_eq_zero.mpr hx]
+theorem moebiusLogSum_of_lt_one (hx : x < 1) : moebiusLogSum x = 0 :=
+  sum_Icc_one_natFloor_eq_zero _ hx
 
 /-- At a natural number `N`, `M(N)` is the sum of `μ` over `Finset.Icc 1 N`. -/
 @[simp]
@@ -129,10 +130,12 @@ theorem moebiusDivSum_natCast (N : ℕ) : moebiusDivSum N = ∑ n ∈ Icc 1 N, (
   simp [moebiusDivSum]
 
 /-- `M` is constant on each interval `[N, N + 1)`: `M(x) = M(⌊x⌋₊)`. -/
+@[simp high]
 theorem moebiusSum_natFloor (x : ℝ) : moebiusSum ⌊x⌋₊ = moebiusSum x := by
   simp [moebiusSum]
 
 /-- `m` is constant on each interval `[N, N + 1)`: `m(x) = m(⌊x⌋₊)`. -/
+@[simp high]
 theorem moebiusDivSum_natFloor (x : ℝ) : moebiusDivSum ⌊x⌋₊ = moebiusDivSum x := by
   simp [moebiusDivSum]
 
@@ -171,13 +174,6 @@ private theorem intervalIntegral_one_eq_zero {F : ℝ → ℝ} (hF : ∀ t < 1, 
   rw [intervalIntegral.integral_symm, intervalIntegral.integral_of_le hx,
     integral_Ioc_eq_integral_Ioo, neg_eq_zero]
   exact setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hF t ht.2
-
-/-- A sum over `Finset.Icc 0 N` of a function vanishing at `0` is its sum over
-`Finset.Icc 1 N`. -/
-private theorem sum_Icc_zero_eq_sum_Icc_one {f : ℕ → ℝ} (h0 : f 0 = 0) (N : ℕ) :
-    ∑ k ∈ Icc 0 N, f k = ∑ k ∈ Icc 1 N, f k := by
-  rw [Icc_eq_cons_Ioc (Nat.zero_le _), sum_cons, h0, zero_add, ← Icc_add_one_left_eq_Ioc,
-    zero_add]
 
 /-! ### `ℓ` through `m`, and `m` through `M` -/
 
@@ -226,9 +222,10 @@ theorem moebiusLogSum_eq_integral (x : ℝ) :
   rw [hsum, habel, mul_comm, sub_sub_cancel]
   exact setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ by rw [moebiusDivSum, div_eq_inv_mul]
 
-/-- `M(t)`, weighted by a function continuous on `[1, ∞)`, is interval integrable between any two
-reals. -/
-private theorem intervalIntegrable_moebiusSum_mul {f : ℝ → ℝ} (hf : ContinuousOn f (Set.Ici 1))
+/-- `M(t)`, weighted by a function locally integrable on `[1, ∞)`, is interval integrable between
+any two reals. -/
+private theorem intervalIntegrable_moebiusSum_mul {f : ℝ → ℝ}
+    (hf : LocallyIntegrableOn f (Set.Ici 1))
     (a b : ℝ) : IntervalIntegrable (fun t ↦ moebiusSum t * f t) volume a b := by
   simpa only [moebiusSum, mul_comm] using
     intervalIntegrable_mul_sum_Icc (fun n ↦ (μ n : ℝ)) hf a b
@@ -273,8 +270,10 @@ theorem moebiusLogSum_eq_integral_moebiusSum (x : ℝ) :
     sum_Icc_zero_eq_sum_Icc_one (f := fun k ↦ (μ k : ℝ)) (by simp), sub_self, zero_div,
     zero_mul, zero_sub] at habel
   rw [← intervalIntegral.integral_add
-    (by simpa only [mul_div_assoc] using intervalIntegrable_moebiusSum_mul hc₂ 1 x)
-    (by simpa only [div_eq_mul_inv] using intervalIntegrable_moebiusSum_mul hc₁ 1 x),
+    (by simpa only [mul_div_assoc] using intervalIntegrable_moebiusSum_mul
+          (hc₂.locallyIntegrableOn measurableSet_Ici) 1 x)
+    (by simpa only [div_eq_mul_inv] using intervalIntegrable_moebiusSum_mul
+          (hc₁.locallyIntegrableOn measurableSet_Ici) 1 x),
     intervalIntegral.integral_of_le hx]
   have hsum : moebiusLogSum x =
       ∑ k ∈ Icc 1 ⌊x⌋₊, (Real.log x - Real.log k) / k * (μ k : ℝ) := by
@@ -298,16 +297,8 @@ theorem continuous_moebiusLogSum : Continuous moebiusLogSum := by
     funext fun t ↦ by rw [moebiusDivSum, div_eq_inv_mul]
   rw [funext moebiusLogSum_eq_integral, hfun]
   exact intervalIntegral.continuous_primitive
-    (intervalIntegrable_mul_sum_Icc (fun n ↦ (μ n : ℝ) / n) hc) 1
-
-/-- Away from the natural numbers `⌊·⌋₊` is locally constant. -/
-private theorem eventually_natFloor_eq (hx : ∀ n : ℕ, x ≠ n) : ∀ᶠ y in 𝓝 x, ⌊y⌋₊ = ⌊x⌋₊ := by
-  rcases lt_or_ge x 0 with hx0 | hx0
-  · filter_upwards [Iio_mem_nhds hx0] with y hy
-    rw [Nat.floor_of_nonpos hy.le, Nat.floor_of_nonpos hx0.le]
-  · have hlt : (⌊x⌋₊ : ℝ) < x := lt_of_le_of_ne (Nat.floor_le hx0) (hx _).symm
-    filter_upwards [Ioo_mem_nhds hlt (Nat.lt_floor_add_one x)] with y hy
-    exact (Nat.floor_eq_iff ((Nat.cast_nonneg _).trans hy.1.le)).mpr ⟨hy.1.le, hy.2⟩
+    (intervalIntegrable_mul_sum_Icc (fun n ↦ (μ n : ℝ) / n)
+      (hc.locallyIntegrableOn measurableSet_Ici)) 1
 
 /-- Off the natural numbers, `ℓ` is differentiable with derivative `m(x) / x`. -/
 theorem hasDerivAt_moebiusLogSum (hx : ∀ n : ℕ, x ≠ n) :
