@@ -134,9 +134,8 @@ on the line `k` with characteristic polynomial `X - χ g`. -/
 @[simp]
 theorem charpoly_ofLinearCharacter_apply [CommRing k] [Monoid G] (χ : G →* kˣ) (g : G) :
     (ofLinearCharacter χ g).charpoly = Polynomial.X - Polynomial.C (χ g : k) := by
-  rw [← LinearMap.charpoly_toMatrix _ (Module.Basis.singleton Unit k), Matrix.charpoly,
-    Matrix.det_unique, Matrix.charmatrix_apply_eq, LinearMap.toMatrix_apply]
-  simp
+  rw [← LinearMap.charpoly_toMatrix _ (Module.Basis.singleton Unit k)]
+  simp [Matrix.charpoly, Matrix.det_unique, LinearMap.toMatrix_apply]
 
 /-- A one-dimensional representation is irreducible, having no room for a proper nonzero
 subrepresentation. -/

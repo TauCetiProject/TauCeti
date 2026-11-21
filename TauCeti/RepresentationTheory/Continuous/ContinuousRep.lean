@@ -33,9 +33,9 @@ topology (`IsModuleTopology A M`). Over such modules every linear map is continu
 equivariant linear equivalence is automatically an isomorphism of continuous representations
 (`TauCeti.ContinuousRep.Iso.ofEquiv`), and an intertwining map is automatically a morphism
 (`TauCeti.ContinuousRep.Hom.ofIntertwiningMap`). Joint continuity on such a module can be checked
-on the orbits of a finite generating family (`IsModuleTopology.continuous_linearMap_apply_iff`)
-or, on a free module, on the matrix coefficients in a basis
-(`TauCeti.ContinuousRep.continuous_toMatrix` and its converse
+on the orbits of a finite generating family
+(`IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top`) or, on a free module, on the
+matrix coefficients in a basis (`TauCeti.ContinuousRep.continuous_toMatrix` and its converse
 `TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix`). Extension of
 scalars along a continuous ring map `A → B` gives `B ⊗[A] M` its `B`-module topology; the
 base-changed action is again jointly continuous because the tensors `1 ⊗ m` of a finite
@@ -549,6 +549,24 @@ theorem comp_apply (f : Hom σ τ) (f' : Hom ρ σ) (x : M) : f.comp f' x = f (f
   (rfl)
 
 @[simp]
+theorem toIntertwiningMap_id : (id ρ).toIntertwiningMap = .id ρ.toRepresentation :=
+  (rfl)
+
+@[simp]
+theorem toIntertwiningMap_comp (f : Hom σ τ) (f' : Hom ρ σ) :
+    (f.comp f').toIntertwiningMap = f.toIntertwiningMap.comp f'.toIntertwiningMap :=
+  (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_id : (id ρ).toContinuousLinearMap = .id A M :=
+  (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_comp (f : Hom σ τ) (f' : Hom ρ σ) :
+    (f.comp f').toContinuousLinearMap = f.toContinuousLinearMap.comp f'.toContinuousLinearMap :=
+  (rfl)
+
+@[simp]
 theorem id_comp (f : Hom ρ σ) : (id σ).comp f = f :=
   ext fun _ => (rfl)
 
@@ -575,6 +593,25 @@ def toHom (e : Iso ρ σ) : Hom ρ σ where
 @[simp]
 theorem coe_toHom (e : Iso ρ σ) : ⇑e.toHom = e :=
   (rfl)
+
+@[simp]
+theorem toIntertwiningMap_toHom (e : Iso ρ σ) :
+    e.toHom.toIntertwiningMap = e.toRepresentationEquiv.toIntertwiningMap :=
+  (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_toHom (e : Iso ρ σ) :
+    e.toHom.toContinuousLinearMap = e.toContinuousLinearEquiv.toContinuousLinearMap :=
+  (rfl)
+
+@[simp]
+theorem toHom_refl : (refl ρ).toHom = Hom.id ρ :=
+  Hom.ext fun _ => (rfl)
+
+@[simp]
+theorem toHom_trans {τ : ContinuousRep Γ A P} (e : Iso ρ σ) (f : Iso σ τ) :
+    (e.trans f).toHom = f.toHom.comp e.toHom :=
+  Hom.ext fun _ => (rfl)
 
 @[simp]
 theorem symm_toHom_comp_toHom (e : Iso ρ σ) : e.symm.toHom.comp e.toHom = Hom.id ρ :=
