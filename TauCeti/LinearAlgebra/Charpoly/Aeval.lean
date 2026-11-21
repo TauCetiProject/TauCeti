@@ -60,18 +60,16 @@ theorem map_charpoly_aeval_eq_prod_aroots (f : Module.End R M)
   let b := Module.Free.chooseBasis R M
   -- In the basis `b`, `p(f)` becomes `p(A)` for the matrix `A` of `f`, and its image over `S`
   -- is `p(A_S)` for the image `A_S` of `A`, to which the matrix spectral mapping theorem applies.
-  have hb (g : Module.End R M) : toMatrixAlgEquiv b g = toMatrix b b g := by
-    ext i j
-    rw [toMatrixAlgEquiv_apply, toMatrix_apply]
   have hfA :
       f.charpoly.map (algebraMap R S) = ((toMatrix b b f).map (algebraMap R S)).charpoly := by
     rw [Matrix.charpoly_map, charpoly_toMatrix]
   have hpA : (toMatrix b b (aeval f p)).map (algebraMap R S) =
       aeval ((toMatrix b b f).map (algebraMap R S)) (p.map (algebraMap R S)) := by
-    rw [aeval_map_algebraMap, ← hb, ← hb, ← aeval_algHom_apply]
-    have h := aeval_algHom_apply (Algebra.ofId R S).mapMatrix (toMatrixAlgEquiv b f) p
-    rwa [AlgHom.mapMatrix_apply, AlgHom.mapMatrix_apply, _root_.funext (Algebra.ofId_apply S),
-      eq_comm] at h
+    -- Both sides are the image of `p(f)` under the algebra map from `End R M` to matrices over
+    -- `S` sending a linear map to the image over `S` of its matrix in `b`.
+    rw [aeval_map_algebraMap]
+    exact (aeval_algHom_apply ((Algebra.ofId R S).mapMatrix.comp (toMatrixAlgEquiv b).toAlgHom)
+      f p).symm
   rw [← charpoly_toMatrix (aeval f p) b, ← Matrix.charpoly_map, hpA,
     Matrix.charpoly_aeval_eq_prod_roots_charpoly_of_splits (hfA ▸ hf), ← hfA]
   simp [aroots, eval_map_algebraMap]
