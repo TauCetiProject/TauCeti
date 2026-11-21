@@ -36,6 +36,11 @@ so it lies in `K⁺`. Its norm to `ℚ` is then the square of its norm from `K�
 
 ## Main results
 
+* `TauCeti.NumberField.IsCMField.quotientRealUnitsEquiv`: when `indexRealUnits K = 1` and
+  `torsion K ≤ H`, the real-unit inclusion induces an isomorphism
+  `(𝓞 K⁺)ˣ ⧸ H⁺ ≃* (𝓞 K)ˣ ⧸ H`.
+* `TauCeti.NumberField.IsCMField.index_comap_realUnits_eq`: equality of indices
+  `[(𝓞 K⁺)ˣ : H⁺] = [(𝓞 K)ˣ : H]` under the same hypotheses.
 * `TauCeti.NumberField.IsCMField.indexRealUnits_eq_one_of_not_isSquare_abs_norm`: if `K` is CM
   and `|N_{K/ℚ}(ζ - 1)|` is not a rational square for some root of unity `ζ` of `K`, then the
   Hasse unit index of `K` is `1`.
@@ -48,7 +53,7 @@ so it lies in `K⁺`. Its norm to `ℚ` is then the square of its norm from `K�
 
 * L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., Graduate Texts in Mathematics
   83, Springer, 1997, Corollary 4.13.
-* R. Sharifi, *Iwasawa theory*, lecture notes, Lemma 4.2.17.
+* R. Sharifi, *Iwasawa theory*, lecture notes, Lemmas 4.2.17 and 4.2.19.
 -/
 
 public section
@@ -56,6 +61,84 @@ public section
 open NumberField NumberField.Units NumberField.IsCMField
 
 namespace TauCeti.NumberField.IsCMField
+
+section Quotient
+
+private theorem mk'_comp_realUnits_surjective (K : Type*) [Field K]
+    (hindex : indexRealUnits K = 1) (H : Subgroup (𝓞 K)ˣ) (htors : torsion K ≤ H) :
+    Function.Surjective ((QuotientGroup.mk' H).comp
+      (Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) :
+        𝓞 (maximalRealSubfield K) →* 𝓞 K))) := by
+  have htop : realUnits K ⊔ torsion K = ⊤ := Subgroup.index_eq_one.mp hindex
+  intro q
+  induction q using QuotientGroup.induction_on with
+  | H u =>
+    have hu : u ∈ realUnits K ⊔ torsion K := htop.symm ▸ Subgroup.mem_top u
+    obtain ⟨r, hr, ζ, hζ, rfl⟩ := Subgroup.mem_sup.mp hu
+    obtain ⟨v, rfl⟩ := hr
+    refine ⟨v, ?_⟩
+    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
+    exact (QuotientGroup.eq.mpr (by simpa using htors hζ)).symm
+
+private theorem mk'_comp_realUnits_ker (K : Type*) [Field K] (H : Subgroup (𝓞 K)ˣ) :
+    ((QuotientGroup.mk' H).comp
+        (Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) :
+          𝓞 (maximalRealSubfield K) →* 𝓞 K))).ker =
+      H.comap (Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) :
+        𝓞 (maximalRealSubfield K) →* 𝓞 K)) := by
+  rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk']
+
+/-- **Real-to-full unit quotient isomorphism (Sharifi, Lemma 4.2.19).** When `indexRealUnits K = 1`
+and `H ≤ (𝓞 K)ˣ` contains all roots of unity, the inclusion of real units induces an isomorphism
+`(𝓞 K⁺)ˣ ⧸ H⁺ ≃* (𝓞 K)ˣ ⧸ H`, where `H⁺` is the preimage of `H` in `(𝓞 K⁺)ˣ`. -/
+noncomputable def quotientRealUnitsEquiv (K : Type*) [Field K]
+    (hindex : indexRealUnits K = 1) (H : Subgroup (𝓞 K)ˣ) (htors : torsion K ≤ H) :
+    (𝓞 (maximalRealSubfield K))ˣ ⧸
+        H.comap (Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) :
+          𝓞 (maximalRealSubfield K) →* 𝓞 K)) ≃*
+      (𝓞 K)ˣ ⧸ H :=
+  (QuotientGroup.quotientMulEquivOfEq (mk'_comp_realUnits_ker K H).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _
+      (mk'_comp_realUnits_surjective K hindex H htors))
+
+/-- Applying `quotientRealUnitsEquiv` to a coset of a real unit gives the coset of its image in
+`(𝓞 K)ˣ`. -/
+@[simp]
+theorem quotientRealUnitsEquiv_mk (K : Type*) [Field K]
+    (hindex : indexRealUnits K = 1) (H : Subgroup (𝓞 K)ˣ) (htors : torsion K ≤ H)
+    (u : (𝓞 (maximalRealSubfield K))ˣ) :
+    quotientRealUnitsEquiv K hindex H htors (QuotientGroup.mk u) =
+      QuotientGroup.mk
+        (Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) :
+          𝓞 (maximalRealSubfield K) →* 𝓞 K) u) :=
+  (rfl)
+
+/-- Applying the inverse of `quotientRealUnitsEquiv` to the coset of a real unit recovers its
+coset in `(𝓞 K⁺)ˣ`. -/
+@[simp]
+theorem quotientRealUnitsEquiv_symm_mk_map (K : Type*) [Field K]
+    (hindex : indexRealUnits K = 1) (H : Subgroup (𝓞 K)ˣ) (htors : torsion K ≤ H)
+    (u : (𝓞 (maximalRealSubfield K))ˣ) :
+    (quotientRealUnitsEquiv K hindex H htors).symm
+        (QuotientGroup.mk
+          (Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) :
+            𝓞 (maximalRealSubfield K) →* 𝓞 K) u)) =
+      QuotientGroup.mk u :=
+  (MulEquiv.symm_apply_eq _).mpr (quotientRealUnitsEquiv_mk K hindex H htors u).symm
+
+/-- **Real and full unit indices coincide when the Hasse unit index is one.** If
+`indexRealUnits K = 1` and `torsion K ≤ H`, then the preimage of `H` in `(𝓞 K⁺)ˣ` has the same
+index as `H` in `(𝓞 K)ˣ`. -/
+theorem index_comap_realUnits_eq (K : Type*) [Field K]
+    (hindex : indexRealUnits K = 1) (H : Subgroup (𝓞 K)ˣ) (htors : torsion K ≤ H) :
+    (H.comap (Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K) :
+      𝓞 (maximalRealSubfield K) →* 𝓞 K))).index =
+      H.index :=
+  Nat.card_congr (quotientRealUnitsEquiv K hindex H htors).toEquiv
+
+end Quotient
+
+section CMField
 
 variable (K : Type*) [Field K] [_root_.NumberField K] [_root_.NumberField.IsCMField K]
 
@@ -97,6 +180,8 @@ theorem indexRealUnits_eq_one_of_not_isSquare_abs_norm (ζ : torsion K)
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
     (hu ▸ Subgroup.mem_top ((⟨-1, neg_one_mem_torsion⟩ : torsion K) * ζ))
   exact isSquare_abs_norm_of_unitsMulComplexConjInv_eq K ζ (u ^ k) (by rw [map_zpow, hk])
+
+end CMField
 
 end TauCeti.NumberField.IsCMField
 
