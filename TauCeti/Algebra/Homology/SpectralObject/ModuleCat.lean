@@ -52,6 +52,7 @@ lemma H_map_map_apply_eq {n : ℤ} {A B B' C : ComposableArrows ι 1} (φ : A �
   rw [X.H_map_map_apply φ ψ (φ ≫ ψ), X.H_map_map_apply φ' ψ' (φ ≫ ψ)]
 
 /-- Every endomorphism of `A` induces the identity of `H^n(A)`. -/
+@[simp]
 lemma H_map_self_apply {n : ℤ} {A : ComposableArrows ι 1} (φ : A ⟶ A) (x : (X.H n).obj A) :
     (X.H n).map φ x = x := by
   rw [Subsingleton.elim φ (𝟙 A), Functor.map_id, ModuleCat.id_apply]

@@ -119,6 +119,23 @@ lemma RangeStableFrom.range_le {n s b m : ℤ} (h : X.RangeStableFrom n s b m) (
         (WithBotTop.coe_le_coe.2 (hi.trans h.le)) (WithBotTop.coe_le_coe.2 h.le_bound))).hom :=
   h.2.2 i hi
 
+/-- The images in `H^n(s ≤ b)` stabilizing from `m` on are equal for all `i ≤ m`: the image of
+`H^n(i ≤ b) ⟶ H^n(s ≤ b)` is the image of `H^n(m ≤ b) ⟶ H^n(s ≤ b)`. -/
+lemma RangeStableFrom.range_eq {n s b m : ℤ} (h : X.RangeStableFrom n s b m) (i : ℤ)
+    (hi : i ≤ m) :
+    LinearMap.range ((X.H n).map (twoδ₁Toδ₀' (i : EInt) (s : EInt) (b : EInt)
+        (WithBotTop.coe_le_coe.2 (hi.trans h.le)) (WithBotTop.coe_le_coe.2 h.le_bound))).hom =
+      LinearMap.range ((X.H n).map (twoδ₁Toδ₀' (m : EInt) (s : EInt) (b : EInt)
+        (WithBotTop.coe_le_coe.2 h.le) (WithBotTop.coe_le_coe.2 h.le_bound))).hom :=
+  le_antisymm (X.range_H_map_twoδ₁Toδ₀'_le (WithBotTop.coe_le_coe.2 hi) _ _) (h.range_le i hi)
+
+/-- If the images in `H^n(s ≤ b)` stabilize from `m` on, they stabilize from any `m' ≤ m` on. -/
+lemma RangeStableFrom.mono {n s b m m' : ℤ} (h : X.RangeStableFrom n s b m) (hm' : m' ≤ m) :
+    X.RangeStableFrom n s b m' :=
+  ⟨hm'.trans h.le, h.le_bound, fun i hi ↦
+    (X.range_H_map_twoδ₁Toδ₀'_le (WithBotTop.coe_le_coe.2 hm') _ _).trans
+      (h.range_le i (hi.trans hm'))⟩
+
 /-- The stage `i₀` from which a spectral sequence is regular at the position `t` is at most `t`. -/
 lemma IsRegularAt.le {n t i₀ : ℤ} (h : X.IsRegularAt n t i₀) : i₀ ≤ t :=
   RangeStableFrom.le h
@@ -132,6 +149,16 @@ lemma IsRegularAt.range_le {n t i₀ : ℤ} (h : X.IsRegularAt n t i₀) (i : �
         (WithBotTop.coe_le_coe.2 (hi.trans h.le)) (WithBotTop.coe_le_coe.2 (by lia)))).hom :=
   RangeStableFrom.range_le h i hi
 
+/-- The images in `H^n(t ≤ t + 1)` of a spectral sequence regular at the position `t` from `i₀` on
+are equal for all `i ≤ i₀`: the image of `H^n(i ≤ t + 1) ⟶ H^n(t ≤ t + 1)` is the image of
+`H^n(i₀ ≤ t + 1) ⟶ H^n(t ≤ t + 1)`. -/
+lemma IsRegularAt.range_eq {n t i₀ : ℤ} (h : X.IsRegularAt n t i₀) (i : ℤ) (hi : i ≤ i₀) :
+    LinearMap.range ((X.H n).map (twoδ₁Toδ₀' (i : EInt) (t : EInt) ((t + 1 : ℤ) : EInt)
+        (WithBotTop.coe_le_coe.2 (hi.trans h.le)) (WithBotTop.coe_le_coe.2 (by lia)))).hom =
+      LinearMap.range ((X.H n).map (twoδ₁Toδ₀' (i₀ : EInt) (t : EInt) ((t + 1 : ℤ) : EInt)
+        (WithBotTop.coe_le_coe.2 h.le) (WithBotTop.coe_le_coe.2 (by lia)))).hom :=
+  RangeStableFrom.range_eq h i hi
+
 /-- The characteristic property of `IsRegularAt`: the images in `H^n(t ≤ t + 1)` stabilize from
 `i₀` on. -/
 lemma isRegularAt_iff {n t i₀ : ℤ} : X.IsRegularAt n t i₀ ↔ X.RangeStableFrom n t (t + 1) i₀ :=
@@ -140,11 +167,8 @@ lemma isRegularAt_iff {n t i₀ : ℤ} : X.IsRegularAt n t i₀ ↔ X.RangeStabl
 /-- A spectral sequence regular at the position `t` from `i₀` on is regular there from any
 `i₁ ≤ i₀` on. -/
 lemma IsRegularAt.mono {n t i₀ i₁ : ℤ} (h : X.IsRegularAt n t i₀) (hi : i₁ ≤ i₀) :
-    X.IsRegularAt n t i₁ := by
-  have := h.le
-  exact ⟨by lia, by lia, fun i hi' ↦
-    (X.range_H_map_twoδ₁Toδ₀'_le (WithBotTop.coe_le_coe.2 hi) _ _).trans
-      (h.range_le i (hi'.trans hi))⟩
+    X.IsRegularAt n t i₁ :=
+  RangeStableFrom.mono h hi
 
 variable (X)
 
