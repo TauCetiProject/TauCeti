@@ -282,8 +282,8 @@ theorem isDiscriminatedBy_of_commGroup {A : Type*} [CommGroup A] [IsMulTorsionFr
         rcases Finset.mem_insert.1 hk with rfl | hk
         exacts [(hφ' hy).elim, (hφ k hk hN).elim]
       · exact (IsMulTorsionFree.zpow_right_inj hy).1 (mul_left_cancel (hN.trans hN'.symm))
-    obtain ⟨N, hN⟩ := ((insert a s).finite_toSet.biUnion fun k hk ↦
-      (hbad k hk).finite).infinite_compl.nonempty
+    obtain ⟨N, hN⟩ :=
+      ((insert a s).finite_toSet.biUnion fun k hk ↦ (hbad k hk).finite).exists_notMem
     exact ⟨ψ N, fun k hk hk1 ↦ hN (Set.mem_biUnion hk hk1)⟩
 
 /-- If a group `K` with unique roots is separated by the coefficients `G` over `G`, then the image
