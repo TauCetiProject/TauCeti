@@ -18,8 +18,10 @@ decomposing by their endpoint in `G.walkEndpoints v₀ n` extends the path model
 finite graphs: `PathAlgebra K G v₀ n`, one-step extension homomorphisms `walkExtend` /
 `walkStarExtend` (injective when no reachable vertex is a dead end), Temperley–Lieb
 (`⋆`-)representations `walkRep` / `walkStarRep` and `walkRep_surjective`, the weighted last-step
-closure map `walkExpect` (a unital conditional expectation when `r` is nowhere zero, `δ ≠ 0`, and
-`r ^ 2` is a `δ`-eigenvector), and the Markov trace `walkTrace` / `isMarkovTrace_walkTrace`.
+closure map `walkExpect` (a unital `walkExtend`-bimodule retraction when `r` is nowhere zero,
+`δ ≠ 0`, and `r ^ 2` is a `δ`-eigenvector; positivity and C⋆-conditional expectations are developed
+in `Quotient.Positivity` and `Quotient.Tower`), and the Markov trace `walkTrace` /
+`isMarkovTrace_walkTrace`.
 
 ## References
 
@@ -221,9 +223,13 @@ variable {K : Type*} [Field K] {V : Type*} (G : SimpleGraph V) [DecidableEq V]
   [G.LocallyFinite] (v₀ : V) (r : V → K) (δ : K)
 /-- Weighted last-step closure `PathAlgebra K G v₀ (n + 1) →ₗ[K] PathAlgebra K G v₀ n` closing
 the final step of walks from `u` across `v ∈ G.neighborFinset u` with weight
-`δ⁻¹ * (r v / r u) ^ 2`. It is always a `walkExtend`-bimodule map, and is a unital conditional
-expectation (retracting `walkExtend`) when `r` is nowhere zero, `δ ≠ 0`, and `r ^ 2` is a
-`δ`-eigenvector of `G`'s adjacency matrix. -/
+`δ⁻¹ * (r v / r u) ^ 2`. It is always a `walkExtend`-bimodule map, and is a unital
+`walkExtend`-bimodule retraction (`walkExpect_one`, `walkExpect_walkExtend`) when `r` is nowhere
+zero, `δ ≠ 0`, and `r ^ 2` is a `δ`-eigenvector of `G`'s adjacency matrix. Over `ℂ` with
+self-adjoint weights `r` and real `δ > 0`, `walkExpect (star Y * Y)` is a finite sum of squares
+(`TauCeti.Algebra.TemperleyLieb.Quotient.Positivity`), yielding the C⋆-conditional expectation
+`IsMarkovTrace.cstarConditionalExpectation` on the positive Jones quotient tower
+(`TauCeti.Algebra.TemperleyLieb.Quotient.Tower`). -/
 def walkExpect {n : ℕ} : PathAlgebra K G v₀ (n + 1) →ₗ[K] PathAlgebra K G v₀ n where
   toFun Y u := Matrix.of fun p q ↦
     δ⁻¹ * ∑ v ∈ (G.neighborFinset u.val).attach, (r v.val / r u.val) ^ 2 *
