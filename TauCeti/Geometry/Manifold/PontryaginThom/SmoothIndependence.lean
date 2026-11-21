@@ -30,7 +30,10 @@ derivative** (`TauCeti.transitionFDeriv`) is the normal part of `dτ₀⁻¹ ∘
 `transitionFDeriv I J τ₀ τ₁ x = pr₂ ∘ (dτ₀_(x,0))⁻¹ ∘ dτ₁_(x,0) ∘ ι₂ : V →L[ℝ] V`.
 
 It measures how the framing of the normal bundle of `f` carried by `τ₁` reads in the framing
-carried by `τ₀`: it is the identity when the tubes coincide (`TauCeti.transitionFDeriv_self`).
+carried by `τ₀`: it is the identity when the tubes coincide (`TauCeti.transitionFDeriv_self`),
+and for two local diffeomorphisms agreeing on the core it is invertible, with inverse the
+transition fibre derivative in the other direction
+(`TauCeti.transitionFDeriv_comp_transitionFDeriv`, `TauCeti.isInvertible_transitionFDeriv`).
 
 If `τ₀` is a `C¹` local diffeomorphism and `τ₁` is `C¹`, the transition `τ₀⁻¹ ∘ τ₁` is a `C¹` map
 near the zero section (`IsLocalDiffeomorphOn.contMDiffOn_invFunOn`). Its normal coordinate has a
@@ -39,7 +42,9 @@ jointly continuous derivative in the fibre direction
 `transitionFDeriv` (`TauCeti.transitionFDeriv_eq_fderiv`). So the transition from `τ₁` to `τ₀`
 has fibre derivative `transitionFDeriv I J τ₀ τ₁` along the core
 (`TauCeti.hasTransitionFDeriv_transitionFDeriv`), which is continuous in the point of the core
-(`TauCeti.continuous_transitionFDeriv`). Hence:
+(`TauCeti.continuous_transitionFDeriv`); when both tubes are local diffeomorphisms it is a
+continuous family of linear automorphisms (`TauCeti.exists_continuous_units_transitionFDeriv`).
+Hence:
 
 * two such tubes whose transition fibre derivative is homotopic to the identity through linear
   automorphisms have homotopic collapses
@@ -54,11 +59,16 @@ has fibre derivative `transitionFDeriv I J τ₀ τ₁` along the core
 
 * `TauCeti.transitionFDeriv I J τ₀ τ₁ x`: the fibre derivative of the transition from `τ₁` to
   `τ₀` at the core point `(x, 0)`.
+* `TauCeti.transitionFDeriv_apply`: its formula from the differentials of the tubes.
+* `TauCeti.isInvertible_transitionFDeriv`: it is invertible for local diffeomorphisms agreeing on
+  the core.
 * `TauCeti.transitionFDeriv_eq_fderiv`: it is the derivative along the fibre of the normal
   coordinate of any transition `φ` with `τ₁ = τ₀ ∘ φ` near the core point.
 * `TauCeti.hasTransitionFDeriv_transitionFDeriv`: for smooth tubes it is the fibre derivative of
   the transition along the core, uniformly in the point of the core.
 * `TauCeti.continuous_transitionFDeriv`: it depends continuously on the point of the core.
+* `TauCeti.exists_continuous_units_transitionFDeriv`: for two smooth local diffeomorphic tubes it
+  lifts to a continuous map into the linear automorphisms of `V`.
 * `TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv`: smooth tubes
   whose transition fibre derivative is homotopic to the identity have homotopic collapses.
 
@@ -94,6 +104,19 @@ private theorem fiberPart_comp {d₀ : E × V →L[ℝ] F} (hd : d₀.IsInvertib
     fiberPart d₀ (d₀ ∘L T) = ContinuousLinearMap.snd ℝ E V ∘L T ∘L ContinuousLinearMap.inr ℝ E V :=
   ContinuousLinearMap.ext fun v ↦ by simp [fiberPart, hd.inverse_apply_self]
 
+/-- Two invertible linear maps `d₀, d₁ : E × V →L[ℝ] F` agreeing on the base `E` have mutually
+inverse normal parts. -/
+private theorem fiberPart_comp_fiberPart {d₀ d₁ : E × V →L[ℝ] F} (h₀ : d₀.IsInvertible)
+    (h₁ : d₁.IsInvertible) (h : ∀ u, d₀ (u, 0) = d₁ (u, 0)) :
+    fiberPart d₀ d₁ ∘L fiberPart d₁ d₀ = ContinuousLinearMap.id ℝ V :=
+  ContinuousLinearMap.ext fun v ↦ by
+    -- Write `w = d₁⁻¹ (d₀ (0, v))`; removing its base part, `d₁ (0, w.2) = d₀ ((0, v) - (w.1, 0))`.
+    have hw : d₁ (0, (d₁.inverse (d₀ (0, v))).2) =
+        d₀ ((0, v) - ((d₁.inverse (d₀ (0, v))).1, 0)) := by
+      rw [map_sub, h, eq_sub_iff_add_eq, ← map_add, Prod.mk_add_mk, zero_add, add_zero, Prod.mk.eta,
+        h₁.self_apply_inverse]
+    simp [fiberPart, hw, h₀.inverse_apply_self]
+
 variable (I J) in
 /-- The **transition fibre derivative** of two tubes `τ₀, τ₁ : S × V → M` at the core point
 `(x, 0)`: the normal part `pr₂ ∘ (dτ₀_(x,0))⁻¹ ∘ dτ₁_(x,0) ∘ ι₂ : V →L[ℝ] V` of the derivative of
@@ -104,6 +127,16 @@ meaningful when `τ₀ (x, 0) = τ₁ (x, 0)`, as for two framed tubes around th
 noncomputable def transitionFDeriv (τ₀ τ₁ : S × V → M) (x : S) : V →L[ℝ] V :=
   fiberPart (E := E) (F := F) (mfderiv (I.prod 𝓘(ℝ, V)) J τ₀ (x, 0))
     (mfderiv (I.prod 𝓘(ℝ, V)) J τ₁ (x, 0))
+
+variable (I J) in
+/-- The transition fibre derivative applied to `v` is the normal coordinate of
+`(dτ₀_(x,0))⁻¹ (dτ₁_(x,0) (0, v))`. -/
+theorem transitionFDeriv_apply (τ₀ τ₁ : S × V → M) (x : S) (v : V) :
+    transitionFDeriv I J τ₀ τ₁ x v =
+      ((mfderiv (I.prod 𝓘(ℝ, V)) J τ₀ (x, 0)).inverse
+        (mfderiv (I.prod 𝓘(ℝ, V)) J τ₁ (x, 0) (0, v))).2 := by
+  rw [transitionFDeriv]
+  rfl
 
 /-- **The transition fibre derivative is the fibre derivative of the transition.** If `τ₀` is a
 local diffeomorphism at the core point `(x, 0)` and `τ₁ = τ₀ ∘ φ` near `(x, 0)`, for a map `φ`
@@ -144,6 +177,38 @@ theorem transitionFDeriv_self {τ : S × V → M} {x : S} (hn : n ≠ 0)
   refine (transitionFDeriv_eq_fderiv (τ₁ := τ) (φ := id) hn hτ mdifferentiableAt_id rfl
     (Filter.Eventually.of_forall fun _ ↦ rfl)).trans ?_
   exact (hasFDerivAt_id (0 : V)).fderiv
+
+/-- **The transition fibre derivatives in both directions are mutually inverse.** If `τ₀` and `τ₁`
+are local diffeomorphisms at the core point `(x, 0)` and agree on the core near `x`, as two framed
+tubes around the same map do, then `transitionFDeriv I J τ₁ τ₀ x` is a right inverse of
+`transitionFDeriv I J τ₀ τ₁ x`. -/
+theorem transitionFDeriv_comp_transitionFDeriv {τ₀ τ₁ : S × V → M} {x : S} (hn : n ≠ 0)
+    (hτ₀ : IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, V)) J n τ₀ (x, 0))
+    (hτ₁ : IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, V)) J n τ₁ (x, 0))
+    (hcore : (fun y ↦ τ₁ (y, 0)) =ᶠ[𝓝 x] fun y ↦ τ₀ (y, 0)) :
+    transitionFDeriv I J τ₀ τ₁ x ∘L transitionFDeriv I J τ₁ τ₀ x = ContinuousLinearMap.id ℝ V := by
+  -- Both tubes restrict to the same map on the core, so by the chain rule their differentials
+  -- agree on the base `E`.
+  have hz : HasMFDerivAt I (I.prod 𝓘(ℝ, V)) (fun y ↦ (y, (0 : V))) x
+      (ContinuousLinearMap.inl ℝ E V) :=
+    (hasMFDerivAt_id x).prodMk (hasMFDerivAt_const (0 : V) x)
+  have hbase : mfderiv (I.prod 𝓘(ℝ, V)) J τ₀ (x, 0) ∘L ContinuousLinearMap.inl ℝ E V =
+      mfderiv (I.prod 𝓘(ℝ, V)) J τ₁ (x, 0) ∘L ContinuousLinearMap.inl ℝ E V :=
+    ((hτ₀.mdifferentiableAt hn).hasMFDerivAt.comp x hz).mfderiv.symm.trans
+      (((hτ₁.mdifferentiableAt hn).hasMFDerivAt.comp x hz).congr_of_eventuallyEq_abuse
+        hcore.symm).mfderiv
+  exact fiberPart_comp_fiberPart (hτ₀.isInvertible_mfderiv hn) (hτ₁.isInvertible_mfderiv hn)
+    fun u ↦ congrArg (fun L : E →L[ℝ] F ↦ L u) hbase
+
+/-- The transition fibre derivative of two local diffeomorphisms at the core point `(x, 0)` which
+agree on the core near `x` is invertible, with inverse `transitionFDeriv I J τ₁ τ₀ x`. -/
+theorem isInvertible_transitionFDeriv {τ₀ τ₁ : S × V → M} {x : S} (hn : n ≠ 0)
+    (hτ₀ : IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, V)) J n τ₀ (x, 0))
+    (hτ₁ : IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, V)) J n τ₁ (x, 0))
+    (hcore : (fun y ↦ τ₁ (y, 0)) =ᶠ[𝓝 x] fun y ↦ τ₀ (y, 0)) :
+    (transitionFDeriv I J τ₀ τ₁ x).IsInvertible :=
+  .of_inverse (transitionFDeriv_comp_transitionFDeriv hn hτ₀ hτ₁ hcore)
+    (transitionFDeriv_comp_transitionFDeriv hn hτ₁ hτ₀ hcore.symm)
 
 /-! ### The transition between two smooth tubes -/
 
@@ -234,6 +299,28 @@ theorem continuous_transitionFDeriv (hn : 1 ≤ n) (h₀ : IsFramedTube f τ₀)
   obtain ⟨r, hr, φ, -, -, -, hD, hDc⟩ := exists_transition hn h₀ h₁ hτ₀ hτ₁
   rw [← funext hD]
   exact hDc.comp_continuous (Continuous.prodMk_left 0) fun x ↦ ⟨mem_univ x, mem_ball_self hr⟩
+
+/-- **The transition fibre derivative of smooth tubes is a continuous family of linear
+automorphisms.** If `τ₀` and `τ₁` are framed tubes around the same map `f : S → M`, from a compact
+boundaryless manifold `S`, and both are `C^n` local diffeomorphisms, `n ≥ 1`, then
+`transitionFDeriv I J τ₀ τ₁` lifts to a continuous map into the units of `V →L[ℝ] V`; this
+supplies the endpoint of the homotopy in
+`TauCeti.IsFramedTube.pontryaginThomCollapseMap_homotopic_of_transitionFDeriv`. -/
+theorem exists_continuous_units_transitionFDeriv (hn : 1 ≤ n) (h₀ : IsFramedTube f τ₀)
+    (h₁ : IsFramedTube f τ₁) (hτ₀ : IsLocalDiffeomorph (I.prod 𝓘(ℝ, V)) J n τ₀)
+    (hτ₁ : IsLocalDiffeomorph (I.prod 𝓘(ℝ, V)) J n τ₁) :
+    ∃ A : S → (V →L[ℝ] V)ˣ, Continuous A ∧
+      ∀ x, (A x : V →L[ℝ] V) = transitionFDeriv I J τ₀ τ₁ x := by
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  have hcore (x : S) : (fun y ↦ τ₁ (y, 0)) =ᶠ[𝓝 x] fun y ↦ τ₀ (y, 0) :=
+    Filter.Eventually.of_forall fun y ↦ (h₁.apply_zero y).trans (h₀.apply_zero y).symm
+  -- The inverse is the transition fibre derivative in the other direction.
+  refine ⟨fun x ↦ ⟨transitionFDeriv I J τ₀ τ₁ x, transitionFDeriv I J τ₁ τ₀ x,
+    transitionFDeriv_comp_transitionFDeriv hn0 (hτ₀ _) (hτ₁ _) (hcore x),
+    transitionFDeriv_comp_transitionFDeriv hn0 (hτ₁ _) (hτ₀ _) (hcore x).symm⟩,
+    Units.continuous_iff.2 ⟨?_, ?_⟩, fun _ ↦ rfl⟩
+  · exact continuous_transitionFDeriv hn h₀ h₁ hτ₀ hτ₁.contMDiff
+  · exact continuous_transitionFDeriv hn h₁ h₀ hτ₁ hτ₀.contMDiff
 
 end Transition
 
