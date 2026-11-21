@@ -310,8 +310,11 @@ private theorem isoModSerre_hurewiczModuleCatHom_of_map {X Z : Type} [Topologica
     P.isoModSerre (HomotopyGroup.hurewiczModuleCatHom Z z n) := by
   let e : ModuleCat.of ℤ (Additive (π_ (n + 2) X x)) ⟶ ModuleCat.of ℤ (Additive (π_ (n + 2) Z z)) :=
     ModuleCat.ofHom (HomotopyGroup.mapHom f hf).toAdditive.toIntLinearMap
-  have : IsIso e := (ConcreteCategory.isIso_iff_bijective e).2
-    (Additive.ofMul.bijective.comp (hπ.comp Additive.toMul.bijective))
+  have : IsIso e := (ConcreteCategory.isIso_iff_bijective e).2 <| by
+    convert Additive.ofMul.bijective.comp (hπ.comp Additive.toMul.bijective) using 1
+    funext a
+    simp only [e, ConcreteCategory.hom_ofHom, AddMonoidHom.coe_toIntLinearMap,
+      MonoidHom.coe_toAdditive, Function.comp_apply, HomotopyGroup.mapHom_apply]
   rw [← IsIso.inv_hom_id_assoc e (HomotopyGroup.hurewiczModuleCatHom Z z n),
     HomotopyGroup.hurewiczModuleCatHom_naturality]
   exact P.isoModSerre.comp_mem _ _ (P.isoModSerre_of_isIso _) (P.isoModSerre.comp_mem _ _ hX hH)
