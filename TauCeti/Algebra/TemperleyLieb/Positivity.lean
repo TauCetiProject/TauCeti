@@ -96,6 +96,9 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   `TauCeti.TemperleyLieb.markovTrace_nonneg_iff_lt_floor`: positivity below `⌊π / arccos (δ / 2)⌋`
   for every real `δ`, and **the first bad level** characterizing positivity on `n` strands at an
   inadmissible `δ > 0`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_eq_zero`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.neg_one_pow_mul_map_star_mul_self_nonneg_of_eq_zero`:
+  nonnegativity of `tr n (x⋆ * x)` and of the signed form `(-1) ^ n * tr n (x⋆ * x)` at `δ = 0`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_traceRadical_iff_map_star_mul_self_eq_zero`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.norm_map_star_mul_sq_le`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.nullSubmodule_quotientStarPositiveFunctional`: trace-radical
@@ -317,6 +320,23 @@ theorem map_star_mul_self_nonneg_of_eq_zero (htr : IsMarkovTrace R δ tr) (hδ :
   · simp [htr.apply_succ_eq_zero]
 
 end StarOrderedRing
+
+section StarOrderedCommRing
+
+variable {R : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+  {δ : R} [Fact (IsSelfAdjoint δ)] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+
+/-- At loop parameter `0`, the signed form `(-1) ^ n * tr n (x⋆ * x)` of a Markov trace over a
+star-ordered commutative ring is nonnegative on every number of strands, since the trace vanishes
+on one or more strands. -/
+theorem neg_one_pow_mul_map_star_mul_self_nonneg_of_eq_zero (htr : IsMarkovTrace R δ tr)
+    (hδ : δ = 0) (n : ℕ) (x : TemperleyLieb R δ n) : 0 ≤ (-1 : R) ^ n * tr n (star x * x) := by
+  obtain _ | n := n
+  · simpa using htr.map_star_mul_self_nonneg_of_eq_zero hδ 0 x
+  · subst hδ
+    simp [htr.apply_succ_eq_zero]
+
+end StarOrderedCommRing
 
 open scoped ComplexOrder
 

@@ -36,9 +36,9 @@ an open subgroup of `G_s`.
 exponential is a homomorphism, two charts differ by a translation of the model space on their
 common domain (`TauCeti.Vortex.gaugeChart_symm_trans_eqOn_add`), so `G_s` is a manifold of every
 smoothness class `n` over `ℝ`, analytic included
-(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`). The smoothness of the group
-operations and of the action of `G_(k+1)` on the field space `A_m^k` in these charts is not
-treated here.
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`). The group operations are smooth
+in these charts (`TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup`); the action of `G_(k+1)` on
+the field space `A_m^k` is not treated here.
 
 ## References
 

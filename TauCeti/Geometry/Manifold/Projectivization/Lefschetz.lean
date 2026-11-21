@@ -25,9 +25,9 @@ import TauCeti.Topology.Algebra.Projectivization.ZeroLocus
 
 Let `X ⊆ ℂℙⁿ` be a closed subset and `H = {x_i = 0}` a coordinate hyperplane, with complement the
 standard affine chart `U_i = Projectivization.affineOpen i ≅ ℂⁿ`. Suppose that the affine part
-`Z = affineChart i '' (X ∩ U_i) ⊆ ℂⁿ` carries a complex manifold structure of complex dimension
-`d` for which the inclusion `Z → ℂⁿ` is a smooth holomorphic immersion; nothing is assumed about
-`X` along the hyperplane section `X ∩ H`, where `X` may be singular.
+`Z = affineChart i '' (X ∩ U_i) ⊆ ℂⁿ` carries a complex manifold structure of finite complex
+dimension `d` for which the inclusion `Z → ℂⁿ` is a smooth holomorphic immersion; nothing is assumed
+about `X` along the hyperplane section `X ∩ H`, where `X` may be singular.
 
 For almost every centre `c ∈ ℂⁿ`, the squared Euclidean distance `ρ(z) = ‖z - c‖²` on `Z` is a
 Morse function (`TauCeti.ae_isMorse_norm_sq_sub_comp`). Because `Z → ℂⁿ` is a holomorphic
@@ -104,14 +104,13 @@ namespace TauCeti
 
 section General
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {n : ℕ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {n : ℕ}
 
 /-- Given a closed `X ⊆ ℂℙⁿ` whose affine part `Z ⊆ ℂⁿ` in chart `i` is a holomorphically immersed
-complex manifold, construct the open embedding `j : Z → X` onto `X \ H_i` and choose a generic
-centre `c ∈ ℂⁿ` so that `F = affineChartInvOneAddDistSq i c` on `X` pulls back along `j` to a
-Morse function whose critical points all have Morse index at least `dim_ℂ E`. -/
-private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
+finite-dimensional complex manifold, construct the open embedding `j : Z → X` onto `X \ H_i` and
+choose a generic centre `c ∈ ℂⁿ` so that `F = affineChartInvOneAddDistSq i c` on `X` pulls back
+along `j` to a Morse function whose critical points all have Morse index at least `dim_ℂ E`. -/
+private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq [FiniteDimensional ℂ E]
     {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X) (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
     [ChartedSpace E Z] [IsManifold 𝓘(ℂ, E) ∞ Z]
@@ -207,8 +206,8 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
       (hc_morse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hp_ρ) (hρ_denom p)
 
 /-- **Path-component surjectivity of a hyperplane section.** If `X ⊆ ℂℙⁿ` is closed, `X \ H_i` is a
-holomorphically immersed complex manifold of positive dimension, and `X ∩ H_i` admits a
-neighbourhood `W` in `X` whose inclusion `(X ∩ H_i) ↪ W` is a weak homotopy equivalence, then
+holomorphically immersed complex manifold of positive finite complex dimension, and `X ∩ H_i` admits
+a neighbourhood `W` in `X` whose inclusion `(X ∩ H_i) ↪ W` is a weak homotopy equivalence, then
 every point of `X` can be joined by a path in `X` to a point of `X ∩ H_i`. -/
 theorem exists_joined_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X)
     (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
@@ -223,6 +222,7 @@ theorem exists_joined_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))
     (hd : 0 < Module.finrank ℂ E) (x : X) :
     ∃ a : {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i},
       Joined (a : X) x := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos hd
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -230,9 +230,9 @@ theorem exists_joined_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))
   exact hf.exists_joined_of_isOpenEmbedding hj hF hbdd hA hAF hcpt hindex hW
     (exists_pos_sublevel_subset_of_mem_nhdsSet hF hpos hW_nhds) hd x
 
-/-- **Path-component injectivity of a hyperplane section.** When the affine complement has complex
-dimension at least `2`, two points of `X ∩ H_i` are joined by a path in `X` if and only if they are
-joined by a path in `X ∩ H_i`. -/
+/-- **Path-component injectivity of a hyperplane section.** When the affine complement has finite
+complex dimension at least `2`, two points of `X ∩ H_i` are joined by a path in `X` if and only if
+they are joined by a path in `X ∩ H_i`. -/
 theorem joined_notMem_affineOpen_iff {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X)
     (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
@@ -246,6 +246,7 @@ theorem joined_notMem_affineOpen_iff {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (
     (hd : 1 < Module.finrank ℂ E)
     {a₀ a₁ : {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}} :
     Joined (a₀ : X) (a₁ : X) ↔ Joined a₀ a₁ := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos (zero_lt_one.trans hd)
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -254,7 +255,8 @@ theorem joined_notMem_affineOpen_iff {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (
     (exists_pos_sublevel_subset_of_mem_nhdsSet hF hpos hW_nhds) hd
 
 /-- **Lefschetz hyperplane surjectivity on homotopy groups (Milnor, Theorem 7.4).** The inclusion
-`X ∩ H_i ↪ X` induces a surjection `π_k(X ∩ H_i, a₀) → π_k(X, a₀)` for `k < dim_ℂ Z`. -/
+`X ∩ H_i ↪ X` induces a surjection `π_k(X ∩ H_i, a₀) → π_k(X, a₀)` when `Z` has finite complex
+dimension greater than `k`. -/
 theorem surjective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
     {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X) (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
@@ -271,6 +273,7 @@ theorem surjective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
       (ContinuousMap.subtypeVal
         {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
       (rfl : (a₀ : X) = (a₀ : X))) := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos (pos_of_gt hJ)
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -279,7 +282,8 @@ theorem surjective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
     hW (exists_pos_sublevel_subset_of_mem_nhdsSet hF hpos hW_nhds) hJ a₀
 
 /-- **Lefschetz hyperplane bijectivity on homotopy groups (Milnor, Theorem 7.4).** The inclusion
-`X ∩ H_i ↪ X` induces a bijection `π_k(X ∩ H_i, a₀) → π_k(X, a₀)` for `k + 1 < dim_ℂ Z`. -/
+`X ∩ H_i ↪ X` induces a bijection `π_k(X ∩ H_i, a₀) → π_k(X, a₀)` when `Z` has finite complex
+dimension greater than `k + 1`. -/
 theorem bijective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
     {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X) (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
@@ -296,6 +300,7 @@ theorem bijective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
       (ContinuousMap.subtypeVal
         {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i})
       (rfl : (a₀ : X) = (a₀ : X))) := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos (pos_of_gt hJ)
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -304,10 +309,10 @@ theorem bijective_homotopyGroupMap_notMem_affineOpen {J : Type v} [Finite J]
     hW (exists_pos_sublevel_subset_of_mem_nhdsSet hF hpos hW_nhds) hJ a₀
 
 /-- **Relative homotopy Lefschetz theorem (Milnor, Theorem 7.4).** Let `X ⊆ ℂℙⁿ` be closed, with
-affine part `X \ H_i ≅ Z` a holomorphically immersed complex manifold of complex dimension `d`, and
-let `W` be a neighbourhood of `X ∩ H_i` in `X` whose inclusion `(X ∩ H_i) ↪ W` is a weak homotopy
-equivalence. Then `π_{k+1}(X, X ∩ H_i, a₀) = 0` whenever `k + 1 < d`. No smoothness of `X` is
-assumed along `X ∩ H_i`. -/
+affine part `X \ H_i ≅ Z` a holomorphically immersed complex manifold of finite complex dimension
+`d`, and let `W` be a neighbourhood of `X ∩ H_i` in `X` whose inclusion `(X ∩ H_i) ↪ W` is a weak
+homotopy equivalence. Then `π_{k+1}(X, X ∩ H_i, a₀) = 0` whenever `k + 1 < d`. No smoothness of `X`
+is assumed along `X ∩ H_i`. -/
 theorem subsingleton_relHomotopyGroup_notMem_affineOpen {J : Type v} [Finite J]
     {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X) (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
@@ -323,6 +328,7 @@ theorem subsingleton_relHomotopyGroup_notMem_affineOpen {J : Type v} [Finite J]
     Subsingleton (RelHomotopyGroup J
       ⟨TopPair.ofSubset (X := TopCat.of X)
         {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}, a₀⟩) := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos (pos_of_gt hJ)
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -336,7 +342,8 @@ variable {A_cat : Type v} [Category.{w} A_cat] [Abelian A_cat] [HasCoproducts.{0
 
 /-- **Homological Lefschetz epimorphism.** If `(X ∩ H_i) ↪ W` induces a singular homology
 isomorphism in degree `k` on a neighbourhood `W` of `X ∩ H_i` in `X`, then `(X ∩ H_i) ↪ X` induces
-an epimorphism `H_k(X ∩ H_i; R) ⟶ H_k(X; R)` for `k < dim_ℂ Z`. -/
+an epimorphism `H_k(X ∩ H_i; R) ⟶ H_k(X; R)` when `Z` has finite complex dimension greater than
+`k`. -/
 theorem epi_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X)
     (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
@@ -351,6 +358,7 @@ theorem epi_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ
     (hk : k < Module.finrank ℂ E) :
     Epi (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal
       {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}))) R k) := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos (pos_of_gt hk)
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -360,7 +368,8 @@ theorem epi_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ
 
 /-- **Homological Lefschetz isomorphism.** If `(X ∩ H_i) ↪ W` induces a singular homology
 isomorphism in degree `k` on a neighbourhood `W` of `X ∩ H_i` in `X`, then `(X ∩ H_i) ↪ X` induces
-an isomorphism `H_k(X ∩ H_i; R) ≅ H_k(X; R)` for `k + 1 < dim_ℂ Z`. -/
+an isomorphism `H_k(X ∩ H_i; R) ≅ H_k(X; R)` when `Z` has finite complex dimension greater than
+`k + 1`. -/
 theorem isIso_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))} (hX : IsClosed X)
     (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
@@ -375,6 +384,7 @@ theorem isIso_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → �
     (hk : k + 1 < Module.finrank ℂ E) :
     IsIso (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal
       {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}))) R k) := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos (pos_of_gt hk)
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
@@ -384,8 +394,8 @@ theorem isIso_homologyMap_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → �
 
 /-- **Homological weak Lefschetz theorem.** If `(X ∩ H_i) ↪ W` induces singular homology
 isomorphisms in degree `k` and (when `k > 0`) degree `k - 1` on a neighbourhood `W` of `X ∩ H_i` in
-`X`, then the relative singular homology `H_k(X, X ∩ H_i; R)` vanishes for `k < dim_ℂ Z`, proved
-directly from high-index Morse cell attachments on `X \ H_i`. -/
+`X`, then the relative singular homology `H_k(X, X ∩ H_i; R)` vanishes when `Z` has finite complex
+dimension greater than `k`, proved directly from high-index Morse cell attachments on `X \ H_i`. -/
 theorem isZero_singularHomology_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1) → ℂ))}
     (hX : IsClosed X) (i : Fin (n + 1)) {Z : Set (Fin n → ℂ)}
     (hZ : Projectivization.affineChart i '' (X ∩ Projectivization.affineOpen i) = Z)
@@ -401,6 +411,7 @@ theorem isZero_singularHomology_notMem_affineOpen {X : Set (ℙ ℂ (Fin (n + 1)
     IsZero ((TopPair.ofSubset (X := TopCat.of X)
       {x : X | (x : ℙ ℂ (Fin (n + 1) → ℂ)) ∉ Projectivization.affineOpen i}).singularHomology
       R k) := by
+  have : FiniteDimensional ℂ E := Module.finite_of_finrank_pos (pos_of_gt hk)
   have : CompactSpace X := isCompact_iff_compactSpace.1 hX.isCompact
   have : IsManifold 𝓘(ℝ, E) ∞ Z := (inferInstance : IsManifold 𝓘(ℂ, E) ∞ Z).restrictScalars ℝ
   obtain ⟨j, F, hj, hF, hf, hbdd, hA, hAF, hpos, hcpt, hindex⟩ :=
