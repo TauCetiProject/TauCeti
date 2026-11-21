@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.Basic
+public import TauCeti.Geometry.Manifold.DeRham.Wedge
 public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.Topology
 public import Mathlib.Topology.Homotopy.Lifting
@@ -37,6 +37,8 @@ coefficient space are used. Manifolds with boundary or corners are included.
   every closed smooth real `1`-form is exact.
 * `TauCeti.subsingleton_deRhamCohomology_one_of_simplyConnectedSpace`: `H¹_dR(M) = 0` for simply
   connected `M`.
+* `TauCeti.SmoothForm.wedge_mem_exactForms_of_simplyConnectedSpace`: on a simply connected
+  manifold the wedge of a closed `1`-form with a closed form is exact.
 
 ## References
 
@@ -105,5 +107,13 @@ theorem subsingleton_deRhamCohomology_one_of_simplyConnectedSpace [SimplyConnect
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective _ _ c
   rw [deRhamCohomology.mk_eq_zero_iff, exactForms_one_eq_closedForms_of_simplyConnectedSpace]
   exact φ.property
+
+/-- On a simply connected manifold, the wedge `α ∧ β` of a closed `1`-form `α` with a closed form
+`β` is exact: `α = dg` for a function `g`, and then `α ∧ β = d (g β)`. -/
+theorem SmoothForm.wedge_mem_exactForms_of_simplyConnectedSpace [SimplyConnectedSpace M] {l : ℕ}
+    {α : SmoothForm I M ℝ 1} {β : SmoothForm I M ℝ l} (hα : α ∈ closedForms I M 1)
+    (hβ : β ∈ closedForms I M l) : SmoothForm.wedge α β ∈ exactForms I M (1 + l) :=
+  SmoothForm.wedge_mem_exactForms_of_left_mem
+    ((exactForms_one_eq_closedForms_of_simplyConnectedSpace (I := I) (M := M)).ge hα) hβ
 
 end TauCeti
