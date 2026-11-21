@@ -59,14 +59,25 @@ variable {F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)}
   (ι : (single₀ _).obj F ⟶ K) [QuasiIso ι] (hK : ∀ n, TopCat.Presheaf.IsFlasque (K.X n).obj)
 
 omit [(Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive] in
-private lemma isFlasque_X₃
+/-- An injective sheaf of `R`-modules satisfies `CategoryTheory.Sheaf.isFlasque`. -/
+lemma isFlasque_of_injective
+    (Y : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (_ : Injective Y) :
+    isFlasque X (ModuleCat.{u} R) Y :=
+  isFlasque_iff.mpr (isFlasque_of_injective_moduleCat Y)
+
+omit [(Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive] in
+/-- In a short exact sequence of sheaves of `R`-modules, `CategoryTheory.Sheaf.isFlasque` passes
+to the third term when the first two terms are flasque. -/
+lemma isFlasque_X₃
     (S : ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))) (hS : S.ShortExact)
     (h₁ : isFlasque X _ S.X₁) (h₂ : isFlasque X _ S.X₂) : isFlasque X _ S.X₃ :=
   have : TopCat.Presheaf.IsFlasque S.X₁.obj := isFlasque_iff.mp h₁
   have : TopCat.Presheaf.IsFlasque S.X₂.obj := isFlasque_iff.mp h₂
   isFlasque_iff.mpr hS.isFlasque_X₃_of_isFlasque
 
-private lemma shortExact_map_Γ_of_isFlasque
+/-- Global sections preserve short exact sequences of sheaves of `R`-modules whose first term
+satisfies `CategoryTheory.Sheaf.isFlasque`. -/
+lemma shortExact_map_Γ_of_isFlasque
     (S : ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))) (hS : S.ShortExact)
     (h₁ : isFlasque X _ S.X₁) (_ : isFlasque X _ S.X₂) :
     (S.map (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).ShortExact :=
@@ -83,7 +94,7 @@ theorem quasiIso_map_Γ_of_isFlasque (I : InjectiveResolution F) (φ : K ⟶ I.c
     QuasiIso (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).map
       φ) :=
   InjectiveResolution.quasiIso_map_of_comp_eq (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
-    (isFlasque X _) (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)) isFlasque_X₃
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
     shortExact_map_Γ_of_isFlasque ι (fun n ↦ isFlasque_iff.mpr (hK n)) I φ hφ
 
 include hK in
@@ -95,8 +106,17 @@ noncomputable def rightDerivedΓObjIsoOfIsFlasque (n : ℕ) :
       (HomologicalComplex.homologyFunctor _ _ n).obj
         (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj K) :=
   Functor.rightDerivedObjIsoOfResolution (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
-    (isFlasque X _) (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)) isFlasque_X₃
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
     shortExact_map_Γ_of_isFlasque ι (fun n ↦ isFlasque_iff.mpr (hK n)) n
+
+/-- Unfolding equation expressing `rightDerivedΓObjIsoOfIsFlasque` in terms of
+`Functor.rightDerivedObjIsoOfResolution`. -/
+lemma rightDerivedΓObjIsoOfIsFlasque_eq (n : ℕ) :
+    rightDerivedΓObjIsoOfIsFlasque ι hK n =
+      Functor.rightDerivedObjIsoOfResolution (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+        (isFlasque X _) isFlasque_of_injective isFlasque_X₃
+        shortExact_map_Γ_of_isFlasque ι (fun n ↦ isFlasque_iff.mpr (hK n)) n :=
+  (rfl)
 
 /-- The isomorphism `rightDerivedΓObjIsoOfIsFlasque` is compatible with the identification of
 `RⁿΓ(F)` through any injective resolution `I` of `F` and any comparison map `φ : K ⟶ I`. -/
@@ -121,7 +141,7 @@ noncomputable def rightDerivedΓIsoOfIsFlasque
       K ⋙ (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _ ⋙
         HomologicalComplex.homologyFunctor _ _ n :=
   Functor.rightDerivedIsoOfResolution (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
-    (isFlasque X _) (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)) isFlasque_X₃
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
     shortExact_map_Γ_of_isFlasque K ι (fun F n ↦ isFlasque_iff.mpr (hK F n)) n
 
 /-- Each component of the functorial flasque comparison is the comparison for that resolution.
