@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.NumberTheory.Height.Arakelov.Subspace.Siegel
+import TauCeti.NumberTheory.Height.Arakelov.SiegelsLemma
 
 /-!
 # Worked examples: Minkowski-ball and rational Euclidean Siegel bounds
@@ -90,10 +90,13 @@ example :
           |(NumberField.discr ℚ : ℝ)| ^ (1 / (2 * (Module.finrank ℚ ℚ : ℝ))) *
           V.subspaceHeight ^ (Module.finrank ℚ V : ℝ)⁻¹ =
         V.subspaceHeight := by
+    have h32 : (3 / 2 : ℝ) = 1 / 2 + 1 := by norm_num
+    have hGamma : Real.Gamma (3 / 2) = √Real.pi / 2 := by
+      rw [h32, Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq]
+      ring
     rw [hdim, NumberField.discr_rat, finrank_self]
     norm_num
-    rw [show (3 / 2 : ℝ) = 1 / 2 + 1 by norm_num, Real.Gamma_add_one (by norm_num),
-      Real.Gamma_one_half_eq]
+    rw [hGamma]
     have hpi : 0 < √Real.pi := Real.sqrt_pos.mpr Real.pi_pos
     field_simp [hpi.ne']
   refine ⟨?_, ?_⟩

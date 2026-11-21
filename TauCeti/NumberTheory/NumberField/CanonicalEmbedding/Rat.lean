@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Euclidean
 
 /-!
 # Identification of the Euclidean Minkowski space of `ℚ` with `ℝ`

@@ -21,9 +21,7 @@ the height of a kernel using its defining forms and dot-product duality.
 
 We first bound the relative Arakelov height of a Plücker vector, including
 dependent families with the projective zero convention. Taking degree roots
-gives the absolute Euclidean bound for vectors and subspaces, which extends to
-arbitrary spanning families of nonzero vectors (without linear independence)
-and to the kernel of a matrix via Euclidean duality.
+gives the absolute Euclidean bound for vectors and subspaces.
 
 ## References
 
@@ -148,18 +146,3 @@ theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p :
   exact arakelovMulHeight_plucker_le_prod _
 
 end Submodule
-
-namespace Matrix
-
-open TauCeti Submodule
-
-variable {K m ι : Type*} [Field K] [NumberField K] [Fintype m] [Fintype ι] [LinearOrder ι]
-
-/-- The absolute Euclidean height of the kernel of a matrix with nonzero rows is at most the
-product of the absolute Euclidean heights of its rows, without any row-independence hypothesis. -/
-theorem subspaceHeight_ker_mulVecLin_le_prod {A : Matrix m ι K} (hA : ∀ i, A.row i ≠ 0) :
-    (LinearMap.ker A.mulVecLin).subspaceHeight ≤ ∏ i, height2 (A.row i) := by
-  rw [A.subspaceHeight_ker_mulVecLin]
-  exact subspaceHeight_span_range_le_prod hA
-
-end Matrix

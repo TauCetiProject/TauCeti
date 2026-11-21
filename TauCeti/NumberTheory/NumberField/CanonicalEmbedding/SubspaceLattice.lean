@@ -17,8 +17,6 @@ public import TauCeti.NumberTheory.NumberField.SubspaceIntegerPoints
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Pi
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
 
 /-!
 # The Euclidean span and lattice of integral points of a number-field subspace
@@ -183,7 +181,7 @@ theorem mulMixedAmbient_mem_euclideanSpan (W : Submodule K (ι → K)) (c : mixe
               (mixedEmbedding K ((RingOfIntegers.basis K j : K) * v i)) := by
       ext1 i
       apply (euclidean.toMixed K).injective
-      rw [mulMixedAmbient_apply, ContinuousLinearEquiv.apply_symm_apply, WithLp.ofLp_toLp,
+      rw [toMixed_mulMixedAmbient_apply, WithLp.ofLp_toLp,
         ContinuousLinearEquiv.apply_symm_apply, WithLp.ofLp_sum, Finset.sum_apply, map_sum]
       conv_lhs => rw [hc, Finset.sum_mul]
       refine Finset.sum_congr rfl fun j _ ↦ ?_
@@ -599,100 +597,64 @@ section MulMixedProperties
 open TauCeti.NumberField.mixedEmbedding
 open scoped RealInnerProductSpace
 
-/-- The embedded `K`-basis vectors of `W` inside `W.euclideanSpan`. -/
-private def basisVecEuclideanSpan [Fintype ι] (W : Submodule K (ι → K))
-    (k : Fin (finrank K W)) : W.euclideanSpan :=
-  ⟨WithLp.toLp 2 fun i ↦
-      (euclidean.toMixed K).symm (mixedEmbedding K ((Module.finBasis K W k : ι → K) i)),
-    W.toLp_mem_euclideanSpan (Module.finBasis K W k).property⟩
-
 open Classical in
-/-- The `ℝ`-linear map `(Fin (finrank K W) → mixedSpace K) →ₗ[ℝ] W.euclideanSpan` sending `z`
-to the `mixedSpace K`-linear combination of the embedded `K`-basis vectors of `W`. -/
-private def mixedSpaceToEuclideanSpan [Fintype ι] (W : Submodule K (ι → K)) :
-    (Fin (finrank K W) → mixedSpace K) →ₗ[ℝ] W.euclideanSpan where
-  toFun z := ∑ k : Fin (finrank K W), W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k)
-  map_add' z₁ z₂ := by
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun k _ ↦ Subtype.ext ?_
-    ext1 i
-    apply (euclidean.toMixed K).injective
-    simp [add_mul]
-  map_smul' r z := by
-    rw [RingHom.id_apply, Finset.smul_sum]
-    refine Finset.sum_congr rfl fun k _ ↦ Subtype.ext ?_
-    ext1 i
-    apply (euclidean.toMixed K).injective
-    simp [Algebra.smul_mul_assoc]
-
-private theorem mixedSpaceToEuclideanSpan_apply [Fintype ι] (W : Submodule K (ι → K))
-    (z : Fin (finrank K W) → mixedSpace K) :
-    mixedSpaceToEuclideanSpan W z =
-      ∑ k : Fin (finrank K W), W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :=
-  rfl
-
-/-- `mixedSpaceToEuclideanSpan W` is injective: extending a biorthogonal dual family for
-`Module.finBasis K W` via `mixedExtend` recovers each coordinate `z k₀`. -/
-private theorem mixedSpaceToEuclideanSpan_injective [Fintype ι] (W : Submodule K (ι → K)) :
-    Function.Injective (mixedSpaceToEuclideanSpan W) := by
-  classical
-  let b : Basis (Fin (finrank K W)) K W := Module.finBasis K W
-  obtain ⟨f, hf⟩ := b.linearIndependent_coe_basis.exists_dual_forall_apply_eq_ite
-  rw [injective_iff_map_eq_zero]
-  intro z hz
-  ext1 k₀
-  have h0 : mixedExtend (f k₀)
-      (mixedSpaceToEuclideanSpan W z : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) = 0 := by
-    rw [hz, ZeroMemClass.coe_zero, map_zero]
-  have hcoe : (mixedSpaceToEuclideanSpan W z : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
-      ∑ k : Fin (finrank K W),
-        (W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :
-          PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) := by
-    rw [mixedSpaceToEuclideanSpan_apply, ← W.euclideanSpan.coe_subtype]
-    exact map_sum W.euclideanSpan.subtype _ _
-  have hterm (k : Fin (finrank K W)) :
-      mixedExtend (f k₀) (W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :
-          PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
-        if k₀ = k then z k else 0 := by
-    have hval : (W.mulMixedSubmodule (z k) (basisVecEuclideanSpan W k) :
-          PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) =
-        WithLp.toLp 2 fun i ↦
-          (euclidean.toMixed K).symm (z k * mixedEmbedding K ((b k : ι → K) i)) := by
-      ext1 i
-      simp [basisVecEuclideanSpan, b]
-    rw [hval, mixedExtend_toLp_mul, hf k₀ k]
-    split_ifs <;> simp
-  rw [hcoe, map_sum] at h0
-  simp_rw [hterm] at h0
-  simpa [eq_comm] using h0
-
 /-- The `ℝ`-linear determinant of coordinatewise multiplication by `c` on `W.euclideanSpan` is
 `(Algebra.norm ℝ c) ^ finrank K W`. -/
 theorem det_mulMixedSubmodule [Finite ι] (W : Submodule K (ι → K)) (c : mixedSpace K) :
     LinearMap.det (W.mulMixedSubmodule c) = (Algebra.norm ℝ c) ^ finrank K W := by
-  classical
   cases nonempty_fintype ι
   set m := finrank K W
-  have hfin : finrank ℝ (Fin m → mixedSpace K) = finrank ℝ W.euclideanSpan := by
-    rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-      smul_eq_mul, mixedEmbedding.finrank, W.finrank_euclideanSpan, mul_comm]
-  have hΦ_inj := mixedSpaceToEuclideanSpan_injective W
-  have hΦ_bij : Function.Bijective (mixedSpaceToEuclideanSpan W) :=
-    ⟨hΦ_inj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mp hΦ_inj⟩
-  let eΦ : (Fin m → mixedSpace K) ≃ₗ[ℝ] W.euclideanSpan :=
-    LinearEquiv.ofBijective (mixedSpaceToEuclideanSpan W) hΦ_bij
+  let B₁ := (⊤ : Ideal (𝓞 K)).mixedLatticeBasis top_ne_bot
+  let Bdom : Basis (Fin m × index K) ℝ (Fin m → mixedSpace K) :=
+    (Pi.basis fun _ : Fin m ↦ B₁).reindex (Equiv.sigmaEquivProd (Fin m) (index K))
+  let Bcod : Basis (Fin m × index K) ℝ W.euclideanSpan :=
+    euclideanSpanBasisOfPseudoBasis (Module.finBasis K W) (fun _ ↦ top_ne_bot)
+  let eΦ : (Fin m → mixedSpace K) ≃ₗ[ℝ] W.euclideanSpan := Bdom.equiv Bcod (Equiv.refl _)
+  have hinter :
+      (W.mulMixedSubmodule c) ∘ₗ (eΦ : (Fin m → mixedSpace K) →ₗ[ℝ] W.euclideanSpan) =
+        (eΦ : (Fin m → mixedSpace K) →ₗ[ℝ] W.euclideanSpan) ∘ₗ
+          (LinearMap.piMap fun _ : Fin m ↦ Algebra.lmul ℝ (mixedSpace K) c) := by
+    refine Bdom.ext fun ⟨k, ν⟩ ↦ ?_
+    have hpi :
+        (LinearMap.piMap fun _ : Fin m ↦ Algebra.lmul ℝ (mixedSpace K) c) (Bdom (k, ν)) =
+          ∑ ν' : index K, B₁.repr (c * B₁ ν) ν' • Bdom (k, ν') := by
+      ext1 j
+      simp only [LinearMap.coe_piMap, Pi.map_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply',
+        Bdom, Basis.reindex_apply, Equiv.sigmaEquivProd_symm_apply, Pi.basis_apply,
+        Finset.sum_apply, Pi.smul_apply]
+      by_cases hj : j = k
+      · subst hj
+        simp only [Pi.single_eq_same]
+        exact (B₁.sum_repr (c * B₁ ν)).symm
+      · simp [hj]
+    apply Subtype.ext
+    ext1 i
+    apply (euclidean.toMixed K).injective
+    dsimp only [LinearMap.comp_apply, eΦ]
+    rw [LinearEquiv.coe_coe, Basis.equiv_apply, Equiv.refl_apply, coe_mulMixedSubmodule,
+      toMixed_mulMixedAmbient_apply, hpi]
+    simp only [map_sum, map_smul, Basis.equiv_apply, Equiv.refl_apply, Submodule.coe_sum,
+      Submodule.coe_smul, WithLp.ofLp_sum, Finset.sum_apply, WithLp.ofLp_smul, Pi.smul_apply, Bcod,
+      coe_euclideanSpanBasisOfPseudoBasis_apply, WithLp.ofLp_toLp,
+      ContinuousLinearEquiv.apply_symm_apply, map_mul, ← Ideal.mixedLatticeBasis_apply]
+    calc
+      c * (B₁ ν * mixedEmbedding K ((Module.finBasis K W k : ι → K) i))
+          = (c * B₁ ν) * mixedEmbedding K ((Module.finBasis K W k : ι → K) i) :=
+            (mul_assoc _ _ _).symm
+      _ = (∑ ν' : index K, B₁.repr (c * B₁ ν) ν' • B₁ ν') *
+            mixedEmbedding K ((Module.finBasis K W k : ι → K) i) := by rw [B₁.sum_repr]
+      _ = ∑ ν' : index K,
+            B₁.repr (c * B₁ ν) ν' •
+              (B₁ ν' * mixedEmbedding K ((Module.finBasis K W k : ι → K) i)) := by
+          rw [Finset.sum_mul]
+          refine Finset.sum_congr rfl fun ν' _ ↦ Algebra.smul_mul_assoc _ _ _
   have hconj :
       W.mulMixedSubmodule c =
         (eΦ : (Fin m → mixedSpace K) →ₗ[ℝ] W.euclideanSpan) ∘ₗ
           (LinearMap.piMap fun _ : Fin m ↦ Algebra.lmul ℝ (mixedSpace K) c) ∘ₗ
           (eΦ.symm : W.euclideanSpan →ₗ[ℝ] (Fin m → mixedSpace K)) := by
     refine LinearMap.ext fun y ↦ ?_
-    obtain ⟨z, rfl⟩ := eΦ.surjective y
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
-    simp only [eΦ, LinearEquiv.ofBijective_apply, LinearMap.coe_piMap]
-    rw [mixedSpaceToEuclideanSpan_apply, mixedSpaceToEuclideanSpan_apply, map_sum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [Pi.map_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', mulMixedSubmodule_mul]
+    simpa using congrArg (· (eΦ.symm y)) hinter
   rw [hconj, LinearMap.det_conj, LinearMap.det_piMap]
   simp [Algebra.norm_apply]
 
@@ -715,8 +677,8 @@ theorem norm_sq_mulMixedSubmodule [Fintype ι] (W : Submodule K (ι → K)) (c :
           normAtPlace w c ^ 2 *
             normAtPlace w
               (euclidean.toMixed K ((x : PiLp 2 fun _ : ι ↦ euclidean.mixedSpace K) i)) ^ 2 := by
-    rw [coe_mulMixedSubmodule, mulMixedAmbient_apply, ← mixedInner_toMixed,
-      ContinuousLinearEquiv.apply_symm_apply, mixedInner_self_eq_sum]
+    rw [coe_mulMixedSubmodule, ← mixedInner_toMixed, toMixed_mulMixedAmbient_apply,
+      mixedInner_self_eq_sum]
     refine Finset.sum_congr rfl fun w _ ↦ ?_
     rw [map_mul, mul_pow]
   simp_rw [hterm]

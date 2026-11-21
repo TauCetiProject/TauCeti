@@ -14,7 +14,8 @@ import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.LinearAlgebra.Pi
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Euclidean
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.FinitePlace.Ideal
 
@@ -53,6 +54,8 @@ fields.
 * `Submodule.covolume_integerLattice`: Schmidt's formula
   `ZLattice.covolume W.integerLattice = ((2⁻¹) ^ nrComplexPlaces K * √|discr K|) ^ finrank K W *
     W.subspaceHeight ^ finrank ℚ K`.
+* `Submodule.covolume_comap_mulMixedSubmodule_multSqrt`: scaling `W.integerLattice` by
+  `W.mulMixedSubmodule (multSqrt K)` cancels the `2 ^ (-r₂ * finrank K W)` factor.
 * `Submodule.covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeight`: the same
   identity written in terms of `ZLattice.covolume (mixedEmbedding.integerLattice K)` and
   `W.relativeSubspaceArakelovHeight`.
@@ -551,6 +554,23 @@ theorem covolume_integerLattice (W : Submodule K (ι → K)) :
         W.subspaceHeight ^ finrank ℚ K := by
   rw [covolume_integerLattice_eq_covolume_pow_mul_relativeSubspaceArakelovHeight,
     mixedEmbedding.covolume_integerLattice, subspaceHeight_pow_finrank]
+
+open Classical in
+/-- Scaling `W.integerLattice` in `W.euclideanSpan` by `W.mulMixedSubmodule (multSqrt K)` cancels
+the `2 ^ (-r₂ * finrank K W)` factor in Schmidt's covolume formula, leaving
+`(√|discr K|) ^ finrank K W * W.subspaceHeight ^ finrank ℚ K`. -/
+theorem covolume_comap_mulMixedSubmodule_multSqrt (W : Submodule K (ι → K))
+    (eT : W.euclideanSpan ≃L[ℝ] W.euclideanSpan)
+    (heT : (eT.toLinearEquiv : W.euclideanSpan →ₗ[ℝ] W.euclideanSpan) =
+      W.mulMixedSubmodule (multSqrt K)) :
+    ZLattice.covolume (ZLattice.comap ℝ W.integerLattice eT.symm.toLinearMap) =
+      (√|(discr K : ℝ)|) ^ finrank K W * W.subspaceHeight ^ finrank ℚ K := by
+  have hdet_symm : |eT.symm.toLinearMap.det|⁻¹ = (2 : ℝ) ^ (nrComplexPlaces K * finrank K W) := by
+    rw [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, heT, abs_inv, inv_inv,
+      W.det_mulMixedSubmodule, algebraNorm_multSqrt, ← pow_mul, abs_of_pos (by positivity)]
+  rw [ZLattice.covolume_comap_continuousLinearEquiv W.integerLattice eT.symm volume,
+    W.covolume_integerLattice, hdet_symm, mul_pow, ← pow_mul, inv_pow]
+  field_simp
 
 open Classical in
 /-- The zero subspace has integral lattice of covolume `1` in its `0`-dimensional real span. -/

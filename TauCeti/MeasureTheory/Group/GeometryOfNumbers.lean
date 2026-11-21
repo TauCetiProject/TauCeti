@@ -85,7 +85,7 @@ theorem exists_ne_zero_mem_of_covolume_mul_two_pow_le
   obtain ⟨⟨x, hxL⟩, hx0, hxs⟩ :=
     exists_ne_zero_mem_lattice_of_measure_mul_two_pow_le_measure (L := L.toAddSubgroup)
       hfund h_symm h_conv h_cpt hvol
-  exact ⟨x, hxL, fun h0 ↦ hx0 (Subtype.ext h0), hxs⟩
+  exact ⟨x, (Submodule.mem_toAddSubgroup L).mp hxL, fun h0 ↦ hx0 (Subtype.ext h0), hxs⟩
 
 /-- **Minkowski's shortest-vector bound in a Euclidean space.** Every full `ℤ`-lattice `L` in a
 nontrivial finite-dimensional real inner product space `E` of dimension `n` contains a nonzero
