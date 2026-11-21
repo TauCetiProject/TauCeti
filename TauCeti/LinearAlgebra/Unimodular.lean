@@ -49,6 +49,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   unimodularity.
 * `TauCeti.forall_mul_eq_mul_iff_exists_units`: two coordinate families generating the unit ideal
   are unit multiples of one another exactly when their `2 × 2` minors vanish.
+* `LinearMap.kerProdEquivOfApplyEqOne`: if a linear functional `f` takes the value `1` at `v`, then
+  `ker f × R ≃ M` by `(x, a) ↦ x + a • v`.
 -/
 
 public section
@@ -272,3 +274,38 @@ theorem span_singleton_eq_iff {v : M} (hv : Module.IsUnimodular R v) (w : M) :
     exact (Submodule.span_singleton_group_smul_eq R c v).symm
 
 end Module.IsUnimodular
+
+namespace LinearMap
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- If a linear functional `f` takes the value `1` at `v`, then `M` is the direct sum of the kernel
+of `f` and the free line `R v`: `(x, a) ↦ x + a • v` is an isomorphism `ker f × R ≃ M`, with
+inverse `m ↦ (m - f m • v, f m)`. -/
+def kerProdEquivOfApplyEqOne {f : M →ₗ[R] R} {v : M} (hf : f v = 1) : (ker f × R) ≃ₗ[R] M :=
+  LinearEquiv.ofLinearMap ((ker f).subtype.coprod (toSpanSingleton R M v))
+    ((codRestrict (ker f) (id - toSpanSingleton R M v ∘ₗ f)
+      (fun m ↦ by simp [mem_ker, hf])).prod f)
+    (LinearMap.ext fun m ↦ by simp)
+    (LinearMap.ext fun x ↦ by ext <;> simp [mem_ker.mp x.1.property, hf])
+
+/-- `LinearMap.kerProdEquivOfApplyEqOne` sends `(x, a)` to `x + a • v`. -/
+@[simp]
+theorem kerProdEquivOfApplyEqOne_apply {f : M →ₗ[R] R} {v : M} (hf : f v = 1)
+    (x : ker f × R) : kerProdEquivOfApplyEqOne hf x = x.1 + x.2 • v :=
+  (rfl)
+
+/-- The kernel component of the inverse of `LinearMap.kerProdEquivOfApplyEqOne` at `m` is
+`m - f m • v`. -/
+@[simp]
+theorem coe_kerProdEquivOfApplyEqOne_symm_apply_fst {f : M →ₗ[R] R} {v : M} (hf : f v = 1)
+    (m : M) : (((kerProdEquivOfApplyEqOne hf).symm m).1 : M) = m - f m • v :=
+  (rfl)
+
+/-- The `R`-component of the inverse of `LinearMap.kerProdEquivOfApplyEqOne` at `m` is `f m`. -/
+@[simp]
+theorem kerProdEquivOfApplyEqOne_symm_apply_snd {f : M →ₗ[R] R} {v : M} (hf : f v = 1)
+    (m : M) : ((kerProdEquivOfApplyEqOne hf).symm m).2 = f m :=
+  (rfl)
+
+end LinearMap

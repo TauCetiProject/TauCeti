@@ -115,8 +115,7 @@ theorem rfl {v : ι → R} : UnimodularEquiv v v :=
 @[symm]
 theorem symm {v w : ι → R} (h : UnimodularEquiv v w) : UnimodularEquiv w v := by
   obtain ⟨P, rfl⟩ := h
-  exact ⟨P⁻¹, by rw [mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-    one_mulVec]⟩
+  exact ⟨P⁻¹, by simp [mulVec_mulVec]⟩
 
 /-- Equivalence of vectors is symmetric, as an `Iff`. -/
 theorem comm {v w : ι → R} : UnimodularEquiv v w ↔ UnimodularEquiv w v :=
@@ -245,6 +244,11 @@ section CommRing
 
 variable [CommRing R]
 
+/-- Restatement of the definition of `TauCeti.HasUnimodularExtension`. -/
+theorem hasUnimodularExtension_def : HasUnimodularExtension R ↔
+    ∀ (n : ℕ) (v : Fin (n + 1) → R), IsUnimodular R v → UnimodularEquiv v (Pi.single 0 1) :=
+  Iff.rfl
+
 /-- Over the zero ring every vector equals `Pi.single 0 1`, so the property holds. -/
 theorem hasUnimodularExtension_of_subsingleton [Subsingleton R] : HasUnimodularExtension R :=
   fun _ v _ ↦ Subsingleton.elim v (Pi.single 0 1) ▸ .rfl
@@ -350,12 +354,7 @@ theorem hasUnimodularExtension_of_forall_free {R : Type u} [CommRing R]
   · exact hasUnimodularExtension_of_subsingleton n v hv
   obtain ⟨f, hf⟩ := isUnimodular_iff.mp hv
   let K := LinearMap.ker f
-  let e : (K × R) ≃ₗ[R] (Fin (n + 1) → R) :=
-    LinearEquiv.ofLinearMap (K.subtype.coprod (LinearMap.toSpanSingleton R _ v))
-      ((LinearMap.codRestrict K (LinearMap.id - (LinearMap.toSpanSingleton R _ v) ∘ₗ f)
-        (fun x ↦ by simp [K, LinearMap.mem_ker, hf])).prod f)
-      (LinearMap.ext fun x ↦ by simp)
-      (LinearMap.ext fun x ↦ by ext <;> simp [K, LinearMap.mem_ker.mp x.1.property, hf])
+  let e : (K × R) ≃ₗ[R] (Fin (n + 1) → R) := LinearMap.kerProdEquivOfApplyEqOne hf
   have : Module.Free R (K × R) := Module.Free.of_equiv e.symm
   have : Module.Finite R (K × R) := Module.Finite.equiv e.symm
   have : Module.Finite R K :=
