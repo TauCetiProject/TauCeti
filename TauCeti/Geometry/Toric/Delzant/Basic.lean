@@ -330,6 +330,14 @@ theorem exists_mem_extremePoints_mem_activeSet (j : ι) :
   obtain ⟨x, hx, hxj⟩ := hΔ.irredundant j
   exact Toric.exists_mem_extremePoints_mem_activeSet hΔ.isCompact hx (hxj ▸ mem_singleton j)
 
+/-- At every point of a Delzant polytope, the active normals are part of a lattice basis: they
+are among the normals active at some vertex, which form a basis of the lattice. -/
+theorem exists_activeSet_subset_basis {x : StrongDual ℝ V} (hx : x ∈ facetPolyhedron i u c) :
+    ∃ s : Set ι, activeSet (facetPairing i u) c x ⊆ s ∧
+      ∃ b : Module.Basis s ℤ N, ∀ j, b j = u j := by
+  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
+  exact ⟨_, hsub, hΔ.isSmoothVertex v hv⟩
+
 /-- The facet normals of a Delzant polytope are primitive lattice vectors. -/
 theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
