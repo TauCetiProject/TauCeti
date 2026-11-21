@@ -46,6 +46,8 @@ relates that norm to the two norms of geometric measure theory.
 * `ContinuousAlternatingMap.opNorm_le_iff_le_mul_norm_ιMulti`: the operator norm is the comass.
 * `ContinuousAlternatingMap.norm_eq_norm_apply_orthonormalBasis`: the comass of a top-degree form
   is the norm of its value on an orthonormal basis.
+* `ContinuousAlternatingMap.norm_apply_eq_norm_apply_orthonormalBasis_span`: a form has values of
+  the same norm on an orthonormal family and on any orthonormal basis of its span.
 * `exteriorPower.norm_formDualEquiv_ιMulti`: the mass of a wedge of vectors is its volume.
 * `exteriorPower.norm_le_norm_formDualEquiv`, `exteriorPower.norm_formDualEquiv_le`: the mass of
   `k`-vectors is comparable with the inner product norm.
@@ -149,6 +151,25 @@ theorem norm_eq_norm_apply_orthonormalBasis {ι : Type*} [Fintype ι] (ω : E [�
         gcongr
         exact b.norm_det_le_prod_norm v
   · simpa [b.norm_eq_one] using ω.le_opNorm b
+
+omit [FiniteDimensional ℝ E] in
+/-- A form takes values of the same norm on an orthonormal family `u` and on any orthonormal basis
+`c` of the span of `u`: both are orthonormal bases of that span. -/
+theorem norm_apply_eq_norm_apply_orthonormalBasis_span {ι : Type*} [Fintype ι]
+    (ω : E [⋀^ι]→L[ℝ] F) {u : ι → E} (hu : Orthonormal ℝ u)
+    (c : OrthonormalBasis ι ℝ (Submodule.span ℝ (Set.range u))) :
+    ‖ω u‖ = ‖ω fun i ↦ (c i : E)‖ := by
+  let W := Submodule.span ℝ (Set.range u)
+  let x : ι → W := fun i ↦ ⟨u i, Submodule.subset_span (Set.mem_range_self i)⟩
+  have hx : Set.range x = Subtype.val ⁻¹' Set.range u := by
+    ext ⟨y, hy⟩
+    simp [x, Subtype.ext_iff]
+  let b := OrthonormalBasis.mk (orthonormal_span hu)
+    (by rw [hx, Submodule.span_span_coe_preimage])
+  let ωW := ω.compContinuousLinearMap W.subtypeL
+  have h := (ωW.norm_eq_norm_apply_orthonormalBasis b).symm.trans
+    (ωW.norm_eq_norm_apply_orthonormalBasis c)
+  simpa [ωW, b, Function.comp_def] using h
 
 end ContinuousAlternatingMap
 

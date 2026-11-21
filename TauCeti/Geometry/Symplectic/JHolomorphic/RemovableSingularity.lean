@@ -10,10 +10,8 @@ public import Mathlib.Topology.Compactification.OnePoint.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Calculus.FDeriv.Puncture
-import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
-import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Continuous removal of finite-energy punctures
@@ -31,15 +29,19 @@ solves the Cauchy--Riemann equation on the punctured disc of radius `R⁻¹`, si
 holomorphic, and it again has finite energy: the Jacobian `‖w‖⁻⁴` of the inversion cancels the
 square of its conformal factor `‖w‖⁻²`, up to a factor depending on the norm of the target
 structure, which is bounded on the compact set `K`. The factor is needed because the structure is
-only tamed, so it need not be an isometry. A finite-energy solution on the whole plane therefore
-extends to a continuous map on the Riemann sphere `OnePoint ℂ`
+only tamed, so it need not be an isometry (`TauCeti.fderiv_comp_inv_apply_I_eq`,
+`TauCeti.integrableOn_norm_fderiv_comp_inv_apply_one_sq`). A finite-energy solution on the whole
+plane therefore extends to a continuous map on the Riemann sphere `OnePoint ℂ`
 (`SymplecticForm.exists_continuous_onePoint_elim_of_finite_energy`). This identifies the end at
-infinity of a finite-energy plane with a point of a sphere, continuously only: it gives neither
-differentiability nor the Cauchy--Riemann equation at infinity.
+infinity of a finite-energy plane with a point of a sphere, continuously only.
 
-This is the continuous part of removal of singularities for pseudoholomorphic curves.
-It does not assert differentiability at the puncture or the Cauchy--Riemann equation there;
-those require elliptic regularity for the extended map.
+This is the continuous part of removal of singularities for pseudoholomorphic curves. That the
+filling solves the Cauchy--Riemann equation weakly across the puncture, and the inverted filling
+weakly at infinity, is proved in `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative`
+(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_of_finite_energy`,
+`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Differentiability
+of the filling and the classical equation at the puncture or at infinity still require elliptic
+regularity for the extended map.
 
 The analytic inputs are
 `SymplecticForm.exists_pos_integrableOn_deriv_radial` (finite radial length) and
@@ -111,41 +113,6 @@ theorem exists_continuousOn_update_of_finite_energy
       simpa using hqK
     · simpa [Function.update_of_ne hzz] using huK ⟨hz, hzz⟩
 
-/-- **The energy near infinity is the energy of the inverted map near zero**, up to a constant:
-for a solution of `∂ₜu = J(u) ∂ₛu` outside the disc of radius `R`, with `‖J‖ ≤ M` along it, the
-map `w ↦ u w⁻¹` has integrable energy density on the disc of radius `R⁻¹` whenever `u` has
-integrable energy density outside the disc of radius `R`. The Cauchy--Riemann equation bounds
-`‖du‖` by `(1 + M) ‖∂ₛu‖`, and inversion preserves finite energy
-(`TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff`). -/
-private theorem integrableOn_norm_fderiv_comp_inv_sq {M : ℝ}
-    (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
-    (hM : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ‖J (u z)‖ ≤ M)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
-    IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) (ball 0 R⁻¹) := by
-  let : MeasurableSpace V := borel V
-  have : BorelSpace V := ⟨rfl⟩
-  set D : Set ℂ := ball 0 R⁻¹ \ {0}
-  have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
-  have hDm : MeasurableSet D := measurableSet_ball.diff (measurableSet_singleton 0)
-  -- By the Cauchy--Riemann equation, `‖du‖ ≤ (1 + M) ‖∂ₛu‖` outside the disc of radius `R`.
-  have hfull : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (closedBall 0 R)ᶜ := by
-    refine (henergy.const_mul ((1 + M) ^ 2)).mono'
-      ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
-      (ae_restrict_of_forall_mem isClosed_closedBall.isOpen_compl.measurableSet fun z hz ↦ ?_)
-    rw [norm_pow, norm_norm, ← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _)
-      ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hM z hz) le_rfl) 2
-  -- Inversion preserves finite energy.
-  have hD : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) D :=
-    (integrableOn_norm_fderiv_comp_inv_sq_iff hDm).2 (hfull.mono_set hDE.image_subset)
-  have hD1 : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) D := by
-    refine hD.mono' ((measurable_fderiv_apply_const ℝ _ 1).norm.pow_const 2).aestronglyMeasurable
-      (ae_of_all _ fun w ↦ ?_)
-    rw [norm_pow, norm_norm]
-    exact pow_le_pow_left₀ (norm_nonneg _)
-      (by simpa using (fderiv ℝ (fun w ↦ u w⁻¹) w).le_opNorm (1 : ℂ)) 2
-  exact hD1.congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)).symm
-
 /-- **A finite-energy plane has a limit at infinity.** A `C³` pseudoholomorphic curve on the
 exterior `‖z‖ > R` of a disc, with compact image, uniformly positive taming constant, `C²` target
 structure near its image and integrable energy density, converges as `z → ∞` to a point of the
@@ -170,14 +137,12 @@ theorem exists_tendsto_cocompact_of_finite_energy
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   -- The inverted map `w ↦ u w⁻¹` is a finite-energy solution on the punctured disc of radius `R⁻¹`.
   have hCRv (w : ℂ) (hw : w ∈ ball 0 R⁻¹ \ {0}) : fderiv ℝ (fun w ↦ u w⁻¹) w I =
-      J (u w⁻¹) (fderiv ℝ (fun w ↦ u w⁻¹) w 1) := by
-    rw [fderiv_comp_inv_apply hw.2, fderiv_comp_inv_apply hw.2, mul_one]
-    exact (fderiv ℝ u w⁻¹ : ℂ →ₗ[ℝ] V).apply_mul_I_eq_of_apply_I_eq (A := J (u w⁻¹))
-      (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw))) _
+      J (u w⁻¹) (fderiv ℝ (fun w ↦ u w⁻¹) w 1) :=
+    fderiv_comp_inv_apply_I_eq hw.2 (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw)))
   obtain ⟨q, hqK, hlim, -, -⟩ := ω.exists_continuousOn_update_of_finite_energy hg hc
     (inv_pos.2 hR) hW hJ hK hKW hJsq (hu.comp ((contDiffOn_inv ℝ).mono fun w hw ↦ hw.2) hDE)
     hCRv (huK.comp hDE) (fun w hw ↦ htame _ (hDE hw))
-    (integrableOn_norm_fderiv_comp_inv_sq hCR (fun z hz ↦ hM _ (huK hz)) henergy)
+    (integrableOn_norm_fderiv_comp_inv_apply_one_sq hCR (fun z hz ↦ hM _ (huK hz)) henergy)
   refine ⟨q, hqK, ?_⟩
   rw [← Metric.cobounded_eq_cocompact]
   simpa [Function.comp_def] using hlim.comp tendsto_inv₀_cobounded'
