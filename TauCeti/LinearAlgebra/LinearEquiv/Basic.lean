@@ -17,7 +17,8 @@ import TauCeti.LinearAlgebra.Span.Basic
 
 Transport of submodule stability through an intertwining semilinear equivalence.
 Symmetry of a linear automorphism agrees with inversion in its group structure, and commutes with
-restriction of scalars.
+restriction of scalars. A homomorphism into linear automorphisms, viewed as a representation, acts
+by its values.
 Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
 family `v` of `M₂` span the kernel of `u ↦ (L u).1`.
 A ring isomorphism over a common target carries the kernel of one map to the kernel of the other.
@@ -37,6 +38,13 @@ namespace LinearEquiv
 /-- Symmetry of a linear automorphism is its group inverse. -/
 theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
     (e : V ≃ₗ[R] V) : e.symm = e⁻¹ := rfl
+
+/-- A homomorphism `ρ : G →* (V ≃ₗ[R] V)`, viewed as a representation through
+`LinearEquiv.automorphismGroup.toLinearMapMonoidHom`, acts by `ρ g`. -/
+theorem automorphismGroup.toLinearMapMonoidHom_comp_apply {R G V : Type*} [Semiring R] [Monoid G]
+    [AddCommMonoid V] [Module R V] (ρ : G →* V ≃ₗ[R] V) (g : G) (v : V) :
+    automorphismGroup.toLinearMapMonoidHom.comp ρ g v = ρ g v :=
+  rfl
 
 /-- The inverse of a linear equivalence with restricted scalars is the inverse with restricted
 scalars. -/
