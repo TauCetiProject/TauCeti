@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Centralizer
+public import Mathlib.Algebra.Central.Defs
 public import Mathlib.LinearAlgebra.DFinsupp
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
@@ -44,6 +45,9 @@ construction works over any commutative semiring of scalars.
 
 * `TauCeti.isTwoSided_of_mem_isotypicComponents`: an isotypic component of the regular module is a
   two-sided ideal.
+* `TauCeti.mul_eq_zero_of_mem_isotypicComponents`: distinct isotypic components of the regular
+  module multiply to zero.
+* `TauCeti.finrank_center_eq_of_isCentral`: a central algebra over a field `Z` has centre `Z`.
 * `TauCeti.exists_ne_zero_mem_center_of_mem_isotypicComponents`: it contains a nonzero central
   element.
 * `TauCeti.card_isotypicComponents_le_finrank_center`: the number of isotypic components of the
@@ -70,6 +74,35 @@ of the regular module, and those endomorphisms are the right multiplications. -/
 theorem isTwoSided_of_mem_isotypicComponents {c : Ideal R} (hc : c ∈ isotypicComponents R R) :
     c.IsTwoSided :=
   isFullyInvariant_iff_isTwoSided.mp (Submodule.IsFullyInvariant.of_mem_isotypicComponents hc)
+
+/-- Left multiplication by an element `b` of an isotypic component `c` of the regular module kills
+every other isotypic component `c'`: `b c' ⊆ c ∩ c' = 0`, since `c` is a two-sided ideal. -/
+theorem mul_eq_zero_of_mem_isotypicComponents {c c' : Ideal R}
+    (hc : c ∈ isotypicComponents R R) (hc' : c' ∈ isotypicComponents R R) (hne : c' ≠ c)
+    {b x : R} (hb : b ∈ c) (hx : x ∈ c') : b * x = 0 := by
+  have := isTwoSided_of_mem_isotypicComponents hc
+  have hdisj : Disjoint c' c :=
+    (sSupIndep_isotypicComponents R R).pairwiseDisjoint hc' hc hne
+  exact (Submodule.disjoint_def.mp hdisj) _ (c'.smul_mem b hx) (Ideal.mul_mem_right x c hb)
+
+/-- A central algebra `B` over a field `Z` has centre `Z`: for any field `k` below `Z`, the centre
+of `B` over `k` has the dimension of `Z` over `k`. -/
+theorem finrank_center_eq_of_isCentral (k : Type*) [Field k] {B : Type*} [Ring B] [Algebra k B]
+    (Z : Type*) [Field Z] [Algebra k Z] [Algebra Z B] [IsScalarTower k Z B]
+    [Algebra.IsCentral Z B] [Nontrivial B] :
+    Module.finrank k (Subalgebra.center k B) = Module.finrank k Z := by
+  let f : Z →ₗ[k] Subalgebra.center k B :=
+    { toFun z := ⟨algebraMap Z B z,
+        Subalgebra.mem_center_iff.mpr fun y ↦ (Algebra.commutes z y).symm⟩
+      map_add' x y := by ext; simp
+      map_smul' r x := by ext; simp [Algebra.smul_def, IsScalarTower.algebraMap_apply k Z B] }
+  have hf : Function.Bijective f := by
+    refine ⟨fun x y h ↦ (algebraMap Z B).injective (congrArg Subtype.val h), fun x ↦ ?_⟩
+    have hx : (x : B) ∈ Subalgebra.center Z B := Subalgebra.mem_center_iff.mpr
+      (Subalgebra.mem_center_iff.mp x.2)
+    obtain ⟨z, hz⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hx)
+    exact ⟨z, Subtype.ext hz⟩
+  exact (LinearEquiv.ofBijective f hf).finrank_eq.symm
 
 section CommSemiring
 
