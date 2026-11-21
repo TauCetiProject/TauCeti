@@ -183,8 +183,8 @@ theorem IsFiniteEtale.surjective_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale
   let := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hφ.finite
   have : IsModuleTopology A B := hφ.isModuleTopology
-  obtain ⟨q, hq⟩ := (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hff).2 (suppFun x.1)
-  obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.2 q.asIdeal
+  obtain ⟨q, hq⟩ := (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hff).2 (suppFun x.val)
+  obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.property q.asIdeal
     (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
   exact ⟨⟨w, hφ.plus_eq ▸ hw⟩, Subtype.ext <| by rw [spaComap_val]; exact hwx⟩
 
@@ -221,24 +221,24 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
 theorem IsFiniteEtale.finite_fibre {φ : Hom S T} (hφ : φ.IsFiniteEtale) (x : spa S.plus) :
     (φ.spaComap ⁻¹' {x}).Finite ∧
       Nat.card (φ.spaComap ⁻¹' {x}) ≤
-        letI := φ.toRingHom.toAlgebra; Module.rankAtStalk (R := A) B (suppFun x.1) := by
+        letI := φ.toRingHom.toAlgebra; Module.rankAtStalk (R := A) B (suppFun x.val) := by
   let := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hφ.finite
   have : Module.Flat A B := (RingHom.Etale.iff_flat_and_formallyUnramified.mp hφ.etale).1
   -- the fibre of `Spa` embeds in the fibre of `Spv`
-  let ι : φ.spaComap ⁻¹' {x} → ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1} :=
-    fun y ↦ ⟨y.1.1, (spaComap_val φ y).symm.trans (congrArg Subtype.val y.2)⟩
+  let ι : φ.spaComap ⁻¹' {x} → ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.val} :=
+    fun y ↦ ⟨y.val.val, (spaComap_val φ y).symm.trans (congrArg Subtype.val y.property)⟩
   have hι : Function.Injective ι := fun y y' h ↦ by
     have h' := congrArg Subtype.val h
     exact Subtype.ext (Subtype.ext h')
-  have hfin := finite_preimage_comap_singleton (B := B) x.1
+  have hfin := finite_preimage_comap_singleton (B := B) x.val
   have := hfin.to_subtype
   refine ⟨Set.finite_coe_iff.mp (Finite.of_injective ι hι), ?_⟩
   calc Nat.card (φ.spaComap ⁻¹' {x})
-      ≤ Nat.card (ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1}) :=
+      ≤ Nat.card (ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.val}) :=
         Nat.card_le_card_of_injective ι hι
-    _ ≤ Module.rankAtStalk (R := A) B (suppFun x.1) :=
-      ncard_preimage_comap_singleton_le_rankAtStalk x.1
+    _ ≤ Module.rankAtStalk (R := A) B (suppFun x.val) :=
+      ncard_preimage_comap_singleton_le_rankAtStalk x.val
 
 end Huber.Pair.Hom
 

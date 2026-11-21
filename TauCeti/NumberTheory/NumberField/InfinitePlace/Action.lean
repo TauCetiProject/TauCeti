@@ -26,7 +26,7 @@ absolute values. -/
 @[simp]
 theorem coe_smul {k K : Type*} [Field k] [Field K] [Algebra k K] (σ : K ≃ₐ[k] K)
     (w : InfinitePlace K) :
-    (σ • w).1 = σ • w.1 :=
+    (σ • w).val = σ • w.val :=
   rfl
 
 end NumberField.InfinitePlace

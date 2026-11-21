@@ -128,7 +128,7 @@ private theorem conjTranspose_eq_neg_of_forall_exp_mem
   rw [← unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg]
   refine lieSubalgebraOfSubgroup_mono ?_ ((forall_exp_mem_iff G X).mp hX)
   rintro _ ⟨g, -, rfl⟩
-  exact mem_unitary_units_iff.mpr g.2
+  exact mem_unitary_units_iff.mpr g.property
 
 private theorem forall_exp_mem_add (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
     {X Y : Matrix n n 𝕜} (hX : ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X))
@@ -200,7 +200,7 @@ algebra. For a unitary `g` the inverse `g⁻¹` is the conjugate transpose `star
 def matrixAdjointRepresentation : Representation ℝ G G.matrixLieAlgebra where
   toFun g :=
     { toFun X := ⟨(g : Matrix n n 𝕜) * X * star (g : Matrix n n 𝕜),
-        mul_mul_star_mem_matrixLieAlgebra g.2 X.2⟩
+        mul_mul_star_mem_matrixLieAlgebra g.property X.property⟩
       map_add' X Y := by ext1; simp [mul_add, add_mul]
       map_smul' c X := by ext1; simp }
   map_one' := by ext1 X; ext1; simp
@@ -232,10 +232,11 @@ private theorem form_exp_mul_mul_exp_neg_eq {B : LinearMap.BilinForm ℝ G.matri
     (X Y Z : G.matrixLieAlgebra) (t : ℝ) :
     B (P (exp (t • (X : Matrix n n 𝕜)) * Y * exp (t • (-(X : Matrix n n 𝕜))))) Z =
       B Y (P (exp (t • (-(X : Matrix n n 𝕜))) * Z * exp (t • (-(-(X : Matrix n n 𝕜)))))) := by
-  obtain ⟨g, hg, hgt⟩ := X.2 t
+  obtain ⟨g, hg, hgt⟩ := X.property t
   have hstar : star (g : Matrix n n 𝕜) = exp (t • (-(X : Matrix n n 𝕜))) := by
     rw [hgt, Matrix.star_eq_conjTranspose, ← Matrix.exp_conjTranspose,
-      Matrix.conjTranspose_smul, conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.2, star_trivial]
+      Matrix.conjTranspose_smul, conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property,
+          star_trivial]
   rw [neg_neg, ← hstar, ← hgt]
   have hY : (g : Matrix n n 𝕜) * Y * star (g : Matrix n n 𝕜) =
       (G.matrixAdjointRepresentation ⟨g, hg⟩ Y : Matrix n n 𝕜) := by simp
@@ -302,7 +303,7 @@ theorem isSymm_matrixTraceForm : G.matrixTraceForm.IsSymm :=
 theorem matrixTraceForm_self (X : G.matrixLieAlgebra) :
     G.matrixTraceForm X X = ∑ i, ∑ j, ‖(X : Matrix n n 𝕜) i j‖ ^ 2 := by
   rw [matrixTraceForm_apply, ← Matrix.re_trace_mul_conjTranspose_self,
-    conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.2, mul_neg, Matrix.trace_neg, map_neg]
+    conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property, mul_neg, Matrix.trace_neg, map_neg]
 
 /-- The trace form is positive definite. -/
 theorem posDef_matrixTraceForm : G.matrixTraceForm.toQuadraticMap.PosDef := by
@@ -397,23 +398,23 @@ through `diag(X₁, X₂) ↦ (X₁, X₂)`. -/
 def matrixLieAlgebraFromBlocksProdEquiv :
     (G₁.fromBlocksProd G₂).matrixLieAlgebra ≃ₗ⁅ℝ⁆ G₁.matrixLieAlgebra × G₂.matrixLieAlgebra where
   toFun X := (⟨(X : Matrix (n ⊕ m) (n ⊕ m) 𝕜).toBlocks₁₁,
-      (mem_matrixLieAlgebra_fromBlocksProd_iff.mp X.2).2.2.1⟩,
+      (mem_matrixLieAlgebra_fromBlocksProd_iff.mp X.property).2.2.1⟩,
     ⟨(X : Matrix (n ⊕ m) (n ⊕ m) 𝕜).toBlocks₂₂,
-      (mem_matrixLieAlgebra_fromBlocksProd_iff.mp X.2).2.2.2⟩)
+      (mem_matrixLieAlgebra_fromBlocksProd_iff.mp X.property).2.2.2⟩)
   invFun X := ⟨Matrix.fromBlocks X.1 0 0 X.2,
-    fromBlocks_mem_matrixLieAlgebra_fromBlocksProd X.1.2 X.2.2⟩
+    fromBlocks_mem_matrixLieAlgebra_fromBlocksProd X.1.property X.2.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   map_lie' {X Y} := by
-    have hX := eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd X.2
-    have hY := eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd Y.2
+    have hX := eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd X.property
+    have hY := eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd Y.property
     refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;>
     · simp only [LieAlgebra.Prod.bracket_apply, LieSubalgebra.coe_bracket,
         LieRing.of_associative_ring_bracket]
       rw [hX, hY, Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
       ext i j
       simp [Matrix.toBlocks₁₁, Matrix.toBlocks₂₂]
-  left_inv X := Subtype.ext (eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd X.2).symm
+  left_inv X := Subtype.ext (eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd X.property).symm
   right_inv _ := rfl
 
 /-- The first component of the equivalence is the upper-left block. -/
@@ -450,7 +451,7 @@ theorem matrixLieAlgebraFromBlocksProdEquiv_matrixAdjointRepresentation {g₁ g�
       (G₁.matrixAdjointRepresentation ⟨g₁, h₁⟩ (G₁.matrixLieAlgebraFromBlocksProdEquiv G₂ X).1,
         G₂.matrixAdjointRepresentation ⟨g₂, h₂⟩
           (G₁.matrixLieAlgebraFromBlocksProdEquiv G₂ X).2) := by
-  have hX := eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd X.2
+  have hX := eq_fromBlocks_of_mem_matrixLieAlgebra_fromBlocksProd X.property
   ext1 <;> ext1 <;>
   simp only [coe_matrixLieAlgebraFromBlocksProdEquiv_fst_apply,
     coe_matrixLieAlgebraFromBlocksProdEquiv_snd_apply, coe_matrixAdjointRepresentation_apply,

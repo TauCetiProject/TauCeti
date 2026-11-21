@@ -98,7 +98,7 @@ theorem exists_testFunction_eq_intervalIntegral
     rw [← contDiffOn_univ]
     refine (contDiffOn_integral_smul_of_contDiffOn (n := (⊤ : ℕ∞))
       (F := fun p : E × ℝ => g (p.1 - p.2 • h)) (μ := (volume : Measure unitInterval))
-      (integrable_const (1 : ℝ)) continuous_subtype_val isOpen_univ
+      (integrable_const (1 : ℝ)) continuous_subtypeVal isOpen_univ
       (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const))).contDiffOn
       fun _ _ _ => mem_univ _).congr fun y _ => ?_
     simp [hΦ_def, intervalIntegral_eq_integral_unitInterval]

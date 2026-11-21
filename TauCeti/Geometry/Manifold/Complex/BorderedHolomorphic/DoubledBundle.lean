@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.DoubleAlong
 
 /-!

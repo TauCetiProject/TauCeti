@@ -261,14 +261,14 @@ atlas read as the fixed orientation `o` of the model fibre is continuous. -/
 theorem continuous_mk_mapOrientation_symm (hι : Fintype.card ι = finrank ℝ F)
     (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (o : Orientation ℝ F ι) :
     Continuous fun x : e.baseSet ↦
-      (⟨x, (e.mapOrientation ι x.2).symm o⟩ : VectorBundleOrientationCover F E ι) := by
-  refine continuous_of_isOpen_preimage_sheet continuous_subtype_val fun b o' ↦ ?_
+      (⟨x, (e.mapOrientation ι x.property).symm o⟩ : VectorBundleOrientationCover F E ι) := by
+  refine continuous_of_isOpen_preimage_sheet continuous_subtypeVal fun b o' ↦ ?_
   set e' := trivializationAt F E b
   refine isOpen_iff_mem_nhds.2 fun x ⟨hx', hx⟩ ↦ ?_
-  have h := (e.eventually_mapOrientation_symm_eq hι e' x.2 hx' o).and
+  have h := (e.eventually_mapOrientation_symm_eq hι e' x.property hx' o).and
     (e'.open_baseSet.mem_nhds hx')
-  filter_upwards [continuous_subtype_val.continuousAt.eventually h] with y ⟨hy, hy'⟩
-  exact ⟨hy', (hy y.2 hy').trans hx⟩
+  filter_upwards [continuous_subtypeVal.continuousAt.eventually h] with y ⟨hy, hy'⟩
+  exact ⟨hy', (hy y.property hy').trans hx⟩
 
 /-- Over the base set of a trivialization `e` of the atlas, the orientation double cover is the
 product of the base set with the discrete set of orientations of the model fibre. -/
@@ -277,16 +277,16 @@ def trivializationHomeomorph (hι : Fintype.card ι = finrank ℝ F)
     [DiscreteTopology (Orientation ℝ F ι)] :
     (proj ⁻¹' e.baseSet : Set (VectorBundleOrientationCover F E ι)) ≃ₜ
       e.baseSet × Orientation ℝ F ι where
-  toFun p := (⟨p.1.proj, p.2⟩, e.mapOrientation ι p.2 p.1.orientation)
-  invFun x := ⟨⟨x.1, (e.mapOrientation ι x.1.2).symm x.2⟩, x.1.2⟩
+  toFun p := (⟨p.val.proj, p.property⟩, e.mapOrientation ι p.property p.val.orientation)
+  invFun x := ⟨⟨x.1, (e.mapOrientation ι x.1.property).symm x.2⟩, x.1.property⟩
   left_inv p := by ext <;> simp
   right_inv x := by simp
   continuous_toFun := by
-    refine (continuous_proj.comp continuous_subtype_val).subtype_mk _ |>.prodMk ?_
+    refine (continuous_proj.comp continuous_subtypeVal).subtype_mk _ |>.prodMk ?_
     refine continuous_discrete_rng.2 fun o ↦ ?_
-    convert (isOpen_sheet hι e o).preimage continuous_subtype_val using 1
+    convert (isOpen_sheet hι e o).preimage continuous_subtypeVal using 1
     ext p
-    exact ⟨fun hp ↦ ⟨p.2, hp⟩, fun ⟨_, hp⟩ ↦ hp⟩
+    exact ⟨fun hp ↦ ⟨p.property, hp⟩, fun ⟨_, hp⟩ ↦ hp⟩
   continuous_invFun := by
     refine continuous_prod_of_discrete_right.2 fun o ↦ ?_
     exact (continuous_mk_mapOrientation_symm hι e o).subtype_mk _
@@ -296,14 +296,16 @@ theorem trivializationHomeomorph_apply (hι : Fintype.card ι = finrank ℝ F)
     (e : Trivialization F (π F E)) [MemTrivializationAtlas e] [TopologicalSpace (Orientation ℝ F ι)]
     [DiscreteTopology (Orientation ℝ F ι)]
     (p : (proj ⁻¹' e.baseSet : Set (VectorBundleOrientationCover F E ι))) :
-    trivializationHomeomorph hι e p = (⟨p.1.proj, p.2⟩, e.mapOrientation ι p.2 p.1.orientation) :=
+    trivializationHomeomorph hι e p = (⟨p.val.proj, p.property⟩, e.mapOrientation ι p.property
+        p.val.orientation) :=
   (rfl)
 
 @[simp]
 theorem trivializationHomeomorph_symm_apply (hι : Fintype.card ι = finrank ℝ F)
     (e : Trivialization F (π F E)) [MemTrivializationAtlas e] [TopologicalSpace (Orientation ℝ F ι)]
     [DiscreteTopology (Orientation ℝ F ι)] (x : e.baseSet × Orientation ℝ F ι) :
-    (trivializationHomeomorph hι e).symm x = ⟨⟨x.1, (e.mapOrientation ι x.1.2).symm x.2⟩, x.1.2⟩ :=
+    (trivializationHomeomorph hι e).symm x = ⟨⟨x.1, (e.mapOrientation ι x.1.property).symm x.2⟩,
+        x.1.property⟩ :=
   (rfl)
 
 /-- The projection of the orientation double cover is a covering map, provided `ι` has
@@ -362,8 +364,14 @@ theorem ncard_fiber (hι : Fintype.card ι = finrank ℝ F) (b : B) :
   · exact fun h ↦ deck_ne_self p (congrArg Subtype.val h)
   · intro q hq
     apply Subtype.ext
-    exact (eq_or_eq_deck hι (q.2.trans hp.symm)).resolve_left
+    exact (eq_or_eq_deck hι (q.property.trans hp.symm)).resolve_left
       fun h ↦ hq (Subtype.ext h)
+
+/-- The fibres of the orientation double cover of a bundle of rank `card ι` are finite: they have
+two points. -/
+theorem finite_fiber (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι)).Finite :=
+  Set.finite_of_ncard_ne_zero (by rw [ncard_fiber hι]; exact two_ne_zero)
 
 /-- Over a preconnected base, a clopen subset of the orientation double cover that is invariant
 under the deck involution is empty or the whole cover, provided `ι` has cardinality the rank of

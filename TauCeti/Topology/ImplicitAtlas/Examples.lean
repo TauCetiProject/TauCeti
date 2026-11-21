@@ -58,18 +58,18 @@ dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regu
 noncomputable def ofChartedSpace :
     ImplicitAtlas Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X n where
   baseHomeomorph := Homeomorph.refl X
-  kuranishi _ α _ := (IsEmpty.false α.1).elim
-  continuous_kuranishi _ α := (IsEmpty.false α.1).elim
-  kuranishi_act _ α := (IsEmpty.false α.1).elim
+  kuranishi _ α _ := (IsEmpty.false α.val).elim
+  continuous_kuranishi _ α := (IsEmpty.false α.val).elim
+  kuranishi_act _ α := (IsEmpty.false α.val).elim
   regLocus _ := univ
   isOpen_regLocus _ := isOpen_univ
   act_mem_regLocus _ _ _ _ := mem_univ _
-  footprintMap _ _ _ x := x.1
-  continuous_footprintMap _ _ _ := continuous_subtype_val
+  footprintMap _ _ _ x := x.val
+  continuous_footprintMap _ _ _ := continuous_subtypeVal
   footprintMap_act _ _ _ _ _ _ := rfl
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
-  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.1).elim
+  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.val).elim
   isOpen_range_footprintMap _ _ _ := by
     rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
     exact isOpen_univ
@@ -79,18 +79,18 @@ noncomputable def ofChartedSpace :
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp
   isQuotientMap_footprintMap I J _ :=
     IsQuotientMap.of_inverse
-      (f := fun y ↦ ⟨y.1, by simp⟩)
-      (continuous_subtype_val.subtype_mk _) continuous_subtype_val.rangeFactorization
+      (f := fun y ↦ ⟨y.val, by simp⟩)
+      (continuous_subtypeVal.subtype_mk _) continuous_subtypeVal.rangeFactorization
       fun _ ↦ rfl
   footprintMap_eq_footprintMap_iff _ _ _ x y :=
     ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
   mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
-  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.1).elim
+  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.val).elim
   exists_openPartialHomeomorph I J _ x _ := by
-    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
     refine ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
-      (chartAt (EuclideanSpace ℝ (Fin n)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
-      by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
+      (chartAt (EuclideanSpace ℝ (Fin n)) x.val).transHomeomorph (Homeomorph.prodUnique _ _).symm,
+      by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.val).elim⟩
   exists_footprintMap_eq y :=
     ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
 
@@ -137,24 +137,25 @@ theorem kuranishiZeroSet_powKuranishi_empty (hm : m ≠ 0) (J : Finset Unit) :
   ext x
   refine ⟨fun hx ↦ ?_, fun hx ↦ mem_kuranishiZeroSet.2 fun _ _ ↦ by simp [hx.out, zero_pow hm]⟩
   by_cases hJ : J = ∅
-  · exact x.2 hJ
-  · obtain ⟨α, hα⟩ := Finset.nonempty_iff_ne_empty.2 hJ
+  · exact x.property hJ
+  · obtain ⟨α, hα⟩ := Finset.ne_empty_iff_nonempty.1 hJ
     exact pow_eq_zero_iff hm |>.1 <| mem_kuranishiZeroSet.1 hx ⟨α, hα⟩ (Finset.notMem_empty α)
 
 /-- The footprint map of `TauCeti.ImplicitAtlas.powAtlas` keeps the real coordinate. -/
 private def powFootprintMap (hm : m ≠ 0) {I J : Finset Unit} (_ : I ⊆ J)
     (x : kuranishiZeroSet (E := fun _ ↦ ℝ) (powKuranishi m) I J) : PowThickening I :=
-  ⟨x.1.1, fun hI ↦ (kuranishiZeroSet_powKuranishi_empty hm J).subset (hI ▸ x.2)⟩
+  ⟨x.val.val, fun hI ↦ (kuranishiZeroSet_powKuranishi_empty hm J).subset (hI ▸ x.property)⟩
 
 /-- A continuous section of `powFootprintMap`, so that it is onto and a quotient map. -/
 private def powSection (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) (y : PowThickening I) :
     kuranishiZeroSet (E := fun _ ↦ ℝ) (powKuranishi m) I J :=
-  ⟨⟨y.1, fun hJ ↦ y.2 (Finset.subset_empty.1 (hJ ▸ h))⟩, mem_kuranishiZeroSet.2 fun _ hα ↦ by
-    simp [y.2 (eq_empty_of_notMem hα), zero_pow hm]⟩
+  ⟨⟨y.val, fun hJ ↦ y.property (Finset.subset_empty.1 (hJ ▸ h))⟩, mem_kuranishiZeroSet.2 fun _ hα ↦
+      by
+    simp [y.property (eq_empty_of_notMem hα), zero_pow hm]⟩
 
 private theorem continuous_powSection (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) :
     Continuous (powSection hm h) :=
-  (continuous_subtype_val.subtype_mk _).subtype_mk _
+  (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 private theorem powFootprintMap_powSection (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J)
     (y : PowThickening I) : powFootprintMap hm h (powSection hm h y) = y :=
@@ -170,7 +171,7 @@ private def powThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) : PowThi
   invFun x := ⟨x, fun h ↦ (hJ.ne_empty h).elim⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val
+  continuous_toFun := continuous_subtypeVal
   continuous_invFun := continuous_id.subtype_mk _
 
 /-- **Pardon's Example 2.3.2.** The implicit atlas of virtual dimension `0` on the point
@@ -182,14 +183,14 @@ noncomputable def powAtlas (hm : m ≠ 0) :
       PowThickening (fun _ ↦ 1) (PowThickening ∅) 0 where
   baseHomeomorph := Homeomorph.refl _
   kuranishi := powKuranishi m
-  continuous_kuranishi _ _ := continuous_subtype_val.pow m
+  continuous_kuranishi _ _ := continuous_subtypeVal.pow m
   kuranishi_act _ _ _ _ := by simp
   regLocus I := {_x | I.Nonempty}
   isOpen_regLocus _ := isOpen_const
   act_mem_regLocus _ _ _ h := h
   footprintMap _ _ := powFootprintMap hm
   continuous_footprintMap _ _ _ :=
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
   footprintMap_act _ _ _ _ _ _ := by ext; simp [powFootprintMap]
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
@@ -200,10 +201,10 @@ noncomputable def powAtlas (hm : m ≠ 0) :
   range_footprintMap_inter _ _ _ _ _ := by simp only [range_powFootprintMap, inter_self]
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp only [range_powFootprintMap, mem_univ]
   isQuotientMap_footprintMap _ _ h :=
-    IsQuotientMap.of_inverse (f := fun y : range (powFootprintMap hm h) ↦ powSection hm h y.1)
-      ((continuous_powSection hm h).comp continuous_subtype_val)
-      (((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).rangeFactorization)
-      fun y ↦ Subtype.ext (powFootprintMap_powSection hm h y.1)
+    IsQuotientMap.of_inverse (f := fun y : range (powFootprintMap hm h) ↦ powSection hm h y.val)
+      ((continuous_powSection hm h).comp continuous_subtypeVal)
+      (((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).rangeFactorization)
+      fun y ↦ Subtype.ext (powFootprintMap_powSection hm h y.val)
   footprintMap_eq_footprintMap_iff _ _ _ x y := by
     simp only [powFootprintMap, Subtype.mk.injEq, MonoidHom.one_apply, Homeomorph.one_apply]
     exact ⟨fun h ↦ ⟨1, Subsingleton.elim _ _, Subtype.ext h⟩, fun ⟨_, _, h⟩ ↦ congrArg _ h⟩
@@ -212,7 +213,8 @@ noncomputable def powAtlas (hm : m ≠ 0) :
   exists_openPartialHomeomorph I J h x hx := by
     have hJ : J.Nonempty := Finset.Nonempty.mono h hx
     obtain rfl : I = Finset.univ := hx.eq_univ
-    have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.2).2 (Finset.mem_univ _)⟩
+    have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.property).2
+        (Finset.mem_univ _)⟩
     refine ⟨1, by simp, ((powThickeningHomeomorph hJ).trans <|
       ((Homeomorph.funUnique (Fin 1) ℝ).symm.trans
         (EuclideanSpace.equiv (Fin 1) ℝ).symm.toHomeomorph).trans

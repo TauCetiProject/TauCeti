@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Interpolation.KFunctional
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 public import TauCeti.MeasureTheory.Function.DecreasingRearrangement
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The `K`-functional of the couple `(L¹, L^∞)`
@@ -70,45 +71,6 @@ namespace TauCeti.CompatibleCouple
 variable {𝕜 E : Type*} {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {t : ℝ}
 
-/-- The cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions, in terms of `eLpNorm`. -/
-private theorem ofReal_norm_add_mul_norm {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-    (g : Lp E p μ) (h : Lp E q μ) (ht : 0 ≤ t) :
-    ENNReal.ofReal (‖g‖ + t * ‖h‖) = eLpNorm g p μ + ENNReal.ofReal t * eLpNorm h q μ := by
-  rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht, Lp.norm_def,
-    Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
-    ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
-
-/-- A splitting of finite cost `‖f₀‖₁ + t ‖f₁‖_∞`, with `t > 0`, is a pair of `L¹` and `L^∞`
-functions. -/
-private theorem memLp_of_eLpNorm_add_mul_ne_top {f₀ f₁ : α → E} (ht : 0 < t)
-    (hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ ≠ ∞) :
-    MemLp f₀ 1 μ ∧ MemLp f₁ ∞ μ := by
-  obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
-  refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
-  rw [htop, ENNReal.mul_top (by simpa using ht)]
-
-/-- Any almost-everywhere splitting `f₀ + f₁ =ᵐ[μ] f` bounds `K(t, u)` (`t > 0`) by
-`‖f₀‖₁ + t ‖f₁‖_∞`. -/
-private theorem ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul {u : L1AddLinfty 𝕜 E μ}
-    {f f₀ f₁ : α → E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (hsum : f₀ + f₁ =ᵐ[μ] f)
-    (ht : 0 < t) :
-    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
-      eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
-  by_cases hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ = ∞
-  · rw [hfin]
-    exact le_top
-  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
-  have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp f₀) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp f₁) =
-      u := L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 <| by
-    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hsum, hu] with y hy₀ hy₁ hsy hy
-    rw [Pi.add_apply, hy₀, hy₁, ← Pi.add_apply, hsy, hy]
-  calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
-      ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
-        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
-    _ = eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
-        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
-          eLpNorm_congr_ae h₁.coeFn_toLp]
-
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions, hence the same
 `K`-functional, read through the embedding of the sum space of the former into `L¹ + L^∞`. -/
 theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
@@ -119,6 +81,17 @@ theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E 
       kFunctional_le ht ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective ?_))
   · rw [← hgh, lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum]
   · rw [lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum, hgh]
+
+/-- Any almost-everywhere splitting `f₀ + f₁ =ᵐ[μ] f` bounds `K(t, u)` (`t > 0`) by
+`‖f₀‖₁ + t ‖f₁‖_∞`. -/
+private theorem ofReal_kFunctional_l1Linfty_le_eLpNorm_add_mul {u : L1AddLinfty 𝕜 E μ}
+    {f f₀ f₁ : α → E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (hsum : f₀ + f₁ =ᵐ[μ] f)
+    (ht : 0 < t) :
+    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
+      eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
+  obtain ⟨v, rfl⟩ := lebesgue_one_top_sumSpaceEmbed_surjective u
+  rw [kFunctional_l1Linfty_sumSpaceEmbed ht.le]
+  exact ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul hu hsum ht
 
 /-- Every decomposition `u = g + h` bounds `∫₀ᵗ ‖f‖*` by `‖g‖₁ + t ‖h‖_∞`, so `∫₀ᵗ ‖f‖*` is at most
 `K(t, u)`. No real normed space structure on `E` is needed. -/
@@ -139,7 +112,7 @@ theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
             rw [← hy]
             exact eNorm_add_le (g y) (h y))
     _ = ENNReal.ofReal (‖g‖ + t * ‖h‖) := by
-        rw [ofReal_norm_add_mul_norm _ _ ht,
+        rw [Lp.ofReal_norm_add_mul_norm _ _ ht,
           eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable g),
           eLpNorm_exponent_top (Lp.aestronglyMeasurable h),
           eLpNormEssSup_eq_essSup_eNorm]

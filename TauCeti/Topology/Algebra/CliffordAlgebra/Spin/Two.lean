@@ -76,7 +76,7 @@ private theorem continuous_coe_spinGroupEquivUnitsWeightedSumSquaresOne :
   -- In coordinates the unit is `w₀ + i w₁` for `w = ιInv (ι e₀ * g)`, a linear function of `g`.
   have hw : Continuous fun g : spinGroup Q ↦ ιInv Q (ι Q ![1, 0] * (g : CliffordAlgebra Q)) :=
     (continuous_ιInv Q).comp ((IsModuleTopology.continuous_of_linearMap
-      (LinearMap.mulLeft K (ι Q ![1, 0]))).comp continuous_subtype_val)
+      (LinearMap.mulLeft K (ι Q ![1, 0]))).comp continuous_subtypeVal)
   simp only [coe_spinGroupEquivUnitsWeightedSumSquaresOne_apply,
     evenWeightedSumSquaresOneAlgHom_apply, coe_spinGroupToEven_apply]
   exact ((continuous_apply 0).comp hw).add (continuous_const.mul ((continuous_apply 1).comp hw))

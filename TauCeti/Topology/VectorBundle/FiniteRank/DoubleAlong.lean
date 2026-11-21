@@ -301,7 +301,7 @@ theorem doubleAlongCoordChange_swap {i j y : DoubleAlong A}
 /-- Coordinatewise conjugation covering the sheet swap, as a map of total spaces. -/
 private noncomputable def doubleAlongSwapFun (p : (C.doubleAlong hC).core.TotalSpace) :
     (C.doubleAlong hC).core.TotalSpace :=
-  ⟨DoubleAlong.swap A p.proj, (star : (Fin C.rank → ℂ) → Fin C.rank → ℂ) p.2⟩
+  ⟨DoubleAlong.swap A p.proj, (star : (Fin C.rank → ℂ) → Fin C.rank → ℂ) p.snd⟩
 
 private theorem doubleAlongSwapFun_involutive :
     Function.Involutive (doubleAlongSwapFun C hC) := fun ⟨z, v⟩ =>
@@ -324,7 +324,7 @@ private theorem continuous_doubleAlongSwapFun : Continuous (doubleAlongSwapFun C
   refine hcont.congr (mem_of_superset hsrc fun q hq => ?_)
   rw [VectorBundleCore.mem_localTriv_source] at hq
   simp only [mem_ofPred_eq, VectorBundleCore.localTriv_apply, D.indexAt_eq]
-  exact (doubleAlongCoordChange_swap C hC (D.mem_baseSet_self q.proj) hq q.2).symm
+  exact (doubleAlongCoordChange_swap C hC (D.mem_baseSet_self q.proj) hq q.snd).symm
 
 /-- The lift of the sheet swap to the double: coordinatewise conjugation on fibres, covering
 `DoubleAlong.swap`. It is a homeomorphism of total spaces and an involution. -/
@@ -344,8 +344,8 @@ conjugate-linear equivalence `starL ℂ`, so the lift is conjugate-linear on fib
 
 /-- The lifted swap conjugates the coordinates of every point. -/
 @[simp] theorem snd_doubleAlongSwap (p : (C.doubleAlong hC).core.TotalSpace) :
-    ((C.doubleAlongSwap hC p).2 : Fin C.rank → ℂ) =
-      (star : (Fin C.rank → ℂ) → Fin C.rank → ℂ) p.2 := (rfl)
+    ((C.doubleAlongSwap hC p).snd : Fin C.rank → ℂ) =
+      (star : (Fin C.rank → ℂ) → Fin C.rank → ℂ) p.snd := (rfl)
 
 /-- The lifted swap covers the sheet swap. -/
 @[simp] theorem proj_doubleAlongSwap (p : (C.doubleAlong hC).core.TotalSpace) :

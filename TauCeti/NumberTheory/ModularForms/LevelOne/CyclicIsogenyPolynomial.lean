@@ -141,7 +141,7 @@ theorem cyclicIsogenyPolynomial_smul {f : ℍ → ℂ} (hf : ∀ (γ : SL(2, ℤ
 of determinant `n` is a root of the polynomial over the cyclic `n`-isogenies at `τ`. -/
 theorem isRoot_cyclicIsogenyPolynomial {f : ℍ → ℂ}
     (hf : ∀ (γ : SL(2, ℤ)) (τ : ℍ), f (γ • τ) = f τ) {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : IsPrimitive A.1) (τ : ℍ) :
+    (hA : IsPrimitive A.val) (τ : ℍ) :
     (cyclicIsogenyPolynomial n f τ).IsRoot
       (f (toGLReal (NeZero.ne (n : ℤ)) A • τ)) := by
   have hn : (n : ℤ) ≠ 0 := NeZero.ne (n : ℤ)

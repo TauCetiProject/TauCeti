@@ -102,8 +102,8 @@ noncomputable def pointIndexedCoreFiberEquiv (b : B) :
 
 private noncomputable def pointIndexedCoreTotalEquiv :
     (pointIndexedCore 𝕜 F E).TotalSpace ≃ TotalSpace F E where
-  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.2⟩
-  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.snd⟩
+  invFun p := ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.snd⟩
   left_inv p := by
     dsimp only
     rw [ContinuousLinearEquiv.symm_apply_apply]
@@ -122,7 +122,7 @@ private theorem trivializationAt_pointIndexedCoreTotalEquiv (b : B)
   rw [VectorBundleCore.localTriv_apply, pointIndexedCore_coordChange,
     pointIndexedCore_indexAt]
   exact ((trivializationAt F E p.proj).mk_coordChangeL (trivializationAt F E b)
-    ⟨mem_baseSet_trivializationAt F E p.proj, hp⟩ p.2).symm
+    ⟨mem_baseSet_trivializationAt F E p.proj, hp⟩ p.snd).symm
 
 private theorem continuous_pointIndexedCoreTotalEquiv :
     Continuous (pointIndexedCoreTotalEquiv 𝕜 F E) := by
@@ -130,7 +130,7 @@ private theorem continuous_pointIndexedCoreTotalEquiv :
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(FiberBundle.continuous_proj F (pointIndexedCore 𝕜 F E).Fiber).continuousAt, ?_⟩
   have hp : p ∈ ((pointIndexedCore 𝕜 F E).localTriv p.proj).source :=
-    (pointIndexedCore 𝕜 F E).mem_source_at p.proj p.2
+    (pointIndexedCore 𝕜 F E).mem_source_at p.proj p.snd
   have hc := (((pointIndexedCore 𝕜 F E).localTriv p.proj).continuousOn.continuousAt
     (((pointIndexedCore 𝕜 F E).localTriv p.proj).open_source.mem_nhds hp)).snd
   refine hc.congr_of_eventuallyEq ?_
@@ -166,11 +166,11 @@ noncomputable def pointIndexedCoreHomeomorph :
 
 @[simp] theorem pointIndexedCoreHomeomorph_apply (p : (pointIndexedCore 𝕜 F E).TotalSpace) :
     pointIndexedCoreHomeomorph 𝕜 F E p =
-      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.2⟩ := (rfl)
+      ⟨p.proj, pointIndexedCoreFiberEquiv 𝕜 F E p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem pointIndexedCoreHomeomorph_symm_apply (p : TotalSpace F E) :
     (pointIndexedCoreHomeomorph 𝕜 F E).symm p =
-      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.2⟩ := (rfl)
+      ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 F E p.proj).symm p.snd⟩ := (rfl)
 
 /-- The reconstruction homeomorphism intertwines every core chart with its
 original chart, wherever that chart is defined. -/

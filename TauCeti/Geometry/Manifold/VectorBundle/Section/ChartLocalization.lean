@@ -203,14 +203,14 @@ theorem continuous_chartLocalization (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     funext s
     ext y
     simp only [ContMDiffMap.restrict_apply, ContDiffMapSupportedIn.coe_toContMDiffMap]
-    exact localizationFun_eq_zero t c hct ψ L hψ s y.2
+    exact localizationFun_eq_zero t c hct ψ L hψ s y.property
   | true =>
     -- On the chart target, compose the frame coefficients with the inverse chart and multiply by
     -- `ψ ∘ c⁻¹`.
     have hsymm : ContMDiff 𝓘(ℝ, E) I n (fun y : W true ↦ c.symm y) :=
-      hc.comp_contMDiff (contMDiff_subtype_val (U := W true)) fun y ↦ y.2
+      hc.comp_contMDiff (contMDiff_subtypeVal (U := W true)) fun y ↦ y.property
     let j : C^n⟮𝓘(ℝ, E), W true; I, chartSource c⟯ :=
-      ⟨fun y ↦ ⟨c.symm y, c.map_target y.2⟩,
+      ⟨fun y ↦ ⟨c.symm y, c.map_target y.property⟩,
         (TauCeti.ContMDiff.subtypeVal_comp_iff (chartSource c) _).mp hsymm⟩
     let A : C^n⟮𝓘(ℝ, E), W true; 𝓘(ℝ, F →L[ℝ] F), F →L[ℝ] F⟯ :=
       ⟨fun y ↦ ψ (c.symm y) • ContinuousLinearMap.id ℝ F,
@@ -226,7 +226,7 @@ theorem continuous_chartLocalization (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     simp only [Function.comp_apply, ContMDiffMap.restrict_apply,
       ContMDiffMap.clmApplyLinearMap_apply, ContMDiffMap.comp_apply,
       ContDiffMapSupportedIn.coe_toContMDiffMap, frameCoordinates_apply]
-    exact localizationFun_of_mem t c hct ψ s y.2
+    exact localizationFun_of_mem t c hct ψ s y.property
 
 end Continuity
 
@@ -237,7 +237,7 @@ the closed support of `ψ` lies in the chart source. -/
 theorem chartTestSection_chartLocalization (hc' : ContMDiffOn I 𝓘(ℝ, E) n c c.source)
     (hψc : tsupport ψ ⊆ c.source) (s : Cₛ^n⟮I; F, V⟯) :
     (t.chartTestSection c hc' hct
-      (TestFunction.ofSupportedIn hL (t.chartLocalization c hc hct ψ L hL hψ s))).1 = ψ • s := by
+      (TestFunction.ofSupportedIn hL (t.chartLocalization c hc hct ψ L hL hψ s))).val = ψ • s := by
   ext x
   by_cases hx : x ∈ c.source
   · rw [chartTestSection_apply_of_mem t c hc' hct _ hx, TestFunction.coe_ofSupportedIn,
@@ -402,7 +402,7 @@ private theorem exists_ofSupportedIn_eq_sum (K : Compacts M) :
   by_cases hy : y ∈ K
   · rw [ContMDiffMap.coe_sum]
     simp [hsum y hy]
-  · rw [(σ : Cₛ^n⟮I; F, V⟯).eq_zero_of_notMem_tsupport fun h ↦ hy (mem_supportedIn.1 σ.2 h),
+  · rw [(σ : Cₛ^n⟮I; F, V⟯).eq_zero_of_notMem_tsupport fun h ↦ hy (mem_supportedIn.1 σ.property h),
       smul_zero]
 
 variable {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
@@ -444,7 +444,7 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
     (supportedIn I F n V K).subtype, fun x _ ↦ ?_, LinearMap.ext fun σ ↦ ?_⟩
   · exact (TestFunction.ofSupportedInCLM ℝ (hL x)).continuous.comp
       ((continuous_chartLocalization _ _ (contMDiffOn_testChart_symm V x) _ _ _ (hL x) (hψ x) e U hU
-        hcover).comp continuous_subtype_val)
+        hcover).comp continuous_subtypeVal)
   · simp [p, hdecomp σ]
 
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]

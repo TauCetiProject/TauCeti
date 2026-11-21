@@ -124,7 +124,7 @@ lemma isZero_homology_cokernel_arrow_of_isZero_cokernel_ofLE {b m : ℤ}
     IsZero ((cokernel (F b).arrow).homology m) := by
   -- The quotients `F_j/F_b` form a directed family of subcomplexes of `K/F_b`.
   let φ (j : {j // b ≤ j}) :
-      cokernel (Subobject.ofLE (F b) (F j) (hF j.2)) ⟶ cokernel (F b).arrow :=
+      cokernel (Subobject.ofLE (F b) (F j) (hF j.property)) ⟶ cokernel (F b).arrow :=
     cokernel.map _ _ (𝟙 _) (F j).arrow (by simp)
   have hφ (j : {j // b ≤ j}) : Mono (φ j) :=
     Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono ⟨by simp⟩)
@@ -145,7 +145,7 @@ lemma isZero_homology_cokernel_arrow_of_isZero_cokernel_ofLE {b m : ℤ}
   intro z
   obtain ⟨j, y, rfl⟩ := HomologicalComplex.exists_homologyMap_eq_of_injective m φ
     (fun j ↦ (ModuleCat.mono_iff_injective _).1 inferInstance) hcover z
-  rw [(ModuleCat.isZero_iff_subsingleton.1 (h j j.2)).elim y 0, map_zero]
+  rw [(ModuleCat.isZero_iff_subsingleton.1 (h j j.property)).elim y 0, map_zero]
 
 /-- **The quotient by a stage of an exhaustive filtration.** If every element of `K^m` lies in
 some `F_q` and the graded pieces `F_{i+1}/F_i` have vanishing `H^m` for all `i ≥ b`, then so does

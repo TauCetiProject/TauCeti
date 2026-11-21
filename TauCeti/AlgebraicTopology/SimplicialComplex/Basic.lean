@@ -87,6 +87,13 @@ theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
   rw [faces_map]
   exact Set.finite_image_iff (Finset.image_injective hf).injOn
 
+/-- Every precomplex with finitely many faces is supported on a finite set of ambient vertices. -/
+theorem exists_finset_subset_of_finite_faces (hfin : K.faces.Finite) :
+    ∃ V : Finset ι, ∀ σ ∈ K, σ ⊆ V := by
+  classical
+  exact ⟨hfin.toFinset.biUnion id, fun σ hσ _ hx =>
+    Finset.mem_biUnion.mpr ⟨σ, hfin.mem_toFinset.mpr hσ, hx⟩⟩
+
 /-- A finite set is a face of an intersection of two precomplexes exactly when it is a face of
 both. -/
 @[simp]
