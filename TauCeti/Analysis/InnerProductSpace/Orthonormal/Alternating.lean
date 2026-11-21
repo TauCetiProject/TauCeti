@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Comass
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
 # Alternating forms on orthonormal frames
@@ -19,6 +21,12 @@ empty set, its real supremum is zero, and every alternating form vanishes.
 The bound criterion works for maps into any real normed space. Restriction to the span of
 an independent frame reduces it to the top-degree norm formula in an orthonormal basis;
 dependent frames give zero. No additional norm on alternating forms is introduced.
+
+Two orthonormal frames `τ` and `τ'` of the same `k`-plane differ by an orthogonal change of frame,
+whose matrix is the overlap matrix `(⟪τ i, τ' j⟫)`: every alternating map takes the value
+`det (⟪τ i, τ' j⟫) • f τ` on `τ'` (`AlternatingMap.map_eq_det_inner_smul_of_mem_span`), and this
+determinant is `±1` (`Orthonormal.det_inner_eq_one_or_eq_neg_one`). This is how the two
+orientations of a plane enter the integration of forms over oriented rectifiable sets.
 
 ## References
 
@@ -95,3 +103,24 @@ theorem norm_eq_sSup_abs_orthonormal (ω : E [⋀^Fin k]→L[ℝ] ℝ) :
   simpa only [Real.norm_eq_abs] using ω.norm_eq_sSup_norm_orthonormal
 
 end ContinuousAlternatingMap
+
+namespace AlternatingMap
+
+open scoped RealInnerProductSpace
+
+variable {E N : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [AddCommGroup N]
+  [Module ℝ N] {k : ℕ}
+
+/-- **Change of orthonormal frame.** If `τ` is an orthonormal family and every vector of `τ'` lies
+in its span, an alternating map takes on `τ'` the value `det (⟪τ i, τ' j⟫) • f τ`. For two
+orthonormal frames of the same plane the determinant is `±1`
+(`Orthonormal.det_inner_eq_one_or_eq_neg_one`). -/
+theorem map_eq_det_inner_smul_of_mem_span (f : E [⋀^Fin k]→ₗ[ℝ] N) {τ τ' : Fin k → E}
+    (hτ : Orthonormal ℝ τ) (h : ∀ j, τ' j ∈ Submodule.span ℝ (range τ)) :
+    f τ' = (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫).det • f τ := by
+  conv_lhs => rw [show τ' = fun j ↦ ∑ i, ⟪τ i, τ' j⟫ • τ i from
+    funext fun j ↦ (hτ.sum_inner_smul_eq_of_mem_span (h j)).symm]
+  simpa using f.map_sum_smul (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫) τ
+
+end AlternatingMap
+
