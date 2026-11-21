@@ -24,13 +24,13 @@ injective (`Algebra.Generators.liftBaseChange_injective_of_isStandardEtale`).
 Since `B` is formally smooth over `A`, the conormal module `K/K²` is projective, so the sequence
 splits: `J/J² ≃ B ⊗[A] I/I² × K/K²`
 (`Algebra.Generators.cotangentCompEquivOfIsStandardEtale`). In particular, when `Q` is a
-submersive presentation with finitely many relations and `I/I²` is a finite `A`-module, the fibres
-of the conormal modules at a field-valued point of `B` satisfy
+submersive presentation with finitely many relations and the fibre `F ⊗[A] I/I²` is
+finite-dimensional, the fibres of the conormal modules at that field-valued point of `B` satisfy
 `dim F ⊗[B] J/J² = dim F ⊗[A] I/I² + #relations of Q`
-(`Algebra.Generators.finrank_tensor_cotangent_comp_of_isStandardEtale`). Thus the number of
-equations needed to cut out `B` near a point exceeds the number needed for `A` near its image by
-exactly the number of new variables: complete intersections can be detected on étale
-neighbourhoods.
+(`Algebra.Generators.finrank_tensor_cotangent_comp_of_isStandardEtale`). When the presentation
+kernel `I` is finitely generated near the image point, Nakayama's lemma interprets these fibre
+dimensions as the minimal numbers of generators of the localized presentation kernels.
+This equation count is used to detect complete intersections on étale neighbourhoods.
 
 Injectivity is the base change of a flatness statement. It holds whenever `B` lifts to a flat
 `R[X]`-algebra `C` with `C ⧸ I C ≅ B`
@@ -211,12 +211,14 @@ dimension the dimension of the fibre of the conormal module of `P`, plus the num
 of `Q`. -/
 theorem finrank_tensor_cotangent_comp_of_isStandardEtale {σ : Type*} [Finite σ]
     (Q : SubmersivePresentation A B ι' σ) (F : Type*) [Field F] [Algebra A F] [Algebra B F]
-    [IsScalarTower A B F] [Module.Finite A P.toExtension.Cotangent] :
+    [IsScalarTower A B F] [Module.Finite F (F ⊗[A] P.toExtension.Cotangent)] :
     Module.finrank F (F ⊗[B] (Q.toGenerators.comp P).toExtension.Cotangent) =
       Module.finrank F (F ⊗[A] P.toExtension.Cotangent) + Nat.card σ := by
   have : Nontrivial B := (algebraMap B F).domain_nontrivial
   have := Fintype.ofFinite σ
   have : Module.Finite B Q.toExtension.Cotangent := .of_basis Q.basisCotangent
+  have : Module.Finite F (F ⊗[B] (B ⊗[A] P.toExtension.Cotangent)) :=
+    Module.Finite.equiv (AlgebraTensorModule.cancelBaseChange A B F F _).symm
   rw [((cotangentCompEquivOfIsStandardEtale Q.toGenerators P).baseChange B F _ _).finrank_eq,
     (_root_.TensorProduct.prodRight B F F _ _).finrank_eq, Module.finrank_prod,
     (AlgebraTensorModule.cancelBaseChange A B F F _).finrank_eq,

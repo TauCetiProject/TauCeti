@@ -24,8 +24,8 @@ canonical map `A ⧸ J → P.Ring ⧸ J P.Ring` is bijective
 A standard étale algebra `B` over a quotient `A = S ⧸ I` lifts to a flat `S`-algebra `C` with
 `C ⧸ I C ≅ B` (`Algebra.IsStandardEtale.exists_flat_lift`): if `B = (A[X] ⧸ (f))[1/g]` with `f`
 monic, lift `f` to a monic polynomial `F` and `g` to a polynomial `G` over `S`, and take
-`C = (S[X] ⧸ (F))[1/G]`. Such a lift identifies the conormal module of `B` relative to a
-presentation of `A` with the base change of the conormal module of `A`.
+`C = (S[X] ⧸ (F))[1/G]`. The surjection `C → B` has kernel `I C`, and flatness of `C` over `S`
+identifies its conormal module as `I C/(I C)² ≃ B ⊗[A] I/I²`.
 
 ## References
 
