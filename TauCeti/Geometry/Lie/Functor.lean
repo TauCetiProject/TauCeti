@@ -30,6 +30,8 @@ Lie-group exponential.
 
 ## Main results
 
+* `ContMDiffMonoidMorphism.mfderiv_mulInvariantVectorField`: a smooth homomorphism carries
+  left-invariant vector fields to left-invariant vector fields.
 * `ContMDiffMonoidMorphism.groupLieAlgebraLieHom`: the differential at the identity of a smooth
   homomorphism, as a homomorphism of the tangent Lie algebras.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
@@ -75,7 +77,9 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
-private theorem mfderiv_monoidHom_mulInvariantVectorField
+/-- A smooth homomorphism `φ` carries the left-invariant vector field of `X` to that of `dφ X`:
+`dφ_g (X^L g) = (dφ X)^L (φ g)`. -/
+theorem ContMDiffMonoidMorphism.mfderiv_mulInvariantVectorField
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
     (X : GroupLieAlgebra I G) :
     mfderiv I I' φ g (mulInvariantVectorField X g) =
@@ -113,8 +117,8 @@ theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
     (mdifferentiableAt_mulInvariantVectorField X) (mdifferentiableAt_mulInvariantVectorField Y)
     (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
     (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y))
-    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g X)
-    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g Y)
+    (Filter.Eventually.of_forall fun g => φ.mfderiv_mulInvariantVectorField g X)
+    (Filter.Eventually.of_forall fun g => φ.mfderiv_mulInvariantVectorField g Y)
   rw [φ.toMonoidHom.groupLieAlgebraMap_apply I, GroupLieAlgebra.bracket_def X Y,
     GroupLieAlgebra.bracket_def]
   rw [map_one] at h
@@ -269,7 +273,7 @@ private theorem monoidHom_mulInvariantExp
       (W := mulInvariantVectorField (I := I') (G := G') Y)
       (γ := γ) (s := Set.univ)
       (fun t _ => φ.contMDiff_toFun.mdifferentiable (by simp) (γ t))
-      (fun t _ => mfderiv_monoidHom_mulInvariantVectorField (I := I) (I' := I') φ (γ t) X)
+      (fun t _ => φ.mfderiv_mulInvariantVectorField (I := I) (I' := I') (γ t) X)
       ((isMIntegralCurve_mulInvariantIntegralCurve
         (I := I) (G := G) X 1).isMIntegralCurveOn Set.univ)
   have hzero : (φ ∘ γ) 0 = (1 : G') := by simp [γ]
