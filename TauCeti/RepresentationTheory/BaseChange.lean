@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
@@ -16,6 +17,9 @@ public import TauCeti.RepresentationTheory.RestrictScalars
 -- of finite products (`TensorProduct.piRight`) are used only to construct the invariant and
 -- intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
+-- Non-public: injectivity of faithfully flat scalar extension on linear maps
+-- (`LinearMap.baseChange_injective`) is used only to prove `IntertwiningMap.baseChange_injective`.
+import TauCeti.LinearAlgebra.LinearMap.BaseChange
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
@@ -68,6 +72,7 @@ to torsion modules and do not require the coefficient algebra to be flat.
 ## Main declarations
 
 * `Representation.baseChange`: scalar extension of a representation.
+* `Representation.cancelBaseChange_baseChange`: scalar-tower compatibility of base change.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
@@ -84,6 +89,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.finrank_intertwiningMap_baseChange`: scalar extension to a nontrivial
   commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
+* `Representation.IntertwiningMap.baseChange_injective`: base change is faithful on intertwining
+  maps over any faithfully flat algebra.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
   intertwines the base-changed representation exactly when the map intertwines on `V`.
@@ -143,6 +150,29 @@ theorem baseChange_comp {H : Type*} [Monoid H]
   simp only [baseChange, MonoidHom.comp_assoc]
 
 end BaseChange
+
+section Tower
+
+variable {E E' L : Type*} [CommSemiring E] [CommSemiring E'] [Semiring L]
+  [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+  [AddCommMonoid V] [Module E V]
+
+/-- **Scalar-tower compatibility for base change of representations.** For a tower `E → E' → L`,
+the canonical linear equivalence `L ⊗[E'] (E' ⊗[E] V) ≃ₗ[L] L ⊗[E] V` intertwines
+`(ρ.baseChange E').baseChange L` with `ρ.baseChange L`. -/
+theorem cancelBaseChange_baseChange (ρ : Representation E G V) (g : G)
+    (x : L ⊗[E'] (E' ⊗[E] V)) :
+    AlgebraTensorModule.cancelBaseChange E E' L L V
+        ((ρ.baseChange E').baseChange L g x) =
+      ρ.baseChange L g (AlgebraTensorModule.cancelBaseChange E E' L L V x) := by
+  have h : (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap ∘ₗ
+        ((ρ.baseChange E').baseChange L g) =
+      (ρ.baseChange L g) ∘ₗ (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
+    ext v
+    simp
+  exact LinearMap.congr_fun h x
+
+end Tower
 
 section Invariants
 
@@ -492,6 +522,24 @@ theorem isIntertwiningMap_liftBaseChange_iff {A : Type*} [CommSemiring A]
 end LinearMap
 
 end Transport
+
+section Faithfulness
+
+variable {R A G V W : Type*} [CommRing R] [Ring A] [Algebra R A] [Module.FaithfullyFlat R A]
+  [Monoid G] [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+
+/-- **Base change is faithful on intertwining maps** over any faithfully flat algebra. -/
+theorem Representation.IntertwiningMap.baseChange_injective
+    {ρ : Representation R G V} {σ : Representation R G W} :
+    Function.Injective (fun f : IntertwiningMap ρ σ ↦ f.baseChange A) := by
+  intro f g h
+  apply IntertwiningMap.ext
+  have hlin : f.toLinearMap.baseChange A = g.toLinearMap.baseChange A := by
+    simpa only [IntertwiningMap.toLinearMap_baseChange] using
+      congrArg IntertwiningMap.toLinearMap h
+  exact LinearMap.baseChange_injective (R := R) (A := A) hlin
+
+end Faithfulness
 
 section QuotSMulTop
 
