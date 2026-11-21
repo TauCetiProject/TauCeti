@@ -190,11 +190,8 @@ theorem covectorDifferential_toCovectorChain_single (k : P.characteristicVectors
     P.covectorDifferential (P.toCovectorChain k (Finsupp.single C 1)) =
       P.toCovectorChain k (P.latticeDifferential k (Finsupp.single C 1)) := by
   obtain ⟨x, S⟩ := C
-  rw [toCovectorChain_single, covectorDifferential_single, latticeDifferential_single, one_smul,
-    one_smul, toCovectorCube_mk, covectorDifferentialOnGenerator_mk,
-    latticeDifferentialOnGenerator_def, map_sum]
-  refine Finset.sum_congr rfl fun v _ => ?_
-  simp [characteristicLowerFaceExponent_addTwoMulVec, characteristicUpperFaceExponent_addTwoMulVec]
+  simp [covectorDifferentialOnGenerator_mk, latticeDifferentialOnGenerator_def,
+    characteristicLowerFaceExponent_addTwoMulVec, characteristicUpperFaceExponent_addTwoMulVec]
 
 /-- **The comparison map is a chain map**: sending the cube `(x, E)` of Némethi's complex of `k`
 to the generator `[k + 2 A x, E]` intertwines Némethi's differential with the differential on
@@ -242,14 +239,7 @@ theorem covectorDifferential_single_mk_singleton (K : P.characteristicVectors) (
         Finsupp.single
           ⟨P.addTwoMulVec K (Pi.single v 1), ∅⟩
           (Polynomial.X ^ ((K.val v + P.weight v) / 2).toNat) := by
-  rw [covectorDifferential_single, one_smul, covectorDifferentialOnGenerator_mk,
-    Finset.sum_eq_single_of_mem (⟨v, Finset.mem_singleton_self v⟩ : {w // w ∈ ({v} : Finset V)})
-      (Finset.mem_attach _ _)
-      (fun w _ hw => absurd (Subtype.ext (Finset.mem_singleton.mp w.property)) hw)]
-  dsimp only
-  rw [Finset.erase_singleton, PlumbingCube.characteristicLowerFaceExponent_mk_singleton,
-    PlumbingCube.characteristicUpperFaceExponent_mk_singleton, characteristicWeight_zero, zero_add,
-    characteristicWeight_single]
+  simp [covectorDifferentialOnGenerator_mk, ← Finset.univ_eq_attach, characteristicWeight_single]
   congr 3 <;> omega
 
 /-! ### Orbits of characteristic covectors -/
@@ -283,13 +273,11 @@ theorem range_toCovectorChain (k : P.characteristicVectors) :
       rw [toCovectorCube_mk, CovectorCube.mk.injEq] at h
       rw [← h.1, characteristicOrbit_addTwoMulVec]
     · intro h
-      obtain ⟨x, hx⟩ := (P.isSpinCEquivalent_iff k K).mp
+      obtain ⟨x, rfl⟩ := (P.isSpinCEquivalent_iff k K).mp
         (IsSpinCEquivalent.symm P ((P.characteristicOrbit_eq_iff K k).mp h))
-      exact ⟨⟨x, E⟩, by rw [toCovectorCube_mk, CovectorCube.mk.injEq]; exact ⟨Subtype.ext hx.symm,
-        rfl⟩⟩
+      exact ⟨⟨x, E⟩, P.toCovectorCube_mk k x E⟩
   rw [toCovectorChain, Finsupp.range_lmapDomain, covectorOrbitPart, ← hrange,
-    Finsupp.supported_eq_span_single, ← Set.range_comp]
-  rfl
+    Finsupp.supported_eq_span_single, ← Set.range_comp, Function.comp_def]
 
 /-- The differential preserves the summand of each orbit. -/
 theorem covectorDifferential_mem_covectorOrbitPart {o : P.characteristicOrbits}

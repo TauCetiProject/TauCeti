@@ -15,7 +15,7 @@ import TauCeti.LowDimTopology.Plumbing.Weight.Translation
 Shifting a characteristic covector `k` by `2 * A m`, for the intersection matrix `A` and a lattice
 point `m`, translates Némethi's weight function by `m` up to a constant,
 `χ_{k + 2 A m}(y) = χ_k(y + m) - χ_k(m)`
-(`TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec_eq_sub`).
+(`TauCeti.PlumbingGraph.characteristicWeight_addTwoMulVec_eq_sub`).
 Taking maxima over the vertices of a cube, the same holds for the cube weights, and the constant
 cancels in the face exponents, which are differences of cube weights. So the cube based at `x`
 for `k + 2 A m` carries the same face exponents as the cube based at `x + m` for `k`.
@@ -50,11 +50,8 @@ theorem characteristicCubeWeight_addTwoMulVec_eq_sub (k : P.characteristicVector
     (m x : V → ℤ) (S : Finset V) :
     P.characteristicCubeWeight (P.addTwoMulVec k m) x S =
       P.characteristicCubeWeight k (x + m) S - P.characteristicWeight k m := by
-  have hw (y : V → ℤ) : P.characteristicWeight (P.addTwoMulVec k m) y =
-      P.characteristicWeight k (y + m) - P.characteristicWeight k m :=
-    P.characteristicWeight_add_two_mulVec_eq_sub k m y
   refine le_antisymm (P.characteristicCubeWeight_le _ fun y hy => ?_) ?_
-  · rw [hw, sub_le_sub_iff_right]
+  · rw [characteristicWeight_addTwoMulVec_eq_sub, sub_le_sub_iff_right]
     exact P.characteristicWeight_le_characteristicCubeWeight k
       (add_mem_cubeVertices_add_iff.mpr hy)
   · obtain ⟨y, hy, hmax⟩ := P.exists_characteristicWeight_eq_characteristicCubeWeight k (x + m) S
@@ -62,7 +59,7 @@ theorem characteristicCubeWeight_addTwoMulVec_eq_sub (k : P.characteristicVector
       rw [← add_mem_cubeVertices_add_iff (m := m), sub_add_cancel]
       exact hy
     have h := P.characteristicWeight_le_characteristicCubeWeight (P.addTwoMulVec k m) hy'
-    rw [hw, sub_add_cancel] at h
+    rw [characteristicWeight_addTwoMulVec_eq_sub, sub_add_cancel] at h
     linarith
 
 /-- The lower-face exponent is invariant under the translation of

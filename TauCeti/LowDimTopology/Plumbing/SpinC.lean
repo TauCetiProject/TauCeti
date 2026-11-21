@@ -47,14 +47,14 @@ variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 
 /-- The characteristic covector `k + 2 * A x`, the shift of `k` by twice the image of the lattice
 point `x` under the intersection matrix `A`. -/
-@[expose] def addTwoMulVec (k : P.characteristicVectors) (x : V → ℤ) : P.characteristicVectors :=
+def addTwoMulVec (k : P.characteristicVectors) (x : V → ℤ) : P.characteristicVectors :=
   ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v, k.property.add_two_mul⟩
 
 /-- The value of the shifted covector `k + 2 * A x`. -/
 @[simp]
 theorem addTwoMulVec_val (k : P.characteristicVectors) (x : V → ℤ) :
     (P.addTwoMulVec k x).val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v :=
-  rfl
+  (rfl)
 
 /-- Shifting by `2 * A 0` does nothing. -/
 @[simp]
@@ -73,44 +73,35 @@ theorem addTwoMulVec_addTwoMulVec (k : P.characteristicVectors) (x m : V → ℤ
 /-- Two characteristic covectors lie in the same lattice orbit when their difference is twice
 an integral covector in the image of the plumbing intersection matrix. -/
 def IsSpinCEquivalent (k l : P.characteristicVectors) : Prop :=
-  ∃ x : V → ℤ, l.val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v
+  ∃ x : V → ℤ, P.addTwoMulVec k x = l
 
-/-- Unfolds `TauCeti.PlumbingGraph.IsSpinCEquivalent`: `l = k + 2 * A x` for some lattice
+/-- Unfolds `TauCeti.PlumbingGraph.IsSpinCEquivalent`: `k + 2 * A x = l` for some lattice
 point `x`. -/
 theorem isSpinCEquivalent_iff (k l : P.characteristicVectors) :
-    P.IsSpinCEquivalent k l ↔
-      ∃ x : V → ℤ, l.val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v :=
+    P.IsSpinCEquivalent k l ↔ ∃ x : V → ℤ, P.addTwoMulVec k x = l :=
   Iff.rfl
 
 /-- Every characteristic covector lies in its own lattice orbit. -/
 @[refl]
 theorem isSpinCEquivalent_refl (k : P.characteristicVectors) : P.IsSpinCEquivalent k k :=
-  ⟨0, by funext v; simp⟩
+  (P.isSpinCEquivalent_iff k k).2 ⟨0, P.addTwoMulVec_zero k⟩
 
 /-- Reversing an integral translation reverses the lattice equivalence. -/
 @[symm]
 theorem IsSpinCEquivalent.symm {k l : P.characteristicVectors}
     (h : P.IsSpinCEquivalent k l) : P.IsSpinCEquivalent l k := by
-  rcases h with ⟨x, hx⟩
-  refine ⟨-x, ?_⟩
-  rw [hx]
-  ext v
-  simp only [Pi.neg_apply, Matrix.mulVec_neg]
-  ring
+  obtain ⟨x, rfl⟩ := (P.isSpinCEquivalent_iff k l).1 h
+  refine (P.isSpinCEquivalent_iff _ k).2 ⟨-x, ?_⟩
+  rw [addTwoMulVec_addTwoMulVec, add_neg_cancel, addTwoMulVec_zero]
 
 /-- Integral translations compose by addition, so lattice equivalence is transitive. -/
 @[trans]
 theorem IsSpinCEquivalent.trans {k l m : P.characteristicVectors}
     (h₁ : P.IsSpinCEquivalent k l) (h₂ : P.IsSpinCEquivalent l m) :
     P.IsSpinCEquivalent k m := by
-  rcases h₁ with ⟨x, hx⟩
-  rcases h₂ with ⟨y, hy⟩
-  refine ⟨x + y, ?_⟩
-  rw [hy, hx]
-  ext v
-  rw [Matrix.mulVec_add]
-  simp only [Pi.add_apply]
-  ring
+  obtain ⟨x, rfl⟩ := (P.isSpinCEquivalent_iff k l).1 h₁
+  obtain ⟨y, rfl⟩ := (P.isSpinCEquivalent_iff _ m).1 h₂
+  exact (P.isSpinCEquivalent_iff k _).2 ⟨x + y, (P.addTwoMulVec_addTwoMulVec k x y).symm⟩
 
 /-- The setoid of characteristic covectors in the same lattice orbit. -/
 def spinCSetoid : Setoid P.characteristicVectors where
@@ -141,7 +132,8 @@ theorem characteristicOrbit_eq_iff (k l : P.characteristicVectors) :
 @[simp]
 theorem characteristicOrbit_addTwoMulVec (k : P.characteristicVectors) (x : V → ℤ) :
     P.characteristicOrbit (P.addTwoMulVec k x) = P.characteristicOrbit k :=
-  (P.characteristicOrbit_eq_iff _ _).2 (IsSpinCEquivalent.symm P ⟨x, rfl⟩)
+  (P.characteristicOrbit_eq_iff _ _).2
+    (IsSpinCEquivalent.symm P ((P.isSpinCEquivalent_iff k _).2 ⟨x, rfl⟩))
 
 end PlumbingGraph
 
