@@ -182,6 +182,13 @@ theorem measureReal_renewalExcess_le_eq_one_sub [IsProbabilityMeasure P]
   ext ω
   simp
 
+/-- For a probability measure and almost-everywhere measurable increments, the excess upper
+tail is one minus the excess distribution function. -/
+theorem measureReal_lt_renewalExcess_eq_one_sub [IsProbabilityMeasure P]
+    (hT : ∀ n, AEMeasurable (T n) P) (t x : ℝ≥0) :
+    P.real {ω | x < renewalExcess T t ω} = 1 - P.real {ω | renewalExcess T t ω ≤ x} := by
+  rw [measureReal_renewalExcess_le_eq_one_sub hT, sub_sub_cancel]
+
 /-- For i.i.d. increments with law `F`, the `n`-th arrival is at most `t` and the next one is
 after `t + x` with probability `∫_{[0, t]} F((t - s + x, ∞)) F^{∗n}(ds)`, because `arrival T n`
 is independent of `T n`. -/
@@ -285,11 +292,7 @@ theorem measureReal_renewalExcess_le (hindep : iIndepFun T P)
     (Antitone.measurable fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr)))
     (fun u _ ↦ by simp [abs_of_nonneg measureReal_nonneg]) hU
   -- `P(E t ≤ x) = 1 - P(x < E t)`, and `1 = (F> ∗ U) t` by the tail identity.
-  have hcompl : {ω | renewalExcess T t ω ≤ x} = {ω | x < renewalExcess T t ω}ᶜ := by
-    ext
-    simp
-  rw [hcompl, probReal_compl_eq_one_sub₀ (nullMeasurableSet_lt aemeasurable_const
-      (aemeasurable_renewalExcess hT t)), measureReal_lt_renewalExcess hindep hid,
+  rw [measureReal_renewalExcess_le_eq_one_sub hT, measureReal_lt_renewalExcess hindep hid,
     ← renewalConv_measureReal_Ioi_renewalMeasure hF t]
   have hfun : (fun u ↦ F.real (Iic (u + x)) - F.real (Iic u)) =
       (fun u ↦ F.real (Ioi (u + 0))) - fun u ↦ F.real (Ioi (u + x)) := by

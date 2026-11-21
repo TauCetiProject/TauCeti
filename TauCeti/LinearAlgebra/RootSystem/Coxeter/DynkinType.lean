@@ -124,8 +124,8 @@ reflections commute exactly when the two simple roots are orthogonal. On the dia
 fail. -/
 lemma coxeterMatrix_apply_eq_two_iff (t : DynkinType) {i j : Fin t.rank} :
     t.coxeterMatrix i j = 2 ↔ t.cartanMatrix i j = 0 :=
-  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff _ (t.cartanMatrix_apply_same i)
-    (t.cartanMatrix_apply_eq_zero_iff_symm j i).mp
+  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff _
+    (t.cartanMatrix_apply_same i ▸ two_ne_zero) (t.cartanMatrix_apply_eq_zero_iff_symm j i).mp
 
 /-- **On a simply-laced type the Coxeter matrix is the diagram**: distinct nodes carry the entry `2`
 when they are not joined and `3` when they are, there being no multiple edge to raise an entry to
