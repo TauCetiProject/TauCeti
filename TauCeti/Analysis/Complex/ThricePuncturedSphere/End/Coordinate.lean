@@ -147,6 +147,14 @@ def endCenter : Puncture → ℂ
 
 @[simp] theorem endCenter_one : one.endCenter = 1 := (rfl)
 
+/-- A nonzero complex number is the center `1` of the end at `1` or a point of the thrice-punctured
+sphere `ℂ ∖ {0, 1}`. -/
+theorem eq_endCenter_one_or_of_ne_zero {w : ℂ} (hw : w ≠ 0) :
+    w = one.endCenter ∨ w ≠ 0 ∧ w ≠ 1 := by
+  rcases eq_or_ne w 1 with h | h
+  · exact Or.inl (by simpa using h)
+  · exact Or.inr ⟨hw, h⟩
+
 @[simp] theorem endCenter_inf : inf.endCenter = 0 := (rfl)
 
 /-- The scale of an end lift: `cylindricalEndLift q z = q.endCenter + q.endScale * exp (-2πz)`. -/

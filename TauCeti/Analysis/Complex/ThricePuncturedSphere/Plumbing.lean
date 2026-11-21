@@ -74,10 +74,9 @@ maps on the plumbed sphere is computed.
   `Puncture.realChart_plumbingMap_mem_plumbedSphere`:
   the part `s_q ≤ L/2` of `S` and the image of the part `-s_∞ ≤ L/2` of `S'` lie in the
   four-punctured sphere, also in real coordinates.
-* `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_one_ne_zero`: for `L > 4` the plumbing map
-  of the end at `1` carries the whole part `-s_∞ ≤ L/2` of the plane, including `0` and `1`, into
-  `ℂ ∖ {0}`; `TauCeti.ThricePuncturedSphere.Puncture.eq_endCenter_one_or_of_ne_zero` splits
-  `ℂ ∖ {0}` into the center `1` and the thrice-punctured sphere.
+* `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le`:
+  for `L > 4` the plumbing map of the end at `1` carries the whole part `-s_∞ ≤ L/2` of the plane,
+  including `0` and `1`, into `ℂ ∖ {0}`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
@@ -586,19 +585,11 @@ theorem plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ 
   rw [endSign_inf, neg_one_mul] at hwL
   linarith
 
-/-- A nonzero complex number is the center `1` of the end at `1` or a point of the thrice-punctured
-sphere `ℂ ∖ {0, 1}`. -/
-theorem eq_endCenter_one_or_of_ne_zero {w : ℂ} (hw : w ≠ 0) :
-    w = one.endCenter ∨ w ≠ 0 ∧ w ≠ 1 := by
-  rcases eq_or_ne w 1 with h | h
-  · exact Or.inl (by simpa using h)
-  · exact Or.inr ⟨hw, h⟩
-
 /-- The plumbing map `ψ_L` of the end at `1`, for `L > 4`, carries every point of the inserted
 plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to a nonzero point: points of the disc
 `‖w‖ ≤ 2 exp (2π)` land within `exp (-2π(L - 1)) / 2 < 1` of the center `1`, and the other points
 land in the plumbed four-punctured sphere. -/
-theorem plumbingMap_one_ne_zero (hL : 4 < L) {w : ℂ}
+theorem plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL : 4 < L) {w : ℂ}
     (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 := by
   by_cases hw : ‖w‖ ≤ 2 * Real.exp (2 * π)
   · intro h0
