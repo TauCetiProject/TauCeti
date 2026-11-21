@@ -198,7 +198,7 @@ topologies. -/
 @[fun_prop]
 theorem continuous_spinGroupToEven (Q : QuadraticForm R V) : Continuous (spinGroupToEven Q) :=
   continuous_induced_rng.mpr
-    (continuous_subtype_val.congr fun x ↦ (coe_spinGroupToEven_apply Q x).symm)
+    (continuous_subtypeVal.congr fun x ↦ (coe_spinGroupToEven_apply Q x).symm)
 
 /-- A map of Spin groups is continuous if its Clifford values are obtained from the even part by a
 linear map of the even subalgebra. -/

@@ -44,9 +44,9 @@ theorem continuous_even_linearMap {N : Type*} [AddCommGroup N] [Module R N] [Top
     DirectSum.component R (ZMod 2) (fun i ↦ evenOdd Q i) 0 ∘ₗ
       (DirectSum.decomposeLinearEquiv (evenOdd Q)).toLinearMap
   have hπ (x : even Q) : π x = x :=
-    Subtype.ext (DirectSum.decompose_of_mem_same (evenOdd Q) x.2)
+    Subtype.ext (DirectSum.decompose_of_mem_same (evenOdd Q) x.property)
   refine ((IsModuleTopology.continuous_of_linearMap (φ ∘ₗ π)).comp
-    continuous_subtype_val).congr fun x ↦ ?_
+    continuous_subtypeVal).congr fun x ↦ ?_
   simp [hπ]
 
 end CliffordAlgebra
