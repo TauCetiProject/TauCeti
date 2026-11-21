@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Manifold.PositiveCohomologyAssignment
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.Conformal.LocalIndex
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Deriv
 
 /-!
 # The zero charges of discs and the zero set of a pseudoholomorphic function
@@ -40,7 +39,8 @@ When `σ⁻¹(Z)` is compact, the zero charge obeys the laws of a positive cohom
 
 These are the local degree's naturality under proper maps, invariance under homotopies with
 compact fibre, and additivity over disjoint open sets. For additivity, the subdisc maps
-`z ↦ c + r z` with `r > 0` preserve the canonical orientation of `ℂ`, being holomorphic.
+`z ↦ c + r z` with `r > 0` preserve the canonical orientation of `ℂ`, being holomorphic
+(`TauCeti.comap_coe_comp_subdisc_complexHomologicalOrientation`).
 
 If `f ∘ σ` extends to a function `φ` holomorphic on the unit disc, a compact `σ⁻¹(Z)` is finite
 (`TauCeti.finite_preimage_preimage_zero`). The zero charge is then the sum of the orders of
@@ -108,14 +108,8 @@ reversing `o` reverses both. -/
 theorem zeroCharge_eq_localDegree (o : HomologicalOrientation ℂ ℂ 2) (f : C(Y, ℂ))
     (σ : C(𝔻, Y)) :
     zeroCharge f σ = (o.comap Complex.UnitDisc.isOpenEmbedding_coe).localDegree o
-      Complex.finrank_real_complex (f.comp σ) 0 := by
-  rw [zeroCharge]
-  rcases HomologicalOrientation.eq_or_eq_neg Complex.finrank_real_complex
-    (complexHomologicalOrientation ℂ) o with rfl | rfl
-  · rfl
-  · rw [HomologicalOrientation.comap_neg,
-      HomologicalOrientation.localDegree_neg_left _ _ _ Complex.finrank_real_complex,
-      HomologicalOrientation.localDegree_neg_right _ _ _ Complex.finrank_real_complex, neg_neg]
+      Complex.finrank_real_complex (f.comp σ) 0 :=
+  (HomologicalOrientation.localDegree_comap_self_eq _ Complex.finrank_real_complex o _ _ _).symm
 
 /-- The zero charge vanishes when the zero set of `f ∘ σ` is not compact. -/
 @[simp]
@@ -144,32 +138,10 @@ theorem zeroCharge_comp (o : HomologicalOrientation 𝔻 ℂ 2) {f : C(Y, ℂ)} 
     (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {θ : C(𝔻, 𝔻)} (hθ : IsProperMap θ) :
     zeroCharge f (σ.comp θ) = o.degree o Complex.finrank_real_complex θ * zeroCharge f σ := by
   set O := (complexHomologicalOrientation ℂ).comap Complex.UnitDisc.isOpenEmbedding_coe
-  have hdeg : o.degree o Complex.finrank_real_complex θ =
-      O.degree O Complex.finrank_real_complex θ := by
-    rcases HomologicalOrientation.eq_or_eq_neg Complex.finrank_real_complex O o with rfl | rfl
-    · rfl
-    · rw [HomologicalOrientation.degree_neg_left _ _ _ Complex.finrank_real_complex,
-        HomologicalOrientation.degree_neg_right _ _ _ Complex.finrank_real_complex, neg_neg]
-  rw [hdeg, zeroCharge, zeroCharge, ← ContinuousMap.comp_assoc]
+  rw [O.degree_self_eq Complex.finrank_real_complex o, zeroCharge, zeroCharge,
+    ← ContinuousMap.comp_assoc]
   exact O.localDegree_comp O _ Complex.finrank_real_complex Complex.finrank_real_complex
     Complex.finrank_real_complex h hθ
-
-/-- The subdisc maps `z ↦ c + r z`, `r > 0`, pull the orientation of `𝔻` restricted from the
-canonical orientation of `ℂ` back to itself: the affine map `w ↦ c + r w` of `ℂ` is a holomorphic
-diffeomorphism, so it preserves the canonical orientation. -/
-private theorem comap_eq_comap_coe_of_eq_add_mul (c : ℂ) {r : ℝ} (hr : 0 < r) {k : 𝔻 → ℂ}
-    (hk : IsOpenEmbedding k) (hkc : ∀ z, k z = c + r * z) :
-    (complexHomologicalOrientation ℂ).comap hk =
-      (complexHomologicalOrientation ℂ).comap Complex.UnitDisc.isOpenEmbedding_coe := by
-  have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
-  set A : ℂ ≃ₜ ℂ := (Homeomorph.mulLeft₀ (r : ℂ) hr0).trans (Homeomorph.addLeft c)
-  have hA : ⇑A = fun w ↦ c + r * w := rfl
-  have hloc : IsLocalDiffeomorph 𝓘(ℂ, ℂ) 𝓘(ℂ, ℂ) 1 A :=
-    isLocalDiffeomorph_of_deriv_ne_zero (by rw [hA]; fun_prop) le_rfl fun w ↦ by
-      simpa [hA] using hr0
-  rw [← HomologicalOrientation.comap_comap_of_comp_eq _ A.isOpenEmbedding
-      Complex.UnitDisc.isOpenEmbedding_coe hk (funext fun z ↦ (hkc z).symm),
-    comap_complexHomologicalOrientation A.isOpenEmbedding hloc]
 
 /-- **Additivity.** If finitely many disjoint round discs `B(cᵢ, rᵢ) ⊆ 𝔻` contain the compact
 preimage `σ⁻¹(f⁻¹(0))`, the zero charge of `σ` is the sum of the zero charges of its restrictions
@@ -202,7 +174,7 @@ theorem zeroCharge_eq_sum {ι : Type} [Fintype ι] {f : C(Y, ℂ)} {σ : C(𝔻,
     exact ⟨z, Subtype.ext hz⟩
   have hO : (O.comap (U i).isOpenEmbedding').comap he = O := by
     rw [HomologicalOrientation.comap_comap, HomologicalOrientation.comap_comap]
-    exact comap_eq_comap_coe_of_eq_add_mul (c i) (hr i) _ fun z ↦ coe_subdisc_apply z
+    exact comap_coe_comp_subdisc_complexHomologicalOrientation
   rw [← O.comap (U i).isOpenEmbedding' |>.localDegree_comap o _ Complex.finrank_real_complex he _
     fun z _ ↦ hsurj z, hO, zeroCharge]
   -- `Subtype.val ∘ e` is `s` by the construction of `e`.
@@ -211,24 +183,14 @@ theorem zeroCharge_eq_sum {ι : Type} [Fintype ι] {f : C(Y, ℂ)} {σ : C(𝔻,
 /-! ### Discs along which `f` is holomorphic -/
 
 /-- If `σ⁻¹(f⁻¹(0))` is compact, an extension `φ` of `f ∘ σ` to `ℂ` does not vanish identically on
-the unit disc: otherwise the whole noncompact disc would be that preimage. -/
+the unit disc: otherwise the whole disc, which is not compact, would be that preimage. -/
 private theorem exists_mem_ball_ne_zero {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
     (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {φ : ℂ → ℂ} (hφ : ∀ z : 𝔻, φ z = f (σ z)) :
     ∃ w ∈ ball (0 : ℂ) 1, φ w ≠ 0 := by
   by_contra! hzero
   have huniv : σ ⁻¹' (f ⁻¹' {0}) = univ := eq_univ_of_forall fun z ↦ by
     simpa [hφ z] using hzero z (mem_ball_zero_iff.2 z.norm_lt_one)
-  -- The open unit disc would be compact, hence closed in `ℂ`, so it would contain `1`.
-  have hcl : IsClosed (ball (0 : ℂ) 1) := by
-    convert (huniv ▸ h).image Complex.UnitDisc.continuous_coe |>.isClosed using 1
-    ext w
-    exact ⟨fun hw ↦ ⟨Complex.UnitDisc.mk w (mem_ball_zero_iff.1 hw), trivial, rfl⟩,
-      fun ⟨z, _, hz⟩ ↦ hz ▸ mem_ball_zero_iff.2 z.norm_lt_one⟩
-  have h1 : (1 : ℂ) ∈ closure (ball (0 : ℂ) 1) := by
-    rw [closure_ball _ one_ne_zero]
-    simp
-  rw [hcl.closure_eq] at h1
-  simp at h1
+  exact noncompact_univ 𝔻 (huniv ▸ h)
 
 /-- **Finiteness.** If `f ∘ σ` extends to a function `φ` holomorphic on the unit disc, a compact
 preimage `σ⁻¹(f⁻¹(0))` is finite: the zeros of `φ` are isolated. -/
