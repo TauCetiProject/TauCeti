@@ -52,6 +52,8 @@ noncomputable section
 
 variable (n : ℕ)
 
+section CommRing
+
 variable (A : Type*) [CommRing A] (i : Fin (n + 1))
 
 /-- The explicit rank-one action on the spin module at node `i`, over an arbitrary commutative
@@ -114,7 +116,11 @@ theorem rankOneMatrix_diag2nUnit (u : Aˣ) :
   rw [rankOneMatrix, Sl2.coe_squareZeroSL2Hom_diagonal,
     coe_weightTorusPoints_mulSingle, Matrix.map_mul_intCast, Matrix.map_mul_intCast]
 
-variable (K : Type*) [Field K]
+end CommRing
+
+section Field
+
+variable (i : Fin (n + 1)) (K : Type*) [Field K]
 
 private theorem rankOneMatrix_mem_of_root_mem {H : Subgroup (GL (Fin (dimension n)) K)}
     (hinl : ∀ t : K, (rootSubgroupPoints n (.inl i) K (Multiplicative.ofAdd t) :
@@ -177,6 +183,8 @@ theorem range_rankOnePoints :
       rankOnePoints_lower_transvection, MonoidHom.coe_range] using
       (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
         (rootSubgroupPoints n _ K)
+
+end Field
 
 end
 

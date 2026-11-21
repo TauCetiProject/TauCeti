@@ -323,23 +323,23 @@ variable (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
 /-- The absolute value of `K` underlying a place of `Sinf` or of `Sfin`, the two sets of places
 being joined into the index type `Sinf ⊕ Sfin`. -/
 def sPlaceAbsValue : Sinf ⊕ Sfin → AbsoluteValue K ℝ :=
-  Sum.elim (fun v ↦ v.1.1) fun v ↦ v.1.1
+  Sum.elim (fun v ↦ v.val.val) fun v ↦ v.val.val
 
 @[simp]
-theorem sPlaceAbsValue_inl (v : Sinf) : sPlaceAbsValue Sinf Sfin (.inl v) = v.1.1 :=
+theorem sPlaceAbsValue_inl (v : Sinf) : sPlaceAbsValue Sinf Sfin (.inl v) = v.val.val :=
   (rfl)
 
 @[simp]
-theorem sPlaceAbsValue_inr (v : Sfin) : sPlaceAbsValue Sinf Sfin (.inr v) = v.1.1 :=
+theorem sPlaceAbsValue_inr (v : Sfin) : sPlaceAbsValue Sinf Sfin (.inr v) = v.val.val :=
   (rfl)
 
 /-- The weight of a place of `Sinf` or of `Sfin` in Mathlib's relative normalization of heights:
 `mult v` at an infinite place and `1` at a finite place. -/
 noncomputable def sPlaceWeight : Sinf ⊕ Sfin → ℕ :=
-  Sum.elim (fun v ↦ v.1.mult) fun _ ↦ 1
+  Sum.elim (fun v ↦ v.val.mult) fun _ ↦ 1
 
 @[simp]
-theorem sPlaceWeight_inl (v : Sinf) : sPlaceWeight Sinf Sfin (.inl v) = v.1.mult :=
+theorem sPlaceWeight_inl (v : Sinf) : sPlaceWeight Sinf Sfin (.inl v) = v.val.mult :=
   (rfl)
 
 @[simp]
@@ -363,12 +363,13 @@ variable {Sinf Sfin} (w : AbsoluteValue K ℝ → AbsoluteValue F ℝ) (α : Abs
 @[simp]
 theorem approxFactor_inl (β : K) (v : Sinf) :
     approxFactor Sinf Sfin w α β (.inl v) =
-      min 1 (w v.1.1 (algebraMap K F β - α v.1.1)) ^ v.1.mult :=
+      min 1 (w v.val.val (algebraMap K F β - α v.val.val)) ^ v.val.mult :=
   (rfl)
 
 @[simp]
 theorem approxFactor_inr (β : K) (v : Sfin) :
-    approxFactor Sinf Sfin w α β (.inr v) = min 1 (w v.1.1 (algebraMap K F β - α v.1.1)) := by
+    approxFactor Sinf Sfin w α β (.inr v) = min 1 (w v.val.val (algebraMap K F β - α v.val.val))
+        := by
   simp [approxFactor]
 
 theorem approxFactor_nonneg (β : K) (a : Sinf ⊕ Sfin) : 0 ≤ approxFactor Sinf Sfin w α β a :=
@@ -382,12 +383,12 @@ a product over the infinite places of `Sinf` with exponents `mult v` times a pro
 finite places of `Sfin`. -/
 theorem prod_approxFactor (β : K) :
     ∏ a, approxFactor Sinf Sfin w α β a =
-      (∏ v ∈ Sinf, min 1 (w v.1 (algebraMap K F β - α v.1)) ^ v.mult) *
-        ∏ v ∈ Sfin, min 1 (w v.1 (algebraMap K F β - α v.1)) := by
+      (∏ v ∈ Sinf, min 1 (w v.val (algebraMap K F β - α v.val)) ^ v.mult) *
+        ∏ v ∈ Sfin, min 1 (w v.val (algebraMap K F β - α v.val)) := by
   rw [Fintype.prod_sum_type]
   simp only [approxFactor_inl, approxFactor_inr]
-  rw [Finset.prod_coe_sort Sinf (fun v ↦ min 1 (w v.1 (algebraMap K F β - α v.1)) ^ v.mult),
-    Finset.prod_coe_sort Sfin (fun v ↦ min 1 (w v.1 (algebraMap K F β - α v.1)))]
+  rw [Finset.prod_coe_sort Sinf (fun v ↦ min 1 (w v.val (algebraMap K F β - α v.val)) ^ v.mult),
+    Finset.prod_coe_sort Sfin (fun v ↦ min 1 (w v.val (algebraMap K F β - α v.val)))]
 
 /-- The local approximation factor of `β` at a place vanishes exactly when `β` is the target
 there. -/

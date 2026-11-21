@@ -97,7 +97,7 @@ fractional ideal, viewed inside the ideals prime to `𝔪`. -/
 noncomputable def rayHom (𝔪 : Modulus K) :
     congruenceSubgroup 𝔪 →* idealsPrimeTo 𝔪 :=
   MonoidHom.codRestrict ((toPrincipalIdeal (𝓞 K) K).comp (congruenceSubgroup 𝔪).subtype) _
-    fun x ↦ (mem_congruenceSubgroup.mp x.2).toPrincipalIdeal_mem_idealsPrimeTo
+    fun x ↦ (mem_congruenceSubgroup.mp x.property).toPrincipalIdeal_mem_idealsPrimeTo
 
 @[simp] theorem coe_rayHom (𝔪 : Modulus K) (x : congruenceSubgroup 𝔪) :
     ((rayHom 𝔪 x : idealsPrimeTo 𝔪) : (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
@@ -112,7 +112,7 @@ noncomputable def ray (𝔪 : Modulus K) : Subgroup (idealsPrimeTo 𝔪) :=
     I ∈ ray 𝔪 ↔ ∃ x : Kˣ, IsCongrOne 𝔪 x ∧
       toPrincipalIdeal (𝓞 K) K x = (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) := by
   rw [ray, MonoidHom.mem_range]
-  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, mem_congruenceSubgroup.mp x.2, ?_⟩, fun ⟨x, hx, hxI⟩ ↦ ?_⟩
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x, mem_congruenceSubgroup.mp x.property, ?_⟩, fun ⟨x, hx, hxI⟩ ↦ ?_⟩
   · rw [← coe_rayHom 𝔪 x, hx]
   · exact ⟨⟨x, mem_congruenceSubgroup.mpr hx⟩, Subtype.ext (Units.ext (by rw [coe_rayHom, hxI]))⟩
 

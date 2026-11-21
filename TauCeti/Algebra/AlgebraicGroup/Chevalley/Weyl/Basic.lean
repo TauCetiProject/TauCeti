@@ -132,6 +132,17 @@ theorem weylSubgroupMap_weylElement (A : Type*) [CommRing A] {B : Type*} [CommRi
   apply Subtype.ext
   simp only [D.coe_weylSubgroupMap, D.map_weylElement_one]
 
+/-- The `i`-th pinned simple Weyl representative viewed as an element of `D.weylSubgroup A`. -/
+noncomputable def simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank) :
+    D.weylSubgroup A :=
+  ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩
+
+/-- Coercing `D.simpleWeylLift A i` to `D.points A` recovers the pinned simple Weyl element. -/
+@[simp]
+theorem coe_simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank) :
+    (D.simpleWeylLift A i : D.points A) = D.weylElement (t.simpleIndex ht i) A 1 :=
+  (rfl)
+
 private theorem isSl2Triple_representation (i : Fin t.rank) :
     IsSl2Triple
       (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
@@ -377,6 +388,13 @@ theorem weylProjection_weylElement (k : Type v) [Field k] (i : Fin t.rank) :
     (by simpa only [RealizesWeyl, map_weylElement, map_one] using
       D.weylElement_conj_weightTorus (AlgebraicClosure k) i)
 
+/-- Each pinned simple Weyl lift projects to the corresponding simple reflection. -/
+@[simp]
+theorem weylProjection_simpleWeylLift (k : Type v) [Field k] (i : Fin t.rank) :
+    D.weylProjection k (D.simpleWeylLift k i) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) :=
+  D.weylProjection_weylElement k i
+
 private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field
     (k : Type v) [Field k] (i : Fin t.rank) :
     D.rootSubgroupPoints (t.simpleIndex ht i) k (Multiplicative.ofAdd 1) ≠ 1 := by
@@ -391,9 +409,8 @@ private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field
     · simpa [hx, hε] using hconj.symm
   have hw : D.weylElement (t.simpleIndex ht i) k 1 = 1 := by
     simp only [D.weylElement_def, inv_one, Units.val_one, hx, hy, one_mul]
-  have hsub : (⟨D.weylElement (t.simpleIndex ht i) k 1,
-      D.weylElement_mem_weylSubgroup k i⟩ : D.weylSubgroup k) = 1 := Subtype.ext hw
-  have hproj := D.weylProjection_weylElement k i
+  have hsub : D.simpleWeylLift k i = 1 := Subtype.ext hw
+  have hproj := D.weylProjection_simpleWeylLift k i
   rw [hsub, map_one] at hproj
   exact RootPairing.weylGroup.ofIdx_ne_one (t.simplyConnectedRootDatum ht)
     (t.simpleIndex ht i) hproj.symm
@@ -441,8 +458,7 @@ theorem weylProjection_surjective (k : Type v) [Field k] :
     | nil => exact ⟨1, by simp⟩
     | cons i l ih =>
       obtain ⟨g, hg⟩ := ih
-      exact ⟨⟨D.weylElement (t.simpleIndex ht i) k 1,
-        D.weylElement_mem_weylSubgroup k i⟩ * g, by simp [hg]⟩
+      exact ⟨D.simpleWeylLift k i * g, by simp [hg]⟩
   intro w
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
   exact hword l

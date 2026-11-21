@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Artinian.Module
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Ambiguity
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.MatrixBaseChange
 import TauCeti.RingTheory.Artinian.EquivPi
 
@@ -66,6 +67,19 @@ characterization, zero pattern, field case and naturality as that of a `ℤ`-gra
 `HomologicalComplex.map_componentwiseParityTorsion`,
 `HomologicalComplex.componentwiseParityTorsion_eq_of_toMatrix_eq`).
 
+Changing the bases `c i` of `C` to `c' i` multiplies the componentwise torsion by the image under
+`f` of a unit of `A` built from the determinants `[c'ᵢ / cᵢ]` of the new bases with respect to the
+old ones: `[c'₀ / c₀] · [c₁ / c'₁]` for a two-periodic complex
+(`HomologicalComplex.componentwiseParityTorsion_eq_mul_det`) and `∏ᵢ [c'ᵢ / cᵢ] ^ ((-1) ^ i)` for a
+`ℤ`-graded one (`HomologicalComplex.componentwiseReidemeisterTorsion_eq_mul_finprod_det`). Bases of
+Floer–Novikov complexes are fixed only up to the order of the generators, their signs, and the
+deck transformations of the chosen lifts, which change these determinants by signed deck
+monomials. So the componentwise torsion is well defined as a class modulo signed deck monomials
+(`TauCeti.TorsionClass`): if every determinant `[c'ᵢ / cᵢ]` has trivial class, the torsions in
+the two bases have the same class, whether or not some of their components vanish
+(`TauCeti.TorsionClass.mk_componentwiseParityTorsion_eq_of_mk_det_eq_one`,
+`TauCeti.TorsionClass.mk_componentwiseReidemeisterTorsion_eq_of_mk_det_eq_one`).
+
 ## Main definitions
 
 * `HomologicalComplex.componentwiseReidemeisterTorsion c f`: the componentwise torsion in a
@@ -91,6 +105,13 @@ characterization, zero pattern, field case and naturality as that of a `ℤ`-gra
   `HomologicalComplex.map_componentwiseParityTorsion`: the same results for two-periodic complexes.
 * `HomologicalComplex.componentwiseParityTorsion_eq_one`: the zero two-periodic complex has
   componentwise torsion `1`.
+* `HomologicalComplex.componentwiseReidemeisterTorsion_eq_mul_finprod_det`,
+  `HomologicalComplex.componentwiseParityTorsion_eq_mul_det`: the change of the componentwise
+  torsion under a change of the bases.
+* `TauCeti.TorsionClass.mk_componentwiseReidemeisterTorsion_eq_of_mk_det_eq_one`,
+  `TauCeti.TorsionClass.mk_componentwiseParityTorsion_eq_of_mk_det_eq_one`: the class of the
+  componentwise torsion modulo signed deck monomials does not change when the bases change by
+  signed deck monomials.
 
 ## References
 
@@ -229,6 +250,35 @@ theorem componentwiseReidemeisterTorsion_eq_of_toMatrix_eq {A' : Type*} [CommRin
     exact (map_reidemeisterTorsion (RingHom.id _) fun i ↦ by
       simp [hd, Matrix.map_map, Function.comp_assoc]).symm
 
+/-- The basis-change formula for the componentwise torsion: replacing the bases `c i` of `C` by
+`c' i` multiplies the componentwise torsion by the image under `f` of the unit
+`∏ᵢ [c'ᵢ / cᵢ] ^ ((-1) ^ i)` of `A`, where `[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect
+to `c i`. This holds for every complex, both sides being `0` when `C` is unbounded. -/
+theorem componentwiseReidemeisterTorsion_eq_mul_finprod_det
+    (c' : ∀ i, Basis (Fin (n i)) A (C.X i)) :
+    C.componentwiseReidemeisterTorsion c' f = C.componentwiseReidemeisterTorsion c f *
+      f ↑(∏ᶠ i : ℤ, ((c i).isUnit_det (c' i)).unit ^ (i.negOnePow : ℤ)) := by
+  by_cases hn : {i | n i ≠ 0}.Finite
+  swap
+  · simp [componentwiseReidemeisterTorsion_of_not_finite hn]
+  -- The unit factors are `1` in the degrees where `C` vanishes.
+  have hfin : Function.HasFiniteMulSupport fun i : ℤ ↦
+      ((c i).isUnit_det (c' i)).unit ^ (i.negOnePow : ℤ) :=
+    hn.subset <| Function.mulSupport_subset_iff'.2 fun i hi ↦ by
+      have : IsEmpty (Fin (n i)) := by rw [show n i = 0 by simpa using hi]; infer_instance
+      ext
+      simp
+  refine (eq_componentwiseReidemeisterTorsion_iff.2 fun m ↦ ?_).symm
+  rw [map_mul, mk_componentwiseReidemeisterTorsion,
+    reidemeisterTorsion_matrixBaseChange_eq_mul_finprod_det _ c c']
+  congr 1
+  -- Read the image of the unit in the residue field through `Units.map`.
+  have hψ (u : Aˣ) : Ideal.Quotient.mk m.asIdeal (f u) =
+      ((Units.coeHom _).comp (Units.map ((Ideal.Quotient.mk m.asIdeal).comp f).toMonoidHom)) u := by
+    simp
+  rw [hψ, map_finprod _ hfin]
+  simp [Units.val_zpow_eq_zpow_val]
+
 end Graded
 
 section Periodic
@@ -348,6 +398,66 @@ theorem componentwiseParityTorsion_eq_of_toMatrix_eq {A' : Type*} [CommRing A']
     exact (map_parityTorsion (RingHom.id _) fun i j ↦ by
       simp [hd, Matrix.map_map, Function.comp_assoc]).symm
 
+/-- The basis-change formula for the componentwise torsion of a two-periodic complex: replacing
+the bases `c i` of `C` by `c' i` multiplies the componentwise torsion by
+`f [c'₀ / c₀] · f [c₁ / c'₁]`, where `[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect to
+`c i`. -/
+theorem componentwiseParityTorsion_eq_mul_det (c' : ∀ i, Basis (Fin (n i)) A (C.X i)) :
+    C.componentwiseParityTorsion c' f = C.componentwiseParityTorsion c f *
+      (f ((c 0).det (c' 0)) * f ((c' 1).det (c 1))) :=
+  (eq_componentwiseParityTorsion_iff.2 fun m ↦ by
+    rw [map_mul, map_mul, mk_componentwiseParityTorsion,
+      parityTorsion_matrixBaseChange_eq_mul_det _ c c', RingHom.comp_apply,
+      RingHom.comp_apply]).symm
+
 end Periodic
 
 end HomologicalComplex
+
+namespace TauCeti.TorsionClass
+
+/-! ### Torsion classes modulo signs and deck monomials -/
+
+open HomologicalComplex
+
+variable {G A Q : Type*} [Group G] [CommRing A] [CommRing Q] [IsArtinianRing Q] [IsReduced Q]
+  {m : G →* Aˣ} {m' : G →* Qˣ} {f : A →+* Q}
+
+/-- **Torsion classes do not depend on bases chosen up to signed deck monomials.** If the
+determinant of each `c' i` with respect to `c i` has trivial class, that is, is a signed deck
+monomial of `A` (`TauCeti.TorsionClass.mk_eq_mk_iff`), then the
+componentwise torsions of a based two-periodic complex in the bases `c` and `c'` have the same
+class modulo the signed deck monomials of `Q`, for a ring homomorphism `f : A →+* Q` sending
+deck monomials to deck monomials. -/
+theorem mk_componentwiseParityTorsion_eq_of_mk_det_eq_one
+    {C : HomologicalComplex (ModuleCat A) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
+    {c c' : ∀ i, Basis (Fin (n i)) A (C.X i)} (hf : ∀ g, Units.map f (m g) = m' g)
+    (h : ∀ i, mk m ((c i).det (c' i)) = 1) :
+    mk m' (C.componentwiseParityTorsion c' f) = mk m' (C.componentwiseParityTorsion c f) := by
+  -- The inverse change of bases has trivial class as well.
+  have h₁ : mk m ((c' 1).det (c 1)) = 1 := by
+    rw [← (c 1).det_inv (c' 1), mk_coe_eq_one_iff]
+    exact inv_mem ((mk_coe_eq_one_iff m _).1 (h 1))
+  rw [componentwiseParityTorsion_eq_mul_det (c := c) c', map_mul, map_mul, ← map_mk f hf,
+    ← map_mk f hf, h 0, h₁, map_one, mul_one, mul_one]
+
+/-- **Torsion classes do not depend on bases chosen up to signed deck monomials.** If the
+determinant of each `c' i` with respect to `c i` has trivial class, that is, is a signed deck
+monomial of `A` (`TauCeti.TorsionClass.mk_eq_mk_iff`), then the
+componentwise torsions of a based complex in the bases `c` and `c'` have the same class modulo
+the signed deck monomials of `Q`, for a ring homomorphism `f : A →+* Q` sending deck monomials to
+deck monomials. -/
+theorem mk_componentwiseReidemeisterTorsion_eq_of_mk_det_eq_one
+    {C : ChainComplex (ModuleCat A) ℤ} {n : ℤ → ℕ} {c c' : ∀ i, Basis (Fin (n i)) A (C.X i)}
+    (hf : ∀ g, Units.map f (m g) = m' g) (h : ∀ i, mk m ((c i).det (c' i)) = 1) :
+    mk m' (C.componentwiseReidemeisterTorsion c' f) =
+      mk m' (C.componentwiseReidemeisterTorsion c f) := by
+  rw [componentwiseReidemeisterTorsion_eq_mul_finprod_det (c := c) c', map_mul, ← map_mk f hf]
+  -- The units whose class is trivial are the signed deck monomials, which contain the product.
+  have hU : (∏ᶠ i : ℤ, ((c i).isUnit_det (c' i)).unit ^ (i.negOnePow : ℤ)) ∈
+      signedMonomialSubgroup m :=
+    finprod_induction (· ∈ signedMonomialSubgroup m) (one_mem _) (fun _ _ ↦ mul_mem)
+      fun i ↦ zpow_mem ((mk_coe_eq_one_iff m _).1 (h i)) _
+  rw [(mk_coe_eq_one_iff m _).2 hU, map_one, mul_one]
+
+end TauCeti.TorsionClass

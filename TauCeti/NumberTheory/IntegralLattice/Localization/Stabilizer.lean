@@ -178,7 +178,7 @@ theorem localStabilizer_eq_integralOrthogonalSubgroup {ι : Type*} [Fintype ι] 
         LinearMap.range (L.localizationToCompletion p) := Set.ext fun x ↦ by
     rw [SetLike.mem_coe, SetLike.mem_coe, Basis.mem_span_iff_repr_mem,
       L.mem_range_localizationToCompletion_iff p e]
-    exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
+    exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   ext g
   rw [mem_localStabilizer_iff, mem_integralOrthogonalSubgroup_iff_mem_span]
   refine (Equiv.forall_apply_mem_iff_iff_mapsTo (g : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).toEquiv

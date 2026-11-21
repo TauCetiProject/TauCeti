@@ -301,8 +301,8 @@ private def specialIsogenyToMatrix :
     Matrix (Fin (2 + 2)) (Fin (2 + 2)) R)
   map_one' := by simp
   map_mul' M N := by
-    simpa using symplecticSpecialIsogeny_mul (GLSymplecticFin.mem_iff.mp M.2)
-      (GLSymplecticFin.mem_iff.mp N.2)
+    simpa using symplecticSpecialIsogeny_mul (GLSymplecticFin.mem_iff.mp M.property)
+      (GLSymplecticFin.mem_iff.mp N.property)
 
 @[simp]
 private theorem specialIsogenyToMatrix_apply (M : GLSymplecticFin 2 R) :
@@ -318,7 +318,7 @@ def specialIsogeny : GLSymplecticFin 2 R →* GLSymplecticFin 2 R :=
     fun M => by
       rw [GLSymplecticFin.mem_iff]
       simpa using symplecticSpecialIsogeny_mul_jFin_mul_transpose
-        (GLSymplecticFin.mem_iff.mp M.2)
+        (GLSymplecticFin.mem_iff.mp M.property)
 
 /-- The matrix underlying the special isogeny is the matrix of `2 × 2` minors. -/
 @[simp]
@@ -477,7 +477,7 @@ theorem specialIsogeny_specialIsogeny [CharP R 2] (M : GLSymplecticFin 2 R) :
   apply Subtype.ext
   apply Units.ext
   rw [coe_specialIsogeny, coe_specialIsogeny,
-    symplecticSpecialIsogeny_symplecticSpecialIsogeny (GLSymplecticFin.mem_iff.mp M.2),
+    symplecticSpecialIsogeny_symplecticSpecialIsogeny (GLSymplecticFin.mem_iff.mp M.property),
     GLSymplecticFin.coe_map]
   ext i j
   simp [frobenius_def]
