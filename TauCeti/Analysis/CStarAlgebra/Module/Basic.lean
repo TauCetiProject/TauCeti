@@ -51,7 +51,8 @@ Riesz theorem.
   norm-preserving module injections and on `A`-submodules.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
-* `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
+* `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
+  `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`.
 * `TauCeti.CStarModule.inner_map_map_le_of_norm_le`, `CStarModule.inner_map_map_le_norm_sq_smul`:
   Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for any action-preserving function with
   pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded operator specialization
@@ -318,6 +319,15 @@ theorem norm_smul_sub_self (a : A) (x : E) :
 /-- The action of a C⋆-algebra on a Hilbert C⋆-module is bounded: `‖a x‖ ≤ ‖a‖ ‖x‖`. -/
 protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
   TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_le (NonUnitalStarAlgHom.id ℂ A) a x
+
+variable (A) in
+/-- The bound `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`. -/
+theorem norm_inner_smul_le {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
+    [CStarModule A F] (x : F) (y z : E) : ‖inner A y z • x‖ ≤ ‖x‖ * ‖y‖ * ‖z‖ :=
+  calc ‖inner A y z • x‖ ≤ ‖inner A y z‖ * ‖x‖ := CStarModule.norm_smul_le _ _
+    _ ≤ ‖y‖ * ‖z‖ * ‖x‖ :=
+      mul_le_mul_of_nonneg_right (norm_inner_le E) (CStarModule.norm_nonneg A)
+    _ = ‖x‖ * ‖y‖ * ‖z‖ := by ring
 
 end Norm
 

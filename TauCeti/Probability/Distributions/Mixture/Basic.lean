@@ -22,7 +22,7 @@ public import TauCeti.Probability.Density
 This file supplies distribution-level formulas for mixtures of measurable families of measures.
 Cumulative distribution functions, moment-generating functions, and characteristic functions are
 the corresponding integrals of the component quantities under their natural hypotheses.  It also
-connects a jointly measurable family of component densities to `HasPDF`.
+connects a jointly a.e.-measurable family of component densities to `HasPDF`.
 
 The density results allow the component presentation to hold only almost everywhere for the
 mixing measure.  This is useful for kernels whose values away from the valid parameter set are an
@@ -253,23 +253,23 @@ variable {Omega A B : Type*} [MeasurableSpace Omega] [MeasurableSpace A] [Measur
   {P : Measure Omega} {rho : Measure A} {nu : Measure B} {K : A → Measure B}
   {f : A → B → ℝ≥0∞} {X : Omega → B}
 
-/-- A random variable whose law is a mixture of jointly measurable component densities has the
-integrated component density. -/
+/-- A random variable whose law is a mixture of jointly a.e.-measurable component densities has
+the integrated component density. -/
 theorem hasPDF_of_hasLaw_bind_withDensity [SFinite rho] [SFinite nu]
-    (hf : Measurable f.uncurry) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
+    (hf : AEMeasurable f.uncurry (rho.prod nu)) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
     (hX : HasLaw X (rho.bind K) P) : HasPDF X P nu := by
   apply hasPDF_of_hasLaw_withDensity (f := fun b ↦ ∫⁻ a, f a b ∂rho)
-    hf.lintegral_prod_left.aemeasurable
+    hf.lintegral_prod_left
   rwa [← Measure.bind_eq_withDensity_of_ae_eq rho nu hf hKf]
 
 /-- The pdf selected by Mathlib for a mixture of component densities agrees almost everywhere
 with their pointwise integral. -/
 theorem pdf_eq_of_hasLaw_bind_withDensity [SFinite rho] [SigmaFinite nu]
-    (hf : Measurable f.uncurry) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
+    (hf : AEMeasurable f.uncurry (rho.prod nu)) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
     (hX : HasLaw X (rho.bind K) P) :
     pdf X P nu =ᵐ[nu] fun b ↦ ∫⁻ a, f a b ∂rho := by
   apply pdf_eq_of_hasLaw_withDensity (f := fun b ↦ ∫⁻ a, f a b ∂rho)
-    hf.lintegral_prod_left.aemeasurable
+    hf.lintegral_prod_left
   rwa [← Measure.bind_eq_withDensity_of_ae_eq rho nu hf hKf]
 
 end TauCeti.Probability
