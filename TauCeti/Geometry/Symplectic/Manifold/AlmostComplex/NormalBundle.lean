@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Quotient
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Topology.VectorBundle.Complex.Structure
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
@@ -23,10 +24,11 @@ Riemann surface, `df ∘ j = J ∘ df`
 the intrinsic normal spaces `N_x = T_{f x} N ⧸ range (df_x)`
 (`TauCeti.SmoothEmbedding.NormalSpace`): the normal complex structure
 (`TauCeti.SmoothEmbedding.normalComplexStructureAt`) is the endomorphism of `N_x` with
-`J_N [v] = [J v]` for ambient tangent vectors `v`, and it squares to `-1`. In other words the
-normal projection `T_{f x} N → N_x` is complex linear, as is the inclusion of the tangent spaces,
-so the tangent–normal sequence `0 → T M → f^* T N → N → 0` is a sequence of complex vector
-spaces.
+`J_N [v] = [J v]` for ambient tangent vectors `v`. Its underlying linear map is that of the
+quotient almost complex structure (`TauCeti.AlmostComplexStructure.quotient`), as
+`TauCeti.SmoothEmbedding.normalComplexStructureAt_toLinearMap` records, so it squares to `-1`. In
+other words the normal projection `T_{f x} N → N_x` is complex linear
+(`TauCeti.AlmostComplexStructure.isComplexLinearMap_mkQ`).
 
 These complex structures vary smoothly. With the intrinsic normal bundle of a `C^n` embedding,
 which is a `C^m` vector bundle for `m + 1 ≤ n`, the map `ν ↦ J_N ν` of total spaces is `C^m`
@@ -42,8 +44,8 @@ If moreover `J` is orthogonal for a Riemannian metric on `N`, then the orthogona
 tangent spaces is `J`-invariant, the orthogonal representative of `J_N ν` is `J` applied to that
 of `ν` (`TauCeti.SmoothEmbedding.normalRepresentative_normalComplexStructureAt`), and `J_N` is
 orthogonal for the induced metric on the normal bundle
-(`TauCeti.SmoothEmbedding.inner_normalComplexStructureAt_normalComplexStructureAt`): the normal
-bundle is a Hermitian vector bundle.
+(`TauCeti.SmoothEmbedding.inner_normalComplexStructureAt_normalComplexStructureAt`) at every point
+where `J` is orthogonal.
 
 ## Main definitions
 
@@ -54,6 +56,8 @@ bundle is a Hermitian vector bundle.
 ## Main results
 
 * `TauCeti.SmoothEmbedding.normalComplexStructureAt_normalClass`: `J_N [v] = [J v]`.
+* `TauCeti.SmoothEmbedding.normalComplexStructureAt_toLinearMap`: `J_N` is the quotient almost
+  complex structure.
 * `TauCeti.SmoothEmbedding.normalComplexStructureAt_normalComplexStructureAt`: `J_N (J_N ν) = -ν`.
 * `TauCeti.SmoothEmbedding.mapsTo_tangentRange_of_isPseudoholomorphicAt`: the tangent spaces of a
   pseudoholomorphic embedding are `J`-invariant.
@@ -117,15 +121,32 @@ theorem normalComplexStructureAt_normalClass {x : M}
   rw [normalComplexStructureAt, normalLiftL_normalClass, ContinuousLinearMap.comp_apply,
     normalClassL_apply]
 
+/-- The normal complex structure is the almost complex structure that `J` induces on the
+quotient `N_x = T_{f x} N ⧸ range (df_x)`. -/
+theorem normalComplexStructureAt_toLinearMap {x : M}
+    (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) :
+    (f.normalComplexStructureAt hn J x hJ).toLinearMap =
+      ((J.almostComplexStructureAt (f x)).quotient (f.tangentRange x hn)
+        fun _ hv ↦ by
+          rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
+          exact hJ hv).toLinearMap := by
+  refine LinearMap.ext fun ν ↦ ?_
+  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn ν
+  rw [ContinuousLinearMap.coe_coe, normalComplexStructureAt_normalClass, normalClass_def]
+  refine ((AlmostComplexStructure.quotient_mk _ _ _ v).trans ?_).symm
+  rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+  exact (Submodule.mkQ_apply _ _).symm
+
 /-- The normal complex structure squares to `-1`. -/
 @[simp]
 theorem normalComplexStructureAt_normalComplexStructureAt {x : M}
     (hJ : MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn))
     (ν : f.NormalSpace x hn) :
     f.normalComplexStructureAt hn J x hJ (f.normalComplexStructureAt hn J x hJ ν) = -ν := by
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn ν
-  simp only [normalComplexStructureAt_normalClass, SmoothAlmostComplexStructure.apply_apply,
-    map_neg]
+  have h := LinearMap.congr_fun (normalComplexStructureAt_toLinearMap hJ)
+  simp only [ContinuousLinearMap.coe_coe] at h
+  rw [h, h]
+  exact AlmostComplexStructure.apply_apply _ ν
 
 /-- The normal complex structure squares to `-1`, as an identity of endomorphisms. -/
 theorem normalComplexStructureAt_comp_self {x : M}
@@ -143,11 +164,10 @@ section Pseudoholomorphic
 variable [IsManifold I ∞ M] {f : SmoothEmbedding I I' n M N} (hn : n ≠ 0)
   {j : SmoothAlmostComplexStructure I M} {J : SmoothAlmostComplexStructure I' N} {x : M}
 
-/-- The tangent space at `x` of a pseudoholomorphic embedding is `J`-invariant: by the
-Cauchy–Riemann equation `df ∘ j = J ∘ df`, the vector `J (df w)` is the tangent vector
-`df (j w)`. -/
+/-- The tangent space at `x` of a pseudoholomorphic embedding is `J`-invariant. -/
 theorem mapsTo_tangentRange_of_isPseudoholomorphicAt (hf : IsPseudoholomorphicAt j J f x) :
     MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn) := by
+  -- By the Cauchy–Riemann equation `df ∘ j = J ∘ df`, `J (df w)` is the tangent vector `df (j w)`.
   rintro _ ⟨w, rfl⟩
   exact ⟨j x w, hf.mfderiv_apply_commute w⟩
 
@@ -162,8 +182,7 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] [FiniteDimensional 
   (f : SmoothEmbedding I I' n M N) (hn : n ≠ 0) (J : SmoothAlmostComplexStructure I' N)
 
 /-- The normal complex structure of an embedding whose tangent spaces are `J`-invariant is `C^m`
-on the total space of its normal bundle when the embedding is `C^n` with `m + 1 ≤ n`: on ambient
-representatives it is `J` applied along the embedding, followed by the normal projection. -/
+on the total space of its normal bundle when the embedding is `C^n` with `m + 1 ≤ n`. -/
 theorem contMDiff_normalComplexStructureAt (hm : m + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
     (hJ : ∀ x, MapsTo (J (f x)) (f.tangentRange x hn) (f.tangentRange x hn)) :
@@ -179,6 +198,7 @@ theorem contMDiff_normalComplexStructureAt (hm : m + 1 ≤ n)
     .of_le ((add_le_add (ENat.LEInfty.out (m := m)) le_rfl).trans (by simp : (∞ : ℕ∞ω) + 1 ≤ ∞))
   let := f.normalSpaceFiberBundle hn hdim
   rw [f.contMDiff_normalBundle_iff hn hm hdim]
+  -- On ambient representatives `J_N` is `J` applied along `f`, followed by the normal projection.
   -- On the ambient tangent bundle, `J` is `C^m` on total spaces; pull it back along `f`.
   have hJtot : ContMDiff (I'.prod 𝓘(ℝ, V)) (I'.prod 𝓘(ℝ, V)) m
       fun p : TotalSpace V (TangentSpace I' : N → Type _) ↦
