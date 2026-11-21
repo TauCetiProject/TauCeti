@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Poisson.Strip
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
@@ -123,7 +124,7 @@ private theorem exists_herglotz_multiplier {θ δ : ℝ} (hθ : θ ∈ Ioo 0 1) 
   have hψ' : ContinuousOn ψ (sphere 0 |1|) := by simpa using hψ
   have hψi : CircleIntegrable ψ 0 1 := hψ'.circleIntegrable'
   have hψic : CircleIntegrable (fun ζ ↦ (ψ ζ : ℂ)) 0 1 :=
-    intervalIntegrable_iff.2 (Complex.ofRealCLM.integrable_comp (intervalIntegrable_iff.1 hψi))
+    (Complex.continuous_ofReal.comp_continuousOn hψ').circleIntegrable'
   let H : ℂ → ℂ := fun w ↦ circleAverage (fun ζ ↦ herglotzRieszKernel 0 w ζ • (ψ ζ : ℂ)) 0 1
   have hH_re {w : ℂ} (hw : w ∈ ball 0 1) : (H w).re = planarPoissonIntegral ψ 0 1 w := by
     rw [planarPoissonIntegral_def, poissonKernel_eq_re_herglotzRieszKernel]
@@ -263,14 +264,6 @@ theorem norm_mk_le_rpow_integral_stripPoissonMeasure {θ p₀ p₁ : ℝ} (hθ :
   norm_le_rpow_integral_stripPoissonMeasure hθ hp₀ hp₁ (C.isStripFunction_stripFunction g)
     (by simp [stripEval_apply])
 
-private theorem integral_norm_rpow_le_norm_rpow {X : Type*} [NormedAddCommGroup X]
-    {μ : Measure ℝ} [IsProbabilityMeasure μ] (f : C₀(ℝ, X)) {α : ℝ} (hα : 0 ≤ α) :
-    (∫ t, ‖f t‖ ∂μ) ^ α ≤ ‖f‖ ^ α :=
-  Real.rpow_le_rpow (integral_nonneg fun _ ↦ norm_nonneg _)
-    ((integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (integrable_const _)
-      (.of_forall f.norm_coe_le_norm)).trans_eq (by rw [integral_const, probReal_univ, one_smul]))
-    hα
-
 /-- **Mixed `(L^∞, L^{p₁})` strip Poisson bound for `[X₀, X₁]_θ`.** -/
 theorem norm_le_norm_fst_rpow_mul_rpow_integral_stripPoissonMeasure {θ p₁ : ℝ}
     (hθ : θ ∈ Ioo 0 1) (hp₁ : 0 < p₁) {u : C.ComplexMethodSpace θ} {F : ℂ → C.SumSpace}
@@ -280,7 +273,10 @@ theorem norm_le_norm_fst_rpow_mul_rpow_integral_stripPoissonMeasure {θ p₁ : �
   have h := norm_le_rpow_integral_stripPoissonMeasure hθ one_pos hp₁ hF hu
   simp only [div_one, Real.rpow_one] at h
   exact h.trans <| mul_le_mul_of_nonneg_right
-    (integral_norm_rpow_le_norm_rpow g.1 (sub_nonneg.2 hθ.2.le))
+    (Real.rpow_le_rpow (integral_nonneg fun _ ↦ norm_nonneg _)
+      (TauCeti.MeasureTheory.integral_le_const_of_ae_nonneg (.of_forall fun _ ↦ norm_nonneg _)
+        (.of_forall g.1.norm_coe_le_norm))
+      (sub_nonneg.2 hθ.2.le))
     (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
 
 /-- **Mixed `(L^{p₀}, L^∞)` strip Poisson bound for `[X₀, X₁]_θ`.** -/
@@ -292,7 +288,10 @@ theorem norm_le_rpow_integral_stripPoissonMeasure_mul_norm_snd_rpow {θ p₀ : �
   have h := norm_le_rpow_integral_stripPoissonMeasure hθ hp₀ one_pos hF hu
   simp only [div_one, Real.rpow_one] at h
   exact h.trans <| mul_le_mul_of_nonneg_left
-    (integral_norm_rpow_le_norm_rpow g.2 hθ.1.le)
+    (Real.rpow_le_rpow (integral_nonneg fun _ ↦ norm_nonneg _)
+      (TauCeti.MeasureTheory.integral_le_const_of_ae_nonneg (.of_forall fun _ ↦ norm_nonneg _)
+        (.of_forall g.2.norm_coe_le_norm))
+      hθ.1.le)
     (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
 
 /-- **`L¹` strip Poisson bound (Calderón–Hirschman).** -/

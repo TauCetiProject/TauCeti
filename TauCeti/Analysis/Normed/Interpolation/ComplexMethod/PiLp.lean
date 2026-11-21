@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Poisson
+public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Refl
+public import TauCeti.Analysis.Normed.Lp.PiLp
 import Mathlib.Analysis.MeanInequalities
-import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Integral.Bochner.PiLp
 
@@ -24,7 +25,8 @@ of intersections, or duality (Calderón §13.6; Bergh–Löfström, Theorem 5.1.
 ## Main definitions and results
 
 * `TauCeti.CompatibleCouple.piLp`, `piLp_proj_compat`, `piLpCoord`, `piLpCoord_mk`,
-  `piLpCoord_injective`, `piLpComplexMethodEquiv`, and `piLpReflComplexMethodEquiv`.
+  `piLpCoord_injective`, `piLp_single_compat`, `piLpSingle`, `piLpCoord_piLpSingle_same`,
+  `piLpCoord_piLpSingle_of_ne`, `piLpComplexMethodEquiv`, and `piLpReflComplexMethodEquiv`.
 
 ## References
 
@@ -193,7 +195,8 @@ theorem piLpCoord_injective (θ : ℝ) (C : ∀ i, CompatibleCouple ℂ (X₀ i)
     rw [← sumSpaceEmbed_toSum_piLpCoord, ← sumSpaceEmbed_toSum_piLpCoord, h i]
 
 omit [∀ i, T1Space (V i)] in
-private theorem piLp_single_compat [DecidableEq ι]
+/-- Compatibility of the `i`-th coordinate inclusions on the intersection space of `piLp`. -/
+theorem piLp_single_compat [DecidableEq ι]
     (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (i : ι) (x : (C i).inter) :
     (piLp q₀ q₁ C).fstToSum (PiLp.singleCLM q₀ ℂ X₀ i ((C i).interFst x)) =
       (piLp q₀ q₁ C).sndToSum (PiLp.singleCLM q₁ ℂ X₁ i ((C i).interSnd x)) := by
@@ -202,12 +205,26 @@ private theorem piLp_single_compat [DecidableEq ι]
   · subst hij; simpa using (C j).embed₀_interFst x
   · simp [hij]
 
-private def piLpSingle [DecidableEq ι] (θ : ℝ) (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
+/-- The `i`-th coordinate inclusion `[X₀ i, X₁ i]_θ →L[ℂ] [PiLp q₀ X₀, PiLp q₁ X₁]_θ`. -/
+def piLpSingle [DecidableEq ι] (θ : ℝ) (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     (i : ι) : (C i).ComplexMethodSpace θ →L[ℂ] (piLp q₀ q₁ C).ComplexMethodSpace θ :=
   ComplexMethodSpace.map θ (PiLp.singleCLM q₀ ℂ X₀ i) (PiLp.singleCLM q₁ ℂ X₁ i)
     (piLp_single_compat C i)
 
-private theorem sumSpaceEmbed_toSum_piLpSingle [DecidableEq ι] (θ : ℝ)
+/-- Applying `piLpSingle` to `mk θ g` places both boundary traces in coordinate `i`. -/
+@[simp]
+theorem piLpSingle_mk [DecidableEq ι] (θ : ℝ)
+    (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (i : ι) (g : (C i).stripTraces) :
+    piLpSingle (q₀ := q₀) (q₁ := q₁) θ C i (ComplexMethodSpace.mk θ g) =
+      ComplexMethodSpace.mk θ
+        (stripTracesMap (PiLp.singleCLM q₀ ℂ X₀ i) (PiLp.singleCLM q₁ ℂ X₁ i)
+          (piLp_single_compat C i) g) :=
+  ComplexMethodSpace.map_mk (PiLp.singleCLM q₀ ℂ X₀ i) (PiLp.singleCLM q₁ ℂ X₁ i)
+    (piLp_single_compat C i) g
+
+/-- In `∀ j, V j`, `piLpSingle θ C i u` embeds as `Pi.single i` of `u`. -/
+@[simp]
+theorem sumSpaceEmbed_toSum_piLpSingle [DecidableEq ι] (θ : ℝ)
     (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (i j : ι)
     (u : (C i).ComplexMethodSpace θ) :
     (piLp q₀ q₁ C).sumSpaceEmbed
@@ -218,6 +235,24 @@ private theorem sumSpaceEmbed_toSum_piLpSingle [DecidableEq ι] (θ : ℝ)
   by_cases hij : j = i
   · subst hij; simp
   · simp [hij]
+
+/-- Projecting `piLpSingle θ C i u` onto coordinate `i` recovers `u`. -/
+@[simp]
+theorem piLpCoord_piLpSingle_same [DecidableEq ι] (θ : ℝ)
+    (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (i : ι)
+    (u : (C i).ComplexMethodSpace θ) :
+    piLpCoord (q₀ := q₀) (q₁ := q₁) θ C i (piLpSingle θ C i u) = u := by
+  refine ComplexMethodSpace.ext ((C i).sumSpaceEmbed_injective ?_)
+  simp
+
+/-- Projecting `piLpSingle θ C i u` onto a distinct coordinate `j ≠ i` gives `0`. -/
+@[simp]
+theorem piLpCoord_piLpSingle_of_ne [DecidableEq ι] (θ : ℝ)
+    (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) {i j : ι} (h : j ≠ i)
+    (u : (C i).ComplexMethodSpace θ) :
+    piLpCoord (q₀ := q₀) (q₁ := q₁) θ C j (piLpSingle θ C i u) = 0 := by
+  refine ComplexMethodSpace.ext ((C j).sumSpaceEmbed_injective ?_)
+  simp [h]
 
 private def piLpFromCoord (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] (θ : ℝ)
     (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
@@ -477,39 +512,6 @@ theorem piLpCoord_piLpComplexMethodEquiv_symm [Fact (1 ≤ q)] {θ : ℝ} (hθ :
     (v : PiLp q (fun i ↦ (C i).ComplexMethodSpace θ)) (i : ι) :
     piLpCoord θ C i ((piLpComplexMethodEquiv hθ hq C).symm v) = v i :=
   piLpCoord_piLpFromCoord (q₀ := q₀) (q₁ := q₁) θ C v.ofLp i
-
-/-- For `0 ≤ θ ≤ 1`, `[X, X]_θ ≃ₗᵢ[ℂ] X` via evaluation in the ambient space. -/
-def ComplexMethodSpace.reflEquiv {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
-    (hθ : θ ∈ Icc 0 1) : (refl ℂ X).ComplexMethodSpace θ ≃ₗᵢ[ℂ] X where
-  toFun u := (refl ℂ X).sumSpaceEmbed (ComplexMethodSpace.toSum u)
-  invFun x := ComplexMethodSpace.ofInter θ ⟨(x, x), by simp⟩
-  left_inv u := by ext; simp [ComplexMethodSpace.toSum_ofInter hθ]
-  right_inv x := by simp [ComplexMethodSpace.toSum_ofInter hθ]
-  map_add' u v := by simp
-  map_smul' c u := by simp
-  norm_map' u := (norm_refl_sumSpaceEmbed (ComplexMethodSpace.toSum u)).trans
-    (ComplexMethodSpace.norm_refl u).symm
-
-/-- Applying `reflEquiv` evaluates `toSum u` in `X`. -/
-@[simp]
-theorem ComplexMethodSpace.reflEquiv_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
-    {θ : ℝ} (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
-    ComplexMethodSpace.reflEquiv hθ u = (refl ℂ X).sumSpaceEmbed (ComplexMethodSpace.toSum u) :=
-  (rfl)
-
-/-- The inverse of `reflEquiv` sends `x : X` to the class of `(x, x) ∈ (refl ℂ X).inter`. -/
-@[simp]
-theorem ComplexMethodSpace.reflEquiv_symm_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
-    {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : X) :
-    (ComplexMethodSpace.reflEquiv hθ).symm x = ComplexMethodSpace.ofInter θ ⟨(x, x), by simp⟩ :=
-  (rfl)
-
-/-- In `(refl ℂ X).SumSpace`, `(reflEquiv hθ).symm x` lies over `fstToSum x`. -/
-theorem ComplexMethodSpace.toSum_reflEquiv_symm {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℂ X] {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : X) :
-    ComplexMethodSpace.toSum ((ComplexMethodSpace.reflEquiv hθ).symm x) =
-      (refl ℂ X).fstToSum x := by
-  simp [ComplexMethodSpace.reflEquiv_symm_apply, ComplexMethodSpace.toSum_ofInter hθ]
 
 /-- **Constant-fiber complex interpolation of finite `ℓ^q` spaces** (`0 < θ < 1`,
 `1 / q = (1 - θ) / q₀ + θ / q₁`). -/

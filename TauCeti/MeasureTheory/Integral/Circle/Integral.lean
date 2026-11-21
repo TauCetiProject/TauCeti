@@ -6,19 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
+import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
-# Circle integrals: linear maps, the angle interval and the radius
+# Circle integrals: linear maps, the angle interval, the radius, and arc pullbacks
 
 This file records that continuous linear maps commute with Mathlib's circle integrals
 `∮ z in C(c, R), f z`, the circle-integral analogue of
 `ContinuousLinearMap.intervalIntegral_comp_comm`. It also writes a circle integral over the angle
-interval `[-π, π]` instead of `[0, 2π]`, and shows that for `f` continuous on a closed disc the
+interval `[-π, π]` instead of `[0, 2π]`, shows that for `f` continuous on a closed disc the
 circle integrals over the concentric circles depend continuously on the radius up to the
-boundary circle. By periodicity of `circleMap` a circle integral may also be computed over
-any parameter interval `[a, a + 2π]`.
+boundary circle, and provides change-of-variables lemmas for pulling circle-arc integrals back
+along injective differentiable angle parametrizations. By periodicity of `circleMap` a circle
+integral may also be computed over any parameter interval `[a, a + 2π]`.
 
 ## Main results
 
@@ -30,9 +32,14 @@ any parameter interval `[a, a + 2π]`.
   `[-π, π]`.
 * `ContinuousOn.continuousOn_circleIntegral`: for `f` continuous on the closed disc
   `|z - c| ≤ R`, the map `r ↦ ∮ z in C(c, r), f z` is continuous on `[0, R]`.
+* `TauCeti.integrableOn_circleMap_iff_of_hasDerivAt` and
+  `TauCeti.setIntegral_circleMap_eq_of_hasDerivAt`: change of variables for pulling normalized
+  circle-arc integrals back along an injective differentiable angle parametrization.
 -/
 
 public section
+
+section Complex
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -91,3 +98,39 @@ theorem ContinuousOn.continuousOn_circleIntegral {f : ℂ → E} {c : ℂ} {R : 
     intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' hG 0 (2 * π)
   refine hcont.continuousOn.congr fun r hr ↦ ?_
   simp [hρ, hr.1, hr.2]
+
+end Complex
+
+section Pullback
+
+open MeasureTheory Real Set
+
+/-- Pulling an integrable function on a circle arc `circleMap c R '' s` back along an injective
+differentiable angle parametrization `g` with `range g = s` and `|g' t| = 2 * π * k t`. -/
+theorem TauCeti.integrableOn_circleMap_iff_of_hasDerivAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {c : ℂ} {R : ℝ} {g d k : ℝ → ℝ} {b : ℝ → ℂ} {s : Set ℝ} {ψ : ℂ → E}
+    (hrange : range g = s) (hinj : Function.Injective g) (hd : ∀ t, HasDerivAt g (d t) t)
+    (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap c R (g t) = b t) :
+    IntegrableOn (fun φ ↦ ψ (circleMap c R φ)) s ↔ Integrable (fun t ↦ k t • ψ (b t)) := by
+  have hfun : (fun t ↦ |d t| • ψ (circleMap c R (g t))) =
+      fun t ↦ (2 * π) • (k t • ψ (b t)) :=
+    funext fun t ↦ by rw [habs, hb, mul_smul]
+  rw [← hrange, ← image_univ, integrableOn_image_iff_integrableOn_abs_deriv_smul .univ
+    (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, integrableOn_univ, hfun]
+  exact integrable_smul_iff two_pi_pos.ne' _
+
+/-- Change of variables for a circle-arc integral along an injective differentiable angle
+parametrization `g` with `range g = s` and `|g' t| = 2 * π * k t`. -/
+theorem TauCeti.setIntegral_circleMap_eq_of_hasDerivAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {c : ℂ} {R : ℝ} {g d k : ℝ → ℝ} {b : ℝ → ℂ} {s : Set ℝ} {ψ : ℂ → E}
+    (hrange : range g = s) (hinj : Function.Injective g) (hd : ∀ t, HasDerivAt g (d t) t)
+    (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap c R (g t) = b t) :
+    (∫ φ in s, ψ (circleMap c R φ)) = (2 * π) • ∫ t, k t • ψ (b t) := by
+  have hfun : (fun t ↦ |d t| • ψ (circleMap c R (g t))) =
+      fun t ↦ (2 * π) • (k t • ψ (b t)) :=
+    funext fun t ↦ by rw [habs, hb, mul_smul]
+  rw [← hrange, ← image_univ, integral_image_eq_integral_abs_deriv_smul .univ
+    (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, setIntegral_univ, ← integral_smul]
+  exact integral_congr_ae (.of_forall (congr_fun hfun))
+
+end Pullback

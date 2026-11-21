@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Variants of Hölder's inequality
@@ -246,18 +247,12 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
     hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
 
-private theorem integrable_max_rpow [IsFiniteMeasure ν] {g : β → ℝ} {p ε : ℝ}
-    (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x) (hgp : Integrable (fun x ↦ g x ^ p) ν) :
-    Integrable (fun x ↦ (max (g x) ε) ^ p) ν :=
-  (hgp.sup (integrable_const (ε ^ p))).congr
-    (h0.mono fun _ hx ↦ (Real.rpow_max hx hε.le hp.le).symm)
-
 /-- On a finite measure space, `x ↦ Real.log (max (g x) ε)` is integrable whenever `0 < p`,
 `0 < ε`, `g ≥ 0` almost everywhere, and `g ^ p` is integrable. -/
 theorem integrable_log_max_of_integrable_rpow [IsFiniteMeasure ν] {g : β → ℝ} {p ε : ℝ}
     (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x) (hgp : Integrable (fun x ↦ g x ^ p) ν) :
     Integrable (fun x ↦ Real.log (max (g x) ε)) ν := by
-  have hmax := integrable_max_rpow hp hε h0 hgp
+  have hmax := integrable_max_rpow hp.le hε.le h0 hgp
   refine ((integrable_const |Real.log ε|).add (hmax.const_mul p⁻¹)).mono'
     (((Real.measurable_log.comp_aemeasurable hmax.aemeasurable).const_mul p⁻¹).congr
       (.of_forall fun _ ↦ by
@@ -294,7 +289,7 @@ theorem exp_mul_integral_log_max_le_rpow_integral_rpow_add [IsProbabilityMeasure
     {α p ε : ℝ} (hα : 0 ≤ α) (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x)
     (hgp : Integrable (fun x ↦ g x ^ p) ν) :
     Real.exp (α * ∫ x, Real.log (max (g x) ε) ∂ν) ≤ ((∫ x, g x ^ p ∂ν) + ε ^ p) ^ (α / p) := by
-  have hmax := integrable_max_rpow hp hε h0 hgp
+  have hmax := integrable_max_rpow hp.le hε.le h0 hgp
   refine (exp_mul_integral_log_le_rpow_integral_rpow hα hp
     (.of_forall fun _ ↦ lt_max_of_lt_right hε)
     (integrable_log_max_of_integrable_rpow hp hε h0 hgp) hmax).trans ?_

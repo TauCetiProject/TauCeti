@@ -25,9 +25,10 @@ integrable function whose norm is almost everywhere at least one is finite
 (`MeasureTheory.Integrable.isFiniteMeasure_of_one_le_norm`).
 
 For absolute moments, a real function in `Lᵖ` of positive real order has an integrable `p`-th
-power (`MeasureTheory.MemLp.integrable_rpow`), and when the function is almost everywhere
-nonnegative both its extended `p`-th moment and the `p`-th power of its `eLpNorm` agree with
-`ENNReal.ofReal` of its Bochner `p`-th moment
+power (`MeasureTheory.MemLp.integrable_rpow`), a lower-truncated power `(max (g x) ε) ^ p` is
+integrable on a finite measure space whenever `g ^ p` is (`TauCeti.integrable_max_rpow`), and when
+the function is almost everywhere nonnegative both its extended `p`-th moment and the `p`-th power
+of its `eLpNorm` agree with `ENNReal.ofReal` of its Bochner `p`-th moment
 (`MeasureTheory.MemLp.lintegral_ofReal_rpow_eq_ofReal_integral`,
 `MeasureTheory.MemLp.eLpNorm_rpow_eq_ofReal_integral`), converting `eLpNorm` bounds between almost
 everywhere nonnegative functions into Bochner `p`-th moment inequalities
@@ -242,5 +243,14 @@ theorem memLp_id_ofReal_iff_integrable_abs_rpow {q : ℝ} (hq : 0 < q) (μ : Mea
   simpa only [id_eq, Real.norm_eq_abs, ENNReal.toReal_ofReal hq.le] using
     (integrable_norm_rpow_iff (f := id) (μ := μ) aestronglyMeasurable_id
       (ENNReal.ofReal_pos.mpr hq).ne' ENNReal.ofReal_ne_top).symm
+
+/-- On a finite measure space, `x ↦ (max (g x) ε) ^ p` is integrable whenever `0 ≤ p`, `0 ≤ ε`,
+`g ≥ 0` almost everywhere, and `g ^ p` is integrable. -/
+theorem integrable_max_rpow {β : Type*} [MeasurableSpace β] {ν : Measure β} [IsFiniteMeasure ν]
+    {g : β → ℝ} {p ε : ℝ} (hp : 0 ≤ p) (hε : 0 ≤ ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x)
+    (hgp : Integrable (fun x ↦ g x ^ p) ν) :
+    Integrable (fun x ↦ (max (g x) ε) ^ p) ν :=
+  (hgp.sup (integrable_const (ε ^ p))).congr
+    (h0.mono fun _ hx ↦ (Real.rpow_max hx hε hp).symm)
 
 end TauCeti

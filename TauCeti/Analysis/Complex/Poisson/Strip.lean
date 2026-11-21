@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.MeasureTheory.Integral.Circle.Integral
 
 /-!
 # Conformal map and Poisson kernels of the vertical strip
@@ -33,7 +33,9 @@ measures `stripPoissonMeasure₀ θ` and `stripPoissonMeasure₁ θ`, and
   `TauCeti.range_stripToUnitDisc_mul_I`, `TauCeti.range_stripToUnitDisc_one_add_mul_I`.
 * `TauCeti.stripPoissonKernel₀`, `TauCeti.stripPoissonKernel₁`,
   `TauCeti.stripPoissonMeasure₀`, `TauCeti.stripPoissonMeasure₁`,
-  `TauCeti.stripPoissonMeasure₀_apply`, `TauCeti.stripPoissonMeasure₁_apply`.
+  `TauCeti.stripPoissonMeasure₀_apply`, `TauCeti.stripPoissonMeasure₁_apply`,
+  `TauCeti.integrable_stripPoissonMeasure₀_iff`, `TauCeti.integrable_stripPoissonMeasure₁_iff`,
+  `TauCeti.integral_stripPoissonMeasure₀`, `TauCeti.integral_stripPoissonMeasure₁`.
 * `TauCeti.exists_continuousOn_sphere_comp_stripToUnitDisc` and
   `TauCeti.circleAverage_eq_stripPoissonKernel`.
 
@@ -368,32 +370,20 @@ theorem range_stripToUnitDisc_mul_I {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     funext fun t ↦ (circleMap_leftBoundaryAngle hθ t).symm
   rw [h, Set.range_comp, range_leftBoundaryAngle hθ]
 
-private theorem boundaryAngle_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {g d k : ℝ → ℝ} {b : ℝ → ℂ} {s : Set ℝ} {ψ : ℂ → E}
-    (hrange : range g = s) (hinj : Function.Injective g) (hd : ∀ t, HasDerivAt g (d t) t)
-    (habs : ∀ t, |d t| = 2 * π * k t) (hb : ∀ t, circleMap 0 1 (g t) = b t) :
-    (IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) s ↔ Integrable (fun t ↦ k t • ψ (b t))) ∧
-      (∫ φ in s, ψ (circleMap 0 1 φ)) = (2 * π) • ∫ t, k t • ψ (b t) := by
-  have hfun : (fun t ↦ |d t| • ψ (circleMap 0 1 (g t))) = fun t ↦ (2 * π) • (k t • ψ (b t)) :=
-    funext fun t ↦ by rw [habs, hb, mul_smul]
-  refine ⟨?_, ?_⟩
-  · rw [← hrange, ← image_univ, integrableOn_image_iff_integrableOn_abs_deriv_smul .univ
-      (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, integrableOn_univ, hfun]
-    exact integrable_smul_iff two_pi_pos.ne' _
-  · rw [← hrange, ← image_univ, integral_image_eq_integral_abs_deriv_smul .univ
-      (fun t _ ↦ (hd t).hasDerivWithinAt) hinj.injOn, setIntegral_univ, ← integral_smul]
-    exact integral_congr_ae (.of_forall (congr_fun hfun))
-
 private theorem rightBoundary_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (ψ : ℂ → E) :
     (IntegrableOn (fun φ ↦ ψ (circleMap 0 1 φ)) (Ioo 0 (2 * π * θ)) ↔
       Integrable (fun t ↦ stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I)))) ∧
       (∫ φ in Ioo 0 (2 * π * θ), ψ (circleMap 0 1 φ)) =
         (2 * π) • ∫ t, stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I)) :=
-  boundaryAngle_pullback (range_rightBoundaryAngle hθ)
-    (strictMono_rightBoundaryAngle hθ).injective (hasDerivAt_rightBoundaryAngle hθ)
-    (fun t ↦ abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)))
-    (circleMap_rightBoundaryAngle hθ)
+  ⟨integrableOn_circleMap_iff_of_hasDerivAt (range_rightBoundaryAngle hθ)
+      (strictMono_rightBoundaryAngle hθ).injective (hasDerivAt_rightBoundaryAngle hθ)
+      (fun t ↦ abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)))
+      (circleMap_rightBoundaryAngle hθ),
+    setIntegral_circleMap_eq_of_hasDerivAt (range_rightBoundaryAngle hθ)
+      (strictMono_rightBoundaryAngle hθ).injective (hasDerivAt_rightBoundaryAngle hθ)
+      (fun t ↦ abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₁_pos hθ t)))
+      (circleMap_rightBoundaryAngle hθ)⟩
 
 private theorem leftBoundary_pullback {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (ψ : ℂ → E) :
@@ -401,10 +391,14 @@ private theorem leftBoundary_pullback {E : Type*} [NormedAddCommGroup E] [Normed
       Integrable (fun t ↦ stripPoissonKernel₀ θ t • ψ (stripToUnitDisc θ (t * I)))) ∧
       (∫ φ in Ioo (2 * π * θ) (2 * π), ψ (circleMap 0 1 φ)) =
         (2 * π) • ∫ t, stripPoissonKernel₀ θ t • ψ (stripToUnitDisc θ (t * I)) :=
-  boundaryAngle_pullback (range_leftBoundaryAngle hθ)
-    (strictAnti_leftBoundaryAngle hθ).injective (hasDerivAt_leftBoundaryAngle hθ)
-    (fun t ↦ (abs_neg _).trans (abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₀_pos hθ t))))
-    (circleMap_leftBoundaryAngle hθ)
+  ⟨integrableOn_circleMap_iff_of_hasDerivAt (range_leftBoundaryAngle hθ)
+      (strictAnti_leftBoundaryAngle hθ).injective (hasDerivAt_leftBoundaryAngle hθ)
+      (fun t ↦ (abs_neg _).trans (abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₀_pos hθ t))))
+      (circleMap_leftBoundaryAngle hθ),
+    setIntegral_circleMap_eq_of_hasDerivAt (range_leftBoundaryAngle hθ)
+      (strictAnti_leftBoundaryAngle hθ).injective (hasDerivAt_leftBoundaryAngle hθ)
+      (fun t ↦ (abs_neg _).trans (abs_of_pos (mul_pos two_pi_pos (stripPoissonKernel₀_pos hθ t))))
+      (circleMap_leftBoundaryAngle hθ)⟩
 
 /-- The right-boundary strip Poisson kernel is integrable on `ℝ`. -/
 theorem integrable_stripPoissonKernel₁ {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
@@ -487,6 +481,29 @@ theorem isProbabilityMeasure_stripPoissonMeasure₀ {θ : ℝ} (hθ : θ ∈ Ioo
   stripPoissonMeasure₀_eq_stripPoissonMeasure₁_one_sub θ ▸
     isProbabilityMeasure_stripPoissonMeasure₁ (sub_mem_Ioo_zero_iff_right.2 hθ)
 
+/-- Integrability against `stripPoissonMeasure₁ θ` is equivalent to integrability of the
+`stripPoissonKernel₁ θ`-weighted function. -/
+theorem integrable_stripPoissonMeasure₁_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (f : ℝ → E) :
+    Integrable f (stripPoissonMeasure₁ θ) ↔
+      Integrable (fun t ↦ stripPoissonKernel₁ θ t • f t) := by
+  rw [stripPoissonMeasure₁, integrable_withDensity_iff_integrable_smul'
+    ((continuous_stripPoissonKernel₁ hθ).const_mul _).measurable.ennreal_ofReal
+    (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp_rw [ENNReal.toReal_ofReal (mul_nonneg (inv_nonneg.2 hθ.1.le)
+    (stripPoissonKernel₁_pos hθ _).le), mul_smul]
+  exact integrable_smul_iff (inv_ne_zero hθ.1.ne') _
+
+/-- Integrability against `stripPoissonMeasure₀ θ` is equivalent to integrability of the
+`stripPoissonKernel₀ θ`-weighted function. -/
+theorem integrable_stripPoissonMeasure₀_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (f : ℝ → E) :
+    Integrable f (stripPoissonMeasure₀ θ) ↔
+      Integrable (fun t ↦ stripPoissonKernel₀ θ t • f t) := by
+  rw [stripPoissonMeasure₀_eq_stripPoissonMeasure₁_one_sub,
+    integrable_stripPoissonMeasure₁_iff (sub_mem_Ioo_zero_iff_right.2 hθ)]
+  simp_rw [stripPoissonKernel₀_eq_stripPoissonKernel₁_one_sub]
+
 /-- Bochner integration against `stripPoissonMeasure₁ θ` equals `θ⁻¹` times integration against
 `stripPoissonKernel₁ θ`. -/
 theorem integral_stripPoissonMeasure₁ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -516,7 +533,7 @@ theorem circleIntegrable_iff_stripPoissonKernel {E : Type*} [NormedAddCommGroup 
     CircleIntegrable ψ 0 1 ↔
       Integrable (fun t ↦ stripPoissonKernel₀ θ t • ψ (stripToUnitDisc θ (t * I))) ∧
         Integrable (fun t ↦ stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I))) := by
-  rw [CircleIntegrable, intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le,
+  rw [circleIntegrable_def, intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le,
     ← Ioc_union_Ioc_eq_Ioc (mul_nonneg two_pi_pos.le hθ.1.le)
       (mul_le_of_le_one_right two_pi_pos.le hθ.2.le),
     integrableOn_union, integrableOn_Ioc_iff_integrableOn_Ioo,
@@ -533,7 +550,8 @@ theorem circleAverage_eq_stripPoissonKernel {E : Type*} [NormedAddCommGroup E] [
         ∫ t, stripPoissonKernel₁ θ t • ψ (stripToUnitDisc θ (1 + t * I)) := by
   have h0 : 0 ≤ 2 * π * θ := mul_nonneg two_pi_pos.le hθ.1.le
   have h1 : 2 * π * θ ≤ 2 * π := mul_le_of_le_one_right two_pi_pos.le hθ.2.le
-  have hψ' := (intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1 hψ
+  have hψ' := (intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1
+    ((circleIntegrable_def _ _ _).1 hψ)
   rw [circleAverage_def, ← intervalIntegral.integral_add_adjacent_intervals
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le h0).2 (hψ'.mono_set (Ioc_subset_Ioc_right h1)))
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le h1).2 (hψ'.mono_set (Ioc_subset_Ioc_left h0))),
@@ -546,6 +564,21 @@ theorem circleAverage_eq_stripPoissonKernel {E : Type*} [NormedAddCommGroup E] [
 
 private def unitDiscToExpStrip (θ : ℝ) (w : ℂ) : ℂ :=
   (exp (I * π * θ) - w * exp (-I * π * θ)) / (1 - w)
+
+private theorem im_unitDiscToExpStrip (θ : ℝ) (w : ℂ) :
+    (unitDiscToExpStrip θ w).im = (1 - normSq w) * Real.sin (π * θ) / normSq (1 - w) := by
+  have him : (exp (I * π * θ)).im = Real.sin (π * θ) := by
+    rw [im_exp_I_mul_pi_mul]; simp
+  rw [unitDiscToExpStrip, Complex.div_im]
+  have h1 : (exp (I * π * θ) - w * exp (-I * π * θ)).im * (1 - w).re -
+      (exp (I * π * θ) - w * exp (-I * π * θ)).re * (1 - w).im =
+      (1 - normSq w) * Real.sin (π * θ) := by
+    rw [← star_exp_I_mul_pi, ← him]
+    simp only [RCLike.star_def, normSq_apply, sub_re, sub_im, mul_re, mul_im,
+      conj_re, conj_im, one_re, one_im]
+    ring
+  rw [← h1]
+  ring
 
 private theorem exp_I_pi_sub_exp_neg_I_pi_ne_zero {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
     exp (I * π * θ) - exp (-I * π * θ) ≠ 0 :=
@@ -617,24 +650,9 @@ theorem bijOn_stripToUnitDisc {θ : ℝ} (hθ : θ ∈ Ioo 0 1) :
       rw [normSq_eq_norm_sq, sq_lt_one_iff₀ (norm_nonneg _)]
       exact hu_lt
     set w := unitDiscToExpStrip θ u
-    have hw_eq : w =
-        ((exp (I * π * θ) - u * exp (-I * π * θ)) * star (1 - u)) / (normSq (1 - u) : ℂ) := by
-      dsimp only [w]
-      have hnorm_eq : (1 - u) * star (1 - u) = (normSq (1 - u) : ℂ) := by
-        rw [RCLike.star_def, mul_conj]
-      rw [unitDiscToExpStrip, div_eq_div_iff h1u (ofReal_ne_zero.2 (normSq_pos.2 h1u).ne'),
-        ← hnorm_eq]
-      ring
-    have hnum_im : ((exp (I * π * θ) - u * exp (-I * π * θ)) * star (1 - u)).im =
-        (1 - normSq u) * Real.sin (π * θ) := by
-      have him : (exp (I * π * θ)).im = Real.sin (π * θ) := by
-        rw [im_exp_I_mul_pi_mul]; simp
-      rw [← star_exp_I_mul_pi, ← him]
-      simp only [RCLike.star_def, normSq_apply, sub_re, sub_im, mul_re, mul_im,
-        conj_re, conj_im, one_re, one_im]
-      ring
     have hw_im : 0 < w.im := by
-      rw [hw_eq, div_ofReal_im, hnum_im]
+      dsimp only [w]
+      rw [im_unitDiscToExpStrip]
       exact div_pos (mul_pos (sub_pos.2 hnormSq) (sin_pi_mul_pos hθ)) (normSq_pos.2 h1u)
     have hw_ne : w ≠ 0 := fun h ↦ by simp [h] at hw_im
     have harg_pos : 0 < w.arg :=
@@ -660,21 +678,12 @@ private theorem cayley_ofReal {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (r : ℝ) :
   have h := stripToUnitDisc_cayley hθ (sub_exp_neg_I_pi_ne_zero hθ (by simp : 0 ≤ (r : ℂ).im))
   exact ⟨h.1, by rw [h.2, ofReal_re]⟩
 
-private theorem abs_re_unitDiscToExpStrip_of_mem_sphere (θ : ℝ) {w : ℂ}
-    (hw : w ∈ sphere 0 1) (hw1 : w ≠ 1) :
+private theorem abs_re_unitDiscToExpStrip_of_mem_sphere (θ : ℝ) {w : ℂ} (hw : w ∈ sphere 0 1) :
     |(unitDiscToExpStrip θ w).re| = ‖unitDiscToExpStrip θ w‖ := by
-  have hww : w * star w = 1 := by
-    rw [RCLike.star_def, mul_conj, normSq_eq_norm_sq, mem_sphere_zero_iff_norm.1 hw, one_pow,
-      ofReal_one]
-  have h1w : 1 - w ≠ 0 := sub_ne_zero.2 hw1.symm
-  have hstar : star (exp (-I * π * θ)) = exp (I * π * θ) := by
-    rw [← star_exp_I_mul_pi, star_involutive]
-  have hself : star (unitDiscToExpStrip θ w) = unitDiscToExpStrip θ w := by
-    rw [unitDiscToExpStrip, star_div₀, star_sub, star_mul, star_sub, star_one, star_exp_I_mul_pi,
-      hstar, div_eq_div_iff (fun h ↦ h1w (by simpa using congrArg star h)) h1w]
-    linear_combination (exp (I * ↑π * ↑θ) - exp (-I * ↑π * ↑θ)) * hww
+  have hnormSq : normSq w = 1 := by
+    rw [normSq_eq_norm_sq, mem_sphere_zero_iff_norm.1 hw, one_pow]
   have him : (unitDiscToExpStrip θ w).im = 0 := by
-    have := congrArg Complex.im hself; simp only [RCLike.star_def, conj_im] at this; linarith
+    rw [im_unitDiscToExpStrip, hnormSq, sub_self, zero_mul, zero_div]
   rw [← Complex.re_add_im (unitDiscToExpStrip θ w), him]; simp
 
 private def glueBoundary {α : Type*} (θ : ℝ) (cBot cTop : α) (u₀ u₁ : ℝ → α) (w : ℂ) : α :=
@@ -731,7 +740,7 @@ private theorem continuousWithinAt_glueBoundary_one {α : Type*} [TopologicalSpa
   by_cases hw1 : w = 1
   · simpa [hw1] using mem_of_mem_nhds hs
   have hgt : B < |(unitDiscToExpStrip θ w).re| := by
-    rw [abs_re_unitDiscToExpStrip_of_mem_sphere θ hw hw1, unitDiscToExpStrip, norm_div,
+    rw [abs_re_unitDiscToExpStrip_of_mem_sphere θ hw, unitDiscToExpStrip, norm_div,
       lt_div_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hw1)))]
     linarith [(lt_div_iff₀ hB).1 hden]
   have hlog : -Real.log |(unitDiscToExpStrip θ w).re| / π ≤ T := by

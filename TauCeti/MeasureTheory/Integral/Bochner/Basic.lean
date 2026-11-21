@@ -94,6 +94,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `MeasureTheory.integral_le_const_of_ae_nonneg`: on a probability space, the integral of an
+  almost-everywhere nonnegative function bounded almost everywhere by `C` is at most `C`.
 * `TauCeti.setIntegral_Icc_update_add_setIntegral_Icc_update` splits a Bochner set integral over
   `Set.Icc a b` in `ι → ℝ` along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
 * `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
@@ -357,6 +359,15 @@ theorem integral_exp_neg_le_one_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {
     ∫ x, Real.exp (-f x) ∂μ ≤ 1 :=
   (integral_mono_of_nonneg (ae_of_all _ fun x ↦ (Real.exp_pos _).le) (integrable_const 1)
     (hf0.mono fun x hx ↦ Real.exp_le_one_iff.2 (neg_nonpos.2 hx))).trans_eq (by simp)
+
+/-- On a probability space, the integral of an almost-everywhere nonnegative function bounded
+almost everywhere by a constant `C` is at most `C`. No measurability is needed: a non-integrable
+integrand has integral `0`, and `0 ≤ C` follows from the pointwise bounds. -/
+theorem integral_le_const_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {f : Ω → ℝ} {C : ℝ} (hf0 : 0 ≤ᵐ[μ] f)
+    (hfC : ∀ᵐ x ∂μ, f x ≤ C) : ∫ x, f x ∂μ ≤ C :=
+  (integral_mono_of_nonneg hf0 (integrable_const C) hfC).trans_eq
+    (by rw [integral_const, probReal_univ, one_smul])
 
 /-- The difference of the integrals of two almost everywhere strongly measurable functions is at
 most the integral of the norm of their difference. No integrability is assumed: when `u - v` is
