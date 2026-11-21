@@ -37,7 +37,7 @@ theorem forall_imp_sub_iff_forall_le {n : ℕ} {p q : ℕ → Prop} :
     (∀ j : Fin (n + 1), p j → q (n - j)) ↔ ∀ m ≤ n, p (n - m) → q m := by
   refine ⟨fun h m hm hp ↦ ?_, fun h j hp ↦ h _ (Nat.sub_le n j) ?_⟩
   · simpa [Nat.sub_sub_self hm] using h ⟨n - m, by omega⟩ hp
-  · rwa [Nat.sub_sub_self (Nat.lt_succ_iff.1 j.2)]
+  · rwa [Nat.sub_sub_self (Nat.lt_succ_iff.1 j.isLt)]
 
 /-- Reversing both indices of a pair in `Fin n` preserves the parity of their sum, so the sign
 `(-1) ^ (i + j + 1)` attached to a root `ε_i - ε_j` is unchanged by the reversal. -/

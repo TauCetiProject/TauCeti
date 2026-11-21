@@ -36,7 +36,10 @@ Adjoining constants to an algebraic language gives an algebraic language
 
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
-(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), symbol sets of `L[[γ]]` avoiding the
+(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`); `Equiv.sumEmpty` absorbs
+`lhomWithConstantsMap` and commutes with `LHom.addConstants`
+(`FirstOrder.Language.sumEmpty_lhomWithConstantsMap_onRelation`,
+`FirstOrder.Language.LHom.sumEmpty_addConstants_onRelation`). Symbol sets of `L[[γ]]` avoiding the
 added constants lie in the range of `lhomWithConstants`
 (`FirstOrder.Language.subset_range_lhomWithConstants_onFunction`,
 `FirstOrder.Language.subset_range_lhomWithConstants_onRelation`), and every `L[[γ]]`-structure is
@@ -251,6 +254,36 @@ theorem sumElim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions
   rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
 
 end WithConstantsSymbols
+
+section ConstantsVarsCommutation
+
+/-- Mapping constants along `f` leaves the projection of a relation symbol of `L[[γ]]` to `L`
+unchanged. -/
+@[simp]
+theorem sumEmpty_lhomWithConstantsMap_onRelation {L : Language.{u, v}} {γ : Type w} {δ : Type*}
+    (f : γ → δ) {l : ℕ} (R : L[[γ]].Relations l) :
+    (Equiv.sumEmpty _ _) ((L.lhomWithConstantsMap f).onRelation R) = (Equiv.sumEmpty _ _) R := by
+  cases R with
+  | inl R => rfl
+  | inr R => exact R.elim
+
+namespace LHom
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}}
+
+/-- Eliminating the empty constant-relation summand commutes with `LHom.addConstants`. -/
+@[simp]
+theorem sumEmpty_addConstants_onRelation (g : L →ᴸ L') {γ : Type w} {l : ℕ}
+    (R : L[[γ]].Relations l) :
+    (Equiv.sumEmpty _ _) ((g.addConstants γ).onRelation R) =
+      g.onRelation ((Equiv.sumEmpty _ _) R) := by
+  cases R with
+  | inl R => rfl
+  | inr R => exact R.elim
+
+end LHom
+
+end ConstantsVarsCommutation
 
 namespace LEquiv
 

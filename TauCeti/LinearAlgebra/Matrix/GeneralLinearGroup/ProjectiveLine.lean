@@ -124,7 +124,7 @@ theorem natCard_fixedCosets_eq_zero {g : GL (Fin 2) R}
     rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def,
       MulAut.conj_apply] at hmem
     exact h y⁻¹ hmem
-  have : IsEmpty {c : GL (Fin 2) R ⧸ GL2Borel R // g • c = c} := ⟨fun c => hnone c.1 c.2⟩
+  have : IsEmpty {c : GL (Fin 2) R ⧸ GL2Borel R // g • c = c} := ⟨fun c => hnone c.val c.property⟩
   exact Nat.card_of_isEmpty
 
 end CommRing

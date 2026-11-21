@@ -257,8 +257,8 @@ signed simple root `k`, then the ideal first-order column of the reversed label 
 short-root basis vector at `β'` to the one at `γ'`. -/
 theorem f4ShortRootIdealFirstColumn_eq_basis_of_specialMap_add
     (k : Fin 4 ⊕ Fin 4) (iβ iγ : F4ShortRootIndex)
-    (hadd : f4SimplyConnectedRootDatum.root iγ.1 =
-      f4SimplyConnectedRootDatum.root iβ.1 +
+    (hadd : f4SimplyConnectedRootDatum.root iγ.val =
+      f4SimplyConnectedRootDatum.root iβ.val +
         f4SimplyConnectedRootDatum.root
           (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))) :
     f4ShortRootIdealFirstColumn (isogenyReverse k)

@@ -87,34 +87,35 @@ indexed by `0`, and `B` the indices `Fin.succ`. -/
 def unitaryProdBlockSucc :
     unitary α × unitary (Matrix (Fin m) (Fin m) α) →*
       unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α) where
-  toFun cB := ⟨cornerBlockSucc cB.1.1 cB.2.1, cornerBlockSucc_mem_unitary_iff.2 ⟨cB.1.2, cB.2.2⟩⟩
+  toFun cB := ⟨cornerBlockSucc cB.1.val cB.2.val, cornerBlockSucc_mem_unitary_iff.2 ⟨cB.1.property,
+      cB.2.property⟩⟩
   map_one' := Subtype.ext cornerBlockSucc_one
   map_mul' _ _ := Subtype.ext (cornerBlockSucc_mul_cornerBlockSucc _ _ _ _).symm
 
 /-- The block-diagonal embedding sends `(c, B)` to the matrix `diag(c, B)`. -/
 theorem coe_unitaryProdBlockSucc (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α)) :
     (unitaryProdBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) =
-      cornerBlockSucc (cB.1 : α) cB.2.1 :=
+      cornerBlockSucc (cB.1 : α) cB.2.val :=
   (rfl)
 
 @[simp]
 theorem unitaryProdBlockSucc_apply_zero_zero (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α)) :
-    (unitaryProdBlockSucc α m cB).1 0 0 = cB.1 :=
+    (unitaryProdBlockSucc α m cB).val 0 0 = cB.1 :=
   cornerBlockSucc_zero_zero _ _
 
 @[simp]
 theorem unitaryProdBlockSucc_apply_zero_succ (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α))
-    (j : Fin m) : (unitaryProdBlockSucc α m cB).1 0 j.succ = 0 :=
+    (j : Fin m) : (unitaryProdBlockSucc α m cB).val 0 j.succ = 0 :=
   cornerBlockSucc_zero_succ _ _ j
 
 @[simp]
 theorem unitaryProdBlockSucc_apply_succ_zero (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α))
-    (i : Fin m) : (unitaryProdBlockSucc α m cB).1 i.succ 0 = 0 :=
+    (i : Fin m) : (unitaryProdBlockSucc α m cB).val i.succ 0 = 0 :=
   cornerBlockSucc_succ_zero _ _ i
 
 @[simp]
 theorem unitaryProdBlockSucc_apply_succ_succ (cB : unitary α × unitary (Matrix (Fin m) (Fin m) α))
-    (i j : Fin m) : (unitaryProdBlockSucc α m cB).1 i.succ j.succ = cB.2.1 i j :=
+    (i j : Fin m) : (unitaryProdBlockSucc α m cB).val i.succ j.succ = cB.2.val i j :=
   cornerBlockSucc_succ_succ _ _ i j
 
 /-- The block-diagonal embedding of `unitary α × unitary (Matrix (Fin m) (Fin m) α)` is
@@ -142,33 +143,33 @@ theorem unitaryOneBlockSucc_eq_unitaryProdBlockSucc (B : unitary (Matrix (Fin m)
 
 /-- The block-diagonal embedding `Matrix.unitaryOneBlockSucc` sends `B` to `diag(1, B)`. -/
 theorem coe_unitaryOneBlockSucc (B : unitary (Matrix (Fin m) (Fin m) α)) :
-    (unitaryOneBlockSucc α m B : Matrix (Fin (m + 1)) (Fin (m + 1)) α) = cornerBlockSucc 1 B.1 :=
+    (unitaryOneBlockSucc α m B : Matrix (Fin (m + 1)) (Fin (m + 1)) α) = cornerBlockSucc 1 B.val :=
   (rfl)
 
 @[simp]
 theorem unitaryOneBlockSucc_apply_zero_zero (B : unitary (Matrix (Fin m) (Fin m) α)) :
-    (unitaryOneBlockSucc α m B).1 0 0 = 1 :=
-  cornerBlockSucc_zero_zero 1 B.1
+    (unitaryOneBlockSucc α m B).val 0 0 = 1 :=
+  cornerBlockSucc_zero_zero 1 B.val
 
 @[simp]
 theorem unitaryOneBlockSucc_apply_zero_succ (B : unitary (Matrix (Fin m) (Fin m) α)) (j : Fin m) :
-    (unitaryOneBlockSucc α m B).1 0 j.succ = 0 :=
-  cornerBlockSucc_zero_succ 1 B.1 j
+    (unitaryOneBlockSucc α m B).val 0 j.succ = 0 :=
+  cornerBlockSucc_zero_succ 1 B.val j
 
 @[simp]
 theorem unitaryOneBlockSucc_apply_succ_zero (B : unitary (Matrix (Fin m) (Fin m) α)) (i : Fin m) :
-    (unitaryOneBlockSucc α m B).1 i.succ 0 = 0 :=
-  cornerBlockSucc_succ_zero 1 B.1 i
+    (unitaryOneBlockSucc α m B).val i.succ 0 = 0 :=
+  cornerBlockSucc_succ_zero 1 B.val i
 
 @[simp]
 theorem unitaryOneBlockSucc_apply_succ_succ (B : unitary (Matrix (Fin m) (Fin m) α))
-    (i j : Fin m) : (unitaryOneBlockSucc α m B).1 i.succ j.succ = B.1 i j :=
-  cornerBlockSucc_succ_succ 1 B.1 i j
+    (i j : Fin m) : (unitaryOneBlockSucc α m B).val i.succ j.succ = B.val i j :=
+  cornerBlockSucc_succ_succ 1 B.val i j
 
 /-- Column `0` of the block-diagonal unitary matrix `diag(1, B)` is `e₀`. -/
 @[simp]
 theorem col_unitaryOneBlockSucc_zero (B : unitary (Matrix (Fin m) (Fin m) α)) :
-    (unitaryOneBlockSucc α m B).1.col 0 = Pi.single 0 1 := by
+    (unitaryOneBlockSucc α m B).val.col 0 = Pi.single 0 1 := by
   ext p
   refine Fin.cases ?_ (fun i ↦ ?_) p <;> simp [Fin.succ_ne_zero]
 
@@ -182,21 +183,21 @@ any star semiring, a unitary matrix of size `m + 1` lies in the image of
 the corner in column `0` vanish. -/
 theorem mem_range_unitaryOneBlockSucc_iff_apply
     {A : unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)} :
-    A ∈ (unitaryOneBlockSucc α m).range ↔ A.1 0 0 = 1 ∧ ∀ i : Fin m, A.1 i.succ 0 = 0 := by
+    A ∈ (unitaryOneBlockSucc α m).range ↔ A.val 0 0 = 1 ∧ ∀ i : Fin m, A.val i.succ 0 = 0 := by
   refine ⟨?_, fun ⟨h00, hcol⟩ ↦ ?_⟩
   · rintro ⟨B, rfl⟩
     exact ⟨unitaryOneBlockSucc_apply_zero_zero B, unitaryOneBlockSucc_apply_succ_zero B⟩
   -- Because `A 0 0 = 1` and `star A * A = 1`, row `0` vanishes off the corner as well.
-  have hrow (j : Fin m) : A.1 0 j.succ = 0 := by
-    have h := congrFun (congrFun A.2.1 0) j.succ
+  have hrow (j : Fin m) : A.val 0 j.succ = 0 := by
+    have h := congrFun (congrFun A.property.1 0) j.succ
     simpa [Matrix.mul_apply, star_eq_conjTranspose, Matrix.one_apply, Fin.sum_univ_succ, h00, hcol,
       (Fin.succ_ne_zero j).symm] using h
-  let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.1 i.succ j.succ
-  have hAB : A.1 = cornerBlockSucc 1 B :=
+  let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.val i.succ j.succ
+  have hAB : A.val = cornerBlockSucc 1 B :=
     ext_fin_succ (h00.trans (cornerBlockSucc_zero_zero 1 B).symm) (by simpa using hrow)
       (by simpa using hcol) fun i j ↦ (cornerBlockSucc_succ_succ 1 B i j).symm
   have hB : B ∈ unitary (Matrix (Fin m) (Fin m) α) :=
-    (cornerBlockSucc_mem_unitary_iff.1 (hAB ▸ A.2)).2
+    (cornerBlockSucc_mem_unitary_iff.1 (hAB ▸ A.property)).2
   exact ⟨⟨B, hB⟩, Subtype.ext hAB.symm⟩
 
 /-- **The block-diagonal unitary matrices `diag(1, B)` are the stabilizer of `e₀`**: over any star
@@ -204,7 +205,7 @@ semiring, a unitary matrix of size `m + 1` lies in the image of
 `unitary (Matrix (Fin m) (Fin m) α)` exactly when it fixes `e₀`. -/
 theorem mem_range_unitaryOneBlockSucc_iff
     {A : unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)} :
-    A ∈ (unitaryOneBlockSucc α m).range ↔ A.1 *ᵥ Pi.single 0 1 = Pi.single 0 1 := by
+    A ∈ (unitaryOneBlockSucc α m).range ↔ A.val *ᵥ Pi.single 0 1 = Pi.single 0 1 := by
   rw [mem_range_unitaryOneBlockSucc_iff_apply, funext_iff, Fin.forall_fin_succ]
   simp [Fin.succ_ne_zero]
 
@@ -219,36 +220,36 @@ of `e₀`**: over a division ring, a unitary matrix of size `m + 1` lies in the 
 `unitary α × unitary (Matrix (Fin m) (Fin m) α)` exactly when its entries below the corner in the
 column `0` vanish. -/
 theorem mem_range_unitaryProdBlockSucc_iff {A : unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)} :
-    A ∈ (unitaryProdBlockSucc α m).range ↔ ∀ i : Fin m, A.1 i.succ 0 = 0 := by
+    A ∈ (unitaryProdBlockSucc α m).range ↔ ∀ i : Fin m, A.val i.succ 0 = 0 := by
   refine ⟨?_, fun hA ↦ ?_⟩
   · rintro ⟨cB, rfl⟩ i
     exact unitaryProdBlockSucc_apply_succ_zero cB i
   have hentry (p q : Fin (m + 1)) :
-      ∑ k, star (A.1 k p) * A.1 k q = if p = q then 1 else 0 := by
+      ∑ k, star (A.val k p) * A.val k q = if p = q then 1 else 0 := by
     simpa [Matrix.mul_apply, star_eq_conjTranspose, Matrix.one_apply] using
-      congrFun (congrFun A.2.1 p) q
+      congrFun (congrFun A.property.1 p) q
   -- The corner is a unitary scalar: its left inverse is two-sided in a division ring.
-  have hc : star (A.1 0 0) * A.1 0 0 = 1 := by simpa [Fin.sum_univ_succ, hA] using hentry 0 0
-  have hc' : A.1 0 0 * star (A.1 0 0) = 1 := by
-    have h0 : A.1 0 0 ≠ 0 := by
+  have hc : star (A.val 0 0) * A.val 0 0 = 1 := by simpa [Fin.sum_univ_succ, hA] using hentry 0 0
+  have hc' : A.val 0 0 * star (A.val 0 0) = 1 := by
+    have h0 : A.val 0 0 ≠ 0 := by
       rintro h
       rw [h, mul_zero] at hc
       exact zero_ne_one hc
     rw [eq_inv_of_mul_eq_one_left hc, mul_inv_cancel₀ h0]
   -- The row `0` vanishes off the corner.
-  have hrow (j : Fin m) : A.1 0 j.succ = 0 := by
+  have hrow (j : Fin m) : A.val 0 j.succ = 0 := by
     have h := hentry 0 j.succ
     simp only [Fin.sum_univ_succ, hA, star_zero, zero_mul, Finset.sum_const_zero, add_zero,
       (Fin.succ_ne_zero j).symm, ite_false] at h
-    calc A.1 0 j.succ = A.1 0 0 * star (A.1 0 0) * A.1 0 j.succ := by rw [hc', one_mul]
+    calc A.val 0 j.succ = A.val 0 0 * star (A.val 0 0) * A.val 0 j.succ := by rw [hc', one_mul]
       _ = 0 := by rw [mul_assoc, h, mul_zero]
-  let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.1 i.succ j.succ
-  have hAB : A.1 = cornerBlockSucc (A.1 0 0) B :=
+  let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.val i.succ j.succ
+  have hAB : A.val = cornerBlockSucc (A.val 0 0) B :=
     ext_fin_succ (cornerBlockSucc_zero_zero _ _).symm (by simpa using hrow) (by simpa using hA)
       fun i j ↦ (cornerBlockSucc_succ_succ _ B i j).symm
   have hB : B ∈ unitary (Matrix (Fin m) (Fin m) α) :=
-    (cornerBlockSucc_mem_unitary_iff.1 (hAB ▸ A.2)).2
-  exact ⟨(⟨A.1 0 0, hc, hc'⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩
+    (cornerBlockSucc_mem_unitary_iff.1 (hAB ▸ A.property)).2
+  exact ⟨(⟨A.val 0 0, hc, hc'⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩
 
 end DivisionRing
 

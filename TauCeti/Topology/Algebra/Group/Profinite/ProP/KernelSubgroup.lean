@@ -68,7 +68,7 @@ theorem proPKernel_eq_comap_of_le_range (f : H →* G) (hf : Topology.IsEmbeddin
     (MonoidHom.ofInjective hf.injective).symm.toMonoidHom.comp (Subgroup.inclusion hle)
   have hfg : ∀ n, f (g n) = n := fun n ↦ MonoidHom.apply_ofInjective_symm hf.injective _
   have hg : Continuous g := hf.continuous_iff.mpr <| by
-    simpa only [Function.comp_def, hfg] using continuous_subtype_val
+    simpa only [Function.comp_def, hfg] using continuous_subtypeVal
   -- Every open normal subgroup of `H` with `p`-group quotient pulls back to all of `N`.
   refine mem_proPKernel_iff.mpr fun U hU ↦ ?_
   have hN : proPKernel p (proPKernel p G) ≤ (U.comap g hg).toSubgroup :=

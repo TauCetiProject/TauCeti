@@ -298,11 +298,12 @@ private theorem euclideanHausdorffMeasure_image_coe_of_forall_ne {v : E} (hv : �
       finrank ℝ E * volume (Ioo (0 : ℝ) 1 • (((↑) : sphere (0 : E) 1 → E) '' s)) := by
   set ψ := stereoInvFunAux v ∘ ((↑) : (ℝ ∙ v)ᗮ → E)
   set A := ((↑) : sphere (0 : E) 1 → E) '' s
-  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.2)
+  have hnorm (w : (ℝ ∙ v)ᗮ) : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1
+      (stereoInvFunAux_mem hv w.property)
   have hd : Differentiable ℝ ψ :=
     (contDiff_stereoInvFunAux.comp (ℝ ∙ v)ᗮ.subtypeL.contDiff).differentiable one_ne_zero
   have hA : MeasurableSet A :=
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).measurableSet_image.2 hs
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).measurableSet_image.2 hs
   have himage : ψ '' (ψ ⁻¹' A) = A := by
     refine image_preimage_eq_of_subset fun x hx => ?_
     obtain ⟨y, hy, rfl⟩ := hx
@@ -323,11 +324,11 @@ theorem toSphere_volume_eq_comap_euclideanHausdorffMeasure :
     (volume : Measure E).toSphere = (μHE[finrank ℝ E - 1] : Measure E).comap (↑) := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.2⟩
+      ⟨fun x => by simpa [Subsingleton.elim (x : E) 0] using x.property⟩
     ext s
     simp [Set.eq_empty_of_isEmpty s]
   have hemb :=
-    MeasurableEmbedding.subtype_coe (isClosed_sphere (x := (0 : E)) (ε := 1)).measurableSet
+    MeasurableEmbedding.subtypeVal (isClosed_sphere (x := (0 : E)) (ε := 1)).measurableSet
   have key {v : E} (hv : ‖v‖ = 1) {s : Set (sphere (0 : E) 1)} (hs : MeasurableSet s)
       (hvs : ∀ x ∈ s, (x : E) ≠ v) :
       (volume : Measure E).toSphere s = (μHE[finrank ℝ E - 1] : Measure E).comap (↑) s := by
@@ -341,7 +342,7 @@ theorem toSphere_volume_eq_comap_euclideanHausdorffMeasure :
     norm_num at h₂
   ext s hs
   set t : Set (sphere (0 : E) 1) := {x | (x : E) = v}
-  have ht : MeasurableSet t := measurableSet_eq_fun measurable_subtype_coe measurable_const
+  have ht : MeasurableSet t := measurableSet_eq_fun measurable_subtypeVal measurable_const
   rw [← measure_inter_add_sdiff s ht, ← measure_inter_add_sdiff s ht (μ := Measure.comap _ _)]
   congr 1
   · exact key (v := -v) (by simpa using hv) (hs.inter ht) fun x hx => hx.2.symm ▸ hvneg
@@ -354,14 +355,14 @@ theorem euclideanHausdorffMeasure_restrict_sphere :
     (μHE[finrank ℝ E - 1] : Measure E).restrict (sphere 0 1) =
       (volume : Measure E).toSphere.map (↑) := by
   rw [toSphere_volume_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
 
 /-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional
 Hausdorff measure `n ω_n`, where `ω_n` is the volume of the unit ball. -/
 theorem euclideanHausdorffMeasure_sphere_zero_one :
     μHE[finrank ℝ E - 1] (sphere (0 : E) 1) = finrank ℝ E * volume (ball (0 : E) 1) := by
   rw [← toSphere_apply_univ, toSphere_volume_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).comap_apply, image_univ,
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe]
 
 /-- The unit sphere of an `n`-dimensional real inner product space has `(n - 1)`-dimensional

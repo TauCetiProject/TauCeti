@@ -270,8 +270,8 @@ private theorem finrank_relPathsInto_add_le (h2 : ∀ v, r v ∈ grade k R 2)
     (Submodule.inclusion (relPathsInto_le_pathsInto m j)).prod
       (LinearMap.pi fun i => LinearMap.pi fun b => -LinearMap.codRestrict _
         ((LinearMap.mulLeft k (c i b)).comp (relPathsInto r m j).subtype) fun y =>
-          mem_relPathsInto.2 ⟨mul_mem_pathsInto (hc i b) (mem_relPathsInto.1 y.2).1,
-            TwoSidedIdeal.mul_mem_left _ _ _ (mem_relPathsInto.1 y.2).2⟩)
+          mem_relPathsInto.2 ⟨mul_mem_pathsInto (hc i b) (mem_relPathsInto.1 y.property).1,
+            TwoSidedIdeal.mul_mem_left _ _ _ (mem_relPathsInto.1 y.property).2⟩)
   have hι : Function.Injective ι := by
     intro y y' h
     have h1 := congrArg (fun p => (p.1 : pathAlgebra k R)) h

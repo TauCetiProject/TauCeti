@@ -122,8 +122,8 @@ theorem extend_subtypeVal_comp_inclusion {α β : Type*} {s t : Set α} (h : s �
   · exact (Subtype.val_injective.extend_apply _ e ⟨a, ha hat⟩).trans
       (Subtype.val_injective.extend_apply g e ⟨a, hat⟩).symm
   · have has : a ∉ s := fun has ↦ hat (h has)
-    rw [extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ has (hb ▸ b.2),
-      extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.2)]
+    rw [extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ has (hb ▸ b.property),
+      extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.property)]
 
 /-- `Function.extend` along a composite `f₂₃ ∘ f₁₂` is the iterated extension, provided only the
 outer map `f₂₃` is injective. The inner extension of `g` along `f₁₂` uses the fallback `e' ∘ f₂₃`,
