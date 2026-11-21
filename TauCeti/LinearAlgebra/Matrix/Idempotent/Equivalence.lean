@@ -22,10 +22,10 @@ Two square matrices `e : Matrix m m R` and `f : Matrix n n R`, possibly of diffe
 `x * y = e`, `y * x = f`, `e * x = x`, `x * f = x`, `f * y = y`, and `y * e = y`.
 
 The four corner absorptions force `e` and `f` to be idempotent whenever multiplication is
-associative, and ensure that left multiplication by `x` and `y` restrict directly to mutually
-inverse right `R`-module maps between the column ranges `f Rⁿ` and `e Rᵐ`
-(`Matrix.linearEquivRangeMulVecBilinOfMulEq`). When `e` and `f` are already idempotent, raw
-witnesses with `x * y = e` and `y * x = f` can always be normalized to `(e * x * f, f * y * e)`
+associative. When `e` and `f` are idempotent, any raw witnesses with `x * y = e` and `y * x = f`
+induce mutually inverse right `R`-module maps between the column ranges `f Rⁿ` and `e Rᵐ`
+(`Matrix.linearEquivRangeMulVecBilinOfMulEq`), and can always be normalized to
+`(e * x * f, f * y * e)` to satisfy all four corner absorptions
 (`Matrix.isAlgebraicEquivalent_iff_exists_mul_eq`).
 
 This file establishes the calculus of rectangular algebraic equivalence:
@@ -46,7 +46,7 @@ This file establishes the calculus of rectangular algebraic equivalence:
 
 * `Matrix.IsAlgebraicEquivalent`: rectangular algebraic equivalence of square matrices.
 * `Matrix.linearEquivRangeMulVecBilinOfMulEq`: the explicit `Rᵐᵒᵖ`-linear isomorphism between
-  column ranges induced by normalized witnesses `(x, y)`.
+  column ranges induced by witnesses `x * y = e` and `y * x = f` for idempotent `e` and `f`.
 
 ## Main results
 
@@ -371,44 +371,40 @@ theorem not_isAlgebraicEquivalent_single_one_one [InvariantBasisNumber R] [Finty
   have h1 := (isAlgebraicEquivalent_single_one_one i).symm.trans h
   exact (ne_of_lt Fintype.one_lt_card) (isAlgebraicEquivalent_one_iff.mp h1)
 
-/-- **Mutually inverse module maps from normalized equivalence witnesses.** When `x * y = e`,
-`y * x = f`, `e * x = x`, and `f * y = y`, left multiplication by `x` and `y` restrict to mutually
-inverse `Rᵐᵒᵖ`-linear maps between `f Rⁿ` and `e Rᵐ`. -/
+/-- **Mutually inverse module maps from equivalence witnesses.** When `e` and `f` are idempotent
+and `x * y = e`, `y * x = f`, left multiplication by `x` and `y` restrict to mutually inverse
+`Rᵐᵒᵖ`-linear maps between `f Rⁿ` and `e Rᵐ`. -/
 def linearEquivRangeMulVecBilinOfMulEq [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
-    (hxy : x * y = e) (hyx : y * x = f) (hex : e * x = x) (hfy : f * y = y) :
-    range (f.mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ) :=
-  have hee : IsIdempotentElem e := by
-    rw [IsIdempotentElem]
-    nth_rw 2 [← hxy]
-    rw [← Matrix.mul_assoc, hex, hxy]
-  have hff : IsIdempotentElem f := by
-    rw [IsIdempotentElem]
-    nth_rw 2 [← hyx]
-    rw [← Matrix.mul_assoc, hfy, hyx]
-  { toFun v := ⟨x *ᵥ v, ⟨x *ᵥ v, by rw [mulVecBilin_apply, mulVec_mulVec, hex]⟩⟩
-    invFun w := ⟨y *ᵥ w, ⟨y *ᵥ w, by rw [mulVecBilin_apply, mulVec_mulVec, hfy]⟩⟩
-    map_add' u v := Subtype.ext (mulVec_add x u v)
-    map_smul' r v := Subtype.ext (mulVec_smul x r v)
-    left_inv v := Subtype.ext <| by
-      simp [mulVec_mulVec, hyx, hff.mem_range_mulVecBilin_iff.mp v.property]
-    right_inv w := Subtype.ext <| by
-      simp [mulVec_mulVec, hxy, hee.mem_range_mulVecBilin_iff.mp w.property] }
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f) :
+    range (f.mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ) where
+  toFun v := ⟨x *ᵥ v, he.mem_range_mulVecBilin_iff.mpr <| by
+    rw [mulVec_mulVec, ← hxy, Matrix.mul_assoc, hyx, ← mulVec_mulVec,
+      hf.mem_range_mulVecBilin_iff.mp v.property]⟩
+  invFun w := ⟨y *ᵥ w, hf.mem_range_mulVecBilin_iff.mpr <| by
+    rw [mulVec_mulVec, ← hyx, Matrix.mul_assoc, hxy, ← mulVec_mulVec,
+      he.mem_range_mulVecBilin_iff.mp w.property]⟩
+  map_add' u v := Subtype.ext (mulVec_add x u v)
+  map_smul' r v := Subtype.ext (mulVec_smul x r v)
+  left_inv v := Subtype.ext <| by
+    simp [mulVec_mulVec, hyx, hf.mem_range_mulVecBilin_iff.mp v.property]
+  right_inv w := Subtype.ext <| by
+    simp [mulVec_mulVec, hxy, he.mem_range_mulVecBilin_iff.mp w.property]
 
 @[simp]
 theorem coe_linearEquivRangeMulVecBilinOfMulEq_apply [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
-    (hxy : x * y = e) (hyx : y * x = f) (hex : e * x = x) (hfy : f * y = y)
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (v : range (f.mulVecBilin R Rᵐᵒᵖ)) :
-    (linearEquivRangeMulVecBilinOfMulEq hxy hyx hex hfy v : m → R) = x *ᵥ v :=
+    (linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf v : m → R) = x *ᵥ v :=
   (rfl)
 
 @[simp]
 theorem coe_linearEquivRangeMulVecBilinOfMulEq_symm_apply [Fintype m] [Fintype n]
     {e : Matrix m m R} {f : Matrix n n R} {x : Matrix m n R} {y : Matrix n m R}
-    (hxy : x * y = e) (hyx : y * x = f) (hex : e * x = x) (hfy : f * y = y)
+    (hxy : x * y = e) (hyx : y * x = f) (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (w : range (e.mulVecBilin R Rᵐᵒᵖ)) :
-    ((linearEquivRangeMulVecBilinOfMulEq hxy hyx hex hfy).symm w : n → R) = y *ᵥ w :=
+    ((linearEquivRangeMulVecBilinOfMulEq hxy hyx he hf).symm w : n → R) = y *ᵥ w :=
   (rfl)
 
 /-- **Rectangular equivalence matches row-range isomorphism.** Two idempotent matrices over `R` are

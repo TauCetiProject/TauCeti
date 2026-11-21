@@ -293,17 +293,17 @@ def rangeMulVecBilinSubmatrixEquiv {ι₂ ι₂' : Type*} [Fintype ι₂] (M : M
   toFun v := ⟨(v : ι' → R) ∘ σ, by
     obtain ⟨u, hu⟩ := v.property
     refine ⟨u ∘ τ, ?_⟩
-    ext i₂
-    simp only [mulVecBilin_apply, mulVec, dotProduct, submatrix_apply, Function.comp_apply]
-    exact (τ.sum_comp fun j ↦ M (σ i₂) j * u j).trans (congrFun hu (σ i₂))⟩
+    simp [mulVecBilin_apply, submatrix_mulVec_equiv, Function.comp_assoc, ← hu]⟩
   invFun w := ⟨(w : ι₂' → R) ∘ σ.symm, by
     obtain ⟨u, hu⟩ := w.property
     refine ⟨u ∘ τ.symm, ?_⟩
-    ext i
-    have h := congrFun hu (σ.symm i)
-    simp only [mulVecBilin_apply, mulVec, dotProduct, submatrix_apply, Equiv.apply_symm_apply] at h
-    simpa [mulVecBilin_apply, mulVec, dotProduct] using
-      (τ.symm.sum_comp fun j₂ ↦ M i (τ j₂) * u j₂).trans h⟩
+    rw [mulVecBilin_apply]
+    calc M *ᵥ (u ∘ τ.symm)
+        = (M.submatrix σ τ).submatrix σ.symm τ.symm *ᵥ (u ∘ τ.symm) := by simp
+      _ = ((M.submatrix σ τ) *ᵥ ((u ∘ τ.symm) ∘ τ.symm.symm)) ∘ σ.symm :=
+          submatrix_mulVec_equiv _ _ _ _
+      _ = (w : ι₂' → R) ∘ σ.symm := by
+          rw [show (u ∘ τ.symm) ∘ τ.symm.symm = u by ext; simp, ← mulVecBilin_apply R Rᵐᵒᵖ, hu]⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv v := Subtype.ext <| funext fun i ↦ by simp
@@ -329,18 +329,27 @@ def rangeMulVecBilinReindexEquiv {ι₂ ι₂' : Type*} [Fintype ι₂] (M : Mat
     range (M.mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] range ((M.reindex σ τ).mulVecBilin R Rᵐᵒᵖ) :=
   M.rangeMulVecBilinSubmatrixEquiv σ.symm τ.symm
 
+/-- `rangeMulVecBilinReindexEquiv` simplifies to `rangeMulVecBilinSubmatrixEquiv` with inverted
+equivalences. -/
+@[simp]
+theorem rangeMulVecBilinReindexEquiv_eq_submatrixEquiv {ι₂ ι₂' : Type*} [Fintype ι₂]
+    (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂) :
+    M.rangeMulVecBilinReindexEquiv σ τ = M.rangeMulVecBilinSubmatrixEquiv σ.symm τ.symm :=
+  (rfl)
+
 /-- Coordinate computation for `rangeMulVecBilinReindexEquiv`. Not marked `@[simp]` because
-`Matrix.reindex_apply` rewrites `M.reindex σ τ` in the codomain type to `M.submatrix σ.symm τ.symm`;
-see `coe_rangeMulVecBilinSubmatrixEquiv_apply` for the `simp`-normal form. -/
+`rangeMulVecBilinReindexEquiv_eq_submatrixEquiv` and `Matrix.reindex_apply` rewrite the equivalence
+and its codomain type to `rangeMulVecBilinSubmatrixEquiv`; see
+`coe_rangeMulVecBilinSubmatrixEquiv_apply` for the `simp`-normal form. -/
 theorem coe_rangeMulVecBilinReindexEquiv_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
     (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂) (v : range (M.mulVecBilin R Rᵐᵒᵖ)) :
     (M.rangeMulVecBilinReindexEquiv σ τ v : ι₂' → R) = (v : ι' → R) ∘ σ.symm :=
   (rfl)
 
 /-- Coordinate computation for `(rangeMulVecBilinReindexEquiv _ _ _).symm`. Not marked `@[simp]`
-because `Matrix.reindex_apply` rewrites `M.reindex σ τ` in the codomain type to
-`M.submatrix σ.symm τ.symm`; see `coe_rangeMulVecBilinSubmatrixEquiv_symm_apply` for the
-`simp`-normal form. -/
+because `rangeMulVecBilinReindexEquiv_eq_submatrixEquiv` and `Matrix.reindex_apply` rewrite the
+equivalence and its domain type to `rangeMulVecBilinSubmatrixEquiv`; see
+`coe_rangeMulVecBilinSubmatrixEquiv_symm_apply` for the `simp`-normal form. -/
 theorem coe_rangeMulVecBilinReindexEquiv_symm_apply {ι₂ ι₂' : Type*} [Fintype ι₂]
     (M : Matrix ι' ι R) (σ : ι' ≃ ι₂') (τ : ι ≃ ι₂)
     (w : range ((M.reindex σ τ).mulVecBilin R Rᵐᵒᵖ)) :
@@ -370,12 +379,6 @@ section FromBlocks
 
 variable [Fintype ι'] [Fintype κ']
 
-omit [Fintype ι'] [Fintype κ'] in
-private theorem transpose_map_op_fromBlocks (e : Matrix ι ι' R) (f : Matrix κ κ' R) :
-    (fromBlocks e 0 0 f).transpose.map op =
-      fromBlocks (e.transpose.map op) 0 0 (f.transpose.map op) := by
-  ext (_ | _) (_ | _) <;> simp
-
 /-- A column vector lies in the column range of `Matrix.fromBlocks e 0 0 f` if and only if its two
 halves lie in the column ranges of `e` and `f`. -/
 theorem mem_range_mulVecBilin_fromBlocks_iff {e : Matrix ι ι' R} {f : Matrix κ κ' R}
@@ -383,8 +386,9 @@ theorem mem_range_mulVecBilin_fromBlocks_iff {e : Matrix ι ι' R} {f : Matrix �
     v ∈ range ((fromBlocks e 0 0 f).mulVecBilin R Rᵐᵒᵖ) ↔
       v ∘ Sum.inl ∈ range (e.mulVecBilin R Rᵐᵒᵖ) ∧
         v ∘ Sum.inr ∈ range (f.mulVecBilin R Rᵐᵒᵖ) := by
-  rw [mem_range_mulVecBilin_iff_op_comp, transpose_map_op_fromBlocks,
-    mem_range_vecMulLinear_fromBlocks_iff, mem_range_mulVecBilin_iff_op_comp,
+  rw [mem_range_mulVecBilin_iff_op_comp]
+  simp only [fromBlocks_transpose, transpose_zero, fromBlocks_map, Matrix.map_zero _ op_zero]
+  rw [mem_range_vecMulLinear_fromBlocks_iff, mem_range_mulVecBilin_iff_op_comp,
     mem_range_mulVecBilin_iff_op_comp]
   rfl
 
@@ -394,8 +398,8 @@ def rangeMulVecBilinFromBlocksEquiv (e : Matrix ι ι' R) (f : Matrix κ κ' R) 
     range ((fromBlocks e 0 0 f).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ]
       range (e.mulVecBilin R Rᵐᵒᵖ) × range (f.mulVecBilin R Rᵐᵒᵖ) :=
   (fromBlocks e 0 0 f).rangeMulVecBilinEquivRangeVecMulLinear.trans <|
-    (LinearEquiv.ofEq _ _ (congrArg (fun N ↦ range N.vecMulLinear)
-      (transpose_map_op_fromBlocks e f))).trans <|
+    (LinearEquiv.ofEq _ _ (congrArg (fun N : Matrix (ι' ⊕ κ') (ι ⊕ κ) Rᵐᵒᵖ ↦ range N.vecMulLinear)
+      (by simp [fromBlocks_transpose, fromBlocks_map]))).trans <|
       (rangeVecMulLinearFromBlocksEquiv (e.transpose.map op) (f.transpose.map op)).trans <|
         e.rangeMulVecBilinEquivRangeVecMulLinear.symm.prodCongr
           f.rangeMulVecBilinEquivRangeVecMulLinear.symm
