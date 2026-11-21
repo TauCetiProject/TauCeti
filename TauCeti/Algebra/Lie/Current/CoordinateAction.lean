@@ -210,7 +210,7 @@ theorem coordinateEnvelopingAut_homothety_envelopingι (u : Kˣ) (m : ℤ) (c : 
       (u : K) ^ m • HahnSeries.single m c := by
     rw [← HahnSeries.single_zero_mul_eq_smul, HahnSeries.single_mul_single, zero_add]
   simp only [coordinateEnvelopingAut_envelopingι, FormalCoordinate.ofAlgEquiv_substAlgEquiv,
-    substLieEquiv_tmul, LaurentSeries.substAlgEquiv_homothety_single,
+    substLieEquiv_tmul, LaurentSeries.substAlgEquiv_homothety, LaurentSeries.rescale_single,
     Units.val_zpow_eq_zpow_val, hs,
     ← TensorProduct.smul_tmul', map_smul]
 

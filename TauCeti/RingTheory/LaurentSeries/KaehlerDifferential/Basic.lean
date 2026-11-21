@@ -43,9 +43,9 @@ Continuous one-forms are covariant under changes of parameter. For a nonzero pow
 zero constant coefficient, substitution `f dX ↦ f (φ) dφ` is a continuous map of `Ω¹_cont(F/K)`,
 semilinear over the substitution `f ↦ f (φ)` of `F`. Since `dφ = Dφ dX`, it sends `f dX` to
 `f (φ) Dφ dX`, and by the chain rule it sends `d g` to `d (g (φ))`. Substitutions compose as power
-series do, and the residue of `ω (φ)` is `ord φ` times the residue of `ω`. A formal coordinate
-`φ = u X + ⋯`, `u ≠ 0`, therefore acts by a semilinear automorphism of `Ω¹_cont(F/K)`, inverse to
-that of `φ⁻¹`, which preserves residues.
+series do. A formal coordinate `φ = u X + ⋯`, `u ≠ 0`, therefore acts by a semilinear automorphism
+of `Ω¹_cont(F/K)`, inverse to that of `φ⁻¹`. Its effect on residues is in
+`LaurentSeries.KaehlerDifferential.Residue`.
 
 ## Main definitions
 
@@ -70,8 +70,6 @@ that of `φ⁻¹`, which preserves residues.
 * `TauCeti.ContinuousKaehlerDifferential.subst_D`: coordinate covariance, `(d g) (φ) = d (g (φ))`.
 * `TauCeti.ContinuousKaehlerDifferential.subst_subst`: substituting `φ` and then `ψ` is
   substituting `φ (ψ)`.
-* `TauCeti.ContinuousKaehlerDifferential.coeff_neg_one_equivLaurentSeries_subst`: the residue of
-  `ω (φ)` is `ord φ` times that of `ω`.
 -/
 
 public section
@@ -335,14 +333,6 @@ theorem eq_subst_of_apply_D_single_one
 theorem continuous_subst : Continuous (subst hφ hφ₀) :=
   IsModuleTopology.continuous_of_linearMapₛₗ (continuous_substAlgHom hφ hφ₀) (subst hφ hφ₀)
 
-/-- **Residues of substituted one-forms.** Substituting `φ` multiplies the residue of a one-form
-by the order of `φ`: `Res (ω (φ)) = ord φ • Res ω`, where the residue of `f dX` is the coefficient
-of `X⁻¹` in `f`. -/
-theorem coeff_neg_one_equivLaurentSeries_subst (ω : ContinuousKaehlerDifferential K) :
-    (equivLaurentSeries K (subst hφ hφ₀ ω)).coeff (-1) =
-      φ.order.toNat • (equivLaurentSeries K ω).coeff (-1) := by
-  rw [equivLaurentSeries_subst, coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul]
-
 /-- Substituting `φ` into one-forms and then `ψ` is substituting `φ (ψ)`. -/
 theorem subst_subst {ψ : K⟦X⟧} (hψ : constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0)
     (ω : ContinuousKaehlerDifferential K) :
@@ -421,13 +411,6 @@ theorem substEquiv_mul_apply (φ ψ : FormalCoordinate K) (ω : ContinuousKaehle
 theorem substEquiv_one_apply (ω : ContinuousKaehlerDifferential K) :
     substEquiv (1 : FormalCoordinate K) ω = ω :=
   subst_eq_self_of_eq_X _ _ FormalCoordinate.toPowerSeries_one ω
-
-/-- **Formal coordinate changes preserve residues of one-forms.** -/
-theorem coeff_neg_one_equivLaurentSeries_substEquiv (φ : FormalCoordinate K)
-    (ω : ContinuousKaehlerDifferential K) :
-    (equivLaurentSeries K (substEquiv φ ω)).coeff (-1) = (equivLaurentSeries K ω).coeff (-1) := by
-  rw [substEquiv_apply, coeff_neg_one_equivLaurentSeries_subst,
-    FormalCoordinate.order_toPowerSeries, ENat.toNat_one, one_smul]
 
 end ContinuousKaehlerDifferential
 

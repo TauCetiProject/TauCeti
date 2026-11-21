@@ -46,6 +46,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
+* `Matrix.PosSemidef.norm_sq_toEuclideanLin_inv_sqrt` — over the reals, the squared length of
+  `(CFC.sqrt S)⁻¹ x` is the quadratic form of `S⁻¹` at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
   positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
@@ -122,6 +124,17 @@ theorem inner_toEuclideanCLM_sqrt_toEuclideanLin [DecidableEq ι] (S Θ : Matrix
       ⟪x, (CFC.sqrt S * Θ * CFC.sqrt S).toEuclideanLin x⟫_𝕜 := by
   simp only [← ContinuousLinearMap.coe_coe, coe_toEuclideanCLM_eq_toEuclideanLin,
     inner_toEuclideanLin_toEuclideanLin, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq]
+
+/-- For real positive-semidefinite `S`, the squared length of `(CFC.sqrt S)⁻¹ x` is the quadratic
+form of `S⁻¹` at `x`. -/
+theorem PosSemidef.norm_sq_toEuclideanLin_inv_sqrt [DecidableEq ι] {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (x : EuclideanSpace ℝ ι) :
+    ‖(CFC.sqrt S)⁻¹.toEuclideanLin x‖ ^ 2 = ⟪x, S⁻¹.toEuclideanLin x⟫_ℝ := by
+  have hconj : ((CFC.sqrt S)⁻¹).conjTranspose * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
+    rw [mul_one, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.inv.eq,
+      ← Matrix.mul_inv_rev, CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  rw [← real_inner_self_eq_norm_sq, ← hconj, ← inner_toEuclideanLin_toEuclideanLin]
+  simp
 
 /-- For positive-semidefinite `S`, the pencils of the sandwich `CFC.sqrt S * Θ * CFC.sqrt S` and
 of the product `Θ * S` have the same determinant. -/

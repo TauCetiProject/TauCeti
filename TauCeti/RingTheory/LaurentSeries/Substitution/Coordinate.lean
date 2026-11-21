@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LaurentSeries.Derivative
+public import TauCeti.RingTheory.LaurentSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
-import TauCeti.RingTheory.LaurentSeries.Rescale
 
 /-!
 # Substituting formal coordinates into Laurent series over a commutative ring
@@ -23,7 +23,8 @@ Substitution is contravariant, `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`, where `φ * �
 `FormalCoordinate R`; so pulling back Laurent series is a right action of the coordinate group,
 and `φ ↦ σ_φ` is an injective homomorphism to the opposite of the automorphism group. It is
 natural in the coefficients: a ring homomorphism `R →+* S` applied to every coefficient
-intertwines `σ_φ` with the substitution of the base-changed coordinate.
+intertwines `σ_φ` with the substitution of the base-changed coordinate. The homothety `X ↦ a X`
+by a unit `a` gives the rescaling `TauCeti.LaurentSeries.rescale a`.
 
 Each `σ_φ` preserves the power series and, by
 `TauCeti.RingTheory.LaurentSeries.Substitution.Lattice`, every lattice `Xᵃ R⟦X⟧`, so it is a
@@ -37,6 +38,9 @@ which holds over every commutative ring (`TauCeti.RingTheory.PowerSeries.Derivat
 Over a field these automorphisms agree with the substitution `TauCeti.LaurentSeries.substAlgHom`
 of nonzero series of positive order (`TauCeti.LaurentSeries.coe_substAlgEquiv`).
 
+The final examples check the composition order for `φ = 2 X` and `ψ = X + X²` over `ℚ`:
+`σ_φ (σ_ψ X) = 2 X + 4 X²` while `σ_ψ (σ_φ X) = 2 X + 2 X²`.
+
 ## Main definitions
 
 * `TauCeti.LaurentSeries.substAlgEquiv φ`: the substitution automorphism `f ↦ f (φ)` of `R⸨X⸩`.
@@ -49,10 +53,10 @@ of nonzero series of positive order (`TauCeti.LaurentSeries.coe_substAlgEquiv`).
   `TauCeti.FormalCoordinate.substAlgEquiv`.
 * `TauCeti.LaurentSeries.algHom_eq_substAlgEquiv`: it is the only `R`-algebra endomorphism of
   `R⸨X⸩` extending substitution of power series.
-* `TauCeti.LaurentSeries.substAlgEquiv_homothety_single`: the homothety `X ↦ u X` scales a
-  Laurent monomial of degree `n` by the unit power `u ^ n`.
+* `TauCeti.LaurentSeries.substAlgEquiv_single`: `σ_φ (a X ^ n) = a φ ^ n` for every integer `n`.
 * `TauCeti.LaurentSeries.substAlgEquiv_mul`: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`.
 * `TauCeti.LaurentSeries.mapRingHom_substAlgEquiv`: naturality in the coefficient ring.
+* `TauCeti.LaurentSeries.substAlgEquiv_homothety`: the homothety by `a` gives rescaling by `a`.
 * `TauCeti.LaurentSeries.derivative_substAlgEquiv`: the chain rule.
 * `TauCeti.LaurentSeries.coeff_neg_one_substAlgEquiv_mul_derivative`: invariance of the residue.
 
@@ -169,19 +173,19 @@ theorem substAlgEquiv_single_of_eq_X_mul (φ : FormalCoordinate R) {v : R⟦X⟧
     rw [single_mul_single, zero_add, mul_one]
   rw [hC, map_mul, substAlgEquiv_single_zero, hone, mul_assoc]
 
-/-- The homothety `X ↦ u X` scales a Laurent monomial of integer degree `n` by the unit power
-`u ^ n`. -/
--- Match before the generic variable rule rewrites degree one to the coordinate itself.
-@[simp↓]
-theorem substAlgEquiv_homothety_single (u : Rˣ) (n : ℤ) (c : R) :
-    substAlgEquiv (FormalCoordinate.homothety u) (single n c) =
-      single n (↑(u ^ n) * c) := by
-  have h : (rescale u).toAlgHom =
-      (substAlgEquiv (FormalCoordinate.homothety u)).toAlgHom :=
-    algHom_eq_substAlgEquiv _ _ fun f ↦ by
-      simp only [AlgEquiv.toAlgHom_apply, rescale_coe, PowerSeries.rescale_eq_subst,
-        FormalCoordinate.substAlgEquiv_apply, FormalCoordinate.toPowerSeries_homothety]
-  rw [← AlgEquiv.toAlgHom_apply, ← h, AlgEquiv.toAlgHom_apply, rescale_single]
+/-- Substitution sends the monomial `a X ^ n`, for every integer `n`, to `a φ ^ n`, a power of the
+unit `φ` of `R⸨X⸩`. -/
+theorem substAlgEquiv_single (φ : FormalCoordinate R) (n : ℤ) (a : R) :
+    substAlgEquiv φ (single n a) =
+      (HahnSeries.C a : R⸨X⸩) * (((isUnit_coe_toPowerSeries φ).unit ^ n : R⸨X⸩ˣ) : R⸨X⸩) := by
+  have hx : Units.map (substAlgEquiv φ : R⸨X⸩ →* R⸨X⸩) unitX = (isUnit_coe_toPowerSeries φ).unit :=
+    Units.ext <| by
+      rw [Units.coe_map, MonoidHom.coe_ofClass, val_unitX, substAlgEquiv_single_one,
+        IsUnit.unit_spec]
+  have hC : (single n a : R⸨X⸩) = single 0 a * single n 1 := by
+    rw [single_mul_single, zero_add, mul_one]
+  rw [hC, map_mul, substAlgEquiv_single_zero, ← val_unitX_zpow, ← hx, ← map_zpow, Units.coe_map,
+    MonoidHom.coe_ofClass, HahnSeries.C_apply]
 
 /-- Substitution automorphisms reverse composition: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`. -/
 @[simp]
@@ -250,6 +254,15 @@ theorem mapRingHom_substAlgEquiv {S : Type*} [CommRing S] (σ : R →+* S) (φ :
       simp only [RingHom.comp_apply, RingHom.coe_coe, substAlgEquiv_coe, mapRingHom_apply,
         map_ofPowerSeries, FormalCoordinate.map_substAlgEquiv]
   exact congr($h f)
+
+/-- The substitution automorphism of the homothety `X ↦ a X` by a unit `a` is the rescaling by
+`a`. -/
+@[simp]
+theorem substAlgEquiv_homothety (a : Rˣ) :
+    substAlgEquiv (FormalCoordinate.homothety a) = rescale a :=
+  AlgEquiv.coe_toAlgHom_injective (algHom_eq_substAlgEquiv _ _ fun p ↦ by
+    rw [AlgEquiv.coe_toAlgHom, rescale_coe, FormalCoordinate.substAlgEquiv_apply,
+      FormalCoordinate.toPowerSeries_homothety, rescale_eq_subst]).symm
 
 /-! ### Differentiation and residues -/
 
@@ -353,5 +366,56 @@ theorem coeff_neg_one_substAlgEquiv_mul_derivative (φ : FormalCoordinate R) (f 
           rw [ih _ hs, coeff_neg_one_substAlgEquiv_single_mul_derivative, coeff_single]
           split_ifs <;> first | rfl | omega
       _ = f.coeff (-1) := by rw [coeff_sub, sub_add_cancel]
+
+/-! ### The composition order for `φ = 2 X` and `ψ = X + X²` -/
+
+section Check
+
+/-- `ψ = X + X²` over `ℚ` is the Laurent series `X + X²`. -/
+private theorem coe_toPowerSeries_X_add_X_sq :
+    ((FormalCoordinate.ofStrictCoeffs (Pi.single 1 1) : FormalCoordinate ℚ).toPowerSeries :
+      ℚ⸨X⸩) = single 1 1 + single 2 1 := by
+  rw [FormalCoordinate.toPowerSeries_ofStrictCoeffs_single, map_add, map_mul, map_pow,
+    ofPowerSeries_X, ofPowerSeries_C, HahnSeries.C_apply, single_pow, single_mul_single]
+  simp
+
+/-- For `φ = 2 X` and `ψ = X + X²`: `σ_φ (σ_ψ X) = (ψ ∘ φ) (X) = 2 X + 4 X²`. -/
+private theorem substAlgEquiv_two_X_mul_X_add_X_sq :
+    (substAlgEquiv (FormalCoordinate.homothety (Units.mk0 (2 : ℚ) two_ne_zero)) *
+      substAlgEquiv (FormalCoordinate.ofStrictCoeffs (Pi.single 1 1)) : ℚ⸨X⸩ ≃ₐ[ℚ] ℚ⸨X⸩)
+      (single 1 1) = single 1 2 + single 2 4 := by
+  rw [AlgEquiv.mul_apply, substAlgEquiv_single_one, coe_toPowerSeries_X_add_X_sq,
+    substAlgEquiv_homothety, map_add, rescale_single, rescale_single]
+  norm_num
+
+/-- For `φ = 2 X` and `ψ = X + X²`: `σ_ψ (σ_φ X) = (φ ∘ ψ) (X) = 2 X + 2 X²`. -/
+private theorem substAlgEquiv_X_add_X_sq_mul_two_X :
+    (substAlgEquiv (FormalCoordinate.ofStrictCoeffs (Pi.single 1 1)) *
+      substAlgEquiv (FormalCoordinate.homothety (Units.mk0 (2 : ℚ) two_ne_zero)) :
+      ℚ⸨X⸩ ≃ₐ[ℚ] ℚ⸨X⸩) (single 1 1) = single 1 2 + single 2 2 := by
+  rw [AlgEquiv.mul_apply, substAlgEquiv_homothety, rescale_single, substAlgEquiv_single,
+    zpow_one, zpow_one, IsUnit.unit_spec, coe_toPowerSeries_X_add_X_sq, mul_add,
+    HahnSeries.C_apply, single_mul_single, single_mul_single]
+  norm_num
+
+/-- `σ_φ ∘ σ_ψ` is the automorphism of `ψ ∘ φ = ψ * φ`: for `φ = 2 X` and `ψ = X + X²`,
+`ψ (φ (X)) = 2 X + 4 X²`. -/
+example : substAlgEquiv (FormalCoordinate.ofStrictCoeffs (Pi.single 1 1) *
+      FormalCoordinate.homothety (Units.mk0 (2 : ℚ) two_ne_zero)) (single 1 1) =
+    single 1 2 + single 2 4 := by
+  rw [substAlgEquiv_mul, substAlgEquiv_two_X_mul_X_add_X_sq]
+
+/-- The two orders differ, in the coefficient of `X²`: `σ_φ ∘ σ_ψ ≠ σ_ψ ∘ σ_φ` for `φ = 2 X` and
+`ψ = X + X²`. -/
+example : (substAlgEquiv (FormalCoordinate.homothety (Units.mk0 (2 : ℚ) two_ne_zero)) *
+      substAlgEquiv (FormalCoordinate.ofStrictCoeffs (Pi.single 1 1)) : ℚ⸨X⸩ ≃ₐ[ℚ] ℚ⸨X⸩) ≠
+    substAlgEquiv (FormalCoordinate.ofStrictCoeffs (Pi.single 1 1)) *
+      substAlgEquiv (FormalCoordinate.homothety (Units.mk0 (2 : ℚ) two_ne_zero)) := by
+  intro h
+  have h₂ := congr(($h (single 1 1)).coeff 2)
+  rw [substAlgEquiv_two_X_mul_X_add_X_sq, substAlgEquiv_X_add_X_sq_mul_two_X] at h₂
+  norm_num [coeff_single] at h₂
+
+end Check
 
 end TauCeti.LaurentSeries
