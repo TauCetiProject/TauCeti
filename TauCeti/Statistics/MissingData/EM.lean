@@ -39,8 +39,10 @@ quantities. They have their statistical meaning only under side conditions:
   under it. Integrability alone is not enough: if `f θ` vanishes on a set of positive
   conditional probability, the statistical criterion is `-∞`, while the totalized `Q(θ | θ')`
   may still be a finite integral of an integrable function.
-* An EM step is the statistical EM step only when these conditions hold for every candidate
-  `θ ∈ Θ`. Otherwise an EM step maximizes the totalized criterion, junk values included.
+* If these conditions hold for every candidate `θ ∈ Θ`, they guarantee that the totalized and
+  the statistical criteria agree on `Θ`, so an EM step is the statistical EM step. Without them
+  the two criteria, and hence their maximizers, may differ: an EM step maximizes the totalized
+  criterion, junk values included.
 
 ## Main definitions
 
@@ -95,7 +97,9 @@ observed data, integrated over the missing part. -/
 def obsLikelihood (θ : E) : ℝ := ∫ z, f θ z ∂ρ
 
 /-- The **observed-data log-likelihood** `log L(θ)`. It is the statistical log-likelihood when
-`0 < L(θ)`. When `L(θ) = 0`, whether the likelihood is genuinely zero (statistically `-∞`) or
+`f θ` is a density slice: almost everywhere nonnegative with `0 < L(θ)` (which forces `f θ` to be
+integrable), as in `missingLaw`. For a signed slice a positive integral `L(θ)` need not be a
+likelihood. When `L(θ) = 0`, whether the likelihood is genuinely zero (statistically `-∞`) or
 `f θ` is not integrable (the Bochner fallback), it is the junk value `Real.log 0 = 0`. -/
 def obsLogLikelihood (θ : E) : ℝ := Real.log (ρ.obsLikelihood f θ)
 
