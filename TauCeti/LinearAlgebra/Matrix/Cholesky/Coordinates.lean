@@ -50,7 +50,7 @@ abbrev lowerTriangle (p : ℕ) := {ij : Fin p × Fin p // ij.2 ≤ ij.1}
 index, and only through whether the position is diagonal, collapses to a product over the rows:
 row `i` has one diagonal position and `i` strictly lower ones. -/
 theorem prod_lowerTriangle_ite {M : Type*} [CommMonoid M] {p : ℕ} (F G : Fin p → M) :
-    ∏ ij : lowerTriangle p, (if ij.1.1 = ij.1.2 then F ij.1.1 else G ij.1.1) =
+    ∏ ij : lowerTriangle p, (if ij.val.1 = ij.val.2 then F ij.val.1 else G ij.val.1) =
       ∏ i : Fin p, F i * G i ^ (i : ℕ) := by
   classical
   rw [← Finset.prod_subtype (p := fun q : Fin p × Fin p ↦ q.2 ≤ q.1)
@@ -101,7 +101,7 @@ theorem isLowerTriangular_lowerTriangleMatrix (x : lowerTriangle p → ℝ) :
 /-- A lower-triangular matrix is rebuilt from its on-or-below-diagonal entries. -/
 @[simp]
 theorem lowerTriangleMatrix_entries {A : Matrix (Fin p) (Fin p) ℝ} (hA : A.IsLowerTriangular) :
-    lowerTriangleMatrix p (fun ij ↦ A ij.1.1 ij.1.2) = A := by
+    lowerTriangleMatrix p (fun ij ↦ A ij.val.1 ij.val.2) = A := by
   refine Matrix.ext fun i j ↦ ?_
   by_cases h : j ≤ i
   · exact lowerTriangleMatrix_apply_of_le _ h
@@ -138,7 +138,7 @@ theorem trace_lowerTriangleMatrix_mul_transpose (x : lowerTriangle p → ℝ) :
     _ = ∑ ij : lowerTriangle p, x ij ^ 2 := by
         rw [Finset.sum_subtype (p := fun q : Fin p × Fin p ↦ q.2 ≤ q.1) _ (fun q ↦ by simp)
           fun q ↦ if h : q.2 ≤ q.1 then x ⟨q, h⟩ ^ 2 else 0]
-        exact Finset.sum_congr rfl fun ij _ ↦ dite_eq_left ij.2
+        exact Finset.sum_congr rfl fun ij _ ↦ dite_eq_left ij.property
 
 /-- The common algebraic core of Cholesky-coordinate density factorizations. A determinant power,
 the Cholesky diagonal powers, and an exponential trace factor split into one factor per lower
@@ -146,9 +146,9 @@ triangular coordinate; `c` and `b` supply the diagonal and off-diagonal constant
 theorem prod_lowerTriangle_diag_rpow_mul_exp_neg_sq (x : lowerTriangle p → ℝ)
     (hpos : ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩) (d q : ℝ) (c : Fin p → ℝ) (b : ℝ) :
     ∏ ij : lowerTriangle p,
-        (if ij.1.1 = ij.1.2 then
-            c ij.1.1 * x ⟨(ij.1.1, ij.1.1), le_rfl⟩ ^
-              (2 * d + p - ((ij.1.1 : ℕ) : ℝ))
+        (if ij.val.1 = ij.val.2 then
+            c ij.val.1 * x ⟨(ij.val.1, ij.val.1), le_rfl⟩ ^
+              (2 * d + p - ((ij.val.1 : ℕ) : ℝ))
           else b) * Real.exp (-q * x ij ^ 2) =
       (∏ i : Fin p, c i * b ^ (i : ℕ)) *
         ((lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ d *
@@ -162,7 +162,7 @@ theorem prod_lowerTriangle_diag_rpow_mul_exp_neg_sq (x : lowerTriangle p → ℝ
         x ⟨(i, i), le_rfl⟩ ^ (2 * d + p - ((i : ℕ) : ℝ)) := by
     intro i
     rw [← Real.rpow_natCast (x ⟨(i, i), le_rfl⟩) (p - (i : ℕ)),
-      ← Real.rpow_add (hpos i), Nat.cast_sub i.2.le]
+      ← Real.rpow_add (hpos i), Nat.cast_sub i.isLt.le]
     congr 1
     ring
   have hdet : (lowerTriangleMatrix p x * (lowerTriangleMatrix p x)ᵀ).det ^ d =
@@ -202,33 +202,33 @@ lower-triangular matrices to their coordinate space. Its inverse fills the posit
 diagonal with zeros. -/
 def lowerTriangleCoordinatesHomeomorph :
     PosDiagLowerTriangular p ≃ₜ PosDiagLowerCoordinates p where
-  toFun L := ⟨fun ij ↦ L.1 ij.1.1 ij.1.2, L.2.2⟩
+  toFun L := ⟨fun ij ↦ L.val ij.val.1 ij.val.2, L.property.2⟩
   invFun x :=
-    ⟨lowerTriangleMatrix p x.1, isLowerTriangular_lowerTriangleMatrix x.1,
-      fun i ↦ by simpa using x.2 i⟩
-  left_inv L := Subtype.ext (lowerTriangleMatrix_entries L.2.1)
-  right_inv x := Subtype.ext (funext fun ij ↦ lowerTriangleMatrix_apply_of_le x.1 ij.2)
+    ⟨lowerTriangleMatrix p x.val, isLowerTriangular_lowerTriangleMatrix x.val,
+      fun i ↦ by simpa using x.property i⟩
+  left_inv L := Subtype.ext (lowerTriangleMatrix_entries L.property.1)
+  right_inv x := Subtype.ext (funext fun ij ↦ lowerTriangleMatrix_apply_of_le x.val ij.property)
   continuous_toFun := by
     refine Continuous.subtype_mk (continuous_pi fun ij ↦ ?_) _
-    exact continuous_subtype_val.matrix_elem ij.1.1 ij.1.2
+    exact continuous_subtypeVal.matrix_elem ij.val.1 ij.val.2
   continuous_invFun :=
-    Continuous.subtype_mk (continuous_lowerTriangleMatrix.comp continuous_subtype_val) _
+    Continuous.subtype_mk (continuous_lowerTriangleMatrix.comp continuous_subtypeVal) _
 
 @[simp]
 theorem lowerTriangleCoordinatesHomeomorph_apply_coe (L : PosDiagLowerTriangular p)
     (ij : lowerTriangle p) :
-    (lowerTriangleCoordinatesHomeomorph p L).1 ij = L.1 ij.1.1 ij.1.2 :=
+    (lowerTriangleCoordinatesHomeomorph p L).val ij = L.val ij.val.1 ij.val.2 :=
   (rfl)
 
 @[simp]
 theorem lowerTriangleCoordinatesHomeomorph_symm_apply_coe (x : PosDiagLowerCoordinates p) :
-    ((lowerTriangleCoordinatesHomeomorph p).symm x).1 = lowerTriangleMatrix p x.1 :=
+    ((lowerTriangleCoordinatesHomeomorph p).symm x).val = lowerTriangleMatrix p x.val :=
   (rfl)
 
 @[simp]
 theorem lowerTriangleMatrix_lowerTriangleCoordinatesHomeomorph (L : PosDiagLowerTriangular p) :
-    lowerTriangleMatrix p (lowerTriangleCoordinatesHomeomorph p L).1 = L.1 :=
-  lowerTriangleMatrix_entries L.2.1
+    lowerTriangleMatrix p (lowerTriangleCoordinatesHomeomorph p L).val = L.val :=
+  lowerTriangleMatrix_entries L.property.1
 
 /-- The measurable equivalence induced by `TauCeti.lowerTriangleCoordinatesHomeomorph`. -/
 def lowerTriangleCoordinates : PosDiagLowerTriangular p ≃ᵐ PosDiagLowerCoordinates p :=

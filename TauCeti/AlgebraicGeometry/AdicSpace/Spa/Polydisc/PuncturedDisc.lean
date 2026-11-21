@@ -55,13 +55,13 @@ local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily
 /-- The complement of the coordinate zero locus in the closed unit disc. -/
 noncomputable def puncturedDisc (A : Type*) [CommRing A] [TopologicalSpace A]
     [NonarchimedeanRing A] : Set (closedPolydisc 1 A) :=
-  {v | weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 ∉ v.1.supp}
+  {v | weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 ∉ v.val.supp}
 
 /-- A point of the closed disc lies in the punctured disc exactly when its coordinate
 has nonzero valuation. -/
 @[simp]
 theorem mem_puncturedDisc (v : closedPolydisc 1 A) :
-    v ∈ puncturedDisc A ↔ ¬ v.1.toValuativeRel.vle T 0 := by
+    v ∈ puncturedDisc A ↔ ¬ v.val.toValuativeRel.vle T 0 := by
   simp [puncturedDisc, mem_supp_iff]
 
 /-- The annulus `|c|^(n+1) ≤ |T| ≠ 0` in the closed unit disc. -/
@@ -72,12 +72,12 @@ noncomputable def puncturedDiscAnnulus (c : A) (n : ℕ) : Set (closedPolydisc 1
 @[simp]
 theorem mem_puncturedDiscAnnulus (c : A) (n : ℕ) (v : closedPolydisc 1 A) :
     v ∈ puncturedDiscAnnulus c n ↔
-      v.1.toValuativeRel.vle (C (c ^ (n + 1))) T ∧ ¬ v.1.toValuativeRel.vle T 0 := by
+      v.val.toValuativeRel.vle (C (c ^ (n + 1))) T ∧ ¬ v.val.toValuativeRel.vle T 0 := by
   rw [puncturedDiscAnnulus, Set.mem_preimage, mem_basicOpen_iff]
 
 /-- Every exhaustion annulus is open in the closed unit disc. -/
 theorem isOpen_puncturedDiscAnnulus (c : A) (n : ℕ) : IsOpen (puncturedDiscAnnulus c n) :=
-  (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 /-- An exhaustion annulus lies in the punctured disc. -/
 theorem puncturedDiscAnnulus_subset (c : A) (n : ℕ) :
@@ -91,7 +91,7 @@ theorem puncturedDiscAnnulus_eq_rationalSubset (c : A) (n : ℕ) :
       rationalSubset (powerBoundedSubring 𝒯) {C (c ^ (n + 1))} T := by
   classical
   ext v
-  have hv : v.1 ∈ spa (powerBoundedSubring 𝒯) := closedPolydisc_def 1 A ▸ v.2
+  have hv : v.val ∈ spa (powerBoundedSubring 𝒯) := closedPolydisc_def 1 A ▸ v.property
   simp [mem_puncturedDiscAnnulus, mem_rationalSubset_iff, hv]
 
 /-- Annuli with a unit radius parameter are quasi-compact rational opens. -/
@@ -112,12 +112,12 @@ theorem monotone_puncturedDiscAnnulus {c : A} (hc : IsTopologicallyNilpotent c) 
     Monotone (puncturedDiscAnnulus c) := by
   intro n m hnm v hv
   rw [mem_puncturedDiscAnnulus] at hv ⊢
-  have hcont := (isContinuous_def v.1).mp ((mem_closedPolydisc_iff 1 A v.1).mp v.2).1
+  have hcont := (isContinuous_def v.val).mp ((mem_closedPolydisc_iff 1 A v.val).mp v.property).1
   have hnil : IsTopologicallyNilpotent (C c) :=
     hc.map (continuous_weightedC isWeightFamily_one_weight)
-  have hn : v.1.valuation (C c) ^ (n + 1) ≤ v.1.valuation T := by
-    simpa only [map_pow] using (valuation_le_iff v.1 _ _).mpr hv.1
-  refine ⟨(valuation_le_iff v.1 _ _).mp ?_, hv.2⟩
+  have hn : v.val.valuation (C c) ^ (n + 1) ≤ v.val.valuation T := by
+    simpa only [map_pow] using (valuation_le_iff v.val _ _).mpr hv.1
+  refine ⟨(valuation_le_iff v.val _ _).mp ?_, hv.2⟩
   simpa only [map_pow] using (pow_le_pow_of_le_one zero_le
     (hcont.lt_one_of_isTopologicallyNilpotent hnil).le
       (Nat.add_le_add_right hnm 1)).trans hn
@@ -127,17 +127,17 @@ theorem iUnion_puncturedDiscAnnulus {c : A} (hc : IsTopologicallyNilpotent c) :
     (⋃ n, puncturedDiscAnnulus c n) = puncturedDisc A := by
   apply Set.Subset.antisymm (Set.iUnion_subset (puncturedDiscAnnulus_subset c))
   intro v hv
-  have hcont := ((mem_closedPolydisc_iff 1 A v.1).mp v.2).1
+  have hcont := ((mem_closedPolydisc_iff 1 A v.val).mp v.property).1
   have hnil : IsTopologicallyNilpotent (C c) :=
     hc.map (continuous_weightedC isWeightFamily_one_weight)
   obtain ⟨n, hn⟩ := hcont.exists_pow_vlt_of_isTopologicallyNilpotent hnil
     (by simpa only [mem_supp_iff] using (mem_puncturedDisc v).mp hv)
-  have hvalcont := (isContinuous_def v.1).mp hcont
+  have hvalcont := (isContinuous_def v.val).mp hcont
   apply Set.mem_iUnion.mpr
   refine ⟨n, (mem_puncturedDiscAnnulus c n v).mpr ⟨?_, (mem_puncturedDisc v).mp hv⟩⟩
-  have hnval : v.1.valuation (C c) ^ n < v.1.valuation T := by
-    simpa only [map_pow] using (valuation_lt_iff v.1 _ _).mpr hn
-  apply (valuation_le_iff v.1 _ _).mp
+  have hnval : v.val.valuation (C c) ^ n < v.val.valuation T := by
+    simpa only [map_pow] using (valuation_lt_iff v.val _ _).mpr hn
+  apply (valuation_le_iff v.val _ _).mp
   simpa only [map_pow] using
     (pow_le_pow_of_le_one zero_le (hvalcont.lt_one_of_isTopologicallyNilpotent hnil).le
       (Nat.le_succ n)).trans hnval.le
@@ -156,7 +156,7 @@ theorem isOpen_puncturedDisc : IsOpen (puncturedDisc A) := by
     ext v
     simp [mem_puncturedDisc, mem_basicOpen_iff, ← valuation_le_iff]
   rw [h]
-  exact (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  exact (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 end TopologicalRing
 
@@ -177,14 +177,14 @@ theorem classicalPoint_pow_mem_puncturedDisc_notMem_annulus
     classicalPoint x (fun _ : Fin 1 ↦ c ^ (n + 2)) ha ∈ puncturedDisc A ∧
       classicalPoint x (fun _ : Fin 1 ↦ c ^ (n + 2)) ha ∉ puncturedDiscAnnulus c n := by
   dsimp only
-  have hcont := (isContinuous_def x.1).mp ((mem_spa_iff _ _).mp x.2).1
-  have hcval : x.1.valuation c < 1 :=
+  have hcont := (isContinuous_def x.val).mp ((mem_spa_iff _ _).mp x.property).1
+  have hcval : x.val.valuation c < 1 :=
     hcont.lt_one_of_isTopologicallyNilpotent hc.isTopologicallyNilpotent
-  have hne (k : ℕ) : x.1.valuation (c ^ k) ≠ 0 := ((hc.isUnit.pow k).map x.1.valuation).ne_zero
-  have hlt : x.1.valuation (c ^ (n + 2)) < x.1.valuation (c ^ (n + 1)) := by
+  have hne (k : ℕ) : x.val.valuation (c ^ k) ≠ 0 := ((hc.isUnit.pow k).map x.val.valuation).ne_zero
+  have hlt : x.val.valuation (c ^ (n + 2)) < x.val.valuation (c ^ (n + 1)) := by
     have hexp : n + 2 = (n + 1) + 1 := by omega
     rw [hexp, pow_succ, map_mul]
-    simpa using mul_lt_mul_of_pos_left hcval (zero_lt_iff.mpr (hne (n + 1)))
+    simpa using mul_lt_mul_of_pos_left hcval (pos_iff_ne_zero.mpr (hne (n + 1)))
   simp only [mem_puncturedDisc, mem_puncturedDiscAnnulus]
   simp only [classicalPoint_vle, evalAtHom_weightedX, evalAtHom_weightedC, map_zero]
   simp only [← valuation_le_iff, map_zero]
@@ -200,7 +200,7 @@ theorem exists_mem_puncturedDisc_notMem_annulus {c : A} (hc : IsPseudoUniformize
   have hplus : IsRingOfIntegralElements (powerBoundedSubring A) := by
     simpa only [Pair.powerBounded_plus] using (Pair.powerBounded A).isRingOfIntegralElements
   have hne : (spa (powerBoundedSubring A)).Nonempty := by
-    rw [Set.nonempty_iff_ne_empty, ne_eq,
+    rw [← Set.ne_empty_iff_nonempty, ne_eq,
       spa_eq_empty_iff_subsingleton _ hplus]
     exact not_subsingleton A
   obtain ⟨x, hx⟩ := hne

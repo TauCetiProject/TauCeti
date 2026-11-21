@@ -111,8 +111,8 @@ theorem MarkovExchangeable.measure_setOf_loopPathAt_eq_of_perm (h : MarkovExchan
   have := h.countable
   have := h.measurableSingletonClass
   have key := h.prefixLaw_loopPathAt_eq_of_perm a₀ hperm hn
-  rw [prefixLaw_singleton_eq_measure h.aemeasurable,
-    prefixLaw_singleton_eq_measure h.aemeasurable] at key
+  rw [prefixLaw_singleton_eq_measure fun i => h.aemeasurable i.val,
+    prefixLaw_singleton_eq_measure fun i => h.aemeasurable i.val] at key
   convert key using 2 <;>
     exact Set.ext fun ω => ⟨fun hω i => hω i.val (by omega), fun hω i hi => hω ⟨i, by omega⟩⟩
 

@@ -64,7 +64,9 @@ conjugation action.
 * `ConjClasses.pow_zero`, `ConjClasses.pow_one` and
   `ConjClasses.pow_mul`: the identity and composition laws for that power.
 * `ConjClasses.map_mk`: the computation rule for `ConjClasses.map` on representatives,
-  with `ConjClasses.map_pow` the consequence that the power is natural in the monoid.
+  with `ConjClasses.map_pow` the consequence that the power is natural in the monoid, and
+  `ConjClasses.carrier_map_of_surjective` the carrier of the image under a surjective
+  homomorphism of groups.
 * `MulEquiv.conjClassesEquiv`: a multiplicative equivalence induces an equivalence of
   conjugacy classes, compatible with representatives, powers, inversion, composition, and
   multiplicative automorphisms acting on conjugacy classes.
@@ -418,6 +420,18 @@ theorem pow_mul (C : ConjClasses M) (i j : ℕ) : (C ^ i) ^ j = C ^ (i * j) := b
 @[simp]
 theorem map_mk {N : Type*} [Monoid N] (f : M →* N) (a : M) :
     map f (ConjClasses.mk a) = ConjClasses.mk (f a) := rfl
+
+/-- Under a surjective homomorphism of groups, the image of a conjugacy class is the class whose
+members are the images of its members. -/
+theorem carrier_map_of_surjective {G H : Type*} [Group G] [Group H] {f : G →* H}
+    (hf : Function.Surjective f) (C : ConjClasses G) : (map f C).carrier = f '' C.carrier := by
+  obtain ⟨g, rfl⟩ := mk_surjective C
+  ext x
+  simp only [map_mk, mem_carrier_iff_mk_eq, mk_eq_mk_iff_isConj, Set.mem_image]
+  refine ⟨fun hx => ?_, fun ⟨y, hy, hyx⟩ => hyx ▸ f.map_isConj hy⟩
+  obtain ⟨z, hz⟩ := isConj_iff.mp hx.symm
+  obtain ⟨w, rfl⟩ := hf z
+  exact ⟨w * g * w⁻¹, (isConj_iff.mpr ⟨w, rfl⟩).symm, by rw [← hz, map_mul, map_mul, map_inv]⟩
 
 end ConjClasses
 

@@ -481,7 +481,7 @@ theorem dist_smul_eq_translationLength_add (g : G) (v : T.V) :
   obtain ⟨a, ha, hmin⟩ := exists_forall_dist_le (T.axis_nonempty g) v
   rw [dist_smul_eq_translationLength_add_two_mul_dist ha hmin]
   congr 2
-  exact le_antisymm (le_ciInf fun b => hmin b b.2)
+  exact le_antisymm (le_ciInf fun b => hmin b b.property)
     (ciInf_le (OrderBot.bddBelow _) (⟨a, ha⟩ : T.axis g))
 
 /-! ### Translation lengths and characteristic sets of powers -/

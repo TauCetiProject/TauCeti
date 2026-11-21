@@ -72,6 +72,11 @@ In the namespace `AlgebraicGeometry.Scheme.IdealSheafData`:
   with factorial local rings, the ideal sheaf of a nonzero global function `f` is the product of
   the ideal sheaves of the prime divisors, raised to the orders of vanishing of `f`.
 
+In the namespace `AlgebraicGeometry.Scheme.Hom`:
+
+* `uniqueFactorizationMonoid_stalk_of_isOpenImmersion`: open immersions preserve stalkwise
+  factoriality.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Chapter II, Proposition 6.11: on a Noetherian integral
@@ -89,6 +94,18 @@ open CategoryTheory TopologicalSpace Order
 
 universe u
 
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- The stalks of the source of an open immersion into a locally factorial scheme are unique
+factorization domains. -/
+theorem uniqueFactorizationMonoid_stalk_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] (u : U) :
+    UniqueFactorizationMonoid (U.presheaf.stalk u) :=
+  (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
+    inferInstance
+
+end AlgebraicGeometry.Scheme.Hom
+
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X : Scheme.{u}}
@@ -99,7 +116,7 @@ private lemma exists_vanishingIdeal_closure_singleton_ideal_eq_span_singleton
     [IsLocallyNoetherian X] [∀ x : X, IsDomain (X.presheaf.stalk x)]
     [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] {η : X} (hη : coheight η = 1)
     {x : X} (hx : x ∈ closure {η}) :
-    ∃ V : X.affineOpens, x ∈ V.1 ∧ ∃ a : Γ(X, V), IsSMulRegular Γ(X, V) a ∧
+    ∃ V : X.affineOpens, x ∈ V.val ∧ ∃ a : Γ(X, V), IsSMulRegular Γ(X, V) a ∧
       (vanishingIdeal ⟨closure {η}, isClosed_closure⟩).ideal V = Ideal.span {a} := by
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
@@ -123,7 +140,7 @@ private lemma exists_vanishingIdeal_closure_singleton_ideal_eq_span_singleton
   set S := X.presheaf.stalk x
   let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
   have hQ : (q.asIdeal.map (algebraMap Γ(X, U) S)).IsPrime :=
-    IsLocalization.isPrime_of_isPrime_disjoint P.asIdeal.primeCompl S _ q.2 hdisj
+    IsLocalization.isPrime_of_isPrime_disjoint P.asIdeal.primeCompl S _ q.isPrime hdisj
   have hqh : q.asIdeal.height = coheight (hU'.fromSpec q) :=
     (idealHeight_eq_coheight Γ(X, U) q).trans (coheight_eq_of_isOpenImmersion hU'.fromSpec).symm
   have hQh : (q.asIdeal.map (algebraMap Γ(X, U) S)).height = 1 := by
@@ -204,7 +221,7 @@ theorem isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of
     {η η' : TauCeti.AlgebraicGeometry.CodimensionOnePoint X} (hne : η ≠ η') :
     ((vanishingIdeal ⟨closure {(η' : X)}, isClosed_closure⟩).comap
       (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι).IsEffectiveCartier :=
-  (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX η'.2)
+  (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX η'.property)
     |>.comap_subschemeι_vanishingIdeal_closure_singleton_of_ne hne
 
 section Principal
@@ -241,9 +258,9 @@ variable {x : X} {U : X.affineOpens}
 
 /-- On an affine open containing `x`, the ideal of the closure of a point `η` generates the prime
 of `𝒪_{X,x}` of `η` when `η` is a generization of `x`, and the unit ideal otherwise. -/
-private lemma map_ideal_vanishingIdeal_closure_singleton (hxU : x ∈ U.1) (η : X) :
+private lemma map_ideal_vanishingIdeal_closure_singleton (hxU : x ∈ U.val) (η : X) :
     ((vanishingIdeal ⟨closure {η}, isClosed_closure⟩).ideal U).map
-      (X.presheaf.germ U.1 x hxU).hom = stalkIdeal x η := by
+      (X.presheaf.germ U.val x hxU).hom = stalkIdeal x η := by
   by_cases h : η ⤳ x
   · rw [stalkIdeal_of_specializes h, map_ideal_vanishingIdeal_closure_singleton_of_specializes]
   · rw [stalkIdeal_of_not_specializes h,
@@ -273,7 +290,7 @@ private lemma span_singleton_eq_prod_stalkIdeal [UniqueFactorizationMonoid (X.pr
     rw [Ideal.span_singleton_eq_top.mpr hu, ← Ideal.one_eq_top, eq_comm]
     refine Finset.prod_eq_one fun η _ ↦ ?_
     by_cases h : (η : X) ⤳ x
-    · rw [(ord_algebraMap_stalk_eq_zero_iff η.2 h hu.ne_zero).mpr fun hmem ↦
+    · rw [(ord_algebraMap_stalk_eq_zero_iff η.property h hu.ne_zero).mpr fun hmem ↦
         stalkIdeal_ne_top h (Ideal.eq_top_of_isUnit_mem _ (stalkIdeal_of_specializes h ▸ hmem) hu),
         Int.toNat_zero, pow_zero]
     · rw [stalkIdeal_of_not_specializes h, Ideal.top_pow, Ideal.one_eq_top]
@@ -295,14 +312,14 @@ private lemma span_singleton_eq_prod_stalkIdeal [UniqueFactorizationMonoid (X.pr
       intro η _
       by_cases h : (η : X) ⤳ x
       · rw [map_mul, X.ord_mul hp0 ha0,
-          Int.toNat_add (ord_algebraMap_stalk_nonneg η.2 h p)
-            (ord_algebraMap_stalk_nonneg η.2 h a), pow_add]
+          Int.toNat_add (ord_algebraMap_stalk_nonneg η.property h p)
+            (ord_algebraMap_stalk_nonneg η.property h a), pow_add]
         by_cases he : η₀ = η
         · subst he
-          rw [ord_algebraMap_stalk_eq_one η₀.2 h (stalkIdeal_of_specializes h ▸ hη₀),
+          rw [ord_algebraMap_stalk_eq_one η₀.property h (stalkIdeal_of_specializes h ▸ hη₀),
             ite_eq_left rfl, hη₀,
             Int.toNat_one, pow_one]
-        · rw [(ord_algebraMap_stalk_eq_zero_iff η.2 h hp.ne_zero).mpr fun hmem ↦ he
+        · rw [(ord_algebraMap_stalk_eq_zero_iff η.property h hp.ne_zero).mpr fun hmem ↦ he
             (TauCeti.AlgebraicGeometry.CodimensionOnePoint.eq_of_specializes
               (specializes_of_comap_stalkSpecializes_maximalIdeal_le hη₀x h
                 (by rwa [← stalkIdeal_of_specializes hη₀x, hη₀, Ideal.span_singleton_le_iff_mem]))),
@@ -338,7 +355,7 @@ theorem ofIdealTop_span_singleton_eq_prod_vanishingIdeal
   have hprod : ∀ (I : TauCeti.AlgebraicGeometry.CodimensionOnePoint X → X.IdealSheafData),
       (∏ η ∈ s, I η).ideal U = ∏ η ∈ s, (I η).ideal U := fun I ↦ map_prod φ I s
   rw [ofIdealTop_ideal, hprod]
-  refine U.2.ideal_ext_iff.mpr fun x hxU ↦ ?_
+  refine U.property.ideal_ext_iff.mpr fun x hxU ↦ ?_
   rw [Ideal.map_map, Ideal.map_span, Set.image_singleton, ← CommRingCat.hom_comp,
     TopCat.Presheaf.germ_res, ← Ideal.mapHom_apply, map_prod]
   simp only [Ideal.mapHom_apply, ideal_pow, Pi.pow_apply, Ideal.map_pow,
@@ -351,8 +368,8 @@ theorem ofIdealTop_span_singleton_eq_prod_vanishingIdeal
     (X.algebraMap_germ_eq_germToFunctionField hx f).symm
   rw [hord]
   refine span_singleton_eq_prod_stalkIdeal hgerm s fun η hηx hmem ↦ hs η ?_
-  have h0 := ord_algebraMap_stalk_nonneg η.2 hηx (X.presheaf.germ ⊤ x hx f)
-  have hne := (ord_algebraMap_stalk_eq_zero_iff η.2 hηx hgerm).not_left.mpr
+  have h0 := ord_algebraMap_stalk_nonneg η.property hηx (X.presheaf.germ ⊤ x hx f)
+  have hne := (ord_algebraMap_stalk_eq_zero_iff η.property hηx hgerm).not_left.mpr
     (stalkIdeal_of_specializes hηx ▸ hmem)
   rw [hord]
   omega

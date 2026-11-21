@@ -91,16 +91,16 @@ with ambient PL coordinate formulas in both directions. -/
 theorem IsCombinatorialBall.exists_homeomorph_standardSimplex
     [DecidableEq ι] (h : IsCombinatorialBall P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    ∃ e : {x : Realization A // x.1.support ∈ P} ≃ₜ
+    ∃ e : {x : Realization A // x.val.support ∈ P} ≃ₜ
         Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))),
       ∃ f : (ι → ℝ) → (Fin (n + 1) → ℝ), ∃ g : (Fin (n + 1) → ℝ) → (ι → ℝ),
-        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.1.support ∈ P} =>
-          (x.1.1 : ι → ℝ)) ∧
+        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.val.support ∈ P} =>
+          (x.val.val : ι → ℝ)) ∧
         TauCeti.IsPLOn g (Set.range fun y :
           Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) =>
-            (y.1 : Fin (n + 1) → ℝ)) ∧
-        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1) ∧
-        ∀ y, g (y.1 : Fin (n + 1) → ℝ) = (e.symm y).1.1 := by
+            (y.val : Fin (n + 1) → ℝ)) ∧
+        (∀ x, f (x.val.val : ι → ℝ) = (e x).val) ∧
+        ∀ y, g (y.val : Fin (n + 1) → ℝ) = (e.symm y).val.val := by
   have hPL := h.plHomeomorphic_standardSimplex
   rw [simplex_univ, ← top_toPreAbstractSimplicialComplex] at hPL
   exact hPL.exists_homeomorph_realization hA
@@ -110,15 +110,15 @@ boundary, with ambient PL coordinate formulas in both directions. -/
 theorem IsCombinatorialSphere.exists_homeomorph_standardSimplexBoundary
     [DecidableEq ι] (h : IsCombinatorialSphere P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    ∃ e : {x : Realization A // x.1.support ∈ P} ≃ₜ
+    ∃ e : {x : Realization A // x.val.support ∈ P} ≃ₜ
         Realization (standardSuccSimplexBoundary n),
       ∃ f : (ι → ℝ) → (Fin (n + 2) → ℝ), ∃ g : (Fin (n + 2) → ℝ) → (ι → ℝ),
-        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.1.support ∈ P} =>
-          (x.1.1 : ι → ℝ)) ∧
+        TauCeti.IsPLOn f (Set.range fun x : {x : Realization A // x.val.support ∈ P} =>
+          (x.val.val : ι → ℝ)) ∧
         TauCeti.IsPLOn g (Set.range fun y : Realization (standardSuccSimplexBoundary n) =>
-          (y.1 : Fin (n + 2) → ℝ)) ∧
-        (∀ x, f (x.1.1 : ι → ℝ) = (e x).1) ∧
-        ∀ y, g (y.1 : Fin (n + 2) → ℝ) = (e.symm y).1.1 := by
+          (y.val : Fin (n + 2) → ℝ)) ∧
+        (∀ x, f (x.val.val : ι → ℝ) = (e x).val) ∧
+        ∀ y, g (y.val : Fin (n + 2) → ℝ) = (e.symm y).val.val := by
   have hPL := h.plHomeomorphic_standardSimplexBoundary
   rw [← standardSuccSimplexBoundary_toPreAbstractSimplicialComplex] at hPL
   exact hPL.exists_homeomorph_realization hA
@@ -131,7 +131,7 @@ The ambient complex may contain unused vertices. They are removed by the weak-po
 theorem IsCombinatorialBall.nonempty_homeomorph_closedBall
     [DecidableEq ι] (h : IsCombinatorialBall P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    Nonempty ({x : Realization A // x.1.support ∈ P} ≃ₜ
+    Nonempty ({x : Realization A // x.val.support ∈ P} ≃ₜ
       Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
   classical
   obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp h
@@ -144,7 +144,7 @@ inside any ambient realization containing it. This includes the two-point zero-s
 theorem IsCombinatorialSphere.nonempty_homeomorph_sphere [DecidableEq ι]
     (h : IsCombinatorialSphere P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    Nonempty ({x : Realization A // x.1.support ∈ P} ≃ₜ
+    Nonempty ({x : Realization A // x.val.support ∈ P} ≃ₜ
       sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
   classical
   let r := topRealizationHomeomorph P hA
@@ -175,7 +175,7 @@ theorem IsCombinatorialManifold.nonempty_homeomorph_closedStar_closedBall
   obtain ⟨b⟩ := hball.nonempty_homeomorph_closedBall hP
   let r := P.relabelingHomeomorph e (PreAbstractSimplicialComplex.closedStar_le) hP
   have hset : (K.closedStarRealization {v} : Set (Realization K)) =
-      {x : Realization K | x.1.support ∈ P} := by
+      {x : Realization K | x.val.support ∈ P} := by
     ext x
     simp only [P, mem_closedStarRealization, Set.mem_ofPred_eq]
   exact ⟨(Homeomorph.setCongr hset).trans (r.trans b)⟩

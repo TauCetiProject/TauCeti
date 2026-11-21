@@ -114,7 +114,7 @@ private theorem poisson_counts_identDistrib [IsProbabilityMeasure P]
     apply Finset.prod_congr rfl
     intro i _
     simp only [ENNReal.toEReal_natCast, ← EReal.coe_natCast, ← EReal.coe_neg,
-      EReal.exp_coe, ← ENNReal.ofReal_pow (Real.exp_nonneg _), ← Real.exp_nat_mul]
+      EReal.exp_coe, ← ENNReal.ofReal_pow (Real.exp_nonneg _), ← Real.exp_natCast_mul]
     congr 2
     ring
   simp_rw [he]
