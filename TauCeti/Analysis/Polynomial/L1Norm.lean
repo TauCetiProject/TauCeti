@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.MvPolynomial.L1Norm
 import TauCeti.Algebra.Polynomial.Homogenize
 
 /-!
@@ -39,6 +40,8 @@ coefficients.
   quotient of a polynomial by a power of `X - a`.
 * `Polynomial.l1Norm_aeval_homogenize_le`: the bound `‖p‖∞ (‖g‖₁ + ‖h‖₁) ^ n` after substituting
   `g` and `h` into the homogenization of degree `n` of `p`.
+* `Polynomial.l1Norm_toMvPolynomial_le`: embedding a polynomial as a polynomial in one variable of
+  a multivariate polynomial ring does not increase its coefficient l¹-norm.
 
 ## References
 
@@ -406,6 +409,15 @@ theorem l1Norm_aeval_homogenize_le (p : A[X]) (n : ℕ) (g h : A[X]) :
         have h1 : (1 : ℝ) ≤ n.choose k := by
           exact_mod_cast Nat.choose_pos (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
         exact le_mul_of_one_le_right (by positivity) h1
+
+/-- Embedding a polynomial as a polynomial in the variable `Xᵢ` of a multivariate polynomial ring
+does not increase its coefficient l¹-norm. -/
+theorem l1Norm_toMvPolynomial_le {σ : Type*} (i : σ) (p : A[X]) :
+    (p.toMvPolynomial i).l1Norm ≤ p.l1Norm := by
+  rw [toMvPolynomial, aeval_def, eval₂_eq_sum, sum_def, l1Norm_eq_sum_support]
+  refine (MvPolynomial.l1Norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
+  rw [MvPolynomial.algebraMap_eq, MvPolynomial.C_mul_X_pow_eq_monomial,
+    MvPolynomial.l1Norm_monomial]
 
 end CommRing
 

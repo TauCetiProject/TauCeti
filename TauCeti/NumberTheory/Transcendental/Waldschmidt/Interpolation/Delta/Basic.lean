@@ -107,12 +107,10 @@ over `K` is `∏ᵢ Δ(q zᵢ; τᵢ)` over `L`. -/
 theorem map_waldschmidtDelta {L : Type*} [Field L] [CharZero L] (f : K →+* L) (q : ℤ)
     (τ : Fin (n + 1) →₀ ℕ) :
     (waldschmidtDelta (K := K) q τ).map f = waldschmidtDelta q τ := by
-  -- The two ring homomorphisms out of `ℚ` agree.
-  have h : (MvPolynomial.map (σ := Fin (n + 1)) f).comp (C.comp (algebraMap ℚ K)) =
-      C.comp (algebraMap ℚ L) :=
-    RingHom.ext_rat _ _
-  simp [waldschmidtDelta_def, map_prod, Polynomial.aeval_def, Polynomial.hom_eval₂,
-    Polynomial.eval₂_map, h]
+  rw [waldschmidtDelta_def, waldschmidtDelta_def, map_prod]
+  refine prod_congr rfl fun i _ ↦ ?_
+  rw [Polynomial.map_aeval_eq_aeval_map (φ := f) (RingHom.ext fun _ ↦ (map_C f _).symm), map_X,
+    Polynomial.map_map, RingHom.ext_rat (f.comp (algebraMap ℚ K)) (algebraMap ℚ L)]
 
 /-- **The delta polynomials are integer-valued.** If `q xᵢ` is an integer for every coordinate
 of the point `x`, then `∏ᵢ Δ(q xᵢ; τᵢ)` is an integer. -/

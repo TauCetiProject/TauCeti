@@ -89,7 +89,7 @@ theorem abs_intCast_mul_waldschmidtPoint_waldschmidtNormalize_le (a₀ : ℤ) {a
         Fin (n + 1) → ℕ) i := by
   have ha' : ((a (Fin.last n) : ℤ) : ℚ) ≠ 0 := Int.cast_ne_zero.2 ha
   have habs (z : ℤ) : |(z : ℚ)| = z.natAbs := by
-    rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast]
+    rw [← Int.cast_abs, ← Nat.cast_natAbs]
   have hs' (j : Fin (n + 1)) : |(s j : ℚ)| ≤ S j := by
     rw [habs]
     exact_mod_cast hs j
@@ -156,21 +156,11 @@ most `∏ᵢ (τᵢ + 1) max(1, ‖q‖) ^ τᵢ`. -/
 theorem l1Norm_waldschmidtDelta_le (q : ℤ) (τ : Fin (n + 1) →₀ ℕ) :
     (waldschmidtDelta (K := ℚ) q τ).l1Norm ≤
       ∏ i, ((τ i + 1 : ℝ) * max 1 ‖(q : ℚ)‖ ^ τ i) := by
-  have hX (Q : Polynomial ℚ) (i : Fin (n + 1)) :
-      (Polynomial.aeval (X i : MvPolynomial (Fin (n + 1)) ℚ) Q).l1Norm ≤ Q.l1Norm := by
-    rw [Polynomial.aeval_def, Polynomial.eval₂_eq_sum, Polynomial.sum_def,
-      Polynomial.l1Norm_eq_sum_support]
-    refine (l1Norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ ?_)
-    simpa [algebraMap_eq] using
-      (l1Norm_mul_le (C (Q.coeff k)) ((X i : MvPolynomial (Fin (n + 1)) ℚ) ^ k)).trans
-        (by
-          rw [l1Norm_C]
-          simpa using mul_le_mul_of_nonneg_left
-            (l1Norm_pow_le (X i : MvPolynomial (Fin (n + 1)) ℚ) k) (norm_nonneg (Q.coeff k)))
   rw [waldschmidtDelta_def]
   refine (l1Norm_prod_le _ _).trans (prod_le_prod₀ (fun _ _ ↦ l1Norm_nonneg _) fun i _ ↦ ?_)
   simp only [Algebra.algebraMap_self, Polynomial.map_id]
-  refine (hX _ i).trans ((Polynomial.l1Norm_comp_le _ _).trans ?_)
+  refine (Polynomial.l1Norm_toMvPolynomial_le i _).trans
+    ((Polynomial.l1Norm_comp_le _ _).trans ?_)
   have hΔ : (Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ i)).l1Norm ≤ τ i + 1 := by
     simpa using l1Norm_taylor_multichoose_X_add_one_le (x := 0) (n := 0) (by simp) (τ i)
   rw [natDegree_multichoose_X_add_one, Polynomial.C_mul_X_eq_monomial,
@@ -190,9 +180,7 @@ theorem l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_le {t : ℤ} {P : Pol
         (τ.degree + 2 * S + 1 : ℝ) ^ τ.degree := by
   have hH : 0 ≤ H := (norm_nonneg _).trans (hP 0)
   have hs' (j : Fin (n + 1)) : ‖(s j : ℚ)‖ ≤ S := by
-    rw [← Rat.norm_cast_real, Real.norm_eq_abs]
-    push_cast
-    rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast]
+    rw [Int.norm_cast_rat, Int.norm_eq_abs, ← Int.cast_abs, ← Nat.cast_natAbs]
     exact_mod_cast hs j
   have hdeg : (waldschmidtDelta (K := ℚ) q τ).totalDegree ≤ τ.degree :=
     (mem_restrictTotalDegree _ _ _).1 (waldschmidtDelta_mem_restrictTotalDegree q le_rfl)
@@ -238,7 +226,7 @@ theorem abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_waldschmidtDeltaOpe
       ≤ 2 ^ (σ / k * (T₁ + k + 1) + (T₁ + σ % k + 1)) * (1 + τ 0 * |(q : ℚ)|) ^ τ 0 *
         2 ^ ∑ i, (N i + τ i + 1) := by
   have htT : |(t : ℚ)| ≤ T₁ := by
-    rw [← Int.cast_abs, Int.abs_eq_natAbs]
+    rw [← Int.cast_abs, ← Nat.cast_natAbs]
     exact_mod_cast ht
   exact abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_le hx
     fun κ _ ↦ abs_eval_hasseDeriv_waldschmidtDeltaOperator_le htT k σ κ
