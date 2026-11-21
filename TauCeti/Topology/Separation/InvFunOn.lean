@@ -30,11 +30,11 @@ continuous on `Q` and fixing `Q ∩ f⁻¹(y)` pointwise, which is injective on 
 `k` is injective on `f '' R` and `f` is injective on `R \ f⁻¹(y)`
 (`ContinuousOn.exists_continuousOn_injOn_lift`).
 
-For instance, let `f` be continuous on a compact set `K` and injective on `K` away from the fibre
-over a point `y`, and let `k` be continuous and injective on `f '' K`, equal to the identity on
-`f '' K` near `y`, and mapping `f '' K` into `f '' (K ∩ U)` for a set `U` containing the fibre.
-Then the lift is continuous and injective on `K`, maps `K` into `K ∩ U`, and fixes every point of
-`K` at whose image `k` is the identity
+For instance, let `f` be continuous on a compact set `K`, with values in a Hausdorff space, and
+injective on `K` away from the fibre over a point `y`, and let `k` be continuous and injective on
+`f '' K`, equal to the identity on `f '' K` near `y`, and mapping `f '' K` into `f '' (K ∩ U)` for
+a set `U` containing the fibre. Then the lift is continuous and injective on `K`, maps `K` into
+`K ∩ U`, and fixes every point of `K` at whose image `k` is the identity
 (`ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image`). This is the shrinking step in
 M. Brown's proof that the only inverse set of a map of a cell is cellular.
 
@@ -67,9 +67,7 @@ theorem ContinuousOn.continuousOn_invFunOn_image_of_isCompact [Nonempty α] [T2S
   refine ⟨fun ⟨hyC, hy⟩ ↦ ⟨?_, hy⟩, fun ⟨⟨k, ⟨hkC, hkK⟩, hky⟩, hy⟩ ↦ ⟨?_, hy⟩⟩
   · exact ⟨invFunOn f U y, ⟨hyC, hUK (invFunOn_mem hy)⟩, invFunOn_eq hy⟩
   · -- A point of `K` with image in `f '' U` lies in `U`, so it is the chosen preimage.
-    have hkU : k ∈ U := by
-      by_contra hkU
-      exact disjoint_left.1 hdisj ⟨k, ⟨hkK, hkU⟩, hky⟩ hy
+    have hkU : k ∈ U := of_not_not fun hkU ↦ disjoint_left.1 hdisj ⟨k, ⟨hkK, hkU⟩, hky⟩ hy
     rwa [← hky, hinj.leftInvOn_invFunOn hkU]
 
 /-- **Limits read back through an injective map.** Let `f` be continuous and injective on a compact
@@ -77,13 +75,19 @@ set `K`, with values in a Hausdorff space, and let `x i` be maps from a space `T
 on a set `Ω ⊆ T`. If the maps `f ∘ x i` converge pointwise on `Ω` to a map `g` continuous on `Ω`,
 then `g = f ∘ y` on `Ω` for a map `y` continuous on `Ω` with values in `K`, and the `x i` converge
 pointwise on `Ω` to `y`. -/
-theorem IsCompact.exists_tendsto_of_tendsto_comp [Nonempty α] [T2Space β] {K : Set α}
+theorem IsCompact.exists_tendsto_of_tendsto_comp [T2Space β] {K : Set α}
     (hK : IsCompact K) {f : α → β} (hf : ContinuousOn f K) (hinj : InjOn f K) {T : Type*}
     [TopologicalSpace T] {Ω : Set T} {ι : Type*} {l : Filter ι} [l.NeBot] {x : ι → T → α}
     (hxK : ∀ i, MapsTo (x i) Ω K) {g : T → β} (hg : ContinuousOn g Ω)
     (hlim : ∀ t ∈ Ω, Tendsto (fun i ↦ f (x i t)) l (𝓝 (g t))) :
     ∃ y : T → α, ContinuousOn y Ω ∧ MapsTo y Ω K ∧ EqOn (f ∘ y) g Ω ∧
       ∀ t ∈ Ω, Tendsto (fun i ↦ x i t) l (𝓝 (y t)) := by
+  obtain ⟨i⟩ := l.nonempty_of_neBot
+  rcases isEmpty_or_nonempty α with hα | hα
+  · -- Then `T` is empty too, as the map `x i : T → α` shows.
+    have := Function.isEmpty (x i)
+    exact ⟨x i, fun t ↦ isEmptyElim t, fun t ↦ isEmptyElim t, fun t ↦ isEmptyElim t,
+      fun t ↦ isEmptyElim t⟩
   have hinv := hf.continuousOn_invFunOn_image_of_isCompact hK subset_rfl hinj (by simp)
   -- The limit takes values in the closed set `f(K)`.
   have hgK : MapsTo g Ω (f '' K) := fun t ht ↦
@@ -135,15 +139,14 @@ theorem ContinuousOn.exists_continuousOn_injOn_lift [Nonempty α] [T1Space β] {
         · rw [hg hx'y, hk, id]
           exact hinj.leftInvOn_invFunOn (hQP x' hx' hx'y (hk ▸ hkP x' hx' hx'y))
       exact continuousWithinAt_id.congr_of_eventuallyEq_of_mem hid hx
-    · -- Elsewhere `g` is `f⁻¹ ∘ k ∘ f`, a composite of maps continuous at the relevant points.
-      have hcont : ContinuousWithinAt (fun x ↦ invFunOn f P (k (f x))) (Q ∩ {x | f x ≠ y}) x :=
-        (hinv _ (hkP x hx hxy)).comp (f := fun x ↦ k (f x))
-          ((hkc (f x) (mem_image_of_mem f hx)).comp ((hf x hx).mono inter_subset_left)
-            fun x' hx' ↦ mem_image_of_mem f hx'.1)
-          fun x' hx' ↦ hkP x' hx'.1 hx'.2
-      exact (hcont.congr (fun x' hx' ↦ hg hx'.2) (hg hxy)).mono_of_mem_nhdsWithin
-        (inter_mem self_mem_nhdsWithin
-          ((hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxy)))
+    · -- Off the fibre, `g` is `f⁻¹ ∘ k ∘ f` near `x`, a composite of maps continuous there.
+      have hne : {x' | f x' ≠ y} ∈ 𝓝[Q] x :=
+        (hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxy)
+      have hkf : ContinuousWithinAt (k ∘ f) Q x :=
+        (hkc (f x) (mem_image_of_mem f hx)).comp (hf x hx) (mapsTo_image f Q)
+      exact ((hinv _ (hkP x hx hxy)).comp_of_preimage_mem_nhdsWithin (f := k ∘ f) hkf <|
+        mem_of_superset (inter_mem self_mem_nhdsWithin hne) fun x' hx' ↦ hkP x' hx'.1 hx'.2)
+        |>.congr_of_eventuallyEq (mem_of_superset hne fun _ ↦ hg) (hg hxy)
   · -- `k` is injective on `f '' R`, so `x` and `x'` have the same image under `f`.
     have hfx : f x = f x' := hki (mem_image_of_mem f hx) (mem_image_of_mem f hx')
       (by rw [← hfg (hRQ hx), ← hfg (hRQ hx'), h])
@@ -178,9 +181,10 @@ theorem ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image [T2Space �
       (hx'k.symm.trans hfx' ▸ (hkid.eq_of_nhdsWithin ⟨x', hx'.1, hfx'⟩).symm)
   -- The inverse of `f` on `P` is continuous, since `K` is compact.
   have hinv : ContinuousOn (invFunOn f P) (f '' P) :=
-    hf.continuousOn_invFunOn_image_of_isCompact hK sdiff_subset hinj
-      (disjoint_left.2 fun _ ⟨a, ha, haz⟩ ⟨b, hb, hbz⟩ ↦
-        hb.2 (hbz.trans (haz.symm.trans (not_not.1 fun h ↦ ha.2 ⟨ha.1, h⟩))))
+    hf.continuousOn_invFunOn_image_of_isCompact hK sdiff_subset hinj <| by
+      -- The image of the fibre is in `{y}`, which the image of `P` avoids.
+      rw [sdiff_sdiff_right_self, image_inter_preimage, image_sdiff_preimage]
+      exact disjoint_sdiff_inter.symm
   obtain ⟨g, hgc, hfg, hgy, hgP, hgi⟩ := hf.exists_continuousOn_injOn_lift hinv hinj
     (fun x hx hxy _ ↦ ⟨hx, hxy⟩) hkc hkid hkP
   refine ⟨g, hgc, hgi K subset_rfl hki hinj, fun x hx ↦ ?_, hfg, fun x hx hkx ↦ ?_⟩
