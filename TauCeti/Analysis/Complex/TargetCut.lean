@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.GroupTheory.Perm.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Affine
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.Data.Finite.Perm
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
@@ -18,7 +19,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.GroupTheory.Coset.Card
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.DiscreteSubset
-import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
+import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Stabilizing sphere components by a transverse target cut
@@ -40,7 +41,7 @@ with special points `∞` and `P ⊆ K`, for instance `P = ∅` or `P = {0}`, is
   `TauCeti.markingStabilizer P C`. Each of them permutes `C` (`TauCeti.markingPerm`), and when
   `P ∪ C` contains two distinct points this permutation determines it
   (`TauCeti.markingPerm_injective`), because an affine automorphism fixing two distinct points is
-  the identity (`AffineEquiv.eq_one_of_apply_eq_self_of_apply_eq_self`). So the sphere with the
+  the identity (`AffineMap.ext_of_ne`). So the sphere with the
   special point `∞`, the marked points `P` and the unordered marking `C` has finitely many
   automorphisms, whose number divides `|C|!`
   (`TauCeti.card_markingStabilizer_dvd_factorial`). With an ordering of `C` it has none but the
@@ -55,19 +56,22 @@ with special points `∞` and `P ⊆ K`, for instance `P = ∅` or `P = {0}`, is
   finite and `P ∪ u⁻¹(D)` contains two distinct points
   (`TauCeti.card_markedIsotropy_dvd_factorial`). This is why the preimage must be taken in full and
   unordered: a chosen subset or an ordering would not be preserved by the isotropy.
-* **Finiteness of transverse preimages.** For `K = ℂ`, the map `u` meets `D` transversally at `z`
-  (`TauCeti.IsTransverseCutAt u D z`) if near `u z` the set `D` is the zero set of a function
-  `g : X → ℂ` such that `g ∘ u` has an invertible real derivative at `z`. For a smooth map `u` to a
-  manifold and a local defining function `g` of a codimension-two submanifold `D`, this is the
-  injectivity of `dg ∘ du` (`TauCeti.isTransverseCutAt_of_hasMFDerivAt`), that is, the
-  transversality of `u` to `D` at `z`. Transverse intersection points are isolated
+* **Finiteness of transverse preimages.** For `K = ℂ`, the predicate
+  `TauCeti.IsTransverseCutAt u D z` asks that near `u z` the set `D` be the zero set of a function
+  `g : X → ℂ` such that `g ∘ u` has an invertible real derivative at `z`; no regularity of `g` is
+  required (`TauCeti.isTransverseCutAt_iff`). It holds when a smooth map `u` to a manifold is
+  transverse at `z` to a codimension-two submanifold `D` with local defining function `g`, that is,
+  when `dg ∘ du` is injective (`TauCeti.isTransverseCutAt_of_hasMFDerivAt`); in general it is
+  weaker than transversality, and it is exactly what the isolation argument needs. Intersection
+  points at which it holds are isolated
   (`TauCeti.IsTransverseCutAt.eventually_notMem`). Hence if `u` is continuous, `D` is closed, `u`
-  has a limit `y ∉ D` at `∞` and `u` meets `D` transversally at every point of `u⁻¹(D)`, the
-  preimage `u⁻¹(D)` is finite (`TauCeti.finite_preimage_of_isTransverseCutAt`). Transversality is
-  invariant under reparametrization by maps with invertible derivative
-  (`TauCeti.IsTransverseCutAt.comp`), in particular under the automorphisms of the sphere fixing
-  `∞` (`TauCeti.isTransverseCutAt_comp_affineEquiv_iff`), so it is a property of the
-  unparametrized map.
+  has a limit `y ∉ D` at `∞` and the predicate holds at every point of `u⁻¹(D)`, the preimage
+  `u⁻¹(D)` is finite (`TauCeti.finite_preimage_of_isTransverseCutAt`). The predicate is invariant
+  under reparametrization by maps with invertible derivative (`TauCeti.IsTransverseCutAt.comp`),
+  in particular under the automorphisms of the sphere fixing `∞`, which have invertible real
+  derivatives (`AffineEquiv.hasFDerivAt_restrictScalars`,
+  `TauCeti.isTransverseCutAt_comp_affineEquiv_iff`), so it is a property of the unparametrized
+  map.
 
 Nothing here uses that `u` is pseudoholomorphic: for a nonconstant pseudoholomorphic sphere the
 finiteness of the isotropy also follows from `MDifferentiable.finite_setOf_comp_eq_iff_exists_ne`,
@@ -101,15 +105,22 @@ section Marking
 
 variable {K : Type*} [Field K] {P C : Set K} {f : K ≃ᵃ[K] K}
 
+/-- The affine automorphisms of `K` fixing each point of `P`. -/
+private def fixingPointwise (P : Set K) : Subgroup (K ≃ᵃ[K] K) where
+  carrier := {f | ∀ p ∈ P, f p = p}
+  mul_mem' {f g} hf hg p hp := by simp [hg p hp, hf p hp]
+  one_mem' _ _ := rfl
+  inv_mem' {f} hf p hp := by rw [AffineEquiv.inv_def, AffineEquiv.symm_apply_eq, hf p hp]
+
 /-- The automorphisms of the sphere `K ∪ {∞}` fixing `∞`, fixing each point of `P` and mapping
 the unordered marking `C` onto itself: the affine automorphisms `f` of `K` with `f p = p` for
 `p ∈ P` and `f '' C = C`. -/
 def markingStabilizer (P C : Set K) : Subgroup (K ≃ᵃ[K] K) where
   carrier := {f | (∀ p ∈ P, f p = p) ∧ f '' C = C}
-  mul_mem' {f g} hf hg := ⟨fun p hp ↦ by simp [hg.1 p hp, hf.1 p hp], by
+  mul_mem' {f g} hf hg := ⟨(fixingPointwise P).mul_mem hf.1 hg.1, by
     rw [AffineEquiv.coe_mul, Set.image_comp, hg.2, hf.2]⟩
-  one_mem' := ⟨fun _ _ ↦ rfl, by simp⟩
-  inv_mem' {f} hf := ⟨fun p hp ↦ by rw [AffineEquiv.inv_def, AffineEquiv.symm_apply_eq, hf.1 p hp],
+  one_mem' := ⟨(fixingPointwise P).one_mem, by simp⟩
+  inv_mem' {f} hf := ⟨(fixingPointwise P).inv_mem hf.1,
     by
       calc (f⁻¹ : K ≃ᵃ[K] K) '' C = f.symm '' (f '' C) := by rw [hf.2, AffineEquiv.inv_def]
         _ = C := by simp [Set.image_image]⟩
@@ -148,8 +159,8 @@ theorem markingPerm_injective (h : ∃ p ∈ P ∪ C, ∃ q ∈ P ∪ C, p ≠ q
     · exact f.2.1 a ha
     · simpa using congrArg Subtype.val (DFunLike.congr_fun hf ⟨a, ha⟩)
   obtain ⟨p, hp, q, hq, hpq⟩ := h
-  exact Subtype.ext
-    (AffineEquiv.eq_one_of_apply_eq_self_of_apply_eq_self hpq (hfix p hp) (hfix q hq))
+  exact Subtype.ext (AffineEquiv.toAffineMap_injective
+    (AffineMap.ext_of_ne hpq (hfix p hp) (hfix q hq)))
 
 /-- **Stability of the stabilized domain.** If the marking `C` is finite and `P ∪ C` contains two
 distinct points, the sphere with the special point `∞`, the marked points `P` and the unordered
@@ -182,10 +193,10 @@ marked points `P`: the affine automorphisms `f` of `K` fixing each point of `P` 
 `u ∘ f = u`. -/
 def markedIsotropy (u : K → X) (P : Set K) : Subgroup (K ≃ᵃ[K] K) where
   carrier := {f | (∀ p ∈ P, f p = p) ∧ u ∘ f = u}
-  mul_mem' {f g} hf hg := ⟨fun p hp ↦ by simp [hg.1 p hp, hf.1 p hp], by
+  mul_mem' {f g} hf hg := ⟨(fixingPointwise P).mul_mem hf.1 hg.1, by
     rw [AffineEquiv.coe_mul, ← Function.comp_assoc, hf.2, hg.2]⟩
-  one_mem' := ⟨fun _ _ ↦ rfl, rfl⟩
-  inv_mem' {f} hf := ⟨fun p hp ↦ by rw [AffineEquiv.inv_def, AffineEquiv.symm_apply_eq, hf.1 p hp],
+  one_mem' := ⟨(fixingPointwise P).one_mem, rfl⟩
+  inv_mem' {f} hf := ⟨(fixingPointwise P).inv_mem hf.1,
     by
       funext z
       simpa [AffineEquiv.inv_def] using congrFun hf.2 (f.symm z) |>.symm⟩
@@ -240,14 +251,30 @@ section Transverse
 
 variable {X : Type*} [TopologicalSpace X] {u : ℂ → X} {D : Set X} {z : ℂ}
 
-/-- The map `u` meets the target cut `D` transversally at `z`: near `u z` the set `D` is the zero
-set of a function `g : X → ℂ` such that `g ∘ u` has an invertible real derivative at `z`. The
-predicate is used at the points `z` of `u⁻¹(D)`. There, for a smooth map to a manifold and a local
-defining function `g` of a codimension-two submanifold `D`, it is the transversality of `u` to `D`
-at `z` (`TauCeti.isTransverseCutAt_of_hasMFDerivAt`). -/
+/-- The transversality condition on the target cut `D` used to stabilize `u` at `z`: near `u z`
+the set `D` is the zero set of a function `g : X → ℂ` such that `g ∘ u` has an invertible real
+derivative at `z`. The predicate is used at the points `z` of `u⁻¹(D)`. No regularity of `g` is
+required, so in general it is weaker than transversality; it holds when a smooth map `u` to a
+manifold is transverse at `z` to a codimension-two submanifold `D` with local defining function
+`g` (`TauCeti.isTransverseCutAt_of_hasMFDerivAt`), and it is what makes the points of `u⁻¹(D)`
+isolated (`TauCeti.IsTransverseCutAt.eventually_notMem`). -/
 def IsTransverseCutAt (u : ℂ → X) (D : Set X) (z : ℂ) : Prop :=
   ∃ (g : X → ℂ) (L : ℂ ≃L[ℝ] ℂ), (∀ᶠ x in 𝓝 (u z), x ∈ D ↔ g x = 0) ∧
     HasFDerivAt (g ∘ u) (L : ℂ →L[ℝ] ℂ) z
+
+/-- Unfold `IsTransverseCutAt u D z` into a local defining function `g` of `D` near `u z` and the
+invertible real derivative of `g ∘ u` at `z`. -/
+theorem isTransverseCutAt_iff :
+    IsTransverseCutAt u D z ↔ ∃ (g : X → ℂ) (L : ℂ ≃L[ℝ] ℂ),
+      (∀ᶠ x in 𝓝 (u z), x ∈ D ↔ g x = 0) ∧ HasFDerivAt (g ∘ u) (L : ℂ →L[ℝ] ℂ) z :=
+  Iff.rfl
+
+/-- Build `IsTransverseCutAt u D z` from a local defining function `g` of `D` near `u z` such that
+`g ∘ u` has an invertible real derivative at `z`. -/
+theorem IsTransverseCutAt.intro {g : X → ℂ} {L : ℂ ≃L[ℝ] ℂ}
+    (hD : ∀ᶠ x in 𝓝 (u z), x ∈ D ↔ g x = 0) (hg : HasFDerivAt (g ∘ u) (L : ℂ →L[ℝ] ℂ) z) :
+    IsTransverseCutAt u D z :=
+  ⟨g, L, hD, hg⟩
 
 /-- A transverse intersection point of `u` with `D` is isolated: nearby points are not mapped
 into `D`. -/
@@ -271,7 +298,7 @@ theorem finite_preimage_of_isTransverseCutAt {y : X} (hu : Continuous u) (hD : I
   by_contra hzK
   exact hKD hzK hz
 
-/-- Transversality is invariant under reparametrization by a map with invertible derivative. -/
+/-- The predicate is invariant under reparametrization by a map with invertible derivative. -/
 theorem IsTransverseCutAt.comp {ρ : ℂ → ℂ} (h : IsTransverseCutAt u D (ρ z)) {E : ℂ ≃L[ℝ] ℂ}
     (hρ : HasFDerivAt ρ (E : ℂ →L[ℝ] ℂ) z) : IsTransverseCutAt (u ∘ ρ) D z := by
   obtain ⟨g, L, hD, hg⟩ := h
@@ -279,29 +306,24 @@ theorem IsTransverseCutAt.comp {ρ : ℂ → ℂ} (h : IsTransverseCutAt u D (ρ
   rw [← ContinuousLinearEquiv.comp_coe]
   exact hg.comp z hρ
 
-/-- Transversality to a target cut is invariant under the automorphisms of the sphere fixing `∞`,
-so it is a property of the unparametrized map. -/
+/-- An affine automorphism of `ℂ` has an invertible real derivative: its linear part, read over
+`ℝ`. -/
+theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars (f : ℂ ≃ᵃ[ℂ] ℂ) (z : ℂ) :
+    HasFDerivAt f ((f.linear.toContinuousLinearEquiv.restrictScalars ℝ : ℂ ≃L[ℝ] ℂ) :
+      ℂ →L[ℝ] ℂ) z :=
+  (ContinuousAffineMap.hasFDerivAt (f := ⟨f.toAffineMap,
+    f.toAffineMap.continuous_of_finiteDimensional⟩)).restrictScalars ℝ
+
+/-- `IsTransverseCutAt` is invariant under the automorphisms of the sphere fixing `∞`, so it is a
+property of the unparametrized map. -/
 theorem isTransverseCutAt_comp_affineEquiv_iff (f : ℂ ≃ᵃ[ℂ] ℂ) :
     IsTransverseCutAt (u ∘ f) D z ↔ IsTransverseCutAt u D (f z) := by
-  -- An affine automorphism `w ↦ f.linear w + f 0` of `ℂ` has the invertible real derivative
-  -- `f.linear`, read over `ℝ`.
-  have hderiv (f : ℂ ≃ᵃ[ℂ] ℂ) (z : ℂ) : ∃ E : ℂ ≃L[ℝ] ℂ, HasFDerivAt f (E : ℂ →L[ℝ] ℂ) z := by
-    refine ⟨f.linear.toContinuousLinearEquiv.restrictScalars ℝ, ?_⟩
-    convert ((f.linear.toContinuousLinearEquiv.hasFDerivAt (x := z)).restrictScalars ℝ).add_const
-      (f 0) using 1
-    · funext w
-      exact f.apply_eq_linear_add w
-    · ext w
-      simp
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨E, hE⟩ := hderiv f.symm (f z)
-    have h' : IsTransverseCutAt (u ∘ f) D (f.symm (f z)) := by simpa using h
-    have hu : (u ∘ f) ∘ f.symm = u := by
-      funext w
-      simp
-    simpa [hu] using IsTransverseCutAt.comp h' hE
-  · obtain ⟨E, hE⟩ := hderiv f z
-    exact IsTransverseCutAt.comp h hE
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp (f.hasFDerivAt_restrictScalars z)⟩
+  have h' : IsTransverseCutAt (u ∘ f) D (f.symm (f z)) := by simpa using h
+  have hu : (u ∘ f) ∘ f.symm = u := by
+    funext w
+    simp
+  simpa [hu] using h'.comp (f.symm.hasFDerivAt_restrictScalars (f z))
 
 /-- Transversality of a smooth map `u` from `ℂ` to a manifold to a set `D` with a local defining
 function `g` at `u z`: if `d(g ∘ u) = dg ∘ du` is injective at `z`, then `u` meets the target cut

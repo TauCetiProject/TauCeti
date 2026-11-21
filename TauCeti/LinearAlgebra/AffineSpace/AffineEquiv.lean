@@ -37,8 +37,6 @@ infinite-order elements, such as those used for Euclidean triangle groups.
   commutative ring multiply as the maps compose.
 * `AffineEquiv.eq_homothetyUnitsMulHom_of_linear_one_ne_one`: an affine self-equivalence
   `x ↦ a * x + b` of a field with `a ≠ 1` is a homothety about its fixed point.
-* `AffineEquiv.eq_one_of_apply_eq_self_of_apply_eq_self`: an affine self-equivalence of a field
-  fixing two distinct points is the identity.
 * `TauCeti.AffineEquiv.commutatorElement_homothetyUnitsMulHom`: the commutator of
   homotheties about two points is a translation.
 -/
@@ -160,17 +158,6 @@ theorem eq_homothetyUnitsMulHom_of_linear_one_ne_one (f : K ≃ᵃ[K] K) (hf : f
   ext z
   rw [homothetyUnitsMulHom_apply_ring, Units.val_mk0, f.apply_eq_linear_one_mul_add]
   linear_combination -div_mul_cancel₀ (f 0) (sub_ne_zero.2 hf.symm)
-
-/-- An affine self-equivalence of a field fixing two distinct points is the identity. -/
-theorem eq_one_of_apply_eq_self_of_apply_eq_self {f : K ≃ᵃ[K] K} {p q : K} (hpq : p ≠ q)
-    (hp : f p = p) (hq : f q = q) : f = 1 := by
-  rw [f.apply_eq_linear_one_mul_add] at hp hq
-  have ha : f.linear 1 = 1 := by
-    have h : (f.linear 1 - 1) * (p - q) = 0 := by linear_combination hp - hq
-    exact sub_eq_zero.1 ((mul_eq_zero.1 h).resolve_right (sub_ne_zero.2 hpq))
-  have hb : f 0 = 0 := by linear_combination hp - p * ha
-  ext z
-  rw [f.apply_eq_linear_one_mul_add, ha, hb, one_mul, add_zero, coe_one, id]
 
 end Field
 
