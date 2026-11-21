@@ -258,8 +258,8 @@ theorem mem_awayCompleteIntegralClosure_iff_exists_fg [IsLocalization.Away g S] 
       Submodule.fg_span_singleton _, fun n ↦ ?_⟩
     obtain ⟨r, hr⟩ := hm n
     refine Submodule.mem_span_singleton.mpr ⟨r, ?_⟩
-    rw [Algebra.smul_def, hr, Algebra.smul_def, map_pow, mul_right_comm, ← mul_pow,
-      IsLocalization.Away.mul_invSelf, one_pow, one_mul]
+    simp [Algebra.smul_def, hr, mul_right_comm _ (s ^ n), ← mul_pow,
+      IsLocalization.Away.mul_invSelf]
   · obtain ⟨a, ⟨m, rfl⟩, ha⟩ := FractionalIdeal.isFractional_of_fg (S := Submonoid.powers g) hM
     exact ⟨m, fun n ↦ ha _ (hsM n)⟩
 
@@ -287,8 +287,8 @@ theorem map_awayCompleteIntegralClosure_le {R' S' : Type*} [CommRing R'] [CommRi
   refine ⟨m, fun n ↦ ?_⟩
   obtain ⟨r, hr⟩ := hm n
   refine ⟨algebraMap R R' r, ?_⟩
-  rw [← IsScalarTower.algebraMap_apply, ← map_pow, algebraMap_smul, ← f.commutes, hr, map_smul,
-    map_pow]
+  rw [← IsScalarTower.algebraMap_apply, ← map_pow, algebraMap_smul, ← f.commutes, hr]
+  simp
 
 end AwayCompleteIntegralClosure
 
@@ -383,10 +383,10 @@ theorem rootSaturation_mono {A B : Subalgebra R S} (hAB : A ≤ B) (hp : 1 < p)
 `A` away from `t 0`. -/
 theorem IsPRootClosed.restrictScalars_awayCompleteIntegralClosure_eq_rootSaturation (hp : 1 < p)
     (ht : ∀ k, t (k + 1) ^ p = t k) {A : Subalgebra R S} (hA : A.IsPRootClosed p) :
-    (TauCeti.awayCompleteIntegralClosure (⟨algebraMap R S (t 0), algebraMap_mem A _⟩ : A)
-      S).restrictScalars R = A.rootSaturation hp ht := by
+    (TauCeti.awayCompleteIntegralClosure (algebraMap R A (t 0)) S).restrictScalars R =
+      A.rootSaturation hp ht := by
   ext s
-  simp only [mk_algebraMap, mem_restrictScalars, TauCeti.mem_awayCompleteIntegralClosure,
+  simp only [mem_restrictScalars, TauCeti.mem_awayCompleteIntegralClosure,
     range_algebraMap, mem_toSubring, smul_def, SubmonoidClass.coe_pow,
     SubalgebraClass.coe_algebraMap, smul_eq_mul, mem_rootSaturation]
   refine ⟨fun ⟨_, hm⟩ ↦ hA.algebraMap_mul_mem_of_forall_pow_mul_pow_mem hp ht hm,

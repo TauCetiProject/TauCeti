@@ -75,7 +75,7 @@ example : pRootClosure 3 ℤ GaussianInt ≠ integralClosure ℤ GaussianInt := 
   intro h
   have hi : (⟨0, 1⟩ : GaussianInt) ∈ integralClosure ℤ GaussianInt := by
     refine IsIntegral.of_pow (n := 4) (by norm_num) ?_
-    rw [show (⟨0, 1⟩ : GaussianInt) ^ 4 = 1 by decide]
+    rw [show (⟨0, 1⟩ : GaussianInt) ^ 4 = 1 by ext <;> simp [pow_succ]]
     exact isIntegral_one
   rw [← h, pRootClosure_eq_bot_iff.mpr gaussianInt_bot_isPRootClosed_three,
     gaussianInt_mem_bot_iff] at hi
