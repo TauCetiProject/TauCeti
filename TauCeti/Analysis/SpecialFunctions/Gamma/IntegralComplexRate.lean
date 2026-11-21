@@ -12,6 +12,8 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.LaplaceTransform.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The Gamma integral with a complex rate
@@ -28,15 +30,13 @@ integrable real majorant on `(0, ∞)`, giving holomorphy in `s` and joint analy
 
 ## Main results
 
-* `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`,
-  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp`: the Gamma integral with complex
-  rate, written with `z^{-s}` and with `exp(-s log z)`.
+* `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`: the Gamma integral with complex rate.
 * `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi`,
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: convergence and holomorphy in the
   rate on the right half-plane.
 * `Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi`,
   `Complex.integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi`,
-  `Complex.exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le`: integrability and
+  `IsCompact.exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le`: integrability and
   compact-set majorants on `(0, ∞)` with logarithmic power factors.
 * `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
@@ -50,9 +50,6 @@ integrable real majorant on `(0, ∞)`, giving holomorphy in `s` and joint analy
 * The complex-rate evaluation proof is adapted from the lean-DLMF project
   (<https://github.com/bjbraams/lean-DLMF>), file
   `DLMFMathlib/Analysis/Asymptotics/WatsonSector.lean`.
-* The `|Real.log t| ^ k` upper-bound estimate in `abs_log_pow_mul_rpow_le` is adapted from
-  `TauCeti.locallyIntegrable_log_norm_pow` in
-  `TauCeti/Analysis/SpecialFunctions/Integrability/Log.lean`.
 -/
 
 @[expose] public section
@@ -136,66 +133,53 @@ public section
 open MeasureTheory Set Filter
 open scoped Topology
 
--- Adapted from `TauCeti.locallyIntegrable_log_norm_pow` in
--- `TauCeti/Analysis/SpecialFunctions/Integrability/Log.lean`.
-private theorem abs_log_pow_mul_rpow_le {s t : ℝ} (hs : -1 < s) (ht : 0 < t) {k : ℕ}
-    (hk : 0 < k) :
-    |Real.log t| ^ k * t ^ s ≤
-      (2 : ℝ) ^ (k - 1) * (((s + 1) / (2 * k))⁻¹ ^ k * t ^ (s - (s + 1) / 2) + t ^ (s + k)) := by
-  set ε : ℝ := (s + 1) / (2 * k) with hε_def
-  have hε : 0 < ε := div_pos (by linarith) (by positivity)
-  have hlow := Real.neg_rpow_div_le_log ht.le hε
-  rw [neg_div] at hlow
-  have hlog : |Real.log t| ≤ t ^ (-ε) / ε + t :=
-    abs_le.mpr ⟨by linarith [Real.rpow_nonneg ht.le (-ε)],
-      by linarith [Real.log_le_self ht.le, div_nonneg (Real.rpow_nonneg ht.le (-ε)) hε.le]⟩
-  have hrpow : (t ^ (-ε) / ε) ^ k = ε⁻¹ ^ k * t ^ (-(s + 1) / 2) := by
-    have hk' : (k : ℝ) ≠ 0 := by positivity
-    rw [div_eq_mul_inv, mul_pow, mul_comm _ (ε⁻¹ ^ k), ← Real.rpow_natCast (t ^ (-ε)) k,
-      ← Real.rpow_mul ht.le, hε_def]
-    congr 2; field_simp
-  have ha : t ^ (-(s + 1) / 2) * t ^ s = t ^ (s - (s + 1) / 2) := by
-    rw [← Real.rpow_add ht]; ring_nf
-  have hb : t ^ k * t ^ s = t ^ (s + k) := by
-    rw [← Real.rpow_natCast t k, ← Real.rpow_add ht, add_comm]
-  calc |Real.log t| ^ k * t ^ s ≤ (t ^ (-ε) / ε + t) ^ k * t ^ s := by gcongr
-    _ ≤ (2 : ℝ) ^ (k - 1) * ((t ^ (-ε) / ε) ^ k + t ^ k) * t ^ s := by
-        gcongr; exact add_pow_le (by positivity) ht.le k
-    _ = (2 : ℝ) ^ (k - 1) * (ε⁻¹ ^ k * t ^ (s - (s + 1) / 2) + t ^ (s + k)) := by
-        rw [hrpow]; linear_combination (2 : ℝ) ^ (k - 1) * ε⁻¹ ^ k * ha + (2 : ℝ) ^ (k - 1) * hb
-
 /-- For `s > -1`, `b > 0`, and any natural power `k`, `t ↦ |log t|^k t^s e^{-bt}` is integrable
 on `(0, ∞)`. -/
 theorem Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi {s b : ℝ} (hs : -1 < s)
     (hb : 0 < b) (k : ℕ) :
     IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioi 0) := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · simpa using integrableOn_rpow_mul_exp_neg_mul_rpow hs one_pos hb
-  set ε : ℝ := (s + 1) / (2 * k)
-  have h1 : Integrable
-      (fun t : ℝ => (2 : ℝ) ^ (k - 1) * ε⁻¹ ^ k * (t ^ (s - (s + 1) / 2) * Real.exp (-b * t)))
-      (volume.restrict (Ioi 0)) := by
-    simpa only [Real.rpow_one] using
-      (integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith) one_pos hb).const_mul
-        ((2 : ℝ) ^ (k - 1) * ε⁻¹ ^ k)
-  have h2 : Integrable (fun t : ℝ => (2 : ℝ) ^ (k - 1) * (t ^ (s + k) * Real.exp (-b * t)))
-      (volume.restrict (Ioi 0)) := by
-    simpa only [Real.rpow_one] using
-      (integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith [(Nat.cast_pos (α := ℝ)).2 hk])
-        one_pos hb).const_mul ((2 : ℝ) ^ (k - 1))
-  refine (h1.add h2).mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  have ht0 : 0 < t := ht
-  rw [Real.norm_of_nonneg (by positivity), Pi.add_apply]
-  linarith [mul_le_mul_of_nonneg_right (abs_log_pow_mul_rpow_le hs ht hk)
-    (Real.exp_pos (-b * t)).le]
+  have hm : AEStronglyMeasurable (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t))
+      volume := (Measurable.aestronglyMeasurable (by fun_prop))
+  have hIoo :
+      IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioo 0 1) := by
+    refine (TauCeti.integrableOn_Ioo_rpow_mul_neg_log_rpow hs
+      (by linarith [Nat.cast_nonneg (α := ℝ) k] : (-1 : ℝ) < k)).mono' hm.restrict ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
+    have ht0 : 0 < t := ht.1
+    have hlog : Real.log t < 0 := Real.log_neg ht.1 ht.2
+    have hlog_nn : 0 ≤ -Real.log t := neg_nonneg.mpr hlog.le
+    have hexp : Real.exp (-b * t) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith)
+    rw [Real.norm_of_nonneg (by positivity), abs_of_neg hlog, ← Real.rpow_natCast (-Real.log t) k]
+    calc (-Real.log t) ^ (k : ℝ) * t ^ s * Real.exp (-b * t)
+        ≤ (-Real.log t) ^ (k : ℝ) * t ^ s * 1 := by gcongr
+      _ = t ^ s * (-Real.log t) ^ (k : ℝ) := by ring
+  have hIoc :
+      IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioc 0 1) :=
+    hIoo.congr_set_ae Ioo_ae_eq_Ioc.symm
+  have hIoi :
+      IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioi 1) := by
+    have hsk : -1 < s + k := by linarith [Nat.cast_nonneg (α := ℝ) k]
+    have hdom : IntegrableOn (fun t : ℝ => t ^ (s + k) * Real.exp (-b * t ^ (1 : ℝ))) (Ioi 1) :=
+      (integrableOn_rpow_mul_exp_neg_mul_rpow hsk one_pos hb).mono_set (Ioi_subset_Ioi zero_le_one)
+    refine hdom.mono' hm.restrict ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    have ht1 : 1 ≤ t := le_of_lt ht
+    have ht0 : 0 < t := zero_lt_one.trans_le ht1
+    have hlog_nn : 0 ≤ Real.log t := Real.log_nonneg ht1
+    have hlog_le : |Real.log t| ^ k ≤ t ^ k := by
+      rw [abs_of_nonneg hlog_nn]
+      exact pow_le_pow_left₀ hlog_nn (Real.log_le_self ht0.le) k
+    rw [Real.norm_of_nonneg (by positivity), Real.rpow_one]
+    calc |Real.log t| ^ k * t ^ s * Real.exp (-b * t)
+        ≤ t ^ k * t ^ s * Real.exp (-b * t) := by gcongr
+      _ = t ^ (s + k) * Real.exp (-b * t) := by
+          rw [← Real.rpow_natCast t k, ← Real.rpow_add ht0, add_comm (k : ℝ) s]
+  exact (hIoc.union hIoi).mono_set fun t ht => by
+    rcases le_or_gt t 1 with ht1 | ht1
+    · exact Or.inl ⟨ht, ht1⟩
+    · exact Or.inr ht1
 
 namespace Complex
-
-private theorem norm_cpow_mul_log_pow_mul_exp_neg_mul (s w : ℂ) (k : ℕ) {t : ℝ} (ht : 0 < t) :
-    ‖(t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))‖ =
-      |Real.log t| ^ k * t ^ s.re * Real.exp (-w.re * t) := by
-  simp [norm_cpow_eq_rpow_re_of_pos ht, ← ofReal_log ht.le, norm_exp]; ring
 
 /-- For `Re s > -1`, `Re w > 0`, and `k : ℕ`, `t ↦ t^s (log t)^k e^{-wt}` is integrable on
 `(0, ∞)`. -/
@@ -210,8 +194,9 @@ theorem integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : -1 <
 /-- On any compact subset `K` of `{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}`, the weighted
 Gamma-Laplace integrand `t^{p.1} (log t)^k e^{-p.2 t}` admits a single integrable real majorant
 on `(0, ∞)`. -/
-theorem exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le {K : Set (ℂ × ℂ)}
-    (hK : IsCompact K) (hKs : ∀ p ∈ K, -1 < p.1.re) (hKw : ∀ p ∈ K, 0 < p.2.re) (k : ℕ) :
+theorem _root_.IsCompact.exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le
+    {K : Set (ℂ × ℂ)} (hK : IsCompact K) (hKs : ∀ p ∈ K, -1 < p.1.re)
+    (hKw : ∀ p ∈ K, 0 < p.2.re) (k : ℕ) :
     ∃ g : ℝ → ℝ, IntegrableOn g (Ioi 0) ∧
       ∀ p ∈ K, ∀ t > (0 : ℝ),
         ‖(t : ℂ) ^ p.1 * (log t) ^ k * exp (-(p.2 * t))‖ ≤ g t := by
@@ -233,14 +218,6 @@ theorem exists_integrableOn_Ioi_norm_cpow_mul_log_pow_mul_exp_neg_mul_le {K : Se
     exact le_add_of_le_of_nonneg (by gcongr) (by positivity)
   · have hrp : t ^ p.1.re ≤ t ^ p₂.1.re := Real.rpow_le_rpow_of_exponent_le ht1.le (hmax_s hp)
     exact le_add_of_nonneg_of_le (by positivity) (by gcongr)
-
-/-- The Gamma integral with a complex rate written in principal-logarithm form: for `Re s > 0` and
-`Re z > 0`, `∫₀^∞ t^{s-1} e^{-zt} dt = Γ(s) exp(-s log z)`. -/
-theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_Gamma_mul_exp {s z : ℂ} (hs : 0 < s.re)
-    (hz : 0 < z.re) :
-    ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(z * t)) = Gamma s * exp (-s * log z) := by
-  have hzne : z ≠ 0 := fun h => by simp [h] at hz
-  rw [integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs hz, cpow_def_of_ne_zero hzne, mul_comm (log z)]
 
 /-- The complex-rate Gamma integral `(s, z) ↦ ∫₀^∞ t^{s-1} e^{-zt} dt` is jointly analytic on
 `{p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re}`. -/

@@ -61,6 +61,13 @@ theorem eulerianPolynomial_succ (r : ℕ) :
 @[simp] theorem eulerianPolynomial_two : eulerianPolynomial 2 = 1 + X := by
   simp [eulerianPolynomial_succ]
 
+/-- Evaluating `eulerianPolynomial r` at `0` gives `1`. -/
+@[simp] theorem eulerianPolynomial_eval_zero (r : ℕ) :
+    (eulerianPolynomial r).eval 0 = 1 := by
+  induction r with
+  | zero => simp
+  | succ r ih => simp [eulerianPolynomial_succ, ih]
+
 /-- Evaluating `eulerianPolynomial r` at `1` gives `r!`. -/
 @[simp] theorem eulerianPolynomial_eval_one (r : ℕ) :
     (eulerianPolynomial r).eval 1 = (r.factorial : ℤ) := by
@@ -128,7 +135,7 @@ theorem map_lerchNegNatPoly {R S : Type*} [CommRing R] [CommRing S] (f : R →+*
 
 /-- At shift `c = 1 : ℤ`, `lerchNegNatPoly` coincides with `TauCeti.eulerianPolynomial`. -/
 @[simp]
-theorem lerchNegNatPoly_one_eq_eulerianPolynomial (m : ℕ) :
+theorem lerchNegNatPoly_one_left_eq_eulerianPolynomial (m : ℕ) :
     lerchNegNatPoly (1 : ℤ) m = eulerianPolynomial m := by
   induction m with
   | zero => simp
@@ -140,6 +147,6 @@ theorem lerchNegNatPoly_one_eq_eulerianPolynomial (m : ℕ) :
 `TauCeti.eulerianPolynomial m` under `Int.castRingHom R`. -/
 theorem lerchNegNatPoly_one_left {R : Type*} [CommRing R] (m : ℕ) :
     lerchNegNatPoly (1 : R) m = (eulerianPolynomial m).map (Int.castRingHom R) := by
-  rw [← lerchNegNatPoly_one_eq_eulerianPolynomial, map_lerchNegNatPoly, map_one]
+  rw [← lerchNegNatPoly_one_left_eq_eulerianPolynomial, map_lerchNegNatPoly, map_one]
 
 end TauCeti

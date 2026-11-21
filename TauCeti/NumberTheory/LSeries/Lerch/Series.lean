@@ -17,6 +17,9 @@ import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
@@ -28,28 +31,31 @@ The Lerch transcendent is defined on `‖z‖ < 1` by the principal-logarithm po
 companion `lerchZeta s a c = lerchSeries (exp (2πia)) s c`. Using `exp (-s * log (n + c))` agrees
 with `(n + c) ^ (-s)` whenever every `n + c ≠ 0`, while keeping each term entire in `s` and monomial
 in `z`. On compact subsets with `‖z‖ < 1` and `c ∈ Complex.slitPlane`, all mixed partial derivatives
-in `(z, s, c)` admit uniform summable bounds, giving joint analyticity and the raising relation
+in `(z, s, c)` admit uniform summable bounds, giving joint analyticity, the lowering relation
+`(z ∂_z + c) Φ(z, s, c) = Φ(z, s - 1, c)`, and the raising relation
 `∂_c Φ(z, s, c) = -s * Φ(z, s + 1, c)`.
 
 ## Main definitions and results
 
 * `TauCeti.lerchSeries`, `TauCeti.lerchZeta`: power-series and additive-phase Lerch series.
 * `TauCeti.summable_norm_lerchSeries_term`, `TauCeti.hasSum_lerchSeries`,
-  `TauCeti.exists_summable_norm_lerchSeries_term_le`,
-  `TauCeti.exists_summable_norm_iteratedDeriv_lerchSeries_term_le`,
-  `TauCeti.tendstoUniformlyOn_iteratedDeriv_lerchSeries`: absolute convergence and compact uniform
+  `IsCompact.exists_summable_norm_lerchSeries_term_le`,
+  `IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le`,
+  `IsCompact.tendstoUniformlyOn_iteratedDeriv_lerchSeries`: absolute convergence and compact uniform
   convergence of all mixed partial derivatives.
 * `TauCeti.lerchSeries_zero_left`, `TauCeti.lerchSeries_zero_middle`,
-  `TauCeti.lerchSeries_eq_sum_range_add_pow_mul_add_natCast`,
-  `TauCeti.lerchSeries_eq_exp_add_mul_add_one`, `TauCeti.mul_lerchSeries_add_one`: initial values
-  and `c`-shift identities.
-* `TauCeti.lerchZeta_add_intCast`, `TauCeti.lerchZeta_add_one`, `TauCeti.hasSum_lerchZeta`,
-  `TauCeti.lerchZeta_zero_left`, `TauCeti.lerchZeta_eq_exp_add_mul_add_one`,
-  `TauCeti.analyticOnNhd_lerchZeta`, `TauCeti.differentiableOn_lerchZeta`,
-  `TauCeti.hasSum_lerchZeta_of_im_nonneg`: characteristic API for `lerchZeta`.
-* `TauCeti.hasDerivAt_lerchSeries_left`, `TauCeti.hasDerivAt_lerchSeries_middle`,
-  `TauCeti.hasDerivAt_lerchSeries_right`, `TauCeti.analyticOnNhd_lerchSeries`,
-  `TauCeti.differentiableOn_lerchSeries`: termwise derivatives and joint analyticity in `(s, z, c)`.
+  `TauCeti.lerchSeries_eq_sum_range_add_pow_mul_add_natCast_right`,
+  `TauCeti.lerchSeries_eq_exp_add_mul_add_one_right`, `TauCeti.mul_lerchSeries_add_one_right`:
+  initial values and `c`-shift identities.
+* `TauCeti.lerchZeta_add_intCast_middle`, `TauCeti.lerchZeta_add_one_middle`,
+  `TauCeti.hasSum_lerchZeta`, `TauCeti.lerchZeta_zero_left`,
+  `TauCeti.lerchZeta_eq_exp_add_mul_add_one_right`, `TauCeti.analyticOnNhd_lerchZeta`,
+  `TauCeti.differentiableOn_lerchZeta`, `TauCeti.hasSum_lerchZeta_of_im_nonneg`: characteristic API
+  for `lerchZeta`.
+* `TauCeti.hasDerivAt_lerchSeries_left`, `TauCeti.mul_deriv_lerchSeries_left_add_mul`,
+  `TauCeti.hasDerivAt_lerchSeries_middle`, `TauCeti.hasDerivAt_lerchSeries_right`,
+  `TauCeti.analyticOnNhd_lerchSeries`, `TauCeti.differentiableOn_lerchSeries`: termwise derivatives,
+  lowering relation, and joint analyticity in `(s, z, c)`.
 * `TauCeti.summable_norm_lerchSeries_term_of_norm_le_one`, `TauCeti.expZeta_eq_mul_lerchSeries`,
   `TauCeti.lerchSeries_one_one_eq_riemannZeta`,
   `TauCeti.lerchSeries_neg_one_one_eq_mul_riemannZeta`: boundary convergence on
@@ -96,51 +102,6 @@ theorem lerchSeries_eq_tsum_cpow (z s : ℂ) {c : ℂ} (hc : ∀ n : ℕ, (n : �
 
 /-! ### Uniform norm bounds and compact convergence -/
 
-private theorem norm_log_pow_mul_exp_le {s w : ℂ} {S δ B : ℝ} (hS : ‖s‖ ≤ S)
-    (hδ0 : 0 < δ) (hδ1 : δ ≤ 1) (hw_lo : δ ≤ ‖w‖) (hB1 : 1 ≤ B) (hw_hi : ‖w‖ ≤ B) (k : ℕ) :
-    ‖(-Complex.log w) ^ k * Complex.exp (-s * Complex.log w)‖ ≤
-      (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
-        (Real.exp (-S * Real.log δ) + B ^ S) := by
-  have hS0 : 0 ≤ S := (norm_nonneg s).trans hS
-  have hw0 : 0 < ‖w‖ := hδ0.trans_le hw_lo
-  have hlog_w : ‖Complex.log w‖ ≤ |Real.log ‖w‖| + Real.pi := by
-    have h1 := norm_le_abs_re_add_abs_im (Complex.log w)
-    rw [Complex.log_re, Complex.log_im] at h1
-    linarith [abs_arg_le_pi w]
-  have hlog_norm : ‖Complex.log w‖ ≤ |Real.log δ| + Real.pi + B := by
-    have h1 := Real.log_le_log hδ0 hw_lo
-    have h2 := (Real.log_le_log hw0 hw_hi).trans
-      (Real.log_le_sub_one_of_pos (zero_lt_one.trans_le hB1))
-    have hδ_np := Real.log_nonpos hδ0.le hδ1
-    have habs : |Real.log ‖w‖| ≤ -Real.log δ + B := abs_le.mpr ⟨by linarith, by linarith⟩
-    rw [abs_of_nonpos hδ_np]; linarith
-  have hexp_re : (-s * Complex.log w).re ≤ S * (|Real.log ‖w‖| + Real.pi) :=
-    (re_le_norm _).trans <| by
-      rw [norm_mul, norm_neg]; exact mul_le_mul hS hlog_w (norm_nonneg _) hS0
-  have hexp_abs : Real.exp (S * |Real.log ‖w‖|) ≤ Real.exp (-S * Real.log δ) + B ^ S := by
-    rcases le_or_gt ‖w‖ 1 with hw1 | hw1
-    · have hl : |Real.log ‖w‖| ≤ -Real.log δ := by
-        rw [abs_of_nonpos (Real.log_nonpos hw0.le hw1)]; linarith [Real.log_le_log hδ0 hw_lo]
-      have he : Real.exp (S * |Real.log ‖w‖|) ≤ Real.exp (-S * Real.log δ) := by
-        rw [show -S * Real.log δ = S * (-Real.log δ) by ring]
-        exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hl hS0)
-      linarith [Real.rpow_pos_of_pos (zero_lt_one.trans_le hB1) S]
-    · have hl : |Real.log ‖w‖| ≤ Real.log B := by
-        rw [abs_of_pos (Real.log_pos hw1)]; exact Real.log_le_log hw0 hw_hi
-      have he : Real.exp (S * |Real.log ‖w‖|) ≤ B ^ S := by
-        rw [Real.rpow_def_of_pos (zero_lt_one.trans_le hB1), mul_comm (Real.log B)]
-        exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hl hS0)
-      linarith [Real.exp_pos (-S * Real.log δ)]
-  rw [norm_mul, norm_pow, norm_neg, Complex.norm_exp]
-  calc ‖Complex.log w‖ ^ k * Real.exp (-s * Complex.log w).re
-      ≤ (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * (|Real.log ‖w‖| + Real.pi)) :=
-        mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) hlog_norm k)
-          (Real.exp_le_exp.mpr hexp_re) (Real.exp_pos _).le (by positivity)
-    _ = (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
-          Real.exp (S * |Real.log ‖w‖|) := by rw [mul_add, Real.exp_add]; ring
-    _ ≤ (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
-          (Real.exp (-S * Real.log δ) + B ^ S) := by gcongr
-
 private theorem norm_log_pow_lerchTerm_le_aux {s z c : ℂ} {r S C δ : ℝ} {k n : ℕ}
     (hz : ‖z‖ ≤ r) (hs : ‖s‖ ≤ S) (hc : ‖c‖ ≤ C) (hδ0 : 0 < δ) (hδ1 : δ ≤ 1)
     (hw_lo : δ ≤ ‖(n : ℂ) + c‖) :
@@ -152,7 +113,7 @@ private theorem norm_log_pow_lerchTerm_le_aux {s z c : ℂ} {r S C δ : ℝ} {k 
   have hC0 : 0 ≤ C := (norm_nonneg c).trans hc
   have hw_hi : ‖(n : ℂ) + c‖ ≤ (n : ℝ) + C + 1 := by
     have := norm_add_le (n : ℂ) c; rw [Complex.norm_natCast] at this; linarith
-  have hbase := norm_log_pow_mul_exp_le hs hδ0 hδ1 hw_lo
+  have hbase := Complex.norm_log_pow_mul_exp_le hs hδ0 hδ1 hw_lo
     (by linarith [Nat.cast_nonneg (α := ℝ) n] : 1 ≤ (n : ℝ) + C + 1) hw_hi k
   set L : ℝ := |Real.log δ| + Real.pi + C + 1
   set M : ℕ := Nat.ceil S
@@ -193,8 +154,9 @@ private theorem exists_summable_norm_log_pow_lerchSeries_term_le {K : Set (ℂ �
     (continuous_norm.comp (continuous_fst.comp continuous_snd)).continuousOn
   obtain ⟨S, hS⟩ := (hK.image continuous_fst).isBounded.exists_norm_le
   obtain ⟨C, hC⟩ := (hK.image (continuous_snd.comp continuous_snd)).isBounded.exists_norm_le
-  obtain ⟨δ, hδ0, hδ1, hδK⟩ := exists_pos_le_norm_natCast_add_on_compact
-    (hK.image (continuous_snd.comp continuous_snd)) (by rintro _ ⟨p, hp, rfl⟩ n; exact hKc p hp n)
+  obtain ⟨δ, hδ0, hδ1, hδK⟩ :=
+    (hK.image (continuous_snd.comp continuous_snd)).exists_pos_le_norm_natCast_add
+      (by rintro _ ⟨p, hp, rfl⟩ n; exact hKc p hp n)
   set r : ℝ := ‖p₀.2.1‖
   have hr : ‖r‖ < 1 := by rw [Real.norm_of_nonneg (norm_nonneg _)]; exact hKz p₀ hp₀
   have hsum1 : Summable (fun n : ℕ => Real.exp (-S * Real.log δ) * ((n : ℝ) + 1) ^ k * r ^ n) :=
@@ -211,8 +173,9 @@ private theorem exists_summable_norm_log_pow_lerchSeries_term_le {K : Set (ℂ �
 
 /-- On any compact subset `K ⊆ ℂ × ℂ × ℂ` (in coordinates `(s, z, c)`) with `‖z‖ < 1` and
 `n + c ≠ 0` for all `n : ℕ`, the Lerch series terms are dominated by a single summable sequence. -/
-theorem exists_summable_norm_lerchSeries_term_le {K : Set (ℂ × ℂ × ℂ)} (hK : IsCompact K)
-    (hKz : ∀ p ∈ K, ‖p.2.1‖ < 1) (hKc : ∀ p ∈ K, ∀ n : ℕ, (n : ℂ) + p.2.2 ≠ 0) :
+theorem _root_.IsCompact.exists_summable_norm_lerchSeries_term_le {K : Set (ℂ × ℂ × ℂ)}
+    (hK : IsCompact K) (hKz : ∀ p ∈ K, ‖p.2.1‖ < 1)
+    (hKc : ∀ p ∈ K, ∀ n : ℕ, (n : ℂ) + p.2.2 ≠ 0) :
     ∃ u : ℕ → ℝ, Summable u ∧ ∀ n : ℕ, ∀ p ∈ K,
       ‖p.2.1 ^ n * Complex.exp (-p.1 * Complex.log (n + p.2.2))‖ ≤ u n := by
   obtain ⟨u, hu, hle⟩ := exists_summable_norm_log_pow_lerchSeries_term_le hK hKz hKc 0
@@ -241,11 +204,11 @@ private theorem exists_summable_norm_log_pow_lerchSeries_term_le_fixed_right
         u n := by
   set N : ℕ := Nat.ceil (‖c‖ + 1)
   have hshift_ne : ∀ n : ℕ, (n : ℂ) + (c + N) ≠ 0 := fun n h => by
-    have htri : ‖((n + N : ℕ) : ℂ)‖ ≤ ‖((n + N : ℕ) : ℂ) + c‖ + ‖-c‖ := by
-      simpa using norm_add_le (((n + N : ℕ) : ℂ) + c) (-c)
     have hzero : ((n + N : ℕ) : ℂ) + c = 0 := by push_cast; linear_combination h
-    rw [hzero, norm_zero, zero_add, Complex.norm_natCast, norm_neg] at htri
-    linarith [Nat.le_ceil (‖c‖ + 1), (by exact_mod_cast Nat.le_add_left N n : (N : ℝ) ≤ ↑(n + N))]
+    have htri := Complex.sub_norm_le_norm_natCast_add (n + N) c
+    rw [hzero, norm_zero] at htri
+    linarith [Nat.le_ceil (‖c‖ + 1),
+      (by exact_mod_cast Nat.le_add_left N n : (N : ℝ) ≤ ↑(n + N))]
   let emb : ℂ × ℂ → ℂ × ℂ × ℂ := fun q => (q.1, q.2, c + N)
   obtain ⟨u₁, hu₁, hle₁⟩ := exists_summable_norm_log_pow_lerchSeries_term_le
     (hK.image (by fun_prop : Continuous emb)) (by rintro _ ⟨q, hq, rfl⟩; exact hKz q hq)
@@ -296,8 +259,8 @@ theorem lerchSeries_zero_left (s c : ℂ) :
   · simp
   · intro n hn; simp [zero_pow hn]
 
-/-- Normalization check `Φ(0, 2, 1) = 1`, distinguishing `Φ(z, s, c)` from `z * Φ(z, s, c)`. -/
-theorem lerchSeries_zero_two_one : lerchSeries 0 2 1 = 1 := by simp
+-- Normalization check `Φ(0, 2, 1) = 1`, distinguishing `Φ(z, s, c)` from `z * Φ(z, s, c)`.
+example : lerchSeries 0 2 1 = 1 := by simp
 
 /-- At `s = 0` and `‖z‖ < 1`, the Lerch series reduces to the geometric sum `(1 - z)⁻¹`. -/
 theorem lerchSeries_zero_middle {z : ℂ} (hz : ‖z‖ < 1) (c : ℂ) :
@@ -305,7 +268,7 @@ theorem lerchSeries_zero_middle {z : ℂ} (hz : ‖z‖ < 1) (c : ℂ) :
   simpa [lerchSeries_def] using tsum_geometric_of_norm_lt_one hz
 
 /-- `N`-step shift identity in `c`, peeling off the first `N` terms of any summable Lerch series. -/
-theorem lerchSeries_eq_sum_range_add_pow_mul_add_natCast {z s c : ℂ}
+theorem lerchSeries_eq_sum_range_add_pow_mul_add_natCast_right {z s c : ℂ}
     (hs : Summable (fun n : ℕ => z ^ n * Complex.exp (-s * Complex.log (n + c)))) (N : ℕ) :
     lerchSeries z s c =
       (∑ n ∈ Finset.range N, z ^ n * Complex.exp (-s * Complex.log (n + c))) +
@@ -313,81 +276,67 @@ theorem lerchSeries_eq_sum_range_add_pow_mul_add_natCast {z s c : ℂ}
   rw [lerchSeries_def, ← hs.sum_add_tsum_nat_add N, lerchSeries_def, ← tsum_mul_left]
   congr 1
   refine tsum_congr fun n => ?_
-  rw [pow_add, mul_comm (z ^ n) (z ^ N), mul_assoc]
-  congr 5; push_cast; ring
+  have hcast : ((n + N : ℕ) : ℂ) + c = (n : ℂ) + (c + N) := by push_cast; ring
+  rw [pow_add, mul_comm (z ^ n) (z ^ N), mul_assoc, hcast]
 
 /-- One-step shift identity in `c`: `Φ(z, s, c) = exp (-s * log c) + z * Φ(z, s, c + 1)`
 whenever the Lerch series is summable. -/
-theorem lerchSeries_eq_exp_add_mul_add_one {z s c : ℂ}
+theorem lerchSeries_eq_exp_add_mul_add_one_right {z s c : ℂ}
     (hs : Summable (fun n : ℕ => z ^ n * Complex.exp (-s * Complex.log (n + c)))) :
     lerchSeries z s c = Complex.exp (-s * Complex.log c) + z * lerchSeries z s (c + 1) := by
-  simpa using lerchSeries_eq_sum_range_add_pow_mul_add_natCast hs 1
+  simpa using lerchSeries_eq_sum_range_add_pow_mul_add_natCast_right hs 1
 
 /-- Rearranged shift identity `z * Φ(z, s, c + 1) = Φ(z, s, c) - exp (-s * log c)` whenever
 the Lerch series is summable. -/
-theorem mul_lerchSeries_add_one {z s c : ℂ}
+theorem mul_lerchSeries_add_one_right {z s c : ℂ}
     (hs : Summable (fun n : ℕ => z ^ n * Complex.exp (-s * Complex.log (n + c)))) :
     z * lerchSeries z s (c + 1) = lerchSeries z s c - Complex.exp (-s * Complex.log c) := by
-  rw [lerchSeries_eq_exp_add_mul_add_one hs, add_sub_cancel_left]
-
-private theorem norm_exp_two_pi_I_mul_lt_one {a : ℂ} (ha : 0 < a.im) :
-    ‖Complex.exp (2 * Real.pi * I * a)‖ < 1 := by
-  rw [Complex.norm_exp, Real.exp_lt_one_iff]
-  have hre : (2 * (Real.pi : ℂ) * I * a).re = -2 * Real.pi * a.im := by simp [mul_assoc]
-  rw [hre]; nlinarith [Real.pi_pos, ha]
-
-private theorem norm_exp_two_pi_I_mul_le_one {a : ℂ} (ha : 0 ≤ a.im) :
-    ‖Complex.exp (2 * Real.pi * I * a)‖ ≤ 1 := by
-  rw [Complex.norm_exp, Real.exp_le_one_iff]
-  have hre : (2 * (Real.pi : ℂ) * I * a).re = -2 * Real.pi * a.im := by simp [mul_assoc]
-  rw [hre]; nlinarith [Real.pi_pos, ha]
-
-private theorem exp_two_pi_I_mul_pow (a : ℂ) (n : ℕ) :
-    Complex.exp (2 * Real.pi * I * a) ^ n = Complex.exp (2 * Real.pi * I * n * a) := by
-  rw [← Complex.exp_natCast_mul]; congr 1; ring
+  rw [lerchSeries_eq_exp_add_mul_add_one_right hs, add_sub_cancel_left]
 
 /-- Periodicity of `lerchZeta` in the phase `a`: adding an integer leaves `lerchZeta s a c`
 unchanged. -/
 @[simp]
-theorem lerchZeta_add_intCast (s a c : ℂ) (k : ℤ) : lerchZeta s (a + k) c = lerchZeta s a c := by
-  rw [lerchZeta_def, lerchZeta_def, mul_add, Complex.exp_add,
-    show 2 * (Real.pi : ℂ) * I * (k : ℂ) = (k : ℂ) * (2 * Real.pi * I) by ring,
+theorem lerchZeta_add_intCast_middle (s a c : ℂ) (k : ℤ) :
+    lerchZeta s (a + k) c = lerchZeta s a c := by
+  have hexp : 2 * (Real.pi : ℂ) * I * (k : ℂ) = (k : ℂ) * (2 * Real.pi * I) := by ring
+  rw [lerchZeta_def, lerchZeta_def, mul_add, Complex.exp_add, hexp,
     Complex.exp_int_mul_two_pi_mul_I, mul_one]
 
 /-- Unit periodicity of `lerchZeta` in the phase `a`: `L(s, a + 1, c) = L(s, a, c)`. -/
 @[simp]
-theorem lerchZeta_add_one (s a c : ℂ) : lerchZeta s (a + 1) c = lerchZeta s a c := by
-  simpa using lerchZeta_add_intCast s a c 1
+theorem lerchZeta_add_one_middle (s a c : ℂ) : lerchZeta s (a + 1) c = lerchZeta s a c := by
+  simpa using lerchZeta_add_intCast_middle s a c 1
 
 /-- On the upper half-plane `0 < a.im`, the `lerchZeta` series is summable for all `s, c : ℂ`. -/
 theorem summable_lerchZeta_term (s : ℂ) {a : ℂ} (ha : 0 < a.im) (c : ℂ) :
     Summable (fun n : ℕ =>
       Complex.exp (2 * Real.pi * I * n * a) * Complex.exp (-s * Complex.log (n + c))) :=
-  (summable_lerchSeries_term (norm_exp_two_pi_I_mul_lt_one ha) s c).congr fun n => by
-    rw [exp_two_pi_I_mul_pow]
+  (summable_lerchSeries_term (UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr ha) s c).congr
+    fun n => by rw [UpperHalfPlane.exp_two_pi_I_mul_pow]
 
 /-- `HasSum` form of `lerchZeta` on the upper half-plane `0 < a.im`. -/
 theorem hasSum_lerchZeta (s : ℂ) {a : ℂ} (ha : 0 < a.im) (c : ℂ) :
     HasSum (fun n : ℕ =>
       Complex.exp (2 * Real.pi * I * n * a) * Complex.exp (-s * Complex.log (n + c)))
       (lerchZeta s a c) := by
-  simpa only [lerchZeta_def, exp_two_pi_I_mul_pow] using
-    hasSum_lerchSeries (norm_exp_two_pi_I_mul_lt_one ha) s c
+  simpa only [lerchZeta_def, UpperHalfPlane.exp_two_pi_I_mul_pow] using
+    hasSum_lerchSeries (UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr ha) s c
 
 /-- At `s = 0` on the upper half-plane `0 < a.im`, `L(0, a, c) = (1 - exp (2πia))⁻¹`. -/
 theorem lerchZeta_zero_left {a : ℂ} (ha : 0 < a.im) (c : ℂ) :
     lerchZeta 0 a c = (1 - Complex.exp (2 * Real.pi * I * a))⁻¹ :=
-  lerchSeries_zero_middle (norm_exp_two_pi_I_mul_lt_one ha) c
+  lerchSeries_zero_middle (UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr ha) c
 
 /-- One-step shift identity in `c` for `lerchZeta`:
 `L(s, a, c) = exp (-s * log c) + exp (2πia) * L(s, a, c + 1)` whenever the series is summable. -/
-theorem lerchZeta_eq_exp_add_mul_add_one {s a c : ℂ}
+theorem lerchZeta_eq_exp_add_mul_add_one_right {s a c : ℂ}
     (hs : Summable (fun n : ℕ =>
       Complex.exp (2 * Real.pi * I * n * a) * Complex.exp (-s * Complex.log (n + c)))) :
     lerchZeta s a c =
       Complex.exp (-s * Complex.log c) +
         Complex.exp (2 * Real.pi * I * a) * lerchZeta s a (c + 1) :=
-  lerchSeries_eq_exp_add_mul_add_one (hs.congr fun n => by rw [← exp_two_pi_I_mul_pow])
+  lerchSeries_eq_exp_add_mul_add_one_right
+    (hs.congr fun n => by rw [← UpperHalfPlane.exp_two_pi_I_mul_pow])
 
 /-! ### Termwise derivatives, compact mixed-derivative bounds, and joint analyticity -/
 
@@ -399,8 +348,10 @@ private theorem isOpen_lerchSeriesDomain :
 private theorem iteratedDeriv_exp_neg_mul (L : ℂ) (k : ℕ) (s : ℂ) :
     iteratedDeriv k (fun w : ℂ => Complex.exp (-w * L)) s =
       (-L) ^ k * Complex.exp (-s * L) := by
-  simp_rw [show ∀ w : ℂ, -w * L = -L * w from fun w => by ring]
-  exact congrFun (iteratedDeriv_cexp_const_mul k (-L)) s
+  have hfun : (fun w : ℂ => Complex.exp (-w * L)) = fun w => Complex.exp (-L * w) := by
+    ext w; congr 1; ring
+  rw [hfun, congrFun (iteratedDeriv_cexp_const_mul k (-L)) s]
+  congr 2; ring
 
 /-- On `‖z‖ < 1`, `w ↦ lerchSeries w s c` has term-by-term complex derivative at `z` for all
 `s, c : ℂ`. -/
@@ -430,6 +381,33 @@ theorem differentiableOn_lerchSeries_left (s c : ℂ) :
     DifferentiableOn ℂ (fun w => lerchSeries w s c) (ball 0 1) := fun _ hz =>
   (hasDerivAt_lerchSeries_left (mem_ball_zero_iff.mp hz) s c).differentiableAt
     |>.differentiableWithinAt
+
+/-- Lowering differential relation `(z ∂_z + c) Φ(z, s, c) = Φ(z, s - 1, c)` on `‖z‖ < 1` whenever
+`(n : ℂ) + c ≠ 0` for every `n : ℕ`. -/
+theorem mul_deriv_lerchSeries_left_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
+    (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
+    z * deriv (fun w => lerchSeries w s c) z + c * lerchSeries z s c =
+      lerchSeries z (s - 1) c := by
+  have hterm (n : ℕ) :
+      z * ((n : ℂ) * z ^ (n - 1) * Complex.exp (-s * Complex.log (n + c))) =
+        z ^ n * Complex.exp (-(s - 1) * Complex.log (n + c)) -
+          c * (z ^ n * Complex.exp (-s * Complex.log (n + c))) := by
+    have hzn : z * ((n : ℂ) * z ^ (n - 1)) = (n : ℂ) * z ^ n := by
+      rcases n with _ | k <;> simp [pow_succ', mul_left_comm]
+    have hexp : Complex.exp (-(s - 1) * Complex.log (n + c)) =
+        ((n : ℂ) + c) * Complex.exp (-s * Complex.log (n + c)) := by
+      have harg : -(s - 1) * Complex.log (n + c) =
+          Complex.log (n + c) + (-s * Complex.log (n + c)) := by ring
+      rw [harg, Complex.exp_add, Complex.exp_log (hc n)]
+    rw [← mul_assoc, hzn, hexp]; ring
+  have hs1 := summable_lerchSeries_term hz (s - 1) c
+  have hs2 := (summable_lerchSeries_term hz s c).mul_left c
+  have hfun : (fun n : ℕ => z * ((n : ℂ) * z ^ (n - 1) * Complex.exp (-s * Complex.log (n + c)))) =
+      fun n : ℕ => z ^ n * Complex.exp (-(s - 1) * Complex.log (n + c)) -
+        c * (z ^ n * Complex.exp (-s * Complex.log (n + c))) := funext hterm
+  rw [deriv_lerchSeries_left hz s c, ← tsum_mul_left, lerchSeries_def z s c, ← tsum_mul_left, hfun,
+    ← (hs1.sub hs2).tsum_add hs2]
+  simp [lerchSeries_def]
 
 /-- On `‖z‖ < 1`, `w ↦ lerchSeries z w c` is entire and may be differentiated term-by-term in `s`
 for all `c : ℂ`. -/
@@ -469,8 +447,11 @@ theorem hasDerivAt_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c :
     HasDerivAt (fun w => lerchSeries z s w) (-s * lerchSeries z (s + 1) c) c := by
   obtain ⟨δ, hδ, hcb⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
     (Complex.isOpen_slitPlane.mem_nhds hc)
-  obtain ⟨u, hu, hle⟩ := exists_summable_norm_lerchSeries_term_le
-    (isCompact_singleton.prod (isCompact_singleton.prod (isCompact_closedBall c δ)))
+  let K : Set (ℂ × ℂ × ℂ) :=
+    ({s} : Set ℂ) ×ˢ (({z} : Set ℂ) ×ˢ closedBall c δ)
+  have hK : IsCompact K :=
+    isCompact_singleton.prod (isCompact_singleton.prod (isCompact_closedBall c δ))
+  obtain ⟨u, hu, hle⟩ := hK.exists_summable_norm_lerchSeries_term_le
     (fun p hp => by rw [hp.2.1]; exact hz)
     (fun p hp n => slitPlane_ne_zero (natCast_add_mem_slitPlane_iff.mpr (hcb hp.2.2) n))
   let F : ℕ → ℂ → ℂ := fun n w => z ^ n * Complex.exp (-s * Complex.log (n + w))
@@ -487,9 +468,9 @@ theorem hasDerivAt_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c :
     have hdF : HasDerivAt (F n)
         (z ^ n * (Complex.exp (-s * Complex.log (n + c)) * (-s * (1 / ((n : ℂ) + c))))) c :=
       (((((hasDerivAt_id c).const_add (n : ℂ)).clog hslit).const_mul (-s)).cexp).const_mul (z ^ n)
-    rw [hdF.deriv, show -(s + 1) * Complex.log (n + c) =
-      -s * Complex.log (n + c) - Complex.log (n + c) by ring,
-      Complex.exp_sub, Complex.exp_log (slitPlane_ne_zero hslit)]
+    have hexp : -(s + 1) * Complex.log (n + c) =
+        -s * Complex.log (n + c) - Complex.log (n + c) := by ring
+    rw [hdF.deriv, hexp, Complex.exp_sub, Complex.exp_log (slitPlane_ne_zero hslit)]
     simp only [div_eq_mul_inv]; ring
   rw [hterm, tsum_mul_left, ← lerchSeries_def] at hd
   exact hd.congr_of_eventuallyEq (Eventually.of_forall fun w => (lerchSeries_def z s w).symm)
@@ -505,34 +486,36 @@ theorem differentiableOn_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ
     DifferentiableOn ℂ (fun w => lerchSeries z s w) Complex.slitPlane := fun _ hc =>
   (hasDerivAt_lerchSeries_right hz s hc).differentiableAt.differentiableWithinAt
 
-private theorem continuousOn_lerchSeries :
-    ContinuousOn (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2)
-      {p | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} := by
-  intro p₀ hp₀
-  obtain ⟨δ, hδ, hcb⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
-    (isOpen_lerchSeriesDomain.mem_nhds hp₀)
-  obtain ⟨u, hu, hle⟩ := exists_summable_norm_lerchSeries_term_le (isCompact_closedBall p₀ δ)
-    (fun q hq => (hcb hq).1)
-    (fun q hq n => slitPlane_ne_zero (natCast_add_mem_slitPlane_iff.mpr (hcb hq).2 n))
-  have hcball : ContinuousOn (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2) (ball p₀ δ) := by
-    simp_rw [lerchSeries_def]
-    refine continuousOn_tsum (fun n q hq => ?_) hu fun n q hq => hle n q (ball_subset_closedBall hq)
-    have hslit := natCast_add_mem_slitPlane_iff.mpr (hcb (ball_subset_closedBall hq)).2 n
-    exact (((continuous_fst.comp continuous_snd).pow n).continuousAt.mul
-      ((continuous_fst.neg.continuousAt.mul
-        ((continuous_const.add (continuous_snd.comp continuous_snd)).continuousAt.clog
-          hslit)).cexp)).continuousWithinAt
-  exact (hcball.continuousAt (isOpen_ball.mem_nhds (mem_ball_self hδ))).continuousWithinAt
-
 /-- `lerchSeries` is jointly analytic in `(s, z, c)` on
 `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`. -/
 theorem analyticOnNhd_lerchSeries :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2)
-      {p | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} :=
-  continuousOn_lerchSeries.analyticOnNhd_of_differentiableAt_prod_prod isOpen_lerchSeriesDomain
-    (fun p hp => (hasDerivAt_lerchSeries_middle hp.1 p.1 p.2.2).differentiableAt)
-    (fun p hp => (hasDerivAt_lerchSeries_left hp.1 p.1 p.2.2).differentiableAt)
-    (fun p hp => (hasDerivAt_lerchSeries_right hp.1 p.1 hp.2).differentiableAt)
+      {p | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane} := by
+  intro p₀ hp₀
+  obtain ⟨δ, hδ, hcb⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
+    (isOpen_lerchSeriesDomain.mem_nhds hp₀)
+  obtain ⟨u, hu, hle⟩ := (isCompact_closedBall p₀ δ).exists_summable_norm_lerchSeries_term_le
+    (fun q hq => (hcb hq).1)
+    (fun q hq n => slitPlane_ne_zero (natCast_add_mem_slitPlane_iff.mpr (hcb hq).2 n))
+  have hunif : TendstoUniformlyOn
+      (fun N (p : ℂ × ℂ × ℂ) =>
+        ∑ n ∈ Finset.range N, p.2.1 ^ n * Complex.exp (-p.1 * Complex.log (n + p.2.2)))
+      (fun p : ℂ × ℂ × ℂ => lerchSeries p.2.1 p.1 p.2.2) atTop (ball p₀ δ) :=
+    (tendstoUniformlyOn_tsum_nat hu fun n q hq => hle n q (ball_subset_closedBall hq)).congr_right
+      fun q _ => (lerchSeries_def q.2.1 q.1 q.2.2).symm
+  have hdiff_sum : ∀ N : ℕ, DifferentiableOn ℂ
+      (fun p : ℂ × ℂ × ℂ =>
+        ∑ n ∈ Finset.range N, p.2.1 ^ n * Complex.exp (-p.1 * Complex.log (n + p.2.2)))
+      (ball p₀ δ) := fun N q hq => by
+    refine DifferentiableWithinAt.fun_sum fun n _ => ?_
+    have hslit := natCast_add_mem_slitPlane_iff.mpr (hcb (ball_subset_closedBall hq)).2 n
+    exact (((differentiableAt_fst.comp q differentiableAt_snd).pow n).mul
+      ((differentiableAt_fst.neg.mul
+        (((differentiableAt_const (n : ℂ)).add
+          (differentiableAt_snd.comp q differentiableAt_snd)).clog hslit)).cexp)
+      ).differentiableWithinAt
+  have hdiff := hunif.differentiableOn (Eventually.of_forall hdiff_sum) isOpen_ball
+  exact hdiff.analyticOnNhd_of_finiteDimensional isOpen_ball p₀ (mem_ball_self hδ)
 
 /-- `lerchSeries` is jointly complex differentiable in `(s, z, c)` on
 `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`. -/
@@ -552,7 +535,7 @@ theorem analyticOnNhd_lerchZeta :
     analyticAt_fst.prod (((analyticAt_const.mul (analyticAt_fst.comp analyticAt_snd)).cexp).prod
       (analyticAt_snd.comp analyticAt_snd))
   have hmem : φ p ∈ {q : ℂ × ℂ × ℂ | ‖q.2.1‖ < 1 ∧ q.2.2 ∈ Complex.slitPlane} :=
-    ⟨norm_exp_two_pi_I_mul_lt_one hp.1, hp.2⟩
+    ⟨UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff.mpr hp.1, hp.2⟩
   exact ((analyticOnNhd_lerchSeries (φ p) hmem).comp hφ).congr
     (Eventually.of_forall fun q => (lerchZeta_def q.1 q.2.1 q.2.2).symm)
 
@@ -577,7 +560,7 @@ private theorem iteratedDeriv_lerchSeries_term_eq (n dz ds dc : ℕ) (p : ℂ ×
         z ^ n * g c := by rw [iteratedDeriv_const_mul_field, iteratedDeriv_exp_neg_mul]
   have hz_pull (a : ℂ) : iteratedDeriv dz (fun z : ℂ => z ^ n * a) p.2.1 =
       iteratedDeriv dz (fun z : ℂ => z ^ n) p.2.1 * a := by
-    simp_rw [mul_comm _ a, iteratedDeriv_const_mul_field]
+    rw [iteratedDeriv_mul_const_field]
   simp_rw [hs_eval, hz_pull (g _), iteratedDeriv_const_mul_field]
   exact (hz_pull (iteratedDeriv dc g p.2.2)).symm
 
@@ -601,8 +584,9 @@ private theorem norm_mul_iteratedDeriv_right_lerchSeries_term_le (n ds dc : ℕ)
 /-- On any compact subset `K` of `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`
 (in coordinates `(s, z, c)`), every fixed mixed iterated partial derivative of order `(dz, ds, dc)`
 of the Lerch series terms has a single summable norm bound uniformly on `K`. -/
-theorem exists_summable_norm_iteratedDeriv_lerchSeries_term_le {K : Set (ℂ × ℂ × ℂ)}
-    (hK : IsCompact K) (hKU : K ⊆ {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane})
+theorem _root_.IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le
+    {K : Set (ℂ × ℂ × ℂ)} (hK : IsCompact K)
+    (hKU : K ⊆ {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane})
     (dz ds dc : ℕ) :
     ∃ u : ℕ → ℝ, Summable u ∧ ∀ n : ℕ, ∀ p ∈ K,
       ‖iteratedDeriv dc (fun c =>
@@ -684,18 +668,15 @@ theorem iteratedDeriv_lerchSeries_eq_tsum {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1
   obtain ⟨δ, hδ, hcb⟩ :=
     Metric.nhds_basis_closedBall.mem_iff.mp (Complex.isOpen_slitPlane.mem_nhds hc)
   simp_rw [iteratedDeriv_lerchSeries_middle_left_eq_tsum hz _ dz ds]
-  obtain ⟨u, hu, hle⟩ := exists_summable_norm_iteratedDeriv_lerchSeries_term_le
-    (isCompact_singleton.prod (isCompact_singleton.prod (isCompact_closedBall p.2.2 δ)))
-    (fun q hq => ⟨by rw [hq.2.1]; exact hz, hcb hq.2.2⟩) dz ds 0
+  obtain ⟨u, hu, hle⟩ :=
+    (isCompact_singleton.prod
+      (isCompact_singleton.prod
+        (isCompact_closedBall p.2.2 δ))).exists_summable_norm_iteratedDeriv_lerchSeries_term_le
+      (fun q hq => ⟨by rw [hq.2.1]; exact hz, hcb hq.2.2⟩) dz ds 0
   refine (Complex.hasSum_iteratedDeriv_of_summable_norm hu (fun n c' hc' => ?_) isOpen_ball
     (fun n c' hc' => ?_) dc (mem_ball_self hδ)).tsum_eq.symm
-  · simp_rw [iteratedDeriv_const_mul_field, iteratedDeriv_exp_neg_mul]
-    have hpull (w : ℂ) : iteratedDeriv dz (fun z : ℂ =>
-        z ^ n * ((-Complex.log (n + w)) ^ ds * Complex.exp (-p.1 * Complex.log (n + w)))) p.2.1 =
-        iteratedDeriv dz (fun z : ℂ => z ^ n) p.2.1 *
-          ((-Complex.log (n + w)) ^ ds * Complex.exp (-p.1 * Complex.log (n + w))) := by
-      simp [mul_comm]
-    simp_rw [hpull]
+  · simp_rw [iteratedDeriv_const_mul_field, iteratedDeriv_exp_neg_mul,
+      iteratedDeriv_mul_const_field]
     have hlog := (differentiableAt_id.const_add (n : ℂ)).clog
       (natCast_add_mem_slitPlane_iff.mpr (hcb (ball_subset_closedBall hc')) n)
     exact (((hlog.neg.pow ds).mul ((hlog.const_mul (-p.1)).cexp)).const_mul
@@ -704,7 +685,8 @@ theorem iteratedDeriv_lerchSeries_eq_tsum {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1
 
 /-- Partial sums of every mixed `(dz, ds, dc)` partial derivative of `lerchSeries` converge
 uniformly on every compact subset of `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`. -/
-theorem tendstoUniformlyOn_iteratedDeriv_lerchSeries {K : Set (ℂ × ℂ × ℂ)} (hK : IsCompact K)
+theorem _root_.IsCompact.tendstoUniformlyOn_iteratedDeriv_lerchSeries {K : Set (ℂ × ℂ × ℂ)}
+    (hK : IsCompact K)
     (hKU : K ⊆ {p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}) (dz ds dc : ℕ) :
     TendstoUniformlyOn
       (fun N p => ∑ n ∈ Finset.range N,
@@ -716,7 +698,7 @@ theorem tendstoUniformlyOn_iteratedDeriv_lerchSeries {K : Set (ℂ × ℂ × ℂ
         iteratedDeriv dz (fun z =>
            iteratedDeriv ds (fun s => lerchSeries z s c) p.1) p.2.1) p.2.2)
       atTop K := by
-  obtain ⟨u, hu, hle⟩ := exists_summable_norm_iteratedDeriv_lerchSeries_term_le hK hKU dz ds dc
+  obtain ⟨u, hu, hle⟩ := hK.exists_summable_norm_iteratedDeriv_lerchSeries_term_le hKU dz ds dc
   exact (tendstoUniformlyOn_tsum_nat hu hle).congr_right fun p hp =>
     (iteratedDeriv_lerchSeries_eq_tsum (hKU hp).1 (hKU hp).2 dz ds dc).symm
 
@@ -737,8 +719,7 @@ theorem summable_norm_lerchSeries_term_of_norm_le_one {z s : ℂ} (hz : ‖z‖ 
   have hNc : 2 * ‖c‖ + 1 ≤ (N : ℝ) := Nat.le_ceil _
   have hm_pos : 0 < (m : ℝ) := by linarith [norm_nonneg c]
   have hw_lo : (m : ℝ) / 2 ≤ ‖(m : ℂ) + c‖ := by
-    have htri : ‖(m : ℂ)‖ ≤ ‖(m : ℂ) + c‖ + ‖-c‖ := by simpa using norm_add_le ((m : ℂ) + c) (-c)
-    rw [Complex.norm_natCast, norm_neg] at htri; linarith
+    linarith [Complex.sub_norm_le_norm_natCast_add m c]
   have hre : (-s * Complex.log ((m : ℂ) + c)).re ≤
       |s.im| * Real.pi - s.re * Real.log ((m : ℝ) / 2) := by
     have him : s.im * ((m : ℂ) + c).arg ≤ |s.im| * Real.pi :=
@@ -748,8 +729,9 @@ theorem summable_norm_lerchSeries_term_of_norm_le_one {z s : ℂ} (hz : ‖z‖ 
     nlinarith [hs, Real.log_le_log (half_pos hm_pos) hw_lo]
   have hexp_eq : Real.exp (|s.im| * Real.pi - s.re * Real.log ((m : ℝ) / 2)) =
       Real.exp (|s.im| * Real.pi) * (2 : ℝ) ^ s.re * (m : ℝ) ^ (-s.re) := by
-    rw [sub_eq_add_neg, Real.exp_add, Real.log_div hm_pos.ne' two_ne_zero,
-      show -(s.re * (Real.log m - Real.log 2)) = Real.log 2 * s.re + Real.log m * (-s.re) by ring,
+    have harg : -(s.re * (Real.log m - Real.log 2)) = Real.log 2 * s.re + Real.log m * (-s.re) :=
+      by ring
+    rw [sub_eq_add_neg, Real.exp_add, Real.log_div hm_pos.ne' two_ne_zero, harg,
       Real.exp_add, ← Real.rpow_def_of_pos two_pos, ← Real.rpow_def_of_pos hm_pos]
     ring
   rw [norm_mul, norm_pow, Complex.norm_exp]
@@ -771,16 +753,18 @@ theorem hasSum_lerchSeries_of_norm_le_one {z s : ℂ} (hz : ‖z‖ ≤ 1) (hs :
 theorem summable_lerchZeta_term_of_im_nonneg {s a : ℂ} (hs : 1 < s.re) (ha : 0 ≤ a.im) (c : ℂ) :
     Summable (fun n : ℕ =>
       Complex.exp (2 * Real.pi * I * n * a) * Complex.exp (-s * Complex.log (n + c))) :=
-  (summable_lerchSeries_term_of_norm_le_one (norm_exp_two_pi_I_mul_le_one ha) hs c).congr
-    fun n => by rw [exp_two_pi_I_mul_pow]
+  (summable_lerchSeries_term_of_norm_le_one
+    ((UpperHalfPlane.norm_exp_two_pi_I_mul_le ha).trans_eq (by simp)) hs c).congr
+    fun n => by rw [UpperHalfPlane.exp_two_pi_I_mul_pow]
 
 /-- `HasSum` form of `lerchZeta` on `0 ≤ a.im` (including real `a`) when `1 < s.re`. -/
 theorem hasSum_lerchZeta_of_im_nonneg {s a : ℂ} (hs : 1 < s.re) (ha : 0 ≤ a.im) (c : ℂ) :
     HasSum (fun n : ℕ =>
       Complex.exp (2 * Real.pi * I * n * a) * Complex.exp (-s * Complex.log (n + c)))
       (lerchZeta s a c) := by
-  simpa only [lerchZeta_def, exp_two_pi_I_mul_pow] using
-    hasSum_lerchSeries_of_norm_le_one (norm_exp_two_pi_I_mul_le_one ha) hs c
+  simpa only [lerchZeta_def, UpperHalfPlane.exp_two_pi_I_mul_pow] using
+    hasSum_lerchSeries_of_norm_le_one
+      ((UpperHalfPlane.norm_exp_two_pi_I_mul_le ha).trans_eq (by simp)) hs c
 
 /-- On `1 < s.re`, Mathlib's periodic zeta `HurwitzZeta.expZeta a s` differs from the `c = 1`
 boundary Lerch series at `z = exp (2πia)` by the prefactor `exp (2πia)`. -/
@@ -794,9 +778,13 @@ theorem expZeta_eq_mul_lerchSeries (a : ℝ) {s : ℂ} (hs : 1 < s.re) :
   rw [lerchSeries_def, ← tsum_mul_left]
   refine tsum_congr fun n => ?_
   have hn1 : ((n + 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
-  rw [div_eq_mul_inv, cpow_def_of_ne_zero hn1, ← Complex.exp_neg, ← Complex.exp_natCast_mul,
-    ← Complex.exp_add, ← Complex.exp_add, ← Complex.exp_add]
-  congr 1; push_cast; ring
+  have hden : (((n + 1 : ℕ) : ℂ) ^ s)⁻¹ = Complex.exp (-s * Complex.log ((n : ℂ) + 1)) := by
+    rw [cpow_def_of_ne_zero hn1, ← Complex.exp_neg]
+    simp only [Nat.cast_add, Nat.cast_one, neg_mul, mul_comm (Complex.log _)]
+  have hphase : Complex.exp (2 * Real.pi * I * a * ((n + 1 : ℕ) : ℂ)) =
+      Complex.exp (2 * Real.pi * I * a) * Complex.exp (2 * Real.pi * I * a) ^ n := by
+    rw [mul_right_comm _ (a : ℂ), ← UpperHalfPlane.exp_two_pi_I_mul_pow, pow_succ']
+  rw [div_eq_mul_inv, hden, hphase, mul_assoc]
 
 /-- Equivalent form in terms of `lerchZeta`: `expZeta a s = exp (2πia) * lerchZeta s a 1` for
 `a : ℝ` and `1 < s.re`. -/
@@ -830,21 +818,22 @@ theorem lerchSeries_neg_one_one_eq_mul_riemannZeta {s : ℂ} (hs : 1 < s.re) :
   rw [hsum.tsum_eq_zero_add, LSeries.term_zero, zero_add, lerchSeries_def]
   exact tsum_congr fun n => (hterm n).symm
 
-/-- Alternating Basel check `lerchSeries (-1) 2 1 = π ^ 2 / 12`. -/
-theorem lerchSeries_neg_one_two_one :
-    lerchSeries (-1) 2 1 = (Real.pi : ℂ) ^ 2 / 12 := by
+-- Alternating Basel check `lerchSeries (-1) 2 1 = π ^ 2 / 12`.
+example : lerchSeries (-1) 2 1 = (Real.pi : ℂ) ^ 2 / 12 := by
+  have hsub : (1 : ℂ) - 2 = (-1 : ℤ) := by norm_num
   rw [lerchSeries_neg_one_one_eq_mul_riemannZeta (by norm_num : 1 < (2 : ℂ).re), riemannZeta_two,
-    show (1 : ℂ) - 2 = (-1 : ℤ) by norm_num, cpow_intCast, zpow_neg_one]
+    hsub, cpow_intCast, zpow_neg_one]
   ring
 
-/-- Sign-distinguishing check against `HurwitzZeta.expZeta`: at `a = 1 / 2` and `s = 2`,
-`expZeta (1 / 2) 2 = -π ^ 2 / 12`, opposite in sign to `lerchSeries (-1) 2 1 = π ^ 2 / 12` due to
-the prefactor `exp (2πi · (1 / 2)) = -1`. -/
-theorem expZeta_half_two :
-    HurwitzZeta.expZeta ((1 / 2 : ℝ) : UnitAddCircle) 2 = -(Real.pi : ℂ) ^ 2 / 12 := by
-  rw [expZeta_eq_mul_lerchSeries (1 / 2 : ℝ) (by norm_num : 1 < (2 : ℂ).re),
-    show 2 * (Real.pi : ℂ) * I * ((1 / 2 : ℝ) : ℂ) = Real.pi * I by push_cast; ring,
-    Complex.exp_pi_mul_I, lerchSeries_neg_one_two_one]
+-- Sign-distinguishing check against `HurwitzZeta.expZeta`: at `a = 1 / 2` and `s = 2`,
+-- `expZeta (1 / 2) 2 = -π ^ 2 / 12`, opposite in sign to `lerchSeries (-1) 2 1 = π ^ 2 / 12` due to
+-- the prefactor `exp (2πi · (1 / 2)) = -1`.
+example : HurwitzZeta.expZeta ((1 / 2 : ℝ) : UnitAddCircle) 2 = -(Real.pi : ℂ) ^ 2 / 12 := by
+  have harg : 2 * (Real.pi : ℂ) * I * ((1 / 2 : ℝ) : ℂ) = Real.pi * I := by push_cast; ring
+  have hsub : (1 : ℂ) - 2 = (-1 : ℤ) := by norm_num
+  rw [expZeta_eq_mul_lerchSeries (1 / 2 : ℝ) (by norm_num : 1 < (2 : ℂ).re), harg,
+    Complex.exp_pi_mul_I, lerchSeries_neg_one_one_eq_mul_riemannZeta (by norm_num : 1 < (2 : ℂ).re),
+    riemannZeta_two, hsub, cpow_intCast, zpow_neg_one]
   ring
 
 end TauCeti

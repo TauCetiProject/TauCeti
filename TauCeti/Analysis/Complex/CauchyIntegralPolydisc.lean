@@ -338,14 +338,8 @@ theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_prod_prod
     (hd₃ : ∀ p ∈ s, DifferentiableAt ℂ (fun z => f (p.1, p.2.1, z)) p.2.2) :
     AnalyticOnNhd ℂ f s := by
   let e : (Fin 3 → ℂ) ≃L[ℂ] ℂ × ℂ × ℂ :=
-    { toFun := fun v => (v 0, v 1, v 2)
-      invFun := fun p => ![p.1, p.2.1, p.2.2]
-      left_inv := fun v => by ext i; fin_cases i <;> rfl
-      right_inv := fun _ => rfl
-      map_add' := fun _ _ => rfl
-      map_smul' := fun _ _ => rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := continuous_pi fun i => by fin_cases i <;> fun_prop }
+    (Fin.consEquivL ℂ (fun _ : Fin 3 => ℂ)).symm.trans
+      ((ContinuousLinearEquiv.refl ℂ ℂ).prodCongr (ContinuousLinearEquiv.finTwoArrow ℂ ℂ))
   have he : ∀ v, e v = (v 0, v 1, v 2) := fun _ => rfl
   have han : AnalyticOnNhd ℂ (f ∘ e) (e ⁻¹' s) := by
     refine (hc.comp e.continuous.continuousOn (mapsTo_preimage _ _))

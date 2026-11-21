@@ -103,6 +103,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
   for `|θ| < π` and `0 ≤ r`.
+* `Complex.norm_cpow_mul_log_pow_mul_exp_neg_mul` -- norm of
+  `(t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))` for `t > 0`.
 -/
 
 public section
@@ -790,6 +792,13 @@ theorem norm_one_add_ofReal_mul_exp_mul_I_cpow_le {θ r : ℝ} (hθ : |θ| < Rea
       exact Real.rpow_le_rpow (norm_nonneg _) hw_hi hd.le
   exact (norm_cpow_le_mul_exp w d).trans <|
     (mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le).trans_eq (by ring)
+
+/-- The norm of `(t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))` for `t > 0`. -/
+theorem norm_cpow_mul_log_pow_mul_exp_neg_mul (s w : ℂ) (k : ℕ) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ s * (log t) ^ k * exp (-(w * t))‖ =
+      |Real.log t| ^ k * t ^ s.re * Real.exp (-w.re * t) := by
+  simp [norm_cpow_eq_rpow_re_of_pos ht, ← ofReal_log ht.le, norm_exp]
+  ring
 
 end Complex
 

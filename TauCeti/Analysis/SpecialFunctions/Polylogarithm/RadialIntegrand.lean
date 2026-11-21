@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Integrability of the polylogarithm's radial integrand
@@ -30,8 +31,6 @@ gives the uniform majorant of the integrand, and the same lower bound controls i
 
 * `TauCeti.Polylog.intervalIntegrable_radialIntegrand`: interval integrability on `[0, 1]` for
   every `z`.
-* `TauCeti.Polylog.exists_le_norm_one_sub_ofReal_mul`: on a compact subset of the principal
-  domain, `‖1 - t z‖` is bounded below by a positive constant for `t ∈ [0, 1]`.
 * `TauCeti.Polylog.exists_norm_radialIntegrand_le`: the uniform majorant `C * |log t| ^ k` on a
   compact subset of the principal domain.
 
@@ -107,21 +106,6 @@ theorem intervalIntegrable_radialIntegrand (k : ℕ) (z : ℂ) :
     convert hlog.continuousOn_mul hcont using 2 with t
     ring
 
-/-- On a compact subset `K` of the principal domain `ℂ ∖ [1, ∞)`, the factors `1 - t z` with
-`t ∈ [0, 1]` stay uniformly away from zero. -/
-theorem exists_le_norm_one_sub_ofReal_mul {K : Set ℂ} (hK : IsCompact K)
-    (hKΩ : K ⊆ {z : ℂ | 1 - z ∈ Complex.slitPlane}) :
-    ∃ δ > 0, ∀ z ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, δ ≤ ‖1 - t * z‖ := by
-  -- `1 - t z = 1 + t • (-z)` lies on the segment from `1` to `1 - z` in the star-convex slit plane.
-  have hpos : ∀ p ∈ Icc (0 : ℝ) 1 ×ˢ K, 0 < ‖1 - p.1 * p.2‖ := by
-    intro p hp
-    have hz : 1 + -p.2 ∈ Complex.slitPlane := by simpa [sub_eq_add_neg] using hKΩ hp.2
-    have hmem := Complex.starConvex_one_slitPlane.add_smul_mem hz hp.1.1 hp.1.2
-    rw [Complex.real_smul, mul_neg, ← sub_eq_add_neg] at hmem
-    exact norm_pos_iff.2 (Complex.slitPlane_ne_zero hmem)
-  obtain ⟨δ, hδ, h⟩ := (isCompact_Icc.prod hK).exists_forall_le' (by fun_prop) hpos
-  exact ⟨δ, hδ, fun z hz t ht ↦ h (t, z) ⟨ht, hz⟩⟩
-
 /-- On a compact subset `K` of the principal domain `ℂ ∖ [1, ∞)`, the radial integrand of the
 polylogarithm of weight `k + 2` has the single integrable majorant `C * |log t| ^ k` on `(0, 1]`,
 uniformly in `z ∈ K`. -/
@@ -129,7 +113,7 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
     (hKΩ : K ⊆ {z : ℂ | 1 - z ∈ Complex.slitPlane}) :
     ∃ C, ∀ z ∈ K, ∀ t ∈ Ioc (0 : ℝ) 1,
       ‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ≤ C * |Real.log t| ^ k := by
-  obtain ⟨δ, hδ, hδK⟩ := exists_le_norm_one_sub_ofReal_mul hK hKΩ
+  obtain ⟨δ, hδ, hδK⟩ := hK.exists_le_norm_one_sub_ofReal_mul hKΩ
   obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
   set R' : ℝ := max R 0
   set a : ℝ := 1 / (2 * (R' + 1)) with ha_def

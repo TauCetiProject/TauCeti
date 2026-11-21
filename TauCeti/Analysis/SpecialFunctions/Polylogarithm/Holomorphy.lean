@@ -89,7 +89,7 @@ theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Compl
         ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
   obtain ⟨ε, hε, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
     (Complex.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds hz)
-  obtain ⟨δ, hδ, hδ_le⟩ := exists_le_norm_one_sub_ofReal_mul (isCompact_closedBall z ε) hball
+  obtain ⟨δ, hδ, hδ_le⟩ := (isCompact_closedBall z ε).exists_le_norm_one_sub_ofReal_mul hball
   let F : ℂ → ℝ → ℂ := fun w t ↦
     ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * w)) / (t : ℂ)
   let F' : ℂ → ℝ → ℂ := fun w t ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * w)

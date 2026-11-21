@@ -70,6 +70,8 @@ term takes.
   positive vertical strip, including empty and singleton strips.
 * `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
   `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
+* `Complex.norm_log_pow_mul_exp_le`: uniform norm bound for `(-log w) ^ k * exp (-s * log w)`
+  on an annulus `δ ≤ ‖w‖ ≤ B` with `‖s‖ ≤ S`.
 -/
 
 public section
@@ -255,5 +257,53 @@ theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) 
   · have h := Real.log_le_log hz0 hhi
     rw [Real.log_mul hx0.ne' ht1.ne'] at h
     linarith
+
+/-- Uniform norm bound for `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B`
+(`0 < δ ≤ 1 ≤ B`) with `‖s‖ ≤ S`. -/
+theorem norm_log_pow_mul_exp_le {s w : ℂ} {S δ B : ℝ} (hS : ‖s‖ ≤ S)
+    (hδ0 : 0 < δ) (hδ1 : δ ≤ 1) (hw_lo : δ ≤ ‖w‖) (hB1 : 1 ≤ B) (hw_hi : ‖w‖ ≤ B) (k : ℕ) :
+    ‖(-Complex.log w) ^ k * Complex.exp (-s * Complex.log w)‖ ≤
+      (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
+        (Real.exp (-S * Real.log δ) + B ^ S) := by
+  have hS0 : 0 ≤ S := (norm_nonneg s).trans hS
+  have hw0 : 0 < ‖w‖ := hδ0.trans_le hw_lo
+  have hlog_w : ‖Complex.log w‖ ≤ |Real.log ‖w‖| + Real.pi := by
+    have h1 := norm_le_abs_re_add_abs_im (Complex.log w)
+    rw [Complex.log_re, Complex.log_im] at h1
+    linarith [abs_arg_le_pi w]
+  have hlog_norm : ‖Complex.log w‖ ≤ |Real.log δ| + Real.pi + B := by
+    have h1 := Real.log_le_log hδ0 hw_lo
+    have h2 := (Real.log_le_log hw0 hw_hi).trans
+      (Real.log_le_sub_one_of_pos (zero_lt_one.trans_le hB1))
+    have hδ_np := Real.log_nonpos hδ0.le hδ1
+    have habs : |Real.log ‖w‖| ≤ -Real.log δ + B := abs_le.mpr ⟨by linarith, by linarith⟩
+    rw [abs_of_nonpos hδ_np]; linarith
+  have hexp_re : (-s * Complex.log w).re ≤ S * (|Real.log ‖w‖| + Real.pi) :=
+    (re_le_norm _).trans <| by
+      rw [norm_mul, norm_neg]; exact mul_le_mul hS hlog_w (norm_nonneg _) hS0
+  have hexp_abs : Real.exp (S * |Real.log ‖w‖|) ≤ Real.exp (-S * Real.log δ) + B ^ S := by
+    rcases le_or_gt ‖w‖ 1 with hw1 | hw1
+    · have hl : |Real.log ‖w‖| ≤ -Real.log δ := by
+        rw [abs_of_nonpos (Real.log_nonpos hw0.le hw1)]; linarith [Real.log_le_log hδ0 hw_lo]
+      have hSr : -S * Real.log δ = S * (-Real.log δ) := by ring
+      have he : Real.exp (S * |Real.log ‖w‖|) ≤ Real.exp (-S * Real.log δ) := by
+        rw [hSr]
+        exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hl hS0)
+      linarith [Real.rpow_pos_of_pos (zero_lt_one.trans_le hB1) S]
+    · have hl : |Real.log ‖w‖| ≤ Real.log B := by
+        rw [abs_of_pos (Real.log_pos hw1)]; exact Real.log_le_log hw0 hw_hi
+      have he : Real.exp (S * |Real.log ‖w‖|) ≤ B ^ S := by
+        rw [Real.rpow_def_of_pos (zero_lt_one.trans_le hB1), mul_comm (Real.log B)]
+        exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hl hS0)
+      linarith [Real.exp_pos (-S * Real.log δ)]
+  rw [norm_mul, norm_pow, norm_neg, Complex.norm_exp]
+  calc ‖Complex.log w‖ ^ k * Real.exp (-s * Complex.log w).re
+      ≤ (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * (|Real.log ‖w‖| + Real.pi)) :=
+        mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) hlog_norm k)
+          (Real.exp_le_exp.mpr hexp_re) (Real.exp_pos _).le (by positivity)
+    _ = (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
+          Real.exp (S * |Real.log ‖w‖|) := by rw [mul_add, Real.exp_add]; ring
+    _ ≤ (|Real.log δ| + Real.pi + B) ^ k * Real.exp (S * Real.pi) *
+          (Real.exp (-S * Real.log δ) + B ^ S) := by gcongr
 
 end Complex
