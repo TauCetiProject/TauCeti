@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Wronskian
 public import TauCeti.RingTheory.Valuation.RootMonic
 
 import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
-import TauCeti.Algebra.CharP.Lemmas
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.RingTheory.Polynomial.Wronskian
 
 /-!
