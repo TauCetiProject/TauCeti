@@ -14,8 +14,7 @@ Reflection about an upper bound turns left-closed, right-open intervals into
 left-open, right-closed intervals. The explicit upper bound prevents truncated
 subtraction from introducing extra points at zero. Pulling a left-open, right-closed
 `ℝ≥0` interval `Ioc u v` (`(u, v]`) back along `Real.toNNReal` yields the corresponding
-real interval `Ioc (u : ℝ) (v : ℝ)`, and shifting `Ioc u v` by `x₀ ≤ u` reduces to
-membership in `Ioc (u - x₀) (v - x₀)` without requiring `u ≤ v`.
+real interval `Ioc (u : ℝ) (v : ℝ)`.
 -/
 
 public section
@@ -47,18 +46,5 @@ theorem mem_Ioc_tsub_iff {t a b : ℝ≥0} (s : ℝ≥0) (hab : a ≤ b) (hbt : 
     constructor
     · exact (tsub_lt_iff_right hbt).2 ((tsub_lt_iff_left hst).1 hb)
     · exact (le_tsub_iff_right (hab.trans hbt)).2 ((le_tsub_iff_left hst).1 ha)
-
-/-- Shifting by `x₀ ≤ u` moves membership in `Ioc u v` to membership in `Ioc (u - x₀) (v - x₀)`.
-No ordering between `u` and `v` is needed: both intervals are empty when `v ≤ u`. -/
-theorem add_mem_Ioc_iff_tsub {x₀ u v z : ℝ≥0} (hx : x₀ ≤ u) :
-    x₀ + z ∈ Ioc u v ↔ z ∈ Ioc (u - x₀) (v - x₀) := by
-  simp only [mem_Ioc, tsub_lt_iff_left hx]
-  constructor
-  · rintro ⟨hu, hv⟩
-    exact ⟨hu, le_tsub_of_add_le_left hv⟩
-  · rintro ⟨hu, hv⟩
-    have hxv : x₀ ≤ v :=
-      (tsub_pos_iff_lt.mp (((lt_add_iff_pos_right x₀).mp (hx.trans_lt hu)).trans_le hv)).le
-    exact ⟨hu, (le_tsub_iff_left hxv).mp hv⟩
 
 end NNReal

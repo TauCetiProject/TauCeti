@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
 public import TauCeti.Order.Interval.SeparatedBox
+public import Mathlib.MeasureTheory.Constructions.Pi
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Measure extensionality on the strictly increasing positive chamber
@@ -19,7 +21,9 @@ finite (or, more generally, finite on all separated boxes).
 Separated boxes form a π-system on the strictly increasing positive chamber, and their rational
 subfamily countably covers the chamber and generates its subtype Borel σ-algebra. This avoids
 multivariate coordinate changes when comparing ordered arrival-time laws with order-statistic or
-renewal partial-sum laws.
+renewal partial-sum laws. Moreover, cumulative sums of independent `ℝ≥0`-valued variables with
+σ-finite almost-everywhere positive marginals concentrate on this chamber
+(`MeasureTheory.Measure.ae_pos_and_strictMono_map_sum_Iic_pi`).
 -/
 
 public section
@@ -221,5 +225,27 @@ theorem ext_of_Ioc_strictMono {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)} [I
     have hsub : (univ.pi fun i => Ioc (a i) (b i)) ⊆ Icc a b :=
       fun x hx => ⟨fun i => (hx i (mem_univ i)).1.le, fun i => (hx i (mem_univ i)).2⟩
     exact ((measure_mono hsub).trans_lt measure_Icc_lt_top).ne) hbox
+
+/-- Cumulative sums of `m` independent `ℝ≥0`-valued variables with σ-finite marginals concentrated
+on `(0, ∞)` are almost surely strictly positive and strictly increasing. -/
+theorem ae_pos_and_strictMono_map_sum_Iic_pi {m : ℕ} (ν : Fin m → Measure ℝ≥0)
+    [∀ i, SigmaFinite (ν i)] (hν : ∀ i, ∀ᵐ x ∂ν i, 0 < x) :
+    ∀ᵐ s ∂((Measure.pi ν).map fun x i => ∑ j ∈ Finset.Iic i, x j),
+      (∀ i, 0 < s i) ∧ StrictMono s := by
+  have hsum : Measurable (fun (x : Fin m → ℝ≥0) (i : Fin m) => ∑ j ∈ Finset.Iic i, x j) :=
+    measurable_pi_iff.mpr fun i => Finset.measurable_sum _ fun j _ => measurable_pi_apply j
+  rw [ae_map_iff hsum.aemeasurable (measurableSet_setOf_pos_and_strictMono m)]
+  have hae_coord : ∀ᵐ x ∂Measure.pi ν, ∀ i, 0 < x i := by
+    rw [ae_all_iff]
+    intro i
+    exact (Measure.quasiMeasurePreserving_eval ν i).ae (hν i)
+  filter_upwards [hae_coord] with x hx
+  have hsm := Fin.strictMono_partialSum hx
+  refine ⟨fun i => ?_, fun i j hij => ?_⟩
+  · rw [← Fin.partialSum_succ_eq_sum_Iic, ← Fin.partialSum_zero x]
+    exact hsm (Fin.succ_pos i)
+  · dsimp only
+    rw [← Fin.partialSum_succ_eq_sum_Iic, ← Fin.partialSum_succ_eq_sum_Iic]
+    exact hsm (Fin.succ_lt_succ_iff.mpr hij)
 
 end MeasureTheory.Measure

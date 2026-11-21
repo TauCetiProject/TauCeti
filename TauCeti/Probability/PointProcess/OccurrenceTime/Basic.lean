@@ -140,22 +140,38 @@ theorem isLocallyFiniteMeasure_iff_tendsto_occurrenceTime (μ : Measure ℝ≥0)
     IsLocallyFiniteMeasure μ ↔ Tendsto μ.occurrenceTime atTop (𝓝 ∞) :=
   ⟨fun _ => μ.tendsto_occurrenceTime_nhds_top, isLocallyFiniteMeasure_of_tendsto_occurrenceTime⟩
 
+/-- Restricting to a closed observation window retains exactly the occurrences in that window,
+setting all subsequent occurrence times to `∞`, whenever the measure is finite on some larger
+closed window. No global local finiteness is required. -/
+theorem occurrenceTime_restrict_Iic_of_measure_Iic_ne_top (μ : Measure ℝ≥0)
+    (b : ℝ≥0) (n : ℕ) (hfin : ∃ s > b, μ (Iic s) ≠ ∞) :
+    (μ.restrict (Iic b)).occurrenceTime n =
+      if μ.occurrenceTime n ≤ b then μ.occurrenceTime n else ∞ := by
+  obtain ⟨s₀, hs₀, hμs₀⟩ := hfin
+  have hμb : μ (Iic b) ≠ ∞ :=
+    ne_top_of_le_ne_top hμs₀ (measure_mono (Iic_subset_Iic.2 hs₀.le))
+  have hres (u : ℝ≥0) : (μ.restrict (Iic b)) (Iic u) ≠ ∞ := by
+    rw [Measure.restrict_apply measurableSet_Iic]
+    exact ne_top_of_le_ne_top hμb (measure_mono inter_subset_right)
+  apply ENNReal.eq_of_forall_le_nnreal_iff
+  intro t
+  rw [occurrenceTime_le_iff_of_measure_Iic_ne_top _ n t ⟨t + 1, lt_add_one t, hres _⟩,
+    Measure.restrict_apply measurableSet_Iic, Iic_inter_Iic,
+    ← occurrenceTime_le_iff_of_measure_Iic_ne_top _ n (min t b)
+      ⟨s₀, (min_le_right t b).trans_lt hs₀, hμs₀⟩]
+  by_cases h : μ.occurrenceTime n ≤ b
+  · simp [h, ENNReal.coe_min, le_min_iff]
+  · simp [h, ENNReal.coe_min, le_min_iff]
+
 /-- Restricting to a closed observation window retains exactly the occurrences in
 that window; all subsequent occurrence times become infinite. -/
 @[simp]
 theorem occurrenceTime_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
     (b : ℝ≥0) (n : ℕ) :
     (μ.restrict (Iic b)).occurrenceTime n =
-      if μ.occurrenceTime n ≤ b then μ.occurrenceTime n else ∞ := by
-  have : IsLocallyFiniteMeasure (μ.restrict (Iic b)) :=
-    isLocallyFiniteMeasure_of_le Measure.restrict_le_self
-  apply ENNReal.eq_of_forall_le_nnreal_iff
-  intro t
-  rw [occurrenceTime_le_iff, Measure.restrict_apply measurableSet_Iic, Iic_inter_Iic,
-    ← occurrenceTime_le_iff]
-  by_cases h : μ.occurrenceTime n ≤ b
-  · simp [h, ENNReal.coe_min, le_min_iff]
-  · simp [h, ENNReal.coe_min, le_min_iff]
+      if μ.occurrenceTime n ≤ b then μ.occurrenceTime n else ∞ :=
+  occurrenceTime_restrict_Iic_of_measure_Iic_ne_top μ b n
+    ⟨b + 1, lt_add_one b, (measure_Iic_lt_top (μ := μ)).ne⟩
 
 private theorem occurrenceTime_lt_iff_rat (μ : Measure ℝ≥0) (n : ℕ) (b : ℝ≥0∞) :
     μ.occurrenceTime n < b ↔ ∃ q : ℚ,

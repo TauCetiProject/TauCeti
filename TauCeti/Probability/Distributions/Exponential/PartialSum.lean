@@ -9,9 +9,9 @@ public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Order.Interval.SeparatedBox
 
 import TauCeti.Algebra.BigOperators.Fin
-import TauCeti.Basic.NNReal.Interval
+import TauCeti.Order.Interval.Set.OrderedSub
 import TauCeti.MeasureTheory.Constructions.Pi
-import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
+import TauCeti.MeasureTheory.Measure.StrictMono
 
 /-!
 # Cumulative sums of independent exponential random variables
@@ -125,7 +125,7 @@ private lemma preimage_cons_partialSum_separatedBox {k : ℕ} {a b : Fin (k + 2)
     rw [Fin.forall_fin_succ (n := k + 1)]
     simp only [partialSum_cons_zero, partialSum_cons_succ, hx₀, true_and]
     exact forall_congr' fun i =>
-      NNReal.add_mem_Ioc_iff_tsub (hx₀.2.trans (hsep.le_of_lt (Fin.succ_pos i)))
+      Set.add_mem_Ioc_iff_tsub (hx₀.2.trans (hsep.le_of_lt (Fin.succ_pos i)))
   · ext y
     simp only [mem_preimage, mem_univ_pi, mem_empty_iff_false, iff_false]
     intro hy
@@ -208,32 +208,13 @@ theorem ae_pos_and_strictMono_map_sum_Iic_pi_nnrealExpMeasure (r : ℝ) (m : ℕ
     ∀ᵐ s ∂((Measure.pi fun _ : Fin m => nnrealExpMeasure r).map
         fun x i => ∑ j ∈ Finset.Iic i, x j),
       (∀ i, 0 < s i) ∧ StrictMono s := by
-  cases m with
-  | zero =>
-    exact Filter.Eventually.of_forall fun _ => ⟨fun i => i.elim0, fun i => i.elim0⟩
-  | succ k =>
+  have : SigmaFinite (nnrealExpMeasure r) := by
     rcases le_or_gt r 0 with hr | hr
-    · have h0 : nnrealExpMeasure r = 0 := by
-        simp [nnrealExpMeasure_def, ProbabilityTheory.expMeasure_of_nonpos hr]
-      have hzero : (Measure.pi fun _ : Fin (k + 1) => nnrealExpMeasure r) = 0 := by
-        simp_rw [h0]
-        rw [← Measure.measure_univ_eq_zero, Measure.pi_univ]
-        simp
-      simp [hzero]
-    · have _ : IsProbabilityMeasure (nnrealExpMeasure r) := isProbabilityMeasure_nnrealExpMeasure hr
-      rw [fun_sum_Iic_eq_partialSum,
-        ae_map_iff (measurable_partialSum (k + 1)).aemeasurable
-          (measurableSet_setOf_pos_and_strictMono (k + 1))]
-      have hae_coord : ∀ᵐ x ∂Measure.pi (fun _ : Fin (k + 1) => nnrealExpMeasure r),
-          ∀ i, 0 < x i := by
-        rw [ae_all_iff]
-        intro i
-        exact (measurePreserving_eval (fun _ : Fin (k + 1) => nnrealExpMeasure r)
-          i).quasiMeasurePreserving.ae (ae_pos_nnrealExpMeasure r)
-      filter_upwards [hae_coord] with x hx
-      have hsm := Fin.strictMono_partialSum hx
-      refine ⟨fun i => ?_, fun i j hij => hsm (Fin.succ_lt_succ_iff.mpr hij)⟩
-      simpa only [partialSum, Fin.partialSum_zero] using hsm (Fin.succ_pos i)
+    · rw [nnrealExpMeasure_def, ProbabilityTheory.expMeasure_of_nonpos hr, Measure.map_zero]
+      infer_instance
+    · have := isProbabilityMeasure_nnrealExpMeasure hr
+      infer_instance
+  exact Measure.ae_pos_and_strictMono_map_sum_Iic_pi _ fun _ => ae_pos_nnrealExpMeasure r
 
 /-- The mass assigned by the cumulative sums of `k + 1` independent `nnrealExpMeasure r`
 variables (`0 ≤ r`) to a separated left-open, right-closed box `∏ᵢ (aᵢ, bᵢ]` equals

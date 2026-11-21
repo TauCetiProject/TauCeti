@@ -185,12 +185,7 @@ theorem coe_sum_range_succ_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : �
     (hn : μ.occurrenceTime n ≠ ∞) :
     ((∑ i ∈ Finset.range (n + 1), (μ.occurrenceGap i).toNNReal : ℝ≥0) : ℝ≥0∞) =
       μ.occurrenceTime n := by
-  rw [← sum_range_succ_occurrenceGap]
-  push_cast
-  refine Finset.sum_congr rfl fun i hi ↦ ENNReal.coe_toNNReal ?_
-  exact (μ.occurrenceGap_eq_top_iff i).not.mpr
-    (ne_top_of_le_ne_top hn
-      (μ.monotone_occurrenceTime (Nat.le_of_lt_succ (Finset.mem_range.mp hi))))
+  rw [μ.sum_range_toNNReal_occurrenceGap hn, ENNReal.coe_toNNReal hn]
 
 /-- Interarrival gaps and occurrence times carry the same information for every measure on the
 half-line. -/
@@ -220,18 +215,19 @@ theorem measurable_occurrenceGap (n : ℕ) :
       measurable_const
       ((measurable_occurrenceTime (n + 1)).sub (measurable_occurrenceTime n))
 
-/-- Restricting to a closed observation window `[0, b]` retains exactly the interarrival gaps of
-occurrences in `[0, b]`; all subsequent gaps become infinite. -/
-@[simp]
-theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
-    (b : ℝ≥0) (n : ℕ) :
+/-- Restricting to a closed observation window retains exactly the interarrival gaps of
+occurrences in `[0, b]`, setting all subsequent gaps to `∞`, whenever the measure is finite on
+some larger closed window. No global local finiteness is required. -/
+theorem occurrenceGap_restrict_Iic_of_measure_Iic_ne_top (μ : Measure ℝ≥0)
+    (b : ℝ≥0) (n : ℕ) (hfin : ∃ s > b, μ (Iic s) ≠ ∞) :
     (μ.restrict (Iic b)).occurrenceGap n =
       if μ.occurrenceTime n ≤ b then μ.occurrenceGap n else ∞ := by
   cases n with
   | zero =>
-    simp [occurrenceGap_zero, occurrenceTime_restrict_Iic]
+    simp [occurrenceGap_zero, occurrenceTime_restrict_Iic_of_measure_Iic_ne_top μ b 0 hfin]
   | succ n =>
-    rw [occurrenceGap_succ, occurrenceTime_restrict_Iic, occurrenceTime_restrict_Iic]
+    rw [occurrenceGap_succ, occurrenceTime_restrict_Iic_of_measure_Iic_ne_top μ b n hfin,
+      occurrenceTime_restrict_Iic_of_measure_Iic_ne_top μ b (n + 1) hfin]
     by_cases h : μ.occurrenceTime (n + 1) ≤ b
     · have hn_le : μ.occurrenceTime n ≤ b :=
         (μ.monotone_occurrenceTime (Nat.le_succ n)).trans h
@@ -242,6 +238,16 @@ theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasur
       · have hn_ne : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn_le
         simp [hn_le, hn_ne]
       · simp [hn_le]
+
+/-- Restricting to a closed observation window retains exactly the interarrival gaps of
+occurrences in `[0, b]`; all subsequent gaps become infinite. -/
+@[simp]
+theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
+    (b : ℝ≥0) (n : ℕ) :
+    (μ.restrict (Iic b)).occurrenceGap n =
+      if μ.occurrenceTime n ≤ b then μ.occurrenceGap n else ∞ :=
+  occurrenceGap_restrict_Iic_of_measure_Iic_ne_top μ b n
+    ⟨b + 1, lt_add_one b, (measure_Iic_lt_top (μ := μ)).ne⟩
 
 section LocallyFinite
 
