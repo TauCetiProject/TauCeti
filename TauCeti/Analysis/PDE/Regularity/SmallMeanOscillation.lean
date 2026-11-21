@@ -82,7 +82,7 @@ the cutoff extension of locally integrable fields of small mean oscillation belo
 A weak solution `u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` on an open set `Ω`, in dimension at least
 two, with `u`, `∇u` and `G` in `Lᵖ(B)` on a ball `B = B(x₀, R) ⊆ Ω` with `4R ≤ r₀`, satisfies
 
-`‖∇u‖_{Lᵖ(B(x₀, R/2))} ≤ C (‖G‖_{Lᵖ(B)} + R⁻¹ (‖u - m‖_{Lᵖ(B)} + ‖G‖_{L^q(B)} + ‖∇u‖_{L^q(B)}))`
+`‖∇u‖_{Lᵖ(B(x₀, R/2))} ≤ C (‖G‖_{Lᵖ(B)} + R⁻¹ (‖u - m‖_{Lᵖ(B)} + ‖∇u‖_{L^q(B)}))`
 
 for every constant `m`, where `1 / q = 1 / p + 1 / (n + 1)`
 (`TauCeti.PDE.exists_eLpNorm_gradient_ball_le_of_setAverage_le`). For a smooth cutoff `ζ` equal
@@ -92,9 +92,11 @@ testing the equation of `u` with `ζ φ` shows that it solves
 `-∂ᵢ(aⁱʲ ∂ⱼ(ζ (u - m))) = -div (ζ G + (u - m) a ∇ζ) + ⟪G, ∇ζ⟫ - ⟪∇ζ, a ∇u⟫`.
 
 The scalar term is supported in `B` and bounded in `L^q` by `R⁻¹ (‖G‖_{L^q(B)} + Λ ‖∇u‖_{L^q(B)})`,
-so it is the divergence of a field bounded in `Lᵖ` by the same quantity
+so it is minus the divergence of a field bounded in `Lᵖ` by the same quantity
 (`TauCeti.exists_eLpNorm_le_and_integral_inner_gradient_eq`, the gradient of its Newtonian
 potential). The estimate for gradients vanishing outside a small ball then applies to `ζ (u - m)`.
+Finally Hölder's inequality bounds `R⁻¹ ‖G‖_{L^q(B)}` by a dimensional multiple of `‖G‖_{Lᵖ(B)}`,
+since `|B|^(1/q - 1/p)` is a dimensional multiple of `R`.
 
 ## Main declarations
 
@@ -709,13 +711,45 @@ private theorem one_lt_and_le_of_inv_eq_inv_add_inv (hn : n ≠ 0) {p q : ℝ≥
   · have : (p : ℝ)⁻¹ ≤ (q : ℝ)⁻¹ := by linarith
     exact_mod_cast (inv_le_inv₀ hp0 hq0).1 this
 
-/-- The bookkeeping of constants in the interior estimate, with `k = c₀ / R`. -/
-private theorem mul_add_mul_add_le_mul_add {CW CD : ℝ≥0} {c₀ Lam R : ℝ} (hc₀ : 0 ≤ c₀)
-    (hLam : 0 ≤ Lam) {X Y Z W : ℝ≥0∞} :
+/-- **Hölder's inequality on a ball.** When `1 / q = 1 / p + 1 / (n + 1)`, the `L^q` norm on
+`B(x₀, R)` is at most `R V` times the `Lᵖ` norm there, with `V = |B(0, 1)|^(1/(n + 1))`. -/
+private theorem ofReal_inv_mul_eLpNorm_ball_le {p q : ℝ≥0}
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ + ((n : ℝ) + 1)⁻¹) (hqp : (q : ℝ≥0∞) ≤ p)
+    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 < R) {F : Type*} [NormedAddCommGroup F]
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → F}
+    (hG : AEStronglyMeasurable G (volume.restrict (ball x₀ R))) :
+    ENNReal.ofReal R⁻¹ * eLpNorm G q (volume.restrict (ball x₀ R)) ≤
+      (((volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toNNReal ^ ((n : ℝ) + 1)⁻¹ :
+        ℝ≥0) : ℝ≥0∞) * eLpNorm G p (volume.restrict (ball x₀ R)) := by
+  set V : ℝ≥0 :=
+    (volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toNNReal ^ ((n : ℝ) + 1)⁻¹
+  have hvol : volume (ball x₀ R) ^ (1 / (q : ℝ≥0∞).toReal - 1 / (p : ℝ≥0∞).toReal) =
+      ENNReal.ofReal R * V := by
+    rw [ENNReal.coe_toReal, ENNReal.coe_toReal, one_div, one_div, hpq, add_sub_cancel_left,
+      Measure.addHaar_ball _ _ hR.le, finrank_euclideanSpace_fin,
+      ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.ofReal_pow hR.le,
+      ENNReal.coe_rpow_of_nonneg _ (by positivity),
+      ENNReal.coe_toNNReal measure_ball_lt_top.ne]
+    congr 1
+    rw [show ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) by push_cast; rfl,
+      ENNReal.pow_rpow_inv_natCast n.succ_ne_zero]
+  have hH := eLpNorm_le_eLpNorm_mul_rpow_measure_univ hqp hG
+  rw [Measure.restrict_apply_univ, hvol] at hH
+  calc ENNReal.ofReal R⁻¹ * eLpNorm G q (volume.restrict (ball x₀ R))
+      ≤ ENNReal.ofReal R⁻¹ * (eLpNorm G p (volume.restrict (ball x₀ R)) *
+          (ENNReal.ofReal R * V)) := by gcongr
+    _ = ENNReal.ofReal (R⁻¹ * R) * V * eLpNorm G p (volume.restrict (ball x₀ R)) := by
+        rw [ENNReal.ofReal_mul (inv_nonneg.2 hR.le)]; ring
+    _ = V * eLpNorm G p (volume.restrict (ball x₀ R)) := by
+        rw [inv_mul_cancel₀ hR.ne', ENNReal.ofReal_one, one_mul]
+
+/-- The bookkeeping of constants in the interior estimate, with `k = c₀ / R` and `R⁻¹ Z ≤ V X`. -/
+private theorem mul_add_mul_add_le_mul_add {CW CD V : ℝ≥0} {c₀ Lam R : ℝ} (hc₀ : 0 ≤ c₀)
+    (hLam : 0 ≤ Lam) {X Y Z W : ℝ≥0∞} (hZ : ENNReal.ofReal R⁻¹ * Z ≤ V * X) :
     (CW : ℝ≥0∞) * ((ENNReal.ofReal 1 * X + ENNReal.ofReal (Lam * (c₀ * R⁻¹)) * Y) +
       CD * (ENNReal.ofReal (c₀ * R⁻¹) * Z + ENNReal.ofReal (Lam * (c₀ * R⁻¹)) * W)) ≤
-      ((CW * (1 + c₀.toNNReal * (Lam.toNNReal + CD + CD * Lam.toNNReal)) : ℝ≥0) : ℝ≥0∞) *
-        (X + ENNReal.ofReal R⁻¹ * (Y + Z + W)) := by
+      ((CW * (1 + c₀.toNNReal * (Lam.toNNReal + CD + CD * Lam.toNNReal)) * (1 + V) : ℝ≥0) :
+          ℝ≥0∞) * (X + ENNReal.ofReal R⁻¹ * (Y + W)) := by
   set κ := c₀.toNNReal
   set L := Lam.toNNReal
   set ρ := ENNReal.ofReal R⁻¹
@@ -743,7 +777,11 @@ private theorem mul_add_mul_add_le_mul_add {CW CD : ℝ≥0} {c₀ Lam R : ℝ} 
     _ ≤ CW * ((K : ℝ≥0∞) * X + K * ρ * Y + K * ρ * Z + K * ρ * W) := by
         gcongr
         exact_mod_cast h1
-    _ = ((CW * K : ℝ≥0) : ℝ≥0∞) * (X + ρ * (Y + Z + W)) := by push_cast; ring
+    _ = ((CW * K : ℝ≥0) : ℝ≥0∞) * (X + ρ * Z + ρ * (Y + W)) := by push_cast; ring
+    _ ≤ ((CW * K : ℝ≥0) : ℝ≥0∞) * (X + V * X + ρ * (Y + W) + V * (ρ * (Y + W))) := by
+        gcongr ((CW * K : ℝ≥0) : ℝ≥0∞) * ?_
+        exact (by gcongr : X + ρ * Z + ρ * (Y + W) ≤ X + V * X + ρ * (Y + W)).trans le_self_add
+    _ = ((CW * K * (1 + V) : ℝ≥0) : ℝ≥0∞) * (X + ρ * (Y + W)) := by push_cast; ring
 
 /-- A smooth cutoff for the ball `B(x₀, R)`: equal to one, with vanishing gradient, on
 `B(x₀, R/2)`, with values in `[0, 1]`, compact support in `B(x₀, R)` and gradient bounded by
@@ -766,7 +804,7 @@ private theorem exists_cutoff_ball :
     rwa [abs_of_nonneg h0]
   · have hev : ζ =ᶠ[𝓝 x] fun _ => (1 : ℝ) := Filter.mem_of_superset
       (isOpen_ball.mem_nhds hx) fun y hy => hζ1 (ball_subset_closedBall hy)
-    exact ⟨hev.eq_of_nhds, by rw [_root_.gradient, hev.fderiv_eq, fderiv_const_apply, map_zero]⟩
+    exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const _ _)⟩
 
 /-- The pointwise bound `‖ζ X + c W‖ ≤ ‖X‖ + k |c|` when `|ζ| ≤ 1` and `‖W‖ ≤ k`. -/
 private theorem norm_smul_add_smul_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -905,7 +943,7 @@ constants `λ, Λ`, has mean deviation `⨍_B ‖a - A‖ ≤ δ` from `a`. Let 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in an open set `Ω`, and let `B(x₀, R) ⊆ Ω` with `4R ≤ r₀`. If `u`,
 `∇u` and `G` lie in `Lᵖ(B(x₀, R))`, then for every constant `m`
 
-`‖∇u‖_{Lᵖ(B(x₀, R/2))} ≤ C (‖G‖_{Lᵖ(B)} + R⁻¹ (‖u - m‖_{Lᵖ(B)} + ‖G‖_{L^q(B)} + ‖∇u‖_{L^q(B)}))`,
+`‖∇u‖_{Lᵖ(B(x₀, R/2))} ≤ C (‖G‖_{Lᵖ(B)} + R⁻¹ (‖u - m‖_{Lᵖ(B)} + ‖∇u‖_{L^q(B)}))`,
 
 with `B = B(x₀, R)`. Both sides scale in the same way under dilations, since `q` is the Sobolev
 exponent below `p`. The constants depend neither on `r₀`, `R`, `x₀` nor on `Ω`; the radius enters
@@ -936,19 +974,17 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
               EuclideanSpace ℝ (Fin (n + 1))) p (volume.restrict (ball x₀ (R / 2))) ≤
             C * (eLpNorm G p (volume.restrict (ball x₀ R)) + ENNReal.ofReal R⁻¹ *
               (eLpNorm (fun x => W1p.value u x - m) p (volume.restrict (ball x₀ R)) +
-                eLpNorm G q (volume.restrict (ball x₀ R)) +
                 eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
                   EuclideanSpace ℝ (Fin (n + 1))) q (volume.restrict (ball x₀ R)))) := by
   obtain ⟨hq1, hqp⟩ := one_lt_and_le_of_inv_eq_inv_add_inv hn hp hpq
   have hpq' : (p : ℝ)⁻¹ = (q : ℝ)⁻¹ - 1 / Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) := by
-    rw [finrank_euclideanSpace_fin, hpq]
-    push_cast
-    ring
+    rw [finrank_euclideanSpace_fin, Nat.cast_add_one, hpq, one_div, add_sub_cancel_right]
   obtain ⟨CW, δ, hδ, hW⟩ := exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero
     (n := n) (p := (p : ℝ≥0∞)) (by exact_mod_cast hp) ENNReal.coe_ne_top lam Lam
   obtain ⟨CD, hD⟩ := exists_eLpNorm_le_and_integral_inner_gradient_eq volume hq1 hpq'
   obtain ⟨c₀, hc₀, hcut⟩ := exists_cutoff_ball (n := n)
-  refine ⟨CW * (1 + c₀.toNNReal * (Lam.toNNReal + CD + CD * Lam.toNNReal)), δ, hδ,
+  refine ⟨CW * (1 + c₀.toNNReal * (Lam.toNNReal + CD + CD * Lam.toNNReal)) *
+    (1 + (volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).toNNReal ^ ((n : ℝ) + 1)⁻¹), δ, hδ,
     fun {a r₀} ha hbd hosc Ω u G m x₀ R hR hRr₀ hball hu hgp hvp hGp => ?_⟩
   have : IsFiniteMeasure (volume.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
@@ -961,7 +997,7 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
   have hgζ0 : ∀ x ∉ ball x₀ R, ∇ ζ x = 0 := fun x hx =>
     gradient_of_notMem_tsupport fun h => hx (hζB h)
   have hvum := hvp.sub (memLp_const m)
-  -- The scalar datum, in `L^q`, is the divergence of a field `H ∈ Lᵖ`.
+  -- The scalar datum, in `L^q`, is minus the divergence of a field `H ∈ Lᵖ`.
   obtain ⟨hhq, hhle⟩ := memLp_and_eLpNorm_le_scalarDatum ha hbd hLam u measurableSet_ball
     (by exact_mod_cast hq1.le) (by positivity) hgζk hgζ0 (hgp.mono_exponent hqp')
     (hGp.mono_exponent hqp')
@@ -986,7 +1022,8 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
   -- On `B(x₀, R/2)` the cutoff is one, so the gradient there is `∇u`.
   refine ((eLpNorm_gradient_le_of_ae_eq_cutoff u measurableSet_ball hv hζ1 p).trans
     (hWv.trans (mul_le_mul_right (eLpNorm_add_le hp1) _))).trans
-    (le_trans ?_ (mul_add_mul_add_le_mul_add hc₀ hLam))
+    (le_trans ?_ (mul_add_mul_add_le_mul_add hc₀ hLam
+      (ofReal_inv_mul_eLpNorm_ball_le hpq hqp' hR hGp.aestronglyMeasurable)))
   gcongr
   exact hHle.trans (by gcongr)
 

@@ -17,11 +17,11 @@ import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 
 /-!
-# Scalar data as divergences of vector fields
+# Scalar data as minus divergences of vector fields
 
 Let `E` be a nontrivial finite-dimensional real inner product space of dimension `d`, with an
 additive Haar measure `μ`, and let `1 < q` and `1 / p = 1 / q - 1 / d`. Every compactly supported
-`h ∈ L^q(E)` is the divergence of a vector field `H ∈ Lᵖ(E; E)`, in the sense that
+`h ∈ L^q(E)` is minus the divergence of a vector field `H ∈ Lᵖ(E; E)`, in the sense that
 
 `∫ ⟪H, ∇φ⟫ = ∫ h φ` for every `C¹` function `φ` with compact support,
 
@@ -252,8 +252,7 @@ private theorem integral_inner_divField_gradient [FiniteDimensional ℝ E] [Bore
     intro x
     rw [divField_apply, sum_inner]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [real_inner_smul_left, gradient, real_inner_comm, InnerProductSpace.toDual_symm_apply,
-      mul_comm]
+    rw [real_inner_smul_left, inner_gradient_right, conj_trivial, mul_comm]
   -- The pairing of each component is integrated against the compactly supported `h`.
   have hhI : ∀ i, Integrable
       (fun t ↦ h t * ∫ x, fderiv ℝ φ x (b i) * divKernel μ (b i) (x - t) ∂μ) μ := by
@@ -280,10 +279,10 @@ private theorem integral_inner_divField_gradient [FiniteDimensional ℝ E] [Bore
     _ = ∫ t, h t * φ t ∂μ := by
         simp_rw [sum_integral_fderiv_mul_divKernel_sub b hφ hφc]
 
-/-- **Compactly supported `L^q` data are divergences of `Lᵖ` fields.** Let `E` be a nontrivial
+/-- **Compactly supported `L^q` data are minus divergences of `Lᵖ` fields.** Let `E` be a nontrivial
 finite-dimensional real inner product space of dimension `d` with an additive Haar measure `μ`,
 and let `1 < q` and `1 / p = 1 / q - 1 / d`. There is a constant `C` such that every compactly
-supported `h ∈ L^q(E)` is the divergence of a field `H` with `‖H‖_p ≤ C ‖h‖_q`:
+supported `h ∈ L^q(E)` is minus the divergence of a field `H` with `‖H‖_p ≤ C ‖h‖_q`:
 `∫ ⟪H, ∇φ⟫ = ∫ h φ` for every `C¹` function `φ` with compact support, so that `-div H = h`
 weakly. One may take for `H` the gradient of the Newtonian potential of `h`. -/
 theorem exists_eLpNorm_le_and_integral_inner_gradient_eq [FiniteDimensional ℝ E] [BorelSpace E]
