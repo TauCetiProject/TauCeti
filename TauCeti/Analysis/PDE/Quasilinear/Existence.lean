@@ -129,7 +129,7 @@ private theorem mul_norm_sq_le_energyFormH1_comp
     (UniformlyEllipticOn.apply_of_forall hA v)
     (aestronglyMeasurable_comp hAm hAc hv) (b := 0) (c := 0) aestronglyMeasurable_const
     aestronglyMeasurable_const (beta := 0) (gamma := 0) (fun _ _ => by simp) (fun _ _ => by simp)
-    (fun _ _ => by simp) hball w.2
+    (fun _ _ => by simp) hball w.property
   have hlam := (hA 0).pos.ne'
   rwa [show (lam ^ 2 - 0 ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) =
     lam / (2 * ((2 * R) ^ 2 + 1)) by field_simp; ring] at h

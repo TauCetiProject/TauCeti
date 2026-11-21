@@ -342,7 +342,7 @@ theorem exists_norm_teichmuller_pow_mul_sub_lt_mul {x : RadiusRing p hv hϖ hϖ'
       ‖ι (teichmuller p ϖ ^ k) * x - ι y‖ < ε * ‖ι (teichmuller p ϖ ^ k) * x‖ := by
   obtain ⟨z, hz⟩ := Completion.denseRange_coe.exists_dist_lt x (mul_pos hε (norm_pos_iff.mpr hx))
   obtain ⟨⟨y, s⟩, rfl⟩ := IsLocalization.mk'_surjective (Submonoid.powers (teichmuller p ϖ)) z
-  obtain ⟨k, hk : teichmuller p ϖ ^ k = s⟩ := s.2
+  obtain ⟨k, hk : teichmuller p ϖ ^ k = s⟩ := s.property
   refine ⟨k, y, ?_⟩
   have hy : ι (teichmuller p ϖ ^ k) * (IsLocalization.mk' (RadiusLocalization p hv hϖ hϖ' hρ) y s :
       RadiusRing p hv hϖ hϖ' hρ) = ι y := by

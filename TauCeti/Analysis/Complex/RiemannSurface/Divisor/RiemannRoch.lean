@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
-import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
 
 /-!
 # Riemann–Roch for divisor sheaves
@@ -26,7 +27,14 @@ finite-dimensional for every divisor `D`, because finiteness is unchanged by a p
   (`finrank_divisorSheaf_euler_characteristic`). The proof is induction over the point twists
   `𝒪(D) → 𝒪(D + x)`, each of which raises `h⁰ - h¹` by one, starting from `h⁰(0) = 1`
   (holomorphic functions on `X` are constant) and `h¹(0) = g_an`;
-* the lower bound `deg D + 1 - g_an ≤ h⁰(D)`.
+* the lower bound `deg D + 1 - g_an ≤ h⁰(D)`;
+* **a finite map to the sphere** (Forster §16): a divisor `D` with `g_an < deg D` has two
+  independent global sections, so a non-constant meromorphic function with order at least `-D`
+  everywhere, which is a finite holomorphic map `X → ℙ¹`
+  (`exists_finiteHolomorphicMap_of_analyticGenus_lt_degree`). For `D = (g_an + 1) · x` its degree
+  is at most `g_an + 1` (`exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one`), and in
+  analytic genus zero it is `1`
+  (`exists_finiteHolomorphicMap_degree_eq_one_of_analyticGenus_eq_zero`).
 
 Combined with the vanishing `h⁰(D) = 0` for `deg D < 0`
 (`finrank_divisorSheaf_eq_zero_of_degree_neg`, which needs no finiteness hypothesis), Riemann–Roch
@@ -47,7 +55,10 @@ theorem for `h¹` is needed for this.
 * `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_of_degree_neg`:
   `h¹(D) = g_an - 1 - deg D` if `deg D < 0`;
 * `TauCeti.RiemannSurface.eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ`: for all large
-  `k`, `h⁰(D + (k + 1)[x]) = h⁰(D + k[x]) + 1`.
+  `k`, `h⁰(D + (k + 1)[x]) = h⁰(D + k[x]) + 1`;
+* `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_of_analyticGenus_lt_degree` and
+  `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one`: finite
+  holomorphic maps to `ℙ¹` from Riemann–Roch.
 
 ## References
 
@@ -145,5 +156,42 @@ theorem eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ (D : WeilDivisor 
   rw [add_assoc, ← succ_nsmul] at hχ
   simp only [a] at h₁
   omega
+
+/-- **A finite map to the sphere from Riemann–Roch.** On a compact connected Riemann surface with
+finite-dimensional `H¹(X, 𝒪)`, every divisor `D` with `g_an < deg D` admits a finite holomorphic
+map `F : X → ℙ¹` whose affine part has meromorphic order at least `-D x` at every point `x`. -/
+theorem exists_finiteHolomorphicMap_of_analyticGenus_lt_degree {D : WeilDivisor X}
+    (hD : (analyticGenus X : ℤ) < WeilDivisor.degree D) :
+    ∃ F : FiniteHolomorphicMap X (OnePoint ℂ),
+      ∀ x, ((-D x : ℤ) : WithTop ℤ) ≤
+        meromorphicOrderAt (fun y ↦ OnePoint.affineChart (F y)) x := by
+  refine exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections D ?_
+  have h := degree_add_one_sub_analyticGenus_le_finrank_divisorSheaf D
+  rw [(divisorSheafSectionsEquiv D ⊤).finrank_eq] at h
+  omega
+
+/-- A compact connected Riemann surface with finite-dimensional `H¹(X, 𝒪)` admits a finite
+holomorphic map to `ℙ¹` of degree at most `g_an + 1`. -/
+theorem exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one :
+    ∃ F : FiniteHolomorphicMap X (OnePoint ℂ), degree F ≤ analyticGenus X + 1 := by
+  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
+  have hdeg : WeilDivisor.degree ((analyticGenus X + 1) • WeilDivisor.ofPoint x) =
+      analyticGenus X + 1 := by
+    simp [map_nsmul, WeilDivisor.degree_ofPoint]
+  obtain ⟨F, hF⟩ := exists_finiteHolomorphicMap_of_analyticGenus_lt_degree
+    (D := (analyticGenus X + 1) • WeilDivisor.ofPoint x) (by omega)
+  refine ⟨F, ?_⟩
+  have := F.degree_le_degree_of_neg_le_meromorphicOrderAt
+    (nsmul_nonneg (WeilDivisor.ofPoint_nonneg x) _) hF
+  rw [hdeg] at this
+  omega
+
+/-- A compact connected Riemann surface with finite-dimensional `H¹(X, 𝒪)` and analytic genus `0`
+admits a finite holomorphic map to `ℙ¹` of degree `1`. -/
+theorem exists_finiteHolomorphicMap_degree_eq_one_of_analyticGenus_eq_zero
+    (h : analyticGenus X = 0) : ∃ F : FiniteHolomorphicMap X (OnePoint ℂ), degree F = 1 := by
+  obtain ⟨F, hF⟩ := exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one (X := X)
+  have := degree_pos F
+  exact ⟨F, by omega⟩
 
 end TauCeti.RiemannSurface

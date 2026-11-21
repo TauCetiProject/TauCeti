@@ -100,7 +100,7 @@ theorem IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage [T2Space E] [
   have hfs : IsOpen (f ⁻¹' s) := isOpen_iff_mem_nhds.mpr fun x hx ↦
     (hf.continuousAt hx).preimage_mem_nhds (hs.mem_nhds hx)
   have hcont : Continuous (s.restrictPreimage f) := continuous_iff_continuousAt.mpr fun x ↦
-    (hf.continuousAt x.2).restrictPreimage
+    (hf.continuousAt x.property).restrictPreimage
   refine IsCoveringMapOn.of_isCoveringMap_restrictPreimage _ hs hfs ?_
   have := hs.locallyCompactSpace
   -- The restriction `f ⁻¹' s → s` is again a local homeomorphism ...
@@ -108,11 +108,11 @@ theorem IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage [T2Space E] [
     IsLocalHomeomorph.of_comp (g := Subtype.val)
       (isLocalHomeomorph_iff_isLocalHomeomorphOn_univ.mpr <|
         hf.comp hfs.isOpenEmbedding_subtypeVal.isLocalHomeomorph.isLocalHomeomorphOn
-          fun x _ ↦ x.2)
+          fun x _ ↦ x.property)
       hs.isOpenEmbedding_subtypeVal.isLocalHomeomorph hcont
   -- ... and it is proper, hence a closed map with compact fibres.
   have hproper : IsProperMap (s.restrictPreimage f) := by
     refine isProperMap_iff_isCompact_preimage.mpr ⟨hcont, fun K hK' ↦ ?_⟩
     rw [IsEmbedding.subtypeVal.isCompact_iff, image_val_preimage_restrictPreimage]
-    exact hK _ (Subtype.coe_image_subset _ _) (hK'.image continuous_subtype_val)
+    exact hK _ (Subtype.coe_image_subset _ _) (hK'.image continuous_subtypeVal)
   exact hloc.isCoveringMap_of_isProperMap hproper

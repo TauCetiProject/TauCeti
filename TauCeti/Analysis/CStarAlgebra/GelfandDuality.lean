@@ -111,7 +111,7 @@ private theorem bijective_codRestrict_gelfandStarTransform :
       (gelfandStarTransform A⁺¹).injective.comp Unitization.inr_injective,
     fun F ↦ by
       obtain ⟨_, ⟨a, rfl⟩, hu⟩ :=
-        (SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F.1).mpr F.2
+        (SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F.val).mpr F.property
       exact ⟨a, Subtype.ext hu⟩⟩
 
 variable (A) in
@@ -129,7 +129,7 @@ noncomputable def puncturedGelfandStarTransform :
 @[simp]
 theorem puncturedGelfandStarTransform_apply (a : A)
     (φ : {φ : characterSpace ℂ A⁺¹ // φ ≠ Unitization.augmentation ℂ A}) :
-    puncturedGelfandStarTransform A a φ = φ.1 (a : A⁺¹) := by
+    puncturedGelfandStarTransform A a φ = φ.val (a : A⁺¹) := by
   simp [puncturedGelfandStarTransform]
 
 /-- Extending `puncturedGelfandStarTransform A a` by zero at the augmentation character recovers

@@ -26,7 +26,10 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 ## Main declarations
 
 * `Scheme.IdealSheafData.sections I U`: the ideal of sections of `I` over an open `U`, with
-  `mem_sections_iff` and `sections_eq_ideal` describing it on arbitrary and on affine opens;
+  `mem_sections_iff` and `sections_eq_ideal` describing it on arbitrary and on affine opens,
+  `mem_sections_of_forall_affineOpens` and `map_mem_ideal` comparing it with the ideals `I(V)` on
+  the affine opens `V`, and `sections_mono` and `sections_inf` relating it to the order on ideal
+  sheaves;
 * `Scheme.IdealSheafData.submodule I`: the submodule `I ⊆ 𝒪_X` of the sheaf of modules `𝒪_X`;
 * `Scheme.IdealSheafData.sheaf I`: the ideal sheaf as an `𝒪_X`-module, with its inclusion
   `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
@@ -97,6 +100,38 @@ lemma mem_sections_of_forall_exists {U : X.Opens} {s : Γ(X, U)}
   -- morphisms of opens agree since morphisms in a preorder are unique.
   rfl
 
+/-- A regular function lies in `I` as soon as its restriction to every affine open inside its
+domain lies in the ideal `I` records there. -/
+lemma mem_sections_of_forall_affineOpens {I : X.IdealSheafData} {U : X.Opens}
+    {s : Γ(X, U)}
+    (hs : ∀ (V : X.affineOpens) (i : (V : X.Opens) ⟶ U), X.presheaf.map i.op s ∈ I.ideal V) :
+    s ∈ I.sections U :=
+  I.mem_sections_of_forall_exists fun x hx ↦ by
+    obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
+    refine ⟨V, homOfLE hVU, hxV, ?_⟩
+    have := I.sections_eq_ideal ⟨V, hV⟩
+    exact this ▸ hs ⟨V, hV⟩ (homOfLE hVU)
+
+/-- The restriction of a section of `I` to an affine open lies in the ideal `I` records there. -/
+lemma map_mem_ideal {I : X.IdealSheafData} {U : X.Opens} {s : Γ(X, U)}
+    (hs : s ∈ I.sections U) (V : X.affineOpens) (i : (V : X.Opens) ⟶ U) :
+    X.presheaf.map i.op s ∈ I.ideal V := by
+  rw [← sections_eq_ideal]
+  exact I.map_mem_sections i hs
+
+/-- Sections of a smaller ideal sheaf are sections of a larger one. -/
+lemma sections_mono {I J : X.IdealSheafData} (h : I ≤ J) (U : X.Opens) :
+    I.sections U ≤ J.sections U := fun _ hs ↦
+  mem_sections_of_forall_affineOpens fun V i ↦ h V (map_mem_ideal hs V i)
+
+/-- The sections of `I ⊓ J` are the regular functions that are sections of both `I` and `J`. -/
+@[simp]
+lemma sections_inf {I J : X.IdealSheafData} (U : X.Opens) :
+    (I ⊓ J).sections U = I.sections U ⊓ J.sections U :=
+  le_antisymm (le_inf (sections_mono inf_le_left U) (sections_mono inf_le_right U))
+    fun _ ⟨hI, hJ⟩ ↦ mem_sections_of_forall_affineOpens fun V i ↦
+      ⟨map_mem_ideal hI V i, map_mem_ideal hJ V i⟩
+
 /-- The ideal sheaf `I ⊆ 𝒪_X` as a submodule of the sheaf of modules `𝒪_X`. -/
 def submodule : (SheafOfModules.unit X.ringCatSheaf).Submodule where
   obj U := I.sections U.unop
@@ -141,7 +176,7 @@ lemma sheafι_app_map {U V : X.Opens} (i : V ⟶ U) (t : Γ(I.sheaf, U)) :
 /-- The inclusion `I ⟶ 𝒪_X` sends a section of the ideal sheaf over `U` into `sections I U`. -/
 lemma sheafι_app_mem (U : X.Opens) (t : Γ(I.sheaf, U)) :
     Scheme.Modules.Hom.app I.sheafι U t ∈ I.sections U :=
-  t.2
+  t.property
 
 /-- The inclusion of the ideal sheaf into `𝒪_X` is injective on sections. -/
 lemma sheafι_app_injective (U : X.Opens) : Function.Injective (Scheme.Modules.Hom.app I.sheafι U) :=

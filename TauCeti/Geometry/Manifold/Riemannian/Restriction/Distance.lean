@@ -124,7 +124,7 @@ theorem eventually_riemannianEDist_open_eq_edist (U : Opens M) (p : U) :
     ∀ᶠ q : U in 𝓝 p, riemannianEDist I p q = edist (p : M) q := by
   obtain ⟨r, hr, hball⟩ := EMetric.mem_nhds_iff.mp (U.isOpen.mem_nhds p.property)
   have hnear : ∀ᶠ q : U in 𝓝 p, edist (p : M) q < r :=
-    (continuous_const.edist continuous_subtype_val).continuousAt.eventually
+    (continuous_const.edist continuous_subtypeVal).continuousAt.eventually
       (gt_mem_nhds (by simpa using hr))
   exact hnear.mono fun q hq ↦ U.riemannianEDist_open_eq_edist_of_eball_subset p q hball hq
 
