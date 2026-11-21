@@ -32,6 +32,9 @@ simultaneously.
   `b` a monomorphism, `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact.
 * `TauCeti.kernelCokernelCompSequence_snakeInput_L₀_shortExact`: for composable `a` and `b` with
   `a` an epimorphism, `kernel a ⟶ kernel (a ≫ b) ⟶ kernel b` is short exact.
+* `TauCeti.kernelCokernelCompSequence_shortExact_of_mono_of_epi`: for composable `a` and `b` with
+  `a` a monomorphism and `a ≫ b` an epimorphism, `kernel (a ≫ b) ⟶ kernel b ⟶ cokernel a` is
+  short exact.
 * `TauCeti.cokernelOfLEKernelSubobjectIso`: for an epimorphism `a`, the quotient of the kernel of
   `a ≫ b` by the kernel of `a` is the kernel of `b`.
 * `TauCeti.cokernelKernelSubobjectArrowIso`: for an epimorphism `a`, the quotient by the kernel of
@@ -46,6 +49,9 @@ simultaneously.
   `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` of a morphism `g : X ⟶ Y` is short exact.
 * `CategoryTheory.ShortComplex.ShortExact.biprod`: a componentwise binary direct sum of short
   exact sequences is short exact.
+* `CategoryTheory.ShortComplex.exact_of_eq_epi_comp_of_eq_comp_mono`: precomposing the first map
+  of an exact sequence with an epimorphism and postcomposing the second with a monomorphism keeps
+  it exact.
 * `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
   of short exact sequences whose third component is a monomorphism is short exact; the source
   only needs to be exact with an epimorphic second map.
@@ -106,6 +112,29 @@ lemma kernelCokernelCompSequence_snakeInput_L₀_shortExact [Epi a] :
   · exact (inferInstance : Mono (kernel.map a (a ≫ b) (𝟙 _) b (by simp)))
   · exact ((kernelCokernelCompSequence_exact a b).exact 1).epi_f
       ((isZero_cokernel_of_epi a).eq_of_tgt _ _)
+
+/-- The sequence `kernel (a ≫ b) ⟶ kernel b ⟶ cokernel a`, whose second map is
+`kernel.ι b ≫ cokernel.π a`, is short exact when `a` is a monomorphism and `a ≫ b` is an
+epimorphism. Up to the sign of its second map, it is the middle of Mathlib's
+`kernelCokernelCompSequence a b`, whose two outer terms `kernel a` and `cokernel (a ≫ b)` then
+vanish. -/
+lemma kernelCokernelCompSequence_shortExact_of_mono_of_epi [Mono a] [Epi (a ≫ b)] :
+    (ShortComplex.mk (kernel.map (a ≫ b) b a (𝟙 _) (by simp)) (kernel.ι b ≫ cokernel.π a)
+      (by simp)).ShortExact := by
+  have hE := kernelCokernelCompSequence_exact a b
+  -- The middle of Mathlib's sequence, whose second map is the connecting map
+  -- `δ = -(kernel.ι b ≫ cokernel.π a)`.
+  have hS : ((kernelCokernelCompSequence a b).sc hE.toIsComplex 1).ShortExact :=
+    ShortComplex.ShortExact.mk' (hE.exact 1)
+      ((hE.exact 0).mono_g ((isZero_kernel_of_mono a).eq_of_src _ _))
+      ((hE.exact 2).epi_f ((isZero_cokernel_of_epi (a ≫ b)).eq_of_tgt _ _))
+  refine ShortComplex.shortExact_of_iso (ShortComplex.isoMk
+    (S₁ := (kernelCokernelCompSequence a b).sc hE.toIsComplex 1) (Iso.refl _) (Iso.refl _)
+    { hom := -𝟙 _, inv := -𝟙 _ } ?_ ?_) hS
+  · simp
+  · dsimp
+    rw [kernelCokernelCompSequence.δ_fac]
+    simp
 
 variable {a b} in
 /-- The short complex `S ⟶ T ⟶ kernel b` for subobjects `S = kernelSubobject a` and
@@ -281,5 +310,21 @@ lemma ShortExact.of_isColimit_cokernelCofork {L₁ L₂ L₃ : ShortComplex C} (
       mono_L₂_f := h₂.mono_f }
   have hδ : S.δ = 0 := (KernelFork.IsLimit.isZero_of_mono S.h₀τ₃).eq_of_src _ _
   exact ShortExact.mk' S.L₃_exact (S.L₂'_exact.mono_g hδ) S.epi_L₃_g
+
+/-- An exact sequence `A₁ ⟶ X₂ ⟶ A₂` stays exact after precomposing its first map with an
+epimorphism `X₁ ⟶ A₁` and postcomposing its second map with a monomorphism `A₂ ⟶ X₃`. -/
+lemma exact_of_eq_epi_comp_of_eq_comp_mono {X₁ A₁ X₂ A₂ X₃ : C} {f : X₁ ⟶ X₂}
+    {g : X₂ ⟶ X₃} (zero : f ≫ g = 0) (e : X₁ ⟶ A₁) (i : A₁ ⟶ X₂) (g' : X₂ ⟶ A₂)
+    (m : A₂ ⟶ X₃) [Epi e] [Mono m] (hf : f = e ≫ i)
+    (hg : g = g' ≫ m) (w : i ≫ g' = 0) (h : (ShortComplex.mk i g' w).Exact) :
+    (ShortComplex.mk f g zero).Exact := by
+  subst hf hg
+  have h₁ : (ShortComplex.mk (e ≫ i) g' (by simp [w])).Exact :=
+    (exact_iff_of_epi_of_isIso_of_mono
+      (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w])) (S₂ := ShortComplex.mk i g' w)
+      { τ₁ := e, τ₂ := 𝟙 _, τ₃ := 𝟙 _ }).2 h
+  exact (exact_iff_of_epi_of_isIso_of_mono
+    (S₁ := ShortComplex.mk (e ≫ i) g' (by simp [w]))
+    (S₂ := ShortComplex.mk (e ≫ i) (g' ≫ m) zero) { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := m }).1 h₁
 
 end CategoryTheory.ShortComplex

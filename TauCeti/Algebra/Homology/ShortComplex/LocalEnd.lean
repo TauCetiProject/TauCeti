@@ -37,25 +37,43 @@ namespace CategoryTheory.ShortComplex
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {S : ShortComplex C}
 
+/-- An endomorphism of a short complex whose initial map is a kernel of its final map and does not
+split, vanishing at the right-hand end, is not invertible at the left-hand end: its middle
+component factors through the initial map, which it would split. -/
+theorem not_isIso_τ₁_of_τ₃_eq_zero (hS : IsLimit (KernelFork.ofι S.f S.zero))
+    (hf : ¬ IsSplitMono S.f) (φ : S ⟶ S) (hφ : φ.τ₃ = 0) : ¬ IsIso φ.τ₁ := by
+  intro h
+  have : Mono S.f := mono_of_isLimit_fork hS
+  obtain ⟨(γ : S.X₂ ⟶ S.X₁), (hγ : γ ≫ S.f = _)⟩ :=
+    KernelFork.IsLimit.lift' hS φ.τ₂ (by rw [φ.comm₂₃, hφ, comp_zero])
+  have hfγ : S.f ≫ γ = φ.τ₁ := by
+    apply (cancel_mono S.f).mp
+    rw [Category.assoc, hγ, φ.comm₁₂]
+  exact hf (IsSplitMono.mk' ⟨γ ≫ inv φ.τ₁, by rw [← Category.assoc, hfγ, IsIso.hom_inv_id]⟩)
+
+/-- An endomorphism of a short complex whose final map is a cokernel of its initial map and does
+not split, vanishing at the left-hand end, is not invertible at the right-hand end: its middle
+component factors through the final map, which it would split. -/
+theorem not_isIso_τ₃_of_τ₁_eq_zero (hS : IsColimit (CokernelCofork.ofπ S.g S.zero))
+    (hg : ¬ IsSplitEpi S.g) (φ : S ⟶ S) (hφ : φ.τ₁ = 0) : ¬ IsIso φ.τ₃ := by
+  intro h
+  have : Epi S.g := epi_of_isColimit_cofork hS
+  obtain ⟨(γ : S.X₃ ⟶ S.X₂), (hγ : S.g ≫ γ = _)⟩ :=
+    CokernelCofork.IsColimit.desc' hS φ.τ₂ (by rw [← φ.comm₁₂, hφ, zero_comp])
+  have hγg : γ ≫ S.g = φ.τ₃ := by
+    apply (cancel_epi S.g).mp
+    rw [← Category.assoc, hγ, φ.comm₂₃]
+  exact hg (IsSplitEpi.mk' ⟨inv φ.τ₃ ≫ γ, by rw [Category.assoc, hγg, IsIso.inv_hom_id]⟩)
+
 /-- An endomorphism of a short complex whose initial map is a kernel of its final map, fixing the
 right-hand end, is invertible on the left-hand end if its endomorphism ring is local and the
 initial map does not split. -/
 theorem isIso_τ₁_of_τ₃_eq_id (hS : IsLimit (KernelFork.ofι S.f S.zero)) [IsLocalRing (End S.X₁)]
     (hf : ¬ IsSplitMono S.f) (φ : S ⟶ S) (hφ : φ.τ₃ = 𝟙 S.X₃) : IsIso φ.τ₁ := by
-  have : Mono S.f := mono_of_isLimit_fork hS
-  have hker : (𝟙 S.X₂ - φ.τ₂) ≫ S.g = 0 := by
-    simp [sub_comp, φ.comm₂₃, hφ]
-  obtain ⟨(γ : S.X₂ ⟶ S.X₁), (hγ : γ ≫ S.f = _)⟩ :=
-    KernelFork.IsLimit.lift' hS (𝟙 S.X₂ - φ.τ₂) hker
-  have hfγ : S.f ≫ γ = 𝟙 S.X₁ - φ.τ₁ := by
-    apply (cancel_mono S.f).mp
-    simp [Category.assoc, hγ, comp_sub, sub_comp, φ.comm₁₂]
-  have hnot : ¬ IsIso (𝟙 S.X₁ - φ.τ₁) := fun h ↦
-    hf (IsSplitMono.mk' ⟨γ ≫ inv (𝟙 S.X₁ - φ.τ₁), by
-      rw [← Category.assoc, hfγ, IsIso.hom_inv_id]⟩)
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End S.X₁) (.of φ.τ₁) with h | h
   · exact (isUnit_iff_isIso _).mp h
-  · exact absurd ((isUnit_iff_isIso _).mp h) hnot
+  · refine absurd ?_ (not_isIso_τ₁_of_τ₃_eq_zero hS hf (𝟙 S - φ) (by simp [hφ]))
+    simpa using (isUnit_iff_isIso _).mp h
 
 /-- An endomorphism of a short complex whose final map is a cokernel of its initial map, fixing the
 left-hand end, is invertible on the right-hand end if its endomorphism ring is local and the final
@@ -63,21 +81,10 @@ map does not split. -/
 theorem isIso_τ₃_of_τ₁_eq_id (hS : IsColimit (CokernelCofork.ofπ S.g S.zero))
     [IsLocalRing (End S.X₃)] (hg : ¬ IsSplitEpi S.g) (φ : S ⟶ S) (hφ : φ.τ₁ = 𝟙 S.X₁) :
     IsIso φ.τ₃ := by
-  have : Epi S.g := epi_of_isColimit_cofork hS
-  have hcoker : S.f ≫ (𝟙 S.X₂ - φ.τ₂) = 0 := by
-    simp [comp_sub, ← φ.comm₁₂, hφ]
-  obtain ⟨(γ : S.X₃ ⟶ S.X₂), (hγ : S.g ≫ γ = _)⟩ :=
-    CokernelCofork.IsColimit.desc' hS (𝟙 S.X₂ - φ.τ₂) hcoker
-  have hγg : γ ≫ S.g = 𝟙 S.X₃ - φ.τ₃ := by
-    apply (cancel_epi S.g).mp
-    rw [← Category.assoc, hγ]
-    simp [sub_comp, comp_sub, φ.comm₂₃]
-  have hnot : ¬ IsIso (𝟙 S.X₃ - φ.τ₃) := fun h ↦
-    hg (IsSplitEpi.mk' ⟨inv (𝟙 S.X₃ - φ.τ₃) ≫ γ, by
-      rw [Category.assoc, hγg, IsIso.inv_hom_id]⟩)
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := End S.X₃) (.of φ.τ₃) with h | h
   · exact (isUnit_iff_isIso _).mp h
-  · exact absurd ((isUnit_iff_isIso _).mp h) hnot
+  · refine absurd ?_ (not_isIso_τ₃_of_τ₁_eq_zero hS hg (𝟙 S - φ) (by simp [hφ]))
+    simpa using (isUnit_iff_isIso _).mp h
 
 variable [Balanced C]
 

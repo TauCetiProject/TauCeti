@@ -639,7 +639,7 @@ private theorem exists_vertex_family (I : Ideal (MvPowerSeries σ K)) :
   let V := ord.initialDiagramVertices I
   let e : Fin V.card ≃ {v // v ∈ V} := (Finset.equivFin V).symm
   have hmem : ∀ i : Fin V.card, ∃ f ∈ I, f ≠ 0 ∧ ord.initialExp f = (e i : σ →₀ ℕ) :=
-    fun i ↦ ord.mem_initialDiagram_iff.mp (ord.initialDiagramVertices_subset I (e i).2)
+    fun i ↦ ord.mem_initialDiagram_iff.mp (ord.initialDiagramVertices_subset I (e i).property)
   choose F hFI hF0 hFexp using hmem
   refine ⟨V.card, F, fun i ↦ (e i : σ →₀ ℕ), hFI,
     fun i ↦ ord.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq.mpr ⟨hF0 i, hFexp i⟩,
@@ -977,7 +977,7 @@ theorem span_image_standardGenerator_initialDiagramVertices (I : Ideal (MvPowerS
   refine ord.span_range_eq_of_forall_mem_initialDiagram_exists_le_of_divisionRing
     (α := fun v : ord.initialDiagramVertices I ↦ (v : σ →₀ ℕ))
     (fun v ↦ ord.standardGenerator_mem I v)
-    (fun v ↦ ord.isLeast_toSyn_standardGenerator (ord.initialDiagramVertices_subset I v.2))
+    (fun v ↦ ord.isLeast_toSyn_standardGenerator (ord.initialDiagramVertices_subset I v.property))
     fun γ hγ ↦ ?_
   obtain ⟨v, hvV, hle⟩ := (ord.mem_initialDiagram_iff_exists_mem_initialDiagramVertices_le).mp hγ
   exact ⟨⟨v, hvV⟩, hle⟩

@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Hodge.HodgeForm
 public import TauCeti.Geometry.Hodge.TensorProduct.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.Analysis.InnerProductSpace.TensorProduct
+import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
 
 /-!

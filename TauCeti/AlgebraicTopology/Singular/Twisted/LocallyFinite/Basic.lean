@@ -373,14 +373,14 @@ simplex. -/
 def extendLocallyFinite (hA : IsProperlySupported A) :
     locallyFiniteChains L a →ₗ[R] locallyFiniteChains K b where
   toFun c := ⟨extendLocallyFiniteFun A c, mem_locallyFiniteChains.2 <|
-    hA.isLocallyFiniteChain_extendLocallyFiniteFun (mem_locallyFiniteChains.1 c.2)⟩
+    hA.isLocallyFiniteChain_extendLocallyFiniteFun (mem_locallyFiniteChains.1 c.property)⟩
   map_add' c c' := Subtype.ext <| funext fun ρ ↦ by
     simp only [Submodule.coe_add, Pi.add_apply, extendLocallyFiniteFun, map_add]
-    exact finsum_add_distrib (hA.finite_support (mem_locallyFiniteChains.1 c.2) ρ)
-      (hA.finite_support (mem_locallyFiniteChains.1 c'.2) ρ)
+    exact finsum_add_distrib (hA.finite_support (mem_locallyFiniteChains.1 c.property) ρ)
+      (hA.finite_support (mem_locallyFiniteChains.1 c'.property) ρ)
   map_smul' r c := Subtype.ext <| funext fun ρ ↦ by
     simp only [SetLike.val_smul, Pi.smul_apply, extendLocallyFiniteFun, map_smul, RingHom.id_apply]
-    exact (smul_finsum' r (hA.finite_support (mem_locallyFiniteChains.1 c.2) ρ)).symm
+    exact (smul_finsum' r (hA.finite_support (mem_locallyFiniteChains.1 c.property) ρ)).symm
 
 /-- The underlying coefficients of the extension of a properly supported map. -/
 @[simp]
@@ -450,7 +450,7 @@ lemma extendLocallyFinite_comp {B : (twistedChainComplex K).X b ⟶ (twistedChai
     (hA : IsProperlySupported A) (hB : IsProperlySupported B) :
     extendLocallyFinite hB ∘ₗ extendLocallyFinite hA = extendLocallyFinite (hA.comp hB) :=
   LinearMap.ext fun c ↦ Subtype.ext <|
-    extendLocallyFiniteFun_extendLocallyFiniteFun hA hB (mem_locallyFiniteChains.1 c.2)
+    extendLocallyFiniteFun_extendLocallyFiniteFun hA hB (mem_locallyFiniteChains.1 c.property)
 
 /-- Extending the identity gives the identity. -/
 @[simp]

@@ -45,22 +45,22 @@ variable {𝕜 B F G : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B
 
 private theorem continuous_pointIndexedCore_conjugate_iff (f : B → F →L[𝕜] G) :
     Continuous (fun p : (pointIndexedCore 𝕜 F E).TotalSpace ↦
-      TotalSpace.mk' G (E := (pointIndexedCore 𝕜 G E').Fiber) p.proj (f p.proj p.2)) ↔
+      TotalSpace.mk' G (E := (pointIndexedCore 𝕜 G E').Fiber) p.proj (f p.proj p.snd)) ↔
     Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' G p.proj
       (((pointIndexedCoreFiberEquiv 𝕜 F E p.proj).arrowCongrEquiv
-        (pointIndexedCoreFiberEquiv 𝕜 G E' p.proj)) (f p.proj) p.2)) := by
+        (pointIndexedCoreFiberEquiv 𝕜 G E' p.proj)) (f p.proj) p.snd)) := by
   let h := pointIndexedCoreHomeomorph 𝕜 F E
   let h' := pointIndexedCoreHomeomorph 𝕜 G E'
   let g := fun p : (pointIndexedCore 𝕜 F E).TotalSpace ↦
-    TotalSpace.mk' G (E := (pointIndexedCore 𝕜 G E').Fiber) p.proj (f p.proj p.2)
+    TotalSpace.mk' G (E := (pointIndexedCore 𝕜 G E').Fiber) p.proj (f p.proj p.snd)
   have hmap : (fun p : TotalSpace F E ↦ TotalSpace.mk' G p.proj
       (((pointIndexedCoreFiberEquiv 𝕜 F E p.proj).arrowCongrEquiv
-        (pointIndexedCoreFiberEquiv 𝕜 G E' p.proj)) (f p.proj) p.2)) =
+        (pointIndexedCoreFiberEquiv 𝕜 G E' p.proj)) (f p.proj) p.snd)) =
       h' ∘ g ∘ h.symm := by
     funext p
     dsimp only [h, h', g, Function.comp_def]
     rw [pointIndexedCoreHomeomorph_symm_apply, pointIndexedCoreHomeomorph_apply]
-    exact congrArg (fun g ↦ TotalSpace.mk' G p.proj (g p.2))
+    exact congrArg (fun g ↦ TotalSpace.mk' G p.proj (g p.snd))
       (ContinuousLinearEquiv.arrowCongrEquiv_apply
         (pointIndexedCoreFiberEquiv 𝕜 F E p.proj)
         (pointIndexedCoreFiberEquiv 𝕜 G E' p.proj) (f p.proj))
@@ -74,7 +74,7 @@ original bundles need not agree with each other or with the coordinate universe.
 noncomputable def pointIndexedCoreHomEquiv :
     VectorBundleCore.CoordinateHom (pointIndexedCore 𝕜 F E) (pointIndexedCore 𝕜 G E') ≃
       {f : ∀ x, E x →L[𝕜] E' x //
-        Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' G p.proj (f p.proj p.2))} :=
+        Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' G p.proj (f p.proj p.snd))} :=
   (VectorBundleCore.CoordinateHom.fiberMapEquiv _ _).trans <|
     Equiv.subtypeEquiv (Equiv.piCongrRight fun x ↦
       (pointIndexedCoreFiberEquiv 𝕜 F E x).arrowCongrEquiv
@@ -86,7 +86,7 @@ noncomputable def pointIndexedCoreHomEquiv :
 @[simp] theorem pointIndexedCoreHomEquiv_apply
     (a : VectorBundleCore.CoordinateHom
       (pointIndexedCore 𝕜 F E) (pointIndexedCore 𝕜 G E')) (x : B) (v : E x) :
-    (pointIndexedCoreHomEquiv a).1 x v =
+    (pointIndexedCoreHomEquiv a).val x v =
       pointIndexedCoreFiberEquiv 𝕜 G E' x
         (a.fiberMap x ((pointIndexedCoreFiberEquiv 𝕜 F E x).symm v)) := by
   simp only [pointIndexedCoreHomEquiv, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
@@ -97,22 +97,22 @@ noncomputable def pointIndexedCoreHomEquiv :
 
 @[simp] theorem pointIndexedCoreHomEquiv_symm_fiberMap
     (f : {f : ∀ x, E x →L[𝕜] E' x //
-      Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' G p.proj (f p.proj p.2))})
+      Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' G p.proj (f p.proj p.snd))})
     (x : B) (v : F) :
     (pointIndexedCoreHomEquiv.symm f).fiberMap x v =
       (pointIndexedCoreFiberEquiv 𝕜 G E' x).symm
-        (f.1 x (pointIndexedCoreFiberEquiv 𝕜 F E x v)) := by
+        (f.val x (pointIndexedCoreFiberEquiv 𝕜 F E x v)) := by
   simp only [pointIndexedCoreHomEquiv, Equiv.symm_trans_apply, Equiv.subtypeEquiv_symm,
     Equiv.subtypeEquiv_apply, VectorBundleCore.CoordinateHom.fiberMapEquiv_symm_apply,
     VectorBundleCore.CoordinateHom.fiberMap_ofContinuous]
   -- The inverse dependent-function equivalence evaluates pointwise in the model fibres.
   exact congrArg (fun g ↦ g v) (ContinuousLinearEquiv.arrowCongrEquiv_symm_apply
-    (pointIndexedCoreFiberEquiv 𝕜 F E x) (pointIndexedCoreFiberEquiv 𝕜 G E' x) (f.1 x))
+    (pointIndexedCoreFiberEquiv 𝕜 F E x) (pointIndexedCoreFiberEquiv 𝕜 G E' x) (f.val x))
 
 /-- The coordinate identity reconstructs the actual identity on each original fibre. -/
 @[simp] theorem pointIndexedCoreHomEquiv_id (x : B) :
     (pointIndexedCoreHomEquiv
-      (VectorBundleCore.CoordinateHom.id (pointIndexedCore 𝕜 F E))).1 x =
+      (VectorBundleCore.CoordinateHom.id (pointIndexedCore 𝕜 F E))).val x =
       ContinuousLinearMap.id 𝕜 (E x) := by
   ext v
   simp only [pointIndexedCoreHomEquiv_apply, VectorBundleCore.CoordinateHom.fiberMap_id,
@@ -134,8 +134,8 @@ reconstructed maps, for finite-dimensional source models. -/
       (pointIndexedCore 𝕜 G E') (pointIndexedCore 𝕜 H E''))
     (a : VectorBundleCore.CoordinateHom
       (pointIndexedCore 𝕜 F E) (pointIndexedCore 𝕜 G E')) (x : B) :
-    (pointIndexedCoreHomEquiv (b.comp a)).1 x =
-      ((pointIndexedCoreHomEquiv b).1 x).comp ((pointIndexedCoreHomEquiv a).1 x) := by
+    (pointIndexedCoreHomEquiv (b.comp a)).val x =
+      ((pointIndexedCoreHomEquiv b).val x).comp ((pointIndexedCoreHomEquiv a).val x) := by
   ext v
   simp only [pointIndexedCoreHomEquiv_apply, VectorBundleCore.CoordinateHom.fiberMap_comp,
     ContinuousLinearMap.comp_apply]

@@ -348,14 +348,14 @@ multiplicity one, `Newform.eq_of_forall_prime_eigenvalue_eq`), so the joint prim
 `levelOneNewformBasis k` are injective and `Module.Basis.self_mem_of_repr_ne_zero_of_forall`
 clears extra coordinates. -/
 theorem levelOneNewformBasis_mem_of_forall_prime {k : ℤ} {W : Submodule ℂ (CuspForm 𝒮ℒ k)}
-    (hW : ∀ p : Nat.Primes, ∀ g ∈ W, heckeTCuspLevelOne k p.1 g ∈ W) {g : CuspForm 𝒮ℒ k}
+    (hW : ∀ p : Nat.Primes, ∀ g ∈ W, heckeTCuspLevelOne k p.val g ∈ W) {g : CuspForm 𝒮ℒ k}
     (hg : g ∈ W) {f : Newform 1 k} (hf : (levelOneNewformBasis k).repr g f ≠ 0) :
     levelOneNewformBasis k f ∈ W := by
-  let a (f₀ : Newform 1 k) (p : Nat.Primes) : ℂ := (qExpansion 1 f₀.toCuspForm).coeff p.1
+  let a (f₀ : Newform 1 k) (p : Nat.Primes) : ℂ := (qExpansion 1 f₀.toCuspForm).coeff p.val
   have hdiag (f₀ : Newform 1 k) (p : Nat.Primes) :
-      heckeTCuspLevelOne k p.1 (levelOneNewformBasis k f₀) =
+      heckeTCuspLevelOne k p.val (levelOneNewformBasis k f₀) =
         a f₀ p • levelOneNewformBasis k f₀ :=
-    heckeTCuspLevelOne_levelOneNewformBasis k p.1 f₀
+    heckeTCuspLevelOne_levelOneNewformBasis k p.val f₀
   have hinj : Function.Injective a := fun f₁ f₂ h ↦
     Newform.eq_of_forall_prime_eigenvalue_eq (Subsingleton.elim f₁.χ f₂.χ) fun p hp hp1 ↦ by
       rw [← f₁.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f₁.isNorm ⟨p, hp.pos⟩ hp1,
@@ -368,7 +368,7 @@ theorem levelOneNewformBasis_mem_of_forall_prime {k : ℤ} {W : Submodule ℂ (C
 vanishes on no basis vector of `levelOneNewformBasis k` is injective. -/
 theorem injective_of_heckeTCuspLevelOne_mem_ker {k : ℤ} {R M : Type*} [Semiring R]
     [AddCommMonoid M] [Module R M] {φ : ℂ →+* R} {L : CuspForm 𝒮ℒ k →ₛₗ[φ] M}
-    (hker : ∀ p : Nat.Primes, ∀ g ∈ LinearMap.ker L, heckeTCuspLevelOne k p.1 g ∈ LinearMap.ker L)
+    (hker : ∀ p : Nat.Primes, ∀ g ∈ LinearMap.ker L, heckeTCuspLevelOne k p.val g ∈ LinearMap.ker L)
     (hbasis : ∀ f : Newform 1 k, L (levelOneNewformBasis k f) ≠ 0) :
     Function.Injective L := by
   rw [injective_iff_map_eq_zero]

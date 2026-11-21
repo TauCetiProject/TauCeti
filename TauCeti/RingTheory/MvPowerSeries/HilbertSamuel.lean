@@ -115,13 +115,13 @@ exponents of degree `< n` outside `ord.initialDiagram I`. -/
 private noncomputable def normalRemainderEval (I : Ideal (MvPowerSeries σ K)) (n : ℕ) :
     MvPowerSeries σ K →ₗ[K]
       (↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) → K) :=
-  LinearMap.pi fun α ↦ (MvPowerSeries.coeff α.1).comp (ord.normalRemainder I)
+  LinearMap.pi fun α ↦ (MvPowerSeries.coeff α.val).comp (ord.normalRemainder I)
 
 @[simp]
 private theorem normalRemainderEval_apply (I : Ideal (MvPowerSeries σ K)) (n : ℕ)
     (f : MvPowerSeries σ K)
     (α : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I)) :
-    ord.normalRemainderEval I n f α = MvPowerSeries.coeff α.1 (ord.normalRemainder I f) := by
+    ord.normalRemainderEval I n f α = MvPowerSeries.coeff α.val (ord.normalRemainder I f) := by
   simp [normalRemainderEval]
 
 private theorem ker_normalRemainderEval (hdeg : Monotone (Finsupp.degree ∘ ord.toSyn.symm))
@@ -152,15 +152,15 @@ private theorem ker_normalRemainderEval (hdeg : Monotone (Finsupp.degree ∘ ord
 private theorem normalRemainderEval_sum_monomial (I : Ideal (MvPowerSeries σ K)) (n : ℕ)
     [Fintype ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I)]
     (v : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) → K) :
-    ord.normalRemainderEval I n (∑ β, MvPowerSeries.monomial β.1 (v β)) = v := by
+    ord.normalRemainderEval I n (∑ β, MvPowerSeries.monomial β.val (v β)) = v := by
   classical
-  have hg_comp : (∑ β, MvPowerSeries.monomial β.1 (v β)) ∈ ord.complementSubmodule I :=
-    Submodule.sum_mem _ fun β _ ↦ ord.monomial_mem_complementSubmodule_iff.mpr (Or.inr β.2.2)
+  have hg_comp : (∑ β, MvPowerSeries.monomial β.val (v β)) ∈ ord.complementSubmodule I :=
+    Submodule.sum_mem _ fun β _ ↦ ord.monomial_mem_complementSubmodule_iff.mpr (Or.inr β.property.2)
   funext α
   rw [normalRemainderEval_apply,
     ord.normalRemainder_eq_self_of_mem_complementSubmodule hg_comp, map_sum,
     Finset.sum_eq_single α]
-  · exact MvPowerSeries.coeff_monomial_same α.1 (v α)
+  · exact MvPowerSeries.coeff_monomial_same α.val (v α)
   · intro β _ hβα
     exact MvPowerSeries.coeff_monomial_ne (fun h ↦ hβα (Subtype.ext h.symm)) (v β)
   · intro hα
@@ -194,7 +194,7 @@ theorem quotientSupMaximalIdealPowEquiv_mk
     (I : Ideal (MvPowerSeries σ K)) (n : ℕ) (f : MvPowerSeries σ K)
     (α : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I)) :
     ord.quotientSupMaximalIdealPowEquiv hdeg I n (Ideal.Quotient.mk _ f) α =
-      MvPowerSeries.coeff α.1 (ord.normalRemainder I f) := by
+      MvPowerSeries.coeff α.val (ord.normalRemainder I f) := by
   simp [quotientSupMaximalIdealPowEquiv, ← Ideal.Quotient.mk_eq_mk]
 
 /-- Inverse of `quotientSupMaximalIdealPowEquiv`: sums the corresponding monomials modulo
@@ -205,7 +205,7 @@ theorem quotientSupMaximalIdealPowEquiv_symm_apply
     (I : Ideal (MvPowerSeries σ K)) (n : ℕ)
     (v : ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) → K) :
     (ord.quotientSupMaximalIdealPowEquiv hdeg I n).symm v =
-      Ideal.Quotient.mk _ (∑ᶠ β, MvPowerSeries.monomial β.1 (v β)) := by
+      Ideal.Quotient.mk _ (∑ᶠ β, MvPowerSeries.monomial β.val (v β)) := by
   have hfin : ({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I).Finite :=
     (Finsupp.finite_of_degree_lt n).sdiff
   have : Fintype ↥({α : σ →₀ ℕ | α.degree < n} \ ord.initialDiagram I) := hfin.fintype

@@ -44,7 +44,9 @@ same stage.
   recursive in the code, the step bound and the input.
 * `Nat.Partrec.Code.primrecRel_mem_domStage`, `Nat.Partrec.Code.primrec_domStage`: membership in
   the stages and their binary codes are primitive recursive, uniformly in the code and the stage.
-  `Nat.Partrec.Code.primrecRel_mem_domStage_ofNat` indexes the codes by their numbers.
+  `Nat.Partrec.Code.primrec_domStage_apply` and `Nat.Partrec.Code.computable_domStage` specialize
+  to a fixed code, and `Nat.Partrec.Code.primrecRel_mem_domStage_ofNat` indexes the codes by their
+  numbers.
 * `TauCeti.Enumeration.computablePred_mem_of_computable_equivBitIndices`: membership in finite
   stages with computable binary codes is computable.
 * `TauCeti.Enumeration.rePred_mem_stageLimit`: the limit of finite stages with computable
@@ -138,6 +140,18 @@ theorem primrec_domStage :
   ext x
   simp [Nat.testBit_two_pow_sub_one, domStage]
 
+/-- For a fixed code `c`, the binary finite-set codes of the stages `W_{c,s}` are primitive
+recursive in `s`. -/
+theorem primrec_domStage_apply (c : Code) :
+    Primrec fun s => Finset.equivBitIndices.symm (c.domStage s) :=
+  primrec_domStage.comp ((_root_.Primrec.const c).pair _root_.Primrec.id)
+
+/-- For a fixed code `c`, the binary finite-set codes of the stages `W_{c,s}` are computable in
+`s`. -/
+theorem computable_domStage (c : Code) :
+    Computable fun s => Finset.equivBitIndices.symm (c.domStage s) :=
+  c.primrec_domStage_apply.to_comp
+
 end Nat.Partrec.Code
 
 namespace TauCeti
@@ -173,8 +187,7 @@ theorem rePred_iff_exists_stages {p : ℕ → Prop} :
   constructor
   · intro hp
     obtain ⟨c, hc⟩ := Code.exists_code.mp (Partrec.nat_iff.mp (hp.map (Computable.const 0).to₂))
-    refine ⟨c.domStage, c.monotone_domStage, c.domStage_zero,
-      (Code.primrec_domStage.comp ((Primrec.const c).pair Primrec.id)).to_comp, ?_⟩
+    refine ⟨c.domStage, c.monotone_domStage, c.domStage_zero, c.computable_domStage, ?_⟩
     rw [Code.stageLimit_domStage, hc]
     ext x
     simp [Part.dom_iff_mem, Part.mem_assert_iff]

@@ -61,9 +61,8 @@ theorem isUnramified_divisionField_iff (m : ℕ) [ValuativeRel (W.divisionField 
     [TopologicalSpace (W.divisionField m)] [IsNonarchimedeanLocalField (W.divisionField m)]
     [ValuativeExtension K (W.divisionField m)] :
     IsUnramified K (W.divisionField m) ↔
-      ∀ σ ∈ (inertiaSubgroup K).map (absoluteGaloisGroupRestrictEquiv K).toMonoidHom,
-        ∀ P : W.TorsionCoeff m, σ • P = P := by
-  rw [← map_inertiaSubgroup_le_fixingSubgroup_iff, IsConcreteLE.le_iff]
+      ∀ σ ∈ separableClosureInertiaSubgroup K, ∀ P : W.TorsionCoeff m, σ • P = P := by
+  rw [← separableClosureInertiaSubgroup_le_fixingSubgroup_iff, IsConcreteLE.le_iff]
   simp only [mem_fixingSubgroup_divisionField_iff]
 
 open scoped Classical in
@@ -78,9 +77,12 @@ theorem isUnramified_divisionField_iff_forall_mem_inertiaSubgroup [W.IsElliptic]
       ∀ σ ∈ inertiaSubgroup K, ∀ P : (W⁄(AlgebraicClosure K)).toAffine.Point, m • P = 0 →
         Affine.Point.map σ.toAlgHom P = P := by
   rw [isUnramified_divisionField_iff]
-  refine ⟨fun h σ hσ ↦ (forall_smul_torsionCoeff_eq_self_iff hm σ).1 (h _ ⟨σ, hσ, rfl⟩), ?_⟩
-  rintro h _ ⟨σ, hσ, rfl⟩
-  exact (forall_smul_torsionCoeff_eq_self_iff hm σ).2 (h σ hσ)
+  refine ⟨fun h σ hσ ↦ (forall_smul_torsionCoeff_eq_self_iff hm σ).1
+    (h _ (absoluteGaloisGroupRestrictEquiv_mem_separableClosureInertiaSubgroup_iff.mpr hσ)),
+    fun h τ hτ ↦ ?_⟩
+  obtain ⟨σ, rfl⟩ := (absoluteGaloisGroupRestrictEquiv K).surjective τ
+  exact (forall_smul_torsionCoeff_eq_self_iff hm σ).2
+    (h σ (absoluteGaloisGroupRestrictEquiv_mem_separableClosureInertiaSubgroup_iff.mp hτ))
 
 open scoped Classical in
 /-- **An unramified Tate module gives unramified division fields.** Let `ℓ` be a prime invertible

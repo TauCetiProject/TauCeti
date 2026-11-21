@@ -43,7 +43,9 @@ The computation has three steps.
 
 ## Main definitions and results
 
-* `TauCeti.singularHomologyComplSingletonIsoOfChart`: `Hₖ(M, M ∖ {x}) ≅ Hₖ(E, E ∖ {φ x})`.
+* `TauCeti.singularHomologyComplSingletonIsoOfChart`: `Hₖ(M, M ∖ {x}) ≅ Hₖ(E, E ∖ {φ x})`, with
+  `TauCeti.singularHomologyComplSingletonIsoOfChart_refl` and
+  `TauCeti.singularHomologyComplSingletonIsoOfChart_transHomeomorph_hom`.
 * `TauCeti.singularHomologyComplSingletonIso`: `Hₖ₊₁(M, M ∖ {x})` is isomorphic to the
   degree-`k` reduced homology of `S`.
 * `TauCeti.isZero_singularHomology_complSingleton_zero`: `H₀(M, M ∖ {x}) = 0` when `E ≠ 0`.
@@ -118,7 +120,7 @@ def singularHomologyComplSingletonIsoOfChart (k : ℕ) :
     asIso (TopPair.singularHomologyMap (TopPair.ofSubsetIso
       (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
       (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-      fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm).hom R k) ≪≫
+      fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm).hom R k) ≪≫
     asIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ) R k)
 
@@ -132,7 +134,7 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfCh
       TopPair.singularHomologyMap (TopPair.ofSubsetIso
           (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
           (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-          fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm).hom R k ≫
+          fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm).hom R k ≫
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ) R k := by
   simp [singularHomologyComplSingletonIsoOfChart]
@@ -147,7 +149,7 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfCh
       TopPair.singularHomologyMap (TopPair.ofSubsetIso
           (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
           (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-          fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm).inv R k ≫
+          fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm).inv R k ≫
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ) R k := by
   rw [← cancel_mono (singularHomologyComplSingletonIsoOfChart R φ hx k).hom, Category.assoc,
@@ -179,6 +181,42 @@ lemma singularHomologyComplSingletonIsoOfChart_refl {p : E}
   rw [TopPair.Hom.fst_comp]
   erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
     TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply]
+  rfl
+
+/-- Composing a chart with a homeomorphism of the model composes its local homology isomorphism
+with the map induced by the homeomorphism on the pair `(E, E ∖ {φ x})`. -/
+theorem singularHomologyComplSingletonIsoOfChart_transHomeomorph_hom
+    {F : Type w} [TopologicalSpace F] [T1Space F] (g : E ≃ₜ F)
+    (hx' : x ∈ (φ.transHomeomorph g).source) (k : ℕ) :
+    (singularHomologyComplSingletonIsoOfChart R (φ.transHomeomorph g) hx' k).hom =
+      (singularHomologyComplSingletonIsoOfChart R φ hx k).hom ≫
+        TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
+            (TopCat.ofHom ⟨g, g.continuous⟩) (B := {φ x}ᶜ) (B' := {(φ.transHomeomorph g) x}ᶜ)
+            (fun _ hy h ↦ hy (g.injective h))) R k := by
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R
+    (X := TopCat.of M) φ.open_source isClosed_singleton (Set.singleton_subset_iff.2 hx) k
+  apply (cancel_epi (TopPair.singularHomologyMap
+    (TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ) R k)).1
+  -- `(φ.transHomeomorph g).source` is `φ.source` only after unfolding `transHomeomorph`.
+  erw [singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom
+    R (φ.transHomeomorph g) hx' k]
+  rw [singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom_assoc
+      R φ hx k,
+    ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
+    ← TopPair.singularHomologyMap_comp]
+  congr 1
+  apply TopPair.hom_ext_of_fst
+  ext z
+  rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp]
+  -- Unfold the ambient carrier of `TopPair.ofSubset` to evaluate `TopCat` composites on `z`.
+  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
+    TopPair.ofSubsetIso_hom, TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply,
+    TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply,
+    OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
+    OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
+    OpenPartialHomeomorph.transHomeomorph_apply]
   rfl
 
 end Chart
@@ -274,7 +312,7 @@ theorem isZero_singularHomology_complSingleton_of_ne [FiniteDimensional ℝ E] {
       -- A zero-dimensional space is a point, so its unit sphere is empty.
       have : Subsingleton E := Module.finrank_zero_iff.1 h
       have : IsEmpty (sphere (0 : E) 1) :=
-        ⟨fun z ↦ by simpa [Subsingleton.elim (z : E) 0] using z.2⟩
+        ⟨fun z ↦ by simpa [Subsingleton.elim (z : E) 0] using z.property⟩
       exact isZero_reducedSingularHomologyFunctor_of_isEmpty R _ k
     | succ n =>
       exact (isZero_reducedSingularHomologyFunctor_sphere_of_ne R
@@ -291,7 +329,7 @@ def singularHomologyComplSingletonIsoOfFinrankEqZero [FiniteDimensional ℝ E]
     (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology R 0 ≅ R :=
   haveI : IsEmpty (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).snd :=
     have : Subsingleton E := Module.finrank_zero_iff.1 h
-    ⟨fun z ↦ z.2 (Subsingleton.elim _ _)⟩
+    ⟨fun z ↦ z.property (Subsingleton.elim _ _)⟩
   -- The quotient map starts at the homology of the singular simplicial set of `E`, so the
   -- augmentation is taken there; it is `TopCat.singularHomology₀ε` by definition.
   haveI : IsIso ((TopPair.toSSetPair.obj
@@ -316,7 +354,7 @@ lemma singularHomologyπ_comp_singularHomologyComplSingletonIsoOfFinrankEqZero_h
       (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).fst.singularHomology₀ε R := by
   have : IsEmpty (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).snd :=
     have : Subsingleton E := Module.finrank_zero_iff.1 h
-    ⟨fun z ↦ z.2 (Subsingleton.elim _ _)⟩
+    ⟨fun z ↦ z.property (Subsingleton.elim _ _)⟩
   simp only [singularHomologyComplSingletonIsoOfFinrankEqZero, Iso.trans_hom, Iso.symm_hom,
     asIso_hom, asIso_inv, Iso.inv_hom_id_assoc, IsIso.hom_inv_id_assoc]
   -- The augmentation of the singular simplicial set of `E` is `TopCat.singularHomology₀ε`.
@@ -345,32 +383,25 @@ lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv [FiniteDimensional �
 /-- **Local homology in the top degree**: at a point with a chart to a real normed space of
 dimension `n + 1`, the local homology `Hₙ₊₁(M, M ∖ {x})` is one copy of the coefficients.  It is
 `TauCeti.singularHomologyComplSingletonIso` followed by the map on reduced homology induced by the
-homeomorphism of the unit sphere of `E` with `TopCat.sphere n`
-(`TauCeti.sphereHomeomorphOfFinrankEq` and `TauCeti.diskBoundaryHomeomorph`), and by
-`TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
+homeomorphism `TauCeti.sphereHomeomorphTopCatSphere` of the unit sphere of `E` with
+`TopCat.sphere n`, and by `TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
 def singularHomologyComplSingletonIsoOfFinrankEq {n : ℕ} (h : finrank ℝ E = n + 1) :
     (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology R (n + 1) ≅ R :=
-  haveI := Module.finite_of_finrank_eq_succ h
   singularHomologyComplSingletonIso R φ hx n ≪≫
-    (reducedSingularHomologyFunctor R n).mapIso (TopCat.isoOfHomeo
-      ((sphereHomeomorphOfFinrankEq
-          (h.trans (finrank_euclideanSpace_ulift_fin.{w} (n + 1)).symm)).trans
-        (diskBoundaryHomeomorph (n + 1)).symm : sphere (0 : E) 1 ≃ₜ TopCat.sphere.{w} n)) ≪≫
+    (reducedSingularHomologyFunctor R n).mapIso
+      (TopCat.isoOfHomeo (sphereHomeomorphTopCatSphere.{w} h)) ≪≫
     reducedSingularHomologyTopCatSphereIso R n
 
 /-- `TauCeti.singularHomologyComplSingletonIsoOfFinrankEq` is
 `TauCeti.singularHomologyComplSingletonIso`, followed by the map on reduced homology induced by the
-homeomorphism of the unit sphere of `E` with `TopCat.sphere n`, and by
-`TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
+homeomorphism `TauCeti.sphereHomeomorphTopCatSphere` of the unit sphere of `E` with
+`TopCat.sphere n`, and by `TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
 @[simp]
 lemma singularHomologyComplSingletonIsoOfFinrankEq_hom {n : ℕ} (h : finrank ℝ E = n + 1) :
-    haveI := Module.finite_of_finrank_eq_succ h
     (singularHomologyComplSingletonIsoOfFinrankEq R φ hx h).hom =
       (singularHomologyComplSingletonIso R φ hx n).hom ≫
-        (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
-          (((sphereHomeomorphOfFinrankEq
-              (h.trans (finrank_euclideanSpace_ulift_fin.{w} (n + 1)).symm)).trans
-            (diskBoundaryHomeomorph (n + 1)).symm : sphere (0 : E) 1 ≃ₜ TopCat.sphere.{w} n) :
+        (reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom (sphereHomeomorphTopCatSphere.{w} h :
             C(sphere (0 : E) 1, TopCat.sphere.{w} n))) ≫
           (reducedSingularHomologyTopCatSphereIso R n).hom :=
   (rfl)
@@ -381,13 +412,10 @@ by the homeomorphism of `TopCat.sphere n` with the unit sphere of `E`, and by th
 `TauCeti.singularHomologyComplSingletonIso`. -/
 @[simp]
 lemma singularHomologyComplSingletonIsoOfFinrankEq_inv {n : ℕ} (h : finrank ℝ E = n + 1) :
-    haveI := Module.finite_of_finrank_eq_succ h
     (singularHomologyComplSingletonIsoOfFinrankEq R φ hx h).inv =
       (reducedSingularHomologyTopCatSphereIso R n).inv ≫
-        (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
-          (((sphereHomeomorphOfFinrankEq
-              (h.trans (finrank_euclideanSpace_ulift_fin.{w} (n + 1)).symm)).trans
-            (diskBoundaryHomeomorph (n + 1)).symm : sphere (0 : E) 1 ≃ₜ TopCat.sphere.{w} n).symm :
+        (reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom ((sphereHomeomorphTopCatSphere.{w} h).symm :
             C(TopCat.sphere.{w} n, sphere (0 : E) 1))) ≫
           (singularHomologyComplSingletonIso R φ hx n).inv := by
   simp [singularHomologyComplSingletonIsoOfFinrankEq]
@@ -481,10 +509,10 @@ theorem isIso_singularHomologyMap_compl_of_chart (hx : x ∈ φ.source) (hK : St
   have hL : ∀ z : TopCat.of φ.source, z ∈ (Subtype.val ⁻¹' (φ.symm '' K)ᶜ : Set φ.source) ↔
       φ.toHomeomorphSourceTarget z ∈ (Subtype.val ⁻¹' Kᶜ : Set φ.target) := fun z ↦ by
     rw [Set.mem_preimage, Set.mem_preimage, φ.symm_image_eq_source_inter_preimage hKφ]
-    simp [z.2]
+    simp [z.property]
   have hy : ∀ z : TopCat.of φ.source, z ∈ (Subtype.val ⁻¹' {x}ᶜ : Set φ.source) ↔
       φ.toHomeomorphSourceTarget z ∈ (Subtype.val ⁻¹' {φ x}ᶜ : Set φ.target) :=
-    fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm
+    fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm
   -- By excision, it suffices to treat the inclusions of complements in the source of `φ`; these
   -- are carried to the inclusions in the target by the homeomorphism of source and target, and
   -- those are invertible by excision in `E`.

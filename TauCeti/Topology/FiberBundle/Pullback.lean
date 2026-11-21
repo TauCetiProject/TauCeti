@@ -48,6 +48,13 @@ instance Bundle.Pullback.instMulAction {M : Type*} [Monoid M] {E : B → Type*}
     [i : ∀ b, MulAction M (E b)] (f : B' → B) (x : B') : MulAction M ((f *ᵖ E) x) :=
   i (f x)
 
+/-- Scalar multiplication on a fibre of a pullback bundle `f *ᵖ E` agrees with the scalar
+multiplication on the corresponding fibre of `E`. -/
+theorem Bundle.Pullback.smul_eq {M : Type*} {E : B → Type*} [∀ b, SMul M (E b)] (f : B' → B)
+    (x : B') (m : M) (v : (f *ᵖ E) x) :
+    m • v = @HSMul.hSMul M (E (f x)) (E (f x)) _ m v :=
+  rfl
+
 section Lift
 
 variable {F : Type*} {E : B → Type*}
@@ -63,7 +70,7 @@ theorem Bundle.Pullback.range_lift (f : B' → B) :
     exact ⟨z.proj, rfl⟩
   · rintro ⟨x, hx⟩
     refine ⟨⟨x, ?_⟩, ?_⟩
-    · exact cast (congrArg E hx.symm) w.2
+    · exact cast (congrArg E hx.symm) w.snd
     · cases w with | mk b v => cases hx; rfl
 
 /-- If `f` is injective, the canonical lift `Pullback.lift f` on total spaces is injective. -/

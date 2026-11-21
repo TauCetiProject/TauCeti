@@ -84,7 +84,7 @@ theorem exists_homotopyRel_of_segment_subset_target (f : C(X, Y)) (φ : OpenPart
   have hmem : ∀ (t : unitInterval) x, f x ∈ φ.source →
       (t : ℝ) • (w x - φ (f x)) + φ (f x) ∈ φ.target := fun t x hx =>
     hseg x hx (AffineMap.lineMap_apply_module' (φ (f x)) (w x) (t : ℝ) ▸
-      lineMap_mem_segment ℝ _ _ t.2)
+      lineMap_mem_segment ℝ _ _ t.property)
   let H : unitInterval × X → Y := fun q =>
     if f q.2 ∈ φ.source then φ.symm ((q.1 : ℝ) • (w q.2 - φ (f q.2)) + φ (f q.2)) else f q.2
   have hH_eq : ∀ q : unitInterval × X, (f q.2 ∈ φ.source → w q.2 = φ (f q.2)) → H q = f q.2 :=
@@ -142,7 +142,7 @@ private lemma exists_differentiable_approx_notMem_range {D : Set E} (f : C(D, Y)
   obtain ⟨u, hu⟩ := ContinuousMap.exists_extension
     (hD.isClosedEmbedding_subtypeVal.comp hK.isClosedEmbedding_subtypeVal)
     ⟨fun x : K => φ (f x), φ.continuousOn.comp_continuous
-      (f.continuous.comp continuous_subtype_val) fun x => hKsource x.2⟩
+      (f.continuous.comp continuous_subtypeVal) fun x => hKsource x.property⟩
   obtain ⟨G, hG, hGu, -⟩ := u.continuous.exists_contDiff_approx (1 : ℕ∞) continuous_const
     (fun _ => show (0 : ℝ) < r / 8 by positivity)
   obtain ⟨p, hp, hpG⟩ :=
@@ -194,7 +194,7 @@ private lemma exists_chart_value_interpolation {D : Set E} (f : C(D, Y))
   have hφf : ContinuousOn (fun x => φ (f x)) (f ⁻¹' φ.source) :=
     φ.continuousOn.comp f.continuous.continuousOn fun x hx => hx
   refine ⟨fun x => φ (f x) + d x, hφf.add ((β.continuous.comp_continuousOn hφf).smul
-      ((hG.comp continuous_subtype_val).continuousOn.sub hφf)), ?_, ?_, ?_, ?_, ?_⟩
+      ((hG.comp continuous_subtypeVal).continuousOn.sub hφf)), ?_, ?_, ?_, ?_, ?_⟩
   · refine (closure_minimal ?_ hK).trans hKsource
     intro x hx
     exact hK_of x hx.1 fun hβ => hx.2 (by simp [d, hβ])

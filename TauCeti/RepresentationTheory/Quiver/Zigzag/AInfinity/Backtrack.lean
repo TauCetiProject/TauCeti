@@ -86,10 +86,13 @@ open PathAlgebra DoubledQuiver AInfinity ReducedTensorWords
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
-  (hns : ∀ i : V, ∃ j, G.Adj i j)
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 /-! ### Backtrack operations -/
+
+section
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
 
 /-- The **backtrack operation** of two darts `d` and `e`: the product of the `d`-, `e`- and
 `e.symm`-arrow coordinates of its three inputs, times the arrow of `d`. -/
@@ -110,12 +113,13 @@ theorem zigzagBacktrackOperation_apply (d e : G.Dart) (x : Fin 3 → nonisolated
         zigzagMk k G (ofArrow (arrow G d.adj)) := by
   simp [zigzagBacktrackOperation, Fin.prod_univ_three, mul_assoc]
 
+end
+
 /-- The closed walk `d.symm, d, e, e.symm` in product order: read from the last entry it goes
 back and forth along `e` and then along `d`, so it is closed when `d.fst = e.snd`. -/
 def zigzagBacktrackWalk (d e : G.Dart) : Fin 4 → G.Dart :=
   ![d.symm, d, e, e.symm]
 
-omit [Finite V] in
 /-- The backtrack walk lists `d.symm`, `d`, `e` and `e.symm`. -/
 theorem zigzagBacktrackWalk_def (d e : G.Dart) :
     zigzagBacktrackWalk G d e = ![d.symm, d, e, e.symm] := by
@@ -123,13 +127,13 @@ theorem zigzagBacktrackWalk_def (d e : G.Dart) :
 
 variable {G}
 
-omit [Finite V] in
 /-- Every rotation of the backtrack walk of `d` and `e` is closed, read in product order, when `d`
 starts where `e` ends. -/
 theorem zigzagBacktrackWalk_fst_eq_snd {d e : G.Dart} (h : d.fst = e.snd) (j i : Fin 4) :
     (zigzagBacktrackWalk G d e (i + j)).fst = (zigzagBacktrackWalk G d e (i + 1 + j)).snd := by
   fin_cases i <;> fin_cases j <;> simp [zigzagBacktrackWalk, h]
 
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j) in
 /-- **The core coboundary identity.** When `d.fst = e.snd`, the Hochschild coboundary of the
 backtrack operation of `d` and `e` is the sum of the loop operations of the backtrack walk and of
 its rotation by one step. -/
@@ -154,9 +158,10 @@ theorem zigzagBacktrackOperation_coboundary {d e : G.Dart} (h : d.fst = e.snd)
 
 /-! ### Weighted families of backtrack operations -/
 
-section Family
+section
 
-variable {k} (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
+variable {k} [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+  (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
 
 /-- The **backtrack cochain** of a finite set `P` of pairs of darts with weights `a`: the sum of the
 backtrack operations of the pairs in `P`, weighted by `a`. -/
@@ -175,13 +180,18 @@ theorem zigzagBacktrackCochain_apply (x : Fin 3 → nonisolatedZigzagQuotient k 
         zigzagMk k G (ofArrow (arrow G p.1.adj)) := by
   simp [zigzagBacktrackCochain, zigzagBacktrackOperation_apply, smul_smul]
 
+end
+
+section
+
+variable {k} (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
+
 /-- The coefficients of the loop operations of the backtrack walks of the pairs in `P` and of their
 rotations by one step, weighted by `a`. -/
 noncomputable def zigzagBacktrackCoefficients : (Fin 4 → G.Dart) →₀ k :=
   ∑ p ∈ P, (Finsupp.single (zigzagBacktrackWalk G p.1 p.2) (a p) +
     Finsupp.single (fun i ↦ zigzagBacktrackWalk G p.1 p.2 (i + 1)) (a p))
 
-omit [Finite V] in
 /-- The backtrack coefficients are the sum, over the pairs in `P`, of the single coefficients of the
 backtrack walk and of its rotation by one step. -/
 theorem zigzagBacktrackCoefficients_def :
@@ -192,7 +202,6 @@ theorem zigzagBacktrackCoefficients_def :
 
 variable {P}
 
-omit [Finite V] in
 /-- The backtrack coefficients are supported on closed walks, read in product order. -/
 theorem fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients
     (hP : ∀ p ∈ P, p.1.fst = p.2.snd) :
@@ -209,6 +218,14 @@ theorem fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients
   · subst h₂
     exact zigzagBacktrackWalk_fst_eq_snd (hP p hp) 1 i
   simp [h₁, h₂] at hpw
+
+end
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+
+section Family
+
+variable {k} {P : Finset (G.Dart × G.Dart)} (a : G.Dart × G.Dart → k)
 
 /-- The quartic operation of the loop deformation with backtrack coefficients is the weighted sum
 of the loop operations of the backtrack walks and of their rotations. -/

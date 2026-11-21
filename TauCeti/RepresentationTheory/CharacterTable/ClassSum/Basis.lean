@@ -38,9 +38,9 @@ omit [Fintype G] [DecidableEq G] in
 /-- The coefficient function of a central group-algebra element, as a class function on `G`. -/
 def centerToClassFunction :
     Subalgebra.center k (MonoidAlgebra k G) →ₗ[k] ClassFunction k G where
-  toFun z := ⟨fun g => z.1.coeff g, ClassFunction.mem_iff.mpr fun g x => by
+  toFun z := ⟨fun g => z.val.coeff g, ClassFunction.mem_iff.mpr fun g x => by
     have hz := congrArg (fun a : MonoidAlgebra k G => a.coeff (x * g))
-      (Subalgebra.mem_center_iff.mp z.2 (MonoidAlgebra.of k G x))
+      (Subalgebra.mem_center_iff.mp z.property (MonoidAlgebra.of k G x))
     simpa [mul_assoc] using hz.symm⟩
   map_add' z w := rfl
   map_smul' c z := rfl
@@ -49,14 +49,14 @@ omit [Fintype G] [DecidableEq G] in
 /-- The class function of a central element is its coefficient function. -/
 @[simp]
 theorem centerToClassFunction_apply (z : Subalgebra.center k (MonoidAlgebra k G)) (g : G) :
-    (centerToClassFunction z).1 g = z.1.coeff g :=
+    (centerToClassFunction z).val g = z.val.coeff g :=
   (rfl)
 
 omit [Fintype G] [DecidableEq G] in
 /-- The coefficients of a central group-algebra element agree on conjugate group elements. -/
 theorem center_coeff_eq_of_isConj (z : Subalgebra.center k (MonoidAlgebra k G))
     {g h : G} (hgh : IsConj g h) :
-    z.1.coeff g = z.1.coeff h :=
+    z.val.coeff g = z.val.coeff h :=
   ClassFunction.eq_of_isConj (centerToClassFunction z) hgh
 
 omit [Fintype G] [DecidableEq G] in
@@ -69,7 +69,7 @@ omit [Fintype G] [DecidableEq G] in
 /-- Reading the coefficient on the conjugacy class of `g` recovers the coefficient at `g`. -/
 @[simp]
 theorem centerToConjClasses_mk (z : Subalgebra.center k (MonoidAlgebra k G)) (g : G) :
-    centerToConjClasses z (ConjClasses.mk g) = z.1.coeff g := by
+    centerToConjClasses z (ConjClasses.mk g) = z.val.coeff g := by
   simp [centerToConjClasses]
 
 /-- Regard a class sum as an element of the center of the group algebra. -/

@@ -6,9 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.FiniteLength
+public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import TauCeti.RingTheory.Artinian.FiniteLength
 public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
+
+import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
+import TauCeti.Algebra.Category.FGModuleCat.Projective
+import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 
 /-!
 # The Matlis duality between left and right modules over an Artin algebra
@@ -20,10 +27,29 @@ Artin `R`-algebra. Over `A` the finitely generated modules are the modules of fi
 anti-equivalence between the finitely generated left `A`-modules and the finitely generated right
 `A`-modules, the modules over `Aᵐᵒᵖ`.
 
+The dual of the regular right module is the left module `D A = Hom_R(A, E)`
+(`TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualRegular`), defined as the image of `Aᵐᵒᵖ` under
+the duality. Facts about projective right modules then dualize to facts about `D A`: it is an
+injective object of `mod A`, and every injective object of `mod A` is a direct summand of a finite
+direct sum of copies of `D A`.
+
 ## Main definitions
 
 * `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDuality`: the anti-equivalence
   `(mod A)ᵒᵖ ≌ mod Aᵐᵒᵖ`, whose unit and counit are evaluation.
+* `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualRegular`: the Matlis dual `D A` of the right
+  regular module, a finitely generated left `A`-module.
+* `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualRegularEquiv`: the underlying module of `D A`
+  is the Matlis dual `Hom_R(A, E)` of the right regular module.
+* `TauCeti.IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso`: the Matlis
+  dual of `D A` is the right regular module, by evaluation.
+
+## Main results
+
+* `TauCeti.IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular`: `D A` is injective in
+  `mod A`.
+* `TauCeti.IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective`: every
+  injective object of `mod A` lies in `add (D A)`.
 
 ## References
 
@@ -45,8 +71,11 @@ open ModuleCat
 attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_moduleOfAlgebra
 
 variable {R : Type u} [CommRing R] [IsArtinianRing R] {E : Type v} [AddCommGroup E] [Module R E]
-  [Small.{v} R] {f : R ⧸ Ring.jacobson R →ₗ[R] E} {A : Type t} [Ring A] [Algebra R A]
-  [Module.Finite R A]
+  [Small.{v} R] {f : R ⧸ Ring.jacobson R →ₗ[R] E}
+
+section Duality
+
+variable {A : Type t} [Ring A] [Algebra R A] [Module.Finite R A]
 
 /-- **Matlis duality for Artin algebras.** For an injective hull `E` of `R ⧸ J(R)`, the dual
 `D_R = Hom_R(-, E)` is an anti-equivalence between the finitely generated left and the finitely
@@ -108,5 +137,118 @@ theorem IsInjectiveEnvelope.fgModuleCatMatlisDuality_counitIso_inv_app (hf : IsI
       (matlisDualEvalIsoOp (A := A) hf.length_quotient_linearMap_eq_one N.obj
         (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N.obj)).hom :=
   rfl
+
+end Duality
+
+section Regular
+
+variable {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A]
+
+/-- The Matlis dual `D A = Hom_R(A, E)` of the right regular module, as a finitely generated left
+`A`-module: the image of the regular right module `Aᵐᵒᵖ` under the Matlis duality
+`(mod A)ᵒᵖ ≌ mod Aᵐᵒᵖ`. Defining it through the duality, rather than as the module
+`Hom_R(A, E)`, makes the statements about `D A` the duals of the statements about the regular
+module. -/
+def IsInjectiveEnvelope.fgModuleCatMatlisDualRegular (hf : IsInjectiveEnvelope f) :
+    FGModuleCat.{v} A :=
+  ((hf.fgModuleCatMatlisDuality (A := A)).inverse.obj (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)).unop
+
+theorem IsInjectiveEnvelope.fgModuleCatMatlisDualRegular_def (hf : IsInjectiveEnvelope f) :
+    hf.fgModuleCatMatlisDualRegular (A := A) =
+      ((hf.fgModuleCatMatlisDuality (A := A)).inverse.obj (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)).unop :=
+  (rfl)
+
+/-- The underlying module of `D A` is the Matlis dual of the regular right module. -/
+@[simp]
+theorem IsInjectiveEnvelope.fgModuleCatMatlisDualRegular_obj (hf : IsInjectiveEnvelope f) :
+    (hf.fgModuleCatMatlisDualRegular (A := A)).obj =
+      matlisDualOpObj R E (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) := by
+  rw [fgModuleCatMatlisDualRegular_def, fgModuleCatMatlisDuality_inverse_obj_unop_obj]
+
+/-- The underlying module of `D A` is the Matlis dual `Hom_R(A, E)` of the right regular module
+`Aᵐᵒᵖ`. The two sides differ only in the `R`-action on `Aᵐᵒᵖ`: through the algebra map in `D A`, and
+the usual one in `MatlisDual R E Aᵐᵒᵖ`. -/
+def IsInjectiveEnvelope.fgModuleCatMatlisDualRegularEquiv (hf : IsInjectiveEnvelope f) :
+    (hf.fgModuleCatMatlisDualRegular (A := A)).obj ≃ₗ[A] MatlisDual R E Aᵐᵒᵖ :=
+  (eqToIso hf.fgModuleCatMatlisDualRegular_obj).toLinearEquiv.trans <|
+    (matlisDualOpObjEquiv R E (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)).trans
+      -- The `R`-action on `ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ` is passed explicitly: instance search would find
+      -- the usual action on `Aᵐᵒᵖ` instead of the action through the algebra map.
+      (@MatlisDual.congrOp R _ E _ _ A _ _ Aᵐᵒᵖ _ _ _ _ (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _
+        (moduleOfAlgebra R _) _ (isScalarTower_moduleOfAlgebra R _) (LinearEquiv.refl _ _))
+
+/-- `fgModuleCatMatlisDualRegularEquiv` is `ModuleCat.matlisDualOpObjEquiv` for the regular right
+module, read through `fgModuleCatMatlisDualRegular_obj`. -/
+theorem IsInjectiveEnvelope.fgModuleCatMatlisDualRegularEquiv_apply (hf : IsInjectiveEnvelope f)
+    (φ : (hf.fgModuleCatMatlisDualRegular (A := A)).obj) (a : Aᵐᵒᵖ) :
+    equivLinearMap R E Aᵐᵒᵖ (hf.fgModuleCatMatlisDualRegularEquiv φ) a =
+      -- The `R`-action on `ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ` is passed explicitly, as in
+      -- `fgModuleCatMatlisDualRegularEquiv`.
+      @equivLinearMap R _ E _ _ (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _ (moduleOfAlgebra R _)
+        (matlisDualOpObjEquiv R E _ ((eqToHom hf.fgModuleCatMatlisDualRegular_obj).hom φ)) a := by
+  simp [fgModuleCatMatlisDualRegularEquiv]
+
+/-- The Matlis dual of `D A` is the regular right module, by evaluation. -/
+def IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso
+    (hf : IsInjectiveEnvelope f) :
+    (hf.fgModuleCatMatlisDuality (A := A)).functor.obj (op hf.fgModuleCatMatlisDualRegular) ≅
+      FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ :=
+  (hf.fgModuleCatMatlisDuality (A := A)).functor.mapIso
+      (eqToIso (congrArg op hf.fgModuleCatMatlisDualRegular_def)) ≪≫
+    (hf.fgModuleCatMatlisDuality (A := A)).counitIso.app (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)
+
+/-- `D (D A) ≅ Aᵐᵒᵖ` is the counit of the Matlis duality at the regular right module. -/
+theorem IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso_def
+    (hf : IsInjectiveEnvelope f) :
+    hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A) =
+      (hf.fgModuleCatMatlisDuality (A := A)).functor.mapIso
+          (eqToIso (congrArg op hf.fgModuleCatMatlisDualRegular_def)) ≪≫
+        (hf.fgModuleCatMatlisDuality (A := A)).counitIso.app (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) :=
+  (rfl)
+
+/-- The inverse of `D (D A) ≅ Aᵐᵒᵖ` sends `a` to evaluation at `a`. A pre-simp lemma
+(`simp↓`): it applies before `fgModuleCatMatlisDuality_functor_obj_obj` rewrites the type of the
+morphism. -/
+@[simp↓]
+theorem IsInjectiveEnvelope.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso_inv_apply
+    (hf : IsInjectiveEnvelope f) (a : Aᵐᵒᵖ) (φ : (hf.fgModuleCatMatlisDualRegular (A := A)).obj) :
+    equivLinearMap R E _
+      (matlisDualObjEquiv R E (hf.fgModuleCatMatlisDualRegular (A := A)).obj
+        ((hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).inv.hom a)) φ =
+      equivLinearMap R E Aᵐᵒᵖ (hf.fgModuleCatMatlisDualRegularEquiv φ) a := by
+  have := hf.moduleInjective
+  simp only [fgModuleCatMatlisDualRegularEquiv_apply,
+    fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso_def, Iso.trans_inv, Iso.app_inv,
+    ObjectProperty.FullSubcategory.comp_hom, fgModuleCatMatlisDuality_counitIso_inv_app,
+    Functor.mapIso_inv, eqToIso.inv, eqToHom_map]
+  -- The casts along `fgModuleCatMatlisDualRegular_def` and `fgModuleCatMatlisDualRegular_obj` are
+  -- identities here, where `D A` unfolds to the dual of the regular right module.
+  exact ModuleCat.matlisDualEvalIsoOp_hom_apply (A := A) hf.length_quotient_linearMap_eq_one
+    (ModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) _ a φ
+
+/-- `D A` is an injective object of `mod A`, as the dual of the projective right module `Aᵐᵒᵖ`. -/
+instance IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular (hf : IsInjectiveEnvelope f) :
+    Injective (hf.fgModuleCatMatlisDualRegular (A := A)) := by
+  have : Projective (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ) := FGModuleCat.projective_of_free Aᵐᵒᵖ _
+  have : Projective ((hf.fgModuleCatMatlisDuality (A := A)).inverse.obj
+      (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)) :=
+    (hf.fgModuleCatMatlisDuality.symm.map_projective_iff _).2 inferInstance
+  exact inferInstanceAs (Injective (unop _))
+
+/-- **Finitely generated injective modules are summands of finite sums of `D A`**: an injective
+object of `mod A` lies in `add (D A)`. This is the dual of the
+statement that finitely generated projective modules over `Aᵐᵒᵖ` lie in `add Aᵐᵒᵖ`. -/
+theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective
+    (hf : IsInjectiveEnvelope f) (I : FGModuleCat.{v} A) [Injective I] :
+    additiveClosure (hf.fgModuleCatMatlisDualRegular (A := A)) I := by
+  let Φ := hf.fgModuleCatMatlisDuality (A := A)
+  have : Projective (Φ.functor.obj (op I)) := (Φ.map_projective_iff _).2 inferInstance
+  rw [← Φ.additiveClosure_functor_obj_op_iff]
+  exact (hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).symm.retract
+    |>.additiveClosure_le _
+      (FGModuleCat.additiveClosure_of_isGenerator_of_projective (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)
+        (Φ.functor.obj (op I)))
+
+end Regular
 
 end TauCeti

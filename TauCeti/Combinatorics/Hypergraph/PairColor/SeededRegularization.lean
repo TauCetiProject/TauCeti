@@ -82,6 +82,13 @@ theorem le_ceil_mul_mul_four_pow_sq {ε : ℝ} (hε : 0 < ε) (k : ℕ) :
     _ ≤ ⌈8 / ε ^ 5⌉₊ * (k * 4 ^ k ^ 2) :=
       Nat.le_mul_of_pos_left _ (Nat.ceil_pos.2 (by positivity))
 
+/-- Seeded equitable pair-color regularity does not decrease the number of parts when `0 < ε`. -/
+theorem le_equitablePairColorRegularityBound {ε : ℝ} (hε : 0 < ε) (l : ℕ) :
+    l ≤ equitablePairColorRegularityBound ε l := by
+  rw [equitablePairColorRegularityBound_def]
+  exact (le_max_left l 1).trans
+    (Function.id_le_iterate_of_id_le (le_ceil_mul_mul_four_pow_sq hε) _ _)
+
 namespace PairColorSystem
 
 variable {κ V : Type*} [Fintype V] [DecidableEq V] (S : PairColorSystem κ V)
@@ -115,7 +122,7 @@ theorem exists_refining_equipartition_energy_add_lt [Fintype κ]
   have hmono := S.energy_mono_of_refines (inf_le_right : Q ⊓ R ≤ R)
   -- A bad pair has two distinct nonempty cells, so the ordered-pair denominator is positive.
   obtain ⟨AB, hAB⟩ : (S.irregularPairs ε P).Nonempty := by
-    rw [nonempty_iff_ne_empty]
+    rw [← ne_empty_iff_nonempty]
     rintro he
     rw [he, sum_empty] at hbad
     nlinarith [sq_nonneg (n : ℝ)]
