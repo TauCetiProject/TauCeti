@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Lie.Cohomology.ChevalleyEilenberg
+public import TauCeti.Algebra.Lie.InvariantForm.Basic
 
 /-!
 # The Cartan three-form of an invariant bilinear form
@@ -103,14 +104,6 @@ theorem cartanThreeForm_apply (v : Fin 3 → L) :
 theorem cartanThreeForm_apply_of_lie_eq {x y z : L} (h : ⁅y, z⁆ = x) :
     B.cartanThreeForm hB ![x, y, z] = B x x := by
   simp [h]
-
-/-- The pullback `B(φ ·, φ ·)` of a bilinear map `B` invariant under the adjoint action along a
-Lie algebra morphism `φ` is again invariant. -/
-theorem compl₁₂_lieInvariant (hB : ∀ x y z : L, B ⁅x, y⁆ z = -B y ⁅x, z⁆) {L' : Type*}
-    [LieRing L'] [LieAlgebra R L'] (φ : L' →ₗ⁅R⁆ L) (x y z : L') :
-    B.compl₁₂ φ.toLinearMap φ.toLinearMap ⁅x, y⁆ z =
-      -B.compl₁₂ φ.toLinearMap φ.toLinearMap y ⁅x, z⁆ := by
-  simp [hB]
 
 /-- **Naturality of the Cartan three-form.** Pulling the Cartan three-form of `B` back along a
 Lie algebra morphism `φ` gives the Cartan three-form of the pulled-back form `B(φ ·, φ ·)`. -/
