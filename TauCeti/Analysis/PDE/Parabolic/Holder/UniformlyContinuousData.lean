@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
 import TauCeti.Analysis.Normed.Group.Submodule
 import TauCeti.Analysis.PDE.HeatKernel.UniformContinuous
 import TauCeti.Analysis.PDE.Parabolic.Holder.InitialTrace
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Parabolic Cauchy and terminal-value problems with bounded uniformly continuous data

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.InitialTrace
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # The rate of attainment of the initial trace
@@ -42,8 +43,6 @@ beyond.
   rate of attainment of the initial trace.
 * `TauCeti.ParabolicC2HolderSpace.exists_forall_abs_sub_lt_of_uniformEquicontinuous`: uniform
   attainment for families with uniformly equicontinuous initial traces.
-* `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
-  `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
 
 ## References
 
@@ -55,54 +54,6 @@ beyond.
 public section
 
 noncomputable section
-
-namespace UniformEquicontinuous
-
-open Real
-
-/-- `X ε / (2 (X + 1)) < ε / 2` for `X ≥ 0` and `ε > 0`. -/
-private theorem mul_div_two_mul_add_one_lt {ε : ℝ} (hε : 0 < ε) (X : ℝ) (hX : 0 ≤ X) :
-    X * (ε / (2 * (X + 1))) < ε / 2 := by
-  have hX1 : X / (X + 1) < 1 := (div_lt_one (by positivity)).2 (by linarith)
-  calc X * (ε / (2 * (X + 1))) = ε / 2 * (X / (X + 1)) := by field_simp
-    _ < ε / 2 * 1 := mul_lt_mul_of_pos_left hX1 (by positivity)
-    _ = ε / 2 := mul_one _
-
-/-- **From a rate of attainment to uniform attainment.** Let `(g_k)` be a uniformly equicontinuous
-family of real functions, and let `F k p ≤ C (η + s(p) L)` whenever `g_k` moves by at most `η`
-over distances at most `√(s p)`, where `C ≥ 0` and `s ≥ 0`. Then `F k p < ε` for all `k` and all
-`p` with `s p` small enough. -/
-theorem exists_forall_lt_of_le_mul_add_mul {κ X P : Type*} [PseudoMetricSpace X]
-    {g : κ → X → ℝ} (hg : UniformEquicontinuous g) {F : κ → P → ℝ} {s : P → ℝ}
-    (hs : ∀ p, 0 ≤ s p) {C L : ℝ} (hC : 0 ≤ C)
-    (hF : ∀ η k p, (∀ x y, dist x y ≤ √(s p) → |g k x - g k y| ≤ η) →
-      F k p ≤ C * (η + s p * L))
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ δ > 0, ∀ k p, s p < δ → F k p < ε := by
-  set R := C * |L|
-  set η := ε / (2 * (C + 1))
-  have hη : 0 < η := by positivity
-  obtain ⟨δ₁, hδ₁, hδ₁η⟩ := Metric.uniformEquicontinuous_iff.1 hg η hη
-  refine ⟨min (δ₁ ^ 2) (ε / (2 * (R + 1))), by positivity, fun k p hp ↦ ?_⟩
-  have hsδ : √(s p) < δ₁ := by
-    rw [← sqrt_sq hδ₁.le]
-    exact sqrt_lt_sqrt (hs p) (hp.trans_le (min_le_left _ _))
-  have key := hF η k p fun x y hxy ↦ by
-    simpa [Real.dist_eq] using (hδ₁η x y (hxy.trans_lt hsδ) k).le
-  have hR : C * (s p * L) ≤ R * s p := by
-    calc _ = C * s p * L := by ring
-      _ ≤ C * s p * |L| := mul_le_mul_of_nonneg_left (le_abs_self _) (mul_nonneg hC (hs p))
-      _ = _ := by ring
-  have hRs : R * s p ≤ R * (ε / (2 * (R + 1))) :=
-    mul_le_mul_of_nonneg_left (hp.le.trans (min_le_right _ _)) (by positivity)
-  -- Each of the two terms is less than `ε / 2`.
-  have h₁ := mul_div_two_mul_add_one_lt hε C hC
-  have h₂ := mul_div_two_mul_add_one_lt hε R (by positivity)
-  calc _ ≤ C * (η + s p * L) := key
-    _ = C * η + C * (s p * L) := by ring
-    _ < ε := by linarith
-
-end UniformEquicontinuous
 
 namespace TauCeti.ParabolicC2HolderSpace
 
