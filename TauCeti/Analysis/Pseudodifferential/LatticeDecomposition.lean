@@ -380,7 +380,7 @@ theorem isBallFamily_smulLeft (z : ι → CoordinateSpace n) (r : ℝ)
   -- `φᵢ a` has the coefficient of the composition of `a` with the cutoff symbol of `φᵢ`.
   have hc : (smulLeft (Complex.ofRealCLM.contDiff.comp (hφ i)) a).coefficient =
       ((cutoff W (hφ i)).comp a).coefficient := funext fun p ↦ by
-    simp [ContinuousLinearMap.smul_comp, Complex.coe_smul]
+    simp [ContinuousLinearMap.smul_comp]
   simpa only [hc, zero_add] using norm_mixedDeriv_comp_le_of_coefficient_eq
     (f := fun y ↦ L (φ i y)) (B := fun s ↦ max (B s.length) 0) (fun p ↦ by simp [L]) a
     (fun _ ↦ le_max_right _ _) hf (fun s t ↦ hD s t x ξ) α β

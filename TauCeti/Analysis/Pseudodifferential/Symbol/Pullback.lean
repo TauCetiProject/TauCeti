@@ -103,9 +103,9 @@ private theorem coefficient_eulerTerm
     (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
     (eulerTerm N hN a).coefficient (x, ξ) =
       ∑ k, N x ξ k • (frequencyDeriv k a).coefficient (x, ξ) := by
-  simp only [eulerTerm, coefficient_sum, Finset.sum_apply, coefficient_smulLeft,
-    Function.comp_apply, Complex.ofRealCLM_apply, Complex.coe_smul, coefficient_inclusion,
-    coefficient_comp, coefficient_ofInner, EuclideanSpace.inner_single_right]
+  simp only [eulerTerm, coefficient_sum, Finset.sum_apply, coefficient_smulLeft_ofReal,
+    coefficient_inclusion, coefficient_comp, coefficient_ofInner, Complex.coe_smul,
+    EuclideanSpace.inner_single_right]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   have h : N x ξ k = ∑ l, ξ l * N x (EuclideanSpace.single l 1) k := by
     rw [(N x).apply_eq_sum_single ξ]
@@ -221,7 +221,7 @@ private theorem coordinateDeriv_coreCoeff_fst (hL : ContDiff ℝ ∞ L) (hLinv :
   have hξ : Linv (κ x) (L (κ x) ξ) = ξ := DFunLike.congr_fun (hLL _) _
   simp only [coreSpatial, coefficient_add, Pi.add_apply, coefficient_sum, Finset.sum_apply]
   rw [coefficient_eulerTerm]
-  simp [Complex.coe_smul, coefficient_spatialDeriv, coefficient_frequencyDeriv, hξ]
+  simp [coefficient_spatialDeriv, coefficient_frequencyDeriv, hξ]
 
 private theorem coordinateDeriv_coreCoeff_snd (hL : ContDiff ℝ ∞ L) (a : Symbol n V W m)
     (j : Fin n) (x ξ : CoordinateSpace n) :
@@ -234,7 +234,7 @@ private theorem coordinateDeriv_coreCoeff_snd (hL : ContDiff ℝ ∞ L) (a : Sym
   have h : HasFDerivAt (fun η ↦ a.coefficient (κ x, L (κ x) η)) _ ξ := ha.hasFDerivAt.comp ξ hη
   simp only [coordinateDeriv_cons, coordinateDeriv_nil, coreCoeff]
   rw [h.fderiv, ContinuousLinearMap.comp_apply, fderiv_apply_eq_sum_coordinateDeriv ha]
-  simp [coreFrequency, coefficient_sum, Complex.coe_smul, coefficient_frequencyDeriv]
+  simp [coreFrequency, coefficient_sum, coefficient_frequencyDeriv]
 
 /-- On a compact set of positions, `a(κ x, L(κ x) ξ)` is bounded by `C ⟨ξ⟩ ^ m`: on the compact set
 `κ '' K` the norms of `L` and of its left inverse are bounded, so `⟨L(κ x) ξ⟩` and `⟨ξ⟩` are

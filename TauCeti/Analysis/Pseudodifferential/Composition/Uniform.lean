@@ -456,8 +456,7 @@ private theorem coefficient_latticePiece (a : Symbol n V W m) (j : Fin n → ℤ
     (q : CoordinateSpace n × CoordinateSpace n) :
     (latticePiece a j).coefficient q =
       latticeBump n (q.1 - latticePoint j) • a.coefficient q := by
-  rw [latticePiece, coefficient_smulLeft, Function.comp_apply, Complex.ofRealCLM_apply,
-    Complex.coe_smul]
+  rw [latticePiece, coefficient_smulLeft_ofReal]
 
 omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
 /-- The lattice pieces of a uniform symbol `a` form a ball family centred at the lattice points,
@@ -478,9 +477,9 @@ private theorem quantizeSchwartzValue_sharp_latticePiece (p : Symbol n W U m')
   rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
   congr 1
   ext y
-  rw [HasCompactSupport.toSchwartzMap_toFun, latticePiece, quantizeSchwartzValue_smulLeft,
-    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j), Function.comp_apply,
-    Complex.ofRealCLM_apply, Complex.coe_smul, quantizeUniformCLM_apply]
+  simp [latticePiece, quantizeSchwartzValue_smulLeft,
+    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
+    quantizeUniformCLM_apply]
 
 /-- The series `∑ⱼ p # χⱼ a` over the lattice pieces of `a` converges to a symbol of order
 `m' + m` with estimates uniform in the position, whose quantization is `Op(p) ∘ Op(a)`. -/

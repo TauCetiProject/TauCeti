@@ -1111,9 +1111,7 @@ theorem quantizeSchwartzValue_coordSubSymbol_comp (b : Symbol n V W m) (z : Coor
     quantizeSchwartzValue ((coordSubSymbol z j).comp b).coefficient u x =
       ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x := by
   rw [quantizeSchwartzValue_congr_left (b := ((x - z) j : ℂ) • b.coefficient) (fun ξ ↦ by
-      rw [coefficient_comp, coefficient_coordSubSymbol, ContinuousLinearMap.smul_comp,
-        ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
-    quantizeSchwartzValue_smul_left]
+      simp [coefficient_comp, ← Complex.coe_smul]), quantizeSchwartzValue_smul_left]
 
 /-- **Commutator with a coordinate function.** For a symbol `b` with compact spatial support,
 `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`: multiplying `Op(a) (Op(b) u)` by

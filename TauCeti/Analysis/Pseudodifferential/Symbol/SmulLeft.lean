@@ -18,7 +18,8 @@ operator `Op(a)` in the position.
 ## Main results
 
 * `TauCeti.Symbol.smulLeft`: the symbol `ψ(x) a(x, ξ)`, with coefficient
-  `TauCeti.Symbol.coefficient_smulLeft`.
+  `TauCeti.Symbol.coefficient_smulLeft`, and `TauCeti.Symbol.coefficient_smulLeft_ofReal` for a
+  real `ψ`.
 * `TauCeti.Symbol.hasCompactSpatialSupport_smulLeft`: when `ψ` has compact support, `ψ(x) a(x, ξ)`
   has compact spatial support.
 * `TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`: when `a` has compact spatial support, so does
@@ -50,6 +51,14 @@ theorem coefficient_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff �
     (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
     (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
   simp [smulLeft, coefficient_inclusion, ContinuousLinearMap.smul_comp]
+
+/-- `TauCeti.Symbol.coefficient_smulLeft` for a real smooth function `ψ`, viewed in `ℂ`: the
+coefficient of `ψ(x) a(x, ξ)` is the real multiple `ψ(x) • a(x, ξ)`. -/
+theorem coefficient_smulLeft_ofReal {ψ : CoordinateSpace n → ℝ}
+    (hψ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ)) (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
+  simp [Complex.coe_smul]
 
 /-- Multiplying any symbol by a compactly supported smooth function of the position gives a symbol
 with compact spatial support. -/
