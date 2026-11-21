@@ -187,6 +187,7 @@ theorem mk_surjective : Function.Surjective (mk S hn) :=
 
 /-- Two diffeotopies through `S` have the same path class exactly when they are homotopic through
 `S`. -/
+@[simp]
 theorem mk_eq_mk_iff {Φ Ψ : sliceSubgroup S} : mk S hn Φ = mk S hn Ψ ↔ HomotopicWith S Φ Ψ :=
   (homotopicWithCon S hn).eq
 

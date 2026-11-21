@@ -42,6 +42,8 @@ endpoint flux of the final diffeomorphism of a class is the class of its flux mo
 * `TauCeti.pathClassFlux_mk`: the flux of the class of a path is the flux of the path.
 * `TauCeti.range_pathClass_final`: the final diffeomorphisms of the path classes form the isotopy
   stabilizer of `σ`.
+* `TauCeti.Diffeotopy.PathClass.final_mem_isotopyStabilizer`: the final diffeomorphism of a path
+  class lies in the isotopy stabilizer of `σ`.
 * `TauCeti.mem_fluxGroup_iff_exists_pathClass`: the flux group is the flux image of the loop
   classes.
 * `TauCeti.endpointFlux_pathClass_final`: the endpoint flux factors through the path classes.
@@ -113,6 +115,12 @@ theorem range_pathClass_final :
   ext φ
   simp only [Subgroup.mem_map, mem_sliceSubgroup, finalHom_apply, mem_isotopyStabilizer]
 
+/-- The final diffeomorphism of a path class of `σ` lies in the isotopy stabilizer of `σ`. -/
+theorem Diffeotopy.PathClass.final_mem_isotopyStabilizer
+    (γ : PathClass (diffeomorphStabilizer σ.val) le_rfl) :
+    PathClass.final _ _ γ ∈ isotopyStabilizer σ.val :=
+  (range_pathClass_final (σ := σ)) ▸ ⟨γ, rfl⟩
+
 /-- **The flux group is the flux image of the loop classes.** A class lies in the flux group of `σ`
 exactly when it is the flux of a path class of `σ` whose final diffeomorphism is the identity. -/
 theorem mem_fluxGroup_iff_exists_pathClass {c : deRhamCohomology J M 1} :
@@ -132,9 +140,8 @@ theorem mem_fluxGroup_iff_exists_pathClass {c : deRhamCohomology J M 1} :
 /-- **The endpoint flux factors through the path classes.** The endpoint flux of the final
 diffeomorphism of a path class of `σ` is the class modulo the flux group of the flux of the path
 class. -/
-theorem endpointFlux_pathClass_final (γ : PathClass (diffeomorphStabilizer σ.val) le_rfl)
-    (h : PathClass.final _ _ γ ∈ isotopyStabilizer σ.val) :
-    endpointFlux σ ⟨PathClass.final _ _ γ, h⟩ =
+theorem endpointFlux_pathClass_final (γ : PathClass (diffeomorphStabilizer σ.val) le_rfl) :
+    endpointFlux σ ⟨PathClass.final _ _ γ, γ.final_mem_isotopyStabilizer⟩ =
       Multiplicative.ofAdd ((pathClassFlux σ γ).toAdd :
         deRhamCohomology J M 1 ⧸ fluxGroup σ) := by
   obtain ⟨Φ, rfl⟩ := PathClass.mk_surjective γ
