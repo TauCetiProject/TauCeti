@@ -49,8 +49,8 @@ theorem support_lkjMeasure (hη : 0 < η) :
         (R : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
           ∀ i, (R : Matrix (Fin p) (Fin p) ℝ) i i = 1} := by
       simp only [ofPred_and, ofPred_forall]
-      exact (isClosed_setOfPred_posSemidef.preimage continuous_subtype_val).inter <|
-        isClosed_iInter fun i ↦ isClosed_eq (continuous_subtype_val.matrix_elem i i)
+      exact (isClosed_setOfPred_posSemidef.preimage continuous_subtypeVal).inter <|
+        isClosed_iInter fun i ↦ isClosed_eq (continuous_subtypeVal.matrix_elem i i)
           continuous_const
     refine Measure.support_subset_of_isClosed hclosed ?_
     filter_upwards [ae_posDef_lkjMeasure p η, ae_diag_eq_one_lkjMeasure p η] with R hR hdiag

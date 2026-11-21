@@ -31,6 +31,7 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
 * `TauCeti.laplacianSymbol`: the symbol `-4π² ‖ξ‖²` of the Laplacian.
 * `SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol`: on Schwartz functions, `Δ` is the
   Fourier multiplier with symbol `TauCeti.laplacianSymbol`.
+* `TauCeti.hasTemperateGrowth_laplacianSymbol`: it has temperate growth.
 * `TauCeti.sqrtNegLaplacianSymbol`: the symbol `2π ‖ξ‖` of `√(-Δ)`.
 * `TauCeti.sq_sqrtNegLaplacianSymbol`: its square is the symbol of `-Δ`.
 * `MeasureTheory.Lp.laplacian_toTemperedDistribution_eq_iff`: for `f, h ∈ L²`, the distributional
@@ -101,6 +102,17 @@ end Homogeneity
 
 variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The symbol of the Laplacian has temperate growth, so it is a Fourier multiplier on Schwartz
+functions. -/
+@[fun_prop]
+theorem hasTemperateGrowth_laplacianSymbol : (laplacianSymbol : E → ℝ).HasTemperateGrowth := by
+  have h : (laplacianSymbol : E → ℝ) = fun ξ ↦ -(4 * π ^ 2) * ‖ξ‖ ^ 2 := by
+    ext ξ
+    rw [laplacianSymbol_apply, neg_mul]
+  rw [h]
+  fun_prop
 
 /-- On Schwartz functions, the Laplacian is the Fourier multiplier with symbol
 `TauCeti.laplacianSymbol`. -/

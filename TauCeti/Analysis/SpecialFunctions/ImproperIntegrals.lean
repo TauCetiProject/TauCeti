@@ -27,6 +27,9 @@ zero and one.
 ## Main declarations
 
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
+* `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
+  `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
+  roots is dominated by a Cauchy integrand and is integrable for positive radii.
 
 * `TauCeti.integrableOn_rpow_mul_sin` and `TauCeti.integral_Ioi_rpow_mul_sin`: integrability
   and the value of `∫ x in Ioi 0, x ^ (-(alpha + 1)) * sin x` for `0 < alpha < 1`.
@@ -127,6 +130,41 @@ theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
     ring
   exact ((integrable_inv_one_add_sq.comp_div hc).const_mul (c ^ 2)⁻¹).congr
     (Eventually.of_forall hscale)
+
+/-- For positive radii, the inverse product of two quadratic square roots is bounded by the
+Cauchy integrand at their minimum radius. -/
+theorem one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
+    1 / (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) ≤
+      ((min a b) ^ 2 + t ^ 2)⁻¹ := by
+  have hd : 0 < min a b := lt_min ha hb
+  rw [one_div]
+  apply inv_anti₀ (add_pos_of_pos_of_nonneg (sq_pos_of_pos hd) (sq_nonneg t))
+  calc
+    (min a b) ^ 2 + t ^ 2 =
+        Real.sqrt ((min a b) ^ 2 + t ^ 2) * Real.sqrt ((min a b) ^ 2 + t ^ 2) :=
+      (Real.mul_self_sqrt (by positivity)).symm
+    _ ≤ _ := by
+      gcongr <;> nlinarith [min_le_left a b, min_le_right a b]
+
+/-- The inverse product of `sqrt (a² + t²)` and `sqrt (b² + t²)` is integrable on the whole
+real line when both radii are positive. -/
+theorem integrable_one_div_sqrt_mul_sqrt {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    Integrable (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) := by
+  have hdcont : Continuous (fun t : ℝ ↦
+      Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) :=
+    (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2))).mul
+      (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2)))
+  have hcont : Continuous (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) :=
+    continuous_const.div hdcont (fun t ↦ by
+      exact (mul_pos (Real.sqrt_pos.2 (by positivity))
+        (Real.sqrt_pos.2 (by positivity))).ne')
+  have hC : Integrable (fun t : ℝ ↦ ((min a b) ^ 2 + t ^ 2)⁻¹) := by
+    simpa only [add_comm] using TauCeti.integrable_inv_sq_add_sq (lt_min ha hb).ne'
+  refine hC.mono' hcont.aestronglyMeasurable (Eventually.of_forall fun t ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq ha hb t
 
 /-- A remainder `E` that is interval integrable on `[a, b]` with `0 < a` makes `t ^ (τ - 1) * E t`
 interval integrable on `[a, b]`. -/

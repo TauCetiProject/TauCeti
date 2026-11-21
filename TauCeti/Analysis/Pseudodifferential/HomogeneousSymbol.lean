@@ -37,9 +37,13 @@ builds a homogeneous symbol from a function given only away from `ξ = 0`.
 The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
-  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
+  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), with the joint continuity of
+  straight lines `s ↦ (1 - s) a + s b` (`HomogeneousSymbol.continuousOn_coefficient_lineMap`),
+  and the pointwise
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
+* the symbol `HomogeneousSymbol.ofLinear` of degree `1` given by a continuous real-linear function
+  of the frequency, as for first-order operators with constant coefficients;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions, and the linear change
   of variables `HomogeneousSymbol.compProdMap`, `(x, ξ) ↦ a(P x, Q ξ)` for a linear map `P` and a
@@ -251,6 +255,24 @@ theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymb
     (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
   map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
 
+/-- The coefficient of a real affine combination `(1 - s) a + s b` of homogeneous symbols is the
+same combination of their coefficients. -/
+@[simp]
+theorem coefficient_lineMap (a b : HomogeneousSymbol X E V W m) (s : ℝ) (p : X × E) :
+    (AffineMap.lineMap a b s).coefficient p =
+      AffineMap.lineMap (a.coefficient p) (b.coefficient p) s := by
+  simp [AffineMap.lineMap_apply_module]
+
+/-- The straight line `s ↦ (1 - s) a + s b` between two homogeneous symbols is jointly continuous
+in the time and the point at every nonzero frequency. -/
+theorem continuousOn_coefficient_lineMap (a b : HomogeneousSymbol X E V W m) :
+    ContinuousOn (fun q : ℝ × X × E ↦ (AffineMap.lineMap a b q.1).coefficient q.2)
+      {q | q.2.2 ≠ 0} := by
+  simp only [coefficient_lineMap]
+  exact ContinuousOn.lineMap (a.continuousOn_coefficient.comp continuous_snd.continuousOn
+    fun _ hq ↦ hq) (b.continuousOn_coefficient.comp continuous_snd.continuousOn fun _ hq ↦ hq)
+    continuous_fst.continuousOn
+
 /-! ### Changing the degree -/
 
 /-- Transport a homogeneous symbol along an equality of degrees, for instance to identify the
@@ -332,6 +354,13 @@ def comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
 theorem coefficient_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m)
     (p : X × E) : (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) :=
   (rfl)
+
+/-- If the composite `b a` of two homogeneous symbols vanishes, so does the composite of their
+values at every point. -/
+theorem coefficient_comp_coefficient_eq_zero {b : HomogeneousSymbol X E W U m'}
+    {a : HomogeneousSymbol X E V W m} (h : b.comp a = 0) (p : X × E) :
+    b.coefficient p ∘L a.coefficient p = 0 := by
+  simpa using congrFun (congrArg coefficient h) p
 
 @[simp]
 theorem comp_add (b : HomogeneousSymbol X E W U m') (a₁ a₂ : HomogeneousSymbol X E V W m) :
@@ -429,6 +458,21 @@ degree. -/
 theorem id_comp (a : HomogeneousSymbol X E V W m) :
     (id X E W).comp a = a.castDegree (zero_add m).symm :=
   ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
+
+variable (X) in
+/-- The homogeneous symbol of degree `1` given at every position by a continuous real-linear
+function `L` of the frequency, such as the principal symbol `∑ⱼ i ξⱼ Aⱼ` of a first-order operator
+`∑ⱼ Aⱼ ∂ⱼ` with constant coefficients. -/
+def ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) : HomogeneousSymbol X E V W 1 where
+  coefficient p := L p.2
+  zero_covector _ := map_zero L
+  contDiffOn_coefficient := (L.contDiff.comp contDiff_snd).contDiffOn
+  homogeneous _ _ _ _ := by rw [Real.rpow_one, map_smul]
+
+@[simp]
+theorem coefficient_ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) (p : X × E) :
+    (ofLinear X L).coefficient p = L p.2 :=
+  (rfl)
 
 /-! ### Pullback in the position -/
 
