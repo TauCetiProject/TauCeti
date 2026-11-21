@@ -81,6 +81,8 @@ that enlarging the stabilization changes the identification of determinant lines
   on exterior products, which determine it by `TauCeti.rid_lTensor_eval_injective`.
 * `TauCeti.exists_spanning_ιMulti_append`: exterior products spanning `det B`, with the data
   evaluating the isomorphism on them.
+* `TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero`: when all four terms are zero, it
+  matches the empty exterior products tensored with their normalized functionals.
 * `TauCeti.detLineFourTermEquiv_congr`: it is natural for isomorphisms of four-term exact
   sequences.
 * `TauCeti.detLineShortExactCancelEquiv`: the isomorphism `det V ⊗ (det V')^* ≃ det U ⊗ (det U')^*`
@@ -123,7 +125,7 @@ variable {U V W : Type*} [AddCommGroup U] [Module K U] [AddCommGroup V] [Module 
 `TauCeti.exteriorPower.shortExactEquiv`, whose target `⋀^(dim U + dim W) V` is the determinant
 line of `V`. -/
 def detLineShortExactEquiv : detLine K U ⊗[K] detLine K W ≃ₗ[K] detLine K V :=
-  have : FiniteDimensional K V := finiteDimensional_of_exact hfg
+  have : FiniteDimensional K V := hfg.moduleFinite
   exteriorPower.shortExactEquiv hf hfg hg ≪≫ₗ
     LinearEquiv.ofEq _ _ (congrArg (⋀[K]^· V) (hfg.finrank_eq_add hf hg).symm)
 
@@ -320,6 +322,27 @@ theorem exists_spanning_ιMulti_append :
   rw [show g.rangeRestrict ∘ v = ⇑(Module.finBasis K (LinearMap.range g)) from funext hv]
   exact exists_eq_smul_detLineShortExactEquiv hf hfg.rangeRestrict g.surjective_rangeRestrict
 
+/-- **`TauCeti.detLineFourTermEquiv` of a sequence of zero spaces.** When all four terms of the
+exact sequence have dimension zero, the isomorphism sends the empty exterior product of `B`
+tensored with the functional taking the value `1` on the empty exterior product of `C` to the
+empty exterior product of `A` tensored with the functional taking the value `1` on the empty
+exterior product of `D`. -/
+theorem detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero (hA : finrank K A = 0)
+    (hB : finrank K B = 0) (hC : finrank K C = 0) (hD : finrank K D = 0)
+    (u : Fin (finrank K A) → A) (b : Fin (finrank K B) → B) :
+    detLineFourTermEquiv hf hfg hgh hh
+        (exteriorPower.ιMulti K _ b ⊗ₜ (detLineEquivOfFinrankEqZero hC).toLinearMap) =
+      exteriorPower.ιMulti K _ u ⊗ₜ (detLineEquivOfFinrankEqZero hD).toLinearMap := by
+  have hg : finrank K (LinearMap.range g) = 0 :=
+    Nat.eq_zero_of_le_zero ((Submodule.finrank_le _).trans hC.le)
+  rw [detLineFourTermEquiv_tmul_eq_smul_tmul hf hfg hgh hh u 0 0
+      (γ := exteriorPower.ιMulti K _ 0) ?_ ?_ _ (detLineEquivOfFinrankEqZero_ιMulti hD _),
+    LinearEquiv.coe_coe, detLineEquivOfFinrankEqZero_ιMulti, one_smul]
+  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_of_eq_zero hB,
+      ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hA, hg])]
+  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_of_eq_zero hC,
+      ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hg, hD])]
+
 /-- Pairing the dual factor with a nonzero element `ω` of a line `L` is injective on `M ⊗ L^*`.
 With `TauCeti.detLineFourTermEquiv_tmul`, taking `L = det D` and `ω` the exterior product of the
 images of a basis of `D`, this determines `TauCeti.detLineFourTermEquiv` by its values on
@@ -468,7 +491,7 @@ private theorem detLineFourTermEquiv_detLineShortExactCancelEquiv_ιMulti
             (exteriorPower.ιMulti K _ u ⊗ₜ exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v)) ⊗ₜ
           exteriorPower.ιMulti K _ ((π ∘ₗ g') ∘ w)) ⊗ₜ φ) := by
   have : FiniteDimensional K D := Module.Finite.of_surjective h hh
-  have : FiniteDimensional K B' := finiteDimensional_of_exact hjπ
+  have : FiniteDimensional K B' := hjπ.moduleFinite
   -- Vectors `z` of `C` lifting a basis of `D`, whose images span the line `det D`.
   choose z hz using fun i ↦ hh (Module.finBasis K D i)
   have hω : exteriorPower.ιMulti K _ (h ∘ z) ≠ 0 := by
@@ -591,7 +614,7 @@ def detLineSixTermEquiv :
     detLine K A₂ ⊗[K] Dual K (detLine K A₅) ≃ₗ[K]
       (detLine K A₁ ⊗[K] Dual K (detLine K A₄)) ⊗[K]
         (detLine K A₃ ⊗[K] Dual K (detLine K A₆)) :=
-  have : FiniteDimensional K A₄ := finiteDimensional_of_exact h₃₄
+  have : FiniteDimensional K A₄ := h₃₄.moduleFinite
   open Module.Invertible in
   (rightCancelEquiv _ (linearEquiv K (detLine K A₃))).symm.rTensor _ ≪≫ₗ
     (leftCancelEquiv _ (linearEquiv K (detLine K A₄))).symm.lTensor _ ≪≫ₗ
@@ -626,7 +649,7 @@ theorem detLineSixTermEquiv_tmul (u : Fin (finrank K A₁) → A₁)
     {χ : Dual K (detLine K A₆)} (hχ : χ (exteriorPower.ιMulti K _ (f₅ ∘ y)) = 1) :
     detLineSixTermEquiv hf₁ h₁₂ h₂₃ h₃₄ h₄₅ hf₅ (β ⊗ₜ φ) =
       φ ε • ((exteriorPower.ιMulti K _ u ⊗ₜ ψ) ⊗ₜ (γ ⊗ₜ χ)) := by
-  have : FiniteDimensional K A₄ := finiteDimensional_of_exact h₃₄
+  have : FiniteDimensional K A₄ := h₃₄.moduleFinite
   have : FiniteDimensional K A₆ := Module.Finite.of_surjective f₅ hf₅
   -- Normalized pairs `γ₀' γ₀ = 1` in `det A₃` and `ι₀' ι₀ = 1` in `det (range f₃)`.
   have : Nontrivial (detLine K A₃) := Module.nontrivial_of_finrank_eq_succ (finrank_detLine K A₃)

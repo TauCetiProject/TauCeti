@@ -40,8 +40,10 @@ superset. For a smooth metric, near any closed subset of an open preconnected ge
 also agrees with a curve smooth on the whole line.
 
 The finite-endpoint and open-superset geodesic extensions need a `C²` metric on a `C³` Hausdorff
-manifold without boundary. The maximal-geodesic identifications and globally smooth curve extensions
-require a smooth metric and manifold without boundary. No completeness assumption is needed.
+manifold without boundary. The smooth extensions on open preconnected sets require only a smooth
+metric and manifold; the closed-interval and maximal-geodesic smooth extensions and the
+maximal-geodesic identifications also assume a Hausdorff manifold without boundary. No completeness
+assumption is needed.
 
 ## Main results
 
@@ -103,7 +105,7 @@ variable
 
 section SmoothExtension
 
-variable [I.Boundaryless] [IsManifold I ∞ M]
+variable [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
 /-- A geodesic on an open preconnected set `U` agrees near any set closed in `ℝ` and contained

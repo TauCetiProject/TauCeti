@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
-public import TauCeti.Analysis.CStarAlgebra.InductiveLimit
+public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Sequential
 
 /-!
 # Elliott's approximate intertwining of sequential C⋆-systems
