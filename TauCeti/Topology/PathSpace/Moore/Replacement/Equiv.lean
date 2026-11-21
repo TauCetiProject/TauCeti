@@ -148,7 +148,7 @@ def fiberHomotopyEquiv {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     FiberHomotopyEquiv p (endpoint p) where
   toFun := incl p
   invFun := homotopyInverse hp
-  comp_toFun := ContinuousMap.ext fun e ↦ by simp
+  comp_toFun := endpoint_comp_incl p
   comp_invFun := ContinuousMap.ext fun x ↦ by simp
   left_inv := ⟨(leftHomotopy hp).symm⟩
   right_inv := ⟨(rightHomotopy hp).symm⟩
@@ -167,26 +167,23 @@ theorem fiberHomotopyEquiv_invFun {p : C(E, B)} (hp : IsHurewiczFibration.{max u
 Moore-path replacement, by `f ↦ (f, const)`. -/
 def fiberHomotopyEquivFiber {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) (b : B) :
     HomotopyEquiv {e // p e = b} (Fiber p b) :=
-  ((fiberHomotopyEquiv hp).fiber b).trans
-    ((Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
-      rw [endpoint_apply, Homeomorph.refl_apply, id_eq]).toHomotopyEquiv
+  ((fiberHomotopyEquiv hp).fiber b).trans (Fiber.homeomorphEndpointFiber p b).symm.toHomotopyEquiv
 
 @[simp]
 theorem val_fiberHomotopyEquivFiber_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
     (b : B) (f : {e // p e = b}) : (fiberHomotopyEquivFiber hp b f).val = incl p f := by
-  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
-  erw [HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv]
-  exact (FiberHomotopyEquiv.coe_fiber_apply _ b f).trans (by rw [fiberHomotopyEquiv_toFun])
+  rw [fiberHomotopyEquivFiber, HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv,
+    Fiber.val_homeomorphEndpointFiber_symm_apply, FiberHomotopyEquiv.coe_fiber_apply,
+    fiberHomotopyEquiv_toFun]
 
 @[simp]
 theorem coe_fiberHomotopyEquivFiber_symm_apply {p : C(E, B)}
     (hp : IsHurewiczFibration.{max u v} p) (b : B) (x : Fiber p b) :
     ((fiberHomotopyEquivFiber hp b).symm x : E) = homotopyInverse hp x.val := by
-  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
-  erw [HomotopyEquiv.symm_trans, HomotopyEquiv.trans_apply, ← Homeomorph.symm_toHomotopyEquiv,
-    Homeomorph.coe_toHomotopyEquiv]
-  exact (FiberHomotopyEquiv.coe_fiber_symm_apply _ b _).trans
-    (by rw [fiberHomotopyEquiv_invFun]; rfl)
+  rw [fiberHomotopyEquivFiber, HomotopyEquiv.symm_trans, HomotopyEquiv.trans_apply,
+    ← Homeomorph.symm_toHomotopyEquiv, Homeomorph.symm_symm, Homeomorph.coe_toHomotopyEquiv,
+    FiberHomotopyEquiv.coe_fiber_symm_apply, fiberHomotopyEquiv_invFun,
+    Fiber.coe_homeomorphEndpointFiber_apply]
 
 /-! ### The endpoint evaluation -/
 
@@ -195,22 +192,22 @@ variable {X : Type u} [TopologicalSpace X]
 theorem source_path_mem {A : Set X} (x : MooreReplacement (ContinuousMap.subtypeVal A)) :
     x.path.source ∈ A := by
   rw [source_path]
-  exact x.point.2
+  exact x.point.property
 
 /-- The Moore paths starting in `A` are the Moore-path replacement of the inclusion `A → X`. -/
 def homeomorphPathsFrom (A : Set X) :
     MooreReplacement (ContinuousMap.subtypeVal A) ≃ₜ {γ : MoorePath X // γ.source ∈ A} where
   toFun x := ⟨x.path, source_path_mem x⟩
-  invFun γ := mk ⟨γ.1.source, γ.2⟩ γ.1 rfl
+  invFun γ := mk ⟨γ.val.source, γ.property⟩ γ.val rfl
   left_inv x := ext (Subtype.ext (by simp)) (by simp)
   right_inv γ := Subtype.ext (path_mk _ _ _)
   continuous_toFun := continuous_path.subtype_mk _
   continuous_invFun := continuous_mk ((MoorePath.continuous_source.comp
-    continuous_subtype_val).subtype_mk _) continuous_subtype_val _
+    continuous_subtypeVal).subtype_mk _) continuous_subtypeVal _
 
 @[simp]
 theorem path_homeomorphPathsFrom_symm (A : Set X) (γ : {γ : MoorePath X // γ.source ∈ A}) :
-    ((homeomorphPathsFrom A).symm γ).path = γ.1 :=
+    ((homeomorphPathsFrom A).symm γ).path = γ.val :=
   path_mk _ _ _
 
 end MooreReplacement
@@ -218,7 +215,7 @@ end MooreReplacement
 /-- The **endpoint evaluation** `P_{A→X} X → X` of the Moore paths starting in a subset `A` is a
 Hurewicz fibration. -/
 theorem MoorePath.isHurewiczFibration_target {X : Type u} [TopologicalSpace X] (A : Set X) :
-    IsHurewiczFibration.{w} fun γ : {γ : MoorePath X // γ.source ∈ A} ↦ γ.1.target := by
+    IsHurewiczFibration.{w} fun γ : {γ : MoorePath X // γ.source ∈ A} ↦ γ.val.target := by
   convert (MooreReplacement.isHurewiczFibration_endpoint.{w} _).comp_homeomorph
     (MooreReplacement.homeomorphPathsFrom A).symm using 1
   funext γ

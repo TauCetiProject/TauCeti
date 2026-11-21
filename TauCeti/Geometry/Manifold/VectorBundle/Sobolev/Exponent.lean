@@ -33,12 +33,14 @@ For a finite bundle atlas `A`, every chart image has compact closure, so it has 
 
 ## Main results
 
+* `TauCeti.SectionChartData.lowerOrdersL_ofExponentLEL`: order and exponent inclusions commute,
+  including an infinite source exponent; the loss-one case uses the explicit
+  `TauCeti.SectionChartData.lowerOrdersL_one` rewrite.
 * `TauCeti.SectionChartData.chartValueL_ofExponentLEL`: the chart data are their `Lᵖ` copies.
 * `TauCeti.SectionChartData.ofExponentLEL_injective`: the inclusion is injective.
 * `TauCeti.SectionChartData.ofExponentLEL_self`,
   `TauCeti.SectionChartData.ofExponentLEL_ofExponentLEL`: the identity at `p = q` and
   transitivity.
-* `TauCeti.SectionChartData.lowerOrderL_ofExponentLEL`: compatibility with `lowerOrderL`.
 * `TauCeti.SectionChartData.ofExponentLEL_ofComponents`,
   `TauCeti.SobolevSection.ofExponentLEL_ofContMDiffSection`: compatibility with the Sobolev sections
   with given components, in particular those of `Cᵏ` sections.
@@ -137,13 +139,15 @@ theorem ofExponentLEL_ofExponentLEL (hpq : p ≤ q) (hqr : q ≤ r) (w : C.sobol
     rw [ofExponentLEL_apply, ofExponentLEL_apply, ofExponentLEL_apply,
       Wkp.ofExponentLEL_ofExponentLEL]
 
-/-- Lowering the exponent commutes with forgetting the highest derivative. -/
-theorem lowerOrderL_ofExponentLEL (hpq : p ≤ q) (w : C.sobolevSections μ q (k + 1)) :
-    C.lowerOrderL μ p k (C.ofExponentLEL μ (k + 1) hpq w) =
-      C.ofExponentLEL μ k hpq (C.lowerOrderL μ q k w) :=
-  Subtype.ext <| funext fun i ↦ funext fun j ↦ by
-    rw [lowerOrderL_apply, ofExponentLEL_apply, ofExponentLEL_apply, lowerOrderL_apply,
-      Wkp.lowerOrder_ofExponentLEL]
+/-- Lowering any number of derivatives commutes with lowering the exponent, including an
+infinite source exponent. -/
+theorem lowerOrdersL_ofExponentLEL (d : ℕ) (hpq : p ≤ q)
+    (w : C.sobolevSections μ q (k + d)) :
+    C.lowerOrdersL μ p k d (C.ofExponentLEL μ (k + d) hpq w) =
+      C.ofExponentLEL μ k hpq (C.lowerOrdersL μ q k d w) := by
+  apply C.chartValuesL_injective μ p k
+  funext i
+  simp only [chartValuesL_apply, chartValueL_lowerOrdersL, chartValueL_ofExponentLEL]
 
 variable {T : Type*} [AddCommGroup T] [Module ℝ T] (ι : T →ₗ[ℝ] S)
 

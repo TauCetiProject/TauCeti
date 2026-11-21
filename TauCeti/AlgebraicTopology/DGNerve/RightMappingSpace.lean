@@ -325,7 +325,7 @@ private theorem dgCast_boundary_term (f : Coherences R obj) (hf : IsConstInit f 
   · rw [ite_eq_right hmin]
     have hne : {s ∈ S.map Fin.castSuccEmb | s < t.castSucc}.Nonempty := by
       rw [hlt]
-      exact (nonempty_iff_ne_empty.2 hmin).map
+      exact (ne_empty_iff_nonempty.1 hmin).map
     rw [hf.1 _ _ _ _ _ _ _ (Fin.castSucc_ne_last t) hne, zero_dgComp, smul_zero, map_zero]
 
 /-- For coherences whose restriction to the first `n + 1` vertices is that of a constant simplex,
@@ -347,7 +347,7 @@ private theorem dgCast_boundary_last (f : Coherences R obj) (hf : IsConstInit f 
   have hne_last : ∀ a ∈ S.map Fin.castSuccEmb, a ≠ Fin.last (n + 1) := fun a ha ↦ by
     obtain ⟨t, -, rfl⟩ := mem_map.1 ha
     exact Fin.castSucc_ne_last t
-  rw [sum_bij (fun a _ ↦ a.1.castPred (hne_last a.1 a.2))
+  rw [sum_bij (fun a _ ↦ a.val.castPred (hne_last a.val a.property))
     (fun a _ ↦ by
       obtain ⟨_, ha⟩ := a
       obtain ⟨t, ht, rfl⟩ := mem_map.1 ha
@@ -384,9 +384,9 @@ private theorem boundary_eq_zero_of_ne_last {f : Coherences R obj} (hf : IsConst
     (hd : d + #S = 0) (hj : j ≠ Fin.last (n + 1)) : boundary R f i j S d hij hS hd = 0 := by
   rw [boundary_def]
   refine sum_eq_zero fun t _ ↦ ?_
-  have htj : t.1 ≠ Fin.last (n + 1) :=
-    ((mem_Ioo.1 (hS t.2)).2.trans_le (Fin.le_last j)).ne
-  have hunion : S.erase t.1 = {s ∈ S | s < t.1} ∪ {s ∈ S | t.1 < s} := by
+  have htj : t.val ≠ Fin.last (n + 1) :=
+    ((mem_Ioo.1 (hS t.property)).2.trans_le (Fin.le_last j)).ne
+  have hunion : S.erase t.val = {s ∈ S | s < t.val} ∪ {s ∈ S | t.val < s} := by
     ext s
     simp only [mem_erase, mem_union, mem_filter]
     constructor
@@ -397,24 +397,25 @@ private theorem boundary_eq_zero_of_ne_last {f : Coherences R obj} (hf : IsConst
     · rintro (⟨hs, h⟩ | ⟨hs, h⟩)
       · exact ⟨h.ne, hs⟩
       · exact ⟨h.ne', hs⟩
-  by_cases hS₁ : S.erase t.1 = ∅
+  by_cases hS₁ : S.erase t.val = ∅
   · -- `S = {t}`: the face term and the composite term are both identities.
-    have hlt : {s ∈ S | s < t.1} = ∅ := (union_eq_empty.1 (hunion.symm.trans hS₁)).1
-    have hgt : {s ∈ S | t.1 < s} = ∅ := (union_eq_empty.1 (hunion.symm.trans hS₁)).2
+    have hlt : {s ∈ S | s < t.val} = ∅ := (union_eq_empty.1 (hunion.symm.trans hS₁)).1
+    have hgt : {s ∈ S | t.val < s} = ∅ := (union_eq_empty.1 (hunion.symm.trans hS₁)).2
     have hS1 : #S = 1 := by
-      have h₁ := card_erase_of_mem t.2
-      have h₂ := card_pos.2 ⟨_, t.2⟩
+      have h₁ := card_erase_of_mem t.property
+      have h₂ := card_pos.2 ⟨_, t.property⟩
       rw [hS₁, card_empty] at h₁
       omega
-    have hcard : (#{s ∈ S | s < t.1} * #{s ∈ S | t.1 < s} : ℤ).negOnePow = 1 := by
+    have hcard : (#{s ∈ S | s < t.val} * #{s ∈ S | t.val < s} : ℤ).negOnePow = 1 := by
       rw [hlt, card_empty, Nat.cast_zero, zero_mul, Int.negOnePow_zero]
     have ha := (heq_of_eq (Coherences.congr f hS₁ (hS := (erase_subset _ _).trans hS)
-        (hd := add_one_add_card_erase_eq_zero t.2 hd))).trans
+        (hd := add_one_add_card_erase_eq_zero t.property hd))).trans
       (hf.2 i j (d + 1) hij (empty_subset _) (by rw [card_empty]; omega) hj)
-    have hb := dgComp_heq_dgId (R := R) (a := f i t.1 {s ∈ S | s < t.1} _
-        (mem_Ioo.1 (hS t.2)).1.le (filter_lt_subset_Ioo hS) (neg_add_cancel _))
-      (b := f t.1 j {s ∈ S | t.1 < s} _ (mem_Ioo.1 (hS t.2)).2.le (filter_gt_subset_Ioo hS)
-        (neg_add_cancel _)) (neg_card_filter_lt_add_neg_card_filter_gt t.2 hd)
+    have hb := dgComp_heq_dgId (R := R) (a := f i t.val {s ∈ S | s < t.val} _
+        (mem_Ioo.1 (hS t.property)).1.le (filter_lt_subset_Ioo hS) (neg_add_cancel _))
+      (b := f t.val j {s ∈ S | t.val < s} _ (mem_Ioo.1 (hS t.property)).2.le
+          (filter_gt_subset_Ioo hS)
+        (neg_add_cancel _)) (neg_card_filter_lt_add_neg_card_filter_gt t.property hd)
       (obj_eq_of_ne_last hX ((hij.trans_lt (lt_of_le_of_ne (Fin.le_last j) hj)).ne))
       (obj_eq_of_ne_last hX htj) (obj_eq_of_ne_last hX hj) (by simp [hlt]) (by simp [hgt])
       ((heq_of_eq (Coherences.congr f hlt)).trans
@@ -422,9 +423,9 @@ private theorem boundary_eq_zero_of_ne_last {f : Coherences R obj} (hf : IsConst
       ((heq_of_eq (Coherences.congr f hgt)).trans
         (hf.2 _ _ _ _ (empty_subset _) (by simp [hgt]) hj))
     rw [hcard, one_smul, eq_of_heq (ha.trans hb.symm), sub_self, smul_zero]
-  · rw [hf.1 _ _ _ _ _ _ _ hj (nonempty_iff_ne_empty.2 hS₁)]
+  · rw [hf.1 _ _ _ _ _ _ _ hj (ne_empty_iff_nonempty.1 hS₁)]
     rw [hunion] at hS₁
-    obtain ⟨s, hs⟩ := nonempty_iff_ne_empty.2 hS₁
+    obtain ⟨s, hs⟩ := ne_empty_iff_nonempty.1 hS₁
     rcases mem_union.1 hs with hs | hs
     · rw [hf.1 _ _ _ _ _ _ _ htj ⟨s, hs⟩, zero_dgComp, smul_zero, sub_zero, smul_zero]
     · rw [hf.1 _ _ _ _ _ _ _ hj ⟨s, hs⟩, dgComp_zero, smul_zero, sub_zero, smul_zero]
@@ -442,8 +443,8 @@ private theorem chainVal_insert (f : Coherences R obj) {a : Fin (n + 1)}
     chainVal hX hY f (insert a T) d = twist #T • lastCol hX hY f a T d := by
   have ha : a ∉ T := fun h ↦ notMem_Ioi_self (hT h)
   rw [chainVal, dite_eq_left (insert_nonempty a T)]
-  simp only [min'_insert_of_subset_Ioi hT, erase_insert ha, card_insert_of_notMem ha,
-    Nat.add_sub_cancel]
+  simp only [min'_insert_of_forall_le fun _ hb ↦ (mem_Ioi.1 (hT hb)).le, erase_insert ha,
+    card_insert_of_notMem ha, Nat.add_sub_cancel]
 
 private theorem chainVal_empty (f : Coherences R obj) (d : ℤ) : chainVal hX hY f ∅ d = 0 :=
   dite_eq_right (by simp)
@@ -452,7 +453,8 @@ private theorem chainVal_eq_zero_of_ne (f : Coherences R obj) {J : Finset (Fin (
     {d : ℤ} (h : d + #J ≠ 1) : chainVal hX hY f J d = 0 := by
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · exact chainVal_empty hX hY f d
-  · obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  · obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+    replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
     have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
     rw [chainVal_insert hX hY f hS, lastCol_eq_zero hX hY f (by
       rw [card_insert_of_notMem hi] at h; push_cast at h; omega), smul_zero]
@@ -488,7 +490,8 @@ private noncomputable def toChainMap (σ : Simplex R C (n + 1))
     change dgDifferential R d (chainVal hX hY σ.coh J d) = _
     rcases J.eq_empty_or_nonempty with rfl | hJ
     · simp [chainVal_empty]
-    obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+    obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+    replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
     have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
     by_cases hd : d + #S = 0
     · have hd' : d + #(S.map Fin.castSuccEmb) = 0 := by rwa [card_map]
@@ -602,7 +605,8 @@ private theorem chainVal_psiCoh (g : (dgHomComplex R X Y).SimplexChainMap n)
     chainVal psiObj_castSucc psiObj_last (psiCoh g) J d = g.val J d := by
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · rw [chainVal_empty, g.val_empty']
-  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+  replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
   have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
   rw [chainVal_insert _ _ _ hS]
   by_cases hd : d + #S = 0
@@ -650,7 +654,7 @@ private noncomputable def ofChainMap (g : (dgHomComplex R X Y).SimplexChainMap n
         exact dgDifferential_eq_zero_of_heq_dgId
           (psiObj_of_ne ((hij.trans_lt (lt_of_le_of_ne (Fin.le_last j) hj)).ne))
           (psiObj_of_ne hj) (by simpa using hd) (psiCoh_of_ne_last_empty_heq g _ _ _ hj)
-      · rw [psiCoh_of_ne_last_of_nonempty g hij hS hd hj (nonempty_iff_ne_empty.2 hS₀), map_zero,
+      · rw [psiCoh_of_ne_last_of_nonempty g hij hS hd hj (ne_empty_iff_nonempty.1 hS₀), map_zero,
           boundary_eq_zero_of_ne_last psiObj_castSucc (isConstInit_psiCoh g) hij hS hd hj]
 
 private theorem ofChainMap_coh (g : (dgHomComplex R X Y).SimplexChainMap n) :
@@ -687,8 +691,8 @@ private theorem ofChainMap_toChainMap (σ : Simplex R C (n + 1))
     · subst hS₀
       exact (psiCoh_of_ne_last_empty_heq _ hij hS hd hj).trans (hσ.2 _ _ _ _ _ _ hj).symm
     · rw [ofChainMap_coh,
-        psiCoh_of_ne_last_of_nonempty _ hij hS hd hj (nonempty_iff_ne_empty.2 hS₀),
-        hσ.1 _ _ _ _ _ _ _ hj (nonempty_iff_ne_empty.2 hS₀)]
+        psiCoh_of_ne_last_of_nonempty _ hij hS hd hj (ne_empty_iff_nonempty.1 hS₀),
+        hσ.1 _ _ _ _ _ _ _ hj (ne_empty_iff_nonempty.1 hS₀)]
       exact zero_heq_zero (hobj i) (hobj j)
 
 /-- Pulling back along a simplicial operator of the right mapping space, which acts on the first
@@ -703,7 +707,8 @@ private theorem chainVal_map {m : ℕ} (σ : Simplex R C (n + 1))
   rw [CochainComplex.SimplexChainMap.map_val, toChainMap_val]
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · rw [chainVal_empty, image_empty, chainVal_empty, ite_self]
-  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+  replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
   have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
   rw [chainVal_insert hX' hY' _ hS]
   by_cases hd : d + #S = 0
@@ -877,7 +882,7 @@ noncomputable def rightMappingSpaceEquiv (X Y : C) (n : ℕ) :
     ((dgNerve R C).rightMappingSpace ((dgNerveEquiv R C).symm X)
       ((dgNerveEquiv R C).symm Y) : SSet) _⦋n⦌ ≃ (dgHomComplex R X Y).SimplexChainMap n where
   toFun s :=
-    have h := (mem_rightMappingSpace_iff (s.1 : Simplex R C (n + 1))).1 s.2
+    have h := (mem_rightMappingSpace_iff (s.val : Simplex R C (n + 1))).1 s.property
     toChainMap _ h.1 h.2.1 ⟨h.2.2.1, h.2.2.2⟩
   invFun g := ⟨ofChainMap g, (mem_rightMappingSpace_iff _).2
     ⟨psiObj_castSucc, psiObj_last, (isConstInit_psiCoh g).1, (isConstInit_psiCoh g).2⟩⟩
@@ -915,7 +920,7 @@ noncomputable def rightMappingSpaceIso (X Y : C) :
     fun {Δ Δ'} f ↦ by
       ext s : 3
       refine ULift.ext (CochainComplex.SimplexChainMap.ext (funext₂ fun J d ↦ ?_))
-      have h := (mem_rightMappingSpace_iff (s.1 : Simplex R C (Δ.unop.len + 1))).1 s.2
+      have h := (mem_rightMappingSpace_iff (s.val : Simplex R C (Δ.unop.len + 1))).1 s.property
       exact chainVal_map _ h.1 h.2.1 ⟨h.2.2.1, h.2.2.2⟩ f.unop.toOrderHom
         (SimplexCategory.joinVertex.map f.unop).toOrderHom
         (SimplexCategory.joinVertex_map_castSucc f.unop)

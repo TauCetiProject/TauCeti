@@ -94,11 +94,11 @@ include hs in
 time. -/
 private theorem norm_exp_smul_apply_le (ξ : X) (t : ℝ≥0) :
     ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * ‖ξ‖ :=
-  calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.2 ξ
+  calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.property ξ
     _ ≤ K * 1 * ‖ξ‖ := by
       gcongr
       exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg
-        (neg_nonpos.2 α.coe_nonneg) t.2)
+        (neg_nonpos.2 α.coe_nonneg) t.property)
     _ = K * ‖ξ‖ := by ring
 
 /-- The homogeneous term `ξ ↦ (t ↦ exp (t A) (P ξ))` of the Lyapunov--Perron equation, as a

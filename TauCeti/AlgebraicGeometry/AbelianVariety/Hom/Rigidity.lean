@@ -58,7 +58,7 @@ namespace Hom
 noncomputable def equivPointed (A B : AbelianVariety K) :
     (A ⟶ B) ≃ {f : A.toOver ⟶ B.toOver // η[A.toOver] ≫ f = η[B.toOver]} where
   toFun f := ⟨toOverHom f, one_hom f⟩
-  invFun f := mk' f.1 f.2 (isMonHom_of_one_hom f.1 f.2).mul_hom
+  invFun f := mk' f.val f.property (isMonHom_of_one_hom f.val f.property).mul_hom
   left_inv _ := toOverHom_injective (toOverHom_mk' _ _ _)
   right_inv _ := Subtype.ext (toOverHom_mk' _ _ _)
 

@@ -44,7 +44,7 @@ namespace TauCeti.EisensteinSeries
 def correctedE2AtLevel (N : ℕ) (d : {d : ℕ // 1 < d ∧ d ∣ N}) :
     ModularForm ((Gamma0 N).map (mapGL ℝ)) 2 :=
   ModularForm.restrict (Subgroup.map_mono
-    (CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd d.2.2)) (@correctedE2 d.val ⟨by omega⟩)
+    (CongruenceSubgroup.Gamma0_le_Gamma0_of_dvd d.property.2)) (@correctedE2 d.val ⟨by omega⟩)
 
 /-- Evaluating a corrected series after restricting its level gives the original series. -/
 @[simp]
