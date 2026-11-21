@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Map
+public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
 public import Mathlib.CategoryTheory.Sites.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Closed.Types
 -- The coset action is defined on the coset presheaf and extended along its sheafification, so
@@ -43,10 +43,9 @@ No finiteness, smoothness, reducedness or normality hypothesis is imposed on `R`
 * `CommHopfAlgCat.fppfHomogeneousQuotientAction`: the action morphism `G × G/N ⟶ G/N`.
 * `CommHopfAlgCat.instMulActionPointsFppfHomogeneousQuotient`: the resulting action of `G(A)`
   on the `A`-points of `G/N`, with `x • gN = xgN`
-  (`CommHopfAlgCat.smul_fppfHomogeneousQuotientProjection_app`).
+  (`CommHopfAlgCat.smul_fppfHomogeneousQuotientProjection_app`). At the base object it is
+  `CommHopfAlgCat.instMulActionPointsBaseFppfHomogeneousQuotient`.
 * `CommHopfAlgCat.map_smul_fppfHomogeneousQuotient`: the action is natural in the value algebra.
-* `CommHopfAlgCat.eq_of_forall_fppfHomogeneousQuotient_map_eq_projection`: sections agreeing
-  wherever a given section becomes a coset are equal.
 * `CommHopfAlgCat.fppfHomogeneousQuotientTranslation_hom_app`: translation by a base-ring point is
   the action of its extension.
 
@@ -117,10 +116,11 @@ instance instSMulPointsFppfHomogeneousQuotient (A : ((CommAlgCat.{u} R)ᵒᵖ)�
   smul x z := (fppfHomogeneousQuotientAction H I).app A (ULift.up x, z)
 
 /-- The components of the action morphism are the scalar actions on points. -/
+@[simp]
 theorem fppfHomogeneousQuotientAction_app (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
     (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
     (z : (fppfHomogeneousQuotient H I).obj.obj A) :
-    (fppfHomogeneousQuotientAction H I).app A (ULift.up x, z) = x • z :=
+    dsimp% (fppfHomogeneousQuotientAction H I).app A (ULift.up x, z) = x • z :=
   (rfl)
 
 /-- **The action on cosets.** An `A`-point `x` of `G` sends the image of `g` in `G/N` to the
@@ -145,25 +145,6 @@ theorem map_smul_fppfHomogeneousQuotient {A B : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ
       HopfAlgebra.mapPoints (H := H) f.unop.unop x • (fppfHomogeneousQuotient H I).obj.map f z :=
   (congrArg (fun t ↦ t (ULift.up x, z)) ((fppfHomogeneousQuotientAction H I).naturality f)).symm
 
-/-- **Sections are determined on cosets.** Let `z` be an `A`-point of `G/N`. Two `A`-points of
-an fppf sheaf `F` are equal as soon as they agree after every change of value algebra `A ⟶ B`
-along which `z` becomes the image of a `B`-point of `G`. Such changes of algebra cover `A`,
-because `G ⟶ G/N` is locally surjective. -/
-theorem eq_of_forall_fppfHomogeneousQuotient_map_eq_projection
-    (F : Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1))) {A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ}
-    (z : (fppfHomogeneousQuotient H I).obj.obj A) {t₁ t₂ : F.obj.obj A}
-    (h : ∀ (B : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (f : A ⟶ B)
-      (g : HopfAlgebra.points (R := R) (H := H) B.unop.unop),
-      (fppfHomogeneousQuotient H I).obj.map f z =
-          (fppfHomogeneousQuotientProjection H I).app B (ULift.up g) →
-        F.obj.map f t₁ = F.obj.map f t₂) :
-    t₁ = t₂ := by
-  have hS := Presheaf.imageSieve_mem (CommAlgCat.fppfTopology R)
-    (fppfHomogeneousQuotientProjection H I) z
-  refine (((isSheaf_iff_isSheaf_of_type _ _).mp F.property).isSeparated _ hS).ext ?_
-  rintro B f ⟨⟨g⟩, hg⟩
-  exact h _ f.op g hg.symm
-
 /-- **The action laws.** The `A`-points of `G` act on the `A`-points of `G/N`. -/
 instance instMulActionPointsFppfHomogeneousQuotient (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) :
     MulAction (HopfAlgebra.points (R := R) (H := H) A.unop.unop)
@@ -178,6 +159,15 @@ instance instMulActionPointsFppfHomogeneousQuotient (A : ((CommAlgCat.{u} R)ᵒ�
       map_smul_fppfHomogeneousQuotient, map_mul, hg, smul_fppfHomogeneousQuotientProjection_app,
       smul_fppfHomogeneousQuotientProjection_app, smul_fppfHomogeneousQuotientProjection_app,
       mul_assoc]
+
+/-- The action of the `R`-points of `G` on the `R`-points of `G/N`, at the base object where fixed
+points live. Instance search does not find `instMulActionPointsFppfHomogeneousQuotient` here: it
+indexes the acting group by the carrier of `A.unop.unop`, which reduces to `R` at the base object
+and so no longer matches. -/
+instance instMulActionPointsBaseFppfHomogeneousQuotient :
+    MulAction (HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+      ((fppfHomogeneousQuotient H I).obj.obj (op (op (CommAlgCat.of R R)))) :=
+  instMulActionPointsFppfHomogeneousQuotient H I (op (op (CommAlgCat.of R R)))
 
 /-- **Translation is the action of a base-ring point.** Left translation of `G/N` by a point
 `t ∈ G(R)` acts on `A`-points as the extension of `t` to `A`. -/

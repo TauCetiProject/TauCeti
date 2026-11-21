@@ -65,27 +65,6 @@ noncomputable section
 
 variable {R : Type u} [CommRing R] {H : _root_.CommHopfAlgCat.{u} R} {I J : HopfIdeal R H}
 
-/-- Changing the value algebra from the base ring to `A` extends ground-ring points of `G`. -/
-private theorem mapPoints_isInitialSelf_to (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    HopfAlgebra.mapPoints (H := H) (CommAlgCat.isInitialSelf.op.op.to A).unop.unop g =
-      HopfAlgebra.extendPoint H A.unop.unop g := by
-  rw [HopfAlgebra.mapPoints_apply, HopfAlgebra.extendPoint_apply]
-  -- An algebra map out of the base ring is its structure map.
-  congr 2
-
-/-- Extending the image of an `R`-point of `G` in `G/N` to `A` gives the image of its extension. -/
-private theorem map_isInitialSelf_to_projection (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
-    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    (fppfHomogeneousQuotient H J).obj.map (CommAlgCat.isInitialSelf.op.op.to A)
-        ((fppfHomogeneousQuotientProjection H J).app (op (op (CommAlgCat.of R R)))
-          (ULift.up g)) =
-      (fppfHomogeneousQuotientProjection H J).app A
-        (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g)) := by
-  rw [← mapPoints_isInitialSelf_to]
-  exact (congrArg (fun t ↦ t (ULift.up g))
-    ((fppfHomogeneousQuotientProjection H J).naturality (CommAlgCat.isInitialSelf.op.op.to A))).symm
-
 /-- A morphism `G/P ⟶ G/Q` of fppf homogeneous quotients is `G`-equivariant when it commutes with
 the left action of points of `G` with values in every algebra. -/
 def IsFppfHomogeneousQuotientEquivariant
@@ -154,8 +133,8 @@ theorem IsFppfHomogeneousQuotientEquivariant.app_projection
         (f.hom.app (op (op (CommAlgCat.of R R)))
           ((fppfHomogeneousQuotientProjection H I).app (op (op (CommAlgCat.of R R)))
             (ULift.up (1 : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))))) := by
-  rw [← NatTrans.naturality_apply, map_isInitialSelf_to_projection, map_one, ← hf,
-    smul_fppfHomogeneousQuotientProjection_app, mul_one]
+  rw [← NatTrans.naturality_apply, fppfHomogeneousQuotient_map_projection_app_of_base, map_one,
+    ← hf, smul_fppfHomogeneousQuotientProjection_app, mul_one]
 
 /-- The base point of an equivariant morphism is fixed by `P`. -/
 theorem IsFppfHomogeneousQuotientEquivariant.app_projection_one_mem
@@ -231,9 +210,7 @@ def fppfHomogeneousQuotientEquivariantEquiv :
     refine Subtype.ext ?_
     refine (fixedPointHom_app_projection y _ 1).trans ?_
     rw [IsInitial.to_self, CategoryTheory.Functor.map_id]
-    -- The action instance is indexed by an arbitrary object of the site, so instance search does
-    -- not find it at the base object; supply it.
-    exact @one_smul _ _ _ (instMulActionPointsFppfHomogeneousQuotient H J _) y.1
+    exact one_smul (HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) y.1
 
 /-- Evaluation at the base point applies the morphism to `eP`. -/
 @[simp]
@@ -286,7 +263,8 @@ theorem projection_mem_fppfHomogeneousQuotientFixedPoints_iff
       J.conjugate g ≤ I := by
   rw [conjugate_le_iff_forall_fppfHomogeneousQuotientProjection_app_mul_eq]
   refine forall₂_congr fun A p ↦ imp_congr_right fun _ ↦ ?_
-  rw [map_isInitialSelf_to_projection, smul_fppfHomogeneousQuotientProjection_app]
+  rw [fppfHomogeneousQuotient_map_projection_app_of_base,
+    smul_fppfHomogeneousQuotientProjection_app]
 
 variable (H) in
 /-- The morphism `xP ↦ xgQ` is `G`-equivariant. -/
