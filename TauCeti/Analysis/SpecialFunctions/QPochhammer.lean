@@ -91,6 +91,8 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   infinite q-Pochhammer product `(z; q)_∞ = ∏_{n ≥ 0} (1 - z qⁿ)` converges, and is the limit of
   the finite products `(z; q)_N` (`TauCeti.qPochhammer`); these do not vanish when `‖z‖ < 1`
   (`TauCeti.qPochhammer_ne_zero_of_norm_lt_one`).
+* `TauCeti.tprod_one_sub_mul_pow_eq_qPochhammer_mul`: for `‖q‖ < 1` the infinite product splits
+  as `(z; q)_∞ = (z; q)_N (z q^N; q)_∞`.
 * `TauCeti.hasSum_tprod_one_sub_mul_pow`, `TauCeti.hasSum_inv_tprod_one_sub_mul_pow`: **Euler's
   expansions** `(z; q)_∞ = ∑_{k ≥ 0} (-1)ᵏ q^{k(k-1)/2} zᵏ / (q; q)_k` for every `z`, and
   `1 / (z; q)_∞ = ∑_{k ≥ 0} zᵏ / (q; q)_k` for `‖z‖ < 1`, the latter absolutely convergent
@@ -502,7 +504,7 @@ theorem qPochhammer_ne_zero_of_norm_lt_one {x q : 𝕜} (hx : ‖x‖ < 1) (hq :
   have h₁ : ‖x * q ^ i‖ < 1 := by
     rw [norm_mul, norm_pow]
     exact (mul_le_of_le_one_right (norm_nonneg x) (pow_le_one₀ (norm_nonneg q) hq)).trans_lt hx
-  simp [h] at h₁
+  exact one_sub_ne_zero_of_norm_lt_one h₁ (sub_eq_zero.2 h.symm)
 
 /-- For `‖q‖ < 1` the infinite q-Pochhammer product `(z; q)_∞ = ∏_{n ≥ 0} (1 - z qⁿ)`
 converges. -/
@@ -516,6 +518,16 @@ theorem tendsto_qPochhammer_atTop {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) :
     Tendsto (qPochhammer z q) atTop (𝓝 (∏' n : ℕ, (1 - z * q ^ n))) :=
   (multipliable_one_sub_mul_pow hq z).tendsto_prod_tprod_nat.congr fun N ↦
     (qPochhammer_def z q N).symm
+
+/-- For `‖q‖ < 1` the infinite q-Pochhammer product splits as
+`(z; q)_∞ = (z; q)_N (z q^N; q)_∞`. -/
+theorem tprod_one_sub_mul_pow_eq_qPochhammer_mul {q : 𝕜} (hq : ‖q‖ < 1) (z : 𝕜) (N : ℕ) :
+    ∏' n : ℕ, (1 - z * q ^ n) = qPochhammer z q N * ∏' n : ℕ, (1 - z * q ^ N * q ^ n) := by
+  have hm : Multipliable fun n : ℕ ↦ 1 - z * q ^ (n + N) :=
+    (multipliable_one_sub_mul_pow hq (z * q ^ N)).congr fun n ↦ by ring
+  rw [← Multipliable.prod_mul_tprod_nat_mul' (f := fun n : ℕ ↦ 1 - z * q ^ n) hm,
+    qPochhammer_def]
+  exact congrArg _ (tprod_congr fun n ↦ by ring)
 
 omit [CompleteSpace 𝕜] in
 /-- The ratio of consecutive terms of Euler's expansion of `(z; q)_∞`. -/

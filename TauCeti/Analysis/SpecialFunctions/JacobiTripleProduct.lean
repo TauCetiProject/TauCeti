@@ -133,11 +133,8 @@ variable [CompleteSpace 𝕜]
 /-- The Euler function splits as `(q; q)_∞ = (q; q)_n (q^{n+1}; q)_∞`. -/
 private theorem tprod_one_sub_pow_succ_eq {q : 𝕜} (hq : ‖q‖ < 1) (n : ℕ) :
     ∏' i : ℕ, (1 - q ^ (i + 1)) = qPochhammer q q n * ∏' i : ℕ, (1 - q ^ (n + 1) * q ^ i) := by
-  have hm : Multipliable fun i : ℕ ↦ 1 - q ^ (i + n + 1) :=
-    (multipliable_one_sub_mul_pow hq (q ^ (n + 1))).congr fun i ↦ by ring
-  rw [← Multipliable.prod_mul_tprod_nat_mul' (f := fun i : ℕ ↦ 1 - q ^ (i + 1)) (k := n) hm,
-    qPochhammer_self]
-  exact congrArg _ (tprod_congr fun i ↦ by ring)
+  rw [pow_succ', ← tprod_one_sub_mul_pow_eq_qPochhammer_mul hq]
+  exact tprod_congr fun i ↦ by ring
 
 /-- For `‖q‖ < ‖w‖`, the product of the bilateral series with Euler's expansion of
 `1 / (q / w; q)_∞`, summed first over the index of the latter: the inner sums are
@@ -207,13 +204,10 @@ private theorem hasSum_tripleTerm_of_norm_lt {q w : 𝕜} (hq : ‖q‖ < 1) (hq
             exact pow_le_of_le_one (norm_nonneg q) hq.le n.succ_ne_zero
         _ = ‖q * w⁻¹‖ := (norm_mul _ _).symm
         _ < 1 := hz
-    rw [← sub_eq_zero.mp h, norm_one] at h₁
-    exact lt_irrefl _ h₁
+    exact one_sub_ne_zero_of_norm_lt_one h₁ h
   -- `(w; q)_∞ = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w)`.
   have hW : ∏' n : ℕ, (1 - w * q ^ n) = (1 - w) * ∏' n : ℕ, (1 - q ^ (n + 1) * w) := by
-    rw [tprod_eq_zero_mul' (f := fun n : ℕ ↦ 1 - w * q ^ n)
-      ((multipliable_one_sub_pow_mul hq w).congr fun n ↦ by ring)]
-    simp only [pow_zero, mul_one]
+    rw [tprod_one_sub_mul_pow_eq_qPochhammer_mul hq w 1, qPochhammer_one]
     exact congrArg _ (tprod_congr fun n ↦ by ring)
   have h := (hasSum_tripleTerm_mul_tprod_of_norm_lt hq hq₀ hw hz).unique
     (hasSum_tripleTerm_mul_tprod hq hq₀ w)
@@ -235,16 +229,7 @@ theorem hasSum_qTheta_mul_tprod_one_sub_pow {q w : 𝕜} (hq : ‖q‖ < 1) (hw 
         (-1) ^ k * (0 : 𝕜) ^ (k * (k - 1) / 2) * w ^ k = 0 := by
       intro k hk
       simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hk
-      have h₂ : 2 ≤ k * (k - 1) := by
-        rcases le_or_gt k 0 with h | h
-        · nlinarith [lt_of_le_of_ne h hk.1]
-        · nlinarith [show 2 ≤ k by omega]
-      have h₃ := Int.two_mul_mul_sub_one_ediv_two k
-      have h₄ : k * (k - 1) / 2 ≠ 0 := by
-        generalize k * (k - 1) / 2 = a at h₃
-        generalize k * (k - 1) = b at h₂ h₃
-        omega
-      simp [zero_zpow _ h₄]
+      simp [zero_zpow _ (Int.mul_sub_one_ediv_two_ne_zero hk.1 hk.2)]
     convert hasSum_sum_of_ne_finset_zero (L := .unconditional ℤ) h using 1
     simp [qTheta_def, sub_eq_add_neg]
   set E := ∏' n : ℕ, (1 - q ^ (n + 1))
