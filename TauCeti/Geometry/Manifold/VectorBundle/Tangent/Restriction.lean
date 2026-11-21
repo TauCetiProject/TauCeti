@@ -8,14 +8,20 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Topology.VectorBundle.Pullback
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 
 /-!
-# Restricting tangent Hom fields to open products
+# Restricting tangent fields to open submanifolds
 
-The canonical tangent-space identifications of open submanifolds preserve the native Hom-section
-regularity, at every order. The coordinate comparison uses the inherited tangent charts and
-applies to arbitrary normed models, without completeness or finite-dimensionality assumptions.
+The canonical tangent-space identifications of open submanifolds preserve regularity, at every
+order. Near every point, the tangent-bundle trivialization of an open submanifold reads tangent
+vectors as the ambient one does
+(`TauCeti.Manifold.eventually_trivializationAt_tangentSpace_opens_eq`). So a map into the tangent
+bundle of an open submanifold is `C^n` exactly when it is as a map into the ambient tangent
+bundle (`TauCeti.Manifold.contMDiffAt_tangentBundle_opens_iff`), and the same holds for native Hom
+sections restricted to open products. The coordinate comparison uses the inherited tangent charts
+and applies to arbitrary normed models, without completeness or finite-dimensionality assumptions.
 -/
 
 public noncomputable section
@@ -31,6 +37,61 @@ variable {𝕜 E H M F H' N : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H']
   {I' : ModelWithCorners 𝕜 F H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold I' 1 N]
+
+section RestrictOpenSection
+
+/-! ### Sections of the tangent bundle over open submanifolds -/
+
+/-- Near a point `x` of an open submanifold `U`, the tangent-bundle trivialization of `U` at `x`
+reads every tangent vector as the ambient trivialization of `M` at `x` does. -/
+theorem eventually_trivializationAt_tangentSpace_opens_eq {U : Opens M} (x : U) :
+    ∀ᶠ y in 𝓝 x, ∀ v : E,
+      (trivializationAt E (TangentSpace I : U → Type _) x ⟨y, v⟩).2 =
+        (trivializationAt E (TangentSpace I : M → Type _) (x : M) ⟨(y : M), v⟩).2 := by
+  filter_upwards [eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x,
+    (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
+    continuousAt_subtypeVal.eventually
+      ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (x : M)))]
+    with y hs hyU hyM v
+  -- The ambient inverse trivialization sends the coordinates of `v` in `U` back to `v`, so the
+  -- ambient trivialization sends `v` to them.
+  have h₁ := Trivialization.symm_apply_apply_mk
+    (trivializationAt E (TangentSpace I : U → Type _) x) hyU (v : TangentSpace I y)
+  have h := hs (trivializationAt E (TangentSpace I : U → Type _) x ⟨y, v⟩).2
+  rw [Trivialization.symmL_apply _ hyU, Trivialization.symmL_apply _ hyM, h₁] at h
+  -- `tangentSpaceOpenEquiv y` is the identity of the model space `E`.
+  have h' : v = (trivializationAt E (TangentSpace I : M → Type _) (x : M)).symm (y : M)
+      (trivializationAt E (TangentSpace I : U → Type _) x ⟨y, v⟩).2 :=
+    (tangentSpaceOpenEquiv_apply y v).symm.trans h
+  calc (trivializationAt E (TangentSpace I : U → Type _) x ⟨y, v⟩).2
+      = (trivializationAt E (TangentSpace I : M → Type _) (x : M) ⟨(y : M),
+          (trivializationAt E (TangentSpace I : M → Type _) (x : M)).symm (y : M)
+            (trivializationAt E (TangentSpace I : U → Type _) x ⟨y, v⟩).2⟩).2 := by
+        rw [Trivialization.apply_mk_symm _ hyM]
+    _ = (trivializationAt E (TangentSpace I : M → Type _) (x : M) ⟨(y : M), v⟩).2 := by
+        rw [← h']
+
+/-- **Regularity of restrictions to open submanifolds.** A map `q ↦ (g q, V q)` into the tangent
+bundle of an open submanifold `U` is `C^n` at a point exactly when the same map into the tangent
+bundle of the ambient manifold is: the tangent spaces of `U` and `M` are the same, and so are
+their trivializations near every point. -/
+theorem contMDiffAt_tangentBundle_opens_iff {G N' : Type*} [TopologicalSpace G]
+    {J : ModelWithCorners 𝕜 F G} [TopologicalSpace N'] [ChartedSpace G N'] {n : ℕ∞ω}
+    {U : Opens M} {g : N' → U} {V : N' → E} {q : N'} :
+    ContMDiffAt J I.tangent n (fun q ↦ (⟨g q, V q⟩ : TangentBundle I U)) q ↔
+      ContMDiffAt J I.tangent n (fun q ↦ (⟨(g q : M), V q⟩ : TangentBundle I M)) q := by
+  rw [contMDiffAt_totalSpace_iff, contMDiffAt_totalSpace_iff]
+  simp only
+  rw [← ContMDiffAt.subtypeVal_comp_iff U g q]
+  refine and_congr_right fun hg ↦ Filter.EventuallyEq.contMDiffAt_iff ?_
+  -- Near `q`, the point `g` stays where the two trivializations agree.
+  filter_upwards [((ContMDiffAt.subtypeVal_comp_iff U g q).1 hg).continuousAt.eventually
+    (eventually_trivializationAt_tangentSpace_opens_eq (I := I) (g q))] with y hy
+  exact hy (V y)
+
+end RestrictOpenSection
 
 /-- Read a tangent Hom field restricted to open submanifolds in the inherited coordinates. -/
 theorem inCoordinates_openTangentSpaceHom_eq {U : Opens M} {V : Opens N} {x y : U} {x' y' : V}

@@ -189,6 +189,24 @@ theorem mlieDerivForm_grayVectorField_add (x : M) (v : TangentSpace I x) :
           (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v] :=
   hc.mlieDerivForm_contactMoserVectorField_add _ x v
 
+/-- **Gray's equation** as an identity of forms on `M` at time `t`: if the slice `α_t` is a contact
+form, the rate `ι_t^* L_{∂_t} α + L_{Y_t} α_t` of the family `α_t` along the Gray vector field is
+`μ_t α_t`. This is the hypothesis of Moser's principle for families of forms, which turns it into
+the rescaling of the slices by the flow of the Gray vector field. -/
+theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField :
+    TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
+        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val) +
+      mlieDerivForm (α.grayVectorField t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val) =
+    fun y ↦ α.grayRate (t, y) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val y := by
+  funext y
+  ext v
+  have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
+  have h := mlieDerivForm_grayVectorField_add hc y (v 0)
+  rw [hv]
+  simp only [coe_mpullback, coe_timeDeriv, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
+  rw [add_comm, h]
+
 /-- **The Gray vector field vanishes where the contact hyperplane is stationary.** If the slice
 `α_t` is a contact form and the hyperplane `ker α_u` at `x` is the same for all times `u` near `t`,
 then `Y_t(x) = 0`: the velocity `∂_t α_t` annihilates the hyperplane at `x`, which the
@@ -311,6 +329,14 @@ theorem grayVectorField_eq_of_kerDistribution_eq
 
 end Naturality
 
+/-- The Gray rate `μ_t = (∂_t α_t)(R_{α_t})` is smooth at every point `(t, x)` such that the
+slices `α_u` are contact forms for all times `u` near `t`. -/
+theorem contMDiffAt_grayRate {p : ℝ × M}
+    (hc : ∀ᶠ t in 𝓝 p.1,
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
+    ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate p :=
+  contMDiffAt_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
+
 variable (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
 include hc
 
@@ -323,8 +349,8 @@ theorem contMDiff_grayVectorField :
 
 /-- The Gray rate `μ_t = (∂_t α_t)(R_{α_t})` of a smooth family of contact forms depends smoothly
 on time and point. -/
-theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate :=
-  contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
+theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate := fun _ ↦
+  contMDiffAt_grayRate (.of_forall hc)
 
 /-- The Gray vector field of a smooth family of contact forms vanishes at every time at a point
 where the contact hyperplane `ker α_u` is the same for all times `u`. -/
@@ -333,24 +359,6 @@ theorem grayVectorField_eq_zero_of_kerDistribution_eq [I.Boundaryless] {x : M} {
       (mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
     (u : ℝ) : α.grayVectorField u x = 0 :=
   grayVectorField_eq_zero (hc u) (.of_forall fun v ↦ (hx v).trans (hx u).symm)
-
-/-- **Gray's equation** as an identity of forms on `M` at time `t`: the rate
-`ι_t^* L_{∂_t} α + L_{Y_t} α_t` of the family `α_t` along the Gray vector field is `μ_t α_t`. This
-is the hypothesis of Moser's principle for families of forms, which turns it into the rescaling of
-the slices by the flow of the Gray vector field. -/
-private theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField (t : ℝ) :
-    TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val) +
-      mlieDerivForm (α.grayVectorField t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val) =
-    fun y ↦ α.grayRate (t, y) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val y := by
-  funext y
-  ext v
-  have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
-  have h := mlieDerivForm_grayVectorField_add (hc t) y (v 0)
-  rw [hv]
-  simp only [coe_mpullback, coe_timeDeriv, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
-  rw [add_comm, h]
 
 /-! ### Relative Gray stability -/
 
@@ -421,7 +429,7 @@ theorem mpullback_grayPartialDiffeomorph_apply {s t : ℝ} {x : M}
   have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul_of_mem
     ((contMDiff_grayVectorField hc).of_le (by simp)) (contMDiff_grayRate hc).continuous
     (α.contMDiff.of_le (by simp))
-    (mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField hc)
+    (fun t ↦ mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField (hc t))
     ((mem_grayPartialDiffeomorph_source_iff hc).1 hx)
   have hφ (u : ℝ) : ⇑(grayPartialDiffeomorph hc s u) = timeDependentFlowOf α.grayVectorField s u :=
     funext (grayPartialDiffeomorph_apply hc s u)
@@ -549,7 +557,7 @@ theorem mpullback_grayDiffeomorph_apply (s t : ℝ) (x : M) :
     ((contMDiff_grayVectorField hc).of_le (by simp))
     (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc)
     (contMDiff_grayRate hc).continuous (α.contMDiff.of_le (by simp))
-    (mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField hc) s t x
+    (fun t ↦ mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField (hc t)) s t x
   have hφ : ⇑(grayDiffeomorph hc s t) = timeDependentFlowOf α.grayVectorField s t :=
     funext (grayDiffeomorph_apply hc s t)
   simpa only [coe_mpullback, grayDiffeomorph_apply, hφ] using h
