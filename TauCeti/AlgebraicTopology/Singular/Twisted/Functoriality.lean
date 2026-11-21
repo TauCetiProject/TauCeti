@@ -241,6 +241,16 @@ def fstPullbackIdIso (P : TopPair.{v})
       (Hom.fst_id P)) ≪≫
     (LocalCoefficientSystem.pullbackIdIso P.fst).app L
 
+/-- The comparison `TopPair.fstPullbackIdIso` is the identity on every fibre. -/
+@[simp]
+lemma fstPullbackIdIso_hom_app (P : TopPair.{v})
+    (L : LocalCoefficientSystem.{u, v, max v w} R P.fst) (x : FundamentalGroupoid P.fst) :
+    (fstPullbackIdIso P L).hom.app x = 𝟙 _ := by
+  -- What remains composes an identity with an `eqToHom` between definitionally equal fibres.
+  simp only [fstPullbackIdIso, Iso.trans_hom, NatTrans.comp_app, Iso.app_hom,
+    LocalCoefficientSystem.pullbackIdIso_hom_app_app, eqToIso.hom, eqToHom_app]
+  rfl
+
 /-- The identity map of a pair induces the coefficient-change map coming from the canonical
 identification of a system with its pullback along the identity. -/
 @[simp]

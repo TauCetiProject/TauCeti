@@ -196,6 +196,19 @@ theorem pullbackCompIso_inv_app_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z :
   rw [eqToHom_app, eqToHom_map, Category.id_comp]
   rfl
 
+/-- Pulling back along the identity map leaves a local coefficient system unchanged. This is the
+equality underlying `TauCeti.LocalCoefficientSystem.pullbackIdIso`. -/
+theorem pullback_obj_id (X : TopCat.{v}) (L : LocalCoefficientSystem.{u, v, w} R X) :
+    (pullback (R := R) (.id X)).obj L = L :=
+  congrArg (· ⋙ L) FundamentalGroupoid.map_id
+
+/-- Pulling back along a composite is pulling back twice. This is the equality underlying
+`TauCeti.LocalCoefficientSystem.pullbackCompIso`. -/
+theorem pullback_obj_comp {X : TopCat.{v₁}} {Y : TopCat.{v₂}} {Z : TopCat.{v₃}}
+    (f : C(X, Y)) (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z) :
+    (pullback (R := R) (g.comp f)).obj L = (pullback f).obj ((pullback g).obj L) :=
+  congrArg (· ⋙ L) (FundamentalGroupoid.map_comp g f)
+
 /-- Pulling back a constant local coefficient system leaves it constant. -/
 def pullbackConstantIso {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (M : ModuleCat.{w} R) :
