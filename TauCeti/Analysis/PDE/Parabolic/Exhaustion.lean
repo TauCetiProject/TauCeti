@@ -74,12 +74,6 @@ variable {ι : Type*} [Fintype ι]
 
 /-! ### Zero extension and restriction between `L²(U)` and `L²(ℝⁿ)` -/
 
-/-- The measure `volume` restricted to the whole space, as an open set, is `volume`. -/
-private theorem restrict_top_eq :
-    (volume : Measure (EuclideanSpace ℝ ι)).restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) :
-      Set (EuclideanSpace ℝ ι)) = volume := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-
 /-- Extension by zero `L²(U) → L²(ℝⁿ)`. -/
 private def extendL (U : Opens (EuclideanSpace ℝ ι)) :
     Lp ℝ 2 (volume.restrict (U : Set (EuclideanSpace ℝ ι))) →L[ℝ]
@@ -110,16 +104,12 @@ private theorem norm_extendL_apply (U : Opens (EuclideanSpace ℝ ι))
   ((castLpₗᵢ (𝕜 := ℝ) Measure.restrict_univ).toLinearIsometry.comp
     (extendByZeroLpₗᵢ ℝ volume U.isOpen.nullMeasurableSet (subset_univ _))).norm_map y
 
-private theorem norm_restrictL_apply_le (U : Opens (EuclideanSpace ℝ ι))
-    (x : Lp ℝ 2 (volume : Measure (EuclideanSpace ℝ ι))) :
-    ‖restrictL U x‖ ≤ ‖x‖ :=
-  norm_Lp_toLp_restrict_le _ x
-
 /-- The zero extension of the value of `w ∈ H¹₀(U)` is the value of its zero extension in
 `H¹₀(ℝⁿ)`. -/
 private theorem extendL_value (U : Opens (EuclideanSpace ℝ ι)) (w : W1p0 volume U 2) :
     extendL U (W1p.value (w : W1p volume U 2)) =
-      castLpₗᵢ (𝕜 := ℝ) restrict_top_eq (W1p0.valueL (W1p0.extendByZeroL le_top w)) := by
+      castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top _)
+        (W1p0.valueL (W1p0.extendByZeroL le_top w)) := by
   refine Lp.ext ?_
   filter_upwards [coeFn_castLpₗᵢ_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet
     (W1p.value (w : W1p volume U 2)), W1p0.value_extendByZeroL_top_ae w] with z h1 h2
@@ -128,7 +118,7 @@ private theorem extendL_value (U : Opens (EuclideanSpace ℝ ι)) (w : W1p0 volu
 /-- Integrals over the whole space, as an open set, are integrals against `volume`. -/
 private theorem setIntegral_top (F : EuclideanSpace ℝ ι → ℝ) :
     ∫ z in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)), F z = ∫ z, F z := by
-  rw [restrict_top_eq]
+  rw [Measure.restrict_coe_opens_top]
 
 /-! ### A semigroup on `L²(U)`, extended by the identity off `U` -/
 
@@ -194,7 +184,7 @@ private theorem hasGrowthBound_extendSemigroup (U : Opens (EuclideanSpace ℝ ι
   refine StronglyContinuousSemigroup.hasGrowthBound_of_bound (by norm_num) fun t _ => ?_
   rw [zero_mul, Real.exp_zero, mul_one, StronglyContinuousSemigroup.realOperator_def]
   refine ContinuousLinearMap.opNorm_le_bound _ (by norm_num) fun x => ?_
-  have hP := norm_restrictL_apply_le U x
+  have hP : ‖restrictL U x‖ ≤ ‖x‖ := norm_Lp_toLp_restrict_le _ x
   have hD' := ((D t.toNNReal).le_opNorm (restrictL U x)).trans
     (mul_le_of_le_one_left (norm_nonneg _) (hD t.toNNReal))
   rw [extendSemigroup_apply]
@@ -305,7 +295,7 @@ private theorem resolvent_heatSemigroup_eq (x : Lp ℝ 2 (volume : Measure (Eucl
     have h := hdist φ
     rw [setIntegral_top, setIntegral_top] at h
     have hsub := (Lp.coeFn_sub f (W1p.value (u : W1p volume ⊤ 2))).filter_mono
-      (ae_mono restrict_top_eq.ge)
+      Measure.ae_le_ae_restrict_coe_opens_top
     calc ∫ z, Δ (φ : EuclideanSpace ℝ ι → ℝ) z • y z
         = ∫ z, Δ (φ : EuclideanSpace ℝ ι → ℝ) z * W1p.value (u : W1p volume ⊤ 2) z := by
           simp_rw [smul_eq_mul, hyz]
@@ -333,7 +323,8 @@ private theorem resolvent_extendSemigroup_dirichletSemigroup {U : Opens (Euclide
       IsWeakSolutionDirichlet (fun _ => (1 : Matrix ι ι ℝ)) 0 (fun _ => 1) (restrictL U y) w ∧
       LinearPMap.resolvent (extendSemigroup U
         (dirichletSemigroup _ hcoercive).toStronglyContinuousSemigroup).generator 1 y =
-        castLpₗᵢ (𝕜 := ℝ) restrict_top_eq (W1p0.valueL (W1p0.extendByZeroL le_top w)) +
+        castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top _)
+          (W1p0.valueL (W1p0.extendByZeroL le_top w)) +
           (y - extendL U (restrictL U y)) := by
   obtain ⟨w, hw, hsol⟩ := exists_value_eq_resolvent_dirichletSemigroup hcoercive (restrictL U y)
   refine ⟨w, hsol, ?_⟩
@@ -374,8 +365,9 @@ private theorem tendsto_resolvent_extendSemigroup {κ : Type*} [Preorder κ] [Is
   simp_rw [hres]
   -- The solutions `w k` converge in `H¹` to the solution `u` of `-Δu + u = y` on `ℝⁿ`.
   obtain ⟨hcoeff, hcoercive₁⟩ := exists_isCoercive_laplacian_add_one_top (ι := ι)
-  set f := castLpₗᵢ (𝕜 := ℝ) (restrict_top_eq (ι := ι)).symm y
-  have hfy : ∀ z, f z = y z := coeFn_castLpₗᵢ (𝕜 := ℝ) (restrict_top_eq (ι := ι)).symm y
+  have htop := Measure.restrict_coe_opens_top (volume : Measure (EuclideanSpace ℝ ι))
+  set f := castLpₗᵢ (𝕜 := ℝ) htop.symm y
+  have hfy : ∀ z, f z = y z := coeFn_castLpₗᵢ (𝕜 := ℝ) htop.symm y
   obtain ⟨u, hu, -⟩ := existsUnique_isWeakSolutionDirichlet hcoeff hcoercive₁ f
   have hlim := tendsto_extendByZeroL_of_isWeakSolutionDirichlet hcoeff hcoercive₁ hu hmono
     (fun k => le_top) (by rw [hcover]; exact subset_univ _) (w := w) fun k v => by
@@ -384,15 +376,15 @@ private theorem tendsto_resolvent_extendSemigroup {κ : Type*} [Preorder κ] [Is
       filter_upwards [LpToLpRestrictCLM_coeFn (𝕜 := ℝ) (U k : Set (EuclideanSpace ℝ ι)) y]
         with z hz
       rw [restrictL_apply, hz, hfy]
-  have h := ((((castLpₗᵢ (𝕜 := ℝ) (restrict_top_eq (ι := ι))).continuous.comp
+  have h := ((((castLpₗᵢ (𝕜 := ℝ) htop).continuous.comp
     (W1p0.valueL (mu := volume) (Omega := ⊤) (p := 2)).continuous).tendsto u).comp hlim).add
       (tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM ℝ ENNReal.ofNat_ne_top
       (fun k => (U k).isOpen) (fun _ _ h => hmono h) hcover y)
   rw [add_zero] at h
   rwa [resolvent_heatSemigroup_eq y hfy hu
-    (y := castLpₗᵢ (𝕜 := ℝ) restrict_top_eq (W1p0.valueL u)) fun z => by
+    (y := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top _) (W1p0.valueL u)) fun z => by
       rw [W1p0.valueL_apply]
-      exact coeFn_castLpₗᵢ (𝕜 := ℝ) restrict_top_eq _ z]
+      exact coeFn_castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top _) _ z]
 
 /-- **The Dirichlet heat flows of an exhaustion converge to the heat flow of `ℝⁿ`.** Let `U k` be
 a monotone family of open subsets of `ℝⁿ`, indexed by a directed order, that covers `ℝⁿ`, such

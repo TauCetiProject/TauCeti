@@ -277,13 +277,13 @@ theorem tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM [Topolog
       J (LpToLpRestrictCLM α F 𝕜 μ p (U k) (f - hgmem.toLp g)) := by
     rw [map_sub, map_sub, hg]
     abel
-  change dist (f - J (LpToLpRestrictCLM α F 𝕜 μ p (U k) f)) 0 < ε
+  simp only [J, LinearIsometry.coe_comp, LinearIsometryEquiv.coe_toLinearIsometry,
+    Function.comp_apply] at hsplit
   rw [dist_zero_right, hsplit]
-  calc _ ≤ ‖f - hgmem.toLp g‖ + ‖J (LpToLpRestrictCLM α F 𝕜 μ p (U k) (f - hgmem.toLp g))‖ :=
-        norm_sub_le _ _
-    _ ≤ ε / 3 + ε / 3 := by
-        rw [LinearIsometry.norm_map]
-        exact add_le_add hfg ((norm_Lp_toLp_restrict_le _ _).trans hfg)
+  calc _ ≤ ‖f - hgmem.toLp g‖ + ‖LpToLpRestrictCLM α F 𝕜 μ p (U k) (f - hgmem.toLp g)‖ := by
+        refine (norm_sub_le _ _).trans_eq ?_
+        rw [LinearIsometryEquiv.norm_map, LinearIsometry.norm_map]
+    _ ≤ ε / 3 + ε / 3 := add_le_add hfg ((norm_Lp_toLp_restrict_le _ _).trans hfg)
     _ < ε := by linarith
 
 end TauCeti
