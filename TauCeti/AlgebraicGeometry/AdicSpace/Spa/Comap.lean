@@ -95,19 +95,19 @@ theorem mem_spa_map_iff {φ : A →+* B} (hφ : Continuous φ) (Aplus : Subring 
 `φ : A →+* B` carrying `Aplus` into `Bplus`. -/
 def spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A) (Bplus : Subring B)
     (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (v : spa Bplus) : spa Aplus :=
-  ⟨comap φ v.1, comap_mem_spa hφ hplus v.2⟩
+  ⟨comap φ v.val, comap_mem_spa hφ hplus v.property⟩
 
 @[simp]
 theorem spaComap_val (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A)
     (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (v : spa Bplus) :
-    (spaComap φ hφ Aplus Bplus hplus v).1 = comap φ v.1 := (rfl)
+    (spaComap φ hφ Aplus Bplus hplus v).val = comap φ v.val := (rfl)
 
 /-- `spaComap` is continuous for the subspace topologies. -/
 theorem continuous_spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A)
     (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
     Continuous (spaComap φ hφ Aplus Bplus hplus) := by
   rw [continuous_induced_rng]
-  exact (continuous_comap φ).comp continuous_subtype_val
+  exact (continuous_comap φ).comp continuous_subtypeVal
 
 /-- `spaComap` of the identity homomorphism is the identity map on `spa Aplus`. -/
 @[simp]
@@ -359,7 +359,7 @@ theorem isClosed_support_locus (Aplus : Subring A) (J : Ideal A) :
     simp [PrimeSpectrum.mem_zeroLocus, suppFun_asIdeal]
   rw [hlocus, ← Set.preimage_comp]
   exact (PrimeSpectrum.isClosed_zeroLocus (J : Set A)).preimage
-    (continuous_suppFun.comp continuous_subtype_val)
+    (continuous_suppFun.comp continuous_subtypeVal)
 
 /-- The quotient homomorphism with the image plus ring induces a closed embedding of sub-unit
 valuation loci. -/
