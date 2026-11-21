@@ -51,6 +51,19 @@ theorem contractL_succ (j i : ℕ) (h : E) :
       (ContinuousLinearMap.apply ℝ (IteratedGradient E (j + i)) h) :=
   (rfl)
 
+/-- Contracting a single outermost slot is evaluation at `h`. -/
+theorem contractL_one (j : ℕ) (h : E) :
+    contractL j 1 h = ContinuousLinearMap.apply ℝ (IteratedGradient E j) h := by
+  rw [contractL_succ, contractL_zero]
+  exact ContinuousLinearMap.id_comp _
+
+-- Not `@[simp]`: `contractL_succ` and `contractL_zero` already reduce `contractL j 1 h`, so
+-- `simpNF` rejects `@[simp]` on the left-hand side here.
+/-- Pointwise form of `TauCeti.IteratedGradient.contractL_one`. -/
+theorem contractL_one_apply (j : ℕ) (h : E) (G : IteratedGradient E (j + 1)) :
+    contractL j 1 h G = G h :=
+  (rfl)
+
 /-- The pointwise bound for contraction, in the operator norms of the nested linear maps. -/
 theorem norm_contractL_apply_le (j i : ℕ) (h : E) (G : IteratedGradient E (j + i)) :
     ‖contractL j i h G‖ ≤ ‖G‖ * ‖h‖ ^ i := by

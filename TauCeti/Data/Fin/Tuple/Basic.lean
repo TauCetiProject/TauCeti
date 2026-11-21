@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Algebra.Group.Submonoid.Membership
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
+import Mathlib.GroupTheory.Perm.Sign
 
 /-!
 # Insertions and appends in tuples
@@ -35,6 +37,8 @@ once.
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
   appending.
+* `Fin.tail_tail_comp_swap_zero_one`: exchanging the first two entries leaves
+  `Fin.tail (Fin.tail a)` unchanged.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.snoc_self_zero_succ`: in `q 0, …, q n, q 0`, the entry after the `i`-th is `q (i + 1)`.
@@ -78,6 +82,9 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
+* `Fin.comp_perm_eq_of_cons_of_swap`: a family of maps `F` on tuples `Fin j → α` for which
+  prepending an entry (`Fin.cons v`) respects `F j`-equality and swapping the first two entries
+  leaves `F` invariant is invariant under all permutations.
 * `Fin.comp_succ_succAbove_comp_predAbove`: when adjacent entries at `p.castSucc` and `p.succ`
   agree, deleting `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers the
   tuple.
@@ -134,6 +141,14 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
     simp
+
+/-- Swapping the first two entries of a tuple of length at least two leaves `Fin.tail (Fin.tail a)`
+unchanged. -/
+@[simp]
+theorem tail_tail_comp_swap_zero_one {n : ℕ} (a : Fin (n + 2) → α) :
+    tail (tail (a ∘ Equiv.swap 0 1)) = tail (tail a) :=
+  funext fun r => by
+    simp [tail, Equiv.swap_apply_of_ne_of_ne (succ_ne_zero _) (succ_succ_ne_one r)]
 
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
@@ -502,6 +517,45 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
     omega
   · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
     omega
+
+/-- Any family of maps `F` on tuples `Fin j → α` such that prepending an entry via `Fin.cons`
+respects `F j`-equality (`F j m = F j m' → F (j + 1) (cons v m) = F (j + 1) (cons v m')`) and `F`
+is invariant under `Equiv.swap 0 1` is invariant under every permutation of `Fin j`. -/
+theorem comp_perm_eq_of_cons_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j → α) → β j)
+    (hcons : ∀ j (v : α) (m m' : Fin j → α), F j m = F j m' →
+      F (j + 1) (cons v m : Fin (j + 1) → α) = F (j + 1) (cons v m' : Fin (j + 1) → α))
+    (hswap : ∀ j (m : Fin (j + 2) → α), F (j + 2) (m ∘ Equiv.swap 0 1) = F (j + 2) m) :
+    ∀ (j : ℕ) (m : Fin j → α) (σ : Equiv.Perm (Fin j)), F j (m ∘ σ) = F j m
+  | 0, m, σ => by
+      have hm : m ∘ σ = m := funext fun i => i.elim0
+      rw [hm]
+  | j + 1, m, σ => by
+      have hadj : ∀ (n : ℕ) (i : Fin n) (a : Fin (n + 1) → α),
+          F (n + 1) (a ∘ Equiv.swap i.castSucc i.succ) = F (n + 1) a := by
+        intro n
+        induction n with
+        | zero => intro i; exact i.elim0
+        | succ n ih =>
+          intro i a
+          refine cases ?_ (fun q => ?_) i
+          · simpa using hswap n a
+          · have hswap' :
+                (cons (a 0) (tail a) : Fin (n + 2) → α) ∘ Equiv.swap q.castSucc.succ q.succ.succ =
+                  cons (a 0) (tail a ∘ Equiv.swap q.castSucc q.succ) := by
+              funext k
+              refine cases ?_ (fun k => ?_) k
+              · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero _).symm]
+              · rw [Function.comp_apply,
+                  ← (succ_injective (n + 1)).map_swap q.castSucc q.succ k]
+                simp
+            conv_lhs => rw [← cons_self_tail a, ← succ_castSucc, hswap']
+            exact (hcons (n + 1) (a 0) _ _ (ih q (tail a))).trans
+              (congrArg (F (n + 2)) (cons_self_tail a))
+      revert m
+      refine Submonoid.induction_of_closure_eq_top_left
+        (Equiv.Perm.mclosure_swap_castSucc_succ j) σ (fun m => by simp) ?_
+      rintro _ ⟨i, rfl⟩ τ ih m
+      rw [Equiv.Perm.coe_mul, ← Function.comp_assoc, ih, hadj]
 
 /-- When `f` takes equal values at the adjacent indices `p.castSucc` and `p.succ`, deleting
 `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers `f`. -/
