@@ -30,6 +30,8 @@ general: for the bounded operators on an infinite-dimensional separable Hilbert 
   modulo Murray–von Neumann equivalence.
 * `TauCeti.ProjectionMonoid.mk p hp`: the class in `V(R)` of a projection `p : Matrix m m R`
   indexed by any finite type `m`.
+* `TauCeti.ProjectionMonoid.lift f hf`: the function out of `V(R)` induced by a function `f` on
+  projections in `Matrix (Fin k) (Fin k) R` that is invariant under Murray–von Neumann equivalence.
 * `TauCeti.ProjectionMonoid.map f`: the monoid homomorphism `V(R) →+ V(S)` induced entrywise by a
   star ring homomorphism `f : R →⋆ₙ+* S`.
 
@@ -83,7 +85,7 @@ instance MatrixProjection.setoid : Setoid (MatrixProjection R) where
 /-- The **projection monoid** `V(R)`: matrix projections over `R` of all finite sizes modulo
 Murray–von Neumann equivalence. Its addition is induced by block sum, see
 `TauCeti.ProjectionMonoid.mk_fromBlocks`. -/
-@[expose] def ProjectionMonoid : Type _ :=
+def ProjectionMonoid : Type _ :=
   Quotient (MatrixProjection.setoid R)
 
 namespace ProjectionMonoid
@@ -146,14 +148,53 @@ theorem mk_submatrix {p : Matrix m m R} (hp : IsStarProjection p) (e : n ≃ m) 
       mk p hp :=
   mk_reindex hp e.symm
 
+section lift
+
+variable {α : Sort*} (f : ∀ {k : ℕ} (p : Matrix (Fin k) (Fin k) R), IsStarProjection p → α)
+  (hf : ∀ {k l : ℕ} {p : Matrix (Fin k) (Fin k) R} {q : Matrix (Fin l) (Fin l) R}
+    (hp : IsStarProjection p) (hq : IsStarProjection q), IsMurrayVonNeumannEquivalent p q →
+      f p hp = f q hq)
+
+/-- **Universal property.** A function on projections in `Matrix (Fin k) (Fin k) R`, over all sizes
+`k`, that takes the same value on Murray–von Neumann equivalent projections induces a function
+out of `V(R)`. -/
+def lift : ProjectionMonoid R → α :=
+  Quotient.lift (fun p ↦ f p.matrix p.isStarProjection) fun _ _ h ↦ hf _ _ h
+
+/-- The function `TauCeti.ProjectionMonoid.lift f hf` sends the class of a projection in
+`Matrix (Fin k) (Fin k) R` to its value under `f`. -/
+@[simp]
+theorem lift_mk {k : ℕ} {p : Matrix (Fin k) (Fin k) R} (hp : IsStarProjection p) :
+    lift @f @hf (mk p hp) = f p hp :=
+  hf _ _ (hp.isMurrayVonNeumannEquivalent_reindex _).symm
+
+/-- The function `TauCeti.ProjectionMonoid.lift f hf` sends the class of a projection indexed by
+any finite type `m` to the value under `f` of any relabelling of it by `Fin k`. -/
+theorem lift_mk_of_equiv {p : Matrix m m R} (hp : IsStarProjection p) {k : ℕ} (e : m ≃ Fin k) :
+    lift @f @hf (mk p hp) =
+      f (reindex e e p) (hp.isMurrayVonNeumannEquivalent_reindex e).isStarProjection_right := by
+  rw [← mk_reindex hp e, lift_mk]
+
+/- The statements above write `@f @hf` so that these arguments are not eta-expanded through their
+implicit binders; otherwise `rw` and `simp` match `hf` only up to proof irrelevance and leave it
+as a side goal. -/
+
+end lift
+
 /-- The zero of `V(R)` is the class of the zero projection. -/
 noncomputable instance : Zero (ProjectionMonoid R) :=
   ⟨mk (0 : Matrix (Fin 0) (Fin 0) R) (.zero _)⟩
 
+/-- Unfolds the `Zero` instance. -/
+private theorem zero_def :
+    (0 : ProjectionMonoid R) = mk (0 : Matrix (Fin 0) (Fin 0) R) (.zero _) :=
+  rfl
+
 /-- A matrix projection has class zero exactly when it is the zero matrix. -/
 @[simp]
-theorem mk_eq_zero_iff {p : Matrix m m R} (hp : IsStarProjection p) : mk p hp = 0 ↔ p = 0 :=
-  (mk_eq_mk_iff _ _).trans isMurrayVonNeumannEquivalent_zero_right_iff
+theorem mk_eq_zero_iff {p : Matrix m m R} (hp : IsStarProjection p) : mk p hp = 0 ↔ p = 0 := by
+  rw [zero_def, mk_eq_mk_iff]
+  exact isMurrayVonNeumannEquivalent_zero_right_iff
 
 /-- The zero matrix of any size has class zero. -/
 @[simp]
@@ -161,19 +202,33 @@ theorem mk_zero : mk (0 : Matrix m m R) (.zero _) = 0 :=
   (mk_eq_zero_iff _).2 rfl
 
 /-- The addition of `V(R)`, induced by block sum of representatives. -/
-noncomputable instance : Add (ProjectionMonoid R) where
+@[no_expose] noncomputable instance : Add (ProjectionMonoid R) where
   add := Quotient.lift₂
     (fun p q ↦ mk (fromBlocks p.matrix 0 0 q.matrix)
       (p.isStarProjection.fromBlocks_zero₁₂_zero₂₁ q.isStarProjection))
     fun _ _ _ _ h₁ h₂ ↦ (mk_eq_mk_iff _ _).2 (h₁.fromBlocks h₂)
+
+/-- Unfolds `TauCeti.ProjectionMonoid.mk`. -/
+private theorem mk_def {p : Matrix m m R} (hp : IsStarProjection p) :
+    mk p hp = Quotient.mk _ ⟨Fintype.card m, reindex (Fintype.equivFin m) (Fintype.equivFin m) p,
+      (hp.isMurrayVonNeumannEquivalent_reindex _).isStarProjection_right⟩ :=
+  rfl
+
+/-- Unfolds the `Add` instance on classes of representatives. -/
+private theorem quotientMk_add_quotientMk (p q : MatrixProjection R) :
+    @HAdd.hAdd (ProjectionMonoid R) (ProjectionMonoid R) _ _ (Quotient.mk _ p) (Quotient.mk _ q) =
+      mk (fromBlocks p.matrix 0 0 q.matrix)
+        (p.isStarProjection.fromBlocks_zero₁₂_zero₂₁ q.isStarProjection) :=
+  rfl
 
 /-- **Additivity.** The class of the block sum `p ⊕ q` is the sum of the classes of `p` and
 `q`. -/
 @[simp]
 theorem mk_fromBlocks {p : Matrix m m R} {q : Matrix n n R} (hp : IsStarProjection p)
     (hq : IsStarProjection q) :
-    mk (fromBlocks p 0 0 q) (hp.fromBlocks_zero₁₂_zero₂₁ hq) = mk p hp + mk q hq :=
-  mk_eq_mk ((hp.isMurrayVonNeumannEquivalent_reindex _).fromBlocks
+    mk (fromBlocks p 0 0 q) (hp.fromBlocks_zero₁₂_zero₂₁ hq) = mk p hp + mk q hq := by
+  rw [mk_def hp, mk_def hq, quotientMk_add_quotientMk]
+  exact mk_eq_mk ((hp.isMurrayVonNeumannEquivalent_reindex _).fromBlocks
     (hq.isMurrayVonNeumannEquivalent_reindex _))
 
 /-- **Padding by zero.** Padding a projection by a zero block of any size does not change its
@@ -258,12 +313,12 @@ variable {S T : Type*} [NonUnitalSemiring S] [StarRing S] [NonUnitalSemiring T] 
 
 /-- The function `V(R) → V(S)` induced entrywise by a star ring homomorphism. -/
 private noncomputable def mapFun (f : R →⋆ₙ+* S) : ProjectionMonoid R → ProjectionMonoid S :=
-  Quotient.lift (fun p ↦ mk (p.matrix.map f) (p.isStarProjection.matrix_map f))
-    fun _ _ h ↦ (mk_eq_mk_iff _ _).2 (h.map f)
+  lift (fun p hp ↦ mk (p.map f) (hp.matrix_map f)) fun _ _ h ↦ (mk_eq_mk_iff _ _).2 (h.map f)
 
 private theorem mapFun_mk (f : R →⋆ₙ+* S) {p : Matrix m m R} (hp : IsStarProjection p) :
-    mapFun f (mk p hp) = mk (p.map f) (hp.matrix_map f) :=
-  mk_eq_mk ((hp.isMurrayVonNeumannEquivalent_reindex _).map f).symm
+    mapFun f (mk p hp) = mk (p.map f) (hp.matrix_map f) := by
+  rw [mapFun, ← mk_reindex hp (Fintype.equivFin m), lift_mk]
+  exact mk_eq_mk ((hp.isMurrayVonNeumannEquivalent_reindex _).map f).symm
 
 /-- **Functoriality.** A star ring homomorphism `f : R →⋆ₙ+* S`, applied to matrix entries,
 induces a monoid homomorphism `V(R) →+ V(S)`. -/
