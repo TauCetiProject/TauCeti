@@ -7,9 +7,13 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
+import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Algebra.Homology.PrincipalIdealRing
+import TauCeti.AlgebraicTopology.Disk
 import TauCeti.CategoryTheory.GradedObject.Monoidal
+import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 
 /-!
 # The fundamental class of a product of manifolds
@@ -43,10 +47,22 @@ The proof uses no local computation in a product of charts. Fix a point `z = (x,
   monomorphism between modules free of rank one, hence it carries the generator `μ ⊗ ν` to a
   generator of the local homology at `z` (`LinearMap.span_singleton_apply_eq_top_of_leftInverse`).
 
+Since the standard generator `[Sᵈ⁺¹]` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` is a fundamental class
+(`TauCeti.isFundamentalClass_singularHomologyTopCatSphereGenerator`), the cross product
+`[Sᵈ⁺¹] × ν` is a fundamental class of `Sᵈ⁺¹ × N` for every fundamental class `ν` of `N`
+(`TauCeti.IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross`). Its
+coefficients are `k ⊗ k`; read with coefficients `k` through `k ⊗ k ≅ k` it is still a fundamental
+class (`TauCeti.isFundamentalClass_singularHomologyFunctor_map_app_iff`). For a closed connected
+oriented three-manifold `Y`, this is the fundamental class `[S¹] × [Y]` of the four-manifold
+`S¹ × Y`, on which its intersection form is evaluated.
+
 ## Main results
 
 * `TauCeti.IsFundamentalClass.singularHomologyCross`: the cross product of fundamental classes of
   closed connected manifolds is a fundamental class of their product.
+* `TauCeti.IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross`: the
+  cross product of the standard generator of `Hᵈ⁺¹(Sᵈ⁺¹; k)` with a fundamental class of `N` is a
+  fundamental class of `Sᵈ⁺¹ × N`.
 
 ## References
 
@@ -139,5 +155,44 @@ theorem IsFundamentalClass.singularHomologyCross
     (eT.span_singleton_eq_top_iff_isUnit.2 heT)
 
 end Cross
+
+section Sphere
+
+variable {k : Type w} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k]
+  {N F : Type w} [TopologicalSpace N] [T2Space N] [CompactSpace N] [ConnectedSpace N]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F N] {d n : ℕ}
+
+/-- **The fundamental class of `Sᵈ⁺¹ × N`.** Let `N` be a compact connected manifold of dimension
+`n` and `k` a principal ideal domain. If `ν ∈ Hₙ(N; k)` is a fundamental class, then the cross
+product `[Sᵈ⁺¹] × ν ∈ Hᵈ⁺¹⁺ⁿ(Sᵈ⁺¹ × N; k ⊗ k)` of the standard generator
+`TauCeti.singularHomologyTopCatSphereGenerator` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` with `ν` is a fundamental class
+of `Sᵈ⁺¹ × N`. -/
+theorem IsFundamentalClass.singularHomologyTopCatSphereGenerator_singularHomologyCross
+    (hn : finrank ℝ F = n)
+    {ν : ((TopCat.toSSet.obj (TopCat.of N)).homology (ModuleCat.of k k) n : ModuleCat.{w} k)}
+    (hν : IsFundamentalClass ν) :
+    IsFundamentalClass (M := TopCat.sphere.{w} (d + 1) × N)
+      ((TopCat.singularHomologyCross (TopCat.sphere.{w} (d + 1)) (TopCat.of N)
+        (ModuleCat.of k k) (ModuleCat.of k k) (d + 1) n (d + 1 + n) rfl).hom
+        (singularHomologyTopCatSphereGenerator k d ⊗ₜ ν)) := by
+  -- `TopCat.sphere (d + 1)` is the lift to `Type w` of the unit sphere of `ℝᵈ⁺²`, a compact
+  -- connected manifold modelled on `ℝᵈ⁺¹`; the model is moved to `Type w` along its dimension.
+  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (d + 1 + 1))) = d + 1 + 1) := ⟨by simp⟩
+  let e : Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1 ≃ₜ
+      ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1) :=
+    Homeomorph.ulift.symm
+  let : ChartedSpace (EuclideanSpace ℝ (Fin (d + 1)))
+      (ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1)) :=
+    e.chartedSpace
+  let : ChartedSpace (ULift.{w} (Fin (d + 1)) → ℝ)
+      (ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1)) :=
+    ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := EuclideanSpace ℝ (Fin (d + 1))) _ (by simp)
+  have : ConnectedSpace (ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (d + 1 + 1))) 1)) :=
+    @PathConnectedSpace.connectedSpace _ _ (TopCat.pathConnectedSpace_sphere.{w} d)
+  exact IsFundamentalClass.singularHomologyCross (E := ULift.{w} (Fin (d + 1)) → ℝ)
+    (LinearEquiv.refl k k) (LinearEquiv.refl k k) (by simp) hn
+    (isFundamentalClass_singularHomologyTopCatSphereGenerator k d) hν
+
+end Sphere
 
 end TauCeti

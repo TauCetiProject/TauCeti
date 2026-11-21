@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Contractible
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 
 /-!
@@ -28,8 +29,12 @@ class whose image under a map `Sⁿ ⟶ Y` computes local degrees.
   antipodal map acts on the class by `(-1) ^ (n + 1)`.
 * `TauCeti.isIso_diskBoundaryFundamentalClass_compl_singleton`: in positive degrees the class
   generates the local homology `Hₙ(Sⁿ, Sⁿ ∖ {x})`, since `Sⁿ ∖ {x}` is contractible.
+* `TauCeti.isFundamentalClass_singularHomologyTopCatSphereGenerator`: consequently the standard
+  generator of `Hₙ(Sⁿ; k)`, `n ≥ 1`, is a fundamental class of `Sⁿ` in the sense of
+  `TauCeti.IsFundamentalClass`, for every ring `k`.
 
-Coefficients are an object `R` of an abelian category with coproducts.
+Coefficients are an object `R` of an abelian category with coproducts, except in the last result,
+which is about `k`-modules.
 -/
 
 public section
@@ -138,5 +143,23 @@ theorem isIso_diskBoundaryFundamentalClass_compl_singleton (k : ℕ)
     TopPair.isIso_singularHomologyπ_of_contractibleSpace _ R k
   -- The three factors are invertible, but their objects agree only up to unfolding.
   exact IsIso.comp_isIso' inferInstance (IsIso.comp_isIso' ‹_› ‹_›)
+
+/-- **The standard generator of `Hₙ(Sⁿ; k)` is a fundamental class.** For every ring `k` and
+`n ≥ 1`, the image of the standard generator `TauCeti.singularHomologyTopCatSphereGenerator` of
+`Hₙ(Sⁿ; k)` in the local homology `Hₙ(Sⁿ, Sⁿ ∖ {x}; k)` generates it, at every point `x`. -/
+theorem isFundamentalClass_singularHomologyTopCatSphereGenerator (k : Type w) [Ring k] (d : ℕ) :
+    IsFundamentalClass (M := TopCat.sphere.{w} (d + 1)) (N := ModuleCat.of k k) (n := d + 1)
+      (singularHomologyTopCatSphereGenerator k d) := by
+  refine (isFundamentalClass_iff _).2 fun x ↦ ?_
+  have h := isIso_diskBoundaryFundamentalClass_compl_singleton (ModuleCat.of k k) d x
+  -- The generator is stated in `singularHomologyFunctor`, the map to local homology in
+  -- `SSet.homology`; the two presentations of singular homology agree only up to unfolding.
+  erw [singularHomologyToLocalHomology_eq_singularHomologyπ]
+  rw [singularHomologyTopCatSphereGenerator_def]
+  erw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← diskBoundaryFundamentalClass_def]
+  -- `h` is stated for `{x}ᶜ` as a subset of `TopCat.diskBoundary (d + 1 + 1)`, so it is passed to
+  -- `asIso` explicitly rather than found by instance search.
+  exact (@asIso _ _ _ _ _ h).toLinearEquiv.span_singleton_apply_eq_top_iff.2
+    Ideal.span_singleton_one
 
 end TauCeti

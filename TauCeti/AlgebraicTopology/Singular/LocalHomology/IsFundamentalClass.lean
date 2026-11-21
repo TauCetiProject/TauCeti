@@ -38,6 +38,8 @@ one, are fundamental classes in this sense.
   coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
   coordinates is a unit of `R`.
 * `TauCeti.isFundamentalClass_of_subsingleton`: over the zero ring every class is fundamental.
+* `TauCeti.isFundamentalClass_singularHomologyFunctor_map_app_iff`: changing the coefficients along
+  an isomorphism `N ≅ N'` preserves and reflects fundamental classes.
 * `TauCeti.not_isFundamentalClass_zero`: on a nonempty `n`-manifold with nontrivial coefficients,
   the zero class of `Hₙ(M; N)` is not fundamental.
 * `TauCeti.IsFundamentalClass.isFundamentalClass_smul_iff`: on a nonempty `n`-manifold with
@@ -133,6 +135,41 @@ theorem isFundamentalClass_iff_isUnit_of_linearEquiv [IsDedekindFiniteMonoid R]
   forall_congr' fun x ↦ (e x).span_singleton_eq_top_iff_isUnit
 
 end Definition
+
+section Coefficients
+
+variable {M : Type w} [TopologicalSpace M] {R : Type u} [Ring R] {N N' : ModuleCat.{w} R} {n : ℕ}
+
+/-- **Fundamental classes do not depend on the presentation of the coefficients.** Changing the
+coefficients of `Hₙ(M; N)` along an isomorphism `N ≅ N'` carries fundamental classes to
+fundamental classes, and only them. -/
+@[simp]
+theorem isFundamentalClass_singularHomologyFunctor_map_app_iff (e : N ≅ N')
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)) :
+    IsFundamentalClass
+        (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) n).map e.hom).app
+          (TopCat.of M) μ) ↔ IsFundamentalClass μ := by
+  refine ((isFundamentalClass_iff _).trans (forall_congr' fun x ↦ ?_)).trans
+    (isFundamentalClass_iff μ).symm
+  -- At each point the coefficient change acts on the local homology by an isomorphism `L`, and
+  -- the map to local homology intertwines it with the coefficient change on `Hₙ(M)`.
+  let P := TopPair.toSSetPair.obj (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))
+  let L := asIso (HomologicalComplex.homologyMap
+    (((SSetPair.chainComplexFunctor (ModuleCat.{w} R)).map e.hom).app P) n)
+  have h := ConcreteCategory.congr_hom (SSetPair.homologyπ_coefficient_naturality P e.hom n) μ
+  have key : singularHomologyToLocalHomology N' x n
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) n).map e.hom).app
+        (TopCat.of M) μ) = L.toLinearEquiv (singularHomologyToLocalHomology N x n μ) := by
+    -- `singularHomologyFunctor` and `SSet.homology` present the homology of `M` differently, and
+    -- they agree only up to unfolding, so the rewrites across them use `erw`.
+    erw [singularHomologyToLocalHomology_eq_singularHomologyπ,
+      singularHomologyToLocalHomology_eq_singularHomologyπ]
+    erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
+    exact h
+  erw [key]
+  exact L.toLinearEquiv.span_singleton_apply_eq_top_iff
+
+end Coefficients
 
 section Homeomorph
 
