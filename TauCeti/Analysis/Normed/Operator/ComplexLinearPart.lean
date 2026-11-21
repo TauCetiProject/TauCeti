@@ -451,9 +451,8 @@ theorem Submodule.ClosedComplemented.of_restrictScalars {K : Submodule ℂ V}
   have : ContinuousConstSMul ℝ K := IsScalarTower.continuousConstSMul ℝ ℂ K
   refine ⟨P'.complexLinearPart, fun x ↦ ?_⟩
   have hIx : P' (I • (x : V)) = I • x := hP' (I • x)
-  rw [ContinuousLinearMap.complexLinearPart_apply, hP', hIx, smul_smul, I_mul_I, neg_one_smul,
-    sub_neg_eq_add]
-  module
+  rw [ContinuousLinearMap.complexLinearPart_apply, hP', hIx]
+  match_scalars; norm_num [I_mul_I]
 
 end ClosedComplemented
 

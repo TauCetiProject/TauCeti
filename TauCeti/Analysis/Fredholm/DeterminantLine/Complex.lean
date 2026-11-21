@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Chart
 public import TauCeti.LinearAlgebra.Determinant.Complex.LinearMap
 public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
-public import TauCeti.Topology.Algebra.Module.ComplexSmulI
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import TauCeti.LinearAlgebra.Complex.Finrank
