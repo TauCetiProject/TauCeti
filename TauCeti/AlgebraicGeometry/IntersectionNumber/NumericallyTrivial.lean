@@ -170,7 +170,7 @@ theorem numericallyTrivial_pullback_iff_of_isIso {Y : Scheme.{u}} (g : Y ⟶ X) 
     {a : LineBundleClass X} :
     NumericallyTrivial k (g ≫ x) (pullback g a) ↔ NumericallyTrivial k x a := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.pullback_of_isClosedImmersion g⟩
-  simpa [← pullback_comp] using h.pullback_of_isClosedImmersion (inv g)
+  simpa [pullback_comp, pullback_id] using h.pullback_of_isClosedImmersion (inv g)
 
 /-- **Degree on a curve.** A numerically trivial class on an integral `k`-scheme of dimension one
 has degree zero: the scheme is itself one of the test curves. -/
@@ -330,8 +330,10 @@ theorem relNumericallyTrivial_iff_numericallyTrivial {k : Type u} [Field k]
     have he : Spec.map (CommRingCat.ofHom (algebraMap k ((Spec (.of k)).residueField s))) =
         (Spec (.of k)).fromSpecResidueField s :=
       Spec.map_preimage _
+    have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap k ((Spec (.of k)).residueField s)))) := by
+      rw [he]; infer_instance
     have hbij : Function.Bijective (algebraMap k ((Spec (.of k)).residueField s)) :=
-      isIso_SpecMap_iff.mp (he ▸ inferInstance)
+      isIso_SpecMap_iff.mp this
     have : FiniteDimensional k ((Spec (.of k)).residueField s) :=
       .of_surjective (Algebra.linearMap k _) hbij.surjective
     have : IsIso (x.fiberι s) :=
