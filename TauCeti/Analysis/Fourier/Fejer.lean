@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Circle
 public import TauCeti.Analysis.Fourier.Monomial
 import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Analysis.Complex.Trigonometric
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Fourier.AddCircle
 
 /-!
@@ -25,16 +24,11 @@ Haar measure when `N > 0`. Its Fourier coefficients are the triangular weights
 The normalization uses `AddCircle.haarAddCircle`, of total mass one, and the Fourier
 monomials of Mathlib. This is the positive kernel underlying Cesàro means of Fourier sums.
 
-The file also records the corresponding finite Fourier sum identities for the real-frequency
-additive character `Real.fourierChar`:
+The file also records the corresponding finite triangular Fourier sum identity for the
+real-frequency additive character `Real.fourierChar`:
 
-* `Real.conj_fourierChar` and `Real.fourierChar_mul_fourierChar`: conjugation and multiplication of
-  complex-valued `Real.fourierChar`.
 * `TauCeti.sum_Icc_max_sub_abs_mul_fourierChar`: the triangular Fourier sum identity
   `∑ n ∈ Icc (-K) K, max 0 (M - |n|) * e(n * t) = ‖∑ k ∈ range M, e(k * t)‖ ^ 2` for `M ≤ K`.
-* `TauCeti.norm_sum_range_fourierChar_mul_abs_sin` and
-  `TauCeti.norm_sum_range_fourierChar_sq_eq_sin_div_sq`: closed forms for the norm of a geometric
-  exponential sum in terms of `Real.sin`.
 
 The development is motivated by the real periodic Fejér kernel and convergence formalization
 in the [PrimeNumberTheoremAnd formalization][PNTFejer], by Aristotle (Harmonic) and
@@ -173,20 +167,6 @@ theorem integral_fejerKernel (N : ℕ) (hN : 0 < N) :
 
 end TauCeti
 
-namespace Real
-
-/-- Conjugating a complex-valued Fourier character negates its phase. -/
-theorem conj_fourierChar (x : ℝ) :
-    starRingEnd ℂ (Real.fourierChar x : ℂ) = (Real.fourierChar (-x) : ℂ) := by
-  rw [← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv]
-
-/-- Multiplying two complex-valued Fourier characters adds their phases. -/
-theorem fourierChar_mul_fourierChar (x y : ℝ) :
-    (Real.fourierChar x : ℂ) * (Real.fourierChar y : ℂ) = (Real.fourierChar (x + y) : ℂ) := by
-  rw [← Circle.coe_mul, ← AddChar.map_add_eq_mul]
-
-end Real
-
 namespace TauCeti
 
 /-- For `M ≤ K`, the triangular Fourier polynomial over `[-K, K]` equals the squared norm of the
@@ -231,42 +211,5 @@ theorem sum_Icc_max_sub_abs_mul_fourierChar {M K : ℕ} (hMK : M ≤ K) (t : ℝ
     · rw [Nat.sub_eq_zero_of_le (le_of_not_ge hn), Nat.cast_zero,
         max_eq_left (sub_nonpos.mpr (Nat.cast_le.mpr (le_of_not_ge hn)))]
   exact_mod_cast hcast.symm
-
-/-- Closed-form product identity for the norm of a geometric exponential sum:
-`‖∑ k ∈ range M, Real.fourierChar (k * t)‖ * |sin (π * t)| = |sin (π * M * t)|`. -/
-theorem norm_sum_range_fourierChar_mul_abs_sin (M : ℕ) (t : ℝ) :
-    ‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ * |Real.sin (Real.pi * t)| =
-      |Real.sin (Real.pi * (M : ℝ) * t)| := by
-  let z : ℂ := (Real.fourierChar t : ℂ)
-  have hpow : ∀ k : ℕ, (Real.fourierChar ((k : ℝ) * t) : ℂ) = z ^ k := by
-    intro k
-    rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul]
-  simp_rw [hpow]
-  have hgeom := congrArg norm (geom_sum_mul z M)
-  rw [norm_mul] at hgeom
-  have hz1 : ‖z - 1‖ = 2 * |Real.sin (Real.pi * t)| := by
-    have h1 : z = Complex.exp (Complex.I * ((2 * Real.pi * t : ℝ) : ℂ)) := by
-      simp only [z, Real.fourierChar_apply, mul_comm]
-    rw [h1, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
-    congr 3; ring
-  have hzM : ‖z ^ M - 1‖ = 2 * |Real.sin (Real.pi * (M : ℝ) * t)| := by
-    have hM : z ^ M = Complex.exp (Complex.I * ((2 * Real.pi * (M : ℝ) * t : ℝ) : ℂ)) := by
-      rw [← hpow M, Real.fourierChar_apply, mul_comm]
-      congr 2; push_cast; ring
-    rw [hM, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
-    congr 3; ring
-  rw [hz1, hzM] at hgeom
-  linarith
-
-/-- Whenever `sin (π * t) ≠ 0`, the squared norm of the geometric exponential sum of length `M`
-equals `(sin (π * M * t) / sin (π * t)) ^ 2`. -/
-theorem norm_sum_range_fourierChar_sq_eq_sin_div_sq (M : ℕ) {t : ℝ}
-    (ht : Real.sin (Real.pi * t) ≠ 0) :
-    ‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ ^ 2 =
-      (Real.sin (Real.pi * (M : ℝ) * t) / Real.sin (Real.pi * t)) ^ 2 := by
-  have h := congrArg (fun r : ℝ ↦ r ^ 2) (norm_sum_range_fourierChar_mul_abs_sin M t)
-  rw [mul_pow, sq_abs, sq_abs] at h
-  rw [div_pow, eq_div_iff (pow_ne_zero 2 ht)]
-  exact h
 
 end TauCeti

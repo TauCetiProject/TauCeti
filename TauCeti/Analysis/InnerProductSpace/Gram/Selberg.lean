@@ -53,6 +53,9 @@ section Seminormed
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
+private theorem norm_inner_self_eq_norm_sq (x : E) : ‖⟪x, x⟫_𝕜‖ = ‖x‖ ^ 2 := by
+  simp [inner_self_eq_norm_sq_to_K]
+
 namespace TauCeti
 
 /-- A Gram row sum `∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖` vanishes if and only if `‖y i‖ = 0`. -/
@@ -62,8 +65,7 @@ theorem sum_norm_inner_eq_zero_iff_norm_eq_zero {s : Finset ι} {y : ι → E} {
   · intro h
     have hdiag : ‖⟪y i, y i⟫_𝕜‖ ≤ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ :=
       Finset.single_le_sum (f := fun j ↦ ‖⟪y i, y j⟫_𝕜‖) (fun j _ ↦ norm_nonneg _) hi
-    rw [h, inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal,
-      abs_of_nonneg (norm_nonneg _)] at hdiag
+    rw [h, norm_inner_self_eq_norm_sq] at hdiag
     nlinarith [norm_nonneg (y i)]
   · intro h
     refine Finset.sum_eq_zero fun j _ ↦ ?_
@@ -221,8 +223,7 @@ theorem sum_norm_inner_sq_le_of_diag_offDiag [DecidableEq ι] (s : Finset ι) (y
     (hoff : ∀ i ∈ s, ∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O) :
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤ (D + O) * ‖x‖ ^ 2 := by
   refine s.sum_norm_inner_sq_le_of_sum_norm_inner_le y x hDO fun i hi ↦ ?_
-  rw [← Finset.add_sum_erase _ _ hi, inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal,
-    abs_of_nonneg (norm_nonneg _)]
+  rw [← Finset.add_sum_erase _ _ hi, norm_inner_self_eq_norm_sq]
   exact add_le_add (hdiag i hi) (hoff i hi)
 
 end Finset

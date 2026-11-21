@@ -21,11 +21,11 @@ This file records elementary metric and geometric estimates on the unit additive
 * `TauCeti.two_mul_norm_unitAddCircle_le_abs_sin` and
   `TauCeti.four_mul_norm_unitAddCircle_sq_le_sin_sq`: Jordan's sine lower bound
   `2 * ‖(t : UnitAddCircle)‖ ≤ |sin (π * t)|` and its squared form.
-* `TauCeti.card_filter_floor_div_norm_unitAddCircle_le_two`: circular radial bin-packing bound
+* `TauCeti.card_filter_floor_norm_unitAddCircle_div_le_two`: circular radial bin-packing bound
   showing that at most two points of a `δ`-separated finite family lie in each shell
   `m δ ≤ ‖(c - x j : UnitAddCircle)‖ < (m + 1) δ`.
-* `TauCeti.card_le_one_of_half_lt_norm_unitAddCircle`: since every point of `UnitAddCircle` has
-  norm at most `1 / 2`, a `δ`-separated finite family with `1 / 2 < δ` has at most one element.
+* `TauCeti.card_le_one_of_half_lt_of_unitAddCircle_separated`: since every point of `UnitAddCircle`
+  has norm at most `1 / 2`, a `δ`-separated finite family with `1 / 2 < δ` has at most one element.
 -/
 
 public section
@@ -66,7 +66,7 @@ theorem four_mul_norm_unitAddCircle_sq_le_sin_sq (t : ℝ) :
 /-- Circular radial bin-packing bound: around any center `c : ℝ`, each radial bin
 `⌊‖c - x j‖ / δ⌋₊ = m` of a `δ`-separated finite family in `UnitAddCircle` contains at most two
 indices `j ∈ s` (at most one on each side of `c`). -/
-theorem card_filter_floor_div_norm_unitAddCircle_le_two {ι : Type*}
+theorem card_filter_floor_norm_unitAddCircle_div_le_two {ι : Type*}
     {s : Finset ι} {x : ι → ℝ} {δ : ℝ} (hδ : 0 < δ)
     (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ ‖((x i - x j : ℝ) : UnitAddCircle)‖)
     (c : ℝ) (m : ℕ) :
@@ -115,8 +115,8 @@ theorem card_filter_floor_div_norm_unitAddCircle_le_two {ι : Type*}
 
 /-- Because every point of `UnitAddCircle` has norm at most `1 / 2`, a `δ`-separated finite family
 with `1 / 2 < δ` has cardinality at most `1`. -/
-theorem card_le_one_of_half_lt_norm_unitAddCircle {ι : Type*} {s : Finset ι} {x : ι → ℝ} {δ : ℝ}
-    (hδ : 1 / 2 < δ)
+theorem card_le_one_of_half_lt_of_unitAddCircle_separated {ι : Type*} {s : Finset ι}
+    {x : ι → ℝ} {δ : ℝ} (hδ : 1 / 2 < δ)
     (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ ‖((x i - x j : ℝ) : UnitAddCircle)‖) :
     s.card ≤ 1 := by
   refine Finset.card_le_one.mpr fun i hi j hj ↦ ?_

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Group.AddCircle
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.NumberTheory.ZetaValues
@@ -16,6 +15,8 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Fiber
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Fourier.Fejer
 import TauCeti.Analysis.InnerProductSpace.Gram.Selberg
 import TauCeti.Analysis.Normed.Group.AddCircle
@@ -91,20 +92,16 @@ theorem sum_erase_inv_sin_sq_le {ι : Type*} [DecidableEq ι] {s : Finset ι} {x
   have hfib :
       ∑ j ∈ s.erase i, ((1 : ℝ) / (b j : ℝ) ^ 2) ≤
         2 * ∑ m ∈ (s.erase i).image b, ((1 : ℝ) / (m : ℝ) ^ 2) := by
-    rw [← Finset.sum_fiberwise_of_maps_to (g := b) (t := (s.erase i).image b)
-      (fun j hj ↦ Finset.mem_image_of_mem b hj), Finset.mul_sum]
+    rw [← sum_card_filter_nsmul_eq_sum_comp (s := s.erase i) (t := (s.erase i).image b)
+        (fun j hj ↦ Finset.mem_image_of_mem b hj) (fun m ↦ (1 : ℝ) / (m : ℝ) ^ 2),
+      Finset.mul_sum]
     refine Finset.sum_le_sum fun m _ ↦ ?_
-    have hcongr :
-        (∑ j ∈ (s.erase i).filter (fun j ↦ b j = m), ((1 : ℝ) / (b j : ℝ) ^ 2)) =
-          (((s.erase i).filter (fun j ↦ b j = m)).card : ℝ) * ((1 : ℝ) / (m : ℝ) ^ 2) := by
-      rw [Finset.sum_congr rfl fun j hj ↦ by rw [(Finset.mem_filter.mp hj).2],
-        Finset.sum_const, nsmul_eq_mul]
-    rw [hcongr]
+    rw [nsmul_eq_mul]
     have hsep' : ∀ a ∈ s.erase i, ∀ b ∈ s.erase i, a ≠ b →
         δ ≤ ‖((x a - x b : ℝ) : UnitAddCircle)‖ :=
       fun a ha b hb ↦ hsep a (Finset.mem_of_mem_erase ha) b (Finset.mem_of_mem_erase hb)
     exact mul_le_mul_of_nonneg_right
-      (by exact_mod_cast card_filter_floor_div_norm_unitAddCircle_le_two hδ hsep' (x i) m)
+      (by exact_mod_cast card_filter_floor_norm_unitAddCircle_div_le_two hδ hsep' (x i) m)
       (by positivity)
   have hzeta :
       ∑ m ∈ (s.erase i).image b, ((1 : ℝ) / (m : ℝ) ^ 2) ≤ Real.pi ^ 2 / 6 :=
@@ -206,8 +203,8 @@ noncomputable def taperedFourierVec (N L : ℕ) (x : ℝ) :
 theorem taperedFourierVec_apply (N L : ℕ) (x : ℝ) (k : Fin (2 * (N + L) + 1)) :
     taperedFourierVec N L x k =
       (Real.sqrt (taperWeight N L ((k : ℤ) - ((N + L : ℕ) : ℤ))) : ℂ) *
-        (Real.fourierChar (-((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * x)) : ℂ) :=
-  (rfl)
+        (Real.fourierChar (-((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * x)) : ℂ) := by
+  rw [taperedFourierVec, PiLp.toLp_apply]
 
 /-- For taper width `L = 0`, `taperedFourierVec` is the zero vector. -/
 @[simp]
@@ -248,11 +245,14 @@ theorem inner_taperedFourierVec (N L : ℕ) (x y : ℝ) :
             (Real.fourierChar (((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * (x - y))) : ℂ)) =
         ∑ n ∈ Finset.Icc (-((N + L : ℕ) : ℤ)) (N + L : ℕ),
           (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ) := by
-    refine Finset.sum_bij (fun (k : Fin (2 * (N + L) + 1)) _ ↦ (k : ℤ) - ((N + L : ℕ) : ℤ))
-      (fun k _ ↦ Finset.mem_Icc.mpr ⟨by omega, by omega⟩)
-      (fun k₁ _ k₂ _ h ↦ Fin.ext (by omega)) (fun n hn ↦ ?_) (fun _ _ ↦ rfl)
-    rcases Finset.mem_Icc.mp hn with ⟨hlo, hhi⟩
-    exact ⟨⟨(n + ((N + L : ℕ) : ℤ)).toNat, by omega⟩, Finset.mem_univ _, by dsimp; omega⟩
+    have hcard : (((N + L : ℕ) : ℤ) + 1 - -((N + L : ℕ) : ℤ)).toNat = 2 * (N + L) + 1 := by omega
+    rw [Int.Icc_eq_finset_map, hcard, Finset.sum_map,
+      Fin.sum_univ_eq_sum_range (fun k : ℕ ↦
+        (taperWeight N L ((k : ℤ) - ((N + L : ℕ) : ℤ)) : ℂ) *
+          (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * (x - y)) : ℂ))]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply,
+      sub_eq_neg_add]
   rw [hsum, hreindex]
   simp_rw [taperWeight_def, Complex.ofReal_div, Complex.ofReal_sub, div_mul_eq_mul_div,
     sub_mul, ← Finset.sum_div, Finset.sum_sub_distrib]
@@ -417,49 +417,69 @@ private theorem sum_norm_sum_Ico_fourierChar_sq_le_of_le_half {ι : Type*}
   let f : EuclideanSpace ℂ (Fin (2 * (N + L) + 1)) :=
     WithLp.toLp 2 fun k ↦
       if L ≤ k.val ∧ k.val - L < H then a (M + ((k.val - L : ℕ) : ℤ)) else 0
+  have hf_apply (k : Fin (2 * (N + L) + 1)) :
+      f k = if L ≤ k.val ∧ k.val - L < H then a (M + ((k.val - L : ℕ) : ℤ)) else 0 :=
+    PiLp.toLp_apply 2 _ _ k
   have hf_supp : ∀ k : Fin (2 * (N + L) + 1),
       (N : ℤ) < |(k : ℤ) - ((N + L : ℕ) : ℤ)| → f k = 0 := by
     intro k hk
     have hnot : ¬ (L ≤ k.val ∧ k.val - L < H) := by
       dsimp only [N, L] at hk ⊢
       rcases abs_cases ((k : ℤ) - (((H / 2 + ⌊1 / δ⌋₊ : ℕ) : ℤ))) with ⟨h, _⟩ | ⟨h, _⟩ <;> omega
-    simp [f, hnot]
-  have hbij : ∀ {α : Type} [AddCommMonoid α] (g : ℤ → α),
-      (∑ k : Fin (2 * (N + L) + 1),
-          if L ≤ k.val ∧ k.val - L < H then g (M + ((k.val - L : ℕ) : ℤ)) else 0) =
-        ∑ n ∈ Finset.Ico M (M + H), g n := by
+    rw [hf_apply, ite_eq_right hnot]
+  have hpad : ∀ {α : Type} [AddCommMonoid α] (g : ℕ → α),
+      (∑ k : Fin (2 * (N + L) + 1), if L ≤ k.val ∧ k.val - L < H then g (k.val - L) else 0) =
+        ∑ j ∈ Finset.range H, g j := by
     intro α _ g
-    rw [← Finset.sum_filter]
-    refine Finset.sum_bij (fun (k : Fin (2 * (N + L) + 1)) _ ↦ M + ((k.val - L : ℕ) : ℤ))
-      (fun k hk ↦ Finset.mem_Ico.mpr (by have := (Finset.mem_filter.mp hk).2; omega))
-      (fun k₁ hk₁ k₂ hk₂ h ↦ Fin.ext (by
-        have := (Finset.mem_filter.mp hk₁).2; have := (Finset.mem_filter.mp hk₂).2; omega))
-      (fun n hn ↦ ?_) (fun _ _ ↦ rfl)
-    rcases Finset.mem_Ico.mp hn with ⟨hlo, hhi⟩
-    exact ⟨⟨L + (n - M).toNat, by dsimp only [N, L]; omega⟩,
-      Finset.mem_filter.mpr ⟨Finset.mem_univ _, by dsimp; omega⟩, by dsimp; omega⟩
+    rw [Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ if L ≤ k ∧ k - L < H then g (k - L) else 0),
+      ← Finset.sum_filter]
+    have hfilt : (Finset.range (2 * (N + L) + 1)).filter (fun k ↦ L ≤ k ∧ k - L < H) =
+        Finset.Ico L (L + H) := by
+      ext k
+      simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]
+      dsimp only [N]
+      omega
+    rw [hfilt, Finset.sum_Ico_eq_sum_range, add_tsub_cancel_left]
+    exact Finset.sum_congr rfl fun j _ ↦ by rw [Nat.add_sub_cancel_left]
+  have hIco : ∀ {α : Type} [AddCommMonoid α] (g : ℤ → α),
+      ∑ n ∈ Finset.Ico M (M + H), g n = ∑ j ∈ Finset.range H, g (M + (j : ℤ)) := by
+    intro α _ g
+    rw [Int.Ico_eq_finset_map, Finset.sum_map, add_sub_cancel_left, Int.toNat_natCast]
+    rfl
   -- Identify `‖f‖ ^ 2` and the unimodularly shifted Fourier sums with those on `Ico M (M + H)`.
   have hnorm_f : ‖f‖ ^ 2 = ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-    rw [EuclideanSpace.norm_sq_eq, ← hbij (fun n ↦ ‖a n‖ ^ 2)]
-    exact Finset.sum_congr rfl fun k _ ↦ by by_cases hk : L ≤ k.val ∧ k.val - L < H <;> simp [f, hk]
+    rw [EuclideanSpace.norm_sq_eq, hIco (fun n ↦ ‖a n‖ ^ 2),
+      ← hpad (fun j ↦ ‖a (M + (j : ℤ))‖ ^ 2)]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [hf_apply]
+    split_ifs <;> simp
   have hsum_norm (t : ℝ) :
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ =
         ‖∑ k : Fin (2 * (N + L) + 1),
             f k * (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)‖ := by
     rw [← one_mul (‖∑ k : Fin (2 * (N + L) + 1), _‖),
       ← Circle.norm_coe (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t)), ← norm_mul,
-      Finset.mul_sum, ← hbij (fun n ↦ a n * (Real.fourierChar ((n : ℝ) * t) : ℂ))]
+      Finset.mul_sum, hIco (fun n ↦ a n * (Real.fourierChar ((n : ℝ) * t) : ℂ))]
     congr 1
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    by_cases hk : L ≤ k.val ∧ k.val - L < H
-    · simp only [f, hk, and_self, ↓reduceIte]
-      rw [← mul_assoc, mul_comm (Real.fourierChar _ : ℂ), mul_assoc,
-        Real.fourierChar_mul_fourierChar]
-      congr 3
-      have heq : M + ((k.val - L : ℕ) : ℤ) = (M + (N : ℤ)) + ((k : ℤ) - ((N + L : ℕ) : ℤ)) := by
-        omega
-      rw [heq]; push_cast; ring
-    · simp [f, hk]
+    have hphase (k : Fin (2 * (N + L) + 1)) :
+        (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
+            (f k * (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)) =
+          if L ≤ k.val ∧ k.val - L < H then
+            a (M + ((k.val - L : ℕ) : ℤ)) *
+              (Real.fourierChar (((M + ((k.val - L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)
+          else 0 := by
+      rw [hf_apply]
+      split_ifs with hk
+      · rw [← mul_assoc, mul_comm (Real.fourierChar _ : ℂ), mul_assoc,
+          Real.fourierChar_mul_fourierChar]
+        congr 3
+        have heq : M + ((k.val - L : ℕ) : ℤ) = (M + (N : ℤ)) + ((k : ℤ) - ((N + L : ℕ) : ℤ)) := by
+          omega
+        rw [heq]; push_cast; ring
+      · simp
+    simp_rw [hphase]
+    exact (hpad fun j ↦ a (M + (j : ℤ)) *
+      (Real.fourierChar (((M + (j : ℤ) : ℤ) : ℝ) * t) : ℂ)).symm
   -- Apply the centered core large sieve and replace `2 * (H / 2) ≤ H`.
   have h2N : 2 * (N : ℝ) ≤ (H : ℝ) := by exact_mod_cast (by omega : 2 * (H / 2) ≤ H)
   simp_rw [hsum_norm]
@@ -486,7 +506,7 @@ theorem sum_norm_sum_Ico_fourierChar_sq_le {ι : Type*} (s : Finset ι) (M : ℤ
   by_cases hδ' : δ ≤ 1 / 2
   · exact s.sum_norm_sum_Ico_fourierChar_sq_le_of_le_half M H a x hδ hδ' hsep
   have hcard : (s.card : ℝ) ≤ 1 := by
-    exact_mod_cast card_le_one_of_half_lt_norm_unitAddCircle (lt_of_not_ge hδ') hsep
+    exact_mod_cast card_le_one_of_half_lt_of_unitAddCircle_separated (lt_of_not_ge hδ') hsep
   have hsingle : ∀ i ∈ s,
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ^ 2 ≤
         ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
@@ -541,12 +561,9 @@ theorem sum_norm_sum_fourierChar_sq_le {ι : Type*} (s : Finset ι) (M : ℤ) (H
   have hbij : ∀ {α : Type} [AddCommMonoid α] (g : ℤ → α),
       (∑ j : Fin H, g (M + (j : ℤ))) = ∑ n ∈ Finset.Ico M (M + H), g n := by
     intro α _ g
-    refine Finset.sum_bij (fun (j : Fin H) _ ↦ M + (j : ℤ))
-      (fun j _ ↦ Finset.mem_Ico.mpr ⟨by omega, by omega⟩)
-      (fun j₁ _ j₂ _ h ↦ Fin.ext (by omega))
-      (fun n hn ↦ ?_) (fun _ _ ↦ rfl)
-    rcases Finset.mem_Ico.mp hn with ⟨hlo, hhi⟩
-    exact ⟨⟨(n - M).toNat, by omega⟩, Finset.mem_univ _, by dsimp; omega⟩
+    rw [Int.Ico_eq_finset_map, Finset.sum_map, add_sub_cancel_left, Int.toNat_natCast]
+    simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
+    rw [← Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ g (M + (j : ℤ))) H]
   have hsum_norm_sq : (∑ n ∈ Finset.Ico M (M + H), ‖b n‖ ^ 2) = ∑ j : Fin H, ‖a j‖ ^ 2 := by
     rw [← hbij (fun n ↦ ‖b n‖ ^ 2)]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [hb j]

@@ -12,11 +12,15 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
+import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.Analysis.Complex.Trigonometric
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -59,6 +63,11 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
+* `Real.conj_fourierChar` and `Real.fourierChar_mul_fourierChar`: conjugation and multiplication of
+  complex-valued `Real.fourierChar`.
+* `TauCeti.norm_sum_range_fourierChar_mul_abs_sin` and
+  `TauCeti.norm_sum_range_fourierChar_sq_eq_sin_div_sq`: closed forms for the norm of a geometric
+  exponential sum in terms of `Real.sin`.
 -/
 
 public section
@@ -316,5 +325,58 @@ theorem hasDerivAt_coe_circleExp (t : ℝ) :
     HasDerivAt (fun s : ℝ ↦ ((Circle.exp s : Circle) : ℂ)) (I * Circle.exp t) t := by
   simp only [Circle.coe_exp]
   simpa [mul_comm] using ((ofRealCLM.hasDerivAt (x := t)).mul_const I).cexp
+
+end TauCeti
+
+namespace Real
+
+/-- Conjugating a complex-valued Fourier character negates its phase. -/
+theorem conj_fourierChar (x : ℝ) :
+    starRingEnd ℂ (Real.fourierChar x : ℂ) = (Real.fourierChar (-x) : ℂ) := by
+  rw [← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv]
+
+/-- Multiplying two complex-valued Fourier characters adds their phases. -/
+theorem fourierChar_mul_fourierChar (x y : ℝ) :
+    (Real.fourierChar x : ℂ) * (Real.fourierChar y : ℂ) = (Real.fourierChar (x + y) : ℂ) := by
+  rw [← Circle.coe_mul, ← AddChar.map_add_eq_mul]
+
+end Real
+
+namespace TauCeti
+
+/-- Closed-form product identity for the norm of a geometric exponential sum:
+`‖∑ k ∈ range M, Real.fourierChar (k * t)‖ * |sin (π * t)| = |sin (π * M * t)|`. -/
+theorem norm_sum_range_fourierChar_mul_abs_sin (M : ℕ) (t : ℝ) :
+    ‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ * |Real.sin (Real.pi * t)| =
+      |Real.sin (Real.pi * (M : ℝ) * t)| := by
+  let z : ℂ := (Real.fourierChar t : ℂ)
+  have hpow : ∀ k : ℕ, (Real.fourierChar ((k : ℝ) * t) : ℂ) = z ^ k := by
+    intro k
+    rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul]
+  simp_rw [hpow]
+  have hgeom := congrArg norm (geom_sum_mul z M)
+  rw [norm_mul] at hgeom
+  have hnorm_sub_one (s : ℝ) :
+      ‖(Real.fourierChar s : ℂ) - 1‖ = 2 * |Real.sin (Real.pi * s)| := by
+    have hs : (Real.fourierChar s : ℂ) = Complex.exp (Complex.I * ((2 * Real.pi * s : ℝ) : ℂ)) := by
+      simp only [Real.fourierChar_apply, mul_comm]
+    rw [hs, Complex.norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs, abs_mul, abs_two]
+    congr 3; ring
+  have hz1 : ‖z - 1‖ = 2 * |Real.sin (Real.pi * t)| := hnorm_sub_one t
+  have hzM : ‖z ^ M - 1‖ = 2 * |Real.sin (Real.pi * (M : ℝ) * t)| := by
+    rw [← hpow M, hnorm_sub_one, mul_assoc]
+  rw [hz1, hzM] at hgeom
+  linarith
+
+/-- Whenever `sin (π * t) ≠ 0`, the squared norm of the geometric exponential sum of length `M`
+equals `(sin (π * M * t) / sin (π * t)) ^ 2`. -/
+theorem norm_sum_range_fourierChar_sq_eq_sin_div_sq (M : ℕ) {t : ℝ}
+    (ht : Real.sin (Real.pi * t) ≠ 0) :
+    ‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ ^ 2 =
+      (Real.sin (Real.pi * (M : ℝ) * t) / Real.sin (Real.pi * t)) ^ 2 := by
+  have h := congrArg (fun r : ℝ ↦ r ^ 2) (norm_sum_range_fourierChar_mul_abs_sin M t)
+  rw [mul_pow, sq_abs, sq_abs] at h
+  rw [div_pow, eq_div_iff (pow_ne_zero 2 ht)]
+  exact h
 
 end TauCeti
