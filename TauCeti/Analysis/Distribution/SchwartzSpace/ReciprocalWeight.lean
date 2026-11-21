@@ -69,8 +69,8 @@ theorem integral_inner_eq_integral_inner_smul_fourier {w w' : E → ℝ}
   rw [← integral_inner_fourier_fourier]
   congr 1
   funext ζ
-  rw [inner_smul_left, inner_smul_right, ← mul_assoc, Complex.conj_ofReal, ← Complex.ofReal_mul,
-    mul_comm (w ζ), hww', Complex.ofReal_one, one_mul]
+  simp [inner_smul_left, inner_smul_right, ← mul_assoc, ← Complex.ofReal_mul, hww',
+    -Complex.coe_smul]
 
 omit [CompleteSpace F] in
 /-- For a weight of temperate growth, the weighted `L²` norm `‖w 𝓕 u‖_{L²}` of a Schwartz function
@@ -109,8 +109,8 @@ theorem exists_integral_inner_eq_and_eLpNorm_eq {w w' : E → ℝ}
   refine ⟨𝓕⁻ (smulLeftCLM F (fun ζ ↦ (w' ζ : ℂ)) b), ?_⟩
   -- The weighted Fourier transform of the partner is `w' 𝓕 v`, since `w' w = 1`.
   have hu (ζ : E) : (w ζ : ℂ) • 𝓕 (𝓕⁻ (smulLeftCLM F (fun ζ ↦ (w' ζ : ℂ)) b)) ζ = b ζ := by
-    rw [fourier_fourierInv_eq, smulLeftCLM_apply_apply hw', smul_smul, ← Complex.ofReal_mul,
-      mul_comm (w ζ), hww', Complex.ofReal_one, one_smul]
+    rw [fourier_fourierInv_eq, smulLeftCLM_apply_apply hw']
+    simp [smul_smul, mul_comm (w ζ), hww']
   have hb (ζ : E) : (w' ζ : ℂ) • 𝓕 v ζ = b ζ := (smulLeftCLM_apply_apply hw' _ ζ).symm
   refine ⟨?_, by simp only [hu, hb]⟩
   simp_rw [integral_inner_eq_integral_inner_smul_fourier hww', hu, hb]
