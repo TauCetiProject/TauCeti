@@ -230,25 +230,25 @@ theorem exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear (B : E →ₗ[𝕜] F
 theorem nuclear_eq_iSup_norm_trace_adjoint_comp (B : E →ₗ[𝕜] F) :
     nuclear 𝕜 E F B =
       ⨆ U : {U : E →ₗ[𝕜] F // opNorm 𝕜 E F U ≤ 1},
-        ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.1 ∘ₗ B)‖ := by
+        ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.val ∘ₗ B)‖ := by
   have : Nonempty {U : E →ₗ[𝕜] F // opNorm 𝕜 E F U ≤ 1} := ⟨⟨0, by simp⟩⟩
   have hle (U : {U : E →ₗ[𝕜] F // opNorm 𝕜 E F U ≤ 1}) :
-      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.1 ∘ₗ B)‖ ≤ nuclear 𝕜 E F B := by
-    calc ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.1 ∘ₗ B)‖
-        ≤ opNorm 𝕜 E F U.1 * nuclear 𝕜 E F B :=
-          norm_trace_adjoint_comp_le_opNorm_mul_nuclear U.1 B
-      _ ≤ 1 * nuclear 𝕜 E F B := mul_le_mul_of_nonneg_right U.2 (apply_nonneg _ _)
+      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.val ∘ₗ B)‖ ≤ nuclear 𝕜 E F B := by
+    calc ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.val ∘ₗ B)‖
+        ≤ opNorm 𝕜 E F U.val * nuclear 𝕜 E F B :=
+          norm_trace_adjoint_comp_le_opNorm_mul_nuclear U.val B
+      _ ≤ 1 * nuclear 𝕜 E F B := mul_le_mul_of_nonneg_right U.property (apply_nonneg _ _)
       _ = nuclear 𝕜 E F B := one_mul _
   refine le_antisymm ?_ (ciSup_le hle)
   obtain ⟨U, hU_norm, _, _, hU_tr⟩ := exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear B
   have hbdd : BddAbove (Set.range fun U : {U : E →ₗ[𝕜] F // opNorm 𝕜 E F U ≤ 1} ↦
-      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.1 ∘ₗ B)‖) :=
+      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.val ∘ₗ B)‖) :=
     ⟨nuclear 𝕜 E F B, by rintro _ ⟨V, rfl⟩; exact hle V⟩
   calc nuclear 𝕜 E F B
       = ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U ∘ₗ B)‖ := by
         rw [hU_tr, RCLike.norm_ofReal, abs_of_nonneg (apply_nonneg _ _)]
     _ ≤ ⨆ U : {U : E →ₗ[𝕜] F // opNorm 𝕜 E F U ≤ 1},
-          ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.1 ∘ₗ B)‖ :=
+          ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.val ∘ₗ B)‖ :=
         le_ciSup hbdd ⟨U, hU_norm⟩
 
 /-- The nuclear seminorm of a rank-one map `x ↦ ⟪v, x⟫ u` is `‖u‖ * ‖v‖`. -/
@@ -312,25 +312,25 @@ theorem exists_nuclear_le_one_trace_adjoint_comp_eq_opNorm (A : E →ₗ[𝕜] F
 theorem opNorm_eq_iSup_norm_trace_adjoint_comp (A : E →ₗ[𝕜] F) :
     opNorm 𝕜 E F A =
       ⨆ B : {B : E →ₗ[𝕜] F // nuclear 𝕜 E F B ≤ 1},
-        ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.1)‖ := by
+        ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.val)‖ := by
   have : Nonempty {B : E →ₗ[𝕜] F // nuclear 𝕜 E F B ≤ 1} := ⟨⟨0, by simp⟩⟩
   have hle (B : {B : E →ₗ[𝕜] F // nuclear 𝕜 E F B ≤ 1}) :
-      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.1)‖ ≤ opNorm 𝕜 E F A := by
-    calc ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.1)‖
-        ≤ opNorm 𝕜 E F A * nuclear 𝕜 E F B.1 :=
-          norm_trace_adjoint_comp_le_opNorm_mul_nuclear A B.1
-      _ ≤ opNorm 𝕜 E F A * 1 := mul_le_mul_of_nonneg_left B.2 (apply_nonneg _ _)
+      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.val)‖ ≤ opNorm 𝕜 E F A := by
+    calc ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.val)‖
+        ≤ opNorm 𝕜 E F A * nuclear 𝕜 E F B.val :=
+          norm_trace_adjoint_comp_le_opNorm_mul_nuclear A B.val
+      _ ≤ opNorm 𝕜 E F A * 1 := mul_le_mul_of_nonneg_left B.property (apply_nonneg _ _)
       _ = opNorm 𝕜 E F A := mul_one _
   refine le_antisymm ?_ (ciSup_le hle)
   obtain ⟨B, hB_norm, hB_tr⟩ := exists_nuclear_le_one_trace_adjoint_comp_eq_opNorm A
   have hbdd : BddAbove (Set.range fun B : {B : E →ₗ[𝕜] F // nuclear 𝕜 E F B ≤ 1} ↦
-      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.1)‖) :=
+      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.val)‖) :=
     ⟨opNorm 𝕜 E F A, by rintro _ ⟨C, rfl⟩; exact hle C⟩
   calc opNorm 𝕜 E F A
       = ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)‖ := by
         rw [hB_tr, RCLike.norm_ofReal, abs_of_nonneg (apply_nonneg _ _)]
     _ ≤ ⨆ B : {B : E →ₗ[𝕜] F // nuclear 𝕜 E F B ≤ 1},
-          ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.1)‖ :=
+          ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.val)‖ :=
         le_ciSup hbdd ⟨B, hB_norm⟩
 
 /-! ### Orthogonal additivity of the nuclear seminorm -/
