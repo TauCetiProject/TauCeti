@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.Topology.FiberBundle.Principal.Basic
 public import TauCeti.Topology.FiberBundle.Principal.MilnorJoin.Basic
 public import TauCeti.Topology.PartitionOfUnity.Shrink
+import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Topology.LocalAtTarget
 import Mathlib.Topology.Separation.Hausdorff
 import TauCeti.Topology.Order.Lattice
@@ -211,13 +212,9 @@ private theorem sum_toFinset_support_baseWeight (b : MilnorClassifyingSpace G) :
 /-- Finite-support tail bound: for `j ∉ I`, `baseWeight G j b ≤ 1 - ∑ i ∈ I, baseWeight G i b`. -/
 theorem baseWeight_le_one_sub_sum {b : MilnorClassifyingSpace G} {I : Finset ℕ} {j : ℕ}
     (hj : j ∉ I) : baseWeight G j b ≤ 1 - ∑ i ∈ I, baseWeight G i b := by
-  let S := insert j I ∪ (finite_support_baseWeight b).toFinset
-  have hle : ∑ i ∈ insert j I, baseWeight G i b ≤ ∑ i ∈ S, baseWeight G i b :=
-    Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left fun k _ _ ↦ baseWeight_nonneg k b
-  have hS : ∑ i ∈ S, baseWeight G i b = 1 :=
-    (Finset.sum_subset Finset.subset_union_right fun _ _ ↦
-      baseWeight_eq_zero_of_notMem).symm.trans (sum_toFinset_support_baseWeight b)
-  rw [Finset.sum_insert hj, hS] at hle; linarith
+  have hle := sum_le_hasSum (insert j I) (fun k _ ↦ baseWeight_nonneg k b) (hasSum_baseWeight b)
+  rw [Finset.sum_insert hj] at hle
+  linarith
 
 private def maxBaseWeightFun (G : Type u) [Group G] [TopologicalSpace G]
     (b : MilnorClassifyingSpace G) : ℝ := ⨆ i : ℕ, baseWeight G i b

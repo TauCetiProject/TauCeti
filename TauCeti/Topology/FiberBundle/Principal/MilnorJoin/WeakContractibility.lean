@@ -10,6 +10,7 @@ public import TauCeti.Topology.Homotopy.Extension.Ball
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.FundamentalGroupAction
 public import TauCeti.Topology.Homotopy.Path
+import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
@@ -147,13 +148,8 @@ theorem partialWeightSum_mono {M N : ℕ} (hMN : M ≤ N) (p : MilnorTotalSpace 
   exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono hMN) fun i _ _ ↦ weight_nonneg i p
 
 theorem partialWeightSum_le_one (N : ℕ) (p : MilnorTotalSpace G) :
-    partialWeightSum G N p ≤ 1 := by
-  let S := (finite_support_weight p).toFinset ∪ Finset.range N
-  have hsum : ∑ i ∈ S, weight i p = 1 := sum_weight_of_support_subset fun i hi ↦
-    weight_eq_zero_of_notMem fun hm ↦ hi (Finset.mem_union_left _ hm)
-  rw [partialWeightSum_apply, ← hsum]
-  exact Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_right
-    fun i _ _ ↦ weight_nonneg i p
+    partialWeightSum G N p ≤ 1 :=
+  sum_le_hasSum (Finset.range N) (fun i _ ↦ weight_nonneg i p) (hasSum_weight p)
 
 theorem exists_partialWeightSum_eq_one (p : MilnorTotalSpace G) :
     ∃ N, partialWeightSum G N p = 1 :=

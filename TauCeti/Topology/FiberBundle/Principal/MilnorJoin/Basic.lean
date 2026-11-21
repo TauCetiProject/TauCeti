@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
 public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 public import Mathlib.Topology.Algebra.MulAction
+import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Topology.Separation.Hausdorff
 
 /-!
@@ -177,12 +178,8 @@ theorem hasSum_weight (p : MilnorTotalSpace G) : HasSum (fun i ↦ weight i p) 1
     (fun _ hi ↦ Finsupp.mem_support_iff.mpr ((finite_support_weight p).mem_toFinset.mp hi))
     fun _ _ hi ↦ not_not.mp fun hne ↦ hi ((finite_support_weight p).mem_toFinset.mpr hne)
 
-theorem weight_le_one (i : ℕ) (p : MilnorTotalSpace G) : weight i p ≤ 1 := by
-  rw [← p.sum_weightFinsupp, Finsupp.sum]
-  by_cases hi : i ∈ p.weightFinsupp.support
-  · exact Finset.single_le_sum (fun j _ ↦ weight_nonneg j p) hi
-  · rw [weight, Finsupp.notMem_support_iff.mp hi]
-    exact Finset.sum_nonneg fun j _ ↦ weight_nonneg j p
+theorem weight_le_one (i : ℕ) (p : MilnorTotalSpace G) : weight i p ≤ 1 :=
+  le_hasSum (hasSum_weight p) i fun j _ ↦ weight_nonneg j p
 
 theorem exists_weight_pos (p : MilnorTotalSpace G) : ∃ i, 0 < weight i p := by
   by_contra! h
