@@ -203,7 +203,7 @@ theorem one_mem_spectrum_rieszIdempotent_iff (a : A) (K : Clopens (spectrum ℂ 
   rw [rieszIdempotent_def, spectrum_holomorphicCalculus, spectrum_eq]
   simp only [mem_ofPred_eq, eval_indicator_eq_one_iff]
   refine ⟨fun ⟨x, hx, hxK⟩ hK ↦ ?_, fun hK ↦ not_forall_not.mp fun h ↦ hK (Clopens.ext ?_)⟩
-  · exact (hK ▸ hxK : (⟨x, hx⟩ : spectrum ℂ a) ∈ (⊥ : Clopens (spectrum ℂ a)))
+  · simp [hK, ← SetLike.mem_coe] at hxK
   · exact eq_empty_of_forall_notMem fun y hy ↦ h y ⟨y.2, hy⟩
 
 /-- `0` lies in the spectrum of the Riesz idempotent of `K` exactly when `K` is not the whole
@@ -212,7 +212,7 @@ theorem zero_mem_spectrum_rieszIdempotent_iff (a : A) (K : Clopens (spectrum ℂ
     0 ∈ spectrum ℂ (rieszIdempotent a K) ↔ K ≠ ⊤ := by
   rw [rieszIdempotent_def, spectrum_holomorphicCalculus, spectrum_eq]
   simp only [mem_ofPred_eq, eval_indicator_eq_zero_iff]
-  refine ⟨fun ⟨x, hx, hxK⟩ hK ↦ hxK (hK ▸ mem_univ _), fun hK ↦
+  refine ⟨fun ⟨x, hx, hxK⟩ hK ↦ hxK (by simp [hK, ← SetLike.mem_coe]), fun hK ↦
     not_forall_not.mp fun h ↦ hK (Clopens.ext ?_)⟩
   exact eq_univ_of_forall fun y ↦ not_not.mp (h y ∘ fun hy ↦ ⟨y.2, hy⟩)
 
