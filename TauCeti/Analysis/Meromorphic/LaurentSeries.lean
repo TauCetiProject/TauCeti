@@ -189,6 +189,21 @@ theorem laurentSeries_eq {φ : meromorphicGerms 𝕜 a} {N : ℕ} {h : 𝕜 → 
     laurentSeries a φ = single (-(N : ℤ)) 1 * ofPowerSeries ℤ 𝕜 (taylorSeries h a) :=
   laurentSeriesFun_eq hh hφ
 
+/-- A representation with denominator `(z - a)ᴺ` bounds the Laurent expansion below by `-N`.
+The bound need not be sharp and also applies to the zero germ. -/
+theorem neg_le_orderTop_laurentSeries {φ : meromorphicGerms 𝕜 a} {N : ℕ} {h : 𝕜 → 𝕜}
+    (hh : AnalyticAt 𝕜 h a)
+    (hφ : (φ : Germ (𝓝[≠] a) 𝕜) = (fun z ↦ ((z - a) ^ N)⁻¹ * h z : 𝕜 → 𝕜)) :
+    (-(N : ℤ) : WithTop ℤ) ≤ (laurentSeries a φ).orderTop := by
+  rw [le_orderTop_iff_forall]
+  intro n hn
+  rw [laurentSeries_eq hh hφ, coeff_single_mul, one_mul, sub_neg_eq_add,
+    ofPowerSeries_apply, embDomain_of_notMem_range]
+  rintro ⟨m, hm⟩
+  simp only [Nat.castOrderEmbedding_apply] at hm
+  have hn' : n < -(N : ℤ) := by exact_mod_cast hn
+  omega
+
 /-- The Laurent expansion of the germ of a function analytic at `a` is its Taylor series. -/
 @[simp]
 theorem laurentSeries_mk_of_analyticAt {f : 𝕜 → 𝕜} (hf : AnalyticAt 𝕜 f a) :
