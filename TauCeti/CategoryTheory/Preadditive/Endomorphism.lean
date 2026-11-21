@@ -97,7 +97,7 @@ noncomputable def endRingEquivCorner {X Y : C} {e : End X} (he : IsIdempotentEle
   toFun g := ⟨End.of (p ≫ g.asHom ≫ i), by
     refine (Subsemigroup.mem_corner_iff he).2 ⟨End.ext ?_, End.ext ?_⟩ <;>
       simp [← hpi, reassoc_of% hip]⟩
-  invFun c := End.of (i ≫ c.1.asHom ≫ p)
+  invFun c := End.of (i ≫ c.val.asHom ≫ p)
   left_inv g := End.ext (by simp [reassoc_of% hip, hip])
   right_inv c := by
     obtain ⟨c, hc⟩ := c
@@ -125,13 +125,13 @@ noncomputable def endRingEquivCorner {X Y : C} {e : End X} (he : IsIdempotentEle
 @[simp]
 theorem endRingEquivCorner_apply_val_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
     (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) (g : End Y) :
-    (he.endRingEquivCorner i p hip hpi g).1.asHom = p ≫ g.asHom ≫ i :=
+    (he.endRingEquivCorner i p hip hpi g).val.asHom = p ≫ g.asHom ≫ i :=
   (rfl)
 
 @[simp]
 theorem endRingEquivCorner_symm_apply_asHom {X Y : C} {e : End X} (he : IsIdempotentElem e)
     (i : Y ⟶ X) (p : X ⟶ Y) (hip : i ≫ p = 𝟙 Y) (hpi : p ≫ i = e.asHom) (c : he.Corner) :
-    ((he.endRingEquivCorner i p hip hpi).symm c).asHom = i ≫ c.1.asHom ≫ p :=
+    ((he.endRingEquivCorner i p hip hpi).symm c).asHom = i ≫ c.val.asHom ≫ p :=
   (rfl)
 
 end IsIdempotentElem

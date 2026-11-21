@@ -71,7 +71,9 @@ noncomputable def matrixBaseChange : HomologicalComplex (ModuleCat K) s where
   shape i j hij := by
     rw [C.shape i j hij]
     ext1
-    simp
+    simp only [ModuleCat.hom_zero, ConcreteCategory.hom_ofHom, EmbeddingLike.map_eq_zero_iff]
+    convert Matrix.map_zero _ φ.map_zero
+    exact map_zero _
   d_comp_d' i j k _ _ := by
     ext1
     simp [← Matrix.toLin'_mul, ← Matrix.map_mul, toMatrix_d_mul_toMatrix_d]

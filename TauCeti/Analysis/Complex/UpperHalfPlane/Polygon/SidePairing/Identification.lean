@@ -102,7 +102,7 @@ theorem identification_of_mem_cycle {j k : Fin n} {z w : ℍ} (hz : P.vertex j =
 theorem orbitRel_of_identification (hmap : ∀ i, σ.map i ∈ Γ) {z w : ℍ}
     (h : σ.identification z w) : orbitRel Γ ℍ z w :=
   haveI := (orbitRel Γ ℍ).iseqv.isEquiv
-  Relation.EqvGen.eqvGen_le (fun z _ ⟨i, _, h⟩ ↦
+  Relation.eqvGen_le (fun z _ ⟨i, _, h⟩ ↦
     h ▸ (orbitRel Γ ℍ).symm (mem_orbit z (⟨σ.map i, hmap i⟩ : Γ))) _ _ h
 
 /-! ### Orbits of points of a fundamental polygon -/
@@ -211,7 +211,8 @@ noncomputable def carrierQuotientHomeomorph (hmap : ∀ i, σ.map i ∈ Γ)
   have hq := isQuotientMap_quotientMk_domRestrict_of_locallyFinite_smul (G := Γ)
     P.isClosed_carrier (σ.iUnion_smul_carrier_eq_univ hmap hlf) hlf
   (Homeomorph.Quotient.congrRight (r := σ.carrierSetoid) fun z w ↦
-      (σ.identification_iff_orbitRel hmap hdisj z.2 w.2).trans Quotient.eq''.symm).trans
+      (σ.identification_iff_orbitRel hmap hdisj z.property w.property).trans
+          Quotient.eq''.symm).trans
     (IsQuotientMap.homeomorph (f := ⟨_, hq.continuous⟩) hq)
 
 /-- The homeomorphism sends the class of a point of `P` to its orbit. -/

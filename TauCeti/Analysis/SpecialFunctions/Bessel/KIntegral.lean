@@ -8,14 +8,13 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
-import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.MellinInversion
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.MacdonaldIntegral
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 
 /-!
@@ -38,23 +37,18 @@ where `𝐅(b, x) = ∑ₙ xⁿ / (n! Γ(b + n))` is Mathlib's regularized `₀F
 integral representations of the form `z^{1/2} ∫₀^∞ e^{-ζ cosh u} cosh(pu) du`, such as that of
 the generalized Airy functions with `p = 1/(n + 2)`, reduce to series in `𝐅`.
 
-The proof is by Mellin transforms. By Fubini and Euler's integral, the Mellin transform of the
-integral in `x` is `Γ(t) Γ(t + p)` for `Re t > max(0, -p)` (DLMF 10.43.19 in reduced form).
-Mellin inversion recovers the integral from `Γ(t) Γ(t + p)` on the line `Re t = 1`, and this line
-is shifted to `Re t = δ - N` with `δ = (1 - p)/2`, crossing the simple poles at `t = -k` and
-`t = -p - k` for `k < N`. Their residues are the terms of the two series, by the reflection
-formula, and the integral over the shifted line tends to `0` as `N → ∞`, since `Γ` decays like
-`1/N!` across a vertical line `N` units to the left of the strip `0 < Re t < 1`.
+The proof is by Mellin transforms. The Mellin transform of the integral in `x` is
+`Γ(t) Γ(t + p)` (DLMF 10.43.19 in reduced form), and
+`Complex.mellinInv_Gamma_mul_Gamma_add` in `TauCeti.Analysis.SpecialFunctions.MacdonaldIntegral`
+recovers the integral by Mellin inversion on the line `Re t = 1`. This file shifts that line to
+`Re t = δ - N` with `δ = (1 - p)/2`, crossing the simple poles at `t = -k` and `t = -p - k` for
+`k < N`. Their residues are the terms of the two series, by the reflection formula, and the
+integral over the shifted line tends to `0` as `N → ∞`, since `Γ` decays like `1/N!` across a
+vertical line `N` units to the left of the strip `0 < Re t < 1`.
 
 ## Main results
 
-* `TauCeti.integrableOn_rpow_mul_exp_neg_sub_div`: `s ↦ s^{p-1} e^{-s - x/s}` is integrable on
-  `(0, ∞)` for every real `p` and `x > 0`.
-* `TauCeti.continuousOn_integral_rpow_mul_exp_neg_sub_div`: the integral is continuous in
-  `x > 0`.
-* `TauCeti.hasMellin_integral_rpow_mul_exp_neg_sub_div`: its Mellin transform is
-  `Γ(t) Γ(t + p)` for `0 < Re t` and `0 < Re t + p`.
-* `TauCeti.integral_rpow_mul_exp_neg_sub_div_Ioi`: the series evaluation above for `0 < p < 1`.
+* `TauCeti.integral_cpow_mul_exp_neg_add_div_Ioi`: the series evaluation above for `0 < p < 1`.
 
 ## References
 
@@ -74,118 +68,7 @@ open Complex hiding exp continuous_exp
 
 namespace TauCeti
 
-/-! ### Integrability, continuity and the Mellin transform -/
-
-/-- For every real `p` and `x > 0`, the integrand `s ↦ s^{p - 1} e^{-s - x/s}` is integrable on
-`(0, ∞)`: the factor `e^{-x/s}` vanishes to infinite order at `0`, and `e^{-s}` decays at `∞`. -/
-theorem integrableOn_rpow_mul_exp_neg_sub_div (p : ℝ) {x : ℝ} (hx : 0 < x) :
-    IntegrableOn (fun s : ℝ ↦ s ^ (p - 1) * Real.exp (-s - x / s)) (Ioi 0) := by
-  -- `e^{-x/s} ≤ n! sⁿ / xⁿ` reduces the integrand to Euler's integrand for `Γ(p + n)`
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, 0 < p + n :=
-    ⟨⌈-p⌉₊ + 1, by push_cast; linarith [Nat.le_ceil (-p)]⟩
-  refine ((Real.GammaIntegral_convergent hn).const_mul ((n ! : ℝ) / x ^ n)).mono'
-    (by fun_prop : Measurable fun s : ℝ ↦ s ^ (p - 1) * Real.exp (-s - x / s)).aestronglyMeasurable
-    ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : 0 < s)
-  have hexp : Real.exp (-s - x / s) * ((x / s) ^ n / n !) ≤ Real.exp (-s) := by
-    rw [sub_eq_add_neg, Real.exp_add, mul_assoc]
-    calc Real.exp (-s) * (Real.exp (-(x / s)) * ((x / s) ^ n / n !))
-        ≤ Real.exp (-s) * (Real.exp (-(x / s)) * Real.exp (x / s)) := by
-          gcongr; exact Real.pow_div_factorial_le_exp _ (div_pos hx hs).le n
-      _ = Real.exp (-s) := by rw [← Real.exp_add, neg_add_cancel, Real.exp_zero, mul_one]
-  have hfac : (0 : ℝ) < (x / s) ^ n / n ! := by positivity
-  rw [Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ s ^ (p - 1) * Real.exp (-s - x / s)),
-    show p + n - 1 = (p - 1) + n by ring,
-    Real.rpow_add hs, Real.rpow_natCast]
-  calc s ^ (p - 1) * Real.exp (-s - x / s)
-      ≤ s ^ (p - 1) * (Real.exp (-s) / ((x / s) ^ n / n !)) := by
-        gcongr; rwa [le_div_iff₀ hfac]
-    _ = (n ! : ℝ) / x ^ n * (Real.exp (-s) * (s ^ (p - 1) * s ^ n)) := by
-        rw [div_pow]
-        field_simp
-
-/-- The integral `x ↦ ∫₀^∞ s^{p - 1} e^{-s - x/s} ds` is continuous on `x > 0`. -/
-theorem continuousOn_integral_rpow_mul_exp_neg_sub_div (p : ℝ) :
-    ContinuousOn (fun x : ℝ ↦ ∫ s in Ioi 0, s ^ (p - 1) * Real.exp (-s - x / s)) (Ioi 0) := by
-  intro x (hx : 0 < x)
-  refine ContinuousAt.continuousWithinAt <| continuousAt_of_dominated
-    (bound := fun s ↦ s ^ (p - 1) * Real.exp (-s - x / 2 / s))
-    (Eventually.of_forall fun y ↦ (by fun_prop : Measurable fun s : ℝ ↦
-      s ^ (p - 1) * Real.exp (-s - y / s)).aestronglyMeasurable) ?_
-    (integrableOn_rpow_mul_exp_neg_sub_div p (half_pos hx))
-    (Eventually.of_forall fun s ↦ by fun_prop)
-  filter_upwards [Ioi_mem_nhds (half_lt_self hx)] with y (hy : x / 2 < y)
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : 0 < s)
-  rw [Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ s ^ (p - 1) * Real.exp (-s - y / s))]
-  gcongr
-
-/-- The Mellin integrand of `∫₀^∞ s^{p - 1} e^{-s - x/s} ds` at `x`, as a function of `s > 0`,
-splits off the factor `x^{t - 1} e^{-x/s}`. -/
-private lemma cpow_mul_ofReal_rpow_mul_exp_eq (p : ℝ) (t : ℂ) (x : ℝ) {s : ℝ} (hs : 0 < s) :
-    (x : ℂ) ^ (t - 1) * ((s ^ (p - 1) * Real.exp (-s - x / s) : ℝ) : ℂ) =
-      ((s ^ (p - 1) * Real.exp (-s) : ℝ) : ℂ) *
-        ((x : ℂ) ^ (t - 1) * cexp (-((s⁻¹ : ℝ) * (x : ℂ)))) := by
-  rw [show -s - x / s = -s + -(s⁻¹ * x) by field_simp; ring, Real.exp_add]
-  push_cast
-  ring
-
-/-- The double integrand `x^{t - 1} s^{p - 1} e^{-s - x/s}` is integrable on `(0, ∞)²` for
-`0 < Re t` and `0 < Re t + p`: its `x`-integral is `Γ(Re t) s^{Re t + p - 1} e^{-s}` in norm. -/
-private lemma integrable_uncurry_cpow_mul_rpow_mul_exp {p : ℝ} {t : ℂ} (ht : 0 < t.re)
-    (htp : 0 < t.re + p) :
-    Integrable (Function.uncurry fun x s : ℝ ↦
-        (x : ℂ) ^ (t - 1) * ((s ^ (p - 1) * Real.exp (-s - x / s) : ℝ) : ℂ))
-      ((volume.restrict (Ioi (0 : ℝ))).prod (volume.restrict (Ioi 0))) := by
-  have hnorm {x s : ℝ} (hx : 0 < x) (hs : 0 < s) :
-      ‖(x : ℂ) ^ (t - 1) * ((s ^ (p - 1) * Real.exp (-s - x / s) : ℝ) : ℂ)‖ =
-        s ^ (p - 1) * Real.exp (-s) * (x ^ (t.re - 1) * Real.exp (-(s⁻¹ * x))) := by
-    rw [cpow_mul_ofReal_rpow_mul_exp_eq p t x hs, norm_mul, norm_mul, norm_real,
-      Real.norm_of_nonneg (by positivity), norm_cpow_eq_rpow_re_of_pos hx, norm_exp]
-    simp
-  refine (integrable_prod_iff' (by fun_prop : Measurable _).aestronglyMeasurable).mpr ⟨?_, ?_⟩
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : 0 < s)
-    have h := integrableOn_rpow_mul_exp_neg_mul_rpow (s := t.re - 1) (p := 1) (b := s⁻¹)
-      (by linarith) one_pos (inv_pos.mpr hs)
-    simp only [Real.rpow_one, neg_mul] at h
-    refine (h.const_mul (s ^ (p - 1) * Real.exp (-s))).mono'
-      (by fun_prop : Measurable _).aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x (hx : 0 < x)
-    exact (hnorm hx hs).le
-  · refine ((Real.GammaIntegral_convergent htp).const_mul (Real.Gamma t.re)).congr ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : 0 < s)
-    simp only [Function.uncurry_apply_pair]
-    rw [setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ hnorm hx hs,
-      integral_const_mul, Real.integral_rpow_mul_exp_neg_mul_Ioi ht (inv_pos.mpr hs), one_div,
-      inv_inv, show t.re + p - 1 = (p - 1) + t.re by ring, Real.rpow_add hs]
-    ring
-
-/-- **The Mellin transform of `∫₀^∞ s^{p - 1} e^{-s - x/s} ds`.** For `0 < Re t` and
-`0 < Re t + p`, the Mellin transform in `x` of the integral converges and equals
-`Γ(t) Γ(t + p)`. -/
-theorem hasMellin_integral_rpow_mul_exp_neg_sub_div {p : ℝ} {t : ℂ} (ht : 0 < t.re)
-    (htp : 0 < t.re + p) :
-    HasMellin (fun x : ℝ ↦ ((∫ s in Ioi 0, s ^ (p - 1) * Real.exp (-s - x / s) : ℝ) : ℂ)) t
-      (Gamma t * Gamma (t + p)) := by
-  have hK := integrable_uncurry_cpow_mul_rpow_mul_exp ht htp
-  -- the Mellin integrand is the `s`-integral of the double integrand
-  have houter (x : ℝ) : (x : ℂ) ^ (t - 1) •
-      (((∫ s in Ioi 0, s ^ (p - 1) * Real.exp (-s - x / s) : ℝ) : ℂ)) =
-        ∫ s in Ioi 0, (x : ℂ) ^ (t - 1) * ((s ^ (p - 1) * Real.exp (-s - x / s) : ℝ) : ℂ) := by
-    rw [smul_eq_mul, ← integral_complex_ofReal, ← integral_const_mul]
-  refine ⟨hK.integral_prod_left.congr (Eventually.of_forall fun x ↦ (houter x).symm), ?_⟩
-  simp only [mellin]
-  simp only [houter]
-  -- Fubini, then Euler's integral in `x` and in `s`
-  rw [integral_integral_swap hK, Gamma_eq_integral (show 0 < (t + p).re by simpa using htp),
-    GammaIntegral, ← integral_const_mul]
-  refine setIntegral_congr_fun measurableSet_Ioi fun s (hs : 0 < s) ↦ ?_
-  rw [setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ cpow_mul_ofReal_rpow_mul_exp_eq p t x hs,
-    integral_const_mul, integral_cpow_mul_exp_neg_mul_Ioi ht (inv_pos.mpr hs),
-    show t + p - 1 = (p - 1 : ℂ) + t by ring, cpow_add _ _ (ofReal_ne_zero.mpr hs.ne')]
-  push_cast
-  rw [ofReal_cpow hs.le, one_div, inv_inv]
-  push_cast
-  ring
+/-! ### Decay of `Γ(t) Γ(t + p)` to the left -/
 
 /-- On the line `Re s = δ - N`, with `0 < δ`, `0 < p` and `δ + p < 1`, the product
 `Γ(s) Γ(s + p)` is bounded by `(1 + (Im s)²)⁻¹` times a constant multiple of `1 / (κ^N N!²)`,
@@ -437,23 +320,14 @@ private lemma tendsto_mellinInv_Gamma_mul_Gamma_add {p x : ℝ} (hp0 : 0 < p) (h
 `∫₀^∞ s^{p - 1} e^{-s - x/s} ds = (π / sin pπ) (𝐅(1 - p, x) - x^p 𝐅(1 + p, x))`, where
 `𝐅(b, x) = ∑ₙ xⁿ / (n! Γ(b + n))` is the regularized `₀F₁`. In Bessel notation both sides are
 `2 x^{p/2} K_p(2 √x)`, the right side being `(π / sin pπ) x^{p/2} (I_{-p}(2 √x) - I_p(2 √x))`. -/
-theorem integral_rpow_mul_exp_neg_sub_div_Ioi {p x : ℝ} (hp0 : 0 < p) (hp1 : p < 1)
+theorem integral_cpow_mul_exp_neg_add_div_Ioi {p x : ℝ} (hp0 : 0 < p) (hp1 : p < 1)
     (hx : 0 < x) :
-    ((∫ s in Ioi 0, s ^ (p - 1) * Real.exp (-s - x / s) : ℝ) : ℂ) =
+    ∫ s in Ioi (0 : ℝ), (s : ℂ) ^ ((p : ℂ) - 1) * Real.exp (-(s + x / s)) =
       ((π / Real.sin (π * p) : ℝ) : ℂ) * (regularizedHGFun 0 {1 - (p : ℂ)} x -
         (x : ℂ) ^ (p : ℂ) * regularizedHGFun 0 {1 + (p : ℂ)} x) := by
-  set G : ℝ → ℂ := fun y ↦ ((∫ s in Ioi 0, s ^ (p - 1) * Real.exp (-s - y / s) : ℝ) : ℂ)
   -- Mellin inversion on the line `Re t = 1`
-  have hM (y : ℝ) : HasMellin G (((1 : ℝ) : ℂ) + y * I)
-      (Gamma (((1 : ℝ) : ℂ) + y * I) * Gamma (((1 : ℝ) : ℂ) + y * I + p)) :=
-    hasMellin_integral_rpow_mul_exp_neg_sub_div (by simp) (by simp; linarith)
-  have hF1 := verticalIntegrable_Gamma_mul_Gamma_add_one hp0.le
-  have hinv : G x = mellinInv 1 (fun z ↦ Gamma z * Gamma (z + p)) x := by
-    have hcont : ContinuousAt G x := continuous_ofReal.continuousAt.comp
-      ((continuousOn_integral_rpow_mul_exp_neg_sub_div p).continuousAt (Ioi_mem_nhds hx))
-    rw [← mellinInv_mellin_eq 1 G hx (by simpa using (hM 0).1)
-      (hF1.congr (Eventually.of_forall fun y ↦ (hM y).2.symm)) hcont, mellinInv, mellinInv]
-    simp_rw [(hM _).2]
+  have hinv := (mellinInv_Gamma_mul_Gamma_add (a := (p : ℂ)) one_pos
+    (by rw [ofReal_re]; linarith) hx).symm
   -- the residue series
   have hA := (hasSum_ofReal_regularizedHGFun_zero_singleton (1 - p) x).mul_left
     ((π / Real.sin (π * p) : ℝ) : ℂ)

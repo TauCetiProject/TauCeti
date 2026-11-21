@@ -36,26 +36,26 @@ variable {ι B F : Type*} {E : B → Type*} {s : Set B}
 
 private def gapChart (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n}) :
     Trivialization F (π F E) :=
-  (e (S.2.1.choose)).restrOpen {b | 0 < ρ.gap S.1 b}
-    (isOpen_lt continuous_const (ρ.continuous_gap S.1))
+  (e (S.property.1.choose)).restrOpen {b | 0 < ρ.gap S.val b}
+    (isOpen_lt continuous_const (ρ.continuous_gap S.val))
 
 omit [Nonempty F] [∀ b, Nonempty (E b)] in
 private theorem gapChart_apply (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n})
-    (p : TotalSpace F E) : gapChart ρ e n S p = e S.2.1.choose p :=
+    (p : TotalSpace F E) : gapChart ρ e n S p = e S.property.1.choose p :=
   rfl
 
 omit [Nonempty F] [∀ b, Nonempty (E b)] in
 private theorem gapChart_symm_apply (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n})
     (p : B × F) :
     (gapChart ρ e n S).toOpenPartialHomeomorph.symm p =
-      (e S.2.1.choose).toOpenPartialHomeomorph.symm p :=
+      (e S.property.1.choose).toOpenPartialHomeomorph.symm p :=
   rfl
 
 omit [Nonempty F] [∀ b, Nonempty (E b)] in
 include he in
 private theorem gapChart_baseSet (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n}) :
-    (gapChart ρ e n S).baseSet = {b | 0 < ρ.gap S.1 b} := by
-  exact Set.inter_eq_right.mpr fun _ hb ↦ he.mem_of_gap_pos hb S.2.1.choose_spec
+    (gapChart ρ e n S).baseSet = {b | 0 < ρ.gap S.val b} := by
+  exact Set.inter_eq_right.mpr fun _ hb ↦ he.mem_of_gap_pos hb S.property.1.choose_spec
 
 omit [Nonempty F] [∀ b, Nonempty (E b)] in
 include he in
@@ -65,7 +65,7 @@ private theorem pairwise_disjoint_gapChart (n : ℕ) :
   intro S T hST
   rw [gapChart_baseSet ρ e he, gapChart_baseSet ρ e he]
   exact Set.disjoint_left.2 fun _ hS hT ↦ hST (Subtype.ext <|
-    ρ.eq_of_gap_pos_of_card_eq hS hT (S.2.2.trans T.2.2.symm))
+    ρ.eq_of_gap_pos_of_card_eq hS hT (S.property.2.trans T.property.2.symm))
 
 /-- Glue the subordinate charts on the positive gap strata of cardinality `n`. The resulting
 native trivialization has base set exactly the positive set of `ρ.gapPartition n`. On a stratum

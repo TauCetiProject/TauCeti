@@ -58,8 +58,9 @@ theorem card_forall_mem_and_comp_eq_congr {K : Subgroup G} (hK : K.map f = ⊤) 
   -- the `h i`, and all fibres of a surjective homomorphism are in bijection.
   let e : ∀ h : ι → H,
       {x : ι → G // (∀ i, x i ∈ K) ∧ f ∘ x = h} ≃ ∀ i, f.comp K.subtype ⁻¹' {h i} := fun h ↦
-    { toFun x i := ⟨⟨x.1 i, x.2.1 i⟩, congr_fun x.2.2 i⟩
-      invFun y := ⟨fun i ↦ ((y i : K) : G), fun i ↦ (y i).1.2, funext fun i ↦ (y i).2⟩
+    { toFun x i := ⟨⟨x.val i, x.property.1 i⟩, congr_fun x.property.2 i⟩
+      invFun y := ⟨fun i ↦ ((y i : K) : G), fun i ↦ (y i).val.property, funext fun i ↦
+          (y i).property⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   exact Nat.card_congr ((e h).trans
