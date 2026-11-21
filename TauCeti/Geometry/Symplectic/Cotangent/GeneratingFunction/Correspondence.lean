@@ -113,7 +113,7 @@ omit [TopologicalSpace N] in
 /-- The source projection carries the differential of `S` in the first variable. -/
 @[simp]
 theorem generatingSource_snd (x : M × N) :
-    (generatingSource I S x).2 = mvfderiv I (fun q ↦ S (q, x.2)) x.1 :=
+    (generatingSource I S x).snd = mvfderiv I (fun q ↦ S (q, x.2)) x.1 :=
   (rfl)
 
 omit [TopologicalSpace M] in
@@ -126,7 +126,7 @@ omit [TopologicalSpace M] in
 /-- The target projection carries minus the differential of `S` in the second variable. -/
 @[simp]
 theorem generatingTarget_snd (x : M × N) :
-    (generatingTarget J S x).2 = -mvfderiv J (fun Q ↦ S (x.1, Q)) x.2 :=
+    (generatingTarget J S x).snd = -mvfderiv J (fun Q ↦ S (x.1, Q)) x.2 :=
   (rfl)
 
 omit [TopologicalSpace M] in
@@ -254,7 +254,7 @@ theorem mpullback_generatingCorrespondence_liouvilleForm
     mpullback (I.prod J) ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)))
         (generatingCorrespondence I J S)
         (SmoothForm.mpullback Prod.fst contMDiff_fst (liouvilleForm I M) -
-          SmoothForm.mpullback Prod.snd contMDiff_snd (liouvilleForm J N)).1 =
+          SmoothForm.mpullback Prod.snd contMDiff_snd (liouvilleForm J N)).val =
       mextDeriv (RoughForm.ofFunction (I.prod J) S) := by
   have hf := contMDiff_generatingCorrespondence hS
   rw [← SmoothForm.coe_mpullback _ hf, map_sub, SmoothForm.mpullback_mpullback,

@@ -87,7 +87,7 @@ theorem iSupLift_inclusion {K : ι → Submodule R M} {dir : Directed (· ≤ ·
     {hf : ∀ (i j : ι) (h : K i ≤ K j), f i = (f j).comp (inclusion h)}
     {T : Submodule R M} {hT : T ≤ iSup K} {i : ι} (m : K i) (h : K i ≤ T) :
     iSupLift K dir f hf T hT (inclusion h m) = f i m :=
-  iSupLift_mk m (h m.2)
+  iSupLift_mk m (h m.property)
 
 /-- Evaluate the map glued on a directed supremum at an element known to lie in one member of the
 family. -/
@@ -96,7 +96,7 @@ theorem iSupLift_of_mem {K : ι → Submodule R M} {dir : Directed (· ≤ ·) K
     {hf : ∀ (i j : ι) (h : K i ≤ K j), f i = (f j).comp (inclusion h)}
     {T : Submodule R M} {hT : T ≤ iSup K} {i : ι} (m : T) (hm : (m : M) ∈ K i) :
     iSupLift K dir f hf T hT m = f i ⟨m, hm⟩ :=
-  iSupLift_mk (⟨m, hm⟩ : K i) m.2
+  iSupLift_mk (⟨m, hm⟩ : K i) m.property
 
 /-- Restricting the map glued on a directed supremum to a member of the family recovers the
 prescribed map. -/
@@ -119,10 +119,10 @@ theorem iSupLift_unique {K : ι → Submodule R M} {dir : Directed (· ≤ ·) K
     g = iSupLift K dir f hf T hT := by
   ext m
   rcases isEmpty_or_nonempty ι with hι | hι
-  · obtain rfl : m = 0 := by simpa using hT m.2
+  · obtain rfl : m = 0 := by simpa using hT m.property
     simp
-  obtain ⟨i, hi⟩ := (mem_iSup_of_directed K dir).1 (hT m.2)
+  obtain ⟨i, hi⟩ := (mem_iSup_of_directed K dir).1 (hT m.property)
   rw [iSupLift_of_mem m hi]
-  exact hg i ⟨m, hi⟩ m.2
+  exact hg i ⟨m, hi⟩ m.property
 
 end Submodule

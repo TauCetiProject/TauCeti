@@ -19,6 +19,8 @@ set, the shear `(u, w) ↦ (u, w - g u)` of the graph of `g` is a partial homeom
 
 * `ContinuousLinearEquiv.exists_contDiffOn_shear`: the existence of such a shear chart, with its
   explicit formula and source.
+* `ContDiffOn.exists_contDiffOn_graphShear`: the shear `z ↦ (z.1, z.2 - g z.1)` of `V × W` itself,
+  moving the graph of `g` to the zero section.
 -/
 
 public section
@@ -81,3 +83,22 @@ theorem exists_contDiffOn_shear (A : (V × W) ≃L[𝕜] Y) (c₀ : Y) {U : Set 
         contDiffOn_const).congr fun y _ ↦ hΨ_symm_apply y
 
 end ContinuousLinearEquiv
+
+namespace ContDiffOn
+
+variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W] {m : ℕ∞ω}
+
+/-- **The graph shear**: if `g : V → W` is `C^m` on an open set `U`, the shear
+`z ↦ (z.1, z.2 - g z.1)` of `V × W` is a partial homeomorphism, `C^m` with `C^m` inverse, whose
+source is the set of points over `U`. It moves the graph of `g` over `U` to the zero section. -/
+theorem exists_contDiffOn_graphShear {U : Set V} {g : V → W} (hg : ContDiffOn 𝕜 m g U)
+    (hU : IsOpen U) :
+    ∃ Ψ : OpenPartialHomeomorph (V × W) (V × W), ContDiffOn 𝕜 m Ψ Ψ.source ∧
+      ContDiffOn 𝕜 m Ψ.symm Ψ.target ∧ (∀ z, z ∈ Ψ.source ↔ z.1 ∈ U) ∧
+      ∀ z, Ψ z = (z.1, z.2 - g z.1) := by
+  obtain ⟨Ψ, hΨ, hΨinv, hsrc, happly⟩ :=
+    (ContinuousLinearEquiv.refl 𝕜 (V × W)).exists_contDiffOn_shear 0 hU hg
+  exact ⟨Ψ, hΨ, hΨinv, fun z ↦ by simpa using hsrc z, fun z ↦ by simpa using happly z⟩
+
+end ContDiffOn

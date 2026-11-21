@@ -38,15 +38,15 @@ least numbers for its prime-primary components. -/
 theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
     (⊤ : Submodule ℤ A).spanFinrank =
       Finset.univ.sup (fun p : (Nat.card A).primeFactors ↦
-        (⊤ : Submodule ℤ (_root_.AddCommGroup.primaryComponent A p.1)).spanFinrank) := by
+        (⊤ : Submodule ℤ (_root_.AddCommGroup.primaryComponent A p.val)).spanFinrank) := by
   classical
   let M : (Nat.card A).primeFactors → Type _ :=
-    fun p ↦ _root_.AddCommGroup.primaryComponent A p.1
+    fun p ↦ _root_.AddCommGroup.primaryComponent A p.val
   have hcop : Pairwise fun p q ↦ (Nat.card (M p)).Coprime (Nat.card (M q)) := by
     intro p q hpq
     dsimp only [M]
-    have hp := Nat.prime_of_mem_primeFactors p.2
-    have hq := Nat.prime_of_mem_primeFactors q.2
+    have hp := Nat.prime_of_mem_primeFactors p.property
+    have hq := Nat.prime_of_mem_primeFactors q.property
     rw [natCard_primaryComponent A hp, natCard_primaryComponent A hq]
     exact ((Nat.coprime_primes hp hq).mpr (by simpa using hpq)).pow _ _
   let e : (∀ p, M p) ≃ₗ[ℤ] A := (primaryDecomposition A).toIntLinearEquiv
@@ -91,12 +91,12 @@ theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] {p : �
 /-- Nikulin's formula `l(A) = max_p l(A_p)` over all primes `p`. -/
 theorem rank_eq_ciSup_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] :
     AddGroup.rank A =
-      ⨆ p : {p : ℕ // p.Prime}, AddGroup.rank (AddCommGroup.primaryComponent A p.1) := by
+      ⨆ p : {p : ℕ // p.Prime}, AddGroup.rank (AddCommGroup.primaryComponent A p.val) := by
   have : Nonempty {p : ℕ // p.Prime} := ⟨⟨2, Nat.prime_two⟩⟩
   have hbdd : BddAbove (Set.range fun p : {p : ℕ // p.Prime} ↦
-      AddGroup.rank (AddCommGroup.primaryComponent A p.1)) :=
-    ⟨AddGroup.rank A, by rintro _ ⟨p, rfl⟩; exact rank_primaryComponent_le A p.2⟩
-  refine le_antisymm ?_ (ciSup_le fun p ↦ rank_primaryComponent_le A p.2)
+      AddGroup.rank (AddCommGroup.primaryComponent A p.val)) :=
+    ⟨AddGroup.rank A, by rintro _ ⟨p, rfl⟩; exact rank_primaryComponent_le A p.property⟩
+  refine le_antisymm ?_ (ciSup_le fun p ↦ rank_primaryComponent_le A p.property)
   rw [rank_eq_sup_primaryComponents A]
   refine Finset.sup_le fun p hp ↦ ?_
   exact le_ciSup hbdd ⟨p, Nat.prime_of_mem_primeFactors hp⟩

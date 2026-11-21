@@ -14,6 +14,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Adjoint
 
 /-!
 # The weak right inverse of the gauge-fixed operator at a plane vortex
@@ -37,7 +38,11 @@ solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kerne
 `Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
 `L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
 gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
-bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
+bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). The
+uniform gap `exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` over
+the smooth vortices of a given degree `m` gives the same for the bound on `Q`: one constant,
+depending only on `m`, bounds the norm of `Q` over the whole moduli space `Sym^m ℂ`
+(`exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`).
 
 At such a vortex `Q` also respects exponential decay. With `ρ = √(1 + |z|²)` and `|c| < 1/2`,
 every weak solution `y` of `L_x y = f` orthogonal to the weak kernel, in particular `y = Q f`,
@@ -47,6 +52,15 @@ weighted coercivity of `L_x L_x*` in `TauCeti.Analysis.PDE.Vortex.WeightedEstima
 test fields; here it is transferred to `y`, which is an `L²` limit of values `L_x* η` because it
 is orthogonal to the weak kernel. The transfer uses the bounded weights `W / (1 + ε W)`, for which
 every weighted quantity of `y` and `f` is finite, and lets `ε → 0` by Fatou's lemma.
+
+The Hilbert space adjoint `Q†` of such a `Q` is the left inverse of `L_x*` vanishing on the weak
+kernel: it sends `L_x* η` to `η` for every test field `η`
+(`TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`) and vanishes on the weak kernel
+(`TauCeti.Vortex.adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero`); formally it
+is `(L_x L_x*)⁻¹ L_x`. It satisfies the same weighted estimate,
+`‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂` for `|c| < 1/2`
+(`TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`). This is dual to the estimate for
+`Q` at the rate `-c`, by `ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le`.
 
 These are statements about weak solutions in `L²`. At a bounded field, weak solutions lie in `H¹`
 by the elliptic regularity of `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`, so `Q f ∈ H¹`
@@ -59,8 +73,15 @@ are not proved here.
   lower bound on `L_x*` gives a bounded weak right inverse of `L_x` orthogonal to its weak kernel.
 * `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`: the weak
   right inverse at a plane vortex with `|α| → 1`.
+* `exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`: a bound
+  on its norm uniform over the smooth vortices of degree `m`.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`: the
   exponentially weighted `L²` estimate for the weak right inverse at such a vortex.
+* `TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`,
+  `TauCeti.Vortex.adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero`: the adjoint
+  of the weak right inverse is the left inverse of `L_x*` vanishing on the weak kernel.
+* `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_adjoint_apply_le`: the exponentially weighted `L²`
+  estimate for the adjoint.
 
 ## References
 
@@ -75,22 +96,18 @@ public section
 namespace TauCeti.Vortex
 
 open MeasureTheory Filter
-open scoped RealInnerProductSpace Topology NNReal ENNReal
+open scoped ContDiff RealInnerProductSpace Topology NNReal ENNReal
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- The compactly supported `C²` test fields. -/
 private abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
 
-private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
-    MemLp (gaugeFixedAdjoint x η) 2 μ :=
-  (continuous_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))).memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint η.hasCompactSupport)
-
 /-- The formal adjoint `L_x*` on test fields, with values in `L²`. -/
 private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
     (hx : Continuous x) : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η)
+  toFun η := (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))
+    η.hasCompactSupport).toLp (gaugeFixedAdjoint x η)
   map_add' η ν := by
     rw [← MemLp.toLp_add]
     refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
@@ -104,14 +121,15 @@ private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaar
     exact gaugeFixedAdjoint_smul x η t z
 
 private theorem gaugeFixedAdjointToLp_apply (hx : Continuous x) (η : TestField) :
-    gaugeFixedAdjointToLp μ hx η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) :=
+    gaugeFixedAdjointToLp μ hx η = (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))
+      η.hasCompactSupport).toLp (gaugeFixedAdjoint x η) :=
   rfl
 
 private theorem inner_gaugeFixedAdjointToLp (hx : Continuous x)
     (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
     ⟪u, gaugeFixedAdjointToLp μ hx η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ := by
   rw [gaugeFixedAdjointToLp_apply]
-  exact L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
+  exact L2.inner_toLp u _
 
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
 field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
@@ -180,6 +198,31 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq (hx : Con
     exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc hgap
   exact ⟨Q, hQ⟩
 
+/-- **Uniform weak right inverse over all vortices of degree `m`.** There is `K`, depending only
+on `m`, such that at every smooth plane vortex `x` with the degree-`m` end framing there is a
+bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `K` such that `Q f` is a weak solution of
+`L_x y = f` for every `f ∈ L²`, orthogonal to the weak kernel of `L_x`. The bound is uniform over
+the whole noncompact moduli space `Sym^m ℂ`. -/
+theorem exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq
+    (m : ℕ) :
+    ∃ K, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        ‖Q‖ ≤ K ∧
+        (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
+        ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+          (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+            ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+          ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+  obtain ⟨c, hc, hgap⟩ :=
+    exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) m
+  exact ⟨(√c)⁻¹, fun x D hx hsol hframe hD ↦
+    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc
+      (hgap x D hx hsol hframe hD)⟩
+
 /-! ### The exponentially weighted estimate -/
 
 /-- A square-integrable field orthogonal to the weak kernel of `L_x` is an `L²` limit of values
@@ -214,7 +257,8 @@ private theorem exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt (hx : Continuou
     rw [← Lp.integral_norm_sq_eq_norm_sq]
     refine integral_congr_ae ?_
     filter_upwards [Lp.coeFn_sub y (S η),
-      (memLp_gaugeFixedAdjoint (μ := μ) hx η).coeFn_toLp] with z h₁ h₂
+      (memLp_gaugeFixedAdjoint (μ := μ) hx (η.contDiff.of_le (by norm_cast))
+        η.hasCompactSupport).coeFn_toLp] with z h₁ h₂
     rw [h₁, Pi.sub_apply, gaugeFixedAdjointToLp_apply, h₂]
   rw [hn]
   rw [dist_eq_norm] at hd
@@ -237,18 +281,16 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
   have hVηc : HasCompactSupport (fun t ↦ V t ^ 2 • η t) := hηc.smul_left (f := fun t ↦ V t ^ 2)
   have hA := contDiff_gaugeFixedAdjoint hx hη
   have hAc := hasCompactSupport_gaugeFixedAdjoint (x := x) hηc
-  have hH : MemLp H 2 μ :=
-    (continuous_gaugeFixedAdjoint hx.continuous
-      (hVη.of_le (by norm_num))).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint hVηc)
-  have hG : MemLp (gaugeFixedAdjoint x η) 2 μ := hA.continuous.memLp_of_hasCompactSupport hAc
+  have hH : MemLp H 2 μ := memLp_gaugeFixedAdjoint hx.continuous (hVη.of_le (by norm_num)) hVηc
+  have hG : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+    memLp_gaugeFixedAdjoint hx.continuous (hη.of_le (by norm_num)) hηc
   have hi₁ : Integrable (fun z ↦ ⟪gaugeFixedAdjoint x η z - y z, H z⟫) μ :=
     (hG.sub hy).integrable_inner hH
   have hi₂ : Integrable (fun z ↦ ⟪y z, H z⟫) μ := hy.integrable_inner hH
   -- Integration by parts: `∫ V² ⟪L_x L_x* η, η⟫ = ∫ ⟪L_x* η, L_x* (V² η)⟫`.
   have h₁ : ∫ z, V z ^ 2 * ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ =
       ∫ z, ⟪gaugeFixedAdjoint x η z, H z⟫ ∂μ := by
-    rw [← integral_inner_gaugeFixedOperator hx.continuous hA hAc (hVη.of_le (by norm_num))]
+    rw [← integral_inner_gaugeFixedOperator hA (hVη.of_le (by norm_num)) (.inl hAc)]
     simp only [real_inner_smul_right]
   have h₂ := hweak _ hVη hVηc
   simp only [real_inner_smul_right] at h₂
@@ -364,12 +406,9 @@ private theorem integral_sq_mul_norm_sq_le_add_mul_integral_norm_sub_sq
   set H := gaugeFixedAdjoint x (fun t ↦ V t ^ 2 • η t)
   have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
     hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
-  have hG : MemLp G 2 μ := (contDiff_gaugeFixedAdjoint hx hη).continuous.memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint hηc)
-  have hH : MemLp H 2 μ :=
-    (continuous_gaugeFixedAdjoint hx.continuous
-      (((hV.pow 2).smul hη).of_le (by norm_num))).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint (hηc.smul_left (f := fun t ↦ V t ^ 2)))
+  have hG : MemLp G 2 μ := memLp_gaugeFixedAdjoint hx.continuous (hη.of_le (by norm_num)) hηc
+  have hH : MemLp H 2 μ := memLp_gaugeFixedAdjoint hx.continuous
+    (((hV.pow 2).smul hη).of_le (by norm_num)) (hηc.smul_left (f := fun t ↦ V t ^ 2))
   have hη₂ : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
   have iyG : Integrable (fun z ↦ ‖y z - G z‖ ^ 2) μ := (hy.sub hG).norm.integrable_sq
   have iy := hy.norm.integrable_sq
@@ -600,5 +639,88 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
     _ = ENNReal.ofReal (E * E * K₀) * ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖f z‖ ^ 2) ∂μ := by
         rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hE]
         ring
+
+/-! ### The adjoint of the weak right inverse -/
+
+/-- **The adjoint of a weak right inverse is a left inverse of `L_x*`.** Let `Q` be a bounded
+operator on `L²(ℂ; ℝ⁴)` such that `Q f` is a weak solution of `L_x y = f` for every `f`. Then its
+Hilbert space adjoint `Q†` sends the class of `L_x* η` to the class of `η`, for every compactly
+supported `C²` field `η`. -/
+theorem adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hQ : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    {v : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (hv : v =ᵐ[μ] gaugeFixedAdjoint x η) :
+    ContinuousLinearMap.adjoint Q v =ᵐ[μ] η := by
+  have hη₂ : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
+  suffices ContinuousLinearMap.adjoint Q v = hη₂.toLp η from this ▸ hη₂.coeFn_toLp
+  refine ext_inner_right ℝ fun f ↦ ?_
+  calc ⟪ContinuousLinearMap.adjoint Q v, f⟫ = ⟪Q f, v⟫ := by
+        rw [ContinuousLinearMap.adjoint_inner_left, real_inner_comm]
+    _ = ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ := by
+        rw [L2.inner_def]
+        exact integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
+    _ = ⟪hη₂.toLp η, f⟫ := by rw [hQ f η hη hηc, real_inner_comm, L2.inner_toLp]
+
+omit [μ.IsAddHaarMeasure] in
+/-- **The adjoint of a weak right inverse vanishes on the weak kernel.** Let `Q` be a bounded
+operator on `L²(ℂ; ℝ⁴)` whose values are orthogonal to the weak kernel of `L_x`. Then its Hilbert
+space adjoint `Q†` vanishes on that kernel. -/
+theorem adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hQ : ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪Q f z, u z⟫ ∂μ = 0)
+    {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hu : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) :
+    ContinuousLinearMap.adjoint Q u = 0 := by
+  refine ext_inner_right ℝ fun f ↦ ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, inner_zero_left, real_inner_comm, L2.inner_def]
+  exact hQ f u hu
+
+/-- **Exponentially weighted estimate for the adjoint of the weak right inverse.** Let `x` be a
+`C¹` solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ = √(1 + |z|²)` and
+`|c| < 1/2`. There is `K`, depending only on the vortex and `c`, with the following property. Let
+`Q` be a bounded operator on `L²(ℂ; ℝ⁴)` such that `Q f` is a weak solution of `L_x y = f`
+orthogonal to the weak kernel of `L_x`, for every `f`, for instance the weak right inverse of
+`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. Then its Hilbert space adjoint
+`Q†` satisfies
+
+`‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂`  for every `g ∈ L²`,
+
+where either side may be infinite. By `adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint` and
+`adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero`, `Q†` is the left inverse of
+`L_x*` vanishing on the weak kernel, formally `(L_x L_x*)⁻¹ L_x`. For `c > 0` the estimate says that
+`Q†` maps inputs decaying like `exp(-c ρ)` in `L²` to outputs decaying at the same rate. -/
+theorem exists_eLpNorm_exp_mul_smul_adjoint_apply_le (hx : ContDiff ℝ 1 x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) →
+      (∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0) →
+      ∀ g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint Q g z) 2 μ ≤
+          K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ := by
+  -- The estimate for `Q` at the rate `-c`, transferred to `Q†` by duality.
+  obtain ⟨K, hK⟩ := exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq (μ := μ)
+    hx hsol hlim (c := -c) (by rwa [abs_neg])
+  refine ⟨K, fun Q hweak horth g ↦ ?_⟩
+  have hw : AEStronglyMeasurable (fun z : ℂ ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))) μ :=
+    (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.aestronglyMeasurable
+  have h := ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
+    (ContinuousLinearMap.adjoint Q) (p := 2) (p' := 2) (q := 2) (q' := 2) ENNReal.ofNat_ne_top
+    (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(1 + ‖z‖ ^ 2))).ne') hw (C := K) (fun f ↦ ?_) g
+  · simpa using h
+  · -- `Q†† = Q`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
+    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using
+      hK f (Q f) (hweak f) (horth f)
 
 end TauCeti.Vortex

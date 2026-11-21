@@ -43,7 +43,7 @@ theorem support_batesMeasure (n : ℕ) :
     funext x
     simp [div_eq_mul_inv, mul_comm]
   rw [hfun]
-  rw [support_map_affine (inv_ne_zero (ne_of_gt hnR)), support_irwinHallMeasure]
+  rw [support_map_affine, support_irwinHallMeasure]
   simpa [add_comm, hnR.ne'] using
     (image_affine_Icc' (a := (n : ℝ)⁻¹) (inv_pos.mpr hnR) (0 : ℝ) 0 (n : ℝ))
 

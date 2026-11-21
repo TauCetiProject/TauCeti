@@ -146,7 +146,7 @@ coordinate. -/
   first coordinate. -/]
 theorem coe_primaryComponentProdMulEquiv_apply_fst (G H : Type*) [CommGroup G] [CommGroup H]
     (n : ℕ) (x : CommGroup.primaryComponent (G × H) n) :
-    ((primaryComponentProdMulEquiv G H n x).1 : G) = x.1.1 := by
+    ((primaryComponentProdMulEquiv G H n x).1 : G) = x.val.1 := by
   rw [primaryComponentProdMulEquiv, MulEquiv.trans_apply]
   exact congrArg Prod.fst (MulEquiv.subgroupCongr_apply (primaryComponent_prod G H n) x)
 
@@ -157,7 +157,7 @@ second coordinate. -/
   second coordinate. -/]
 theorem coe_primaryComponentProdMulEquiv_apply_snd (G H : Type*) [CommGroup G] [CommGroup H]
     (n : ℕ) (x : CommGroup.primaryComponent (G × H) n) :
-    ((primaryComponentProdMulEquiv G H n x).2 : H) = x.1.2 := by
+    ((primaryComponentProdMulEquiv G H n x).2 : H) = x.val.2 := by
   rw [primaryComponentProdMulEquiv, MulEquiv.trans_apply]
   exact congrArg Prod.snd (MulEquiv.subgroupCongr_apply (primaryComponent_prod G H n) x)
 
@@ -167,7 +167,7 @@ theorem coe_primaryComponentProdMulEquiv_apply_snd (G H : Type*) [CommGroup G] [
   coordinates. -/]
 theorem coe_primaryComponentProdMulEquiv_symm_apply (G H : Type*) [CommGroup G] [CommGroup H]
     (n : ℕ) (x : CommGroup.primaryComponent G n) (y : CommGroup.primaryComponent H n) :
-    ((primaryComponentProdMulEquiv G H n).symm (x, y) : G × H) = (x.1, y.1) := by
+    ((primaryComponentProdMulEquiv G H n).symm (x, y) : G × H) = (x.val, y.val) := by
   rw [primaryComponentProdMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.subgroupCongr_symm_apply]
   rfl
 

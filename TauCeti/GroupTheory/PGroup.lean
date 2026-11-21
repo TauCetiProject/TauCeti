@@ -31,8 +31,10 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 * `IsPGroup.exists_pow_pow_eq_one_map`: every element in the image of a `p`-group under a monoid
   homomorphism has `p`-power order.
-* `IsPGroup.prod`, `IsAddPGroup.prod`: a product of two `p`-groups is a `p`-group.
-* `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of `p`-groups is a `p`-group.
+* `TauCeti.isAddPGroup_additive_iff`: `Additive G` is an additive `p`-group if and only if `G` is a
+  `p`-group.
+* `IsPGroup.prod`, `IsAddPGroup.prod`: a product of two (additive) `p`-groups is a `p`-group.
+* `IsPGroup.pi`, `IsAddPGroup.pi`: a finite product of (additive) `p`-groups is a `p`-group.
 * `IsAddPGroup.zmod_pow`: `ZMod (p ^ k)` is an additive `p`-group.
 * `IsPGroup.of_subgroup_of_quotient`: an extension of a `p`-group by a `p`-group is a
   `p`-group.
@@ -67,6 +69,11 @@ This supplies the power-order hypothesis for a representation of a `p`-group. -/
 theorem _root_.IsPGroup.exists_pow_pow_eq_one_map {M : Type*} [Monoid M] (hG : IsPGroup p G)
     (f : G →* M) (g : G) : ∃ n : ℕ, f g ^ p ^ n = 1 :=
   (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
+
+/-- `Additive G` is an additive `p`-group if and only if `G` is a `p`-group. -/
+@[simp]
+theorem isAddPGroup_additive_iff : IsAddPGroup p (Additive G) ↔ IsPGroup p G := by
+  simp [isAddPGroup_iff_pow_nsmul_eq_zero, isPGroup_iff_pow_pow_eq_one, ← ofMul_pow]
 
 /-- A product of two `p`-groups is a `p`-group. -/
 @[to_additive _root_.IsAddPGroup.prod
@@ -208,7 +215,7 @@ theorem _root_.IsPGroup.exists_mem_center_orderOf_eq_prime [Fact p.Prime] [Finit
   have := hG.center_nontrivial
   obtain ⟨z, hz⟩ := exists_prime_orderOf_dvd_card' (G := Subgroup.center G) p
     ((hG.to_subgroup _).card_eq_or_dvd.resolve_left Finite.one_lt_card.ne')
-  exact ⟨z, z.2, (Subgroup.orderOf_coe z).trans hz⟩
+  exact ⟨z, z.property, (Subgroup.orderOf_coe z).trans hz⟩
 
 /-- A nontrivial finite `p`-subgroup `P` of `G` lies in the centralizer of one of its nontrivial
 elements, namely of any nontrivial element of the centre of `P`. -/
@@ -216,9 +223,9 @@ theorem _root_.IsPGroup.exists_ne_one_le_centralizer [Fact p.Prime] {P : Subgrou
     (hP : IsPGroup p P) (hne : P ≠ ⊥) : ∃ g ∈ P, g ≠ 1 ∧ P ≤ Subgroup.centralizer {g} := by
   have : Nontrivial P := (Subgroup.nontrivial_iff_ne_bot P).2 hne
   obtain ⟨z, hz1⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 hP.bot_lt_center.ne'
-  refine ⟨z.1, z.1.2, fun h ↦ hz1 (Subtype.ext (Subtype.ext h)), fun y hy ↦ ?_⟩
+  refine ⟨z.val, z.val.property, fun h ↦ hz1 (Subtype.ext (Subtype.ext h)), fun y hy ↦ ?_⟩
   rw [Subgroup.mem_centralizer_singleton_iff]
-  exact congrArg Subtype.val (Subgroup.mem_center_iff.1 z.2 ⟨y, hy⟩)
+  exact congrArg Subtype.val (Subgroup.mem_center_iff.1 z.property ⟨y, hy⟩)
 
 /-- The normal subgroups of `G` with `p`-group quotient are closed under binary intersection. -/
 theorem _root_.IsPGroup.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]
