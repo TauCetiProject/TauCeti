@@ -6,76 +6,67 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.LpEquiv
-public import Mathlib.Analysis.Normed.Lp.PiLp
-public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Analysis.Normed.Lp.Dual
-public import TauCeti.Analysis.Normed.Lp.LeftTranslation
-import Mathlib.Analysis.Normed.Operator.Mul
+public import TauCeti.Analysis.Normed.Lp.Finsupp
+public import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
-# Bounded continuous functions in `ℓ∞` and the pairing with `ℓ¹`
+# Bounded continuous functions in `ℓ∞` and their pairing with `ℓ¹`
 
-Every bounded continuous function `f : α →ᵇ E` on an arbitrary topological space `α` is bounded as
-a family of values, giving a linear isometry
-`BoundedContinuousFunction.toLpInfty 𝕜 : (α →ᵇ E) →ₗᵢ[𝕜] lp (fun _ : α ↦ E) ∞` without any
-discreteness hypothesis on `α`. When `α` is discrete, this is the inverse of Mathlib's isometric
-equivalence `lpBCFₗᵢ`, and composing it with `lp.dualEquiv` identifies `α →ᵇ 𝕜` isometrically with
-the continuous dual of `ℓ¹(α, 𝕜)` (`BoundedContinuousFunction.dualLpOneEquiv`).
+On any topological space `α`, every bounded continuous function `f : α →ᵇ E` has bounded pointwise
+norms (`BoundedContinuousFunction.bddAbove_range_norm_comp`) and supremum norm
+`‖f‖ = ⨆ x, ‖f x‖` (`BoundedContinuousFunction.norm_eq_iSup_norm`). Unlike Mathlib's `lpBCFₗᵢ`,
+which assumes `[DiscreteTopology α]` to obtain surjectivity, the forward inclusion into
+`lp (fun _ : α ↦ E) ∞` is a linear isometry on every topological space
+(`BoundedContinuousFunction.toLpInfty`).
 
-Restricting `lp.dualPairing` along `BoundedContinuousFunction.toLpInfty` gives the continuous
-bilinear pairing
+Pairing `u ∈ ℓ¹(α, 𝕜)` with `f : α →ᵇ E` into a complete normed space `E` over a nontrivially
+normed field `𝕜` by the absolutely convergent series `∑' x, u x • f x` defines the continuous
+bilinear map `lp.bcfPairing 𝕜 α E : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] (α →ᵇ E) →L[𝕜] E`, of operator
+norm at most `1`. On a finitely supported probability `s : Convexity.StdSimplex ℝ α`,
+`bcfPairing ℝ α ℝ (s.toLp 1)` is a positive normalized functional of norm at most `1` evaluating
+`f` to `s.weights.sum fun x r ↦ r * f x`.
 
-```text
-lp.pairingBCF 𝕜 : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] (α →ᵇ 𝕜) →L[𝕜] 𝕜,
-lp.pairingBCF 𝕜 a f = ∑' x, a x * f x,
-```
-
-of norm at most one. On a point mass `lp.single 1 x c`, it evaluates `c * f x`. For a continuous
-group action on `α`, left translation on `ℓ¹` is adjoint to precomposition on `α →ᵇ 𝕜`:
-`lp.pairingBCF 𝕜 (L_g a) f = lp.pairingBCF 𝕜 a (x ↦ f (g • x))`.
+When `α` carries the discrete topology and `𝕜` is `ℝ` or `ℂ`, `toLpInfty` is surjective (`lpBCFₗᵢ`)
+and `lp.dualEquiv` identifies `ℓ∞(α, 𝕜)` with the strong dual of `ℓ¹(α, 𝕜)`, giving the isometric
+identification `lp.bcfDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)` whose
+inverse evaluates a functional on the unit coordinate vectors `lp.single 1 x 1`. Pulling back a
+continuous linear functional `Λ` on a finite `Lᵖ` product `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))` along
+the coordinate inclusions `PiLp.singleCLM` gives coordinate bounded functions
+`Λ.piLpCoordBCF i : α →ᵇ 𝕜` satisfying `Λ v = ∑ i, lp.bcfPairing 𝕜 α 𝕜 (v i) (Λ.piLpCoordBCF i)`.
 
 ## Main definitions
 
-* `BoundedContinuousFunction.toLpInfty`: the isometric inclusion `(α →ᵇ E) →ₗᵢ[𝕜] ℓ∞(α, E)`.
-* `BoundedContinuousFunction.dualLpOneEquiv`: on a discrete space, the linear isometry equivalence
-  `(α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (ℓ¹(α, 𝕜))`.
-* `lp.pairingBCF`: the continuous bilinear pairing between `ℓ¹(α, 𝕜)` and `α →ᵇ 𝕜`.
+* `BoundedContinuousFunction.toLpInfty`: isometric inclusion `(α →ᵇ E) →ₗᵢ[𝕜] lp (fun _ : α ↦ E) ∞`
+  on an arbitrary topological space.
+* `lp.bcfPairing`: for a complete normed space `E` over a nontrivially normed field `𝕜`, the
+  continuous bilinear pairing `lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] (α →ᵇ E) →L[𝕜] E` given by
+  `∑' x, u x • f x`.
+* `lp.bcfDualEquiv`: on a discrete space over `RCLike 𝕜`, the linear isometry equivalence
+  `(α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)`.
 * `ContinuousLinearMap.piLpCoordBCF`: coordinate bounded functions `y ↦ Λ (PiLp.single p i δ_y)`
   associated to a continuous linear functional `Λ` on `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))`.
-
-## Main results
-
-* `BoundedContinuousFunction.leftTranslation_toLpInfty`: `toLpInfty` intertwines precomposition by
-  `g⁻¹ • ·` with `lp.leftTranslation ∞`.
-* `lp.norm_pairingBCF_le`, `lp.norm_pairingBCF_apply_le`: `‖lp.pairingBCF 𝕜‖ ≤ 1` and
-  `‖lp.pairingBCF 𝕜 a f‖ ≤ ‖a‖ * ‖f‖`.
-* `lp.pairingBCF_single`: `lp.pairingBCF 𝕜 (lp.single 1 x c) f = c * f x`.
-* `lp.pairingBCF_leftTranslation`: adjointness of `lp.leftTranslation 1` with respect to
-  `lp.pairingBCF`.
-* `lp.pairingBCF_eq_dualLpOneEquiv`: on a discrete space, `lp.pairingBCF 𝕜 a f` coincides with
-  `BoundedContinuousFunction.dualLpOneEquiv 𝕜 f a`.
-* `ContinuousLinearMap.norm_piLpCoordBCF_le`, `ContinuousLinearMap.apply_eq_sum_pairingBCF`:
-  each coordinate bounded function `Λ.piLpCoordBCF i` has norm at most `‖Λ‖`, and
-  `Λ v = ∑ i, lp.pairingBCF 𝕜 (v i) (Λ.piLpCoordBCF i)`.
 -/
 
 public section
 
 noncomputable section
 
-open scoped ENNReal NNReal BoundedContinuousFunction
+open scoped ENNReal BoundedContinuousFunction
 
 namespace BoundedContinuousFunction
 
-section ToLpInfty
+section Module
 
-variable (𝕜 : Type*) {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E] [NormedRing 𝕜]
-  [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+variable (𝕜 : Type*) {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E]
+  [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
 
-/-- The inclusion of bounded continuous functions `α →ᵇ E` into `ℓ∞(α, E)`, as a linear isometry.
-Unlike `lpBCFₗᵢ`, no discreteness assumption on `α` is needed. -/
+/-- Isometric inclusion of bounded continuous functions `α →ᵇ E` into `lp (fun _ : α ↦ E) ∞`, on
+any topological space `α`. -/
 def toLpInfty : (α →ᵇ E) →ₗᵢ[𝕜] lp (fun _ : α ↦ E) ∞ where
-  toFun f := ⟨⇑f, f.bddAbove_range_norm_comp⟩
+  toFun f := ⟨⇑f, memℓp_infty f.bddAbove_range_norm_comp⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   norm_map' f := by
@@ -84,155 +75,214 @@ def toLpInfty : (α →ᵇ E) →ₗᵢ[𝕜] lp (fun _ : α ↦ E) ∞ where
 
 variable {𝕜}
 
-/-- The inclusion of `α →ᵇ E` into `ℓ∞(α, E)` preserves pointwise values. -/
 @[simp]
-theorem toLpInfty_apply (f : α →ᵇ E) (x : α) : toLpInfty 𝕜 f x = f x :=
-  (rfl)
-
-/-- On a discrete space, `toLpInfty` agrees with the inverse of Mathlib's `lpBCFₗᵢ`. -/
-theorem toLpInfty_eq_lpBCFₗᵢ_symm {𝕜 : Type*} [DiscreteTopology α] [NontriviallyNormedField 𝕜]
-    [NormedSpace 𝕜 E] (f : α →ᵇ E) : toLpInfty 𝕜 f = (lpBCFₗᵢ E 𝕜).symm f := by
-  ext x
+theorem coeFn_toLpInfty (f : α →ᵇ E) : ⇑(toLpInfty 𝕜 f) = ⇑f := by
   rfl
 
-/-- `toLpInfty` intertwines left translation on `ℓ∞` with precomposition by `x ↦ g⁻¹ • x`. -/
-theorem leftTranslation_toLpInfty {G : Type*} [Group G] [MulAction G α] [ContinuousConstSMul G α]
-    (g : G) (f : α →ᵇ E) :
-    lp.leftTranslation ∞ 𝕜 g (toLpInfty 𝕜 f) =
-      toLpInfty 𝕜 (f.compContinuous (Homeomorph.smul (α := α) g⁻¹ : C(α, α))) := by
+theorem toLpInfty_apply (f : α →ᵇ E) (x : α) : toLpInfty 𝕜 f x = f x := by
+  rfl
+
+theorem toLpInfty_injective : Function.Injective (toLpInfty (α := α) (E := E) 𝕜) :=
+  (toLpInfty 𝕜).injective
+
+end Module
+
+@[simp]
+theorem toLpInfty_one {𝕜 α B : Type*} [TopologicalSpace α] [NormedRing 𝕜] [NormedRing B]
+    [NormOneClass B] [Module 𝕜 B] [IsBoundedSMul 𝕜 B] :
+    toLpInfty 𝕜 (1 : α →ᵇ B) = 1 := by
   ext x
   simp
 
-end ToLpInfty
-
-section Dual
-
-variable (𝕜 : Type*) {α : Type*} [TopologicalSpace α] [DiscreteTopology α] [RCLike 𝕜]
-
-/-- On a discrete space, bounded functions `α →ᵇ 𝕜` are isometrically identified with the
-continuous dual of `ℓ¹(α, 𝕜)` via `f ↦ (a ↦ ∑' x, f x * a x)`. -/
-def dualLpOneEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1) :=
-  (lpBCFₗᵢ 𝕜 𝕜).symm.trans (lp.dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top)
-
-variable {𝕜}
-
-/-- Evaluating `dualLpOneEquiv 𝕜 f` at `a ∈ ℓ¹` gives the series `∑' x, f x * a x`. -/
-theorem dualLpOneEquiv_apply (f : α →ᵇ 𝕜) (a : lp (fun _ : α ↦ 𝕜) 1) :
-    dualLpOneEquiv 𝕜 f a = ∑' x, f x * a x :=
-  lp.dualEquiv_apply ENNReal.one_ne_top ((lpBCFₗᵢ 𝕜 𝕜).symm f) a
-
-/-- Evaluating `dualLpOneEquiv 𝕜 f` at a point mass `lp.single 1 x c` gives `f x * c`. -/
-@[simp]
-theorem dualLpOneEquiv_apply_single [DecidableEq α] (f : α →ᵇ 𝕜) (x : α) (c : 𝕜) :
-    dualLpOneEquiv 𝕜 f (lp.single 1 x c) = f x * c :=
-  lp.dualEquiv_apply_single ENNReal.one_ne_top ((lpBCFₗᵢ 𝕜 𝕜).symm f) x c
-
-/-- The inverse of `dualLpOneEquiv` recovers a bounded function from the values of a functional on
-unit point masses `lp.single 1 x 1`. -/
-@[simp]
-theorem dualLpOneEquiv_symm_apply [DecidableEq α]
-    (Λ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) (x : α) :
-    (dualLpOneEquiv 𝕜).symm Λ x = Λ (lp.single 1 x 1) := by
-  simp [dualLpOneEquiv, coe_lpBCFₗᵢ]
-
-end Dual
+/-- On a discrete space, `toLpInfty` agrees with `(lpBCFₗᵢ E 𝕜).symm`. -/
+theorem toLpInfty_eq_lpBCFₗᵢ_symm {𝕜 α E : Type*} [TopologicalSpace α] [DiscreteTopology α]
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] :
+    (toLpInfty 𝕜 : (α →ᵇ E) →ₗᵢ[𝕜] lp (fun _ : α ↦ E) ∞) =
+      (lpBCFₗᵢ E 𝕜).symm.toLinearIsometry := by
+  ext f x
+  simp [coe_lpBCFₗᵢ_symm]
 
 end BoundedContinuousFunction
 
 namespace lp
 
-section PairingBCF
+section Summable
 
-variable (𝕜 : Type*) {α : Type*} [TopologicalSpace α] [RCLike 𝕜]
+variable {𝕜 α E : Type*} [NormedAddCommGroup 𝕜] [TopologicalSpace α]
+  [SeminormedAddCommGroup E] [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E]
 
-private theorem opNorm_mul_le_one :
-    ‖ContinuousLinearMap.mul 𝕜 𝕜‖ ≤ ((1 : ℝ≥0) : ℝ) := by
-  simpa only [NNReal.coe_one] using ContinuousLinearMap.opNorm_mul_le 𝕜 𝕜
+/-- Pointwise scalar multiplication of `f : α →ᵇ E` by `u ∈ ℓ¹(α, 𝕜)` is norm-summable. -/
+theorem summable_norm_smul_bcf (u : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ E) :
+    Summable fun x ↦ ‖u x • f x‖ :=
+  Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun x ↦ f.norm_smul_apply_le (u x) x)
+    ((lp.hasSum_norm_one u).summable.mul_right ‖f‖)
 
-/-- The continuous bilinear pairing `(a, f) ↦ ∑' x, a x * f x` between `ℓ¹(α, 𝕜)` and bounded
-continuous functions `α →ᵇ 𝕜`. -/
-def pairingBCF : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] (α →ᵇ 𝕜) →L[𝕜] 𝕜 :=
-  ((ContinuousLinearMap.compL 𝕜 (α →ᵇ 𝕜) (lp (fun _ : α ↦ 𝕜) ∞) 𝕜).flip
-      (BoundedContinuousFunction.toLpInfty 𝕜).toContinuousLinearMap).comp
-    (dualPairing (𝕜 := 𝕜) 1 ∞ (fun _ : α ↦ ContinuousLinearMap.mul 𝕜 𝕜)
-      (fun _ ↦ opNorm_mul_le_one 𝕜))
+/-- When `E` is complete, pointwise scalar multiplication of `f : α →ᵇ E` by `u ∈ ℓ¹(α, 𝕜)` is
+summable. -/
+theorem summable_smul_bcf [CompleteSpace E] (u : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ E) :
+    Summable fun x ↦ u x • f x :=
+  (summable_norm_smul_bcf u f).of_norm
 
-variable {𝕜}
+end Summable
 
-/-- The pairing of `a ∈ ℓ¹(α, 𝕜)` with `f : α →ᵇ 𝕜` is the sum `∑' x, a x * f x`. -/
-theorem pairingBCF_apply (a : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ 𝕜) :
-    pairingBCF 𝕜 a f = ∑' x, a x * f x := by
-  simp [pairingBCF, dualPairing_apply]
+section Pairing
 
-/-- The bilinear pairing between `ℓ¹(α, 𝕜)` and `α →ᵇ 𝕜` has operator norm at most `1`. -/
-theorem norm_pairingBCF_le : ‖pairingBCF (α := α) 𝕜‖ ≤ 1 := by
-  have hdual :
-      ‖dualPairing (𝕜 := 𝕜) 1 ∞ (fun _ : α ↦ ContinuousLinearMap.mul 𝕜 𝕜)
-        (fun _ ↦ opNorm_mul_le_one 𝕜)‖ ≤ 1 := by
-    simpa only [NNReal.coe_one] using
-      norm_dualPairing (p := 1) (q := ∞) (fun _ : α ↦ ContinuousLinearMap.mul 𝕜 𝕜)
-        (fun _ ↦ opNorm_mul_le_one 𝕜)
-  have hcomp :
-      ‖(ContinuousLinearMap.compL 𝕜 (α →ᵇ 𝕜) (lp (fun _ : α ↦ 𝕜) ∞) 𝕜).flip
-          (BoundedContinuousFunction.toLpInfty 𝕜).toContinuousLinearMap‖ ≤ 1 := by
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun φ ↦ ?_
-    rw [one_mul]
-    exact (φ.opNorm_comp_le _).trans
-      (mul_le_of_le_one_right (norm_nonneg φ) (LinearIsometry.norm_toContinuousLinearMap_le _))
-  calc ‖pairingBCF (α := α) 𝕜‖
-      ≤ ‖(ContinuousLinearMap.compL 𝕜 (α →ᵇ 𝕜) (lp (fun _ : α ↦ 𝕜) ∞) 𝕜).flip
-          (BoundedContinuousFunction.toLpInfty 𝕜).toContinuousLinearMap‖ *
-        ‖dualPairing (𝕜 := 𝕜) 1 ∞ (fun _ : α ↦ ContinuousLinearMap.mul 𝕜 𝕜)
-          (fun _ ↦ opNorm_mul_le_one 𝕜)‖ :=
-        ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ 1 * 1 := by gcongr
-    _ = 1 := one_mul 1
+variable (𝕜 α E : Type*) [NontriviallyNormedField 𝕜] [TopologicalSpace α]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 
-/-- The pairing of `a ∈ ℓ¹(α, 𝕜)` and `f : α →ᵇ 𝕜` has norm at most `‖a‖ * ‖f‖`. -/
-theorem norm_pairingBCF_apply_le (a : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ 𝕜) :
-    ‖pairingBCF 𝕜 a f‖ ≤ ‖a‖ * ‖f‖ :=
-  calc ‖pairingBCF 𝕜 a f‖ ≤ ‖pairingBCF (α := α) 𝕜‖ * ‖a‖ * ‖f‖ := (pairingBCF 𝕜).le_opNorm₂ a f
-    _ ≤ 1 * ‖a‖ * ‖f‖ := by gcongr; exact norm_pairingBCF_le
-    _ = ‖a‖ * ‖f‖ := by rw [one_mul]
+/-- The continuous bilinear pairing between `ℓ¹(α, 𝕜)` and bounded continuous functions `α →ᵇ E`,
+sending `(u, f)` to `∑' x, u x • f x`. -/
+def bcfPairing : lp (fun _ : α ↦ 𝕜) 1 →L[𝕜] (α →ᵇ E) →L[𝕜] E :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ 𝕜 (fun u f ↦ ∑' x, u x • f x)
+      (fun u₁ u₂ f ↦ by
+        simp_rw [lp.coeFn_add, Pi.add_apply, add_smul]
+        exact (summable_smul_bcf u₁ f).tsum_add (summable_smul_bcf u₂ f))
+      (fun c u f ↦ by
+        simp_rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, mul_smul]
+        exact tsum_const_smul'' c)
+      (fun u f₁ f₂ ↦ by
+        simp_rw [FunLike.coe_add, Pi.add_apply, smul_add]
+        exact (summable_smul_bcf u f₁).tsum_add (summable_smul_bcf u f₂))
+      (fun c u f ↦ by
+        simp_rw [FunLike.coe_smul, Pi.smul_apply, smul_comm _ c]
+        exact tsum_const_smul'' c))
+    1 fun u f ↦ by
+      simpa using tsum_of_norm_bounded ((lp.hasSum_norm_one u).mul_right ‖f‖)
+        fun x ↦ f.norm_smul_apply_le (u x) x
 
-/-- Pairing a point mass `lp.single 1 x c` with `f : α →ᵇ 𝕜` gives `c * f x`. -/
+variable {𝕜 α E}
+
+theorem bcfPairing_apply (u : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ E) :
+    bcfPairing 𝕜 α E u f = ∑' x, u x • f x := by
+  rfl
+
+theorem norm_bcfPairing_le : ‖bcfPairing 𝕜 α E‖ ≤ 1 :=
+  LinearMap.mkContinuous₂_norm_le _ zero_le_one _
+
+theorem norm_bcfPairing_apply_le (u : lp (fun _ : α ↦ 𝕜) 1) :
+    ‖bcfPairing 𝕜 α E u‖ ≤ ‖u‖ :=
+  ((bcfPairing 𝕜 α E).le_opNorm u).trans
+    (by simpa using mul_le_mul_of_nonneg_right norm_bcfPairing_le (norm_nonneg u))
+
+theorem norm_bcfPairing_apply_apply_le (u : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ E) :
+    ‖bcfPairing 𝕜 α E u f‖ ≤ ‖u‖ * ‖f‖ :=
+  ((bcfPairing 𝕜 α E u).le_opNorm f).trans
+    (mul_le_mul_of_nonneg_right (norm_bcfPairing_apply_le u) (norm_nonneg f))
+
 @[simp]
-theorem pairingBCF_single [DecidableEq α] (x : α) (c : 𝕜) (f : α →ᵇ 𝕜) :
-    pairingBCF 𝕜 (lp.single 1 x c) f = c * f x := by
-  simp [pairingBCF_apply, lp.single_apply, Pi.single_apply]
+theorem bcfPairing_single [DecidableEq α] (x : α) (c : 𝕜) (f : α →ᵇ E) :
+    bcfPairing 𝕜 α E (lp.single 1 x c) f = c • f x := by
+  simp [bcfPairing_apply, lp.single_apply, Pi.single_apply, ite_smul]
 
-/-- Pairing `a ∈ ℓ¹` with the constant function `1` sums the coordinates of `a`. -/
 @[simp]
-theorem pairingBCF_one (a : lp (fun _ : α ↦ 𝕜) 1) :
-    pairingBCF 𝕜 a 1 = ∑' x, a x := by
-  simp [pairingBCF_apply]
+theorem bcfPairing_finsupp_toLp (w : α →₀ 𝕜) (f : α →ᵇ E) :
+    bcfPairing 𝕜 α E (w.toLp 1) f = w.sum fun x c ↦ c • f x := by
+  rw [bcfPairing_apply, Finsupp.sum]
+  simp_rw [Finsupp.coeFn_toLp]
+  exact tsum_eq_sum fun x hx ↦ by simp [Finsupp.notMem_support_iff.mp hx]
 
-/-- Pairing a nonnegative real `ℓ¹` sequence with a nonnegative bounded continuous function is
-nonnegative. -/
-theorem pairingBCF_nonneg {a : lp (fun _ : α ↦ ℝ) 1} {f : α →ᵇ ℝ}
-    (ha : ∀ x, 0 ≤ a x) (hf : 0 ≤ f) : 0 ≤ pairingBCF ℝ a f :=
-  tsum_nonneg fun x ↦ mul_nonneg (ha x) (hf x)
+@[simp]
+theorem bcfPairing_const [CompleteSpace 𝕜] (u : lp (fun _ : α ↦ 𝕜) 1) (v : E) :
+    bcfPairing 𝕜 α E u (BoundedContinuousFunction.const α v) = (∑' x, u x) • v := by
+  rw [bcfPairing_apply]
+  simp_rw [BoundedContinuousFunction.const_apply]
+  exact (lp.memℓp u).summable_of_one.tsum_smul_const v
 
-/-- For a continuous group action on `α`, left translation on `ℓ¹` moves to precomposition by
-`x ↦ g • x` on `α →ᵇ 𝕜`. -/
-theorem pairingBCF_leftTranslation {G : Type*} [Group G] [MulAction G α] [ContinuousConstSMul G α]
-    (g : G) (a : lp (fun _ : α ↦ 𝕜) 1) (f : α →ᵇ 𝕜) :
-    pairingBCF 𝕜 (leftTranslation 1 𝕜 g a) f =
-      pairingBCF 𝕜 a (f.compContinuous (Homeomorph.smul (α := α) g : C(α, α))) := by
-  have h := dualPairing_leftTranslation_left (p := 1) (q := ∞) (ContinuousLinearMap.mul 𝕜 𝕜)
-    (opNorm_mul_le_one 𝕜) g a (BoundedContinuousFunction.toLpInfty 𝕜 f)
-  simpa only [pairingBCF, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
-    ContinuousLinearMap.compL_apply, LinearIsometry.coe_toContinuousLinearMap,
-    BoundedContinuousFunction.leftTranslation_toLpInfty, inv_inv] using h
+end Pairing
 
-/-- On a discrete space, `lp.pairingBCF` agrees with `BoundedContinuousFunction.dualLpOneEquiv`. -/
-theorem pairingBCF_eq_dualLpOneEquiv [DiscreteTopology α] (a : lp (fun _ : α ↦ 𝕜) 1)
-    (f : α →ᵇ 𝕜) :
-    pairingBCF 𝕜 a f = BoundedContinuousFunction.dualLpOneEquiv 𝕜 f a := by
-  rw [pairingBCF_apply, BoundedContinuousFunction.dualLpOneEquiv_apply]
-  exact tsum_congr fun x ↦ mul_comm (a x) (f x)
+@[simp]
+theorem bcfPairing_one {𝕜 α : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [TopologicalSpace α] (u : lp (fun _ : α ↦ 𝕜) 1) :
+    bcfPairing 𝕜 α 𝕜 u 1 = ∑' x, u x := by
+  have h1 : (1 : α →ᵇ 𝕜) = BoundedContinuousFunction.const α 1 := by ext; simp
+  rw [h1, bcfPairing_const, smul_eq_mul, mul_one]
 
-end PairingBCF
+section StdSimplex
+
+variable {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [CompleteSpace E]
+
+/-- Pairing a finitely supported probability `s : StdSimplex ℝ α` with `f : α →ᵇ E` yields the
+weighted finite sum of `f` against `s.weights`. -/
+theorem bcfPairing_stdSimplex_toLp (s : Convexity.StdSimplex ℝ α) (f : α →ᵇ E) :
+    bcfPairing ℝ α E (s.toLp 1) f = s.weights.sum fun x r ↦ r • f x := by
+  rw [s.toLp_def]
+  exact bcfPairing_finsupp_toLp s.weights f
+
+theorem norm_bcfPairing_stdSimplex_toLp_le (s : Convexity.StdSimplex ℝ α) :
+    ‖bcfPairing ℝ α E (s.toLp 1)‖ ≤ 1 :=
+  (norm_bcfPairing_apply_le (s.toLp 1)).trans_eq s.norm_toLp_one
+
+end StdSimplex
+
+section Real
+
+variable {α : Type*} [TopologicalSpace α]
+
+/-- Pairing a nonnegative sequence in `ℓ¹(α, ℝ)` with a nonnegative bounded continuous function
+gives a nonnegative real number. -/
+theorem bcfPairing_nonneg {u : lp (fun _ : α ↦ ℝ) 1} (hu : 0 ≤ ⇑u) {f : α →ᵇ ℝ} (hf : 0 ≤ f) :
+    0 ≤ bcfPairing ℝ α ℝ u f := by
+  rw [bcfPairing_apply]
+  exact tsum_nonneg fun x ↦ smul_nonneg (hu x) (hf x)
+
+/-- Pairing with a nonnegative sequence in `ℓ¹(α, ℝ)` is monotone on `α →ᵇ ℝ`. -/
+theorem bcfPairing_mono_right {u : lp (fun _ : α ↦ ℝ) 1} (hu : 0 ≤ ⇑u) {f g : α →ᵇ ℝ}
+    (hfg : f ≤ g) : bcfPairing ℝ α ℝ u f ≤ bcfPairing ℝ α ℝ u g := by
+  rw [← sub_nonneg, ← map_sub]
+  exact bcfPairing_nonneg hu (sub_nonneg.2 hfg)
+
+end Real
+
+/-- Under `lp.dualEquiv`, `f.toLpInfty 𝕜` corresponds to the continuous linear functional
+`u ↦ bcfPairing 𝕜 α 𝕜 u f`. -/
+theorem dualEquiv_toLpInfty {𝕜 α : Type*} [RCLike 𝕜] [TopologicalSpace α] (f : α →ᵇ 𝕜) :
+    dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top (BoundedContinuousFunction.toLpInfty 𝕜 f) =
+      (bcfPairing 𝕜 α 𝕜).flip f := by
+  ext u
+  simp [dualEquiv_apply, bcfPairing_apply, mul_comm]
+
+section DiscreteDual
+
+variable (𝕜 α : Type*) [RCLike 𝕜] [TopologicalSpace α] [DiscreteTopology α]
+
+/-- On a discrete space over `RCLike 𝕜`, bounded functions `α →ᵇ 𝕜` identify isometrically with
+the strong dual of `ℓ¹(α, 𝕜)` via `bcfPairing`. -/
+def bcfDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1) :=
+  (lpBCFₗᵢ 𝕜 𝕜).symm.trans (dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top)
+
+variable {𝕜 α}
+
+/-- Forward evaluation of `bcfDualEquiv` agrees with `bcfPairing`. -/
+@[simp]
+theorem bcfDualEquiv_apply (f : α →ᵇ 𝕜) (u : lp (fun _ : α ↦ 𝕜) 1) :
+    bcfDualEquiv 𝕜 α f u = bcfPairing 𝕜 α 𝕜 u f := by
+  simp only [bcfDualEquiv, LinearIsometryEquiv.trans_apply, dualEquiv_apply, coe_lpBCFₗᵢ_symm,
+    bcfPairing_apply, smul_eq_mul, mul_comm]
+
+/-- The inverse of `bcfDualEquiv` evaluates a functional on the unit coordinate vectors
+`lp.single 1 x 1`. -/
+@[simp]
+theorem bcfDualEquiv_symm_apply [DecidableEq α]
+    (φ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) (x : α) :
+    (bcfDualEquiv 𝕜 α).symm φ x = φ (lp.single 1 x 1) := by
+  simp [bcfDualEquiv, coe_lpBCFₗᵢ]
+
+@[simp]
+theorem bcfPairing_bcfDualEquiv_symm (u : lp (fun _ : α ↦ 𝕜) 1)
+    (φ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)) :
+    bcfPairing 𝕜 α 𝕜 u ((bcfDualEquiv 𝕜 α).symm φ) = φ u := by
+  rw [← bcfDualEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+
+/-- On a discrete space, `lp.dualEquiv` applied to `f.toLpInfty 𝕜` equals `bcfDualEquiv 𝕜 α f`. -/
+theorem dualEquiv_toLpInfty_eq_bcfDualEquiv (f : α →ᵇ 𝕜) :
+    dualEquiv 𝕜 α ∞ 1 ENNReal.one_ne_top (BoundedContinuousFunction.toLpInfty 𝕜 f) =
+      bcfDualEquiv 𝕜 α f := by
+  ext u
+  simp [dualEquiv_toLpInfty]
+
+end DiscreteDual
 
 end lp
 
@@ -240,87 +290,46 @@ namespace ContinuousLinearMap
 
 section PiLpCoordBCF
 
-variable {ι α 𝕜 : Type*} [Fintype ι] [TopologicalSpace α] [DiscreteTopology α]
-  [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {ι α 𝕜 : Type*} [DecidableEq ι] [TopologicalSpace α] [DiscreteTopology α]
+  [RCLike 𝕜] {p : ℝ≥0∞}
 
-/-- The isometric inclusion of the `i`-th coordinate into `PiLp p (fun _ : ι ↦ E)`. -/
-private def piLpSingleLI (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 : Type*) {E : Type*}
-    [SeminormedAddCommGroup E] [Semiring 𝕜] [Module 𝕜 E] (i : ι) :
-    E →ₗᵢ[𝕜] PiLp p (fun _ : ι ↦ E) :=
-  open scoped Classical in
-  { toLinearMap :=
-      (WithLp.linearEquiv p 𝕜 (ι → E)).symm.toLinearMap.comp
-        (LinearMap.single 𝕜 (fun _ : ι ↦ E) i)
-    norm_map' := PiLp.norm_single p (fun _ : ι ↦ E) i }
-
-private lemma piLpSingleLI_apply_same (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 : Type*) {E : Type*}
-    [SeminormedAddCommGroup E] [Semiring 𝕜] [Module 𝕜 E] (i : ι) (x : E) :
-    piLpSingleLI p 𝕜 i x i = x :=
-  open scoped Classical in Pi.single_eq_same (M := fun _ : ι ↦ E) i x
-
-private lemma piLpSingleLI_apply_ne (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 : Type*) {E : Type*}
-    [SeminormedAddCommGroup E] [Semiring 𝕜] [Module 𝕜 E] {i j : ι} (h : j ≠ i) (x : E) :
-    piLpSingleLI p 𝕜 i x j = 0 :=
-  open scoped Classical in Pi.single_eq_of_ne (M := fun _ : ι ↦ E) h x
-
-/-- For a continuous linear functional `Λ` on the finite `Lᵖ` product of `ℓ¹(α, 𝕜)` spaces, the
+/-- For a continuous linear functional `Λ` on the `Lᵖ` product of `ℓ¹(α, 𝕜)` spaces, the
 `i`-th coordinate bounded function `y ↦ Λ (PiLp.single p i (lp.single 1 y 1))`. -/
 def piLpCoordBCF (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) :
     α →ᵇ 𝕜 :=
-  (BoundedContinuousFunction.dualLpOneEquiv 𝕜).symm
-    (Λ.comp (piLpSingleLI p 𝕜 i).toContinuousLinearMap)
+  (lp.bcfDualEquiv 𝕜 α).symm
+    (Λ.comp (PiLp.singleCLM p 𝕜 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) i))
 
 /-- The `i`-th coordinate bounded function of `Λ` evaluates at `y` to
 `Λ (PiLp.single p i (lp.single 1 y 1))`. -/
 @[simp]
-theorem piLpCoordBCF_apply [DecidableEq ι] [DecidableEq α]
+theorem piLpCoordBCF_apply [DecidableEq α]
     (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) (y : α) :
     Λ.piLpCoordBCF i y = Λ (PiLp.single p i (lp.single 1 y 1)) := by
-  rw [piLpCoordBCF, BoundedContinuousFunction.dualLpOneEquiv_symm_apply]
-  change Λ (piLpSingleLI p 𝕜 i (lp.single 1 y 1)) = _
-  congr 1
-  refine PiLp.ext fun j ↦ ?_
-  by_cases h : j = i
-  · subst h
-    rw [piLpSingleLI_apply_same, PiLp.single_eq_same]
-  · rw [piLpSingleLI_apply_ne p 𝕜 h, PiLp.single_eq_of_ne _ h]
+  simp [piLpCoordBCF]
 
 /-- Each coordinate bounded function of `Λ` has supremum norm at most `‖Λ‖`. -/
-theorem norm_piLpCoordBCF_le
+theorem norm_piLpCoordBCF_le [Fintype ι] [Fact (1 ≤ p)]
     (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) :
     ‖Λ.piLpCoordBCF i‖ ≤ ‖Λ‖ := by
   rw [piLpCoordBCF, LinearIsometryEquiv.norm_map]
   exact (Λ.opNorm_comp_le _).trans
-    (mul_le_of_le_one_right (norm_nonneg Λ) (LinearIsometry.norm_toContinuousLinearMap_le _))
+    (mul_le_of_le_one_right (norm_nonneg Λ) (PiLp.norm_singleCLM_le i))
 
 /-- Every pointwise value of a coordinate bounded function of `Λ` has norm at most `‖Λ‖`. -/
-theorem norm_piLpCoordBCF_apply_le
+theorem norm_piLpCoordBCF_apply_le [Fintype ι] [Fact (1 ≤ p)]
     (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) (y : α) :
     ‖Λ.piLpCoordBCF i y‖ ≤ ‖Λ‖ :=
   ((Λ.piLpCoordBCF i).norm_coe_le_norm y).trans (Λ.norm_piLpCoordBCF_le i)
 
 /-- A continuous linear functional on `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))` is the sum over `i` of the
 `ℓ¹`-pairings with its coordinate bounded functions `Λ.piLpCoordBCF i`. -/
-theorem apply_eq_sum_pairingBCF
+theorem apply_eq_sum_bcfPairing [Fintype ι]
     (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)))
     (v : PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)) :
-    Λ v = ∑ i : ι, lp.pairingBCF 𝕜 (v i) (Λ.piLpCoordBCF i) := by
-  have hv : v = ∑ i : ι, piLpSingleLI p 𝕜 i (v i) := by
-    refine PiLp.ext fun j ↦ ?_
-    rw [WithLp.ofLp_sum, Finset.sum_apply, Finset.sum_eq_single j]
-    · exact (piLpSingleLI_apply_same p 𝕜 j (v j)).symm
-    · intro i _ hij
-      exact piLpSingleLI_apply_ne p 𝕜 hij.symm (v i)
-    · intro hj
-      exact absurd (Finset.mem_univ j) hj
-  conv_lhs => rw [hv]
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [lp.pairingBCF_eq_dualLpOneEquiv]
-  have h := congrArg (fun φ : StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1) ↦ φ (v i))
-    ((BoundedContinuousFunction.dualLpOneEquiv 𝕜).apply_symm_apply
-      (Λ.comp (piLpSingleLI p 𝕜 i).toContinuousLinearMap))
-  exact h.symm
+    Λ v = ∑ i : ι, lp.bcfPairing 𝕜 α 𝕜 (v i) (Λ.piLpCoordBCF i) := by
+  conv_lhs => rw [← PiLp.univ_sum_single v]
+  simp [map_sum, piLpCoordBCF]
 
 end PiLpCoordBCF
 

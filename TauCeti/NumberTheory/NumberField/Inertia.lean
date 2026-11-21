@@ -255,9 +255,9 @@ section Unramified
 
 variable {K : Type*} [Field K] [NumberField K] {G : Type*} [Group G]
   [MulSemiringAction G K] [IsGaloisGroup G ℚ K]
-  {F : Type*} [Field F] [NumberField F] [Algebra ℚ F] [Algebra F K] [IsScalarTower ℚ F K]
+  {F : Type*} [Field F] [Algebra F K]
 
-omit [NumberField F] [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
+omit [IsGaloisGroup G ℚ K] in
 /-- **The inertia subgroup at an unramified prime meets `H` trivially.** Let `H` be a subgroup of
 `G` whose fixed field is `F`. If `P` is unramified over `𝓞 F`, then the inertia subgroup of `P`
 is disjoint from `H`, since its intersection with `H` is the inertia subgroup of `P` over `𝓞 F`,
@@ -274,7 +274,7 @@ theorem disjoint_inertia_of_ramificationIdx_eq_one (H : Subgroup G) [IsGaloisGro
   rw [AddSubgroup.subgroupOf_inertia, Ideal.card_inertia_eq_ramificationIdx (𝓞 F) H P]
   exact hunr
 
-omit [NumberField F] [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
+omit [IsGaloisGroup G ℚ K] in
 /-- **The index of `H` kills inertia at a prime unramified over the fixed field.** If `H` is a
 normal subgroup of `G` with fixed field `F` and `P` is unramified over `𝓞 F`, then every element
 of the inertia subgroup at `P` is killed by `H.index`: its `H.index`-th power lies in `H`, and it
@@ -295,7 +295,6 @@ theorem pow_index_eq_one_of_ramificationIdx_eq_one {H : Subgroup G} [H.Normal]
   exact Subgroup.disjoint_def.mp (disjoint_inertia_of_ramificationIdx_eq_one H P hP hunr)
     (pow_mem hg _) (H.pow_index_mem g)
 
-omit [NumberField F] [Algebra ℚ F] [IsScalarTower ℚ F K] in
 open scoped IsMulCommutative in
 /-- **An abelian extension of `ℚ` unramified over a subfield has exponent dividing its degree.**
 Let `K` be a number field, Galois over `ℚ` with abelian Galois group `G`, and let `H` be a

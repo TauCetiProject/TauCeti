@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.Category.CommAlgCat.Fppf
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 
 /-!
 # Affine-group points on the affine fppf site
@@ -24,6 +26,10 @@ For a commutative Hopf algebra `H`, the imported Yoneda module registers the und
 presheaf of convolution points `A ↦ WithConv (H →ₐ[R] A)` as representable. Its representability
 and subcanonicity imply that affine-group points form an fppf sheaf.
 
+The points of a closed subgroup, cut out by a Hopf ideal, form an fppf sheaf as well. Hence
+membership of a point in a closed subgroup is fppf local: a point lies in the subgroup as soon as
+its restrictions along some fppf covering do.
+
 This is the affine-site foundation for fppf sheafification of pointwise quotients. It does not
 assert that such a quotient sheaf is representable; representability requires separate hypotheses.
 
@@ -31,6 +37,8 @@ assert that such a quotient sheaf is representable; representability requires se
 
 * `TauCeti.HopfAlgebra.pointsPresheaf_isSheaf`: affine-group points satisfy fppf descent.
 * `TauCeti.HopfAlgebra.pointsFppfSheaf`: affine-group points bundled as an fppf sheaf.
+* `CommHopfAlgCat.mem_quotientPointsSubgroup_of_mem_fppfTopology`: membership in a closed
+  subgroup is fppf local.
 
 ## References
 
@@ -82,3 +90,55 @@ theorem pointsFppfSheaf_obj (H : _root_.CommHopfAlgCat.{u} R) :
 end HopfAlgebra
 
 end TauCeti
+
+namespace CommHopfAlgCat
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+universe u
+
+variable {R : Type u} [CommRing R]
+
+/-- **Membership in a closed subgroup is fppf local.** If the restrictions of a point `g` of the
+affine group represented by `H` along every arrow of an fppf covering sieve lie in the closed
+subgroup cut out by `I`, then `g` itself lies in it. -/
+theorem mem_quotientPointsSubgroup_of_mem_fppfTopology (H : _root_.CommHopfAlgCat.{u} R)
+    (I : HopfIdeal R H) {X : (CommAlgCat.{u} R)ᵒᵖ} (S : Sieve X)
+    (hS : S ∈ CommAlgCat.fppfTopology R X) (g : HopfAlgebra.points (R := R) (H := H) X.unop)
+    (hg : ∀ ⦃Y : (CommAlgCat.{u} R)ᵒᵖ⦄ ⦃f : Y ⟶ X⦄, S f →
+      HopfAlgebra.mapPoints (H := H) f.unop g ∈ quotientPointsSubgroup H I Y.unop) :
+    g ∈ quotientPointsSubgroup H I X.unop := by
+  let J := CommAlgCat.fppfTopology R
+  have hG := ((isSheaf_iff_isSheaf_of_type J _).mp (HopfAlgebra.pointsPresheaf_isSheaf H)) S hS
+  have hN := ((isSheaf_iff_isSheaf_of_type J _).mp
+    (HopfAlgebra.pointsPresheaf_isSheaf (_root_.CommHopfAlgCat.quotient H I))) S hS
+  -- The restrictions of `g` lie in the subgroup, so they lift to points of the quotient.
+  let x : Presieve.FamilyOfElements
+      (HopfAlgebra.pointsPresheaf (_root_.CommHopfAlgCat.quotient H I)) S :=
+    fun Y (f : Y ⟶ X) (hf : S f) ↦ (liftQuotientPoint H I Y.unop _
+      ((mem_quotientPointsSubgroup_iff H I _ _).mp (hg hf)) :
+        WithConv (_root_.CommHopfAlgCat.quotient H I →ₐ[R] Y.unop))
+  have hx (Y : (CommAlgCat.{u} R)ᵒᵖ) (f : Y ⟶ X) (hf : S f) :
+      quotientPointsHom H I Y.unop (x f hf) = HopfAlgebra.mapPoints (H := H) f.unop g :=
+    quotientPointsHom_liftQuotientPoint H I _ _ _
+  have hcompat : x.Compatible := by
+    rw [Presieve.compatible_iff_sieveCompatible]
+    intro Y Z f k hf
+    apply quotientPointsHom_injective H I Z.unop
+    rw [HopfAlgebra.pointsPresheaf_map_op_apply, ← mapPoints_quotientPointsHom, hx _ _ hf,
+      hx _ _ (S.downward_closed hf k), unop_comp, HopfAlgebra.mapPoints_comp,
+      ConcreteCategory.comp_apply]
+  -- Glue the lifts to a quotient point; it includes as `g`, having the same restrictions.
+  let n : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) X.unop :=
+    hN.amalgamate x hcompat
+  have hn (Y : (CommAlgCat.{u} R)ᵒᵖ) (f : Y ⟶ X) (hf : S f) :
+      HopfAlgebra.mapPoints (H := _root_.CommHopfAlgCat.quotient H I) f.unop n = x f hf := by
+    rw [← HopfAlgebra.pointsPresheaf_map_op_apply]
+    exact hN.valid_glue hcompat f hf
+  have hglue : quotientPointsHom H I X.unop n = g := by
+    refine hG.isSeparatedFor.ext fun Y f hf ↦ ?_
+    rw [HopfAlgebra.pointsPresheaf_map_op_apply, HopfAlgebra.pointsPresheaf_map_op_apply,
+      mapPoints_quotientPointsHom, hn _ f hf, hx _ _ hf]
+  exact hglue ▸ quotientPointsHom_mem_quotientPointsSubgroup H I X.unop n
+
+end CommHopfAlgCat

@@ -223,10 +223,6 @@ theorem hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul
     A.HasLyapunovForm ↔
       ∀ (ω : ℝ) (v w : E), A v = -ω • w → A w = ω • v → v = 0 ∧ w = 0 := by
   refine ⟨fun h ω v w hv hw ↦ h.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul hv hw, fun h ↦ ?_⟩
-  have : FiniteDimensional ℝ (WithLp 2 (Complexification E)) :=
-    (WithLp.complexificationEquivProd E).toLinearEquiv.symm.finiteDimensional
-  have : FiniteDimensional ℂ (WithLp 2 (Complexification E)) :=
-    Module.Finite.of_restrictScalars_finite ℝ ℂ _
   -- The complexification of `A` has no eigenvalue on the imaginary axis.
   obtain ⟨Sc, hSc, c, hc, hcS⟩ :=
     exists_isSymmetric_forall_mul_norm_sq_le_re_inner_of_re_ne_zero A.complexifyL2
