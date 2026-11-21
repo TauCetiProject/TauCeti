@@ -107,16 +107,6 @@ theorem integral_norm_sq_mul {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜
   exact (indepFun_norm_sq h).integral_fun_mul_eq_mul_integral
     (hX.norm.pow_const 2).aestronglyMeasurable (hY.norm.pow_const 2).aestronglyMeasurable
 
-/-- Conjugating the first factor preserves the product second-moment formula. -/
-theorem integral_norm_sq_star_mul {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
-    {P : Measure Ω} {X Y : Ω → 𝕜} (h : IndepFun X Y P)
-    (hX : AEMeasurable X P) (hY : AEMeasurable Y P) :
-    (∫ ω, ‖star (X ω) * Y ω‖ ^ 2 ∂P) =
-      (∫ ω, ‖X ω‖ ^ 2 ∂P) * (∫ ω, ‖Y ω‖ ^ 2 ∂P) := by
-  simpa only [Function.comp_apply, id_eq, norm_star] using
-    (h.comp continuous_star.measurable measurable_id).integral_norm_sq_mul
-      (continuous_star.measurable.comp_aemeasurable hX) hY
-
 /-- An integrable bound for the mean norms of sections also bounds the mean norm of the
 joint evaluation at independent variables. -/
 theorem integral_norm_comp_prodMk_le_of_sections {Ω α β E : Type*}

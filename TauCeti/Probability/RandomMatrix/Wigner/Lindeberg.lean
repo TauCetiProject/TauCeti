@@ -8,12 +8,12 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Probability.Moments.QuadraticForm.SecondMoment
 import TauCeti.Probability.Moments.SampleMean
 import TauCeti.Probability.RandomMatrix.Diagonal
 import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
 import TauCeti.Analysis.Convex.FiniteMean
-import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.Analysis.Matrix.MeasurableSpace
 import TauCeti.MeasureTheory.Measure.ResolventTransform.InProbability
 
@@ -271,7 +271,9 @@ private theorem integral_norm_resolventTransform_wignerMatrix_zero_sub_semicircl
   refine (mul_le_mul_of_nonneg_left (add_le_add (finiteMean_mono hU) le_rfl)
     (sq_nonneg _)).trans_eq ?_
   dsimp only [U]
-  rw [finiteMean_smul, finiteMean_add_const, finiteMean_smul, ← htail]
+  rw [finiteMean_def (fun i ↦ z.im⁻¹ • ((2 : ℝ) • T i + b)), Finset.centerMass_smul,
+    ← finiteMean_def, finiteMean_add_const]
+  rw [finiteMean_def (fun i ↦ (2 : ℝ) • T i), Finset.centerMass_smul, ← finiteMean_def, ← htail]
   simp only [smul_eq_mul, add_comm (2 * (wignerLindebergSum A P r).toReal)]
   rfl
 
@@ -361,10 +363,15 @@ theorem integral_norm_resolventTransform_wignerMatrix_sub_semicircleReal_le
     (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1)) : Measure ℝ) z
   let m := resolventTransform (semicircleReal 0 1) z
   have hsplit (ω : Ω) : L ω - m = (L₀ ω - m) + (L ω - L₀ ω) := by abel
+  have htriangle := lpNorm_add_le (memLp_one_iff_integrable.mpr hb) le_rfl
+    (g := fun ω ↦ L ω - L₀ ω)
+  rw [lpNorm_one_eq_integral_norm (hb.add hd').aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm hb.aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm hd'.aestronglyMeasurable] at htriangle
   calc
     _ = ∫ ω, ‖(L₀ ω - m) + (L ω - L₀ ω)‖ ∂P :=
       integral_congr_ae (.of_forall fun ω ↦ congrArg norm (hsplit ω))
-    _ ≤ _ := (integral_norm_add_le hb hd').trans ((add_le_add h hab).trans_eq (by ring))
+    _ ≤ _ := htriangle.trans ((add_le_add h hab).trans_eq (by ring))
 
 
 end TauCeti.Probability

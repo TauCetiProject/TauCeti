@@ -160,8 +160,10 @@ private theorem norm_wignerTransform_sub_le {n : ℕ} {z : ℂ} (hz : 0 < z.im)
   intro A hA
   have h := hA.norm_resolventTransform_spectralMeasure_sub_semicircleReal_le
     (by simp) hz v
-  have hmean : finiteMean ℝ (fun i ↦ ‖A.minorQuadraticError i z v‖) ≤ t :=
-    (finiteMean_mono (g := fun _ ↦ t) ht).trans_eq (finiteMean_const t)
+  have hmean : finiteMean ℝ (fun i ↦ ‖A.minorQuadraticError i z v‖) ≤ t := by
+    refine (finiteMean_mono (g := fun _ ↦ t) ht).trans_eq ?_
+    rw [finiteMean_def]
+    exact Finset.centerMass_const (by simpa using (show (0 : ℝ) < n + 1 by positivity).ne') t
   have h' := h.trans (mul_le_mul_of_nonneg_left (add_le_add hmean le_rfl) (sq_nonneg _))
   simpa only [Fintype.card_fin, Nat.cast_succ, inv_pow, div_eq_inv_mul] using h'
 

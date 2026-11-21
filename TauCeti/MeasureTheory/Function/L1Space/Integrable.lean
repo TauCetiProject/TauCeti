@@ -52,13 +52,6 @@ public section
 
 namespace MeasureTheory
 
-/-- The mean norm of a sum is bounded by the sum of the mean norms. -/
-theorem integral_norm_add_le {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E]
-    {P : Measure Ω} {f g : Ω → E} (hf : Integrable f P) (hg : Integrable g P) :
-    ∫ ω, ‖f ω + g ω‖ ∂P ≤ (∫ ω, ‖f ω‖ ∂P) + ∫ ω, ‖g ω‖ ∂P := by
-  rw [← integral_add' hf.norm hg.norm]
-  exact integral_mono (hf.add hg).norm (hf.norm.add hg.norm) (fun _ ↦ norm_add_le _ _)
-
 /-- Scalar multiplication by a finite product of multiplicative indicators preserves
 integrability, when each factor is a constant on a null-measurable set and `1` off it.
 Neither a finite measure nor disjoint sets are required. -/

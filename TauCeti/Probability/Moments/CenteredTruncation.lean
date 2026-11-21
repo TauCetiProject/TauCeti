@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Moments.Variance
 public import TauCeti.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
-import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Bounded centered approximations in mean square
@@ -142,8 +142,12 @@ theorem _root_.MeasureTheory.Integrable.integral_norm_sub_integral_sub_centeredT
   simp_rw [hX.sub_integral_sub_centeredTruncation_eq R]
   calc
     _ ≤ (∫ ω, ‖T ω‖ ∂P) + ‖∫ y, T y ∂P‖ := by
-      simpa only [← sub_eq_add_neg, norm_neg, integral_const, probReal_univ, one_smul] using
-        integral_norm_add_le hT (integrable_const (-(∫ y, T y ∂P)))
+      have hc : Integrable (fun _ : Ω ↦ ∫ y, T y ∂P) P := integrable_const _
+      simpa only [lpNorm_one_eq_integral_norm hT.aestronglyMeasurable,
+        lpNorm_one_eq_integral_norm hc.aestronglyMeasurable,
+        lpNorm_one_eq_integral_norm (hT.sub hc).aestronglyMeasurable, Pi.sub_apply,
+        integral_const, probReal_univ, one_smul] using
+        lpNorm_sub_le (memLp_one_iff_integrable.mpr hT) le_rfl (g := fun _ ↦ ∫ y, T y ∂P)
     _ ≤ 2 * ∫ ω, {y | (R : ℝ) < ‖X y‖}.indicator (fun y ↦ ‖X y‖) ω ∂P := by
       simp_rw [two_mul, ← norm_indicator_eq_indicator_norm]
       unfold T

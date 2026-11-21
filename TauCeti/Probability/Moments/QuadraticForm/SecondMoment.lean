@@ -10,8 +10,8 @@ public import TauCeti.Probability.Independence.Integration
 public import TauCeti.Probability.Moments.SampleMean
 public import TauCeti.Probability.Moments.CenteredTruncation
 public import TauCeti.Analysis.Matrix.L2OpNorm
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Matrix.DotProduct
-import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Second-moment bounds for independent quadratic forms
@@ -141,22 +141,25 @@ theorem integral_norm_sum_pairs_le {t : Set ι} (hX : iIndepFun (fun i : t ↦ X
           ‖A p.1 p.2‖ ^ 2 * ‖star (X p.1 ω) * X p.2 ω‖ ^ 2 := by
         simp only [Y, norm_mul, mul_pow]
       simp_rw [he, integral_const_mul]
-      rw [(hpind p hp).integral_norm_sq_star_mul
-        (hLp (left p hp)).aemeasurable (hLp (right p hp)).aemeasurable]
+      have hmoment := (hpind p hp).integral_norm_sq_mul
+        (hLp (left p hp)).aemeasurable (hLp (right p hp)).aemeasurable
+      simp only [norm_mul, norm_star] at hmoment ⊢
+      rw [hmoment]
       rw [mul_comm (v ^ 2), sq v]
       exact mul_le_mul_of_nonneg_left
         (mul_le_mul (hv (left p hp)) (hv (right p hp)) (integral_nonneg fun _ ↦ sq_nonneg _) hv₀)
         (sq_nonneg _)
     _ = _ := by rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hv₀]
 
-/-- Mean-norm bound for the off-diagonal part of a quadratic form in centered
-independent coordinates, in terms of the Euclidean operator norm. -/
+/-- The off-diagonal part of a quadratic form in centered independent coordinates is
+integrable, with mean norm bounded in terms of the Euclidean operator norm. -/
 theorem integral_norm_offDiag_le [DecidableEq ι] (hX : iIndepFun X P)
     (hLp : ∀ i, MemLp (X i) 2 P) (hc : ∀ i, ∫ ω, X i ω ∂P = 0)
     (A : Matrix ι ι 𝕜) {v : ℝ} (hv : ∀ i, ∫ ω, ‖X i ω‖ ^ 2 ∂P ≤ v) (hv₀ : 0 ≤ v) :
-    (∫ ω, ‖∑ p ∈ (univ : Finset ι).offDiag,
-        A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)‖ ∂P) ≤
-      2 * v * (Real.sqrt (Fintype.card ι)) * ‖A‖ := by
+    let offDiag (ω : Ω) := ∑ p ∈ (univ : Finset ι).offDiag,
+      A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)
+    Integrable offDiag P ∧
+      (∫ ω, ‖offDiag ω‖ ∂P) ≤ 2 * v * (Real.sqrt (Fintype.card ι)) * ‖A‖ := by
   classical
   have := hX.isProbabilityMeasure
   let _ := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
@@ -184,9 +187,8 @@ theorem integral_norm_offDiag_le [DecidableEq ι] (hX : iIndepFun X P)
   let u := s.filter (fun p ↦ ¬p.1 < p.2)
   have ht : t ⊆ s := filter_subset _ _
   have hu : u ⊆ s := filter_subset _ _
-  have ht' : ∀ p ∈ t, p.swap ∉ t := by
-    intro p hp hswap
-    exact (mem_filter.mp hp).2.not_gt (mem_filter.mp hswap).2
+  have ht' : ∀ p ∈ t, p.swap ∉ t := fun _ hp hswap ↦
+    (mem_filter.mp hp).2.not_gt (mem_filter.mp hswap).2
   have hu' : ∀ p ∈ u, p.swap ∉ u := by
     intro p hp hswap
     exact hd p (hu hp) (le_antisymm (le_of_not_gt (mem_filter.mp hswap).2)
@@ -196,11 +198,18 @@ theorem integral_norm_offDiag_le [DecidableEq ι] (hX : iIndepFun X P)
     (memLp_finsetSum t fun p hp ↦ hX₂ p (ht hp)).integrable one_le_two
   have hsplit (ω : Ω) : (∑ p ∈ s, Y p ω) = (∑ p ∈ t, Y p ω) + ∑ p ∈ u, Y p ω :=
     (sum_filter_add_sum_filter_not s (fun p ↦ p.1 < p.2) (fun p ↦ Y p ω)).symm
+  refine ⟨hint s Subset.rfl, ?_⟩
   -- Work with the named sum to match the splitting identity under the integral.
   change (∫ ω, ‖∑ p ∈ s, Y p ω‖ ∂P) ≤ _
   simp_rw [hsplit]
-  exact (integral_norm_add_le (hint t ht) (hint u hu)).trans
-    ((add_le_add (hbound t ht ht') (hbound u hu hu')).trans_eq (by ring))
+  have ht₁ := hint t ht
+  have hu₁ := hint u hu
+  have htriangle := lpNorm_add_le (memLp_one_iff_integrable.mpr ht₁) le_rfl
+    (g := fun ω ↦ ∑ p ∈ u, Y p ω)
+  rw [lpNorm_one_eq_integral_norm (ht₁.add hu₁).aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm ht₁.aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm hu₁.aestronglyMeasurable] at htriangle
+  exact htriangle.trans ((add_le_add (hbound t ht ht') (hbound u hu hu')).trans_eq (by ring))
 
 /-- Mean-norm bound for a weighted sum of centered squares of pairwise independent variables.
 The cutoff controls the retained part and the tail integrals bound the discarded part. -/
@@ -246,20 +255,21 @@ theorem _root_.TauCeti.integral_norm_weighted_centeredSquares_le [IsProbabilityM
         _ = _ := by rw [Real.sqrt_mul (sq_nonneg C), Real.sqrt_sq hC]
   have hdiscard := TauCeti.Probability.integral_norm_sum_mul_centeredTruncation_residual_le
     hW a hC ha r
-  have hsum (ω : Ω) : (∑ i, a i * ((W i ω - ∫ y, W i y ∂P : ℝ) : 𝕜)) =
+  have hsum (ω : Ω) : (∑ i, a i * ((‖X i ω‖ ^ 2 - ∫ y, ‖X i y‖ ^ 2 ∂P : ℝ) : 𝕜)) =
       (∑ i, Y i ω) + ∑ i, a i * (D i ω : 𝕜) := by
     rw [← sum_add_distrib]
     refine sum_congr rfl fun i _ ↦ ?_
-    simp only [Y, D, RCLike.ofReal_sub]
+    simp only [Y, D, W, RCLike.ofReal_sub]
     ring
-  -- Fold the squared coordinates to use the centered truncation decomposition.
-  change (∫ ω, ‖∑ i, a i * ((W i ω - ∫ y, W i y ∂P : ℝ) : 𝕜)‖ ∂P) ≤ _
-  simp_rw [hsum]
+  simp_rw [hsum, mul_add]
   have ht := (memLp_finsetSum univ fun i _ ↦ hY i).integrable one_le_two
-  refine (integral_norm_add_le ht hdiscard.1).trans ?_
-  rw [mul_add]
-  exact add_le_add hsmall (by
-    simpa only [W, Real.norm_of_nonneg (sq_nonneg _)] using hdiscard.2)
+  have htriangle := lpNorm_add_le (memLp_one_iff_integrable.mpr ht) le_rfl
+    (g := fun ω ↦ ∑ i, a i * (D i ω : 𝕜))
+  rw [lpNorm_one_eq_integral_norm (ht.add hdiscard.1).aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm ht.aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm hdiscard.1.aestronglyMeasurable] at htriangle
+  refine htriangle.trans (add_le_add hsmall ?_)
+  simpa only [W, Real.norm_of_nonneg (sq_nonneg _)] using hdiscard.2
 
 /-- Mean absolute error of a quadratic form in centered independent coordinates,
 relative to its diagonal second-moment sum. The cutoff applies to squared absolute values.
@@ -286,14 +296,13 @@ theorem integral_norm_star_dotProduct_mulVec_sub_sum_diag_le [DecidableEq ι]
   have hDi : Integrable (fun ω ↦ ∑ i, A i i * ((‖X i ω‖ ^ 2 - m i : ℝ) : 𝕜)) P :=
     integrable_finsetSum _ fun i _ ↦
       ((RCLike.ofRealCLM (K := 𝕜)).integrable_comp ((hW i).sub (integrable_const _))).const_mul _
-  have hAi : Integrable (fun ω ↦ ∑ p ∈ (univ : Finset ι).offDiag,
-      A p.1 p.2 * (star (X p.1 ω) * X p.2 ω)) P :=
-    integrable_finsetSum _ fun p hp ↦
-      (memLp_two_const_mul_star_mul (hX.indepFun (mem_offDiag.mp hp).2.2)
-        (hLp p.1) (hLp p.2) _).integrable one_le_two
   simp_rw [A.star_dotProduct_mulVec_sub_sum_diag_eq]
-  refine (integral_norm_add_le hAi hDi).trans ?_
-  exact (add_le_add hA hD).trans_eq (by ring)
+  have htriangle := lpNorm_add_le (memLp_one_iff_integrable.mpr hA.1) le_rfl
+    (g := fun ω ↦ ∑ i, A i i * ((‖X i ω‖ ^ 2 - m i : ℝ) : 𝕜))
+  rw [lpNorm_one_eq_integral_norm (hA.1.add hDi).aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm hA.1.aestronglyMeasurable,
+    lpNorm_one_eq_integral_norm hDi.aestronglyMeasurable] at htriangle
+  exact htriangle.trans ((add_le_add hA.2 hD).trans_eq (by ring))
 
 /-- The mean absolute quadratic-form bound for an independent random coefficient matrix
 with integrable Euclidean operator norm. The quadratic form is integrable and is centered
