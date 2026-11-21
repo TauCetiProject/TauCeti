@@ -122,6 +122,20 @@ theorem mpullback_leftInvariantKirillovForm (ν : Dual ℝ (GroupLieAlgebra I G)
 variable [I.Boundaryless] [J.Boundaryless] (hφ : Surjective φ)
   (hdφ : Surjective (φ.toMonoidHom.groupLieAlgebraMap J I)) (ν : Dual ℝ (GroupLieAlgebra I G))
 
+include hdφ in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [I.Boundaryless] [J.Boundaryless] in
+/-- Two cosets of `K_{ν ∘ dφ}` agree exactly when their images under `φ` are equal cosets of
+`G_ν`, since `K_{ν ∘ dφ} = φ⁻¹(G_ν)` when `dφ` is surjective. -/
+private theorem quotientMk_eq_iff_map_quotientMk_eq (a b : K) :
+    (a : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
+        (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)) = b ↔
+      (φ a : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) = φ b := by
+  rw [QuotientGroup.eq, QuotientGroup.eq,
+    φ.toMonoidHom.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap hdφ ν,
+    Subgroup.mem_comap, map_mul, map_inv]
+  -- `φ.toMonoidHom` and `φ` have the same underlying function.
+  rfl
+
 /-- The map `[k] ↦ [φ k]` from the coadjoint orbit `K ⧸ K_{ν ∘ dφ}` to `G ⧸ G_ν`, well defined
 because `K_{ν ∘ dφ} = φ⁻¹(G_ν)` when `dφ` is surjective. -/
 private def orbitQuotientMap :
@@ -129,11 +143,7 @@ private def orbitQuotientMap :
         (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) →
       G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν :=
   Quotient.lift (fun k : K ↦ (φ k : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν))
-    fun a b hab ↦ QuotientGroup.eq.2 <| by
-      have h := QuotientGroup.leftRel_apply.1 hab
-      rw [φ.toMonoidHom.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap hdφ ν,
-        Subgroup.mem_comap, map_mul, map_inv] at h
-      exact h
+    fun a b hab ↦ (quotientMk_eq_iff_map_quotientMk_eq φ hdφ ν a b).1 (Quotient.sound hab)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [I.Boundaryless] [J.Boundaryless] in
 private theorem orbitQuotientMap_mk (k : K) :
@@ -213,11 +223,8 @@ private theorem bijective_orbitQuotientMap :
   refine ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩
   · induction x using QuotientGroup.induction_on with | H a =>
     induction y using QuotientGroup.induction_on with | H b =>
-    rw [orbitQuotientMap_mk, orbitQuotientMap_mk, QuotientGroup.eq] at hxy
-    refine QuotientGroup.eq.2 ?_
-    rw [φ.toMonoidHom.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap hdφ ν,
-      Subgroup.mem_comap, map_mul, map_inv]
-    exact hxy
+    rw [orbitQuotientMap_mk, orbitQuotientMap_mk] at hxy
+    exact (quotientMk_eq_iff_map_quotientMk_eq φ hdφ ν a b).2 hxy
   · induction y using QuotientGroup.induction_on with | H g =>
     obtain ⟨k, rfl⟩ := hφ g
     exact ⟨k, orbitQuotientMap_mk φ hdφ ν k⟩
