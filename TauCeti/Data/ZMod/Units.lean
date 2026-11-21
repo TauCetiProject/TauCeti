@@ -89,6 +89,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.unitOfIsCoprime_div_eq_iff` — two quotients `a / b` and `a' / b'` of integer
   units modulo `n` agree exactly when `n ∣ a b' - a' b`. Its consumer is the cusp label of
   `Γ₀(N)` in `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Count.lean`.
+* `ZMod.mul_val_inv_modEq_one` — for `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of
+  `m` modulo `n`, as a `Nat.ModEq`. Its consumer is the distribution relation for `1 - ζ` in
+  `TauCeti/NumberTheory/Cyclotomic/DistributionRelation.lean`.
 -/
 
 public section
@@ -119,6 +122,13 @@ theorem ZMod.natAbs_cast (x : ZMod d) : (ZMod.cast x : ℤ).natAbs = x.val := by
     -- `Int.natAbs`
     rfl
   · rw [ZMod.cast_eq_val, Int.natAbs_natCast]
+
+/-- For `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of `m` modulo `n`: the
+`Nat.ModEq` form of Mathlib's `ZMod.mul_val_inv`. -/
+theorem ZMod.mul_val_inv_modEq_one {m n : ℕ} (h : m.Coprime n) :
+    m * ((m : ZMod n)⁻¹).val ≡ 1 [MOD n] := by
+  rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_mul, Nat.cast_one]
+  exact ZMod.mul_val_inv h
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
     (hac : IsCoprime (a₁ : ZMod d) (c₁ : ZMod d)) :
