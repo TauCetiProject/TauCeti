@@ -123,6 +123,12 @@ theorem isBounded_normalCylinder (a b : ℝ) :
   (WithLp.prod_antilipschitzWith_ofLp 2 ℝ E).isBounded_preimage
     ((isBounded_Ioo (-a) a).prod isBounded_ball)
 
+/-- A normal product cylinder is convex. -/
+theorem convex_normalCylinder [NormedSpace ℝ E] (a b : ℝ) :
+    Convex ℝ (normalCylinder (E := E) a b) :=
+  ((convex_Ioo (-a) a).linear_preimage (WithLp.fstL 2 ℝ ℝ E).toLinearMap).inter
+    ((convex_ball (0 : E) b).linear_preimage (WithLp.sndL 2 ℝ ℝ E).toLinearMap)
+
 /-- Shrinking either radius shrinks the normal product cylinder. -/
 theorem normalCylinder_mono {a b a' b' : ℝ} (ha : a' ≤ a) (hb : b' ≤ b) :
     normalCylinder (E := E) a' b' ⊆ normalCylinder a b := by
@@ -471,7 +477,7 @@ theorem exists_finite_cover (hΩ : Ω.IsLipschitzDomain E) (hcompact : IsCompact
     ∃ (K : ℝ≥0) (m : ℕ) (e : Fin m → F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : Fin m → E → ℝ)
       (h r : Fin m → ℝ), (∀ i, IsLipschitzChart Ω (e i) (γ i) K (h i) (r i)) ∧
         frontier Ω ⊆ ⋃ i, e i ⁻¹' normalCylinder (h i) (r i) := by
-  choose e γ K h r hc hex using fun x : frontier Ω => hΩ x x.2
+  choose e γ K h r hc hex using fun x : frontier Ω => hΩ x x.property
   obtain ⟨t, ht⟩ := hcompact.elim_finite_subcover
     (fun x : frontier Ω => e x ⁻¹' normalCylinder (h x) (r x))
     (fun x => (isOpen_normalCylinder _ _).preimage (e x).continuous)
@@ -480,7 +486,7 @@ theorem exists_finite_cover (hΩ : Ω.IsLipschitzDomain E) (hcompact : IsCompact
         zero_mem_normalCylinder (E := E) (hc ⟨x, hx⟩).height_pos (hc ⟨x, hx⟩).radius_pos⟩
   let f : Fin t.card → frontier Ω := fun i => t.equivFin.symm i
   refine ⟨t.sup K, t.card, fun i => e (f i), fun i => γ (f i), fun i => h (f i),
-    fun i => r (f i), fun i => (hc (f i)).weaken (t.le_sup (t.equivFin.symm i).2), ?_⟩
+    fun i => r (f i), fun i => (hc (f i)).weaken (t.le_sup (t.equivFin.symm i).property), ?_⟩
   intro x hx
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (ht hx)
   exact mem_iUnion.2 ⟨t.equivFin ⟨y, hy⟩, by simpa [f] using hxy⟩

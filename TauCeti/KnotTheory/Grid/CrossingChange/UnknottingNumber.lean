@@ -97,6 +97,11 @@ theorem IsCrossingChange.componentCount_eq {L L' : GridLink} (h : IsCrossingChan
   obtain ⟨n, G, G', h, rfl, rfl⟩ := h
   simpa using h.componentCount_eq
 
+/-- A crossing change preserves whether a grid link is a knot. -/
+theorem IsCrossingChange.isKnot_iff {L L' : GridLink} (h : IsCrossingChange L L') :
+    L'.IsKnot ↔ L.IsKnot := by
+  rw [isKnot_def, h.componentCount_eq, isKnot_def]
+
 /-- The crossing change graph: two distinct grid links are adjacent when they differ by a crossing
 change. -/
 def crossingChangeGraph : SimpleGraph GridLink where

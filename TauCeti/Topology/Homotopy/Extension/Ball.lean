@@ -79,7 +79,7 @@ theorem ballRadialDen_def (p : I × closedBall (0 : E) 1) :
 omit [NormedSpace ℝ E] in
 private lemma ballRadialProjection_den_pos (p : I × closedBall (0 : E) 1) :
     0 < max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) :=
-  lt_of_lt_of_le (by have := p.1.2.2; linarith) (le_max_left _ _)
+  lt_of_lt_of_le (by have := p.1.property.2; linarith) (le_max_left _ _)
 
 /-- Radial projection of the cylinder over the closed unit ball away from the point at height `2`
 on its axis, written in the ambient coordinates `ℝ × E`. The scale factor is the smaller of the
@@ -106,9 +106,9 @@ part of the cylinder lying over the sphere. -/
 theorem ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     (ballRadialProjection p).1 ∈ I ∧ (ballRadialProjection p).2 ∈ closedBall (0 : E) 1 ∧
       ((ballRadialProjection p).1 = 0 ∨ (ballRadialProjection p).2 ∈ sphere (0 : E) 1) := by
-  have ht0 := p.1.2.1
-  have ht1 := p.1.2.2
-  have hn1 := mem_closedBall_zero_iff.1 p.2.2
+  have ht0 := p.1.property.1
+  have ht1 := p.1.property.2
+  have hn1 := mem_closedBall_zero_iff.1 p.2.property
   have hd := ballRadialProjection_den_pos p
   have hd1 := le_max_left (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
   have hd2 := le_max_right (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
@@ -140,10 +140,10 @@ cylinder. -/
 theorem ballRadialProjection_fst_le (p : I × closedBall (0 : E) 1) :
     (ballRadialProjection p).1 ≤ p.1 := by
   have hd := ballRadialProjection_den_pos p
-  have ht1 := p.1.2.2
-  have hn1 := mem_closedBall_zero_iff.1 p.2.2
+  have ht1 := p.1.property.2
+  have hn1 := mem_closedBall_zero_iff.1 p.2.property
   have hdle : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) ≤ 2 :=
-    max_le (by linarith [p.1.2.1]) (by linarith)
+    max_le (by linarith [p.1.property.1]) (by linarith)
   simp only [ballRadialProjection, ballRadialDen]
   rw [sub_le_comm, le_div_iff₀ hd]
   nlinarith
@@ -157,11 +157,11 @@ theorem ballRadialProjection_eq_self (p : I × closedBall (0 : E) 1)
   have hd : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) = 2 := by
     rcases mem_cylinderExtensionDomain_iff.1 hp with h0 | hs
     · have ht : (p.1 : ℝ) = 0 := congrArg Subtype.val h0
-      have hn := mem_closedBall_zero_iff.1 p.2.2
+      have hn := mem_closedBall_zero_iff.1 p.2.property
       simp only [ht, sub_zero]
       exact max_eq_left (by linarith)
     · rw [mem_sphere_zero_iff_norm.1 hs, mul_one]
-      exact max_eq_right (by have := p.1.2.1; linarith)
+      exact max_eq_right (by have := p.1.property.1; linarith)
   simp only [ballRadialProjection, ballRadialDen, hd,
     div_self (by norm_num : (2 : ℝ) ≠ 0), one_smul]
   congr 1
@@ -189,7 +189,7 @@ theorem hasHomotopyExtensionProperty_sphere_closedBall :
     HasHomotopyExtensionProperty
       (Subtype.val ⁻¹' sphere (0 : E) 1 : Set (closedBall (0 : E) 1)) := by
   refine hasHomotopyExtensionProperty_of_retraction
-    (isClosed_sphere.preimage continuous_subtype_val) (r := ballCylinderRetraction)
+    (isClosed_sphere.preimage continuous_subtypeVal) (r := ballCylinderRetraction)
     (fun p => ?_) (fun p hp => ?_)
   · rw [mem_cylinderExtensionDomain_iff, ballCylinderRetraction_apply]
     obtain h0 | hs := (ballRadialProjection_spec p).2.2
@@ -211,7 +211,7 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {Y : Type*} 
 ball.** -/
 theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y)) :
     g.Nullhomotopic ↔ ∃ G : C(closedBall (0 : E) 1, Y),
-      ∀ y : sphere (0 : E) 1, G ⟨y, sphere_subset_closedBall y.2⟩ = g y := by
+      ∀ y : sphere (0 : E) 1, G ⟨y, sphere_subset_closedBall y.property⟩ = g y := by
   constructor
   · -- Extend a homotopy from a constant map to `g` over the closed ball, starting at the constant
     -- map, and take its final stage.
@@ -219,18 +219,19 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
     let H := hc.some.symm
     obtain ⟨K, -, hK⟩ :=
       TauCeti.hasHomotopyExtensionProperty_sphere_closedBall.exists_extension_of_isClosed
-        (isClosed_sphere.preimage continuous_subtype_val) (ContinuousMap.const _ c)
+        (isClosed_sphere.preimage continuous_subtypeVal) (ContinuousMap.const _ c)
         (H.toContinuousMap.comp ⟨fun p : I × (Subtype.val ⁻¹' sphere (0 : E) 1 :
-          Set (closedBall (0 : E) 1)) ↦ (p.1, (⟨p.2.1.1, p.2.2⟩ : sphere (0 : E) 1)), by fun_prop⟩)
+          Set (closedBall (0 : E) 1)) ↦ (p.1, (⟨p.2.val.val, p.2.property⟩ : sphere (0 : E) 1)),
+              by fun_prop⟩)
         fun a ↦ H.apply_zero _
     exact ⟨⟨fun x ↦ K (1, x), by fun_prop⟩, fun y ↦
-      (hK 1 ⟨⟨y, sphere_subset_closedBall y.2⟩, y.2⟩).trans (H.apply_one y)⟩
+      (hK 1 ⟨⟨y, sphere_subset_closedBall y.property⟩, y.property⟩).trans (H.apply_one y)⟩
   · -- The closed ball is contractible, so every map out of it is null-homotopic.
     rintro ⟨G, hG⟩
     have : ContractibleSpace (closedBall (0 : E) 1) :=
       (convex_closedBall 0 1).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
     let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
-      ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.2⟩, by fun_prop⟩
+      ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.property⟩, by fun_prop⟩
     have hg : g = (G.comp (ContinuousMap.id _)).comp ι := by
       ext y
       exact (hG y).symm
@@ -257,7 +258,8 @@ theorem exists_homotopicRel_range_subset {B : Set Y} {g g₁ : C(closedBall (0 :
     (TauCeti.hasHomotopyExtensionProperty_sphere_closedBall (E := E)).exists_retraction
   have hseg (p : I × closedBall (0 : E) 1) :
       (1 - (p.1 : ℝ)) • (p.2 : E) + (p.1 : ℝ) • ((r (1, p.2)).2 : E) ∈ closedBall (0 : E) 1 :=
-    convex_closedBall (0 : E) 1 p.2.2 (r (1, p.2)).2.2 (sub_nonneg.2 p.1.2.2) p.1.2.1
+    convex_closedBall (0 : E) 1 p.2.property (r (1, p.2)).2.property (sub_nonneg.2 p.1.property.2)
+        p.1.property.1
       (by ring)
   have hS {x : closedBall (0 : E) 1} (hx : (x : E) ∈ sphere 0 1) : r (1, x) = (1, x) :=
     hr' _ (TauCeti.mem_cylinderExtensionDomain_of_mem hx)

@@ -154,13 +154,14 @@ private theorem eq_zero_of_sum_pow_mul_add_mul_X_pow_eq_algebraMap
     fun i hi ↦ by simp only [g', hi, ↓reduceDIte, hg]
   have hd0 : algebraMap k[X] (RatFunc k) d ≠ 0 :=
     (map_ne_zero_iff _ (IsFractionRing.injective k[X] (RatFunc k))).mpr
-      (nonZeroDivisors.ne_zero d.2)
+      (nonZeroDivisors.ne_zero d.property)
   have Hpoly : ∑ i ∈ range p, g' i ^ p * (C a + C b * X ^ p) ^ i = C e * (d : k[X]) ^ p := by
     refine IsFractionRing.injective k[X] (RatFunc k) ?_
     simp only [map_sum, map_mul, map_pow]
     rw [sum_congr rfl fun i hi ↦ by rw [hg' i hi, Algebra.smul_def, mul_pow, mul_assoc],
       ← mul_sum, H, RatFunc.algebraMap_C, ← RatFunc.algebraMap_eq_C, mul_comm]
-  have := eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq hab (nonZeroDivisors.ne_zero d.2) Hpoly hi0
+  have := eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq hab (nonZeroDivisors.ne_zero d.property) Hpoly
+      hi0
     hip
   have hfi := hg' i (mem_range.mpr hip)
   rw [this, map_zero, Algebra.smul_def, eq_comm, mul_eq_zero] at hfi

@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Carrier
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.PerfectField
-import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
 
 /-!
@@ -36,10 +35,7 @@ namespace TauCeti.G2ShortRoot.PrimeField
 /-- The coordinate algebra of the short-root type-`G₂` carrier over `𝔽₃` is smooth. -/
 instance algebraSmooth_carrierAlgebra : Algebra.Smooth (ZMod 3) carrierAlgebra := by
   let : ∀ j, IsReduced (generatorCodomain j) := by
-    intro j
-    cases j with
-    | inl _ => exact AdditiveGroup.isReduced_coordinateHopfAlgebra (ZMod 3)
-    | inr _ => exact inferInstance
+    rintro (_ | _) <;> exact inferInstance
   exact (smoothCommHopfAlgProperty_iff _).mp
     (CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_perfectField
       generator)

@@ -122,7 +122,7 @@ private theorem exists_valuation_ne_zero_and_lt (vK : Spv K) (s : Finset (Spv C)
       exact hρ w (Finset.mem_filter.mp hw).1 (Finset.mem_filter.mp hw).2
   -- lift the separating elements of `κ(Q)` to `C`
   refine ⟨fun w ↦ Function.surjInv hsurj (e (ρ w)), fun w hw hwQ ↦ ⟨?_, fun w' hw' hw'Q hne ↦ ?_⟩⟩
-  · rw [ne_eq, ← le_zero_iff, ← map_zero w.valuation,
+  · rw [ne_eq, ← nonpos_iff_eq_zero, ← map_zero w.valuation,
       valuation_le_iff_of_comap_eq (hlift w hwQ), Function.surjInv_eq hsurj, map_zero,
       map_zero, (he _ (hmem hw hwQ)).1]
     exact not_le.mpr zero_lt_one
@@ -159,25 +159,26 @@ private theorem card_le_finrank (vK : Spv K) (s : Finset (Spv C))
   have hδ0 {w : Spv C} (hw : w ∈ s) : w.valuation (δ w.supp) ≠ 0 := by
     rw [ne_eq, ← Valuation.mem_supp_iff, ← supp_eq_valuation_supp]
     exact (hδ w.supp w hw rfl).1
-  have hli : LinearIndependent K fun w : s ↦ δ w.1.supp * ε w.1.supp w.1 := by
+  have hli : LinearIndependent K fun w : s ↦ δ w.val.supp * ε w.val.supp w.val := by
     refine Valuation.linearIndependent_of_map_lt (O := vK.valuation.valuationSubring)
-      (fun w : s ↦ w.1.valuation) (fun w a ha ↦ ?_) (fun w ↦ ?_) fun w w' hne ↦ ?_
+      (fun w : s ↦ w.val.valuation) (fun w a ha ↦ ?_) (fun w ↦ ?_) fun w w' hne ↦ ?_
     · -- the points of `s` are at most `1` on the valuation subring of `vK`
-      rw [← map_one w.1.valuation, ← map_one (algebraMap K C), valuation_le_iff, ← comap_vle,
-        hs w.1 w.2, ← valuation_le_iff, map_one]
+      rw [← map_one w.val.valuation, ← map_one (algebraMap K C), valuation_le_iff, ← comap_vle,
+        hs w.val w.property, ← valuation_le_iff, map_one]
       exact ha
     · rw [map_mul]
-      exact mul_ne_zero (hδ0 w.2) (hε _ w.1 w.2 rfl).1
+      exact mul_ne_zero (hδ0 w.property) (hε _ w.val w.property rfl).1
     · -- `w'` is the element, `w` the valuation
       rw [map_mul, map_mul]
-      by_cases hsupp : w'.1.supp = w.1.supp
-      · rw [hsupp, mul_lt_mul_iff_right₀ (pos_iff_ne_zero.mpr (hδ0 w.2))]
-        exact (hε _ w'.1 w'.2 hsupp).2 w.1 w.2 rfl fun h ↦ hne (Subtype.ext h).symm
-      · have : w.1.valuation (δ w'.1.supp) = 0 := by
+      by_cases hsupp : w'.val.supp = w.val.supp
+      · rw [hsupp, mul_lt_mul_iff_right₀ (pos_iff_ne_zero.mpr (hδ0 w.property))]
+        exact (hε _ w'.val w'.property hsupp).2 w.val w.property rfl fun h ↦ hne
+            (Subtype.ext h).symm
+      · have : w.val.valuation (δ w'.val.supp) = 0 := by
           rw [← Valuation.mem_supp_iff, ← supp_eq_valuation_supp]
-          exact (hδ w'.1.supp w'.1 w'.2 rfl).2 w.1 w.2 (Ne.symm hsupp)
+          exact (hδ w'.val.supp w'.val w'.property rfl).2 w.val w.property (Ne.symm hsupp)
         rw [this, zero_mul, pos_iff_ne_zero]
-        exact mul_ne_zero (hδ0 w.2) (hε _ w.1 w.2 rfl).1
+        exact mul_ne_zero (hδ0 w.property) (hε _ w.val w.property rfl).1
   simpa using hli.fintype_card_le_finrank
 
 /-- **The fibre bound over a field.** For a finite `K`-algebra `C`, the number of points of `Spv C`
@@ -237,12 +238,12 @@ private theorem card_le_finrank_fiber (v : Spv A) (s : Finset (Spv B))
     s.card ≤ Module.finrank v.supp.ResidueField (v.supp.Fiber B) := by
   classical
   choose W hW using fun w (hw : w ∈ s) ↦ exists_comap_includeRight_eq v (hs w hw)
-  have hinj : Function.Injective fun w : s ↦ W w.1 w.2 := fun w w' h ↦
-    Subtype.ext (by rw [← (hW w.1 w.2).1, ← (hW w'.1 w'.2).1]; exact congrArg _ h)
+  have hinj : Function.Injective fun w : s ↦ W w.val w.property := fun w w' h ↦
+    Subtype.ext (by rw [← (hW w.val w.property).1, ← (hW w'.val w'.property).1]; exact congrArg _ h)
   rw [← Finset.card_attach, ← Finset.card_image_of_injective _ hinj]
   refine card_le_finrank (ofValuation (residueFieldValuation v)) _ fun W' hW' ↦ ?_
   obtain ⟨w, -, rfl⟩ := Finset.mem_image.mp hW'
-  exact (hW w.1 w.2).2
+  exact (hW w.val w.property).2
 
 /-- **The fibres of `Spv B → Spv A` are finite** for a finite `A`-algebra `B`. -/
 theorem finite_preimage_comap_singleton (v : Spv A) :

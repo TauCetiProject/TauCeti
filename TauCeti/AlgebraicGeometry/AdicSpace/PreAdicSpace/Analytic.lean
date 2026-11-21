@@ -142,7 +142,7 @@ theorem analyticPoints_restrict {U : TopCat.{u}} {f : U ⟶ X.toTopCat} (h : IsO
   have hle : h.isOpenMap.functor.obj ((Opens.map f).obj W) ≤ W :=
     Set.image_preimage_subset f W
   exact ⟨(Opens.map f).obj W, hxW, _,
-    hg.map (X.toPresheafedSpace.presheaf.map (homOfLE hle).op).hom.2⟩
+    hg.map (X.toPresheafedSpace.presheaf.map (homOfLE hle).op).hom.property⟩
 
 /-! ### Analytic points along morphisms -/
 
@@ -155,7 +155,7 @@ analytic points of its target back into those of its source, because its maps on
 continuous ring homomorphisms, which send pseudouniformisers to pseudouniformisers. -/
 theorem preimage_analyticPoints_subset (f : Y ⟶ X) :
     f.base ⁻¹' X.analyticPoints ⊆ Y.analyticPoints :=
-  fun _ ⟨U, hxU, _, hg⟩ ↦ ⟨(Opens.map f.base).obj U, hxU, _, hg.map (f.c.app (op U)).hom.2⟩
+  fun _ ⟨U, hxU, _, hg⟩ ↦ ⟨(Opens.map f.base).obj U, hxU, _, hg.map (f.c.app (op U)).hom.property⟩
 
 /-- A morphism of pre-adic spaces sends analytic points to analytic points exactly when the
 analytic points of its source are the preimage of those of its target. -/
@@ -225,7 +225,7 @@ theorem analyticLocus.range_ι : Set.range (analyticLocus.ι X).base = X.analyti
 @[simp]
 theorem analyticPoints_analyticLocus : X.analyticLocus.analyticPoints = Set.univ := by
   rw [analyticLocus, analyticPoints_restrict]
-  exact Set.eq_univ_of_forall fun x ↦ x.2
+  exact Set.eq_univ_of_forall fun x ↦ x.property
 
 /-- The inclusion of the analytic locus is an isomorphism exactly when every point of `X` is
 analytic. -/
@@ -345,7 +345,7 @@ theorem analyticPoints_presentationLimitPreAdicSpace :
       eqToHom (completionLocObj_obj P i.pres.num i.pres.den _ i.pres.hasDenominatorPower)
     -- the image of `f` is a pseudouniformiser of `A⟨T/s⟩`, which is therefore a Tate ring
     exact rationalSubset_subset_spaAnalytic_of_isTateRing P hP i.pres.num i.pres.den _
-      i.pres.hasDenominatorPower ⟨⟨_, hf.map φ.2⟩⟩ (mem_spaBasicOpen.mp hi)
+      i.pres.hasDenominatorPower ⟨⟨_, hf.map φ.property⟩⟩ (mem_spaBasicOpen.mp hi)
   · intro hx
     -- `x` lies in a rational chart `R(T/g)` with `g` topologically nilpotent
     obtain ⟨T, g, hT, hxg, hnil⟩ :=
@@ -359,14 +359,14 @@ theorem analyticPoints_presentationLimitPreAdicSpace :
       (presentationLimitRationalIso Aplus hAplus p hT).inv.hom ≫
       (eqToHom (presentationLimitPresheaf_obj P Aplus (op (spaBasicOpen Aplus T g))).symm).hom
     exact ⟨spaBasicOpen Aplus T g, mem_spaBasicOpen.mpr hxg, _,
-      (isPseudoUniformizer_toCompletionLoc P _ _ _ p.hasDenominatorPower hnil).map ψ.2⟩
+      (isPseudoUniformizer_toCompletionLoc P _ _ _ p.hasDenominatorPower hnil).map ψ.property⟩
 
 /-- **Every point of the adic spectrum of a Tate ring is analytic**: over a Tate ring the
 analytic locus is the whole adic spectrum (Wedhorn, Remark 7.40(3)). -/
 theorem analyticPoints_presentationLimitPreAdicSpace_of_isTateRing [IsTateRing A] :
     (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints = Set.univ := by
   rw [analyticPoints_presentationLimitPreAdicSpace, spaAnalytic_eq_spa_of_isTateRing]
-  exact Set.eq_univ_of_forall fun x ↦ x.2
+  exact Set.eq_univ_of_forall fun x ↦ x.property
 
 /-- **Covering analytic points of `Spa(A, A⁺)` by standard analytic rational opens.** Let `Q` be a
 property of objects of `𝒱^pre` that holds on every rational open `R(T/s)` of `Spa(A, A⁺)` with `T`
@@ -384,7 +384,7 @@ theorem exists_mem_propOpens_of_mem_analyticPoints (Q : ObjectProperty PreAdicSp
   obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
   -- `presentationLimitPreAdicSpace` has underlying type `spa Aplus`, so `Set.mem_preimage`
   -- views `y` as an element of `spa Aplus`.
-  have hy' : (y : spa Aplus).1 ∈ spaAnalytic Aplus :=
+  have hy' : (y : spa Aplus).val ∈ spaAnalytic Aplus :=
     Set.mem_preimage.mp (by rwa [analyticPoints_presentationLimitPreAdicSpace] at hy)
   rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hy'
   obtain ⟨g, hg, hyg⟩ := Set.mem_iUnion₂.mp hy'
@@ -478,7 +478,7 @@ theorem mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap_iff {B : Type u
   rw [analyticPoints_presentationLimitPreAdicSpace] at hφx
   -- membership in the preimage under `Subtype.val` is membership of the underlying valuation
   have hφx' : ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base x :
-      spa Aplus).1 ∈ spaAnalytic Aplus := hφx
+      spa Aplus).val ∈ spaAnalytic Aplus := hφx
   rwa [presentationLimitPreAdicSpaceComap_base_val] at hφx'
 
 end ValuationSpectrum

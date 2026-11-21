@@ -37,14 +37,15 @@ The file also records additivity on products of modules, `[P × Q] = [P] + [Q]` 
 
 * `TauCeti.FiniteProjectiveModules.biprodLinearEquiv`: the underlying module of a biproduct
   of finite projective modules is linearly isomorphic to the product.
-* `TauCeti.FiniteProjectiveModules.{freeObj,finFreeObj,selfObj,exists_biprod_iso_fin}`: standard
+* `TauCeti.FiniteProjectiveModules.{freeObj,finFreeObj,exists_biprod_iso_fin}`: standard
   free objects and categorical free complements `P ⊞ Q ≅ Rⁿ`.
 * `TauCeti.FiniteProjectiveModules.classOf_eq_zero_iff`: the class `[M] - n[R]` vanishes
   exactly when `M` is stably free of rank `n`.
 * `TauCeti.FiniteProjectiveModules.classOf_eq_classOf_iff`: equality of classes in the same
   rank is stable equivalence.
-* `TauCeti.SplitK0.{of_finFreeObj,of_freeObj,exists_eq_of_sub_nsmul_selfObj}`: standard free
-  classes and normal form `[P] - n • [R]`.
+* `TauCeti.SplitK0.of_finFreeObj`, `TauCeti.SplitK0.of_freeObj`,
+  `TauCeti.SplitK0.exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular`:
+  standard free classes and normal form `[P] - n • [R]`.
 * `TauCeti.SplitK0.of_eq_add_of_linearEquiv_prod`: the class of a module isomorphic to `P × Q` is
   the sum of the classes of `P` and `Q`.
 * `TauCeti.SplitK0.of_eq_nsmul_of_linearEquiv_fin`: the class of a module isomorphic to `Rⁿ` is
@@ -102,6 +103,24 @@ theorem of_eq_add_of_linearEquiv_prod {X P Q : (finiteProjectiveModules R).FullS
   rw [← of_biprod]
   exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
     (e.trans (FiniteProjectiveModules.biprodLinearEquiv P Q).symm).toModuleIso)
+
+/-- **Additivity on finite products.** The class of a finitely generated projective module
+isomorphic to a finite product is the sum of the classes of the factors. -/
+theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
+    {X : (finiteProjectiveModules R).FullSubcategory}
+    (P : ι → (finiteProjectiveModules R).FullSubcategory)
+    (e : X.obj ≃ₗ[R] (i : ι) → (P i).obj) : of.{u} X = ∑ i, of.{u} (P i) := by
+  have := hasFiniteProducts_of_has_binary_and_terminal
+    (C := (finiteProjectiveModules R).FullSubcategory)
+  have := HasFiniteBiproducts.of_hasFiniteProducts
+    (C := (finiteProjectiveModules R).FullSubcategory)
+  have := PreservesFiniteProducts.of_preserves_binary_and_terminal (finiteProjectiveModules R).ι
+  have : PreservesBiproduct P (finiteProjectiveModules R).ι :=
+    preservesBiproduct_of_preservesProduct _
+  rw [← of_biproduct.{u} P]
+  exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
+    (e.toModuleIso ≪≫ (ModuleCat.biproductIsoPi fun i ↦ (P i).obj).symm ≪≫
+      ((finiteProjectiveModules R).ι.mapBiproduct P).symm))
 
 /-- The class of a finitely generated projective module isomorphic to `Rⁿ` is `n` times the class
 of `R`. -/
@@ -234,12 +253,6 @@ def finFreeObj (n : ℕ) : (finiteProjectiveModules R).FullSubcategory :=
 
 @[simp] theorem finFreeObj_obj (n : ℕ) : (finFreeObj R n).obj = ModuleCat.of R (Fin n → R) := (rfl)
 
-/-- The regular left `R`-module `R` in `(finiteProjectiveModules R).FullSubcategory`. -/
-def selfObj : (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R R, finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
-
-@[simp] theorem selfObj_obj : (selfObj R).obj = ModuleCat.of R R := (rfl)
-
 end FreeObjects
 
 /-- **Categorical free-complement theorem:** every finite projective module `P` admits a complement
@@ -259,24 +272,24 @@ namespace SplitK0
 /-- The class of `Fin n → R` in `SplitK0` is `n` times `[R]`. -/
 @[simp] theorem of_finFreeObj (n : ℕ) :
     SplitK0.of.{u} (FiniteProjectiveModules.finFreeObj R n) =
-      n • SplitK0.of.{u} (FiniteProjectiveModules.selfObj R) :=
+      n • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
   of_eq_nsmul_of_linearEquiv_fin (X := FiniteProjectiveModules.finFreeObj R n)
-    (R' := FiniteProjectiveModules.selfObj R) (.refl _ _) (.refl _ _)
+    (R' := finiteProjectiveModulesRegular R) (.refl _ _) (.refl _ _)
 
 /-- The class of `ι → R` in `SplitK0` is `Fintype.card ι` times `[R]`. -/
 @[simp] theorem of_freeObj (ι : Type u) [Fintype ι] :
     SplitK0.of.{u} (FiniteProjectiveModules.freeObj R ι) =
-      Fintype.card ι • SplitK0.of.{u} (FiniteProjectiveModules.selfObj R) :=
+      Fintype.card ι • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
   of_eq_nsmul_of_linearEquiv_fin (X := FiniteProjectiveModules.freeObj R ι)
-    (R' := FiniteProjectiveModules.selfObj R)
+    (R' := finiteProjectiveModulesRegular R)
     (LinearEquiv.funCongrLeft R R (Fintype.equivFin ι).symm) (.refl _ _)
 
 /-- Every element of `SplitK0 (finiteProjectiveModules R).FullSubcategory` has the form
 `[P] - n • [R]` (Weibel, *The K-book*, Lemma II.2.1). -/
-theorem exists_eq_of_sub_nsmul_selfObj
+theorem exists_eq_of_sub_nsmul_finiteProjectiveModulesRegular
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) :
     ∃ (P : (finiteProjectiveModules R).FullSubcategory) (n : ℕ),
-      x = SplitK0.of.{u} P - n • SplitK0.of.{u} (FiniteProjectiveModules.selfObj R) := by
+      x = SplitK0.of.{u} P - n • SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
   obtain ⟨P₁, P₂, rfl⟩ := SplitK0.exists_eq_sub.{u} x
   obtain ⟨Q, n, ⟨e⟩⟩ := FiniteProjectiveModules.exists_biprod_iso_fin P₂
   refine ⟨P₁ ⊞ Q, n, ?_⟩

@@ -1,0 +1,145 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Positive
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.NotG2
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.G2
+import TauCeti.GroupTheory.Commutator
+
+/-!
+# Punctured-positive normalization
+
+Remove one simple root from the pinned positive roots. The subgroup generated
+by the remaining root groups is normalized by the positive subgroup and by the opposite
+simple-root pair. Every positive element factors as a punctured-positive element followed
+by an element of the omitted root group. These are local steps in Bruhat reduction.
+
+The lattice may be any Kostant-stable lattice with nilpotent simple root operators, and the
+commutative value ring is arbitrary. No structure constant is inverted, and neither generation
+by positive simple root groups nor uniqueness of the factors is asserted.
+
+Outside G₂, positive normalization follows from the commutator height bound in
+`Root.Collection.NotG2`: commutator factors have height greater than one, so cannot be the
+omitted simple root. This includes F₄ by `instIsNotG2RationalRootSystemF4`; positive-root
+collection there is supplied by `mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod`.
+In G₂, the native table-index bound in `commutator_range_chevalleyRootSubgroup_g2_le`
+from `Root.Collection.G2` keeps commutator factors away from the omitted simple root.
+Rank-one normalization and factorization then use
+`closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_normalizer` and
+`mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_of_le_normalizer`
+from `Root.Positive`.
+
+## References
+
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, proof of Theorem 4.
+* R. W. Carter, *Simple Groups of Lie Type*, §§5.2 and 8.3.
+-/
+
+public section
+
+namespace TauCeti.DynkinType
+
+open TensorProduct TauCeti.UniversalEnvelopingAlgebra
+
+variable {t : DynkinType} {ht : t.Valid} {V : Type*} [AddCommGroup V] [Module ℚ V]
+variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
+  (M : AddSubgroup V)
+  (hM : ∀ u ∈ UniversalEnvelopingAlgebra.kostantForm
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h,
+    ∀ v ∈ M, ρ u v ∈ M)
+  (hnil : ∀ i, IsNilpotent
+    (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
+
+attribute [local instance high] Algebra.toModule
+
+/-- A positive simple root subgroup normalizes the punctured positive subgroup. -/
+theorem range_simpleIndex_le_normalizer_posRoots_diff_singleton
+    (i : Fin t.rank) (A : CommAlgCat ℤ) :
+    (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A).range ≤
+    Subgroup.normalizer
+      (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
+        (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
+  classical
+  by_cases htG2 : t = G2
+  · subst t
+    rw [iSup_subtype']
+    apply Subgroup.le_normalizer_iSup_of_commutator_le
+    rintro ⟨γ, hγ⟩
+    -- Rebuilding native indices from their values changes only their bound proofs.
+    let i₆ : Fin 6 := ⟨(G2.simpleIndex ht i).val,
+      lt_trans (by simpa only [simpleIndex_val, rank_G2] using i.isLt) (by decide : 2 < 6)⟩
+    let γ₆ : Fin 6 := ⟨γ.val, (mem_posRoots_rational_g2_iff ht γ).mp hγ.1⟩
+    have hcomm := commutator_range_chevalleyRootSubgroup_g2_le ρ M hM hnil A i₆ γ₆
+      (by intro h; exact hγ.2 (Fin.ext (congrArg Fin.val h).symm))
+    refine hcomm.trans ?_
+    rw [iSup_subtype]
+    refine iSup₂_le fun k hk => le_iSup_of_le (Fin.castAdd 6 k) (le_iSup_of_le ?_ le_rfl)
+    refine ⟨(mem_posRoots_rational_g2_iff ht _).mpr k.isLt, ?_⟩
+    -- Correction indices exceed the omitted simple index, so stay punctured.
+    have hik := lt_of_le_of_lt (le_max_left i₆ γ₆) hk
+    intro heq
+    exact (ne_of_lt hik) (Fin.ext (congrArg Fin.val heq).symm)
+  · have := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) htG2
+    rw [← iSup_subtype'']
+    apply Subgroup.le_normalizer_iSup_of_commutator_le
+    intro β
+    refine (commutator_range_chevalleyRootSubgroup_le ρ M hM hnil
+      (simpleIndex_mem_posRoots i) β.property.1 A).trans ?_
+    simp only [iSup_subtype]
+    refine iSup₂_le fun γ hγ => le_iSup₂_of_le γ ⟨?_, ?_⟩ le_rfl
+    · exact (mem_posRootsFinset _ _ _).mp (Finset.mem_filter.mp hγ).1
+    · simp only [Set.mem_singleton_iff]
+      intro heq
+      have hheight := (le_max_left _ _).trans_lt (Finset.mem_filter.mp hγ).2
+      rw [heq] at hheight
+      exact (lt_irrefl _ hheight)
+
+/-- The positive subgroup normalizes the subgroup generated by all positive
+roots except one simple root, over every commutative value ring. -/
+theorem iSup_posRoots_le_normalizer_posRoots_diff_singleton
+    (i : Fin t.rank) (A : CommAlgCat ℤ) :
+    (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+      (chevalleyRootSubgroup ρ M hM hnil γ A).range) ≤
+    Subgroup.normalizer
+      (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
+        (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
+  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union, iSup_singleton]
+  exact sup_le Subgroup.le_normalizer
+    (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil i A)
+
+/-- The opposite simple-root pair normalizes the punctured positive subgroup.
+In particular, the negative simple root group preserves it by conjugation. -/
+theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
+    (i : Fin t.rank) (A : CommAlgCat ℤ) :
+    Subgroup.closure
+      (Set.range (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A) ∪
+        Set.range (chevalleyRootSubgroup ρ M hM hnil
+          ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
+            (t.simpleIndex ht i)) A)) ≤
+    Subgroup.normalizer
+      (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
+        (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) :=
+  closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_le_normalizer
+    ρ M hM hnil i A
+    (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil i A)
+
+/-- Every positive element is a punctured-positive element followed by an element
+of the chosen simple root group. No uniqueness of the factors is asserted. -/
+theorem mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul
+    (i : Fin t.rank) (A : CommAlgCat ℤ)
+    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
+    g ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+      (chevalleyRootSubgroup ρ M hM hnil γ A).range) ↔
+    ∃ q ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
+      (chevalleyRootSubgroup ρ M hM hnil γ A).range),
+      ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u :=
+  mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul_of_le_normalizer
+    ρ M hM hnil i A
+    (range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil i A) g
+
+end TauCeti.DynkinType

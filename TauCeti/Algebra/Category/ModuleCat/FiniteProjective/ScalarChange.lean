@@ -42,7 +42,8 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
 
 ## Main results
 
-* `TauCeti.SplitK0.of_extendScalars_obj`, `of_finiteProjectiveModulesExtendScalars_selfObj`:
+* `TauCeti.SplitK0.of_extendScalars_obj`,
+  `of_finiteProjectiveModulesExtendScalars_finiteProjectiveModulesRegular`:
   the split `K₀` class of an extended module and `[S ⊗_R R] = [S]`.
 * `TauCeti.SplitK0.map_finiteProjectiveModulesExtendScalars_{id,comp}`,
   `map_extendScalars_comp_restrictScalars_{self,eq_zero}`: functoriality and restriction-extension
@@ -573,14 +574,14 @@ theorem map_finiteProjectiveModulesExtendScalars_of_linearEquiv_pi {ι : Type*} 
 variable (f)
 
 /-- Extension of scalars along `f : R →+* S` sends `[R]` to `[S]`. -/
-@[simp] theorem of_finiteProjectiveModulesExtendScalars_selfObj :
+@[simp] theorem of_finiteProjectiveModulesExtendScalars_finiteProjectiveModulesRegular :
     SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj
-      (FiniteProjectiveModules.selfObj R)) = SplitK0.of.{u} (FiniteProjectiveModules.selfObj S) :=
+      (finiteProjectiveModulesRegular R)) = SplitK0.of.{u} (finiteProjectiveModulesRegular S) :=
   of_extendScalars_obj <| (BalancedExtension.congr f
-    ((eqToIso (FiniteProjectiveModules.selfObj_obj R)).toLinearEquiv.trans
+    ((eqToIso (finiteProjectiveModulesRegular_obj R)).toLinearEquiv.trans
       (LinearEquiv.funUnique Unit R R).symm)).trans <|
     (BalancedExtension.piScalarRight f Unit).trans ((LinearEquiv.funUnique Unit S S).trans
-      (eqToIso (FiniteProjectiveModules.selfObj_obj S).symm).toLinearEquiv)
+      (eqToIso (finiteProjectiveModulesRegular_obj S).symm).toLinearEquiv)
 
 /-- Along a surjective `p : E →+* A` making `A` finite projective over `E`, extending scalars after
 restricting scalars induces the identity on `SplitK0`. -/

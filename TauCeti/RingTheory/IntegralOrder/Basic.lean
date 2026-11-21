@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.MulOpposite
-public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Algebra.Module.Lattice.Full
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
@@ -18,9 +18,10 @@ import TauCeti.RingTheory.IntegralClosure.TensorProduct
 
 Let `R` be a domain with fraction field `F` and `E` a finite-dimensional `F`-algebra, not
 necessarily commutative. An `R`-order in `E` is an `R`-subalgebra `Λ` of `E` which is an `R`-lattice
-in `E` in the sense of `Submodule.IsLattice`: it is finitely generated as an `R`-module and spans
-`E` over `F`. Orders are the integral structures on which arithmetic of `E` is done: the ring of
-integers of a number field, group rings `R[G] ⊆ F[G]`, and `M_n(R) ⊆ M_n(F)` are orders.
+in `E`: it is finitely generated as an `R`-module and spans `E` over `F` (over a fraction field
+`F`, this is `Submodule.IsFullLattice`). Orders are the integral structures on which arithmetic of
+`E` is done: the ring of integers of a number field, group rings `R[G] ⊆ F[G]`, and
+`M_n(R) ⊆ M_n(F)` are orders.
 
 Every element of an order is integral over `R`. Conversely, over an integrally closed noetherian
 `R`, a spanning subalgebra all of whose elements are integral is an order provided the regular trace
@@ -77,24 +78,19 @@ namespace TauCeti.IntegralOrder
 section Basic
 
 variable {R : Type*} (F : Type*) {E : Type*} [CommRing R] [CommRing F] [Ring E]
-  [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+  [Algebra F E] [Algebra R E]
 
 /-- An `R`-subalgebra `Λ` of an `F`-algebra `E` is an `R`-order in `E` if it is an `R`-lattice in
 `E`: finitely generated as an `R`-module, with `F`-span all of `E`. -/
 def IsOrder (Λ : Subalgebra R E) : Prop :=
-  (Subalgebra.toSubmodule Λ).IsLattice F
+  (Subalgebra.toSubmodule Λ).FG ∧ span F (Λ : Set E) = ⊤
 
 variable {F}
-
-/-- Being an order is being an `R`-lattice in `E` (this is the definition of `IsOrder`). -/
-theorem isOrder_iff_isLattice {Λ : Subalgebra R E} :
-    IsOrder F Λ ↔ (Subalgebra.toSubmodule Λ).IsLattice F :=
-  Iff.rfl
 
 /-- An `R`-subalgebra is an order exactly when it is finite over `R` and spans `E` over `F`. -/
 theorem isOrder_iff {Λ : Subalgebra R E} :
     IsOrder F Λ ↔ Module.Finite R Λ ∧ span F (Λ : Set E) = ⊤ :=
-  ⟨fun h => ⟨.of_fg h.fg, h.span_eq_top⟩, fun h => ⟨Module.Finite.iff_fg.1 h.1, h.2⟩⟩
+  ⟨fun h => ⟨.of_fg h.1, h.2⟩, fun h => ⟨Module.Finite.iff_fg.1 h.1, h.2⟩⟩
 
 namespace IsOrder
 
@@ -114,11 +110,10 @@ theorem isIntegral (h : IsOrder F Λ) {x : E} (hx : x ∈ Λ) : IsIntegral R x :
   IsIntegral.of_mem_of_fg Λ (Module.Finite.iff_fg.1 h.finite) x hx
 
 /-- A finitely generated subalgebra containing an order is an order. -/
-theorem of_le (h : IsOrder F Λ) (hle : Λ ≤ Γ) [Module.Finite R Γ] : IsOrder F Γ :=
-  have : (Subalgebra.toSubmodule Λ).IsLattice F := h
-  isOrder_iff_isLattice.2 <|
-    IsLattice.of_le_of_isLattice_of_fg F (Subalgebra.toSubmodule.monotone hle)
-      (Module.Finite.iff_fg.1 inferInstance)
+theorem of_le (h : IsOrder F Λ) (hle : Λ ≤ Γ) [Module.Finite R Γ] : IsOrder F Γ := by
+  refine isOrder_iff.2 ⟨inferInstance, ?_⟩
+  rw [eq_top_iff, ← h.span_eq_top]
+  exact span_mono fun _ hx => hle hx
 
 end IsOrder
 
@@ -133,9 +128,9 @@ theorem isOrder_op_iff {Λ : Subalgebra R E} : IsOrder F Λ.op ↔ IsOrder F Λ 
   rw [isOrder_iff, isOrder_iff, hspan, Submodule.map_eq_top_iff,
     Module.Finite.equiv_iff Λ.linearEquivOp]
 
-omit [Algebra F E] [Algebra R E] [IsScalarTower R F E] in
+omit [Algebra F E] [Algebra R E] in
 /-- The image of `R` is an `R`-order in `F`. -/
-theorem isOrder_bot : IsOrder F (⊥ : Subalgebra R F) := by
+theorem isOrder_bot [Algebra R F] : IsOrder F (⊥ : Subalgebra R F) := by
   refine isOrder_iff.2 ⟨inferInstance, eq_top_iff.2 fun x _ => ?_⟩
   simpa using smul_mem (span F ((⊥ : Subalgebra R F) : Set F)) x
     (subset_span (one_mem (⊥ : Subalgebra R F)))
@@ -144,8 +139,7 @@ end Basic
 
 section Commutative
 
-variable {R F E : Type*} [CommRing R] [CommRing F] [CommRing E]
-  [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+variable {R F E : Type*} [CommRing R] [CommRing F] [CommRing E] [Algebra F E] [Algebra R E]
 
 /-- In a commutative algebra, every `R`-order lies in the integral closure of `R`. -/
 theorem IsOrder.le_integralClosure {Λ : Subalgebra R E} (h : IsOrder F Λ) :
@@ -153,6 +147,19 @@ theorem IsOrder.le_integralClosure {Λ : Subalgebra R E} (h : IsOrder F Λ) :
   fun _ hx => h.isIntegral hx
 
 end Commutative
+
+section Lattice
+
+variable {R F E : Type*} [CommRing R] [Field F] [Ring E]
+  [Algebra R F] [IsFractionRing R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+
+/-- Over a fraction field `F` of `R`, being an order is being a full `R`-lattice in `E`. -/
+theorem isOrder_iff_isFullLattice {Λ : Subalgebra R E} :
+    IsOrder F Λ ↔ (Subalgebra.toSubmodule Λ).IsFullLattice F :=
+  ⟨fun h => { toIsLattice := IsLattice.of_fg F h.1, span_eq_top := h.2 },
+    fun h => ⟨IsLattice.fg F _, h.span_eq_top⟩⟩
+
+end Lattice
 
 section Integral
 
@@ -260,7 +267,7 @@ variable (R F G) in
 /-- **Group rings are orders.** For a finite monoid `G`, the group ring `R[G]` is an `R`-order in
 `F[G]`. -/
 theorem groupRing_isOrder [Finite G] : IsOrder F (groupRingSubalgebra R F G) := by
-  refine isOrder_iff_isLattice.2 ⟨?_, eq_top_iff.2 ?_⟩
+  refine ⟨?_, eq_top_iff.2 ?_⟩
   · rw [toSubmodule_groupRingSubalgebra]
     exact fg_span (Set.finite_range _)
   · rw [← (MonoidAlgebra.basis G F).span_eq]
