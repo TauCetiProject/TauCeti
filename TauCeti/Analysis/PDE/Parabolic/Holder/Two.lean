@@ -352,6 +352,31 @@ theorem norm_apply_slabMk_sub_le (f : ParabolicC2HolderSpace α E F hab) (x : E)
     (fun τ _ ↦ HolderSpace.norm_apply_le _ _) s.property t.property
   rwa [timeExtension_of_mem, timeExtension_of_mem, Real.norm_eq_abs] at h
 
+/-- For each fixed `t`, the spatial gradient `x ↦ D_xu(x, t)` is Lipschitz, with the supremum of
+the Hessian as constant: `‖D_xu(y + w, t) - D_xu(y, t)‖ ≤ ‖D_x²u‖ ‖w‖`. -/
+theorem dist_spatialFDerivL_slabMk_add_le (f : ParabolicC2HolderSpace α E F hab) (y w : E)
+    (t : Icc a b) :
+    dist (spatialFDerivL f (slabMk (y + w) t)) (spatialFDerivL f (slabMk y t)) ≤
+      ‖spatialSecondFDerivL f‖ * ‖w‖ := by
+  have hL : LipschitzWith ‖spatialSecondFDerivL f‖₊ fun z ↦ spatialFDerivL f (slabMk z t) :=
+    lipschitzWith_of_nnNorm_fderiv_le (fun z ↦ (f.hasSpatialSecondFDerivAt t z).differentiableAt)
+      fun z ↦ by
+        rw [f.fderiv_spatialFDeriv_eq]
+        exact_mod_cast HolderSpace.norm_apply_le _ _
+  simpa [dist_eq_norm] using hL.dist_le_mul (y + w) y
+
+/-- For each fixed `t`, the map `x ↦ u(x, t)` is Lipschitz, with the supremum of the spatial
+gradient as constant: `‖u(y + w, t) - u(y, t)‖ ≤ ‖D_xu‖ ‖w‖`. -/
+theorem dist_apply_slabMk_add_le (f : ParabolicC2HolderSpace α E F hab) (y w : E)
+    (t : Icc a b) :
+    dist (f (slabMk (y + w) t)) (f (slabMk y t)) ≤ ‖spatialFDerivL f‖ * ‖w‖ := by
+  have hL : LipschitzWith ‖spatialFDerivL f‖₊ fun z ↦ f (slabMk z t) :=
+    lipschitzWith_of_nnNorm_fderiv_le (fun z ↦ (f.hasSpatialFDerivAt t z).differentiableAt)
+      fun z ↦ by
+        rw [f.fderiv_eq]
+        exact_mod_cast (spatialFDerivL f).norm_coe_le_norm _
+  simpa [dist_eq_norm] using hL.dist_le_mul (y + w) y
+
 /-! ### Locality of the derivative fields -/
 
 section Locality

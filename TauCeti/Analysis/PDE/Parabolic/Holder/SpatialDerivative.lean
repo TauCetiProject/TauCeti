@@ -68,11 +68,6 @@ section Slab
 variable {E Y : Type*} [NormedAddCommGroup E] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
   {t₀ t₁ : ℝ}
 
-/-- The time slices of a parabolic Hölder map are Hölder in space, with its norm as constant. -/
-private theorem holderWith_slabMk (F : HolderSpace α (slab (E := E) t₀ t₁) Y) (s : Icc t₀ t₁) :
-    HolderWith ‖F‖₊ α fun y ↦ F (slabMk y s) := fun y z ↦ by
-  simpa [edist_slabMk] using F.holderWith_nnnorm (slabMk y s) (slabMk z s)
-
 /-- The first-order Taylor estimate along `e` for the time slice of a scalar parabolic Hölder map
 whose derivative along `e` is a parabolic Hölder map. -/
 private theorem abs_sub_sub_mul_le_of_hasLineDerivAt [NormedSpace ℝ E]
@@ -81,7 +76,7 @@ private theorem abs_sub_sub_mul_le_of_hasLineDerivAt [NormedSpace ℝ E]
     |F (slabMk (y + h • e) s) - F (slabMk y s) - h * F' (slabMk y s)| ≤
       ‖F'‖ * ‖h • e‖ ^ (α : ℝ) * |h| := by
   simpa [Real.norm_eq_abs, smul_eq_mul] using
-    (holderWith_slabMk F' s).norm_sub_sub_smul_le_of_hasLineDerivAt hF y h
+    (F'.holderWith_slabMk s).norm_sub_sub_smul_le_of_hasLineDerivAt hF y h
 
 /-- One term of the forcing of a difference quotient. For a scalar parabolic Hölder map `F` with
 derivative `F'` along `e` and a function `m` on the slab with `|m (y + h e)| ≤ M` and
@@ -113,30 +108,6 @@ private theorem abs_sub_mul_sub_mul_le_of_hasLineDerivAt [NormedSpace ℝ E]
             (mul_nonneg (abs_nonneg h) (norm_nonneg _)))
     _ = |h| * (‖F'‖ * ‖h • e‖ ^ (α : ℝ) * M + ‖F'‖ * D) := by ring
 
-/-- The spatial gradient of `u ∈ C_b^{2+α,1+α/2}` is Lipschitz in space, with the supremum of the
-Hessian as constant. -/
-private theorem dist_spatialFDerivL_slabMk_add_le [NormedSpace ℝ E] {ht : t₀ < t₁}
-    (u : ParabolicC2HolderSpace α E Y ht) (y w : E) (s : Icc t₀ t₁) :
-    dist (spatialFDerivL u (slabMk (y + w) s)) (spatialFDerivL u (slabMk y s)) ≤
-      ‖spatialSecondFDerivL u‖ * ‖w‖ := by
-  have hL : LipschitzWith ‖spatialSecondFDerivL u‖₊ fun z ↦ spatialFDerivL u (slabMk z s) :=
-    lipschitzWith_of_nnNorm_fderiv_le (fun z ↦ (u.hasSpatialSecondFDerivAt s z).differentiableAt)
-      fun z ↦ by
-        rw [u.fderiv_spatialFDeriv_eq]
-        exact_mod_cast HolderSpace.norm_apply_le _ _
-  simpa [dist_eq_norm] using hL.dist_le_mul (y + w) y
-
-/-- `u ∈ C_b^{2+α,1+α/2}` is Lipschitz in space, with the supremum of the gradient as constant. -/
-private theorem dist_apply_slabMk_add_le [NormedSpace ℝ E] {ht : t₀ < t₁}
-    (u : ParabolicC2HolderSpace α E Y ht) (y w : E) (s : Icc t₀ t₁) :
-    dist (u (slabMk (y + w) s)) (u (slabMk y s)) ≤ ‖spatialFDerivL u‖ * ‖w‖ := by
-  have hL : LipschitzWith ‖spatialFDerivL u‖₊ fun z ↦ u (slabMk z s) :=
-    lipschitzWith_of_nnNorm_fderiv_le (fun z ↦ (u.hasSpatialFDerivAt s z).differentiableAt)
-      fun z ↦ by
-        rw [u.fderiv_eq]
-        exact_mod_cast (spatialFDerivL u).norm_coe_le_norm _
-  simpa [dist_eq_norm] using hL.dist_le_mul (y + w) y
-
 end Slab
 
 section Euclidean
@@ -147,16 +118,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 `TauCeti.Analysis.PDE.Parabolic.Holder.Operator`. -/
 local instance : NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :=
   inferInstance
-
-/-- An entry of a bilinear form at two vectors of the standard basis is bounded by its norm. -/
-private theorem abs_apply_single_single_le (H : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
-    (i j : ι) : |H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ ‖H‖ := by
-  simpa using H.le_opNorm₂ (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
-
-/-- An entry of a covector at a vector of the standard basis is bounded by its norm. -/
-private theorem abs_apply_single_le (l : EuclideanSpace ℝ ι →L[ℝ] ℝ) (i : ι) :
-    |l (EuclideanSpace.single i 1)| ≤ ‖l‖ := by
-  simpa using l.le_opNorm (EuclideanSpace.single i (1 : ℝ))
 
 variable {t₀ t₁ : ℝ} {ht : t₀ < t₁}
 
@@ -231,12 +192,13 @@ private theorem abs_spatialSecondFDerivL_apply_le
           (EuclideanSpace.single j 1) -
         spatialSecondFDerivL u (slabMk y s) (EuclideanSpace.single i 1)
           (EuclideanSpace.single j 1)| ≤ ‖spatialSecondFDerivL u‖ * ‖w‖ ^ (α : ℝ) := by
-  refine ⟨(abs_apply_single_single_le _ i j).trans (HolderSpace.norm_apply_le _ _), ?_⟩
-  have h₁ := abs_apply_single_single_le (spatialSecondFDerivL u (slabMk (y + w) s) -
-    spatialSecondFDerivL u (slabMk y s)) i j
+  refine ⟨(ContinuousLinearMap.abs_apply_single_single_le _ i j).trans
+    (HolderSpace.norm_apply_le _ _), ?_⟩
+  have h₁ := ContinuousLinearMap.abs_apply_single_single_le
+    (spatialSecondFDerivL u (slabMk (y + w) s) - spatialSecondFDerivL u (slabMk y s)) i j
   rw [_root_.sub_apply, _root_.sub_apply, ← dist_eq_norm] at h₁
   refine h₁.trans ?_
-  simpa [dist_eq_norm] using (holderWith_slabMk (spatialSecondFDerivL u) s).dist_le (y + w) y
+  simpa [dist_eq_norm] using ((spatialSecondFDerivL u).holderWith_slabMk s).dist_le (y + w) y
 
 /-- The gradient entries of `u` are bounded by `‖D_xu‖`, and they change by at most
 `‖D_x²u‖ ‖w‖` under a spatial translation by `w`. -/
@@ -246,8 +208,9 @@ private theorem abs_spatialFDerivL_apply_le (u : ParabolicC2HolderSpace α (Eucl
       |spatialFDerivL u (slabMk (y + w) s) (EuclideanSpace.single i 1) -
         spatialFDerivL u (slabMk y s) (EuclideanSpace.single i 1)| ≤
           ‖spatialSecondFDerivL u‖ * ‖w‖ := by
-  refine ⟨(abs_apply_single_le _ i).trans ((spatialFDerivL u).norm_coe_le_norm _), ?_⟩
-  have h₁ := abs_apply_single_le (spatialFDerivL u (slabMk (y + w) s) -
+  refine ⟨(ContinuousLinearMap.abs_apply_single_le _ i).trans
+    ((spatialFDerivL u).norm_coe_le_norm _), ?_⟩
+  have h₁ := ContinuousLinearMap.abs_apply_single_le (spatialFDerivL u (slabMk (y + w) s) -
     spatialFDerivL u (slabMk y s)) i
   rw [_root_.sub_apply, ← dist_eq_norm] at h₁
   exact h₁.trans (dist_spatialFDerivL_slabMk_add_le u y w s)
@@ -277,16 +240,16 @@ private theorem exists_tendsto_and_abs_euclideanParabolicOperatorL_smul_translat
         K ‖h • e‖ := by
   set N₂ := ‖spatialSecondFDerivL u‖
   set N₁ := ‖spatialFDerivL u‖
-  refine ⟨fun δ ↦ ‖f'‖ * δ ^ (α : ℝ) +
+  set K : ℝ → ℝ := fun δ ↦ ‖f'‖ * δ ^ (α : ℝ) +
       ∑ i, ∑ j, (‖a' i j‖ * δ ^ (α : ℝ) * N₂ + ‖a' i j‖ * (N₂ * δ ^ (α : ℝ))) +
       ∑ i, (‖b' i‖ * δ ^ (α : ℝ) * N₁ + ‖b' i‖ * (N₂ * δ)) +
-      (‖c'‖ * δ ^ (α : ℝ) * ‖valueL u‖ + ‖c'‖ * (N₁ * δ)), ?_, fun h hh q ↦ ?_⟩
+      (‖c'‖ * δ ^ (α : ℝ) * ‖valueL u‖ + ‖c'‖ * (N₁ * δ)) with hK
+  refine ⟨K, ?_, fun h hh q ↦ ?_⟩
   · have : Continuous fun δ : ℝ ↦ δ ^ (α : ℝ) := Real.continuous_rpow_const α.property
-    simpa [Real.zero_rpow (NNReal.coe_ne_zero.2 hα₀.ne')] using
-      (by fun_prop : Continuous fun δ : ℝ ↦ ‖f'‖ * δ ^ (α : ℝ) +
-        ∑ i, ∑ j, (‖a' i j‖ * δ ^ (α : ℝ) * N₂ + ‖a' i j‖ * (N₂ * δ ^ (α : ℝ))) +
-        ∑ i, (‖b' i‖ * δ ^ (α : ℝ) * N₁ + ‖b' i‖ * (N₂ * δ)) +
-        (‖c'‖ * δ ^ (α : ℝ) * ‖valueL u‖ + ‖c'‖ * (N₁ * δ))).tendsto 0
+    have hKc : Continuous K := by
+      rw [hK]
+      fun_prop
+    simpa [hK, Real.zero_rpow (NNReal.coe_ne_zero.2 hα₀.ne')] using hKc.tendsto 0
   obtain ⟨y, s, rfl⟩ : ∃ y s, slabMk y s = q := ⟨_, _, slabMk_space_slabTime q⟩
   rw [euclideanParabolicOperatorL_smul_translateLIE_sub_sub_apply hα hu hv hh, abs_mul, abs_inv,
     inv_mul_le_iff₀ (abs_pos.2 hh)]
@@ -309,7 +272,7 @@ private theorem exists_tendsto_and_abs_euclideanParabolicOperatorL_smul_translat
     ((abs_add_le _ _).trans (add_le_add le_rfl ((Finset.abs_sum_le_sum_abs _ _).trans
       (Finset.sum_le_sum fun i _ ↦ Finset.abs_sum_le_sum_abs _ _))))
     (Finset.abs_sum_le_sum_abs _ _))) le_rfl)).trans (key.trans (le_of_eq ?_))
-  simp only [mul_add, Finset.mul_sum]
+  simp only [hK, mul_add, Finset.mul_sum]
   ring
 
 omit [DecidableEq ι] in
@@ -329,7 +292,6 @@ private theorem abs_smul_translateLIE_sub_sub_apply_le
     (fun z ↦ by simpa [hg'] using
       (u.hasSpatialFDerivAt ⟨t₀, left_mem_Icc.2 ht.le⟩ z).hasLineDerivAt e) y h
   simp only [Real.norm_eq_abs, smul_eq_mul, NNReal.coe_one, Real.rpow_one, coe_nnNorm] at h₁
-  rw [← inv_mul_cancel_left₀ (abs_ne_zero.2 hh) (‖g'.iteratedFDeriv 1‖ * ‖h • e‖), ← abs_inv]
   calc _ = |h⁻¹| * |u (slabMk (y + h • e) ⟨t₀, left_mem_Icc.2 ht.le⟩) -
         u (slabMk y ⟨t₀, left_mem_Icc.2 ht.le⟩) - h * g' y| := by
         rw [← abs_mul]
@@ -337,8 +299,8 @@ private theorem abs_smul_translateLIE_sub_sub_apply_le
           IsometryEquiv.addRight_apply, hv, smul_eq_mul]
         congr 1
         field_simp
-    _ ≤ _ := by
-        gcongr
+    _ ≤ ‖g'.iteratedFDeriv 1‖ * ‖h • e‖ := by
+        rw [abs_inv, inv_mul_le_iff₀ (abs_pos.2 hh)]
         linarith
 
 /-- **The spatial derivative of a solution solves the differentiated Cauchy problem.** Let
