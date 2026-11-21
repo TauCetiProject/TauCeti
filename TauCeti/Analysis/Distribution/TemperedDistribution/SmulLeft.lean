@@ -34,6 +34,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
+  temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 -/
 
 public section
@@ -73,6 +75,20 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
   simp [SchwartzMap.lineDerivOp_smulLeftCLM hg, ← map_add]
 
 end Deriv
+
+section Delta
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Multiplying the Dirac mass at `ξ` by a function `g` of temperate growth multiplies it by the
+value `g ξ`. -/
+@[simp]
+theorem smulLeftCLM_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
+    smulLeftCLM ℂ g (delta ξ) = g ξ • delta ξ := by
+  ext f
+  simp [SchwartzMap.smulLeftCLM_apply_apply hg]
+
+end Delta
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]

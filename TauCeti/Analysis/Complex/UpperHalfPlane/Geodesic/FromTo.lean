@@ -59,6 +59,9 @@ left half-plane up to that reversal (`extLeftHalfPlane_eq_or_eq_mul_pslS_of_rang
 * `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atTop_atImInfty`,
   `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atBot_atImInfty`: a vertical geodesic line goes to
   `i∞` along its end at `∞`.
+* `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atBot_coe`,
+  `TauCeti.UpperHalfPlane.tendsto_geodesicLine_atTop_coe`: a geodesic line converges in `ℂ` to its
+  real backward or forward ideal endpoint.
 * `TauCeti.UpperHalfPlane.eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane`:
   all points high enough lie strictly to the left of such a line.
 
@@ -77,7 +80,7 @@ public section
 noncomputable section
 
 open UpperHalfPlane
-open scoped MatrixGroups Pointwise OnePoint
+open scoped MatrixGroups Pointwise OnePoint Topology
 
 namespace TauCeti.UpperHalfPlane
 
@@ -668,6 +671,37 @@ theorem tendsto_geodesicLine_atBot_atImInfty {g : PSL(2, ℝ)}
     Filter.Tendsto (geodesicLine g) Filter.atBot atImInfty := by
   have h := (tendsto_geodesicLine_atTop_atImInfty (g := g * pslS)
     (by rw [mul_smul, pslS_smul_infty, hg])).comp Filter.tendsto_neg_atBot_atTop
+  refine h.congr fun t ↦ ?_
+  rw [Function.comp_apply, geodesicLine_mul_pslS, neg_neg]
+
+/-- Backwards along a geodesic line starting from a real ideal point `x`, the points converge in
+`ℂ` to `x`. -/
+theorem tendsto_geodesicLine_atBot_coe {g : PSL(2, ℝ)} {x : ℝ}
+    (hg : g • ((0 : ℝ) : OnePoint ℝ) = (x : OnePoint ℝ)) :
+    Filter.Tendsto (fun t : ℝ ↦ (geodesicLine g t : ℂ)) Filter.atBot (𝓝 (x : ℂ)) := by
+  induction g using QuotientGroup.induction_on with | H a =>
+  obtain ⟨hd, hb⟩ := Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_coe_iff.1 hg
+  have hexp : Filter.Tendsto (fun t : ℝ ↦ (⟨0, Real.exp t⟩ : ℂ)) Filter.atBot (𝓝 0) := by
+    have h : (fun t : ℝ ↦ (⟨0, Real.exp t⟩ : ℂ)) = fun t ↦ (Real.exp t : ℂ) * Complex.I :=
+      funext fun t ↦ by rw [Complex.mk_eq_add_mul_I, Complex.ofReal_zero, zero_add]
+    rw [h]
+    simpa using ((Complex.continuous_ofReal.tendsto 0).comp Real.tendsto_exp_atBot).mul_const
+      Complex.I
+  have hlin (c d : ℝ) :
+      Filter.Tendsto (fun t : ℝ ↦ (c : ℂ) * ⟨0, Real.exp t⟩ + d) Filter.atBot (𝓝 (d : ℂ)) := by
+    simpa using (tendsto_const_nhds.mul hexp).add tendsto_const_nhds
+  have hdiv := (hlin (a 0 0) (a 0 1)).div (hlin (a 1 0) (a 1 1)) (Complex.ofReal_ne_zero.2 hd)
+  rw [hb, Complex.ofReal_mul, mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.2 hd)] at hdiv
+  exact hdiv.congr fun t ↦ by
+    simp [geodesicLine_def, UpperHalfPlane.pslMk_smul,
+      UpperHalfPlane.coe_specialLinearGroup_apply, hb]
+
+/-- Along a geodesic line ending at a real ideal point `x`, the points converge in `ℂ` to `x`. -/
+theorem tendsto_geodesicLine_atTop_coe {g : PSL(2, ℝ)} {x : ℝ}
+    (hg : g • (∞ : OnePoint ℝ) = (x : OnePoint ℝ)) :
+    Filter.Tendsto (fun t : ℝ ↦ (geodesicLine g t : ℂ)) Filter.atTop (𝓝 (x : ℂ)) := by
+  have h := (tendsto_geodesicLine_atBot_coe (g := g * pslS)
+    (by rw [mul_smul, pslS_smul_zero, hg])).comp Filter.tendsto_neg_atTop_atBot
   refine h.congr fun t ↦ ?_
   rw [Function.comp_apply, geodesicLine_mul_pslS, neg_neg]
 
