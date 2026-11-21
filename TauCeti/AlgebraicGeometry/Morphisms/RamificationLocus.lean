@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 public import TauCeti.Topology.Sets.Opens
+import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # The ramification, non-étale and branch loci of a morphism of schemes
@@ -56,6 +57,8 @@ local ring of the same dimension is étale
   finite type, in particular finite, Stacks 01WM).
 * `AlgebraicGeometry.Scheme.Hom.etale_morphismRestrict_iff`: the restriction of `f` over an open
   `U` is étale iff `f⁻¹ U` does not meet the non-étale locus.
+* `AlgebraicGeometry.Scheme.Hom.nonEtaleLocus_eq_empty_iff`: `f` is étale iff its non-étale
+  locus is empty.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_subset_nonEtaleLocus`.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_nonEtaleLocus`: for a dominant morphism of
   integral schemes, locally of finite type, onto a locally Noetherian normal (for instance,
@@ -194,24 +197,28 @@ theorem etale_morphismRestrict_iff (U : Y.Opens) :
   refine ⟨fun _ ↦ Set.disjoint_left.mpr fun x hx hne ↦ hne ⟨f ⁻¹ᵁ U, hx, ?_⟩, fun h ↦ ?_⟩
   · rw [← morphismRestrict_ι]
     infer_instance
-  -- Instance search does not find `IsZariskiLocalAtSource @Etale` by itself.
-  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @Etale) (Q := RingHom.Etale)
-  have hx (z : (f ⁻¹ᵁ U).toScheme) : ∃ O : X.Opens, (f ⁻¹ᵁ U).ι z ∈ O ∧ Etale (O.ι ≫ f) :=
+  -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  refine IsZariskiLocalAtSource.of_forall_exists_ι_comp fun z ↦ ?_
+  obtain ⟨O, hzO, hO⟩ : ∃ O : X.Opens, (f ⁻¹ᵁ U).ι z ∈ O ∧ Etale (O.ι ≫ f) :=
     not_not.mp (Set.disjoint_left.mp h z.property)
-  choose O hzO hO using hx
-  refine IsZariskiLocalAtSource.of_iSup_eq_top (P := @Etale)
-    (fun z ↦ (f ⁻¹ᵁ U).ι ⁻¹ᵁ O z) ?_ fun z ↦ ?_
-  · exact top_le_iff.mp fun z _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨z, hzO z⟩
-  · -- On `(f ⁻¹ᵁ U).ι ⁻¹ᵁ O z` the restriction of `f` factors as the open immersion
-    -- `(f ⁻¹ᵁ U).ι ∣_ O z` into `O z`, followed by `(O z).ι ≫ f`, which is étale.
-    have := hO z
-    have hfac : (((f ⁻¹ᵁ U).ι ⁻¹ᵁ O z).ι ≫ f ∣_ U) ≫ U.ι =
-        (f ⁻¹ᵁ U).ι ∣_ O z ≫ (O z).ι ≫ f := by
-      simp only [Category.assoc, morphismRestrict_ι, morphismRestrict_ι_assoc]
-    have : Etale ((((f ⁻¹ᵁ U).ι ⁻¹ᵁ O z).ι ≫ f ∣_ U) ≫ U.ι) := by
-      rw [hfac]
-      infer_instance
-    exact Etale.of_comp _ U.ι
+  refine ⟨(f ⁻¹ᵁ U).ι ⁻¹ᵁ O, hzO, ?_⟩
+  -- On `(f ⁻¹ᵁ U).ι ⁻¹ᵁ O` the restriction of `f` factors as the open immersion
+  -- `(f ⁻¹ᵁ U).ι ∣_ O` into `O`, followed by `O.ι ≫ f`, which is étale.
+  have hfac : (((f ⁻¹ᵁ U).ι ⁻¹ᵁ O).ι ≫ f ∣_ U) ≫ U.ι = (f ⁻¹ᵁ U).ι ∣_ O ≫ O.ι ≫ f := by
+    simp only [Category.assoc, morphismRestrict_ι, morphismRestrict_ι_assoc]
+  have : Etale ((((f ⁻¹ᵁ U).ι ⁻¹ᵁ O).ι ≫ f ∣_ U) ≫ U.ι) := by
+    rw [hfac]
+    infer_instance
+  exact Etale.of_comp _ U.ι
+
+/-- A morphism is étale iff its non-étale locus is empty: being étale is local on the source. -/
+theorem nonEtaleLocus_eq_empty_iff : f.nonEtaleLocus = ∅ ↔ Etale f := by
+  -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  refine ⟨fun h ↦ IsZariskiLocalAtSource.of_forall_exists_ι_comp fun x ↦
+    not_not.mp fun hx ↦ (h ▸ hx : x ∈ (∅ : Set X)), fun _ ↦
+    Set.eq_empty_of_forall_notMem fun x hx ↦ hx ⟨⊤, trivial, inferInstance⟩⟩
 
 /-- An étale point is unramified: the ramification locus is contained in the non-étale locus. -/
 theorem ramificationLocus_subset_nonEtaleLocus : f.ramificationLocus ⊆ f.nonEtaleLocus := by
@@ -292,14 +299,12 @@ theorem support_subset_ramificationLocus_specMap (φ : R →+* S) {A : Type*} [C
   let : Module R M := Module.compHom M (algebraMap R S)
   have : IsScalarTower R S M := IsScalarTower.of_compHom R S M
   -- Vanishing on the image of `φ` makes `D` linear over `R`, which acts on `M` through `φ`.
-  let D' : Derivation R S M := Derivation.mk'
-    { toFun := D, map_add' := D.map_add, map_smul' := fun r s ↦ by
-        simp [Algebra.smul_def, D.leibniz, RingHom.algebraMap_toAlgebra, hφ]; rfl }
-      fun a b ↦ D.leibniz a b
+  let D' : Derivation R S M := D.ofMapAlgebraMap fun r ↦ by
+    rw [RingHom.algebraMap_toAlgebra, hφ]
   have hsurj : Function.Surjective D'.liftKaehlerDifferential := by
     rw [← LinearMap.range_eq_top, eq_top_iff, ← hD, Submodule.span_le]
     rintro _ ⟨s, rfl⟩
-    exact ⟨KaehlerDifferential.D R S s, D'.liftKaehlerDifferential_comp_D s⟩
+    exact ⟨KaehlerDifferential.D R S s, by simp [D']⟩
   refine (Module.support_subset_of_surjective _ hsurj).trans ?_
   rw [Scheme.Hom.ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support,
     compl_compl]

@@ -107,23 +107,13 @@ section RestrictAlong
 
 variable {F K M : Type*} [Field F] [Field K] [Field M] [Algebra F K] [Algebra F M] [Normal F M]
 
-private theorem restrictNormalHom_eq_autCongr (f : M →ₐ[F] K) (σ : Gal(K/F)) :
-    f.equivFieldRange.symm.autCongr (AlgEquiv.restrictNormalHom f.fieldRange σ) =
-      f.restrictNormalHom σ := by
-  symm
-  refine f.restrictNormalHom_eq_iff.2 fun x ↦ ?_
-  simp only [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm]
-  symm
-  rw [← AlgHom.equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply,
-    AlgEquiv.restrictNormalHom_apply, ← AlgHom.equivFieldRange_apply_coe]
-
 /-- **Restriction along an embedding of a normal extension is continuous** for the Krull
 topologies, with no normality assumption on `K/F` or finiteness assumption on `M/F`. -/
 theorem _root_.AlgHom.continuous_restrictNormalHom (f : M →ₐ[F] K) :
     Continuous f.restrictNormalHom :=
   (f.equivFieldRange.symm.continuous_autCongr.comp
     (InfiniteGalois.restrictNormalHom_continuous f.fieldRange)).congr
-    (restrictNormalHom_eq_autCongr f)
+    f.restrictNormalHom_eq_autCongr
 
 /-- **Restriction to a normal intermediate field in a scalar tower is continuous** for the Krull
 topologies, with no normality assumption on the top field `K/F`. -/
@@ -157,7 +147,7 @@ theorem _root_.AlgHom.quotientKerRestrictNormalHomEquiv_mk (f : M →ₐ[F] K) [
   rw [AlgHom.quotientKerRestrictNormalHomEquiv, ContinuousMulEquiv.trans_apply,
     ContinuousMulEquiv.trans_apply, Subgroup.quotientContinuousMulEquivOfEq_mk,
     quotientFixingSubgroupEquiv_mk, AlgEquiv.autContinuousCongr_apply]
-  exact restrictNormalHom_eq_autCongr f σ
+  exact f.restrictNormalHom_eq_autCongr σ
 
 /-- The inverse of `quotientKerRestrictNormalHomEquiv` sends `f.restrictNormalHom σ` back to the
 class of `σ`. -/

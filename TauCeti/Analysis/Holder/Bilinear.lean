@@ -18,7 +18,9 @@ This supplies multiplication and scalar multiplication in Hölder spaces with th
 supremum-plus-Hölder norm, without replacing the existing space or its norm. When the second
 factor vanishes off a set on which the first is small, the first factor enters the norm of the
 product only through that bound and its Hölder seminorm
-(`ContinuousLinearMap.norm_compHolder₂_apply_le_of_eq_zero`).
+(`ContinuousLinearMap.norm_compHolder₂_apply_le_of_eq_zero`), or more generally through any Hölder
+constant of the first factor on that set
+(`ContinuousLinearMap.norm_compHolder₂_apply_le_of_holderOnWith_of_eq_zero`).
 
 If the second factor `f` vanishes off a set `s`, the first factor need only be a Hölder function
 `g` on `s`: the function equal to `B (g x) (f x)` on `s` and to zero off `s` is Hölder on the whole
@@ -139,18 +141,18 @@ theorem norm_lsmul_compHolder₂_const_le (f : HolderSpace α X ℝ) (c : F) :
     (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.opNorm_lsmul_le)
     (HolderSpace.norm_const_le c) (norm_nonneg _) (norm_nonneg f))
 
-/-- If `g` vanishes off a set `s` on which `‖f‖ ≤ δ`, then `f` enters the norm of the product only
-through `δ` and its Hölder seminorm: `‖B (f, g)‖ ≤ ‖B‖ (δ ‖g‖ + [f]_α ‖g‖_∞)`. This is the
-estimate for freezing a coefficient field on the support of a localized function. -/
-theorem norm_compHolder₂_apply_le_of_eq_zero (B : E →L[ℝ] F →L[ℝ] G) (f : HolderSpace α X E)
-    (g : HolderSpace α X F) {s : Set X} {δ : ℝ≥0} (hf : ∀ x ∈ s, ‖f x‖ ≤ δ)
+/-- If `g` vanishes off a set `s` on which `‖f‖ ≤ M` and `f` is `K`-Hölder, then `f` enters the
+norm of the product only through `M` and `K`: `‖B (f, g)‖ ≤ ‖B‖ (M ‖g‖ + K ‖g‖_∞)`. Nothing about
+`f` off `s` is used. -/
+theorem norm_compHolder₂_apply_le_of_holderOnWith_of_eq_zero (B : E →L[ℝ] F →L[ℝ] G)
+    (f : HolderSpace α X E) (g : HolderSpace α X F) {s : Set X} {K M : ℝ≥0}
+    (hfK : HolderOnWith K α (f : X → E) s) (hf : ∀ x ∈ s, ‖f x‖ ≤ M)
     (hg : ∀ x ∉ s, g x = 0) :
-    ‖B.compHolder₂ f g‖ ≤
-      ‖B‖ * (δ * ‖g‖ + nnHolderNorm α (f : X → E) * ‖g.toBoundedContinuousFunction‖) := by
+    ‖B.compHolder₂ f g‖ ≤ ‖B‖ * (M * ‖g‖ + K * ‖g.toBoundedContinuousFunction‖) := by
   have hgM : ∀ x, ‖g x‖ ≤ ‖g.toBoundedContinuousFunction‖₊ := fun x ↦ by
     simpa using g.toBoundedContinuousFunction.norm_coe_le_norm x
   have hsup : ‖(B.compHolder₂ f g).toBoundedContinuousFunction‖ ≤
-      ‖B‖ * δ * ‖g.toBoundedContinuousFunction‖ := by
+      ‖B‖ * M * ‖g.toBoundedContinuousFunction‖ := by
     refine (BoundedContinuousFunction.norm_le (by positivity)).mpr fun x ↦ ?_
     rw [HolderSpace.toBoundedContinuousFunction_apply, compHolder₂_apply]
     by_cases hx : x ∈ s
@@ -158,24 +160,33 @@ theorem norm_compHolder₂_apply_le_of_eq_zero (B : E →L[ℝ] F →L[ℝ] G) (
     · rw [hg x hx, map_zero, norm_zero]
       positivity
   have hsemi : (nnHolderNorm α ((B.compHolder₂ f g).toBoundedContinuousFunction : X → G) : ℝ) ≤
-      ‖B‖ * (δ * nnHolderNorm α (g : X → F) +
-        ‖g.toBoundedContinuousFunction‖ * nnHolderNorm α (f : X → E)) := by
+      ‖B‖ * (M * nnHolderNorm α (g : X → F) + ‖g.toBoundedContinuousFunction‖ * K) := by
     have heq : ((B.compHolder₂ f g).toBoundedContinuousFunction : X → G) =
         fun x ↦ B (f x) (g x) := by
       funext x
       rw [HolderSpace.toBoundedContinuousFunction_apply, compHolder₂_apply]
     rw [heq]
-    have h := B.holderWith_comp₂_of_eq_zero (f.memHolder.holderWith.holderOnWith s)
-      g.memHolder.holderWith (Mf := δ) (Mg := ‖g.toBoundedContinuousFunction‖₊)
+    have h := B.holderWith_comp₂_of_eq_zero hfK g.memHolder.holderWith (Mf := M)
+      (Mg := ‖g.toBoundedContinuousFunction‖₊)
       (fun x hx ↦ by simpa using hf x hx) (fun x _ ↦ by simpa using hgM x)
       (fun x hx ↦ by simpa using hg x hx)
     exact_mod_cast (by simpa using h.nnholderNorm_le :
       nnHolderNorm α (fun x ↦ B (f x) (g x)) ≤
-        ‖B‖₊ * (δ * nnHolderNorm α (g : X → F) +
-          ‖g.toBoundedContinuousFunction‖₊ * nnHolderNorm α (f : X → E)))
+        ‖B‖₊ * (M * nnHolderNorm α (g : X → F) + ‖g.toBoundedContinuousFunction‖₊ * K))
   rw [HolderSpace.norm_def, HolderSpace.norm_def g]
   simp only [HolderSpace.coe_toBoundedContinuousFunction] at hsemi ⊢
   linarith
+
+/-- If `g` vanishes off a set `s` on which `‖f‖ ≤ δ`, then `f` enters the norm of the product only
+through `δ` and its Hölder seminorm: `‖B (f, g)‖ ≤ ‖B‖ (δ ‖g‖ + [f]_α ‖g‖_∞)`. This is the
+estimate for freezing a coefficient field on the support of a localized function. -/
+theorem norm_compHolder₂_apply_le_of_eq_zero (B : E →L[ℝ] F →L[ℝ] G) (f : HolderSpace α X E)
+    (g : HolderSpace α X F) {s : Set X} {δ : ℝ≥0} (hf : ∀ x ∈ s, ‖f x‖ ≤ δ)
+    (hg : ∀ x ∉ s, g x = 0) :
+    ‖B.compHolder₂ f g‖ ≤
+      ‖B‖ * (δ * ‖g‖ + nnHolderNorm α (f : X → E) * ‖g.toBoundedContinuousFunction‖) :=
+  B.norm_compHolder₂_apply_le_of_holderOnWith_of_eq_zero f g
+    (f.holderWith.holderOnWith s) hf hg
 
 /-- On a nonempty domain, pointwise lifting preserves the bilinear operator norm. -/
 @[simp]

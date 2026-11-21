@@ -125,6 +125,13 @@ theorem splittingSymbolExponent_replicate (n : ℕ) (x : ℕ × ℕ) :
     splittingSymbolExponent (Multiset.replicate n x) = n * (x.1 * (x.2 - 1)) := by
   simp [splittingSymbolExponent]
 
+/-- Erasing a factor `(f, e) ∈ σ` splits off `f * (e - 1)` from the tame discriminant bound. -/
+theorem splittingSymbolExponent_eq_add_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ} (hx : x ∈ σ) :
+    splittingSymbolExponent σ =
+      x.1 * (x.2 - 1) + splittingSymbolExponent (σ.erase x) := by
+  conv_lhs => rw [← Multiset.cons_erase hx]
+  exact splittingSymbolExponent_cons x (σ.erase x)
+
 /-- The defining formula of `ramificationPartition`. -/
 theorem ramificationPartition_def (σ : Multiset (ℕ × ℕ)) :
     ramificationPartition σ =
@@ -188,6 +195,16 @@ theorem splittingSymbolAut_replicate (n : ℕ) (x : ℕ × ℕ) :
     rw [Multiset.replicate_succ, splittingSymbolAut_cons, Multiset.count_replicate_self, ih,
       pow_succ', Nat.factorial_succ]
     ring
+
+/-- Erasing one copy of a factor `x ∈ σ` divides `#Aut(σ)` by `x.1 * σ.count x`. -/
+theorem splittingSymbolAut_eq_mul_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ} (hx : x ∈ σ) :
+    splittingSymbolAut σ = x.1 * σ.count x * splittingSymbolAut (σ.erase x) := by
+  have hc : (σ.erase x).count x + 1 = σ.count x := by
+    have := Multiset.count_pos.2 hx
+    rw [Multiset.count_erase_self]
+    omega
+  conv_lhs => rw [← Multiset.cons_erase hx]
+  rw [splittingSymbolAut_cons, hc]
 
 /-- The empty splitting symbol has the empty ramification partition. -/
 @[simp]

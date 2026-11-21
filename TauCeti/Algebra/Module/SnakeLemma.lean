@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
+public import TauCeti.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.Quotient.Basic
 
 import Mathlib.Algebra.Exact.Sequence
@@ -49,6 +50,8 @@ different universes.
 * `Function.Exact.snakeδ`: the connecting map `ker i₃ → coker i₁`, with exactness
   `Function.Exact.restrict_ker_snakeδ` at `ker i₃` and `Function.Exact.snakeδ_mapQ_range` at
   `coker i₁`.
+* `LinearMap.snakeδ_prodMap_eq_zero`: the connecting map of a direct sum, with split rows,
+  vanishes.
 * `LinearMap.finiteDimensional_ker₂_of_finiteDimensional_ker₁₃` and
   `LinearMap.finiteDimensional_coker₂_of_finiteDimensional_coker₁₃`: finiteness in the middle.
 * `LinearMap.finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁` and
@@ -163,6 +166,19 @@ theorem Function.Exact.snakeδ_mapQ_range (hf : Exact f₁ f₂) (hg : Exact g�
     (exact_subtype_ker_map i₃) (range i₁).mkQ (exact_map_mkQ_range i₁) (range i₂).mkQ
     (exact_map_mkQ_range i₂) hf₂ hg₁ _ (mapQ_mkQ ..) (range i₁).mkQ_surjective
 
+/-- **The connecting map of a direct sum vanishes.** For the split rows
+`0 → M₁ → M₁ × M₃ → M₃ → 0` and `0 → N₁ → N₁ × N₃ → N₃ → 0` and the vertical maps `j₁`,
+`j₁.prodMap j₃` and `j₃`, the connecting map `ker j₃ → coker j₁` is zero: `x ∈ ker j₃` lifts to
+`(0, x) ∈ ker (j₁.prodMap j₃)`. -/
+theorem LinearMap.snakeδ_prodMap_eq_zero (j₁ : M₁ →ₗ[R] N₁) (j₃ : M₃ →ₗ[R] N₃) :
+    Exact.inl_snd.snakeδ Exact.inl_snd (snd_surjective (R := R)) (inl_injective (R := R))
+      (prodMap_comp_inl j₁ j₃).symm (snd_comp_prodMap j₁ j₃) = 0 := by
+  refine LinearMap.ext fun x ↦ ?_
+  rw [Exact.inl_snd.snakeδ_apply Exact.inl_snd (snd_surjective (R := R)) (inl_injective (R := R))
+    (prodMap_comp_inl j₁ j₃).symm (snd_comp_prodMap j₁ j₃) x (0, x) rfl 0
+    (by simp [mem_ker.1 x.property])]
+  simp
+
 end CommRing
 
 namespace LinearMap
@@ -180,7 +196,7 @@ theorem finiteDimensional_ker₂_of_finiteDimensional_ker₁₃ [FiniteDimension
     [FiniteDimensional k (ker i₃)] (hf : Exact f₁ f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (ker i₂) :=
-  TauCeti.finiteDimensional_of_exact (hf.restrict_ker hg₁ h₁ h₂)
+  (hf.restrict_ker hg₁ h₁ h₂).moduleFinite
 
 /-- In a commutative diagram with exact bottom row and surjective `f₂`, if the outer vertical maps
 have finite-dimensional cokernels, so does the middle one. -/
@@ -189,7 +205,7 @@ theorem finiteDimensional_coker₂_of_finiteDimensional_coker₁₃
     (hg : Exact g₁ g₂) (hf₂ : Surjective f₂)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (N₂ ⧸ range i₂) :=
-  TauCeti.finiteDimensional_of_exact (hg.mapQ_range hf₂ h₁ h₂)
+  (hg.mapQ_range hf₂ h₁ h₂).moduleFinite
 
 /-- In a commutative square `g₁ ∘ i₁ = i₂ ∘ f₁` with `f₁` injective, a finite-dimensional kernel
 of `i₂` forces a finite-dimensional kernel of `i₁`. -/
@@ -222,7 +238,7 @@ theorem finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁ [FiniteDim
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (ker i₃) :=
-  TauCeti.finiteDimensional_of_exact (hf.restrict_ker_snakeδ hg hf₂ hg₁ h₁ h₂)
+  (hf.restrict_ker_snakeδ hg hf₂ hg₁ h₁ h₂).moduleFinite
 
 /-- In a commutative diagram with exact rows, `f₂` surjective and `g₁` injective, if the kernel
 of `i₃` and the cokernel of `i₂` are finite dimensional, so is the cokernel of `i₁`: the snake
@@ -232,7 +248,7 @@ theorem finiteDimensional_coker₁_of_finiteDimensional_ker₃_coker₂ [FiniteD
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (N₁ ⧸ range i₁) :=
-  TauCeti.finiteDimensional_of_exact (hf.snakeδ_mapQ_range hg hf₂ hg₁ h₁ h₂)
+  (hf.snakeδ_mapQ_range hg hf₂ hg₁ h₁ h₂).moduleFinite
 
 /-- **Additivity of the index along a map of short exact sequences.** For a commutative diagram
 whose rows `0 → M₁ → M₂ → M₃ → 0` and `0 → N₁ → N₂ → N₃ → 0` are short exact, if the outer
