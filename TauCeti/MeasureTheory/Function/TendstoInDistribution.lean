@@ -176,10 +176,6 @@ private theorem abs_integral_map_sub_le_of_lipschitz
       (L : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y ω) (X ω)} := by
   let F' : BoundedContinuousFunction E ℝ := ⟨⟨F, hF_lip.continuous⟩, M, hF_bd⟩
   have hF_meas : Measurable F := F'.continuous.measurable
-  have hFY_meas : AEStronglyMeasurable (fun ω ↦ F (Y ω)) μ'' :=
-    (hF_meas.comp_aemeasurable hY).aestronglyMeasurable
-  have hFX_meas : AEStronglyMeasurable (fun ω ↦ F (X ω)) μ'' :=
-    (hF_meas.comp_aemeasurable hX).aestronglyMeasurable
   have ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ''
   have hM_nonneg : 0 ≤ M := dist_nonneg.trans (hF_bd (X ω₀) (X ω₀))
   have := Measure.isFiniteMeasure_map μ'' Y
@@ -190,7 +186,8 @@ private theorem abs_integral_map_sub_le_of_lipschitz
     (F'.integrable (μ''.map X)).comp_aemeasurable hX
   let S : Set Ω'' := {ω | (L : ℝ) * δ < ‖F (Y ω) - F (X ω)‖}
   have hS : NullMeasurableSet S μ'' :=
-    nullMeasurableSet_lt aemeasurable_const (hFY_meas.sub hFX_meas).norm.aemeasurable
+    nullMeasurableSet_lt aemeasurable_const
+      (h_int_Y.sub h_int_X).aestronglyMeasurable.norm.aemeasurable
   have hS_sub : S ⊆ {ω | δ ≤ dist (Y ω) (X ω)} := by
     intro ω hω
     have hlip := hF_lip.dist_le_mul (Y ω) (X ω)

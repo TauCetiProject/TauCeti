@@ -104,29 +104,41 @@ theorem IsBoundedInProbability.mono_norm_ae [SeminormedAddGroup F] {μ : Measure
     exact lt_of_lt_of_le hY hω
   exact (ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae hsub)).trans hn
 
+/-- Helper for two-argument closure of `IsBoundedInProbability` via a positive output threshold
+function whose tail event lies in the union of the two input tail events. -/
+private theorem isBoundedInProbability_of_union
+    {E₁ E₂ E₃ : Type*} [SeminormedAddGroup E₁] [SeminormedAddGroup E₂] [SeminormedAddGroup E₃]
+    {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → E₁} {Y : ℕ → Ω → E₂} {Z : ℕ → Ω → E₃}
+    (hX : IsBoundedInProbability μ X) (hY : IsBoundedInProbability μ Y)
+    (C : ℝ → ℝ → ℝ) (hC_pos : ∀ {c₁ c₂}, 0 < c₁ → 0 < c₂ → 0 < C c₁ c₂)
+    (hbound : ∀ {c₁ c₂}, 0 < c₁ → 0 < c₂ → ∀ n ω,
+      ‖X n ω‖ ≤ c₁ → ‖Y n ω‖ ≤ c₂ → ‖Z n ω‖ ≤ C c₁ c₂) :
+    IsBoundedInProbability μ Z := by
+  intro ε hε
+  obtain ⟨c₁, hc₁, hX_ev⟩ := hX (ε / 2) (half_pos hε)
+  obtain ⟨c₂, hc₂, hY_ev⟩ := hY (ε / 2) (half_pos hε)
+  refine ⟨C c₁ c₂, hC_pos hc₁ hc₂, ?_⟩
+  filter_upwards [hX_ev, hY_ev] with n hn₁ hn₂
+  have hsub : {ω | C c₁ c₂ < ‖Z n ω‖} ⊆ {ω | c₁ < ‖X n ω‖} ∪ {ω | c₂ < ‖Y n ω‖} := by
+    intro ω hω
+    by_contra hmem
+    rw [Set.mem_union, not_or] at hmem
+    exact not_le_of_gt (Set.mem_ofPred_eq.mp hω)
+      (hbound hc₁ hc₂ n ω (not_lt.1 hmem.1) (not_lt.1 hmem.2))
+  calc μ.real {ω | C c₁ c₂ < ‖Z n ω‖}
+      ≤ μ.real ({ω | c₁ < ‖X n ω‖} ∪ {ω | c₂ < ‖Y n ω‖}) := measureReal_mono hsub
+    _ ≤ μ.real {ω | c₁ < ‖X n ω‖} + μ.real {ω | c₂ < ‖Y n ω‖} := measureReal_union_le _ _
+    _ ≤ ε / 2 + ε / 2 := add_le_add hn₁ hn₂
+    _ = ε := add_halves ε
+
 /-- The sum of two sequences bounded in probability is bounded in probability, under a finite
 measure. -/
 theorem IsBoundedInProbability.add {μ : Measure Ω} [IsFiniteMeasure μ] {X Y : ℕ → Ω → E}
     (hX : IsBoundedInProbability μ X) (hY : IsBoundedInProbability μ Y) :
-    IsBoundedInProbability μ (fun n ω ↦ X n ω + Y n ω) := by
-  intro ε hε
-  obtain ⟨C₁, hC₁, hX_ev⟩ := hX (ε / 2) (half_pos hε)
-  obtain ⟨C₂, hC₂, hY_ev⟩ := hY (ε / 2) (half_pos hε)
-  refine ⟨C₁ + C₂, by positivity, ?_⟩
-  filter_upwards [hX_ev, hY_ev] with n hn₁ hn₂
-  have hsub : {ω | C₁ + C₂ < ‖X n ω + Y n ω‖} ⊆
-      {ω | C₁ < ‖X n ω‖} ∪ {ω | C₂ < ‖Y n ω‖} := by
-    intro ω hω
-    by_contra hmem
-    rw [Set.mem_union, not_or] at hmem
-    have h1 : ‖X n ω‖ ≤ C₁ := not_lt.1 hmem.1
-    have h2 : ‖Y n ω‖ ≤ C₂ := not_lt.1 hmem.2
-    linarith [norm_add_le (X n ω) (Y n ω), Set.mem_ofPred_eq.mp hω]
-  calc μ.real {ω | C₁ + C₂ < ‖X n ω + Y n ω‖}
-      ≤ μ.real ({ω | C₁ < ‖X n ω‖} ∪ {ω | C₂ < ‖Y n ω‖}) := measureReal_mono hsub
-    _ ≤ μ.real {ω | C₁ < ‖X n ω‖} + μ.real {ω | C₂ < ‖Y n ω‖} := measureReal_union_le _ _
-    _ ≤ ε / 2 + ε / 2 := add_le_add hn₁ hn₂
-    _ = ε := add_halves ε
+    IsBoundedInProbability μ (fun n ω ↦ X n ω + Y n ω) :=
+  isBoundedInProbability_of_union hX hY (· + ·) (fun hc₁ hc₂ ↦ by positivity)
+    fun _ _ _ _ h1 h2 ↦ (norm_add_le _ _).trans (add_le_add h1 h2)
 
 /-- The difference of two sequences bounded in probability is bounded in probability, under a
 finite measure. -/
@@ -141,27 +153,9 @@ theorem IsBoundedInProbability.smul {𝕜 : Type*} [SeminormedAddGroup 𝕜]
     [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E] {μ : Measure Ω} [IsFiniteMeasure μ]
     {U : ℕ → Ω → 𝕜} {V : ℕ → Ω → E}
     (hU : IsBoundedInProbability μ U) (hV : IsBoundedInProbability μ V) :
-    IsBoundedInProbability μ (fun n ω ↦ U n ω • V n ω) := by
-  intro ε hε
-  obtain ⟨C₁, hC₁, hU_ev⟩ := hU (ε / 2) (half_pos hε)
-  obtain ⟨C₂, hC₂, hV_ev⟩ := hV (ε / 2) (half_pos hε)
-  refine ⟨C₁ * C₂, by positivity, ?_⟩
-  filter_upwards [hU_ev, hV_ev] with n hn₁ hn₂
-  have hsub : {ω | C₁ * C₂ < ‖U n ω • V n ω‖} ⊆
-      {ω | C₁ < ‖U n ω‖} ∪ {ω | C₂ < ‖V n ω‖} := by
-    intro ω hω
-    by_contra hmem
-    rw [Set.mem_union, not_or] at hmem
-    have h1 : ‖U n ω‖ ≤ C₁ := not_lt.1 hmem.1
-    have h2 : ‖V n ω‖ ≤ C₂ := not_lt.1 hmem.2
-    have hprod : ‖U n ω • V n ω‖ ≤ C₁ * C₂ :=
-      (norm_smul_le (U n ω) (V n ω)).trans (mul_le_mul h1 h2 (norm_nonneg _) hC₁.le)
-    exact not_le_of_gt (Set.mem_ofPred_eq.mp hω) hprod
-  calc μ.real {ω | C₁ * C₂ < ‖U n ω • V n ω‖}
-      ≤ μ.real ({ω | C₁ < ‖U n ω‖} ∪ {ω | C₂ < ‖V n ω‖}) := measureReal_mono hsub
-    _ ≤ μ.real {ω | C₁ < ‖U n ω‖} + μ.real {ω | C₂ < ‖V n ω‖} := measureReal_union_le _ _
-    _ ≤ ε / 2 + ε / 2 := add_le_add hn₁ hn₂
-    _ = ε := add_halves ε
+    IsBoundedInProbability μ (fun n ω ↦ U n ω • V n ω) :=
+  isBoundedInProbability_of_union hU hV (· * ·) (fun hc₁ hc₂ ↦ by positivity)
+    fun hc₁ _ _ _ h1 h2 ↦ (norm_smul_le _ _).trans (mul_le_mul h1 h2 (norm_nonneg _) hc₁.le)
 
 /-- Scaling a sequence bounded in probability by a fixed constant preserves boundedness in
 probability, under a finite measure. -/

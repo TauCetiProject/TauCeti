@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Real.Cardinality
 public import Mathlib.MeasureTheory.Measure.Portmanteau
 
+import Mathlib.Analysis.SumIntegralComparisons
+import Mathlib.MeasureTheory.Integral.Layercake
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
@@ -274,22 +276,6 @@ end MeasureTheory.ProbabilityMeasure
 
 namespace MeasureTheory.ProbabilityMeasure
 
-/-- Pointwise Riemann-sum sandwich for `y ∈ [0, k * a]` with step size `a > 0`. -/
-private theorem mul_card_filter_range_bounds {k : ℕ} {a y : ℝ} (ha : 0 < a) (hy0 : 0 ≤ y)
-    (hyk : y ≤ k * a) :
-    y ≤ a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y).card : ℝ) ∧
-      a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y).card : ℝ) ≤ y + a := by
-  have hceil : ⌈y / a⌉₊ ≤ k := Nat.ceil_le.2 ((div_le_iff₀ ha).2 hyk)
-  have hfilter : ((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y) = Finset.range ⌈y / a⌉₊ := by
-    ext j
-    simp only [Finset.mem_filter, Finset.mem_range, ← lt_div_iff₀ ha, ← Nat.lt_ceil]
-    exact ⟨fun ⟨_, hj⟩ ↦ hj, fun hj ↦ ⟨hj.trans_le hceil, hj⟩⟩
-  rw [hfilter, Finset.card_range]
-  refine ⟨(div_le_iff₀' ha).1 (Nat.le_ceil _), ?_⟩
-  have hlt := mul_lt_mul_of_pos_left (Nat.ceil_lt_add_one (div_nonneg hy0 ha.le)) ha
-  rw [mul_add, mul_div_cancel₀ _ ha.ne', mul_one] at hlt
-  exact hlt.le
-
 /-- Finite layer-cake approximation of the integral of a nonnegative bounded continuous function by
 a Riemann sum of open superlevel-set probabilities. -/
 private theorem integral_bounds_mul_sum_measureReal_gt
@@ -298,32 +284,44 @@ private theorem integral_bounds_mul_sum_measureReal_gt
     {k : ℕ} {a : ℝ} (ha : 0 < a) (hka : ∀ x, f x ≤ k * a) :
     ∫ x, f x ∂ν ≤ a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} ∧
       a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} ≤ (∫ x, f x ∂ν) + a := by
-  classical
-  let g : X → ℝ := fun x ↦
-    a * ∑ j ∈ Finset.range k, ({x | (j : ℝ) * a < f x}.indicator (fun _ ↦ (1 : ℝ)) x)
-  have hgx (x : X) :
-      g x = a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < f x).card : ℝ) := by
-    simp only [g, Set.indicator_apply, Set.mem_ofPred_eq, Finset.sum_boole]
-  have hU (j : ℕ) : IsOpen {x | (j : ℝ) * a < f x} := isOpen_lt continuous_const f.continuous
-  have hind (j : ℕ) : Integrable ({x | (j : ℝ) * a < f x}.indicator (fun _ ↦ (1 : ℝ))) ν :=
-    (integrable_indicator_iff (hU j).measurableSet).2 (integrable_const _).integrableOn
-  have hg_int : Integrable g ν := (integrable_finsetSum _ fun j _ ↦ hind j).const_mul a
-  have hg_eq : ∫ x, g x ∂ν = a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} := by
-    simp only [g, integral_const_mul]
-    rw [integral_finsetSum _ fun j _ ↦ hind j]
-    congr 1
-    exact Finset.sum_congr rfl fun j _ ↦ integral_indicator_one (hU j).measurableSet
-  rw [← hg_eq]
-  refine ⟨integral_mono (f.integrable ν) hg_int fun x ↦ ?_, ?_⟩
-  · rw [hgx]
-    exact (mul_card_filter_range_bounds ha (hf x) (hka x)).1
-  · have hadd : ∫ x, (f x + a) ∂ν = (∫ x, f x ∂ν) + a := by
-      rw [integral_add (f.integrable ν) (integrable_const a), integral_const]
-      simp
-    rw [← hadd]
-    exact integral_mono hg_int ((f.integrable ν).add (integrable_const a)) fun x ↦ by
-      rw [hgx]
-      exact (mul_card_filter_range_bounds ha (hf x) (hka x)).2
+  let g : ℝ → ℝ := fun t ↦ ν.real {x | t < f x / a}
+  have hg_anti : AntitoneOn g (Set.Icc 0 (0 + k)) :=
+    fun _ _ _ _ hst ↦ measureReal_mono fun _ hx ↦ hst.trans_lt hx
+  have hint : (∫ x, f x ∂ν) / a = ∫ t in (0 : ℝ)..0 + k, g t := by
+    rw [← integral_div, ((f.integrable ν).div_const a).integral_eq_integral_meas_lt
+      (ae_of_all _ fun x ↦ div_nonneg (hf x) ha.le)]
+    rw [zero_add, intervalIntegral.integral_of_le (Nat.cast_nonneg k)]
+    rw [← setIntegral_eq_of_subset_of_ae_sdiff_eq_zero nullMeasurableSet_Ioi
+      Set.Ioc_subset_Ioi_self]
+    refine Eventually.of_forall fun t ht ↦ ?_
+    have hkt : (k : ℝ) < t := by
+      simp only [Set.mem_sdiff, Set.mem_Ioi, Set.mem_Ioc, not_and, not_le] at ht
+      exact ht.2 ht.1
+    have hempty : {x | t < f x / a} = ∅ := Set.eq_empty_iff_forall_notMem.2 fun x hx ↦
+      not_lt_of_ge ((div_le_iff₀ ha).2 (hka x)) (hkt.trans (Set.mem_ofPred_eq.mp hx))
+    simp [g, hempty]
+  have hle_sum : (∫ x, f x ∂ν) / a ≤ ∑ j ∈ Finset.range k, g j := by
+    simpa only [zero_add] using hint.trans_le hg_anti.integral_le_sum
+  have hsum_le : ∑ j ∈ Finset.range k, g j ≤ 1 + (∫ x, f x ∂ν) / a := by
+    have hshift : g 0 + ∑ j ∈ Finset.range k, g (0 + ↑(j + 1)) =
+        (∑ j ∈ Finset.range k, g j) + g k := by
+      simp only [zero_add]
+      calc g 0 + ∑ j ∈ Finset.range k, g ↑(j + 1)
+          = (∑ j ∈ Finset.range k, g ↑(j + 1)) + g ↑(0 : ℕ) := by rw [Nat.cast_zero, add_comm]
+        _ = ∑ j ∈ Finset.range (k + 1), g j := (Finset.sum_range_succ' (fun j : ℕ ↦ g j) k).symm
+        _ = (∑ j ∈ Finset.range k, g j) + g k := Finset.sum_range_succ (fun j : ℕ ↦ g j) k
+    have hgk : g k = 0 := by
+      have hempty : {x | (k : ℝ) < f x / a} = ∅ := Set.eq_empty_iff_forall_notMem.2 fun x hx ↦
+        not_lt_of_ge ((div_le_iff₀ ha).2 (hka x)) (Set.mem_ofPred_eq.mp hx)
+      simp [g, hempty]
+    have hg0 : g 0 ≤ 1 := measureReal_le_one
+    linarith [hg_anti.sum_le_integral]
+  have hgj (j : ℕ) : g j = ν.real {x | (j : ℝ) * a < f x} := by
+    simp only [g, lt_div_iff₀ ha]
+  simp only [hgj] at hle_sum hsum_le
+  refine ⟨(div_le_iff₀' ha).1 hle_sum, (le_div_iff₀' ha).1 ?_⟩
+  rw [add_div, div_self ha.ne']
+  linarith [hsum_le]
 
 /-- Unpack a `liminf` lower bound for `ProbabilityMeasure` into an eventual real-valued bound. -/
 private theorem eventually_measureReal_sub_lt_of_le_liminf
