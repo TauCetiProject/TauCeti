@@ -30,7 +30,9 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   `@[simp]`, like its neighbours `AdjoinRoot.map_of` and `AdjoinRoot.map_root`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
 * `AdjoinRoot.algHomOfDvd_mk`: for `g ∣ f`, the reduction `AdjoinRoot f →ₐ[R] AdjoinRoot g` sends
-  the class of `p` to the class of `p`.
+  the class of `p` to the class of `p`; `AdjoinRoot.algHomOfDvd_algHomOfDvd` and
+  `AdjoinRoot.algHomOfDvd_self`: these reductions compose, and reduction modulo `f` itself is the
+  identity.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
 * `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f`
@@ -131,6 +133,28 @@ of `p` modulo `f` to its class modulo `g`. -/
 lemma algHomOfDvd_mk [Algebra R S] {f g : S[X]} (h : g ∣ f) (p : S[X]) :
     algHomOfDvd R f g h (mk f p) = mk g p := by
   simp [algHomOfDvd]
+
+/-- Reducing modulo `g ∣ f` and then modulo `k ∣ g` is reducing modulo `k`. -/
+@[simp]
+lemma algHomOfDvd_algHomOfDvd [Algebra R S] {f g k : S[X]} (hgf : g ∣ f) (hkg : k ∣ g)
+    (x : AdjoinRoot f) :
+    algHomOfDvd R g k hkg (algHomOfDvd R f g hgf x) = algHomOfDvd R f k (hkg.trans hgf) x := by
+  induction x using AdjoinRoot.induction_on with
+  | ih p => simp only [algHomOfDvd_mk]
+
+/-- `AdjoinRoot.algHomOfDvd_algHomOfDvd` as an equality of algebra maps. -/
+@[simp]
+lemma algHomOfDvd_comp_algHomOfDvd [Algebra R S] {f g k : S[X]} (hgf : g ∣ f) (hkg : k ∣ g) :
+    (algHomOfDvd R g k hkg).comp (algHomOfDvd R f g hgf) = algHomOfDvd R f k (hkg.trans hgf) :=
+  AlgHom.ext (algHomOfDvd_algHomOfDvd hgf hkg)
+
+/-- Reducing modulo `f` itself is the identity. -/
+@[simp]
+lemma algHomOfDvd_self [Algebra R S] (f : S[X]) (h : f ∣ f) :
+    algHomOfDvd R f f h = AlgHom.id R (AdjoinRoot f) :=
+  AlgHom.ext fun x ↦ by
+    induction x using AdjoinRoot.induction_on with
+    | ih p => simp only [algHomOfDvd_mk, AlgHom.id_apply]
 
 end Map
 
