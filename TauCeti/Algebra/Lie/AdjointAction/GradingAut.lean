@@ -41,6 +41,8 @@ contracting action on a Slodowy slice (`TauCeti.Algebra.Lie.Sl2.SlodowySlice.Bas
   `s ↦ gradingAut hh s` is a group homomorphism from `Rˣ` to the automorphisms of `L`.
 * `TauCeti.subsingleton_of_isInternal_eigenspace_of_charP_pos`: in positive characteristic the
   grading forces `L` to be trivial.
+* `LieHom.map_gradingAut`: a Lie algebra homomorphism `φ` intertwines the grading automorphisms
+  of `h` and of `φ h`.
 -/
 
 public section
@@ -185,5 +187,30 @@ theorem gradingAut_apply_self (s : Rˣ) : gradingAut hh s h = h := by
   rw [gradingAut_apply_of_mem hh s hh0, zpow_zero, Units.val_one, one_smul]
 
 end Grading
+
+section Naturality
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- **Lie algebra homomorphisms intertwine grading automorphisms.** If the integer eigenspaces of
+`ad h` decompose `L` and those of `ad (φ h)` decompose `L'`, then `φ ∘ gradingAut s` is
+`gradingAut s ∘ φ` for every unit `s`. -/
+theorem _root_.LieHom.map_gradingAut (φ : L →ₗ⁅R⁆ L') {h : L}
+    (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad R L h).eigenspace (j : R))
+    (hh' : DirectSum.IsInternal fun j : ℤ ↦ (ad R L' (φ h)).eigenspace (j : R)) (s : Rˣ)
+    (x : L) : φ (gradingAut hh s x) = gradingAut hh' s (φ x) := by
+  -- Both sides are linear in `x`; on the `j`-eigenspace of `ad h` both scale by `s ^ j`, because
+  -- `φ` carries it into the `j`-eigenspace of `ad (φ h)`.
+  refine LinearMap.congr_fun (LinearMap.ext_of_iSup_eq_top hh.submodule_iSup_eq_top
+    (f := (φ : L →ₗ[R] L') ∘ₗ (gradingAut hh s : L →ₗ[R] L))
+    (g := (gradingAut hh' s : L' →ₗ[R] L') ∘ₗ (φ : L →ₗ[R] L')) fun j y hy ↦ ?_) x
+  have hφy : φ y ∈ (ad R L' (φ h)).eigenspace (j : R) := by
+    rw [Module.End.mem_eigenspace_iff, ad_apply] at hy ⊢
+    rw [← LieHom.map_lie, hy, map_smul]
+  simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LinearEquiv.coe_coe,
+    LieEquiv.coe_toLinearEquiv]
+  rw [gradingAut_apply_of_mem hh s hy, gradingAut_apply_of_mem hh' s hφy, map_smul]
+
+end Naturality
 
 end TauCeti
