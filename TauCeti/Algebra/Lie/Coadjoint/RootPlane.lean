@@ -55,7 +55,10 @@ positivity of `B`; symmetry enters only their reading as a Hessian bilinear form
 of zero divisors and nondegeneracy only the orthogonality and stabilizer statements.
 
 The root plane of `so(3)` and its height Hessian are worked out in
-`TauCeti.Algebra.Lie.Orthogonal.CrossProduct.RootPlane`.
+`TauCeti.Algebra.Lie.Orthogonal.CrossProduct.RootPlane`. Summing these formulas over a
+decomposition of `L` into a torus and orthogonal root planes, which gives the indices of the
+height Hessian and the dimension of the orbit, is done in
+`TauCeti.Algebra.Lie.Coadjoint.RootPlane.Decomposition`.
 
 ## Main definitions
 

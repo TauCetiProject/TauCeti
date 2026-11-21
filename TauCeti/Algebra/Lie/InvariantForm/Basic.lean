@@ -13,7 +13,8 @@ public import TauCeti.Algebra.Lie.Dual
 
 A bilinear form `Φ` on a Lie module `M` is invariant when `Φ ⁅x, y⁆ z = -Φ y ⁅x, z⁆`
 (`LinearMap.BilinForm.lieInvariant`). On a Lie algebra, a symmetric invariant form satisfies the
-cyclic identity `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. This file collects the invariant symmetric forms into the
+cyclic identity `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`, and for commuting `p` and `X` any invariant form makes
+`(A, C) ↦ Φ ⁅A, p⁆ ⁅C, X⁆` symmetric. This file collects the invariant symmetric forms into the
 submodule `TauCeti.LieModule.invariantForms R L M` and shows that on a finite-dimensional
 irreducible module over an algebraically closed field there is at most one invariant form up to
 scalars.
@@ -91,6 +92,20 @@ bracket and a third argument: `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. -/
 theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L) :
     Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c := by
   rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
+
+/-- For an invariant form on a Lie algebra and commuting `p` and `X`, the form
+`(A, C) ↦ Φ ⁅A, p⁆ ⁅C, X⁆` is symmetric. No symmetry of `Φ` is needed: by invariance and the
+Jacobi identity the difference is `Φ ⁅⁅C, A⁆, p⁆ X = -Φ ⁅X, p⁆ ⁅C, A⁆`. -/
+theorem apply_lie_lie_comm (hΦ : Φ.lieInvariant L) {p X : L} (hXp : ⁅X, p⁆ = 0) (A C : L) :
+    Φ ⁅A, p⁆ ⁅C, X⁆ = Φ ⁅C, p⁆ ⁅A, X⁆ := by
+  have h₁ := hΦ C ⁅A, p⁆ X
+  have h₂ := hΦ A ⁅C, p⁆ X
+  have h₃ := hΦ ⁅C, A⁆ p X
+  have h₄ := hΦ X p ⁅C, A⁆
+  rw [leibniz_lie, map_add, LinearMap.add_apply] at h₁
+  rw [← lie_skew ⁅C, A⁆ X, map_neg] at h₃
+  rw [hXp, map_zero, LinearMap.zero_apply] at h₄
+  linear_combination h₁ - h₂ - h₃ - h₄
 
 end LinearMap.BilinForm.lieInvariant
 
