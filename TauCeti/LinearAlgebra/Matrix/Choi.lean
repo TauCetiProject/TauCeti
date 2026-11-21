@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Vec
-import Mathlib.LinearAlgebra.Matrix.RowCol
 import Mathlib.LinearAlgebra.Matrix.StdBasis
 
 /-!
@@ -71,12 +70,16 @@ theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semirin
   ext a b
   simpa only [choiMatrix_apply] using congrFun (congrFun h (i, a)) (j, b)
 
+end TauCeti
+
+namespace Matrix
+
 -- The proof needs the zero of the sums and the zero absorbed by multiplication to be the same
 -- element.
 /-- The Choi matrix of `X ↦ A * X * B` is the outer product of `A.vec` and `(Bᵀ).vec`. -/
 theorem choiMatrix_mul_mul {m n R : Type*} [Fintype n] [DecidableEq n]
     [NonAssocSemiring R] (A : Matrix m n R) (B : Matrix n m R) :
-    choiMatrix (fun X : Matrix n n R => A * X * B) =
+    TauCeti.choiMatrix (fun X : Matrix n n R => A * X * B) =
       Matrix.vecMulVec A.vec (Bᵀ).vec := by
   apply Matrix.ext
   rintro ⟨i, a⟩ ⟨j, b⟩
@@ -84,12 +87,8 @@ theorem choiMatrix_mul_mul {m n R : Type*} [Fintype n] [DecidableEq n]
     rw [Matrix.mul_single_eq_updateCol_zero]
     ext k
     simp [Matrix.updateCol_apply, Pi.single_apply]
-  rw [choiMatrix_apply, Matrix.mul_apply']
+  rw [TauCeti.choiMatrix_apply, Matrix.mul_apply']
   simp only [hrow, single_dotProduct, Matrix.vecMulVec_apply, Matrix.vec, Matrix.transpose_apply]
-
-end TauCeti
-
-namespace Matrix
 
 /-- The Choi matrix of `X ↦ K * X * Kᴴ` is the outer product of the vectorized operator
 with its entrywise conjugate. -/
@@ -97,6 +96,6 @@ theorem choiMatrix_mul_mul_conjTranspose {m n R : Type*} [Fintype n] [DecidableE
     [NonAssocSemiring R] [Star R] (K : Matrix m n R) :
     TauCeti.choiMatrix (fun X : Matrix n n R => K * X * Kᴴ) =
       Matrix.vecMulVec K.vec (star K.vec) := by
-  rw [TauCeti.choiMatrix_mul_mul, Matrix.conjTranspose_transpose, Matrix.star_vec]
+  rw [K.choiMatrix_mul_mul Kᴴ, Matrix.conjTranspose_transpose, Matrix.star_vec]
 
 end Matrix
