@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+public import TauCeti.Algebra.Order.BigOperators.Group.Finset
 public import TauCeti.GroupTheory.Amenable.Content
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.GroupTheory.Amenable.Foelner
