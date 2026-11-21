@@ -59,7 +59,7 @@ variable {S B : Type*} [CommSemiring S] [Ring B] [Algebra S B]
 def algebraOfMem (A : Subring B) (h : ∀ s : S, algebraMap S B s ∈ A) : Algebra S A where
   smul s f := ⟨s • (f : B), by
     rw [Algebra.smul_def]
-    exact A.mul_mem (h s) f.2⟩
+    exact A.mul_mem (h s) f.property⟩
   algebraMap := (algebraMap S B).codRestrict A h
   commutes' s f := Subtype.ext <| by
     simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using Algebra.commutes s (f : B)

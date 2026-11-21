@@ -54,7 +54,7 @@ private theorem isClassifyingCoordinates_stageTautological :
       exact (congrArg (· m) (Tautological.subtype_apply _ v)).symm
   locally_supported _ := ⟨n, Eventually.of_forall fun V v m hm ↦ by
     have hm' : m ∈ v.val.support := congrArg Finsupp.support (Tautological.subtype_apply _ v) ▸ hm
-    exact Finset.mem_range.2 (((mem_range_toInfinite_iff _).1 ⟨V, rfl⟩ v.2) hm')⟩
+    exact Finset.mem_range.2 (((mem_range_toInfinite_iff _).1 ⟨V, rfl⟩ v.property) hm')⟩
   injective V := Tautological.subtype_injective V.toInfinite
 end Base
 private theorem strictMono_even : StrictMono (fun m : ℕ ↦ 2 * m) := fun _ _ _ ↦ by dsimp; omega
@@ -68,11 +68,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] 
 private theorem homotopic_of_stage_isClassifyingCoordinates
     {f₀ f₁ : C(infiniteGrassmannian 𝕜 k, infiniteGrassmannian 𝕜 k)}
     (L₀ L₁ : ∀ W, Tautological 𝕜 k W →ₗ[𝕜] (ℕ →₀ 𝕜))
-    (hf₀ : ∀ W, (f₀ W).1 = LinearMap.range (L₀ W)) (hf₁ : ∀ W, (f₁ W).1 = LinearMap.range (L₁ W))
+    (hf₀ : ∀ W, (f₀ W).val = LinearMap.range (L₀ W)) (hf₁ : ∀ W, (f₁ W).val = LinearMap.range
+        (L₁ W))
     (hL₀ : ∀ n, IsClassifyingCoordinates 𝕜 (Fin k → 𝕜) (stagePullback k n) fun V ↦ L₀ V.toInfinite)
     (hL₁ : ∀ n, IsClassifyingCoordinates 𝕜 (Fin k → 𝕜) (stagePullback k n) fun V ↦ L₁ V.toInfinite)
     (hinj : ∀ (t : I) (W : infiniteGrassmannian 𝕜 k),
-      Injective ((1 - algebraMap ℝ 𝕜 t.1) • L₀ W + (algebraMap ℝ 𝕜 t.1) • L₁ W)) :
+      Injective ((1 - algebraMap ℝ 𝕜 t.val) • L₀ W + (algebraMap ℝ 𝕜 t.val) • L₁ W)) :
     f₀.Homotopic f₁ := by
   let hk := Module.finrank_fin_fun (R := 𝕜) (n := k)
   -- Phase 1 (stage construction): restrict `f₀, f₁` to each finite stage
@@ -88,9 +89,9 @@ private theorem homotopic_of_stage_isClassifyingCoordinates
     (((hL₀ n).homotopyOfLinearCombinationInjective (hL₁ n)
       (fun t V ↦ hinj t V.toInfinite) hk).compContinuousMap (ιStage n)).cast (hc₀ n) (hc₁ n)
   have hH_val (n : ℕ) (t : I) (U : (diagram 𝕜 k).obj n) :
-      (H n (t, U)).1 = LinearMap.range
-        ((1 - algebraMap ℝ 𝕜 t.1) • L₀ (toInfinite U) +
-          (algebraMap ℝ 𝕜 t.1) • L₁ (toInfinite U)) := by
+      (H n (t, U)).val = LinearMap.range
+        ((1 - algebraMap ℝ 𝕜 t.val) • L₀ (toInfinite U) +
+          (algebraMap ℝ 𝕜 t.val) • L₁ (toInfinite U)) := by
     rw [ContinuousMap.Homotopy.cast_apply, ContinuousMap.Homotopy.compContinuousMap_apply]
     exact (hL₀ n).coe_homotopyOfLinearCombinationInjective (hL₁ n)
       (fun t V ↦ hinj t V.toInfinite) hk t (ιStage n U)
@@ -102,7 +103,7 @@ private theorem homotopic_of_stage_isClassifyingCoordinates
         (toInfinite_ambientInclusion (leOfHom u) V)
     exact (hH_val n t ((diagram 𝕜 k).map u V)).trans <|
       (congrArg (fun W ↦ LinearMap.range
-        ((1 - algebraMap ℝ 𝕜 t.1) • L₀ W + (algebraMap ℝ 𝕜 t.1) • L₁ W)) hmap).trans
+        ((1 - algebraMap ℝ 𝕜 t.val) • L₀ W + (algebraMap ℝ 𝕜 t.val) • L₁ W)) hmap).trans
         (hH_val m t V).symm⟩
 
 private theorem homotopic_id_mapContinuousMap_lmapDomain_of_le {s : ℕ → ℕ}
@@ -117,10 +118,10 @@ private theorem homotopic_id_mapContinuousMap_lmapDomain_of_le {s : ℕ → ℕ}
     (fun _ ↦ isClassifyingCoordinates_stageTautological.postcomp
       (FiberBundle.continuous_proj (Fin k → 𝕜) _) (lmapDomain 𝕜 𝕜 s) (mapDomain_injective hs))
     fun t W ↦ by
-      have heq : (1 - algebraMap ℝ 𝕜 t.1) • Tautological.subtype W +
-          (algebraMap ℝ 𝕜 t.1) • (lmapDomain 𝕜 𝕜 s).comp (Tautological.subtype W) =
-        ((1 - algebraMap ℝ 𝕜 t.1) • (LinearMap.id : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) +
-          (algebraMap ℝ 𝕜 t.1) • lmapDomain 𝕜 𝕜 s).comp (Tautological.subtype W) := by ext; simp
+      have heq : (1 - algebraMap ℝ 𝕜 t.val) • Tautological.subtype W +
+          (algebraMap ℝ 𝕜 t.val) • (lmapDomain 𝕜 𝕜 s).comp (Tautological.subtype W) =
+        ((1 - algebraMap ℝ 𝕜 t.val) • (LinearMap.id : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) +
+          (algebraMap ℝ 𝕜 t.val) • lmapDomain 𝕜 𝕜 s).comp (Tautological.subtype W) := by ext; simp
       rw [heq]
       exact (one_sub_smul_id_add_smul_lmapDomain_injective hs hle _).comp
         (Tautological.subtype_injective W)
@@ -128,7 +129,7 @@ private theorem homotopic_id_mapContinuousMap_lmapDomain_of_le {s : ℕ → ℕ}
 private theorem homotopic_id_of_stage_isClassifyingCoordinates
     {f : C(infiniteGrassmannian 𝕜 k, infiniteGrassmannian 𝕜 k)}
     (L : ∀ W, Tautological 𝕜 k W →ₗ[𝕜] (ℕ →₀ 𝕜))
-    (hf : ∀ W, (f W).1 = LinearMap.range (L W))
+    (hf : ∀ W, (f W).val = LinearMap.range (L W))
     (hL : ∀ n, IsClassifyingCoordinates 𝕜 (Fin k → 𝕜) (stagePullback k n) (fun V ↦ L V.toInfinite))
     (hinj : ∀ W, Injective (L W)) :
     (ContinuousMap.id (infiniteGrassmannian 𝕜 k)).Homotopic f := by
@@ -146,7 +147,7 @@ private theorem homotopic_id_of_stage_isClassifyingCoordinates
       (fun n ↦ (hL n).postcomp (FiberBundle.continuous_proj (Fin k → 𝕜) _) φ₁ hφ₁)
       fun t W ↦ one_sub_smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
         strictMono_even.injective strictMono_odd.injective disjoint_range_even_odd
-        (Tautological.subtype_injective W) (hinj W) (algebraMap ℝ 𝕜 t.1)
+        (Tautological.subtype_injective W) (hinj W) (algebraMap ℝ 𝕜 t.val)
   exact (homotopic_id_mapContinuousMap_lmapDomain_of_le (𝕜 := 𝕜) (k := k)
       strictMono_even.injective strictMono_even.id_le).trans
     (hmid.trans (ContinuousMap.Homotopic.comp
@@ -214,7 +215,8 @@ theorem homotopic_of_continuousLinearEquiv_pullback
     {f₀ f₁ : C(X, infiniteGrassmannian 𝕜 k)}
     (Φ : ∀ x, Tautological 𝕜 k (f₀ x) ≃L[𝕜] Tautological 𝕜 k (f₁ x))
     (hΦ : Continuous fun p : TotalSpace (Fin k → 𝕜) ((f₀ : _ → _) *ᵖ (Tautological 𝕜 k)) ↦
-      TotalSpace.mk' (Fin k → 𝕜) (E := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k)) p.proj (Φ p.proj p.2)) :
+      TotalSpace.mk' (Fin k → 𝕜) (E := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k)) p.proj
+          (Φ p.proj p.snd)) :
     f₀.Homotopic f₁ := by
   obtain ⟨j_univ, hj_univ⟩ := exists_isClassifyingCoordinates (𝕜 := 𝕜)
     (X := infiniteGrassmannian 𝕜 k) (F := Fin k → 𝕜) (E := Tautological 𝕜 k)
@@ -241,7 +243,7 @@ theorem homotopic_iff_exists_continuousLinearEquiv_pullback
     f₀.Homotopic f₁ ↔ ∃ Φ : ∀ x, Tautological 𝕜 k (f₀ x) ≃L[𝕜] Tautological 𝕜 k (f₁ x),
       Continuous fun p : TotalSpace (Fin k → 𝕜) ((f₀ : _ → _) *ᵖ (Tautological 𝕜 k)) ↦
         TotalSpace.mk' (Fin k → 𝕜) (E := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k))
-          p.proj (Φ p.proj p.2) :=
+          p.proj (Φ p.proj p.snd) :=
   ⟨fun h ↦ (h.exists_continuousLinearEquiv_pullback (𝕜 := 𝕜) (F := Fin k → 𝕜)
       (E := Tautological 𝕜 k)).imp fun _ hΦ ↦ hΦ.1,
    fun ⟨Φ, hΦ⟩ ↦ homotopic_of_continuousLinearEquiv_pullback Φ hΦ⟩
@@ -262,7 +264,8 @@ theorem nonempty_pullback_iso_of_continuousLinearEquiv_pullback [CompleteSpace �
     {f₀ f₁ : C(X, infiniteGrassmannian 𝕜 k)}
     (Φ : ∀ x, Tautological 𝕜 k (f₀ x) ≃L[𝕜] Tautological 𝕜 k (f₁ x))
     (hΦ : Continuous fun p : TotalSpace (Fin k → 𝕜) ((f₀ : _ → _) *ᵖ (Tautological 𝕜 k)) ↦
-      TotalSpace.mk' (Fin k → 𝕜) (E := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k)) p.proj (Φ p.proj p.2)) :
+      TotalSpace.mk' (Fin k → 𝕜) (E := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k)) p.proj
+          (Φ p.proj p.snd)) :
     Nonempty ((tautologicalCore 𝕜 k).pullback f₀ ≅ (tautologicalCore 𝕜 k).pullback f₁) := by
   rw [pullback_ofBundle, pullback_ofBundle]
   exact ⟨ofBundleIso (E₀ := (f₀ : _ → _) *ᵖ (Tautological 𝕜 k))
@@ -275,7 +278,7 @@ theorem exists_continuousLinearEquiv_pullback_of_pullback_iso {k : ℕ}
     ∃ Φ : ∀ x, Tautological 𝕜 k (f₀ x) ≃L[𝕜] Tautological 𝕜 k (f₁ x),
       Continuous fun p : TotalSpace (Fin k → 𝕜) ((f₀ : _ → _) *ᵖ (Tautological 𝕜 k)) ↦
         TotalSpace.mk' (Fin k → 𝕜) (E := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k))
-          p.proj (Φ p.proj p.2) :=
+          p.proj (Φ p.proj p.snd) :=
   FiniteRankBundleCore.exists_continuousLinearEquiv_of_ofBundle_iso
     (E₀ := (f₀ : _ → _) *ᵖ (Tautological 𝕜 k)) (E₁ := (f₁ : _ → _) *ᵖ (Tautological 𝕜 k))
     ((eqToIso (pullback_ofBundle _ f₀)).symm.trans (α.trans (eqToIso (pullback_ofBundle _ f₁))))
@@ -336,7 +339,7 @@ private theorem pointIndexedCoreFiberEquiv_toInfinite_pullback_symm_apply
   let f := toInfiniteContinuousMap (𝕜 := 𝕜) (k := k) (n := n)
   let z : TotalSpace (Fin k → 𝕜) ((f : _ → _) *ᵖ (Tautological 𝕜 k)) := ⟨V, w⟩
   refine (pointIndexedCoreFiberEquiv_symm_apply 𝕜 (Fin k → 𝕜)
-    ((f : _ → _) *ᵖ (Tautological 𝕜 k)) V z.2).trans ?_
+    ((f : _ → _) *ᵖ (Tautological 𝕜 k)) V z.snd).trans ?_
   rw [trivializationAt, FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply]
   exact (congrArg (fun p ↦ (trivializationAt (Fin k → 𝕜) (Tautological 𝕜 k) (f V) p).2)
     (Pullback.lift_mk (F := Fin k → 𝕜) (E := Tautological 𝕜 k) f V w)).trans
@@ -352,7 +355,7 @@ private theorem pointIndexedCoreFiberEquiv_toInfinite_pullback_apply
 private theorem continuous_toInfiniteTautologicalEquiv (k n : ℕ) :
     Continuous fun p : TotalSpace (Fin k → 𝕜) (finiteGrassmannian.Tautological 𝕜 k n) ↦
       TotalSpace.mk' (Fin k → 𝕜) (E := stagePullback k n)
-        p.proj (toInfiniteTautologicalEquiv p.proj p.2) :=
+        p.proj (toInfiniteTautologicalEquiv p.proj p.snd) :=
   (toInfiniteTautologicalHomeomorph 𝕜 k n).continuous.congr toInfiniteTautologicalHomeomorph_apply
 
 /-- Over `RCLike 𝕜`, pulling back `tautologicalCore 𝕜 k` along `toInfiniteContinuousMap` is
@@ -427,7 +430,7 @@ def classificationEquiv (k : ℕ) :
       fun _ _ h ↦ homotopic_iff_nonempty_pullback_iso.1 h)
     ⟨Quotient.ind₂ fun _ _ h ↦
         Quotient.sound (homotopic_iff_nonempty_pullback_iso.2 (Quotient.exact h)),
-     Quotient.ind fun A ↦ let ⟨f, hf⟩ := exists_pullback_tautologicalCore_iso A.1 A.2
+     Quotient.ind fun A ↦ let ⟨f, hf⟩ := exists_pullback_tautologicalCore_iso A.val A.property
         ⟨Quotient.mk _ f, Quotient.sound hf⟩⟩
 @[simp] theorem classificationEquiv_mk (k : ℕ) (f : C(X, infiniteGrassmannian 𝕜 k)) :
     classificationEquiv 𝕜 X k (Quotient.mk _ f) =
@@ -435,13 +438,13 @@ def classificationEquiv (k : ℕ) :
 /-- `(classificationEquiv 𝕜 X k).symm` sends `[A]` to `[hj.classifyContinuousMap ...]`. -/
 theorem classificationEquiv_symm_mk_of_isClassifyingCoordinates
     {k : ℕ} (A : {A : FiniteRankBundleCore 𝕜 X // A.rank = k})
-    {j : ∀ x, A.1.core.Fiber x →ₗ[𝕜] (ℕ →₀ 𝕜)}
-    (hj : IsClassifyingCoordinates 𝕜 (Fin A.1.rank → 𝕜) A.1.core.Fiber j) :
+    {j : ∀ x, A.val.core.Fiber x →ₗ[𝕜] (ℕ →₀ 𝕜)}
+    (hj : IsClassifyingCoordinates 𝕜 (Fin A.val.rank → 𝕜) A.val.core.Fiber j) :
     (classificationEquiv 𝕜 X k).symm (Quotient.mk _ A) =
-      Quotient.mk _ (hj.classifyContinuousMap ((Module.finrank_fin_fun 𝕜).trans A.2)) :=
+      Quotient.mk _ (hj.classifyContinuousMap ((Module.finrank_fin_fun 𝕜).trans A.property)) :=
   (classificationEquiv 𝕜 X k).injective <| by
     rw [Equiv.apply_symm_apply, classificationEquiv_mk]
-    exact Quotient.sound ⟨(tautologicalPullbackIsoOfClassifyingCoordinates A.2 hj).symm⟩
+    exact Quotient.sound ⟨(tautologicalPullbackIsoOfClassifyingCoordinates A.property hj).symm⟩
 /-- Any constant map into `infiniteGrassmannian 𝕜 k` classifies `FiniteRankBundleCore.trivial`. -/
 theorem classificationEquiv_const (k : ℕ) (W : infiniteGrassmannian 𝕜 k) :
     classificationEquiv 𝕜 X k (Quotient.mk _ (ContinuousMap.const X W)) =

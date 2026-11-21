@@ -171,7 +171,7 @@ theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
   -- restricted to the cycles, so its underlying chain is the differential by definition.
   have hd (w : (G.simplyBlockedComplex R i).X ()) :
       G.simplyBlockedChainEquiv R i
-          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles w).1 =
+          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles w).val =
         G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i w) :=
     G.simplyBlockedChainEquiv_d R i w
   constructor
@@ -220,7 +220,7 @@ theorem
         (G.oneVariableSpecializationHomologyClass R i z) =
       Submodule.Quotient.mk ⟨G.simplyBlockedChainEquiv R i z, by
         rw [LinearMap.mem_ker, LinearMap.restrictScalars_apply]
-        exact (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.2⟩ := by
+        exact (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.property⟩ := by
   -- Unfold the composite, forgetting the restriction of scalars of its first two factors.
   change ((G.simplyBlockedDifferential R i).homologyRestrictScalarsEquiv R
       (G.simplyBlockedDifferential_comp_self_eq_zero R i)).symm

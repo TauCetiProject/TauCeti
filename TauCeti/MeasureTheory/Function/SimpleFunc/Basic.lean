@@ -19,7 +19,8 @@ A simple function `u : SimpleFunc α β` is the finite sum, over the values `c` 
 constant `c` restricted to the fibre `u ⁻¹' {c}`. More generally, for any `ψ : β → M` into an
 additive commutative monoid, `u.map ψ` is the sum of the constants `ψ c` restricted to the same
 fibres. This is the form in which an operator defined on simple functions is evaluated by
-linearity, as in the Riesz–Thorin theorem.
+linearity, as in the Riesz–Thorin theorem. Weighting the fibre pieces by coefficients `a c`
+gives `x ↦ a (u x) • u x` (`MeasureTheory.SimpleFunc.sum_smul_restrict_const_apply`).
 
 If `u` lies in `Lᵖ` for some `0 < p < ∞`, each of these restricted constants lies in every `L^q`
 (`MeasureTheory.SimpleFunc.memLp_restrict_const_fiber`).
@@ -71,6 +72,16 @@ theorem memLp_restrict_const_fiber {E : Type*} [NormedAddCommGroup E] {μ : Meas
   rcases eq_or_ne c 0 with hc | hc
   · exact Or.inl hc
   · exact Or.inr ((finMeasSupp_iff.1 ((memLp_iff_finMeasSupp hp0 hp).1 hu) c hc).ne)
+
+/-- Weighting each fibre piece of `u` by a coefficient depending on its value gives, at `x`, the
+value `u x` weighted by the coefficient of `u x`. -/
+theorem sum_smul_restrict_const_apply {R : Type*} [AddCommMonoid β] [SMulZeroClass R β]
+    (u : SimpleFunc α β) (a : β → R) (x : α) :
+    ∑ c ∈ u.range, a c • (const α c).restrict (u ⁻¹' {c}) x = a (u x) • u x := by
+  rw [← map_apply (fun c => a c • c) u x, map_apply_eq_sum_restrict_const]
+  refine Finset.sum_congr rfl fun c _ => ?_
+  simp only [restrict_apply _ (u.measurableSet_fiber c), coe_const]
+  by_cases hx : x ∈ u ⁻¹' {c} <;> simp [hx]
 
 /-- The product of two simple functions constant on measurable sets `A` and `B` and zero
 elsewhere is constant on `A ∩ B` and zero elsewhere. -/

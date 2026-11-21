@@ -55,6 +55,9 @@ component, so the action of `V_c` on the homology of `GC⁻` is independent of t
   the homotopy identities for a single `X`-marking homotopy and an `m`-step path sum.
 * `TauCeti.GridDiagram.IsKnot.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp`:
   on a knot grid, `∂⁻ H + H ∂⁻ = V_c + V_c'` for `H = hG.XSmulHomotopy R c c'`.
+* `TauCeti.GridDiagram.IsKnot.unblockedDifferential_add_XSmulHomotopy_left` and
+  `TauCeti.GridDiagram.IsKnot.unblockedDifferential_add_XSmulHomotopy_right`: if `∂⁻ x = V_c a`,
+  then `∂⁻(x + H a) = V_c' a`, and symmetrically.
 * `TauCeti.GridDiagram.nonempty_homotopy_X_smul_of_pow_componentPerm_apply` and
   `TauCeti.GridDiagram.homologyMap_X_smul_eq_of_pow_componentPerm_apply`: the multiplications by
   two variables on the same link component are chain homotopic and agree on homology.
@@ -202,6 +205,38 @@ theorem IsKnot.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp {
   simpa only [hG.pow_traversalIndex_apply] using
     G.unblockedDifferential_comp_componentPathXHomotopy_add_componentPathXHomotopy_comp R c
       (hG.traversalIndex c c')
+
+/-- On a cycle `a`, the chosen homotopy has boundary `∂⁻(H a) = (V_c + V_c') a`. -/
+theorem IsKnot.unblockedDifferential_XSmulHomotopy_of_eq_zero {G : GridDiagram n}
+    (hG : G.IsKnot) (c c' : Fin n) {a : GridChainMinus R n}
+    (ha : G.unblockedDifferential R a = 0) :
+    G.unblockedDifferential R (hG.XSmulHomotopy R c c' a) =
+      (MvPolynomial.X c + MvPolynomial.X c' : MvPolynomial (Fin n) R) • a := by
+  have h := congr($(hG.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp R c c') a)
+  simpa only [LinearMap.add_apply, LinearMap.comp_apply, ha, map_zero, add_zero,
+    LinearMap.smul_apply, LinearMap.id_apply] using h
+
+/-- If `∂⁻ x = V_c a`, then `∂⁻(x + H a) = V_c' a` for the chosen homotopy `H` between the
+actions of `V_c` and `V_c'`. -/
+theorem IsKnot.unblockedDifferential_add_XSmulHomotopy_left {G : GridDiagram n} (hG : G.IsKnot)
+    (c c' : Fin n) (x a : GridChainMinus R n)
+    (hx : G.unblockedDifferential R x = (MvPolynomial.X c : MvPolynomial (Fin n) R) • a) :
+    G.unblockedDifferential R (x + hG.XSmulHomotopy R c c' a) =
+      (MvPolynomial.X c' : MvPolynomial (Fin n) R) • a := by
+  rw [map_add, hx, hG.unblockedDifferential_XSmulHomotopy_of_eq_zero R c c'
+    (G.unblockedDifferential_eq_zero_of_eq_X_smul R hx), add_smul, ← add_assoc, ← add_smul,
+    CharTwo.add_self_eq_zero, zero_smul, zero_add]
+
+/-- If `∂⁻ x = V_c' a`, then `∂⁻(x + H a) = V_c a` for the chosen homotopy `H` between the
+actions of `V_c` and `V_c'`. -/
+theorem IsKnot.unblockedDifferential_add_XSmulHomotopy_right {G : GridDiagram n} (hG : G.IsKnot)
+    (c c' : Fin n) (x a : GridChainMinus R n)
+    (hx : G.unblockedDifferential R x = (MvPolynomial.X c' : MvPolynomial (Fin n) R) • a) :
+    G.unblockedDifferential R (x + hG.XSmulHomotopy R c c' a) =
+      (MvPolynomial.X c : MvPolynomial (Fin n) R) • a := by
+  rw [map_add, hx, hG.unblockedDifferential_XSmulHomotopy_of_eq_zero R c c'
+    (G.unblockedDifferential_eq_zero_of_eq_X_smul R hx), add_smul, add_comm, add_assoc, ← add_smul,
+    CharTwo.add_self_eq_zero, zero_smul, add_zero]
 
 end Matrix
 

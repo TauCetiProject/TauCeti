@@ -290,7 +290,7 @@ private theorem twoFieldSphereFamilyFiber_sphereCollapse (x : sphere (0 : E) 1)
     (p₀ q : sphereEquator
       (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ : (ℝ ∙ u x)ᗮ))
     (hp₀ : (((p₀ : sphere (0 : (ℝ ∙ u x)ᗮ) 1) : (ℝ ∙ u x)ᗮ) : E) = x) (y : I^(Fin 2)) :
-    (twoFieldSphereFamilyFiber h hu hv x (twoFieldEquatorsFiberHomeomorph huv q)).1
+    (twoFieldSphereFamilyFiber h hu hv x (twoFieldEquatorsFiberHomeomorph huv q)).val
         (sphereCollapse 2 Sphere2.north y) =
       tangentCircleDoubleLoop hux hvx p₀ q (y 0) (y 1) := by
   apply Subtype.ext

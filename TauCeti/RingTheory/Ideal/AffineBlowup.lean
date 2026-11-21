@@ -258,7 +258,7 @@ noncomputable def affineBlowupLift (hI : I.map (algebraMap A B) ≤ span {algebr
       exact ((Commute.isRegular_iff (Commute.all _)).mpr ha).pow n))).symm.toAlgHom.comp
     (((IsLocalization.Away.mapₐ S (Localization.Away (algebraMap A B a)) (Algebra.ofId A B) a).comp
       (I.affineBlowup a S).val).codRestrict _
-      fun z ↦ map_affineBlowup_le_range (S := S) hI ⟨z.1, z.2, rfl⟩)
+      fun z ↦ map_affineBlowup_le_range (S := S) hI ⟨z.val, z.property, rfl⟩)
 
 end Lift
 

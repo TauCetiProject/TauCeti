@@ -169,7 +169,7 @@ theorem oneVariableSpecializationHomologyEquivOfHomotopy_oneVariableSpecializati
   have hz : simplyBlockedSpecializationLinearMap R i b ∈
       LinearMap.ker ((G.simplyBlockedDifferential R i).restrictScalars R) := by
     rw [hb, LinearMap.mem_ker, LinearMap.restrictScalars_apply]
-    exact (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.2
+    exact (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.property
   -- `hab` with both maps written as the linear maps the general comparison is stated for.
   have hab' : DistribSMul.toLinearMap R (GridChainMinus R n)
       (MvPolynomial.X i : MvPolynomial (Fin n) R) a +
@@ -238,7 +238,7 @@ theorem isHomogeneous_simplyBlockedHomologyColumnChangeEquiv :
     (-G.unblockedDifferential R (simplyBlockedLift R i (G.simplyBlockedChainEquiv R i z)))).mp (by
       rw [map_neg, simplyBlockedSpecialization_unblockedDifferential,
         simplyBlockedSpecialization_simplyBlockedLift,
-        (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.2, neg_zero])
+        (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.property, neg_zero])
   dsimp only at ha
   -- `V_i • a` has bidegree `g - (1, 0)`, so `a` has bidegree `g + (1, 1)`.
   have hadeg : a ∈ hG.toOddComponentGridDiagram.bigradedChainMinusPiece R (g + (1, 1)) := by
