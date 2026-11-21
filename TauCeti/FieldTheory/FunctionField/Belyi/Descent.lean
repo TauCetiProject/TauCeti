@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Belyi.Model
+public import TauCeti.FieldTheory.FunctionField.Belyi.Model.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.GaloisDescent
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange

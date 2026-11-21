@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.CoefficientDescent
-public import TauCeti.FieldTheory.FunctionField.Belyi.Model
+public import TauCeti.FieldTheory.FunctionField.Belyi.Model.Basic
 import TauCeti.FieldTheory.FunctionField.Belyi.Model.AdjoinSimple
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -168,17 +168,6 @@ end PointedModel
 
 section AlgClosed
 
-/-- Over an algebraically closed field of characteristic zero, every algebraic Belyi pair has a
-place of degree one over the unbranched rational point `t = 2`. -/
-private theorem exists_place_over_two [IsAlgClosed k] (X : AlgebraicBelyiPair k) :
-    ∃ P : Place k X,
-      P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C ((2 : ℚ) : k)) ∧
-      P.degree = 1 := by
-  have hF : IsFunctionField k X := (IsFunctionField.ratFunc k).finite_extension
-  obtain ⟨P, hPa⟩ := Place.restrict_surjective_of_finiteDimensional (IsFunctionField.ratFunc k) hF
-    (Place.adicOfIrreducible (irreducible_X_sub_C ((2 : ℚ) : k)))
-  exact ⟨P, hPa, P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF⟩
-
 /-- **Köck's Theorem 2.2(a), pair form**: over an algebraically closed field `k` of characteristic
 zero (such as `ℂ` or `AlgebraicClosure ℚ`), every algebraic Belyi pair `X` has a model over a
 finite extension `K` of its field of moduli inside `k` of degree at most `[X : k(t)]`. -/
@@ -189,7 +178,9 @@ theorem exists_relfinrank_le_finrank_and_nonempty_model [IsAlgClosed k]
       0 < (IsoClass.mk X).fieldOfModuli.relfinrank K ∧
       (IsoClass.mk X).fieldOfModuli.relfinrank K ≤ Module.finrank (RatFunc k) X ∧
       Nonempty (Model K X) := by
-  obtain ⟨P, hPa, hP⟩ := exists_place_over_two X
+  obtain ⟨P, hPa, hP⟩ := Place.exists_restrict_eq_and_degree_eq_one_of_finiteDimensional (F' := X)
+    (IsFunctionField.ratFunc k) (IsFunctionField.ratFunc k).finite_extension
+    (Place.adicOfIrreducible (irreducible_X_sub_C ((2 : ℚ) : k)))
   exact ⟨X.pointedFieldOfModuli P, X.fieldOfModuli_le_pointedFieldOfModuli P,
     X.relfinrank_pointedFieldOfModuli_pos hPa, X.relfinrank_pointedFieldOfModuli_le hPa,
     X.nonempty_model_pointedFieldOfModuli (q := 2) (by norm_num) (by norm_num) hPa hP⟩
@@ -252,7 +243,9 @@ zero (such as `ℂ` or `AlgebraicClosure ℚ`), every Galois algebraic Belyi pai
 its field of moduli. -/
 theorem nonempty_model_fieldOfModuli_of_isGalois [IsAlgClosed k] :
     Nonempty (Model (IsoClass.mk X).fieldOfModuli X) := by
-  obtain ⟨P, hPa, hP⟩ := exists_place_over_two X
+  obtain ⟨P, hPa, hP⟩ := Place.exists_restrict_eq_and_degree_eq_one_of_finiteDimensional (F' := X)
+    (IsFunctionField.ratFunc k) (IsFunctionField.ratFunc k).finite_extension
+    (Place.adicOfIrreducible (irreducible_X_sub_C ((2 : ℚ) : k)))
   exact X.nonempty_model_fieldOfModuli_of_degree_eq_one_of_isGalois
     (q := 2) (by norm_num) (by norm_num) hPa hP
 

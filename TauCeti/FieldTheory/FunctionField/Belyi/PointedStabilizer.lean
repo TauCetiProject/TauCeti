@@ -9,7 +9,6 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
 import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Decomposition
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
 
 /-!

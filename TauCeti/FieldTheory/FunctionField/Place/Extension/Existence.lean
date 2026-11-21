@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.FieldTheory.FunctionField.ConstantField
+import TauCeti.FieldTheory.FunctionField.Place.Degree
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 
 /-!
@@ -35,6 +36,9 @@ place whose restriction is the original place.
 * `TauCeti.Place.restrict_surjective_of_finiteDimensional`: the same statement for an extension
   of algebraic function fields, where both integrality hypotheses are theorems rather than
   hypotheses.
+* `TauCeti.Place.exists_restrict_eq_and_degree_eq_one` and
+  `TauCeti.Place.exists_restrict_eq_and_degree_eq_one_of_finiteDimensional`: over an algebraically
+  closed field of constants, every place downstairs lifts to a place of degree one upstairs.
 * `TauCeti.Place.ramificationIdxIn_pos`: the ramification index of a place of the base in an
   algebraic extension of function fields is positive, since some place lies above it; the
   constants may grow by an integral extension.
@@ -113,6 +117,14 @@ theorem restrict_surjective (hF' : IsFunctionField k' F') :
   simpa only [f, RingHom.coe_comp, Function.comp_apply, ValuationSubring.coe_subtype,
     ValuationSubring.mem_toSubring] using hAx
 
+/-- Over an algebraically closed field of constants `k'`, every place of `F / k` lifts to a
+place of `F' / k'` of degree one when both `k' / k` and `F' / F` are integral. -/
+theorem exists_restrict_eq_and_degree_eq_one [IsAlgClosed k']
+    (hF' : IsFunctionField k' F') (P : Place k F) :
+    ∃ P' : Place k' F', P'.restrict k F = P ∧ P'.degree = 1 := by
+  obtain ⟨P', hP'⟩ := restrict_surjective hF' P
+  exact ⟨P', hP', P'.degree_eq_one_of_isAlgClosed_of_isFunctionField hF'⟩
+
 /-- **The ramification index of a place of the base is positive** for an algebraic extension
 `F' / F` with `F'` a function field over an integral extension `k'` of `k`: some place of
 `F' / k'` lies above it, and it is also a place of `F' / k` (`TauCeti.Place.constantsEquiv`). -/
@@ -178,6 +190,17 @@ theorem restrict_surjective_of_finiteDimensional [FiniteDimensional F F']
   have := Algebra.IsIntegral.of_finite k k'
   have := Algebra.IsIntegral.of_finite F F'
   restrict_surjective hF'
+
+/-- Over an algebraically closed field of constants `k'`, every place of `F / k` lifts to a
+place of `F' / k'` of degree one for a finite extension `F' / F` of algebraic function fields. -/
+theorem exists_restrict_eq_and_degree_eq_one_of_finiteDimensional [IsAlgClosed k']
+    [FiniteDimensional F F'] (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (P : Place k F) :
+    ∃ P' : Place k' F', P'.restrict k F = P ∧ P'.degree = 1 :=
+  have := hF.finiteDimensional_baseExtension hF'
+  have := Algebra.IsIntegral.of_finite k k'
+  have := Algebra.IsIntegral.of_finite F F'
+  exists_restrict_eq_and_degree_eq_one hF' P
 
 end Place
 
