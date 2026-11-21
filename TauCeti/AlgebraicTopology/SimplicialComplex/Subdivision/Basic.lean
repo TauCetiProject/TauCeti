@@ -318,6 +318,19 @@ theorem le_of_subdivisionFace_subset
   rw [← toLinearExtension_ofSubdivisionVertex K p, ← toLinearExtension_ofSubdivisionVertex K q]
   exact toLinearExtension.monotone h
 
+omit [LinearOrder α] in
+/-- **The largest vertex of a face of the subdivision is its largest face.** In a face `s` of the
+barycentric subdivision, the largest vertex in the linear extension contains every other vertex
+as a face of `K`. -/
+theorem subdivisionFace_subset_subdivisionFace_max'
+    {s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))}
+    (hs : s ∈ orderedBarycentricSubdivision K) {p} (hp : p ∈ s) :
+    subdivisionFace K p ⊆ subdivisionFace K (s.max' ⟨p, hp⟩) := by
+  rcases ((mem_orderedBarycentricSubdivision_iff K).mp hs).2 p hp _ (s.max'_mem _) with h | h
+  · exact h
+  · exact subset_of_eq (congrArg (subdivisionFace K)
+      (le_antisymm (s.le_max' p hp) (le_of_subdivisionFace_subset K h)))
+
 /-- The barycenter of a face of `K` in the barycentric subdivision: the face itself, regarded as a
 vertex. -/
 def subdivisionBarycenter (τ : TauCeti.SetLike.Face K) :
@@ -367,15 +380,11 @@ def lastVertexMap :
   map_face' := by
     intro s hs
     have hs' := (mem_orderedBarycentricSubdivision_iff K).mp hs
-    -- The largest vertex `M` of `s` in the linear extension is its largest face under inclusion.
-    set M := s.max' hs'.1
-    have hle : ∀ p ∈ s, subdivisionFace K p ⊆ subdivisionFace K M := fun p hp ↦ by
-      rcases hs'.2 p hp M (s.max'_mem hs'.1) with h | h
-      · exact h
-      · rw [le_antisymm (s.le_max' p hp) (le_of_subdivisionFace_subset K h)]
-    refine (K.isRelLowerSet_faces (subdivisionFace_mem K M)).2 (fun v hv ↦ ?_) (hs'.1.image _)
+    -- The largest vertex of `s` in the linear extension is its largest face under inclusion.
+    refine (K.isRelLowerSet_faces (subdivisionFace_mem K (s.max' hs'.1))).2 (fun v hv ↦ ?_)
+      (hs'.1.image _)
     obtain ⟨p, hp, rfl⟩ := Finset.mem_image.mp hv
-    exact hle p hp (Finset.max'_mem _ _)
+    exact subdivisionFace_subset_subdivisionFace_max' K hs hp (Finset.max'_mem _ _)
 
 /-- The last-vertex map sends a vertex of the subdivision to the largest vertex of its face. -/
 @[simp]

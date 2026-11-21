@@ -20,7 +20,8 @@ file also defines the codimension-one cell obtained by deleting an enumerated ve
 the semisimplicial face identity.  The codimension-one cells are classified by the vertex deleted
 from the original face.  Finally, a cell whose vertices all precede a vertex `v`, and to which `v`
 can be adjoined, has a cone with `v` as its last vertex; its faces are the original cell and the
-cones on the faces of the original cell.
+cones on the faces of the original cell. Conversely, every cell of positive dimension is the cone
+on the face opposite its last vertex.
 
 ## Main definitions
 
@@ -275,6 +276,43 @@ theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.val
   rw [face_val, ← Fin.castSucc_zero, congrFun (vertexEmbedding_cone c v hlt hK),
     Fin.lastCases_castSucc, cone_val, hc]
   simp [Finset.erase_insert_of_ne (hlt _ (c.vertexEmbedding_mem 0)).ne']
+
+/-- A vertex of a cell that no vertex of the cell exceeds is its last vertex. -/
+theorem vertexEmbedding_last_eq {c : RealizationCell K n} {v : ι} (hv : v ∈ c.val.val)
+    (hle : ∀ w ∈ c.val.val, w ≤ v) : c.vertexEmbedding (Fin.last n) = v := by
+  rw [← c.image_vertexEmbedding] at hv
+  obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hv
+  exact le_antisymm (hle _ (c.vertexEmbedding_mem _))
+    (c.strictMono_vertexEmbedding.monotone (Fin.le_last j))
+
+/-- Every vertex of the face opposite the last vertex of a cell precedes that last vertex. -/
+theorem lt_of_mem_face_last (c : RealizationCell K (n + 1)) {w : ι}
+    (hw : w ∈ (c.face (Fin.last (n + 1))).val.val) : w < c.vertexEmbedding (Fin.last (n + 1)) := by
+  rw [face_val, Finset.mem_erase, ← c.image_vertexEmbedding] at hw
+  obtain ⟨hne, hw⟩ := hw
+  obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hw
+  exact c.strictMono_vertexEmbedding
+    (lt_of_le_of_ne (Fin.le_last j) fun h ↦ hne (congrArg c.vertexEmbedding h))
+
+/-- Adjoining the last vertex of a cell to the face opposite it recovers the cell. -/
+theorem insert_face_last (c : RealizationCell K (n + 1)) :
+    insert (c.vertexEmbedding (Fin.last (n + 1))) (c.face (Fin.last (n + 1))).val.val =
+      c.val.val := by
+  rw [face_val, Finset.insert_erase (c.vertexEmbedding_mem _)]
+
+/-- **A cell is the cone on the face opposite its last vertex**, with that vertex as cone
+vertex. -/
+theorem cone_face_last (c : RealizationCell K (n + 1)) :
+    (c.face (Fin.last (n + 1))).cone (c.vertexEmbedding (Fin.last (n + 1)))
+      (fun _ hw ↦ c.lt_of_mem_face_last hw) (by rw [insert_face_last]; exact c.val.property) =
+      c :=
+  ext (by rw [cone_val, insert_face_last])
+
+/-- Every face of a cell other than the one opposite its last vertex contains that vertex. -/
+theorem vertexEmbedding_last_mem_face_castSucc (c : RealizationCell K (n + 1)) (j : Fin (n + 1)) :
+    c.vertexEmbedding (Fin.last (n + 1)) ∈ (c.face j.castSucc).val.val := by
+  rw [face_val, Finset.mem_erase]
+  exact ⟨c.vertexEmbedding.injective.ne (Fin.castSucc_lt_last j).ne', c.vertexEmbedding_mem _⟩
 
 end Cone
 

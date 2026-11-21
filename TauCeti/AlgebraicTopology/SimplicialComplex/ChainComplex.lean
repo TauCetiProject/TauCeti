@@ -170,6 +170,20 @@ theorem boundary_single {n : ℕ}
   simp only [boundary, linearCombination_single, boundaryCell, Finset.smul_sum, smul_single,
     smul_eq_mul, mul_one, hc]
 
+variable {R} in
+/-- Every cell in the support of the image, under a linear map, of the boundary of a cell lies in
+the support of the image of one of its codimension-one faces. -/
+theorem exists_mem_support_face_of_mem_support_boundary {κ : Type*} {n : ℕ}
+    (f : OrderedSimplicialChain K R n →ₗ[R] κ →₀ R)
+    (c : _root_.AbstractSimplicialComplex.RealizationCell K (n + 1)) {e : κ}
+    (he : e ∈ (f (boundary R n (single c 1))).support) :
+    ∃ j, e ∈ (f (single (c.face j) 1)).support := by
+  classical
+  rw [boundary_single, map_sum] at he
+  obtain ⟨j, -, he⟩ := Finsupp.mem_support_finsetSum _ he
+  rw [map_smul] at he
+  exact ⟨j, Finsupp.support_smul he⟩
+
 /-- The boundary of a boundary vanishes. -/
 theorem boundary_boundary (n : ℕ) :
     boundary (K := K) R n ∘ₗ boundary (K := K) R (n + 1) = 0 := by

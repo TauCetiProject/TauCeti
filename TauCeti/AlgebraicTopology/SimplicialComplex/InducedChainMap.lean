@@ -179,6 +179,13 @@ theorem tupleChain_eq_zero_of_image_notMem {g : Fin (n + 1) → ι} (hg : Finset
   exact hg ((image_eq_of_det_incidence_ne_zero fun h' ↦ h (by rw [h',
       Int.cast_zero])) ▸ c.val.property)
 
+/-- Every cell in the support of the chain of a vertex tuple is spanned by the entries of the
+tuple. -/
+theorem val_eq_image_of_mem_support_tupleChain {g : Fin (n + 1) → ι} {c : RealizationCell K n}
+    (hc : c ∈ (tupleChain R g).support) : c.val.val = Finset.univ.image g := by
+  rw [Finsupp.mem_support_iff, tupleChain_apply] at hc
+  exact (image_eq_of_det_incidence_ne_zero fun h ↦ hc (by rw [h, Int.cast_zero])).symm
+
 /-- The integer matrix obtained by adjoining a column of ones to the incidence matrix of a
 tuple of `n + 2` vertices against an `n`-cell. Its Laplace expansion along the column of ones
 is the coefficient of the alternating deleted-entry sum. -/
@@ -269,6 +276,15 @@ theorem map_single (c : RealizationCell K n) (r : R) :
     map R f n (single c r) = r • tupleChain R (f ∘ c.vertexEmbedding) :=
   linearCombination_single R r c
 
+/-- Every cell in the support of the image of a multiple of a cell under a simplicial map is
+spanned by the images of the vertices of that cell. -/
+theorem val_eq_image_of_mem_support_map_single {c : RealizationCell K n} {r : R}
+    {d : RealizationCell L n} (hd : d ∈ (map R f n (single c r)).support) :
+    d.val.val = c.val.val.image f := by
+  rw [map_single] at hd
+  rw [val_eq_image_of_mem_support_tupleChain (Finsupp.support_smul hd), ← Finset.image_image,
+    RealizationCell.image_vertexEmbedding]
+
 /-- A simplicial map increasing on a cell sends a multiple of that cell to the same multiple of
 its image cell, without a change of sign. -/
 theorem map_single_of_strictMonoOn (c : RealizationCell K n)
@@ -276,6 +292,15 @@ theorem map_single_of_strictMonoOn (c : RealizationCell K n)
     map R f n (single c r) = single (c.map f hc.injOn) r := by
   rw [map_single, ← RealizationCell.vertexEmbedding_map c f hc, tupleChain_vertexEmbedding,
     smul_single, smul_eq_mul, mul_one]
+
+/-- The induced map on `0`-chains preserves the augmentation, the sum of the coefficients. -/
+theorem augmentation_comp_map_zero :
+    linearCombination R (fun _ : RealizationCell L 0 ↦ (1 : R)) ∘ₗ map R f 0 =
+      linearCombination R fun _ : RealizationCell K 0 ↦ (1 : R) := by
+  refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
+  have hc : (↑c.val.val : Set ι).Subsingleton :=
+    Finset.card_le_one_iff_subsingleton.mp c.property.le
+  simp [map_single_of_strictMonoOn f c (hc.strictMonoOn f)]
 
 /-- The induced map sends the chain of a vertex tuple to the chain of its image tuple. -/
 @[simp]
