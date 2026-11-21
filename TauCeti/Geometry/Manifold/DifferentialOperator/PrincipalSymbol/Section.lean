@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
 import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.LinearAlgebra.Multilinear.Polarization
 
 /-!
 # The principal symbol of a differential operator between vector bundles
@@ -42,8 +43,9 @@ The principal symbol is homogeneous of degree `m` in the covector, vanishes on o
 order, and is multiplicative: `σ(P ∘ Q) = σ(P) ∘ σ(Q)` when the intermediate bundle `W` is also
 smooth and of finite rank, which the comparison with the cotangent symbol of `I_x` likewise
 needs. On a boundaryless manifold, the commutator symbol of an operator of order at most `m + 1`
-vanishes identically exactly when the operator has order at most `m`. An operator of order zero is
-a `C^∞(M)`-linear map, and its principal symbol is its fibre map.
+vanishes identically exactly when the operator has order at most `m`, and by polarization so does
+its principal symbol. An operator of order zero is a `C^∞(M)`-linear map, and its principal
+symbol is its fibre map.
 
 ## Main definitions
 
@@ -71,6 +73,9 @@ a `C^∞(M)`-linear map, and its principal symbol is its fibre map.
 * `TauCeti.forall_sectionCommutatorSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
   order at most `m + 1` has vanishing commutator symbol at every point exactly when it has order
   at most `m`.
+* `TauCeti.forall_sectionPrincipalSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
+  order at most `m + 1` has vanishing principal symbol at every point exactly when it has order at
+  most `m`.
 * `TauCeti.sectionPrincipalSymbol_mk_smul`: multiplying the values of an operator by a smooth
   function `g` multiplies its principal symbol at `x` by `g(x)`.
 * `TauCeti.sectionPrincipalSymbol_mvfderiv_of_order_one`: a first-order operator has
@@ -335,6 +340,25 @@ theorem sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsIn
     sectionPrincipalSymbol I hx P ξ = 0 := by
   simp [sectionPrincipalSymbol_def,
     sectionCommutatorSymbol_eq_zero_of_mem_differentialOperators hx P hP]
+
+/-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing principal symbol
+at every point if and only if it has order at most `m`. -/
+theorem forall_sectionPrincipalSymbol_eq_zero_iff [BoundarylessManifold I M] {m : ℕ}
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ (m + 1)) :
+    (∀ (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ),
+      sectionPrincipalSymbol I BoundarylessManifold.isInteriorPoint P ξ = 0) ↔
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ∈
+        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m := by
+  refine ⟨fun h ↦ (forall_sectionCommutatorSymbol_eq_zero_iff P).1 fun x ↦ ?_,
+    fun hP x ↦ sectionPrincipalSymbol_eq_zero_of_mem_differentialOperators _ P hP⟩
+  -- The commutator symbol is symmetric and vanishes on the diagonal, so it vanishes by
+  -- polarization.
+  have := HasUniqueDiv.of_isTorsionFree ℝ (V x →ₗ[ℝ] W x)
+  refine MultilinearMap.eq_zero_of_apply_const_eq_zero
+    (sectionCommutatorSymbol_comp_perm BoundarylessManifold.isInteriorPoint P) fun ξ ↦ ?_
+  have hξ := h x ξ
+  rw [sectionPrincipalSymbol_def, smul_eq_zero, inv_eq_zero] at hξ
+  exact hξ.resolve_left (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
 
 /-- **The principal symbol of an operator of order zero.** A `C^∞(M)`-linear map `L` of sections,
 viewed as a differential operator of order zero, has principal symbol its fibre map at `x` at
