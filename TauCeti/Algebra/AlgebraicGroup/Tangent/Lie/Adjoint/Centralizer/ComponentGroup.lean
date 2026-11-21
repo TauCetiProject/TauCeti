@@ -87,7 +87,7 @@ theorem centralizerComponentGroupConjugationEquiv_rationalComponentMap
       HopfIdeal.rationalComponentMap
         (centralizerHopfIdeal H (Comodule.basePointsRepresentation (H := H) _ g x))
         ⟨g * c * g⁻¹, centralizerHopfIdeal_basePointsRepresentation x g ▸
-          (CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff _ g c).mpr c.2⟩ :=
+          (CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff _ g c).mpr c.property⟩ :=
   HopfIdeal.componentGroupConjugationEquiv_rationalComponentMap _ _ g _ c
 
 end Conjugation
@@ -115,7 +115,7 @@ theorem centralizerComponentGroupMap_rationalComponentMap (f : H ⟶ K)
       (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)).rationalComponentMap
         ⟨BialgHom.mapDomain (A := k) (toBialgHom f) c,
           CommHopfAlgCat.mapDomain_mem_quotientPointsSubgroup_of_map_le f.hom
-            ((toBialgHom f).map_centralizerHopfIdeal_le x) _ c.2⟩ :=
+            ((toBialgHom f).map_centralizerHopfIdeal_le x) _ c.property⟩ :=
   HopfIdeal.componentGroupMap_rationalComponentMap _ _ f _ c
 
 /-- **Surjectivity of centralizer component group maps.** Let `φ : G' → G` be a homomorphism of

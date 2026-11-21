@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
+public import Mathlib.Order.WithBot
 
 import Mathlib.Order.SuccPred.Nat
 import TauCeti.Order.SuccPred.IntermediateValue
@@ -24,12 +26,14 @@ recovery sequence built from a countable neighbourhood basis. It complements Mat
 `Filter.extraction_forall_of_eventually`, which meets the requirements along a subsequence
 instead.
 
-The second statement is the diagonal extraction of a subsequence along which countably many
-sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
-each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
-them converge. It is the compactness step of the Arzelà–Ascoli theorem. For finitely many
-properties of extractions, each preserved by further extraction, the same holds one property at a
-time (`TauCeti.extraction_forall_mem_finset`).
+The second statement is diagonal extraction for countably many properties of extractions
+(`TauCeti.extraction_forall`): if every extraction has, for each `j`, a further extraction with
+the property `P j`, then one extraction is, for every `j`, eventually a subsequence of an
+extraction with the property `P j`. In particular, a single subsequence makes countably many
+sequences converge at once when every subsequence of each of them has a convergent further
+subsequence (`TauCeti.extraction_forall_exists_tendsto`). This is the compactness step of the
+Arzelà–Ascoli theorem. For finitely many properties of extractions, each preserved by further
+extraction, the same holds one property at a time (`TauCeti.extraction_forall_mem_finset`).
 
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
 semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
@@ -42,7 +46,9 @@ steps of at most one.
 
 In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
-(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`.
+(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`. In an
+Archimedean ordered semiring, truncating a finite `WithTop` element at natural casts eventually
+stabilizes (`WithTop.eventually_min_natCast_eq`).
 -/
 
 public section
@@ -68,6 +74,61 @@ theorem exists_tendsto_atTop_of_forall_eventually {P : ℕ → ℕ → Prop}
       (fun j hj ↦ ?_) _ le_rfl)
     rwa [Nat.le_zero.1 hj]
 
+/-- **Diagonal extraction for countably many properties.** Let `P j` be properties of extractions
+`ψ : ℕ → ℕ`, for `j ∈ ℕ`. If every extraction has, for each `j`, a further extraction with property
+`P j`, then there is one extraction `D` which for every `j` is, from the index `j` on, a
+subsequence of an extraction `ψ` with property `P j`: each `D n` with `j ≤ n` is a term `ψ k` with
+`n ≤ k`. So `D` is eventually a reindexing of `ψ` along a map tending to infinity
+(`TauCeti.exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le`), and properties of the form
+`∀ᶠ n in atTop, Q (ψ n)` pass from `ψ` to `D` (`TauCeti.eventually_of_eq_apply_of_le`). -/
+theorem extraction_forall {P : ℕ → (ℕ → ℕ) → Prop}
+    (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P j (ψ ∘ ψ')) :
+    ∃ D : ℕ → ℕ, StrictMono D ∧
+      ∀ j, ∃ ψ : ℕ → ℕ, P j ψ ∧ ∀ n, j ≤ n → ∃ k, n ≤ k ∧ D n = ψ k := by
+  choose ψ' hψ' hP using h
+  -- `θ j` is the extraction with the properties `P 0, …, P j`, each refining the previous one.
+  let θ : ℕ → {ψ : ℕ → ℕ // StrictMono ψ} := fun j ↦ Nat.rec
+    ⟨ψ' 0 id strictMono_id, hψ' 0 id strictMono_id⟩
+    (fun j θj ↦ ⟨θj.val ∘ ψ' (j + 1) θj.val θj.property, θj.property.comp (hψ'
+        (j + 1) θj.val θj.property)⟩) j
+  have hθ0 : (θ 0).val = ψ' 0 id strictMono_id := rfl
+  have hθsucc j : (θ (j + 1)).val = (θ j).val ∘ ψ' (j + 1) (θ j).val (θ j).property := rfl
+  have hθ j : P j (θ j).val := by
+    cases j with
+    | zero => exact hθ0 ▸ hP 0 id strictMono_id
+    | succ j => exact (hθsucc j) ▸ hP (j + 1) (θ j).val (θ j).property
+  -- Every later `θ n` is a subsequence of `θ j`.
+  have hsub j n (hjn : j ≤ n) a : ∃ b, a ≤ b ∧ (θ n).val a = (θ j).val b := by
+    induction n, hjn using Nat.le_induction generalizing a with
+    | base => exact ⟨a, le_rfl, rfl⟩
+    | succ n _ ih =>
+      obtain ⟨b, hab, hb⟩ := ih (ψ' (n + 1) (θ n).val (θ n).property a)
+      exact ⟨b, ((hψ' _ _ _).id_le a).trans hab, by rw [hθsucc]; exact hb⟩
+  -- The diagonal extraction `n ↦ θ n n`.
+  refine ⟨fun n ↦ (θ n).val n, strictMono_nat_of_lt_succ fun n ↦ ?_,
+    fun j ↦ ⟨(θ j).val, hθ j, fun n hjn ↦ hsub j n hjn n⟩⟩
+  rw [hθsucc]
+  exact (θ n).property.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).property n.lt_succ_self)
+
+/-- A sequence `D` whose terms from some index on are terms `ψ k` with `k ≥ n` is eventually the
+reindexing `ψ ∘ f` of `ψ` along a map `f` tending to infinity. This is how the properties of the
+extractions given by `TauCeti.extraction_forall` pass to the diagonal. -/
+theorem exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le {ψ D : ℕ → ℕ} {m : ℕ}
+    (hD : ∀ n, m ≤ n → ∃ k, n ≤ k ∧ D n = ψ k) :
+    ∃ f : ℕ → ℕ, Tendsto f atTop atTop ∧ D =ᶠ[atTop] ψ ∘ f := by
+  choose! f hf using hD
+  have hev : ∀ᶠ n in atTop, n ≤ f n ∧ D n = ψ (f n) := (eventually_ge_atTop m).mono hf
+  exact ⟨f, tendsto_atTop_mono' atTop (hev.mono fun _ h ↦ h.1) tendsto_id, hev.mono fun _ h ↦ h.2⟩
+
+/-- A property eventually true along a sequence `ψ` is eventually true along a sequence `D` whose
+terms from some index on are terms `ψ k` with `k ≥ n`. -/
+theorem eventually_of_eq_apply_of_le {p : ℕ → Prop} {ψ D : ℕ → ℕ} {m : ℕ}
+    (hD : ∀ n, m ≤ n → ∃ k, n ≤ k ∧ D n = ψ k) (h : ∀ᶠ k in atTop, p (ψ k)) :
+    ∀ᶠ n in atTop, p (D n) := by
+  obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hD
+  filter_upwards [hDf, hf.eventually h] with n hn hp
+  rwa [hn]
+
 /-- **Diagonal extraction.** Let `x j : ℕ → X` be countably many sequences and `l y` the filter of
 a convergence to `y` on `X`. If every subsequence of every `x j` has a further subsequence
 converging to some point, then one subsequence makes every `x j` converge. -/
@@ -75,35 +136,14 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
     (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ →
       ∃ y, ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ Tendsto (fun n ↦ x j (ψ (ψ' n))) atTop (l y)) :
     ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ j, ∃ y, Tendsto (fun n ↦ x j (ψ n)) atTop (l y) := by
-  choose y ψ' hψ' hy using h
-  -- `θ j` is the subsequence along which `x 0, …, x j` converge, each refining the previous one.
-  let θ : ℕ → {ψ : ℕ → ℕ // StrictMono ψ} := fun j ↦ Nat.rec
-    ⟨ψ' 0 id strictMono_id, hψ' 0 id strictMono_id⟩
-    (fun j θj ↦ ⟨θj.1 ∘ ψ' (j + 1) θj.1 θj.2, θj.2.comp (hψ' (j + 1) θj.1 θj.2)⟩) j
-  have hθ0 : (θ 0).1 = ψ' 0 id strictMono_id := rfl
-  have hθsucc j : (θ (j + 1)).1 = (θ j).1 ∘ ψ' (j + 1) (θ j).1 (θ j).2 := rfl
-  have hθ j : ∃ z, Tendsto (fun n ↦ x j ((θ j).1 n)) atTop (l z) := by
-    cases j with
-    | zero => exact ⟨_, by simpa only [hθ0, id] using hy 0 id strictMono_id⟩
-    | succ j =>
-      exact ⟨_, by simpa only [hθsucc, Function.comp_apply] using hy (j + 1) (θ j).1 (θ j).2⟩
-  -- Every later `θ n` is a subsequence of `θ j`.
-  have hsub j n (hjn : j ≤ n) a : ∃ b, a ≤ b ∧ (θ n).1 a = (θ j).1 b := by
-    induction n, hjn using Nat.le_induction generalizing a with
-    | base => exact ⟨a, le_rfl, rfl⟩
-    | succ n _ ih =>
-      obtain ⟨b, hab, hb⟩ := ih (ψ' (n + 1) (θ n).1 (θ n).2 a)
-      exact ⟨b, ((hψ' _ _ _).id_le a).trans hab, by rw [hθsucc]; exact hb⟩
-  -- The diagonal subsequence `n ↦ θ n n`.
-  refine ⟨fun n ↦ (θ n).1 n, strictMono_nat_of_lt_succ fun n ↦ ?_, fun j ↦ ?_⟩
-  · rw [hθsucc]
-    exact (θ n).2.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).2 n.lt_succ_self)
-  · obtain ⟨z, hz⟩ := hθ j
-    choose m hm using fun n ↦ hsub j (max j n) (le_max_left _ _) (max j n)
-    refine ⟨z, (hz.comp (tendsto_atTop_mono (fun n ↦ (le_max_right j n).trans (hm n).1)
-      tendsto_id)).congr' ?_⟩
-    filter_upwards [eventually_ge_atTop j] with n hn
-    simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+  obtain ⟨D, hD, hP⟩ := extraction_forall
+    (P := fun j ψ ↦ ∃ y, Tendsto (fun n ↦ x j (ψ n)) atTop (l y)) fun j ψ hψ ↦ by
+      obtain ⟨y, ψ', hψ', hy⟩ := h j ψ hψ
+      exact ⟨ψ', hψ', y, hy⟩
+  refine ⟨D, hD, fun j ↦ ?_⟩
+  obtain ⟨ψ, ⟨z, hz⟩, hψD⟩ := hP j
+  obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hψD
+  exact ⟨z, (hz.comp hf).congr' (hDf.fun_comp (x j)).symm⟩
 
 /-- **Common extraction for finitely many properties.** Let `P i` be properties of extractions
 `ψ : ℕ → ℕ`, for `i` in a finite set `s`, each preserved by passing to a further extraction. If
@@ -176,3 +216,18 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
 end TauCeti
+
+namespace WithTop
+
+/-- Truncating a finite extended element at `(n : ι)` eventually leaves it unchanged. -/
+theorem eventually_min_natCast_eq {ι : Type*} [Semiring ι] [LinearOrder ι] [IsOrderedRing ι]
+    [Archimedean ι] {τ : WithTop ι} (hfin : τ ≠ ⊤) :
+    ∀ᶠ n : ℕ in atTop, min ((n : ι) : WithTop ι) τ = τ := by
+  cases τ with
+  | top => exact absurd rfl hfin
+  | coe s =>
+    obtain ⟨N, hN⟩ := exists_nat_ge s
+    filter_upwards [eventually_ge_atTop N] with n hn
+    exact min_eq_right (WithTop.coe_le_coe.mpr (hN.trans (Nat.mono_cast hn)))
+
+end WithTop

@@ -134,7 +134,7 @@ theorem isProperMap_cylinderDeformation (N : NDRPair A) (hN : IsProperMap N.defo
 `N.cylinderRetraction : I × X → {0} × X ∪ I × A`. -/
 theorem isProperMap_cylinderRetraction (N : NDRPair A) (hN : IsProperMap N.deformation) :
     IsProperMap N.cylinderRetraction := by
-  refine isProperMap_of_comp_of_inj N.cylinderRetraction.continuous continuous_subtype_val ?_
+  refine isProperMap_of_comp_of_inj N.cylinderRetraction.continuous continuous_subtypeVal ?_
     Subtype.val_injective
   convert (N.isProperMap_cylinderDeformation hN).comp (isProperMap_prodMk_left (1 : I)) using 1
   funext z
@@ -152,7 +152,7 @@ protected theorem hasProperHomotopyExtensionProperty (N : NDRPair A)
     (r := (ContinuousMap.subtypeVal _).comp N.cylinderRetraction)
     (hval ▸ (isClosed_cylinderExtensionDomain N.isClosed).isProperMap_subtypeVal.comp
       (N.isProperMap_cylinderRetraction hN))
-    (fun z ↦ (N.cylinderRetraction z).2)
+    (fun z ↦ (N.cylinderRetraction z).property)
     fun z hz ↦ ?_
   simpa using congrArg Subtype.val (N.cylinderRetraction_apply_coe ⟨z, hz⟩)
 
@@ -256,13 +256,13 @@ private lemma retraceTime_zero_left (t : I) : retraceTime 0 t = tent t := by
   rw [retraceTime, Icc.coe_zero, sub_zero, projIcc_val]
 
 private lemma retraceTime_zero_right (s : I) : retraceTime s 0 = 0 :=
-  projIcc_eq_zero.2 (by simp [s.2.1])
+  projIcc_eq_zero.2 (by simp [s.property.1])
 
 private lemma retraceTime_one_right (s : I) : retraceTime s 1 = 0 :=
-  projIcc_eq_zero.2 (by simp [s.2.1])
+  projIcc_eq_zero.2 (by simp [s.property.1])
 
 private lemma retraceTime_one_left (t : I) : retraceTime 1 t = 0 :=
-  projIcc_eq_zero.2 (by rw [Icc.coe_one]; linarith [(tent t).2.2])
+  projIcc_eq_zero.2 (by rw [Icc.coe_one]; linarith [(tent t).property.2])
 
 /-- Boundary data on `I × ({0, 1} × X ∪ I × A)` contracting the tent-reparametrised loop on `A`
 to the stationary path `f₀` while keeping the endpoints `t = 0` and `t = 1` fixed at `f₀` and
@@ -271,20 +271,20 @@ private noncomputable def retraceBoundary {X : Type u} {Y : Type v}
     [TopologicalSpace X] [TopologicalSpace Y] {A : Set X} {f₀ f₁ f₂ : C(X, Y)}
     (F : f₀.Homotopy f₁) :
     I × ↥(({0, 1} : Set I) ×ˢ (univ : Set X) ∪ univ ×ˢ A) → Y := fun q ↦
-  if q.2.1.1 = 0 then f₀ q.2.1.2
-  else if q.2.1.1 = 1 then f₂ q.2.1.2
-  else F (retraceTime q.1 q.2.1.1, q.2.1.2)
+  if q.2.val.1 = 0 then f₀ q.2.val.2
+  else if q.2.val.1 = 1 then f₂ q.2.val.2
+  else F (retraceTime q.1 q.2.val.1, q.2.val.2)
 
 private lemma retraceBoundary_of_mem {X : Type u} {Y : Type v}
     [TopologicalSpace X] [TopologicalSpace Y] {A : Set X} {f₀ f₁ f₂ : C(X, Y)}
     (F : f₀.Homotopy f₁) (G : f₁.Homotopy f₂) (hG : ∀ t, ∀ x ∈ A, G (t, x) = F (σ t, x))
-    (q : I × ↥(({0, 1} : Set I) ×ˢ (univ : Set X) ∪ univ ×ˢ A)) (hq : q.2.1.2 ∈ A) :
-    retraceBoundary (f₂ := f₂) F q = F (retraceTime q.1 q.2.1.1, q.2.1.2) := by
-  by_cases h0 : q.2.1.1 = 0
+    (q : I × ↥(({0, 1} : Set I) ×ˢ (univ : Set X) ∪ univ ×ˢ A)) (hq : q.2.val.2 ∈ A) :
+    retraceBoundary (f₂ := f₂) F q = F (retraceTime q.1 q.2.val.1, q.2.val.2) := by
+  by_cases h0 : q.2.val.1 = 0
   · simp [retraceBoundary, h0, retraceTime_zero_right]
-  · by_cases h1 : q.2.1.1 = 1
-    · have hf₂ : f₂ q.2.1.2 = F (0, q.2.1.2) := by
-        simpa using (G.apply_one q.2.1.2).symm.trans (hG 1 q.2.1.2 hq)
+  · by_cases h1 : q.2.val.1 = 1
+    · have hf₂ : f₂ q.2.val.2 = F (0, q.2.val.2) := by
+        simpa using (G.apply_one q.2.val.2).symm.trans (hG 1 q.2.val.2 hq)
       simp [retraceBoundary, h1, retraceTime_one_right, hf₂]
     · simp [retraceBoundary, h0, h1]
 
@@ -299,9 +299,9 @@ private lemma isProperMap_retraceBoundary {X : Type u} {Y : Type v}
   -- Cover `I × B` by the two end slices (`t = 0`, `t = 1`) and the wall (`x ∈ A`).
   let C : Fin 3 → Set (I × B) := fun i ↦
     match i with
-    | ⟨0, _⟩ => {q | q.2.1.1 = 0}
-    | ⟨1, _⟩ => {q | q.2.1.1 = 1}
-    | ⟨2, _⟩ => {q | q.2.1.2 ∈ A}
+    | ⟨0, _⟩ => {q | q.2.val.1 = 0}
+    | ⟨1, _⟩ => {q | q.2.val.1 = 1}
+    | ⟨2, _⟩ => {q | q.2.val.2 ∈ A}
   have hC : ∀ i, IsClosed (C i) := by
     rintro ⟨_ | _ | _ | n, hn⟩
     · exact (isClosed_singleton (x := (0 : I))).preimage (by fun_prop)
@@ -309,7 +309,7 @@ private lemma isProperMap_retraceBoundary {X : Type u} {Y : Type v}
     · exact hA.preimage (by fun_prop)
     · omega
   have hcov : ⋃ i, C i = univ := eq_univ_of_forall fun q ↦ by
-    rcases q.2.2 with ⟨h0 | h1, -⟩ | ⟨-, hx⟩
+    rcases q.2.property with ⟨h0 | h1, -⟩ | ⟨-, hx⟩
     · exact mem_iUnion.2 ⟨0, h0⟩
     · exact mem_iUnion.2 ⟨1, h1⟩
     · exact mem_iUnion.2 ⟨2, hx⟩
@@ -322,11 +322,11 @@ private lemma isProperMap_retraceBoundary {X : Type u} {Y : Type v}
   rintro ⟨_ | _ | _ | n, hn⟩
   · have h₀ : (C 0).domRestrict (retraceBoundary (A := A) (f₂ := f₂) F) =
         (C 0).domRestrict (f₀ ∘ Prod.snd ∘ Prod.snd ∘ ι) := by
-      funext q; have hq : q.1.2.1.1 = 0 := q.2; simp [retraceBoundary, ι, hq]
+      funext q; have hq : q.val.2.val.1 = 0 := q.property; simp [retraceBoundary, ι, hq]
     exact h₀ ▸ ((F.isProperMap_left hF).comp hproj).restrict (hC 0)
   · have h₁ : (C 1).domRestrict (retraceBoundary (A := A) (f₂ := f₂) F) =
         (C 1).domRestrict (f₂ ∘ Prod.snd ∘ Prod.snd ∘ ι) := by
-      funext q; have hq : q.1.2.1.1 = 1 := q.2; simp [retraceBoundary, ι, hq]
+      funext q; have hq : q.val.2.val.1 = 1 := q.property; simp [retraceBoundary, ι, hq]
     exact h₁ ▸ ((G.isProperMap_right hG).comp hproj).restrict (hC 1)
   · have h₂ : (C 2).domRestrict (retraceBoundary (A := A) (f₂ := f₂) F) =
         (C 2).domRestrict (F ∘ Prod.map (Function.uncurry retraceTime) id ∘

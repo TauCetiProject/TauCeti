@@ -137,7 +137,7 @@ theorem mem_iff {g : GL m R} :
 /-- The underlying matrix of an element of `Uₙ(R)` is upper unitriangular. -/
 theorem isUpperUnitriangular (g : upperUnitriangularGroup m R) :
     ((g : GL m R) : Matrix m m R).IsUpperUnitriangular :=
-  g.2
+  g.property
 
 /-- An upper-unitriangular matrix is upper triangular. -/
 theorem isUpperTriangular (g : upperUnitriangularGroup m R) :

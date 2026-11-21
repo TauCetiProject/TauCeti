@@ -149,7 +149,7 @@ private def canonicalModularRow (q : DixonPrimeData G)
 
 /-- The canonical modular row is the value of the equivalence enumerating the modular search. -/
 private theorem modularCentralRowsEquiv_apply (q : DixonPrimeData G) (i : Fin d.numClasses) :
-    (d.modularCentralRowsEquiv q i).1 = d.canonicalModularRow q i := by
+    (d.modularCentralRowsEquiv q i).val = d.canonicalModularRow q i := by
   let _ : FinEnum (ZMod q.p) :=
     FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
   simp only [modularCentralRowsEquiv, Equiv.trans_apply, Equiv.subtypeEquivRight_apply]

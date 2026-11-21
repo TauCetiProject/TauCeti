@@ -154,7 +154,7 @@ def basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
 @[simp] theorem basisEquiv_of (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     S.basisEquiv T a hS hO (FreeGroup.of e) =
-      ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
+      ⟨S.treeLoopWord T a e.val, S.treeLoopWord_mem_subgroup T a e.val⟩ := by
   apply Subtype.ext
   rw [basisEquiv, MulEquiv.trans_apply, S.coe_pathGroupEquivSubgroup_apply,
     ← S.pathGroupRead_apply, T.pathGroupEquivFreeGroup_symm_of, S.pathGroupRead_loop]
@@ -166,7 +166,7 @@ inverse generator, and tree darts nothing. The path need not be reduced. -/
     (p : S.graph.Path a a) :
     (S.basisEquiv T a hS hO).symm ⟨S.read p, S.read_mem_subgroup p⟩ =
       p.weight (fun {x y : S.graph.V} (e : x ⟶ y) =>
-        GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+        GraphOfGroups.π₁Tree.dartWord O T.darts e.val) := by
   rw [← T.pathGroupEquivFreeGroup_ofPath a hO]
   apply (S.basisEquiv T a hS hO).injective
   simp [basisEquiv]
@@ -178,28 +178,28 @@ theorem basisEquiv_symm_apply (hS : S.IsFolded) (hO : S.graph.IsOrientation O) (
     (S.basisEquiv T a hS hO).symm g =
       ((S.pathGroupEquivSubgroup hS a).symm g).toPath.weight
         (fun {x y : S.graph.V} (e : x ⟶ y) =>
-          GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+          GraphOfGroups.π₁Tree.dartWord O T.darts e.val) := by
   rw [← T.pathGroupEquivFreeGroup_apply a hO, basisEquiv, MulEquiv.symm_trans_apply,
     MulEquiv.symm_symm]
 
 /-- The embedding into the ambient free group is the lift of the tree-loop words. -/
 theorem subtype_comp_basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
     (S.subgroup a).subtype.comp (S.basisEquiv T a hS hO).toMonoidHom =
-      FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1) := by
+      FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val) := by
   ext e
   simp
 
 /-- The tree-loop words freely generate a subgroup of the ambient free group. -/
 theorem lift_treeLoopWord_injective (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
-    Function.Injective (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1)) := by
+    Function.Injective (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val)) := by
   rw [← S.subtype_comp_basisEquiv T a hS hO]
   exact Subtype.val_injective.comp (S.basisEquiv T a hS hO).injective
 
 /-- The image of the free group on the tree-loop words is exactly the accepted subgroup. -/
 @[simp] theorem range_lift_treeLoopWord (hO : S.graph.IsOrientation O) :
-    (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1)).range =
+    (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val)).range =
       S.subgroup a := by
-  have h : FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1) =
+  have h : FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val) =
       (S.pathGroupRead a).comp (T.pathGroupEquivFreeGroup a hO).symm.toMonoidHom := by
     ext e
     simp
@@ -216,7 +216,7 @@ def freeGroupBasis (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
 @[simp] theorem freeGroupBasis_apply (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     S.freeGroupBasis T a hS hO e =
-      ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
+      ⟨S.treeLoopWord T a e.val, S.treeLoopWord_mem_subgroup T a e.val⟩ := by
   exact S.basisEquiv_of T a hS hO e
 
 /-- The accepted subgroup of a folded graph is finitely generated exactly when finitely many
@@ -258,10 +258,10 @@ theorem subgroup_eq_bot_iff (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
   · intro h e heO
     by_contra heT
     have hone : S.basisEquiv T a hS hO (FreeGroup.of ⟨e, heO, heT⟩) = 1 :=
-      Subtype.ext (Subgroup.mem_bot.mp (h ▸ (S.basisEquiv T a hS hO _).2))
+      Subtype.ext (Subgroup.mem_bot.mp (h ▸ (S.basisEquiv T a hS hO _).property))
     exact FreeGroup.of_ne_one _ ((S.basisEquiv T a hS hO).map_eq_one_iff.mp hone)
   · intro h
-    have : IsEmpty ↥(O \ T.darts) := ⟨fun e => e.2.2 (h e.2.1)⟩
+    have : IsEmpty ↥(O \ T.darts) := ⟨fun e => e.property.2 (h e.property.1)⟩
     have := (S.basisEquiv T a hS hO).symm.toEquiv.subsingleton
     exact Subgroup.eq_bot_of_subsingleton _
 

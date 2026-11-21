@@ -160,13 +160,13 @@ private theorem cup_cor_of_add_one (M N : Rep k G) (H : Subgroup G) {p q r : ℤ
     (cup_δ_of_leftInverse (Rep.res H.subtype M) ((shortExact_res H.subtype).2 hD)
       hρ h x (res N H q y))
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, curriedTensor_obj_obj] at hcup
-  rw [negOnePow_smul_negOnePow_smul] at hcup
+  rw [Int.negOnePow_smul_negOnePow_smul] at hcup
   refine (congrArg (cor (M ⊗ dimensionShiftDown N) H (r + 1)) hcup.symm).trans ?_
   erw [map_zsmul_unit]
   erw [← hres, ih]
   have htarget := congrArg (p.negOnePow • ·)
     (cup_dimensionShiftDownIso_hom M N hq h rfl (cor M H p x) y)
-  rw [negOnePow_smul_negOnePow_smul, dimensionShiftDownIso_hom,
+  rw [Int.negOnePow_smul_negOnePow_smul, dimensionShiftDownIso_hom,
     tensorDimensionShiftDownIso_hom] at htarget
   exact htarget
 

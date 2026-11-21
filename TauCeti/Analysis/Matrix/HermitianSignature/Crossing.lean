@@ -123,6 +123,14 @@ theorem crossingForm_neg (B V' : E →L[ℝ] E →L[ℝ] ℝ) :
   ext v
   simp
 
+/-- At `B = 0` the crossing form of `B` and `V'` is the quadratic form of `V'` on the whole
+space. -/
+theorem crossingForm_equivalent_of_eq_zero {B V' : E →L[ℝ] E →L[ℝ] ℝ} (hB : B = 0) :
+    (crossingForm B V').Equivalent V'.toBilinForm.toQuadraticMap := by
+  subst hB
+  refine ⟨{ toLinearEquiv := LinearEquiv.ofTop _ (by simp), map_app' := fun v ↦ ?_ }⟩
+  simpa using (crossingForm_apply (0 : E →L[ℝ] E →L[ℝ] ℝ) V' v).symm
+
 /-- A subspace of the kernel of `B` on which the crossing form of `B` and `D` is negative definite
 gives a subspace of `E` of the same dimension, inside the kernel, on which `D` is negative
 definite. -/
@@ -132,7 +140,7 @@ private theorem exists_le_ker_of_posDef_neg_crossingForm (B D : E →L[ℝ] E �
       ∀ x ∈ M, x ≠ 0 → D x x < 0 := by
   refine ⟨M'.map B.ker.subtype, Submodule.finrank_map_subtype_eq _ _, ?_, ?_⟩
   · rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   · rintro _ ⟨y, hy, rfl⟩ hy0
     have hy0' : (⟨y, hy⟩ : M') ≠ 0 := by
       intro h
@@ -267,7 +275,7 @@ private theorem eventually_add_sigNeg_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
       rw [ContinuousLinearMap.coe_coe] at h
       simp [h]), finrank_bot, add_zero] at hdim
   rw [← hNr, ← hM'r, ← hMr, ← hdim]
-  exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
+  exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.property (by simpa using hx0)
 
 /-- Lower bound for the positive index: eventually along `l`, the positive index of `V t` is at
 least that of `V t₀` plus that of the crossing form of `V t₀` and `D`. This is the negative-index

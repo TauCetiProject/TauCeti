@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 public import TauCeti.Analysis.Complex.UnitDisc.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Symplectic.JHolomorphic.ComplexDifferentiable
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Restriction
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 import TauCeti.Analysis.Normed.Module.Ball
 
@@ -50,10 +52,25 @@ that is constant near none of the points of a finite `σ⁻¹(Z)`, every local c
 `Z` (`TauCeti.PositiveCohomologyAssignment.charge_eq_zero_iff`). These are the multiplicities that
 the reconstruction attaches to the components of the curve.
 
+Positive cohomology assignments are natural. An injective pseudoholomorphic map
+`f : (Y', J') → (Y, J)` pulls a positive cohomology assignment to `Z` back to one to `f⁻¹(Z)`,
+giving a disc `σ` in `Y'` the integer of `f ∘ σ`
+(`TauCeti.PositiveCohomologyAssignment.comap`); pseudoholomorphicity of `f` preserves positivity,
+and injectivity preserves nonconstancy. In particular a positive cohomology assignment restricts
+to every open subset `U ⊆ Y` with the restricted almost complex structure
+(`TauCeti.PositiveCohomologyAssignment.restrictOpen`), and is transported by every diffeomorphism
+`h : Y' → Y` to `h⁻¹(Z)` with the pulled-back structure `h^* J`
+(`TauCeti.PositiveCohomologyAssignment.pullback`). The integers and local charges are unchanged.
+This is how the reconstruction, which is local, moves to a chart, where the curve near a point is
+built.
+
 ## Main definitions
 
 * `TauCeti.PositiveCohomologyAssignment J Z`: a positive cohomology assignment to `Z`.
 * `TauCeti.PositiveCohomologyAssignment.localCharge`: the local charge of a disc at a point.
+* `TauCeti.PositiveCohomologyAssignment.comap`: pullback along an injective pseudoholomorphic map.
+* `TauCeti.PositiveCohomologyAssignment.restrictOpen`: restriction to an open subset.
+* `TauCeti.PositiveCohomologyAssignment.pullback`: transport by a diffeomorphism.
 
 ## Main results
 
@@ -66,6 +83,12 @@ the reconstruction attaches to the components of the curve.
   `TauCeti.PositiveCohomologyAssignment.charge_eq_zero_iff`: for a `J`-holomorphic disc that is
   nowhere locally constant on a finite `σ⁻¹(Z)`, `I(σ)` is at least the number of its points, and
   is zero exactly when `σ` misses `Z`.
+* `TauCeti.PositiveCohomologyAssignment.charge_restrictOpen`,
+  `TauCeti.PositiveCohomologyAssignment.localCharge_restrictOpen`: a disc in an open subset `U` has
+  the same integer and the same local charges for the restricted assignment as in `Y`.
+* `TauCeti.PositiveCohomologyAssignment.charge_pullback`,
+  `TauCeti.PositiveCohomologyAssignment.localCharge_pullback`: the same for transport by a
+  diffeomorphism.
 
 ## References
 
@@ -251,12 +274,12 @@ theorem charge_eq_sum_localCharge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)
           fun r hr _ ↦ by linarith
   obtain ⟨r, hr, hrs, hsep⟩ := hev.exists
   replace hr : 0 < r := mem_Ioi.1 hr
-  have hc : ∀ z : s, ‖((z : 𝔻) : ℂ)‖ + r ≤ 1 := fun z ↦ by linarith [hrs z z.2]
+  have hc : ∀ z : s, ‖((z : 𝔻) : ℂ)‖ + r ≤ 1 := fun z ↦ by linarith [hrs z z.property]
   have hdisj : Pairwise fun z w : s ↦
       Disjoint (ball ((z : 𝔻) : ℂ) r) (ball ((w : 𝔻) : ℂ) r) := by
     intro z w hzw
     refine ball_disjoint_ball ?_
-    have := hsep z z.2 w w.2 fun h ↦ hzw (Subtype.ext h.symm)
+    have := hsep z z.property w w.property fun h ↦ hzw (Subtype.ext h.symm)
     rw [dist_comm] at this
     linarith
   have hcov : ∀ z, σ z ∈ Z → ∃ w : s, (z : ℂ) ∈ ball ((w : 𝔻) : ℂ) r :=
@@ -274,7 +297,7 @@ theorem charge_eq_sum_localCharge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)
   refine Finset.sum_congr rfl fun z _ ↦ (A.localCharge_eq_charge_comp_subdisc h (hc z) hr
     (by linarith : r < 2 * r) (fun w hw hwb ↦ ?_)).symm
   by_contra hwz
-  have := hsep z z.2 w ((hs w).1 hw) hwz
+  have := hsep z z.property w ((hs w).1 hw) hwz
   rw [mem_ball] at hwb
   linarith
 
@@ -340,6 +363,145 @@ theorem charge_eq_zero_iff {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)) (u : 
   have := A.card_le_charge h u hu hhol s hs hnc
   rw [h0, Nat.cast_nonpos, Finset.card_eq_zero] at this
   simpa [this] using (hs z).1 hz
+
+/-! ### Naturality -/
+
+section Naturality
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*}
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {Y' : Type*} [TopologicalSpace Y']
+  [ChartedSpace H' Y'] [IsManifold I' ∞ Y'] {J' : SmoothAlmostComplexStructure I' Y'}
+  {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] {H'' : Type*}
+  [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''} {Y'' : Type*} [TopologicalSpace Y'']
+  [ChartedSpace H'' Y''] [IsManifold I'' ∞ Y''] {J'' : SmoothAlmostComplexStructure I'' Y''}
+
+/-- **Pullback of a positive cohomology assignment** along an injective pseudoholomorphic map
+`f : (Y', J') → (Y, J)`: the integer of a disc `σ` in `Y'` whose preimage of `f⁻¹(Z)` is compact is
+the integer of `f ∘ σ`. Injectivity keeps nonconstant discs nonconstant, and pseudoholomorphicity
+keeps `J'`-holomorphic discs `J`-holomorphic. -/
+def comap (f : C(Y', Y)) (hf : IsPseudoholomorphic J' J f) (hinj : Function.Injective f) :
+    PositiveCohomologyAssignment J' (f ⁻¹' Z) where
+  charge σ h := A.charge (f.comp σ) h
+  charge_eq_zero σ h hZ := A.charge_eq_zero _ h hZ
+  charge_eq_of_homotopy F hF h₀ h₁ :=
+    A.charge_eq_of_homotopy ((ContinuousMap.Homotopy.refl f).comp F) hF h₀ h₁
+  charge_comp o σ h θ hθ h' := A.charge_comp o (f.comp σ) h θ hθ h'
+  charge_eq_sum σ h c r hc hr hdisj hcov h' := A.charge_eq_sum (f.comp σ) h c r hc hr hdisj hcov h'
+  charge_pos σ h u hu hhol hnc hZ := by
+    obtain ⟨z, w, hzw⟩ := hnc
+    exact A.charge_pos (f.comp σ) h (f ∘ u) (fun z ↦ congrArg f (hu z))
+      ((hf.isPseudoholomorphicOn univ).comp hhol (mapsTo_univ _ _)) ⟨z, w, hinj.ne hzw⟩ hZ
+
+variable (f : C(Y', Y)) (hf : IsPseudoholomorphic J' J f) (hinj : Function.Injective f)
+
+/-- The integer of a disc for the pulled-back assignment is the integer of its image. -/
+@[simp]
+theorem charge_comap (σ : C(𝔻, Y')) (h : IsCompact (σ ⁻¹' (f ⁻¹' Z))) :
+    (A.comap f hf hinj).charge σ h = A.charge (f.comp σ) h :=
+  (rfl)
+
+/-- If `σ = f ∘ σ'`, the integer of `σ'` for the pulled-back assignment is the integer of `σ`. -/
+theorem charge_comap_of_comp_eq {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)} (hσ : f.comp σ' = σ)
+    (h' : IsCompact (σ' ⁻¹' (f ⁻¹' Z))) (h : IsCompact (σ ⁻¹' Z)) :
+    (A.comap f hf hinj).charge σ' h' = A.charge σ h :=
+  A.charge_congr hσ _ _
+
+/-- The local charges of the pulled-back assignment are the local charges of the image discs. -/
+@[simp]
+theorem localCharge_comap (σ : C(𝔻, Y')) (z : 𝔻) :
+    (A.comap f hf hinj).localCharge σ z = A.localCharge (f.comp σ) z :=
+  -- Both sides test compactness of the same set and evaluate the same integer: `(σ ∘ τ)⁻¹'
+  -- (f⁻¹' Z)` and `((f ∘ σ) ∘ τ)⁻¹' Z` agree definitionally because `ContinuousMap.comp` and
+  -- `Set.preimage` unfold to function composition, so `ContinuousMap.comp_assoc` is `rfl`.
+  (rfl)
+
+/-- If `σ = f ∘ σ'`, the local charges of `σ'` for the pulled-back assignment are those of `σ`. -/
+theorem localCharge_comap_of_comp_eq {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)} (hσ : f.comp σ' = σ)
+    (z : 𝔻) : (A.comap f hf hinj).localCharge σ' z = A.localCharge σ z := by
+  rw [localCharge_comap, hσ]
+
+/-- Pulling back along the identity does nothing. -/
+@[simp]
+theorem comap_id :
+    A.comap (ContinuousMap.id Y) (isPseudoholomorphic_id J) Function.injective_id = A :=
+  -- `(ContinuousMap.id Y).comp σ` reduces to `σ` by structure eta (`ContinuousMap.id_comp` is
+  -- `rfl`), so every field of the pulled-back assignment is that of `A`.
+  (rfl)
+
+/-- Pulling back is functorial: pulling back along `f` and then along `g` is pulling back along
+`f ∘ g`. -/
+theorem comap_comap (g : C(Y'', Y')) (hg : IsPseudoholomorphic J'' J' g)
+    (hginj : Function.Injective g) :
+    (A.comap f hf hinj).comap g hg hginj = A.comap (f.comp g) (hf.comp hg) (hinj.comp hginj) :=
+  -- The `charge` fields agree because `ContinuousMap.comp_assoc` and `Set.preimage_comp` hold by
+  -- `rfl`; the remaining fields are proofs, which agree by proof irrelevance.
+  (rfl)
+
+end Naturality
+
+/-! ### Restriction to open subsets and transport by diffeomorphisms -/
+
+/-- **Restriction of a positive cohomology assignment** to an open subset `U ⊆ Y`, with the
+restricted almost complex structure: the integer of a disc in `U` is its integer as a disc in
+`Y`. -/
+def restrictOpen (U : TopologicalSpace.Opens Y) :
+    PositiveCohomologyAssignment (J.restrictOpen U) ((Subtype.val : U → Y) ⁻¹' Z) :=
+  A.comap ⟨Subtype.val, continuous_subtypeVal⟩ (J.isPseudoholomorphic_subtype_val U)
+    Subtype.val_injective
+
+/-- The restricted assignment is the pullback along the inclusion `U → Y`. -/
+theorem restrictOpen_def (U : TopologicalSpace.Opens Y) :
+    A.restrictOpen U = A.comap ⟨Subtype.val, continuous_subtypeVal⟩
+      (J.isPseudoholomorphic_subtype_val U) Subtype.val_injective :=
+  (rfl)
+
+/-- The integer of a disc `σ'` in an open subset `U` for the restricted assignment is the integer
+of any disc `σ` in `Y` that agrees with `σ'`. -/
+theorem charge_restrictOpen (U : TopologicalSpace.Opens Y) {σ' : C(𝔻, U)} {σ : C(𝔻, Y)}
+    (hσ : ∀ z, (σ' z : Y) = σ z) (h' : IsCompact (σ' ⁻¹' ((Subtype.val : U → Y) ⁻¹' Z)))
+    (h : IsCompact (σ ⁻¹' Z)) : (A.restrictOpen U).charge σ' h' = A.charge σ h :=
+  A.charge_comap_of_comp_eq ⟨Subtype.val, continuous_subtypeVal⟩ _ _ (ContinuousMap.ext hσ) h' h
+
+/-- The local charges of the restricted assignment are those of the discs in `Y`. -/
+theorem localCharge_restrictOpen (U : TopologicalSpace.Opens Y) {σ' : C(𝔻, U)} {σ : C(𝔻, Y)}
+    (hσ : ∀ z, (σ' z : Y) = σ z) (z : 𝔻) :
+    (A.restrictOpen U).localCharge σ' z = A.localCharge σ z :=
+  A.localCharge_comap_of_comp_eq ⟨Subtype.val, continuous_subtypeVal⟩ _ _ (ContinuousMap.ext hσ) z
+
+section Pullback
+
+variable [FiniteDimensional ℝ E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [FiniteDimensional ℝ E'] {H' : Type*}
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {Y' : Type*} [TopologicalSpace Y']
+  [ChartedSpace H' Y'] [IsManifold I' ∞ Y']
+
+/-- **Transport of a positive cohomology assignment by a diffeomorphism** `h : Y' → Y`, to
+`h⁻¹(Z)` with the pulled-back almost complex structure `h^* J`: the integer of a disc `σ` in `Y'` is
+the integer of `h ∘ σ`. -/
+def pullback (h : Y' ≃ₘ⟮I', I⟯ Y) :
+    PositiveCohomologyAssignment (J.pullback h) (h ⁻¹' Z) :=
+  A.comap ⟨h, h.continuous⟩ (SmoothAlmostComplexStructure.isPseudoholomorphic_pullback h J)
+    h.injective
+
+/-- The transported assignment is the pullback along the underlying map of `h`. -/
+theorem pullback_def (h : Y' ≃ₘ⟮I', I⟯ Y) :
+    A.pullback h = A.comap ⟨h, h.continuous⟩
+      (SmoothAlmostComplexStructure.isPseudoholomorphic_pullback h J) h.injective :=
+  (rfl)
+
+/-- The integer of a disc for the transported assignment is the integer of its image. -/
+theorem charge_pullback (h : Y' ≃ₘ⟮I', I⟯ Y) {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)}
+    (hσ : ∀ z, h (σ' z) = σ z) (h' : IsCompact (σ' ⁻¹' (h ⁻¹' Z))) (hc : IsCompact (σ ⁻¹' Z)) :
+    (A.pullback h).charge σ' h' = A.charge σ hc :=
+  A.charge_comap_of_comp_eq ⟨h, h.continuous⟩ _ _ (ContinuousMap.ext hσ) h' hc
+
+/-- The local charges of the transported assignment are those of the image discs. -/
+theorem localCharge_pullback (h : Y' ≃ₘ⟮I', I⟯ Y) {σ' : C(𝔻, Y')} {σ : C(𝔻, Y)}
+    (hσ : ∀ z, h (σ' z) = σ z) (z : 𝔻) :
+    (A.pullback h).localCharge σ' z = A.localCharge σ z :=
+  A.localCharge_comap_of_comp_eq ⟨h, h.continuous⟩ _ _ (ContinuousMap.ext hσ) z
+
+end Pullback
 
 end PositiveCohomologyAssignment
 

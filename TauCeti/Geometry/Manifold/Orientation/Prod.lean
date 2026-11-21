@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
@@ -27,6 +28,11 @@ when the product `m * n` of the dimensions is even, and reverses it when `m * n`
 (`TauCeti.Manifold.Orientation.isOrientationPreservingAt_swap_prod`,
 `TauCeti.Manifold.Orientation.isOrientationReversingAt_swap_prod`). The two products are indexed by
 `Fin (m + n)` and `Fin (n + m)`, identified by `TauCeti.Manifold.Orientation.reindex`.
+
+When the factors are modelled on normed spaces `E` and `E'`, the same product charts with values in
+the normed space `E × E'` (`TauCeti.chartedSpaceProd`) make `M × M'` a manifold for the model
+`𝓘(ℝ, E × E')`, which is orientable as soon as the factors are
+(`TauCeti.orientable_chartedSpaceProd`).
 
 A product `Prod.map f g` of maps preserving orientations at `p.1` and at `p.2` preserves the
 product orientations at `p` (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.prodMap`).
@@ -76,9 +82,9 @@ def prod (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n)) 
     compatible := ?_ }
   · intro α
     exact ((o.locallyConstant_sign α.1).comp_continuous
-      ((continuous_fst.comp continuous_subtype_val).subtype_mk _)).mul
+      ((continuous_fst.comp continuous_subtypeVal).subtype_mk _)).mul
         ((o'.locallyConstant_sign α.2).comp_continuous
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk _))
+          ((continuous_snd.comp continuous_subtypeVal).subtype_mk _))
   · intro α β x hα hβ
     have h₁ := o.compatible α.1 β.1 x.1 (left α ⟨x, hα⟩).property
       (left β ⟨x, hβ⟩).property
@@ -333,5 +339,23 @@ instance [Orientable I M] [Orientable I' M'] : Orientable (I.prod I') (M × M') 
   constructor
   rw [Module.finrank_prod]
   exact ⟨o.prod o'⟩
+
+section ChartedSpaceProd
+
+attribute [local instance low] chartedSpaceProd
+
+variable {N N' : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
+  [TopologicalSpace N'] [ChartedSpace E' N'] [IsManifold 𝓘(ℝ, E') 1 N']
+
+/-- A product of orientable manifolds modelled on normed spaces `E` and `E'` is orientable for the
+model `𝓘(ℝ, E × E')` of its product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`).
+These are the charts of the product model `𝓘(ℝ, E).prod 𝓘(ℝ, E')`, read in the normed space
+`E × E'` rather than in the type synonym `ModelProd E E'`. -/
+theorem orientable_chartedSpaceProd [Orientable 𝓘(ℝ, E) N] [Orientable 𝓘(ℝ, E') N'] :
+    Orientable 𝓘(ℝ, E × E') (N × N') := by
+  obtain ⟨o⟩ := Orientable.nonempty_orientation (I := 𝓘(ℝ, E).prod 𝓘(ℝ, E')) (M := N × N')
+  exact ⟨⟨o.congrModel modelWithCornersSelf_prod.symm⟩⟩
+
+end ChartedSpaceProd
 
 end TauCeti

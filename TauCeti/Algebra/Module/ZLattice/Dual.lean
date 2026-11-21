@@ -124,6 +124,11 @@ finite-dimensional space, `dual_dual`. -/
 theorem le_dual_dual (L : Submodule ℤ E) : L ≤ dual (dual L) :=
   le_dual_comm.mpr le_rfl
 
+/-- The dual of the zero lattice is the whole space. -/
+@[simp]
+theorem dual_bot : dual (⊥ : Submodule ℤ E) = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ mem_dual.mpr fun y hy ↦ ⟨0, by simp [(mem_bot ℤ).mp hy]⟩
+
 /-- A vector orthogonal to a lattice lies in its dual lattice, its inner products with the lattice
 being `0`. -/
 theorem mem_dual_of_mem_orthogonal_span {L : Submodule ℤ E} {x : E}
@@ -202,7 +207,7 @@ theorem dual_span_singleton_le_self_iff {c : ℝ} :
       ∃ m : ℤ, (m : ℝ) * c ^ 2 = 1 := by
   rcases eq_or_ne c 0 with rfl | hc
   · refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ by norm_num at hm⟩
-    have h1 : (1 : ℝ) ∈ span ℤ {(0 : ℝ)} := h (mem_dual.mpr fun y hy ↦ ⟨0, by simp_all⟩)
+    have h1 : (1 : ℝ) ∈ span ℤ {(0 : ℝ)} := h (by simp)
     rw [span_singleton_eq_bot.mpr rfl, mem_bot] at h1
     exact (one_ne_zero h1).elim
   · rw [dual_span_singleton hc, span_singleton_le_iff_mem, Submodule.mem_span_singleton]
@@ -407,14 +412,15 @@ theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional 
     Submodule.nontrivial_iff_ne_bot.mpr (by rwa [Ne, Submodule.orthogonal_eq_bot_iff])
   have : Infinite Kᗮ := Module.Free.infinite ℝ _
   have : Infinite (dual L ⧸ (c • L).submoduleOf (dual L)) := Infinite.of_injective
-    (fun w : Kᗮ ↦ Submodule.Quotient.mk ⟨w, mem_dual_of_mem_orthogonal_span w.2⟩) fun a b hab ↦ by
+    (fun w : Kᗮ ↦ Submodule.Quotient.mk ⟨w, mem_dual_of_mem_orthogonal_span w.property⟩) fun a b hab
+        ↦ by
     rw [Submodule.Quotient.eq, submoduleOf, Submodule.mem_comap, subtype_apply,
       mem_smul_pointwise_iff_exists] at hab
     obtain ⟨l, hl, hlab⟩ := hab
     -- `a - b = c • l` lies both in `K` and in `Kᗮ`, so it vanishes.
     have hK : (a : E) - b ∈ K := by
       simpa [hlab] using K.smul_mem c (subset_span hl : l ∈ K)
-    have h0 := Submodule.inner_right_of_mem_orthogonal hK (sub_mem a.2 b.2)
+    have h0 := Submodule.inner_right_of_mem_orthogonal hK (sub_mem a.property b.property)
     rw [inner_self_eq_zero, sub_eq_zero] at h0
     exact Subtype.ext h0
   exact not_finite (dual L ⧸ (c • L).submoduleOf (dual L))
