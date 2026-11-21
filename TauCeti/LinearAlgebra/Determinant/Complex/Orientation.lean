@@ -632,7 +632,7 @@ theorem isComplexPositive_detLineShortExactEquiv_tmul
   have hgC : Function.Surjective g := hg
   have : FiniteDimensional ℂ U := Module.Finite.of_restrictScalars_finite ℝ ℂ U
   have : FiniteDimensional ℂ W := Module.Finite.of_restrictScalars_finite ℝ ℂ W
-  have : FiniteDimensional ℂ V := finiteDimensional_of_exact hfgC
+  have : FiniteDimensional ℂ V := hfgC.moduleFinite
   -- Lift a basis of `W` to `V`; with the image of a basis of `U` it is a basis of `V`.
   obtain ⟨v, bV, hv, hbV⟩ := Basis.exists_coe_eq_append_lift hfC hfgC hgC (finBasis ℂ U)
     (finBasis ℂ W)
@@ -681,7 +681,7 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   have : FiniteDimensional ℂ A := Module.Finite.of_restrictScalars_finite ℝ ℂ A
   have : FiniteDimensional ℂ C := Module.Finite.of_restrictScalars_finite ℝ ℂ C
   have : FiniteDimensional ℂ D := Module.Finite.of_surjective h hhC
-  have : FiniteDimensional ℂ B := finiteDimensional_of_exact hfgC
+  have : FiniteDimensional ℂ B := hfgC.moduleFinite
   have : FiniteDimensional ℝ D := Module.Finite.trans ℂ D
   -- Complex bases of `A`, of `range g` and of `D`, lifts of the last two to `B` and `C`, and the
   -- complex bases of `B` and of `C` they give, adapted to the exact sequence.
@@ -876,8 +876,8 @@ theorem exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul
   have : FiniteDimensional ℂ A₁ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₁
   have : FiniteDimensional ℂ A₃ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₃
   have : FiniteDimensional ℂ A₅ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₅
-  have : FiniteDimensional ℂ A₂ := finiteDimensional_of_exact h₁₂
-  have : FiniteDimensional ℂ A₄ := finiteDimensional_of_exact h₃₄
+  have : FiniteDimensional ℂ A₂ := h₁₂.moduleFinite
+  have : FiniteDimensional ℂ A₄ := h₃₄.moduleFinite
   have : FiniteDimensional ℂ A₆ := Module.Finite.of_surjective f₅ hf₅
   -- Complex bases of `A₁`, of the ranges of `f₂`, `f₃`, `f₄` and of `A₆`, lifts `v`, `w`, `x`,
   -- `y` of the last four, and the complex bases of `A₂`, …, `A₅` they give.

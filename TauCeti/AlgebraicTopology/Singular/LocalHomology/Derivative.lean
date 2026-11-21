@@ -53,6 +53,9 @@ The comparison has two halves.
   `x` with derivative of nonzero determinant acts on local homology by the sign of that
   determinant.
 
+* `OpenPartialHomeomorph.localHomologyMap_chart_comp_eq_sign_det_smul`: the corresponding
+  commuting square for a continuous map between charts, in every degree and coefficient object.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -160,5 +163,79 @@ theorem localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt {f : E → 
   exact localHomologyMap_affine_eq_sign_det_smul R _ _ hdet k
 
 end Jacobian
+
+section Charts
+
+variable {M N E : Type w} [TopologicalSpace M] [TopologicalSpace N]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- In source and target charts, the map of local homology at an isolated point of a fibre is
+the sign of the coordinate derivative times the map induced by the translated source chart.
+This is an identity of morphisms in every degree and for every coefficient object. -/
+theorem _root_.OpenPartialHomeomorph.localHomologyMap_chart_comp_eq_sign_det_smul
+    (φ : OpenPartialHomeomorph M E) (χ : OpenPartialHomeomorph N E) (R : A) (f : C(M, N))
+    {a : M} {U : Set M} (hUo : IsOpen U) (haU : a ∈ U) (hUφ : U ⊆ φ.source)
+    (hUχ : ∀ x ∈ U, f x ∈ χ.source) (hU : ∀ x ∈ U, f x = f a → x = a)
+    {f' : E →L[ℝ] E} (hf : HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ a))
+    (hdet : f'.det ≠ 0) (k : ℕ) :
+    let fχ := (f.restrictPreimage χ.source).comp (ContinuousMap.inclusion hUχ)
+    let φU := φ.sourceRestrict.comp (ContinuousMap.inclusion hUφ)
+    let b := (χ ∘ f ∘ φ.symm) (φ a)
+    let T : C(E, E) := ⟨fun y ↦ b + (y - φ a), by fun_prop⟩
+    localHomologyMap R fχ (S := {⟨a, haU⟩})
+        (T := ContinuousMap.subtypeVal χ.source ⁻¹' {f a})
+        (fun x hx ↦ Subtype.ext (hU x x.property hx)) k ≫
+      localHomologyMap R χ.sourceRestrict
+        (S := ContinuousMap.subtypeVal χ.source ⁻¹' {f a}) (T := {b})
+        (fun x hx ↦ χ.sourceRestrict_preimage (hUχ a haU) (by
+          simpa only [b, Function.comp_apply, φ.left_inv (hUφ haU)] using hx)) k =
+      (SignType.sign f'.det : ℤ) •
+        (localHomologyMap R φU (S := {⟨a, haU⟩}) (T := {φ a})
+          (fun x hx ↦ Subtype.ext (φ.sourceRestrict_preimage (hUφ haU) hx)) k ≫
+        localHomologyMap R T (S := {φ a}) (T := {b})
+          (fun y hy ↦ sub_eq_zero.1 (add_eq_left.1 hy)) k) := by
+  dsimp only
+  generalize_proofs
+  rw [localHomologyMap_comp, localHomologyMap_comp]
+  let V : Set E := φ.target ∩ φ.symm ⁻¹' U
+  have hmem {x : M} (hx : x ∈ U) : φ x ∈ V :=
+    ⟨φ.map_source (hUφ hx), by simpa only [Set.mem_preimage, φ.left_inv (hUφ hx)]⟩
+  have hV : V ∈ 𝓝 (φ a) :=
+    (φ.isOpen_inter_preimage_symm hUo).mem_nhds (hmem haU)
+  have hcont : ContinuousOn (χ ∘ f ∘ φ.symm) V :=
+    χ.continuousOn.comp (f.continuous.comp_continuousOn
+      (φ.continuousOn_symm.mono inter_subset_left)) fun y hy ↦ hUχ _ hy.2
+  have hinj : ∀ y ∈ V, (χ ∘ f ∘ φ.symm) y = (χ ∘ f ∘ φ.symm) (φ a) → y = φ a := by
+    intro y hy heq
+    simp only [Function.comp_apply, φ.left_inv (hUφ haU)] at heq
+    rw [← φ.right_inv hy.1, hU _ hy.2 (χ.injOn (hUχ _ hy.2) (hUχ a haU) heq)]
+  let m : C(U, V) := ⟨fun x ↦ ⟨φ x, hmem x.property⟩,
+    (φ.continuousOn.comp_continuous continuous_subtypeVal fun x ↦ hUφ x.property).subtype_mk _⟩
+  have hm : m ⁻¹' {⟨φ a, mem_of_mem_nhds hV⟩} ⊆ {⟨a, haU⟩} := fun x hx ↦
+    Subtype.ext (φ.injOn (hUφ x.property) (hUφ haU) (congrArg Subtype.val hx))
+  have key := localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt R hV hcont hf hdet
+    hinj k
+  let τ : C(V, E) := ⟨V.domRestrict (χ ∘ f ∘ φ.symm), hcont.domRestrict⟩
+  let t : C(V, E) := ⟨fun y ↦ (χ ∘ f ∘ φ.symm) (φ a) + (y - φ a), by fun_prop⟩
+  have hτ₀ : τ ⁻¹' {(χ ∘ f ∘ φ.symm) (φ a)} ⊆ {⟨φ a, mem_of_mem_nhds hV⟩} := fun y hy ↦
+    Subtype.ext (hinj y y.property hy)
+  have ht₀ : t ⁻¹' {(χ ∘ f ∘ φ.symm) (φ a)} ⊆ {⟨φ a, mem_of_mem_nhds hV⟩} := fun y hy ↦
+    Subtype.ext (sub_eq_zero.1 (add_eq_left.1 hy))
+  have key' : localHomologyMap R τ hτ₀ k =
+      (SignType.sign f'.det : ℤ) • localHomologyMap R t ht₀ k := by
+    exact key
+  have hτ : χ.sourceRestrict.comp
+      ((f.restrictPreimage χ.source).comp (ContinuousMap.inclusion hUχ)) = τ.comp m := by
+    ext x
+    simp [τ, m, χ.sourceRestrict_apply, φ.left_inv (hUφ x.property), ContinuousMap.inclusion]
+  have ht : (⟨fun y ↦ (χ ∘ f ∘ φ.symm) (φ a) + (y - φ a), by fun_prop⟩ : C(E, E)).comp
+      (φ.sourceRestrict.comp (ContinuousMap.inclusion hUφ)) = t.comp m := by
+    ext x
+    simp [t, m, φ.sourceRestrict_apply, ContinuousMap.inclusion]
+  rw [localHomologyMap_congr R hτ, localHomologyMap_congr R ht,
+    ← localHomologyMap_comp R m τ hm hτ₀ k,
+    ← localHomologyMap_comp R m t hm ht₀ k, key', Preadditive.comp_zsmul]
+
+end Charts
 
 end TauCeti

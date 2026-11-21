@@ -11,7 +11,8 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Elementary interval integrals
@@ -20,6 +21,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 `Mathlib/Analysis/SpecialFunctions/Integrals/Basic.lean`.
 
 ## Main declarations
+
+* `TauCeti.integral_div_pow`: `∫ s in 0..c, (s / c)^m = c / (m + 1)` for every real `c`.
 
 * `TauCeti.intervalIntegrable_sub_const_rpow`: the weight `(x - c)^r` is interval integrable on
   every interval, for `r > -1`;
@@ -61,8 +64,10 @@ Interval integrals of elementary functions in closed form or as series, continui
   sum of the termwise integrals of the exponential series of `e^{z cos θ}`, for complex `z`.
 * `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp`: for integer `n`, the same
   integral as the series `∑ₗ 2π (z / 2) ^ (2 l + |n|) / (l! (l + |n|)!)`.
-* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
-  from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
+* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`,
+  `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
+  `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
+  limit.
 -/
 
 public section
@@ -70,6 +75,18 @@ public section
 open scoped Nat
 
 namespace TauCeti
+
+/-- The normalized integer power integrates to `c / (m + 1)` from zero to `c`,
+including a zero or negative endpoint. -/
+theorem integral_div_pow (c : ℝ) (m : ℕ) :
+    (∫ s in 0..c, (s / c) ^ m) = c / (m + 1 : ℝ) := by
+  by_cases hc : c = 0
+  · simp [hc]
+  simp_rw [div_pow]
+  rw [intervalIntegral.integral_div, integral_pow]
+  simp only [zero_pow (Nat.succ_ne_zero _), sub_zero, pow_succ]
+  field_simp [hc]
+
 
 /-- The weight `(x - c)^r`, singular at `x = c`, is interval integrable between `a` and `b` for
 `r > -1`, wherever `c` lies. -/
@@ -414,55 +431,36 @@ A function of the form `θ ↦ G (sin θ ^ 2)` is even and `π`-periodic, which 
 quasi-periodicity of its integral from `0`. -/
 
 /-- The integral from `0` of an integrand depending only on `sin² θ` is odd in its upper limit. -/
-theorem integral_comp_sin_sq_neg (G : ℝ → ℝ) (x : ℝ) :
-    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) := by
-  have h := intervalIntegral.integral_comp_neg (a := 0) (b := x) fun θ ↦ G (Real.sin θ ^ 2)
-  simp only [Real.sin_neg, neg_sq, neg_zero] at h
-  rw [h, intervalIntegral.integral_symm]
+theorem integral_comp_sin_sq_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (G : ℝ → E)
+    (x : ℝ) :
+    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) :=
+  intervalIntegral.integral_zero_neg_of_even (g := fun θ ↦ G (Real.sin θ ^ 2))
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) x
 
-/-- The integral of a continuous integrand depending only on `sin² θ` over a half-period
-`[-π/2, π/2]` is twice its integral over `[0, π/2]`. -/
-theorem integral_comp_sin_sq_neg_pi_div_two (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) :
-    ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) =
-      2 * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hG.intervalIntegrable _ _)
-    (hG.intervalIntegrable _ _), intervalIntegral.integral_symm 0 (-(Real.pi / 2)),
-    integral_comp_sin_sq_neg G, neg_neg]
-  ring
-
-/-- **Quasi-periodicity** of the integral from `0` of a continuous integrand depending only on
+open MeasureTheory in
+/-- **Quasi-periodicity** of the integral from `0` of an integrand depending only on
 `sin² θ`: adding `n` half-turns to the upper limit adds `2 n` times the integral over
 `[0, π/2]`. -/
-theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) (x : ℝ) (n : ℤ) :
+theorem integral_comp_sin_sq_add_int_mul_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (G : ℝ → E)
+    (hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)) (x : ℝ) (n : ℤ) :
     ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2) =
       (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-        2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
-    simp only [Real.sin_add_pi, neg_sq]
-  have hint : ∀ a b : ℝ, IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) MeasureTheory.volume a b :=
-    fun a b ↦ hG.intervalIntegrable a b
-  -- Split off `[x, x + n π]`, which consists of `n` periods; each period integral equals the
-  -- one over the half-period `[-π/2, π/2]`, which is twice the integral over `[0, π/2]`.
-  calc ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2)
-      = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          ∫ θ in x..x + n * Real.pi, G (Real.sin θ ^ 2) :=
-        (intervalIntegral.integral_add_adjacent_intervals (hint 0 x) (hint x _)).symm
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          n * ∫ θ in x..x + Real.pi, G (Real.sin θ ^ 2) := by
-        simpa only [zsmul_eq_mul] using
-          congrArg (_ + ·) (hper.intervalIntegral_add_zsmul_eq n x hint)
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          n * ∫ θ in -(Real.pi / 2)..-(Real.pi / 2) + Real.pi, G (Real.sin θ ^ 2) := by
-        rw [hper.intervalIntegral_add_eq x (-(Real.pi / 2))]
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          n * ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-        ring_nf
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-        rw [integral_comp_sin_sq_neg_pi_div_two G hG]
-        ring
+        (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) :=
+  Function.Periodic.intervalIntegral_add_int_mul_eq_add_of_even
+    (f := fun θ ↦ G (Real.sin θ ^ 2))
+    (fun θ ↦ by simp only [Real.sin_add_pi, neg_sq])
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) hG 0 x n
+
+/-- The integral from `0` to `n π` of an integrand depending only on `sin² θ` is `2 n` times its
+integral over `[0, π/2]`, without any integrability assumption. -/
+theorem integral_comp_sin_sq_int_mul_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (G : ℝ → E) (n : ℤ) :
+    ∫ θ in (0 : ℝ)..n * Real.pi, G (Real.sin θ ^ 2) =
+      (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+  simpa only [zero_add] using Function.Periodic.intervalIntegral_add_int_mul_eq_of_even
+    (f := fun θ ↦ G (Real.sin θ ^ 2)) (fun θ ↦ by simp only [Real.sin_add_pi, neg_sq])
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) 0 n
 
 /-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
 uniformly in `β`. -/
