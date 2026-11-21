@@ -120,9 +120,8 @@ theorem curveFst_injective : Function.Injective (curveFst g m) :=
 
 /-- The boundary map onto the second side of the cut curve is injective: `p_{m+2}` has infinite
 order, since a surface with `m + 2` boundary components is not a disc. -/
-theorem curveSnd_injective : Function.Injective (curveSnd g m) := fun x y hxy ↦
-  Multiplicative.toAdd.injective <| injective_zpow_iff_not_isOfFinOrder.2
-    (isOfFinOrder_inv_iff.not.2 (not_isOfFinOrder_peripheral (Or.inr (by omega)) _)) hxy
+theorem curveSnd_injective : Function.Injective (curveSnd g m) :=
+  zpowersHom_inv_peripheral_injective (Or.inr (by omega)) _
 
 variable {g m}
 

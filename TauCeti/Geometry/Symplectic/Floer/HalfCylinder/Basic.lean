@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Topology.Order.MonotoneConvergence
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
@@ -176,19 +177,12 @@ theorem setLIntegral_floerEnergyDensity_Ici_eq_of_tendsto_hamiltonianAction
     Set.prod_mono (fun s h ↦ hb.trans_le h.1) le_rfl
   have hRU (n : ℕ) : Icc b (b + n) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ :=
     (hRsub n).trans (Set.prod_mono le_rfl (subset_univ _))
-  have hEcont := ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
-    (isOpen_Ioi.prod isOpen_univ) (hu.of_le one_le_two) contDiffOn_const
-    (contDiff_uncurry_cylindrical hH).contDiffOn
   -- Exhaust the half-cylinder by the rectangles `[b, b + n] × [0, 1]`, on which the energy is the
   -- change of action.
-  refine setLIntegral_Ici_prod_eq_ofReal_of_tendsto (fun n ↦ ?_) hL
-  rw [← ofReal_integral_eq_lintegral_ofReal
-      ((hEcont.mono (hRU n)).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-      ((ae_restrict_iff' (measurableSet_Icc.prod measurableSet_Icc)).2 (Eventually.of_forall
-        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hRsub n hz)) (hfloer z (hRsub n hz)))),
-    ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH (isOpen_Ioi.prod isOpen_univ) hu
-      (le_add_of_nonneg_right n.cast_nonneg) (hRU n)
-      fun s h ↦ by simpa using hper s (hb.trans_le h.1) 0]
+  exact setLIntegral_Ici_prod_eq_ofReal_of_tendsto (fun n ↦
+    ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (fun z hz ↦ hJ z (hRsub n hz))
+      hH (isOpen_Ioi.prod isOpen_univ) hu (le_add_of_nonneg_right n.cast_nonneg) (hRU n)
+      (fun s h ↦ by simpa using hper s (hb.trans_le h.1) 0) fun z hz ↦ hfloer z (hRsub n hz)) hL
 
 /-- **The action along loops with vanishing defect.** Let `H` be a `C¹` Hamiltonian and let `u` be
 `C¹` on the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a`
@@ -277,8 +271,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
   have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH
     (hu.of_le one_le_two) hK huK hφa hdef hx hux.tendsto_at
   -- The actions increase along the end, so their limit along `s_n` is their limit as `s → ∞`.
-  have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   have hmono := ω.monotoneOn_hamiltonianAction_of_floer isOpen_Ioi hH hu hper hJ hfloer
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hb : ∀ s, a < max s (a + 1) := fun s ↦ (lt_add_one a).trans_le (le_max_right _ _)
@@ -336,8 +330,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer
   have hseq := tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect hH hur hK
     (fun s hs ↦ huK (-s) (hura s hs)) hφa hdef hx hux.tendsto_at
   -- The actions increase along the end, so their limit along `-s_n` is their limit as `s → -∞`.
-  have hJ : ∀ z ∈ Iio a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ Iio a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    tames_of_mul_norm_sq_le hc (hJc z hz)
   have hmono := ω.monotoneOn_hamiltonianAction_of_floer isOpen_Iio hH hu hper hJ hfloer
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hb : ∀ s, -max s (-a + 1) < a := fun s ↦

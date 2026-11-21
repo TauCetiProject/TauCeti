@@ -43,9 +43,10 @@ From these axioms this file derives:
 
 * inversion is an involutive diffeomorphism (`IsLieGroupoid.inverseDiffeomorph`), so the target map
   `Quiver.Total.right` is also a smooth submersion (`IsLieGroupoid.isSubmersion_target`), both
-  source and target are open maps (`IsLieGroupoid.isOpenMap_source`,
-  `IsLieGroupoid.isOpenMap_target`), and forgetting smoothness yields a topological groupoid
-  (`IsLieGroupoid.isTopologicalGroupoid`);
+  source and target are open maps with surjective differentials
+  (`IsLieGroupoid.isOpenMap_source`, `IsLieGroupoid.isOpenMap_target`,
+  `IsLieGroupoid.surjective_mfderiv_source`, `IsLieGroupoid.surjective_mfderiv_target`), and
+  forgetting smoothness yields a topological groupoid (`IsLieGroupoid.isTopologicalGroupoid`);
 * the unit map is a smooth embedding (`IsLieGroupoid.isSmoothEmbedding_unit`), forcing `C` to be
   second-countable (`IsLieGroupoid.secondCountableTopology_objects`) and bounding the base
   dimension by the arrow dimension when `C` is nonempty (`IsLieGroupoid.finrank_le_finrank`);
@@ -53,6 +54,12 @@ From these axioms this file derives:
   if arrow and object models have equal dimension
   (`IsLieGroupoid.isLocalDiffeomorph_source_iff_finrank_eq`), and source is a local diffeomorphism
   if and only if target is (`IsLieGroupoid.isLocalDiffeomorph_source_iff_target`);
+* composable pairs form a smooth manifold with the universal property of the fibre product
+  (`IsLieGroupoid.contMDiff_composablePairs_iff`), so composing arrows that depend smoothly on a
+  point gives an arrow that depends smoothly on the point (`ContMDiff.totalComp`); conversely,
+  composition is smooth on composable pairs as soon as it is the restriction of a smooth map on
+  `Quiver.Total C × Quiver.Total C` (`TauCeti.contMDiff_composablePairs_comp_of_eq`), which is how
+  the examples verify the composition axiom;
 * the left-shear diffeomorphism (`IsLieGroupoid.shearLeftDiffeomorph`) from composable pairs to
   same-source pairs `{q : Quiver.Total C × Quiver.Total C // q.1.left = q.2.left}`, from which
   groupoid composition is a smooth submersion (`IsLieGroupoid.isSubmersion_comp`);
@@ -130,6 +137,49 @@ class IsLieGroupoid {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fini
   /-- Every source fibre is Hausdorff in the subspace topology. -/
   t2Space_sourceFiber (x : C) : T2Space {a : Quiver.Total C // a.left = x} := by infer_instance
 
+section CompositionCriterion
+
+variable {E H E' H' : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+  {C : Type*} [Category C] [IsGroupoid C]
+  [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C]
+  [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
+  [IsManifold J ∞ (Quiver.Total C)]
+
+/-- Composition is smooth on the transverse fibre product of target and source, the condition
+`IsLieGroupoid.contMDiff_comp`, as soon as it is the restriction of a smooth map on `Γ × Γ`. -/
+theorem contMDiff_composablePairs_comp_of_eq
+    (hs : Manifold.IsSubmersion J I ∞ (Quiver.Total.left : Quiver.Total C → C))
+    (hi : ContMDiff J J ∞ fun a : Quiver.Total C ↦
+      (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C))
+    {Φ : Quiver.Total C × Quiver.Total C → Quiver.Total C} (hΦ : ContMDiff (J.prod J) J ∞ Φ)
+    (h : ∀ p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left},
+      p.val.1.comp p.val.2 p.property = Φ p.val) :
+    letI := transverseFiberProductChartedSpace
+      (f := (Quiver.Total.right : Quiver.Total C → C))
+      (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
+      (hs.contMDiff.comp hi) hs.contMDiff
+      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
+    ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
+      fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+        p.val.1.comp p.val.2 p.property := by
+  let := transverseFiberProductChartedSpace
+    (f := (Quiver.Total.right : Quiver.Total C → C))
+    (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
+    (hs.contMDiff.comp hi) hs.contMDiff
+    (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
+  simp only [h]
+  exact hΦ.comp (isSmoothEmbedding_coe_transverseFiberProduct
+    (f := (Quiver.Total.right : Quiver.Total C → C))
+    (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
+    (hs.contMDiff.comp hi) hs.contMDiff
+    (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)).contMDiff
+
+end CompositionCriterion
+
 namespace IsLieGroupoid
 
 variable {E H E' H' : Type*}
@@ -176,12 +226,19 @@ theorem contMDiff_target : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total 
 /-- The target projection of a Lie groupoid is a smooth submersion, since it is the source
 projection precomposed with the inversion diffeomorphism. -/
 theorem isSubmersion_target :
-    Manifold.IsSubmersion J I ∞ (Quiver.Total.right : Quiver.Total C → C) := by
-  refine ((contMDiff_target I J C).isSubmersionOfComplement_of_surjective_mfderiv (by simp)
-    fun a ↦ ?_).isSubmersion
-  exact (((inverseDiffeomorph I J C).isLocalDiffeomorph a).isSubmersionAt_comp_iff.2
-    ((isSubmersion_source (I := I) (J := J) (C := C)).isSubmersionAt
-      (inverseDiffeomorph I J C a))).surjective_mfderiv (by simp)
+    Manifold.IsSubmersion J I ∞ (Quiver.Total.right : Quiver.Total C → C) :=
+  (inverseDiffeomorph I J C).isLocalDiffeomorph.isSubmersion_comp
+    (isSubmersion_source (I := I) (J := J) (C := C))
+
+/-- The differential of the source projection of a Lie groupoid is surjective at every arrow. -/
+theorem surjective_mfderiv_source (a : Quiver.Total C) :
+    Surjective (mfderiv J I (Quiver.Total.left : Quiver.Total C → C) a) :=
+  (isSubmersion_source (I := I) (J := J) (C := C)).surjective_mfderiv (by simp) a
+
+/-- The differential of the target projection of a Lie groupoid is surjective at every arrow. -/
+theorem surjective_mfderiv_target (a : Quiver.Total C) :
+    Surjective (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) a) :=
+  (isSubmersion_target I J C).surjective_mfderiv (by simp) a
 
 include I J in
 /-- The source projection of a Lie groupoid is an open map. -/
@@ -227,32 +284,23 @@ theorem isTopologicalGroupoid : IsTopologicalGroupoid C where
 include I J C in
 /-- On a nonempty object manifold, the dimension of the object model is at most the dimension of
 the arrow model. -/
-theorem finrank_le_finrank [Nonempty C] : finrank ℝ E ≤ finrank ℝ E' := by
-  obtain ⟨x⟩ := ‹Nonempty C›
-  have hsurj := (isSubmersion_source (I := I) (J := J) (C := C)).surjective_mfderiv
-    (by simp) ⟨x, x, 𝟙 x⟩
-  exact LinearMap.finrank_le_finrank_of_surjective hsurj
+theorem finrank_le_finrank [Nonempty C] : finrank ℝ E ≤ finrank ℝ E' :=
+  have : Nonempty (Quiver.Total C) := ‹Nonempty C›.map fun x ↦ ⟨x, x, 𝟙 x⟩
+  (isSubmersion_source (I := I) (J := J) (C := C)).finrank_le (by simp)
 
 /-- If the arrow and object models have the same dimension, the source projection is a local
 diffeomorphism (an étale Lie groupoid). -/
 theorem isLocalDiffeomorph_source_of_finrank_eq (h : finrank ℝ E' = finrank ℝ E) :
-    IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C) := by
-  intro a
-  have hsurj := (isSubmersion_source (I := I) (J := J) (C := C)).surjective_mfderiv (by simp) a
-  have hinj : Injective (mfderiv J I (Quiver.Total.left : Quiver.Total C → C) a) :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-      (f := (mfderiv J I (Quiver.Total.left : Quiver.Total C → C) a).toLinearMap) h).2 hsurj
-  exact isLocalDiffeomorphAt_of_injective_mfderiv (contMDiff_source I J C).contMDiffOn
-    isOpen_univ (Set.mem_univ a) BoundarylessManifold.isInteriorPoint (by simp) hinj h
+    IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C) :=
+  (isSubmersion_source (I := I) (J := J) (C := C)).isLocalDiffeomorph_of_finrank_eq (by simp) h
 
 /-- On a nonempty object manifold, the source projection is a local diffeomorphism if and only if
 the arrow and object models have equal dimension. -/
 theorem isLocalDiffeomorph_source_iff_finrank_eq [Nonempty C] :
     IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C) ↔
-      finrank ℝ E' = finrank ℝ E := by
-  refine ⟨fun h ↦ ?_, isLocalDiffeomorph_source_of_finrank_eq I J C⟩
-  obtain ⟨x⟩ := ‹Nonempty C›
-  exact ((h ⟨x, x, 𝟙 x⟩).mfderivToContinuousLinearEquiv (by simp)).toLinearEquiv.finrank_eq
+      finrank ℝ E' = finrank ℝ E :=
+  have : Nonempty (Quiver.Total C) := ‹Nonempty C›.map fun x ↦ ⟨x, x, 𝟙 x⟩
+  (isSubmersion_source (I := I) (J := J) (C := C)).isLocalDiffeomorph_iff_finrank_eq (by simp)
 
 /-- The source projection is a local diffeomorphism if and only if the target projection is, since
 groupoid inversion is a diffeomorphism exchanging them. -/
@@ -335,6 +383,21 @@ theorem isSubmersion_snd_composablePairs :
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
       (isSubmersion_source (I := I) (J := J) (C := C)) p)
     (isSubmersion_target I J C)
+
+/-- **The universal property of the composable pairs.** A map into the manifold of composable
+pairs is `C^n`, for `n ≤ ∞`, exactly when both of its arrows are `C^n` functions of the point. -/
+theorem contMDiff_composablePairs_iff {F G X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace G] {K : ModelWithCorners ℝ F G} [TopologicalSpace X] [ChartedSpace G X]
+    {n : ℕ∞ω} (hn : n ≤ ∞)
+    {f : X → {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}} :
+    letI := composablePairsChartedSpace I J C
+    ContMDiff K 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) n f ↔
+      ContMDiff K J n (fun x ↦ (f x).val.1) ∧ ContMDiff K J n (fun x ↦ (f x).val.2) := by
+  let := composablePairsChartedSpace I J C
+  have := isManifold_composablePairs I J C
+  rw [((isSmoothEmbedding_coe_composablePairs I J C).of_le hn).contMDiff_iff_comp,
+    contMDiff_prod_iff]
+  rfl
 
 /-- The smooth manifold atlas on pairs of arrows `{p : Quiver.Total C × Quiver.Total C //
 p.1.left = p.2.left}` sharing a source, constructed as the self-fibre-product of source. -/
@@ -724,5 +787,26 @@ theorem mfderiv_inverse_unit_of_mem_ker_source (x : C)
 end UnitDifferentials
 
 end IsLieGroupoid
+
+/-- In a Lie groupoid, composing arrows which depend `C^n` (`n ≤ ∞`) on a point gives an arrow
+which depends `C^n` on the point. -/
+theorem _root_.ContMDiff.totalComp {E H E' H' : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
+    (I : ModelWithCorners ℝ E H) [I.Boundaryless]
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
+    (J : ModelWithCorners ℝ E' H') [J.Boundaryless]
+    (C : Type*) [Category C] [IsGroupoid C]
+    [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C]
+    [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
+    [IsManifold J ∞ (Quiver.Total C)] [IsLieGroupoid I J C]
+    {F G X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+    {K : ModelWithCorners ℝ F G} [TopologicalSpace X] [ChartedSpace G X] {n : ℕ∞ω} (hn : n ≤ ∞)
+    {a b : X → Quiver.Total C} (ha : ContMDiff K J n a) (hb : ContMDiff K J n b)
+    (h : ∀ x, (a x).right = (b x).left) :
+    ContMDiff K J n fun x ↦ (a x).comp (b x) (h x) := by
+  let := IsLieGroupoid.composablePairsChartedSpace I J C
+  have hp := (IsLieGroupoid.contMDiff_composablePairs_iff I J C hn
+    (f := fun x ↦ ⟨(a x, b x), h x⟩)).2 ⟨ha, hb⟩
+  exact ((IsLieGroupoid.contMDiff_comp_composablePairs I J C).of_le hn).comp hp
 
 end TauCeti

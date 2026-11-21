@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Pullback of differential forms along smooth families of maps
@@ -27,6 +29,12 @@ and this joint smoothness is what makes pointwise constructions from the slices,
 Moser vector fields, into smooth time-dependent vector fields. The basic example is the linear
 interpolation `α₀ + c(t) (α₁ - α₀)` of two forms (`TauCeti.SmoothForm.lineMapFamily`).
 
+In coordinates, the coordinate expression of a slice in a chart of `M` is that of `α` in a product
+chart, precomposed with the inclusion of the second factor (`TauCeti.inChartAt_mpullback_prodMk`).
+So for a `C^m` form `α` the coordinate expressions of the slices are jointly `C^m` in the chart
+coordinates of the parameter and the point
+(`TauCeti.IsSmoothForm.contDiffOn_inChartAt_mpullback_prodMk`).
+
 ## Main results
 
 * `ContMDiffAt.mpullback_form_family`: pullbacks along a jointly smooth family of maps, evaluated
@@ -36,6 +44,11 @@ interpolation `α₀ + c(t) (α₁ - α₀)` of two forms (`TauCeti.SmoothForm.l
 * `TauCeti.SmoothForm.contMDiff_mpullback_prodMk`: the same for smooth pullback of smooth forms.
 * `TauCeti.SmoothForm.contMDiff_mextDeriv_mpullback_prodMk`: the exterior derivatives of the slices
   of a smooth form on `N × M` are jointly smooth in `(t, y)`.
+* `TauCeti.inChartAt_mpullback_prodMk`: the coordinate expression of a slice of a form on `N × M`
+  in terms of that of the form in a product chart.
+* `TauCeti.IsSmoothForm.contDiffOn_inChartAt_mpullback_prodMk`: the coordinate expressions of the
+  slices of a `C^m` form on `N × M` are jointly `C^m` in the chart coordinates of the parameter and
+  the point, on the product chart target.
 * `TauCeti.SmoothForm.lineMapFamily`, `TauCeti.SmoothForm.mpullback_prodMk_lineMapFamily`: the
   family `t ↦ α₀ + c(t) (α₁ - α₀)` interpolating two forms, as a form on `ℝ × M`.
 -/
@@ -159,6 +172,58 @@ theorem SmoothForm.contMDiff_mextDeriv_mpullback_prodMk [IsManifold I 2 M] [IsMa
   convert contMDiff_mpullback_prodMk_form (contMDiff_mextDeriv α) using 3 with p
   rw [← mextDerivₗ_apply, mextDerivₗ_mpullback, coe_mpullback, mextDerivₗ_apply]
 
+/-- **Coordinates of a slice.** In the chart of `M` at `a.2`, the coordinate expression of the
+slice `ι_p^* φ` of a form `φ` on `N × M`, for `p` in the chart of `N` at `a.1`, is the coordinate
+expression of `φ` in the product chart at `a`, at the coordinates of `p`, precomposed with the
+inclusion of the second factor. -/
+theorem inChartAt_mpullback_prodMk [IsManifold J 1 N]
+    (φ : RoughForm (J.prod I) (N × M) F k) (a : N × M) {p : N}
+    (hp : p ∈ (extChartAt J a.1).source) {w : E} (hw : w ∈ (extChartAt I a.2).target) :
+    (mpullback I (J.prod I) (Prod.mk p) φ).inChartAt a.2 w =
+      (φ.inChartAt a (extChartAt J a.1 p, w)).compContinuousLinearMap
+        (ContinuousLinearMap.inr ℝ EN E) := by
+  have hx : (extChartAt J a.1 p, w) ∈ (extChartAt (J.prod I) a).target := by
+    rw [extChartAt_prod, PartialEquiv.prod_target]
+    exact ⟨(extChartAt J a.1).map_source hp, hw⟩
+  have hsymm : (extChartAt (J.prod I) a).symm (extChartAt J a.1 p, w) =
+      (p, (extChartAt I a.2).symm w) := by
+    rw [extChartAt_prod_symm_apply, (extChartAt J a.1).left_inv hp]
+  have h : mfderiv I (J.prod I) (Prod.mk p) ((extChartAt I a.2).symm w) =
+      ContinuousLinearMap.inr ℝ (TangentSpace J p) (TangentSpace I _) := mfderiv_prod_right
+  ext v
+  rw [RoughForm.inChartAt_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    RoughForm.inChartAt_apply, mpullback_apply]
+  refine φ.apply_congr hsymm.symm fun i ↦ ?_
+  rw [Manifold.mfderivWithin_extChartAt_prod_symm_apply hx, h]
+  -- The first component of `inr ℝ _ _ u` is `0`, and the second is `u`.
+  exact Prod.ext (map_zero _).symm rfl
+
+/-- **The slices of a smooth form are jointly smooth in coordinates.** For a `C^m` form `φ` on
+`N × M`, the coordinate expression in the chart of `M` at `a.2` of the slice `ι_p^* φ`, at the
+point of `N` with coordinate `X.1` in the chart at `a.1` and at the coordinate `X.2`, is jointly
+`C^m` in `X` on the target of the product chart at `a`. -/
+theorem IsSmoothForm.contDiffOn_inChartAt_mpullback_prodMk [IsManifold J 1 N]
+    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N] {φ : RoughForm (J.prod I) (N × M) F k}
+    (hφ : IsSmoothForm (J.prod I) m φ) (a : N × M) :
+    ContDiffOn ℝ m
+      (fun X : EN × E ↦
+        (TauCeti.mpullback I (J.prod I) (Prod.mk ((extChartAt J a.1).symm X.1)) φ).inChartAt a.2
+          X.2)
+      (extChartAt (J.prod I) a).target := by
+  -- Precomposition with the inclusion of the second factor, a continuous linear map.
+  let L : (EN × E) [⋀^Fin k]→L[ℝ] F →L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
+    ContinuousAlternatingMap.compContinuousLinearMapCLM (ContinuousLinearMap.inr ℝ EN E)
+  have hφa : ContDiffOn ℝ m (L ∘ φ.inChartAt a) (extChartAt (J.prod I) a).target := fun X hX ↦
+    (L.contDiff.comp_contDiffWithinAt
+      (φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt hX
+        (mem_extChartAt_source _) (hφ.contDiffWithinAt_inChartAt_self _))).mono
+      (extChartAt_target_subset_range a)
+  refine hφa.congr fun X hX ↦ ?_
+  have hX' : X.1 ∈ (extChartAt J a.1).target ∧ X.2 ∈ (extChartAt I a.2).target := by
+    simpa only [extChartAt_prod, PartialEquiv.prod_target, mem_prod] using hX
+  rw [inChartAt_mpullback_prodMk φ a ((extChartAt J a.1).map_target hX'.1) hX'.2,
+    (extChartAt J a.1).right_inv hX'.1]
+  exact ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _
 /-! ### Linear interpolation of two forms -/
 
 /-- **The linear interpolation of two forms, as a form on `ℝ × M`.** For smooth forms `α₀`, `α₁`
