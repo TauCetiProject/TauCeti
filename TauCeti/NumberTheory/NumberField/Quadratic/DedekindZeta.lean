@@ -21,6 +21,7 @@ import TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.NumberField.Units.Torsion
 import TauCeti.NumberTheory.LSeries.Zeta.Mul
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
@@ -257,10 +258,7 @@ theorem dedekindZeta_residue_eq_LFunction_one :
     (fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
       (Int.castRingHom ℂ)
   -- As `s → 1⁺`, `(s - 1) ζ(s) → 1` and `L(s, χ) → L(1, χ)`, while `(s - 1) ζ_K(s) → ρ`.
-  have hζ : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * riemannZeta s) (𝓝[>] 1) (𝓝 1) :=
-    riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun s hs ↦ by simpa using (Set.mem_Ioi.mp hs).ne')
+  have hζ := TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT
   have hL : Tendsto (fun s : ℝ ↦ χ.LFunction s) (𝓝[>] 1) (𝓝 (χ.LFunction 1)) :=
     (((DirichletCharacter.differentiable_LFunction (χ := χ)
       (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)).continuous.comp

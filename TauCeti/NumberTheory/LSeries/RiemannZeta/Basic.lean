@@ -50,6 +50,7 @@ Siegel's theorem on real zeros.
 * `TauCeti.norm_riemannZeta_le`, `TauCeti.norm_riemannZeta_le_two`, and
   `TauCeti.riemannZeta_re_le_two`: `‖ζ(s)‖ ≤ Re ζ(Re s)` for `Re s > 1`, and `‖ζ(s)‖ ≤ 2` and
   `Re ζ(s) ≤ 2` for `Re s ≥ 2`;
+* `TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT`: `(x - 1) ζ(x) → 1` as real `x → 1⁺`.
 * `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
 * `TauCeti.LSeries_neg_one_pow_add_one_eq_mul_riemannZeta`: the alternating series
   `∑ (-1) ^ (n + 1) n⁻ˢ` is `(1 - 2 ^ (1 - s)) ζ(s)` for `Re s > 1`.
@@ -124,6 +125,14 @@ theorem norm_riemannZeta_le_two {s : ℂ} (hs : 2 ≤ s.re) : ‖riemannZeta s�
 /-- On `Re s ≥ 2`, `Re ζ(s) ≤ 2`. -/
 theorem riemannZeta_re_le_two {s : ℂ} (hs : 2 ≤ s.re) : (riemannZeta s).re ≤ 2 :=
   (re_le_norm (riemannZeta s)).trans (norm_riemannZeta_le_two hs)
+
+/-- **The residue of `ζ` at `1` along the reals.** `(x - 1) ζ(x) → 1` as the real variable `x`
+tends to `1` from the right. -/
+theorem tendsto_sub_one_mul_riemannZeta_nhdsGT :
+    Tendsto (fun x : ℝ ↦ ((x : ℂ) - 1) * riemannZeta x) (𝓝[>] 1) (𝓝 1) :=
+  riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+    ((continuous_ofReal.tendsto' 1 1 ofReal_one).mono_left nhdsWithin_le_nhds)
+    (eventually_nhdsWithin_of_forall fun x hx ↦ by simpa using (Set.mem_Ioi.mp hx).ne')
 
 /-- The Riemann zeta function is measurable: it is continuous away from its pole at `1`. -/
 @[fun_prop]
