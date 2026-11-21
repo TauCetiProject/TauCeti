@@ -181,8 +181,8 @@ theorem continuousOn_iteratedFDeriv_transport (a : HomogeneousSymbol E E V W m) 
       ((((ContinuousLinearMap.compL ℂ V V W).bilinearRestrictScalars ℝ).isBoundedBilinearMap
         |>.contDiff (n := ∞)).comp_contDiffOn (ha.prodMk contDiff_fst.snd.snd.contDiffOn)))
   refine ((hU.continuousOn_iteratedFDerivWithin_prod_right (hs.prod ht).uniqueDiffOn k
-    (by simp)).comp (((continuous_transportParams hρ hσ hτ).comp continuous_fst).prodMk
-      continuous_snd).continuousOn
+    (by simp)).comp (((continuous_symm_prodMk_adjointEquiv_prodMk hρ hσ hτ).comp
+      continuous_fst).prodMk continuous_snd).continuousOn
       fun q (hq : q ∈ univ ×ˢ t) ↦ ⟨⟨(ρ q.1).adjointEquiv.toUnit, rfl⟩, hq.2⟩).congr
       fun q hq ↦ ?_
   have hfun : (fun y ↦ U (((((ρ q.1).symm : E →L[ℝ] E), ((ρ q.1).adjointEquiv : E →L[ℝ] E)),

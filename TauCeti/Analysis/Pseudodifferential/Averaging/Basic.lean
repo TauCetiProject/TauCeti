@@ -84,7 +84,8 @@ variable {G E V W : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- The parameters `(ρ(g)⁻¹, ρ(g)ᵀ, τ(g), σ(g)⁻¹)` of the transport along `g ∈ G` depend
 continuously on `g` in the operator norm, for representations `ρ`, `σ` and `τ` that do. -/
-theorem continuous_transportParams (hρ : Continuous fun g ↦ (ρ g : E →L[ℝ] E))
+theorem continuous_symm_prodMk_adjointEquiv_prodMk
+    (hρ : Continuous fun g ↦ (ρ g : E →L[ℝ] E))
     (hσ : Continuous fun g ↦ (σ g : V →L[ℂ] V)) (hτ : Continuous fun g ↦ (τ g : W →L[ℂ] W)) :
     Continuous fun g ↦ ((((ρ g).symm : E →L[ℝ] E), ((ρ g).adjointEquiv : E →L[ℝ] E)),
       ((τ g : W →L[ℂ] W), ((σ g).symm : V →L[ℂ] V))) :=
@@ -298,8 +299,8 @@ theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : ℕ) :
           ((contDiff_fst.fst.fst.clm_apply contDiff_snd.fst).prodMk
             (contDiff_fst.fst.snd.clm_apply contDiff_snd.snd))).prodMk contDiff_fst.snd.snd)))
   refine ((hU.continuous_iteratedFDeriv_prod_right k (by simp)).comp
-    (((continuous_transportParams hρ hσ hτ).comp continuous_fst).prodMk continuous_snd)).congr
-    fun q ↦ ?_
+    (((continuous_symm_prodMk_adjointEquiv_prodMk hρ hσ hτ).comp continuous_fst).prodMk
+      continuous_snd)).congr fun q ↦ ?_
   have hfun : (fun y ↦ U (((((ρ q.1).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n),
       ((ρ q.1).adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n)),
       ((τ q.1 : W →L[ℂ] W), ((σ q.1).symm : V →L[ℂ] V))), y)) =
