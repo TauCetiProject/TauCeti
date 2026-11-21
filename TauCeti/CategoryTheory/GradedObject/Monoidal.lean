@@ -403,8 +403,10 @@ morphisms `f` and `g` of graded objects is the map of biproducts given by the `f
 lemma tensorHom_tensorObjIsoBiproduct_hom (f : X ⟶ X') (g : Y ⟶ Y') :
     tensorHom f g n ≫ (tensorObjIsoBiproduct X' Y' n).hom =
       (tensorObjIsoBiproduct X Y n).hom ≫ biproduct.map fun x ↦ f x.val.1 ⊗ₘ g x.val.2 := by
-  refine tensorObj_ext _ _ fun i j h ↦ ?_
-  simp
+  simp only [MonoidalCategory.tensorHom_def]
+  -- `tensorHom` and `tensorObjIsoBiproduct` are by definition `mapBifunctorMapMap` and
+  -- `mapBifunctorMapObjIsoBiproduct` of `curriedTensor C`
+  exact mapBifunctorMapMap_mapBifunctorMapObjIsoBiproduct_hom (F := curriedTensor C) n f g
 
 end Antidiagonal
 

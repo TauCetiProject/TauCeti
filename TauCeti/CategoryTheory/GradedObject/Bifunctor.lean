@@ -96,9 +96,11 @@ lemma mapBifunctorMapMap_mapBifunctorMapObjIsoBiproduct_hom (f : X ⟶ X') (g : 
     mapBifunctorMapMap F (fun x ↦ x.1 + x.2) f g n ≫
         (mapBifunctorMapObjIsoBiproduct X' Y' F n).hom =
       (mapBifunctorMapObjIsoBiproduct X Y F n).hom ≫ biproduct.map fun x ↦
-        (F.map (f x.val.1)).app (Y x.val.2) ≫ (F.obj (X' x.val.1)).map (g x.val.2) := by
-  refine mapBifunctorMapObj_ext F _ fun i j h ↦ ?_
-  simp
+        (F.map (f x.val.1)).app (Y x.val.2) ≫ (F.obj (X' x.val.1)).map (g x.val.2) :=
+  -- `mapBifunctorMapMap` is by definition `mapMap` of the graded map of summands, and
+  -- `TauCeti.fiberEquivAntidiagonal` does not change the underlying pairs
+  mapMap_mapObjIsoBiproductOfEquiv_hom _ (TauCeti.fiberEquivAntidiagonal n)
+    (((mapBifunctor F I I).map f).app Y ≫ ((mapBifunctor F I I).obj X').map g)
 
 end Antidiagonal
 

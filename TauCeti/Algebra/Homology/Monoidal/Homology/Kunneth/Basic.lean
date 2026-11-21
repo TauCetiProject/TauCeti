@@ -17,6 +17,7 @@ public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.Algebra.Homology.Semisimple
 public import TauCeti.CategoryTheory.GradedObject.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # The Künneth map on the homology of a tensor product of complexes
@@ -763,15 +764,20 @@ theorem finrank_tensorObj [Nontrivial k] (n : I) :
   let e : P ≃ Finset.antidiagonal n := TauCeti.fiberEquivAntidiagonal n
   have := Fintype.ofEquiv _ e.symm
   let ε := (Fintype.equivFin P).symm
-  -- The degree `n` part of the tensor product is by definition the coproduct of the summands.
-  -- Reindexing it by `Fin _` keeps the index type in universe `0`, as `coprodIsoDirectSum`
-  -- requires the index universe to be at most the module universe.
-  have iso : (tensorObj A B n : ModuleCat.{u} k) ≅ ModuleCat.of k
-      (DirectSum (Fin (Fintype.card P)) fun j ↦ TensorProduct k (A (ε j).val.1) (B (ε j).val.2)) :=
-    (Sigma.reindex ε fun i : P ↦ A i.val.1 ⊗ B i.val.2).symm ≪≫
-      ModuleCat.coprodIsoDirectSum fun j ↦ A (ε j).val.1 ⊗ B (ε j).val.2
-  rw [iso.toLinearEquiv.finrank_eq, Module.finrank_directSum,
-    ← Finset.sum_coe_sort (Finset.antidiagonal n)]
-  exact Fintype.sum_equiv (ε.trans e) _ _ fun x ↦ Module.finrank_tensorProduct
+  -- The degree `n` part of the tensor product is by definition the coproduct of the summands over
+  -- the fibre `P`, which is their biproduct indexed by `Fin _` through `ε`. Reindexing by `Fin _`
+  -- keeps the index type in universe `0`, as `TauCeti.biproductDirectSumEquiv` requires.
+  have iso : (tensorObj A B n : ModuleCat.{u} k) ≅ ⨁ fun j ↦ A (ε j).val.1 ⊗ B (ε j).val.2 :=
+    mapObjIsoBiproductOfEquiv (((mapBifunctor (curriedTensor _) I I).obj A).obj B) _ ε.symm
+  -- the carrier of `A i ⊗ B j` is by definition `TensorProduct k (A i) (B j)`
+  have (j : Fin (Fintype.card P)) : Module.Free k (A (ε j).val.1 ⊗ B (ε j).val.2 : ModuleCat k) :=
+    inferInstanceAs (Module.Free k (TensorProduct k (A (ε j).val.1) (B (ε j).val.2)))
+  have (j : Fin (Fintype.card P)) : Module.Finite k (A (ε j).val.1 ⊗ B (ε j).val.2 : ModuleCat k) :=
+    inferInstanceAs (Module.Finite k (TensorProduct k (A (ε j).val.1) (B (ε j).val.2)))
+  rw [(iso.toLinearEquiv.trans (TauCeti.biproductDirectSumEquiv _)).finrank_eq,
+    Module.finrank_directSum, ← Finset.sum_coe_sort (Finset.antidiagonal n)]
+  exact Fintype.sum_equiv (ε.trans e) _ _ fun x ↦ by
+    rw [Equiv.trans_apply, TauCeti.coe_fiberEquivAntidiagonal_apply]
+    exact Module.finrank_tensorProduct
 
 end CategoryTheory.GradedObject.Monoidal

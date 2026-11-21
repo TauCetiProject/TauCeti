@@ -25,6 +25,7 @@ import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 import TauCeti.CategoryTheory.Abelian.LeftDerived
 import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 import TauCeti.CategoryTheory.Monoidal.Tor
+import TauCeti.Algebra.Homology.Monoidal.Tensor.ObjFlat
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.End.TensorProduct
@@ -201,14 +202,8 @@ gives a short exact sequence of complexes. -/
 private lemma shortExact_map_objTensor (P : ProjectiveResolution M)
     {S : ShortComplex (ModuleCat.{u} A)} (hS : S.ShortExact) :
     (S.map P.complex.objTensor).ShortExact := by
-  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
-  have : Module.Flat A (P.complex.X n) := Module.Flat.of_projective
-  refine .mk' (Module.Flat.rTensor_shortComplex_exact _ S hS.exact) ?_ ?_
-  · rw [ModuleCat.mono_iff_injective]
-    exact Module.Flat.rTensor_preserves_injective_linearMap _
-      ((ModuleCat.mono_iff_injective _).1 hS.mono_f)
-  · rw [ModuleCat.epi_iff_surjective]
-    exact LinearMap.rTensor_surjective _ ((ModuleCat.epi_iff_surjective _).1 hS.epi_g)
+  have (n : ℕ) : Module.Flat A (P.complex.X n) := Module.Flat.of_projective
+  exact P.complex.shortExact_map_objTensor_of_flat hS
 
 /-- `Tor_{n+1}(X, M)` vanishes exactly when `X ⊗ P` is exact in degree `n + 1`. -/
 private lemma isZero_Tor_succ_iff (P : ProjectiveResolution M) (X : ModuleCat.{u} A) (n : ℕ) :
@@ -217,16 +212,17 @@ private lemma isZero_Tor_succ_iff (P : ProjectiveResolution M) (X : ModuleCat.{u
         (P.complex.d (n + 1) n).hom.lTensor X y = 0 →
         ∃ z : (X ⊗ P.complex.X (n + 2) : ModuleCat.{u} A),
           (P.complex.d (n + 2) (n + 1)).hom.lTensor X z = y := by
+  -- `X ⊗ P` is isomorphic to the prolongation of `tensorLeft X` applied to `P`, whose short
+  -- complexes are those of `P` mapped by `tensorLeft X`
   rw [isZero_Tor_iff P, ← HomologicalComplex.exactAt_iff_isZero_homology,
     HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
-    ShortComplex.moduleCat_exact_iff]
+    ShortComplex.exact_iff_of_iso ((HomologicalComplex.shortComplexFunctor' _ _ (n + 2) (n + 1)
+      n).mapIso (P.complex.objTensorObjIso X)), ShortComplex.moduleCat_exact_iff]
   simp only [HomologicalComplex.shortComplexFunctor'_obj_X₁,
     HomologicalComplex.shortComplexFunctor'_obj_X₂, HomologicalComplex.shortComplexFunctor'_obj_f,
-    HomologicalComplex.shortComplexFunctor'_obj_g, HomologicalComplex.objTensor_obj_d]
-  -- `HomologicalComplex.objTensor_obj_X` and `ModuleCat.hom_whiskerLeft` do not rewrite here: after
-  -- `objTensor_obj_d` the whiskering is typed by the terms of `X ⊗ P`, which are `X ⊗ P.X n` only
-  -- by definition, so the two sides agree by definition
-  exact Iff.rfl
+    HomologicalComplex.shortComplexFunctor'_obj_g, Functor.mapHomologicalComplex_obj_X,
+    Functor.mapHomologicalComplex_obj_d, curriedTensor_obj_obj, curriedTensor_obj_map,
+    hom_whiskerLeft]
 
 /-- **Flat modules are `Tor`-acyclic.** If `X` is flat, then `Tor_{n+1}(X, M) = 0` for every
 module `M`. -/
@@ -340,8 +336,8 @@ private lemma mono_homologyMap_zero_iff (P : ProjectiveResolution M) :
     simp only [φ, ShortComplex.map_f, HomologicalComplex.p_opcyclesMap_assoc,
       ProjectiveResolution.pOpcycles_comp_fromLeftDerivedZero',
       ProjectiveResolution.pOpcycles_comp_fromLeftDerivedZero'_assoc,
-      HomologicalComplex.objTensorObjIso_hom_f,
-      HomologicalComplex.objTensor_map_f]
+      HomologicalComplex.objTensorObjIso_hom_f]
+    rw [← Iso.inv_comp_eq, HomologicalComplex.objTensorXIso_inv_map_f_assoc, Iso.inv_hom_id_assoc]
     -- `tensorLeft X` acts on morphisms by whiskering on the left with `X`.
     exact (whisker_exchange S.f (P.π.f 0)).symm
   have hmono : Mono (HomologicalComplex.homologyMap φ 0) ↔ Mono (S.f ▷ M) := by
@@ -434,9 +430,14 @@ theorem isZero_Tor_restrictScalars_iff (hf : f.Flat) (M : ModuleCat.{u} B) (N : 
   -- exact and faithful, so it neither creates nor destroys exactness.
   let e : ((restrictScalars.{u} f).mapHomologicalComplex _).obj (Q'.complex.objTensor.obj M) ≅
       Q.complex.objTensor.obj ((restrictScalars f).obj M) :=
-    HomologicalComplex.Hom.isoOfComponents
-      (fun k ↦ (extendScalarsCompTensorLeftIso f M).app (Q.complex.X k))
-      fun i j _ ↦ ((extendScalarsCompTensorLeftIso f M).hom.naturality (Q.complex.d i j)).symm
+    -- the prolongations of `tensorLeft M` and of restriction of scalars compose to the prolongation
+    -- of the composite, and `Q'.complex` is by definition the prolongation of extension of scalars
+    -- applied to `Q.complex`
+    ((restrictScalars.{u} f).mapHomologicalComplex _).mapIso (Q'.complex.objTensorObjIso M) ≪≫
+      (Functor.mapHomologicalComplexCompIso (Iso.refl (tensorLeft M ⋙ restrictScalars.{u} f))
+        _).app Q'.complex ≪≫
+      (Functor.mapHomologicalComplexCompIso (extendScalarsCompTensorLeftIso f M) _).app Q.complex ≪≫
+      (Q.complex.objTensorObjIso _).symm
   have hR : (((restrictScalars.{u} f).mapHomologicalComplex _).obj
       (Q'.complex.objTensor.obj M)).ExactAt n ↔ (Q'.complex.objTensor.obj M).ExactAt n :=
     ((Q'.complex.objTensor.obj M).sc n).exact_map_iff_of_faithful (restrictScalars.{u} f)
