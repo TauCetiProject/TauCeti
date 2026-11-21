@@ -12,10 +12,12 @@ public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.Defs
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
@@ -50,7 +52,9 @@ factor `φ i` by its second derivative. Finally, the
 second derivative of a directional derivative
 `y ↦ Dg(y) v` is the third derivative of `g` evaluated at `v`, and differentiating the symmetry
 of the second derivative shows that the third derivative is symmetric in its last two
-directions. The file also gives the second-order product rule for scalar-valued maps, together
+directions. Contracting a second derivative with an antisymmetric matrix gives zero, and so does
+the double divergence `∑ᵢⱼ ∂ᵢ∂ⱼ Kᵢⱼ` of an antisymmetric matrix field. The file also gives the
+second-order product rule for scalar-valued maps, together
 with a form valid at every point when both factors are `C²` on an open set containing the support
 of one of them (a cutoff), the second-order chain rule through a function of one variable, and
 the comparison of second derivatives over a field and over a larger field. Along a curve the
@@ -92,6 +96,10 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_fderiv_apply`: the second derivative of a directional derivative of a
   `C³` map is its third derivative.
 * `TauCeti.fderiv_fderiv_apply_comm`: mixed directional derivatives of a `C²` map commute.
+* `TauCeti.sum_sum_smul_fderiv_fderiv_apply_eq_zero_of_transpose_eq_neg`: contracting the second
+  derivative of a `C²` map with an antisymmetric matrix gives zero.
+* `TauCeti.sum_fderiv_sum_fderiv_apply_eq_zero_of_transpose_eq_neg`: the double divergence
+  `∑ᵢⱼ ∂ᵢ∂ⱼ Kᵢⱼ` of a `C²` antisymmetric matrix field vanishes.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
@@ -394,6 +402,48 @@ theorem fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : E}
       (le_minSmoothness.trans hn))).differentiableAt one_ne_zero
   rw [fderiv_clm_apply_const_apply hD, fderiv_clm_apply_const_apply hD]
   exact (hg.isSymmSndFDerivAt hn).eq w v
+
+open scoped Matrix in
+/-- **An antisymmetric matrix annihilates a second derivative.** For a map that is
+`C^{minSmoothness 𝕜 2}` at `x` (so `C²` over `ℝ` or `ℂ`), directions `v i` and a matrix `A` with
+`Aᵀ = -A`, the contraction `∑ᵢⱼ Aᵢⱼ D²g(x)(vⱼ, vᵢ)` vanishes: the second derivative is symmetric. -/
+theorem sum_sum_smul_fderiv_fderiv_apply_eq_zero_of_transpose_eq_neg [CharZero 𝕜]
+    {ι : Type*} [Fintype ι] {n : WithTop ℕ∞} {g : E → F} {x : E} (hg : ContDiffAt 𝕜 n g x)
+    (hn : minSmoothness 𝕜 2 ≤ n) (v : ι → E) {A : Matrix ι ι 𝕜} (hA : Aᵀ = -A) :
+    ∑ i, ∑ j, A i j • fderiv 𝕜 (fderiv 𝕜 g) x (v j) (v i) = 0 := by
+  have hAij : ∀ i j, A j i = -A i j := fun i j ↦ congrFun (congrFun hA i) j
+  refine Finset.sum_sum_eq_zero_of_diag _ (fun i _ ↦ ?_) fun i _ j _ _ ↦ ?_
+  · simp [show A i i = 0 from self_eq_neg.1 (hAij i i)]
+  · rw [hAij, (hg.isSymmSndFDerivAt hn).eq (v i) (v j), neg_smul, neg_add_cancel]
+
+open scoped Matrix in
+/-- **The double divergence of an antisymmetric matrix field vanishes.** Let `K` be a matrix
+field whose entries are `C^{minSmoothness 𝕜 2}` at `x` (so `C²` over `ℝ` or `ℂ`) and whose values
+are antisymmetric, `Kᵀ = -K`, near `x`. Then, for directions `v i`,
+`∑ᵢ ∂ᵢ (∑ⱼ ∂ⱼ Kᵢⱼ) = 0` at `x`, where `∂ᵢ` differentiates in the direction `v i`. -/
+theorem sum_fderiv_sum_fderiv_apply_eq_zero_of_transpose_eq_neg [CharZero 𝕜]
+    {ι : Type*} [Fintype ι] {n : WithTop ℕ∞} {K : E → Matrix ι ι F} {x : E}
+    (hK : ∀ i j, ContDiffAt 𝕜 n (fun z ↦ K z i j) x) (hn : minSmoothness 𝕜 2 ≤ n)
+    (hKt : ∀ᶠ z in 𝓝 x, (K z)ᵀ = -K z) (v : ι → E) :
+    ∑ i, fderiv 𝕜 (fun y ↦ ∑ j, fderiv 𝕜 (fun z ↦ K z i j) y (v j)) x (v i) = 0 := by
+  have hdd : ∀ i j, DifferentiableAt 𝕜 (fderiv 𝕜 fun z ↦ K z i j) x := fun i j ↦
+    ((hK i j).fderiv_right (m := 1) ((by norm_num : ((1 : ℕ) : WithTop ℕ∞) + 1 ≤ 2).trans
+      (le_minSmoothness.trans hn))).differentiableAt one_ne_zero
+  -- The second derivatives `Hᵢⱼ` of the entries are symmetric, and antisymmetric in `(i, j)`.
+  have hneg : ∀ i j, fderiv 𝕜 (fderiv 𝕜 fun z ↦ K z j i) x =
+      -fderiv 𝕜 (fderiv 𝕜 fun z ↦ K z i j) x := fun i j ↦ by
+    have heq : (fun z ↦ K z j i) =ᶠ[𝓝 x] fun z ↦ -K z i j :=
+      hKt.mono fun z hz ↦ by simpa using congrFun (congrFun hz i) j
+    rw [(heq.fderiv.trans (Eventually.of_forall fun z ↦ fderiv_neg)).fderiv_eq, fderiv_fun_neg]
+  rw [Finset.sum_congr rfl fun i _ ↦ by
+    rw [fderiv_fun_sum fun j _ ↦ (hdd i j).clm_apply (differentiableAt_const _), sum_apply]]
+  simp_rw [fderiv_clm_apply_const_apply (hdd _ _)]
+  refine Finset.sum_sum_eq_zero_of_diag _ (fun i _ ↦ ?_) fun i _ j _ _ ↦ ?_
+  · have h := hneg i i
+    rw [eq_neg_iff_add_eq_zero, ← two_smul 𝕜, smul_eq_zero] at h
+    simp [h.resolve_left two_ne_zero]
+  · rw [hneg i j, neg_apply, neg_apply, ((hK i j).isSymmSndFDerivAt hn).eq (v i) (v j),
+      add_neg_cancel]
 
 /-- **The third derivative is symmetric in its last two directions.** For a map that is
 `C^{minSmoothness 𝕜 3}` at `x` (so `C³` over `ℝ` or `ℂ`), differentiating the symmetry of the
