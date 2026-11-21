@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.PathClass
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.PathClass.Stabilizer
 public import TauCeti.Geometry.Symplectic.Flux.Endpoint
 
 /-!
@@ -26,8 +26,8 @@ because the flux is invariant under homotopy fixing both time ends
 (`TauCeti.Diffeotopy.Homotopic.flux_eq`), in particular under homotopy through `G_σ`.
 
 The final diffeomorphisms of the path classes are exactly the isotopy stabilizer of `σ`
-(`TauCeti.range_pathClass_final`), and the flux group `Γ_σ` is the image under the flux of the
-classes of loops, those with final diffeomorphism the identity
+(`TauCeti.range_pathClass_final`, for any smooth form), and the flux group `Γ_σ` is the image
+under the flux of the classes of loops, those with final diffeomorphism the identity
 (`TauCeti.mem_fluxGroup_iff_exists_pathClass`). The endpoint flux
 `G_σ-isotopies → H¹_dR(M) / Γ_σ` (`TauCeti.endpointFlux`) factors through the path classes: the
 endpoint flux of the final diffeomorphism of a class is the class of its flux modulo `Γ_σ`
@@ -40,10 +40,6 @@ endpoint flux of the final diffeomorphism of a class is the class of its flux mo
 ## Main results
 
 * `TauCeti.pathClassFlux_mk`: the flux of the class of a path is the flux of the path.
-* `TauCeti.range_pathClass_final`: the final diffeomorphisms of the path classes form the isotopy
-  stabilizer of `σ`.
-* `TauCeti.Diffeotopy.PathClass.final_mem_isotopyStabilizer`: the final diffeomorphism of a path
-  class lies in the isotopy stabilizer of `σ`.
 * `TauCeti.mem_fluxGroup_iff_exists_pathClass`: the flux group is the flux image of the loop
   classes.
 * `TauCeti.endpointFlux_pathClass_final`: the endpoint flux factors through the path classes.
@@ -106,20 +102,6 @@ theorem pathClassFlux_mk (Φ : sliceSubgroup (diffeomorphStabilizer σ.val)) :
         (final_mem_of_mem_sliceSubgroup Φ.property)) := by
   rw [PathClass.mk_def]
   exact Con.lift_mk' _ _
-
-/-- **The final diffeomorphisms of the path classes** of `σ` form the isotopy stabilizer of `σ`:
-the final diffeomorphisms of the diffeotopies preserving `σ` at every time. -/
-theorem range_pathClass_final :
-    (PathClass.final (diffeomorphStabilizer σ.val) le_rfl).range = isotopyStabilizer σ.val := by
-  rw [PathClass.range_final]
-  ext φ
-  simp only [Subgroup.mem_map, mem_sliceSubgroup, finalHom_apply, mem_isotopyStabilizer]
-
-/-- The final diffeomorphism of a path class of `σ` lies in the isotopy stabilizer of `σ`. -/
-theorem Diffeotopy.PathClass.final_mem_isotopyStabilizer
-    (γ : PathClass (diffeomorphStabilizer σ.val) le_rfl) :
-    PathClass.final _ _ γ ∈ isotopyStabilizer σ.val :=
-  (range_pathClass_final (σ := σ)) ▸ ⟨γ, rfl⟩
 
 /-- **The flux group is the flux image of the loop classes.** A class lies in the flux group of `σ`
 exactly when it is the flux of a path class of `σ` whose final diffeomorphism is the identity. -/
