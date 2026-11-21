@@ -652,7 +652,7 @@ theorem W1p.norm_gradient_sub_compHyperplaneReflectionL_sq_le (hν : ν ≠ 0)
 
 /-- **Extension by zero across the hyperplane.** Let `H = {x | c < ⟪x, ν⟫}`, let `d` be `C¹` on an
 open set `U₀` and vanish on the part of the hyperplane `∂H` in `U₀`. Let `V` be bounded and open
-with `closure V ∩ closure H ⊆ U₀`, and let `K ⊆ V` be compact. On every open `U₁` with
+with `closure V ∩ {x | c ≤ ⟪x, ν⟫} ⊆ U₀`, and let `K ⊆ V` be compact. On every open `U₁` with
 `U₁ ∩ H ⊆ K` there is `w ∈ W^{1,p}(U₁)` vanishing on `U₁ ∖ H` and equal to `d` on `U₁ ∩ H`. -/
 theorem W1p.exists_value_eq_zero_and_value_ae_eq (hp : p ≠ ⊤) (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ)
     {U₀ : Set E} {d : E → ℝ} (hU₀ : IsOpen U₀) (hd : ContDiffOn ℝ 1 d U₀)

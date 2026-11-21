@@ -31,7 +31,8 @@ where `C` depends only on `n` and `α`
 (`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_of_laplacian_of_halfSpace`). The set `S` may
 meet the hyperplane, and only the part of `S_R` in `H`, where the equation holds, enters the
 constant. This is the boundary counterpart of the interior estimate
-`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_of_laplacian`, and the estimate for the frozen
+`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_of_laplacian`, and the constant-coefficient
+(Laplacian) input that, after a linear change of variables, gives the estimate for the frozen
 operator in the perturbation argument for the `C^{2,α}` estimate near a flat boundary portion.
 
 ## The argument
