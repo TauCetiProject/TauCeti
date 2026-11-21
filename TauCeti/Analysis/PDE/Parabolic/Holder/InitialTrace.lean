@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.InitialTrace
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # The rate of attainment of the initial trace
@@ -40,8 +41,6 @@ beyond.
 
 * `TauCeti.ParabolicC2HolderSpace.exists_abs_sub_le_of_abs_euclideanParabolicOperatorL_le`: the
   rate of attainment of the initial trace.
-* `TauCeti.ParabolicC2HolderSpace.exists_forall_mul_add_mul_lt_of_uniformEquicontinuous`: the
-  step from such a rate to uniform attainment for a uniformly equicontinuous family.
 * `TauCeti.ParabolicC2HolderSpace.exists_forall_abs_sub_lt_of_uniformEquicontinuous`: uniform
   attainment for families with uniformly equicontinuous initial traces.
 
@@ -146,45 +145,6 @@ theorem exists_abs_sub_le_of_abs_euclideanParabolicOperatorL_le (Λ β γ : ℝ)
     (fun x y ↦ by simpa [projIcc_left] using hω x y)
     hsT (p : ParabolicSpaceTime _).space
   simpa only [hτ, slabMk_space_slabTime, zero_add, projIcc_left, hωs] using key
-
-/-- `X ε / (2 (X + 1)) < ε / 2` for `X ≥ 0` and `ε > 0`. -/
-private theorem mul_div_two_mul_add_one_lt {ε : ℝ} (hε : 0 < ε) (X : ℝ) (hX : 0 ≤ X) :
-    X * (ε / (2 * (X + 1))) < ε / 2 := by
-  have hX1 : X / (X + 1) < 1 := (div_lt_one (by positivity)).2 (by linarith)
-  calc X * (ε / (2 * (X + 1))) = ε / 2 * (X / (X + 1)) := by field_simp
-    _ < ε / 2 * 1 := mul_lt_mul_of_pos_left hX1 (by positivity)
-    _ = ε / 2 := mul_one _
-
-/-- **From the rate to uniform attainment.** Let `(g_k)` be a uniformly equicontinuous family of
-real functions, and let `C ≥ 0` and `L` be constants. For every `ε > 0` there is `δ > 0` such that
-each time `0 ≤ s < δ` admits an `η` by which every `g_k` moves by at most `η` over distances at
-most `√s`, with `C (η + s L) < ε`. Combined with a rate `|u_k(x, s) - g_k(x)| ≤ C (η + s L)`, such
-as `exists_abs_sub_le_of_abs_euclideanParabolicOperatorL_le`, this gives `u_k(·, s) → g_k`
-uniformly in `k` as `s → 0`. -/
-theorem exists_forall_mul_add_mul_lt_of_uniformEquicontinuous {κ X : Type*} [PseudoMetricSpace X]
-    {C : ℝ} (hC : 0 ≤ C) (L : ℝ) {g : κ → X → ℝ} (hg : UniformEquicontinuous g) {ε : ℝ}
-    (hε : 0 < ε) :
-    ∃ δ > 0, ∀ s, 0 ≤ s → s < δ → ∃ η, (∀ k x y, dist x y ≤ √s → |g k x - g k y| ≤ η) ∧
-      C * (η + s * L) < ε := by
-  -- Take `η` with `C η < ε / 2`, the scale `δ₁` of the oscillation `η`, and `C s |L| < ε / 2`.
-  set R := C * |L|
-  obtain ⟨δ₁, hδ₁, hδ₁η⟩ :=
-    Metric.uniformEquicontinuous_iff.1 hg (ε / (2 * (C + 1))) (by positivity)
-  refine ⟨min (δ₁ ^ 2) (ε / (2 * (R + 1))), by positivity, fun s hs0 hs ↦
-    ⟨ε / (2 * (C + 1)), fun k x y hxy ↦ ?_, ?_⟩⟩
-  · have hsδ : √s < δ₁ := by
-      rw [← sqrt_sq hδ₁.le]
-      exact sqrt_lt_sqrt hs0 (hs.trans_le (min_le_left _ _))
-    simpa [Real.dist_eq] using (hδ₁η x y (hxy.trans_lt hsδ) k).le
-  · have hR : C * (s * L) ≤ R * (ε / (2 * (R + 1))) :=
-      calc _ ≤ C * (s * |L|) := by gcongr; exact le_abs_self _
-        _ = R * s := by ring
-        _ ≤ _ := mul_le_mul_of_nonneg_left (hs.le.trans (min_le_right _ _)) (by positivity)
-    -- Each of the two terms is less than `ε / 2`.
-    have h₁ := mul_div_two_mul_add_one_lt hε C hC
-    have h₂ := mul_div_two_mul_add_one_lt hε R (by positivity)
-    calc _ = C * (ε / (2 * (C + 1))) + C * (s * L) := by ring
-      _ < ε := by linarith
 
 /-- **Uniform attainment for equicontinuous families.** Let `P` have degenerate elliptic Hölder
 coefficients on the slab `ℝⁿ × [t₀, t₁]`, and let `(u_k)` be a family in `C_b^{2+α,1+α/2}` with
