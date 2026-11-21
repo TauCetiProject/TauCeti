@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
@@ -58,54 +59,48 @@ variable [hr₁ : Fact (0 < r₁)] [hr₁₂ : Fact (r₁ < r₂)]
 private theorem log_div_pos : 0 < Real.log (r₂ / r₁) :=
   Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
 
-private def doublePeriodBasis (r₁ r₂ : ℝ) [h₁ : Fact (0 < r₁)] [h₁₂ : Fact (r₁ < r₂)] :
-    Module.Basis (Fin 2) ℝ ℂ :=
-  Complex.basisOneI.unitsSMul fun i ↦
-    if i = 0 then Units.mk0 (2 * π) (by positivity)
-    else Units.mk0 (2 * Real.log (r₂ / r₁))
-      (mul_ne_zero (by norm_num) (log_div_pos (r₁ := r₁) (r₂ := r₂)).ne')
+/-- The two real-linearly independent periods of the analytic annulus double. -/
+def doublePeriodPair (r₁ r₂ : ℝ) [h₁ : Fact (0 < r₁)] [h₁₂ : Fact (r₁ < r₂)] :
+    PeriodPair where
+  ω₁ := 2 * π
+  ω₂ := 2 * Real.log (r₂ / r₁) * I
+  indep := by
+    refine LinearIndependent.pair_iff.mpr fun s t h ↦ ?_
+    have hre : s * (2 * π) = 0 := by
+      simpa [Complex.real_smul] using congrArg Complex.re h
+    have him : t * (2 * Real.log (r₂ / r₁)) = 0 := by
+      simpa [Complex.real_smul] using congrArg Complex.im h
+    exact ⟨(mul_eq_zero.mp hre).resolve_right (by positivity),
+      (mul_eq_zero.mp him).resolve_right
+        (mul_ne_zero (by norm_num) (log_div_pos (r₁ := r₁) (r₂ := r₂)).ne')⟩
+
+/-- The first period of the annulus double is the real exponential period. -/
+@[simp]
+theorem doublePeriodPair_ω₁ : (doublePeriodPair r₁ r₂).ω₁ = (2 * π : ℂ) := (rfl)
+
+/-- The second period of the annulus double is twice its logarithmic height times `I`. -/
+@[simp]
+theorem doublePeriodPair_ω₂ :
+    (doublePeriodPair r₁ r₂).ω₂ = 2 * Real.log (r₂ / r₁) * I := (rfl)
 
 /-- The rectangular period lattice of the double of the annulus: horizontal period `2π` and
 vertical period `2i log(r₂/r₁)`. -/
-def doublePeriodLattice (r₁ r₂ : ℝ) [Fact (0 < r₁)] [Fact (r₁ < r₂)] : Submodule ℤ ℂ :=
-  Submodule.span ℤ (range (doublePeriodBasis r₁ r₂))
-
-/-- The period lattice of the doubled annulus is discrete. -/
-instance instDiscreteTopologyDoublePeriodLattice :
-    DiscreteTopology (doublePeriodLattice r₁ r₂) := by
-  unfold doublePeriodLattice
-  infer_instance
-
-/-- The period lattice spans the real model plane. -/
-instance instIsZLatticeDoublePeriodLattice : IsZLattice ℝ (doublePeriodLattice r₁ r₂) := by
-  unfold doublePeriodLattice
-  infer_instance
+abbrev doublePeriodLattice (r₁ r₂ : ℝ) [Fact (0 < r₁)] [Fact (r₁ < r₂)] : Submodule ℤ ℂ :=
+  (doublePeriodPair r₁ r₂).lattice
 
 /-- Membership in the doubled annulus's period lattice is an integer linear combination of its
 two explicit periods. -/
 theorem mem_doublePeriodLattice_iff {w : ℂ} :
     w ∈ doublePeriodLattice r₁ r₂ ↔
       ∃ m n : ℤ, (m : ℂ) * (2 * π) + (n : ℂ) * (2 * Real.log (r₂ / r₁) * I) = w := by
-  have hb : range (doublePeriodBasis r₁ r₂) =
-      ({(2 * π : ℂ), (2 * Real.log (r₂ / r₁) : ℂ) * I} : Set ℂ) := by
-    ext z
-    constructor
-    · rintro ⟨i, rfl⟩
-      fin_cases i <;>
-        simp [doublePeriodBasis, Module.Basis.unitsSMul_apply, Complex.coe_basisOneI,
-          Units.smul_def, Complex.real_smul]
-    · rintro (rfl | rfl)
-      · exact ⟨0, by simp [doublePeriodBasis, Module.Basis.unitsSMul_apply,
-          Complex.coe_basisOneI, Units.smul_def, Complex.real_smul]⟩
-      · exact ⟨1, by simp [doublePeriodBasis, Module.Basis.unitsSMul_apply,
-          Complex.coe_basisOneI, Units.smul_def, Complex.real_smul]⟩
-  rw [doublePeriodLattice, hb, Submodule.mem_span_pair]
-  simp only [zsmul_eq_mul]
+  simpa only [doublePeriodLattice, doublePeriodPair_ω₁, doublePeriodPair_ω₂] using
+    (PeriodPair.mem_lattice (L := doublePeriodPair r₁ r₂) (x := w))
 
 /-- The horizontal exponential period belongs to the period lattice of the doubled annulus. -/
 @[simp]
-theorem two_pi_mem_doublePeriodLattice : (2 * π : ℂ) ∈ doublePeriodLattice r₁ r₂ :=
-  mem_doublePeriodLattice_iff.mpr ⟨1, 0, by simp⟩
+theorem two_pi_mem_doublePeriodLattice : (2 * π : ℂ) ∈ doublePeriodLattice r₁ r₂ := by
+  simpa only [doublePeriodLattice, doublePeriodPair_ω₁] using
+    (doublePeriodPair r₁ r₂).ω₁_mem_lattice
 
 private theorem conj_mem_doublePeriodLattice {z : ℂ} (hz : z ∈ doublePeriodLattice r₁ r₂) :
     conj z ∈ doublePeriodLattice r₁ r₂ := by
