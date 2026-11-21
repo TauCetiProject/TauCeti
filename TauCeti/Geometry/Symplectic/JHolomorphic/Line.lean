@@ -31,8 +31,10 @@ These pointwise linear-algebra statements supply the local calculus for holomorp
 energy and elliptic estimates.
 
 Two calculus facts concern the real Cauchy--Riemann operator `P = ∂s + J ∂t + A` with any
-coefficients `J, A : ℝ × ℝ → V →L[ℝ] V`: a cutoff `β(s)` acts as `P (β ξ) = β P ξ + β' ξ`, and `P`
-sends `C¹` maps to continuous maps when `J` and `A` are continuous.
+coefficients `J, A : ℝ × ℝ → V →L[ℝ] V`: a function `β(z)` acts as
+`P (β ξ) = β P ξ + (∂s β) ξ + J ((∂t β) ξ)`, in particular a cutoff `β(s)` as
+`P (β ξ) = β P ξ + β' ξ`, and `P` sends `C¹` maps to continuous maps when `J` and `A` are
+continuous.
 
 ## Main declarations
 
@@ -65,8 +67,9 @@ sends `C¹` maps to continuous maps when `J` and `A` are continuous.
   `ω(F v, F (J v))` for a complex-linear map under tameness.
 * `TauCeti.IsComplexLinearMap.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_*`:
   nonnegativity and positivity of `ω(F ∂s, F ∂t)` under tameness.
-* `TauCeti.cauchyRiemann_smul_fst`: the cutoff rule `P (β ξ) = β P ξ + β' ξ` for
-  `P = ∂s + J ∂t + A`.
+* `TauCeti.cauchyRiemann_fun_smul`: the Leibniz rule
+  `P (β ξ) = β P ξ + (∂s β) ξ + J ((∂t β) ξ)` for `P = ∂s + J ∂t + A`.
+* `TauCeti.cauchyRiemann_smul_fst`: its case `P (β ξ) = β P ξ + β' ξ` for a cutoff `β(s)`.
 * `TauCeti.continuous_cauchyRiemann`: `P ξ` is continuous for `C¹` maps `ξ` and continuous `J`,
   `A`.
 
@@ -383,23 +386,32 @@ section CauchyRiemann
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- **Multiplying by a function.** If `β : ℝ × ℝ → ℝ` and `ξ` are differentiable at `z`, the real
+Cauchy–Riemann operator `P = ∂s + J ∂t + A` sends `β ξ` to `β P ξ + (∂s β) ξ + J ((∂t β) ξ)` at
+`z`: the leading terms `∂s + J ∂t` differentiate the factor, and the zeroth-order part does not. -/
+theorem cauchyRiemann_fun_smul (J A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
+    {β : ℝ × ℝ → ℝ} (hβ : DifferentiableAt ℝ β z) (hξ : DifferentiableAt ℝ ξ z) :
+    fderiv ℝ (fun w ↦ β w • ξ w) z stdComplexLineReal +
+        J z (fderiv ℝ (fun w ↦ β w • ξ w) z stdComplexLineImag) + A z (β z • ξ z) =
+      β z • (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) +
+        A z (ξ z)) + fderiv ℝ β z stdComplexLineReal • ξ z +
+          J z (fderiv ℝ β z stdComplexLineImag • ξ z) := by
+  simp only [fderiv_fun_smul hβ hξ, add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
+    map_add, map_smul]
+  module
+
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the real Cauchy–Riemann
-operator `P = ∂s + J ∂t + A` sends `β(s) ξ` to `β(s) P ξ + β' ξ` at `z = (s, t)`: the factor only
-differentiates in the `s` direction, where `P` has the leading term `∂s`. -/
+operator `P = ∂s + J ∂t + A` sends `β(s) ξ` to `β(s) P ξ + β' ξ` at `z = (s, t)`: this is the case
+of `cauchyRiemann_fun_smul` for a factor that only depends on `s`. -/
 theorem cauchyRiemann_smul_fst (J A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
     {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
     fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal +
         J z (fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag) + A z (β z.1 • ξ z) =
       β z.1 • (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) +
         A z (ξ z)) + β' • ξ z := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [hd.fderiv]
-  simp only [add_apply, smul_apply,
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, one_smul, zero_smul, add_zero]
-  module
+  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1) _ z := hβ.hasFDerivAt.comp z hasFDerivAt_fst
+  rw [cauchyRiemann_fun_smul J A hd.differentiableAt hξ, hd.fderiv]
+  simp [stdComplexLineReal_fst, stdComplexLineImag_fst]
 
 /-- The real Cauchy–Riemann operator `P = ∂s + J ∂t + A` sends a `C¹` map `ξ` to a continuous map
 when its coefficients `J` and `A` are continuous. -/
