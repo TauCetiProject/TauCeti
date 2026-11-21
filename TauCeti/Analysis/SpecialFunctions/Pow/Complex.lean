@@ -104,6 +104,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖w ^ s‖ ≤ ‖w‖ ^ s.re * exp (|arg w| * |Im s|)`.
 * `Complex.norm_cpow_le_max_rpow_mul_exp` -- uniform upper bound on `‖w ^ s‖` when
   `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`.
+* `Complex.norm_mul_cpow_sub_one_le_max_rpow_mul_exp` -- uniform upper bound on `‖s * w ^ (s - 1)‖`
+  when `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
@@ -461,74 +463,6 @@ theorem exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow {z : ℂ} (hz : z �
           rw [Complex.neg_re, Real.rpow_neg h1t.le, mul_inv_rev, inv_inv, mul_comm]
   exact (inv_le_inv₀ (norm_pos_iff.mpr hne) (by positivity)).mp h'
 
-/-- Around any `w₀ ∈ slitPlane`, there is an open ball inside `slitPlane` on which
-`w ^ (σ + i y)` and its `w`-derivative `(σ + i y) w ^ (σ + i y - 1)` satisfy uniform exponential
-bounds in `|y|` with rate strictly below `Real.pi`. -/
-theorem exists_ball_slitPlane_cpow_le {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (σ : ℝ) :
-    ∃ ε > 0, ∃ θ < Real.pi, ∃ M > 0, ∀ w ∈ Metric.ball w₀ ε,
-      w ∈ slitPlane ∧
-        (∀ y : ℝ, ‖w ^ ((σ : ℂ) + y * I)‖ ≤ M * Real.exp (θ * |y|)) ∧
-        (∀ y : ℝ, ‖((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)‖ ≤
-          M * (1 + |y|) * Real.exp (θ * |y|)) := by
-  have hr₀ : 0 < ‖w₀‖ := norm_pos_iff.mpr (slitPlane_ne_zero hw₀)
-  have harg₀ : |w₀.arg| < Real.pi :=
-    abs_lt.mpr ⟨neg_pi_lt_arg w₀, (arg_le_pi w₀).lt_of_ne (slitPlane_arg_ne_pi hw₀)⟩
-  set θ : ℝ := (|w₀.arg| + Real.pi) / 2
-  have hθ_lt : θ < Real.pi := by dsimp [θ]; linarith
-  have hnhds : {w : ℂ | w ∈ slitPlane ∧ ‖w₀‖ / 2 < ‖w‖ ∧ ‖w‖ < 2 * ‖w₀‖ ∧ |w.arg| < θ} ∈ 𝓝 w₀ :=
-    Filter.inter_mem (isOpen_slitPlane.mem_nhds hw₀) <|
-      Filter.inter_mem
-        (continuous_norm.continuousAt.eventually (Ioi_mem_nhds (half_lt_self hr₀))) <|
-        Filter.inter_mem
-          (continuous_norm.continuousAt.eventually (Iio_mem_nhds (by linarith)))
-          ((continuous_abs.continuousAt.comp (continuousAt_arg hw₀)).eventually
-            (Iio_mem_nhds (by dsimp [θ]; linarith)))
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hnhds
-  let B (ρ : ℝ) : ℝ := max ((‖w₀‖ / 2) ^ ρ) ((2 * ‖w₀‖) ^ ρ)
-  have hB_nonneg (ρ : ℝ) : 0 ≤ B ρ :=
-    (Real.rpow_nonneg (by positivity) ρ).trans (le_max_left _ _)
-  -- General vertical-line `cpow` bound at real part `ρ` on the annulus-sector neighborhood.
-  have hcpow_le {w : ℂ} (hws : w ∈ slitPlane) (hw1 : ‖w₀‖ / 2 ≤ ‖w‖) (hw2 : ‖w‖ ≤ 2 * ‖w₀‖)
-      (hwarg : |w.arg| < θ) (ρ y : ℝ) :
-      ‖w ^ ((ρ : ℂ) + y * I)‖ ≤ B ρ * Real.exp (θ * |y|) := by
-    have hrpow : ‖w‖ ^ ρ ≤ B ρ := by
-      rcases le_total 0 ρ with hρ | hρ
-      · exact (Real.rpow_le_rpow (by positivity) hw2 hρ).trans (le_max_right _ _)
-      · exact (Real.rpow_le_rpow_of_nonpos (by positivity) hw1 hρ).trans (le_max_left _ _)
-    have hexp : -(w.arg * y) ≤ θ * |y| :=
-      (neg_le_abs _).trans <| (abs_mul w.arg y).le.trans
-        (mul_le_mul_of_nonneg_right hwarg.le (abs_nonneg y))
-    rw [norm_cpow_of_ne_zero (slitPlane_ne_zero hws), div_eq_mul_inv, ← Real.exp_neg]
-    have hre : ((ρ : ℂ) + y * I).re = ρ := by simp
-    have him : ((ρ : ℂ) + y * I).im = y := by simp
-    rw [hre, him]
-    exact mul_le_mul hrpow (Real.exp_le_exp.mpr hexp) (Real.exp_pos _).le (hB_nonneg ρ)
-  set M : ℝ := max (B σ) (max 1 |σ| * B (σ - 1)) + 1
-  have hM : 0 < M := by
-    have : 0 ≤ max (B σ) (max 1 |σ| * B (σ - 1)) := (hB_nonneg σ).trans (le_max_left _ _)
-    dsimp [M]; linarith
-  refine ⟨ε, hε, θ, hθ_lt, M, hM, fun w hw ↦ ?_⟩
-  obtain ⟨hws, hw1, hw2, hwarg⟩ := hball hw
-  refine ⟨hws, fun y ↦ ?_, fun y ↦ ?_⟩
-  · exact (hcpow_le hws hw1.le hw2.le hwarg σ y).trans <|
-      mul_le_mul_of_nonneg_right
-        (by dsimp [M]; linarith [le_max_left (B σ) (max 1 |σ| * B (σ - 1))]) (Real.exp_pos _).le
-  · have hsub (y : ℝ) : (σ : ℂ) + y * I - 1 = ((σ - 1 : ℝ) : ℂ) + y * I := by push_cast; ring
-    have hlin (y : ℝ) : ‖(σ : ℂ) + y * I‖ ≤ max 1 |σ| * (1 + |y|) :=
-      calc ‖(σ : ℂ) + y * I‖ ≤ |σ| + |y| := by
-              simpa using norm_le_abs_re_add_abs_im ((σ : ℂ) + y * I)
-        _ ≤ max 1 |σ| * 1 + max 1 |σ| * |y| :=
-            add_le_add (by simp) (le_mul_of_one_le_left (abs_nonneg y) (le_max_left 1 |σ|))
-        _ = max 1 |σ| * (1 + |y|) := by ring
-    rw [norm_mul, hsub y]
-    calc ‖(σ : ℂ) + y * I‖ * ‖w ^ (((σ - 1 : ℝ) : ℂ) + y * I)‖
-        ≤ (max 1 |σ| * (1 + |y|)) * (B (σ - 1) * Real.exp (θ * |y|)) :=
-          mul_le_mul (hlin y) (hcpow_le hws hw1.le hw2.le hwarg (σ - 1) y)
-            (norm_nonneg _) (by positivity)
-      _ = (max 1 |σ| * B (σ - 1)) * (1 + |y|) * Real.exp (θ * |y|) := by ring
-      _ ≤ M * (1 + |y|) * Real.exp (θ * |y|) := by
-          gcongr; dsimp [M]; linarith [le_max_right (B σ) (max 1 |σ| * B (σ - 1))]
-
 /-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
 continuous in the real variable `t > 0`. -/
 theorem continuousOn_ofReal_add_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (s : ℂ) :
@@ -748,6 +682,28 @@ theorem norm_cpow_le_max_rpow_mul_exp {w : ℂ} {r₀ r₁ α : ℝ} (hr₀ : 0 
     · exact (Real.rpow_le_rpow_of_nonpos hr₀ hw_lo hσ.le).trans (le_max_left _ _)
   gcongr
 
+/-- If `0 < r₀ ≤ ‖w‖ ≤ r₁` and `|arg w| ≤ α`, then for every `s : ℂ`,
+`‖s * w ^ (s - 1)‖ ≤
+  max |s.re| 1 * max (r₀ ^ (s.re - 1)) (r₁ ^ (s.re - 1)) * (1 + |s.im|) * exp (α * |s.im|)`. -/
+theorem norm_mul_cpow_sub_one_le_max_rpow_mul_exp {w : ℂ} {r₀ r₁ α : ℝ} (hr₀ : 0 < r₀)
+    (hw_lo : r₀ ≤ ‖w‖) (hw_hi : ‖w‖ ≤ r₁) (hw_arg : |w.arg| ≤ α) (s : ℂ) :
+    ‖s * w ^ (s - 1)‖ ≤
+      max |s.re| 1 * max (r₀ ^ (s.re - 1)) (r₁ ^ (s.re - 1)) * (1 + |s.im|) *
+        Real.exp (α * |s.im|) := by
+  have hs_norm : ‖s‖ ≤ max |s.re| 1 * (1 + |s.im|) :=
+    (norm_le_abs_re_add_abs_im s).trans <| by
+      nlinarith [le_max_left |s.re| 1, le_max_right |s.re| 1, abs_nonneg s.im]
+  have hw_pow : ‖w ^ (s - 1)‖ ≤
+      max (r₀ ^ (s.re - 1)) (r₁ ^ (s.re - 1)) * Real.exp (α * |s.im|) := by
+    simpa using norm_cpow_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg (s - 1)
+  rw [norm_mul]
+  calc ‖s‖ * ‖w ^ (s - 1)‖
+      ≤ (max |s.re| 1 * (1 + |s.im|)) *
+          (max (r₀ ^ (s.re - 1)) (r₁ ^ (s.re - 1)) * Real.exp (α * |s.im|)) :=
+        mul_le_mul hs_norm hw_pow (norm_nonneg _) (by positivity)
+    _ = max |s.re| 1 * max (r₀ ^ (s.re - 1)) (r₁ ^ (s.re - 1)) * (1 + |s.im|) *
+          Real.exp (α * |s.im|) := by ring
+
 /-- On the closed unit disk `‖z‖ ≤ 1` and for `0 ≤ t < 1`, the principal power `(1 - z * t) ^ s`
 has norm at most `exp (π * |s.im|) * (2 ^ s.re + (1 - t) ^ s.re)` for any complex exponent `s`. -/
 theorem norm_one_sub_mul_ofReal_cpow_le (s : ℂ) {z : ℂ} (hz : ‖z‖ ≤ 1) {t : ℝ}
@@ -842,6 +798,46 @@ theorem neg_cpow_half_eq_or_eq_neg (w : ℂ) :
   sq_eq_sq_iff_eq_or_eq_neg.mp <| by rw [mul_pow, I_sq]; simp [one_div]
 
 end Complex
+
+namespace TauCeti
+
+/-- Around any `w₀ ∈ slitPlane`, there is an open ball inside `slitPlane` on which
+`w ^ (σ + i y)` and its `w`-derivative `(σ + i y) w ^ (σ + i y - 1)` satisfy uniform exponential
+bounds in `|y|` with rate strictly below `Real.pi`. -/
+theorem exists_ball_slitPlane_cpow_le {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (σ : ℝ) :
+    ∃ ε > 0, ∃ θ < Real.pi, ∃ M > 0, ∀ w ∈ Metric.ball w₀ ε,
+      w ∈ slitPlane ∧
+        (∀ y : ℝ, ‖w ^ ((σ : ℂ) + y * I)‖ ≤ M * Real.exp (θ * |y|)) ∧
+        (∀ y : ℝ, ‖((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)‖ ≤
+          M * (1 + |y|) * Real.exp (θ * |y|)) := by
+  obtain ⟨U, hU, r₀, r₁, θ, hr₀, hθ_lt, hU_bounds⟩ :=
+    Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt hw₀
+      (Complex.abs_arg_lt_pi_of_mem_slitPlane hw₀)
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hU
+  set M₀ : ℝ := max (r₀ ^ σ) (r₁ ^ σ)
+  set M₁ : ℝ := max |σ| 1 * max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))
+  set M : ℝ := max M₀ M₁ + 1
+  have hM₀_nonneg : 0 ≤ M₀ := le_max_of_le_left (Real.rpow_nonneg hr₀.le _)
+  have hM : 0 < M := by
+    have : 0 ≤ max M₀ M₁ := hM₀_nonneg.trans (le_max_left _ _)
+    dsimp [M]; linarith
+  refine ⟨ε, hε, θ, hθ_lt, M, hM, fun w hw ↦ ?_⟩
+  obtain ⟨hws, hw_lo, hw_hi, hw_arg⟩ := hU_bounds w (hball hw)
+  refine ⟨hws, fun y ↦ ?_, fun y ↦ ?_⟩
+  · have h0 := Complex.norm_cpow_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg ((σ : ℂ) + y * I)
+    simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im,
+      zero_add] at h0
+    exact h0.trans <| mul_le_mul_of_nonneg_right
+      (by dsimp [M]; linarith [le_max_left M₀ M₁]) (Real.exp_pos _).le
+  · have h1 := Complex.norm_mul_cpow_sub_one_le_max_rpow_mul_exp hr₀ hw_lo hw_hi hw_arg
+      ((σ : ℂ) + y * I)
+    simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im,
+      zero_add] at h1
+    exact h1.trans <| by
+      gcongr
+      dsimp [M]; linarith [le_max_right M₀ M₁]
+
+end TauCeti
 
 /-- Derivative of the principal square root `w ↦ f w ^ (1 / 2 : ℂ)` at a point where `f x` lies
 in `Complex.slitPlane`: the derivative is `f' / (2 * f x ^ (1 / 2 : ℂ))`. The variable ranges over
