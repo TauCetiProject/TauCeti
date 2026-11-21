@@ -15,6 +15,7 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Wigner matrices
@@ -54,7 +55,9 @@ and resolvent methods:
   moment `σ²` and the off-diagonal ones second absolute moment `s`
   (`integral_re_trace_wignerMatrix_mul_self`), and its consequence that two Wigner arrays sharing
   a diagonal whose upper differences have second absolute moment `s` differ at size `n + 1` by
-  expected squared Frobenius norm `n s` (`integral_norm_wignerMatrix_sub_sq`).
+  expected squared Frobenius norm `n s` (`integral_norm_wignerMatrix_sub_sq`). Pointwise, the
+  squared Frobenius distance of two such matrices is `2/n` times the sum of the squared upper
+  differences in the corner (`TauCeti.Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin`).
 
 Centring, the second-moment normalisation and independence of the entries are not properties of
 the constructor: each theorem that uses one states it as a hypothesis.
@@ -271,16 +274,16 @@ theorem wignerMatrix_eq_add_diagonal (ξ : StrictUpper → Ω → ℂ) (η : ℕ
     simp [div_eq_mul_inv, mul_comm]
   · simp [wignerMatrix_apply_of_gt _ _ _ hij, Fin.ne_of_val_ne hij.ne']
 
+private theorem norm_inv_ofReal_sqrt_natCast (n : ℕ) :
+    ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
+  rw [norm_inv, Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+
 /-- The squared absolute value of a diagonal entry is the corresponding diagonal
 coordinate's square divided by the matrix size. -/
 theorem norm_wignerMatrix_apply_self_sq (i : Fin n) :
     ‖wignerMatrix ξ η n ω i i‖ ^ 2 = (n : ℝ)⁻¹ * η i.val ω ^ 2 := by
-  simp only [wignerMatrix_apply_self, norm_mul, mul_pow, norm_inv, Complex.norm_real,
-    Real.norm_eq_abs, inv_pow, sq_abs, Real.sq_sqrt (Nat.cast_nonneg n)]
-
-private theorem norm_inv_ofReal_sqrt_natCast (n : ℕ) :
-    ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
-  rw [norm_inv, Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+  simp only [wignerMatrix_apply_self, norm_mul, mul_pow, norm_inv_ofReal_sqrt_natCast, inv_pow,
+    Real.sq_sqrt (Nat.cast_nonneg n), Complex.norm_real, Real.norm_eq_abs, sq_abs]
 
 /-- The norm of an off-diagonal Wigner entry is the norm of the corresponding upper
 coordinate multiplied by the inverse square root of the matrix size. -/
@@ -367,6 +370,43 @@ theorem submatrix_castLE_wignerMatrix {m : ℕ} (hmn : m ≤ n) :
       ((key _).trans (by rw [wignerMatrix_apply_of_gt ξ η ω h]; rfl))
 
 end Deterministic
+
+section Frobenius
+
+open scoped Matrix.Norms.Frobenius
+
+/-- Squared Frobenius error between Wigner matrices with a common diagonal, in terms of
+the squared errors on the strictly upper corner. -/
+theorem Probability.norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin
+    {ξ : StrictUpper → Ω → ℂ} (ζ : StrictUpper → Ω → ℂ)
+    (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
+    ‖wignerMatrix ξ η n ω - wignerMatrix ζ η n ω‖ ^ 2 =
+      (2 / (n : ℝ)) * ∑ i : StrictUpperFin n,
+        ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2 := by
+  let d (ij : StrictUpper) (ω : Ω) := ξ ij ω - ζ ij ω
+  let D := wignerMatrix d (fun _ _ ↦ 0) n ω
+  have hD : wignerMatrix ξ η n ω - wignerMatrix ζ η n ω = D := by
+    simp only [wignerMatrix_sub, sub_self, D, d]
+  have hDh : D.IsHermitian := wignerMatrix_isHermitian d _ ω n
+  have hsymm (i j : Fin n) : ‖D i j‖ ^ 2 = ‖D j i‖ ^ 2 := by
+    rw [← hDh.apply i j, norm_star]
+  have hdiag (i : Fin n) : ‖D i i‖ ^ 2 = 0 := by
+    simp [D]
+  have hupper (p : StrictUpperFin n) : ‖D p.val.1 p.val.2‖ ^ 2 =
+      (n : ℝ)⁻¹ * ‖ξ (wignerUpperIndex p) ω - ζ (wignerUpperIndex p) ω‖ ^ 2 := by
+    have hp : wignerUpperIndex p = ⟨(p.val.1.val, p.val.2.val), p.prop⟩ :=
+      Subtype.ext (wignerUpperIndex_val _)
+    simpa only [D, d, hp, min_eq_left p.prop.le, max_eq_right p.prop.le] using
+      norm_wignerMatrix_apply_sq_of_ne d (fun _ _ ↦ 0) ω (Fin.ne_of_val_ne p.prop.ne)
+  rw [hD, Matrix.frobenius_norm_def, ← Real.sqrt_eq_rpow]
+  simp only [Real.rpow_two]
+  rw [Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
+    sum_symmetric_pairs _ hsymm]
+  simp only [hdiag, Finset.sum_const_zero, zero_add, hupper, ← Finset.mul_sum, nsmul_eq_mul,
+    Nat.cast_ofNat, div_eq_mul_inv, mul_assoc]
+  rfl
+
+end Frobenius
 
 section Measurability
 

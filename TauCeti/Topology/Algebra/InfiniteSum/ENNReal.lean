@@ -26,9 +26,14 @@ of its dyadic level sets.
 A finite product of infinite sums in `ℝ≥0∞` expands as the infinite sum over the dependent
 product type of the products of terms (`ENNReal.prod_tsum`).
 
+A family of finite terms bounded outside a finite set of indices by a family with finite sum has
+finite sum. This is the comparison test for eventual majorants of tail probabilities.
+
 ## Main declarations
 
 * `HasSum.toReal`: a series in `ℝ≥0∞` with finite sum has the termwise `toReal` sum.
+* `Filter.EventuallyLE.ennreal_tsum_lt_top`: comparison with a cofinitely larger family of finite
+  sum.
 * `ENNReal.tsum_indicator_one`: summing the indicator of `s` with value one gives `s.encard`.
 * `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^(k+1) 1{2^k < y}`.
 * `ENNReal.prod_tsum`: `∏ i, ∑' y, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)`.
@@ -46,15 +51,16 @@ theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
   simpa only [← ENNReal.tsum_toReal_eq (_root_.ne_top_of_tsum_ne_top hfin), h.tsum_eq]
     using ENNReal.hasSum_toReal hfin
 
-/-- A series of finite extended nonnegative reals has finite sum if it is eventually
-bounded by a series with finite sum. -/
-theorem Filter.EventuallyLE.ennreal_tsum_lt_top {f b : ℕ → ℝ≥0∞} (h : f ≤ᶠ[atTop] b)
-    (hf : ∀ n, f n ≠ ∞) (hb : (∑' n, b n) < ∞) : (∑' n, f n) < ∞ := by
-  obtain ⟨N, hN⟩ := eventually_atTop.1 h
-  rw [← sum_add_tsum_compl (Finset.range N) f]
-  refine ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun n _ ↦ (hf n).lt_top, ?_⟩
-  refine (tsum_le_tsum (g := fun n : {n // n ∉ Finset.range N} ↦ b n) fun n ↦
-    hN n (by simpa only [Finset.mem_range, not_lt] using n.property)).trans_lt ?_
+/-- A family of finite extended nonnegative reals has finite sum if, outside a finite set of
+indices, it is bounded by a family with finite sum. -/
+theorem Filter.EventuallyLE.ennreal_tsum_lt_top {ι : Type*} {f b : ι → ℝ≥0∞}
+    (h : f ≤ᶠ[cofinite] b) (hf : ∀ i, f i ≠ ∞) (hb : (∑' i, b i) < ∞) :
+    (∑' i, f i) < ∞ := by
+  have hfin := eventually_cofinite.1 h
+  rw [← sum_add_tsum_compl hfin.toFinset f]
+  refine ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun i _ ↦ (hf i).lt_top, ?_⟩
+  refine (tsum_le_tsum (g := fun i : {i // i ∉ hfin.toFinset} ↦ b i) fun i ↦ not_not.1
+    (by simpa only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using i.property)).trans_lt ?_
   exact (tsum_comp_le_tsum_of_injective Subtype.val_injective b).trans_lt hb
 
 /-- Summing the indicator of a set with value one counts its elements. -/

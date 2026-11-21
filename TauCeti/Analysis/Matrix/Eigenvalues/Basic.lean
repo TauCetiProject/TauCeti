@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
+import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
@@ -35,9 +36,8 @@ allowed.
 The perturbation estimate combines the operator Weyl inequality in
 `TauCeti.Analysis.InnerProductSpace.CourantFischer` with the entrywise operator bound in
 `TauCeti.Analysis.Matrix.EntrywiseOpNorm`. The rank count reindexes Mathlib's
-`Matrix.IsHermitian.rank_eq_card_non_zero_eigs` to the sorted enumeration. The same reindexing
-turns a simple sorted eigenvalue into a simple matrix-indexed one
-(`Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq`).
+`Matrix.IsHermitian.rank_eq_card_non_zero_eigs` to the sorted enumeration, using
+`Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq` from `TauCeti.Analysis.Matrix.Spectrum`.
 
 Weyl's additive inequalities `λₖ(A + B) ≤ λᵢ(A) + λⱼ(B)` for `i + j ≤ k`, and their lower
 counterpart, are the matrix forms of the operator inequalities in
@@ -168,26 +168,6 @@ theorem IsHermitian.card_eigenvalues₀_ge_eq_of_norm_sub_lt
     hA.le_eigenvalues₀_iff_of_norm_sub_lt hB i (hpert.trans_le (hgap i)))
 
 end
-
-/-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
-corresponding matrix-indexed eigenvalue. -/
-@[simp]
-theorem IsHermitian.eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
-    (i : Fin (Fintype.card ι)) :
-    hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
-      hA.eigenvalues₀ i := by
-  simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
-
-/-- A simple sorted eigenvalue is simple as a matrix-indexed eigenvalue at the index given by the
-canonical finite equivalence. -/
-theorem IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
-    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
-    ∀ k ≠ Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i, hA.eigenvalues k ≠
-      hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) := by
-  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
-  intro k hk
-  have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
-  simpa [e, IsHermitian.eigenvalues] using hi _ hk'
 
 /-- The rank of a Hermitian matrix counts its nonzero sorted eigenvalues, with multiplicity. -/
 theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Probability.IdentDistrib
 import TauCeti.Probability.RandomMatrix.Wigner.Corner.Enumeration
 
@@ -32,8 +33,6 @@ theorem ae_eventually_norm_wignerMatrix_zero_apply_le
     (hid : ∀ ij, IdentDistrib (ξ ij) X P Q) (hX : MemLp X 4 Q) :
     ∀ᵐ ω ∂P, ∀ ε > (0 : ℝ), ∀ᶠ n : ℕ in atTop,
       ∀ i j : Fin (n + 1), ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖ ≤ ε := by
-  have hs : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ)) atTop atTop :=
-    Real.tendsto_sqrt_atTop.comp (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))
   have hm : ∀ᶠ n : ℕ in atTop, ((n + 1).choose 2 : ℝ) ≤ Real.sqrt (n + 1 : ℕ) ^ 4 :=
     .of_forall fun n ↦ by
       have hpow : Real.sqrt (n + 1 : ℕ) ^ 4 = ((n + 1 : ℕ) : ℝ) ^ 2 := calc
@@ -42,7 +41,7 @@ theorem ae_eventually_norm_wignerMatrix_zero_apply_le
       rw [hpow]
       exact_mod_cast Nat.choose_le_pow (n + 1) 2
   filter_upwards [ae_eventually_forall_lt_norm_le_mul_of_identDistrib
-    (p := 4) (fun k ↦ hid (strictUpperEquivNat.symm k)) hX hs
+    (p := 4) (fun k ↦ hid (strictUpperEquivNat.symm k)) hX Real.tendsto_sqrt_natCast_add_one_atTop
     (by simpa only [NNReal.coe_ofNat, ← Real.rpow_natCast, Nat.cast_ofNat] using hm)] with ω hω
   intro ε hε
   filter_upwards [hω ε hε] with n hn i j

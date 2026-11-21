@@ -13,6 +13,8 @@ public import TauCeti.Probability.RandomMatrix.Perturbation
 
 The expected normalized squared Frobenius error controls the difference of Lipschitz
 spectral statistics in mean square and in probability, uniformly over positive dimensions.
+At a fixed dimension, only the upper entries of that corner need a common centered,
+square-integrable law, and the diagonal is unrestricted.
 
 ## References
 
@@ -34,16 +36,18 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 variable {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'}
   [IsProbabilityMeasure P] {X : Ω' → ℂ} (hX : MemLp X 2 Q)
-  (hmean : ∫ ω, X ω ∂Q = 0) (hd : ∀ ij, IdentDistrib (ξ ij) X P Q)
+  (hmean : ∫ ω, X ω ∂Q = 0)
 
-include hd hX hmean
+include hX hmean
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- Mean-square control of a Lipschitz spectral statistic, uniformly in positive dimension. -/
+/-- Mean-square control of a Lipschitz spectral statistic at a positive dimension, with a
+bound independent of the dimension. The upper entries of the corner share a centered,
+square-integrable law. The diagonal entries need no assumption, not even measurability. -/
 theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
-    {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f)
-    (hη : ∀ i, AEMeasurable (η i) P) (R : ℝ≥0) (n : ℕ) :
+    {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) (R : ℝ≥0) (n : ℕ)
+    (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
     ∫ ω, ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω _) : Measure ℝ)) -
       ∫ x, f x ∂((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η
@@ -52,20 +56,19 @@ theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
   refine (integral_norm_integral_spectralMeasure_sub_sq_le _ _
     (fun ω ↦ wignerMatrix_isHermitian ξ η ω _)
     (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
-    (integrable_norm_wignerMatrix_sub_centeredTruncation_sq hX hd R _) hf
-    (aemeasurable_wignerMatrix (fun ij _ ↦ (hd ij).aemeasurable_fst) fun i _ ↦ hη i)
-    (aemeasurable_wignerMatrix (fun ij _ ↦
-      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.centeredTruncation R).aemeasurable)
-      fun i _ ↦ hη i)).trans ?_
+    (integrable_norm_wignerMatrix_sub_centeredTruncation_sq
+      (fun ij hij ↦ (hd ij hij).symm.memLp_snd hX) R) hf).trans ?_
   simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, mul_assoc] using
     mul_le_mul_of_nonneg_left
-      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
+      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean R n hd)
       (sq_nonneg (K : ℝ))
 
-/-- A spectral-statistic approximation probability bound uniform over all positive dimensions. -/
+/-- A spectral-statistic approximation probability bound at a positive dimension, with a bound
+independent of the dimension. The upper entries of the corner share a centered,
+square-integrable law, and the diagonal is unrestricted. -/
 theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε)
-    (R : ℝ≥0) (n : ℕ) :
+    (R : ℝ≥0) (n : ℕ) (hd : ∀ ij : StrictUpper, ij.val.2 < n + 1 → IdentDistrib (ξ ij) X P Q) :
     P {ω | ε ≤ ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω _) : Measure ℝ)) -
       ∫ x, f x ∂((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η
@@ -75,17 +78,19 @@ theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
   refine (measure_norm_integral_spectralMeasure_sub_ge_le _ _
     (fun ω ↦ wignerMatrix_isHermitian ξ η ω _)
     (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
-    (integrable_norm_wignerMatrix_sub_centeredTruncation_sq hX hd R _) hf hε).trans ?_
+    (integrable_norm_wignerMatrix_sub_centeredTruncation_sq
+      (fun ij hij ↦ (hd ij hij).symm.memLp_snd hX) R) hf hε).trans ?_
   apply ENNReal.ofReal_le_ofReal
   simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv,
     mul_inv, mul_assoc, mul_left_comm, mul_comm] using mul_le_mul_of_nonneg_left
-      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
+      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean R n hd)
       (by positivity : 0 ≤ (K : ℝ) ^ 2 / ε ^ 2)
 
 /-- Bounded centered off-diagonal approximation is valid in probability, uniformly over
 all positive matrix sizes, for every Lipschitz spectral statistic when the upper entries
 have a common centered, square-integrable law. -/
 theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation
+    (hd : ∀ ij, IdentDistrib (ξ ij) X P Q)
     {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun R : ℝ≥0 ↦ ⨆ n : ℕ,
       P {ω | ε ≤ ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -101,6 +106,6 @@ theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTrunc
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ht
     (fun _ ↦ bot_le) (fun R ↦ iSup_le fun n ↦
       measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
-        hX hmean hd hf hε R n)
+        hX hmean hf hε R n fun ij _ ↦ hd ij)
 
 end TauCeti.Probability

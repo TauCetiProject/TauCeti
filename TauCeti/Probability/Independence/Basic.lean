@@ -27,6 +27,12 @@ event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A �
 An independent, identically distributed family admits a measurable version agreeing almost
 everywhere at each index, preserving independence and identical distribution
 (`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`).
+
+Independence within rows also gives a union bound for row counts. For a finite array of events
+whose rows consist of independent events of measure at most `p`, the measure that some row
+contains at least `q` occurring events is at most `p ^ q` times the sum over rows of the number of
+`q`-element subsets of the row indices (`TauCeti.Probability.measure_exists_le_card_filter_mem_le`).
+This bound needs no probability-measure assumption.
 -/
 
 public section

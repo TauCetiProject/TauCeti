@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import TauCeti.MeasureTheory.Integral.Bochner.Markov
 
 /-!
 # Chebyshev's inequality for the second moment

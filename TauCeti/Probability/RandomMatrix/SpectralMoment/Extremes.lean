@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
+import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
@@ -21,7 +21,8 @@ a sufficiently large multiple of `log (n + 1)` in the moment order offsets a pol
 prefactor in the sequence index `n`. The norm tails have a summable eventual majorant.
 Full-series summability also requires finite tail measures at the initial indices where
 Hermiticity and trace integrability are not assumed. The Borel–Cantelli step applies
-without independence across indices.
+without independence across indices. For the almost-sure bound below every threshold above a
+level, each threshold may use its own positive scale below it.
 
 ## References
 
@@ -41,7 +42,7 @@ variable {Ω 𝕜 ι : Type*} [MeasurableSpace Ω] [RCLike 𝕜] {P : Measure Ω
 
 /-- For a random Hermitian matrix, Markov's inequality with the even trace power
 controls the upper tail of its Euclidean operator norm. -/
-theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul
+theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
     [Fintype ι] [DecidableEq ι] {A : Ω → Matrix ι ι 𝕜}
     (hA : ∀ᵐ ω ∂P, (A ω).IsHermitian) (k : ℕ)
     (hint : Integrable (fun ω ↦ RCLike.re ((A ω) ^ (2 * k)).trace) P) {r : ℝ} (hr : 0 < r) :
@@ -66,7 +67,7 @@ variable {m : ℕ → Type*} [∀ n, Fintype (m n)] [∀ n, DecidableEq (m n)]
 and polynomial prefactor of degree `d` gives a summable eventual majorant for the norm tails.
 It suffices that the moment order is eventually at least `B * log (n + 1)` and
 `d + 1 < 2 * B * log (r / s)`. -/
-theorem exists_tsum_lt_top_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
+theorem exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian)
     (hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re ((A n ω) ^ (2 * k n)).trace) P)
     {s r : ℝ} (hs : 0 < s) (hr : s < r) {B C d : ℝ} (hB : d + 1 < 2 * B * Real.log (r / s))
@@ -82,12 +83,9 @@ theorem exists_tsum_lt_top_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul
     rw [Real.log_div hr₀.ne' hs.ne'] at hB
     linarith
   let b (n : ℕ) := |C| * (n + 1 : ℝ) ^ e
-  have hsum := ((Real.summable_nat_rpow (p := e)).2 he)
-  have hsum' : Summable b := by
-    simpa only [b, Nat.cast_add, Nat.cast_one] using ((summable_nat_add_iff 1).2 hsum).mul_left |C|
-  refine ⟨fun n ↦ ENNReal.ofReal (b n), hsum'.tsum_ofReal_lt_top, ?_⟩
+  refine ⟨fun n ↦ ENNReal.ofReal (b n), tsum_ofReal_mul_natCast_add_one_rpow_lt_top |C| he, ?_⟩
   filter_upwards [hA, hint, hbound, hk] with n hh hi hn hk'
-  refine (meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul hh _ hi hr₀).trans ?_
+  refine (meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow hh _ hi hr₀).trans ?_
   apply ENNReal.ofReal_le_ofReal
   calc
     _ ≤ |C| * ((n + 1 : ℝ) ^ d * (s / r) ^ (2 * k n)) := by
@@ -120,23 +118,23 @@ theorem tsum_meas_l2_opNorm_ge_lt_top_of_integral_re_trace_pow_two_mul_le {N : �
     (hfinite : ∀ n < N, P {ω | r ≤ ‖A n ω‖} ≠ ∞) :
     (∑' n, P {ω | r ≤ ‖A n ω‖}) < ∞ := by
   obtain ⟨b, hb, h⟩ :=
-    exists_tsum_lt_top_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
+    exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
       (eventually_atTop.2 ⟨N, hA⟩) (eventually_atTop.2 ⟨N, hint⟩) hs hr hB hk hbound
-  refine Filter.EventuallyLE.ennreal_tsum_lt_top (f := fun n ↦ P {ω | r ≤ ‖A n ω‖}) h
-    (fun n ↦ ?_) hb
+  refine Filter.EventuallyLE.ennreal_tsum_lt_top (f := fun n ↦ P {ω | r ≤ ‖A n ω‖})
+    (Nat.cofinite_eq_atTop ▸ h) (fun n ↦ ?_) hb
   rcases lt_or_ge n N with hn | hn
   · exact hfinite n hn
-  · have hle :=
-      meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul (hA n hn) _ (hint n hn) (hs.trans hr)
+  · have hle := meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow (hA n hn) _
+      (hint n hn) (hs.trans hr)
     exact (hle.trans_lt ENNReal.ofReal_lt_top).ne
 
-/-- For each threshold `r > s > 0`, a trace estimate of sufficiently large logarithmic order
-at exponential scale `s ≤ t < r` gives an almost-sure eventual upper norm bound.
-The scale, moment orders and polynomial prefactors may depend on the threshold. -/
+/-- If, for each threshold `r > s`, a trace estimate of sufficiently large logarithmic order
+holds at some exponential scale `0 < t < r`, the norms are almost surely eventually below
+every threshold `r > s`. The scale, moment orders and polynomial prefactors may depend on the
+threshold. -/
 theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
-    (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian)
-    {s : ℝ} (hs : 0 < s)
-    (htrace : ∀ r > s, ∃ (t B C d : ℝ) (k : ℕ → ℕ), s ≤ t ∧ t < r ∧
+    (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian) {s : ℝ}
+    (htrace : ∀ r > s, ∃ (t B C d : ℝ) (k : ℕ → ℕ), 0 < t ∧ t < r ∧
       d + 1 < 2 * B * Real.log (r / t) ∧
       (∀ᶠ n : ℕ in atTop, B * Real.log (n + 1) ≤ (k n : ℝ)) ∧
       (∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re ((A n ω) ^ (2 * k n)).trace) P) ∧
@@ -145,10 +143,10 @@ theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
     ∀ᵐ ω ∂P, ∀ r > s, ∀ᶠ n in atTop, ‖A n ω‖ < r := by
   have h (j : ℕ) : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ‖A n ω‖ < s + 1 / (j + 1) := by
     have hr : s < s + 1 / (j + 1) := lt_add_of_pos_right _ (by positivity)
-    obtain ⟨t, B, C, d, k, hst, htr, hB, hk, hi, hb⟩ := htrace _ hr
+    obtain ⟨t, B, C, d, k, ht, htr, hB, hk, hi, hb⟩ := htrace _ hr
     obtain ⟨b, hsum, h⟩ :=
-      exists_tsum_lt_top_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
-        hA hi (hs.trans_le hst) htr hB hk hb
+      exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
+        hA hi ht htr hB hk hb
     simpa only [Set.mem_ofPred_eq, not_le] using
       TauCeti.MeasureTheory.ae_eventually_notMem_of_eventually_measure_le hsum h
   filter_upwards [ae_all_iff.2 h] with ω hω

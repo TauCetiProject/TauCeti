@@ -53,21 +53,15 @@ theorem integral_sq_spectralMeasure_wignerMatrix_coordinates (n : ℕ) (ω : Ω)
     have h := (wignerMatrix_isHermitian ξ η ω (n + 1)).apply i j
     dsimp only [H] at h ⊢
     rw [← h, norm_star]
-  have hn : ‖(Real.sqrt (n + 1 : ℝ) : ℂ)⁻¹‖ ^ 2 = (n + 1 : ℝ)⁻¹ := by
-    rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
-      inv_pow, Real.sq_sqrt (by positivity)]
-  have hn' : ‖(Real.sqrt ((n + 1 : ℕ) : ℝ) : ℂ)⁻¹‖ ^ 2 =
-      (n + 1 : ℝ)⁻¹ := by simpa using hn
   have hd (i : Fin (n + 1)) :
       ‖H i i‖ ^ 2 = (n + 1 : ℝ)⁻¹ * η i.val ω ^ 2 := by
-    dsimp only [H]
-    rw [wignerMatrix_apply_self, norm_mul, mul_pow, hn', Complex.norm_real,
-      Real.norm_eq_abs, sq_abs]
+    simpa only [Nat.cast_add, Nat.cast_one] using norm_wignerMatrix_apply_self_sq ξ η ω i
   have hu (p : FinStrictUpper (n + 1)) :
       ‖H p.val.1 p.val.2‖ ^ 2 =
         (n + 1 : ℝ)⁻¹ * ‖ξ ⟨(p.val.1.val, p.val.2.val), p.property⟩ ω‖ ^ 2 := by
-    dsimp only [H]
-    rw [wignerMatrix_apply_of_lt _ _ _ p.property, norm_mul, mul_pow, hn']
+    have hp : p.val.1.val < p.val.2.val := p.property
+    simpa only [Nat.cast_add, Nat.cast_one, min_eq_left hp.le, max_eq_right hp.le] using
+      norm_wignerMatrix_apply_sq_of_ne ξ η ω p.property.ne
   rw [integral_sq_spectralMeasure_wignerMatrix]
   -- Name the Wigner matrix so the diagonal and upper-coordinate identities apply.
   change (n + 1 : ℝ)⁻¹ * (∑ i, ∑ j, ‖H i j‖ ^ 2) = _

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.Matrix.EuclideanLin
-import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.Normed.Group.Pi
 
@@ -22,6 +21,11 @@ for this eigenvalue attains the operator norm, including when `A = 0`.
 The source must be nonempty for a largest eigenvalue or a unit attaining vector to exist.
 For an empty source the operator norm is zero by subsingleton elimination, and
 `spectrum.of_subsingleton` gives the empty Gram spectrum.
+
+For a Hermitian matrix, each ordered eigenvalue is bounded in absolute value by the operator
+norm. For a nonempty Hermitian matrix, the `2 * k`-th power of the operator norm is bounded by
+the real trace of the `2 * k`-th matrix power. This is the trace bound behind moment estimates
+for the operator norm of random matrices.
 
 All matrix norms here use `Matrix.Norms.L2Operator`, hence agree with the norms of the
 native maps on `EuclideanSpace`. The proof uses Mathlib's

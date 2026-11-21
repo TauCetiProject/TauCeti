@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
+public import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 
 /-!
 # Extreme eigenvalues and weak spectral limits
@@ -13,13 +14,15 @@ public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 Any open interval meeting the support of the weak limit of empirical spectral measures
 eventually contains an eigenvalue. An asymptotic upper bound at a point of the support
 gives convergence of the largest eigenvalue there, and an asymptotic lower bound gives
-the corresponding convergence for the smallest eigenvalue.
+the corresponding convergence for the smallest eigenvalue. If `c` and `-c` both lie in the
+limiting support and the Euclidean operator norms are eventually below every `r > c`,
+the largest and smallest eigenvalues converge to `c` and `-c`.
 -/
 
 public section
 
 open Filter MeasureTheory Set
-open scoped Topology
+open scoped Topology Matrix.Norms.L2Operator
 
 namespace Filter.Tendsto
 
@@ -66,5 +69,21 @@ theorem eigenvalues₀_top_of_eventually_gt
     with i hi
   obtain ⟨j, hj⟩ := hi
   exact ((hA i).eigenvalues₀_antitone le_top).trans_lt hj
+
+/-- If `c` and `-c` lie in the limiting spectral support and the Euclidean operator norms are
+eventually below every `r > c`, the largest eigenvalues converge to `c` and the smallest
+eigenvalues converge to `-c`. -/
+theorem eigenvalues₀_bot_and_top_of_eventually_l2_opNorm_lt
+    (h : Tendsto (fun i ↦ (A i).spectralMeasure (hA i)) l (𝓝 μ))
+    {c : ℝ} (hc : c ∈ (μ : Measure ℝ).support) (hc' : -c ∈ (μ : Measure ℝ).support)
+    (hnorm : ∀ r > c, ∀ᶠ i in l, ‖A i‖ < r) :
+    Tendsto (fun i ↦ (hA i).eigenvalues₀ ⊥) l (𝓝 c) ∧
+      Tendsto (fun i ↦ (hA i).eigenvalues₀ ⊤) l (𝓝 (-c)) := by
+  refine ⟨h.eigenvalues₀_bot_of_eventually_lt hc fun r hr ↦ (hnorm r hr).mono fun i hi ↦
+      (Real.le_norm_self _).trans_lt (((hA i).norm_eigenvalues₀_le_l2_opNorm ⊥).trans_lt hi),
+    h.eigenvalues₀_top_of_eventually_gt hc' fun r hr ↦
+      (hnorm (-r) (by linarith)).mono fun i hi ↦ ?_⟩
+  have h' := ((hA i).norm_eigenvalues₀_le_l2_opNorm ⊤).trans_lt hi
+  simpa only [neg_neg, Real.norm_eq_abs] using (neg_lt_neg h').trans_le (neg_abs_le _)
 
 end Filter.Tendsto

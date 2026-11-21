@@ -120,7 +120,7 @@ variable [NormedSpace ℝ E] {X : Ω → E} {P : Measure Ω}
 moment of order `k+1` divided by the `k`-th power of the cutoff. The measure may be infinite.
 If the original variable is nonintegrable, the retained part is nonintegrable as well,
 and its Bochner integral is zero by convention. -/
-theorem _root_.MeasureTheory.MemLp.norm_integral_indicator_norm_le_of_integral_eq_zero
+theorem _root_.MeasureTheory.MemLp.norm_integral_indicator_setOf_norm_le_le_of_integral_eq_zero
     {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P)
     (hmean : ∫ ω, X ω ∂P = 0) {r : ℝ} (hr : 0 < r) :
     ‖∫ ω, {ω' | ‖X ω'‖ ≤ r}.indicator X ω ∂P‖ ≤
@@ -154,7 +154,7 @@ theorem _root_.MeasureTheory.MemLp.norm_integral_indicator_norm_le_of_integral_e
 
 /-- The weighted truncated mean tends to zero when the weight divided by the
 cutoff to the power `k` tends to zero and the centered variable has moment `k + 1`. -/
-theorem _root_.MeasureTheory.MemLp.tendsto_mul_norm_integral_indicator_norm_le_nhds_zero
+theorem _root_.MeasureTheory.MemLp.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero
     {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P)
     (hmean : ∫ ω, X ω ∂P = 0)
     {ι : Type*} {l : Filter ι} {R w : ι → ℝ} (hR : ∀ i, 0 < R i) (hw : ∀ i, 0 ≤ w i)
@@ -166,7 +166,7 @@ theorem _root_.MeasureTheory.MemLp.tendsto_mul_norm_integral_indicator_norm_le_n
   calc
     _ ≤ w i * (C / R i ^ k) :=
       mul_le_mul_of_nonneg_left
-        (hX.norm_integral_indicator_norm_le_of_integral_eq_zero hmean (hR i)) (hw i)
+        (hX.norm_integral_indicator_setOf_norm_le_le_of_integral_eq_zero hmean (hR i)) (hw i)
     _ = C * (w i / R i ^ k) := by rw [mul_div_left_comm, ← mul_div_assoc]
 
 end TruncationMean

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner.Basic
-import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # Column enumeration of strictly upper Wigner entries
@@ -30,8 +29,7 @@ private theorem strictUpperIndex_lt_choose_iff (ij : StrictUpper) (n : ℕ) :
   · intro h
     calc
       _ < (ij.val.2 + 1).choose 2 := by
-        rw [Nat.add_choose_two, Nat.choose_eq_zero_of_lt (by decide : 1 < 2), add_zero,
-          Nat.mul_one]
+        rw [Nat.choose_succ_succ' _ 1, Nat.choose_one_right, Nat.add_comm ij.val.2]
         exact Nat.add_lt_add_left ij.prop _
       _ ≤ _ := Nat.choose_mono 2 h
 
@@ -58,8 +56,8 @@ def strictUpperEquivNat : StrictUpper ≃ ℕ := by
         omega
       · refine ⟨⟨(0, j + 1), Nat.zero_lt_succ _⟩, ?_⟩
         dsimp only
-        simp only [Nat.add_choose_two, Nat.choose_eq_zero_of_lt (by decide : 1 < 2),
-          add_zero, Nat.mul_one]
+        rw [show (j + 1).choose 2 = j.choose 1 + j.choose 2 from Nat.choose_succ_succ' j 1,
+          Nat.choose_one_right]
         omega
 
 /-- The index of a strictly upper entry is the size of the preceding columns plus its row. -/
@@ -104,6 +102,13 @@ def strictUpperFinEquiv (n : ℕ) : StrictUpperFin n ≃ Fin (n.choose 2) where
 theorem strictUpperFinEquiv_apply_val (n : ℕ) (ij : StrictUpperFin n) :
     (strictUpperFinEquiv n ij).val = strictUpperEquivNat (wignerUpperIndex ij) :=
   (rfl)
+
+/-- An index of the finite enumeration corresponds to the same strictly upper entry as in the
+infinite column enumeration. -/
+@[simp]
+theorem wignerUpperIndex_strictUpperFinEquiv_symm_apply (n : ℕ) (k : Fin (n.choose 2)) :
+    wignerUpperIndex ((strictUpperFinEquiv n).symm k) = strictUpperEquivNat.symm k :=
+  wignerUpperIndex_strictUpperFinOfIndex _ _
 
 /-- A sum over a finite strictly upper corner is the sum over the corresponding prefix
 of the column-order enumeration. -/

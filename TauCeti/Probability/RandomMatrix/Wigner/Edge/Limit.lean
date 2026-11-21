@@ -43,17 +43,20 @@ variable {Ω Ω' Ω'' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] [Measu
 
 local notation "e₀" => (⟨(0, 1), by decide⟩ : StrictUpper)
 
-/-- To prove both Wigner edge limits under a finite fourth moment, it suffices to bound the
-expected real trace of the `2*k`-th powers of the zero-diagonal centered truncations at radius
-`(n+1)^a`, with `a > 1/4`, by a polynomial in the sequence index times `t^(2*k)`. At each threshold
-`r > 2`, the scale `2 ≤ t < r` and the orders `k n` may depend on `r`. The orders satisfy
+/-- Let the upper entries be independent with a common centered law of unit second moment and
+finite fourth moment, and let the diagonal entries, possibly dependent, share a law of finite
+second moment. Then the largest and smallest eigenvalues of the normalized corners converge
+almost surely to `2` and `-2`, provided the following trace bound holds. The expected real trace
+of the `2*k`-th powers of the zero-diagonal centered truncations at radius `(n+1)^a`, with
+`a > 1/4`, is bounded by a polynomial in the sequence index times `t^(2*k)`. At each threshold
+`r > 2`, the scale `0 < t < r` and the orders `k n` may depend on `r`. The orders satisfy
 `k n ≥ B * log (n + 1)` eventually and `2 * B * log (r/t) > d+1` for polynomial exponent `d`. -/
 theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_two_mul_le
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q)
     (hξ : MemLp X 4 Q) (hmean : ∫ ω, X ω ∂Q = 0) (hvar : ∫ ω, ‖X ω‖ ^ 2 ∂Q = 1)
     (hd : ∀ i, IdentDistrib (η i) Y P S) (hη : MemLp Y 2 S)
     {a : ℝ} (ha : 1 / 4 < a)
-    (htrace : ∀ r > (2 : ℝ), ∃ (t B C d : ℝ) (k : ℕ → ℕ), 2 ≤ t ∧ t < r ∧
+    (htrace : ∀ r > (2 : ℝ), ∃ (t B C d : ℝ) (k : ℕ → ℕ), 0 < t ∧ t < r ∧
       d + 1 < 2 * B * Real.log (r / t) ∧
       (∀ᶠ n : ℕ in atTop, B * Real.log (n + 1) ≤ (k n : ℝ)) ∧
       (∀ᶠ n : ℕ in atTop, (∫ ω, ((wignerMatrix (fun ij ↦
@@ -75,7 +78,7 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
   have hZ n ω : (Z n ω).IsHermitian := wignerMatrix_isHermitian _ _ _ _
   have hnorm : ∀ᵐ ω ∂P, ∀ r > (2 : ℝ), ∀ᶠ n in atTop, ‖B n ω‖ < r := by
     apply ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le (A := B)
-      (.of_forall fun n ↦ .of_forall fun ω ↦ wignerMatrix_isHermitian _ _ ω (n + 1)) (by norm_num)
+      (.of_forall fun n ↦ .of_forall fun ω ↦ wignerMatrix_isHermitian _ _ ω (n + 1))
     intro r hr
     obtain ⟨t, b, C, d, k, ht, htr, hb, hk, htrace'⟩ := htrace r hr
     refine ⟨t, b, C, d, k, ht, htr, hb, hk, .of_forall fun n ↦ ?_, ?_⟩
@@ -98,21 +101,17 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
         ((hid e₀).comp (measurable_norm.pow_const 2)).integral_eq.trans hvar)
   have hdiag := ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη
   filter_upwards [hnorm, happrox, hweak, hdiag] with ω hn hdiff hw hdω
+  -- The norm bounds pass from the truncations to the zero-diagonal corners.
   have hZnorm r (hr : 2 < r) : ∀ᶠ n in atTop, ‖Z n ω‖ < r := by
     have hgap : 0 < (r - 2) / 2 := by linarith
     filter_upwards [hn ((r + 2) / 2) (by linarith), hdiff.eventually_lt_const hgap] with n hBn hδ
     have htri : ‖Z n ω‖ ≤ ‖Z n ω - B n ω‖ + ‖B n ω‖ := by
       simpa only [sub_zero] using norm_sub_le_norm_sub_add_norm_sub (Z n ω) (B n ω) 0
     exact htri.trans_lt ((add_lt_add hδ hBn).trans_eq (by ring))
-  have hmax := hw.eigenvalues₀_bot_of_eventually_lt
-    (hA := fun n ↦ hZ n ω) (c := 2) (by simp [support_semicircleReal]) (fun r hr ↦
-      (hZnorm r hr).mono fun n hn ↦ (Real.le_norm_self _).trans_lt
-        (((hZ n ω).norm_eigenvalues₀_le_l2_opNorm ⊥).trans_lt hn))
-  have hmin := hw.eigenvalues₀_top_of_eventually_gt
-    (hA := fun n ↦ hZ n ω) (c := -2) (by simp [support_semicircleReal]) (fun r hr ↦
-      (hZnorm (-r) (by linarith)).mono fun n hn ↦ by
-        have h := ((hZ n ω).norm_eigenvalues₀_le_l2_opNorm ⊤).trans_lt hn
-        simpa only [neg_neg, Real.norm_eq_abs] using (neg_lt_neg h).trans_le (neg_abs_le _))
+  obtain ⟨hmax, hmin⟩ := hw.eigenvalues₀_bot_and_top_of_eventually_l2_opNorm_lt
+    (hA := fun n ↦ hZ n ω) (by simp [support_semicircleReal]) (by simp [support_semicircleReal])
+    hZnorm
+  -- The diagonal perturbation has vanishing operator norm.
   exact ⟨hmax.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero
       (fun n ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hdω,
     hmin.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero

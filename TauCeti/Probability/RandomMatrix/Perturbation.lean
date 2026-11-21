@@ -14,9 +14,10 @@ public import TauCeti.Topology.Instances.Matrix
 
 The Hoffman–Wielandt bound transfers a small expected normalized squared Frobenius
 perturbation to a small mean-square difference of Lipschitz spectral statistics, and to a
-probability bound for their difference. The matrices may be dependent. For the mean-square
-conclusion they are measurable almost everywhere; only the squared Frobenius perturbation
-needs to be integrable. All matrix norms here are Frobenius norms.
+probability bound for their difference. The matrices may be dependent. Only the squared
+Frobenius perturbation needs to be integrable; almost-everywhere measurability of the matrices
+is needed only to make the squared difference of the statistics integrable. All matrix norms
+here are Frobenius norms.
 
 ## References
 
@@ -69,16 +70,15 @@ theorem integrable_norm_integral_spectralMeasure_sub_sq
     (Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le (hA ω) (hB ω) hf) 2
 
 /-- Mean-square Frobenius control gives mean-square control of every Lipschitz linear
-spectral statistic, with the normalization by matrix dimension. -/
-theorem integral_norm_integral_spectralMeasure_sub_sq_le
-    [MeasurableSpace 𝕜] [BorelSpace 𝕜] (hAm : AEMeasurable A P) (hBm : AEMeasurable B P) :
+spectral statistic, with the normalization by matrix dimension. The matrices need not be
+measurable. -/
+theorem integral_norm_integral_spectralMeasure_sub_sq_le :
     ∫ ω, ‖(∫ x, f x ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) -
       ∫ x, f x ∂((B ω).spectralMeasure (hB ω) : Measure ℝ)‖ ^ 2 ∂P ≤
       (K : ℝ) ^ 2 / Fintype.card n * ∫ ω, ‖A ω - B ω‖ ^ 2 ∂P := by
   calc
     _ ≤ ∫ ω, ((K : ℝ) * ‖A ω - B ω‖ / Real.sqrt (Fintype.card n)) ^ 2 ∂P := by
-      apply integral_mono_ae
-        (integrable_norm_integral_spectralMeasure_sub_sq A B hA hB hD hf hAm hBm)
+      apply integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _)
       · simpa only [div_pow, mul_pow] using (hD.const_mul ((K : ℝ) ^ 2)).div_const _
       · exact .of_forall fun ω ↦ pow_le_pow_left₀ (norm_nonneg _)
           (Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le
