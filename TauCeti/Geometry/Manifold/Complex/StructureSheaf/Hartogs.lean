@@ -91,7 +91,7 @@ theorem restrictAlgHom_bijective_of_isDiscrete (hE : 2 ≤ Module.finrank ℂ E)
     have heq_U : EqOn F₁ F₂ U :=
       U.isOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete (S := (U : Set X) \ (V : Set X))
         (hinter.symm ▸ hUV) hF₁_cont hF₂_cont (hsdiff.symm ▸ heq_V)
-    exact ext fun x ↦ (hF₁_eq x).symm.trans ((heq_U x.2).trans (hF₂_eq x))
+    exact ext fun x ↦ (hF₁_eq x).symm.trans ((heq_U x.property).trans (hF₂_eq x))
   · intro t
     set f : X → ℂ := Subtype.val.extend t 0
     have hf : MDifferentiableOn I 𝓘(ℂ) f (V : Set X) := fun y hy ↦
@@ -104,11 +104,11 @@ theorem restrictAlgHom_bijective_of_isDiscrete (hE : 2 ≤ Module.finrank ℂ E)
     have hgfV : EqOn g f (V : Set X) := hsdiff ▸ hgf
     have hg_omega : ContMDiffOn I 𝓘(ℂ) ω g U := hg.contMDiffOn U.isOpen
     have hg_sub : ContMDiff I 𝓘(ℂ) ω (fun x : U ↦ g x) := fun x ↦
-      (hg_omega.contMDiffAt (U.isOpen.mem_nhds x.2)).comp x contMDiff_subtype_val.contMDiffAt
+      (hg_omega.contMDiffAt (U.isOpen.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
     refine ⟨ofContMDiff (fun x : U ↦ g x) hg_sub, ext fun y ↦ ?_⟩
     rw [restrictAlgHom_apply, ofContMDiff_apply]
     dsimp only [Opens.inclusion]
-    rw [Set.coe_inclusion hsub, hgfV y.2]
+    rw [Set.coe_inclusion hsub, hgfV y.property]
     exact Subtype.val_injective.extend_apply t 0 y
 
 variable (I) in
@@ -205,7 +205,7 @@ theorem restrictSdiffSingletonAlgEquiv_apply (hE : 2 ≤ Module.finrank ℂ E) (
     (s : (holomorphicStructureSheaf I X).obj.obj (op U))
     (x : (⟨(U : Set X) \ {p}, by have := I.t1Space X; exact U.isOpen.sdiff isClosed_singleton⟩ :
       Opens X)) :
-    (no_index (restrictSdiffSingletonAlgEquiv I hE U p s)) x = s ⟨x.1, x.2.1⟩ := by
+    (no_index (restrictSdiffSingletonAlgEquiv I hE U p s)) x = s ⟨x.val, x.property.1⟩ := by
   rw [restrictSdiffSingletonAlgEquiv, restrictAlgEquivOfFinite_apply]
 
 /-- The Hartogs extension `(restrictSdiffSingletonAlgEquiv I hE U p).symm t` agrees with `t` away
@@ -251,7 +251,7 @@ def restrictComplSingletonAlgEquiv (hE : 2 ≤ Module.finrank ℂ E) (p : X) :
 theorem restrictComplSingletonAlgEquiv_apply (hE : 2 ≤ Module.finrank ℂ E) (p : X)
     (s : (holomorphicStructureSheaf I X).obj.obj (op (⊤ : Opens X)))
     (x : (⟨{p}ᶜ, by have := I.t1Space X; exact isOpen_compl_singleton⟩ : Opens X)) :
-    (no_index (restrictComplSingletonAlgEquiv I hE p s)) x = s ⟨x.1, trivial⟩ := by
+    (no_index (restrictComplSingletonAlgEquiv I hE p s)) x = s ⟨x.val, trivial⟩ := by
   rw [restrictComplSingletonAlgEquiv, restrictAlgEquivOfFinite_apply]
 
 /-- The global Hartogs extension `(restrictComplSingletonAlgEquiv I hE p).symm t` agrees with `t`

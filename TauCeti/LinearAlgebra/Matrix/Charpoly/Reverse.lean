@@ -240,8 +240,8 @@ theorem charpolyRev_submatrix_blockDiagonal' {o : Type*} {m : o → Type*}
   classical
   let fiber := fun i ↦ S.preimage (Sigma.mk i) sigma_mk_injective.injOn
   let e : (Σ i, fiber i) ≃ S := {
-    toFun x := ⟨⟨x.1, x.2.1⟩, Finset.mem_preimage.mp x.2.2⟩
-    invFun x := ⟨x.1.1, ⟨x.1.2, Finset.mem_preimage.mpr x.2⟩⟩
+    toFun x := ⟨⟨x.1, x.2.val⟩, Finset.mem_preimage.mp x.2.property⟩
+    invFun x := ⟨x.val.1, ⟨x.val.2, Finset.mem_preimage.mpr x.property⟩⟩
     left_inv _ := rfl
     right_inv _ := rfl }
   have hmatrix :

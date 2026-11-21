@@ -133,7 +133,7 @@ private theorem mul_sub_algebraMap_mem_map (C' : Subalgebra S C) {x y : C'} {σ 
     (ha : ∀ c, a c ∈ J) (hsum : (a.sum fun c t ↦ t • id c) = (x : C) - algebraMap S C σ)
     (hy : ∀ c ∈ a.support, (y : C) * c ∈ C') :
     y * (x - algebraMap S C' σ) ∈ J.map (algebraMap S C') := by
-  have : y * (x - algebraMap S C' σ) = ∑ c ∈ a.support.attach, a c • ⟨y * c, hy c c.2⟩ := by
+  have : y * (x - algebraMap S C' σ) = ∑ c ∈ a.support.attach, a c • ⟨y * c, hy c c.property⟩ := by
     ext
     simp [← hsum, Finsupp.sum, Finset.mul_sum, Finset.sum_attach a.support fun c ↦ a c • (y * c)]
   rw [this]
@@ -171,10 +171,11 @@ private theorem exists_mul_sub_smul_mem (hC : Function.Surjective (reducedMap J 
     trivial
   obtain ⟨w, hw⟩ := (Fintype.mem_span_image_iff_exists_fun C).mp h1
   choose t ht using fun r : (s : Set C) ↦ hlift (w r)
-  let r' (r : (s : Set C)) : C' := ⟨r, hsC' r.2⟩
+  let r' (r : (s : Set C)) : C' := ⟨r, hsC' r.property⟩
   have hgen (r : (s : Set C)) (l : Fin k) :
       r' r ^ N * (g l - algebraMap S C' (σ l)) ∈ J.map (algebraMap S C') :=
-    mul_sub_algebraMap_mem_map J C' (ha l) (hsum l) fun c hc ↦ by simpa [r'] using hN r r.2 l c hc
+    mul_sub_algebraMap_mem_map J C' (ha l)
+        (hsum l) fun c hc ↦ by simpa [r'] using hN r r.property l c hc
   refine ⟨∑ r, t r • r' r ^ N, ?_, ?_, fun x ↦ ?_⟩
   · have hcoe : ((∑ r, t r • r' r ^ N : C') : C) = ∑ r, algebraMap S C (t r) * (r : C) ^ N := by
       simp [r', Algebra.smul_def]
@@ -183,7 +184,7 @@ private theorem exists_mul_sub_smul_mem (hC : Function.Surjective (reducedMap J 
     rw [smul_eq_mul, ← sub_mul, ← neg_sub]
     exact Ideal.mul_mem_right _ _ (neg_mem (ht r))
   · refine sum_mem fun r _ ↦ Submodule.smul_of_tower_mem _ (t r) ?_
-    exact Ideal.pow_mem_of_mem _ (Ideal.subset_span (s := {x : C' | (x : C) ∈ s}) r.2) N hN1
+    exact Ideal.pow_mem_of_mem _ (Ideal.subset_span (s := {x : C' | (x : C) ∈ s}) r.property) N hN1
   refine exists_sub_mem_and_mul_sub_smul_mem_of_span J C' hg _ (fun l ↦ ⟨σ l, hσ l, ?_⟩) x
   have : (∑ r, t r • r' r ^ N) * g l - σ l • ∑ r, t r • r' r ^ N =
       ∑ r, t r • (r' r ^ N * (g l - algebraMap S C' (σ l))) := by
@@ -252,7 +253,7 @@ private theorem exists_smul_eq_mul_of_subalgebra (hJ : J ≤ Ideal.jacobson ⊥)
   obtain ⟨u, rfl⟩ := Ideal.mem_span_singleton'.mp hz
   obtain ⟨T, hT, w, hw⟩ := (Submodule.mem_span_image_iff_exists_fun C').mp hy
   -- `e c = e (y c)`, and `y c` lies in `C'`.
-  let x : C' := ∑ i, w i * ⟨(i : C) ^ m * c, hm _ (hT i.2)⟩
+  let x : C' := ∑ i, w i * ⟨(i : C) ^ m * c, hm _ (hT i.property)⟩
   obtain ⟨σ, hσ⟩ := hse x
   refine ⟨σ, ?_⟩
   have hey : e * y = e := by linear_combination e * hyz + u * he.eq

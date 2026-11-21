@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The round metric in stereographic coordinates
@@ -37,8 +38,12 @@ projection onto the equatorial hyperplane, which is `y ↦ σ⁻¹(2 y)`, the fa
   orthogonal to `v`.
 * `TauCeti.inner_fderiv_stereoInvFunAux_two_smul`: the conformal factor `(2 / (1 + ‖y‖²))²` of
   `y ↦ σ⁻¹ (2 J y)` for a linear isometry `J` into that hyperplane.
+* `TauCeti.inner_fderiv_subtypeVal_comp_stereographic'_symm`: the conformal factor of the inverse
+  of the stereographic chart `stereographic' n v`, read in `E`.
 * `TauCeti.inner_mfderiv_stereographic'_symm`: the round metric pulled back along the inverse of
   the stereographic chart `stereographic' n v`.
+* `TauCeti.inner_mvfderiv_subtypeVal_sphere`: at the centre of the preferred chart, the differential
+  of the inclusion of the sphere is an isometry from the chart coordinates.
 
 ## References
 
@@ -117,6 +122,33 @@ theorem inner_fderiv_stereoInvFunAux_two_smul {F : Type*} [NormedAddCommGroup F]
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
+/-- **The inverse stereographic chart is conformal.** Read in `E`, the inverse of the
+stereographic chart `stereographic' n v` of the unit sphere scales the Euclidean inner product of
+`ℝⁿ` by `(4 / (‖y‖² + 4))²` at `y`. -/
+theorem inner_fderiv_subtypeVal_comp_stereographic'_symm (v : sphere (0 : E) 1)
+    (y a b : EuclideanSpace ℝ (Fin n)) :
+    ⟪fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y a,
+      fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y b⟫_ℝ =
+      (4 / (‖y‖ ^ 2 + 4)) ^ 2 * ⟪a, b⟫_ℝ := by
+  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+    (ne_zero_of_mem_unit_sphere v)).repr
+  -- Read in `E`, the inverse chart is `σ⁻¹` precomposed with the isometry `U.symm`.
+  have hfun : ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm =
+      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm :=
+    coe_comp_stereographic'_symm v
+  have hL : HasFDerivAt (((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm)
+      ((ℝ ∙ (v : E))ᗮ.subtypeL.comp U.symm.toContinuousLinearEquiv.toContinuousLinearMap) y :=
+    ((ℝ ∙ (v : E))ᗮ.subtypeL.comp
+      U.symm.toContinuousLinearEquiv.toContinuousLinearMap).hasFDerivAt
+  rw [hfun, (((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp y
+    hL).fderiv]
+  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, Submodule.subtypeL_apply]
+  rw [inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere v) (U.symm y).property (U.symm a).property
+      (U.symm b).property,
+    Submodule.norm_coe, LinearIsometryEquiv.norm_map, ← Submodule.coe_inner,
+    LinearIsometryEquiv.inner_map_map]
+
 /-- **The round metric in stereographic coordinates.** Pulled back along the inverse of the
 stereographic chart `stereographic' n v` of the unit sphere, the round metric is
 `(4 / (‖y‖² + 4))²` times the Euclidean metric of `ℝⁿ` at `y`. -/
@@ -125,33 +157,31 @@ theorem inner_mfderiv_stereographic'_symm (v : sphere (0 : E) 1)
     inner ℝ (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y a)
         (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y b) =
       (4 / (‖y‖ ^ 2 + 4)) ^ 2 * inner ℝ a b := by
-  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
-    (ne_zero_of_mem_unit_sphere v)).repr
   have hsymm : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm y :=
     mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
-  -- Read in `E`, the inverse chart is `σ⁻¹` precomposed with the isometry `U.symm`.
-  have hfun : ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm =
-      stereoInvFunAux (v : E) ∘ ((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm :=
-    coe_comp_stereographic'_symm v
   have hd (c : TangentSpace (𝓡 n) y) :
       mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) _
           (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y c) =
-        fderiv ℝ (stereoInvFunAux (v : E)) (U.symm y) (U.symm c) := by
+        fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y c := by
     rw [← mvfderiv_comp_apply y ((contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero) hsymm,
-      hfun, mvfderiv_eq_fderiv]
-    have hL : HasFDerivAt (((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm)
-        ((ℝ ∙ (v : E))ᗮ.subtypeL.comp U.symm.toContinuousLinearEquiv.toContinuousLinearMap) y :=
-      ((ℝ ∙ (v : E))ᗮ.subtypeL.comp
-        U.symm.toContinuousLinearEquiv.toContinuousLinearMap).hasFDerivAt
-    rw [(((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp y
-      hL).fderiv]
+      mvfderiv_eq_fderiv]
     -- `NormedSpace.fromTangentSpace y` is the identity of the model space, by definition.
-    simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
-      ContinuousLinearEquiv.coe_coe, Submodule.subtypeL_apply]
     rfl
-  rw [inner_tangentSpace_sphere, hd a, hd b,
-    inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere v) (U.symm y).2 (U.symm a).2 (U.symm b).2,
-    Submodule.norm_coe, LinearIsometryEquiv.norm_map, ← Submodule.coe_inner,
-    LinearIsometryEquiv.inner_map_map]
+  rw [inner_tangentSpace_sphere, hd a, hd b, inner_fderiv_subtypeVal_comp_stereographic'_symm]
+
+/-- **The preferred chart is isometric at its centre.** The preferred chart of the unit sphere at
+`x` is stereographic projection from `-x`, which sends `x` to the origin, where the conformal factor
+`(4 / (‖y‖² + 4))²` is one. So the differential at `x` of the inclusion of the sphere preserves the
+Euclidean inner product of the chart coordinates `tangentSpaceCastModel (𝓡 n) x` of tangent
+vectors. -/
+theorem inner_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1) (a b : TangentSpace (𝓡 n) x) :
+    inner ℝ (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x a)
+        (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x b) =
+      inner ℝ (tangentSpaceCastModel (𝓡 n) x a) (tangentSpaceCastModel (𝓡 n) x b) := by
+  -- The preferred chart at `x` is `stereographic' n (-x)`, which sends `x` to the origin.
+  rw [mvfderiv_apply_eq_fderiv_comp_extChartAt_symm, mvfderiv_apply_eq_fderiv_comp_extChartAt_symm,
+    extChartAt_sphere_apply_self, extChartAt_coe_symm, modelWithCornersSelf_coe_symm,
+    Function.comp_id, chartAt_sphere, inner_fderiv_subtypeVal_comp_stereographic'_symm]
+  norm_num
 
 end TauCeti
