@@ -9,14 +9,17 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
-# Products of standard Gaussian vectors
+# Products of Gaussian vectors
 
 Grouping independent standard Gaussian scalars by their first index produces independent
-standard Gaussian vectors.
+standard Gaussian vectors. For a general multivariate Gaussian with zero cross-covariance,
+the two coordinate blocks have a product law.
 
 ## Main results
 
 * `TauCeti.Probability.map_pi_gaussianReal_to_vectors`: the grouped product law.
+* `TauCeti.Probability.map_sumEquivProd_multivariateGaussian_of_submatrix_eq_zero`:
+  the joint law of two Gaussian blocks with zero cross-covariance.
 -/
 
 public section
@@ -76,5 +79,24 @@ theorem map_pi_gaussianReal_to_vectors {ι κ : Type*} [Fintype ι] [Fintype κ]
     (g := fun j z ↦ WithLp.toLp 2 fun i : κ ↦ z (e j i))
     hfiber
   convert hregroup.map_eq using 1
+
+/-- If the cross-covariance of two coordinate blocks vanishes, their joint Gaussian law is the
+product of the two Gaussian laws with the corresponding means and diagonal covariance blocks.
+This combines `indepFun_sumEquivProd_multivariateGaussian_iff` with the coordinate marginals
+`map_comp_multivariateGaussian`. -/
+theorem map_sumEquivProd_multivariateGaussian_of_submatrix_eq_zero {ι κ : Type*}
+    [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ] (m : EuclideanSpace ℝ (ι ⊕ κ))
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) (h₁₂ : S.submatrix Sum.inl Sum.inr = 0) :
+    (multivariateGaussian m S).map EuclideanSpace.sumEquivProd =
+      (multivariateGaussian (EuclideanSpace.sumEquivProd m).1 (S.submatrix Sum.inl Sum.inl)).prod
+        (multivariateGaussian (EuclideanSpace.sumEquivProd m).2 (S.submatrix Sum.inr Sum.inr)) := by
+  have hind := (indepFun_sumEquivProd_multivariateGaussian_iff m hS).2 h₁₂
+  have hprod := hind.map_prod_eq_prod_map_map (by fun_prop) (by fun_prop)
+  have h₁ : (multivariateGaussian m S).map (fun x ↦ (EuclideanSpace.sumEquivProd x).1) = _ :=
+    map_comp_multivariateGaussian m hS Sum.inl
+  have h₂ : (multivariateGaussian m S).map (fun x ↦ (EuclideanSpace.sumEquivProd x).2) = _ :=
+    map_comp_multivariateGaussian m hS Sum.inr
+  rw [h₁, h₂] at hprod
+  exact hprod
 
 end TauCeti.Probability
