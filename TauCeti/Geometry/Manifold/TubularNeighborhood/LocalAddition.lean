@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
-public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
 
 /-!
@@ -46,10 +44,9 @@ spaces of maps. It proves the basic properties of `B`.
 * `TauCeti.contDiffAt_adaptedLocalAddition`: `B` is jointly `C^n` when `f` is `C^(n + 1)` and `r`
   is `C^n`, by the smoothness of the normal projections along the retraction,
   `TauCeti.contDiffAt_starProjection_normalSubspace_comp`.
-* `TauCeti.hasFDerivAt_comp_of_eventually_sub_mem_normalSubspace`: the differential of `f ∘ r` at
-  a point `f x` of the submanifold is the tangential projection `P_T(x)`.
 * `TauCeti.hasFDerivAt_adaptedLocalAddition`: at a point `f x` of the submanifold, the derivative
-  of `v ↦ B(f x, v)` at `0` is the identity.
+  of `v ↦ B(f x, v)` at `0` is the identity, since the differential of `f ∘ r` there is the
+  tangential projection `P_T(x)` (`TauCeti.hasFDerivAt_comp_of_eventually_sub_mem_normalSubspace`).
 * `TauCeti.eventually_adaptedLocalAddition_mem_image_iff`: on a tubular neighbourhood on which
   normal addition `(y, ν) ↦ f y + ν` is injective at the points of a neighbourhood `W` of `x`,
   `B(f x, v)` lies in `f '' W`, for small `v`, exactly when `v` is tangent at `f x`.
@@ -133,23 +130,6 @@ section Smooth
 
 variable [I.Boundaryless]
 
-/-- The orthogonal projection onto the normal space of an immersion `f` at `r q` is `C^n` in `q`
-at a point where `r` is `C^n`, when `f` is `C^(n + 1)` at `r q`. -/
-theorem contDiffAt_starProjection_normalSubspace_comp [IsManifold I (n + 1) M] {q : V}
-    (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f (r q))
-    (himm : Injective (mfderiv I 𝓘(ℝ, V) f (r q))) (hr : ContMDiffAt 𝓘(ℝ, V) I n r q) :
-    ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) q :=
-  contMDiffAt_iff_contDiffAt.mp ((contMDiffAt_normalSubspace_starProjection hf himm).comp q hr)
-
-/-- At a point `f x` whose base point `x` is fixed by the retraction `r`, the orthogonal projection
-onto the normal space of an immersion `f` at `r q` is `C^n` in `q` at `f x`, when `f` is `C^(n + 1)`
-at `x` and `r` is `C^n` at `f x`. -/
-theorem contDiffAt_starProjection_normalSubspace_comp_of_retract [IsManifold I (n + 1) M]
-    {x : M} (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f x) (himm : Injective (mfderiv I 𝓘(ℝ, V) f x))
-    (hr : ContMDiffAt 𝓘(ℝ, V) I n r (f x)) (hrx : r (f x) = x) :
-    ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) (f x) :=
-  contDiffAt_starProjection_normalSubspace_comp (by rwa [hrx]) (by rwa [hrx]) hr
-
 /-- The adapted local addition is jointly `C^n` at `(q, v)` when `f` is a `C^(n + 1)` immersion
 and `r` is `C^n` at `q` and at the moved base point `f (r q) + P_T(r q) v`, the smoothness and
 immersion conditions on `f` being needed only at the images of these two points under `r`. -/
@@ -179,62 +159,6 @@ theorem contDiffAt_adaptedLocalAddition [IsManifold I (n + 1) M] {q v : V}
     (((contDiffAt_starProjection_normalSubspace_comp hfw himmw hrw).comp (q, v) hW).clm_apply
       ((contDiffAt_fst.sub ((hg hfq hrq).comp (q, v) contDiffAt_fst)).add
         ((hNq.comp (q, v) contDiffAt_fst).clm_apply contDiffAt_snd)))
-
-/-- Let `r` be a `C^n` retraction, `n ≥ 1`, onto a map `f` near `f x`, with normal displacement,
-where `f` is `C^(n + 1)` and immersive at `x`. Then the differential of `f ∘ r` at `f x` is the
-orthogonal projection onto the tangent space of the immersed manifold at `f x`. -/
-theorem hasFDerivAt_comp_of_eventually_sub_mem_normalSubspace [IsManifold I (n + 1) M]
-    {x : M} (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f x) (hn : 1 ≤ n)
-    (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) (hr : ContMDiffAt 𝓘(ℝ, V) I n r (f x))
-    (hrx : r (f x) = x)
-    (hnormal : ∀ᶠ q in 𝓝 (f x), q - f (r q) ∈ normalSubspace I f (r q)) :
-    HasFDerivAt (f ∘ r) (normalSubspace I f x)ᗮ.starProjection (f x) := by
-  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
-  have hfx : MDifferentiableAt I 𝓘(ℝ, V) f (r (f x)) := by
-    rw [hrx]
-    exact hf.mdifferentiableAt (by simp)
-  have hrd : MDifferentiableAt 𝓘(ℝ, V) I r (f x) := hr.mdifferentiableAt hn0
-  have hg : DifferentiableAt ℝ (f ∘ r) (f x) :=
-    mdifferentiableAt_iff_differentiableAt.mp (hfx.comp _ hrd)
-  have hN :=
-    (contDiffAt_starProjection_normalSubspace_comp_of_retract hf himm hr hrx).differentiableAt hn0
-  set D := fderiv ℝ (f ∘ r) (f x)
-  -- `D` takes values in the tangent space, since it factors through the differential of `f`.
-  have hrange (h : V) : D h ∈ (normalSubspace I f x)ᗮ := by
-    have hD : D h = mfderiv I 𝓘(ℝ, V) f (r (f x)) (mfderiv 𝓘(ℝ, V) I r (f x) h) :=
-      (mvfderiv_eq_fderiv_apply (f ∘ r) (f x) h).symm.trans
-        ((mvfderiv_apply_eq_mfderiv_apply (f ∘ r) (f x) h).trans
-          (mfderiv_comp_apply (f x) hfx hrd h))
-    have : D h ∈ (normalSubspace I f (r (f x)))ᗮ := fun u hu ↦ by
-      rw [hD]
-      exact mem_normalSubspace_iff.mp hu _
-    rwa [hrx] at this
-  -- Differentiating `P_N(r q) (q - f (r q)) = q - f (r q)` shows that `h - D h` is normal.
-  have hzero : (fun q ↦ (normalSubspace I f (r q)).starProjection (q - (f ∘ r) q) -
-      (q - (f ∘ r) q)) =ᶠ[𝓝 (f x)] fun _ ↦ 0 := by
-    filter_upwards [hnormal] with q hq
-    rw [Function.comp_apply, Submodule.starProjection_eq_self_iff.mpr hq, sub_self]
-  have hderiv := ((hN.hasFDerivAt.clm_apply ((hasFDerivAt_id _).sub hg.hasFDerivAt)).sub
-    ((hasFDerivAt_id _).sub hg.hasFDerivAt)).unique
-    ((hasFDerivAt_const 0 (f x)).congr_of_eventuallyEq hzero)
-  have hnormalD (h : V) : h - D h ∈ normalSubspace I f x := by
-    -- Evaluated at `h`, the derivative is `P_N(x) (h - D h) + N' h (f x - (f ∘ r) (f x)) -
-    -- (h - D h)`, where `N' h` is the derivative of `q ↦ P_N(r q)` along `h`. The middle term
-    -- vanishes, since `(f ∘ r) (f x) = f x`.
-    have hev : (normalSubspace I f (r (f x))).starProjection (h - D h) +
-        fderiv ℝ (fun q ↦ (normalSubspace I f (r q)).starProjection) (f x) h
-          (f x - (f ∘ r) (f x)) - (h - D h) = 0 :=
-      DFunLike.congr_fun hderiv h
-    have hP : (normalSubspace I f x).starProjection (h - D h) = h - D h := by
-      rwa [Function.comp_apply, hrx, sub_self, map_zero, add_zero, sub_eq_zero] at hev
-    exact Submodule.starProjection_eq_self_iff.mp hP
-  refine hg.hasFDerivAt.congr_fderiv (ContinuousLinearMap.ext fun h ↦ ?_)
-  calc D h = (normalSubspace I f x)ᗮ.starProjection (D h) +
-        (normalSubspace I f x)ᗮ.starProjection (h - D h) := by
-        rw [Submodule.starProjection_eq_self_iff.mpr (hrange h),
-          (Submodule.starProjection_apply_eq_zero_iff _).mpr
-            (Submodule.le_orthogonal_orthogonal _ (hnormalD h)), add_zero]
-    _ = (normalSubspace I f x)ᗮ.starProjection h := by rw [← map_add, add_sub_cancel]
 
 /-- At a point `f x` of the submanifold, the derivative in the vector variable of the adapted
 local addition at the zero vector is the identity. -/
