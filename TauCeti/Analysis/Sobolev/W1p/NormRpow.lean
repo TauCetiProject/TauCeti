@@ -119,31 +119,7 @@ theorem exists_w1p_value_ae_eq_norm_rpow_iff [Nontrivial E] (hp : p ≠ ∞)
   ⟨fun h => not_le.1 fun hs => not_exists_w1p_value_ae_eq_norm_rpow hΩ hs0 hs h,
     fun hs => (exists_w1p_value_ae_eq_norm_rpow hp hb hs).imp fun _ h => h.1⟩
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For `1 / p⋆ + 1 / n = 1 / p` with `p⋆` finite, the conditions `(s - 1) p > -n` and
-`s p⋆ > -n` agree. -/
-private theorem neg_finrank_lt_sub_one_mul_iff {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ ∞) (hexp : pstar⁻¹ + (Module.finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) :
-    -(Module.finrank ℝ E : ℝ) < (s - 1) * p.toReal ↔
-      -(Module.finrank ℝ E : ℝ) < s * pstar.toReal := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  have hc : 0 < p.toReal := ENNReal.toReal_pos hp0 (ne_top_of_inv_add_inv_eq_inv hexp)
-  have ha : 0 < pstar.toReal :=
-    ENNReal.toReal_pos (zero_lt_one.trans_le (one_le_of_inv_add_eq_inv hexp)).ne' hpstar
-  -- Dividing by `p` and `p⋆`, the conditions read `-n / p < s - 1` and `-n / p⋆ < s`, which
-  -- agree since `n / p⋆ + 1 = n / p`.
-  rw [← div_lt_iff₀ hc, ← div_lt_iff₀ ha, neg_div, neg_div,
-    ← natCast_div_toReal_add_one_of_inv_add_inv_eq_inv hp0 hexp]
-  constructor <;> intro h <;> linarith
-
 variable {pstar : ℝ≥0∞}
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A space with a Sobolev exponent `1 / p⋆ + 1 / n = 1 / p`, `p ≥ 1`, is nontrivial. -/
-private theorem nontrivial_of_inv_add_inv_eq_inv
-    (hexp : pstar⁻¹ + (Module.finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) : Nontrivial E :=
-  Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero
-    (ne_zero_of_inv_add_inv_eq_inv (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hexp))
 
 /-- **The Sobolev exponent of norm powers.** Let `1 ≤ p` and let `p⋆ < ∞` be the Sobolev
 exponent, `1 / p⋆ + 1 / n = 1 / p`, so that `p < n`. On a bounded open neighbourhood `Ω` of the
@@ -154,7 +130,8 @@ theorem exists_w1p_value_ae_eq_norm_rpow_iff_memLp (hpstar : pstar ≠ ∞)
     (hb : Bornology.IsBounded (Ω : Set E)) (hΩ : (Ω : Set E) ∈ 𝓝 (0 : E)) (s : ℝ) :
     (∃ u : W1p μ Ω p, W1p.value u =ᵐ[μ.restrict Ω] fun x => ‖x‖ ^ s) ↔
       MemLp (fun x : E => ‖x‖ ^ s) pstar (μ.restrict Ω) := by
-  have := nontrivial_of_inv_add_inv_eq_inv (E := E) hexp
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  have := nontrivial_of_inv_add_inv_eq_inv (E := E) hp0 hexp
   have hp := ne_top_of_inv_add_inv_eq_inv hexp
   rw [hb.memLp_norm_rpow_restrict_iff hΩ hpstar]
   rcases eq_or_ne s 0 with rfl | hs0
@@ -163,8 +140,9 @@ theorem exists_w1p_value_ae_eq_norm_rpow_iff_memLp (hpstar : pstar ≠ ∞)
       rw [zero_mul, neg_lt_zero]
       exact_mod_cast Module.finrank_pos
     exact iff_of_true ((exists_w1p_value_ae_eq_norm_rpow hp hb
-      ((neg_finrank_lt_sub_one_mul_iff hpstar hexp).2 h0)).imp fun _ h => h.1) h0
-  · rw [← neg_finrank_lt_sub_one_mul_iff hpstar hexp]
+      ((neg_natCast_lt_sub_one_mul_iff_of_inv_add_inv_eq_inv hp0 hpstar hexp).2 h0)).imp
+        fun _ h => h.1) h0
+  · rw [← neg_natCast_lt_sub_one_mul_iff_of_inv_add_inv_eq_inv hp0 hpstar hexp]
     exact exists_w1p_value_ae_eq_norm_rpow_iff hp hb hΩ hs0
 
 /-- **The Sobolev exponent is sharp.** Let `1 ≤ p` and let `p⋆` be the Sobolev exponent,
@@ -175,7 +153,8 @@ theorem exists_w1p_not_memLp_value
     (hexp : pstar⁻¹ + (Module.finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹)
     (hb : Bornology.IsBounded (Ω : Set E)) (hΩ : (Ω : Set E) ∈ 𝓝 (0 : E)) {q : ℝ≥0∞}
     (hq : pstar < q) : ∃ u : W1p μ Ω p, ¬ MemLp (W1p.value u) q (μ.restrict Ω) := by
-  have := nontrivial_of_inv_add_inv_eq_inv (E := E) hexp
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  have := nontrivial_of_inv_add_inv_eq_inv (E := E) hp0 hexp
   have hpstar := hq.ne_top
   set n : ℝ := (Module.finrank ℝ E : ℝ)
   have hn : 0 < n := by simp [n, Module.finrank_pos]
@@ -194,7 +173,7 @@ theorem exists_w1p_not_memLp_value
     rw [neg_div, neg_mul, neg_lt_neg_iff, div_mul_eq_mul_div, div_lt_iff₀ hrr]
     exact mul_lt_mul_of_pos_left hpr hn
   obtain ⟨u, hu, -⟩ := exists_w1p_value_ae_eq_norm_rpow (μ := μ) hp hb
-    ((neg_finrank_lt_sub_one_mul_iff hpstar hexp).2 hs)
+    ((neg_natCast_lt_sub_one_mul_iff_of_inv_add_inv_eq_inv hp0 hpstar hexp).2 hs)
   refine ⟨u, fun hq' => ?_⟩
   have : IsFiniteMeasure (μ.restrict (Ω : Set E)) :=
     isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
