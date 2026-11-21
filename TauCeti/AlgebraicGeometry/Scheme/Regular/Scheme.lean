@@ -162,7 +162,7 @@ theorem isRegular_iff_forall_exists_affineOpens :
     have : IsLocallyNoetherian X := isLocallyNoetherian_of_affine_cover hCover hNoeth
     refine ⟨fun point ↦ ?_⟩
     have : IsRegularRing Γ(X, openSet point) := hRing point
-    exact isRegularLocalRing_stalk_of_isRegularRing (openSet point).2 (hMem point)
+    exact isRegularLocalRing_stalk_of_isRegularRing (openSet point).property (hMem point)
 
 /-- A scheme is regular exactly when its affine-open section rings are regular. -/
 @[stacks 02IU]
@@ -170,7 +170,7 @@ theorem isRegular_iff_forall_affineOpens :
     IsRegular X ↔ ∀ U : X.affineOpens, IsRegularRing Γ(X, U) := by
   refine ⟨fun _ U ↦ ?_, fun hRegular ↦ ?_⟩
   · have := IsLocallyNoetherian.component_noetherian U
-    exact (isRegularRing_iff_isRegularLocalRing_stalk U.2).mpr fun _ _ ↦ inferInstance
+    exact (isRegularRing_iff_isRegularLocalRing_stalk U.property).mpr fun _ _ ↦ inferInstance
   · apply isRegular_iff_forall_exists_affineOpens.mpr
     intro point
     obtain ⟨openSet, hAffine, hMem, -⟩ :=

@@ -66,7 +66,7 @@ theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (1 : ι → ℝ)).isEmbedding_specialOrthogonalToGeneralLinear.continuous_iff]
   have hc : Continuous (fun (A : Matrix.specialOrthogonalGroup ι ℝ) =>
       Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ)) := by
-    exact Unitary.continuous_toUnits.comp (continuous_subtype_val.subtype_mk _)
+    exact Unitary.continuous_toUnits.comp (continuous_subtypeVal.subtype_mk _)
   rw [Function.comp_def]
   exact hc.congr
     (g := fun A => specialOrthogonalToGeneralLinear

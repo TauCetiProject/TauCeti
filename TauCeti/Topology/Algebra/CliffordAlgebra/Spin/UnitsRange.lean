@@ -62,7 +62,7 @@ hypotheses. -/
 theorem isEmbedding_spinGroup_toUnits (Q : QuadraticForm R V) :
     Topology.IsEmbedding (spinGroup.toUnits (Q := Q)) := by
   have hcont : Continuous (spinGroup.toUnits (Q := Q)) :=
-    Units.continuous_iff.mpr ⟨continuous_subtype_val, continuous_subtype_val.star⟩
+    Units.continuous_iff.mpr ⟨continuous_subtypeVal, continuous_subtypeVal.star⟩
   exact Topology.IsEmbedding.of_comp hcont Units.continuous_val Topology.IsEmbedding.subtypeVal
 
 private def spinGroupToUnitsContinuousMonoidHom (Q : QuadraticForm R V) :

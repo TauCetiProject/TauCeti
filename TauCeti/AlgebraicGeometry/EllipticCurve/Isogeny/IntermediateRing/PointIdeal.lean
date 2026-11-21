@@ -138,7 +138,7 @@ theorem valuation_le_one_of_valuation_pullback_X_le_one {x y : F} (h : W₁.Equa
   have : IsScalarTower W₂.CoordinateRing w.integer W₁.FunctionField :=
     IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   have hint : IsIntegral w.integer (algebraMap φ.intermediateRing W₁.FunctionField b) :=
-    ((φ.mem_intermediateRing_iff _).mp b.2).tower_top
+    ((φ.mem_intermediateRing_iff _).mp b.property).tower_top
   exact (Valuation.Integers.isIntegral_iff_v_le_one (Valuation.integer.integers w)).mp hint
 
 /-- **The ideal of a point extends to the prime of the intermediate ring at that point.** If the

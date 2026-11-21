@@ -77,7 +77,7 @@ private theorem coe_smoothRange_lieExp_smul_eq_exp (n : ℕ)
       LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
     Y = realCliffordSpinToSpecialOrthogonalRangeLieMap n X →
     realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X)) = lieExp (t • Y) →
-    (((realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X))).1 :
+    (((realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X))).val :
         (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ) =
       NormedSpace.exp (t • A) := by
   intro X Y A hY hmap
@@ -87,7 +87,7 @@ private theorem coe_smoothRange_lieExp_smul_eq_exp (n : ℕ)
           Matrix (Fin n) (Fin n) ℝ) := by
       simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using congrArg
         (fun z : SpecialOrthogonalUnitsRange(n) ↦
-          ((z.1 : (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ)) hmap
+          ((z.val : (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ)) hmap
     _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
         ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y)) :=
       (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).coe_lieExp_smul Y t
@@ -125,7 +125,7 @@ private theorem coe_symm_lieExp_smul_eq_exp (n : ℕ)
   intro Q X s
   calc
     (s : CliffordAlgebra Q) =
-        ((((lieExp (t • X) : SpinUnitsRange(n)).1 :
+        ((((lieExp (t • X) : SpinUnitsRange(n)).val :
           (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) :=
       coe_spinGroupContinuousMulEquivUnitsRange_symm_apply Q (lieExp (t • X))
     _ = NormedSpace.exp (t • unitsLieAlgebraEquiv

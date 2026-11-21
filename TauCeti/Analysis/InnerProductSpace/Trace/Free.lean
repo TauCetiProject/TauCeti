@@ -270,7 +270,7 @@ theorem not_finite_traceFreeSelfAdjoint (hE : ¬Module.Finite ℂ E) :
     exact hE inferInstance
   obtain ⟨e, he⟩ := exists_ne (0 : E)
   refine hE (Module.Finite.of_injective
-    (ContinuousLinearMap.smulRightL ℂ E E (innerSL ℂ e)).toLinearMap ?_)
+    (ContinuousLinearMap.smulRightL ℂ ℂ ℂ E E (innerSL ℂ e)).toLinearMap ?_)
   rw [injective_iff_map_eq_zero]
   intro x hx
   have := DFunLike.congr_fun hx e

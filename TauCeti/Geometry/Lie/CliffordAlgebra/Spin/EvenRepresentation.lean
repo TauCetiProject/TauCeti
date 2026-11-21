@@ -104,9 +104,9 @@ private theorem spinToEvenHom_continuous (n : ℕ) : Continuous (spinToEvenHom n
       (⟨(((spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm g :
         spinGroup (realCliffordForm n 0)) : CliffordAlgebra (realCliffordForm n 0)),
         spinGroup.mem_even
-          ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm g).2⟩ :
+          ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm g).property⟩ :
           CliffordAlgebra.even (realCliffordForm n 0))) :=
-    (continuous_subtype_val.comp
+    (continuous_subtypeVal.comp
       (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm.continuous).subtype_mk _
   apply h.congr
   intro g
@@ -198,7 +198,7 @@ def realCliffordSpinEvenSmoothHom
 theorem realCliffordSpinEvenSmoothHom_apply
     (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A) (g : SpinUnitsRange(n)) :
     ((f.realCliffordSpinEvenSmoothHom g : Aˣ) : A) =
-      f ⟨((g.1 : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
+      f ⟨((g.val : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
           CliffordAlgebra (realCliffordForm n 0)), by
         exact (coe_spinGroupContinuousMulEquivUnitsRange_symm_apply (realCliffordForm n 0) g) ▸
           spinGroup.mem_even
