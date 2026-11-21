@@ -407,32 +407,6 @@ structure `Linear.preadditiveIntLinear` of a preadditive category, which `integr
 carries. -/
 attribute [local instance 1100] ModuleCat.instLinear
 
-/-- Cohomology does not depend on the presentation of the `ℤ`-linear structure, which is unique
-(`CategoryTheory.Linear.subsingletonInt`): the identification of the two cohomology modules
-commutes with the maps induced by continuous maps. -/
-private theorem singularCohomologyMap_comp_eqToHom {C : Type*} [Category C]
-    [Limits.HasCoproducts.{0} C]
-    [Abelian C] (R M : C) (L₁ L₂ : Linear ℤ C) (h : L₁ = L₂) {X Y : TopCat.{0}} (f : X ⟶ Y)
-    (n : ℕ) :
-    @TopCat.singularCohomologyMap _ _ _ _ R ℤ _ L₁ M X Y f n ≫
-        eqToHom (congrArg (fun L : Linear ℤ C ↦
-          @TopCat.singularCohomology _ _ _ _ R ℤ _ L M X n) h) =
-      eqToHom (congrArg (fun L : Linear ℤ C ↦
-          @TopCat.singularCohomology _ _ _ _ R ℤ _ L M Y n) h) ≫
-        @TopCat.singularCohomologyMap _ _ _ _ R ℤ _ L₂ M X Y f n := by
-  subst h
-  simp
-
-/-- The Kronecker map does not depend on the presentation of the `ℤ`-linear structure. -/
-private theorem singularKronecker_eqToHom {C : Type*} [Category C] [Limits.HasCoproducts.{0} C]
-    [Abelian C] (R M : C) (L₁ L₂ : Linear ℤ C) (h : L₁ = L₂) (X : TopCat.{0}) (n : ℕ)
-    (a : @TopCat.singularCohomology _ _ _ _ R ℤ _ L₁ M X n) :
-    @TopCat.singularKronecker _ _ _ _ R M X ℤ _ L₂ n (eqToHom (congrArg (fun L : Linear ℤ C ↦
-        @TopCat.singularCohomology _ _ _ _ R ℤ _ L M X n) h) a) =
-      @TopCat.singularKronecker _ _ _ _ R M X ℤ _ L₁ n a := by
-  subst h
-  simp
-
 /-- **Integral cohomology with unit coefficients**: the integral singular cohomology
 `Hⁿ(X; ℤ) = X.integralCohomology n`, computed from singular chains with coefficients in `ULift ℤ`,
 is the cohomology with chain coefficients and cochain values the unit object `ℤ` of `ModuleCat ℤ`,

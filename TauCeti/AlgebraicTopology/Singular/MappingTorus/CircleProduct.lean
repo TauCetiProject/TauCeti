@@ -15,7 +15,8 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.SecondCohomology
 
 Let `φ` be an orientation-preserving homeomorphism of a closed connected oriented surface `F` with
 `det (1 - φ_*) ≠ 0` on `H₁(F; ℤ)`, so that the mapping torus `Y_φ` has `b₁(Y_φ) = 1`, and let
-`X = (ℝ / pℤ) × Y_φ`. This file computes `H²(X; ℤ)` modulo torsion, keeping the torsion.
+`X = (ℝ / pℤ) × Y_φ`. This file shows that two explicit classes span `H²(X; ℤ)` modulo torsion and
+identifies the torsion of `H²(X; ℤ)`.
 
 Write `pr₁, pr₂` for the projections of `X` and `θ_p` for the angular class of `ℝ / pℤ`
 (`AddCircle.angularClass`). Let `v ∈ H²(Y_φ; ℤ)` pair to one with the fibre class `i_*[F]`, and
