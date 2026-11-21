@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Smooth real Cauchy–Riemann operators on Sobolev sections
@@ -218,23 +217,7 @@ private theorem chartValueL_dataL_ae (w : A.sectionChartData.SobolevData μ p 1)
         (fun f : Lp ℝ p (μ.restrict (A.sectionChartData.image i)) ↦ (f : ℂ → ℝ) y)
         (Wkp.value_zero (chartL A hD hDs μ p i c w))).trans (h₃ c)))
     _ = _ := by
-      -- These are the actual chart vectors and coefficient, in their native bases.
-      let b := finBasis ℝ F
-      let B := finBasis ℝ (ℂ →L[ℝ] F)
-      let X := complexAntilinearPartL (A.sectionChartData.chartDerivL μ p i w y)
-      let v := A.sectionChartData.chartValueL μ p 1 i w y
-      let Z : F →ₗ[ℝ] (ℂ →L[ℝ] F) := (A.chartZeroOrder D i y).toLinearMap
-      change (∑ c, (B.coord c X + B.coord c (Z v)) • B c) = X + Z v
-      have hv : ∑ j, b.coord j v • b j = v := by
-        simpa only [Basis.coord_apply] using b.sum_repr v
-      have hcoords (c) : B.coord c (Z v) = ∑ j, B.coord c (Z (b j)) * b.coord j v := by
-        calc
-          _ = B.coord c (Z (∑ j, b.coord j v • b j)) :=
-            congrArg (fun t ↦ B.coord c (Z t)) hv.symm
-          _ = _ := by simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
-      simp_rw [hcoords]
-      rw [Basis.sum_coord_add_smul]
-      exact congrArg (fun t ↦ X + Z t) hv
+      simp only [Basis.coord_apply, ← Finsupp.add_apply, ← map_add, Basis.sum_repr]
 
 include hD in
 omit [T2Space M] in
