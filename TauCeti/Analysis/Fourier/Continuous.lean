@@ -33,6 +33,8 @@ sign under the usual domination hypothesis.
 * `MeasureTheory.Integrable.fourier_add`, `MeasureTheory.Integrable.fourier_sub`: the Fourier
   integral is additive on integrable functions; `MeasureTheory.Integrable.fourierInv_add`: so is
   the inverse Fourier integral.
+* `MeasureTheory.Integrable.fourierChar_smul`: an integrable function times a measurable phase
+  `𝐞 (φ ξ)` is integrable.
 * `TauCeti.eLpNorm_fourier_top_le`: `‖𝓕 f‖_∞ ≤ ‖f‖₁`.
 * `MeasureTheory.Integrable.tendstoUniformly_fourier`: if integrable `gᵢ` tend to an integrable
   `f` in `L¹`, then `𝓕 gᵢ` tends to `𝓕 f` uniformly.
@@ -104,6 +106,14 @@ theorem fourier_add (hf : Integrable f) (hg : Integrable g) : 𝓕 (f + g) = �
 theorem fourierInv_add (hf : Integrable f) (hg : Integrable g) : 𝓕⁻ (f + g) = 𝓕⁻ f + 𝓕⁻ g :=
   VectorFourier.fourierIntegral_add (L := -innerₗ V) Real.continuous_fourierChar
     continuous_inner.neg hf hg
+
+/-- An integrable function times a measurable phase `𝐞 (φ x)` is integrable, since the phase has
+norm one. -/
+theorem fourierChar_smul {α : Type*} [MeasurableSpace α] {μ : Measure α} {a : α → E}
+    {φ : α → ℝ} (ha : Integrable a μ) (hφ : AEMeasurable φ μ) :
+    Integrable (fun x ↦ 𝐞 (φ x) • a x) μ :=
+  ha.mono ((Real.continuous_fourierChar.comp_aestronglyMeasurable
+    hφ.aestronglyMeasurable).smul ha.aestronglyMeasurable) (ae_of_all _ fun x ↦ by simp)
 
 /-- The Fourier integral of a difference of integrable functions is the difference of their
 Fourier integrals. -/

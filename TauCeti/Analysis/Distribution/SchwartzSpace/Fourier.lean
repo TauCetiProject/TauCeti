@@ -76,8 +76,6 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   support of the Fourier transform.
 * `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
   translation multiplies the Fourier transform by a phase and keeps its support.
-* `SchwartzMap.integrable_fourierChar_smul`: a Schwartz function times a continuous phase
-  `𝐞 (φ ξ)` is integrable.
 * `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`: composition with a linear isometry
   equivalence commutes with the Fourier transform, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
@@ -333,12 +331,6 @@ theorem support_fourier_compSubConstCLM (u : 𝓢(E, F)) (a : E) :
       Function.support ⇑(𝓕 u : 𝓢(E, F)) := by
   rw [fourier_coe, fourier_coe, funext (compSubConstCLM_apply u a),
     TauCeti.support_fourier_comp_sub_const]
-
-/-- A Schwartz function times a continuous phase `𝐞 (φ ξ)` is integrable. -/
-theorem integrable_fourierChar_smul (a : 𝓢(E, F)) {φ : E → ℝ} (hφ : Continuous φ) :
-    Integrable fun ξ ↦ 𝐞 (φ ξ) • a ξ :=
-  a.integrable.mono ((Real.continuous_fourierChar.comp hφ).smul a.continuous).aestronglyMeasurable
-    (ae_of_all _ fun ξ ↦ by simp)
 
 /-- The Fourier transform commutes with composition by a linear isometry equivalence:
 `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`. -/

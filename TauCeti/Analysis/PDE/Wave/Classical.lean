@@ -243,8 +243,8 @@ private theorem contDiff_fourierInv_waveCosSymbol_smul (a : 𝓢(E, F)) :
       ((∫ ξ, 𝐞 (1 * ‖ξ‖ * p.1 + inner ℝ ξ p.2) • a ξ) +
         ∫ ξ, 𝐞 (-1 * ‖ξ‖ * p.1 + inner ℝ ξ p.2) • a ξ) := by
     funext p
-    rw [Real.fourierInv_eq, ← integral_add (a.integrable_fourierChar_smul (by fun_prop))
-      (a.integrable_fourierChar_smul (by fun_prop)), ← integral_smul]
+    rw [Real.fourierInv_eq, ← integral_add (a.integrable.fourierChar_smul (by fun_prop))
+      (a.integrable.fourierChar_smul (by fun_prop)), ← integral_smul]
     congr 1 with ξ
     exact fourierChar_smul_waveCosSymbol_smul p.1 ξ p.2 (a ξ)
   rw [h]
