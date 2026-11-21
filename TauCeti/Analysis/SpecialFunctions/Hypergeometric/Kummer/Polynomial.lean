@@ -13,7 +13,9 @@ import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 If an upper parameter of the regularized hypergeometric function `Complex.regularizedHGFun a b`
 is a nonpositive integer `-n`, the series terminates and the function is a polynomial of degree
-at most `n` (`Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem`). For Olver's regularized
+at most `n` (`Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem` and
+`Complex.exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem`, the latter applying to
+`𝐌(-n, b, ·)` with `Multiset.mem_singleton_self`). For Olver's regularized
 Kummer function `𝐌(a, b, z)` this gives, for every natural `n` and every
 complex `b`, including the nonpositive integers,
 `𝐌(-n, b, z) = ∑_{k ≤ n} (-n)_k z^k / (k! Γ(b + k))`
@@ -23,8 +25,6 @@ complex `b`, including the nonpositive integers,
 ## Main results
 
 * `Complex.regularizedHGFun_singleton_neg_natCast` — the Kummer case DLMF 13.2.3 with `a = -n`.
-* `Complex.exists_natDegree_le_regularizedHGFun_singleton_neg_natCast` — `𝐌(-n, b, ·)` is a
-  polynomial of degree at most `n`.
 * `Complex.regularizedHGFun_singleton_neg_one` — `𝐌(-1, b, z) = Γ(b)⁻¹ - z Γ(b + 1)⁻¹`.
 -/
 
@@ -32,7 +32,7 @@ public section
 
 noncomputable section
 
-open Finset Polynomial
+open Finset
 open scoped Nat
 
 namespace Complex
@@ -47,12 +47,6 @@ theorem regularizedHGFun_singleton_neg_natCast (b z : ℂ) (n : ℕ) :
   refine sum_congr rfl fun k _ => ?_
   simp only [regularizedHGFunCoeff, Multiset.map_singleton, Multiset.prod_singleton]
   ring
-
-/-- For every natural `n` and every complex `b`, the Kummer function `𝐌(-n, b, ·)` is a
-polynomial of degree at most `n`. -/
-theorem exists_natDegree_le_regularizedHGFun_singleton_neg_natCast (b : ℂ) (n : ℕ) :
-    ∃ p : ℂ[X], p.natDegree ≤ n ∧ ∀ z, regularizedHGFun {-(n : ℂ)} {b} z = p.eval z :=
-  exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem (Multiset.mem_singleton_self _)
 
 /-- `𝐌(-1, b, z) = Γ(b)⁻¹ - z Γ(b + 1)⁻¹` for every complex `b`. -/
 @[simp]
