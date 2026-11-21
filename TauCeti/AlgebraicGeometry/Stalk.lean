@@ -19,7 +19,8 @@ For `x : X`, the affine open neighbourhoods `X.AffineOpenNhds x` form a cofilter
 `X.specStalkCone x` exhibits `Spec 𝒪_{X,x}` as the limit of `X.affineOpenNhdsDiagram x`
 (`isLimitSpecStalkCone`), `directLimitRingEquivStalk` identifies `colim Γ(X, W)` with `𝒪_{X,x}`,
 and `stalkOpensCone` expresses `(X.fromSpecStalk x ⁻¹ᵁ U).toScheme` as a cofiltered limit over
-`Over W₀` (`isLimitStalkOpensCone`; [Stacks, Tag 0BQ5](https://stacks.math.columbia.edu/tag/0BQ5)).
+`Over W₀` (`isLimitStalkOpensCone`;
+[Stacks Project, Lemma 32.20.3](https://stacks.math.columbia.edu/tag/0BQ5)).
 -/
 
 public section
@@ -203,8 +204,10 @@ def directLimitRingEquivStalk :
             (OrderDual.ofDual W).mem (hz.trans (map_zero _).symm)
           have hWW' : W ≤ OrderDual.toDual (AffineOpenNhds.mk V hV hxV) :=
             OrderDual.le_toDual.mpr (AffineOpenNhds.le_iff.mpr hVW)
-          rw [← Ring.DirectLimit.of_f (hij := hWW'),
-            show X.stalkDirectSystemMap x W _ hWW' s = 0 from heq.trans (map_zero _), map_zero]
+          have hzero : X.stalkDirectSystemMap x W _ hWW' s = 0 := by
+            rw [stalkDirectSystemMap_apply]
+            exact heq.trans (map_zero _)
+          rw [← Ring.DirectLimit.of_f (hij := hWW'), hzero, map_zero]
       · obtain ⟨V, hxV, hV, s, rfl⟩ :=
           TopCat.Presheaf.exists_mem_germ_eq_of_isBasis X.isBasis_affineOpens X.presheaf x t
         let W : (X.AffineOpenNhds x)ᵒᵈ := OrderDual.toDual (AffineOpenNhds.mk V hV hxV)
@@ -227,11 +230,11 @@ section ExplicitNhds
 variable (X : Scheme.{u}) (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x)
 
 /-- Diagram over `Over W₀` sending `j.left ≤ W₀` to the preimage of `U` in `j.left.opens`. -/
-@[expose, implicit_reducible] def stalkOpensDiagram : Over W₀ ⥤ Scheme.{u} :=
+@[implicit_reducible] def stalkOpensDiagram : Over W₀ ⥤ Scheme.{u} :=
   opensDiagram (X.affineOpenNhdsDiagram x) W₀ (W₀.opens.ι ⁻¹ᵁ U)
 
 /-- Cone over `X.stalkOpensDiagram U x W₀` induced by `X.specStalkCone x`. -/
-@[expose, implicit_reducible] def stalkOpensCone : Cone (X.stalkOpensDiagram U x W₀) :=
+@[implicit_reducible] def stalkOpensCone : Cone (X.stalkOpensDiagram U x W₀) :=
   opensCone (X.affineOpenNhdsDiagram x) (X.specStalkCone x) W₀ (W₀.opens.ι ⁻¹ᵁ U)
 
 /-- `X.stalkOpensCone U x W₀` is a limit cone over `X.stalkOpensDiagram U x W₀`. -/
@@ -339,7 +342,8 @@ theorem stalkOpensStageIso_hom_map_toNhds {W₀ : X.AffineOpenNhds x} {k : Over 
     rw [← cancel_mono k.left.opens.ι]; simp
   simp only [stalkOpensStageIso, stalkOpensTopToNhds, Iso.trans_hom, Iso.symm_hom, Over.mk_left,
     Category.assoc] at hmap ⊢
-  rw [hmap, Iso.inv_hom_id_assoc, reassoc_of% hfac, show fk.left = k.hom by simpa using Over.w fk]
+  have hfk : fk.left = k.hom := by simpa using Over.w fk
+  rw [hmap, Iso.inv_hom_id_assoc, reassoc_of% hfac, hfk]
 
 /-- Compatibility of `stalkOpensStageIso` with the transition map to `U.toScheme`. -/
 theorem stalkOpensStageIso_hom_map_toOpen {W₀ : X.AffineOpenNhds x} {k : Over W₀}

@@ -32,9 +32,9 @@ private theorem spec_obj_eq_mk {R : Type u} [CommRing R] (A : (CommAlgCat.Finite
   by rw [spec_obj_obj]; rfl
 private theorem spec_map_hom_left {R : Type u} [CommRing R]
     {A₁ A₂ : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ} (f : A₁ ⟶ A₂) :
-    ((spec (.of R)).map f).hom.left = eqToHom (by rw [spec_obj_obj]; rfl) ≫
+    ((spec (.of R)).map f).hom.left = eqToHom (congrArg Over.left (spec_obj_eq_mk A₁)) ≫
       Spec.map (CommRingCat.ofHom f.unop.hom.hom.toRingHom) ≫
-      eqToHom (by rw [spec_obj_obj]; rfl) := by
+      eqToHom (congrArg Over.left (spec_obj_eq_mk A₂)).symm := by
   have h := congrArg Over.Hom.left (Functor.congr_hom (spec_comp_ι (.of R)) f)
   simp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.ι_obj, ObjectProperty.ι_map,
     Functor.op_obj, Functor.op_map, Over.comp_left, Over.eqToHom_left, algSpec_map_left,
@@ -43,15 +43,20 @@ private theorem spec_map_hom_left {R : Type u} [CommRing R]
 
 variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
 
-private theorem pullback_spec_obj_left (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
+/-- Underlying scheme of
+`(spec (.of R) ⋙ pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).obj A`. -/
+theorem pullback_spec_obj_left (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     (((spec (.of R) ⋙ pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).obj A).obj).left =
       Limits.pullback (Spec.map (CommRingCat.ofHom (algebraMap R A.unop.obj)))
         (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
   simp only [Functor.comp_obj, pullback_obj_obj, spec_obj_eq_mk, Over.pullback_obj_left,
     Over.mk_hom]
-private theorem spec_baseChange_obj_left (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
+
+/-- Underlying scheme of `((CommAlgCat.FiniteEtale.baseChange.{u} R S).op ⋙ spec (.of S)).obj A`. -/
+theorem spec_baseChange_obj_left (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     (((CommAlgCat.FiniteEtale.baseChange.{u} R S).op ⋙ spec (.of S)).obj A).obj.left =
       Spec (.of (S ⊗[R] A.unop.obj)) := by rw [Functor.comp_obj, Functor.op_obj, spec_obj_obj]; rfl
+
 private noncomputable def specCompPullbackAppIso (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     (spec (.of R) ⋙ pullback (Spec.map (CommRingCat.ofHom (algebraMap R S)))).obj A ≅
       ((CommAlgCat.FiniteEtale.baseChange.{u} R S).op ⋙ spec (.of S)).obj A :=
@@ -127,29 +132,30 @@ noncomputable def specCompPullbackIso :
 @[reassoc, simp]
 theorem specCompPullbackIso_hom_app_hom_left (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     ((specCompPullbackIso R S).hom.app A).hom.left =
-      eqToHom (by rw [Functor.comp_obj, pullback_obj_obj, spec_obj_obj]; rfl) ≫
+      eqToHom (pullback_spec_obj_left R S A) ≫
         (Limits.pullbackSymmetry (Spec.map (CommRingCat.ofHom (algebraMap R A.unop.obj)))
           (Spec.map (CommRingCat.ofHom (algebraMap R S)))).hom ≫
         (AlgebraicGeometry.pullbackSpecIso R S A.unop.obj).hom ≫
-        eqToHom (by rw [Functor.comp_obj, Functor.op_obj, spec_obj_obj]; rfl) :=
+        eqToHom (spec_baseChange_obj_left R S A).symm :=
   specCompPullbackAppIso_hom_left R S A
 
 /-- Inverse component of `specCompPullbackIso` on underlying schemes. -/
 @[reassoc, simp]
 theorem specCompPullbackIso_inv_app_hom_left (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     ((specCompPullbackIso R S).inv.app A).hom.left =
-      eqToHom (by rw [Functor.comp_obj, Functor.op_obj, spec_obj_obj]; rfl) ≫
+      eqToHom (spec_baseChange_obj_left R S A) ≫
         (AlgebraicGeometry.pullbackSpecIso R S A.unop.obj).inv ≫
         (Limits.pullbackSymmetry (Spec.map (CommRingCat.ofHom (algebraMap R A.unop.obj)))
           (Spec.map (CommRingCat.ofHom (algebraMap R S)))).inv ≫
-        eqToHom (by rw [Functor.comp_obj, pullback_obj_obj, spec_obj_obj]; rfl) := by
-  rw [← cancel_epi ((specCompPullbackIso R S).hom.app A).hom.left,
-    show ((specCompPullbackIso R S).hom.app A).hom.left ≫
-        ((specCompPullbackIso R S).inv.app A).hom.left = 𝟙 _ by
-      simpa only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.id_hom,
-        Over.comp_left, Over.id_left] using
-        congrArg (·.hom.left) ((specCompPullbackIso R S).hom_inv_id_app A),
-    specCompPullbackIso_hom_app_hom_left_assoc]; simp
+        eqToHom (pullback_spec_obj_left R S A).symm := by
+  have hhomInv : ((specCompPullbackIso R S).hom.app A).hom.left ≫
+      ((specCompPullbackIso R S).inv.app A).hom.left = 𝟙 _ := by
+    simpa only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.id_hom,
+      Over.comp_left, Over.id_left] using
+      congrArg (·.hom.left) ((specCompPullbackIso R S).hom_inv_id_app A)
+  rw [← cancel_epi ((specCompPullbackIso R S).hom.app A).hom.left, hhomInv,
+    specCompPullbackIso_hom_app_hom_left_assoc]
+  simp
 
 /-- If scalar extension of finite étale algebras is essentially surjective, then so is
 pullback of finite étale schemes along the corresponding affine morphism. -/
