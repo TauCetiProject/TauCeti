@@ -340,7 +340,7 @@ theorem iteratedFDeriv_bilinear_eq_leibnizJet {n : WithTop ℕ∞} {f : E → F}
     have hm' : (m : WithTop ℕ∞) < n :=
       lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self m) hm
     have hi : ∀ i : Fin (m + 1), ((i : ℕ) : WithTop ℕ∞) < n := fun i ↦
-      lt_of_le_of_lt (by exact_mod_cast Nat.lt_succ_iff.1 i.2) hm'
+      lt_of_le_of_lt (by exact_mod_cast Nat.lt_succ_iff.1 i.isLt) hm'
     have hD := hasFDerivAt_leibnizJet B (n := m) (x := x)
       (f := fun y (i : Fin (m + 2)) ↦ iteratedFDeriv 𝕜 i f y)
       (g := fun y (i : Fin (m + 2)) ↦ iteratedFDeriv 𝕜 i g y)
