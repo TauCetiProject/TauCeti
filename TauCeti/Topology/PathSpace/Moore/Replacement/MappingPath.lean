@@ -68,11 +68,20 @@ universe u v
 
 namespace TauCeti
 
+variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B]
+
+/-- The Moore path of the path of a point `(e, γ)` of the mapping-path fibre is
+`MoorePath.ofUnitPath γ`. -/
+@[simp]
+theorem MappingPathFiber.toMoorePath_toPath (p : C(E, B)) (b : B) (y : MappingPathFiber p b) :
+    (MappingPathFiber.toPath p b y).toMoorePath = MoorePath.ofUnitPath y.val.2 := by
+  rw [Path.toMoorePath_def, MappingPathFiber.toContinuousMap_toPath]
+
 namespace MooreReplacement
 
 namespace Fiber
 
-variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B] {p : C(E, B)} {b : B}
+variable {p : C(E, B)} {b : B}
 
 /-! ### The comparison maps -/
 
@@ -217,12 +226,10 @@ private theorem toMappingPathFiber_unitHomotopyAct_zero (q : Fiber p b × MooreL
       MappingPathFiber.transLoop p b (toMappingPathFiber q.1) q.2.toPath := by
   have hx : MoorePath.unitHomotopy (0, q.1.val.path) =
       (MappingPathFiber.toPath p b (toMappingPathFiber q.1)).toMoorePath := by
-    rw [MoorePath.unitHomotopy_apply_zero, Path.toMoorePath_def,
-      MappingPathFiber.toContinuousMap_toPath, toMappingPathFiber_val]
+    rw [MoorePath.unitHomotopy_apply_zero, MappingPathFiber.toMoorePath_toPath,
+      toMappingPathFiber_val]
   have hω : MoorePath.unitHomotopy (0, q.2.toMoorePath) = q.2.toPath.toMoorePath := by
-    rw [MoorePath.unitHomotopy_apply_zero, ← MoorePath.toLengthOne_apply,
-      ← MooreLoopSpace.toMoorePath_toLengthOne, MooreLoopSpace.toLengthOne_apply,
-      Path.toMoorePath_toMooreLoop]
+    rw [MoorePath.unitHomotopy_apply_zero, MooreLoopSpace.toMoorePath_toPath_eq_ofUnitPath]
   refine Subtype.ext (Prod.ext (by
     rw [toMappingPathFiber_val, MappingPathFiber.transLoop_val_fst, toMappingPathFiber_val,
       point_unitHomotopyAct]) ?_)
@@ -338,11 +345,11 @@ def transLoopHomotopy (p : C(E, B)) (b : B) :
     (by
       have hy : (ofMappingPathFiber q.1).val.path =
           (MappingPathFiber.toPath p b q.1).toMoorePath := by
-        rw [path_ofMappingPathFiber, Path.toMoorePath_def, MappingPathFiber.toContinuousMap_toPath]
+        rw [path_ofMappingPathFiber, MappingPathFiber.toMoorePath_toPath]
       rw [path_transLoopRescale, toNNReal_one, one_add_one_eq_two, actOfMappingPathFiber_apply]
       simp only [path_act, hy, Path.toMoorePath_toMooreLoop]
-      rw [Path.transMoorePath_eq_rescale, MappingPathFiber.transLoop_val_snd,
-        Path.toMoorePath_def]))
+      rw [Path.transMoorePath_eq_rescale, ← MappingPathFiber.toMoorePath_toPath,
+        MappingPathFiber.toPath_transLoop, Path.toMoorePath_cast]))
 
 @[simp]
 theorem point_transLoopHomotopy (s : I) (q : MappingPathFiber p b × Path b b) :

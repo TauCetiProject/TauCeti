@@ -231,6 +231,14 @@ theorem transLoop_val_fst (p : MappingPathFiber f k) (ℓ : Path k k) :
 theorem transLoop_val_snd (p : MappingPathFiber f k) (ℓ : Path k k) :
     (transLoop f k p ℓ).val.2 = ((toPath f k p).trans ℓ).toContinuousMap := (rfl)
 
+/-- The path of `transLoop f k p ℓ` is the concatenation of the path of `p` with `ℓ`, cast along
+the equality of start points `transLoop_val_fst`. -/
+@[simp]
+theorem toPath_transLoop (p : MappingPathFiber f k) (ℓ : Path k k) :
+    toPath f k (transLoop f k p ℓ) =
+      ((toPath f k p).trans ℓ).cast (congrArg f (transLoop_val_fst f k p ℓ)) rfl :=
+  (rfl)
+
 /-- Concatenation with loops is continuous in both variables. -/
 theorem continuous_transLoop :
     Continuous fun q : MappingPathFiber f k × Path k k ↦ transLoop f k q.1 q.2 := by
