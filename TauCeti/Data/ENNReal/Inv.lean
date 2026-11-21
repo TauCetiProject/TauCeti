@@ -50,6 +50,8 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
+* `ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one`: truncates `a < p ≤ ∞` above a
+  finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
 -/
 
 public section
@@ -254,5 +256,29 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
+
+/-- Given `a < p` (with `a : ℝ≥0`), a finite `r ≤ p`, and `p⁻¹ + q⁻¹ < 1` in `ℝ≥0∞` (allowing
+`p = ∞` and `q = ∞`), there exists a finite exponent `p₀ : ℝ≥0` with `a < p₀`, `r ≤ p₀`,
+`(p₀ : ℝ≥0∞) ≤ p`, and `(p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1`. -/
+theorem exists_nnreal_lt_and_le_and_inv_add_inv_lt_one {a : ℝ≥0} {p q r : ℝ≥0∞}
+    (hp : (a : ℝ≥0∞) < p) (hr_top : r ≠ ∞) (hrp : r ≤ p) (hpq : p⁻¹ + q⁻¹ < 1) :
+    ∃ p₀ : ℝ≥0, a < p₀ ∧ r ≤ p₀ ∧ (p₀ : ℝ≥0∞) ≤ p ∧ (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 := by
+  rcases ne_or_eq p ∞ with hp_top | rfl
+  · refine ⟨p.toNNReal, ?_, ?_, (coe_toNNReal hp_top).le, ?_⟩
+    · exact_mod_cast hp.trans_eq (coe_toNNReal hp_top).symm
+    · rwa [coe_toNNReal hp_top]
+    · rwa [coe_toNNReal hp_top]
+  · have hq_lt : q⁻¹ < 1 := by simpa using hpq
+    obtain ⟨n, hn⟩ := exists_inv_nat_lt (tsub_pos_of_lt hq_lt).ne'
+    let p₀ : ℝ≥0 := max (a + 1) (max r.toNNReal n)
+    refine ⟨p₀, (lt_add_one a).trans_le (le_max_left _ _), ?_, le_top, ?_⟩
+    · exact (coe_toNNReal hr_top).symm.trans_le
+        (ENNReal.coe_le_coe.2 ((le_max_left _ _).trans (le_max_right _ _)))
+    · have hnp : (n : ℝ≥0∞) ≤ p₀ := by
+        exact_mod_cast (le_max_right r.toNNReal n).trans (le_max_right (a + 1) _)
+      have hp₀_lt : (p₀ : ℝ≥0∞)⁻¹ < 1 - q⁻¹ := (ENNReal.inv_le_inv.2 hnp).trans_lt hn
+      calc (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 - q⁻¹ + q⁻¹ :=
+            ENNReal.add_lt_add_right (lt_of_lt_of_le hq_lt le_rfl).ne_top hp₀_lt
+        _ = 1 := tsub_add_cancel_of_le hq_lt.le
 
 end ENNReal

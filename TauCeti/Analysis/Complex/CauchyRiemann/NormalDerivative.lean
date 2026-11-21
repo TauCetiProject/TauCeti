@@ -38,8 +38,8 @@ formulation is expected to produce.
 * `TauCeti.memWkpLoc_succ_of_ae_cauchyRiemann`: the induction step of boundary regularity for
   coefficients `J`, `S` of class `C^k` near `U`. If `ξ` and `η` lie in `W^{k,q}_loc(U)` and so does
   the tangential derivative `∂ₛξ`, then `ξ` lies in `W^{k+1,q}_loc(U)`.
-  `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ` is the same step for weak solutions of the
-  homogeneous linear equation.
+  `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ_of_hasWeakFDerivOn` is the same step for weak
+  solutions of the homogeneous linear equation.
 * `TauCeti.ae_cauchyRiemann_standard_iff`: for `J = i` and `S = η = 0` the formula is
   `∂ₜξ = i ∂ₛξ`. Examples at the end check it on `ξ = z` and show that the sign
   `∂ₜξ = -J(∂ₛξ + Sξ - η)` fails there.
@@ -131,7 +131,8 @@ theorem memWkpLoc_succ_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {Ω : Opens
 `∂ₛξ + J ∂ₜξ + S ξ = 0` on `U`, with `J`, `S` of class `C^n` near `U`, `k ≤ n` and `J ∘ J = -1`
 on the interior of `U`, lies in `W^{k+1,q}_loc(U)` as soon as `ξ` and its tangential derivative
 `∂ₛξ` lie in `W^{k,q}_loc(U)`. -/
-theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_succ [FiniteDimensional ℝ V] {Ω : Opens ℂ}
+theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_succ_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
+    {Ω : Opens ℂ}
     {n : WithTop ℕ∞} {J S : ℂ → V →L[ℝ] V} {ξ : ℂ → V} {D : ℂ → ℂ →L[ℝ] V}
     (h : IsWeakLinearCauchyRiemannOn q U J S ξ) (hJ : ContDiffOn ℝ n J Ω)
     (hS : ContDiffOn ℝ n S Ω) (hk : (k : WithTop ℕ∞) ≤ n) (hU : U ⊆ Ω)

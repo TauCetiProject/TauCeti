@@ -46,9 +46,9 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
   `‖z‖⁻¹` and `2 ‖z‖⁻¹`, and `‖z‖ ^ (-p)` is integrable near the origin of the plane exactly when
   `p < 2`. For `p < 2` the weak second derivative across the origin is that of the unit radial
   field `z / ‖z‖` (`TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`).
-* The indicator of the half-plane `{z | 0 < z.re}` has no weak derivative on any open set
-  meeting the imaginary axis, so it is in every local `Lᵖ` class but in no local `W^{k,p}` class
-  of positive order there.
+* The indicator of the right half-plane `{z | 0 < z.re}` or a horizontal upper half-plane
+  `{z | t₀ < z.im}` has no weak derivative on any open set meeting its boundary line, so it is in
+  every local `Lᵖ` class but in no local `W^{k,p}` class of positive order there.
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.
@@ -325,6 +325,26 @@ theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ 
     ¬ MemWkpLoc p U (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := fun h => by
   obtain ⟨-, D, hD, -⟩ := memWkpLoc_succ_iff.1 h
   exact not_hasWeakFDerivOn_indicator_re_pos (Ω := Opens.interior U) hz₀ hre D hD
+
+/-- The indicator of the upper half-plane `{z : ℂ | t₀ < z.im}` is in no local Sobolev class of
+positive order on a set whose interior meets the horizontal line `{z : ℂ | z.im = t₀}`. -/
+theorem not_memWkpLoc_indicator_lt_im {k : ℕ} {t₀ : ℝ} {z₀ : ℂ} (hz₀ : z₀ ∈ interior U)
+    (him : z₀.im = t₀) :
+    ¬ MemWkpLoc p U (k + 1) ({z : ℂ | t₀ < z.im}.indicator fun _ => (1 : ℝ)) := by
+  intro hW
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 isOpen_interior z₀ hz₀
+  let A : ℂ ≃L[ℝ] ℂ :=
+    ((LinearEquiv.smulOfNeZero ℂ ℂ Complex.I Complex.I_ne_zero).restrictScalars
+      ℝ).toContinuousLinearEquiv
+  have hmaps : MapsTo (fun z => A z + z₀) (ball 0 ε) U := fun z hz =>
+    interior_subset <| hball <| by
+      rw [mem_ball, dist_eq_norm, add_sub_cancel_right]
+      simpa [A] using hz
+  have h' : MemWkpLoc p (ball 0 ε) (k + 1) ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
+    convert hW.comp_continuousLinearEquiv_add A z₀ hmaps using 2 with z
+    by_cases hz : 0 < z.re <;> simp [A, him, hz]
+  exact not_memWkpLoc_indicator_re_pos
+    (isOpen_ball (x := (0 : ℂ)).interior_eq.symm ▸ mem_ball_self hε) Complex.zero_re h'
 
 /-! ### A square-root profile on the half-disc -/
 

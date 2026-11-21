@@ -57,7 +57,9 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 * `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
   and only if `Set.range f` and `Set.range g` are bounded.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
-* `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
+* `ContinuousLinearMap.withLpProdMap`, `ContinuousLinearMap.withLpProdMapL`,
+  `ContinuousLinearMap.withLpDiagL` — the block sum `f ⊕ g` on `WithLp p (α × β)` and its
+  continuous-linear bundlings `(f, g) ↦ f ⊕ g` and `f ↦ f ⊕ f`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.finrank_range_withLpProdMap`,
@@ -450,6 +452,34 @@ theorem nnnorm_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
 theorem withLpProdMap_smul (c : 𝕜) (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     (c • f).withLpProdMap p (c • g) = c • f.withLpProdMap p g :=
   (rfl)
+
+variable (p 𝕜 α β α' β') in
+/-- Bundling `ContinuousLinearMap.withLpProdMap` as a continuous linear map on operator pairs. -/
+noncomputable def withLpProdMapL :
+    ((α →L[𝕜] α') × (β →L[𝕜] β')) →L[𝕜] (WithLp p (α × β) →L[𝕜] WithLp p (α' × β')) :=
+  LinearMap.mkContinuous
+    { toFun := fun fg => fg.1.withLpProdMap p fg.2
+      map_add' := fun fg fg' => withLpProdMap_add fg.1 fg'.1 fg.2 fg'.2
+      map_smul' := fun c fg => withLpProdMap_smul c fg.1 fg.2 }
+    1 fun fg => by simp [Prod.norm_def]
+
+/-- Evaluating `ContinuousLinearMap.withLpProdMapL` on a pair of operators produces their `L^p`
+block sum. -/
+@[simp]
+theorem withLpProdMapL_apply (fg : (α →L[𝕜] α') × (β →L[𝕜] β')) :
+    withLpProdMapL p 𝕜 α β α' β' fg = fg.1.withLpProdMap p fg.2 := (rfl)
+
+variable (p 𝕜 α α') in
+/-- The diagonal block-sum continuous linear map `f ↦ f ⊕ f` on `WithLp p (α × α)`. -/
+noncomputable def withLpDiagL :
+    (α →L[𝕜] α') →L[𝕜] (WithLp p (α × α) →L[𝕜] WithLp p (α' × α')) :=
+  (withLpProdMapL p 𝕜 α α α' α').comp
+    ((ContinuousLinearMap.id 𝕜 (α →L[𝕜] α')).prod (ContinuousLinearMap.id 𝕜 (α →L[𝕜] α')))
+
+/-- Evaluating `ContinuousLinearMap.withLpDiagL` on `f` produces `f.withLpProdMap p f`. -/
+@[simp]
+theorem withLpDiagL_apply (f : α →L[𝕜] α') :
+    withLpDiagL p 𝕜 α α' f = f.withLpProdMap p f := (rfl)
 
 /-- The block sum depends continuously on its blocks. -/
 @[fun_prop]
