@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Matrix.Polar.Realify
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 public import TauCeti.Topology.Algebra.Matrix.Realify
 
@@ -15,17 +16,20 @@ Realification `Matrix.GeneralLinearGroup.realify n 𝕜 : GL n 𝕜 →* GL (n �
 topological groups onto its image `C = (realify n 𝕜).range`
 (`Matrix.GeneralLinearGroup.realifyEquivRange`). For `𝕜 = ℂ` this image is the group `C_ℝ` of
 invertible real `2n × 2n` matrices commuting with `J`
-(`Matrix.GeneralLinearGroup.mem_range_realify_iff`), the realification of `GL(n, ℂ)`, and the
-realified unitary group is its orthogonal part `C_ℝ ∩ O(2n)`
+(`Matrix.GeneralLinearGroup.mem_range_realify_iff`), the realification of `GL(n, ℂ)`. For every
+`𝕜` the realified unitary group is the orthogonal part `C ∩ O(2n)`
 (`Matrix.GeneralLinearGroup.unitarySubgroup_inf_range_realify`).
 
 This file shows that the realified unitary group `realify (U(n))` is a maximal compact subgroup of
 `C`, and that every compact subgroup of `C` is conjugate into it by an element of `C`. So the
-maximal compact subgroups of `C` are exactly the `C`-conjugates of `realify (U(n))`. These are the
-statements for `GL n 𝕜` (`Matrix.GeneralLinearGroup.eq_unitarySubgroup_of_isCompact_of_le`,
-`Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup`), transported along the closed
-embedding `realify n 𝕜`: a compact subgroup of `GL (n ⊕ n) ℝ` contained in `C` has compact preimage
-in `GL n 𝕜`, and is the image of that preimage.
+maximal compact subgroups of `C` are exactly the `C`-conjugates of `realify (U(n))`. Maximality is
+the theorem for closed subgroups of `GL (n ⊕ n) ℝ` stable under the polar decomposition
+(`Matrix.GeneralLinearGroup.maximal_isCompact_unitarySubgroup_subgroupOf`), applied to `C`, which
+contains the orthogonal polar factors of its elements
+(`Matrix.GeneralLinearGroup.toUnits_polarUnitary_mem_range_realify`). Conjugacy is the statement
+for `GL n 𝕜` (`Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup`), transported along
+the closed embedding `realify n 𝕜`: a compact subgroup of `GL (n ⊕ n) ℝ` contained in `C` has
+compact preimage in `GL n 𝕜`, and is the image of that preimage.
 
 ## Main results
 
@@ -72,11 +76,9 @@ theorem eq_map_realify_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL (n �
     (hK : IsCompact (K : Set (GL (n ⊕ n) ℝ))) (hKR : K ≤ (realify n 𝕜).range)
     (hUK : (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) ≤ K) :
     K = (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) := by
-  -- The preimage of `K` in `GL n 𝕜` is compact and contains the unitary group.
-  have h : K.comap (realify n 𝕜) = unitarySubgroup (GL n 𝕜) :=
-    eq_unitarySubgroup_of_isCompact_of_le ((isClosedEmbedding_realify n 𝕜).isCompact_preimage hK)
-      (Subgroup.map_le_iff_le_comap.1 hUK)
-  rw [← h, Subgroup.map_comap_eq_self hKR]
+  rw [← unitarySubgroup_inf_range_realify, inf_comm] at hUK ⊢
+  exact eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem
+    (fun _ ↦ toUnits_polarUnitary_mem_range_realify) hK hKR hUK
 
 /-- **The realified unitary group is a maximal compact subgroup of the realified group**, viewed in
 the subgroup lattice of `(realify n 𝕜).range` with the inherited topology. For `𝕜 = ℂ` this says
@@ -84,23 +86,9 @@ that `U(n)` is a maximal compact subgroup of the realified `GL(n, ℂ)` in `GL(2
 theorem maximal_isCompact_map_realify_unitarySubgroup_subgroupOf :
     Maximal (fun K : Subgroup (realify n 𝕜).range ↦ IsCompact (K : Set (realify n 𝕜).range))
       (((unitarySubgroup (GL n 𝕜)).map (realify n 𝕜)).subgroupOf (realify n 𝕜).range) := by
-  have hUR : (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) ≤ (realify n 𝕜).range :=
-    Subgroup.map_le_range _ _
-  have hmapU : (((unitarySubgroup (GL n 𝕜)).map (realify n 𝕜)).subgroupOf
-      (realify n 𝕜).range).map (realify n 𝕜).range.subtype =
-        (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) := by
-    rw [Subgroup.subgroupOf_map_subtype, inf_eq_left.2 hUR]
-  refine ⟨?_, fun K hK hUK ↦ ?_⟩
-  · have h := isCompact_map_realify_unitarySubgroup (n := n) (𝕜 := 𝕜)
-    rw [← hmapU, Subgroup.coe_map] at h
-    exact Subtype.isCompact_iff.mpr h
-  have hmap : K.map (realify n 𝕜).range.subtype = (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) :=
-    eq_map_realify_unitarySubgroup_of_isCompact_of_le (hK.image continuous_subtype_val)
-      (Subgroup.map_subtype_le K) (hmapU ▸ Subgroup.map_mono hUK)
-  intro M hM
-  have hMmem : (M : GL (n ⊕ n) ℝ) ∈ K.map (realify n 𝕜).range.subtype := ⟨M, hM, rfl⟩
-  rw [hmap] at hMmem
-  exact Subgroup.mem_subgroupOf.2 hMmem
+  rw [← unitarySubgroup_inf_range_realify, Subgroup.inf_subgroupOf_right]
+  exact maximal_isCompact_unitarySubgroup_subgroupOf
+    (fun _ ↦ toUnits_polarUnitary_mem_range_realify) (isClosedEmbedding_realify n 𝕜).isClosed_range
 
 /-- **Every compact subgroup of the realified group is conjugate into the realified unitary
 group** by a realified matrix. This is Weyl's unitarian trick for `GL n 𝕜`

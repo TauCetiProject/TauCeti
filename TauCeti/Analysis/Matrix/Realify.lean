@@ -87,9 +87,7 @@ theorem posDef_realify_iff [Finite n] {A : Matrix n n 𝕜} :
     exact hR.dotProduct_mulVec_pos hy
   · intro hA
     have hR : A.realify.PosSemidef := posSemidef_realify_iff.mpr hA.posSemidef
-    exact hR.posDef_iff_isUnit.mpr
-      ((isUnit_iff_isUnit_det A.realify).mpr
-        (isUnit_det_realify_iff.mpr ((isUnit_iff_isUnit_det A).mp hA.isUnit)))
+    exact hR.posDef_iff_isUnit.mpr (isUnit_realify_iff.mpr hA.isUnit)
 
 /-- The sum of squared entries of `A.realify` is twice the sum of squared norms of `A`. -/
 theorem sum_sq_realify {m : Type*} [Fintype m] [Fintype n] (A : Matrix m n 𝕜) :
@@ -195,6 +193,7 @@ theorem spectrum_realify (A : Matrix ι ι 𝕜) : spectrum ℝ A.realify = spec
 /-- **Realification commutes with the continuous functional calculus**: for every real function
 `f`, `f(A)` realifies to `f(A_ℝ)`. This holds without hypotheses: if `A` is not self-adjoint, or
 `f` is not continuous on its spectrum, both sides are zero. -/
+@[simp]
 theorem realify_cfc (f : ℝ → ℝ) (A : Matrix ι ι 𝕜) : (cfc f A).realify = cfc f A.realify := by
   by_cases hA : IsSelfAdjoint A
   · by_cases hf : ContinuousOn f (spectrum ℝ A)
