@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
-import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.LinearAlgebra.ExteriorPower.Square
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Symmetric exterior product of linear maps on the second exterior power
@@ -38,8 +38,8 @@ via `id ∧ id = id` and the traceless-Ricci operator via `Ric₀ ∧ id`.
   `exteriorPower.symmMap₂_self`, `exteriorPower.symmMap₂_id_right`,
   `exteriorPower.symmMap₂_id_left`, `exteriorPower.symmMap₂_comp_symmMap₂`,
   `exteriorPower.map_comp_symmMap₂`, `exteriorPower.symmMap₂_comp_map`,
-  `LinearEquiv.exteriorPower_conj_symmMap₂`, `exteriorPower.trace_symmMap₂`, and
-  `exteriorPower.trace_symmMap₂_id_right`.
+  `LinearEquiv.exteriorPower_arrowCongr_symmMap₂`, `LinearEquiv.exteriorPower_conj_symmMap₂`,
+  `exteriorPower.trace_symmMap₂`, and `exteriorPower.trace_symmMap₂_id_right`.
 
 ## References
 
@@ -131,6 +131,45 @@ theorem symmMap₂_comp_map (f g : N →ₗ[R] P) (h : M →ₗ[R] N) :
 
 section Trace
 
+private theorem sum_powersetCard_two_of_symm_of_diag_eq_zero
+    {I G : Type*} [Fintype I] [LinearOrder I] [AddCommMonoid G]
+    (F : I → I → G) (hsymm : ∀ i j, F i j = F j i) (hdiag : ∀ i, F i i = 0) :
+    (∑ i, ∑ j, F i j) = 2 • ∑ s : Set.powersetCard I 2,
+      F (Set.powersetCard.ofFinEmbEquiv.symm s 0) (Set.powersetCard.ofFinEmbEquiv.symm s 1) := by
+  rw [TauCeti.sum_symmetric_pairs F hsymm]
+  simp only [hdiag, Finset.sum_const_zero, zero_add]
+  congr 1
+  exact (Fintype.sum_equiv (Set.powersetCard.ofLtPair (I := I)).symm _ _ fun s ↦ by
+    simp [Set.powersetCard.ofLtPair_symm_apply]).symm
+
+private theorem toMatrix_symmMap₂_diag {I : Type*} [LinearOrder I] [Fintype I] [DecidableEq I]
+    (b : Module.Basis I R M) (f g : Module.End R M) (s : Set.powersetCard I 2) :
+    LinearMap.toMatrix (b.exteriorPower 2) (b.exteriorPower 2) (symmMap₂ f g) s s =
+      ⅟(2 : R) *
+        (LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s 0)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 0) *
+          LinearMap.toMatrix b b g (Set.powersetCard.ofFinEmbEquiv.symm s 1)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 1) -
+        LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s 1)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 0) *
+          LinearMap.toMatrix b b g (Set.powersetCard.ofFinEmbEquiv.symm s 0)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 1) +
+        LinearMap.toMatrix b b g (Set.powersetCard.ofFinEmbEquiv.symm s 0)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 0) *
+          LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s 1)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 1) -
+        LinearMap.toMatrix b b g (Set.powersetCard.ofFinEmbEquiv.symm s 1)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 0) *
+          LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s 0)
+            (Set.powersetCard.ofFinEmbEquiv.symm s 1)) := by
+  rw [LinearMap.toMatrix_apply, basis_apply, ιMulti_family, symmMap₂_apply_ιMulti_tuple,
+    map_smul, map_add, Finsupp.smul_apply, Finsupp.add_apply, basis_repr_apply,
+    basis_repr_apply, ιMultiDual_apply_ιMulti, ιMultiDual_apply_ιMulti,
+    Matrix.det_fin_two, Matrix.det_fin_two, smul_eq_mul]
+  simp only [LinearMap.toMatrix_apply, Module.Basis.coord_apply, Matrix.of_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Function.comp_apply]
+  ring
+
 variable [Module.Free R M] [Module.Finite R M]
 
 /-- The trace of `symmMap₂ f g` on `⋀[R]^2 M` is `⅟2 * (tr f * tr g - tr(f ∘ₗ g))`.
@@ -145,15 +184,25 @@ theorem trace_symmMap₂ (f g : Module.End R M) :
   let I := Module.Free.ChooseBasisIndex R M
   let _ : LinearOrder I := linearOrderOfSTO WellOrderingRel
   let b := Module.Free.chooseBasis R M
-  let B := b.exteriorPower 2
-  let φ (s : Set.powersetCard I 2) : Fin 2 ↪o I := Set.powersetCard.ofFinEmbEquiv.symm s
   let A := LinearMap.toMatrix b b f
   let C := LinearMap.toMatrix b b g
   let F (i j : I) : R := A i i * C j j - A j i * C i j + C i i * A j j - C j i * A i j
-  have hdiag (h : Module.End R M) :
-      ∑ i : I, LinearMap.toMatrix b b h i i = LinearMap.trace R M h := by
-    rw [LinearMap.trace_eq_matrix_trace R b h, Matrix.trace]
+  have htr : LinearMap.trace R (⋀[R]^2 M) (symmMap₂ f g) =
+      ⅟(2 : R) * ∑ s : Set.powersetCard I 2,
+        F (Set.powersetCard.ofFinEmbEquiv.symm s 0)
+          (Set.powersetCard.ofFinEmbEquiv.symm s 1) := by
+    rw [LinearMap.trace_eq_matrix_trace R (b.exteriorPower 2) (symmMap₂ f g), Matrix.trace]
+    simp_rw [Matrix.diag, toMatrix_symmMap₂_diag b f g, ← Finset.mul_sum]
     rfl
+  have hsum : ∑ i : I, ∑ j : I, F i j =
+      2 • ∑ s : Set.powersetCard I 2,
+        F (Set.powersetCard.ofFinEmbEquiv.symm s 0)
+          (Set.powersetCard.ofFinEmbEquiv.symm s 1) :=
+    sum_powersetCard_two_of_symm_of_diag_eq_zero F (fun _ _ ↦ by simp only [F]; ring)
+      (fun _ ↦ by simp only [F]; ring)
+  have hdiag (h : Module.End R M) :
+      ∑ i : I, LinearMap.toMatrix b b h i i = LinearMap.trace R M h :=
+    (LinearMap.trace_eq_matrix_trace R b h).symm
   have hoff (f₁ f₂ : Module.End R M) :
       ∑ i : I, ∑ j : I, LinearMap.toMatrix b b f₁ j i * LinearMap.toMatrix b b f₂ i j =
         LinearMap.trace R M (f₁ ∘ₗ f₂) := by
@@ -161,75 +210,14 @@ theorem trace_symmMap₂ (f g : Module.End R M) :
       Matrix.trace]
     simp_rw [Matrix.diag, Matrix.mul_apply]
     exact Finset.sum_comm
-  have hterm (s : Set.powersetCard I 2) :
-      LinearMap.toMatrix B B (symmMap₂ f g) s s = ⅟(2 : R) * F (φ s 0) (φ s 1) := by
-    rw [LinearMap.toMatrix_apply, basis_apply, ιMulti_family, symmMap₂_apply_ιMulti_tuple,
-      map_smul, map_add, Finsupp.smul_apply, Finsupp.add_apply, basis_repr_apply,
-      basis_repr_apply, ιMultiDual_apply_ιMulti, ιMultiDual_apply_ιMulti,
-      Matrix.det_fin_two, Matrix.det_fin_two, smul_eq_mul]
-    simp only [F, A, C, LinearMap.toMatrix_apply, Module.Basis.coord_apply, Matrix.of_apply,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Function.comp_apply, φ]
-    ring
-  have htr : LinearMap.trace R (⋀[R]^2 M) (symmMap₂ f g) =
-      ⅟(2 : R) * ∑ s : Set.powersetCard I 2, F (φ s 0) (φ s 1) := by
-    rw [LinearMap.trace_eq_matrix_trace R B (symmMap₂ f g), Matrix.trace]
-    simp_rw [Matrix.diag, hterm, ← Finset.mul_sum]
-    rfl
-  let e : Set.powersetCard I 2 ≃ {p : I × I // p.1 < p.2} :=
-    (Set.powersetCard.ofFinEmbEquiv (n := 2) (I := I)).symm.trans
-      { toFun := fun f ↦ ⟨(f 0, f 1), f.strictMono (by decide)⟩
-        invFun := fun p ↦ OrderEmbedding.ofStrictMono ![p.val.1, p.val.2] fun i j hij ↦ by
-          fin_cases i <;> fin_cases j <;> first | exact absurd hij (by decide) | exact p.property
-        left_inv := fun f ↦ RelEmbedding.ext fun i ↦ by fin_cases i <;> rfl
-        right_inv := fun _ ↦ Subtype.ext rfl }
-  have hlt : ∑ p ∈ Finset.univ.filter (fun p : I × I ↦ p.1 < p.2), F p.1 p.2 =
-      ∑ s : Set.powersetCard I 2, F (φ s 0) (φ s 1) := by
-    refine Finset.sum_bij'
-      (fun p hp ↦ e.symm ⟨p, (Finset.mem_filter.mp hp).2⟩)
-      (fun s _ ↦ (e s).val)
-      (fun _ _ ↦ Finset.mem_univ _)
-      (fun s _ ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ _, (e s).property⟩)
-      (fun _ _ ↦ by simp)
-      (fun s _ ↦ by simp)
-      (fun p hp ↦ ?_)
-    dsimp [φ, e]
-    rw [Equiv.symm_apply_apply]
-    rfl
-  have hgt : ∑ p ∈ Finset.univ.filter (fun p : I × I ↦ p.2 < p.1), F p.1 p.2 =
-      ∑ p ∈ Finset.univ.filter (fun p : I × I ↦ p.1 < p.2), F p.1 p.2 := by
-    refine Finset.sum_bij' (fun p _ ↦ (p.2, p.1)) (fun p _ ↦ (p.2, p.1))
-      (fun _ hp ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ _, (Finset.mem_filter.mp hp).2⟩)
-      (fun _ hp ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ _, (Finset.mem_filter.mp hp).2⟩)
-      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) fun p _ ↦ by simp only [F]; ring
-  have hsum_eq : ∑ i : I, ∑ j : I, F i j =
-      2 * ∑ s : Set.powersetCard I 2, F (φ s 0) (φ s 1) := by
-    rw [← Fintype.sum_prod_type']
-    have hsplit₁ := (Finset.sum_filter_add_sum_filter_not Finset.univ
-      (fun p : I × I ↦ p.1 < p.2) (fun p ↦ F p.1 p.2)).symm
-    have hsplit₂ := (Finset.sum_filter_add_sum_filter_not
-      (Finset.univ.filter (fun p : I × I ↦ ¬ p.1 < p.2))
-      (fun p : I × I ↦ p.2 < p.1) (fun p ↦ F p.1 p.2)).symm
-    have hfilt1 : (Finset.univ.filter (fun p : I × I ↦ ¬ p.1 < p.2)).filter
-        (fun p : I × I ↦ p.2 < p.1) = Finset.univ.filter (fun p : I × I ↦ p.2 < p.1) := by
-      ext p; simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt, and_iff_right_iff_imp]
-      exact fun h ↦ h.le
-    have hfilt2 : ∑ p ∈ (Finset.univ.filter (fun p : I × I ↦ ¬ p.1 < p.2)).filter
-        (fun p : I × I ↦ ¬ p.2 < p.1), F p.1 p.2 = 0 := by
-      refine Finset.sum_eq_zero fun p hp ↦ ?_
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt] at hp
-      have heq : p.1 = p.2 := le_antisymm hp.2 hp.1
-      simp [F, heq]
-    rw [hsplit₁, hsplit₂, hfilt1, hfilt2, add_zero, hgt, hlt, two_mul]
   have hF : ∑ i : I, ∑ j : I, F i j =
       2 * (LinearMap.trace R M f * LinearMap.trace R M g - LinearMap.trace R M (f ∘ₗ g)) := by
     have h1 : ∑ i : I, ∑ j : I, A i i * C j j =
         LinearMap.trace R M f * LinearMap.trace R M g := by
-      dsimp only [A, C]
-      simp_rw [← Finset.mul_sum, ← Finset.sum_mul, hdiag]
+      dsimp only [A, C]; simp_rw [← Finset.mul_sum, ← Finset.sum_mul, hdiag]
     have h2 : ∑ i : I, ∑ j : I, C i i * A j j =
         LinearMap.trace R M g * LinearMap.trace R M f := by
-      dsimp only [A, C]
-      simp_rw [← Finset.mul_sum, ← Finset.sum_mul, hdiag]
+      dsimp only [A, C]; simp_rw [← Finset.mul_sum, ← Finset.sum_mul, hdiag]
     have h3 : ∑ i : I, ∑ j : I, C j i * A i j = LinearMap.trace R M (f ∘ₗ g) :=
       (hoff g f).trans (LinearMap.trace_comp_comm' g f).symm
     dsimp only [F, A, C]
@@ -237,12 +225,10 @@ theorem trace_symmMap₂ (f g : Module.End R M) :
     dsimp only [A, C] at h1 h2 h3
     rw [h1, h2, hoff f g, h3]
     ring
-  rw [htr]
-  have h2 : ∑ s : Set.powersetCard I 2, F (φ s 0) (φ s 1) =
-      LinearMap.trace R M f * LinearMap.trace R M g - LinearMap.trace R M (f ∘ₗ g) := by
-    have h2' := congrArg (⅟(2 : R) * ·) (hsum_eq.symm.trans hF)
-    simpa only [← mul_assoc, invOf_mul_self, one_mul] using h2'
-  rw [h2]
+  have h2 := congrArg (⅟(2 : R) * ·) (hsum.symm.trans hF)
+  rw [nsmul_eq_mul, Nat.cast_ofNat, ← mul_assoc, ← mul_assoc, invOf_mul_self, one_mul,
+    one_mul] at h2
+  rw [htr, h2]
 
 /-- The trace of `symmMap₂ f id` on `⋀[R]^2 M` is `((finrank R M - 1) * ⅟2) * tr f`. -/
 theorem trace_symmMap₂_id_right (f : Module.End R M) :
@@ -257,17 +243,27 @@ end exteriorPower
 
 namespace LinearEquiv
 
-variable {R M N : Type*} [CommRing R] [Invertible (2 : R)]
+variable {R M N M' N' : Type*} [CommRing R] [Invertible (2 : R)]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+
+/-- Transporting `exteriorPower.symmMap₂ f g` along domain and codomain equivalences `e₁` and `e₂`
+transports each factor via `e₁.arrowCongr e₂`. -/
+theorem exteriorPower_arrowCongr_symmMap₂ (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
+    (f g : M →ₗ[R] N) :
+    ((e₁.exteriorPower 2).arrowCongr (e₂.exteriorPower 2)) (exteriorPower.symmMap₂ f g) =
+      exteriorPower.symmMap₂ (e₁.arrowCongr e₂ f) (e₁.arrowCongr e₂ g) := by
+  change (e₂.exteriorPower 2).toLinearMap ∘ₗ exteriorPower.symmMap₂ f g ∘ₗ
+        (e₁.exteriorPower 2).symm.toLinearMap =
+      exteriorPower.symmMap₂ (e₂.toLinearMap ∘ₗ f ∘ₗ e₁.symm.toLinearMap)
+        (e₂.toLinearMap ∘ₗ g ∘ₗ e₁.symm.toLinearMap)
+  simp only [LinearEquiv.exteriorPower_symm, LinearEquiv.exteriorPower_toLinearMap,
+    exteriorPower.symmMap₂_comp_map, exteriorPower.map_comp_symmMap₂]
 
 /-- Conjugating `exteriorPower.symmMap₂ f g` by `e.exteriorPower 2` conjugates each factor. -/
 theorem exteriorPower_conj_symmMap₂ (e : M ≃ₗ[R] N) (f g : Module.End R M) :
     (e.exteriorPower 2).conj (exteriorPower.symmMap₂ f g) =
-      exteriorPower.symmMap₂ (e.conj f) (e.conj g) := by
-  rw [LinearEquiv.conj_apply, LinearEquiv.exteriorPower_symm,
-    LinearEquiv.exteriorPower_toLinearMap, LinearEquiv.exteriorPower_toLinearMap,
-    LinearMap.comp_assoc, exteriorPower.symmMap₂_comp_map, exteriorPower.map_comp_symmMap₂,
-    LinearEquiv.conj_apply, LinearEquiv.conj_apply]
-  simp only [LinearMap.comp_assoc]
+      exteriorPower.symmMap₂ (e.conj f) (e.conj g) :=
+  exteriorPower_arrowCongr_symmMap₂ e e f g
 
 end LinearEquiv

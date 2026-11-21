@@ -217,8 +217,9 @@ theorem IsAlgebraicCurvature.isSymmetric_tracelessRicciEndomorphism {r : FourTen
 
 /-- The algebraic Schouten bilinear form
 `P(r) = (dim V - 2)⁻¹ • (Ric(r) - (Scal(r) / (2 (dim V - 1))) g)`.
-Because Lean totalizes `(0 : ℝ)⁻¹ = 0`, this definition evaluates to `0` when `dim V = 2`
-(and uses `(0 : ℝ)⁻¹ = 0` in the scalar coefficient when `dim V = 1`, where `P(r) = 0`). -/
+Because Lean totalizes `(0 : ℝ)⁻¹ = 0`, `schouten r = 0` when `dim V = 2`; when `dim V = 1`, the
+scalar correction vanishes so `schouten r = -ricci r` (which is `0` for pair-antisymmetric
+four-tensors). -/
 def schouten : FourTensor V →ₗ[ℝ] BilinForm ℝ V :=
   ((Module.finrank ℝ V : ℝ) - 2)⁻¹ •
     (ricci + (-(2 * ((Module.finrank ℝ V : ℝ) - 1))⁻¹ • scalar).smulRight (innerₗ V))
@@ -237,6 +238,11 @@ theorem schouten_apply_apply (r : FourTensor V) (u v : V) :
     schouten r u v = ((Module.finrank ℝ V : ℝ) - 2)⁻¹ *
       (ricci r u v - scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) * ⟪u, v⟫) := by
   simp [schouten_apply]
+
+/-- In dimension `2`, `schouten r = 0` because Lean totalizes `(0 : ℝ)⁻¹ = 0`. -/
+@[simp] theorem schouten_eq_zero_of_finrank_eq_two (hdim : Module.finrank ℝ V = 2)
+    (r : FourTensor V) : schouten r = 0 := by
+  simp [schouten, hdim]
 
 /-- `schouten r` is symmetric whenever `ricci r` is symmetric. -/
 theorem isSymm_schouten_of_isSymm_ricci {r : FourTensor V} (h : (ricci r).IsSymm) :

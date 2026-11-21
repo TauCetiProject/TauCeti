@@ -23,13 +23,14 @@ This file collects two enumerations of fixed-cardinality subsets through Mathlib
 `Set.powersetCard.ofFinEmbEquiv`, together with the sum and product formulas for its increasing
 enumeration.
 
-In a linear order, a three-element finite set is listed exactly once as an increasing triple
-`a < b < c`. `Set.powersetCard.ofLtTriple` is this enumeration, an equivalence between the
-increasing triples and `Set.powersetCard I 3`. It is the case `n = 3` of Mathlib's
-`Set.powersetCard.ofFinEmbEquiv`, stated for triples so that sums and products over the
-increasing triples `{t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}` can be compared with sums over
-three-element sets. For instance, a finite linear order with `n` elements has `n.choose 3`
-increasing triples.
+In a linear order, a two-element finite set is listed once as an increasing pair `a < b`
+(`Set.powersetCard.ofLtPair`), and a three-element finite set is listed once as an increasing
+triple `a < b < c` (`Set.powersetCard.ofLtTriple`), the cases `n = 2` and `n = 3` of Mathlib's
+`Set.powersetCard.ofFinEmbEquiv`. They identify `{p : I × I // p.1 < p.2}` with
+`Set.powersetCard I 2` and `{t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}` with
+`Set.powersetCard I 3`, so sums and products over increasing pairs or triples can be compared with
+sums over two- or three-element sets. For instance, a finite linear order with `n` elements has
+`n.choose 3` increasing triples.
 
 For `k + p = N`, the indices `k, …, N - 1` of `Fin N` form the `p`-subset `TauCeti.topBlock h`,
 built through `Set.powersetCard.ofFinEmbEquiv` from the order embedding `a ↦ k + a`. Its increasing
@@ -68,6 +69,36 @@ theorem prod_comp_ofFinEmbEquiv_symm {n : ℕ} (s : powersetCard I n)
       rw [ofFinEmbEquiv_symm_apply]
       exact congrArg f (Finset.coe_orderIsoOfFin_apply s.val s.property a).symm)).trans
     (Finset.prod_coe_sort s.val f)
+
+/-- The increasing pairs `a < b` of a linear order enumerate its two-element sets, by
+`(a, b) ↦ {a, b}`. -/
+noncomputable def ofLtPair : {p : I × I // p.1 < p.2} ≃ powersetCard I 2 :=
+  ((OrderEmbedding.equivSubtypeStrictMono (α := Fin 2) (β := I)).trans
+    ((finTwoArrowEquiv I).subtypeEquiv fun f ↦ by
+      rw [Fin.strictMono_iff_lt_succ, Fin.forall_fin_one]
+      rfl)).symm.trans ofFinEmbEquiv
+
+/-- The inverse of `ofLtPair` reads the two coordinates of the increasing enumeration. -/
+@[simp]
+theorem ofLtPair_symm_apply (s : powersetCard I 2) :
+    (ofLtPair.symm s).val = (ofFinEmbEquiv.symm s 0, ofFinEmbEquiv.symm s 1) := by
+  simp [ofLtPair, OrderEmbedding.equivSubtypeStrictMono]
+
+/-- The increasing enumeration of `ofLtPair p` is `![p.val.1, p.val.2]`. -/
+@[simp]
+theorem ofFinEmbEquiv_symm_ofLtPair (p : {p : I × I // p.1 < p.2}) :
+    ⇑(ofFinEmbEquiv.symm (ofLtPair p)) = ![p.val.1, p.val.2] := by
+  simp [ofLtPair, OrderEmbedding.equivSubtypeStrictMono]
+
+/-- The two-element set enumerated by an increasing pair consists of its two entries. -/
+@[simp]
+theorem val_ofLtPair (p : {p : I × I // p.1 < p.2}) :
+    (ofLtPair p).val = {p.val.1, p.val.2} := by
+  ext a
+  have h := (mem_range_ofFinEmbEquiv_symm_iff_mem (ofLtPair p) a).symm
+  rw [← mem_coe_iff] at h
+  rw [h]
+  simp [ofFinEmbEquiv_symm_ofLtPair, or_comm]
 
 /-- An increasing triple, as an order embedding of `Fin 3`. -/
 private def ltTripleEmb (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Fin 3 ↪o I :=

@@ -103,6 +103,7 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
 * `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`,
+  `TauCeti.FourTensor.constantCurvature_ne_zero_of_two_le_finrank`,
   `TauCeti.FourTensor.sum_mul_constantCurvature_last`, and
   `TauCeti.FourTensor.sum_mul_constantCurvature_second_fourth`.
 * `TauCeti.FourTensor.inner_eq_mul_constantCurvature`: a curvature operator of constant curvature
@@ -685,6 +686,15 @@ theorem scalar_constantCurvature :
   rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ, bilinFormTrace_inner,
     smul_eq_mul]
   ring
+
+/-- In dimension at least `2`, the constant-curvature tensor is nonzero. -/
+theorem constantCurvature_ne_zero_of_two_le_finrank (hdim : 2 ≤ Module.finrank ℝ V) :
+    constantCurvature V ≠ 0 := by
+  intro h
+  have hs := congrArg scalar h
+  rw [scalar_constantCurvature, map_zero] at hs
+  have hdim' : (2 : ℝ) ≤ Module.finrank ℝ V := by exact_mod_cast hdim
+  nlinarith
 
 /-- A curvature operator of constant curvature `κ`, `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)` as in
 `Bundle.RiemannianMetric.IsConstantCurvatureTensor`, has four-tensor

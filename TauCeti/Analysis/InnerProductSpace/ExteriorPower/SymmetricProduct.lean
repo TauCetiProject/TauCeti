@@ -13,9 +13,9 @@ import Mathlib.Tactic.Ring
 # Metric properties of the symmetric exterior product on the exterior square
 
 On real inner product spaces, the inner product of `symmMap₂ f g (a ∧ b)` with `u ∧ w` is half
-the Kulkarni–Nomizu expression in the matrix coefficients of `f` and `g`. Consequently,
-`(symmMap₂ f g)* = symmMap₂ f* g*`, so symmetric endomorphisms `f, g` have a symmetric exterior
-product `symmMap₂ f g`.
+the Kulkarni–Nomizu expression in the matrix coefficients of `f` and `g`. On finite-dimensional
+real inner product spaces, it follows that `(symmMap₂ f g)* = symmMap₂ f* g*`, so symmetric
+endomorphisms `f, g` have a symmetric exterior product `symmMap₂ f g`.
 
 ## Main results
 
