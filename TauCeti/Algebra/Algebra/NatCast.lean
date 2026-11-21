@@ -30,6 +30,7 @@ differentiation.
 * `IsUnit.natCast_ne_zero_of_algebra`: if `(m : K)` is a unit then `(m : L) ≠ 0`.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
 * `IsUnit.natCast_of_dvd`: a divisor of a natural number casting to a unit also casts to a unit.
+* `IsUnit.natCast_pow`: a power of a natural number casting to a unit also casts to a unit.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
 * `TauCeti.isUnit_natCast_of_forall_prime_dvd`, `TauCeti.isUnit_natCast_iff_forall_prime_dvd`: a
@@ -62,6 +63,12 @@ theorem IsUnit.natCast_of_dvd {R : Type*} [Semiring R] {m n : ℕ}
   obtain ⟨k, rfl⟩ := hmn
   rw [Nat.cast_mul, (Nat.cast_commute m (k : R)).isUnit_mul_iff] at hn
   exact hn.1
+
+/-- A power of a natural number casting to a unit in a semiring also casts to a unit. -/
+theorem IsUnit.natCast_pow {R : Type*} [Semiring R] {p : ℕ} (hp : IsUnit (p : R)) (m : ℕ) :
+    IsUnit ((p ^ m : ℕ) : R) := by
+  rw [Nat.cast_pow]
+  exact hp.pow m
 
 /-- A subalgebra over `K` contains `m * t` exactly when it contains `t`, provided the natural
 number `m` is invertible in `K`. -/
