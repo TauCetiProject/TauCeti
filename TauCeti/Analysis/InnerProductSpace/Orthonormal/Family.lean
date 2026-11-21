@@ -187,8 +187,10 @@ theorem det_inner_eq_one_or_eq_neg_one {F : Type*} [NormedAddCommGroup F] [Inner
     convert hτ' using 1
     funext j
     exact hτ.sum_inner_smul_eq_of_mem_span (h j)
-  rw [← sq_eq_one_iff]
-  simpa [unitary, sq] using! Matrix.det_of_mem_unitary hA
+  -- The determinant of `A` is unitary, and the unitary reals are `±1`.
+  have hdet := Unitary.star_mul_self_of_mem (Matrix.det_of_mem_unitary hA)
+  rw [star_trivial] at hdet
+  exact mul_self_eq_one_iff.1 hdet
 
 end Orthonormal
 

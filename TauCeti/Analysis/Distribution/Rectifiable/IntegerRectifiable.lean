@@ -140,9 +140,8 @@ private theorem abs_frameSign (σ τ : Fin k → V) : |(frameSign σ τ : ℝ)| 
 
 private theorem measurable_frameSign {σ τ : V → Fin k → V} (hσ : Measurable σ)
     (hτ : Measurable τ) : Measurable fun x ↦ frameSign (σ x) (τ x) :=
-  Measurable.ite (measurableSet_le measurable_const (Measurable.matrix_det <|
-    Measurable.of_eval_matrix _ fun j i ↦ ((measurable_pi_apply i).comp hσ).inner
-      ((measurable_pi_apply j).comp hτ))) measurable_const measurable_const
+  Measurable.ite (measurableSet_le measurable_const (by fun_prop)) measurable_const
+    measurable_const
 
 omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
 /-- On forms, an orthonormal frame `τ` in the plane of an orthonormal frame `σ` is `σ` times the

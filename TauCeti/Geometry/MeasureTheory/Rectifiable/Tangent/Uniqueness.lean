@@ -229,13 +229,7 @@ theorem CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div {E : Set 
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
     ∀ᵐ x ∂μHE[k], x ∈ E → ∀ P Q : Submodule ℝ V,
       Module.finrank ℝ P = k → Module.finrank ℝ Q = k →
-      (∀ ε > (0 : ℝ), Tendsto (fun r ↦
-        μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)) →
-      (∀ ε > (0 : ℝ), Tendsto (fun r ↦
-        μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (Q : Set V)} /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)) →
-      P = Q := by
+      DensityZeroOutsideCones k E x P → DensityZeroOutsideCones k E x Q → P = Q := by
   obtain ⟨A, f, hAm, hbi, hcover⟩ := hE.exists_bilipschitz_cover
   choose K L hLip hAnti using hbi
   have hgood (n : ℕ) := (hLip n).ae_exists_fderiv_range_forall_infDist_le (hAnti n)
@@ -262,6 +256,7 @@ theorem CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div {E : Set 
     (hLip n).lipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
       (finrank_euclideanSpace_fin (𝕜 := ℝ)) (hAnti n) hu hd.hasFDerivAt.hasFDerivWithinAt hrange
       hone' h0 (P := P)
-  rw [hchart P hP hPc, hchart Q hQ hQc]
+  rw [hchart P hP (densityZeroOutsideCones_iff.1 hPc),
+    hchart Q hQ (densityZeroOutsideCones_iff.1 hQc)]
 
 end TauCeti

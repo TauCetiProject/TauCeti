@@ -52,9 +52,7 @@ theorem CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_di
     (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
     ∀ᵐ x ∂μHE[k], x ∈ E → ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
-      ∀ ε > (0 : ℝ), Tendsto (fun r =>
-        μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+      DensityZeroOutsideCones k E x P := by
   obtain ⟨Q, _, hQ⟩ := hE.exists_measurable_approximate_tangent_projection hEm
   filter_upwards [hQ] with x hx hxE
   obtain ⟨P, hdim, _, hP⟩ := hx hxE

@@ -160,22 +160,6 @@ theorem integrable_frameCurrent_integrand {θ : V → ℝ} {τ : V → Fin k →
   simpa using ω.integrable_bilin formVectorPairing
     (locallyIntegrableOn_frameDensity hθ hτ hτo)
 
-/-- **The frame current depends only on the pairings on `Ω`.** If the pairings
-`θ(x) ω(τ(x))` and `θ'(x) ω(τ'(x))` agree for almost every `x ∈ Ω` and every form `ω`, the two
-frame currents agree. -/
-theorem frameCurrent_eq_of_ae {θ θ' : V → ℝ} {τ τ' : V → Fin k → V}
-    (hθ : LocallyIntegrableOn θ Ω μHE[k]) (hτ : Measurable τ)
-    (hτo : ∀ x, θ x ≠ 0 → Orthonormal ℝ (τ x)) (hθ' : LocallyIntegrableOn θ' Ω μHE[k])
-    (hτ' : Measurable τ') (hτo' : ∀ x, θ' x ≠ 0 → Orthonormal ℝ (τ' x))
-    (h : ∀ᵐ x ∂μHE[k], x ∈ Ω → ∀ ω : V [⋀^Fin k]→L[ℝ] ℝ, θ x * ω (τ x) = θ' x * ω (τ' x)) :
-    (frameCurrent θ τ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) = frameCurrent θ' τ' := by
-  ext ω
-  rw [frameCurrent_apply hθ hτ hτo, frameCurrent_apply hθ' hτ' hτo']
-  refine integral_congr_ae (h.mono fun x hx ↦ ?_)
-  by_cases hxΩ : x ∈ Ω
-  · exact hx hxΩ (ω x)
-  · simp [image_eq_zero_of_notMem_tsupport fun hmem ↦ hxΩ (ω.tsupport_subset hmem)]
-
 /-- **Additivity in the multiplicity.** If the pairing of `(θ, τ)` is almost everywhere on `Ω` the
 sum of the pairings of `(θ₁, τ₁)` and `(θ₂, τ₂)`, the frame current of `(θ, τ)` is the sum of the
 other two. -/
@@ -221,6 +205,19 @@ theorem frameCurrent_zero (τ : V → Fin k → V) :
   ext ω
   simp [frameCurrent, frameDensity]
 
+/-- **The frame current depends only on the pairings on `Ω`.** If the pairings
+`θ(x) ω(τ(x))` and `θ'(x) ω(τ'(x))` agree for almost every `x ∈ Ω` and every form `ω`, the two
+frame currents agree. -/
+theorem frameCurrent_eq_of_ae {θ θ' : V → ℝ} {τ τ' : V → Fin k → V}
+    (hθ : LocallyIntegrableOn θ Ω μHE[k]) (hτ : Measurable τ)
+    (hτo : ∀ x, θ x ≠ 0 → Orthonormal ℝ (τ x)) (hθ' : LocallyIntegrableOn θ' Ω μHE[k])
+    (hτ' : Measurable τ') (hτo' : ∀ x, θ' x ≠ 0 → Orthonormal ℝ (τ' x))
+    (h : ∀ᵐ x ∂μHE[k], x ∈ Ω → ∀ ω : V [⋀^Fin k]→L[ℝ] ℝ, θ x * ω (τ x) = θ' x * ω (τ' x)) :
+    (frameCurrent θ τ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) = frameCurrent θ' τ' := by
+  simpa using frameCurrent_eq_add_of_ae hθ hτ hτo hθ' hτ' hτo' (θ₂ := 0) (τ₂ := τ')
+    locallyIntegrableOn_zero hτ' (fun _ h ↦ absurd rfl h)
+    (h.mono fun x hx hxΩ ω ↦ by simp [hx hxΩ ω])
+
 /-- **Change of frame within the same planes.** If, wherever `θ` does not vanish, the orthonormal
 frame `τ' x` lies in the plane spanned by the orthonormal frame `τ x`, the frame current of
 `(θ, τ')` is that of `(det (⟪τ i, τ' j⟫) θ, τ)`. The determinant is `±1`
@@ -237,8 +234,7 @@ theorem frameCurrent_eq_det_inner_mul {θ : V → ℝ} {τ τ' : V → Fin k →
   have hd (x : V) (hx : θ x ≠ 0) : |d x| = 1 := by
     rcases Orthonormal.det_inner_eq_one_or_eq_neg_one (hτo x hx) (hτo' x hx) (h x hx)
       with h1 | h1 <;> simp [d, h1]
-  have hdm : Measurable d := Measurable.matrix_det <| Measurable.of_eval_matrix _ fun j i ↦
-    ((measurable_pi_apply i).comp hτ).inner ((measurable_pi_apply j).comp hτ')
+  have hdm : Measurable d := by fun_prop
   have hθ' : LocallyIntegrableOn (fun x ↦ d x * θ x) Ω μHE[k] :=
     hθ.bdd_mul_of_ne_zero hdm.aestronglyMeasurable
       (ae_of_all _ fun x hx ↦ (Real.norm_eq_abs _).trans_le (hd x hx).le)
