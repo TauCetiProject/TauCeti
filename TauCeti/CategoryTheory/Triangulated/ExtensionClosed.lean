@@ -18,7 +18,9 @@ and under finite products once it also contains a zero object.
 
 Mathlib records these facts for triangulated subcategories (`ObjectProperty.IsTriangulated`);
 here no stability under shifts is assumed. This applies, for instance, to the aisles and coaisles
-of a `t`-structure and to its heart.
+of a `t`-structure and to its heart. The proofs are Mathlib's instances for
+`ObjectProperty.IsTriangulated` in `Mathlib.CategoryTheory.Triangulated.Subcategory`, with the
+hypothesis weakened to `IsTriangulatedClosed₂`.
 
 ## Main results
 
