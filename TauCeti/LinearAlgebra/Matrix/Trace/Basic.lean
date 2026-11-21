@@ -25,6 +25,8 @@ one equivalence preserves the trace.
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
+* `Matrix.map_trace_mul_comm`: a trace `τ` on a possibly noncommutative ring of entries gives the
+  trace `τ ∘ Tr` on matrices.
 -/
 
 public section
@@ -53,5 +55,13 @@ trace. -/
 theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matrix m m R) :
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
+
+/-- A trace `τ` on a possibly noncommutative ring of entries, `τ (x * y) = τ (y * x)`, gives a trace
+`τ ∘ Tr` on matrices: `τ (Tr (M N)) = τ (Tr (N M))`. The matrices may be rectangular. -/
+theorem map_trace_mul_comm {α β F : Type*} [NonUnitalNonAssocSemiring α] [AddCommMonoid β]
+    [FunLike F α β] [AddMonoidHomClass F α β] (τ : F) (hτ : ∀ x y, τ (x * y) = τ (y * x))
+    (A : Matrix m n α) (B : Matrix n m α) : τ (A * B).trace = τ (B * A).trace := by
+  simp only [trace, diag_apply, Matrix.mul_apply, map_sum, hτ (A _ _)]
+  exact Finset.sum_comm
 
 end Matrix

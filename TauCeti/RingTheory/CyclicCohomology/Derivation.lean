@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Derivation.Basic
-public import TauCeti.RingTheory.CyclicCohomology.Cohomology
+public import TauCeti.LinearAlgebra.Matrix.Derivation
+public import TauCeti.RingTheory.CyclicCohomology.Matrix
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -55,6 +55,9 @@ vanishes.
 * `TauCeti.traceDerivationCochain_compLinearMap` and
   `TauCeti.traceDerivationPairCochain_compLinearMap`: naturality under homomorphisms intertwining
   the derivations.
+* `TauCeti.matrixCochainExtension_traceDerivationCochain` and
+  `TauCeti.matrixCochainExtension_traceDerivationPairCochain`: the extensions `φ#Tr` to matrices
+  are the cochains of the trace `τ ∘ Tr` and the entrywise derivations.
 
 ## References
 
@@ -255,6 +258,42 @@ theorem traceDerivationPairCochain_compLinearMap {δ₁ δ₂ : derivationLieAlg
   simp [hf₁, hf₂]
 
 end Naturality
+
+/-! ### Extension to matrices -/
+
+section Matrix
+
+variable (τ : A →ₗ[k] M) (ι : Type*) [Fintype ι]
+
+/-- The extension `ψ#Tr` to matrices of the cochain `τ(a₀ δ(a₁))` is the cochain of the trace
+`τ ∘ Tr` and the entrywise derivation `M ↦ M.map δ`. -/
+theorem matrixCochainExtension_traceDerivationCochain (δ : derivationLieAlgebra k A) :
+    matrixCochainExtension ι 1 (traceDerivationCochain τ δ) =
+      traceDerivationCochain (τ ∘ₗ Matrix.traceLinearMap ι k A)
+        (derivationLieAlgebra.mapMatrix δ) := by
+  ext a
+  rw [matrixCochainExtension_apply, ← (Fin.consEquiv fun _ : Fin 2 ↦ ι).sum_comp,
+    Fintype.sum_prod_type]
+  simp only [← (Fin.consEquiv fun _ : Fin 1 ↦ ι).sum_comp, Fintype.sum_prod_type,
+    Fintype.sum_unique]
+  simp [Matrix.trace, Matrix.mul_apply, map_sum]
+
+/-- The extension `φ#Tr` to matrices of the cochain `τ(a₀ (δ₁(a₁) δ₂(a₂) - δ₂(a₁) δ₁(a₂)))` is
+the cochain of the trace `τ ∘ Tr` and the entrywise derivations `M ↦ M.map δ₁`, `M ↦ M.map δ₂`. -/
+theorem matrixCochainExtension_traceDerivationPairCochain (δ₁ δ₂ : derivationLieAlgebra k A) :
+    matrixCochainExtension ι 2 (traceDerivationPairCochain τ δ₁ δ₂) =
+      traceDerivationPairCochain (τ ∘ₗ Matrix.traceLinearMap ι k A)
+        (derivationLieAlgebra.mapMatrix δ₁) (derivationLieAlgebra.mapMatrix δ₂) := by
+  ext a
+  rw [matrixCochainExtension_apply, ← (Fin.consEquiv fun _ : Fin 3 ↦ ι).sum_comp,
+    Fintype.sum_prod_type]
+  simp only [← (Fin.consEquiv fun _ : Fin 2 ↦ ι).sum_comp,
+    ← (Fin.consEquiv fun _ : Fin 1 ↦ ι).sum_comp, Fintype.sum_prod_type, Fintype.sum_unique]
+  simp [Matrix.trace, Matrix.mul_apply, map_sum, Finset.mul_sum, Finset.sum_sub_distrib, mul_sub]
+  -- The remaining terms index by `Fin.cons i (Fin.cons j (Fin.cons l _)) 2`, which is `l`.
+  rfl
+
+end Matrix
 
 end NonUnital
 

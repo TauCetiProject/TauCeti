@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.Lie.AdjointAction.Basic
 public import TauCeti.Algebra.Lie.Derivation.Basic
+public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Derivations of a matrix algebra are inner
@@ -21,6 +22,15 @@ characteristic, and identifies the infinitesimal algebra automorphisms of a matr
 `Matrix.adRangeEquivPi` parametrizes inner derivations by all matrix entries except one
 chosen diagonal entry. Its coordinates normalize that entry to zero by subtracting a
 scalar matrix, giving a free coordinate model without dividing by the matrix size.
+
+Over a possibly noncommutative algebra `A`, a derivation `δ` of `A` applied to every entry is a
+derivation `TauCeti.derivationLieAlgebra.mapMatrix δ` of the square matrices over `A`, and it
+satisfies the Leibniz rule `δ(M v) = δ(M) v + M δ(v)` for matrices acting on column vectors. For
+an idempotent matrix `e` it is off-diagonal, `e δ(e) e = 0`, and a trace `τ` on `A` invariant under
+`δ` kills the corner `e δ(t) e` of every matrix `t` with `e t = t = t e`. These entrywise
+derivations appear when a cyclic cocycle built from a trace and derivations is extended to
+matrices, and in the Grassmann connection of a projective module presented by an idempotent
+matrix.
 
 ## References
 
@@ -237,3 +247,79 @@ theorem finrank_adRange [Nontrivial R] :
 end
 
 end Matrix
+
+namespace TauCeti.derivationLieAlgebra
+
+variable {k A : Type*} [CommRing k] [NonUnitalRing A] [Module k A] [SMulCommClass k A A]
+  [IsScalarTower k A A] {ι κ : Type*} [Fintype ι]
+
+/-- **The Leibniz rule for matrices acting on vectors**: applying a derivation `δ` to the
+coordinates of `M v` gives `δ(M) v + M δ(v)`. -/
+theorem comp_mulVec (δ : derivationLieAlgebra k A) (M : Matrix κ ι A) (v : ι → A) :
+    (δ : Module.End k A) ∘ (M *ᵥ v) =
+      M.map (δ : Module.End k A) *ᵥ v + M *ᵥ ((δ : Module.End k A) ∘ v) := by
+  ext i
+  simp [Matrix.mulVec, dotProduct, map_sum, Finset.sum_add_distrib]
+
+/-- A derivation `δ` of `A`, applied to every entry, is a derivation `M ↦ M.map δ` of the square
+matrices over `A`. -/
+def mapMatrix (δ : derivationLieAlgebra k A) : derivationLieAlgebra k (Matrix ι ι A) :=
+  ⟨(δ : Module.End k A).mapMatrix, mem_derivationLieAlgebra.2 fun M N ↦ by
+    ext i j
+    simp [Matrix.mul_apply, map_sum, Finset.sum_add_distrib]⟩
+
+@[simp]
+theorem mapMatrix_apply (δ : derivationLieAlgebra k A) (M : Matrix ι ι A) :
+    ((mapMatrix δ : derivationLieAlgebra k (Matrix ι ι A)) : Module.End k (Matrix ι ι A)) M =
+      M.map (δ : Module.End k A) :=
+  (rfl)
+
+/-- The coordinate derivative of a column vector `v` fixed by a matrix `M` splits as
+`δ(v) = δ(M) v + M δ(v)`. -/
+theorem comp_eq_map_mulVec_add_of_mulVec_eq (δ : derivationLieAlgebra k A) {M : Matrix ι ι A}
+    {v : ι → A} (hv : M *ᵥ v = v) :
+    (δ : Module.End k A) ∘ v =
+      M.map (δ : Module.End k A) *ᵥ v + M *ᵥ ((δ : Module.End k A) ∘ v) := by
+  conv_lhs => rw [← hv]
+  exact comp_mulVec δ M v
+
+end TauCeti.derivationLieAlgebra
+
+namespace IsIdempotentElem
+
+open TauCeti
+
+variable {k A : Type*} [CommRing k] [NonUnitalRing A] [Module k A] [SMulCommClass k A A]
+  [IsScalarTower k A A] {ι : Type*} [Fintype ι] {e : Matrix ι ι A}
+
+/-- `e δ(e) e = 0` for an idempotent matrix `e` and a derivation `δ` applied to every entry. -/
+theorem mul_map_mul_eq_zero (he : IsIdempotentElem e) (δ : derivationLieAlgebra k A) :
+    e * e.map (δ : Module.End k A) * e = 0 := by
+  simpa using derivationLieAlgebra.mul_apply_mul_eq_zero (derivationLieAlgebra.mapMatrix δ) he
+
+/-- For a trace `τ` invariant under a derivation `δ` and an idempotent matrix `e`, the corner
+`e δ(t) e` of the entrywise derivative of a matrix `t` with `e t = t = t e` has trace zero. -/
+theorem map_trace_mul_map_mul_eq_zero (he : IsIdempotentElem e) {M : Type*} [AddCommGroup M]
+    [Module k M] {τ : A →ₗ[k] M} (hτ : ∀ x y, τ (x * y) = τ (y * x))
+    {δ : derivationLieAlgebra k A} (hδ : ∀ x, τ ((δ : Module.End k A) x) = 0)
+    {t : Matrix ι ι A} (hl : e * t = t) (hr : t * e = t) :
+    τ (e * t.map (δ : Module.End k A) * e).trace = 0 := by
+  -- Differentiating `t = t e` gives `δ(t) e = δ(t) - t δ(e)`.
+  have hL : t.map (δ : Module.End k A) =
+      t.map (δ : Module.End k A) * e + t * e.map (δ : Module.End k A) := by
+    simpa [hr] using derivationLieAlgebra.leibniz (derivationLieAlgebra.mapMatrix δ) t e
+  have h₀ : τ (t.map (δ : Module.End k A)).trace = 0 := by
+    simp [Matrix.trace, hδ]
+  have h₁ : τ (t * e.map (δ : Module.End k A)).trace = 0 := by
+    calc τ (t * e.map (δ : Module.End k A)).trace
+        _ = τ (e * t * e.map (δ : Module.End k A)).trace := by rw [hl]
+        _ = τ (t * e.map (δ : Module.End k A) * e).trace := by
+          rw [Matrix.mul_assoc, map_trace_mul_comm τ hτ e]
+        _ = τ (t * e * e.map (δ : Module.End k A) * e).trace := by rw [hr]
+        _ = 0 := by
+          rw [Matrix.mul_assoc t, Matrix.mul_assoc t, he.mul_map_mul_eq_zero δ,
+            Matrix.mul_zero, trace_zero, map_zero]
+  rw [Matrix.mul_assoc, map_trace_mul_comm τ hτ e, Matrix.mul_assoc, he.eq,
+    eq_sub_of_add_eq hL.symm, trace_sub, map_sub, h₀, h₁, sub_zero]
+
+end IsIdempotentElem

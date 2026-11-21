@@ -18,6 +18,9 @@ algebra derivations use `TauCeti.derivationLieAlgebra`.
 
 Connections along a fixed derivation differ by right-module endomorphisms. For two commuting
 derivations, the commutator of connections is a right-module endomorphism: their curvature.
+Adding endomorphisms changes the curvature by their derivatives and commutator, and the
+right-module automorphisms act on connections by gauge transformations `c ↦ u c u⁻¹`, which
+conjugate the curvature.
 The coordinate connection on a coordinate product supplies concrete flat connections and the
 ambient connections from which Grassmann connections are obtained by projection. For finite
 coordinate sets, these products are free right modules.
@@ -207,6 +210,38 @@ theorem curvature_swap (c₁ : RightConnection (E := E) D₁)
     (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) :
     curvature c₂ c₁ hD.symm = -curvature c₁ c₂ hD := by
   ext x
+  simp
+
+/-- **Change of connection.** Adding right-module endomorphisms `T` and `S` to connections
+`c₁` and `c₂` changes their curvature by `[c₁,S] - [c₂,T] + [T,S]`. -/
+theorem curvature_addEnd (c₁ : RightConnection (E := E) D₁)
+    (c₂ : RightConnection (E := E) D₂)
+    (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (T S : E →ₗ[Aᵐᵒᵖ] E) :
+    curvature (addEnd c₁ T) (addEnd c₂ S) hD =
+      curvature c₁ c₂ hD + derivativeEnd c₁ S - derivativeEnd c₂ T + ⁅T, S⁆ := by
+  ext x
+  simp only [curvature_apply, addEnd_apply, map_add, LinearMap.add_apply, LinearMap.sub_apply,
+    derivativeEnd_apply, Ring.lie_def, mul_apply_eq_comp]
+  abel
+
+/-- The gauge group `E ≃ₗ[Aᵐᵒᵖ] E` acts on connections by conjugation, `u • c = u c u⁻¹`. -/
+instance : MulAction (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where
+  smul u c :=
+    { toLinearMap := (u.toLinearMap.restrictScalars k).comp
+        (c.toLinearMap.comp (u.symm.toLinearMap.restrictScalars k))
+      leibniz' a x := by simp [c.leibniz'] }
+  one_smul c := ext fun x ↦ rfl
+  mul_smul u v c := ext fun x ↦ rfl
+
+@[simp]
+theorem smul_apply (u : E ≃ₗ[Aᵐᵒᵖ] E) (c : RightConnection (E := E) D) (x : E) :
+    (u • c) x = u (c (u.symm x)) := (rfl)
+
+/-- Gauge transformations conjugate the curvature. -/
+theorem curvature_smul_apply (c₁ : RightConnection (E := E) D₁)
+    (c₂ : RightConnection (E := E) D₂)
+    (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (u : E ≃ₗ[Aᵐᵒᵖ] E) (x : E) :
+    curvature (u • c₁) (u • c₂) hD x = u (curvature c₁ c₂ hD (u.symm x)) := by
   simp
 
 /-- The coordinate connection on a coordinate product differentiates each coordinate.
