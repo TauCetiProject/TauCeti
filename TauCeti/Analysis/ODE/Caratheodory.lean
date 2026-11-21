@@ -9,6 +9,7 @@ public import Mathlib.Analysis.ODE.PicardLindelof
 import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
@@ -101,27 +102,19 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
       rwa [← ae_restrict_iff' measurableSet_Ioc, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     simp only [iterate_succ_apply', next_apply, ODE.picard_apply]
     rw [dist_eq_norm, add_sub_add_left_eq_sub, ← intervalIntegral.integral_sub (hint Y) (hint Z)]
-    calc _ ≤ ∫ s in a..t, L * ((L * (s - a)) ^ n / n ! * dist y z) := by
-          refine norm_integral_le_of_norm_le t.property.1 ?_
-            (Continuous.intervalIntegrable (by fun_prop) _ _)
-          filter_upwards [hLae] with s hs hst
-          have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.property.2⟩
-          simp only [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs']
-          refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.property.2⟩) ?_
-            (norm_nonneg _) hL₀)
-          simpa [dist_eq_norm] using ih ⟨s, hs'⟩
-      _ = (L * (t - a)) ^ (n + 1) / (n + 1)! * dist y z := by
-          have : ∫ s in a..t, L * ((L * (s - a)) ^ n / n ! * dist y z) =
-              L ^ (n + 1) * dist y z / n ! * ∫ s in a..t, (s - a) ^ n := by
-            rw [← intervalIntegral.integral_const_mul]
-            congr 1
-            ext s
-            rw [mul_pow, pow_succ]
-            ring
-          rw [this, intervalIntegral.integral_comp_sub_right (fun s ↦ s ^ n), integral_pow]
-          simp only [sub_self, zero_pow n.succ_ne_zero, sub_zero, Nat.factorial_succ, mul_pow]
-          push_cast
-          field_simp
+    refine (TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right
+      (K := L ^ (n + 1) * dist y z / n !) (u := n) (neg_one_lt_zero.trans_le n.cast_nonneg)
+      t.property.1 ((ae_restrict_iff' measurableSet_Ioc).2 ?_)).trans_eq ?_
+    · filter_upwards [hLae] with s hs hst
+      have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.property.2⟩
+      simp only [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs',
+        Real.rpow_natCast]
+      calc _ ≤ L * ((L * (s - a)) ^ n / n ! * dist y z) :=
+            ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.property.2⟩)
+              (by simpa [dist_eq_norm] using ih ⟨s, hs'⟩) (norm_nonneg _) hL₀)
+        _ = _ := by rw [mul_pow, pow_succ]; ring
+    · rw [← Nat.cast_add_one, Real.rpow_natCast, Nat.factorial_succ, Nat.cast_mul, mul_pow]
+      field_simp
 
 include hab hM hF in
 /-- If `‖M t‖ ≤ K` almost everywhere, some iterate of the Picard map is a contraction. -/

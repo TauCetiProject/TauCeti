@@ -755,9 +755,10 @@ and the evaluation case of `ContinuousLinearMap.integrableOn_of_bilin_of_continu
 -/
 theorem clm_apply_continuousOn_of_subset (hA : IntegrableOn A s μ) (hf : ContinuousOn f K)
     (hs : MeasurableSet s) (hK : IsCompact K) (hsK : s ⊆ K) :
-    IntegrableOn (fun x ↦ A x (f x)) s μ :=
-  (ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).integrableOn_of_bilin_of_continuousOn_of_subset hA hf hs
-    hK hsK
+    IntegrableOn (fun x ↦ A x (f x)) s μ := by
+  simpa only [ContinuousLinearMap.id_apply] using
+    (ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).integrableOn_of_bilin_of_continuousOn_of_subset hA hf
+      hs hK hsK
 
 /-- Applying a field of continuous linear maps integrable on a compact set `K` to a function
 continuous on `K` gives a function integrable on `K`. This is the operator-valued counterpart of

@@ -31,9 +31,9 @@ integration-by-parts arguments:
 * `ContinuousLinearMap.integrableOn_of_bilin_of_continuousOn_of_subset`: a continuous bilinear
   pairing of a function integrable on a measurable set `s` with a function continuous on a compact
   set `K ⊇ s` is integrable on `s`.
-* `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of an
-  integrable function vanishing off a compact set `K` with a function continuous on `K` is
-  integrable.
+* `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of a
+  function integrable on a compact set `K` and vanishing almost everywhere off `K` with a function
+  continuous on `K` is integrable.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
@@ -140,13 +140,13 @@ theorem integrableOn_of_bilin_of_continuousOn_of_subset (B : E →L[𝕜] F →L
     (hg.aestronglyMeasurable_of_subset_isCompact hK hs hsK)
     (ae_restrict_of_forall_mem hs fun x hx ↦ hC x (hsK hx))
 
-/-- A continuous bilinear pairing of an integrable function vanishing off a compact set `K` with a
-function continuous on `K` is integrable. -/
-theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
-    (hf : Integrable f μ) {K : Set α} (hK : IsCompact K) (hfK : ∀ x ∉ K, f x = 0) {g : α → F}
+/-- A continuous bilinear pairing of a function integrable on a compact set `K` and vanishing
+almost everywhere off `K` with a function continuous on `K` is integrable. -/
+theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f : α → E} {K : Set α}
+    (hf : IntegrableOn f K μ) (hK : IsCompact K) (hfK : ∀ᵐ x ∂μ, x ∉ K → f x = 0) {g : α → F}
     (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ :=
-  (B.integrableOn_of_bilin_of_continuousOn_of_subset hf.integrableOn hg hK.measurableSet hK
-    Set.Subset.rfl).integrable_of_forall_notMem_eq_zero fun x hx ↦ by simp [hfK x hx]
+  (B.integrableOn_of_bilin_of_continuousOn_of_subset hf hg hK.measurableSet hK
+    Set.Subset.rfl).integrable_of_ae_notMem_eq_zero <| hfK.mono fun x hx hxK ↦ by simp [hx hxK]
 
 end ContinuousLinearMap
 
