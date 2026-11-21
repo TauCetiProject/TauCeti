@@ -118,9 +118,6 @@ lemma cochainCompTensor_tmul (p q j : ℤ)
       (z₁.comp z₂ (by dsimp at h; omega) : ModuleCat.of R (Cochain F K j)) :=
   (rfl)
 
-/- The expansion through `D₁` and `D₂` below is the unavoidable alignment between Mathlib's
-totalized tensor differential and its bidegree inclusions.  Keeping it in this summand formula
-isolates those implementation details from the chain-map construction. -/
 private lemma cochainCompTensor_d (p q j : ℤ)
     (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ)
       (ComplexShape.up ℤ) (p, q) = j) :
@@ -130,29 +127,16 @@ private lemma cochainCompTensor_d (p q j : ℤ)
         HomologicalComplex.mapBifunctorDesc (cochainCompTensor R F G K · · (j + 1) ·) =
       cochainCompTensor R F G K p q j h ≫ (linearHomComplex R F K).d j (j + 1) := by
   replace h : p + q = j := h
-  have hd : (linearHomComplex R G K ⊗ linearHomComplex R F G).d j (j + 1) =
-      HomologicalComplex.mapBifunctor.D₁ (linearHomComplex R G K) (linearHomComplex R F G)
-          (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) j (j + 1) +
-        HomologicalComplex.mapBifunctor.D₂ (linearHomComplex R G K) (linearHomComplex R F G)
-          (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) j (j + 1) :=
-    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  rw [hd, Preadditive.add_comp, Preadditive.comp_add,
-    HomologicalComplex.mapBifunctor.ι_D₁_assoc, HomologicalComplex.mapBifunctor.ι_D₂_assoc,
-    HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
-      (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega),
-    Linear.units_smul_comp, Linear.units_smul_comp, Category.assoc, Category.assoc,
+  rw [HomologicalComplex.ιTensorObj_tensor_d_assoc, Preadditive.add_comp,
+    Linear.units_smul_comp, Category.assoc, Category.assoc,
     HomologicalComplex.ι_mapBifunctorDesc, HomologicalComplex.ι_mapBifunctorDesc]
   apply ModuleCat.MonoidalCategory.tensor_ext
   intro z₂ z₁
   let z₂' : ModuleCat.of R (Cochain G K p) := z₂
   let z₁' : ModuleCat.of R (Cochain F G q) := z₁
-  simp only [curriedTensor_obj_obj, ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
-    ComplexShape.ε₁_def, curriedTensor_map_app, one_smul, ComplexShape.ε₂_def,
-    ComplexShape.ε_up_ℤ, curriedTensor_obj_map, ModuleCat.hom_add, ModuleCat.hom_smul,
-    LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply, LinearMap.smul_apply,
-    ModuleCat.MonoidalCategory.whiskerLeft_apply]
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_add,
+    ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
+    LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
   -- Express the totalized tensor differential on this pure tensor in the degreewise cochain
   -- modules characterized by `linearHomComplex_X`.
   change ModuleCat.Hom.hom (cochainCompTensor R F G K (p + 1) q (j + 1) _) (

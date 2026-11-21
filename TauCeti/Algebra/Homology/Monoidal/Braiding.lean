@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Summand
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -113,36 +114,10 @@ private lemma koszulBraidingSummand_comm (X Y : CochainComplex C ℤ)
       HomologicalComplex.ιMapBifunctor X Y (curriedTensor C)
           (ComplexShape.up ℤ) p q j h ≫ (X ⊗ Y).d j (j + 1) ≫
         HomologicalComplex.mapBifunctorDesc (koszulBraidingSummand C X Y · · (j + 1) ·) := by
-  replace h : p + q = j := h
-  have hdYX : (Y ⊗ X).d j (j + 1) =
-      HomologicalComplex.mapBifunctor.D₁ Y X (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) +
-        HomologicalComplex.mapBifunctor.D₂ Y X (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) :=
-    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  have hdXY : (X ⊗ Y).d j (j + 1) =
-      HomologicalComplex.mapBifunctor.D₁ X Y (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) +
-        HomologicalComplex.mapBifunctor.D₂ X Y (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) :=
-    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  rw [hdYX, hdXY, koszulBraidingSummand]
-  simp only [Preadditive.comp_add, Preadditive.add_comp, Linear.units_smul_comp,
-    Category.assoc, HomologicalComplex.mapBifunctor.ι_D₁,
-    HomologicalComplex.mapBifunctor.ι_D₂,
-    HomologicalComplex.mapBifunctor.ι_D₁_assoc, HomologicalComplex.mapBifunctor.ι_D₂_assoc]
-  rw [HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk q (q + 1) rfl) p (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ q
-      (ComplexShape.up_mk p (p + 1) rfl) (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
-      (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
-  simp only [ComplexShape.ε₁_def, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ, one_smul,
-    curriedTensor_map_app, curriedTensor_obj_map,
-    Linear.units_smul_comp, Linear.comp_units_smul, Category.assoc,
-    HomologicalComplex.ι_mapBifunctorDesc, koszulBraidingSummand, smul_smul]
+  simp only [koszulBraidingSummand, Linear.units_smul_comp, Category.assoc,
+    HomologicalComplex.ιTensorObj_tensor_d, HomologicalComplex.ιTensorObj_tensor_d_assoc,
+    Preadditive.comp_add, Preadditive.add_comp, Linear.comp_units_smul,
+    HomologicalComplex.ι_mapBifunctorDesc, smul_add, smul_smul]
   have hs₁ : ((p + 1) * q).negOnePow = (p * q).negOnePow * q.negOnePow := by
     rw [show (p + 1) * q = p * q + q by ring, Int.negOnePow_add]
   have hs₂ : p.negOnePow * (p * (q + 1)).negOnePow = (p * q).negOnePow := by
