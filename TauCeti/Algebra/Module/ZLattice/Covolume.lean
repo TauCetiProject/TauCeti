@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Module.ZLattice.Dual
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
+import TauCeti.Analysis.InnerProductSpace.Gram.Basic
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 
 /-!

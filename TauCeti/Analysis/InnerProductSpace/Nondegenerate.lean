@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.Analysis.InnerProductSpace.Gram.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
@@ -25,12 +25,11 @@ requires of its bilinear form. Its pullback along an injective linear map, such 
 induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
 is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
 
-The matrix of the inner product in a basis `b` is the Gram matrix of `b`
-(`LinearMap.BilinForm.toMatrix_innerₗ`). The dual basis of `b` for the inner product pairs with a
-vector to give its coordinates in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained
-from `b` by the inverse of the Gram matrix (`Module.Basis.dualBasis_innerₗ_eq_sum`). In a coordinate
-frame of a Riemannian metric, these are the coordinate covectors `dxⁱ` with their musical
-isomorphism `gⁱʲ ∂ⱼ`.
+The dual basis of a basis `b` for the inner product pairs with a vector to give its coordinates
+in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained from `b` by the inverse of the Gram
+matrix (`Module.Basis.dualBasis_innerₗ_eq_sum`). In a coordinate frame `∂ᵢ` of a Riemannian metric
+`g`, the `i`-th dual basis vector is thus the image `(dxⁱ)♯ = ∑ⱼ gⁱʲ ∂ⱼ` of the coordinate covector
+`dxⁱ` under the sharp isomorphism.
 -/
 
 public section
@@ -76,18 +75,6 @@ theorem eq_of_forall_inner_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {L :
   simp [H]
 
 end TauCeti
-
-namespace LinearMap.BilinForm
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The matrix of the real inner product in a basis `b` is the Gram matrix of `b`. -/
-theorem toMatrix_innerₗ {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ E) :
-    toMatrix b (innerₗ E) = Matrix.gram ℝ b := by
-  ext k l
-  rw [toMatrix_apply, innerₗ_apply_apply, Matrix.gram_apply]
-
-end LinearMap.BilinForm
 
 namespace Module.Basis
 
