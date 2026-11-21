@@ -297,12 +297,10 @@ in the space, is `k • ·` at every point. -/
 theorem mvfderiv_smul_left {K : Type*} [Group K] [DistribMulAction K F] [SMulCommClass K 𝕜 F]
     [ContinuousConstSMul K F] (k : K) (p : F) (v : TangentSpace 𝓘(𝕜, F) p) :
     mvfderiv 𝓘(𝕜, F) (fun x ↦ k • x) p v = k • NormedSpace.fromTangentSpace p v := by
-  have h : (fun x : F ↦ k • x) = ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) k := by
-    funext x
-    rw [ContinuousLinearEquiv.smulLeft_apply_apply]
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, h, ContinuousLinearEquiv.fderiv,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.smulLeft_apply_apply,
-    ContinuousLinearEquiv.coe_coe]
+  have h : HasFDerivAt (fun x : F ↦ k • x)
+      (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k : F →L[𝕜] F) p :=
+    (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k).hasFDerivAt
+  simp [mvfderiv_eq_fderiv, h.fderiv]
 
 /-- Adding a constant does not change the derivative of a vector-valued function, read in the
 target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
