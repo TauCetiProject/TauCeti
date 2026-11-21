@@ -66,14 +66,16 @@ All seven are in the namespace `TauCeti.PDE`.
 * `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_lowerOrder`: Caccioppoli's
   inequality for weak solutions with lower-order terms and no sign condition on `c`.
 * `exists_setIntegral_ball_norm_gradient_sq_le_lowerOrder`: its form on concentric balls.
-* `exists_sq_toReal_eLpNorm_gradient_ball_le`: the same in terms of `L²` norms on the balls, for
-  coefficients controlled on the outer ball only.
+* `exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder`: the same in terms of `L²` norms on the
+  balls, for coefficients controlled on the outer ball only.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   §8.5 and §8.6.
 * Q. Han, F. Lin, *Elliptic Partial Differential Equations*, Chapter 4.
+* L. C. Evans, *Partial Differential Equations*, §6.3.1, proof of Theorem 1 (Step 1), for the
+  inequality for weak solutions.
 -/
 
 public section
@@ -147,6 +149,18 @@ private theorem UniformlyEllipticOn.energyFormH1_zero_zero_le_of_lowerOrder
   linarith [hu v hv]
 
 omit [DecidableEq ι] in
+/-- Multiplying an integrable function by the square of a smooth compactly supported cutoff keeps
+it integrable. -/
+private theorem integrable_sq_mul_of_contDiff {ν : Measure (EuclideanSpace ℝ ι)}
+    {ψ g : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hg : Integrable g ν) : Integrable (fun x => ψ x ^ 2 * g x) ν := by
+  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+  refine hg.bdd_mul (c := M ^ 2) (hψ.continuous.pow 2).aestronglyMeasurable
+    (.of_forall fun x => ?_)
+  rw [Real.norm_eq_abs, abs_pow]
+  exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
+
+omit [DecidableEq ι] in
 /-- Young's inequality for the drift: for `w = (u - k)⁺` and `‖b‖ ≤ β` on `Ω`, the drift part of
 the forcing `F - ⟪b, ∇u⟫`, tested against `ψ² w`, is at most `λ/4 · ∫ ψ² ‖∇w‖² + β²/λ · ∫ ψ² w²`
 above the `F` part. -/
@@ -162,22 +176,17 @@ private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam
         + (lam / 4 * ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
           + beta ^ 2 / lam * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu) := by
   intro w
-  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
-    (hψ.continuous.pow 2).aestronglyMeasurable
-  have hψ2M : ∀ᵐ x ∂mu.restrict Omega, ‖ψ x ^ 2‖ ≤ M ^ 2 := Eventually.of_forall fun x => by
-    rw [Real.norm_eq_abs, abs_pow]
-    exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
   have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
-    (Lp.memLp (W1p.gradient w)).norm.integrable_sq.bdd_mul hψ2 hψ2M
+    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.gradient w)).norm.integrable_sq
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-    (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul hψ2 hψ2M
+    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.value w)).integrable_sq
   have hFw : Integrable (fun x => ψ x ^ 2 * F x * W1p.value w x) (mu.restrict Omega) :=
-    ((hF.integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2 hψ2M).congr
+    (integrable_sq_mul_of_contDiff hψ hcpt (hF.integrable_mul (Lp.memLp (W1p.value w)))).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hG : Integrable (fun x => ψ x ^ 2 * hg.toLp _ x * W1p.value w x) (mu.restrict Omega) :=
-    (((Lp.memLp (hg.toLp _)).integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2
-      hψ2M).congr (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
+    (integrable_sq_mul_of_contDiff hψ hcpt
+      ((Lp.memLp (hg.toLp _)).integrable_mul (Lp.memLp (W1p.value w)))).congr
+      (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hR : Integrable (fun x => lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
       + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2)) (mu.restrict Omega) :=
     (hX.const_mul _).add (hZ.const_mul _)
@@ -412,25 +421,16 @@ private theorem sub_inner_sub_mul_mul_le (hlam : 0 < lam) {s fx ux cx : ℝ}
     {bx gx : EuclideanSpace ℝ ι} (hs : 0 ≤ s) (hb : ‖bx‖ ≤ beta) (hc : ‖cx‖ ≤ gamma) :
     (fx - ⟪bx, gx⟫_ℝ - cx * ux) * (s * ux) ≤
       s * fx * ux + (lam / 4 * (s * ‖gx‖ ^ 2) + (beta ^ 2 / lam + gamma) * (s * ux ^ 2)) := by
-  have hinner : |⟪bx, gx⟫_ℝ| ≤ beta * ‖gx‖ :=
-    (abs_real_inner_le_norm bx gx).trans (mul_le_mul_of_nonneg_right hb (norm_nonneg _))
   have hc' : |cx| ≤ gamma := by rwa [← Real.norm_eq_abs]
-  -- Young's inequality `β |u| ‖∇u‖ ≤ λ/4 ‖∇u‖² + β²/λ u²`, multiplied out by `λ`.
+  -- Young's inequality `-u ⟪b, ∇u⟫ ≤ λ/4 ‖∇u‖² + β²/λ u²`.
   have hyoung : -(⟪bx, gx⟫_ℝ * ux) ≤ lam / 4 * ‖gx‖ ^ 2 + beta ^ 2 / lam * ux ^ 2 := by
-    have h1 : -(⟪bx, gx⟫_ℝ * ux) ≤ beta * ‖gx‖ * |ux| := by
-      rw [← neg_mul]
-      calc -⟪bx, gx⟫_ℝ * ux ≤ |-⟪bx, gx⟫_ℝ * ux| := le_abs_self _
-        _ = |⟪bx, gx⟫_ℝ| * |ux| := by rw [abs_mul, abs_neg]
-        _ ≤ beta * ‖gx‖ * |ux| := mul_le_mul_of_nonneg_right hinner (abs_nonneg _)
-    have h2 : beta * ‖gx‖ * |ux| ≤ lam / 4 * ‖gx‖ ^ 2 + beta ^ 2 / lam * ux ^ 2 := by
-      have key : lam / 4 * ‖gx‖ ^ 2 + beta ^ 2 / lam * ux ^ 2 - beta * ‖gx‖ * |ux| =
-          (lam * ‖gx‖ - 2 * beta * |ux|) ^ 2 / (4 * lam) := by
-        rw [← sq_abs ux]
-        field_simp
-        ring
-      have : 0 ≤ (lam * ‖gx‖ - 2 * beta * |ux|) ^ 2 / (4 * lam) := by positivity
-      linarith
-    exact h1.trans h2
+    have h := two_mul_re_inner_le_add_mul_norm_sq (𝕜 := ℝ) (-ux • bx) gx
+      (by positivity : (0 : ℝ) < 2 / lam)
+    simp only [RCLike.re_to_real, real_inner_smul_left, norm_smul, mul_pow, Real.norm_eq_abs,
+      sq_abs, inv_div] at h
+    have hb2 : ux ^ 2 * ‖bx‖ ^ 2 ≤ ux ^ 2 * beta ^ 2 :=
+      mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hb 2) (sq_nonneg _)
+    linear_combination (h + 2 / lam * hb2) / 2
   have hmass : -(cx * ux * ux) ≤ gamma * ux ^ 2 := by
     have : -(cx * ux * ux) ≤ |cx| * ux ^ 2 := by
       rw [mul_assoc, ← sq, ← neg_mul]
@@ -454,18 +454,13 @@ private theorem setIntegral_sub_inner_sub_mul_mul_le (hlam : 0 < lam)
       ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu
         + (lam / 4 * ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu
           + (beta ^ 2 / lam + gamma) * ∫ x in Omega, ψ x ^ 2 * W1p.value u x ^ 2 ∂mu) := by
-  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
-    (hψ.continuous.pow 2).aestronglyMeasurable
-  have hψ2M : ∀ᵐ x ∂mu.restrict Omega, ‖ψ x ^ 2‖ ≤ M ^ 2 := Eventually.of_forall fun x => by
-    rw [Real.norm_eq_abs, abs_pow]
-    exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
   have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-    (Lp.memLp (W1p.gradient u)).norm.integrable_sq.bdd_mul hψ2 hψ2M
+    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.gradient u)).norm.integrable_sq
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
-    (Lp.memLp (W1p.value u)).integrable_sq.bdd_mul hψ2 hψ2M
+    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.value u)).integrable_sq
   have hFu : Integrable (fun x => ψ x ^ 2 * f x * W1p.value u x) (mu.restrict Omega) :=
-    (((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u))).bdd_mul hψ2 hψ2M).congr
+    (integrable_sq_mul_of_contDiff hψ hcpt
+      ((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u)))).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hG : Integrable (fun x => (f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) *
       W1p.value v x) (mu.restrict Omega) :=
@@ -494,7 +489,7 @@ with no boundary condition. Then every smooth `ψ` compactly supported in `Ω` s
 `∫_Ω ψ² ‖∇u‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² u² + ((2β/λ)² + 4γ/λ) ∫_Ω ψ² u² + (4/λ) ∫_Ω ψ² f u`.
 
 No sign condition on `c` and no smallness of `b` is needed: both enter through the zeroth-order
-term in `ψ`. -/
+term in `ψ`. This is the energy bound of Evans, §6.3.1, proof of Theorem 1 (Step 1). -/
 theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_lowerOrder
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -548,31 +543,33 @@ private theorem mul_setIntegral_add_div_mul_setIntegral_le (hlam : 0 < lam) {R :
         + 4 / lam * ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ((B + 2 / R ^ 2) * W1p.value u x ^ 2 +
         2 * (R / lam) ^ 2 * f x ^ 2) ∂mu := by
-  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
-    (hψ.continuous.pow 2).aestronglyMeasurable
-  have hψ2M : ∀ᵐ x ∂mu.restrict Omega, ‖ψ x ^ 2‖ ≤ M ^ 2 := Eventually.of_forall fun x => by
-    rw [Real.norm_eq_abs, abs_pow]
-    exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
-    (Lp.memLp (W1p.value u)).integrable_sq.bdd_mul hψ2 hψ2M
+    integrable_sq_mul_of_contDiff hψ hcpt (Lp.memLp (W1p.value u)).integrable_sq
   have hFu : Integrable (fun x => ψ x ^ 2 * f x * W1p.value u x) (mu.restrict Omega) :=
-    (((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u))).bdd_mul hψ2 hψ2M).congr
+    (integrable_sq_mul_of_contDiff hψ hcpt
+      ((Lp.memLp f).integrable_mul (Lp.memLp (W1p.value u)))).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
   have hg : Integrable (fun x => ψ x ^ 2 * ((B + 2 / R ^ 2) * W1p.value u x ^ 2 +
       2 * (R / lam) ^ 2 * f x ^ 2)) (mu.restrict Omega) :=
-    (((Lp.memLp (W1p.value u)).integrable_sq.const_mul _).add
-      ((Lp.memLp f).integrable_sq.const_mul _)).bdd_mul hψ2 hψ2M
+    integrable_sq_mul_of_contDiff hψ hcpt
+      (((Lp.memLp (W1p.value u)).integrable_sq.const_mul _).add
+        ((Lp.memLp f).integrable_sq.const_mul _))
   rw [← integral_const_mul, ← integral_const_mul,
     ← integral_add (hZ.const_mul _) (hFu.const_mul _)]
   refine integral_mono ((hZ.const_mul _).add (hFu.const_mul _)) hg fun x => ?_
-  -- `4 f u / λ ≤ 2 u² / R² + 2 (R / λ)² f²`, since the difference is `2 (u / R - R f / λ)²`.
-  have hsq : 0 ≤ ψ x ^ 2 * (2 * (W1p.value u x / R - R / lam * f x) ^ 2) := by positivity
-  have he : ψ x ^ 2 * (2 * (W1p.value u x / R - R / lam * f x) ^ 2) =
-      ψ x ^ 2 * ((B + 2 / R ^ 2) * W1p.value u x ^ 2 + 2 * (R / lam) ^ 2 * f x ^ 2) -
-        (B * (ψ x ^ 2 * W1p.value u x ^ 2) + 4 / lam * (ψ x ^ 2 * f x * W1p.value u x)) := by
+  -- Young's inequality `2 u f ≤ (λ / R²) u² + (R² / λ) f²`, multiplied by `2 ψ² / λ`.
+  have hyoung := two_mul_le_add_mul_sq (a := W1p.value u x) (b := f x)
+    (by positivity : 0 < lam / R ^ 2)
+  rw [inv_div] at hyoung
+  have he : ψ x ^ 2 * ((B + 2 / R ^ 2) * W1p.value u x ^ 2 + 2 * (R / lam) ^ 2 * f x ^ 2) -
+      (B * (ψ x ^ 2 * W1p.value u x ^ 2) + 4 / lam * (ψ x ^ 2 * f x * W1p.value u x)) =
+      2 / lam * ψ x ^ 2 * (lam / R ^ 2 * W1p.value u x ^ 2 + R ^ 2 / lam * f x ^ 2 -
+        2 * W1p.value u x * f x) := by
     field_simp
     ring
+  have : 0 ≤ 2 / lam * ψ x ^ 2 * (lam / R ^ 2 * W1p.value u x ^ 2 + R ^ 2 / lam * f x ^ 2 -
+      2 * W1p.value u x * f x) :=
+    mul_nonneg (by positivity) (sub_nonneg.2 hyoung)
   linarith
 
 /-- **The Caccioppoli inequality on concentric balls for weak solutions with lower-order
@@ -640,9 +637,10 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_lowerOrder :
 /-- **Caccioppoli's inequality on balls, for coefficients controlled on the outer ball only.**
 There is a constant `C`, depending only on the dimension, such that the following holds. Let
 `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `r < R`, let `a` be measurable and uniformly elliptic on `B(x₀, R)`
-with constants `0 < λ ≤ Λ`, let `b, c ∈ L∞(Ω)` with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on
-`B(x₀, R)`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`,
-with `f ∈ L²(Ω)`. Then, with `L²` norms on the indicated balls,
+with constants `0 < λ ≤ Λ`, let `b` and `c` be measurable on `B(x₀, R)` with `‖b‖ ≤ β` and
+`|c| ≤ γ` almost everywhere there, and let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`. Then, with `L²` norms on the
+indicated balls,
 
 `‖∇u‖²_{B(x₀, r)} ≤ (2 (2Λ/λ)² (C/(R - r))² + (2β/λ)² + 4γ/λ + 2/R²) ‖u‖²_{B(x₀, R)}`
 `  + 2 (R/λ)² ‖f‖²_{B(x₀, R)}`.
@@ -650,7 +648,7 @@ with `f ∈ L²(Ω)`. Then, with `L²` norms on the indicated balls,
 Nothing is assumed about the coefficients outside `B(x₀, R)`: this is
 `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_lowerOrder` for the restriction of `u` to
 `B(x₀, R)`. -/
-theorem exists_sq_toReal_eLpNorm_gradient_ball_le :
+theorem exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder :
     ∃ C : ℝ, ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
       ⦃Omega : Opens (EuclideanSpace ℝ ι)⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
       ⦃b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι⦄ ⦃c : EuclideanSpace ℝ ι → ℝ⦄
@@ -659,7 +657,8 @@ theorem exists_sq_toReal_eLpNorm_gradient_ball_le :
       0 < R → r < R → Metric.ball x₀ R ⊆ Omega →
       UniformlyEllipticOn (Metric.ball x₀ R) a lam Lam →
       AEStronglyMeasurable a (mu.restrict (Metric.ball x₀ R)) →
-      MemLp b ⊤ (mu.restrict Omega) → MemLp c ⊤ (mu.restrict Omega) →
+      AEStronglyMeasurable b (mu.restrict (Metric.ball x₀ R)) →
+      AEStronglyMeasurable c (mu.restrict (Metric.ball x₀ R)) →
       (∀ᵐ x ∂mu.restrict (Metric.ball x₀ R), ‖b x‖ ≤ β) →
       (∀ᵐ x ∂mu.restrict (Metric.ball x₀ R), |c x| ≤ γ) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
@@ -678,7 +677,7 @@ theorem exists_sq_toReal_eLpNorm_gradient_ball_le :
   have hfU : MemLp f 2 (mu.restrict U) := (Lp.memLp f).mono_measure hle
   have hcU := hcacc (mu := mu) (Omega := U) (f := hfU.toLp f) (u := W1p.restrictL hUΩ u)
     (x₀ := x₀) (r := r) (R := R) ha ham
-    (hb.aestronglyMeasurable.mono_measure hle) (hc.aestronglyMeasurable.mono_measure hle) hβ
+    hb hc hβ
     (hγ.mono fun x hx => (Real.norm_eq_abs _).trans_le hx)
     (fun v => by
       rw [energyFormH1_restrictL_eq_setIntegral hUΩ hu v]

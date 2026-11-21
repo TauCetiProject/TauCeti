@@ -13,8 +13,8 @@ import TauCeti.Topology.Instances.Matrix
 /-!
 # The interior `H²` estimate in terms of the forcing and the solution
 
-Let `a` be uniformly elliptic and Lipschitz on `B(x₀, 4 r)`, let `b, c` be bounded there, and let
-`u ∈ H¹(Ω)` be a weak solution of
+Let `a` be uniformly elliptic and Lipschitz on `B(x₀, 4 r)`, let `b, c ∈ L∞(Ω)` with `‖b‖ ≤ β`
+and `|c| ≤ γ` on `B(x₀, 4 r)`, and let `u ∈ H¹(Ω)` be a weak solution of
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω ⊇ B(x₀, 4 r)`, with `f ∈ L²(Ω)`.
 
@@ -22,8 +22,8 @@ The interior estimate on balls
 (`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball`) bounds the
 second weak derivatives of `u` on `B(x₀, r)` by the `L²` norms of `f`, `∇u` and `u` on
 `B(x₀, 2 r)`. This file removes `∇u` from the right-hand side: by Caccioppoli's inequality with
-lower-order terms (`TauCeti.PDE.exists_sq_toReal_eLpNorm_gradient_ball_le`), the gradient on
-`B(x₀, 2 r)` is bounded by `f` and `u` on `B(x₀, 4 r)`. The result is the classical
+lower-order terms (`TauCeti.PDE.exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder`), the
+gradient on `B(x₀, 2 r)` is bounded by `f` and `u` on `B(x₀, 4 r)`. The result is the classical
 form of the interior estimate,
 
 `‖D²u‖_{L²(B(x₀, r))} ≤ C (‖f‖_{L²(B(x₀, 4 r))} / λ + ‖u‖_{L²(B(x₀, 4 r))} / r²)`,
@@ -213,7 +213,7 @@ theorem UniformlyEllipticOn.exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_grad
           (fun x => ⟪W1p.gradient u x, y⟫_ℝ) G w := by
   obtain ⟨C₁, hC₁, hball⟩ :=
     UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball (ι := ι)
-  obtain ⟨C₂, hcacc⟩ := exists_sq_toReal_eLpNorm_gradient_ball_le (ι := ι)
+  obtain ⟨C₂, hcacc⟩ := exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder (ι := ι)
   set M' := max M 0
   refine ⟨1 + 6 * ((3 + C₁) * M') + ((3 + C₁) * M' * (2 * M' ^ 2 * C₂ ^ 2 + 4 * M' ^ 2 +
     4 * M' + 1 / 8 + 1) + (1 + 2 * C₁) * M'), by positivity, ?_⟩
@@ -234,7 +234,9 @@ theorem UniformlyEllipticOn.exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_grad
   -- Caccioppoli's inequality bounds `∇u` on `B(x₀, 2 r)` by `u` and `f` on `B(x₀, 4 r)`.
   have hcU := hcacc mu (r := 2 * r) (by positivity) (by linarith) hΩ ha
     ((continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
-      Metric.isOpen_ball.measurableSet) hb hc hβ hγ hu
+      Metric.isOpen_ball.measurableSet)
+    (hb.aestronglyMeasurable.mono_measure (Measure.restrict_mono hΩ le_rfl))
+    (hc.aestronglyMeasurable.mono_measure (Measure.restrict_mono hΩ le_rfl)) hβ hγ hu
   rw [mul_assoc _ ‖y‖]
   exact le_mul_div_add_div_of_le hlam hr ha.upper_nonneg hβ0 hC₁ (by positivity)
     ENNReal.toReal_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg (hMΛ.trans hMlam)
