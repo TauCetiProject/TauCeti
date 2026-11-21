@@ -515,7 +515,7 @@ theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))
     (a : NovikovSeries R H N) :
     comap K.subtype hφ hker (algebraMap _ _ b * a) = b * comap K.subtype hφ hker a := by
   ext k
-  rw [coeff_comap, AddSubgroup.subtype_apply, coeff_mul]
+  rw [coeff_comap, AddSubgroup.subtype_apply]
   refine (coeff_mul_eq_sum_of_injOn (F := (finite_setOf_add_eq b (comap K.subtype hφ hker a)
     k).toFinset) (f := fun p : K × K => ((p.1 : H), (p.2 : H)))
     (fun p hp => ?_) (fun u v huv hu hv => ?_) fun p _ p' _ hpp' => ?_).trans ?_

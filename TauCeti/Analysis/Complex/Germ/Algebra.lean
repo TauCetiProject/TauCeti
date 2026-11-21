@@ -33,6 +33,7 @@ operations, and germ composition.
 public noncomputable section
 
 open Filter Set Topology
+open scoped Ring
 
 namespace TauCeti
 
@@ -183,7 +184,8 @@ theorem eval_restrict (h : t ⊆ s) (x : ℂ) (hx : x ∈ t) (g : holomorphicGer
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   rfl
 
-private theorem ofFun_mul_ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
+/-- A representative with no zero on `s` times its pointwise inverse is the unit germ. -/
+theorem ofFun_mul_ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
     (hne : ∀ x ∈ s, f x ≠ 0) :
     ofFun f hf * ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = 1 := by
   apply Subtype.ext
@@ -205,8 +207,9 @@ theorem isUnit_iff (g : holomorphicGerms s) :
     exact IsUnit.of_mul_eq_one _ (ofFun_mul_ofFun_inv hf hne)
 
 /-- The reciprocal of a function with no zero on the base set represents the inverse germ. -/
+@[simp]
 theorem ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
-    ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = Ring.inverse (ofFun f hf) := by
+    ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = (ofFun f hf)⁻¹ʳ := by
   have h := ofFun_mul_ofFun_inv hf hne
   rw [← (Ring.inverse_mul_eq_iff_eq_mul _ _ _ (IsUnit.of_mul_eq_one _ h)).mpr h.symm, mul_one]
 
