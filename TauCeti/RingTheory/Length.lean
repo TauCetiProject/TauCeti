@@ -519,7 +519,8 @@ theorem _root_.MaximalSpectrum.length_quotient_eq_length_residueField {A B S : T
   let e := IsLocalization.algEquiv m.asIdeal.primeCompl (Localization.AtPrime m.asIdeal) S
   let f := IsLocalRing.ResidueField.mapAlgEquiv (e.restrictScalars A)
   rw [← m.length_residueField_localization_eq, f.toLinearEquiv.length_eq,
-    IsLocalRing.length_restrictScalars A S, TauCeti.length_residueField_eq_one, one_mul]
+    Module.length_eq_of_surjective (M := IsLocalRing.ResidueField S)
+      (IsLocalRing.residue_surjective (R := A))]
 
 /-- **The residue degree as a natural number.** Under the hypotheses of
 `MaximalSpectrum.length_quotient_eq_length_residueField`, the natural-number truncation of the

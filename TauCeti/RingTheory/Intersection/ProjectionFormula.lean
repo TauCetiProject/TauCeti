@@ -71,9 +71,9 @@ theorem finsum_ord_algebraMap_mul_length_quotient_eq_finrank_mul_ord {a : A} (ha
   have hab : algebraMap A B a ≠ 0 := (FaithfulSMul.algebraMap_eq_zero_iff A B).not.mpr ha
   have hrange : LinearMap.range (LinearMap.lsmul A B a) =
       (Ideal.span {algebraMap A B a}).restrictScalars A := by
-    rw [range_lsmul_eq_smul_top, ← Submodule.ideal_span_singleton_smul, Ideal.smul_top_eq_map,
-      Ideal.map_span]
-    simp
+    change LinearMap.range (Algebra.lsmul A A B a) = _
+    rw [← Algebra.lmul_algebraMap]
+    exact Ideal.range_mul B _
   have hlen := length_quotient_lsmul_eq_finrank_mul_ord (M := B) ha
   rw [hrange, (Submodule.Quotient.restrictScalarsEquiv A _).length_eq,
     length_quotient_span_singleton_eq_finsum_ord hab] at hlen
