@@ -582,6 +582,24 @@ theorem isoFiberEquiv_symm_apply (e : A ≅ D) (x : B) (v : Fin D.rank → 𝕜)
     (isoFiberEquiv e x).symm v = e.inv.fiberMap x v :=
   (rfl)
 
+@[simp]
+theorem isoFiberEquiv_refl (A : FiniteRankBundleCore 𝕜 B) (x : B) :
+    isoFiberEquiv (Iso.refl A) x = ContinuousLinearEquiv.refl 𝕜 (Fin A.rank → 𝕜) := by
+  ext v
+  simp [isoFiberEquiv, fiberMap_id]
+
+@[simp]
+theorem isoFiberEquiv_symm (e : A ≅ D) (x : B) :
+    isoFiberEquiv e.symm x = (isoFiberEquiv e x).symm := by
+  ext v
+  simp [isoFiberEquiv]
+
+@[simp]
+theorem isoFiberEquiv_trans {E : FiniteRankBundleCore 𝕜 B} (e₁ : A ≅ D) (e₂ : D ≅ E) (x : B) :
+    isoFiberEquiv (e₁ ≪≫ e₂) x = (isoFiberEquiv e₁ x).trans (isoFiberEquiv e₂ x) := by
+  ext v
+  simp
+
 /-- Re-express a continuous linear equivalence between core fibres directly on coordinate models so
 its type reduces under `implicit` transparency. -/
 def ofCoreEquiv {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]

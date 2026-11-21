@@ -18,8 +18,8 @@ This file defines the canonical continuous maps associated with a topological cy
   `s ⊆ X`.
 * `TauCeti.cylinderSlice X t`: the time-`t` slice embedding `x ↦ (x, t)` into `X × I`.
 
-The definitions are kept opaque and accompanied by evaluation, `ContinuousMap`-equality, and
-composition lemmas.
+The definitions are exposed so dependent pullback fibres reduce definitionally, and are accompanied
+by evaluation, `ContinuousMap`-equality, and composition lemmas.
 -/
 
 public section
@@ -29,7 +29,7 @@ open scoped unitInterval
 namespace TauCeti
 
 /-- Projection `(x, t) ↦ (x, 0)` of a cylinder onto its time-zero slice. -/
-def cylinderZero (X : Type*) [TopologicalSpace X] : C(X × I, X × I) :=
+@[expose] def cylinderZero (X : Type*) [TopologicalSpace X] : C(X × I, X × I) :=
   ContinuousMap.fst.prodMk (ContinuousMap.const (X × I) (0 : I))
 
 theorem cylinderZero_eq (X : Type*) [TopologicalSpace X] :
@@ -46,7 +46,7 @@ theorem cylinderZero_apply {X : Type*} [TopologicalSpace X] (q : X × I) :
   (rfl)
 
 /-- Inclusion `s × I → X × I` of the cylinder over a subset `s ⊆ X`. -/
-def cylinderSetIncl {X : Type*} [TopologicalSpace X] (s : Set X) : C(s × I, X × I) :=
+@[expose] def cylinderSetIncl {X : Type*} [TopologicalSpace X] (s : Set X) : C(s × I, X × I) :=
   ((ContinuousMap.id X).restrict s).prodMap (ContinuousMap.id I)
 
 theorem cylinderSetIncl_eq {X : Type*} [TopologicalSpace X] (s : Set X) :
@@ -63,7 +63,7 @@ theorem cylinderSetIncl_apply {X : Type*} [TopologicalSpace X] (s : Set X) (q : 
   (rfl)
 
 /-- Time-`t` slice embedding `x ↦ (x, t)` into the cylinder `X × I`. -/
-def cylinderSlice (X : Type*) [TopologicalSpace X] (t : I) : C(X, X × I) :=
+@[expose] def cylinderSlice (X : Type*) [TopologicalSpace X] (t : I) : C(X, X × I) :=
   (ContinuousMap.id X).prodMk (ContinuousMap.const X t)
 
 theorem cylinderSlice_eq (X : Type*) [TopologicalSpace X] (t : I) :

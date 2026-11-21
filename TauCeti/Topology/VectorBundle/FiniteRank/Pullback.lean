@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
-public import TauCeti.Topology.Homotopy.Cylinder.Basic
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.Topology.VectorBundle.Constructions
 import TauCeti.Topology.FiberBundle.Pullback
@@ -44,7 +43,6 @@ and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle map
 public section
 
 open Bundle CategoryTheory VectorBundleCore
-open scoped unitInterval
 
 namespace TauCeti.FiniteRankBundleCore
 
@@ -215,11 +213,6 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
 /-- Iterated pullback and pullback by a composite have literally the same coordinate data. -/
 @[simp] theorem pullback_comp (A : FiniteRankBundleCore 𝕜 Z) (f : C(X, Y)) (g : C(Y, Z)) :
     (A.pullback g).pullback f = A.pullback (g.comp f) := (rfl)
-
-/-- Pulling back `A.pullback ContinuousMap.fst` along any time-`t` cylinder slice recovers `A`. -/
-theorem pullback_cylinderSlice_pullback_fst (A : FiniteRankBundleCore 𝕜 X) (t : I) :
-    (A.pullback ContinuousMap.fst).pullback (cylinderSlice X t) = A := by
-  rw [pullback_comp, fst_comp_cylinderSlice, pullback_id]
 
 /-- Pullback by the identity is the identity functor, including on morphisms. -/
 @[simp] theorem pullbackFunctor_id :

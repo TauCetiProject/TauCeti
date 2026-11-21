@@ -657,6 +657,25 @@ theorem continuous_hom_bundle_of_inCoordinates_eq_const
     (mem_baseSet_trivializationAt F₂ E₂ a)] with x hx₁ hx₂
   exact hϕ a x hx₁ hx₂
 
+/-- The identity endomorphism of a vector bundle forms a continuous section of its endomorphism
+bundle. -/
+theorem continuous_hom_bundle_id {𝕜 B F : Type*} [NontriviallyNormedField 𝕜]
+    [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
+    [∀ x, TopologicalSpace (E x)] [∀ x, IsTopologicalAddGroup (E x)]
+    [∀ x, ContinuousSMul 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+    [FiberBundle F E] [VectorBundle 𝕜 F E] :
+    Continuous (fun x ↦ TotalSpace.mk' (F →L[𝕜] F)
+      (E := fun y ↦ E y →L[𝕜] E y) x (ContinuousLinearMap.id 𝕜 (E x))) :=
+  continuous_hom_bundle_of_inCoordinates_eq_const
+    (c := fun _ ↦ ContinuousLinearMap.id 𝕜 F)
+    fun _ _ hx _ ↦ by
+      rw [ContinuousLinearMap.inCoordinates_eq hx hx]
+      ext v
+      simp only [ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply,
+        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
+        ContinuousLinearMap.id_apply]
+
 end ConstantCoordinates
 
 end TauCeti

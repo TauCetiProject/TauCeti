@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Classical.Finite
-public import TauCeti.Topology.VectorBundle.FiniteRank.HomotopyInvariance.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.HomotopyInvariance.Relative
 
 /-!
 # Relative cylinder extension over finite CW complexes for finite-rank bundle cores
