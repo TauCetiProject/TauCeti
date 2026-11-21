@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.Hierarchy.NormalForm.Prefix
 public import TauCeti.Computability.Hierarchy.Totality
+public import TauCeti.Computability.SingleOracle.Combinators
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -434,36 +435,11 @@ theorem isClass_iff_exists_normalFormCode_unary {Z : Set ℕ} {p : QuantifierPre
 
 /-! ### Exact Π⁰₂-completeness and undecidability of `NormalFormCode.IsValid` -/
 
--- An ordinary oracle-independent program that halts precisely on Boolean outputs (`0` or `1`).
-private theorem exists_boolGuardCode :
-    ∃ c : Code, ∀ (O : ℕ →. ℕ) (n : ℕ),
-      Code.eval O c n = Part.assert (n < 2) fun _ => Part.some 0 := by
-  have hpart : Nat.Partrec fun n : ℕ => Part.assert (n < 2) fun _ => Part.some 0 := by
-    have hdec : Primrec fun n : ℕ => decide (n < 2) :=
-      (Primrec.nat_lt.comp Primrec.id (Primrec.const 2)).decide
-    have hre : REPred fun n : ℕ => n < 2 :=
-      ComputablePred.to_re ⟨inferInstance, hdec.to_comp⟩
-    have hp := hre.map (Computable.const 0).to₂
-    unfold Partrec at hp
-    refine hp.of_eq fun n => ?_
-    ext y
-    simp [Part.assert]
-  obtain ⟨c, hc⟩ := Code.exists_forall_eval_eq_of_partrec hpart
-  exact ⟨c, fun O n => congrFun (hc O) n⟩
-
--- An ordinary oracle-independent program extracting the head of an encoded list of naturals.
-private theorem exists_listHeadCode :
-    ∃ c : Code, ∀ (O : ℕ →. ℕ) (n : ℕ), Code.eval O c n = Part.some (ofNat (List ℕ) n).headI := by
-  have hpart : Nat.Partrec fun n : ℕ => ((ofNat (List ℕ) n).headI : Part ℕ) :=
-    Nat.Partrec.of_primrec (Primrec.nat_iff.1 (Primrec.list_headI.comp (Primrec.ofNat (List ℕ))))
-  obtain ⟨c, hc⟩ := Code.exists_forall_eval_eq_of_partrec hpart
-  exact ⟨c, fun O n => by simpa using congrFun (hc O) n⟩
-
 -- Halting with a Boolean output (`0` or `1`) on a coded input is Σ⁰₁ relative to `Z`.
 private theorem isSigma_one_eval_bool {Z : Set ℕ} :
     IsSigma Z 1 (fun p : NormalFormCode × ℕ =>
       ∃ b : Bool, encode b ∈ Code.eval Z.oracle p.1.matrix p.2) := by
-  obtain ⟨guard, hguard⟩ := exists_boolGuardCode
+  obtain ⟨guard, hguard⟩ := Code.exists_boolGuardCode
   have harg : Primrec fun p : NormalFormCode × ℕ =>
       Nat.pair (encode (Code.comp guard p.1.matrix)) p.2 :=
     Primrec₂.natPair.comp
@@ -517,7 +493,7 @@ theorem isPi_two_isValid {Z : Set ℕ} : IsPi Z 2 (NormalFormCode.IsValid Z) := 
 uniformly for every oracle `Z`. -/
 theorem oneOneReducible_totality_isValid {Z : Set ℕ} :
     OneOneReducible (· ∈ totality Z) (NormalFormCode.IsValid Z) := by
-  obtain ⟨headCode, hhead⟩ := exists_listHeadCode
+  obtain ⟨headCode, hhead⟩ := Code.exists_listHeadCode
   let f : ℕ → NormalFormCode := fun e =>
     ⟨.zero, 1, Code.comp Code.zero (Code.comp (ofNat Code e) headCode)⟩
   have hf : Primrec f :=

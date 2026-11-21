@@ -37,95 +37,12 @@ namespace TauCeti.ArithmeticalHierarchy
 
 namespace NormalFormCode
 
-/-! ### Explicit Boolean and list-unpairing matrix combinators -/
-
--- Evaluating `Code.prec` at counter `1` unpacks one recursion step.
-private theorem eval_prec_one (O : ℕ →. ℕ) (cf cg : Code) (a : ℕ) :
-    Code.eval O (Code.prec cf cg) (Nat.pair a 1) =
-      Code.eval O cf a >>= fun y => Code.eval O cg (Nat.pair a (Nat.pair 0 y)) := by
-  simpa using Code.eval_prec_succ (O := O) cf cg a 0
-
--- Explicit oracle-independent Boolean negation on `0`/`1`-valued codes.
-private def boolNotCode (c : Code) : Code :=
-  Code.comp (Code.prec (Code.comp Code.succ Code.zero) Code.zero) (Code.pair Code.zero c)
-
-private theorem primrec_boolNotCode : Primrec boolNotCode :=
-  Code.primrec₂_comp.comp (Primrec.const _)
-    (Code.primrec₂_pair.comp (Primrec.const _) Primrec.id)
-
-private theorem eval_boolNotCode (O : ℕ →. ℕ) (c : Code) (n : ℕ) (b : Bool)
-    (hc : encode b ∈ Code.eval O c n) :
-    Code.eval O (boolNotCode c) n = Part.some (encode (!b)) := by
-  have hce : Code.eval O c n = Part.some (encode b) := Part.eq_some_iff.2 hc
-  cases b <;> simp [boolNotCode, hce, eval_prec_one, Seq.seq]
-
--- Explicit oracle-independent Boolean conjunction on `0`/`1`-valued codes.
-private def boolAndCode (c₁ c₂ : Code) : Code :=
-  Code.comp (Code.prec Code.zero Code.left) (Code.pair c₂ c₁)
-
-private theorem primrec₂_boolAndCode : Primrec₂ boolAndCode :=
-  Code.primrec₂_comp.comp (Primrec.const _)
-    (Code.primrec₂_pair.comp Primrec.snd Primrec.fst)
-
-private theorem eval_boolAndCode (O : ℕ →. ℕ) (c₁ c₂ : Code) (n : ℕ) (b₁ b₂ : Bool)
-    (h₁ : encode b₁ ∈ Code.eval O c₁ n) (h₂ : encode b₂ ∈ Code.eval O c₂ n) :
-    Code.eval O (boolAndCode c₁ c₂) n = Part.some (encode (b₁ && b₂)) := by
-  have he₁ : Code.eval O c₁ n = Part.some (encode b₁) := Part.eq_some_iff.2 h₁
-  have he₂ : Code.eval O c₂ n = Part.some (encode b₂) := Part.eq_some_iff.2 h₂
-  cases b₁ <;> cases b₂ <;> simp [boolAndCode, he₁, he₂, eval_prec_one, Seq.seq]
-
--- Explicit oracle-independent Boolean disjunction on `0`/`1`-valued codes.
-private def boolOrCode (c₁ c₂ : Code) : Code :=
-  Code.comp (Code.prec (Code.pair Code.left Code.right) (Code.comp Code.succ Code.zero))
-    (Code.pair c₂ c₁)
-
-private theorem primrec₂_boolOrCode : Primrec₂ boolOrCode :=
-  Code.primrec₂_comp.comp (Primrec.const _)
-    (Code.primrec₂_pair.comp Primrec.snd Primrec.fst)
-
-private theorem eval_boolOrCode (O : ℕ →. ℕ) (c₁ c₂ : Code) (n : ℕ) (b₁ b₂ : Bool)
-    (h₁ : encode b₁ ∈ Code.eval O c₁ n) (h₂ : encode b₂ ∈ Code.eval O c₂ n) :
-    Code.eval O (boolOrCode c₁ c₂) n = Part.some (encode (b₁ || b₂)) := by
-  have he₁ : Code.eval O c₁ n = Part.some (encode b₁) := Part.eq_some_iff.2 h₁
-  have he₂ : Code.eval O c₂ n = Part.some (encode b₂) := Part.eq_some_iff.2 h₂
-  have hid (x : ℕ) : Code.eval O (Code.pair Code.left Code.right) x = Part.some x := by
-    simp [Seq.seq]
-  cases b₁ <;> cases b₂ <;> simp [boolOrCode, he₁, he₂, eval_prec_one, hid, Seq.seq]
-
--- Parameterized query-free program realizing a primitive recursive list transformation.
-private theorem natPartrec_listParam {f : ℕ → List ℕ → List ℕ} (hf : Primrec₂ f) :
-    Nat.Partrec fun n : ℕ =>
-      (encode (f n.unpair.1 (ofNat (List ℕ) n.unpair.2)) : Part ℕ) :=
-  Nat.Partrec.of_primrec (Primrec.nat_iff.1
-    (Primrec.encode.comp
-      (hf.comp (Primrec.fst.comp Primrec.unpair)
-        ((Primrec.ofNat (List ℕ)).comp (Primrec.snd.comp Primrec.unpair)))))
-
-private noncomputable def listParamCode {f : ℕ → List ℕ → List ℕ} (hf : Primrec₂ f) (a : ℕ) :
-    Code :=
-  Code.curry (Code.exists_forall_eval_eq_of_partrec (natPartrec_listParam hf)).choose a
-
-private theorem primrec_listParamCode {f : ℕ → List ℕ → List ℕ} (hf : Primrec₂ f) :
-    Primrec (listParamCode hf) :=
-  Code.primrec₂_curry.comp (Primrec.const _) Primrec.id
-
-private theorem eval_comp_listParamCode {f : ℕ → List ℕ → List ℕ} (hf : Primrec₂ f)
-    (O : ℕ →. ℕ) (c : Code) (a : ℕ) (l : List ℕ) :
-    Code.eval O (Code.comp c (listParamCode hf a)) (encode l) =
-      Code.eval O c (encode (f a l)) := by
-  have hcode := congrFun
-    ((Code.exists_forall_eval_eq_of_partrec (natPartrec_listParam hf)).choose_spec O)
-    (Nat.pair a (encode l))
-  have hpar : Code.eval O (listParamCode hf a) (encode l) = Part.some (encode (f a l)) := by
-    simpa [listParamCode] using hcode
-  simp [Code.eval_comp, hpar]
-
 /-! ### Complementation -/
 
 /-- Effective complementation of a normal-form code, dualizing the quantifier prefix and negating
 the Boolean matrix. -/
 def neg (nf : NormalFormCode) : NormalFormCode :=
-  ⟨nf.quantifiers.dual, nf.arity, boolNotCode nf.matrix⟩
+  ⟨nf.quantifiers.dual, nf.arity, Code.boolNot nf.matrix⟩
 
 /-- Complementation dualizes the quantifier prefix. -/
 @[simp]
@@ -139,7 +56,7 @@ theorem arity_neg (nf : NormalFormCode) : nf.neg.arity = nf.arity := (rfl)
 theorem primrec_neg : Primrec neg :=
   primrec_mk.comp
     ((QuantifierPrefix.primrec_dual.comp primrec_quantifiers).pair
-      (primrec_arity.pair (primrec_boolNotCode.comp primrec_matrix)))
+      (primrec_arity.pair (Code.primrec_boolNot.comp primrec_matrix)))
 
 /-- Complementation preserves validity relative to every oracle. -/
 theorem IsValid.neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z) : nf.neg.IsValid Z := by
@@ -148,7 +65,7 @@ theorem IsValid.neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z) : nf.
     simpa [quantifiers_neg, arity_neg] using hl
   obtain ⟨b, hb⟩ := isValid_iff.1 h l hl'
   refine ⟨!b, ?_⟩
-  rw [NormalFormCode.neg, eval_boolNotCode Z.oracle nf.matrix (encode l) b hb]
+  rw [NormalFormCode.neg, Code.eval_boolNot Z.oracle nf.matrix (encode l) b hb]
   exact Part.mem_some _
 
 /-- Semantic equation for complementation on lists of the expected arity. -/
@@ -160,7 +77,7 @@ theorem evalList_neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z)
   have hlen : (bs ++ xs).length = nf.quantifiers.depth + nf.arity := by
     simp [hbs, hxs]
   obtain ⟨b, hb⟩ := isValid_iff.1 h (bs ++ xs) hlen
-  have hnot := eval_boolNotCode Z.oracle nf.matrix (encode (bs ++ xs)) b hb
+  have hnot := Code.eval_boolNot Z.oracle nf.matrix (encode (bs ++ xs)) b hb
   have hmat := Part.eq_some_iff.2 hb
   rw [matrixHolds_iff, matrixHolds_iff]
   simp only [neg, hnot, hmat, Part.mem_some_iff]
@@ -202,10 +119,10 @@ private theorem length_unpairSnd (d : ℕ) (l : List ℕ) : (unpairSnd d l).leng
   omega
 
 private noncomputable def unpairFstCode (d : ℕ) : Code :=
-  listParamCode primrec₂_unpairFst d
+  Code.paramCode primrec₂_unpairFst.to_comp d
 
 private noncomputable def unpairSndCode (d : ℕ) : Code :=
-  listParamCode primrec₂_unpairSnd d
+  Code.paramCode primrec₂_unpairSnd.to_comp d
 
 -- Inductive step for `eval_and_or_unpair_aux`, peeling off the outermost paired variable `y`.
 private theorem eval_and_or_unpair_step (q : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
@@ -295,14 +212,14 @@ private theorem eval_and_or_unpair_aux (p : QuantifierPrefix) (R₁ R₂ : List 
 /-- Effective conjunction of two normal-form codes with matching quantifier prefix and arity. -/
 noncomputable def and (nf₁ nf₂ : NormalFormCode) : NormalFormCode :=
   ⟨nf₁.quantifiers, nf₁.arity,
-    boolAndCode
+    Code.boolAnd
       (Code.comp nf₁.matrix (unpairFstCode nf₁.quantifiers.depth))
       (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth))⟩
 
 /-- Effective disjunction of two normal-form codes with matching quantifier prefix and arity. -/
 noncomputable def or (nf₁ nf₂ : NormalFormCode) : NormalFormCode :=
   ⟨nf₁.quantifiers, nf₁.arity,
-    boolOrCode
+    Code.boolOr
       (Code.comp nf₁.matrix (unpairFstCode nf₁.quantifiers.depth))
       (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth))⟩
 
@@ -329,12 +246,12 @@ theorem primrec₂_and : Primrec₂ and :=
   (primrec_mk.comp
     ((primrec_quantifiers.comp Primrec.fst).pair
       ((primrec_arity.comp Primrec.fst).pair
-        (primrec₂_boolAndCode.comp
+        (Code.primrec₂_boolAnd.comp
           (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.fst)
-            ((primrec_listParamCode primrec₂_unpairFst).comp
+            ((Code.primrec_paramCode primrec₂_unpairFst.to_comp).comp
               (QuantifierPrefix.primrec_depth.comp (primrec_quantifiers.comp Primrec.fst))))
           (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.snd)
-            ((primrec_listParamCode primrec₂_unpairSnd).comp
+            ((Code.primrec_paramCode primrec₂_unpairSnd.to_comp).comp
               (QuantifierPrefix.primrec_depth.comp
                 (primrec_quantifiers.comp Primrec.fst)))))))).to₂
 
@@ -343,12 +260,12 @@ theorem primrec₂_or : Primrec₂ or :=
   (primrec_mk.comp
     ((primrec_quantifiers.comp Primrec.fst).pair
       ((primrec_arity.comp Primrec.fst).pair
-        (primrec₂_boolOrCode.comp
+        (Code.primrec₂_boolOr.comp
           (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.fst)
-            ((primrec_listParamCode primrec₂_unpairFst).comp
+            ((Code.primrec_paramCode primrec₂_unpairFst.to_comp).comp
               (QuantifierPrefix.primrec_depth.comp (primrec_quantifiers.comp Primrec.fst))))
           (Code.primrec₂_comp.comp (primrec_matrix.comp Primrec.snd)
-            ((primrec_listParamCode primrec₂_unpairSnd).comp
+            ((Code.primrec_paramCode primrec₂_unpairSnd.to_comp).comp
               (QuantifierPrefix.primrec_depth.comp
                 (primrec_quantifiers.comp Primrec.fst)))))))).to₂
 
@@ -371,9 +288,9 @@ private theorem eval_unpair_components {Z : Set ℕ} {nf₁ nf₂ : NormalFormCo
   obtain ⟨b₁, hb₁⟩ := isValid_iff.1 h₁ _ hl₁
   obtain ⟨b₂, hb₂⟩ := isValid_iff.1 h₂ _ hl₂
   refine ⟨b₁, b₂, hb₁, hb₂, ?_, ?_⟩
-  · rw [unpairFstCode, eval_comp_listParamCode]
+  · rw [unpairFstCode, Code.eval_comp_paramCode]
     exact hb₁
-  · rw [unpairSndCode, eval_comp_listParamCode]
+  · rw [unpairSndCode, Code.eval_comp_paramCode]
     exact hb₂
 
 /-- Conjunction preserves validity when both operands share prefix and arity. -/
@@ -384,7 +301,7 @@ theorem IsValid.and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
   refine isValid_iff.2 fun l hl => ?_
   obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
   refine ⟨b₁ && b₂, ?_⟩
-  rw [NormalFormCode.and, eval_boolAndCode Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
+  rw [NormalFormCode.and, Code.eval_boolAnd Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
   exact Part.mem_some _
 
 /-- Disjunction preserves validity when both operands share prefix and arity. -/
@@ -395,7 +312,7 @@ theorem IsValid.or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
   refine isValid_iff.2 fun l hl => ?_
   obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
   refine ⟨b₁ || b₂, ?_⟩
-  rw [NormalFormCode.or, eval_boolOrCode Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
+  rw [NormalFormCode.or, Code.eval_boolOr Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
   exact Part.mem_some _
 
 -- Shared matrix equivalence for conjunction and disjunction on paired bound variables.
@@ -412,8 +329,8 @@ private theorem matrixHolds_and_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
         (((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++ xs)) := by
   have hl : (bs ++ xs).length = nf₁.quantifiers.depth + nf₁.arity := by simp [hbs, hxs]
   obtain ⟨b₁, b₂, hb₁, hb₂, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
-  have hand := eval_boolAndCode Z.oracle _ _ (encode (bs ++ xs)) b₁ b₂ hm₁ hm₂
-  have hor := eval_boolOrCode Z.oracle _ _ (encode (bs ++ xs)) b₁ b₂ hm₁ hm₂
+  have hand := Code.eval_boolAnd Z.oracle _ _ (encode (bs ++ xs)) b₁ b₂ hm₁ hm₂
+  have hor := Code.eval_boolOr Z.oracle _ _ (encode (bs ++ xs)) b₁ b₂ hm₁ hm₂
   have huf : unpairFst nf₁.quantifiers.depth (bs ++ xs) =
       ((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++ xs := by
     simp [unpairFst, hbs]
