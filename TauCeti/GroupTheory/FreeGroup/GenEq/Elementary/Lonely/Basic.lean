@@ -25,11 +25,12 @@ ET4 removes the bases `μ` and `Δ(μ)` together with the section `σ(μ)` and i
 each constant base of an item of `μ` to the matching item of `Δ(μ)`, with the same letter when
 `ε(μ) = ε(Δμ)` and with the inverse letter otherwise.
 
-Writing `Ω′ = Ω.removeLonely μ h`, the substitution `π` sending an item of `μ` to the word of its
-segment of `Δ(μ)` and every other item to itself maps the points of `Ω′*` bijectively onto the
-points of `Ω*`, in every `F(A)`-group (`TauCeti.GenEq.bijOn_wordMap_removeLonely`); hence it
-induces an `F(A)`-isomorphism `F_{R(Ω)} → F_{R(Ω′)}` (`TauCeti.GenEq.removeLonelyHom`,
-`TauCeti.GenEq.removeLonelyHom_bijective`).
+The *matched word* of an item `hₖ` of `μ` is `h[b(k), b(k + 1)]` when `ε(μ) = ε(Δμ)` and the formal
+inverse `h[b(k + 1), b(k)]⁻¹` otherwise (`TauCeti.GenEq.tiedSegment`). Writing
+`Ω′ = Ω.removeLonely μ h`, the substitution `π` sending an item of `μ` to its matched word and
+every other item to itself maps the points of `Ω′*` bijectively onto the points of `Ω*`, in every
+`F(A)`-group (`TauCeti.GenEq.bijOn_wordMap_removeLonely`); hence it induces an `F(A)`-isomorphism
+`F_{R(Ω)} → F_{R(Ω′)}` (`TauCeti.GenEq.removeLonelyHom`, `TauCeti.GenEq.removeLonelyHom_bijective`).
 
 The source deletes "the boundaries `α(μ) + 1, …, β(μ) - 1`", which would leave one free item in
 place of `σ(μ)`, gives `π` only for the items after the first, with a misprinted last index and
@@ -40,9 +41,13 @@ its items could be sent. Finally the source moves a constant base of an item of 
 matching place of `Δ(μ)` without asking that this place be a single item; formal consistency
 guarantees it only for items strictly inside `μ`, so it is part of `TauCeti.GenEq.IsLonely`.
 
+The transfer of solutions along ET4 is developed in
+`TauCeti.GroupTheory.FreeGroup.GenEq.Elementary.Lonely.Solution`.
+
 ## Main definitions
 
 * `TauCeti.GenEq.IsLonely`: a lonely base.
+* `TauCeti.GenEq.tiedSegment`: the matched word of an item of `μ`.
 * `TauCeti.GenEq.dualItem`, `TauCeti.GenEq.moveConstBases`: the item of `Δ(μ)` matched with an
   item of `μ`, and the generalised equation with the constant bases of `μ` moved there.
 * `TauCeti.GenEq.removeLonely`: the generalised equation obtained by removing a lonely base.
@@ -55,7 +60,9 @@ guarantees it only for items strictly inside `μ`, so it is part of `TauCeti.Gen
   `TauCeti.GenEq.equations_moveConstBases_subset_union`: moving constant bases changes only the
   coefficient equations of the moved bases.
 * `TauCeti.GenEq.mapsTo_wordMap_removeLonely`, `TauCeti.GenEq.bijOn_wordMap_removeLonely`: `π`
-  maps the points of `Ω′*` bijectively onto the points of `Ω*`, in every `F(A)`-group.
+  maps the points of `Ω′*` bijectively onto the points of `Ω*`, in every `F(A)`-group; the inverse
+  restricts a point to the items outside `μ` (`TauCeti.GenEq.mem_V_moveConstBases`,
+  `TauCeti.GenEq.comp_mem_V_removeLonely`, `TauCeti.GenEq.wordMap_removeLonelyWord_comp`).
 * `TauCeti.GenEq.removeLonelyHom_bijective`: `π` induces an `F(A)`-isomorphism of coordinate
   groups.
 
@@ -305,16 +312,32 @@ private theorem isTiedTo_succ (hk : k ∈ Ω.baseItems μ) :
     (succ_le_right_of_mem_baseItems hk)
 
 include h in
-/-- The segment of `Δ(μ)` matched with an item of `μ` lies in `Δ(μ)`. -/
-private theorem tiedSegment_bounds (hk : k ∈ Ω.baseItems μ) :
-    (Ω.left (Ω.dual μ) : ℕ) ≤ min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) ∧
-      max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) ≤
-        Ω.right (Ω.dual μ) := by
-  have := Fin.le_def.1 (isTiedTo_castSucc h hk).left_dual_le
-  have := Fin.le_def.1 (isTiedTo_succ h hk).left_dual_le
-  have := Fin.le_def.1 (isTiedTo_castSucc h hk).le_right_dual
-  have := Fin.le_def.1 (isTiedTo_succ h hk).le_right_dual
-  lia
+/-- The segment of `Δ(μ)` matched with an item of `μ` starts inside `Δ(μ)`. -/
+theorem left_dual_le_min_tiedBoundary (hk : k ∈ Ω.baseItems μ) :
+    (Ω.left (Ω.dual μ) : ℕ) ≤ min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) :=
+  le_min (Fin.le_def.1 (isTiedTo_castSucc h hk).left_dual_le)
+    (Fin.le_def.1 (isTiedTo_succ h hk).left_dual_le)
+
+include h in
+/-- The segment of `Δ(μ)` matched with an item of `μ` ends inside `Δ(μ)`. -/
+theorem max_tiedBoundary_le_right_dual (hk : k ∈ Ω.baseItems μ) :
+    max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) ≤ Ω.right (Ω.dual μ) :=
+  max_le (Fin.le_def.1 (isTiedTo_castSucc h hk).le_right_dual)
+    (Fin.le_def.1 (isTiedTo_succ h hk).le_right_dual)
+
+include h hΩ in
+/-- When `ε(μ) = ε(Δμ)`, the boundaries tied to the end-points of an item of `μ` come in the same
+order as the end-points. -/
+theorem tiedBoundary_castSucc_lt_succ_of_sign_eq (hk : k ∈ Ω.baseItems μ)
+    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) : Ω.tiedBoundary μ k.castSucc < Ω.tiedBoundary μ k.succ :=
+  hΩ.lt_of_isTiedTo_of_sign_eq hs (isTiedTo_castSucc h hk) (isTiedTo_succ h hk) k.castSucc_lt_succ
+
+include h hΩ in
+/-- When `ε(μ) ≠ ε(Δμ)`, the boundaries tied to the end-points of an item of `μ` come in the
+opposite order. -/
+theorem tiedBoundary_succ_lt_castSucc_of_sign_ne (hk : k ∈ Ω.baseItems μ)
+    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) : Ω.tiedBoundary μ k.succ < Ω.tiedBoundary μ k.castSucc :=
+  hΩ.lt_of_isTiedTo_of_sign_ne hs (isTiedTo_castSucc h hk) (isTiedTo_succ h hk) k.castSucc_lt_succ
 
 include h hΩ in
 /-- In a formally consistent generalised equation the segment of `Δ(μ)` matched with an item of
@@ -322,18 +345,17 @@ include h hΩ in
 private theorem min_lt_max_tiedBoundary (hk : k ∈ Ω.baseItems μ) :
     min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) <
       max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ) := by
-  have h₁ := isTiedTo_castSucc h hk
-  have h₂ := isTiedTo_succ h hk
   rw [min_lt_max, Ne, ← Fin.ext_iff]
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-  · exact (hΩ.lt_of_isTiedTo_of_sign_eq hs h₁ h₂ k.castSucc_lt_succ).ne
-  · exact (hΩ.lt_of_isTiedTo_of_sign_ne hs h₁ h₂ k.castSucc_lt_succ).ne'
+  · exact (tiedBoundary_castSucc_lt_succ_of_sign_eq h hΩ hk hs).ne
+  · exact (tiedBoundary_succ_lt_castSucc_of_sign_ne h hΩ hk hs).ne'
 
 include h hΩ in
 /-- The item of `Δ(μ)` matched with an item of `μ` is an item of `Δ(μ)`, hence not of `μ`. -/
 private theorem dualItem_notMem (hk : k ∈ Ω.baseItems μ) : Ω.dualItem μ k ∉ Ω.baseItems μ := by
-  obtain ⟨h₁, h₃⟩ := tiedSegment_bounds h hk
+  have h₁ := left_dual_le_min_tiedBoundary h hk
   have h₂ := min_lt_max_tiedBoundary h hΩ hk
+  have h₃ := max_tiedBoundary_le_right_dual h hk
   refine Finset.disjoint_left.1 (h.disjoint _ h.dual_ne) (Ω.mem_baseItems.2 ?_)
   rw [val_dualItem (by have := Fin.is_le (Ω.right (Ω.dual μ)); lia)]
   exact ⟨h₁, by lia⟩
@@ -347,15 +369,57 @@ private theorem notMem_baseItems_of_mem_constBases {b : Fin Ω.numItems × (A ×
   · exact dualItem_notMem h hΩ hk
 
 variable (Ω μ) in
-/-- The word of the segment of `Δ(μ)` matched with the item `k` of `μ`, in the items of `Ω`. -/
-private def tiedSegment (k : Fin Ω.numItems) : List ((Fin Ω.numItems ⊕ A) × Bool) :=
+/-- The *matched word* of the item `k` of `μ`, in the items of `Ω`: the word `h[b(k), b(k + 1)]`
+of the segment of `Δ(μ)` between the boundaries tied to the end-points of `k` when
+`ε(μ) = ε(Δμ)`, and the formal inverse `h[b(k + 1), b(k)]⁻¹` of the word of that segment
+otherwise. -/
+def tiedSegment (k : Fin Ω.numItems) : List ((Fin Ω.numItems ⊕ A) × Bool) :=
   Ω.segment (min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
     (max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
     (decide (Ω.sign μ = Ω.sign (Ω.dual μ)))
 
+include h hΩ in
+/-- When `ε(μ) = ε(Δμ)`, the matched word of an item `hₖ` of `μ` is `h[b(k), b(k + 1)]`. -/
+theorem tiedSegment_of_sign_eq (hk : k ∈ Ω.baseItems μ) (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) :
+    Ω.tiedSegment μ k =
+      Ω.segment (Ω.tiedBoundary μ k.castSucc) (Ω.tiedBoundary μ k.succ) true := by
+  have hlt := Fin.lt_def.1 (tiedBoundary_castSucc_lt_succ_of_sign_eq h hΩ hk hs)
+  rw [tiedSegment, min_eq_left hlt.le, max_eq_right hlt.le, decide_eq_true hs]
+
+include h hΩ in
+/-- When `ε(μ) ≠ ε(Δμ)`, the matched word of an item `hₖ` of `μ` is `h[b(k + 1), b(k)]⁻¹`. -/
+theorem tiedSegment_of_sign_ne (hk : k ∈ Ω.baseItems μ) (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) :
+    Ω.tiedSegment μ k =
+      Ω.segment (Ω.tiedBoundary μ k.succ) (Ω.tiedBoundary μ k.castSucc) false := by
+  have hlt := Fin.lt_def.1 (tiedBoundary_succ_lt_castSucc_of_sign_ne h hΩ hk hs)
+  rw [tiedSegment, min_eq_right hlt.le, max_eq_left hlt.le, decide_eq_false hs]
+
+include h hΩ in
+/-- In a formally consistent generalised equation the matched word of an item of `μ` is
+nonempty. -/
+theorem tiedSegment_ne_nil (hk : k ∈ Ω.baseItems μ) : Ω.tiedSegment μ k ≠ [] := by
+  rw [tiedSegment, Ne, ← List.length_eq_zero_iff, length_segment]
+  have := min_lt_max_tiedBoundary h hΩ hk
+  have := max_tiedBoundary_le_right_dual h hk
+  have := Fin.is_le (Ω.right (Ω.dual μ))
+  lia
+
 include h in
-/-- The two end-points of a constant item of `μ` are tied to the end-points of a single item:
-its matched segment is the item `Ω.dualItem μ k`. -/
+/-- If substituting `W` makes the word of `Δ(μ)` reduced as written, it makes the matched word of
+every item of `μ` reduced as written: this is a factor of the word of `Δ(μ)`, or the formal inverse
+of one. -/
+theorem isReduced_substituteVars_tiedSegment {W : Fin Ω.numItems → List (A × Bool)}
+    (hW : FreeGroup.IsReduced (FreeGroup.substituteVars W
+      (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))
+    (hk : k ∈ Ω.baseItems μ) :
+    FreeGroup.IsReduced (FreeGroup.substituteVars W (Ω.tiedSegment μ k)) := by
+  rw [tiedSegment, isReduced_substituteVars_segment_iff]
+  exact Ω.isReduced_substituteVars_segment_of_le_of_le hW (left_dual_le_min_tiedBoundary h hk)
+    (max_tiedBoundary_le_right_dual h hk)
+
+include h in
+/-- The two end-points of a constant item of `μ` are tied to the end-points of a single item: its
+matched word is the item `Ω.dualItem μ k`, formally inverted when `ε(μ) ≠ ε(Δμ)`. -/
 private theorem tiedSegment_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) (hk : b.1 ∈ Ω.baseItems μ) :
     Ω.tiedSegment μ b.1 =
@@ -373,27 +437,36 @@ private theorem tiedSegment_of_mem_constBases {b : Fin Ω.numItems × (A × Bool
   rw [tiedSegment, hmax, hd]
   exact Ω.segment_succ ⟨_, hlt⟩ _
 
-/-- An item of a lonely base `μ` is sent by `π` to the segment of `Δ(μ)` between the boundaries
-tied to its end-points, inverted when `ε(μ) ≠ ε(Δμ)`; here this word of the result is read in the
-items of `Ω`. -/
-theorem restoreWord_removeLonelyList_of_mem (hk : k ∈ Ω.baseItems μ) :
-    restoreWord (Ω.baseItems μ) (Ω.removeLonelyList μ h k) =
-      Ω.segment (min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
-        (max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
-        (decide (Ω.sign μ = Ω.sign (Ω.dual μ))) := by
-  obtain ⟨h₁, h₃⟩ := tiedSegment_bounds h hk
-  -- The matched segment lies in `Δ(μ)`, which contains no item of `μ`.
-  have hS : Disjoint (((Ω.moveConstBases μ).removePair μ).sectionItems
-      (min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
-      (max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))) (Ω.baseItems μ) :=
+/-- A segment of the result between the renumbered boundaries `i` and `j` of `Δ(μ)`, read in the
+items of `Ω`, is the segment of `Ω` between `i` and `j`: `Δ(μ)` contains no item of `μ`. -/
+theorem restoreWord_segment_removeLonely {i j : ℕ} (hi : (Ω.left (Ω.dual μ) : ℕ) ≤ i)
+    (hj : j ≤ Ω.right (Ω.dual μ)) (s : Bool) :
+    restoreWord (Ω.baseItems μ) ((Ω.removeLonely μ h).segment ((Ω.baseItems μ).collapse i)
+      ((Ω.baseItems μ).collapse j) s) = Ω.segment i j s := by
+  have hS : Disjoint (((Ω.moveConstBases μ).removePair μ).sectionItems i j) (Ω.baseItems μ) :=
     Finset.disjoint_left.2 fun l hl => Finset.disjoint_left.1 (h.disjoint _ h.dual_ne)
       (Ω.mem_baseItems.2 (by
         have := ((Ω.moveConstBases μ).removePair μ).mem_sectionItems.1 hl
         lia))
-  have := restoreWord_segment_deleteItems h.disjoint_baseItems_removePair hS
-    (decide (Ω.sign μ = Ω.sign (Ω.dual μ)))
-  simp only [segment_removeBases, segment_moveConstBases] at this
-  rw [removeLonelyList, ite_eq_left hk, this]
+  simpa only [segment_removeBases, segment_moveConstBases] using
+    restoreWord_segment_deleteItems h.disjoint_baseItems_removePair hS s
+
+/-- An item `k` of a lonely base `μ` is sent by `π` to the segment of the result that replaces the
+segment of `Δ(μ)` between the boundaries tied to the end-points of `k`, formally inverted when
+`ε(μ) ≠ ε(Δμ)`. -/
+theorem removeLonelyList_of_mem (hk : k ∈ Ω.baseItems μ) :
+    Ω.removeLonelyList μ h k = (Ω.removeLonely μ h).segment
+      ((Ω.baseItems μ).collapse (min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ)))
+      ((Ω.baseItems μ).collapse (max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ)))
+      (decide (Ω.sign μ = Ω.sign (Ω.dual μ))) := by
+  rw [removeLonelyList, ite_eq_left hk]
+
+/-- An item of a lonely base `μ` is sent by `π` to its matched word, read in the items of `Ω`. -/
+theorem restoreWord_removeLonelyList_of_mem (hk : k ∈ Ω.baseItems μ) :
+    restoreWord (Ω.baseItems μ) (Ω.removeLonelyList μ h k) = Ω.tiedSegment μ k := by
+  rw [removeLonelyList_of_mem h hk]
+  exact restoreWord_segment_removeLonely h (left_dual_le_min_tiedBoundary h hk)
+    (max_tiedBoundary_le_right_dual h hk) _
 
 end Segments
 
@@ -457,19 +530,16 @@ private theorem evalWord_tiedSegment (v : Fin Ω.numItems → H) {k : Fin Ω.num
     (hk : k ∈ Ω.baseItems μ) : evalWord ι v (Ω.tiedSegment μ k) =
       (prefixVal Ω ι v (Ω.tiedBoundary μ k.castSucc))⁻¹ *
         prefixVal Ω ι v (Ω.tiedBoundary μ k.succ) := by
-  have h₁ := isTiedTo_castSucc h hk
-  have h₂ := isTiedTo_succ h hk
-  rw [tiedSegment]
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-  · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_eq hs h₁ h₂ k.castSucc_lt_succ)
-    rw [min_eq_left hlt.le, max_eq_right hlt.le, evalWord_segment ι v hlt.le]
-    simp [hs]
-  · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_ne hs h₁ h₂ k.castSucc_lt_succ)
-    rw [min_eq_right hlt.le, max_eq_left hlt.le, evalWord_segment ι v hlt.le]
-    simp [hs]
+  · rw [tiedSegment_of_sign_eq h hΩ hk hs, evalWord_segment ι v
+      (Fin.lt_def.1 (tiedBoundary_castSucc_lt_succ_of_sign_eq h hΩ hk hs)).le]
+    simp
+  · rw [tiedSegment_of_sign_ne h hΩ hk hs, evalWord_segment ι v
+      (Fin.lt_def.1 (tiedBoundary_succ_lt_castSucc_of_sign_ne h hΩ hk hs)).le]
+    simp
 
 include h hΩ in
-/-- An item of `μ` takes the value of its matched segment exactly when the defect of the tie is
+/-- An item of `μ` takes the value of its matched word exactly when the defect of the tie is
 the same at its two end-points. -/
 private theorem eq_evalWord_tiedSegment_iff (v : Fin Ω.numItems → H) {k : Fin Ω.numItems}
     (hk : k ∈ Ω.baseItems μ) : v k = evalWord ι v (Ω.tiedSegment μ k) ↔
@@ -479,27 +549,18 @@ private theorem eq_evalWord_tiedSegment_iff (v : Fin Ω.numItems → H) {k : Fin
   rfl
 
 include h hΩ in
-/-- If every item of `μ` takes the value of its matched segment, the defect of the tie is constant
+/-- If every item of `μ` takes the value of its matched word, the defect of the tie is constant
 on the boundaries of `μ`. -/
 private theorem tiedDefect_eq_of_forall (v : Fin Ω.numItems → H)
     (hI : ∀ k ∈ Ω.baseItems μ, v k = evalWord ι v (Ω.tiedSegment μ k)) {p : Fin (Ω.numItems + 1)}
     (h₁ : Ω.left μ ≤ p) (h₂ : p ≤ Ω.right μ) :
-    tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ) := by
-  obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le (Fin.le_def.1 h₁)
-  induction m generalizing p with
-  | zero => rw [Fin.ext (hm.trans (Nat.add_zero _))]
-  | succ m ih =>
-    have := Fin.le_def.1 h₂
-    have := Fin.is_le (Ω.right μ)
-    let k : Fin Ω.numItems := ⟨Ω.left μ + m, by lia⟩
-    have hk : k ∈ Ω.baseItems μ := Ω.mem_baseItems.2 ⟨by simp [k], by simp only [k]; lia⟩
-    have hp : p = k.succ := Fin.ext (by simp [k]; lia)
-    rw [hp, (eq_evalWord_tiedSegment_iff h hΩ ι v hk).1 (hI k hk)]
-    exact ih (Fin.le_def.2 (by simp [k])) (Fin.le_def.2 (by simp [k]; lia)) (by simp [k])
+    tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ) :=
+  base_induction rfl
+    (fun k hk ih => ((eq_evalWord_tiedSegment_iff h hΩ ι v hk).1 (hI k hk)).trans ih) p h₁ h₂
 
 include h hΩ in
 /-- If the defect of the tie is constant on the boundaries of `μ`, every item of `μ` takes the
-value of its matched segment. -/
+value of its matched word. -/
 private theorem eq_evalWord_tiedSegment_of_forall (v : Fin Ω.numItems → H)
     (hC : ∀ p : Fin (Ω.numItems + 1), Ω.left μ ≤ p → p ≤ Ω.right μ →
       tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ)) {k : Fin Ω.numItems}
@@ -606,8 +667,15 @@ private theorem tiedDefect_eq_of_mem_V {v : Fin Ω.numItems → H} (hv : v ∈ V
   obtain ⟨q, hq⟩ := h.tied p (Ω.crosses_iff.2 ⟨h₁, h₂⟩)
   exact (boundaryEquation_iff hΩ ι v hq).1 (hv _ (Ω.boundaryEquation_mem_equations hq))
 
+include h hΩ in
+/-- At a point of `Ω*` every item of `μ` takes the value of its matched word. -/
+private theorem eq_evalWord_tiedSegment_of_mem_V {v : Fin Ω.numItems → H}
+    (hv : v ∈ V ι Ω.toSystem) {k : Fin Ω.numItems} (hk : k ∈ Ω.baseItems μ) :
+    v k = evalWord ι v (Ω.tiedSegment μ k) :=
+  eq_evalWord_tiedSegment_of_forall h hΩ ι v (fun _ => tiedDefect_eq_of_mem_V h hΩ ι hv) hk
+
 include h in
-/-- If the items of `μ` take the values of their matched segments, the coefficient equation of a
+/-- If the items of `μ` take the values of their matched words, the coefficient equation of a
 constant base on an item of `μ` holds exactly when the coefficient equation of the moved constant
 base holds. -/
 private theorem coeffEquation_eq_iff (v : Fin Ω.numItems → H)
@@ -645,7 +713,7 @@ private theorem wordMap_removeLonelyWord_comp_of_mem (v : Fin Ω.numItems → H)
     wordMap ι (Ω.removeLonelyWord μ h) (v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl) k =
       evalWord ι v (Ω.tiedSegment μ k) := by
   rw [wordMap_removeLonelyWord_apply, ← evalWord.eq_1, ← evalWord_restoreWord,
-    restoreWord_removeLonelyList_of_mem h hk, tiedSegment]
+    restoreWord_removeLonelyList_of_mem h hk]
 
 private theorem wordMap_removeLonelyWord_comp_of_notMem (v : Fin Ω.numItems → H)
     {k : Fin Ω.numItems} (hk : k ∉ Ω.baseItems μ) :
@@ -687,7 +755,7 @@ theorem mapsTo_wordMap_removeLonely {H : Type*} [Group H] (ι : FreeGroup A →*
   set v := wordMap ι (Ω.removeLonelyWord μ h) v'
   have hcomp : v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl = v' :=
     funext (wordMap_removeLonelyWord_orderEmbOfFin h ι v')
-  -- The items of `μ` take the values of their matched segments, by definition of `π`.
+  -- The items of `μ` take the values of their matched words, by definition of `π`.
   have hI : ∀ k ∈ Ω.baseItems μ, v k = evalWord ι v (Ω.tiedSegment μ k) := fun k hk => by
     have := wordMap_removeLonelyWord_comp_of_mem h ι v hk
     rwa [hcomp] at this
@@ -706,6 +774,43 @@ theorem mapsTo_wordMap_removeLonely {H : Type*} [Group H] (ι : FreeGroup A →*
       hv _ (((Ω.moveConstBases μ).removePair μ).coeffEquation_mem_equations
         (Ω.mem_constBases_moveConstBases_of_mem μ hb hk))
 
+section Restrict
+
+variable {H : Type*} [Group H] {ι : FreeGroup A →* H} {v : Fin Ω.numItems → H}
+
+include h hΩ in
+/-- A point of `Ω*` in an `F(A)`-group remains a point after the constant bases of the items of
+the lonely base `μ` are moved to the matching items of `Δ(μ)`. -/
+theorem mem_V_moveConstBases (hv : v ∈ V ι Ω.toSystem) :
+    v ∈ V ι (Ω.moveConstBases μ).toSystem := by
+  have hI := fun k (hk : k ∈ Ω.baseItems μ) => eq_evalWord_tiedSegment_of_mem_V h hΩ ι hv hk
+  rw [mem_V_toSystem_iff] at hv ⊢
+  intro e he
+  rcases Ω.equations_moveConstBases_subset_union μ he with he | ⟨_, ⟨b, ⟨hb, hk⟩, rfl⟩, rfl⟩
+  · exact hv e he
+  · exact (coeffEquation_eq_iff h ι v hI hb hk).1 (hv _ (Ω.coeffEquation_mem_equations hb))
+
+include hΩ in
+/-- The restriction of a point of `Ω*` in an `F(A)`-group to the items outside `μ` is a point of
+`Ω′*`, where `Ω′` is `Ω` with a lonely base removed. -/
+theorem comp_mem_V_removeLonely (hv : v ∈ V ι Ω.toSystem) :
+    v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl ∈ V ι (Ω.removeLonely μ h).toSystem :=
+  (comp_mem_V_iff h hΩ ι v).2 fun e he => (mem_V_toSystem_iff _).1
+    (V_toSystem_subset_removeBases _ ι (mem_V_moveConstBases h hΩ hv)) e he
+
+include hΩ in
+/-- `π` sends the restriction of a point of `Ω*` in an `F(A)`-group to the items outside the
+lonely base `μ` back to the point. -/
+theorem wordMap_removeLonelyWord_comp (hv : v ∈ V ι Ω.toSystem) :
+    wordMap ι (Ω.removeLonelyWord μ h) (v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl) = v := by
+  funext k
+  by_cases hk : k ∈ Ω.baseItems μ
+  · rw [wordMap_removeLonelyWord_comp_of_mem h ι v hk,
+      ← eq_evalWord_tiedSegment_of_mem_V h hΩ ι hv hk]
+  · exact wordMap_removeLonelyWord_comp_of_notMem h ι v hk
+
+end Restrict
+
 include hΩ in
 /-- **ET4 on group solutions.** Every point of `Ω*` in an `F(A)`-group is the image under `π` of
 exactly one point of `Ω′*`, where `Ω′` is `Ω` with a lonely base removed. -/
@@ -713,22 +818,9 @@ theorem bijOn_wordMap_removeLonely {H : Type*} [Group H] (ι : FreeGroup A →* 
     Set.BijOn (wordMap ι (Ω.removeLonelyWord μ h)) (V ι (Ω.removeLonely μ h).toSystem)
       (V ι Ω.toSystem) := by
   refine ⟨mapsTo_wordMap_removeLonely h hΩ ι, fun v₁ _ v₂ _ he => funext fun j => ?_,
-    fun v hv => ?_⟩
-  · rw [← wordMap_removeLonelyWord_orderEmbOfFin h ι v₁ j, he,
-      wordMap_removeLonelyWord_orderEmbOfFin]
-  -- A point of `Ω*` is the image of its restriction to the items outside `μ`.
-  have hI : ∀ k ∈ Ω.baseItems μ, v k = evalWord ι v (Ω.tiedSegment μ k) := fun k hk =>
-    eq_evalWord_tiedSegment_of_forall h hΩ ι v (fun _ => tiedDefect_eq_of_mem_V h hΩ ι hv) hk
-  rw [mem_V_toSystem_iff] at hv
-  refine ⟨v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl, (comp_mem_V_iff h hΩ ι v).2 fun e he => ?_,
-    funext fun k => ?_⟩
-  · rcases Ω.equations_moveConstBases_subset_union μ (equations_removeBases_subset _ he) with
-      he | ⟨_, ⟨b, ⟨hb, hk⟩, rfl⟩, rfl⟩
-    · exact hv e he
-    · exact (coeffEquation_eq_iff h ι v hI hb hk).1 (hv _ (Ω.coeffEquation_mem_equations hb))
-  · by_cases hk : k ∈ Ω.baseItems μ
-    · rw [wordMap_removeLonelyWord_comp_of_mem h ι v hk, ← hI k hk]
-    · exact wordMap_removeLonelyWord_comp_of_notMem h ι v hk
+    fun v hv => ⟨_, comp_mem_V_removeLonely h hΩ hv, wordMap_removeLonelyWord_comp h hΩ hv⟩⟩
+  rw [← wordMap_removeLonelyWord_orderEmbOfFin h ι v₁ j, he,
+    wordMap_removeLonelyWord_orderEmbOfFin]
 
 /-- **ET4 on coordinate groups.** The `F(A)`-homomorphism `π : F_{R(Ω)} → F_{R(Ω′)}`, where `Ω′`
 is `Ω` with a lonely base removed. -/
@@ -794,15 +886,17 @@ private theorem isLonely_equalItems : equalItems.IsLonely 0 where
   tied p hp := absurd (equalItems.crosses_iff.1 hp) (by revert p; decide)
   adjacent_of_mem_constBases b hb := absurd hb (Finset.notMem_empty b)
 
+/-- The base `μ = [0, 1]` of `h₀ = h₁` consists of the item `h₀`. -/
+private theorem baseItems_equalItems : equalItems.baseItems 0 = {0} := by
+  ext k
+  rw [mem_baseItems, Finset.mem_singleton]
+  revert k
+  decide
+
 /-- Removing the lonely base `μ` of `h₀ = h₁` together with its item leaves one item. -/
 private theorem numItems_removeLonely_equalItems :
     (equalItems.removeLonely 0 isLonely_equalItems).numItems = 1 := by
-  have h : equalItems.baseItems 0 = {0} := by
-    ext k
-    rw [mem_baseItems, Finset.mem_singleton]
-    revert k
-    decide
-  simp [h, Finset.card_compl]
+  simp [baseItems_equalItems, Finset.card_compl]
 
 /-- Removing the lonely base `μ` of `h₀ = h₁` leaves no variable base. -/
 example : (equalItems.removeLonely 0 isLonely_equalItems).numBases = 0 := by decide
