@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.Const
-public import Mathlib.Topology.Category.TopCat.Basic
+public import Mathlib.CategoryTheory.Limits.Shapes.End
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
-public import Mathlib.Topology.Compactness.Lindelof
-public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
 
@@ -21,10 +19,15 @@ tensor product* (coend) `TauCeti.functorTensor K X` is the quotient of `Σ d : D
 `(X(f) x, t) ∼ (x, K(f) t)` for all morphisms `f : c ⟶ d`, with the quotient topology.
 
 Specializing `(D, K)` yields `TauCeti.fatRealization` (`SemiSimplexCategory`),
-`TauCeti.thinRealization` (`SimplexCategory`), and `TauCeti.thinRealization.skeleton X k`
-(`SimplexCategory.Truncated k`), while `TauCeti.functorTensor.reindex` yields the fat-to-thin
-comparison, skeletal transition maps, and skeletal cocone legs. The file establishes the universal
-property (`ι`, `desc`, `hom_ext`), functoriality (`map`, `functorTensorFunctor`), quotient topology
+`CategoryTheory.SimplicialObject.geometricRealization` (`SimplexCategory`), and
+`CategoryTheory.SimplicialObject.geometricRealization.skeleton` (`SimplexCategory.Truncated k`),
+while `TauCeti.functorTensor.reindex` yields the fat-to-thin comparison
+(`CategoryTheory.SimplicialObject.fatToGeometricRealization`), skeletal transition maps, and
+skeletal cocone legs
+(`CategoryTheory.SimplicialObject.geometricRealization.skeleton.toRealization`).
+The file establishes the generating relation and equality characterization (`Rel`, `ι`, `ι_eq_iff`),
+the universal property (`desc`, `hom_ext`) and Mathlib coend cowedge (`prodBifunctor`, `cowedge`,
+`isColimitCowedge`), functoriality (`map`, `functorTensorFunctor`), quotient topology
 (`isQuotientMap_sigma`, `isQuotientMap_reindex`, `isQuotientMap_augment`), `LindelofSpace` and
 `UCompactlyGeneratedSpace` instances, augmentations (`augment`), homotopies (`homotopy`), and
 open/closed embeddings for saturated subfunctors (`isOpenEmbedding_map`, `isClosedEmbedding_map`).
@@ -46,17 +49,17 @@ namespace TauCeti
 
 variable {D : Type} [Category.{w} D]
 
-/-- The coend identifications `(X(f) x, t) ∼ (x, K(f) t)` on `Σ d : D, X(d) × K(d)`. -/
-private inductive FunctorTensorRel (K : D ⥤ TopCat.{u}) (X : Dᵒᵖ ⥤ TopCat.{u}) :
+/-- The generating coend identifications `(X(f) x, t) ∼ (x, K(f) t)` on `Σ d : D, X(d) × K(d)`. -/
+inductive functorTensor.Rel (K : D ⥤ TopCat.{u}) (X : Dᵒᵖ ⥤ TopCat.{u}) :
     (Σ d : D, X.obj (op d) × K.obj d) → (Σ d : D, X.obj (op d) × K.obj d) → Prop where
   | mk ⦃c d : D⦄ (f : c ⟶ d) (x : X.obj (op d)) (t : K.obj c) :
-      FunctorTensorRel K X ⟨c, X.map f.op x, t⟩ ⟨d, x, K.map f t⟩
+      functorTensor.Rel K X ⟨c, X.map f.op x, t⟩ ⟨d, x, K.map f t⟩
 
 /-- The functor tensor product (coend) `∫^{d : D} X(d) × K(d)` of `K : D ⥤ TopCat.{u}` and
 `X : Dᵒᵖ ⥤ TopCat.{u}`: the quotient of `Σ d : D, X(d) × K(d)` by `(X(f) x, t) ∼ (x, K(f) t)` for
 all morphisms `f` of `D`, equipped with the quotient topology. -/
 def functorTensor (K : D ⥤ TopCat.{u}) (X : Dᵒᵖ ⥤ TopCat.{u}) : TopCat.{u} :=
-  TopCat.of (Quot (FunctorTensorRel K X))
+  TopCat.of (Quot (functorTensor.Rel K X))
 
 namespace functorTensor
 
@@ -66,14 +69,20 @@ variable (K : D ⥤ TopCat.{u}) (X : Dᵒᵖ ⥤ TopCat.{u})
 
 /-- The characteristic map `X(d) × K(d) → functorTensor K X` at `d : D`. -/
 def ι (d : D) : C(X.obj (op d) × K.obj d, functorTensor K X) :=
-  ⟨fun p ↦ Quot.mk (FunctorTensorRel K X) ⟨d, p⟩, continuous_quot_mk.comp continuous_sigmaMk⟩
+  ⟨fun p ↦ Quot.mk (Rel K X) ⟨d, p⟩, continuous_quot_mk.comp continuous_sigmaMk⟩
 
 /-- The characteristic maps coequalize the contravariant action of `X` and the covariant action of
 `K`. -/
 @[simp]
 theorem ι_map {c d : D} (f : c ⟶ d) (x : X.obj (op d)) (t : K.obj c) :
     ι K X c (X.map f.op x, t) = ι K X d (x, K.map f t) :=
-  Quot.sound (FunctorTensorRel.mk f x t)
+  Quot.sound (Rel.mk f x t)
+
+/-- Two representatives in `Σ d, X(d) × K(d)` map to the same point of `functorTensor K X` iff
+they are connected by a zigzag of generating coend identifications `Rel K X`. -/
+theorem ι_eq_iff {c d : D} {x : X.obj (op c)} {t : K.obj c} {y : X.obj (op d)} {s : K.obj d} :
+    ι K X c (x, t) = ι K X d (y, s) ↔ Relation.EqvGen (Rel K X) ⟨c, x, t⟩ ⟨d, y, s⟩ :=
+  Quot.eq
 
 /-- Every point of `functorTensor K X` lies in the image of a characteristic map. -/
 theorem ι_jointly_surjective (p : functorTensor K X) : ∃ d x t, ι K X d (x, t) = p := by
@@ -167,6 +176,41 @@ theorem desc_ι (d : D) (p : X.obj (op d) × K.obj d) : desc g hg (ι K X d p) =
 
 end Desc
 
+section Coend
+
+variable (K : D ⥤ TopCat.{u}) (X : Dᵒᵖ ⥤ TopCat.{u})
+
+/-- The product bifunctor `Dᵒᵖ ⥤ D ⥤ TopCat.{u}` sending `(c, d)` to `X(c) × K(d)`. -/
+@[expose, simps]
+def prodBifunctor : Dᵒᵖ ⥤ D ⥤ TopCat.{u} where
+  obj c :=
+    { obj := fun d ↦ TopCat.of (X.obj c × K.obj d)
+      map := fun f ↦ TopCat.ofHom ((ContinuousMap.id _).prodMap (K.map f).hom) }
+  map f :=
+    { app := fun _ ↦ TopCat.ofHom ((X.map f).hom.prodMap (ContinuousMap.id _)) }
+
+/-- The characteristic maps `X(d) × K(d) ⟶ functorTensor K X` packaged as a cowedge for
+`prodBifunctor K X`. -/
+@[expose]
+def cowedge : Limits.Cowedge (prodBifunctor K X) :=
+  Limits.Cowedge.mk (functorTensor K X) (fun d ↦ TopCat.ofHom (ι K X d)) fun _ _ f ↦ by
+    ext ⟨x, t⟩
+    exact ι_map K X f x t
+
+@[simp]
+theorem cowedge_π (d : D) : (cowedge K X).π d = TopCat.ofHom (ι K X d) := (rfl)
+
+/-- The cowedge `cowedge K X` exhibits `functorTensor K X` as a coend of `prodBifunctor K X` in
+`TopCat`. -/
+def isColimitCowedge : Limits.IsColimit (cowedge K X) :=
+  Limits.Multicofork.IsColimit.mk (cowedge K X)
+    (fun s ↦ TopCat.ofHom <| desc (fun d ↦ (Limits.Multicofork.π s d).hom) fun _ _ f x t ↦
+      ConcreteCategory.congr_hom (Limits.Cowedge.condition s f) (x, t))
+    (fun s (d : D) ↦ TopCat.hom_ext <| ContinuousMap.ext fun p ↦ rfl)
+    (fun s m hm ↦ hom_ext fun d x t ↦ by exact ConcreteCategory.congr_hom (hm d) (x, t))
+
+end Coend
+
 section Map
 
 variable (K : D ⥤ TopCat.{u}) {X Y : Dᵒᵖ ⥤ TopCat.{u}}
@@ -193,10 +237,25 @@ end Map
 end functorTensor
 
 /-- The functor tensor product with `K` as a functor `(Dᵒᵖ ⥤ TopCat.{u}) ⥤ TopCat.{u}`. -/
-@[expose, simps]
 def functorTensorFunctor (K : D ⥤ TopCat.{u}) : (Dᵒᵖ ⥤ TopCat.{u}) ⥤ TopCat.{u} where
   obj := functorTensor K
   map := functorTensor.map K
+
+@[simp]
+theorem functorTensorFunctor_obj (K : D ⥤ TopCat.{u}) (X : Dᵒᵖ ⥤ TopCat.{u}) :
+    (functorTensorFunctor K).obj X = functorTensor K X :=
+  -- `(rfl)`, not `rfl`: the body of `functorTensorFunctor` is not `@[expose]`d.
+  (rfl)
+
+@[simp]
+theorem functorTensorFunctor_map (K : D ⥤ TopCat.{u}) {X Y : Dᵒᵖ ⥤ TopCat.{u}} (φ : X ⟶ Y) :
+    (functorTensorFunctor K).map φ =
+      eqToHom (functorTensorFunctor_obj K X) ≫
+        functorTensor.map K φ ≫
+          eqToHom (functorTensorFunctor_obj K Y).symm := by
+  apply (conj_eqToHom_iff_heq _ _ (functorTensorFunctor_obj K X)
+    (functorTensorFunctor_obj K Y)).2
+  rw [functorTensorFunctor.eq_def]
 
 namespace functorTensor
 

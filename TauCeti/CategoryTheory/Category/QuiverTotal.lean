@@ -85,6 +85,11 @@ end Quiver
 
 variable {C : Type*} [Category C]
 
+/-- The source projection `Quiver.Total.left : Quiver.Total C → C` of a category is surjective,
+with right inverse `x ↦ ⟨x, x, 𝟙 x⟩`. -/
+theorem surjective_left : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
+  fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+
 /-- The sum of a function of the target over the total arrows with source `x` only depends on the
 isomorphism class of `x`: an isomorphism `x ≅ y` identifies the arrows out of `x` with those out
 of `y`, preserving targets. -/

@@ -75,7 +75,7 @@ classifying spaces. All isotropy arrows are retained. -/
 theorem isOpenEmbedding_fatClassifyingSpaceMap_ι (hP : IsOpen {x | P x}) :
     IsOpenEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.fatClassifyingSpaceMap_eq]
-  apply TauCeti.fatRealization.isOpenEmbedding_map_of_range_eq_preimage
+  apply TauCeti.functorTensor.isOpenEmbedding_map_of_range_eq_preimage
     (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
       (TauCeti.topologicalNerve.coarseAugmentation hs))
     (V := Quotient.mk (isIsomorphicSetoid C) '' {x | P x})
@@ -103,7 +103,7 @@ classifying spaces. All isotropy arrows are retained. -/
 theorem isClosedEmbedding_fatClassifyingSpaceMap_ι (hP : IsClosed {x | P x}) :
     IsClosedEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.fatClassifyingSpaceMap_eq]
-  apply TauCeti.fatRealization.isClosedEmbedding_map_of_range_eq_preimage
+  apply TauCeti.functorTensor.isClosedEmbedding_map_of_range_eq_preimage
     (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
       (TauCeti.topologicalNerve.coarseAugmentation hs))
     (V := Quotient.mk (isIsomorphicSetoid C) '' {x | P x})
@@ -123,7 +123,7 @@ theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_ι :
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) =
       range (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.fatClassifyingSpace.coarseMap_eq_augment, TauCeti.fatClassifyingSpaceMap_eq]
-  exact TauCeti.fatRealization.preimage_augment_eq_range_map _ fun m ↦ by
+  exact TauCeti.functorTensor.preimage_augment_eq_range_map _ fun m ↦ by
     simpa only [Functor.whiskerLeft_app] using
       P.range_topologicalNerveMap_ι hs (SemiSimplexCategory.toSimplexCategory.op.obj m)
 

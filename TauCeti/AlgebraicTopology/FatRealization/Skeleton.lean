@@ -74,18 +74,19 @@ variable (X : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u})
 /-- The `n`-skeleton of the fat realization `‖X‖`: the union of the images of the characteristic
 maps `Xₖ × Δᵏ → ‖X‖` for `k ≤ n`. -/
 def skeleton (n : ℕ) : Set (fatRealization X) :=
-  ⋃ (k : ℕ) (_ : k ≤ n), range (ι X ⦋k⦌ₛ)
+  ⋃ (k : ℕ) (_ : k ≤ n), range (functorTensor.ι toTop X ⦋k⦌ₛ)
 
 variable {X}
 
 /-- A point lies in the `n`-skeleton exactly when it is in the image of the characteristic map of
 some level `k ≤ n`. -/
 theorem mem_skeleton_iff {p : fatRealization X} {n : ℕ} :
-    p ∈ skeleton X n ↔ ∃ k ≤ n, p ∈ range (ι X ⦋k⦌ₛ) := by
+    p ∈ skeleton X n ↔ ∃ k ≤ n, p ∈ range (functorTensor.ι toTop X ⦋k⦌ₛ) := by
   simp [skeleton]
 
 /-- The image of the characteristic map of a level `k ≤ n` lies in the `n`-skeleton. -/
-theorem range_ι_subset_skeleton {k n : ℕ} (h : k ≤ n) : range (ι X ⦋k⦌ₛ) ⊆ skeleton X n :=
+theorem range_ι_subset_skeleton {k n : ℕ} (h : k ≤ n) :
+    range (functorTensor.ι toTop X ⦋k⦌ₛ) ⊆ skeleton X n :=
   fun _ hp ↦ mem_skeleton_iff.2 ⟨k, h, hp⟩
 
 /-- The skeleta of the fat realization increase. -/
@@ -96,37 +97,39 @@ theorem monotone_skeleton : Monotone (skeleton X) := fun _ _ h _ hp ↦ by
 /-- The skeleta exhaust the fat realization. -/
 theorem iUnion_skeleton : ⋃ n, skeleton X n = univ :=
   eq_univ_of_forall fun p ↦ by
-    obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
+    obtain ⟨n, x, t, rfl⟩ := functorTensor.ι_jointly_surjective toTop X p
     exact mem_iUnion.2 ⟨n.len, range_ι_subset_skeleton le_rfl ⟨(x, t), rfl⟩⟩
 
 /-- The number of nonzero barycentric coordinates of a point of the fat realization, that is, the
 number of vertices of the face of a simplex carrying it. -/
 private def card : fatRealization X → ℕ :=
-  lift (fun _ p ↦ #(toTopWeights p.2).support) fun _ _ f _ t ↦
+  functorTensor.lift (fun _ p ↦ #(toTopWeights p.2).support) fun _ _ f _ t ↦
     (card_support_toTopWeights_toTop_map f t).symm
 
 /-- A point `[x, t]` lies in the `n`-skeleton exactly when at most `n + 1` barycentric coordinates
 of `t` are nonzero. -/
 theorem ι_mem_skeleton_iff {m : SemiSimplexCategory} {x : X.obj (op m)} {t : toTop.{u}.obj m}
-    {n : ℕ} : ι X m (x, t) ∈ skeleton X n ↔ #(toTopWeights t).support ≤ n + 1 := by
+    {n : ℕ} :
+    functorTensor.ι toTop X m (x, t) ∈ skeleton X n ↔ #(toTopWeights t).support ≤ n + 1 := by
   constructor
   · intro hp
     obtain ⟨k, hk, ⟨y, s⟩, h⟩ := mem_skeleton_iff.1 hp
-    have hcard : card (ι X ⦋k⦌ₛ (y, s)) = card (ι X m (x, t)) := congrArg _ h
-    simp only [card, lift_ι] at hcard
+    have hcard : card (functorTensor.ι toTop X ⦋k⦌ₛ (y, s)) =
+        card (functorTensor.ι toTop X m (x, t)) := congrArg _ h
+    simp only [card, functorTensor.lift_ι] at hcard
     have : _ ≤ k + 1 := card_support_toTopWeights_le s
     omega
   · intro h
     obtain ⟨a, f, s, hs, rfl⟩ := exists_toTop_map_eq t
     rw [card_support_toTopWeights_toTop_map, notMem_toTopBoundary_iff.1 hs] at h
-    rw [← ι_map]
+    rw [← functorTensor.ι_map]
     exact range_ι_subset_skeleton (show a.len ≤ n by omega) ⟨_, rfl⟩
 
 /-- For a level `n`, the points `(y, u)` of `Xₙ × Δⁿ` with `u` off the boundary which represent a
 given point of the fat realization. -/
 private def reps (n : SemiSimplexCategory) :
     fatRealization X → Set (X.obj (op n) × toTop.{u}.obj n) :=
-  lift (fun m p ↦ {q | q.2 ∉ toTopBoundary n ∧
+  functorTensor.lift (fun m p ↦ {q | q.2 ∉ toTopBoundary n ∧
       ∃ f : n ⟶ m, toTop.map f q.2 = p.2 ∧ X.map f.op p.1 = q.1}) <| by
     intro m m' f x t
     refine Set.ext fun q ↦ and_congr_right fun hv ↦ ⟨?_, ?_⟩
@@ -145,8 +148,9 @@ private def reps (n : SemiSimplexCategory) :
       rw [← hgx, op_comp, Functor.map_comp, ConcreteCategory.comp_apply]
 
 private theorem reps_ι_of_notMem {n : SemiSimplexCategory} {x : X.obj (op n)}
-    {u : toTop.{u}.obj n} (hu : u ∉ toTopBoundary n) : reps n (ι X n (x, u)) = {(x, u)} := by
-  rw [reps, lift_ι]
+    {u : toTop.{u}.obj n} (hu : u ∉ toTopBoundary n) :
+    reps n (functorTensor.ι toTop X n (x, u)) = {(x, u)} := by
+  rw [reps, functorTensor.lift_ι]
   refine Set.ext fun ⟨y, v⟩ ↦ ⟨fun ⟨hv, g, hg, hgx⟩ ↦ ?_, ?_⟩
   · dsimp only at hv hg hgx ⊢
     obtain ⟨rfl, rfl⟩ := eq_and_eq_of_toTop_map_eq (g := 𝟙 n) hv hu
@@ -159,7 +163,8 @@ private theorem reps_ι_of_notMem {n : SemiSimplexCategory} {x : X.obj (op n)}
 
 /-- The characteristic map of level `n` is injective off `Xₙ × ∂Δⁿ`: distinct points `(x, t)` of
 `Xₙ × Δⁿ` with `t` off the boundary have distinct images in `‖X‖`. -/
-theorem injOn_ι (n : SemiSimplexCategory) : InjOn (ι X n) {p | p.2 ∉ toTopBoundary n} :=
+theorem injOn_ι (n : SemiSimplexCategory) :
+    InjOn (functorTensor.ι toTop X n) {p | p.2 ∉ toTopBoundary n} :=
   fun p hp q hq h ↦ by
     have := congrArg (reps n) h
     rwa [reps_ι_of_notMem hp, reps_ι_of_notMem hq, singleton_eq_singleton_iff] at this
@@ -167,12 +172,13 @@ theorem injOn_ι (n : SemiSimplexCategory) : InjOn (ι X n) {p | p.2 ∉ toTopBo
 /-- A subset of the `n`-skeleton is closed as soon as its preimages under the characteristic maps
 of the levels `k ≤ n` are closed. -/
 theorem isClosed_of_subset_skeleton {n : ℕ} {C : Set (fatRealization X)} (hC : C ⊆ skeleton X n)
-    (h : ∀ k ≤ n, IsClosed (ι X ⦋k⦌ₛ ⁻¹' C)) : IsClosed C := by
-  rw [isClosed_iff]
+    (h : ∀ k ≤ n, IsClosed (functorTensor.ι toTop X ⦋k⦌ₛ ⁻¹' C)) : IsClosed C := by
+  rw [functorTensor.isClosed_iff]
   intro m
   -- A point of `Xₘ × Δᵐ` over `C` is the image of a point of a face of dimension at most `n`.
-  have : ι X m ⁻¹' C = ⋃ (k : ℕ) (_ : k ≤ n) (f : ⦋k⦌ₛ ⟶ m),
-      Prod.map id (toTop.map f) '' (Prod.map (X.map f.op) id ⁻¹' (ι X ⦋k⦌ₛ ⁻¹' C)) := by
+  have : functorTensor.ι toTop X m ⁻¹' C = ⋃ (k : ℕ) (_ : k ≤ n) (f : ⦋k⦌ₛ ⟶ m),
+      Prod.map id (toTop.map f) '' (Prod.map (X.map f.op) id ⁻¹'
+        (functorTensor.ι toTop X ⦋k⦌ₛ ⁻¹' C)) := by
     ext ⟨x, t⟩
     simp only [Set.mem_preimage, mem_iUnion, Set.mem_image, Prod.exists, Prod.map_apply, id_eq,
       Prod.mk.injEq]
@@ -181,9 +187,9 @@ theorem isClosed_of_subset_skeleton {n : ℕ} {C : Set (fatRealization X)} (hC :
       obtain ⟨a, f, s, hs, rfl⟩ := exists_toTop_map_eq t
       have := ι_mem_skeleton_iff.1 (hC hxt)
       rw [card_support_toTopWeights_toTop_map, notMem_toTopBoundary_iff.1 hs] at this
-      exact ⟨a.len, by omega, f, x, s, by rwa [ι_map], rfl, rfl⟩
+      exact ⟨a.len, by omega, f, x, s, by rwa [functorTensor.ι_map], rfl, rfl⟩
     · rintro ⟨k, -, f, y, s, hys, rfl, rfl⟩
-      rwa [← ι_map]
+      rwa [← functorTensor.ι_map]
   rw [this]
   refine (finite_le_nat n).isClosed_biUnion fun k hk ↦ isClosed_iUnion_of_finite fun f ↦ ?_
   exact (IsClosedEmbedding.id.prodMap (isClosedEmbedding_toTop_map f)).isClosedMap _
@@ -199,13 +205,13 @@ variable (X) in
 /-- The characteristic map `Xₖ × Δᵏ → skₙ ‖X‖` of a level `k ≤ n`, into the `n`-skeleton. -/
 def skeletonιOfLE {k n : ℕ} (h : k ≤ n) :
     TopCat.of (X.obj (op ⦋k⦌ₛ) × toTop.{u}.obj ⦋k⦌ₛ) ⟶ TopCat.of (skeleton X n) :=
-  TopCat.ofHom ⟨fun p ↦ ⟨ι X ⦋k⦌ₛ p, range_ι_subset_skeleton h ⟨p, rfl⟩⟩,
-    (ι X ⦋k⦌ₛ).continuous.subtype_mk _⟩
+  TopCat.ofHom ⟨fun p ↦ ⟨functorTensor.ι toTop X ⦋k⦌ₛ p, range_ι_subset_skeleton h ⟨p, rfl⟩⟩,
+    (functorTensor.ι toTop X ⦋k⦌ₛ).continuous.subtype_mk _⟩
 
 @[simp]
 theorem coe_skeletonιOfLE_apply {k n : ℕ} (h : k ≤ n)
     (p : X.obj (op ⦋k⦌ₛ) × toTop.{u}.obj ⦋k⦌ₛ) :
-    (skeletonιOfLE X h p : fatRealization X) = ι X ⦋k⦌ₛ p :=
+    (skeletonιOfLE X h p : fatRealization X) = functorTensor.ι toTop X ⦋k⦌ₛ p :=
   (rfl)
 
 variable (X) in
@@ -221,13 +227,13 @@ theorem skeletonι_eq_skeletonιOfLE (n : ℕ) : skeletonι X n = skeletonιOfLE
 
 @[simp]
 theorem coe_skeletonι_apply (n : ℕ) (p : X.obj (op ⦋n⦌ₛ) × toTop.{u}.obj ⦋n⦌ₛ) :
-    (skeletonι X n p : fatRealization X) = ι X ⦋n⦌ₛ p :=
+    (skeletonι X n p : fatRealization X) = functorTensor.ι toTop X ⦋n⦌ₛ p :=
   (rfl)
 
 /-- The preimage of a subset of the `n`-skeleton under the characteristic map of a level `k ≤ n`
 is its preimage under the corestriction of that map to the skeleton. -/
 private theorem preimage_ι_image_val {n k : ℕ} (hk : k ≤ n) (C : Set (skeleton X n)) :
-    ι X ⦋k⦌ₛ ⁻¹' (Subtype.val '' C) = skeletonιOfLE X hk ⁻¹' C := by
+    functorTensor.ι toTop X ⦋k⦌ₛ ⁻¹' (Subtype.val '' C) = skeletonιOfLE X hk ⁻¹' C := by
   ext p
   refine ⟨fun ⟨q, hq, hqp⟩ ↦ ?_, fun hp ↦ ⟨_, hp, rfl⟩⟩
   rwa [show q = skeletonιOfLE X hk p from Subtype.ext hqp] at hq
@@ -245,7 +251,7 @@ private theorem isClosed_of_preimage {n : ℕ} {C : Set (skeleton X n)}
 /-- The points of `Xₙ₊₁ × ∂Δⁿ⁺¹` are mapped into the `n`-skeleton. -/
 theorem ι_mem_skeleton_of_mem_toTopBoundary {n : ℕ} (x : X.obj (op ⦋n + 1⦌ₛ))
     {t : toTop.{u}.obj ⦋n + 1⦌ₛ} (ht : t ∈ toTopBoundary ⦋n + 1⦌ₛ) :
-    ι X ⦋n + 1⦌ₛ (x, t) ∈ skeleton X n := by
+    functorTensor.ι toTop X ⦋n + 1⦌ₛ (x, t) ∈ skeleton X n := by
   have : _ < n + 1 + 1 := mem_toTopBoundary_iff_card_lt.1 ht
   exact ι_mem_skeleton_iff.2 (by omega)
 
@@ -254,14 +260,15 @@ variable (X) in
 def skeletonAttach (n : ℕ) :
     TopCat.of (X.obj (op ⦋n + 1⦌ₛ) × toTopBoundary.{u} ⦋n + 1⦌ₛ) ⟶ TopCat.of (skeleton X n) :=
   TopCat.ofHom ⟨fun p ↦
-      ⟨ι X ⦋n + 1⦌ₛ (p.1, p.2), ι_mem_skeleton_of_mem_toTopBoundary p.1 p.2.property⟩,
-    ((ι X _).continuous.comp (continuous_fst.prodMk (continuous_subtypeVal.comp
-      continuous_snd))).subtype_mk _⟩
+      ⟨functorTensor.ι toTop X ⦋n + 1⦌ₛ (p.1, p.2),
+        ι_mem_skeleton_of_mem_toTopBoundary p.1 p.2.property⟩,
+    ((functorTensor.ι toTop X _).continuous.comp
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _⟩
 
 @[simp]
 theorem coe_skeletonAttach_apply (n : ℕ)
     (p : X.obj (op ⦋n + 1⦌ₛ) × toTopBoundary.{u} ⦋n + 1⦌ₛ) :
-    (skeletonAttach X n p : fatRealization X) = ι X ⦋n + 1⦌ₛ (p.1, p.2) :=
+    (skeletonAttach X n p : fatRealization X) = functorTensor.ι toTop X ⦋n + 1⦌ₛ (p.1, p.2) :=
   (rfl)
 
 variable (X) in
@@ -284,7 +291,7 @@ theorem isPushout_skeleton (n : ℕ) :
         have h₂ := congrArg Prod.snd h
         exact Prod.ext h₁ (Subtype.ext h₂)
       · rintro ⟨p, hp⟩ ⟨x, t⟩ h
-        obtain rfl : p = ι X _ (x, t) := congrArg Subtype.val h
+        obtain rfl : p = functorTensor.ι toTop X _ (x, t) := congrArg Subtype.val h
         have : _ ≤ n + 1 := ι_mem_skeleton_iff.1 hp
         exact ⟨(x, ⟨t, mem_toTopBoundary_iff_card_lt.2 (show _ < n + 1 + 1 by omega)⟩), rfl, rfl⟩
     case h₂ =>
@@ -331,7 +338,8 @@ variable (X) in
 /-- The fat realization is the colimit in `TopCat` of its skeleta along their inclusions: its
 topology is coherent with the skeleta. -/
 def isColimitSkeleton : IsColimit (subspaceCocone (monotone_skeleton (X := X))) :=
-  isColimitOfIsCoherentWith _ iUnion_skeleton <| .of_isClosed fun _ hC ↦ (isClosed_iff X).2 fun m ↦
+  isColimitOfIsCoherentWith _ iUnion_skeleton <| .of_isClosed fun _ hC ↦
+    functorTensor.isClosed_iff.2 fun m ↦
     -- As `m` is definitionally `⦋m.len⦌ₛ`, the characteristic map `ι X m` is definitionally the
     -- corestriction `skeletonιOfLE X le_rfl` followed by `Subtype.val`.
     (hC _ ⟨m.len, rfl⟩).preimage (skeletonιOfLE X le_rfl).hom.continuous

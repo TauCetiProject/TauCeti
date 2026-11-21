@@ -202,11 +202,6 @@ theorem isClosed_eq_right_left [T2Space C] (n : ℕ) :
     IsClosed {p : Quiver.Total C × ComposableArrows C n | p.fst.right = p.snd.left} :=
   isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
 
-omit [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)] in
-private theorem surjective_totalLeft :
-    Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
-  fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
-
 include hs hu hc in
 /-- When source, target, units and composition are continuous, `C` is Hausdorff and
 `Quiver.Total C` is compact, every `ComposableArrows C n` is compact. -/
@@ -218,7 +213,7 @@ theorem compactSpace_of_compactSpace
   -- closed fiber product in a compact product.
   induction n with
   | zero =>
-    have : CompactSpace C := (surjective_totalLeft (C := C)).compactSpace hs
+    have : CompactSpace C := (Quiver.Total.surjective_left (C := C)).compactSpace hs
     exact (zeroHomeomorph hs hu).symm.compactSpace
   | succ n _ =>
     have : CompactSpace {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left} :=
@@ -242,7 +237,7 @@ theorem sigmaCompactSpace [T2Space C] [SigmaCompactSpace (Quiver.Total C)] :
   | 0 =>
     have : SigmaCompactSpace C :=
       isSigmaCompact_univ_iff.mp
-        ((surjective_totalLeft (C := C)).range_eq ▸ isSigmaCompact_range hs)
+        ((Quiver.Total.surjective_left (C := C)).range_eq ▸ isSigmaCompact_range hs)
     (zeroHomeomorph hs hu).isClosedEmbedding.sigmaCompactSpace
   | n + 1 =>
     have := sigmaCompactSpace n

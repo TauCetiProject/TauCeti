@@ -70,13 +70,13 @@ namespace fatClassifyingSpace
 /-- The coarse projection from the fat classifying space to the actual orbit quotient
 of objects, with its quotient topology. -/
 def coarseMap : fatClassifyingSpace C ⟶ TopCat.of (Quotient (isIsomorphicSetoid C)) :=
-  fatRealization.augment
+  functorTensor.augment SemiSimplexCategory.toTop
     (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
       (topologicalNerve.coarseAugmentation hs))
 
 /-- The coarse projection is induced by the coarse augmentation of the topological nerve. -/
 theorem coarseMap_eq_augment :
-    coarseMap hs = fatRealization.augment
+    coarseMap hs = functorTensor.augment SemiSimplexCategory.toTop
       (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
         (topologicalNerve.coarseAugmentation hs)) := (rfl)
 
@@ -87,9 +87,9 @@ theorem coarseMap_eq_augment :
 theorem coarseMap_ι (m : SemiSimplexCategory)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.obj m) :
-    coarseMap hs (fatRealization.ι _ m (F, t)) =
+    coarseMap hs (functorTensor.ι SemiSimplexCategory.toTop _ m (F, t)) =
       Quotient.mk (isIsomorphicSetoid C) (F.obj 0) :=
-  (fatRealization.augment_ι
+  (functorTensor.augment_ι SemiSimplexCategory.toTop
     (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
       (topologicalNerve.coarseAugmentation hs)) m F t).trans
     (topologicalNerve.coarseAugmentation_app_apply hs _ F)
@@ -99,7 +99,8 @@ theorem coarseMap_surjective : Function.Surjective (coarseMap hs) := by
   refine Quotient.ind fun x ↦ ?_
   obtain ⟨t⟩ : Nonempty (SimplexCategory.toTop.{u}.obj
     (SemiSimplexCategory.toSimplexCategory.obj (SemiSimplexCategory.mk 0))) := inferInstance
-  exact ⟨fatRealization.ι _ (SemiSimplexCategory.mk 0) (ComposableArrows.mk₀ x, t),
+  exact ⟨functorTensor.ι SemiSimplexCategory.toTop _ (SemiSimplexCategory.mk 0)
+      (ComposableArrows.mk₀ x, t),
     coarseMap_ι hs _ _ _⟩
 
 /-- With continuous units, the coarse projection is a quotient map: the topology on the
@@ -114,7 +115,7 @@ theorem isQuotientMap_coarseMap
     simpa [ComposableArrows.totalArrow_def, ComposableArrows.mk₀] using hu
   let ε := Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
     (topologicalNerve.coarseAugmentation hs)
-  apply fatRealization.isQuotientMap_augment ε (SemiSimplexCategory.mk 0)
+  apply functorTensor.isQuotientMap_augment ε (SemiSimplexCategory.mk 0)
   have heq : (ε.app (op (SemiSimplexCategory.mk 0))) ∘
       ComposableArrows.mk₀ = Quotient.mk (isIsomorphicSetoid C) :=
     funext fun x ↦ topologicalNerve.coarseAugmentation_app_apply hs _ _

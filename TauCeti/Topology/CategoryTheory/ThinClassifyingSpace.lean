@@ -114,7 +114,7 @@ variable {C}
 @[simp↓] theorem fatToThinClassifyingSpace_ι (m : SemiSimplexCategory)
     (F : ComposableArrows C (toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.{max u v}.obj m) :
-    fatToThinClassifyingSpace C (fatRealization.ι _ m (F, t)) =
+    fatToThinClassifyingSpace C (functorTensor.ι SemiSimplexCategory.toTop _ m (F, t)) =
       geometricRealization.ι (topologicalNerve C) (toSimplexCategory.obj m).len (F, t) :=
   fatToGeometricRealization_ι (topologicalNerve C) m F t
 

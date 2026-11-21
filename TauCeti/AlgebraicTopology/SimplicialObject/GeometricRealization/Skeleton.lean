@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Category.TopCat.Normal
 public import TauCeti.Topology.Compactness.Paracompact
+import TauCeti.AlgebraicTopology.SimplexCategory.Basic
 
 /-!
 # Normal form, skeletal filtration, and point-set topology of thin geometric realization
@@ -234,64 +235,78 @@ end MapEmbedding
 
 section Skeleton
 
-private inductive SkeletonRel (n : ℕ) :
-    (Σ k : {k : ℕ // k ≤ n}, X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) →
-      (Σ k : {k : ℕ // k ≤ n}, X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) → Prop where
-  | mk {l k : ℕ} (hl : l ≤ n) (hk : k ≤ n) (f : ⦋l⦌ ⟶ ⦋k⦌) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋l⦌) :
-      SkeletonRel n ⟨⟨l, hl⟩, X.map f.op x, t⟩ ⟨⟨k, hk⟩, x, toTop.map f t⟩
-
-/-- The skeletal filtration `n ↦ skₙ |X|` of `X.geometricRealization`: stage `n` is the quotient
-of `Σ k ≤ n, X _⦋k⦌ × Δᵏ` by the simplicial identifications in degrees at most `n`. -/
+/-- The skeletal filtration `n ↦ skₙ |X|` of `X.geometricRealization`: stage `n` is the functor
+tensor product of `SimplexCategory.toTop` and `X` restricted to `SimplexCategory.Truncated n`. -/
 def skeleton : ℕ ⥤ TopCat.{u} where
-  obj n := TopCat.of (Quot (SkeletonRel X n))
-  map {m n} f := TopCat.ofHom
-    { toFun := Quot.lift
-        (fun p ↦ Quot.mk (SkeletonRel X n) ⟨⟨p.1.val, p.1.property.trans (leOfHom f)⟩, p.2⟩)
-        (by rintro _ _ ⟨hl, hk, g, x, t⟩
-            exact Quot.sound (SkeletonRel.mk (hl.trans (leOfHom f)) (hk.trans (leOfHom f)) g x t))
-      continuous_toFun := continuous_quot_lift _ (continuous_sigma fun k ↦
-        continuous_quot_mk.comp (continuous_sigmaMk
-          (σ := fun j : {j : ℕ // j ≤ n} ↦ X _⦋j.val⦌ × toTop.{u}.obj ⦋j.val⦌)
-          (i := ⟨k.val, k.property.trans (leOfHom f)⟩))) }
-  map_id _ := by ext q; induction q using Quot.ind with | mk _ => rfl
-  map_comp _ _ := by ext q; induction q using Quot.ind with | mk _ => rfl
+  obj n :=
+    TauCeti.functorTensor (SimplexCategory.Truncated.inclusion n ⋙ toTop)
+      ((SimplexCategory.Truncated.inclusion n).op ⋙ X)
+  map {m n} f :=
+    TauCeti.functorTensor.reindex (SimplexCategory.Truncated.incl m n (leOfHom f))
+      (SimplexCategory.Truncated.inclusion n ⋙ toTop)
+      ((SimplexCategory.Truncated.inclusion n).op ⋙ X)
+  map_id _ := TauCeti.functorTensor.hom_ext fun ⟨⟨_⟩, _⟩ _ _ ↦
+    (TauCeti.functorTensor.reindex_ι _ _ _ _ _ _).trans (CategoryTheory.id_apply _).symm
+  map_comp {m k l} f g := TauCeti.functorTensor.reindex_comp
+    (SimplexCategory.Truncated.incl k l (leOfHom g))
+    (SimplexCategory.Truncated.inclusion l ⋙ toTop)
+    (SimplexCategory.Truncated.incl m k (leOfHom f))
+    ((SimplexCategory.Truncated.inclusion l).op ⋙ X)
 
 /-- Characteristic map `X _⦋k⦌ × Δᵏ → skₙ |X|` for `k ≤ n`. -/
 def skeleton.ι (n : ℕ) {k : ℕ} (hk : k ≤ n) : C(X _⦋k⦌ × toTop.{u}.obj ⦋k⦌, (skeleton X).obj n) :=
-  ⟨fun p ↦ Quot.mk (SkeletonRel X n) ⟨⟨k, hk⟩, p⟩, continuous_quot_mk.comp continuous_sigmaMk⟩
+  TauCeti.functorTensor.ι (SimplexCategory.Truncated.inclusion n ⋙ toTop)
+    ((SimplexCategory.Truncated.inclusion n).op ⋙ X) ⟨⦋k⦌, hk⟩
 
 @[simp] theorem skeleton.ι_map (n : ℕ) {l k : ℕ} (hl : l ≤ n) (hk : k ≤ n) (f : ⦋l⦌ ⟶ ⦋k⦌)
     (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋l⦌) :
-    skeleton.ι X n hl (X.map f.op x, t) = skeleton.ι X n hk (x, toTop.map f t) :=
-  Quot.sound (SkeletonRel.mk hl hk f x t)
+    skeleton.ι X n hl (X.map f.op x, t) = skeleton.ι X n hk (x, toTop.map f t) := by
+  exact TauCeti.functorTensor.ι_map (SimplexCategory.Truncated.inclusion n ⋙ toTop)
+    ((SimplexCategory.Truncated.inclusion n).op ⋙ X) (SimplexCategory.Truncated.Hom.tr f hl hk)
+    x t
 
 theorem skeleton.ι_jointly_surjective {n : ℕ} (q : (skeleton X).obj n) :
     ∃ (k : ℕ) (hk : k ≤ n) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋k⦌),
       skeleton.ι X n hk (x, t) = q := by
-  induction q using Quot.ind with | mk p => exact ⟨p.1.val, p.1.property, p.2.1, p.2.2, rfl⟩
+  obtain ⟨⟨⟨k⟩, hk⟩, x, t, rfl⟩ := TauCeti.functorTensor.ι_jointly_surjective _ _ q
+  exact ⟨k, hk, x, t, rfl⟩
 
 /-- The `n`-skeleton carries the quotient topology from `Σ k : {k // k ≤ n}, X _⦋k⦌ × Δᵏ`. -/
 theorem skeleton.isQuotientMap_sigma (n : ℕ) :
     IsQuotientMap fun p : Σ k : {k : ℕ // k ≤ n}, X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌ ↦
-      skeleton.ι X n p.1.property p.2 := isQuotientMap_quot_mk
+      skeleton.ι X n p.1.property p.2 :=
+  have he : (fun p : Σ k : {k : ℕ // k ≤ n}, X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌ ↦
+        skeleton.ι X n p.1.property p.2) ∘
+      (fun q : Σ d : SimplexCategory.Truncated n,
+          ((SimplexCategory.Truncated.inclusion n).op ⋙ X).obj (op d) ×
+            (SimplexCategory.Truncated.inclusion n ⋙ toTop).obj d ↦
+        ⟨⟨q.1.obj.len, q.1.property⟩, q.2⟩) =
+      fun q ↦ TauCeti.functorTensor.ι _ _ q.1 q.2 :=
+    funext fun ⟨⟨⟨_⟩, _⟩, _⟩ ↦ rfl
+  IsQuotientMap.of_comp
+    (continuous_sigma fun d ↦
+      continuous_sigmaMk (σ := fun k : {k : ℕ // k ≤ n} ↦ X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌)
+        (i := ⟨d.obj.len, d.property⟩))
+    (continuous_sigma fun k ↦ (skeleton.ι X n k.property).continuous)
+    (he.symm ▸ TauCeti.functorTensor.isQuotientMap_sigma _ _)
 
 theorem skeleton.isOpen_iff {n : ℕ} {s : Set ((skeleton X).obj n)} :
-    IsOpen s ↔ ∀ (k : ℕ) (hk : k ≤ n), IsOpen (skeleton.ι X n hk ⁻¹' s) := by
-  rw [← (skeleton.isQuotientMap_sigma X n).isOpen_preimage, isOpen_sigma_iff, Subtype.forall]; rfl
+    IsOpen s ↔ ∀ (k : ℕ) (hk : k ≤ n), IsOpen (skeleton.ι X n hk ⁻¹' s) :=
+  TauCeti.functorTensor.isOpen_iff.trans ⟨fun h k hk ↦ h ⟨⦋k⦌, hk⟩, fun h ⟨⟨k⟩, hk⟩ ↦ h k hk⟩
 
 theorem skeleton.isClosed_iff {n : ℕ} {s : Set ((skeleton X).obj n)} :
-    IsClosed s ↔ ∀ (k : ℕ) (hk : k ≤ n), IsClosed (skeleton.ι X n hk ⁻¹' s) := by
-  simp only [← isOpen_compl_iff, skeleton.isOpen_iff, preimage_compl]
+    IsClosed s ↔ ∀ (k : ℕ) (hk : k ≤ n), IsClosed (skeleton.ι X n hk ⁻¹' s) :=
+  TauCeti.functorTensor.isClosed_iff.trans ⟨fun h k hk ↦ h ⟨⦋k⦌, hk⟩, fun h ⟨⟨k⟩, hk⟩ ↦ h k hk⟩
 
 theorem skeleton.continuous_iff {n : ℕ} {Z : Type*} [TopologicalSpace Z]
     {g : (skeleton X).obj n → Z} :
-    Continuous g ↔ ∀ (k : ℕ) (hk : k ≤ n), Continuous (g ∘ skeleton.ι X n hk) := by
-  rw [(skeleton.isQuotientMap_sigma X n).continuous_iff, continuous_sigma_iff, Subtype.forall]; rfl
+    Continuous g ↔ ∀ (k : ℕ) (hk : k ≤ n), Continuous (g ∘ skeleton.ι X n hk) :=
+  TauCeti.functorTensor.continuous_iff.trans ⟨fun h k hk ↦ h ⟨⦋k⦌, hk⟩, fun h ⟨⟨k⟩, hk⟩ ↦ h k hk⟩
 
 @[ext] theorem skeleton.hom_ext {n : ℕ} {Z : TopCat.{u}} {g h : (skeleton X).obj n ⟶ Z}
     (H : ∀ (k : ℕ) (hk : k ≤ n) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋k⦌),
-      g (skeleton.ι X n hk (x, t)) = h (skeleton.ι X n hk (x, t))) : g = h := by
-  ext q; obtain ⟨k, hk, x, t, rfl⟩ := skeleton.ι_jointly_surjective X q; exact H k hk x t
+      g (skeleton.ι X n hk (x, t)) = h (skeleton.ι X n hk (x, t))) : g = h :=
+  TauCeti.functorTensor.hom_ext fun ⟨⟨k⟩, hk⟩ x t ↦ H k hk x t
 
 section Desc
 
@@ -302,20 +317,23 @@ variable (n : ℕ) {Z : Type*} [TopologicalSpace Z]
 
 /-- Universal property of the `n`-skeleton: continuous maps `X _⦋k⦌ × Δᵏ → Z` (`k ≤ n`) compatible
 with all simplicial operators in degrees at most `n` descend to a continuous map `skₙ |X| → Z`. -/
-def skeleton.desc : C((skeleton X).obj n, Z) where
-  toFun := Quot.lift (fun p ↦ g p.1.val p.1.property p.2)
-    (by rintro _ _ ⟨hl, hk, f, x, t⟩; exact hg hl hk f x t)
-  continuous_toFun :=
-    continuous_quot_lift _ (continuous_sigma fun k ↦ (g k.val k.property).continuous)
+def skeleton.desc : C((skeleton X).obj n, Z) :=
+  TauCeti.functorTensor.desc (fun k ↦ g k.obj.len k.property) fun _ _ f x t ↦ hg _ _ f.hom x t
 
 @[simp] theorem skeleton.desc_ι {k : ℕ} (hk : k ≤ n) (p : X _⦋k⦌ × toTop.{u}.obj ⦋k⦌) :
-    skeleton.desc X n g hg (skeleton.ι X n hk p) = g k hk p := (rfl)
+    skeleton.desc X n g hg (skeleton.ι X n hk p) = g k hk p :=
+  TauCeti.functorTensor.desc_ι (K := SimplexCategory.Truncated.inclusion n ⋙ toTop)
+    (X := (SimplexCategory.Truncated.inclusion n).op ⋙ X)
+    (fun k ↦ g k.obj.len k.property) (fun _ _ f x t ↦ hg _ _ f.hom x t) ⟨⦋k⦌, hk⟩ p
 
 end Desc
 
 @[simp] theorem skeleton.map_ι {m n k : ℕ} (f : m ⟶ n) (hk : k ≤ m)
     (p : X _⦋k⦌ × toTop.{u}.obj ⦋k⦌) :
-    (skeleton X).map f (skeleton.ι X m hk p) = skeleton.ι X n (hk.trans (leOfHom f)) p := (rfl)
+    (skeleton X).map f (skeleton.ι X m hk p) = skeleton.ι X n (hk.trans (leOfHom f)) p := by
+  exact TauCeti.functorTensor.reindex_ι (SimplexCategory.Truncated.incl m n (leOfHom f))
+    (SimplexCategory.Truncated.inclusion n ⋙ toTop)
+    ((SimplexCategory.Truncated.inclusion n).op ⋙ X) ⟨⦋k⦌, hk⟩ p.1 p.2
 
 /-- Characteristic morphism `TopCat.of (X _⦋k⦌ × Δᵏ) ⟶ skₙ |X|` in `TopCat` for `k ≤ n`. -/
 def skeleton.ιHom (n : ℕ) {k : ℕ} (hk : k ≤ n) :
@@ -327,19 +345,23 @@ def skeleton.ιHom (n : ℕ) {k : ℕ} (hk : k ≤ n) :
 
 /-- Stage inclusion morphism `skₙ |X| ⟶ |X|` in `TopCat`. -/
 def skeleton.toRealization (n : ℕ) : (skeleton X).obj n ⟶ X.geometricRealization :=
-  TopCat.ofHom <| skeleton.desc X n (fun k _ ↦ geometricRealization.ι X k)
-    fun _ _ _ _ f x t ↦ geometricRealization.ι_map X f x t
+  TauCeti.functorTensor.reindex (SimplexCategory.Truncated.inclusion n) toTop X
 
 @[simp] theorem skeleton.toRealization_ι (n : ℕ) {k : ℕ} (hk : k ≤ n)
     (p : X _⦋k⦌ × toTop.{u}.obj ⦋k⦌) :
-    skeleton.toRealization X n (skeleton.ι X n hk p) = geometricRealization.ι X k p := (rfl)
+    skeleton.toRealization X n (skeleton.ι X n hk p) = geometricRealization.ι X k p := by
+  exact TauCeti.functorTensor.reindex_ι (SimplexCategory.Truncated.inclusion n) toTop X
+    ⟨⦋k⦌, hk⟩ p.1 p.2
 
 @[reassoc (attr := simp)] theorem skeleton_map_comp_toRealization {m n : ℕ} (f : m ⟶ n) :
-    (skeleton X).map f ≫ skeleton.toRealization X n = skeleton.toRealization X m := by
-  ext k hk x t; simp
+    (skeleton X).map f ≫ skeleton.toRealization X n = skeleton.toRealization X m :=
+  (TauCeti.functorTensor.reindex_comp (SimplexCategory.Truncated.inclusion n) toTop
+    (SimplexCategory.Truncated.incl m n (leOfHom f)) X).symm
 
-instance (n : ℕ) [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌)] :
-    LindelofSpace ((skeleton X).obj n) := Quot.lindelofSpace
+instance (n : ℕ) [h : ∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌)] :
+    LindelofSpace ((skeleton X).obj n) :=
+  @TauCeti.functorTensor.instLindelofSpace _ _ (SimplexCategory.Truncated.inclusion n ⋙ toTop)
+    ((SimplexCategory.Truncated.inclusion n).op ⋙ X) _ fun k ↦ h ⟨k.obj.len, k.property⟩
 
 /-- The canonical cocone exhibiting `X.geometricRealization` above `skeleton X`. -/
 @[expose, simps] def skeletonCocone : Cocone (skeleton X) where
