@@ -137,9 +137,7 @@ theorem _root_.LipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
     (hE0 : Tendsto (fun r ↦ μHE[k] ((E \ f '' A) ∩ closedBall (f u₀) r) /
       volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0))
     {P : Submodule ℝ V} (hPk : Module.finrank ℝ P = k)
-    (hP : ∀ ε > (0 : ℝ), Tendsto (fun r ↦
-      μHE[k] {z ∈ E ∩ closedBall (f u₀) r | ε * dist z (f u₀) < infDist (z - f u₀) (P : Set V)} /
-        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)) :
+    (hP : DensityZeroOutsideCones k E (f u₀) P) :
     P = D.range := by
   set x := f u₀
   -- Balls in `U` have the volume of balls in `EuclideanSpace ℝ (Fin k)`.
@@ -149,6 +147,7 @@ theorem _root_.LipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
     rw [← (stdOrthonormalBasis ℝ U).measurePreserving_repr.measure_preimage
       measurableSet_closedBall.nullMeasurableSet, LinearIsometryEquiv.preimage_closedBall,
       map_zero]
+  rw [densityZeroOutsideCones_iff] at hP
   simp only [hvol] at hE1 hE0 hP
   by_contra hne
   -- A vector `w` orthogonal to `P` but not to the derivative range makes `ψ = ⟪w, D ·⟫` nonzero.
@@ -256,7 +255,6 @@ theorem CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div {E : Set 
     (hLip n).lipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
       (finrank_euclideanSpace_fin (𝕜 := ℝ)) (hAnti n) hu hd.hasFDerivAt.hasFDerivWithinAt hrange
       hone' h0 (P := P)
-  rw [hchart P hP (densityZeroOutsideCones_iff.1 hPc),
-    hchart Q hQ (densityZeroOutsideCones_iff.1 hQc)]
+  rw [hchart P hP hPc, hchart Q hQ hQc]
 
 end TauCeti
