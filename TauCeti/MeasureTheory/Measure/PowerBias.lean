@@ -106,11 +106,8 @@ theorem integrable_rpow_powerBias_iff {μ : Measure ℝ} {q r : ℝ}
     (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
     Integrable (fun x : ℝ => x ^ r) (μ.powerBias q) ↔
       Integrable (fun x : ℝ => x ^ (q + r)) μ := by
-  rcases eq_zero_or_pos (∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ) with hZ | hpos
-  · obtain rfl := eq_zero_of_lintegral_powerBiasWeight_eq_zero hμ hZ
-    simp [powerBias_def]
   rw [powerBias_def, Measure.integrable_weighted_iff
-    (measurable_powerBiasWeight q).aemeasurable hpos hfin]
+    (measurable_powerBiasWeight q).aemeasurable hfin]
   apply integrable_congr
   filter_upwards [hμ] with x hx
   rw [NNReal.smul_def, Real.coe_toNNReal _ (Real.rpow_nonneg hx.le q),
