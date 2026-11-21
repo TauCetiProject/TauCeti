@@ -14,7 +14,10 @@ import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
-# Cardinalities of images, complements, coverings, division preimages, sigma fibres and doubled sets
+# Set cardinalities and equivalences
+
+Countable sets have the same extended cardinality precisely when there is an equivalence
+between them (`Set.encard_eq_iff_nonempty_equiv`).
 
 Two maps on a common index type that identify the same pairs of indices take equally many values
 on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
