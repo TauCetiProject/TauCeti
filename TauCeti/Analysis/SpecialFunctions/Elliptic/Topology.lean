@@ -28,6 +28,8 @@ topological group.
 
 * `PeriodPair.exists_analyticAt_mk_eq_weierstrassPoint_toProjective`: the point map has local
   holomorphic nonsingular homogeneous coordinates.
+* `PeriodPair.eventually_mk_eq_weierstrassPoint_toProjective`: near the lattice they are the
+  coordinates `[2 ℘ / ℘' : 1 : 2 / ℘']` of the chart at infinity.
 * `PeriodPair.continuous_weierstrassPoint_toProjective`: the point map is continuous.
 * `PeriodPair.weierstrassPointContinuousAddEquiv`: `ℂ / Λ ≃ₜ+ E_Λ(ℂ)`.
 * `WeierstrassCurve.Projective.Point.instConnectedSpace`: the points of a complex elliptic curve
@@ -58,6 +60,27 @@ theorem exists_analyticAt_mk_eq_weierstrassPoint_toProjective (L : PeriodPair) (
   refine ⟨hz.1, ?_⟩
   apply (Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).injective
   rw [Projective.Point.toAffineAddEquiv_apply, Projective.Point.toAffineLift_eq, hz.2]
+  simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
+    ((Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).apply_symm_apply
+      (L.weierstrassPoint z)).symm
+
+/-- Near a lattice point `l₀`, the projective point `(℘(z), ℘'(z) / 2)` has the nonsingular
+homogeneous coordinates `[2 ℘(z) / ℘'(z) : 1 : 2 / ℘'(z)]` of the chart at infinity. -/
+theorem eventually_mk_eq_weierstrassPoint_toProjective (L : PeriodPair) {l₀ : ℂ}
+    (hl₀ : l₀ ∈ L.lattice) :
+    ∀ᶠ z in 𝓝 l₀, ∃ h : L.weierstrassCurve.toProjective.Nonsingular
+        ![2 * (℘[L] z / ℘'[L] z), 1, 2 * (℘'[L] z)⁻¹],
+      Projective.Point.mk ((Projective.nonsingularLift_iff _).mpr h) =
+        (L.weierstrassPoint z).toProjective := by
+  filter_upwards [eventually_nhdsWithin_iff.mp (L.eventually_derivWeierstrassP_ne_zero hl₀)]
+    with z hz
+  obtain ⟨hn, hP⟩ := L.nonsingular_toAffine_chartAtInfinity <| by
+    rcases eq_or_ne z l₀ with h | hne
+    · exact .inr (h ▸ hl₀)
+    · exact .inl (hz hne)
+  refine ⟨hn, ?_⟩
+  apply (Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).injective
+  rw [Projective.Point.toAffineAddEquiv_apply, Projective.Point.toAffineLift_eq, hP]
   simpa only [Projective.Point.toAffineAddEquiv_symm_apply] using
     ((Projective.Point.toAffineAddEquiv L.weierstrassCurve.toProjective).apply_symm_apply
       (L.weierstrassPoint z)).symm
