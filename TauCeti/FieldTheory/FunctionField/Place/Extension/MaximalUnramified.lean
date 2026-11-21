@@ -14,9 +14,9 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 
 Let `F / k` be an algebraic function field, `A / F` an algebraic extension, for instance an
 algebraic closure of `F`, and `S` a set of places of `F`. A subextension `E` of `A / F` is
-**unramified outside `S`** when it is finite and separable over `F` and every place of `F` outside
-`S` is unramified in `E` (`IntermediateField.IsUnramifiedOutside`). The compositum of all of them
-is the **maximal subextension of `A / F` unramified outside `S`**
+**unramified outside `S`** when it is finite and separable over `F` and its branch places, the
+places of `F` not unramified in `E`, all lie in `S` (`IntermediateField.IsUnramifiedOutside`).
+The compositum of all of them is the **maximal subextension of `A / F` unramified outside `S`**
 (`TauCeti.maximalUnramifiedOutside`). For `F = k(t)` with `k` algebraically closed and `S` the
 three places `t = 0`, `t = 1`, `t = ∞`, its Galois group is the geometric fundamental group of the
 projective line minus three points, realized field-theoretically.
@@ -40,8 +40,8 @@ subextensions of `A / F` unramified outside `S`
 
 ## Main definitions
 
-* `IntermediateField.IsUnramifiedOutside`: a finite separable subextension in which every place
-  outside `S` is unramified.
+* `IntermediateField.IsUnramifiedOutside`: a finite separable subextension whose branch places lie
+  in `S`.
 * `TauCeti.maximalUnramifiedOutside A S`: the compositum of the subextensions of `A / F`
   unramified outside `S`.
 * `TauCeti.maximalUnramifiedOutside.openNormalSubgroupEquiv`: the open normal subgroups of its
@@ -50,6 +50,9 @@ subextensions of `A / F` unramified outside `S`
 
 ## Main results
 
+* `IntermediateField.IsUnramifiedOutside.isUnramified` and
+  `IntermediateField.IsUnramifiedOutside.of_isUnramified`: unramified outside `S` means finite,
+  separable and unramified at every place outside `S`.
 * `IntermediateField.IsUnramifiedOutside.sup`, `IntermediateField.IsUnramifiedOutside.mono`,
   `IntermediateField.IsUnramifiedOutside.map` and `IntermediateField.isUnramifiedOutside_bot`:
   the family is closed under composita, smaller fields and embeddings, and contains `F`.
@@ -86,18 +89,30 @@ variable [Algebra.IsAlgebraic F A]
 
 /-- A subextension `E` of an algebraic extension `A / F` of a function field `F / k` is
 **unramified outside** a set `S` of places of `F` when it is finite and separable over `F` and
-every place of `F` outside `S` is unramified in `E`, in the sense of
-`TauCeti.Place.IsUnramified`. -/
+its branch places `TauCeti.Place.branchPlaces k E`, the places of `F` not unramified in `E`, all
+lie in `S`. -/
 structure IsUnramifiedOutside (E : IntermediateField F A) (S : Set (TauCeti.Place k F)) :
     Prop where
   /-- `E` is a finite extension of `F`. -/
   finiteDimensional : FiniteDimensional F E
   /-- `E` is a separable extension of `F`. -/
   isSeparable : Algebra.IsSeparable F E
-  /-- Every place of `F` outside `S` is unramified in `E`. -/
-  isUnramified : ∀ P ∉ S, P.IsUnramified (k' := k) (F' := E)
+  /-- Every branch place of `E` over `F` lies in `S`. -/
+  branchPlaces_subset : TauCeti.Place.branchPlaces (k := k) (F := F) k E ⊆ S
 
 variable {S : Set (TauCeti.Place k F)} {E E₁ E₂ L : IntermediateField F A}
+
+/-- In a subextension unramified outside `S`, every place of `F` outside `S` is unramified. -/
+theorem IsUnramifiedOutside.isUnramified (h : E.IsUnramifiedOutside S) {P : TauCeti.Place k F}
+    (hP : P ∉ S) : P.IsUnramified (k' := k) (F' := E) :=
+  not_not.mp fun hU ↦ hP (h.branchPlaces_subset (TauCeti.Place.mem_branchPlaces_iff.mpr hU))
+
+/-- A finite separable subextension in which every place of `F` outside `S` is unramified is
+unramified outside `S`. -/
+theorem IsUnramifiedOutside.of_isUnramified [FiniteDimensional F E] [Algebra.IsSeparable F E]
+    (h : ∀ P ∉ S, P.IsUnramified (k' := k) (F' := E)) : E.IsUnramifiedOutside S :=
+  ⟨inferInstance, inferInstance, fun P hP ↦
+    not_not.mp fun hPS ↦ TauCeti.Place.mem_branchPlaces_iff.mp hP (h P hPS)⟩
 
 /-- **Being unramified outside `S` is invariant under isomorphism over `F`**, also between
 subextensions of different algebraic extensions of `F`. -/
@@ -106,7 +121,9 @@ theorem IsUnramifiedOutside.of_algEquiv {K : Type*} [Field K] [Algebra F K] [Alg
     (h : E.IsUnramifiedOutside S) (e : E ≃ₐ[F] E') : E'.IsUnramifiedOutside S where
   finiteDimensional := have := h.finiteDimensional; e.toLinearEquiv.finiteDimensional
   isSeparable := have := h.isSeparable; AlgEquiv.Algebra.isSeparable e
-  isUnramified P hP := (TauCeti.Place.isUnramified_iff_of_algEquiv P e).mp (h.isUnramified P hP)
+  branchPlaces_subset P hP := h.branchPlaces_subset <| TauCeti.Place.mem_branchPlaces_iff.mpr
+    fun hU ↦ TauCeti.Place.mem_branchPlaces_iff.mp hP
+      ((TauCeti.Place.isUnramified_iff_of_algEquiv P e).mp hU)
 
 /-- The image of a subextension unramified outside `S` under an embedding over `F` is unramified
 outside `S`. -/
@@ -120,10 +137,8 @@ theorem isUnramifiedOutside_bot (hF : TauCeti.IsFunctionField k F) (S : Set (Tau
     (⊥ : IntermediateField F A).IsUnramifiedOutside S := by
   -- Inside the trivial Galois extension `F / F`, the bottom field lies in every inertia field.
   have hF' : (⊥ : IntermediateField F F).IsUnramifiedOutside S :=
-    { finiteDimensional := inferInstance
-      isSeparable := inferInstance
-      isUnramified := fun P _ ↦
-        (TauCeti.Place.isUnramified_iff_forall_le_inertiaField hF P ⊥).mpr fun _ _ ↦ bot_le }
+    .of_isUnramified fun P _ ↦
+      (TauCeti.Place.isUnramified_iff_forall_le_inertiaField hF P ⊥).mpr fun _ _ ↦ bot_le
   exact hF'.of_algEquiv ((botEquiv F F).trans (botEquiv F A).symm)
 
 /-- **A compositum of two subextensions unramified outside `S` is unramified outside `S`**
@@ -135,9 +150,8 @@ theorem IsUnramifiedOutside.sup (hF : TauCeti.IsFunctionField k F)
   have := h₂.finiteDimensional
   have := h₁.isSeparable
   have := h₂.isSeparable
-  exact ⟨inferInstance, inferInstance, fun P hP ↦
-    (TauCeti.Place.isUnramified_sup_iff hF P E₁ E₂).mpr
-      ⟨h₁.isUnramified P hP, h₂.isUnramified P hP⟩⟩
+  exact .of_isUnramified fun P hP ↦
+    (TauCeti.Place.isUnramified_sup_iff hF P E₁ E₂).mpr ⟨h₁.isUnramified hP, h₂.isUnramified hP⟩
 
 /-- **A subfield of a subextension unramified outside `S` is unramified outside `S`**: in the
 tower `F ⊆ E ⊆ L`, a place of `F` unramified in `L` is unramified in `E`. -/
@@ -145,18 +159,19 @@ theorem IsUnramifiedOutside.mono (hF : TauCeti.IsFunctionField k F)
     (h : L.IsUnramifiedOutside S) (hEL : E ≤ L) : E.IsUnramifiedOutside S := by
   have := h.finiteDimensional
   have hL : TauCeti.IsFunctionField k L := hF.finite_extension
-  refine ⟨(restrictAlgEquiv hEL).symm.toLinearEquiv.finiteDimensional, ?_, fun P hP ↦ ?_⟩
-  · exact (le_separableClosure_iff F A E).mp
-      (hEL.trans ((le_separableClosure_iff F A L).mpr h.isSeparable))
-  · -- View `E` as an intermediate field of `L` and read off the lower step of the tower.
-    rw [TauCeti.Place.isUnramified_iff_of_algEquiv P (restrictAlgEquiv hEL)]
-    exact ((TauCeti.Place.isUnramified_tower_iff (k₁ := k) (F₁ := restrict hEL) hL P).mp
-      (h.isUnramified P hP)).left
+  have : FiniteDimensional F E := (restrictAlgEquiv hEL).symm.toLinearEquiv.finiteDimensional
+  have : Algebra.IsSeparable F E := (le_separableClosure_iff F A E).mp
+    (hEL.trans ((le_separableClosure_iff F A L).mpr h.isSeparable))
+  refine .of_isUnramified fun P hP ↦ ?_
+  -- View `E` as an intermediate field of `L` and read off the lower step of the tower.
+  rw [TauCeti.Place.isUnramified_iff_of_algEquiv P (restrictAlgEquiv hEL)]
+  exact ((TauCeti.Place.isUnramified_tower_iff (k₁ := k) (F₁ := restrict hEL) hL P).mp
+    (h.isUnramified hP)).left
 
 /-- **A subextension unramified outside `S` is unramified outside every larger set of places.** -/
 theorem IsUnramifiedOutside.mono_set {T : Set (TauCeti.Place k F)} (h : E.IsUnramifiedOutside S)
     (hST : S ⊆ T) : E.IsUnramifiedOutside T :=
-  ⟨h.finiteDimensional, h.isSeparable, fun P hP ↦ h.isUnramified P fun hPS ↦ hP (hST hPS)⟩
+  ⟨h.finiteDimensional, h.isSeparable, h.branchPlaces_subset.trans hST⟩
 
 end Algebraic
 
