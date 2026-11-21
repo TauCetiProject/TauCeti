@@ -42,11 +42,13 @@ When `S` is finitely generated and projective over `R`, a finite dual basis from
 `S`-algebra isomorphism
 `completedGroupAlgebra.baseChangeEquiv R S Γ : S ⊗[R] R[[Γ]] ≃ₐ[S] S[[Γ]]`: `R` and `S` carry no
 topology, while `Γ` requires no topological-group or compactness/finite-quotient hypotheses beyond
-`[Group Γ] [TopologicalSpace Γ]`. When `S` admits a finite `R`-basis `b`, taking `b`-coordinates of
-levelwise coefficients yields an additive isomorphism `coordAddEquiv Γ b : S[[Γ]] ≃+ (ι → R[[Γ]])`,
-which upgrades to a topological additive isomorphism
-`coordContinuousAddEquiv Γ b : S[[Γ]] ≃ₜ+ (ι → R[[Γ]])` for the inverse-limit topologies when `R`
-is a topological ring and `S` carries the `R`-module topology.
+`[Group Γ] [TopologicalSpace Γ]`. When `R` is a topological ring, `S` carries the `R`-module
+topology, and multiplication on `R[[Γ]]` is continuous, `baseChangeEquiv R S Γ` is a homeomorphism
+when `S ⊗[R] R[[Γ]]` carries the `R[[Γ]]`-module topology (`isHomeomorph_baseChangeEquiv`). When
+`S` admits a finite `R`-basis `b`, taking `b`-coordinates of levelwise coefficients yields an
+additive isomorphism `coordAddEquiv Γ b : S[[Γ]] ≃+ (ι → R[[Γ]])`, which upgrades to a topological
+additive isomorphism `coordContinuousAddEquiv Γ b : S[[Γ]] ≃ₜ+ (ι → R[[Γ]])` for the inverse-limit
+topologies when `R` is a topological ring and `S` carries the `R`-module topology.
 
 ## Main definitions
 
@@ -89,9 +91,11 @@ is a topological ring and `S` carries the `R`-module topology.
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_mapRingHom`,
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_of`,
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply_of_dual`,
-  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply`: inverse cancellation, self-base-change
-  normalization, pure-tensor and generator normal forms, and dual-family and basis decompositions
-  of `(baseChangeEquiv R S Γ).symm`.
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply`,
+  `TauCeti.completedGroupAlgebra.isHomeomorph_baseChangeEquiv`: inverse cancellation,
+  self-base-change normalization, pure-tensor and generator normal forms, dual-family and basis
+  decompositions of `(baseChangeEquiv R S Γ).symm`, and homeomorphism for the `R[[Γ]]`-module
+  topology.
 
 ## References
 
@@ -526,6 +530,144 @@ theorem baseChangeEquiv_symm_apply {ι : Type*} [Fintype ι] (b : Module.Basis �
 theorem baseChangeEquiv_self :
     baseChangeEquiv R R Γ = Algebra.TensorProduct.lid R (completedGroupAlgebra R Γ) :=
   AlgEquiv.coe_toAlgHom_injective (by simp)
+
+omit [Module.Projective R S] [Module.Finite R S] in
+private theorem continuous_mapRingHom_algebraMap [TopologicalSpace R] [IsTopologicalRing R]
+    [TopologicalSpace S] [IsModuleTopology R S] :
+    Continuous (mapRingHom (R := R) (S := S) Γ (algebraMap R S)) := by
+  have : ContinuousSMul R S := IsModuleTopology.toContinuousSMul R S
+  have : ContinuousAdd S := IsModuleTopology.toContinuousAdd R S
+  exact continuous_mapRingHom (IsModuleTopology.continuous_of_linearMap (Algebra.linearMap R S))
+
+private theorem continuousMul_of_isModuleTopology [TopologicalSpace R] [IsTopologicalRing R]
+    [TopologicalSpace S] [IsModuleTopology R S] [ContinuousMul (completedGroupAlgebra R Γ)] :
+    Continuous (fun p : completedGroupAlgebra S Γ × completedGroupAlgebra S Γ ↦ p.1 * p.2) := by
+  have : IsTopologicalRing S := IsModuleTopology.isTopologicalRing R S
+  obtain ⟨n, b, φ, hsum⟩ := TauCeti.exists_sum_dual_smul_eq (R := R) (M := S)
+  have hdual (z : completedGroupAlgebra S Γ) :
+      z = ∑ i : Fin n, b i • mapRingHom Γ (algebraMap R S)
+        (mapAddMonoidHom Γ (φ i).toAddMonoidHom z) := by
+    apply (baseChangeEquiv R S Γ).symm.injective
+    rw [map_sum, baseChangeEquiv_symm_apply_of_dual hsum z]
+    exact Finset.sum_congr rfl fun i _ ↦ by
+      rw [← baseChangeEquiv_tmul, AlgEquiv.symm_apply_apply]
+  have heq : (fun p : completedGroupAlgebra S Γ × completedGroupAlgebra S Γ ↦ p.1 * p.2) =
+      fun p ↦ ∑ i : Fin n, ∑ j : Fin n, (b i * b j) •
+        mapRingHom Γ (algebraMap R S)
+          (mapAddMonoidHom Γ (φ i).toAddMonoidHom p.1 *
+            mapAddMonoidHom Γ (φ j).toAddMonoidHom p.2) := by
+    ext ⟨x, y⟩ U a
+    have hxy : x * y = ∑ i : Fin n, ∑ j : Fin n, (b i * b j) •
+        mapRingHom Γ (algebraMap R S)
+          (mapAddMonoidHom Γ (φ i).toAddMonoidHom x *
+            mapAddMonoidHom Γ (φ j).toAddMonoidHom y) := by
+      conv_lhs => rw [hdual x, hdual y, Finset.sum_mul]
+      simp_rw [Finset.mul_sum, Algebra.smul_mul_assoc, Algebra.mul_smul_comm, smul_smul, ← map_mul]
+    rw [hxy]
+  rw [heq]
+  refine continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦ ?_
+  have h1 := continuous_mapAddMonoidHom (Γ := Γ) (f := (φ i).toAddMonoidHom)
+    (IsModuleTopology.continuous_of_linearMap (φ i))
+  have h2 := continuous_mapAddMonoidHom (Γ := Γ) (f := (φ j).toAddMonoidHom)
+    (IsModuleTopology.continuous_of_linearMap (φ j))
+  exact (continuous_const (y := b i * b j)).smul
+    ((continuous_mapRingHom_algebraMap (R := R) (S := S) (Γ := Γ)).comp
+      ((h1.comp continuous_fst).mul (h2.comp continuous_snd)))
+
+private theorem continuous_baseChangeEquiv [TopologicalSpace R] [IsTopologicalRing R]
+    [TopologicalSpace S] [IsModuleTopology R S] [ContinuousMul (completedGroupAlgebra R Γ)] :
+    letI : Module (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) :=
+      Module.compHom (S ⊗[R] completedGroupAlgebra R Γ)
+        (Algebra.TensorProduct.includeRight (R := R) (A := S)
+          (B := completedGroupAlgebra R Γ)).toRingHom
+    letI : TopologicalSpace (S ⊗[R] completedGroupAlgebra R Γ) :=
+      moduleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ)
+    Continuous (baseChangeEquiv R S Γ) := by
+  let : Module (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) :=
+    Module.compHom (S ⊗[R] completedGroupAlgebra R Γ)
+      (Algebra.TensorProduct.includeRight (R := R) (A := S)
+        (B := completedGroupAlgebra R Γ)).toRingHom
+  let : TopologicalSpace (S ⊗[R] completedGroupAlgebra R Γ) :=
+    moduleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ)
+  have : IsModuleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) := ⟨rfl⟩
+  have : IsTopologicalRing S := IsModuleTopology.isTopologicalRing R S
+  have : ContinuousMul (completedGroupAlgebra S Γ) :=
+    ⟨continuousMul_of_isModuleTopology (R := R) (S := S) (Γ := Γ)⟩
+  let : Module (completedGroupAlgebra R Γ) (completedGroupAlgebra S Γ) :=
+    Module.compHom (completedGroupAlgebra S Γ) (mapRingHom Γ (algebraMap R S))
+  have : ContinuousSMul (completedGroupAlgebra R Γ) (completedGroupAlgebra S Γ) :=
+    ⟨((continuous_mapRingHom_algebraMap (R := R) (S := S) (Γ := Γ)).comp
+      continuous_fst).mul continuous_snd⟩
+  let f : S ⊗[R] completedGroupAlgebra R Γ →ₗ[completedGroupAlgebra R Γ]
+      completedGroupAlgebra S Γ :=
+    { toFun := baseChangeEquiv R S Γ
+      map_add' := map_add _
+      map_smul' := fun r z ↦ by
+        -- `Module.compHom` acts on the tensor product via `1 ⊗ₜ r` and on `S[[Γ]]` via
+        -- `mapRingHom`.
+        have hdom : r • z = (1 ⊗ₜ[R] r) * z := rfl
+        have hcod : r • baseChangeEquiv R S Γ z =
+            mapRingHom Γ (algebraMap R S) r * baseChangeEquiv R S Γ z := rfl
+        rw [hdom, RingHom.id_apply, hcod, map_mul, baseChangeEquiv_tmul, one_smul] }
+  exact IsModuleTopology.continuous_of_linearMap f
+
+private theorem continuous_baseChangeEquiv_symm [TopologicalSpace R] [IsTopologicalRing R]
+    [TopologicalSpace S] [IsModuleTopology R S] :
+    letI : Module (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) :=
+      Module.compHom (S ⊗[R] completedGroupAlgebra R Γ)
+        (Algebra.TensorProduct.includeRight (R := R) (A := S)
+          (B := completedGroupAlgebra R Γ)).toRingHom
+    letI : TopologicalSpace (S ⊗[R] completedGroupAlgebra R Γ) :=
+      moduleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ)
+    Continuous (baseChangeEquiv R S Γ).symm := by
+  let : Module (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) :=
+    Module.compHom (S ⊗[R] completedGroupAlgebra R Γ)
+      (Algebra.TensorProduct.includeRight (R := R) (A := S)
+        (B := completedGroupAlgebra R Γ)).toRingHom
+  let : TopologicalSpace (S ⊗[R] completedGroupAlgebra R Γ) :=
+    moduleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ)
+  have : IsModuleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) := ⟨rfl⟩
+  have : ContinuousAdd (S ⊗[R] completedGroupAlgebra R Γ) :=
+    IsModuleTopology.toContinuousAdd (completedGroupAlgebra R Γ) _
+  obtain ⟨n, b, φ, hsum⟩ := TauCeti.exists_sum_dual_smul_eq (R := R) (M := S)
+  have hsymm : (⇑(baseChangeEquiv R S Γ).symm) =
+      fun y ↦ ∑ i : Fin n,
+        (mapAddMonoidHom Γ (φ i).toAddMonoidHom y) •
+          (b i ⊗ₜ[R] (1 : completedGroupAlgebra R Γ)) := by
+    ext y
+    rw [baseChangeEquiv_symm_apply_of_dual hsum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hsmul (x : completedGroupAlgebra R Γ) (z : S ⊗[R] completedGroupAlgebra R Γ) :
+        x • z = (1 ⊗ₜ[R] x) * z := rfl
+    rw [hsmul, Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_one]
+  rw [hsymm]
+  refine continuous_finsetSum _ fun i _ ↦ ?_
+  exact (continuous_mapAddMonoidHom (Γ := Γ) (f := (φ i).toAddMonoidHom)
+    (IsModuleTopology.continuous_of_linearMap (φ i))).smul continuous_const
+
+variable (R S Γ) in
+/-- When `R` is a topological ring, `S` carries the `R`-module topology, and multiplication on
+`R[[Γ]]` is continuous, `baseChangeEquiv R S Γ` is a homeomorphism from the `R[[Γ]]`-module
+topology on `S ⊗[R] R[[Γ]]` (induced by `Algebra.TensorProduct.includeRight`) to the
+inverse-limit topology on `S[[Γ]]`. -/
+theorem isHomeomorph_baseChangeEquiv [TopologicalSpace R] [IsTopologicalRing R]
+    [TopologicalSpace S] [IsModuleTopology R S] [ContinuousMul (completedGroupAlgebra R Γ)] :
+    letI : Module (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) :=
+      Module.compHom (S ⊗[R] completedGroupAlgebra R Γ)
+        (Algebra.TensorProduct.includeRight (R := R) (A := S)
+          (B := completedGroupAlgebra R Γ)).toRingHom
+    letI : TopologicalSpace (S ⊗[R] completedGroupAlgebra R Γ) :=
+      moduleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ)
+    IsHomeomorph (baseChangeEquiv R S Γ) :=
+  letI : Module (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ) :=
+    Module.compHom (S ⊗[R] completedGroupAlgebra R Γ)
+      (Algebra.TensorProduct.includeRight (R := R) (A := S)
+        (B := completedGroupAlgebra R Γ)).toRingHom
+  letI : TopologicalSpace (S ⊗[R] completedGroupAlgebra R Γ) :=
+    moduleTopology (completedGroupAlgebra R Γ) (S ⊗[R] completedGroupAlgebra R Γ)
+  (Homeomorph.mk (baseChangeEquiv R S Γ).toEquiv
+    (continuous_baseChangeEquiv (R := R) (S := S) (Γ := Γ))
+    (continuous_baseChangeEquiv_symm (R := R) (S := S) (Γ := Γ))).isHomeomorph
 
 end FiniteProjective
 
