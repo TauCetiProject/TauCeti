@@ -336,6 +336,10 @@ theorem dualMeasure_facetPolyhedron_simplex_cornerChop (n : ℕ) {a ε : ℝ} (h
           (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
           (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε)) =
       ENNReal.ofReal ((a ^ n - ε ^ n) / n.factorial) := by
+  -- The normals of the facets at the corner `0` are the coordinate vectors.
+  have hu (k : Fin n) :
+      (Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) (some k)) = Pi.single k 1 := by
+    simp
   rcases lt_or_ge a ε with haε | hεa
   · -- Beyond the depth `a` nothing is left, and `aⁿ - εⁿ ≤ 0`.
     rw [ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg
@@ -343,29 +347,22 @@ theorem dualMeasure_facetPolyhedron_simplex_cornerChop (n : ℕ) {a ε : ℝ} (h
     refine measure_mono_null (t := ∅) (fun x hx ↦ ?_) measure_empty
     -- The chopped simplex is `{0 ≤ x(eₖ), ε ≤ ∑ k, x(eₖ) ≤ a}`.
     simp only [mem_facetPolyhedron_cornerChop_iff, mem_facetPolyhedron_simplex_iff, Finset.sum_map,
-      Function.Embedding.some_apply, simplexNormal_some, simplexSupport_some, sub_zero,
-      AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one] at hx
+      Function.Embedding.some_apply, hu, simplexSupport_some, sub_zero] at hx
     exact absurd (hx.2.trans hx.1.2) (not_le.2 haε)
-  -- The normals of the facets at the corner `0` are the coordinate vectors.
   let e : Fin n ≃ (Finset.univ.map .some : Finset (Option (Fin n))) :=
-    .ofBijective (fun k ↦ ⟨some k, by simp⟩) ⟨fun _ _ h ↦ Option.some_injective _
-      (congrArg Subtype.val h), fun ⟨o, ho⟩ ↦ by
-        obtain ⟨k, -, rfl⟩ := Finset.mem_map.1 ho
-        exact ⟨k, rfl⟩⟩
+    (Equiv.subtypeUnivEquiv Finset.mem_univ).symm.trans (Finset.univ.equivMap .some)
   have hb (j) : (Pi.basisFun ℤ (Fin n)).reindex e j = simplexNormal (Fin n) j := by
     obtain ⟨k, rfl⟩ := e.surjective j
     rw [Basis.reindex_apply, Equiv.symm_apply_apply, Pi.basisFun_apply]
-    -- `e k` is `some k` by the definition of `e`.
-    exact (simplexNormal_some k).symm
+    simp only [e, Equiv.trans_apply, Finset.equivMap_apply_coe, Equiv.subtypeUnivEquiv_symm_apply,
+      Function.Embedding.some_apply, simplexNormal_some]
   -- The simplex of size `ε` at the corner lies in the simplex of size `a`.
   have h := (isIntegralLattice_intCast n).dualMeasure_facetPolyhedron_cornerChop_add
     (c := simplexSupport a) _ hb hε fun x hxs hxε ↦ by
       simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
-        forall_exists_index, forall_apply_eq_imp_iff, simplexNormal_some, simplexSupport_some,
-        AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one] at hxs
-      simp only [Finset.sum_map, Function.Embedding.some_apply, simplexNormal_some,
-        simplexSupport_some, sub_zero, AddMonoidHom.compLeft_single, Int.coe_castAddHom,
-        Int.cast_one] at hxε
+        forall_exists_index, forall_apply_eq_imp_iff, hu, simplexSupport_some] at hxs
+      simp only [Finset.sum_map, Function.Embedding.some_apply, hu, simplexSupport_some,
+        sub_zero] at hxε
       exact mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa⟩
   rw [dualMeasure_facetPolyhedron_simplex n ha, finrank_fin_fun] at h
   rw [ENNReal.eq_sub_of_add_eq ENNReal.ofReal_ne_top h, sub_div,
