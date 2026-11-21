@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.LevelThreeNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
 # The universal level-three normal form over a scheme

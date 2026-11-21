@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
+public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.Basic
 import TauCeti.AlgebraicGeometry.ModularCurve.Rigidifier.LevelThree
 import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.RelativeDimension
 import TauCeti.AlgebraicGeometry.ModularCurve.YOne.LevelFour

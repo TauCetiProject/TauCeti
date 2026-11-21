@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
+public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.Basic
 
 /-!
 # Explicit presentation and smoothness of `Y₁(4)`

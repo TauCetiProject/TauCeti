@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.TateNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 
 /-!
 # The universal Tate normal form over a scheme
