@@ -77,19 +77,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace IsContMDiffDistribution
 
-/-- A continuous covector field with values in the annihilators of `D` is a continuous section of
-the annihilator bundle `D⁰`. -/
-private theorem continuous_totalSpaceMk_annihilatorSpace
-    (hσ : Continuous fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) x (σ x))
-    (hσD : ∀ x, σ x ∈ CotangentBundle.annihilatorSpace I D x) :
-    Continuous fun x ↦ TotalSpace.mk' (Fin 1 → ℝ)
-      (E := fun x ↦ CotangentBundle.annihilatorSpace I D x) x ⟨σ x, hσD x⟩ := by
-  rw [(CotangentBundle.isEmbedding_annihilatorInclusion I D _).continuous_iff]
-  convert hσ using 1
-  funext x
-  rw [Function.comp_apply, CotangentBundle.annihilatorInclusion_apply]
-
 /-- **A one-form proportional to a nonzero annihilating covector defines the hyperplane.** If the
 value at `x` of a smooth one-form `α` is a nonzero multiple of a nonzero covector `σ_x` annihilating
 the hyperplane `D x`, then `α` does not vanish at `x` and its kernel there is `D x`. -/
@@ -128,13 +115,14 @@ theorem exists_smoothForm_pos_smul (hD : IsContMDiffDistribution I ∞ k D)
   let := hD.annihilatorContMDiffVectorBundle hk
   -- `σ` is a continuous nowhere-zero section of the smooth line bundle `D⁰`.
   obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_exists_pos_smul_of_continuous (I := I) (n := ⊤)
-    (Module.finrank_fin_fun ℝ) (continuous_totalSpaceMk_annihilatorSpace hσ hσD)
+    (Module.finrank_fin_fun ℝ)
+    ((CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff
+      (σ := fun x ↦ ⟨σ x, hσD x⟩)).2 hσ)
     fun x h ↦ hσ₀ x (congrArg Subtype.val h)
   let s : ContMDiffSection I (E →L[ℝ] ℝ) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) :=
     ⟨fun x ↦ (t x : TangentSpace I x →L[ℝ] ℝ), by
-      convert (hD.contMDiff_annihilatorInclusion hk).comp t.contMDiff using 1
-      funext x
-      rw [Function.comp_apply, CotangentBundle.annihilatorInclusion_apply]⟩
+      simpa only [Function.comp_def, CotangentBundle.annihilatorInclusion_mk'] using
+        (hD.contMDiff_annihilatorInclusion hk).comp t.contMDiff⟩
   refine ⟨SmoothForm.degreeOneEquiv.symm s, fun x ↦ ?_⟩
   obtain ⟨c, hc, htc⟩ := ht x
   exact ⟨c, hc, by rw [LinearEquiv.apply_symm_apply]; exact congrArg Subtype.val htc⟩
@@ -192,15 +180,15 @@ theorem exists_smoothForm_ker_eq_iff_exists_trivialization [FiniteDimensional �
   · rintro ⟨σ, hσ, hσD⟩
     -- A continuous nowhere-zero section of `D⁰` gives a smooth one.
     obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_ne_zero_of_continuous (I := I) (n := ⊤)
-      (continuous_totalSpaceMk_annihilatorSpace hσ fun x ↦ (hσD x).2)
+      ((CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff (P := Fin 1 → ℝ)
+        (σ := fun x ↦ ⟨σ x, (hσD x).2⟩)).2 hσ)
       fun x h ↦ (hσD x).1 (congrArg Subtype.val h)
     exact ⟨t, t.contMDiff, ht⟩
   · rintro ⟨σ, hσ, hσ₀⟩
-    refine ⟨fun x ↦ (σ x : TangentSpace I x →L[ℝ] ℝ), ?_, fun x ↦ ⟨fun h ↦ hσ₀ x (Subtype.ext h),
-      (σ x).property⟩⟩
-    convert ((hD.contMDiff_annihilatorInclusion hk).comp hσ).continuous using 1
-    funext x
-    rw [Function.comp_apply, CotangentBundle.annihilatorInclusion_apply]
+    exact ⟨fun x ↦ (σ x : TangentSpace I x →L[ℝ] ℝ),
+      (CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff (P := Fin 1 → ℝ)).1
+        hσ.continuous,
+      fun x ↦ ⟨fun h ↦ hσ₀ x (Subtype.ext h), (σ x).property⟩⟩
 
 end IsContMDiffDistribution
 
