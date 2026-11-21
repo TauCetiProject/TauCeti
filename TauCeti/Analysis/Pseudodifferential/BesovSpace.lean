@@ -108,12 +108,20 @@ private def twoPiDilate (φ : ContDiffBump (0 : CoordinateSpace n)) :
   rIn_pos := by have := φ.rIn_pos; positivity
   rIn_lt_rOut := mul_lt_mul_of_pos_left φ.rIn_lt_rOut (by positivity)
 
+private theorem twoPiDilate_rIn (φ : ContDiffBump (0 : CoordinateSpace n)) :
+    (twoPiDilate φ).rIn = 2 * Real.pi * φ.rIn :=
+  rfl
+
+private theorem twoPiDilate_rOut (φ : ContDiffBump (0 : CoordinateSpace n)) :
+    (twoPiDilate φ).rOut = 2 * Real.pi * φ.rOut :=
+  rfl
+
 private theorem twoPiDilate_apply (φ : ContDiffBump (0 : CoordinateSpace n))
     (ξ : CoordinateSpace n) : twoPiDilate φ ξ = φ ((2 * Real.pi)⁻¹ • ξ) := by
-  have h₁ : (twoPiDilate φ).rOut / (twoPiDilate φ).rIn = φ.rOut / φ.rIn :=
-    mul_div_mul_left _ _ (by positivity)
+  have h₁ : (twoPiDilate φ).rOut / (twoPiDilate φ).rIn = φ.rOut / φ.rIn := by
+    rw [twoPiDilate_rOut, twoPiDilate_rIn, mul_div_mul_left _ _ (by positivity)]
   have h₂ : (twoPiDilate φ).rIn⁻¹ = φ.rIn⁻¹ * (2 * Real.pi)⁻¹ := by
-    rw [twoPiDilate, mul_inv, mul_comm]
+    rw [twoPiDilate_rIn, mul_inv, mul_comm]
   simp only [ContDiffBump.apply, sub_zero, smul_smul, h₁, h₂]
 
 private theorem inhomogeneousLittlewoodPaley_twoPiDilate (φ : ContDiffBump (0 : CoordinateSpace n))
