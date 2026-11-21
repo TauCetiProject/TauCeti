@@ -75,6 +75,9 @@ expanded through: one multiplies by `q` and divides the expansion of the product
   `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_qParam_pow_mul_isBigO`, and their
   companions: analyticity and meromorphy at `0` of cusp functions under algebraic operations and
   untwisting by `𝕢 ^ k`.
+* `TauCeti.UpperHalfPlane.meromorphicAtCuspSubring` and
+  `TauCeti.UpperHalfPlane.mem_meromorphicAtCuspSubring`: the subring of functions `f : ℍ → ℂ`
+  whose cusp function is meromorphic at `0`.
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
 * `TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex`,
@@ -411,6 +414,20 @@ theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
   rw [fun_meromorphicOrderAt_mul hq hf]
   congr 1
   simpa using fun_meromorphicOrderAt_pow_id_sub_const (x := (0 : ℂ)) (n := k)
+
+/-- The subring of functions `f : ℍ → ℂ` whose period-`h` cusp function is meromorphic at `0`. -/
+def UpperHalfPlane.meromorphicAtCuspSubring (h : ℝ) : Subring (ℍ → ℂ) where
+  carrier := {f | MeromorphicAt (cuspFunction h f) 0}
+  mul_mem' hf hg := UpperHalfPlane.meromorphicAt_cuspFunction_mul hf hg
+  one_mem' := by rw [Pi.one_def]; exact UpperHalfPlane.meromorphicAt_cuspFunction_const 1
+  add_mem' hf hg := UpperHalfPlane.meromorphicAt_cuspFunction_add hf hg
+  zero_mem' := by rw [Pi.zero_def]; exact UpperHalfPlane.meromorphicAt_cuspFunction_const 0
+  neg_mem' hf := UpperHalfPlane.meromorphicAt_cuspFunction_neg hf
+
+/-- Membership in `UpperHalfPlane.meromorphicAtCuspSubring h` is cusp meromorphy at `0`. -/
+@[simp]
+theorem UpperHalfPlane.mem_meromorphicAtCuspSubring {h : ℝ} {f : ℍ → ℂ} :
+    f ∈ UpperHalfPlane.meromorphicAtCuspSubring h ↔ MeromorphicAt (cuspFunction h f) 0 := (Iff.rfl)
 
 end CuspFunction
 

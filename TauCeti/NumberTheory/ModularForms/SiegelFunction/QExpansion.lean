@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Congruence
 public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.PowerSeries.QPochhammer
-import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.ZPow
@@ -38,20 +38,22 @@ product `∏ᵢ g_{aᵢ/N}^{mᵢ}` is meromorphic at every cusp `γ • ∞`, an
   (for `0 < N`), the `q_N`-order of `g_{v/N}^{12 N}` at `i∞` when `v ≠ 0`; its sum over
   `(ℤ/Nℤ)² \ {0}` is `0`.
 * `TauCeti.ModularForm.siegelPowerLaurentSeries`, `siegelPowerLaurentSeries_def`,
-  `coeff_siegelPowerLaurentSeries_eq_zero_of_lt`,
+  `siegelPowerLaurentSeries_zero`, `coeff_siegelPowerLaurentSeries_eq_zero_of_lt`,
   `coeff_siegelPowerLaurentSeries_siegelPowerCuspExponent`, `orderTop_siegelPowerLaurentSeries`,
   `mapRingHom_aeval_exp_pow_siegelPowerLaurentSeries`,
   `mapRingHom_aeval_exp_siegelPowerLaurentSeries`,
   `laurentQExpansion_siegelFunction_div_pow_twelve_mul_coeff_mem_adjoin`,
-  `laurentQExpansion_siegelFunction_div_pow_twelve_mul_coeff_siegelPowerCuspExponent`: universal
-  `HahnSeries ℤ ℤ[X]` lift (for `0 < N`), its defining product formula, order and leading
-  coefficient, diagonal `ζ_N ↦ ζ_N^d` action, `ℤ[ζ_N]`-integrality, and leading coefficient at
-  `q_N^{siegelPowerCuspExponent N v}` (nonzero iff `v ≠ 0`).
+  `laurentQExpansion_siegelFunction_zmod_pow_twelve_mul_coeff_siegelPowerCuspExponent`: universal
+  `HahnSeries ℤ ℤ[X]` lift (for `0 < N`), its zero case, defining product formula, order and
+  leading coefficient, diagonal `ζ_N ↦ ζ_N^d` action, `ℤ[ζ_N]`-integrality, and leading
+  coefficient at `q_N^{siegelPowerCuspExponent N v}` (nonzero iff `v ≠ 0`).
 * `TauCeti.ModularForm.meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul`,
   `meromorphicOrderAt_cuspFunction_siegelFunction_div_pow_twelve_mul`,
+  `meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_mem_Gamma`,
   `meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow`,
   `natCast_twelve_mul_mul_meromorphicOrderAt_cuspFunction_prod_siegelFunction_div_zpow`: cusp
-  meromorphy and exact `q_N`-orders at `γ • ∞` (for `0 < N` and `aᵢ ∉ N ℤ²` whenever `mᵢ ≠ 0`).
+  meromorphy (from `Γ(N)`-invariance or the Kubert–Lang congruences) and exact `q_N`-orders at
+  `γ • ∞` (for `0 < N` and `aᵢ ∉ N ℤ²` whenever `mᵢ ≠ 0`).
 
 ## References
 
@@ -244,8 +246,15 @@ theorem coeff_siegelPowerLaurentSeries_eq_zero_of_lt (N : ℕ) (v : Fin 2 → ZM
   rw [siegelPowerLaurentSeries, HahnSeries.coeff_single_mul, one_mul,
     HahnSeries.ofPowerSeries_apply, HahnSeries.embDomain_of_notMem_range]
   rintro ⟨m, hm⟩
-  change (m : ℤ) = n - siegelPowerCuspExponent N v at hm
+  simp only [Nat.castOrderEmbedding_apply] at hm
   omega
+
+/-- For `0 < N`, the universal Laurent series at `v = 0` vanishes identically. -/
+@[simp]
+theorem siegelPowerLaurentSeries_zero (N : ℕ) [NeZero N] :
+    siegelPowerLaurentSeries N 0 = 0 := by
+  have hN : 0 < N := NeZero.pos N
+  simp [siegelPowerLaurentSeries, siegelUnitPowerSeries, show (12 * N : ℕ) ≠ 0 by positivity]
 
 private theorem constantCoeff_siegelUnitPowerSeries {N : ℕ} [NeZero N] (v : Fin 2 → ZMod N) :
     (siegelUnitPowerSeries N v).constantCoeff =
@@ -307,6 +316,17 @@ private theorem analyticAt_cuspFunction_siegelUnitFun {N : ℕ} [NeZero N] (v : 
       (analyticAt_cuspFunction_pow (analyticAt_cuspFunction_qPochhammerFun hNR hN _ ω) _))
     (analyticAt_cuspFunction_pow (analyticAt_cuspFunction_qPochhammerFun hNR hN _ (ω ^ (N - 1))) _)
 
+private theorem map_aeval_siegelUnitPowerSeries {N : ℕ} (v : Fin 2 → ZMod N) (z : ℂ) :
+    (siegelUnitPowerSeries N v).map (Polynomial.aeval z).toRingHom =
+      PowerSeries.C ((z ^ (v 1).val) ^ (6 * (v 0).val)) *
+        (1 - PowerSeries.C (z ^ (v 1).val) * PowerSeries.X ^ (v 0).val) ^ (12 * N) *
+        qPochhammerSeries N (N + (v 0).val) (z ^ (v 1).val) ^ (12 * N) *
+        qPochhammerSeries N (N - (v 0).val) ((z ^ (v 1).val) ^ (N - 1)) ^ (12 * N) := by
+  simp only [siegelUnitPowerSeries, map_mul, map_pow, map_sub, map_one, PowerSeries.map_C,
+    PowerSeries.map_X, map_qPochhammerSeries, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    Polynomial.aeval_X]
+  simp only [← map_pow, ← pow_mul, mul_comm (v 1).val]
+
 private theorem qExpansion_siegelUnitFun {N : ℕ} [NeZero N] (v : Fin 2 → ZMod N) :
     qExpansion N (siegelUnitFun N v) =
       (siegelUnitPowerSeries N v).map (Polynomial.aeval (cexp (2 * π * I / N))).toRingHom := by
@@ -326,10 +346,8 @@ private theorem qExpansion_siegelUnitFun {N : ℕ} [NeZero N] (v : Fin 2 → ZMo
     _root_.UpperHalfPlane.qExpansion_mul h0 hp1, qExpansion_const, qExpansion_pow h1,
     qExpansion_pow h2, qExpansion_pow h3, qExpansion_one_sub_mul_qParam_pow hNR (v 0).val ω,
     qExpansion_qPochhammerFun hNR hN (N + (v 0).val) ω,
-    qExpansion_qPochhammerFun hNR hN (N - (v 0).val) (ω ^ (N - 1)), siegelUnitPowerSeries]
-  simp only [map_mul, map_pow, map_sub, map_one, PowerSeries.map_C, PowerSeries.map_X,
-    map_qPochhammerSeries, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Polynomial.aeval_X]
-  simp only [ω, map_pow, ← pow_mul, mul_comm (v 1).val]
+    qExpansion_qPochhammerFun hNR hN (N - (v 0).val) (ω ^ (N - 1)),
+    map_aeval_siegelUnitPowerSeries]
 
 /-- **Diagonal cyclotomic action on the Laurent `q_N`-expansion of `g_{v/N}^{12N}`.**
 For `0 < N`, evaluating `siegelPowerLaurentSeries N v` at `X = e^{2π i / N}^d` yields the Laurent
@@ -346,16 +364,10 @@ theorem mapRingHom_aeval_exp_pow_siegelPowerLaurentSeries {N : ℕ} [NeZero N]
   have hpow : (ζ ^ d) ^ (v 1).val = ζ ^ (v' 1).val := by
     have hv1 : (v' 1).val = (d * (v 1).val) % N := by simp [v', ZMod.val_mul]
     rw [← pow_mul, hv1, ← pow_eq_pow_mod _ (Complex.isPrimitiveRoot_exp N hN.ne').pow_eq_one]
-  have hpow_mul (k : ℕ) : (ζ ^ d) ^ (k * (v 1).val) = ζ ^ (k * (v' 1).val) := by
-    rw [mul_comm k, pow_mul, hpow, ← pow_mul, mul_comm]
   have hunit : (siegelUnitPowerSeries N v).map (Polynomial.aeval (ζ ^ d)).toRingHom =
       (siegelUnitPowerSeries N v').map (Polynomial.aeval ζ).toRingHom := by
-    simp only [siegelUnitPowerSeries, map_mul, map_pow, map_sub, map_one, PowerSeries.map_C,
-      PowerSeries.map_X, map_qPochhammerSeries, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      Polynomial.aeval_X]
-    simp only [← map_pow]
     have h0 : (v' 0).val = (v 0).val := rfl
-    rw [hpow_mul (6 * (v 0).val), hpow_mul (N - 1), hpow, h0]
+    rw [map_aeval_siegelUnitPowerSeries, map_aeval_siegelUnitPowerSeries, hpow, h0]
   rw [siegelFunction_zmod_pow_twelve_mul_eq_fun v',
     laurentQExpansion_qParam_zpow_mul (Nat.cast_pos.mpr hN)
       (siegelPowerCuspExponent N v') (analyticAt_cuspFunction_siegelUnitFun v').meromorphicAt,
@@ -371,7 +383,7 @@ theorem mapRingHom_aeval_exp_siegelPowerLaurentSeries {N : ℕ} [NeZero N] (v : 
         (siegelPowerLaurentSeries N v) =
       laurentQExpansion N (fun τ : ℍ ↦
         siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N)) := by
-  have hv : ![v 0, v 1] = v := by ext i; fin_cases i <;> rfl
+  have hv : ![v 0, v 1] = v := FinVec.etaExpand_eq v
   simpa [hv] using mapRingHom_aeval_exp_pow_siegelPowerLaurentSeries v 1
 
 /-- **Every Laurent `q_N`-coefficient of `g_{a/N}^{12 N}` lies in `ℤ[ζ_N]`**, where
@@ -425,7 +437,7 @@ private theorem qExpansion_siegelUnitFun_coeff_zero_ne_zero {N : ℕ} [NeZero N]
 /-- **The Laurent `q_N`-coefficient of `g_{v/N}^{12 N}` at `q_N^{siegelPowerCuspExponent N v}`.**
 For `0 < N` and `v ≠ 0`, this is the nonzero leading Laurent `q_N`-coefficient of `g_{v/N}^{12 N}`;
 when `v = 0`, it equals `0` (since `g_0 = 0` has the zero Laurent series). -/
-theorem laurentQExpansion_siegelFunction_div_pow_twelve_mul_coeff_siegelPowerCuspExponent
+theorem laurentQExpansion_siegelFunction_zmod_pow_twelve_mul_coeff_siegelPowerCuspExponent
     {N : ℕ} [NeZero N] (v : Fin 2 → ZMod N) :
     (laurentQExpansion N (fun τ : ℍ ↦
         siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))).coeff
@@ -523,10 +535,10 @@ private theorem prod_siegelFunction_div_zpow_pow_twelve_mul (N : ℕ) {ι : Type
 private theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_zero
     {N : ℕ} [NeZero N] {ι : Type*} (s : Finset ι) (a : ι → Fin 2 → ℤ) (m : ι → ℤ)
     (ha : ∀ i ∈ s, (fun j ↦ (a i j : ZMod N)) ≠ 0)
-    (h₀ : ((Nat.gcd 2 N * N : ℕ) : ℤ) ∣ ∑ i ∈ s, m i * a i 0 ^ 2)
-    (h₁ : ((Nat.gcd 2 N * N : ℕ) : ℤ) ∣ ∑ i ∈ s, m i * a i 1 ^ 2)
-    (h₀₁ : (N : ℤ) ∣ ∑ i ∈ s, m i * (a i 0 * a i 1))
-    (h₁₂ : (12 : ℤ) ∣ Nat.gcd 12 N * ∑ i ∈ s, m i) (γ : SL(2, ℤ)) :
+    (hinv : ∀ {δ : SL(2, ℤ)}, δ ∈ CongruenceSubgroup.Gamma N → ∀ τ : ℍ,
+      ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(δ • τ) ^ m i =
+        ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) τ ^ m i)
+    (γ : SL(2, ℤ)) :
     MeromorphicAt (cuspFunction N fun τ : ℍ ↦
       ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i) 0 := by
   set F : ℍ → ℂ := fun τ ↦ ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) τ ^ m i
@@ -545,14 +557,45 @@ private theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_ze
     convert mdifferentiable_smul (g := Matrix.SpecialLinearGroup.mapGL ℝ γ) (by simp) using 1
     funext τ; exact (Matrix.SpecialLinearGroup.mapGL_smul γ τ).symm
   have hper : Function.Periodic ((fun τ : ℍ ↦ F (γ • τ)) ∘ ofComplex) N :=
-    TauCeti.periodic_smul_comp_ofComplex_of_Gamma_invariant
-      (fun _ hδ τ ↦ prod_siegelFunction_div_zpow_smul_of_mem_Gamma s a m h₀ h₁ h₀₁ h₁₂ hδ τ) γ
+    TauCeti.periodic_smul_comp_ofComplex_of_Gamma_invariant (fun _ hδ τ ↦ hinv hδ τ) γ
   refine meromorphicAt_cuspFunction_of_pow (Nat.cast_pos.mpr (NeZero.pos N))
     (hF_mdiff.comp hγ) hper (by have := NeZero.pos N; positivity : 0 < 12 * N) ?_
   rw [Pi.pow_def, prod_siegelFunction_div_zpow_pow_twelve_mul N s a m γ]
   exact meromorphicAt_cuspFunction_prod s fun i _ ↦
     meromorphicAt_cuspFunction_zpow
       (meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul N (a i) γ) (m i)
+
+/-- **Cusp meromorphy of a `Γ(N)`-invariant Siegel product.** For `0 < N`, every product
+`∏ i ∈ s, g_{aᵢ/N}^{mᵢ}` invariant under the principal congruence subgroup `Γ(N)` is meromorphic
+at `q_N = 0` at every cusp `γ • ∞`. At `N = 0`, division by zero reduces the product to the
+constant `∏ i ∈ s, (0 : ℂ) ^ m i`. -/
+theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_mem_Gamma {N : ℕ}
+    {ι : Type*} (s : Finset ι) (a : ι → Fin 2 → ℤ) (m : ι → ℤ)
+    (hinv : ∀ {δ : SL(2, ℤ)}, δ ∈ CongruenceSubgroup.Gamma N → ∀ τ : ℍ,
+      ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(δ • τ) ^ m i =
+        ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) τ ^ m i)
+    (γ : SL(2, ℤ)) :
+    MeromorphicAt (cuspFunction N fun τ : ℍ ↦
+      ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i) 0 := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · convert meromorphicAt_cuspFunction_const (∏ i ∈ s, (0 : ℂ) ^ m i) using 2
+    ext _; simp [div_zero, ← Pi.zero_def]
+  have : NeZero N := ⟨hN⟩
+  set s' := s.filter (m · ≠ 0)
+  rw [prod_siegelFunction_div_zpow_filter_ne_zero s a m γ]
+  by_cases ha : ∀ i ∈ s', (fun j ↦ (a i j : ZMod N)) ≠ 0
+  · refine meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_zero s' a m ha
+      (fun {δ} hδ τ ↦ ?_) γ
+    have h₁ := congrFun (prod_siegelFunction_div_zpow_filter_ne_zero (N := N) s a m δ) τ
+    have h₂ := congrFun (prod_siegelFunction_div_zpow_filter_ne_zero (N := N) s a m 1) τ
+    simp only [one_smul] at h₂
+    rw [← h₁, ← h₂]
+    exact hinv hδ τ
+  · obtain ⟨i₀, hi₀, hz⟩ := by push Not at ha; exact ha
+    obtain ⟨t, ht⟩ := (TauCeti.exists_div_eq_intCast_iff_zmod_eq_zero (K := ℝ) hN (a i₀)).mpr hz
+    convert meromorphicAt_cuspFunction_const (h := N) 0 using 2
+    exact funext fun _ ↦ Finset.prod_eq_zero hi₀
+      (by rw [ht, siegelFunction_intCast, zero_zpow _ (Finset.mem_filter.mp hi₀).2])
 
 /-- **Cusp meromorphy of `Γ(N)`-invariant Kubert–Lang products.** For `0 < N`, every product
 `∏ i ∈ s, g_{aᵢ/N}^{mᵢ}` satisfying the Kubert–Lang congruence relations is meromorphic at
@@ -565,25 +608,9 @@ theorem meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow {N : ℕ}
     (h₀₁ : (N : ℤ) ∣ ∑ i ∈ s, m i * (a i 0 * a i 1))
     (h₁₂ : (12 : ℤ) ∣ Nat.gcd 12 N * ∑ i ∈ s, m i) (γ : SL(2, ℤ)) :
     MeromorphicAt (cuspFunction N fun τ : ℍ ↦
-      ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i) 0 := by
-  rcases eq_or_ne N 0 with rfl | hN
-  · convert meromorphicAt_cuspFunction_const (∏ i ∈ s, (0 : ℂ) ^ m i) using 2
-    ext _; simp [div_zero, ← Pi.zero_def]
-  have : NeZero N := ⟨hN⟩
-  set s' := s.filter (m · ≠ 0)
-  rw [prod_siegelFunction_div_zpow_filter_ne_zero s a m γ]
-  by_cases ha : ∀ i ∈ s', (fun j ↦ (a i j : ZMod N)) ≠ 0
-  · refine meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_ne_zero s' a m ha
-      ?_ ?_ ?_ ?_ γ
-    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h h0 ↦ h (by simp [h0])
-    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h h0 ↦ h (by simp [h0])
-    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h h0 ↦ h (by simp [h0])
-    · rwa [Finset.sum_filter_of_ne]; exact fun _ _ h ↦ h
-  · obtain ⟨i₀, hi₀, hz⟩ := by push Not at ha; exact ha
-    obtain ⟨t, ht⟩ := (TauCeti.exists_div_eq_intCast_iff_zmod_eq_zero (K := ℝ) hN (a i₀)).mpr hz
-    convert meromorphicAt_cuspFunction_const (h := N) 0 using 2
-    exact funext fun _ ↦ Finset.prod_eq_zero hi₀
-      (by rw [ht, siegelFunction_intCast, zero_zpow _ (Finset.mem_filter.mp hi₀).2])
+      ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) ↑(γ • τ) ^ m i) 0 :=
+  meromorphicAt_cuspFunction_prod_siegelFunction_div_zpow_of_mem_Gamma s a m
+    (fun hδ τ ↦ prod_siegelFunction_div_zpow_smul_of_mem_Gamma s a m h₀ h₁ h₀₁ h₁₂ hδ τ) γ
 
 /-- **Cusp order of a cusp-meromorphic Siegel product at `γ • ∞`.** For `0 < N` and non-integral
 parameters `aᵢ ∉ N ℤ²` whenever `mᵢ ≠ 0`, if `τ ↦ ∏ i ∈ s, g_{aᵢ/N}(γ • τ)^{mᵢ}` is meromorphic

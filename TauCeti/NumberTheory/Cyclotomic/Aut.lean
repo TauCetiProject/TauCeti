@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.RingTheory.ZMod.UnitsCyclic
-import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
 
 /-!

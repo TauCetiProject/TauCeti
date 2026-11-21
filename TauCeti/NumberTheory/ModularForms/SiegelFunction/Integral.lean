@@ -7,13 +7,16 @@ module
 
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.QExpansion
+import Mathlib.Algebra.Polynomial.Lifts
+import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.RingTheory.RootsOfUnity.Lemmas
+import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Data.Rat.ZMultiples
 import TauCeti.Data.ZMod.FinEquiv
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
+import TauCeti.NumberTheory.ModularForms.LevelOne.JIntegral
 import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 import TauCeti.RingTheory.HahnSeries.Multiplication
@@ -30,19 +33,19 @@ whenever `j` (or `j(τ)`) is integral over a commutative ring `R`, every `g_r` (
 
 ## Main results
 
-* `TauCeti.ModularForm.prod_siegelFunction_div_pow_twelve_mul_eq`,
+* `TauCeti.ModularForm.prod_siegelFunction_zmod_pow_twelve_mul_eq`,
   `natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase`:
   `∏_{v ∈ (ℤ/Nℤ)² \ {0}} g_{v/N}(τ)^{12 N} = N^{12 N}` and the complementary-product formula for
   `(N / g_{a/N}(τ))^{12 N}`.
-* `TauCeti.ModularForm.exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_div_pow_twelve_mul`:
+* `TauCeti.ModularForm.exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_zmod_pow_twelve_mul`:
   monic `Φ ∈ (ℤ[X])[X]` specializing at `j(τ)` to `∏_{v ∈ S} (X - g_{v/N}(τ)^{12 N})`, obtained via
   `SL₂(ℤ)`-invariance, cyclotomic descent on `ℤ[ζ_N]`, and `exists_aeval_j_eq`.
 * `TauCeti.ModularForm.isIntegral_siegelFunction_div`, `isIntegral_siegelFunction_ratCast`,
   `isIntegral_natCast_div_siegelFunction_div`: function-level integrality over any ring over which
   `j` is integral (via `(12 N)`-th roots and `(N / g_{v/N})^{12 N} = ∏_{w ≠ v} g_{w/N}^{12 N}`).
-* `IsIntegral.eval_of_adjoin_j`, `TauCeti.ModularForm.isIntegral_siegelFunction_div_apply`,
+* `TauCeti.ModularForm.isIntegral_siegelFunction_div_apply`,
   `isIntegral_siegelFunction_ratCast_apply`, `isIntegral_natCast_div_siegelFunction_div_apply`:
-  evaluation descent and pointwise integrality at `τ ∈ ℍ`, plus level-two specializations.
+  pointwise integrality at `τ ∈ ℍ`, plus level-two specializations.
 
 ## References
 
@@ -131,12 +134,13 @@ private theorem prod_leadingCoeff_ne_zero_first {N : ℕ} [NeZero N] :
   · refine Finset.prod_eq_one fun x _ ↦ ?_
     rw [Finset.prod_pow_eq_pow_sum]
     have hexp : (∑ y : ZMod N, 6 * x.val * y.val) = N * (3 * x.val * (N - 1)) := by
-      rw [← Fintype.sum_equiv (ZMod.finEquiv N).toEquiv (fun k : Fin N ↦ 6 * x.val * k) _
-          (fun k ↦ by simp [ZMod.val_natCast_of_lt k.isLt]),
-        Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ 6 * x.val * k) N, ← Finset.mul_sum,
-        show 6 * x.val * ∑ k ∈ Finset.range N, k =
-          3 * x.val * ((∑ k ∈ Finset.range N, k) * 2) by ring,
-        Finset.sum_range_id_mul_two]
+      have hsum : (∑ y : ZMod N, 6 * x.val * y.val) = 6 * x.val * ∑ k ∈ Finset.range N, k := by
+        rw [← Fintype.sum_equiv (ZMod.finEquiv N).toEquiv (fun k : Fin N ↦ 6 * x.val * k) _
+            (fun k ↦ by simp [ZMod.val_natCast_of_lt k.isLt]),
+          Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ 6 * x.val * k) N, ← Finset.mul_sum]
+      have hdouble : 6 * x.val * ∑ k ∈ Finset.range N, k =
+          3 * x.val * ((∑ k ∈ Finset.range N, k) * 2) := by ring
+      rw [hsum, hdouble, Finset.sum_range_id_mul_two]
       ring
     rw [hexp, pow_mul, (Complex.isPrimitiveRoot_exp N (NeZero.ne N)).pow_eq_one, one_pow]
 
@@ -182,21 +186,13 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
           (if v 0 = 0 then (1 - cexp (2 * π * I / N) ^ (v 1).val) ^ (12 * N) else 1) := by
     rw [HahnSeries.leadingCoeff_eq, hord_eq (hfactor_ord v hv), laurentQExpansionRingHom_apply,
       siegelPowerMem_coe]
-    exact laurentQExpansion_siegelFunction_div_pow_twelve_mul_coeff_siegelPowerCuspExponent v
+    exact laurentQExpansion_siegelFunction_zmod_pow_twelve_mul_coeff_siegelPowerCuspExponent v
   rw [Finset.prod_congr rfl hfac, ← Finset.prod_filter_mul_prod_filter_not S (fun v ↦ v 0 = 0),
     prod_leadingCoeff_zero_first, prod_leadingCoeff_ne_zero_first, mul_one]
 
-private theorem prod_erase_zero_equiv {M : Type*} [CommMonoid M] {N : ℕ} [NeZero N]
-    (e : (Fin 2 → ZMod N) ≃ (Fin 2 → ZMod N)) (h0 : e 0 = 0)
-    (f g : (Fin 2 → ZMod N) → M)
-    (hfg : ∀ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, f v = g (e v)) :
-    ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, f v =
-      ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, g v :=
-  Finset.prod_equiv e (fun v ↦ by simpa [h0] using (e.injective.ne_iff (x := v) (y := 0)).symm) hfg
-
 /-- **Product of all nonzero level-`N` Siegel `(12 N)`-th powers.** For every positive integer `N`
 and `τ ∈ ℍ`, `∏_{v ∈ (ℤ/Nℤ)² \ {0}} g_{v/N}(τ)^{12 N} = N^{12 N}`. -/
-theorem prod_siegelFunction_div_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : ℍ) :
+theorem prod_siegelFunction_zmod_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : ℍ) :
     ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
         siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N) =
       (N : ℂ) ^ (12 * N) := by
@@ -212,7 +208,7 @@ theorem prod_siegelFunction_div_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : ℍ
   have hinv (γ : SL(2, ℤ)) (z : ℍ) : FM.val (γ • z) = FM.val z := by
     rw [hFM_val, hFM_val]
     set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
-    exact prod_erase_zero_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
+    exact Finset.prod_univ_erase_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
       (fun v ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • z) ^ (12 * N))
       (fun w ↦ siegelFunction (fun i ↦ ((w i).val : ℝ) / N) z ^ (12 * N))
       fun v _ ↦ siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6) v γ z
@@ -232,14 +228,10 @@ theorem prod_siegelFunction_div_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : ℍ
 
 /-- Permutation `v ↦ (v₀, u v₁)` of `(ℤ/Nℤ)²` induced by `u ∈ (ℤ/Nℤ)ˣ`. -/
 private def diagSecondEquiv {N : ℕ} (u : (ZMod N)ˣ) :
-    (Fin 2 → ZMod N) ≃ (Fin 2 → ZMod N) where
-  toFun v := ![v 0, (u : ZMod N) * v 1]
-  invFun v := ![v 0, (↑u⁻¹ : ZMod N) * v 1]
-  left_inv v := by ext i; fin_cases i <;> simp [← mul_assoc]
-  right_inv v := by ext i; fin_cases i <;> simp [← mul_assoc]
-
-private theorem diagSecondEquiv_zero {N : ℕ} (u : (ZMod N)ˣ) : diagSecondEquiv u 0 = 0 := by
-  ext i; fin_cases i <;> simp [diagSecondEquiv]
+    (Fin 2 → ZMod N) ≃ (Fin 2 → ZMod N) :=
+  (piFinTwoEquiv fun _ ↦ ZMod N).trans <|
+    ((Equiv.refl (ZMod N)).prodCongr (LinearEquiv.smulOfUnit u).toEquiv).trans
+      (piFinTwoEquiv fun _ ↦ ZMod N).symm
 
 /-- The monic polynomial `∏_{v ≠ 0} (X - g_{v/N}^{12 N})` over `meromorphicAtCuspSubring N`. -/
 private noncomputable def siegelPowerPoly (N : ℕ) [NeZero N] : (meromorphicAtCuspSubring N)[X] :=
@@ -280,8 +272,11 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
       mapRingHom_aeval_exp_pow_siegelPowerLaurentSeries]
   have hmap1 : Ω.map (HahnSeries.mapRingHom (Polynomial.aeval ζ).toRingHom) =
       (siegelPowerPoly N).map (laurentQExpansionRingHom N) := by
-    simpa [siegelPowerPoly, Polynomial.map_prod, show ∀ v : Fin 2 → ZMod N, ![v 0, v 1] = v from
-      fun v ↦ by ext i; fin_cases i <;> rfl] using hmap 1
+    simp only [Ω, siegelPowerPoly, Polynomial.map_prod, Polynomial.map_sub, Polynomial.map_X,
+      Polynomial.map_C]
+    refine Finset.prod_congr rfl fun v _ ↦ ?_
+    rw [laurentQExpansionRingHom_apply, siegelPowerMem_coe,
+      mapRingHom_aeval_exp_siegelPowerLaurentSeries]
   have heq : (laurentQExpansion N (((siegelPowerPoly N).coeff k).val)).coeff m =
       Polynomial.aeval ζ ((Ω.coeff k).coeff m) := by
     rw [← laurentQExpansionRingHom_apply, ← Polynomial.coeff_map, ← hmap1,
@@ -294,11 +289,15 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
     rw [hmap (u : ZMod N).val, hmap1]
     simp only [siegelPowerPoly, ZMod.natCast_zmod_val, Polynomial.map_prod, Polynomial.map_sub,
       Polynomial.map_X, Polynomial.map_C]
-    exact prod_erase_zero_equiv (diagSecondEquiv u) (diagSecondEquiv_zero u)
+    exact Finset.prod_univ_erase_equiv (diagSecondEquiv u)
+      (by ext i; fin_cases i <;> simp [diagSecondEquiv, LinearEquiv.smulOfUnit])
       (fun v ↦ Polynomial.X - Polynomial.C
         (laurentQExpansionRingHom N (siegelPowerMem N ![v 0, (u : ZMod N) * v 1])))
       (fun w ↦ Polynomial.X - Polynomial.C (laurentQExpansionRingHom N (siegelPowerMem N w)))
-      fun _ _ ↦ rfl
+      fun v _ ↦ by
+        have hv : diagSecondEquiv u v = ![v 0, (u : ZMod N) * v 1] := by
+          ext i; fin_cases i <;> simp [diagSecondEquiv, LinearEquiv.smulOfUnit, Units.smul_def]
+        rw [hv]
   simpa only [Polynomial.coeff_map, HahnSeries.coeff_mapRingHom, AlgHom.toRingHom_eq_coe,
     RingHom.coe_coe] using congrArg (fun P : (LaurentSeries ℂ)[X] ↦ (P.coeff k).coeff m) hu
 
@@ -318,7 +317,7 @@ private theorem exists_aeval_j_siegelPolyCoeff {N : ℕ} [NeZero N] (k : ℕ) :
             ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype) := by
       rw [siegelPowerPoly_map_eval, siegelPowerPoly_map_eval]
       set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
-      exact prod_erase_zero_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
+      exact Finset.prod_univ_erase_equiv e (Matrix.SpecialLinearGroup.vecMulEquiv_zero _)
         (fun v ↦ Polynomial.X - Polynomial.C
           (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • τ) ^ (12 * N)))
         (fun w ↦ Polynomial.X - Polynomial.C
@@ -339,41 +338,32 @@ private theorem exists_aeval_j_siegelPolyCoeff {N : ℕ} [NeZero N] (k : ℕ) :
 /-- **The `(12 N)`-th powers of the nonzero level-`N` Siegel functions satisfy a monic polynomial
 over `ℤ[j]`.** There exists a monic polynomial `Φ ∈ (ℤ[X])[X]` whose coefficientwise evaluation
 at `j(τ)` equals `∏_{v ∈ (ℤ/Nℤ)² \ {0}} (X - g_{v/N}(τ)^{12 N})` for every `τ ∈ ℍ`. -/
-theorem exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_div_pow_twelve_mul
+theorem exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_zmod_pow_twelve_mul
     (N : ℕ) [NeZero N] :
     ∃ Φ : (ℤ[X])[X], Φ.Monic ∧ ∀ τ : ℍ,
       Φ.map (Polynomial.aeval (j τ)).toRingHom =
         ∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
           (Polynomial.X - Polynomial.C
             (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) := by
-  set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
-  choose P hP using fun k : ℕ ↦ exists_aeval_j_siegelPolyCoeff (N := N) k
-  set Φ : (ℤ[X])[X] :=
-    Polynomial.X ^ S.card + ∑ k ∈ Finset.range S.card, Polynomial.C (P k) * Polynomial.X ^ k
-  refine ⟨Φ, Polynomial.monic_X_pow_add
-    (by simp_rw [← Fin.sum_univ_eq_sum_range, Polynomial.degree_sum_fin_lt]), fun τ ↦ ?_⟩
-  set Q := (siegelPowerPoly N).map
-    ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype)
-  have hQ : Q = ∏ v ∈ S, (Polynomial.X - Polynomial.C
-      (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) :=
-    siegelPowerPoly_map_eval N τ
-  have hQ_monic : Q.Monic := hQ ▸ Polynomial.monic_prod_of_monic _ _ fun _ _ ↦
-    Polynomial.monic_X_sub_C _
-  have hQ_deg : Q.natDegree = S.card := by rw [hQ, Polynomial.natDegree_finsetProd_X_sub_C_eq_card]
-  rw [← hQ]
-  ext m
-  simp only [Φ, Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_sum,
-    Polynomial.map_mul, Polynomial.map_C, Polynomial.coeff_add, Polynomial.coeff_X_pow,
-    Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, AlgHom.toRingHom_eq_coe,
-    RingHom.coe_coe, hP, mul_ite, mul_one, mul_zero]
-  rcases lt_trichotomy m S.card with hm | rfl | hm
-  · simp only [hm.ne, ↓reduceIte, Finset.sum_ite_eq, Finset.mem_range.mpr hm, zero_add]
-    simp only [Q, Polynomial.coeff_map, RingHom.comp_apply, Subring.coe_subtype,
-      Pi.evalRingHom_apply]
-  · simp only [↓reduceIte, Finset.sum_ite_eq, Finset.notMem_range_self, add_zero]
-    rw [← hQ_deg, ← Polynomial.leadingCoeff, hQ_monic.leadingCoeff]
-  · simp only [hm.ne', ↓reduceIte, Finset.sum_ite_eq, Finset.mem_range.not.mpr hm.not_gt, add_zero]
-    exact (Polynomial.coeff_eq_zero_of_natDegree_lt (hQ_deg.symm ▸ hm)).symm
+  set Ψ : (ℍ → ℂ)[X] := (siegelPowerPoly N).map (meromorphicAtCuspSubring N).subtype
+  have hΨ_monic : Ψ.Monic :=
+    (Polynomial.monic_prod_of_monic _ _ fun _ _ ↦ Polynomial.monic_X_sub_C _).map _
+  have hcomp (τ : ℍ) :
+      (Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (Polynomial.aeval (R := ℤ) j).toRingHom =
+        (Polynomial.aeval (j τ)).toRingHom :=
+    Polynomial.ringHom_ext' (RingHom.ext_int _ _) (by simp)
+  have hΨ_lifts : Ψ ∈ Polynomial.lifts (Polynomial.aeval (R := ℤ) j).toRingHom := by
+    rw [Polynomial.lifts_iff_coeff_lifts]
+    intro k
+    obtain ⟨P, hP⟩ := exists_aeval_j_siegelPolyCoeff (N := N) k
+    refine ⟨P, funext fun τ ↦ ?_⟩
+    have hev : Polynomial.aeval (R := ℤ) j P τ = Polynomial.aeval (j τ) P := by
+      simpa using RingHom.congr_fun (hcomp τ) P
+    simpa [Ψ, Polynomial.coeff_map, hev] using hP τ
+  obtain ⟨Φ, hΦ_map, -, hΦ_monic⟩ :=
+    Polynomial.lifts_and_natDegree_eq_and_monic hΨ_lifts hΨ_monic
+  refine ⟨Φ, hΦ_monic, fun τ ↦ ?_⟩
+  rw [← hcomp τ, ← Polynomial.map_map, hΦ_map, Polynomial.map_map, siegelPowerPoly_map_eval]
 
 /-- **Complementary product identity for `(N / g_{a/N})^{12 N}`**: for `0 < N` and `a ∉ N ℤ²`,
 `(N / g_{a/N}(τ))^{12 N}` equals the product of `g_{w/N}(τ)^{12 N}` over all
@@ -388,7 +378,7 @@ theorem natCast_div_siegelFunction_div_pow_twelve_mul_eq_prod_erase {N : ℕ} [N
     pow_ne_zero _ (mt (siegelFunction_div_eq_zero_iff (fun i ↦ ((v i).val : ℤ)) τ.im_pos).mp
       (by simpa [ZMod.natCast_zmod_val] using hv))
   rw [div_pow, siegelFunction_div_pow_twelve_mul_eq_zmod (dvd_mul_left N 6) a τ.im_pos,
-    ← prod_siegelFunction_div_pow_twelve_mul_eq N τ,
+    ← prod_siegelFunction_zmod_pow_twelve_mul_eq N τ,
     ← Finset.mul_prod_erase _ _ (Finset.mem_erase.mpr ⟨hv, Finset.mem_univ v⟩),
     mul_div_cancel_left₀ _ hne]
 
@@ -418,7 +408,7 @@ theorem isIntegral_siegelFunction_div (N : ℕ) (a : Fin 2 → ℤ) (hj : IsInte
       funext fun τ ↦ (siegelFunction_div_eq_zero_iff a τ.im_pos).mpr hv
     rw [hzero]; exact isIntegral_zero
   obtain ⟨Φ, hmon, hΦ⟩ :=
-    exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_div_pow_twelve_mul N
+    exists_monic_map_aeval_j_eq_prod_X_sub_C_siegelFunction_zmod_pow_twelve_mul N
   refine IsIntegral.of_pow (by positivity : 0 < 12 * N) ?_
   rw [siegelFunction_div_pow_twelve_mul_eq_zmod_fun N a]
   refine TauCeti.isIntegral_of_eval_map_aeval_eq_zero hmon hj (funext fun τ ↦ ?_)
@@ -469,20 +459,9 @@ end GeneralFunctions
 
 /-! ### General integrality of Siegel values at `τ ∈ ℍ` -/
 
-private theorem isIntegral_adjoin_j : IsIntegral (Algebra.adjoin ℤ ({j} : Set (ℍ → ℂ))) j :=
-  isIntegral_algebraMap
-    (x := (⟨j, Algebra.subset_adjoin rfl⟩ : Algebra.adjoin ℤ ({j} : Set (ℍ → ℂ))))
-
 section GeneralValues
 
 variable {R : Type*} [CommRing R] [Algebra R ℂ]
-
-/-- **Pointwise integrality from function-level integrality over `ℤ[j]`.** If `F : ℍ → ℂ` is
-integral over `ℤ[j]` and `j(τ)` is integral over `R`, then `F(τ)` is integral over `R`. -/
-theorem _root_.IsIntegral.eval_of_adjoin_j {F : ℍ → ℂ}
-    (hF : IsIntegral (Algebra.adjoin ℤ ({j} : Set (ℍ → ℂ))) F) (τ : ℍ)
-    (hj : IsIntegral R (j τ)) : IsIntegral R (F τ) :=
-  hF.map_of_adjoin_singleton (Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ) (RingHom.ext_int _ _) hj
 
 /-- **Pointwise integrality of `g_{a/N}(τ)`**: if `j(τ)` is integral over `R`, then so is
 `g_{a/N}(τ)`. In particular, if `j(τ)` is an algebraic integer (`R = ℤ`), then every `g_{a/N}(τ)`
@@ -513,18 +492,18 @@ section Functions
 
 variable {R : Type*} [CommRing R] [Algebra R (ℍ → ℂ)]
 
-private theorem fun_vecCons_div_two (a b : ℤ) :
-    (fun i ↦ ((![a, b] i : ℤ) : ℝ) / (2 : ℕ)) = ![(a : ℝ) / 2, (b : ℝ) / 2] := by
-  ext i; fin_cases i <;> simp
-
 private theorem isIntegral_siegelFunction_vecCons_div_two (a b : ℤ) (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ siegelFunction ![(a : ℝ) / 2, (b : ℝ) / 2] τ) := by
-  simpa only [← fun_vecCons_div_two a b] using isIntegral_siegelFunction_div 2 ![a, b] hj
+  have hmap : ![(a : ℝ) / 2, (b : ℝ) / 2] = fun i ↦ ((![a, b] i : ℤ) : ℝ) / (2 : ℕ) :=
+    FinVec.map_eq (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![a, b]
+  simpa only [hmap] using isIntegral_siegelFunction_div 2 ![a, b] hj
 
 private theorem isIntegral_two_div_siegelFunction_vecCons_div_two (a b : ℤ)
     (hj : IsIntegral R j) :
     IsIntegral R (fun τ : ℍ ↦ 2 / siegelFunction ![(a : ℝ) / 2, (b : ℝ) / 2] τ) := by
-  simpa only [← fun_vecCons_div_two a b, Nat.cast_ofNat] using
+  have hmap : ![(a : ℝ) / 2, (b : ℝ) / 2] = fun i ↦ ((![a, b] i : ℤ) : ℝ) / (2 : ℕ) :=
+    FinVec.map_eq (fun x : ℤ ↦ (x : ℝ) / (2 : ℕ)) ![a, b]
+  simpa only [hmap, Nat.cast_ofNat] using
     isIntegral_natCast_div_siegelFunction_div 2 ![a, b] hj
 
 /-- The level-two Siegel function `g₀` is integral over any coefficient ring over which `j`

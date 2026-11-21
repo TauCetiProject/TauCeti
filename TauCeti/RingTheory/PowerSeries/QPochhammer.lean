@@ -67,7 +67,7 @@ theorem map_qPochhammerSeries (f : R →+* S) (N c : ℕ) (x : R) :
 
 /-- At `x = 0`, `qPochhammerSeries N c 0 = 1`. -/
 @[simp]
-theorem qPochhammerSeries_zero_left (N c : ℕ) : qPochhammerSeries N c (0 : R) = 1 := by
+theorem qPochhammerSeries_zero (N c : ℕ) : qPochhammerSeries N c (0 : R) = 1 := by
   ext m
   simp [coeff_qPochhammerSeries]
 

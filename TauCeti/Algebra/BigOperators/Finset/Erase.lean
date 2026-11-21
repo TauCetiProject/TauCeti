@@ -23,6 +23,8 @@ the product with one factor removed by the full product leaves the inverse of th
   the products with a second function once `f t` is replaced by `f t'`.
 * `Finset.prod_erase_mul_units_inv`: `(∏_{j ∈ s, j ≠ a} f j) / ∏_{j ∈ s} f j = 1 / f a` in a
   commutative monoid, when the full product and `f a` are units.
+* `Finset.prod_univ_erase_equiv`, `Finset.sum_univ_erase_equiv`: reindexing a product (or sum)
+  over `Finset.univ.erase a` along an equivalence `e : α ≃ β` sending `a` to `b`.
 -/
 
 public section
@@ -65,5 +67,15 @@ theorem sum_erase_merge_mul {ι R : Type*} [NonUnitalNonAssocSemiring R] [Decida
     ∑ a ∈ A.erase t, (v a + if a = t' then v t else 0) * f a =
       ∑ a ∈ A.erase t, v a * f a + v t * f t' := by
   simp [add_mul, sum_add_distrib, ht'A']
+
+/-- **Reindexing a product over `Finset.univ.erase a` along an equivalence sending `a` to
+`b`.** -/
+@[to_additive /-- **Reindexing a sum over `Finset.univ.erase a` along an equivalence sending `a` to
+`b`.** -/]
+theorem prod_univ_erase_equiv {α β M : Type*} [Fintype α] [Fintype β] [DecidableEq α]
+    [DecidableEq β] [CommMonoid M] (e : α ≃ β) {a : α} {b : β} (hab : e a = b)
+    (f : α → M) (g : β → M) (hfg : ∀ x ∈ (univ : Finset α).erase a, f x = g (e x)) :
+    ∏ x ∈ (univ : Finset α).erase a, f x = ∏ y ∈ (univ : Finset β).erase b, g y :=
+  Finset.prod_equiv e (fun x ↦ by simp [← hab, e.injective.ne_iff]) hfg
 
 end Finset

@@ -689,6 +689,18 @@ theorem qPochhammerFun_zero_right {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpa
   simp only [qPochhammerFun_def, zero_pow ((by omega : ∀ n, N * n + c ≠ 0) _), mul_zero, sub_zero,
     tprod_one]
 
+/-- For `0 < N`, `qPochhammerFun N 0 w 0 = 1 - w`. -/
+@[simp]
+theorem qPochhammerFun_zero_zero_right {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+    {N : ℕ} (hN : 0 < N) (w : 𝕜) : qPochhammerFun N 0 w (0 : 𝕜) = 1 - w := by
+  rw [qPochhammerFun_def]
+  have hfun : (fun n : ℕ ↦ 1 - w * (0 : 𝕜) ^ (N * n + 0)) = fun n ↦ if n = 0 then 1 - w else 1 := by
+    ext n
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    · simp [hn, zero_pow (Nat.mul_ne_zero hN.ne' hn)]
+  rw [hfun, tprod_ite_eq]
+
 /-- For `0 < N` and `‖z‖ < 1` in a complete normed field, the shifted `q`-Pochhammer product
 `∏_{n ≥ 0} (1 - w z^{N n + c})` converges. -/
 theorem multipliable_qPochhammerFun {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
