@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.Basic
-import Mathlib.Data.Nat.Pairing
+import TauCeti.Data.Nat.Pairing
 import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll
 
@@ -66,34 +66,6 @@ namespace FreeGroup
 
 open List
 
-/-- For every list `l` of variables there are nodup exponent lists of a given length, one for each
-variable, such that the list of a variable of `l` is disjoint from the lists of the others. -/
-private theorem exists_exponentLists {X : Type*} (l : List X) (N : ℕ) : ∃ ms : X → List ℕ,
-    (∀ x, (ms x).Nodup ∧ (ms x).length = N) ∧ ∀ x ∈ l, ∀ x', ∀ n ∈ ms x, n ∈ ms x' → x = x' := by
-  classical
-  refine ⟨fun x ↦ (range N).map (Nat.pair (l.idxOf x)), fun x ↦ ⟨nodup_range.map fun _ _ h ↦
-    (Nat.pair_eq_pair.1 h).2, by simp⟩, fun x hx x' n h h' ↦ ?_⟩
-  obtain ⟨r, -, rfl⟩ := mem_map.1 h
-  obtain ⟨r', -, hr'⟩ := mem_map.1 h'
-  exact (idxOf_inj hx).1 (Nat.pair_eq_pair.1 hr').1.symm
-
-/-- Composing a solution `(x₀, y₀)` in which each `x₀ x` is a two-sided translate `u x * x * v x`
-of `x` by constants with the endomorphism `x ↦ (u x)⁻¹ * x * (v x)⁻¹` gives a formal solution,
-whose values at the point `x ↦ u x * v x` are the values of `y₀` with the variables erased. -/
-private theorem exists_formalSolution_of_mul {A X Y : Type*} (w : FreeGroup ((X ⊕ Y) ⊕ A))
-    {y₀ : Y → FreeGroup (X ⊕ A)} {u v : X → FreeGroup A}
-    (hw : lift (Sum.elim (Sum.elim (fun x ↦ map Sum.inr (u x) * of (Sum.inl x) * map Sum.inr (v x))
-      y₀) (of ∘ Sum.inr)) w = 1) :
-    ∃ y : Y → FreeGroup (X ⊕ A), lift (Sum.elim (Sum.elim (of ∘ Sum.inl) y) (of ∘ Sum.inr)) w = 1 ∧
-      ∀ j, lift (Sum.elim (fun x ↦ u x * v x) of) (y j) = lift (Sum.elim 1 of) (y₀ j) := by
-  let ψ : FreeGroup (X ⊕ A) →* FreeGroup (X ⊕ A) :=
-    lift (Sum.elim (fun x ↦ (map Sum.inr (u x))⁻¹ * of (Sum.inl x) * (map Sum.inr (v x))⁻¹)
-      (of ∘ Sum.inr))
-  refine ⟨fun j ↦ ψ (y₀ j), lift_eq_one_of_translate w hw, fun j ↦ ?_⟩
-  have hcomp : (lift (Sum.elim (fun x ↦ u x * v x) of)).comp ψ = lift (Sum.elim 1 of) :=
-    ext_hom _ _ fun z ↦ by rcases z with x | c <;> simp [ψ, Function.comp_def]
-  exact DFunLike.congr_fun hcomp (y₀ j)
-
 /-- **Merzljakov's theorem** for one block of quantifiers `∀ x ∃ y`, with the values of the formal
 solution: if `a ≠ b` are letters of `A` and `w(x, f x) = 1` holds in `FreeGroup A` for all `x`,
 then `w(x, y) = 1` has a solution `y` in `FreeGroup (X ⊕ A)` whose values at some point `g` are
@@ -109,7 +81,7 @@ theorem exists_formalSolution_lift_eq_of_skolem {A X Y : Type*} {a b : A} (hab :
   -- the variables `x` occurring in `W`, and for each `x` a list of `|W|² + 1` exponents, the
   -- list of a variable of `W` being disjoint from the others
   let xs : List X := (W.filterMap fun c ↦ c.1.getLeft?.bind Sum.getLeft?).dedup
-  obtain ⟨ms, hms, hdisj⟩ := exists_exponentLists xs (W.length * W.length + 1)
+  obtain ⟨ms, hnd, hlen, hdisj⟩ := Nat.exists_nodup_disjoint_lists xs (W.length * W.length + 1)
   -- substitute the Merzljakov words `g x` and the witnesses `f g`, and insert the variables
   let g (x : X) : FreeGroup A := mk (merzljakovWord a b (ms x))
   let U : (X ⊕ Y) ⊕ A → List (A × Bool) :=
@@ -119,23 +91,21 @@ theorem exists_formalSolution_lift_eq_of_skolem {A X Y : Type*} {a b : A} (hab :
     ext ((x | j) | c) <;> simp [U, g, of, mk_toWord]
   obtain ⟨m, hm, hU'⟩ := exists_lift_mk_blockInsertAll_eq_one hab (U := U)
     (fun ⟨z, _⟩ _ ↦ by rcases z with (x | j) | c <;> simp [U, isReduced_toWord]) (hU ▸ hw g)
-    (fun x ↦ (hms x).1)
-    (fun x ↦ by rw [(hms x).2]; lia) xs
+    hnd (fun x ↦ by rw [hlen x]; lia) xs
   -- the inserted Merzljakov word of `x ∈ xs` is `u x * x * v x`, with `g x = u x * v x`
-  choose u v hg hx₀ using exists_mk_blockInsertAll_merzljakovWord hab (fun x ↦ (hms x).1) hm
-    fun x hx x' _ ↦ hdisj x hx x'
-  obtain ⟨y, hy, hyg⟩ := exists_formalSolution_of_mul (mk W)
-    (y₀ := fun j ↦
-      mk (blockInsertAll a b m xs ((U (Sum.inl (Sum.inr j))).map (Prod.map Sum.inr id))))
-    (by
-      rw [← hU', lift_mk, lift_mk]
-      refine congrArg _ (map_congr_left fun ⟨z, e⟩ hz ↦ congrArg (fun q ↦ cond e q q⁻¹) ?_)
-      rcases z with (x | j) | c
-      · exact (hx₀ x (mem_dedup.2 (mem_filterMap.2 ⟨_, hz, rfl⟩))).symm
-      · rfl
-      · simp [U, of])
-  refine ⟨y, fun x ↦ u x * v x, hy, fun j ↦ ?_⟩
-  rw [hyg j, map_mk_blockInsertAll _ (by simp)]
+  choose u v hg hx₀ using exists_mk_blockInsertAll_merzljakovWord hab hnd hm
+    fun x hx x' _ n hn hn' ↦ of_not_not fun hne ↦ hdisj x hx x' hne hn hn'
+  -- the endomorphism `x ↦ (u x)⁻¹ * x * (v x)⁻¹` gives the formal solution
+  refine ⟨_, fun x ↦ u x * v x, lift_eq_one_of_translate (mk W) (u := u) (v := v) (y₀ := fun j ↦
+    mk (blockInsertAll a b m xs ((U (Sum.inl (Sum.inr j))).map (Prod.map Sum.inr id)))) ?_,
+    fun j ↦ ?_⟩
+  · rw [← hU', lift_mk, lift_mk]
+    refine congrArg _ (map_congr_left fun ⟨z, e⟩ hz ↦ congrArg (fun q ↦ cond e q q⁻¹) ?_)
+    rcases z with (x | j) | c
+    · exact (hx₀ x (mem_dedup.2 (mem_filterMap.2 ⟨_, hz, rfl⟩))).symm
+    · rfl
+    · simp [U, of]
+  rw [lift_sumElim_mul_lift_eq_lift_sumElim_one, map_mk_blockInsertAll _ (by simp)]
   simp only [Prod.map_def, id_eq, ← map.mk, lift_map, Sum.elim_comp_inr, lift_of_eq_id,
     MonoidHom.id_apply, U, Sum.elim_inl, Sum.elim_inr, mk_toWord]
   exact congrArg (f · j) (funext hg)

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Basic
-public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.Insertion
 public import TauCeti.Logic.ForallExistsAlt
 import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll
@@ -46,8 +45,9 @@ insertion of `x_i` acts, decomposing the result as `u_i x_i v_i` with `u_i, v_i 
 in `h j` the blocks of the variables `x_t` with `t > j` do not occur by the Merzljakov tuple
 condition, so only `x₀, …, x_j` are inserted. Applying the endomorphism sending `x_i` to
 `u_i⁻¹ x_i v_i⁻¹` and fixing `A` produces the required formal solution
-(`FreeGroup.lift_eq_one_of_translate`). These steps, shared with the form of the theorem for one
-block of quantifiers, are in `TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll`.
+(`FreeGroup.lift_eq_one_of_translate`, in `TauCeti.GroupTheory.FreeGroup.Basic`). The other
+steps, shared with the form of the theorem for one block of quantifiers, are in
+`TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll`.
 
 Compared with Kharlampovich–Myasnikov (§4.4), which selects "marked" occurrences of blocks via a
 solution table over a finite alphabet, this proof replaces all occurrences of an unsplit block using

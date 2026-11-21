@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.FreeGroup.Cancellation
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.Insertion
 import Mathlib.Algebra.Order.BigOperators.Group.List
-import Mathlib.Tactic.Group
 
 /-!
 # Inserting several variables into the blocks of a word
@@ -38,8 +37,6 @@ one block (`FreeGroup.exists_formalSolution_lift_eq_of_skolem`).
   exponents chosen from given lists of more than `L²` exponents, `L` the length of the word.
 * `FreeGroup.exists_mk_blockInsertAll_merzljakovWord`: the inserted Merzljakov word `u v` of a
   variable `x` is `u x v`.
-* `FreeGroup.lift_eq_one_of_translate`: the endomorphism `x ↦ u⁻¹ x v⁻¹` of `FreeGroup (X ⊕ A)`
-  turns a solution taking the values `u x v` at the variables into one taking the values `x`.
 
 ## References
 
@@ -393,35 +390,5 @@ theorem exists_mk_blockInsertAll_merzljakovWord (hab : a ≠ b) {l : List X} {ms
   · exact ⟨_, 1, (mul_one _).symm, fun h ↦ absurd h hx⟩
 
 end MerzljakovWord
-
-/-- If `w = 1` has a solution in `FreeGroup (X ⊕ A)` whose value at each variable `x` is its
-two-sided translate `u x * x * v x` by constants `u x`, `v x` of `FreeGroup A`, then composing
-with the endomorphism `x ↦ (u x)⁻¹ * x * (v x)⁻¹`, which fixes the constants, gives a solution
-whose value at each variable `x` is `x`. -/
-theorem lift_eq_one_of_translate {A X Y : Type*} (w : FreeGroup ((X ⊕ Y) ⊕ A))
-    {u v : X → FreeGroup A} {y₀ : Y → FreeGroup (X ⊕ A)}
-    (hw : lift (Sum.elim (Sum.elim (fun x ↦ map Sum.inr (u x) * of (Sum.inl x) * map Sum.inr (v x))
-      y₀) (of ∘ Sum.inr)) w = 1) :
-    lift (Sum.elim (Sum.elim (of ∘ Sum.inl) fun j ↦ lift (Sum.elim
-      (fun x ↦ (map Sum.inr (u x))⁻¹ * of (Sum.inl x) * (map Sum.inr (v x))⁻¹) (of ∘ Sum.inr))
-        (y₀ j)) (of ∘ Sum.inr)) w = 1 := by
-  set ψ : FreeGroup (X ⊕ A) →* FreeGroup (X ⊕ A) :=
-    lift (Sum.elim (fun x ↦ (map Sum.inr (u x))⁻¹ * of (Sum.inl x) * (map Sum.inr (v x))⁻¹)
-      (of ∘ Sum.inr))
-  have hψ_inr (q : FreeGroup A) : ψ (map Sum.inr q) = map Sum.inr q := by
-    have hcomp : ψ.comp (map Sum.inr) = map Sum.inr := ext_hom _ _ fun c ↦ by simp [ψ]
-    exact DFunLike.congr_fun hcomp q
-  have hcomp : ψ.comp (lift (Sum.elim (Sum.elim
-      (fun x ↦ map Sum.inr (u x) * of (Sum.inl x) * map Sum.inr (v x)) y₀) (of ∘ Sum.inr))) =
-      lift (Sum.elim (Sum.elim (of ∘ Sum.inl) fun j ↦ ψ (y₀ j)) (of ∘ Sum.inr)) := by
-    refine ext_hom _ _ fun z ↦ ?_
-    rcases z with (x | j) | c
-    · simp only [MonoidHom.comp_apply, lift_apply_of, Sum.elim_inl, _root_.map_mul, hψ_inr,
-        Function.comp_apply]
-      simp only [ψ, lift_apply_of, Sum.elim_inl]
-      group
-    · simp
-    · simp [ψ]
-  rw [← hcomp, MonoidHom.comp_apply, hw, _root_.map_one]
 
 end FreeGroup

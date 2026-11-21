@@ -14,6 +14,8 @@ public import Mathlib.Data.Set.Finite.Basic
 For `Nat.pair : ℕ → ℕ → ℕ`, the `e`-th **column** `e.pairColumn = {n | n.unpair.2 = e}` is Soare's
 `ω^{[e]}`. Distinct columns are disjoint with union `Set.univ`, and `Nat.leastInPairColumn e b`
 computes the least element of `e.pairColumn ∩ Set.Ici b` by bounded search up to `Nat.pair b e`.
+Taking the list of an element `x` of a list `l` in the column indexed by the position of `x` in
+`l` gives disjoint nodup lists of natural numbers of any length (`Nat.exists_nodup_disjoint_lists`).
 
 ## References
 
@@ -70,6 +72,20 @@ theorem pairwise_disjoint_pairColumn : Pairwise (Disjoint on pairColumn) :=
 theorem infinite_pairColumn (e : ℕ) : e.pairColumn.Infinite :=
   pairColumn_eq_range_pair e ▸ Set.infinite_range_of_injective
     (StrictMono.injective fun _ _ => pair_lt_pair_left e)
+
+/-- For a list `l` of elements of `X` and a length `N`, there are nodup lists of `N` natural
+numbers, one for each `x : X`, such that the list of a member of `l` is disjoint from the list of
+every other element of `X`. -/
+theorem exists_nodup_disjoint_lists {X : Type*} (l : List X) (N : ℕ) : ∃ ms : X → List ℕ,
+    (∀ x, (ms x).Nodup) ∧ (∀ x, (ms x).length = N) ∧
+      ∀ x ∈ l, ∀ x', x ≠ x' → (ms x).Disjoint (ms x') := by
+  classical
+  refine ⟨fun x => (List.range N).map (pair · (l.idxOf x)),
+    fun x => List.nodup_range.map fun _ _ h => (pair_eq_pair.1 h).1, by simp,
+    fun x hx x' hne n hn hn' => hne ?_⟩
+  obtain ⟨r, -, rfl⟩ := List.mem_map.1 hn
+  obtain ⟨r', -, hr'⟩ := List.mem_map.1 hn'
+  exact (List.idxOf_inj hx).1 (pair_eq_pair.1 hr').2.symm
 
 /-- The least member of `e.pairColumn` at or above `b`, found by searching up to `Nat.pair b e`. -/
 def leastInPairColumn (e b : ℕ) : ℕ :=

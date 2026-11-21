@@ -30,8 +30,9 @@ specialisations of the free generators; they label the leaves of Makanin–Razbo
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.GX.eval_eq_lift_mulEquivFreeGroupSum`: under `GX.mulEquivFreeGroupSum`,
-  evaluation in `G[X]` is `FreeGroup.lift`.
+* `TauCeti.GroupAlgGeom.GX.eval_eq_lift_mulEquivFreeGroupSum`,
+  `TauCeti.GroupAlgGeom.GX.eval_id_eq_lift_mulEquivFreeGroupSum`: under
+  `GX.mulEquivFreeGroupSum`, evaluation in `G[X]` is `FreeGroup.lift`.
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.of_mulEquiv`: a group isomorphic over `G` to `G[Y]`, for a
   type `Y` in any universe, is a free `G`-group.
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.of_unique_lift`: conversely, a group with a family of
@@ -149,6 +150,15 @@ theorem eval_eq_lift_mulEquivFreeGroupSum {A X : Type*} (b : FreeGroupBasis A G)
       (mulEquivFreeGroupSum b X).toMonoidHom :=
     hom_ext (b.ext_hom _ _ fun c => by simp) (FreeGroup.ext_hom _ _ fun x => by simp)
   exact DFunLike.congr_fun this w
+
+/-- Over a free group `F(A)` with its standard basis, evaluation of a word in `F(A)[X]` is
+`FreeGroup.lift` sending the variables along `v` and the letters of `A` to themselves. -/
+theorem eval_id_eq_lift_mulEquivFreeGroupSum {A X : Type*} (v : X → FreeGroup A)
+    (w : GX (FreeGroup A) X) :
+    eval (.id _) v w = FreeGroup.lift (Sum.elim v FreeGroup.of)
+      (mulEquivFreeGroupSum (FreeGroupBasis.ofFreeGroup A) X w) := by
+  rw [eval_eq_lift_mulEquivFreeGroupSum (FreeGroupBasis.ofFreeGroup A)]
+  simp [Function.comp_def]
 
 end GX
 
