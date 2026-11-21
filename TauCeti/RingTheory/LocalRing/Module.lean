@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.Algebra.Module.Shrink
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
 # Generators of modules over a local ring
@@ -76,6 +77,26 @@ theorem exists_mem_span_singleton_eq_top_of_finrank_eq_one [Module.Free R M]
   rw [SetLike.mem_coe, _root_.IsLocalRing.notMem_maximalIdeal] at hu
   exact ⟨m, hm, (Submodule.span_singleton_eq_top_iff R m).mpr fun v ↦
     ⟨e.symm v * hu.unit⁻¹, e.symm.injective (by simp [mul_assoc])⟩⟩
+
+-- Adapted from roed-math/TauCeti-w2-fresh, lookahead/StableReduction/relative-ampleness,
+-- commit efa6fc8f3735.
+/-- **An element generates a free module of rank one exactly when it does not vanish in the
+fibre.** If `M` is free of rank one over the local ring `R` with residue field `k`, then `m`
+spans `M` if and only if `1 ⊗ m` is nonzero in `k ⊗ M`. -/
+theorem span_singleton_eq_top_iff_one_tmul_ne_zero [Module.Free R M]
+    (h : Module.finrank R M = 1) (m : M) :
+    Submodule.span R {m} = ⊤ ↔ (1 : _root_.IsLocalRing.ResidueField R) ⊗ₜ[R] m ≠ 0 := by
+  obtain ⟨e⟩ := Module.nonempty_linearEquiv_of_finrank_eq_one h
+  rw [e.symm.span_singleton_eq_top_iff_isUnit]
+  obtain ⟨a, rfl⟩ := e.surjective m
+  -- Under `k ⊗ M ≃ k ⊗ R ≃ k`, the vector `1 ⊗ e a` is the residue of `a`.
+  have he : (1 : _root_.IsLocalRing.ResidueField R) ⊗ₜ[R] e a =
+      e.lTensor _ ((TensorProduct.rid R _).symm (_root_.IsLocalRing.residue R a)) := by
+    rw [TensorProduct.rid_symm_apply, LinearEquiv.lTensor_tmul, ← mul_one a, ← smul_eq_mul,
+      map_smul, ← TensorProduct.smul_tmul, Algebra.smul_def, mul_one, smul_eq_mul, mul_one]
+    rfl
+  rw [he, LinearEquiv.map_ne_zero_iff, LinearEquiv.map_ne_zero_iff,
+    _root_.IsLocalRing.residue_ne_zero_iff_isUnit, LinearEquiv.symm_apply_apply]
 
 /-- **A family with linearly independent residues is a basis.** If `M` has a basis `b` indexed by
 `ι`, and `v` is a family of `|ι|` elements whose coordinates in `b`, read in the residue field,
