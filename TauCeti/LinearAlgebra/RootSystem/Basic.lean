@@ -18,6 +18,8 @@ Elementary consequences of the definition of a root system that need no further 
 * `RootPairing.nonempty_of_isRootSystem`: a root system on a nontrivial module has a root.
 * `RootPairing.finite_weight_of_isRootSystem`: the weight module of a finite root system is finitely
   generated.
+* `RootPairing.reflection_reflection_of_pairing_eq_zero`: reflecting in `i` then `j` when
+  `P.pairing i j = 0` subtracts both coroot projections independently.
 -/
 
 public section
@@ -41,5 +43,14 @@ theorem finite_weight_of_isRootSystem (P : RootPairing ι R M N) [Finite ι] [P.
     Module.Finite R M :=
   Module.finite_def.mpr
     (IsRootSystem.span_root_eq_top (P := P) ▸ Submodule.fg_span (Set.finite_range P.root))
+
+/-- Reflecting in `i` and then in `j` when `P.pairing i j = 0` subtracts the `i`-th and
+`j`-th coroot projections independently. -/
+theorem reflection_reflection_of_pairing_eq_zero (P : RootPairing ι R M N) {i j : ι}
+    (h0 : P.pairing i j = 0) (y : M) :
+    P.reflection j (P.reflection i y) =
+      y - P.coroot' i y • P.root i - P.coroot' j y • P.root j := by
+  rw [reflection_apply, reflection_apply, map_sub, map_smul, root_coroot'_eq_pairing, h0,
+    smul_eq_mul, mul_zero, sub_zero]
 
 end RootPairing

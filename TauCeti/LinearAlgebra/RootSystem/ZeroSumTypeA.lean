@@ -87,7 +87,7 @@ theorem singleParityCheckCodeBasis_repr_typeAZeroSumVec (a b : Fin (m + 1)) (i :
   rw [singleParityCheckCodeBasis_repr_apply, coe_typeAZeroSumVec]; simp [Pi.single_apply]
 
 /-- The reversal linear involution `(θ x) a = -x (rev a)` on the sum-zero hyperplane. -/
-def typeAZeroSumRevEquiv (m : ℕ) :
+def typeAZeroSumNegRevEquiv (m : ℕ) :
     singleParityCheckCode R (Fin (m + 1)) ≃ₗ[R] singleParityCheckCode R (Fin (m + 1)) :=
   LinearEquiv.ofInvolutive
     { toFun x := ⟨fun a ↦ -(x : Fin (m + 1) → R) a.rev, by
@@ -98,30 +98,30 @@ def typeAZeroSumRevEquiv (m : ℕ) :
       map_smul' _ _ := Subtype.ext (funext fun _ ↦ by simp) }
     fun _ ↦ Subtype.ext (funext fun _ ↦ by simp)
 
-/-- Coordinate evaluation of `typeAZeroSumRevEquiv`. -/
-@[simp] theorem coe_typeAZeroSumRevEquiv_apply (x : singleParityCheckCode R (Fin (m + 1)))
+/-- Coordinate evaluation of `typeAZeroSumNegRevEquiv`. -/
+@[simp] theorem coe_typeAZeroSumNegRevEquiv_apply (x : singleParityCheckCode R (Fin (m + 1)))
     (a : Fin (m + 1)) :
-    (typeAZeroSumRevEquiv R m x : Fin (m + 1) → R) a = -(x : Fin (m + 1) → R) a.rev := (rfl)
+    (typeAZeroSumNegRevEquiv R m x : Fin (m + 1) → R) a = -(x : Fin (m + 1) → R) a.rev := (rfl)
 
-/-- `typeAZeroSumRevEquiv` is an involution. -/
-@[simp] theorem typeAZeroSumRevEquiv_apply_self (x : singleParityCheckCode R (Fin (m + 1))) :
-    typeAZeroSumRevEquiv R m (typeAZeroSumRevEquiv R m x) = x := by ext; simp
+/-- `typeAZeroSumNegRevEquiv` is an involution. -/
+@[simp] theorem typeAZeroSumNegRevEquiv_apply_self (x : singleParityCheckCode R (Fin (m + 1))) :
+    typeAZeroSumNegRevEquiv R m (typeAZeroSumNegRevEquiv R m x) = x := by ext; simp
 
-/-- `typeAZeroSumRevEquiv` is its own inverse. -/
-@[simp] theorem typeAZeroSumRevEquiv_symm (m : ℕ) :
-    (typeAZeroSumRevEquiv R m).symm = typeAZeroSumRevEquiv R m :=
+/-- `typeAZeroSumNegRevEquiv` is its own inverse. -/
+@[simp] theorem typeAZeroSumNegRevEquiv_symm (m : ℕ) :
+    (typeAZeroSumNegRevEquiv R m).symm = typeAZeroSumNegRevEquiv R m :=
   LinearEquiv.ext fun _ ↦ by simp [LinearEquiv.symm_apply_eq]
 
 /-- Reversal sends `eₐ - e_b` to `e_{rev b} - e_{rev a}`. -/
-@[simp] theorem typeAZeroSumRevEquiv_vec (a b : Fin (m + 1)) :
-    typeAZeroSumRevEquiv R m (typeAZeroSumVec R a b) = typeAZeroSumVec R b.rev a.rev := by
-  ext k; simp only [coe_typeAZeroSumRevEquiv_apply, typeAZeroSumVec_apply, Fin.rev_eq_iff]; ring
+@[simp] theorem typeAZeroSumNegRevEquiv_vec (a b : Fin (m + 1)) :
+    typeAZeroSumNegRevEquiv R m (typeAZeroSumVec R a b) = typeAZeroSumVec R b.rev a.rev := by
+  ext k; simp only [coe_typeAZeroSumNegRevEquiv_apply, typeAZeroSumVec_apply, Fin.rev_eq_iff]; ring
 
 /-- Reversal sends the `i`-th vector of `singleParityCheckCodeBasis` to the `(rev i)`-th. -/
-@[simp] theorem typeAZeroSumRevEquiv_singleParityCheckCodeBasis (i : Fin m) :
-    typeAZeroSumRevEquiv R m (singleParityCheckCodeBasis R m i) =
+@[simp] theorem typeAZeroSumNegRevEquiv_singleParityCheckCodeBasis (i : Fin m) :
+    typeAZeroSumNegRevEquiv R m (singleParityCheckCodeBasis R m i) =
       singleParityCheckCodeBasis R m i.rev := by
-  rw [singleParityCheckCodeBasis_eq_typeAZeroSumVec, typeAZeroSumRevEquiv_vec,
+  rw [singleParityCheckCodeBasis_eq_typeAZeroSumVec, typeAZeroSumNegRevEquiv_vec,
     singleParityCheckCodeBasis_eq_typeAZeroSumVec, Fin.rev_succ, Fin.rev_castSucc]
 
 end CommRing
@@ -393,11 +393,11 @@ theorem isPos_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :
 /-- **The diagram-reversal automorphism of `typeAZeroSumRootPairing K m`.** -/
 noncomputable def typeAZeroSumRevAut (m : ℕ) : RootPairing.Aut (typeAZeroSumRootPairing K m) :=
   RootPairing.Equiv.mk' (typeAZeroSumRootPairing K m) (typeAZeroSumRootPairing K m)
-    (typeAZeroSumRevEquiv K m) (finDistinctPairsRevSwap (m + 1)) fun _ ↦ by simp
+    (typeAZeroSumNegRevEquiv K m) (finDistinctPairsRevSwap (m + 1)) fun _ ↦ by simp
 
-/-- The weight map of `typeAZeroSumRevAut K m` is `typeAZeroSumRevEquiv K m`. -/
+/-- The weight map of `typeAZeroSumRevAut K m` is `typeAZeroSumNegRevEquiv K m`. -/
 @[simp] theorem weightMap_typeAZeroSumRevAut (m : ℕ) :
-    (typeAZeroSumRevAut K m).weightMap = (typeAZeroSumRevEquiv K m).toLinearMap := (rfl)
+    (typeAZeroSumRevAut K m).weightMap = (typeAZeroSumNegRevEquiv K m).toLinearMap := (rfl)
 
 /-- The index permutation of `typeAZeroSumRevAut K m` is `finDistinctPairsRevSwap (m + 1)`. -/
 @[simp] theorem indexEquiv_typeAZeroSumRevAut (m : ℕ) :
@@ -438,7 +438,7 @@ theorem autCongr_typeABaseChangeEquivZeroSum_graphAut (m : ℕ) :
     RootPairing.Equiv.weightEquiv_autCongr_apply, LinearEquiv.symm_apply_apply]
   simp only [RootPairing.Equiv.weightEquiv_apply, weightMap_typeABaseChangeGraphAut_apply,
     weightMap_typeAZeroSumRevAut, LinearEquiv.coe_coe,
-    weightEquiv_symm_typeABaseChangeEquivZeroSum_apply, coe_typeAZeroSumRevEquiv_apply,
+    weightEquiv_symm_typeABaseChangeEquivZeroSum_apply, coe_typeAZeroSumNegRevEquiv_apply,
     Fin.rev_castSucc, Fin.rev_succ]
   ring
 

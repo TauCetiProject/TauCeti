@@ -68,7 +68,7 @@ positive root is a nonnegative integer combination of the simple coroots.
   `TauCeti.eq_zero_of_add_eq_zero_of_mem_posRootCone` is the same fact as a cancellation rule,
   `TauCeti.root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone` specializes that to a positive root
   added to a member of `Q⁺`, `TauCeti.sum_root_ne_zero_of_mem_posRoots` deduces that a nonempty
-  sum of positive roots is nonzero, and `TauCeti.nsmul_root_mem_posRootCone_iff` says a root is
+  sum of positive roots is nonzero, and `RootPairing.nsmul_root_mem_posRootCone_iff` says a root is
   positive iff a positive natural multiple of it lies in `Q⁺`.
 * `TauCeti.eq_of_nsmul_root_sub_root_mem_posRootCone` says that the only positive root lying below
   a natural multiple of a simple root, in the order defined by `Q⁺`, is that simple root itself.
@@ -628,7 +628,7 @@ theorem sum_root_ne_zero_of_mem_posRoots {κ : Type*} {s : Finset κ} (hs : s.No
 
 /-- **A root is positive if and only if a positive natural multiple of it lies in the positive
 root cone.** -/
-theorem nsmul_root_mem_posRootCone_iff {n : ℕ} (hn : n ≠ 0) {i : ι} :
+theorem _root_.RootPairing.nsmul_root_mem_posRootCone_iff {n : ℕ} (hn : n ≠ 0) {i : ι} :
     n • P.root i ∈ posRootCone P b ↔ i ∈ posRoots P b := by
   refine ⟨fun h ↦ ?_, fun hi ↦
     (posRootCone P b).nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hi) n⟩

@@ -35,6 +35,11 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 @[simp] theorem pairingIn_eq_pairing (P : RootPairing ι R M N) (i j : ι) :
     P.pairingIn R i j = P.pairing i j := by simpa using P.algebraMap_pairingIn R i j
 
+/-- Two root indices with `P.pairingIn S i j ≠ 2` are distinct. -/
+theorem ne_of_pairingIn_ne_two (P : RootPairing ι R M N) {S : Type*} [CommRing S] [Algebra S R]
+    [FaithfulSMul S R] [P.IsValuedIn S] {i j : ι} (h : P.pairingIn S i j ≠ 2) : i ≠ j :=
+  fun hij ↦ h (hij ▸ P.pairingIn_same S j)
+
 /-- Rewrites `P₂.pairingIn R (e i) (e j) = P.pairing i j` into agreement of `pairingIn R`. -/
 theorem pairingIn_eq_of_pairingIn_eq_pairing {ι₂ S M₂ N₂ : Type*} [CommRing S] [Algebra R S]
     [AddCommGroup M₂] [Module S M₂] [AddCommGroup N₂] [Module S N₂]

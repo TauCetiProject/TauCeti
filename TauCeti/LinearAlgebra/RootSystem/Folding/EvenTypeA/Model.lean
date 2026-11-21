@@ -71,11 +71,11 @@ def evenTypeABasisVec (R : Type*) [CommRing R] (n : ℕ) (i : Fin n) :
     singleParityCheckCode R (Fin (2 * n + 1)) :=
   typeAZeroSumVec R (evenTypeALeftIdx n i) (evenTypeALeftIdx n i).rev
 
-/-- `evenTypeABasisVec` is fixed by `typeAZeroSumRevEquiv`. -/
-@[simp] theorem typeAZeroSumRevEquiv_evenTypeABasisVec (R : Type*) [CommRing R] (n : ℕ)
+/-- `evenTypeABasisVec` is fixed by `typeAZeroSumNegRevEquiv`. -/
+@[simp] theorem typeAZeroSumNegRevEquiv_evenTypeABasisVec (R : Type*) [CommRing R] (n : ℕ)
     (i : Fin n) :
-    typeAZeroSumRevEquiv R (2 * n) (evenTypeABasisVec R n i) = evenTypeABasisVec R n i := by
-  rw [evenTypeABasisVec, typeAZeroSumRevEquiv_vec, Fin.rev_rev]
+    typeAZeroSumNegRevEquiv R (2 * n) (evenTypeABasisVec R n i) = evenTypeABasisVec R n i := by
+  rw [evenTypeABasisVec, typeAZeroSumNegRevEquiv_vec, Fin.rev_rev]
 
 /-- Evaluating `evenTypeABasisVec R n i` at a left index `evenTypeALeftIdx n j` gives `[i = j]`. -/
 @[simp] theorem evenTypeABasisVec_apply_left (R : Type*) [CommRing R] (n : ℕ) (i j : Fin n) :
@@ -126,7 +126,7 @@ theorem evenTypeABasisVec_mem_fixedSubmodule (n : ℕ) (i : Fin n) :
     evenTypeABasisVec K n i ∈
       LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap := by
   rw [LinearMap.mem_fixedSubmodule_iff, weightMap_typeAZeroSumRevAut, LinearEquiv.coe_coe,
-    typeAZeroSumRevEquiv_evenTypeABasisVec]
+    typeAZeroSumNegRevEquiv_evenTypeABasisVec]
 
 private lemma fixedSubmodule_revAut_apply_rev {n : ℕ}
     (x : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap)
@@ -135,7 +135,7 @@ private lemma fixedSubmodule_revAut_apply_rev {n : ℕ}
       -((x : singleParityCheckCode K (Fin (2 * n + 1))) : Fin (2 * n + 1) → K) a := by
   have hx := congrArg (fun w : singleParityCheckCode K (Fin (2 * n + 1)) ↦
     (w : Fin (2 * n + 1) → K) a) (LinearMap.mem_fixedSubmodule_iff.mp x.property)
-  simp only [weightMap_typeAZeroSumRevAut, LinearEquiv.coe_coe, coe_typeAZeroSumRevEquiv_apply,
+  simp only [weightMap_typeAZeroSumRevAut, LinearEquiv.coe_coe, coe_typeAZeroSumNegRevEquiv_apply,
     neg_eq_iff_eq_neg] at hx
   exact hx
 
@@ -379,7 +379,7 @@ private def evenTypeAFoldAtomFixed (n : ℕ) (a : Fin (2 * n + 1)) :
     LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap :=
   ⟨evenTypeAFoldAtom K n a, by
     rw [LinearMap.mem_fixedSubmodule_iff, weightMap_typeAZeroSumRevAut, LinearEquiv.coe_coe,
-      evenTypeAFoldAtom, typeAZeroSumRevEquiv_vec, Fin.rev_rev]⟩
+      evenTypeAFoldAtom, typeAZeroSumNegRevEquiv_vec, Fin.rev_rev]⟩
 
 @[simp] private lemma coe_evenTypeAFoldAtomFixed (n : ℕ) (a : Fin (2 * n + 1)) :
     (evenTypeAFoldAtomFixed K n a : singleParityCheckCode K (Fin (2 * n + 1))) =

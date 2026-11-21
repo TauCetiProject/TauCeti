@@ -48,6 +48,11 @@ instance, so they are not restated here.
   the index permutation of a conjugated automorphism are the conjugates of the originals.
 * `RootPairing.Equiv.smul_index_eq_indexEquiv`: an automorphism acts on root indices through its
   index permutation.
+* `RootPairing.Equiv.indexEquiv_mul_apply`, `RootPairing.Equiv.weightMap_mul_apply`, and
+  `RootPairing.reflection_weightMap_apply`: index-permutation and weight-map evaluation on products
+  and reflections of automorphisms.
+* `RootPairing.Equiv.indexEquiv_reflection_comm_of_indexEquiv_eq`: reflection in a `σ`-fixed root
+  commutes with `σ` on root indices.
 * `RootPairing.Equiv.autCongr_smul` and `RootPairing.Equiv.autCongr_smul_index`: conjugation
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
@@ -116,6 +121,35 @@ Not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
 theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
     g • i = g.indexEquiv i :=
   (rfl)
+
+/-- The index permutation of a product of automorphisms is the composition of their index
+permutations. -/
+theorem indexEquiv_mul_apply (f g : Aut P) (i : ι) :
+    (f * g).indexEquiv i = f.indexEquiv (g.indexEquiv i) :=
+  (rfl)
+
+/-- The weight-space map of a product of automorphisms is the composition of their weight-space
+maps. -/
+theorem weightMap_mul_apply (f g : Aut P) (x : M) :
+    (f * g).weightMap x = f.weightMap (g.weightMap x) :=
+  (rfl)
+
+/-- The weight-space map of `RootPairing.Equiv.reflection P i` is `P.reflection i`. -/
+theorem _root_.RootPairing.reflection_weightMap_apply (P : RootPairing ι R M N) (i : ι) (x : M) :
+    (reflection P i).weightMap x = P.reflection i x :=
+  (rfl)
+
+/-- On root indices, reflection in a `σ`-fixed root `j` commutes with `σ`. -/
+theorem indexEquiv_reflection_comm_of_indexEquiv_eq (σ : Aut P) {j : ι}
+    (hfix : σ.indexEquiv j = j) (r : ι) :
+    (reflection P j).indexEquiv (σ.indexEquiv r) =
+      σ.indexEquiv ((reflection P j).indexEquiv r) := by
+  refine P.root.injective ?_
+  rw [reflection_indexEquiv, root_reflectionPerm,
+    ← Hom.root_weightMap_apply _ _ (P.reflectionPerm j r) σ.toHom,
+    root_reflectionPerm, reflection_apply_root, reflection_apply_root,
+    map_sub, map_smul, Hom.root_weightMap_apply, Hom.root_weightMap_apply,
+    ← σ.toHom.pairing (i := r) (j := j), hfix]
 
 noncomputable section Conjugation
 
