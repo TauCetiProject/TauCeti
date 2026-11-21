@@ -642,12 +642,6 @@ theorem stinespringOp_eq_toStinespring_one : φ.stinespringOp = φ.toStinespring
 theorem norm_stinespringOp_sq_eq_norm_map_one : ‖φ.stinespringOp‖ ^ 2 = ‖φ 1‖ := by
   rw [← φ.stinespringOp_adjoint_comp_self, ContinuousLinearMap.norm_adjoint_comp_self, sq]
 
-/-- A completely positive map from a unital C⋆-algebra into `H →L[ℂ] H` attains its operator norm
-at `1`: `‖φ‖ = ‖φ 1‖`. -/
-theorem opNorm_toContinuousLinearMap_eq_norm_map_one :
-    ‖φ.toContinuousLinearMap‖ = ‖φ 1‖ := by
-  rw [← φ.norm_stinespringOp_sq, φ.norm_stinespringOp_sq_eq_norm_map_one]
-
 /-- The Stinespring operator is an isometry if and only if `φ` is unital (`φ 1 = 1`). -/
 theorem isometry_stinespringOp_iff : Isometry φ.stinespringOp ↔ φ 1 = 1 := by
   rw [ContinuousLinearMap.isometry_iff_adjoint_comp_self, φ.stinespringOp_adjoint_comp_self]
@@ -656,7 +650,7 @@ theorem isometry_stinespringOp_iff : Isometry φ.stinespringOp ↔ φ 1 = 1 := b
 C⋆-algebra into `H →L[ℂ] H`: `star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a)`. -/
 theorem star_map_mul_map_le_norm_map_one_smul (a : D) :
     star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) :=
-  φ.opNorm_toContinuousLinearMap_eq_norm_map_one ▸ φ.star_map_mul_map_le_opNorm_smul a
+  φ.norm_toContinuousLinearMap ▸ φ.star_map_mul_map_le_opNorm_smul a
 
 /-- The **Kadison–Schwarz inequality** for a unital completely positive map into `H →L[ℂ] H`. -/
 theorem star_map_mul_map_le_of_map_one (h1 : φ 1 = 1) (a : D) :
