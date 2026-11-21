@@ -228,10 +228,6 @@ theorem toSplitting_apply (c : CrossedCocycle α) (γ : Γ) : c.toSplitting γ =
 theorem left_toSplitting (c : CrossedCocycle α) (γ : Γ) : (c.toSplitting γ).left = c γ :=
   (rfl)
 
-@[simp]
-theorem right_toSplitting (c : CrossedCocycle α) (γ : Γ) : (c.toSplitting γ).right = γ :=
-  (rfl)
-
 /-- The unit crossed cocycle gives the canonical splitting `SemidirectProduct.inr`. -/
 @[simp]
 theorem toSplitting_one : (1 : CrossedCocycle α).toSplitting = inr_splitting α :=
@@ -241,7 +237,7 @@ theorem toSplitting_one : (1 : CrossedCocycle α).toSplitting = inr_splitting α
 /-- Gauge by `h` conjugates the splitting by `SemidirectProduct.inl h`. -/
 theorem toSplitting_smul (h : H) (c : CrossedCocycle α) (γ : Γ) :
     (h • c).toSplitting γ = inl h * c.toSplitting γ * (inl h)⁻¹ := by
-  ext <;> simp [mul_assoc]
+  ext <;> simp [mul_assoc, right_splitting]
 
 /-- The crossed cocycle given by the first coordinate of a splitting of `H ⋊[α] Γ`. -/
 def ofSplitting (s : (toGroupExtension α).Splitting) : CrossedCocycle α where

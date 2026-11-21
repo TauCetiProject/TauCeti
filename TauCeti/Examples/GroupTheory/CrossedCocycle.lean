@@ -55,10 +55,10 @@ theorem inv_toSplitting_gauge_two :
     ((two • (1 : TauCeti.CrossedCocycle inversion)).toSplitting (ofAdd 1))⁻¹ =
       ⟨two * two, ofAdd (-1)⟩ := by
   ext
-  · simp only [inv_left, left_toSplitting, right_toSplitting, CrossedCocycle.smul_apply,
+  · simp only [inv_left, left_toSplitting, right_splitting, CrossedCocycle.smul_apply,
       CrossedCocycle.one_apply]
     simp [inversion, two]
-  · simp
+  · simp [right_splitting]
 
 /-- For the trivial action, the inverse of the splitting value `(4, 1)` is `(1/4, -1)`. -/
 theorem inv_toSplitting_trivial :
@@ -67,7 +67,7 @@ theorem inv_toSplitting_trivial :
       ⟨(two * two)⁻¹, ofAdd (-1)⟩ := by
   ext
   · simp
-  · simp
+  · simp [right_splitting]
 
 /-- A group acting on itself by conjugation has the crossed cocycle `γ ↦ γ⁻¹`. -/
 def invCocycle (G : Type*) [Group G] : TauCeti.CrossedCocycle (MulAut.conj : G →* MulAut G) where

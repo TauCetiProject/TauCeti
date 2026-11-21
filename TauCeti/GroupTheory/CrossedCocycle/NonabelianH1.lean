@@ -28,9 +28,8 @@ gauge orbits of crossed cocycles.
 ## Main results
 
 * `TauCeti.CrossedCocycle.nonabelianCocycleEquiv_equiv_iff`: the cohomology relation corresponds
-  to gauge equivalence.
-* `TauCeti.CrossedCocycle.nonabelianH1_mk_eq_mk_iff`: two crossed cocycles have the same class in
-  `TauCeti.NonabelianH1 Γ H` exactly when they are gauge equivalent.
+  to gauge equivalence; with `TauCeti.NonabelianH1.mk_eq_mk_iff`, two crossed cocycles have the
+  same class in `TauCeti.NonabelianH1 Γ H` exactly when they are gauge equivalent.
 -/
 
 public section
@@ -71,14 +70,6 @@ theorem nonabelianCocycleEquiv_equiv_iff {c c' : CrossedCocycle α} :
     exact ⟨a⁻¹, ext fun γ ↦ by simpa [hα] using (ha γ).symm⟩
   · rintro ⟨h, rfl⟩
     exact ⟨h⁻¹, fun γ ↦ by simp [hα]⟩
-
-/-- Two crossed cocycles have the same class in `TauCeti.NonabelianH1 Γ H` exactly when they are
-gauge equivalent. -/
-theorem nonabelianH1_mk_eq_mk_iff {c c' : CrossedCocycle α} :
-    NonabelianH1.mk (nonabelianCocycleEquiv hα c) = NonabelianH1.mk (nonabelianCocycleEquiv hα c')
-      ↔ ∃ h : H, h • c = c' := by
-  rw [NonabelianH1.mk_eq_mk_iff, ← NonabelianH1.Cocycle.equiv_iff,
-    nonabelianCocycleEquiv_equiv_iff]
 
 end CrossedCocycle
 
