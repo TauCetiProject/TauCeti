@@ -77,8 +77,8 @@ theorem exists_pos_forall_closedBall_abs_arg_lt_of_le_pi {θ θ' : ℝ} (hθ : �
     rw [dist_eq_norm, ← sub_div, norm_div, norm_real, Real.norm_of_nonneg hz0.le]
     exact ((div_le_iff₀ hz0).mpr hw).trans (min_le_left _ _)
   have hwU := (hδU (mem_cthickening_of_dist_le _ _ _ K hunit hdist)).2
-  rwa [Set.mem_preimage, Set.mem_Iio, div_eq_mul_inv, ← ofReal_inv, arg_mul_real (inv_pos.mpr hz0)]
-    at hwU
+  rwa [Set.mem_preimage, Set.mem_Iio, div_eq_mul_inv, ← ofReal_inv,
+    arg_mul_ofReal _ (inv_pos.mpr hz0)] at hwU
 
 /-- For `θ' < θ`, the closed balls of radius `c ‖z‖` around the points `z ≠ 0` of the closed
 sector `|arg z| ≤ θ'` stay in the open sector `|arg w| < θ`, for some `c > 0`, and the norms in

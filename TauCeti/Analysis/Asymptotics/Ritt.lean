@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.Deriv.ZPow
-import TauCeti.Analysis.Complex.SectorDeriv
+import TauCeti.Analysis.Complex.Sector.Deriv
 
 /-!
 # Ritt's theorem: differentiating order relations in sectors
@@ -37,7 +37,7 @@ stay inside `S`, by compactness of the arc of unit directions of the subsector.
   expansion at infinity in a sector.
 
 The sector geometry and the pointwise Cauchy estimate are in
-`TauCeti.Analysis.Complex.SectorDeriv`, the comparison of real powers of comparable numbers is
+`TauCeti.Analysis.Complex.Sector.Deriv`, the comparison of real powers of comparable numbers is
 `Real.rpow_le_two_rpow_abs_mul`, and the derivative of `z ↦ (z ^ n)⁻¹` is `hasDerivAt_inv_pow`.
 
 The statements and proofs are adapted from the lean-DLMF project
