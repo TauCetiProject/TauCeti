@@ -25,9 +25,9 @@ the stated parameter set, so closed nondegenerate intervals are allowed. The sec
 retains its original tangent-space fibres and is not required to extend to an ambient field.
 
 The Jacobi equation is linear, is unchanged by restriction to sets with unique derivatives,
-and depends only on the field on its parameter set. For two solutions, the Wronskian
-`⟨DJ, K⟩ - ⟨J, DK⟩` is constant on every preconnected parameter set. This conservation
-law is the bilinear identity underlying the symmetry of the geodesic index form.
+and depends only on the curve and tangent-bundle lift on its parameter set. For two solutions,
+the Wronskian `⟨DJ, K⟩ - ⟨J, DK⟩` is constant on every preconnected parameter set. This
+conservation law is the bilinear identity underlying the symmetry of the geodesic index form.
 
 ## References
 
@@ -88,7 +88,7 @@ theorem IsJacobiFieldOn.uniqueDiffOn (h : IsJacobiFieldOn I γ V s) : UniqueDiff
 /-- The coordinate reading of a Jacobi field is differentiable within its parameter set. -/
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord
     (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
-    DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t :=
+    DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t :=
   TauCeti.Manifold.differentiableWithinAt_sectionCoord γ V
     ((h.contMDiffOn t ht).mdifferentiableWithinAt (by norm_num))
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
@@ -105,7 +105,7 @@ theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin (h : IsJacobiFieldOn I γ V
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
     (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
     DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
+      (sectionCoord ℝ (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
     h.uniqueDiffOn (h.contMDiffOn t ht) ht
 
@@ -145,19 +145,53 @@ theorem IsJacobiFieldOn.const_smul (h : IsJacobiFieldOn I γ V s) (c : ℝ) :
     simpa only [alongCurveWithin_const_smul, map_smul, LinearMap.smul_apply, ← smul_add,
       smul_zero] using congrArg (c • ·) (h.equation r hr)
 
+/-- Being a Jacobi field on `s` depends only on the curve and the tangent-bundle lift of the field
+on `s`. This transports Jacobi fields across curves that agree on `s`, such as a geodesic and its
+reparametrized maximal geodesic. -/
+theorem IsJacobiFieldOn.congr_totalSpace
+    {δ : ℝ → M} {W : ∀ t, TangentSpace I (δ t)}
+    (h : IsJacobiFieldOn I γ V s)
+    (hEq : ∀ r ∈ s, TotalSpace.mk' E (δ r) (W r) = TotalSpace.mk' E (γ r) (V r)) :
+    IsJacobiFieldOn I δ W s := by
+  let cov := leviCivitaConnection I M
+  have hcurve : EqOn δ γ s := fun r hr ↦ congrArg TotalSpace.proj (hEq r hr)
+  have hheq : ∀ r ∈ s, HEq (W r) (V r) := fun r hr ↦ (TotalSpace.ext_iff.mp (hEq r hr)).2
+  have hfirst : ∀ r ∈ s,
+      HEq (alongCurveWithin cov δ W s r) (alongCurveWithin cov γ V s r) := fun r hr ↦
+    alongCurveWithin_congr_heq cov W (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin)
+      (hcurve hr) (mem_of_superset self_mem_nhdsWithin hheq) (hheq r hr)
+  refine ⟨h.isGeodesicCurveOn.congr hcurve, h.contMDiffOn.congr hEq, fun r hr ↦ ?_⟩
+  have hsecond : HEq (alongCurveWithin cov δ (alongCurveWithin cov δ W s) s r)
+      (alongCurveWithin cov γ (alongCurveWithin cov γ V s) s r) :=
+    alongCurveWithin_congr_heq cov (alongCurveWithin cov δ W s)
+      (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin) (hcurve hr)
+      (mem_of_superset self_mem_nhdsWithin hfirst) (hfirst r hr)
+  have hvel : HEq (curveVelocityWithin I δ s r) (curveVelocityWithin I γ s r) := by
+    have hlift := (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin).curveVelocityLiftWithin_eq
+      (I := I) (hcurve hr)
+    rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply] at hlift
+    exact (TotalSpace.ext_iff.mp hlift).2
+  have hpt : δ r = γ r := hcurve hr
+  have hwv : HEq (W r) (V r) := hheq r hr
+  have heq_r := h.equation r hr
+  generalize alongCurveWithin cov δ (alongCurveWithin cov δ W s) s r = d₂W at hsecond ⊢
+  generalize alongCurveWithin cov γ (alongCurveWithin cov γ V s) s r = d₂V at hsecond heq_r
+  generalize curveVelocityWithin I δ s r = uδ at hvel ⊢
+  generalize curveVelocityWithin I γ s r = uγ at hvel heq_r
+  generalize W r = wr at hwv ⊢
+  generalize V r = vr at hwv heq_r
+  generalize δ r = x at hpt d₂W uδ wr ⊢
+  generalize γ r = y at hpt d₂V uγ vr hsecond hvel hwv heq_r
+  subst hpt
+  cases eq_of_heq hsecond
+  cases eq_of_heq hvel
+  cases eq_of_heq hwv
+  exact heq_r
+
 /-- A field agreeing with a Jacobi field on its parameter set is again a Jacobi field there. -/
 theorem IsJacobiFieldOn.congr (h : IsJacobiFieldOn I γ V s)
-    (hWV : ∀ r ∈ s, W r = V r) : IsJacobiFieldOn I γ W s := by
-  have hfirst : ∀ r ∈ s, alongCurveWithin (leviCivitaConnection I M) γ W s r =
-      alongCurveWithin (leviCivitaConnection I M) γ V s r := by
-    intro r hr
-    exact alongCurveWithin_congr _ γ W
-      (Filter.mem_of_superset self_mem_nhdsWithin (hWV ·)) (hWV r hr)
-  refine ⟨h.isGeodesicCurveOn, h.contMDiffOn.congr (fun r hr ↦ ?_), fun r hr ↦ ?_⟩
-  · rw [hWV r hr]
-  · rw [alongCurveWithin_congr _ γ _
-      (Filter.mem_of_superset self_mem_nhdsWithin (hfirst ·)) (hfirst r hr), hWV r hr]
-    exact h.equation r hr
+    (hWV : ∀ r ∈ s, W r = V r) : IsJacobiFieldOn I γ W s :=
+  h.congr_totalSpace fun r hr ↦ congrArg (TotalSpace.mk' E (γ r)) (hWV r hr)
 
 /-- Sums of Jacobi fields along the same geodesic are Jacobi fields. -/
 theorem IsJacobiFieldOn.add (hV : IsJacobiFieldOn I γ V s)
