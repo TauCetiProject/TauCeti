@@ -92,6 +92,6 @@ theorem Nat.sum_range_factorial_mul_pow_le {α : Type*} [CommSemiring α] [Parti
   refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA _)
   have hc : 0 < m.choose k := Nat.choose_pos (Nat.lt_succ_iff.1 (mem_range.1 hk))
   have h : k.factorial ≤ m ^ k * m.choose k :=
-    (Nat.le_mul_of_pos_right _ hc).trans ((m.descFactorial_eq_factorial_mul_choose k).ge.trans
-      ((m.descFactorial_le_pow k).trans (Nat.le_mul_of_pos_right _ hc)))
+    (Nat.factorial_le_pow k).trans ((Nat.pow_le_pow_left
+      (Nat.lt_succ_iff.1 (mem_range.1 hk)) k).trans (Nat.le_mul_of_pos_right _ hc))
   exact (Nat.mono_cast h).trans_eq (by push_cast; ring)

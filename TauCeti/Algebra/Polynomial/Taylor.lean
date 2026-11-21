@@ -94,12 +94,14 @@ theorem taylor_neg_taylor {R : Type*} [Ring R] (r : R) (p : R[X]) :
 
 /-- Taylor expansion commutes with rescaling the variable: the expansion of `p(a X)` at `r` is
 the expansion of `p` at `a r`, rescaled. -/
+@[simp]
 theorem taylor_comp_C_mul_X {R : Type*} [CommSemiring R] (p : R[X]) (a r : R) :
     taylor r (p.comp (C a * X)) = (taylor (a * r) p).comp (C a * X) := by
   simp only [taylor_apply, comp_assoc, mul_comp, C_comp, X_comp, add_comp, mul_add, C_mul]
 
 /-- The Hasse derivatives of the rescaled polynomial `p(a X)`: the `k`-th one at `r` is
 `a ^ k` times the `k`-th Hasse derivative of `p` at `a r`. -/
+@[simp]
 theorem eval_hasseDeriv_comp_C_mul_X {R : Type*} [CommSemiring R] (p : R[X]) (a r : R)
     (k : ℕ) : (hasseDeriv k (p.comp (C a * X))).eval r = a ^ k * (hasseDeriv k p).eval (a * r) := by
   rw [← taylor_coeff, ← taylor_coeff, taylor_comp_C_mul_X, comp_C_mul_X_coeff, mul_comm]
