@@ -152,7 +152,7 @@ lemma singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_h
   let g := TopPair.ofSubsetIso
     (X := TopCat.of φ.source) (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
     (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-    (fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm)
+    (fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm)
   let f' := TopPair.excisionMap (X := TopCat.of E) φ.target {φ x}ᶜ
   let a := singularHomology₀Section R (⟨x, hx⟩ : φ.source) ≫
     (TopPair.ofSubset (Subtype.val ⁻¹' {x}ᶜ : Set (TopCat.of φ.source))).singularHomologyπ R 0
@@ -163,7 +163,7 @@ lemma singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_h
       (fun k ↦ TopPair.Hom.fst k (⟨x, hx⟩ : φ.source))
       (TopPair.ofSubsetIso_hom (X := TopCat.of φ.source) (Y := TopCat.of φ.target)
         (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
-        φ.toHomeomorphSourceTarget (fun z ↦ (φ.injOn.eq_iff z.2 hx).not.symm))
+        φ.toHomeomorphSourceTarget (fun z ↦ (φ.injOn.eq_iff z.property hx).not.symm))
     exact congrArg Subtype.val (hg'.trans
       (TopPair.ofSubsetMap_fst_apply (X := TopCat.of φ.source) (Y := TopCat.of φ.target)
         (B := Subtype.val ⁻¹' {x}ᶜ) (B' := Subtype.val ⁻¹' {φ x}ᶜ)
