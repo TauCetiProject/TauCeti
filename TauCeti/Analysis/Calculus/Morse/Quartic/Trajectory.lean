@@ -203,17 +203,13 @@ theorem mul_mem_Ioo_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet
     exact ⟨abs_pos.2 hne, abs_lt.2 hy'⟩
   · exact absurd (h1.trans h2.symm) h
 
-/-- The ends of a trajectory in the cube are critical points of the quartic, and the target is
-obtained from the source by replacing some zero coordinates by `±1`. -/
+/-- The target of a trajectory in the cube is a critical point of the quartic, obtained from the
+source by replacing some zero coordinates by `±1`; so the source is a critical point too
+(`TauCeti.forall_eq_neg_one_or_eq_zero_or_eq_one_left`). -/
 theorem forall_eq_or_eq_of_mem_quarticConnectingSet (hy : y ∈ quarticConnectingSet p q) :
-    (∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) ∧ (∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) ∧
-      ∀ i, p i ≠ q i → p i = 0 := by
+    (∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) ∧ ∀ i, p i ≠ q i → p i = 0 := by
   have h := (tendsto_quarticWellSumFlow_atBot_atTop_iff hy.1).1 hy.2
-  refine ⟨fun i ↦ ?_, fun i ↦ ?_, fun i hi ↦ ?_⟩
-  · rcases h i with ⟨-, h0, -⟩ | ⟨h1 | h1, h2, -⟩
-    · exact .inr (.inl h0)
-    · exact .inl (h2.trans h1)
-    · exact .inr (.inr (h2.trans h1))
+  refine ⟨fun i ↦ ?_, fun i hi ↦ ?_⟩
   · rcases h i with ⟨-, -, h0⟩ | ⟨h1 | h1, -, h2⟩
     · rw [h0]
       cases SignType.sign (y i) <;> simp
@@ -280,7 +276,7 @@ theorem quarticTrajectoryPoint_mem_quarticConnectingSet (hq : ∀ i, q i = -1 �
 @[simp]
 theorem quarticTrajectoryPoint_quarticTimeShift (hy : y ∈ quarticConnectingSet p q) :
     quarticTrajectoryPoint p q (quarticTimeShift p q y) = y := by
-  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
+  obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
   funext i
   by_cases hi : p i = q i
   · rw [quarticTrajectoryPoint_apply_of_eq _ hi, apply_eq_of_mem_quarticConnectingSet hy hi]
@@ -308,18 +304,19 @@ theorem bijOn_quarticTrajectoryPoint (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i =
     (fun τ _ ↦ quarticTrajectoryPoint_mem_quarticConnectingSet hq hpq τ) (mapsTo_univ _ _)
 
 /-- **Critical points joined by trajectories in the cube.** There is a trajectory from `p` to `q`
-in the cube exactly when `p` and `q` are critical points of the Euclidean quartic and `q` is
-obtained from `p` by replacing some zero coordinates by `±1`. -/
+in the cube exactly when `q` is a critical point of the Euclidean quartic obtained from `p` by
+replacing some zero coordinates by `±1`; then `p` is a critical point too
+(`TauCeti.forall_eq_neg_one_or_eq_zero_or_eq_one_left`). -/
 theorem quarticConnectingSet_nonempty_iff :
-    (quarticConnectingSet p q).Nonempty ↔ (∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) ∧
+    (quarticConnectingSet p q).Nonempty ↔
       (∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) ∧ ∀ i, p i ≠ q i → p i = 0 :=
-  ⟨fun ⟨_, hy⟩ ↦ forall_eq_or_eq_of_mem_quarticConnectingSet hy, fun ⟨_, hq, hpq⟩ ↦
+  ⟨fun ⟨_, hy⟩ ↦ forall_eq_or_eq_of_mem_quarticConnectingSet hy, fun ⟨hq, hpq⟩ ↦
     ⟨_, quarticTrajectoryPoint_mem_quarticConnectingSet hq hpq 0⟩⟩
 
 /-- Along the flow the time shifts of a point advance at unit rate. -/
 theorem quarticTimeShift_quarticWellSumFlow (hy : y ∈ quarticConnectingSet p q) (s : ℝ) :
     quarticTimeShift p q (quarticWellSumFlow s y) = fun j ↦ s + quarticTimeShift p q y j := by
-  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
+  obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
   conv_lhs => rw [← quarticTrajectoryPoint_quarticTimeShift hy,
     quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
   exact quarticTimeShift_quarticTrajectoryPoint hq hpq _
@@ -358,7 +355,7 @@ theorem eq_quarticTrajectoryPoint_of_isIntegralCurve {γ : ℝ → ι → ℝ}
     (htop : Tendsto γ atTop (𝓝 q)) :
     γ = fun t ↦ quarticTrajectoryPoint p q fun j ↦ t + quarticTimeShift p q (γ 0) j := by
   have h0 := mem_quarticConnectingSet_of_isIntegralCurve hγ hmem hbot htop
-  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet h0
+  obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet h0
   conv_lhs => rw [eq_quarticWellSumFlow_of_isIntegralCurve hγ hmem,
     ← quarticTrajectoryPoint_quarticTimeShift h0]
   simp only [quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
@@ -371,7 +368,7 @@ theorem existsUnique_eq_quarticTrajectoryPoint_of_isIntegralCurve {γ : ℝ → 
     (htop : Tendsto γ atTop (𝓝 q)) :
     ∃! τ : {i // p i ≠ q i} → ℝ, γ = fun t ↦ quarticTrajectoryPoint p q fun j ↦ t + τ j := by
   refine ⟨_, eq_quarticTrajectoryPoint_of_isIntegralCurve hγ hmem hbot htop, fun τ hτ ↦ ?_⟩
-  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet
+  obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet
     (mem_quarticConnectingSet_of_isIntegralCurve hγ hmem hbot htop)
   rw [hτ]
   simp [quarticTimeShift_quarticTrajectoryPoint hq hpq]
@@ -402,7 +399,7 @@ theorem exists_quarticWellSumFlow_eq_iff (hy : y ∈ quarticConnectingSet p q) {
     (hy' : y' ∈ quarticConnectingSet p q) :
     (∃ s, quarticWellSumFlow s y = y') ↔
       quarticTimeShift p q y' - quarticTimeShift p q y ∈ ℝ ∙ (1 : {i // p i ≠ q i} → ℝ) := by
-  obtain ⟨-, hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
+  obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
   rw [Submodule.mem_span_singleton]
   constructor
   · rintro ⟨s, rfl⟩

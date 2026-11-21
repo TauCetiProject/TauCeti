@@ -96,9 +96,9 @@ theorem strictAnti_quarticWellSum_quarticWellSumFlow_quarticTrajectoryPoint
   · rw [quarticTrajectoryPoint_apply_of_eq _ hi, quarticTrajectoryPoint_apply_of_eq _ hi]
   · exact (hlt ⟨i, hi⟩).le
 
-/-- **Level slices of the trajectory spaces.** The quartic takes along each trajectory from `p`
-to `q` exactly the values strictly between its values at `q` and at `p`, each exactly once. This
-also holds for `p = q`, where both sides are false. -/
+/-- **Level slices of the trajectory spaces.** The levels of the quartic crossed exactly once
+along each trajectory from `p` to `q` are exactly those strictly between its values at `q` and at
+`p`. For `p = q` no level is crossed exactly once, since the trajectory is constant. -/
 theorem existsUnique_quarticWellSum_quarticWellSumFlow_eq_iff
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (hpq : ∀ i, p i ≠ q i → p i = 0)
     (τ : {i // p i ≠ q i} → ℝ) {c : ℝ} :
