@@ -15,7 +15,6 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Conformal.Area
-import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Sobolev.Poincare.Slab
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 
@@ -37,14 +36,10 @@ Dirichlet energy: if `χ` is `C¹`, compactly supported and vanishes on the disc
 the point at infinity. In the coordinate `z = w⁻¹` centred at infinity, the map `η = χ ∘ (·⁻¹)` is
 supported in the disc `|z| ≤ 1 / R`. The weight `|w|⁻⁴` is the area distortion `‖(w⁻¹)'‖²` of the
 inversion, so the change of variables formula on `ℂ`
-(`TauCeti.integral_inv_sq_norm_sq_smul_eq`) turns the left side into `∫ ‖η‖²`, and
-the Dirichlet energy is conformally invariant (`TauCeti.fderiv_comp_inv_apply`). The Poincaré
-inequality on a strip of width `4 / R` containing that disc
+(`TauCeti.integral_inv_sq_norm_sq_smul_eq`) turns the left side into `∫ ‖η‖²`, and the Dirichlet
+energy does not grow under the inversion (`TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le`).
+The Poincaré inequality on a strip of width `4 / R` containing that disc
 (`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`) then gives the bound.
-
-The norm on the target is arbitrary, so the Dirichlet energy is only conformally invariant up to
-the inequality `‖a v₁ + b v₂‖² ≤ (a² + b²) (‖v₁‖² + ‖v₂‖²)`
-(`TauCeti.norm_smul_add_smul_sq_le`), which is enough here.
 -/
 
 public section
@@ -56,43 +51,6 @@ open scoped Topology
 open _root_.Complex (equivRealProdCLM volume_preserving_equiv_real_prod I)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- **The Dirichlet energy does not grow under the inversion.** For a `C¹` map `f` of `ℂ` with
-integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in the direction `i` is
-at most the Dirichlet energy of `f`. -/
-private theorem integral_norm_fderiv_comp_inv_I_sq_le {f : ℂ → V}
-    (hE : Integrable fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :
-    ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 ≤
-      ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) := by
-  set E : ℂ → ℝ := fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2
-  have hs : MeasurableSet ({0}ᶜ : Set ℂ) := (measurableSet_singleton 0).compl
-  have hd (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) : DifferentiableAt ℂ (·⁻¹) z := differentiableAt_inv hz
-  have himage : (·⁻¹) '' ({0}ᶜ : Set ℂ) = {0}ᶜ := by
-    rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero]
-  -- Pointwise, `‖∂_i (f ∘ inv)‖² ≤ ‖(z⁻¹)'‖² E(z⁻¹)`, by Cauchy–Schwarz in the real coordinates of
-  -- the direction `-(z²)⁻¹ i`.
-  have hpt (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) :
-      ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 ≤ ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹ := by
-    have ha : -(z ^ 2)⁻¹ * I = (-(z ^ 2)⁻¹ * I).re • (1 : ℂ) + (-(z ^ 2)⁻¹ * I).im • I := by
-      rw [Complex.real_smul, Complex.real_smul, mul_one, Complex.re_add_im]
-    have hn (w : ℂ) : ‖w‖ ^ 2 = (w * I).re ^ 2 + (w * I).im ^ 2 := by
-      simp [Complex.sq_norm, Complex.normSq_apply]
-      ring
-    rw [fderiv_comp_inv_apply hz, ha, map_add, map_smul, map_smul, deriv_inv, smul_eq_mul,
-      hn (-(z ^ 2)⁻¹)]
-    exact norm_smul_add_smul_sq_le _ _ _ _
-  have hEi : IntegrableOn (fun z ↦ ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹) {0}ᶜ :=
-    (integrableOn_image_iff_integrableOn_norm_deriv_sq_smul hd hs inv_injective.injOn E).1
-      (himage ▸ hE.integrableOn)
-  calc ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2
-      = ∫ z in {0}ᶜ, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 := by
-        rw [restrict_compl_singleton]
-    _ ≤ ∫ z in {0}ᶜ, ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹ :=
-        integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ sq_nonneg _) hEi
-          ((ae_restrict_iff' hs).2 (Eventually.of_forall hpt))
-    _ = ∫ w in (·⁻¹) '' {0}ᶜ, E w :=
-        (integral_image_eq_integral_norm_deriv_sq_smul hd hs inv_injective.injOn E).symm
-    _ = ∫ w, E w := by rw [himage, restrict_compl_singleton]
 
 /-- **The Poincaré inequality on a horizontal strip of `ℂ`.** A compactly supported `C¹` map of
 `ℂ` vanishing where `r ≤ |Im z|` satisfies `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`; this is
@@ -135,7 +93,8 @@ private theorem integral_norm_sq_comp_inv_le {f : ℂ → V} {R : ℝ} (hR : 0 <
   calc _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 := hpoinc
     _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :=
         mul_le_mul_of_nonneg_left
-          (integral_norm_fderiv_comp_inv_I_sq_le (integrable_norm_fderiv_sq_add hf hfc 1 I))
+          ((integral_norm_fderiv_comp_inv_apply_sq_le I
+            (integrable_norm_fderiv_sq_add hf hfc 1 I)).trans_eq (by simp))
           (sq_nonneg _)
     _ = _ := by ring
 

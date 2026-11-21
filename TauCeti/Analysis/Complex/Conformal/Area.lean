@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Determinant
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Area and change of variables for a holomorphic map
@@ -91,6 +92,8 @@ because that is what Mathlib's versions of them ask for.
   exactly when that of `u` is integrable on `s⁻¹`.
 * `TauCeti.integral_inv_sq_norm_sq_smul_eq` — the change of variables formula for the inversion:
   `∫ |w|⁻⁴ • g w = ∫ g z⁻¹`.
+* `TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le` — the Dirichlet energy does not grow under
+  the inversion: `∫ ‖∂_v (f ∘ (·⁻¹))‖² ≤ ‖v‖² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`.
 
 ## References
 
@@ -316,5 +319,45 @@ theorem integral_inv_sq_norm_sq_smul_eq (g : ℂ → E) :
   congr 1
   ext z
   simp [deriv_inv]
+
+/-- **The Dirichlet energy does not grow under the inversion.** For a map `f` of `ℂ` with
+integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in a direction `v` is at
+most `‖v‖ ^ 2` times the Dirichlet energy of `f`. The target norm is arbitrary, so the bound comes
+from Cauchy–Schwarz (`TauCeti.norm_smul_add_smul_sq_le`) rather than from conformal invariance. -/
+theorem integral_norm_fderiv_comp_inv_apply_sq_le {f : ℂ → E} (v : ℂ)
+    (hE : Integrable fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :
+    ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2 ≤
+      ‖v‖ ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) := by
+  set G : ℂ → ℝ := fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2
+  have hs : MeasurableSet ({0}ᶜ : Set ℂ) := (measurableSet_singleton 0).compl
+  have hd (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) : DifferentiableAt ℂ (·⁻¹) z := differentiableAt_inv hz
+  have himage : (·⁻¹) '' ({0}ᶜ : Set ℂ) = {0}ᶜ := by
+    rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero]
+  -- Pointwise, `‖∂_v (f ∘ inv)‖² ≤ ‖v‖² ‖(z⁻¹)'‖² G(z⁻¹)`, by Cauchy–Schwarz in the real
+  -- coordinates of the direction `-(z²)⁻¹ v`.
+  have hpt (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) :
+      ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2 ≤ ‖v‖ ^ 2 * ‖deriv (·⁻¹) z‖ ^ 2 • G z⁻¹ := by
+    have hc : -(z ^ 2)⁻¹ * v = (-(z ^ 2)⁻¹ * v).re • (1 : ℂ) + (-(z ^ 2)⁻¹ * v).im • I := by
+      rw [Complex.real_smul, Complex.real_smul, mul_one, Complex.re_add_im]
+    have hn : (-(z ^ 2)⁻¹ * v).re ^ 2 + (-(z ^ 2)⁻¹ * v).im ^ 2 =
+        ‖v‖ ^ 2 * ‖deriv (·⁻¹) z‖ ^ 2 := by
+      rw [deriv_inv, ← mul_pow, ← norm_mul, mul_comm, Complex.sq_norm, Complex.normSq_apply]
+      ring
+    rw [fderiv_comp_inv_apply hz, hc, map_add, map_smul, map_smul, smul_eq_mul, ← mul_assoc,
+      ← hn]
+    exact norm_smul_add_smul_sq_le _ _ _ _
+  have hGi : IntegrableOn (fun z ↦ ‖deriv (·⁻¹) z‖ ^ 2 • G z⁻¹) {0}ᶜ :=
+    (integrableOn_image_iff_integrableOn_norm_deriv_sq_smul hd hs inv_injective.injOn G).1
+      (himage ▸ hE.integrableOn)
+  calc ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2
+      = ∫ z in {0}ᶜ, ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2 := by
+        rw [restrict_compl_singleton]
+    _ ≤ ∫ z in {0}ᶜ, ‖v‖ ^ 2 * ‖deriv (·⁻¹) z‖ ^ 2 • G z⁻¹ :=
+        integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _) (hGi.const_mul _)
+          ((ae_restrict_iff' hs).2 (Filter.Eventually.of_forall hpt))
+    _ = ‖v‖ ^ 2 * ∫ w in (·⁻¹) '' {0}ᶜ, G w := by
+        rw [integral_const_mul, integral_image_eq_integral_norm_deriv_sq_smul hd hs
+          inv_injective.injOn G]
+    _ = ‖v‖ ^ 2 * ∫ w, G w := by rw [himage, restrict_compl_singleton]
 
 end TauCeti
