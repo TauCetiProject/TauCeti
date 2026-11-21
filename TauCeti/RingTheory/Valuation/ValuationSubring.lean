@@ -32,6 +32,9 @@ all zero, one of largest valuation divides all the others in the valuation subri
 * `ValuationSubring.comap_eq_of_map_maximalIdeal_le`: a valuation subring `W` of `L` pulls back to
   a valuation subring `V` of `K` when `V` maps through a ring `S` into `W`, with its maximal ideal
   landing in an ideal of `S` that is sent into the nonunits of `W`.
+* `ValuationSubring.exists_comap_eq`: any valuation subring extends along a field embedding.
+* `ValuationSubring.integralClosure_toSubring_le`: every extension contains the integral closure
+  of the base valuation subring.
 
 ## References
 
@@ -132,3 +135,29 @@ theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [Com
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
 
 end RingHom
+
+namespace ValuationSubring
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- A valuation subring of `K` extends along any embedding into a field `L`. -/
+theorem exists_comap_eq (A : ValuationSubring K) (f : K →+* L) :
+    ∃ B : ValuationSubring L, B.comap f = A := by
+  let ψ := f.comp A.subtype
+  obtain ⟨B, hmem, hnon⟩ := ψ.exists_valuationSubring_mem_and_image_subset_nonunits
+    (maximalIdeal.isMaximal A).ne_top (by
+      rw [(RingHom.injective_iff_ker_eq_bot ψ).mp (f.injective.comp A.subtype_injective)]
+      exact bot_le)
+  exact ⟨B, comap_eq_of_map_maximalIdeal_le (RingHom.id A) ψ (by simp) hmem hnon f
+    (fun a ↦ by simp only [ψ, RingHom.id_apply, RingHom.comp_apply, subtype_apply])⟩
+
+/-- A valuation subring contains the integral closure of any base valuation subring contained
+in its pullback. -/
+theorem integralClosure_toSubring_le [Algebra K L] (B : ValuationSubring L) {A : ValuationSubring K}
+    (h : A ≤ B.comap (algebraMap K L)) : (integralClosure A L).toSubring ≤ B.toSubring := by
+  have : IsIntegrallyClosedIn B.toSubring L := inferInstanceAs (IsIntegrallyClosedIn B L)
+  refine Subring.integralClosure_le_iff.mpr fun a ↦ ?_
+  rw [mem_toSubring, IsScalarTower.algebraMap_apply A K L, algebraMap_apply, ← mem_comap]
+  exact h a.property
+
+end ValuationSubring
