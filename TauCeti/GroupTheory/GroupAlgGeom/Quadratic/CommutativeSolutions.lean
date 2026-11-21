@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
 import TauCeti.Algebra.BigOperators.Group.List
-import TauCeti.GroupTheory.GroupAlgGeom.FreeDiscrimination
 import TauCeti.GroupTheory.GroupAlgGeom.Separated
 import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
 
@@ -37,8 +36,9 @@ Proposition 8 (4)). The proof follows [VAR-I]:
 * The group of the system embeds over `G` in the free product of the extension
   `G(d, ℤ^{m + n})` of the centralizer of `d` with the free group on the variables, by
   `zⱼ ↦ a(zⱼ) tⱼ` and `x_k ↦ a(x_k) t_{m+k}`, the image of `x₁` being corrected so that the product
-  relation holds. This group is discriminated by `G`, so the radical of the system is its normal
-  closure.
+  relation holds. This group is discriminated by `G`
+  (`TauCeti.LimitGroup.CentralizerExt.isDiscriminatedBy_inl_comp_of`), so the radical of the
+  system is its normal closure.
 
 The commutators are Mathlib's `⁅g, h⁆ = g h g⁻¹ h⁻¹`; their normal closures are the same as with the
 convention `[g, h] = g⁻¹ h⁻¹ g h` of the sources. For one conjugated coefficient, the system is the
@@ -377,8 +377,7 @@ private theorem mem_V_extPoint (hG : IsCommTransitive G) (hd : d ≠ 1)
   · have hx : (List.ofFn fun k ↦ extPoint x z a hs (x k)) =
         (List.ofFn fun k ↦ (⟨a (x k), hs k⟩, xExp m n k)).map (inl.comp CentralizerExt.ofProd) := by
       simp [extPoint_x inj, List.map_ofFn, Function.comp_def]
-    rw [hx, ← map_list_prod, ← Prod.mk.eta (p := List.prod _), Prod.fst_list_prod,
-      Prod.snd_list_prod]
+    rw [hx, ← map_list_prod, ← Prod.mk.eta (p := List.prod _)]
     simp [prod_xExp, List.map_ofFn, Function.comp_def, List.prod_ofFn]
   · rw [extPoint_x inj, extPoint_x inj]; exact hcomm _ _
   · rw [hz, extPoint_x inj]; exact hcomm _ _
@@ -452,8 +451,7 @@ private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (hG : IsCommTran
         Pi.mulSingle (Fin.natAdd m k) (.ofAdd 1))).map (ψK.comp CentralizerExt.ofProd) := by
       simp [List.map_ofFn, Function.comp_def, hψK, τ, letterVals]
     have h1 := ((mem_V_commutativeSystem_iff ι x z c a v).1 hv).1
-    rw [hx, ← map_list_prod, MonoidHom.comp_apply, hψK, Prod.fst_list_prod,
-      Prod.snd_list_prod] at h1
+    rw [hx, ← map_list_prod, MonoidHom.comp_apply, hψK] at h1
     simpa [Subgroup.val_list_prod, List.map_ofFn, Function.comp_def, List.prod_ofFn] using h1
   refine ⟨lift ψK (FreeGroup.lift v), hom_ext (MonoidHom.ext fun g ↦ ?_)
     (FreeGroup.ext_hom _ _ fun y ↦ ?_)⟩
@@ -473,18 +471,6 @@ private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (hG : IsCommTran
       simp [τ, letterVals]
   · simp [extPoint, Function.extend_apply' _ _ _ hy]
 
-/-- The free product of an extension of the centralizer of `d ≠ 1` with a free group is
-discriminated by a nonabelian fully residually free group `G`. -/
-private theorem isDiscriminatedBy_inl_comp_of (hG : IsFullyResiduallyFree G)
-    (hna : ¬IsMulCommutative G) (hd : d ≠ 1) (r : ℕ) :
-    IsDiscriminatedBy (inl.comp CentralizerExt.of : G →* GX (CentralizerExt d r) X) (.id G) := by
-  have hK : IsFullyResiduallyFree (CentralizerExt d r) := isFullyResiduallyFree_centralizerExt hG hd
-  have hKna : ¬IsMulCommutative (CentralizerExt d r) := fun h ↦ hna ⟨⟨fun g g' ↦
-    CentralizerExt.of_injective (u := d) (n := r)
-      (by rw [map_mul, map_mul]; exact h.is_comm.comm _ _)⟩⟩
-  exact ((GX.isDiscriminatedBy hK.isBP hK.isCSA hKna).comp CentralizerExt.of).trans
-    (CentralizerExt.isDiscriminatedBy hG.isBP hG.isCSA hd)
-
 /-- The group of the system is separated by `G`. -/
 private theorem isSeparatedBy_coeff_commutativeSystem (hG : IsFullyResiduallyFree G)
     (hna : ¬IsMulCommutative G) (inj : (Sum.elim x z).Injective) (hd : d ≠ 1)
@@ -502,7 +488,7 @@ private theorem isSeparatedBy_coeff_commutativeSystem (hG : IsFullyResiduallyFre
     mem_V.2 fun t ht ↦ by
       rw [hξ, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
       exact subset_normalClosure ht
-  refine (isDiscriminatedBy_inl_comp_of hG hna hd _).isSeparatedBy.of_injective
+  refine (CentralizerExt.isDiscriminatedBy_inl_comp_of hG hna hd).isSeparatedBy.of_injective
     (SystemGroup.evalGHom _ (mem_V_extPoint hG.isCommTransitive hd inj hs hC))
     (Function.LeftInverse.injective (g := ψ) fun w ↦ ?_)
   obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective w

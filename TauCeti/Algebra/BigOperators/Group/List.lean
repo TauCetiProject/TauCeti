@@ -200,15 +200,15 @@ variable {M N : Type*} [Monoid M] [Monoid N]
 
 /-- The first component of a product along a list of pairs is the product of the first
 components. -/
-@[to_additive /-- The first component of a sum along a list of pairs is the sum of the first
-components. -/]
+@[to_additive (attr := simp) /-- The first component of a sum along a list of pairs is the sum of
+the first components. -/]
 theorem fst_list_prod (l : List (M × N)) : l.prod.1 = (l.map Prod.fst).prod :=
   map_list_prod (MonoidHom.fst M N) l
 
 /-- The second component of a product along a list of pairs is the product of the second
 components. -/
-@[to_additive /-- The second component of a sum along a list of pairs is the sum of the second
-components. -/]
+@[to_additive (attr := simp) /-- The second component of a sum along a list of pairs is the sum of
+the second components. -/]
 theorem snd_list_prod (l : List (M × N)) : l.prod.2 = (l.map Prod.snd).prod :=
   map_list_prod (MonoidHom.snd M N) l
 
