@@ -21,9 +21,11 @@ local-martingale arguments retain the continuity or right continuity of their na
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
 Pathwise set membership up to the random time also passes to the stopped process. Neither
-fact requires a stopping-time or measurability assumption. Under a finite measure, truncating an
-almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an
-integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
+fact requires a stopping-time or measurability assumption. Restricting a strongly progressive
+process to `{⊥ < τ}` before stopping preserves strong progressivity
+(`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`). Under a finite measure,
+truncating an almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound
+`T : ℝ≥0` yields an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -51,7 +53,7 @@ theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
   have heq : s.sup τ = fun ω ↦ s.sup (fun j ↦ τ j ω) := funext (s.sup_apply τ)
   exact heq ▸ h
 
-open Filter Set
+open Filter Set TopologicalSpace
 open scoped Topology
 
 /-- Stopping preserves continuity of a path, without any measurability or stopping-time
@@ -134,6 +136,25 @@ theorem ae_nonneg_stoppedProcess_indicator
     exact Set.indicator_apply_nonneg (fun _ ↦ hω t)
   · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
     exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
+
+/-- Stopping a strongly progressive process restricted to the event that the stopping time is
+strictly above the bottom time preserves strong progressivity. -/
+theorem IsStronglyProgressive.stoppedProcess_indicator_pos
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
+    [SecondCountableTopology ι] [PseudoMetrizableSpace ι] [MeasurableSpace ι] [BorelSpace ι]
+    [TopologicalSpace E] [Zero E] {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ}
+    {X : ι → Ω → E} (hX : IsStronglyProgressive ℱ X) {τ : Ω → WithTop ι}
+    (hτ : IsStoppingTime ℱ τ) :
+    IsStronglyProgressive ℱ
+      (MeasureTheory.stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ) :=
+  fun T ↦ by
+  let : MeasurableSpace Ω := ℱ T
+  have hpos : MeasurableSet[ℱ T] {ω | (⊥ : WithTop ι) < τ ω} :=
+    ℱ.mono bot_le _ (hτ.measurableSet_gt ⊥)
+  convert ((hX.stoppedProcess hτ) T).indicator (MeasurableSet.univ.prod hpos) using 1
+  ext ⟨t, ω⟩
+  rw [stoppedProcess_indicator_comm]
+  by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
 
 open scoped NNReal
 
