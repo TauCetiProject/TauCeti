@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Prod
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Relative
 
@@ -34,15 +35,23 @@ quasi-isomorphisms by the relative Eilenberg–Zilber theorem for a space and a 
 quasi-isomorphism (`TauCeti.quasiIso_cubicalCrossProductPair`): the **Eilenberg–Zilber theorem for
 a product of pairs**. Consequently the Künneth map
 `⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ⟶ Hₙ(N(P × Q))` is an isomorphism over a field
-(`TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`). Everything is natural in both
-pairs.
+(`TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`), and over any commutative ring
+when the relative homology of `P` is projective
+(`TauCeti.isIso_cubicalHomologyKunnethPair_of_projective`). Everything is natural in both pairs.
 
-No hypothesis is placed on the subspaces. When the interiors of `A × Y` and `X × B` cover
-`A × Y ∪ X × B`, for instance when `A` and `B` are open, the small-chain theorem identifies the
-homology of `N(P × Q)` with the relative homology of `(X × Y, A × Y ∪ X × B)`; that comparison is
-not made here. For compact manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair
-`(M × N, ∂M × N ∪ M × ∂N)`, and `N(P × Q)` is the complex in which cross products of fundamental
-chains rel boundary are relative cycles.
+No hypothesis is placed on the subspaces. When `A × Y` and `X × B` form an excisive couple, for
+instance when `A` and `B` are open, the homology of `N(P × Q)` is the relative homology of
+`(X × Y, A × Y ∪ X × B)`
+(`TopPair.quasiIso_cubicalChainComplexProdComparison_of_isIso`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Excisive`). When `A` and `B` are
+open, it is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth map in
+relative singular homology (`TauCeti.singularHomologyKunnethPair`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`) is an isomorphism over a field
+(`TauCeti.isIso_singularHomologyKunnethPair_of_isSemisimpleRing`) or when the relative homology
+of `(X, A)` is projective (`TauCeti.isIso_singularHomologyKunnethPair_of_projective`). For compact
+manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair `(M × N, ∂M × N ∪ M × ∂N)`,
+and `N(P × Q)` is the complex in which cross products of fundamental chains rel boundary are
+relative cycles.
 
 ## Main definitions
 
@@ -59,8 +68,9 @@ chains rel boundary are relative cycles.
 * `TauCeti.cubicalCrossProductPair_naturality`, `TauCeti.cubicalHomologyKunnethPair_naturality`:
   naturality in both pairs.
 * `TauCeti.isIso_cubicalHomologyKunnethPair`,
-  `TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`: the Künneth theorem for a
-  product of pairs.
+  `TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`,
+  `TauCeti.isIso_cubicalHomologyKunnethPair_of_projective`: the Künneth theorem for a product of
+  pairs.
 
 ## References
 
@@ -292,5 +302,16 @@ theorem isIso_cubicalHomologyKunnethPair
 instance isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing [IsSemisimpleRing k] (n : ℕ) :
     IsIso (cubicalHomologyKunnethPair k P Q n) :=
   isIso_cubicalHomologyKunnethPair k P Q n
+
+/-- **The Künneth theorem for a product of pairs with projective homology**: if the relative
+cubical homology modules `Hₚ(X, A; k)` are all projective, then
+`⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ≅ Hₙ(N(P × Q))`. No condition is placed on the pair
+`Q`. -/
+theorem isIso_cubicalHomologyKunnethPair_of_projective
+    [∀ p, Projective ((P.cubicalChainComplex k).homology p)] (n : ℕ) :
+    IsIso (cubicalHomologyKunnethPair k P Q n) := by
+  have := isIso_homologyKunneth_of_projective (P.cubicalChainComplex k) (Q.cubicalChainComplex k) n
+  rw [cubicalHomologyKunnethPair_def]
+  infer_instance
 
 end TauCeti

@@ -189,7 +189,7 @@ theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq_of_memLp (hn : 
     rw [hx]
   obtain ⟨h, hh, hHh⟩ := exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero fun φ ↦
     hH ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
-  refine ⟨h, hh, ⟨w, w - u, hwv, hHh, by rw [sub_sub_cancel]; exact u.2⟩, ?_⟩
+  refine ⟨h, hh, ⟨w, w - u, hwv, hHh, by rw [sub_sub_cancel]; exact u.property⟩, ?_⟩
   filter_upwards [W1p.value_sub_ae w (u : W1p volume Omega 2), hwv, hHh] with x h₁ h₂ h₃
   rw [Pi.sub_apply, ← h₂, ← h₃, h₁, Pi.sub_apply, sub_sub_cancel]
 
