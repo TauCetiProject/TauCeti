@@ -11,8 +11,8 @@ import TauCeti.Analysis.InnerProductSpace.Complex
 /-!
 # Real inner products with a unit complex number
 
-Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by `‖ζ‖ ^ 2`
-(`TauCeti.RCLike.real_inner_mul_mul`). In particular multiplication by a unit complex number `ζ`
+Scalar multiplication by `ζ` scales the real inner product by `‖ζ‖ ^ 2`
+(`TauCeti.real_inner_smul_smul`). In particular multiplication by a unit complex number `ζ`
 is a rotation of the plane, so the real inner product of `ζ` with `ζ * w` is the real inner
 product of `1` with `w`, namely the real part of `w`. This lets the level sets `⟪ζ, z⟫_ℝ = t` be
 read in the rotated coordinate `w = conj ζ * z`.
@@ -40,7 +40,7 @@ variable {ζ : ℂ}
 /-- Multiplication by a unit complex number `ζ` preserves the real inner product. -/
 theorem inner_mul_mul_of_norm_eq_one (hζ : ‖ζ‖ = 1) (a b : ℂ) :
     inner ℝ (ζ * a) (ζ * b) = inner ℝ a b := by
-  rw [TauCeti.RCLike.real_inner_mul_mul, hζ, one_pow, one_mul]
+  simpa only [smul_eq_mul, hζ, one_pow, one_mul] using TauCeti.real_inner_smul_smul ζ a b
 
 /-- The real inner product of a unit complex number `ζ` with `ζ * w` is the real part of `w`. -/
 theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by

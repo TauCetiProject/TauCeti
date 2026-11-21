@@ -16,8 +16,8 @@ identity on `(E, +, ‖·‖)`, polarization forces `⟪x, y⟫_ℝ = RCLike.re 
 (`TauCeti.inner_real_eq_re_inner`) without any separate compatibility hypothesis. This applies
 simultaneously to `InnerProductSpace.rclikeToReal` (and `InnerProductSpace.complexToReal`) and to
 spaces such as `EuclideanSpace ℂ ι` whose coordinatewise real inner product is only propositionally
-equal to `Re ⟪·, ·⟫_ℂ`. On an `RCLike` field itself, multiplication by a scalar `ζ` scales the
-real inner product by `‖ζ‖ ^ 2` (`TauCeti.RCLike.real_inner_mul_mul`).
+equal to `Re ⟪·, ·⟫_ℂ`. In particular, on any such space scalar multiplication by `ζ : 𝕜` scales
+the real inner product by `‖ζ‖ ^ 2` (`TauCeti.real_inner_smul_smul`).
 
 On any complex inner product space, Hermitian symmetry gives `Im ⟪x, x⟫_ℂ = 0`, so pairwise
 vanishing of `Im ⟪·, ·⟫_ℂ` on a generating set `s` extends by `ℝ`-bilinearity to all pairs in
@@ -30,15 +30,15 @@ ambient real dimension.
 
 * `TauCeti.inner_real_eq_re_inner`: `⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜` whenever a `𝕜`-inner product
   (for `[RCLike 𝕜]`) and a real inner product share the same seminormed group structure.
-* `TauCeti.RCLike.real_inner_mul_mul`: `⟪ζ * a, ζ * b⟫_ℝ = ‖ζ‖ ^ 2 * ⟪a, b⟫_ℝ` in an `RCLike`
-  field.
+* `TauCeti.real_inner_smul_smul`: `⟪ζ • x, ζ • y⟫_ℝ = ‖ζ‖ ^ 2 * ⟪x, y⟫_ℝ` for `ζ : 𝕜` on such a
+  space.
 * `Set.Pairwise.im_inner_eq_zero_of_mem_span`: if `Im ⟪x, y⟫_ℂ` vanishes for distinct elements of
   `s`, then `Im ⟪x, y⟫_ℂ = 0` for all `x, y ∈ Submodule.span ℝ s`.
 -/
 
 public section
 
-open scoped ComplexConjugate InnerProductSpace
+open scoped InnerProductSpace
 
 namespace TauCeti
 
@@ -50,15 +50,14 @@ theorem inner_real_eq_re_inner (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [Seminor
     ⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜 := by
   linarith [norm_add_sq (𝕜 := 𝕜) x y, norm_add_sq_real x y]
 
-/-- Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by
-`‖ζ‖ ^ 2`. -/
-theorem RCLike.real_inner_mul_mul {K : Type*} [RCLike K] (ζ a b : K) :
-    ⟪ζ * a, ζ * b⟫_ℝ = ‖ζ‖ ^ 2 * ⟪a, b⟫_ℝ := by
-  simp only [real_inner_eq_re_inner K, RCLike.inner_apply, map_mul]
-  calc RCLike.re (ζ * b * (conj ζ * conj a))
-      = RCLike.re ((ζ * conj ζ) * (b * conj a)) := by ac_rfl
-    _ = ‖ζ‖ ^ 2 * RCLike.re (b * conj a) := by
-      rw [RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.re_ofReal_mul]
+/-- On any seminormed space carrying both a `𝕜`-inner product (for an `RCLike` field `𝕜`) and a
+real inner product for the same norm, scalar multiplication by `ζ : 𝕜` scales the real inner
+product by `‖ζ‖ ^ 2`. -/
+theorem real_inner_smul_smul {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [InnerProductSpace ℝ E] (ζ : 𝕜) (x y : E) :
+    ⟪ζ • x, ζ • y⟫_ℝ = ‖ζ‖ ^ 2 * ⟪x, y⟫_ℝ := by
+  rw [inner_real_eq_re_inner 𝕜, inner_real_eq_re_inner 𝕜, inner_smul_left, inner_smul_right,
+    ← mul_assoc, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.re_ofReal_mul]
 
 end TauCeti
 
