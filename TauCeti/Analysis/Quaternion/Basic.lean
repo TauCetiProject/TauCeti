@@ -40,7 +40,6 @@ quaternionic line in real dimension above four, and packages the standard basis
 * `Quaternion.normSq_inv_norm_smul_star`, `Quaternion.mul_inv_norm_smul_star`: for nonzero `q`,
   normalizing `star q` by `‖q‖⁻¹` gives a unit quaternion, and right multiplication by it sends any
   `q` to the nonnegative real quaternion `‖q‖`.
-* `Quaternion.mem_unitary_of_mem_sphere`: a unit quaternion is unitary.
 -/
 
 public section
@@ -88,12 +87,6 @@ theorem Quaternion.mul_inv_norm_smul_star (q : ℍ) :
   · have hn : ‖q‖ ≠ 0 := norm_ne_zero_iff.2 hq
     rw [mul_smul_comm, self_mul_star, normSq_eq_norm_mul_self, ← coe_mul_eq_smul, ← coe_mul,
       ← mul_assoc, inv_mul_cancel₀ hn, one_mul]
-
-/-- A unit Hamilton quaternion is unitary: `q * star q = 1` and `star q * q = 1`. -/
-theorem Quaternion.mem_unitary_of_mem_sphere {q : ℍ} (hq : q ∈ Metric.sphere (0 : ℍ) 1) :
-    q ∈ unitary ℍ := by
-  have h : normSq q = 1 := by rw [normSq_eq_norm_mul_self, mem_sphere_zero_iff_norm.1 hq, mul_one]
-  exact Unitary.mem_iff.2 ⟨by rw [star_mul_self, h, coe_one], by rw [self_mul_star, h, coe_one]⟩
 
 namespace TauCeti
 

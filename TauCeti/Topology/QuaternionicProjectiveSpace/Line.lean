@@ -357,9 +357,9 @@ theorem lineSphereFamily_eq_of_op_smul {f f' : twoFrame n}
     lineSphereFamily (f', q') = lineSphereFamily (f, q) := by
   have hc : ‖(c : ℍ)‖ = 1 := norm_eq_of_mem_sphere c
   have hcc : (c : ℍ) * star (c : ℍ) = 1 :=
-    Unitary.mul_star_self_of_mem (mem_unitary_of_mem_sphere c.2)
+    Unitary.mul_star_self_of_mem ((mem_unitary_iff_mem_sphere_zero_one _).2 c.2)
   have hcc' : star (c : ℍ) * c = 1 :=
-    Unitary.star_mul_self_of_mem (mem_unitary_of_mem_sphere c.2)
+    Unitary.star_mul_self_of_mem ((mem_unitary_iff_mem_sphere_zero_one _).2 c.2)
   ext s : 1
   obtain ⟨v, hv⟩ := hopfSphere4_surjective (greatSphere4 (q, s))
   -- The conjugate `w = (c* a c, c* b c)` of a Hopf preimage `v = (a, b)` of the sphere point.

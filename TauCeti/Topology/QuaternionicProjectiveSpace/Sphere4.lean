@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.QuaternionicProjectiveSpace.Homogeneous
+public import TauCeti.Topology.Algebra.Quaternion.Unitary
 
 /-!
 # The quaternionic Hopf map `S⁷ → S⁴` and `HP¹ = S⁴`
@@ -97,7 +98,7 @@ theorem hopfSphere4_op_smul (q : sphere (0 : ℍ) 1) (v : sphere (0 : PiLp 2 fun
     hopfSphere4 (v <• q) = hopfSphere4 v := by
   have hq : ‖(q : ℍ)‖ = 1 := norm_eq_of_mem_sphere q
   have hqq : (q : ℍ) * star (q : ℍ) = 1 :=
-    Unitary.mul_star_self_of_mem (mem_unitary_of_mem_sphere q.2)
+    Unitary.mul_star_self_of_mem ((mem_unitary_iff_mem_sphere_zero_one _).2 q.2)
   have h (a b : ℍ) : a * (q : ℍ) * star (b * (q : ℍ)) = a * star b := by
     rw [star_mul, mul_assoc, ← mul_assoc (q : ℍ), hqq, one_mul]
   refine Subtype.ext ?_
@@ -116,7 +117,7 @@ theorem coe_hopfSphere4_conj (c : sphere (0 : ℍ) 1)
         star (c : ℍ) * (hopfSphere4 v : WithLp 2 (ℝ × ℍ)).snd * c) := by
   have hc : ‖(c : ℍ)‖ = 1 := norm_eq_of_mem_sphere c
   have hcc : (c : ℍ) * star (c : ℍ) = 1 :=
-    Unitary.mul_star_self_of_mem (mem_unitary_of_mem_sphere c.2)
+    Unitary.mul_star_self_of_mem ((mem_unitary_iff_mem_sphere_zero_one _).2 c.2)
   have hnorm (a : ℍ) : ‖star (c : ℍ) * a * c‖ = ‖a‖ := by
     rw [norm_mul, norm_mul, _root_.norm_star, hc, one_mul, mul_one]
   rw [coe_hopfSphere4_apply, coe_hopfSphere4_apply, hw, hw, hnorm, hnorm]
