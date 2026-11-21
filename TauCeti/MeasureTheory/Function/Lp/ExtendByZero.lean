@@ -47,8 +47,8 @@ against `μ`, hence against every restriction of `μ`.
 * `MeasureTheory.MemLp.of_restrict_of_support_subset`: the unbundled form for the whole space, a
   function supported in `s` and in `Lᵖ(s)` is in `Lᵖ`.
 * `TauCeti.LpToLpRestrictCLM_castLpₗᵢ_extendByZeroLpₗᵢ` and
-  `TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_eq_zero`: extension by zero to the
-  whole space and restriction (`LpToLpRestrictCLM`) undo each other, the second on functions
+  `TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_compl_eq_zero`: extension by zero to
+  the whole space and restriction (`LpToLpRestrictCLM`) undo each other, the second on functions
   vanishing off `s`.
 * `TauCeti.tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM`: along a directed monotone
   open cover `U k` of a locally compact space, `f - 1_{U k} f → 0` in `Lᵖ` for `p < ∞`.
@@ -231,7 +231,7 @@ theorem LpToLpRestrictCLM_castLpₗᵢ_extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs
       (indicator_ae_eq_restrict hs)
 
 /-- **A function vanishing off `s` is the extension by zero of its restriction to `s`.** -/
-theorem castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_eq_zero [Fact (1 ≤ p)]
+theorem castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_compl_eq_zero [Fact (1 ≤ p)]
     (hs : NullMeasurableSet s μ) {f : Lp F p μ} (hf : ∀ᵐ x ∂μ, x ∉ s → f x = 0) :
     castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
       (extendByZeroLpₗᵢ 𝕜 μ hs (subset_univ s) (LpToLpRestrictCLM α F 𝕜 μ p s f)) = f := by
@@ -269,7 +269,7 @@ theorem tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM [Topolog
   set J := (castLpₗᵢ (𝕜 := 𝕜) (E := F) (p := p) Measure.restrict_univ).toLinearIsometry.comp
     (extendByZeroLpₗᵢ 𝕜 μ (hU k).nullMeasurableSet (subset_univ _))
   have hg : J (LpToLpRestrictCLM α F 𝕜 μ p (U k) (hgmem.toLp g)) = hgmem.toLp g := by
-    refine castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_eq_zero 𝕜 _ ?_
+    refine castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_compl_eq_zero 𝕜 _ ?_
     filter_upwards [hgmem.coeFn_toLp] with x hx hxU
     rw [hx]
     exact image_eq_zero_of_notMem_tsupport fun h => hxU (hmono hk (hk₀ h))
