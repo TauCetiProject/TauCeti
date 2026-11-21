@@ -130,7 +130,8 @@ theorem heatSemigroup_sub_eq_integral (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ)
   have hprod : Integrable (Function.uncurry fun s x => (heatKernel s ⋆ Δ φ) x)
       ((volume.restrict (Ioc 0 t)).prod (volume.restrict A)) := by
     refine (integrable_const C₂).mono'
-      (stronglyMeasurable_heatKernel_convolution hΔ).aestronglyMeasurable ?_
+      (stronglyMeasurable_heatKernel_convolution (f := fun _ => Δ φ) measurable_id
+        (hΔ.stronglyMeasurable.comp_measurable measurable_snd)).aestronglyMeasurable ?_
     rw [Measure.prod_restrict]
     filter_upwards [ae_restrict_mem (measurableSet_Ioc.prod hAm)] with z hz
     exact norm_heatKernel_convolution_le hz.1.1 (ae_of_all _ hC₂) z.2

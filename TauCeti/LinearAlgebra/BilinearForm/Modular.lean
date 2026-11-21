@@ -269,6 +269,12 @@ theorem IsModular.isPerfPair_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroD
     simpa using LinearMap.congr_fun₂ (hC.trans hC'.symm) x y)
   exact this ▸ hperf
 
+/-- The rescaling of a modular form by its regular scale has unit Gram determinant. -/
+theorem IsModular.isUnit_det_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)
+    {C : BilinForm R M} (hC : a • C = B) {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) : IsUnit (C.toMatrix b).det :=
+  b.isUnit_det_of_isPerfPair b C (h.isPerfPair_of_smul_eq ha hC)
+
 /-- **Divisibility in a modular form.** If `B` is `a`-modular, with `a` and `r` non-zero-divisors,
 and `a * r` divides `B x y` for every `y`, then `x` is `r` times a vector. -/
 theorem IsModular.exists_eq_smul_of_forall_dvd (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)

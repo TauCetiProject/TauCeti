@@ -68,6 +68,9 @@ Morse-theoretic definitions that use them.
   directional derivative `y ↦ Dg(y) v` has derivative `u ↦ D²g(x)(u, v)`.
 * `ContDiffOn.continuousOn_fderiv_fderiv_apply`: on an open set, the second directional
   derivative of a `C²` map in a fixed direction is continuous.
+* `ContDiff.continuous_fderiv_fderiv_apply`: the second derivative of a `C^n` map, `2 ≤ n`, in
+  two fixed directions is continuous.
+* `TauCeti.fderiv_fderiv_of_notMem_tsupport`: the second derivative vanishes off the support.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
   avoids any prescribed value on a punctured neighbourhood of the point.
 * `TauCeti.fderiv_fderiv_comp_apply`: the second-order chain rule for `C²` maps.
@@ -154,6 +157,19 @@ continuous. -/
 theorem _root_.ContDiffAt.continuousAt_fderiv_fderiv {n : WithTop ℕ∞} {g : E → F} {x : E}
     (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) : ContinuousAt (fderiv 𝕜 (fderiv 𝕜 g)) x :=
   (h.fderiv_right (m := 1) (by exact_mod_cast hn)).continuousAt_fderiv one_ne_zero
+
+/-- The second derivative `x ↦ D²g(x)(v, w)` of a `C^n` map, `2 ≤ n`, in two fixed directions is
+continuous. -/
+theorem _root_.ContDiff.continuous_fderiv_fderiv_apply {n : WithTop ℕ∞} {g : E → F}
+    (hg : ContDiff 𝕜 n g) (hn : 2 ≤ n) (v w : E) :
+    Continuous fun x ↦ fderiv 𝕜 (fderiv 𝕜 g) x v w :=
+  (((hg.fderiv_right (m := 1) (by exact_mod_cast hn)).continuous_fderiv one_ne_zero).clm_apply
+    continuous_const).clm_apply continuous_const
+
+/-- Off the topological support of `g`, the second derivative of `g` vanishes. -/
+theorem fderiv_fderiv_of_notMem_tsupport {g : E → F} {x : E} (hx : x ∉ tsupport g) :
+    fderiv 𝕜 (fderiv 𝕜 g) x = 0 :=
+  fderiv_of_notMem_tsupport 𝕜 fun h ↦ hx (tsupport_fderiv_subset 𝕜 h)
 
 /-- At a twice continuously differentiable point, the directional derivative `y ↦ Dg(y) v` is
 differentiable, with derivative `u ↦ D²g(x)(u, v)`. -/
