@@ -279,11 +279,8 @@ public theorem piExtendOfInjective_apply_of_notMem (e : (κ → M) ≃ₗ[R] (κ
 @[simp]
 public theorem piExtendOfInjective_symm (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective) :
     (e.piExtendOfInjective hf).symm = e.symm.piExtendOfInjective hf := by
-  refine LinearEquiv.ext fun x ↦ (symm_apply_eq _).2 <| funext fun i ↦ ?_
-  by_cases hi : i ∈ Set.range f
-  · obtain ⟨k, rfl⟩ := hi
-    simp [Function.comp_def]
-  · simp [hi]
+  simp only [piExtendOfInjective, trans_symm, prodCongr_symm, symm_symm, refl_symm]
+  exact (trans_assoc _ _ _).symm
 
 end ExtendOfInjective
 

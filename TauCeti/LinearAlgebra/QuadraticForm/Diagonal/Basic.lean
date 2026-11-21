@@ -65,18 +65,6 @@ section PairExtension
 variable [CommSemiring R] [Fintype ι] {S : Type*} [Monoid S] [DistribMulAction S R]
   [SMulCommClass S R R] {w w' : ι → S} {i j : ι}
 
-omit [Fintype ι] in
-/-- A coordinate lies outside the range of the pair `![i, j]` exactly when it is neither `i` nor
-`j`. -/
-private theorem notMem_range_pair {k : ι} : k ∉ Set.range ![i, j] ↔ k ≠ i ∧ k ≠ j := by
-  rw [Matrix.range_cons_cons_empty, Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-
-omit [Fintype ι] in
-/-- Restricting a vector to the pair `![i, j]` gives the pair of its coordinates at `i` and `j`. -/
-private theorem comp_pair {α : Type*} (x : ι → α) : x ∘ ![i, j] = ![x i, x j] := by
-  ext t
-  fin_cases t <;> simp
-
 /-- Replacing two distinct coefficients by those of an isometric binary form, while fixing all other
 coefficients up to their action on `1`, gives an isometric diagonal form. The isometry is the
 extension `LinearEquiv.piExtendOfInjective` of `e` along the pair `![i, j]`: it applies `e` to the
@@ -96,19 +84,19 @@ noncomputable def isometryEquivWeightedSumSquaresOfPair (hij : i ≠ j)
     -- `e` preserves the binary form, and off the pair the coordinates are fixed and the weights
     -- act alike.
     have he := e.map_app ![x i, x j]
+    have hx : x ∘ ![i, j] = ![x i, x j] := (FinVec.map_eq x ![i, j]).symm
     simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
       Matrix.cons_val_one] at he
     simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, weightedSumSquares_apply,
       ← (Equiv.ofInjectiveSumCompl _ (Matrix.injective_pair_iff_ne.2 hij)).sum_comp,
       Fintype.sum_sum_type, Equiv.ofInjectiveSumCompl_apply_inl,
-      Equiv.ofInjectiveSumCompl_apply_inr, LinearEquiv.piExtendOfInjective_apply_apply, comp_pair,
+      Equiv.ofInjectiveSumCompl_apply_inr, LinearEquiv.piExtendOfInjective_apply_apply, hx,
       Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, IsometryEquiv.coe_toLinearEquiv]
     rw [he]
     congr 1
     refine Fintype.sum_congr _ _ fun k ↦ ?_
-    obtain ⟨hki, hkj⟩ := notMem_range_pair.1 k.property
     rw [LinearEquiv.piExtendOfInjective_apply_of_notMem _ _ _ k.property, ← mul_smul_one,
-      ← hrest k hki hkj, mul_smul_one]
+      ← hrest k (fun h ↦ k.property ⟨0, h.symm⟩) (fun h ↦ k.property ⟨1, h.symm⟩), mul_smul_one]
 
 /-- The linear equivalence underlying the pair-replacement isometry is the extension of `e` along
 the pair `![i, j]`. -/
@@ -128,8 +116,9 @@ theorem isometryEquivWeightedSumSquaresOfPair_apply_left (hij : i ≠ j)
     (hrest : ∀ k, k ≠ i → k ≠ j → w k • (1 : R) = w' k • (1 : R)) (x : ι → R) :
     isometryEquivWeightedSumSquaresOfPair hij e hrest x i = e ![x i, x j] 0 := by
   have h := e.toLinearEquiv.piExtendOfInjective_apply_apply (Matrix.injective_pair_iff_ne.2 hij) x 0
-  rw [← isometryEquivWeightedSumSquaresOfPair_toLinearEquiv hij e hrest] at h
-  simpa [comp_pair] using h
+  have hx : x ∘ ![i, j] = ![x i, x j] := (FinVec.map_eq x ![i, j]).symm
+  rw [← isometryEquivWeightedSumSquaresOfPair_toLinearEquiv hij e hrest, hx] at h
+  simpa using h
 
 /-- The pair-replacement isometry acts on the second coordinate of the pair through `e`. -/
 @[simp]
@@ -139,8 +128,9 @@ theorem isometryEquivWeightedSumSquaresOfPair_apply_right (hij : i ≠ j)
     (hrest : ∀ k, k ≠ i → k ≠ j → w k • (1 : R) = w' k • (1 : R)) (x : ι → R) :
     isometryEquivWeightedSumSquaresOfPair hij e hrest x j = e ![x i, x j] 1 := by
   have h := e.toLinearEquiv.piExtendOfInjective_apply_apply (Matrix.injective_pair_iff_ne.2 hij) x 1
-  rw [← isometryEquivWeightedSumSquaresOfPair_toLinearEquiv hij e hrest] at h
-  simpa [comp_pair] using h
+  have hx : x ∘ ![i, j] = ![x i, x j] := (FinVec.map_eq x ![i, j]).symm
+  rw [← isometryEquivWeightedSumSquaresOfPair_toLinearEquiv hij e hrest, hx] at h
+  simpa using h
 
 /-- The pair-replacement isometry fixes the coordinates outside the pair. -/
 @[simp]
@@ -151,7 +141,7 @@ theorem isometryEquivWeightedSumSquaresOfPair_apply_of_ne (hij : i ≠ j)
     (hki : k ≠ i) (hkj : k ≠ j) :
     isometryEquivWeightedSumSquaresOfPair hij e hrest x k = x k := by
   have h := e.toLinearEquiv.piExtendOfInjective_apply_of_notMem
-    (Matrix.injective_pair_iff_ne.2 hij) x (notMem_range_pair.2 ⟨hki, hkj⟩)
+    (Matrix.injective_pair_iff_ne.2 hij) x (i := k) (by simp [hki, hkj])
   rwa [← isometryEquivWeightedSumSquaresOfPair_toLinearEquiv hij e hrest,
     IsometryEquiv.coe_toLinearEquiv] at h
 
