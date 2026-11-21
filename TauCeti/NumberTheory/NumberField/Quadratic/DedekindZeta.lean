@@ -21,7 +21,6 @@ import TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.NumberField.Units.Torsion
 import TauCeti.NumberTheory.LSeries.Zeta.Mul
-import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.DedekindZeta.Residue
 import TauCeti.NumberTheory.NumberField.PrimeIdeal

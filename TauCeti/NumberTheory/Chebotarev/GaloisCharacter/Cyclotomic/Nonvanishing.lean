@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Series
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Nonvanishing
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 
 /-!
 # Nonvanishing of cyclotomic character series on the line `Re s = 1`
