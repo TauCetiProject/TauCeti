@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Positive.FunctionalCalculus
+import TauCeti.Algebra.Algebra.StrictPositivity
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Commute
 
 /-!
 # Smooth positive and negative spectral projections
@@ -23,7 +25,9 @@ These formulas supply smooth local projections for splitting a nondegenerate sym
 into its positive and negative subbundles. They concern the existing
 `Module.End.pointSpectralSubspace` and `Submodule.starProjection`, not new choices of subspaces
 or projections. The invertibility hypothesis excludes eigenvalues crossing zero; dimension zero
-is allowed.
+is allowed. The same formula shows that `(A * A) ^ (-(1 / 4))` conjugates `A` to the difference
+`1 - 2 Π` of the positive and negative spectral projections, where `Π` is the negative one
+(`ContinuousLinearMap.mul_self_rpow_mul_mul_mul_self_rpow`).
 
 ## References
 
@@ -96,6 +100,32 @@ theorem starProjection_pointSpectralSubspace_Ioi_zero_eq (A : E →L[ℝ] E) (hA
     neg_mul_neg, neg_mul, mul_neg, neg_neg, sub_neg_eq_add] using
     starProjection_pointSpectralSubspace_Iio_zero_eq (-A) hA.neg hunit.neg
 
+/-- For an invertible self-adjoint operator `A`, the operator `(A * A) ^ (-(1 / 4))` conjugates `A`
+to the difference `1 - 2 Π` of the orthogonal spectral projections, where `Π` projects onto the
+negative spectral subspace. -/
+theorem mul_self_rpow_mul_mul_mul_self_rpow (A : E →L[ℝ] E) (hA : IsSelfAdjoint A)
+    (hunit : IsUnit A) :
+    (A * A) ^ (-(1 / 4) : ℝ) * A * (A * A) ^ (-(1 / 4) : ℝ) =
+      1 - (2 : ℝ) • (Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)).starProjection := by
+  have hc (s : ℝ) : Commute ((A * A) ^ s) A :=
+    ((Commute.refl A).mul_left (Commute.refl A)).rpow_left s
+  rw [starProjection_pointSpectralSubspace_Iio_zero_eq A hA hunit, smul_smul, mul_assoc,
+    ← (hc _).eq, ← mul_assoc, ← CFC.rpow_add (hA.isStrictlyPositive_mul_self hunit).isUnit,
+    (hc _).eq]
+  norm_num
+
+/-- A real power of `A * A` commutes with the orthogonal projection onto the negative spectral
+subspace of an invertible self-adjoint operator `A`. -/
+theorem commute_mul_self_rpow_starProjection (A : E →L[ℝ] E) (hA : IsSelfAdjoint A)
+    (hunit : IsUnit A) (s : ℝ) :
+    Commute ((A * A) ^ s)
+      (Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)).starProjection := by
+  rw [starProjection_pointSpectralSubspace_Iio_zero_eq A hA hunit]
+  refine ((Commute.one_right _).sub_right
+    ((((Commute.refl A).mul_left (Commute.refl A)).rpow_left s).mul_right ?_)).smul_right _
+  rw [CFC.rpow_def, CFC.rpow_def]
+  exact cfc_commute_cfc _ _ _
+
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
   {n : ℕ∞ω} {A : P → E →L[ℝ] E} {s : Set P}
 
@@ -106,8 +136,7 @@ theorem _root_.ContDiffOn.starProjection_pointSpectralSubspace_Iio_zero (hA : Co
     ContDiffOn ℝ n
       (fun x ↦ (Module.End.pointSpectralSubspace (A x).toLinearMap (Iio 0)).starProjection) s := by
   have hpos (x) (hx : x ∈ s) : IsStrictlyPositive (A x * A x) :=
-    ((hunit x hx).mul (hunit x hx)).isStrictlyPositive (by
-      simpa only [(hself x hx).star_eq] using star_mul_self_nonneg (A x))
+    (hself x hx).isStrictlyPositive_mul_self (hunit x hx)
   have hpow := (contDiffOn_rpow (E := E) (n := n) (-(1 / 2))).comp (hA.mul hA) hpos
   exact (((contDiffOn_const (c := (1 : E →L[ℝ] E))).sub (hA.mul hpow)).const_smul
     (1 / 2 : ℝ)).congr
