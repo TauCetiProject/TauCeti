@@ -55,10 +55,14 @@ and the absorbed form
 These are the forms in which the integral of `T ∧ Ω` can be replaced by its topological value
 `K m area(C)`.
 
-The norm here is the inner product norm of two-vectors. It dominates the comass of the
-corresponding form (`ContinuousAlternatingMap.norm_le_sqrt_alternatingFormInner_self`), which
-is the pointwise norm of the mass of a current, and on an `n`-dimensional space it is at most
-`√(n choose 2)` times the comass (`ContinuousAlternatingMap.sqrt_alternatingFormInner_self_le`).
+The norm here is the inner product norm of two-vectors, which bounds the mass norm of the
+corresponding current up to a constant depending only on the dimension. The pointwise mass of a
+current is the mass norm of its two-vector density (here `⋆ξ_T`, which has the same inner product
+norm as `ξ_T`), the norm dual to the comass of forms. On an `n`-dimensional space the comass is
+at most the inner product norm (`ContinuousAlternatingMap.norm_le_sqrt_alternatingFormInner_self`)
+and at least `1 / √(n choose 2)` times it
+(`ContinuousAlternatingMap.sqrt_alternatingFormInner_self_le`), so dually the mass norm lies
+between the inner product norm and `√(n choose 2)` times it.
 
 ## References
 
