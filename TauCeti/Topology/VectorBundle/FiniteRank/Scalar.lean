@@ -104,7 +104,7 @@ noncomputable def toScalarCore : CoordinateHom (ofScalarCore Z).core Z where
   operator x j :=
     let e : (Fin (ofScalarCore Z).rank → 𝕜) →L[𝕜] 𝕜 :=
       (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).toContinuousLinearMap
-    ⟨fun z ↦ (Z.coordChange (Z.indexAt x) j z.1).comp e,
+    ⟨fun z ↦ (Z.coordChange (Z.indexAt x) j z.val).comp e,
       (continuousOn_iff_continuous_domRestrict.1
         (Z.continuousOn_coordChange (Z.indexAt x) j)).clm_comp_const e⟩
   compatible x x' j j' z hx hx' hj hj' v := by
@@ -139,7 +139,7 @@ noncomputable def fromScalarCore : CoordinateHom Z (ofScalarCore Z).core where
   operator i y :=
     let e : 𝕜 →L[𝕜] (Fin (ofScalarCore Z).rank → 𝕜) :=
       (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm.toContinuousLinearMap
-    ⟨fun z ↦ e.comp (Z.coordChange i (Z.indexAt y) z.1),
+    ⟨fun z ↦ e.comp (Z.coordChange i (Z.indexAt y) z.val),
       continuous_const.clm_comp <| continuousOn_iff_continuous_domRestrict.1
         (Z.continuousOn_coordChange i (Z.indexAt y))⟩
   compatible i i' y y' z hi hi' hy hy' v := by

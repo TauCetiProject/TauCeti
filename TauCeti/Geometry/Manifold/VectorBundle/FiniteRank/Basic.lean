@@ -59,7 +59,7 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
 `C^n` at `p₀`. -/
 theorem contMDiffAt_localTriv_snd (E : FiniteRankBundleCore 𝕜 B) (p₀ : E.core.TotalSpace) :
     ContMDiffAt (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) 𝓘(𝕜, Fin E.rank → 𝕜) n
-      (fun p : E.core.TotalSpace ↦ (E.core.localTriv p₀.proj p).2) p₀ := by
+      (fun p : E.core.TotalSpace ↦ (E.core.localTriv p₀.proj p).snd) p₀ := by
   simpa only [E.trivializationAt_core] using
     p₀.contMDiffAt_trivializationAt_snd (IB := I) (n := n)
 
@@ -72,7 +72,7 @@ theorem contMDiff_of_localTriv_snd {F : Type*} [NormedAddCommGroup F] [NormedSpa
     [FiberBundle F V] (E : FiniteRankBundleCore 𝕜 B) (f : E.core.TotalSpace → TotalSpace F V)
     (hf_proj : ∀ p, (f p).proj = p.proj) (L : (Fin E.rank → 𝕜) →L[𝕜] F)
     (hL : ∀ (b : B) (p : E.core.TotalSpace),
-      (trivializationAt F V b (f p)).2 = L ((E.core.localTriv b p).2)) :
+      (trivializationAt F V b (f p)).snd = L ((E.core.localTriv b p).snd)) :
     ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n f := by
   intro p₀
   rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀]
@@ -89,7 +89,7 @@ theorem contMDiff_of_trivializationAt_snd {F : Type*} [NormedAddCommGroup F] [No
     [FiberBundle F V] (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
     (hf_proj : ∀ p, (f p).proj = p.proj) (L : F →L[𝕜] (Fin E.rank → 𝕜))
     (hL : ∀ (b : B) (p : TotalSpace F V),
-      (E.core.localTriv b (f p)).2 = L ((trivializationAt F V b p).2)) :
+      (E.core.localTriv b (f p)).snd = L ((trivializationAt F V b p).snd)) :
     ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) n f := by
   intro p₀
   rw [Bundle.contMDiffAt_totalSpace_iff, hf_proj p₀, E.trivializationAt_core]

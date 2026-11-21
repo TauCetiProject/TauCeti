@@ -335,18 +335,18 @@ private noncomputable def twistCharacterCoreHom {χ₁ χ₂ χ₁' χ₂' : G �
   operator e e' :=
     let re : ↥((hp.characterCore χ₁').baseSet e ∩ (hp.characterCore χ₂').baseSet e') →
         ↥((hp.characterCore χ₁).baseSet e ∩ (hp.characterCore χ₂).baseSet e') :=
-      fun x ↦ ⟨x.1, ⟨by simpa using x.2.1, by simpa using x.2.2⟩⟩
-    ⟨fun x ↦ (ψ (hp.deckChange e e' x.1) : 𝕜) • a.operator e e' (re x),
+      fun x ↦ ⟨x.val, ⟨by simpa using x.property.1, by simpa using x.property.2⟩⟩
+    ⟨fun x ↦ (ψ (hp.deckChange e e' x.val) : 𝕜) • a.operator e e' (re x),
       continuous_iff_continuousAt.2 fun x ↦ by
-        have hx : x.1 ∈ (hp.isLocalHomeomorph.localInverseAt e).source ∩
-            (hp.isLocalHomeomorph.localInverseAt e').source := by simpa using x.2
+        have hx : x.val ∈ (hp.isLocalHomeomorph.localInverseAt e).source ∩
+            (hp.isLocalHomeomorph.localInverseAt e').source := by simpa using x.property
         have hconst : ContinuousAt (fun y : ↥((hp.characterCore χ₁').baseSet e ∩
-            (hp.characterCore χ₂').baseSet e') ↦ (ψ (hp.deckChange e e' y.1) : 𝕜)) x :=
+            (hp.characterCore χ₂').baseSet e') ↦ (ψ (hp.deckChange e e' y.val) : 𝕜)) x :=
           continuousAt_const.congr <| Filter.Eventually.mono
-            (continuous_subtype_val.continuousAt.eventually (hp.eventually_deckChange_eq hx))
+            (continuous_subtypeVal.continuousAt.eventually (hp.eventually_deckChange_eq hx))
             fun y hy ↦ congrArg (fun g ↦ (ψ g : 𝕜)) hy.symm
         exact hconst.smul ((a.operator e e').continuous.comp
-          (continuous_subtype_val.subtype_mk _)).continuousAt⟩
+          (continuous_subtypeVal.subtype_mk _)).continuousAt⟩
   compatible e₁ e₂ e₁' e₂' x he₁ he₂ he₁' he₂' v := by
     rw [characterCore_baseSet] at he₁ he₂ he₁' he₂'
     have hcompat := a.compatible e₁ e₂ e₁' e₂' x (by simpa using he₁) (by simpa using he₂)
@@ -415,7 +415,8 @@ theorem inChartCoordinates_characterCore_one_smulRight (χ : G →* 𝕜ˣ)
     (s : X → 𝕜) (e e' : E) (x : X) :
     (hp.characterCore 1).inChartCoordinates (hp.characterCore χ) e e' x
         ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (s x)) =
-      (ContinuousLinearMap.id 𝕜 𝕜).smulRight (((hp.characterCore χ).localTriv e' ⟨x, s x⟩).2) := by
+      (ContinuousLinearMap.id 𝕜 𝕜).smulRight
+        (((hp.characterCore χ).localTriv e' ⟨x, s x⟩).snd) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
   rw [inChartCoordinates_apply, hp.characterCore_one_coordChange, ContinuousLinearMap.id_apply,
     smulRight_apply, ContinuousLinearMap.id_apply, _root_.map_smul, localTriv_apply,

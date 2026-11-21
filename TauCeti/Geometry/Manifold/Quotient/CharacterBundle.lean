@@ -360,7 +360,7 @@ private theorem contMDiffOn_inChartCoordinates_smulRight_of_section (χ : G →*
       (hp.characterCore χ).baseSet e') :=
     ((hp.characterCore (1 : G →* 𝕜ˣ)).isOpen_baseSet e).inter
       ((hp.characterCore χ).isOpen_baseSet e')
-  have hloc : ContMDiffOn IB 𝓘(𝕜) n (fun x ↦ ((hp.characterCore χ).localTriv e' ⟨x, σ x⟩).2)
+  have hloc : ContMDiffOn IB 𝓘(𝕜) n (fun x ↦ ((hp.characterCore χ).localTriv e' ⟨x, σ x⟩).snd)
       ((hp.characterCore (1 : G →* 𝕜ˣ)).baseSet e ∩ (hp.characterCore χ).baseSet e') :=
     (((hp.characterCore χ).localTriv e').contMDiffOn_section_iff hopen
       (inter_subset_right.trans (by simp))).1 hσ.contMDiffOn
@@ -389,7 +389,7 @@ theorem exists_bundleDiffeomorph_characterCore_of_section_ne_zero (χ₁ χ₂ :
     (hσ₀ : ∀ x, σ x ≠ 0) :
     ∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
       ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
-        (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.2)) := by
+        (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd)) := by
   let ϕ : X → 𝕜 →L[𝕜] 𝕜 := fun x ↦ (ContinuousLinearMap.id 𝕜 𝕜).smulRight (σ x : 𝕜)
   have hϕon := hp.contMDiffOn_inChartCoordinates_smulRight_of_section (χ₁⁻¹ * χ₂) hσ
   have hϕ : ContMDiff IB (IB.prod 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜)) n (fun x ↦
@@ -420,7 +420,7 @@ theorem exists_bundleDiffeomorph_characterCore_of_section_ne_zero (χ₁ χ₂ :
 theorem exists_bundleDiffeomorph_characterCore_iff_exists_trivialization (χ₁ χ₂ : G →* 𝕜ˣ) :
     (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
         ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
-          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.2))) ↔
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd))) ↔
       ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore (χ₁⁻¹ * χ₂)).Fiber)) (_ : e.IsLinear 𝕜),
         e.toOpenPartialHomeomorph ∈
           (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
@@ -532,7 +532,7 @@ theorem exists_bundleDiffeomorph_characterCore_iff_eq_of_eq_one
     (χ₁ χ₂ : G →* 𝕜ˣ) :
     (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
         ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
-          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.2))) ↔
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd))) ↔
       χ₁ = χ₂ := by
   refine ⟨fun h ↦ inv_mul_eq_one.1 (hinj (χ₁⁻¹ * χ₂)
     ((hp.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization χ₁ χ₂).1 h)), ?_⟩
@@ -596,7 +596,7 @@ theorem exists_bundleDiffeomorph_characterCore_iff
     (hpd : IsLocalDiffeomorph I IB n p) (χ₁ χ₂ : G →* 𝕜ˣ) :
     (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[𝕜] (hp.characterCore χ₂).Fiber x,
         ContMDiff (IB.prod 𝓘(𝕜)) (IB.prod 𝓘(𝕜)) n
-          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.2))) ↔
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' 𝕜 p.proj (e p.proj p.snd))) ↔
       ∃ f : E → 𝕜, ContMDiff I 𝓘(𝕜) n f ∧ (∀ y, f y ≠ 0) ∧
         ∀ (g : G) (y : E), f (g • y) = (χ₁⁻¹ * χ₂) g * f y :=
   (hp.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization χ₁ χ₂).trans
@@ -625,7 +625,7 @@ theorem exists_bundleDiffeomorph_characterCore_iff_eq
     (hpd : MDifferentiable I IB p) (hn : n ≠ 0) (χ₁ χ₂ : G →* ℂˣ) :
     (∃ e : ∀ x, (hp.characterCore χ₁).Fiber x ≃L[ℂ] (hp.characterCore χ₂).Fiber x,
         ContMDiff (IB.prod 𝓘(ℂ)) (IB.prod 𝓘(ℂ)) n
-          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' ℂ p.proj (e p.proj p.2))) ↔
+          (fun p : (hp.characterCore χ₁).TotalSpace ↦ TotalSpace.mk' ℂ p.proj (e p.proj p.snd))) ↔
       χ₁ = χ₂ :=
   hp.exists_bundleDiffeomorph_characterCore_iff_eq_of_eq_one
     (fun ψ ↦ (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one hpd hn ψ).1)
