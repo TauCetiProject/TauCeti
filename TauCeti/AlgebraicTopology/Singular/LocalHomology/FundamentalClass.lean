@@ -616,6 +616,14 @@ theorem fundamentalClassEquiv_apply (c : ℤ) :
     o.fundamentalClassEquiv hn c = c • o.fundamentalClass hn :=
   int_smul_eq_zsmul _ c _
 
+include o hn in
+/-- The top homology `Hₙ(M; ℤ)` of a compact connected oriented manifold is nontrivial, being
+isomorphic to `ℤ` through the fundamental class. -/
+theorem nontrivial_singularHomology :
+    Nontrivial ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ) :=
+  (o.fundamentalClassEquiv hn).symm.toEquiv.nontrivial
+
 /-- On a compact connected oriented manifold, every class of `Hₙ(M; ℤ)` is an integer multiple of
 the fundamental class. -/
 theorem exists_eq_zsmul_fundamentalClass
