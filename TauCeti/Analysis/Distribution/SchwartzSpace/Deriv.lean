@@ -36,6 +36,9 @@ Multiplication by a function `g` of temperate growth satisfies the Leibniz rule
 Fourier side, multiplying a symbol by `⟪h, ξ⟫` differentiates its kernel along `h`, so these
 identities control the derivatives of the symbol of a differentiated kernel.
 
+The real or complex inner pairing satisfies directional integration by parts
+(`SchwartzMap.integral_inner_lineDerivOp_right_eq_neg_left`), with sign `(-1)^k` after
+transferring `k` derivatives (`SchwartzMap.integral_inner_iterate_lineDerivOp_right_eq`).
 Integrating by parts along an orthonormal basis gives Green's identity
 `∫ B(f, Δg) = -∑ᵢ ∫ B(∂_{bᵢ} f, ∂_{bᵢ} g)` for a continuous bilinear map `B`
 (`SchwartzMap.integral_bilinear_laplacian_right_eq_neg_sum`). For the inner product this reads
@@ -183,6 +186,38 @@ theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall
     mul_assoc ((k : ℝ) + 1) ‖L‖ ‖v‖]
   gcongr
   exact L.le_opNorm v
+
+open MeasureTheory LineDeriv in
+/-- Directional integration by parts for the real or complex Hilbert pairing of Schwartz maps. -/
+theorem integral_inner_lineDerivOp_right_eq_neg_left {𝕜 E H : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [InnerProductSpace 𝕜 H] (f g : 𝓢(E, H)) (v : E) :
+    (∫ x, inner 𝕜 (f x) (∂_{v} g x) ∂μ) =
+      -∫ x, inner 𝕜 (∂_{v} f x) (g x) ∂μ := by
+  let B : H →L[ℝ] H →L[ℝ] 𝕜 :=
+    (ContinuousLinearMap.restrictScalarsL 𝕜 H 𝕜 ℝ ℝ).comp
+      ((innerSL 𝕜).toAddMonoidHom.toRealLinearMap (innerSL 𝕜).continuous)
+  -- Restricting scalars and the native additive realification both preserve evaluation.
+  have hB (x y : H) : B x y = inner 𝕜 x y := by rfl
+  simpa only [hB] using integral_bilinear_lineDerivOp_right_eq_neg_left f g B v
+
+open MeasureTheory LineDeriv in
+/-- Transferring every directional derivative across a Schwartz inner pairing contributes
+one factor of minus one per derivative. -/
+theorem integral_inner_iterate_lineDerivOp_right_eq {𝕜 E H : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [InnerProductSpace 𝕜 H]
+    (f g : 𝓢(E, H)) (v : E) (k : ℕ) :
+    (∫ x, inner 𝕜 (f x) (((∂_{v})^[k] g) x) ∂μ) =
+      (-1 : 𝕜) ^ k * ∫ x, inner 𝕜 (((∂_{v})^[k] f) x) (g x) ∂μ := by
+  induction k generalizing f with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', integral_inner_lineDerivOp_right_eq_neg_left, ih,
+      Function.iterate_succ_apply, pow_succ]
+    ring
 
 open MeasureTheory LineDeriv Laplacian in
 /-- **Green's identity on Schwartz space**: for a continuous bilinear map `B` and an orthonormal
