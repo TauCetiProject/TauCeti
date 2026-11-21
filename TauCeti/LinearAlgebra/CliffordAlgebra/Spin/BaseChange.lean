@@ -130,8 +130,8 @@ theorem span_spinGroupBaseChange_eq_even {Q : QuadraticForm R M}
   have hrange : (Set.range fun g : spinGroup Q ↦
       (spinGroupBaseChange (A := A) Q g : CliffordAlgebra (Q.baseChange A))) =
       ofBaseChangeAux A Q '' (spinGroup Q : Set (CliffordAlgebra Q)) := by
-    ext x
-    simp
+    simp only [coe_spinGroupBaseChange_apply]
+    exact (Set.range_comp (ofBaseChangeAux A Q) Subtype.val).trans (congrArg _ Subtype.range_coe)
   rw [hrange, ← Submodule.span_span_of_tower R, ← AlgHom.coe_toLinearMap,
     Submodule.span_image, hspan, even_toSubmodule, Submodule.map_coe, AlgHom.coe_toLinearMap,
     span_ofBaseChangeAux_image_evenOdd, even_toSubmodule]

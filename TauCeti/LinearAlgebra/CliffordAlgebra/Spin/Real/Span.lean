@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Real
 Over `ℝ`, an anisotropic quadratic form is positive or negative definite
 (`QuadraticForm.anisotropic_iff_posDef_or_negDef`). Two vectors of nonzero norm therefore have
 norms of the same sign, so `(Q v)⁻¹ * (Q w)⁻¹` is positive and hence a real square. This is the
-square normalization under which `CliffordAlgebra.span_spinGroup_eq_even_of_span_anisotropic`
+square normalization under which `CliffordAlgebra.span_spinGroup_eq_even_of_isSquare`
 lifts every product `ι v * ι w` of vectors into the linear span of the Spin group. No
 `IsSepClosed ℝ` is involved: the compact group `Spin(n)` of the positive-definite form is not the
 Spin group of a split form, but it spans the real even Clifford algebra all the same. In
@@ -64,12 +64,9 @@ private theorem isSquare_inv_mul_inv_of_anisotropic (hQ : Q.Anisotropic) {v w : 
 covers the compact group `Spin(n)` of a positive-definite form, and of a negative-definite one;
 the span includes the scalars, which is the whole even algebra in dimension zero. -/
 theorem span_spinGroup_eq_even_of_anisotropic (hQ : Q.Anisotropic) :
-    Submodule.span ℝ (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule := by
-  refine span_spinGroup_eq_even_of_span_anisotropic Q (eq_top_iff.2 fun v _ ↦ ?_)
-    fun _ _ hv hw ↦ isSquare_inv_mul_inv_of_anisotropic hQ hv hw
-  rcases eq_or_ne v 0 with rfl | hv
-  · exact Submodule.zero_mem _
-  · exact Submodule.subset_span fun h ↦ hv (hQ v h)
+    Submodule.span ℝ (spinGroup Q : Set (CliffordAlgebra Q)) = (even Q).toSubmodule :=
+  span_spinGroup_eq_even_of_isSquare Q hQ.nondegenerate fun _ _ hv hw ↦
+    isSquare_inv_mul_inv_of_anisotropic hQ hv hw
 
 /-- **The complexified real Spin group spans the complex even Clifford algebra.** For an
 anisotropic real quadratic form, the `A`-linear span of the image of `spinGroup Q` in the Spin group
