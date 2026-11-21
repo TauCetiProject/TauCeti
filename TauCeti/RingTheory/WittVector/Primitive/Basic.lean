@@ -59,7 +59,8 @@ properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
 * `WittVector.isPrimitive_p`: `p` is primitive, and
   `WittVector.not_isDistinguished_of_mem_span_p_sq`, `WittVector.not_isDistinguished_teichmuller`:
   over a nonzero ring no element of `(p ^ 2)` and no Teichmüller representative is.
-* `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius.
+* `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius;
+  `WittVector.isDistinguished_frobenius_iff`: Frobenius preserves and reflects distinguishedness.
 * `WittVector.isPrimitive_p_add_teichmuller_mul`,
   `WittVector.isPrimitive_p_add_teichmuller_mul_of_isAdic`,
   `WittVector.isDistinguished_p_add_teichmuller_mul_of_isAdicComplete`: `p + [ϖ] α` is primitive
@@ -179,12 +180,20 @@ theorem not_isDistinguished_of_mem_span_p_sq [Nontrivial S] {ξ : 𝕎 S}
   rw [isDistinguished_iff, mul_comm, mul_pow_charP_coeff_zero y one_lt_two]
   exact not_isUnit_zero
 
+/-- In characteristic `p`, the Witt vector Frobenius of `ξ` is distinguished exactly when `ξ` is:
+it raises the first Witt coordinate to the `p`-th power. -/
+@[simp]
+theorem isDistinguished_frobenius_iff {ξ : 𝕎 S} :
+    (frobenius ξ).IsDistinguished ↔ ξ.IsDistinguished := by
+  rw [isDistinguished_iff, isDistinguished_iff, coeff_frobenius_charP,
+    isUnit_pow_iff hp.out.ne_zero]
+
 /-- In characteristic `p`, the Witt vector Frobenius carries primitive elements to primitive
 elements: it raises every Witt coordinate to the `p`-th power. -/
 theorem IsPrimitive.frobenius [TopologicalSpace S] {ξ : 𝕎 S} (h : ξ.IsPrimitive) :
     (frobenius ξ).IsPrimitive :=
-  ⟨by rw [coeff_frobenius_charP]; exact h.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero, by
-    rw [isDistinguished_iff, coeff_frobenius_charP]; exact h.isDistinguished.pow p⟩
+  ⟨by rw [coeff_frobenius_charP]; exact h.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero,
+    isDistinguished_frobenius_iff.mpr h.isDistinguished⟩
 
 /-- **Distinguishedness of a product.** In characteristic `p`, if the zeroth Witt coordinate of
 `ξ` lies in the Jacobson radical, then `y ξ` is distinguished exactly when `y` is a unit and `ξ` is
