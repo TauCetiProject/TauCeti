@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionFiel
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Asymptotics
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Congruence
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.LinearAlgebra.Matrix.Divisibility
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Siegel modular units on `X(N)`
@@ -77,22 +79,10 @@ private theorem div_ne_intCast [NeZero N] {a : Fin 2 → ℤ} (ha : ¬ ∀ j, (N
   rw [div_eq_iff hN] at this
   exact_mod_cast this.trans (mul_comm _ _)
 
-/-- Right multiplication by `γ` followed by `γ⁻¹` is the identity on row vectors. -/
-private theorem vecMul_vecMul_inv (a : Fin 2 → ℤ) (γ : SL(2, ℤ)) :
-    (a ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = a := by
-  rw [vecMul_vecMul]
-  simp [Matrix.mul_adjugate]
-
 /-- Right multiplication by `γ ∈ SL(2, ℤ)` keeps a numerator outside `N ℤ²`. -/
 private theorem not_forall_dvd_vecMul {a : Fin 2 → ℤ} (ha : ¬ ∀ j, (N : ℤ) ∣ a j)
-    (γ : SL(2, ℤ)) : ¬ ∀ j, (N : ℤ) ∣ (a ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) j := by
-  intro h
-  have key (b : Fin 2 → ℤ) (M : Matrix (Fin 2) (Fin 2) ℤ) (hb : ∀ i, (N : ℤ) ∣ b i) (j : Fin 2) :
-      (N : ℤ) ∣ (b ᵥ* M) j := by
-    simp only [vecMul, dotProduct]
-    exact Finset.dvd_sum fun i _ ↦ dvd_mul_of_dvd_left (hb i) _
-  exact ha fun j ↦ by
-    simpa only [vecMul_vecMul_inv] using key _ ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) h j
+    (γ : SL(2, ℤ)) : ¬ ∀ j, (N : ℤ) ∣ (a ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) j :=
+  fun h ↦ ha (dvd_of_forall_dvd_vecMul (by simp) h)
 
 /-- The product `∏ g_{aᵢ/N}^{mᵢ}` is holomorphic on the upper half-plane. -/
 private theorem mdifferentiable_prod_siegelFunction [NeZero N]
@@ -184,27 +174,36 @@ private theorem dvd_sum_mul_vecMul_mul_vecMul (γ : Matrix (Fin 2) (Fin 2) ℤ)
 `aᵢ / N` are not in `ℤ²`), `gcd(2, N) N` divides `∑ mᵢ aᵢ₁²` and `∑ mᵢ aᵢ₂²`, `N` divides
 `∑ mᵢ aᵢ₁ aᵢ₂`, and `12` divides `gcd(12, N) ∑ mᵢ`. Under these conditions `∏ g_{aᵢ/N}^{mᵢ}` is a
 modular unit of level `N` (`TauCeti.ModularForm.siegelMeromorphicFunction`). -/
-def IsSiegelUnitData (N : ℕ) (s : Finset ι) (a : ι → Fin 2 → ℤ) (m : ι → ℤ) : Prop :=
-  (∀ i ∈ s, ¬ ∀ j, (N : ℤ) ∣ a i j) ∧
-    ((Nat.gcd 2 N * N : ℕ) : ℤ) ∣ ∑ i ∈ s, m i * a i 0 ^ 2 ∧
-    ((Nat.gcd 2 N * N : ℕ) : ℤ) ∣ ∑ i ∈ s, m i * a i 1 ^ 2 ∧
-    (N : ℤ) ∣ ∑ i ∈ s, m i * (a i 0 * a i 1) ∧
-    (12 : ℤ) ∣ Nat.gcd 12 N * ∑ i ∈ s, m i
+structure IsSiegelUnitData (N : ℕ) (s : Finset ι) (a : ι → Fin 2 → ℤ) (m : ι → ℤ) : Prop where
+  /-- No numerator `aᵢ` lies in `N ℤ²`. -/
+  not_dvd : ∀ i ∈ s, ¬ ∀ j, (N : ℤ) ∣ a i j
+  /-- `gcd(2, N) N` divides `∑ mᵢ aᵢ₁²`. -/
+  dvd_sum_sq₀ : ((Nat.gcd 2 N * N : ℕ) : ℤ) ∣ ∑ i ∈ s, m i * a i 0 ^ 2
+  /-- `gcd(2, N) N` divides `∑ mᵢ aᵢ₂²`. -/
+  dvd_sum_sq₁ : ((Nat.gcd 2 N * N : ℕ) : ℤ) ∣ ∑ i ∈ s, m i * a i 1 ^ 2
+  /-- `N` divides `∑ mᵢ aᵢ₁ aᵢ₂`. -/
+  dvd_sum_mul : (N : ℤ) ∣ ∑ i ∈ s, m i * (a i 0 * a i 1)
+  /-- `12` divides `gcd(12, N) ∑ mᵢ`. -/
+  dvd_twelve : (12 : ℤ) ∣ Nat.gcd 12 N * ∑ i ∈ s, m i
 
 /-- The Kubert–Lang conditions are preserved by the substitution `aᵢ ↦ aᵢ γ`, `γ ∈ SL(2, ℤ)`. -/
 theorem IsSiegelUnitData.vecMul (h : IsSiegelUnitData N s a m) (γ : SL(2, ℤ)) :
     IsSiegelUnitData N s (fun i ↦ a i ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) m :=
-  ⟨fun i hi ↦ not_forall_dvd_vecMul (h.1 i hi) γ,
-    dvd_sum_mul_vecMul_sq _ h.2.1 h.2.2.1 h.2.2.2.1 0,
-    dvd_sum_mul_vecMul_sq _ h.2.1 h.2.2.1 h.2.2.2.1 1,
-    dvd_sum_mul_vecMul_mul_vecMul _ h.2.1 h.2.2.1 h.2.2.2.1, h.2.2.2.2⟩
+  ⟨fun i hi ↦ not_forall_dvd_vecMul (h.not_dvd i hi) γ,
+    dvd_sum_mul_vecMul_sq _ h.dvd_sum_sq₀ h.dvd_sum_sq₁ h.dvd_sum_mul 0,
+    dvd_sum_mul_vecMul_sq _ h.dvd_sum_sq₀ h.dvd_sum_sq₁ h.dvd_sum_mul 1,
+    dvd_sum_mul_vecMul_mul_vecMul _ h.dvd_sum_sq₀ h.dvd_sum_sq₁ h.dvd_sum_mul, h.dvd_twelve⟩
 
 /-- The family `(aᵢ γ, mᵢ)` satisfies the Kubert–Lang conditions exactly when `(aᵢ, mᵢ)` does,
 since `γ⁻¹` carries it back. -/
 theorem isSiegelUnitData_vecMul_iff (γ : SL(2, ℤ)) :
     IsSiegelUnitData N s (fun i ↦ a i ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) m ↔
       IsSiegelUnitData N s a m :=
-  ⟨fun h ↦ by simpa only [vecMul_vecMul_inv] using h.vecMul γ⁻¹, fun h ↦ h.vecMul γ⟩
+  ⟨fun h ↦ by
+    have hinv : (fun i ↦ (a i ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) ᵥ*
+        ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) = a :=
+      funext fun i ↦ ((SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv γ (a i) _).mp rfl).symm
+    simpa only [hinv] using h.vecMul γ⁻¹, fun h ↦ h.vecMul γ⟩
 
 /-- Every `SL(2, ℤ)`-translate of the product has at most exponential growth at `i∞`. -/
 private theorem exists_isBigO_prod_siegelFunction_smul [NeZero N]
@@ -229,15 +228,16 @@ def siegelMeromorphicFunction (N : ℕ) [NeZero N] (s : Finset ι) (a : ι → F
   if h : IsSiegelUnitData N s a m then
     meromorphicFunctionOfGammaInvariant
       (fun τ ↦ ∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) τ ^ m i)
-      (mdifferentiable_prod_siegelFunction h.1)
-      (fun _ hγ τ ↦ prod_siegelFunction_div_zpow_smul_of_mem_Gamma s a m h.2.1 h.2.2.1
-        h.2.2.2.1 h.2.2.2.2 hγ τ)
-      (exists_isBigO_prod_siegelFunction_smul h.1)
+      (mdifferentiable_prod_siegelFunction h.not_dvd)
+      (fun _ hγ τ ↦ prod_siegelFunction_div_zpow_smul_of_mem_Gamma s a m h.dvd_sum_sq₀
+        h.dvd_sum_sq₁ h.dvd_sum_mul h.dvd_twelve hγ τ)
+      (exists_isBigO_prod_siegelFunction_smul h.not_dvd)
   else 0
 
 variable [NeZero N]
 
 /-- The value of the Siegel modular unit at the orbit of `τ` is `∏ g_{aᵢ/N}(τ)^{mᵢ}`. -/
+@[simp]
 theorem siegelMeromorphicFunction_ofQuotient_mk (h : IsSiegelUnitData N s a m) (τ : ℍ) :
     siegelMeromorphicFunction N s a m (ofQuotient (Quotient.mk _ τ)) =
       (∏ i ∈ s, siegelFunction (fun j ↦ (a i j : ℝ) / N) τ ^ m i : ℂ) := by
@@ -246,6 +246,7 @@ theorem siegelMeromorphicFunction_ofQuotient_mk (h : IsSiegelUnitData N s a m) (
 
 /-- The finite part of the Siegel modular unit at the orbit of `τ` is
 `∏ g_{aᵢ/N}(τ)^{mᵢ}`. -/
+@[simp]
 theorem finitePart_siegelMeromorphicFunction_ofQuotient_mk (h : IsSiegelUnitData N s a m)
     (τ : ℍ) :
     (siegelMeromorphicFunction N s a m).finitePart (ofQuotient (Quotient.mk _ τ)) =
@@ -265,7 +266,7 @@ theorem siegelMeromorphicFunction_ne_zero (h : IsSiegelUnitData N s a m) :
   have hτ := finitePart_siegelMeromorphicFunction_ofQuotient_mk h UpperHalfPlane.I
   rw [h0, MeromorphicFunction.finitePart_zero, Pi.zero_apply] at hτ
   refine (Finset.prod_ne_zero_iff.mpr fun i hi ↦ zpow_ne_zero _ <|
-    siegelFunction_ne_zero (div_ne_intCast (h.1 i hi)) UpperHalfPlane.I.im_pos) hτ.symm
+    siegelFunction_ne_zero (div_ne_intCast (h.not_dvd i hi)) UpperHalfPlane.I.im_pos) hτ.symm
 
 /-- The Siegel modular unit is not zero exactly when the Kubert–Lang conditions hold. -/
 theorem siegelMeromorphicFunction_ne_zero_iff :

@@ -112,6 +112,23 @@ theorem tendsto_norm_siegelFunction_div_rpow {r : Fin 2 → ℝ}
     mul_zero, zero_add, add_zero, mul_one, coe_im]
   ring
 
+/-- For `r ∉ ℤ²` the leading coefficient in
+`TauCeti.ModularForm.tendsto_norm_siegelFunction_div_rpow` is nonzero: on the boundary `r₁ = 0`,
+the coordinate `r₂` is not an integer. -/
+private theorem leadingCoeff_ne_zero {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → ℤ, r ≠ fun i ↦ (s i : ℝ)) :
+    (if r 0 = 0 then ‖1 - cexp (2 * π * I * r 1)‖ else 1) ≠ 0 := by
+  split_ifs with hz
+  · rw [norm_ne_zero_iff, sub_ne_zero, ne_comm, Ne, Complex.exp_eq_one_iff]
+    rintro ⟨k, hk⟩
+    have h2π : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
+    have hk' : (r 1 : ℂ) = k := mul_left_cancel₀ h2π (by rw [hk]; ring)
+    refine hr ![0, k] ?_
+    ext i
+    fin_cases i
+    · simp [hz]
+    · simpa using (by exact_mod_cast hk' : r 1 = k)
+  · exact one_ne_zero
+
 /-- **The logarithmic `q`-order of a Siegel function.** For `0 ≤ r₁ < 1` and `r ∉ ℤ²`, the
 logarithmic `q`-order of `g_r` is `B₂(r₁)/2`. The nonintegrality hypothesis excludes the
 identically zero function at the corner of the strip. -/
@@ -121,15 +138,7 @@ theorem tendsto_log_norm_siegelFunction_div_log_norm_q {r : Fin 2 → ℝ}
     Tendsto (fun τ : ℍ ↦ Real.log ‖siegelFunction r τ‖ /
       Real.log ‖cexp (2 * π * I * (τ : ℂ))‖) atImInfty
       (𝓝 (bernoulliFun 2 (r 0) / 2)) := by
-  have hc : (if r 0 = 0 then ‖1 - cexp (2 * π * I * r 1)‖ else 1) ≠ 0 := by
-    split_ifs with hz
-    · apply norm_ne_zero_iff.mpr
-      simpa only [ofReal_zero, zero_mul, zero_add] using
-        UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero (x := 0) (y := r 1)
-          (τ := Complex.I) (by simp)
-          (fun k _ hk ↦ hr ![0, k] (by ext i; fin_cases i <;> simp_all))
-    · exact one_ne_zero
-  have hlog := (tendsto_norm_siegelFunction_div_rpow hlo hhi).log hc
+  have hlog := (tendsto_norm_siegelFunction_div_rpow hlo hhi).log (leadingCoeff_ne_zero hr)
   have him : Tendsto (fun τ : ℍ ↦ τ.im) atImInfty atTop := tendsto_comap
   have hden : Tendsto (fun τ : ℍ ↦ Real.log ‖cexp (2 * π * I * (τ : ℂ))‖)
       atImInfty atBot := by
@@ -170,22 +179,12 @@ theorem isBigO_siegelFunction_zpow {r : Fin 2 → ℝ} (hr : ∀ s : Fin 2 → �
   set r' : Fin 2 → ℝ := ![Int.fract (r 0), r 1]
   have hr' : ∀ s : Fin 2 → ℤ, r' ≠ fun i ↦ (s i : ℝ) := fun s h ↦
     hr (s + ![⌊r 0⌋, 0]) <| (eq_fract_add_floor r).trans <| by
-      change r' + _ = _
-      rw [h]
+      rw [show ![Int.fract (r 0), r 1] = r' from rfl, h]
       ext i
       simp
   have hlim := tendsto_norm_siegelFunction_div_rpow (r := r') (Int.fract_nonneg _)
     (Int.fract_lt_one _)
-  -- The limit is nonzero because `r' ∉ ℤ²`.
-  have hL : (if r' 0 = 0 then ‖1 - cexp (2 * π * I * r' 1)‖ else 1) ≠ 0 := by
-    split_ifs with hz
-    · apply norm_ne_zero_iff.mpr
-      simpa only [ofReal_zero, zero_mul, zero_add] using
-        UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero (x := 0) (y := r' 1)
-          (τ := Complex.I) (by simp)
-          (fun k _ hk ↦ hr' ![0, k] (by ext i; fin_cases i <;> simp [hz, hk]))
-    · exact one_ne_zero
-  have hbdd := ((hlim.zpow₀ m (Or.inl hL)).isBigO_one ℝ).mul
+  have hbdd := ((hlim.zpow₀ m (Or.inl (leadingCoeff_ne_zero hr'))).isBigO_one ℝ).mul
     (Asymptotics.isBigO_refl (fun τ : ℍ ↦
       Real.exp (-(π * m * bernoulliFun 2 (Int.fract (r 0))) * τ.im)) atImInfty)
   simp only [one_mul] at hbdd
