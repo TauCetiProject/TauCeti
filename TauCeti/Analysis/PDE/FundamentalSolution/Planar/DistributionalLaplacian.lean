@@ -259,7 +259,7 @@ theorem hasWeakFDerivOn_planarNewtonianKernel (Ω : Opens ℂ) :
   hasWeakFDerivOn_of_forall_integral_fderiv_smul locallyIntegrable_planarNewtonianKernel
     locallyIntegrable_fderiv_planarNewtonianKernel (fun _ hg hc v ↦ by
       simpa only [smul_eq_mul, mul_comm] using
-        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hc v) Ω
+        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hg.of_le (by simp)) hc v) Ω
 
 /-- Away from the pole, the gradient pairing `∇G · ∇f` is `-(2π)⁻¹ ‖z‖⁻² f' z z`. -/
 private lemma sum_fderiv_planarNewtonianKernel_mul_fderiv (b : OrthonormalBasis (Fin 2) ℝ ℂ)
