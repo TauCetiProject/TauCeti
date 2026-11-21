@@ -153,9 +153,9 @@ theorem enorm_le_lintegral_edist_of_isCoupling_map_add_right [MeasurableAdd E] {
   have hIcc (n : ℕ) : -(n : ℝ) ≤ n := neg_le_self n.cast_nonneg
   set F : ℕ → E → ℝ := fun n x ↦ Set.projIcc (-(n : ℝ)) n (hIcc n) (ℓ x) with hF
   have hFm (n : ℕ) : Measurable (F n) :=
-    (continuous_subtype_val.comp continuous_projIcc).measurable.comp ℓ.continuous.measurable
+    (continuous_subtypeVal.comp continuous_projIcc).measurable.comp ℓ.continuous.measurable
   have hFb (n : ℕ) (x : E) : ‖F n x‖ ≤ n :=
-    Real.norm_eq_abs (F n x) ▸ abs_le.2 (Set.projIcc (-(n : ℝ)) n (hIcc n) (ℓ x)).2
+    Real.norm_eq_abs (F n x) ▸ abs_le.2 (Set.projIcc (-(n : ℝ)) n (hIcc n) (ℓ x)).property
   have hFi (n : ℕ) {ρ : Measure E} [IsFiniteMeasure ρ] : Integrable (F n) ρ :=
     .of_bound (hFm n).aestronglyMeasurable n (.of_forall (hFb n))
   have hFl (n : ℕ) (x y : E) : |F n x - F n y| ≤ |ℓ x - ℓ y| :=

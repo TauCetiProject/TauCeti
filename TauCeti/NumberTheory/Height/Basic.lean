@@ -284,13 +284,14 @@ lemma mulHeight_natCast_le {n : ι → ℕ} {N : ℕ} (hN : 1 ≤ N) (hn : ∀ i
   have : Finite (Set.range n) :=
     ((Set.finite_Iic N).subset (by rintro _ ⟨i, rfl⟩; exact hn i)).to_subtype
   have hsurj : Function.Surjective (Set.rangeFactorization n) := Set.rangeFactorization_surjective
-  refine (mulHeight_eq_of_forall_iSup_eq (y := fun s : Set.range n ↦ ((s.1 : ℕ) : K))
-    fun v ↦ Function.Surjective.iSup_comp hsurj fun s : Set.range n ↦ v ((s.1 : ℕ) : K)).trans_le ?_
-  have hs (s : Set.range n) : (s.1 : ℕ) ≤ N := by
-    obtain ⟨i, hi⟩ := s.2
+  refine (mulHeight_eq_of_forall_iSup_eq (y := fun s : Set.range n ↦ ((s.val : ℕ) : K))
+    fun v ↦ Function.Surjective.iSup_comp hsurj fun s : Set.range n ↦ v
+        ((s.val : ℕ) : K)).trans_le ?_
+  have hs (s : Set.range n) : (s.val : ℕ) ≤ N := by
+    obtain ⟨i, hi⟩ := s.property
     exact hi ▸ hn i
   refine mulHeight_le_pow_totalWeight (mod_cast hN) (fun v _ ↦ ?_) fun v hv ↦ ?_
-  · exact Real.iSup_le (fun s ↦ (v.apply_nat_le_self s.1).trans (mod_cast hs s))
+  · exact Real.iSup_le (fun s ↦ (v.apply_nat_le_self s.val).trans (mod_cast hs s))
       (Nat.cast_nonneg N)
   · exact Real.iSup_le (fun s ↦ (isNonarchimedean v hv).apply_natCast_le_one (by simp) (by simp))
       zero_le_one

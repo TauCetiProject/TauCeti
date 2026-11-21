@@ -80,24 +80,24 @@ intersected with `U` (the pullbacks of `i_a` along `j`), with the restrictions o
 functions. -/
 private noncomputable def restrict : RatEquivFamily U n where
   ι := {a : F.ι // Nonempty ↥(pullback (F.i a) j)}
-  W a := pullback (F.i a.1) j
-  i a := pullback.snd (F.i a.1) j
+  W a := pullback (F.i a.val) j
+  i a := pullback.snd (F.i a.val) j
   isIntegral a :=
-    haveI : Nonempty ↥(pullback (F.i a.1) j) := a.2
-    isIntegral_pullback j F a.1
+    haveI : Nonempty ↥(pullback (F.i a.val) j) := a.property
+    isIntegral_pullback j F a.val
   genericPoint_mem a := by
-    have : Nonempty ↥(pullback (F.i a.1) j) := a.2
-    have := isIntegral_pullback j F a.1
-    rw [mem_pointsOfDimension, ← Scheme.Hom.height_apply_eq_height (pullback.snd (F.i a.1) j),
+    have : Nonempty ↥(pullback (F.i a.val) j) := a.property
+    have := isIntegral_pullback j F a.val
+    rw [mem_pointsOfDimension, ← Scheme.Hom.height_apply_eq_height (pullback.snd (F.i a.val) j),
       ← height_apply_of_isOpenImmersion k j, ← Scheme.Hom.comp_apply, ← pullback.condition,
       Scheme.Hom.comp_apply, genericPoint_eq_of_isOpenImmersion, Scheme.Hom.height_apply_eq_height]
-    exact mem_pointsOfDimension.mp (F.genericPoint_mem a.1)
+    exact mem_pointsOfDimension.mp (F.genericPoint_mem a.val)
   r a :=
-    haveI : Nonempty ↥(pullback (F.i a.1) j) := a.2
-    haveI := isIntegral_pullback j F a.1
-    haveI := (pullback.fst (F.i a.1) j).isDominant_of_isOpenMap
-      (pullback.fst (F.i a.1) j).isOpenEmbedding.isOpenMap
-    Units.map (pullback.fst (F.i a.1) j).functionFieldMap.hom (F.r a.1)
+    haveI : Nonempty ↥(pullback (F.i a.val) j) := a.property
+    haveI := isIntegral_pullback j F a.val
+    haveI := (pullback.fst (F.i a.val) j).isDominant_of_isOpenMap
+      (pullback.fst (F.i a.val) j).isOpenEmbedding.isOpenMap
+    Units.map (pullback.fst (F.i a.val) j).functionFieldMap.hom (F.r a.val)
   locallyFinite := by
     simp_rw [Scheme.Pullback.range_snd]
     exact (F.locallyFinite.preimage_continuous j.continuous).comp_injective Subtype.val_injective
@@ -106,22 +106,22 @@ variable {j F} in
 /-- On `U`, the summands of the restricted family are the restrictions of the summands. -/
 private lemma component_restrict_apply [IsLocallyNoetherian X] [IsLocallyNoetherian U]
     (a : {a : F.ι // Nonempty ↥(pullback (F.i a) j)}) (u : U) :
-    (F.restrict k j).component a u = F.component a.1 (j u) := by
-  by_cases hu : u ∈ Set.range (pullback.snd (F.i a.1) j)
+    (F.restrict k j).component a u = F.component a.val (j u) := by
+  by_cases hu : u ∈ Set.range (pullback.snd (F.i a.val) j)
   · obtain ⟨p, rfl⟩ := hu
-    have : Nonempty ↥(pullback (F.i a.1) j) := a.2
-    have := isIntegral_pullback j F a.1
-    have := (pullback.fst (F.i a.1) j).isDominant_of_isOpenMap
-      (pullback.fst (F.i a.1) j).isOpenEmbedding.isOpenMap
-    have h : j (pullback.snd (F.i a.1) j p) = F.i a.1 (pullback.fst (F.i a.1) j p) := by
+    have : Nonempty ↥(pullback (F.i a.val) j) := a.property
+    have := isIntegral_pullback j F a.val
+    have := (pullback.fst (F.i a.val) j).isDominant_of_isOpenMap
+      (pullback.fst (F.i a.val) j).isOpenEmbedding.isOpenMap
+    have h : j (pullback.snd (F.i a.val) j p) = F.i a.val (pullback.fst (F.i a.val) j p) := by
       rw [← Scheme.Hom.comp_apply, ← pullback.condition, Scheme.Hom.comp_apply]
     refine ((F.restrict k j).component_apply a p).trans ?_
     rw [h, component_apply]
     simp only [restrict, Units.coe_map, MonoidHom.coe_ofClass]
-    exact Scheme.ord_functionFieldMap (pullback.fst (F.i a.1) j) _ p
+    exact Scheme.ord_functionFieldMap (pullback.fst (F.i a.val) j) _ p
   · rw [(F.restrict k j).component_apply_eq_zero_of_notMem_range a hu, eq_comm]
     rw [Scheme.Pullback.range_snd, Set.mem_preimage] at hu
-    exact F.component_apply_eq_zero_of_notMem_range a.1 hu
+    exact F.component_apply_eq_zero_of_notMem_range a.val hu
 
 /-- **Restriction of a rational equivalence.** The cycle of the restriction of a family to an open
 subscheme `j : U ⟶ X` is the restriction of its cycle: `(Σ_a (i_a)_* div r_a)|_U` is

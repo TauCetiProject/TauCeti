@@ -172,7 +172,7 @@ lemma homotopyLimitMapOfHomotopiesHomotopy_hom
     (homotopyLimitMapOfHomotopiesHomotopy f h h' s hs).hom p q =
       (homotopyLimitFst K).f p ≫
         (productComplexTransitionCochain s).v p (q + -1) (by omega) ≫
-          (mappingCocone.inr ((complexShift R).app L)).1.v (q + -1) q (by omega) := by
+          (mappingCocone.inr ((complexShift R).app L)).val.v (q + -1) q (by omega) := by
   rw [homotopyLimitMapOfHomotopiesHomotopy, mappingCocone.mapOfHomotopyHomotopy_hom
     _ _ _ _ p q hpq]
   simp only [Cochain.neg_v, Preadditive.comp_neg, Preadditive.neg_comp, neg_neg,

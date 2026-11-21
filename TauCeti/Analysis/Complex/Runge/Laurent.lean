@@ -63,7 +63,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_eval_inv_sub_lt (hfill : IsFille
   let φ := ρ.comp (holomorphicFunctions U).val
   let S := φ.range.topologicalClosure
   let w : C(K, ℂ) := ⟨fun z : K => ((z : ℂ) - a)⁻¹,
-    (continuous_subtype_val.sub continuous_const).inv₀ fun z =>
+    (continuous_subtypeVal.sub continuous_const).inv₀ fun z =>
       sub_ne_zero.mpr fun h : (z : ℂ) = a => ha (h ▸ z.property)⟩
   have hw : w ∈ S := Metric.mem_closure_iff.mpr fun δ hδ => by
     obtain ⟨g₀, hg₀, hbound⟩ := hfill.exists_differentiableOn_norm_inv_sub_lt hΩ hK hKΩ ha hδ

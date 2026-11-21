@@ -66,8 +66,8 @@ theorem iIndepFun.hasLaw_finset_inf' {Ω ι α : Type*} {_ : MeasurableSpace Ω}
     HasLaw (fun ω ↦ s.inf' hs fun i ↦ X i ω)
       ((Measure.pi fun i : s ↦ μ i).map fun x ↦ s.attach.inf' hs.attach fun i ↦ x i) P := by
   have : Nonempty s := hs.to_subtype
-  have hlaw := (hindep.precomp Subtype.val_injective).hasLaw_inf' fun i : s ↦ hX i.1 i.2
-  have hdom : (fun ω ↦ Finset.univ.inf' Finset.univ_nonempty fun i : s ↦ X i.1 ω) =
+  have hlaw := (hindep.precomp Subtype.val_injective).hasLaw_inf' fun i : s ↦ hX i.val i.property
+  have hdom : (fun ω ↦ Finset.univ.inf' Finset.univ_nonempty fun i : s ↦ X i.val ω) =
       fun ω ↦ s.inf' hs fun i ↦ X i ω :=
     funext fun ω ↦ eq_of_forall_le_iff fun _ ↦ by simp
   have hcod : (fun x : s → α ↦ Finset.univ.inf' Finset.univ_nonempty fun i ↦ x i) =
@@ -85,8 +85,8 @@ theorem iIndepFun.hasLaw_finset_sup' {Ω ι α : Type*} {_ : MeasurableSpace Ω}
     HasLaw (fun ω ↦ s.sup' hs fun i ↦ X i ω)
       ((Measure.pi fun i : s ↦ μ i).map fun x ↦ s.attach.sup' hs.attach fun i ↦ x i) P := by
   have : Nonempty s := hs.to_subtype
-  have hlaw := (hindep.precomp Subtype.val_injective).hasLaw_sup' fun i : s ↦ hX i.1 i.2
-  have hdom : (fun ω ↦ Finset.univ.sup' Finset.univ_nonempty fun i : s ↦ X i.1 ω) =
+  have hlaw := (hindep.precomp Subtype.val_injective).hasLaw_sup' fun i : s ↦ hX i.val i.property
+  have hdom : (fun ω ↦ Finset.univ.sup' Finset.univ_nonempty fun i : s ↦ X i.val ω) =
       fun ω ↦ s.sup' hs fun i ↦ X i ω :=
     funext fun ω ↦ eq_of_forall_ge_iff fun _ ↦ by simp
   have hcod : (fun x : s → α ↦ Finset.univ.sup' Finset.univ_nonempty fun i ↦ x i) =

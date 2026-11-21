@@ -32,14 +32,14 @@ public section
 namespace TauCeti.ReeF4LieIndex
 
 /-- The algebraic closure attached to a Ree index of type `F₄` has characteristic two. -/
-instance charP_closure_two (d : ReeF4LieIndex) : CharP d.1.Closure 2 := by
+instance charP_closure_two (d : ReeF4LieIndex) : CharP d.val.Closure 2 := by
   rw [← d.characteristic_eq_two]
   infer_instance
 
 /-- The algebraic closure attached to a Ree index of type `F₄` is an algebra over the field of two
 elements, this being the base ring over which its carrier is defined. Characteristic two forces
 the structure: any two `ZMod 2`-algebra structures on a ring agree. -/
-noncomputable instance algebraZModTwo (d : ReeF4LieIndex) : Algebra (ZMod 2) d.1.Closure :=
-  ZMod.algebra d.1.Closure 2
+noncomputable instance algebraZModTwo (d : ReeF4LieIndex) : Algebra (ZMod 2) d.val.Closure :=
+  ZMod.algebra d.val.Closure 2
 
 end TauCeti.ReeF4LieIndex

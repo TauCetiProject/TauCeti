@@ -120,11 +120,11 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_cappedCy
     funext (cappedCylinderComponent_of_le_neg_three (hHb inf) hL₂ (z := (s, t))
       (by linarith [le_max_right R 3]) v)
   refine ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical
-    (R := max R 3) (fun ⟨s, t⟩ hs ↦ hJRm s t (hs.trans (neg_le_neg (le_max_left _ _))))
-    (fun ⟨s, t⟩ hs ↦ hJRp s t ((le_max_left _ _).trans hs)) (fun ⟨s, t⟩ hs ↦ ?_)
-    (fun ⟨s, t⟩ hs ↦ by simp [hm _ s t hs]) (fun ⟨s, t⟩ hs ↦ by simp [hp _ s t hs]) hJ
-    (fun _ ↦ (hK 1).contDiffAt) (fun _ ↦ (hK Complex.I).contDiffAt) hu hJu hXm (hHbs inf) hxm hndm
-    hJm hJxm huxm hδm hXp (hHbs zero) hxp hndp hJp hJxp huxp hδp
+    (R := max R 3) ⟨fun ⟨s, t⟩ hs ↦ hJRm s t (hs.trans (neg_le_neg (le_max_left _ _))),
+      fun ⟨s, t⟩ hs ↦ hJRp s t ((le_max_left _ _).trans hs), fun ⟨s, t⟩ hs ↦ ?_,
+      fun ⟨s, t⟩ hs ↦ by simp [hm _ s t hs], fun ⟨s, t⟩ hs ↦ by simp [hp _ s t hs], hJ,
+      fun _ ↦ (hK 1).contDiffAt, fun _ ↦ (hK Complex.I).contDiffAt⟩
+    hu hJu hXm (hHbs inf) hxm hndm hJm hJxm huxm hδm hXp (hHbs zero) hxp hndp hJp hJxp huxp hδp
   funext x
   rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
   rcases hs with hs | hs

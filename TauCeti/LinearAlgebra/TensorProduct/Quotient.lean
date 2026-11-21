@@ -465,7 +465,7 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
   let p := r • (⊤ : Submodule R M)
   have hzero : lTensor A p.subtype = 0 := by
     ext a v
-    obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
+    obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.property
     simp [← hw, smul_tmul', Algebra.smul_def, hr]
   rw [baseChange_eq_lTensor]
   exact ⟨(injective_iff_eq_zero_of_exact

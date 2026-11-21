@@ -191,7 +191,7 @@ private theorem memLp_comp_latticeCoord {g : ℂ → ℂ} (hg : Continuous g) :
 private noncomputable def sectionToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     flatLineTestSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) where
-  toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂) u.2.1.continuous).toLp _
+  toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂) u.property.1.continuous).toLp _
   map_add' u v := by
     rw [← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp)
@@ -200,7 +200,7 @@ private noncomputable def sectionToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp)
 
 private theorem sectionToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
-    sectionToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord u.2.1.continuous).toLp
+    sectionToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord u.property.1.continuous).toLp
       (fun p : ℝ × ℝ ↦ (u : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)) :=
   rfl
 
@@ -210,19 +210,19 @@ private noncomputable def negWirtingerToLp (ω₁ ω₂ : ℂ) (θ₁ θ₂ : �
     flatLineTestSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ]
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)) where
   toFun u := (memLp_comp_latticeCoord (ω₁ := ω₁) (ω₂ := ω₂)
-    ((u.2.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1).neg).toLp _
+    ((u.property.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1).neg).toLp _
   map_add' u v := by
     rw [← MemLp.toLp_add]
     refine MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ ?_)
-    simp [wirtingerDeriv_add (u.2.1.differentiable two_ne_zero _)
-      (v.2.1.differentiable two_ne_zero _), add_comm]
+    simp [wirtingerDeriv_add (u.property.1.differentiable two_ne_zero _)
+      (v.property.1.differentiable two_ne_zero _), add_comm]
   map_smul' c u := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun p ↦ by simp [wirtingerDeriv_const_smul])
 
 private theorem negWirtingerToLp_apply (u : flatLineTestSections ω₁ ω₂ θ₁ θ₂) :
     negWirtingerToLp ω₁ ω₂ θ₁ θ₂ u = (memLp_comp_latticeCoord
-      ((u.2.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1).neg).toLp
+      ((u.property.1.of_le one_le_two).continuous_wirtingerDeriv_apply 1).neg).toLp
       (fun p : ℝ × ℝ ↦ -wirtingerDeriv (u : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂) 1) :=
   rfl
 
@@ -235,7 +235,8 @@ private theorem sqrt_mul_norm_sectionToLp_le (hω : (conj ω₁ * ω₂).im ≠ 
   rw [mul_pow, Real.sq_sqrt (by positivity), sectionToLp_apply, negWirtingerToLp_apply,
     MemLp.norm_toLp_sq, MemLp.norm_toLp_sq]
   simpa only [norm_neg] using
-    mul_setIntegral_norm_sq_le_setIntegral_norm_wirtingerDeriv_sq u.2.1 hω u.2.2.1 u.2.2.2
+    mul_setIntegral_norm_sq_le_setIntegral_norm_wirtingerDeriv_sq u.property.1 hω u.property.2.1
+        u.property.2.2
 
 /-- **The bounded weak inverse of `∂bar` on a flat line with nontrivial holonomy.** Let
 `ω₁, ω₂` be linearly independent over `ℝ`, and let `θ₁` or `θ₂` not be an integer, so that the

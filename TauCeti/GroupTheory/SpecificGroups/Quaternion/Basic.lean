@@ -199,7 +199,7 @@ theorem conjNormal_eq_inv_of_notMem_quaternionRotations {s : QuaternionGroup n}
     MulAut.conjNormal s x = x⁻¹ :=
   Subtype.ext (by
     rw [MulAut.conjNormal_apply]
-    simpa using conj_eq_inv_of_notMem_quaternionRotations hs x.2)
+    simpa using conj_eq_inv_of_notMem_quaternionRotations hs x.property)
 
 /-- The rotation index of a quaternion-group element: the index `i` of `a i`, and the junk value
 `0` on `xa i`. The interface is `TauCeti.quaternionRotationsMulEquiv`, which reads the index off
@@ -227,9 +227,9 @@ def quaternionRotationsMulEquiv (n : ℕ) :
     quaternionRotations n ≃* Multiplicative (ZMod (2 * n)) where
   toFun x := Multiplicative.ofAdd (quaternionRotationIndex (x : QuaternionGroup n))
   invFun i := ⟨QuaternionGroup.a (Multiplicative.toAdd i), a_mem_quaternionRotations _⟩
-  left_inv x := Subtype.ext (a_quaternionRotationIndex x.2)
+  left_inv x := Subtype.ext (a_quaternionRotationIndex x.property)
   right_inv _ := rfl
-  map_mul' x y := congrArg Multiplicative.ofAdd (quaternionRotationIndex_mul x.2 y.2)
+  map_mul' x y := congrArg Multiplicative.ofAdd (quaternionRotationIndex_mul x.property y.property)
 
 @[simp]
 theorem quaternionRotationsMulEquiv_a (i : ZMod (2 * n)) :
@@ -414,7 +414,7 @@ theorem not_exists_isComplement'_zpowers_quaternionGroup_a (n : ℕ) [NeZero n] 
   obtain ⟨k, hk⟩ := exists_prime_orderOf_dvd_card' (G := K) 2 ⟨n, by omega⟩
   rw [← Subgroup.orderOf_coe, orderOf_eq_two_quaternionGroup_iff] at hk
   exact quaternionGroup_a_self_ne_one
-    (Subgroup.disjoint_def.mp hK.disjoint (Subgroup.mem_zpowers _) (hk ▸ k.2))
+    (Subgroup.disjoint_def.mp hK.disjoint (Subgroup.mem_zpowers _) (hk ▸ k.property))
 
 /-- For `n ≠ 0` and `n ≠ 1`, the centre of `QuaternionGroup n` has no complement in
 `QuaternionGroup n`. -/
@@ -461,7 +461,7 @@ theorem quaternionGroup_a_two_pow_mem_of_ne_bot {k : ℕ}
       (mt Subgroup.card_eq_one.mp hH)
   obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' (G := H) 2 hdvd
   rw [← Subgroup.orderOf_coe, orderOf_eq_two_quaternionGroup_iff] at hx
-  exact hx ▸ x.2
+  exact hx ▸ x.property
 
 /-- Two subgroups of `QuaternionGroup (2 ^ k)` are disjoint if and only if at least one of them is
 trivial. -/

@@ -121,7 +121,7 @@ difference of integer powers, when the exponent has valuation one. -/
   have hy0 : y ≠ 0 := v.ne_zero_iff.mp hyv
   have hx : v (c / y) < 1 := by
     rw [v.map_div]
-    exact (div_lt_one₀ (zero_lt_iff.mpr hyv)).mpr hc
+    exact (div_lt_one₀ (pos_iff_ne_zero.mpr hyv)).mpr hc
   have he : y + c = y * (1 + c / y) := by field_simp
   have heq : (y + c) ^ n - y ^ n = y ^ n * ((1 + c / y) ^ n - 1) := by
     rw [he, mul_zpow]

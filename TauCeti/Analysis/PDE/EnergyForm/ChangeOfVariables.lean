@@ -157,6 +157,16 @@ theorem pullbackDensity_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     (f : E → ℝ) (x : E) : pullbackDensity Φ f x = |(fderiv ℝ Φ x).det| * f (Φ x) :=
   (rfl)
 
+@[simp]
+theorem pullbackDrift_zero (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) :
+    pullbackDrift Φ (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) = 0 := by
+  funext x; simp [pullbackDrift_apply]
+
+@[simp]
+theorem pullbackDensity_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Φ : E → E) :
+    pullbackDensity Φ (0 : E → ℝ) = 0 := by
+  funext x; simp
+
 /-- Where `DΦ(x)` is invertible, the map of the inverse Jacobian matrix is a right inverse of
 `DΦ(x)`. -/
 private theorem fderiv_apply_toEuclideanCLM_inv_apply {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
@@ -508,7 +518,7 @@ theorem energyFormH1_compL_eq_setIntegral (hΦ : DifferentiableOn ℝ Φ U) (hin
   set w := W1p.compL Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁ hΨdet (φ : W1p mu U 2)
   have hw : w ∈ w1p0Submodule mu V 2 :=
     W1p.compL_mem_w1p0Submodule_of_leftInvOn Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁
-      hΨdet hΦ.continuousOn hmaps hΦΨ φ.2
+      hΨdet hΦ.continuousOn hmaps hΦΨ φ.property
   have hφ : W1p.compL Φ hp hΦ hinj hmaps hL hc₀ hdet w = φ :=
     W1p.compL_compL_of_leftInvOn Φ hp hΦ hinj hmaps hL hc₀ hdet hΨ hΦΨ.injOn
       hΨmaps hΨL hc₁ hΨdet hΨΦ (φ : W1p mu U 2)
