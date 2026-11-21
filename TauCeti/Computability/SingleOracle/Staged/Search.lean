@@ -91,8 +91,8 @@ private theorem eval_searchStages_bind (c : Code) (x : ℕ) :
       (Nat.rfind fun s => (eval O c (Nat.pair x s)).map (fun n => decide (n ≠ 0))).bind
         fun s => (eval O c (Nat.pair x s)).map Nat.pred := by
   have hout : eval O stageSearchOutput = fun n => Part.some n.pred := funext eval_stageSearchOutput
-  rw [searchStages, eval_comp, eval_pair, eval_pair_left_right, eval_searchStages_index]
-  rw [← Part.pure_eq_some x, map_pure, pure_seq, Part.map_eq_map]
+  rw [searchStages, eval_comp, eval_pair_of_left_eq_some (eval_pair_left_right x),
+    eval_searchStages_index]
   refine (Part.bind_map _ _ _).trans ?_
   congr 1
   funext s
@@ -127,26 +127,25 @@ theorem mem_eval_searchStages {c : Code} {x y : ℕ} :
     · exact (Part.mem_map_iff _).2 ⟨_, hs, by simp⟩
     · exact (Part.mem_map_iff _).2 ⟨0, hbefore _ ht, by simp⟩
 
+private theorem mem_rfindOpt_iff {α : Type*} {A : ℕ → Option α} {y : α} :
+    y ∈ Nat.rfindOpt A ↔ ∃ s, A s = some y ∧ ∀ t < s, A t = none := by
+  simp only [Nat.rfindOpt, Part.mem_bind_iff, Part.mem_coe, Option.mem_def]
+  refine exists_congr fun s => ?_
+  constructor
+  · rintro ⟨hfind, hs⟩
+    exact ⟨hs, fun _ ht => Option.isNone_iff_eq_none.1
+      (Option.isSome_eq_false_iff.1 (Part.mem_some_iff.1 (Nat.rfind_min hfind ht)).symm)⟩
+  · rintro ⟨hs, hbefore⟩
+    refine ⟨Nat.mem_rfind.2 ⟨?_, fun {t} ht => ?_⟩, hs⟩
+    · exact Part.mem_some_iff.2 (by simp [hs])
+    · exact Part.mem_some_iff.2 (by simp [hbefore t ht])
+
 /-- The compiler realizes least-stage search for any source program that computes a total
 table of optional observations relative to the given oracle. -/
 theorem eval_searchStages {c : Code} {A : ℕ → Option ℕ} {x : ℕ}
     (hA : ∀ s, eval O c (Nat.pair x s) = Part.some (encode (A s))) :
     eval O c.searchStages x = Nat.rfindOpt A := by
-  have htest (s : ℕ) :
-      (Part.some (encode (A s))).map (fun n => decide (n ≠ 0)) = Part.some (A s).isSome := by
-    cases A s <;> simp
-  rw [eval_searchStages_bind, Nat.rfindOpt]
-  simp only [hA, htest]
   ext y
-  simp only [Part.mem_bind_iff]
-  refine exists_congr fun s => ?_
-  cases hs : A s with
-  | none =>
-    have hn : s ∉ Nat.rfind fun t => Part.some (A t).isSome := by
-      intro h
-      have hfound := Nat.rfind_spec h
-      simp [hs] at hfound
-    simp [hn]
-  | some v => simp
+  simp only [mem_eval_searchStages, mem_rfindOpt_iff, hA, Part.mem_some_iff, encode_inj, eq_comm]
 
 end TauCeti.Oracle.Single.Code

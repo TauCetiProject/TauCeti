@@ -49,19 +49,13 @@ example : ∃ P Q : StagedPartial ℕ ℕ,
   let t (s : ℕ) := s + 2
   have ht : Monotone t := fun _ _ h => Nat.add_le_add_right h 2
   refine ⟨delayed 2, delayed 1, ?_, t, ht, fun s => ⟨s, Nat.le_add_right _ _⟩, ?_⟩
-  · rw [StagedPartial.mem_eval_iff]
-    refine ⟨1, ?_⟩
-    rw [StagedPartial.stage_race, Staged.race_eq_some_inr_iff]
-    refine ⟨1, le_rfl, ?_, ?_, ?_⟩
+  · refine (StagedPartial.inr_mem_eval_race_iff _).2 ⟨1, ?_, ?_, ?_⟩
     · intro u hu
       obtain rfl := Nat.lt_one_iff.1 hu
       simp [delayed]
     · simp [delayed]
     · simp [delayed]
-  · rw [StagedPartial.mem_eval_iff]
-    refine ⟨0, ?_⟩
-    have hleft : (delayed 2).stage 7 (t 0) = some 7 := by simp [delayed, t]
-    simp [StagedPartial.stage_race, hleft]
+  · exact (StagedPartial.inl_mem_eval_race_iff _).2 ⟨0, by simp, by simp [delayed, t]⟩
 
 -- A reported absence permits search to continue, while an undefined initial observation
 -- blocks the search even though stage one would report a success in both cases.

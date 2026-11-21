@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SingleOracle.Relative
+public import TauCeti.Computability.SingleOracle.Stage.Relative
 public import TauCeti.Computability.Staged.Partial
 
 /-!
@@ -81,12 +81,10 @@ theorem recursiveIn_iff_exists_stagedPartial {α β : Type*} [Primcodable α] [P
     refine ⟨P, ?_, ?_⟩
     · have hO : ComputableIn {(O : ℕ →. ℕ)} O := RecursiveIn.oracle _ (Set.mem_singleton _)
       have hσ : ComputableIn {(O : ℕ →. ℕ)} σ := Primrec.option_some.computableIn.comp hO
-      have hargs : ComputableIn {(O : ℕ →. ℕ)} fun p : α × ℕ => (encode p.1, p.2) :=
-        (Primrec.encode.computableIn.comp ComputableIn.fst).pair ComputableIn.snd
-      simpa only [ComputableIn₂, P, StagedPartial.stage_filterMap, StagedPartial.stage_comap,
-        Function.comp_apply] using
-        (Primrec.option_bind₁ (Primrec.decode.comp Halt.primrec_output)).computableIn.comp
-          ((c.computableIn₂_stage_stagedEval hσ).comp hargs)
+      have hcomap := (c.stagedEval σ).computableIn₂_stage_comap
+        (c.computableIn₂_stage_stagedEval hσ) (Primrec.encode (α := α)).computableIn
+      exact ((c.stagedEval σ).comap encode).computableIn₂_stage_filterMap hcomap
+        (Primrec.decode.comp Halt.primrec_output).computableIn
     · funext x
       have hcode : eval (O : ℕ →. ℕ) c (encode x) = (f x).map encode := by
         rw [hc]

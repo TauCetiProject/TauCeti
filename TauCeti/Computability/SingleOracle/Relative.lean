@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SingleOracle.Stage
+public import TauCeti.Computability.SingleOracle.Primrec
 public import TauCeti.Computability.RecursiveIn
 
 /-!
 # Oracle-relative computability of bounded simulation
 
-Bounded and normalized stage evaluation accept optional answers uniformly computable in the
-same oracle family as the evaluation. The simulator computes a finite initial segment of
-those answers and then uses the primitive-recursive evaluator. Only the first `k` answers
-are needed for fuel or stage `k`, including to certify failure. Total oracles are the
-special case in which every answer is present.
+Bounded evaluation accepts optional answers uniformly computable in the same oracle family
+as the evaluation. The simulator computes a finite initial segment of those answers and then
+uses the primitive-recursive evaluator. Only the first `k` answers are needed for fuel `k`,
+including to certify failure. Total oracles are the special case in which every answer is present.
 
 This allows a computable approximation of an oracle to be passed to a bounded simulator,
 without assuming that its oracle answers are primitive recursive. In particular it supports
@@ -48,16 +47,5 @@ theorem computableIn_evaln {σ : α → ℕ → ℕ} (hσ : ComputableIn₂ G σ
       evaln (fun z => some (σ p.1 z)) p.2.1 p.2.2.1 p.2.2.2 :=
   computableIn_evaln_option (σ := fun a z => some (σ a z))
     (Primrec.option_some.computableIn.comp hσ)
-
-/-- Normalized stage evaluation of optional answers uniformly computable in `G` is uniformly
-computable in `G`. To simulate stage `s` it suffices to read the first `s` answers. -/
-theorem computableIn_evalStage {σ : α → ℕ → Option ℕ} (hσ : ComputableIn₂ G σ) :
-    ComputableIn G fun p : α × ℕ × Code × ℕ =>
-      evalStage (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
-  have hstage : ComputableIn G fun p : α × ℕ × Code × ℕ => (p.2.1, p.2.2.1) :=
-    ComputableIn.fst.comp ComputableIn.snd |>.pair
-      (ComputableIn.fst.comp (ComputableIn.snd.comp ComputableIn.snd))
-  simpa only [evalStage_def] using primrec_normalizeStage.computableIn.comp
-    (hstage.pair (computableIn_evaln_option hσ))
 
 end TauCeti.Oracle.Single.Code

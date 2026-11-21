@@ -150,11 +150,22 @@ variable [Primcodable α] [Primcodable β] {G : Set (ℕ →. ℕ)}
 theorem recursiveIn_eval (hP : ComputableIn₂ G P.stage) : RecursiveIn G P.eval :=
   RecursiveIn.rfindOpt hP
 
+/-- Precomposing the inputs by an oracle-computable function preserves relative effectivity. -/
+theorem computableIn₂_stage_comap {δ : Type*} [Primcodable δ] (hP : ComputableIn₂ G P.stage)
+    {f : δ → α} (hf : ComputableIn G f) : ComputableIn₂ G (P.comap f).stage := by
+  simpa only [ComputableIn₂, stage_comap] using
+    hP.comp ((hf.comp ComputableIn.fst).pair ComputableIn.snd)
+
+/-- An oracle-computable optional output map preserves the relative effectivity of a table. -/
+theorem computableIn₂_stage_filterMap [Primcodable γ] (hP : ComputableIn₂ G P.stage)
+    {f : β → Option γ} (hf : ComputableIn G f) : ComputableIn₂ G (P.filterMap f).stage := by
+  simpa only [ComputableIn₂, stage_filterMap] using
+    hP.option_bind (g := fun (_ : α × ℕ) y => f y) (hf.comp ComputableIn.snd)
+
 /-- Mapping by an oracle-computable function preserves the relative effectivity of a table. -/
 theorem computableIn₂_stage_map [Primcodable γ] (hP : ComputableIn₂ G P.stage)
     {f : β → γ} (hf : ComputableIn G f) : ComputableIn₂ G (P.map f).stage := by
-  simpa only [ComputableIn₂, stage_map] using
-    hP.option_map (g := fun (_ : α × ℕ) y => f y) (hf.comp ComputableIn.snd)
+  exact P.computableIn₂_stage_filterMap hP (Primrec.option_some.computableIn.comp hf)
 
 /-- Reindexing by an oracle-computable monotone clock preserves relative effectivity. -/
 theorem computableIn₂_stage_reindex (hP : ComputableIn₂ G P.stage)
