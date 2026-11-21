@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DividedPowers.DPMorphism
-import TauCeti.RingTheory.DividedPowers.FromGens
+public import TauCeti.RingTheory.DividedPowers.FromGens
 
 /-!
 # Gluing divided power structures on sums of ideals
@@ -22,9 +22,9 @@ The construction proceeds in three steps:
    semiring).
 2. Over a commutative ring, when `hI` and `hJ` agree on `I ⊓ J`, prove that `dpowConv hI hJ n x y`
    depends only on the sum `x + y` (`dpowConv_eq_of_add_eq`) via `DividedPowers.exp_add`.
-3. Assemble the induced additive divided power candidate on `I ⊔ J` and upgrade it to
-   `DividedPowers.sup hI hJ h : DividedPowers (I ⊔ J)` via the generator criterion
-   `TauCeti.AdditiveDividedPowers.toDividedPowers` on `(I : Set A) ∪ (J : Set A)`.
+3. Assemble the induced additive divided power candidate `DividedPowers.supAdditive hI hJ h` on
+   `I ⊔ J` and upgrade it to `DividedPowers.sup hI hJ h : DividedPowers (I ⊔ J)` via the generator
+   criterion `TauCeti.AdditiveDividedPowers.toDividedPowers` on `(I : Set A) ∪ (J : Set A)`.
 
 When `I ⊓ J = I * J`, agreement on `I ⊓ J` is automatic by `DividedPowers.coincide_on_smul`,
 yielding an unconditional glued divided power structure on `I ⊔ J`.
@@ -36,6 +36,9 @@ yielding an unconditional glued divided power structure on `I ⊔ J`.
 * `DividedPowers.coeff_exp_mul_exp`: `dpowConv` computes the coefficients of `hI.exp x * hJ.exp y`.
 * `DividedPowers.dpowConv_eq_of_add_eq`: independence of `dpowConv` from the decomposition
   `z = x + y` when `hI` and `hJ` agree on `I ⊓ J`.
+* `DividedPowers.supAdditive`: the glued additive divided power candidate on `I ⊔ J` for
+  compatible `hI` and `hJ`, with evaluation `DividedPowers.supAdditive_dpow_add` and restrictions
+  `DividedPowers.supAdditive_dpow_left`, `DividedPowers.supAdditive_dpow_right`.
 * `DividedPowers.sup`: the glued divided power structure on `I ⊔ J` for compatible `hI` and `hJ`.
 * `DividedPowers.isDPMorphism_sup_iff`: universal property of `DividedPowers.sup` with respect to
   divided power morphisms.
@@ -128,6 +131,20 @@ theorem dpowConv_mem (hI : DividedPowers I) (hJ : DividedPowers J)
   · have h2 : k.2 ≠ 0 := by omega
     exact Ideal.mul_mem_left (I ⊔ J) _ (Ideal.mem_sup_right (hJ.dpow_mem h2 hy))
   · exact Ideal.mul_mem_right _ (I ⊔ J) (Ideal.mem_sup_left (hI.dpow_mem h1 hx))
+
+/-- If `x ∉ I`, then `dpowConv hI hJ n x y = 0`. -/
+@[simp]
+theorem dpowConv_null_left (hI : DividedPowers I) (hJ : DividedPowers J)
+    {n : ℕ} {x y : A} (hx : x ∉ I) :
+    hI.dpowConv hJ n x y = 0 := by
+  simp [dpowConv_def, hI.dpow_null hx]
+
+/-- If `y ∉ J`, then `dpowConv hI hJ n x y = 0`. -/
+@[simp]
+theorem dpowConv_null_right (hI : DividedPowers I) (hJ : DividedPowers J)
+    {n : ℕ} {x y : A} (hy : y ∉ J) :
+    hI.dpowConv hJ n x y = 0 := by
+  simp [dpowConv_def, hJ.dpow_null hy]
 
 /-- Evaluating `dpowConv` at `0` on the left recovers `hJ.dpow`. -/
 @[simp]
@@ -238,7 +255,9 @@ private lemma supDpow_add_eq (hI : DividedPowers I) (hJ : DividedPowers J)
   have hspec2 := hspec.2.choose_spec
   exact hI.dpowConv_eq_of_add_eq hJ h hspec.1 hx hspec2.1 hy hspec2.2
 
-private noncomputable def supAdditive (hI : DividedPowers I) (hJ : DividedPowers J)
+/-- The glued additive divided power candidate on `I ⊔ J` constructed from `hI` and `hJ`
+when they agree on `I ⊓ J` in every degree. -/
+noncomputable def supAdditive (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     TauCeti.AdditiveDividedPowers (I ⊔ J) where
   dpow := supDpow hI hJ
@@ -273,19 +292,29 @@ private lemma supAdditive_dpow (hI : DividedPowers I) (hJ : DividedPowers J)
     (supAdditive hI hJ h).dpow = supDpow hI hJ := by
   rfl
 
-private lemma supAdditive_dpow_left (hI : DividedPowers I) (hJ : DividedPowers J)
-    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) (n : ℕ) {x : A} (hx : x ∈ I) :
-    (supAdditive hI hJ h).dpow n x = hI.dpow n x := by
-  rw [supAdditive_dpow]
-  simpa only [add_zero] using
-    (supDpow_add_eq hI hJ h n hx J.zero_mem).trans (hI.dpowConv_zero_right hJ n x)
+/-- On a sum `x + y` with `x ∈ I` and `y ∈ J`, `(hI.supAdditive hJ h).dpow n (x + y)` equals
+the antidiagonal convolution `hI.dpowConv hJ n x y`. -/
+theorem supAdditive_dpow_add (hI : DividedPowers I) (hJ : DividedPowers J)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
+    (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
+    (hI.supAdditive hJ h).dpow n (x + y) = hI.dpowConv hJ n x y := by
+  simpa only [supAdditive_dpow] using supDpow_add_eq hI hJ h n hx hy
 
-private lemma supAdditive_dpow_right (hI : DividedPowers I) (hJ : DividedPowers J)
+/-- The glued additive divided power candidate `hI.supAdditive hJ h` agrees with `hI` on `I`. -/
+@[simp]
+theorem supAdditive_dpow_left (hI : DividedPowers I) (hJ : DividedPowers J)
+    (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) (n : ℕ) {x : A} (hx : x ∈ I) :
+    (hI.supAdditive hJ h).dpow n x = hI.dpow n x := by
+  simpa only [add_zero] using
+    (hI.supAdditive_dpow_add hJ h n hx J.zero_mem).trans (hI.dpowConv_zero_right hJ n x)
+
+/-- The glued additive divided power candidate `hI.supAdditive hJ h` agrees with `hJ` on `J`. -/
+@[simp]
+theorem supAdditive_dpow_right (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) (n : ℕ) {y : A} (hy : y ∈ J) :
-    (supAdditive hI hJ h).dpow n y = hJ.dpow n y := by
-  rw [supAdditive_dpow]
+    (hI.supAdditive hJ h).dpow n y = hJ.dpow n y := by
   simpa only [zero_add] using
-    (supDpow_add_eq hI hJ h n I.zero_mem hy).trans (hI.dpowConv_zero_left hJ n y)
+    (hI.supAdditive_dpow_add hJ h n I.zero_mem hy).trans (hI.dpowConv_zero_left hJ n y)
 
 /-- Stacks Project, Lemma 23.2.5 (tag `07GQ`): given divided power structures `hI` on `I` and
 `hJ` on `J` that agree on `I ⊓ J` in every degree, construct the unique divided power structure on
@@ -314,8 +343,8 @@ theorem sup_dpow_add (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
     (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
     (hI.sup hJ h).dpow n (x + y) = hI.dpowConv hJ n x y := by
-  simpa only [sup, TauCeti.AdditiveDividedPowers.toDividedPowers_dpow, supAdditive_dpow] using
-    supDpow_add_eq hI hJ h n hx hy
+  rw [sup, TauCeti.AdditiveDividedPowers.toDividedPowers_dpow,
+    hI.supAdditive_dpow_add hJ h n hx hy]
 
 /-- The glued divided power structure `hI.sup hJ h` agrees with `hI` on `I`. -/
 @[simp]
@@ -387,6 +416,7 @@ theorem isDPMorphism_id_sup_right (hI : DividedPowers I) (hJ : DividedPowers J)
 /-- Universal property of `DividedPowers.sup`: a ring homomorphism `g : A →+* C` is a divided
 power morphism from `(I ⊔ J, hI.sup hJ h)` to `(K, hK)` if and only if it is a divided power
 morphism from both `(I, hI)` and `(J, hJ)` to `(K, hK)`. -/
+@[simp]
 theorem isDPMorphism_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w)
     {C : Type*} [CommSemiring C] {K : Ideal C} (hK : DividedPowers K) (g : A →+* C) :
