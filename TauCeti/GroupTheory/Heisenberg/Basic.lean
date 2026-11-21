@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 
@@ -15,12 +16,14 @@ public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 # The Heisenberg group of a bilinear form
 
 The Heisenberg group of a symplectic space is the central extension of the additive group of that
-space, by its centre, whose factor set is the symplectic form. This file builds the extension of an
-arbitrary bilinear map in the library's factor-set coordinates, and computes the group law, the
-inverse, the commutator and the centre in those coordinates. The development is deliberately
-coordinate-level: no alternating, nondegeneracy or invertibility hypothesis is used unless a
-theorem states it, so one API serves both the integral bilinear extensions and the
-half-alternating convention `ω / 2` of the metaplectic cover.
+space by its coefficient group, with factor set the half-form `ω / 2` when `2` is invertible. This
+file builds the extension of an arbitrary bilinear map in the library's factor-set coordinates, and
+computes the group law, the inverse, the commutator and the centre in those coordinates. The
+development is deliberately coordinate-level: no alternating, nondegeneracy or invertibility
+hypothesis is used unless a theorem states it, so one API serves both the integral bilinear
+extensions and the half-alternating convention of the metaplectic cover. In general the copy of the
+coefficient group supplied by `TauCeti.FactorSet.inl` is only a subgroup of the centre; it is the
+whole centre exactly when the form is nondegenerate alternating.
 
 The extension of `B : W × W → C` is the `TauCeti.FactorSet.Extension` of
 `TauCeti.Heisenberg.bilinearFactorSet B`: its elements are pairs `(t, w)` with the coefficient
@@ -45,8 +48,6 @@ the extension of `ω / 2` is exactly the copy of the coefficient group
 ## Main results
 
 * `TauCeti.Heisenberg.bilinearFactorSet_apply`: the value of the factor set is `B`.
-* `TauCeti.Heisenberg.bilinearExtension_mul_left`,
-  `TauCeti.Heisenberg.bilinearExtension_mul_right`: the two coordinates of a product.
 * `TauCeti.Heisenberg.bilinearExtension_inv`: the inverse of `(t, w)` is `(B w w - t, -w)`.
 * `TauCeti.Heisenberg.bilinearExtension_commutator`: the commutator of `(t, w)` and `(s, v)` is
   `inl (B w v - B v w)`.
@@ -82,51 +83,29 @@ normalization is `B 0 0 = 0`. The associated extension
 `TauCeti.FactorSet.Extension (TauCeti.Heisenberg.bilinearFactorSet B)` is the **Heisenberg group of
 `B`**; its law is `(t, w) * (s, v) = (t + s + B w v, w + v)`. -/
 def bilinearFactorSet (B : LinearMap.BilinMap R W C) :
-    FactorSet (Multiplicative W) (Multiplicative C) where
-  toFun p := ofAdd (B p.1.toAdd p.2.toAdd)
-  isMulCocycle₂' g h j := by
-    refine toAdd.injective ?_
-    simp only [TauCeti.trivialMulDistribMulAction_smul, toAdd_mul, toAdd_ofAdd, map_add,
-      LinearMap.add_apply]
-    abel
-  map_one_one' := by
-    simp only [toAdd_one, map_zero, ofAdd_zero]
+    FactorSet (Multiplicative W) (Multiplicative C) :=
+  FactorSet.ofBimultiplicative
+    { toFun w := AddMonoidHom.toMultiplicative (LinearMap.toAddMonoidHom (B w.toAdd))
+      map_one' := by ext; simp
+      map_mul' _ _ := by ext; simp [ofAdd_add] }
+    TauCeti.trivialMulDistribMulAction_smul
 
 /-- The value of the factor set of `B` at two multiplicatively written space coordinates is the
 image under `ofAdd` of the value of `B` at the corresponding additive coordinates: the additive
 value of the factor set is `B` itself. -/
 @[simp]
 theorem bilinearFactorSet_apply (B : LinearMap.BilinMap R W C) (w v : Multiplicative W) :
-    bilinearFactorSet B (w, v) = ofAdd (B w.toAdd v.toAdd) :=
-  (rfl)
+    bilinearFactorSet B (w, v) = ofAdd (B w.toAdd v.toAdd) := by
+  rw [bilinearFactorSet, FactorSet.ofBimultiplicative_apply]
+  simp [LinearMap.toAddMonoidHom_coe]
 
 section
 
 variable {B : LinearMap.BilinMap R W C} {p q : (bilinearFactorSet B).Extension}
 
-/-- **The coefficient coordinate of a product** in the Heisenberg group of `B`: the coefficient
-accumulates the value of `B` at the two space coordinates. Not `@[simp]`: the global simplifier
-already rewrites `(p * q).left` to this normal form through
-`TauCeti.FactorSet.Extension.mul_left`, `TauCeti.trivialMulDistribMulAction_smul` and
-`TauCeti.Heisenberg.bilinearFactorSet_apply`, so tagging it would shadow those lemmas
-(the `simpNF` linter rejects the tag). -/
-theorem bilinearExtension_mul_left :
-    (p * q).left = ofAdd (p.left.toAdd + q.left.toAdd + B p.right.toAdd q.right.toAdd) := by
-  simp only [FactorSet.Extension.mul_left, TauCeti.trivialMulDistribMulAction_smul,
-    bilinearFactorSet_apply, ofAdd_add, ofAdd_toAdd]
-
-/-- **The space coordinate of a product** in the Heisenberg group of `B` is the sum of the two
-space coordinates: the projection `(t, w) ↦ w` is a homomorphism
-(`TauCeti.FactorSet.rightHom`). -/
-@[simp]
-theorem bilinearExtension_mul_right :
-    (p * q).right = ofAdd (p.right.toAdd + q.right.toAdd) := by
-  rw [FactorSet.Extension.mul_right]
-  conv_lhs => rw [← ofAdd_toAdd p.right, ← ofAdd_toAdd q.right, ← ofAdd_add]
-
-/-- **The inverse in the Heisenberg group of `B`** is `(t, w)⁻¹ = (B w w - t, -w)`. The diagonal
-value of `B` appears because `B w (-w) = -B w w`, so the inverse of `(0, w)` is not `(0, -w)`
-unless `B` is alternating. -/
+/-- **The inverse in the Heisenberg group of `B`** is `(t, w)⁻¹ = (B w w - t, -w)`. In particular,
+the inverse of `(0, w)` is `(0, -w)` exactly when `B w w = 0`; this holds for every `w` when `B` is
+alternating. -/
 theorem bilinearExtension_inv :
     p⁻¹ = ⟨ofAdd (-p.left.toAdd + B p.right.toAdd p.right.toAdd), ofAdd (-p.right.toAdd)⟩ := by
   refine FactorSet.Extension.ext ?_ ?_
@@ -155,19 +134,16 @@ theorem bilinearExtension_mem_center_iff :
   rw [Subgroup.mem_center_iff]
   constructor
   · intro hp v
-    have hl := congrArg FactorSet.Extension.left (hp ⟨1, ofAdd v⟩)
-    simp only [bilinearExtension_mul_left, toAdd_one, toAdd_ofAdd, zero_add, add_zero] at hl
-    have h2 := congrArg toAdd hl
-    rw [toAdd_ofAdd, toAdd_ofAdd, add_left_cancel_iff] at h2
-    exact h2.symm
+    have hcomm := commutatorElement_eq_one_iff_mul_comm.mpr (hp ⟨1, ofAdd v⟩)
+    rw [bilinearExtension_commutator, map_eq_one_iff _ (FactorSet.inl_injective _),
+      ofAdd_eq_one, sub_eq_zero] at hcomm
+    exact hcomm.symm
   · intro hv q
-    refine FactorSet.Extension.ext ?_ ?_
-    · rw [bilinearExtension_mul_left, bilinearExtension_mul_left, hv q.right.toAdd]
-      congr 1
-      abel
-    · rw [bilinearExtension_mul_right, bilinearExtension_mul_right]
-      congr 1
-      abel
+    refine commutatorElement_eq_one_iff_mul_comm.mp ?_
+    rw [bilinearExtension_commutator]
+    have h0 : B q.right.toAdd p.right.toAdd - B p.right.toAdd q.right.toAdd = 0 := by
+      rw [hv q.right.toAdd]; abel
+    simp [h0, map_one]
 
 end
 
@@ -176,20 +152,23 @@ section HalfForm
 variable [Invertible (2 : R)] {ω : LinearMap.BilinForm R W}
 
 /-- **The quadratic correction between the two Heisenberg cocycles.** For a scalar form `B` with
-`2` invertible, put `q x = B x x / 2` and `ω = B - Bᵀ`. Then the difference of the cocycle of `B`
-and the cocycle of `ω / 2` is the coboundary of `q`: concretely
-`ω x y / 2 + q (x + y) = B x y + q x + q y`. This is Weil's identity comparing the two ways of
+`2` invertible, put `q x = B x x / 2` and `ω = B - Bᵀ`. Then the difference of the cocycle of
+`ω / 2` and the cocycle of `B` is the coboundary of `q`; explicitly `ω / 2 - B = δq`, where
+`δq (x, y) = q x + q y - q (x + y)`, or concretely
+`(ω x y) / 2 + q (x + y) = B x y + q x + q y`. This is Weil's identity comparing the two ways of
 writing the same central extension, and it is what lets the integral extension of `B` be replaced
 by the half-alternating one. -/
 theorem polarization_cocycle (B : LinearMap.BilinForm R W) (x y : W) :
     (⅟(2 : R) • (B - B.flip)) x y + ⅟(2 : R) • B (x + y) (x + y)
       = B x y + ⅟(2 : R) • B x x + ⅟(2 : R) • B y y := by
   have hstep : (⅟(2 : R) • (B - B.flip)) x y = ⅟(2 : R) • (B x y - B y x) := by
-    rw [LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.sub_apply,
-      show (B.flip x) y = B y x from rfl]
+    simp [LinearMap.sub_apply, LinearMap.smul_apply, mul_sub]
   have hdiag : B (x + y) (x + y) = B x x + B x y + B y x + B y y := by
-    simp only [map_add, LinearMap.add_apply]
-    abel
+    have h := LinearMap.BilinMap.polar_toQuadraticMap (B := B) x y
+    simp only [QuadraticMap.polar, LinearMap.BilinMap.toQuadraticMap_apply] at h
+    calc B (x + y) (x + y) = (B (x + y) (x + y) - B x x - B y y) + B x x + B y y := by abel
+      _ = (B x y + B y x) + B x x + B y y := by rw [h]
+      _ = B x x + B x y + B y x + B y y := by abel
   have hinner : B x y - B y x + (B x x + B x y + B y x + B y y)
       = (2 : R) • B x y + B x x + B y y := by
     rw [two_smul]
@@ -220,40 +199,26 @@ nondegeneracy: a central element has trivial space coordinate. -/
 theorem halfForm_center (hω : ω.IsAlt) (hωn : ω.Nondegenerate) :
     Subgroup.center ((bilinearFactorSet (⅟(2 : R) • ω)).Extension) =
       (FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))).range := by
-  refine le_antisymm ?_ ?_
+  refine le_antisymm ?_ (FactorSet.inl_range_le_center _ TauCeti.trivialMulDistribMulAction_smul)
   · intro p hp
-    rw [bilinearExtension_mem_center_iff] at hp
-    simp only [LinearMap.smul_apply] at hp
-    have hsym : ∀ y : W, ω p.right.toAdd y = ω y p.right.toAdd := by
-      intro y
-      have h2 := congrArg ((2 : R) • ·) (hp y)
-      rw [smul_smul, mul_invOf_self, one_smul, smul_smul, mul_invOf_self, one_smul] at h2
-      exact h2
-    have hzero : ∀ v : W, ω p.right.toAdd v = 0 := by
-      intro v
-      have hn : ω p.right.toAdd v = -(ω p.right.toAdd v) :=
-        (hsym v).trans (hω.neg_eq p.right.toAdd v).symm
-      have ht : (2 : R) • ω p.right.toAdd v = 0 := by
-        rw [two_smul]
-        nth_rw 2 [hn]
-        abel
-      have hc : ω p.right.toAdd v = ⅟(2 : R) • (2 : R) • ω p.right.toAdd v := by
-        rw [smul_smul, invOf_mul_self, one_smul]
-      rw [hc, ht, smul_zero]
-    have hz : ω p.right.toAdd = 0 := by
-      ext v
-      rw [LinearMap.zero_apply]
-      exact hzero v
-    have hw : p.right.toAdd = 0 := by
-      have hmem : p.right.toAdd ∈ LinearMap.ker (ω : LinearMap.BilinForm R W) :=
-        LinearMap.mem_ker.mpr hz
-      rw [hωn.ker_eq_bot] at hmem
-      exact hmem
-    refine MonoidHom.mem_range.mpr ⟨p.left, FactorSet.Extension.ext
-      (FactorSet.inl_left _ _) ?_⟩
-    rw [FactorSet.inl_right, ← ofAdd_toAdd p.right, hw, ofAdd_zero]
-  · exact FactorSet.inl_range_le_center (bilinearFactorSet (⅟(2 : R) • ω))
-      TauCeti.trivialMulDistribMulAction_smul
+    rw [FactorSet.range_inl_eq_ker_rightHom, MonoidHom.mem_ker, FactorSet.rightHom_apply]
+    rw [← ofAdd_toAdd p.right]
+    congr
+    apply hωn.2 p.right.toAdd
+    intro y
+    have hcomm := commutatorElement_eq_one_iff_mul_comm.mpr
+      (Subgroup.mem_center_iff.mp hp ⟨1, ofAdd y⟩)
+    rw [halfForm_commutator hω] at hcomm
+    have hcomm' : (bilinearFactorSet (⅟(2 : R) • ω)).inl (ofAdd (ω y p.right.toAdd)) = 1 := by
+      simpa using hcomm
+    have hzero : ω y p.right.toAdd = 0 := by
+      have h' : (bilinearFactorSet (⅟(2 : R) • ω)).inl (ofAdd (ω y p.right.toAdd))
+          = (bilinearFactorSet (⅟(2 : R) • ω)).inl 1 := by
+        rw [hcomm']
+        exact (FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))).map_one.symm
+      have h'' := FactorSet.inl_injective (bilinearFactorSet (⅟(2 : R) • ω)) h'
+      simpa [ofAdd_eq_one] using h''
+    exact hzero
 
 end HalfForm
 
