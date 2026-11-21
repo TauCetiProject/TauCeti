@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Crossover
 public import TauCeti.Analysis.PDE.Regularity.ReverseHolder
-public import TauCeti.Analysis.PDE.Regularity.Supersolution.Lp
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.LowerOrder
 import TauCeti.Analysis.PDE.Regularity.Supersolution.LowerOrder
