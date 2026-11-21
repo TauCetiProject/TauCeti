@@ -121,6 +121,46 @@ theorem raiseWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :
     raiseWord F x w π = some ρ ↔ lowerWord F x w.reverse ρ = some π := by
   simpa using (lowerWord_eq_some_iff hx (w := w.reverse) (π := ρ) (ρ := π)).symm
 
+/-- A path is reached from `π` by a defined lowering word exactly when it is reached by finitely
+many single lowering steps. -/
+theorem exists_lowerWord_eq_some_iff_reflTransGen :
+    (∃ w, lowerWord F x w π = some ρ) ↔
+      Relation.ReflTransGen (fun p q ↦ ∃ i, lower (F i) (x i) p = some q) π ρ := by
+  constructor
+  · rintro ⟨w, hw⟩
+    induction w generalizing π with
+    | nil => exact Option.some.inj hw ▸ .refl
+    | cons i w ih =>
+      obtain ⟨σ, hσ, hρ⟩ := Option.bind_eq_some_iff.mp (lowerWord_cons i w π ▸ hw)
+      exact .head ⟨i, hσ⟩ (ih hρ)
+  · intro h
+    induction h with
+    | refl => exact ⟨[], rfl⟩
+    | tail _ hstep ih =>
+      obtain ⟨w, hw⟩ := ih
+      obtain ⟨i, hi⟩ := hstep
+      exact ⟨w ++ [i], by rw [lowerWord_append, hw, Option.bind_some, lowerWord_singleton, hi]⟩
+
+/-- A path is reached from `π` by a defined raising word exactly when it is reached by finitely
+many single raising steps. -/
+theorem exists_raiseWord_eq_some_iff_reflTransGen :
+    (∃ w, raiseWord F x w π = some ρ) ↔
+      Relation.ReflTransGen (fun p q ↦ ∃ i, raise (F i) (x i) p = some q) π ρ := by
+  constructor
+  · rintro ⟨w, hw⟩
+    induction w generalizing π with
+    | nil => exact Option.some.inj hw ▸ .refl
+    | cons i w ih =>
+      obtain ⟨σ, hσ, hρ⟩ := Option.bind_eq_some_iff.mp (raiseWord_cons i w π ▸ hw)
+      exact .head ⟨i, hσ⟩ (ih hρ)
+  · intro h
+    induction h with
+    | refl => exact ⟨[], rfl⟩
+    | tail _ hstep ih =>
+      obtain ⟨w, hw⟩ := ih
+      obtain ⟨i, hi⟩ := hstep
+      exact ⟨w ++ [i], by rw [raiseWord_append, hw, Option.bind_some, raiseWord_singleton, hi]⟩
+
 /-- A lowering word subtracts the sum of its roots from the endpoint. -/
 theorem endpoint_of_lowerWord_eq_some (h : lowerWord F x w π = some ρ) :
     ρ.endpoint = π.endpoint - (w.map x).sum := by
