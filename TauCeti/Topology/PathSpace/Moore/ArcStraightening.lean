@@ -217,6 +217,14 @@ theorem mem_arcsWithin {γ : MooreFreeLoopSpace X} :
     γ ∈ arcsWithin U r ↔ ArcsWithin U r γ.toMoorePath.toUnitPath :=
   Iff.rfl
 
+/-- Consecutive sampled vertices of a free Moore loop whose `n + 1` arcs lie in `U` form a pair in
+`U`, including the last vertex and the first one, which bound the closing arc. -/
+theorem mk_sample_mem_of_mem_arcsWithin {n : ℕ} {γ : MooreFreeLoopSpace X}
+    (hγ : γ ∈ arcsWithin U (n + 1)) (i : Fin (n + 1)) :
+    (γ.toMoorePath.sample (n + 1) i, γ.toMoorePath.sample (n + 1) (i + 1)) ∈ U := by
+  rw [MoorePath.sample_eq_toUnitPath_arcPoint, sample_add_one_eq_toUnitPath_arcPoint]
+  exact mem_arcsWithin.1 hγ i i.isLt 1
+
 /-- A free Moore loop whose arcs lie in `U`, as a Moore path whose arcs lie in `U`. -/
 def toArcsWithin (γ : arcsWithin U r) : MoorePath.arcsWithin U r :=
   ⟨(γ : MooreFreeLoopSpace X).toMoorePath, MoorePath.mem_arcsWithin.2 (mem_arcsWithin.1 γ.property)⟩
@@ -294,5 +302,21 @@ theorem exists_subset_arcsWithin {K : Set (MoorePath X)} (hK : IsCompact K) {U :
   · exact div_le_div_of_nonneg_right (by linarith [a.property.2]) hrpos.le
 
 end MoorePath
+
+namespace MooreFreeLoopSpace
+
+variable {X : Type*} [PseudoMetricSpace X]
+
+/-- The samples of a free Moore loop whose `n + 1` arcs are shorter than `r` are at distance less
+than `r` from the preceding ones, the last one preceding the first one. -/
+theorem dist_sample_sub_one_lt_of_mem_arcsWithin {n : ℕ} {r : ℝ} {γ : MooreFreeLoopSpace X}
+    (hγ : γ ∈ arcsWithin {p : X × X | dist p.1 p.2 < r} (n + 1)) (i : Fin (n + 1)) :
+    dist (γ.toMoorePath.sample (n + 1) i) (γ.toMoorePath.sample (n + 1) (i - 1)) < r := by
+  have h := mk_sample_mem_of_mem_arcsWithin hγ (i - 1)
+  rw [sub_add_cancel] at h
+  rw [dist_comm]
+  exact h
+
+end MooreFreeLoopSpace
 
 end TauCeti

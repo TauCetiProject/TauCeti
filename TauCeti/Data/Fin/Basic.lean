@@ -263,6 +263,23 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
     partialProd f (last n) = ∏ i, f i := by
   rw [partialProd_last_eq_prod_ofFn, prod_ofFn]
 
+/-- The partial product up to the `i`-th entry is the product of the entries of index less than
+`i`. -/
+@[to_additive /-- The partial sum up to the `i`-th entry is the sum of the entries of index less
+than `i`. -/]
+theorem partialProd_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    (i : Fin (n + 1)) : partialProd f i.castSucc = ∏ k < i, f k := by
+  induction i using Fin.induction with
+  | zero =>
+    rw [castSucc_zero, partialProd_zero]
+    exact (Finset.prod_eq_one fun k hk ↦ absurd (Finset.mem_Iio.1 hk) (not_lt_zero k)).symm
+  | succ j ih =>
+    have hj : Finset.Iio j.succ = insert j.castSucc (Finset.Iio j.castSucc) := by
+      ext k
+      simp only [Finset.mem_Iio, Finset.mem_insert, lt_def, val_succ, val_castSucc, Fin.ext_iff]
+      omega
+    rw [← succ_castSucc, partialProd_succ, ih, hj, Finset.prod_insert (by simp), mul_comm]
+
 /-- The last entry times the preceding partial product is the product of all entries. -/
 theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
     f (last n) * partialProd (init f) (last n) = ∏ i, f i := by
