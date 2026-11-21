@@ -17,7 +17,9 @@ of order `m` with values in `V →L[ℂ] W` that vanishes for positions outside 
 file shows that their composition symbol `a # b` (`TauCeti.Symbol.sharp`), whose quantization is
 `Op(a) ∘ Op(b)`, is again classical, of order `m' + m`, and computes its homogeneous terms. As a
 consequence, the commutator `a # b - b # a` of two classical symbols with commuting principal
-symbols is classical of order `m' + m - 1`, with an explicit leading term.
+symbols is classical of order `m' + m - 1`, with an explicit leading term. When one of them is a
+scalar symbol times the identity, that leading term is `-i` times the Poisson bracket of the
+principal symbols.
 
 Each term `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w b` of the composition expansion is a
 classical symbol of order `m' + m - k` (`TauCeti.ClassicalSymbol.sharpTerm`), built from the
@@ -50,6 +52,15 @@ In particular the principal symbol of `a # b` is `a_{m'} ∘ b_m`, and its next 
 
   Commuting principal symbols do not remove the two commutators of a principal with a subprincipal
   term.
+* `TauCeti.ClassicalSymbol.exists_inclusion_eq_sharpCommutator_of_forall_commute`: **the Poisson
+  bracket formula**. If every value of `a` commutes with every operator on `V`, the commutator has
+  order `m' + m - 1` and principal symbol
+  `-i ∑ⱼ (∂_{ξⱼ} a_{m'} ∂_{xⱼ} b_m - ∂_{xⱼ} a_{m'} ∂_{ξⱼ} b_m)`; then all homogeneous terms of `a`
+  are central, so the subprincipal commutators vanish.
+* `TauCeti.ClassicalSymbol.exists_inclusion_eq_sharpCommutator_scalar`: the case of a scalar
+  symbol `p` times the identity (`TauCeti.ClassicalSymbol.scalar`) and a symbol `b` with values in
+  `V →L[ℂ] V`: the principal symbol of the commutator is
+  `-i ∑ⱼ (∂_{ξⱼ} p_{m'} ∂_{xⱼ} b_m - ∂_{xⱼ} p_{m'} ∂_{ξⱼ} b_m)`.
 * `TauCeti.ClassicalSymbol.exists_inclusion_eq_sharpCommutator_of_scalar`: for scalar symbols the
   commutator has order `m' + m - 1` and principal symbol `-i {a_{m'}, b_m}`, with the Poisson
   bracket `{p, q} = ∑ⱼ (∂_{ξⱼ} p ∂_{xⱼ} q - ∂_{xⱼ} p ∂_{ξⱼ} q)`.
@@ -356,6 +367,42 @@ theorem exists_inclusion_eq_sharpCommutator
     coefficient_term_one_sharp, Finset.sum_sub_distrib, smul_sub, neg_smul, neg_smul]
   abel
 
+/-- **The Poisson bracket formula for a central symbol.** If every value of the full symbol of
+`a` commutes with every operator on `V`, as for a scalar symbol times the identity, the commutator
+`a # b - b # a` with a classical symbol `b` is a classical symbol of order `m' + m - 1` with
+principal symbol
+
+`-i ∑ⱼ (∂_{ξⱼ} a_{m'} ∂_{xⱼ} b_m - ∂_{xⱼ} a_{m'} ∂_{ξⱼ} b_m)`,
+
+`-i` times the Poisson bracket of the principal symbols. Unlike for symbols whose principal symbols
+merely commute (`TauCeti.ClassicalSymbol.exists_inclusion_eq_sharpCommutator`), no commutators
+with the subprincipal terms remain: all homogeneous terms of `a` are central as well
+(`TauCeti.ClassicalSymbol.commute_coefficient_term`). -/
+theorem exists_inclusion_eq_sharpCommutator_of_forall_commute
+    (hc : ∀ z (T : V →L[ℂ] V), Commute (a.toSymbol.coefficient z) T) :
+    ∃ c : ClassicalSymbol n V V (m' + m - 1), inclusion 1 (by simp) c = sharpCommutator a b ha hb ∧
+      ∀ z, c.principal.coefficient z =
+        -Complex.I • ∑ j,
+          ((((a.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient z).comp
+            ((b.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z)) -
+          (((a.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z).comp
+            ((b.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient z))) := by
+  -- The homogeneous terms of `a` and of its spatial derivatives are central.
+  have hterm (k : ℕ) z (T : V →L[ℂ] V) :
+      ((a.term k).coefficient z).comp T = T.comp ((a.term k).coefficient z) :=
+    (commute_coefficient_term (fun q => hc q T) k z).eq
+  have hx (j : Fin n) z (T : V →L[ℂ] V) :
+      ((a.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z).comp T =
+        T.comp ((a.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z) := by
+    rw [← principal_spatialDeriv, coefficient_principal]
+    exact (commute_coefficient_term (fun q => by
+      simpa using Symbol.commute_coefficient_spatialDeriv (fun q' => hc q' T) j q) 0 z).eq
+  obtain ⟨c, hc', hσ⟩ := exists_inclusion_eq_sharpCommutator a b ha hb fun z => by
+    simpa using hterm 0 z _
+  refine ⟨c, hc', fun z => ?_⟩
+  rw [hσ z, coefficient_principal, hterm 0, hterm 1, sub_self, sub_self, add_zero, add_zero]
+  simp only [← hx _ z]
+
 /-- **The Poisson bracket formula.** For scalar classical symbols `a` and `b` of compact spatial
 support, the commutator `a # b - b # a` is a classical symbol of order `m' + m - 1` whose principal
 symbol is `-i {a_{m'}, b_m}`, with the Poisson bracket
@@ -369,19 +416,38 @@ theorem exists_inclusion_eq_sharpCommutator_of_scalar (a : ClassicalSymbol n ℂ
           ((((a.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient z).comp
             ((b.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z)) -
           (((a.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z).comp
-            ((b.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient z))) := by
+            ((b.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient z))) :=
   -- Continuous linear endomorphisms of `ℂ` commute.
-  have hcomm (S T : ℂ →L[ℂ] ℂ) : S.comp T = T.comp S := by
+  exists_inclusion_eq_sharpCommutator_of_forall_commute a b ha hb fun z T => by
     have h (f : ℂ →L[ℂ] ℂ) (x : ℂ) : f x = x * f 1 := by simpa using f.map_smul x 1
+    rw [commute_iff_eq, ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def]
     ext1
     simp only [ContinuousLinearMap.comp_apply]
-    rw [h S, h T (S 1), mul_comm]
-  obtain ⟨c, hc, hσ⟩ := exists_inclusion_eq_sharpCommutator a b ha hb fun z => hcomm _ _
+    rw [h (a.toSymbol.coefficient z), h T (a.toSymbol.coefficient z 1), mul_comm]
+
+/-- **The Poisson bracket formula for a scalar symbol times the identity.** For a scalar classical
+symbol `p` and a classical symbol `b` with values in the endomorphisms of `V`, both of compact
+spatial support, the commutator of `p · Id_V` and `b` is a classical symbol of order `m' + m - 1`
+with principal symbol
+
+`-i ∑ⱼ (∂_{ξⱼ} p_{m'} ∂_{xⱼ} b_m - ∂_{xⱼ} p_{m'} ∂_{ξⱼ} b_m)`. -/
+theorem exists_inclusion_eq_sharpCommutator_scalar (p : ClassicalSymbol n ℂ ℂ m')
+    (hp : p.toSymbol.HasCompactSpatialSupport) :
+    ∃ c : ClassicalSymbol n V V (m' + m - 1),
+      inclusion 1 (by simp) c =
+        sharpCommutator (scalar V p) b (hasCompactSpatialSupport_toSymbol_scalar p hp) hb ∧
+      ∀ z, c.principal.coefficient z =
+        -Complex.I • ∑ j,
+          ((p.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient z 1 •
+            (b.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z -
+          (p.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z 1 •
+            (b.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient z) := by
+  obtain ⟨c, hc, hσ⟩ := exists_inclusion_eq_sharpCommutator_of_forall_commute (scalar V p) b
+    (hasCompactSpatialSupport_toSymbol_scalar p hp) hb (commute_coefficient_toSymbol_scalar p)
   refine ⟨c, hc, fun z => ?_⟩
-  rw [hσ z, hcomm (a.principal.coefficient z) ((b.term 1).coefficient z),
-    hcomm ((a.term 1).coefficient z) (b.principal.coefficient z), sub_self, sub_self, add_zero,
-    add_zero]
-  simp only [hcomm ((b.principal.frequencyDeriv _).coefficient z)]
+  simp only [hσ z, ← principal_frequencyDeriv, ← principal_spatialDeriv, frequencyDeriv_scalar,
+    spatialDeriv_scalar, coefficient_principal, coefficient_term_scalar,
+    ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp]
 
 end Commutator
 

@@ -86,6 +86,10 @@ The file develops:
 * between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
   `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
   (`HomogeneousSymbol.adjoint_comp`).
+* the image `HomogeneousSymbol.map Φ a`, `(x, ξ) ↦ Φ (a (x, ξ))`, under a continuous real-linear
+  map `Φ` of the coefficient spaces, of the same degree; it commutes with the spatial and
+  frequency derivatives (`HomogeneousSymbol.spatialDeriv_map`,
+  `HomogeneousSymbol.frequencyDeriv_map`).
 
 Higher derivatives are full Fréchet derivatives on `X × E`; a derivative in `j` position
 directions `u` and `l` frequency directions `w` is the iterated derivative evaluated on
@@ -832,6 +836,49 @@ theorem frequencyDeriv_castDegree (h : m = m') (w : E) :
   subst h; rfl
 
 end Deriv
+
+/-! ### Images under maps of the coefficient spaces -/
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W'] (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : HomogeneousSymbol X E V W m)
+
+/-- The image `(x, ξ) ↦ Φ (a (x, ξ))` of a homogeneous symbol under a continuous real-linear map
+`Φ` of the coefficient spaces is a homogeneous symbol of the same degree. For instance, a scalar
+symbol `p` gives the symbol `p · Id` with values in the endomorphisms of any space. -/
+def map : HomogeneousSymbol X E V' W' m where
+  coefficient := Φ ∘ a.coefficient
+  zero_covector x := by simp
+  contDiffOn_coefficient := Φ.contDiff.comp_contDiffOn a.contDiffOn_coefficient
+  homogeneous x ξ t ht := by simp [a.homogeneous x ξ t ht]
+
+@[simp]
+theorem coefficient_map (p : X × E) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
+  (rfl)
+
+@[simp]
+theorem map_castDegree (h : m = m') : (a.castDegree h).map Φ = (a.map Φ).castDegree h :=
+  (rfl)
+
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (v : X) : (a.map Φ).spatialDeriv v = (a.spatialDeriv v).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_spatialDeriv_eq_fderiv, coefficient_map, coefficient_spatialDeriv_eq_fderiv,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (w : E) : (a.map Φ).frequencyDeriv w = (a.frequencyDeriv w).map Φ :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_frequencyDeriv_eq_fderiv _ _ hξ, coefficient_map,
+      coefficient_frequencyDeriv_eq_fderiv _ _ hξ,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
+
+end Map
 
 /-! ### The product rule for composition -/
 
