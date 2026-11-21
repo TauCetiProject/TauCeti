@@ -87,16 +87,10 @@ theorem mem_range_rankTwoUpperUnitaryRootHom_iff
       ((g : SpecialLinearGroup (Fin 3)
         (GaloisField d.characteristic (d.fieldExponent * 2))) : Matrix (Fin 3) (Fin 3)
           (GaloisField d.characteristic (d.fieldExponent * 2))).IsUpperUnitriangular := by
-  let e := MulEquiv.subgroupCongr
-    (d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2)
-  have hmem : g ∈ d.rankTwoUpperUnitaryRootHom.range ↔
-      e g ∈ UnitaryRankOne.unipotentSubgroup _ _ := by
-    rw [UnitaryRankOne.unipotentSubgroup_def, rankTwoUpperUnitaryRootHom, MonoidHom.mem_range,
-      MonoidHom.mem_range]
-    exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, by simpa [e] using congrArg e ha⟩,
-      fun ⟨a, ha⟩ ↦ ⟨a, by simpa [e] using congrArg e.symm ha⟩⟩
-  rw [hmem, UnitaryRankOne.mem_unipotentSubgroup_iff]
-  simp [e]
+  rw [rankTwoUpperUnitaryRootHom, MonoidHom.range_comp, Subgroup.mem_map_equiv,
+    MulEquiv.symm_symm, ← UnitaryRankOne.unipotentSubgroup_def,
+    UnitaryRankOne.mem_unipotentSubgroup_iff]
+  simp
 
 /-- The upper root subgroup of the finite special unitary model has derived subgroup equal
 to its centre, including over the field of order four. -/

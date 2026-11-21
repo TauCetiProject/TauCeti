@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.TitsSystem.Coxeter
 
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.DoubleCoset.TwoCell
 
 /-!
@@ -25,8 +26,9 @@ that
 * every element of `G` lies in `B` or in the double coset `B n B`.
 
 Then `TauCeti.TitsSystem.ofRankOne` is a Tits system with `B`, `N` and the single simple reflection
-`n (B ∩ N)`. Its Coxeter system is irreducible, having only one generator, which is the
-irreducibility hypothesis of Tits's simplicity theorem
+`n (B ∩ N)`. When `n ^ 2 = 1` and `N = Subgroup.zpowers n`, `TauCeti.TitsSystem.ofRankOneOfSqEqOne`
+automatically discharges the `N`-membership obligation. Its Coxeter system is irreducible, having
+only one generator, which is the irreducibility hypothesis of Tits's simplicity theorem
 `TauCeti.TitsSystem.le_normalCore_or_eq_top_of_normal`. Applying that theorem additionally requires
 `G` to be perfect and a solvable subgroup normalized by `B` whose conjugates generate `G`.
 
@@ -40,6 +42,8 @@ point in a doubly transitive action and `n` exchanges that point with a second o
 * `TauCeti.TitsSystem.ofRankOne`: the Tits system defined by a two-cell Bruhat decomposition.
 * `TauCeti.TitsSystem.ofRankOne_simple`: its only simple reflection is the class of `n`.
 * `TauCeti.TitsSystem.isIrreducible_ofRankOne`: it is irreducible.
+* `TauCeti.TitsSystem.ofRankOneOfSqEqOne`: specialization to `N = Subgroup.zpowers n` when
+  `n ^ 2 = 1`.
 
 ## References
 
@@ -117,5 +121,52 @@ theorem isIrreducible_ofRankOne : (ofRankOne B N n hn hN hconj hbruhat).IsIrredu
   isIrreducible_of_subsingleton_simple _ (by
     rw [ofRankOne_simple]
     exact Set.subsingleton_singleton)
+
+section OfSqEqOne
+
+variable {B : Subgroup G} {n : G}
+
+/-- **The Tits system of a two-cell Bruhat decomposition with an involutive Weyl representative.**
+Taking `N = Subgroup.zpowers n` when `n ^ 2 = 1`, every element of `N` is `1` or `n`, so `B` and
+`N` form a rank-one Tits system whose only simple reflection is the class of `n`. -/
+def ofRankOneOfSqEqOne (B : Subgroup G) (n : G) (hn : n ^ 2 = 1)
+    (hconj : ∃ b ∈ B, n * b * n⁻¹ ∉ B)
+    (hbruhat : ∀ g : G, g ∈ B ∨ g ∈ DoubleCoset.doubleCoset n B B) : TitsSystem G :=
+  ofRankOne B (Subgroup.zpowers n) ⟨n, Subgroup.mem_zpowers n⟩
+    (by rw [← sq, hn]; exact B.one_mem)
+    (fun _ hx ↦ by
+      rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one hn).mp hx with rfl | rfl
+      · exact Or.inl (one_mem _)
+      · exact Or.inr (by simp [one_mem]))
+    hconj hbruhat
+
+variable {hn : n ^ 2 = 1} {hconj : ∃ b ∈ B, n * b * n⁻¹ ∉ B}
+  {hbruhat : ∀ g : G, g ∈ B ∨ g ∈ DoubleCoset.doubleCoset n B B}
+
+/-- The subgroup `B` of `ofRankOneOfSqEqOne` is `B`. -/
+@[simp]
+theorem ofRankOneOfSqEqOne_subgroupB :
+    (ofRankOneOfSqEqOne B n hn hconj hbruhat).subgroupB = B :=
+  (rfl)
+
+/-- The subgroup `N` of `ofRankOneOfSqEqOne` is `Subgroup.zpowers n`. -/
+@[simp]
+theorem ofRankOneOfSqEqOne_subgroupN :
+    (ofRankOneOfSqEqOne B n hn hconj hbruhat).subgroupN = Subgroup.zpowers n :=
+  (rfl)
+
+/-- The only simple reflection of `ofRankOneOfSqEqOne` is the class of `n`. -/
+@[simp]
+theorem ofRankOneOfSqEqOne_simple :
+    (ofRankOneOfSqEqOne B n hn hconj hbruhat).simple =
+      {QuotientGroup.mk ⟨n, by rw [ofRankOneOfSqEqOne_subgroupN]; exact Subgroup.mem_zpowers _⟩} :=
+  (rfl)
+
+/-- **A Tits system constructed by `ofRankOneOfSqEqOne` is irreducible.** -/
+theorem isIrreducible_ofRankOneOfSqEqOne :
+    (ofRankOneOfSqEqOne B n hn hconj hbruhat).IsIrreducible :=
+  isIrreducible_ofRankOne
+
+end OfSqEqOne
 
 end TauCeti.TitsSystem

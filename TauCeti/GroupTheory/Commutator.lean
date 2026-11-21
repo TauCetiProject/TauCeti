@@ -45,8 +45,9 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   of `A` and `B` in `G ⧸ N` commute.
 * `TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot`: two subgroups that normalize each
   other and meet trivially centralize each other;
-  `TauCeti.inf_normalizer_le_centralizer_of_inf_eq_bot` restricts this to the elements of `Z`
-  normalizing `U`.
+  `TauCeti.le_centralizer_normalClosure_of_le_normalizer_of_inf_eq_bot` extends this to the normal
+  closure of `U`, and `TauCeti.inf_normalizer_le_centralizer_of_inf_eq_bot` restricts it to the
+  elements of `Z` normalizing `U`.
 * `QuotientGroup.commute_mk_iff`: two classes in `G ⧸ N` commute exactly when the commutator of
   representatives lies in `N`.
 * `MonoidHom.commutatorElement_mem_ker_iff`: the images of two elements under a homomorphism
@@ -387,6 +388,15 @@ theorem le_centralizer_of_le_normalizer_of_inf_eq_bot {Z U : Subgroup G}
   commutator_eq_bot_iff_le_centralizer.mp <| eq_bot_iff.mpr <| hinf ▸
     le_inf (le_normalizer_iff_commutator_le_left.mp hUZ)
       (le_normalizer_iff_commutator_le_right.mp hZU)
+
+/-- A normal subgroup `Z` that normalizes `U` and meets it trivially centralizes the normal
+closure of `U`: `Z` centralizes `U`, so `U` lies in the normal subgroup `centralizer Z`. -/
+theorem le_centralizer_normalClosure_of_le_normalizer_of_inf_eq_bot {Z U : Subgroup G}
+    [Z.Normal] (hZU : Z ≤ normalizer (U : Set G)) (hinf : Z ⊓ U = ⊥) :
+    Z ≤ centralizer (normalClosure (U : Set G) : Set G) :=
+  le_centralizer_iff.mpr (normalClosure_le_normal
+    (le_centralizer_iff.mp (le_centralizer_of_le_normalizer_of_inf_eq_bot hZU
+      le_normalizer_of_normal hinf)))
 
 /-- If `U` normalizes `Z` and `Z ⊓ U = ⊥`, then the elements of `Z` normalizing `U` centralize `U`.
 For a normal `Z`, the hypothesis `U ≤ normalizer (Z : Set G)` is

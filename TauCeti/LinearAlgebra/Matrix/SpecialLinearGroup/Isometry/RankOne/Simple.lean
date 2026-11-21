@@ -12,6 +12,7 @@ import Mathlib.GroupTheory.Subgroup.Centralizer
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Field.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.FieldTheory.Finite.Frobenius
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.Finite.PowNeOne
@@ -231,25 +232,20 @@ theorem normalClosure_unipotentSubgroup_eq_top (hσ : Function.Involutive σ)
       (by simpa using hd)
     have hd_mem := torusHom_mem_normalClosure hσ ⟨d, hd0, hd⟩ (Units.mk0 d hd0)
     simpa only [mul_inv_cancel_right] using mul_mem hwd (inv_mem hd_mem)
-  rw [eq_top_iff]
-  intro g _
-  rcases mem_borelSubgroup_or_mem_doubleCoset hσ g with hg | hg
-  · exact hB hg
-  · obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
-    exact mul_mem (mul_mem (hB hb₁) hw) (hB hb₂)
+  rw [eq_top_iff, ← (titsSystem K σ hσ).closure_subgroupB_union_subgroupN, Subgroup.closure_le,
+    Set.union_subset_iff, titsSystem_subgroupB, titsSystem_subgroupN]
+  exact ⟨hB, Subgroup.zpowers_le.mpr hw⟩
 
 /-! ### The normal core of the Borel subgroup -/
 
 /-- The normal core of the Borel subgroup intersects the unipotent subgroup trivially. -/
 theorem normalCore_borelSubgroup_inf_unipotentSubgroup_eq_bot :
-    (borelSubgroup K σ).normalCore ⊓ unipotentSubgroup K σ = ⊥ := by
-  rw [unipotentSubgroup_def, eq_bot_iff]
-  rintro g ⟨hgN, a, rfl⟩
-  have hconj : weyl K σ * unipotentHom K σ a * (weyl K σ)⁻¹ ∈ borelSubgroup K σ :=
-    (borelSubgroup K σ).normalCore_le
-      ((inferInstance : (borelSubgroup K σ).normalCore.Normal).conj_mem _ hgN (weyl K σ))
-  rw [weyl_inv, weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff] at hconj
-  simp [hconj]
+    (borelSubgroup K σ).normalCore ⊓ unipotentSubgroup K σ = ⊥ :=
+  Subgroup.normalCore_inf_eq_bot_of_conj_mem (weyl K σ) fun _ hu hconj ↦ by
+    rw [unipotentSubgroup_def] at hu
+    obtain ⟨a, rfl⟩ := hu
+    rw [weyl_inv, weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff] at hconj
+    simp [hconj]
 
 /-- **The normal core of the Borel subgroup is the centre** of the rank-one special isometry group
 whenever `σ` is involutive and `∃ d ≠ 0, d + σ d = 0`. -/
@@ -257,18 +253,11 @@ theorem normalCore_borelSubgroup_eq_center (hσ : Function.Involutive σ)
     (hadm : ∃ d : K, d ≠ 0 ∧ d + σ d = 0) :
     (borelSubgroup K σ).normalCore = Subgroup.center _ := by
   refine le_antisymm ?_ (Subgroup.normal_le_normalCore.mpr fun g hg ↦ ?_)
-  · have hUC : unipotentSubgroup K σ ≤ Subgroup.centralizer ((borelSubgroup K σ).normalCore :
-        Set ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) :=
-      le_centralizer_of_le_normalizer_of_inf_eq_bot
-        (Z := unipotentSubgroup K σ) (U := (borelSubgroup K σ).normalCore)
-        Subgroup.le_normalizer_of_normal
-        ((borelSubgroup K σ).normalCore_le.trans (borelSubgroup_le_normalizer_unipotentSubgroup hσ))
-        (inf_comm (unipotentSubgroup K σ) _ ▸ normalCore_borelSubgroup_inf_unipotentSubgroup_eq_bot)
-    have htop : Subgroup.centralizer ((borelSubgroup K σ).normalCore :
-        Set ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) = ⊤ :=
-      top_le_iff.mp (normalClosure_unipotentSubgroup_eq_top hσ hadm ▸
-        Subgroup.normalClosure_le_normal hUC)
-    exact Subgroup.centralizer_eq_top_iff_subset.mp htop
+  · have hcenter := le_centralizer_normalClosure_of_le_normalizer_of_inf_eq_bot
+      ((borelSubgroup K σ).normalCore_le.trans (borelSubgroup_le_normalizer_unipotentSubgroup hσ))
+      normalCore_borelSubgroup_inf_unipotentSubgroup_eq_bot
+    rwa [normalClosure_unipotentSubgroup_eq_top hσ hadm, Subgroup.coe_top,
+      Subgroup.centralizer_univ] at hcenter
   · obtain ⟨d, hd0, hd⟩ := hadm
     let u := unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ 0 d (by simpa using hd))
     have hcomm : g * u = u * g := (Subgroup.mem_center_iff.mp hg u).symm
@@ -457,19 +446,26 @@ theorem isSimpleGroup_derivedCentralQuotient (hσ : Function.Involutive σ)
 
 /-! ### Finite-field specialization for fields of order `q ^ 2` -/
 
+private theorem unitaryHypotheses_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
+    (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
+    Function.Involutive σ ∧ (∃ d : K, d ≠ 0 ∧ d + σ d = 0) ∧
+      (∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :=
+  ⟨TauCeti.FiniteField.involutive_of_natCard_eq_sq hK hσ,
+    by
+      simpa only [pow_zero, one_mul, hσ] using
+        TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero hK 0,
+    by
+      simpa only [hσ] using TauCeti.FiniteField.exists_ne_zero_pow_ne_pow_of_natCard_eq_sq
+        (F := K) (Nat.lt_of_succ_le hq) hK⟩
+
 /-- **Over a field of order `q ^ 2` with `3 ≤ q` and `σ a = a ^ q`, the three-dimensional special
 unitary group `SU₃(q)` is perfect.** -/
 theorem commutator_eq_top_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
     (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
     commutator ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) =
-      ⊤ :=
-  commutator_eq_top (TauCeti.FiniteField.involutive_of_natCard_eq_sq hK hσ)
-    (by
-      simpa only [pow_zero, one_mul, hσ] using
-        TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero hK 0)
-    (by
-      simpa only [hσ] using TauCeti.FiniteField.exists_ne_zero_pow_ne_pow_of_natCard_eq_sq
-        (F := K) (Nat.lt_of_succ_le hq) hK)
+      ⊤ := by
+  obtain ⟨hinv, hadm, hunit⟩ := unitaryHypotheses_of_natCard_eq_sq hq hK hσ
+  exact commutator_eq_top hinv hadm hunit
 
 /-- **Over a field of order `q ^ 2` with `3 ≤ q` and `σ a = a ^ q`, the projective special unitary
 group `PSU₃(q)` is simple.** -/
@@ -478,14 +474,9 @@ theorem isSimpleGroup_quotient_center_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
     IsSimpleGroup
       ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ ⧸
         Subgroup.center
-          ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) :=
-  isSimpleGroup_quotient_center (TauCeti.FiniteField.involutive_of_natCard_eq_sq hK hσ)
-    (by
-      simpa only [pow_zero, one_mul, hσ] using
-        TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero hK 0)
-    (by
-      simpa only [hσ] using TauCeti.FiniteField.exists_ne_zero_pow_ne_pow_of_natCard_eq_sq
-        (F := K) (Nat.lt_of_succ_le hq) hK)
+          ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
+  obtain ⟨hinv, hadm, hunit⟩ := unitaryHypotheses_of_natCard_eq_sq hq hK hσ
+  exact isSimpleGroup_quotient_center hinv hadm hunit
 
 end Field
 

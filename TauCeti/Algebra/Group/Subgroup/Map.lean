@@ -49,6 +49,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
   of the normal core of `B` when every element is `f x * b` with `b` in the normalizer of `B`.
+* `Subgroup.normalCore_inf_eq_bot_of_conj_mem`,
+  `AddSubgroup.normalCore_inf_eq_bot_of_conj_mem`: if `w`-conjugation sends no nontrivial
+  element of `U` into `B`, then the normal core of `B` meets `U` trivially.
 * `Subgroup.mul_mul_injective_of_disjoint`: the coordinates `u n b` are unique when `U`
   meets `n B n⁻¹` trivially.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
@@ -341,6 +344,15 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
     group
   rw [hconj]
   exact (Subgroup.mem_normalizer_iff.mp (inv_mem hb) _).mp (hx y⁻¹)
+
+/-- If `w`-conjugates of nontrivial elements of `U` never lie in `B`, then the normal core of `B`
+meets `U` trivially. -/
+@[to_additive /-- If `w + u + -w ∈ B` forces `u = 0` for all `u ∈ U`, then the normal core of `B`
+meets `U` trivially. -/]
+theorem _root_.Subgroup.normalCore_inf_eq_bot_of_conj_mem {B U : Subgroup G} (w : G)
+    (h : ∀ u ∈ U, w * u * w⁻¹ ∈ B → u = 1) : B.normalCore ⊓ U = ⊥ :=
+  eq_bot_iff.mpr fun u ⟨huB, huU⟩ ↦
+    Subgroup.mem_bot.mpr (h u huU (B.normalCore_le (B.normalCore_normal.conj_mem u huB w)))
 
 /-- The coordinates `u n b` are unique if `U` meets `n B n⁻¹` trivially. -/
 theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}
