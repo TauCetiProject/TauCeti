@@ -20,6 +20,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
 import TauCeti.Data.List.Forall2
+import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.Logic.Function.Extend
 
 /-!
@@ -112,8 +113,8 @@ independently, and the values of each atom are closed under conjugation: standar
   each atom takes at some point are taken by all the atoms at one point.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_eval_eq_of_mem_atoms_of_isConj`: complete
   spectrum, the values of an atom are closed under conjugation. This holds for every word in the
-  variables alone (`TauCeti.GroupAlgGeom.Quadratic.exists_eval_inr_eq_of_isConj`) and for every
-  conjugate `z⁻¹ c z` of a coefficient by a variable
+  variables alone (`FreeGroup.exists_lift_eq_of_isConj`) and for every conjugate `z⁻¹ c z` of a
+  coefficient by a variable
   (`TauCeti.GroupAlgGeom.Quadratic.exists_eval_inv_mul_inl_mul_eq_of_isConj`).
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isDegenerate_iff_of_genus_eq_zero`,
   `TauCeti.GroupAlgGeom.Quadratic.Standard.not_isDegenerate_of_genus_eq_zero_of_injective`: a
@@ -446,13 +447,6 @@ end CyclicReduction
 section Spectrum
 
 variable {ι : G →* H}
-
-/-- The values in `H` of a word in the variables alone are closed under conjugation. -/
-theorem exists_eval_inr_eq_of_isConj {u : FreeGroup X} (v : X → H) {a : H}
-    (ha : IsConj (eval ι v (inr u)) a) : ∃ w : X → H, eval ι w (inr u) = a := by
-  obtain ⟨t, rfl⟩ := isConj_iff.1 ha
-  -- Conjugate the value of every variable by `t`.
-  exact ⟨_, by simpa using (hom_eval (ι := ι) (v := v) (MulAut.conj t) (inr u)).symm⟩
 
 /-- The values in `H` of the conjugate `z⁻¹ c z` of a coefficient by a variable are closed under
 conjugation. -/
@@ -873,7 +867,7 @@ variable {S : Standard G X} {ι : G →* H}
 -- `F i` depends only on the variables `e a` with `p a = i`.
 private theorem exists_map_eval_ofFn_eq {k : ℕ} {K : Type*} {e : K → X} (he : e.Injective)
     (p : K → Fin k) {F : Fin k → GX G X}
-    (hF : ∀ i (v w : X → H), (∀ a, p a = i → v (e a) = w (e a)) → eval ι v (F i) = eval ι w (F i))
+    (hF : ∀ i, DependsOn (fun v : X → H => eval ι v (F i)) (e '' (p ⁻¹' {i})))
     {l : List H} (h : List.Forall₂ (fun r a => ∃ v : X → H, eval ι v r = a) (List.ofFn F) l) :
     ∃ v : X → H, (List.ofFn F).map (eval ι v) = l := by
   obtain ⟨a, ha, rfl⟩ := List.forall₂_ofFn_left_iff.1 h
@@ -881,7 +875,7 @@ private theorem exists_map_eval_ofFn_eq {k : ℕ} {K : Type*} {e : K → X} (he 
   refine ⟨Function.extend e (fun a => V (p a) (e a)) 1, ?_⟩
   rw [List.map_ofFn, List.ofFn_inj]
   funext i
-  exact ((he.factorsThrough p).apply_extend_eq_apply V 1 (hF i)).trans (hV i)
+  exact ((he.factorsThrough _).apply_extend_eq_apply 1 (hF i)).trans (hV i)
 
 /-- **Separability.** The atoms of a standard quadratic equation are words in pairwise disjoint
 sets of variables, so values that each atom takes at some point are taken by all the atoms at one
@@ -893,7 +887,7 @@ theorem exists_map_eval_atoms_eq {l : List H}
   | orientable n hn x y inj =>
     rw [atoms_orientable] at h ⊢
     refine exists_map_eval_ofFn_eq inj (Sum.elim id id) (fun i v w hvw => ?_) h
-    simp_all [Sum.forall, map_commutatorElement]
+    simp_all [map_commutatorElement]
   | orientableCoeff n m hnm x y z inj c hc d hd =>
     rw [atoms_orientableCoeff, ← List.ofFn_fin_append] at h ⊢
     refine exists_map_eval_ofFn_eq inj
@@ -907,7 +901,7 @@ theorem exists_map_eval_atoms_eq {l : List H}
     rw [atoms_nonorientableCoeff, ← List.ofFn_fin_append] at h ⊢
     refine exists_map_eval_ofFn_eq inj (Sum.elim (Fin.castAdd m) (Fin.natAdd n))
       (fun i v w hvw => ?_) h
-    induction i using Fin.addCases <;> simp_all [Sum.forall]
+    induction i using Fin.addCases <;> simp_all
 
 -- Each atom is a word in the variables alone, a commutator or a square, or the conjugate
 -- `z⁻¹ c z` of a coefficient.
@@ -929,7 +923,9 @@ conjugation. -/
 theorem exists_eval_eq_of_mem_atoms_of_isConj {r : GX G X} (hr : r ∈ S.atoms) (v : X → H) {a : H}
     (ha : IsConj (eval ι v r) a) : ∃ w : X → H, eval ι w r = a := by
   obtain ⟨u, rfl⟩ | ⟨z, c, rfl⟩ := exists_inr_eq_or_exists_conj_eq_of_mem_atoms r hr
-  exacts [exists_eval_inr_eq_of_isConj v ha, exists_eval_inv_mul_inl_mul_eq_of_isConj v ha]
+  · rw [eval_inr] at ha
+    simpa only [eval_inr] using FreeGroup.exists_lift_eq_of_isConj v ha
+  · exact exists_eval_inv_mul_inl_mul_eq_of_isConj v ha
 
 end Atoms
 
