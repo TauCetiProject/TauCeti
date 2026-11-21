@@ -35,9 +35,9 @@ Small real examples for `TauCeti.ConvexLifting.sharedRows` and
 
 public section
 
-open Set
+open Set TauCeti.ConvexLifting
 
-namespace TauCeti.ConvexLifting
+namespace TauCeti.Examples.SupportRows
 
 /-- Singleton supports: with one row `c j` per component, shared heights exist exactly when the
 single sum row `∑ j, row j (c j) x ≤ b` holds. -/
@@ -90,7 +90,8 @@ minimum zero at the feasible pair `(0, -3)`. -/
 theorem isMinOn_fst_sharedRows_empty_support {row : Fin 1 → ℕ → ℝ → ℝ} :
     ((0 : ℝ), fun _ => (-3 : ℝ)) ∈ sharedRows (Icc 0 1) row (fun _ => ∅) (-3) ∧
       IsMinOn Prod.fst (sharedRows (Icc 0 1) row (fun _ => ∅) (-3)) (0, fun _ => -3) :=
-  ⟨mk_mem_sharedRows_empty_support (by simp), fun _ hz => (mem_sharedRows_iff.1 hz).1.1⟩
+  ⟨mk_mem_sharedRows_empty_support (by simp),
+    isMinOn_iff.2 fun _ hz => (mem_sharedRows_iff.1 hz).1.1⟩
 
 /-- One constant row `1` with budget one: free heights project onto the whole domain. -/
 theorem fst_image_sharedRows_const_one {X : Type*} {D : Set X} :
@@ -101,7 +102,7 @@ theorem fst_image_sharedRows_const_one {X : Type*} {D : Set X} :
 
 /-- One constant row `1` with budget one: restricting the height to `0` makes the row `1 ≤ y`
 impossible, so the restricted system is empty although its free-height projection is `D`. -/
-theorem sharedRows_const_one_inter_height_zero {X : Type*} {D : Set X} :
+theorem sharedRows_const_one_inter_height_zero_eq_empty {X : Type*} {D : Set X} :
     sharedRows D (fun (_ : Fin 1) (_ : Unit) _ => (1 : ℝ)) (fun _ => {()}) 1 ∩ {z | z.2 = 0} =
       ∅ := by
   ext ⟨x, y⟩
@@ -111,7 +112,7 @@ theorem sharedRows_const_one_inter_height_zero {X : Type*} {D : Set X} :
   exact absurd (hrow 0 () (Finset.mem_singleton_self ())) (by simp)
 
 /-- With no anchors, independent heights exist exactly on `D`. -/
-theorem exists_mem_independentRows_of_isEmpty {X κ α : Type*} [Fintype κ] [IsEmpty α]
+theorem exists_mem_independentRows_iff_of_isEmpty {X κ α : Type*} [Fintype κ] [IsEmpty α]
     {D : Set X} {row : α → κ → X → ℝ} {b : α → ℝ} (x : X) :
     (∃ y, (x, y) ∈ independentRows D row b) ↔ x ∈ D := by
   simp
@@ -182,4 +183,4 @@ theorem squareTangentRow_separation :
   · norm_num [abs_of_pos]
   · norm_num [abs_of_neg] at h
 
-end TauCeti.ConvexLifting
+end TauCeti.Examples.SupportRows

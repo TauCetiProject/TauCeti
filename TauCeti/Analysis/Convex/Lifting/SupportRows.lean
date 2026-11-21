@@ -102,8 +102,12 @@ end Defs
 
 section Shared
 
-variable [Fintype κ] [AddCommMonoid β] [LinearOrder β]
+variable [Fintype κ] [AddCommMonoid β]
 variable {D : Set X} {row : κ → ι → X → β} {H : κ → Finset ι} {b : β}
+
+section SemilatticeSup
+
+variable [SemilatticeSup β]
 
 /-- The height of each component in `sharedRows` lies above the maximum of its support rows. -/
 theorem sup'_le_of_mem_sharedRows {z : X × (κ → β)} (hz : z ∈ sharedRows D row H b) (j : κ)
@@ -146,6 +150,10 @@ theorem fst_image_sharedRows (hne : ∀ j, (H j).Nonempty) :
   ext x
   simpa only [mem_image, Prod.exists, exists_and_right, exists_eq_right, mem_ofPred_eq] using
     exists_mem_sharedRows_iff_sum_sup'_le hne x
+
+end SemilatticeSup
+
+variable [LinearOrder β] [IsOrderedAddMonoid β]
 
 /-- **Elimination of shared heights through mixed choices.** With nonempty supports, `x` admits
 heights in `sharedRows` if and only if `x ∈ D` and every choice of one support row per component
