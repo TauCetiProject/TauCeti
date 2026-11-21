@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Set.Prod
+import TauCeti.Logic.Function.Fiber
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
-# Cardinalities of images, complements, coverings, division preimages, sigma fibres and doubled sets
+# Cardinalities of images, complements, coverings, preimages, fibres, products and doubled sets
 
 Two maps on a common index type that identify the same pairs of indices take equally many values
 on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
@@ -27,10 +29,13 @@ Adding a fresh element to a set removes one element from its complement
 (`Set.encard_compl_insert_add_one`).
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
-are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
+are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`),
+and the fibre of `Sigma.fst` over `x` has `encard` equal to `ENat.card (Y x)`
+(`Set.encard_sigma_fst_eq`).
 
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
-indices as on `ι` (`Set.ncard_setOf_sumElim`).
+indices as on `ι` (`Set.ncard_setOf_sumElim`). A property of the first coordinate of `α × β` holds
+on `Nat.card β` times as many pairs as elements of `α` (`Set.ncard_setOf_fst`).
 
 Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other than
 `k` (`Set.ncard_preimage_succAbove`).
@@ -52,6 +57,11 @@ coinfiniteness from this counting invariant.
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
 sides are `0` when `S` is infinite or `n = 0`.
+
+The fibre of the first pullback projection has the same `Set.ncard` as the original fibre
+(`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
+transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
+identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
 -/
 
 public section
@@ -193,6 +203,13 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   congr 1
   ext (i | i) <;> simp
 
+/-- A property of the first coordinate of `α × β` holds on `Nat.card β` times as many pairs as
+elements of `α`. Both sides are `0` when `β` or the set on `α` is infinite. -/
+theorem ncard_setOf_fst {α β : Type*} (P : α → Prop) :
+    {p : α × β | P p.1}.ncard = Nat.card β * {a | P a}.ncard := by
+  rw [show {p : α × β | P p.1} = {a | P a} ×ˢ (univ : Set β) by ext; simp, ncard_prod,
+    ncard_univ, mul_comm]
+
 /-- Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other
 than `k`. -/
 theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 1))) :
@@ -200,4 +217,29 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
 
+/-- The fibre of `Sigma.fst : (Σ y, Y y) → α` over `x` has `encard` equal to `ENat.card (Y x)`. -/
+theorem encard_sigma_fst_eq {α : Type*} (Y : α → Type*) (x : α) :
+    {p : Σ y : α, Y y | p.1 = x}.encard = ENat.card (Y x) := by
+  have heq : {p : Σ y : α, Y y | p.1 = x} = range (Sigma.mk x : Y x → Σ y : α, Y y) := by
+    ext ⟨y, k⟩
+    simp only [mem_ofPred_eq, mem_range]
+    exact ⟨by rintro rfl; exact ⟨k, rfl⟩, by rintro ⟨_, h⟩; exact (congrArg Sigma.fst h).symm⟩
+  rw [heq, sigma_mk_injective.encard_range]
+
 end Set
+
+/-- The fibre of `Function.Pullback.fst` over `a` has the same `Set.ncard` as the fibre of `q`
+over `f a`. Both sides are zero for infinite fibres. -/
+@[simp]
+theorem Function.Pullback.ncard_preimage_fst_singleton {A B C : Type*}
+    {f : A → B} {q : C → B} (a : A) :
+    ((Function.Pullback.fst : f.Pullback q → A) ⁻¹' {a}).ncard =
+      (q ⁻¹' {f a}).ncard :=
+  Set.ncard_congr' (Function.Pullback.fstPreimageEquiv a)
+
+/-- An equivalence onto `p ⁻¹' U` commuting with projections preserves `Set.ncard` of the fibres
+over `y ∈ U`. Both sides are zero for infinite fibres. -/
+theorem Equiv.ncard_fiber_eq_of_preimage {A X Y : Type*} {p : X → Y} {q : A → Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y} (hy : y ∈ U) :
+    (q ⁻¹' {y}).ncard = (p ⁻¹' {y}).ncard :=
+  Set.ncard_congr' (k.fiberEquivOfPreimage hk hy)

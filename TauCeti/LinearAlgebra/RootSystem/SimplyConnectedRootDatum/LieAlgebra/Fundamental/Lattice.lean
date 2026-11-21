@@ -36,7 +36,7 @@ which therefore gives `fundamentalLattice t ht i` a basis of weight vectors.
 * `TauCeti.DynkinType.fundamentalLattice`: the orbit `U_ℤ · v⁺ᵢ` in `L(ϖᵢ)`.
 * `TauCeti.DynkinType.representation_mem_fundamentalLattice`: its stability under the Kostant form.
 * `TauCeti.DynkinType.fundamentalLattice_eq_span_loweringWord`: its description by lowering words.
-* `TauCeti.DynkinType.instIsLatticeFundamentalLattice`: it is a full lattice in `L(ϖᵢ)`.
+* `TauCeti.DynkinType.instIsFullLatticeFundamentalLattice`: it is a full lattice in `L(ϖᵢ)`.
 * `TauCeti.DynkinType.iSup_jointWeightSpace_eq_top`: the integral weight spaces span it.
 
 ## References
@@ -129,10 +129,10 @@ theorem fundamentalLattice_eq_span_loweringWord (i : Fin t.rank) :
 /-- **The fundamental lattice is a full lattice in `L(ϖᵢ)`**: it is finitely generated over `ℤ`
 and spans `L(ϖᵢ)` over `ℚ`. Finite generation comes from finite-dimensionality of `L(ϖᵢ)`:
 only lowering words of bounded degree survive on `v⁺ᵢ`. -/
-instance instIsLatticeFundamentalLattice (i : Fin t.rank) :
-    Submodule.IsLattice ℚ (t.fundamentalLattice ht i) := by
+instance instIsFullLatticeFundamentalLattice (i : Fin t.rank) :
+    Submodule.IsFullLattice ℚ (t.fundamentalLattice ht i) := by
   rw [fundamentalLattice]
-  exact (t.lieBasis ht).isLattice_highestWeightLattice _
+  exact (t.lieBasis ht).isFullLattice_highestWeightLattice _
     (t.isDominantIntegral_fundamentalWeight ht i)
 
 /-- **The integral weight spaces of the Cartan generators span `L(ϖᵢ)`**, since they contain the
@@ -143,7 +143,7 @@ fundamental lattice a basis of weight vectors. -/
 theorem iSup_jointWeightSpace_eq_top (i : Fin t.rank) :
     (⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)) μ) = ⊤ := by
-  rw [eq_top_iff, ← Submodule.IsLattice.span_eq_top (A := ℚ) (M := t.fundamentalLattice ht i)]
+  rw [eq_top_iff, ← Submodule.IsFullLattice.span_eq_top (A := ℚ) (M := t.fundamentalLattice ht i)]
   refine Submodule.span_le.2 fun x hx => ?_
   rw [fundamentalLattice] at hx
   exact (t.lieBasis ht).mem_iSup_jointWeightSpace_of_mem_highestWeightLattice _
