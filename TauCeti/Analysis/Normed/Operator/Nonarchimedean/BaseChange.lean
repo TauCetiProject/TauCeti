@@ -175,14 +175,10 @@ theorem IsRieszProjection.inverse_mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
     (isRieszProjection_def.mp (hE.mapCoeffs f hf)).inverse =
-      (isRieszProjection_def.mp hE).inverse.mapCoeffs f hf := by
-  have hinv := (isRieszProjection_def.mp hE).inverse_map (mapCoeffsRingHom f hf)
-    (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
-  have heq : ∀ {u' C' E'} (_ : u' = u.mapCoeffs f hf) (_ : C' = 1 - f a • u.mapCoeffs f hf)
-      (_ : E' = E.mapCoeffs f hf) (h' : IsSpectralProjection u' C' h E'),
-      h'.inverse = (isRieszProjection_def.mp (hE.mapCoeffs f hf)).inverse := by
-    rintro _ _ _ rfl rfl rfl _; rfl
-  exact (heq (mapCoeffsRingHom_apply _ _ _) (by simp [mapCoeffsRingHom_apply])
-    (mapCoeffsRingHom_apply _ _ _) _).symm.trans (hinv.trans (mapCoeffsRingHom_apply _ _ _))
+      (isRieszProjection_def.mp hE).inverse.mapCoeffs f hf :=
+  ((isRieszProjection_def.mp hE).inverse_map (mapCoeffsRingHom f hf)
+    (isRieszProjection_def.mp (hE.mapCoeffs f hf))
+    (by simp [mapCoeffsRingHom_apply]) (mapCoeffsRingHom_apply _ _ _).symm).trans
+    (mapCoeffsRingHom_apply _ _ _)
 
 end ContinuousLinearMap

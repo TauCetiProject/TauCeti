@@ -47,9 +47,11 @@ polynomials term by term. The reverse of a scalar multiple of a product of linea
 nonzero roots is again such a product in the reciprocal roots
 (`Polynomial.reverse_C_mul_prod_X_sub_C`). Reflection at a degree bound stays within that bound,
 also after a coefficient map, and its coefficient at the bound is the constant coefficient; when a
-coefficient map does not kill the leading coefficient, or when the leading coefficient is a unit, it
-commutes with reversal (`Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
-`Polynomial.reverse_map_of_isUnit_leadingCoeff`).
+coefficient map preserves the degree of `p` (in particular, when it does not kill the leading
+coefficient or when the leading coefficient is a unit), it commutes with reversal
+(`Polynomial.reverse_map_of_natDegree_eq`, `Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
+`Polynomial.reverse_map_of_isUnit_leadingCoeff`), and scaling by a unit also commutes with
+reversal (`Polynomial.reverse_units_smul`).
 The reverse of
 `(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
 is nonzero.
@@ -196,12 +198,19 @@ theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
     (p.reflect N).coeff N = p.coeff 0 := by
   rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self]
 
+/-- When a ring homomorphism preserves the degree of `p`, polynomial reversal commutes with
+`Polynomial.map f`. -/
+theorem reverse_map_of_natDegree_eq [Semiring R] [Semiring S] {p : R[X]}
+    (f : R →+* S) (hf : (p.map f).natDegree = p.natDegree) :
+    (p.map f).reverse = p.reverse.map f := by
+  rw [reverse, reverse, hf, reflect_map]
+
 /-- When a ring homomorphism does not kill `p.leadingCoeff`, polynomial reversal commutes with
 `Polynomial.map f`. -/
 theorem reverse_map_of_leadingCoeff_ne_zero [Semiring R] [Semiring S] {p : R[X]}
     (f : R →+* S) (hf : f p.leadingCoeff ≠ 0) :
-    (p.map f).reverse = p.reverse.map f := by
-  rw [reverse, reverse, natDegree_map_of_leadingCoeff_ne_zero f hf, reflect_map]
+    (p.map f).reverse = p.reverse.map f :=
+  reverse_map_of_natDegree_eq f (natDegree_map_of_leadingCoeff_ne_zero f hf)
 
 /-- When `p.leadingCoeff` is a unit, polynomial reversal commutes with `Polynomial.map f`. -/
 theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
@@ -209,6 +218,13 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
     (p.map f).reverse = p.reverse.map f := by
   nontriviality S
   exact reverse_map_of_leadingCoeff_ne_zero f (hp.map f).ne_zero
+
+/-- Scaling a polynomial by a unit commutes with reversal. -/
+@[simp]
+theorem reverse_units_smul [Semiring R] (c : Rˣ) (p : R[X]) :
+    (c • p).reverse = c • p.reverse := by
+  rw [reverse, reverse, natDegree_smul_of_smul_regular p (IsSMulRegular.all c),
+    Units.smul_def, Units.smul_def, smul_eq_C_mul, smul_eq_C_mul, reflect_C_mul]
 
 /-- The reversal of `1` is `1`. -/
 @[simp]

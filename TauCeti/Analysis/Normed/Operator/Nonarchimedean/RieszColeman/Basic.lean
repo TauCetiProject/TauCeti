@@ -182,15 +182,8 @@ variable {u E : M →L[R] M} {Q : R[X]}
 projection. -/
 theorem units_smul (hE : IsRieszColemanProjection u Q E) (c : Rˣ) :
     IsRieszColemanProjection u (c • Q) E := by
-  have hdeg : (c • Q).natDegree = Q.natDegree :=
-    Polynomial.natDegree_smul_of_smul_regular Q (IsSMulRegular.all _)
-  have hrev : (c • Q).reverse = (c : R) • Q.reverse := by
-    rw [Polynomial.reverse, hdeg]
-    simp [Polynomial.reverse, Units.smul_def, Polynomial.smul_eq_C_mul]
-  have haev : Polynomial.aeval u (c • Q).reverse = c • Polynomial.aeval u Q.reverse := by
-    rw [hrev, map_smul, Units.smul_def]
-  rw [isRieszColemanProjection_def, haev]
-  exact (isRieszColemanProjection_def.mp hE).units_smul_spectral c
+  rw [isRieszColemanProjection_def, Polynomial.reverse_units_smul, Units.smul_def, map_smul]
+  simpa only [Units.smul_def] using (isRieszColemanProjection_def.mp hE).units_smul_spectral c
 
 /-- Scaling the polynomial `Q` by a unit of the coefficient ring yields an equivalent Riesz–Coleman
 projection predicate. -/
@@ -198,6 +191,18 @@ projection predicate. -/
 theorem units_smul_iff (c : Rˣ) :
     IsRieszColemanProjection u (c • Q) E ↔ IsRieszColemanProjection u Q E :=
   ⟨fun h ↦ by simpa using h.units_smul c⁻¹, fun h ↦ h.units_smul c⟩
+
+/-- Scaling `Q` by a unit `c : Rˣ` scales the complementary inverse of a Riesz–Coleman projection
+by `c⁻¹`. -/
+theorem inverse_units_smul (hE : IsRieszColemanProjection u Q E) (c : Rˣ) :
+    (isRieszColemanProjection_def.mp (hE.units_smul c)).inverse =
+      c⁻¹ • (isRieszColemanProjection_def.mp hE).inverse := by
+  refine ((isRieszColemanProjection_def.mp (hE.units_smul c)).eq_inverse ?_ ?_).symm
+  · rw [Polynomial.reverse_units_smul, Units.smul_def, map_smul, Units.smul_def, smul_mul_assoc,
+      mul_smul_comm, smul_smul, Units.mul_inv, one_smul,
+      (isRieszColemanProjection_def.mp hE).spectral_mul_inverse]
+  · rw [Units.smul_def, mul_smul_comm, (isRieszColemanProjection_def.mp hE).mul_inverse_eq_zero,
+      smul_zero]
 
 /-- A Riesz–Coleman projection commutes with every polynomial in `u`. -/
 theorem commute_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
@@ -512,11 +517,10 @@ particular, whenever `Q` has invertible leading coefficient, via
 theorem IsRieszColemanProjection.mapCoeffs {u E : C₀(J, R) →L[R] C₀(J, R)} {Q : R[X]}
     (hE : IsRieszColemanProjection u Q E) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (hdeg : (Q.map f).natDegree = Q.natDegree) :
-    IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) := by
-  have hrev : (Q.map f).reverse = Q.reverse.map f := by
-    rw [Polynomial.reverse, hdeg, Polynomial.reflect_map, Polynomial.reverse]
-  exact isRieszColemanProjection_def.mpr <| by
-    simpa only [mapCoeffsRingHom_apply, aeval_mapCoeffs, hrev] using
+    IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) :=
+  isRieszColemanProjection_def.mpr <| by
+    simpa only [mapCoeffsRingHom_apply, aeval_mapCoeffs,
+      Polynomial.reverse_map_of_natDegree_eq f hdeg] using
       IsSpectralProjection.map (isRieszColemanProjection_def.mp hE) (mapCoeffsRingHom f hf)
         (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
 
@@ -526,18 +530,11 @@ theorem IsRieszColemanProjection.inverse_mapCoeffs {u E : C₀(J, R) →L[R] C�
     (hE : IsRieszColemanProjection u Q E) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (hdeg : (Q.map f).natDegree = Q.natDegree) :
     (isRieszColemanProjection_def.mp (hE.mapCoeffs f hf hdeg)).inverse =
-      (isRieszColemanProjection_def.mp hE).inverse.mapCoeffs f hf := by
-  have hrev : (Q.map f).reverse = Q.reverse.map f := by
-    rw [Polynomial.reverse, hdeg, Polynomial.reflect_map, Polynomial.reverse]
-  have hinv := (isRieszColemanProjection_def.mp hE).inverse_map (mapCoeffsRingHom f hf)
-    (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
-  have heq : ∀ {u' C' E'} (_ : u' = u.mapCoeffs f hf)
-      (_ : C' = Polynomial.aeval (u.mapCoeffs f hf) (Q.map f).reverse)
-      (_ : E' = E.mapCoeffs f hf) (h' : IsSpectralProjection u' C' 1 E'),
-      h'.inverse = (isRieszColemanProjection_def.mp (hE.mapCoeffs f hf hdeg)).inverse := by
-    rintro _ _ _ rfl rfl rfl _; rfl
-  exact (heq (mapCoeffsRingHom_apply _ _ _) (by simp [mapCoeffsRingHom_apply, hrev])
-    (mapCoeffsRingHom_apply _ _ _) _).symm.trans (hinv.trans (mapCoeffsRingHom_apply _ _ _))
+      (isRieszColemanProjection_def.mp hE).inverse.mapCoeffs f hf :=
+  ((isRieszColemanProjection_def.mp hE).inverse_map (mapCoeffsRingHom f hf)
+    (isRieszColemanProjection_def.mp (hE.mapCoeffs f hf hdeg))
+    (by simp [mapCoeffsRingHom_apply, Polynomial.reverse_map_of_natDegree_eq f hdeg])
+    (mapCoeffsRingHom_apply _ _ _).symm).trans (mapCoeffsRingHom_apply _ _ _)
 
 end BaseChange
 

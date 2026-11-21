@@ -132,8 +132,7 @@ theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) {Q
   have hinv : Ring.inverse (c • Q).leadingCoeff = (↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff := by
     rw [hlc, Ring.inverse_mul (Or.inl c.isUnit), Ring.inverse_unit, mul_comm]
   have hrev : (c • Q).reverse = Polynomial.C (c : R) * Q.reverse := by
-    rw [Polynomial.reverse, hdeg]
-    simp [Polynomial.reverse, Units.smul_def, Polynomial.smul_eq_C_mul]
+    rw [Polynomial.reverse_units_smul, Units.smul_def, Polynomial.smul_eq_C_mul]
   have hB : Polynomial.C (Ring.inverse (c • Q).leadingCoeff) * (c • Q).reverse =
       Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse := by
     rw [hinv, hrev, map_mul]

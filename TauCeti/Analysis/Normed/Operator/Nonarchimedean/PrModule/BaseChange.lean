@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coprime
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Basic
 public import TauCeti.RingTheory.Huber.BanachModule.ZeroAtInfty
+import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
 # Completed-tensor base change of `(Pr)` modules, Fredholm series and Riesz projections
@@ -497,13 +498,8 @@ theorem IsPrCompact.isUnit_aeval_reverse_completedBaseChange
     IsUnit (Polynomial.aeval (u.completedBaseChange α α)
       (Polynomial.map (algebraMap R S) Q).reverse) := by
   have huQ : IsUnit (Polynomial.aeval u Q.reverse) := (hu.isUnit_aeval_reverse_iff hQ).mpr hcop
-  have hrev : (Polynomial.map (algebraMap R S) Q).reverse =
-      Polynomial.map (algebraMap R S) Q.reverse :=
-    (subsingleton_or_nontrivial S).elim (fun _ ↦ Subsingleton.elim _ _) fun _ ↦ by
-      rw [Polynomial.reverse, Polynomial.reverse,
-        Polynomial.natDegree_map_of_leadingCoeff_ne_zero _ (hQ.map _).ne_zero,
-        Polynomial.reflect_map]
-  rw [hrev, aeval_completedBaseChange]; exact huQ.map (completedBaseChangeRingHom α)
+  rw [Polynomial.reverse_map_of_isUnit_leadingCoeff hQ (algebraMap R S), aeval_completedBaseChange]
+  exact huQ.map (completedBaseChangeRingHom α)
 
 /-- **Operator-norm continuity of `completedBaseChange`** between `(Pr)` modules over Tate rings. -/
 theorem continuous_completedBaseChange [TauCeti.NormedRing.IsTate S]
@@ -567,11 +563,10 @@ theorem IsRieszColemanProjection.completedBaseChange [TauCeti.NormedRing.IsTate 
     {u E : M₁ →L[R] M₁} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
     (hdeg : (Q.map (algebraMap R S)).natDegree = Q.natDegree) :
     IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S))
-      (E.completedBaseChange α α) := by
-  have hrev : (Q.map (algebraMap R S)).reverse = Q.reverse.map (algebraMap R S) := by
-    rw [Polynomial.reverse, hdeg, Polynomial.reflect_map, Polynomial.reverse]
-  exact isRieszColemanProjection_def.mpr <| by
-    simpa only [completedBaseChangeRingHom_apply, aeval_completedBaseChange, hrev] using
+      (E.completedBaseChange α α) :=
+  isRieszColemanProjection_def.mpr <| by
+    simpa only [completedBaseChangeRingHom_apply, aeval_completedBaseChange,
+      Polynomial.reverse_map_of_natDegree_eq _ hdeg] using
       (isRieszColemanProjection_def.mp hE).map (completedBaseChangeRingHom α)
         (completedBaseChange_mem_closure_adjoin hS hM α)
 
@@ -582,17 +577,14 @@ theorem IsRieszColemanProjection.inverse_completedBaseChange [TauCeti.NormedRing
     {u E : M₁ →L[R] M₁} {Q : R[X]} (hE : IsRieszColemanProjection u Q E)
     (hdeg : (Q.map (algebraMap R S)).natDegree = Q.natDegree) :
     (isRieszColemanProjection_def.mp (hE.completedBaseChange hS hM α hdeg)).inverse =
-      (isRieszColemanProjection_def.mp hE).inverse.completedBaseChange α α := by
-  let Φ := completedBaseChangeRingHom α
-  refine ((isRieszColemanProjection_def.mp (hE.completedBaseChange hS hM α hdeg)).eq_inverse
-    ?_ ?_).symm
-  · have hrev : (Q.map (algebraMap R S)).reverse = Q.reverse.map (algebraMap R S) := by
-      rw [Polynomial.reverse, hdeg, Polynomial.reflect_map, Polynomial.reverse]
-    simpa only [Φ, map_mul, map_sub, map_one, completedBaseChangeRingHom_apply,
-      ← aeval_completedBaseChange, ← hrev] using
-      congrArg Φ (isRieszColemanProjection_def.mp hE).spectral_mul_inverse
-  · simpa only [Φ, map_mul, map_zero, completedBaseChangeRingHom_apply] using
-      congrArg Φ (isRieszColemanProjection_def.mp hE).mul_inverse_eq_zero
+      (isRieszColemanProjection_def.mp hE).inverse.completedBaseChange α α :=
+  ((isRieszColemanProjection_def.mp hE).inverse_map (completedBaseChangeRingHom α)
+    (isRieszColemanProjection_def.mp (hE.completedBaseChange hS hM α hdeg))
+    (by
+      simp [completedBaseChangeRingHom_apply, Polynomial.reverse_map_of_natDegree_eq _ hdeg,
+        aeval_completedBaseChange])
+    (completedBaseChangeRingHom_apply α _).symm).trans
+    (completedBaseChangeRingHom_apply α _)
 
 end PrTransport
 
