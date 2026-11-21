@@ -148,8 +148,9 @@ theorem IsSelfAdjoint.separableSpace_of_hasCompactResolvent
   have hN : Northcott fun k ↦ |lam k| := by
     simpa only [Complex.norm_real, Real.norm_eq_abs] using
       h.northcott_norm_of_orthonormal b.orthonormal hb
+  have huniv : (Set.univ : Set κ) = ⋃ n : ℕ, {k | |lam k| ≤ (n : ℝ)} := by
+    ext k; simp [exists_nat_ge]
   have : Countable κ := by
-    rw [← Set.countable_univ_iff, show (Set.univ : Set κ) = ⋃ n : ℕ, {k | |lam k| ≤ (n : ℝ)} by
-      ext k; simp [exists_nat_ge]]
+    rw [← Set.countable_univ_iff, huniv]
     exact Set.countable_iUnion fun n ↦ (hN.finite_le (n : ℝ)).countable
   exact b.separableSpace

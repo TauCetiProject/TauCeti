@@ -17,6 +17,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
 * `LinearPMap.congr_fun`: the value-level part of `LinearPMap.ext_iff`, with the two domain
   memberships as explicit arguments.
 * `LinearPMap.neg_smul` and `LinearPMap.smul_neg`: a negation moves through a scalar multiple.
+* `LinearPMap.apply_eq_neg_smul_of_anticommute`: a linear map preserving `A.domain` and
+  anticommuting with `A` negates eigenvalues on eigenvectors.
 * `LinearPMap.exists_eq_add_smul_supSpanSingleton`: every vector of the domain of
   `f.supSpanSingleton x y hx` is `s + c • x` with `s` in the domain of `f`, sent to `f s + σ c • y`.
 * `LinearPMap.supSpanSingleton_injective`: extending an injective partial map by `x ↦ y` with `y`
@@ -48,6 +50,16 @@ theorem neg_smul {M : Type*} [Ring M] [Module M F] [SMulCommClass S M F] (c : M)
 theorem smul_neg {M : Type*} [Monoid M] [DistribMulAction M F] [SMulCommClass S M F] (c : M)
     (A : E →ₛₗ.[σ] F) : c • (-A) = -(c • A) :=
   LinearPMap.ext rfl fun _ _ _ => _root_.smul_neg _ _
+
+/-- If a linear map `γ` preserves the domain of `A` and anticommutes with `A` on `D(A)`, then `γ`
+sends an eigenvector of `A` with eigenvalue `r` to one with eigenvalue `-r`. -/
+theorem apply_eq_neg_smul_of_anticommute {𝕜 E G : Type*} [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [FunLike G E E] [LinearMapClass G 𝕜 E E] {A : E →ₗ.[𝕜] E} {γ : G}
+    (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.2⟩)
+    (x : A.domain) {r : 𝕜} (hx : A x = r • (x : E)) :
+    A ⟨γ x, hγdom x x.2⟩ = (-r) • γ x := by
+  rw [← neg_neg (A ⟨γ x, hγdom x x.2⟩), ← hγA x, hx, _root_.map_smul, _root_.neg_smul]
 
 section supSpanSingleton
 

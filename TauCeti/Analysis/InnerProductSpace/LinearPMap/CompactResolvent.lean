@@ -38,13 +38,11 @@ each of these finite-dimensional invariant subspaces in
   has compact resolvent exactly when its resolvent at a given nonreal point is compact.
 * `IsSelfAdjoint.hasCompactResolvent_iff_isCompactOperator_resolvent_neg_neg`: the same for the
   inverse `(D - z)⁻¹`.
-* `LinearPMap.mem_resolventSet_unitaryConj_iff`, `LinearPMap.resolvent_unitaryConj`,
-  `LinearPMap.hasCompactResolvent_unitaryConj_iff`: unitary conjugation preserves the resolvent
-  set, conjugates the resolvent, and preserves compact resolvent.
-* `LinearPMap.finiteDimensional_of_hasCompactResolvent_toPMap_top` and
-  `IsSelfAdjoint.hasCompactResolvent_toPMap_top_iff`: a bounded operator has compact resolvent only
-  in finite dimensions, and for a bounded self-adjoint operator on a complex Hilbert space the two
-  conditions are equivalent.
+* `LinearPMap.hasCompactResolvent_unitaryConj_iff`: unitary conjugation preserves compact
+  resolvent.
+* `IsSelfAdjoint.hasCompactResolvent_toPMap_top_iff`: a bounded self-adjoint operator on a
+  complex Hilbert space has compact resolvent if and only if the Hilbert space is
+  finite-dimensional.
 * `IsSelfAdjoint.invOneAddSq_eq_adjoint_comp`: `(1 + D²)⁻¹ = R(i)* R(i)`.
 * `IsSelfAdjoint.isPositive_invOneAddSq`: `(1 + D²)⁻¹` is a positive operator.
 * `LinearPMap.HasCompactResolvent.hasOrthogonalProjection_ker`: the finite-dimensional kernel of
@@ -105,47 +103,7 @@ end RCLike
 section UnitaryConj
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {A : E →ₗ.[𝕜] E} {z : 𝕜} {R : E →L[𝕜] E}
-
-/-- Unitary conjugation transports a resolvent at `z` to the conjugated operator
-`U ∘ R ∘ U⁻¹`. -/
-theorem _root_.LinearPMap.IsResolventAt.unitaryConj (h : IsResolventAt A z R) (U : E ≃ₗᵢ[𝕜] F) :
-    IsResolventAt (unitaryConj U A) z
-      (U.toContinuousLinearEquiv.toContinuousLinearMap ∘L R ∘L
-        U.symm.toContinuousLinearEquiv.toContinuousLinearMap) where
-  mem_domain y := by
-    rw [mem_unitaryConj_domain_iff]
-    simpa using h.mem_domain (U.symm y)
-  smul_sub_apply y := by
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      ContinuousLinearEquiv.coe_coe, unitaryConj_apply]
-    have hEq : (⟨U.symm (U (R (U.symm y))), by simpa using h.mem_domain (U.symm y)⟩ : A.domain) =
-        ⟨R (U.symm y), h.mem_domain (U.symm y)⟩ := Subtype.ext (U.symm_apply_apply _)
-    rw [hEq, ← _root_.map_smul, ← _root_.map_sub, h.smul_sub_apply (U.symm y), U.apply_symm_apply]
-  apply_smul_sub x := by
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      ContinuousLinearEquiv.coe_coe, unitaryConj_apply]
-    rw [_root_.map_sub U.symm, _root_.map_smul U.symm, U.symm_apply_apply,
-      h.apply_smul_sub ⟨U.symm (x : F), (mem_unitaryConj_domain_iff (U := U) (A := A)).1 x.2⟩,
-      U.apply_symm_apply]
-
-/-- Unitary conjugation preserves the resolvent set. -/
-@[simp]
-theorem _root_.LinearPMap.mem_resolventSet_unitaryConj_iff (U : E ≃ₗᵢ[𝕜] F) :
-    z ∈ (unitaryConj U A).resolventSet ↔ z ∈ A.resolventSet := by
-  simp only [mem_resolventSet_iff]
-  refine ⟨fun ⟨R, hR⟩ ↦ ?_, fun ⟨R, hR⟩ ↦ ⟨_, hR.unitaryConj U⟩⟩
-  have h := hR.unitaryConj U.symm
-  rw [unitaryConj_unitaryConj_symm] at h
-  exact ⟨_, h⟩
-
-/-- The resolvent of a unitary conjugate is the conjugate of the resolvent. -/
-theorem _root_.LinearPMap.resolvent_unitaryConj (U : E ≃ₗᵢ[𝕜] F) (hz : z ∈ A.resolventSet) :
-    (unitaryConj U A).resolvent z =
-      U.toContinuousLinearEquiv.toContinuousLinearMap ∘L A.resolvent z ∘L
-        U.symm.toContinuousLinearEquiv.toContinuousLinearMap :=
-  (isResolventAt_resolvent ((mem_resolventSet_unitaryConj_iff U).2 hz)).unique
-    ((isResolventAt_resolvent hz).unitaryConj U)
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {A : E →ₗ.[𝕜] E}
 
 private theorem hasCompactResolvent_unitaryConj (U : E ≃ₗᵢ[𝕜] F) (h : A.HasCompactResolvent) :
     (unitaryConj U A).HasCompactResolvent := by
@@ -162,21 +120,6 @@ theorem _root_.LinearPMap.hasCompactResolvent_unitaryConj_iff (U : E ≃ₗᵢ[�
     hasCompactResolvent_unitaryConj U.symm h, hasCompactResolvent_unitaryConj U⟩
 
 end UnitaryConj
-
-/-- A bounded linear operator defined on the entire space has compact resolvent only if the space
-is finite-dimensional. -/
-theorem _root_.LinearPMap.finiteDimensional_of_hasCompactResolvent_toPMap_top
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {T : E →L[𝕜] E} (h : ((T : E →ₗ[𝕜] E).toPMap ⊤).HasCompactResolvent) :
-    FiniteDimensional 𝕜 E := by
-  obtain ⟨z, hz, hcomp⟩ := hasCompactResolvent_def.1 h
-  have hres := isResolventAt_resolvent hz
-  have hid : ((z • ContinuousLinearMap.id 𝕜 E - T) ∘L
-      ((T : E →ₗ[𝕜] E).toPMap ⊤).resolvent z : E → E) = id := funext fun y ↦ by
-    simpa using hres.smul_sub_apply y
-  exact FiniteDimensional.of_isCompactOperator_id
-    (hid ▸ hcomp.clm_comp (z • ContinuousLinearMap.id 𝕜 E - T))
 
 section Complex
 

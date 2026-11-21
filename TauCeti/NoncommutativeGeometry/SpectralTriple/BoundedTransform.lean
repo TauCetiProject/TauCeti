@@ -8,43 +8,27 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.BoundedTransform
 public import TauCeti.NoncommutativeGeometry.FredholmModule.Basic
 public import TauCeti.NoncommutativeGeometry.SpectralTriple.Basic
+import TauCeti.Algebra.Ring.Commute
 
 /-!
 # The bounded transform of a spectral triple
 
 Every spectral triple `(A, H, D)` determines a bounded self-adjoint contraction
-`F_D = D (1 + D²)⁻¹/²` (`SpectralTriple.boundedTransform`), constructed via the eigenbasis
-functional calculus of `D` (`LinearPMap.boundedTransform`). It satisfies:
-
-* `SpectralTriple.isSelfAdjoint_boundedTransform` and `SpectralTriple.norm_boundedTransform_le_one`:
-  `F_D` is self-adjoint with `‖F_D‖ ≤ 1`.
-* `SpectralTriple.one_sub_boundedTransform_mul_self`: `1 - F_D² = (1 + D²)⁻¹`, so `F_D² - 1` is
-  compact (`SpectralTriple.isCompactOperator_boundedTransform_mul_self_sub_one`).
-* `SpectralTriple.isCompactOperator_commutator_boundedTransform` and
-  `SpectralTriple.norm_commutator_boundedTransform_le`: by the Baaj–Julg theorem, `[F_D, π(a)]` is
-  compact for every `a : A` and satisfies `‖[F_D, π(a)]‖ ≤ (5 / 4) ‖[D, π(a)]‖`.
-
-Consequently `(H, π, F_D)` is a Fredholm module (`SpectralTriple.toFredholmModule`), and for an
-even spectral triple the grading `γ` anticommutes with `F_D`
-(`EvenSpectralTriple.grading_mul_boundedTransform`) and commutes with `(1 + D²)⁻¹`
-(`EvenSpectralTriple.commute_grading_invOneAddSq`), yielding an even Fredholm module
-(`EvenSpectralTriple.toEvenFredholmModule`). Both conversions are equivariant under unitary
-transport (`SpectralTriple.toFredholmModule_conj`, `EvenSpectralTriple.toEvenFredholmModule_conj`).
+`F_D = D (1 + D²)⁻¹/²` (`SpectralTriple.boundedTransform`) with `1 - F_D² = (1 + D²)⁻¹` compact
+and `[F_D, π(a)]` compact with `‖[F_D, π(a)]‖ ≤ (5 / 4) ‖[D, π(a)]‖`, yielding a Fredholm
+module `SpectralTriple.toFredholmModule` (and an even Fredholm module
+`EvenSpectralTriple.toEvenFredholmModule`), equivariantly under unitary transport.
 
 ## Main definitions
 
 * `TauCeti.SpectralTriple.boundedTransform`: the bounded transform `F_D = D (1 + D²)⁻¹/²`.
-* `TauCeti.SpectralTriple.toFredholmModule`: the Fredholm module `(H, π, F_D)` associated to a
-  spectral triple.
-* `TauCeti.EvenSpectralTriple.toEvenFredholmModule`: the even Fredholm module `(H, π, F_D, γ)`
-  associated to an even spectral triple.
+* `TauCeti.SpectralTriple.toFredholmModule`: the Fredholm module `(H, π, F_D)`.
+* `TauCeti.EvenSpectralTriple.toEvenFredholmModule`: the even Fredholm module `(H, π, F_D, γ)`.
 
 ## References
 
-* S. Baaj and P. Julg, *Théorie bivariante de Kasparov et opérateurs non bornés dans les
-  C*-modules hilbertiens*, C. R. Acad. Sci. Paris Sér. I Math. 296 (1983), 875–878.
+* S. Baaj and P. Julg, *C. R. Acad. Sci. Paris Sér. I Math.* 296 (1983), 875–878.
 * A. Connes, *Noncommutative Geometry*, Academic Press (1994), Chapter IV, §2.
-* N. Higson and J. Roe, *Analytic K-Homology*, Oxford Mathematical Monographs (2000), Chapter 10.
 -/
 
 public section
@@ -195,9 +179,9 @@ theorem grading_mul_boundedTransform :
 /-- The grading of an even spectral triple commutes with `(1 + D²)⁻¹`. -/
 theorem commute_grading_invOneAddSq : Commute S.grading S.operator.invOneAddSq := by
   rw [← S.one_sub_boundedTransform_mul_self]
-  refine (Commute.one_right _).sub_right ?_
-  rw [Commute, SemiconjBy, ← mul_assoc, S.grading_mul_boundedTransform, neg_mul, mul_assoc,
-    S.grading_mul_boundedTransform, mul_neg, neg_neg, mul_assoc]
+  have h : S.boundedTransform * S.grading = -(S.grading * S.boundedTransform) := by
+    rw [S.grading_mul_boundedTransform, neg_neg]
+  exact (Commute.one_right _).sub_right (TauCeti.commute_mul_of_mul_eq_neg_mul h h).symm
 
 /-- **Baaj–Julg even Fredholm module.** The even Fredholm module `(H, π, F_D, γ)` associated to an
 even spectral triple `(A, H, D, γ)`. -/

@@ -43,6 +43,8 @@ finite-dimensional: the resolvent `R(lambda)` acts on it as multiplication by `l
 * `LinearPMap.hasCompactResolvent_neg_iff`: `-A` has compact resolvent exactly when `A` does.
 * `LinearPMap.HasCompactResolvent.finiteDimensional_ker`: an operator with compact resolvent has a
   finite-dimensional kernel.
+* `LinearPMap.finiteDimensional_of_hasCompactResolvent_toPMap_top`: a bounded linear operator
+  defined on the entire space has compact resolvent only in finite dimensions.
 
 ## References
 
@@ -173,6 +175,19 @@ theorem HasCompactResolvent.finiteDimensional_ker (h : A.HasCompactResolvent) :
     have hR := resolvent_apply_of_apply_eq_smul hl y (c := 0) (by rw [hy, zero_smul])
     rw [sub_zero] at hR
     exact Module.End.mem_eigenspace_iff.2 hR
+
+/-- A bounded linear operator defined on the entire space has compact resolvent only if the space
+is finite-dimensional. -/
+theorem finiteDimensional_of_hasCompactResolvent_toPMap_top {T : X →L[𝕜] X}
+    (h : ((T : X →ₗ[𝕜] X).toPMap ⊤).HasCompactResolvent) :
+    FiniteDimensional 𝕜 X := by
+  obtain ⟨z, hz, hcomp⟩ := hasCompactResolvent_def.1 h
+  have hres := isResolventAt_resolvent hz
+  have hid : ((z • ContinuousLinearMap.id 𝕜 X - T) ∘L
+      ((T : X →ₗ[𝕜] X).toPMap ⊤).resolvent z : X → X) = id := funext fun y ↦ by
+    simpa using hres.smul_sub_apply y
+  exact FiniteDimensional.of_isCompactOperator_id
+    (hid ▸ hcomp.clm_comp (z • ContinuousLinearMap.id 𝕜 X - T))
 
 end FiniteDimensional
 

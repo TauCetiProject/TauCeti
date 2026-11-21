@@ -169,6 +169,14 @@ theorem unitaryConj_apply_map (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
   congr 1
   exact congrArg A (Subtype.ext (U.symm_apply_apply (y : H)))
 
+/-- Transport a domain element of `unitaryConj U A` to `A.domain` via an image equality
+`(x : H') = U y`, evaluating `unitaryConj U A x` through `unitaryConj_apply_map`. -/
+theorem unitaryConj_apply_of_eq {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜] H}
+    {x : (unitaryConj U A).domain} {y : A.domain} (hxy : (x : H') = U (y : H)) :
+    unitaryConj U A x = U (A y) := by
+  have hx : x = ⟨U (y : H), map_mem_unitaryConj_domain U A y⟩ := Subtype.ext hxy
+  rw [hx, unitaryConj_apply_map]
+
 /-- The domain of a unitary conjugate of a densely defined operator is dense: `U` is a surjective
 isometry, so it carries a dense set to a dense set. -/
 theorem dense_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H)
