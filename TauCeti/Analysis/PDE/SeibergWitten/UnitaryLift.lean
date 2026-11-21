@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
 
 /-!
@@ -60,9 +59,9 @@ subgroup of the linear automorphisms of `V`, the canonical lift is continuous
 out by equations `x ψ = ψ` in the continuous half-spin action, so it is closed
 (`TauCeti.SeibergWitten.isClosed_canonicalLineFixingSubgroup`), hence compact since `Spinᶜ(4)` is.
 The rotation homomorphism is continuous and `U(V, J)` is Hausdorff, so its restriction to the
-subgroup is a homeomorphism onto `U(V, J)`, whose inverse is the canonical lift. A principal
-bundle is extended along a continuous homomorphism of structure groups, so this is the form of the
-canonical lift through which the unitary frame bundle induces the canonical `Spinᶜ` structure.
+subgroup is a homeomorphism onto `U(V, J)`, whose inverse is the canonical lift. Continuity is
+the hypothesis needed to extend principal bundles along the canonical lift as a homomorphism of
+structure groups.
 
 The determinant character of the canonical lift is the complex determinant: `det (unitaryLift A)`
 is the determinant of `A` as a `ℂ`-linear map of the complex vector space `(V, J)`
@@ -633,10 +632,10 @@ variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
   (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 
 include hQ he h₀ h₂ hW in
-/-- **The subgroup fixing the canonical line is the unitary group, as a topological group.** The
-isomorphism `canonicalLineFixingSubgroupEquiv` is the restriction of the continuous rotation
-homomorphism `Spinᶜ(4) → SO(4)`, and it is a homeomorphism because the subgroup is closed in the
-compact group `Spinᶜ(4)` and `U(V, J)` is Hausdorff. -/
+/-- **The subgroup fixing the canonical line is the unitary group, as a topological group**: the
+rotation homomorphism, as an isomorphism of topological groups from the subgroup of `Spinᶜ(4)`
+fixing the canonical line onto `U(V, J)`. Its underlying group isomorphism is
+`canonicalLineFixingSubgroupEquiv`. -/
 def canonicalLineFixingSubgroupContinuousMulEquiv :
     canonicalLineFixingSubgroup o ρ J hQ₀ ≃ₜ* J.unitaryGroup Q :=
   have hneg : (-Q).PosDef := fun v hv ↦ by simpa [hQ] using pow_pos (norm_pos_iff.2 hv) 2
@@ -645,12 +644,8 @@ def canonicalLineFixingSubgroupContinuousMulEquiv :
   have : CompactSpace (canonicalLineFixingSubgroup o ρ J hQ₀) :=
     isCompact_iff_compactSpace.mp
       (isClosed_canonicalLineFixingSubgroup o ρ J hQ₀).isCompact
-  have hrot : Continuous (spinCGroup.toSpecialOrthogonal Q hQ₀) :=
-    (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ₀)).continuous_iff.mpr <| by
-      simpa only [Function.comp_def, ← spinCGroup.mk_apply, spinCGroup.toSpecialOrthogonal_mk]
-        using (TauCeti.CliffordAlgebra.continuous_spinToSpecialOrthogonal Q).comp continuous_fst
   have hc : Continuous (canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ) :=
-    ((hrot.comp continuous_subtypeVal).subtype_mk _)
+    (((spinCGroup.continuous_toSpecialOrthogonal Q hQ₀).comp continuous_subtypeVal).subtype_mk _)
   { canonicalLineFixingSubgroupEquiv hQ he h₀ h₂ hQ₀ hW hρ with
     continuous_toFun := hc
     continuous_invFun := hc.continuous_symm_of_equiv_compact_to_t2
@@ -681,8 +676,8 @@ theorem continuous_unitaryLift : Continuous (unitaryLift hQ he h₀ h₂ hQ₀ h
     (canonicalLineFixingSubgroupContinuousMulEquiv hQ he h₀ h₂ hQ₀ hW hρ).symm.continuous
 
 /-- **The canonical `Spinᶜ` lift of the unitary group, as a continuous homomorphism**
-`U(V, J) →ₜ* Spinᶜ(4)`: the structure group homomorphism along which the unitary frame bundle of
-an almost Hermitian four-manifold induces its canonical `Spinᶜ` structure. -/
+`U(V, J) →ₜ* Spinᶜ(4)`. Continuity is what extending a principal bundle along this structure
+group homomorphism requires. -/
 def unitaryLiftContinuousMonoidHom : J.unitaryGroup Q →ₜ* spinCGroup Q hQ₀ where
   toMonoidHom := unitaryLift hQ he h₀ h₂ hQ₀ hW hρ
   continuous_toFun := continuous_unitaryLift hQ he h₀ h₂ hQ₀ hW hρ
