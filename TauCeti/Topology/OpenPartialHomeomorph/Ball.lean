@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 
 /-!
 # Balls of a chart
@@ -18,7 +19,9 @@ of `b` when `b ∈ e.source` and `0 < ε`. When `V` is a seminormed group and th
 target of `e`, the map `x ↦ e x - e b` is a homeomorphism of this set with the ball of radius `ε`
 about `0` (`OpenPartialHomeomorph.chartBallHomeomorph`). When moreover `V` is a real normed
 space and `b ∈ e.source`, straight lines to `e b` contract every map into this set onto the
-constant map at `b` (`OpenPartialHomeomorph.chartBallHomotopy`).
+constant map at `b` (`OpenPartialHomeomorph.chartBallHomotopy`), and scaling `e x - e b` down to
+`0` contracts the chart ball itself onto `b` inside the chart ball
+(`OpenPartialHomeomorph.chartBallContraction`).
 -/
 
 public section
@@ -122,6 +125,35 @@ def chartBallHomotopy {g : C(X, M)} (hg : ∀ x, g x ∈ chartBall e b ε) :
 lemma chartBallHomotopy_apply {g : C(X, M)} (hg : ∀ x, g x ∈ chartBall e b ε)
     (z : unitInterval × X) :
     chartBallHomotopy e hb hε hg z = e.symm (e b + (1 - (z.1 : ℝ)) • (e (g z.2) - e b)) :=
+  (rfl)
+
+variable (hε₀ : 0 < ε)
+
+include hb in
+/-- **The straight-line contraction of a chart ball onto its centre.** At time `t` it sends `x` to
+the point of the chart ball read as `(1 - t) • (e x - e b)` through
+`OpenPartialHomeomorph.chartBallHomeomorph`, so it starts at the identity and ends at the constant
+map at `b`. -/
+def chartBallContraction :
+    (ContinuousMap.id (chartBall e b ε)).Homotopy
+      (ContinuousMap.const (chartBall e b ε) ⟨b, e.mem_chartBall_self hb hε₀⟩) where
+  toFun tx := (chartBallHomeomorph e hε).symm
+    ⟨(1 - (tx.1 : ℝ)) • (chartBallHomeomorph e hε tx.2 : V),
+      balanced_ball_zero.smul_mem
+        (by
+          rw [Real.norm_of_nonneg (sub_nonneg.2 tx.1.property.2)]
+          exact sub_le_self _ tx.1.property.1)
+        (chartBallHomeomorph e hε tx.2).property⟩
+  continuous_toFun := (chartBallHomeomorph e hε).symm.continuous.comp <|
+    ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
+      (continuous_subtypeVal.comp ((chartBallHomeomorph e hε).continuous.comp
+        continuous_snd))).subtype_mk _
+  map_zero_left x := Subtype.ext <| by simp [e.left_inv (e.chartBall_subset_source b ε x.property)]
+  map_one_left x := Subtype.ext <| by simp [e.left_inv hb]
+
+@[simp]
+lemma coe_chartBallContraction_apply (t : unitInterval) (x : chartBall e b ε) :
+    (chartBallContraction e hb hε hε₀ (t, x) : M) = e.symm ((1 - (t : ℝ)) • (e x - e b) + e b) :=
   (rfl)
 
 end NormedSpace
