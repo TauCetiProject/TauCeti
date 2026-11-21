@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
-public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.LocalRing.Pullback
 
 import Mathlib.Algebra.Category.Ring.Constructions
@@ -21,9 +21,9 @@ import Mathlib.RingTheory.Finiteness.Finsupp
 # Fiber products along a surjection
 
 For `B → C ← D`, if `B → C` is surjective, the fiber product square is also a
-pushout in commutative rings. The projection to `B` is finite when `D → C` is
-finite, and is an isomorphism after inverting an element of the kernel of
-the projection to `D`.
+pushout in commutative rings. The projection to `B` is finite when `B → C` is
+surjective and `D → C` is finite. For arbitrary maps, this projection is an
+isomorphism after inverting an element of the kernel of the projection to `D`.
 
 ## References
 
@@ -158,17 +158,19 @@ variable {B : Type u} {C : Type v} {D : Type w} [CommRing B] [CommRing C] [CommR
 variable (p : B →+* C) (q : D →+* C)
 
 /-- For `t ∈ ker (p.pullbackSnd q)`, the induced map `(B ×_C D)[1/t] → B[1/(p.pullbackFst q t)]`
-is bijective for arbitrary ring maps `p` and `q`. -/
+is bijective for arbitrary ring maps `p` and `q`.
+
+For this bijection, `IsLocalization.Away.map_symm_algebraMap` gives the inverse
+representative `a / t` whenever `p.pullbackFst q a = p.pullbackFst q t * b`. -/
 theorem bijective_awayMap_pullbackFst {t : p.pullback q} (ht : t ∈ ker (p.pullbackSnd q)) :
     Function.Bijective (Localization.awayMap (p.pullbackFst q) t) := by
   constructor
   · apply Localization.awayMap_injective_iff.mpr
     intro a ha
-    refine ⟨1, Subtype.ext (Prod.ext ?_ ?_)⟩
-    · change (p.pullbackFst q) (t ^ 1 * a) = 0
-      rw [map_mul, map_pow, pow_one, ha, mul_zero]
-    · change (p.pullbackSnd q) (t ^ 1 * a) = 0
-      rw [map_mul, map_pow, pow_one, mem_ker.mp ht, zero_mul]
+    have hfst : p.pullbackFst q (t ^ 1 * a) = 0 := by simp only [map_mul, pow_one, ha, mul_zero]
+    have hsnd : p.pullbackSnd q (t ^ 1 * a) = 0 := by
+      simp only [map_mul, pow_one, mem_ker.mp ht, zero_mul]
+    exact ⟨1, Subtype.ext (Prod.ext hfst hsnd)⟩
   · apply Localization.awayMap_surjective_iff.mpr
     intro b
     have hzero : p (p.pullbackFst q t) = 0 :=
@@ -176,24 +178,6 @@ theorem bijective_awayMap_pullbackFst {t : p.pullback q} (ht : t ∈ ker (p.pull
     have hb : p.pullbackFst q t * b ∈ ker p := by
       rw [mem_ker, map_mul, hzero, zero_mul]
     exact ⟨(pullbackSndKerEquiv p q).symm ⟨_, hb⟩, 1, by simp⟩
-
-/-- If the first coordinate of `a` is the first coordinate of `t` times `b`, the
-inverse of the localized first projection sends the image of `b` to the fraction `a / t`. -/
-theorem awayMap_pullbackFst_symm_algebraMap {t : p.pullback q}
-    (ht : t ∈ ker (p.pullbackSnd q)) {a : p.pullback q} {b : B}
-    (ha : p.pullbackFst q a = p.pullbackFst q t * b) :
-    (RingEquiv.ofBijective (Localization.awayMap (p.pullbackFst q) t)
-      (bijective_awayMap_pullbackFst p q ht)).symm
-        (algebraMap B (Localization.Away (p.pullbackFst q t)) b) =
-      IsLocalization.mk' (Localization.Away t) a ⟨t, Submonoid.mem_powers t⟩ := by
-  apply (RingEquiv.ofBijective (Localization.awayMap (p.pullbackFst q) t)
-    (bijective_awayMap_pullbackFst p q ht)).injective
-  simp only [RingEquiv.apply_symm_apply, RingEquiv.ofBijective_apply,
-    Localization.awayMap, IsLocalization.Away.map, IsLocalization.map_mk']
-  rw [IsLocalization.eq_mk'_iff_mul_eq]
-  rw [← map_mul]
-  exact congrArg (algebraMap B (Localization.Away (p.pullbackFst q t)))
-    (ha.trans (mul_comm _ _)).symm
 
 /-- If the map from the first factor is surjective and the map from the second
 factor is finite, the first projection is finite. -/
@@ -207,10 +191,10 @@ theorem finite_pullbackFst_of_surjective (hp : Function.Surjective p) (hq : q.Fi
   let : Algebra D C := q.toAlgebra
   have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' rfl
   have : IsScalarTower A D C := IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
-  have hfinite : Module.Finite D C := hq
-  have : Module.Finite A C := ⟨by
-    simpa only [Submodule.restrictScalars_top] using
-      hfinite.fg_top.restrictScalars_of_surjective (p.surjective_pullbackSnd_of_surjective q hp)⟩
+  have hfinite : (q.comp (p.pullbackSnd q)).Finite :=
+    hq.comp (Finite.of_surjective _ (p.surjective_pullbackSnd_of_surjective q hp))
+  have : (p.comp (p.pullbackFst q)).Finite := by rw [p.pullback_comm_sq q]; exact hfinite
+  have : Module.Finite A C := this
   let reduce := (IsScalarTower.toAlgHom A B C).toLinearMap
   let coefficients := (Algebra.linearMap A B).range
   -- The quotient by the coefficient image is already a quotient of C.

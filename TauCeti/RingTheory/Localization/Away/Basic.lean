@@ -58,6 +58,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `w = u * r` rescales fractions by the cofactor, sending `a/u` to `(a · r)/w`.
 * `RingHom.awayMap_divBy`: the map induced on localisations by a ring homomorphism
   `f` pushes fractions along `f`, sending `a/u` to `f(a)/f(u)`.
+* `IsLocalization.Away.map_symm_algebraMap`: the inverse of a bijective induced map sends
+  the image of `b` to `a/t` when `f(a) = f(t) * b`.
 * `TauCeti.Localization.map_adjoin_divBy_le` and
   `TauCeti.Localization.map_integralClosure_adjoin_divBy_le`: that map carries `R[T/s]`, and its
   integral closure in the localisation, into `R'[T'/f(s)]` and its integral closure, as soon as
@@ -466,6 +468,23 @@ theorem map_integralClosure_adjoin_divBy_le (hT : ∀ t ∈ T, f t ∈ T')
 end TauCeti.Localization
 
 namespace IsLocalization.Away
+
+/-- If the map induced by `f` on arbitrary away-localization carriers is bijective,
+its inverse sends the image of `b` to `a / t` whenever `f a = f t * b`. -/
+theorem map_symm_algebraMap {R S Rₜ Sₜ : Type*}
+    [CommSemiring R] [CommSemiring S] [CommSemiring Rₜ] [CommSemiring Sₜ]
+    [Algebra R Rₜ] [Algebra S Sₜ] (f : R →+* S) (t : R)
+    [IsLocalization.Away t Rₜ] [IsLocalization.Away (f t) Sₜ]
+    (h : Function.Bijective (IsLocalization.Away.map Rₜ Sₜ f t))
+    {a : R} {b : S} (ha : f a = f t * b) :
+    (RingEquiv.ofBijective (IsLocalization.Away.map Rₜ Sₜ f t) h).symm
+        (algebraMap S Sₜ b) =
+      IsLocalization.mk' Rₜ a ⟨t, Submonoid.mem_powers t⟩ := by
+  apply (RingEquiv.ofBijective (IsLocalization.Away.map Rₜ Sₜ f t) h).injective
+  simp only [RingEquiv.apply_symm_apply, RingEquiv.ofBijective_apply,
+    IsLocalization.Away.map, IsLocalization.map_mk']
+  rw [IsLocalization.eq_mk'_iff_mul_eq, ← map_mul]
+  exact congrArg (algebraMap S Sₜ) (ha.trans (mul_comm _ _)).symm
 
 /-- Inverting `x` is also a localization away from `g` if `g` divides `x` and `x` divides
 some power of `g`. -/
