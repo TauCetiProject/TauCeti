@@ -29,7 +29,8 @@ projections are right and left fibrations.
 
 * `SSet.join.stdSimplexIso n m`: the isomorphism `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`.
 * `SSet.join.coneIso n`: the cone `Δ[0] ⋆ Δ[n]` as `Δ[n + 1]`, with the cone point as the
-  vertex `0`; `SSet.join.coneIso_zero` identifies `coneIso 0` with `stdSimplexIso 0 0`.
+  vertex `0`; `SSet.join.coneIso_hom_eq` identifies it with `stdSimplexIso 0 n`, and
+  `SSet.join.coneIso_zero` identifies `coneIso 0` with `stdSimplexIso 0 0`.
 * `SSet.join.coneEdgeEquiv x y`: maps `Δ[0] ⋆ Δ[0] ⟶ X` sending the cone point to `y` and the base
   to `x` are the edges from `y` to `x`.
 
@@ -438,6 +439,13 @@ lemma vertexJoin_map_comp_coneIso_inv {m : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
   exact (Iso.inv_hom_id_assoc (coneIso m) _).symm.trans (congrArg ((coneIso m).inv ≫ ·)
     ((map_comp_coneIso_hom_assoc f _).symm.trans
       ((congrArg _ (Iso.hom_inv_id _)).trans (Category.comp_id _))))
+
+variable (n) in
+/-- The cone isomorphism is `stdSimplexIso 0 n`, followed by the identification of its target
+`Δ[0 + n + 1]` with `Δ[n + 1]`. For a numeral `n` this identification is the identity, so that,
+for instance, `(coneIso 2).hom` is `(stdSimplexIso 0 2).hom`. -/
+lemma coneIso_hom_eq : (coneIso.{u} n).hom = (stdSimplexIso 0 n).hom ≫ eqToHom (by simp) := by
+  simp [coneIso, eqToHom_map]
 
 /-- For `n = 0`, the cone isomorphism is `stdSimplexIso 0 0 : Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
 lemma coneIso_zero : coneIso.{u} 0 = stdSimplexIso 0 0 :=

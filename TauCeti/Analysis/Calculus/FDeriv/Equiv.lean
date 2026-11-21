@@ -59,7 +59,7 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
-  `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
+  `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`, so `det Dφ⁻¹(y) ≠ 0` (`Equiv.det_fderiv_symm_ne_zero`).
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
 
@@ -271,6 +271,12 @@ theorem det_fderiv_symm_mul_det_fderiv {y : E} (hφ : DifferentiableAt 𝕜 φ (
     (fderiv 𝕜 φ.symm y).det * (fderiv 𝕜 φ (φ.symm y)).det = 1 := by
   rw [mul_comm, ← ContinuousLinearMap.det_comp, ← fderiv_comp y hφ hψ, φ.self_comp_symm,
     fderiv_id, ContinuousLinearMap.det_id]
+
+/-- If a bijection `φ` is differentiable at `φ⁻¹ y` and its inverse is differentiable at `y`, the
+Jacobian determinant of `φ⁻¹` at `y` is nonzero. -/
+theorem det_fderiv_symm_ne_zero {y : E} (hφ : DifferentiableAt 𝕜 φ (φ.symm y))
+    (hψ : DifferentiableAt 𝕜 φ.symm y) : (fderiv 𝕜 φ.symm y).det ≠ 0 :=
+  left_ne_zero_of_mul_eq_one (φ.det_fderiv_symm_mul_det_fderiv hφ hψ)
 
 end Equiv
 
