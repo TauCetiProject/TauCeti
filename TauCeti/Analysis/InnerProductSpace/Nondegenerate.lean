@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
@@ -24,10 +25,12 @@ requires of its bilinear form. Its pullback along an injective linear map, such 
 induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
 is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
 
-The dual basis of a basis `b` for the inner product pairs with a vector to give its coordinates
-in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained from `b` by the inverse of the Gram
-matrix (`Module.Basis.dualBasis_innerₗ_eq_sum`). In a coordinate frame of a Riemannian metric, these
-are the coordinate covectors `dxⁱ` with their musical isomorphism `gⁱʲ ∂ⱼ`.
+The matrix of the inner product in a basis `b` is the Gram matrix of `b`
+(`LinearMap.BilinForm.toMatrix_innerₗ`). The dual basis of `b` for the inner product pairs with a
+vector to give its coordinates in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained
+from `b` by the inverse of the Gram matrix (`Module.Basis.dualBasis_innerₗ_eq_sum`). In a coordinate
+frame of a Riemannian metric, these are the coordinate covectors `dxⁱ` with their musical
+isomorphism `gⁱʲ ∂ⱼ`.
 -/
 
 public section
@@ -74,6 +77,18 @@ theorem eq_of_forall_inner_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {L :
 
 end TauCeti
 
+namespace LinearMap.BilinForm
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The matrix of the real inner product in a basis `b` is the Gram matrix of `b`. -/
+theorem toMatrix_innerₗ {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ E) :
+    toMatrix b (innerₗ E) = Matrix.gram ℝ b := by
+  ext k l
+  rw [toMatrix_apply, innerₗ_apply_apply, Matrix.gram_apply]
+
+end LinearMap.BilinForm
+
 namespace Module.Basis
 
 open TauCeti
@@ -82,6 +97,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The inner product with the `i`-th vector of the dual basis of `b` is the `i`-th coordinate
 in `b`. -/
+@[simp]
 theorem inner_dualBasis_left {ι : Type*} [DecidableEq ι] [Finite ι] (b : Basis ι ℝ E) (i : ι)
     (v : E) :
     ⟪LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i, v⟫ = b.repr v i := by
@@ -93,10 +109,7 @@ theorem dualBasis_innerₗ_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι] (b 
     (i : ι) :
     LinearMap.BilinForm.dualBasis (innerₗ E) nondegenerate_inner b i =
       ∑ j, (Matrix.gram ℝ b)⁻¹ i j • b j := by
-  -- The matrix of the inner product in `b` is the Gram matrix of `b`.
-  have hG : LinearMap.BilinForm.toMatrix b (innerₗ E) = Matrix.gram ℝ b := by
-    ext k l
-    rw [LinearMap.BilinForm.toMatrix_apply, innerₗ_apply_apply, Matrix.gram_apply]
-  rw [LinearMap.BilinForm.dualBasis_apply_eq_sum_inv_toMatrix_smul, hG]
+  rw [LinearMap.BilinForm.dualBasis_apply_eq_sum_inv_toMatrix_smul,
+    LinearMap.BilinForm.toMatrix_innerₗ]
 
 end Module.Basis
