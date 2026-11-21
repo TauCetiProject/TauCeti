@@ -80,7 +80,7 @@ private instance final_basicOpenNhds : (basicOpenNhds p).Final := by
   refine Functor.final_of_exists_of_isFiltered _ (fun U ↦ ?_)
     fun _ _ ↦ ⟨_, 𝟙 _, Subsingleton.elim _ _⟩
   obtain ⟨_, ⟨f, rfl⟩, hpf, hfU⟩ :=
-    (Opens.isBasis_iff_nbhd.mp isBasis_basicOpen) (unop U).2
+    (Opens.isBasis_iff_nbhd.mp isBasis_basicOpen) (unop U).property
   exact ⟨⟨f, mem_basicOpen.mp hpf⟩, ⟨(homOfLE hfU).op⟩⟩
 
 variable (hI : IsAdic I) (hIfg : I.FG)
@@ -199,13 +199,17 @@ namespace Spf
 
 variable {A}
 
+/-- The stalk of `Spf A` at an open prime `p` of `A` is a local ring. This is the instance of
+`Spf A` as a locally ringed space, for points written as open primes. -/
+instance isLocalRing_stalk (p : carrier A) : IsLocalRing ((Spf A).presheaf.stalk p) :=
+  (Spf A).isLocalRing p
+
 /-- The residue field of `Spf A` at an open prime `p` is the fraction field of `A ⧸ p`
 (EGA I, Ch. I, 10.1.6). -/
 noncomputable def stalkResidueFieldEquiv (p : carrier A) :
     (Spf A).residueField p ≃+* FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
   let e : colimit (completedNeighbourhoodDiagram p) ≅ (Spf A).presheaf.stalk p :=
     completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1
-  haveI := (Spf A).isLocalRing p
   (IsLocalRing.ResidueField.mapEquiv e.commRingCatIsoToRingEquiv).symm.trans (stalkResidueIso p)
 
 /-- The residue field isomorphism sends the residue class of the germ at `p` of the section

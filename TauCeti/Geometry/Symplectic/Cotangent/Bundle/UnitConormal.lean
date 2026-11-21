@@ -142,7 +142,7 @@ theorem contMDiffAt_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
     {z : TotalSpace (Fin k → ℝ) fun q ↦ conormalSpace J I i q} (hz : z ∈ unitConormal J I k i) :
     letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
     ContMDiffAt (J.prod 𝓘(ℝ, Fin k → ℝ)) 𝓘(ℝ) ∞
-      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) z := by
+      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) z := by
   let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
   exact (contMDiffAt_norm_snd_of_mem_cosphereBundle _ hz).comp z
     (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk z)
@@ -154,7 +154,7 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
     (hinj : ∀ q, Injective (mfderiv J I i q)) (hk : finrank ℝ F + k = finrank ℝ E) :
     letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
     IsRegularValue (J.prod 𝓘(ℝ, Fin k → ℝ)) 𝓘(ℝ)
-      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) 1 := by
+      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) 1 := by
   let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
   let := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
   rw [isRegularValue_iff]
@@ -163,15 +163,15 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
   have hz' : z ∈ unitConormal J I k i := mem_unitConormal.2 (mem_cosphereBundle.2 hz)
   have hne := snd_ne_zero_of_mem_cosphereBundle hz'
   have hd : mfderiv (J.prod 𝓘(ℝ, Fin k → ℝ)) 𝓘(ℝ)
-      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) z (vectorBundleEulerField J z) =
-        ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖ := by
+      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) z (vectorBundleEulerField J z) =
+        ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖ := by
     have hnorm : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ)
-        (fun w : CotangentBundle I M ↦ ‖w.2‖) (conormalInclusion (Fin k → ℝ) J I i z) :=
+        (fun w : CotangentBundle I M ↦ ‖w.snd‖) (conormalInclusion (Fin k → ℝ) J I i z) :=
       (contMDiffAt_norm_snd_of_mem_cosphereBundle _ hz').mdifferentiableAt (by simp)
     have hι : MDifferentiableAt (J.prod 𝓘(ℝ, Fin k → ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
         (conormalInclusion (Fin k → ℝ) J I i) z :=
       (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk z).mdifferentiableAt (by simp)
-    have h := mfderiv_comp_apply (g := fun w : CotangentBundle I M ↦ ‖w.2‖) z hnorm hι
+    have h := mfderiv_comp_apply (g := fun w : CotangentBundle I M ↦ ‖w.snd‖) z hnorm hι
       (vectorBundleEulerField J z)
     -- The conormal inclusion is linear on fibres, so it preserves Euler fields.
     rw [mfderiv_vectorBundleEulerField_of_linear (fun q ↦ (conormalSpace J I i q).subtype)
@@ -180,10 +180,10 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
     exact h
   -- The differential is onto `ℝ`, whose tangent spaces are `ℝ` itself.
   intro y
-  refine ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖ y /
-    ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) • vectorBundleEulerField J z, ?_⟩
+  refine ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖ y /
+    ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) • vectorBundleEulerField J z, ?_⟩
   rw [map_smul, hd]
-  exact div_mul_cancel₀ _ ((norm_ne_zero_iff (a := (conormalInclusion (Fin k → ℝ) J I i z).2)).2
+  exact div_mul_cancel₀ _ ((norm_ne_zero_iff (a := (conormalInclusion (Fin k → ℝ) J I i z).snd)).2
     hne)
 
 variable [FiniteDimensional ℝ F] [J.Boundaryless]
@@ -282,7 +282,7 @@ theorem isSmoothEmbedding_unitConormalInclusion (hi : IsSmoothEmbedding J I ∞ 
       unitConormalInclusion J I k i = conormalInclusion (Fin k → ℝ) J I i ∘ Subtype.val :=
     (rfl)
   refine ⟨hf.isImmersion_of_injective_mfderiv (by simp) fun z ↦ ?_,
-    Topology.IsEmbedding.of_comp hf.continuous continuous_subtype_val
+    Topology.IsEmbedding.of_comp hf.continuous continuous_subtypeVal
       (hcomp ▸ hι.isEmbedding.comp hv.isEmbedding)⟩
   have h : Injective (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
       (conormalInclusion (Fin k → ℝ) J I i ∘ Subtype.val) z) := by
@@ -332,12 +332,12 @@ theorem isLegendrianEmbedding_unitConormalInclusion [Nontrivial E]
       ← TauCeti.mpullback_comp (hf.mdifferentiable (by simp))
         (hS.contMDiff.mdifferentiable (by simp))]
     exact mpullback_liouvilleForm_eq_zero_of_conormal
-      (g := fun z : unitConormal J I k i ↦ z.1.proj)
-      (fun z ↦ conormalInclusion_proj (Fin k → ℝ) J I i z.1)
+      (g := fun z : unitConormal J I k i ↦ z.val.proj)
+      (fun z ↦ conormalInclusion_proj (Fin k → ℝ) J I i z.val)
       ((hS.contMDiff.comp hf).mdifferentiable (by simp))
       (((Bundle.contMDiff_proj _).comp hv.contMDiff).mdifferentiable (by simp))
       (fun z ↦ (hi.contMDiff _).mdifferentiableAt (by simp))
-      (fun z ↦ conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i z.1)
+      (fun z ↦ conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i z.val)
   · rw [finrank_fin_fun, finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
     have := Module.finrank_pos (R := ℝ) (M := E)
     omega

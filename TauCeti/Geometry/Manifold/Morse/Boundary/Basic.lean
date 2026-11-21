@@ -45,6 +45,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `neg_morseTrajectorySlice`: reversing the pseudo-gradient reverses the trajectories.
 * `morseTrajectorySlice_eq_image_of_stableSet_subset`: the trajectories into `q` read off a
   decomposition of the stable set of `q` into orbits.
+* `ncard_morseTrajectorySlice_eq_one_of_unstableSet_inter_stableSet_eq_orbit`: a single orbit of
+  trajectories from `p` to `q` gives a single point of the slice.
 * `IsMorseSmale.finite_morseTrajectorySlice`: for consecutive indices it is finite.
 * `natCard_orbitQuotient_eq_ncard_morseTrajectorySlice`: the slice has as many points as there are
   unparametrized trajectories from `p` to `q`.
@@ -145,6 +147,25 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset
     exact ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1,
       (Flow.apply_mem_stableSet_iff _ _).2 (hy i).2, hτ i⟩
 
+/-- **A single orbit of trajectories crosses the middle level once.** If the trajectories from `p`
+to a different point `q` form the single orbit of `z`, then the middle-level slice from `p` to `q`
+is a single point, where the orbit of `z` crosses the level. -/
+theorem ncard_morseTrajectorySlice_eq_one_of_unstableSet_inter_stableSet_eq_orbit {p q z : M}
+    (hpq : p ≠ q) (hz : hX.flow.unstableSet p ∩ hX.flow.stableSet q = hX.flow.orbit z) :
+    (hX.morseTrajectorySlice p q).ncard = 1 := by
+  have hzm : z ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := hz ▸ Flow.mem_orbit_self _ z
+  obtain ⟨s, hs, huniq⟩ :=
+    hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hpq hzm
+  refine ncard_eq_one.2 ⟨hX.flow s z, Set.ext fun y ↦ ?_⟩
+  rw [mem_morseTrajectorySlice, mem_singleton_iff]
+  constructor
+  · rintro ⟨hyu, hys, hyc⟩
+    obtain ⟨s', rfl⟩ := (Flow.mem_orbit_iff _).1 (hz ▸ ⟨hyu, hys⟩ : y ∈ hX.flow.orbit z)
+    rw [huniq s' hyc]
+  · rintro rfl
+    exact ⟨(Flow.apply_mem_unstableSet_iff _ s).2 hzm.1, (Flow.apply_mem_stableSet_iff _ s).2 hzm.2,
+      hs⟩
+
 omit hX in
 /-- **Finitely many trajectories between critical points of consecutive index.** Under the
 Morse–Smale condition, if `ind p = ind q + 1`, then the middle-level slice of trajectories from
@@ -168,7 +189,7 @@ theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice {p q : M} :
     have hC : ∀ y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet p, y = p := fun y hy ↦
       hX.eq_of_mem_unstableSet_inter_stableSet hy
     have : Subsingleton ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet p) :=
-      ⟨fun a b ↦ Subtype.ext ((hC _ a.2).trans (hC _ b.2).symm)⟩
+      ⟨fun a b ↦ Subtype.ext ((hC _ a.property).trans (hC _ b.property).symm)⟩
     have hlevel : hX.flow.unstableSet p ∩ hX.flow.stableSet p ∩ {z | f z = (f p + f p) / 2} =
         hX.flow.unstableSet p ∩ hX.flow.stableSet p :=
       inter_eq_left.2 fun z hz ↦ by rw [mem_ofPred_eq, hC z hz]; ring

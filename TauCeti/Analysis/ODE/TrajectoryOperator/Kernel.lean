@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -37,6 +39,8 @@ difference of dimensions of spaces of square-integrable solutions is
 
 * `TauCeti.squareIntegrableSolutions`: the initial values of the square-integrable solutions of
   `v' + A(s) v = 0`.
+* `TauCeti.squareIntegrableSolutions_neg_comp_neg`: reflecting time, `s ↦ v (-s)`, identifies the
+  square-integrable solutions of `v' + A(s) v = 0` with those of `w' - A(-s) w = 0`.
 * `TauCeti.squareIntegrableSolutions_neg_smul_id_eq_bot`: a scalar equation `v' = b v` has no
   nonzero square-integrable solution when its scalar solution `g` is not square integrable.
 * `TauCeti.mem_squareIntegrableSolutions_iff_of_apply_eq_toLp`: for a block-diagonal coefficient
@@ -55,10 +59,14 @@ difference of dimensions of spaces of square-integrable solutions is
   solution of `v' = g - A v`, with `g ∈ Lᵖ`, is the value of an element `u` with `D_A u = g`.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_eq_zero_of_hasDerivAt`: an `Lᵖ` classical
   solution of `v' = -A v` is the value of an element of the kernel of `D_A`.
+* `TauCeti.WeakDerivStep.exists_prev_ae_eq_of_contDiff_of_hasCompactSupport`: a compactly
+  supported `C¹` path is the value of an element of the weak-derivative graph over `Lᵖ(ℝ, F)`.
 * `TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`: the kernel of `D_A` on `W^{1,2}(ℝ, F)` is
   linearly equivalent to `TauCeti.squareIntegrableSolutions A`.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator`: the kernel of `D_A` on
   `W^{1,2}(ℝ, F)` has the dimension of `TauCeti.squareIntegrableSolutions A`.
+* `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_neg_comp_neg`: the kernels of `D_A` and
+  of `D_{-A(-·)}` have the same dimension.
 * `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`: that kernel is finite
   dimensional when `F` is.
 * `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot_iff`: `D_A` is injective on
@@ -103,6 +111,24 @@ theorem mem_squareIntegrableSolutions {A : ℝ → F →L[ℝ] F} {x : F} :
     x ∈ squareIntegrableSolutions A ↔
       ∃ v : ℝ → F, v 0 = x ∧ (∀ s, HasDerivAt v (-A s (v s)) s) ∧ MemLp v 2 :=
   Iff.rfl
+
+/-- Reflecting time turns a square-integrable solution of `v' + A(s) v = 0` into the
+square-integrable solution `s ↦ v (-s)` of `w' - A(-s) w = 0`, with the same initial value. -/
+private theorem mem_squareIntegrableSolutions_neg_comp_neg {A : ℝ → F →L[ℝ] F} {x : F}
+    (hx : x ∈ squareIntegrableSolutions A) :
+    x ∈ squareIntegrableSolutions fun s ↦ -A (-s) := by
+  obtain ⟨v, rfl, hv, hv2⟩ := hx
+  refine ⟨fun s ↦ v (-s), by simp, fun s ↦ ?_, ?_⟩
+  · simpa [Function.comp_def] using (hv (-s)).scomp s (hasDerivAt_neg s)
+  · simpa [Function.comp_def] using hv2.comp_measurePreserving (Measure.measurePreserving_neg _)
+
+/-- **Time reversal of square-integrable solutions.** The equations `v' + A(s) v = 0` and
+`w' - A(-s) w = 0` have the same initial values of square-integrable solutions: `s ↦ v (-s)`
+solves the second equation exactly when `v` solves the first, and reflection preserves `L²`. -/
+theorem squareIntegrableSolutions_neg_comp_neg (A : ℝ → F →L[ℝ] F) :
+    squareIntegrableSolutions (fun s ↦ -A (-s)) = squareIntegrableSolutions A := by
+  refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ mem_squareIntegrableSolutions_neg_comp_neg hx
+  simpa using mem_squareIntegrableSolutions_neg_comp_neg hx
 
 /-- If the scalar equation `g' = b g` has a solution with `g 0 = 1` that is not square
 integrable, then `v' = b v` has no nonzero square-integrable solution in `F`: every solution is
@@ -334,6 +360,22 @@ theorem exists_trajectoryOperator_eq_zero_of_hasDerivAt
     (fun s ↦ by simpa using hv s) hvp MemLp.zero
   exact ⟨u, Lp.eq_zero_iff_ae_eq_zero.2 hu, hux⟩
 
+/-- A compactly supported `C¹` path is the value of an element of the weak-derivative graph over
+`Lᵖ(ℝ, F)`. -/
+theorem exists_prev_ae_eq_of_contDiff_of_hasCompactSupport {v : ℝ → F} (hv : ContDiff ℝ 1 v)
+    (hvs : HasCompactSupport v) :
+    ∃ u : WeakDerivStep volume ⊤ p
+        (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
+      ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+        =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := by
+  -- For the zero coefficient `D_0 u = u'`, so `v` solves `v' = v' - 0 v` with `v, v' ∈ Lᵖ`.
+  obtain ⟨u, -, hu⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt (p := p) (A := fun _ ↦ 0)
+    (AL := 0) (Lp.coeFn_zero _ _ _) (g := deriv v)
+    (fun s ↦ by simpa using (hv.differentiable one_ne_zero s).hasDerivAt)
+    (hv.continuous.memLp_of_hasCompactSupport hvs)
+    ((hv.continuous_deriv le_rfl).memLp_of_hasCompactSupport hvs.deriv)
+  exact ⟨u, hu⟩
+
 end Banach
 
 section SquareIntegrable
@@ -347,14 +389,14 @@ private def kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) : ℝ → F :=
-  Classical.choose (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.2)
+  Classical.choose (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.property)
 
 private theorem hasDerivAt_kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) (s : ℝ) :
     HasDerivAt (kerSolution hA hAL u) (-A s (kerSolution hA hAL u s)) s :=
-  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.2)).1 s
+  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.property)).1 s
 
 private theorem continuous_kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -366,16 +408,17 @@ private theorem prev_ae_eq_kerSolution (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) :
-    ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.1)
+    ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.val)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] kerSolution hA hAL u :=
-  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.2)).2
+  (Classical.choose_spec (exists_hasDerivAt_of_trajectoryOperator_eq_zero hA hAL u.property)).2
 
 /-- Any continuous representative of an element of the kernel is its chosen solution. -/
 private theorem kerSolution_eq (hA : Continuous A)
     {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) {v : ℝ → F} (hv : Continuous v)
-    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.1)
+    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict
+        ((⊤ : Opens ℝ) : Set ℝ)))) u.val)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v) :
     kerSolution hA hAL u = v := by
   have h := (prev_ae_eq_kerSolution hA hAL u).symm.trans huv
@@ -414,7 +457,7 @@ private theorem kerEval_mem (hA : Continuous A)
     (u : (trajectoryOperator (p := 2) AL).ker) :
     kerEval hA hAL u ∈ squareIntegrableSolutions A := by
   refine ⟨kerSolution hA hAL u, rfl, hasDerivAt_kerSolution hA hAL u, ?_⟩
-  have h := (Lp.memLp (prev _ u.1)).ae_eq (prev_ae_eq_kerSolution hA hAL u)
+  have h := (Lp.memLp (prev _ u.val)).ae_eq (prev_ae_eq_kerSolution hA hAL u)
   simpa using h
 
 /-- A solution vanishing at time `0` vanishes identically, so evaluation is injective. -/
@@ -427,7 +470,7 @@ private theorem kerEval_injective (hA : Continuous A)
   have h0 : kerSolution hA hAL u = 0 := hA.neg.eq_of_hasDerivAt_clm_apply
     (hasDerivAt_kerSolution hA hAL u) (fun s ↦ by simp) (t₀ := 0)
     ((kerEval_apply hA hAL u).symm.trans hu)
-  have hprev : prev _ u.1 = 0 := by
+  have hprev : prev _ u.val = 0 := by
     rw [Lp.eq_zero_iff_ae_eq_zero]
     simpa [h0] using prev_ae_eq_kerSolution hA hAL u
   exact Subtype.ext (ext (by rw [hprev, Submodule.coe_zero, prev_zero]))
@@ -449,7 +492,7 @@ private theorem bijective_codRestrict_kerEval (hA : Continuous A)
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     Function.Bijective ((kerEval hA hAL).codRestrict _ (kerEval_mem hA hAL)) :=
   ⟨fun _ _ h ↦ kerEval_injective hA hAL (congrArg Subtype.val h), fun x ↦
-    (exists_kerEval_eq hA hAL x.2).imp fun _ h ↦ Subtype.ext h⟩
+    (exists_kerEval_eq hA hAL x.property).imp fun _ h ↦ Subtype.ext h⟩
 
 /-- **The kernel of the trajectory operator is the space of square-integrable solutions.** For a
 continuous family `A` of bounded operators on a real Banach space `F`, with `L∞` class `AL`,
@@ -468,7 +511,8 @@ theorem kerTrajectoryOperatorEquiv_apply (hA : Continuous A)
     (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (u : (trajectoryOperator (p := 2) AL).ker) {v : ℝ → F} (hv : Continuous v)
-    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u.1)
+    (huv : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict
+        ((⊤ : Opens ℝ) : Set ℝ)))) u.val)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v) :
     (kerTrajectoryOperatorEquiv hA AL hAL u : F) = v 0 := by
   rw [kerTrajectoryOperatorEquiv, LinearEquiv.ofBijective_apply, LinearMap.codRestrict_apply,
@@ -482,6 +526,20 @@ theorem finrank_ker_trajectoryOperator (hA : Continuous A)
     Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
       Module.finrank ℝ (squareIntegrableSolutions A) :=
   (kerTrajectoryOperatorEquiv hA AL hAL).finrank_eq
+
+/-- **Time reversal preserves the kernel of the trajectory operator.** For a continuous family `A`
+of operators on a real Banach space `F`, the kernels of `D_A u = u' + A u` and of the trajectory
+operator `u ↦ u' - A(-s) u` of the reflected coefficient on `W^{1,2}(ℝ, F)` have the same
+dimension: `u ↦ u (-·)` exchanges their solutions. -/
+theorem finrank_ker_trajectoryOperator_neg_comp_neg (hA : Continuous A)
+    (AL RL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hRL : RL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ -A (-s)) :
+    Module.finrank ℝ (trajectoryOperator (p := 2) RL).ker =
+      Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker := by
+  have hR : Continuous fun s ↦ -A (-s) := (hA.comp continuous_neg).neg
+  rw [finrank_ker_trajectoryOperator hR RL hRL, finrank_ker_trajectoryOperator hA AL hAL,
+    squareIntegrableSolutions_neg_comp_neg]
 
 /-- The kernel of the trajectory operator `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` is finite
 dimensional when `F` is: it embeds into the initial values of the solutions of `v' + A v = 0`. -/

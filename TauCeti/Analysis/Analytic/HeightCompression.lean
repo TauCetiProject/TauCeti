@@ -140,7 +140,7 @@ theorem mul_dist_fst_le_dist_baseScaling_fst {p q : E × 𝕜} {a c : ℝ} {k L 
   rw [add_sub_cancel_right, norm_smul, norm_smul, ← hΔ] at htri
   have hh' : ‖h p.2 - h q.2‖ * ‖q.1‖ ≤ L * a * k * ‖p.1 - q.1‖ :=
     calc ‖h p.2 - h q.2‖ * ‖q.1‖ ≤ L * (k * ‖p.1 - q.1‖) * a :=
-          mul_le_mul (hL.trans (mul_le_mul_of_nonneg_left hk L.2)) hq (norm_nonneg _)
+          mul_le_mul (hL.trans (mul_le_mul_of_nonneg_left hk L.property)) hq (norm_nonneg _)
             (by positivity)
       _ = L * a * k * ‖p.1 - q.1‖ := by ring
   nlinarith [mul_le_mul_of_nonneg_right hc (norm_nonneg (p.1 - q.1))]
@@ -164,7 +164,8 @@ theorem dist_snd_le_mul_dist_fst_of_mem_image_baseScaling {s : Set (E × 𝕜)} 
       = dist p.2 q.2 * (c - L * a * k) := by simp
     _ ≤ k * dist p.1 q.1 * (c - L * a * k) := mul_le_mul_of_nonneg_right (hk p hp q hq) hpos.le
     _ = k * ((c - L * a * k) * dist p.1 q.1) := by ring
-    _ ≤ k * dist (baseScaling hh p).1 (baseScaling hh q).1 := mul_le_mul_of_nonneg_left key k.2
+    _ ≤ k * dist (baseScaling hh p).1 (baseScaling hh q).1 := mul_le_mul_of_nonneg_left key
+        k.property
 
 /-- **The rescaled graph lies over a large ball.** Let `φ : E → 𝕜` be `k`-Lipschitz on
 `closedBall 0 a`, with values in `D` there. If `h` is `L`-Lipschitz on `D`, with `c ≤ ‖h t‖` for
@@ -186,7 +187,8 @@ theorem closedBall_subset_fst_image_baseScaling_image_graphOn [CompleteSpace E] 
     intro u hu
     rw [mem_closedBall_zero_iff, norm_smul, norm_inv, inv_mul_le_iff₀ (hc0.trans_le (hhc hu))]
     nlinarith [hhc hu]
-  let K : ℝ≥0 := ⟨L * a * k / c, div_nonneg (mul_nonneg (mul_nonneg L.2 ha) k.2) hc0.le⟩
+  let K : ℝ≥0 := ⟨L * a * k / c, div_nonneg (mul_nonneg (mul_nonneg L.property ha) k.property)
+      hc0.le⟩
   have hK : (K : ℝ) = L * a * k / c := rfl
   have hTL : LipschitzOnWith K (fun u ↦ (h (φ u))⁻¹ • w) (closedBall 0 a) := by
     refine LipschitzOnWith.of_dist_le_mul fun u hu v hv ↦ ?_
@@ -195,7 +197,7 @@ theorem closedBall_subset_fst_image_baseScaling_image_graphOn [CompleteSpace E] 
     have hhuv : ‖h (φ v) - h (φ u)‖ ≤ L * (k * dist u v) := by
       rw [← dist_eq_norm, dist_comm u v]
       exact (hL.dist_le_mul _ (hφD hv) _ (hφD hu)).trans
-        (mul_le_mul_of_nonneg_left (hφ.dist_le_mul v hv u hu) L.2)
+        (mul_le_mul_of_nonneg_left (hφ.dist_le_mul v hv u hu) L.property)
     have hcc : c * c ≤ ‖h (φ u)‖ * ‖h (φ v)‖ := mul_le_mul (hhc hu) (hhc hv) hc0.le (norm_nonneg _)
     rw [dist_eq_norm, ← sub_smul, norm_smul, inv_sub_inv hu0 hv0, norm_div, norm_mul, hK]
     calc ‖h (φ v) - h (φ u)‖ / (‖h (φ u)‖ * ‖h (φ v)‖) * ‖w‖
@@ -373,7 +375,7 @@ theorem dist_snd_le_three_mul_dist_fst_of_mem_image_heightCompression_comp_baseS
       ((hc _ (hsD p hp)).trans_eq (norm_eq_abs _).symm)
       (hL.dist_le_mul p.2 (hsD p hp) q.2 (hsD q hq)) (hk p hp q hq)
     have hLak : (L : ℝ) * a * k ≤ k := by
-      simpa using mul_le_mul_of_nonneg_right hLa k.2
+      simpa using mul_le_mul_of_nonneg_right hLa k.property
     have hkd : (k : ℝ) * dist p.1 q.1 ≤ (2 * k - L * a * k) * dist p.1 q.1 :=
       mul_le_mul_of_nonneg_right (by linarith) dist_nonneg
     have := hk p hp q hq

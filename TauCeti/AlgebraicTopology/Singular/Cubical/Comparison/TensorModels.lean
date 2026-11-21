@@ -59,7 +59,7 @@ theorem BidegreeIndex.eq_mk_zero_zero (i : BidegreeIndex 0) : i = ⟨(0, 0), rfl
 
 /-- The model of bidegree `(p, q)`: the pair of cubes `(Iᵖ, I^q)`. -/
 abbrev cubicalBidegreeModel (n : ℕ) (i : BidegreeIndex n) : TopCat.{u} × TopCat.{u} :=
-  (cubeModel.{u} i.1.1, cubeModel.{u} i.1.2)
+  (cubeModel.{u} i.val.1, cubeModel.{u} i.val.2)
 
 variable {k}
 
@@ -92,18 +92,20 @@ variable (k) in
 `I^q`, in the summand of bidegree `(p, q)`. -/
 def cubicalTensorGen (n : ℕ) (i : BidegreeIndex n) :
     ((cubicalTensor k).obj (cubicalBidegreeModel.{u} n i)).X n :=
-  (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.1))
-      ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.2)) i.1.1 i.1.2 n i.2).hom
-    (NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.1) k (upCube i.1.1) ⊗ₜ[k]
-      NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2))
+  (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.val.1))
+      ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.val.2)) i.val.1 i.val.2 n
+          i.property).hom
+    (NormalizedCubicalChain.ofCube (cubeModel.{u} i.val.1) k (upCube i.val.1) ⊗ₜ[k]
+      NormalizedCubicalChain.ofCube (cubeModel.{u} i.val.2) k (upCube i.val.2))
 
 /-- The generator is the image of the tensor product of the two identity cubes. -/
 theorem cubicalTensorGen_def (n : ℕ) (i : BidegreeIndex n) :
     cubicalTensorGen k n i =
-      (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.1))
-          ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.2)) i.1.1 i.1.2 n i.2).hom
-        (NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.1) k (upCube i.1.1) ⊗ₜ[k]
-          NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2)) :=
+      (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.val.1))
+          ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.val.2)) i.val.1 i.val.2 n
+              i.property).hom
+        (NormalizedCubicalChain.ofCube (cubeModel.{u} i.val.1) k (upCube i.val.1) ⊗ₜ[k]
+          NormalizedCubicalChain.ofCube (cubeModel.{u} i.val.2) k (upCube i.val.2)) :=
   (rfl)
 
 /-- The coefficients of a chain of a summand of the tensor product are those of the summand. -/

@@ -147,10 +147,10 @@ private theorem exchange_weylCoxeterHom (l : List b.support) (i : b.support)
           (coxeterMatrixOfBase P b).toCoxeterSystem.simple i) := by
   simp only [map_mul, weylCoxeterHom_wordProd, CoxeterMatrix.toCoxeterSystem_simple,
     weylCoxeterHom_apply_simple] at hl hle ⊢
-  have hpos := b.isPos_of_mem_support i.2
+  have hpos := b.isPos_of_mem_support i.property
   have hlt : (inversions P b (wordProd P b l * RootPairing.weylGroup.ofIdx P (i : ι))).ncard <
       (inversions P b (wordProd P b l)).ncard := by
-    rcases ncard_inversions_mul_ofIdx P (wordProd P b l) b i.2 with h | h <;> omega
+    rcases ncard_inversions_mul_ofIdx P (wordProd P b l) b i.property with h | h <;> omega
   have hmem := (ncard_inversions_mul_ofIdx_lt_iff P b _ hpos).mp hlt
   exact exists_wordProd_eraseIdx_eq_mul_ofIdx P b hpos l ((mem_inversions P b _ _).mp hmem).2
 

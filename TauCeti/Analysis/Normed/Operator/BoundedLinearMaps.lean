@@ -26,6 +26,10 @@ a map `d` is uniform on a compact set: if `A x` is invertible wherever `d x = 0`
 with `d` and `A` continuous on `K`, then every operator close to `A x` at a point `x ∈ K` where
 `d x` is small is invertible (`IsCompact.exists_pos_forall_isInvertible_of_norm_le`). This drives
 the persistence of nondegenerate critical points and fixed points under small perturbations.
+
+Bounded operators act jointly continuously on their domain for the operator norm topology
+(`ContinuousLinearMap.instContinuousSMulApply`), and so does every submonoid of them, such as a
+unitary group.
 -/
 
 public section
@@ -112,5 +116,11 @@ theorem IsCompact.exists_pos_forall_isInvertible_of_norm_le {𝕜 X F E G : Type
     (infDist_le_dist_of_mem (mem_ofPred.2 hTS : T ∈ S)).trans_eq (dist_comm _ _ |>.trans
       (dist_eq_norm _ _))
   linarith [hmK x hx]
+
+/-- Bounded operators act jointly continuously on their domain, for the operator norm topology. -/
+instance ContinuousLinearMap.instContinuousSMulApply {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : ContinuousSMul (E →L[𝕜] E) E :=
+  ⟨by simpa only [ContinuousLinearMap.smul_def] using
+    (isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := E) (F := E)).continuous⟩
 
 end
