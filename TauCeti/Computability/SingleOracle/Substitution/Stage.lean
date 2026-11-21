@@ -51,14 +51,14 @@ theorem exists_evalStage_boundedAnswers_of_evaln_subst {s : ℕ}
   obtain ⟨t, ht, he⟩ := exists_evaln_boundedAnswers_of_evaln_subst h hj hu
   exact ⟨t, evalStage_eq_some_of_evaln ht hks hcs (he ▸ hy), he⟩
 
-/-- For finitely many successful inlined runs, possibly witnessed at different stages, there
+/-- For finitely many successful raw inlined runs, possibly witnessed at different fuels, there
 is a common query fuel and outer stage at which replay preserves each output exactly when
 the shared bound covers the largest base-oracle use recorded by the original inlined runs.
 Each replay records its intermediate-oracle use. Each entry gives an outer program, its input
 and the inlined run's outcome. -/
 theorem exists_forall_mem_exists_evalStage_boundedAnswers_iff_sup_use_le
     {runs : List (Code × ℕ × Halt)}
-    (h : ∀ p ∈ runs, ∃ k, evalStage σ k (p.1.subst d) p.2.1 = some p.2.2) :
+    (h : ∀ p ∈ runs, ∃ k, evaln σ k (p.1.subst d) p.2.1 = some p.2.2) :
     (∃ j s, ∀ p ∈ runs, ∃ t,
       evalStage (d.boundedAnswers σ j u) s p.1 p.2.1 = some t ∧
         t.output = p.2.2.output) ↔ runs.toFinset.sup (fun p => p.2.2.use) ≤ u := by
@@ -69,19 +69,17 @@ theorem exists_forall_mem_exists_evalStage_boundedAnswers_iff_sup_use_le
   · rintro ⟨j, s, hs⟩ p hp
     obtain ⟨k, hk⟩ := h p hp
     obtain ⟨t, ht, -⟩ := hs p hp
-    exact (exists_evaln_boundedAnswers_iff_use_le (evalStage_eq_some_iff.1 hk).2.1).1
+    exact (exists_evaln_boundedAnswers_iff_use_le hk).1
       ⟨j, s, t, (evalStage_eq_some_iff.1 ht).2.1⟩
   · intro hu
     have houter (p) (hp : p ∈ runs.toFinset) :
         ∀ᶠ s in atTop, ∃ t, evalStage (d.boundedAnswers σ s u) s p.1 p.2.1 = some t ∧
           t.output = p.2.2.output := by
       obtain ⟨k, hk⟩ := h p (List.mem_toFinset.1 hp)
-      obtain ⟨-, hraw, hy⟩ := evalStage_eq_some_iff.1 hk
-      refine eventually_atTop.2 ⟨max k (encode p.1 + 1), fun s hs => ?_⟩
+      refine eventually_atTop.2 ⟨max k (max (encode p.1) p.2.2.output + 1), fun s hs => ?_⟩
       have hks : k ≤ s := (le_max_left _ _).trans hs
-      exact exists_evalStage_boundedAnswers_of_evaln_subst hraw hks
-        (hu p (List.mem_toFinset.1 hp)) hks
-        (Nat.lt_of_succ_le ((le_max_right _ _).trans hs)) (hy.trans_le hks)
+      exact exists_evalStage_boundedAnswers_of_evaln_subst hk hks
+        (hu p (List.mem_toFinset.1 hp)) hks (by omega) (by omega)
     obtain ⟨s, hs⟩ := ((eventually_all_finset runs.toFinset).2 houter).exists
     exact ⟨s, s, fun p hp => hs p (List.mem_toFinset.2 hp)⟩
 

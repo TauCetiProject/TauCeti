@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Computability.SingleOracle.Substitution.Basic
 public import TauCeti.Computability.SingleOracle.Evaln
--- The concrete search certificates compute using the evaluator's defining equations.
-import all TauCeti.Computability.SingleOracle.Evaln
 
 /-!
 # Bounded oracle substitution and use
@@ -97,15 +95,47 @@ private def searchAnswers (x : ℕ) : Option ℕ :=
 private def shiftQuery : Code :=
   comp oracle succ
 
+private theorem evaln_shiftQuery {x y : ℕ} (hy : searchAnswers (x + 1) = some y) :
+    evaln searchAnswers 3 shiftQuery x = some ⟨y, x + 2⟩ := by
+  rw [shiftQuery]
+  have hx : x + 1 ≤ 2 := by
+    unfold searchAnswers at hy
+    split_ifs at hy <;> omega
+  have hx' : x ≤ 2 := Nat.le_of_succ_le hx
+  exact evaln_succ_comp_eq_some.2 ⟨hx', ⟨x + 1, 0⟩, ⟨y, x + 2⟩,
+    evaln_succ_succ_eq_some.2 ⟨hx', rfl⟩,
+    evaln_succ_oracle_eq_some.2 ⟨hx, y, hy, rfl⟩, by simp⟩
+
 -- The outer search sees nonzero at address zero, then zero at address one.
 private theorem evaln_search_boundedAnswers :
     evaln (shiftQuery.boundedAnswers searchAnswers 3 3) 3 (rfind' oracle) (Nat.pair 0 0) =
       some ⟨1, 2⟩ := by
-  simp [evaln, boundedAnswers_def, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
+  have hanswer {x y : ℕ} (hy : searchAnswers (x + 1) = some y) :
+      shiftQuery.boundedAnswers searchAnswers 3 3 x = some y := by
+    have hrun := evaln_shiftQuery hy
+    exact boundedAnswers_eq_some_iff.2 ⟨_, hrun, evaln_use_le hrun, rfl⟩
+  refine evaln_succ_rfind'_eq_some.2
+    ⟨by decide, ⟨1, 1⟩, ?_, .inr ⟨by decide, ⟨1, 2⟩, ?_, rfl⟩⟩
+  · exact evaln_succ_oracle_eq_some.2 ⟨by decide, 1, hanswer rfl, rfl⟩
+  · exact evaln_succ_rfind'_eq_some.2 ⟨by decide, ⟨0, 2⟩,
+      evaln_succ_oracle_eq_some.2 ⟨by decide, 0, hanswer rfl, rfl⟩, .inl ⟨rfl, rfl⟩⟩
 
 private theorem evaln_search_subst_fuel_three :
     evaln searchAnswers 3 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) = none := by
-  simp [evaln, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
+  rw [rfind'_subst, oracle_subst]
+  apply Option.eq_none_iff_forall_ne_some.2
+  intro t ht
+  obtain ⟨-, first, hfirst, hnext⟩ := evaln_succ_rfind'_eq_some.1 ht
+  have hfirst' := evaln_shiftQuery (x := Nat.pair 0 0) (y := 1) rfl
+  rw [evaln_unique hfirst hfirst'] at hnext
+  rcases hnext with ⟨hzero, -⟩ | ⟨-, next, hnext, -⟩
+  · exact (by decide : (1 : ℕ) ≠ 0) hzero
+  · obtain ⟨-, _, hshift, -⟩ := evaln_succ_rfind'_eq_some.1 hnext
+    rw [shiftQuery] at hshift
+    obtain ⟨-, s, _, hs, hquery, -⟩ := evaln_succ_comp_eq_some.1 hshift
+    obtain ⟨-, rfl⟩ := evaln_succ_succ_eq_some.1 hs
+    rw [evaln_eq_none_of_le (by decide : 2 ≤ Nat.pair 0 1 + 1)] at hquery
+    contradiction
 
 /-- The maximum of the two separate fuels can be too small for inlining.
 In the concrete witness, each intermediate answer is computed by one base-oracle query. -/
