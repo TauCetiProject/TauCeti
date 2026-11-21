@@ -22,6 +22,8 @@ slices `y ↦ f (x, y)` with `x` near `p.1` (`AnalyticAt.eventually_analyticAt_c
 Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic
 (`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`), as is the slice
 `ζ ↦ Sum.elim x (fun _ ↦ ζ)` fixing the first block (`TauCeti.analyticAt_sumElim_const`).
+Replacing one component of an analytic family by another analytic function preserves analyticity
+(`AnalyticAt.update`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`), and
@@ -83,6 +85,25 @@ theorem analyticAt_sumElim_const {ι ι' : Type*} [Fintype ι] [Fintype ι']
 end TauCeti
 
 end Products
+
+section Update
+
+variable {𝕜 ι E : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [DecidableEq ι]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {G : ι → Type*} [∀ i, NormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)]
+  {f : E → ∀ i, G i} {x : E} {i : ι} {g : E → G i}
+
+/-- Updating one component of a finite analytic family by an analytic function is analytic. -/
+theorem AnalyticAt.update (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) :
+    AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x := by
+  apply AnalyticAt.pi
+  intro j
+  by_cases h : j = i
+  · subst j
+    simpa only [Function.update_self] using hg
+  · simpa only [Function.update_of_ne h] using (analyticAt_pi_iff.mp hf j)
+
+end Update
 
 section FinsetSum
 
