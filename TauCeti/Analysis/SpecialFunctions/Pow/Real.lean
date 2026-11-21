@@ -133,8 +133,9 @@ with the corresponding integral of `q`-th powers.
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
-* `Real.mul_rpow_one_sub_mul_mul_rpow`: `(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for
-  `0 ≤ c`.
+* `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: `(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t`
+  and `a + b = 1`, with the special case `Real.mul_rpow_one_sub_mul_mul_rpow` for the exponents
+  `1 - θ` and `θ`.
 * `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
   `0 ≤ P` and `0 ≤ δ ≤ 1`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
@@ -377,12 +378,19 @@ theorem mul_rpow_of_nonneg_left {a : ℝ} (ha : 0 ≤ a) (t z : ℝ) :
         log_mul ha.ne' ht.ne, add_mul, exp_add]
       ring
 
+/-- **Homogeneity of the two-point weighted geometric mean.** For exponents with `a + b = 1`, a
+common factor `t ≥ 0` comes out: `(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)`, for all real `x` and
+`y`. -/
+theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hab : a + b = 1) :
+    (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
+  rw [mul_rpow_of_nonneg_left ht, mul_rpow_of_nonneg_left ht, mul_mul_mul_comm,
+    ← rpow_add' ht (by rw [hab]; exact one_ne_zero), hab, rpow_one]
+
 /-- A common factor `c ≥ 0` comes out of a weighted geometric mean:
 `(c a) ^ (1 - θ) (c b) ^ θ = c (a ^ (1 - θ) b ^ θ)`, for all real `a`, `b` and `θ`. -/
 theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
-    (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
-  rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
-    ← rpow_add' hc (by simp), sub_add_cancel, rpow_one]
+    (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) :=
+  mul_rpow_mul_mul_rpow_of_add_eq_one hc (sub_add_cancel 1 θ)
 
 /-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
 every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
