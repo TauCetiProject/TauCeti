@@ -222,9 +222,6 @@ theorem _root_.LinearMap.finrank_range_sub_starProjection_comp_le {F : Type*}
           abel
       _ = (T₁ + T₂) x := rfl
   rw [hdecomp]
-  have hrng_add : LinearMap.range (T₁ + T₂) ≤ LinearMap.range T₁ ⊔ LinearMap.range T₂ := by
-    rintro _ ⟨x, rfl⟩
-    exact Submodule.add_mem_sup ⟨x, rfl⟩ ⟨x, rfl⟩
   have h1 : Module.finrank 𝕜 (LinearMap.range T₁) ≤ Module.finrank 𝕜 Wᗮ := by
     calc Module.finrank 𝕜 (LinearMap.range T₁)
         ≤ Module.finrank 𝕜 (LinearMap.range Wᗮ.starProjection.toLinearMap) :=
@@ -232,9 +229,8 @@ theorem _root_.LinearMap.finrank_range_sub_starProjection_comp_le {F : Type*}
       _ = Module.finrank 𝕜 Wᗮ := by rw [Wᗮ.range_starProjection]
   have h2 : Module.finrank 𝕜 (LinearMap.range T₂) ≤ Module.finrank 𝕜 Kᗮ :=
     Kᗮ.finrank_range_comp_starProjection_le (W.starProjection.toLinearMap ∘ₗ Δ)
-  have hsup := Submodule.finrank_sup_add_finrank_inf_eq (LinearMap.range T₁) (LinearMap.range T₂)
-  have hmono := Submodule.finrank_mono hrng_add
-  omega
+  exact ((Submodule.finrank_mono (LinearMap.range_add_le T₁ T₂)).trans
+    (Submodule.finrank_add_le_finrank_add_finrank _ _)).trans (Nat.add_le_add h1 h2)
 
 /-- For a target map `Θ`, the canonical tangent part `Δ - P_{(range Θ)ᗮ} Δ P_{ker Θ}` has rank
 at most `2 * rank Θ`. -/

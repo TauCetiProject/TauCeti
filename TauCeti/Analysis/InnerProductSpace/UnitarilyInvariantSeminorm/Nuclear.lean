@@ -431,20 +431,9 @@ theorem nuclear_sub_orthogonal_range_ker_le (Θ Δ : E →ₗ[𝕜] F) :
         (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
           (LinearMap.ker Θ).starProjection.toLinearMap) ≤
       √(2 * (finrank 𝕜 (LinearMap.range Θ) : ℝ)) * frobenius 𝕜 E F Δ := by
-  have hrank := Θ.finrank_range_sub_orthogonal_range_starProjection_comp_ker_le Δ
-  calc nuclear 𝕜 E F
-        (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
-          (LinearMap.ker Θ).starProjection.toLinearMap)
-      ≤ √(finrank 𝕜 (LinearMap.range
-            (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
-              (LinearMap.ker Θ).starProjection.toLinearMap))) *
-          frobenius 𝕜 E F
-            (Δ - (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
-              (LinearMap.ker Θ).starProjection.toLinearMap) :=
-        nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply _
-    _ ≤ √(2 * (finrank 𝕜 (LinearMap.range Θ) : ℝ)) * frobenius 𝕜 E F Δ :=
-        mul_le_mul (Real.sqrt_le_sqrt (by exact_mod_cast hrank))
-          (frobenius_sub_starProjection_comp_le _ _ Δ) (apply_nonneg _ _) (Real.sqrt_nonneg _)
+  have h := nuclear_sub_starProjection_comp_le (LinearMap.range Θ)ᗮ (LinearMap.ker Θ) Δ
+  rwa [Submodule.orthogonal_orthogonal, LinearMap.orthogonal_ker,
+    LinearMap.finrank_range_adjoint, ← two_mul, Nat.cast_mul, Nat.cast_ofNat] at h
 
 /-- **Explicit nuclear-norm decomposability** for the canonical tangent–normal split around `Θ`:
 `‖Θ‖₁ + ‖P_{(range Θ)ᗮ} Δ P_{ker Θ}‖₁ - ‖Δ - P_{(range Θ)ᗮ} Δ P_{ker Θ}‖₁ ≤ ‖Θ + Δ‖₁`. -/

@@ -28,8 +28,8 @@ estimates open only `Matrix.Norms.L2Operator` and write the Frobenius pairing ex
 
 ## Main declarations
 
-* `Matrix.opNorm_toEuclideanLin`, `Matrix.frobenius_toEuclideanLin`: bridges between the operator
-  and Frobenius unitarily invariant seminorms of `A.toEuclideanLin` and the scoped matrix norms.
+* `Matrix.frobenius_toEuclideanLin`: bridge between the Frobenius unitarily invariant seminorm
+  of `A.toEuclideanLin` and the scoped matrix Frobenius norm.
 * `Matrix.nuclear_toEuclideanLin_conjTranspose`, `Matrix.nuclear_toEuclideanLin_vecMulVec`:
   conjugate-transpose invariance and the nuclear norm of a rank-one outer product.
 * `Matrix.norm_trace_conjTranspose_mul_le_l2_opNorm_mul_nuclear`,
@@ -70,12 +70,6 @@ namespace Matrix
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {m : Type*} [Fintype m]
 
-open scoped Matrix.Norms.L2Operator in
-/-- The operator seminorm of `A.toEuclideanLin` is the scoped `ℓ²` operator norm of `A`. -/
-theorem opNorm_toEuclideanLin (A : Matrix m n 𝕜) :
-    opNorm 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin = ‖A‖ := by
-  rw [opNorm_apply, l2_opNorm_def, LinearEquiv.trans_apply]
-
 open scoped Matrix.Norms.Frobenius in
 /-- The Frobenius seminorm of `A.toEuclideanLin` is the scoped Frobenius norm of `A`. -/
 theorem frobenius_toEuclideanLin (A : Matrix m n 𝕜) :
@@ -113,14 +107,14 @@ open scoped Matrix.Norms.L2Operator
 theorem norm_trace_conjTranspose_mul_le_l2_opNorm_mul_nuclear (A B : Matrix m n 𝕜) :
     ‖(Aᴴ * B).trace‖ ≤
       ‖A‖ * nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) B.toEuclideanLin := by
-  rw [← trace_adjoint_comp_toEuclideanLin, ← opNorm_toEuclideanLin]
+  rw [← trace_adjoint_comp_toEuclideanLin, l2_opNorm_def, LinearEquiv.trans_apply, ← opNorm_apply]
   exact norm_trace_adjoint_comp_le_opNorm_mul_nuclear A.toEuclideanLin B.toEuclideanLin
 
 /-- **Matrix trace duality (symmetric form)**: `‖(Aᴴ * B).trace‖ ≤ ‖A‖₁ * ‖B‖`. -/
 theorem norm_trace_conjTranspose_mul_le_nuclear_mul_l2_opNorm (A B : Matrix m n 𝕜) :
     ‖(Aᴴ * B).trace‖ ≤
       nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin * ‖B‖ := by
-  rw [← trace_adjoint_comp_toEuclideanLin, ← opNorm_toEuclideanLin]
+  rw [← trace_adjoint_comp_toEuclideanLin, l2_opNorm_def, LinearEquiv.trans_apply, ← opNorm_apply]
   exact norm_trace_adjoint_comp_le_nuclear_mul_opNorm A.toEuclideanLin B.toEuclideanLin
 
 /-- **Entrywise matrix trace duality**: `‖∑ i, ∑ j, conj (A i j) * B i j‖ ≤ ‖A‖ * ‖B‖₁`. -/
@@ -128,8 +122,8 @@ theorem norm_sum_conj_mul_le_l2_opNorm_mul_nuclear (A B : Matrix m n 𝕜) :
     ‖∑ i, ∑ j, conj (A i j) * B i j‖ ≤
       ‖A‖ * nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) B.toEuclideanLin := by
   have htr : ∑ i, ∑ j, conj (A i j) * B i j = (Aᴴ * B).trace := by
-    simp only [trace, diag_apply, Matrix.mul_apply, conjTranspose_apply, RCLike.star_def]
-    exact Finset.sum_comm
+    open scoped Matrix.Norms.Frobenius in
+    rw [← Matrix.frobenius_inner_eq_sum_conj_mul, Matrix.frobenius_inner_eq_trace_conjTranspose_mul]
   rw [htr]
   exact norm_trace_conjTranspose_mul_le_l2_opNorm_mul_nuclear A B
 
@@ -149,7 +143,7 @@ theorem exists_l2_opNorm_le_one_trace_conjTranspose_mul_eq_nuclear (B : Matrix m
   obtain ⟨Uop, hU_norm, _, _, hU_tr⟩ :=
     exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear B.toEuclideanLin
   refine ⟨toEuclideanLin.symm Uop, ?_, ?_⟩
-  · rw [← opNorm_toEuclideanLin, toEuclideanLin.apply_symm_apply]
+  · rw [l2_opNorm_def, LinearEquiv.trans_apply, ← opNorm_apply, toEuclideanLin.apply_symm_apply]
     exact hU_norm
   · rw [← trace_adjoint_comp_toEuclideanLin, toEuclideanLin.apply_symm_apply]
     exact hU_tr
@@ -166,7 +160,7 @@ theorem exists_nuclear_le_one_trace_conjTranspose_mul_eq_l2_opNorm (A : Matrix m
   · rw [toEuclideanLin.apply_symm_apply]
     exact hB_norm
   · rw [← trace_adjoint_comp_toEuclideanLin, toEuclideanLin.apply_symm_apply, hB_tr,
-      opNorm_toEuclideanLin]
+      opNorm_apply, ← LinearEquiv.trans_apply, ← l2_opNorm_def]
 
 end TraceDuality
 
@@ -284,21 +278,27 @@ theorem exists_lowRank_decomposition {r : ℕ} {Θ : Matrix m n 𝕜}
         nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Θ + Δ).toEuclideanLin ∧
       nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₁.toEuclideanLin ≤
         √(2 * (r : ℝ)) * ‖Δ‖ := by
-  let Δ₂ : Matrix m n 𝕜 := toEuclideanLin.symm
-    ((LinearMap.range Θ.toEuclideanLin)ᗮ.starProjection.toLinearMap ∘ₗ Δ.toEuclideanLin ∘ₗ
-      (LinearMap.ker Θ.toEuclideanLin).starProjection.toLinearMap)
-  let Δ₁ : Matrix m n 𝕜 := Δ - Δ₂
-  have hnuc : nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₁.toEuclideanLin ≤
-      √(2 * (r : ℝ)) * ‖Δ‖ := by
-    refine (nuclear_toEuclideanLin_sub_starProjection_comp_le Θ Δ).trans ?_
-    refine mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt ?_) (norm_nonneg _)
-    gcongr
-  exact ⟨Δ₁, Δ₂, sub_add_cancel Δ Δ₂,
-    (rank_sub_toEuclideanLin_symm_starProjection_comp_le Θ Δ).trans (Nat.mul_le_mul_left 2 hΘ),
-    conjTranspose_mul_toEuclideanLin_symm_starProjection_comp Θ Δ,
-    mul_conjTranspose_toEuclideanLin_symm_starProjection_comp Θ Δ,
-    frobenius_inner_sub_toEuclideanLin_symm_starProjection_comp Θ Δ,
-    nuclear_toEuclideanLin_add_starProjection_comp_sub_le_nuclear_add Θ Δ, hnuc⟩
+  classical
+  obtain ⟨L₁, L₂, hsum, hrank, h1, h2, htr, hdec, hnuc⟩ :=
+    TauCeti.UnitarilyInvariantSeminorm.exists_lowRank_decomposition
+      (rank_eq_finrank_range_toEuclideanLin Θ ▸ hΘ) Δ.toEuclideanLin
+  refine ⟨toEuclideanLin.symm L₁, toEuclideanLin.symm L₂, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [← map_add, hsum, toEuclideanLin.symm_apply_apply]
+  · rw [rank_eq_finrank_range_toEuclideanLin, LinearEquiv.apply_symm_apply]
+    exact hrank
+  · apply toEuclideanLin.injective
+    rw [toEuclideanLin_conjTranspose_mul, map_zero, LinearEquiv.apply_symm_apply]
+    exact h1
+  · apply toEuclideanLin.injective
+    rw [toEuclideanLin_mul_conjTranspose, map_zero, LinearEquiv.apply_symm_apply]
+    exact h2
+  · rw [frobenius_inner_eq_trace_conjTranspose_mul, ← trace_adjoint_comp_toEuclideanLin,
+      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+    exact htr
+  · rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, map_add]
+    exact hdec
+  · rw [LinearEquiv.apply_symm_apply, ← frobenius_toEuclideanLin Δ]
+    exact hnuc
 
 end LowRankDecomposition
 
