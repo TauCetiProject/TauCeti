@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Holder.OpenSet
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
@@ -78,14 +79,6 @@ namespace TauCeti
 
 open Filter Metric Set Topology
 open scoped ENNReal NNReal BoundedContinuousFunction
-
-/-- The scalar inequality behind the diameter bounds on the exponent inclusions: if the top
-seminorm `H` grows by the factor `c`, the sum `a + H` grows by at most `max 1 c`. -/
-private theorem add_mul_le_max_one_mul {a H c : ℝ} (ha : 0 ≤ a) (hH : 0 ≤ H) :
-    a + H * c ≤ max 1 c * (a + H) := by
-  rw [mul_add, mul_comm H]
-  exact add_le_add (le_mul_of_one_le_left ha (le_max_left _ _))
-    (mul_le_mul_of_nonneg_right (le_max_right _ _) hH)
 
 /-- The scalar inequality behind the bound `3` on the exponent inclusions: if the top seminorm is
 replaced by `max (2 s) H`, with `s` a part of the sum `a`, the sum `a + H` grows by at most the
@@ -184,12 +177,13 @@ theorem norm_inclusionL_le (hβα : β ≤ α) :
       max 1 (((diam (univ : Set X)).toNNReal : ℝ) ^ ((α : ℝ) - β)) := by
   refine ContinuousLinearMap.opNorm_le_bound _ (zero_le_one.trans (le_max_left _ _)) fun f ↦ ?_
   have hD' : (nnHolderNorm β (f : X → Y) : ℝ) ≤
-      nnHolderNorm α (f : X → Y) * ((diam (univ : Set X)).toNNReal : ℝ) ^ ((α : ℝ) - β) := by
+      ((diam (univ : Set X)).toNNReal : ℝ) ^ ((α : ℝ) - β) * nnHolderNorm α (f : X → Y) := by
+    rw [mul_comm]
     exact_mod_cast nnHolderNorm_le_of_le hβα f
   rw [norm_def, norm_def f, toBoundedContinuousFunction_inclusionL,
     coe_toBoundedContinuousFunction]
   exact (add_le_add_right hD' _).trans
-    (add_mul_le_max_one_mul (norm_nonneg _) (NNReal.coe_nonneg _))
+    (add_mul_le_max_one_mul_add (norm_nonneg _) (NNReal.coe_nonneg _))
 
 end BoundedSpace
 
@@ -380,8 +374,8 @@ theorem norm_inclusionL_le (hΩ : Bornology.IsBounded (Ω : Set E)) (hβα : β 
       rw [iteratedFDeriv_inclusionL]
       exact (f.iteratedFDeriv i).norm_coe_le_norm x) hH).trans ?_
   have hsum : ∑ i, ‖f.iteratedFDeriv i‖ + H = ‖f‖ := (norm_eq f).symm
-  rw [← hsum, NNReal.coe_mul, NNReal.coe_rpow]
-  exact add_mul_le_max_one_mul (Finset.sum_nonneg fun i _ ↦ hM0 i) (NNReal.coe_nonneg H)
+  rw [← hsum, NNReal.coe_mul, NNReal.coe_rpow, mul_comm (H : ℝ)]
+  exact add_mul_le_max_one_mul_add (Finset.sum_nonneg fun i _ ↦ hM0 i) (NNReal.coe_nonneg H)
 
 end CkHolderSpaceOn
 
