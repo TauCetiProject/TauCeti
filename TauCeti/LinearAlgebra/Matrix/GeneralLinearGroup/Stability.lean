@@ -22,6 +22,8 @@ Over a possibly noncommutative ring `R` of Bass stable range at most `s`
   `AlgebraicK1.mk R n : GL (Fin n) R →* K₁(R)` is surjective, yielding
   `GL (Fin n) R ⧸ (AlgebraicK1.mk R n).ker ≃* K₁(R)` already at the boundary `n = s` where
   injective stability need not yet hold.
+  In stable range at most `1` this says that every class of `K₁(R)` is the class of an
+  invertible `1 × 1` matrix.
 * **Injective `K₁`-stability (`s + 1 ≤ n`).** The kernel of `AlgebraicK1.mk R n` equals
   `elementarySubgroup (Fin n) R`, yielding
   `GL (Fin n) R ⧸ elementarySubgroup (Fin n) R ≃* K₁(R)` and
@@ -43,6 +45,8 @@ Over a possibly noncommutative ring `R` of Bass stable range at most `s`
 
 * `TauCeti.AlgebraicK1.mk_surjective`, `TauCeti.AlgebraicK1.ker_mk_eq_elementarySubgroup`:
   finite-rank surjectivity and kernel identification for `AlgebraicK1.mk` in the stable range.
+* `TauCeti.AlgebraicK1.ofUnits_surjective`: in stable range at most `1`, the classes of units
+  exhaust `K₁(R)`.
 * `TauCeti.commutator_le_elementarySubgroup_of_hasStableRangeLE`,
   `TauCeti.elementarySubgroup_eq_commutator_of_hasStableRangeLE`: finite-rank commutator
   descriptions in the stable range.
@@ -90,6 +94,20 @@ theorem mk_surjective {R : Type*} [Ring R] {s n : ℕ} (hR : HasStableRangeLE R 
     refine ⟨h, ?_⟩
     rw [hu, map_mul, mk_stabilizeGL hnm h,
       elementarySubgroup_le_ker_mk m ((φ.reindexGL_mem_elementarySubgroup_iff).mpr he), mul_one]
+
+/-- Over a ring of Bass stable range at most `1`, every class in algebraic `K₁` is the class of an
+invertible `1 × 1` matrix: the homomorphism `ofUnits R : Rˣ →* K₁(R)` is surjective. -/
+theorem ofUnits_surjective {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
+    Function.Surjective (ofUnits R) := by
+  intro x
+  obtain ⟨g, rfl⟩ := mk_surjective hR le_rfl x
+  refine ⟨⟨(g : Matrix (Fin 1) (Fin 1) R) 0 0, (g⁻¹ : GL (Fin 1) R) 0 0, ?_, ?_⟩, ?_⟩
+  · simpa [Matrix.mul_apply] using congrFun₂ g.mul_inv 0 0
+  · simpa [Matrix.mul_apply] using congrFun₂ g.inv_mul 0 0
+  · rw [ofUnits_apply]
+    congr 1
+    ext i j
+    simp [Subsingleton.elim i 0, Subsingleton.elim j 0]
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
 injective stability need not yet hold), `K₁(R)` is the quotient of `GL (Fin n) R` by the actual
