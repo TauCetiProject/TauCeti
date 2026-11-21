@@ -25,10 +25,12 @@ together with a triadic complex `C` such that
 * the complexity of `C` is bounded independently of `V` by `regularityBound3 q ε F R t₀`, where `q`
   is the number of top colors.
 
-Both schedules are chosen before the complexity bound, and are evaluated only at the complexity
-of the complex that is returned. This is the regular approximation lemma for three-uniform
-hypergraphs (`Colored3Graph.exists_strong_regular_approximation3`). It combines the regularity
-lemma with a regular lower skeleton
+Both schedules are chosen before the complexity bound and are evaluated only at the complex that
+is returned: `F` at its number of vertex cells plus pair colors for skeleton regularity and at
+`C.complexity` for top regularity, and `R` only at `C.complexity`. This is the regular
+approximation lemma for three-uniform hypergraphs
+(`Colored3Graph.exists_strong_regular_approximation3`). It combines the regularity lemma with a
+regular lower skeleton
 (`Colored3Graph.exists_strong_topRegularOverMostPolyads_lowerSkeletonRegular`), which produces a
 coarse complex and a fine palette refinement with a small polyad energy gap, with the coupled
 recoloring of the triples toward the coarse densities

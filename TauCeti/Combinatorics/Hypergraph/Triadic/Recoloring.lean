@@ -65,6 +65,8 @@ palette refinement `C` with `C.pairColorCount ≤ topRegularApproximationPalette
 
 * `TauCeti.Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le`:
   coupled recoloring from fine rank-one top regularity across a small polyad energy gap.
+* `TauCeti.Colored3Graph.TopRegularOverMostPolyads.exists_approximates3_of_recoloringHostBound_le`:
+  scheduled coupled recoloring on a host of size at least `recoloringHostBound`.
 * `TauCeti.Colored3Graph.exists_approximates3_topRegularOverMostPolyads`: scheduled strong
   top-regular approximation over any lower skeleton on any finite vertex set.
 
