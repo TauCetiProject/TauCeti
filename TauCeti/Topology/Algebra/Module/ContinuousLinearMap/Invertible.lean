@@ -42,7 +42,9 @@ exactly when both factors are, which is how block-diagonal second derivatives on
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
 coordinate is block lower triangular, and it is invertible exactly when its diagonal block
 `M₂ → M₃` is. This is the shape of the differential of a fibre-preserving map between vector
-bundles over the same base, read in bundle charts.
+bundles over the same base, read in bundle charts. Two invertible maps on `M₁ × M₂` which agree
+on `M₁` have mutually inverse diagonal blocks `M₂ → M₂`
+(`ContinuousLinearMap.IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr`).
 
 Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
@@ -309,6 +311,24 @@ theorem isInvertible_iff_of_fst_comp_eq {T : M₁ × M₂ →L[R] M₁ × M₃}
       have hKp : K p.2 = (T (0, p.2)).2 := DFunLike.congr_fun hK p.2
       conv_rhs => rw [hp, map_add]
       simp [hKp, add_comm]
+
+/-- Two invertible maps `d₀, d₁ : M₁ × M₂ → N` which agree on the first factor have mutually
+inverse diagonal blocks `snd ∘ d₀⁻¹ ∘ d₁ ∘ inr` and `snd ∘ d₁⁻¹ ∘ d₀ ∘ inr : M₂ → M₂`, since
+`d₀⁻¹ ∘ d₁` restricts to the identity on `M₁`. This is how the normal parts of the differentials of
+two tubes around the same map are compared. -/
+theorem IsInvertible.snd_comp_inverse_comp_inr_comp_snd_comp_inverse_comp_inr {N : Type*}
+    [TopologicalSpace N] [AddCommGroup N] [Module R N] {d₀ d₁ : M₁ × M₂ →L[R] N}
+    (h₀ : d₀.IsInvertible) (h₁ : d₁.IsInvertible) (h : d₀ ∘L inl R M₁ M₂ = d₁ ∘L inl R M₁ M₂) :
+    (snd R M₁ M₂ ∘L d₀.inverse ∘L d₁ ∘L inr R M₁ M₂) ∘L
+      (snd R M₁ M₂ ∘L d₁.inverse ∘L d₀ ∘L inr R M₁ M₂) = .id R M₂ :=
+  ContinuousLinearMap.ext fun v ↦ by
+    have hbase (a : M₁) : d₀ (a, 0) = d₁ (a, 0) := by simpa using DFunLike.congr_fun h a
+    -- Write `w = d₁⁻¹ (d₀ (0, v))`; removing its base part, `d₁ (0, w.2) = d₀ ((0, v) - (w.1, 0))`.
+    have hw : d₁ (0, (d₁.inverse (d₀ (0, v))).2) =
+        d₀ ((0, v) - ((d₁.inverse (d₀ (0, v))).1, 0)) := by
+      rw [map_sub, hbase, eq_sub_iff_add_eq, ← map_add]
+      simp [h₁.self_apply_inverse]
+    simp [hw, h₀.inverse_apply_self]
 
 end FstPreserving
 
