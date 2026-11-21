@@ -66,26 +66,25 @@ theorem LocallyOfFinitePresentation.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     simpa [hc₀₀] using congrArg (fun m ↦ m.base c₀₀) hsq_fg
   obtain ⟨TA, sA, hTA, -, CY, ψ, hψ, b₀, hb₀, hsq_g⟩ :=
     hg.exists_openImmersion_over_rationalLocalization CZ (f.hom.base x) ha₀
-  let CZ₁ := CZ.rationalLocalization TA sA hTA
-  let ψ₀ := ψ.comp (CZ.rationalLocalizationHom TA sA hTA)
+  let CZ₁ := CZ.rationalLocalization TA sA hTA; let ιA := CZ.rationalLocalizationHom TA sA hTA
+  let ψ₀ := ψ.comp ιA
   have hψ₀_tft := hψ.comp (CZ.isTopologicallyFiniteType_rationalLocalizationHom TA sA hTA)
   have : IsHuberStandard CY.Ring :=
     .of_isTopologicallyFiniteType hψ₀_tft.isTopologicallyFiniteType_toRingHom
   have hsq_g₀ : CZ.pairComap CY ψ₀ ≫ CZ.hom = CY.hom ≫ g.hom := by
-    rw [CZ.pairComap_comp CZ₁ CY _ ψ, Category.assoc]
-    have h := hsq_g; rw [ofRationalLocalization_hom] at h; exact h
+    calc
+      CZ.pairComap CY ψ₀ ≫ CZ.hom
+        = CZ₁.pairComap CY ψ ≫ (CZ.pairComap CZ₁ ιA ≫ CZ.hom) := by
+            simp only [ψ₀, ιA, CZ.pairComap_comp CZ₁ CY, Category.assoc]
+      _ = CZ₁.pairComap CY ψ ≫ CZ₁.hom := by rw [← rationalLocalization_hom]
+      _ = CY.hom ≫ g.hom := hsq_g
   obtain ⟨TC, sC, hTC, φ, c₁, hc₁, hsq_f, hφψ₀⟩ :=
-    exists_rationalLocalization_lift_sq (f := f.hom) (g := g.hom) CZ CY CX₀ ψ₀ χ hb₀ hc₀₀
-      hsq_g₀ hsq_fg
-  have hφ_tft : φ.IsTopologicallyFiniteType :=
-    .of_comp (hφψ₀ ▸ (CX₀.isTopologicallyFiniteType_rationalLocalizationHom TC sC hTC).comp hχ)
-  refine locallyOfFinitePresentationAt_of_openImmersion_sq CY
-    (CX₀.rationalLocalization TC sC hTC) φ hφ_tft (fun _ ↦ ?_) hc₁ hsq_f
-  exact hψ₀_tft.isTopologicallyFiniteType_toRingHom.finitePresentation_of_comp
-    hφ_tft.isTopologicallyFiniteType_toRingHom fun hDiscA ↦ by
-      have : DiscreteTopology CX₀.Ring := hχ.isTopologicallyFiniteType_toRingHom.discreteTopology
-      rw [← Pair.Hom.toRingHom_comp, hφψ₀, Pair.Hom.toRingHom_comp]
-      exact (CX₀.finitePresentation_rationalLocalizationHom TC sC hTC).comp (hχ_fp hDiscA)
+    exists_rationalLocalization_lift_sq CZ CY CX₀ ψ₀ χ hb₀ hc₀₀ hsq_g₀ hsq_fg
+  obtain ⟨hφ_tft, hφ_fp⟩ :=
+    isTopologicallyFiniteType_and_finitePresentation_of_comp_rationalLocalization
+      hψ₀_tft hχ hχ_fp hφψ₀
+  exact locallyOfFinitePresentationAt_of_openImmersion_sq CY
+    (CX₀.rationalLocalization TC sC hTC) φ hφ_tft hφ_fp hc₁ hsq_f
 
 /-- **Restriction of `LocallyOfFinitePresentation` along open immersions**: given a commuting
 square `g ≫ iV = iU ≫ f` of adic spaces with `iU` and `iV` open immersions and `f` locally of

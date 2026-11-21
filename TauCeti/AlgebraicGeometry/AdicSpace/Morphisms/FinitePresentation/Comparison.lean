@@ -195,8 +195,7 @@ theorem locallyOfFinitePresentation_comapOfPresentation {A B : Type u} [CommRing
   obtain ⟨b₀, hb₀⟩ : x ∈ Set.range CX.hom.base :=
     range_ofCompletion_hom_base P' hT hsheafT ▸ Set.mem_univ _
   refine locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁ hb₀ ?_
-  rw [comapOfPresentation_hom]
-  exact pairComap_ofCompletionMap_comp_hom P hS hsheafS P' hT hsheafT φ
+  rw [comapOfPresentation_hom]; exact pairComap_ofCompletionMap_comp_hom P _ _ P' _ _ φ
 
 /-- Comparing `LocallyOfFinitePresentation` on `comapOfPair` with `comapOfPresentation` via the
 canonical isomorphisms `ofPairIsoOfPresentation`. -/
@@ -228,8 +227,7 @@ theorem locallyOfFinitePresentation_comapOfPair {A B : Type u} [CommRing A] [Top
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
   exact (locallyOfFinitePresentation_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP' φ).mpr
-    (locallyOfFinitePresentation_comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP'
-      (hT.isSheaf P' hP') φ hφ hfp)
+    (locallyOfFinitePresentation_comapOfPresentation _ _ _ _ _ _ _ _ φ hφ hfp)
 
 /-- **Affinoid sufficient condition over a strongly noetherian Tate ring**: if `A` is a strongly
 noetherian Tate ring and `φ : S → T` is topologically of finite type between sheafy Huber pairs,
