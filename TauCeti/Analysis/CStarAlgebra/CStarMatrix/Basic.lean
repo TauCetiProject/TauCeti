@@ -11,11 +11,15 @@ import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
+import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
 # Positivity and rectangular algebra for `CStarMatrix`
+
+We record associativity and conjugate-transpose identities for rectangular C⋆-matrices, together
+with their conversion to ordinary matrices.
 
 For a non-unital C⋆-algebra `A` and a finite type `n`, Mathlib makes `CStarMatrix n n A` a
 C⋆-algebra and orders it by the spectral order. This file proves that a matrix `M` is positive in
@@ -38,11 +42,14 @@ and the proper-star instance `IsProperStar (CStarMatrix n n A)`.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
-* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects rectangular multiplication and sends `star` to the conjugate
-  transpose; the companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`,
-  `ofMatrix_symm_add`, `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the
-  same for the other algebraic operations.
+* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
+  `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
+  rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
+  companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
+  `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
+  algebraic operations.
+* `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
+  a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
@@ -166,9 +173,14 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [AddCommMonoid A] [Mul A]
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
-lemma ofMatrix_symm_mul {l m : Type*} [Fintype m] [Mul A] [AddCommMonoid A]
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+lemma ofMatrix_symm_mul {m k : Type*} [Fintype n] [Mul A] [AddCommMonoid A]
+    (M : CStarMatrix m n A) (N : CStarMatrix n k A) :
     ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
+
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix preserves conjugate transpose. -/
+@[simp]
+lemma ofMatrix_symm_conjTranspose {m : Type*} [Star A] (M : CStarMatrix m n A) :
+    ofMatrix.symm M.conjTranspose = (ofMatrix.symm M)ᴴ := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `star` to the conjugate transpose. -/
 @[simp]
@@ -204,6 +216,44 @@ lemma ofMatrix_symm_sub {m : Type*} [Sub A] (M N : CStarMatrix m n A) :
 @[simp]
 lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
+
+/-- Rectangular matrix multiplication is associative. -/
+lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSemiring A]
+    (M : CStarMatrix m n A) (N : CStarMatrix n k A) (P : CStarMatrix k l A) :
+    (M * N) * P = M * (N * P) := by
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_mul, Matrix.mul_assoc]
+
+/-- Conjugate transpose reverses rectangular multiplication. -/
+@[simp]
+lemma conjTranspose_mul {m k : Type*} [Fintype n] [NonUnitalNonAssocSemiring A] [StarRing A]
+    (M : CStarMatrix m n A) (N : CStarMatrix n k A) :
+    (M * N).conjTranspose = N.conjTranspose * M.conjTranspose := by
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.conjTranspose_mul]
+
+/-- Conjugate transpose of rectangular matrices is involutive. -/
+@[simp]
+lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatrix m n A) :
+    M.conjTranspose.conjTranspose = M := by
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
+
+/-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
+an idempotent `p` is supported on `p`. -/
+lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalRing A]
+    [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A] {p : CStarMatrix m m A}
+    (v : CStarMatrix n m A) (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) :
+    v * p = v := by
+  have hp' : IsIdempotentElem (v.conjTranspose * v) := by
+    rw [hv]
+    exact hp
+  have hpM := congrArg ofMatrix.symm hp'.eq
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at hpM
+  have h := Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) hpM
+  rw [← hv]
+  apply ofMatrix.symm.injective
+  simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
@@ -303,8 +353,6 @@ instance subsingleton_of_empty_right [IsEmpty n] : Subsingleton (CStarMatrix m n
 @[simp] theorem of_mul_of [Fintype m] [Mul A] [AddCommMonoid A] (f : Matrix l m A)
     (g : Matrix m n A) : ofMatrix f * ofMatrix g = ofMatrix (f * g) := (rfl)
 @[simp] theorem star_of [Star A] (f : Matrix n n A) : star (ofMatrix f) = ofMatrix fᴴ := (rfl)
-@[simp] theorem ofMatrix_symm_conjTranspose [Star A] (M : CStarMatrix m n A) :
-    ofMatrix.symm M.conjTranspose = (ofMatrix.symm M)ᴴ := (rfl)
 @[simp] theorem conjTranspose_of [Star A] (f : Matrix m n A) :
     (ofMatrix f).conjTranspose = ofMatrix fᴴ := (rfl)
 /-- A self-adjoint square `CStarMatrix` equals its conjugate transpose. -/
@@ -336,8 +384,6 @@ protected theorem sub_mul (L M : CStarMatrix l m A) (N : CStarMatrix m n A) :
 @[simp] protected theorem mul_neg (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     M * (-N) = -(M * N) := ofMatrix.symm.injective (Matrix.mul_neg _ _)
 end
-@[simp] theorem conjTranspose_conjTranspose [InvolutiveStar A] (M : CStarMatrix m n A) :
-    M.conjTranspose.conjTranspose = M := by ext; simp
 theorem conjTranspose_injective [InvolutiveStar A] :
     Function.Injective (conjTranspose : CStarMatrix m n A → CStarMatrix n m A) :=
   Function.LeftInverse.injective conjTranspose_conjTranspose
@@ -353,11 +399,6 @@ theorem conjTranspose_injective [InvolutiveStar A] :
     (M : CStarMatrix m n A) : (r • M).conjTranspose = star r • M.conjTranspose := by ext; simp
 @[simp] theorem conjTranspose_one [DecidableEq n] [NonAssocSemiring A] [StarRing A] :
     (1 : CStarMatrix n n A).conjTranspose = 1 := ofMatrix.symm.injective Matrix.conjTranspose_one
-/-- Conjugate transposition reverses rectangular matrix products. -/
-@[simp] theorem conjTranspose_mul [Fintype m] [NonUnitalNonAssocSemiring A] [StarRing A]
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (M * N).conjTranspose = N.conjTranspose * M.conjTranspose :=
-  ofMatrix.symm.injective (Matrix.conjTranspose_mul _ _)
 section
 variable [NonUnitalSemiring A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
 /-- Over a star-ordered ring with proper star, `M.conjTranspose * M = 0` iff `M = 0`. -/
