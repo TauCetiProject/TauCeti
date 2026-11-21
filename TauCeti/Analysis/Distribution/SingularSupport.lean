@@ -30,6 +30,8 @@ function `φ` supported in `U`. It is a relatively closed subset of `Ω` contain
   support.
 * `IsUnit.singularSupport_smul`, `Distribution.singularSupport_smul`: multiplication by a unit,
   in particular by a nonzero scalar, preserves the singular support.
+* `Distribution.singularSupport_mapCLM_subset`: a continuous linear map of the values does not
+  enlarge the singular support.
 
 ## References
 
@@ -174,5 +176,18 @@ theorem singularSupport_neg (T : 𝓓'(Ω, F)) : (-T).singularSupport = T.singul
 theorem singularSupport_sub_subset (S T : 𝓓'(Ω, F)) :
     (S - T).singularSupport ⊆ S.singularSupport ∪ T.singularSupport := by
   simpa [sub_eq_add_neg] using singularSupport_add_subset S (-T)
+
+/-- A continuous linear map of the values does not enlarge the singular support: where `T` is a
+smooth function `f`, the distribution `A ∘ T` is the smooth function `A ∘ f`. -/
+theorem singularSupport_mapCLM_subset [CompleteSpace F] {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [CompleteSpace F'] (A : F →L[ℝ] F') (T : 𝓓'(Ω, F)) :
+    (mapCLM A T).singularSupport ⊆ T.singularSupport := by
+  refine fun x hx ↦ by_contra fun h ↦ hx.2 ?_
+  obtain ⟨U, hU, hxU, f, hf, hT⟩ := (notMem_singularSupport_iff hx.1).1 h
+  refine ⟨U, hU, hxU, A ∘ f, A.contDiff.comp_contDiffOn hf, fun φ hφ ↦ ?_⟩
+  have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
+  rw [mapCLM_apply, hT φ hφ]
+  exact (A.integral_comp_comm (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous
+    φ.hasCompactSupport hφ)).symm.trans (by simp)
 
 end Distribution

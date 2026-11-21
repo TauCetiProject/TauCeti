@@ -100,6 +100,8 @@ families of operators.
   its values on Schwartz functions.
 * `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
   extensions of quantizations are compatible with isomorphisms of the fibres.
+* `TauCeti.Symbol.quantizeSobolev_map`: the symbol `L ∘ a ∘ K`, for constant maps `L` and `K` of
+  the fibres, quantizes to `L ∘ Op(a) ∘ K`.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
 * `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm`,
@@ -1005,6 +1007,32 @@ theorem memSobolev_toDistr_quantizeSobolev (ha : a.HasCompactSpatialSupport) {s 
     MemSobolev (s - m) 2 (a.quantizeSobolev ha t u).toDistr := by
   rw [toDistr_quantizeSobolev_congr rfl ha ha hu.toBesselPotentialSpace_toDistr.symm]
   exact (a.quantizeSobolev ha s _).memSobolev_toDistr
+
+/-- **Composition with constant maps of the fibres.** Let `Φ` act on the coefficients by
+`T ↦ L ∘ T ∘ K` for continuous linear maps `L : W →L[ℂ] W'` and `K : V' →L[ℂ] V`. Then the
+quantization of the symbol `L ∘ a(x, ξ) ∘ K` is `L ∘ Op(a) ∘ K` as an operator
+`H^s(ℝⁿ; V') → H^{s - m}(ℝⁿ; W')`, where `L` and `K` act on the values
+(`BesselPotentialSpace.postcomp`). -/
+theorem quantizeSobolev_map {V' W' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℂ V']
+    [CompleteSpace V'] [NormedAddCommGroup W'] [InnerProductSpace ℂ W'] [CompleteSpace W']
+    (ha : a.HasCompactSpatialSupport) {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W')
+    (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K) (s : ℝ) :
+    (a.map Φ).quantizeSobolev (ha.map Φ) s =
+      BesselPotentialSpace.postcomp _ _ 2 L ∘L a.quantizeSobolev ha s ∘L
+        BesselPotentialSpace.postcomp _ s 2 K := by
+  refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  ext φ
+  have hi : Integrable fun x ↦ φ x • quantizeSchwartzValue a.coefficient (u.postcompCLM K) x :=
+    (ha.integrable_quantizeSchwartzValue _).smul_of_top_right (φ.memLp ⊤)
+  have hq : (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
+    funext fun p ↦ by rw [coefficient_map, hΦ]
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
+    BesselPotentialSpace.toDistr_postcomp_apply,
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, ← L.integral_comp_comm hi, hq]
+  simp only [quantizeSchwartzValue_comp_comp, map_smul]
 
 end Sobolev
 

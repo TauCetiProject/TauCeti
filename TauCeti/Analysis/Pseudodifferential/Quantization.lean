@@ -82,6 +82,8 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: composing a symbol on the left
   with a smooth function `f` of the position, operator-valued between Banach spaces or real,
   composes its quantization with `f`.
+* `TauCeti.Symbol.quantizeSchwartzValue_comp_comp`: quantizing `L ∘ a(x, ξ) ∘ K` for constant
+  maps `L` and `K` of the fibres gives `L ∘ Op(a) (K ∘ u)`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -966,6 +968,22 @@ theorem quantizeSchwartzValue_ofSpatial_comp [CompleteSpace W] {U : Type*}
     (integrable_quantizeSchwartzValue_integrand
       (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 u))]
   simp only [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.comp_apply,
+    Circle.smul_def, map_smul]
+
+/-- **Composition with constant maps of the fibres.** For continuous linear maps `L : W →L[ℂ] W'`
+and `K : V' →L[ℂ] V`, quantizing the coefficient `L ∘ a(x, ξ) ∘ K` on `u` gives `L` applied to the
+quantization of `a` on `K ∘ u`. -/
+theorem quantizeSchwartzValue_comp_comp [CompleteSpace V] [CompleteSpace W] {V' W' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W']
+    [NormedSpace ℂ W'] [CompleteSpace W'] (L : W →L[ℂ] W') (K : V' →L[ℂ] V) (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V')) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (fun p ↦ L ∘L a.coefficient p ∘L K) u x =
+      L (quantizeSchwartzValue a.coefficient (u.postcompCLM K) x) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  rw [quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← L.integral_comp_comm
+    (integrable_quantizeSchwartzValue_integrand
+      (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 (u.postcompCLM K)))]
+  simp only [ContinuousLinearMap.comp_apply, SchwartzMap.fourier_postcompCLM_apply,
     Circle.smul_def, map_smul]
 
 open scoped ContDiff in
