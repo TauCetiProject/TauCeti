@@ -28,10 +28,11 @@ the Gamma law `ProbabilityTheory.gammaMeasure (α + 1) 1` scaled by its normaliz
 `Γ(α + 1)`. The moment formulas hold for every `α`, including `α ≤ -1`, where the measure is
 infinite but `x ^ s` is still integrable when `-1 < s + α`.
 
-The measure has a finite exponential moment `∫ exp (a * |x|) < ∞` for every `a < 1`. This is the
-hypothesis of the moment-determinacy argument behind
+For `-1 < α` the measure has a finite exponential moment `∫ exp (a * |x|) < ∞` for every `a < 1`.
+This is the hypothesis of the moment-determinacy argument behind
 `TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot`, the density of polynomials in
-`L²(laguerreMeasure α)`. Every polynomial is integrable against the measure as well.
+`L²(laguerreMeasure α)`. For `-1 < α` every polynomial is integrable against the measure as well.
+The measure is sigma-finite for every `α`.
 
 ## Main definitions
 
@@ -45,6 +46,7 @@ hypothesis of the moment-determinacy argument behind
 * `Polynomial.integral_rpow_laguerreMeasure`: the moments `∫ x ^ s = Γ(s + α + 1)`.
 * `Polynomial.laguerreMeasure_univ`: the total mass is `Γ(α + 1)`.
 * `Polynomial.isFiniteMeasure_laguerreMeasure_iff`: the measure is finite iff `-1 < α`.
+* `Polynomial.sigmaFinite_laguerreMeasure`: the measure is sigma-finite for every `α`.
 * `Polynomial.integrable_exp_mul_abs_laguerreMeasure`: the finite exponential moments.
 * `Polynomial.integrable_eval_laguerreMeasure`: polynomials are integrable.
 
@@ -73,6 +75,12 @@ theorem laguerreMeasure_def (α : ℝ) :
     laguerreMeasure α =
       (volume.restrict (Ioi 0)).withDensity fun x => ENNReal.ofReal (x ^ α * exp (-x)) :=
   (rfl)
+
+/-- The Laguerre measure is sigma-finite for every `α`, unlike `IsFiniteMeasure`, which needs
+`-1 < α`. -/
+instance sigmaFinite_laguerreMeasure (α : ℝ) : SigmaFinite (laguerreMeasure α) := by
+  rw [laguerreMeasure_def]
+  infer_instance
 
 /-- The Laguerre weight `x ^ α * exp (-x)` is a.e. measurable for Lebesgue measure on `(0, ∞)`. -/
 theorem aemeasurable_laguerreWeight (α : ℝ) :
