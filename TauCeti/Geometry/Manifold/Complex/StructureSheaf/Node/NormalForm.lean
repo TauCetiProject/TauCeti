@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.OffNodeChart
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rechart
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 import Mathlib.RingTheory.AdjoinRoot
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 
 /-!
 # The Weierstrass normal form of a holomorphic node equation
@@ -41,6 +43,10 @@ ring of the node as a finite free module over `𝒪_{E × ℂ, (b, 0)}`.
 
 ## Main results
 
+* `TauCeti.holomorphicStructureSheaf.stalkPrecomp_assoc_bijective`,
+  `TauCeti.holomorphicStructureSheaf.stalkPrecomp_assoc_smoothingEquation`: the associator
+  `((b, x), y) ↦ (b, x, y)` identifies holomorphic stalks in the coordinates of `OffNodeChart`
+  with those used here, and carries the local equation `smoothingEquation` to `nodeEquation`.
 * `TauCeti.holomorphicStructureSheaf.nodeTransverseHom_comp_stalkPrecomp_fst`: the structure map
   extends the pullback of base germs along `((b, x), y) ↦ b`.
 * `TauCeti.holomorphicStructureSheaf.nodeTransverseHom_flat`,
@@ -96,6 +102,31 @@ theorem eval_nodeEquation (b : E) (x y : ℂ)
     eval 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, x), y) (nodeEquation b x y s) =
       x * y - eval 𝓘(ℂ, E) E b s := by
   simp [nodeEquation, eval_stalkPrecomp]
+
+/-- Pullback along the associator `((b, x), y) ↦ (b, x, y)` is a bijection of holomorphic
+stalks. It identifies local rings in the coordinates of `OffNodeChart` with those in the
+coordinates of `Node.NormalForm`. -/
+theorem stalkPrecomp_assoc_bijective (p : (E × ℂ) × ℂ) :
+    Function.Bijective (stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)
+      (fun z ↦ (z.1.1, z.1.2, z.2)) (contMDiff_iff_contDiff.mpr (by fun_prop)) p) := by
+  rw [← stalkPullback_eq_stalkPrecomp]
+  exact stalkPullback_bijective _ (g := fun q : E × ℂ × ℂ ↦ ((q.1, q.2.1), q.2.2))
+    (.of_forall fun _ ↦ (contMDiff_iff_contDiff.mpr (by fun_prop)).contMDiffAt)
+    (.of_forall fun _ ↦ rfl) (.of_forall fun _ ↦ rfl)
+
+/-- The associator `((b, x), y) ↦ (b, x, y)` carries the local equation of `N_s` in the
+coordinates of `OffNodeChart` to the node equation in the coordinates of `Node.NormalForm`. -/
+theorem stalkPrecomp_assoc_smoothingEquation (b : E)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b) :
+    stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) (fun z ↦ (z.1.1, z.1.2, z.2))
+        (contMDiff_iff_contDiff.mpr (by fun_prop)) ((b, 0), 0)
+        (smoothingEquation (b, 0, 0) s) = nodeEquation b 0 0 s := by
+  obtain ⟨S, -, hS⟩ := exists_toFilterGerm_eq b s
+  apply toFilterGerm_nhds_injective ((b, (0 : ℂ)), (0 : ℂ))
+  rw [toFilterGerm_stalkPrecomp, toFilterGerm_smoothingEquation (S := S) (hS _ le_rfl),
+    toFilterGerm_nodeEquation b 0 0 s (hS _ le_rfl), Germ.coe_compTendsto]
+  -- Both sides are the germ of `((b, x), y) ↦ x * y - S b`.
+  rfl
 
 /-- The linear change of coordinates `((b, v), u) ↦ ((b, u + v), u - v)` of `(E × ℂ) × ℂ`, that is
 `x = u + v` and `y = u - v`. It carries `xy` to `u² - v²` and fixes the base coordinate `b`.
