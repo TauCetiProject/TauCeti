@@ -213,7 +213,10 @@ private theorem abs_spatialFDerivL_apply_le (u : ParabolicC2HolderSpace α (Eucl
   have h₁ := ContinuousLinearMap.abs_apply_single_le (spatialFDerivL u (slabMk (y + w) s) -
     spatialFDerivL u (slabMk y s)) i
   rw [_root_.sub_apply, ← dist_eq_norm] at h₁
-  exact h₁.trans (dist_spatialFDerivL_slabMk_add_le u y w s)
+  refine h₁.trans (((u.lipschitzWith_spatialFDerivL_slabMk s).dist_le_mul (y + w) y).trans ?_)
+  rw [dist_self_add_left]
+  gcongr
+  exact (spatialSecondFDerivL u).norm_toBoundedContinuousFunction_le
 
 /-- **The forcing of `δₕu - v` tends to zero uniformly.** With the hypotheses of
 `euclideanParabolicOperatorL_smul_translateLIE_sub_sub_apply`, and derivatives of the coefficients
@@ -267,7 +270,7 @@ private theorem exists_tendsto_and_abs_euclideanParabolicOperatorL_smul_translat
       (abs_spatialFDerivL_apply_le u y (h • e) s i).1
       (abs_spatialFDerivL_apply_le u y (h • e) s i).2))
     (abs_sub_mul_sub_mul_le_of_hasLineDerivAt (hc' s) (m := fun q ↦ u q) hD₀
-      (dist_apply_slabMk_add_le u y (h • e) s))
+      (by simpa [Real.dist_eq] using (u.lipschitzWith_apply_slabMk s).dist_le_mul (y + h • e) y))
   refine ((abs_add_le _ _).trans (add_le_add ((abs_add_le _ _).trans (add_le_add
     ((abs_add_le _ _).trans (add_le_add le_rfl ((Finset.abs_sum_le_sum_abs _ _).trans
       (Finset.sum_le_sum fun i _ ↦ Finset.abs_sum_le_sum_abs _ _))))
