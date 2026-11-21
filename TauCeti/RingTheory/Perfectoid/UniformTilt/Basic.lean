@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Perfection
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Huber.Uniform
 import Mathlib.Algebra.CharP.Lemmas
+import TauCeti.RingTheory.Perfection
 import Mathlib.LinearAlgebra.SModEq.Pow
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.UniformSpace.UniformApproximation
@@ -667,20 +668,9 @@ theorem coeff_zero (n : ℕ) : coeff p B n 0 = 0 := (rfl)
 /-- An element of the tilt is a unit exactly when its zeroth coordinate is a unit. -/
 @[simp]
 theorem isUnit_iff_coeff_zero {x : uniformTilt p B} :
-    IsUnit x ↔ IsUnit (coeff p B 0 x) := by
-  refine ⟨fun hx ↦ hx.map _, fun hx ↦ ?_⟩
-  have hu (n : ℕ) : IsUnit (coeff p B n x) := by
-    apply (isUnit_pow_iff (pow_ne_zero n hp.out.ne_zero)).mp
-    simpa only [← coeff_pow_p_pow x 0 n, zero_add] using hx
-  let u (n : ℕ) : Bˣ := (hu n).unit
-  have hpow (n : ℕ) : u (n + 1) ^ p = u n := by
-    apply Units.ext
-    simpa only [Units.val_pow_eq_pow_val, u, IsUnit.unit_spec] using coeff_pow_p x n
-  let y : uniformTilt p B := mk (fun n ↦ ↑((u n)⁻¹)) (fun n ↦ by
-    rw [← Units.val_pow_eq_pow_val, inv_pow, hpow])
-  refine isUnit_iff_exists_inv.mpr ⟨y, ext fun n ↦ ?_⟩
-  simp only [map_mul, y, coeff_mk, map_one]
-  exact (hu n).mul_val_inv
+    IsUnit x ↔ IsUnit (coeff p B 0 x) :=
+  -- `uniformTilt p B` is `Perfection B p`, with the same multiplication and coordinates
+  ⟨fun hx ↦ hx.map _, (Perfection.isLocalHom_coeffMonoidHom (M := B) (p := p) 0).map_nonunit x⟩
 
 /-- **In the tilt of a reduced ring, `x♯ = 0` only for `x = 0`**: every coordinate `x⁽ⁿ⁾` is a
 `p ^ n`-th root of `x♯`. -/

@@ -169,6 +169,21 @@ theorem equilibriumExcessLaw_real_Iic (F : Measure ℝ≥0) [IsFiniteMeasure F] 
     ← integral_toReal ht.aemeasurable (ae_of_all _ fun _ => measure_lt_top _ _)]
   rfl
 
+/-- For an almost-everywhere measurable nonnegative random variable on a finite measure space,
+the real distribution function of the equilibrium excess law of its distribution is its
+integrated survival function divided by its extended expectation, including zero and infinite
+expectations. -/
+theorem equilibriumExcessLaw_map_real_Iic {Ω : Type*} [MeasurableSpace Ω]
+    (μ : Measure Ω) [IsFiniteMeasure μ] {X : Ω → ℝ≥0} (hX : AEMeasurable X μ) (x : ℝ) :
+    (equilibriumExcessLaw (μ.map X)).real (Iic x) =
+      ((∫⁻ ω, (X ω : ℝ≥0∞) ∂μ)⁻¹).toReal *
+        ∫ t in Ioc 0 x, μ.real {ω | t < (X ω : ℝ)} := by
+  rw [equilibriumExcessLaw_real_Iic, lintegral_map' measurable_coe_nnreal_ennreal.aemeasurable hX]
+  congr 1
+  refine setIntegral_congr_fun measurableSet_Ioc fun t _ => ?_
+  exact map_measureReal_apply_of_aemeasurable hX
+    (measurableSet_lt measurable_const measurable_coe_nnreal_real)
+
 /-- Deterministic positive gaps give the uniform equilibrium excess on the interval
 between zero and the gap. The equation also holds at gap zero, with both sides zero. -/
 theorem equilibriumExcessLaw_dirac (a : ℝ≥0) :

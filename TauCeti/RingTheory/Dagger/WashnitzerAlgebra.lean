@@ -569,7 +569,8 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
   · exact Subtype.ext (by simpa [hu, g, v] using congrArg Subtype.val u.inv_mul)
 
 /-- An overconvergent series is a unit of the Tate algebra iff it is a unit of the
-Monsky–Washnitzer algebra: the inverse of an overconvergent series is overconvergent. -/
+Monsky–Washnitzer algebra: the Tate-algebra inverse of an overconvergent series, when it exists, is
+overconvergent. -/
 theorem washnitzerAlgebra.isUnit_toTate_iff (f : washnitzerAlgebra σ K) :
     IsUnit (washnitzerAlgebra.toTate σ K f) ↔ IsUnit f :=
   ⟨fun hf ↦ (isUnit_washnitzerAlgebra_iff f).2 ⟨constantCoeff_ne_zero_of_isUnit_toTate hf,

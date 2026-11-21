@@ -27,7 +27,9 @@ periodic functions on half-strips.
 * For a function periodic under `z ↦ z + I`, translating the band `t` vertically by an integer
   does not change the integral (`Function.Periodic.setLIntegral_reProdIm_preimage_add_intCast`),
   so its integral over a band of `k` periods is `k` times its integral over one period
-  (`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`). A disc of radius at most
+  (`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`). The same holds on
+  `ℝ × ℝ` for a function periodic under `z ↦ z + (0, 1)`
+  (`Function.Periodic.setLIntegral_prod_Ico_intCast_add_natCast`). A disc of radius at most
   `1/2` lies in two periods, so the integral over it is at most twice the integral over one period
   of the vertical strip of the same width
   (`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo`), and the same holds
@@ -88,6 +90,22 @@ theorem setLIntegral_reProdIm_Ico_intCast_add_natCast (hf : Periodic f I) {s : S
     rw [hunion, lintegral_union (hs.reProdIm measurableSet_Ico) hdisj, ih, hshift]
     push_cast
     ring
+
+/-- For a function on `ℝ × ℝ` periodic under `z ↦ z + (0, 1)`, its integral over `k` consecutive
+periods `s × [n, n + k)` is `k` times its integral over the period `s × [0, 1)`. This is
+`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast` read through `ℂ ≃ ℝ × ℝ`. -/
+theorem setLIntegral_prod_Ico_intCast_add_natCast {g : ℝ × ℝ → ℝ≥0∞}
+    (hg : Periodic g ((0 : ℝ), (1 : ℝ))) {s : Set ℝ} (hs : MeasurableSet s) (n : ℤ) (k : ℕ) :
+    ∫⁻ z in s ×ˢ Ico (n : ℝ) (n + k), g z = k * ∫⁻ z in s ×ˢ Ico 0 1, g z := by
+  have he := volume_preserving_equiv_real_prod.symm
+  have h (t : Set ℝ) : ∫⁻ z in s ×ˢ t, g z = ∫⁻ w in s ×ℂ t, g (measurableEquivRealProd w) := by
+    rw [← he.setLIntegral_comp_preimage_emb measurableEquivRealProd.symm.measurableEmbedding]
+    simp only [MeasurableEquiv.apply_symm_apply]
+    rfl
+  have hgI : Periodic (fun w ↦ g (measurableEquivRealProd w)) I := fun w ↦ by
+    simpa [measurableEquivRealProd, equivRealProd_apply, Prod.ext_iff] using
+      hg (measurableEquivRealProd w)
+  rw [h, h, hgI.setLIntegral_reProdIm_Ico_intCast_add_natCast hs]
 
 /-- For a function periodic under `z ↦ z + I`, its integral over a disc of radius `r ≤ 1/2` about
 `z₀` is at most twice its integral over one period `(z₀.re - r, z₀.re + r) ×ℂ [0, 1]` of the
