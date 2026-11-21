@@ -83,7 +83,7 @@ private theorem volume_rpow_mul_volume_rpow_le_of_nullMeasurableSet {A B : Set E
       · simp [hx, ENNReal.zero_rpow_of_pos (sub_pos.2 hθ₁)])
   simpa only [lintegral_indicator_const hK, lintegral_indicator_const hL,
     lintegral_indicator_const hS, one_mul, measure_congr hKv, measure_congr hLv,
-    S, measure_toMeasurable, ENNReal.rpow_eq_pow] using key
+    S, measure_toMeasurable] using key
 
 /-- The multiplicative Brunn–Minkowski inequality for an arbitrary set `A` and a
 Lebesgue-measurable set `B`, with outer volume for `A` and for the weighted sum. The weight is

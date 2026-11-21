@@ -73,23 +73,19 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
-  [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
-  [FiberBundle G W] [∀ x, AddCommGroup (W x)] [∀ x, Module ℂ (W x)]
-  [∀ x, Module ℝ (W x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
 
 /-! ### Pointwise lemmas -/
 
 namespace SmoothAlmostComplexStructure
 
-variable [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
+section IsZeroOneForm
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
+variable {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℂ (V x)] [∀ x, Module ℝ (V x)]
+  {W : M → Type*} [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℂ (W x)] [∀ x, Module ℝ (W x)]
+  [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
+
 /-- A pair of one-forms is a `(0,1)`-form exactly when both components are. -/
 @[simp]
 theorem isZeroOneForm_prod_iff {x : M} {η : TangentSpace I x →L[ℝ] V x}
@@ -98,6 +94,25 @@ theorem isZeroOneForm_prod_iff {x : M} {η : TangentSpace I x →L[ℝ] V x}
   simp only [isZeroOneForm_iff, ContinuousLinearMap.prod_apply, Prod.smul_mk, Prod.neg_mk,
     Prod.mk.injEq, forall_and]
 
+variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)] in
+/-- Composing a `(0,1)`-form with a complex linear map gives a `(0,1)`-form. -/
+theorem IsZeroOneForm.restrictScalars_comp {x : M} {η : TangentSpace I x →L[ℝ] V x}
+    (h : j.IsZeroOneForm η) (L : V x →L[ℂ] W x) :
+    j.IsZeroOneForm ((L.restrictScalars ℝ).comp η) :=
+  isZeroOneForm_iff.2 fun v ↦ by simp [isZeroOneForm_iff.1 h v]
+
+end IsZeroOneForm
+
+section DbarSMulRight
+
+variable {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℂ (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  {W : M → Type*} [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℂ (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
+
 /-- The term `(∂bar g) ⊗ ξ` of a section of a direct-sum bundle is the pair of the terms of its
 components. -/
 theorem dbarSMulRight_prod (g : M → ℝ) (σ : Π x : M, V x × W x) (x : M) :
@@ -105,16 +120,7 @@ theorem dbarSMulRight_prod (g : M → ℝ) (σ : Π x : M, V x × W x) (x : M) :
       (j.dbarSMulRight g (fun y ↦ (σ y).1) x).prod (j.dbarSMulRight g (fun y ↦ (σ y).2) x) := by
   ext v <;> simp [dbarSMulRight_apply, -mvfderiv_apply_eq_mfderiv_apply]
 
-variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
-
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
-/-- Composing a `(0,1)`-form with a complex linear map gives a `(0,1)`-form. -/
-theorem IsZeroOneForm.restrictScalars_comp {x : M} {η : TangentSpace I x →L[ℝ] V x}
-    (h : j.IsZeroOneForm η) (L : V x →L[ℂ] W x) :
-    j.IsZeroOneForm ((L.restrictScalars ℝ).comp η) :=
-  isZeroOneForm_iff.2 fun v ↦ by simp [isZeroOneForm_iff.1 h v]
-
+variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)] in
 /-- A fibrewise complex linear map commutes with the term `(∂bar g) ⊗ ξ`. -/
 theorem restrictScalars_comp_dbarSMulRight (L : Π x : M, V x →L[ℂ] W x) (g : M → ℝ)
     (σ : Π x : M, V x) (x : M) :
@@ -122,6 +128,8 @@ theorem restrictScalars_comp_dbarSMulRight (L : Π x : M, V x →L[ℂ] W x) (g 
       j.dbarSMulRight g (fun y ↦ L y (σ y)) x := by
   ext v
   simp [dbarSMulRight_apply, -mvfderiv_apply_eq_mfderiv_apply]
+
+end DbarSMulRight
 
 end SmoothAlmostComplexStructure
 
@@ -131,6 +139,13 @@ open SmoothAlmostComplexStructure
 
 section Prod
 
+section Pointwise
+
+variable {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)]
+  {W : M → Type*} [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℝ (W x)]
+
 /-- The direct sum `D₁ ⊕ D₂` of operators on sections of `V` and of `W`, an operator on sections
 of `V ×ᵇ W`: `(D₁ ⊕ D₂) σ = (D₁ σ.1, D₂ σ.2)`. -/
 def sectionProdMap (D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x)
@@ -138,17 +153,13 @@ def sectionProdMap (D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[�
     (x : M) : TangentSpace I x →L[ℝ] V x × W x :=
   (D₁ (fun y ↦ (σ y).1) x).prod (D₂ (fun y ↦ (σ y).2) x)
 
-variable {D₁ D₁' : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
-  {D₂ D₂' : (Π x : M, W x) → Π x : M, TangentSpace I x →L[ℝ] W x}
+variable {D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+  {D₂ : (Π x : M, W x) → Π x : M, TangentSpace I x →L[ℝ] W x}
 
-omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 theorem sectionProdMap_apply (σ : Π x : M, V x × W x) (x : M) :
     sectionProdMap D₁ D₂ σ x = (D₁ (fun y ↦ (σ y).1) x).prod (D₂ (fun y ↦ (σ y).2) x) :=
   (rfl)
 
-omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- The direct sum `D₁ ⊕ D₂` applied to a constant multiple `c • σ` applies `D₁` and `D₂` to the
 constant multiples of the components of `σ`. -/
 theorem sectionProdMap_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W x)] (c : S)
@@ -157,8 +168,6 @@ theorem sectionProdMap_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W 
       (D₁ (c • fun y ↦ (σ y).1) x).prod (D₂ (c • fun y ↦ (σ y).2) x) :=
   (rfl)
 
-omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- The direct sum `D₁ ⊕ D₂` applied to a function multiple `g • σ` applies `D₁` and `D₂` to the
 function multiples of the components of `σ`. -/
 theorem sectionProdMap_smul' {S : M → Type*} [∀ x, SMul (S x) (V x)] [∀ x, SMul (S x) (W x)]
@@ -167,8 +176,21 @@ theorem sectionProdMap_smul' {S : M → Type*} [∀ x, SMul (S x) (V x)] [∀ x,
       (D₁ (g • fun y ↦ (σ y).1) x).prod (D₂ (g • fun y ↦ (σ y).2) x) :=
   (rfl)
 
-omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousSMul ℝ (W x)] in
+end Pointwise
+
+section Add
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle G W] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)]
+  {D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+  {D₂ : (Π x : M, W x) → Π x : M, TangentSpace I x →L[ℝ] W x}
+
 /-- A direct sum is additive on two sections differentiable at `x` when both summands are
 additive on sections differentiable at `x`. -/
 theorem sectionProdMap_add {x : M}
@@ -188,9 +210,19 @@ theorem sectionProdMap_add {x : M}
   simp only [sectionProdMap_apply, Pi.add_apply, Prod.fst_add, Prod.snd_add, k₁, k₂]
   ext v <;> simp
 
-section ComplexPart
+end Add
 
-variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
+section ComplexLinearPart
+
+variable {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℂ (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  {W : M → Type*} [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℂ (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  {D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+  {D₂ : (Π x : M, W x) → Π x : M, TangentSpace I x →L[ℝ] W x}
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
   [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, ContinuousSMul ℂ (W x)]
 
 /-- The complex linear part of a direct sum is the direct sum of the complex linear parts. -/
@@ -201,6 +233,23 @@ theorem sectionComplexLinearPart_sectionProdMap :
   simp only [sectionComplexLinearPart_apply, sectionProdMap_smul]
   ext v <;> simp [sectionComplexLinearPart_apply, sectionProdMap_apply]
 
+end ComplexLinearPart
+
+section Bundles
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle G W] [∀ x, AddCommGroup (W x)] [∀ x, Module ℂ (W x)]
+  [∀ x, Module ℝ (W x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  {D₁ D₁' : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+  {D₂ D₂' : (Π x : M, W x) → Π x : M, TangentSpace I x →L[ℝ] W x}
+
+variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, ContinuousSMul ℂ (W x)] in
 /-- The direct sum of two complex linear operators is complex linear. -/
 theorem IsComplexLinearOperator.prod (hD₁ : IsComplexLinearOperator F D₁)
     (hD₂ : IsComplexLinearOperator G D₂) :
@@ -214,8 +263,6 @@ theorem IsComplexLinearOperator.prod (hD₁ : IsComplexLinearOperator F D₁)
     obtain ⟨h₁, h₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
     rw [sectionProdMap_smul, hD₁.complex_I_smul h₁, hD₂.complex_I_smul h₂]
     ext v <;> simp [sectionProdMap_apply]
-
-end ComplexPart
 
 variable [IsManifold I ∞ M] {j : SmoothAlmostComplexStructure I M}
 
@@ -281,14 +328,22 @@ end ComplexPart
 
 end IsRealCauchyRiemannOperator
 
+end Bundles
+
 end Prod
 
 /-! ### Transport along fibrewise complex linear isomorphisms -/
 
 section Transport
 
-variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
-  {Φ : Π x : M, V x ≃L[ℂ] W x} {D D' : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+section Pointwise
+
+variable {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℂ (V x)] [∀ x, Module ℝ (V x)]
+  {W : M → Type*} [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℂ (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
+  {Φ : Π x : M, V x ≃L[ℂ] W x} {D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
 
 variable (Φ) in
 /-- The transport `σ ↦ Φ ∘ D (Φ⁻¹ σ)` of an operator `D` on sections of `V` to sections of `W`,
@@ -298,14 +353,11 @@ def sectionTransport (D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[�
   ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (fun y ↦ (Φ y).symm (σ y)) x)
 
 variable (Φ) in
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 theorem sectionTransport_apply (σ : Π x : M, W x) (x : M) :
     sectionTransport Φ D σ x =
       ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (fun y ↦ (Φ y).symm (σ y)) x) :=
   (rfl)
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
 /-- Transport along the identity is the identity. -/
 @[simp]
 theorem sectionTransport_refl :
@@ -314,8 +366,6 @@ theorem sectionTransport_refl :
   ext v
   simp [sectionTransport_apply]
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- Transport along `Φ` and then along `Ψ` is transport along the composite. -/
 theorem sectionTransport_sectionTransport {X : M → Type*} [∀ x, TopologicalSpace (X x)]
     [∀ x, AddCommGroup (X x)] [∀ x, Module ℂ (X x)] [∀ x, Module ℝ (X x)]
@@ -326,8 +376,6 @@ theorem sectionTransport_sectionTransport {X : M → Type*} [∀ x, TopologicalS
   ext v
   simp [sectionTransport_apply]
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- Transporting back along `Φ⁻¹` recovers the operator. -/
 @[simp]
 theorem sectionTransport_symm_sectionTransport :
@@ -336,8 +384,6 @@ theorem sectionTransport_symm_sectionTransport :
   ext v
   simp [sectionTransport_apply]
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- Transporting along `Φ⁻¹` and then back along `Φ` recovers the operator. -/
 @[simp]
 theorem sectionTransport_sectionTransport_symm
@@ -345,8 +391,6 @@ theorem sectionTransport_sectionTransport_symm
     sectionTransport Φ (sectionTransport (fun x ↦ (Φ x).symm) D') = D' :=
   sectionTransport_symm_sectionTransport (Φ := fun x ↦ (Φ x).symm)
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- The transport `sectionTransport Φ D` applied to a function multiple `g • σ` is `Φ` composed
 with `D` applied to the function multiple `g • Φ⁻¹ σ`. -/
 theorem sectionTransport_smul' {S : M → Type*} [∀ x, SMul (S x) (V x)] [∀ x, SMul (S x) (W x)]
@@ -358,8 +402,6 @@ theorem sectionTransport_smul' {S : M → Type*} [∀ x, SMul (S x) (V x)] [∀ 
   congr 2 with y
   exact LinearMapClass.map_smul_of_tower _ _ _
 
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
 /-- The transport `sectionTransport Φ D` applied to a constant multiple `c • σ` is `Φ` composed
 with `D` applied to the constant multiple `c • Φ⁻¹ σ`. -/
 theorem sectionTransport_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W x)]
@@ -368,7 +410,21 @@ theorem sectionTransport_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (
       ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (c • fun y ↦ (Φ y).symm (σ y)) x) :=
   sectionTransport_smul' (fun _ ↦ c) σ x
 
-omit [∀ x, ContinuousSMul ℝ (V x)] [∀ x, ContinuousSMul ℝ (W x)] in
+end Pointwise
+
+section Add
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle G W] [∀ x, AddCommGroup (W x)] [∀ x, Module ℂ (W x)]
+  [∀ x, Module ℝ (W x)] [∀ x, IsTopologicalAddGroup (W x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
+  {Φ : Π x : M, V x ≃L[ℂ] W x} {D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+
 /-- The transport of an operator additive on sections differentiable at `x` along a fibrewise
 complex linear isomorphism whose inverse preserves differentiability of sections at `x` is
 additive on sections differentiable at `x`. -/
@@ -382,9 +438,19 @@ theorem sectionTransport_add {x : M}
   rw [Pi.add_def] at k
   simp only [sectionTransport_apply, Pi.add_apply, map_add, k, ContinuousLinearMap.comp_add]
 
-section ComplexPart
+end Add
 
-variable [∀ x, ContinuousSMul ℂ (V x)] [∀ x, ContinuousSMul ℂ (W x)]
+section ComplexLinearPart
+
+variable {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℂ (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  {W : M → Type*} [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℂ (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
+  {Φ : Π x : M, V x ≃L[ℂ] W x} {D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+  [∀ x, ContinuousSMul ℂ (V x)] [∀ x, ContinuousSMul ℂ (W x)]
 
 /-- Transport commutes with taking the complex linear part. -/
 theorem sectionComplexLinearPart_sectionTransport :
@@ -394,6 +460,25 @@ theorem sectionComplexLinearPart_sectionTransport :
   simp only [sectionComplexLinearPart_apply, sectionTransport_smul]
   ext v
   simp [sectionTransport_apply, sectionComplexLinearPart_apply]
+
+end ComplexLinearPart
+
+section Bundles
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle G W] [∀ x, AddCommGroup (W x)] [∀ x, Module ℂ (W x)]
+  [∀ x, Module ℝ (W x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, IsScalarTower ℝ ℂ (W x)]
+  {Φ : Π x : M, V x ≃L[ℂ] W x} {D D' : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+
+section ComplexPart
+
+variable [∀ x, ContinuousSMul ℂ (V x)] [∀ x, ContinuousSMul ℂ (W x)]
 
 /-- The transport of a complex linear operator along a fibrewise complex linear isomorphism whose
 inverse preserves differentiability of sections is complex linear. -/
@@ -499,13 +584,19 @@ theorem isRealCauchyRiemannOperator_sectionTransport_iff
   have := h.transport (Φ := fun x ↦ (Φ x).symm) (by simpa using hΦ')
   rwa [sectionTransport_symm_sectionTransport] at this
 
+end Bundles
+
 end Transport
 
 /-! ### Affine combinations and the straight line between two operators -/
 
 section LineMap
 
-variable {D₀ D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  {D₀ D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
 
 /-- A pointwise linear combination `a • D₀ + b • D₁` of two complex linear operators, with weights
 `a b : Π x, S x` acting on the fibres, is complex linear; in particular so is every point

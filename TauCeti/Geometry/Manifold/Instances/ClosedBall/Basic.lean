@@ -140,15 +140,15 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 local notation "e₀" => (EuclideanSpace.single (0 : Fin _) (1 : ℝ))
 
 private theorem symm_inversion_mem_closedBall (φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
-    (y : EuclideanHalfSpace n) : φ.symm (inversion (-e₀) √2 y.1) ∈ closedBall (0 : E) 1 := by
+    (y : EuclideanHalfSpace n) : φ.symm (inversion (-e₀) √2 y.val) ∈ closedBall (0 : E) 1 := by
   rw [mem_closedBall_zero_iff, LinearIsometryEquiv.norm_map]
-  exact norm_inversion_le_one y.2
+  exact norm_inversion_le_one y.property
 
 /-- The chart of a point of the closed ball lies in the half-space. -/
 private theorem zero_le_inversion_apply_zero (φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
     {x : closedBall (0 : E) 1} (hx : φ x ≠ -e₀) : 0 ≤ inversion (-e₀) √2 (φ x) 0 := by
   rw [inversion_apply_zero_nonneg_iff hx, LinearIsometryEquiv.norm_map]
-  exact mem_closedBall_zero_iff.1 x.2
+  exact mem_closedBall_zero_iff.1 x.property
 
 /-- The chart of the closed unit ball attached to a linear isometry
 `φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)`: transport along `φ`, then invert in the sphere of radius
@@ -157,13 +157,13 @@ the boundary hyperplane `{y | y 0 = 0}`, and its target is the whole half-space.
 def closedBallChart (φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)) :
     OpenPartialHomeomorph (closedBall (0 : E) 1) (EuclideanHalfSpace n) where
   toFun x := (𝓡∂ n).symm (inversion (-e₀) √2 (φ x))
-  invFun y := ⟨φ.symm (inversion (-e₀) √2 y.1), symm_inversion_mem_closedBall φ y⟩
+  invFun y := ⟨φ.symm (inversion (-e₀) √2 y.val), symm_inversion_mem_closedBall φ y⟩
   source := {x | φ x ≠ -e₀}
   target := univ
   map_source' _ _ := mem_univ _
   map_target' y _ := by
     simp only [mem_ofPred_eq, LinearIsometryEquiv.apply_symm_apply]
-    exact (inversion_eq_center (by positivity)).not.2 (ne_neg_single_of_nonneg y.2)
+    exact (inversion_eq_center (by positivity)).not.2 (ne_neg_single_of_nonneg y.property)
   left_inv' x hx := by
     have h0 := zero_le_inversion_apply_zero φ hx
     ext1
@@ -171,15 +171,16 @@ def closedBallChart (φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)) :
       inversion_inversion _ (by positivity : (√2 : ℝ) ≠ 0)]
   right_inv' y _ := by
     simp [inversion_inversion _ (by positivity : (√2 : ℝ) ≠ 0),
-      modelWithCornersEuclideanHalfSpace_symm_apply_of_le y.2]
-  open_source := isOpen_ne_fun (φ.continuous.comp continuous_subtype_val) continuous_const
+      modelWithCornersEuclideanHalfSpace_symm_apply_of_le y.property]
+  open_source := isOpen_ne_fun (φ.continuous.comp continuous_subtypeVal) continuous_const
   open_target := isOpen_univ
   continuousOn_toFun := (𝓡∂ n).continuous_symm.comp_continuousOn <|
     ContinuousOn.inversion continuousOn_const continuousOn_const
-      (φ.continuous.comp continuous_subtype_val).continuousOn fun _ hx ↦ hx
+      (φ.continuous.comp continuous_subtypeVal).continuousOn fun _ hx ↦ hx
   continuousOn_invFun := Continuous.continuousOn <| Continuous.subtype_mk
     (φ.symm.continuous.comp <| Continuous.inversion continuous_const continuous_const
-      continuous_subtype_val fun y ↦ ne_neg_single_of_nonneg y.2) (symm_inversion_mem_closedBall φ)
+      continuous_subtypeVal fun y ↦ ne_neg_single_of_nonneg y.property)
+          (symm_inversion_mem_closedBall φ)
 
 variable (φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
 
@@ -375,7 +376,7 @@ private theorem orientationPreservingOn_closedBallChart_symm_trans
   have hR : (√2 : ℝ) ≠ 0 := by positivity
   rw [orientationPreservingOn_iff]
   intro z hz
-  have h₁ : (𝓡∂ n) z ≠ -e₀ := ne_neg_single_of_nonneg z.2
+  have h₁ : (𝓡∂ n) z ≠ -e₀ := ne_neg_single_of_nonneg z.property
   have h₂ : A (inv ((𝓡∂ n) z)) ≠ -e₀ := hz.2
   have d₁ : HasFDerivAt inv (fderiv ℝ inv ((𝓡∂ n) z)) ((𝓡∂ n) z) :=
     (hasFDerivAt_inversion h₁).differentiableAt.hasFDerivAt
@@ -516,9 +517,9 @@ diffeomorphism of the closed unit ball, in the sense of manifolds with boundary.
 def _root_.Diffeomorph.restrictUnitClosedBall (f : E ≃ₘ^k⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E)
     (hf : ∀ x, ‖f x‖ ≤ 1 ↔ ‖x‖ ≤ 1) :
     closedBall (0 : E) 1 ≃ₘ^k⟮𝓡∂ n, 𝓡∂ n⟯ closedBall (0 : E) 1 where
-  toFun x := ⟨f x, mem_closedBall_zero_iff.2 ((hf x).2 (mem_closedBall_zero_iff.1 x.2))⟩
+  toFun x := ⟨f x, mem_closedBall_zero_iff.2 ((hf x).2 (mem_closedBall_zero_iff.1 x.property))⟩
   invFun y := ⟨f.symm y, mem_closedBall_zero_iff.2
-    ((hf _).1 (by rw [f.apply_symm_apply]; exact mem_closedBall_zero_iff.1 y.2))⟩
+    ((hf _).1 (by rw [f.apply_symm_apply]; exact mem_closedBall_zero_iff.1 y.property))⟩
   left_inv x := Subtype.ext (f.symm_apply_apply x)
   right_inv y := Subtype.ext (f.apply_symm_apply y)
   contMDiff_toFun := contMDiff_iff_comp_subtypeVal_closedBall.2

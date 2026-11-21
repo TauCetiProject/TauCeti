@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
+public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.SMul
@@ -44,7 +46,8 @@ is the single-neck model of the same deformation.
 * It is smooth on `ℂ × M`, jointly with the parameters `a` and `L`
   (`TauCeti.Floer.contMDiff_cappedPerturbation`), and so are its components in the real
   coordinates of `ℂ` (`TauCeti.Floer.contMDiff_cappedPerturbation_apply`,
-  `TauCeti.Floer.contDiff_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
+  `TauCeti.Floer.contDiff_cappedPerturbation_apply`), hence differentiable in the target point
+  (`TauCeti.Floer.differentiableAt_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
   (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and on a vector space so are its
   components (`TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
@@ -54,7 +57,15 @@ is the single-neck model of the same deformation.
   (`TauCeti.Floer.cappedPerturbation_eq_smul_pairOfPantsPerturbation`). Beyond the neck it is the
   datum for `L = 0` translated by `L` along the end
   (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_add_endSign_mul`), so the PSS plane pieces
-  do not depend on the neck length.
+  do not depend on the neck length. In the coordinate of `ℂ`, the datum pulls back along the
+  translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q L` to the datum for `L = 0` at
+  the center of the end and beyond the neck (`TauCeti.Floer.cappedPerturbation_endShift`).
+* On the part `s > 0` of the positive end chart of `q` (`TauCeti.Floer.positiveEndChart`) it is
+  `a P_L(s) H'_q(t) dt` for the end Hamiltonian `H'_q = TauCeti.Floer.positiveEndHamiltonian H q`
+  (`TauCeti.Floer.perturbationPullback_positiveEndChart_cappedPerturbation`). Read in that chart
+  translated by `L + 4`, it is `a` times the perturbation of the negative PSS plane with
+  Hamiltonian `H'_q` in the end coordinates of the plane, `a β(-s - 1) H'_q(t) dt`, wherever
+  `s + L ≥ -2` (`TauCeti.Floer.perturbationPullback_positiveEndChart_add_cappedPerturbation`).
 * For `R = 0` the datum vanishes, which is the unperturbed problem on the three-pole sphere
   (`TauCeti.Floer.cappedComparisonPerturbation_zero`). It is constant, equal to the datum with
   `a = 1` and `L = 0`, for `2/3 ≤ R ≤ 3/2`
@@ -312,6 +323,32 @@ theorem cappedPerturbation_cylindricalEndLift_add_endSign_mul {q : Puncture}
     cappedEndProfile_add_eq_cappedEndProfile_zero hL hz, Complex.add_im, Complex.ofReal_im,
     add_zero]
 
+/-- **The PSS plane pieces in coordinates independent of the neck length.** Let `χ` be the
+translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q L` by `±L` along the end `q`, with
+derivative `λ = e^{-2π (±L)}`. At the center `c_q` of the end, which is its pole for an input end,
+and at every point beyond the neck, where the signed longitudinal coordinate is at least `2`, the
+pullback of the datum with neck length `L ≥ 0` along `χ` is the datum with `L = 0`: its value at
+`χ w` on `λ v` is the value of the datum with `L = 0` at `w` on `v`. -/
+theorem cappedPerturbation_endShift {q : Puncture} (hH : Function.Periodic (H q) 1) (hL : 0 ≤ L)
+    {w : ℂ} (hw : w = q.endCenter ∨ 2 ≤ q.endSign * (q.endCoord w).re) (x : M) (v : ℂ) :
+    cappedPerturbation a L H (q.endShift L w) x
+        ((Real.exp (-(2 * π * (q.endSign * L))) : ℂ) * v) =
+      cappedPerturbation a 0 H w x v := by
+  rcases hw with rfl | hw
+  · -- Both data vanish at the center `0` or `1`, which lies outside every truncation.
+    have h (L' : ℝ) := cappedPerturbation_eq_zero_of_notMem_truncation (a := a) (L := L') (H := H)
+      (notMem_truncation_of_eq_zero_or_eq_one q.endCenter_eq_zero_or_eq_one (L' + 3)) x
+    rw [endShift_endCenter, h, h, zero_apply, zero_apply]
+  · -- Write `w` as the end lift of its end coordinate `z`, and `v` as the image of a tangent
+    -- vector of the cylinder at `z`.
+    have hc : w ≠ q.endCenter :=
+      q.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
+    have hd := q.deriv_cylindricalEndLift_ne_zero (q.endCoord w)
+    have key := cappedPerturbation_cylindricalEndLift_add_endSign_mul (a := a) hH hL hw x
+      (v / deriv q.cylindricalEndLift (q.endCoord w))
+    rwa [cylindricalEndLift_add_endSign_mul, deriv_cylindricalEndLift_add_endSign_mul,
+      q.cylindricalEndLift_endCoord hc, mul_assoc, mul_div_cancel₀ _ hd] at key
+
 /-- **The datum is the pair-of-pants datum up to the necks.** At points where the signed
 longitudinal coordinate of every end is at most `L + 2`, such as the points of the truncation
 `S_{L + 2}`, the datum is `a` times the pair-of-pants perturbation. -/
@@ -330,6 +367,53 @@ theorem cappedPerturbation_eq_zero_of_forall_le {w : ℂ}
   rw [cappedPerturbation_def]
   refine Finset.sum_eq_zero fun q _ ↦ ?_
   rw [cappedEndProfile_of_le_one (h q), mul_zero, zero_mul, zero_smul]
+
+/-! ### The datum in the positive end charts -/
+
+/-- **The datum in the positive end chart.** At a point `(s, t)` with `s > 0` of the positive end
+chart of `q`, the pullback of the capped perturbation evaluated on a tangent vector `v` is
+`v.2 · a P_L(s) H'_q(t)`, for the end profile `P_L = cappedEndProfile L` and the end Hamiltonian
+`H'_q = positiveEndHamiltonian H q`: the datum is `a P_L(s) H'_q(t) dt`. -/
+theorem perturbationPullback_positiveEndChart_cappedPerturbation {q : Puncture}
+    (hH : Periodic (H q) 1) {z : ℝ × ℝ} (hz : 0 < z.1) (v : ℝ × ℝ) (x : M) :
+    perturbationPullback (positiveEndChart q)
+        (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
+      v.2 * (a * cappedEndProfile L z.1 * positiveEndHamiltonian H q z.2 x) := by
+  have hre : q.endSign * (Complex.equivRealProdCLM.symm (q.endSign • z)).re = z.1 := by
+    simp [← mul_assoc]
+  rw [perturbationPullback_positiveEndChart, perturbationPullback_endChart_eq_cylindricalEndLift]
+  dsimp only
+  rw [cappedPerturbation_cylindricalEndLift_of_pos hH (by rw [hre]; exact hz), hre,
+    positiveEndHamiltonian_apply]
+  simp only [Complex.equivRealProdCLM_symm_apply_im, Prod.smul_snd, smul_eq_mul]
+  ring
+
+/-- **The PSS plane pieces in end coordinates.** Beyond the first transition, read in the positive
+end chart of `q` translated by `L + 4`, the capped perturbation with scaling factor `a` and neck
+length `L` is `a` times the perturbation of the negative PSS plane with the end Hamiltonian
+`H'_q = positiveEndHamiltonian H q`, read in the end coordinates of the plane
+(`TauCeti.Floer.PSSPlane.endComponent`): at a point `(s, t)` with `s + L ≥ -2`, both are
+`a β(-s - 1) H'_q(t) dt`. In particular the plane pieces do not depend on the neck length. -/
+theorem perturbationPullback_positiveEndChart_add_cappedPerturbation {q : Puncture}
+    (hH : Periodic (H q) 1) {z : ℝ × ℝ} (hz : -2 ≤ z.1 + L) (v : ℝ × ℝ) (x : M) :
+    perturbationPullback (fun z ↦ positiveEndChart q (z + (L + 4, 0)))
+        (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
+      a * PSSPlane.negative.endComponent (positiveEndHamiltonian H q)
+        (Complex.equivRealProdCLM.symm v) z x := by
+  have h0 : 0 < (z + (L + 4, 0)).1 := by
+    rw [Prod.fst_add]
+    linarith
+  rw [perturbationPullback_comp_add_right,
+    perturbationPullback_positiveEndChart_cappedPerturbation hH h0 v x,
+    PSSPlane.endComponent_eq (periodic_positiveEndHamiltonian hH)]
+  simp only [Prod.fst_add, Prod.snd_add, add_zero, Complex.equivRealProdCLM_symm_apply_im,
+    PSSPlane.endSign_negative]
+  -- The translation by `L + 4` turns the neck profile into the transition `β(-s - 1)` of the plane.
+  have hs : L + 3 - (z.1 + (L + 4)) = -1 * z.1 - 1 := by ring
+  rw [cappedEndProfile_def, smoothTransition.one_of_one_le (by linarith), one_mul, hs]
+  ring
 
 /-! ### Smoothness -/
 
@@ -459,6 +543,16 @@ theorem contDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H 
     exact h
   rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
   exact contMDiff_cappedPerturbation_apply hH hHs' a L v
+
+/-- The components of the capped perturbation are differentiable in the target point, for `C¹`
+Hamiltonians on a vector space. -/
+theorem differentiableAt_cappedPerturbation_apply (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (a L : ℝ) (z : ℝ × ℝ) (x : M) (v : ℂ) :
+    DifferentiableAt ℝ (fun y ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) y v)
+      x :=
+  ((contDiff_cappedPerturbation_apply hH hHs a L v).differentiable one_ne_zero
+    ).differentiableAt.comp (f := fun y : M ↦ (z, y)) x
+      ((differentiableAt_const _).prodMk differentiableAt_id)
 
 end SmoothNormed
 

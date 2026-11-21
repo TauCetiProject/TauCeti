@@ -169,7 +169,7 @@ private theorem mvfderiv_coe_mfderiv_stereoSphere (z : ℝ²) (v : TangentSpace 
 /-- On the derivatives of the parametrization, the area form is the density
 `4 / (1 + x² + y²)²`. -/
 private theorem sphereVolumeForm_mfderiv_stereoSphere (z : ℝ²) :
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 (stereoSphere z)
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val (stereoSphere z)
       (fun i ↦ mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
         ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i)) =
         4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := by
@@ -189,7 +189,7 @@ private theorem injective_mfderiv_stereoSphere (z : ℝ²) :
   -- The area form does not vanish on the images of the basis vectors, so they are independent.
   have hli : LinearIndependent ℝ fun i ↦ L ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i) := by
     by_contra h
-    have h0 := ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
+    have h0 := ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
       (stereoSphere z)).toAlternatingMap.map_linearDependent _ h
     rw [ContinuousAlternatingMap.coe_toAlternatingMap, sphereVolumeForm_mfderiv_stereoSphere]
       at h0
@@ -301,20 +301,20 @@ private theorem integral_stereoDensity :
 /-- The outward-normal area form of the standard orientation integrates to `4π`. -/
 private theorem integralTopForm_sphereVolumeForm_basisFun :
     integralTopForm (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 =
+      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val =
         4 * Real.pi := by
   obtain ⟨l, hl⟩ :=
     (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation.exists_lift
   have hc : IsCompact (_root_.tsupport (α := ℝ² [⋀^Fin 2]→L[ℝ] ℝ)
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1) :=
+      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val) :=
     isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)
   have h := integralTopForm_eq_oriented_parametrization l
     (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
     (IsSmoothForm.integrableTopForm
       (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.isSmoothForm hc
       (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis)
-    MeasurableSet.univ (Set.finite_singleton southPole)
+    MeasurableSet.univ (Set.countable_singleton southPole).isNullSet
     (by rw [Set.image_univ, range_stereoSphere]) injective_stereoSphere.injOn stereoDerivEquiv
     (fun z _ ↦ hasMFDerivAt_stereoSphere z)
     (fun z _ ↦ by
@@ -331,7 +331,7 @@ outward-normal area form `(a, b) ↦ vol(u, a, b)` of the unit sphere integrates
 sphere with its outward-normal orientation. -/
 theorem Orientation.integralTopForm_sphereOrientation_sphereVolumeForm
     (o : Orientation ℝ ℝ³ (Fin 3)) :
-    TauCeti.integralTopForm o.sphereOrientation o.sphereVolumeForm.1 = 4 * Real.pi := by
+    TauCeti.integralTopForm o.sphereOrientation o.sphereVolumeForm.val = 4 * Real.pi := by
   rcases o.eq_or_eq_neg (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation (by simp)
     with rfl | rfl
   · exact TauCeti.integralTopForm_sphereVolumeForm_basisFun

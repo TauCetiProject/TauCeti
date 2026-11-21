@@ -85,7 +85,7 @@ noncomputable def standardOrthogonalGroupEquiv (h2 : IsSMulRegular R (2 : R)) :
     QuadraticMap.orthogonalGroup (Matrix.toQuadraticForm' (1 : Matrix n n R)) ≃*
       Matrix.orthogonalGroup n R where
   toFun g := ⟨LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap,
-    (toMatrix_mem_orthogonalGroup_iff R n h2 _).mpr g.2⟩
+    (toMatrix_mem_orthogonalGroup_iff R n h2 _).mpr g.property⟩
   invFun A := ⟨Matrix.UnitaryGroup.toLinearEquiv A,
     (toMatrix_mem_orthogonalGroup_iff R n h2 _).mp (by
       simp [Matrix.UnitaryGroup.toLinearEquiv])⟩

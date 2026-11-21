@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Grassmannian.Chart.Basic
 
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.RingTheory.FittingIdeal.BaseChange
+import TauCeti.RingTheory.Flat.Generators
 
 /-!
 # The standard charts of the Grassmannian are open and cover it
@@ -103,36 +104,16 @@ theorem iSup_chartLocus_eq_top (N : G(k, P; A)) {ι : Type*} (v : ι → P)
     ⨆ y : Fin k → ι, chartLocus N (v ∘ y) = ⊤ := by
   by_contra h
   obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ h
-  set K := m.ResidueField
-  set Q := P ⧸ N.toSubmodule
-  -- the images `w i` of the `v i` span the fibre `κ(m) ⊗[A] (P ⧸ N)`, of dimension `k`
-  set u : ι → Q := N.toSubmodule.mkQ ∘ v
-  set w : ι → K ⊗[A] Q := TensorProduct.mk A K Q 1 ∘ u
-  have hspan (y : Fin k → ι) : Submodule.span K (Set.range (w ∘ y)) =
-      (Submodule.span A (Set.range (u ∘ y))).baseChange K := by
-    rw [Submodule.baseChange_span, ← Set.range_comp]
-    rfl
-  have hw : Submodule.span K (Set.range w) = ⊤ := by
-    have hu : Submodule.span A (Set.range u) = ⊤ := by
-      rwa [Set.range_comp, ← Submodule.map_span, Submodule.map_mkQ_eq_top]
-    rw [Set.range_comp, ← Submodule.baseChange_span, hu, Submodule.baseChange_top]
-  have hdim : finrank K (K ⊗[A] Q) = k :=
-    (Ideal.finrank_fiber_eq_rankAtStalk m).trans (N.rankAtStalk_eq _)
-  -- `k` of the `w i` form a basis of the fibre
-  obtain ⟨κ, a, -, hκ, hli⟩ := exists_linearIndependent' K w
-  rw [hw] at hκ
-  let b := Basis.mk hli hκ.ge
-  have : Finite κ := Module.Finite.finite_basis b
-  let e : Fin k ≃ κ :=
-    (Finite.equivFinOfCardEq ((finrank_eq_nat_card_basis b).symm.trans hdim)).symm
-  have hy : Submodule.span K (Set.range (w ∘ (a ∘ e))) = ⊤ := by
-    rw [← Function.comp_assoc, Set.range_comp, e.range_eq_univ, Set.image_univ, hκ]
-  -- so the cokernel at the family `v ∘ a ∘ e` vanishes at `m`, against `chartLocus ≤ m`
-  have hle' : chartLocus N (v ∘ (a ∘ e)) ≤ m :=
-    (le_iSup (fun y : Fin k → ι ↦ chartLocus N (v ∘ y)) (a ∘ e)).trans hle
-  rw [chartLocus_def, TauCeti.fittingIdeal_le_iff_lt_finrank, finrank_pos_iff,
-    ← not_subsingleton_iff_nontrivial, ← Submodule.baseChange_eq_top_iff_subsingleton] at hle'
-  exact hle' ((hspan (a ∘ e)).symm.trans hy)
+  have hu : Submodule.span A (Set.range (N.toSubmodule.mkQ ∘ v)) = ⊤ := by
+    rwa [Set.range_comp, ← Submodule.map_span, Submodule.map_mkQ_eq_top]
+  obtain ⟨y, hy⟩ := Module.exists_generators_annihilator_not_le _ hu ⟨m, hm.isPrime⟩
+    (N.rankAtStalk_eq _)
+  apply hy
+  rw [← Module.mem_support_iff_of_finite,
+    Module.mem_support_iff_nontrivial_residueField_tensorProduct]
+  have hle' := (le_iSup (fun y : Fin k → ι ↦ chartLocus N (v ∘ y)) y).trans hle
+  rw [chartLocus_def, TauCeti.fittingIdeal_le_iff_lt_finrank, finrank_pos_iff] at hle'
+  exact hle'
 
 end ChartLocus
 

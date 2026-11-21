@@ -49,8 +49,11 @@ universe v₁ v₂ u₁ u₂
 namespace ExactStructure
 
 variable {C : Type u₁} {D : Type u₂}
+
+section ConflationClass
+
 variable [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-variable [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+variable [Category.{v₂} D] [Preadditive D]
 
 /-- The conflation class transported along an additive equivalence. A target short complex is
 distinguished when applying the inverse equivalence produces a source conflation. -/
@@ -65,7 +68,6 @@ private noncomputable def transportConflationClass (E : ExactStructure C) (e : C
   isClosedUnderIsomorphisms :=
     { of_iso := fun i hS ↦ E.conflation_of_iso (e.inverse.mapShortComplex.mapIso i) hS }
 
-omit [HasZeroObject D] [HasBinaryBiproducts D] in
 /-- A morphism is an inflation in the transported conflation class exactly when its image under
 the inverse equivalence is an inflation. -/
 private theorem transportConflationClass_inflations (E : ExactStructure C) (e : C ≌ D)
@@ -95,7 +97,6 @@ private theorem transportConflationClass_inflations (E : ExactStructure C) (e : 
     exact ((transportConflationClass E e).inflations.arrow_mk_iso_iff
       (((Functor.mapArrowFunctor D D).mapIso e.counitIso).app (Arrow.mk i))).mp hmap
 
-omit [HasZeroObject D] [HasBinaryBiproducts D] in
 /-- A morphism is a deflation in the transported conflation class exactly when its image under
 the inverse equivalence is a deflation. -/
 private theorem transportConflationClass_deflations (E : ExactStructure C) (e : C ≌ D)
@@ -125,7 +126,6 @@ private theorem transportConflationClass_deflations (E : ExactStructure C) (e : 
     exact ((transportConflationClass E e).deflations.arrow_mk_iso_iff
       (((Functor.mapArrowFunctor D D).mapIso e.counitIso).app (Arrow.mk p))).mp hmap
 
-omit [HasZeroObject D] [HasBinaryBiproducts D] in
 /-- A morphism is an inflation in the transported conflation class exactly when its image under
 the inverse equivalence is an inflation. -/
 private theorem transportConflationClass_isInflation_iff (E : ExactStructure C) (e : C ≌ D)
@@ -136,7 +136,6 @@ private theorem transportConflationClass_isInflation_iff (E : ExactStructure C) 
     rw [transportConflationClass_inflations]
   exact h
 
-omit [HasZeroObject D] [HasBinaryBiproducts D] in
 /-- A morphism is a deflation in the transported conflation class exactly when its image under
 the inverse equivalence is a deflation. -/
 private theorem transportConflationClass_isDeflation_iff (E : ExactStructure C) (e : C ≌ D)
@@ -147,8 +146,12 @@ private theorem transportConflationClass_isDeflation_iff (E : ExactStructure C) 
     rw [transportConflationClass_deflations]
   exact h
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-  [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D] in
+end ConflationClass
+
+section MorphismProperty
+
+variable [Category.{v₁} C] [Category.{v₂} D]
+
 private theorem inverseImageHasPushouts (P : MorphismProperty C) [P.HasPushouts]
     (e : C ≌ D) : (P.inverseImage e.inverse).HasPushouts := by
   constructor
@@ -159,8 +162,6 @@ private theorem inverseImageHasPushouts (P : MorphismProperty C) [P.HasPushouts]
     hasColimit_of_iso (spanCompIso e.inverse f g)
   exact CategoryTheory.Adjunction.hasColimit_of_comp_equivalence (span f g) e.inverse
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-  [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D] in
 private theorem inverseImageIsStableUnderCobaseChange (P : MorphismProperty C)
     [P.IsStableUnderCobaseChange] (e : C ≌ D) :
     (P.inverseImage e.inverse).IsStableUnderCobaseChange := by
@@ -169,8 +170,6 @@ private theorem inverseImageIsStableUnderCobaseChange (P : MorphismProperty C)
   exact MorphismProperty.IsStableUnderCobaseChange.of_isPushout (P := P)
     (sq.map e.inverse) hf
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-  [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D] in
 private theorem inverseImageHasPullbacks (P : MorphismProperty C) [P.HasPullbacks]
     (e : C ≌ D) : (P.inverseImage e.inverse).HasPullbacks := by
   constructor
@@ -181,8 +180,6 @@ private theorem inverseImageHasPullbacks (P : MorphismProperty C) [P.HasPullback
     hasLimit_of_iso (cospanCompIso e.inverse f g).symm
   exact CategoryTheory.Adjunction.hasLimit_of_comp_equivalence (cospan f g) e.inverse
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-  [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D] in
 private theorem inverseImageIsStableUnderBaseChange (P : MorphismProperty C)
     [P.IsStableUnderBaseChange] (e : C ≌ D) :
     (P.inverseImage e.inverse).IsStableUnderBaseChange := by
@@ -190,6 +187,11 @@ private theorem inverseImageIsStableUnderBaseChange (P : MorphismProperty C)
   intro X Y Y' S f g f' g' sq hf
   exact MorphismProperty.IsStableUnderBaseChange.of_isPullback (P := P)
     (sq.map e.inverse) hf
+
+end MorphismProperty
+
+variable [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+variable [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
 
 /-- Transport an exact structure along an additive equivalence. The distinguished short
 complexes in the target are those whose images under the inverse equivalence are distinguished

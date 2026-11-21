@@ -42,6 +42,8 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
+* `LinearMap.surjective_coprod_iff`, `LinearMap.surjective_coprod_neg_iff`: `f.coprod g` and
+  `f.coprod (-g)` are surjective if and only if `range f ⊔ range g = ⊤`.
 * `LinearMap.coprod_neg_comp_prodComm`, `LinearMap.map_prodComm_ker_coprod_neg`,
   `LinearMap.surjective_coprod_neg_comm`: the exchange of factors negates `(ξ, η) ↦ α ξ - β η`,
   identifies the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β` with that of `β`
@@ -52,10 +54,21 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
 * `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
   coercion of `f.prodMap g`.
+* `LinearMap.prodMap_comp_append`: `f.prodMap g` sends an appended family of vectors of the two
+  factors to the appended family of their images.
+* `LinearMap.prodMap_comp_inl`, `LinearMap.snd_comp_prodMap`: the commuting squares of the split
+  rows `0 → M₁ → M₁ × M₂ → M₂ → 0` and `0 → M₃ → M₃ × M₄ → M₄ → 0` with vertical maps `f`,
+  `f.prodMap g` and `g`.
 * `LinearMap.surjective_coprod_of_comp_left`, `LinearMap.surjective_coprod_of_comp_right`,
   `LinearMap.surjective_coprod_neg_of_comp_right`: surjectivity of `f.coprod g` survives
   removing a precomposition from either map. In particular transversality passes from `α ∘ h`
   and `β`, or from `α` and `β ∘ h`, to `α` and `β`.
+* `LinearMap.injective_domRestrict_of_injective_prod`,
+  `LinearMap.bijective_domRestrict_of_bijective_prod`: when the augmented map `f.prod g` is
+  injective or bijective, `g` is injective or bijective on the kernel of `f`.
+  Consequently the kernel of `f` is finite when the target of `g` is Noetherian
+  (`LinearMap.finite_ker_of_injective_prod`), and the cokernel of `f` is zero
+  (`LinearMap.subsingleton_quotient_range_of_surjective_prod`).
 * `LinearMap.surjective_coprod_neg_assoc_outer` and its converse
   `LinearMap.surjective_coprod_neg_assoc_symm_outer`: transversality of one bracketing of an
   iterated fibre product gives transversality of the outer fibre product of the other; the inner
@@ -225,12 +238,39 @@ theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃)
     f.coprod g ∘ₗ (LinearEquiv.prodComm R M₂ M₁).toLinearMap = g.coprod f := by
   ext <;> simp
 
+/-- The coproduct `(x, y) ↦ f x + g y` of two linear maps is surjective if and only if their ranges
+together span the codomain. -/
+theorem surjective_coprod_iff (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
+    Function.Surjective (f.coprod g) ↔ range f ⊔ range g = ⊤ := by
+  rw [← range_eq_top, range_coprod]
+
 variable {M₄ : Type*} [AddCommMonoid M₄] [Module R M₄]
 
 /-- A product of injective linear maps is injective, stated for the coercion of `f.prodMap g`. -/
 theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Injective f)
     (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
   hf.prodMap hg
+
+/-- The product map `f × g` sends an appended family of vectors of the two factors to the appended
+family of their images. -/
+theorem prodMap_comp_append (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) {m n : ℕ} (p : Fin m → M₁)
+    (q : Fin n → M₂) :
+    ⇑(f.prodMap g) ∘ Fin.append (inl R M₁ M₂ ∘ p) (inr R M₁ M₂ ∘ q) =
+      Fin.append (inl R M₃ M₄ ∘ f ∘ p) (inr R M₃ M₄ ∘ g ∘ q) := by
+  funext i
+  induction i using Fin.addCases <;> simp
+
+/-- The left square of the split rows `0 → M₁ → M₁ × M₂ → M₂ → 0` and
+`0 → M₃ → M₃ × M₄ → M₄ → 0` with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
+theorem prodMap_comp_inl (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) :
+    f.prodMap g ∘ₗ inl R M₁ M₂ = inl R M₃ M₄ ∘ₗ f := by
+  ext <;> simp
+
+/-- The right square of the split rows `0 → M₁ → M₁ × M₂ → M₂ → 0` and
+`0 → M₃ → M₃ × M₄ → M₄ → 0` with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
+theorem snd_comp_prodMap (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) :
+    snd R M₃ M₄ ∘ₗ f.prodMap g = g ∘ₗ snd R M₁ M₂ := by
+  ext <;> simp
 
 /-- If `(x, y) ↦ f (h x) + g y` is surjective, then so is `(x, y) ↦ f x + g y`. -/
 theorem surjective_coprod_of_comp_left {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₃} {h : M₄ →ₗ[R] M₁}
@@ -244,7 +284,41 @@ theorem surjective_coprod_of_comp_right {f : M₁ →ₗ[R] M₃} {g : M₂ →�
   obtain ⟨x, hx⟩ := H y
   exact ⟨LinearMap.id.prodMap h x, by simpa using hx⟩
 
+/-- If `f.prod g` is injective, `g` is injective on the kernel of `f`. -/
+theorem injective_domRestrict_of_injective_prod {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Injective (f.prod g)) : Function.Injective (g.domRestrict (ker f)) :=
+  fun x y hxy ↦ Subtype.ext (h (Prod.ext ((mem_ker.mp x.property).trans
+      (mem_ker.mp y.property).symm) hxy))
+
+/-- If `f.prod g` is bijective, `g` maps the kernel of `f` bijectively onto its target. -/
+theorem bijective_domRestrict_of_bijective_prod {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Bijective (f.prod g)) : Function.Bijective (g.domRestrict (ker f)) :=
+  ⟨injective_domRestrict_of_injective_prod h.1, fun v ↦
+    let ⟨m, hm⟩ := h.2 (0, v)
+    ⟨⟨m, congrArg Prod.fst hm⟩, congrArg Prod.snd hm⟩⟩
+
+/-- If `f.prod g` is injective and the target of `g` is Noetherian, the kernel of `f` is finite. -/
+theorem finite_ker_of_injective_prod [IsNoetherian R M₃] {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Injective (f.prod g)) : Module.Finite R (ker f) :=
+  Module.Finite.of_injective _ (injective_domRestrict_of_injective_prod h)
+
 end Semiring
+
+/-- The difference coproduct `(x, y) ↦ f x - g y` of two linear maps is surjective if and only if
+their ranges together span the codomain. -/
+theorem surjective_coprod_neg_iff {R M₁ M₂ M₃ : Type*} [Ring R]
+    [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+    [AddCommGroup M₃] [Module R M₃] (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
+    Function.Surjective (f.coprod (-g)) ↔ range f ⊔ range g = ⊤ := by
+  rw [surjective_coprod_iff, range_neg]
+
+/-- If `f.prod g` is onto, the cokernel of `f` is zero. -/
+theorem subsingleton_quotient_range_of_surjective_prod {R M₁ M₂ M₃ : Type*} [Ring R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃]
+    [Module R M₃] {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃} (h : Function.Surjective (f.prod g)) :
+    Subsingleton (M₂ ⧸ range f) :=
+  -- `f` is `fst ∘ₗ f.prod g` by definition (`LinearMap.fst_prod` is proved by `rfl`).
+  Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr (Prod.fst_surjective.comp h))
 
 section Ring
 
@@ -292,10 +366,12 @@ def fiberProductAssoc :
       ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))) where
   -- Without `map_coe_ker`, `simp` unfolds each membership hypothesis instead of reducing it to
   -- `True` through the membership of an inner component.
-  toFun r := ⟨(r.1.1.1.1, ⟨(r.1.1.1.2, r.1.2), by simpa [-map_coe_ker] using mem_ker.1 r.2⟩),
-    by simpa [-map_coe_ker] using mem_ker.1 r.1.1.2⟩
-  invFun r := ⟨(⟨(r.1.1, r.1.2.1.1), by simpa [-map_coe_ker] using mem_ker.1 r.2⟩, r.1.2.1.2),
-    by simpa [-map_coe_ker] using mem_ker.1 r.1.2.2⟩
+  toFun r := ⟨(r.val.1.val.1, ⟨(r.val.1.val.2, r.val.2),
+      by simpa [-map_coe_ker] using mem_ker.1 r.property⟩),
+    by simpa [-map_coe_ker] using mem_ker.1 r.val.1.property⟩
+  invFun r := ⟨(⟨(r.val.1, r.val.2.val.1),
+      by simpa [-map_coe_ker] using mem_ker.1 r.property⟩, r.val.2.val.2),
+    by simpa [-map_coe_ker] using mem_ker.1 r.val.2.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -307,28 +383,28 @@ variable {α β γ δ}
 @[simp]
 theorem fiberProductAssoc_apply_fst
     (r : ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
-    (fiberProductAssoc α β γ δ r).1.1 = r.1.1.1.1 :=
+    (fiberProductAssoc α β γ δ r).val.1 = r.val.1.val.1 :=
  (rfl)
 
 /-- The `Y ×_S Z`-component of the reassociation of `((ξ, η), ζ)` is `(η, ζ)`. -/
 @[simp]
 theorem fiberProductAssoc_apply_snd
     (r : ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
-    ((fiberProductAssoc α β γ δ r).1.2 : Y × Z) = (r.1.1.1.2, r.1.2) :=
+    ((fiberProductAssoc α β γ δ r).val.2 : Y × Z) = (r.val.1.val.2, r.val.2) :=
  (rfl)
 
 /-- The `X ×_T Y`-component of the inverse reassociation of `(ξ, (η, ζ))` is `(ξ, η)`. -/
 @[simp]
 theorem fiberProductAssoc_symm_apply_fst
     (r : ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
-    (((fiberProductAssoc α β γ δ).symm r).1.1 : X × Y) = (r.1.1, r.1.2.1.1) :=
+    (((fiberProductAssoc α β γ δ).symm r).val.1 : X × Y) = (r.val.1, r.val.2.val.1) :=
  (rfl)
 
 /-- The `Z`-component of the inverse reassociation of `(ξ, (η, ζ))` is `ζ`. -/
 @[simp]
 theorem fiberProductAssoc_symm_apply_snd
     (r : ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
-    ((fiberProductAssoc α β γ δ).symm r).1.2 = r.1.2.1.2 :=
+    ((fiberProductAssoc α β γ δ).symm r).val.2 = r.val.2.val.2 :=
  (rfl)
 
 /-- The reassociation is the restriction of `(X × Y) × Z ≃ X × (Y × Z)`: viewed in `X × (Y × Z)`,
@@ -442,8 +518,8 @@ theorem mem_range_fiberProductInclusionLeft {p : Submodule R X} {v : ker (α.cop
     v ∈ range (fiberProductInclusionLeft α β p) ↔ (v : X × Y).1 ∈ p := by
   refine ⟨fun ⟨z, hz⟩ ↦ ?_, fun h ↦ ⟨⟨(⟨_, h⟩, (v : X × Y).2), ?_⟩, Subtype.ext (by simp)⟩⟩
   · rw [← hz, coe_fiberProductInclusionLeft_apply]
-    exact (z : p × Y).1.2
-  · have hv := mem_ker.1 v.2
+    exact (z : p × Y).1.property
+  · have hv := mem_ker.1 v.property
     rw [coprod_apply] at hv
     simpa using hv
 
@@ -453,8 +529,8 @@ theorem mem_range_fiberProductInclusionRight {p : Submodule R Y} {v : ker (α.co
     v ∈ range (fiberProductInclusionRight α β p) ↔ (v : X × Y).2 ∈ p := by
   refine ⟨fun ⟨z, hz⟩ ↦ ?_, fun h ↦ ⟨⟨((v : X × Y).1, ⟨_, h⟩), ?_⟩, Subtype.ext (by simp)⟩⟩
   · rw [← hz, coe_fiberProductInclusionRight_apply]
-    exact (z : X × p).2.2
-  · have hv := mem_ker.1 v.2
+    exact (z : X × p).2.property
+  · have hv := mem_ker.1 v.property
     rw [coprod_apply] at hv
     simpa using hv
 

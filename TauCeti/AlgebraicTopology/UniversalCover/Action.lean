@@ -158,6 +158,16 @@ theorem proj_surjective [PathConnectedSpace X] :
     Function.Surjective (proj : UniversalCover x₀ → X) := fun x ↦
   ⟨mk x (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x₀ x)), rfl⟩
 
+/-- The projection of the universal cover of a preconnected, locally path-connected space is
+surjective. -/
+theorem proj_surjective_of_preconnectedSpace [LocallyPathConnectedSpace X]
+    [PreconnectedSpace X] (x₀ : X) :
+    Function.Surjective (proj : UniversalCover x₀ → X) :=
+  have : Nonempty X := ⟨x₀⟩
+  have : ConnectedSpace X := ⟨inferInstance⟩
+  have := pathConnectedSpace_iff_connectedSpace.mpr ‹ConnectedSpace X›
+  proj_surjective
+
 /-- The endpoint projection is a quotient covering map for the fundamental-group action. -/
 theorem isQuotientCoveringMap [LocallyPathConnectedSpace X] [PathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] :
