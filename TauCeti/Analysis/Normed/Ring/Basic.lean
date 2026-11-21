@@ -52,6 +52,36 @@ theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c :
   rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
   exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
 
+/-- Norm bound for the difference of two products:
+`‖a * b - c * d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖`. -/
+theorem norm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b c d : R) :
+    ‖a * b - c * d‖ ≤ ‖a - c‖ * ‖b‖ + ‖c‖ * ‖b - d‖ := by
+  refine (norm_mul_sub_le_right b a c (c * d)).trans (add_le_add le_rfl ?_)
+  rw [← mul_sub]
+  exact norm_mul_le _ _
+
+/-- Idempotency defect bound for a perturbation `y` of `x`:
+`‖y * y - y‖ ≤ ‖x * x - x‖ + (‖y‖ + ‖x‖ + 1) * ‖y - x‖`. -/
+theorem norm_mul_self_sub_le_of_norm_sub {R : Type*} [NonUnitalSeminormedRing R] (x y : R) :
+    ‖y * y - y‖ ≤ ‖x * x - x‖ + (‖y‖ + ‖x‖ + 1) * ‖y - x‖ := by
+  have hsq : ‖y * y - x * x‖ ≤ (‖y‖ + ‖x‖) * ‖y - x‖ := by
+    refine (norm_mul_sub_mul_le y y x x).trans_eq ?_
+    rw [mul_comm ‖y - x‖ ‖y‖, add_mul]
+  rw [← sub_add_sub_cancel (y * y) (x * x) y, ← sub_add_sub_cancel (x * x) x y]
+  refine (norm_add_le _ _).trans
+    ((add_le_add hsq (norm_add_le (x * x - x) (x - y))).trans_eq ?_)
+  rw [norm_sub_rev x y]; ring
+
+/-- Idempotency defect bound with norm bounds `‖x‖ ≤ M` and `‖y - x‖ ≤ μ`:
+`‖y * y - y‖ ≤ ‖x * x - x‖ + (2 * M + μ + 1) * μ`. -/
+theorem norm_mul_self_sub_le_of_le {R : Type*} [NonUnitalSeminormedRing R] {x y : R} {M μ : ℝ}
+    (hx : ‖x‖ ≤ M) (hyx : ‖y - x‖ ≤ μ) :
+    ‖y * y - y‖ ≤ ‖x * x - x‖ + (2 * M + μ + 1) * μ := by
+  have hy : ‖y‖ ≤ M + μ := (norm_le_norm_add_norm_sub' y x).trans (add_le_add hx hyx)
+  refine (norm_mul_self_sub_le_of_norm_sub x y).trans (add_le_add le_rfl ?_)
+  exact mul_le_mul (by linarith) hyx (norm_nonneg _)
+    (by linarith [norm_nonneg x, norm_nonneg (y - x)])
+
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
 theorem norm_pow_succ_mul_pow_lt_one {K : Type*} [SeminormedRing K]
@@ -299,6 +329,16 @@ theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempote
     (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
   (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
     simpa only [hp.eq] using norm_mul_le p p
+
+/-- Quadratic idempotency-defect bound for an element `h` absorbing an idempotent `p` on both
+sides (`p * h = h` and `h * p = h`): `‖h * h - h‖ ≤ ‖h - p‖ ^ 2 + ‖h - p‖`. -/
+theorem norm_mul_self_sub_le_of_mul_eq {R : Type*} [NonUnitalSeminormedRing R] {p h : R}
+    (hp : IsIdempotentElem p) (hph : p * h = h) (hhp : h * p = h) :
+    ‖h * h - h‖ ≤ ‖h - p‖ ^ 2 + ‖h - p‖ := by
+  have heq : h * h - h = (h - p) * (h - p) + (h - p) := by
+    rw [sub_mul, mul_sub, mul_sub, hph, hhp, hp.eq, sub_add_cancel]
+  rw [heq, sq]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
 
 end IsIdempotentElem
 

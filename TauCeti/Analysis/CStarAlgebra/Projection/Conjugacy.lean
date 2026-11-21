@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Star.Projection.Intertwiner
 public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
@@ -42,18 +43,6 @@ open scoped ContinuousFunctionalCalculus Real
 namespace IsStarProjection
 section
 variable {A : Type*} [CStarAlgebra A] {p q : A}
-private theorem spectrum_one_sub_sub_sq_bounds (hp : IsStarProjection p) (hq : IsStarProjection q)
-    (h : ‖p - q‖ < 1) {x : ℝ} (hx : x ∈ spectrum ℝ (1 - (p - q) ^ 2)) :
-    0 < x ∧ x ≤ 1 ∧ 1 - x ≤ ‖p - q‖ ^ 2 := by
-  rcases subsingleton_or_nontrivial A with _ | _; · exact (hx (isUnit_of_subsingleton _)).elim
-  have hd : IsSelfAdjoint (p - q) := hp.isSelfAdjoint.sub hq.isSelfAdjoint
-  rw [← show cfc (fun t : ℝ ↦ 1 - t ^ 2) (p - q) = 1 - (p - q) ^ 2 by
-      rw [cfc_sub _ _ (p - q), cfc_const_one ℝ _ hd, cfc_pow _ 2 (p - q), cfc_id' ℝ _ hd],
-    cfc_map_spectrum (fun t : ℝ ↦ 1 - t ^ 2) (p - q) hd (by fun_prop)] at hx
-  rcases hx with ⟨t, ht, rfl⟩
-  have htsq : t ^ 2 ≤ ‖p - q‖ ^ 2 := (sq_abs t).symm ▸ pow_le_pow_left₀ (abs_nonneg t)
-    (by simpa [Real.norm_eq_abs] using spectrum.norm_le_norm_of_mem ht) 2
-  exact ⟨by nlinarith [norm_nonneg (p - q)], by nlinarith [sq_nonneg t], by linarith⟩
 /-- **Kato–Sz.-Nagy conjugating unitary** for star projections `p, q` with `‖p - q‖ < 1`, defined
 as the polar unitary of `projectionIntertwiner p q`. -/
 noncomputable def projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarProjection q)
@@ -71,9 +60,10 @@ theorem coe_projectionConjugacyUnitary (hp : IsStarProjection p) (hq : IsStarPro
 @[simp] theorem projectionConjugacyUnitary_self (hp : IsStarProjection p) (h : ‖p - p‖ < 1) :
     hp.projectionConjugacyUnitary hp h = 1 := by
   let _ := CStarAlgebra.spectralOrder A; let _ := CStarAlgebra.spectralOrderedRing A
-  rw [projectionConjugacyUnitary, show (hp.isIdempotentElem.isUnit_projectionIntertwiner
-      hp.isIdempotentElem h).unit = 1 from Units.ext <| by
-    simp [hp.isIdempotentElem.projectionIntertwiner_self], Units.polarUnitary_one]
+  have hunit :
+      (hp.isIdempotentElem.isUnit_projectionIntertwiner hp.isIdempotentElem h).unit = 1 :=
+    Units.ext <| by simp [hp.isIdempotentElem.projectionIntertwiner_self]
+  rw [projectionConjugacyUnitary, hunit, Units.polarUnitary_one]
 /-- Swapping `p` and `q` takes `IsStarProjection.projectionConjugacyUnitary` to its adjoint. -/
 @[simp] theorem star_projectionConjugacyUnitary (hp : IsStarProjection p)
     (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
@@ -129,8 +119,8 @@ theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
     ‖(hp.projectionConjugacyUnitary hq h : A) - 1‖ ≤ √2 * ‖p - q‖ := by
   set u := hp.projectionConjugacyUnitary hq h; set z := projectionIntertwiner p q
   set a := 1 - (p - q) ^ 2; set w := cfc (fun x : ℝ ↦ (√x)⁻¹) a
-  have ha : IsSelfAdjoint a :=
-    (IsSelfAdjoint.one A).sub ((hp.isSelfAdjoint.sub hq.isSelfAdjoint).pow 2)
+  have hd : IsSelfAdjoint (p - q) := hp.isSelfAdjoint.sub hq.isSelfAdjoint
+  have ha : IsSelfAdjoint a := (IsSelfAdjoint.one A).sub (hd.pow 2)
   have hw_sa : IsSelfAdjoint w := cfc_predicate _ a
   have hstar_z_comm_w : star z * w = w * star z := by
     simpa only [star_mul, hw_sa.star_eq, z, a, w] using congrArg star
@@ -140,23 +130,24 @@ theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
     conv_lhs => lhs; rw [← cfc_id' ℝ a ha]
     rw [← cfc_mul (fun x : ℝ ↦ x) (fun x : ℝ ↦ (√x)⁻¹) a (continuousOn_id' _)
       (Real.continuous_sqrt.continuousOn.inv₀
-        fun _ hx ↦ (Real.sqrt_pos.mpr (hp.spectrum_one_sub_sub_sq_bounds hq h hx).1).ne')]
-    refine cfc_congr fun x hx ↦ ?_; have hx_pos := (hp.spectrum_one_sub_sub_sq_bounds hq h hx).1
+        fun _ hx ↦ (Real.sqrt_pos.mpr (hd.pos_of_mem_spectrum_one_sub_sq h hx)).ne')]
+    refine cfc_congr fun x hx ↦ ?_; have hx_pos := hd.pos_of_mem_spectrum_one_sub_sq h hx
     field_simp [(Real.sqrt_pos.mpr hx_pos).ne']; exact (Real.sq_sqrt hx_pos.le).symm
   have hu_add : (u : A) + star (u : A) = cfc (fun x : ℝ ↦ 2 * √x) a := by
     rw [hp.coe_projectionConjugacyUnitary hq h, star_mul, hw_sa.star_eq, ← hstar_z_comm_w,
       ← add_mul, hp.projectionIntertwiner_add_star hq, ← Nat.cast_smul_eq_nsmul ℝ 2 a,
       Nat.cast_ofNat, smul_mul_assoc, haw, ← cfc_smul (2 : ℝ) Real.sqrt a]; simp_rw [smul_eq_mul]
+  have hsq_sub : star ((u : A) - 1) * ((u : A) - 1) = (2 : A) - ((u : A) + star (u : A)) := by
+    simp only [star_sub, star_one, sub_mul, mul_sub, mul_one, one_mul,
+      Unitary.star_mul_self_of_mem u.property, ← one_add_one_eq_two]; abel
   have hstar_sub : star ((u : A) - 1) * ((u : A) - 1) = cfc (fun x : ℝ ↦ 2 * (1 - √x)) a := by
-    rw [show star ((u : A) - 1) * ((u : A) - 1) = (2 : A) - ((u : A) + star (u : A)) by
-        simp only [star_sub, star_one, sub_mul, mul_sub, mul_one, one_mul,
-          Unitary.star_mul_self_of_mem u.property, ← one_add_one_eq_two]; abel,
-      ← map_ofNat (algebraMap ℝ A) 2, ← cfc_const (2 : ℝ) a ha, hu_add, ← cfc_sub _ _ a]
+    rw [hsq_sub, ← map_ofNat (algebraMap ℝ A) 2, ← cfc_const (2 : ℝ) a ha, hu_add, ← cfc_sub _ _ a]
     exact cfc_congr fun _ _ ↦ by ring
   refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp ?_
   rw [sq, ← CStarRing.norm_star_mul_self, hstar_sub, mul_pow, Real.sq_sqrt (by positivity)]
   refine norm_cfc_le (by positivity) fun x hx ↦ ?_
-  obtain ⟨hx_pos, hx_le_one, h1x⟩ := hp.spectrum_one_sub_sub_sq_bounds hq h hx
+  have hx_pos := hd.pos_of_mem_spectrum_one_sub_sq h hx
+  obtain ⟨hx_ge, hx_le_one⟩ := hd.spectrum_one_sub_sq_subset_Icc hx
   rw [Real.norm_of_nonneg (mul_nonneg (by positivity)
     (sub_nonneg.mpr (Real.sqrt_le_one.mpr hx_le_one)))]
   nlinarith [Real.mul_self_sqrt hx_pos.le, Real.sqrt_nonneg x]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
 /-!
 # Norm perturbation and unitization properties of polar unitaries in C⋆-algebras
@@ -38,29 +39,19 @@ variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 theorem norm_polarUnitary_sub_one_le_sq_add (a : Aˣ) :
     ‖(a.polarUnitary : A) - 1‖ ≤ ‖(a : A) - 1‖ ^ 2 + 3 * ‖(a : A) - 1‖ := by
   set h : A := star (a : A) * a; have hh0 : 0 ≤ h := star_mul_self_nonneg (a : A)
+  have hh_eq : h - 1 = star ((a : A) - 1) * ((a : A) - 1) + star ((a : A) - 1) + ((a : A) - 1) := by
+    dsimp [h]; simp only [star_sub, star_one, sub_mul, mul_sub, one_mul, mul_one]; abel
   have hh_sub : ‖h - 1‖ ≤ ‖(a : A) - 1‖ ^ 2 + 2 * ‖(a : A) - 1‖ := by
-    rw [show h - 1 = star ((a : A) - 1) * ((a : A) - 1) + star ((a : A) - 1) + ((a : A) - 1) by
-      dsimp [h]; simp only [star_sub, star_one, sub_mul, mul_sub, one_mul, mul_one]; abel]
+    rw [hh_eq]
     exact norm_add₃_le.trans (by rw [CStarRing.norm_star_mul_self, norm_star, sq]; linarith)
-  have hs_sub : ‖CFC.sqrt h - 1‖ ≤ ‖h - 1‖ := by
-    rw [show CFC.sqrt h - 1 = cfc (fun t : ℝ ↦ √t - 1) h by
-      rw [cfc_sub Real.sqrt (fun _ ↦ 1) h, CFC.sqrt_eq_real_sqrt _ hh0, cfcₙ_eq_cfc,
-        cfc_const_one ℝ h hh0.isSelfAdjoint]]
-    refine norm_cfc_le (norm_nonneg _) fun x hx ↦ ?_
-    have habs : |x - 1| ≤ ‖h - 1‖ := by
-      simpa [Real.norm_eq_abs, cfc_sub (fun t : ℝ ↦ t) (fun _ : ℝ ↦ (1 : ℝ)) h,
-        cfc_id' ℝ h hh0.isSelfAdjoint, cfc_const_one ℝ h hh0.isSelfAdjoint] using
-        norm_apply_le_norm_cfc (fun t : ℝ ↦ t - 1) h hx (by fun_prop) hh0.isSelfAdjoint
-    have hprod : |x - 1| = |√x - 1| * (√x + 1) := by
-      rw [show x - 1 = (√x - 1) * (√x + 1) by
-          nlinarith [Real.mul_self_sqrt (spectrum_nonneg_of_nonneg hh0 hx)],
-        abs_mul, abs_of_pos (show 0 < √x + 1 by positivity)]
-    rw [Real.norm_eq_abs]; nlinarith [abs_nonneg (√x - 1), Real.sqrt_nonneg x]
-  refine (show ‖(a.polarUnitary : A) - 1‖ ≤ ‖(a : A) - 1‖ + ‖CFC.sqrt h - 1‖ by
-    rw [show (a.polarUnitary : A) - 1 = ((a : A) - 1) - (a.polarUnitary : A) * (CFC.sqrt h - 1) by
-        rw [mul_sub, mul_one, a.polarUnitary_mul_sqrt_star_mul]; abel,
-      ← CStarRing.norm_coe_unitary_mul a.polarUnitary (CFC.sqrt h - 1)]; exact norm_sub_le _ _
-    ).trans (by linarith)
+  have hs_sub : ‖CFC.sqrt h - 1‖ ≤ ‖h - 1‖ := CFC.norm_sqrt_sub_one_le hh0
+  have hu_eq :
+      (a.polarUnitary : A) - 1 = ((a : A) - 1) - (a.polarUnitary : A) * (CFC.sqrt h - 1) := by
+    rw [mul_sub, mul_one, a.polarUnitary_mul_sqrt_star_mul]; abel
+  have hu_le : ‖(a.polarUnitary : A) - 1‖ ≤ ‖(a : A) - 1‖ + ‖CFC.sqrt h - 1‖ := by
+    rw [hu_eq, ← CStarRing.norm_coe_unitary_mul a.polarUnitary (CFC.sqrt h - 1)]
+    exact norm_sub_le _ _
+  linarith
 /-- Distance bound `‖(a.polarUnitary : A) - 1‖ ≤ 4 * ‖(a : A) - 1‖` for `‖(a : A) - 1‖ ≤ 1`. -/
 theorem norm_polarUnitary_sub_one_le {a : Aˣ} (ha : ‖(a : A) - 1‖ ≤ 1) :
     ‖(a.polarUnitary : A) - 1‖ ≤ 4 * ‖(a : A) - 1‖ := by

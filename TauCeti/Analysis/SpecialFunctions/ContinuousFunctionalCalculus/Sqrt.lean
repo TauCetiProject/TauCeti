@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 
 /-!
@@ -45,6 +46,7 @@ bounds on `CFC.conjSqrt c⁻¹ʳ a` are equivalent to `a ≤ r • c` and `r •
   `CFC.le_conjSqrt_ringInverse_iff`: moving `CFC.conjSqrt c` or `CFC.conjSqrt c⁻¹ʳ` across `≤`.
 * `CFC.conjSqrt_ringInverse_le_algebraMap_iff`, `CFC.algebraMap_le_conjSqrt_ringInverse_iff`:
   scalar bounds on `CFC.conjSqrt c⁻¹ʳ a` are equivalent to `a ≤ r • c` and `r • c ≤ a`.
+* `CFC.norm_sqrt_sub_one_le`: `‖CFC.sqrt h - 1‖ ≤ ‖h - 1‖` for `0 ≤ h`.
 -/
 
 public section
@@ -168,5 +170,36 @@ theorem algebraMap_le_conjSqrt_ringInverse_iff {c a : A} {r : ℝ}
   rw [le_conjSqrt_ringInverse_iff hc, conjSqrt_algebraMap hc.nonneg]
 
 end ConjSqrt
+
+section Norm
+
+open scoped ContinuousFunctionalCalculus
+
+/-- For `0 ≤ h`, `CFC.sqrt h - 1` has norm at most `‖h - 1‖`. -/
+theorem norm_sqrt_sub_one_le {A : Type*} [PartialOrder A] [NormedRing A] [StarRing A]
+    [StarOrderedRing A] [NormedAlgebra ℝ A]
+    [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [NonnegSpectrumClass ℝ A]
+    {h : A} (hh : 0 ≤ h := by cfc_tac) :
+    ‖sqrt h - 1‖ ≤ ‖h - 1‖ := by
+  have hsqrt_sub : sqrt h - 1 = cfc (fun t : ℝ ↦ √t - 1) h := by
+    rw [cfc_sub Real.sqrt (fun _ ↦ 1) h, sqrt_eq_real_sqrt _ hh, cfcₙ_eq_cfc,
+      cfc_const_one ℝ h hh.isSelfAdjoint]
+  have hid_sub : cfc (fun t : ℝ ↦ t - 1) h = h - 1 := by
+    rw [cfc_sub (fun t : ℝ ↦ t) (fun _ : ℝ ↦ (1 : ℝ)) h, cfc_id' ℝ h hh.isSelfAdjoint,
+      cfc_const_one ℝ h hh.isSelfAdjoint]
+  rw [hsqrt_sub]
+  refine norm_cfc_le (norm_nonneg _) fun x hx ↦ ?_
+  have habs : |x - 1| ≤ ‖h - 1‖ := by
+    have hle := norm_apply_le_norm_cfc (fun t : ℝ ↦ t - 1) h hx (by fun_prop) hh.isSelfAdjoint
+    rw [hid_sub] at hle
+    simpa only [Real.norm_eq_abs] using hle
+  have hfactor : x - 1 = (√x - 1) * (√x + 1) := by
+    nlinarith [Real.mul_self_sqrt (spectrum_nonneg_of_nonneg hh hx)]
+  have hprod : |x - 1| = |√x - 1| * (√x + 1) := by
+    rw [hfactor, abs_mul, abs_of_pos (a := √x + 1) (by positivity)]
+  rw [Real.norm_eq_abs]
+  nlinarith [abs_nonneg (√x - 1), Real.sqrt_nonneg x]
+
+end Norm
 
 end CFC

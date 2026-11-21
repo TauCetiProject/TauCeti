@@ -145,6 +145,7 @@ theorem IsIdempotentElem.isUnit_projectionIntertwiner {R : Type*} [NormedRing R]
     (h : ‖p - q‖ < 1) : IsUnit (TauCeti.projectionIntertwiner p q) := by
   have hcomm : Commute (TauCeti.projectionIntertwiner p q) (TauCeti.projectionIntertwiner q p) :=
     (hp.projectionIntertwiner_mul_swap hq).trans (hp.projectionIntertwiner_swap_mul_self hq).symm
+  have hsq : ‖(p - q) ^ 2‖ < 1 := by
+    rw [sq]; exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p - q)])
   exact (hcomm.isUnit_mul_iff.mp <| hp.projectionIntertwiner_mul_swap hq ▸
-    isUnit_one_sub_of_norm_lt_one (show ‖(p - q) ^ 2‖ < 1 by
-      rw [sq]; exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p - q)]))).1
+    isUnit_one_sub_of_norm_lt_one hsq).1

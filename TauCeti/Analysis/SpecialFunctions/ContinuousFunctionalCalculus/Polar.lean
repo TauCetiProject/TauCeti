@@ -295,9 +295,10 @@ theorem sqrt_unitary_mul_mul_unitary (v w : unitary A) :
 theorem coe_polarUnitary_eq_mul_cfc_inv_sqrt :
     (a.polarUnitary : A) = (a : A) * cfc (fun x : ℝ ↦ (√x)⁻¹) (star (a : A) * a) := by
   have hx := isStrictlyPositive_star_mul a
-  rw [show cfc (fun t : ℝ ↦ (√t)⁻¹) (star (a : A) * a) = (CFC.sqrt (star (a : A) * a))⁻¹ʳ by
+  have hcfc : cfc (fun t : ℝ ↦ (√t)⁻¹) (star (a : A) * a) = (CFC.sqrt (star (a : A) * a))⁻¹ʳ := by
     rw [CFC.sqrt_eq_real_sqrt _ hx.nonneg, cfcₙ_eq_cfc, cfc_inv _ _ (fun _ ht ↦ (Real.sqrt_pos.mpr
-      ((StarOrderedRing.isStrictlyPositive_iff_spectrum_pos _).mp hx _ ht)).ne') (by fun_prop)]]
+      ((StarOrderedRing.isStrictlyPositive_iff_spectrum_pos _).mp hx _ ht)).ne') (by fun_prop)]
+  rw [hcfc]
   conv_lhs => rw [← mul_one (a.polarUnitary : A), ← mul_inverse_cancel _
     (isStrictlyPositive_sqrt_star_mul a).isUnit, ← mul_assoc, a.polarUnitary_mul_sqrt_star_mul]
 /-- Any unital `⋆`-ring homomorphism commutes with `Units.polarUnitary`. -/

@@ -160,9 +160,8 @@ theorem contMDiff_range_inclusion
     (e.toOpenPartialHomeomorph.left_inv hw)
   rw [rangeTrivialization_symm_apply] at he
   have he' := congrArg Prod.snd he
-  -- Remove the range subtype before rewriting the base coordinate.
-  change p (e w).1 (projectionIntertwiner (p v.proj) (p (e w).1) (φ (e w).2)) = (w.snd : F) at he'
-  rw [e.coe_fst' (e.mem_source.mp hw)] at he'
+  dsimp only [ContinuousLinearMap.coe_rangeRestrict, Set.rangeFactorization_coe] at he'
+  rw [Trivialization.coe_coe, e.coe_fst' (e.mem_source.mp hw)] at he'
   exact he'.symm
 
 section RangeMaps

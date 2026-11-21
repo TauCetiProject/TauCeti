@@ -32,6 +32,9 @@ and over a characteristic-zero field `𝕜`, `z = matrixUnitIntertwiner 𝕜 e f
   `TauCeti.matrixUnitBlockSupport`, `TauCeti.matrixUnitIntertwiner`,
   `TauCeti.IsMatrixUnitSystem.of_partialIsometry`,
   `TauCeti.isUnitalMatrixUnitSystem_piSingle_matrixSingle`,
+  `TauCeti.IsMatrixUnitSystem.nonUnitalStarAlgHom`, `TauCeti.IsUnitalMatrixUnitSystem.starAlgHom`,
+  `TauCeti.IsMatrixUnitSystem.injective_nonUnitalStarAlgHom_iff`,
+  `TauCeti.IsUnitalMatrixUnitSystem.injective_starAlgHom_iff`,
   `TauCeti.IsMatrixUnitSystem.matrixUnitIntertwiner_self`,
   `TauCeti.IsMatrixUnitSystem.mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul`.
 
@@ -155,12 +158,12 @@ theorem matrixUnitSupport_mem [Fintype κ] {T : Type*} [SetLike T R] [AddSubmono
     {e : ∀ r : κ, n r → n r → R} (he : ∀ r i, e r i i ∈ s) :
     matrixUnitSupport e ∈ s := sum_mem fun r _ ↦ matrixUnitBlockSupport_mem (he r)
 /-- Additive monoid homomorphisms preserve `TauCeti.matrixUnitBlockSupport`. -/
-theorem map_matrixUnitBlockSupport [AddCommMonoid S] {F : Type*} [FunLike F R S]
+@[simp] theorem map_matrixUnitBlockSupport [AddCommMonoid S] {F : Type*} [FunLike F R S]
     [AddMonoidHomClass F R S] (φ : F) (e : ∀ r : κ, n r → n r → R) (r : κ) :
     φ (matrixUnitBlockSupport e r) = matrixUnitBlockSupport (fun r i j ↦ φ (e r i j)) r := by
   simp [matrixUnitBlockSupport_def]
 /-- Additive monoid homomorphisms preserve `TauCeti.matrixUnitSupport`. -/
-theorem map_matrixUnitSupport [AddCommMonoid S] [Fintype κ] {F : Type*} [FunLike F R S]
+@[simp] theorem map_matrixUnitSupport [AddCommMonoid S] [Fintype κ] {F : Type*} [FunLike F R S]
     [AddMonoidHomClass F R S] (φ : F) (e : ∀ r : κ, n r → n r → R) :
     φ (matrixUnitSupport e) = matrixUnitSupport (fun r i j ↦ φ (e r i j)) := by
   simp [matrixUnitSupport_def]
@@ -192,29 +195,29 @@ theorem isStarProjection_support [Fintype κ] (he : IsMatrixUnitSystem e) :
   IsStarProjection.sum (fun r _ ↦ he.isStarProjection_blockSupport r)
     (he.pairwise_isStarOrtho_blockSupport.set_pairwise _)
 /-- Right-multiplying `e r i j` by its own block support leaves `e r i j` fixed. -/
-theorem mul_blockSupport (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
+@[simp] theorem mul_blockSupport (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     e r i j * matrixUnitBlockSupport e r = e r i j := by
   classical simp [matrixUnitBlockSupport_def, Finset.mul_sum, he.mul_eq_ite]
 /-- Left-multiplying `e r i j` by its own block support leaves `e r i j` fixed. -/
-theorem blockSupport_mul (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
+@[simp] theorem blockSupport_mul (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     matrixUnitBlockSupport e r * e r i j = e r i j := by
   classical simp [matrixUnitBlockSupport_def, Finset.sum_mul, he.mul_eq_ite]
 /-- Entries from block `r` annihilate block supports from any distinct block `s`. -/
-theorem mul_blockSupport_eq_zero_of_ne (he : IsMatrixUnitSystem e) {r s : κ} (hrs : r ≠ s)
-    (i j : n r) : e r i j * matrixUnitBlockSupport e s = 0 := by
+@[simp] theorem mul_blockSupport_eq_zero_of_ne (he : IsMatrixUnitSystem e) {r s : κ}
+    (hrs : r ≠ s) (i j : n r) : e r i j * matrixUnitBlockSupport e s = 0 := by
   simp [matrixUnitBlockSupport_def, Finset.mul_sum, he.mul_eq_zero_of_block_ne hrs]
 /-- Block supports from block `r` annihilate entries from any distinct block `s`. -/
-theorem blockSupport_mul_eq_zero_of_ne (he : IsMatrixUnitSystem e) {r s : κ} (hrs : r ≠ s)
-    (i j : n s) : matrixUnitBlockSupport e r * e s i j = 0 := by
+@[simp] theorem blockSupport_mul_eq_zero_of_ne (he : IsMatrixUnitSystem e) {r s : κ}
+    (hrs : r ≠ s) (i j : n s) : matrixUnitBlockSupport e r * e s i j = 0 := by
   simp [matrixUnitBlockSupport_def, Finset.sum_mul, he.mul_eq_zero_of_block_ne hrs]
 /-- Right-multiplying `e r i j` by `matrixUnitSupport e` leaves `e r i j` fixed. -/
-theorem mul_support [Fintype κ] (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
+@[simp] theorem mul_support [Fintype κ] (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     e r i j * matrixUnitSupport e = e r i j := by
   rw [matrixUnitSupport_eq_sum_blockSupport, Finset.mul_sum, Finset.sum_eq_single_of_mem r
     (Finset.mem_univ r) fun _ _ h ↦ he.mul_blockSupport_eq_zero_of_ne h.symm i j,
     he.mul_blockSupport]
 /-- Left-multiplying `e r i j` by `matrixUnitSupport e` leaves `e r i j` fixed. -/
-theorem support_mul [Fintype κ] (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
+@[simp] theorem support_mul [Fintype κ] (he : IsMatrixUnitSystem e) (r : κ) (i j : n r) :
     matrixUnitSupport e * e r i j = e r i j := by
   rw [matrixUnitSupport_eq_sum_blockSupport, Finset.sum_mul, Finset.sum_eq_single_of_mem r
     (Finset.mem_univ r) fun _ _ h ↦ he.blockSupport_mul_eq_zero_of_ne h i j, he.blockSupport_mul]
@@ -251,6 +254,230 @@ theorem isUnitalMatrixUnitSystem_piSingle_matrixSingle (R : Type*) [Semiring R] 
       ← AddMonoidHom.single_apply (f := fun r ↦ Matrix (n r) (n r) R), ← map_sum,
       Matrix.sum_single_one]; simp [AddMonoidHom.single_apply]
 
+section HomExtension
+
+/-- Two nonunital `𝕜`-`⋆`-algebra homomorphisms from `∀ r : κ, Matrix (n r) (n r) 𝕜` agreeing on
+all standard matrix units `Pi.single r (Matrix.single i j 1)` are equal. -/
+theorem _root_.NonUnitalStarAlgHom.ext_piSingle_matrixSingle {𝕜 : Type*} [CommSemiring 𝕜]
+    [StarRing 𝕜] [NonUnitalSemiring R] [StarRing R] [Module 𝕜 R] [Finite κ]
+    [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    {φ ψ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₙₐ[𝕜] R}
+    (h : ∀ r (i j : n r),
+      φ (Pi.single r (Matrix.single i j 1)) = ψ (Pi.single r (Matrix.single i j 1))) :
+    φ = ψ := by
+  have : Fintype κ := Fintype.ofFinite κ
+  ext x
+  have hx : x = ∑ r : κ, ∑ i : n r, ∑ j : n r, x r i j • Pi.single r (Matrix.single i j 1) := by
+    funext s a b
+    simp only [Finset.sum_apply, Matrix.sum_apply, Pi.smul_apply, Matrix.smul_apply, smul_eq_mul]
+    rw [Finset.sum_eq_single_of_mem s (Finset.mem_univ s) fun r _ hrs ↦ by
+      simp_rw [Pi.single_eq_of_ne hrs.symm]; simp]
+    simp_rw [Pi.single_eq_same]
+    rw [Finset.sum_eq_single_of_mem a (Finset.mem_univ a) fun i _ hia ↦ by simp [hia],
+      Finset.sum_eq_single_of_mem b (Finset.mem_univ b) fun j _ hjb ↦ by simp [hjb]]
+    simp
+  rw [hx]; simp only [map_sum, map_smul, h]
+
+/-- Two unital `𝕜`-`⋆`-algebra homomorphisms from `∀ r : κ, Matrix (n r) (n r) 𝕜` agreeing on all
+standard matrix units `Pi.single r (Matrix.single i j 1)` are equal. -/
+theorem _root_.StarAlgHom.ext_piSingle_matrixSingle {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜]
+    [Semiring R] [StarRing R] [Algebra 𝕜 R] [Finite κ]
+    [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    {φ ψ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₐ[𝕜] R}
+    (h : ∀ r (i j : n r),
+      φ (Pi.single r (Matrix.single i j 1)) = ψ (Pi.single r (Matrix.single i j 1))) :
+    φ = ψ :=
+  StarAlgHom.ext fun x ↦ DFunLike.congr_fun (NonUnitalStarAlgHom.ext_piSingle_matrixSingle
+    (φ := φ.toNonUnitalStarAlgHom) (ψ := ψ.toNonUnitalStarAlgHom) h) x
+
+section
+variable [Fintype κ]
+
+namespace IsMatrixUnitSystem
+
+/-- Nonunital `𝕜`-`⋆`-algebra homomorphism `∀ r : κ, Matrix (n r) (n r) 𝕜 →⋆ₙₐ[𝕜] R` induced by a
+system of matrix units `e`, sending `Pi.single r (Matrix.single i j 1)` to `e r i j`. -/
+def nonUnitalStarAlgHom [NonUnitalSemiring R] [StarRing R] {e : ∀ r : κ, n r → n r → R}
+    (he : IsMatrixUnitSystem e) (𝕜 : Type*) [CommSemiring 𝕜] [StarRing 𝕜]
+    [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [StarModule 𝕜 R] :
+    (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₙₐ[𝕜] R where
+  toFun x := ∑ r : κ, ∑ i : n r, ∑ j : n r, x r i j • e r i j
+  map_zero' := by simp
+  map_add' x y := by simp [add_smul, Finset.sum_add_distrib]
+  map_smul' c x := by simp [Finset.smul_sum, mul_smul]
+  map_mul' x y := by
+    classical
+    refine Eq.symm <| calc
+      (∑ r : κ, ∑ i : n r, ∑ j : n r, x r i j • e r i j) *
+          (∑ s : κ, ∑ k : n s, ∑ l : n s, y s k l • e s k l)
+        = ∑ r : κ, ∑ i : n r, ∑ j : n r, ∑ s : κ, ∑ k : n s, ∑ l : n s,
+            (x r i j * y s k l) • (e r i j * e s k l) := by
+          simp_rw [Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm]
+      _ = ∑ r : κ, ∑ i : n r, ∑ j : n r, ∑ l : n r,
+            (x r i j * y r j l) • e r i l := by
+          refine Finset.sum_congr rfl fun r _ ↦ Finset.sum_congr rfl fun i _ ↦
+            Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [Finset.sum_eq_single_of_mem r (Finset.mem_univ r) fun s _ hsr ↦ by
+            simp [he.mul_eq_zero_of_block_ne hsr.symm]]
+          rw [Finset.sum_eq_single_of_mem j (Finset.mem_univ j) fun k _ hkj ↦ by
+            simp [he.mul_eq_zero_of_ne r i _ hkj.symm]]
+          simp [he.mul_same]
+      _ = ∑ r : κ, ∑ i : n r, ∑ l : n r, (∑ j : n r, x r i j * y r j l) • e r i l := by
+          refine Finset.sum_congr rfl fun r _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+          rw [Finset.sum_comm]
+          exact Finset.sum_congr rfl fun l _ ↦ by rw [Finset.sum_smul]
+      _ = ∑ r : κ, ∑ i : n r, ∑ l : n r, (x * y) r i l • e r i l := by
+          simp [Pi.mul_apply, Matrix.mul_apply]
+  map_star' x := by
+    simp only [star_sum, star_smul, he.star_eq]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
+    rw [Finset.sum_comm]
+    rfl
+
+/-- Unfold `IsMatrixUnitSystem.nonUnitalStarAlgHom`. -/
+theorem nonUnitalStarAlgHom_apply [NonUnitalSemiring R] [StarRing R] {e : ∀ r : κ, n r → n r → R}
+    (he : IsMatrixUnitSystem e) (𝕜 : Type*) [CommSemiring 𝕜] [StarRing 𝕜]
+    [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [StarModule 𝕜 R]
+    (x : ∀ r : κ, Matrix (n r) (n r) 𝕜) :
+    he.nonUnitalStarAlgHom 𝕜 x = ∑ r : κ, ∑ i : n r, ∑ j : n r, x r i j • e r i j := (rfl)
+
+/-- Evaluating `he.nonUnitalStarAlgHom 𝕜` at a standard matrix unit yields `e r i j`. -/
+@[simp] theorem nonUnitalStarAlgHom_piSingle_matrixSingle [NonUnitalSemiring R] [StarRing R]
+    {e : ∀ r : κ, n r → n r → R} (he : IsMatrixUnitSystem e)
+    (𝕜 : Type*) [CommSemiring 𝕜] [StarRing 𝕜] [Module 𝕜 R] [IsScalarTower 𝕜 R R]
+    [SMulCommClass 𝕜 R R] [StarModule 𝕜 R] [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    (r : κ) (i j : n r) :
+    he.nonUnitalStarAlgHom 𝕜 (Pi.single r (Matrix.single i j 1)) = e r i j := by
+  rw [nonUnitalStarAlgHom_apply, Finset.sum_eq_single_of_mem r (Finset.mem_univ r)
+    fun s _ hsr ↦ by rw [Pi.single_eq_of_ne hsr]; simp]
+  rw [Pi.single_eq_same]
+  rw [Finset.sum_eq_single_of_mem i (Finset.mem_univ i) fun a _ har ↦ by simp [har.symm]]
+  rw [Finset.sum_eq_single_of_mem j (Finset.mem_univ j) fun b _ hbr ↦ by simp [hbr.symm]]
+  simp
+
+/-- A nonunital `𝕜`-`⋆`-algebra homomorphism from `∀ r, Matrix (n r) (n r) 𝕜` equals
+`he.nonUnitalStarAlgHom 𝕜` iff it sends every standard matrix unit to `e r i j`. -/
+theorem eq_nonUnitalStarAlgHom_iff [NonUnitalSemiring R] [StarRing R] {e : ∀ r : κ, n r → n r → R}
+    (he : IsMatrixUnitSystem e) {𝕜 : Type*} [CommSemiring 𝕜]
+    [StarRing 𝕜] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [StarModule 𝕜 R]
+    [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    {φ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₙₐ[𝕜] R} :
+    φ = he.nonUnitalStarAlgHom 𝕜 ↔ ∀ r i j, φ (Pi.single r (Matrix.single i j 1)) = e r i j :=
+  ⟨fun h r i j ↦ h ▸ he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j,
+   fun h ↦ NonUnitalStarAlgHom.ext_piSingle_matrixSingle fun r i j ↦
+     (h r i j).trans (he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j).symm⟩
+
+/-- Over a field, `he.nonUnitalStarAlgHom 𝕜` is injective iff no nonempty block vanishes. -/
+theorem injective_nonUnitalStarAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜]
+    [NonUnitalRing R] [StarRing R] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
+    [StarModule 𝕜 R] {e : ∀ r : κ, n r → n r → R} (he : IsMatrixUnitSystem e) :
+    Function.Injective (he.nonUnitalStarAlgHom 𝕜) ↔ ∀ r (i : n r), e r i i ≠ 0 := by
+  classical
+  refine ⟨fun hinj r i hzero ↦ ?_, fun hne ↦ (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_⟩
+  · have hpi : (Pi.single r (Matrix.single i i (1 : 𝕜)) : ∀ s, Matrix (n s) (n s) 𝕜) = 0 :=
+      hinj ((he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i i).trans
+        (hzero.trans (map_zero _).symm))
+    simpa using congrFun (congrFun (congrFun hpi r) i) i
+  · funext r i j
+    by_contra hne_entry
+    have hmul : e r i i * he.nonUnitalStarAlgHom 𝕜 x * e r j j = x r i j • e r i j := by
+      have hsingle : Pi.single r (Matrix.single i i (1 : 𝕜)) * x *
+          Pi.single r (Matrix.single j j (1 : 𝕜)) =
+          x r i j • Pi.single r (Matrix.single i j (1 : 𝕜)) := by
+        funext s a b
+        by_cases hrs : s = r
+        · subst hrs
+          by_cases hia : a = i <;> by_cases hjb : b = j <;>
+            simp [Matrix.mul_apply, Matrix.single_apply, eq_comm, hia, hjb]
+        · simp [Pi.single_eq_of_ne hrs]
+      have h1 := congrArg (he.nonUnitalStarAlgHom 𝕜) hsingle
+      simpa only [map_mul, map_smul, he.nonUnitalStarAlgHom_piSingle_matrixSingle] using h1
+    have hzero_entry : e r i j = 0 := by
+      rw [← one_smul 𝕜 (e r i j), ← inv_mul_cancel₀ hne_entry, mul_smul, ← hmul, hx, mul_zero,
+        zero_mul, smul_zero]
+    exact hne r i (by rw [← he.mul_same r i j i, hzero_entry, zero_mul])
+
+/-- Over a field, `he.nonUnitalStarAlgHom 𝕜` is injective when every nonempty block has
+`e r i i ≠ 0`. -/
+theorem injective_nonUnitalStarAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜]
+    [NonUnitalRing R] [StarRing R] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
+    [StarModule 𝕜 R] {e : ∀ r : κ, n r → n r → R} (he : IsMatrixUnitSystem e)
+    (hne : ∀ r (i : n r), e r i i ≠ 0) :
+    Function.Injective (he.nonUnitalStarAlgHom 𝕜) :=
+  (he.injective_nonUnitalStarAlgHom_iff).mpr hne
+end IsMatrixUnitSystem
+
+namespace IsUnitalMatrixUnitSystem
+/-- Unital `𝕜`-`⋆`-algebra homomorphism `∀ r : κ, Matrix (n r) (n r) 𝕜 →⋆ₐ[𝕜] R` induced by a
+unital system of matrix units `e`. -/
+def starAlgHom [Semiring R] [StarRing R] [∀ r, DecidableEq (n r)] {e : ∀ r : κ, n r → n r → R}
+    (he : IsUnitalMatrixUnitSystem e) (𝕜 : Type*) [CommSemiring 𝕜] [StarRing 𝕜]
+    [Algebra 𝕜 R] [StarModule 𝕜 R] :
+    (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₐ[𝕜] R :=
+  { he.toIsMatrixUnitSystem.nonUnitalStarAlgHom 𝕜 with
+    map_one' := by
+      simp [IsMatrixUnitSystem.nonUnitalStarAlgHom_apply, Matrix.one_apply, ← matrixUnitSupport_def,
+        he.support_eq_one]
+    commutes' := fun c ↦ by
+      have h1 : (he.toIsMatrixUnitSystem.nonUnitalStarAlgHom 𝕜) 1 = 1 := by
+        simp [IsMatrixUnitSystem.nonUnitalStarAlgHom_apply, Matrix.one_apply,
+          ← matrixUnitSupport_def, he.support_eq_one]
+      rw [Algebra.algebraMap_eq_smul_one]
+      exact ((he.toIsMatrixUnitSystem.nonUnitalStarAlgHom 𝕜).map_smul c 1).trans
+        (by simp [h1, Algebra.algebraMap_eq_smul_one]) }
+
+/-- Coercing `he.starAlgHom 𝕜` to a nonunital `⋆`-algebra homomorphism recovers
+`he.toIsMatrixUnitSystem.nonUnitalStarAlgHom 𝕜`. -/
+@[simp] theorem toNonUnitalStarAlgHom_starAlgHom {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜]
+    [Semiring R] [StarRing R] [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
+    {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e) :
+    (he.starAlgHom 𝕜).toNonUnitalStarAlgHom = he.toIsMatrixUnitSystem.nonUnitalStarAlgHom 𝕜 := by
+  ext x; rfl
+
+/-- Unfold `IsUnitalMatrixUnitSystem.starAlgHom`. -/
+theorem starAlgHom_apply {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜] [Semiring R] [StarRing R]
+    [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
+    {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e)
+    (x : ∀ r : κ, Matrix (n r) (n r) 𝕜) :
+    he.starAlgHom 𝕜 x = ∑ r : κ, ∑ i : n r, ∑ j : n r, x r i j • e r i j := (rfl)
+
+/-- Evaluating `he.starAlgHom 𝕜` at a standard matrix unit yields `e r i j`. -/
+@[simp] theorem starAlgHom_piSingle_matrixSingle {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜]
+    [Semiring R] [StarRing R] [Algebra 𝕜 R] [StarModule 𝕜 R] [DecidableEq κ]
+    [∀ r, DecidableEq (n r)] {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e)
+    (r : κ) (i j : n r) :
+    he.starAlgHom 𝕜 (Pi.single r (Matrix.single i j 1)) = e r i j :=
+  he.toIsMatrixUnitSystem.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i j
+
+/-- A unital `𝕜`-`⋆`-algebra homomorphism from `∀ r, Matrix (n r) (n r) 𝕜` equals
+`he.starAlgHom 𝕜` iff it sends every standard matrix unit to `e r i j`. -/
+theorem eq_starAlgHom_iff {𝕜 : Type*} [CommSemiring 𝕜] [StarRing 𝕜] [Semiring R] [StarRing R]
+    [Algebra 𝕜 R] [StarModule 𝕜 R] [DecidableEq κ] [∀ r, DecidableEq (n r)]
+    {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e)
+    {φ : (∀ r : κ, Matrix (n r) (n r) 𝕜) →⋆ₐ[𝕜] R} :
+    φ = he.starAlgHom 𝕜 ↔ ∀ r i j, φ (Pi.single r (Matrix.single i j 1)) = e r i j :=
+  ⟨fun h r i j ↦ h ▸ he.starAlgHom_piSingle_matrixSingle r i j,
+   fun h ↦ StarAlgHom.ext_piSingle_matrixSingle fun r i j ↦
+     (h r i j).trans (he.starAlgHom_piSingle_matrixSingle r i j).symm⟩
+
+/-- Over a field, `he.starAlgHom 𝕜` is injective iff no nonempty block vanishes. -/
+theorem injective_starAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Ring R] [StarRing R]
+    [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
+    {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e) :
+    Function.Injective (he.starAlgHom 𝕜) ↔ ∀ r (i : n r), e r i i ≠ 0 :=
+  he.toIsMatrixUnitSystem.injective_nonUnitalStarAlgHom_iff
+
+/-- Over a field, `he.starAlgHom 𝕜` is injective when every nonempty block has `e r i i ≠ 0`. -/
+theorem injective_starAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Ring R] [StarRing R]
+    [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
+    {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e)
+    (hne : ∀ r (i : n r), e r i i ≠ 0) :
+    Function.Injective (he.starAlgHom 𝕜) :=
+  (he.injective_starAlgHom_iff).mpr hne
+end IsUnitalMatrixUnitSystem
+end
+end HomExtension
+
 section
 variable (𝕜 : Type*) [Field 𝕜] [Ring R] [Algebra 𝕜 R] [Fintype κ]
 /-- The **canonical multi-block intertwiner**
@@ -278,7 +505,7 @@ theorem matrixUnitIntertwiner_mem {T : Type*} [SetLike T R] [SubringClass T R] [
     (sum_mem fun _ _ ↦ SMulMemClass.smul_mem _ <| sum_mem fun _ _ ↦ sum_mem fun _ _ ↦ mul_mem
       (hf _ _ _) (he _ _ _))
 /-- Unital `𝕜`-algebra homomorphisms preserve `TauCeti.matrixUnitIntertwiner`. -/
-theorem map_matrixUnitIntertwiner [Ring S] [Algebra 𝕜 S] {F : Type*} [FunLike F R S]
+@[simp] theorem map_matrixUnitIntertwiner [Ring S] [Algebra 𝕜 S] {F : Type*} [FunLike F R S]
     [AlgHomClass F 𝕜 R S] (φ : F) (e f : ∀ r : κ, n r → n r → R) :
     φ (matrixUnitIntertwiner 𝕜 e f) =
       matrixUnitIntertwiner 𝕜 (fun r i j ↦ φ (e r i j)) (fun r i j ↦ φ (f r i j)) := by
@@ -329,7 +556,7 @@ theorem mul_matrixUnitIntertwiner_eq_matrixUnitIntertwiner_mul (he : IsMatrixUni
     f r i j * matrixUnitIntertwiner 𝕜 e f = matrixUnitIntertwiner 𝕜 e f * e r i j := by
   rw [hf.mul_matrixUnitIntertwiner 𝕜, he.matrixUnitIntertwiner_mul 𝕜]
 /-- Taking the star of `matrixUnitIntertwiner 𝕜 e f` swaps `e` and `f`. -/
-theorem star_matrixUnitIntertwiner (he : IsMatrixUnitSystem e) (hf : IsMatrixUnitSystem f) :
+@[simp] theorem star_matrixUnitIntertwiner (he : IsMatrixUnitSystem e) (hf : IsMatrixUnitSystem f) :
     star (matrixUnitIntertwiner 𝕜 e f) = matrixUnitIntertwiner 𝕜 f e := by
   simp only [matrixUnitIntertwiner_def, star_add, star_mul, star_sum, star_inv_natCast_smul,
     (he.isStarProjection_support.one_sub).isSelfAdjoint.star_eq,

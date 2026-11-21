@@ -208,10 +208,14 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] {a : A}
 theorem abs_mul_self_sub_le_norm (ha : IsSelfAdjoint a) {t : ℝ} (ht : t ∈ quasispectrum ℝ a) :
     |t * t - t| ≤ ‖a * a - a‖ := by
   have hsq : ContinuousOn (fun x : ℝ ↦ x * x) (quasispectrum ℝ a) := by fun_prop
-  simpa [Real.norm_eq_abs, cfcₙ_sub (fun x : ℝ ↦ x * x) (fun x : ℝ ↦ x) a hsq (mul_zero 0)
-      continuousOn_id rfl, cfcₙ_mul (fun x : ℝ ↦ x) (fun x : ℝ ↦ x) a continuousOn_id rfl
-      continuousOn_id rfl, cfcₙ_id' ℝ a] using
+  have hcfc : cfcₙ (fun x : ℝ ↦ x * x - x) a = a * a - a := by
+    rw [cfcₙ_sub (fun x : ℝ ↦ x * x) (fun x : ℝ ↦ x) a hsq (mul_zero 0) continuousOn_id rfl,
+      cfcₙ_mul (fun x : ℝ ↦ x) (fun x : ℝ ↦ x) a continuousOn_id rfl continuousOn_id rfl,
+      cfcₙ_id' ℝ a]
+  have hle :=
     norm_apply_le_norm_cfcₙ (fun x : ℝ ↦ x * x - x) a ht (hsq.sub continuousOn_id) (by simp) ha
+  rw [hcfc] at hle
+  simpa only [Real.norm_eq_abs] using hle
 /-- When `IsSelfAdjoint a` and `‖a * a - a‖ < 1 / 4`, `1 / 2 ∉ quasispectrum ℝ a`. -/
 theorem half_notMem_quasispectrum_of_norm_mul_self_sub_lt (ha : IsSelfAdjoint a)
     (h : ‖a * a - a‖ < 1 / 4) : (1 / 2 : ℝ) ∉ quasispectrum ℝ a := fun hmem ↦ by
@@ -236,9 +240,10 @@ theorem map_spectralProjectionIoiHalf {𝕜' B F : Type*} [CommRing 𝕜'] [Alge
 theorem norm_spectralProjectionIoiHalf_sub_le (ha : IsSelfAdjoint a) (h : ‖a * a - a‖ < 1 / 4) :
     ‖spectralProjectionIoiHalf a - a‖ ≤ 2 * ‖a * a - a‖ := by
   set f : ℝ → ℝ := (Set.Ioi (1 / 2 : ℝ)).indicator 1
-  rw [spectralProjectionIoiHalf_def, show cfcₙ f a - a = cfcₙ (fun t : ℝ ↦ f t - t) a by
+  have hcfc : cfcₙ f a - a = cfcₙ (fun t : ℝ ↦ f t - t) a := by
     rw [cfcₙ_sub f (fun t : ℝ ↦ t) a (ha.continuousOn_indicator_Ioi_half_quasispectrum h)
-      (by simp [f]) continuousOn_id rfl, cfcₙ_id' ℝ a]]
+      (by simp [f]) continuousOn_id rfl, cfcₙ_id' ℝ a]
+  rw [spectralProjectionIoiHalf_def, hcfc]
   refine norm_cfcₙ_le fun t ht ↦ ?_; rw [Real.norm_eq_abs]; dsimp only [f]
   have hprod : |t| * |1 - t| ≤ ‖a * a - a‖ := by
     simpa [abs_sub_comm, ← abs_mul, mul_sub] using ha.abs_mul_self_sub_le_norm ht
@@ -254,7 +259,7 @@ theorem continuousOn_indicator_Ioi_half_inv_sqrt_quasispectrum (ha : IsSelfAdjoi
     ContinuousOn ((Set.Ioi (1 / 2 : ℝ)).indicator fun t ↦ (√t)⁻¹) (quasispectrum ℝ a) :=
   ContinuousOn.continuousOn_indicator_of_disjoint_frontier
     (Real.continuous_sqrt.continuousOn.inv₀ fun _ ht ↦
-      (Real.sqrt_pos.mpr (by linarith [show (1 / 2 : ℝ) < _ from interior_subset ht])).ne')
+      (Real.sqrt_pos.mpr (by linarith [Set.mem_Ioi.mp (interior_subset ht)])).ne')
     (by simpa [frontier_Ioi] using ha.half_notMem_quasispectrum_of_norm_mul_self_sub_lt h)
 /-- For self-adjoint `a` with `‖a * a - a‖ < 1 / 4`, `w = cfcₙ ((Ioi (1 / 2)).indicator (√·)⁻¹) a`
 satisfies `w * a * w = spectralProjectionIoiHalf a`. -/
@@ -283,12 +288,14 @@ theorem norm_cfcₙ_indicator_Ioi_half_inv_sqrt_sub_spectralProjectionIoiHalf_le
   refine norm_cfcₙ_le fun t ht ↦ ?_; rw [Real.norm_eq_abs]; by_cases hgt : (1 / 2 : ℝ) < t
   · simp only [Set.indicator_of_mem (Set.mem_Ioi.mpr hgt), Pi.one_apply]
     have hsq : √t * √t = t := Real.mul_self_sqrt (by linarith)
+    have hfactor : t * t - t = -(((√t)⁻¹ - 1) * (t * √t * (1 + √t))) := by
+      field_simp [(Real.sqrt_pos.mpr (by linarith : 0 < t)).ne']; nlinarith
+    have hpos_prod : 0 < t * √t * (1 + √t) := by positivity
     have h1 : |t * t - t| = |(√t)⁻¹ - 1| * (t * √t * (1 + √t)) := by
-      rw [show t * t - t = -(((√t)⁻¹ - 1) * (t * √t * (1 + √t))) by
-          field_simp [(Real.sqrt_pos.mpr (by linarith : 0 < t)).ne']; nlinarith,
-        abs_neg, abs_mul, abs_of_pos (show 0 < t * √t * (1 + √t) by positivity)]
-    nlinarith [ha.abs_mul_self_sub_le_norm ht, abs_nonneg ((√t)⁻¹ - 1),
-      show (1 / 4 : ℝ) ≤ t * √t * (1 + √t) by nlinarith [show (0 : ℝ) ≤ t * √t by positivity]]
+      rw [hfactor, abs_neg, abs_mul, abs_of_pos hpos_prod]
+    have hnonneg : 0 ≤ t * √t := by positivity
+    have hquarter : (1 / 4 : ℝ) ≤ t * √t * (1 + √t) := by nlinarith
+    nlinarith [ha.abs_mul_self_sub_le_norm ht, abs_nonneg ((√t)⁻¹ - 1)]
   · simp only [Set.indicator_of_notMem (Set.mem_Ioi.not.mpr hgt), sub_self, abs_zero]; positivity
 end IsSelfAdjoint
 /-- Every star projection `p` is fixed by `TauCeti.spectralProjectionIoiHalf`. -/

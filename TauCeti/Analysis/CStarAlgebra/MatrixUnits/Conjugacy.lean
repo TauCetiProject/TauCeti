@@ -42,10 +42,10 @@ theorem norm_matrixUnitIntertwiner_sub_one_le {κ A : Type*} {n : κ → Type*} 
     [NormedAlgebra 𝕜 A] {e f : ∀ r : κ, n r → n r → A} (he : IsMatrixUnitSystem e)
     {δ : ℝ} (hdist : ∀ r i j, ‖f r i j - e r i j‖ ≤ δ) :
     ‖matrixUnitIntertwiner 𝕜 e f - 1‖ ≤ 2 * (∑ r : κ, (Fintype.card (n r) : ℝ)) * δ := by
+  have hsupp_diff : (1 - matrixUnitSupport f) - (1 - matrixUnitSupport e) =
+      matrixUnitSupport e - matrixUnitSupport f := by abel
   rw [← he.matrixUnitIntertwiner_self (𝕜 := 𝕜), matrixUnitIntertwiner_def,
-    matrixUnitIntertwiner_def, add_sub_add_comm, ← sub_mul,
-    show (1 - matrixUnitSupport f) - (1 - matrixUnitSupport e) =
-      matrixUnitSupport e - matrixUnitSupport f by abel]
+    matrixUnitIntertwiner_def, add_sub_add_comm, ← sub_mul, hsupp_diff]
   simp only [← Finset.sum_sub_distrib, ← smul_sub, ← sub_mul]
   set S : ℝ := (∑ r : κ, (Fintype.card (n r) : ℝ)) * δ
   refine (norm_add_le _ _).trans <|
@@ -76,9 +76,9 @@ private lemma exists_polarUnitary_intertwiner [PartialOrder A] [StarOrderedRing 
       (∀ r i j, (a.polarUnitary : A) * e r i j * star (a.polarUnitary : A) = f r i j) ∧
       ‖(a.polarUnitary : A) - 1‖ ≤ 8 * (∑ r : κ, (Fintype.card (n r) : ℝ)) * δ := by
   have hz_le := he.norm_matrixUnitIntertwiner_sub_one_le ℝ hdist
+  have hnorm_lt : ‖1 - matrixUnitIntertwiner ℝ e f‖ < 1 := by rw [norm_sub_rev]; linarith
   have hz_unit : IsUnit (matrixUnitIntertwiner ℝ e f) := by
-    simpa only [sub_sub_cancel] using isUnit_one_sub_of_norm_lt_one
-      (show ‖1 - matrixUnitIntertwiner ℝ e f‖ < 1 by rw [norm_sub_rev]; linarith)
+    simpa only [sub_sub_cancel] using isUnit_one_sub_of_norm_lt_one hnorm_lt
   set a : Aˣ := hz_unit.unit; have ha : (a : A) = matrixUnitIntertwiner ℝ e f := hz_unit.unit_spec
   have ha_half : ‖(a : A) - 1‖ ≤ 1 / 2 := by rw [ha]; linarith
   exact ⟨a, ha, Units.joined_one_polarUnitary ha_half, fun r i j ↦ a.conjugate_polarUnitary
