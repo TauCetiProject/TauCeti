@@ -36,15 +36,16 @@ ball of the same radius likewise agrees with it up to a null set. In a nontrivia
 balls are ordered by measure as by radius, so the points `x` whose centered ball of radius `‖x‖` has
 measure below `m` form a set of measure `m`. The ratio of the measures of two closed balls is
 controlled by the ratio of their radii raised to the dimension, also for the restriction of the
-measure to a set of positive density in the balls, the shell between concentric balls
-has measure the difference of the powers of the radii, and the part of a ball outside a translate of
-itself is controlled by the distance between the centres. The measure of an affine image
-`y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
+measure to a set of positive density in the balls, the closed and open shells between concentric
+balls have measure the difference of the powers of the radii, and the part of a ball outside a
+translate of itself is controlled by the distance between the centres. The measure of an affine
+image `y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball, and a
 homothety of ratio `r ≠ 0` pushes the measure forward to its multiple by `|r|⁻ⁿ`, and an
 invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹`. Comparing the
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
-to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
+to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field, and applying this bound
+to a left inverse `g` of `f` bounds `‖det f‖` below by `(‖g‖ ^ n)⁻¹`.
 
 For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 `t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
@@ -55,6 +56,8 @@ gives a set of measure one.
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
+* `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`: the ratio of the real measures
+  of two balls is the ratio of their radii raised to the dimension.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
@@ -74,7 +77,8 @@ gives a set of measure one.
   `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
   ball or to the open ball of the same radius gives the same measure.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
-  with the measure of a closed ball of the same radius, agrees with it up to a null set.
+  with the measure of a closed ball of the same radius, agrees with the containing closed ball up
+  to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
   measure as by radius.
 * `MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq`: every finite nonnegative value is the
@@ -95,6 +99,9 @@ gives a set of measure one.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
   radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
   that of the unit ball.
+* `MeasureTheory.Measure.addHaar_real_ball_sdiff_closedBall`: the open annulus between the closed
+  ball of radius `r ≥ 0` and the concentric open ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)`
+  times that of the unit ball.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
   same radius `s` whose centre is at distance `d` is no larger than a spherical shell of radii `s`
   and `s + d`.
@@ -123,6 +130,12 @@ gives a set of measure one.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
+* `ContinuousLinearMap.inv_pow_le_norm_det_of_comp_eq_id`,
+  `ContinuousLinearMap.inv_pow_le_abs_det_of_comp_eq_id`: if `g ∘L f = id` and `‖g‖ ≤ L`, then
+  `(L ^ n)⁻¹ ≤ ‖det f‖`.
+* `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id`,
+  `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id`: the corresponding Jacobian
+  lower bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 * `TauCeti.addHaar_inv_measureReal_rpow_smul_eq_one`: rescaling a set `s` of positive finite
@@ -144,6 +157,16 @@ theorem addHaar_real_ball_of_pos
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- The ratio of the real measures of two balls of positive radii is the ratio of the radii raised
+to the dimension, whatever their centres. -/
+theorem addHaar_real_ball_div_addHaar_real_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {r s : ℝ} (hr : 0 < r) (hs : 0 < s) :
+    mu.real (ball y s) / mu.real (ball x r) = (s / r) ^ finrank ℝ E := by
+  rw [mu.addHaar_real_ball_of_pos y hs, mu.addHaar_real_ball_of_pos x hr,
+    mul_div_mul_right _ _ (Metric.measureReal_ball_pos mu 0 one_pos).ne', div_pow]
 
 /-- The square root of the real measure of a ball of radius `R` is `R ^ (n / 2)` times that of the
 unit ball, where `n` is the dimension. -/
@@ -398,7 +421,8 @@ theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_
   Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr)
 
 /-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
-of radius `r`, agrees up to a null set with the ball containing it. -/
+of radius `r`, agrees up to a null set with the closed ball of radius `r` about `c` containing
+it. -/
 theorem ae_eq_closedBall_of_subset_of_measure_eq
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure] {s : Set E}
@@ -547,6 +571,21 @@ theorem addHaar_real_closedBall_sdiff_ball
     measurableSet_ball measure_closedBall_lt_top.ne, mu.addHaar_real_closedBall x (hr.le.trans hrs),
     mu.addHaar_real_ball_of_pos x hr, sub_mul]
 
+/-- The open annulus between the closed ball of radius `r ≥ 0` and the concentric open ball of
+radius `s ≥ r` has real measure `(sⁿ - rⁿ)` times the real measure of the unit ball, where `n` is
+the dimension. -/
+theorem addHaar_real_ball_sdiff_closedBall
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {r s : ℝ} (hr : 0 ≤ r) (hrs : r ≤ s) :
+    mu.real (ball x s \ closedBall x r) =
+      (s ^ finrank ℝ E - r ^ finrank ℝ E) * mu.real (ball 0 1) := by
+  rcases hrs.eq_or_lt with rfl | hrs
+  · rw [Set.sdiff_eq_empty.2 ball_subset_closedBall, measureReal_empty, sub_self, zero_mul]
+  rw [measureReal_sdiff (closedBall_subset_ball hrs) measurableSet_closedBall
+    measure_ball_lt_top.ne, mu.addHaar_real_ball_of_pos x (hr.trans_lt hrs),
+    mu.addHaar_real_closedBall x hr, sub_mul]
+
 /-- The part of the ball `ball y s` outside the ball `ball z s` of the same radius `s > 0` has
 measure at most `((s + dist y z)ⁿ - sⁿ)` times the measure of the unit ball, the measure of the
 shell between the spheres of radii `s` and `s + dist y z` about `z`. Here `n` is the dimension. -/
@@ -662,7 +701,78 @@ theorem norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
     ← finrank_mul_finrank ℝ 𝕜 E, pow_mul'] at h
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 h
 
+/-- If `g ∘L f = id` on a normed space over an `RCLike` field, then
+`1 ≤ ‖g‖ ^ finrank 𝕜 E * ‖det f‖`. No finite-dimensionality hypothesis is needed: in infinite
+dimension `finrank 𝕜 E = 0` and `det f = 1`. -/
+theorem one_le_opNorm_pow_mul_norm_det_of_comp_eq_id {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E →L[𝕜] E}
+    (h : g.comp f = ContinuousLinearMap.id 𝕜 E) :
+    1 ≤ ‖g‖ ^ finrank 𝕜 E * ‖f.det‖ := by
+  by_cases hfd : FiniteDimensional 𝕜 E
+  · have hdet : g.det * f.det = 1 := by
+      rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp]
+      exact (congrArg ContinuousLinearMap.det h).trans LinearMap.det_id
+    calc (1 : ℝ) = ‖(1 : 𝕜)‖ := norm_one.symm
+      _ = ‖g.det‖ * ‖f.det‖ := by rw [← hdet, norm_mul]
+      _ ≤ ‖g‖ ^ finrank 𝕜 E * ‖f.det‖ :=
+        mul_le_mul_of_nonneg_right g.norm_det_le_opNorm_pow (norm_nonneg _)
+  · rw [Module.finrank_of_not_finite hfd, pow_zero, one_mul, ContinuousLinearMap.det,
+      LinearMap.det_eq_one_of_not_module_finite hfd, norm_one]
+
+/-- If `g ∘L f = id` on a normed space over an `RCLike` field and `‖g‖ ≤ L`, then
+`(L ^ finrank 𝕜 E)⁻¹ ≤ ‖det f‖`. -/
+theorem inv_pow_le_norm_det_of_comp_eq_id {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E →L[𝕜] E}
+    (h : g.comp f = ContinuousLinearMap.id 𝕜 E) {L : ℝ} (hL : ‖g‖ ≤ L) :
+    (L ^ finrank 𝕜 E)⁻¹ ≤ ‖f.det‖ := by
+  have hL0 : 0 ≤ L := (norm_nonneg g).trans hL
+  have h1 : 1 ≤ L ^ finrank 𝕜 E * ‖f.det‖ :=
+    (one_le_opNorm_pow_mul_norm_det_of_comp_eq_id h).trans
+      (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg g) hL _) (norm_nonneg _))
+  have hpos : 0 < L ^ finrank 𝕜 E := by
+    rcases (pow_nonneg hL0 (finrank 𝕜 E)).eq_or_lt with hp | hp
+    · exfalso; linarith [hp ▸ h1]
+    · exact hp
+  exact (inv_le_iff_one_le_mul₀' hpos).2 h1
+
+/-- If `g ∘L f = id` on a real normed space, then `1 ≤ ‖g‖ ^ finrank ℝ E * |det f|`. -/
+theorem one_le_opNorm_pow_mul_abs_det_of_comp_eq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E →L[ℝ] E}
+    (h : g.comp f = ContinuousLinearMap.id ℝ E) :
+    1 ≤ ‖g‖ ^ finrank ℝ E * |f.det| := by
+  simpa only [Real.norm_eq_abs] using one_le_opNorm_pow_mul_norm_det_of_comp_eq_id h
+
+/-- If `g ∘L f = id` on a real normed space and `‖g‖ ≤ L`, then `(L ^ finrank ℝ E)⁻¹ ≤ |det f|`. -/
+theorem inv_pow_le_abs_det_of_comp_eq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E →L[ℝ] E}
+    (h : g.comp f = ContinuousLinearMap.id ℝ E) {L : ℝ} (hL : ‖g‖ ≤ L) :
+    (L ^ finrank ℝ E)⁻¹ ≤ |f.det| := by
+  simpa only [Real.norm_eq_abs] using inv_pow_le_norm_det_of_comp_eq_id h hL
+
 end ContinuousLinearMap
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` for maps differentiable at `x` and `f x` over an `RCLike` field, and
+`‖fderiv 𝕜 g (f x)‖ ≤ L`, then `(L ^ finrank 𝕜 E)⁻¹ ≤ ‖det (fderiv 𝕜 f x)‖`. -/
+theorem DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id {𝕜 E : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E → E} {x : E} {L : ℝ}
+    (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g (f x))
+    (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv 𝕜 g (f x)‖ ≤ L) :
+    (L ^ finrank 𝕜 E)⁻¹ ≤ ‖(fderiv 𝕜 f x).det‖ := by
+  refine ContinuousLinearMap.inv_pow_le_norm_det_of_comp_eq_id ?_ hL
+  calc (fderiv 𝕜 g (f x)).comp (fderiv 𝕜 f x)
+      = fderiv 𝕜 (g ∘ f) x := (hg.hasFDerivAt.comp x hf.hasFDerivAt).fderiv.symm
+    _ = fderiv 𝕜 (fun y ↦ y) x := hgf.fderiv_eq
+    _ = ContinuousLinearMap.id 𝕜 E := fderiv_fun_id
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` for real-differentiable maps at `x` and `f x`, and
+`‖fderiv ℝ g (f x)‖ ≤ L`, then `(L ^ finrank ℝ E)⁻¹ ≤ |det (fderiv ℝ f x)|`. -/
+theorem DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E → E} {x : E} {L : ℝ}
+    (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g (f x))
+    (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv ℝ g (f x)‖ ≤ L) :
+    (L ^ finrank ℝ E)⁻¹ ≤ |(fderiv ℝ f x).det| := by
+  simpa only [Real.norm_eq_abs] using
+    hf.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id hg hgf hL
 
 namespace ContinuousAffineMap
 

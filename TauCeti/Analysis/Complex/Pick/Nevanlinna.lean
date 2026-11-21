@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, OpenAI gpt-6.1-sol
 -/
 module
 
@@ -56,22 +56,6 @@ open Complex MeasureTheory Metric Set
 
 namespace TauCeti
 
-/-- The real coordinate of a point of the circle.  At the omitted point `1` the denominator is
-zero and Lean's totalized division assigns the harmless value `0`; the measure transport below
-first restricts away from that point. -/
-def circleCayleyInv (z : Circle) : ℝ :=
-  -(z : ℂ).im / (1 - (z : ℂ).re)
-
-/-- Applying the real boundary coordinate after the boundary Cayley map gives the original real
-number. -/
-@[simp]
-theorem circleCayleyInv_boundaryCayley (x : ℝ) :
-    circleCayleyInv (boundaryCayley x) = x := by
-  simp only [circleCayleyInv, coe_boundaryCayley, div_re, div_im, sub_re, sub_im,
-    ofReal_re, ofReal_im, I_re, I_im, add_re, add_im, normSq_apply]
-  field_simp
-  ring
-
 /-- The real part of a boundary Cayley point. -/
 @[simp]
 theorem boundaryCayley_re (x : ℝ) :
@@ -102,9 +86,13 @@ private theorem one_sub_re_ne_zero_of_ne_one {z : Circle} (hz : z ≠ 1) :
   apply Circle.ext
   apply Complex.ext <;> simp [hre, him]
 
-/-- A non-`1` point of the circle is recovered from its real boundary coordinate. -/
-theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
-    boundaryCayley (circleCayleyInv z) = z := by
+/-- A non-`1` point of the circle is recovered from its real boundary coordinate
+`Complex.inverseCayleyCoord`, which inverts the boundary Cayley map
+(`Complex.inverseCayleyCoord_cayley`). At the omitted point `1` that coordinate takes the harmless
+value `0`; the measure transport below first restricts away from that point. -/
+theorem boundaryCayley_inverseCayleyCoord {z : Circle} (hz : z ≠ 1) :
+    boundaryCayley (inverseCayleyCoord z) = z := by
+  rw [inverseCayleyCoord_eq_neg_im_div (Circle.norm_coe z)]
   apply Circle.ext
   have hden := one_sub_re_ne_zero_of_ne_one hz
   have hcircle := Circle.normSq_coe z
@@ -116,13 +104,11 @@ theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
     add_pos_of_nonneg_of_pos (sq_nonneg _) (sq_pos_of_ne_zero hden)
   apply Complex.ext
   · rw [coe_boundaryCayley, boundaryCayley_re]
-    simp only [circleCayleyInv]
     have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
     rw [div_eq_iff hdenom.ne']
     field_simp [hden, hquadpos.ne']
     nlinarith [hquad]
   · rw [coe_boundaryCayley, boundaryCayley_im]
-    simp only [circleCayleyInv]
     have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
     rw [div_eq_iff hdenom.ne']
     field_simp [hden, hquadpos.ne']
@@ -140,27 +126,21 @@ theorem continuous_boundaryCayley : Continuous boundaryCayley := by
     have := congrArg im h
     norm_num at this
 
-/-- The inverse boundary coordinate is measurable on the whole circle. -/
-@[fun_prop]
-theorem measurable_circleCayleyInv : Measurable circleCayleyInv := by
-  unfold circleCayleyInv
-  fun_prop
-
 /-- The inverse boundary coordinate is continuous away from the omitted point `1`. -/
-theorem continuous_circleCayleyInv_restrict :
-    Continuous fun z : {z : Circle // z ≠ 1} ↦ circleCayleyInv z := by
-  unfold circleCayleyInv
+theorem continuous_inverseCayleyCoord_restrict :
+    Continuous fun z : {z : Circle // z ≠ 1} ↦ inverseCayleyCoord (z : Circle) := by
+  simp_rw [inverseCayleyCoord_eq_neg_im_div (Circle.norm_coe _)]
   exact Continuous.div₀ (by fun_prop) (by fun_prop) fun z ↦
     one_sub_re_ne_zero_of_ne_one z.property
 
 /-- The boundary Cayley homeomorphism from the real line onto the circle punctured at `1`. -/
 def boundaryCayleyHomeomorph : ℝ ≃ₜ {z : Circle // z ≠ 1} where
   toFun x := ⟨boundaryCayley x, boundaryCayley_ne_one x⟩
-  invFun z := circleCayleyInv z
-  left_inv := circleCayleyInv_boundaryCayley
-  right_inv z := Subtype.ext (boundaryCayley_circleCayleyInv z.property)
+  invFun z := inverseCayleyCoord (z : Circle)
+  left_inv x := by simp
+  right_inv z := Subtype.ext (boundaryCayley_inverseCayleyCoord z.property)
   continuous_toFun := continuous_boundaryCayley.subtype_mk _
-  continuous_invFun := continuous_circleCayleyInv_restrict
+  continuous_invFun := continuous_inverseCayleyCoord_restrict
 
 @[simp]
 theorem boundaryCayleyHomeomorph_apply (x : ℝ) :
@@ -169,13 +149,13 @@ theorem boundaryCayleyHomeomorph_apply (x : ℝ) :
 
 @[simp]
 theorem boundaryCayleyHomeomorph_symm_apply (z : {z : Circle // z ≠ 1}) :
-    boundaryCayleyHomeomorph.symm z = circleCayleyInv z :=
+    boundaryCayleyHomeomorph.symm z = inverseCayleyCoord (z : Circle) :=
   by simp [boundaryCayleyHomeomorph]
 
 /-- The real-line measure obtained by deleting the atom at `1` from a circle measure and pushing
 the remainder forward through the inverse boundary Cayley coordinate. -/
 def _root_.MeasureTheory.Measure.cayleyPushforward (mu : Measure Circle) : Measure ℝ :=
-  (mu.restrict ({1}ᶜ : Set Circle)).map circleCayleyInv
+  (mu.restrict ({1}ᶜ : Set Circle)).map fun z : Circle ↦ inverseCayleyCoord z
 
 /-- The Cayley pushforward of a finite circle measure is finite. -/
 instance _root_.MeasureTheory.Measure.isFiniteMeasure_cayleyPushforward
@@ -207,13 +187,13 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
       -- Expose the composition expected by `integral_map`; the two integrands are definitionally
       -- equal, but its rewrite lemma matches the composition form.
       change ∫ z, f z ∂mu.restrict ({1}ᶜ : Set Circle) =
-        ∫ x, (f ∘ boundaryCayley) x ∂Measure.map circleCayleyInv
+        ∫ x, (f ∘ boundaryCayley) x ∂Measure.map (fun z : Circle ↦ inverseCayleyCoord z)
           (mu.restrict ({1}ᶜ : Set Circle))
-      rw [integral_map measurable_circleCayleyInv.aemeasurable
+      rw [integral_map (by fun_prop)
         (hf.comp continuous_boundaryCayley).aestronglyMeasurable]
       refine integral_congr_ae ((ae_restrict_mem (measurableSet_singleton 1).compl).mono ?_)
       intro z hz
-      exact congrArg f (boundaryCayley_circleCayleyInv (by simpa using hz)).symm
+      exact congrArg f (boundaryCayley_inverseCayleyCoord (by simpa using hz)).symm
 
 /-- The Nevanlinna kernel on the upper half-plane. -/
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=

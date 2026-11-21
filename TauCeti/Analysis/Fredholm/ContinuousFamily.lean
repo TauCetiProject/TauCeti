@@ -9,12 +9,18 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Analysis.Fredholm.SmallPerturbation
 
+import TauCeti.Analysis.Fredholm.Basic
+
 /-!
 # Continuous families of Fredholm operators
 
 The Fredholm index is locally constant in a continuous family of Fredholm operators. Consequently,
 it is constant when the parameter space is preconnected, and in particular at the endpoints of a
-path of Fredholm operators.
+path of Fredholm operators, so it descends to the set of path components
+`ZerothHomotopy {T : E →L[K] F // T.IsFredholm}` (`ZerothHomotopy.fredholmIndex`). Between
+finite-dimensional spaces over a path-connected complete nontrivially normed field, every operator
+is Fredholm and scalar interpolation makes the Fredholm locus path connected
+(`ContinuousLinearMap.instPathConnectedSpaceIsFredholmOfFiniteDimensional`).
 
 This is the continuous-family form of stability under small perturbations: a family can change index
 only by leaving the Fredholm locus.
@@ -34,6 +40,10 @@ together with Mathlib's general API for locally constant functions on preconnect
 * `Path.index_eq`: the endpoints of a continuous Fredholm path have equal index.
 * `ContinuousLinearMap.index_eq_of_segment`: two operators joined by a Fredholm affine segment
   have equal index.
+* `ZerothHomotopy.fredholmIndex`: the Fredholm index descended to the path components of the
+  Fredholm locus.
+* `ContinuousLinearMap.instPathConnectedSpaceIsFredholmOfFiniteDimensional`: in finite dimensions
+  over a path-connected complete nontrivially normed field, the Fredholm locus is path connected.
 
 The index convention and its perturbation stability follow McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -96,5 +106,44 @@ theorem _root_.ContinuousLinearMap.index_eq_of_segment
   simpa only [Path.segment_apply, AffineMap.lineMap_apply_module] using hFredholm
 
 end TauCeti
+
+section ZerothHomotopy
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The Fredholm index descended to the path components of the Fredholm locus. -/
+noncomputable def ZerothHomotopy.fredholmIndex :
+    ZerothHomotopy {T : E →L[𝕜] F // T.IsFredholm} → ℤ :=
+  ZerothHomotopy.lift (fun T ↦ T.val.index) fun _ _ γ ↦
+    (γ.map continuous_subtypeVal).index_eq fun t ↦ (γ t).property
+
+/-- On the path component of a Fredholm operator `T`, `ZerothHomotopy.fredholmIndex` evaluates to
+`T.val.index`. -/
+@[simp]
+theorem ZerothHomotopy.fredholmIndex_mk (T : {T : E →L[𝕜] F // T.IsFredholm}) :
+    ZerothHomotopy.fredholmIndex (.mk T) = T.val.index :=
+  ZerothHomotopy.lift_mk _ _ T
+
+end ZerothHomotopy
+
+/-- Between finite-dimensional topological vector spaces over a path-connected complete
+nontrivially normed field (with Hausdorff target), every continuous linear map is Fredholm and
+interpolating along a scalar path from `0` to `1` in `𝕜` makes the Fredholm locus path connected. -/
+noncomputable instance ContinuousLinearMap.instPathConnectedSpaceIsFredholmOfFiniteDimensional
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [PathConnectedSpace 𝕜]
+    [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module 𝕜 E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
+    [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [T2Space F]
+    [Module 𝕜 F] [ContinuousSMul 𝕜 F] [FiniteDimensional 𝕜 F] :
+    PathConnectedSpace {T : E →L[𝕜] F // T.IsFredholm} :=
+  PathConnectedSpace.mk ⟨⟨0, isFredholm_of_finiteDimensional 0⟩⟩ fun S T ↦ by
+    let γ : Path S.val T.val :=
+      ((PathConnectedSpace.somePath (0 : 𝕜) 1).map
+        (f := fun c : 𝕜 ↦ S.val + c • (T.val - S.val))
+        (continuous_const.add (continuous_id.smul continuous_const))).cast (by simp) (by simp)
+    exact (joinedIn_iff_joined (F := {U : E →L[𝕜] F | U.IsFredholm}) S.property T.property).mp
+      ⟨γ, fun _ ↦ isFredholm_of_finiteDimensional _⟩
 
 end

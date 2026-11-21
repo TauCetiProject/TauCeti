@@ -164,9 +164,7 @@ theorem etale_pullback_snd_puncturedSpectrum {B : Type u} [CommRing B] [Algebra 
       exact .of_comp _ O.ι
     rw [← Scheme.Hom.resLE_comp_ι_assoc (e := le_rfl)]
     exact IsZariskiLocalAtSource.comp hO _
-  choose V hxV hV using key
-  exact IsZariskiLocalAtSource.of_iSup_eq_top V
-    (top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxV x⟩) hV
+  exact IsZariskiLocalAtSource.of_forall_exists_ι_comp key
 
 variable [IsNoetherianRing A]
 

@@ -13,6 +13,10 @@ import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
 import TauCeti.MeasureTheory.Measure.Continuity
+-- Proof-only: bounds of antitone functions by dyadic step functions.
+import TauCeti.Analysis.SpecificLimits.DyadicSum
+-- Proof-only: Minkowski's inequality for series of step functions.
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # The decreasing rearrangement of a function on a measure space
@@ -67,12 +71,23 @@ from it.
   `MeasureTheory.Measure.decreasingRearrangement_sub_const`,
   `MeasureTheory.Measure.decreasingRearrangement_rpow`: indicators, multiplication by and
   subtraction of constants, and positive real powers;
+  `MeasureTheory.Measure.decreasingRearrangement_indicator_setOf_lt_eq_zero`,
+  `MeasureTheory.Measure.decreasingRearrangement_indicator_compl_setOf_lt_le`: the two parts of
+  `f` cut at the level `f* s`, whose rearrangements vanish from `s` on and are at most
+  `min (f* t) (f* s)`;
   `MeasureTheory.Measure.lintegral_decreasingRearrangement_indicator`: the formula
   `∫₀ᵗ (c 1_A)* = c min (t, μ A)`.
 * `MeasureTheory.Measure.volume_restrict_setOf_lt_decreasingRearrangement`: equimeasurability,
   with the consequences `decreasingRearrangement_decreasingRearrangement`,
   `lintegral_rpow_decreasingRearrangement`, `eLpNorm_decreasingRearrangement`,
   `memLp_decreasingRearrangement_iff` and `essSup_decreasingRearrangement`.
+* `MeasureTheory.Measure.eLpNorm_le_eLpNorm_of_decreasingRearrangement_le`: a pointwise bound
+  `‖g‖* ≤ M` on `(0, ∞)` bounds `‖g‖_r` by the `Lʳ(0, ∞)` seminorm of `M`. Bounding `‖g‖*` on
+  dyadic intervals by its values at their left endpoints, the parts of `g` above and at or below
+  the level `‖g‖* s` have `‖g 1_{‖g‖ > ‖g‖* s}‖_r ≤ ∑ₙ ‖g‖*(2^{-(n+1)} s) (2^{-(n+1)} s)^{1/r}` and
+  `‖g 1_{‖g‖ ≤ ‖g‖* s}‖_r ≤ ‖g‖*(s) s^{1/r} + ∑ₙ ‖g‖*(2ⁿ s) (2ⁿ s)^{1/r}`
+  (`MeasureTheory.Measure.eLpNorm_indicator_setOf_lt_le`,
+  `MeasureTheory.Measure.eLpNorm_indicator_compl_setOf_lt_le`, Holmstedt's estimate).
 * `MeasureTheory.Measure.decreasingRearrangement_add_le`,
   `MeasureTheory.Measure.decreasingRearrangement_mul_le`: the shifted subadditivity and
   submultiplicativity, and `decreasingRearrangement_le_add_essSup`, the bound
@@ -90,6 +105,7 @@ from it.
   **123** (1986), 269–300, §2 (Definition 2.1, Lemma 2.5).
 * J. Bergh and J. Löfström, *Interpolation Spaces. An Introduction*, Grundlehren 223,
   Springer, 1976, §1.3 and §5.2 (Theorem 5.2.1).
+* T. Holmstedt, *Interpolation of quasi-normed spaces*, Math. Scand. **26** (1970), 177–199.
 -/
 
 public noncomputable section
@@ -245,6 +261,33 @@ theorem decreasingRearrangement_indicator (A : Set α) (c : ℝ≥0∞) (s : ℝ
       by_cases hy : y ∈ A <;> simp [hy, hbc]
     rw [this, measure_empty]
     split_ifs <;> simp [hbc]
+
+/-- The part of `f` above the level `f* s` is supported on a set of measure at most `s`, so its
+decreasing rearrangement vanishes from `s` on. -/
+theorem decreasingRearrangement_indicator_setOf_lt_eq_zero (f : α → ℝ≥0∞) (hst : s ≤ t) :
+    μ.decreasingRearrangement ({y | μ.decreasingRearrangement f s < f y}.indicator f) t = 0 := by
+  refine nonpos_iff_eq_zero.1 (μ.decreasingRearrangement_le_iff.2 ((measure_mono ?_).trans
+    ((μ.measure_setOf_decreasingRearrangement_lt_le f s).trans (ENNReal.ofReal_le_ofReal hst))))
+  intro y hy
+  rw [mem_ofPred_eq] at hy
+  by_contra hyA
+  rw [indicator_of_notMem hyA] at hy
+  exact lt_irrefl _ hy
+
+/-- The part of `f` at or below the level `f* s` has decreasing rearrangement at most
+`min (f* t) (f* s)`. -/
+theorem decreasingRearrangement_indicator_compl_setOf_lt_le (f : α → ℝ≥0∞) (s t : ℝ) :
+    μ.decreasingRearrangement ({y | μ.decreasingRearrangement f s < f y}ᶜ.indicator f) t ≤
+      min (μ.decreasingRearrangement f t) (μ.decreasingRearrangement f s) := by
+  refine le_min (μ.decreasingRearrangement_mono (indicator_le_self _ f) t)
+    (μ.decreasingRearrangement_le_iff.2 ((measure_mono (t := ∅) ?_).trans (by simp)))
+  intro y hy
+  rw [mem_ofPred_eq] at hy
+  by_cases hyA : y ∈ {y | μ.decreasingRearrangement f s < f y}ᶜ
+  · rw [indicator_of_mem hyA] at hy
+    exact hyA hy
+  · rw [indicator_of_notMem hyA] at hy
+    exact ENNReal.not_lt_zero hy
 
 /-- Multiplication by a constant commutes with rearrangement. -/
 theorem decreasingRearrangement_const_mul (f : α → ℝ≥0∞) (a : ℝ≥0∞) (s : ℝ) :
@@ -593,5 +636,97 @@ theorem lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm {f : α → E}
       · exact essSup_le_of_ae_le c (ae_of_all _ fun y ↦ (htrunc y).2)
 
 end Normed
+
+section Dyadic
+
+/-- A pointwise bound `‖g‖* ≤ M` on `(0, ∞)` for the decreasing rearrangement of `‖g‖` bounds the
+`Lʳ` seminorm of `g` by the `Lʳ(0, ∞)` seminorm of `M`. -/
+theorem eLpNorm_le_eLpNorm_of_decreasingRearrangement_le {ε : Type*} [TopologicalSpace ε]
+    [ContinuousENorm ε] {g : α → ε} (hg : AEStronglyMeasurable g μ) {M : ℝ → ℝ≥0∞}
+    (hM : ∀ u, 0 < u → μ.decreasingRearrangement (‖g ·‖ₑ) u ≤ M u) (r : ℝ≥0∞) :
+    eLpNorm g r μ ≤ eLpNorm M r (volume.restrict (Ioi 0)) := by
+  rw [← eLpNorm_eNorm _ hg, ← μ.eLpNorm_decreasingRearrangement hg.eNorm]
+  refine eLpNorm_mono_eNorm_ae (μ.measurable_decreasingRearrangement _).aestronglyMeasurable
+    ((ae_restrict_mem measurableSet_Ioi).mono fun u hu ↦ ?_)
+  simpa only [eNorm_eq_self] using hM u hu
+
+/-- A set `I ⊆ ℝ` of Lebesgue measure `ℓ` has measure at most `ℓ` for Lebesgue measure restricted
+to `(0, ∞)`, so its measure raised to `1 / r` is at most `ℓ ^ (1 / r)`. -/
+private theorem restrict_Ioi_rpow_le {I : Set ℝ} {ℓ : ℝ} (hℓ : 0 ≤ ℓ) (hI : volume I = .ofReal ℓ)
+    (r : ℝ≥0∞) :
+    volume.restrict (Ioi 0) I ^ (1 / r.toReal) ≤ ENNReal.ofReal (ℓ ^ (r⁻¹).toReal) := by
+  rw [← ENNReal.ofReal_rpow_of_nonneg hℓ ENNReal.toReal_nonneg, ENNReal.toReal_inv, ← one_div,
+    ← hI]
+  gcongr
+  exact Measure.restrict_le_self
+
+variable {E : Type*} [NormedAddCommGroup E] {g : α → E} {r : ℝ≥0∞}
+
+/-- The part of `g` above the level `g*(s)` has `Lʳ` seminorm at most
+`∑ₙ g*(2⁻¹ ^ (n + 1) s) (2⁻¹ ^ (n + 1) s) ^ (1 / r)`, where `g*` is the decreasing rearrangement of
+`‖g‖`. -/
+theorem eLpNorm_indicator_setOf_lt_le (hg : AEStronglyMeasurable g μ) (hr : 1 ≤ r) (hs : 0 < s) :
+    eLpNorm ({x | μ.decreasingRearrangement (‖g ·‖ₑ) s < ‖g x‖ₑ}.indicator g) r μ ≤
+      ∑' n : ℕ, μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ ^ (n + 1) * s) *
+        ENNReal.ofReal ((2⁻¹ ^ (n + 1) * s) ^ (r⁻¹).toReal) := by
+  set R := μ.decreasingRearrangement (‖g ·‖ₑ)
+  set A := {x | R s < ‖g x‖ₑ}
+  have hA : NullMeasurableSet A μ := nullMeasurableSet_lt aemeasurable_const hg.eNorm
+  -- The rearrangement of `‖g 1_A‖` is at most `g*` and vanishes beyond `s`.
+  refine (μ.eLpNorm_le_eLpNorm_of_decreasingRearrangement_le (hg.indicator₀ hA)
+    (M := fun u ↦ ∑' n : ℕ,
+      (Ioc (2⁻¹ ^ (n + 1) * s) (2⁻¹ ^ n * s)).indicator (fun _ ↦ R (2⁻¹ ^ (n + 1) * s)) u)
+    (fun u hu ↦ ?_) r).trans
+    ((eLpNorm_tsum_indicator_const_le (fun _ ↦ measurableSet_Ioc.nullMeasurableSet) _ hr).trans
+      (tsum_le_tsum fun n ↦ ?_))
+  · simp only [eNorm_indicator_eq_indicator_eNorm]
+    rcases le_or_gt u s with hus | hsu
+    · exact (μ.decreasingRearrangement_mono (indicator_le_self _ _) u).trans
+        (((μ.antitone_decreasingRearrangement _).antitoneOn _).le_tsum_indicator_Ioc one_lt_two hu
+          hus)
+    · exact (μ.decreasingRearrangement_indicator_setOf_lt_eq_zero _ hsu.le).trans_le zero_le
+  · gcongr
+    refine restrict_Ioi_rpow_le (by positivity) ?_ r
+    rw [Real.volume_Ioc, pow_succ]
+    ring_nf
+
+/-- The part of `g` at or below the level `g*(s)` has `Lʳ` seminorm at most
+`g*(s) s ^ (1 / r) + ∑ₙ g*(2 ^ n s) (2 ^ n s) ^ (1 / r)`, where `g*` is the decreasing rearrangement
+of `‖g‖`. -/
+theorem eLpNorm_indicator_compl_setOf_lt_le (hg : AEStronglyMeasurable g μ) (hr : 1 ≤ r)
+    (hs : 0 < s) :
+    eLpNorm ({x | μ.decreasingRearrangement (‖g ·‖ₑ) s < ‖g x‖ₑ}ᶜ.indicator g) r μ ≤
+      μ.decreasingRearrangement (‖g ·‖ₑ) s * ENNReal.ofReal (s ^ (r⁻¹).toReal) +
+        ∑' n : ℕ, μ.decreasingRearrangement (‖g ·‖ₑ) (2 ^ n * s) *
+          ENNReal.ofReal ((2 ^ n * s) ^ (r⁻¹).toReal) := by
+  set R := μ.decreasingRearrangement (‖g ·‖ₑ)
+  set A := {x | R s < ‖g x‖ₑ}
+  have hA : NullMeasurableSet Aᶜ μ := (nullMeasurableSet_lt aemeasurable_const hg.eNorm).compl
+  set M₀ : ℝ → ℝ≥0∞ := (Ioc 0 s).indicator fun _ ↦ R s
+  set M₁ : ℝ → ℝ≥0∞ := fun u ↦ ∑' n : ℕ,
+    (Ico (2 ^ n * s) (2 ^ (n + 1) * s)).indicator (fun _ ↦ R (2 ^ n * s)) u
+  -- The rearrangement of `‖g 1_{Aᶜ}‖` is at most `min (g*, g*(s))`.
+  refine (μ.eLpNorm_le_eLpNorm_of_decreasingRearrangement_le (hg.indicator₀ hA) (M := M₀ + M₁)
+    (fun u hu ↦ ?_) r).trans
+    ((eLpNorm_add_le hr).trans (add_le_add ?_ ((eLpNorm_tsum_indicator_const_le
+      (fun _ ↦ measurableSet_Ico.nullMeasurableSet) _ hr).trans (tsum_le_tsum fun n ↦ ?_))))
+  · simp only [eNorm_indicator_eq_indicator_eNorm]
+    have h := μ.decreasingRearrangement_indicator_compl_setOf_lt_le (‖g ·‖ₑ) s u
+    rcases le_or_gt u s with hus | hsu
+    · exact le_add_right ((h.trans (min_le_right _ _)).trans_eq
+        (indicator_of_mem (show u ∈ Ioc 0 s from ⟨hu, hus⟩) fun _ ↦ R s).symm)
+    · exact le_add_left ((h.trans (min_le_left _ _)).trans
+        (((μ.antitone_decreasingRearrangement _).antitoneOn _).le_tsum_indicator_Ico one_lt_two hs
+          hsu.le))
+  · refine (eLpNorm_indicator_const_le _ r measurableSet_Ioc.nullMeasurableSet).trans ?_
+    rw [eNorm_eq_self]
+    gcongr
+    exact restrict_Ioi_rpow_le hs.le (by rw [Real.volume_Ioc, sub_zero]) r
+  · gcongr
+    refine restrict_Ioi_rpow_le (by positivity) ?_ r
+    rw [Real.volume_Ico, pow_succ]
+    ring_nf
+
+end Dyadic
 
 end MeasureTheory.Measure

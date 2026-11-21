@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Continuous representatives of whole-space Sobolev functions
@@ -59,11 +60,9 @@ theorem value_ae_eq_of_tendsto {u : ℕ → Wkp mu ⊤ p k} {w : Wkp mu ⊤ p k}
     {g : ℕ → C₀(E, ℝ)} {g₀ : C₀(E, ℝ)} (hu : Tendsto u atTop (𝓝 w))
     (hug : ∀ n, value k (u n) =ᵐ[mu] g n) (hg : Tendsto g atTop (𝓝 g₀)) :
     value k w =ᵐ[mu] g₀ := by
-  have hval : Tendsto (fun n => value k (u n)) atTop (𝓝 (value k w)) := by
-    simpa only [Function.comp_def, valueL_apply] using ((valueL k).continuous.tendsto w).comp hu
+  have hval : Tendsto (fun n => value k (u n)) atTop (𝓝 (value k w)) := tendsto_value hu
   obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hval).exists_seq_tendsto_ae
-  replace hns : ∀ᵐ x ∂mu, Tendsto (fun i => value k (u (ns i)) x) atTop (𝓝 (value k w x)) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using hns
+  rw [Measure.ae_restrict_coe_opens_top] at hns
   filter_upwards [hns, ae_all_iff.mpr fun i => hug (ns i)] with x hx hxrep
   -- Convergence in `C₀` is uniform, so it implies convergence at `x`.
   have heval : Tendsto (fun i => g (ns i) x) atTop (𝓝 (g₀ x)) :=
@@ -78,16 +77,14 @@ private def toZeroAtInftyOfExistsₗ (h : ∀ u : Wkp mu ⊤ p k, ∃ g : C₀(E
   toFun u := (h u).choose
   map_add' u v := by
     refine zeroAtInfty_eq_of_value_ae_eq (u := u + v) (h (u + v)).choose_spec ?_
-    have hadd : ⇑(value k u + value k v) =ᵐ[mu] ⇑(value k u) + ⇑(value k v) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_add (value k u) (value k v)
-    filter_upwards [(h u).choose_spec, (h v).choose_spec, hadd] with x hu hv hadd
-    rw [value_add, hadd, Pi.add_apply, hu, hv, _root_.add_apply]
+    filter_upwards [(h u).choose_spec, (h v).choose_spec,
+      (Measure.ae_restrict_coe_opens_top mu).ge (value_add_ae k u v)] with x hu hv hadd
+    rw [hadd, Pi.add_apply, hu, hv, _root_.add_apply]
   map_smul' c u := by
     refine zeroAtInfty_eq_of_value_ae_eq (u := c • u) (h (c • u)).choose_spec ?_
-    have hsmul : ⇑(c • value k u) =ᵐ[mu] c • ⇑(value k u) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_smul c (value k u)
-    filter_upwards [(h u).choose_spec, hsmul] with x hu hsmul
-    rw [value_smul, hsmul, Pi.smul_apply, hu, RingHom.id_apply, _root_.smul_apply]
+    filter_upwards [(h u).choose_spec,
+      (Measure.ae_restrict_coe_opens_top mu).ge (value_smul_ae k c u)] with x hu hsmul
+    rw [hsmul, Pi.smul_apply, hu, RingHom.id_apply, _root_.smul_apply]
 
 /-- **The continuous representative of a whole-space Sobolev function.** If every function in
 `W^{k,p}(E)` agrees almost everywhere with a continuous function vanishing at infinity, the map
@@ -119,13 +116,10 @@ theorem toZeroAtInftyOfExists_injective
     (h : ∀ u : Wkp mu ⊤ p k, ∃ g : C₀(E, ℝ), value k u =ᵐ[mu] g) :
     Function.Injective (toZeroAtInftyOfExists h) := by
   intro u v huv
-  apply ext k
-  apply Lp.ext
-  have hae : value k u =ᵐ[mu] value k v := by
-    filter_upwards [value_ae_eq_toZeroAtInftyOfExists h u,
-      value_ae_eq_toZeroAtInftyOfExists h v] with x hu hv
-    rw [hu, hv, huv]
-  simpa only [Opens.coe_top, Measure.restrict_univ] using hae
+  refine ext_ae ?_
+  filter_upwards [value_ae_eq_toZeroAtInftyOfExists h u,
+    value_ae_eq_toZeroAtInftyOfExists h v] with x hu hv
+  rw [hu, hv, huv]
 
 end Wkp
 
