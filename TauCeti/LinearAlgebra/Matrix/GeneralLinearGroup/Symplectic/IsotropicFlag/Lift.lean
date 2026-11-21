@@ -45,7 +45,7 @@ variable {m : ℕ} {R : Type*} [CommRing R]
     ← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd,
     Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₂₂, Matrix.fromBlocks_apply₂₁,
     Matrix.transpose_apply, Matrix.zero_apply]
-  exact ⟨fun i j hij ↦ (UpperTriangularGroup.mem_iff.mp P.2) hij,
+  exact ⟨fun i j hij ↦ (UpperTriangularGroup.mem_iff.mp P.property) hij,
     fun i j hij ↦ hinv hij, fun _ _ ↦ trivial⟩
 
 /-- Every symmetric upper unipotent block preserves the isotropic flag. -/
@@ -98,7 +98,7 @@ theorem exists_leviHom_mul_upperUnipotent (g : matrixSubgroup m (A := R)) :
   have hP : P ∈ upperTriangularGroup (Fin m) R := by
     rw [UpperTriangularGroup.mem_iff]
     intro i j hij
-    have hg := (mem_matrixSubgroup_iff m g.val).mp g.2
+    have hg := (mem_matrixSubgroup_iff m g.val).mp g.property
     have hentry := congrArg (fun X : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R ↦
       X (Sum.inl i) (Sum.inl j)) hmatrix
     rw [Matrix.fromBlocks_apply₁₁] at hentry

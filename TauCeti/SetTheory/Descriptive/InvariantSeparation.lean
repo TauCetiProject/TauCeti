@@ -75,10 +75,10 @@ private theorem measurablySeparable_image_quotientMk_of_borelSpace [MeasurableSp
   obtain ⟨T₀, hT₀, hAT₀, hT₀B⟩ := step A (hE.preimage_image_quotientMk hA) hAB
   choose next hnext hsub hdisj using fun T : {T : Set X //
       MeasurableSet T ∧ Disjoint (Quotient.mk E '' T) (Quotient.mk E '' B)} ↦
-    step T.1 (hE.preimage_image_quotientMk_measurableSet T.2.1) T.2.2
+    step T.val (hE.preimage_image_quotientMk_measurableSet T.property.1) T.property.2
   let f := fun T ↦ (⟨next T, hnext T, hdisj T⟩ : {T : Set X //
       MeasurableSet T ∧ Disjoint (Quotient.mk E '' T) (Quotient.mk E '' B)})
-  let T n := (f^[n] ⟨T₀, hT₀, hT₀B⟩).1
+  let T n := (f^[n] ⟨T₀, hT₀, hT₀B⟩).val
   have hTsucc (n : ℕ) : Quotient.mk E ⁻¹' (Quotient.mk E '' T n) ⊆ T (n + 1) := by
     simp only [T, Function.iterate_succ_apply']
     exact hsub _
@@ -90,9 +90,9 @@ private theorem measurablySeparable_image_quotientMk_of_borelSpace [MeasurableSp
   refine ⟨Quotient.mk E '' ⋃ n, T n,
     image_mono ((subset_preimage_image _ A).trans (hAT₀.trans (subset_iUnion T 0))), ?_, ?_⟩
   · rw [image_iUnion]
-    exact disjoint_iUnion_right.2 fun n ↦ (f^[n] ⟨T₀, hT₀, hT₀B⟩).2.2.symm
+    exact disjoint_iUnion_right.2 fun n ↦ (f^[n] ⟨T₀, hT₀, hT₀B⟩).property.2.symm
   · rw [measurableSet_quotient, Quotient.mk''_eq_mk, hsat]
-    exact MeasurableSet.iUnion fun n ↦ (f^[n] ⟨T₀, hT₀, hT₀B⟩).2.1
+    exact MeasurableSet.iUnion fun n ↦ (f^[n] ⟨T₀, hT₀, hT₀B⟩).property.1
 
 variable [MeasurableSpace X] [OpensMeasurableSpace X]
 

@@ -282,9 +282,9 @@ private theorem exists_bound_mixedDeriv_comp_prodMap_of_isCompact (p : Symbol n 
       ‖mixedDeriv α β (p.coefficient ∘ P.prodMap P) x ξ‖ ≤
         D * (1 + ‖P ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   choose C _ hC using fun s t : List (Fin n) ↦ p.exists_bound (P '' K) (hK.image P.continuous) s t
-  obtain ⟨B, hB, hB'⟩ := exists_bound_mixedDeriv_comp_prodMap P P
-    (p.contDiff_coefficient.of_le (mod_cast le_top)) C m (α := α) (β := β)
-  exact ⟨B, hB, fun x hx ξ ↦ hB' x (fun s t η ↦ hC s t (P x) ⟨x, hx, rfl⟩ η) ξ⟩
+  obtain ⟨B, hB, hB'⟩ := TauCeti.exists_bound_mixedDeriv_comp_prodMap (α := α) (β := β)
+    (p.contDiff_coefficient.of_le (mod_cast le_top)) (norm_nonneg P) C m
+  exact ⟨B, hB, fun x hx ξ ↦ hB' P P le_rfl le_rfl x (fun s t η ↦ hC s t (P x) ⟨x, hx, rfl⟩ η) ξ⟩
 
 /-- **Estimates of a lifted symbol on a cone.** On the cone `δ ‖ξ‖ ≤ ‖P ξ‖`, where `⟨P ξ⟩` and
 `⟨ξ⟩` are comparable, the symbol estimates of `p` give estimates of order `m` for

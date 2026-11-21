@@ -37,15 +37,9 @@ regularity over a `C^(r + 1)` bundle (`TauCeti.IsSmoothForm.vectorBundlePoincare
 additive on continuous forms (`TauCeti.vectorBundlePoincareHomotopy_add`). The identities above
 need only a `C²` bundle.
 
-Everything transports along a diffeomorphism `Φ` from the total space onto a manifold `M`, such as
-a tubular neighbourhood of an embedded submanifold
-(`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`). With the zero-section inclusion
-`i = Φ ∘ 0` and the retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹`, every closed `C^r` form `η` of positive
-degree on `M`, with `r ≥ 1`, has a `C^r` form `β` with `d β = η - ρ^* η` that vanishes along
-`i` as a full ambient tensor (`Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback`), and
-`d β = η` when `i^* η = 0` (`Diffeomorph.exists_isSmoothForm_relative_primitive`). This needs `Φ`
-and the bundle to be `C^(r + 1)`. This is the primitive used to compare two symplectic forms
-relative to a submanifold.
+The transport of these primitives along a diffeomorphism from the total space onto a manifold,
+such as a tubular neighbourhood of an embedded submanifold, together with their first jets, is in
+`TauCeti.Geometry.Manifold.DifferentialForm.Relative.FirstJet`.
 
 The flat counterpart on an open set stable under scaling the normal coordinate is
 `IsOpen.exists_contDiffOn_relative_primitive`. The base may have boundary or corners and the
@@ -58,7 +52,6 @@ coefficient space is any Banach space.
 * `TauCeti.mextDeriv_vectorBundlePoincareHomotopy_add_vectorBundlePoincareHomotopy_mextDeriv`:
   `d (P η) + P (d η) = η - ρ^* η`.
 * `TauCeti.mextDeriv_vectorBundlePoincareHomotopy`: `d β = η - ρ^* η` for closed `η`.
-* `Diffeomorph.exists_isSmoothForm_relative_primitive`: the relative Poincaré lemma on a tube.
 
 ## References
 
@@ -216,69 +209,5 @@ theorem mextDeriv_vectorBundlePoincareHomotopy_of_mpullback_zeroSection_eq_zero
     mextDeriv (vectorBundlePoincareHomotopy η) = η := by
   rw [mextDeriv_vectorBundlePoincareHomotopy hη hclosed, mpullback_zeroSection_comp_proj, hi,
     mpullback_zero, sub_zero]
-
-/-! ### Transport to a tube -/
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  {n : WithTop ℕ∞} [IsManifold IB n B] [ContMDiffVectorBundle n FV V IB]
-
-/-- **The relative Poincaré lemma on a tube.** Let `Φ` be a `C^n` diffeomorphism from the total
-space of a `C^n` vector bundle onto `M`, such as a tubular neighbourhood, with zero-section
-inclusion `i = Φ ∘ 0` and retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹` onto its image. Every closed `C^r`
-form `η` of positive degree on `M`, with `1 ≤ r` and `r + 1 ≤ n`, has a `C^r` form `β` with
-`d β = η - ρ^* η` that vanishes along `i` as a full ambient tensor. -/
-theorem _root_.Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback
-    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) {r : ℕ∞} (hr : 1 ≤ r) (hn : r + 1 ≤ n)
-    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I r η) (hclosed : mextDeriv η = 0) :
-    ∃ β : RoughForm I M F k, IsSmoothForm I r β ∧
-      mextDeriv β = η - mpullback I I (Φ ∘ zeroSection FV V ∘ π FV V ∘ Φ.symm) η ∧
-      ∀ b, β (Φ (zeroSection FV V b)) = 0 := by
-  have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
-  have h2 : (2 : WithTop ℕ∞) ≤ n := le_trans (by rw [← one_add_one_eq_two]; gcongr) hn
-  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by norm_num) h2).ne'
-  have : IsManifold IB ((r : WithTop ℕ∞) + 1) B := .of_le hn
-  have : ContMDiffVectorBundle ((r : WithTop ℕ∞) + 1) FV V IB := .of_le hn
-  have : IsManifold IB 2 B := .of_le h2
-  have : ContMDiffVectorBundle 2 FV V IB := .of_le h2
-  have hη₀ := hη.mpullback (Φ.contMDiff.of_le hn)
-  have hβ₀ := hη₀.vectorBundlePoincareHomotopy
-  refine ⟨mpullback I (IB.prod 𝓘(ℝ, FV)) Φ.symm (vectorBundlePoincareHomotopy
-    (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η)), hβ₀.mpullback (Φ.symm.contMDiff.of_le hn), ?_,
-    fun b ↦ ?_⟩
-  · have hd := Φ.mdifferentiable hn0
-    have hds := Φ.symm.mdifferentiable hn0
-    have hZ := (contMDiff_zeroSection ℝ V (IB := IB) (F := FV) (n := 1)).mdifferentiable one_ne_zero
-    have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
-    rw [← mpullback_mextDeriv (Φ.symm.contMDiff.of_le h2)
-        ((isSmoothBundleForm_def 1 _).mpr (hβ₀.of_le hr').contMDiff),
-      mextDeriv_vectorBundlePoincareHomotopy (hη₀.of_le hr')
-        (hη.of_le hr' |>.mextDeriv_mpullback_eq_zero hclosed (Φ.contMDiff.of_le h2)),
-      mpullback_sub, mpullback_symm_mpullback hn0, ← mpullback_comp (hZ.comp hp) hd,
-      ← mpullback_comp hds (hd.comp (hZ.comp hp))]
-    -- Both retractions are `Φ ∘ 0 ∘ π ∘ Φ⁻¹`, associated differently.
-    simp only [Function.comp_assoc]
-  · exact mpullback_apply_eq_zero ((congrArg _ (Φ.symm_apply_apply _)).trans
-      (vectorBundlePoincareHomotopy_zeroSection _ b))
-
-/-- **The relative Poincaré lemma on a tube**, for forms restricting to zero on the core. Let `Φ`
-be a `C^n` diffeomorphism from the total space of a `C^n` vector bundle onto `M`, such as a
-tubular neighbourhood, with zero-section inclusion `i = Φ ∘ 0`. Every closed `C^r` form `η` of
-positive degree on `M` with `i^* η = 0`, where `1 ≤ r` and `r + 1 ≤ n`, is the exterior
-derivative of a `C^r` form `β` that vanishes along `i` as a full ambient tensor. -/
-theorem _root_.Diffeomorph.exists_isSmoothForm_relative_primitive
-    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) {r : ℕ∞} (hr : 1 ≤ r) (hn : r + 1 ≤ n)
-    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I r η) (hclosed : mextDeriv η = 0)
-    (hi : mpullback IB I (Φ ∘ zeroSection FV V) η = 0) :
-    ∃ β : RoughForm I M F k, IsSmoothForm I r β ∧ mextDeriv β = η ∧
-      ∀ b, β (Φ (zeroSection FV V b)) = 0 := by
-  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_mextDeriv_eq_sub_mpullback hr hn hη hclosed
-  refine ⟨β, hβ, ?_, hβ₀⟩
-  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by simp) hn).ne'
-  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
-  have hiΦ := (Φ.contMDiff.comp (contMDiff_zeroSection ℝ V (IB := IB) (F := FV))).mdifferentiable
-    hn0
-  rw [hdβ, ← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
-    mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn0)) hiΦ, hi, mpullback_zero, sub_zero]
 
 end TauCeti
