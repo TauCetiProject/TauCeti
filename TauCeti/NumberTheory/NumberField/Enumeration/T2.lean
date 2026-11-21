@@ -162,6 +162,11 @@ theorem complexT2_map_intCast (P : ℤ[X]) : complexT2 (P.map (Int.castRingHom �
 theorem t2_nonneg (P : ℤ[X]) : 0 ≤ t2 P :=
   complexT2_nonneg _
 
+/-- The squared absolute value of each complex root is at most the `T₂` norm. -/
+theorem norm_sq_le_t2 {P : ℤ[X]} {z : ℂ} (hz : z ∈ (P.map (Int.castRingHom ℂ)).roots) :
+    ‖z‖ ^ 2 ≤ t2 P :=
+  norm_sq_le_complexT2 hz
+
 /-- `T₂` is additive on products of nonzero integer polynomials. -/
 theorem t2_mul {P Q : ℤ[X]} (hP : P ≠ 0) (hQ : Q ≠ 0) : t2 (P * Q) = t2 P + t2 Q := by
   rw [t2, Polynomial.map_mul, complexT2_mul ((Polynomial.map_ne_zero_iff
@@ -173,6 +178,11 @@ theorem t2_mul {P Q : ℤ[X]} (hP : P ≠ 0) (hQ : Q ≠ 0) : t2 (P * Q) = t2 P 
 theorem t2_intCast_mul (P : ℤ[X]) {a : ℤ} (ha : a ≠ 0) : t2 ((a : ℤ[X]) * P) = t2 P := by
   rw [← C_eq_intCast, t2, Polynomial.map_mul, map_C, complexT2_C_mul _ (by simpa using ha), t2]
 
+/-- `T₂` of an integer polynomial is invariant under multiplication by a nonzero integer. Not a
+simp lemma: simp rewrites `a • P` to `(a : ℤ[X]) * P`, where `t2_intCast_mul` applies. -/
+theorem t2_smul (P : ℤ[X]) {a : ℤ} (ha : a ≠ 0) : t2 (a • P) = t2 P := by
+  rw [zsmul_eq_mul, t2_intCast_mul _ ha]
+
 @[simp]
 theorem t2_X_sub_intCast (a : ℤ) : t2 (X - (a : ℤ[X])) = (a : ℝ) ^ 2 := by
   rw [← C_eq_intCast, ← complexT2_map_intCast, Polynomial.map_sub, map_X, map_C,
@@ -182,6 +192,10 @@ theorem t2_X_sub_intCast (a : ℤ) : t2 (X - (a : ℤ[X])) = (a : ℝ) ^ 2 := by
 @[simp]
 theorem t2_intCast (a : ℤ) : t2 (a : ℤ[X]) = 0 := by
   rw [← C_eq_intCast, ← complexT2_map_intCast, map_C, complexT2_C]
+
+@[simp]
+theorem t2_zero : t2 0 = 0 := by
+  rw [t2, Polynomial.map_zero, complexT2_zero]
 
 @[simp]
 theorem t2_one : t2 1 = 0 := by
@@ -253,7 +267,7 @@ theorem candidates_finite (n : ℕ) (B : ℝ) : (candidates n B).Finite := by
     intro P ⟨hmon, hdeg, hB⟩
     refine ⟨hdeg.le, fun i => ?_⟩
     have hroot : ∀ z ∈ (P.map (Int.castRingHom ℂ)).roots, ‖z‖ ≤ √B := fun z hz =>
-      Real.le_sqrt_of_sq_le ((norm_sq_le_complexT2 hz).trans hB)
+      Real.le_sqrt_of_sq_le ((norm_sq_le_t2 hz).trans hB)
     have h := coeff_bdd_of_roots_le (Int.castRingHom ℂ) hmon (IsAlgClosed.splits _) hdeg.le
       hroot i
     rw [coeff_map, eq_intCast, Complex.norm_intCast] at h
@@ -269,20 +283,24 @@ namespace NumberField.RingOfIntegers
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- The minimal polynomial over `ℚ` of an algebraic integer `θ` is the image of its minimal
+polynomial over `ℤ`. -/
+theorem minpoly_rat_coe_eq_map (θ : 𝓞 K) :
+    minpoly ℚ (θ : K) = (minpoly ℤ θ).map (Int.castRingHom ℚ) := by
+  rw [← minpoly_coe, minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe,
+    algebraMap_int_eq]
+
 /-- For `θ ∈ 𝓞 K`, the sum of `‖σ θ‖ ^ 2` over the complex embeddings `σ` of `K` is
 `[K : ℚ(θ)]` times the `T₂` norm of the minimal polynomial of `θ` over `ℤ`: every complex root of
 that polynomial is `σ θ` for exactly `[K : ℚ(θ)]` embeddings `σ`. -/
 theorem sum_norm_sq_embeddings_eq_finrank_mul_t2 (θ : 𝓞 K) :
     ∑ σ : K →+* ℂ, ‖σ θ‖ ^ 2 =
       finrank ℚ⟮(θ : K)⟯ K * t2 (minpoly ℤ θ) := by
-  have hmin : minpoly ℚ (θ : K) = (minpoly ℤ θ).map (Int.castRingHom ℚ) := by
-    rw [← minpoly_coe, minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe,
-      algebraMap_int_eq]
   rw [Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ => ‖σ (θ : K)‖ ^ 2)
       (fun σ => ‖σ (θ : K)‖ ^ 2) (fun _ => by simp [RingHom.equivRatAlgHom_apply]),
     TauCeti.sum_algHom_apply_eq_finrank_nsmul_sum_map_aroots (fun z : ℂ => ‖z‖ ^ 2),
-    nsmul_eq_mul, ← complexT2_map_intCast, complexT2_def, hmin, aroots_def, Polynomial.map_map,
-    RingHom.ext_int ((algebraMap ℚ ℂ).comp _) (Int.castRingHom ℂ)]
+    nsmul_eq_mul, ← complexT2_map_intCast, complexT2_def, minpoly_rat_coe_eq_map, aroots_def,
+    Polynomial.map_map, RingHom.ext_int ((algebraMap ℚ ℂ).comp _) (Int.castRingHom ℂ)]
 
 /-- For `θ ∈ 𝓞 K`, `∑_σ ‖σ θ‖ ^ 2 = ([K : ℚ] / deg (minpoly ℤ θ)) * T₂ (minpoly ℤ θ)`, the sum
 running over the complex embeddings `σ` of `K`. -/
@@ -290,9 +308,8 @@ theorem sum_norm_sq_embeddings_eq_finrank_div_mul_t2 (θ : 𝓞 K) :
     ∑ σ : K →+* ℂ, ‖σ θ‖ ^ 2 =
       (finrank ℚ K / (minpoly ℤ θ).natDegree : ℝ) * t2 (minpoly ℤ θ) := by
   have hdeg : finrank ℚ ℚ⟮(θ : K)⟯ = (minpoly ℤ θ).natDegree := by
-    rw [IntermediateField.adjoin.finrank (Algebra.IsIntegral.isIntegral _), ← minpoly_coe,
-      minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.isIntegral_coe,
-      (minpoly.monic θ.isIntegral_coe).natDegree_map]
+    rw [IntermediateField.adjoin.finrank (Algebra.IsIntegral.isIntegral _),
+      minpoly_rat_coe_eq_map, (minpoly.monic θ.isIntegral).natDegree_map]
   have hpos : (0 : ℝ) < finrank ℚ ℚ⟮(θ : K)⟯ := mod_cast finrank_pos
   rw [sum_norm_sq_embeddings_eq_finrank_mul_t2, ← hdeg,
     ← finrank_mul_finrank ℚ ℚ⟮(θ : K)⟯ K, Nat.cast_mul, mul_div_cancel_left₀ _ hpos.ne']

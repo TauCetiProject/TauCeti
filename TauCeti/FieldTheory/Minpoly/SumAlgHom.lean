@@ -36,12 +36,13 @@ namespace TauCeti
 variable {K L E M : Type*} [Field K] [Field L] [Field E] [Algebra K L] [Algebra K E]
   [AddCommMonoid M]
 
-/-- For `x` integral and separable over `K`, summing `f` over the images of the generator of
-`K⟮x⟯` under its `K`-embeddings into `E` is summing `f` over the roots of `minpoly K x` in `E`. -/
-theorem sum_algHom_adjoin_apply_gen_eq_sum_map_aroots {x : L} (hx : IsIntegral K x)
-    (hsep : IsSeparable K x) [Fintype (K⟮x⟯ →ₐ[K] E)] (f : E → M) :
+/-- For `x` separable over `K`, summing `f` over the images of the generator of `K⟮x⟯` under its
+`K`-embeddings into `E` is summing `f` over the roots of `minpoly K x` in `E`. -/
+theorem sum_algHom_adjoin_apply_gen_eq_sum_map_aroots {x : L} (hsep : IsSeparable K x)
+    [Fintype (K⟮x⟯ →ₐ[K] E)] (f : E → M) :
     ∑ σ : K⟮x⟯ →ₐ[K] E, f (σ (AdjoinSimple.gen K x)) = (((minpoly K x).aroots E).map f).sum := by
   classical
+  have hx := hsep.isIntegral
   have hnodup : ((minpoly K x).aroots E).Nodup := nodup_roots ((separable_map _).mpr hsep)
   rw [Fintype.sum_equiv (algHomAdjoinIntegralEquiv K hx) _ (fun y => f y.val)
     (fun σ => by rw [← algHomAdjoinIntegralEquiv_symm_apply_gen K hx, Equiv.symm_apply_apply]),
@@ -52,15 +53,17 @@ theorem sum_algHom_adjoin_apply_gen_eq_sum_map_aroots {x : L} (hx : IsIntegral K
 /-- **Sums over embeddings.** If `L / K` is finite separable and `E` is algebraically closed,
 then for every `x : L` and every `f : E → M`, the sum of `f (σ x)` over the `K`-embeddings
 `σ : L →ₐ[K] E` is `[L : K⟮x⟯]` times the sum of `f` over the roots of `minpoly K x` in `E`, with
-multiplicity. -/
+multiplicity.
+
+The proof adapts Mathlib's proof of `sum_embeddings_eq_finrank_mul`
+(`Mathlib/RingTheory/Trace/Basic.lean`). -/
 theorem sum_algHom_apply_eq_finrank_nsmul_sum_map_aroots [IsAlgClosed E] [FiniteDimensional K L]
     [Algebra.IsSeparable K L] (f : E → M) (x : L) :
     ∑ σ : L →ₐ[K] E, f (σ x) = finrank K⟮x⟯ L • (((minpoly K x).aroots E).map f).sum := by
-  have hx := Algebra.IsSeparable.isIntegral K x
   have : Algebra.IsSeparable K⟮x⟯ L := Algebra.isSeparable_tower_top_of_isSeparable K K⟮x⟯ L
   -- Split an embedding of `L` into its restriction `τ` to `K⟮x⟯` (which sends the generator to
   -- `σ x` by definition) and an extension of `τ` to `L`; there are `[L : K⟮x⟯]` extensions.
-  rw [← sum_algHom_adjoin_apply_gen_eq_sum_map_aroots hx (Algebra.IsSeparable.isSeparable K x),
+  rw [← sum_algHom_adjoin_apply_gen_eq_sum_map_aroots (Algebra.IsSeparable.isSeparable K x),
     Fintype.sum_equiv algHomEquivSigma (fun σ : L →ₐ[K] E => f (σ x))
       (fun σ => f (σ.fst (AdjoinSimple.gen K x))) (fun _ => rfl),
     ← Finset.univ_sigma_univ, Finset.sum_sigma, ← Finset.sum_nsmul]
