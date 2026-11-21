@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Caratheodory
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Basic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!

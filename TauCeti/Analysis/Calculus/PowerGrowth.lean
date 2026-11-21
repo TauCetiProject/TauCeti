@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
@@ -33,7 +33,7 @@ The forced almost-Euler inequality `α f(σ) ≤ σ (1 + C σ) f'(σ) + A σ ^ n
 every `σ` and for monotone `f`, makes `((1 + C σ) / σ) ^ α (f σ + A σ ^ n / (n - α))`
 nondecreasing (`TauCeti.rpow_mul_add_le_rpow_mul_add_of_mul_le_mul_deriv_add`). It follows from
 the almost-everywhere Grönwall inequality for monotone functions in
-`TauCeti.Analysis.ODE.Gronwall`: `g s exp (∫ₛᵗ k) ≤ g t` whenever `k g ≤ g'`
+`TauCeti.Analysis.ODE.Gronwall.Basic`: `g s exp (∫ₛᵗ k) ≤ g t` whenever `k g ≤ g'`
 (`TauCeti.mul_exp_integral_le_of_mul_le_deriv`), with
 `∫ₛᵗ 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))`
 (`TauCeti.integral_inv_mul_one_add_mul`).

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Topology.Algebra.Module.Matrix
-import Mathlib.Algebra.Order.Ring.Pow
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.SmoothSeries
@@ -16,6 +15,7 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
+import TauCeti.Analysis.ODE.Gronwall.Discrete
 import TauCeti.Analysis.ODE.Gronwall.Uniqueness
 import TauCeti.Analysis.SpecificLimits.Normed
 
@@ -197,33 +197,22 @@ theorem norm_propagatorCoeff_le_of_forall_mem_sphere_norm_le
     have hfac : (0 : ℝ) < k.factorial := Nat.cast_pos.mpr k.factorial_pos
     rw [norm_smul, norm_inv, Complex.norm_natCast, inv_mul_le_iff₀ hfac, ← mul_div_assoc]
     exact hk
-  let S : ℕ → ℝ := fun m ↦ ∑ j ∈ Finset.range (m + 1), ρ ^ j * ‖propagatorCoeff A z₀ j‖
-  have hS (m : ℕ) : S m ≤ ‖(1 : B)‖ * (m + 1 : ℝ) ^ K := by
-    induction m with
-    | zero => simp [S]
-    | succ m ih =>
-      have hterm := norm_propagatorCoeff_succ_step hρ hA_coeff m
-      have hm1 : (0 : ℝ) < m + 1 := by positivity
-      have hbern : (m + 1 : ℝ) ^ K * (1 + (K : ℝ) * ((m + 1 : ℝ))⁻¹) ≤ (m + 2 : ℝ) ^ K := by
-        calc
-          (m + 1 : ℝ) ^ K * (1 + (K : ℝ) * ((m + 1 : ℝ))⁻¹)
-              ≤ (m + 1 : ℝ) ^ K * (1 + ((m + 1 : ℝ))⁻¹) ^ K := by
-                gcongr
-                exact one_add_mul_le_pow (by linarith [inv_nonneg.mpr hm1.le]) K
-          _ = ((m + 1 : ℝ) * (1 + ((m + 1 : ℝ))⁻¹)) ^ K := (mul_pow _ _ K).symm
-          _ = (m + 2 : ℝ) ^ K := by congr 1; field_simp [hm1.ne']; ring
-      calc
-        S (m + 1) = S m + ρ ^ (m + 1) * ‖propagatorCoeff A z₀ (m + 1)‖ :=
-          Finset.sum_range_succ _ (m + 1)
-        _ ≤ S m * (1 + (K : ℝ) * ((m + 1 : ℝ))⁻¹) := by linarith [hterm]
-        _ ≤ ‖(1 : B)‖ * (m + 1 : ℝ) ^ K * (1 + (K : ℝ) * ((m + 1 : ℝ))⁻¹) := by gcongr
-        _ ≤ ‖(1 : B)‖ * (m + 2 : ℝ) ^ K := by rw [mul_assoc]; gcongr
-        _ = ‖(1 : B)‖ * ((m + 1 : ℕ) + 1 : ℝ) ^ K := by push_cast; ring
-  have hsingle : ρ ^ n * ‖propagatorCoeff A z₀ n‖ ≤ S n :=
-    Finset.single_le_sum (fun j _ ↦ mul_nonneg (pow_nonneg hρ.le j) (norm_nonneg _))
-      (Finset.mem_range.mpr (Nat.lt_succ_self n))
+  set μ : ℕ → ℝ := fun j ↦ ρ ^ j * ‖propagatorCoeff A z₀ j‖
+  have hpoly := add_sum_range_le_mul_pow_of_le_div (μ := μ) (c := 0) (s₀ := 1) (K := K)
+    le_rfl le_rfl (fun _ ↦ by positivity) (fun s hs ↦ by
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hs
+      calc μ (m + 1)
+          ≤ ((m + 1 : ℝ))⁻¹ * ((K : ℝ) * ∑ j ∈ Finset.range (m + 1), μ j) :=
+            norm_propagatorCoeff_succ_step hρ hA_coeff m
+        _ = (K : ℝ) / (m + 1 : ℕ) * (0 + ∑ j ∈ Finset.range (m + 1), μ j) := by
+            push_cast; ring)
+    (n + 1) (Nat.le_add_left 1 n)
+  have hsingle : μ n ≤ 0 + ∑ k ∈ Finset.range (n + 1), μ k := by
+    rw [zero_add]
+    exact Finset.single_le_sum (fun j _ ↦ by positivity) (Finset.mem_range.mpr (Nat.lt_succ_self n))
+  have hS1 : 0 + ∑ k ∈ Finset.range 1, μ k = ‖(1 : B)‖ := by simp [μ]
   rw [le_div_iff₀ (pow_pos hρ n), mul_comm]
-  exact hsingle.trans (hS n)
+  exact hsingle.trans (hpoly.trans_eq (by rw [hS1]; push_cast; rfl))
 
 private theorem exists_subdisc_bound_of_mem_eball
     {A : ℂ → B} {z₀ z : ℂ} {r : ℝ≥0∞} (hA : DifferentiableOn ℂ A (eball z₀ r))

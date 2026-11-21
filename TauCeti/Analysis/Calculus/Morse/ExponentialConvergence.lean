@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.Linearization
 -- Private: Grönwall's inequality, the fundamental theorem of calculus and the regularity of the
 -- gradient are used only inside proofs; no declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!

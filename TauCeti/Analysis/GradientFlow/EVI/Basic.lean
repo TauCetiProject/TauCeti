@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.ODE.Gronwall
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Basic
 
 /-!
 # The evolution variational inequality

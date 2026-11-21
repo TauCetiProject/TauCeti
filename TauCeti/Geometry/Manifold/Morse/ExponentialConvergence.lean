@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Morse.GradientFlow
 -- only inside proofs; no declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 import TauCeti.Analysis.Calculus.Morse.Basic
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Basic
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Distance

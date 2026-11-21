@@ -71,8 +71,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   base on a suitable sector.
 * `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
   extends to a `k`-th root function complex differentiable at that point.
-* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
-  lowers or raises the exponent by one, including at the base `0`.
+* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'`, `TauCeti.cpow_eq_cpow_sub_natCast_mul_pow` --
+  multiplying a principal power by `w⁻¹` or `w` lowers or raises the exponent by one (including at
+  the base `0`), and a principal power of a nonzero base factors out any natural power `w ^ n`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   real `r` along the positive real axis; only the last allows `r > 0`.
@@ -347,6 +348,11 @@ theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^
   rcases eq_or_ne w 0 with rfl | hw
   · rw [zero_cpow hs, mul_zero]
   · rw [cpow_add _ _ hw, cpow_one]
+
+/-- For a nonzero base `w` and any natural number `n`, `w ^ s = w ^ (s - n) * w ^ n`. -/
+theorem cpow_eq_cpow_sub_natCast_mul_pow {w : ℂ} (hw : w ≠ 0) (s : ℂ) (n : ℕ) :
+    w ^ s = w ^ (s - n) * w ^ n := by
+  rw [← Complex.cpow_natCast w n, ← Complex.cpow_add _ _ hw, sub_add_cancel]
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/

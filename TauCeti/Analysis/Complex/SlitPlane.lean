@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Convex
 
-import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!

@@ -11,7 +11,7 @@ public import TauCeti.Analysis.GradientFlow.MinimizingMovement
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Convex
 import Mathlib.Analysis.Convex.SpecificFunctions.Pow
 import TauCeti.Algebra.Order.Floor.Semifield
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Basic
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
 import TauCeti.Topology.Order.Interval

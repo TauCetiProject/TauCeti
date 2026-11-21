@@ -64,9 +64,11 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 * `sum_range_min_zero`: the base case `j = 0` of that recurrence, which its `j + 1` cannot state.
 * `two_mul_sum_range_pair`: twice the sum of the products over the pairs `i < j < k` is the
   square of the sum minus the sum of the squares.
-* `sum_range_succ_smul_pow_sub`, `sum_range_succ_smul_pow_sub'`: the Horner recursion
-  `V (m + 1) = c (m + 1) • 1 + a * V m = c (m + 1) • 1 + V m * a` for the convolutions
-  `V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` of scalars with the powers of `a`.
+* `sum_range_succ_smul_pow_sub`, `sum_range_succ_smul_pow_sub'`, `sum_range_succ_mul_pow`: the
+  Horner recursion `V (m + 1) = c (m + 1) • 1 + a * V m = c (m + 1) • 1 + V m * a` for the
+  convolutions `V m = ∑ k ∈ range (m + 1), c k • a ^ (m - k)` of scalars with the powers of `a`,
+  and factoring out `u ^ s` from the `(s + 1)`-st Cauchy product of two `u ^ k`-weighted sequences
+  while splitting out the `k = s` boundary term.
 * `Finset.sum_range_succ_eq_sum_range_add`: regroup a sum whose successive terms split into
   adjacent contributions, retaining the final boundary term.
 * `Finset.prod_range_two_mul_add_one`, `Finset.sum_range_two_mul_add_one`: split a product or sum
@@ -659,6 +661,17 @@ theorem sum_range_succ_smul_pow_sub' {R A : Type*} [CommSemiring R] [Semiring A]
   congr 1
   refine sum_congr rfl fun k _ ↦ ?_
   rw [mul_smul_comm, smul_mul_assoc, ← pow_succ', ← pow_succ]
+
+/-- Factoring out `u ^ s` from the `(s + 1)`-st Cauchy-product sum of two `u ^ k`-weighted
+sequences in a commutative semiring, splitting out the `k = s` boundary term. -/
+theorem sum_range_succ_mul_pow {R : Type*} [CommSemiring R] (p q : ℕ → R) (u : R) (s : ℕ) :
+    (∑ k ∈ range (s + 1), (p k * u ^ k) * (q (s - k) * u ^ (s - k))) =
+      ((∑ k ∈ range s, p k * q (s - k)) + p s * q 0) * u ^ s := by
+  rw [sum_range_succ, Nat.sub_self, pow_zero, mul_one, add_mul, Finset.sum_mul]
+  refine congrArg₂ (· + ·) (sum_congr rfl fun k hk ↦ ?_) (by ring)
+  have hpow : u ^ k * u ^ (s - k) = u ^ s := by
+    rw [← pow_add, Nat.add_sub_of_le (mem_range.mp hk).le]
+  rw [mul_mul_mul_comm, hpow]
 
 end TauCeti
 

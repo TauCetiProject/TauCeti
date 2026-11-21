@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.GelfandTriple
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 

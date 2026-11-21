@@ -11,6 +11,7 @@ public import Mathlib.Basic.Real.Basic
 
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Ring.Pow
+import Mathlib.Analysis.ODE.DiscreteGronwall
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
@@ -19,7 +20,8 @@ import Mathlib.Tactic.Positivity
 
 A nonnegative sequence `μ : ℕ → ℝ` whose `s`-th term is bounded by
 `(K / s) * (c + ∑_{k < s} μ k)` for `s ≥ s₀ ≥ 1` has partial sums `c + ∑_{k < s} μ k` bounded
-polynomially by `(c + ∑_{k < s₀} μ k) * s ^ K` (`TauCeti.add_sum_range_le_mul_pow_of_le_div`).
+polynomially by `(c + ∑_{k < s₀} μ k) * s ^ K` (`TauCeti.add_sum_range_le_mul_pow_of_le_div`),
+derived from `discrete_gronwall_prod_general` via the Bernoulli step.
 -/
 
 public section
@@ -37,22 +39,38 @@ theorem add_sum_range_le_mul_pow_of_le_div {μ : ℕ → ℝ} {c : ℝ} {s₀ K 
   set S : ℕ → ℝ := fun s ↦ c + ∑ k ∈ Finset.range s, μ k
   have hS_nn : ∀ s, 0 ≤ S s := fun s ↦
     add_nonneg hc (Finset.sum_nonneg fun k _ ↦ hμ0 k)
-  intro s hs
-  induction s, hs using Nat.le_induction with
-  | base =>
-    exact le_mul_of_one_le_right (hS_nn s₀)
-      (one_le_pow₀ (n := K) (show (1 : ℝ) ≤ s₀ by exact_mod_cast hs₀1))
-  | succ s hs ih =>
+  set u : ℕ → ℝ := fun s ↦ S s / (s : ℝ) ^ K
+  have hu_step : ∀ s ≥ s₀, u (s + 1) ≤ (1 : ℝ) * u s + 0 := by
+    intro s hs
     have hs_pos : (0 : ℝ) < s := by exact_mod_cast (hs₀1.trans hs)
     have hpow_step : (s : ℝ) ^ K * (1 + (K : ℝ) / s) ≤ ((s + 1 : ℕ) : ℝ) ^ K := by
       rw [div_eq_mul_inv]
       refine (mul_le_mul_of_nonneg_left
         (one_add_mul_le_pow (by linarith [inv_nonneg.mpr hs_pos.le]) K) (by positivity)).trans_eq ?_
-      rw [← mul_pow]; push_cast; rw [mul_add, mul_one, mul_inv_cancel₀ hs_pos.ne']
+      rw [← mul_pow]
+      push_cast
+      rw [mul_add, mul_one, mul_inv_cancel₀ hs_pos.ne']
     have hSs : S (s + 1) = S s + μ s := by simp [S, Finset.sum_range_succ, add_assoc]
-    calc S (s + 1) ≤ S s * (1 + (K : ℝ) / s) := by linarith [hSs, hstep s hs]
-      _ ≤ (S s₀ * (s : ℝ) ^ K) * (1 + (K : ℝ) / s) := mul_le_mul_of_nonneg_right ih (by positivity)
-      _ ≤ S s₀ * ((s + 1 : ℕ) : ℝ) ^ K := by
-          rw [mul_assoc]; exact mul_le_mul_of_nonneg_left hpow_step (hS_nn s₀)
+    have hS_le : S (s + 1) ≤ S s * (1 + (K : ℝ) / s) := by linarith [hSs, hstep s hs]
+    have hden_pos : (0 : ℝ) < (s : ℝ) ^ K * (1 + (K : ℝ) / s) := by positivity
+    rw [one_mul, add_zero]
+    dsimp only [u]
+    calc S (s + 1) / ((s + 1 : ℕ) : ℝ) ^ K
+        ≤ S (s + 1) / ((s : ℝ) ^ K * (1 + (K : ℝ) / s)) :=
+            div_le_div_of_nonneg_left (hS_nn (s + 1)) hden_pos hpow_step
+      _ ≤ (S s * (1 + (K : ℝ) / s)) / ((s : ℝ) ^ K * (1 + (K : ℝ) / s)) := by gcongr
+      _ = S s / (s : ℝ) ^ K := by
+            rw [mul_div_mul_right _ _ (by positivity)]
+  intro s hs
+  have hgr := discrete_gronwall_prod_general hu_step (fun _ _ ↦ zero_le_one) hs
+  simp only [Finset.prod_const_one, mul_one, Finset.sum_const_zero, add_zero] at hgr
+  have hs_pos : (0 : ℝ) < (s : ℝ) ^ K := by
+    have : (0 : ℝ) < s := by exact_mod_cast (hs₀1.trans hs)
+    positivity
+  have hs₀_ge : (1 : ℝ) ≤ (s₀ : ℝ) ^ K :=
+    one_le_pow₀ (n := K) (by exact_mod_cast hs₀1)
+  calc S s = u s * (s : ℝ) ^ K := (div_mul_cancel₀ _ hs_pos.ne').symm
+    _ ≤ u s₀ * (s : ℝ) ^ K := mul_le_mul_of_nonneg_right hgr hs_pos.le
+    _ ≤ S s₀ * (s : ℝ) ^ K := mul_le_mul_of_nonneg_right (div_le_self (hS_nn s₀) hs₀_ge) hs_pos.le
 
 end TauCeti

@@ -34,11 +34,12 @@ ball (`HasFPowerSeriesOnBall.deriv_ofScalars`), and gives the Euler operator `y 
 `∑ n * c n * y ^ n` (`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`).
 
 It also proves coefficient uniqueness for scalar power series vanishing near a point of a
-preconnected ball (`HasFPowerSeriesOnBall.ofScalars_eq_zero_of_eventuallyEq_zero`), termwise
-integration of scalar power series with coefficients divided by `n` for `n ≥ 1`
+preconnected ball (`HasFPowerSeriesOnBall.ofScalars_eq_zero_of_eventuallyEq_zero`), proving that
+the series with coefficients divided by `n` for `n ≥ 1`
 (`FormalMultilinearSeries.le_radius_ofScalars_div_natCast`,
-`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast`,
-`HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast`), and computes the scalar series of
+`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast`) is a primitive of
+`(f (x + y) - c 0) / y` away from the center `x`
+(`HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast`), and computes the scalar series of
 `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of `f`, in any normed algebra with
 `‖1‖ = 1`. Over a densely normed field, summability on a punctured disk about the origin bounds the
 convergence radius below and yields a `HasFPowerSeriesOnBall` representation without assuming
@@ -192,37 +193,49 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_descFactorial_mul_pow_eq_pow_mul_ite
         = (k.descFactorial n : 𝕂) * c k * (y ^ n * y ^ (k - n)) := by rw [hpow]
       _ = y ^ n * ((k.descFactorial n : 𝕂) * c k * y ^ (k - n)) := by ring
 
+/-- **The Euler operator on a scalar power series.** If `f` is the sum of the scalar power series
+`∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
+`y * f' y = ∑ n * c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars {𝕂 : Type*}
+    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+    HasSum (fun n : ℕ ↦ n * c n * y ^ n) (y * deriv f y) := by
+  simpa [iteratedDeriv_one, zero_add, Nat.descFactorial_one] using
+    hf.hasSum_descFactorial_mul_pow_eq_pow_mul_iteratedDeriv hy 1
+
 /-- Inside the convergence disk of `ofScalars 𝕂 c`, the termwise differentiated series
 `∑ k, k.descFactorial n * c k * y ^ (k - n)` is absolutely summable. -/
 theorem summable_norm_descFactorial_mul_pow_sub_of_lt_ofScalars_radius
     {𝕂 : Type*} [NontriviallyNormedField 𝕂] (c : ℕ → 𝕂) {y : 𝕂}
     (hy : ‖y‖ₑ < (ofScalars 𝕂 c).radius) (n : ℕ) :
     Summable fun k : ℕ ↦ ‖(k.descFactorial n : 𝕂) * c k * y ^ (k - n)‖ := by
-  rcases eq_or_ne y 0 with rfl | hy0
-  · refine summable_of_ne_finset_zero (s := {n}) fun k hk ↦ ?_
-    rcases lt_or_gt_of_ne (Finset.mem_singleton.not.mp hk) with hkn | hnk
-    · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hkn]
-    · simp [zero_pow (Nat.sub_ne_zero_of_lt hnk)]
-  · obtain ⟨a, ha, C, _, hC⟩ :=
-      (ofScalars 𝕂 c).norm_mul_pow_le_mul_pow_of_lt_radius (eNorm_eq_nnNorm (x := y) ▸ hy)
-    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun k ↦ ?_)
-      (((summable_descFactorial_mul_geometric_of_norm_lt_one n
-        (by rw [Real.norm_of_nonneg ha.1.le]; exact ha.2)).mul_left C).mul_left (‖y‖ ^ n)⁻¹)
-    rcases lt_or_ge k n with hkn | hnk
-    · simp only [Nat.descFactorial_eq_zero_iff_lt.mpr hkn, Nat.cast_zero, zero_mul, norm_zero]
-      positivity
-    · have hCk : ‖c k‖ * ‖y‖ ^ k ≤ C * a ^ k := by simpa [ofScalars_norm] using hC k
-      have hy_pow : ‖y‖ ^ (k - n) = (‖y‖ ^ n)⁻¹ * ‖y‖ ^ k := by
-        rw [eq_inv_mul_iff_mul_eq₀ (pow_ne_zero n (norm_ne_zero_iff.mpr hy0)), ← pow_add,
-          Nat.add_sub_of_le hnk]
-      calc ‖(k.descFactorial n : 𝕂) * c k * y ^ (k - n)‖
-          = (‖y‖ ^ n)⁻¹ * (‖(k.descFactorial n : 𝕂)‖ * (‖c k‖ * ‖y‖ ^ k)) := by
-              rw [norm_mul, norm_mul, norm_pow, hy_pow]; ring
-        _ ≤ (‖y‖ ^ n)⁻¹ * ((k.descFactorial n : ℝ) * (C * a ^ k)) :=
-              mul_le_mul_of_nonneg_left
-                (mul_le_mul (by simpa using Nat.norm_cast_le (α := 𝕂) _) hCk
-                  (by positivity) (by positivity)) (by positivity)
-        _ = (‖y‖ ^ n)⁻¹ * (C * ((k.descFactorial n : ℝ) * a ^ k)) := by ring
+  set p := ofScalars 𝕂 c
+  have hsum : Summable fun l : ℕ ↦
+      ‖(n.factorial : 𝕂)‖ * ‖(p.changeOriginSeries n l) fun _ ↦ y‖ :=
+    ((p.changeOriginSeries n).summable_norm_apply
+      (mem_eball_zero_iff.mpr (hy.trans_le (p.le_changeOriginSeries_radius n)))).mul_left _
+  have hbound : Summable fun l : ℕ ↦
+      ‖((l + n).descFactorial n : 𝕂) * c (l + n) * y ^ l‖ := by
+    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun l ↦ ?_) hsum
+    have hunit : ‖fun _ : Fin n ↦ (1 : 𝕂)‖ ≤ 1 :=
+      (pi_norm_le_iff_of_nonneg zero_le_one).mpr fun _ ↦ norm_one.le
+    calc ‖((l + n).descFactorial n : 𝕂) * c (l + n) * y ^ l‖
+        = ‖(n.factorial : 𝕂) * (((p.changeOriginSeries n l) fun _ ↦ y) fun _ ↦ 1)‖ := by
+            congr 1
+            simp only [p, changeOriginSeries_ofScalars_apply, add_comm l n,
+              Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, nsmul_eq_mul, smul_eq_mul,
+              one_pow, mul_one]
+            rw [Nat.choose_symm_add]
+            ring
+      _ = ‖(n.factorial : 𝕂)‖ * ‖((p.changeOriginSeries n l) fun _ ↦ y) fun _ ↦ 1‖ :=
+            norm_mul _ _
+      _ ≤ ‖(n.factorial : 𝕂)‖ * ‖(p.changeOriginSeries n l) fun _ ↦ y‖ :=
+            mul_le_mul_of_nonneg_left (ContinuousMultilinearMap.unit_le_opNorm _ hunit)
+              (norm_nonneg _)
+  refine ((add_left_injective n).summable_iff fun k hk ↦ ?_).mp
+    (by simpa only [Function.comp_def, Nat.add_sub_cancel] using hbound)
+  simp [Nat.descFactorial_eq_zero_iff_lt.mpr
+    (not_le.mp fun h ↦ hk ⟨k - n, Nat.sub_add_cancel h⟩)]
 
 /-- Inside the convergence disk of `ofScalars 𝕂 c`, the rescaled termwise differentiated series
 `∑ k, k.descFactorial n * c k * y ^ k` is absolutely summable. -/
@@ -288,8 +301,7 @@ theorem le_radius_ofScalars_div_natCast {𝕜 : Type*} [NontriviallyNormedField 
   split_ifs with hn
   · simp
   · have hn_norm : (1 : ℝ) ≤ ‖(n : 𝕜)‖ := by
-      have h1 : (n : 𝕜) = algebraMap ℝ 𝕜 (n : ℝ) := by simp
-      rw [h1, norm_algebraMap']
+      rw [← map_natCast (algebraMap ℝ 𝕜) n, norm_algebraMap']
       simpa using (Nat.one_le_iff_ne_zero.mpr hn : 1 ≤ n)
     rw [norm_div]
     exact div_le_self (norm_nonneg _) hn_norm
@@ -321,14 +333,15 @@ theorem _root_.HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast
     HasDerivAt (fun z : 𝕜 ↦ ∑' n : ℕ, (if n = 0 then 0 else c n / (n : 𝕜)) * (z - x) ^ n)
       ((f (x + y) - c 0) / y) (x + y) := by
   set d : ℕ → 𝕜 := fun n ↦ if n = 0 then 0 else c n / (n : 𝕜)
-  set H : 𝕜 → 𝕜 := fun z ↦ ∑' n : ℕ, d n * (z - x) ^ n
-  have hpH : HasFPowerSeriesOnBall H (ofScalars 𝕜 d) x r :=
-    hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast c x hf.r_pos hf.r_le
-  have hH_diff : HasDerivAt H (deriv H (x + y)) (x + y) :=
-    (hpH.analyticAt_of_mem
-      (by simpa [Metric.mem_eball, eDist_eq_eNorm_sub] using hy)).differentiableAt.hasDerivAt
-  have hsum1 : HasSum (fun n : ℕ ↦ (n : 𝕜) * d n * y ^ n) (y * deriv H (x + y)) := by
-    simpa [iteratedDeriv_one] using hpH.hasSum_descFactorial_mul_pow_eq_pow_mul_iteratedDeriv hy 1
+  set H₀ : 𝕜 → 𝕜 := fun u ↦ ∑' n : ℕ, d n * u ^ n
+  have hpH₀ : HasFPowerSeriesOnBall H₀ (ofScalars 𝕜 d) 0 r := by
+    simpa only [sub_zero] using
+      hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast c 0 hf.r_pos hf.r_le
+  have hH₀_diff : HasDerivAt H₀ (deriv H₀ y) y :=
+    (hpH₀.analyticAt_of_mem
+      (by simpa [Metric.mem_eball, edist_zero_right] using hy)).differentiableAt.hasDerivAt
+  have hsum1 : HasSum (fun n : ℕ ↦ (n : 𝕜) * d n * y ^ n) (y * deriv H₀ y) :=
+    hpH₀.hasSum_mul_deriv_ofScalars hy
   have hsum2 : HasSum (fun n : ℕ ↦ if n = 0 then (0 : 𝕜) else c n * y ^ n) (f (x + y) - c 0) := by
     have hsum_f : HasSum (fun n : ℕ ↦ c n * y ^ n) (f (x + y)) := by
       simpa only [ofScalars_apply_eq, smul_eq_mul] using hf.hasSum (mem_eball_zero_iff.mpr hy)
@@ -340,12 +353,15 @@ theorem _root_.HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast
     by_cases hn : n = 0
     · simp [d, hn]
     · have hn0 : (n : 𝕜) ≠ 0 := by
-        rw [show (n : 𝕜) = algebraMap ℝ 𝕜 (n : ℝ) by simp]
+        rw [← map_natCast (algebraMap ℝ 𝕜) n]
         simpa using (algebraMap ℝ 𝕜).injective.ne (Nat.cast_ne_zero.mpr hn)
       simp [d, hn, mul_div_cancel₀ _ hn0]
-  have hval : y * deriv H (x + y) = f (x + y) - c 0 :=
+  have hval : y * deriv H₀ y = f (x + y) - c 0 :=
     hsum1.unique (hfun ▸ hsum2)
-  exact hH_diff.congr_deriv (eq_div_of_mul_eq hy0 (by rw [mul_comm, hval]))
+  have hH_diff : HasDerivAt H₀ ((f (x + y) - c 0) / y) (x + y - x) := by
+    rw [add_sub_cancel_left]
+    exact hH₀_diff.congr_deriv (eq_div_of_mul_eq hy0 (by rw [mul_comm, hval]))
+  simpa [H₀, d] using hH_diff.comp_sub_const (x + y) x
 
 /-- **Termwise differentiation of a scalar power series.** If `f` is the sum of the scalar power
 series `∑ c n * (z - x) ^ n` on the ball of radius `r` about `x`, then `deriv f` is the sum on
@@ -368,19 +384,6 @@ theorem _root_.HasFPowerSeriesOnBall.deriv_ofScalars {𝕂 : Type*} [Nontriviall
     rw [← h1, coeff, coeff, ContinuousLinearMap.compFormalMultilinearSeries_apply,
       ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
       ContinuousLinearMap.apply_apply]
-
-/-- **The Euler operator on a scalar power series.** If `f` is the sum of the scalar power series
-`∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
-`y * f' y = ∑ n * c n * y ^ n`. -/
-theorem _root_.HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars {𝕂 : Type*}
-    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
-    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
-    HasSum (fun n : ℕ ↦ n * c n * y ^ n) (y * deriv f y) := by
-  have h := (hf.deriv_ofScalars.hasSum (mem_eball_zero_iff.mpr hy)).mul_left y
-  rw [zero_add] at h
-  -- the term of index `0` vanishes, and the remaining terms are those of `h` shifted by one
-  refine (hasSum_nat_add_iff' 1).mp ?_
-  simpa [ofScalars_apply_eq, pow_succ, mul_comm, mul_left_comm, mul_assoc] using h
 
 /-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
 with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series

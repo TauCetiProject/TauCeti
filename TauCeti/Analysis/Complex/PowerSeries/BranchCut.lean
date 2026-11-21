@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 
-import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Branch-cut power series on a slit punctured disc
@@ -48,8 +48,7 @@ theorem hasDerivAt_cpow_mul_tsum {z₀ σ : ℂ} {r : ℝ} {c : ℕ → ℂ}
   have hpow := ((hasDerivAt_id z).sub_const z₀).cpow_const (c := σ) hzs
   refine (hpow.mul (hA_diff.hasDerivAt.comp_sub_const z z₀)).congr_deriv ?_
   dsimp only [id]
-  rw [show (z - z₀) ^ σ = (z - z₀) ^ (σ - 1) * (z - z₀) by
-    rw [Complex.cpow_sub _ _ hu0, Complex.cpow_one, div_mul_cancel₀ _ hu0]]
+  rw [cpow_eq_cpow_sub_natCast_mul_pow hu0 σ 1, Nat.cast_one, pow_one]
   ring
 
 /-- Analytic uniqueness for branch-cut power series: if `∑' s, d s * u ^ s` converges on

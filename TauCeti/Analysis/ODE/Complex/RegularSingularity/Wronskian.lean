@@ -10,12 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
 
-import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.PowerSeries.BranchCut
@@ -23,6 +19,7 @@ import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Complex.RegularSingularity.Basic
 import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Abel–Liouville Wronskian and fundamental pair at a regular singularity
@@ -89,8 +86,7 @@ theorem cpow_mul_exp_mul_wronskian_eq {z₀ : ℂ} {r : ℝ} {f g w₁ w₂ : �
     refine ((((hasDerivAt_id z).sub_const z₀).cpow_const (c := fs 0) hzs).mul
       hH_deriv.cexp).congr_deriv ?_
     dsimp only [id]
-    rw [show (z - z₀) ^ fs 0 = (z - z₀) ^ (fs 0 - 1) * (z - z₀) by
-      rw [Complex.cpow_sub _ _ hzu0, Complex.cpow_one, div_mul_cancel₀ _ hzu0]]
+    rw [cpow_eq_cpow_sub_natCast_mul_pow hzu0 (fs 0) 1, Nat.cast_one, pow_one]
     field_simp [hzu0]; ring
   exact mul_wronskian_eq_of_hasDerivAt (g := g) hopen
     (isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r) hE
@@ -134,11 +130,11 @@ private theorem wronskian_ansatz_eval_of_pos {z₀ α₁ α₂ c : ℂ} {N : ℕ
     rw [hdw₁]; simp only [w₁, A₁, B, id, add_sub_cancel_left, one_div]; ring
   rw [hdw₂, hdw₁]; dsimp only [w₁, w₂, A₁, B]; simp only [add_sub_cancel_left]
   have hp1 : (t : ℂ) ^ fs 0 * ((t : ℂ) ^ α₁ * (t : ℂ) ^ (α₂ - 1)) = 1 := by
-    rw [← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_add _ _ ht_ne,
-      show fs 0 + (α₁ + (α₂ - 1)) = 0 by linear_combination hvieta, Complex.cpow_zero]
+    have hexp1 : fs 0 + (α₁ + (α₂ - 1)) = 0 := by linear_combination hvieta
+    rw [← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_add _ _ ht_ne, hexp1, Complex.cpow_zero]
   have hp2 : (t : ℂ) ^ fs 0 * ((t : ℂ) ^ (α₁ - 1) * (t : ℂ) ^ α₂) = 1 := by
-    rw [← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_add _ _ ht_ne,
-      show fs 0 + (α₁ - 1 + α₂) = 0 by linear_combination hvieta, Complex.cpow_zero]
+    have hexp2 : fs 0 + (α₁ - 1 + α₂) = 0 := by linear_combination hvieta
+    rw [← Complex.cpow_add _ _ ht_ne, ← Complex.cpow_add _ _ ht_ne, hexp2, Complex.cpow_zero]
   have hc_pow : c * ((t : ℂ) ^ fs 0 * ((t : ℂ)⁻¹ * ((t : ℂ) ^ α₁ * (t : ℂ) ^ α₁))) =
       c * (t : ℂ) ^ N := by
     rcases hcN with rfl | hdiff
@@ -228,6 +224,32 @@ private theorem abel_liouville_wronskian_ansatz_eq {z₀ α₁ α₂ c : ℂ} {N
     (hG0 ▸ hG_cont0.tendsto.comp
       ((Complex.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds))
 
+/-- Zero-log specialization (`c = 0`) of `abel_liouville_wronskian_ansatz_eq`. -/
+private theorem abel_liouville_wronskian_ansatz_zero_eq {z₀ α₁ α₂ : ℂ} {r : ℝ}
+    {f g : ℂ → ℂ} {fs a b : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hvieta : α₁ + α₂ = 1 - fs 0)
+    (ha_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s)
+    (hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s)
+    (hw₁_sol : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      let w₁ := fun w => (w - z₀) ^ α₁ * ∑' s, a s * (w - z₀) ^ s
+      deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0)
+    (hw₂_sol : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      let w₂ := fun w => (w - z₀) ^ α₂ * ∑' s, b s * (w - z₀) ^ s
+      deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0) :
+    let w₁ : ℂ → ℂ := fun z => (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s
+    let w₂ : ℂ → ℂ := fun z => (z - z₀) ^ α₂ * ∑' s, b s * (z - z₀) ^ s
+    let H : ℂ → ℂ := fun u => ∑' s : ℕ, (if s = 0 then (0 : ℂ) else fs s / s) * u ^ s
+    ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      (z - z₀) ^ fs 0 * cexp (H (z - z₀)) * (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z) =
+        (α₂ - α₁) * a 0 * b 0 := by
+  intro _ _ _ z hzs hzb
+  have hId := abel_liouville_wronskian_ansatz_eq (c := 0) (N := 1) hf hvieta (Or.inl rfl)
+    ha_sum hb_sum hw₁_sol
+    (fun w hws hwb => by simpa only [zero_mul, add_zero] using hw₂_sol w hws hwb) z hzs hzb
+  simpa only [zero_mul, add_zero] using hId
+
 private theorem eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq {u p h w c : ℂ} (hu : u ≠ 0)
     (heq : u ^ p * cexp h * w = c) : w = c * u ^ (-p) * cexp (-h) := by
   have h1 : u ^ (-p) * u ^ p = 1 := by
@@ -258,10 +280,12 @@ theorem wronskian_regularSingular_eq {z₀ α₁ α₂ : ℂ} {r : ℝ} {f g : �
   intro w₁ w₂ H z hzs hzb
   obtain ⟨ha₁_sum, _, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₁
   obtain ⟨ha₂_sum, _, hw₂_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact]) hres₂
-  exact eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs) (by
-    simpa [w₁, w₂, H] using abel_liouville_wronskian_ansatz_eq (c := 0) (N := 1) hf
-      (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1 (Or.inl rfl) ha₁_sum ha₂_sum hw₁_sol
-      (fun w hws hwb => by simpa using hw₂_sol w hws hwb) z hzs hzb)
+  have hId := abel_liouville_wronskian_ansatz_zero_eq hf
+    (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1 ha₁_sum ha₂_sum hw₁_sol hw₂_sol z hzs hzb
+  have hconst : (α₂ - α₁) * regularSingularCoeff fs gs α₁ 0 * regularSingularCoeff fs gs α₂ 0 =
+      α₂ - α₁ := by
+    rw [regularSingularCoeff_zero, regularSingularCoeff_zero, mul_one, mul_one]
+  exact eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs) (hId.trans hconst)
 
 /-- For two distinct indicial roots `α₁ ≠ α₂` that are both non-resonant (`Q(αᵢ + s) ≠ 0` for all
 `s ≥ 1`), the two canonical series solutions attached to `α₁` and `α₂` have nowhere-vanishing
@@ -309,20 +333,26 @@ theorem wronskian_regularSingular_second_eq {z₀ α₁ α₂ : ℂ} {N : ℕ} {
       w₁ z * deriv w₂ z - deriv w₁ z * w₂ z =
         (if N = 0 then (1 : ℂ) else -(N : ℂ)) * (z - z₀) ^ (-fs 0) * cexp (-H (z - z₀)) := by
   intro a b c w₁ w₂ H z hzs hzb
+  have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
+  have hre : α₁.re ≥ α₂.re := by rw [hα₁]; simp
   obtain ⟨ha_sum, _, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact
-      (by rw [show α₁ = α₂ + N by linear_combination hdiff]; simp) hs
+    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact hre hs
   obtain ⟨hb_sum, _, hw₂_sol⟩ := regularSingular_second_solution hf hg hfact hdiff
   have hId := abel_liouville_wronskian_ansatz_eq (c := c) (N := N) hf
     (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1 (Or.inr hdiff) ha_sum hb_sum hw₁_sol
     hw₂_sol z hzs hzb
-  rw [show α₂ - α₁ = -(N : ℂ) by linear_combination -hdiff] at hId
-  refine eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs) ?_
-  rcases eq_or_ne N 0 with rfl | hN0
-  · simpa [a, b, c, w₁, w₂, H] using hId
-  · simpa [a, b, c, w₁, w₂, H, hN0,
-      regularSingularSecondCoeff_zero_of_pos fs gs α₂ (Nat.pos_of_ne_zero hN0),
-      zero_pow hN0] using hId
+  have hdiff' : α₂ - α₁ = -(N : ℂ) := by linear_combination -hdiff
+  have ha0 : a 0 = 1 := regularSingularCoeff_zero fs gs α₁
+  have hconst : (α₂ - α₁) * a 0 * b 0 + c * (0 : ℂ) ^ N * a 0 ^ 2 =
+      if N = 0 then (1 : ℂ) else -(N : ℂ) := by
+    rw [hdiff', ha0, mul_one, one_pow, mul_one]
+    rcases eq_or_ne N 0 with rfl | hN0
+    · have hc0 : c = 1 := regularSingularLogMultiplier_zero fs gs α₂
+      simp [hc0]
+    · have hb0 : b 0 = 1 :=
+        regularSingularSecondCoeff_zero_of_pos fs gs α₂ (Nat.pos_of_ne_zero hN0)
+      simp [hN0, hb0, zero_pow hN0]
+  exact eq_mul_cpow_neg_mul_cexp_neg_of_mul_eq (Complex.slitPlane_ne_zero hzs) (hId.trans hconst)
 
 /-- When `α₁ - α₂ = N ∈ ℕ`, the primary series solution `w₁` and the second solution `w₂` have
 nowhere-vanishing Wronskian on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
