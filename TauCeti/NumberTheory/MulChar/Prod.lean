@@ -56,7 +56,7 @@ theorem coprodEquiv_symm_apply_fst (χ : MulChar (M × N) R) (m : M) :
     (coprodEquiv.symm χ).1 m = χ (m, 1) := by
   have h := coprodEquiv_apply (coprodEquiv.symm χ) (m, 1)
   rw [MulEquiv.apply_symm_apply] at h
-  simpa using h.symm
+  simpa only [MulChar.map_one, mul_one] using h.symm
 
 /-- The second character attached to `χ` is its restriction `n ↦ χ (1, n)`. -/
 @[simp]
