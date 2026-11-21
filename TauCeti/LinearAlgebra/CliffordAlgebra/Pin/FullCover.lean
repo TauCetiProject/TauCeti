@@ -29,12 +29,13 @@ their images in the orthogonal group.
 
 ## Main results
 
-* `CliffordAlgebra.mem_range_pinToCliffordFullCover_iff` and
-  `CliffordAlgebra.mem_range_spinToCliffordFullCover_iff`: the Pin group is the part of the full
-  cover of `star` norm `1`, and the Spin group its even part of reverse norm `1`.
-* `CliffordAlgebra.comap_range_pinToOrthogonal` and `CliffordAlgebra.comap_range_spinToOrthogonal`:
-  when `-1` is not a square, the Pin and Spin groups of a nondegenerate space are the inverse
-  images of their images in `O(Q)`.
+* `CliffordAlgebra.mem_range_pinToCliffordFullCover_iff`: the Pin group is the part of the full
+  cover of `star` norm `1`.
+* `CliffordAlgebra.comap_range_pinToOrthogonal`: when `-1` is not a square, the Pin group of a
+  nondegenerate space is the inverse image of its image in `O(Q)`.
+
+The corresponding Spin results, `CliffordAlgebra.mem_range_spinToCliffordFullCover_iff` and
+`CliffordAlgebra.comap_range_spinToOrthogonal`, are in `Lipschitz.FullCover.Basic`.
 
 ## References
 
@@ -116,28 +117,6 @@ theorem mem_range_pinToCliffordFullCover_iff (x : cliffordFullCover Q) :
     refine ⟨⟨_, (mem_pinGroup_iff_lipschitzNorm_eq_one Q x).2 h⟩, Subtype.ext (Subtype.ext ?_)⟩
     exact Units.ext (by rw [coe_pinToCliffordFullCover_apply, coe_pinToLipschitz_apply])
 
-/-- **The Spin group inside the full cover** is the subgroup of even elements of reverse norm
-`1`. -/
-theorem mem_range_spinToCliffordFullCover_iff (x : cliffordFullCover Q) :
-    x ∈ (spinToCliffordFullCover Q).range ↔
-      (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q ∧
-        cliffordNorm Q x = 1 := by
-  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule,
-    ← mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one]
-  constructor
-  · rintro ⟨s, rfl⟩
-    rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
-    exact s.property
-  · intro h
-    refine ⟨⟨_, h⟩, Subtype.ext (Subtype.ext (Units.ext ?_))⟩
-    rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
-
-/-- The Spin group lies in the even part of the full cover. -/
-theorem range_spinToCliffordFullCover_le_cliffordFullCoverEven :
-    (spinToCliffordFullCover Q).range ≤ cliffordFullCoverEven Q :=
-  fun x hx ↦
-    (mem_cliffordFullCoverEven_iff Q x).2 ((mem_range_spinToCliffordFullCover_iff Q x).1 hx).1
-
 end Ring
 
 /-! ### Comparison over a field -/
@@ -146,31 +125,6 @@ section Field
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [Invertible (2 : K)] {Q : QuadraticForm K V}
-
-/-- When `-1` is not a square, the kernel of the full-cover action of a nondegenerate quadratic
-space lies in the Spin group: it is `{±1}` in positive dimension and trivial in dimension zero. -/
-theorem ker_cliffordFullCoverToOrthogonal_le_range_spinToCliffordFullCover
-    (hQ : Q.Nondegenerate) (h : ¬IsSquare (-1 : K)) :
-    (cliffordFullCoverToOrthogonal Q).ker ≤ (spinToCliffordFullCover Q).range := by
-  rcases subsingleton_or_nontrivial V with hV | hV
-  · intro x _
-    have hx : (x : lipschitzGroup Q) = 1 :=
-      Subtype.ext (Subgroup.mem_bot.1
-        (lipschitzGroup_eq_bot (Q := Q) ▸ (x : lipschitzGroup Q).property))
-    exact ⟨1, Subtype.ext (by rw [map_one, hx, OneMemClass.coe_one])⟩
-  · rw [ker_cliffordFullCoverToOrthogonal hQ h]
-    exact Subgroup.map_le_range _ _
-
-/-- **The Spin group is the inverse image of its image.** When `-1` is not a square, an element
-of the full cover of a nondegenerate quadratic space acts like a Spin element exactly when it is
-one: the kernel of the full-cover action, `{±1}` in positive dimension and trivial in dimension
-zero, lies in the Spin group. -/
-theorem comap_range_spinToOrthogonal (hQ : Q.Nondegenerate) (h : ¬IsSquare (-1 : K)) :
-    (spinToOrthogonal Q).range.comap (cliffordFullCoverToOrthogonal Q) =
-      (spinToCliffordFullCover Q).range := by
-  rw [← cliffordFullCoverToOrthogonal_comp_spinToCliffordFullCover, ← MonoidHom.map_range,
-    Subgroup.comap_map_eq,
-    sup_eq_left.2 (ker_cliffordFullCoverToOrthogonal_le_range_spinToCliffordFullCover hQ h)]
 
 /-- **The Pin group is the inverse image of its image.** When `-1` is not a square, an element of
 the full cover of a nondegenerate quadratic space acts like a Pin element exactly when it is one:

@@ -51,9 +51,14 @@ subgroup for an indefinite form.
   `CliffordAlgebra.ker_cliffordFullCoverToOrthogonal`: when `-1` is not a square, the kernel of
   the full-cover action is `{±1}`, the image of the kernel of the Spin action, in positive
   dimension; `CliffordAlgebra.card_ker_cliffordFullCoverToOrthogonal` counts it.
-* `CliffordAlgebra.exists_cliffordFullCoverToOrthogonal_eq_and_mem_even_iff`: an orthogonal
-  transformation is the action of an even element of the full cover exactly when it lies in
-  `SO(Q)`.
+* `CliffordAlgebra.mem_range_spinToCliffordFullCover_iff`: the Spin group is the part of the full
+  cover of even elements of reverse norm `1`.
+* `CliffordAlgebra.comap_range_spinToOrthogonal`: when `-1` is not a square, the Spin group of a
+  nondegenerate space is the inverse image of its image in `O(Q)`, since the kernel of the
+  full-cover action lies in it
+  (`CliffordAlgebra.ker_cliffordFullCoverToOrthogonal_le_range_spinToCliffordFullCover`).
+
+The even part of the full cover and its image `SO(Q)` are in `Lipschitz.FullCover.Even`.
 
 ## References
 
@@ -153,6 +158,22 @@ theorem cliffordFullCoverToOrthogonal_comp_spinToCliffordFullCover
   intro x
   simpa only [MonoidHom.comp_apply] using
     cliffordFullCoverToOrthogonal_spinToCliffordFullCover_apply Q x
+
+/-- **The Spin group inside the full cover** is the subgroup of even elements of reverse norm
+`1`. -/
+theorem mem_range_spinToCliffordFullCover_iff (Q : QuadraticForm R M) (x : cliffordFullCover Q) :
+    x ∈ (spinToCliffordFullCover Q).range ↔
+      (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q ∧
+        cliffordNorm Q x = 1 := by
+  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule,
+    ← mem_spinGroup_iff_mem_even_and_cliffordNorm_eq_one]
+  constructor
+  · rintro ⟨s, rfl⟩
+    rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
+    exact s.property
+  · intro h
+    refine ⟨⟨_, h⟩, Subtype.ext (Subtype.ext (Units.ext ?_))⟩
+    rw [coe_spinToCliffordFullCover_apply, coe_spinToLipschitz_apply]
 
 /-! ### Rescaling into the full cover -/
 
@@ -266,21 +287,30 @@ theorem card_ker_cliffordFullCoverToOrthogonal [Nontrivial V] (hQ : Q.Nondegener
     · exact Or.inl (Subtype.ext hx)
     · exact Or.inr (Subtype.ext hx)
 
-/-- **The even part of the full cover covers `SO(Q)`.** Over a field in which every element is a
-square up to sign, an orthogonal transformation of a finite-dimensional nondegenerate quadratic
-space is the action of an even element of the full cover exactly when it has determinant one. -/
-theorem exists_cliffordFullCoverToOrthogonal_eq_and_mem_even_iff (hQ : Q.Nondegenerate)
-    (hK : ∀ a : K, IsSquare a ∨ IsSquare (-a)) (g : QuadraticMap.orthogonalGroup Q) :
-    (∃ x : cliffordFullCover Q, cliffordFullCoverToOrthogonal Q x = g ∧
-        (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q) ↔
-      g ∈ QuadraticMap.specialOrthogonalWithin Q := by
-  rw [QuadraticMap.mem_specialOrthogonalWithin_iff, ← QuadraticMap.orthogonalDet_apply]
-  constructor
-  · rintro ⟨x, rfl, hx⟩
-    exact det_lipschitzToOrthogonal_eq_one_of_mem_even Q _ hx
-  · intro hg
-    obtain ⟨x, rfl⟩ := cliffordFullCoverToOrthogonal_surjective hQ hK g
-    exact ⟨x, rfl, mem_even_of_det_lipschitzToOrthogonal_eq_one Q _ hg⟩
+/-- When `-1` is not a square, the kernel of the full-cover action of a nondegenerate quadratic
+space lies in the Spin group: it is `{±1}` in positive dimension and trivial in dimension zero. -/
+theorem ker_cliffordFullCoverToOrthogonal_le_range_spinToCliffordFullCover
+    (hQ : Q.Nondegenerate) (h : ¬IsSquare (-1 : K)) :
+    (cliffordFullCoverToOrthogonal Q).ker ≤ (spinToCliffordFullCover Q).range := by
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · intro x _
+    have hx : (x : lipschitzGroup Q) = 1 :=
+      Subtype.ext (Subgroup.mem_bot.1
+        (lipschitzGroup_eq_bot (Q := Q) ▸ (x : lipschitzGroup Q).property))
+    exact ⟨1, Subtype.ext (by rw [map_one, hx, OneMemClass.coe_one])⟩
+  · rw [ker_cliffordFullCoverToOrthogonal hQ h]
+    exact Subgroup.map_le_range _ _
+
+/-- **The Spin group is the inverse image of its image.** When `-1` is not a square, an element
+of the full cover of a nondegenerate quadratic space acts like a Spin element exactly when it is
+one: the kernel of the full-cover action, `{±1}` in positive dimension and trivial in dimension
+zero, lies in the Spin group. -/
+theorem comap_range_spinToOrthogonal (hQ : Q.Nondegenerate) (h : ¬IsSquare (-1 : K)) :
+    (spinToOrthogonal Q).range.comap (cliffordFullCoverToOrthogonal Q) =
+      (spinToCliffordFullCover Q).range := by
+  rw [← cliffordFullCoverToOrthogonal_comp_spinToCliffordFullCover, ← MonoidHom.map_range,
+    Subgroup.comap_map_eq,
+    sup_eq_left.2 (ker_cliffordFullCoverToOrthogonal_le_range_spinToCliffordFullCover hQ h)]
 
 end Field
 

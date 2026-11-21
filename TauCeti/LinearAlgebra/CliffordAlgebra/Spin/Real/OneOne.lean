@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OneOne
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RootsOfUnity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Real.OneOne
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.FullCover
 import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.NoncommCoprod
 

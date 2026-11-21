@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.FullCover
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 
 /-!

@@ -21,8 +21,12 @@ all of `SO(Q)` for a finite-dimensional nondegenerate quadratic space.
 
 ## Main results
 
-* `CliffordAlgebra.map_cliffordFullCoverEven`: when every element is a square up to sign, the even
-  part of the full cover covers `SO(Q)`.
+* `CliffordAlgebra.range_spinToCliffordFullCover_le_cliffordFullCoverEven`: the Spin group lies
+  in the even part of the full cover.
+* `CliffordAlgebra.exists_cliffordFullCoverToOrthogonal_eq_and_mem_even_iff` and
+  `CliffordAlgebra.map_cliffordFullCoverEven`: when every element is a square up to sign, an
+  orthogonal transformation is the action of an even element of the full cover exactly when it
+  lies in `SO(Q)`, so the even part of the full cover covers `SO(Q)`.
 
 ## References
 
@@ -67,12 +71,36 @@ theorem mem_cliffordFullCoverEven_iff (x : cliffordFullCover Q) :
       (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q :=
   Iff.rfl
 
+/-- The Spin group lies in the even part of the full cover. -/
+theorem range_spinToCliffordFullCover_le_cliffordFullCoverEven :
+    (spinToCliffordFullCover Q).range ≤ cliffordFullCoverEven Q :=
+  fun x hx ↦
+    (mem_cliffordFullCoverEven_iff Q x).2 ((mem_range_spinToCliffordFullCover_iff Q x).1 hx).1
+
 end Ring
 
 section Field
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [Invertible (2 : K)] {Q : QuadraticForm K V}
+
+/-- **The even part of the full cover covers `SO(Q)`.** Over a field in which every element is a
+square up to sign, an orthogonal transformation of a finite-dimensional nondegenerate quadratic
+space is the action of an even element of the full cover exactly when it has determinant one. -/
+theorem exists_cliffordFullCoverToOrthogonal_eq_and_mem_even_iff (hQ : Q.Nondegenerate)
+    (hK : ∀ a : K, IsSquare a ∨ IsSquare (-a)) (g : QuadraticMap.orthogonalGroup Q) :
+    (∃ x : cliffordFullCover Q, cliffordFullCoverToOrthogonal Q x = g ∧
+        (((x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q) ↔
+      g ∈ QuadraticMap.specialOrthogonalWithin Q := by
+  rw [QuadraticMap.mem_specialOrthogonalWithin_iff, ← QuadraticMap.orthogonalDet_apply]
+  constructor
+  · rintro ⟨x, rfl, hx⟩
+    rw [cliffordFullCoverToOrthogonal_apply]
+    exact det_lipschitzToOrthogonal_eq_one_of_mem_even Q _ hx
+  · intro hg
+    obtain ⟨x, rfl⟩ := cliffordFullCoverToOrthogonal_surjective hQ hK g
+    rw [cliffordFullCoverToOrthogonal_apply] at hg
+    exact ⟨x, rfl, mem_even_of_det_lipschitzToOrthogonal_eq_one Q _ hg⟩
 
 /-- **The even part of the full cover covers `SO(Q)`.** Over a field in which every element is a
 square up to sign, the image of the even part of the full cover of a finite-dimensional
