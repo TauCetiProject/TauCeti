@@ -332,6 +332,23 @@ theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮closedUpperHalfPlaneMode
   (A.halfSectionChartData.chartValueL_ofComponents_ae volume p k _ _ s i).trans
     (A.halfSectionChartData_coord_ae_eq i s)
 
+omit [FiniteDimensional ℝ F] p [Fact (1 ≤ p)] in
+variable {k} in
+/-- If a continuous map `f : F → X` into a `T2` space with zero vanishes on `A.halfCoord i s`
+almost everywhere on the interior `A.halfImage i` of chart `i` for a `Cᵏ` section `s`, then
+it vanishes at `A.chart i x` for every `x ∈ A.dom i`, boundary points included. -/
+theorem continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero
+    {A : FiniteBundleAtlas ClosedUpperHalfPlane M F V}
+    {X : Type*} [TopologicalSpace X] [T2Space X] [Zero X]
+    {f : F → X} (hf : Continuous f) (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯)
+    {i : Fin A.n} {x : M} (hx : x ∈ A.dom i)
+    (hae : (fun z ↦ f (A.halfCoord i s z)) =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] 0) :
+    f (A.halfCoord i s (A.chart i x : ℂ)) = 0 :=
+  A.eqOn_halfClosedImage_of_ae_eq hae
+    (hf.comp_continuousOn <| (A.contDiffOn_halfCoord s.contMDiff i).continuousOn.mono
+      (A.halfClosedImage_subset_halfChartSet i))
+    continuousOn_const (A.coe_chart_mem_halfClosedImage hx)
+
 /-- **Norm bound.** The norm of the Sobolev section of a `Cᵏ` section `s` is at most the sum, over
 all charts `i` and basis vectors `j`, of the `Lᵖ` norms on `A.halfImage i` of the classical
 derivatives of orders `0` through `k` of the components of `A.halfCoord i s`. -/
@@ -355,10 +372,7 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
     (A.halfSectionChartData_coord_ae_eq i s).symm.trans
       (A.halfSectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero volume p k _ _ hs i)
   have hval : A.halfCoord i s (A.chart i x : ℂ) = 0 :=
-    A.eqOn_halfClosedImage_of_ae_eq hae
-      ((A.contDiffOn_halfCoord s.contMDiff i).continuousOn.mono
-        (A.halfClosedImage_subset_halfChartSet i))
-      continuousOn_const (A.coe_chart_mem_halfClosedImage hx)
+    continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero continuous_id s hx hae
   rw [A.halfCoord_coe_chart s hx] at hval
   rw [ContMDiffSection.coe_zero, Pi.zero_apply,
     ← ((A.triv i).continuousLinearEquivAt ℝ x (A.dom_subset_baseSet i hx)).map_eq_zero_iff]

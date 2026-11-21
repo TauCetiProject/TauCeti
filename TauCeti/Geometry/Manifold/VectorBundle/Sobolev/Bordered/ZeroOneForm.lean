@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.AlmostComplexStructure
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Antilinear
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.SMul
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
-import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedAnnulus
+public import TauCeti.Topology.VectorBundle.RestrictScalars
 import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Bordered
 
 /-!
@@ -28,8 +29,9 @@ By `TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Bordered`, in every cha
 (`TauCeti.FiniteBundleAtlas.halfCoord_tangentHom_ofBorderedHolomorphic_zeroOnePart`), and a
 one-form is a `(0,1)`-form on `A.dom i` (boundary included) iff its reading is complex antilinear
 (`TauCeti.FiniteBundleAtlas.isZeroOneForm_ofBorderedHolomorphic_chart_iff_halfCoord`). Instantiating
-the `SectionChartData` theory on `(A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData`
-yields `TauCeti.borderedZeroOnePartSobolevL`, `TauCeti.borderedZeroOneLowerOrderL`,
+the `SectionChartData` theory of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Antilinear` on
+`(A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData` yields
+`TauCeti.borderedZeroOnePartSobolevL`, `TauCeti.borderedZeroOneLowerOrdersL`,
 `TauCeti.borderedZeroOneOfExponentLEL`, and `TauCeti.borderedZeroOneContMDiffSMulL`. We also prove:
 * **Smooth `(0,1)`-forms up to the boundary**
   (`TauCeti.ofContMDiffSection_mem_borderedZeroOneSobolevSections_iff`,
@@ -42,7 +44,7 @@ yields `TauCeti.borderedZeroOnePartSobolevL`, `TauCeti.borderedZeroOneLowerOrder
 ## Main definitions
 
 * `TauCeti.borderedZeroOneSobolevSections`, `TauCeti.borderedZeroOnePartSobolevL`,
-  `TauCeti.borderedZeroOneLowerOrderL`, `TauCeti.borderedZeroOneOfExponentLEL`,
+  `TauCeti.borderedZeroOneLowerOrdersL`, `TauCeti.borderedZeroOneOfExponentLEL`,
   `TauCeti.borderedZeroOneContMDiffSMulL`, `TauCeti.borderedZeroOneOfContMDiffSection`.
 
 ## Main results
@@ -52,6 +54,8 @@ yields `TauCeti.borderedZeroOnePartSobolevL`, `TauCeti.borderedZeroOneLowerOrder
   `TauCeti.isClosed_borderedZeroOneSobolevSections`,
   `TauCeti.borderedZeroOneSobolevSections.instCompleteSpace`,
   `TauCeti.closedComplemented_borderedZeroOneSobolevSections`.
+* `TauCeti.borderedZeroOneLowerOrdersL_injective`,
+  `TauCeti.borderedZeroOneOfExponentLEL_injective`.
 * `TauCeti.ofContMDiffSection_mem_borderedZeroOneSobolevSections_iff`,
   `TauCeti.borderedZeroOnePartSobolevL_ofContMDiffSection_eq_zero_iff`,
   `TauCeti.borderedZeroOneOfContMDiffSection_injective`.
@@ -311,40 +315,86 @@ theorem closedComplemented_borderedZeroOneSobolevSections :
 
 /-! ### Lowering the order -/
 
-/-- Forgetting the highest derivative of a `(0,1)`-form gives a `(0,1)`-form. -/
-theorem lowerOrderL_mem_borderedZeroOneSobolevSections
-    {w : BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p (k + 1)}
-    (hw : w ∈ borderedZeroOneSobolevSections A p (k + 1)) :
-    (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.lowerOrderL volume p k w ∈
-      borderedZeroOneSobolevSections A p k := by
-  rw [← SectionChartData.lowerOrdersL_one]
-  exact SectionChartData.lowerOrdersL_mem_antilinearSobolevSections 1 hw
+/-- Forgetting derivatives preserves the bordered `(0,1)` condition. -/
+theorem lowerOrdersL_mem_borderedZeroOneSobolevSections (d : ℕ)
+    {w : BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p (k + d)}
+    (hw : w ∈ borderedZeroOneSobolevSections A p (k + d)) :
+    (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.lowerOrdersL volume p k d w ∈
+      borderedZeroOneSobolevSections A p k :=
+  SectionChartData.lowerOrdersL_mem_antilinearSobolevSections d hw
 
 variable (A p k) in
-/-- The continuous inclusion of the bordered Sobolev `(0,1)`-forms of order `k + 1` into those of
+/-- The continuous inclusion of the bordered Sobolev `(0,1)`-forms of order `k + d` into those of
 order `k`. -/
-def borderedZeroOneLowerOrderL :
-    borderedZeroOneSobolevSections A p (k + 1) →L[ℝ] borderedZeroOneSobolevSections A p k :=
+def borderedZeroOneLowerOrdersL (d : ℕ) :
+    borderedZeroOneSobolevSections A p (k + d) →L[ℝ] borderedZeroOneSobolevSections A p k :=
   (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.antilinearLowerOrdersL
-    volume p k 1
+    volume p k d
 
+/-- As a function, the bordered order inclusion is the restriction of the canonical order map. -/
+theorem coeFn_borderedZeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
+    ⇑(borderedZeroOneLowerOrdersL A p k d) =
+      Set.codRestrict
+        (⇑((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.lowerOrdersL
+            volume p k d) ∘
+          ⇑(borderedZeroOneSobolevSections A p (k + d)).subtypeL)
+        (borderedZeroOneSobolevSections A p k)
+        (fun w ↦ lowerOrdersL_mem_borderedZeroOneSobolevSections d w.property) :=
+  funext fun w ↦ Subtype.ext (SectionChartData.coe_antilinearLowerOrdersL d w)
+
+/-- The inclusion acts by the canonical order inclusion on the underlying one-form. -/
 @[simp]
-theorem coe_borderedZeroOneLowerOrderL (w : borderedZeroOneSobolevSections A p (k + 1)) :
-    (borderedZeroOneLowerOrderL A p k w :
+theorem coe_borderedZeroOneLowerOrdersL (d : ℕ)
+    (w : borderedZeroOneSobolevSections A p (k + d)) :
+    (borderedZeroOneLowerOrdersL A p k d w :
         BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p k) =
-      (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.lowerOrderL volume p k w := by
-  rw [← SectionChartData.lowerOrdersL_one]
-  exact SectionChartData.coe_antilinearLowerOrdersL 1 w
+      (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.lowerOrdersL
+        volume p k d w :=
+  SectionChartData.coe_antilinearLowerOrdersL d w
 
-/-- The `(0,1)`-projection commutes with forgetting the highest derivative. -/
-theorem borderedZeroOneLowerOrderL_borderedZeroOnePartSobolevL
-    (w : BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p (k + 1)) :
-    borderedZeroOneLowerOrderL A p k (borderedZeroOnePartSobolevL A p (k + 1) w) =
+/-- Forgetting zero derivatives is the identity. -/
+@[simp]
+theorem borderedZeroOneLowerOrdersL_zero (w : borderedZeroOneSobolevSections A p k) :
+    borderedZeroOneLowerOrdersL A p k 0 w = w :=
+  SectionChartData.antilinearLowerOrdersL_zero w
+
+omit k in
+/-- Coercion to one-forms commutes with equality transport of the Sobolev order. -/
+@[simp]
+theorem coe_borderedZeroOneSobolevSections_eqRec {a b : ℕ} (h : a = b)
+    (w : borderedZeroOneSobolevSections A p a) :
+    ((h ▸ w : borderedZeroOneSobolevSections A p b) :
+        BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p b) =
+      h ▸ (w : BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p a) :=
+  SectionChartData.coe_antilinearSobolevSections_eqRec h w
+
+/-- Bordered order inclusions compose, with the source order reassociated by `Nat.add_assoc`. -/
+@[simp]
+theorem borderedZeroOneLowerOrdersL_borderedZeroOneLowerOrdersL (d e : ℕ)
+    (w : borderedZeroOneSobolevSections A p ((k + d) + e)) :
+    borderedZeroOneLowerOrdersL A p k d (borderedZeroOneLowerOrdersL A p (k + d) e w) =
+      borderedZeroOneLowerOrdersL A p k (d + e) ((Nat.add_assoc k d e) ▸ w) :=
+  SectionChartData.antilinearLowerOrdersL_antilinearLowerOrdersL d e w
+
+/-- Forgetting `d + 1` derivatives first forgets the highest derivative. -/
+theorem borderedZeroOneLowerOrdersL_succ (d : ℕ) :
+    borderedZeroOneLowerOrdersL A p k (d + 1) =
+      (borderedZeroOneLowerOrdersL A p k d).comp (borderedZeroOneLowerOrdersL A p (k + d) 1) :=
+  SectionChartData.antilinearLowerOrdersL_succ d
+
+/-- The bordered order inclusion is injective. -/
+theorem borderedZeroOneLowerOrdersL_injective (d : ℕ) :
+    Function.Injective (borderedZeroOneLowerOrdersL A p k d) :=
+  SectionChartData.antilinearLowerOrdersL_injective d
+
+/-- The `(0,1)`-projection commutes with forgetting derivatives. -/
+theorem borderedZeroOneLowerOrdersL_borderedZeroOnePartSobolevL (d : ℕ)
+    (w : BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p (k + d)) :
+    borderedZeroOneLowerOrdersL A p k d (borderedZeroOnePartSobolevL A p (k + d) w) =
       borderedZeroOnePartSobolevL A p k
-        ((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.lowerOrderL volume p k
-          w) := by
-  rw [← SectionChartData.lowerOrdersL_one]
-  exact SectionChartData.antilinearLowerOrdersL_antilinearPartSobolevL 1 _ _ w
+        ((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.lowerOrdersL
+          volume p k d w) :=
+  SectionChartData.antilinearLowerOrdersL_antilinearPartSobolevL d _ _ w
 
 /-! ### Lowering the integrability exponent -/
 
@@ -386,13 +436,13 @@ theorem borderedZeroOneOfExponentLEL_borderedZeroOneOfExponentLEL {r : ℝ≥0�
       borderedZeroOneOfExponentLEL A k (hpq.trans hqr) w :=
   SectionChartData.antilinearOfExponentLEL_antilinearOfExponentLEL hpq hqr w
 
-/-- Lowering the exponent commutes with forgetting the highest derivative on bordered Sobolev
+/-- Lowering the exponent commutes with forgetting derivatives on bordered Sobolev
 `(0,1)`-forms. -/
-theorem borderedZeroOneLowerOrderL_borderedZeroOneOfExponentLEL (hpq : p ≤ q)
-    (w : borderedZeroOneSobolevSections A q (k + 1)) :
-    borderedZeroOneLowerOrderL A p k (borderedZeroOneOfExponentLEL A (k + 1) hpq w) =
-      borderedZeroOneOfExponentLEL A k hpq (borderedZeroOneLowerOrderL A q k w) :=
-  SectionChartData.antilinearLowerOrdersL_antilinearOfExponentLEL 1 hpq w
+theorem borderedZeroOneLowerOrdersL_borderedZeroOneOfExponentLEL (d : ℕ) (hpq : p ≤ q)
+    (w : borderedZeroOneSobolevSections A q (k + d)) :
+    borderedZeroOneLowerOrdersL A p k d (borderedZeroOneOfExponentLEL A (k + d) hpq w) =
+      borderedZeroOneOfExponentLEL A k hpq (borderedZeroOneLowerOrdersL A q k d w) :=
+  SectionChartData.antilinearLowerOrdersL_antilinearOfExponentLEL d hpq w
 
 /-- Lowering the exponent commutes with the `(0,1)`-projection. -/
 theorem borderedZeroOneOfExponentLEL_borderedZeroOnePartSobolevL (hpq : p ≤ q)
@@ -449,15 +499,21 @@ theorem borderedZeroOneContMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneM
   ext1 w
   exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ) w.val)
 
-/-- Smooth real multiplication up to the boundary commutes with forgetting the highest derivative
-on `(0,1)`-forms. -/
-theorem borderedZeroOneLowerOrderL_borderedZeroOneContMDiffSMulL
+/-- Smooth real multiplication up to the boundary commutes with forgetting derivatives on
+`(0,1)`-forms. -/
+theorem borderedZeroOneLowerOrdersL_borderedZeroOneContMDiffSMulL (d : ℕ)
     (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
-    (w : borderedZeroOneSobolevSections A p (k + 1)) :
-    borderedZeroOneLowerOrderL A p k (borderedZeroOneContMDiffSMulL A p (k + 1) hφ w) =
-      borderedZeroOneContMDiffSMulL A p k hφ (borderedZeroOneLowerOrderL A p k w) :=
-  Subtype.ext <| by
-    simp only [coe_borderedZeroOneLowerOrderL, coe_borderedZeroOneContMDiffSMulL]
+    (w : borderedZeroOneSobolevSections A p (k + d)) :
+    borderedZeroOneLowerOrdersL A p k d (borderedZeroOneContMDiffSMulL A p (k + d) hφ w) =
+      borderedZeroOneContMDiffSMulL A p k hφ (borderedZeroOneLowerOrdersL A p k d w) := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+    rw [borderedZeroOneLowerOrdersL_succ, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply]
+    refine (congrArg (borderedZeroOneLowerOrdersL A p k d) (Subtype.ext ?_)).trans (ih _)
+    simp only [coe_borderedZeroOneLowerOrdersL, coe_borderedZeroOneContMDiffSMulL,
+      SectionChartData.lowerOrdersL_one]
     exact BorderedSobolevSection.lowerOrderL_contMDiffSMulL hφ w.val
 
 /-- Smooth real multiplication up to the boundary commutes with the `(0,1)`-projection. -/
@@ -564,12 +620,9 @@ theorem ofContMDiffSection_mem_borderedZeroOneSobolevSections_iff
       mem_borderedZeroOneSobolevSections_iff.1 hw i] with z hz h01
     simpa only [L, B, _root_.sub_apply, ContinuousLinearMap.id_apply, Pi.zero_apply, sub_eq_zero,
       complexAntilinearPartL_eq_self_iff, ← hz] using h01
-  have hcont : ContinuousOn (fun z ↦ L (B.halfCoord i θ z)) (B.halfClosedImage i) :=
-    L.continuous.comp_continuousOn <| (B.contDiffOn_halfCoord θ.contMDiff i).continuousOn.mono
-      (B.halfClosedImage_subset_halfChartSet i)
   have hval : L (B.halfCoord i θ (A.chart i x : ℂ)) = 0 :=
-    B.eqOn_halfClosedImage_of_ae_eq hae hcont continuousOn_const
-      (B.coe_chart_mem_halfClosedImage hx)
+    BorderedSobolevSection.continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero
+      L.continuous θ hx hae
   rw [A.isZeroOneForm_ofBorderedHolomorphic_chart_iff_halfCoord θ hx]
   exact complexAntilinearPartL_eq_self_iff.1 (sub_eq_zero.1 hval)
 
@@ -593,14 +646,9 @@ theorem borderedZeroOnePartSobolevL_ofContMDiffSection_eq_zero_iff
       filter_upwards [chartValueL_ofContMDiffSection_halfCoord p k θ i,
         borderedZeroOnePartSobolevL_eq_zero_iff.1 hw i] with z hz hlin
       simpa only [B, Pi.zero_apply, complexAntilinearPartL_eq_zero_iff, ← hz] using hlin
-    have hcont : ContinuousOn (fun z ↦ complexAntilinearPartL (B.halfCoord i θ z))
-        (B.halfClosedImage i) :=
-      complexAntilinearPartL.continuous.comp_continuousOn <|
-        (B.contDiffOn_halfCoord θ.contMDiff i).continuousOn.mono
-          (B.halfClosedImage_subset_halfChartSet i)
     have hval : complexAntilinearPartL (B.halfCoord i θ (A.chart i x : ℂ)) = 0 :=
-      B.eqOn_halfClosedImage_of_ae_eq hae hcont continuousOn_const
-        (B.coe_chart_mem_halfClosedImage hx)
+      BorderedSobolevSection.continuous_comp_halfCoord_coe_chart_eq_zero_of_ae_eq_zero
+        complexAntilinearPartL.continuous θ hx hae
     have hchart_val : B.halfCoord i (fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ x))
         (A.chart i x : ℂ) = (B.triv i ⟨x, (ofBorderedHolomorphic M).zeroOnePart (θ x)⟩).snd :=
       B.halfCoord_coe_chart _ hx
@@ -672,28 +720,6 @@ theorem borderedZeroOneOfContMDiffSection_injective :
     Function.Injective (borderedZeroOneOfContMDiffSection A p k) := fun _ _ h ↦
   Subtype.ext <| BorderedSobolevSection.ofContMDiffSection_injective _ p k <| by
     simpa only [coe_borderedZeroOneOfContMDiffSection] using congrArg Subtype.val h
-
-/-! #### Concrete witness: the closed annulus -/
-
-section ClosedAnnulusCheck
-
-private example (r₁ r₂ : ℝ) [hr₁ : Fact (0 < r₁)] [hr₁₂ : Fact (r₁ < r₂)]
-    (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ) :
-    ∃ A : FiniteBundleAtlas ClosedUpperHalfPlane (Complex.closedAnnulus r₁ r₂) ℂ
-        (Bundle.Trivial (Complex.closedAnnulus r₁ r₂) ℂ),
-      CompleteSpace (borderedZeroOneSobolevSections A p k) ∧
-      (borderedZeroOneSobolevSections A p k).ClosedComplemented ∧
-      Function.Injective (borderedZeroOneOfContMDiffSection A p k) := by
-  have : LocallyCompactSpace ClosedUpperHalfPlane :=
-    (isClosed_le continuous_const Complex.continuous_im).locallyCompactSpace
-  have : Nonempty (Complex.closedAnnulus r₁ r₂) := ⟨⟨(r₁ : ℂ), Complex.mem_closedAnnulus.2
-    ⟨by simp [abs_of_pos hr₁.out], by simp [abs_of_pos hr₁.out, hr₁₂.out.le]⟩⟩⟩
-  obtain ⟨A⟩ := FiniteBundleAtlas.nonempty (E := ClosedUpperHalfPlane)
-    (M := Complex.closedAnnulus r₁ r₂) (F := ℂ) (V := Bundle.Trivial _ ℂ)
-  exact ⟨A, inferInstance, closedComplemented_borderedZeroOneSobolevSections,
-    borderedZeroOneOfContMDiffSection_injective A p k⟩
-
-end ClosedAnnulusCheck
 
 end Smooth
 

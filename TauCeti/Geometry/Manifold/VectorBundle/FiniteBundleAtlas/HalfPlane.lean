@@ -577,7 +577,8 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
 
 @[simp]
 theorem halfImage_ofBaseSet (i : Fin A.n) : (A.ofBaseSet h).halfImage i = A.halfImage i :=
-  SetLike.ext fun _ ↦ by change (_ ∈ (A.ofBaseSet h).image i ∧ _) ↔ _; rw [image_ofBaseSet]; rfl
+  SetLike.ext fun _ ↦ by
+    rw [mem_halfImage (A := A.ofBaseSet h) (i := i), mem_halfImage, image_ofBaseSet]
 
 @[simp]
 theorem halfClosedImage_ofBaseSet (i : Fin A.n) :
@@ -622,8 +623,9 @@ theorem halfCoord_prod (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
     (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet)
     (i : Fin A.n) (s : ∀ x, (V ×ᵇ V') x) (z : ℂ) :
     (A.prod h).halfCoord i s z =
-      (A.halfCoord i (fun x ↦ (s x).fst) z, (A.ofBaseSet h).halfCoord i (fun x ↦ (s x).snd) z) :=
-  A.coord_prod h i s (closedUpperHalfPlaneModel.symm z)
+      (A.halfCoord i (fun x ↦ (s x).fst) z, (A.ofBaseSet h).halfCoord i (fun x ↦ (s x).snd) z) := by
+  rw [halfCoord_def (A := A.prod h) i, halfCoord_def A i, halfCoord_def (A := A.ofBaseSet h) i]
+  exact A.coord_prod h i s (closedUpperHalfPlaneModel.symm z)
 
 end Prod
 
@@ -678,8 +680,9 @@ theorem halfCoord_hom (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (z : 
       ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (A.center i)
         ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) (A.center i)
         ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))
-        (φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))) :=
-  A.coord_hom h i φ (closedUpperHalfPlaneModel.symm z)
+        (φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))) := by
+  rw [halfCoord_def (A := A.hom h) i]
+  exact A.coord_hom h i φ (closedUpperHalfPlaneModel.symm z)
 
 /-- On the image of a chart, including its points on the real axis, applying the chart reading in
 `ℂ` of a section `φ` of the hom bundle to the chart reading of a section `s` of `V₁` gives the
@@ -687,8 +690,9 @@ chart reading of `x ↦ φ x (s x)`. -/
 theorem halfCoord_hom_apply (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (s : ∀ x, V₁ x) {z : ℂ}
     (hz : closedUpperHalfPlaneModel.symm z ∈ A.image i) :
     (A.hom h).halfCoord i φ z (A.halfCoord i s z) =
-      (A.ofBaseSet h).halfCoord i (fun x ↦ φ x (s x)) z :=
-  A.coord_hom_apply h i φ s hz
+      (A.ofBaseSet h).halfCoord i (fun x ↦ φ x (s x)) z := by
+  rw [halfCoord_def (A := A.hom h) i, halfCoord_def A i, halfCoord_def (A := A.ofBaseSet h) i]
+  exact A.coord_hom_apply h i φ s hz
 
 end Hom
 
@@ -740,8 +744,9 @@ theorem halfCoord_tangentHom (i : Fin A.n)
       ContinuousLinearMap.inCoordinates ℂ (TangentSpace closedUpperHalfPlaneModel) F V
         (A.center i) ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) (A.center i)
         ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))
-        (θ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))) :=
-  A.coord_tangentHom closedUpperHalfPlaneModel i θ (closedUpperHalfPlaneModel.symm z)
+        (θ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z))) := by
+  rw [halfCoord_def (A := A.tangentHom closedUpperHalfPlaneModel) i]
+  exact A.coord_tangentHom closedUpperHalfPlaneModel i θ (closedUpperHalfPlaneModel.symm z)
 
 /-- On the image of a chart, including its points on the real axis, applying the chart reading in
 `ℂ` of a `V`-valued one-form `θ` to the chart reading of a vector field `v` gives the chart reading
@@ -752,8 +757,10 @@ theorem halfCoord_tangentHom_apply (i : Fin A.n)
     (hz : closedUpperHalfPlaneModel.symm z ∈ A.image i) :
     (A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ z
       ((A.tangent closedUpperHalfPlaneModel).halfCoord i v z) =
-        A.halfCoord i (fun x ↦ θ x (v x)) z :=
-  A.coord_tangentHom_apply closedUpperHalfPlaneModel i θ v hz
+        A.halfCoord i (fun x ↦ θ x (v x)) z := by
+  rw [halfCoord_def (A := A.tangentHom closedUpperHalfPlaneModel) i,
+    halfCoord_def (A := A.tangent closedUpperHalfPlaneModel) i, halfCoord_def A i]
+  exact A.coord_tangentHom_apply closedUpperHalfPlaneModel i θ v hz
 
 end TangentHom
 
