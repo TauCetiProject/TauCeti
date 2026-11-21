@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
-public import TauCeti.Geometry.Manifold.Riemannian.SelfDual
+public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 
 /-!
 # The abelian deformation operator of the Seiberg–Witten equations
@@ -170,8 +170,8 @@ four-manifold, `∫_X ⟨f, -2 d*a⟩ vol = 0` for every one-form `a` and every 
 `df = 0`. -/
 theorem integralTopForm_inner_abelianDeformationOperator_fst_eq_zero (a : SmoothForm I M ℝ 1)
     {f : SmoothForm I M ℝ 0} (hf : mextDerivₗ I 0 f = 0) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 0 (f.1 x)
-      ((abelianDeformationOperator o a).1.1 x) • riemannianVolumeForm o x) = 0 := by
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 0 (f.val x)
+      ((abelianDeformationOperator o a).1.val x) • riemannianVolumeForm o x) = 0 := by
   -- `∫ ⟨f, d*a⟩ vol = ∫ ⟨df, a⟩ vol = 0`.
   have h := SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential o
     (show 0 + 1 + 3 = 2 + 2 from rfl) f a (.inl (by simp [compactlySupportedForms_eq_top]))
@@ -190,13 +190,13 @@ theorem integralTopForm_inner_abelianDeformationOperator_snd_eq_zero (a : Smooth
     {γ : SmoothForm.selfDualForms (I := I) (M := M) o}
     (hγ : mextDerivₗ I 2 (γ : SmoothForm I M ℝ 2) = 0) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-      (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).1 x)
-        ((γ : SmoothForm I M ℝ 2).1 x) • riemannianVolumeForm o x) = 0 := by
+      (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).val x)
+        ((γ : SmoothForm I M ℝ 2).val x) • riemannianVolumeForm o x) = 0 := by
   rw [coe_abelianDeformationOperator_apply_snd]
   exact SmoothForm.integralTopForm_inner_selfDualPart_eq_zero o even_two
     (by rw [exactForms_succ]; exact LinearMap.mem_range_self _ a)
     ((mem_compactlySupportedClosedForms I).2 ⟨by simp [compactlySupportedForms_eq_top],
-      (mem_closedForms_iff_mextDerivₗ_eq_zero I _).2 hγ⟩) γ.2
+      (mem_closedForms_iff_mextDerivₗ_eq_zero I _).2 hγ⟩) γ.property
 
 /-- On a closed four-manifold the formal adjoint vanishes exactly on closed functions and
 closed self-dual two-forms, the harmonic `H⁰ ⊕ H⁺` representatives. -/
@@ -237,19 +237,19 @@ theorem integralTopForm_inner_abelianDeformationOperator_eq_inner_abelianDeforma
     (a : SmoothForm I M ℝ 1)
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 0
-      ((abelianDeformationOperator o a).1.1 x) (p.1.1 x) • riemannianVolumeForm o x) +
+      ((abelianDeformationOperator o a).1.val x) (p.1.val x) • riemannianVolumeForm o x) +
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-      (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).1 x)
-      ((p.2 : SmoothForm I M ℝ 2).1 x) • riemannianVolumeForm o x) =
+      (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).val x)
+      ((p.2 : SmoothForm I M ℝ 2).val x) • riemannianVolumeForm o x) =
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 1
-      (a.1 x) ((abelianDeformationFormalAdjoint o p).1 x) • riemannianVolumeForm o x) := by
+      (a.val x) ((abelianDeformationFormalAdjoint o p).val x) • riemannianVolumeForm o x) := by
   have hf := SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential o
     (show 0 + 1 + 3 = 2 + 2 from rfl) p.1 a
     (.inl (by simp [compactlySupportedForms_eq_top]))
   have hγ := SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential o
     (show 1 + 1 + 2 = 2 + 2 from rfl) a (p.2 : SmoothForm I M ℝ 2)
     (.inl (by simp [compactlySupportedForms_eq_top]))
-  rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm (α := a.1),
+  rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm (α := a.val),
     abelianDeformationFormalAdjoint_apply,
     SmoothForm.integralTopForm_inner_add_left o (show 1 + 3 = 2 + 2 from rfl) _ _ _
       (.inr (by simp [compactlySupportedForms_eq_top]))]
@@ -264,7 +264,7 @@ theorem integralTopForm_inner_abelianDeformationOperator_eq_inner_abelianDeforma
       RoughForm.alternatingFormInner_selfDualPart_of_mem_selfDualForms o even_two _
         (SmoothForm.coe_mem_selfDualForms_iff.mpr p.2.property)]
     rw [RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm
-      (α := (SmoothForm.codifferential o rfl (p.2 : SmoothForm I M ℝ 2)).1)]
+      (α := (SmoothForm.codifferential o rfl (p.2 : SmoothForm I M ℝ 2)).val)]
     exact hγ
 
 /-- The smooth annihilator of the range of `T` is exactly the closed scalar and self-dual
@@ -273,10 +273,10 @@ theorem forall_integralTopForm_inner_abelianDeformationOperator_eq_zero_iff
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
     (∀ a : SmoothForm I M ℝ 1,
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 0
-        ((abelianDeformationOperator o a).1.1 x) (p.1.1 x) • riemannianVolumeForm o x) +
+        ((abelianDeformationOperator o a).1.val x) (p.1.val x) • riemannianVolumeForm o x) +
       integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-        (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).1 x)
-        ((p.2 : SmoothForm I M ℝ 2).1 x) • riemannianVolumeForm o x) = 0) ↔
+        (((abelianDeformationOperator o a).2 : SmoothForm I M ℝ 2).val x)
+        ((p.2 : SmoothForm I M ℝ 2).val x) • riemannianVolumeForm o x) = 0) ↔
       mextDerivₗ I 0 p.1 = 0 ∧ mextDerivₗ I 2 (p.2 : SmoothForm I M ℝ 2) = 0 := by
   simp_rw [
     integralTopForm_inner_abelianDeformationOperator_eq_inner_abelianDeformationFormalAdjoint]

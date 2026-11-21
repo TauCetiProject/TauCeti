@@ -202,7 +202,7 @@ theorem relIndex_map_powMonoidHom_two_topologicalClosure_zpowers_two {f : ℕ} (
   by_cases h1 : -u = 1
   · obtain rfl : u = -1 := neg_eq_iff_eq_neg.mp h1
     rw [isClosed_zpowers_neg_one.subgroup_topologicalClosure_eq]
-    exact Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one PadicInt.units_neg_one_ne_one
+    exact Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one (neg_units_ne_self 1)
   · obtain ⟨g, hg, hg'⟩ := exists_mem_unitsPrincipal_and_notMem_succ h1
     have hfg : f ≤ g := by
       by_contra! h

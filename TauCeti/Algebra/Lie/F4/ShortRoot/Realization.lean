@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Datum
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Frobenius
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Comparison
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.OperatorCongr
 
 /-!
 # Integral realization of the short-root F₄ Chevalley datum
@@ -24,10 +24,10 @@ carrier, not with the full-weight fundamental-module construction of the simply 
 group. In particular it makes no specialization or point-generation assertion for the
 prime-field generated carrier.
 
-The proof uses `F4ShortRoot.pinnedRepresentation_ι_rootGenerator`, the common-kernel
-construction of `kostantToralDefiningIdeal`, and its independence from the presentation of
-the root-vector action. The point equivalence follows the matrix-preserving realization
-pattern of `DynkinType.geckChevalleyDatumPointsEquiv`.
+The proof uses `F4ShortRoot.pinnedRepresentation_ι_rootGenerator` and
+`kostantToralDefiningIdeal_eq_of_operator_equiv_linearMap`, which compares closures across
+root-index and character-lattice changes. The point equivalence follows the matrix-preserving
+realization pattern of `DynkinType.geckChevalleyDatumPointsEquiv`.
 
 ## References
 
@@ -45,19 +45,6 @@ open CategoryTheory DynkinType _root_.TauCeti.UniversalEnvelopingAlgebra
 
 noncomputable section
 
-private theorem rootCoordinateMap_eq (k : Fin DynkinType.F4.rank ⊕ Fin DynkinType.F4.rank) :
-    kostantRootSubgroupCoordinateMap (DynkinType.lieBasis .F4 valid_F4).rootGenerator
-      (DynkinType.lieBasis .F4 valid_F4).h chevalleyDatum.representation chevalleyDatum.lattice
-      chevalleyDatum.representation_mem_lattice k
-      (chevalleyDatum.isNilpotent_representation_rootGenerator k) chevalleyDatum.basis =
-    kostantRootSubgroupCoordinateMap (serreRootGenerator CartanMatrix.F₄ᵀ)
-      (serreH ℚ CartanMatrix.F₄ᵀ) rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
-      (k.map (Fin.cast rank_F4) (Fin.cast rank_F4))
-      (isNilpotent_rep_serreRootGenerator _) latticeBasis := by
-  apply kostantRootSubgroupCoordinateMap_eq_of_action_eq
-  rw [chevalleyDatum_representation_rootGenerator, rep_ι,
-    rationalSerreRepresentation_serreRootGenerator]
-
 private theorem toralDefiningIdeal_eq :
     kostantToralDefiningIdeal (DynkinType.lieBasis .F4 valid_F4).rootGenerator
       (DynkinType.lieBasis .F4 valid_F4).h chevalleyDatum.representation chevalleyDatum.lattice
@@ -65,36 +52,14 @@ private theorem toralDefiningIdeal_eq :
       chevalleyDatum.isNilpotent_representation_rootGenerator chevalleyDatum.basis
       chevalleyDatum.coordinateWeight = definingIdeal := by
   let e := (finCongr rank_F4).sumCongr (finCongr rank_F4)
-  have htorus : RingHom.ker
-      (GeneralLinear.weightTorusCoordinateMap
-        chevalleyDatum.coordinateWeight).hom.toAlgHom.toRingHom =
-      RingHom.ker (GeneralLinear.weightTorusCoordinateMap (R := ℤ)
-        f4ShortRootWeight).hom.toAlgHom.toRingHom := by
-    rw [chevalleyDatum_coordinateWeight]
-    exact GeneralLinear.ker_weightTorusCoordinateMap_linearMap
-      (LinearEquiv.funCongrLeft ℤ ℤ (finCongr rank_F4)).injective f4ShortRootWeight
-  have htest (J : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ 26)) :
-      J ≤ kostantToralDefiningIdeal (DynkinType.lieBasis .F4 valid_F4).rootGenerator
-        (DynkinType.lieBasis .F4 valid_F4).h chevalleyDatum.representation chevalleyDatum.lattice
-        chevalleyDatum.representation_mem_lattice
-        chevalleyDatum.isNilpotent_representation_rootGenerator chevalleyDatum.basis
-        chevalleyDatum.coordinateWeight ↔ J ≤ definingIdeal := by
-    rw [definingIdeal_def, le_kostantToralDefiningIdeal_iff, le_kostantToralDefiningIdeal_iff]
-    rw [htorus]
-    constructor
-    · rintro ⟨hr, hT⟩
-      refine ⟨?_, hT⟩
-      intro k
-      obtain ⟨i, rfl⟩ := e.surjective k
-      have he : e i = i.map (Fin.cast rank_F4) (Fin.cast rank_F4) := by cases i <;> rfl
-      rw [he, ← rootCoordinateMap_eq]
-      exact hr i
-    · rintro ⟨hr, hT⟩
-      refine ⟨?_, hT⟩
-      intro i
-      rw [rootCoordinateMap_eq]
-      exact hr _
-  exact le_antisymm ((htest _).mp le_rfl) ((htest _).mpr le_rfl)
+  rw [definingIdeal_def]
+  refine kostantToralDefiningIdeal_eq_of_operator_equiv_linearMap _ _ _ _ _ _ _ _ _ _ e
+    _ _ _ _ ?_ (LinearEquiv.funCongrLeft ℤ ℤ (finCongr rank_F4)).injective
+    chevalleyDatum_coordinateWeight
+  intro k
+  have he : e k = k.map (Fin.cast rank_F4) (Fin.cast rank_F4) := by cases k <;> rfl
+  rw [chevalleyDatum_representation_rootGenerator, rep_ι,
+    rationalSerreRepresentation_serreRootGenerator, he]
 
 /-- The short-root Chevalley datum and the represented integral short-root carrier define the
 same group scheme inside `GL₂₆`. -/
@@ -145,7 +110,7 @@ and unchanged additive parameter. -/
   apply Subtype.ext
   rw [coe_chevalleyDatumPointsEquiv,
     DynkinType.ChevalleyDatum.coe_rootSubgroupPoints_simpleIndex, coe_rootSubgroupPoints]
-  apply kostantRootSubgroupMatrix_eq_of_action_eq
+  apply kostantRootSubgroupMatrix_eq_of_operator_eq
   rw [chevalleyDatum_representation_rootGenerator_inl, rep_ι,
     rationalSerreRepresentation_serreRootGenerator, rootMatrixRat_inl]
 
@@ -161,7 +126,7 @@ and unchanged additive parameter. -/
   rw [coe_chevalleyDatumPointsEquiv,
     DynkinType.ChevalleyDatum.coe_rootSubgroupPoints_reflectionPerm_simpleIndex,
     coe_rootSubgroupPoints]
-  apply kostantRootSubgroupMatrix_eq_of_action_eq
+  apply kostantRootSubgroupMatrix_eq_of_operator_eq
   rw [chevalleyDatum_representation_rootGenerator_inr, rep_ι,
     rationalSerreRepresentation_serreRootGenerator, rootMatrixRat_inr]
 

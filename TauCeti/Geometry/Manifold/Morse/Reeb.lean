@@ -74,11 +74,11 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   -- Small sublevels at the minimum and small superlevels at the maximum are discs.
   obtain ⟨R₀, hR₀, he₀⟩ :=
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      ((hx₀.isLocalMin univ_mem).mem_criticalPoints)).exists_sublevel_homeomorph_closedBall
+      hx₀.mem_criticalPoints).exists_sublevel_homeomorph_closedBall
       hsmooth (isClosed_le hfc continuous_const).isCompact hfc.continuousOn hlt hmin
   obtain ⟨R₁, hR₁, he₁⟩ :=
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      ((hx₁.isLocalMax univ_mem).mem_criticalPoints)).exists_superlevel_homeomorph_closedBall
+      hx₁.mem_criticalPoints).exists_superlevel_homeomorph_closedBall
       (.of_forall fun y ↦ hf.contMDiff y) (isClosed_le continuous_const hfc).isCompact
       hfc.continuousOn (a := f x₀) hlt hmax
   obtain ⟨r, ⟨hrR₀, hrR₁, hr2⟩, hr⟩ :=
@@ -109,10 +109,10 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   refine nonempty_homeomorph_sphere_of_union_closedBall (by simp)
     (isClosed_le hfc continuous_const) (isClosed_le continuous_const hfc)
     (eq_univ_of_forall fun x ↦ le_total (f x) (f x₁ - r ^ 2)) eA eB (fun x ↦ ?_) (fun x ↦ ?_)
-  · have hx : (x : M) ∈ B ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm x.2 h, fun h ↦ h.ge⟩
+  · have hx : (x : M) ∈ B ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm x.property h, fun h ↦ h.ge⟩
     rw [hx, ← he x, he₀ (e x)]
     simpa only [eA, Homeomorph.trans_apply] using hS _ _
-  · have hx : (x : M) ∈ A ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm h x.2, fun h ↦ h.le⟩
+  · have hx : (x : M) ∈ A ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm h x.property, fun h ↦ h.le⟩
     have h₁ := he₁ x
     have hneg : f x = f x₁ - r ^ 2 ↔ ‖(e₁ x : EuclideanSpace ℝ (Fin (finrank ℝ E)))‖ = r := by
       rw [h₁, ← sq_eq_sq₀ (norm_nonneg _) hr.le]
@@ -158,7 +158,7 @@ theorem IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two (hf : Is
       exact hx)
     (Homeomorph.homeomorphOfUnique _ _) (Homeomorph.homeomorphOfUnique _ _)
     (fun x ↦ ?_) (fun x ↦ ?_)
-  · simpa [mem_singleton_iff.1 x.2, hpq] using hnorm _
-  · simpa [mem_singleton_iff.1 x.2, hpq.symm] using hnorm _
+  · simpa [mem_singleton_iff.1 x.property, hpq] using hnorm _
+  · simpa [mem_singleton_iff.1 x.property, hpq.symm] using hnorm _
 
 end TauCeti

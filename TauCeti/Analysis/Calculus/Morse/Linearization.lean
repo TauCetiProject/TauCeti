@@ -113,19 +113,18 @@ both sides use Mathlib's totalized derivatives. -/
 theorem fderiv_gradient (f : E → ℝ) (x : E) : fderiv ℝ (∇ f) x = hessianOperator f x := by
   rw [hessianOperator, iteratedGradientChain_succ, iteratedGradientChain_zero]
 
-/-- The Riesz formula for the Hessian operator: it is the endomorphism that the inner product
-associates with the second derivative of `f`, viewed as a bilinear form. -/
-theorem hessianOperator_eq_continuousLinearMapOfBilin (f : E → ℝ) (x : E) :
-    hessianOperator f x = continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) := by
-  rw [← fderiv_gradient]
-  exact (toDual ℝ E).symm.toContinuousLinearEquiv.comp_fderiv (f := fderiv ℝ f) (x := x)
-
 /-- The inner-product characterization of the Hessian operator. -/
 @[simp]
 theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
-    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
-  rw [hessianOperator_eq_continuousLinearMapOfBilin]
-  exact continuousLinearMapOfBilin_apply _ _ _
+    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w :=
+  inner_iteratedGradientChain_one_apply f x v w
+
+/-- The Riesz formula for the Hessian operator: it is the endomorphism that the inner product
+associates with the second derivative of `f`, viewed as a bilinear form. -/
+theorem hessianOperator_eq_continuousLinearMapOfBilin (f : E → ℝ) (x : E) :
+    hessianOperator f x = continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) :=
+  ContinuousLinearMap.ext fun v =>
+    unique_continuousLinearMapOfBilin _ (inner_hessianOperator_left f x v)
 
 /-- In an orthonormal basis, the entry of the Hessian operator in row `i` and column `j`
 is the second derivative with the input directions `b j` and `b i`. -/
@@ -233,17 +232,9 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
 the Hessian operator. -/
 theorem hasFDerivAt_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (∇ f) (hessianOperator f x) x := by
-  have h := (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.hasFDerivAt.comp x
-    (hf.hasFDerivAt_fderiv le_rfl)
-  -- The composed function is the gradient, by the defining property `toDual_gradient` of `∇ f`.
-  have hfun : ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f = ∇ f := by
-    funext y
-    simp only [Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    exact ((InnerProductSpace.toDual ℝ E).eq_symm_apply.2 toDual_gradient).symm
-  rw [hfun] at h
   -- The derivative of the gradient is the Hessian operator by `fderiv_gradient`.
   rw [← fderiv_gradient]
-  exact h.differentiableAt.hasFDerivAt
+  exact ((hf.gradient_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
 
 /-- The negative-gradient vector field is differentiable at a twice continuously differentiable
 point, with derivative minus the Hessian operator. -/

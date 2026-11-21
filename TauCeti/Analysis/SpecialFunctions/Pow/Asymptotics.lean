@@ -24,14 +24,18 @@ These facts transfer power-law tail constants between proportional or translated
 On a seminormed group, as `‖s‖ → ∞`:
 
 * `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` whenever `a < b`, for every real `c`;
-* every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`.
+* every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`;
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
+  in particular `√‖s‖ = o(s)`.
 
 These are the comparisons behind the order of growth of an entire function.
 
 ## Positive powers near zero
 
-As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant.
-This is how polynomial rates in a small scale `h` become inequalities for all small `h`.
+As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f = O(h ^ θ)`, in
+particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
+rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
+`f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`.
 
 ## Families bounded by integer powers
 
@@ -94,12 +98,23 @@ open Asymptotics Bornology
 
 namespace TauCeti
 
+/-- A positive power of `h` tends to zero as `h → 0⁺`. -/
+theorem tendsto_rpow_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) :
+    Tendsto (fun h : ℝ ↦ h ^ θ) (𝓝[>] 0) (𝓝 0) := by
+  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto
+  rw [Real.zero_rpow hθ.ne'] at ht
+  exact ht.mono_left nhdsWithin_le_nhds
+
+/-- A function bounded by a positive power of `h` is eventually below every positive bound as
+`h → 0⁺`. -/
+theorem eventually_lt_of_isBigO_rpow {f : ℝ → ℝ} {θ : ℝ} (hθ : 0 < θ)
+    (hf : f =O[𝓝[>] 0] fun h ↦ h ^ θ) {c : ℝ} (hc : 0 < c) : ∀ᶠ h in 𝓝[>] 0, f h < c :=
+  (hf.trans_tendsto (tendsto_rpow_nhdsGT_zero hθ)).eventually (gt_mem_nhds hc)
+
 /-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
 theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
-    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
-  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
-  rw [Real.zero_rpow hθ.ne', mul_zero] at ht
-  exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
+    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c :=
+  eventually_lt_of_isBigO_rpow hθ (isBigO_const_mul_self A _ _) hc
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 
@@ -126,6 +141,26 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
     rw [Function.comp_apply, ← Real.rpow_mul hx, mul_div_cancel₀ _ hb.ne', Real.rpow_natCast]
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
 
+/-- For `a < b`, the real power `x ^ a` is `o(x ^ b)` as `x → ∞`. -/
+theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
+    (fun x : ℝ ↦ x ^ a) =o[atTop] fun x ↦ x ^ b := by
+  refine (isLittleO_iff_tendsto' ?_).mpr ((tendsto_rpow_neg_atTop (sub_pos.2 hab)).congr' ?_)
+  · filter_upwards [eventually_gt_atTop 0] with x hx h
+    exact absurd h (Real.rpow_pos_of_pos hx b).ne'
+  · filter_upwards [eventually_gt_atTop 0] with x hx
+    rw [← Real.rpow_sub hx, neg_sub]
+
+/-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
+theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
+    (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
+  (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
+theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
+  refine isLittleO_norm_right.mp ?_
+  refine (isLittleO_norm_rpow_norm_rpow_cobounded (E := E) (show (1 / 2 : ℝ) < 1 by norm_num)).congr
+    (fun s ↦ (Real.sqrt_eq_rpow _).symm) fun s ↦ Real.rpow_one _
+
 /-- A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a`
 tending to `-∞`, tends to zero. -/
 theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : Filter α}
@@ -151,6 +186,21 @@ theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
   linarith
 
 end TauCeti
+
+namespace Asymptotics
+
+/-- Power laws multiply near `0⁺`: if `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then
+`f * g = O(h ^ c)` for every `c ≤ a + b`. This is the counterpart near zero of
+`Asymptotics.IsBigO.mul_atTop_rpow_of_isBigO_rpow`. -/
+theorem IsBigO.mul_nhdsGT_zero_rpow_of_isBigO_rpow {R : Type*} [SeminormedRing R] {f g : ℝ → R}
+    {a b c : ℝ} (hf : f =O[𝓝[>] 0] fun h ↦ h ^ a) (hg : g =O[𝓝[>] 0] fun h ↦ h ^ b)
+    (h : c ≤ a + b) : (f * g) =O[𝓝[>] 0] fun h ↦ h ^ c := by
+  refine (hf.mul hg).trans (Eventually.isBigO ?_)
+  filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
+  rw [← Real.rpow_add ht.1, Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le (a + b))]
+  exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+end Asymptotics
 
 namespace Real
 
