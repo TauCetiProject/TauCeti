@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Subalgebra
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.Algebra.Lie.Hom
 
@@ -13,7 +14,8 @@ public import TauCeti.Algebra.Lie.Hom
 # Fixed Lie subalgebras
 
 The fixed submodule of a Lie endomorphism is closed under brackets. Its underlying
-submodule is the existing linear fixed submodule.
+submodule is the existing linear fixed submodule, equivalently the equalizer with the identity,
+the kernel of `f - id`, or the `1`-eigenspace.
 
 Intertwining homomorphisms restrict to these subalgebras, and intertwining equivalences
 restrict with the expected inverse.
@@ -52,6 +54,17 @@ theorem fixedSubalgebra_toSubmodule_eq_eqLocus (f : L →ₗ⁅R⁆ L) :
     f.fixedSubalgebra.toSubmodule = LinearMap.eqLocus f.toLinearMap LinearMap.id := by
   ext x
   exact mem_fixedSubalgebra
+
+/-- The underlying fixed submodule is the kernel of `f - id`. -/
+theorem fixedSubalgebra_toSubmodule_eq_ker (f : L →ₗ⁅R⁆ L) :
+    f.fixedSubalgebra.toSubmodule = LinearMap.ker (f.toLinearMap - LinearMap.id) :=
+  (fixedSubalgebra_toSubmodule f).trans (LinearMap.fixedSubmodule_eq_ker f.toLinearMap)
+
+/-- The underlying fixed submodule is the `1`-eigenspace of `f`. -/
+theorem fixedSubalgebra_toSubmodule_eq_eigenspace (f : L →ₗ⁅R⁆ L) :
+    f.fixedSubalgebra.toSubmodule = Module.End.eigenspace f.toLinearMap 1 := by
+  ext x
+  simp
 
 @[simp]
 theorem apply_coe_fixedSubalgebra (f : L →ₗ⁅R⁆ L) (x : f.fixedSubalgebra) :

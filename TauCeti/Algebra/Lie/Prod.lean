@@ -37,6 +37,7 @@ product.
 * `LieSubmodule.prodFst` and `LieSubmodule.prodSnd`: the projections of a product Lie submodule.
   A nonzero coordinate guarantees surjectivity onto an irreducible factor.
 * `TauCeti.LieModuleEquiv.prodComm`: swapping the factors is an equivalence.
+* `LieEquiv.prodCongr`: product of two Lie algebra equivalences.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
 * `LieHom.piRepresentation`: the product of a family of explicit Lie representations.
@@ -394,3 +395,31 @@ theorem piRepresentation_injective_iff
 end Pi
 
 end LieHom
+
+namespace LieEquiv
+
+/-- Product of two Lie algebra equivalences. -/
+def prodCongr {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
+    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
+    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) : (L₁ × L₂) ≃ₗ⁅R⁆ (M₁ × M₂) where
+  __ := LinearEquiv.prodCongr e₁.toLinearEquiv e₂.toLinearEquiv
+  map_lie' {p q} := Prod.ext (e₁.map_lie p.1 q.1) (e₂.map_lie p.2 q.2)
+
+@[simp, grind =]
+theorem prodCongr_apply {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
+    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
+    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) (p : L₁ × L₂) :
+    prodCongr e₁ e₂ p = (e₁ p.1, e₂ p.2) :=
+  (rfl)
+
+@[simp]
+theorem prodCongr_symm {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
+    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
+    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
+    (prodCongr e₁ e₂).symm = prodCongr e₁.symm e₂.symm :=
+  (rfl)
+
+end LieEquiv
