@@ -82,6 +82,12 @@ lemma coe_chartBallHomeomorph_symm_apply (v : ball (0 : V) ε) :
     ((chartBallHomeomorph e hε).symm v : M) = e.symm (v + e b) :=
   (rfl)
 
+/-- The coordinate `x ↦ e x - e b` on `chartBall e b ε` vanishes exactly at `b`. -/
+lemma chartBallHomeomorph_eq_zero_iff (hb : b ∈ e.source) (x : chartBall e b ε) :
+    (chartBallHomeomorph e hε x : V) = 0 ↔ (x : M) = b := by
+  rw [coe_chartBallHomeomorph_apply, sub_eq_zero]
+  exact e.injOn.eq_iff (e.chartBall_subset_source b ε x.property) hb
+
 end SeminormedAddCommGroup
 
 end OpenPartialHomeomorph
