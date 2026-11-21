@@ -19,10 +19,12 @@ This file supplies two complements:
 
 * **Products with locally compact factors**
   (`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right`,
-  `Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`): assuming each test space `G i` is
-  locally compact and each pairwise product `G i × G j` is `G`-generated, if `Y` and `Z` are
-  `G`-generated and one of them is locally compact, then the ordinary product topology on `Y × Z`
-  is already `G`-generated, with no universe restriction between `G`, `Y`, and `Z`.
+  `Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`): proved via
+  `Topology.IsGeneratedBy.prod_right` (Whitehead's quotient-product argument in
+  `TauCeti.Topology.Convenient.GeneratedBy`), assuming each test space `G i` is locally compact
+  and each pairwise product `G i × G j` is `G`-generated, if `Y` and `Z` are `G`-generated and
+  one of them is locally compact, then the ordinary product topology on `Y × Z` is already
+  `G`-generated, with no universe restriction between `G`, `Y`, and `Z`.
 * **Comparison with the compact-open topology** (`ContinuousMap.toContinuousMapGeneratedBy`,
   `Topology.ContinuousMapGeneratedBy.equivContinuousMap`,
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMap`,
@@ -36,6 +38,8 @@ This file supplies two complements:
 
 ## References
 
+* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
+  1125–1132 (quotient-product lemma for locally compact factors).
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.

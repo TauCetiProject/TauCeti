@@ -104,7 +104,8 @@ theorem adjCounit_app_apply (X : TopCat.{v})
     (g : Y ⟶ (TopCat.toGeneratedByTopCat (X := G)).obj X) (y : Y) :
     dsimp% (((adj (X := G)).homEquiv Y X).symm g) y =
       WithGeneratedByTopology.equiv (X := G) (Y := X) (g y) := by
-  rw [Adjunction.homEquiv_counit, TopCat.comp_app, adj_counit]; exact adjCounit_app_apply G X (g y)
+  rw [Adjunction.homEquiv_counit]
+  simp [-adjCounit_app_hom, adjCounit_app_apply]
 
 end ExplicitFamily
 

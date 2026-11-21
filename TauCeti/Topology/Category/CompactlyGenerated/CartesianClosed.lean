@@ -51,6 +51,10 @@ object universe `w`.
 
 ## References
 
+* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
+  1125–1132 (quotient-product lemma for locally compact factors, specialized from
+  `Topology.IsGeneratedBy.prod_right` via `TauCeti.Topology.Convenient.HomSpace` and
+  `TauCeti.Topology.Convenient.CompactlyGenerated`).
 * N. E. Steenrod, *A convenient category of topological spaces*, Michigan Math. J. 14 (1967),
   133–152.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
@@ -628,11 +632,6 @@ def ihomIsoToCompactlyGeneratedMappingSpace (Y : CompactlyGenerated.{u, w})
     (fun Z ↦ isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z))
     (fun _ ↦ ConcreteCategory.hom_ext _ _ fun _ ↦ DFunLike.ext _ _ fun _ ↦ rfl)
 
-theorem ihomIsoToCompactlyGeneratedMappingSpace_inv_app
-    (Y Z : CompactlyGenerated.{u, w}) [T2Space Y] [Small.{u} Y] :
-    (ihomIsoToCompactlyGeneratedMappingSpace Y).inv.app Z = compactOpenToIhom Y Z :=
-  ConcreteCategory.hom_ext _ _ fun _ ↦ DFunLike.ext _ _ fun _ ↦ rfl
-
 @[simp]
 theorem ihomIsoToCompactlyGeneratedMappingSpace_hom_app_apply
     (Y Z : CompactlyGenerated.{u, w}) [T2Space Y] [Small.{u} Y]
@@ -648,6 +647,13 @@ theorem ihomIsoToCompactlyGeneratedMappingSpace_inv_app_apply
     dsimp% only [Functor.comp_obj]
       (((ihomIsoToCompactlyGeneratedMappingSpace Y).inv.app Z f) y) = f y :=
   ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply Y Z f y
+
+theorem ihomIsoToCompactlyGeneratedMappingSpace_inv_app
+    (Y Z : CompactlyGenerated.{u, w}) [T2Space Y] [Small.{u} Y] :
+    (ihomIsoToCompactlyGeneratedMappingSpace Y).inv.app Z = compactOpenToIhom Y Z :=
+  ConcreteCategory.hom_ext _ _ fun f ↦ DFunLike.ext _ _ fun y ↦
+    (ihomIsoToCompactlyGeneratedMappingSpace_inv_app_apply Y Z f y).trans
+      (compactOpenToIhom_apply Y Z f y).symm
 
 /-- When `Y` is locally compact, `u`-small, and Hausdorff, currying `Y ⊗ X ⟶ Z` into `k(C(Y, Z))`
 agrees with currying on the ordinary product `Y × X` in `TopCat` (`TopCat.curryEquiv`) followed by

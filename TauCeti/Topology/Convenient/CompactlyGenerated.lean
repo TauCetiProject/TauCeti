@@ -28,10 +28,14 @@ and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 * Locally compact product preservation (`UCompactlyGeneratedSpace.prod_right`,
   `UCompactlyGeneratedSpace.prod_left`,
   `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right`,
-  `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left`).
+  `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left`), specializing Whitehead's
+  quotient-product argument via `Topology.IsGeneratedBy.prod_right` and
+  `TauCeti.Topology.Convenient.HomSpace`.
 
 ## References
 
+* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
+  1125–1132 (quotient-product lemma for locally compact factors).
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
   (Basel) 22 (1971), 545–555.
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
@@ -153,14 +157,16 @@ variable (X : Type v) (Y : Type w) [TopologicalSpace X] [TopologicalSpace Y]
   [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y]
 
 /-- If `X` and `Y` are `u`-compactly generated and `Y` is locally compact, then the ordinary
-product `X × Y` is `u`-compactly generated. -/
+product `X × Y` is `u`-compactly generated (specializing
+`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right`, Whitehead 1948). -/
 theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right [LocallyCompactSpace Y] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
   (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
     (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right X Y)
 
 /-- If `X` and `Y` are `u`-compactly generated and `X` is locally compact, then the ordinary
-product `X × Y` is `u`-compactly generated. -/
+product `X × Y` is `u`-compactly generated (specializing
+`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`, Whitehead 1948). -/
 theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left [LocallyCompactSpace X] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
   (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
@@ -171,7 +177,7 @@ end TauCeti
 namespace UCompactlyGeneratedSpace
 
 /-- Taking the product on the right with a `u`-small locally compact Hausdorff space preserves
-`u`-compact generation. -/
+`u`-compact generation (specializing `Topology.IsGeneratedBy.prod_right`, Whitehead 1948). -/
 theorem prod_right {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
     [UCompactlyGeneratedSpace.{u} X] [LocallyCompactSpace Y] [T2Space Y] [Small.{u} Y] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
@@ -179,7 +185,7 @@ theorem prod_right {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSp
     (Topology.IsGeneratedBy.prod_right (G := fun K : CompHaus.{u} ↦ K))
 
 /-- Taking the product on the left with a `u`-small locally compact Hausdorff space preserves
-`u`-compact generation. -/
+`u`-compact generation (specializing `Topology.IsGeneratedBy.prod_left`, Whitehead 1948). -/
 theorem prod_left {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
     [LocallyCompactSpace X] [T2Space X] [Small.{u} X] [UCompactlyGeneratedSpace.{u} Y] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=

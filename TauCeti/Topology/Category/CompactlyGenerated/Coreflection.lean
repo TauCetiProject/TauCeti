@@ -42,6 +42,10 @@ and deduce completeness, cocompleteness, counit characterizations, and map/produ
 
 ## References
 
+* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
+  1125–1132 (quotient-product lemma for locally compact factors, formalized via
+  `Topology.IsGeneratedBy.prod_right` in `TauCeti.Topology.Convenient.GeneratedBy` and
+  `TauCeti.Topology.Convenient.HomSpace`).
 * N. E. Steenrod, *A convenient category of topological spaces*, Michigan Math. J. 14 (1967),
   133–152.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.

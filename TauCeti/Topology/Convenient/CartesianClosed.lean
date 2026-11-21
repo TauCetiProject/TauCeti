@@ -617,21 +617,25 @@ theorem equiv_pre_app_apply {W Y : GeneratedByTopCat.{v} G} (f : W ⟶ Y)
     (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G W Z)
       (((MonoidalClosed.pre f).app Z) g)) w =
       (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z) g) (f w) := by
-  have h := congrArg
-    (fun φ : W ⊗ (ihom Y).obj Z ⟶ Z ↦
-      φ ((WithGeneratedByTopology.equiv (X := G) (Y := W × _)).symm (w, g)))
+  let wg : ↑(W ⊗ (ihom Y).obj Z) :=
+    (WithGeneratedByTopology.equiv (X := G) (Y := W × _)).symm (w, g)
+  let fwg : ↑(Y ⊗ (ihom Y).obj Z) :=
+    (WithGeneratedByTopology.equiv (X := G) (Y := Y × _)).symm (f w, g)
+  have h := congrArg (fun φ : W ⊗ (ihom Y).obj Z ⟶ Z ↦ φ wg)
     (MonoidalClosed.uncurry_pre f Z)
-  exact h
+  rw [uncurry_apply, CategoryTheory.comp_apply, whiskerRight_apply] at h
+  have hev := ihom_ev_app_apply Y Z fwg
+  simp only [wg, fwg, Equiv.apply_symm_apply] at h hev
+  exact h.trans hev
 
 /-- Canonical morphism from the `G`-generated refinement of the compact-open mapping space
 `C(Y, Z)` into the internal hom `(ihom Y).obj Z`. -/
 @[expose]
 def compactOpenToIhom (Y Z : GeneratedByTopCat.{v} G) :
     of (X := G) (WithGeneratedByTopology G C(Y, Z)) ⟶ (ihom Y).obj Z :=
-  ObjectProperty.homMk <| TopCat.ofHom <|
-    ((ContinuousMap.mk (ContinuousMap.toContinuousMapGeneratedBy G)
-      ContinuousMap.continuous_toContinuousMapGeneratedBy).comp
-      (WithGeneratedByTopology.counit G C(Y, Z))).toGeneratedBy G
+  (TopCat.toGeneratedByTopCat (X := G)).map <| TopCat.ofHom
+    ⟨ContinuousMap.toContinuousMapGeneratedBy G,
+      ContinuousMap.continuous_toContinuousMapGeneratedBy⟩
 
 @[simp]
 theorem equiv_compactOpenToIhom_apply (Y Z : GeneratedByTopCat.{v} G)
@@ -639,12 +643,12 @@ theorem equiv_compactOpenToIhom_apply (Y Z : GeneratedByTopCat.{v} G)
     (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
       (compactOpenToIhom Y Z f)) y =
       WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f y := by
-  change (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
-    (((ContinuousMap.mk (ContinuousMap.toContinuousMapGeneratedBy G)
-      ContinuousMap.continuous_toContinuousMapGeneratedBy).comp
-      (WithGeneratedByTopology.counit G C(Y, Z))).toGeneratedBy G f)) y = _
-  rw [ContinuousMap.toGeneratedBy_apply, Equiv.apply_symm_apply]
-  simp
+  have h := congrArg (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z))
+    (TopCat.toGeneratedByTopCat_map_apply (G := G)
+      (TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
+        ContinuousMap.continuous_toContinuousMapGeneratedBy⟩) f)
+  rw [Equiv.apply_symm_apply] at h
+  exact congrArg (fun k : ContinuousMapGeneratedBy G Y Z ↦ k y) h
 
 section CompactOpen
 
