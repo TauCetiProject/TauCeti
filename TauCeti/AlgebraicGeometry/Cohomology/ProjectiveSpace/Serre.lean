@@ -107,14 +107,6 @@ private def biproductConstIsoTensorFree (M : X.Modules) (J : Type u) [Finite J]
     whiskerLeftIso M ((biproduct.isoCoproduct (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
       TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) J)
 
-/-- Left tensoring commutes with finite biproducts of copies of a module. -/
-private def tensorLeftBiproductConstIso (E M : X.Modules) (J : Type u) [Finite J]
-    [HasBiproduct fun _ : J ↦ M] [HasBiproduct fun _ : J ↦ E ⊗ M] :
-    E ⊗ (⨁ fun _ : J ↦ M) ≅ ⨁ fun _ : J ↦ E ⊗ M :=
-  whiskerLeftIso E (biproduct.isoCoproduct (fun _ : J ↦ M)) ≪≫
-    PreservesCoproduct.iso (tensorLeft E) (fun _ : J ↦ M) ≪≫
-    (biproduct.isoCoproduct (fun _ : J ↦ E ⊗ M)).symm
-
 /-- A finite direct sum of copies of a finitely presented `𝒪_X`-module is finitely presented. -/
 private theorem isFinitePresentation_biproduct_const (M : X.Modules) [M.IsFinitePresentation]
     (J : Type u) [Finite J] [HasBiproduct fun _ : J ↦ M] :
@@ -306,7 +298,11 @@ private theorem serre_vanishing_step (b : Module.Basis κ R M) (q : ℕ) (hq : 0
         Proj.twistingSheaf 𝒜 (m + -(r : ℤ)) :=
       HasBiproduct.of_hasCoproduct _
     obtain ⟨eTwist⟩ := exists_twistingSheaf_tensor_iso (R := R) (M := M) m (-r)
-    let eE := tensorLeftBiproductConstIso (Proj.twistingSheaf 𝒜 m) _ J ≪≫
+    have : PreservesBiproduct (fun _ : J ↦ Proj.twistingSheaf 𝒜 (-(r : ℤ)))
+        (tensorLeft (Proj.twistingSheaf 𝒜 m)) :=
+      preservesBiproduct_of_preservesCoproduct _
+    let eE := (tensorLeft (Proj.twistingSheaf 𝒜 m)).mapBiproduct
+        (fun _ : J ↦ Proj.twistingSheaf 𝒜 (-(r : ℤ))) ≪≫
       biproduct.mapIso fun _ ↦ eTwist
     have hsub : Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) q) :=
       b.subsingleton_cohomology_twistingSheaf_of_neg_card_lt hmr hq
