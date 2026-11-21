@@ -44,6 +44,11 @@ composition and cancellation laws of this transport, its comparison with heterog
 and its interaction with both pastings and both identity cells, so that the laws can be used by
 rewriting without manipulating heterogeneous equalities.
 
+The transpose `TauCeti.StrictDoubleCategory.transpose` of a strict double category exchanges the
+horizontal and vertical directions: its horizontal edges, identity cells and pasting are the
+vertical ones of the original, and conversely. A statement about the horizontal direction applied
+to the transpose gives the corresponding statement about the vertical direction.
+
 ## Main declarations
 
 * `TauCeti.DoubleCategoryStruct`: boundary-indexed cells with identities and both pastings.
@@ -51,6 +56,8 @@ rewriting without manipulating heterogeneous equalities.
   boundary edges.
 * `TauCeti.StrictDoubleCategory`: the laws of a strict double category, including
   `TauCeti.StrictDoubleCategory.interchange` and `TauCeti.StrictDoubleCategory.hId_id`.
+* `TauCeti.StrictDoubleCategory.transpose`: the transpose of a strict double category, exchanging
+  its horizontal and vertical directions.
 
 ## References
 

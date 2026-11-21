@@ -227,6 +227,7 @@ theorem changeBottom_symm_apply (e : D.HorizontalIso q q') (α : D.Cell p q' l r
     (D.changeBottom e).symm α = D.pasteBottom α e.inv :=
   rfl
 
+@[simp]
 theorem changeTop_refl :
     D.changeTop (Iso.refl (⟨p⟩ : D.HGlobular a b)) = Equiv.refl (D.Cell p q l r) := by
   ext α
@@ -237,10 +238,12 @@ theorem changeTop_trans (e : D.HorizontalIso p p') (e' : D.HorizontalIso p' p'')
   ext α
   simp
 
+@[simp]
 theorem changeTop_symm (e : D.HorizontalIso p p') :
     D.changeTop e.symm = (D.changeTop e (q := q) (l := l) (r := r)).symm :=
   rfl
 
+@[simp]
 theorem changeBottom_refl :
     D.changeBottom (Iso.refl (⟨q⟩ : D.HGlobular c d)) = Equiv.refl (D.Cell p q l r) := by
   ext α
@@ -252,6 +255,7 @@ theorem changeBottom_trans (e : D.HorizontalIso q q') (e' : D.HorizontalIso q' q
   ext α
   simp
 
+@[simp]
 theorem changeBottom_symm (e : D.HorizontalIso q q') :
     D.changeBottom e.symm = (D.changeBottom e (p := p) (l := l) (r := r)).symm :=
   rfl
@@ -288,6 +292,7 @@ def changeRight (e : D.VerticalIso r r') : D.Cell p q l r ≃ D.Cell p q l r' :=
 
 /-- Changing the left boundary is horizontal pasting with the inverse cell, followed by the unit
 law for horizontal edges. -/
+@[simp]
 theorem changeLeft_apply (e : D.VerticalIso l l') (α : D.Cell p q l r) :
     D.changeLeft e α = (D.hComp e.inv α).cast (Category.id_comp (self := H) p)
       (Category.id_comp (self := H) q) rfl rfl :=
@@ -296,12 +301,32 @@ theorem changeLeft_apply (e : D.VerticalIso l l') (α : D.Cell p q l r) :
 
 /-- Changing the right boundary is horizontal pasting with the cell, followed by the unit law
 for horizontal edges. -/
+@[simp]
 theorem changeRight_apply (e : D.VerticalIso r r') (α : D.Cell p q l r) :
     D.changeRight e α = (D.hComp α e.hom).cast (Category.comp_id (self := H) p)
       (Category.comp_id (self := H) q) rfl rfl :=
   transpose_cast (D := D.toDoubleCategoryStruct) rfl rfl (Category.comp_id (self := H) p)
     (Category.comp_id (self := H) q) (D.hComp α e.hom)
 
+/-- Undoing a change of the left boundary is horizontal pasting with the cell, followed by the
+unit law for horizontal edges. -/
+@[simp]
+theorem changeLeft_symm_apply (e : D.VerticalIso l l') (α : D.Cell p q l' r) :
+    (D.changeLeft e).symm α = (D.hComp e.hom α).cast (Category.id_comp (self := H) p)
+      (Category.id_comp (self := H) q) rfl rfl :=
+  transpose_cast (D := D.toDoubleCategoryStruct) rfl rfl (Category.id_comp (self := H) p)
+    (Category.id_comp (self := H) q) (D.hComp e.hom α)
+
+/-- Undoing a change of the right boundary is horizontal pasting with the inverse cell, followed
+by the unit law for horizontal edges. -/
+@[simp]
+theorem changeRight_symm_apply (e : D.VerticalIso r r') (α : D.Cell p q l r') :
+    (D.changeRight e).symm α = (D.hComp α e.inv).cast (Category.comp_id (self := H) p)
+      (Category.comp_id (self := H) q) rfl rfl :=
+  transpose_cast (D := D.toDoubleCategoryStruct) rfl rfl (Category.comp_id (self := H) p)
+    (Category.comp_id (self := H) q) (D.hComp α e.inv)
+
+@[simp]
 theorem changeLeft_refl :
     D.changeLeft (Iso.refl (⟨l⟩ : D.transpose.HGlobular a c)) =
       Equiv.refl (D.Cell p q l r) :=
@@ -311,10 +336,12 @@ theorem changeLeft_trans (e : D.VerticalIso l l') (e' : D.VerticalIso l' l'') :
     D.changeLeft (e ≪≫ e') = (D.changeLeft e).trans (D.changeLeft e' (p := p) (q := q) (r := r)) :=
   D.transpose.changeTop_trans e e'
 
+@[simp]
 theorem changeLeft_symm (e : D.VerticalIso l l') :
     D.changeLeft e.symm = (D.changeLeft e (p := p) (q := q) (r := r)).symm :=
   rfl
 
+@[simp]
 theorem changeRight_refl :
     D.changeRight (Iso.refl (⟨r⟩ : D.transpose.HGlobular b d)) =
       Equiv.refl (D.Cell p q l r) :=
@@ -325,6 +352,7 @@ theorem changeRight_trans (e : D.VerticalIso r r') (e' : D.VerticalIso r' r'') :
       (D.changeRight e).trans (D.changeRight e' (p := p) (q := q) (l := l)) :=
   D.transpose.changeBottom_trans e e'
 
+@[simp]
 theorem changeRight_symm (e : D.VerticalIso r r') :
     D.changeRight e.symm = (D.changeRight e (p := p) (q := q) (l := l)).symm :=
   rfl
