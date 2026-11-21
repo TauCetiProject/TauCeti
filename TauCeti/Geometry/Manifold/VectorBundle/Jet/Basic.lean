@@ -383,7 +383,7 @@ trivialization of `V` at `i`. -/
 theorem trivializationAt_apply_snd (i : M)
     (p : TotalSpace (SymmetricJet 𝕜 E F r) (JetBundle I F V r)) :
     (trivializationAt (SymmetricJet 𝕜 E F r) (JetBundle I F V r) i p).2 =
-      coordChange I F V r p.1 i p.1 p.2 := by
+      coordChange I F V r p.proj i p.proj p.snd := by
   rw [VectorBundleCore.trivializationAt, ← VectorBundleCore.localTrivAt_def,
     VectorBundleCore.localTriv_apply, jetBundleCore_indexAt, jetBundleCore_indexAt,
     jetBundleCore_coordChange]

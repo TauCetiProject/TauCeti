@@ -139,7 +139,7 @@ instance [CompleteSpace F] : CompleteSpace (SymmetricJet 𝕜 E F r) :=
 /-- A symmetric jet is a tuple of continuous multilinear maps; `A i` is its component of
 order `i`. -/
 instance : CoeFun (SymmetricJet 𝕜 E F r) fun _ ↦ (i : Fin (r + 1)) → E [×i]→L[𝕜] F :=
-  ⟨fun A ↦ (A : symmetricJets 𝕜 E F r).1⟩
+  ⟨fun A ↦ (A : symmetricJets 𝕜 E F r).val⟩
 
 /-- The symmetric jet with the given symmetric components. -/
 def mk (A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F) (hA : A ∈ symmetricJets 𝕜 E F r) :
@@ -154,7 +154,7 @@ theorem mk_apply (A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F) (hA : A ∈ sym
 
 /-- The components of a symmetric jet form a symmetric tuple. -/
 theorem coeFn_mem_symmetricJets (A : SymmetricJet 𝕜 E F r) : ⇑A ∈ symmetricJets 𝕜 E F r :=
-  (A : symmetricJets 𝕜 E F r).2
+  (A : symmetricJets 𝕜 E F r).property
 
 /-- Each component of a symmetric jet is invariant under permutations of its arguments. -/
 theorem apply_comp_perm (A : SymmetricJet 𝕜 E F r) (i : Fin (r + 1)) (v : Fin i → E)
