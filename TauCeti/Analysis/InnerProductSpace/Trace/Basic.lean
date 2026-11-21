@@ -41,6 +41,8 @@ covariant tensor, making it independent of any choice of basis.
   the values.
 * `LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv`: the metric trace is invariant
   under pulling the form back along a linear isometric equivalence.
+* `LinearMap.BilinMap.metricTrace_innerₗ_smulRight`: the metric trace of the rank-one map
+  `(v, w) ↦ ⟪u, v⟫ • A w` is `A u`.
 * `LinearMap.BilinMap.metricTrace_inner`: the metric trace of the inner product is the real
   dimension.
 -/
@@ -131,6 +133,16 @@ theorem metricTrace_compl₁₂_linearIsometryEquiv {W' : Type*} [NormedAddCommG
   rw [metricTrace_eq_sum _ b, metricTrace_eq_sum B (b.map e)]
   simp only [LinearMap.compl₁₂_apply, OrthonormalBasis.map_apply, LinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toLinearEquiv]
+
+/-- The metric trace of the rank-one bilinear map `(v, w) ↦ ⟪u, v⟫ • A w` is `A u`. For the
+rank-one map in the other slot, combine with `metricTrace_flip`. -/
+@[simp]
+theorem metricTrace_innerₗ_smulRight (u : W) (A : W →ₗ[ℝ] N) :
+    metricTrace ((innerₗ W u).smulRight A) = A u := by
+  let b := stdOrthonormalBasis ℝ W
+  conv_rhs => rw [← b.sum_repr' u]
+  simp only [metricTrace_eq_sum _ b, LinearMap.smulRight_apply, innerₗ_apply_apply,
+    LinearMap.smul_apply, map_sum, map_smul, real_inner_comm]
 
 /-- The metric trace of the inner product is the real dimension. -/
 @[simp]

@@ -191,6 +191,24 @@ theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 
 
 end CovariantDeriv
 
+section CliffordPairing
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
+  {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+
+/-- The real-bilinear pairing `(v, w) ↦ c(v) (L w)` of a real-linear map `L : V → W`, whose
+contraction along the metric is the Clifford contraction `∑ₖ c(eₖ) (L eₖ)`. -/
+def cliffordPairing (L : V →ₗ[ℝ] W) : V →ₗ[ℝ] V →ₗ[ℝ] W :=
+  (LinearMap.restrictScalarsₗ ℝ ℂ W W ℝ ∘ₗ ρ.toLinearMap ∘ₗ ι Q).compl₂ L
+
+@[simp]
+theorem cliffordPairing_apply (L : V →ₗ[ℝ] W) (v w : V) :
+    cliffordPairing ρ L v w = ρ (ι Q v) (L w) := by
+  simp only [cliffordPairing, LinearMap.compl₂_apply, LinearMap.comp_apply,
+    LinearMap.restrictScalarsₗ_apply, LinearMap.coe_restrictScalars, AlgHom.toLinearMap_apply]
+
+end CliffordPairing
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {Q : QuadraticForm ℝ V}
   {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W]
@@ -246,20 +264,6 @@ theorem laplacian_norm_sq_eq [FiniteDimensional ℝ V] (hψ : ContDiffAt ℝ 2 �
 
 /-! ### The Dirac operator and the Weitzenböck formula -/
 
-/-- The real-bilinear pairing `(v, w) ↦ c(v) (L w)` of a linear map `L : V → W`, whose contraction
-along the metric is the Clifford contraction `∑ₖ c(eₖ) (L eₖ)`. -/
-def cliffordPairing (L : V →L[ℝ] W) : V →ₗ[ℝ] V →ₗ[ℝ] W :=
-  LinearMap.mk₂ ℝ (fun v w ↦ ρ (ι Q v) (L w))
-    (fun _ _ _ ↦ by simp)
-    (fun c v w ↦ by rw [map_smul, map_smul, LinearMap.smul_apply])
-    (fun _ _ _ ↦ by simp)
-    (fun c v w ↦ by rw [map_smul, LinearMap.map_smul_of_tower])
-
-@[simp]
-theorem cliffordPairing_apply (L : V →L[ℝ] W) (v w : V) :
-    cliffordPairing ρ L v w = ρ (ι Q v) (L w) := by
-  rw [cliffordPairing, LinearMap.mk₂_apply]
-
 section Dirac
 
 variable [FiniteDimensional ℝ V]
@@ -267,12 +271,12 @@ variable [FiniteDimensional ℝ V]
 /-- The **flat Dirac operator** `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ` of the connection `d + i b`, defined
 without a basis as the metric contraction of `(v, w) ↦ c(v) ∇_w ψ`. -/
 def flatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) : W :=
-  LinearMap.BilinMap.metricTrace (cliffordPairing ρ (covariantDeriv b ψ x))
+  LinearMap.BilinMap.metricTrace (cliffordPairing ρ (covariantDeriv b ψ x).toLinearMap)
 
 /-- The flat Dirac operator is the metric trace of the Clifford pairing `(v, w) ↦ c(v) ∇_w ψ`. -/
 theorem flatDirac_def (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
     flatDirac ρ b ψ x =
-      LinearMap.BilinMap.metricTrace (cliffordPairing ρ (covariantDeriv b ψ x)) := by
+      LinearMap.BilinMap.metricTrace (cliffordPairing ρ (covariantDeriv b ψ x).toLinearMap) := by
   rw [flatDirac]
 
 /-- The flat Dirac operator in an orthonormal basis: `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`. -/
@@ -280,7 +284,7 @@ theorem flatDirac_eq_sum {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ 
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
     flatDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ x (e k)) := by
   rw [flatDirac_def, LinearMap.BilinMap.metricTrace_eq_sum _ e]
-  simp only [cliffordPairing_apply]
+  simp only [cliffordPairing_apply, ContinuousLinearMap.coe_coe]
 
 /-- The flat Dirac operator of `α u₀` for a constant spinor `u₀`:
 `D (α u₀) = ∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`. On the canonical line this is the flat limiting Dirac

@@ -55,7 +55,7 @@ corollaries, where smoothness re-enters, live in the companion files
 The file also records the characterization `laplacian_eq_traceL` of the Laplacian as the trace
 `traceL` of the second Fréchet derivative and the base second-derivative computation
 `laplacian_norm_sq` (`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on
-the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial
+the squared norm, its chain-rule generalization `ContDiffAt.laplacian_comp_norm_sq` to radial
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
 `ContDiffAt.laplacian_comp` for a real function of a scalar function, the companion rule
@@ -101,7 +101,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   `Δ (Dⁿ f) = Dⁿ (Δ f)`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
-* `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
+* `ContDiffAt.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
   `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`.
 * `ContDiff.laplacian`: the Laplacian loses two derivatives at every regularity order.
 * `ContDiffAt.laplacian_fun_mul_complex`: the planar product rule in directions `1` and `I`.
@@ -188,11 +188,15 @@ theorem _root_.ContinuousLinearMap.norm_traceL_apply_le (H : E →L[ℝ] E →L[
 representative of `f`. -/
 @[simp] theorem _root_.ContinuousLinearMap.traceL_smulRight (f : E →L[ℝ] ℝ) (A : E →L[ℝ] F) :
     traceL (f.smulRight A) = A ((InnerProductSpace.toDual ℝ E).symm f) := by
-  rw [traceL_apply, ← (stdOrthonormalBasis ℝ E).sum_repr' ((InnerProductSpace.toDual ℝ E).symm f),
-    map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [ContinuousLinearMap.smulRight_apply, smul_apply, map_smul,
-    real_inner_comm, InnerProductSpace.toDual_symm_apply]
+  have h : ContinuousLinearMap.toLinearMap₁₂ (f.smulRight A) =
+      (innerₗ E ((InnerProductSpace.toDual ℝ E).symm f)).smulRight (A : E →ₗ[ℝ] F) :=
+    LinearMap.ext₂ fun v w ↦ by
+      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, LinearMap.smulRight_apply,
+        innerₗ_apply_apply, InnerProductSpace.toDual_symm_apply,
+        ContinuousLinearMap.smulRight_apply, LinearMap.smul_apply, smul_apply,
+        ContinuousLinearMap.coe_coe]
+  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, h,
+    LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe]
 
 end traceL
 
@@ -587,16 +591,18 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
 
 open Gradient in
-/-- **The Laplacian of a radial function.** For a `C²` function `ρ : ℝ → ℝ`, the Laplacian of
-`x ↦ ρ (‖x‖ ^ 2)` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. -/
+/-- **The Laplacian of a radial function.** For a function `ρ : ℝ → ℝ` that is `C²` at `‖x‖²`,
+the Laplacian of `y ↦ ρ (‖y‖ ^ 2)` at `x` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. Only the
+regularity of `ρ` at `‖x‖²` is used, so `ρ` may be singular elsewhere. -/
 @[simp]
-theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDiff ℝ 2 ρ) (x : E) :
+theorem _root_.ContDiffAt.laplacian_comp_norm_sq {ρ : ℝ → ℝ} {x : E}
+    (hρ : ContDiffAt ℝ 2 ρ (‖x‖ ^ 2)) :
     Δ (fun y : E => ρ (‖y‖ ^ 2)) x =
       4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
         2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
   have hgrad : ∇ (fun y : E => ‖y‖ ^ 2) x = (2 : ℝ) • x := by
     simpa only [sub_zero] using gradient_norm_sq_sub (0 : E) x
-  have h := hρ.contDiffAt.laplacian_comp (x := x) (q := fun y : E => ‖y‖ ^ 2)
+  have h := hρ.laplacian_comp (x := x) (q := fun y : E => ‖y‖ ^ 2)
     (contDiff_norm_sq ℝ).contDiffAt
   simp only [Function.comp_def] at h
   rw [h, hgrad, laplacian_norm_sq, norm_smul, Real.norm_two]

@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Contracting the covariant derivative of the curvature
@@ -389,15 +390,14 @@ theorem IsMetricCompatible.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature
     ∑ i, cov.derivRicciTensor x (b i) (b i) v = mvfderiv I cov.scalarCurvature x v := by
   have hRic (y : M) :
       ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap =
-        cov.ricciTensor y := by
-    ext u w
-    simp [LinearMap.toContinuousBilinearMap_apply]
+        cov.ricciTensor y :=
+    LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap _
   have hScal : cov.scalarCurvature = fun y ↦ LinearMap.BilinMap.metricTrace
       (ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap) := by
     funext y
     rw [hRic, scalarCurvature_apply]
   simp only [derivRicciTensor_def]
-  rw [hScal, hcov.mvfderiv_metricTrace (fun _ _ h₁ h₂ ↦ by
+  rw [hScal, hcov.mvfderiv_metricTrace_apply_eq_sum (fun _ _ h₁ h₂ ↦ by
     simpa only [LinearMap.toContinuousBilinearMap_apply] using
       cov.mdifferentiableAt_ricciTensor_apply h₁ h₂) b v]
 

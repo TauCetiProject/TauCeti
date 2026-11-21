@@ -530,20 +530,38 @@ theorem hessian_zero (x : M) (v w : TangentSpace I x) :
     hessian I (0 : M → ℝ) x v w = 0 :=
   hessian_const I 0 x v w
 
-/-- The Hessian is additive at a point where both functions are `C²`. -/
-theorem hessian_add_of_contMDiffAt {f g : M → ℝ} {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (v w : TangentSpace I x) :
-    hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w := by
-  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  have hgradf := mdifferentiableAt_mgradient hf
-  have hgradg := mdifferentiableAt_mgradient hg
-  have hev := mgradient_add_eventuallyEq (hf.of_le (by norm_num)) (hg.of_le (by norm_num))
+/-- The Hessian form is additive at `x` when both functions are differentiable near `x` and
+their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.hessianForm_add_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M} (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (f + g) x = I.hessianForm f x + I.hessianForm g x := by
+  have hev : ∀ᶠ y in nhds x, mgradient I (f + g) y = (mgradient I f + mgradient I g) y := by
+    filter_upwards [hf, hg] with y hfy hgy
+    refine ext_inner_right ℝ fun v ↦ ?_
+    rw [Pi.add_apply, inner_add_left, inner_mgradient, inner_mgradient, inner_mgradient,
+      mvfderiv_add hfy hgy, add_apply]
+  have hsum := mdifferentiableAt_add_section hf' hg'
   have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
-  rw [hessian_def, hcov.congr_of_eventuallyEq (mdifferentiableAt_mgradient (hf.add hg))
-    (mdifferentiableAt_add_section hgradf hgradg) Filter.univ_mem hev,
-    hcov.add hgradf hgradg, add_apply, inner_add_left,
-    ← hessian_def, ← hessian_def]
+  rw [I.hessianForm_def, I.hessianForm_def, I.hessianForm_def,
+    hcov.congr_of_eventuallyEq
+      (hsum.congr_of_eventuallyEq (hev.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy))
+      hsum Filter.univ_mem hev,
+    hcov.add hf' hg', ContinuousLinearMap.comp_add]
+
+/-- The Hessian is additive at `x` when both functions are differentiable near `x` and their
+gradients are differentiable at `x`. -/
+theorem hessian_add_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
+    hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w := by
+  rw [← I.hessianForm_apply, I.hessianForm_add_of_mdifferentiableAt_mgradient hf hg hf' hg',
+    add_apply, add_apply, I.hessianForm_apply, I.hessianForm_apply]
 
 /-- The Hessian form commutes with constant scalar multiplication at a point where the gradient
 is differentiable. -/
@@ -581,12 +599,34 @@ theorem hessian_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
   rw [← I.hessianForm_apply, I.hessianForm_neg_of_mdifferentiableAt_mgradient hf, neg_apply,
     neg_apply, I.hessianForm_apply]
 
-/-- The Hessian respects subtraction at a point where both functions are `C²`. -/
-theorem hessian_sub_of_contMDiffAt {f g : M → ℝ} {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (v w : TangentSpace I x) :
+/-- The Hessian respects subtraction at `x` when both functions are differentiable near `x` and
+their gradients are differentiable at `x`. -/
+theorem hessian_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+    (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
     hessian I (f - g) x v w = hessian I f x v w - hessian I g x v w := by
-  rw [sub_eq_add_neg, hessian_add_of_contMDiffAt I (g := -g) hf hg.neg,
-    hessian_neg_of_mdifferentiableAt_mgradient I (mdifferentiableAt_mgradient hg), sub_eq_add_neg]
+  have hneg : mgradient I (-g) = -mgradient I g := funext fun _ ↦ mgradient_neg
+  have hg'' : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I (-g) y⟩ : TangentBundle I M)) x := by
+    rw [hneg]
+    exact mdifferentiableAt_neg_section hg'
+  rw [sub_eq_add_neg, hessian_add_of_mdifferentiableAt_mgradient I hf (hg.mono fun _ hy ↦ hy.neg)
+    hf' hg'', hessian_neg_of_mdifferentiableAt_mgradient I hg', sub_eq_add_neg]
+
+/-- The Hessian form respects subtraction at `x` when both functions are differentiable near `x`
+and their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.hessianForm_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M} (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (f - g) x = I.hessianForm f x - I.hessianForm g x :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
+    rw [sub_apply, sub_apply, I.hessianForm_apply, I.hessianForm_apply, I.hessianForm_apply,
+      hessian_sub_of_mdifferentiableAt_mgradient I hf hg hf' hg']
 
 /-- The Hessian form of a function that is `C²` at `x` is symmetric. -/
 theorem _root_.ModelWithCorners.flip_hessianForm {f : M → ℝ} {x : M}
@@ -594,22 +634,6 @@ theorem _root_.ModelWithCorners.flip_hessianForm {f : M → ℝ} {x : M}
   ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
     rw [ContinuousLinearMap.flip_apply, I.hessianForm_apply, I.hessianForm_apply,
       hessian_symm x hf]
-
-/-- The Hessian form is additive at a point where both functions are `C²`. -/
-theorem _root_.ModelWithCorners.hessianForm_add_of_contMDiffAt {f g : M → ℝ} {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
-    I.hessianForm (f + g) x = I.hessianForm f x + I.hessianForm g x :=
-  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
-    rw [add_apply, add_apply, I.hessianForm_apply,
-      I.hessianForm_apply, I.hessianForm_apply, hessian_add_of_contMDiffAt I hf hg]
-
-/-- The Hessian form respects subtraction at a point where both functions are `C²`. -/
-theorem _root_.ModelWithCorners.hessianForm_sub_of_contMDiffAt {f g : M → ℝ} {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
-    I.hessianForm (f - g) x = I.hessianForm f x - I.hessianForm g x :=
-  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
-    rw [sub_apply, sub_apply, I.hessianForm_apply, I.hessianForm_apply, I.hessianForm_apply,
-      hessian_sub_of_contMDiffAt I hf hg]
 
 /-- The Hessian form of a constant function is zero. -/
 @[simp]
@@ -627,7 +651,10 @@ theorem _root_.ModelWithCorners.hessianForm_zero (x : M) : I.hessianForm (0 : M 
 theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) (v w : TangentSpace I x) :
     hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w :=
-  hessian_add_of_contMDiffAt I (hf x) (hg x) v w
+  hessian_add_of_mdifferentiableAt_mgradient I
+    (.of_forall fun y ↦ (hf y).mdifferentiableAt two_ne_zero)
+    (.of_forall fun y ↦ (hg y).mdifferentiableAt two_ne_zero)
+    (mdifferentiableAt_mgradient (hf x)) (mdifferentiableAt_mgradient (hg x)) v w
 
 /-- The Hessian commutes with multiplication of a `C²` function by a real constant. -/
 theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)

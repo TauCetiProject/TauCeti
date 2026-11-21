@@ -127,7 +127,7 @@ private theorem sum_hom_self_eq_zero_of_mdifferentiable
     simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
       lowerConnectionTensor_apply]
     rw [← inner_sum, hy, inner_zero_right]
-  have h := hcov.mvfderiv_metricTrace hb e z
+  have h := hcov.mvfderiv_metricTrace_apply_eq_sum hb e z
   rw [hzero.mvfderiv_eq] at h
   simp only [mvfderiv_const, zero_apply,
     deriv_lowerConnectionTensor hcov hC hW, Finset.sum_add_distrib,

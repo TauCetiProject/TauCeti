@@ -161,7 +161,12 @@ theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
     simpa only [Pi.sub_apply, ← heq, sub_self] using sub_nonneg.mpr hy
   have hh : 0 ≤ hessian I (g - f) x v v :=
     hessian_self_nonneg_of_isLocalMin (hg.sub hf) hmin v
-  rw [hessian_sub_of_contMDiffAt I (f := g) (g := f) hg hf] at hh
+  rw [hessian_sub_of_mdifferentiableAt_mgradient I (f := g) (g := f)
+    (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg).mono fun _ hy ↦
+      hy.mdifferentiableAt two_ne_zero)
+    (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf).mono fun _ hy ↦
+      hy.mdifferentiableAt two_ne_zero)
+    (mdifferentiableAt_mgradient hg) (mdifferentiableAt_mgradient hf)] at hh
   exact sub_nonneg.mp hh
 
 /-- If `g` touches `f` from above, its Laplace–Beltrami operator is larger at contact. -/

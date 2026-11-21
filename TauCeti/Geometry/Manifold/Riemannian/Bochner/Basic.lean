@@ -136,7 +136,7 @@ theorem sum_inner_secondCovariantDerivative_mgradient_self (hf : ContMDiff I �
   have hlap : (fun y ↦ LinearMap.BilinMap.metricTrace
       (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f y))) = laplaceBeltrami I f :=
     funext fun y ↦ (I.laplaceBeltrami_eq_metricTrace_hessianForm f y).symm
-  have htr := hcov.mvfderiv_metricTrace
+  have htr := hcov.mvfderiv_metricTrace_apply_eq_sum
     (fun _ _ ↦ mdifferentiableAt_hessianForm_apply_of_contMDiff hf) b w
   rw [hlap] at htr
   rw [Finset.sum_congr rfl fun i _ ↦ hswap i, Finset.sum_add_distrib, ← htr,

@@ -71,6 +71,8 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.algebraicCurvatureLinearIsometryEquiv`: pullback of algebraic curvature
   tensors along linear isometric equivalences.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
+* `TauCeti.FourTensor.ricciSlice`: the bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace
+  is the Ricci contraction.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
 * `TauCeti.FourTensor.constantCurvature`: the constant-curvature tensor of curvature `1`.
@@ -92,6 +94,8 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.coe_algebraicCurvatureLinearIsometryEquiv`: linear/isometric equivalences
   identify algebraic curvature tensors.
+* `TauCeti.FourTensor.ricci_apply`: the Ricci contraction `ricci r u v` is the metric trace of
+  `ricciSlice r u v`.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
@@ -370,13 +374,15 @@ theorem abs_apply_le_norm_of_norm_eq_one (r : FourTensor V) {u v z w : V}
   simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, hu, hv, hz, hw,
     mul_one] using h
 
-/-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction. -/
-private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
+/-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction
+(`TauCeti.FourTensor.ricci_apply`). -/
+def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
   LinearMap.mk₂ ℝ (fun x y ↦ r ![x, u, y, v])
     (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
     (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
 
-private theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
+@[simp]
+theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
     ricciSlice r u v x y = r ![x, u, y, v] :=
   (rfl)
 
@@ -544,7 +550,7 @@ def ricci : FourTensor V →ₗ[ℝ] BilinForm ℝ V where
     rfl
 
 /-- The Ricci contraction is the metric trace of the slice `(x, y) ↦ r(x, u, y, v)`. -/
-private theorem ricci_apply (r : FourTensor V) (u v : V) :
+theorem ricci_apply (r : FourTensor V) (u v : V) :
     ricci r u v = LinearMap.BilinMap.metricTrace (ricciSlice r u v) := by
   simp only [ricci, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.mk₂_apply]
 

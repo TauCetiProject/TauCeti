@@ -33,7 +33,9 @@ The proof works in the chart-local frame `Fᵢ` and its metric-dual frame
 ## Main results
 
 * `CovariantDerivative.IsMetricCompatible.mvfderiv_metricTrace`: the derivative of the metric
-  trace of a field of bilinear forms is the trace of its covariant derivative.
+  trace of a field of bilinear forms is the metric trace of its covariant derivative.
+* `CovariantDerivative.IsMetricCompatible.mvfderiv_metricTrace_apply_eq_sum`: the same identity
+  along a tangent vector, in an orthonormal basis.
 
 ## References
 
@@ -98,18 +100,17 @@ private theorem sum_apply_chartDualFrame_cancel
 
 /-- **Covariant differentiation commutes with the metric trace.** For a connection compatible
 with the metric and a field of bilinear forms `b` pairing sections differentiable at `x` to
-functions differentiable at `x`, the derivative of the metric trace of `b` along `v` is the
-metric trace of `∇_v b`, computed in any orthonormal basis of the tangent space at `x`. -/
+functions differentiable at `x`, the derivative at `x` of the metric trace of `b` is the metric
+trace of `∇b`, a covector-valued bilinear form on the tangent space at `x`. -/
 theorem IsMetricCompatible.mvfderiv_metricTrace
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {x : M}
     (hb : ∀ ⦃σ τ : Π x : M, TangentSpace I x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
-      MDiffAt (fun y ↦ b y (σ y) (τ y)) x)
-    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I x))
-    (v : TangentSpace I x) :
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x) :
     mvfderiv I
-        (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) x v =
-      ∑ i, cov.derivBilinearTensor b x (e i) (e i) v := by
+        (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) x =
+      LinearMap.BilinMap.metricTrace
+        (ContinuousLinearMap.toLinearMap₁₂ (cov.derivBilinearTensor b x)) := by
   set F := chartLocalFrame (I := I) x with hFdef
   set D := chartDualFrame (I := I) x with hDdef
   have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
@@ -129,6 +130,7 @@ theorem IsMetricCompatible.mvfderiv_metricTrace
     rw [metricTrace_eq_sum_chartDualFrame x
       (by simpa only [TangentBundle.trivializationAt_baseSet] using hy)]
     simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ← hFdef, ← hDdef]
+  ext v
   have hsum : mvfderiv I (fun y ↦ ∑ i, b y (F i y) (D i y)) x v =
       ∑ i, mvfderiv I (fun y ↦ b y (F i y) (D i y)) x v := by
     have hfun : (fun y ↦ ∑ i, b y (F i y) (D i y)) = ∑ i, fun y ↦ b y (F i y) (D i y) := by
@@ -142,16 +144,27 @@ theorem IsMetricCompatible.mvfderiv_metricTrace
   -- The terms involving `∇Fᵢ` and `∇Dᵢ` cancel.
   have hcancel := sum_apply_chartDualFrame_cancel hcov x (b x) v hU hF hD
   simp only [← hFdef, ← hDdef] at hcancel
-  -- At `x`, both sides are metric traces of `∇_v b`.
-  let β : LinearMap.BilinForm ℝ (TangentSpace I x) :=
-    LinearMap.mk₂ ℝ (fun u w ↦ cov.derivBilinearTensor b x u w v) (by simp) (by simp)
-      (by simp) (by simp)
-  have hβ := metricTrace_eq_sum_chartDualFrame x hxc β
-  rw [LinearMap.BilinMap.metricTrace_eq_sum β e] at hβ
-  simp only [β, LinearMap.mk₂_apply, ← hFdef, ← hDdef] at hβ
   have hterm (i : Fin (Module.finrank ℝ E)) := cov.derivBilinearTensor_apply hb (hF i) (hD i) v
-  rw [htr.mvfderiv_eq, hsum, hβ]
-  simp only [hterm, Finset.sum_sub_distrib, hcancel]
+  -- At `x`, the metric trace of `∇b` is `∑ᵢ (∇b)(Fᵢ, Dᵢ)`.
+  rw [htr.mvfderiv_eq, hsum, metricTrace_eq_sum_chartDualFrame x hxc, sum_apply]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ← hFdef, ← hDdef, hterm,
+    Finset.sum_sub_distrib, hcancel]
   ring
+
+/-- **Covariant differentiation commutes with the metric trace**, in an orthonormal basis: the
+derivative of the metric trace of `b` along `v` is `∑ᵢ (∇_v b)(eᵢ, eᵢ)` for every orthonormal basis
+`eᵢ` of the tangent space at `x`. -/
+theorem IsMetricCompatible.mvfderiv_metricTrace_apply_eq_sum
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {x : M}
+    (hb : ∀ ⦃σ τ : Π x : M, TangentSpace I x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x)
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I x))
+    (v : TangentSpace I x) :
+    mvfderiv I
+        (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) x v =
+      ∑ i, cov.derivBilinearTensor b x (e i) (e i) v := by
+  rw [hcov.mvfderiv_metricTrace hb, LinearMap.BilinMap.metricTrace_eq_sum _ e, sum_apply]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 end CovariantDerivative

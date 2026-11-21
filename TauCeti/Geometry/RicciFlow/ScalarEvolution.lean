@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Trace
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.SMul
+import TauCeti.Topology.Algebra.Module.BilinearForm
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 
 /-!
@@ -335,8 +336,8 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
       ((g.metric t y).inverse ∘L ((cov t).ricciTensor y).toContinuousBilinearMap) = _
     rw [ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t y)
       (fun u v ↦ by simpa only [metric_apply] using hg y u v),
+      LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap,
       CovariantDerivative.scalarCurvature_apply]
-    rfl
   have hd := g.hasDerivAt_trace_ricciTensor_of_ricciFlow hcov hg hflow x
   rw [← hcurv] at hd
   exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s ↦ hscalar s x)
