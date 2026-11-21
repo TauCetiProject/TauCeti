@@ -52,8 +52,8 @@ isomorphism, every map out of a path-connected space is injective on zeroth homo
 (`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`), and with coefficients in a
 ring with the strong rank condition that homology has rank one
 (`TauCeti.finrank_singularHomology₀_eq_one`).
-With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
-the number of path components other than that of the point
+With coefficients in a ring with the strong rank condition, such as a field, the rank of reduced
+zeroth homology is therefore the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
 nonempty space with vanishing reduced zeroth homology is path-connected.
 

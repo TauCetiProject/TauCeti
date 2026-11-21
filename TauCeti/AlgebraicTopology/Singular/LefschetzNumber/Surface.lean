@@ -8,7 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LefschetzNumber.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FlatCoefficients
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-import TauCeti.RingTheory.Flat.FractionRing
+import Mathlib.Algebra.Module.Rat
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # The Lefschetz zeta function of a self-map of a closed oriented surface
@@ -98,7 +99,7 @@ compact connected homologically oriented surface and a field `k` of characterist
 theorem lefschetzNumber_eq_one_sub_trace_add_degree [Algebra ℚ k] (f : C(M, M)) :
     f.lefschetzNumber k =
       1 - LinearMap.trace k _ (ContinuousMap.singularHomologyMap k 1 f) + o.degree o hE f := by
-  have := algebraRat.flat_int k
+  have : HasUniqueDiv k := .of_module_rat k
   obtain ⟨h₀, hf₀⟩ := finrank_homology_zero_and_singularHomologyMap_zero (E := E) k f
   have h₂ := o.finrank_singularChains_homology_eq_one hE k
   have := Module.finite_of_finrank_eq_succ h₀
@@ -126,7 +127,7 @@ private theorem reverse_charpoly_singularHomologyMap_two [Algebra ℚ k] [Finite
     (f : C(M, M)) :
     (ContinuousMap.singularHomologyMap k 2 f).charpoly.reverse =
       1 - Polynomial.C (o.degree o hE f : k) * Polynomial.X := by
-  have := algebraRat.flat_int k
+  have : HasUniqueDiv k := .of_module_rat k
   rw [o.singularHomologyMap_eq_degree_smul_id hE, LinearMap.reverse_charpoly_smul_id,
     o.finrank_singularChains_homology_eq_one hE k, pow_one]
 
