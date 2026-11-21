@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Algebra.Field.Rat
 public import Mathlib.RingTheory.PrincipalIdealDomain
+public import TauCeti.KnotTheory.Khovanov.EnhancedState.Evaluation
 public import TauCeti.KnotTheory.Khovanov.EulerCharacteristic
-public import TauCeti.KnotTheory.Khovanov.Parity
 public import TauCeti.KnotTheory.PDCode.ChangeCrossing
 public import TauCeti.KnotTheory.PDCode.Oriented.VertexResolution
 
@@ -42,15 +42,14 @@ When `D` is planar with `c` link components, the quantum-grading parity theorem
   `E(D) = -(-1) ^ c * ((-1) ^ c_A * E(D_A) + (-1) ^ c_B * E(D_B))`
   (`TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing`).
 
-By the same parity theorem every state contributes `(-1) ^ (n + c) (-2) ^ k(s)` to `E(D)`, and the
-unoriented state sum `∑ₛ (-2) ^ k(s)` is `(-1) ^ (n + c) 2 ^ c`
-(`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`), so `E(D) = 2 ^ c` for every planar oriented
-diagram (`TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_two_pow_componentCount`).
-
-Consequently, over every Noetherian commutative ring `R` satisfying rank-nullity—and in particular
-over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)` evaluates to `2 ^ c` at `q = 1`,
-hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)` with
-`i ∈ [-n₋, n₊]` for every planar link diagram, including the empty diagram.
+Building on the state-level evaluation `E(D) = 2 ^ c` from
+`TauCeti.KnotTheory.Khovanov.EnhancedState.Evaluation`
+(`TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_two_pow_componentCount`), evaluating the Jones
+polynomial at `t ^ (1/2) = -1` gives `2 ^ (c - 1)`.
+Over every Noetherian commutative ring `R` satisfying rank-nullity—and in particular over `ℤ` and
+`ℚ`—the graded Euler characteristic `χ_q Kh(D; R)` evaluates to `2 ^ c` at `q = 1`, hence is
+nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)` with `i ∈ [-n₋, n₊]` for
+every planar link diagram, including the empty diagram.
 
 ## Main results
 
@@ -61,10 +60,6 @@ hence is nonzero, so `Khⁱʲ(D; R)` is nonzero in at least one bidegree `(i, j)
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing` and
   `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_resolveCrossingOriented`: the normalized parity
   recurrence across arbitrary oriented smoothings of a crossing.
-* `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_two_pow_componentCount` and
-  `TauCeti.OrientedPDCode.sum_coeff_enhancedStateSum_eq_two_pow`: `E(D) = 2 ^ c` (and the sum
-  of coefficients of `D.enhancedStateSum` is `2 ^ c`) for every planar oriented code `D` with `c`
-  components.
 * `TauCeti.OrientedPDCode.eval₂_neg_one_jonesPolynomial`: for a nonempty planar code, evaluating
   the Jones polynomial at `t ^ (1/2) = -1` gives `2 ^ (c - 1)`.
 * `TauCeti.OrientedPDCode.eval₂_one_khovanovEulerChar`,
@@ -199,49 +194,7 @@ theorem enhancedStateEulerSum_eq_resolveCrossingOriented
     (D.toPDCode_resolveCrossingOriented c true detachedA hA)
     (D.toPDCode_resolveCrossingOriented c false detachedB hB)
 
-/-! ### Closed form `E(D) = 2 ^ c` and evaluations -/
-
-/-- On a planar code, the state `s` with `B`-smoothing set `S` and `k` circles contributes
-`(-1) ^ (n + c) (-2) ^ k` to `E(D)`, by the component parity of the quantum grading. -/
-private theorem neg_one_pow_mul_two_pow_stateLoopCount (D : OrientedPDCode n)
-    (hD : D.toPDCode.IsPlanar) (s : Fin n → Bool) :
-    (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) *
-        2 ^ D.toPDCode.stateLoopCount s =
-      (-1) ^ (n + D.componentCount) * (-2) ^ D.toPDCode.stateLoopCount s := by
-  have hpar := D.stateQuantumShift_add_stateLoopCount_mod_two hD s
-  have hcount := D.positiveCrossingCount_add_negativeCrossingCount
-  have hsign : (D.stateCochainDegree s).negOnePow =
-      ((n + D.componentCount + D.toPDCode.stateLoopCount s : ℕ) : ℤ).negOnePow := by
-    rw [Int.negOnePow_eq_iff, Int.even_iff, stateCochainDegree_def]
-    rw [stateQuantumShift_def] at hpar
-    push_cast at hpar ⊢
-    omega
-  rw [← D.coe_negOnePow_stateCochainDegree, hsign, Int.coe_negOnePow_natCast, neg_pow (2 : ℤ)]
-  ring
-
-/-- **For every planar oriented PD-code `D` with `c` link components, `E(D) = 2 ^ c`.** Every state
-contributes `(-1) ^ (n + c) (-2) ^ k(s)` by the component parity of the quantum grading, and the
-unoriented state sum `∑ₛ (-2) ^ k(s)` is `(-1) ^ (n + c) 2 ^ c`
-(`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`). -/
-theorem enhancedStateEulerSum_eq_two_pow_componentCount (D : OrientedPDCode n)
-    (hD : D.toPDCode.IsPlanar) : D.enhancedStateEulerSum = (2 : ℤ) ^ D.componentCount := by
-  rw [enhancedStateEulerSum_def]
-  simp_rw [D.neg_one_pow_mul_two_pow_stateLoopCount hD]
-  rw [← Finset.mul_sum, D.toPDCode.sum_neg_two_pow_stateLoopCount, ← mul_assoc, ← pow_add,
-    Even.neg_one_pow ⟨_, rfl⟩, one_mul]
-
-/-- **Evaluating the enhanced state sum of a planar diagram at `q = 1` gives `2 ^ c`.** -/
-theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) :
-    eval₂ (RingHom.id ℤ) 1 D.enhancedStateSum = (2 : ℤ) ^ D.componentCount := by
-  rw [D.eval₂_one_enhancedStateSum, D.enhancedStateEulerSum_eq_two_pow_componentCount hD]
-
-/-- The sum of all Laurent coefficients of `D.enhancedStateSum` for a planar oriented PD-code is
-`2 ^ D.componentCount`. -/
-theorem sum_coeff_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) :
-    (D.enhancedStateSum.coeff.sum fun _ c ↦ c) = (2 : ℤ) ^ D.componentCount := by
-  rw [← laurentEval_one_eq_sum, laurentEval_eq_eval₂,
-    RingHom.ext_int (algebraMap ℤ ℤ) (RingHom.id ℤ),
-    D.eval₂_one_enhancedStateSum_eq_two_pow hD]
+/-! ### Jones specialization -/
 
 /-- **Evaluating the Jones polynomial of a nonempty planar diagram at `t ^ (1/2) = -1` gives
 `2 ^ (c - 1)`** (Jones 1985, Theorems 14–15; Lickorish 1997, Chapter 3). -/
