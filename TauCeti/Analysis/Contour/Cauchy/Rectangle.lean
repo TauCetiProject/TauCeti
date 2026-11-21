@@ -42,6 +42,8 @@ this on `[-X, σ₂] ×ℂ [Im w, t₂]` with Cauchy's theorem on `[Re w, σ₂]
 * `TauCeti.Contour.rectangle_boundary_integral_eq_sum_circleIntegral`: the four-edge boundary
   integral of `f` equals the sum of circle integrals around pairwise disjoint discs enclosing the
   isolated singularities `P`.
+* `TauCeti.Contour.vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral`: finite-cutoff
+  L-shaped contour shift from `Re s = σ₂` to a left vertical edge at `Re s = σ₁`.
 * `TauCeti.Contour.vertical_integral_eq_lShaped_add_sum_circleIntegral`: shifting a vertical
   segment integral to an L-shaped contour running to `Re s = -∞` plus circle integrals around
   isolated singularities in the upper half-strip.
@@ -70,23 +72,6 @@ open scoped Interval Real Topology
 namespace TauCeti.Contour
 
 section Kernel
-
-/-- The contour integral of `f` along the rectangle polygon cycle equals Mathlib's four-edge
-expression whenever `f` is continuous on the rectangle frontier. -/
-private theorem integral_rectPolygon_eq_edges {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {σ₁ σ₂ t₁ t₂ : ℝ} {f : ℂ → E}
-    (hf : ContinuousOn f (frontier (Rectangle ((σ₁ : ℂ) + t₁ * I) ((σ₂ : ℂ) + t₂ * I)))) :
-    Cycle.integral f (rectPolygon ((σ₁ : ℂ) + t₁ * I) ((σ₂ : ℂ) + t₂ * I)).contourCycle =
-      (∫ x : ℝ in σ₁..σ₂, f (x + t₁ * I)) - (∫ x : ℝ in σ₁..σ₂, f (x + t₂ * I)) +
-        I • (∫ y : ℝ in t₁..t₂, f (σ₂ + y * I)) - I • (∫ y : ℝ in t₁..t₂, f (σ₁ + y * I)) := by
-  let z₀ : ℂ := σ₁ + t₁ * I
-  let w₀ : ℂ := σ₂ + t₂ * I
-  have hzre : z₀.re = σ₁ := by simp [z₀]
-  have hzim : z₀.im = t₁ := by simp [z₀]
-  have hwre : w₀.re = σ₂ := by simp [w₀]
-  have hwim : w₀.im = t₂ := by simp [w₀]
-  rw [Polygon.contourCycle_def, Polygon.contourCurve_def, Cycle.integral_of_raw,
-    Nat.cast_ofNat, ← rectBoundary_def, integral_rectBoundary hf, hzre, hzim, hwre, hwim]
 
 /-- The cycle integral of the Cauchy kernel `(z - w)⁻¹` around the counterclockwise rectangle
 boundary equals `2πi` for every `w` in the open rectangle. -/
@@ -133,8 +118,8 @@ theorem rectangle_boundary_integral_sub_inv {σ₁ σ₂ t₁ t₂ : ℝ} {w : �
   have hcont : ContinuousOn (fun z : ℂ ↦ (z - w)⁻¹) (frontier (Rectangle z₀ w₀)) :=
     (continuousOn_id.sub continuousOn_const).inv₀ fun z hz ↦
       sub_ne_zero.2 fun h ↦ by simp only [id_eq] at h; exact hfr (h ▸ hz)
-  have h := (integral_rectPolygon_eq_edges hcont).symm.trans (integral_rectPolygon_sub_inv hw')
-  simpa only [smul_eq_mul] using h
+  have h := (integral_contourCycle_rectPolygon hcont).symm.trans (integral_rectPolygon_sub_inv hw')
+  simpa [z₀, w₀, smul_eq_mul] using h
 
 end Kernel
 
@@ -419,7 +404,7 @@ theorem rectangle_boundary_integral_eq_sum_circleIntegral
       Ioo (min z₀.im w₀.im) (max z₀.im w₀.im) = Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ := by
     simp [z₀, w₀, min_eq_left hσ, max_eq_right hσ, min_eq_left ht, max_eq_right ht]
   have hg_zero : Cycle.integral g (rectPolygon z₀ w₀).contourCycle = 0 := by
-    rw [integral_rectPolygon_eq_edges (hg_cont.mono <|
+    rw [integral_contourCycle_rectPolygon (hg_cont.mono <|
       (isClosed_rectangle z₀ w₀).frontier_subset.trans (by rw [Rectangle, hRrect]))]
     simpa [z₀, w₀] using Complex.integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn
       g z₀ w₀ (hRrect ▸ hg_cont) (hUrect ▸ hg_diff)
@@ -450,7 +435,12 @@ theorem rectangle_boundary_integral_eq_sum_circleIntegral
         fun z hz ↦ gluedRegular_eq_out (hfr_out z (htrace ▸ hz)),
       Cycle.integral_sub (htrace ▸ hf_fr) (continuousOn_finsetSum P hext_fr),
       Cycle.integral_finsetSum hext_fr]
-  rw [hg_zero, eq_comm, sub_eq_zero, integral_rectPolygon_eq_edges hf_fr] at hsplit
+  have hzre : z₀.re = σ₁ := by simp [z₀]
+  have hzim : z₀.im = t₁ := by simp [z₀]
+  have hwre : w₀.re = σ₂ := by simp [w₀]
+  have hwim : w₀.im = t₂ := by simp [w₀]
+  rw [hg_zero, eq_comm, sub_eq_zero, integral_contourCycle_rectPolygon hf_fr,
+    hzre, hzim, hwre, hwim] at hsplit
   rw [hsplit]
   exact Finset.sum_congr rfl fun ρ hρ ↦
     integral_rectPolygon_exteriorCauchy hσ ht hr (hP ρ hρ) (hfc_r ρ hρ)
@@ -461,34 +451,49 @@ section LShaped
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- Finite-cutoff L-shaped contour identity: combining the rectangle `[-X, σ₂] ×ℂ [w.im, t₂]`
-(containing the singularities `P`) with the pole-free rectangle `[w.re, σ₂] ×ℂ [t₁, w.im]`
-cancels the shared horizontal segment `[w.re, σ₂] ×ℂ {w.im}`. -/
-private theorem lShaped_finite_eq {σ₂ t₁ t₂ r X : ℝ} {w : ℂ} {P : Finset ℂ}
-    (hr : 0 < r) (hw : w.re ≤ σ₂) (ht₁ : t₁ ≤ w.im) (ht₂ : w.im ≤ t₂) (hX : -X ≤ w.re)
-    (hPX : ∀ ρ ∈ P, closedBall ρ r ⊆ Ioo (-X) σ₂ ×ℂ Ioo w.im t₂)
+/-- **Finite-cutoff L-shaped contour shift.** Let `σ₁ ≤ w.re ≤ σ₂`, `t₁ ≤ w.im ≤ t₂`, `r > 0`, and
+let `D` be the truncated strip `{σ₁ ≤ Re s ≤ σ₂, t₁ ≤ Im s ≤ t₂}` with the lower-left block
+`{Re s < Re w, Im s < Im w}` removed. Let `P` be a finite set whose closed discs `closedBall ρ r`
+are pairwise disjoint and lie in `(σ₁, σ₂) ×ℂ (Im w, t₂)`. If `f : ℂ → E` is continuous on `D \ P`
+and complex differentiable on `interior D \ P`, then combining `[σ₁, σ₂] ×ℂ [Im w, t₂]` with
+`[Re w, σ₂] ×ℂ [t₁, Im w]` cancels the shared segment `[Re w, σ₂] ×ℂ {Im w}` and expresses
+`i ∫_{t₁}^{t₂} f(σ₂ + iy) dy` in terms of the truncated L-shaped boundary (including the left
+vertical edge at `Re s = σ₁`), the top edge, and `∑ ρ ∈ P, ∮ z in C(ρ, r), f z`.
+
+No holomorphy in the removed lower-left block and no decay at `-∞` are assumed, and the points
+of `P` may be essential singularities. -/
+theorem vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral
+    {σ₁ σ₂ t₁ t₂ r : ℝ} {w : ℂ} {P : Finset ℂ}
+    (hr : 0 < r) (hσ₁ : σ₁ ≤ w.re) (hw : w.re ≤ σ₂)
+    (ht₁ : t₁ ≤ w.im) (ht₂ : w.im ≤ t₂)
+    (hP : ∀ ρ ∈ P, closedBall ρ r ⊆ Ioo σ₁ σ₂ ×ℂ Ioo w.im t₂)
     (hdisj : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r) (closedBall ρ' r))
     {f : ℂ → E}
     (hc : ContinuousOn f
-      ({s : ℂ | s.re ≤ σ₂ ∧ t₁ ≤ s.im ∧ s.im ≤ t₂ ∧ (w.re ≤ s.re ∨ w.im ≤ s.im)} \ P))
+      ({s : ℂ | σ₁ ≤ s.re ∧ s.re ≤ σ₂ ∧ t₁ ≤ s.im ∧ s.im ≤ t₂ ∧
+        (w.re ≤ s.re ∨ w.im ≤ s.im)} \ P))
     (hd : DifferentiableOn ℂ f
-      (interior {s : ℂ | s.re ≤ σ₂ ∧ t₁ ≤ s.im ∧ s.im ≤ t₂ ∧ (w.re ≤ s.re ∨ w.im ≤ s.im)} \ P)) :
+      (interior {s : ℂ | σ₁ ≤ s.re ∧ s.re ≤ σ₂ ∧ t₁ ≤ s.im ∧ s.im ≤ t₂ ∧
+        (w.re ≤ s.re ∨ w.im ≤ s.im)} \ P)) :
     I • (∫ y : ℝ in t₁..t₂, f (σ₂ + y * I)) =
-      (∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) + I • (∫ y : ℝ in t₁..w.im, f (w.re + y * I)) -
-        (∫ x : ℝ in (-X)..w.re, f (x + w.im * I)) + (∫ x : ℝ in (-X)..σ₂, f (x + t₂ * I)) +
-        I • (∫ y : ℝ in w.im..t₂, f ((-X : ℝ) + y * I)) +
+      (∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) +
+        I • (∫ y : ℝ in t₁..w.im, f (w.re + y * I)) -
+        (∫ x : ℝ in σ₁..w.re, f (x + w.im * I)) +
+        (∫ x : ℝ in σ₁..σ₂, f (x + t₂ * I)) +
+        I • (∫ y : ℝ in w.im..t₂, f (σ₁ + y * I)) +
         ∑ ρ ∈ P, ∮ z in C(ρ, r), f z := by
-  let D : Set ℂ := {s : ℂ | s.re ≤ σ₂ ∧ t₁ ≤ s.im ∧ s.im ≤ t₂ ∧ (w.re ≤ s.re ∨ w.im ≤ s.im)}
-  have htop_sub : Icc (-X) σ₂ ×ℂ Icc w.im t₂ ⊆ D := fun s hs ↦
-    ⟨hs.1.2, ht₁.trans hs.2.1, hs.2.2, Or.inr hs.2.1⟩
+  let D : Set ℂ := {s : ℂ | σ₁ ≤ s.re ∧ s.re ≤ σ₂ ∧ t₁ ≤ s.im ∧ s.im ≤ t₂ ∧
+    (w.re ≤ s.re ∨ w.im ≤ s.im)}
+  have htop_sub : Icc σ₁ σ₂ ×ℂ Icc w.im t₂ ⊆ D := fun s hs ↦
+    ⟨hs.1.1, hs.1.2, ht₁.trans hs.2.1, hs.2.2, Or.inr hs.2.1⟩
   have hbot_sub : Icc w.re σ₂ ×ℂ Icc t₁ w.im ⊆ D \ P := fun s hs ↦
-    ⟨⟨hs.1.2, hs.2.1, hs.2.2.trans ht₂, Or.inl hs.1.1⟩, fun hsP ↦
-      (hPX s hsP (mem_closedBall_self hr.le)).2.1.not_ge hs.2.2⟩
-  have hIoo_top : Ioo (-X) σ₂ ×ℂ Ioo w.im t₂ ⊆ D := fun _ hs ↦
+    ⟨⟨hσ₁.trans hs.1.1, hs.1.2, hs.2.1, hs.2.2.trans ht₂, Or.inl hs.1.1⟩, fun hsP ↦
+      (hP s hsP (mem_closedBall_self hr.le)).2.1.not_ge hs.2.2⟩
+  have hIoo_top : Ioo σ₁ σ₂ ×ℂ Ioo w.im t₂ ⊆ D := fun _ hs ↦
     htop_sub ⟨Ioo_subset_Icc_self hs.1, Ioo_subset_Icc_self hs.2⟩
   have hIoo_bot : Ioo w.re σ₂ ×ℂ Ioo t₁ w.im ⊆ D \ P := fun _ hs ↦
     hbot_sub ⟨Ioo_subset_Icc_self hs.1, Ioo_subset_Icc_self hs.2⟩
-  have htop := rectangle_boundary_integral_eq_sum_circleIntegral (hX.trans hw) ht₂ hr hPX hdisj
+  have htop := rectangle_boundary_integral_eq_sum_circleIntegral (hσ₁.trans hw) ht₂ hr hP hdisj
     (hc.mono (sdiff_subset_sdiff_left htop_sub))
     (hd.mono (sdiff_subset_sdiff_left <|
       interior_maximal hIoo_top (isOpen_Ioo.reProdIm isOpen_Ioo)))
@@ -500,22 +505,23 @@ private theorem lShaped_finite_eq {σ₂ t₁ t₂ r X : ℝ} {w : ℂ} {P : Fin
   -- Split the vertical right edge at `w.im` and the shared horizontal segment at `w.re`.
   have hright_cont : ContinuousOn (fun y : ℝ ↦ f (σ₂ + y * I)) (Icc t₁ t₂) :=
     hc.comp (continuousOn_const.add (continuous_ofReal.continuousOn.mul continuousOn_const))
-      fun y hy ↦ ⟨⟨by simp, by simpa using hy.1, by simpa using hy.2,
-        Or.inl (by simpa using hw)⟩,
-        fun hP' ↦ (hPX _ hP' (mem_closedBall_self hr.le)).1.2.ne (by simp)⟩
+      fun y hy ↦ ⟨⟨by simpa using hσ₁.trans hw, by simp, by simpa using hy.1,
+        by simpa using hy.2, Or.inl (by simpa using hw)⟩,
+        fun hP' ↦ (hP _ hP' (mem_closedBall_self hr.le)).1.2.ne (by simp)⟩
   have hright_split := intervalIntegral.integral_add_adjacent_intervals
     ((hright_cont.mono (by rw [uIcc_of_le ht₁]; exact Icc_subset_Icc_right ht₂)).intervalIntegrable
       (μ := volume))
     ((hright_cont.mono (by rw [uIcc_of_le ht₂]; exact Icc_subset_Icc_left ht₁)).intervalIntegrable
       (μ := volume))
-  have hmid_cont : ContinuousOn (fun x : ℝ ↦ f (x + w.im * I)) (Icc (-X) σ₂) :=
+  have hmid_cont : ContinuousOn (fun x : ℝ ↦ f (x + w.im * I)) (Icc σ₁ σ₂) :=
     hc.comp (continuous_ofReal.continuousOn.add continuousOn_const)
-      fun x hx ↦ ⟨⟨by simpa using hx.2, by simpa using ht₁, by simpa using ht₂,
-        Or.inr (by simp)⟩, fun hP' ↦ (hPX _ hP' (mem_closedBall_self hr.le)).2.1.ne (by simp)⟩
+      fun x hx ↦ ⟨⟨by simpa using hx.1, by simpa using hx.2, by simpa using ht₁,
+        by simpa using ht₂, Or.inr (by simp)⟩,
+        fun hP' ↦ (hP _ hP' (mem_closedBall_self hr.le)).2.1.ne (by simp)⟩
   have hmid_split := intervalIntegral.integral_add_adjacent_intervals
-    ((hmid_cont.mono (by rw [uIcc_of_le hX]; exact Icc_subset_Icc_right hw)).intervalIntegrable
+    ((hmid_cont.mono (by rw [uIcc_of_le hσ₁]; exact Icc_subset_Icc_right hw)).intervalIntegrable
       (μ := volume))
-    ((hmid_cont.mono (by rw [uIcc_of_le hw]; exact Icc_subset_Icc_left hX)).intervalIntegrable
+    ((hmid_cont.mono (by rw [uIcc_of_le hw]; exact Icc_subset_Icc_left hσ₁)).intervalIntegrable
       (μ := volume))
   have hrev : ∫ x : ℝ in w.re..σ₂, f (x + t₁ * I) = -(∫ x : ℝ in σ₂..w.re, f (x + t₁ * I)) :=
     intervalIntegral.integral_symm σ₂ w.re
@@ -573,7 +579,9 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
       have h2 := hP ρ hρ hs
       exact ⟨⟨hre, h2.1⟩, h2.2.1, h2.2.2⟩
     filter_upwards [eventually_ge_atTop (-w.re), hPev] with X hX hPX
-    exact lShaped_finite_eq hr hw ht₁ ht₂ (by linarith) hPX hdisj hc hd
+    exact vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral hr (by linarith) hw ht₁ ht₂
+      hPX hdisj (hc.mono (sdiff_subset_sdiff_left fun _ h ↦ h.2))
+      (hd.mono (sdiff_subset_sdiff_left (interior_mono fun _ h ↦ h.2)))
   have h1 : Tendsto (fun X : ℝ ↦ ∫ x : ℝ in (-X)..w.re, f (x + w.im * I)) atTop
       (𝓝 (∫ x in Iic w.re, f (x + w.im * I))) :=
     intervalIntegral_tendsto_integral_Iic w.re hw_int tendsto_neg_atTop_atBot
