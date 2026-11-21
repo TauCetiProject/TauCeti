@@ -65,7 +65,7 @@ variable [NeZero N]
 `GL₂(ℚ)`, with the same monoid `Δ₀(N)` as the triple of `Γ₁(N)` itself. -/
 instance : IsHeckeTriple (Delta0 N) (((Gamma1 N).withCenter).map (mapGL ℚ))
     (((Gamma1 N).withCenter).map (mapGL ℚ)) :=
-  IsHeckeTriple.of_diagonal (map_withCenter_le_Delta0 N (Gamma1_in_Gamma0 N))
+  IsHeckeTriple.of_diagonal (map_withCenter_le_Delta0 N (Gamma1_le_Gamma0 N))
     (Delta0_le_commensurator_map N ((Gamma1 N).withCenter))
 
 end HeckeRing.GL2

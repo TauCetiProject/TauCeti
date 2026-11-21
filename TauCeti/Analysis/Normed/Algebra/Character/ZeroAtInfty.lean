@@ -105,7 +105,7 @@ theorem zeroAtInftyHomeoEval_apply (y : Y) (f : C₀(Y, 𝕜)) :
 `zeroAtInftyHomeoEval Y 𝕜 y`. -/
 theorem unitizationZeroAtInftyHomeoEval_coe_eq_unitizationExtend (y : Y) :
     unitizationZeroAtInftyHomeoEval Y 𝕜 y =
-      (unitizationExtend (zeroAtInftyHomeoEval Y 𝕜 y)).1 := by
+      (unitizationExtend (zeroAtInftyHomeoEval Y 𝕜 y)).val := by
   ext u
   simp
 
@@ -116,7 +116,7 @@ theorem unitizationZeroAtInftyHomeoEval_coe_eq_unitizationExtend (y : Y) :
 theorem unitizationZeroAtInftyHomeoEval_symm_apply_coe
     (φ : {φ : characterSpace 𝕜 (Unitization 𝕜 C₀(Y, 𝕜)) //
       φ ≠ Unitization.augmentation 𝕜 C₀(Y, 𝕜)}) :
-    (unitizationZeroAtInftyHomeoEval Y 𝕜).symm φ.1 =
+    (unitizationZeroAtInftyHomeoEval Y 𝕜).symm φ.val =
       ((zeroAtInftyHomeoEval Y 𝕜).symm (unitizationRestrict φ) : OnePoint Y) := by
   rw [Homeomorph.symm_apply_eq, unitizationZeroAtInftyHomeoEval_coe_eq_unitizationExtend,
     Homeomorph.apply_symm_apply, unitizationExtend_unitizationRestrict]

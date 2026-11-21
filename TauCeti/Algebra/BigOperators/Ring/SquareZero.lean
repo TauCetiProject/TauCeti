@@ -81,7 +81,7 @@ theorem sum_pow_of_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι → R)
     (hc : (s : Set ι).Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0) (n : ℕ) :
     (∑ i ∈ s, x i) ^ n =
       n ! • ∑ t : s.powersetCard n,
-        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) := by
+        t.val.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.property).1)) := by
   -- Extend `x` by zero outside `s`, to a family commuting pairwise everywhere.
   have hxs (i : ι) (hi : i ∈ s) : (s : Set ι).indicator x i = x i := Set.indicator_of_mem hi x
   rw [sum_noncommProd_powersetCard_eq_indicator subset_rfl x hc, ← sum_congr rfl hxs]
@@ -147,11 +147,11 @@ theorem sum_noncommProd_powersetCard_mul_of_commute_of_mul_self_eq_zero (s : Fin
     (x : ι → R) (hc : (s : Set ι).Pairwise (Commute on x)) (hx : ∀ i ∈ s, x i * x i = 0)
     (m n : ℕ) :
     (∑ t : s.powersetCard m,
-        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1))) *
+        t.val.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.property).1))) *
         ∑ t : s.powersetCard n,
-          t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) =
+          t.val.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.property).1)) =
       (m + n).choose m • ∑ t : s.powersetCard (m + n),
-        t.1.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.2).1)) := by
+        t.val.noncommProd x (hc.mono (coe_subset.2 (mem_powersetCard.1 t.property).1)) := by
   simp only [sum_noncommProd_powersetCard_eq_indicator subset_rfl x hc]
   exact sum_noncommProd_powersetCard_mul_of_pairwise_commute_of_mul_self_eq_zero s _
     hc.pairwise_commute_indicator (fun i hi ↦ by rw [Set.indicator_of_mem hi, hx i hi]) m n

@@ -130,9 +130,9 @@ theorem OpenCoversSplit.exists_isLocallyConstant_index {X : Type u} [Topological
       (by rw [sUnion_range]; exact hUc)
   let s' : X → Set.range U := fun x ↦ ⟨s x, (hs x).1⟩
   have hs'lc : IsLocallyConstant s' := IsLocallyConstant.iff_isOpen_fiber.2 fun W ↦ by
-    have hEq : s' ⁻¹' {W} = s ⁻¹' {W.1} := by ext x; simp [s', Subtype.ext_iff]
-    exact hEq ▸ hslc.isOpen_fiber W.1
-  choose φ hφ using fun W : Set.range U ↦ W.2
+    have hEq : s' ⁻¹' {W} = s ⁻¹' {W.val} := by ext x; simp [s', Subtype.ext_iff]
+    exact hEq ▸ hslc.isOpen_fiber W.val
+  choose φ hφ using fun W : Set.range U ↦ W.property
   exact ⟨φ ∘ s', fun x ↦ by simpa only [Function.comp_apply, hφ] using (hs x).2, hs'lc.comp φ⟩
 
 /-- Indexed-cover characterization of `OpenCoversSplit`. -/
@@ -143,9 +143,9 @@ theorem openCoversSplit_iff_iUnion (X : Type u) [TopologicalSpace X] :
   refine ⟨fun hX _ _ hUo hUc ↦ hX.exists_isLocallyConstant_index hUo hUc, fun h ↦ ?_⟩
   rw [openCoversSplit_iff_isLocallyConstant]
   intro 𝒰 h𝒰o h𝒰c
-  obtain ⟨g, hg, hglc⟩ := h 𝒰 Subtype.val (fun U ↦ h𝒰o U.1 U.2)
+  obtain ⟨g, hg, hglc⟩ := h 𝒰 Subtype.val (fun U ↦ h𝒰o U.val U.property)
     (by simpa only [sUnion_eq_iUnion] using h𝒰c)
-  exact ⟨Subtype.val ∘ g, fun x ↦ ⟨(g x).2, hg x⟩, hglc.comp Subtype.val⟩
+  exact ⟨Subtype.val ∘ g, fun x ↦ ⟨(g x).property, hg x⟩, hglc.comp Subtype.val⟩
 
 /-- If `f : Y → X` is continuous, `X` has split open covers, and each member `W` of an open cover
 `𝒲` of `X` has preimage refining some member of `𝒰`, then `𝒰` admits a locally constant splitting on
@@ -156,9 +156,9 @@ theorem OpenCoversSplit.exists_isLocallyConstant_of_continuous {X : Type u} {Y :
     (h𝒲c : ⋃₀ 𝒲 = Set.univ) {𝒰 : Set (Set Y)}
     (href : ∀ W ∈ 𝒲, ∃ U ∈ 𝒰, f ⁻¹' W ⊆ U) :
     ∃ s : Y → Set Y, (∀ y, s y ∈ 𝒰 ∧ y ∈ s y) ∧ IsLocallyConstant s := by
-  choose φ hφmem hφsub using fun W : 𝒲 ↦ href W.1 W.2
+  choose φ hφmem hφsub using fun W : 𝒲 ↦ href W.val W.property
   obtain ⟨g, hg, hglc⟩ := hX.exists_isLocallyConstant_index (U := Subtype.val)
-    (fun W : 𝒲 ↦ h𝒲o W.1 W.2) (by simpa only [sUnion_eq_iUnion] using h𝒲c)
+    (fun W : 𝒲 ↦ h𝒲o W.val W.property) (by simpa only [sUnion_eq_iUnion] using h𝒲c)
   exact ⟨φ ∘ g ∘ f, fun y ↦ ⟨hφmem _, hφsub _ (hg (f y))⟩, (hglc.comp φ).comp_continuous hf⟩
 
 /-- Every open cover of a discrete space splits. -/
@@ -184,7 +184,7 @@ theorem _root_.Topology.IsClosedEmbedding.openCoversSplit {X : Type u} {Y : Type
   rw [openCoversSplit_iff_isLocallyConstant]
   intro 𝒰 h𝒰o h𝒰c
   obtain ⟨U₀, hU₀, -⟩ := mem_sUnion.1 (h𝒰c.symm ▸ mem_univ x₀)
-  choose V hVo hVpre using fun U : 𝒰 ↦ hf.isInducing.isOpen_iff.1 (h𝒰o U.1 U.2)
+  choose V hVo hVpre using fun U : 𝒰 ↦ hf.isInducing.isOpen_iff.1 (h𝒰o U.val U.property)
   let 𝒲 : Set (Set Y) := Set.range V ∪ {(Set.range f)ᶜ}
   have h𝒲o : ∀ W ∈ 𝒲, IsOpen W := by
     rintro W (⟨U, rfl⟩ | rfl)
@@ -199,7 +199,7 @@ theorem _root_.Topology.IsClosedEmbedding.openCoversSplit {X : Type u} {Y : Type
     · exact mem_sUnion.2 ⟨(Set.range f)ᶜ, Or.inr rfl, hy⟩
   refine hY.exists_isLocallyConstant_of_continuous hf.continuous h𝒲o h𝒲c ?_
   rintro W (⟨U, rfl⟩ | rfl)
-  · exact ⟨U.1, U.2, (hVpre U).subset⟩
+  · exact ⟨U.val, U.property, (hVpre U).subset⟩
   · exact ⟨U₀, hU₀, fun x hx ↦ (hx ⟨x, rfl⟩).elim⟩
 
 /-- Splitting of open covers passes to closed subspaces of any topological space. -/
@@ -223,7 +223,7 @@ splits. -/
 theorem OpenCoversSplit.of_zeroDimensionalSpace (X : Type u) [TopologicalSpace X]
     [CompactSpace X] [ZeroDimensionalSpace X] : OpenCoversSplit X := by
   intro 𝒰 h𝒰o h𝒰c
-  have hcov : IsOpenCover (fun i : 𝒰 ↦ (⟨i.1, h𝒰o i.1 i.2⟩ : Opens X)) :=
+  have hcov : IsOpenCover (fun i : 𝒰 ↦ (⟨i.val, h𝒰o i.val i.property⟩ : Opens X)) :=
     IsOpenCover.of_sets _ (by simpa [iUnion_subtype, ← sUnion_eq_biUnion] using h𝒰c)
   obtain ⟨n, W, hW₁, hW₂, hW₃⟩ := hcov.exists_finite_nonempty_disjoint_clopen_cover
   choose u hu using fun j ↦ (hW₁ j).2
@@ -235,8 +235,8 @@ theorem OpenCoversSplit.of_zeroDimensionalSpace (X : Type u) [TopologicalSpace X
   have hgc : Continuous g := continuous_discrete_rng.2 fun j ↦ by
     convert (W j).isOpen
     exact Set.ext fun x ↦ ⟨fun hj ↦ hj ▸ hg x, fun hx ↦ (hg' x j hx).symm⟩
-  exact ⟨fun x ↦ (u (g x)).1, fun x ↦ ⟨(u (g x)).2, hu (g x) (hg x)⟩,
-    fun U ↦ (isOpen_discrete ((fun j ↦ (u j).1) ⁻¹' {U})).preimage hgc⟩
+  exact ⟨fun x ↦ (u (g x)).val, fun x ↦ ⟨(u (g x)).property, hu (g x) (hg x)⟩,
+    fun U ↦ (isOpen_discrete ((fun j ↦ (u j).val) ⁻¹' {U})).preimage hgc⟩
 
 /-- In any topological space whose open covers split, each connected component contains at most one
 closed point. -/
@@ -284,10 +284,10 @@ theorem openCoversSplit_iff (X : Type u) [TopologicalSpace X] [SpectralSpace X] 
   intro 𝒰 h𝒰o h𝒰c
   have hclosedMap : IsClosedMap (ConnectedComponents.mk : X → ConnectedComponents X) :=
     ConnectedComponents.continuous_coe.isClosedMap
-  let V : 𝒰 → Set (ConnectedComponents X) := fun U ↦ (ConnectedComponents.mk '' (U.1)ᶜ)ᶜ
+  let V : 𝒰 → Set (ConnectedComponents X) := fun U ↦ (ConnectedComponents.mk '' (U.val)ᶜ)ᶜ
   have hVo : ∀ W ∈ Set.range V, IsOpen W := by
     rintro _ ⟨U, rfl⟩
-    exact (hclosedMap _ (h𝒰o U.1 U.2).isClosed_compl).isOpen_compl
+    exact (hclosedMap _ (h𝒰o U.val U.property).isClosed_compl).isOpen_compl
   have hVc : ⋃₀ Set.range V = Set.univ := eq_univ_iff_forall.2 fun c ↦ by
     obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
     obtain ⟨y, -, hyuniq⟩ := h x
@@ -300,7 +300,7 @@ theorem openCoversSplit_iff (X : Type u) [TopologicalSpace X] [SpectralSpace X] 
       (ConnectedComponents X)).exists_isLocallyConstant_of_continuous
       ConnectedComponents.continuous_coe hVo hVc ?_
   rintro _ ⟨U, rfl⟩
-  exact ⟨U.1, U.2, fun x hxV ↦ by_contra fun hxU ↦ hxV ⟨x, hxU, rfl⟩⟩
+  exact ⟨U.val, U.property, fun x hxV ↦ by_contra fun hxU ↦ hxV ⟨x, hxU, rfl⟩⟩
 
 /-! ### w-local spectral spaces -/
 
@@ -385,10 +385,10 @@ theorem IsWLocalSpace.isHomeomorph_connectedComponentsMk {X : Type u} [Topologic
   have : CompactSpace (closedPoints X) :=
     isCompact_iff_compactSpace.1 hX.isClosed_closedPoints.isCompact
   rw [isHomeomorph_iff_continuous_bijective]
-  refine ⟨ConnectedComponents.continuous_coe.comp continuous_subtype_val, fun x₁ x₂ h12 ↦ ?_,
+  refine ⟨ConnectedComponents.continuous_coe.comp continuous_subtypeVal, fun x₁ x₂ h12 ↦ ?_,
     fun c ↦ ?_⟩
   · exact Subtype.ext (hX.openCoversSplit.eq_of_mem_connectedComponent
-      (ConnectedComponents.coe_eq_coe'.1 h12) x₁.2 x₂.2)
+      (ConnectedComponents.coe_eq_coe'.1 h12) x₁.property x₂.property)
   · obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
     obtain ⟨y, ⟨hyc, hycl⟩, -⟩ := hX.existsUnique_isClosed_singleton x
     exact ⟨⟨y, hycl⟩, ConnectedComponents.coe_eq_coe'.2 hyc⟩

@@ -85,7 +85,7 @@ structure ImplicitAtlasWithBoundary [DecidableEq A] (Γ : A → Type*) [∀ α, 
   boundary_empty : boundary ∅ = baseHomeomorph ⁻¹' bd
   /-- `ψ_IJ⁻¹(∂X_I) = Z_IJ ∩ ∂X_J`. -/
   footprintMap_mem_boundary_iff : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
-    (x : kuranishiZeroSet kuranishi I J), footprintMap h x ∈ boundary I ↔ x.1 ∈ boundary J
+    (x : kuranishiZeroSet kuranishi I J), footprintMap h x ∈ boundary I ↔ x.val ∈ boundary J
   /-- Over `ψ_IJ⁻¹(X_I^reg)`, the map `s_(J \ I) : X_J → E_(J \ I)` is locally a product
   projection, either `ℝ^n × E_(J \ I) → E_(J \ I)` on a chart missing `∂X_J`, or
   `H^n × E_(J \ I) → E_(J \ I)` for the half-space `H^n`, on a chart in which `∂X_J` is the
@@ -94,12 +94,12 @@ structure ImplicitAtlasWithBoundary [DecidableEq A] (Γ : A → Type*) [∀ α, 
     (x : kuranishiZeroSet kuranishi I J), footprintMap h x ∈ regLocus I →
       (∃ n : ℕ, (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
         ∃ e : OpenPartialHomeomorph (T J) (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → E α)),
-          x.1 ∈ e.source ∧ Disjoint e.source (boundary J) ∧ ∀ y ∈ e.source,
-            (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩ y) ∨
+          x.val ∈ e.source ∧ Disjoint e.source (boundary J) ∧ ∀ y ∈ e.source,
+            (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y) ∨
       (∃ n : ℕ, (n + 1 : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
         ∃ e : OpenPartialHomeomorph (T J) (EuclideanHalfSpace (n + 1) × ((α : ↥(J \ I)) → E α)),
-          x.1 ∈ e.source ∧ (∀ y ∈ e.source, y ∈ boundary J ↔ (e y).1.1 0 = 0) ∧ ∀ y ∈ e.source,
-            (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩ y)
+          x.val ∈ e.source ∧ (∀ y ∈ e.source, y ∈ boundary J ↔ (e y).1.val 0 = 0) ∧ ∀ y ∈ e.source,
+            (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y)
 
 variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
   {E : A → Type*} [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
@@ -144,7 +144,7 @@ variable {bd : Set X} (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act X bd d)
 /-- A regular point of a thickening lying on its boundary has positive expected dimension: a
 regular chart of dimension `0` has empty boundary. -/
 theorem one_le_of_mem_boundary {I J : Finset A} (h : I ⊆ J) (x : kuranishiZeroSet 𝒜.kuranishi I J)
-    (hx : 𝒜.footprintMap h x ∈ 𝒜.regLocus I) (hxb : x.1 ∈ 𝒜.boundary J) :
+    (hx : 𝒜.footprintMap h x ∈ 𝒜.regLocus I) (hxb : x.val ∈ 𝒜.boundary J) :
     1 ≤ d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) := by
   rcases 𝒜.exists_openPartialHomeomorph h x hx with ⟨_, _, _, hxe, hdisj, _⟩ | ⟨n, hn, -⟩
   · exact (disjoint_left.1 hdisj hxe hxb).elim
@@ -154,7 +154,7 @@ theorem one_le_of_mem_boundary {I J : Finset A} (h : I ⊆ J) (x : kuranishiZero
 theorem mem_boundary_of_baseHomeomorph_footprintMap_mem {I : Finset A}
     (x : kuranishiZeroSet 𝒜.kuranishi ∅ I)
     (hx : 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) ∈ bd) :
-    x.1 ∈ 𝒜.boundary I :=
+    x.val ∈ 𝒜.boundary I :=
   (𝒜.footprintMap_mem_boundary_iff _ x).1 (by rw [𝒜.boundary_empty]; exact hx)
 
 include 𝒜 in
@@ -164,7 +164,7 @@ theorem eq_empty_of_forall_nonpos
     (hd : ∀ I : Finset A, d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ≤ 0) : bd = ∅ := by
   refine eq_empty_iff_forall_notMem.2 fun y hy ↦ ?_
   obtain ⟨I, x, hreg, rfl⟩ := 𝒜.exists_footprintMap_eq y
-  have := 𝒜.one_le_of_mem_boundary (subset_refl I) ⟨x.1, mem_kuranishiZeroSet_self _ x.1⟩
+  have := 𝒜.one_le_of_mem_boundary (subset_refl I) ⟨x.val, mem_kuranishiZeroSet_self _ x.val⟩
     (by rwa [𝒜.footprintMap_self]) (𝒜.mem_boundary_of_baseHomeomorph_footprintMap_mem x hy)
   linarith [hd I]
 
@@ -202,27 +202,27 @@ private theorem mem_kuranishiZeroSet_boundaryKuranishi {I J : Finset A} {x : �
 /-- The inclusion `Z_IJ ∩ ∂X_J → Z_IJ`. -/
 private def zeroSetInclusion {I J : Finset A} (x : kuranishiZeroSet 𝒜.boundaryKuranishi I J) :
     kuranishiZeroSet 𝒜.kuranishi I J :=
-  ⟨x.1, 𝒜.mem_kuranishiZeroSet_boundaryKuranishi.1 x.2⟩
+  ⟨x.val, 𝒜.mem_kuranishiZeroSet_boundaryKuranishi.1 x.property⟩
 
 private theorem coe_zeroSetInclusion {I J : Finset A}
     (x : kuranishiZeroSet 𝒜.boundaryKuranishi I J) :
-    (𝒜.zeroSetInclusion x : T J) = x.1 :=
+    (𝒜.zeroSetInclusion x : T J) = x.val :=
   (rfl)
 
 /-- The lift of a point of `Z_IJ` lying on `∂X_J` to `Z_IJ ∩ ∂X_J`. -/
 private def zeroSetLift {I J : Finset A} (z : kuranishiZeroSet 𝒜.kuranishi I J)
-    (hz : z.1 ∈ 𝒜.boundary J) : kuranishiZeroSet 𝒜.boundaryKuranishi I J :=
-  ⟨⟨z.1, hz⟩, 𝒜.mem_kuranishiZeroSet_boundaryKuranishi.2 z.2⟩
+    (hz : z.val ∈ 𝒜.boundary J) : kuranishiZeroSet 𝒜.boundaryKuranishi I J :=
+  ⟨⟨z.val, hz⟩, 𝒜.mem_kuranishiZeroSet_boundaryKuranishi.2 z.property⟩
 
 private theorem zeroSetInclusion_zeroSetLift {I J : Finset A}
-    (z : kuranishiZeroSet 𝒜.kuranishi I J) (hz : z.1 ∈ 𝒜.boundary J) :
+    (z : kuranishiZeroSet 𝒜.kuranishi I J) (hz : z.val ∈ 𝒜.boundary J) :
     𝒜.zeroSetInclusion (𝒜.zeroSetLift z hz) = z :=
   (rfl)
 
 /-- The image of the inclusion `Z_IJ ∩ ∂X_J → Z_IJ` is the part of `Z_IJ` on `∂X_J`. -/
 private theorem range_zeroSetInclusion {I J : Finset A} :
     range (𝒜.zeroSetInclusion (I := I) (J := J)) = Subtype.val ⁻¹' 𝒜.boundary J :=
-  Subset.antisymm (range_subset_iff.2 fun x ↦ x.1.2)
+  Subset.antisymm (range_subset_iff.2 fun x ↦ x.val.property)
     fun z hz ↦ ⟨𝒜.zeroSetLift z hz, 𝒜.zeroSetInclusion_zeroSetLift z hz⟩
 
 /-- A point of `Z_IJ` whose image under `ψ_IJ` lies on `∂X_I` comes from `Z_IJ ∩ ∂X_J`. -/
@@ -233,7 +233,7 @@ private theorem mem_range_zeroSetInclusion {I J : Finset A} (h : I ⊆ J)
 
 private theorem isClosedEmbedding_zeroSetInclusion {I J : Finset A} :
     IsClosedEmbedding (𝒜.zeroSetInclusion (I := I) (J := J)) := by
-  have hcomp : Subtype.val ∘ 𝒜.zeroSetInclusion (I := I) (J := J) = fun x ↦ (x.1 : T J) :=
+  have hcomp : Subtype.val ∘ 𝒜.zeroSetInclusion (I := I) (J := J) = fun x ↦ (x.val : T J) :=
     funext 𝒜.coe_zeroSetInclusion
   refine ⟨⟨IsInducing.subtypeVal.of_comp_iff.1 ?_,
     Function.Injective.of_comp (f := Subtype.val) ?_⟩, ?_⟩
@@ -242,19 +242,19 @@ private theorem isClosedEmbedding_zeroSetInclusion {I J : Finset A} :
   · rw [hcomp]
     exact Subtype.val_injective.comp Subtype.val_injective
   rw [range_zeroSetInclusion]
-  exact (𝒜.isClosed_boundary J).preimage continuous_subtype_val
+  exact (𝒜.isClosed_boundary J).preimage continuous_subtypeVal
 
 /-- The footprint maps of the boundary thickenings. -/
 private def boundaryFootprintMap {I J : Finset A} (h : I ⊆ J)
     (x : kuranishiZeroSet 𝒜.boundaryKuranishi I J) : 𝒜.boundary I :=
   ⟨𝒜.footprintMap h (𝒜.zeroSetInclusion x),
-    (𝒜.footprintMap_mem_boundary_iff h _).2 x.1.2⟩
+    (𝒜.footprintMap_mem_boundary_iff h _).2 x.val.property⟩
 
 private theorem mem_range_boundaryFootprintMap {I J : Finset A} (h : I ⊆ J)
     {y : 𝒜.boundary I} :
     y ∈ range (𝒜.boundaryFootprintMap h) ↔ (y : T I) ∈ range (𝒜.footprintMap h) := by
   refine ⟨fun ⟨x, hx⟩ ↦ ⟨𝒜.zeroSetInclusion x, congrArg Subtype.val hx⟩, fun ⟨z, hz⟩ ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := 𝒜.mem_range_zeroSetInclusion h (hz ▸ y.2)
+  obtain ⟨x, rfl⟩ := 𝒜.mem_range_zeroSetInclusion h (hz ▸ y.property)
   exact ⟨x, Subtype.ext hz⟩
 
 private theorem range_boundaryFootprintMap {I J : Finset A} (h : I ⊆ J) :
@@ -265,17 +265,17 @@ private theorem range_boundaryFootprintMap {I J : Finset A} (h : I ⊆ J) :
 private theorem isQuotientMap_boundaryFootprintMap {I J : Finset A} (h : I ⊆ J) :
     IsQuotientMap (rangeFactorization (𝒜.boundaryFootprintMap h)) := by
   refine (𝒜.isQuotientMap_footprintMap h).of_comp_eq_comp
-    (j := fun y ↦ ⟨y.1.1, (𝒜.mem_range_boundaryFootprintMap h).1 y.2⟩)
+    (j := fun y ↦ ⟨y.val.val, (𝒜.mem_range_boundaryFootprintMap h).1 y.property⟩)
     ((((𝒜.continuous_footprintMap h).comp
       𝒜.isClosedEmbedding_zeroSetInclusion.continuous).subtype_mk _).rangeFactorization)
     rangeFactorization_surjective 𝒜.isClosedEmbedding_zeroSetInclusion.isClosedMap
-    ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _)
+    ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _)
     (fun y y' hyy' ↦ Subtype.ext (Subtype.ext
       (congrArg (fun z : range (𝒜.footprintMap h) ↦ (z : T I)) hyy')))
     (funext fun _ ↦ rfl) ?_
   rintro z ⟨y, hy⟩
-  have hz : 𝒜.footprintMap h z = y.1.1 := (congrArg Subtype.val hy).symm
-  exact 𝒜.mem_range_zeroSetInclusion h (hz ▸ y.1.2)
+  have hz : 𝒜.footprintMap h z = y.val.val := (congrArg Subtype.val hy).symm
+  exact 𝒜.mem_range_zeroSetInclusion h (hz ▸ y.val.property)
 
 /-- **The restriction of an implicit atlas with boundary to its boundary** (Pardon,
 Definition 3.2.3). The boundaries `∂X_I` of the thickenings, with the restricted actions, Kuranishi
@@ -286,10 +286,10 @@ noncomputable def boundaryAtlas :
     ImplicitAtlas Γ E ρ (fun I ↦ 𝒜.boundary I) 𝒜.boundaryAct bd (d - 1) where
   baseHomeomorph := 𝒜.baseHomeomorph.sets 𝒜.boundary_empty
   kuranishi := 𝒜.boundaryKuranishi
-  continuous_kuranishi I α := (𝒜.continuous_kuranishi I α).comp continuous_subtype_val
+  continuous_kuranishi I α := (𝒜.continuous_kuranishi I α).comp continuous_subtypeVal
   kuranishi_act I α g x := 𝒜.kuranishi_act I α g x
   regLocus I := Subtype.val ⁻¹' 𝒜.regLocus I
-  isOpen_regLocus I := (𝒜.isOpen_regLocus I).preimage continuous_subtype_val
+  isOpen_regLocus I := (𝒜.isOpen_regLocus I).preimage continuous_subtypeVal
   act_mem_regLocus I g x hx := 𝒜.act_mem_regLocus I g x hx
   footprintMap _ _ := 𝒜.boundaryFootprintMap
   continuous_footprintMap _ _ h :=
@@ -305,7 +305,7 @@ noncomputable def boundaryAtlas :
   kuranishi_footprintMap _ _ h x α := 𝒜.kuranishi_footprintMap h (𝒜.zeroSetInclusion x) α
   isOpen_range_footprintMap _ _ h := by
     rw [𝒜.range_boundaryFootprintMap h]
-    exact (𝒜.isOpen_range_footprintMap h).preimage continuous_subtype_val
+    exact (𝒜.isOpen_range_footprintMap h).preimage continuous_subtypeVal
   range_footprintMap_inter _ _ _ h₁ h₂ := by
     simp only [range_boundaryFootprintMap, ← preimage_inter, 𝒜.range_footprintMap_inter]
   footprintMap_mem_range_iff _ _ _ hIJ hJK x := by
@@ -324,16 +324,17 @@ noncomputable def boundaryAtlas :
   exists_openPartialHomeomorph I J h x hx := by
     rcases 𝒜.exists_openPartialHomeomorph h (𝒜.zeroSetInclusion x) hx with
       ⟨_, _, _, hxe, hdisj, _⟩ | ⟨n, hn, e, hxe, hbd, he⟩
-    · exact (disjoint_left.1 hdisj hxe x.1.2).elim
-    refine ⟨n, by omega, e.hyperplaneChart hbd x.1, ?_, fun y hy ↦ ?_⟩
+    · exact (disjoint_left.1 hdisj hxe x.val.property).elim
+    refine ⟨n, by omega, e.hyperplaneChart hbd x.val, ?_, fun y hy ↦ ?_⟩
     · rw [OpenPartialHomeomorph.hyperplaneChart_source]
       exact hxe
     · rw [OpenPartialHomeomorph.hyperplaneChart_source] at hy
       rw [OpenPartialHomeomorph.hyperplaneChart_apply, Prod.map_snd, id_eq]
-      exact he y.1 hy
+      exact he y.val hy
   exists_footprintMap_eq y := by
-    obtain ⟨I, x, hreg, hx⟩ := 𝒜.exists_footprintMap_eq y.1
-    exact ⟨I, 𝒜.zeroSetLift x (𝒜.mem_boundary_of_baseHomeomorph_footprintMap_mem x (hx ▸ y.2)),
+    obtain ⟨I, x, hreg, hx⟩ := 𝒜.exists_footprintMap_eq y.val
+    exact ⟨I,
+      𝒜.zeroSetLift x (𝒜.mem_boundary_of_baseHomeomorph_footprintMap_mem x (hx ▸ y.property)),
       hreg, Subtype.ext hx⟩
 
 /-- The base identification of the boundary atlas is that of `𝒜`, restricted to the boundary. -/
@@ -366,7 +367,7 @@ theorem regLocus_boundaryAtlas (I : Finset A) :
 theorem coe_footprintMap_boundaryAtlas {I J : Finset A} (h : I ⊆ J)
     (x : kuranishiZeroSet 𝒜.boundaryAtlas.kuranishi I J) :
     (𝒜.boundaryAtlas.footprintMap h x : T I) =
-      𝒜.footprintMap h ⟨x.1, 𝒜.mem_kuranishiZeroSet_boundaryAtlas.1 x.2⟩ :=
+      𝒜.footprintMap h ⟨x.val, 𝒜.mem_kuranishiZeroSet_boundaryAtlas.1 x.property⟩ :=
   (rfl)
 
 end ImplicitAtlasWithBoundary

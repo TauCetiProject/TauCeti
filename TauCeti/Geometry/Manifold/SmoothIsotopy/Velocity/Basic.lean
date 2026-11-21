@@ -114,7 +114,7 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
     (fun q _ => isImmersionAt_comp_isLocalDiffeomorphAt
       (isLocalDiffeomorph_subtype_val q) (hΓimm q))
     (himage.symm ▸ hK.isClosed) hU (himage.symm ▸ hKU)
-    (fun q : W => v q) (hv.comp contMDiff_subtype_val)
+    (fun q : W => v q) (hv.comp contMDiff_subtypeVal)
   refine ⟨Y, U, hcU, hYU, fun t ht x hx => ?_⟩
   -- The spatial part of the track velocity is the time derivative of the motion.
   have hGd : MDifferentiable (𝓘(ℝ, ℝ).prod I) J G := hG.mdifferentiable hn0
