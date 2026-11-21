@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Simple
 public import Mathlib.CategoryTheory.Limits.Constructions.EpiMono
 public import TauCeti.CategoryTheory.Monoidal.Center.Preadditive
 public import TauCeti.CategoryTheory.Monoidal.Center.Limits
+public import TauCeti.CategoryTheory.Preadditive.Schur
 
 /-!
 # Simple objects in the Drinfeld centre
@@ -23,8 +24,11 @@ monoidal category. In particular, if the tensor unit of `C` is simple, the canon
 of `Center C` is simple. No semisimplicity, finiteness of the simple classes, or assumption on a
 coefficient field is needed.
 
-Together with `CategoryTheory.Center.instFiniteDimensionalHom`, this supplies the simple-unit
-and Hom-finiteness properties of the centre using its canonical monoidal and linear structures.
+Together with `CategoryTheory.Center.instFiniteDimensionalHom` and
+`CategoryTheory.Center.instFiniteDimensionalUnitHom`, this supplies the simple-unit and
+Hom-finiteness properties of the centre using its canonical monoidal and linear structures, and
+identifies scalar endomorphisms of `𝟙_ (Center C)` with those of `𝟙_ C`
+(`CategoryTheory.Center.endAlgEquivOfSimple_unit_apply`).
 
 ## References
 
@@ -33,7 +37,7 @@ and Hom-finiteness properties of the centre using its canonical monoidal and lin
 
 public section
 
-universe v u
+universe w v u
 
 namespace CategoryTheory.Center
 
@@ -56,5 +60,24 @@ instance instSimpleUnit [(forget C).PreservesMonomorphisms]
   have : Simple ((forget C).obj (𝟙_ (Center C))) :=
     Simple.of_iso (Functor.Monoidal.εIso (forget C)).symm
   exact (forget C).simple_of_simple_obj _
+
+section UnitScalar
+
+variable (k : Type w) [Field k] [IsAlgClosed k] [Linear k C] [MonoidalLinear k C]
+  [Limits.HasKernels C] [Limits.HasKernels (Center C)] [(forget C).PreservesMonomorphisms]
+  [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
+
+/-- Reading an endomorphism of `𝟙_ (Center C)` as a scalar in `k` agrees with reading its
+underlying endomorphism of `𝟙_ C` in `k`. -/
+@[simp]
+theorem endAlgEquivOfSimple_unit_apply (a : 𝟙_ (Center C) ⟶ 𝟙_ (Center C)) :
+    TauCeti.endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of a) =
+      TauCeti.endAlgEquivOfSimple k (𝟙_ C) (End.of a.f) := by
+  apply (TauCeti.endAlgEquivOfSimple_apply_eq_iff (End.of a) _).2
+  refine Center.ext _ _ ?_
+  rw [smul_f, id_f]
+  exact (TauCeti.endAlgEquivOfSimple_smul_id (k := k) (X := 𝟙_ C) (End.of a.f)).symm
+
+end UnitScalar
 
 end CategoryTheory.Center

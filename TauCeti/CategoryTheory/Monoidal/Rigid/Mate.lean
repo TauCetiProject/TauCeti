@@ -83,7 +83,9 @@ morphism.
   comparison between two duals is an identity;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_inv` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_inv`: the opposite-handed mate of the
-  inverse comparison between two duals is the comparison between the two opposite-handed duals.
+  inverse comparison between two duals is the comparison between the two opposite-handed duals;
+* `TauCeti.rightAdjointMate_whiskerRight_comp_evaluation_of_unit`: evaluating the right adjoint mate
+  of a morphism into the tensor unit.
 
 ## References
 
@@ -581,5 +583,16 @@ theorem leftAdjointMate_eq_leftMate {X Y : C} [HasLeftDual X] [HasLeftDual Y] (f
     (ᘁf) = ExactPairing.leftMate HasLeftDual.exact HasLeftDual.exact f :=
   ExactPairing.leftDualHom_ext (Y := X) (by
     rw [leftAdjointMate_comp_evaluation, ExactPairing.leftMate_comp_evaluation])
+
+/-- Evaluating the right adjoint mate of a unit-target morphism `f : X ⟶ 𝟙_ C` against `X`
+recovers `f` up to the left unitor. -/
+@[reassoc]
+theorem rightAdjointMate_whiskerRight_comp_evaluation_of_unit {X : C} [HasRightDual X]
+    (f : X ⟶ 𝟙_ C) :
+    fᘁ ▷ X ≫ ε_ X Xᘁ = (λ_ X).hom ≫ f := by
+  rw [rightAdjointMate_comp_evaluation]
+  -- `hasRightDualUnit` gives `(𝟙_ C)ᘁ = 𝟙_ C` with pairing `exactPairingUnit`.
+  dsimp only [HasRightDual.rightDual, hasRightDualUnit]
+  rw [ExactPairing.unit_evaluation, ← unitors_equal, leftUnitor_naturality]
 
 end TauCeti

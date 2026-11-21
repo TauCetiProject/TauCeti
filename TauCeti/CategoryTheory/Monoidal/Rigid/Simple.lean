@@ -31,9 +31,11 @@ zero tensor product.
 
 For a split simple member of an exact pairing, Frobenius reciprocity and Schur's lemma show
 that every morphism from the paired tensor product to the unit is a scalar multiple of the
-evaluation. Both choices of the simple member are available; they control the two categorical
-trace pairings. In a finite semisimple category with simple unit, every nonzero morphism
-`η : 𝟙_ C ⟶ Y ⊗ X` then splits, and composing it with the evaluation gives an invertible scalar.
+evaluation, and dually every morphism from the unit to the paired tensor product is a scalar
+multiple of the coevaluation. Both choices of the simple member are available; they control the two
+categorical trace pairings and the uniqueness of opposite pairings on simple objects. In a finite
+semisimple category with simple unit, every nonzero morphism `η : 𝟙_ C ⟶ Y ⊗ X` then splits, and
+composing it with the evaluation gives an invertible scalar.
 
 ## References
 
@@ -131,6 +133,38 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [
   simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
     Category.id_comp, tensorLeftHomLinearEquiv_apply]
   simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
+
+/-- If the right member of an exact pairing is split simple, every morphism from the unit to the
+paired tensor product is a scalar multiple of the coevaluation. -/
+theorem hom_from_tensorUnit_eq_smul_coevaluation_of_simple_right (k : Type*) [Field k]
+    [IsAlgClosed k] [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C]
+    [MonoidalLinear k C] {X Y : C} [ExactPairing X Y] [Simple Y] [FiniteDimensional k (Y ⟶ Y)]
+    (f : 𝟙_ C ⟶ X ⊗ Y) : ∃ c : k, f = c • η_ X Y := by
+  let e := (tensorLeftHomLinearEquiv k (𝟙_ C) X Y Y).symm.trans
+    (Linear.homCongr k (ρ_ Y) (Iso.refl Y))
+  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
+  refine ⟨c, e.injective ?_⟩
+  rw [map_smul, ← hc]; congr 1; symm
+  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
+    tensorLeftHomLinearEquiv_symm_apply]
+  rw [← Category.comp_id (η_ X Y), ← whiskerLeft_id X Y,
+    tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft]; simp
+
+/-- If the left member of an exact pairing is split simple, every morphism from the unit to the
+paired tensor product is a scalar multiple of the coevaluation. -/
+theorem hom_from_tensorUnit_eq_smul_coevaluation_of_simple_left (k : Type*) [Field k]
+    [IsAlgClosed k] [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C]
+    [MonoidalLinear k C] {X Y : C} [ExactPairing X Y] [Simple X] [FiniteDimensional k (X ⟶ X)]
+    (f : 𝟙_ C ⟶ X ⊗ Y) : ∃ c : k, f = c • η_ X Y := by
+  let e := (tensorRightHomLinearEquiv k (𝟙_ C) X Y X).symm.trans
+    (Linear.homCongr k (λ_ X) (Iso.refl X))
+  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
+  refine ⟨c, e.injective ?_⟩
+  rw [map_smul, ← hc]; congr 1; symm
+  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
+    tensorRightHomLinearEquiv_symm_apply]
+  rw [← Category.comp_id (η_ X Y), ← id_whiskerRight X Y,
+    tensorRightHomEquiv_symm_coevaluation_comp_whiskerRight]; simp
 
 section FiniteSemisimple
 
