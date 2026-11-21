@@ -153,7 +153,7 @@ theorem mem_regularSubmodule {μ : VectorMeasure X 𝕜} :
 namespace regularSubmodule
 
 instance (μ : regularSubmodule X 𝕜) : (μ : VectorMeasure X 𝕜).variation.Regular :=
-  μ.2
+  μ.property
 
 /-- The total-variation norm `‖μ‖ = |μ|(X)`. -/
 instance : Norm (regularSubmodule X 𝕜) where

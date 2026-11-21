@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- The symmetric-power representation of `GL n k` and the basis of `Sym[k]^d(Fin n → k)`.
-public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Basic
 -- The weight spaces of a representation with a basis of weight vectors.
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basis
 -- The multiplicity vector `TauCeti.weightOfMultiset` of a multiset, and its torus character.

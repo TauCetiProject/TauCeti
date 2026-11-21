@@ -149,11 +149,10 @@ theorem sphereCoords_infty : sphereCoords ∞ = ![0, 0, 1] := by
 theorem sphereCoords_coe (z : ℂ) :
     sphereCoords z = (1 + normSq z)⁻¹ • ![2 * z.re, -(2 * z.im), normSq z - 1] := by
   have h : (1 + normSq z : ℝ) ≠ 0 := by linarith [normSq_nonneg z]
-  have hs : (star ![z, 1] ⬝ᵥ ![z, 1] : ℂ) = ((1 + normSq z : ℝ) : ℂ) := by
-    simp [dotProduct, Fin.sum_univ_two, mul_comm, normSq_eq_conj_mul_self, add_comm]
   have hP (i j : Fin 2) : rankOneHermitianProjector ![z, 1] i j =
       ![z, 1] i * star (![z, 1] j) * (((1 + normSq z)⁻¹ : ℝ) : ℂ) := by
-    rw [rankOneHermitianProjector_apply, hs, div_eq_mul_inv, ofReal_inv]
+    rw [rankOneHermitianProjector_apply, star_vec2_one_dotProduct_self,
+      RCLike.ofReal_eq_complex_ofReal, ← normSq_eq_norm_sq, div_eq_mul_inv, ofReal_inv]
   have hn : normSq (1 + (normSq z : ℂ)) = (1 + normSq z) ^ 2 := by
     rw [← ofReal_one, ← ofReal_add, normSq_ofReal, sq]
   ext i
@@ -224,7 +223,8 @@ private noncomputable def toSphere (x : OnePoint ℂ) :
 private theorem bijective_toSphere : Function.Bijective toSphere := by
   refine ⟨fun x y h ↦ sphereCoords_injective ?_, fun v ↦ ?_⟩
   · simpa [toSphere] using h
-  · obtain ⟨x, hx⟩ := mem_range_sphereCoords (EuclideanSpace.toLp_mem_sphere_zero_one_iff.mp v.2)
+  · obtain ⟨x, hx⟩ := mem_range_sphereCoords (EuclideanSpace.toLp_mem_sphere_zero_one_iff.mp
+      v.property)
     exact ⟨x, Subtype.ext (by simp [toSphere, hx])⟩
 
 /-- **The Riemann sphere is the round sphere.** `sphereCoords` is a homeomorphism from `OnePoint ℂ`
@@ -252,7 +252,7 @@ theorem sphereCoords_toUnits_smul (U : unitaryGroup (Fin 2) ℂ) (x : OnePoint �
   refine pauli_injective ?_
   rw [pauli_pauliRotation_mulVec, pauli_sphereCoords, pauli_sphereCoords,
     equivProjectivization_smul, hermitianProjector_unitary_smul]
-  have hU := mem_unitaryGroup_iff.mp U.2
+  have hU := mem_unitaryGroup_iff.mp U.property
   simp only [two_mul, mul_add, add_mul, mul_sub, sub_mul, mul_one, hU, mul_assoc]
 
 end Matrix.UnitaryGroup
