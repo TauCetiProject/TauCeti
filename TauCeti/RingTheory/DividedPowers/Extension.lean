@@ -211,11 +211,25 @@ noncomputable def mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
       (by rwa [hIx, Ideal.map_span, Set.image_singleton] at hz)
     have hmem : hI.dpow n x ∈ Ideal.span {x} := hIx ▸ hI.dpow_mem hn hx
     obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.mp hmem
-    rw [mul_comm (f x) b, principalDpow_mul, ha, map_mul, mul_comm (f x), ← mul_assoc,
-      principalDpow_mul, principalDpow_mul, mul_pow, ← pow_mul, mul_comm n m, mul_assoc,
-      ← map_pow, ← map_mul, ← hI.dpow_mul hx, mul_comm a x, ← ha, hI.dpow_comp hn hx, map_mul,
-      map_natCast]
-    ring
+    have hinner : principalDpow hI f hIx n (f x * b) = (b ^ n * f a) * f x := by
+      rw [mul_comm (f x) b, principalDpow_mul, ha, map_mul]
+      ring
+    calc
+      principalDpow hI f hIx m (principalDpow hI f hIx n (f x * b))
+        = principalDpow hI f hIx m ((b ^ n * f a) * f x) := by rw [hinner]
+      _ = (b ^ n * f a) ^ m * f (hI.dpow m x) :=
+          principalDpow_mul hI f hIx (b ^ n * f a) m
+      _ = b ^ (m * n) * f (a ^ m * hI.dpow m x) := by
+          simp only [map_mul, map_pow]
+          ring
+      _ = b ^ (m * n) * f (hI.dpow m (hI.dpow n x)) := by
+          rw [← hI.dpow_mul hx, mul_comm a x, ← ha]
+      _ = (Nat.uniformBell m n : B) * (b ^ (m * n) * f (hI.dpow (m * n) x)) := by
+          rw [hI.dpow_comp hn hx]
+          simp only [map_mul, map_natCast]
+          ring
+      _ = (Nat.uniformBell m n : B) * principalDpow hI f hIx (m * n) (f x * b) := by
+          rw [mul_comm (f x) b, principalDpow_mul]
 
 /-- The formula for `DividedPowers.mapOfSpanSingleton` on a multiple `b * f x` of the generator. -/
 @[simp]
