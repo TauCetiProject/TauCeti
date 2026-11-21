@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Subgroup.GroupLieAlgebra
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup
 import TauCeti.RepresentationTheory.Dual
 import TauCeti.RepresentationTheory.Quotient
 
@@ -13,38 +13,38 @@ import TauCeti.RepresentationTheory.Quotient
 # The adjoint action of `G ⧸ N` and the coadjoint action on the annihilator of `𝔫`
 
 Let `N` be a closed normal subgroup of a Lie group `G`, with Lie algebra `𝔫 ⊆ 𝔤`
-(`TauCeti.Lie.groupLieSubalgebraOfSubgroup N`). The adjoint representation of `G` preserves `𝔫`,
-and `N` acts trivially on `𝔤 ⧸ 𝔫` because `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N`. So the adjoint
-representation descends to a representation of the quotient group `G ⧸ N` on `𝔤 ⧸ 𝔫`,
-`TauCeti.Lie.quotientAdjointRepresentation N`, by `[g] · [ξ] = [Ad_g ξ]`. No Lie group structure
-on `G ⧸ N` is assumed or constructed here. When `G ⧸ N` carries a quotient Lie group structure
-with `Lie(G ⧸ N) ≃ 𝔤 ⧸ 𝔫`, that identification intertwines this representation and its dual on
-`(𝔤 ⧸ 𝔫)*` with the adjoint and coadjoint representations of `G ⧸ N`.
+(`Subgroup.groupLieSubalgebra N`). The adjoint representation of `G` preserves `𝔫`, and `N` acts
+trivially on `𝔤 ⧸ 𝔫` because `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N`
+(`TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup`). So the adjoint representation descends
+to a representation of the quotient group `G ⧸ N` on `𝔤 ⧸ 𝔫`,
+`Subgroup.quotientAdjointRepresentation N`, by `[g] · [ξ] = [Ad_g ξ]`; its pullback to `G` is the
+quotient representation of `G` on `𝔤 ⧸ 𝔫`. No Lie group structure on `G ⧸ N` is assumed or
+constructed here. When `G ⧸ N` carries a quotient Lie group structure with `Lie(G ⧸ N) ≃ 𝔤 ⧸ 𝔫`,
+that identification intertwines this representation and its dual on `(𝔤 ⧸ 𝔫)*` with the adjoint
+and coadjoint representations of `G ⧸ N`.
 
-Dually, the coadjoint action of the normalizer of a subgroup `K` preserves the annihilator
-`𝔨⁰ ⊆ 𝔤*` of its Lie algebra `𝔨`; in particular the coadjoint representation of `G` preserves
-`𝔫⁰`, and `N` fixes `𝔫⁰` pointwise. Under the identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` of linear forms
-on the quotient with linear forms vanishing on `𝔫` (`Submodule.dualQuotEquivDualAnnihilator`), the
-coadjoint action of `G` on `𝔫⁰` is the dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*`
+Dually, the coadjoint representation of `G` preserves the annihilator `𝔫⁰ ⊆ 𝔤*`, and `N` fixes
+`𝔫⁰` pointwise. Under the identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` of linear forms on the quotient with
+linear forms vanishing on `𝔫` (`Submodule.dualQuotEquivDualAnnihilator`), the coadjoint action of
+`G` on `𝔫⁰` is the dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*`
 (`Representation.dualQuotEquivDualAnnihilator_symm_dual_apply` for a general representation).
 
-These are the linear-algebra ingredients of reduction in stages for a normal subgroup: on the zero
+These are linear-algebra ingredients of reduction in stages for a normal subgroup: on the zero
 level of the moment map of `N`, the moment map of `G` takes values in `𝔫⁰`, and through
-`(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` it supplies the moment map of the residual action of `G ⧸ N`.
+`(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` it gives a map from the zero level to `(𝔤 ⧸ 𝔫)*`. This is the candidate for the
+residual moment map before it is descended to the first reduced space.
 
 ## Main definitions
 
-* `TauCeti.Lie.quotientAdjointRepresentation`: the representation of `G ⧸ N` on `𝔤 ⧸ 𝔫` induced by
+* `Subgroup.quotientAdjointRepresentation`: the representation of `G ⧸ N` on `𝔤 ⧸ 𝔫` induced by
   the adjoint representation.
 
 ## Main results
 
 * `TauCeti.Lie.isTrivial_quotient_adjointRepresentation_comp_subtype`: `N` acts trivially on
   `𝔤 ⧸ 𝔫`.
-* `TauCeti.Lie.coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebraOfSubgroup`:
-  the coadjoint action of the normalizer of `K` preserves `𝔨⁰`.
-* `coadjointRepresentation_apply_eq_self_of_mem_dualAnnihilator_groupLieSubalgebraOfSubgroup`
-  (in `TauCeti.Lie`): `N` fixes `𝔫⁰` pointwise.
+* `TauCeti.Lie.quotientAdjointRepresentation_comp_mk'`: the pullback of
+  `Subgroup.quotientAdjointRepresentation N` to `G` is the quotient of the adjoint representation.
 * `TauCeti.Lie.dualQuotEquivDualAnnihilator_symm_coadjointRepresentation_apply`: the coadjoint
   action of `G` on `𝔫⁰` is the dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*`.
 
@@ -74,68 +74,57 @@ representation of `G` on `𝔤 ⧸ 𝔫` induced by the adjoint representation i
 theorem isTrivial_quotient_adjointRepresentation_comp_subtype {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) :
     Representation.IsTrivial (((adjointRepresentation ℝ I G).quotient
-      (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule
-      groupLieSubalgebraOfSubgroup_le_comap_adjointRepresentation).comp N.subtype) :=
+      (N.groupLieSubalgebra (I := I)).toSubmodule
+      groupLieSubalgebra_le_comap_adjointRepresentation).comp N.subtype) :=
   ⟨fun n ↦ by
     rw [MonoidHom.comp_apply]
-    exact Representation.quotient_apply_eq_id (ρ := adjointRepresentation ℝ I G)
-      groupLieSubalgebraOfSubgroup_le_comap_adjointRepresentation
-      (adjointRepresentation_apply_sub_mem_groupLieSubalgebraOfSubgroup hN n.property)⟩
+    exact (Representation.quotient_apply_eq_id_iff (ρ := adjointRepresentation ℝ I G)
+      groupLieSubalgebra_le_comap_adjointRepresentation).2
+      (adjointRepresentation_apply_sub_mem_groupLieSubalgebra hN n.property)⟩
 
 /-- **The adjoint representation of `G ⧸ N` on `𝔤 ⧸ 𝔫`** for a closed normal subgroup `N` with Lie
 algebra `𝔫`: the adjoint representation of `G` descends to `𝔤 ⧸ 𝔫` because `𝔫` is `Ad`-invariant,
 and then to `G ⧸ N` because `N` acts trivially on `𝔤 ⧸ 𝔫`. -/
-def quotientAdjointRepresentation (N : Subgroup G) [N.Normal] (hN : IsClosed (N : Set G)) :
+def _root_.Subgroup.quotientAdjointRepresentation (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G)) :
     Representation ℝ (G ⧸ N)
-      (GroupLieAlgebra I G ⧸ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule) :=
+      (GroupLieAlgebra I G ⧸ (N.groupLieSubalgebra (I := I)).toSubmodule) :=
   haveI := isTrivial_quotient_adjointRepresentation_comp_subtype (I := I) hN
   ((adjointRepresentation ℝ I G).quotient _
-    groupLieSubalgebraOfSubgroup_le_comap_adjointRepresentation).ofQuotient N
+    groupLieSubalgebra_le_comap_adjointRepresentation).ofQuotient N
+
+/-- **The pullback of the adjoint representation of `G ⧸ N` to `G`** is the representation of `G`
+on `𝔤 ⧸ 𝔫` induced by the adjoint representation. -/
+theorem quotientAdjointRepresentation_comp_mk' {N : Subgroup G} [N.Normal]
+    (hN : IsClosed (N : Set G)) :
+    (N.quotientAdjointRepresentation (I := I) hN).comp (QuotientGroup.mk' N) =
+      (adjointRepresentation ℝ I G).quotient _
+        groupLieSubalgebra_le_comap_adjointRepresentation :=
+  MonoidHom.ext fun g ↦ LinearMap.ext fun x ↦ by
+    rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, Subgroup.quotientAdjointRepresentation,
+      Representation.ofQuotient_coe_apply]
 
 /-- The class of `g` acts on the class of `ξ` by `[g] · [ξ] = [Ad_g ξ]`. -/
 @[simp]
 theorem quotientAdjointRepresentation_mk_apply_mk {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) (g : G) (ξ : GroupLieAlgebra I G) :
-    quotientAdjointRepresentation (I := I) N hN g (Submodule.Quotient.mk ξ) =
+    N.quotientAdjointRepresentation (I := I) hN g (Submodule.Quotient.mk ξ) =
       Submodule.Quotient.mk (adjointRepresentation ℝ I G g ξ) := by
-  rw [quotientAdjointRepresentation, Representation.ofQuotient_coe_apply,
-    Representation.quotient_apply, Submodule.mapQ_apply]
+  have h := DFunLike.congr_fun (quotientAdjointRepresentation_comp_mk' (I := I) hN) g
+  rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply] at h
+  rw [h, Representation.quotient_apply, Submodule.mapQ_apply]
 
 /-- The dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*`: `([g] · φ) [ξ] = φ [Ad_{g⁻¹} ξ]`. Not a `simp`
 lemma, since `Representation.dual_apply` already rewrites its left-hand side. -/
 theorem dual_quotientAdjointRepresentation_mk_apply_mk {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) (g : G)
     (φ : Module.Dual ℝ
-      (GroupLieAlgebra I G ⧸ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule))
+      (GroupLieAlgebra I G ⧸ (N.groupLieSubalgebra (I := I)).toSubmodule))
     (ξ : GroupLieAlgebra I G) :
-    (quotientAdjointRepresentation (I := I) N hN).dual g φ (Submodule.Quotient.mk ξ) =
+    (N.quotientAdjointRepresentation (I := I) hN).dual g φ (Submodule.Quotient.mk ξ) =
       φ (Submodule.Quotient.mk (adjointRepresentation ℝ I G g⁻¹ ξ)) := by
   rw [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
     ← QuotientGroup.mk_inv, quotientAdjointRepresentation_mk_apply_mk]
-
-/-- **The coadjoint action of the normalizer preserves the annihilator of the Lie algebra of a
-subgroup**: for `g` in the normalizer of `K` and `ν ∈ 𝔨⁰`, `Ad*_g ν ∈ 𝔨⁰`. -/
-theorem coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebraOfSubgroup
-    {K : Subgroup G} {g : G} (hg : g ∈ Subgroup.normalizer (K : Set G))
-    {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
-    (hν : ν ∈ (groupLieSubalgebraOfSubgroup (I := I) K).toSubmodule.dualAnnihilator) :
-    coadjointRepresentation ℝ I G g ν ∈
-      (groupLieSubalgebraOfSubgroup (I := I) K).toSubmodule.dualAnnihilator := by
-  rw [coadjointRepresentation_eq_dual]
-  exact (adjointRepresentation ℝ I G).dualAnnihilator_le_comap_dual
-    (fun _ hξ ↦ adjointRepresentation_apply_mem_groupLieSubalgebraOfSubgroup
-      (Subgroup.inv_mem _ hg) hξ) hν
-
-/-- **A closed normal subgroup fixes the annihilator of its Lie algebra**: `Ad*_n ν = ν` for
-`n ∈ N` and `ν ∈ 𝔫⁰`. -/
-theorem coadjointRepresentation_apply_eq_self_of_mem_dualAnnihilator_groupLieSubalgebraOfSubgroup
-    {N : Subgroup G} [N.Normal]
-    (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
-    (hν : ν ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator) :
-    coadjointRepresentation ℝ I G n ν = ν := by
-  rw [coadjointRepresentation_eq_dual]
-  exact Representation.dual_apply_eq_self_of_mem_dualAnnihilator
-    (adjointRepresentation_apply_sub_mem_groupLieSubalgebraOfSubgroup hN hn) hν
 
 /-- **The coadjoint action of `G` on `𝔫⁰` is the dual action of `G ⧸ N` on `(𝔤 ⧸ 𝔫)*`.**
 Under the identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` of `Submodule.dualQuotEquivDualAnnihilator`, the coadjoint
@@ -143,15 +132,20 @@ translate `Ad*_g ν` of `ν ∈ 𝔫⁰` corresponds to the translate of the cor
 by the class of `g` in `G ⧸ N`. -/
 theorem dualQuotEquivDualAnnihilator_symm_coadjointRepresentation_apply {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) (g : G) {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
-    (hν : ν ∈ (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualAnnihilator) :
-    (groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualQuotEquivDualAnnihilator.symm
+    (hν : ν ∈ (N.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator) :
+    (N.groupLieSubalgebra (I := I)).toSubmodule.dualQuotEquivDualAnnihilator.symm
         ⟨coadjointRepresentation ℝ I G g ν,
-          coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebraOfSubgroup
+          coadjointRepresentation_apply_mem_dualAnnihilator_groupLieSubalgebra
             (Subgroup.normalizer_eq_top (H := N) ▸ Subgroup.mem_top g) hν⟩ =
-      (quotientAdjointRepresentation (I := I) N hN).dual g
-        ((groupLieSubalgebraOfSubgroup (I := I) N).toSubmodule.dualQuotEquivDualAnnihilator.symm
+      (N.quotientAdjointRepresentation (I := I) hN).dual g
+        ((N.groupLieSubalgebra (I := I)).toSubmodule.dualQuotEquivDualAnnihilator.symm
           ⟨ν, hν⟩) := by
-  rw [quotientAdjointRepresentation, Representation.dual_ofQuotient_coe_apply,
+  have := isTrivial_quotient_adjointRepresentation_comp_subtype (I := I) hN
+  have h := DFunLike.congr_fun (Representation.dual_ofQuotient_comp_mk'
+    ((adjointRepresentation ℝ I G).quotient (N.groupLieSubalgebra (I := I)).toSubmodule
+      groupLieSubalgebra_le_comap_adjointRepresentation) N) g
+  rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply] at h
+  rw [Subgroup.quotientAdjointRepresentation, h,
     ← Representation.dualQuotEquivDualAnnihilator_symm_dual_apply]
   simp only [coadjointRepresentation_eq_dual]
 

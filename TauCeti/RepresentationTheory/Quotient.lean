@@ -14,9 +14,9 @@ Mathlib's `Representation.ofQuotient` descends a representation through a normal
 acting trivially. The kernel always acts trivially, and quotienting by it gives a faithful
 representation on the original module, with the caller's scalar and additive structures.
 
-An element `g` that moves every vector by an element of a `G`-stable submodule `W`,
-`ρ g v - v ∈ W`, acts trivially on the quotient representation on `V ⧸ W`
-(`Representation.quotient_apply_eq_id`); this is how a subgroup comes to act trivially on a
+An element `g` acts trivially on the quotient representation on `V ⧸ W` by a `G`-stable submodule
+`W` exactly when it moves every vector by an element of `W`, `ρ g v - v ∈ W`
+(`Representation.quotient_apply_eq_id_iff`); this is how a subgroup comes to act trivially on a
 quotient module, so that `Representation.ofQuotient` applies to it.
 -/
 
@@ -56,12 +56,14 @@ section QuotientModule
 variable {k G V : Type*} [Ring k] [Monoid G] [AddCommGroup V] [Module k V]
   {ρ : Representation k G V} {W : Submodule k V} {g : G}
 
-/-- An element `g` that moves every vector by an element of the invariant submodule `W`,
-`ρ g v - v ∈ W`, acts trivially on `V ⧸ W`. -/
-theorem quotient_apply_eq_id (hW : ∀ g, W ≤ W.comap (ρ g)) (hg : ∀ v, ρ g v - v ∈ W) :
-    ρ.quotient W hW g = LinearMap.id := by
-  ext v
-  simpa [Submodule.Quotient.eq] using hg v
+/-- An element `g` acts trivially on `V ⧸ W`, for an invariant submodule `W`, exactly when it
+moves every vector by an element of `W`: `ρ g v - v ∈ W`. -/
+theorem quotient_apply_eq_id_iff (hW : ∀ g, W ≤ W.comap (ρ g)) :
+    ρ.quotient W hW g = LinearMap.id ↔ ∀ v, ρ g v - v ∈ W := by
+  refine ⟨fun h v ↦ ?_, fun h ↦ ?_⟩
+  · simpa [Submodule.Quotient.eq] using LinearMap.congr_fun h (Submodule.Quotient.mk v)
+  · ext v
+    simpa [Submodule.Quotient.eq] using h v
 
 end QuotientModule
 

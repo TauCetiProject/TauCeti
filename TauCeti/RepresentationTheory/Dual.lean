@@ -62,8 +62,8 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
   an element of `W` fixes the annihilator `W⁰` pointwise.
 * `Representation.dualQuotEquivDualAnnihilator_symm_dual_apply`: under `(V ⧸ W)* ≃ W⁰`, the dual
   representation on `W⁰` is the dual of the quotient representation on `V ⧸ W`.
-* `Representation.dual_ofQuotient_coe_apply`: the dual of `ρ.ofQuotient S` acts on the coset of
-  `g` by `ρ.dual g`.
+* `Representation.dual_ofQuotient_comp_mk'`: the dual of `ρ.ofQuotient S`, pulled back along
+  `G → G ⧸ S`, is `ρ.dual`.
 * `Representation.dual_comp`: restricting along a group homomorphism commutes with taking duals.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
   when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
@@ -189,14 +189,14 @@ theorem dualAnnihilator_le_comap_dual [CommSemiring k] [AddCommMonoid V] [Module
   rw [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply]
   exact (Submodule.mem_dualAnnihilator φ).1 hφ _ (hW hw)
 
-/-- The dual of the representation `ρ.ofQuotient S` descended through a normal subgroup `S` acts on
-the coset `[g]` by `ρ.dual g`: `(ρ.ofQuotient S).dual [g] = ρ.dual g`. -/
-theorem dual_ofQuotient_coe_apply [CommSemiring k] [AddCommMonoid V] [Module k V]
-    (ρ : Representation k G V) (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] (g : G)
-    (φ : Module.Dual k V) :
-    (ρ.ofQuotient S).dual (g : G ⧸ S) φ = ρ.dual g φ := by
-  ext v
-  rw [dual_apply, dual_apply, ← QuotientGroup.mk_inv]
+/-- The dual of the representation `ρ.ofQuotient S` descended through a normal subgroup `S`,
+pulled back along `G → G ⧸ S`, is the dual of `ρ`:
+`(ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual`. -/
+theorem dual_ofQuotient_comp_mk' [CommSemiring k] [AddCommMonoid V] [Module k V]
+    (ρ : Representation k G V) (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] :
+    (ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual := by
+  ext g φ v
+  rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, dual_apply, dual_apply, ← QuotientGroup.mk_inv]
   simp only [Module.Dual.transpose_apply, LinearMap.comp_apply, ofQuotient_coe_apply]
 
 variable [CommRing k] [AddCommGroup V] [Module k V] {ρ : Representation k G V}

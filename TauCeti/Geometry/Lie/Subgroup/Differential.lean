@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
+public import TauCeti.Geometry.Lie.Subgroup.GroupLieAlgebra
 import TauCeti.Geometry.Lie.Exponential.Classification
 
 /-!
@@ -37,6 +38,12 @@ independent of the choice of finite-dimensional model for the subgroup.
   the inclusion differential on underlying elements.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.finrank_eq_finrank_lieSubalgebraOfSubgroup`: the model
   space of the subgroup has the dimension of that subalgebra.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.range_groupLieAlgebraMap_subtype`: in the tangent Lie
+  algebra, the differential of the inclusion at the identity has range
+  `Subgroup.groupLieSubalgebra K`, for any model of `K`.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.comp_groupLieAlgebraMap_subtype_eq_zero_iff`: a linear form
+  vanishes along that differential exactly when it annihilates `Subgroup.groupLieSubalgebra K`;
+  for a moment map `μ`, this identifies the zero level of the restriction `μ ∘ dι` to `K`.
 
 ## References
 
@@ -290,5 +297,51 @@ theorem finrank_eq_finrank_lieSubalgebraOfSubgroup :
   rw [← finrank_leftInvariantDerivation_eq_modelVectorSpace (I := 𝓘(ℝ, E')) (G := K)
     BoundarylessManifold.isInteriorPoint]
   exact d.lieEquivLieSubalgebraOfSubgroup.toLinearEquiv.finrank_eq
+
+omit [FiniteDimensional ℝ E'] in
+/-- **The differential of an embedded inclusion has range the Lie algebra of the subgroup.** For
+any model of an embedded Lie subgroup `K`, the differential at the identity of
+the inclusion `K → G` has range `Subgroup.groupLieSubalgebra K`. -/
+theorem range_groupLieAlgebraMap_subtype :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    LinearMap.range (K.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I).toLinearMap =
+      (K.groupLieSubalgebra (I := I)).toSubmodule := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  -- The model of `K` embeds into that of `G` through the injective differential of the inclusion.
+  have : FiniteDimensional ℝ E' := FiniteDimensional.of_injective
+    (mfderiv 𝓘(ℝ, E') I (fun x : K ↦ (x : G)) 1).toLinearMap (d.injective_mfderiv_subtypeVal 1)
+  let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+  dsimp only
+  -- Local names for the evaluation-at-the-identity equivalences of `K` and `G`.
+  let eK := leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E')) (G := K)
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E')) (n := ∞) (by simp) (1 : K))
+  let eG := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  have hmap (D : LeftInvariantDerivation 𝓘(ℝ, E') K) :
+      K.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I (eK D) = eG (d.lieMapSubtypeVal D) := by
+    rw [d.lieMapSubtypeVal_apply, leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
+      MonoidHom.groupLieAlgebraMap_apply, Subgroup.coe_subtype,
+      mfderiv_congr (funext fun k ↦ d.subtypeVal_apply k)]
+    -- `eK` and `eG` unfold to the evaluation-at-the-identity equivalences of `K` and `G`.
+    rfl
+  ext ξ
+  rw [LinearMap.mem_range, LieSubalgebra.mem_toSubmodule, K.groupLieSubalgebra_eq_map
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
+    ← d.range_lieMapSubtypeVal_eq, LieSubalgebra.mem_map, (EquivLike.surjective eK).exists]
+  simp [hmap, eG]
+
+omit [FiniteDimensional ℝ E'] in
+/-- **Restriction of a linear form to an embedded subgroup.** A linear form `ν` on `𝔤` vanishes
+along the differential `dι` of the inclusion of an embedded Lie subgroup `K` exactly when it
+annihilates the Lie algebra `𝔨` of `K`. For a moment map `μ` this identifies the zero level of the
+restricted moment map `μ ∘ dι` with the points where `μ` takes values in `𝔨⁰`. -/
+theorem comp_groupLieAlgebraMap_subtype_eq_zero_iff (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    ν.comp (K.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I).toLinearMap = 0 ↔
+      ν ∈ (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  dsimp only
+  rw [← d.range_groupLieAlgebraMap_subtype, ← LinearMap.ker_dualMap_eq_dualAnnihilator_range,
+    LinearMap.mem_ker, LinearMap.dualMap_apply']
 
 end TauCeti.Lie.EmbeddedLieSubgroupData

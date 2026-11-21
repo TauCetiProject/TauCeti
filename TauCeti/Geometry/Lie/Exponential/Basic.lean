@@ -161,6 +161,7 @@ theorem lieExp_eq_mulInvariantExp (X : LeftInvariantDerivation I G) :
 
 /-- The exponential of the left-invariant derivation of a tangent vector `ξ` at the identity is the
 tangent-space exponential of `ξ`. -/
+@[simp]
 theorem lieExp_tangentToLeftInvariantDerivation (ξ : GroupLieAlgebra I G) :
     lieExp (tangentToLeftInvariantDerivation ξ) = mulInvariantExp ξ := by
   rw [lieExp_eq_mulInvariantExp, ← leftInvariantDerivationEquivGroupLieAlgebra_symm_apply
