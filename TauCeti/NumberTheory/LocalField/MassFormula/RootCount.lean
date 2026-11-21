@@ -102,7 +102,7 @@ the separable closure lies in exactly one member of `σ_K(n)`, the one it genera
 theorem tsum_rootCount_eq_of_separable {n : ℕ} {a : Fin n → K} {f : 𝒪[K][X]}
     (he : f.IsEisensteinAt 𝓂[K]) (hf : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a)
     (hsep : (monicOfCoeff a).Separable) :
-    ∑' L : totallyRamifiedOfDegree K n, (L.1.rootCount a : ℝ≥0∞) = n := by
+    ∑' L : totallyRamifiedOfDegree K n, (L.val.rootCount a : ℝ≥0∞) = n := by
   classical
   have hcard : ((monicOfCoeff a).aroots (SeparableClosure K)).card = n :=
     (card_aroots_eq_natDegree_of_separable hsep).trans (natDegree_monicOfCoeff a)
@@ -112,18 +112,18 @@ theorem tsum_rootCount_eq_of_separable {n : ℕ} {a : Fin n → K} {f : 𝒪[K][
     intro L hL
     obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.mp hL
     exact adjoin_mem_totallyRamifiedOfDegree_of_mem_aroots he hf hx
-  have hcount (L : totallyRamifiedOfDegree K n) : L.1.rootCount a = F.count L.1 := by
-    have hL := mem_totallyRamifiedOfDegree_iff.mp L.2
+  have hcount (L : totallyRamifiedOfDegree K n) : L.val.rootCount a = F.count L.val := by
+    have hL := mem_totallyRamifiedOfDegree_iff.mp L.property
     have := hL.2.finite
     have ha : Irreducible (monicOfCoeff a) :=
       irreducible_monicOfCoeff_of_mem_eisensteinSet (hL.1 ▸ Module.finrank_pos)
         (mem_eisensteinSet_iff_exists_isEisensteinAt.mpr ⟨f, hf, he⟩)
-    rw [L.1.rootCount_eq_card_filter_adjoin_eq ha hL.1, Multiset.count_map]
+    rw [L.val.rootCount_eq_card_filter_adjoin_eq ha hL.1, Multiset.count_map]
     exact congrArg _ (Multiset.filter_congr fun _ _ ↦ eq_comm)
   have hsupp : Function.support (fun L ↦ (F.count L : ℝ≥0∞)) ⊆ totallyRamifiedOfDegree K n :=
     fun L hL ↦ hmem L (Multiset.count_ne_zero.mp (by simpa using hL))
-  calc ∑' L : totallyRamifiedOfDegree K n, (L.1.rootCount a : ℝ≥0∞)
-      = ∑' L : totallyRamifiedOfDegree K n, (F.count L.1 : ℝ≥0∞) := by simp only [hcount]
+  calc ∑' L : totallyRamifiedOfDegree K n, (L.val.rootCount a : ℝ≥0∞)
+      = ∑' L : totallyRamifiedOfDegree K n, (F.count L.val : ℝ≥0∞) := by simp only [hcount]
     _ = ∑' L, (F.count L : ℝ≥0∞) := tsum_subtype_eq_of_support_subset hsupp
     _ = ∑ L ∈ F.toFinset, (F.count L : ℝ≥0∞) :=
       tsum_eq_sum fun L hL ↦ by simpa using hL
@@ -137,7 +137,7 @@ theorem ae_tsum_rootCount_eq {n : ℕ}
     [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
     (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
     ∀ᵐ a ∂μ.restrict (eisensteinSet K n),
-      ∑' L : totallyRamifiedOfDegree K n, (L.1.rootCount a : ℝ≥0∞) = n := by
+      ∑' L : totallyRamifiedOfDegree K n, (L.val.rootCount a : ℝ≥0∞) = n := by
   rcases n.eq_zero_or_pos with rfl | hn
   · have : IsEmpty (totallyRamifiedOfDegree K 0) := by
       rw [totallyRamifiedOfDegree_zero]

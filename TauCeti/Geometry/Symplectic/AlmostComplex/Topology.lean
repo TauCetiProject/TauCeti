@@ -8,7 +8,11 @@ module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.BilinearForm
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import TauCeti.Geometry.Symplectic.Duality
 
@@ -33,11 +37,15 @@ equivalent, it does not depend on the choice of the norm of `V`.
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
+* `TauCeti.SymplecticForm.tames_of_mul_norm_sq_le`: a uniform lower bound `c ‖v‖² ≤ ω(v, J v)`
+  with `c > 0` makes `J` tame.
 * `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
   of tame structures continuous on a compact set, the forms `ω(·, J ·)` are uniformly equivalent
   to the square of the norm.
 * `TauCeti.SymplecticForm.continuousOn_associatedBilinForm_apply_self`: the forms `ω(·, J ·)` of
   a continuous family of structures, evaluated along a continuous map, vary continuously.
+* `ContDiffOn.associatedBilinForm`, `DifferentiableAt.associatedBilinForm`: the forms
+  `ω(·, J ·)` of a family of structures are as smooth as their endomorphisms in the operator norm.
 -/
 
 public noncomputable section
@@ -110,6 +118,14 @@ theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : 
   filter_upwards [hJ.eventually hA] with y hy v hv
   simpa [ωc] using hy v hv
 
+omit [FiniteDimensional ℝ V] in
+/-- A uniform lower bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0` makes `J` tame. Conversely, a family
+of tame structures that is continuous on a compact set satisfies such a bound uniformly
+(`TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`). -/
+theorem tames_of_mul_norm_sq_le {ω : SymplecticForm V} {J : AlmostComplexStructure V} {c : ℝ}
+    (hc : 0 < c) (h : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) : ω.Tames J :=
+  fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (h v)
+
 /-- **Uniform equivalence of tame metrics.** If a family of complex structures `J_x` is continuous
 in the operator norm on a compact set `K` and `ω`-tame there, the forms `g_x = ω(·, J_x ·)` are
 uniformly equivalent to the square of the norm over `K`: there are constants `a > 0` and `b ≥ 0`
@@ -149,6 +165,36 @@ theorem continuousOn_associatedBilinForm_apply_self {ω : SymplecticForm V} {X :
     (hf : ContinuousOn f s) :
     ContinuousOn (fun x ↦ ω.associatedBilinForm (J x) (f x) (f x)) s := by
   simpa using ω.continuousOn_apply_comp hf (hJc.clm_apply hf)
+
+variable (ω : SymplecticForm V)
+
+/-- The metric `ω(·, J ·)` is the image of the endomorphism `J` under a continuous linear map. -/
+theorem toContinuousBilinearMap_associatedBilinForm (J : AlmostComplexStructure V) :
+    (ω.associatedBilinForm J).toContinuousBilinearMap =
+      (ContinuousLinearMap.compL ℝ V V ℝ).flip (LinearMap.toContinuousLinearMap J.toLinearMap) ∘L
+        ω.toBilinForm.toContinuousBilinearMap := by
+  ext u v
+  simp [associatedBilinForm_apply]
+
+/-- The metrics `ω(·, J x ·)` of a family of complex structures depend `C^n` on `x ∈ s` when the
+endomorphisms `J x` do, in the operator norm. -/
+theorem _root_.ContDiffOn.associatedBilinForm {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {s : Set P} {n : WithTop ℕ∞} {J : P → AlmostComplexStructure V}
+    (hJ : ContDiffOn ℝ n (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) s) :
+    ContDiffOn ℝ n (fun x ↦ (ω.associatedBilinForm (J x)).toContinuousBilinearMap) s := by
+  have h := ((ContinuousLinearMap.compL ℝ V V ℝ).flip.contDiff.comp_contDiffOn hJ).clm_comp
+    (contDiffOn_const (c := ω.toBilinForm.toContinuousBilinearMap))
+  exact h.congr fun x _ ↦ ω.toContinuousBilinearMap_associatedBilinForm (J x)
+
+/-- The metrics `ω(·, J x ·)` of a family of complex structures are differentiable at every point
+where the endomorphisms `J x` are, in the operator norm. -/
+theorem _root_.DifferentiableAt.associatedBilinForm {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {x : P} {J : P → AlmostComplexStructure V}
+    (hJ : DifferentiableAt ℝ (fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) x) :
+    DifferentiableAt ℝ (fun x ↦ (ω.associatedBilinForm (J x)).toContinuousBilinearMap) x :=
+  (((ContinuousLinearMap.compL ℝ V V ℝ).flip.differentiableAt.comp x hJ).clm_comp
+    (differentiableAt_const ω.toBilinForm.toContinuousBilinearMap)).congr_of_eventuallyEq
+      (.of_forall fun y ↦ ω.toContinuousBilinearMap_associatedBilinForm (J y))
 
 end SymplecticForm
 

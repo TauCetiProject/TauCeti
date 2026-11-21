@@ -36,35 +36,35 @@ theorem continuous_hyperexponentialMeasure :
     Continuous (Y := ProbabilityMeasure ℝ)
       (fun q : {q : Convexity.StdSimplex ℝ≥0 ι × (ι → ℝ) //
           ∀ i, 0 < q.1.weights i → 0 < q.2 i} ↦
-        (⟨hyperexponentialMeasure q.1.1 q.1.2,
-          isProbabilityMeasure_hyperexponentialMeasure q.2⟩ : ProbabilityMeasure ℝ)) := by
+        (⟨hyperexponentialMeasure q.val.1 q.val.2,
+          isProbabilityMeasure_hyperexponentialMeasure q.property⟩ : ProbabilityMeasure ℝ)) := by
   let _ : FirstCountableTopology (Convexity.StdSimplex ℝ≥0 ι) :=
     (Convexity.StdSimplex.isEmbedding_toFun_comp_weights_nnreal (ι := ι)).firstCountableTopology
   apply continuous_iff_seqContinuous.2
   intro q a hq
-  have hparam := (continuous_subtype_val.tendsto a).comp hq
-  let _ (n : ℕ) := isProbabilityMeasure_hyperexponentialMeasure (q n).2
-  let _ := isProbabilityMeasure_hyperexponentialMeasure a.2
+  have hparam := (continuous_subtypeVal.tendsto a).comp hq
+  let _ (n : ℕ) := isProbabilityMeasure_hyperexponentialMeasure (q n).property
+  let _ := isProbabilityMeasure_hyperexponentialMeasure a.property
   -- Mathlib's Lévy convergence theorem.
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
-    (μ := fun n ↦ ⟨hyperexponentialMeasure (q n).1.1 (q n).1.2,
-      isProbabilityMeasure_hyperexponentialMeasure (q n).2⟩)
+    (μ := fun n ↦ ⟨hyperexponentialMeasure (q n).val.1 (q n).val.2,
+      isProbabilityMeasure_hyperexponentialMeasure (q n).property⟩)
   intro t
   by_cases ht : t = 0
   · subst t
     simp
-  simp only [ProbabilityMeasure.coe_mk, charFun_hyperexponentialMeasure (q _).2,
-    charFun_hyperexponentialMeasure a.2]
+  simp only [ProbabilityMeasure.coe_mk, charFun_hyperexponentialMeasure (q _).property,
+    charFun_hyperexponentialMeasure a.property]
   apply tendsto_finsetSum
   intro i _
-  have hr : Tendsto (fun n ↦ ((q n).1.2 i : ℂ)) atTop (𝓝 (a.1.2 i : ℂ)) :=
+  have hr : Tendsto (fun n ↦ ((q n).val.2 i : ℂ)) atTop (𝓝 (a.val.2 i : ℂ)) :=
     Complex.continuous_ofReal.continuousAt.tendsto.comp
-      (tendsto_pi_nhds.mp ((continuous_snd.tendsto a.1).comp hparam) i)
-  have hw : Tendsto (fun n ↦ ((q n).1.1.weights i : ℂ)) atTop
-      (𝓝 (a.1.1.weights i : ℂ)) :=
+      (tendsto_pi_nhds.mp ((continuous_snd.tendsto a.val).comp hparam) i)
+  have hw : Tendsto (fun n ↦ ((q n).val.1.weights i : ℂ)) atTop
+      (𝓝 (a.val.1.weights i : ℂ)) :=
     (Complex.continuous_ofReal.comp (NNReal.continuous_coe.comp
       (Convexity.StdSimplex.continuous_weights_apply_nnreal i))).continuousAt.tendsto.comp
-        ((continuous_fst.tendsto a.1).comp hparam)
+        ((continuous_fst.tendsto a.val).comp hparam)
   refine (hw.mul hr).div (hr.sub tendsto_const_nhds) ?_
   intro h
   have him := congrArg Complex.im h

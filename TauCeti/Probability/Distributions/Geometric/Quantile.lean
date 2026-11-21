@@ -97,7 +97,7 @@ theorem tendsto_quantile_map_cast_geometricMeasure_nhdsGT_zero (p : unitInterval
   have hp0 : 0 < (p : ℝ) := unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)
   apply tendsto_const_nhds.congr'
   filter_upwards [Ioo_mem_nhdsGT hp0] with u hu
-  have hu1 : u < 1 := hu.2.trans_le p.2.2
+  have hu1 : u < 1 := hu.2.trans_le p.property.2
   have hnonneg : 0 ≤ ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)).quantile u :=
     ordConnected_Ici.quantile_mem
       ((ae_map_iff (by fun_prop) measurableSet_Ici).2

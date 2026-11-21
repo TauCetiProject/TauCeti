@@ -12,7 +12,9 @@ public import Mathlib.Data.Nat.Factorization.Basic
 
 The least prime belongs to the prime factors of a natural number greater than one, and removing
 its full multiplicity gives a smaller number. Removing the `p`-part erases `p` from the prime
-factors. These facts support induction by successively removing prime-power blocks. For a
+factors; coprimality excludes prime factors of one number from dividing the other, and a natural
+number has no prime divisor distinct from a prime `p` if and only if it is a power of `p`. These
+facts support induction by successively removing prime-power blocks. For a
 divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
@@ -121,6 +123,32 @@ theorem card_Ico_one_filter_dvd {m d : ℕ} (hm : 0 < m) (hd : 0 < d) :
     have : 0 < m % d := Nat.pos_of_ne_zero fun h0 ↦ h (Nat.dvd_of_mod_eq_zero h0)
     rw [show m - 1 = (m % d - 1) + d * (m / d) by omega, Nat.add_mul_div_left _ _ hd,
       Nat.div_eq_of_lt (by omega : m % d - 1 < d), zero_add, Nat.sub_zero]
+
+/-- A natural number has no prime divisor distinct from a prime `p` if and only if it is a power of
+`p`. -/
+theorem Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq {p k : ℕ} (hp : p.Prime) :
+    (∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) ↔ ∃ n : ℕ, p ^ n = k := by
+  refine ⟨fun hno ↦ ?_, fun ⟨n, hn⟩ q hq hqp hqd ↦
+    hqp (Nat.prime_eq_prime_of_dvd_pow hq hp (hn ▸ hqd))⟩
+  rcases eq_or_ne k 0 with rfl | hk
+  · by_cases hp2 : p = 2
+    · exact (hno 3 Nat.prime_three (by omega) (dvd_zero 3)).elim
+    · exact (hno 2 Nat.prime_two (Ne.symm hp2) (dvd_zero 2)).elim
+  · exact ⟨_, (Nat.eq_prime_pow_of_unique_prime_dvd hk fun {q} hq hqk ↦ by
+      by_contra hqp
+      exact hno q hq hqp hqk).symm⟩
+
+/-- No prime factor of `n` divides `p` when `n` and `p` are coprime. -/
+theorem Coprime.not_dvd_of_mem_primeFactors {n p q : ℕ} (hcop : n.Coprime p)
+    (hq : q ∈ n.primeFactors) : ¬ q ∣ p :=
+  (prime_of_mem_primeFactors hq).coprime_iff_not_dvd.mp
+    (hcop.coprime_dvd_left (dvd_of_mem_primeFactors hq))
+
+/-- A natural number `n > 1` coprime to `p` has a prime factor not dividing `p`. -/
+theorem Coprime.exists_mem_primeFactors_not_dvd {n p : ℕ} (hcop : n.Coprime p) (hn : 1 < n) :
+    ∃ q ∈ n.primeFactors, ¬ q ∣ p :=
+  ⟨n.minFac, minFac_mem_primeFactors hn,
+    hcop.not_dvd_of_mem_primeFactors (minFac_mem_primeFactors hn)⟩
 
 end Nat
 

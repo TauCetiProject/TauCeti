@@ -70,7 +70,7 @@ theorem algebraMap_norm_eq_prod_embeddings_of_le_adjoin (p : ℕ) [Fact p.Prime]
     (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
     (hKM : ∀ x ∈ K, x ∈ M)
     (hMK : M ≤ IntermediateField.adjoin ℚ_[p] (K : Set (AlgebraicClosure ℚ_[p]))) (Y : K) :
-    algebraMap ℚ_[p] (AlgebraicClosure ℚ_[p]) (Algebra.norm ℚ_[p] (⟨Y, hKM Y Y.2⟩ : M)) =
+    algebraMap ℚ_[p] (AlgebraicClosure ℚ_[p]) (Algebra.norm ℚ_[p] (⟨Y, hKM Y Y.property⟩ : M)) =
       ∏ φ ∈ Finset.univ.filter fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p] ↦
         ∃ h : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p], ∀ x : K, φ x = h x,
         φ Y := by
@@ -95,15 +95,15 @@ theorem algebraMap_norm_eq_prod_embeddings_of_le_adjoin (p : ℕ) [Fact p.Prime]
   -- extending to `G_{ℚ_p}`.
   let res : (M →ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p]) → (K →ₐ[ℚ] AlgebraicClosure ℚ_[p]) :=
     fun ψ ↦ ((hext ψ).choose.toAlgHom.restrictScalars ℚ).comp K.val
-  have hres : ∀ ψ (x : K), res ψ x = ψ ⟨x, hKM x x.2⟩ := fun ψ x ↦
-    ((hext ψ).choose_spec ⟨x, hKM x x.2⟩).symm
+  have hres : ∀ ψ (x : K), res ψ x = ψ ⟨x, hKM x x.property⟩ := fun ψ x ↦
+    ((hext ψ).choose_spec ⟨x, hKM x x.property⟩).symm
   rw [Algebra.norm_eq_prod_embeddings ℚ_[p] (AlgebraicClosure ℚ_[p])]
   refine Finset.prod_bij (fun ψ _ ↦ res ψ) (fun ψ _ ↦ ?_) (fun ψ₁ _ ψ₂ _ h ↦ ?_)
     (fun φ hφ ↦ ?_) (fun ψ _ ↦ (hres ψ Y).symm)
   · exact Finset.mem_filter.2 ⟨Finset.mem_univ _, (hext ψ).choose, fun x ↦ rfl⟩
   · ext x
     rw [(hext ψ₁).choose_spec, (hext ψ₂).choose_spec]
-    refine hagree _ _ (fun z hz ↦ ?_) x x.2
+    refine hagree _ _ (fun z hz ↦ ?_) x x.property
     exact DFunLike.congr_fun h ⟨z, hz⟩
   · obtain ⟨h, hh⟩ := (Finset.mem_filter.1 hφ).2
     refine ⟨h.toAlgHom.comp M.val, Finset.mem_univ _, ?_⟩

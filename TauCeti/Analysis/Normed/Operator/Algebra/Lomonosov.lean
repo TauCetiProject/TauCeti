@@ -114,7 +114,7 @@ theorem IsTransitive.exists_apply_apply_eq_self {A : Subalgebra 𝕜 (E →L[�
       obtain ⟨a, ha, hya⟩ := mem_iUnion₂.1 (ht hy)
       exact mem_iUnion.2 ⟨⟨a, ha⟩, ball_subset_interior_closedBall hya⟩)
   refine ⟨∑ i : t, (c i : 𝕜) • ((i : A) : E →L[𝕜] E),
-    A.sum_mem fun i _ ↦ A.smul_mem (i : A).2 _, x, ?_, ?_⟩
+    A.sum_mem fun i _ ↦ A.smul_mem (i : A).property _, x, ?_, ?_⟩
   · rintro rfl
     have h := hlow hxB
     rw [map_zero, norm_zero] at h

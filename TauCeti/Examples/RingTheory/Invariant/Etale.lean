@@ -73,7 +73,7 @@ example [Invertible (2 : k)] (q : Ideal (MvPolynomial (Fin 2) k)) [q.IsPrime]
     Algebra.IsEtaleAt (FixedPoints.subring (MvPolynomial (Fin 2) k) (G k)) q := by
   refine q.isEtaleAt_of_inertia_eq_bot (G := G k)
     ((Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_)
-  rcases mem_G g.2 with h | h
+  rcases mem_G g.property with h | h
   · exact Subtype.ext h
   -- The displacement of `X i` under `σ` is `-2 X i`, and `2` is a unit.
   have hX (i : Fin 2) : X i ∈ q := by
