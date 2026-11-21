@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
+import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.GroupTheory.GroupAlgGeom.FreeDiscrimination
 import TauCeti.GroupTheory.GroupAlgGeom.Separated
 import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
@@ -141,28 +142,6 @@ private theorem mem_V_sqConjWord_iff {v : X → G} :
     v ∈ V (.id G) {sqConjWord x z c d} ↔ (atomVals x z c v).prod * d = 1 := by
   simp [sqConjWord, atomVals, map_list_prod, Function.comp_def]
 
-/-- In a commutative-transitive group, the elements of a `Commute`-chain of nonidentity elements
-commute with its product. -/
-private theorem commute_prod_of_isChain (hG : IsCommTransitive G) {L : List G}
-    (hL : L.IsChain Commute) (h1 : ∀ g ∈ L, g ≠ 1) {g : G} (hg : g ∈ L) : Commute g L.prod := by
-  -- Commutation between nonidentity elements is transitive.
-  let R : G → G → Prop := fun a b ↦ Commute a b ∧ a ≠ 1 ∧ b ≠ 1
-  have : Trans R R R :=
-    ⟨fun hab hbc ↦ ⟨(isCommTransitive_iff G).1 hG _ _ _ hab.2.2 hab.1 hbc.1, hab.2.1, hbc.2.2⟩⟩
-  have : Std.Symm (Commute : G → G → Prop) := ⟨fun _ _ h ↦ h.symm⟩
-  have hR : L.IsChain R := hL.imp_of_mem_imp fun a b ha hb h ↦ ⟨h, h1 a ha, h1 b hb⟩
-  exact Commute.list_prod_right _ _ fun g' hg' ↦
-    (hR.pairwise.imp And.left).forall_of_forall (fun g _ ↦ Commute.refl g) hg hg'
-
-/-- Dropping elements with trivial square from a list does not change the product of the
-squares. -/
-private theorem prod_map_sq_filter (p : G → Bool) (hp : ∀ b, p b = true → b ^ 2 = 1)
-    (l : List G) : ((l.filter fun b ↦ !p b).map (· ^ 2)).prod = (l.map (· ^ 2)).prod := by
-  induction l with
-  | nil => rfl
-  | cons b l ih =>
-    cases hb : p b <;> simp [hb, ih, hp b]
-
 /-- Reordering the values of the `xₖ`, those selected by `p` first, gives a point whose atoms are
 the squares of the selected values, then those of the others, then the conjugates of `v`. -/
 private theorem exists_atomVals_eq_filter (inj : (Sum.elim x z).Injective) (v : X → G)
@@ -194,7 +173,7 @@ private theorem commute_of_mem_atomVals (hG : IsCommTransitive G)
     (hr : r ∈ atomVals x z c v) : Commute r d := by
   classical
   -- Move the values of the `xₖ` with trivial square to the front.
-  set p : G → Bool := fun b ↦ decide (b ^ 2 = 1) with hp
+  set p : G → Bool := fun b ↦ b ^ 2 == 1 with hp
   have hsq : ∀ b, p b = true → b ^ 2 = 1 := fun b hb ↦ by simpa [hp] using hb
   set R := List.ofFn fun k ↦ v (x k)
   set N := (R.filter fun b ↦ !p b).map (· ^ 2) ++ List.ofFn fun j ↦ (v (z j))⁻¹ * c j * v (z j)
@@ -202,8 +181,12 @@ private theorem commute_of_mem_atomVals (hG : IsCommTransitive G)
   have hd : N.prod = d⁻¹ := by
     have : (List.ofFn fun k ↦ v (x k) ^ 2) = R.map (· ^ 2) := by
       simp [R, List.map_ofFn, Function.comp_def]
+    -- The squares dropped by the filter are trivial.
+    have hf : (R.filter fun b ↦ !p b).map (· ^ 2) = (R.map (· ^ 2)).filter (· != 1) := by
+      rw [List.filter_map]
+      rfl
     rw [← eq_inv_of_mul_eq_one_left (mem_V_sqConjWord_iff.1 hv), atomVals, this, List.prod_append,
-      List.prod_append, prod_map_sq_filter p hsq]
+      List.prod_append, hf, List.prod_filter_bne_one]
   have hw : w ∈ V (.id G) {sqConjWord x z c d} := by
     rw [mem_V_sqConjWord_iff, hwN, List.prod_append, List.prod_eq_one, one_mul, hd,
       inv_mul_cancel]
@@ -218,19 +201,13 @@ private theorem commute_of_mem_atomVals (hG : IsCommTransitive G)
     · simpa [mul_assoc, inv_mul_eq_one] using hc j
   rcases eq_or_ne r 1 with rfl | hr1
   · exact Commute.one_left d
-  refine Commute.inv_right_iff.1 (hd ▸ commute_prod_of_isChain hG
+  refine Commute.inv_right_iff.1 (hd ▸ hG.commute_list_prod_of_isChain
     (hwN ▸ hall w hw).right_of_append hN1 ?_)
   simp only [atomVals, List.mem_append, List.mem_ofFn] at hr
   simp only [N, List.mem_append, List.mem_map, List.mem_filter, List.mem_ofFn, R]
   rcases hr with ⟨k, rfl⟩ | ⟨j, rfl⟩
   · exact .inl ⟨v (x k), ⟨⟨k, rfl⟩, by simpa [hp] using hr1⟩, rfl⟩
   · exact .inr ⟨j, rfl⟩
-
-/-- Elements of the centralizer of `d ≠ 1` in a commutative-transitive group commute. -/
-private theorem commute_of_mem_centralizer (hG : IsCommTransitive G) (hd : d ≠ 1) {g h : G}
-    (hg : g ∈ centralizer {d}) (hh : h ∈ centralizer {d}) : Commute g h :=
-  have := isCommTransitive_iff_centralizer_isMulCommutative.1 hG d hd
-  setLike_mul_comm hg hh
 
 /-- If all solutions are commutative, every solution sends the `xₖ` into `C_G(d)`. -/
 private theorem mem_centralizer_of_mem_V (hG : IsFullyResiduallyFree G)
@@ -280,28 +257,10 @@ private theorem centralizer_eq_of_mem_V (hG : IsCommTransitive G) (hd : d ≠ 1)
       (mem_centralizer_singleton_iff.1 hgd)).eq
   · rw [mem_centralizer_iff]
     rintro _ (⟨j, rfl⟩ | ⟨k, rfl⟩)
-    exacts [(commute_of_mem_centralizer hG hd (hb j) hh).eq,
-      (commute_of_mem_centralizer hG hd (hs k) hh).eq]
+    exacts [(hG.commute_of_mem_centralizer_singleton hd (hb j) hh).eq,
+      (hG.commute_of_mem_centralizer_singleton hd (hs k) hh).eq]
 
 /-! ### The equation and the system have the same solutions -/
-
-/-- The square of a product of pairwise commuting elements is the product of their squares. -/
-private theorem prod_ofFn_sq {f : Fin n → G} (h : ∀ k l, Commute (f k) (f l)) :
-    (List.ofFn fun k ↦ f k ^ 2).prod = (List.ofFn f).prod ^ 2 := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    simp only [List.ofFn_succ, List.prod_cons]
-    rw [ih fun k l ↦ h _ _, (Commute.list_prod_right _ _ ?_).mul_pow]
-    simp only [List.mem_ofFn]
-    rintro _ ⟨k, rfl⟩
-    exact h _ _
-
-/-- If `a⁻¹ w` commutes with `a⁻¹ c a`, then `w⁻¹ c w = a⁻¹ c a`. -/
-private theorem inv_mul_mul_eq_of_commute {a w c : G} (h : Commute (a⁻¹ * w) (a⁻¹ * c * a)) :
-    w⁻¹ * c * w = a⁻¹ * c * a := by
-  rw [← h.inv_mul_cancel]
-  group
 
 /-- A solution of the equation whose atoms lie in `C_G(d)` solves the system of a solution `a`
 whose atoms lie in `C_G(d)`. -/
@@ -315,7 +274,7 @@ private theorem mem_V_commutativeSystem_of_mem_V (hG : IsFullyResiduallyFree G)
     v ∈ V (.id G) (commutativeSystem x z c a) := by
   have := hG.isResiduallyFree.isMulTorsionFree
   have hA {g h : G} (hg : g ∈ centralizer {d}) (hh : h ∈ centralizer {d}) : Commute g h :=
-    commute_of_mem_centralizer hG.isCommTransitive hd hg hh
+    hG.isCommTransitive.commute_of_mem_centralizer_singleton hd hg hh
   -- By malnormality of `C_G(d)`, `uⱼ = a(zⱼ)⁻¹ v(zⱼ)` centralizes `d`.
   have hu (j : Fin m) : (a (z j))⁻¹ * v (z j) ∈ centralizer {d} := by
     have hb1 : (a (z j))⁻¹ * c j * a (z j) ≠ 1 := by simpa [mul_assoc, inv_mul_eq_one] using hc j
@@ -330,9 +289,13 @@ private theorem mem_V_commutativeSystem_of_mem_V (hG : IsFullyResiduallyFree G)
   · simpa using hvx
   · simpa using hs
   have h := (mem_V_sqConjWord_iff.1 hv).trans (mem_V_sqConjWord_iff.1 ha).symm
-  simp only [atomVals, List.prod_append, fun j ↦ inv_mul_mul_eq_of_commute (hA (hu j) (hb j))] at h
-  rw [← prod_ofFn_sq fun k l ↦ hA (hvx k) (hvx l), ← prod_ofFn_sq fun k l ↦ hA (hs k) (hs l)]
-  exact mul_right_cancel (mul_right_cancel h)
+  have hconj (j : Fin m) : (v (z j))⁻¹ * c j * v (z j) = (a (z j))⁻¹ * c j * a (z j) := by
+    rw [← (hA (hu j) (hb j)).inv_mul_cancel]
+    group
+  simp only [atomVals, List.prod_append, hconj, List.ofFn_eq_map,
+    List.prod_map_pow_of_pairwise_commute (List.pairwise_of_forall fun k l ↦ hA (hvx k) (hvx l)),
+    List.prod_map_pow_of_pairwise_commute (List.pairwise_of_forall fun k l ↦ hA (hs k) (hs l))] at h
+  simpa only [List.ofFn_eq_map] using mul_right_cancel (mul_right_cancel h)
 
 /-- A solution of the system of a solution `a` whose atoms lie in `C_G(d)` solves the
 equation. -/
@@ -343,21 +306,19 @@ private theorem mem_V_of_mem_V_commutativeSystem (hG : IsCommTransitive G) (hd :
     v ∈ V (.id G) {sqConjWord x z c d} := by
   rw [mem_V_commutativeSystem_iff, centralizer_eq_of_mem_V hG hd ha hs hb] at hv
   obtain ⟨h1, h2, -, -, -, h6⟩ := hv
-  rw [mem_V_sqConjWord_iff, atomVals, List.prod_append]
-  simp only [fun j ↦ inv_mul_mul_eq_of_commute (h6 j _ (hb j)), prod_ofFn_sq h2]
-  rw [h1, MonoidHom.id_apply,
-    ← prod_ofFn_sq fun k l ↦ commute_of_mem_centralizer hG hd (hs k) (hs l), ← List.prod_append]
-  exact mem_V_sqConjWord_iff.1 ha
+  have hconj (j : Fin m) : (v (z j))⁻¹ * c j * v (z j) = (a (z j))⁻¹ * c j * a (z j) := by
+    have h : Commute ((a (z j))⁻¹ * v (z j)) ((a (z j))⁻¹ * c j * a (z j)) := h6 j _ (hb j)
+    rw [← h.inv_mul_cancel]
+    group
+  -- The products of the squares of the `xₖ` are the squares of their products.
+  rw [mem_V_sqConjWord_iff, ← mem_V_sqConjWord_iff.1 ha]
+  simp only [atomVals, List.prod_append, hconj, mul_left_inj, List.ofFn_eq_map,
+    List.prod_map_pow_of_pairwise_commute (List.pairwise_of_forall h2),
+    List.prod_map_pow_of_pairwise_commute (List.pairwise_of_forall fun k l ↦
+      hG.commute_of_mem_centralizer_singleton hd (hs k) (hs l))]
+  simpa [List.ofFn_eq_map] using congrArg (· ^ 2) h1
 
 /-! ### The group of the system embeds in an extension of a centralizer -/
-
-/-- A product of finitely many elements of `C × B`, for a commutative monoid `B`. -/
-private theorem prod_ofFn_prod {B C : Type*} [Monoid C] [CommMonoid B] (f : Fin n → C × B) :
-    (List.ofFn f).prod = ((List.ofFn fun k ↦ (f k).1).prod, ∏ k, (f k).2) := by
-  refine Prod.ext ?_ ?_
-  · simpa [List.map_ofFn, Function.comp_def] using map_list_prod (MonoidHom.fst C B) (List.ofFn f)
-  · simpa [List.map_ofFn, Function.comp_def, List.prod_ofFn] using
-      map_list_prod (MonoidHom.snd C B) (List.ofFn f)
 
 /-- The exponents in `ℤ^{m + n}` of the new letters in the image of `x_k`: the letter `t_{m+k}`,
 and for `k = 0` also the inverse of the product of all of them, so that they add up to `0`. -/
@@ -401,7 +362,8 @@ private theorem mem_V_extPoint (hG : IsCommTransitive G) (hd : d ≠ 1)
   have hcomm (p q : centralizer {d} × (Fin (m + n) → Multiplicative ℤ)) :
       Commute (inl (CentralizerExt.ofProd p) : GX (CentralizerExt d (m + n)) X)
         (inl (CentralizerExt.ofProd q)) :=
-    ((Commute.prod (Subtype.ext (commute_of_mem_centralizer hG hd p.1.property q.1.property).eq)
+    ((Commute.prod (Subtype.ext
+      (hG.commute_of_mem_centralizer_singleton hd p.1.property q.1.property).eq)
       (Commute.all _ _)).map _).map _
   have hz (j : Fin m) : ((inl.comp CentralizerExt.of) (a (z j)))⁻¹ * extPoint x z a hs (z j) =
       inl (CentralizerExt.ofProd (1, Pi.mulSingle (Fin.castAdd n j) (.ofAdd 1))) := by
@@ -415,8 +377,9 @@ private theorem mem_V_extPoint (hG : IsCommTransitive G) (hd : d ≠ 1)
   · have hx : (List.ofFn fun k ↦ extPoint x z a hs (x k)) =
         (List.ofFn fun k ↦ (⟨a (x k), hs k⟩, xExp m n k)).map (inl.comp CentralizerExt.ofProd) := by
       simp [extPoint_x inj, List.map_ofFn, Function.comp_def]
-    rw [hx, ← map_list_prod, prod_ofFn_prod]
-    simp [prod_xExp, List.map_ofFn, Function.comp_def]
+    rw [hx, ← map_list_prod, ← Prod.mk.eta (p := List.prod _), Prod.fst_list_prod,
+      Prod.snd_list_prod]
+    simp [prod_xExp, List.map_ofFn, Function.comp_def, List.prod_ofFn]
   · rw [extPoint_x inj, extPoint_x inj]; exact hcomm _ _
   · rw [hz, extPoint_x inj]; exact hcomm _ _
   · rw [hz, hz]; exact hcomm _ _
@@ -442,7 +405,7 @@ private theorem commute_letterVals {H : Type*} [Group H] {ι : G →* H} {v : X 
   refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) i
   · simpa [letterVals] using (hv.2.2.2.2.2 j h hh).symm
   · simpa [letterVals] using
-      ((commute_of_mem_centralizer hG hd hh (hs k)).map ι).inv_right.mul_right
+      ((hG.commute_of_mem_centralizer_singleton hd hh (hs k)).map ι).inv_right.mul_right
         (hv.2.2.2.2.1 k h hh).symm
 
 /-- At a solution of the system, the elements `letterVals` commute with each other. -/
@@ -489,8 +452,9 @@ private theorem exists_comp_eval_extPoint {H : Type*} [Group H] (hG : IsCommTran
         Pi.mulSingle (Fin.natAdd m k) (.ofAdd 1))).map (ψK.comp CentralizerExt.ofProd) := by
       simp [List.map_ofFn, Function.comp_def, hψK, τ, letterVals]
     have h1 := ((mem_V_commutativeSystem_iff ι x z c a v).1 hv).1
-    rw [hx, ← map_list_prod, prod_ofFn_prod, MonoidHom.comp_apply, hψK] at h1
-    simpa [Subgroup.val_list_prod, List.map_ofFn, Function.comp_def] using h1
+    rw [hx, ← map_list_prod, MonoidHom.comp_apply, hψK, Prod.fst_list_prod,
+      Prod.snd_list_prod] at h1
+    simpa [Subgroup.val_list_prod, List.map_ofFn, Function.comp_def, List.prod_ofFn] using h1
   refine ⟨lift ψK (FreeGroup.lift v), hom_ext (MonoidHom.ext fun g ↦ ?_)
     (FreeGroup.ext_hom _ _ fun y ↦ ?_)⟩
   · simp [ψK, CentralizerExt.lift_of _ _ _ _ g]
