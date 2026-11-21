@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.ChartedSpace
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Ramification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Transport
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck
 public import TauCeti.Combinatorics.PermutationTriple.ClassInvariants
 public import TauCeti.Topology.Covering.Clopen
@@ -353,10 +351,8 @@ theorem equivConnectedIsoClass_mk {n : ℕ} (X : TopBranchedCover.{0} n)
   rw [equivConnectedIsoClass, Equiv.trans_apply, equivConnectedCoverClass_apply, restrict_mk,
     ConnectedCoverClass.isoClassEquiv_apply, ConnectedCoverClass.isoClass_mk _ ν']
   refine ConnectedIsoClass.forget_injective ?_
-  rw [ConnectedIsoClass.forget_mk, ConnectedIsoClass.forget_mk,
-    ConnectedFiberNumberedCover.coe_connectedTriple]
-  exact (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph ν'
-    X.isCoveringMap_restrict ν X.connectedCoverHomeomorph
+  simpa using (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph
+    ν' X.isCoveringMap_restrict ν X.connectedCoverHomeomorph
     (funext X.restrict_connectedCoverHomeomorph)).symm
 
 /-- Up to isomorphism there is a unique topological branched cover of degree one. -/
@@ -466,18 +462,17 @@ theorem parts_ramificationPartition_inf (ν : X.restrict ⁻¹' {basePt} ≃ Fin
 theorem ramificationPartitions_eq_cycleData_monodromyTriple {n : ℕ} (X : TopBranchedCover.{0} n)
     (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
     X.ramificationPartitions = (X.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
-  rw [X.ramificationPartitions_def]
-  simp only [parts_ramificationPartition_zero X ν, parts_ramificationPartition_one X ν,
-    parts_ramificationPartition_inf X ν, fullCycleType_def, ← PermutationTriple.cycleData_σ0,
-    ← PermutationTriple.cycleData_σ1, ← PermutationTriple.cycleData_σinf]
+  simp only [TopBranchedCover.ramificationPartitions_def, parts_ramificationPartition_zero X ν,
+    parts_ramificationPartition_one X ν, parts_ramificationPartition_inf X ν, fullCycleType_def]
+  exact Prod.ext (PermutationTriple.cycleData_σ0 _).symm
+    (Prod.ext (PermutationTriple.cycleData_σ1 _).symm (PermutationTriple.cycleData_σinf _).symm)
 
 /-- `IsoClass.equivConnectedIsoClass` matches `ramificationPartitions` with `cycleData`. -/
 @[simp] theorem IsoClass.cycleData_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :
     (equivConnectedIsoClass n c).cycleData = c.ramificationPartitions := by
   obtain ⟨X, rfl⟩ := mk_surjective c
   obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
-  rw [equivConnectedIsoClass_mk X ν]
-  simp [X.ramificationPartitions_eq_cycleData_monodromyTriple ν]
+  simp [equivConnectedIsoClass_mk X ν, X.ramificationPartitions_eq_cycleData_monodromyTriple ν]
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the order of the deck/automorphism group. -/
 @[simp] theorem IsoClass.natCardAutomorphismGroup_equivConnectedIsoClass {n : ℕ}
@@ -485,8 +480,8 @@ theorem ramificationPartitions_eq_cycleData_monodromyTriple {n : ℕ} (X : TopBr
     (equivConnectedIsoClass n c).natCardAutomorphismGroup = c.natCardDeck := by
   obtain ⟨X, rfl⟩ := mk_surjective c
   obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
-  rw [equivConnectedIsoClass_mk X ν, ConnectedIsoClass.natCardAutomorphismGroup_mk, natCardDeck_mk]
-  exact (Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv).symm
+  simpa [equivConnectedIsoClass_mk X ν] using
+    (Nat.card_congr (X.deckMulEquivAutomorphismGroup ν).toEquiv).symm
 
 /-- `IsoClass.equivConnectedIsoClass` preserves regularity. -/
 @[simp] theorem IsoClass.isRegular_equivConnectedIsoClass {n : ℕ} (c : IsoClass.{0} n) :

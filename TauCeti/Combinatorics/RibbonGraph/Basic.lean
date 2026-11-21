@@ -240,9 +240,8 @@ theorem sum_whiteDegree : ∑ w, Γ.whiteDegree w = Fintype.card Γ.E := by
 
 /-- Every edge belongs to a unique face orbit, so the face degrees sum to `|E|`. -/
 theorem sum_faceDegree : ∑ f, Γ.faceDegree f = Fintype.card Γ.E := by
-  simp only [faceDegree]
-  rw [← Fintype.card_sigma]
-  exact Fintype.card_congr (Equiv.sigmaFiberEquiv fun e : Γ.E ↦ (Quotient.mk'' e : Γ.Face))
+  simpa [faceDegree, ← Fintype.card_sigma] using
+    Fintype.card_congr (Equiv.sigmaFiberEquiv fun e : Γ.E ↦ (Quotient.mk'' e : Γ.Face))
 
 /-- The number of faces, counting every orbit of the face permutation. -/
 @[expose] def faceCount : ℕ :=
@@ -572,11 +571,9 @@ theorem whiteDegree_eq (f : Γ.Iso Δ) (w : Γ.W) :
     rw [f.map_whiteEnd, f.white.injective.eq_iff]
 
 /-- An isomorphism preserves the degree of each face. -/
-@[simp]
-theorem faceDegree_eq (φ : Γ.Iso Δ) (f : Γ.Face) :
-    Δ.faceDegree (φ.faceEquiv f) = Γ.faceDegree f := by
-  symm
-  exact Fintype.card_congr <| φ.edge.subtypeEquiv fun e ↦ by
+@[simp] theorem faceDegree_eq (φ : Γ.Iso Δ) (f : Γ.Face) :
+    Δ.faceDegree (φ.faceEquiv f) = Γ.faceDegree f :=
+  Eq.symm <| Fintype.card_congr <| φ.edge.subtypeEquiv fun _ ↦ by
     rw [← φ.faceEquiv_mk, φ.faceEquiv.injective.eq_iff]
 
 /-- Isomorphic bipartite ribbon graphs have the same number of faces. -/
@@ -705,13 +702,15 @@ instance : Group Γ.Aut where
 
 universe v
 
+section
+
+variable {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}} (φ : Γ.Iso Δ)
+
 /-- Isomorphisms between finite bipartite ribbon graphs form a finite type. -/
-instance {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}} : Finite (Γ.Iso Δ) :=
-  Finite.of_injective Iso.edge fun _ _ ↦ Iso.ext
+instance : Finite (Γ.Iso Δ) := Finite.of_injective Iso.edge fun _ _ ↦ Iso.ext
 
 /-- Conjugation by an isomorphism of ribbon graphs identifies their automorphism groups. -/
-def Iso.autMulEquiv {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}} (φ : Γ.Iso Δ) :
-    Γ.Aut ≃* Δ.Aut where
+def Iso.autMulEquiv : Γ.Aut ≃* Δ.Aut where
   toFun f := φ.symm.trans (f.trans φ)
   invFun g := φ.trans (g.trans φ.symm)
   left_inv f := by ext e; simp
@@ -719,21 +718,18 @@ def Iso.autMulEquiv {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{
   map_mul' f₁ f₂ := by ext e; simp
 
 /-- Conjugating an automorphism by an isomorphism conjugates its edge permutation. -/
-@[simp] theorem Iso.autMulEquiv_apply_edge {Γ : BipartiteRibbonGraph.{u}}
-    {Δ : BipartiteRibbonGraph.{v}} (φ : Γ.Iso Δ) (f : Γ.Aut) :
-    (φ.autMulEquiv f).edge = φ.edge.permCongr f.edge :=
-  Equiv.ext fun _ ↦ rfl
+@[simp] theorem Iso.autMulEquiv_apply_edge (f : Γ.Aut) :
+    (φ.autMulEquiv f).edge = φ.edge.permCongr f.edge := Equiv.ext fun _ ↦ rfl
 
 /-- The inverse of `Iso.autMulEquiv` conjugates edge permutations by `φ.edge.symm`. -/
-@[simp] theorem Iso.autMulEquiv_symm_apply_edge {Γ : BipartiteRibbonGraph.{u}}
-    {Δ : BipartiteRibbonGraph.{v}} (φ : Γ.Iso Δ) (g : Δ.Aut) :
-    (φ.autMulEquiv.symm g).edge = φ.edge.symm.permCongr g.edge :=
-  Equiv.ext fun _ ↦ rfl
+@[simp] theorem Iso.autMulEquiv_symm_apply_edge (g : Δ.Aut) :
+    (φ.autMulEquiv.symm g).edge = φ.edge.symm.permCongr g.edge := Equiv.ext fun _ ↦ rfl
 
 /-- Isomorphic bipartite ribbon graphs have automorphism groups of the same cardinality. -/
-theorem Iso.natCard_aut_eq {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}
-    (φ : Γ.Iso Δ) : Nat.card Γ.Aut = Nat.card Δ.Aut :=
+theorem Iso.natCard_aut_eq (φ : Γ.Iso Δ) : Nat.card Γ.Aut = Nat.card Δ.Aut :=
   Nat.card_congr φ.autMulEquiv.toEquiv
+
+end
 
 /-- Automorphisms of a bipartite ribbon graph act on its edges by evaluation. -/
 instance : SMul Γ.Aut Γ.E := ⟨fun f e ↦ f.edge e⟩

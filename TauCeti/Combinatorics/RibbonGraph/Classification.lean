@@ -265,28 +265,24 @@ theorem _root_.TauCeti.PermutationTriple.coe_automorphismGroupMulEquivRibbonGrap
 /-! ### Regularity -/
 
 /-- A ribbon graph is *regular* when it is connected and `Γ.Aut` acts transitively on `Γ.E`. -/
-def IsRegular : Prop :=
-  Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E
+def IsRegular : Prop := Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E
 
 /-- Unfold `BipartiteRibbonGraph.IsRegular` into connectedness and edge-transitivity. -/
 theorem isRegular_iff {Γ : BipartiteRibbonGraph.{u}} :
     Γ.IsRegular ↔ Γ.IsConnected ∧ MulAction.IsPretransitive Γ.Aut Γ.E := Iff.rfl
 
 /-- Every regular bipartite ribbon graph is connected. -/
-theorem IsRegular.isConnected {Γ : BipartiteRibbonGraph.{u}} (hΓ : Γ.IsRegular) : Γ.IsConnected :=
-  hΓ.1
+theorem IsRegular.isConnected {Γ : BipartiteRibbonGraph.{u}} (hΓ : Γ.IsRegular) :
+    Γ.IsConnected := hΓ.1
 
 /-- Numbering the edges of a bipartite ribbon graph preserves regularity. -/
 @[simp] theorem isRegular_toPermutationTriple (ν : Γ.E ≃ Fin n) :
     (Γ.toPermutationTriple ν).IsRegular ↔ Γ.IsRegular := by
   let φ : Γ.E →ₑ[Γ.autEquivAutomorphismGroup ν] Fin n :=
-    { toFun := ν, map_smul' := fun f e ↦ by
-        rw [Aut.smul_def, Subgroup.smul_def, Perm.smul_def, coe_autEquivAutomorphismGroup_apply,
-          Equiv.permCongr_apply, ν.symm_apply_apply] }
-  rw [PermutationTriple.isRegular_iff, isRegular_iff]
-  exact and_congr (Γ.isConnected_toPermutationTriple ν)
-    (MulAction.isPretransitive_congr (f := φ)
-      (Γ.autEquivAutomorphismGroup ν).surjective ν.bijective).symm
+    ⟨ν, fun f e ↦ by simp [Aut.smul_def, Subgroup.smul_def, Perm.smul_def]⟩
+  exact PermutationTriple.isRegular_iff.trans <| and_congr (Γ.isConnected_toPermutationTriple ν)
+    (MulAction.isPretransitive_congr (f := φ) (Γ.autEquivAutomorphismGroup ν).surjective
+      ν.bijective).symm
 
 /-- Passing from a permutation triple to its ribbon graph preserves regularity. -/
 @[simp] theorem _root_.TauCeti.PermutationTriple.isRegular_ribbonGraph (t : PermutationTriple n) :

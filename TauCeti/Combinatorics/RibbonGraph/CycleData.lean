@@ -87,8 +87,7 @@ theorem cycleData_eq_fullCycleType :
 theorem sum_cycleData :
     (Γ.cycleData.1.sum, Γ.cycleData.2.1.sum, Γ.cycleData.2.2.sum) =
       (Fintype.card Γ.E, Fintype.card Γ.E, Fintype.card Γ.E) := by
-  rw [cycleData_def, ← Finset.sum_eq_multiset_sum, ← Finset.sum_eq_multiset_sum,
-    ← Finset.sum_eq_multiset_sum, Γ.sum_blackDegree, Γ.sum_whiteDegree, Γ.sum_faceDegree]
+  simp [cycleData_def, Γ.sum_blackDegree, Γ.sum_whiteDegree, Γ.sum_faceDegree]
 
 /-- The numbers of parts of the three degree partitions are `|B|`, `|W|`, and `faceCount`. -/
 theorem card_cycleData :
@@ -97,13 +96,10 @@ theorem card_cycleData :
 
 /-- Numbering the edges of `Γ` gives a permutation triple with cycle data `Γ.cycleData`. -/
 @[simp] theorem cycleData_toPermutationTriple {n : ℕ} (ν : Γ.E ≃ Fin n) :
-    (Γ.toPermutationTriple ν).cycleData = Γ.cycleData :=
-  Prod.ext (by rw [PermutationTriple.cycleData_σ0, ← fullCycleType_def, toPermutationTriple_σ0,
-      fullCycleType_permCongr, fullCycleType_rotB, cycleData_def]) <|
-  Prod.ext (by rw [PermutationTriple.cycleData_σ1, ← fullCycleType_def, toPermutationTriple_σ1,
-      fullCycleType_permCongr, fullCycleType_rotW, cycleData_def])
-    (by rw [PermutationTriple.cycleData_σinf, ← fullCycleType_def, toPermutationTriple_σinf,
-      fullCycleType_permCongr, fullCycleType_facePerm, cycleData_def])
+    (Γ.toPermutationTriple ν).cycleData = Γ.cycleData := by
+  rw [cycleData_eq_fullCycleType]; refine Prod.ext ?_ (Prod.ext ?_ ?_) <;>
+    simp [toPermutationTriple_σ0, toPermutationTriple_σ1, toPermutationTriple_σinf,
+      fullCycleType_def]
 
 /-- Isomorphic bipartite ribbon graphs have the same cycle data. -/
 theorem Iso.cycleData_eq {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonGraph.{v}}

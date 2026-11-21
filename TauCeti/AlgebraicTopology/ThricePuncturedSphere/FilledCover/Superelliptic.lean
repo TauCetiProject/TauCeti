@@ -210,31 +210,23 @@ theorem genus_monodromyTriple_superelliptic {n : ℕ}
 /-- **The ramification degree of the superelliptic Belyi map is `8`**: `3 + 3 + (1 + 1)` summed
 over the three fibres above `0`, `1` and `∞`. -/
 @[simp] theorem ramificationDegree_β_superelliptic : ramificationDegree superelliptic.β = 8 := by
-  have hmap (s : Multiset superelliptic.X) :
-      s.map (fun x ↦ localMultiplicity superelliptic.β x - 1) =
-        (s.map (localMultiplicity superelliptic.β)).map (· - 1) :=
-    (Multiset.map_map (· - 1) (localMultiplicity superelliptic.β) s).symm
-  rw [superelliptic.ramificationDegree_β_eq_sum_three_fibers,
-    Finset.sum_eq_multiset_sum, Finset.sum_eq_multiset_sum, Finset.sum_eq_multiset_sum,
-    hmap, hmap, hmap,
-    map_localMultiplicity_fiber_zero_superelliptic,
-    map_localMultiplicity_fiber_one_superelliptic,
-    map_localMultiplicity_fiber_inf_superelliptic]
-  norm_num
+  obtain ⟨ν⟩ := superelliptic.nonempty_restrict_preimage_singleton_equiv basePt
+  have h := superelliptic.natCast_ramificationDegree_β_eq_two_mul_degree_sub_eulerChar
+    (ν.trans (finCongr degree_β_superelliptic))
+  rw [eulerChar_eq_cycleCounts, cycleCounts_eq_card_cycleData,
+    cycleData_monodromyTriple_superelliptic] at h
+  have := degree_β_superelliptic; norm_num at h; omega
 
 /-- **The compact superelliptic curve `y ^ 4 = t (t - 1)` has Euler characteristic `0`**:
 `2 · 4 - 8 = 0`. -/
 @[simp] theorem eulerChar_X_superelliptic : TauCeti.eulerChar superelliptic.X = 0 := by
-  rw [superelliptic.β.eulerChar_eq_two_mul_degree_sub_ramificationDegree,
-    degree_β_superelliptic, ramificationDegree_β_superelliptic]
-  norm_num
+  simp [superelliptic.β.eulerChar_eq_two_mul_degree_sub_ramificationDegree]
 
 /-- **The compact superelliptic curve `y ^ 4 = t (t - 1)` has topological genus `1`**, matching
 both the genus of its monodromy triple and the Riemann–Hurwitz formula
 `2 g - 2 = 4 · (-2) + 8 = 0`. -/
-@[simp] theorem genus_X_superelliptic : RiemannSurface.genus superelliptic.X = 1 := by
-  obtain ⟨ν⟩ := superelliptic.nonempty_restrict_preimage_singleton_equiv basePt
-  rw [superelliptic.genus_X_eq_genus_monodromyTriple ν, genus_monodromyTriple_superelliptic]
+@[simp] theorem genus_X_superelliptic : RiemannSurface.genus superelliptic.X = 1 :=
+  RiemannSurface.genus_eq_of_eulerChar_eq (by simp)
 
 /-- **The automorphisms of the superelliptic curve are `y ↦ ζ y`** for the fourth roots of unity
 `ζ`: these automorphisms of the cover over `ℂ ∖ {0, 1}` extend to the compact curve

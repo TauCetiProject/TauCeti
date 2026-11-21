@@ -134,13 +134,10 @@ theorem finite_marked : marked.Finite := by
   simp [marked]
 
 /-- The set `marked = {0, 1, ∞}` of marked points on the Riemann sphere has cardinality `3`. -/
-@[simp]
-theorem ncard_marked : marked.ncard = 3 := by
-  have hmarked : marked =
-      insert ((0 : ℂ) : OnePoint ℂ) (insert ((1 : ℂ) : OnePoint ℂ) {(∞ : OnePoint ℂ)}) :=
-    Set.ext fun _ ↦ by simp [mem_marked]
-  rw [hmarked, Set.ncard_insert_of_notMem (by simp), Set.ncard_insert_of_notMem (by simp),
-    Set.ncard_singleton]
+@[simp] theorem ncard_marked : marked.ncard = 3 := by
+  rw [show marked = insert ((0 : ℂ) : OnePoint ℂ) (insert ((1 : ℂ) : OnePoint ℂ) {∞}) from
+      Set.ext fun _ ↦ by simp [mem_marked],
+    Set.ncard_insert_of_notMem (by simp), Set.ncard_insert_of_notMem (by simp), Set.ncard_singleton]
 
 /-- The range of the inclusion into the Riemann sphere is the complement of the three marked points
 `0`, `1` and `∞`. -/
