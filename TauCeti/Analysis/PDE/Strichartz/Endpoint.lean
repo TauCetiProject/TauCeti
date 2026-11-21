@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Strichartz.TimeShell
 public import TauCeti.MeasureTheory.Function.Lp.DyadicLayer
+import TauCeti.Analysis.InnerProductSpace.CotlarStein
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lorentz
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.SchurTest
@@ -65,7 +67,9 @@ transfers the bound from the finite sums of atoms to `F`.
 ## Main declarations
 
 * `TauCeti.exists_min_exponent_le`: the exponent bookkeeping of Keel and Tao.
-* `TauCeti.levelNorm`: the `L²` norm in time of the level `f*(2ᵏ)` of `F(t)`.
+* `TauCeti.levelNorm`: the `L²` norm in time of the level `f*(2ᵏ)` of `F(t)`, which bounds the
+  mixed norms of the layers (`TauCeti.eLpNorm_eLpNorm_dyadicLayer_le`) and is square summable after
+  normalization (`TauCeti.tsum_sq_two_rpow_mul_levelNorm_le`).
 * `TauCeti.tsum_enorm_setIntegral_timeShell_dyadicLayer_le`: the pairings of two atoms summed over
   the dyadic time shells.
 * `TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`: the endpoint dual estimate.
@@ -160,83 +164,7 @@ theorem exists_min_exponent_le {σ β : ℝ} (hσ : 1 < σ) (hβ : 2⁻¹ < β)
   have := min_le_neg_mul_abs_add_abs hγ hη hκ (k - σ * j) (l - σ * j)
   linarith
 
-/-! ### Dyadic sums -/
-
-/-- `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite for `ε > 0`. -/
-private theorem tsum_two_rpow_neg_mul_abs_ne_top {ε : ℝ} (hε : 0 < ε) :
-    ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) ≠ ∞ := by
-  set r : ℝ≥0∞ := (2 : ℝ≥0∞) ^ (-ε)
-  have hr : r < 1 := ENNReal.rpow_lt_one_of_one_lt_of_neg (by norm_num) (by linarith)
-  have hterm (n : ℕ) : (2 : ℝ≥0∞) ^ (-(ε * |((n : ℤ) : ℝ)|)) = r ^ n := by
-    rw [Int.cast_natCast, abs_of_nonneg (Nat.cast_nonneg n), ← ENNReal.rpow_natCast,
-      ← ENNReal.rpow_mul, neg_mul]
-  have hterm' (n : ℕ) : (2 : ℝ≥0∞) ^ (-(ε * |((-((n : ℤ) + 1) : ℤ) : ℝ)|)) ≤ r ^ n := by
-    rw [← hterm]
-    refine ENNReal.rpow_le_rpow_of_exponent_le (by norm_num) ?_
-    push_cast
-    rw [abs_neg, abs_of_nonneg (by positivity), abs_of_nonneg (Nat.cast_nonneg n)]
-    nlinarith
-  rw [tsum_of_nat_of_neg_add_one CompleteLattice.summable CompleteLattice.summable]
-  refine ENNReal.add_ne_top.2 ⟨?_, ne_top_of_le_ne_top ?_ (tsum_le_tsum hterm')⟩ <;>
-  · simp only [hterm, ENNReal.tsum_geometric]
-    exact ENNReal.inv_ne_top.2 (tsub_pos_of_lt hr).ne'
-
-/-- For `σ ≥ 1` and `ε > 0`, `∑_{j ∈ ℤ} 2^{-ε |x - σ j|}` is bounded uniformly in `x`: the points
-`σ j` are `1`-separated, so the sum is at most `2^ε ∑_{m ∈ ℤ} 2^{-ε |m|}`. -/
-private theorem tsum_two_rpow_neg_mul_abs_sub_le {σ ε : ℝ} (hσ : 1 ≤ σ) (hε : 0 < ε) (x : ℝ) :
-    ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
-      2 ^ ε * ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) := by
-  have hσ0 : 0 < σ := one_pos.trans_le hσ
-  have hfl := Int.floor_le (x / σ)
-  have hlt := Int.lt_floor_add_one (x / σ)
-  set n : ℤ := ⌊x / σ⌋
-  have hj (j : ℤ) : (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
-      2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := by
-    rw [← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top]
-    refine ENNReal.rpow_le_rpow_of_exponent_le (by norm_num) ?_
-    -- `|x - σ j| ≥ |x / σ - j| ≥ |j - n| - 1`.
-    have h1 : |x / σ - j| ≤ |x - σ * j| := by
-      rw [show x - σ * j = σ * (x / σ - j) by field_simp, abs_mul, abs_of_pos hσ0]
-      exact le_mul_of_one_le_left (abs_nonneg _) hσ
-    have h2 : |((j - n : ℤ) : ℝ)| - 1 ≤ |x / σ - j| := by
-      have h := abs_sub_le (j : ℝ) (x / σ) (n : ℝ)
-      rw [abs_sub_comm (j : ℝ) (x / σ), abs_of_nonneg (by linarith : 0 ≤ x / σ - n)] at h
-      push_cast
-      linarith
-    nlinarith
-  calc _ ≤ ∑' j : ℤ, 2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := tsum_le_tsum hj
-    _ = 2 ^ ε * ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := ENNReal.tsum_mul_left
-    _ = _ := by
-        congr 1
-        exact (Equiv.subRight n).tsum_eq fun m : ℤ ↦ (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|))
-
-/-! ### Hilbert space bookkeeping -/
-
 variable {𝕜 : Type*} [RCLike 𝕜]
-
-/-- If `y` is the limit of the symmetric partial sums `∑_{-N ≤ k < N} xₖ`, then
-`‖y‖² ≤ ∑_{k, l} |⟪xₖ, xₗ⟫|`. -/
-private theorem enorm_rpow_two_le_tsum_tsum_enorm_inner {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace 𝕜 V] (x : ℤ → V) {y : V}
-    (hy : Tendsto (fun N : ℕ ↦ ∑ i ∈ Finset.range (2 * N), x ((i : ℤ) - N)) atTop (𝓝 y)) :
-    ‖y‖ₑ ^ (2 : ℝ) ≤ ∑' k, ∑' l, ‖⟪x k, x l⟫_𝕜‖ₑ := by
-  have hsq (v : V) : ‖v‖ₑ ^ (2 : ℝ) = ‖⟪v, v⟫_𝕜‖ₑ := by
-    rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
-    simp
-  have hlim := ((ENNReal.continuous_rpow_const (y := 2)).tendsto _).comp hy.eNorm
-  refine le_of_tendsto' hlim fun N ↦ ?_
-  set g : ℕ → ℤ := fun i ↦ (i : ℤ) - N
-  have hg : Set.InjOn g (Finset.range (2 * N)) := fun i _ i' _ h ↦ by
-    simpa [g] using h
-  simp only [Function.comp_apply]
-  rw [hsq, sum_inner]
-  simp_rw [inner_sum]
-  refine (eNorm_sum_le _ _).trans ((Finset.sum_le_sum fun i _ ↦ eNorm_sum_le _ _).trans ?_)
-  rw [← Finset.sum_image (g := g) (f := fun k ↦ ∑ i' ∈ Finset.range (2 * N), ‖⟪x k, x (g i')⟫_𝕜‖ₑ)
-    hg]
-  refine (Finset.sum_le_sum fun k _ ↦ ?_).trans (sum_le_tsum _)
-  rw [← Finset.sum_image (g := g) (f := fun l ↦ ‖⟪x k, x l⟫_𝕜‖ₑ) hg]
-  exact sum_le_tsum _
 
 /-! ### Atoms on dyadic time shells -/
 
@@ -262,7 +190,7 @@ private theorem two_rpow_mul_two_rpow (a b : ℝ) : (2 : ℝ≥0∞) ^ a * 2 ^ b
 omit [CompleteSpace E] in
 /-- The mixed norm `L²_t L^s_x` of the `k`-th dyadic layers of `F` is at most
 `2^{(k+1)/s} ‖f*(2ᵏ)‖_{L²_t}`. -/
-private theorem eLpNorm_eLpNorm_dyadicLayer_le {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F)
+theorem eLpNorm_eLpNorm_dyadicLayer_le {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F)
     (k : ℤ) (s : ℝ≥0∞) :
     eLpNorm (fun t ↦ eLpNorm (Lp.dyadicLayer k (F t)) s μ) 2 ≤
       2 ^ (((k : ℝ) + 1) * s.toReal⁻¹) * levelNorm μ F k := by
@@ -270,8 +198,39 @@ private theorem eLpNorm_eLpNorm_dyadicLayer_le {F : ℝ → Lp E 2 μ} (hF : AES
   refine eLpNorm_mono_eNorm ((hF.dyadicLayer k).aemeasurable_eLpNorm_Lp .rfl s).aestronglyMeasurable
     fun t ↦ ?_
   simp only [eNorm_eq_self]
-  refine (Lp.eLpNorm_dyadicLayer_le two_ne_zero ENNReal.ofNat_ne_top k (F t) s).trans_eq ?_
+  refine (Lp.eLpNorm_dyadicLayer_le two_ne_zero k (F t) s).trans_eq ?_
   rw [ofReal_two_zpow, ← ENNReal.rpow_mul, Int.cast_add, Int.cast_one]
+
+omit [CompleteSpace E] [NormedSpace ℝ E] in
+/-- The normalized level norms are square summable, with sum controlled by the mixed norm
+`L²_t L^{r'}_x` of `F`, for `r' ≤ 2`. -/
+theorem tsum_sq_two_rpow_mul_levelNorm_le {r' : ℝ≥0∞} (hr'0 : r' ≠ 0) (hr'2 : r' ≤ 2)
+    {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) :
+    ∑' k : ℤ, (2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k) ^ 2 ≤
+      ENNReal.ofReal (2 ^ (2 / r'.toReal) / Real.log 2) *
+        eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 ^ 2 := by
+  set a : ℤ → ℝ → ℝ≥0∞ := fun k t ↦ μ.decreasingRearrangement (fun x ↦ ‖F t x‖ₑ) ((2 : ℝ) ^ k)
+  have ha (k : ℤ) : AEMeasurable (a k) := hF.aemeasurable_decreasingRearrangement_enorm _
+  -- The square of an `L²` norm in time is the integral of the square.
+  have hL2 {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) : eLpNorm f 2 ^ 2 = ∫⁻ t, f t ^ (2 : ℝ) := by
+    rw [← ENNReal.rpow_two, eLpNorm_eq_eLpNorm' two_ne_zero ENNReal.ofNat_ne_top
+      hf.aestronglyMeasurable, ENNReal.toReal_ofNat,
+      ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' two_pos]
+    simp only [eNorm_eq_self]
+  have hsq (k : ℤ) : (2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k) ^ 2 =
+      ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) := by
+    rw [levelNorm_def, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2),
+      hL2 ((ha k).const_mul _), ofReal_two_zpow, ← ENNReal.rpow_mul]
+  calc _ = ∑' k : ℤ, ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) :=
+        tsum_congr hsq
+    _ = ∫⁻ t, ∑' k : ℤ, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) :=
+        (lintegral_tsum fun k ↦ ((ha k).const_mul _).pow_const _).symm
+    _ ≤ ∫⁻ t, ENNReal.ofReal (2 ^ (2 / r'.toReal) / Real.log 2) * eLpNorm (F t) r' μ ^ (2 : ℝ) :=
+        lintegral_mono fun t ↦
+          tsum_rpow_mul_decreasingRearrangement_sq_le (Lp.aestronglyMeasurable (F t)) hr'0 hr'2
+    _ = _ := by
+        rw [lintegral_const_mul'' _ ((hF.aemeasurable_eLpNorm_Lp .rfl r').pow_const _),
+          hL2 (hF.aemeasurable_eLpNorm_Lp .rfl r')]
 
 section Shell
 
@@ -436,54 +395,6 @@ theorem tsum_enorm_setIntegral_timeShell_dyadicLayer_le {σ : ℝ} (hσ : 1 < σ
         exact tsum_two_rpow_neg_mul_abs_sub_le hσ.le (half_pos hδ) _
     _ = _ := by ring
 
-omit [CompleteSpace E] [NormedSpace ℝ E] in
-/-- The normalized level norms are square summable, with sum controlled by the mixed norm
-`L²_t L^{r'}_x` of `F`, for `r' ≤ 2`. -/
-private theorem tsum_sq_two_rpow_mul_levelNorm_le {r' : ℝ≥0∞} (hr'0 : r' ≠ 0) (hr'2 : r' ≤ 2)
-    {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F) :
-    ∑' k : ℤ, (2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k) ^ 2 ≤
-      ENNReal.ofReal (2 ^ (2 / r'.toReal) / Real.log 2) *
-        eLpNorm (fun t ↦ eLpNorm (F t) r' μ) 2 ^ 2 := by
-  set a : ℤ → ℝ → ℝ≥0∞ := fun k t ↦ μ.decreasingRearrangement (fun x ↦ ‖F t x‖ₑ) ((2 : ℝ) ^ k)
-  have ha (k : ℤ) : AEMeasurable (a k) := hF.aemeasurable_decreasingRearrangement_enorm _
-  -- The square of an `L²` norm in time is the integral of the square.
-  have hL2 {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) : eLpNorm f 2 ^ 2 = ∫⁻ t, f t ^ (2 : ℝ) := by
-    rw [← ENNReal.rpow_two, eLpNorm_eq_eLpNorm' two_ne_zero ENNReal.ofNat_ne_top
-      hf.aestronglyMeasurable, ENNReal.toReal_ofNat,
-      ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' two_pos]
-    simp only [eNorm_eq_self]
-  have hsq (k : ℤ) : (2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k) ^ 2 =
-      ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) := by
-    rw [levelNorm_def, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2),
-      hL2 ((ha k).const_mul _), ofReal_two_zpow, ← ENNReal.rpow_mul]
-  calc _ = ∑' k : ℤ, ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) :=
-        tsum_congr hsq
-    _ = ∫⁻ t, ∑' k : ℤ, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) :=
-        (lintegral_tsum fun k ↦ ((ha k).const_mul _).pow_const _).symm
-    _ ≤ ∫⁻ t, ENNReal.ofReal (2 ^ (2 / r'.toReal) / Real.log 2) * eLpNorm (F t) r' μ ^ (2 : ℝ) :=
-        lintegral_mono fun t ↦
-          tsum_rpow_mul_decreasingRearrangement_sq_le (Lp.aestronglyMeasurable (F t)) hr'0 hr'2
-    _ = _ := by
-        rw [lintegral_const_mul'' _ ((hF.aemeasurable_eLpNorm_Lp .rfl r').pow_const _),
-          hL2 (hF.aemeasurable_eLpNorm_Lp .rfl r')]
-
-/-- The pairing of two dual integrals is at most the sum over the dyadic time shells of the
-absolute values of its pieces. -/
-private theorem enorm_inner_integral_le_tsum {f g : ℝ → H} (hf : Integrable f)
-    (hg : Integrable g) :
-    ‖⟪∫ s, f s, ∫ t, g t⟫_𝕜‖ₑ ≤
-      ∑' j : ℤ, ‖∫ z in timeShell ((2 : ℝ) ^ j), ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume)‖ₑ := by
-  have hφ : Integrable (fun z : ℝ × ℝ ↦ ⟪f z.1, g z.2⟫_𝕜) (volume.prod volume) :=
-    hf.op_fst_snd (op := fun u v ↦ ⟪u, v⟫_𝕜) continuous_inner
-      ⟨1, fun u v ↦ by simpa using norm_inner_le_norm u v⟩ hg
-  have heq : ⟪∫ s, f s, ∫ t, g t⟫_𝕜 = ∫ z, ⟪f z.1, g z.2⟫_𝕜 ∂(volume.prod volume) := by
-    rw [integral_prod _ hφ]
-    simp_rw [integral_inner hg]
-    rw [← inner_conj_symm, ← integral_inner hf, ← integral_conj]
-    simp_rw [inner_conj_symm]
-  rw [heq, ← (hasSum_setIntegral_timeShell hφ).tsum_eq]
-  exact eNorm_tsum_le_tsum_eNorm
-
 omit [NormedSpace ℝ E] [NormedSpace ℝ H] in
 /-- An energy bound `‖U(t)‖ₑ ≤ M` bounds the adjoints in norm. -/
 private theorem norm_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {M : ℝ≥0} (hM : ∀ t, ‖U t‖ₑ ≤ M)
@@ -514,7 +425,7 @@ private theorem tendsto_sum_range_integral_dyadicLayer {U : ℝ → H →L[𝕜]
       hF.aestronglyMeasurable.dyadicLayer _))
     (hF.norm.const_mul _) (fun N ↦ ae_of_all _ fun t ↦ ?_) (ae_of_all _ fun t ↦ ?_)
   · exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul (norm_adjoint_le hM t)
-      (Lp.norm_sum_range_dyadicLayer_le two_ne_zero ENNReal.ofNat_ne_top N (F t))
+      (Lp.norm_sum_range_dyadicLayer_le two_ne_zero N (F t))
       (norm_nonneg _) M.coe_nonneg)
   · exact (((U t)†).continuous.tendsto _).comp
       (Lp.tendsto_sum_range_dyadicLayer ENNReal.ofNat_ne_top (F t))
@@ -571,8 +482,8 @@ private theorem enorm_integral_adjoint_rpow_two_le {σ : ℝ} (hσ : 1 < σ) {p 
       (hUm _ (hF.aestronglyMeasurable.dyadicLayer k)) (ae_of_all _ fun t ↦ ?_)
     refine (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul (norm_adjoint_le hM t) ?_
       (norm_nonneg _) M.coe_nonneg)
-    exact Lp.norm_le_norm_of_ae_le ((Lp.enorm_dyadicLayer_le_enorm two_ne_zero
-      ENNReal.ofNat_ne_top k (F t)).mono fun x hx ↦ eNorm_le_iff_norm_le.1 hx)
+    exact Lp.norm_le_norm_of_ae_le ((Lp.enorm_dyadicLayer_le_enorm two_ne_zero k (F t)).mono
+      fun x hx ↦ eNorm_le_iff_norm_le.1 hx)
   set c : ℝ≥0∞ := 16 * A + 2 ^ (p.toReal⁻¹ + 2⁻¹ + b.toReal⁻¹) * M * K
   set S : ℝ≥0∞ := ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(δ / 2 * |(m : ℝ)|))
   let y : ℤ → ℝ≥0∞ := fun k ↦ 2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k

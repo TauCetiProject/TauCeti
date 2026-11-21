@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.CStarAlgebra.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Analysis.Normed.Operator.Dense
@@ -26,12 +28,19 @@ This is the almost-orthogonality principle behind the `L²` boundedness of
 pseudodifferential operators with symbols of order zero (Calderón–Vaillancourt): such an
 operator is decomposed dyadically, and the pieces are almost orthogonal in the above sense.
 
+The simplest almost-orthogonality bound, for vectors rather than operators, expands a square:
+if `y` is the limit of the symmetric partial sums `∑_{-N ≤ k < N} xₖ` of a family indexed by `ℤ`,
+then `‖y‖² ≤ ∑_{k, l} |⟪xₖ, xₗ⟫|`. The `TT*` argument for the endpoint Strichartz estimate
+applies it to the dual integrals of the dyadic layers of a function.
+
 ## Main results
 
 * `TauCeti.norm_sum_le_of_almost_orthogonal`: the finite Cotlar–Stein lemma.
 * `TauCeti.exists_hasSum_apply_of_almost_orthogonal`: the Cotlar–Stein lemma for an arbitrary
   family; the series converges in the strong operator topology to an operator of norm at
   most `A`.
+* `TauCeti.enorm_rpow_two_le_tsum_tsum_enorm_inner`: `‖y‖² ≤ ∑_{k, l} |⟪xₖ, xₗ⟫|` for the limit `y`
+  of the symmetric partial sums of `x : ℤ → V`.
 
 ## Implementation notes
 
@@ -63,6 +72,29 @@ open ContinuousLinearMap Filter Finset
 open scoped InnerProduct InnerProductSpace Topology
 
 namespace TauCeti
+
+/-- If `y` is the limit of the symmetric partial sums `∑_{-N ≤ k < N} xₖ`, then
+`‖y‖² ≤ ∑_{k, l} |⟪xₖ, xₗ⟫|`. -/
+theorem enorm_rpow_two_le_tsum_tsum_enorm_inner {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] (x : ℤ → V) {y : V}
+    (hy : Tendsto (fun N : ℕ ↦ ∑ i ∈ range (2 * N), x ((i : ℤ) - N)) atTop (𝓝 y)) :
+    ‖y‖ₑ ^ (2 : ℝ) ≤ ∑' k, ∑' l, ‖⟪x k, x l⟫_𝕜‖ₑ := by
+  have hsq (v : V) : ‖v‖ₑ ^ (2 : ℝ) = ‖⟪v, v⟫_𝕜‖ₑ := by
+    rw [inner_self_eq_norm_sq_to_K, eNorm_pow, ← ENNReal.rpow_natCast]
+    simp
+  have hlim := ((ENNReal.continuous_rpow_const (y := 2)).tendsto _).comp hy.eNorm
+  refine le_of_tendsto' hlim fun N ↦ ?_
+  set g : ℕ → ℤ := fun i ↦ (i : ℤ) - N
+  have hg : Set.InjOn g (range (2 * N)) := fun i _ i' _ h ↦ by
+    simpa [g] using h
+  simp only [Function.comp_apply]
+  rw [hsq, sum_inner]
+  simp_rw [inner_sum]
+  refine (eNorm_sum_le _ _).trans ((sum_le_sum fun i _ ↦ eNorm_sum_le _ _).trans ?_)
+  rw [← sum_image (g := g) (f := fun k ↦ ∑ i' ∈ range (2 * N), ‖⟪x k, x (g i')⟫_𝕜‖ₑ) hg]
+  refine (sum_le_sum fun k _ ↦ ?_).trans (_root_.sum_le_tsum _)
+  rw [← sum_image (g := g) (f := fun l ↦ ‖⟪x k, x l⟫_𝕜‖ₑ) hg]
+  exact _root_.sum_le_tsum _
 
 variable {𝕜 E F ι : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]

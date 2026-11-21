@@ -542,12 +542,16 @@ theorem rpow_mul_decreasingRearrangement_le_eLpNorm (hf : AEStronglyMeasurable f
   rwa [div_self (ENNReal.toReal_pos hp0 hptop).ne', Real.one_rpow, ENNReal.ofReal_one, one_mul,
     eLorentzNorm_self] at h
 
-/-- The decreasing rearrangement of a function in `Lᵖ`, `0 < p < ∞`, is finite at positive
-arguments. -/
+/-- The decreasing rearrangement of a function in `Lᵖ`, `p ≠ 0`, is finite at positive
+arguments. For `p = ∞` it is bounded by the essential supremum of `‖f‖ₑ`. -/
 theorem _root_.MeasureTheory.MemLp.decreasingRearrangement_lt_top (hf : MemLp f p μ)
-    (hp0 : p ≠ 0) (hptop : p ≠ ∞) {t : ℝ} (ht : 0 < t) :
-    μ.decreasingRearrangement (‖f ·‖ₑ) t < ∞ :=
-  ENNReal.lt_top_of_mul_ne_top_right
+    (hp0 : p ≠ 0) {t : ℝ} (ht : 0 < t) :
+    μ.decreasingRearrangement (‖f ·‖ₑ) t < ∞ := by
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · refine (μ.decreasingRearrangement_le_essSup _ t).trans_lt ?_
+    rw [← eLpNormEssSup_eq_essSup_eNorm, ← eLpNorm_exponent_top hf.aestronglyMeasurable]
+    exact hf.eLpNorm_lt_top
+  exact ENNReal.lt_top_of_mul_ne_top_right
     ((rpow_mul_decreasingRearrangement_le_eLpNorm hf.aestronglyMeasurable hp0 hptop ht).trans_lt
       hf.eLpNorm_lt_top).ne
     (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht _)).ne'

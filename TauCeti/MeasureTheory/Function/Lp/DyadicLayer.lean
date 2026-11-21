@@ -94,9 +94,7 @@ theorem lowerSemicontinuous_measure_setOf_lt_enorm [Fact (1 ≤ p)] (c : ℝ≥0
   intro y
   refine isClosed_of_closure_subset fun g hg ↦ ?_
   obtain ⟨u, hu, hlim⟩ := mem_closure_iff_seq_limit.1 hg
-  have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  obtain ⟨ns, -, hae⟩ := (tendstoInMeasure_of_tendsto_eLpNorm hp
-    ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1 hlim)).exists_seq_tendsto_ae
+  obtain ⟨ns, -, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hlim).exists_seq_tendsto_ae
   set A : ℕ → Set X := fun N ↦ ⋂ i ≥ N, {x | c < ‖u (ns i) x‖ₑ}
   have hA : Monotone A := fun N M hNM _ hx ↦
     mem_iInter₂.2 fun i hi ↦ mem_iInter₂.1 hx i (hNM.trans hi)
@@ -127,13 +125,13 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.aemeasurable_decreasingRearran
 /-! ### The dyadic levels -/
 
 /-- The levels `f*(2ᵏ)` decrease with `k`. -/
-private theorem toNNReal_decreasingRearrangement_succ_le (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    (g : Lp E p μ) (k : ℤ) :
-    (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1))).toNNReal ≤
+private theorem toNNReal_decreasingRearrangement_zpow_le (hp0 : p ≠ 0) (g : Lp E p μ) {k l : ℤ}
+    (hkl : k ≤ l) :
+    (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ l)).toNNReal ≤
       (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k)).toNNReal :=
   ENNReal.toNNReal_mono
-    ((Lp.memLp g).decreasingRearrangement_lt_top hp0 hp (zpow_pos two_pos k)).ne
-    (μ.antitone_decreasingRearrangement _ (zpow_le_zpow_right₀ one_le_two (by omega)))
+    ((Lp.memLp g).decreasingRearrangement_lt_top hp0 (zpow_pos two_pos k)).ne
+    (μ.antitone_decreasingRearrangement _ (zpow_le_zpow_right₀ one_le_two hkl))
 
 /-! ### The radial retraction of an `Lᵖ` function -/
 
@@ -149,6 +147,15 @@ def radialRetraction (r : ℝ≥0) (g : Lp E p μ) : Lp E p μ :=
 theorem coeFn_radialRetraction (r : ℝ≥0) (g : Lp E p μ) :
     radialRetraction r g =ᵐ[μ] fun x ↦ TauCeti.radialRetraction r (g x) :=
   LipschitzWith.coeFn_compLp _ _ _
+
+/-- A difference of two radial retractions of `g` is, almost everywhere, the pointwise difference
+of the radial retractions of the values of `g`. -/
+theorem coeFn_radialRetraction_sub (a b : ℝ≥0) (g : Lp E p μ) :
+    radialRetraction a g - radialRetraction b g =ᵐ[μ]
+      fun x ↦ TauCeti.radialRetraction a (g x) - TauCeti.radialRetraction b (g x) := by
+  filter_upwards [Lp.coeFn_sub (radialRetraction a g) (radialRetraction b g),
+    coeFn_radialRetraction a g, coeFn_radialRetraction b g] with x h h1 h2
+  rw [h, Pi.sub_apply, h1, h2]
 
 /-- At a fixed height, the radial retraction is a continuous function on `Lᵖ`. -/
 theorem continuous_radialRetraction [Fact (1 ≤ p)] (r : ℝ≥0) :
@@ -212,50 +219,47 @@ theorem coeFn_dyadicLayer (k : ℤ) (g : Lp E p μ) :
       TauCeti.radialRetraction
           (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k)).toNNReal (g x) -
         TauCeti.radialRetraction
-          (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1))).toNNReal (g x) := by
-  filter_upwards [Lp.coeFn_sub (radialRetraction _ g) (radialRetraction _ g),
-    coeFn_radialRetraction (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k)).toNNReal g,
-    coeFn_radialRetraction
-      (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1))).toNNReal g]
-    with x h h1 h2
-  rw [dyadicLayer_def, h, Pi.sub_apply, h1, h2]
+          (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1))).toNNReal (g x) :=
+  coeFn_radialRetraction_sub _ _ g
 
 /-- The `k`-th dyadic layer of `g` is bounded by `f*(2ᵏ)`. -/
-theorem enorm_dyadicLayer_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (k : ℤ) (g : Lp E p μ) :
+theorem enorm_dyadicLayer_le (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖dyadicLayer k g x‖ₑ ≤ μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k) := by
   filter_upwards [coeFn_dyadicLayer k g] with x hx
   have h := TauCeti.norm_radialRetraction_sub_radialRetraction_le (NNReal.coe_nonneg _)
-    (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_succ_le hp0 hp g k)) (g x)
+    (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g
+      (Int.le_add_one (le_refl k)))) (g x)
   rw [hx, ← ofReal_norm]
   refine (ENNReal.ofReal_le_ofReal (h.trans (min_le_right _ _))).trans ?_
   rw [ENNReal.ofReal_coe_nnreal]
   exact ENNReal.coe_toNNReal_le_self
 
 /-- The `k`-th dyadic layer of `g` is bounded by `‖g‖`. -/
-theorem enorm_dyadicLayer_le_enorm (hp0 : p ≠ 0) (hp : p ≠ ∞) (k : ℤ) (g : Lp E p μ) :
+theorem enorm_dyadicLayer_le_enorm (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖dyadicLayer k g x‖ₑ ≤ ‖g x‖ₑ := by
   filter_upwards [coeFn_dyadicLayer k g] with x hx
   rw [hx]
   exact eNorm_le_iff_norm_le.2 ((TauCeti.norm_radialRetraction_sub_radialRetraction_le
-    (NNReal.coe_nonneg _) (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_succ_le hp0 hp g
-      k)) (g x)).trans (min_le_left _ _))
+    (NNReal.coe_nonneg _) (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g
+      (Int.le_add_one (le_refl k)))) (g x)).trans (min_le_left _ _))
 
 /-- The `k`-th dyadic layer of `g` vanishes where `‖g‖ₑ ≤ f*(2ᵏ⁺¹)`. -/
-theorem dyadicLayer_eq_zero_of_enorm_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (k : ℤ) (g : Lp E p μ) :
+theorem dyadicLayer_eq_zero_of_enorm_le (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖g x‖ₑ ≤ μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1)) →
       dyadicLayer k g x = 0 := by
   filter_upwards [coeFn_dyadicLayer k g] with x hx hle
   rw [hx, sub_eq_zero]
   refine TauCeti.radialRetraction_eq_radialRetraction_of_norm_le ?_
-    (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_succ_le hp0 hp g k))
+    (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g
+      (Int.le_add_one (le_refl k))))
   rw [← ofReal_norm, ← ENNReal.ofReal_toReal
-    ((Lp.memLp g).decreasingRearrangement_lt_top hp0 hp (zpow_pos two_pos (k + 1))).ne] at hle
+    ((Lp.memLp g).decreasingRearrangement_lt_top hp0 (zpow_pos two_pos (k + 1))).ne] at hle
   exact (ENNReal.ofReal_le_ofReal_iff ENNReal.toReal_nonneg).1 hle
 
 /-- **The size of a dyadic layer.** For every exponent `s`, the `k`-th dyadic layer of `g` has
 `‖gₖ‖_s ≤ (2ᵏ⁺¹) ^ (1 / s) f*(2ᵏ)`: it is bounded by `f*(2ᵏ)` and supported in the set
 `{f*(2ᵏ⁺¹) < ‖g‖}`, of measure at most `2ᵏ⁺¹`. -/
-theorem eLpNorm_dyadicLayer_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (k : ℤ) (g : Lp E p μ) (s : ℝ≥0∞) :
+theorem eLpNorm_dyadicLayer_le (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) (s : ℝ≥0∞) :
     eLpNorm (dyadicLayer k g) s μ ≤
       ENNReal.ofReal ((2 : ℝ) ^ (k + 1)) ^ s.toReal⁻¹ *
         μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k) := by
@@ -264,14 +268,14 @@ theorem eLpNorm_dyadicLayer_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (k : ℤ) (g : L
   have hS : MeasurableSet S :=
     measurableSet_lt measurable_const (Lp.stronglyMeasurable g).eNorm
   have hind : (dyadicLayer k g : X → E) =ᵐ[μ] S.indicator (dyadicLayer k g) := by
-    filter_upwards [dyadicLayer_eq_zero_of_enorm_le hp0 hp k g] with x hx
+    filter_upwards [dyadicLayer_eq_zero_of_enorm_le hp0 k g] with x hx
     by_cases hxS : x ∈ S
     · rw [indicator_of_mem hxS]
     · rw [indicator_of_notMem hxS, hx (not_lt.1 hxS)]
-  have ha : a ≠ ∞ := ((Lp.memLp g).decreasingRearrangement_lt_top hp0 hp (zpow_pos two_pos k)).ne
+  have ha : a ≠ ∞ := ((Lp.memLp g).decreasingRearrangement_lt_top hp0 (zpow_pos two_pos k)).ne
   rw [eLpNorm_congr_ae hind, eLpNorm_indicator_eq_eLpNorm_restrict hS.nullMeasurableSet]
   refine (eLpNorm_le_of_ae_bound (C := a.toReal) (Lp.aestronglyMeasurable _).restrict
-    (ae_restrict_of_ae ((enorm_dyadicLayer_le hp0 hp k g).mono fun x hx ↦ ?_))).trans ?_
+    (ae_restrict_of_ae ((enorm_dyadicLayer_le hp0 k g).mono fun x hx ↦ ?_))).trans ?_
   · rw [← ENNReal.ofReal_le_ofReal_iff ENNReal.toReal_nonneg, ofReal_norm,
       ENNReal.ofReal_toReal ha]
     exact hx
@@ -287,37 +291,23 @@ theorem sum_range_dyadicLayer (N : ℕ) (g : Lp E p μ) :
           g -
         radialRetraction (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (N : ℤ))).toNNReal
           g := by
-  have h := Finset.sum_range_sub' (fun i : ℕ ↦ radialRetraction
-    (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ ((i : ℤ) - N))).toNNReal g) (2 * N)
-  convert h using 3 with i
-  · rw [dyadicLayer_def]
-    congr 5
-    push_cast
-    ring
-  · congr 4
-    simp
-  · congr 4
-    push_cast
-    ring
+  rw [Finset.sum_congr rfl fun i _ ↦ by rw [dyadicLayer_def,
+      show (i : ℤ) - N + 1 = ((i + 1 : ℕ) : ℤ) - N by push_cast; ring],
+    Finset.sum_range_sub' (fun i : ℕ ↦ radialRetraction
+      (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ ((i : ℤ) - N))).toNNReal g)]
+  push_cast
+  ring_nf
 
 /-- The partial sums of the dyadic layers of `g` have norm at most `‖g‖`. -/
-theorem norm_sum_range_dyadicLayer_le (hp0 : p ≠ 0) (hp : p ≠ ∞) (N : ℕ) (g : Lp E p μ) :
+theorem norm_sum_range_dyadicLayer_le (hp0 : p ≠ 0) (N : ℕ) (g : Lp E p μ) :
     ‖∑ i ∈ Finset.range (2 * N), dyadicLayer ((i : ℤ) - N) g‖ ≤ ‖g‖ := by
-  set f := fun x ↦ ‖g x‖ₑ
-  have hle : (μ.decreasingRearrangement f ((2 : ℝ) ^ (N : ℤ))).toNNReal ≤
-      (μ.decreasingRearrangement f ((2 : ℝ) ^ (-(N : ℤ)))).toNNReal :=
-    ENNReal.toNNReal_mono
-      ((Lp.memLp g).decreasingRearrangement_lt_top hp0 hp (zpow_pos two_pos _)).ne
-      (μ.antitone_decreasingRearrangement _ (zpow_le_zpow_right₀ one_le_two (by omega)))
   rw [sum_range_dyadicLayer]
   refine Lp.norm_le_norm_of_ae_le ?_
-  filter_upwards [Lp.coeFn_sub (radialRetraction _ g) (radialRetraction _ g),
-    coeFn_radialRetraction (μ.decreasingRearrangement f ((2 : ℝ) ^ (-(N : ℤ)))).toNNReal g,
-    coeFn_radialRetraction (μ.decreasingRearrangement f ((2 : ℝ) ^ (N : ℤ))).toNNReal g]
-    with x h h1 h2
-  rw [h, Pi.sub_apply, h1, h2]
+  filter_upwards [coeFn_radialRetraction_sub _ _ g] with x h
+  rw [h]
   exact (TauCeti.norm_radialRetraction_sub_radialRetraction_le (NNReal.coe_nonneg _)
-    (NNReal.coe_le_coe.2 hle) (g x)).trans (min_le_left _ _)
+    (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g
+      (by omega : -(N : ℤ) ≤ N))) (g x)).trans (min_le_left _ _)
 
 /-- A difference of two radial retractions of `v`, minus `v`, has norm at most `3 ‖v‖`. -/
 private theorem norm_radialRetraction_sub_radialRetraction_sub_le (a b : ℝ≥0) (v : E) :
@@ -348,13 +338,13 @@ private theorem tendsto_radialRetraction_sub_radialRetraction (v : E) {hi : ℕ 
     exact h
   have hupper : Tendsto (fun N ↦ TauCeti.radialRetraction (hi N).toNNReal v) atTop (𝓝 v) := by
     have h := hmin.radialRetraction (Eventually.of_forall fun _ ↦ ENNReal.toReal_nonneg)
-      (norm_nonneg v) (tendsto_const_nhds (x := v))
+      (tendsto_const_nhds (x := v))
     rw [TauCeti.radialRetraction_of_norm_le le_rfl] at h
     refine h.congr fun N ↦ ?_
     rw [ENNReal.toReal_min (hfin N) eNorm_ne_top, toReal_eNorm, TauCeti.radialRetraction_min_norm,
       ENNReal.coe_toNNReal_eq_toReal]
   have hlower : Tendsto (fun N ↦ TauCeti.radialRetraction (lo N) v) atTop (𝓝 0) := by
-    have h := hlo.radialRetraction (Eventually.of_forall fun N ↦ NNReal.coe_nonneg _) le_rfl
+    have h := hlo.radialRetraction (Eventually.of_forall fun N ↦ NNReal.coe_nonneg _)
       (tendsto_const_nhds (x := v))
     simpa [TauCeti.radialRetraction_def] using h
   simpa using hupper.sub hlower
@@ -386,11 +376,7 @@ theorem tendsto_sum_range_dyadicLayer [Fact (1 ≤ p)] (hp : p ≠ ∞) (g : Lp 
         TauCeti.radialRetraction (hi N).toNNReal (g x) -
           TauCeti.radialRetraction (lo N) (g x) := by
     rw [ae_all_iff]
-    intro N
-    filter_upwards [Lp.coeFn_sub (radialRetraction (hi N).toNNReal g) (radialRetraction (lo N) g),
-      coeFn_radialRetraction (hi N).toNNReal g, coeFn_radialRetraction (lo N) g]
-      with x h h1 h2
-    rw [h, Pi.sub_apply, h1, h2]
+    exact fun N ↦ coeFn_radialRetraction_sub _ _ g
   -- Dominated convergence, with the bound `3 ‖g‖`.
   refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := 3) hp
     (Eventually.of_forall fun N ↦ Lp.aestronglyMeasurable _) (Lp.memLp g)
@@ -400,7 +386,7 @@ theorem tendsto_sum_range_dyadicLayer [Fact (1 ≤ p)] (hp : p ≠ ∞) (g : Lp 
     exact ENNReal.ofReal_le_ofReal (norm_radialRetraction_sub_radialRetraction_sub_le _ _ _)
   · filter_upwards [hcoe, ae_le_essSup (f := f)] with x hx hle
     exact (tendsto_radialRetraction_sub_radialRetraction (g x)
-      (fun N ↦ ((Lp.memLp g).decreasingRearrangement_lt_top hp0 hp (zpow_pos two_pos _)).ne)
+      (fun N ↦ ((Lp.memLp g).decreasingRearrangement_lt_top hp0 (zpow_pos two_pos _)).ne)
       hhi hle hlo).congr fun N ↦ (hx N).symm
 
 end Lp

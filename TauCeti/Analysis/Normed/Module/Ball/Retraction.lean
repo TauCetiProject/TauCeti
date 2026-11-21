@@ -248,6 +248,7 @@ theorem radialRetraction_eq_radialRetraction_of_norm_le {s : ℝ} (hs : ‖x‖ 
       radialRetraction_of_norm_pos_of_norm_le h hs]
 
 /-- Truncating the radius at `‖x‖` does not change the radial retraction of `x`. -/
+@[simp]
 theorem radialRetraction_min_norm (r : ℝ) (x : E) :
     radialRetraction (min r ‖x‖) x = radialRetraction r x := by
   rcases le_total r ‖x‖ with h | h
@@ -433,14 +434,16 @@ theorem Continuous.radialRetraction {E X : Type*} [SeminormedAddCommGroup E] [No
     exact (continuousAt_const.min (hr.continuousAt.div hf.continuousAt.norm
       hx)).smul hf.continuousAt
 
-/-- If the radii `r a` are eventually nonnegative and converge to `r₀ ≥ 0`, and the points `f a`
+/-- If the radii `r a` are eventually nonnegative and converge to `r₀`, and the points `f a`
 converge to `x`, then the radial retractions `R_{r a} (f a)` converge to `R_{r₀} x`. -/
 theorem Filter.Tendsto.radialRetraction {E α : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {l : Filter α} {r : α → ℝ} {r₀ : ℝ} {f : α → E} {x : E}
-    (hr : Tendsto r l (𝓝 r₀)) (hr0 : ∀ᶠ a in l, 0 ≤ r a) (hr₀ : 0 ≤ r₀)
-    (hf : Tendsto f l (𝓝 x)) :
+    (hr : Tendsto r l (𝓝 r₀)) (hr0 : ∀ᶠ a in l, 0 ≤ r a) (hf : Tendsto f l (𝓝 x)) :
     Tendsto (fun a ↦ TauCeti.radialRetraction (r a) (f a)) l
       (𝓝 (TauCeti.radialRetraction r₀ x)) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact tendsto_bot
+  have hr₀ : 0 ≤ r₀ := ge_of_tendsto hr hr0
   -- Cut the radius at `0` to apply the joint continuity on `ℝ × E`.
   have hc := ((continuous_fst.max continuous_const).radialRetraction
     (fun _ ↦ le_max_right _ 0) continuous_snd).tendsto (r₀, x)
