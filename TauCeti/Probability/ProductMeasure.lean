@@ -41,8 +41,6 @@ The finite-cylinder formula gives positivity on nonempty open sets and the Haar 
 * `TauCeti.MeasureTheory.Measure.infinitePi_map_none_some`: splitting off `none` in `Option ι`.
 * `TauCeti.measurePreserving_piEquivPiSubtypeProd_infinitePi`: splitting along a predicate `p`.
 * `TauCeti.infinitePi_pi'`: unconditional finite-cylinder formula for `Measure.infinitePi`.
-* `MeasureTheory.Measure.infinitePi_subtype_map_dite_const`: padding `Measure.infinitePi` over a
-  subtype by deterministic (Dirac) coordinates recovers the full infinite product.
 -/
 
 public section
@@ -147,64 +145,3 @@ theorem infinitePi_pi' (μ : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure 
 end SplitAndCylinder
 
 end TauCeti
-
-namespace MeasureTheory.Measure
-
-/-- **Padding an infinite product measure with deterministic coordinates.** If every coordinate
-outside a decidable predicate `p` has Dirac law `Measure.dirac (a₀ i)`, then pushing the infinite
-product over `{i // p i}` forward by padding missing coordinates with `a₀ i` recovers
-`Measure.infinitePi μ`. -/
-theorem infinitePi_subtype_map_dite_const {ι : Type*} {α : ι → Type*}
-    [∀ i, MeasurableSpace (α i)] {p : ι → Prop} [DecidablePred p]
-    (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
-    {a₀ : ∀ i, α i} (hdirac : ∀ i, ¬ p i → μ i = Measure.dirac (a₀ i)) :
-    (Measure.infinitePi fun i : {i : ι // p i} => μ i.val).map
-      (fun z i => if h : p i then z ⟨i, h⟩ else a₀ i) = Measure.infinitePi μ := by
-  let pad : (∀ i : {i : ι // p i}, α i.val) → ∀ i, α i :=
-    fun z i => if h : p i then z ⟨i, h⟩ else a₀ i
-  have hpad : Measurable pad := Measurable.of_eval fun i => by
-    dsimp [pad]
-    split_ifs with h
-    · exact measurable_pi_apply (⟨i, h⟩ : {i : ι // p i})
-    · exact measurable_const
-  -- Verify equality on finite measurable cylinder sets `s.pi t`.
-  apply Measure.eq_infinitePi
-  intro s t ht
-  rw [Measure.map_apply hpad (.pi s.countable_toSet fun i _ => ht i)]
-  by_cases hmem : ∀ i ∈ s, ¬ p i → a₀ i ∈ t i
-  · -- Every padded coordinate in `s` lies in `t i`, so the preimage is the restricted cylinder.
-    have hpre : pad ⁻¹' (s : Set ι).pi t =
-        (s.subtype p : Set {i : ι // p i}).pi (fun i => t i.val) := by
-      ext z
-      simp only [Set.mem_preimage, Set.mem_pi, Finset.mem_coe, pad]
-      constructor
-      · intro hz i hi
-        simpa [i.property] using hz i.val (Finset.mem_subtype.mp hi)
-      · intro hz i hi
-        split_ifs with h
-        · exact hz ⟨i, h⟩ (Finset.mem_subtype.mpr hi)
-        · exact hmem i hi h
-    rw [hpre, Measure.infinitePi_pi _ (fun i _ => ht i.val),
-      Finset.prod_subtype_eq_prod_filter (f := fun i => μ i (t i))]
-    symm
-    rw [← Finset.prod_filter_mul_prod_filter_not s p]
-    have hone : ∏ i ∈ s.filter (fun i => ¬ p i), μ i (t i) = 1 := by
-      refine Finset.prod_eq_one fun i hi => ?_
-      rw [Finset.mem_filter] at hi
-      rw [hdirac i hi.2, Measure.dirac_apply' _ (ht i),
-        Set.indicator_of_mem (hmem i hi.1 hi.2), Pi.one_apply]
-    rw [hone, mul_one]
-  · -- Some padded coordinate in `s` misses `t i₀`, so both the preimage and the product vanish.
-    push Not at hmem
-    obtain ⟨i₀, hi₀s, hi₀p, hi₀notmem⟩ := hmem
-    have hpre : pad ⁻¹' (s : Set ι).pi t = ∅ := by
-      ext z
-      simp only [Set.mem_preimage, Set.mem_pi, Finset.mem_coe, Set.mem_empty_iff_false,
-        iff_false, not_forall]
-      exact ⟨i₀, hi₀s, by simpa [pad, hi₀p] using hi₀notmem⟩
-    rw [hpre, measure_empty]
-    symm
-    refine Finset.prod_eq_zero hi₀s ?_
-    rw [hdirac i₀ hi₀p, Measure.dirac_apply' _ (ht i₀), Set.indicator_of_notMem hi₀notmem]
-
-end MeasureTheory.Measure

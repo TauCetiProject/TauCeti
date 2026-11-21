@@ -18,8 +18,8 @@ locations, and countability ensures that equal extended multiplicities give equi
 fibers, even when those fibers are infinite. Repeated locations and empty index types are
 allowed. This permits constructions on enumerated occurrences to descend to measures.
 
-This file also records `Measure.sum` identities for dropping zero summands and restricting
-optional enumerations `ι → Option X` to their present (`isSome`) indices.
+This file also records `Measure.sum_elim_dirac_eq_sum_isSome` for restricting optional
+enumerations `ι → Option X` to their present (`isSome`) indices.
 -/
 
 public section
@@ -29,38 +29,27 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
-/-- Dropping indices at which a family of measures vanishes leaves `Measure.sum` unchanged. -/
-theorem sum_eq_sum_subtype {ι X : Type*} [MeasurableSpace X] {p : ι → Prop}
-    (μ : ι → Measure X) (hzero : ∀ i, ¬ p i → μ i = 0) :
-    Measure.sum μ = Measure.sum fun i : {i : ι // p i} => μ i.val := by
-  ext A hA
-  rw [Measure.sum_apply _ hA, Measure.sum_apply _ hA,
-    ← tsum_subtype_eq_of_support_subset (s := {i : ι | p i}) fun i hi => by
-      by_contra h
-      exact hi (by simp [hzero i h])]
-  rfl
-
-/-- Padding a subtype-indexed family of measures with `0` outside the subtype leaves `Measure.sum`
-unchanged. -/
-theorem sum_dite_zero {ι X : Type*} [MeasurableSpace X] {p : ι → Prop} [DecidablePred p]
-    (μ : {i : ι // p i} → Measure X) :
-    (Measure.sum fun i : ι => if h : p i then μ ⟨i, h⟩ else 0) = Measure.sum μ := by
-  rw [sum_eq_sum_subtype (p := p) _ fun i hi => by simp [hi]]
-  congr 1
-  funext i
-  simp [i.property]
-
 /-- Summing optional Dirac occurrences agrees with summing the Dirac occurrences over the
 present (`isSome`) indices. -/
 theorem sum_elim_dirac_eq_sum_isSome {ι X : Type*} [MeasurableSpace X] (x : ι → Option X) :
     (Measure.sum fun i => (x i).elim 0 Measure.dirac) =
       Measure.sum fun i : {i : ι // (x i).isSome} => Measure.dirac ((x i.val).get i.property) := by
-  rw [sum_eq_sum_subtype (p := fun i => (x i).isSome) _ fun i hi => by
-    rw [Option.not_isSome_iff_eq_none.mp hi, Option.elim_none]]
-  congr 1
-  funext ⟨i, hi⟩
-  obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp hi
-  simp [ha]
+  classical
+  have hfun : (fun i => (x i).elim (0 : Measure X) Measure.dirac) =
+      Function.extend Subtype.val
+        (fun i : {i : ι // (x i).isSome} => Measure.dirac ((x i.val).get i.property)) 0 := by
+    funext i
+    by_cases hi : (x i).isSome
+    · obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp hi
+      simpa [ha] using (Subtype.val_injective.extend_apply
+        (fun j : {j : ι // (x j).isSome} => Measure.dirac ((x j.val).get j.property))
+        0 ⟨i, hi⟩).symm
+    · have hnot : i ∉ Set.range (Subtype.val : {j : ι // (x j).isSome} → ι) := by
+        rintro ⟨⟨j, hj⟩, rfl⟩
+        exact hi hj
+      rw [Option.not_isSome_iff_eq_none.mp hi, Option.elim_none,
+        Function.extend_apply' _ _ _ hnot, Pi.zero_apply]
+  rw [hfun, Measure.sum_extend_zero Subtype.val_injective]
 
 end MeasureTheory.Measure
 

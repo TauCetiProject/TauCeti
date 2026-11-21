@@ -12,7 +12,6 @@ public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Topology.EMetricSpace.Defs
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
-import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
 
 /-!
 # Marginal masses and sections of product measures
@@ -31,13 +30,10 @@ of the first coordinate commutes with taking the first marginal (`fst_withDensit
 Projecting a measurable restriction of a product weights the first factor by the masses of
 its vertical sections (`map_fst_restrict_prod_eq_withDensity`), and splitting along a measurable
 second-coordinate set and its complement recovers the first marginal as a sum
-(`map_fst_restrict_univ_prod_add_compl`). A measure's first marginal is determined (pointwise or
-almost surely) by cylinders over a generating π-system and a finite-mass countable cover
-(`map_fst_eq_of_generateFrom_of_cover`, `ae_map_fst_eq_of_generateFrom_of_cover`). Rectangle bounds
-also give finite interval-selection masses and a local-finiteness criterion for projected
-restrictions away from an initial endpoint. Partitioning an arbitrary measure on `X × ι` into
-countable singleton slices `univ ×ˢ {i}` and projecting onto `X` sums back to `μ.map Prod.fst`
-(`sum_map_fst_restrict_univ_prod_singleton`).
+(`map_fst_restrict_univ_prod_add_compl`). Rectangle bounds also give finite interval-selection
+masses and a local-finiteness criterion for projected restrictions away from an initial endpoint.
+Partitioning an arbitrary measure on `X × ι` into countable singleton slices `univ ×ˢ {i}` and
+projecting onto `X` sums back to `μ.map Prod.fst` (`sum_map_fst_restrict_univ_prod_singleton`).
 
 If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
 `(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
@@ -185,51 +181,6 @@ theorem map_fst_restrict_univ_prod_add_compl {α β : Type*} [MeasurableSpace α
   rw [← Measure.map_add _ _ measurable_fst,
     ← Measure.restrict_union (Set.Disjoint.set_prod_right disjoint_compl_right Set.univ Set.univ)
       (MeasurableSet.univ.prod hA.compl), hpart, Measure.restrict_univ]
-
-/-- A measure `ν` on a product has first marginal `μ` if they agree on all cylinders
-`(A ∩ s n) ×ˢ univ` for a generating π-system `C` containing `univ` and a countable measurable
-cover `s` on which `μ` is finite. -/
-theorem map_fst_eq_of_generateFrom_of_cover {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {C : Set (Set α)} (hgen : ‹MeasurableSpace α› = MeasurableSpace.generateFrom C)
-    (hpi : IsPiSystem C) (huniv : Set.univ ∈ C)
-    {s : ℕ → Set α} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = Set.univ)
-    {μ : Measure α} {ν : Measure (α × β)} (hfin : ∀ n, μ (s n) < ∞)
-    (heq : ∀ n, ∀ A ∈ C, ν ((A ∩ s n) ×ˢ Set.univ) = μ (A ∩ s n)) :
-    ν.map Prod.fst = μ := by
-  symm
-  refine Measure.ext_of_generateFrom_of_cover hgen (Set.countable_range s) hpi
-    (by rwa [Set.sUnion_range]) (by rintro _ ⟨n, rfl⟩; exact (hfin n).ne)
-    (by
-      rintro _ ⟨n, rfl⟩ A hA
-      rw [Measure.map_apply measurable_fst
-          ((MeasurableSpace.measurableSet_of_eq_generateFrom hgen hA).inter (hs n)),
-        ← Set.prod_univ]
-      exact (heq n A hA).symm)
-    (by
-      rintro _ ⟨n, rfl⟩
-      have h := heq n Set.univ huniv
-      rw [Set.univ_inter] at h
-      rw [Measure.map_apply measurable_fst (hs n), ← Set.prod_univ]
-      exact h.symm)
-
-/-- Almost-sure form of `Measure.map_fst_eq_of_generateFrom_of_cover`: for random measures
-`μ : Ω → Measure α` and `ν : Ω → Measure (α × β)`, if `μ` is almost surely finite on each piece of
-a countable measurable cover `s` and `ν ((A ∩ s n) ×ˢ univ) = μ (A ∩ s n)` holds almost surely for
-every `n` and every `A` in a countable generating π-system `C` containing `univ`, then
-`(ν ω).map Prod.fst = μ ω` almost surely. -/
-theorem ae_map_fst_eq_of_generateFrom_of_cover {Ω α β : Type*}
-    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
-    {P : Measure Ω} {μ : Ω → Measure α} {ν : Ω → Measure (α × β)}
-    {C : Set (Set α)} (hcount : C.Countable)
-    (hgen : ‹MeasurableSpace α› = MeasurableSpace.generateFrom C)
-    (hpi : IsPiSystem C) (huniv : Set.univ ∈ C)
-    {s : ℕ → Set α} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = Set.univ)
-    (hfin : ∀ n, ∀ᵐ ω ∂P, μ ω (s n) < ∞)
-    (heq : ∀ n, ∀ A ∈ C, ∀ᵐ ω ∂P, ν ω ((A ∩ s n) ×ˢ Set.univ) = μ ω (A ∩ s n)) :
-    ∀ᵐ ω ∂P, (ν ω).map Prod.fst = μ ω := by
-  filter_upwards [ae_all_iff.mpr hfin,
-    ae_all_iff.mpr fun n => (ae_ball_iff hcount).mpr fun A hA => heq n A hA] with ω hωfin hωeq
-  exact map_fst_eq_of_generateFrom_of_cover hgen hpi huniv hs hcover hωfin hωeq
 
 /-- Weighting a joint measure by a function of its first coordinate weights its first marginal
 by the same function. The weight only needs to be almost everywhere measurable for the first

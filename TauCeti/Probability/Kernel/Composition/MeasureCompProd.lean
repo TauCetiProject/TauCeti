@@ -28,8 +28,6 @@ vertical sections, and finite kernels bound rectangle masses in terms of the bas
 
 * `MeasureTheory.Measure.map_prodMap_compProd_comap` — for `f : W → Y` measurable and
   `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
-* `MeasureTheory.Measure.map_prod_compProd_comap` — Markov-kernel form expressing the right-hand
-  side in terms of the pushed-forward first marginal `(μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst)`.
 * `MeasureTheory.Measure.compProd_comap_map` — pushing a kernel forward along `g` before pulling
   its input back along `f` pushes the composition-product forward along `Prod.map id g`.
 * `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
@@ -83,17 +81,6 @@ theorem map_prodMap_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y 
   rw [map_apply hmap hs, compProd_apply (hs.preimage hmap), compProd_apply hs,
     lintegral_map (Kernel.measurable_kernel_prodMk_left hs) hf]
   simp [Set.preimage_preimage]
-
-/-- Under `μ ⊗ₘ κ.comap f hf` for a Markov kernel `κ`, the pair `(f q.1, q.2)` has joint law
-`((μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst)) ⊗ₘ κ`. -/
-theorem map_prod_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y Z)
-    [IsMarkovKernel κ] {f : W → Y} (hf : Measurable f) :
-    (μ ⊗ₘ κ.comap f hf).map (fun q => (f q.1, q.2)) =
-      ((μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst)) ⊗ₘ κ := by
-  have hfst : (μ ⊗ₘ κ.comap f hf).map (f ∘ Prod.fst) = μ.map f := by
-    rw [← Measure.map_map hf measurable_fst, ← Measure.fst, Measure.fst_compProd]
-  rw [hfst]
-  exact μ.map_prodMap_compProd_comap κ hf
 
 /-- Pushing a kernel forward along `g` before pulling its input back along `f` pushes the second
 factor of the composition-product forward along `Prod.map id g`, with no s-finiteness assumption on

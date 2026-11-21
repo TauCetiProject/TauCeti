@@ -63,6 +63,24 @@ theorem IsPoissonRandomMeasure.acceptance_univ_prod [SFinite Q]
   simpa only [mk_preimage_prod_right (mem_univ _), withDensity_const] using
     hM.acceptance (MeasurableSet.univ.prod hA)
 
+/-- Restricting a Poisson random measure with composition-product intensity `Λ ⊗ₘ κ` to a
+measurable set `A` and projecting onto `X` gives a Poisson random measure whose intensity weights
+`Λ` by the section masses `x ↦ κ x (Prod.mk x ⁻¹' A)`. -/
+theorem IsPoissonRandomMeasure.map_fst_restrict_compProd [SFinite Λ] [IsSFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {A : Set (X × E)} (hA : MeasurableSet A) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict A).map Prod.fst)
+      (Λ.withDensity fun x ↦ κ x (Prod.mk x ⁻¹' A)) := by
+  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ κ hA] using
+    (hM.restrict hA).map measurable_fst
+
+/-- Projecting occurrences whose marks fall in a measurable mark set `B` produces a Poisson random
+measure on `X` with intensity `Λ.withDensity (fun x ↦ κ x B)`. -/
+theorem IsPoissonRandomMeasure.map_fst_restrict_univ_prod_compProd [SFinite Λ] [IsSFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B) :
+    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ B)).map Prod.fst)
+      (Λ.withDensity fun x ↦ κ x B) := by
+  simpa using hM.map_fst_restrict_compProd (MeasurableSet.univ.prod hB)
+
 /-- Selecting the first atom `a` from a Poisson random measure with Bernoulli kernel intensity
 `Λ ⊗ₘ Kernel.bernoulli a b hp` (with `a ≠ b`) weights `Λ` by `p`. -/
 theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli_left [SFinite Λ]
@@ -70,10 +88,8 @@ theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli_left [SFinite Λ]
     (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ Kernel.bernoulli a b hp)) :
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {a})).map Prod.fst)
       (Λ.withDensity fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞)) := by
-  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ (Kernel.bernoulli a b hp)
-        (MeasurableSet.univ.prod (measurableSet_singleton a)),
-      mk_preimage_prod_right (mem_univ _), Kernel.bernoulli_apply_singleton_left hab] using
-    (hM.restrict (MeasurableSet.univ.prod (measurableSet_singleton a))).map measurable_fst
+  simpa only [Kernel.bernoulli_apply_singleton_left hab] using
+    hM.map_fst_restrict_univ_prod_compProd (measurableSet_singleton a)
 
 /-- Selecting the second atom `b` from a Poisson random measure with Bernoulli kernel intensity
 `Λ ⊗ₘ Kernel.bernoulli a b hp` (with `a ≠ b`) weights `Λ` by `unitInterval.symm ∘ p`. -/
@@ -82,10 +98,8 @@ theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli_right [SFinite Λ]
     (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ Kernel.bernoulli a b hp)) :
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
       (Λ.withDensity fun x ↦ (unitInterval.toNNReal (unitInterval.symm (p x)) : ℝ≥0∞)) := by
-  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ (Kernel.bernoulli a b hp)
-        (MeasurableSet.univ.prod (measurableSet_singleton b)),
-      mk_preimage_prod_right (mem_univ _), Kernel.bernoulli_apply_singleton_right hab] using
-    (hM.restrict (MeasurableSet.univ.prod (measurableSet_singleton b))).map measurable_fst
+  simpa only [Kernel.bernoulli_apply_singleton_right hab] using
+    hM.map_fst_restrict_univ_prod_compProd (measurableSet_singleton b)
 
 /-- Selecting colour `b : Bool` from a Poisson random measure with Boolean Bernoulli kernel
 intensity `Λ ⊗ₘ Kernel.bernoulli true false hp` weights `Λ` by `p` (for `true`) or
@@ -96,10 +110,8 @@ theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli [SFinite Λ]
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
       (Λ.withDensity fun x ↦
         (unitInterval.toNNReal (if b then p x else unitInterval.symm (p x)) : ℝ≥0∞)) := by
-  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ (Kernel.bernoulli true false hp)
-        (MeasurableSet.univ.prod (measurableSet_singleton b)),
-      mk_preimage_prod_right (mem_univ _), Kernel.bernoulli_apply_singleton_bool] using
-    (hM.restrict (MeasurableSet.univ.prod (measurableSet_singleton b))).map measurable_fst
+  simpa only [Kernel.bernoulli_apply_singleton_bool] using
+    hM.map_fst_restrict_univ_prod_compProd (measurableSet_singleton b)
 
 /-- If a product-space Poisson random measure has zero intensity on `univ ×ˢ B`, then the
 ground projection of its restriction to `univ ×ˢ B` vanishes almost surely. No measurability
@@ -133,12 +145,7 @@ theorem IsPoissonRandomMeasure.acceptance_univ_prod_singleton_of_bernoulliMeasur
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
       (((if b then unitInterval.toNNReal p else
         1 - unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) • Λ) := by
-  have hb : ((bernoulliMeasure true false p) {b}).toNNReal =
-      if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p := by
-    cases b
-    · simpa using unitInterval.toNNReal_symm p
-    · simp
-  simpa only [← hb, ENNReal.coe_toNNReal (measure_ne_top _ _)] using
+  simpa only [bernoulliMeasure_apply_singleton_bool] using
     h.acceptance_univ_prod (measurableSet_singleton b)
 
 /-- Bernoulli colour selection splits a scaled ground intensity into scales `r*p` and

@@ -93,78 +93,63 @@ theorem ae_nat_count_eq_add_compl_of_ae_map_fst {Γ : Measure (ℝ≥0 × E)}
     rw [← hω, Measure.map_apply measurable_fst measurableSet_Ioc, ← prod_univ]
   simpa only [union_compl_self, hground] using hωadd t
 
-/-- For any coupled marking `(N, M)` with joint law `(P.map N) ⊗ₘ κ.marking` and any measurable
-mark set `B`, the cumulative natural count paths of `B` and `Bᶜ` add to the ground count path of
-`N` simultaneously at every time `t : ℝ≥0` on a single full-measure event. -/
-theorem ae_nat_count_eq_add_compl_of_map_prod_eq_compProd_marking [IsLocallyFiniteMeasure Λ]
-    [IsMarkovKernel κ] (h : IsPoissonRandomMeasure P N Λ) (hM : Measurable M)
-    (hjoint : P.map (fun ω => (N ω, M ω)) = (P.map N) ⊗ₘ κ.marking)
+/-- For any marked temporal Poisson random measure `M` of composition-product intensity `Λ ⊗ₘ κ`
+with locally finite `Λ` and finite kernel `κ` whose ground projection equals `N` almost surely,
+the cumulative natural count paths of a measurable mark set `B` and its complement `Bᶜ` add to the
+ground count path of `N` simultaneously at every time `t : ℝ≥0` on a single full-measure event. -/
+theorem ae_nat_count_eq_add_compl_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) (hproj : ∀ᵐ ω ∂P, (M ω).map Prod.fst = N ω)
     {B : Set E} (hB : MeasurableSet B) :
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
       ⌊(N ω (Ioc 0 t)).toNNReal⌋₊ =
         ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ +
-          ⌊(M ω (Ioc 0 t ×ˢ Bᶜ)).toNNReal⌋₊ := by
-  obtain ⟨hPM, hproj⟩ := h.of_map_prod_eq_compProd_marking hM hjoint
-  exact hPM.ae_nat_count_eq_add_compl_of_ae_map_fst hproj hB (Λ.compProd_Ioc_prod_lt_top κ univ 0)
+          ⌊(M ω (Ioc 0 t ×ˢ Bᶜ)).toNNReal⌋₊ :=
+  hM.ae_nat_count_eq_add_compl_of_ae_map_fst hproj hB (Λ.compProd_Ioc_prod_lt_top κ univ 0)
 
-/-- Each measurable mark-set interval count of a coupled marking `(N, M)` has Poisson law with
-parameter `∫⁻ x in Ioc s t, κ x B ∂Λ`, including empty intervals and atomic intensities. -/
-theorem hasLaw_nat_count_Ioc_of_map_prod_eq_compProd_marking [IsLocallyFiniteMeasure Λ]
-    [IsMarkovKernel κ] (h : IsPoissonRandomMeasure P N Λ) (hM : Measurable M)
-    (hjoint : P.map (fun ω => (N ω, M ω)) = (P.map N) ⊗ₘ κ.marking)
-    {B : Set E} (hB : MeasurableSet B) (s t : ℝ≥0) :
+/-- Each measurable mark-set interval count of a temporal Poisson random measure with
+composition-product intensity `Λ ⊗ₘ κ` has Poisson law with parameter `∫⁻ x in Ioc s t, κ x B ∂Λ`,
+including empty intervals and atomic intensities. -/
+theorem hasLaw_nat_count_Ioc_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B) (s t : ℝ≥0) :
     HasLaw (fun ω => ⌊(M ω (Ioc s t ×ˢ B)).toNNReal⌋₊)
       (poissonMeasure (∫⁻ x in Ioc s t, κ x B ∂Λ).toNNReal) P := by
-  have hPM := (h.of_map_prod_eq_compProd_marking hM hjoint).1
   simpa only [Measure.compProd_apply_prod measurableSet_Ioc hB] using
-    hPM.hasLaw_nat_count_prod_Ioc_of_lt_top hB s t (Λ.compProd_Ioc_prod_lt_top κ B s t)
+    hM.hasLaw_nat_count_prod_Ioc_of_lt_top hB s t (Λ.compProd_Ioc_prod_lt_top κ B s t)
 
-/-- Each measurable mark-set count increment over `(s, t]` of a coupled marking `(N, M)` has
-Poisson law with parameter `∫⁻ x in Ioc s t, κ x B ∂Λ`. -/
-theorem hasLaw_nat_count_sub_of_map_prod_eq_compProd_marking [IsLocallyFiniteMeasure Λ]
-    [IsMarkovKernel κ] (h : IsPoissonRandomMeasure P N Λ) (hM : Measurable M)
-    (hjoint : P.map (fun ω => (N ω, M ω)) = (P.map N) ⊗ₘ κ.marking)
-    {B : Set E} (hB : MeasurableSet B) {s t : ℝ≥0} (hst : s ≤ t) :
+/-- Each measurable mark-set count increment over `(s, t]` of a temporal Poisson random measure
+with composition-product intensity `Λ ⊗ₘ κ` has Poisson law with parameter
+`∫⁻ x in Ioc s t, κ x B ∂Λ`. -/
+theorem hasLaw_nat_count_sub_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B)
+    {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (fun ω => ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ -
       ⌊(M ω (Ioc 0 s ×ˢ B)).toNNReal⌋₊)
       (poissonMeasure (∫⁻ x in Ioc s t, κ x B ∂Λ).toNNReal) P := by
-  have hPM := (h.of_map_prod_eq_compProd_marking hM hjoint).1
   simpa only [Measure.compProd_apply_prod measurableSet_Ioc hB] using
-    hPM.hasLaw_nat_count_prod_sub_of_measure_Ioc_prod_lt_top hB hst
+    hM.hasLaw_nat_count_prod_sub_of_measure_Ioc_prod_lt_top hB hst
       (Λ.compProd_Ioc_prod_lt_top κ B 0 t)
 
 end CoupledTemporal
 
 section BernoulliBoundary
 
-/-- Zero-rate constant-Bernoulli boundary case for any scaled locally finite intensity `r • Λ`
-(in particular homogeneous `r • nnvolume`): whenever the effective rate of colour `b` vanishes
-(covering `r = 0`, `b = true` with `p = 0`, and `b = false` with `p = 1`), the `b`-projection
-vanishes almost surely and its cumulative count path is identically zero simultaneously at all
-times. -/
+/-- Zero-rate constant-Bernoulli boundary case for any scaled intensity `r • Λ` (in particular
+homogeneous `r • nnvolume`): whenever the effective rate of colour `b` vanishes (covering `r = 0`,
+`b = true` with `p = 0`, and `b = false` with `p = 1`), the `b`-projection vanishes almost surely
+and its cumulative count path is identically zero simultaneously at all times. -/
 theorem ae_map_fst_restrict_singleton_and_nat_count_eq_zero_of_const_bernoulliMeasure_smul
-    [IsLocallyFiniteMeasure Λ] {r : ℝ≥0}
-    (h : IsPoissonRandomMeasure P N ((r : ℝ≥0∞) • Λ)) {p : unitInterval}
-    {M : Ω → Measure (ℝ≥0 × Bool)} (hM : Measurable M)
-    (hjoint : P.map (fun ω => (N ω, M ω)) =
-      (P.map N) ⊗ₘ (Kernel.const ℝ≥0 (bernoulliMeasure true false p)).marking)
+    {r : ℝ≥0} {p : unitInterval} {M : Ω → Measure (ℝ≥0 × Bool)}
+    (hM : IsPoissonRandomMeasure P M
+      (((r : ℝ≥0∞) • Λ).prod (bernoulliMeasure true false p)))
     (b : Bool)
     (hzero : r * (if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p) = 0) :
     (∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ {b})).map Prod.fst = 0) ∧
     (∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊ = 0) := by
-  have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • Λ) :=
-    Λ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
-  have hzero' : (r : ℝ≥0∞) *
-      ((if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p : ℝ≥0) : ℝ≥0∞) = 0 := by
-    rw [← ENNReal.coe_mul, hzero, ENNReal.coe_zero]
-  have hmeas : ∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ {b})).map Prod.fst = 0 :=
-    (h.ae_map_fst_restrict_singleton_eq_zero_and_not_eq_of_const_bernoulliMeasure hM hjoint b
-      (by rw [smul_apply, smul_eq_mul, mul_right_comm, hzero', zero_mul])).1
-  have hPM := (h.of_map_prod_eq_compProd_marking_const hM hjoint).1
-  refine ⟨hmeas, hPM.ae_nat_count_prod_eq_zero_of_smul_prod_of_mul_eq_zero ?_⟩
-  rw [← Kernel.bernoulli_apply (X := Unit) true false (p := fun _ => p) measurable_const (),
-    Kernel.bernoulli_apply_singleton_bool, apply_ite unitInterval.toNNReal,
-    unitInterval.toNNReal_symm, hzero']
+  have hzero' : (r : ℝ≥0∞) * bernoulliMeasure true false p {b} = 0 := by
+    rw [bernoulliMeasure_apply_singleton_bool, ← ENNReal.coe_mul, hzero, ENNReal.coe_zero]
+  refine ⟨hM.ae_map_fst_restrict_univ_prod_eq_zero ?_,
+    hM.ae_nat_count_prod_eq_zero_of_smul_prod_of_mul_eq_zero hzero'⟩
+  rw [Measure.prod_prod, smul_apply, smul_eq_mul, mul_right_comm, hzero', zero_mul]
 
 end BernoulliBoundary
 
@@ -284,31 +269,6 @@ end Existential
 end TauCeti.Probability.IsPoissonRandomMeasure
 
 namespace TauCeti.Probability
-
-section MarkedProjection
-
-variable {Ω X E : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
-  {P : Measure Ω} {Λ : Measure X} {κ : Kernel X E} {M : Ω → Measure (X × E)}
-
-/-- Restricting a Poisson random measure with composition-product intensity `Λ ⊗ₘ κ` to a
-measurable set `A` and projecting onto `X` gives a Poisson random measure whose intensity weights
-`Λ` by the section masses `x ↦ κ x (Prod.mk x ⁻¹' A)`. -/
-theorem IsPoissonRandomMeasure.map_fst_restrict_compProd [SFinite Λ] [IsSFiniteKernel κ]
-    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {A : Set (X × E)} (hA : MeasurableSet A) :
-    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict A).map Prod.fst)
-      (Λ.withDensity fun x ↦ κ x (Prod.mk x ⁻¹' A)) := by
-  simpa only [Measure.map_fst_restrict_compProd_eq_withDensity Λ κ hA] using
-    (hM.restrict hA).map measurable_fst
-
-/-- Projecting occurrences whose marks fall in a measurable mark set `B` produces a Poisson random
-measure on `X` with intensity `Λ.withDensity (fun x ↦ κ x B)`. -/
-theorem IsPoissonRandomMeasure.map_fst_restrict_univ_prod_compProd [SFinite Λ] [IsSFiniteKernel κ]
-    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B) :
-    IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ B)).map Prod.fst)
-      (Λ.withDensity fun x ↦ κ x B) := by
-  simpa using hM.map_fst_restrict_compProd (MeasurableSet.univ.prod hB)
-
-end MarkedProjection
 
 section CategoricalAndBernoulliThinning
 
@@ -454,19 +414,14 @@ theorem IsPoissonRandomMeasure.exists_bernoulli_thinning_of_measurable
         (Λ.withDensity fun x ↦ ((1 - unitInterval.toNNReal (p x) : ℝ≥0) : ℝ≥0∞)) ∧
       IndepFun (fun z ↦ z.2.1) (fun z ↦ z.2.2) (P ⊗ₘ η.comap N hN.measurable) ∧
       ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.1 + z.2.2 = N z.1 := by
-  let κ : Kernel X Bool := ⟨fun x ↦ bernoulliMeasure true false (p x), by fun_prop⟩
-  have : IsMarkovKernel κ := ⟨fun x ↦ by dsimp [κ]; infer_instance⟩
-  obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := exists_bool_thinning hN κ
-  have htrue : (fun x ↦ κ x {true}) = fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞) :=
-    funext fun x ↦ bernoulliMeasure_apply_of_mem_of_notMem (p x)
-      (measurableSet_singleton true) rfl (by simp)
-  have hfalse : (fun x ↦ κ x {false}) =
+  obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := exists_bool_thinning hN (Kernel.bernoulli true false hp)
+  have htrue : (fun x ↦ Kernel.bernoulli true false hp x {true}) =
+      fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞) :=
+    funext fun x ↦ Kernel.bernoulli_apply_singleton_left (by decide) hp x
+  have hfalse : (fun x ↦ Kernel.bernoulli true false hp x {false}) =
       fun x ↦ ((1 - unitInterval.toNNReal (p x) : ℝ≥0) : ℝ≥0∞) :=
     funext fun x ↦ by
-      simp only [κ, Kernel.coe_mk]
-      rw [bernoulliMeasure_apply_of_notMem_of_mem (p x) (measurableSet_singleton false)
-          (by simp) rfl,
-        ← unitInterval.toNNReal_add_toNNReal_symm (p x), add_tsub_cancel_left]
+      rw [Kernel.bernoulli_apply_singleton_right (by decide) hp x, unitInterval.toNNReal_symm]
   exact ⟨η, hη, htrue ▸ h₁, hfalse ▸ h₂, hind, hadd⟩
 
 /-- **Constant-probability Bernoulli thinning of an uncoloured Poisson random measure**, including

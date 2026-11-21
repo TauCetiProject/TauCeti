@@ -7,18 +7,35 @@ module
 
 public import Mathlib.Probability.Distributions.Bernoulli
 public import Mathlib.Probability.Kernel.Basic
+import TauCeti.Topology.UnitInterval.NNReal
 
 /-!
 # Parameter measurability for the Bernoulli distribution
 
 The Bernoulli measure `Ber(x, y, p)` depends measurably on its two atoms and its success
 probability jointly, so measurable parameter maps produce measurable measure-valued Bernoulli
-families, in particular the Markov kernel `ProbabilityTheory.Kernel.bernoulli`.
+families, in particular the Markov kernel `ProbabilityTheory.Kernel.bernoulli`, as well as
+`ProbabilityTheory.bernoulliMeasure_apply_singleton_bool` for evaluating `Ber(true, false, p)` on
+singleton sets.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory
+open scoped NNReal
+
+namespace ProbabilityTheory
+
+/-- Evaluating `bernoulliMeasure true false p` at `{b}` gives `p` for `true` and `1 - p` for
+`false`. -/
+theorem bernoulliMeasure_apply_singleton_bool (p : unitInterval) (b : Bool) :
+    bernoulliMeasure true false p {b} =
+      ((if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p : ℝ≥0) : ENNReal) := by
+  cases b
+  · simp [unitInterval.toNNReal_symm]
+  · simp
+
+end ProbabilityTheory
 
 /-- **The Bernoulli family is measurable in its parameters**: if the atoms `x`, `y` and the
 success probability `p` depend measurably on `a`, then so does `Ber(x a, y a, p a)`. -/

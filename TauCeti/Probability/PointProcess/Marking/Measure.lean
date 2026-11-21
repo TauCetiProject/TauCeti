@@ -185,7 +185,9 @@ theorem laplaceFunctional_markingOfCover {s : ℕ → Set X}
   have hrec :=
     (Measure.exists_occurrence_enumeration_of_cover hs hcover).choose_spec.2.1 μ hμ hfin
   rw [κ.markingOfCover_eq_optionalTupleMarking hs hcover hμ hfin hrec,
-    κ.laplaceFunctional_optionalTupleMarking _ hf, ← hrec]
+    Measure.laplaceFunctional_def]
+  simp only [id]
+  rw [κ.lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral _ hf, ← hrec]
 
 end Cover
 
