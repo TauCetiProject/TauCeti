@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Convex
 
+import Mathlib.Analysis.Convex.PathConnected
+import Mathlib.Analysis.Normed.Module.Convex
+
 /-!
 # Geometry of the complex slit plane
 
@@ -34,6 +37,10 @@ controls integrands of the form `(t + x) ^ s` over `t ∈ (0, ∞)`, such as tho
 symmetric elliptic integrals.
 For `x ∈ slitPlane ∪ {0}`, the quotient `a / (t + x)` is continuous for `t > 0` and the term
 `x / (t + x) · t` stays bounded.
+
+Intersecting `Complex.slitPlane` with a disc centered at the origin yields a set star-convex about
+any positive real inside the disc, and hence preconnected; translating by `z₀` shows that the slit
+disc `{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}` is both open and preconnected.
 
 These criteria feed logarithm evaluations of index integrals: a curve piece confined to a
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
@@ -74,6 +81,9 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
+* `TauCeti.starConvex_ofReal_slitPlane_inter_ball`, `TauCeti.isPreconnected_slitPlane_inter_ball`
+* `TauCeti.isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt`,
+  `TauCeti.isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt`
 -/
 
 public section
@@ -337,6 +347,46 @@ theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
   refine ⟨c⁻¹, inv_pos.mpr hc, fun t ht => ?_⟩
   rw [norm_inv, ← mul_inv]
   exact inv_anti₀ (by positivity) (h t ht)
+
+/-- For `0 < t < r`, the slit disc `Complex.slitPlane ∩ Metric.ball 0 r` is star-convex about the
+positive real point `(t : ℂ)`. -/
+theorem starConvex_ofReal_slitPlane_inter_ball {r t : ℝ} (ht0 : 0 < t) (htr : t < r) :
+    StarConvex ℝ (t : ℂ) (slitPlane ∩ Metric.ball 0 r) :=
+  (starConvex_ofReal_slitPlane ht0).inter <|
+    (convex_ball (0 : ℂ) r).starConvex <| by
+      simpa [Metric.mem_ball, dist_zero_right, abs_of_pos ht0] using htr
+
+/-- The slit disc `Complex.slitPlane ∩ Metric.ball 0 r` is preconnected for every `r : ℝ`. -/
+theorem isPreconnected_slitPlane_inter_ball (r : ℝ) :
+    IsPreconnected (slitPlane ∩ Metric.ball 0 r) := by
+  by_cases hr : 0 < r
+  · have hmem : ((r / 2 : ℝ) : ℂ) ∈ slitPlane ∩ Metric.ball 0 r :=
+      ⟨ofReal_mem_slitPlane.mpr (half_pos hr), by
+        simpa [Metric.mem_ball, dist_zero_right, abs_of_pos hr] using half_lt_self hr⟩
+    exact ((starConvex_ofReal_slitPlane_inter_ball (half_pos hr) (half_lt_self hr)).isPathConnected
+      hmem).isConnected.isPreconnected
+  · simp [Metric.ball_eq_empty.mpr (not_lt.mp hr), isPreconnected_empty]
+
+/-- The translated slit disc `{z : ℂ | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}` is open. -/
+theorem isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt (z₀ : ℂ) (r : ℝ) :
+    IsOpen {z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} :=
+  (isOpen_slitPlane.preimage (continuous_sub_right z₀)).inter
+    (isOpen_lt (continuous_sub_right z₀).norm continuous_const)
+
+/-- The translated slit disc `{z : ℂ | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}` is
+preconnected. -/
+theorem isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt (z₀ : ℂ) (r : ℝ) :
+    IsPreconnected {z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} := by
+  have heq : {z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} =
+      (fun u : ℂ ↦ z₀ + u) '' (slitPlane ∩ Metric.ball 0 r) := by
+    ext z
+    simp only [Set.mem_ofPred_eq, Set.mem_image, Set.mem_inter_iff, Metric.mem_ball,
+      dist_zero_right]
+    exact ⟨fun ⟨h1, h2⟩ ↦ ⟨z - z₀, ⟨h1, h2⟩, add_sub_cancel z₀ z⟩,
+      fun ⟨u, ⟨h1, h2⟩, hu⟩ ↦ by subst hu; exact ⟨by simpa using h1, by simpa using h2⟩⟩
+  rw [heq]
+  exact (isPreconnected_slitPlane_inter_ball r).image _
+    (continuous_const.add continuous_id).continuousOn
 
 end TauCeti
 
