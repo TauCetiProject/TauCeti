@@ -404,12 +404,18 @@ theorem norm_eq (f : CkHolderSpaceOn k α Ω F) :
   simp only [iteratedFDeriv, fieldL_castSucc, iteratedFDerivHolder, WithLp.ofLp_fst,
     WithLp.ofLp_snd]
 
+/-- The sum of the supremum norms of the derivative fields is controlled by the `C^{k,α}(Ω)`
+norm. -/
+theorem sum_norm_iteratedFDeriv_le (f : CkHolderSpaceOn k α Ω F) :
+    ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
+
 /-- The supremum norm of each derivative field is controlled by the `C^{k,α}(Ω)` norm. -/
 theorem norm_iteratedFDeriv_le (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) :
-    ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
-  rw [norm_eq]
-  exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (f.iteratedFDeriv j))
-    (Finset.mem_univ i)).trans (le_add_of_nonneg_right (NNReal.coe_nonneg _))
+    ‖f.iteratedFDeriv i‖ ≤ ‖f‖ :=
+  (Finset.single_le_sum (fun j _ ↦ norm_nonneg (f.iteratedFDeriv j))
+    (Finset.mem_univ i)).trans f.sum_norm_iteratedFDeriv_le
 
 /-- The values of an element of `C^{k,α}(Ω)` are controlled by its norm. -/
 theorem norm_apply_le (f : CkHolderSpaceOn k α Ω F) (x : Ω) : ‖f x‖ ≤ ‖f‖ := by
@@ -935,9 +941,7 @@ def inclusionSuccLOfHolderOnWith (C : ℝ≥0)
         exact f.norm_iteratedFDeriv_apply_le_norm_iteratedFDeriv f.extend_apply i.castSucc x
       · rw [iteratedFDeriv_ofContDiffOn, iteratedFDeriv_ofContDiffOn]
         exact hC f x x.property y y.property
-      · have hsum : ∑ i : Fin (k + 2), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
-          rw [norm_eq]
-          exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
+      · have hsum := f.sum_norm_iteratedFDeriv_le
         rw [Fin.sum_univ_castSucc] at hsum
         push_cast
         nlinarith [norm_nonneg (f.iteratedFDeriv (Fin.last (k + 1)))]
@@ -976,12 +980,9 @@ private theorem holderOnWith_iteratedFDeriv_extend_succ (hconv : Convex ℝ (Ω 
     (hα : α ≤ 1) (f : CkHolderSpaceOn (k + 1) α Ω F) :
     HolderOnWith (2 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ k f.extend) Ω := by
   refine (f.holderOnWith_iteratedFDeriv_of_lt f.extend_apply hconv hα k.lt_succ_self).mono_const ?_
-  have hsum : ∑ i : Fin (k + 2), ‖f.iteratedFDeriv i‖ ≤ ‖f‖ := by
-    rw [norm_eq]
-    exact le_add_of_nonneg_right (NNReal.coe_nonneg _)
   have h2 : ‖f.iteratedFDeriv ⟨k + 1, by omega⟩‖ + ‖f.iteratedFDeriv ⟨k, by omega⟩‖ ≤ ‖f‖ :=
     (Finset.add_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ _) (Finset.mem_univ _)
-      (by simp)).trans hsum
+      (by simp)).trans f.sum_norm_iteratedFDeriv_le
   have hk := norm_iteratedFDeriv_le f ⟨k, by omega⟩
   rw [← NNReal.coe_le_coe]
   push_cast
