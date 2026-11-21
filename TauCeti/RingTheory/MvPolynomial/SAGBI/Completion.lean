@@ -362,49 +362,6 @@ private theorem exists_aeval_eq_support_lt_of_isSubduction (h : m.IsFairSAGBISeq
           one_smul, hir, degree_monicNormalize]
         exact hs.degree_le.trans_lt hflt
 
-/-- Decompose the top-weight component `weightedHomogeneousComponent a δ P` as a homogeneous
-combination of the binomial generators `S` of `toricIdeal k a` when `(aeval (c n) P).coeff δ = 0`.
--/
-private theorem exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent
-    (h : m.IsFairSAGBISequence c) {n : ℕ} {S : Set ((ι n →₀ ℕ) × (ι n →₀ ℕ))}
-    (hS : TauCeti.toricIdeal k (fun i ↦ m.degree (c n i)) =
-      Ideal.span ((fun p : (ι n →₀ ℕ) × (ι n →₀ ℕ) ↦
-        monomial p.1 (1 : k) - monomial p.2 1) '' S))
-    {P : MvPolynomial (ι n) k} {δ : σ →₀ ℕ}
-    (hPδ : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) w ≼[m] δ)
-    (hδ : (aeval (c n) P).coeff δ = 0) :
-    ∃ g : S →₀ MvPolynomial (ι n) k,
-      (g.sum fun j q ↦ q * (monomial j.1.1 (1 : k) - monomial j.1.2 1)) =
-        weightedHomogeneousComponent (fun i ↦ m.degree (c n i)) δ P ∧
-      ∀ j, ∀ x ∈ (g j).support,
-        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) x +
-          Finsupp.linearCombination ℕ (fun i ↦ m.degree (c n i)) j.1.1 = δ := by
-  classical
-  set a := fun i ↦ m.degree (c n i)
-  have hβ (p : S) :
-      (monomial p.1.1 (1 : k) - monomial p.1.2 1).IsWeightedHomogeneous a
-        (Finsupp.linearCombination ℕ a p.1.1) := by
-    have hmem : monomial p.1.1 (1 : k) - monomial p.1.2 1 ∈ TauCeti.toricIdeal k a := by
-      rw [hS]
-      exact Ideal.subset_span ⟨p.1, p.2, rfl⟩
-    have huv := TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 hmem
-    have hA (w : ι n →₀ ℕ) : Finsupp.weight a w = Finsupp.linearCombination ℕ a w := by
-      rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
-    exact (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
-      (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans huv.symm))
-  have hspan : TauCeti.toricIdeal k a =
-      Ideal.span (Set.range fun p : S ↦ monomial p.1.1 (1 : k) - monomial p.1.2 1) := by
-    rw [hS]
-    congr 1
-    ext q
-    simp
-  obtain ⟨g, hgP₀, hgA⟩ := exists_finsupp_sum_mul_eq_weightedHomogeneousComponent hβ
-    (hspan ▸ weightedHomogeneousComponent_mem_toricIdeal (h.monic n) hPδ hδ) δ
-  rw [weightedHomogeneousComponent_eq_self
-    (weightedHomogeneousComponent_isWeightedHomogeneous _ _)] at hgP₀
-  refine ⟨g, hgP₀, fun j x hx ↦ ?_⟩
-  simpa [Finsupp.weight_apply, Finsupp.linearCombination_apply] using hgA j x hx
-
 /-- Support-weight bound for the lifted expression replacing the top-weight component of `P` by
 bounded zero-subductions `Q'M p`. -/
 private theorem linearCombination_stageLift_lt {n M : ℕ} {S : Set ((ι n →₀ ℕ) × (ι n →₀ ℕ))}
@@ -458,8 +415,11 @@ private theorem exists_stage_aeval_eq_support_lt (h : m.IsFairSAGBISequence c)
   classical
   set a := fun i ↦ m.degree (c n i)
   obtain ⟨S, hS, hfair⟩ := h.fair n
+  have hS' : TauCeti.toricIdeal k a =
+      Ideal.span (Set.range fun p : S ↦ monomial p.1.1 (1 : k) - monomial p.1.2 1) := by
+    rw [hS, Set.image_eq_range]
   obtain ⟨g, hgP₀, hgA⟩ :=
-    h.exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent hS hPδ hδ
+    exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent (h.monic n) hS' hPδ hδ
   have hsub (p : S) : ∃ (M : ℕ) (Q' : MvPolynomial (ι M) k),
       aeval (c M) Q' = aeval (c n) (monomial p.1.1 (1 : k) - monomial p.1.2 1) ∧
       ∀ w ∈ Q'.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c M i)) w ≺[m]

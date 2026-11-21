@@ -36,6 +36,10 @@ flat degeneration of `k[c]` to the semigroup algebra of its initial algebra.
   lies in the toric ideal.
 * `MonomialOrder.IsSAGBIBasis.exists_aeval_eq_aeval_sub`: if `c` is a SAGBI basis of `k[c]`, then
   every binomial `Y^u - Y^v` with `A u = A v` has a bounded zero subduction.
+* `MonomialOrder.exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent`: if all
+  exponents `w` of `P` have `A w ≼ δ` and the coefficient of `X^δ` in `φ P` vanishes, then the
+  weight-`δ` component of `P` is a combination `∑ j, g j * (Y^(u j) - Y^(v j))` with every
+  exponent `x` of `g j` satisfying `A x + A (u j) = δ`.
 * `MonomialOrder.exists_finsupp_forall_mem_support_sub_sum_lt`: if all exponents `w` of `P` have
   `A w ≼ δ` and the coefficient of `X^δ` in `φ P` vanishes, then subtracting a combination of the
   relations `Y^(u j) - Y^(v j) - Q j` of weight `δ` lowers the bound `δ`, for any polynomials `Q j`
@@ -102,6 +106,48 @@ section CommRing
 
 variable {R J : Type*} [CommRing R] [Nontrivial R] {c : ι → MvPolynomial σ R}
 
+/-- **Top-weight toric decomposition** for a monic family `c`. Write
+`A w = ∑ i, w i • m.degree (c i)` and let binomials `Y^(u j) - Y^(v j)` generate the toric ideal
+of the leading exponents of `c`. If every exponent `w` of `P` satisfies `A w ≼ δ` and the
+coefficient of `X^δ` in `aeval c P` vanishes, then the weight-`δ` component of `P` is a
+combination `∑ j, g j * (Y^(u j) - Y^(v j))` in which every exponent `x` of `g j` satisfies
+`A x + A (u j) = δ`. -/
+theorem exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent (hc : ∀ i, m.Monic (c i))
+    {u v : J → ι →₀ ℕ}
+    (hJ : TauCeti.toricIdeal R (fun i ↦ m.degree (c i)) =
+      Ideal.span (Set.range fun j ↦ monomial (u j) (1 : R) - monomial (v j) 1))
+    {P : MvPolynomial ι R} {δ : σ →₀ ℕ}
+    (hPδ : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] δ)
+    (hδ : (aeval c P).coeff δ = 0) :
+    ∃ g : J →₀ MvPolynomial ι R,
+      (g.sum fun j q ↦ q * (monomial (u j) (1 : R) - monomial (v j) 1)) =
+        weightedHomogeneousComponent (fun i ↦ m.degree (c i)) δ P ∧
+      ∀ j, ∀ x ∈ (g j).support,
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) x +
+          Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j) = δ := by
+  classical
+  set a := fun i ↦ m.degree (c i)
+  set A := Finsupp.linearCombination ℕ a
+  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := by
+    rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
+  -- The generating binomial `Y^(u j) - Y^(v j)` is weighted homogeneous of weight `A (u j)`.
+  have hβ (j : J) :
+      (monomial (u j) (1 : R) - monomial (v j) 1).IsWeightedHomogeneous a (A (u j)) := by
+    have hmem : monomial (u j) (1 : R) - monomial (v j) 1 ∈ TauCeti.toricIdeal R a := by
+      rw [hJ]
+      exact Ideal.subset_span ⟨j, rfl⟩
+    have huv : A (u j) = A (v j) := TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 hmem
+    exact (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
+      (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans huv.symm))
+  -- The part `P₀` of `P` of weight `δ` lies in the toric ideal, so `P₀ = ∑ j, g j * β j` for some
+  -- `g j` all of whose exponents `x` satisfy `A x + A (u j) = δ`.
+  obtain ⟨g, hgP₀, hgA⟩ := exists_finsupp_sum_mul_eq_weightedHomogeneousComponent hβ
+    (hJ ▸ weightedHomogeneousComponent_mem_toricIdeal hc hPδ hδ) δ
+  rw [weightedHomogeneousComponent_eq_self
+    (weightedHomogeneousComponent_isWeightedHomogeneous _ _)] at hgP₀
+  refine ⟨g, hgP₀, fun j x hx ↦ ?_⟩
+  simpa only [hA] using hgA j x hx
+
 /-- **The reduction step** for a monic family `c`. Write `A w = ∑ i, w i • m.degree (c i)`, let
 binomials `Y^(u j) - Y^(v j)` generate the toric ideal of the leading exponents of `c`, and let
 `Q j` be polynomials all of whose exponents `w` satisfy `A w ≺ A (u j)`. If every exponent `w` of
@@ -126,24 +172,9 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
   classical
   set a := fun i ↦ m.degree (c i)
   set A := Finsupp.linearCombination ℕ a
-  have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := by
-    rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
-  -- The generating binomial `Y^(u j) - Y^(v j)` is weighted homogeneous of weight `A (u j)`.
-  have hβ (j : J) :
-      (monomial (u j) (1 : R) - monomial (v j) 1).IsWeightedHomogeneous a (A (u j)) := by
-    have hmem : monomial (u j) (1 : R) - monomial (v j) 1 ∈ TauCeti.toricIdeal R a := by
-      rw [hJ]
-      exact Ideal.subset_span ⟨j, rfl⟩
-    have huv : A (u j) = A (v j) := TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 hmem
-    exact (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
-      (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans huv.symm))
-  -- The part `P₀` of `P` of weight `δ` lies in the toric ideal, so `P₀ = ∑ j, g j * β j` for some
-  -- `g j` all of whose exponents `x` satisfy `A x + A (u j) = δ`.
-  obtain ⟨g, hgP₀, hgA⟩ := exists_finsupp_sum_mul_eq_weightedHomogeneousComponent hβ
-    (hJ ▸ weightedHomogeneousComponent_mem_toricIdeal hc hPδ hδ) δ
-  rw [weightedHomogeneousComponent_eq_self
-    (weightedHomogeneousComponent_isWeightedHomogeneous _ _)] at hgP₀
-  refine ⟨g, fun j x hx ↦ by rw [← hA]; exact hgA j x hx, fun w hw ↦ ?_⟩
+  obtain ⟨g, hgP₀, hgA⟩ :=
+    exists_finsupp_sum_mul_toricIdeal_eq_weightedHomogeneousComponent hc hJ hPδ hδ
+  refine ⟨g, hgA, fun w hw ↦ ?_⟩
   -- `P - ∑ j, g j * (β j - Q j) = (P - P₀) + ∑ j, g j * Q j`.
   have heq : P - (g.sum fun j q ↦ q * (monomial (u j) 1 - monomial (v j) 1 - Q j)) =
       P - weightedHomogeneousComponent a δ P + g.sum fun j q ↦ q * Q j := by
@@ -155,14 +186,15 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     ring
   rw [heq] at hw
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent, hA] at hw
-    have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
+  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent,
+      Finsupp.weight_apply, ← Finsupp.linearCombination_apply] at hw
+    have hwδ : A w ≠ δ := fun h ↦ hw (by simp [A, a, h])
     have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
     exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
   -- An exponent of `g j * Q j` is a sum `x + y` with `A x + A (u j) = δ` and `A y ≺ A (u j)`.
   obtain ⟨j, -, hj⟩ := Finset.mem_biUnion.1 (support_sum hw)
   obtain ⟨x, hx, y, hy, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hj)
-  rw [map_add, ← hgA j x hx, hA, map_add, map_add]
+  rw [map_add, ← hgA j x hx, map_add, map_add]
   exact add_lt_add_right (hQ j y hy) _
 
 end CommRing
