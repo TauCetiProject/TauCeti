@@ -188,6 +188,46 @@ def thomPairOverTwistedHomologyUnionIso (n : ℕ) :
     (union_subset_union inter_subset_left inter_subset_left) preimage_union
     (by rw [preimage_union, union_inter_distrib_right])) n
 
+/-- The identification of the homology over `U ∩ V` is induced by the inclusion of pairs. -/
+@[simp]
+theorem thomPairOverTwistedHomologyInterIso_hom (n : ℕ) :
+    (thomPairOverTwistedHomologyInterIso L U V n).hom =
+      HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L inter_subset_left
+        (inter_subset_inter inter_subset_left inter_subset_left) preimage_inter.le
+        (by rw [preimage_inter, inter_inter_distrib_right])) n := by
+  rw [thomPairOverTwistedHomologyInterIso, HomologicalComplex.homologyMapIso_hom,
+    subsetPairTwistedChainComplexIsoOfEq_hom]
+
+/-- The inverse of the identification of the homology over `U ∩ V` is induced by an inclusion. -/
+@[simp]
+theorem thomPairOverTwistedHomologyInterIso_inv (n : ℕ) :
+    (thomPairOverTwistedHomologyInterIso L U V n).inv =
+      HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L
+        (inter_subset_inter inter_subset_left inter_subset_left) inter_subset_left
+        preimage_inter.ge (by rw [preimage_inter, ← inter_inter_distrib_right])) n := by
+  rw [thomPairOverTwistedHomologyInterIso, HomologicalComplex.homologyMapIso_inv,
+    subsetPairTwistedChainComplexIsoOfEq_inv]
+
+/-- The identification of the homology over `U ∪ V` is induced by the inclusion of pairs. -/
+@[simp]
+theorem thomPairOverTwistedHomologyUnionIso_hom (n : ℕ) :
+    (thomPairOverTwistedHomologyUnionIso L U V n).hom =
+      HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L inter_subset_left
+        (union_subset_union inter_subset_left inter_subset_left) preimage_union.le
+        (by rw [preimage_union, union_inter_distrib_right])) n := by
+  rw [thomPairOverTwistedHomologyUnionIso, HomologicalComplex.homologyMapIso_hom,
+    subsetPairTwistedChainComplexIsoOfEq_hom]
+
+/-- The inverse of the identification of the homology over `U ∪ V` is induced by an inclusion. -/
+@[simp]
+theorem thomPairOverTwistedHomologyUnionIso_inv (n : ℕ) :
+    (thomPairOverTwistedHomologyUnionIso L U V n).inv =
+      HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L
+        (union_subset_union inter_subset_left inter_subset_left) inter_subset_left
+        preimage_union.ge (by rw [preimage_union, union_inter_distrib_right])) n := by
+  rw [thomPairOverTwistedHomologyUnionIso, HomologicalComplex.homologyMapIso_inv,
+    subsetPairTwistedChainComplexIsoOfEq_inv]
+
 /-- The first map `Hₙ(E|_{U ∩ V}, E₀|_{U ∩ V}; L) ⟶ Hₙ(E|_U, E₀|_U; L) ⊞ Hₙ(E|_V, E₀|_V; L)` of the
 Mayer–Vietoris sequence of the Thom pairs over `U` and over `V`: the restriction to `U` and minus
 the restriction to `V`. -/
@@ -243,16 +283,13 @@ and over `V`, read on the pair over `U ∩ V`. -/
 theorem thomPairOverTwistedHomologyInterIso_hom_pairTwistedMayerVietorisToBiprod (n : ℕ) :
     (thomPairOverTwistedHomologyInterIso L U V n).hom ≫ pairTwistedMayerVietorisToBiprod L
       inter_subset_left inter_subset_left n = thomPairOverTwistedMayerVietorisToBiprod L U V n := by
-  refine biprod.hom_ext _ _ ?_ ?_
-  · rw [thomPairOverTwistedHomologyInterIso, Category.assoc, pairTwistedMayerVietorisToBiprod_fst,
-      thomPairOverTwistedMayerVietorisToBiprod_fst, HomologicalComplex.homologyMapIso_hom,
-      thomPairOverTwistedHomologyMap_def, ← HomologicalComplex.homologyMap_comp,
-      subsetPairTwistedChainComplexIsoOfEq_hom,
-      subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
-  · rw [thomPairOverTwistedHomologyInterIso, Category.assoc, pairTwistedMayerVietorisToBiprod_snd,
-      thomPairOverTwistedMayerVietorisToBiprod_snd, Preadditive.comp_neg,
-      HomologicalComplex.homologyMapIso_hom, thomPairOverTwistedHomologyMap_def,
-      ← HomologicalComplex.homologyMap_comp, subsetPairTwistedChainComplexIsoOfEq_hom,
+  refine biprod.hom_ext _ _ ?_ ?_ <;>
+    [rw [Category.assoc, pairTwistedMayerVietorisToBiprod_fst,
+      thomPairOverTwistedMayerVietorisToBiprod_fst];
+    rw [Category.assoc, pairTwistedMayerVietorisToBiprod_snd,
+      thomPairOverTwistedMayerVietorisToBiprod_snd, Preadditive.comp_neg, neg_inj]] <;>
+    rw [thomPairOverTwistedHomologyInterIso_hom, thomPairOverTwistedHomologyMap_def,
+      ← HomologicalComplex.homologyMap_comp,
       subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
 
 /-- The second map of the Mayer–Vietoris sequence of the Thom pairs is that of the pairs over `U`
@@ -263,18 +300,13 @@ theorem thomPairOverTwistedMayerVietorisFromBiprod_thomPairOverTwistedHomologyUn
     thomPairOverTwistedMayerVietorisFromBiprod L U V n ≫
         (thomPairOverTwistedHomologyUnionIso L U V n).hom =
       pairTwistedMayerVietorisFromBiprod L inter_subset_left inter_subset_left n := by
-  refine (biprod.hom_ext' _ _ ?_ ?_).symm
-  · rw [inl_pairTwistedMayerVietorisFromBiprod,
-      inl_thomPairOverTwistedMayerVietorisFromBiprod_assoc, thomPairOverTwistedHomologyUnionIso,
-      HomologicalComplex.homologyMapIso_hom,
-      thomPairOverTwistedHomologyMap, ← HomologicalComplex.homologyMap_comp,
-      subsetPairTwistedChainComplexIsoOfEq_hom,
-      subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
-  · rw [inr_pairTwistedMayerVietorisFromBiprod,
-      inr_thomPairOverTwistedMayerVietorisFromBiprod_assoc, thomPairOverTwistedHomologyUnionIso,
-      HomologicalComplex.homologyMapIso_hom,
-      thomPairOverTwistedHomologyMap, ← HomologicalComplex.homologyMap_comp,
-      subsetPairTwistedChainComplexIsoOfEq_hom,
+  refine biprod.hom_ext' _ _ ?_ ?_ <;>
+    [rw [inl_thomPairOverTwistedMayerVietorisFromBiprod_assoc,
+      inl_pairTwistedMayerVietorisFromBiprod];
+    rw [inr_thomPairOverTwistedMayerVietorisFromBiprod_assoc,
+      inr_pairTwistedMayerVietorisFromBiprod]] <;>
+    rw [thomPairOverTwistedHomologyUnionIso_hom, thomPairOverTwistedHomologyMap_def,
+      ← HomologicalComplex.homologyMap_comp,
       subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
 
 variable [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)]
@@ -473,6 +505,18 @@ variable {R : Type u} [Ring R] {B : Type w} [TopologicalSpace B] {F : Type w}
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   (L : LocalCoefficientSystem.{u, w, max w w'} R (TopCat.of (TotalSpace F E)))
 
+omit [FiniteDimensional ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- Intersecting a family of trivializing open sets with an open set `W₀` of the base gives a family
+of trivializing open sets: the sets `W₀ ∩ W i`, `i ∈ s`, are open and lie in base sets of linear
+trivializations. -/
+private theorem isOpen_inter_and_subset_baseSet {ι : Type*} {s : Finset ι} {W₀ : Set B}
+    {W : ι → Set B} (hW₀ : IsOpen W₀) (hWo : ∀ i ∈ s, IsOpen (W i))
+    (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W i ⊆ e.baseSet) :
+    (∀ i ∈ s, IsOpen (W₀ ∩ W i)) ∧
+      ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : e.IsLinear ℝ), W₀ ∩ W i ⊆ e.baseSet :=
+  ⟨fun i hi ↦ hW₀.inter (hWo i hi), fun i hi ↦
+    (hWe i hi).imp fun _ ⟨he, hi'⟩ ↦ ⟨he, inter_subset_right.trans hi'⟩⟩
+
 /-- **The relative homology of the Thom pair over a finite union of trivializing open sets vanishes
 below the rank, with any local coefficients**: if each of the finitely many open sets `W i`,
 `i ∈ s`, lies in the base set of a linear trivialization, then `Hₙ(E|_W, E₀|_W; L) = 0` for
@@ -494,11 +538,11 @@ theorem isZero_thomPairOverTwistedHomology_biUnion {ι : Type*} (s : Finset ι) 
       (ih (fun i hi ↦ hWo i (Finset.mem_insert_of_mem hi))
         (fun i hi ↦ hWe i (Finset.mem_insert_of_mem hi)) hn) fun m hm ↦ ?_
     -- `W a ∩ ⋃ i ∈ s, W i` is the union of the trivializing open sets `W a ∩ W i`, `i ∈ s`.
+    have hinter := isOpen_inter_and_subset_baseSet (hWo a (Finset.mem_insert_self a s))
+      (fun i hi ↦ hWo i (Finset.mem_insert_of_mem hi))
+      (fun i hi ↦ hWe i (Finset.mem_insert_of_mem hi))
     rw [inter_iUnion₂]
-    refine ih (fun i hi ↦ (hWo a (Finset.mem_insert_self a s)).inter
-      (hWo i (Finset.mem_insert_of_mem hi))) (fun i hi ↦ ?_) (by omega)
-    obtain ⟨e', he', hi'⟩ := hWe i (Finset.mem_insert_of_mem hi)
-    exact ⟨e', he', inter_subset_right.trans hi'⟩
+    exact ih hinter.1 hinter.2 (by omega)
 
 variable {L} in
 /-- **Morphisms out of the homology over a finite union of trivializing open sets are determined
@@ -530,11 +574,10 @@ theorem thomPairOverTwistedHomology_biUnion_hom_ext {ι : Type*} (s : Finset ι)
     refine thomPairOverTwistedHomology_union_hom_ext (hWo a ha)
       (isOpen_iUnion fun i ↦ isOpen_iUnion fun hi ↦ hWo i (hs i hi)) (fun m hm ↦ ?_) ?_ ?_
     · -- `W a ∩ ⋃ i ∈ s, W i` is the union of the trivializing open sets `W a ∩ W i`, `i ∈ s`.
+      have hinter := isOpen_inter_and_subset_baseSet (hWo a ha) (fun i hi ↦ hWo i (hs i hi))
+        (fun i hi ↦ hWe i (hs i hi))
       rw [inter_iUnion₂]
-      refine isZero_thomPairOverTwistedHomology_biUnion L s
-        (fun i hi ↦ (hWo a ha).inter (hWo i (hs i hi))) (fun i hi ↦ ?_) (by omega)
-      obtain ⟨e', he', hi'⟩ := hWe i (hs i hi)
-      exact ⟨e', he', inter_subset_right.trans hi'⟩
+      exact isZero_thomPairOverTwistedHomology_biUnion L s hinter.1 hinter.2 (by omega)
     · rw [thomPairOverTwistedHomologyMap_comp_assoc, thomPairOverTwistedHomologyMap_comp_assoc]
       exact h a ha
     · refine ih (fun i hi ↦ hWo i (hs i hi)) (fun i hi ↦ hWe i (hs i hi)) fun i hi ↦ ?_
