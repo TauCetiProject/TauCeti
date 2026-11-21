@@ -9,12 +9,14 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.Series
 public import TauCeti.NumberTheory.LSeries.HurwitzZeta.TaylorKernel
+import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Analysis.Calculus.DSlope.Continuous
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.MellinTransform.Growth
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
@@ -44,7 +46,8 @@ Consecutive stages agree identically on overlapping half-planes, gluing into can
 Analytic continuation off `s = 1` extends the `c ↦ c + 1` shift identity and the comparisons with
 `HurwitzZeta.hurwitzZeta` on `(0, 1]` and `riemannZeta` at `c = 1` and `c = 1 / 2` (with finite
 periodic and Dirichlet L-function decompositions in
-`TauCeti.NumberTheory.LSeries.HurwitzZeta.LFunction`).
+`TauCeti.NumberTheory.LSeries.HurwitzZeta.LFunction` and
+`TauCeti.NumberTheory.LSeries.HurwitzZeta.ZMod`).
 
 ## Main definitions and results
 
@@ -55,13 +58,16 @@ periodic and Dirichlet L-function decompositions in
   (`hurwitzHeadIntegral_eq_add_succ`, `hurwitzStageCore_succ_eq`, `hurwitzStageCore_eq_of_le`).
 * `TauCeti.complexHurwitzZeta` and `TauCeti.complexHurwitzZeta₁`: canonical continued Hurwitz zeta
   function and its `(s - 1)`-multiplied entire-in-`s` companion, with stage representations
-  `complexHurwitzZeta_eq_hurwitzStageCore` and `complexHurwitzZeta₁_eq_hurwitzStageCore`.
-* `TauCeti.analyticOnNhd_complexHurwitzZeta`, `TauCeti.analyticOnNhd_complexHurwitzZeta₁`,
-  `TauCeti.differentiableOn_complexHurwitzZeta`, `TauCeti.differentiableOn_complexHurwitzZeta₁`,
-  and slice regularity lemmas (`differentiableAt_complexHurwitzZeta_left`,
-  `differentiableAt_complexHurwitzZeta_right`, `differentiable_complexHurwitzZeta₁_left`,
-  `differentiableAt_complexHurwitzZeta₁_right`).
-* `TauCeti.meromorphic_complexHurwitzZeta_left`,
+  `complexHurwitzZeta_eq_inv_Gamma_div_add_hurwitzStageCore` and
+  `complexHurwitzZeta₁_eq_inv_Gamma_add_mul_hurwitzStageCore`.
+* `TauCeti.analyticOnNhd_complexHurwitzZeta`,
+  `TauCeti.analyticOnNhd_complexHurwitzZeta_sub_inv_Gamma_div`,
+  `TauCeti.analyticOnNhd_complexHurwitzZeta₁`, `TauCeti.differentiableOn_complexHurwitzZeta`,
+  `TauCeti.differentiableOn_complexHurwitzZeta₁`, and slice regularity lemmas
+  (`differentiableAt_complexHurwitzZeta_left`, `differentiableAt_complexHurwitzZeta_right`,
+  `differentiable_complexHurwitzZeta₁_left`, `differentiableAt_complexHurwitzZeta₁_right`).
+* `TauCeti.complexHurwitzZeta_eventuallyEq_nhdsNE_one`,
+  `TauCeti.meromorphic_complexHurwitzZeta_left`,
   `TauCeti.meromorphicOrderAt_complexHurwitzZeta_one`,
   `TauCeti.meromorphicTrailingCoeffAt_complexHurwitzZeta_one`, and
   `TauCeti.tendsto_sub_one_mul_complexHurwitzZeta`: simple pole of order `-1` and residue `1` at
@@ -108,10 +114,6 @@ theorem hurwitzHeadIntegral_def (M : ℕ) (s c : ℂ) :
     hurwitzHeadIntegral M s c =
       ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t := (rfl)
 
-private theorem ofReal_mem_ball_two {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    (t : ℂ) ∈ ball (0 : ℂ) 2 := by
-  simp [abs_of_nonneg ht.1]; linarith [ht.2]
-
 private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) :
     AEStronglyMeasurable
       (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t)
@@ -123,7 +125,7 @@ private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) 
     ContinuousAt.comp (g := fun p : ℂ × ℂ => hurwitzTaylorQuot M p.1 p.2)
       (f := fun u : ℝ => (c, (u : ℂ)))
       (analyticOnNhd_hurwitzTaylorQuot M (c, t)
-        ⟨trivial, ofReal_mem_ball_two (Ioc_subset_Icc_self ht)⟩).continuousAt
+        (Complex.dslope_exp_ne_zero_of_abs_im_sub_lt (by simp [Real.pi_pos]))).continuousAt
       (continuous_const.prodMk continuous_ofReal).continuousAt
   exact (hc1.mul hc2).continuousWithinAt
 
@@ -165,7 +167,7 @@ private theorem continuousOn_hurwitzHeadIntegral (M : ℕ) :
       ContinuousAt.comp (g := fun q : ℂ × ℂ => hurwitzTaylorQuot M q.1 q.2)
         (f := fun p : ℂ × ℂ => (p.2, (t : ℂ)))
         (analyticOnNhd_hurwitzTaylorQuot M (p₀.2, t)
-          ⟨trivial, ofReal_mem_ball_two (Ioc_subset_Icc_self ht)⟩).continuousAt
+          (Complex.dslope_exp_ne_zero_of_abs_im_sub_lt (by simp [Real.pi_pos]))).continuousAt
         (continuous_snd.prodMk continuous_const).continuousAt
     exact hc1.mul hc2
   have hnhds : ({p : ℂ × ℂ | δ - M < p.1.re} ∩ (Prod.snd ⁻¹' closedBall p₀.2 1)) ∈ 𝓝 p₀ :=
@@ -227,8 +229,9 @@ private theorem differentiableAt_hurwitzHeadIntegral_right (M : ℕ) {s₀ c₀ 
   have hφK : ∀ t : ℝ, φ t ∈ K := fun t =>
     ⟨_, ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩, rfl⟩
   have hf : ∀ y ∈ K, AnalyticAt ℂ (fun q : ℂ × ℂ => hurwitzTaylorQuot M q.1 q.2) (c₀, y) := by
-    rintro _ ⟨t, ht, rfl⟩
-    exact analyticOnNhd_hurwitzTaylorQuot M (c₀, t) ⟨trivial, ofReal_mem_ball_two ht⟩
+    rintro _ ⟨t, _, rfl⟩
+    exact analyticOnNhd_hurwitzTaylorQuot M (c₀, t)
+      (Complex.dslope_exp_ne_zero_of_abs_im_sub_lt (by simp [Real.pi_pos]))
   have hg : Integrable (fun t : ℝ => (t : ℂ) ^ (s₀ + (M : ℂ) - 1))
       (volume.restrict (Ioc 0 1)) :=
     (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
@@ -265,37 +268,6 @@ theorem hurwitzTailIntegral_def (s c : ℂ) :
       ∫ t in Ioi (1 : ℝ), (t : ℂ) ^ (s - 1) * (Complex.exp (-c * t) / (1 - Complex.exp (-t))) :=
   (rfl)
 
-private theorem one_sub_exp_neg_one_pos : 0 < 1 - Real.exp (-1) := by
-  linarith [Real.exp_lt_one_iff.mpr (by norm_num : (-1 : ℝ) < 0)]
-
-private theorem norm_div_one_sub_exp_le {c : ℂ} {t : ℝ} (ht : 1 < t) :
-    ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ ≤
-      (1 - Real.exp (-1))⁻¹ * Real.exp (-c.re * t) := by
-  have hlow : 1 - Real.exp (-1) ≤ ‖1 - Complex.exp (-t)‖ := by
-    have h1 := norm_sub_norm_le (1 : ℂ) (Complex.exp (-(t : ℂ)))
-    rw [norm_one, Complex.norm_exp, neg_re, ofReal_re] at h1
-    linarith [Real.exp_le_exp.mpr (by linarith : -t ≤ -1)]
-  rw [norm_div, Complex.norm_exp]
-  have hre : (-c * (t : ℂ)).re = -c.re * t := by simp
-  rw [hre, div_eq_mul_inv, mul_comm]
-  exact mul_le_mul_of_nonneg_right (inv_anti₀ one_sub_exp_neg_one_pos hlow) (Real.exp_pos _).le
-
-private theorem rpow_mul_norm_div_one_sub_exp_le {a A η : ℝ} {c : ℂ} {t : ℝ}
-    (ht : t ∈ Ioi (1 : ℝ)) (ha : a ≤ A) (hc : η ≤ c.re) :
-    t ^ a * ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖ ≤
-      (1 - Real.exp (-1))⁻¹ * (t ^ A * Real.exp (-η * t)) := by
-  have ht0 : 0 < t := zero_lt_one.trans ht
-  calc t ^ a * ‖Complex.exp (-c * t) / (1 - Complex.exp (-t))‖
-      ≤ t ^ A * ((1 - Real.exp (-1))⁻¹ * Real.exp (-c.re * t)) :=
-        mul_le_mul (Real.rpow_le_rpow_of_exponent_le ht.le ha)
-          (norm_div_one_sub_exp_le ht) (norm_nonneg _) (Real.rpow_nonneg ht0.le _)
-    _ ≤ t ^ A * ((1 - Real.exp (-1))⁻¹ * Real.exp (-η * t)) :=
-        mul_le_mul_of_nonneg_left
-          (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith))
-            (inv_pos.mpr one_sub_exp_neg_one_pos).le)
-          (Real.rpow_nonneg ht0.le _)
-    _ = (1 - Real.exp (-1))⁻¹ * (t ^ A * Real.exp (-η * t)) := by ring
-
 private theorem aestronglyMeasurable_hurwitzTailIntegrand (s c : ℂ) :
     AEStronglyMeasurable
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (Complex.exp (-c * t) / (1 - Complex.exp (-t))))
@@ -308,7 +280,10 @@ private theorem integrableOn_hurwitzTailIntegrand (s : ℂ) {c : ℂ} (hc : 0 < 
       (Ioi 1) :=
   integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc one_pos
     (Measurable.aestronglyMeasurable (by fun_prop))
-    (fun _ ht => by simpa only [Real.rpow_one] using norm_div_one_sub_exp_le ht) s
+    (fun _ ht => by
+      simpa only [Real.rpow_one] using
+        TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg_le one_pos ht.le c)
+    s
 
 private theorem continuousOn_hurwitzTailIntegral :
     ContinuousOn (fun p : ℂ × ℂ => hurwitzTailIntegral p.1 p.2) {p | 0 < p.2.re} := by
@@ -338,7 +313,8 @@ private theorem continuousOn_hurwitzTailIntegral :
   filter_upwards [hnhds] with p ⟨hp1, hp2⟩
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
   rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht), sub_re, one_re]
-  exact rpow_mul_norm_div_one_sub_exp_le ht (by linarith [hp1]) hp2.le
+  exact TauCeti.rpow_mul_norm_exp_neg_mul_div_one_sub_exp_neg_le
+    one_pos ht.le ht.le (by linarith [hp1]) hp2.le
 
 private theorem differentiableAt_hurwitzTailIntegral_left (s₀ : ℂ) {c₀ : ℂ} (hc₀ : 0 < c₀.re) :
     DifferentiableAt ℂ (fun s => hurwitzTailIntegral s c₀) s₀ := by
@@ -355,7 +331,7 @@ private theorem differentiableAt_hurwitzTailIntegral_left (s₀ : ℂ) {c₀ : �
     refine IsBigO.of_bound (1 - Real.exp (-1))⁻¹ ?_
     filter_upwards [eventually_gt_atTop (1 : ℝ)] with t ht
     simp only [f, indicator_of_mem (mem_Ioi.mpr ht), Real.norm_of_nonneg (Real.exp_pos _).le]
-    exact norm_div_one_sub_exp_le ht
+    exact TauCeti.norm_exp_neg_mul_div_one_sub_exp_neg_le one_pos ht.le c₀
   have hf_bot : f =O[𝓝[>] 0] fun t : ℝ => t ^ (-(s₀.re - 1)) := by
     refine IsBigO.of_bound 0 ?_
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
@@ -377,14 +353,13 @@ private theorem differentiableAt_hurwitzTailIntegral_right (s₀ : ℂ) {c₀ : 
       by_cases ht : t ∈ Ioi (1 : ℝ)
       · simp only [g, indicator_of_mem ht, smul_eq_mul]; ring
       · simp only [g, indicator_of_notMem ht, smul_zero]
-    refine HasLaplace.intro ?_ ?_
-    · change IntegrableOn (fun t : ℝ => Complex.exp (-c * t) • g t) (Ioi 0)
+    have hint : IntegrableOn (fun t : ℝ => Complex.exp (-c * t) • g t) (Ioi 0) := by
       rw [heq, integrableOn_indicator_iff measurableSet_Ioi.nullMeasurableSet,
         inter_eq_left.mpr (Ioi_subset_Ioi zero_le_one)]
       exact integrableOn_hurwitzTailIntegrand s₀ hc
-    · rw [heq, setIntegral_indicator measurableSet_Ioi,
-        inter_eq_right.mpr (Ioi_subset_Ioi zero_le_one)]
-      rfl
+    refine HasLaplace.intro hint ?_
+    rw [hurwitzTailIntegral_def, heq, setIntegral_indicator measurableSet_Ioi,
+      inter_eq_right.mpr (Ioi_subset_Ioi zero_le_one)]
   exact (hdiff c₀ hc₀).differentiableAt ((isOpen_lt continuous_const continuous_re).mem_nhds hc₀)
 
 /-- The exponential tail integral is jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`. -/
@@ -434,7 +409,9 @@ theorem analyticOnNhd_hurwitzStageCore (M : ℕ) :
           dslope (fun w : ℂ ↦ (Complex.Gamma w)⁻¹) (-((k - 1 : ℕ) : ℂ)) q.1) p :=
     DifferentiableAt.fun_sum fun k _ =>
       ((differentiable_hurwitzBernoulliCoeff k p.2).comp p differentiableAt_snd).mul
-        ((Complex.differentiable_one_div_Gamma.dslope _ p.1).comp p differentiableAt_fst)
+        (((differentiableOn_univ.mp ((Complex.differentiableOn_dslope Filter.univ_mem).mpr
+          Complex.differentiable_one_div_Gamma.differentiableOn)) p.1).comp p
+          differentiableAt_fst)
   exact ((hd_invG.mul (hd_head.add hd_tail)).add hd_sum).differentiableWithinAt
 
 /-- Recursive stage relation for `hurwitzHeadIntegral` on `-(M : ℝ) < s.re`. -/
@@ -459,7 +436,7 @@ theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ}
       have h := (Complex.cpow_add (s + M - 1) 1 (ofReal_ne_zero.mpr ht.1.ne')).symm
       rw [Complex.cpow_one] at h
       exact h.trans (congrArg _ (by push_cast; ring))
-    rw [hurwitzTaylorQuot_eq_add_mul_succ M c (ofReal_mem_ball_two (Ioc_subset_Icc_self ht)),
+    rw [hurwitzTaylorQuot_eq_add_mul_succ M c t,
       mul_add, mul_comm ((t : ℂ) ^ _), ← mul_assoc ((t : ℂ) ^ _), hpow]
   unfold hurwitzHeadIntegral
   rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioc hcongr,
@@ -472,10 +449,15 @@ theorem hurwitzStageCore_succ_eq (M : ℕ) {s : ℂ} (hs : -(M : ℝ) < s.re) (c
     hurwitzStageCore (M + 1) s c = hurwitzStageCore M s c := by
   have hsm_ne : s + M ≠ 0 := fun h0 => by
     have hre := congrArg Complex.re h0; simp at hre; linarith
+  have hslope : (s + (M : ℂ)) * dslope (fun w : ℂ ↦ (Complex.Gamma w)⁻¹) (-(M : ℂ)) s =
+      (Complex.Gamma s)⁻¹ := by
+    simpa [sub_neg_eq_add, smul_eq_mul, Complex.Gamma_neg_nat_eq_zero] using
+      sub_smul_dslope_of_zero (f := fun w : ℂ ↦ (Complex.Gamma w)⁻¹) (a := -(M : ℂ))
+        (by simp [Complex.Gamma_neg_nat_eq_zero]) s
   have hdiv : (Complex.Gamma s)⁻¹ * (hurwitzBernoulliCoeff (M + 1) c / (s + M)) =
       hurwitzBernoulliCoeff (M + 1) c *
         dslope (fun w : ℂ ↦ (Complex.Gamma w)⁻¹) (-(M : ℂ)) s := by
-    rw [← Complex.add_natCast_mul_dslope_inv_Gamma_neg_nat M s]; field_simp
+    rw [← hslope]; field_simp
   unfold hurwitzStageCore
   rw [hurwitzHeadIntegral_eq_add_succ M hs c, Finset.sum_Icc_succ_top (by omega),
     Nat.add_sub_cancel]
@@ -498,28 +480,25 @@ private noncomputable def hurwitzStageIndex (s : ℂ) : ℕ :=
 private noncomputable def hurwitzCore (s c : ℂ) : ℂ :=
   hurwitzStageCore (hurwitzStageIndex s) s c
 
+private theorem neg_hurwitzStageIndex_lt_re (s : ℂ) : -(hurwitzStageIndex s : ℝ) < s.re := by
+  unfold hurwitzStageIndex
+  have h1 : 1 - s.re ≤ max 0 (1 - s.re) := le_max_right _ _
+  have h2 : max 0 (1 - s.re) < (⌊max 0 (1 - s.re)⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
+  push_cast; linarith
+
 private theorem hurwitzCore_eq_stage {M : ℕ} {s : ℂ} (hs : -(M : ℝ) < s.re) (c : ℂ) :
     hurwitzCore s c = hurwitzStageCore M s c := by
-  have hidx : -(hurwitzStageIndex s : ℝ) < s.re := by
-    unfold hurwitzStageIndex
-    have h1 : 1 - s.re ≤ max 0 (1 - s.re) := le_max_right _ _
-    have h2 : max 0 (1 - s.re) < (⌊max 0 (1 - s.re)⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
-    push_cast; linarith
   unfold hurwitzCore
   rcases le_total M (hurwitzStageIndex s) with hle | hge
   · exact hurwitzStageCore_eq_of_le hle hs c
-  · exact (hurwitzStageCore_eq_of_le hge hidx c).symm
+  · exact (hurwitzStageCore_eq_of_le hge (neg_hurwitzStageIndex_lt_re s) c).symm
 
 private theorem analyticOnNhd_hurwitzCore :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ => hurwitzCore p.1 p.2) {p | 0 < p.2.re} := by
   intro p₀ hp₀
-  set N := ⌊max 0 (2 - p₀.1.re)⌋₊ + 2
-  have hN_re : -(N : ℝ) < p₀.1.re - 1 := by
-    have h1 : 2 - p₀.1.re ≤ max 0 (2 - p₀.1.re) := le_max_right _ _
-    have h2 : max 0 (2 - p₀.1.re) < (⌊max 0 (2 - p₀.1.re)⌋₊ : ℝ) + 1 :=
-      Nat.lt_floor_add_one _
-    push_cast [N]; linarith
-  have hp₀_mem : p₀ ∈ {p : ℂ × ℂ | -(N : ℝ) < p.1.re ∧ 0 < p.2.re} := ⟨by linarith, hp₀⟩
+  set N := hurwitzStageIndex p₀.1
+  have hp₀_mem : p₀ ∈ {p : ℂ × ℂ | -(N : ℝ) < p.1.re ∧ 0 < p.2.re} :=
+    ⟨neg_hurwitzStageIndex_lt_re p₀.1, hp₀⟩
   have hopen : {p : ℂ × ℂ | -(N : ℝ) < p.1.re ∧ 0 < p.2.re} ∈ 𝓝 p₀ :=
     ((isOpen_lt continuous_const (continuous_re.comp continuous_fst)).inter
       (isOpen_lt continuous_const (continuous_re.comp continuous_snd))).mem_nhds hp₀_mem
@@ -539,12 +518,14 @@ noncomputable def complexHurwitzZeta₁ (s c : ℂ) : ℂ :=
   (Complex.Gamma s)⁻¹ + (s - 1) * hurwitzCore s c
 
 /-- Stage-`M` representation of `complexHurwitzZeta s c` on `-(M : ℝ) < s.re`. -/
-theorem complexHurwitzZeta_eq_hurwitzStageCore {M : ℕ} {s : ℂ} (hs : -(M : ℝ) < s.re) (c : ℂ) :
+theorem complexHurwitzZeta_eq_inv_Gamma_div_add_hurwitzStageCore {M : ℕ} {s : ℂ}
+    (hs : -(M : ℝ) < s.re) (c : ℂ) :
     complexHurwitzZeta s c = (Complex.Gamma s)⁻¹ / (s - 1) + hurwitzStageCore M s c := by
   rw [complexHurwitzZeta, hurwitzCore_eq_stage hs c]
 
 /-- Stage-`M` representation of `complexHurwitzZeta₁ s c` on `-(M : ℝ) < s.re`. -/
-theorem complexHurwitzZeta₁_eq_hurwitzStageCore {M : ℕ} {s : ℂ} (hs : -(M : ℝ) < s.re) (c : ℂ) :
+theorem complexHurwitzZeta₁_eq_inv_Gamma_add_mul_hurwitzStageCore {M : ℕ} {s : ℂ}
+    (hs : -(M : ℝ) < s.re) (c : ℂ) :
     complexHurwitzZeta₁ s c = (Complex.Gamma s)⁻¹ + (s - 1) * hurwitzStageCore M s c := by
   rw [complexHurwitzZeta₁, hurwitzCore_eq_stage hs c]
 
@@ -559,6 +540,20 @@ theorem complexHurwitzZeta₁_eq_sub_one_mul {s : ℂ} (hs : s ≠ 1) (c : ℂ) 
 @[simp]
 theorem complexHurwitzZeta₁_one_left (c : ℂ) : complexHurwitzZeta₁ 1 c = 1 := by
   simp [complexHurwitzZeta₁, Complex.Gamma_one]
+
+/-- Subtracting the defining polar term `(Gamma s)⁻¹ / (s - 1)` from `complexHurwitzZeta s c`
+yields a function jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`. -/
+theorem analyticOnNhd_complexHurwitzZeta_sub_inv_Gamma_div :
+    AnalyticOnNhd ℂ
+      (fun p : ℂ × ℂ => complexHurwitzZeta p.1 p.2 - (Complex.Gamma p.1)⁻¹ / (p.1 - 1))
+      {p | 0 < p.2.re} := by
+  have heq :
+      (fun p : ℂ × ℂ => complexHurwitzZeta p.1 p.2 - (Complex.Gamma p.1)⁻¹ / (p.1 - 1)) =
+        fun p : ℂ × ℂ => hurwitzCore p.1 p.2 := by
+    ext p
+    simp [complexHurwitzZeta]
+  rw [heq]
+  exact analyticOnNhd_hurwitzCore
 
 /-- `(s, c) ↦ complexHurwitzZeta₁ s c` is jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`. -/
 theorem analyticOnNhd_complexHurwitzZeta₁ :
@@ -575,13 +570,17 @@ theorem differentiableOn_complexHurwitzZeta₁ :
     DifferentiableOn ℂ (fun p : ℂ × ℂ => complexHurwitzZeta₁ p.1 p.2) {p | 0 < p.2.re} :=
   analyticOnNhd_complexHurwitzZeta₁.differentiableOn
 
+private theorem analyticAt_complexHurwitzZeta₁_left (s : ℂ) {c : ℂ} (hc : 0 < c.re) :
+    AnalyticAt ℂ (fun w => complexHurwitzZeta₁ w c) s :=
+  AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta₁ p.1 p.2)
+    (f := fun w : ℂ => (w, c))
+    (analyticOnNhd_complexHurwitzZeta₁ (s, c) hc)
+    (analyticAt_id.prod analyticAt_const)
+
 /-- For fixed `c` with `0 < c.re`, `s ↦ complexHurwitzZeta₁ s c` is an entire function. -/
 theorem differentiable_complexHurwitzZeta₁_left {c : ℂ} (hc : 0 < c.re) :
     Differentiable ℂ (fun s => complexHurwitzZeta₁ s c) := fun s =>
-  (AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta₁ p.1 p.2)
-    (f := fun w : ℂ => (w, c))
-    (analyticOnNhd_complexHurwitzZeta₁ (s, c) hc)
-    (analyticAt_id.prod analyticAt_const)).differentiableAt
+  (analyticAt_complexHurwitzZeta₁_left s hc).differentiableAt
 
 /-- For any `s : ℂ`, `c ↦ complexHurwitzZeta₁ s c` is complex differentiable at every `c` with
 `0 < c.re`. -/
@@ -612,14 +611,22 @@ theorem differentiableOn_complexHurwitzZeta :
       {p | p.1 ≠ 1 ∧ 0 < p.2.re} :=
   analyticOnNhd_complexHurwitzZeta.differentiableOn
 
+private theorem analyticAt_complexHurwitzZeta_left {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.re) :
+    AnalyticAt ℂ (fun w => complexHurwitzZeta w c) s :=
+  AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta p.1 p.2)
+    (f := fun w : ℂ => (w, c))
+    (analyticOnNhd_complexHurwitzZeta (s, c) ⟨hs, hc⟩)
+    (analyticAt_id.prod analyticAt_const)
+
+private theorem differentiableOn_complexHurwitzZeta_left {c : ℂ} (hc : 0 < c.re) :
+    DifferentiableOn ℂ (fun s => complexHurwitzZeta s c) ({1}ᶜ : Set ℂ) := fun _ hz =>
+  (analyticAt_complexHurwitzZeta_left hz hc).differentiableAt.differentiableWithinAt
+
 /-- For fixed `c` with `0 < c.re`, `s ↦ complexHurwitzZeta s c` is complex differentiable at every
 `s ≠ 1`. -/
 theorem differentiableAt_complexHurwitzZeta_left {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.re) :
     DifferentiableAt ℂ (fun w => complexHurwitzZeta w c) s :=
-  (AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta p.1 p.2)
-    (f := fun w : ℂ => (w, c))
-    (analyticOnNhd_complexHurwitzZeta (s, c) ⟨hs, hc⟩)
-    (analyticAt_id.prod analyticAt_const)).differentiableAt
+  (analyticAt_complexHurwitzZeta_left hs hc).differentiableAt
 
 /-- For fixed `s ≠ 1`, `c ↦ complexHurwitzZeta s c` is complex differentiable at every `c` with
 `0 < c.re`. -/
@@ -630,7 +637,9 @@ theorem differentiableAt_complexHurwitzZeta_right {s c : ℂ} (hs : s ≠ 1) (hc
     (analyticOnNhd_complexHurwitzZeta (s, c) ⟨hs, hc⟩)
     (analyticAt_const.prod analyticAt_id)).differentiableAt
 
-private theorem complexHurwitzZeta_eventuallyEq_nhdsNE_one {c : ℂ} :
+/-- Near `s = 1` on `𝓝[≠] 1`, `complexHurwitzZeta s c` agrees with
+`(s - 1) ^ (-1 : ℤ) • complexHurwitzZeta₁ s c`. -/
+theorem complexHurwitzZeta_eventuallyEq_nhdsNE_one {c : ℂ} :
     (fun s => complexHurwitzZeta s c) =ᶠ[𝓝[≠] 1]
       fun s => (s - 1) ^ (-1 : ℤ) • complexHurwitzZeta₁ s c :=
   eventually_nhdsWithin_of_forall fun s hs => by
@@ -645,39 +654,25 @@ theorem meromorphic_complexHurwitzZeta_left {c : ℂ} (hc : 0 < c.re) :
   intro s
   by_cases hs : s = 1
   · subst hs
-    refine MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr
-      ⟨-1, fun w => complexHurwitzZeta₁ w c, ?_, complexHurwitzZeta_eventuallyEq_nhdsNE_one⟩
-    exact AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta₁ p.1 p.2)
-      (f := fun w : ℂ => (w, c))
-      (analyticOnNhd_complexHurwitzZeta₁ (1, c) hc)
-      (analyticAt_id.prod analyticAt_const)
-  · exact (AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta p.1 p.2)
-      (f := fun w : ℂ => (w, c))
-      (analyticOnNhd_complexHurwitzZeta (s, c) ⟨hs, hc⟩)
-      (analyticAt_id.prod analyticAt_const)).meromorphicAt
+    exact MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr
+      ⟨-1, fun w => complexHurwitzZeta₁ w c, analyticAt_complexHurwitzZeta₁_left 1 hc,
+        complexHurwitzZeta_eventuallyEq_nhdsNE_one⟩
+  · exact (analyticAt_complexHurwitzZeta_left hs hc).meromorphicAt
 
 /-- For fixed `c` with `0 < c.re`, `s ↦ complexHurwitzZeta s c` has meromorphic order `-1` at
 `s = 1`. -/
 theorem meromorphicOrderAt_complexHurwitzZeta_one {c : ℂ} (hc : 0 < c.re) :
     meromorphicOrderAt (fun s => complexHurwitzZeta s c) 1 = (-1 : ℤ) := by
   refine (meromorphicOrderAt_eq_int_iff (meromorphic_complexHurwitzZeta_left hc 1)).mpr ?_
-  have han : AnalyticAt ℂ (fun w => complexHurwitzZeta₁ w c) 1 :=
-    AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta₁ p.1 p.2)
-      (f := fun w : ℂ => (w, c))
-      (analyticOnNhd_complexHurwitzZeta₁ (1, c) hc)
-      (analyticAt_id.prod analyticAt_const)
-  refine ⟨fun s => complexHurwitzZeta₁ s c, han, ?_, complexHurwitzZeta_eventuallyEq_nhdsNE_one⟩
+  refine ⟨fun s => complexHurwitzZeta₁ s c, analyticAt_complexHurwitzZeta₁_left 1 hc, ?_,
+    complexHurwitzZeta_eventuallyEq_nhdsNE_one⟩
   simp [complexHurwitzZeta₁_one_left]
 
 /-- For fixed `c` with `0 < c.re`, `s ↦ complexHurwitzZeta s c` has trailing coefficient `1` at
 `s = 1`. -/
 theorem meromorphicTrailingCoeffAt_complexHurwitzZeta_one {c : ℂ} (hc : 0 < c.re) :
     meromorphicTrailingCoeffAt (fun s => complexHurwitzZeta s c) 1 = 1 := by
-  have han : AnalyticAt ℂ (fun s => complexHurwitzZeta₁ s c) 1 :=
-    AnalyticAt.comp (g := fun p : ℂ × ℂ => complexHurwitzZeta₁ p.1 p.2)
-      (f := fun w : ℂ => (w, c))
-      (analyticOnNhd_complexHurwitzZeta₁ (1, c) hc)
-      (analyticAt_id.prod analyticAt_const)
+  have han := analyticAt_complexHurwitzZeta₁_left 1 hc
   have hne : complexHurwitzZeta₁ 1 c ≠ 0 := by simp
   simpa [complexHurwitzZeta₁_one_left] using
     han.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hne
@@ -703,8 +698,7 @@ private theorem eqOn_hurwitzStageZero_add_cpow (s c : ℂ) :
       (Ioc 0 1) := fun t ht => by
   dsimp only
   have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.1.ne'
-  have hdecomp := hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot 0 c
-    (ofReal_mem_ball_two (Ioc_subset_Icc_self ht))
+  have hdecomp := hurwitzKernel_sub_sum_eq_pow_mul_hurwitzTaylorQuot 0 c t
   simp only [Finset.range_one, Finset.sum_singleton, hurwitzBernoulliCoeff_zero, pow_zero,
     mul_one, zero_add, pow_one] at hdecomp
   have hpow : (t : ℂ) ^ (s - 1) = (t : ℂ) ^ (s - 2) * (t : ℂ) := by
@@ -859,8 +853,7 @@ theorem complexHurwitzZeta_zero_left (c : ℂ) : complexHurwitzZeta 0 c = 1 / 2 
     Polynomial.eval_X, Polynomial.eval_C] at h
   rw [h]; push_cast; ring
 
-/-- Special-value identity: `complexHurwitzZeta (-1) 1 = -1 / 12`. -/
-theorem complexHurwitzZeta_neg_one_one : complexHurwitzZeta (-1) 1 = -1 / 12 := by
+example : complexHurwitzZeta (-1) 1 = -1 / 12 := by
   have h := complexHurwitzZeta_neg_nat 1 1
   simp only [Nat.cast_one, Polynomial.eval_one_map, Polynomial.bernoulli_eval_one] at h
   rw [h]; norm_num
@@ -888,18 +881,17 @@ theorem complexHurwitzContinuation_exists :
         fun m => complexHurwitzZeta_neg_nat m c⟩⟩
 
 /-- Uniqueness of the meromorphic continuation of `complexHurwitzSeries · c` for `0 < c.re`:
-any function holomorphic on `{1}ᶜ` agreeing with `complexHurwitzSeries · c` on `{s | b < s.re}`
-equals `complexHurwitzZeta · c` away from `s = 1`. -/
+any function holomorphic on `{1}ᶜ` agreeing with `complexHurwitzSeries · c` on
+`{s | max 1 b < s.re}` equals `complexHurwitzZeta · c` away from `s = 1`. -/
 theorem eq_complexHurwitzZeta_of_eqOn_re_gt {c : ℂ} (hc : 0 < c.re) {H : ℂ → ℂ} {b : ℝ}
     (hH : DifferentiableOn ℂ H ({1}ᶜ))
-    (hagree : EqOn H (fun s => complexHurwitzSeries s c) {s | b < s.re})
+    (hagree : EqOn H (fun s => complexHurwitzSeries s c) {s | max 1 b < s.re})
     {s : ℂ} (hs : s ≠ 1) :
     H s = complexHurwitzZeta s c := by
-  have hd : DifferentiableOn ℂ (fun z => complexHurwitzZeta z c) ({1}ᶜ) :=
-    fun _ hz => (differentiableAt_complexHurwitzZeta_left hz hc).differentiableWithinAt
-  refine hH.eqOn_compl_singleton_of_eqOn_re_gt (b := max 1 b) hd (fun z hz => ?_) hs
-  have hzb : b < z.re := (le_max_right 1 b).trans_lt hz
-  have hz1 : 1 < z.re := (le_max_left 1 b).trans_lt hz
+  refine hH.eqOn_compl_singleton_of_eqOn_re_gt (b := max 1 b)
+    (differentiableOn_complexHurwitzZeta_left hc) (fun z hz => ?_) hs
+  have hzb : max 1 b < z.re := hz.2
+  have hz1 : 1 < z.re := (le_max_left 1 b).trans_lt hzb
   dsimp only
   rw [hagree hzb, complexHurwitzZeta_eq_complexHurwitzSeries hz1 hc]
 
@@ -924,13 +916,14 @@ theorem eq_complexHurwitzZeta₁_of_eq_sub_one_mul {c : ℂ} (hc : 0 < c.re) {R 
     exact tendsto_nhds_unique hR1 (hZ1.congr' heq.symm)
   · rw [hrel hs, complexHurwitzZeta₁_eq_sub_one_mul hs c]
 
-/-- Uniqueness of both `complexHurwitzZeta · c` and `complexHurwitzZeta₁ · c` for `0 < c.re`: if
-`H` is holomorphic on `{1}ᶜ` and agrees with `complexHurwitzSeries · c` on `{s | b < s.re}`, and
+/-- Uniqueness of the regularized companion `complexHurwitzZeta₁ · c` for `0 < c.re`: if `H` is
+holomorphic on `{1}ᶜ` and agrees with `complexHurwitzSeries · c` on `{s | max 1 b < s.re}`, and
 `R` is continuous at `1` with `R s = (s - 1) * H s` for `s ≠ 1`, then
-`R s = complexHurwitzZeta₁ s c` for all `s : ℂ`. -/
+`R s = complexHurwitzZeta₁ s c` for all `s : ℂ` (see `eq_complexHurwitzZeta_of_eqOn_re_gt` for
+uniqueness of `H` off the pole). -/
 theorem eq_complexHurwitzZeta₁_of_eqOn_re_gt {c : ℂ} (hc : 0 < c.re) {H R : ℂ → ℂ} {b : ℝ}
     (hH : DifferentiableOn ℂ H ({1}ᶜ)) (hRc : ContinuousAt R 1)
-    (hagree : EqOn H (fun s => complexHurwitzSeries s c) {s | b < s.re})
+    (hagree : EqOn H (fun s => complexHurwitzSeries s c) {s | max 1 b < s.re})
     (hrel : ∀ {s : ℂ}, s ≠ 1 → R s = (s - 1) * H s) (s : ℂ) :
     R s = complexHurwitzZeta₁ s c :=
   eq_complexHurwitzZeta₁_of_eq_sub_one_mul hc hRc
@@ -943,16 +936,15 @@ theorem complexHurwitzZeta_add_one_right {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.
     complexHurwitzZeta s (c + 1) = complexHurwitzZeta s c - c ^ (-s) := by
   have hc1 : 0 < (c + 1).re := by simp; linarith
   have hc_ne : c ≠ 0 := fun h0 => lt_irrefl (0 : ℝ) (by rwa [h0, zero_re] at hc)
-  have hdf : DifferentiableOn ℂ (fun z => complexHurwitzZeta z (c + 1)) ({1}ᶜ : Set ℂ) :=
-    fun _ hz => (differentiableAt_complexHurwitzZeta_left hz hc1).differentiableWithinAt
   have hdg : DifferentiableOn ℂ (fun z => complexHurwitzZeta z c - c ^ (-z)) ({1}ᶜ : Set ℂ) :=
     fun _ hz => ((differentiableAt_complexHurwitzZeta_left hz hc).sub
       (differentiableAt_id.neg.const_cpow (Or.inl hc_ne))).differentiableWithinAt
-  exact hdf.eqOn_compl_singleton_of_eqOn_re_gt (b := 1) hdg (fun z hz => by
-    dsimp only
-    rw [complexHurwitzZeta_eq_complexHurwitzSeries hz hc1,
-      complexHurwitzZeta_eq_complexHurwitzSeries hz hc,
-      complexHurwitzSeries_add_one_right hz hc_ne]) hs
+  exact (differentiableOn_complexHurwitzZeta_left hc1).eqOn_compl_singleton_of_eqOn_re_gt (b := 1)
+    hdg (fun z hz => by
+      dsimp only
+      rw [complexHurwitzZeta_eq_complexHurwitzSeries hz.2 hc1,
+        complexHurwitzZeta_eq_complexHurwitzSeries hz.2 hc,
+        complexHurwitzSeries_add_one_right hz.2 hc_ne]) hs
 
 /-- For real `x ∈ (0, 1]` and `s ≠ 1`, `complexHurwitzZeta s x` agrees with Mathlib's
 `HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s`. -/
@@ -960,15 +952,14 @@ theorem complexHurwitzZeta_ofReal_eq_hurwitzZeta {s : ℂ} {x : ℝ} (hs : s ≠
     (hx : x ∈ Ioc 0 1) :
     complexHurwitzZeta s x = HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s := by
   have hx_re : 0 < (x : ℂ).re := by simp [hx.1]
-  have hdf : DifferentiableOn ℂ (fun z => complexHurwitzZeta z x) ({1}ᶜ : Set ℂ) :=
-    fun _ hz => (differentiableAt_complexHurwitzZeta_left hz hx_re).differentiableWithinAt
   have hdg : DifferentiableOn ℂ (HurwitzZeta.hurwitzZeta (x : UnitAddCircle))
       ({1}ᶜ : Set ℂ) :=
     fun _ hz => (HurwitzZeta.differentiableAt_hurwitzZeta _ hz).differentiableWithinAt
-  exact hdf.eqOn_compl_singleton_of_eqOn_re_gt (b := 1) hdg (fun z hz => by
-    dsimp only
-    rw [complexHurwitzZeta_eq_complexHurwitzSeries hz hx_re,
-      complexHurwitzSeries_ofReal_eq_hurwitzZeta hz hx]) hs
+  exact (differentiableOn_complexHurwitzZeta_left hx_re).eqOn_compl_singleton_of_eqOn_re_gt (b := 1)
+    hdg (fun z hz => by
+      dsimp only
+      rw [complexHurwitzZeta_eq_complexHurwitzSeries hz.2 hx_re,
+        complexHurwitzSeries_ofReal_eq_hurwitzZeta hz.2 hx]) hs
 
 /-- At `c = 1` and `s ≠ 1`, `complexHurwitzZeta s 1 = riemannZeta s`. -/
 theorem complexHurwitzZeta_one_right {s : ℂ} (hs : s ≠ 1) :
@@ -980,21 +971,21 @@ theorem complexHurwitzZeta_one_right {s : ℂ} (hs : s ≠ 1) :
 theorem complexHurwitzZeta_one_half_right {s : ℂ} (hs : s ≠ 1) :
     complexHurwitzZeta s (1 / 2) = ((2 : ℂ) ^ s - 1) * riemannZeta s := by
   have hhalf_re : 0 < (1 / 2 : ℂ).re := by norm_num
-  have hdf : DifferentiableOn ℂ (fun z => complexHurwitzZeta z (1 / 2)) ({1}ᶜ : Set ℂ) :=
-    fun _ hz => (differentiableAt_complexHurwitzZeta_left hz hhalf_re).differentiableWithinAt
   have hdg : DifferentiableOn ℂ (fun z => ((2 : ℂ) ^ z - 1) * riemannZeta z) ({1}ᶜ : Set ℂ) :=
     fun _ hz => (((differentiableAt_id.const_cpow (Or.inl two_ne_zero)).sub
       (differentiableAt_const 1)).mul (differentiableAt_riemannZeta hz)).differentiableWithinAt
-  exact hdf.eqOn_compl_singleton_of_eqOn_re_gt (b := 1) hdg (fun z hz => by
-    dsimp only
-    rw [complexHurwitzZeta_eq_complexHurwitzSeries hz hhalf_re,
-      complexHurwitzSeries_one_half_right hz]) hs
+  exact (differentiableOn_complexHurwitzZeta_left hhalf_re).eqOn_compl_singleton_of_eqOn_re_gt
+    (b := 1) hdg (fun z hz => by
+      dsimp only
+      rw [complexHurwitzZeta_eq_complexHurwitzSeries hz.2 hhalf_re,
+        complexHurwitzSeries_one_half_right hz.2]) hs
 
 end TauCeti
 
 namespace HurwitzZeta
 
 /-- For `x ∈ (0, 1]`, `hurwitzZeta (x : UnitAddCircle) 0 = 1 / 2 - x`. -/
+@[simp]
 theorem hurwitzZeta_apply_zero_of_mem_Ioc {x : ℝ} (hx : x ∈ Ioc 0 1) :
     hurwitzZeta (x : UnitAddCircle) 0 = 1 / 2 - x := by
   rw [← TauCeti.complexHurwitzZeta_ofReal_eq_hurwitzZeta zero_ne_one hx,

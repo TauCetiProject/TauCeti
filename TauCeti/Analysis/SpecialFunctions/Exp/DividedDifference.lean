@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.DSlope
+public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
@@ -18,15 +19,35 @@ between its arguments. In particular it is strictly positive, including when the
 coincide, and jointly real analytic, including on the diagonal. These divided differences are the
 scalar coefficients in the derivative of the matrix exponential at a Hermitian matrix.
 
-Over `ℂ`, `dslope Complex.exp a b = Complex.exp a * dslope Complex.exp 0 (b - a)` satisfies
-`z * dslope Complex.exp 0 z = Complex.exp z - 1` and vanishes if and only if `b - a` is a nonzero
-integer multiple of `2 * π * I`. In particular, it does not vanish on the horizontal strip
-`|(b - a).im| < 2 * π` or on `Metric.ball a (2 * π)`.
+For any `[RCLike 𝕜]`,
+`dslope NormedSpace.exp a b = NormedSpace.exp a * dslope NormedSpace.exp 0 (b - a)`
+(`NormedSpace.dslope_exp_eq_exp_mul_dslope_zero`), specializing to both
+`Real.dslope_exp_eq_exp_mul_dslope_zero` and `Complex.dslope_exp_eq_exp_mul_dslope_zero`.
+Over `ℂ`, `dslope Complex.exp a b` vanishes if and only if `b - a` is a nonzero integer multiple of
+`2 * π * I`. In particular, it does not vanish on the horizontal strip `|(b - a).im| < 2 * π` or on
+`Metric.ball a (2 * π)`.
 -/
 
 public section
 
 open scoped ContDiff
+
+namespace NormedSpace
+
+/-- Translating the divided difference of `NormedSpace.exp` to zero extracts the factor
+`NormedSpace.exp a`. -/
+theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [RCLike 𝕜] (a b : 𝕜) :
+    dslope (exp : 𝕜 → 𝕜) a b = exp a * dslope (exp : 𝕜 → 𝕜) 0 (b - a) := by
+  by_cases hab : b = a
+  · subst hab
+    simp [dslope_same, (hasDerivAt_exp (𝕂 := 𝕜) (x := b)).deriv,
+      (hasDerivAt_exp (𝕂 := 𝕜) (x := 0)).deriv]
+  · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
+    rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
+    simp only [sub_zero, exp_zero]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add, add_sub_cancel]
+
+end NormedSpace
 
 namespace Real
 
@@ -53,14 +74,7 @@ theorem dslope_exp_pos (a b : ℝ) : 0 < dslope exp a b := by
 /-- Translating the real exponential divided difference to zero extracts the factor `exp a`. -/
 theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℝ) :
     dslope exp a b = exp a * dslope exp 0 (b - a) := by
-  rw [dslope_exp_eq_integral a b, dslope_exp_eq_integral 0 (b - a),
-    ← intervalIntegral.integral_const_mul]
-  apply intervalIntegral.integral_congr
-  intro t _
-  dsimp only
-  rw [← exp_add]
-  congr 1
-  ring
+  simpa only [Real.exp_eq_exp_ℝ] using NormedSpace.dslope_exp_eq_exp_mul_dslope_zero a b
 
 /-- The real exponential divided difference is jointly smooth, including its removable
 value at equal arguments. The regularity parameter also permits real analyticity. -/
@@ -81,16 +95,7 @@ namespace Complex
 /-- Translating the complex exponential divided difference to zero extracts the factor `exp a`. -/
 theorem dslope_exp_eq_exp_mul_dslope_zero (a b : ℂ) :
     dslope exp a b = exp a * dslope exp 0 (b - a) := by
-  by_cases hab : b = a
-  · simp [hab]
-  · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
-    rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
-    simp only [sub_zero, exp_zero]
-    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add, add_sub_cancel]
-
-/-- Multiplying `dslope Complex.exp 0 z` by `z` recovers `exp z - 1`. -/
-theorem mul_dslope_exp_zero (z : ℂ) : z * dslope exp 0 z = exp z - 1 := by
-  simpa using sub_smul_dslope exp 0 z
+  simpa only [Complex.exp_eq_exp_ℂ] using NormedSpace.dslope_exp_eq_exp_mul_dslope_zero a b
 
 /-- The divided difference `dslope Complex.exp a b` vanishes if and only if `b - a` is a nonzero
 integer multiple of `2 * π * I`. -/
@@ -98,12 +103,14 @@ theorem dslope_exp_eq_zero_iff {a b : ℂ} :
     dslope exp a b = 0 ↔ ∃ k : ℤ, k ≠ 0 ∧ b - a = k * (2 * Real.pi * I) := by
   rw [dslope_exp_eq_exp_mul_dslope_zero, mul_eq_zero, or_iff_right (exp_ne_zero a)]
   set z := b - a
+  have hmul : z * dslope exp 0 z = exp z - 1 := by
+    simpa [exp_zero] using sub_smul_dslope exp 0 z
   constructor
   · intro h0
     rcases eq_or_ne z 0 with hz0 | hzne
     · simp [hz0] at h0
     · have hexp : exp z = 1 := by
-        have h := mul_dslope_exp_zero z
+        have h := hmul
         rw [h0, mul_zero] at h
         exact eq_of_sub_eq_zero h.symm
       obtain ⟨k, hk⟩ := exp_eq_one_iff.mp hexp
@@ -113,7 +120,7 @@ theorem dslope_exp_eq_zero_iff {a b : ℂ} :
       rw [hk]
       exact mul_ne_zero (Int.cast_ne_zero.mpr hkne) (by simp [Real.pi_ne_zero, I_ne_zero])
     have hexp : exp z = 1 := exp_eq_one_iff.mpr ⟨k, hk⟩
-    have h := mul_dslope_exp_zero z
+    have h := hmul
     rw [hexp, sub_self] at h
     exact (mul_eq_zero.mp h).resolve_left hzne
 

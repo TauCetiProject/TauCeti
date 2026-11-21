@@ -71,13 +71,6 @@ theorem hasDerivAt_inv_Gamma_neg_nat (n : ℕ) :
     simp only [Nat.factorial_succ, pow_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
     ring
 
-/-- Multiplying the divided difference of `(Gamma ·)⁻¹` at `-m` by `s + m` recovers `(Gamma s)⁻¹`
-everywhere, since `(Gamma (-m))⁻¹ = 0`. -/
-theorem add_natCast_mul_dslope_inv_Gamma_neg_nat (m : ℕ) (s : ℂ) :
-    (s + m) * dslope (fun w : ℂ ↦ (Gamma w)⁻¹) (-(m : ℂ)) s = (Gamma s)⁻¹ := by
-  simpa [sub_neg_eq_add, Gamma_neg_nat_eq_zero] using
-    sub_smul_dslope (fun w : ℂ ↦ (Gamma w)⁻¹) (-(m : ℂ)) s
-
 /-- At nonpositive integers, `dslope (fun w ↦ (Gamma w)⁻¹) (-k) (-n)` equals `(-1)^n n!` when
 `k = n` and `0` otherwise. -/
 theorem dslope_inv_Gamma_neg_nat (k n : ℕ) :

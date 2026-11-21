@@ -23,20 +23,23 @@ index `n` is `exp (-s * log 0) = exp 0 = 1` (by Lean's `Complex.log 0 = 0`), whe
 corresponding principal-power summand `0 ^ (-s)` is `0` for `1 < s.re`; thus convergence at `c ∈ -ℕ`
 is purely formal under totalization and does not represent a genuine Hurwitz zeta value.
 
-Shifting `c ≠ 0` by `1` subtracts the initial `n = 0` term `c ^ (-s)`. Along the real interval
-`(0, 1]`, `complexHurwitzSeries s x` agrees with Mathlib's circle-parametrized Hurwitz zeta
-function `HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s`; at `c = 1` it reduces to `riemannZeta s`,
-and at `c = 1 / 2` the odd-integer sum yields `((2 : ℂ) ^ s - 1) * riemannZeta s`.
+For `1 < s.re`, shifting `c ≠ 0` by `1` subtracts the initial `n = 0` term `c ^ (-s)`. Along the
+real interval `(0, 1]`, `complexHurwitzSeries s x` agrees with Mathlib's circle-parametrized
+Hurwitz zeta function `HurwitzZeta.hurwitzZeta (x : UnitAddCircle) s`; at `c = 1` it reduces to
+`riemannZeta s`, and at `c = 1 / 2` the odd-integer sum yields
+`((2 : ℂ) ^ s - 1) * riemannZeta s`.
 
 ## Main definitions and results
 
 * `TauCeti.complexHurwitzSeries`: the Dirichlet-type series `∑' n : ℕ, exp (-s * log (n + c))`.
 * `TauCeti.summable_norm_complexHurwitzSeries_term`, `TauCeti.summable_complexHurwitzSeries_term`,
-  `TauCeti.hasSum_complexHurwitzSeries`, and `TauCeti.hasSum_complexHurwitzSeries_of_re_pos`:
-  formal absolute convergence on `1 < s.re` for arbitrary `c : ℂ`, and principal-power convergence
-  on the genuine shift domain `c ∉ -ℕ` (in particular `0 < c.re`).
+  `TauCeti.hasSum_complexHurwitzSeries_term`, `TauCeti.hasSum_complexHurwitzSeries`, and
+  `TauCeti.hasSum_complexHurwitzSeries_of_re_pos`: formal absolute convergence and `HasSum` on
+  `1 < s.re` for arbitrary `c : ℂ`, and principal-power convergence on the genuine shift domain
+  `c ∉ -ℕ` (in particular `0 < c.re`).
 * `TauCeti.complexHurwitzSeries_add_one_right`: shift identity
-  `complexHurwitzSeries s (c + 1) = complexHurwitzSeries s c - c ^ (-s)` for `c ≠ 0`.
+  `complexHurwitzSeries s (c + 1) = complexHurwitzSeries s c - c ^ (-s)` for `1 < s.re` and
+  `c ≠ 0`.
 * `TauCeti.complexHurwitzSeries_ofReal_eq_hurwitzZeta`: agreement with `HurwitzZeta.hurwitzZeta`
   for real `x ∈ (0, 1]` and `1 < s.re`.
 * `TauCeti.complexHurwitzSeries_one_right` and `TauCeti.complexHurwitzSeries_one_half_right`:
@@ -99,6 +102,13 @@ theorem summable_complexHurwitzSeries_term {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     Summable (fun n : ℕ => Complex.exp (-s * Complex.log (n + c))) :=
   (summable_norm_complexHurwitzSeries_term hs c).of_norm
 
+/-- For `1 < s.re` and any `c : ℂ`, the defining exponential-log terms sum to
+`complexHurwitzSeries s c`. -/
+theorem hasSum_complexHurwitzSeries_term {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
+    HasSum (fun n : ℕ => Complex.exp (-s * Complex.log (n + c))) (complexHurwitzSeries s c) := by
+  rw [complexHurwitzSeries_def]
+  exact (summable_complexHurwitzSeries_term hs c).hasSum
+
 /-- On `1 < s.re` and away from `c = -n` (`n : ℕ`), `n ↦ (n + c) ^ (-s)` has sum
 `complexHurwitzSeries s c`. -/
 theorem hasSum_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (hc : ∀ n : ℕ, c ≠ -(n : ℂ)) :
@@ -114,7 +124,8 @@ theorem hasSum_complexHurwitzSeries_of_re_pos {s c : ℂ} (hs : 1 < s.re) (hc : 
     simp only [neg_re, natCast_re] at hre
     linarith [Nat.cast_nonneg (α := ℝ) n]
 
-/-- Shifting the complex Hurwitz parameter `c ≠ 0` by `1` removes the `n = 0` term `c ^ (-s)`. -/
+/-- On `1 < s.re`, shifting the complex Hurwitz parameter `c ≠ 0` by `1` removes the `n = 0` term
+`c ^ (-s)`. -/
 theorem complexHurwitzSeries_add_one_right {s c : ℂ} (hs : 1 < s.re) (hc : c ≠ 0) :
     complexHurwitzSeries s (c + 1) = complexHurwitzSeries s c - c ^ (-s) := by
   rw [complexHurwitzSeries_def s c, (summable_complexHurwitzSeries_term hs c).tsum_eq_zero_add]
@@ -139,9 +150,7 @@ theorem complexHurwitzSeries_one_right {s : ℂ} (hs : 1 < s.re) :
   have h := complexHurwitzSeries_ofReal_eq_hurwitzZeta (x := 1) hs (right_mem_Ioc.mpr zero_lt_one)
   rwa [ofReal_one, AddCircle.coe_period, HurwitzZeta.hurwitzZeta_zero] at h
 
-/-- At `(s, c) = (2, 1)`, the complex Hurwitz series evaluates to `π ^ 2 / 6`. -/
-theorem complexHurwitzSeries_two_one :
-    complexHurwitzSeries 2 1 = (Real.pi : ℂ) ^ 2 / 6 := by
+example : complexHurwitzSeries 2 1 = (Real.pi : ℂ) ^ 2 / 6 := by
   rw [complexHurwitzSeries_one_right (by norm_num), riemannZeta_two]
 
 /-- At `c = 1 / 2` and `1 < s.re`, partitioning positive integers by parity yields
@@ -176,10 +185,7 @@ theorem complexHurwitzSeries_one_half_right {s : ℂ} (hs : 1 < s.re) :
     _ = ((2 : ℂ) ^ s - 1) * riemannZeta s := by
         rw [mul_sub, ← mul_assoc, htwo]; ring
 
-/-- Shift identity at the nonreal parameter `1 + I`:
-`complexHurwitzSeries 2 (1 + I) - complexHurwitzSeries 2 (2 + I) = -I / 2`. -/
-theorem complexHurwitzSeries_two_one_add_I_sub_two_add_I :
-    complexHurwitzSeries 2 (1 + I) - complexHurwitzSeries 2 (2 + I) = -I / 2 := by
+example : complexHurwitzSeries 2 (1 + I) - complexHurwitzSeries 2 (2 + I) = -I / 2 := by
   have hne : (1 + I : ℂ) ≠ 0 := fun h => by
     have := congrArg Complex.re h; simp at this
   have hshift := complexHurwitzSeries_add_one_right (s := 2) (by norm_num) hne

@@ -366,7 +366,7 @@ theorem continuedLFunctionOfWeight_restrictAway {χ : UnitaryIdealWeight K}
   exact (differentiableOn_continuedLFunctionOfWeight (hχ.restrictAway _ S.finite_toSet))
     |>.eqOn_of_eqOn_re_gt ((differentiableOn_continuedLFunctionOfWeight hχ).mul
       hcorr.differentiableOn)
-    (fun z (hz : 1 < z.re) ↦ continuedLFunctionOfWeight_restrictAway_of_one_lt_re χ S hz) hs
+    (fun z hz ↦ continuedLFunctionOfWeight_restrictAway_of_one_lt_re χ S hz.2) hs
 
 /-!
 ### Conjugation and imaginary norm twists
@@ -423,7 +423,7 @@ theorem continuedLFunctionOfWeight_normTwist {χ : UnitaryIdealWeight K} {z : �
     (differentiableOn_continuedLFunctionOfWeight hχ).comp
       (differentiable_id.add_const z).differentiableOn fun s hs ↦ by simpa [hz] using hs
   exact (differentiableOn_continuedLFunctionOfWeight hχz).eqOn_of_eqOn_re_gt hshift
-    (fun w (hw : 1 < w.re) ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw)
+    (fun w hw ↦ continuedLFunctionOfWeight_normTwist_of_one_lt_re χ hz hw.2)
     (by rwa [one_div])
 
 /-!
