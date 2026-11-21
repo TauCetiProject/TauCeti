@@ -90,26 +90,14 @@ theorem exists_invariant_probability_subtype_iff (κ : Kernel S S) (hs : Measura
     (hclosed : κ.IsClosedSet s) :
     (∃ ν : Measure s, IsProbabilityMeasure ν ∧ (κ.subtype hs).Invariant ν) ↔
       ∃ ν : Measure S, IsProbabilityMeasure ν ∧ κ.Invariant ν ∧ ν sᶜ = 0 :=
-  ⟨fun ⟨ν, h⟩ => ⟨(invariantProbabilitySubtypeEquiv κ hs hclosed ⟨ν, h⟩).val,
-      (invariantProbabilitySubtypeEquiv κ hs hclosed ⟨ν, h⟩).property⟩,
-    fun ⟨μ, h⟩ => ⟨((invariantProbabilitySubtypeEquiv κ hs hclosed).symm ⟨μ, h⟩).val,
-      ((invariantProbabilitySubtypeEquiv κ hs hclosed).symm ⟨μ, h⟩).property⟩⟩
+  (invariantProbabilitySubtypeEquiv κ hs hclosed).exists_subtype_congr
 
 /-- A closed-state restriction has a unique invariant probability measure if and only if the
 ambient kernel has a unique invariant probability measure concentrated on those states. -/
 theorem existsUnique_invariant_probability_subtype_iff (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) :
     (∃! ν : Measure s, IsProbabilityMeasure ν ∧ (κ.subtype hs).Invariant ν) ↔
-      ∃! ν : Measure S, IsProbabilityMeasure ν ∧ κ.Invariant ν ∧ ν sᶜ = 0 := by
-  let e := invariantProbabilitySubtypeEquiv κ hs hclosed
-  constructor
-  · rintro ⟨ν, hν, huniq⟩
-    refine ⟨(e ⟨ν, hν⟩).val, (e ⟨ν, hν⟩).property, fun μ hμ => ?_⟩
-    have h : e.symm ⟨μ, hμ⟩ = ⟨ν, hν⟩ := Subtype.ext (huniq _ (e.symm ⟨μ, hμ⟩).property)
-    exact congrArg Subtype.val (e.symm_apply_eq.mp h)
-  · rintro ⟨μ, hμ, huniq⟩
-    refine ⟨(e.symm ⟨μ, hμ⟩).val, (e.symm ⟨μ, hμ⟩).property, fun ν hν => ?_⟩
-    have h : e ⟨ν, hν⟩ = ⟨μ, hμ⟩ := Subtype.ext (huniq _ (e ⟨ν, hν⟩).property)
-    exact congrArg Subtype.val (e.eq_symm_apply.mpr h)
+      ∃! ν : Measure S, IsProbabilityMeasure ν ∧ κ.Invariant ν ∧ ν sᶜ = 0 :=
+  (invariantProbabilitySubtypeEquiv κ hs hclosed).existsUnique_subtype_congr
 
 end ProbabilityTheory.Kernel

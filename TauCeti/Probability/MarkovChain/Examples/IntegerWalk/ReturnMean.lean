@@ -10,6 +10,7 @@ public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Recurrence
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import TauCeti.Probability.MarkovChain.Invariant
 
 /-!
 # Infinite mean return time of nearest-neighbor integer walks
@@ -81,10 +82,9 @@ theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (x : ℤ) :
     (integerWalk p).meanReturnTime x = ∞ := by
   by_cases hp : (p : ℝ) = 1 / 2
   · by_contra hfinite
-    have h1 : 0 < (integerWalk p).meanReturnTime x :=
-      zero_lt_one.trans_le (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x))
     have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
-      ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite) (ENNReal.inv_ne_top.mpr h1.ne')
+      Kernel.inv_meanReturnTime_toReal_pos_iff.mpr
+        ((Kernel.isPositiveRecurrent_iff _ _).mpr (lt_top_iff_ne_top.mpr hfinite))
     have hLLN := (integerWalk p).tendsto_integral_visitCount_div_markovChainLaw_dirac x
     exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
   · exact ((integerWalk_isTransient_iff p x).mpr hp).meanReturnTime_eq_top

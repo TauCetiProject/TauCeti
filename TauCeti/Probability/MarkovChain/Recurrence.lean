@@ -57,7 +57,7 @@ public section
 
 open MeasureTheory TauCeti.Probability
 
-open scoped ENNReal Topology
+open scoped ENNReal
 
 namespace ProbabilityTheory.Kernel
 
@@ -287,17 +287,6 @@ theorem IsRecurrent.ae_hittingAfter_one_ne_top (hx : κ.IsRecurrent x) :
     (TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton x) 1)).mpr
       (isRecurrent_iff.mp hx))
 
-/-- From any finite initial measure, the time-`n` singleton mass at a transient state tends to
-zero. -/
-theorem IsTransient.tendsto_pow_comp_real_singleton (hy : κ.IsTransient y)
-    (ν : Measure S) [IsFiniteMeasure ν] :
-    Filter.Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) Filter.atTop (𝓝 0) := by
-  have hdiag : ∑' n : ℕ, (κ ^ n) y {y} ≠ ∞ := mt isRecurrent_iff_tsum_eq_top.mpr hy
-  have hsum : ∑' n : ℕ, ((κ ^ n) ∘ₘ ν) {y} ≠ ∞ := by
-    rw [κ.tsum_pow_comp_apply_singleton ν y]
-    exact ENNReal.mul_ne_top (measure_ne_top _ _) hdiag
-  exact (ENNReal.summable_toReal hsum).tendsto_atTop_zero
-
 /-- From a state reachable from a recurrent state, the chain hits the recurrent state
 almost surely. The entrance may occur at time zero. -/
 theorem IsRecurrent.ae_hittingAfter_ne_top_of_reaches (hx : κ.IsRecurrent x)
@@ -480,16 +469,21 @@ theorem isTransient_deterministic {f : S → S} (hf : Measurable f) (x : S) :
     (deterministic f hf).IsTransient x ↔ x ∉ Function.periodicPts f := by
   rw [isTransient_iff, isRecurrent_deterministic]
 
+omit [MeasurableSingletonClass S] in
+/-- The constant kernel sending every state to `Measure.dirac a` is the deterministic kernel of the
+constant map `fun _ => a`. -/
+theorem const_dirac_eq_deterministic (a : S) :
+    const S (Measure.dirac a) = deterministic (fun _ : S => a) measurable_const := by
+  ext1 _
+  simp [deterministic_apply]
+
 /-- Under the constant kernel `const S (Measure.dirac a)` sending every state to `a`, the mean
 return time is `1` at `a` and `∞` at every `x ≠ a` (distinguishing positive return times
 `t ≥ 1` from time-zero entrance). -/
 @[simp]
 theorem meanReturnTime_const_dirac [DecidableEq S] (a x : S) :
     (const S (Measure.dirac a)).meanReturnTime x = if x = a then 1 else ∞ := by
-  have hconst : const S (Measure.dirac a) = deterministic (fun _ : S => a) measurable_const := by
-    ext1 _
-    simp [deterministic_apply]
-  rw [meanReturnTime_congr hconst, meanReturnTime_deterministic]
+  rw [meanReturnTime_congr (const_dirac_eq_deterministic a), meanReturnTime_deterministic]
   by_cases hxa : x = a
   · subst hxa
     have hper : x ∈ Function.periodicPts (fun _ : S => x) :=

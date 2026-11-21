@@ -262,12 +262,10 @@ theorem meanReturnTime_le_cycleOccupation_univ (κ : Kernel α α) [IsMarkovKern
   rw [Measure.map_apply (measurable_pi_apply n) MeasurableSet.univ, Set.preimage_univ,
     Measure.restrict_apply_univ]
   refine congrArg (markovChainLaw (Measure.dirac x) κ) (Set.ext fun w => ?_)
+  -- `ℕ∞` is `WithTop ℕ`, so the `ℕ∞` cast comparison in `lintegral_enat_le_tsum` agrees with
+  -- the `WithTop ℕ` cast comparison from `hittingAfter`.
   simp only [Set.mem_ofPred_eq]
-  rw [← WithTop.coe_natCast (α := ℕ) n, Nat.cast_id]
-  cases hittingAfter (fun k w => w k) {x} 1 w with
-  | top => exact iff_of_true (ENat.natCast_lt_top n) (WithTop.coe_lt_top n)
-  | coe m => exact (congrArg ((n : ℕ∞) < ·) (congrFun ENat.some_eq_natCast m) ▸
-      ENat.natCast_lt_natCast).trans WithTop.coe_lt_coe.symm
+  cases hittingAfter (fun k w => w k) {x} 1 w <;> norm_cast
 
 /-- At any state that is not positive recurrent, the cycle occupation measure has infinite total
 mass, even without measurable singletons. -/
@@ -858,13 +856,6 @@ end Finite
 /-! ### Deterministic and constant-kernel evaluations -/
 
 section Deterministic
-
-/-- The constant kernel sending every state to `Measure.dirac a` is the deterministic kernel of the
-constant map `fun _ => a`. -/
-theorem const_dirac_eq_deterministic (a : α) :
-    const α (Measure.dirac a) = deterministic (fun _ : α => a) measurable_const := by
-  ext1 _
-  simp [deterministic_apply]
 
 variable [MeasurableSingletonClass α]
 

@@ -223,11 +223,7 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
 theorem encard_setOf_natCast_lt (m : ℕ∞) : {k : ℕ | (k : ℕ∞) < m}.encard = m := by
   induction m using ENat.recTopCoe with
   | top => simp
-  | coe n =>
-    have hr : {k : ℕ | (k : ℕ∞) < (n : ℕ∞)} = ↑(Finset.range n) := by
-      ext k
-      simp
-    rw [hr, Set.encard_coe_eq_coe_finsetCard, Finset.card_range]
+  | coe n => simpa using Nat.encard_range n
 
 end Set
 

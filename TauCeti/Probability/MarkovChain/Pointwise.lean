@@ -15,6 +15,8 @@ public import TauCeti.Probability.Process.Occupation
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Analysis.SpecificLimits.MovingAverage
 import TauCeti.Data.ENat.ENNReal
+import TauCeti.MeasureTheory.Measure.Subtype
+import TauCeti.Probability.MarkovChain.Transient.Occupation
 
 /-!
 # Pointwise decay at states with infinite mean return time
@@ -199,26 +201,19 @@ private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_not_isPositive
     (hκ : κ.IsAperiodic) {y : α} (hy : ¬ κ.IsPositiveRecurrent y)
     (ν : Measure α) [IsFiniteMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
-  by_cases h0 : ν Set.univ = 0
-  · have hzero (n : ℕ) : ((κ ^ n) ∘ₘ ν).real {y} = 0 := by
-      rw [Measure.measure_univ_eq_zero.mp h0, measureReal_def,
-        Measure.bind_apply (measurableSet_singleton y) (κ ^ n).aemeasurable]
-      simp
-    simp_rw [hzero]
-    exact tendsto_const_nhds
-  · let ν₀ : Measure α := (ν Set.univ)⁻¹ • ν
-    have : IsProbabilityMeasure ν₀ :=
-      ⟨by simp [ν₀, smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel h0 (measure_ne_top ν Set.univ)]⟩
-    have hν : ν = ν Set.univ • ν₀ := by
-      simp [ν₀, smul_smul, ENNReal.mul_inv_cancel h0 (measure_ne_top ν Set.univ)]
-    have hprob := κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ
-      (lintegral_return_eq_top_of_not_isPositiveRecurrent hy) ν₀
-    have hscale (n : ℕ) : ((κ ^ n) ∘ₘ ν).real {y} =
-        ν.real Set.univ * ((κ ^ n) ∘ₘ ν₀).real {y} := by
-      conv_lhs => rw [hν]
-      simp [Measure.comp_smul, Measure.real, smul_apply, smul_eq_mul, ENNReal.toReal_mul]
-    simp_rw [hscale]
-    simpa only [mul_zero] using (tendsto_const_nhds (x := ν.real Set.univ)).mul hprob
+  have : Nonempty α := ⟨y⟩
+  let m : FiniteMeasure α := ⟨ν, inferInstance⟩
+  have hν : ν = (m.mass : ℝ≥0∞) • (m.normalize : Measure α) :=
+    (congrArg (fun (μ : FiniteMeasure α) => (μ : Measure α)) m.self_eq_mass_smul_normalize).trans
+      (Measure.coe_nnreal_smul m.mass (m.normalize : Measure α)).symm
+  have hprob := κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ
+    (lintegral_return_eq_top_of_not_isPositiveRecurrent hy) (m.normalize : Measure α)
+  have hscale (n : ℕ) : ((κ ^ n) ∘ₘ ν).real {y} =
+      ν.real Set.univ * ((κ ^ n) ∘ₘ (m.normalize : Measure α)).real {y} := by
+    rw [hν, Measure.comp_smul]
+    simp [Measure.real, smul_apply, ENNReal.toReal_mul, m]
+  simp_rw [hscale]
+  simpa only [mul_zero] using (tendsto_const_nhds (x := ν.real Set.univ)).mul hprob
 
 private theorem pow_period_mul_comp_restrict_compl_singleton_eq_zero
     {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
@@ -257,7 +252,7 @@ private theorem tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent
   have : IsMarkovKernel (η.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
   have : IsIrreducible Measure.count (η.subtype hs) :=
     hclosed.isIrreducible_subtype_communicatingClass hs
-  let y_s : s := ⟨y, mem_communicatingClass_self y⟩
+  let y_s : s := ⟨y, (mem_communicatingClass_iff y y).mpr (Communicates.refl y)⟩
   have haper : (η.subtype hs).IsAperiodic := by
     rw [isAperiodic_iff_period_eq_one y_s, period_subtype hs hclosed]
     exact period_pow_period κ y
@@ -265,9 +260,7 @@ private theorem tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent
     rw [isPositiveRecurrent_subtype_iff hs y_s]
     exact hη.not_isPositiveRecurrent
   let μ_s : Measure s := μ.comap Subtype.val
-  have : IsFiniteMeasure μ_s := ⟨by
-    rw [(MeasurableEmbedding.subtypeVal hs).comap_apply]
-    exact measure_lt_top _ _⟩
+  have : IsFiniteMeasure μ_s := μ.isFiniteMeasure_comap_subtype_coe (measure_ne_top μ s)
   have heq (q : ℕ) : ((κ ^ (d * q)) ∘ₘ μ).real {y} =
       (((η.subtype hs) ^ q) ∘ₘ μ_s).real {y_s} := by
     rw [pow_mul]
@@ -317,7 +310,10 @@ theorem tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent
     (ν : Measure α) [IsFiniteMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
   rcases not_isPositiveRecurrent_iff.mp hy with ht | hn
-  · exact ht.tendsto_pow_comp_real_singleton ν
+  · simpa only [Measure.real, ENNReal.toReal_zero, Function.comp_def] using
+      (ENNReal.continuousAt_toReal ENNReal.zero_ne_top).tendsto.comp
+        (κ.tendsto_pow_comp_apply_singleton_zero_of_return_lt_one
+          (isTransient_iff_return_probability_lt_one.mp ht) ν)
   · exact hn.tendsto_pow_comp_real_singleton ν
 
 end PeriodDecay

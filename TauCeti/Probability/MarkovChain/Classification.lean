@@ -411,7 +411,8 @@ theorem IsClosedSet.existsUnique_invariant_probability_communicatingClass_of_isP
   have : IsMarkovKernel (κ.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
   have : IsIrreducible Measure.count (κ.subtype hs) :=
     hclosed.isIrreducible_subtype_communicatingClass hs
-  let x_s : κ.communicatingClass x := ⟨x, mem_communicatingClass_self x⟩
+  let x_s : κ.communicatingClass x :=
+    ⟨x, (mem_communicatingClass_iff x x).mpr (Communicates.refl x)⟩
   have hx_s : (κ.subtype hs).IsPositiveRecurrent x_s :=
     (isPositiveRecurrent_subtype_iff hs x_s).mpr hx
   exact (existsUnique_invariant_probability_subtype_iff κ hs hclosed).mp
@@ -427,7 +428,8 @@ theorem IsClosedSet.existsUnique_invariant_probability_of_finite_communicatingCl
       IsProbabilityMeasure π ∧ κ.Invariant π ∧ π (κ.communicatingClass x)ᶜ = 0 :=
   hclosed.existsUnique_invariant_probability_communicatingClass_of_isPositiveRecurrent
     hfin.measurableSet
-    (hclosed.isPositiveRecurrent_of_finite_communicatingClass hfin (mem_communicatingClass_self x))
+    (hclosed.isPositiveRecurrent_of_finite_communicatingClass hfin
+      ((mem_communicatingClass_iff x x).mpr (Communicates.refl x)))
 
 /-- On a countable state space, a recurrent state with a finite communicating class
 is positive recurrent. -/
@@ -435,7 +437,7 @@ theorem IsRecurrent.isPositiveRecurrent_of_finite_communicatingClass [Countable 
     (hx : κ.IsRecurrent x) (hfinite : (κ.communicatingClass x).Finite) :
     κ.IsPositiveRecurrent x :=
   hx.isClosedSet_communicatingClass.isPositiveRecurrent_of_finite_communicatingClass
-    hfinite (mem_communicatingClass_self x)
+    hfinite ((mem_communicatingClass_iff x x).mpr (Communicates.refl x))
 
 /-- On a countable state space, a null recurrent state has an infinite communicating class. -/
 theorem IsNullRecurrent.infinite_communicatingClass [Countable S] (hx : κ.IsNullRecurrent x) :
@@ -470,7 +472,7 @@ theorem ae_exists_isPositiveRecurrent_and_forall_mem_communicatingClass [Finite 
         ∀ m, n ≤ m → w m ∈ κ.communicatingClass (w n) := by
   filter_upwards [κ.ae_exists_forall_mem_isClosedSet_communicatingClass ν] with w ⟨n, hclosed, hm⟩
   exact ⟨n, hclosed.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _)
-    (mem_communicatingClass_self _), hclosed, hm⟩
+    ((mem_communicatingClass_iff _ _).mpr (Communicates.refl _)), hclosed, hm⟩
 
 end FiniteClass
 
@@ -544,7 +546,7 @@ theorem ae_exists_isPositiveRecurrent_and_forall_mem_communicatingClass
         ∀ m, n ≤ m → X m ω ∈ κ.communicatingClass (X n ω) := by
   filter_upwards [h.ae_exists_forall_mem_isClosedSet_communicatingClass] with ω ⟨n, hclosed, hm⟩
   exact ⟨n, hclosed.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _)
-    (Kernel.mem_communicatingClass_self _), hclosed, hm⟩
+    ((Kernel.mem_communicatingClass_iff _ _).mpr (Kernel.Communicates.refl _)), hclosed, hm⟩
 
 end Finite
 
