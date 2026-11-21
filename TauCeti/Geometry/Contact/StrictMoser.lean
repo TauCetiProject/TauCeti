@@ -103,8 +103,8 @@ equation on an open neighbourhood of `ℝ × ι(S)` in `ℝ × M`
 (`TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq_of_isTransverseAlong`). It is
 the solution of a transport equation along the trajectories of the Reeb fields, with zero initial
 values on the slice (`TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`).
-At a point of the slice where `∂_t α_t` vanishes, the strict Moser vector field of such an `h`
-vanishes, so the strict Moser isotopy fixes it
+At a point of the slice where `∂_t α_t` vanishes at all times, the strict Moser vector field of
+such an `h` vanishes at all times, so the strict Moser isotopy fixes it
 (`TauCeti.SmoothForm.strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero`).
 
 ## Main declarations
@@ -571,7 +571,7 @@ vanishes at `ι s`, then the strict Moser vector field vanishes at time `t` and 
 function `h` of
 `TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq_of_isTransverseAlong` satisfies
 the hypotheses on `h` at every point of the slice, so its strict Moser isotopy fixes the points of
-the slice where `∂_t α_t` vanishes. -/
+the slice where `∂_t α_t` vanishes at all times. -/
 theorem strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero {ι : S → M} {s : S}
     (hdim : Module.finrank ℝ E' + 1 = Module.finrank ℝ E)
     (himm : Function.Injective (mfderiv J I ι s))
