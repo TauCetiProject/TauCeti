@@ -170,14 +170,13 @@ theorem norm_floerConformalJetCoeff_positiveEndChart_le (ω : SymplecticForm V)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
       (positiveEndChart q ζ)‖ ≤ 1 + B + (1 + B) * B / (2 * π) := by
   have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
+  rw [floerJetCoeff_def] at hB
   -- The leading coefficient `J(w, u w) = J_q(t)(u w)` and the end coefficient `C_end(ζ)` are
   -- components of the coefficient field on jets of the end datum.
   have hJb : ‖(J (positiveEndChart q ζ)
       (u (positiveEndChart q ζ))).toLinearMap.toContinuousLinearMap‖ ≤ B := by
     rw [hJz]
-    exact (ω.norm_apply_le_norm_floerJetCoeff
-      (fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ).trans hB
+    exact (norm_le_norm_firstOrderJetCoeff_left _ _).trans hB
   have hCe : ‖ω.floerLinearizationCoeff
       (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q) ζ‖ ≤ B := by
@@ -189,7 +188,7 @@ theorem norm_floerConformalJetCoeff_positiveEndChart_le (ω : SymplecticForm V)
       ext v
       simp only [floerLinearizationCoeff_apply, Function.comp_apply, hJz]
     rw [heq]
-    exact (ω.norm_floerLinearizationCoeff_le_norm_floerJetCoeff _ _ _ _ ζ).trans hB
+    exact (norm_le_norm_firstOrderJetCoeff_right _ _).trans hB
   -- The zeroth-order part `C(w)` is at most `(1 + B) B / (2π d)` with `d = |w - c_q|`, and the
   -- weight is at least `d⁻²`.
   have hcmp := ω.mul_norm_floerLinearizationCoeff_positiveEndChart_le hH hHs hζ hu hfl

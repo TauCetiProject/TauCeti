@@ -21,7 +21,9 @@ operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication
 
 The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.firstOrderJetCoeff`),
-whose norm is at most `1 + ‖A‖ + ‖C‖` (`TauCeti.norm_firstOrderJetCoeff_le`) and which depends
+whose norm is at most `1 + ‖A‖ + ‖C‖` (`TauCeti.norm_firstOrderJetCoeff_le`) and at least `‖A‖`
+and `‖C‖` (`TauCeti.norm_le_norm_firstOrderJetCoeff_left`,
+`TauCeti.norm_le_norm_firstOrderJetCoeff_right`), and which depends
 continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`).
 
 The Sobolev spaces on the cylinder (with the strip measure) and on conformally weighted domains
@@ -61,12 +63,18 @@ theorem jetOperator_of_not_memLp {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ →
     (hM : ¬ MemLp M ∞ μ) : jetOperator μ M = 0 := by
   simp [jetOperator, hM]
 
+/-- The first-order operator of an essentially bounded coefficient field is the operator-valued
+multiplication operator `MeasureTheory.Lp.operatorMultiplication 2` by that field. -/
+theorem jetOperator_of_memLp {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ μ) : jetOperator μ M = Lp.operatorMultiplication 2 (hM.toLp M) := by
+  simp [jetOperator, hM]
+
 /-- The first-order operator of an essentially bounded coefficient field acts pointwise on
 `L²` jets. -/
 theorem coeFn_jetOperator {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ μ) (f : Lp (V × V × V) 2 μ) :
     jetOperator μ M f =ᵐ[μ] fun z ↦ M z (f z) := by
-  simp only [jetOperator, hM, ↓reduceDIte]
+  rw [jetOperator_of_memLp hM]
   filter_upwards [Lp.operatorMultiplication_ae (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
   rw [h₁, h₂]
 
@@ -95,6 +103,20 @@ theorem norm_firstOrderJetCoeff_le (A C : V →L[ℝ] V) :
       (norm_snd_le ℝ V V)).trans (norm_snd_le ℝ V (V × V)))
   · exact (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
       (norm_fst_le ℝ V (V × V)))
+
+/-- The leading coefficient `A` of `∂s + A ∂t + C` is a component of its coefficient field on
+jets: `A v` is the value of the field on `(0, 0, v)`. -/
+theorem norm_le_norm_firstOrderJetCoeff_left (A C : V →L[ℝ] V) :
+    ‖A‖ ≤ ‖firstOrderJetCoeff A C‖ :=
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
+    simpa [Prod.norm_def] using (firstOrderJetCoeff A C).le_opNorm (0, 0, v)
+
+/-- The zeroth-order coefficient `C` of `∂s + A ∂t + C` is a component of its coefficient field on
+jets: `C v` is the value of the field on `(v, 0, 0)`. -/
+theorem norm_le_norm_firstOrderJetCoeff_right (A C : V →L[ℝ] V) :
+    ‖C‖ ≤ ‖firstOrderJetCoeff A C‖ :=
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
+    simpa [Prod.norm_def] using (firstOrderJetCoeff A C).le_opNorm (v, 0, 0)
 
 /-- The coefficient field of `∂s + A ∂t + C` on jets depends continuously on `A` and `C`. -/
 theorem continuousAt_firstOrderJetCoeff {X : Type*} [TopologicalSpace X] {A C : X → V →L[ℝ] V}
