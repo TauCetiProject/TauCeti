@@ -357,7 +357,7 @@ theorem iteratedLineDerivZeroL_succ_apply :
   | j + 1, m, u => by
       rw [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_apply,
         iteratedLineDerivZeroL_succ_apply j (Fin.tail m) (lineDerivL (m 0) (j + 1) u),
-        iteratedGradient_lineDerivL_eq_contractL (m 0) j u, ContinuousLinearMap.compLp_comp,
+        iteratedGradient_lineDerivL_eq_contractL (m 0) j u, ContinuousLinearMap.compLp_compLp,
         IteratedGradient.evalL_comp_contractL_one, Fin.cons_self_tail]
 
 /-- `Lᵖ` bound for `(j + 1)`-fold directional derivatives in terms of the top seminorm. -/
@@ -406,7 +406,7 @@ theorem iteratedGradient_iteratedLineDerivL_const (k : ℕ) (h : E) :
       -- dependent `Wkp`/`IteratedGradient` indices across the rewrite chain.
       rw [iteratedLineDerivL_succ, ContinuousLinearMap.comp_apply, Fin.tail_def,
         iteratedGradient_iteratedLineDerivL_const k h i hd,
-        iteratedGradient_lineDerivL_eq_contractL h (k + i) u', ContinuousLinearMap.compLp_comp,
+        iteratedGradient_lineDerivL_eq_contractL h (k + i) u', ContinuousLinearMap.compLp_compLp,
         IteratedGradient.contractL_one, ← IteratedGradient.contractL_succ k i h]
       -- The remaining goal aligns the dependent index `(k + i) + 1` with `k + (i + 1)` via
       -- `Nat.add_succ`.

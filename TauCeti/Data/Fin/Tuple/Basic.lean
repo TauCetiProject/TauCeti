@@ -35,8 +35,8 @@ once.
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
-* `Fin.snoc_comp_swap_castSucc`, `Fin.cons_comp_swap_succ`: exchanging two entries other than the
-  last (first) one commutes with appending (prepending).
+* `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
+  appending.
 * `Fin.tail_tail_comp_swap_zero_one`: exchanging the first two entries leaves
   `Fin.tail (Fin.tail a)` unchanged.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
@@ -66,6 +66,8 @@ once.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
+* `Fin.contractNth_castSucc_insertNth_castSucc`: inserting an entry before entry `j` and
+  contracting the two overwrites entry `j` by the contraction.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
@@ -134,16 +136,6 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   refine lastCases ?_ (fun i ↦ ?_) i
   · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
-    simp
-
-/-- Exchanging the entries `j.succ` and `k.succ` of `Fin.cons x c` is prepending `x` to `c` with
-the entries `j` and `k` exchanged. -/
-theorem cons_comp_swap_succ {n : ℕ} (x : α) (c : Fin n → α) (j k : Fin n) :
-    (cons x c : Fin (n + 1) → α) ∘ Equiv.swap j.succ k.succ = cons x (c ∘ Equiv.swap j k) := by
-  funext i
-  refine cases ?_ (fun i ↦ ?_) i
-  · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero j).symm, (succ_ne_zero k).symm]
-  · rw [Function.comp_apply, ← (succ_injective n).map_swap j k i]
     simp
 
 /-- Swapping the first two entries of a tuple of length at least two leaves `Fin.tail (Fin.tail a)`
@@ -333,6 +325,18 @@ theorem contractNth_castSucc_const (j : Fin n) (x : α) :
   · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj]
   · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
   · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj]
+
+/-- Inserting `x` at `j.castSucc` and then contracting the entries `j` and `j + 1` overwrites
+entry `j` of the tuple by `op x (a j)`. -/
+theorem contractNth_castSucc_insertNth_castSucc (j : Fin n) (x : α) (a : Fin n → α) :
+    contractNth j.castSucc op (insertNth (α := fun _ => α) j.castSucc x a) =
+      Function.update a j (op x (a j)) := by
+  funext k
+  rcases eq_or_ne k j with rfl | h
+  · rw [contractNth_apply_of_eq _ _ _ _ rfl, insertNth_apply_same, insertNth_castSucc_apply_succ,
+      Function.update_self]
+  · rw [contractNth_apply_of_ne _ _ _ _ (val_ne_of_ne h).symm, insertNth_apply_succAbove,
+      Function.update_of_ne h]
 
 end ContractNth
 
@@ -526,7 +530,16 @@ theorem comp_perm_eq_of_cons_of_swap {β : ℕ → Sort*} (F : ∀ j, (Fin j →
           intro i a
           refine cases ?_ (fun q => ?_) i
           · simpa using hswap n a
-          · conv_lhs => rw [← cons_self_tail a, ← succ_castSucc, cons_comp_swap_succ]
+          · have hswap' :
+                (cons (a 0) (tail a) : Fin (n + 2) → α) ∘ Equiv.swap q.castSucc.succ q.succ.succ =
+                  cons (a 0) (tail a ∘ Equiv.swap q.castSucc q.succ) := by
+              funext k
+              refine cases ?_ (fun k => ?_) k
+              · simp [Equiv.swap_apply_of_ne_of_ne, (succ_ne_zero _).symm]
+              · rw [Function.comp_apply,
+                  ← (succ_injective (n + 1)).map_swap q.castSucc q.succ k]
+                simp
+            conv_lhs => rw [← cons_self_tail a, ← succ_castSucc, hswap']
             exact (hcons (n + 1) (a 0) _ _ (ih q (tail a))).trans
               (congrArg (F (n + 2)) (cons_self_tail a))
       revert m

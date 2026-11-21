@@ -200,9 +200,8 @@ This is the right-hand half of the Hecke triple `Γ ≤ Δ₀(N) ≤ commensurat
 and it holds for every finite-index `Γ ≤ SL₂(ℤ)`: nothing about the subgroup enters beyond its
 index. Shimura's Lemma 3.10. -/
 lemma Delta0_le_commensurator_map (Γ : Subgroup SL(2, ℤ)) [Γ.FiniteIndex] :
-    Delta0 N ≤ (Subgroup.Commensurable.commensurator (Γ.map (mapGL ℚ))).toSubmonoid := by
-  rw [Subgroup.Commensurable.eq (commensurable_map_SLnZ 2 Γ)]
-  exact (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator 2)
+    Delta0 N ≤ (Subgroup.Commensurable.commensurator (Γ.map (mapGL ℚ))).toSubmonoid :=
+  (Delta0_le_posDetInt N).trans (posDetInt_le_commensurator_map 2 Γ)
 
 /-- The gcd of the four entries, as a natural number. -/
 private def entryGCD (A : Matrix (Fin 2) (Fin 2) ℤ) : ℕ :=

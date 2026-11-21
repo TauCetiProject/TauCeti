@@ -155,7 +155,7 @@ private theorem cup_gradedComm_of_add_one (M N : Rep k G) {p q r : ℤ} (hq : q 
   congr 1
   refine (tensorDimensionShiftDownIso N M r (r + 1) rfl).toLinearEquiv.injective ?_
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply, map_zsmul_unit,
-    ← negOnePow_smul_negOnePow_smul p ((tensorDimensionShiftDownIso N M r (r + 1) rfl).hom _),
+    ← Int.negOnePow_smul_negOnePow_smul p ((tensorDimensionShiftDownIso N M r (r + 1) rfl).hom _),
     ← cup_dimensionShiftDownIso_hom M N hq h rfl x y,
     ← hβ (β_ M (dimensionShiftDown N)) (r + 1) (cup M (dimensionShiftDown N) p (q + 1) (r + 1)
       (by omega) x ((dimensionShiftDownIso N q).hom y)), ih,
