@@ -26,22 +26,20 @@ open Filter Finset Topology
 
 namespace TauCeti
 
-private theorem tendsto_succ_inv : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) :=
-  tendsto_inv_atTop_zero.comp
-    ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))
-
 /-- For `q > 0`, `((n + q - r) / q) / (n + 1)` converges to `q⁻¹` for every `r < q`. -/
 private theorem tendsto_add_sub_div_div_succ {q r : ℕ} (hq : 0 < q) (hr : r < q) :
     Tendsto (fun n : ℕ ↦ (((n + q - r) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ))
       atTop (𝓝 (q : ℝ)⁻¹) := by
+  have hinv : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) := by
+    simpa [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
   have hlo : Tendsto (fun n : ℕ ↦ (q : ℝ)⁻¹ * (1 - (r + 1 : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹))
       atTop (𝓝 (q : ℝ)⁻¹) := by
     simpa using (tendsto_const_nhds (x := (q : ℝ)⁻¹)).mul
-      ((tendsto_const_nhds (x := (1 : ℝ))).sub (tendsto_succ_inv.const_mul (r + 1 : ℝ)))
+      ((tendsto_const_nhds (x := (1 : ℝ))).sub (hinv.const_mul (r + 1 : ℝ)))
   have hhi : Tendsto (fun n : ℕ ↦ (q : ℝ)⁻¹ * (1 + ((q : ℝ) - 1) * ((n + 1 : ℕ) : ℝ)⁻¹))
       atTop (𝓝 (q : ℝ)⁻¹) := by
     simpa using (tendsto_const_nhds (x := (q : ℝ)⁻¹)).mul
-      ((tendsto_const_nhds (x := (1 : ℝ))).add (tendsto_succ_inv.const_mul ((q : ℝ) - 1)))
+      ((tendsto_const_nhds (x := (1 : ℝ))).add (hinv.const_mul ((q : ℝ) - 1)))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le hlo hhi (fun n ↦ ?_) (fun n ↦ ?_)
   all_goals
     have hn1 : ((n + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
@@ -66,7 +64,9 @@ theorem tendsto_cesaro_congr_of_eventuallyEq {f g : ℕ → E} {L : E} (hfg : f 
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 L) := by
   obtain ⟨N, hN⟩ := eventually_atTop.mp hfg
   have hlim : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range N, (f i - g i))
-      atTop (𝓝 0) := by simpa using tendsto_succ_inv.smul_const (∑ i ∈ range N, (f i - g i))
+      atTop (𝓝 0) := by
+    simpa [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const
+      (∑ i ∈ range N, (f i - g i))
   have hdiff : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i -
       ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 0) := by
     refine hlim.congr' (eventually_atTop.mpr ⟨N, fun n hn ↦ ?_⟩); dsimp only
@@ -85,17 +85,18 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
     conv_rhs => rw [(by omega : n + m + 1 = m + (n + 1)), sum_range_add, add_comm]
     exact congrArg (· + ∑ i ∈ range m, f i) (sum_congr rfl fun i _ ↦ by rw [Nat.add_comm])
   have hprefix : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range m, f i) atTop (𝓝 0) := by
-    simpa using tendsto_succ_inv.smul_const (∑ i ∈ range m, f i)
+    simpa [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const
+      (∑ i ∈ range m, f i)
   constructor
   · intro hB
     have hratio : Tendsto (fun n : ℕ ↦ ((n - m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) := by
-      have hsub_lim : Tendsto (fun n : ℕ ↦ (1 : ℝ) - (m : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹)
+      have hlim : Tendsto (fun n : ℕ ↦ (1 - (m : ℝ) + 1 * (n : ℝ)) / (1 + 1 * (n : ℝ)))
           atTop (𝓝 1) := by
-        simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub (tendsto_succ_inv.const_mul (m : ℝ))
-      refine hsub_lim.congr' (eventually_atTop.mpr ⟨m, fun n hn ↦ ?_⟩); dsimp only
-      rw [(by rw [Nat.cast_add, Nat.cast_sub hn]; push_cast; ring :
-          ((n - m + 1 : ℕ) : ℝ) = ((n + 1 : ℕ) : ℝ) - m),
-        sub_div, div_self (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)), div_eq_mul_inv]
+        simpa using tendsto_add_mul_div_add_mul_atTop_nhds
+          (1 - (m : ℝ)) 1 1 (one_ne_zero : (1 : ℝ) ≠ 0)
+      refine hlim.congr' ?_
+      filter_upwards [eventually_ge_atTop m] with n hn
+      rw [Nat.cast_add, Nat.cast_sub hn]; push_cast; ring_nf
     refine Tendsto.congr' ?_
       (by simpa using (hratio.smul (hB.comp (tendsto_sub_atTop_nat m))).add hprefix)
     filter_upwards [eventually_ge_atTop m] with n hn
@@ -104,12 +105,12 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
       mul_inv_cancel₀ (by positivity), one_mul, ← smul_add, hsum k]; push_cast; rfl
   · intro hA
     have hratio : Tendsto (fun n : ℕ ↦ ((n + m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) := by
-      have hadd_lim : Tendsto (fun n : ℕ ↦ (1 : ℝ) + (m : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹)
+      have hlim : Tendsto (fun n : ℕ ↦ ((m : ℝ) + 1 + 1 * (n : ℝ)) / (1 + 1 * (n : ℝ)))
           atTop (𝓝 1) := by
-        simpa using (tendsto_const_nhds (x := (1 : ℝ))).add (tendsto_succ_inv.const_mul (m : ℝ))
-      refine hadd_lim.congr fun n ↦ ?_
-      rw [(by push_cast; ring : ((n + m + 1 : ℕ) : ℝ) = ((n + 1 : ℕ) : ℝ) + m),
-        add_div, div_self (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)), div_eq_mul_inv]
+        simpa using tendsto_add_mul_div_add_mul_atTop_nhds
+          ((m : ℝ) + 1) 1 1 (one_ne_zero : (1 : ℝ) ≠ 0)
+      refine hlim.congr fun n ↦ ?_
+      push_cast; ring_nf
     refine Tendsto.congr (fun n ↦ ?_)
       (by simpa using (hratio.smul (hA.comp (tendsto_add_atTop_nat m))).sub hprefix)
     rw [smul_smul, div_eq_mul_inv, mul_right_comm,
@@ -172,7 +173,7 @@ theorem tendsto_cesaro_mul_add_of_ite_mod {f : ℕ → E} {q r : ℕ} (hq : 0 < 
   refine ((h.comp hsub).const_smul (q : ℝ)).congr fun m ↦ ?_
   have hsum : ∑ i ∈ range (q * (m + 1)), (if i % q = r then f i else 0) =
       ∑ j ∈ range (m + 1), f (q * j + r) := by
-    rw [sum_range_mul_eq_sum_mod, sum_congr rfl fun s hs ↦ (by
+    rw [sum_range_mul_eq_sum_sum, sum_comm, sum_congr rfl fun s hs ↦ (by
         by_cases hsr : s = r <;>
           simp [hsr, Nat.mod_eq_of_lt (mem_range.mp hs), Nat.mod_eq_of_lt hr] :
         ∑ j ∈ range (m + 1), (if (q * j + s) % q = r then f (q * j + s) else 0) =

@@ -52,9 +52,8 @@ private theorem asympEquidistributed_linear_of_torusIrrational {α : UnitAddToru
   rw [weyl_criterion]; intro k hk; set ζ : ℂ := UnitAddTorus.mFourier k α
   have hζne : ζ ≠ 1 := torusIrrational_iff_mFourier.mp hα k hk
   refine squeeze_zero_norm (fun n ↦ ?_) (by
-    simpa using (tendsto_inv_atTop_zero.comp
-      ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))).mul_const
-      (2 / ‖ζ - 1‖))
+    simpa [one_div] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).mul_const (2 / ‖ζ - 1‖))
   have hterm (i : ℕ) : UnitAddTorus.mFourier k (i • α + β) = UnitAddTorus.mFourier k β * ζ ^ i :=
     by rw [UnitAddTorus.mFourier_apply_add, UnitAddTorus.mFourier_apply_nsmul, mul_comm]
   simp_rw [hterm, ← mul_sum, geom_sum_eq hζne, norm_mul, norm_inv, Complex.norm_natCast,

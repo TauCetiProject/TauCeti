@@ -103,9 +103,7 @@ theorem AsympEquidistributed.map {Y : Type*} [TopologicalSpace Y] [MeasurableSpa
     (hx : AsympEquidistributed x μ) {f : X → Y} (hf : Continuous f) (hm : Measurable f) :
     AsympEquidistributed (f ∘ x) (μ.map f) := by
   refine ((ProbabilityMeasure.continuous_map_of_measurable hf hm).tendsto μ |>.comp hx).congr
-    fun n ↦ ProbabilityMeasure.toMeasure_injective ?_
-  ext s hs; simp [ProbabilityMeasure.toMeasure_map, Measure.map_apply hm hs,
-    Measure.dirac_apply' _ hs, Measure.dirac_apply' _ (hm hs), ← Set.indicator_comp_right]
+    fun n ↦ TauCeti.Probability.map_empiricalMeasure hm x n
 
 /-- Two sequences that agree eventually are equidistributed for the same measures. -/
 theorem asympEquidistributed_congr_of_eventuallyEq {x y : ℕ → X} {μ : ProbabilityMeasure X}

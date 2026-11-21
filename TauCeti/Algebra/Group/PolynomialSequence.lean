@@ -42,8 +42,11 @@ theorem poly_sub_shift (s h : ℕ) (α : ℕ → G) (n : ℕ) :
     exact sum_congr rfl fun r _ ↦ by rw [Nat.cast_id, mul_assoc, mul_nsmul'] :
     ∀ j : ℕ, (n + h) ^ j • α j - n ^ j • α j =
       ∑ r ∈ range j, n ^ r • ((h ^ (j - r) * j.choose r) • α j))]
-  rw [sum_range_sum_range_lt (s + 1) (fun r j ↦ n ^ r • ((h ^ (j - r) * j.choose r) • α j)),
-    sum_range_succ, Ico_self, sum_empty, add_zero]
+  rw [← Nat.Ico_zero_eq_range]
+  simp_rw [← Nat.Ico_zero_eq_range]
+  rw [(sum_Ico_Ico_comm' 0 (s + 1) fun r j ↦ n ^ r • ((h ^ (j - r) * j.choose r) • α j)).symm]
+  simp_rw [Nat.Ico_zero_eq_range]
+  rw [sum_range_succ, Ico_self, sum_empty, add_zero]
   exact sum_congr rfl fun r _ ↦ smul_sum.symm
 
 /-- Affine reparametrization of an integer-indexed polynomial in an additive abelian group. -/
@@ -56,7 +59,10 @@ theorem poly_comp_affine_int (s : ℕ) (c : ℕ → G) (Q R n : ℤ) :
     exact sum_congr rfl fun t _ ↦ by rw [mul_pow, ← mul_zsmul]; congr 1; ring :
     ∀ j : ℕ, (Q * n + R) ^ j • c j =
       ∑ t ∈ range (j + 1), n ^ t • ((Q ^ t * R ^ (j - t) * (j.choose t : ℤ)) • c j))]
-  rw [sum_range_sum_range_le (s + 1)]; exact sum_congr rfl fun t _ ↦ smul_sum.symm
+  simp_rw [← Nat.Ico_zero_eq_range]
+  rw [(sum_Ico_Ico_comm 0 (s + 1) _).symm]
+  simp_rw [Nat.Ico_zero_eq_range]
+  exact sum_congr rfl fun t _ ↦ smul_sum.symm
 
 /-- Passing to an arithmetic progression of step `D` annihilating all high-degree torsion
 coefficients `c j` (`j₀ < j ≤ s`) collapses an affine reparametrization of a degree-`s` polynomial

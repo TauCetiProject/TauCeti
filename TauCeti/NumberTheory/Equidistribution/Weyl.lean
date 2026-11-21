@@ -240,64 +240,6 @@ end WeylCriteria
 
 section UniformDistributionModOne
 
-/-- Per-bucket Lipschitz bound between `fourier k (u i)` and its left grid endpoint `j / M`. -/
-private theorem norm_sum_bucket_sub_le (u : ℕ → ℝ) (k : ℤ) (M n j : ℕ) :
-    ‖∑ i ∈ (range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈
-            Ico ((j : ℝ) / (M : ℝ)) (((j + 1 : ℕ) : ℝ) / (M : ℝ))),
-          (fourier k (u i : UnitAddCircle) -
-            fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle))‖ ≤
-      (((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈
-            Ico ((j : ℝ) / (M : ℝ)) (((j + 1 : ℕ) : ℝ) / (M : ℝ)))).card : ℝ) *
-        (2 * Real.pi * |(k : ℝ)| / (M : ℝ)) := by
-  refine (norm_sum_le _ _).trans ((sum_le_sum (g := fun _ ↦
-    2 * Real.pi * |(k : ℝ)| / (M : ℝ)) fun i hi ↦ ?_).trans (by simp))
-  have hmem := (mem_filter.mp hi).2; rw [← AddCircle.coe_fract (u i)]
-  refine (norm_fourier_coe_sub_le k (Int.fract (u i)) ((j : ℝ) / (M : ℝ))).trans ?_
-  rw [norm_two_pi_I_mul_intCast_div one_pos, div_one, mul_div_assoc, mul_assoc]
-  refine mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)) (by positivity)
-  rw [abs_of_nonneg (sub_nonneg.mpr hmem.1)]
-  have hlt : Int.fract (u i) < ((j : ℝ) + 1) / (M : ℝ) := by simpa using hmem.2
-  linarith [add_div (j : ℝ) 1 (M : ℝ), one_div (M : ℝ)]
-
-/-- Partitioning `[0, 1)` into `M > 0` subintervals approximates the Weyl sum within `2π|k|/M`. -/
-private theorem norm_avg_fourier_sub_bucket_le (u : ℕ → ℝ) (k : ℤ) {M : ℕ} (hM : 0 < M) (n : ℕ) :
-    ‖((n + 1 : ℕ) : ℂ)⁻¹ * ∑ i ∈ range (n + 1), fourier k (u i : UnitAddCircle) -
-      ∑ j ∈ range M,
-        (((((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈
-            Ico ((j : ℝ) / (M : ℝ)) (((j + 1 : ℕ) : ℝ) / (M : ℝ)))).card : ℝ) /
-          ((n + 1 : ℕ) : ℝ) : ℝ) : ℂ) *
-          fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle)‖ ≤
-      2 * Real.pi * |(k : ℝ)| / (M : ℝ) := by
-  have hMreal : (0 : ℝ) < (M : ℝ) := Nat.cast_pos.mpr hM
-  let I : ℕ → Set ℝ := fun j ↦ Ico ((j : ℝ) / (M : ℝ)) (((j + 1 : ℕ) : ℝ) / (M : ℝ))
-  let bucket : ℕ → ℕ := fun i ↦ ⌊(M : ℝ) * Int.fract (u i)⌋₊
-  have hmaps : ∀ i ∈ range (n + 1), bucket i ∈ range M := fun i _ ↦ mem_range.mpr
-    ((Nat.floor_lt (mul_nonneg hMreal.le (Int.fract_nonneg _))).mpr
-      (by nlinarith [Int.fract_lt_one (u i)]))
-  have hfilt (j : ℕ) : (range (n + 1)).filter (fun i ↦ bucket i = j) =
-      (range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ I j) :=
-    filter_congr fun i _ ↦ by simp only [bucket, I, Set.mem_Ico,
-      Nat.floor_eq_iff (mul_nonneg hMreal.le (Int.fract_nonneg _)), div_le_iff₀' hMreal,
-      lt_div_iff₀' hMreal, Nat.cast_add, Nat.cast_one]
-  have hSn : ∑ j ∈ range M, (((((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ I j)).card : ℝ) /
-          ((n + 1 : ℕ) : ℝ) : ℝ) : ℂ) * fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) =
-      ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ j ∈ range M, ∑ _i ∈ (range (n + 1)).filter
-        (fun i ↦ Int.fract (u i) ∈ I j), fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) := by
-    simp only [sum_const, nsmul_eq_mul, mul_sum]; exact sum_congr rfl fun j _ ↦ by push_cast; ring
-  have hcard : ∑ j ∈ range M,
-      (((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ I j)).card : ℝ) = ((n + 1 : ℕ) : ℝ) := by
-    simp_rw [← hfilt]; exact_mod_cast ((sum_card_fiberwise_eq_card_filter (range (n + 1)) (range M)
-      bucket).trans (by rw [filter_true_of_mem hmaps])).trans (card_range (n + 1))
-  have hbound : ∑ j ∈ range M, ‖∑ i ∈ (range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ I j),
-      (fourier k (u i : UnitAddCircle) - fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle))‖ ≤
-      ((n + 1 : ℕ) : ℝ) * (2 * Real.pi * |(k : ℝ)| / (M : ℝ)) :=
-    (sum_le_sum fun j _ ↦ norm_sum_bucket_sub_le u k M n j).trans_eq (by rw [← sum_mul, hcard])
-  rw [(sum_fiberwise_of_maps_to hmaps (fun i ↦ fourier k (u i : UnitAddCircle))).symm, hSn,
-    ← mul_sub, ← sum_sub_distrib, norm_mul, norm_inv, Complex.norm_natCast]
-  simp_rw [hfilt, ← sum_sub_distrib]
-  refine (mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans hbound) (by positivity)).trans_eq ?_
-  rw [← mul_assoc, inv_mul_cancel₀ (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)), one_mul]
-
 /-- Haar equidistribution implies convergence of fractional-part visit frequencies in `[a, b)`. -/
 private theorem tendsto_fract_Ico_of_asympEquidistributed {u : ℕ → ℝ}
     (hu : AsympEquidistributed (fun n ↦ (u n : UnitAddCircle))
@@ -323,40 +265,82 @@ private theorem tendsto_fract_Ico_of_asympEquidistributed {u : ℕ → ℝ}
   exact hfreq.congr fun n ↦ congrArg (fun s : Finset ℕ ↦ (s.card : ℝ) / ((n + 1 : ℕ) : ℝ))
     (filter_congr fun i _ ↦ by simp [AddCircle.coe_equivIco_mk_apply])
 
-/-- Convergence of fractional-part frequencies on `[a, b) ⊆ [0, 1]` implies Weyl's criterion. -/
-private theorem tendsto_fourier_of_forall_fract_Ico {u : ℕ → ℝ}
+/-- Convergence of fractional-part frequencies on `[a, b) ⊆ [0, 1]` implies Haar equidistribution on
+`UnitAddCircle`. -/
+private theorem asympEquidistributed_of_forall_fract_Ico {u : ℕ → ℝ}
     (hfreq : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ≤ 1 → Tendsto (fun n : ℕ ↦
       (((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ Ico a b)).card : ℝ) /
-        ((n + 1 : ℕ) : ℝ)) atTop (𝓝 (b - a))) {k : ℤ} (hk : k ≠ 0) :
-    Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ *
-        ∑ i ∈ range (n + 1), fourier k (u i : UnitAddCircle)) atTop (𝓝 0) := by
-  rw [Metric.tendsto_atTop]; intro ε hε
-  obtain ⟨M, hMgt⟩ := exists_nat_gt (max (k.natAbs : ℝ) (4 * Real.pi * (k.natAbs : ℝ) / ε))
-  have hMk : k.natAbs < M := by exact_mod_cast (le_max_left _ _).trans_lt hMgt
-  have hMpos : 0 < M := lt_of_le_of_lt (Nat.zero_le _) hMk
-  have hMreal : (0 : ℝ) < (M : ℝ) := Nat.cast_pos.mpr hMpos
-  let S : ℕ → ℂ := fun n ↦ ∑ j ∈ range M,
-    (((((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈
-        Ico ((j : ℝ) / (M : ℝ)) (((j + 1 : ℕ) : ℝ) / (M : ℝ)))).card : ℝ) /
-      ((n + 1 : ℕ) : ℝ) : ℝ) : ℂ) * fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle)
-  have hS : Tendsto S atTop (𝓝 0) := by
-    have hlen (j : ℕ) : ((((j + 1 : ℕ) : ℝ) / (M : ℝ) - (j : ℝ) / (M : ℝ) : ℝ) : ℂ) =
-        (M : ℂ)⁻¹ := by push_cast; field_simp [hMreal.ne']; ring
-    simpa only [S, Function.comp_apply, hlen, ← mul_sum, ZMod.sum_fourier_div_eq_zero hk hMk,
-      mul_zero] using tendsto_finsetSum (range M) fun j hj ↦ ((Complex.continuous_ofReal.tendsto
-        _).comp (hfreq ((j : ℝ) / (M : ℝ)) (((j + 1 : ℕ) : ℝ) / (M : ℝ)) (by positivity)
-          (by gcongr; exact_mod_cast Nat.le_succ j) ((div_le_one hMreal).mpr
-            (by exact_mod_cast mem_range.mp hj)))).mul_const
-      (fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle))
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hS (ε / 2) (half_pos hε)
-  refine ⟨N, fun n hn ↦ ?_⟩; rw [dist_zero_right]
-  have hMlip : 2 * Real.pi * |(k : ℝ)| / (M : ℝ) < ε / 2 := by
-    rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast, div_lt_iff₀ hMreal]
-    linarith [(div_lt_iff₀ hε).mp ((le_max_right _ _).trans_lt hMgt)]
-  linarith [norm_add_le (((n + 1 : ℕ) : ℂ)⁻¹ * ∑ i ∈ range (n + 1), fourier k (u i : UnitAddCircle)
-      - S n) (S n) |>.trans_eq' (by rw [sub_add_cancel]),
-    (norm_avg_fourier_sub_bucket_le u k hMpos n).trans_lt hMlip,
-    (by simpa [dist_zero_right] using hN n hn : ‖S n‖ < ε / 2)]
+        ((n + 1 : ℕ) : ℝ)) atTop (𝓝 (b - a))) :
+    AsympEquidistributed (fun n ↦ (u n : UnitAddCircle))
+      AddCircle.haarAddCircle.toProbabilityMeasure := by
+  classical
+  have hν_prob : IsProbabilityMeasure (volume.restrict (Ico (0 : ℝ) 1)) := ⟨by simp⟩
+  let ν : ProbabilityMeasure ℝ := (volume.restrict (Ico (0 : ℝ) 1)).toProbabilityMeasure
+  let μ : ℕ → ProbabilityMeasure ℝ :=
+    TauCeti.Probability.empiricalMeasure (fun i ↦ Int.fract (u i))
+  let S : Set (Set ℝ) := {s | ∃ a b : ℝ, s = Ico a b}
+  have hpi : IsPiSystem S := by
+    rintro _ ⟨a₁, b₁, rfl⟩ _ ⟨a₂, b₂, rfl⟩ -
+    exact ⟨max a₁ a₂, min b₁ b₂, Ico_inter_Ico⟩
+  have htend : Tendsto μ atTop (𝓝 ν) := by
+    refine hpi.tendsto_probabilityMeasure_of_tendsto_of_mem ?_ ?_ ?_
+    · rintro _ ⟨a, b, rfl⟩; exact measurableSet_Ico
+    · intro U hU x hx
+      obtain ⟨a, b, ⟨hax, hxb⟩, hsub⟩ := mem_nhds_iff_exists_Ioo_subset.mp (hU.mem_nhds hx)
+      exact ⟨Ico ((a + x) / 2) b, ⟨(a + x) / 2, b, rfl⟩, Ico_mem_nhds (by linarith) hxb,
+        fun y hy ↦ hsub ⟨by linarith [hy.1], hy.2⟩⟩
+    · rintro _ ⟨c, d, rfl⟩
+      rw [← NNReal.tendsto_coe]
+      rcases le_or_gt (max c 0) (min d 1) with hle | hlt
+      · have hμ (n : ℕ) : (μ n (Ico c d) : ℝ) =
+            (((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ Ico (max c 0) (min d 1))).card :
+              ℝ) / ((n + 1 : ℕ) : ℝ) := by
+          dsimp only [μ]
+          rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def,
+            TauCeti.Probability.empiricalMeasure_real_eq_frequency measurableSet_Ico n]
+          refine congrArg (fun s : Finset ℕ ↦ (s.card : ℝ) / ((n + 1 : ℕ) : ℝ))
+            (filter_congr fun i _ ↦ ?_)
+          simp only [Set.mem_Ico]
+          have h01 := Int.fract_nonneg (u i); have h1 := Int.fract_lt_one (u i)
+          exact ⟨fun h ↦ ⟨max_le h.1 h01, lt_min h.2 h1⟩,
+            fun h ↦ ⟨(le_max_left c 0).trans h.1, h.2.trans_le (min_le_left d 1)⟩⟩
+        have hν : (ν (Ico c d) : ℝ) = min d 1 - max c 0 := by
+          rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def]
+          dsimp only [ν]
+          rw [Measure.coe_toProbabilityMeasure, Measure.restrict_apply measurableSet_Ico,
+            Set.Ico_inter_Ico, Real.volume_Ico, ENNReal.toReal_ofReal (sub_nonneg.mpr hle)]
+        simpa only [hμ, hν] using
+          hfreq (max c 0) (min d 1) (le_max_right _ _) hle (min_le_right _ _)
+      · have hemp : Ico c d ∩ Ico (0 : ℝ) 1 = ∅ := by
+          rw [Set.Ico_inter_Ico, Ico_eq_empty_of_le hlt.le]
+        have hμ (n : ℕ) : (μ n (Ico c d) : ℝ) = 0 := by
+          dsimp only [μ]
+          rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def,
+            TauCeti.Probability.empiricalMeasure_real_eq_frequency measurableSet_Ico n]
+          have hfilt : (range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ Ico c d) = ∅ :=
+            filter_eq_empty_iff.mpr fun i _ hi ↦ by
+              have : Int.fract (u i) ∈ Ico c d ∩ Ico 0 1 :=
+                ⟨hi, Int.fract_nonneg _, Int.fract_lt_one _⟩
+              rwa [hemp] at this
+          rw [hfilt, Finset.card_empty, Nat.cast_zero, zero_div]
+        have hν : (ν (Ico c d) : ℝ) = 0 := by
+          rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def]
+          dsimp only [ν]
+          rw [Measure.coe_toProbabilityMeasure, Measure.restrict_apply measurableSet_Ico, hemp,
+            measure_empty, ENNReal.toReal_zero]
+        simpa only [hμ, hν] using tendsto_const_nhds
+  have hν_map :
+      ν.map ((↑) : ℝ → UnitAddCircle) = AddCircle.haarAddCircle.toProbabilityMeasure := by
+    apply ProbabilityMeasure.toMeasure_injective
+    rw [ProbabilityMeasure.toMeasure_map, Measure.coe_toProbabilityMeasure,
+      Measure.coe_toProbabilityMeasure, Measure.restrict_congr_set Ico_ae_eq_Ioc]
+    simpa [AddCircle.volume_eq_smul_haarAddCircle] using
+      (AddCircle.measurePreserving_mk 1 0).map_eq
+  have hmap : AsympEquidistributed (fun i ↦ ((Int.fract (u i) : ℝ) : UnitAddCircle))
+      AddCircle.haarAddCircle.toProbabilityMeasure := by
+    rw [← hν_map]
+    exact (asympEquidistributed_def.mpr htend).map continuous_quotient_mk' AddCircle.measurable_mk'
+  simpa only [AddCircle.coe_fract] using hmap
 
 /-- **Classical equivalence for uniform distribution modulo `1`**: for `u : ℕ → ℝ`, Haar
 equidistribution of `n ↦ (u n : UnitAddCircle)`, convergence of fractional-part visit frequencies
@@ -377,7 +361,8 @@ theorem uniformDistribution_mod_one_tfae (u : ℕ → ℝ) :
           atTop (𝓝 0)
     ] := by
   tfae_have 1 → 2 := fun hu _ _ ha hab hb ↦ tendsto_fract_Ico_of_asympEquidistributed hu ha hab hb
-  tfae_have 2 → 3 := fun hfreq _ hk ↦ tendsto_fourier_of_forall_fract_Ico hfreq hk
+  tfae_have 2 → 1 := asympEquidistributed_of_forall_fract_Ico
+  tfae_have 1 → 3 := fun hu _ hk ↦ weyl_criterion_addCircle.mp hu _ hk
   tfae_have 3 → 1 := weyl_criterion_addCircle.mpr
   tfae_finish
 

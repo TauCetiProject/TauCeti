@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
-import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Data.ZMod.Count
+import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # The discrete Fourier transform on `ZMod N`: reductions and integrality
@@ -81,15 +81,8 @@ character on `ZMod b`. -/
 theorem fourier_natCast_div_eq_stdAddChar {b : ℕ} [NeZero b] (a : ℤ) (i : ℕ) :
     fourier a (((i : ℝ) / (b : ℝ) : ℝ) : UnitAddCircle) =
       stdAddChar ((i : ZMod b) * (a : ZMod b)) := by
-  have hb : (b : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne b)
-  have hdm : (i : ℝ) / (b : ℝ) = ((i / b : ℕ) : ℝ) + ((i % b : ℕ) : ℝ) / (b : ℝ) := by
-    rw [← mul_div_cancel_left₀ ((i / b : ℕ) : ℝ) hb, ← add_div]
-    exact_mod_cast (congrArg (fun k : ℕ ↦ (k : ℝ) / (b : ℝ)) (Nat.div_add_mod i b).symm)
-  have hnat0 : (((i / b : ℕ) : ℝ) : UnitAddCircle) = 0 := (AddCircle.coe_eq_zero_iff 1).2
-    ⟨((i / b : ℕ) : ℤ), by rw [zsmul_eq_mul, mul_one, Int.cast_natCast]⟩
-  rw [(by rw [val_natCast, hdm, AddCircle.coe_add, hnat0, zero_add] :
-    ((i : ℝ) / (b : ℝ) : UnitAddCircle) = ((((i : ZMod b).val : ℝ) / (b : ℝ) : ℝ) : UnitAddCircle)),
-    fourier_val_div_eq_stdAddChar]
+  rw [← AddCircle.coe_fract ((i : ℝ) / (b : ℝ)), Int.fract_div_natCast_eq_div_natCast_mod,
+    ← val_natCast b i, fourier_val_div_eq_stdAddChar]
 
 /-- Indicator of a residue class modulo `q > 0` expanded as a finite Fourier sum of rational
 twists on `ZMod q`. -/
@@ -111,21 +104,16 @@ theorem ite_mod_eq_sum_fourier {q r : ℕ} [NeZero q] (hr : r < q) (i : ℕ) :
 /-- Sum of a nontrivial `M`-th root of unity over `0, …, M - 1` vanishes when `0 < |k| < M`. -/
 theorem sum_fourier_div_eq_zero {k : ℤ} {M : ℕ} (hk : k ≠ 0) (hM : k.natAbs < M) :
     ∑ j ∈ Finset.range M, fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) = 0 := by
-  have hM0 : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (lt_of_le_of_lt (Nat.zero_le _) hM).ne'
-  set ζ : ℂ := fourier k (((1 / (M : ℝ) : ℝ) : UnitAddCircle))
-  have hpow (j : ℕ) : fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) = ζ ^ j := by
-    simp only [ζ, fourier_coe_apply, ← Complex.exp_natCast_mul]; congr 1; push_cast; ring
-  have hζM : ζ ^ M = 1 := by rw [← hpow M, div_self hM0, AddCircle.coe_period, fourier_eval_zero]
-  have hζne : ζ ≠ 1 := fun h1 ↦ by
-    have hEq : fourier 1 (((k : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) = 1 := by
-      rw [← h1]; simp only [ζ, fourier_coe_apply]; congr 1; push_cast; ring
-    rw [TauCeti.fourier_one_eq_one_iff one_ne_zero, AddCircle.coe_eq_zero_iff] at hEq
-    obtain ⟨m, hm⟩ := hEq
-    have hmulZ : m * (M : ℤ) = k := by
-      exact_mod_cast (eq_div_iff hM0).mp (by simpa using hm : (m : ℝ) = (k : ℝ) / (M : ℝ))
-    exact Nat.not_lt.mpr (Nat.le_of_dvd (Int.natAbs_pos.mpr hk) ⟨m.natAbs, by
-      simpa [Int.natAbs_mul, mul_comm] using congrArg Int.natAbs hmulZ.symm⟩) hM
-  simp_rw [hpow]; rw [geom_sum_eq hζne, hζM, sub_self, zero_div]
+  have : NeZero M := ⟨(Nat.zero_lt_of_lt hM).ne'⟩
+  simp_rw [fourier_natCast_div_eq_stdAddChar, ← Fin.sum_univ_eq_sum_range, ← finEquiv_apply]
+  rw [Fintype.sum_equiv (finEquiv M).toEquiv
+      (fun x : Fin M ↦ stdAddChar (finEquiv M x * (k : ZMod M)))
+      (fun x : ZMod M ↦ stdAddChar (x * (k : ZMod M))) (fun _ ↦ rfl),
+    AddChar.sum_mulShift (k : ZMod M) (isPrimitive_stdAddChar M), ite_eq_right fun h0 ↦ ?_,
+    Nat.cast_zero]
+  rw [intCast_zmod_eq_zero_iff_dvd] at h0
+  exact False.elim (Nat.not_lt.mpr (Nat.le_of_dvd (Int.natAbs_pos.mpr hk)
+    (Int.natCast_dvd.mp h0)) hM)
 
 /-- **The Fourier transform of a function of the reduction modulo a divisor.** For `v ∣ N` and
 `L = N / v`, the discrete Fourier transform modulo `N` of `j ↦ f (j mod v)` is `L • 𝓕 f m` at

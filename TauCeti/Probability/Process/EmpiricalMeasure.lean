@@ -375,6 +375,14 @@ theorem empiricalMeasure_toMeasure (x : ℕ → α) (n : ℕ) : (empiricalMeasur
   exact Fin.sum_univ_eq_sum_range
     (fun i => ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ • Measure.dirac (x i)) (n + 1)
 
+/-- Pushing an empirical measure forward along a measurable map gives the empirical measure of the
+image sequence. -/
+@[simp]
+theorem map_empiricalMeasure {β : Type*} [MeasurableSpace β] {f : α → β}
+    (hf : Measurable f) (x : ℕ → α) (n : ℕ) :
+    (empiricalMeasure x n).map f = empiricalMeasure (f ∘ x) n :=
+  map_empiricalMeasureOfFintype hf _
+
 /-- An empirical measure is concentrated on a finite set. -/
 theorem exists_finset_ae_mem_empiricalMeasure [MeasurableSingletonClass α]
     (x : ℕ → α) (n : ℕ) :

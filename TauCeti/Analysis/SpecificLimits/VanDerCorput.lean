@@ -32,10 +32,6 @@ open Filter Finset Topology
 
 namespace TauCeti
 
-private theorem tendsto_succ_inv : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) :=
-  tendsto_inv_atTop_zero.comp
-    ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))
-
 /-- Shifted-sum identity for van der Corput's inequality. -/
 private theorem vanDerCorput_sum_shift {N H : ℕ} (hN : 1 ≤ N) (hH : 1 ≤ H) (b : ℕ → ℂ) :
     ∑ m ∈ range (N + H - 1),
@@ -150,9 +146,10 @@ private theorem tendsto_vanDerCorput_lag {b : ℕ → ℂ} {C : ℝ} (hC : ∀ n
       ‖∑ i ∈ range (n + 1), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 0) :=
     by simpa only [norm_mul, norm_inv, Complex.norm_natCast, norm_zero, inv_mul_eq_div] using
       hcorr.norm.congr fun n ↦ by rw [inv_mul_eq_div, norm_div, Complex.norm_natCast]
+  have hinv : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) := by
+    simpa [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
   refine squeeze_zero' (Eventually.of_forall fun n ↦ by positivity) ?_ (by
-    simpa only [mul_zero, add_zero] using
-      hfull.add (tendsto_succ_inv.const_mul ((h : ℝ) * C ^ 2)))
+    simpa only [mul_zero, add_zero] using hfull.add (hinv.const_mul ((h : ℝ) * C ^ 2)))
   filter_upwards [eventually_ge_atTop h] with n hn
   have hdiff_le : ‖∑ i ∈ Ico (n + 1 - h) (n + 1), b (i + h) * starRingEnd ℂ (b i)‖ ≤
       (h : ℝ) * C ^ 2 := by
@@ -205,12 +202,11 @@ theorem tendsto_cesaro_zero_of_forall_correlation {b : ℕ → ℂ} (hb : ∃ C 
     nlinarith [(div_lt_iff₀ (sq_pos_of_pos hε)).mp
       (hH₀.trans (Nat.cast_lt.mpr (Nat.lt_succ_self H₀))), sq_nonneg C]
   have hratio : Tendsto (fun n : ℕ ↦ (((n + 1 + H - 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)))
-      atTop (𝓝 1) :=
-    (by simpa using tendsto_const_nhds.add (tendsto_succ_inv.const_mul ((H - 1 : ℕ) : ℝ)) :
-      Tendsto (fun n : ℕ ↦ (1 : ℝ) + ((H - 1 : ℕ) : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹)
-        atTop (𝓝 1)).congr fun n ↦ by
-      rw [(by omega : n + 1 + H - 1 = (n + 1) + (H - 1)), Nat.cast_add (n + 1), add_div,
-        div_self (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)), div_eq_mul_inv]
+      atTop (𝓝 1) := by
+    have hlim : Tendsto (fun n : ℕ ↦ ((H : ℝ) + 1 * (n : ℝ)) / (1 + 1 * (n : ℝ))) atTop (𝓝 1) := by
+      simpa using tendsto_add_mul_div_add_mul_atTop_nhds (H : ℝ) 1 1 (one_ne_zero : (1 : ℝ) ≠ 0)
+    refine hlim.congr fun n ↦ ?_
+    rw [(by omega : n + 1 + H - 1 = H + n)]; push_cast; ring_nf
   have hsum0 : Tendsto (fun n : ℕ ↦ ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
       (‖∑ i ∈ range (n + 1 - h), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ)))
       atTop (𝓝 0) := by
