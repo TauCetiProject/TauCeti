@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Basic
-public import TauCeti.Geometry.Manifold.Orientation.Basic
 
 /-!
 # Local homology generators from oriented charts
@@ -23,12 +23,15 @@ orientations used to construct fundamental classes.
 
 The oriented local homology isomorphism of any chart factors through that of the identity chart of
 the model, which is read through the connecting morphism and radial projection about the point.
-Translations of the model preserve the local orientations selected in the identity chart, and linear
+Translations of the model preserve the local orientations selected in the identity chart. Linear
 isometries between real inner product spaces intertwine the oriented local homology isomorphisms
 of the identity charts
-(`TauCeti.singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality`)
-and hence the oriented-chart local orientations of intertwined charts
-(`OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv`).
+(`TauCeti.singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality`) and the
+oriented-chart local orientations of intertwined charts
+(`OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv`),
+and composing a chart with a linear isometry equivalence of the model while transporting the model
+orientation preserves the selected local orientation
+(`OpenPartialHomeomorph.localOrientationOfOrientedChart_transHomeomorph_linearIsometryEquiv`).
 
 The local generator is the one associated to an oriented coordinate chart in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -39,7 +42,6 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Metric Module
-open scoped Manifold
 
 universe w v u
 
@@ -313,7 +315,7 @@ variable {E F : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- On punctured spaces, a linear isometry intertwines the radial projections onto the unit
 spheres. -/
-private theorem snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere
+private theorem snd_ofSubsetMap_linearIsometryEquiv_toHomeomorph
     (f : E ≃ₗᵢ[ℝ] F) (p : E) :
     TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
         (TopCat.ofHom (f.toHomeomorph : C(E, F))) (B := {p}ᶜ) (B' := {f p}ᶜ)
@@ -356,12 +358,87 @@ theorem singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality
   congr 1
   -- The composite is only type-correct after unfolding the subspace of the pair.
   erw [← Functor.map_comp_assoc,
-    snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere f p,
+    snd_ofSubsetMap_linearIsometryEquiv_toHomeomorph f p,
     Functor.map_comp_assoc]
   congr 1
   exact reducedSingularHomologySphereIsoOfOrientation_hom_naturality R oE oF f ho hE
 
 end LinearIsometry
+
+section LinearIsometryEquiv
+
+variable {M E F : Type w} [TopologicalSpace M] [T1Space M]
+  [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Applying a linear isometry equivalence followed by radial projection about `e p` is radial
+projection about `p` followed by the restriction of `e` to the unit spheres. -/
+private theorem snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere
+    (p : E) (e : E ≃ₗᵢ[ℝ] F) :
+    TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
+        (TopCat.ofHom ⟨e, e.continuous⟩) (B := {p}ᶜ) (B' := {e p}ᶜ)
+        (fun _ hy h ↦ hy (e.injective h))) ≫
+      TopCat.ofHom (complSingletonHomotopyEquivSphere (e p)).toFun =
+    TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun ≫
+      TopCat.ofHom ⟨e.toLinearIsometry.unitSphereMap,
+        e.toLinearIsometry.continuous_unitSphereMap⟩ := by
+  ext z
+  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
+  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+  refine (coe_complSingletonHomotopyEquivSphere_apply (e p) _).trans ?_
+  -- Unfold `TopPair.ofSubset` on the subspace component to apply `TopPair.ofSubsetMap_snd_apply`.
+  erw [TopPair.ofSubsetMap_snd_apply]
+  simp only [TopCat.hom_ofHom, ContinuousMap.coe_mk, LinearIsometry.coe_unitSphereMap_apply,
+    LinearIsometryEquiv.coe_toLinearIsometry, ← map_sub, e.norm_map, ← map_smul]
+  exact (congrArg e (coe_complSingletonHomotopyEquivSphere_apply p z)).symm
+
+/-- Composing a chart with a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` and transporting the
+orientation of `E` along `e` preserves the oriented local homology isomorphism. -/
+theorem singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIsometryEquiv
+    (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) {n : ℕ}
+    (o : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
+    (e : E ≃ₗᵢ[ℝ] F) (hF : finrank ℝ F = n + 1)
+    (hx' : x ∈ (φ.transHomeomorph e.toHomeomorph).source :=
+      (φ.transHomeomorph_source e.toHomeomorph).symm ▸ hx) :
+    singularHomologyComplSingletonIsoOfOrientation R (φ.transHomeomorph e.toHomeomorph) hx'
+        (o.map (Fin (n + 1)) e.toLinearEquiv) hF =
+      singularHomologyComplSingletonIsoOfOrientation R φ hx o hE := by
+  ext : 1
+  have hF' : (LinearEquiv.finrank_eq e.toLinearEquiv).symm.trans hE = hF := Subsingleton.elim _ _
+  subst hF'
+  rw [singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom,
+    singularHomologyComplSingletonIsoOfChart_transHomeomorph_hom R φ hx e.toHomeomorph hx' (n + 1),
+    singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom]
+  simp only [Category.assoc]
+  congr 1
+  -- Unfold `(φ.transHomeomorph e.toHomeomorph) x` to `e (φ x)` for naturality of `δ`.
+  erw [← TopPair.reducedSingularHomologyδ_naturality_assoc]
+  congr 1
+  -- Unfold the subspace of `TopPair.ofSubset` and `transHomeomorph` to compose `TopCat` morphisms.
+  erw [← Functor.map_comp_assoc,
+    snd_ofSubsetMap_linearIsometryEquiv_comp_complSingletonHomotopyEquivSphere (φ x) e,
+    Functor.map_comp_assoc,
+    reducedSingularHomologySphereIsoOfOrientation_hom_naturality R o
+      (o.map (Fin (n + 1)) e.toLinearEquiv) e rfl hE]
+
+/-- Composing a chart with a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` and transporting the
+orientation of `E` along `e` selects the same local orientation of `M` at `x`. -/
+theorem
+    _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart_transHomeomorph_linearIsometryEquiv
+    (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) {n : ℕ}
+    (o : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
+    (e : E ≃ₗᵢ[ℝ] F) (hF : finrank ℝ F = n + 1)
+    (hx' : x ∈ (φ.transHomeomorph e.toHomeomorph).source :=
+      (φ.transHomeomorph_source e.toHomeomorph).symm ▸ hx) :
+    (φ.transHomeomorph e.toHomeomorph).localOrientationOfOrientedChart hx'
+        (o.map (Fin (n + 1)) e.toLinearEquiv) hF =
+      φ.localOrientationOfOrientedChart hx o hE := by
+  apply Subtype.ext
+  rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
+    OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
+    singularHomologyComplSingletonIsoOfOrientation_transHomeomorph_linearIsometryEquiv]
+
+end LinearIsometryEquiv
 
 end TauCeti
 
@@ -410,71 +487,3 @@ theorem localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv
   exact (isoM.inv_hom_id_apply 1).trans (isoM'.inv_hom_id_apply 1).symm
 
 end OpenPartialHomeomorph
-
-namespace TauCeti
-
-section Manifold
-
-variable {M E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace M] [T1Space M] [ChartedSpace E M]
-  [IsManifold 𝓘(ℝ, E) 1 M]
-
-/-- The local homology orientation at a point selected by an orientation of a boundaryless
-manifold. The quotient presentation of manifold orientations causes no ambiguity: simultaneously
-reversing the model orientation and every chart sign preserves the signed model orientation in
-the preferred chart. -/
-def localOrientationOfManifoldOrientation {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
-    (hE : finrank ℝ E = n + 1) (x : M) : LocalOrientation M x (n + 1) :=
-  o.lift
-    (fun l ↦ (chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x)
-      (l.chartOrientation x ⟨x, mem_chart_source E x⟩) hE)
-    (fun l ↦ by
-      have hchart : l.flip.chartOrientation x ⟨x, mem_chart_source E x⟩ =
-          l.chartOrientation x ⟨x, mem_chart_source E x⟩ := by
-        rw [← l.flip.orientationAt_eq x, l.orientationAt_flip, l.orientationAt_eq x]
-      rw [hchart])
-
-/-- The local orientation selected by a represented manifold orientation is the oriented-chart
-generator for its signed model orientation in the preferred chart. -/
-@[simp]
-theorem localOrientationOfManifoldOrientation_mk {n : ℕ}
-    (l : Manifold.OrientationLift 𝓘(ℝ, E) M (Fin (n + 1)))
-    (hE : finrank ℝ E = n + 1) (x : M) :
-    localOrientationOfManifoldOrientation (Manifold.Orientation.mk l) hE x =
-      (chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x)
-        (l.chartOrientation x ⟨x, mem_chart_source E x⟩) hE := by
-  simp only [localOrientationOfManifoldOrientation, Manifold.Orientation.lift_mk]
-
-/-- The local orientation selected by a manifold orientation at `x` is the oriented-chart
-generator, in the preferred chart at `x`, for the orientation of the tangent space at `x`. -/
-theorem localOrientationOfManifoldOrientation_eq {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) (hE : finrank ℝ E = n + 1) (x : M) :
-    localOrientationOfManifoldOrientation o hE x =
-      (chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x) (o.orientationAt x)
-        hE := by
-  induction o using Manifold.Orientation.inductionOn with
-  | _ l =>
-    rw [localOrientationOfManifoldOrientation_mk, Manifold.Orientation.orientationAt_mk,
-      l.orientationAt_eq]
-
-/-- Reversing a manifold orientation reverses every local homology orientation it selects. -/
-@[simp]
-theorem localOrientationOfManifoldOrientation_neg {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
-    (hE : finrank ℝ E = n + 1) (x : M) :
-    localOrientationOfManifoldOrientation (-o) hE x =
-      -localOrientationOfManifoldOrientation o hE x := by
-  induction o using Manifold.Orientation.inductionOn with
-  | _ l =>
-      simp only [localOrientationOfManifoldOrientation, Manifold.Orientation.neg_mk,
-        Manifold.Orientation.lift_mk]
-      have hchart : (-l).chartOrientation x ⟨x, mem_chart_source E x⟩ =
-          -l.chartOrientation x ⟨x, mem_chart_source E x⟩ := by
-        rw [← (-l).orientationAt_eq x, l.orientationAt_neg, l.orientationAt_eq x]
-        congr
-      rw [hchart, OpenPartialHomeomorph.localOrientationOfOrientedChart_neg]
-
-end Manifold
-
-end TauCeti

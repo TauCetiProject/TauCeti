@@ -76,7 +76,7 @@ namespace UCB
 `UCB H`. -/
 def compProdMk (x : G) : UCB (G × H) →ₐ[ℝ] UCB H where
   toFun f := ⟨(f : G × H →ᵇ ℝ).compContinuous ((ContinuousMap.const H x).prodMk
-    (ContinuousMap.id H)), compContinuous_prodMk_mem_ucb f.2 x⟩
+    (ContinuousMap.id H)), compContinuous_prodMk_mem_ucb f.property x⟩
   map_one' := rfl
   map_mul' _ _ := rfl
   map_zero' := rfl
@@ -121,7 +121,7 @@ theorem forall_eventually_dist_compProdMk_mul_lt (f : UCB (G × H)) :
   have h : Tendsto (fun u : G => (u, (1 : H))) (𝓝 1) (𝓝 1) :=
     (continuous_id.prodMk continuous_const).tendsto' 1 1 rfl
   intro ε hε
-  filter_upwards [h.eventually ((mem_ucb_iff.1 f.2) (ε / 2) (half_pos hε))] with u hu x
+  filter_upwards [h.eventually ((mem_ucb_iff.1 f.property) (ε / 2) (half_pos hε))] with u hu x
   refine lt_of_le_of_lt ((BoundedContinuousFunction.dist_le (half_pos hε).le).2 fun y => ?_)
     (half_lt_self hε)
   simpa [Real.dist_eq] using (hu (x, y)).le

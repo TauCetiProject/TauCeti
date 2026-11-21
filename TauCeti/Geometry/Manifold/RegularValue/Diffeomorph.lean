@@ -11,21 +11,19 @@ public import TauCeti.Geometry.Manifold.RegularValue
 /-!
 # Regular points and regular values under diffeomorphisms
 
-Every point and value of a `C^n` diffeomorphism (`n ≠ 0`) is regular, and precomposing or
-postcomposing an arbitrary map `f` between manifolds with a `C^n` diffeomorphism (`n ≠ 0`)
+Postcomposing an arbitrary map `f` between manifolds with a `C^n` diffeomorphism (`n ≠ 0`)
 preserves regular points and regular values without any differentiability assumption on `f`.
+(Precomposition is in `TauCeti.Geometry.Manifold.RegularValue`.)
 
 ## Main results
 
 * `Diffeomorph.isRegularPoint`, `Diffeomorph.isRegularValue`: every point and value of a `C^n`
   diffeomorphism (`n ≠ 0`) is regular.
-* `Diffeomorph.isRegularPoint_diffeomorph_comp_iff`,
-  `Diffeomorph.isRegularPoint_comp_diffeomorph_iff`: invariance of regular points under
-  postcomposition and precomposition with a diffeomorphism.
+* `Diffeomorph.isRegularPoint_diffeomorph_comp_iff`: invariance of regular points under
+  postcomposition with a diffeomorphism.
 * `Diffeomorph.isRegularValue_diffeomorph_comp_apply_iff`,
-  `Diffeomorph.isRegularValue_diffeomorph_comp_iff`,
-  `Diffeomorph.isRegularValue_comp_diffeomorph_iff`: invariance of regular values under
-  postcomposition and precomposition with a diffeomorphism.
+  `Diffeomorph.isRegularValue_diffeomorph_comp_iff`: invariance of regular values under
+  postcomposition with a diffeomorphism.
 
 ## References
 
@@ -74,16 +72,6 @@ theorem isRegularPoint_diffeomorph_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n
     ContinuousLinearEquiv.coe_coe]
   exact EquivLike.comp_surjective _ (h.mfderivToContinuousLinearEquiv hn (f x))
 
-/-- Precomposing with a `C^n` diffeomorphism (`n ≠ 0`) preserves regular points at the
-corresponding point, with no differentiability assumption on `f`. -/
-@[simp]
-theorem isRegularPoint_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → P) (x : M) :
-    TauCeti.IsRegularPoint I K (f ∘ h) x ↔ TauCeti.IsRegularPoint J K f (h x) := by
-  rw [TauCeti.isRegularPoint_iff, TauCeti.isRegularPoint_iff, h.mfderiv_comp_diffeomorph hn,
-    ← h.mfderivToContinuousLinearEquiv_coe hn, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe]
-  exact EquivLike.surjective_comp (h.mfderivToContinuousLinearEquiv hn x) _
-
 /-- Under postcomposition with a `C^n` diffeomorphism `h` (`n ≠ 0`), `h y` is a regular value of
 `h ∘ f` if and only if `y` is a regular value of `f`. -/
 @[simp]
@@ -99,15 +87,5 @@ theorem isRegularValue_diffeomorph_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n
     TauCeti.IsRegularValue K J (h ∘ f) z ↔ TauCeti.IsRegularValue K I f (h.symm z) := by
   conv_lhs => rw [← h.apply_symm_apply z]
   exact h.isRegularValue_diffeomorph_comp_apply_iff hn f (h.symm z)
-
-/-- Precomposing with a `C^n` diffeomorphism (`n ≠ 0`) does not change regular values. -/
-@[simp]
-theorem isRegularValue_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → P) (y : P) :
-    TauCeti.IsRegularValue I K (f ∘ h) y ↔ TauCeti.IsRegularValue J K f y := by
-  rw [TauCeti.isRegularValue_iff, TauCeti.isRegularValue_iff]
-  refine ⟨fun hy z hz ↦ ?_,
-    fun hy x hx ↦ (h.isRegularPoint_comp_diffeomorph_iff hn f x).2 (hy _ hx)⟩
-  rw [← h.apply_symm_apply z] at hz ⊢
-  exact (h.isRegularPoint_comp_diffeomorph_iff hn f (h.symm z)).1 (hy (h.symm z) hz)
 
 end Diffeomorph

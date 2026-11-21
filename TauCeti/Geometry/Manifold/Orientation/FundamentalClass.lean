@@ -9,8 +9,8 @@ public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.ModelTransport.Interior
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Geometry.Manifold.Orientation.Pullback
+public import TauCeti.Geometry.Manifold.Orientation.Interior
+import TauCeti.Geometry.Manifold.Orientation.Boundaryless
 
 /-!
 # The integral fundamental class of a compact oriented smooth manifold
@@ -36,12 +36,6 @@ under pointwise orientation-preserving homeomorphisms between compact boundaryle
 
 ## Main definitions
 
-* `TauCeti.Manifold.Orientation.modelEquivEuclidean`: a continuous linear equivalence between the
-  model vector space of an oriented manifold and `EuclideanSpace ℝ ι`.
-* `TauCeti.Manifold.Orientation.boundarylessTransContinuousLinearEquiv`: the orientation transported
-  along `TauCeti.BoundarylessModel.diffeomorphTransContinuousLinearEquiv` to a self-modelled copy.
-* `TauCeti.Manifold.Orientation.interiorOrientation`: the orientation transported along
-  `TauCeti.BoundarylessModel.interiorDiffeomorph` to the interior vector-space atlas.
 * `TauCeti.Manifold.Orientation.fundamentalClass`: the integral fundamental class `[M] ∈ Hₙ₊₁(M; ℤ)`
   of a compact oriented boundaryless `C¹` manifold `(M, I)`.
 * `TauCeti.Manifold.Orientation.mapFundamentalClass`: the pushforward `f_*[M] ∈ Hₙ₊₁(X; ℤ)` along
@@ -49,14 +43,6 @@ under pointwise orientation-preserving homeomorphisms between compact boundaryle
 
 ## Main results
 
-* `Manifold.Orientation.boundarylessTransContinuousLinearEquiv_neg`,
-  `Manifold.Orientation.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv`,
-  `Manifold.Orientation.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm`:
-  negation and orientation-preservation lemmas for recharting boundaryless models.
-* `TauCeti.Manifold.Orientation.interiorOrientation_neg`,
-  `TauCeti.Manifold.Orientation.isOrientationPreservingAt_interiorDiffeomorph`,
-  `TauCeti.Manifold.Orientation.isOrientationPreservingAt_interiorDiffeomorph_symm`: negation and
-  orientation-preservation lemmas for the interior vector-space atlas.
 * `TauCeti.Manifold.Orientation.fundamentalClass_neg`,
   `TauCeti.Manifold.Orientation.mapFundamentalClass_id`,
   `TauCeti.Manifold.Orientation.mapFundamentalClass_comp`,
@@ -91,72 +77,6 @@ namespace TauCeti
 
 namespace Manifold.Orientation
 
-section Rechart
-
-variable {E H X ι : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace X] [ChartedSpace H X] [Fintype ι]
-
-/-- A chosen continuous linear equivalence `E ≃L[ℝ] EuclideanSpace ℝ ι` from the dimension
-equality carried by an orientation. -/
-def modelEquivEuclidean (o : Manifold.Orientation I X ι) : E ≃L[ℝ] EuclideanSpace ℝ ι :=
-  ContinuousLinearEquiv.ofFinrankEq (by rw [← o.card_eq, finrank_euclideanSpace])
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [I.Boundaryless] [IsManifold I 1 X]
-
-/-- The orientation on the self-modelled copy
-`BoundarylessModel (I.transContinuousLinearEquiv e) X` pulled back from `o` along the inverse
-recharting diffeomorphism `(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I e 1).symm`. -/
-def boundarylessTransContinuousLinearEquiv (o : Manifold.Orientation I X ι) (e : E ≃L[ℝ] F) :
-    Manifold.Orientation 𝓘(ℝ, F) (BoundarylessModel (I.transContinuousLinearEquiv e) X) ι :=
-  let Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e 1
-  o.pullback Φ.symm.contMDiff (fun _ ↦ Φ.symm.isInvertible_mfderiv one_ne_zero)
-    (o.card_eq.trans e.toLinearEquiv.finrank_eq)
-
-/-- Reversing `o` negates `o.boundarylessTransContinuousLinearEquiv e`. -/
-@[simp]
-theorem boundarylessTransContinuousLinearEquiv_neg (o : Manifold.Orientation I X ι)
-    (e : E ≃L[ℝ] F) :
-    (-o).boundarylessTransContinuousLinearEquiv e = -o.boundarylessTransContinuousLinearEquiv e :=
-  pullback_neg o _ _ _
-
-/-- The inverse recharting diffeomorphism
-`(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I e k).symm` preserves orientations from
-`o.boundarylessTransContinuousLinearEquiv e` to `o`. -/
-theorem isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm
-    (o : Manifold.Orientation I X ι) (e : E ≃L[ℝ] F) (k : ℕ∞ω)
-    (y : BoundarylessModel (I.transContinuousLinearEquiv e) X) :
-    IsOrientationPreservingAt (o.boundarylessTransContinuousLinearEquiv e) o
-      (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e k).symm y := by
-  have hcoe :
-      ⇑(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e k).symm =
-        ⇑(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e 1).symm := by
-    rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm,
-      BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm]
-  rw [hcoe]
-  exact isOrientationPreservingAt_pullback _ _ _ _ y
-
-/-- The recharting diffeomorphism `BoundarylessModel.diffeomorphTransContinuousLinearEquiv I e k`
-preserves orientations from `o` to `o.boundarylessTransContinuousLinearEquiv e`. -/
-theorem isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv
-    (o : Manifold.Orientation I X ι) (e : E ≃L[ℝ] F) (k : ℕ∞ω) (x : X) :
-    IsOrientationPreservingAt o (o.boundarylessTransContinuousLinearEquiv e)
-      (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e k) x := by
-  have hcoe :
-      ⇑(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e k) =
-        ⇑(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e 1) := by
-    rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv,
-      BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv]
-  rw [hcoe]
-  exact (o.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm e 1
-    (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e 1 x)).diffeomorph_symm
-    (e := (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := X) e 1).symm)
-    one_ne_zero
-
-end Rechart
-
 section SelfModel
 
 variable {E : Type*} {M : Type}
@@ -169,7 +89,8 @@ variable {E : Type*} {M : Type}
 private def fundamentalClassSelf (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of M) :=
-  ((o.boundarylessTransContinuousLinearEquiv o.modelEquivEuclidean).toHomologicalOrientation
+  ((o.transContinuousLinearEquiv
+    o.modelEquivEuclidean).toBoundarylessModel.toHomologicalOrientation
     finrank_euclideanSpace_fin).mapFundamentalClass finrank_euclideanSpace_fin
     ((BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
       o.modelEquivEuclidean 1).symm.toHomeomorph :
@@ -187,13 +108,13 @@ private theorem map_fundamentalClassSelf_of_homeomorph
     (eM : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
     (eN : F ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
     (h : M ≃ₜ N) (hh : ∀ x, IsOrientationPreservingAt o o' h x) :
-    ((o.boundarylessTransContinuousLinearEquiv eM).toHomologicalOrientation
+    (((o.transContinuousLinearEquiv eM).toBoundarylessModel).toHomologicalOrientation
         finrank_euclideanSpace_fin).mapFundamentalClass finrank_euclideanSpace_fin
         ((h : C(M, N)).comp
           ((BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
             eM 1).symm.toHomeomorph :
             C(BoundarylessModel (𝓘(ℝ, E).transContinuousLinearEquiv eM) M, M))) =
-      ((o'.boundarylessTransContinuousLinearEquiv eN).toHomologicalOrientation
+      (((o'.transContinuousLinearEquiv eN).toBoundarylessModel).toHomologicalOrientation
         finrank_euclideanSpace_fin).mapFundamentalClass finrank_euclideanSpace_fin
         ((BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, F) (M := N)
           eN 1).symm.toHomeomorph :
@@ -201,8 +122,9 @@ private theorem map_fundamentalClassSelf_of_homeomorph
   set Φ := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M) eM 1
   set Φ' := BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, F) (M := N) eN 1
   let Θ := (Φ.symm.toHomeomorph.trans h).trans Φ'.toHomeomorph
-  have hΘ : ∀ z, IsOrientationPreservingAt (o.boundarylessTransContinuousLinearEquiv eM)
-      (o'.boundarylessTransContinuousLinearEquiv eN) Θ z := by
+  have hΘ : ∀ z, IsOrientationPreservingAt
+      (o.transContinuousLinearEquiv eM).toBoundarylessModel
+      (o'.transContinuousLinearEquiv eN).toBoundarylessModel Θ z := by
     intro z
     have hcoe : (Θ : _ → _) = ⇑Φ' ∘ (⇑h ∘ ⇑Φ.symm) := by
       ext y
@@ -228,7 +150,7 @@ private theorem map_fundamentalClassSelf_of_homeomorph
 private theorem fundamentalClassSelf_eq (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
     (e : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :
     o.fundamentalClassSelf =
-      ((o.boundarylessTransContinuousLinearEquiv e).toHomologicalOrientation
+      (((o.transContinuousLinearEquiv e).toBoundarylessModel).toHomologicalOrientation
         finrank_euclideanSpace_fin).mapFundamentalClass finrank_euclideanSpace_fin
         ((BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E) (M := M)
           e 1).symm.toHomeomorph :
@@ -249,7 +171,7 @@ private theorem fundamentalClassSelf_eq (o : Manifold.Orientation 𝓘(ℝ, E) M
 private theorem fundamentalClassSelf_neg (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
     (-o).fundamentalClassSelf = -o.fundamentalClassSelf := by
   rw [(-o).fundamentalClassSelf_eq o.modelEquivEuclidean, fundamentalClassSelf,
-    boundarylessTransContinuousLinearEquiv_neg, toHomologicalOrientation_neg,
+    neg_transContinuousLinearEquiv, toBoundarylessModel_neg, toHomologicalOrientation_neg,
     HomologicalOrientation.mapFundamentalClass_neg]
 
 private theorem map_fundamentalClassSelf_homeomorph
@@ -276,14 +198,14 @@ variable {E M : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
 
 omit [T2Space M] [CompactSpace M] in
 /-- For a linear isometry `f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))`, the tangent orientation
-of `o.boundarylessTransContinuousLinearEquiv f.toContinuousLinearEquiv` at `Φ x` is the pushforward
-of `o.orientationAt x` along `f`. -/
-private theorem orientationAt_boundarylessTransContinuousLinearEquiv_linearIsometryEquiv
+of `(o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel` at `Φ x` is the
+pushforward of `o.orientationAt x` along `f`. -/
+private theorem orientationAt_toBoundarylessModel_transContinuousLinearEquiv_linearIsometryEquiv
     (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
     (f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (x : M) :
     _root_.Orientation.map (Fin (n + 1)) f.toLinearEquiv
         (o.orientationAt x : _root_.Orientation ℝ E (Fin (n + 1))) =
-      ((o.boundarylessTransContinuousLinearEquiv f.toContinuousLinearEquiv).orientationAt
+      (((o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel).orientationAt
         (BoundarylessModel.diffeomorphTransContinuousLinearEquiv 𝓘(ℝ, E)
           f.toContinuousLinearEquiv 1 x) :
         _root_.Orientation ℝ (EuclideanSpace ℝ (Fin (n + 1))) (Fin (n + 1))) := by
@@ -309,7 +231,8 @@ private theorem orientationAt_boundarylessTransContinuousLinearEquiv_linearIsome
 omit [CompactSpace M] in
 /-- Pushing forward the local orientation of `o` at `x` along the linear-isometry recharting
 diffeomorphism `BoundarylessModel.diffeomorphTransContinuousLinearEquiv` yields the local
-orientation of `o.boundarylessTransContinuousLinearEquiv f.toContinuousLinearEquiv` at `Φ x`. -/
+orientation of `(o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel` at
+`Φ x`. -/
 private theorem localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrientation
     (hE : finrank ℝ E = n + 1) (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
     (f : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (x : M) :
@@ -320,7 +243,7 @@ private theorem localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrie
           Φ.toHomeomorph.injective.preimage_image]) (n + 1)
         (localOrientationOfManifoldOrientation o hE x).val =
       (localOrientationOfManifoldOrientation
-        (o.boundarylessTransContinuousLinearEquiv f.toContinuousLinearEquiv)
+        (o.transContinuousLinearEquiv f.toContinuousLinearEquiv).toBoundarylessModel
         finrank_euclideanSpace_fin (Φ.toHomeomorph x)).val := by
   intro Φ
   rw [localOrientationOfManifoldOrientation_eq, localOrientationOfManifoldOrientation_eq]
@@ -341,7 +264,7 @@ private theorem localHomologyMap_diffeomorphTransContinuousLinearEquiv_localOrie
     (by rw [ContinuousMap.coe_ofClass, ← image_singleton,
       Φ.toHomeomorph.injective.preimage_image])
     (o.orientationAt x) _
-    (orientationAt_boundarylessTransContinuousLinearEquiv_linearIsometryEquiv o f x)
+    (orientationAt_toBoundarylessModel_transContinuousLinearEquiv_linearIsometryEquiv o f x)
 
 private theorem fundamentalClassSelf_eq_toHomologicalOrientation
     (hE : finrank ℝ E = n + 1) (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
@@ -385,58 +308,6 @@ private theorem fundamentalClassSelf_eq_toHomologicalOrientation
   exact (ConcreteCategory.congr_hom hmap _).trans (ModuleCat.id_apply _ _)
 
 end SelfModelInnerProduct
-
-section Interior
-
-attribute [local instance] BoundarylessModel.interiorChartedSpace
-
-variable {E H M : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [BoundarylessManifold I M]
-  {ι : Type*} [Fintype ι]
-
-/-- The orientation on the interior vector-space copy `BoundarylessModel I M` pulled back from
-`o : Manifold.Orientation I M ι` along `(BoundarylessModel.interiorDiffeomorph I 1).symm`. -/
-def interiorOrientation (o : Manifold.Orientation I M ι) :
-    Manifold.Orientation 𝓘(ℝ, E) (BoundarylessModel I M) ι :=
-  let Φ := BoundarylessModel.interiorDiffeomorph I (M := M) 1
-  o.pullback Φ.symm.contMDiff (fun _ ↦ Φ.symm.isInvertible_mfderiv one_ne_zero) o.card_eq
-
-/-- Reversing `o` negates `o.interiorOrientation`. -/
-@[simp]
-theorem interiorOrientation_neg (o : Manifold.Orientation I M ι) :
-    (-o).interiorOrientation = -o.interiorOrientation :=
-  pullback_neg o _ _ _
-
-/-- The inverse interior-model diffeomorphism `(BoundarylessModel.interiorDiffeomorph I k).symm`
-preserves orientations from `o.interiorOrientation` to `o`. -/
-theorem isOrientationPreservingAt_interiorDiffeomorph_symm
-    (o : Manifold.Orientation I M ι) (k : ℕ∞ω) (z : BoundarylessModel I M) :
-    IsOrientationPreservingAt o.interiorOrientation o
-      (BoundarylessModel.interiorDiffeomorph I (M := M) k).symm z := by
-  have hcoe : ⇑(BoundarylessModel.interiorDiffeomorph I (M := M) k).symm =
-      ⇑(BoundarylessModel.interiorDiffeomorph I (M := M) 1).symm := by
-    rw [BoundarylessModel.coe_interiorDiffeomorph_symm,
-      BoundarylessModel.coe_interiorDiffeomorph_symm]
-  rw [hcoe]
-  exact isOrientationPreservingAt_pullback _ _ _ _ z
-
-/-- The interior-model diffeomorphism `BoundarylessModel.interiorDiffeomorph I k` preserves
-orientations from `o` to `o.interiorOrientation`. -/
-theorem isOrientationPreservingAt_interiorDiffeomorph
-    (o : Manifold.Orientation I M ι) (k : ℕ∞ω) (x : M) :
-    IsOrientationPreservingAt o o.interiorOrientation
-      (BoundarylessModel.interiorDiffeomorph I (M := M) k) x := by
-  have hcoe : ⇑(BoundarylessModel.interiorDiffeomorph I (M := M) k) =
-      ⇑(BoundarylessModel.interiorDiffeomorph I (M := M) 1) := by
-    rw [BoundarylessModel.coe_interiorDiffeomorph, BoundarylessModel.coe_interiorDiffeomorph]
-  rw [hcoe]
-  exact (o.isOrientationPreservingAt_interiorDiffeomorph_symm 1
-    (BoundarylessModel.interiorDiffeomorph I (M := M) 1 x)).diffeomorph_symm
-    (e := (BoundarylessModel.interiorDiffeomorph I (M := M) 1).symm) one_ne_zero
-
-end Interior
 
 section Boundaryless
 

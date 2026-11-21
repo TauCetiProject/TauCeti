@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 public import TauCeti.Geometry.Manifold.Orientation.Atlas
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
@@ -38,6 +39,8 @@ diffeomorphism preserves or reverses orientation according to the sign of the re
 * `TauCeti.Manifold.OrientationLift.transContinuousLinearEquiv`,
   `TauCeti.Manifold.Orientation.transContinuousLinearEquiv`: transport an orientation lift or
   manifold orientation along `e : E ≃L[ℝ] F`.
+* `TauCeti.Manifold.Orientation.modelEquivEuclidean`: a continuous linear equivalence between the
+  model vector space of an oriented manifold and `EuclideanSpace ℝ ι`.
 
 ## Main results
 
@@ -311,6 +314,12 @@ theorem transContinuousLinearEquiv_injective (e : E ≃L[ℝ] F) :
 theorem transContinuousLinearEquiv_inj (e : E ≃L[ℝ] F) {o₁ o₂ : Orientation I M ι} :
     o₁.transContinuousLinearEquiv e = o₂.transContinuousLinearEquiv e ↔ o₁ = o₂ :=
   (transContinuousLinearEquiv_injective e).eq_iff
+
+open scoped EuclideanSpace in
+/-- A chosen continuous linear equivalence `E ≃L[ℝ] EuclideanSpace ℝ ι` from the dimension
+equality carried by an orientation. -/
+def modelEquivEuclidean (o : Orientation I M ι) : E ≃L[ℝ] EuclideanSpace ℝ ι :=
+  ContinuousLinearEquiv.ofFinrankEq (by rw [← o.card_eq, finrank_euclideanSpace])
 
 end Manifold.Orientation
 
