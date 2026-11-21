@@ -16,11 +16,13 @@ The group `ι → ℤˣ` of sign changes of the coordinates acts on `ι → K` c
 Mathlib's `Projectivization.instMulAction`. The sign changes preserve the standard affine opens
 (`TauCeti.signs_smul_mem_affineOpen_iff`), and in the affine chart at `k` the sign change `ε`
 changes the signs of the affine coordinates by `TauCeti.chartSigns ε k`
-(`TauCeti.affineChart_signs_smul`). The sign changes fix the coordinate points `[eₖ]`
-(`TauCeti.signs_smul_mk_single`), and, away from characteristic two, the only fixed point of the
-reflection `Pi.mulSingle k (-1)` negating the `k`-th coordinate in the affine open at `k` is `[eₖ]`
-(`TauCeti.eq_mk_single_of_mulSingle_neg_one_smul_eq`): the other fixed points form the hyperplane
-`v k = 0`.
+(`TauCeti.affineChart_signs_smul`). The reflection `Pi.mulSingle b (-1)` changes the signs of all
+of them when `b = k` (`TauCeti.chartSigns_mulSingle_neg_one_self`) and of exactly one otherwise
+(`TauCeti.prod_chartSigns_mulSingle_neg_one_of_ne`). The sign changes fix the coordinate points
+`[eₖ]` (`TauCeti.signs_smul_mk_single`), and, away from characteristic two, the only fixed point
+of the reflection `Pi.mulSingle k (-1)` negating the `k`-th coordinate in the affine open at `k` is
+`[eₖ]` (`TauCeti.eq_mk_single_of_mulSingle_neg_one_smul_eq`): the other fixed points form the
+hyperplane `v k = 0`.
 -/
 
 public section
@@ -89,6 +91,23 @@ def chartSigns (ε : Fin (n + 1) → ℤˣ) (k : Fin (n + 1)) : Fin n → ℤˣ 
 theorem chartSigns_apply (ε : Fin (n + 1) → ℤˣ) (k : Fin (n + 1)) (j : Fin n) :
     chartSigns ε k j = ε (k.succAbove j) * ε k :=
   (rfl)
+
+/-- In the affine chart at `k`, the reflection negating the `k`-th coordinate changes the sign of
+every affine coordinate. -/
+@[simp]
+theorem chartSigns_mulSingle_neg_one_self (k : Fin (n + 1)) :
+    chartSigns (Pi.mulSingle k (-1) : Fin (n + 1) → ℤˣ) k = -1 := by
+  ext j
+  simp
+
+/-- In the affine chart at `a`, the reflection negating another coordinate `b` changes the sign of
+exactly one affine coordinate, so the product of its signs is `-1`. -/
+theorem prod_chartSigns_mulSingle_neg_one_of_ne {a b : Fin (n + 1)} (hab : a ≠ b) :
+    ∏ j, chartSigns (Pi.mulSingle b (-1) : Fin (n + 1) → ℤˣ) a j = -1 := by
+  have h := Fin.prod_univ_succAbove (Pi.mulSingle b (-1) : Fin (n + 1) → ℤˣ) a
+  simp only [Finset.prod_pi_mulSingle', Finset.mem_univ, ↓reduceIte, Pi.mulSingle_eq_of_ne hab,
+    one_mul] at h
+  simp [Pi.mulSingle_eq_of_ne hab, ← h]
 
 /-- In the affine chart at `k`, the sign change `ε` changes the signs of the coordinates by
 `chartSigns ε k`. -/

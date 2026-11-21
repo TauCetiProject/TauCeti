@@ -69,7 +69,7 @@ theorem mvfderiv_affineChart_mfderiv_signs_smul (ε : Fin (n + 1) → ℤˣ) (k 
   rw [← hS, ← coe_affineOpenPartialHomeomorph]
   exact hc.symm.trans (DFunLike.congr_fun h v)
 
-/-- **A reflection acts by `-1` at its isolated fixed point.** The reflection
+/-- **A reflection acts by `-1` at a coordinate point.** The reflection
 `Pi.mulSingle k (-1)` negating the `k`-th homogeneous coordinate fixes the coordinate point `[eₖ]`
 (`TauCeti.signs_smul_mk_single`) and acts on its tangent space by `-1`, since it changes the sign
 of every affine coordinate of the chart at `k`. -/
@@ -78,14 +78,12 @@ theorem mfderiv_mulSingle_neg_one_smul_mk_single (k : Fin (n + 1))
     mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) ((Pi.mulSingle k (-1) : Fin (n + 1) → ℤˣ) • ·)
       (mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp)) v = -v := by
   have hx : mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp) ∈ affineOpen k := by simp
-  have hsigns : chartSigns (Pi.mulSingle k (-1) : Fin (n + 1) → ℤˣ) k = -1 := by
-    ext j
-    simp
   have h := mvfderiv_affineChart_mfderiv_signs_smul (Pi.mulSingle k (-1)) k hx v
   have hneg (w : Fin n → 𝕜) : (-1 : Fin n → ℤˣ) • w = -w := by
     ext j
     simp
-  rw [hsigns, signs_smul_mk_single, hneg, ← map_neg, ← coe_affineOpenPartialHomeomorph] at h
+  rw [chartSigns_mulSingle_neg_one_self, signs_smul_mk_single, hneg, ← map_neg,
+    ← coe_affineOpenPartialHomeomorph] at h
   have hinj := (isInvertible_mfderiv_chart
     (affineOpenPartialHomeomorph_mem_maximalAtlas (𝕜' := 𝕜) k)
     (y := mk 𝕜 (Pi.single k 1 : Fin (n + 1) → 𝕜) (by simp)) (by simp)).injective

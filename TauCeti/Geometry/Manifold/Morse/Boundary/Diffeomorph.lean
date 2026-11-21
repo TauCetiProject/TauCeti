@@ -432,8 +432,9 @@ private theorem map_orientation_eq_units_smul_reindex (hX : IsAdaptedPseudoGradi
         Orientation.reindex ℝ _ (finCongr h) (𝔬.orientation c) := by
   subst hc
   -- At the critical point itself, the unstable frame is injective, so `N = L`.
-  have hc : (c : M) ∈ hX.flow.unstableSet c := Flow.self_mem_unstableSet_iff.2
-    (hX.flow_apply_of_mfderiv_eq_zero (mem_criticalPoints_iff_mfderiv_eq_zero.1 c.property))
+  have hc : (c : M) ∈ hX.flow.unstableSet c :=
+    (hX.mem_unstableSet_inter_stableSet_self
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 c.property)).1
   have hNL : N = L := LinearEquiv.ext fun v ↦
     hX.injective_unstableFrame_of_mem (𝔬.coord_mfderiv_chart c) hf' hc (hN v)
   rw [hNL, hu, finCongr_refl, Orientation.reindex_refl, Equiv.refl_apply]
@@ -471,8 +472,8 @@ theorem trajectorySign_apply_eq_mul_mul_trajectorySign (hX : IsAdaptedPseudoGrad
   have hφp' := MorseChart.coord_mfderiv_pullback hσf hσX (𝔬.coord_mfderiv_chart (e p))
   have hφq' := MorseChart.coord_mfderiv_pullback hσf hσX (𝔬.coord_mfderiv_chart (e q))
   have hmem (r : criticalPoints 𝓘(ℝ, E) f) : (r : M) ∈ hX.flow.unstableSet r :=
-    Flow.self_mem_unstableSet_iff.2
-      (hX.flow_apply_of_mfderiv_eq_zero (mem_criticalPoints_iff_mfderiv_eq_zero.1 r.property))
+    (hX.mem_unstableSet_inter_stableSet_self
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 r.property)).1
   -- Through the unstable frames, the changes of negative coordinates to the pulled-back charts
   -- are `Lp` and `Lq`; so they transport the orientations of `𝔬` by `up` and `uq`.
   have hop := map_orientation_eq_units_smul_reindex hX hf' 𝔬 (c := e p) (Subtype.ext hp)
@@ -503,6 +504,10 @@ theorem trajectorySign_apply_eq_mul_mul_trajectorySign (hX : IsAdaptedPseudoGrad
     (𝔬.coord_mfderiv_chart q) hφq' hf' (𝔬.orientation p) (𝔬.orientation q) hpq hy, hop, hoq,
     Orientation.intCast_units_smul_eq_ite, Orientation.intCast_units_smul_eq_ite]
   have hne : (-1 : ℤˣ) ≠ 1 := by decide
+  -- After `simp only`, the two sides of each case differ only in the base points of the charts in
+  -- the implicit types of the `Orientation.reindex` coercions: `σ p` on one side and `(e p : M)`
+  -- on the other. These agree by definition (`coe_criticalPointsEquivOfComp_apply` is `rfl`), but
+  -- `simp` and `rw` cannot reach into these dependent implicit types, so `rfl` closes the goals.
   rcases Int.units_eq_one_or up with rfl | rfl <;> rcases Int.units_eq_one_or uq with rfl | rfl <;>
     simp only [↓reduceIte, hne, trajectorySign_neg_left, trajectorySign_neg_right, Units.val_one,
       Units.val_neg, one_mul, neg_mul, neg_neg] <;> rfl

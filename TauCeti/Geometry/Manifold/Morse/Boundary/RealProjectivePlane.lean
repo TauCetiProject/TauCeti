@@ -251,13 +251,8 @@ private theorem det_chartSigns_mulSingle_neg_one_neg {a b : Fin 3} (hab : a ≠ 
     rcases eq_or_ne i j with rfl | hij
     · simp [LinearMap.toMatrix'_apply, Units.smul_def]
     · simp [LinearMap.toMatrix'_apply, hij]
-  have hprod : ∏ j, c j = -1 := by
-    rw [Fin.prod_univ_two]
-    fin_cases a <;> fin_cases b <;> first
-      | exact absurd rfl hab
-      | simp +decide [c, chartSigns_apply, Pi.mulSingle_apply]
   rw [← LinearMap.det_toMatrix', hS, Matrix.det_diagonal]
-  have := congrArg (fun u : ℤˣ ↦ ((u : ℤ) : ℝ)) hprod
+  have := congrArg (fun u : ℤˣ ↦ ((u : ℤ) : ℝ)) (prod_chartSigns_mulSingle_neg_one_of_ne hab)
   push_cast at this
   rw [this]
   norm_num
@@ -279,8 +274,9 @@ private theorem exists_mfderiv_reflection_unstableFrame_of_eq_two
           Units.map (Int.castRingHom ℝ).toMonoidHom (-1) • 𝔬.orientation p := by
   set ε : Fin 3 → ℤˣ := Pi.mulSingle b (-1)
   -- At `p` the unstable frame is an isomorphism `F` onto the tangent space, since `ind p = 2`.
-  have hmem : (p : ℙ ℝ (Fin 3 → ℝ)) ∈ hX.flow.unstableSet p := Flow.self_mem_unstableSet_iff.2
-    (hX.flow_apply_of_mfderiv_eq_zero (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property))
+  have hmem : (p : ℙ ℝ (Fin 3 → ℝ)) ∈ hX.flow.unstableSet p :=
+    (hX.mem_unstableSet_inter_stableSet_self
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property)).1
   have hinj := hX.injective_unstableFrame_of_mem (𝔬.coord_mfderiv_chart p) hf hmem
   have hdim : finrank ℝ ({i // (𝔬.chart p).weight i < 0} → ℝ) =
       finrank ℝ (TangentSpace 𝓘(ℝ, Fin 2 → ℝ) (p : ℙ ℝ (Fin 3 → ℝ))) := by
