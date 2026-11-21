@@ -28,6 +28,7 @@ Over a commutative ring, evaluation also respects congruences: if `d ∣ xᵢ - 
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.eq_C_of_map_eq_C`: an injective coefficient map reflects constant polynomials.
 -/
 
 public section
@@ -65,5 +66,15 @@ theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : 
       using 1
     simp only [map_mul, eval_X]
     ring
+
+/-- If `φ : R →+* S` is injective and `MvPolynomial.map φ p` is a constant `C s`, then `p` is
+already the constant `C (p.coeff 0)`. -/
+theorem eq_C_of_map_eq_C {R : Type*} [CommSemiring R] {φ : R →+* S}
+    (hφ : Function.Injective φ) {p : MvPolynomial σ R} {s : S} (h : map φ p = C s) :
+    p = C (p.coeff 0) := by
+  apply map_injective φ hφ
+  have hs : s = φ (p.coeff 0) := by
+    simpa [coeff_map] using congrArg (fun q : MvPolynomial σ S ↦ q.coeff 0) h.symm
+  rw [h, hs, map_C]
 
 end MvPolynomial

@@ -66,7 +66,9 @@ depressed specialization of that formula is used to compare a quartic with its c
   resultant as its cross term.
 * `Polynomial.discr_prod_of_monic`: the same formula for a finite product of monic polynomials,
   with the pairwise resultants as cross terms.
-* `Polynomial.discr_X_pow_sub_C`: the discriminant of a binomial `X ^ n - C a`.
+* `Polynomial.discr_X_pow_sub_C`, `Polynomial.discr_X_pow_sub_C_mul_X`,
+  `Polynomial.discr_X_pow_sub_X`: the discriminants of `X ^ n - C a`, `X ^ n - C a * X`, and
+  `X ^ n - X`.
 * `TauCeti.discr_X_pow_five_add_C_mul_X_add_C`: the discriminant of `X⁵ + aX + b`.
 * `TauCeti.not_isSquare_discr_X_pow_five_sub_C`: the discriminant `3125a⁴` of a pure quintic
   `X ^ 5 - C a` over `ℚ` with `a ≠ 0` is not a square.
@@ -423,6 +425,44 @@ theorem discr_prod_of_monic {ι : Type*} [LinearOrder ι] (s : Finset ι) (f : �
       simp [not_lt.mpr (hm j hj).le]
     rw [hnew, prod_congr rfl hold]
     ring
+
+/-- **The discriminant of `X ^ n - C a * X`.** Over any commutative ring, for `2 ≤ n`,
+`(X ^ n - C a * X).discr =
+  (-1) ^ ((n - 1) * (n - 2) / 2) * ((n - 1 : ℕ) : R) ^ (n - 1) * (-a) ^ n`. -/
+theorem discr_X_pow_sub_C_mul_X (a : R) {n : ℕ} (hn : 2 ≤ n) :
+    (X ^ n - C a * X).discr =
+      (-1) ^ ((n - 1) * (n - 2) / 2) * ((n - 1 : ℕ) : R) ^ (n - 1) * (-a) ^ n := by
+  nontriviality R
+  let g : R[X] := X ^ (n - 1) - C a
+  have hg_mon : g.Monic := monic_X_pow_sub_C a (by omega)
+  have hfac : X ^ n - C a * X = X * g := by
+    dsimp only [g]
+    rw [mul_sub, ← pow_succ', Nat.sub_add_cancel (by omega), mul_comm X (C a)]
+  have hX_discr : (X : R[X]).discr = 1 := by simpa using discr_X_pow_sub_C (0 : R) 1
+  have hres : X.resultant g = -a := by
+    have hX1 := resultant_X_pow_left g 1 g.natDegree le_rfl
+    rw [pow_one, pow_one, ← natDegree_X (R := R)] at hX1
+    rw [hX1, coeff_sub, coeff_X_pow, coeff_C, ite_eq_right (by omega : 0 ≠ n - 1),
+      ite_eq_left rfl, zero_sub]
+  rw [hfac, monic_X.discr_mul hg_mon, hX_discr, hres, one_mul, discr_X_pow_sub_C]
+  have hn_eq : n - 1 - 1 = n - 2 := rfl
+  have hn2 : (n - 2) + 2 = n := by omega
+  rw [hn_eq, mul_assoc, ← pow_add, hn2]
+
+/-- **The discriminant of `X ^ n - X`.** Over any commutative ring, for `2 ≤ n`,
+`(X ^ n - X).discr = (-1) ^ (n * (n - 1) / 2 + 1) * ((n - 1 : ℕ) : R) ^ (n - 1)`. -/
+theorem discr_X_pow_sub_X {n : ℕ} (hn : 2 ≤ n) :
+    (X ^ n - X : R[X]).discr =
+      (-1) ^ (n * (n - 1) / 2 + 1) * ((n - 1 : ℕ) : R) ^ (n - 1) := by
+  have h := discr_X_pow_sub_C_mul_X (1 : R) hn
+  rw [C_1, one_mul] at h
+  rw [h]
+  have hexp : (n - 1) * (n - 2) / 2 + n = n * (n - 1) / 2 + 1 := by
+    have hmul : n * (n - 1) = (n - 1) * (n - 2) + 2 * (n - 1) := by
+      rcases n with _ | _ | k <;> simp_all
+      ring
+    omega
+  rw [mul_assoc, mul_comm (((n - 1 : ℕ) : R) ^ (n - 1)), ← mul_assoc, ← pow_add, hexp]
 
 namespace Monic
 

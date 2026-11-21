@@ -9,6 +9,10 @@ public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.LinearAlgebra.Determinant.Basic
+import Mathlib.Algebra.Prime.Lemmas
+import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
+import Mathlib.RingTheory.Polynomial.UniqueFactorization
+import TauCeti.RingTheory.MvPolynomial.IrreducibleQuadratic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 
 /-!
@@ -63,6 +67,13 @@ sign appears: that is the dual Pieri rule.
   `(∏ i, X i) ^ c`.
 * `TauCeti.alternant_fin_val_eq_vandermonde`: for the exponents `0, 1, …, n - 1` the alternant
   is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
+* `TauCeti.prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant`, `TauCeti.alternant_fin_val_sq`: sign
+  and square conversion between `∏_{i < j} (X_i - X_j)` and the Vandermonde alternant.
+* `TauCeti.isSymmetric_alternant_of_two_eq_zero`, `TauCeti.not_isSymmetric_alternant_mul_C`:
+  symmetry in characteristic `2` and nonsymmetry of nonzero scalar multiples when `2 ≠ 0`.
+* `TauCeti.alternant_fin_val_dvd_of_isSymmetric`,
+  `TauCeti.isUnit_or_alternant_fin_val_dvd_of_isSymmetric_of_dvd_sq`: over a UFD, divisibility of
+  symmetric polynomials by the Vandermonde alternant.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
 * `TauCeti.psum_mul_alternant_eq_sum_filter`: for `r > 0`, only the exponent moves onto a free
   position contribute to `p_r · a_α`.
@@ -364,5 +375,122 @@ theorem esymm_mul_alternant (r : ℕ) (α : σ → ℕ) :
         refine sum_congr rfl fun T _ => ?_
         rw [alternant_eq_sum, mul_sum]
         exact sum_congr rfl fun τ _ => by rw [mul_smul_comm, mul_comm]
+
+/-- The reversed Vandermonde product `∏_{i < j} (X i - X j)` equals
+`(-1) ^ (n * (n - 1) / 2) * alternant (Fin n) R (fun j => (j : ℕ))`. -/
+theorem prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant (n : ℕ) :
+    (∏ i : Fin n, ∏ j ∈ Ioi i, (X i - X j : MvPolynomial (Fin n) R)) =
+      (-1) ^ (n * (n - 1) / 2) * alternant (Fin n) R (fun j => (j : ℕ)) := by
+  rw [alternant_fin_val_eq_vandermonde]
+  have hneg : ∀ i : Fin n, ∀ j ∈ Ioi i,
+      (X i - X j : MvPolynomial (Fin n) R) = (-1) * (X j - X i) := fun _ _ _ => by ring
+  rw [prod_congr rfl fun i _ => prod_congr rfl (hneg i)]
+  simp only [prod_mul_distrib, prod_const, prod_pow_eq_pow_sum]
+  congr 2
+  simp only [Fin.card_Ioi, Fin.sum_univ_eq_sum_range fun i => n - 1 - i]
+  rw [sum_range_reflect (fun i => i) n, sum_range_id]
+
+/-- The square of `alternant (Fin n) R (fun j => (j : ℕ))` equals the square of the reversed
+Vandermonde product `∏_{i < j} (X i - X j)`. -/
+theorem alternant_fin_val_sq (n : ℕ) :
+    alternant (Fin n) R (fun j => (j : ℕ)) ^ 2 =
+      (∏ i : Fin n, ∏ j ∈ Ioi i, (X i - X j : MvPolynomial (Fin n) R)) ^ 2 := by
+  rw [prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant, mul_pow, ← pow_mul, mul_comm _ 2,
+    pow_mul, neg_one_sq, one_pow, one_mul]
+
+/-- Over a ring in which `2 = 0`, every alternant is symmetric. -/
+theorem isSymmetric_alternant_of_two_eq_zero (h2 : (2 : R) = 0) (α : σ → ℕ) :
+    (alternant σ R α).IsSymmetric := by
+  intro e
+  rw [rename_alternant]
+  rcases Int.units_eq_one_or e.sign with hs | hs
+  · simp [hs]
+  · have h2' : (2 : MvPolynomial σ R) = 0 := by rw [← map_ofNat C 2, h2, map_zero]
+    have hneg : (-1 : MvPolynomial σ R) = 1 := by
+      calc (-1 : MvPolynomial σ R) = 1 - 2 := by ring
+        _ = 1 := by rw [h2', sub_zero]
+    rw [hs, Units.smul_def, Units.val_neg, Units.val_one, neg_smul, one_smul, neg_eq_neg_one_mul,
+      hneg, one_mul]
+
+/-- Over an integral domain in which `2 ≠ 0`, if `σ` has at least two elements,
+`α : σ → ℕ` is injective, and `r ≠ 0`, then `alternant σ R α * C r` is not symmetric. -/
+theorem not_isSymmetric_alternant_mul_C [IsDomain R] (h2 : (2 : R) ≠ 0)
+    (hσ : 2 ≤ Fintype.card σ) {α : σ → ℕ} (hα : Function.Injective α) {r : R}
+    (hr : r ≠ 0) :
+    ¬ (alternant σ R α * C r).IsSymmetric := by
+  have hcard : 1 < Fintype.card σ := by omega
+  obtain ⟨i₀, i₁, h01⟩ := Fintype.one_lt_card_iff.mp hcard
+  intro hsymm
+  have hswap := hsymm (Equiv.swap i₀ i₁)
+  rw [map_mul, rename_alternant, Equiv.Perm.sign_swap h01, rename_C] at hswap
+  have hswap' : -(alternant σ R α * C r) = alternant σ R α * C r := by simpa using hswap
+  have hzero : C (2 : R) * (alternant σ R α * C r) = 0 := by
+    calc C (2 : R) * (alternant σ R α * C r)
+      _ = (1 + 1) * (alternant σ R α * C r) := by rw [← one_add_one_eq_two, map_add, map_one]
+      _ = -(alternant σ R α * C r) + alternant σ R α * C r := by
+          rw [add_mul, one_mul]
+          nth_rw 1 [← hswap']
+      _ = 0 := neg_add_cancel _
+  have hne0 : alternant σ R α * C r ≠ 0 :=
+    mul_ne_zero (alternant_ne_zero_of_injective hα) (by simpa using hr)
+  exact h2 (C_eq_zero.mp ((mul_eq_zero.mp hzero).resolve_right hne0))
+
+/-- Over a unique factorization domain, if a symmetric polynomial in `Fin m` is divisible by one
+root difference `X i₀ - X j₀` (`i₀ ≠ j₀`), then it is divisible by the Vandermonde
+alternant `alternant (Fin m) R (fun j => (j : ℕ))`. -/
+theorem alternant_fin_val_dvd_of_isSymmetric [IsDomain R] [UniqueFactorizationMonoid R]
+    {m : ℕ} {p : MvPolynomial (Fin m) R} (hp : p.IsSymmetric) {i₀ j₀ : Fin m}
+    (h₀ : i₀ ≠ j₀) (hdvd₀ : X i₀ - X j₀ ∣ p) :
+    alternant (Fin m) R (fun j => (j : ℕ)) ∣ p := by
+  rw [alternant_fin_val_eq_vandermonde]
+  let S : Finset (Σ _ : Fin m, Fin m) := univ.sigma fun i : Fin m => Ioi i
+  have hvand : ∏ i : Fin m, ∏ j ∈ Ioi i, (X j - X i : MvPolynomial (Fin m) R) =
+      ∏ x ∈ S, (X x.2 - X x.1) := (Finset.prod_sigma (univ : Finset (Fin m))
+    (fun i : Fin m => Ioi i) fun x : Σ _ : Fin m, Fin m =>
+      (X x.2 - X x.1 : MvPolynomial (Fin m) R)).symm
+  rw [hvand]
+  refine Finset.prod_dvd_of_isRelPrime (fun x hx y hy hxy => ?_) (fun x hx => ?_)
+  · have hx' : x.1 < x.2 := mem_Ioi.mp (mem_sigma.mp hx).2
+    have hy' : y.1 < y.2 := mem_Ioi.mp (mem_sigma.mp hy).2
+    dsimp only [Function.onFun]
+    rw [(irreducible_X_sub_X hx'.ne').isRelPrime_iff_not_dvd]
+    intro hdvd
+    have hass :=
+      (irreducible_X_sub_X hx'.ne').associated_of_dvd (irreducible_X_sub_X hy'.ne') hdvd
+    obtain ⟨u, hu⟩ := hass
+    have hass' : Associated (X x.1 - X x.2 : MvPolynomial (Fin m) R) (X y.1 - X y.2) :=
+      ⟨u, by linear_combination -hu⟩
+    obtain ⟨h1, h2⟩ := eq_of_associated_X_sub_X hx' hy' hass'
+    exact hxy (Sigma.ext h1 (heq_of_eq h2))
+  · have hx' : x.1 < x.2 := mem_Ioi.mp (mem_sigma.mp hx).2
+    obtain ⟨e, he1, he2⟩ := MulAction.is_two_pretransitive_iff.mp
+      (Equiv.Perm.isMultiplyPretransitive (Fin m) 2) h₀ hx'.ne'
+    simp only [Equiv.Perm.smul_def] at he1 he2
+    have hmap := _root_.map_dvd (rename (R := R) e) hdvd₀
+    simpa [hp e, he1, he2] using hmap
+
+/-- Over a unique factorization domain, any symmetric divisor of
+`alternant (Fin m) R (fun j => (j : ℕ)) ^ 2` is either a unit or divisible by
+`alternant (Fin m) R (fun j => (j : ℕ))`. -/
+theorem isUnit_or_alternant_fin_val_dvd_of_isSymmetric_of_dvd_sq [IsDomain R]
+    [UniqueFactorizationMonoid R] {m : ℕ} {p : MvPolynomial (Fin m) R} (hp : p.IsSymmetric)
+    (hdvd : p ∣ alternant (Fin m) R (fun j => (j : ℕ)) ^ 2) :
+    IsUnit p ∨ alternant (Fin m) R (fun j => (j : ℕ)) ∣ p := by
+  by_cases hu : IsUnit p
+  · exact Or.inl hu
+  right
+  have hne0 : alternant (Fin m) R (fun j => (j : ℕ)) ≠ 0 :=
+    alternant_ne_zero_of_injective Fin.val_injective
+  have hp0 : p ≠ 0 := fun h0 => pow_ne_zero 2 hne0 (zero_dvd_iff.mp (h0 ▸ hdvd))
+  obtain ⟨q, hq_irr, hqp⟩ := WfDvdMonoid.exists_irreducible_factor hu hp0
+  have hq_prime : Prime q := UniqueFactorizationMonoid.irreducible_iff_prime.mp hq_irr
+  have hq_vand : q ∣ alternant (Fin m) R (fun j => (j : ℕ)) :=
+    hq_prime.dvd_of_dvd_pow (hqp.trans hdvd)
+  rw [alternant_fin_val_eq_vandermonde] at hq_vand
+  obtain ⟨i, -, hqi⟩ := hq_prime.exists_mem_finset_dvd hq_vand
+  obtain ⟨j, hj, hqij⟩ := hq_prime.exists_mem_finset_dvd hqi
+  have hij : i < j := mem_Ioi.mp hj
+  have hass := hq_irr.associated_of_dvd (irreducible_X_sub_X hij.ne') hqij
+  exact alternant_fin_val_dvd_of_isSymmetric hp hij.ne' (hass.symm.dvd.trans hqp)
 
 end TauCeti

@@ -41,8 +41,9 @@ injective `R`-algebra endomorphism `MvPolynomial.vietaAlgHom`) sending each coef
 
 * `MvPolynomial.aeval_esymm_eq_coeff_prod_X_sub_C`: the elementary symmetric polynomials at `x`
   are the signed coefficients of `∏ i, (X - C (x i))`.
-* `MvPolynomial.vietaAlgEquiv`, `MvPolynomial.vietaAlgHom`: universal Vieta correspondence
-  identifying `MvPolynomial (Fin m) R` with `symmetricSubalgebra (Fin m) R`.
+* `MvPolynomial.vietaAlgEquiv`, `MvPolynomial.vietaAlgHom`, `MvPolynomial.range_vietaAlgHom`,
+  `MvPolynomial.mem_range_vietaAlgHom_iff`: universal Vieta correspondence identifying
+  `MvPolynomial (Fin m) R` with `symmetricSubalgebra (Fin m) R`.
 * `MvPolynomial.map_vietaAlgHom_freeMonic`: `Polynomial.freeMonic R m` maps along
   `MvPolynomial.vietaAlgHom R m` to `∏ j, (X - C (X j))`.
 * `MvPolynomial.isUnit_of_isUnit_vietaAlgHom`: over a reduced ring, `MvPolynomial.vietaAlgHom R m`
@@ -118,8 +119,28 @@ theorem isSymmetric_vietaAlgHom {R : Type*} [CommRing R] {m : ℕ}
     (p : MvPolynomial (Fin m) R) : (vietaAlgHom R m p).IsSymmetric :=
   (vietaAlgEquiv R m p).2
 
+/-- The range of `MvPolynomial.vietaAlgHom` is `symmetricSubalgebra (Fin m) R`. -/
+@[simp]
+theorem range_vietaAlgHom (R : Type*) [CommRing R] (m : ℕ) :
+    (vietaAlgHom R m).range = symmetricSubalgebra (Fin m) R := by
+  ext q
+  simp only [AlgHom.mem_range, vietaAlgHom_apply, mem_symmetricSubalgebra]
+  constructor
+  · rintro ⟨p, rfl⟩
+    exact (vietaAlgEquiv R m p).2
+  · intro hq
+    exact ⟨(vietaAlgEquiv R m).symm ⟨q, hq⟩, by simp⟩
+
+/-- A polynomial in `MvPolynomial (Fin m) R` lies in the range of `MvPolynomial.vietaAlgHom` if
+and only if it is symmetric. -/
+theorem mem_range_vietaAlgHom_iff {R : Type*} [CommRing R] {m : ℕ}
+    {q : MvPolynomial (Fin m) R} :
+    q ∈ Set.range (vietaAlgHom R m) ↔ q.IsSymmetric := by
+  rw [Set.mem_range, ← AlgHom.mem_range, range_vietaAlgHom, mem_symmetricSubalgebra]
+
 /-- On variables, `MvPolynomial.vietaAlgHom` sends `X i` to the signed elementary symmetric
 polynomial `(-1) ^ (m - i) * esymm (Fin m) R (m - i)`. -/
+@[simp]
 theorem vietaAlgHom_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
     vietaAlgHom R m (X i) =
       (-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)) := by
