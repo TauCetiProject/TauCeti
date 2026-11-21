@@ -237,7 +237,8 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
     (S : PairSkeleton3 κ₂ V) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) (r : ℕ → ℕ) :
     ∃ (C : TriadicComplex3 V) (π : Fin C.pairColorCount → κ₂),
       C.pairColorCount ≤ strongTopRegularityBound #S.vertexPart.parts
-        ((ε * δ ^ 2 / (4 * (Nat.card κ + 1))) ^ 2) (fun _ ↦ δ ^ 2 / 2) (fun _ ↦ ε * δ ^ 2 / 4) r
+        (topRegularEnergyGap (Nat.card κ) δ ε)
+        (fun _ ↦ topRegularFineTolerance δ) (fun _ ↦ topRegularFineProportion δ ε) r
         (Fintype.card κ₂) ∧
       C.skeleton.vertexPart = S.vertexPart ∧
       (∀ p, π (C.skeleton.pairColors.color p) = S.pairColors.color p) ∧
@@ -245,10 +246,8 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
       C.polyads = univ ∧ H.TopRegularOverMostPolyads C δ ε (r C.complexity) := by
   have := Fintype.ofFinite κ
   obtain ⟨C, D, π, f, hCcard, -, hCV, hDV, hπ, hrev, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
-    H.exists_strong_topRegularOverMostPolyads S
-      (pow_pos (by positivity : 0 < ε * δ ^ 2 / (4 * (Nat.card κ + 1))) 2)
-      (η := fun _ ↦ δ ^ 2 / 2) (μ := fun _ ↦ ε * δ ^ 2 / 4)
-      (fun _ ↦ by positivity) (fun _ ↦ by positivity) r
+    H.exists_strong_topRegularOverMostPolyads S (topRegularEnergyGap_pos (Nat.card κ) hδ hε)
+      (fun _ ↦ topRegularFineTolerance_pos hδ) (fun _ ↦ topRegularFineProportion_pos hδ hε) r
   exact ⟨C, π, hCcard, hCV, hπ, hrev, hCpol,
     hDreg.of_polyadEnergy_sub_le_div_sq (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
       (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f

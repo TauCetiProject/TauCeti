@@ -435,26 +435,24 @@ vertex cells at `t₀`, an `F`-regular lower skeleton, host-independent bounds o
 and pair colors, and such that `H` is `(δ, r C.complexity)`-top-regular over all polyads of `C`
 outside an `ε`-proportion of the injective triples. -/
 theorem exists_lowerSkeletonRegular_topRegularOverMostPolyads_scheduledRank [Finite κ]
-    {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (r : ℕ → ℕ) (t₀ : ℕ)
-    (hV : strongTriadicRegularityBound F ((ε * δ ^ 2 / (4 * (Nat.card κ + 1))) ^ 2)
-      (fun _ ↦ δ ^ 2 / 2) (fun _ ↦ ε * δ ^ 2 / 4) r (max t₀ 1) ≤ Fintype.card V) :
+    {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (r : ℕ → ℕ) (t₀ : ℕ) :
+    let B := strongTriadicRegularityBound F (topRegularEnergyGap (Nat.card κ) δ ε)
+      (fun _ ↦ topRegularFineTolerance δ) (fun _ ↦ topRegularFineProportion δ ε) r (max t₀ 1)
+    B ≤ Fintype.card V →
     ∃ C : TriadicComplex3 V,
       C.VertexCellsControlled t₀ ∧
-      #C.skeleton.vertexPart.parts ≤
-        strongTriadicRegularityBound F ((ε * δ ^ 2 / (4 * (Nat.card κ + 1))) ^ 2)
-          (fun _ ↦ δ ^ 2 / 2) (fun _ ↦ ε * δ ^ 2 / 4) r (max t₀ 1) ∧
-      C.pairColorCount ≤
-        strongTriadicRegularityBound F ((ε * δ ^ 2 / (4 * (Nat.card κ + 1))) ^ 2)
-          (fun _ ↦ δ ^ 2 / 2) (fun _ ↦ ε * δ ^ 2 / 4) r (max t₀ 1) ∧
+      #C.skeleton.vertexPart.parts ≤ B ∧
+      C.pairColorCount ≤ B ∧
       C.skeleton.LowerSkeletonRegular F ∧
       C.polyads = univ ∧
       H.TopRegularOverMostPolyads C δ ε (r C.complexity) := by
+  intro B hV
   have := Fintype.ofFinite κ
   obtain ⟨C, D, f, hcells, hCt, hCm, -, hCreg, hDV, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
     H.exists_strong_lowerSkeletonRegular_topRegularOverMostPolyads
-      (pow_pos (by positivity : 0 < ε * δ ^ 2 / (4 * (Nat.card κ + 1))) 2) hF
-      (η := fun _ ↦ δ ^ 2 / 2) (μ := fun _ ↦ ε * δ ^ 2 / 4)
-      (fun _ ↦ by positivity) (fun _ ↦ by positivity) r t₀ hV
+      (topRegularEnergyGap_pos (Nat.card κ) hδ hε) hF
+      (fun _ ↦ topRegularFineTolerance_pos hδ) (fun _ ↦ topRegularFineProportion_pos hδ hε)
+      r t₀ hV
   exact ⟨C, hcells, hCt, hCm, hCreg, hCpol,
     hDreg.of_polyadEnergy_sub_le_div_sq (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
       (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) hDV.le f
