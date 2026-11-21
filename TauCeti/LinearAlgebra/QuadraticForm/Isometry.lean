@@ -13,10 +13,7 @@ import Mathlib.Algebra.GroupWithZero.Action.Regular
 /-!
 # Isometries of quadratic maps
 
-This file records general properties of quadratic-map isometries.  It also reindexes a weighted
-sum of squares along an equivalence of its index type, which complements Mathlib's
-`QuadraticForm.weightedSumSquaresCongr` for equal weights and
-`QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares` for weights rescaled by squares.
+This file records general properties of quadratic-map isometries.
 
 ## Main results
 
@@ -37,10 +34,6 @@ sum of squares along an equivalence of its index type, which complements Mathlib
   its polar bilinear form are invariant under isometry.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
-* `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
-  of squares along an equivalence of index types gives an isometric quadratic form.
-* `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: weighted sums of squares whose weights
-  agree after reindexing are equivalent.
 * `QuadraticForm.equivalent_zero_iff_finrank_eq_zero`: a form is isometric to the canonical
   zero-dimensional form exactly when its space has dimension zero.
 -/
@@ -262,37 +255,6 @@ theorem _root_.QuadraticMap.isometryEquivNeg_symm_apply (h : Q' = -Q) (hu : u * 
   rw [QuadraticMap.isometryEquivNeg_symm, QuadraticMap.isometryEquivNeg_apply, neg_smul]
 
 end Neg
-
-section Reindex
-
-variable {ι ι' R S : Type*} [Fintype ι] [Fintype ι'] [CommSemiring R] [Monoid S]
-  [DistribMulAction S R] [SMulCommClass S R R]
-
-/-- Reindexing the weights of a weighted sum of squares along an equivalence of the index types
-gives an isometric quadratic form.  The isometry is precomposition with the equivalence. -/
-def _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (w : ι → S) (e : ι' ≃ ι) :
-    IsometryEquiv (weightedSumSquares R w) (weightedSumSquares R (w ∘ e)) where
-  __ := LinearEquiv.funCongrLeft R R e
-  map_app' x := by
-    simpa [weightedSumSquares_apply, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
-      using e.sum_comp fun i ↦ w i • (x i * x i)
-
-/-- The reindexing isometry acts on a vector by precomposition with the equivalence. -/
-@[simp]
-theorem _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex_apply (w : ι → S) (e : ι' ≃ ι)
-    (x : ι → R) (i : ι') :
-    QuadraticForm.isometryEquivWeightedSumSquaresReindex w e x i = x (e i) :=
-  -- The parentheses keep the proof opaque, so the definition need not be exposed.
-  (rfl)
-
-/-- Weighted sums of squares whose weights agree after reindexing are equivalent. -/
-theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
-    {w : ι → S} {w' : ι' → S} (e : ι' ≃ ι) (h : w ∘ e = w') :
-    (weightedSumSquares R w').Equivalent (weightedSumSquares R w) :=
-  ⟨((QuadraticForm.isometryEquivWeightedSumSquaresReindex w e).trans
-    (QuadraticForm.weightedSumSquaresCongr h)).symm⟩
-
-end Reindex
 
 /-- A quadratic form is isometric to the canonical zero-dimensional form exactly when
 its underlying space has dimension zero. -/
