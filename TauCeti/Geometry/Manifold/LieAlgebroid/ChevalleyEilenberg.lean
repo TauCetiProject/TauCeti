@@ -536,23 +536,14 @@ theorem lieDeriv_extDeriv (k : ℕ) (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k]) :
 /-- The Lie derivative is a Lie algebra representation: `L_{[a, b]} = [L_a, L_b]`. -/
 theorem lieDeriv_bracket (k : ℕ) (a b : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k]) :
     A.lieDeriv k (A.bracket a b) φ =
-      A.lieDeriv k a (A.lieDeriv k b φ) - A.lieDeriv k b (A.lieDeriv k a φ) := by
-  cases k with
-  | zero =>
-    refine ContMDiffSection.eq_of_evalAlternating_eq <| AlternatingMap.ext fun s ↦ ?_
-    obtain rfl : s = ![] := Subsingleton.elim _ _
-    simp [evalAlternating_lieDeriv, A.anchorDeriv_bracket]
-  | succ k =>
-    have hip {m : ℕ} (ψ : Ω[m + 1]) :
-        ψ.interiorProd (A.bracket a b) =
-          A.lieDeriv m a (ψ.interiorProd b) - (A.lieDeriv (m + 1) a ψ).interiorProd b := by
-      rw [A.interiorProd_lieDeriv]; abel
-    rw [A.lieDeriv_eq_interiorProd_extDeriv_add_extDeriv_interiorProd, hip, hip,
-      A.lieDeriv_extDeriv, map_sub, ← A.lieDeriv_extDeriv k a (φ.interiorProd b),
-      A.lieDeriv_eq_interiorProd_extDeriv_add_extDeriv_interiorProd b φ,
-      A.lieDeriv_eq_interiorProd_extDeriv_add_extDeriv_interiorProd b (A.lieDeriv (k + 1) a φ),
-      map_add]
-    abel
+      A.lieDeriv k a (A.lieDeriv k b φ) - A.lieDeriv k b (A.lieDeriv k a φ) :=
+  A.toLieCochain_injective k <| by
+    have hbr : A.sectionsEquiv.symm (A.bracket a b) =
+        ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ :=
+      A.sectionsEquiv.injective (by simp [sectionsEquiv_lie])
+    rw [toLieCochain_sub, A.toLieCochain_lieDeriv, A.toLieCochain_lieDeriv,
+      A.toLieCochain_lieDeriv, A.toLieCochain_lieDeriv, A.toLieCochain_lieDeriv, hbr]
+    exact lie_lie (A.sectionsEquiv.symm a) (A.sectionsEquiv.symm b) (A.toLieCochain k φ)
 
 /-! ### Graded derivations on the fibrewise wedge product -/
 
