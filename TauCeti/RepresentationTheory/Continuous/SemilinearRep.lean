@@ -54,7 +54,6 @@ character are different representations on the same line, with no nonzero equiva
 ## References
 
 * J.-M. Fontaine, *Presque `C_p`-représentations*, Doc. Math. Extra Vol. Kato (2003), §1.3.
-* J.-M. Fontaine and Y. Ouyang, *Theory of p-adic Galois representations*, §2.1.
 -/
 
 public section
