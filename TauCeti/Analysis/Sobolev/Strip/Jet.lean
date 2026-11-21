@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Prod
@@ -32,7 +33,13 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   bounds each of its components (`TauCeti.StripSobolev.norm_le_norm_jet`,
   `TauCeti.StripSobolev.norm_fderiv_one_zero_le_norm_jet`,
   `TauCeti.StripSobolev.norm_fderiv_zero_one_le_norm_jet`), and is in `Lᵖ` on the strip for a
-  `C¹` map vanishing for `|s|` large (`TauCeti.StripSobolev.memLp_jet_of_contDiff`).
+  `C¹` map vanishing for `|s|` large (`TauCeti.StripSobolev.memLp_jet_of_contDiff`). It also
+  bounds the whole derivative (`TauCeti.StripSobolev.norm_fderiv_le_two_mul_norm_jet`), so a `C¹`
+  cutoff supported in a set `P` multiplies a section into a map whose derivative is bounded in
+  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`).
+* The **restricted value** `TauCeti.StripSobolev.restrictValue T` takes an `L²` jet on the strip
+  to its value on the compact piece `[-T, T] × [0, 1]`, the operator whose compactness is
+  Rellich's theorem on the cylinder and on the strip.
 * **Translation in the `s` direction** preserves the strip measure
   (`TauCeti.StripSobolev.measurePreserving_add_strip`) and commutes with taking jets
   (`TauCeti.StripSobolev.jet_comp_add`). It acts on `Lᵖ` of the strip by linear isometric
@@ -96,6 +103,12 @@ theorem norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ
   exact (norm_snd_le (fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))).trans
     (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
 
+/-- The operator norm of the derivative is at most twice the norm of the jet. -/
+theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖fderiv ℝ ξ z‖ ≤ 2 * ‖jet ξ z‖ := by
+  linarith [(fderiv ℝ ξ z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one,
+    norm_fderiv_one_zero_le_norm_jet ξ z, norm_fderiv_zero_one_le_norm_jet ξ z]
+
 variable {ξ η : ℝ × ℝ → V}
 
 /-- The jet of a `C¹` map is continuous. -/
@@ -158,6 +171,56 @@ theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [NormedAddCommG
     (prod_mono (subset_univ _) subset_rfl) fun z hz ↦ hF z (jet_eq_zero_of_lt_abs hR (by
       have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
       rwa [mem_Icc, ← abs_le, not_le] at h))
+
+/-- Multiplying a `C¹` map by a `C¹` cutoff `χ` with `|χ| ≤ 1` and `‖Dχ‖ ≤ C`, whose topological
+support lies in a measurable set `P`, gives a map whose derivative is bounded in `Lᵖ(ℝ × ℝ)` by
+`C + 2` times the jet in `Lᵖ(P)`. -/
+theorem eLpNorm_fderiv_smul_le {χ : ℝ × ℝ → ℝ} {C : ℝ} (hχ : ContDiff ℝ 1 χ)
+    (hχ1 : ∀ z, |χ z| ≤ 1) (hC : ∀ z, ‖fderiv ℝ χ z‖ ≤ C) {P : Set (ℝ × ℝ)}
+    (hP : MeasurableSet P) (hχP : tsupport χ ⊆ P) (hξ : ContDiff ℝ 1 ξ) {p : ℝ≥0∞} :
+    eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume ≤
+      ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  have hpt : ∀ z, ‖fderiv ℝ (fun z ↦ χ z • ξ z) z‖ ≤ (C + 2) * ‖P.indicator (jet ξ) z‖ := by
+    intro z
+    by_cases hz : z ∈ P
+    · rw [indicator_of_mem hz,
+        fderiv_fun_smul (hχ.differentiable one_ne_zero z) (hξ.differentiable one_ne_zero z)]
+      calc _ ≤ ‖χ z‖ * ‖fderiv ℝ ξ z‖ + ‖fderiv ℝ χ z‖ * ‖ξ z‖ := by
+            refine (norm_add_le _ _).trans ?_
+            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
+        _ ≤ 1 * (2 * ‖jet ξ z‖) + C * ‖jet ξ z‖ := by
+            gcongr
+            exacts [(Real.norm_eq_abs _).trans_le (hχ1 z), norm_fderiv_le_two_mul_norm_jet ξ z,
+              hC z, norm_le_norm_jet ξ z]
+        _ = (C + 2) * ‖jet ξ z‖ := by ring
+    · have h0 : (fun z ↦ χ z • ξ z) =ᶠ[𝓝 z] 0 := by
+        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχP h)] with w hw
+        simp [hw]
+      rw [h0.fderiv_eq, indicator_of_notMem hz]
+      simp
+  calc eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume
+      ≤ ENNReal.ofReal (C + 2) * eLpNorm (P.indicator (jet ξ)) p volume :=
+        eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+          ((hχ.smul hξ).continuous_fderiv one_ne_zero).aestronglyMeasurable
+          (Eventually.of_forall hpt) p
+    _ = ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
+        rw [eLpNorm_indicator_eq_eLpNorm_restrict hP.nullMeasurableSet]
+
+/-! ### The restricted value -/
+
+/-- The value of an `L²` jet on the strip, restricted to the compact piece `[-T, T] × [0, 1]`. -/
+def restrictValue (T : ℝ) :
+    Lp (V × V × V) 2 stripMeasure →L[ℝ]
+      Lp V 2 (stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)) :=
+  (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 (Icc (-T) T ×ˢ Icc 0 1)).comp
+    ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure)
+
+/-- The restricted value of an `L²` jet is represented by the first component of the jet. -/
+theorem coeFn_restrictValue (T : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
+    restrictValue T f =ᵐ[stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)] fun z ↦ (f z).1 :=
+  (LpToLpRestrictCLM_coeFn ℝ _ _).trans
+    (ae_restrict_of_ae ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f))
 
 /-! ### Translation in the `s` direction -/
 
@@ -252,12 +315,6 @@ theorem sq_norm_jet_le (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
   calc ‖jet ξ z‖ ^ 2 ≤ (√(‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 +
         ‖ξ z‖ ^ 2)) ^ 2 := by gcongr
     _ = _ := Real.sq_sqrt (by positivity)
-
-/-- The operator norm of the derivative is at most twice the norm of the jet. -/
-theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ‖fderiv ℝ ξ z‖ ≤ 2 * ‖jet ξ z‖ := by
-  linarith [(fderiv ℝ ξ z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one,
-    norm_fderiv_one_zero_le_norm_jet ξ z, norm_fderiv_zero_one_le_norm_jet ξ z]
 
 /-! ### The `L²` jets of a space of sections and their closure -/
 
