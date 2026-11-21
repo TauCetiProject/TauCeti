@@ -119,7 +119,7 @@ product; every approximating graph plan has exactly the prescribed marginals. -/
 theorem Coupling.mem_closure_graphPlans {μ₀ : ProbabilityMeasure X}
     {ν₀ : ProbabilityMeasure Y} (π₀ : Coupling μ₀ ν₀)
     [NullSingletonClass (μ₀ : Measure X)] :
-    (π₀.1 : ProbabilityMeasure (X × Y)) ∈
+    (π₀.val : ProbabilityMeasure (X × Y)) ∈
       closure {ρ : ProbabilityMeasure (X × Y) |
         ∃ T : X → Y, MeasurePreserving T (μ₀ : Measure X) (ν₀ : Measure Y) ∧
           ρ.toMeasure = graphPlan T (μ₀ : Measure X)} := by
@@ -127,16 +127,16 @@ theorem Coupling.mem_closure_graphPlans {μ₀ : ProbabilityMeasure X}
     {ρ | ∃ T : X → Y, MeasurePreserving T (μ₀ : Measure X) (ν₀ : Measure Y) ∧
       ρ.toMeasure = graphPlan T (μ₀ : Measure X)}
   let e := LevyProkhorov.probabilityMeasureHomeomorph (Ω := X × Y)
-  have he : e π₀.1 ∈ closure (e '' G) := by
+  have he : e π₀.val ∈ closure (e '' G) := by
     apply Metric.mem_closure_iff.2
     intro ε hε
     obtain ⟨T, hT, hdist⟩ :=
-      exists_graphPlan_levyProkhorovEDist_lt π₀.2 hε
+      exists_graphPlan_levyProkhorovEDist_lt π₀.property hε
     let ρ : ProbabilityMeasure (X × Y) := ⟨graphPlan T (μ₀ : Measure X), inferInstance⟩
     refine ⟨e ρ, ⟨ρ, ⟨T, hT, rfl⟩, rfl⟩, ?_⟩
     rw [LevyProkhorov.dist_probabilityMeasure_def, levyProkhorovDist]
     exact ENNReal.toReal_lt_of_lt_ofReal hdist
-  have : π₀.1 ∈ e ⁻¹' closure (e '' G) := he
+  have : π₀.val ∈ e ⁻¹' closure (e '' G) := he
   rw [e.preimage_closure, Set.preimage_image_eq _ e.injective] at this
   exact this
 
@@ -146,7 +146,7 @@ theorem Coupling.dense_graphPlans {μ₀ : ProbabilityMeasure X} {ν₀ : Probab
     [NullSingletonClass (μ₀ : Measure X)] :
     Dense {π₀ : Coupling μ₀ ν₀ |
       ∃ T : X → Y, MeasurePreserving T (μ₀ : Measure X) (ν₀ : Measure Y) ∧
-        π₀.1.toMeasure = graphPlan T (μ₀ : Measure X)} := by
+        π₀.val.toMeasure = graphPlan T (μ₀ : Measure X)} := by
   refine Topology.IsEmbedding.subtypeVal.isInducing.dense_iff.2 ?_
   rintro ⟨ρ, hρ⟩
   have hclosure := Coupling.mem_closure_graphPlans (⟨ρ, hρ⟩ : Coupling μ₀ ν₀)

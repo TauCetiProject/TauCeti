@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RepresentationTheory.Character
-public import TauCeti.RepresentationTheory.CharacterTwist
+public import TauCeti.RepresentationTheory.Character.Twist
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.Subrepresentation

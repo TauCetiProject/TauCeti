@@ -340,14 +340,13 @@ theorem iteratedDeriv_gelfond_auxiliary_natCast {R : Type*} [Ring R] (σ : R →
   ring
 
 /-- **The first nonvanishing derivative of Gelfond's auxiliary function.** Let `K` be a field with
-an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `α, β, γ ∈ K` with `β` irrational,
-`σ α = exp λ` and `σ γ = exp (σ β λ)`. Let `η : Fin q → Fin q → K` be nonzero, and suppose that
+an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `β ∈ K` be irrational. Let `η : Fin q → Fin q → K`
+be nonzero, and suppose that
 `R(z) = ∑_{a, b} σ η_{ab} exp (((a + 1) + (b + 1) σ β) λ z)` vanishes to order `n` at every point
 of a nonempty finite set `T` of natural numbers. Then there are `r` with `n ≤ r < q ^ 2` and
 `t₀ ∈ T` such that `R` vanishes to order `r` at every point of `T` and `R⁽ʳ⁾(t₀) ≠ 0`. -/
 theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ : K →+* ℂ)
-    {l : ℂ} (hl : l ≠ 0) {α β γ : K} (hα : σ α = Complex.exp l)
-    (hγ : σ γ = Complex.exp (σ β * l)) (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
+    {l : ℂ} (hl : l ≠ 0) {β : K} (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
     {η : Fin q → Fin q → K} (hη : η ≠ 0) {T : Finset ℕ} (hT : T.Nonempty) {n : ℕ}
     (hn : ∀ k < n, ∀ t ∈ T, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
       Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0) :
@@ -357,17 +356,26 @@ theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ
       iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
         Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
   have := σ.charZero
-  have hα₀ : α ≠ 0 := fun h ↦ Complex.exp_ne_zero l (by rw [← hα, h, map_zero])
-  have hγ₀ : γ ≠ 0 := fun h ↦ Complex.exp_ne_zero (σ β * l) (by rw [← hγ, h, map_zero])
-  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero hα₀ hγ₀ hβ hη hT
-  have hr' : iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
-      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
-    rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ]
-    exact mul_ne_zero (pow_ne_zero _ hl) ((map_ne_zero σ).2 hr)
-  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ ?_, hr'⟩
-  · by_contra! h
-    exact hr' (hn r h t₀ ht₀)
-  · rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ, hzero k hk t ht, map_zero, mul_zero]
+  have hβ' : ∀ r : ℚ, (r : ℂ) ≠ σ β := fun r h ↦ hβ r (σ.injective (by rw [map_ratCast, h]))
+  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero (K := ℂ)
+    (Complex.exp_ne_zero l) (Complex.exp_ne_zero (σ β * l)) hβ' (η := fun a b ↦ σ (η a b))
+    (fun h ↦ hη (by
+      ext a b
+      exact σ.injective (by simpa using congrFun (congrFun h a) b))) hT
+  have key : ∀ k t : ℕ, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
+      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0 ↔
+      ∑ a, ∑ b, σ (η a b) * (((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) ^ k *
+        (Complex.exp l ^ ((a + 1 : ℕ) * t) * Complex.exp (σ β * l) ^ ((b + 1 : ℕ) * t)) = 0 := by
+    intro k t
+    have h := (RingHom.id ℂ).iteratedDeriv_gelfond_auxiliary_natCast (l := l)
+      (α := Complex.exp l) (β := σ β) (γ := Complex.exp (σ β * l)) rfl rfl
+      (fun a b ↦ σ (η a b)) k t
+    simp only [RingHom.id_apply] at h
+    rw [h, mul_eq_zero, or_iff_right (pow_ne_zero _ hl)]
+  have hr' := (key r t₀).not.2 hr
+  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ (key k t).2 (hzero k hk t ht), hr'⟩
+  by_contra! h
+  exact hr' (hn r h t₀ ht₀)
 
 open NumberField in
 /-- **Gelfond's auxiliary function** (Karatarakis–Wiedijk, §3). Let `K` be a number field with an

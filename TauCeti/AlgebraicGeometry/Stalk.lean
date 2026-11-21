@@ -37,23 +37,23 @@ section Stalk
 variable (X : Scheme.{u}) (x : X)
 
 /-- The partially ordered set of affine open neighbourhoods of a point `x` in a scheme `X`. -/
-def AffineOpenNhds : Type u := {W : X.affineOpens // x ∈ W.1}
+def AffineOpenNhds : Type u := {W : X.affineOpens // x ∈ W.val}
 
 namespace AffineOpenNhds
 
 variable {X x}
 
 instance : PartialOrder (X.AffineOpenNhds x) :=
-  inferInstanceAs (PartialOrder {W : X.affineOpens // x ∈ W.1})
+  inferInstanceAs (PartialOrder {W : X.affineOpens // x ∈ W.val})
 
 /-- Construct an affine open neighbourhood of `x` from `U : X.Opens`, `IsAffineOpen U`, `x ∈ U`. -/
 def mk (U : X.Opens) (hU : IsAffineOpen U) (hx : x ∈ U) : X.AffineOpenNhds x := ⟨⟨U, hU⟩, hx⟩
 
 /-- The underlying affine open of `X`. -/
-def affineOpen (W : X.AffineOpenNhds x) : X.affineOpens := W.1
+def affineOpen (W : X.AffineOpenNhds x) : X.affineOpens := W.val
 
 /-- The underlying open subset of `X`. -/
-def opens (W : X.AffineOpenNhds x) : X.Opens := W.1.1
+def opens (W : X.AffineOpenNhds x) : X.Opens := W.val.val
 
 /-- The underlying affine open of `AffineOpenNhds.mk`. -/
 @[simp] theorem mk_affineOpen (U : X.Opens) (hU : IsAffineOpen U) (hx : x ∈ U) :
@@ -64,10 +64,10 @@ def opens (W : X.AffineOpenNhds x) : X.Opens := W.1.1
     (mk U hU hx).opens = U := (rfl)
 
 /-- The base point `x` belongs to `W`. -/
-theorem mem (W : X.AffineOpenNhds x) : x ∈ W.opens := W.2
+theorem mem (W : X.AffineOpenNhds x) : x ∈ W.opens := W.property
 
 /-- The underlying open subset of `W` is affine. -/
-theorem isAffineOpen (W : X.AffineOpenNhds x) : IsAffineOpen W.opens := W.1.2
+theorem isAffineOpen (W : X.AffineOpenNhds x) : IsAffineOpen W.opens := W.val.property
 
 /-- Two affine open neighbourhoods of `x` are equal when their underlying open subsets agree. -/
 @[ext] theorem ext {W₁ W₂ : X.AffineOpenNhds x} (h : W₁.opens = W₂.opens) : W₁ = W₂ :=
@@ -101,7 +101,7 @@ variable (X x) in
 
 instance : (toOpenNhds X x).Initial := Functor.initial_of_exists_of_isCofiltered _
   (fun U ↦ let ⟨_, ⟨W, hW, rfl⟩, hxW, hle⟩ :=
-      X.isBasis_affineOpens.exists_subset_of_mem_open U.2 U.1.isOpen
+      X.isBasis_affineOpens.exists_subset_of_mem_open U.property U.val.isOpen
     ⟨mk W hW hxW, ⟨homOfLE (hle : (⟨W, hxW⟩ : OpenNhds x) ≤ U)⟩⟩)
   fun _ _ ↦ ⟨_, 𝟙 _, Subsingleton.elim _ _⟩
 
@@ -254,7 +254,8 @@ instance [QuasiCompact U.ι] (j : Over W₀) : CompactSpace ((X.stalkOpensDiagra
     (W₀.opens.isCompact_ι_preimage_of_quasiCompact U W₀.isAffineOpen.isCompact))
 instance (j : Over W₀) : QuasiSeparatedSpace ((X.stalkOpensDiagram U x W₀).obj j) :=
   (isQuasiSeparated_iff_quasiSeparatedSpace _
-    ((X.affineOpenNhdsDiagram x).map j.hom ⁻¹ᵁ (W₀.opens.ι ⁻¹ᵁ U)).2).mp (.of_quasiSeparatedSpace _)
+    ((X.affineOpenNhdsDiagram x).map j.hom ⁻¹ᵁ (W₀.opens.ι ⁻¹ᵁ U)).is_open').mp
+      (.of_quasiSeparatedSpace _)
 end Instances
 
 variable (X : Scheme.{u}) (U : X.Opens) (x : X)

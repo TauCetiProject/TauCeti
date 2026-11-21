@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
-import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import TauCeti.Algebra.Star.Subalgebra
 
 /-!
 # Quotient C⋆-algebras and closed range of `⋆`-homomorphisms
@@ -25,8 +24,9 @@ dense-range `⋆`-homomorphism between C⋆-algebras is surjective.
 To prove the C⋆-identity `‖x‖ ^ 2 ≤ ‖star x * x‖` on `A ⧸ I`, let `x = mk I a` and `z ∈ I`. Along
 the increasing approximate unit `e` of `I.toNonUnitalStarSubalgebra`, ideal absorption gives
 `mk I a = mk I (a - a * e)`, while in the unitization `A⁺¹` with `u = 1 - e` (`0 ≤ u ≤ 1`),
-`star (a * u) * (a * u) = u * (star a * a + z) * u - u * (z - z * e)`,
-giving `‖mk I a‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z * e - z‖ → ‖star a * a + z‖` and taking the infimum
+`star (a * u) * (a * u) = u * (star a * a + z) * u - u * (z - z * e)`
+(`TauCeti.CStarAlgebra.norm_sub_mul_sq_le`),
+giving `‖mk I a‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖ → ‖star a * a + z‖` and taking the infimum
 over `z ∈ I` (see Gerard J. Murphy, *C*-Algebras and Operator Theory*, Theorem 3.1.4, or Kenneth R.
 Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 
@@ -36,9 +36,13 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
   and C⋆-algebra instances on `A ⧸ I` for a closed two-sided ideal `I : TwoSidedIdeal A`.
 * `TwoSidedIdeal.Quotient.mkStarAlgHom`, `TwoSidedIdeal.Quotient.liftStarAlgHom`,
   `TwoSidedIdeal.Quotient.factorStarAlgHom`, and `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`:
-  universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients, plus unital counterparts.
+  universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients. `mkStarAlgHom` and
+  `liftStarAlgHom` have unital counterparts `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and
+  `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
+* `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
+  of another is dominated by it in norm.
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
   and `NonUnitalStarAlgHom.surjective_of_denseRange` (plus `StarAlgHom` counterparts): isometric
   first `⋆`-isomorphism theorem and surjectivity from dense range.
@@ -54,7 +58,7 @@ namespace TwoSidedIdeal.Quotient
 section NonUnital
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+  (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
 
 instance instStar : Star (A ⧸ I) where
   star := Quotient.map' star fun _ _ hab => by
@@ -93,8 +97,15 @@ theorem mk_smul_complex (c : ℂ) (a : A) : mk I (c • a) = c • mk I a := by
   rw [← submoduleQuotientMk_toSubmodule_eq_mk, ← submoduleQuotientMk_toSubmodule_eq_mk]
   exact Submodule.Quotient.mk_smul I.toSubmodule c a
 
-noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (A ⧸ I) :=
-  Submodule.Quotient.normedSpace I.toSubmodule ℂ
+noncomputable instance instNormedSpaceComplex : NormedSpace ℂ (A ⧸ I) where
+  norm_smul_le := (Submodule.Quotient.normedSpace I.toSubmodule ℂ).norm_smul_le
+
+-- Verify that the normed-space module agrees with `instModuleComplex` at instance transparency,
+-- so that instance search finds the normed scalar classes on `A ⧸ I`.
+example : (instNormedSpaceComplex I).toModule = instModuleComplex I := by
+  with_reducible_and_instances rfl
+
+example : NormSMulClass ℂ (A ⧸ I) := inferInstance
 
 instance instIsScalarTowerComplex : IsScalarTower ℂ (A ⧸ I) (A ⧸ I) where
   smul_assoc c x y := by
@@ -129,70 +140,24 @@ instance instCStarRing : CStarRing (A ⧸ I) where
     have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit S
     have := hl.neBot
     let z' : S := ⟨z, I.mem_toNonUnitalStarSubalgebra.mpr hz⟩
-    have hz_lim : Tendsto (fun e : S => ‖star a * a + z‖ + ‖(z' * e - z' : S)‖) l
+    have hz_lim : Tendsto (fun e : S => ‖star a * a + z‖ + ‖(z' - z' * e : S)‖) l
         (𝓝 ‖star a * a + z‖) := by
-      simpa only [add_zero] using tendsto_const_nhds.add
+      simpa only [add_zero, norm_sub_rev] using tendsto_const_nhds.add
         (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left z'))
     refine ge_of_tendsto hz_lim ?_
     filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
-    -- Step 2: Bound `‖mk I a‖² ≤ ‖a - a * e‖²` and pass to `A⁺¹` with `u = 1 - e`.
-    have heI : (e : A) ∈ I := I.mem_toNonUnitalStarSubalgebra.mp e.2
+    -- Step 2: Ideal absorption gives `mk I a = mk I (a - a * e)`; then apply the C⋆-estimate
+    -- `TauCeti.CStarAlgebra.norm_sub_mul_sq_le` for the positive contraction `e`.
     have hmk_eq : mk I a = mk I (a - a * (e : A)) := by
-      rw [map_sub, eq_zero_iff_mem.mpr (I.mul_mem_left a (e : A) heI), sub_zero]
-    have hmk_sq : ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := by
-      rw [hmk_eq]
-      exact pow_le_pow_left₀ (norm_nonneg _) (norm_mk_le I _) 2
-    have heA₀ : 0 ≤ (e : A) := he₀
-    have heA₁ : ‖(e : A)‖ ≤ 1 := he₁
-    have he_icc : ((e : A) : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-      CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨heA₀, heA₁⟩
-    have h1_icc : 1 - ((e : A) : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-      Set.sub_mem_Icc_zero_iff_right.mpr he_icc
-    obtain ⟨h1_nonneg, h1_norm⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp h1_icc
-    have h1_star : star (1 - ((e : A) : A⁺¹)) = 1 - ((e : A) : A⁺¹) :=
-      (IsSelfAdjoint.of_nonneg h1_nonneg).star_eq
-    let u : A⁺¹ := 1 - ((e : A) : A⁺¹)
-    let b : A⁺¹ := (a : A⁺¹) * u
-    have hb_norm : ‖a - a * (e : A)‖ = ‖b‖ := by
-      rw [← Unitization.norm_inr (𝕜 := ℂ), Unitization.inr_sub, Unitization.inr_mul]
-      congr 1
-      dsimp only [b, u]
-      rw [mul_sub, mul_one]
-    -- Step 3: Apply the C⋆-identity to `b = a * u` and use `‖u‖ ≤ 1` to bound by `‖a⋆ * a + z‖`.
-    have hb_mul : star b * b =
-        u * ((star a * a + z : A) : A⁺¹) * u - u * ((z - z * (e : A) : A) : A⁺¹) := by
-      simp only [b, u, star_mul, h1_star, Unitization.inr_add, Unitization.inr_sub,
-        Unitization.inr_mul, Unitization.inr_star]
-      noncomm_ring
+      rw [map_sub, eq_zero_iff_mem.mpr
+        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.property)), sub_zero]
     calc
-      ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := hmk_sq
-      _ = ‖b‖ ^ 2 := by rw [hb_norm]
-      _ = ‖star b * b‖ := by rw [sq, ← CStarRing.norm_star_mul_self]
-      _ = ‖u * ((star a * a + z : A) : A⁺¹) * u - u * ((z - z * (e : A) : A) : A⁺¹)‖ := by
-          rw [hb_mul]
-      _ ≤ ‖u * ((star a * a + z : A) : A⁺¹) * u‖ + ‖u * ((z - z * (e : A) : A) : A⁺¹)‖ :=
-          norm_sub_le _ _
-      _ ≤ ‖star a * a + z‖ + ‖(z' * e - z' : S)‖ := by
-          refine add_le_add ?_ ?_
-          · calc
-              ‖u * ((star a * a + z : A) : A⁺¹) * u‖
-                ≤ ‖u * ((star a * a + z : A) : A⁺¹)‖ * ‖u‖ := norm_mul_le _ _
-              _ ≤ (‖u‖ * ‖((star a * a + z : A) : A⁺¹)‖) * 1 :=
-                  mul_le_mul (norm_mul_le _ _) h1_norm (norm_nonneg _)
-                    (mul_nonneg (norm_nonneg _) (norm_nonneg _))
-              _ ≤ (1 * ‖star a * a + z‖) * 1 := by
-                  rw [Unitization.norm_inr]
-                  gcongr
-              _ = ‖star a * a + z‖ := by ring
-          · calc
-              ‖u * ((z - z * (e : A) : A) : A⁺¹)‖
-                ≤ ‖u‖ * ‖((z - z * (e : A) : A) : A⁺¹)‖ := norm_mul_le _ _
-              _ ≤ 1 * ‖z - z * (e : A)‖ := by
-                  rw [Unitization.norm_inr]
-                  exact mul_le_mul_of_nonneg_right h1_norm (norm_nonneg _)
-              _ = ‖(z' * e - z' : S)‖ := by
-                  rw [one_mul, norm_sub_rev]
-                  rfl
+      ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := by
+        rw [hmk_eq]
+        exact pow_le_pow_left₀ (norm_nonneg _) (norm_mk_le I _) 2
+      _ ≤ ‖star a * a + z‖ + ‖z - z * (e : A)‖ :=
+        TauCeti.CStarAlgebra.norm_sub_mul_sq_le (e := (e : A)) he₀ he₁ a z
+      _ = ‖star a * a + z‖ + ‖(z' - z' * e : S)‖ := rfl
 
 /-- The quotient of a nonunital C⋆-algebra by a closed two-sided ideal is a nonunital C⋆-algebra.
 -/
@@ -295,6 +260,27 @@ theorem factorStarAlgHom_surjective {I J : TwoSidedIdeal A} [IsClosed (I : Set A
     [IsClosed (J : Set A)] (h : I ≤ J) : Function.Surjective (factorStarAlgHom h) :=
   liftStarAlgHom_surjective_of_surjective _ (mkStarAlgHom_surjective J)
 
+@[simp]
+theorem factorStarAlgHom_refl {I : TwoSidedIdeal A} [IsClosed (I : Set A)] :
+    factorStarAlgHom (le_refl I) = NonUnitalStarAlgHom.id ℂ (A ⧸ I) :=
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
+
+@[simp]
+theorem factorStarAlgHom_comp {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    [IsClosed (J : Set A)] [IsClosed (K : Set A)] (h₁ : I ≤ J) (h₂ : J ≤ K) :
+    (factorStarAlgHom h₂).comp (factorStarAlgHom h₁) = factorStarAlgHom (h₁.trans h₂) :=
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
+
+@[simp]
+theorem factorStarAlgHom_comp_apply {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    [IsClosed (J : Set A)] [IsClosed (K : Set A)] (h₁ : I ≤ J) (h₂ : J ≤ K) (x : A ⧸ I) :
+    factorStarAlgHom h₂ (factorStarAlgHom h₁ x) = factorStarAlgHom (h₁.trans h₂) x :=
+  DFunLike.congr_fun (factorStarAlgHom_comp h₁ h₂) x
+
 /-- Isometric `⋆`-algebra equivalence between C⋆-quotients by equal closed two-sided ideals. -/
 noncomputable def quotStarAlgEquivOfEq {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
     [IsClosed (J : Set A)] (h : I = J) : A ⧸ I ≃⋆ₐ[ℂ] A ⧸ J where
@@ -316,10 +302,8 @@ theorem quotStarAlgEquivOfEq_mk {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
 @[simp]
 theorem quotStarAlgEquivOfEq_symm {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
     [IsClosed (J : Set A)] (h : I = J) :
-    (quotStarAlgEquivOfEq h).symm = quotStarAlgEquivOfEq h.symm := by
-  ext x
-  obtain ⟨a, rfl⟩ := mk_surjective J x
-  exact (factorStarAlgHom_mk h.ge a).trans (quotStarAlgEquivOfEq_mk h.symm a).symm
+    (quotStarAlgEquivOfEq h).symm = quotStarAlgEquivOfEq h.symm :=
+  (rfl)
 
 end NonUnital
 
@@ -362,12 +346,16 @@ theorem mkUnitalStarAlgHom_apply (a : A) : mkUnitalStarAlgHom I a = mk I a :=
 
 @[simp]
 theorem toNonUnitalStarAlgHom_mkUnitalStarAlgHom :
-    (mkUnitalStarAlgHom I).toNonUnitalStarAlgHom = mkStarAlgHom I := by
-  ext a
-  rfl
+    (mkUnitalStarAlgHom I).toNonUnitalStarAlgHom = mkStarAlgHom I :=
+  (rfl)
 
 theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom I) :=
   mk_surjective I
+
+@[simp]
+theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I := by
+  ext a
+  simp [TwoSidedIdeal.mem_ker, eq_zero_iff_mem]
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/
@@ -400,9 +388,8 @@ theorem liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (h
 @[simp]
 theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
     (liftUnitalStarAlgHom I f hf).toNonUnitalStarAlgHom =
-      liftStarAlgHom I f.toNonUnitalStarAlgHom hf := by
-  ext x
-  rfl
+      liftStarAlgHom I f.toNonUnitalStarAlgHom hf :=
+  (rfl)
 
 end Unital
 
@@ -435,13 +422,9 @@ theorem isometry_quotientKerHom : Isometry φ.quotientKerHom :=
 
 @[simp]
 theorem range_quotientKerHom : Set.range φ.quotientKerHom = Set.range φ := by
-  ext b
-  constructor
-  · rintro ⟨x, rfl⟩
-    obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) x
-    exact ⟨a, (φ.quotientKerHom_mk a).symm⟩
-  · rintro ⟨a, rfl⟩
-    exact ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a, φ.quotientKerHom_mk a⟩
+  simpa only [Function.comp_def, φ.quotientKerHom_mk] using
+    ((TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ)).range_comp
+      φ.quotientKerHom).symm
 
 /-- Every `⋆`-algebra homomorphism between C⋆-algebras has closed range as a subset of `B`. -/
 theorem isClosed_setRange : IsClosed (Set.range φ) := by
@@ -489,6 +472,30 @@ noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₙₐ[ℂ] B} (hφ
 theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₙₐ[ℂ] B} (hφ : Function.Surjective φ) (a : A) :
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
   φ.quotientKerHom_mk a
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {F G A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C] [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+  [FunLike G A C] [NonUnitalAlgHomClass G ℂ A C] [StarHomClass G A C]
+
+/-- If every element killed by `φ` is killed by a `⋆`-homomorphism `ψ` between C⋆-algebras, then
+`ψ` is dominated in norm by `φ`: `‖ψ a‖ ≤ ‖φ a‖`. -/
+theorem norm_apply_le_norm_apply_of_ker_le {φ : F} {ψ : G}
+    (h : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ) (a : A) : ‖ψ a‖ ≤ ‖φ a‖ := by
+  -- `ψ` factors contractively through `A ⧸ ker φ`, which `φ` embeds isometrically
+  let φ' : A →⋆ₙₐ[ℂ] B := ofClass φ
+  let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ') (ofClass ψ) fun b hb =>
+    (TwoSidedIdeal.mem_ker ψ).1 (h hb)
+  -- `ofClass φ` and `ofClass ψ` agree with `φ` and `ψ` definitionally
+  calc ‖ψ a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ :=
+        congrArg norm (TwoSidedIdeal.Quotient.liftStarAlgHom_mk _ (ofClass ψ) _ a).symm
+    _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ') a‖ :=
+        NonUnitalStarAlgHom.norm_apply_le q _
+    _ = ‖φ a‖ := (φ'.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _) _).symm.trans
+        (congrArg norm (φ'.quotientKerHom_mk a))
 
 end NonUnitalStarAlgHom
 

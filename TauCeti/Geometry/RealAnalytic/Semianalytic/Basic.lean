@@ -60,7 +60,9 @@ S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Norm
 (3) 18 (1964), 449–474, §1, for the definition of semianalytic sets.
 
 E. Bierstone and P. D. Milman, *Semianalytic and subanalytic sets*, Publications Mathématiques de
-l'IHÉS 67 (1988), 5–42, §2, for the normal form with a single equation in each conjunct.
+l'IHÉS 67 (1988), 5–42, §2, for the normal form as a union of intersections of sets `{f = 0}` and
+`{f > 0}`. The form with a single equation in each conjunct follows by replacing the equations of a
+conjunct by the sum of their squares.
 -/
 
 public section
@@ -413,8 +415,9 @@ theorem semianalyticAt_iff_exists_iUnion {s : Set E} {x : E} :
     ?_, hst⟩⟩
   · obtain ⟨n, f, hf, Φ, rfl⟩ := ht.exists_eq_setOf_sign
     let e := Finite.equivFin {ε : Fin n → SignType // Φ ε}
-    refine ⟨U, hU, _, n, fun i y => ∑ j with (e.symm i).1 j = 0, f j y ^ 2,
-      fun i j => if (e.symm i).1 j = 0 then fun _ => 1 else fun y => ((e.symm i).1 j : ℝ) * f j y,
+    refine ⟨U, hU, _, n, fun i y => ∑ j with (e.symm i).val j = 0, f j y ^ 2,
+      fun i j => if (e.symm i).val j = 0 then fun _ => 1 else fun y =>
+          ((e.symm i).val j : ℝ) * f j y,
       fun i => Finset.analyticOnNhd_fun_sum _ fun j _ => (hf j).pow 2, fun i j => ?_, ?_⟩
     · dsimp only
       split_ifs
@@ -426,9 +429,9 @@ theorem semianalyticAt_iff_exists_iUnion {s : Set E} {x : E} :
       refine ⟨fun h => ⟨e ⟨_, h⟩, ?_⟩, fun ⟨i, h⟩ => ?_⟩
       · simpa [apply_ite (fun g : E → ℝ => g y)] using
           (forall_sign_eq_iff_sum_sq_eq_zero_and_pos (fun j => f j y) _).1 fun _ => rfl
-      · have hε := (forall_sign_eq_iff_sum_sq_eq_zero_and_pos (fun j => f j y) (e.symm i).1).2
+      · have hε := (forall_sign_eq_iff_sum_sq_eq_zero_and_pos (fun j => f j y) (e.symm i).val).2
           (by simpa [apply_ite (fun g : E → ℝ => g y)] using h)
-        exact (funext hε : (fun j => SignType.sign (f j y)) = _) ▸ (e.symm i).2
+        exact (funext hε : (fun j => SignType.sign (f j y)) = _) ▸ (e.symm i).property
   · exact .iUnion fun i => (isAnalyticBooleanCombination_setOf_eq_zero (hf i)).inter
       (.iInter fun j => isAnalyticBooleanCombination_setOf_pos (hg i j))
 
@@ -581,6 +584,14 @@ theorem IsSemialgebraic.isSemianalytic {σ : Type*} [Fintype σ] {s : Set (σ �
   setOf_isSemialgebraic_subset (isSetAlgebra_setOf_isSemianalytic (σ → ℝ))
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_eq_zero)
     (fun p => (AnalyticOnNhd.eval_mvPolynomial p).isSemianalytic_setOf_pos) hs
+
+/-- A singleton in a finite-dimensional real normed space is semianalytic. -/
+@[simp]
+theorem isSemianalytic_singleton [FiniteDimensional ℝ E] (a : E) :
+    IsSemianalytic ({a} : Set E) := by
+  let e := (Module.Basis.ofVectorSpace ℝ E).equivFunL
+  simpa only [Set.preimage_singleton, e.injective.eq_iff, ofPred_eq_eq_singleton] using
+    (isSemialgebraic_singleton (e a)).isSemianalytic.preimage (e.analyticOnNhd univ)
 
 /-- **Substituting analytic functions.** The preimage of a semialgebraic set `S ⊆ A → ℝ` under a map
 `c` whose coordinates `c · a` are analytic on `U` is a Boolean combination of analytic sign
