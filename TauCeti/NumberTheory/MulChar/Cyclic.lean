@@ -17,13 +17,14 @@ group with at most `n` elements.
 
 For `M` finite, for instance a finite field, where `n = q - 1`, Mathlib's `MulChar.ofRootOfUnity`
 sends an `n`-th root of unity `ζ` to the character that maps `g` to `ζ`. Its order is the order of
-`ζ`, so a primitive `n`-th root of unity gives a character of order `n`. A character `ω` of order
-`n` generates the character group: every character is `ω ^ m` for exactly one `m < n`. The order
-of `ω ^ m` is then `n / gcd(n, m)` by Mathlib's `orderOf_pow`. For a finite field `F`, the order of
-every character divides `#F - 1` (Mathlib's `MulChar.orderOf_dvd_card_sub_one`). Conversely, for
-`d ∣ #F - 1` there is a character of order `d` if the target ring has a primitive `d`-th root of
-unity (Mathlib's `MulChar.exists_mulChar_orderOf`). For complex values this holds for every such
-`d`, so `F` has complex characters of order `d` exactly for `d ∣ #F - 1`.
+`ζ`, so a primitive `n`-th root of unity gives a character of order `n`. With values in a domain,
+a character `ω` of order `n` generates the character group: every character is `ω ^ m` for exactly
+one `m < n`. The order of `ω ^ m` is then `n / gcd(n, m)` by Mathlib's `orderOf_pow`. For a finite
+field `F`, the order of every character divides `#F - 1` (Mathlib's
+`MulChar.orderOf_dvd_card_sub_one`). Conversely, for `d ∣ #F - 1` there is a character of order
+`d` if the target ring has a primitive `d`-th root of unity (Mathlib's
+`MulChar.exists_mulChar_orderOf`). For complex values this holds for every such `d`, so `F` has
+complex characters of order `d` exactly for `d ∣ #F - 1`.
 
 ## Main results
 
@@ -45,26 +46,6 @@ section CommMonoidWithZero
 
 variable {M : Type*} [CommMonoid M] {R : Type*} [CommMonoidWithZero R]
 
-/-- Evaluation of characters at a unit `g`, as a homomorphism to `Rˣ`. -/
-private noncomputable def evalHom (g : Mˣ) : MulChar M R →* Rˣ :=
-  (MonoidHom.eval g).comp mulEquivToUnitHom.toMonoidHom
-
-private theorem evalHom_apply (g : Mˣ) (χ : MulChar M R) : (evalHom g χ : R) = χ g := by
-  simp [evalHom]
-
-/-- Evaluation at a generator of `Mˣ` is injective: a character is determined by its value
-there (Mathlib's `MulChar.eq_iff`). -/
-private theorem evalHom_injective {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g) :
-    Function.Injective (evalHom (R := R) g) := fun χ ψ h ↦ by
-  rw [eq_iff hg]
-  simpa [evalHom_apply] using congrArg Units.val h
-
-/-- If `g` generates `Mˣ`, then the value of a character at `g` has the order of the
-character. -/
-theorem orderOf_apply_eq_orderOf (χ : MulChar M R) {g : Mˣ}
-    (hg : ∀ x, x ∈ Subgroup.zpowers g) : orderOf (χ g) = orderOf χ := by
-  rw [← orderOf_injective _ (evalHom_injective hg) χ, ← orderOf_units, evalHom_apply]
-
 /-- If `g` generates `Mˣ`, the characters are the `#Mˣ`-th roots of unity of `R`: Mathlib's
 `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, transported along `MulChar.mulEquivToUnitHom`
 and `rootsOfUnityUnitsMulEquiv`. -/
@@ -72,6 +53,19 @@ private noncomputable def mulEquivRootsOfUnity {g : Mˣ} (hg : ∀ x, x ∈ Subg
     MulChar M R ≃* rootsOfUnity (Nat.card Mˣ) R :=
   mulEquivToUnitHom.trans ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator hg Rˣ).trans
     (rootsOfUnityUnitsMulEquiv R _))
+
+/-- The root of unity attached to a character is its value at the generator. -/
+private theorem mulEquivRootsOfUnity_apply {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g)
+    (χ : MulChar M R) : ((mulEquivRootsOfUnity hg χ : Rˣ) : R) = χ g := by
+  simp [mulEquivRootsOfUnity, IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator,
+    rootsOfUnityUnitsMulEquiv]
+
+/-- If `g` generates `Mˣ`, then the value of a character at `g` has the order of the
+character. -/
+theorem orderOf_apply_eq_orderOf (χ : MulChar M R) {g : Mˣ}
+    (hg : ∀ x, x ∈ Subgroup.zpowers g) : orderOf (χ g) = orderOf χ := by
+  rw [← (mulEquivRootsOfUnity (R := R) hg).orderOf_eq χ, ← Subgroup.orderOf_coe, ← orderOf_units,
+    mulEquivRootsOfUnity_apply]
 
 end CommMonoidWithZero
 

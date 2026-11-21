@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 import TauCeti.Algebra.Group.Hom.Instances
+import TauCeti.GroupTheory.OrderOfElement.Cauchy
 
 /-!
 # Basic results on roots of unity
@@ -73,6 +74,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
   `HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective`: with enough `n`-th roots of unity,
   `primitiveRoots n R` is nonempty, also after an injective homomorphism into a domain.
+* `HasEnoughRootsOfUnity.natCast_card_ne_zero`: a field with enough roots of unity for the
+  exponent of a finite group `G` has `#G ≠ 0`.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
@@ -315,6 +318,16 @@ theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective {M : T
     (hf : Function.Injective f) : (primitiveRoots n R).Nonempty :=
   have := HasEnoughRootsOfUnity.of_injective (n := n) hf
   HasEnoughRootsOfUnity.primitiveRoots_nonempty R n
+
+variable (K : Type*) [Field K] in
+/-- A field with enough roots of unity for the exponent of a finite group `G` has `#G ≠ 0`: a
+primitive root of unity of that order makes the exponent nonzero in `K`, so `#G` is a unit
+(`TauCeti.isUnit_natCard_of_isUnit_exponent`). -/
+theorem _root_.HasEnoughRootsOfUnity.natCast_card_ne_zero {G : Type*} [Group G] [Finite G]
+    [HasEnoughRootsOfUnity K (Monoid.exponent G)] : (Nat.card G : K) ≠ 0 := by
+  have : NeZero (Monoid.exponent G) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  exact (isUnit_natCard_of_isUnit_exponent (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K
+    (Monoid.exponent G)).choose_spec.neZero'.out.isUnit).ne_zero
 
 /-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
 has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/
