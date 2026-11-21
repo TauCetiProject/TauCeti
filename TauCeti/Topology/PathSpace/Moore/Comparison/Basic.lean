@@ -69,7 +69,7 @@ The detour through length `L + 1` avoids dividing by a length that could be zero
 * `TauCeti.MooreLoopSpace.homotopyEquivPath_comp_map`: normalization to the unit interval
   intertwines the Moore loop map `MooreLoopSpace.map` with `ContinuousMap.loopMap`.
 * `TauCeti.MooreLoopSpace.posLengthHomeomorph_posLengthMap`: `posLengthHomeomorph` is natural:
-  it intertwines `posLengthMap f` with the identity of `(0, ∞)` times the loop map of `f`.
+  it intertwines `posLengthMap f hf` with the identity of `(0, ∞)` times the loop map of `f`.
 
 ## References
 
@@ -614,42 +614,43 @@ theorem mapsTo_map_preimage_length_Ioi {Y : Type*} [TopologicalSpace Y] {y : Y} 
   simpa only [mem_preimage, length_map] using hγ
 
 /-- **The Moore loop map on the Moore loops of positive length**: the restriction of
-`MooreLoopSpace.map f rfl` to the Moore loops of positive length at `x` and at `f x`. -/
-def posLengthMap {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) :
+`MooreLoopSpace.map f hf` to the Moore loops of positive length at `x` and at `y`. -/
+def posLengthMap {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) :
     C((length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x)),
-      (length ⁻¹' Ioi 0 : Set (MooreLoopSpace Y (f x)))) :=
-  ⟨(mapsTo_map_preimage_length_Ioi f rfl).restrict _ _ _,
-    (map f rfl).continuous.restrict (mapsTo_map_preimage_length_Ioi f rfl)⟩
+      (length ⁻¹' Ioi 0 : Set (MooreLoopSpace Y y))) :=
+  ⟨(mapsTo_map_preimage_length_Ioi f hf).restrict _ _ _,
+    (map f hf).continuous.restrict (mapsTo_map_preimage_length_Ioi f hf)⟩
 
-/-- The Moore loop underlying `posLengthMap f γ` is the image of `γ` under the Moore loop map. -/
+/-- The Moore loop underlying `posLengthMap f hf γ` is the image of `γ` under the Moore loop
+map. -/
 @[simp]
-theorem coe_posLengthMap_apply {Y : Type*} [TopologicalSpace Y] (f : C(X, Y))
-    (γ : (length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x))) :
-    (posLengthMap f γ : MooreLoopSpace Y (f x)) = map f rfl γ :=
+theorem coe_posLengthMap_apply {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (γ : (length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x))) :
+    (posLengthMap f hf γ : MooreLoopSpace Y y) = map f hf γ :=
   (rfl)
 
 /-- `posLengthMap` sends the identity to the identity. -/
 @[simp]
 theorem posLengthMap_id :
-    posLengthMap (ContinuousMap.id X) (x := x) = ContinuousMap.id _ :=
+    posLengthMap (ContinuousMap.id X) rfl (x := x) = ContinuousMap.id _ :=
   ContinuousMap.ext fun γ ↦ Subtype.ext (DFunLike.congr_fun map_id γ.val)
 
 /-- `posLengthMap` sends a composite to the composite. -/
-theorem posLengthMap_comp {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] (g : C(Y, Z))
-    (f : C(X, Y)) :
-    posLengthMap (g.comp f) =
-      (posLengthMap g).comp
-        (posLengthMap f : C((length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x)), _)) :=
+theorem posLengthMap_comp {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] {y : Y} {z : Z}
+    (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y) :
+    posLengthMap (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) =
+      (posLengthMap g hg).comp (posLengthMap f hf) :=
   ContinuousMap.ext fun γ ↦ Subtype.ext <| ext <| by simp
 
 /-- **`posLengthHomeomorph` is natural in based maps**: under the identifications of the Moore
 loops of positive length with `(0, ∞) × Path x x`, the Moore loop map of `f` is the identity on
-lengths times the fixed-interval loop map of `f`. -/
-theorem posLengthHomeomorph_posLengthMap {Y : Type*} [TopologicalSpace Y] (f : C(X, Y))
-    (γ : (length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x))) :
-    posLengthHomeomorph (f x) (posLengthMap f γ) =
-      Prod.map id (fun c : Path x x ↦ c.map f.continuous) (posLengthHomeomorph x γ) :=
-  Prod.ext (Subtype.ext (length_map f rfl γ.val)) (toPath_map f γ.val)
+lengths times the fixed-interval loop map `ContinuousMap.loopMap f hf`. -/
+theorem posLengthHomeomorph_posLengthMap {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (γ : (length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x))) :
+    posLengthHomeomorph y (posLengthMap f hf γ) =
+      Prod.map id (f.loopMap hf) (posLengthHomeomorph x γ) :=
+  Prod.ext (Subtype.ext (length_map f hf γ.val))
+    (Path.ext (funext fun s ↦ by simp [toPath_apply]))
 
 end MooreLoopSpace
 

@@ -144,25 +144,26 @@ theorem not_forall_isHurewiczFibration_map :
 
 section Fiber
 
-variable {Y : Type v} [TopologicalSpace Y] (f : C(X, Y)) {L : ℝ≥0}
+variable {Y : Type v} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) {L : ℝ≥0}
 
 /-- Every point of a Moore loop in the fibre of the Moore loop map over the constant loop of
 length `L` lies in the fibre of `f`. -/
 private theorem apply_toPath_mem_preimage_singleton
-    (γ : (map f rfl ⁻¹' {constOfLength (f x) L} : Set (MooreLoopSpace X x))) (s : I) :
-    γ.val.toPath s ∈ f ⁻¹' {f x} := by
+    (γ : (map f hf ⁻¹' {constOfLength y L} : Set (MooreLoopSpace X x))) (s : I) :
+    γ.val.toPath s ∈ f ⁻¹' {y} := by
+  subst hf
   have hγ : map f rfl γ.val = constOfLength (f x) L := γ.property
   have h := congrArg (fun δ : MooreLoopSpace Y (f x) ↦ δ.toPath s) hγ
   simpa [toPath_map] using h
 
-/-- A loop in the fibre `f ⁻¹' {f x}`, run in time `L > 0`, is a Moore loop in the fibre of the
+/-- A loop in the fibre `f ⁻¹' {y}`, run in time `L > 0`, is a Moore loop in the fibre of the
 Moore loop map of `f` over the constant loop of length `L`. -/
 private theorem map_posLengthHomeomorph_symm_eq_constOfLength (hL : 0 < L)
-    (c : Path (⟨x, rfl⟩ : f ⁻¹' {f x}) ⟨x, rfl⟩) :
-    map f rfl ((posLengthHomeomorph x).symm (⟨L, hL⟩, c.map continuous_subtypeVal)).val =
-      constOfLength (f x) L := by
-  -- every value of the extended loop lies in the fibre `f ⁻¹' {f x}`
-  have hmem (r : ℝ) : (c.map continuous_subtypeVal).extend r ∈ f ⁻¹' {f x} := by
+    (c : Path (⟨x, hf⟩ : f ⁻¹' {y}) ⟨x, hf⟩) :
+    map f hf ((posLengthHomeomorph x).symm (⟨L, hL⟩, c.map continuous_subtypeVal)).val =
+      constOfLength y L := by
+  -- every value of the extended loop lies in the fibre `f ⁻¹' {y}`
+  have hmem (r : ℝ) : (c.map continuous_subtypeVal).extend r ∈ f ⁻¹' {y} := by
     obtain ⟨s, hs⟩ := (Path.extend_range (c.map continuous_subtypeVal)).subset
       (Set.mem_range_self r)
     exact hs ▸ (c s).property
@@ -175,18 +176,18 @@ private theorem map_posLengthHomeomorph_symm_eq_constOfLength (hL : 0 < L)
 variable (x) in
 /-- **The fibre of the Moore loop map over a constant loop of positive length is the loop space of
 the fibre**: for `L > 0`, the Moore loops at `x` that `f` sends to the constant loop of length `L`
-at `f x` are, through their reparametrization to the unit interval, the loops at `x` in the fibre
-`f ⁻¹' {f x}`. Over the unit, the fibre is a single point instead
+at `y = f x` are, through their reparametrization to the unit interval, the loops at `x` in the
+fibre `f ⁻¹' {y}`. Over the unit, the fibre is a single point instead
 (`TauCeti.MooreLoopSpace.map_eq_one_iff`). -/
 def fiberConstOfLengthHomeomorph (hL : 0 < L) :
-    (map f rfl ⁻¹' {constOfLength (f x) L} : Set (MooreLoopSpace X x)) ≃ₜ
-      Path (⟨x, rfl⟩ : f ⁻¹' {f x}) ⟨x, rfl⟩ where
-  toFun γ := γ.val.toPath.codRestrict (x := ⟨x, rfl⟩) (y := ⟨x, rfl⟩)
-    (apply_toPath_mem_preimage_singleton f γ)
+    (map f hf ⁻¹' {constOfLength y L} : Set (MooreLoopSpace X x)) ≃ₜ
+      Path (⟨x, hf⟩ : f ⁻¹' {y}) ⟨x, hf⟩ where
+  toFun γ := γ.val.toPath.codRestrict (x := ⟨x, hf⟩) (y := ⟨x, hf⟩)
+    (apply_toPath_mem_preimage_singleton f hf γ)
   invFun c := ⟨((posLengthHomeomorph x).symm (⟨L, hL⟩, c.map continuous_subtypeVal)).val,
-    map_posLengthHomeomorph_symm_eq_constOfLength f hL c⟩
+    map_posLengthHomeomorph_symm_eq_constOfLength f hf hL c⟩
   left_inv γ := by
-    have hγ : map f rfl γ.val = constOfLength (f x) L := γ.property
+    have hγ : map f hf γ.val = constOfLength y L := γ.property
     have hlen : γ.val.length = L := by simpa using congrArg length hγ
     refine Subtype.ext ((congrArg (fun c ↦ ((posLengthHomeomorph x).symm (⟨L, hL⟩, c)).val)
       ?_).trans (coe_posLengthHomeomorph_symm_mk_toPath γ.val hL hlen))
@@ -196,8 +197,8 @@ def fiberConstOfLengthHomeomorph (hL : 0 < L) :
   continuous_toFun := Path.continuous_uncurry_iff.1 <| continuous_induced_rng.2 <|
     ((Path.continuous_uncurry_iff.2 continuous_toPath).comp
       (continuous_subtypeVal.prodMap continuous_id)).congr fun γs ↦
-        (Path.codRestrict_coe (x := ⟨x, rfl⟩) (y := ⟨x, rfl⟩) _
-          (apply_toPath_mem_preimage_singleton f γs.1) γs.2).symm
+        (Path.codRestrict_coe (x := ⟨x, hf⟩) (y := ⟨x, hf⟩) _
+          (apply_toPath_mem_preimage_singleton f hf γs.1) γs.2).symm
   continuous_invFun := ((posLengthHomeomorph x).symm.continuous.comp
     (continuous_const.prodMk (continuous_loopMap continuous_subtypeVal _))).subtypeVal.subtype_mk
       _
@@ -206,16 +207,17 @@ def fiberConstOfLengthHomeomorph (hL : 0 < L) :
 reparametrization `toPath γ` of `γ` to the unit interval. -/
 @[simp]
 theorem coe_fiberConstOfLengthHomeomorph_apply (hL : 0 < L)
-    (γ : (map f rfl ⁻¹' {constOfLength (f x) L} : Set (MooreLoopSpace X x))) (s : I) :
-    (fiberConstOfLengthHomeomorph x f hL γ s : X) = γ.val.toPath s :=
-  Path.codRestrict_coe (x := ⟨x, rfl⟩) (y := ⟨x, rfl⟩) _ (apply_toPath_mem_preimage_singleton f γ) s
+    (γ : (map f hf ⁻¹' {constOfLength y L} : Set (MooreLoopSpace X x))) (s : I) :
+    (fiberConstOfLengthHomeomorph x f hf hL γ s : X) = γ.val.toPath s :=
+  Path.codRestrict_coe (x := ⟨x, hf⟩) (y := ⟨x, hf⟩) _
+    (apply_toPath_mem_preimage_singleton f hf γ) s
 
 /-- The inverse of `fiberConstOfLengthHomeomorph` runs a loop of the fibre in time `L`, by the
 inverse of `posLengthHomeomorph`. -/
 @[simp]
 theorem coe_fiberConstOfLengthHomeomorph_symm_apply (hL : 0 < L)
-    (c : Path (⟨x, rfl⟩ : f ⁻¹' {f x}) ⟨x, rfl⟩) :
-    ((fiberConstOfLengthHomeomorph x f hL).symm c : MooreLoopSpace X x) =
+    (c : Path (⟨x, hf⟩ : f ⁻¹' {y}) ⟨x, hf⟩) :
+    ((fiberConstOfLengthHomeomorph x f hf hL).symm c : MooreLoopSpace X x) =
       ((posLengthHomeomorph x).symm (⟨L, hL⟩, c.map continuous_subtypeVal)).val :=
   (rfl)
 
@@ -236,14 +238,16 @@ product of the identity of `(0, ∞)` with the fixed-interval loop map
 `TauCeti.IsHurewiczFibration.loopMap`. Without the restriction to positive lengths the statement
 fails (`TauCeti.MooreLoopSpace.not_forall_isHurewiczFibration_map`). -/
 theorem IsHurewiczFibration.posLengthMap (hp : IsHurewiczFibration.{w} p) (e : E) :
-    IsHurewiczFibration.{w} (MooreLoopSpace.posLengthMap ⟨p, hp.continuous⟩ (x := e)) := by
-  have h : ⇑(MooreLoopSpace.posLengthMap ⟨p, hp.continuous⟩ (x := e)) =
+    IsHurewiczFibration.{w} (MooreLoopSpace.posLengthMap ⟨p, hp.continuous⟩ rfl (x := e)) := by
+  have h : ⇑(MooreLoopSpace.posLengthMap ⟨p, hp.continuous⟩ rfl (x := e)) =
       (posLengthHomeomorph (p e)).symm ∘
-        Prod.map id (fun γ : Ω E e ↦ (γ.map hp.continuous : Ω B (p e))) ∘
+        Prod.map (Homeomorph.refl _) (fun γ : Ω E e ↦ (γ.map hp.continuous : Ω B (p e))) ∘
           posLengthHomeomorph e := by
     funext γ
-    rw [Function.comp_apply, Function.comp_apply, Homeomorph.eq_symm_apply]
-    exact posLengthHomeomorph_posLengthMap ⟨p, hp.continuous⟩ γ
+    rw [Function.comp_apply, Function.comp_apply, Homeomorph.eq_symm_apply,
+      posLengthHomeomorph_posLengthMap, Homeomorph.refl_apply]
+    -- at `rfl`, the loop map `ContinuousMap.loopMap` is pointwise `Path.map`
+    exact Prod.ext rfl (Path.ext (funext fun s ↦ by simp))
   rw [h]
   exact (posLengthHomeomorph (p e)).symm.isHurewiczFibration.comp
     (((Homeomorph.refl (Set.Ioi (0 : ℝ≥0))).isHurewiczFibration.prodMap
@@ -257,7 +261,8 @@ is a Hurewicz fibration. -/
 theorem IsHurewiczFibration.posLengthMap_posLengthMap (hp : IsHurewiczFibration.{w} p) (e : E)
     (c : (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace E e))) :
     IsHurewiczFibration.{w}
-      (MooreLoopSpace.posLengthMap (MooreLoopSpace.posLengthMap ⟨p, hp.continuous⟩) (x := c)) :=
+      (MooreLoopSpace.posLengthMap (MooreLoopSpace.posLengthMap ⟨p, hp.continuous⟩ rfl) rfl
+        (x := c)) :=
   (hp.posLengthMap e).posLengthMap c
 
 end TauCeti
