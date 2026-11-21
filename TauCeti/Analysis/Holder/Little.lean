@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import TauCeti.Analysis.Calculus.ContDiff.BoundedDerivatives
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Holder.Normed
-public import TauCeti.Topology.ContinuousMap.Bounded.Smooth
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
@@ -386,6 +386,7 @@ theorem isClosed_littleHolder :
 /-- The little Hölder space `h^{k,α}` of a complete space is a Banach space. -/
 instance [CompleteSpace F] : CompleteSpace (littleHolder k α E F) :=
   isClosed_littleHolder.completeSpace_coe
+
 variable (k α E F) in
 /-- The bounded `C^{k,α}` maps that are smooth with all derivatives bounded, as a subspace of
 `CkHolderSpace k α E F`: the preimage of `TauCeti.smoothBoundedDerivatives` under the coercion to
@@ -405,14 +406,6 @@ theorem mem_smoothBoundedDerivatives_iff {g : CkHolderSpace k α E F} :
     g ∈ smoothBoundedDerivatives k α E F ↔
       ContDiff ℝ ∞ g ∧ ∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C :=
   TauCeti.mem_smoothBoundedDerivatives ℝ E F
-
-
-/-- A bounded `C^{k,α}` map whose `k`-th derivative is Hölder of a larger exponent `β > α` lies in
-`h^{k,α}`. -/
-theorem mem_littleHolder_of_holderWith {f : CkHolderSpace k α E F} {C β : ℝ≥0}
-    (hf : HolderWith C β (_root_.iteratedFDeriv ℝ k f)) (hαβ : α < β) :
-    f ∈ littleHolder k α E F :=
-  mem_littleHolder_iff.2 (hf.memLittleHolder hαβ)
 
 /-- For `α < 1`, a bounded `C^{k,α}` map that is `C^{k+1}` with bounded `(k+1)`-th derivative
 lies in `h^{k,α}`, since its `k`-th derivative is Lipschitz. -/
