@@ -44,6 +44,7 @@ closed graph theorem, applied in each variable in turn.
 * `TauCeti.Wkp.mulTopL_comm`, `TauCeti.Wkp.mulTopL_assoc`: the product is commutative and
   associative.
 * `TauCeti.Wkp.lowerOrder_mulTopL`: it commutes with forgetting the highest derivative.
+* `TauCeti.Wkp.lineDerivL_mulTopL`: the Leibniz rule for the bundled product.
 
 ## References
 
@@ -279,6 +280,20 @@ theorem lowerOrder_mulTopL (k : ℕ) (u w : Wkp mu Omega ∞ (k + 1)) :
     lowerOrder k (mulTopL (k + 1) u w) = mulTopL k (lowerOrder k u) (lowerOrder k w) := by
   refine eq_mulTopL_iff.2 ?_
   simpa only [← value_succ] using value_mulTopL_ae (k + 1) u w
+
+/-- **The Leibniz rule for `mulTopL`.** The directional derivative of a product in
+`W^{k+1,∞}(Ω)` is `∂ᵥ(u w) = (∂ᵥu) w + u (∂ᵥw)`, computed in `W^{k,∞}(Ω)`. -/
+theorem lineDerivL_mulTopL (v : E) (k : ℕ) (u w : Wkp mu Omega ∞ (k + 1)) :
+    lineDerivL v k (mulTopL (k + 1) u w) =
+      mulTopL k (lineDerivL v k u) (lowerOrder k w) +
+        mulTopL k (lowerOrder k u) (lineDerivL v k w) := by
+  refine lineDerivL_eq_of_hasWeakLineDerivOn (((hasWeakLineDerivOn_value_mul_top u w v).congr_ae
+    (value_mulTopL_ae (k + 1) u w).symm).congr_ae_deriv ?_)
+  filter_upwards [value_add_ae k (mulTopL k (lineDerivL v k u) (lowerOrder k w))
+      (mulTopL k (lowerOrder k u) (lineDerivL v k w)),
+    value_mulTopL_ae k (lineDerivL v k u) (lowerOrder k w),
+    value_mulTopL_ae k (lowerOrder k u) (lineDerivL v k w)] with x h₁ h₂ h₃
+  rw [h₁, Pi.add_apply, h₂, h₃, ← value_succ, ← value_succ]
 
 end Wkp
 
