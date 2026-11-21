@@ -360,13 +360,6 @@ theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
 
 /-! ### Vertices -/
 
-/-- A point of `(ℝ²)*` is determined by its coordinates `x(e₁)` and `x(e₂)`. -/
-private theorem strongDual_eq_smul_proj_add_smul_proj (x : StrongDual ℝ (Fin 2 → ℝ)) :
-    x = x (Pi.single 0 1) • ContinuousLinearMap.proj 0 +
-      x (Pi.single 1 1) • ContinuousLinearMap.proj 1 :=
-  ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin 2)).ext fun l ↦ by
-    fin_cases l <;> simp
-
 /-- Every vertex of the trapezoid is one of `(0, 0)`, `(a, 0)`, `(0, b)` and `(a - k b, b)`: it is
 the meeting point of a pair of adjacent facets. -/
 private theorem extremePoints_facetPolyhedron_hirzebruch_subset (hb : 0 < b) (ha : 0 < a)
@@ -381,16 +374,27 @@ private theorem extremePoints_facetPolyhedron_hirzebruch_subset (hb : 0 < b) (ha
       (hirzebruchNormal k)) (hirzebruchSupport a b) x := by rw [hA]; simp
   have hj : j ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
       (hirzebruchNormal k)) (hirzebruchSupport a b) x := by rw [hA]; simp
-  rw [strongDual_eq_smul_proj_add_smul_proj x]
   obtain h | h | h | h := hij <;> obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 h
-  · simp [zero_mem_activeSet_hirzebruch_iff.1 hi, one_mem_activeSet_hirzebruch_iff.1 hj]
-  · simp [zero_mem_activeSet_hirzebruch_iff.1 hi, two_mem_activeSet_hirzebruch_iff.1 hj]
-  · have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
-    rw [one_mem_activeSet_hirzebruch_iff.1 hi] at h₃ ⊢
-    simp [show x (Pi.single 0 1) = a by linarith]
-  · have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
-    rw [two_mem_activeSet_hirzebruch_iff.1 hi] at h₃ ⊢
-    simp [show x (Pi.single 0 1) = a - k * b by linarith]
+  · refine .inl ?_
+    have h₀ := zero_mem_activeSet_hirzebruch_iff.1 hi
+    have h₁ := one_mem_activeSet_hirzebruch_iff.1 hj
+    exact strongDual_ext fun l ↦ by fin_cases l <;> simp [h₀, h₁]
+  · refine .inr <| .inr <| .inl ?_
+    have h₀ := zero_mem_activeSet_hirzebruch_iff.1 hi
+    have h₂ := two_mem_activeSet_hirzebruch_iff.1 hj
+    exact strongDual_ext fun l ↦ by fin_cases l <;> simp [h₀, h₂]
+  · refine .inr <| .inl ?_
+    have h₁ := one_mem_activeSet_hirzebruch_iff.1 hi
+    have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
+    rw [h₁] at h₃
+    exact strongDual_ext fun l ↦ by
+      fin_cases l <;> simp [h₁, show x (Pi.single 0 1) = a by linarith]
+  · refine .inr <| .inr <| .inr ?_
+    have h₂ := two_mem_activeSet_hirzebruch_iff.1 hi
+    have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
+    rw [h₂] at h₃
+    exact strongDual_ext fun l ↦ by
+      fin_cases l <;> simp [h₂, show x (Pi.single 0 1) = a - k * b by linarith]
 
 /-- **The vertices of the Hirzebruch trapezoid.** For `0 < b`, `0 < a` and `k b < a`, the
 trapezoid `{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` has exactly the four vertices
@@ -417,9 +421,8 @@ theorem extremePoints_facetPolyhedron_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab 
     rw [facetPairing_apply]
     exact hw j hj
   -- A functional on `ℝ²` vanishing on `e₁` and `e₂` is zero.
-  suffices w (Pi.single 0 1) = 0 ∧ w (Pi.single 1 1) = 0 by
-    rw [strongDual_eq_smul_proj_add_smul_proj w, this.1, this.2]
-    simp
+  suffices w (Pi.single 0 1) = 0 ∧ w (Pi.single 1 1) = 0 from
+    strongDual_ext fun l ↦ by fin_cases l <;> simp [this.1, this.2]
   rcases hx with rfl | rfl | rfl | rfl
   · have h₀ := hw' 0 (zero_mem_activeSet_hirzebruch_iff.2 (by simp))
     have h₁ := hw' 1 (one_mem_activeSet_hirzebruch_iff.2 (by simp))

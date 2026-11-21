@@ -154,7 +154,7 @@ private theorem span_simplexNormal_compl [Finite κ] (o : Option κ) :
   · exact hsingle k hk
 
 /-- A functional on `ℝ^κ` is determined by its values on the coordinate vectors `e k`. -/
-private theorem strongDual_ext [Finite κ] {x y : StrongDual ℝ (κ → ℝ)}
+theorem strongDual_ext [Finite κ] {x y : StrongDual ℝ (κ → ℝ)}
     (h : ∀ k, x (Pi.single k 1) = y (Pi.single k 1)) : x = y :=
   ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ κ).ext fun k ↦ by simpa using h k
 
