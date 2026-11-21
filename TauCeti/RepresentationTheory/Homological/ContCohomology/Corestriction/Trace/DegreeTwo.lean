@@ -55,11 +55,12 @@ section Cochains
 variable (w : G → U) (hw : Continuous w) (hwmul : ∀ (u : U) (g : G), w ((u : G) * g) = u * w g)
   {c : U × U → M} (hc : Continuous c)
 
+omit [ContinuousSMul G M] in
 /-- **The trace of the inverse Shapiro cochain is the corestriction cochain.** For the transversal
 adapted to the factorization `w`, the trace `Coind_U^G M → M` of the inverse Shapiro `2`-cochain
 of `c` is, at every pair `(γ, η)`, the degree-two corestriction cochain of `c`. No cocycle
-condition on `c` is needed. -/
-theorem trace_coindCochain2 (γ η : G) :
+condition on `c` is needed, and only the action of `U` on `M` has to be continuous. -/
+theorem trace_coindCochain2 [ContinuousSMul U M] (γ η : G) :
     DiscreteCoind.trace G U M (coindCochain2 w c hw hwmul hc (γ, η)) =
       cochainsCor2 G M U (factorizationTransversal w) (factorizationTransversal_mk w) c (γ, η) := by
   rw [DiscreteCoind.trace_eq_sum_transversal _ (factorizationTransversal_mk w),
@@ -67,16 +68,10 @@ theorem trace_coindCochain2 (γ η : G) :
   refine Finset.sum_congr rfl fun x _ => congrArg (factorizationTransversal w x • ·) ?_
   have hγη : (factorizationTransversal w x)⁻¹ * γ * η =
       (factorizationTransversal w x)⁻¹ * (γ * η) := mul_assoc _ _ _
-  have hword : (⟨lWord U (factorizationTransversal w) x (γ * η),
-      lWord_mem U _ (factorizationTransversal_mk w) x (γ * η)⟩ : U) =
-      ⟨lWord U (factorizationTransversal w) x γ,
-        lWord_mem U _ (factorizationTransversal_mk w) x γ⟩ *
-      ⟨lWord U (factorizationTransversal w) (γ⁻¹ • x) η,
-        lWord_mem U _ (factorizationTransversal_mk w) (γ⁻¹ • x) η⟩ :=
-    Subtype.ext (lWord_mul_lWord U _ x γ η).symm
   rw [coindCochain2_apply, apply_inv_factorizationTransversal w hwmul, hγη,
     apply_inv_factorizationTransversal_mul w hwmul,
-    apply_inv_factorizationTransversal_mul w hwmul, hword, homogeneous2_one_left,
+    apply_inv_factorizationTransversal_mul w hwmul,
+    ← mk_lWord_mul_mk_lWord U _ (factorizationTransversal_mk w) x γ η, homogeneous2_one_left,
     inv_mul_cancel_left]
 
 end Cochains
@@ -103,7 +98,7 @@ theorem explicitCor2_eq_explicitCoeff2_trace :
         (factorizationTransversal_mk w) hU, explicitCor2Transversal_mk]
     congr 1
     refine Subtype.ext (funext fun ⟨γ, η⟩ => ?_)
-    rw [coe_cocyclesCor2, ← trace_coindCochain2 w hw hwmul (mem_Z2_iff.1 c.2).1 γ η]
+    rw [coe_cocyclesCor2, ← trace_coindCochain2 w hw hwmul (mem_Z2_iff.1 c.property).1 γ η]
     -- `rw [cocyclesMap2_apply]` fails here: `explicitCoeff2` states its equivariance proof through
     -- the `MulActionHom` coercion of the trace, so the motive is not type-correct at reducible
     -- transparency. Unifying against the lemma instead leaves only the coercions to unfold.

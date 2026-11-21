@@ -137,16 +137,17 @@ sections over the two pieces which agree on their overlap are the restrictions o
 `W` by the two pieces. -/
 theorem isSheafFor_ofArrows_inf_laurentCoverOpen_of_injective {W : Opens ↥(spa Aplus)} (f : A)
     (hinj : Function.Injective fun (x : presentationLimit (P := P) Aplus W) (b : Bool) ↦
-      (presentationLimitMap (P := P) (inf_le_left : W ⊓ laurentCoverOpen Aplus f b ≤ W)).hom.1 x)
+      (presentationLimitMap (P := P) (inf_le_left : W ⊓ laurentCoverOpen Aplus f b ≤ W)).hom.val x)
     (hex : ∀ x : ∀ b, presentationLimit (P := P) Aplus (W ⊓ laurentCoverOpen Aplus f b),
       (presentationLimitMap (P := P) (inf_le_left :
-          (W ⊓ laurentCoverOpen Aplus f true) ⊓ (W ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1
+          (W ⊓ laurentCoverOpen Aplus f true) ⊓ (W ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val
             (x true) =
         (presentationLimitMap (P := P) (inf_le_right :
-          (W ⊓ laurentCoverOpen Aplus f true) ⊓ (W ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1
+          (W ⊓ laurentCoverOpen Aplus f true) ⊓ (W ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val
             (x false) →
       ∃ a : presentationLimit (P := P) Aplus W, ∀ b,
-        (presentationLimitMap (P := P) (inf_le_left : W ⊓ laurentCoverOpen Aplus f b ≤ W)).hom.1 a =
+        (presentationLimitMap (P := P) (inf_le_left : W ⊓ laurentCoverOpen Aplus f b ≤ W)).hom.val a
+            =
           x b) :
     (Presieve.ofArrows (fun b ↦ W ⊓ laurentCoverOpen Aplus f b)
       fun _ ↦ homOfLE inf_le_left).IsSheafFor

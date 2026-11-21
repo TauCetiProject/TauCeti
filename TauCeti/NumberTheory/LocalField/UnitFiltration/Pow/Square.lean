@@ -132,7 +132,7 @@ def unitFiltrationSquareCosetHom (h2 : (2 : K) ≠ 0) (k : ℕ) :
           (unitFiltration K (2 * natCastValuation K 2 h2 - 2 * k)) :=
   (QuotientGroup.mk' _).comp
     { toFun := fun z ↦ ⟨(z : Kˣ) ^ 2,
-        Nat.mul_sub 2 _ k ▸ sq_mem_unitFiltration_two_mul h2 (Nat.sub_le _ _) z.2⟩
+        Nat.mul_sub 2 _ k ▸ sq_mem_unitFiltration_two_mul h2 (Nat.sub_le _ _) z.property⟩
       map_one' := by ext; simp
       map_mul' := fun x y ↦ by ext; simp [mul_pow] }
 
@@ -142,7 +142,7 @@ theorem unitFiltrationSquareCosetHom_apply (h2 : (2 : K) ≠ 0) (k : ℕ)
     (z : unitFiltration K (natCastValuation K 2 h2 - k)) :
     unitFiltrationSquareCosetHom h2 k z =
       QuotientGroup.mk ⟨(z : Kˣ) ^ 2,
-        Nat.mul_sub 2 _ k ▸ sq_mem_unitFiltration_two_mul h2 (Nat.sub_le _ _) z.2⟩ := by
+        Nat.mul_sub 2 _ k ▸ sq_mem_unitFiltration_two_mul h2 (Nat.sub_le _ _) z.property⟩ := by
   rw [unitFiltrationSquareCosetHom, MonoidHom.comp_apply, QuotientGroup.mk'_apply,
     MonoidHom.coe_mk, OneHom.coe_mk]
 
@@ -156,12 +156,13 @@ theorem range_unitFiltrationSquareCosetHom (h2 : (2 : K) ≠ 0) (k : ℕ) :
       {q | ∃ u : unitFiltration K (2 * natCastValuation K 2 h2 - 2 * k),
         QuotientGroup.mk u = q ∧ IsSquare (u : Kˣ)} := by
   ext q
-  refine ⟨fun ⟨z, hz⟩ ↦ hz ▸ ⟨_, (unitFiltrationSquareCosetHom_apply h2 k z).symm, ⟨z.1, sq z.1⟩⟩,
+  refine ⟨fun ⟨z, hz⟩ ↦ hz ▸ ⟨_, (unitFiltrationSquareCosetHom_apply h2 k z).symm, ⟨z.val,
+      sq z.val⟩⟩,
     ?_⟩
   rintro ⟨u, rfl, ⟨z, hz⟩⟩
-  have hz2 : z ^ 2 = u.1 := by simpa only [sq] using hz.symm
+  have hz2 : z ^ 2 = u.val := by simpa only [sq] using hz.symm
   refine ⟨⟨z, mem_unitFiltration_of_sq_mem_two_mul h2 (Nat.sub_le _ _)
-    (by rw [Nat.mul_sub, hz2]; exact u.2)⟩, ?_⟩
+    (by rw [Nat.mul_sub, hz2]; exact u.property)⟩, ?_⟩
   rw [unitFiltrationSquareCosetHom_apply]
   exact congrArg QuotientGroup.mk (Subtype.ext hz2)
 
@@ -203,8 +204,8 @@ theorem relIndex_unitFiltration_ker_unitFiltrationSquareCosetHom (h2 : (2 : K) �
       Valuation.map_neg, hv2] at h1
     exact (pow_lt_pow_right_of_lt_one₀ (Valuation.integer.v_irreducible_pos hπ) hπ1
       (Nat.lt_succ_self e)).not_ge h1
-  · have hw2 : (w.1.1 : Kˣ) ^ 2 ∈ unitFiltration K (2 * e + 1) := by
-      have hw_ker := MonoidHom.mem_ker.mp w.2
+  · have hw2 : (w.val.val : Kˣ) ^ 2 ∈ unitFiltration K (2 * e + 1) := by
+      have hw_ker := MonoidHom.mem_ker.mp w.property
       rwa [unitFiltrationSquareCosetHom_apply, QuotientGroup.eq_one_iff,
         Subgroup.mem_subgroupOf] at hw_ker
     refine (mem_or_neg_mem_unitFiltration_succ_of_sq_mem h2 hw2).symm.imp

@@ -13,6 +13,7 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.PSeries
 import Mathlib.Data.Nat.Prime.Int
+import TauCeti.NumberTheory.Chebyshev.PrimeTail
 
 /-!
 # Finite sums over prime powers
@@ -22,16 +23,17 @@ by the prime base: the prime powers `p ^ k ≤ N` with `k ≥ 1` are exactly the
 `p ≤ N` and an exponent `1 ≤ k ≤ Nat.log p N`. This is the finite cutoff identity used to compare
 partial sums of a Dirichlet series supported on prime powers with finite products over primes.
 
-For each prime `p ≤ N`, the first omitted power `p ^ (Nat.log p N + 1)` exceeds `N`. Splitting
-the primes `p ≤ N` at `√N` bounds the sum of their reciprocals by `3 / √N`; in particular, it
-tends to zero as `N → ∞`, controlling the tails left out by the regrouping.
+For each prime `p ≤ N`, the first omitted power `p ^ (Nat.log p N + 1)` exceeds `N`. The sum of
+their reciprocals over the primes `p ≤ N` tends to zero as `N → ∞`, and more quantitatively is
+bounded by `5 / √x` for `N = ⌊x⌋₊`, which controls the tails left out by the regrouping.
 
 ## Main results
 
 * `Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log`: the regrouping of a finite sum of a function
   supported on the prime powers.
-* `Nat.sum_primesLE_inv_pow_log_succ_le`: `∑ p ≤ N, 1 / p ^ (Nat.log p N + 1) ≤ 3 / √N`.
 * `Nat.tendsto_sum_primesLE_inv_pow_log_succ`: `∑ p ≤ N, 1 / p ^ (Nat.log p N + 1)` tends to `0`.
+* `TauCeti.sum_primesLE_inv_pow_log_succ_le`: `∑ p ≤ ⌊x⌋₊, 1 / p ^ (Nat.log p ⌊x⌋₊ + 1) ≤ 5 / √x`
+  for every real `x`.
 
 ## References
 
@@ -73,57 +75,6 @@ theorem sum_Icc_eq_sum_primesLE_sum_Icc_log {M : Type*} [AddCommMonoid M] {f : �
   _ = _ := sum_congr rfl fun p hp ↦
     sum_image fun _ _ _ _ h ↦ Nat.pow_right_injective (two_le_of_mem_primesLE hp) h
 
-/-- **Quantitative bound on the omitted prime-power reciprocals.** Splitting `p ≤ N` at `√N`,
-each prime `p ≤ √N` contributes less than `1 / N` (for `1 / √N` in total), while each prime
-`p > √N` has `Nat.log p N + 1 ≥ 2` and contributes at most `1 / p ^ 2` (for `2 / √N` in total). -/
-theorem sum_primesLE_inv_pow_log_succ_le (N : ℕ) :
-    ∑ p ∈ primesLE N, ((p : ℝ) ^ (p.log N + 1))⁻¹ ≤ 3 / √(N : ℝ) := by
-  rcases eq_or_ne N 0 with rfl | hN0
-  · simp [primesLE]
-  have hN1 : 1 ≤ N := Nat.pos_of_ne_zero hN0
-  set M := N.sqrt
-  have hM1 : 1 ≤ M := Nat.sqrt_pos.mpr hN1
-  have hNpos : (0 : ℝ) < N := mod_cast hN1
-  have hsN : (0 : ℝ) < √(N : ℝ) := Real.sqrt_pos.mpr hNpos
-  -- Primes `p ≤ M` each contribute at most `1 / N`, and there are at most `M ≤ √N` of them.
-  have hsmall : ∑ p ∈ primesLE N with p ≤ M, ((p : ℝ) ^ (p.log N + 1))⁻¹ ≤ 1 / √(N : ℝ) := calc
-    _ ≤ ∑ p ∈ primesLE N with p ≤ M, (N : ℝ)⁻¹ := sum_le_sum fun p hp ↦
-      inv_anti₀ hNpos (mod_cast (lt_pow_succ_log_self (one_lt_of_mem_primesLE
-        (mem_filter.mp hp).1) N).le)
-    _ ≤ ∑ _p ∈ Icc 1 M, (N : ℝ)⁻¹ := sum_le_sum_of_subset_of_nonneg
-      (fun p hp ↦ mem_Icc.mpr ⟨(prime_of_mem_primesLE (mem_filter.mp hp).1).pos,
-        (mem_filter.mp hp).2⟩) fun _ _ _ ↦ by positivity
-    _ = (M : ℝ) / N := by simp [Nat.card_Icc, div_eq_mul_inv]
-    _ ≤ √(N : ℝ) / (√(N : ℝ) * √(N : ℝ)) := by
-      rw [Real.mul_self_sqrt hNpos.le]
-      exact div_le_div_of_nonneg_right
-        (Real.le_sqrt_of_sq_le (by rw [sq]; exact_mod_cast Nat.sqrt_le N)) hNpos.le
-    _ = 1 / √(N : ℝ) := by rw [div_mul_cancel_left₀ hsN.ne', one_div]
-  -- Primes `p > M` have exponent `≥ 2`, and `∑_{M < k ≤ N} 1 / k ^ 2 ≤ 1 / M ≤ 2 / √N`.
-  have hlarge : ∑ p ∈ primesLE N with ¬p ≤ M, ((p : ℝ) ^ (p.log N + 1))⁻¹ ≤ 2 / √(N : ℝ) := calc
-    _ ≤ ∑ p ∈ primesLE N with ¬p ≤ M, ((p : ℝ) ^ 2)⁻¹ := sum_le_sum fun p hp ↦ by
-      have hp' := (mem_filter.mp hp).1
-      have hp1 := one_lt_of_mem_primesLE hp'
-      have hlog : 1 ≤ p.log N := log_pos hp1 (le_of_mem_primesLE hp')
-      exact inv_anti₀ (by positivity) (pow_le_pow_right₀ (mod_cast hp1.le) (by lia))
-    _ ≤ ∑ k ∈ Ioc M N, ((k : ℝ) ^ 2)⁻¹ := sum_le_sum_of_subset_of_nonneg
-      (fun p hp ↦ mem_Ioc.mpr ⟨not_le.mp (mem_filter.mp hp).2,
-        le_of_mem_primesLE (mem_filter.mp hp).1⟩) fun _ _ _ ↦ by positivity
-    _ ≤ (M : ℝ)⁻¹ := (sum_Ioc_inv_sq_le_sub (by lia) (sqrt_le_self N)).trans
-      (sub_le_self _ (inv_nonneg.mpr (Nat.cast_nonneg N)))
-    _ ≤ 2 / √(N : ℝ) := by
-      have hM1_real : (1 : ℝ) ≤ M := Nat.one_le_cast.mpr hM1
-      have hNle : (N : ℝ) ≤ ((M + 1 : ℕ) : ℝ) ^ 2 := by
-        rw [sq]
-        exact_mod_cast (lt_succ_sqrt N).le
-      have h2M : √(N : ℝ) ≤ 2 * (M : ℝ) := Real.sqrt_le_iff.mpr ⟨by positivity,
-        hNle.trans (by push_cast; nlinarith)⟩
-      rw [inv_eq_one_div, div_le_div_iff₀ (zero_lt_one.trans_le hM1_real) hsN]
-      linarith
-  rw [← sum_filter_add_sum_filter_not (primesLE N) (· ≤ M)]
-  calc _ ≤ 1 / √(N : ℝ) + 2 / √(N : ℝ) := _root_.add_le_add hsmall hlarge
-    _ = 3 / √(N : ℝ) := by ring
-
 /-- The reciprocals of the first omitted prime powers `p ^ (Nat.log p N + 1)`, summed over the
 primes `p ≤ N`, tend to `0`: each is less than `1 / N`, and they are dominated by the summable
 `1 / p ^ 2`. -/
@@ -161,3 +112,63 @@ theorem tendsto_sum_primesLE_inv_pow_log_succ :
       positivity
 
 end Nat
+
+namespace TauCeti
+
+/-- Quantitative refinement of `Nat.tendsto_sum_primesLE_inv_pow_log_succ`: for every real `x`,
+the reciprocals of the first omitted prime powers `p ^ (log_p ⌊x⌋₊ + 1)` sum to at most
+`5 / √x`. -/
+theorem sum_primesLE_inv_pow_log_succ_le (x : ℝ) :
+    (∑ p ∈ Nat.primesLE ⌊x⌋₊, ((p : ℝ) ^ (p.log ⌊x⌋₊ + 1))⁻¹) ≤ 5 / Real.sqrt x := by
+  rcases lt_or_ge x 2 with hx | hx
+  · have hemp : Nat.primesLE ⌊x⌋₊ = ∅ := eq_empty_iff_forall_notMem.mpr fun p hp ↦ by
+      have hp2 := (Nat.prime_of_mem_primesLE hp).two_le
+      have hple := Nat.le_of_mem_primesLE hp
+      have hx0 : 0 ≤ x := by
+        by_contra hlt
+        have hfl : ⌊x⌋₊ = 0 := Nat.floor_of_nonpos (le_of_not_ge hlt)
+        omega
+      have h2f : (2 : ℝ) ≤ ⌊x⌋₊ := mod_cast hp2.trans hple
+      linarith [Nat.floor_le hx0]
+    rw [hemp, sum_empty]
+    positivity
+  have hx0 : 0 < x := by linarith
+  have hsq : 0 < Real.sqrt x := Real.sqrt_pos_of_pos hx0
+  set P_le := (Nat.primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ (p : ℝ) ≤ Real.sqrt x)
+  set P_gt := (Nat.primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ ¬((p : ℝ) ≤ Real.sqrt x))
+  have h1 : (∑ p ∈ P_le, ((p : ℝ) ^ (p.log ⌊x⌋₊ + 1))⁻¹) ≤ 1 / Real.sqrt x := by
+    have hterm : ∀ p ∈ P_le, ((p : ℝ) ^ (p.log ⌊x⌋₊ + 1))⁻¹ ≤ x⁻¹ := fun p hp ↦ by
+      have hlt := Nat.lt_pow_succ_log_self (Nat.one_lt_of_mem_primesLE (mem_filter.mp hp).1) ⌊x⌋₊
+      have hxlt : x < (p : ℝ) ^ (p.log ⌊x⌋₊ + 1) :=
+        (Nat.lt_floor_add_one x).trans_le (by exact_mod_cast Nat.succ_le_of_lt hlt)
+      exact inv_anti₀ hx0 hxlt.le
+    have hcard : (P_le.card : ℝ) ≤ Real.sqrt x := by
+      have hsub : P_le ⊆ Icc 1 ⌊Real.sqrt x⌋₊ := fun p hp ↦
+        mem_Icc.mpr ⟨(Nat.prime_of_mem_primesLE (mem_filter.mp hp).1).one_le,
+          Nat.le_floor (mem_filter.mp hp).2⟩
+      exact (Nat.cast_le.mpr (card_le_card hsub)).trans (by simp [Nat.floor_le hsq.le])
+    calc (∑ p ∈ P_le, ((p : ℝ) ^ (p.log ⌊x⌋₊ + 1))⁻¹)
+        ≤ ∑ _p ∈ P_le, x⁻¹ := sum_le_sum hterm
+      _ = (P_le.card : ℝ) * x⁻¹ := by simp [nsmul_eq_mul]
+      _ ≤ Real.sqrt x * x⁻¹ := mul_le_mul_of_nonneg_right hcard (by positivity)
+      _ = 1 / Real.sqrt x := by
+          have hsq2 : Real.sqrt x * Real.sqrt x = x := Real.mul_self_sqrt hx0.le
+          field_simp [hsq.ne', hx0.ne']
+          linarith
+  have h2 : (∑ p ∈ P_gt, ((p : ℝ) ^ (p.log ⌊x⌋₊ + 1))⁻¹) ≤ 4 / Real.sqrt x := by
+    have hterm : ∀ p ∈ P_gt, ((p : ℝ) ^ (p.log ⌊x⌋₊ + 1))⁻¹ ≤
+        if p.Prime ∧ Real.sqrt x < (p : ℝ) then ((p : ℝ) ^ 2)⁻¹ else 0 := fun p hp ↦ by
+      obtain ⟨hp1, hp2⟩ := mem_filter.mp hp
+      have hp_prime := Nat.prime_of_mem_primesLE hp1
+      have hp0 : (0 : ℝ) < p := mod_cast hp_prime.pos
+      have hlt : Real.sqrt x < (p : ℝ) := not_le.mp hp2
+      have hlog1 : 1 ≤ p.log ⌊x⌋₊ := Nat.log_pos hp_prime.one_lt (Nat.le_of_mem_primesLE hp1)
+      simp only [hp_prime, hlt, and_self, ↓reduceIte]
+      exact inv_anti₀ (pow_pos hp0 2) (pow_le_pow_right₀ (mod_cast hp_prime.one_le) (by omega))
+    exact (sum_le_sum hterm).trans
+      (((summable_prime_inv_sq_gt (Real.sqrt x)).sum_le_tsum P_gt
+        fun n _ ↦ by split_ifs <;> positivity).trans (tsum_prime_inv_sq_gt_le hsq))
+  rw [← sum_filter_add_sum_filter_not (Nat.primesLE ⌊x⌋₊) (fun p : ℕ ↦ (p : ℝ) ≤ Real.sqrt x)]
+  exact (add_le_add h1 h2).trans_eq (by ring)
+
+end TauCeti

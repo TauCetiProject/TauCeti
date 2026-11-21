@@ -213,7 +213,7 @@ theorem not_summable_absNorm_of_rank_pos (h : 0 < rank K) {𝔞 : Ideal (𝓞 K)
       mul_ne_zero (Units.ne_zero _) ha congr(($h0 : 𝓞 K))⟩
   have hg : Function.Injective g := fun n m hnm ↦
     injective_pow_iff_not_isOfFinOrder.mpr hu <| Units.ext <|
-      mul_right_cancel₀ ha congr((($hnm).1 : 𝓞 K))
+      mul_right_cancel₀ ha congr((($hnm).val : 𝓞 K))
   have hN : (Ideal.absNorm (Ideal.span {a}) : ℂ) ^ (-s) ≠ 0 := by
     rw [Ne, Complex.cpow_eq_zero_iff, Nat.cast_eq_zero, Ideal.absNorm_eq_zero_iff,
       Ideal.span_singleton_eq_bot]
