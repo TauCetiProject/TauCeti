@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.FreeGroup.GenEq.PartitionTable
 public import Mathlib.SetTheory.Cardinal.NatCard
 import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.GenEq.Completeness
 
 /-!
 # Cancellation schemes of a system of equations and inequations
@@ -17,10 +16,10 @@ Let `S` be a finite system of equations `s = 1` and inequations `t ≠ 1` over t
 `F(A)`, in the variables of a finite type `X`. An inequation `t ≠ 1` holds exactly when `t = z`
 for some `z ≠ 1`, so `S` is equivalent to a system of equations in the variables `X` and one new
 *witness* `z_t` for each inequation, together with the conditions `z_t ≠ 1`. This file defines
-the finite family of *cancellation schemes* of `S` and proves that the reduction of `S` to the
-generalised equations of its schemes is correct in both directions: solutions of the generalised
-equations of the schemes give solutions of `S`, and every solution of `S` arises in this way. The
-cancellation schemes of `S` are the partition tables of the system of words
+the *cancellation schemes* of `S`, over any alphabet `A`, and proves their soundness: solutions of
+the generalised equations of the schemes give solutions of `S`. When `A` is finite, the schemes
+with letters in `Fin (systemSize S.toWords)` form a finite family, the *cancellation family*
+of `S`. The cancellation schemes of `S` are the partition tables of the system of words
 
 * `s`, for each equation `s = 1`;
 * `t z_t⁻¹` and `z_t z_t⁻¹`, for each inequation `t ≠ 1`;
@@ -30,9 +29,8 @@ in which the words of the occurrences of the witnesses are nonempty. A solution 
 generalised equation `Ω_T` of a scheme gives the solution `x ↦ P_x(U)` of `S`, inequations
 included; in a group `H` with a homomorphism `F(A) → H`, a solution of the system `Ω_T*` gives a
 solution of the equations of `S`, and of its inequations exactly when the witnesses stay
-nontrivial. Conversely, every solution `W` of `S` is `x ↦ P_x(U)`, graphically, for a scheme with
-`systemSize S.toWords` letters and a solution `U` of its generalised equation; so a system whose
-cancellation family is empty has no solution.
+nontrivial. The converse, that every solution of `S` comes from a scheme, is
+`TauCeti.GroupTheory.FreeGroup.GenEq.CancellationFamily.Completeness`.
 
 ## Main definitions
 
@@ -43,8 +41,8 @@ cancellation family is empty has no solution.
 * `TauCeti.EqIneqSystem.genEq`, `TauCeti.EqIneqSystem.wordMap`,
   `TauCeti.EqIneqSystem.witnessWord`: the generalised equation of a table, the word maps `P_x` of
   the variables and of the witnesses.
-* `TauCeti.EqIneqSystem.cancellationFamily`: the finite set of cancellation schemes with
-  `systemSize S.toWords` letters.
+* `TauCeti.EqIneqSystem.cancellationFamily`: for a finite alphabet `A`, the finite set of
+  cancellation schemes with `systemSize S.toWords` letters.
 
 ## Main results
 
@@ -71,16 +69,11 @@ cancellation family is empty has no solution.
   nontrivial.
 * `TauCeti.EqIneqSystem.IsCancellationScheme.isSolution`: a solution of the generalised equation
   of a scheme gives a solution of `S`, inequations included.
-* `TauCeti.EqIneqSystem.exists_isCancellationScheme_of_isSolution`: **Lemma 14(3)**, every
-  solution `W` of `S` is `x ↦ P_x(U)`, graphically, for a cancellation scheme `T` with
-  `systemSize S.toWords` letters and a solution `U` of its generalised equation.
-* `TauCeti.EqIneqSystem.not_isSolution_of_cancellationFamily_eq_empty`: **Lemma 14(1)**, a system
-  whose cancellation family is empty has no solution in `F(A)`.
-* `TauCeti.EqIneqSystem.card_cancellationFamily_le`: the cancellation family has at most
-  `(2 (n + |A|) + 1) ^ n` members, for `n = systemSize S.toWords`.
-* `TauCeti.EqIneqSystem.cancellationFamily_empty`, `TauCeti.EqIneqSystem.genEq_empty`: the
-  cancellation family of the empty system in no variables has one member, the empty table, and its
-  generalised equation is empty.
+* `TauCeti.EqIneqSystem.card_cancellationFamily_le`: for a finite alphabet `A`, the cancellation
+  family has at most `(2 (n + |A|) + 1) ^ n` members, for `n = systemSize S.toWords`.
+* `TauCeti.EqIneqSystem.cancellationFamily_empty`, `TauCeti.EqIneqSystem.genEq_empty`: every table
+  of the empty system in no variables has the empty generalised equation, and for a finite
+  alphabet its cancellation family has one member, the empty table.
 
 ## Implementation notes
 
@@ -444,29 +437,6 @@ theorem IsCancellationScheme.isSolution (hT : S.IsCancellationScheme T) (U : (S.
       hT.mk_substituteVars_witnessWord_ne_one U k
   simpa only [MonoidHom.coe_id, Function.id_comp, Solution.eval_point_mk] using h
 
-/-! ### Solutions of the system come from solutions of some `Ω_T` -/
-
-/-- **Kharlampovich–Myasnikov, Lemma 14(3), with inequations.** Every solution `W` of a system of
-equations and inequations over `F(A)` comes from a cancellation scheme `T` with letters in
-`Fin (systemSize S.toWords)` (a member of the cancellation family when `A` is finite) and a
-solution `U` of its generalised equation: `W = P(U)`, graphically, as `P_x(U)` is the reduced
-word of `W x` for every variable `x`. -/
-theorem exists_isCancellationScheme_of_isSolution {S : EqIneqSystem X A} {W : X → FreeGroup A}
-    (hW : S.IsSolution W FreeGroup.of) :
-    ∃ T : Occurrence S.toWords → List ((Fin (systemSize S.toWords) ⊕ A) × Bool),
-      S.IsCancellationScheme T ∧ ∃ U : (S.genEq T).Solution,
-        ∀ x : X, substituteVars U.word (S.wordMap T x) = (W x).toWord := by
-  -- Extend `W` by the values `z k ≠ 1` of the inequations and apply Lemma 14(3) to the words.
-  obtain ⟨z, hz, h⟩ := (isSolution_iff_exists_forall_mem_toWords S W FreeGroup.of).1 hW
-  obtain ⟨T, hT, U, hU⟩ := GenEq.exists_solution_wordMap_eq h
-  refine ⟨T, ⟨hT, fun o k ho h₀ => hz k ?_⟩, U, fun x => ?_⟩
-  · -- An empty word of a witness would spell the reduced word of `z k`.
-    refine FreeGroup.toWord_eq_nil_iff.1 ((hU o (Sum.inr k) ho).symm.trans ?_)
-    rw [(hT.wordMap_eq_nil_iff ho).2 h₀, FreeGroup.substituteVars_nil]
-  · -- The variable `x` occurs in its word `x x⁻¹`.
-    obtain ⟨o, ho⟩ := exists_occurrence_of_mem (S.pair_mem_toWords (Sum.inl x)) (j := 0) (by simp)
-    exact hU o (Sum.inl x) (congrArg Prod.fst ho)
-
 /-! ### The cancellation family -/
 
 section Family
@@ -474,9 +444,9 @@ section Family
 variable [Finite A]
 
 open scoped Classical in
-/-- The cancellation family of a system of equations and inequations: the finite set of its
-cancellation schemes with letters `Z = Fin (systemSize S.toWords)`. Each member `T` gives the
-generalised equation `S.genEq T` and the word maps `S.wordMap T`. -/
+/-- The cancellation family of a system of equations and inequations over a finite alphabet `A`:
+the finite set of its cancellation schemes with letters `Z = Fin (systemSize S.toWords)`. Each
+member `T` gives the generalised equation `S.genEq T` and the word maps `S.wordMap T`. -/
 noncomputable def cancellationFamily (S : EqIneqSystem X A) :
     Finset (Occurrence S.toWords → List ((Fin (systemSize S.toWords) ⊕ A) × Bool)) :=
   (GenEq.cancellationFamily S.toWords).filter fun T =>
@@ -503,13 +473,6 @@ theorem card_cancellationFamily_le (S : EqIneqSystem X A) :
       (2 * (systemSize S.toWords + Nat.card A) + 1) ^ systemSize S.toWords :=
   (Finset.card_le_card (cancellationFamily_subset S)).trans (GenEq.card_cancellationFamily_le _)
 
-/-- **Kharlampovich–Myasnikov, Lemma 14(1), with inequations.** A system of equations and
-inequations over `F(A)` whose cancellation family is empty has no solution in `F(A)`. -/
-theorem not_isSolution_of_cancellationFamily_eq_empty {S : EqIneqSystem X A}
-    (h : S.cancellationFamily = ∅) (W : X → FreeGroup A) : ¬ S.IsSolution W FreeGroup.of :=
-  fun hW => have ⟨T, hT, _⟩ := exists_isCancellationScheme_of_isSolution hW
-    Finset.eq_empty_iff_forall_notMem.1 h T (mem_cancellationFamily.2 hT)
-
 end Family
 
 /-! ### The empty system -/
@@ -531,8 +494,8 @@ theorem genEq_empty (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × B
     (empty X A).genEq T = GenEq.empty :=
   eq_empty_of_numItems_eq_zero (by rw [numItems_ofEntries, length_flatMap_tableEntries]; simp)
 
-/-- The cancellation family of the empty system in no variables has exactly one member, the empty
-table. -/
+/-- Over a finite alphabet, the cancellation family of the empty system in no variables has exactly
+one member, the empty table. -/
 @[simp]
 theorem cancellationFamily_empty [Finite A] :
     (empty X A).cancellationFamily = {fun o => isEmptyElim o} :=
@@ -616,34 +579,6 @@ example (x : X) (a : A) :
       simp [length_eq_two_of_mem_toWords_var_ne_one x (List.getElem_mem o.1.isLt)],
     fun o b h => absurd h (ne_inr_of_mem_toWords_var_ne_one x (List.getElem_mem o.1.isLt)
       (List.getElem_mem o.2.isLt) b), fun _ _ _ => by simp⟩, fun _ _ _ => by simp⟩
-
-/-- The solution `x = a` of the inequation `x ≠ 1` comes from a member of its cancellation family:
-a solution `U` of its generalised equation with `P_x(U) = a`. -/
-example [Finite A] (x : X) (a : A) :
-    ∃ T ∈ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).cancellationFamily,
-      ∃ U : (genEq _ T).Solution, substituteVars U.word (wordMap _ T x) = [(a, true)] := by
-  obtain ⟨T, hT, U, hU⟩ := exists_isCancellationScheme_of_isSolution
-    (S := ⟨[], [FreeGroup.of (Sum.inl x)]⟩) (W := fun _ => FreeGroup.of a)
-    (by simp [isSolution_iff])
-  exact ⟨T, mem_cancellationFamily.2 hT, U, (hU x).trans (FreeGroup.toWord_of a)⟩
-
-/-- The inequation `1 ≠ 1` has an empty cancellation family: in a partition table the word of the
-witness in its word `z⁻¹` is empty, while a scheme makes it nonempty. -/
-private theorem cancellationFamily_ineq_one [Finite A] :
-    (⟨[], [1]⟩ : EqIneqSystem X A).cancellationFamily = ∅ := by
-  refine Finset.eq_empty_of_forall_notMem fun T hT => ?_
-  obtain ⟨hT, hne⟩ := mem_cancellationFamily.1 hT
-  -- The word `z⁻¹` of the witness.
-  obtain ⟨i, hi, hw⟩ := List.getElem_of_mem (mem_toWords (S := (⟨[], [1]⟩ : EqIneqSystem X A))
-    (w := [(Sum.inl (Sum.inr ⟨0, Nat.zero_lt_one⟩), false)]).2
-    (.inr (.inl ⟨⟨0, Nat.zero_lt_one⟩, .inl (by simp)⟩)))
-  let o : Occurrence (⟨[], [1]⟩ : EqIneqSystem X A).toWords := ⟨⟨i, hi⟩, ⟨0, by simp [hw]⟩⟩
-  exact hne o ⟨0, Nat.zero_lt_one⟩ (by simp [o, hw]) (by simpa [o, hw] using hT.length_le o)
-
-/-- The inequation `1 ≠ 1` has no solution, by Lemma 14(1). -/
-example [Finite A] (W : X → FreeGroup A) :
-    ¬ (⟨[], [1]⟩ : EqIneqSystem X A).IsSolution W FreeGroup.of :=
-  not_isSolution_of_cancellationFamily_eq_empty cancellationFamily_ineq_one W
 
 end Examples
 
