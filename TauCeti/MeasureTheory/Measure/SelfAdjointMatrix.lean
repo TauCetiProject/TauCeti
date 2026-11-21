@@ -34,8 +34,8 @@ equivalence preserving `volume`.
 * `selfAdjoint.coe_inner`, `selfAdjoint.isHermitian_coe`, `selfAdjoint.conjTranspose_coe`,
   `selfAdjoint.inner_eq_rclike_re_trace_mul`, `selfAdjoint.norm_sq_eq_rclike_re_trace_sq`.
 * `Matrix.UnitaryGroup.selfAdjointConj`, `measurePreserving_selfAdjointConj_volume`.
-* `Matrix.selfAdjointCoordinates` reads the real diagonal and strict upper entries.
-* `Matrix.unitaryConjCoordinates` expresses unitary conjugation in these coordinates.
+* `TauCeti.selfAdjointCoordinates` reads the real diagonal and strict upper entries.
+* `TauCeti.unitaryConjCoordinates` expresses unitary conjugation in these coordinates.
 -/
 
 public section
@@ -226,9 +226,9 @@ theorem measurePreserving_selfAdjointConj_volume {𝕜 : Type*} [RCLike 𝕜] [M
 
 end Matrix.UnitaryGroup
 
-namespace Matrix
+namespace TauCeti
 
-open TauCeti (StrictUpperFin)
+open Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 
@@ -336,4 +336,4 @@ theorem unitaryConjCoordinates_read (U : unitaryGroup (Fin n) 𝕜)
     selfAdjointCoordinates_apply]
   exact congrArg selfAdjointCoordinatesLinearMap (UnitaryGroup.coe_selfAdjointConj_apply U A)
 
-end Matrix
+end TauCeti

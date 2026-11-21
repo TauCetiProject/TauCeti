@@ -27,10 +27,11 @@ public section
 noncomputable section
 
 open MeasureTheory
-open TauCeti (StrictUpperFin)
 open scoped ENNReal TauCeti.SelfAdjointMatrix
 
-namespace Matrix
+namespace TauCeti
+
+open Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 
@@ -149,4 +150,4 @@ theorem lintegral_image_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
 
 end Measure
 
-end Matrix
+end TauCeti

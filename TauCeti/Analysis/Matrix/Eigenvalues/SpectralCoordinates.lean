@@ -34,10 +34,11 @@ public section
 
 noncomputable section
 
-open TauCeti (StrictUpperFin)
 open scoped Matrix TauCeti.SelfAdjointMatrix
 
-namespace Matrix
+namespace TauCeti
+
+open Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 
@@ -194,7 +195,7 @@ def spectralAngularFDeriv (a : StrictUpperFin n → 𝕜) :
 
 /-- The angular differential is the derivative of the strict upper entries of the unitary
 frame relative to the frame at the base angle. -/
-theorem _root_.TauCeti.spectralAngularFDeriv_def (a : StrictUpperFin n → 𝕜) :
+theorem spectralAngularFDeriv_def (a : StrictUpperFin n → 𝕜) :
     spectralAngularFDeriv a =
       fderiv ℝ (fun b ↦ (selfAdjointCoordinatesLinearMap
         (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
@@ -243,7 +244,7 @@ theorem hasFDerivAt_expStrictUpper_zero :
   have hr : read.comp skewAdjointOfStrictUpper = ContinuousLinearMap.id ℝ _ := by
     ext v ij
     simp [read, Fin.lt_def.mpr ij.property]
-  simpa only [TauCeti.spectralAngularFDeriv_def, expStrictUpper_zero, OneMemClass.coe_one,
+  simpa only [spectralAngularFDeriv_def, expStrictUpper_zero, OneMemClass.coe_one,
     star_one, Matrix.one_mul, Function.comp_def, read, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.coe_snd'] using h.fderiv.trans hr
 
@@ -392,4 +393,4 @@ theorem exists_spectralCoordinates_openPartialHomeomorph (d : Fin n → ℝ)
     ?_, h.mem_toOpenPartialHomeomorph_source⟩
   exact congrArg (fun f ↦ unitaryConjCoordinates U ∘ f) h.toOpenPartialHomeomorph_coe
 
-end Matrix
+end TauCeti
