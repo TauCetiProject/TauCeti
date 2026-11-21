@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 import Mathlib.RingTheory.Nakayama
+import TauCeti.Algebra.Module.Injective.SelfInjective
 
 /-!
 # The socle of a module over a local ring
@@ -24,20 +25,23 @@ When `M` is artinian, the socle is essential: every nonzero submodule of `M` con
 element of the socle. Indeed a nonzero submodule contains a minimal nonzero submodule `A`, which
 is cyclic, so `m • A < A` by Nakayama's lemma and hence `m • A = 0`.
 
-A self-injective artinian local ring has a simple socle. If `x` and `y` are nonzero elements of
-the socle with `y ∉ R x`, then `R x` embeds in `R ⧸ R y`, and self-injectivity extends this
-embedding to an endomorphism of `R`, a multiplication by some `r`, with `r x = x` and `r y = 0`.
-The first equation forces `r ∉ m`, so `r` is a unit, which contradicts the second. This is the
-`R`-module form of the statement that the socle is one-dimensional over the residue field; it is
-the condition under which a finite local ring is its own Matlis dual.
+In a self-injective local ring, every nonzero principal ideal `R x` contains the socle. Indeed, if
+`y` is in the socle, any `r` with `r x = 0` is not a unit, so `r ∈ m` and `r y = 0`; the
+Ikeda–Nakayama annihilator criterion then puts `y` in `R x`. Hence a self-injective artinian local
+ring has a simple socle. This is the `R`-module form of the statement that the socle is
+one-dimensional over the residue field; it is the condition under which a finite local ring is its
+own Matlis dual.
 
 ## Main results
 
-* `IsLocalRing.inf_torsionBySet_maximalIdeal_ne_bot`: in an artinian module over a local ring,
-  every nonzero submodule meets the socle.
-* `IsLocalRing.torsionBySet_maximalIdeal_ne_bot`: a nonzero artinian module has a nonzero socle.
-* `IsLocalRing.isSimpleModule_torsionBySet_maximalIdeal_of_injective`: a self-injective artinian
-  local ring has a simple socle.
+* `TauCeti.IsLocalRing.inf_torsionBySet_maximalIdeal_ne_bot`: in an artinian module over a local
+  ring, every nonzero submodule meets the socle.
+* `TauCeti.IsLocalRing.torsionBySet_maximalIdeal_ne_bot`: a nonzero artinian module has a nonzero
+  socle.
+* `TauCeti.IsLocalRing.mem_span_singleton_of_mem_torsionBySet`: in a self-injective local ring,
+  every nonzero principal ideal contains the socle.
+* `TauCeti.IsLocalRing.isSimpleModule_torsionBySet_maximalIdeal_of_injective`: a self-injective
+  artinian local ring has a simple socle.
 
 ## References
 
@@ -47,9 +51,9 @@ the condition under which a finite local ring is its own Matlis dual.
 
 public section
 
-namespace IsLocalRing
+namespace TauCeti.IsLocalRing
 
-open Submodule
+open _root_.IsLocalRing Submodule
 
 variable {R : Type*} [CommRing R] [IsLocalRing R]
 
@@ -83,47 +87,20 @@ theorem torsionBySet_maximalIdeal_ne_bot [IsArtinian R M] [Nontrivial M] :
 
 end Module
 
-/-- An element of a local ring which does not kill a nonzero element of the socle is a unit. -/
-private theorem isUnit_of_mul_ne_zero {x r : R} (hx : x ∈ torsionBySet R R (maximalIdeal R))
-    (hrx : r * x ≠ 0) : IsUnit r := by
+/-- An element of a local ring which does not kill an element of the socle is a unit. -/
+theorem isUnit_of_mul_ne_zero_of_mem_torsionBySet {x r : R}
+    (hx : x ∈ torsionBySet R R (maximalIdeal R)) (hrx : r * x ≠ 0) : IsUnit r := by
   by_contra hr
   exact hrx ((mem_torsionBySet_iff _ _).mp hx ⟨r, (mem_maximalIdeal r).mpr hr⟩)
 
-/-- In a self-injective local ring, any two nonzero elements of the socle generate the same
-ideal. -/
-private theorem mem_span_singleton_of_mem_torsionBySet [Module.Injective R R] {x y : R}
-    (hx : x ∈ torsionBySet R R (maximalIdeal R)) (hx0 : x ≠ 0)
-    (hy : y ∈ torsionBySet R R (maximalIdeal R)) (hy0 : y ≠ 0) :
-    y ∈ Ideal.span {x} := by
-  by_contra hyx
-  -- `R x` embeds in `R ⧸ R y`: a nonzero element `r x` of `R x` lying in `R y` would make `r`
-  -- a unit, and then `x ∈ R y`; as `x = s y` with `s` a unit too, this would give `y ∈ R x`
-  let ι : Ideal.span {x} →ₗ[R] R ⧸ Ideal.span {y} :=
-    (Ideal.span {y}).mkQ ∘ₗ (Ideal.span {x}).subtype
-  have hι : Function.Injective ι := by
-    refine (injective_iff_map_eq_zero ι).mpr fun ⟨z, hz⟩ hz0 ↦ ?_
-    obtain ⟨r, rfl⟩ := Ideal.mem_span_singleton'.mp hz
-    obtain ⟨s, hs⟩ := Ideal.mem_span_singleton'.mp ((Ideal.Quotient.eq_zero_iff_mem).mp hz0)
-    simp only [Submodule.subtype_apply] at hs
-    by_contra hrx
-    have hrx : r * x ≠ 0 := fun h ↦ hrx (Subtype.ext h)
-    have hs0 : s * y ≠ 0 := hs ▸ hrx
-    obtain ⟨u, hu⟩ := isUnit_of_mul_ne_zero hx hrx
-    obtain ⟨v, hv⟩ := isUnit_of_mul_ne_zero hy hs0
-    refine hyx (Ideal.mem_span_singleton'.mpr ⟨↑(v⁻¹ * u), ?_⟩)
-    rw [Units.val_mul, mul_assoc, hu, ← hs, ← hv, ← mul_assoc, Units.inv_mul, one_mul]
-  obtain ⟨g, hg⟩ := Module.Injective.extension_property R R _ _ ι hι (Ideal.span {x}).subtype
-  -- the extension `g ∘ mkQ` is multiplication by `r = g 1`, with `r x = x` and `r y = 0`
-  set r := g (Submodule.Quotient.mk (p := Ideal.span {y}) 1)
-  have hg' (z : R) : g (Submodule.Quotient.mk z) = r * z := by
-    rw [mul_comm, ← smul_eq_mul, ← map_smul, ← Submodule.Quotient.mk_smul, smul_eq_mul, mul_one]
-  have hgx : r * x = x := by
-    rw [← hg']
-    simpa [ι] using LinearMap.congr_fun hg ⟨x, Ideal.mem_span_singleton_self x⟩
-  have hgy : r * y = 0 := by
-    rw [← hg', (Submodule.Quotient.mk_eq_zero _).mpr (Ideal.mem_span_singleton_self y), map_zero]
-  obtain ⟨u, hu⟩ := isUnit_of_mul_ne_zero hx (hgx.symm ▸ hx0)
-  exact hy0 (by rw [← hu] at hgy; exact (Units.mul_right_eq_zero u).mp hgy)
+/-- In a self-injective local ring, every nonzero principal ideal contains the socle. -/
+theorem mem_span_singleton_of_mem_torsionBySet [Module.Injective R R] {x y : R} (hx0 : x ≠ 0)
+    (hy : y ∈ torsionBySet R R (maximalIdeal R)) : y ∈ Ideal.span {x} := by
+  -- an `r` with `r * y ≠ 0` is a unit, so it does not kill `x ≠ 0`
+  obtain ⟨c, hc⟩ := exists_eq_sum_mul_of_forall_mul_eq_zero (ι := Unit) (a := fun _ ↦ x) (x := y)
+    fun r hr ↦ by_contra fun hry ↦
+      hx0 ((isUnit_of_mul_ne_zero_of_mem_torsionBySet hy hry).mul_right_eq_zero.mp (hr ()))
+  exact Ideal.mem_span_singleton.mpr ⟨c (), by simpa using hc⟩
 
 /-- **A self-injective artinian local ring has a simple socle**: the ideal of elements killed by
 the maximal ideal is a simple module, that is, a line over the residue field. -/
@@ -134,10 +111,7 @@ theorem isSimpleModule_torsionBySet_maximalIdeal_of_injective [IsArtinianRing R]
   by_contra hJ0
   obtain ⟨x, hxJ, hx0⟩ := exists_mem_ne_zero_of_ne_bot hJ0
   refine hJ.ne (le_antisymm hJ.le fun y hy ↦ ?_)
-  by_cases hy0 : y = 0
-  · exact hy0 ▸ J.zero_mem
-  · obtain ⟨r, rfl⟩ := Ideal.mem_span_singleton'.mp
-      (mem_span_singleton_of_mem_torsionBySet (hJ.le hxJ) hx0 hy hy0)
-    exact J.smul_mem r hxJ
+  obtain ⟨r, rfl⟩ := Ideal.mem_span_singleton'.mp (mem_span_singleton_of_mem_torsionBySet hx0 hy)
+  exact J.smul_mem r hxJ
 
-end IsLocalRing
+end TauCeti.IsLocalRing

@@ -72,7 +72,7 @@ public section
 
 namespace CharacterModule
 
-open IsLocalRing Submodule
+open IsLocalRing TauCeti.IsLocalRing Submodule
 
 variable {R : Type*} [CommRing R]
 
@@ -83,6 +83,10 @@ def IsMatlisGenerator (χ : CharacterModule R) : Prop :=
   ∀ I : Ideal R, (∀ x ∈ I, χ x = 0) → I = ⊥
 
 variable {χ ψ : CharacterModule R}
+
+/-- The zero character vanishes everywhere. -/
+private theorem zero_apply (r : R) : (0 : CharacterModule R) r = 0 :=
+  rfl
 
 theorem isMatlisGenerator_def :
     χ.IsMatlisGenerator ↔ ∀ I : Ideal R, (∀ x ∈ I, χ x = 0) → I = ⊥ :=
@@ -104,8 +108,7 @@ theorem isMatlisGenerator_iff_injective :
     refine Ideal.span_singleton_eq_bot.mp (h _ fun x hx ↦ ?_)
     obtain ⟨s, rfl⟩ := Ideal.mem_span_singleton'.mp hx
     calc χ (s * r) = LinearMap.toSpanSingleton R _ χ r s := by simp [mul_comm]
-      -- the zero character evaluates to `0` by definition; Mathlib has no `zero_apply` for it
-      _ = 0 := by rw [hr]; rfl
+      _ = 0 := by rw [hr, zero_apply]
   · exact DFunLike.ext _ _ fun s ↦ (smul_apply χ r s).trans (hI _ (I.mul_mem_right s hr))
 
 /-- An injective character is a Matlis generator. -/
@@ -115,7 +118,7 @@ theorem IsMatlisGenerator.of_injective (h : Function.Injective χ) : χ.IsMatlis
 /-- The zero character of a nonzero ring is not a Matlis generator: it kills the unit ideal. -/
 theorem not_isMatlisGenerator_zero [Nontrivial R] :
     ¬ (0 : CharacterModule R).IsMatlisGenerator :=
-  fun h ↦ top_ne_bot (h ⊤ fun _ _ ↦ rfl)
+  fun h ↦ top_ne_bot (h ⊤ fun x _ ↦ zero_apply x)
 
 /-- A unit multiple of a Matlis generator is a Matlis generator. -/
 theorem IsMatlisGenerator.units_smul (hχ : χ.IsMatlisGenerator) (u : Rˣ) :
@@ -147,9 +150,16 @@ theorem IsMatlisGenerator.linearEquiv_apply (hχ : χ.IsMatlisGenerator) (r : R)
     hχ.linearEquiv r = r • χ :=
   (rfl)
 
+/-- The inverse of `linearEquiv` sends the Matlis generator to `1`; with `map_smul` this computes
+it on every `r • χ`. -/
+@[simp]
+theorem IsMatlisGenerator.linearEquiv_symm_apply_self (hχ : χ.IsMatlisGenerator) :
+    hχ.linearEquiv.symm χ = 1 :=
+  hχ.linearEquiv.symm_apply_eq.mpr (one_smul R χ).symm
+
 theorem IsMatlisGenerator.linearEquiv_symm_apply_smul (hχ : χ.IsMatlisGenerator) (r : R) :
-    hχ.linearEquiv.symm (r • χ) = r :=
-  hχ.linearEquiv.symm_apply_eq.mpr (hχ.linearEquiv_apply r).symm
+    hχ.linearEquiv.symm (r • χ) = r := by
+  simp
 
 /-- **Uniqueness of Matlis generators.** Over a finite ring, any two Matlis generators differ by a
 unique unit. -/
