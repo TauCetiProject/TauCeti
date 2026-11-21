@@ -9,17 +9,19 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 import TauCeti.Algebra.Group.Subgroup.ModularLaw
+import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
-# The torus centralizer inside the Chevalley Borel subgroup
+# The torus centralizer and normalizer inside the Chevalley Borel subgroup
 
 Over an infinite field, the actual character-lattice torus of a Chevalley datum is
-self-centralizing inside its Borel-type subgroup. Its centralizer in the positive subgroup
-is trivial. These are local inputs to the torus-centralizer calculation in the whole
-generated group. `ChevalleyDatum.mem_centralizer_range_torusPoints_iff` characterizes
-centralizing elements of the whole point group by weight-space preservation, but containment
-of that centralizer in the Borel subgroup or torus is not proved here.
+self-centralizing and self-normalizing inside its Borel-type subgroup. Both its centralizer and
+its normalizer in the positive subgroup are trivial. These are local inputs to the torus
+centralizer and normalizer calculations in the whole generated group.
+`ChevalleyDatum.mem_centralizer_range_torusPoints_iff` characterizes centralizing elements of the
+whole point group by weight-space preservation, but containment of that centralizer in the Borel
+subgroup or torus is not proved here.
 
 Commuting with every torus point forces a matrix to preserve each weight space. Positive
 points have identity diagonal blocks on these spaces, by
@@ -107,5 +109,31 @@ theorem borelSubgroup_inf_centralizer_range_torusPoints :
         (D.range_torusPoints_le_normalizer_positivePoints K))
       hT,
     inf_comm, D.positivePoints_inf_centralizer_range_torusPoints K, bot_sup_eq]
+
+/-- Over an infinite field, no nonidentity positive point normalizes the actual torus. -/
+@[simp]
+theorem positivePoints_inf_normalizer_range_torusPoints :
+    D.positivePoints K ⊓ Subgroup.normalizer (Set.range (D.torusPoints K)) = ⊥ := by
+  rw [← le_bot_iff, ← D.positivePoints_inf_centralizer_range_torusPoints K]
+  refine le_inf inf_le_left ?_
+  simpa only [MonoidHom.coe_range] using
+    inf_normalizer_le_centralizer_of_inf_eq_bot
+      (D.range_torusPoints_le_normalizer_positivePoints K)
+      (D.positivePoints_inf_range_torusPoints_eq_bot K)
+
+/-- Over an infinite field, the actual torus is self-normalizing inside the Borel-type
+subgroup. -/
+@[simp]
+theorem borelSubgroup_inf_normalizer_range_torusPoints :
+    D.borelSubgroup K ⊓ Subgroup.normalizer (Set.range (D.torusPoints K)) =
+      (D.torusPoints K).range := by
+  have hT : (D.torusPoints K).range ≤ Subgroup.normalizer (Set.range (D.torusPoints K)) := by
+    simpa only [MonoidHom.coe_range] using (D.torusPoints K).range.le_normalizer
+  rw [D.borelSubgroup_def, inf_comm,
+    ← Subgroup.inf_sup_assoc_of_le
+      (Subgroup.coe_mul_of_right_le_normalizer_left _ _
+        (D.range_torusPoints_le_normalizer_positivePoints K))
+      hT,
+    inf_comm, D.positivePoints_inf_normalizer_range_torusPoints K, bot_sup_eq]
 
 end TauCeti.DynkinType.ChevalleyDatum

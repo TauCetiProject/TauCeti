@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
+public import TauCeti.LinearAlgebra.RootSystem.LongestElement
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -16,7 +19,9 @@ on all root subgroups through its Weyl projection. More precisely, conjugation b
 of a Weyl element carries each root parameter to a unit multiple of that parameter at the
 image root. Thus the root subgroup, unlike its parametrization, is independent of the lift.
 These formulas allow Weyl lifts to transport the root-generated subgroups used in Bruhat
-cells. They do not identify the kernel of the Weyl projection with the torus.
+cells, and in particular show that any lift of the longest Weyl element conjugates
+`D.positivePoints K` onto `D.negativePoints K` and vice versa. They do not identify the
+kernel of the Weyl projection with the torus.
 
 The proof combines the existing pinning equation and the signed simple Weyl conjugation
 formula in `ChevalleyDatum.weylElement_conj_rootSubgroupPoints`. It works over finite fields
@@ -135,5 +140,51 @@ theorem map_iSup_rootSubgroupPoints_conj (g : D.weylSubgroup K)
       ⨆ γ ∈ (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) '' S,
         (D.rootSubgroupPoints γ K).range := by
   simp only [Subgroup.map_iSup, D.map_range_rootSubgroupPoints_conj, iSup_image]
+
+/-- Conjugation by a Weyl lift of the longest element sends the positive unipotent subgroup onto
+the negative unipotent subgroup. -/
+theorem map_positivePoints_conj_longestElement (n₀ : D.weylSubgroup K)
+    (hn₀ : D.weylProjection K n₀ =
+      let _ := t.isReduced_simplyConnectedRootDatum ht
+      longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) :
+    (D.positivePoints K).map (MulAut.conj (n₀ : D.points K)).toMonoidHom =
+      D.negativePoints K := by
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  rw [D.positivePoints_eq_iSup K, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀,
+    D.negativePoints_eq_iSup K]
+  have himage : (t.simplyConnectedRootDatum ht).weylGroupToPerm
+        (longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) ''
+        posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
+    refine Set.Subset.antisymm
+      (mapsTo_posRoots_negRoots_longestElement _ _).image_subset ?_
+    intro γ hγ
+    exact ⟨_, mapsTo_negRoots_posRoots_longestElement _ _ hγ,
+      weylGroupToPerm_longestElement_involutive _ _ γ⟩
+  rw [himage]
+
+/-- Conjugation by a Weyl lift of the longest element sends the negative unipotent subgroup onto
+the positive unipotent subgroup. -/
+theorem map_negativePoints_conj_longestElement (n₀ : D.weylSubgroup K)
+    (hn₀ : D.weylProjection K n₀ =
+      let _ := t.isReduced_simplyConnectedRootDatum ht
+      longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) :
+    (D.negativePoints K).map (MulAut.conj (n₀ : D.points K)).toMonoidHom =
+      D.positivePoints K := by
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  rw [D.negativePoints_eq_iSup K, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀,
+    D.positivePoints_eq_iSup K]
+  have himage : (t.simplyConnectedRootDatum ht).weylGroupToPerm
+        (longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) ''
+        negRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
+    refine Set.Subset.antisymm
+      (mapsTo_negRoots_posRoots_longestElement _ _).image_subset ?_
+    intro γ hγ
+    exact ⟨_, mapsTo_posRoots_negRoots_longestElement _ _ hγ,
+      weylGroupToPerm_longestElement_involutive _ _ γ⟩
+  rw [himage]
 
 end TauCeti.DynkinType.ChevalleyDatum

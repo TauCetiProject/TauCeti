@@ -750,4 +750,17 @@ theorem elementaryTitsSystem_simple_eq_preimage :
       rw [D.titsSystem_simple_eq_preimage K, ← Set.preimage_comp]
       rfl)
 
+/-- Every Weyl-group element lifts to a Weyl subgroup element lying in `D.elementarySubgroup K`,
+over every field `K`. -/
+theorem exists_mem_elementarySubgroup_weylProjection_eq
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    ∃ n : D.weylSubgroup K,
+      (n : D.points K) ∈ D.elementarySubgroup K ∧ D.weylProjection K n = w := by
+  obtain ⟨q, rfl⟩ := (D.elementaryTitsWeylGroupMulEquiv K).surjective w
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk'_surjective _ q
+  exact ⟨⟨((n : D.elementarySubgroup K) : D.points K),
+      D.coe_mem_weylSubgroup_of_mem_elementaryTitsSystem_subgroupN K n⟩,
+    (n : D.elementarySubgroup K).property,
+    (D.elementaryTitsWeylGroupMulEquiv_mk K n).symm⟩
+
 end TauCeti.DynkinType.ChevalleyDatum

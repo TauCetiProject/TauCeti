@@ -122,6 +122,45 @@ theorem inversionPoints_le_positivePoints (w : (t.simplyConnectedRootDatum ht).w
     D.rootSubgroupPoints_mem_positivePoints A
       ((t.posRoots_rationalRootSystem ht).symm ▸ inversions_subset_posRoots _ _ _ hγ) u
 
+/-- Every inversion subgroup is the root-set subgroup on the inversions of `w⁻¹`. -/
+theorem inversionPoints_eq_subsystemPoints (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    D.inversionPoints A w =
+      D.subsystemPoints (inversions (t.simplyConnectedRootDatum ht)
+        (t.simplyConnectedBase ht) w⁻¹) A :=
+  (D.subsystemPoints_eq_iSup _ A).symm
+
+/-- The actual character-lattice torus normalizes every inversion subgroup. -/
+theorem range_torusPoints_le_normalizer_inversionPoints
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    (D.torusPoints A).range ≤ Subgroup.normalizer (D.inversionPoints A w : Set (D.points A)) := by
+  rw [D.inversionPoints_eq_subsystemPoints]
+  exact D.range_torusPoints_le_normalizer_subsystemPoints _ A
+
+/-- Conjugating an inversion subgroup by an actual torus point preserves it. -/
+@[simp]
+theorem map_inversionPoints_conj_torusPoints
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) (r : Fin t.rank → Aˣ) :
+    (D.inversionPoints A w).map (MulAut.conj (D.torusPoints A r) : D.points A →* D.points A) =
+      D.inversionPoints A w := by
+  ext g
+  have hnorm := D.range_torusPoints_le_normalizer_inversionPoints A w ⟨r, rfl⟩
+  simp only [Subgroup.mem_map, MonoidHom.coe_ofClass, MulAut.conj_apply]
+  constructor
+  · rintro ⟨u, hu, rfl⟩
+    exact (Subgroup.mem_normalizer_iff.mp hnorm u).mp hu
+  · intro hg
+    refine ⟨(D.torusPoints A r)⁻¹ * g * D.torusPoints A r, ?_, by group⟩
+    have h := (Subgroup.mem_normalizer_iff.mp (inv_mem hnorm) g).mp hg
+    simpa only [inv_inv] using h
+
+/-- Conjugating an element of an inversion subgroup by an actual torus point stays in the
+inversion subgroup. -/
+theorem torus_conj_inversionPoints_mem (w : (t.simplyConnectedRootDatum ht).weylGroup)
+    (r : Fin t.rank → Aˣ) {u : D.points A} (hu : u ∈ D.inversionPoints A w) :
+    D.torusPoints A r * u * (D.torusPoints A r)⁻¹ ∈ D.inversionPoints A w :=
+  (Subgroup.mem_normalizer_iff.mp
+    (D.range_torusPoints_le_normalizer_inversionPoints A w ⟨r, rfl⟩) u).mp hu
+
 /-- Over every commutative ring, the factors `u ∈ n U⁻(A) n⁻¹` and `b ∈ B(A)` in `u * n * b` are
 uniquely determined by their product. -/
 theorem eq_and_eq_of_mem_map_negativePoints_conj_of_mul_eq {n u₁ u₂ b₁ b₂ : D.points A}

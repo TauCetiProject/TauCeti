@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Action
-import TauCeti.FieldTheory.IsAlgClosed.Units
-import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 
@@ -30,9 +28,7 @@ The torus action and its character equation are reused from
 `DynkinType.geckWeylTorusAction`; that construction depends only on the pinned root datum.
 The Weyl projection also detects nontriviality of simple-root elements with additive parameter
 one over fields. Passage to a residue field and simple-reflection induction give nontriviality
-for every root over every nontrivial commutative ring, and scalar extension to an algebraic
-closure with torus conjugation gives injectivity of every root subgroup parametrization over
-every field (`ChevalleyDatum.rootSubgroupPoints_injective`).
+for every root over every nontrivial commutative ring.
 
 ## References
 
@@ -451,49 +447,6 @@ theorem rootSubgroupPoints_ofAdd_one_ne_one
     rcases Int.units_eq_one_or (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) with hε | hε
     · simpa [hε, hx] using hconj
     · simpa [hε, ofAdd_neg, map_inv, hx] using hconj
-
-/-- Over any field, every root subgroup parametrization of a Chevalley datum is injective.
-No assumption on the characteristic, the field size, or the character lattice is needed. -/
-theorem rootSubgroupPoints_injective (k : Type v) [Field k] (γ : Fin t.numRoots) :
-    Function.Injective (D.rootSubgroupPoints γ k) := by
-  classical
-  rw [injective_iff_map_eq_one]
-  intro u hu
-  by_contra hne
-  have ha : Multiplicative.toAdd u ≠ 0 := fun h0 =>
-    hne (by simpa [h0] using (ofAdd_toAdd u).symm)
-  have hroot : (t.simplyConnectedRootDatum ht).root γ ≠ 0 := fun h0 => by
-    have h2 := (t.simplyConnectedRootDatum ht).root_coroot_two γ
-    rw [h0, map_zero, LinearMap.zero_apply] at h2
-    omega
-  have hcoord : D.coordinateRoot γ ≠ 0 := fun h0 => by
-    have hrep : D.weightLatticeBasis.repr ⟨_, D.root_mem_weightLattice γ⟩ = 0 := by
-      ext j
-      simpa only [← D.coordinateRoot_def γ, Finsupp.zero_apply, Pi.zero_apply] using congrFun h0 j
-    exact hroot (congrArg Subtype.val (D.weightLatticeBasis.repr.map_eq_zero_iff.mp hrep))
-  let ι := algebraMap k (AlgebraicClosure k)
-  let c : (AlgebraicClosure k)ˣ := Units.mk0 (ι (Multiplicative.toAdd u)) (by simpa [ι] using ha)
-  let φ : (Unit → ℤ) →ₗ[ℤ] (Fin t.rank → ℤ) :=
-    LinearMap.smulRight (LinearMap.proj ()) (D.coordinateRoot γ)
-  have hφ : Function.Injective φ := fun x y h => funext fun () =>
-    smul_left_injective ℤ hcoord (by simpa [φ] using h)
-  obtain ⟨s, hs⟩ := torusPointMap_surjective_of_injective (R := AlgebraicClosure k) hφ fun _ => c⁻¹
-  have hchar : torusCharacter s (D.coordinateRoot γ) = c⁻¹ := by
-    have h := congrFun hs ()
-    simpa [φ, torusPointMap_apply] using h
-  have hmap : D.rootSubgroupPoints γ (AlgebraicClosure k)
-      (Multiplicative.ofAdd (ι (Multiplicative.toAdd u))) = 1 := by
-    have h := congrArg ((D.pointsPresentation k).map
-      (D.pointsPresentation (AlgebraicClosure k)) ι) hu
-    simpa only [D.map_rootSubgroupPoints, map_one] using h
-  have hconj := D.torusPoints_conj_rootSubgroupPoints γ (AlgebraicClosure k) s
-    (ι (Multiplicative.toAdd u))
-  rw [hmap, mul_one, mul_inv_cancel, hchar] at hconj
-  have hmul : ((c⁻¹ : (AlgebraicClosure k)ˣ) : AlgebraicClosure k) *
-      ι (Multiplicative.toAdd u) = 1 := by
-    simpa [c] using Units.inv_mul c
-  rw [hmul] at hconj
-  exact D.rootSubgroupPoints_ofAdd_one_ne_one (AlgebraicClosure k) γ hconj.symm
 
 /-- The Weyl projection is surjective: the pinned representatives lift every word in the
 simple reflections. -/
