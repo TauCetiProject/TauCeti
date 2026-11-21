@@ -34,9 +34,9 @@ These isogeny results follow the proofs of their torsion counterparts in this fi
 `WeierstrassCurve.hasFiniteSupport_localTateWeilPairing_torsionRes` and
 `WeierstrassCurve.finsum_toRatAddCircle_localTateWeilPairing_add_sum_infiniteInvMap_eq_zero`.
 At a place where both classes satisfy the Selmer local conditions, their local pairing vanishes
-(`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`). So if `a` and `b` satisfy
-them at every place outside a finite set `S` of finite places, the pairings at the places of `S`
-sum to zero
+(`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in `WeilPairing/Orthogonality`).
+So if `a` and `b` satisfy them at every place outside a finite set `S` of finite places, the
+pairings at the places of `S` sum to zero
 (`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`).
 
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals, as in
@@ -167,23 +167,6 @@ variable {K : Type} [Field K] [NumberField K] {W₁ W₂ : WeierstrassCurve K}
   (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
   (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff)
 
-omit [NumberField K] in
-/-- **The Selmer local conditions are orthogonal after restriction.** If the images of `a` and `b`
-in `H¹(L, E₁)` and `H¹(L, E₂)` are trivial, then the isogeny Weil cup of their restrictions, for
-the base change of `φ` and its dual, vanishes. The extension `L/K` is arbitrary. -/
-theorem kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero {L : Type*} [Field L] [Algebra K L]
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-    (hnL : IsUnit ((φ.baseChange L).degree : L))
-    (ha : W₁.pointRes τ
-      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
-    (hb : W₂.pointRes τ
-      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
-    (φ.baseChange L).kerWeilBrauerPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) = 0 := by
-  refine ((φ.baseChange L).kerWeilBrauerPairing_eq_zero_iff hnL _ _).2
-    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_ker hnL ?_ ?_)
-  · rw [AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl, ha]
-  · rw [AddMonoidHom.mem_ker, ← pointRes_dualKerCoeffIncl, hb]
-
 /-- At a finite place, the local invariant of the global isogeny Weil cup product is the local
 Tate pairing of the restrictions, for the base change of `φ` and its dual, embedded in `ℚ/ℤ`.
 No prime-to-residue-characteristic hypothesis is required. -/
@@ -274,10 +257,10 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
   have h := φ.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteInvMap_eq_zero
     a b τ τ'
   rwa [Finset.sum_eq_zero fun w _ ↦ by
-      rw [φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero a b _ _ (ha' w) (hb' w), map_zero],
+      rw [φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha' w) (hb' w), map_zero],
     add_zero, finsum_eq_sum_of_support_subset _ (s := S) fun v hv ↦ by_contra fun hvS ↦ hv <| by
       rw [toRatAddCircle_localTateKerWeilPairing,
-        φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero a b _ _ (ha v hvS) (hb v hvS),
+        φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha v hvS) (hb v hvS),
         map_zero]] at h
 
 end TauCeti.Isogeny

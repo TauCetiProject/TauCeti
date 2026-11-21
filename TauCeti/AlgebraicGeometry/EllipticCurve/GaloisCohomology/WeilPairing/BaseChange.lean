@@ -160,12 +160,11 @@ theorem brBaseChange_kerWeilBrauerPairing
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
     brBaseChange K L (φ.kerWeilBrauerPairing hn a b) =
       (φ.baseChange L).kerWeilBrauerPairing
-        (by rw [show (φ.baseChange L).degree = φ.degree from degree_map φ _]
-            simpa using hn.map (algebraMap K L))
+        (by rw [degree_baseChange]; simpa using hn.map (algebraMap K L))
         (φ.kerRes τ a) (φ.dualKerRes τ b) := by
   rw [(φ.baseChange L).kerWeilBrauerPairing_apply,
     (φ.baseChange L).kerH1WeilPairing_eq_explicitCup11]
-  exact φ.brBaseChange_kerWeilBrauerPairing_of_eq hn τ _ (TauCeti.Isogeny.degree_map φ _) _ _
+  exact φ.brBaseChange_kerWeilBrauerPairing_of_eq hn τ _ φ.degree_baseChange _ _
     (fun P Q ↦ φ.coe_kerCoeffWeilPairing_baseChange hn τ _ P Q _ _
       (coe_kerCoeffBaseChange τ φ P) (coe_dualKerCoeffBaseChange τ φ Q)) a b
 
