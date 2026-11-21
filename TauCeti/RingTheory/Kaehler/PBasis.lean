@@ -170,11 +170,6 @@ section CoordDerivation
 
 variable {p : ℕ} [Fact p.Prime] {k : Type*} [Field k] [CharP k p] {ι : Type*}
 
-omit [Fact p.Prime] in
-private theorem cast_mod_charP (n : ℕ) : ((n % p : ℕ) : k) = (n : k) := by
-  have h := congrArg (Nat.cast (R := k)) (Nat.div_add_mod n p)
-  simpa [CharP.cast_eq_zero] using h
-
 private theorem neZero_of_prime : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
 
 attribute [local instance] neZero_of_prime
@@ -215,7 +210,7 @@ private theorem coordDerivationLinear_leibniz_pMonomial {b : ι → k} (hb : IsP
     _ = (((e + e') j : ℕ) : k) * (pMonomial p b e * pMonomial p b e') := by
           rw [mul_coordDerivationLinear_pMonomial, hc]; ring
     _ = (((e j : ℕ) : k) + ((e' j : ℕ) : k)) * (pMonomial p b e * pMonomial p b e') := by
-          rw [Finsupp.add_apply, Fin.val_add, cast_mod_charP, Nat.cast_add]
+          rw [Finsupp.add_apply, Fin.val_add, ← CharP.cast_eq_mod k p, Nat.cast_add]
     _ = b j * (pMonomial p b e * coordDerivationLinear hb j (pMonomial p b e') +
           pMonomial p b e' * coordDerivationLinear hb j (pMonomial p b e)) := by
           rw [mul_add, mul_left_comm (b j) (pMonomial p b e), mul_coordDerivationLinear_pMonomial,

@@ -328,28 +328,13 @@ theorem linearIndependent_pow_of_notMem_subfield {E : Subfield k}
     simp only [f, map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C]
     exact sub_self (x ^ p)
   have hmin : minpoly E x = f := (minpoly.eq_of_irreducible_of_monic hirr haeval hmonic).symm
-  rw [Fintype.linearIndependent_iff]
-  intro c hc
-  let g : Polynomial E := ∑ n : Fin p, Polynomial.C (c n) * Polynomial.X ^ (n : ℕ)
-  have hg_eval : Polynomial.aeval x g = 0 := by
-    simp only [g, map_sum, map_mul, Polynomial.aeval_C, map_pow, Polynomial.aeval_X]
-    simpa [Algebra.smul_def] using hc
-  have hdvd : f ∣ g := hmin ▸ minpoly.dvd E x hg_eval
-  have hg_zero : g = 0 := by
-    by_contra hne
-    have hle : p ≤ g.natDegree := by
-      have hdeg := Polynomial.natDegree_le_of_dvd hdvd hne
-      simpa [f, Polynomial.natDegree_X_pow_sub_C] using hdeg
-    have hcoeff : ∀ m ≥ p, g.coeff m = 0 := fun m hm ↦ by
-      simp only [g, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
-      exact Finset.sum_eq_zero fun n _ ↦ by simp [ne_of_gt (lt_of_lt_of_le n.isLt hm)]
-    exact Polynomial.leadingCoeff_ne_zero.mpr hne (hcoeff g.natDegree hle)
-  intro n
-  have hcn : g.coeff (n : ℕ) = 0 := by rw [hg_zero, Polynomial.coeff_zero]
-  simp only [g, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow] at hcn
-  rw [Finset.sum_eq_single n (fun m _ hm ↦ by simp [Fin.val_ne_of_ne hm.symm])
-    (fun h ↦ (h (Finset.mem_univ n)).elim)] at hcn
-  simpa using hcn
+  have hdeg : (minpoly E x).natDegree = p := by
+    rw [hmin]
+    exact Polynomial.natDegree_X_pow_sub_C a
+  have hcomp : (fun n : Fin p ↦ x ^ (n : ℕ)) =
+      (fun i : Fin (minpoly E x).natDegree ↦ x ^ (i : ℕ)) ∘ finCongr hdeg.symm := rfl
+  rw [hcomp, linearIndependent_equiv]
+  exact linearIndependent_pow (K := E) x
 
 /-- For a finite index type, `IsPIndependent` is linear independence of `e ↦ ∏ i, b i ^ e i`
 indexed by `ι → Fin p`. -/
