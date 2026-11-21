@@ -199,14 +199,13 @@ theorem comap_coe_comp_subdisc_complexHomologicalOrientation {c : ℂ} {r : ℝ}
         (Complex.UnitDisc.isOpenEmbedding_coe_comp_subdisc (hc := hc) (hr := hr)) =
       (complexHomologicalOrientation ℂ).comap Complex.UnitDisc.isOpenEmbedding_coe := by
   have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
-  set A : ℂ ≃ₜ ℂ := (Homeomorph.mulLeft₀ (r : ℂ) hr0).trans (Homeomorph.addLeft c)
-  have hA : ⇑A = fun w ↦ c + r * w := rfl
+  set A := affineHomeomorph (r : ℂ) c hr0
+  have hA : ⇑A = fun w ↦ r * w + c := funext (affineHomeomorph_apply _ _ hr0)
   have hloc : IsLocalDiffeomorph 𝓘(ℂ, ℂ) 𝓘(ℂ, ℂ) 1 A :=
     isLocalDiffeomorph_of_deriv_ne_zero (by rw [hA]; fun_prop) le_rfl fun w ↦ by
       simpa [hA] using hr0
   refine (HomologicalOrientation.comap_comap_of_comp_eq _ A.isOpenEmbedding
-    Complex.UnitDisc.isOpenEmbedding_coe _
-    (funext fun z ↦ (Complex.UnitDisc.coe_subdisc_apply z).symm)).symm.trans ?_
+    Complex.UnitDisc.isOpenEmbedding_coe _ Complex.UnitDisc.coe_comp_subdisc.symm).symm.trans ?_
   rw [comap_complexHomologicalOrientation A.isOpenEmbedding hloc]
 
 section CompactSpace
