@@ -5,15 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Separation.Basic
 import TauCeti.Topology.Spectral.Limits.Basic
 import TauCeti.Topology.Spectral.Quotient
 import Mathlib.Topology.Compactification.OnePoint.Basic
+import Mathlib.Topology.Compactification.StoneCech
+import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Topology.InductiveDimension.Classes
+import Mathlib.Topology.UnitInterval
 
 /-!
 # Checks and sharpness examples for spectral and locally spectral quotients
 
 This file exercises the quotient theorems in `TauCeti.Topology.Spectral.Quotient` on extreme
-positive cases and records three counterexamples showing that key hypotheses are sharp:
+positive cases and records four counterexamples showing that key hypotheses are sharp:
 
 * the diagonal `⊥ : Setoid X` and the total relation `⊤ : Setoid X` on any spectral space `X`
   (empty or nonempty) satisfy `spectralSpace_quotient_of_isOpenMap`;
@@ -26,7 +31,12 @@ positive cases and records three counterexamples showing that key hypotheses are
 * on discrete `ℕ`, the total relation `⊤ : Setoid ℕ` has locally pro-constructible graph and open
   projections, so `Quotient (⊤ : Setoid ℕ)` is locally spectral and quasiseparated with locally
   spectral quotient map, while `Quotient.mk (⊤ : Setoid ℕ)` is not globally spectral
-  (`IsSpectralMap` fails because `ℕ` is not compact).
+  (`IsSpectralMap` fails because `ℕ` is not compact);
+* presenting `unitInterval` as a quotient of the Stone–Čech space `Ultrafilter unitInterval`
+  produces a pro-constructible equivalence relation on a spectral space whose projections lift
+  generalizations and whose quotient is T₀, yet `Quotient r` is homeomorphic to `[0, 1]` and
+  therefore not spectral, showing that the basis hypothesis of `TauCeti.spectralSpace_quotient`
+  cannot be omitted.
 -/
 
 open Set Topology
@@ -226,5 +236,40 @@ example :
     hspec.isCompact_preimage_of_isOpen isOpen_univ huniv_c
   rw [isCompact_iff_finite] at hpre
   exact infinite_univ hpre
+
+/-- **Scholze, Remark 2.8**: presenting `unitInterval` as a quotient of the spectral Stone–Čech
+space `Ultrafilter unitInterval` gives a pro-constructible equivalence relation whose projections
+lift generalizations and whose quotient is T₀, yet `Quotient r` is not spectral. -/
+example :
+    let f : C(Ultrafilter unitInterval, unitInterval) :=
+      ⟨Ultrafilter.extend id, continuous_ultrafilter_extend id⟩
+    let r : Setoid (Ultrafilter unitInterval) := Setoid.ker f
+    ∃ (_ : SpectralSpace (Ultrafilter unitInterval)),
+      IsProConstructible {q : Ultrafilter unitInterval × Ultrafilter unitInterval | r q.1 q.2} ∧
+        GeneralizingMap
+          (fun q : {q : Ultrafilter unitInterval × Ultrafilter unitInterval // r q.1 q.2} ↦
+            q.val.1) ∧
+        T0Space (Quotient r) ∧
+        GeneralizingMap (Quotient.mk r) ∧
+        ¬ SpectralSpace (Quotient r) := by
+  intro f r
+  have : SpectralSpace (Ultrafilter unitInterval) :=
+    { toPrespectralSpace := .of_isTopologicalBasis ultrafilterBasis_is_basis
+        fun _ ⟨s, hs⟩ ↦ hs ▸ (ultrafilter_isClosed_basic s).isCompact }
+  have hR :
+      IsProConstructible {q : Ultrafilter unitInterval × Ultrafilter unitInterval | r q.1 q.2} :=
+    (isClosed_eq (f.continuous.comp continuous_fst)
+      (f.continuous.comp continuous_snd)).isProConstructible
+  have hs_gen : GeneralizingMap
+      (fun q : {q : Ultrafilter unitInterval × Ultrafilter unitInterval // r q.1 q.2} ↦
+        q.val.1) :=
+    generalizingMap_of_t1Space
+  refine ⟨inferInstance, hR, hs_gen, hR.t0Space_quotient hs_gen,
+    hR.generalizingMap_quotientMk hs_gen, fun hspec ↦ ?_⟩
+  have hf_surj : Function.Surjective f := fun y ↦ ⟨pure y, ultrafilter_extend_pure id y⟩
+  have hf_quot : IsQuotientMap f := f.continuous.isClosedMap.isQuotientMap f.continuous hf_surj
+  have : SpectralSpace unitInterval := hf_quot.homeomorph.spectralSpace
+  exact zero_ne_one ((subsingleton_of_preconnected_totallyDisconnected (α := unitInterval)).elim
+    0 1)
 
 end TauCeti

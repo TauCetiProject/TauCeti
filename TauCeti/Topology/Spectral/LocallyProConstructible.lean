@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Spectral.LocallySpectral
 public import TauCeti.Topology.Spectral.ProConstructible
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Homeomorph.Subtype
 import TauCeti.Topology.Spectral.Limits.Basic
 
 /-!
@@ -19,12 +20,14 @@ compactness on a subset of a noncompact space.
 
 Local pro-constructibility can be tested on an open cover. Singletons are locally
 pro-constructible, locally pro-constructible subspaces of locally spectral spaces are again
-locally spectral, and locally pro-constructible subsets pull back along locally spectral maps into
-locally spectral spaces. For a locally pro-constructible subset of a product, coordinate slices at
-points of a locally spectral factor remain locally pro-constructible, and each projection is
-locally spectral as soon as the complementary factor is locally spectral. On a locally spectral
-space, the closure of a locally pro-constructible subset is its set of specializations; in
-particular, such a subset is closed exactly when it is stable under specialization.
+locally spectral with locally spectral subspace inclusion, and locally pro-constructible subsets
+pull back along locally spectral maps into locally spectral spaces. For a locally pro-constructible
+subset of a product, coordinate slices at points of a locally spectral factor remain locally
+pro-constructible, and each projection is locally spectral as soon as the complementary factor is
+locally spectral. On a locally spectral space, the closure of a locally pro-constructible subset is
+its set of specializations; in particular, such a subset is closed exactly when it is stable under
+specialization, and an open locally spectral map between locally spectral spaces lifts
+generalizations.
 
 A quasi-compact locally spectral map out of a locally spectral space carries locally
 pro-constructible subsets to locally pro-constructible subsets. Here quasi-compactness is
@@ -468,5 +471,38 @@ theorem IsLocallySpectralMap.isClosedMap_iff_specializingMap {f : X → Y}
   have himage := hs.isLocallyProConstructible.image hX hf hqc
   exact (himage.isClosed_iff_stableUnderSpecialization hY).mpr
     (hs.stableUnderSpecialization.image hspec)
+
+/-- The subspace inclusion of a locally pro-constructible subset is a locally spectral map. -/
+theorem IsLocallyProConstructible.isLocallySpectralMap_subtypeVal
+    (hs : IsLocallyProConstructible s) :
+    IsLocallySpectralMap ((↑) : s → X) := by
+  refine .of_isSpectralMap_restrict continuous_subtypeVal fun U V hUV hUo hVo hUs hVs ↦ ?_
+  let _ : SpectralSpace U := hUs
+  let _ : SpectralSpace V := hVs
+  let U' : Set s := (Subtype.val : s → X) ⁻¹' V
+  let e := Homeomorph.Set.subtypePreimageComm s V
+  have _ : SpectralSpace ((Subtype.val : V → X) ⁻¹' s) :=
+    (hs.isProConstructible_preimage hVo).spectralSpace
+  have hU's : SpectralSpace U' := e.symm.spectralSpace
+  have _ : QuasiSeparatedSpace U' := hU's.toQuasiSeparatedSpace
+  have hincl : IsOpenEmbedding (Set.inclusion hUV : U → U') :=
+    IsOpenEmbedding.inclusion hUV (hUo.preimage continuous_subtypeVal)
+  convert ((hs.isProConstructible_preimage hVo).isSpectralMap_subtypeVal.comp
+    e.isProperMap.isSpectralMap).comp hincl.isSpectralMap using 1
+  ext y
+  simp [e]
+
+/-- An open locally spectral map between locally spectral spaces lifts generalizations. -/
+theorem IsLocallySpectralMap.generalizingMap_of_isOpenMap {f : X → Y}
+    (hf : IsLocallySpectralMap f) (hX : IsLocallySpectralSpace X)
+    (hY : IsLocallySpectralSpace Y) (ho : IsOpenMap f) : GeneralizingMap f := by
+  intro x y' hy'
+  have hx : x ∈ closure (f ⁻¹' {y'}) := by
+    rw [← ho.preimage_closure_eq_closure_preimage hf.continuous]
+    exact specializes_iff_mem_closure.mp hy'
+  rw [((isLocallyProConstructible_singleton y').preimage hY hf).closure_eq_setOfPred_specializes
+    hX] at hx
+  obtain ⟨x', hx', hx'x⟩ := hx
+  exact ⟨x', hx'x, hx'⟩
 
 end TauCeti

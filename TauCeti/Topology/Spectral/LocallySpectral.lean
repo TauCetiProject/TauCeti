@@ -38,9 +38,14 @@ spectral maps compose through a locally spectral middle space.
 * `TauCeti.IsLocallySpectralSpace.isTopologicalBasis`: the spectral open subsets of a locally
   spectral space form a basis.
 * `Topology.IsOpenEmbedding.isLocallySpectralSpace`: open subspaces of locally spectral spaces are
-  locally spectral.
+  locally spectral; `IsCompact.spectralSpace_of_isOpen` gives spectrality of compact open
+  subspaces when the ambient space is quasiseparated.
+* `Topology.IsOpenEmbedding.isLocallySpectralMap`: open embeddings are locally spectral.
 * `TauCeti.IsLocallySpectralSpace.prod`: binary products of locally spectral spaces are locally
   spectral.
+* `TauCeti.IsLocallySpectralSpace.isLocallySpectralMap_fst`,
+  `TauCeti.IsLocallySpectralSpace.isLocallySpectralMap_snd`: product projections are locally
+  spectral when the complementary factor is locally spectral.
 * `TauCeti.IsLocallySpectralMap.of_forall_exists`: local spectrality of a map tested on one cover.
 * `TauCeti.IsLocallySpectralMap.comp`, `Homeomorph.isLocallySpectralMap_comp`,
   `Homeomorph.isLocallySpectralMap_comp_iff`: composition through a locally spectral middle space,
@@ -155,6 +160,14 @@ theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralSpace {Z : Type*} [Topo
   have : CompactSpace (e ⁻¹' W) := h.symm.compactSpace
   exact h.isOpenEmbedding.spectralSpace
 
+/-- A compact open subset of a quasiseparated locally spectral space is spectral. -/
+theorem _root_.IsCompact.spectralSpace_of_isOpen [QuasiSeparatedSpace X] {U : Set X}
+    (hUc : IsCompact U) (hUo : IsOpen U) (hX : IsLocallySpectralSpace X) : SpectralSpace U :=
+  spectralSpace_iff_isLocallySpectralSpace.mpr
+    ⟨hUo.isOpenEmbedding_subtypeVal.isLocallySpectralSpace hX,
+      isCompact_iff_compactSpace.mp hUc,
+      hUo.isOpenEmbedding_subtypeVal.quasiSeparatedSpace⟩
+
 /-- The product of two locally spectral spaces is locally spectral. -/
 theorem IsLocallySpectralSpace.prod (hX : IsLocallySpectralSpace X)
     (hY : IsLocallySpectralSpace Y) : IsLocallySpectralSpace (X × Y) := by
@@ -207,6 +220,15 @@ theorem isLocallySpectralMap_id : IsLocallySpectralMap (id : X → X) := by
     rfl
   rw [heq]
   exact hemb.isSpectralMap
+
+/-- Every open embedding is locally spectral: any restriction between spectral open subspaces is an
+open embedding from a compact space into a quasiseparated space. -/
+theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralMap {f : X → Y} (hf : IsOpenEmbedding f) :
+    IsLocallySpectralMap f :=
+  .of_isSpectralMap_restrict hf.continuous fun U V hUV hUo _ hUs hVs ↦ by
+    let _ : SpectralSpace U := hUs
+    let _ : SpectralSpace V := hVs
+    exact (hf.restrict hUV hUo).isSpectralMap
 
 /-- On spectral spaces, a locally spectral map is a spectral map. -/
 theorem IsLocallySpectralMap.isSpectralMap [SpectralSpace X] [SpectralSpace Y] {f : X → Y}
@@ -358,6 +380,65 @@ theorem _root_.Homeomorph.isLocallySpectralMap_comp_iff {Z : Type*} [Topological
     IsLocallySpectralMap (f ∘ e) ↔ IsLocallySpectralMap f :=
   ⟨fun h ↦ by simpa [Function.comp_def] using e.symm.isLocallySpectralMap_comp h,
     e.isLocallySpectralMap_comp⟩
+
+/-- The first projection `X × Y → X` is locally spectral whenever the second factor `Y` is locally
+spectral. -/
+theorem IsLocallySpectralSpace.isLocallySpectralMap_fst
+    (hY : IsLocallySpectralSpace Y) :
+    IsLocallySpectralMap (Prod.fst : X × Y → X) := by
+  refine .of_isSpectralMap_restrict continuous_fst fun W U hWU hWo hUo hWs hUs ↦ ?_
+  let _ : SpectralSpace W := hWs
+  let _ : SpectralSpace U := hUs
+  have hfstU : IsLocallySpectralMap (Prod.fst : U × Y → U) := by
+    refine IsLocallySpectralMap.of_forall_exists fun ⟨u, y⟩ ↦ ?_
+    obtain ⟨U', hU'o, huU', hU's⟩ :=
+      isLocallySpectralSpace_iff.mp SpectralSpace.isLocallySpectralSpace u
+    obtain ⟨V, hVo, hyV, hVs⟩ := isLocallySpectralSpace_iff.mp hY y
+    have := hU's
+    have := hVs
+    have hU'V : MapsTo (Prod.fst : U × Y → U) (U' ×ˢ V) U' := fun _ h ↦ h.1
+    have hU'Vs : SpectralSpace ↥(U' ×ˢ V) := spectralSpace_set_prod
+    refine ⟨U' ×ˢ V, U', hU'V, hU'o.prod hVo, hU'o, ⟨huU', hyV⟩, hU'Vs.toQuasiSeparatedSpace, ?_⟩
+    have heq : hU'V.restrict Prod.fst (U' ×ˢ V) U' = Prod.fst ∘ Homeomorph.Set.prod U' V := by
+      funext _
+      rfl
+    rw [heq]
+    exact isProperMap_fst_of_compactSpace.isSpectralMap.comp
+      (Homeomorph.Set.prod U' V).isProperMap.isSpectralMap
+  let ι : W → U × Y := fun w ↦ (⟨w.val.1, hWU w.property⟩, w.val.2)
+  have hι : IsOpenEmbedding ι := by
+    refine IsOpenEmbedding.of_comp ι (hUo.isOpenEmbedding_subtypeVal.prodMap .id) ?_
+    have heq : (Prod.map (Subtype.val : U → X) id) ∘ ι = (Subtype.val : W → X × Y) := by
+      funext _
+      rfl
+    rw [heq]
+    exact hWo.isOpenEmbedding_subtypeVal
+  have hls : IsLocallySpectralMap (Prod.fst ∘ ι) :=
+    IsLocallySpectralMap.comp (SpectralSpace.isLocallySpectralSpace.prod hY)
+      hfstU hι.isLocallySpectralMap
+  have heq : hWU.restrict Prod.fst W U = Prod.fst ∘ ι := by
+    funext _
+    rfl
+  rw [heq]
+  exact hls.isSpectralMap
+
+/-- The second projection `X × Y → Y` is locally spectral whenever the first factor `X` is locally
+spectral. -/
+theorem IsLocallySpectralSpace.isLocallySpectralMap_snd
+    (hX : IsLocallySpectralSpace X) :
+    IsLocallySpectralMap (Prod.snd : X × Y → Y) := by
+  refine .of_isSpectralMap_restrict continuous_snd fun W V hWV hWo hVo hWs hVs ↦ ?_
+  let _ : SpectralSpace W := hWs
+  let _ : SpectralSpace V := hVs
+  let e : W ≃ₜ (Prod.swap ⁻¹' W) := (Homeomorph.prodComm X Y).subtype fun _ ↦ Iff.rfl
+  have _ : SpectralSpace (Prod.swap ⁻¹' W) := e.spectralSpace
+  have hW'V : MapsTo (Prod.fst : Y × X → Y) (Prod.swap ⁻¹' W) V := fun _ h ↦ hWV h
+  have heq : hWV.restrict Prod.snd W V = (hW'V.restrict Prod.fst (Prod.swap ⁻¹' W) V) ∘ e := by
+    funext _
+    rfl
+  rw [heq]
+  exact (hX.isLocallySpectralMap_fst.isSpectralMap_restrict hW'V
+    (hWo.preimage continuous_swap) hVo).comp e.isProperMap.isSpectralMap
 
 end TauCeti
 
