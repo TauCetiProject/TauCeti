@@ -123,6 +123,12 @@ section MapProjectivization
 variable {L W : Type*} [DivisionRing L] [AddCommGroup W] [Module L W] [TopologicalSpace W]
   {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
 
+/-- A continuous semilinear equivalence induces a continuous bijection of projective spaces. -/
+@[fun_prop]
+theorem continuous_mapLinearEquiv (f : V ≃ₛₗ[σ] W) (hf : Continuous f) :
+    Continuous (mapLinearEquiv f) :=
+  (continuous_map f.injective hf).congr fun x ↦ (mapLinearEquiv_apply f x).symm
+
 /-- A continuous semilinear equivalence `V ≃SL[σ] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ L W`,
 sending the line spanned by `v` to the line spanned by `e v`. -/
 def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃SL[σ] W) :
