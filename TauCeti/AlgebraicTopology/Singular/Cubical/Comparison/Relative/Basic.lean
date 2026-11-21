@@ -90,6 +90,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
   and `s`, `s'` are relative cycles representing the same class, any cycle `s - s' + a` with `a` a
   chain of `A` is a boundary.
 
+* `TopPair.boundary_ofCube_comp`: compute the boundary of a cube mapped out of a pair, from
+  the map on its subspace.
+
 ## References
 
 * W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter VII.
@@ -681,6 +684,19 @@ theorem map_cubicalBoundaryChainOfCube {m : ℕ} (c : SingularCube P.fst (m + 1)
       P.map.hom.comp (P.liftSnd g hg) = g := ContinuousMap.ext (map_liftSnd g hg)
   simp [cubicalBoundaryChainOfCube, NormalizedCubicalChain.boundary_ofCube,
     NormalizedCubicalChain.map_ofCube, h]
+
+/-- The boundary of a mapped cube is the pushforward of its lifted boundary in the subspace
+of a pair. -/
+theorem boundary_ofCube_comp {Y : Type*} [TopologicalSpace Y] (P : TopPair.{u})
+    {m : ℕ} (c : SingularCube P.fst (m + 1))
+    (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map))
+    (q : C(P.fst, Y)) :
+    NormalizedCubicalChain.boundary Y k m
+      (NormalizedCubicalChain.ofCube Y k (q.comp c)) =
+      NormalizedCubicalChain.map k (q.comp P.map.hom) m
+        (P.cubicalBoundaryChainOfCube k c hc) := by
+  rw [NormalizedCubicalChain.map_comp, LinearMap.comp_apply, map_cubicalBoundaryChainOfCube,
+    NormalizedCubicalChain.map_boundary_apply, NormalizedCubicalChain.map_ofCube]
 
 /-- The boundary of a relative cube, read in the subspace, is a cycle. -/
 @[simp]

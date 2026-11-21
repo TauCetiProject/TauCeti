@@ -8,20 +8,34 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.BumpFunction.Basic
+public import TauCeti.MeasureTheory.Measure.Comap
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
-# Normalized smooth bumps on balls and scale-sharp Haar bounds
+# Integrals and bounds against normalized smooth bumps
 
-This file supplements Mathlib's `ContDiffBump.normed` API with set-integral formulas, half-space
-integrals, and scale-sharp pointwise bounds against an additive Haar measure `μ`, and specializes
-them to `(TauCeti.ballBump x₀ hρ).normed μ`, which is supported in
+Let `f` be a smooth bump centred at `c` in a finite-dimensional real normed space. Its normalized
+form `f.normed μ` is continuous with compact support, so it makes every continuous function
+integrable. Since it vanishes off the closed ball of radius `f.rOut` around `c`, an integral against
+it may be taken over that compact ball, with the pullback of `μ`, which is a finite measure. There
+`f.normed μ` still has integral one and averages constants to themselves.
+
+This file also supplements Mathlib's `ContDiffBump.normed` API with set-integral formulas,
+half-space integrals, and scale-sharp pointwise bounds against an additive Haar measure `μ`, and
+specializes them to `(TauCeti.ballBump x₀ hρ).normed μ`, which is supported in
 `Metric.closedBall x₀ (ρ / 2) ⊆ Metric.ball x₀ ρ` and satisfies the scale-sharp bound
 `‖(TauCeti.ballBump x₀ hρ).normed μ y‖ ≤ C * ρ ^ (-finrank ℝ E)` with `C` independent of `x₀`
 and `ρ`.
 
-## Main results
+## Main declarations
 
+* `ContDiffBump.integrable_normed_smul`: bump-weighted continuous functions are integrable.
+* `ContDiffBump.integral_closedBall_normed_smul`: bump-weighted integrals over the closed ball of
+  radius `f.rOut` are integrals over the whole space.
+* `ContDiffBump.integral_closedBall_normed_smul_const`: over that closed ball, the normalized bump
+  averages a constant to itself.
 * `ContDiffBump.setIntegral_normed`: for a locally finite measure `μ` positive on nonempty open
   sets, integrating `f.normed μ` over any superset of `Metric.closedBall c f.rOut` yields `1`.
 * `ContDiffBump.setIntegral_normed_halfSpace`: integrating `f.normed μ` (for `f` centered at `0`)
@@ -42,6 +56,50 @@ open MeasureTheory Metric Module Set
 open scoped ContDiff Topology
 
 namespace ContDiffBump
+
+section Comap
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] {c : E} (f : ContDiffBump c) (μ : Measure E) [IsLocallyFiniteMeasure μ]
+  [μ.IsOpenPosMeasure]
+
+/-- Bump-weighted continuous functions are integrable. -/
+theorem integrable_normed_smul {g : E → G} (hg : Continuous g) :
+    Integrable (fun x ↦ f.normed μ x • g x) μ :=
+  (f.continuous_normed.smul hg).integrable_of_hasCompactSupport
+    f.hasCompactSupport_normed.smul_right
+
+/-- An integral against a normalized bump over the closed ball of radius `f.rOut`, with the
+pullback of `μ`, is the integral over the whole space. -/
+theorem integral_closedBall_normed_smul (g : E → G) :
+    ∫ x : closedBall c f.rOut, f.normed μ x • g x ∂(μ.comap (↑)) =
+      ∫ x, f.normed μ x • g x ∂μ := by
+  rw [integral_subtype_comap measurableSet_closedBall (fun x ↦ f.normed μ x • g x)]
+  exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
+    rw [image_eq_zero_of_notMem_tsupport (f := f.normed μ) (by rwa [f.tsupport_normed_eq]),
+      zero_smul]
+
+/-- A normalized bump has integral one over the closed ball of radius `f.rOut`. -/
+theorem integral_closedBall_normed :
+    ∫ x : closedBall c f.rOut, f.normed μ x ∂(μ.comap (↑)) = 1 := by
+  have h := f.integral_closedBall_normed_smul μ (fun _ ↦ (1 : ℝ))
+  simp only [smul_eq_mul, mul_one] at h
+  rw [h, f.integral_normed]
+
+omit [μ.IsOpenPosMeasure] in
+/-- Bump-weighted constants are integrable over the closed ball of radius `f.rOut`. -/
+theorem integrable_closedBall_normed_smul_const (z : G) :
+    Integrable (fun x : closedBall c f.rOut ↦ f.normed μ x • z) (μ.comap (↑)) :=
+  ((f.continuous_normed.comp continuous_subtypeVal).smul continuous_const)
+    |>.integrable_of_hasCompactSupport (.of_compactSpace _)
+
+/-- Over the closed ball of radius `f.rOut`, a normalized bump averages a constant to itself. -/
+theorem integral_closedBall_normed_smul_const [CompleteSpace G] (z : G) :
+    ∫ x : closedBall c f.rOut, f.normed μ x • z ∂(μ.comap (↑)) = z := by
+  rw [integral_smul_const, f.integral_closedBall_normed, one_smul]
+
+end Comap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
   [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
