@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effectivity
 public import TauCeti.AlgebraicGeometry.Noetherian
+public import TauCeti.AlgebraicGeometry.LineBundle.SectionDegree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Basic
 
 /-!
@@ -26,6 +27,11 @@ The construction uses `SchemeWeilDivisor.exists_nonempty_iso_sheaf` to pass to d
 and `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree` for effectivity.
 The Weil–Cartier correspondence then gives an effective Cartier divisor representative.
 
+For proper integral curves, including singular curves, the section-theoretic construction also
+produces an actual effective Cartier ideal of colength `deg L`, assuming finite-dimensional
+`H⁰(𝒪_X)` and `H¹(𝒪_X)` but not constant global functions. This is the form needed by the
+functor of relative effective Cartier divisors, rather than just the Weil divisor dictionary.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, II.6.11 and IV.1.3 (Riemann–Roch).
@@ -40,6 +46,42 @@ open Module (finrank)
 namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
 
 universe u
+
+section CartierIdeal
+
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
+  [IsProper (X ↘ Spec (.of k))] [RelativeDimensionLE 1 (X ↘ Spec (.of k))]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (trivial X).obj 0)]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (trivial X).obj 1)]
+
+/-- On a proper integral curve with finite-dimensional `H⁰(𝒪_X)` and `H¹(𝒪_X)`, a line bundle
+of degree at least `dim H¹(𝒪_X)` has an effective Cartier zero subscheme of that degree. The
+ideal sheaf of this subscheme has class `L⁻¹`. Neither regularity, constant global functions,
+nor a rational point is required. -/
+theorem exists_isEffectiveCartier_eulerDegree_eq_of_genus_le (L : InvertibleSheaf X)
+    (hL : (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) ≤ L.eulerDegree k) :
+    ∃ (I : X.IdealSheafData) (hI : I.IsEffectiveCartier),
+      LineBundleClass.mk hI.toInvertibleSheaf = (LineBundleClass.mk L)⁻¹ ∧
+        L.eulerDegree k = (I.subschemeι ≫ X ↘ Spec (.of k)).finrank default := by
+  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, by simp⟩⟩
+  let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
+  have : Nontrivial Γ(M, ⊤) := inferInstanceAs (Nontrivial Γ(X, ⊤))
+  have : Nontrivial (Scheme.Modules.Cohomology M 0) :=
+    (Scheme.Modules.cohomologyZeroEquiv M).toEquiv.nontrivial
+  have : FiniteDimensional k (Scheme.Modules.Cohomology M 0) :=
+    (Scheme.Modules.finiteDimensional_cohomology_congr k (trivialObjIsoUnit X) 0).mp inferInstance
+  have h₀ : 0 < finrank k (Scheme.Modules.Cohomology (trivial X).obj 0) := by
+    rw [Scheme.Modules.finrank_cohomology_congr k (trivialObjIsoUnit X) 0]
+    exact Module.finrank_pos
+  have hdeg := L.eulerDegree_eq_finrank_sub k
+  have hpos : 0 < finrank k (Scheme.Modules.Cohomology L.obj 0) := by omega
+  have := Module.nontrivial_of_finrank_pos hpos
+  obtain ⟨s, hs⟩ := exists_ne (0 : Scheme.Modules.Cohomology L.obj 0)
+  exact L.exists_isEffectiveCartier_eulerDegree_eq_of_ne_zero k
+    (Scheme.Modules.cohomologyZeroEquiv L.obj s)
+    (by simpa using hs)
+
+end CartierIdeal
 
 variable {X : Scheme.{u}} [IsIntegral X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
