@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
-public import TauCeti.Algebra.Colimit.Ring.Basic
 public import TauCeti.Algebra.Colimit.Ring.Ideal
 public import TauCeti.Algebra.Colimit.Ring.Polynomial
 

@@ -31,8 +31,8 @@ full faithfulness half of the statement that finite étale algebras over a direc
 rings are the directed 2-colimit of finite étale algebras over the stages.
 
 Over the base ring `ℤ`, the factorization statement also applies to Mathlib's `Ring.DirectLimit`:
-a ring homomorphism from a finitely presented ring into `Ring.DirectLimit G f` factors through some
-stage.
+for a directed system of commutative rings `G i` indexed by a nonempty directed preorder, a ring
+homomorphism from a finitely presented ring into `Ring.DirectLimit G f` factors through some stage.
 
 Mathlib proves the first two statements for colimit cocones in `Under R` over `CommRingCat`
 (`RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit` and
@@ -45,8 +45,9 @@ the concrete colimit `DirectLimit` of a directed system of algebras.
 * `TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation`: an `A`-algebra map from a
   finitely presented `A`-algebra into a directed colimit of `A`-algebras factors through some
   stage.
-* `RingHom.exists_of_comp_eq_of_finitePresentation`: a ring homomorphism from a finitely
-  presented ring into `Ring.DirectLimit G f` factors through some stage.
+* `RingHom.exists_of_comp_eq_of_finitePresentation`: for a directed system of commutative rings
+  indexed by a nonempty directed preorder, a ring homomorphism from a finitely presented ring into
+  `Ring.DirectLimit G f` factors through some stage.
 * `TauCeti.DirectLimit.Algebra.exists_comp_eq_comp_of_finiteType`: two `A`-algebra maps from an
   `A`-algebra of finite type into a stage which agree in the colimit agree at a later stage.
 * `TauCeti.DirectLimit.Algebra.exists_eq_rTensor_comp_of_finitePresentation`,
@@ -237,18 +238,17 @@ namespace RingHom
 variable {ι : Type*} [Preorder ι] [Nonempty ι] [IsDirectedOrder ι] {G : ι → Type*}
   [∀ i, CommRing (G i)] {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)]
 
-/-- A ring homomorphism from a finitely presented ring `S` into a directed colimit of rings
-factors through some stage. This is the surjectivity half of the statement that `Hom(S, -)`
-commutes with directed colimits for a finitely presented ring `S`.
-
-It is `TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation` over the base ring `ℤ`,
-applied to `S` as a finitely presented `ℤ`-algebra, and transported from the generic `DirectLimit`
-of the `ℤ`-algebra maps `(f i j).toIntAlgHom` to `Ring.DirectLimit` along
-`TauCeti.Ring.DirectLimit.ringEquivOfEq`. -/
+/-- Let `G i` be a directed system of commutative rings, indexed by a nonempty directed preorder,
+with transition maps `f i j`, and let `S` be a finitely presented ring (a finitely presented
+`ℤ`-algebra). Then every ring homomorphism `g : S →+* Ring.DirectLimit G f` factors through some
+stage: `g = (Ring.DirectLimit.of G f i).comp g'` for some `i` and some `g' : S →+* G i`. This is
+the surjectivity half of the statement that `Hom(S, -)` commutes with directed colimits for a
+finitely presented ring `S`. -/
 theorem exists_of_comp_eq_of_finitePresentation {S : Type*} [CommRing S]
     [Algebra.FinitePresentation ℤ S] (g : S →+* Ring.DirectLimit G (f · · ·)) :
     ∃ i, ∃ g' : S →+* G i, (Ring.DirectLimit.of G (f · · ·) i).comp g' = g := by
-  -- View `G` as a directed system of `ℤ`-algebras, and identify the two colimits.
+  -- View `G` as a directed system of `ℤ`-algebras, identify the two colimits along
+  -- `ringEquivOfEq`, and apply `exists_eq_comp_of_finitePresentation` over the base ring `ℤ`.
   let F i j (hij : i ≤ j) : G i →ₐ[ℤ] G j := (f i j hij).toIntAlgHom
   have hF i j hij x : F i j hij x = f i j hij x := (f i j hij).toIntAlgHom_apply x
   have : DirectedSystem G (F · · ·) := by

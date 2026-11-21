@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.FinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.Ideal.GoingDown
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
-import TauCeti.Algebra.Colimit.Ring.Basic
 import TauCeti.Algebra.Colimit.Ring.Ideal
 public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
@@ -56,27 +55,17 @@ theorem exists_faithfullyFlat_baseChange
   have htop : I.map (algebraMap A (DirectLimit B f)) = ⊤ :=
     (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I hI).mp inferInstance
   let J (j : ι) := I.map (algebraMap A (B j))
-  let g (i j : ι) (hij : i ≤ j) := (f i j hij).toRingHom
-  have hJ (j k : ι) (hjk : j ≤ k) : J j ≤ (J k).comap (g j k hjk) := by
-    rw [← Ideal.map_le_iff_le_comap, Ideal.map_map]
+  have hJ (j k : ι) (hjk : j ≤ k) : J j ≤ (J k).comap (f j k hjk) := by
+    rw [← Ideal.map_le_iff_le_comap, ← Ideal.map_coe, Ideal.map_map]
     exact le_of_eq (congrArg (I.map ·) (f j k hjk).comp_algebraMap)
-  -- Compare with the generic colimit of the algebra maps `f`, whose `A`-algebra structure gives
-  -- `algebraMap A (DirectLimit B f)`.
-  let e : Ring.DirectLimit B (g · · ·) ≃+* DirectLimit B f :=
-    TauCeti.Ring.DirectLimit.ringEquivOfEq fun j k hjk x ↦ by
-      simp only [g, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
-  have he (j : ι) :
-      ((J j).map (Ring.DirectLimit.of B (g · · ·) j)).map e.toRingHom =
-        I.map (algebraMap A (DirectLimit B f)) := by
-    rw [Ideal.map_map, Ideal.map_map]
+  have hJA (j : ι) :
+      (J j).map (DirectLimit.Ring.of B f j) = I.map (algebraMap A (DirectLimit B f)) := by
+    rw [Ideal.map_map]
     congr 1
     ext a
-    simp [e, DirectLimit.algebraMap_def j]
-  have hsup : (⨆ j, (J j).map (Ring.DirectLimit.of B (g · · ·) j)) = ⊤ := by
-    apply (Ideal.map_eq_top_of_bijective e.toRingHom e.bijective).mp
-    simp only [Ideal.map_iSup, he, iSup_const, htop]
-  obtain ⟨j, hij, hj⟩ := (TauCeti.Ring.DirectLimit.of_mem_iSup_map_of_iff hJ
-    (i := i) (x := 1)).1 (by simp [hsup])
+    simp [DirectLimit.algebraMap_def j]
+  obtain ⟨j, hij, hj⟩ := (TauCeti.DirectLimit.Ring.of_mem_iSup_map_of_iff hJ
+    (i := i) (x := 1)).1 (by simp [hJA, htop])
   exact ⟨j, hij, (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I hI).mpr
     (Ideal.eq_top_of_isUnit_mem _ (by simpa using hj) isUnit_one)⟩
 
