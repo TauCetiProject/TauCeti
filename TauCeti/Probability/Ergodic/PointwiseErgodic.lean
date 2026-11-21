@@ -498,16 +498,10 @@ private lemma tendsto_eLpNorm_birkhoffAverage_sub_condExp_simpleFunc {Ω E : Typ
     Tendsto (fun n ↦ eLpNorm (birkhoffAverage ℝ T s n - μ[s | MeasurableSpace.invariants T]) p μ)
       atTop (𝓝 0) := by
   obtain ⟨C, hC⟩ := s.exists_forall_norm_le
-  have hce_bdd : ∀ᵐ x ∂μ, ‖μ[s | MeasurableSpace.invariants T] x‖ₑ ≤ ENNReal.ofReal C := by
-    have h1 : eLpNormEssSup (μ[s | MeasurableSpace.invariants T]) μ ≤ ENNReal.ofReal C := by
-      rw [← eLpNorm_exponent_top integrable_condExp.aestronglyMeasurable]
-      calc
-        eLpNorm (μ[s | MeasurableSpace.invariants T]) ∞ μ ≤ eLpNorm (s : Ω → E) ∞ μ :=
-          eLpNorm_condExp_le_eLpNorm (s : Ω → E) le_top
-        _ = eLpNormEssSup (s : Ω → E) μ := eLpNorm_exponent_top s.aestronglyMeasurable
-        _ ≤ ENNReal.ofReal C := eLpNormEssSup_le_of_ae_bound (ae_of_all _ hC)
-    exact (ae_le_eLpNormEssSup (f := μ[s | MeasurableSpace.invariants T]) (μ := μ)).mono
-      fun _ hx ↦ hx.trans h1
+  have hce_bdd : ∀ᵐ x ∂μ, ‖μ[s | MeasurableSpace.invariants T] x‖ₑ ≤ ENNReal.ofReal C :=
+    (ae_bdd_norm_condExp_of_ae_bdd_norm (ae_of_all _ hC)).mono fun _ hx ↦ by
+      rw [← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal hx
   refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (m := μ) (l := atTop) hp
     (Eventually.of_forall fun _ ↦
       aestronglyMeasurable_birkhoffAverage hT.quasiMeasurePreserving s.aestronglyMeasurable)
