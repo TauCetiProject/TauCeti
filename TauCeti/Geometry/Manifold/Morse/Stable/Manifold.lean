@@ -196,8 +196,8 @@ theorem linearFlow_coord_negativeExtend (t : ℝ) (c : {i // φ.weight i < 0} �
   rw [Pi.smul_apply, smul_eq_mul]
   rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
   · rw [φ.linearFlow_of_weight_eq_neg_one hi]
-  · rw [linearFlow_apply, φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num),
-      mul_zero, mul_zero]
+  · rw [MorseBottChart.linearFlow_apply,
+      φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num), mul_zero, mul_zero]
 
 /-- If the coordinates of `a` are those of `b` moved by the linear flow for the time `s`, the
 coordinates of negative weight of `a` are `e^{s}` times those of `b`. -/
