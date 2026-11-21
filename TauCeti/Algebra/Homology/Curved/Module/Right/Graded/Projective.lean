@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.ObjectProperty.OrthogonalLimits
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Abelian
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Exact
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Basic
 public import TauCeti.Algebra.Homology.Curved.Module.Right.SecondKind
@@ -127,26 +128,11 @@ instance projective_toGradedModuleCat_cone {M N : CurvedDGRightModuleCat.{u, u, 
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
     [Projective (toGradedModuleCat M)] [Projective (toGradedModuleCat N)] :
     Projective (toGradedModuleCat (cone f)) := by
-  let S := ShortComplex.mk (coneInclusion f) (coneProjection f)
-    (coneInclusion_comp_coneProjection f)
-  have hS : S.ShortExact := by
-    refine shortExact_iff.2 ⟨?_, ?_, ?_⟩
-    · intro x₁ x₂ hx
-      dsimp only [S, ShortComplex.mk] at hx
-      rw [closedHom_coneInclusion] at hx
-      exact congrArg Prod.snd hx
-    · intro x
-      dsimp only [S, ShortComplex.mk]
-      exact ⟨(x, 0), by rw [closedHom_coneProjection]; rfl⟩
-    · intro z
-      dsimp only [S, ShortComplex.mk]
-      rw [closedHom_coneInclusion, closedHom_coneProjection]
-      exact ⟨fun hz ↦ ⟨z.2, Prod.ext hz.symm rfl⟩, by rintro ⟨y, rfl⟩; rfl⟩
-  let SF := S.map (forgetDifferential (h := h))
-  have hSF : SF.ShortExact := hS.map_of_exact (forgetDifferential (h := h))
-  have : Projective SF.X₁ := (inferInstance : Projective (toGradedModuleCat N))
-  have : Projective SF.X₃ := (inferInstance : Projective (toGradedModuleCat (M.shift 1)))
-  exact Projective.of_iso hSF.splittingOfProjective.isoBinaryBiproduct.symm inferInstance
+  have hiso := (coneGradedSplitting f).isoBinaryBiproduct.symm
+  simp only [ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_X₃,
+    coneShortComplex_X₁, coneShortComplex_X₂, coneShortComplex_X₃,
+    forgetDifferential_obj_of] at hiso
+  exact Projective.of_iso hiso inferInstance
 
 /-- The zero curved module is graded-projective. -/
 instance : (gradedProjective R h).ContainsZero where
