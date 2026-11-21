@@ -357,7 +357,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_pl
   · -- `uₖ ∘ ψₖ` solves the Floer equation of the plane datum.
     have h := hfl k (ψ k w) (hψP k (hΩ'D hw))
     rw [hJΩ' k w hw] at h
-    exact ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap_single_inf hHb
+    exact ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap_single_inf (by simp) hHb
       (fun r ↦ (hHbs r).of_le (by norm_num)) (hL4 k) (hwL k (hΩ'D hw))
       (((hu k).differentiableOn (by norm_num)).differentiableAt (hPo.mem_nhds (hψP k (hΩ'D hw))))
       h
@@ -368,9 +368,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_pl
       (((hKp I).mono (subset_univ _)).of_le (by norm_num))).mono
         fun w hw ↦ hψP k hw).integrableOn_compact hD').mono_set hΩ'D
   · -- Its energy over `Ω'` is the energy of `uₖ` over `ψₖ(Ω')`, at most `E`.
-    rw [← ω.integral_floerEnergyDensity_image_plumbingMap_single_inf hHb
+    rw [← ω.integral_floerEnergyDensity_image_plumbingMap_single_inf (by simp) hHb
       (fun r ↦ (hHbs r).of_le (by norm_num)) (hL4 k) hΩ'.measurableSet
-      (fun w hw ↦ hwL k (hΩ'D hw)) ((hu k).differentiableOn (by norm_num))]
+      (fun w hw ↦ hwL k (hΩ'D hw)) (((hu k).differentiableOn (by norm_num)).mono
+        fun z hz ↦ hz.elim
+          (fun h ↦ by simp only [P, mem_ofPred_eq, h, endCenter_one]; exact one_ne_zero) And.left)]
     exact (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
       ((setLIntegral_le_lintegral _ _).trans ((hE k).trans_eq ENNReal.ofReal_coe_nnreal.symm)))
 
