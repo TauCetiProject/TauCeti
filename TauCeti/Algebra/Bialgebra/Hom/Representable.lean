@@ -15,12 +15,12 @@ import TauCeti.Algebra.Coalgebra.BaseChange
 # The scheme of homomorphisms from a finite locally free monoid scheme
 
 Let `R` be a commutative ring, `G` a commutative `R`-bialgebra that is finitely generated and
-projective as an `R`-module, and `H` a commutative `R`-bialgebra of finite presentation. Thus
+projective as an `R`-module, and `H` a commutative `R`-bialgebra. Thus
 `Spec G` is an affine monoid scheme that is finite locally free over `Spec R`, and `Spec H` is an
-affine monoid scheme of finite presentation over `Spec R`. For an `R`-algebra `T`, homomorphisms of
+affine monoid scheme over `Spec R`. For an `R`-algebra `T`, homomorphisms of
 monoid schemes `Spec (T ⊗[R] G) → Spec (T ⊗[R] H)` over `Spec T` are the `T`-bialgebra
-homomorphisms `T ⊗[R] H →ₐc[T] T ⊗[R] G`. This file constructs an `R`-algebra of finite
-presentation `TauCeti.Bialgebra.HomAlgebra R H G` representing the functor
+homomorphisms `T ⊗[R] H →ₐc[T] T ⊗[R] G`. This file constructs an `R`-algebra
+`TauCeti.Bialgebra.HomAlgebra R H G` representing the functor
 
 ```text
 T ↦ (T ⊗[R] H →ₐc[T] T ⊗[R] G).
@@ -36,8 +36,10 @@ The construction starts from the Weil restriction `WeilRestriction R G (G ⊗[R]
 `T ⊗[R] H → T ⊗[R] G`. Compatibility with the counits says that two points of `Spec H` with values
 in `T` agree, and compatibility with the comultiplications says that two points of the Weil
 restriction along `G ⊗[R] G` agree. Both conditions are therefore equalities between composites
-of the classifying map with two fixed algebra homomorphisms, and it suffices to impose them on
-finitely many generators. So they cut out a finitely generated ideal of the Weil restriction.
+of the classifying map with two fixed algebra homomorphisms. These equations cut out a closed
+subscheme. When `H` is of finite type, it suffices to impose them on finitely many generators, so
+they cut out a finitely generated ideal. When `H` is finitely presented, the representing algebra
+is consequently finitely presented as well.
 
 The formation of `HomAlgebra R H G` commutes with an arbitrary base change `R → S`: the
 `S`-algebra `S ⊗[R] HomAlgebra R H G` is isomorphic to `HomAlgebra S (S ⊗[R] H) (S ⊗[R] G)`.
@@ -58,7 +60,7 @@ in `T`; the isomorphism is the one that the Yoneda lemma produces.
 
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_one_tmul`: `homEquiv` is natural in `T`.
 * `TauCeti.Bialgebra.HomAlgebra.instFinitePresentation`: `HomAlgebra R H G` is of finite
-  presentation over `R`.
+  presentation over `R` whenever `H` is.
 * `TauCeti.Bialgebra.HomAlgebra.instModuleFinite`: `HomAlgebra R H G` is module-finite over
   `R` whenever the ambient Weil restriction `WeilRestriction R G (G ⊗[R] H)` is.
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_baseChangeAlgEquiv`: `baseChangeAlgEquiv` is
@@ -85,7 +87,7 @@ section Construction
 open Algebra.FiniteType (out)
 
 variable (R H G : Type*) [CommRing R] [CommRing H] [CommRing G] [_root_.Bialgebra R H]
-  [_root_.Bialgebra R G] [Algebra.FinitePresentation R H] [Module.Finite R G]
+  [_root_.Bialgebra R G] [Module.Finite R G]
   [Module.Projective R G]
 
 -- The scheme of morphisms `Spec G → Spec H` over `Spec R`: its `T`-points are the algebra
@@ -119,29 +121,52 @@ private def counitLeft : H →ₐ[R] Ambient R H G :=
 private def counitRight : H →ₐ[R] Ambient R H G :=
   (Algebra.ofId R _).comp (_root_.Bialgebra.counitAlgHom R H)
 
--- The ideal of `Ambient` cut out by the two compatibilities, imposed on finite sets of generators.
+-- The ideal of `Ambient` cut out by the two compatibilities on all elements.
 private def ideal : Ideal (Ambient R H G) :=
-  Ideal.span ((fun x ↦ comulLeft R H G x - comulRight R H G x) '' ↑(out (R := R)
-      (A := Ambient₂ R H G)).choose ∪
-    (fun h ↦ counitLeft R H G h - counitRight R H G h) '' ↑(out (R := R) (A := H)).choose)
-
-private lemma ideal_fg : (ideal R H G).FG :=
-  Submodule.fg_span <| ((Finset.finite_toSet _).image _).union ((Finset.finite_toSet _).image _)
+  Ideal.span (Set.range (fun x ↦ comulLeft R H G x - comulRight R H G x) ∪
+    Set.range (fun h ↦ counitLeft R H G h - counitRight R H G h))
 
 variable {R H G}
 
 private lemma ideal_le_ker_iff {T : Type*} [Ring T] [Algebra R T] (g : Ambient R H G →ₐ[R] T) :
     ideal R H G ≤ RingHom.ker g ↔ g.comp (comulLeft R H G) = g.comp (comulRight R H G) ∧
       g.comp (counitLeft R H G) = g.comp (counitRight R H G) := by
-  simp only [ideal, Ideal.span_le, Set.union_subset_iff, Set.image_subset_iff]
-  simp only [Set.subset_def, Set.mem_preimage, SetLike.mem_coe, RingHom.mem_ker]
-  simp only [map_sub, sub_eq_zero]
-  constructor
-  · rintro ⟨hcomul, hcounit⟩
-    exact ⟨AlgHom.ext_of_adjoin_eq_top (out (R := R) (A := Ambient₂ R H G)).choose_spec hcomul,
-      AlgHom.ext_of_adjoin_eq_top (out (R := R) (A := H)).choose_spec hcounit⟩
-  · rintro ⟨hcomul, hcounit⟩
-    exact ⟨fun x _ ↦ AlgHom.congr_fun hcomul x, fun x _ ↦ AlgHom.congr_fun hcounit x⟩
+  simp only [ideal, Ideal.span_le, Set.union_subset_iff, Set.range_subset_iff,
+    SetLike.mem_coe, RingHom.mem_ker, map_sub, sub_eq_zero]
+  exact ⟨fun ⟨hc, he⟩ ↦ ⟨AlgHom.ext hc, AlgHom.ext he⟩,
+    fun ⟨hc, he⟩ ↦ ⟨AlgHom.congr_fun hc, AlgHom.congr_fun he⟩⟩
+
+variable (R H G) in
+private lemma ideal_fg [Algebra.FiniteType R H] : (ideal R H G).FG := by
+  let s := (out (R := R) (A := Ambient₂ R H G)).choose
+  let t := (out (R := R) (A := H)).choose
+  let J : Ideal (Ambient R H G) := Ideal.span
+    ((fun x ↦ comulLeft R H G x - comulRight R H G x) '' (s : Set _) ∪
+      (fun h ↦ counitLeft R H G h - counitRight R H G h) '' (t : Set _))
+  have hfg : J.FG := Submodule.fg_span <|
+    ((Finset.finite_toSet _).image _).union ((Finset.finite_toSet _).image _)
+  suffices ideal R H G = J by rw [this]; exact hfg
+  apply le_antisymm
+  · have h : ideal R H G ≤ RingHom.ker (Ideal.Quotient.mkₐ R J) := by
+      apply (ideal_le_ker_iff _).2
+      constructor
+      · apply AlgHom.ext_of_adjoin_eq_top (out (R := R) (A := Ambient₂ R H G)).choose_spec
+        intro x hx
+        simp only [AlgHom.comp_apply]
+        apply sub_eq_zero.mp
+        rw [← map_sub, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
+        exact Ideal.subset_span (Or.inl ⟨x, hx, rfl⟩)
+      · apply AlgHom.ext_of_adjoin_eq_top (out (R := R) (A := H)).choose_spec
+        intro x hx
+        simp only [AlgHom.comp_apply]
+        apply sub_eq_zero.mp
+        rw [← map_sub, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
+        exact Ideal.subset_span (Or.inr ⟨x, hx, rfl⟩)
+    rwa [AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] at h
+  · apply Ideal.span_le.2
+    rintro _ (⟨x, _, rfl⟩ | ⟨x, _, rfl⟩)
+    · exact Ideal.subset_span (Or.inl ⟨x, rfl⟩)
+    · exact Ideal.subset_span (Or.inr ⟨x, rfl⟩)
 
 variable {T : Type*} [CommRing T] [Algebra R T]
 
@@ -249,11 +274,11 @@ end Construction
 end HomAlgebra
 
 variable (R H G : Type*) [CommRing R] [CommRing H] [CommRing G] [_root_.Bialgebra R H]
-  [_root_.Bialgebra R G] [Algebra.FinitePresentation R H] [Module.Finite R G]
+  [_root_.Bialgebra R G] [Module.Finite R G]
   [Module.Projective R G]
 
 /-- The coordinate ring of the scheme of homomorphisms from the finite locally free monoid scheme
-`Spec G` to the monoid scheme `Spec H` of finite presentation: an `R`-algebra representing the
+`Spec G` to the affine monoid scheme `Spec H`: an `R`-algebra representing the
 functor sending an `R`-algebra `T` to the set `T ⊗[R] H →ₐc[T] T ⊗[R] G` of `T`-bialgebra
 homomorphisms, see `HomAlgebra.homEquiv`. -/
 def HomAlgebra : Type _ :=
@@ -281,8 +306,9 @@ theorem homEquiv_comp_one_tmul {T' : Type*} [CommRing T'] [Algebra R T']
       map k (AlgHom.id R G) (homEquiv R H G T g (1 ⊗ₜ h)) :=
   quotEquiv_comp_one_tmul g k h
 
-/-- `HomAlgebra R H G` is of finite presentation over `R`. -/
-instance instFinitePresentation : Algebra.FinitePresentation R (HomAlgebra R H G) :=
+/-- `HomAlgebra R H G` is of finite presentation over `R` whenever `H` is. -/
+instance instFinitePresentation [Algebra.FinitePresentation R H] :
+    Algebra.FinitePresentation R (HomAlgebra R H G) :=
   Algebra.FinitePresentation.quotient (ideal_fg R H G)
 
 /-- The closed locus of monoid homomorphisms is finite whenever the ambient scheme of

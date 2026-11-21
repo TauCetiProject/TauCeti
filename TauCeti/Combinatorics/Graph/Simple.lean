@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Graph.Lattice
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 public import TauCeti.Combinatorics.Graph.EdgeEnds
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
+public import TauCeti.Combinatorics.Graph.Union
 
 /-!
 # Simple multigraphs and their underlying simple graphs
@@ -25,6 +27,11 @@ interchangeably when edge identities carry no additional information.
 For a simple graph `G`, this file also identifies `G.Subgraph` with the graphs below
 `Graph.ofSimpleGraph G`: `SimpleGraph.Subgraph.toGraph` equips a simple subgraph with unordered
 pairs as edge identities, while `Graph.toSimpleGraphSubgraph` forgets those redundant identities.
+Together they assemble into an order isomorphism
+`SimpleGraph.subgraphOfSimpleGraphOrderIso : G.Subgraph ≃o Set.Iic (Graph.ofSimpleGraph G)`
+compatible with intersections, compatible multigraph unions, spanning and induced subgraph
+predicates, simplicity, and edge-set finiteness, along with canonical isomorphisms
+`S.toGraph.toSimpleGraph ≃g S.coe` and `Graph.Iso (Graph.ofSimpleGraph S.coe) S.toGraph`.
 
 ## Main declarations
 
@@ -38,17 +45,29 @@ pairs as edge identities, while `Graph.toSimpleGraphSubgraph` forgets those redu
   underlying simple graphs.
 * `SimpleGraph.Subgraph.toGraph` and `Graph.toSimpleGraphSubgraph`: the correspondence between
   subgraphs of `G` and graphs below `Graph.ofSimpleGraph G`.
+* `SimpleGraph.Subgraph.toSimpleGraphToGraphIso`: canonical simple-graph isomorphism
+  `S.toGraph.toSimpleGraph ≃g S.coe`.
+* `SimpleGraph.Subgraph.ofSimpleGraphCoeIso`: canonical multigraph isomorphism
+  `Graph.Iso (Graph.ofSimpleGraph S.coe) S.toGraph`.
+* `SimpleGraph.subgraphOfSimpleGraphOrderIso`: the order isomorphism
+  `G.Subgraph ≃o Set.Iic (Graph.ofSimpleGraph G)`.
 -/
 
 public section
 
 open Set
+open scoped Graph Sym2
 
 universe u v
 
 namespace Graph
 
 variable {V : Type u} {E : Type v} {G : Graph V E}
+
+/-- A nonloop link gives adjacency in the underlying simple graph. -/
+theorem IsLink.toSimpleGraph_adj {x y : V} {e : E} (h : G.IsLink e x y)
+    (hxy : x ≠ y) : G.toSimpleGraph.Adj ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ :=
+  ⟨fun heq ↦ hxy (Subtype.mk.inj heq), h.adj⟩
 
 private theorem edgeEnds_mem_toSimpleGraph_edgeSet [G.Simple] (e : G.edgeSet) :
     G.edgeEnds e ∈ G.toSimpleGraph.edgeSet := by
@@ -59,7 +78,7 @@ private theorem edgeEnds_mem_toSimpleGraph_edgeSet [G.Simple] (e : G.edgeSet) :
 
 private theorem edgeEnds_injective [G.Simple] : Function.Injective G.edgeEnds := by
   intro e f hef
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
   let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
   have he : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
@@ -70,16 +89,16 @@ private theorem edgeEnds_surjective [G.Simple] :
     Function.Surjective fun e : G.edgeSet ↦
       (⟨G.edgeEnds e, edgeEnds_mem_toSimpleGraph_edgeSet e⟩ : G.toSimpleGraph.edgeSet) := by
   intro p
-  let x := p.1.out.1
-  let y := p.1.out.2
+  let x := p.val.out.1
+  let y := p.val.out.2
   have hadj : G.toSimpleGraph.Adj x y := by
     rw [← SimpleGraph.mem_edgeSet, Sym2.mk_fst_out_snd_out]
-    exact p.2
+    exact p.property
   obtain ⟨e, he⟩ := (G.toSimpleGraph_adj_iff x y).1 hadj
   let e' : G.edgeSet := ⟨e, he.edge_mem⟩
   refine ⟨e', Subtype.ext ?_⟩
   exact ((G.edgeEnds_eq_iff_isLink e' x y).2 he).trans
-    (Sym2.mk_fst_out_snd_out p.1)
+    (Sym2.mk_fst_out_snd_out p.val)
 
 /-- The actual edges of a simple multigraph are canonically equivalent to the edges of its
 underlying simple graph. The equivalence sends each edge identity to its unordered pair of ends.
@@ -139,23 +158,33 @@ noncomputable def ofSimpleGraphToSimpleGraphIso (G : Graph V E) [G.Simple] :
     simp only [ofSimpleGraph_isLink, coe_ofSimpleGraphEdgeSetEquiv_apply]
     constructor
     · intro h
-      exact ⟨h, by simpa only [edgeSet_ofSimpleGraph] using e.2⟩
+      exact ⟨h, by simpa only [edgeSet_ofSimpleGraph] using e.property⟩
     · exact fun h ↦ h.1
 
 /-- The reverse simple-graph round-trip isomorphism fixes each actual vertex. -/
 @[simp]
 theorem ofSimpleGraphToSimpleGraphIso_vertexEquiv_apply (G : Graph V E) [G.Simple]
     (x : (ofSimpleGraph G.toSimpleGraph).vertexSet) :
-    (G.ofSimpleGraphToSimpleGraphIso.vertexEquiv x : V) = (x.1 : G.vertexSet) :=
+    (G.ofSimpleGraphToSimpleGraphIso.vertexEquiv x : V) = (x.val : G.vertexSet) :=
   (rfl)
 
 /-- The original edge corresponding to an edge of the reconstructed graph has exactly the
-displayed unordered pair of ends. -/
-@[simp]
+displayed unordered pair of ends. This is not a simp lemma: `Graph.Iso.edgeEnds_edgeEquiv`
+rewrites its left-hand side, and
+`Graph.map_vertexEquiv_edgeEnds_ofSimpleGraphToSimpleGraphIso` is the simp-normal form. -/
 theorem edgeEnds_ofSimpleGraphToSimpleGraphIso_edgeEquiv_apply
     (G : Graph V E) [G.Simple] (e : (ofSimpleGraph G.toSimpleGraph).edgeSet) :
     G.edgeEnds (G.ofSimpleGraphToSimpleGraphIso.edgeEquiv e) = e :=
   G.edgeEnds_edgeEndsEquiv_symm_apply (ofSimpleGraphEdgeSetEquiv G.toSimpleGraph e)
+
+/-- The reverse simple-graph round-trip isomorphism carries the ends of an edge of the
+reconstructed graph to the displayed unordered pair itself. -/
+@[simp]
+theorem map_vertexEquiv_edgeEnds_ofSimpleGraphToSimpleGraphIso
+    (G : Graph V E) [G.Simple] (e : (ofSimpleGraph G.toSimpleGraph).edgeSet) :
+    ((ofSimpleGraph G.toSimpleGraph).edgeEnds e).map G.ofSimpleGraphToSimpleGraphIso.vertexEquiv =
+      e := by
+  rw [← Iso.edgeEnds_edgeEquiv, edgeEnds_ofSimpleGraphToSimpleGraphIso_edgeEquiv_apply]
 
 /-- In the inverse round-trip isomorphism, an original edge is sent to its unordered pair of
 ends. -/
@@ -179,13 +208,7 @@ def toSimpleGraphIso (f : Iso G H) : G.toSimpleGraph ≃g H.toSimpleGraph where
   map_rel_iff' := by
     intro x y
     simp only [toSimpleGraph_adj, f.vertexEquiv.injective.ne_iff]
-    refine and_congr_right fun _ ↦ ?_
-    constructor
-    · rintro ⟨e, he⟩
-      exact ⟨f.edgeEquiv.symm ⟨e, he.edge_mem⟩,
-        (f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) x y).mp (by simpa using he)⟩
-    · rintro ⟨e, he⟩
-      exact ⟨f.edgeEquiv ⟨e, he.edge_mem⟩, (f.map_isLink_iff ⟨e, he.edge_mem⟩ x y).mpr he⟩
+    exact and_congr_right fun _ ↦ f.map_adj_iff x y
 
 /-- The induced simple-graph isomorphism uses the original vertex equivalence. -/
 @[simp]
@@ -395,6 +418,109 @@ theorem toGraph_inj {H L : G.Subgraph} : H.toGraph = L.toGraph ↔ H = L := by
       ((toGraph_le_toGraph L H).mp h.ge)
   · exact congrArg toGraph
 
+/-- The multigraph associated to any simple-graph subgraph is simple (loopless with no parallel
+edges). -/
+instance instSimpleToGraph (S : G.Subgraph) : S.toGraph.Simple where
+  not_isLoopAt e x h := by rw [Graph.IsLoopAt, toGraph_isLink] at h; exact S.loopless.irrefl x h.2
+  eq_of_isLink _ _ _ _ h₁ h₂ := by rw [toGraph_isLink] at h₁ h₂; exact h₁.1.trans h₂.1.symm
+
+@[gcongr]
+theorem toGraph_mono {S T : G.Subgraph} (h : S ≤ T) : S.toGraph ≤ T.toGraph :=
+  (toGraph_le_toGraph S T).mpr h
+
+theorem toGraph_injective : Function.Injective (toGraph (G := G)) :=
+  fun _ _ ↦ toGraph_inj.mp
+
+@[simp]
+theorem toGraph_lt_toGraph (S T : G.Subgraph) : S.toGraph < T.toGraph ↔ S < T :=
+  lt_iff_lt_of_le_iff_le' (toGraph_le_toGraph T S) (toGraph_le_toGraph S T)
+
+@[simp]
+theorem toGraph_inf (S T : G.Subgraph) : (S ⊓ T).toGraph = S.toGraph ⊓ T.toGraph :=
+  Graph.ext (by simp) fun _ _ _ ↦ by simp [and_left_comm, and_assoc]
+
+/-- Any two subgraphs of the same simple graph convert to compatible multigraphs. -/
+theorem toGraph_compatible (S T : G.Subgraph) : S.toGraph.Compatible T.toGraph :=
+  .of_le_le S.toGraph_le_ofSimpleGraph T.toGraph_le_ofSimpleGraph
+
+/-- The supremum of two simple-graph subgraphs corresponds to the compatible multigraph union. -/
+theorem toGraph_sup (S T : G.Subgraph) : (S ⊔ T).toGraph = (S.toGraph_compatible T).union :=
+  Graph.ext (by simp) fun _ _ _ ↦ by simp [and_or_left]
+
+/-- When `S.edgeSet` is finite, `S.toGraph` has finitely many actual edges. -/
+instance instFiniteEdgeSetToGraph (S : G.Subgraph) [Finite S.edgeSet] : Finite E(S.toGraph) := by
+  rw [S.edgeSet_toGraph]; infer_instance
+
+@[simp]
+theorem isSpanningSubgraph_toGraph_iff {S : G.Subgraph} :
+    S.toGraph ≤s Graph.ofSimpleGraph G ↔ S.IsSpanning := by
+  rw [Graph.isSpanningSubgraph_iff, Subgraph.isSpanning_iff]; simp [S.toGraph_le_ofSimpleGraph]
+
+@[simp]
+theorem isInducedSubgraph_toGraph_iff {S : G.Subgraph} :
+    S.toGraph.IsInducedSubgraph (Graph.ofSimpleGraph G) ↔ S.IsInduced := by
+  rw [Graph.isInducedSubgraph_iff]
+  refine ⟨fun ⟨_, h⟩ x hx y hy hxy ↦ ?_, fun h ↦ ⟨S.toGraph_le_ofSimpleGraph, ?_⟩⟩
+  · exact ((S.toGraph_isLink s(x, y) x y).mp
+      (h (by simpa [Graph.ofSimpleGraph_isLink] using hxy)
+        (S.vertexSet_toGraph.symm ▸ hx) (S.vertexSet_toGraph.symm ▸ hy))).2
+  · rintro e x y he hx hy
+    rw [Graph.ofSimpleGraph_isLink] at he; rcases he with ⟨rfl, he⟩
+    exact (S.toGraph_isLink _ _ _).mpr
+      ⟨rfl, h (S.vertexSet_toGraph ▸ hx) (S.vertexSet_toGraph ▸ hy) (G.mem_edgeSet.mp he)⟩
+
+/-- The underlying simple graph of `S.toGraph` is canonically isomorphic to `S.coe`. -/
+def toSimpleGraphToGraphIso (S : G.Subgraph) : S.toGraph.toSimpleGraph ≃g S.coe where
+  toEquiv := Equiv.subtypeEquivRight fun _ ↦ by rw [S.vertexSet_toGraph]
+  map_rel_iff' {x y} := by rw [S.toGraph.toSimpleGraph_adj_iff, S.toGraph_adj, S.coe_adj]; rfl
+
+@[simp] theorem coe_toSimpleGraphToGraphIso_apply (S : G.Subgraph) (x : V(S.toGraph)) :
+    (S.toSimpleGraphToGraphIso x : V) = x := (rfl)
+
+@[simp] theorem coe_toSimpleGraphToGraphIso_symm_apply (S : G.Subgraph) (x : S.verts) :
+    (S.toSimpleGraphToGraphIso.symm x : V) = x := (rfl)
+
+/-- The multigraph built from the coerced simple graph `S.coe` is canonically isomorphic to
+`S.toGraph`. -/
+noncomputable def ofSimpleGraphCoeIso (S : G.Subgraph) :
+    Graph.Iso (Graph.ofSimpleGraph S.coe) S.toGraph where
+  vertexEquiv := (Equiv.Set.univ S.verts).trans
+    (Equiv.subtypeEquivRight fun _ ↦ by rw [S.vertexSet_toGraph]).symm
+  edgeEquiv := Equiv.ofBijective
+    (fun e ↦ ⟨e.val.map Subtype.val, by
+      have hm : e.val ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using
+          e.property
+      rw [S.edgeSet_toGraph]; rwa [S.edgeSet_coe] at hm⟩)
+    ⟨fun _ _ h ↦ Subtype.ext (Sym2.map.injective Subtype.val_injective (Subtype.ext_iff.mp h)),
+     fun ⟨f, hf⟩ ↦ by
+      rw [S.edgeSet_toGraph, ← S.image_coe_edgeSet_coe] at hf
+      obtain ⟨e, he, rfl⟩ := hf
+      exact ⟨⟨e, by simpa only [Graph.edgeSet_ofSimpleGraph] using he⟩, rfl⟩⟩
+  map_isLink_iff e x y := by
+    simp only [toGraph_isLink, Graph.ofSimpleGraph_isLink]
+    have hm : e.val ∈ S.coe.edgeSet := by simpa only [Graph.edgeSet_ofSimpleGraph] using e.property
+    refine ⟨fun ⟨he, _⟩ ↦ ⟨Sym2.map.injective Subtype.val_injective he, hm⟩,
+      fun ⟨he, _⟩ ↦ ⟨congrArg (Sym2.map Subtype.val) he, ?_⟩⟩
+    rwa [he, SimpleGraph.mem_edgeSet, S.coe_adj] at hm
+
+@[simp] theorem coe_ofSimpleGraphCoeIso_vertexEquiv_apply (S : G.Subgraph)
+    (x : V(Graph.ofSimpleGraph S.coe)) :
+    (S.ofSimpleGraphCoeIso.vertexEquiv x : V) = (x.val : V) := (rfl)
+
+@[simp] theorem coe_ofSimpleGraphCoeIso_vertexEquiv_symm_apply (S : G.Subgraph)
+    (x : V(S.toGraph)) :
+    ((S.ofSimpleGraphCoeIso.vertexEquiv.symm x).val : V) = (x : V) := (rfl)
+
+@[simp] theorem coe_ofSimpleGraphCoeIso_edgeEquiv_apply (S : G.Subgraph)
+    (e : E(Graph.ofSimpleGraph S.coe)) :
+    (S.ofSimpleGraphCoeIso.edgeEquiv e : Sym2 V) = e.val.map Subtype.val := (rfl)
+
+@[simp] theorem map_coe_ofSimpleGraphCoeIso_edgeEquiv_symm_apply (S : G.Subgraph)
+    (e : E(S.toGraph)) :
+    (S.ofSimpleGraphCoeIso.edgeEquiv.symm e : Sym2 S.verts).map Subtype.val = (e : Sym2 V) := by
+  simpa only [coe_ofSimpleGraphCoeIso_edgeEquiv_apply] using
+    congrArg Subtype.val (S.ofSimpleGraphCoeIso.edgeEquiv.apply_symm_apply e)
+
 end SimpleGraph.Subgraph
 
 namespace Graph
@@ -418,6 +544,16 @@ theorem toSimpleGraphSubgraph_le_toSimpleGraphSubgraph
   rw [← SimpleGraph.Subgraph.toGraph_le_toGraph]
   simp
 
+/-- Forgetting edge identities reflects and preserves strict inclusion between subgraphs of
+`Graph.ofSimpleGraph G`. -/
+@[simp]
+theorem toSimpleGraphSubgraph_lt_toSimpleGraphSubgraph
+    (K L : Graph V (Sym2 V)) (hK : K ≤ Graph.ofSimpleGraph G)
+    (hL : L ≤ Graph.ofSimpleGraph G) :
+    K.toSimpleGraphSubgraph hK < L.toSimpleGraphSubgraph hL ↔ K < L :=
+  lt_iff_lt_of_le_iff_le' (toSimpleGraphSubgraph_le_toSimpleGraphSubgraph L K hL hK)
+    (toSimpleGraphSubgraph_le_toSimpleGraphSubgraph K L hK hL)
+
 /-- Forgetting edge identities is injective on subgraphs of `Graph.ofSimpleGraph G`. -/
 @[simp]
 theorem toSimpleGraphSubgraph_inj
@@ -430,4 +566,65 @@ theorem toSimpleGraphSubgraph_inj
   · rintro rfl
     rfl
 
+@[simp]
+theorem isSpanning_toSimpleGraphSubgraph_iff {K : Graph V (Sym2 V)}
+    (hK : K ≤ Graph.ofSimpleGraph G) :
+    (K.toSimpleGraphSubgraph hK).IsSpanning ↔ K ≤s Graph.ofSimpleGraph G := by
+  rw [← SimpleGraph.Subgraph.isSpanningSubgraph_toGraph_iff, toGraph_toSimpleGraphSubgraph]
+
+@[simp]
+theorem isInduced_toSimpleGraphSubgraph_iff {K : Graph V (Sym2 V)}
+    (hK : K ≤ Graph.ofSimpleGraph G) :
+    (K.toSimpleGraphSubgraph hK).IsInduced ↔ K.IsInducedSubgraph (Graph.ofSimpleGraph G) := by
+  rw [← SimpleGraph.Subgraph.isInducedSubgraph_toGraph_iff, toGraph_toSimpleGraphSubgraph]
+
+/-- Converting the intersection of two subgraphs of `Graph.ofSimpleGraph G` to a simple subgraph
+commutes with `⊓`. -/
+theorem toSimpleGraphSubgraph_inf {K L : Graph V (Sym2 V)}
+    (hK : K ≤ Graph.ofSimpleGraph G) (hL : L ≤ Graph.ofSimpleGraph G)
+    (hKL : K ⊓ L ≤ Graph.ofSimpleGraph G) :
+    (K ⊓ L).toSimpleGraphSubgraph hKL =
+      K.toSimpleGraphSubgraph hK ⊓ L.toSimpleGraphSubgraph hL :=
+  SimpleGraph.Subgraph.toGraph_injective (by simp)
+
+/-- Converting the compatible union of two subgraphs of `Graph.ofSimpleGraph G` to a simple
+subgraph commutes with `⊔`. -/
+@[simp]
+theorem toSimpleGraphSubgraph_union {K L : Graph V (Sym2 V)} (h : K.Compatible L)
+    (hKL : h.union ≤ Graph.ofSimpleGraph G) :
+    h.union.toSimpleGraphSubgraph hKL =
+      K.toSimpleGraphSubgraph (h.left_le_union.trans hKL) ⊔
+        L.toSimpleGraphSubgraph (h.right_le_union.trans hKL) := by
+  apply SimpleGraph.Subgraph.toGraph_injective
+  rw [toGraph_toSimpleGraphSubgraph, SimpleGraph.Subgraph.toGraph_sup]
+  exact Graph.ext (by simp) fun _ _ _ ↦ by simp
+
+/-- When `G.edgeSet` is finite, `Graph.ofSimpleGraph G` has finitely many actual edges. -/
+instance instFiniteEdgeSetOfSimpleGraph (G : SimpleGraph V) [Finite G.edgeSet] :
+    Finite E(Graph.ofSimpleGraph G) := by
+  rw [Graph.edgeSet_ofSimpleGraph]; infer_instance
+
 end Graph
+
+namespace SimpleGraph
+
+variable {V : Type u}
+
+/-- Subgraphs `S : G.Subgraph` of a simple graph `G` are order-isomorphic to multigraph subgraphs
+`K ≤ Graph.ofSimpleGraph G`. -/
+def subgraphOfSimpleGraphOrderIso (G : SimpleGraph V) :
+    G.Subgraph ≃o Set.Iic (Graph.ofSimpleGraph G) where
+  toFun S := ⟨S.toGraph, S.toGraph_le_ofSimpleGraph⟩
+  invFun K := K.val.toSimpleGraphSubgraph K.property
+  left_inv S := S.toSimpleGraphSubgraph_toGraph _
+  right_inv K := Subtype.ext (K.val.toGraph_toSimpleGraphSubgraph K.property)
+  map_rel_iff' := Subgraph.toGraph_le_toGraph _ _
+
+@[simp] theorem coe_subgraphOfSimpleGraphOrderIso_apply (G : SimpleGraph V) (S : G.Subgraph) :
+    (G.subgraphOfSimpleGraphOrderIso S : Graph V (Sym2 V)) = S.toGraph := (rfl)
+
+@[simp] theorem subgraphOfSimpleGraphOrderIso_symm_apply (G : SimpleGraph V)
+    (K : Set.Iic (Graph.ofSimpleGraph G)) :
+    G.subgraphOfSimpleGraphOrderIso.symm K = K.val.toSimpleGraphSubgraph K.property := (rfl)
+
+end SimpleGraph

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
@@ -33,6 +34,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
+  temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 -/
 
 public section
@@ -54,7 +57,7 @@ theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
     (hg : ¬ g.HasTemperateGrowth) : smulLeftCLM F g = 0 := by
   refine ContinuousLinearMap.ext fun u => ?_
   ext f'
-  simp [SchwartzMap.smulLeftCLM, hg]
+  simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
 
 end TVS
 
@@ -73,6 +76,20 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
 
 end Deriv
 
+section Delta
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Multiplying the Dirac mass at `ξ` by a function `g` of temperate growth multiplies it by the
+value `g ξ`. -/
+@[simp]
+theorem smulLeftCLM_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
+    smulLeftCLM ℂ g (delta ξ) = g ξ • delta ξ := by
+  ext f
+  simp [SchwartzMap.smulLeftCLM_apply_apply hg]
+
+end Delta
+
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
@@ -87,6 +104,6 @@ theorem smulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTempera
   by_cases hg : g.HasTemperateGrowth
   · simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
       SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
-  · simp [SchwartzMap.smulLeftCLM, hg]
+  · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
 
 end TemperedDistribution

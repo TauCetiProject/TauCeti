@@ -45,45 +45,45 @@ section CommRing
 variable [CommRing k] (A : FDRep k N) (W : FDRep k (inertia A))
 
 /-- The operator of an inverse implementing pair is the inverse linear equivalence. -/
-private theorem implementers_inv_snd (p : implementers A) : (p⁻¹).1.2 = p.1.2.symm := by
+private theorem implementers_inv_snd (p : implementers A) : (p⁻¹).val.2 = p.val.2.symm := by
   ext x
   simp only [Subgroup.coe_inv, Prod.snd_inv, LinearEquiv.coe_inv]
 
 private noncomputable def implementerMap (p : implementers A)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
     A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W where
-  hom := FGModuleCat.ofHom ((W.ρ p.1.1).comp (f.hom.hom.hom.comp p.1.2.symm.toLinearMap))
+  hom := FGModuleCat.ofHom ((W.ρ p.val.1).comp (f.hom.hom.hom.comp p.val.2.symm.toLinearMap))
   comm n := by
     apply FGModuleCat.hom_ext
     ext x
-    have hU : p.1.2.symm (A.ρ n x) =
-        A.ρ (MulAut.conjNormal (p.1.1 : G)⁻¹ n) (p.1.2.symm x) :=
-      (mem_implementers_iff A _).mp (p⁻¹).2 n x
+    have hU : p.val.2.symm (A.ρ n x) =
+        A.ρ (MulAut.conjNormal (p.val.1 : G)⁻¹ n) (p.val.2.symm x) :=
+      (mem_implementers_iff A _).mp (p⁻¹).property n x
     have hf : f.hom.hom.hom
-        (A.ρ (MulAut.conjNormal (p.1.1 : G)⁻¹ n) (p.1.2.symm x)) =
-        W.ρ (Subgroup.inclusion (le_inertia A) (MulAut.conjNormal (p.1.1 : G)⁻¹ n))
-          (f.hom.hom.hom (p.1.2.symm x)) :=
+        (A.ρ (MulAut.conjNormal (p.val.1 : G)⁻¹ n) (p.val.2.symm x)) =
+        W.ρ (Subgroup.inclusion (le_inertia A) (MulAut.conjNormal (p.val.1 : G)⁻¹ n))
+          (f.hom.hom.hom (p.val.2.symm x)) :=
       LinearMap.congr_fun (FDRep.hom_hom_hom_comm f
-        (MulAut.conjNormal (p.1.1 : G)⁻¹ n)) (p.1.2.symm x)
-    have hn : p.1.1 * Subgroup.inclusion (le_inertia A)
-        (MulAut.conjNormal (p.1.1 : G)⁻¹ n) =
-        Subgroup.inclusion (le_inertia A) n * p.1.1 :=
+        (MulAut.conjNormal (p.val.1 : G)⁻¹ n)) (p.val.2.symm x)
+    have hn : p.val.1 * Subgroup.inclusion (le_inertia A)
+        (MulAut.conjNormal (p.val.1 : G)⁻¹ n) =
+        Subgroup.inclusion (le_inertia A) n * p.val.1 :=
       Subtype.ext (by simp [mul_assoc])
     -- Read the restricted action and categorical composition on the underlying vectors.
-    change W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm (A.ρ n x))) =
+    change W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm (A.ρ n x))) =
       W.ρ (Subgroup.inclusion (le_inertia A) n)
-        (W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x)))
+        (W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x)))
     rw [hU, hf]
-    have hmul : W.ρ p.1.1 *
-        W.ρ (Subgroup.inclusion (le_inertia A) (MulAut.conjNormal (p.1.1 : G)⁻¹ n)) =
-        W.ρ (Subgroup.inclusion (le_inertia A) n) * W.ρ p.1.1 := by
+    have hmul : W.ρ p.val.1 *
+        W.ρ (Subgroup.inclusion (le_inertia A) (MulAut.conjNormal (p.val.1 : G)⁻¹ n)) =
+        W.ρ (Subgroup.inclusion (le_inertia A) n) * W.ρ p.val.1 := by
       rw [← map_mul, hn, map_mul]
-    exact congrArg (fun l : Module.End k W => l (f.hom.hom.hom (p.1.2.symm x))) hmul
+    exact congrArg (fun l : Module.End k W => l (f.hom.hom.hom (p.val.2.symm x))) hmul
 
 private theorem implementerMap_apply (p : implementers A)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) (x : A) :
     (implementerMap A W p f).hom.hom.hom x =
-      W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x)) := (rfl)
+      W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x)) := (rfl)
 
 /-- Implementing pairs act on the multiplicity space by conjugating intertwiners. -/
 private noncomputable def implementerMultiplicity :
@@ -94,16 +94,16 @@ private noncomputable def implementerMultiplicity :
       map_add' f g := by
         ext x
         -- Addition of action morphisms is addition of their underlying linear maps.
-        change W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x) +
-          g.hom.hom.hom (p.1.2.symm x)) =
-          W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x)) +
-            W.ρ p.1.1 (g.hom.hom.hom (p.1.2.symm x))
+        change W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x) +
+          g.hom.hom.hom (p.val.2.symm x)) =
+          W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x)) +
+            W.ρ p.val.1 (g.hom.hom.hom (p.val.2.symm x))
         exact map_add _ _ _
       map_smul' r f := by
         ext x
         -- Scalar multiplication is inherited through the full subcategory.
-        change W.ρ p.1.1 (r • f.hom.hom.hom (p.1.2.symm x)) =
-          r • W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x))
+        change W.ρ p.val.1 (r • f.hom.hom.hom (p.val.2.symm x)) =
+          r • W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x))
         exact map_smul _ _ _ }
   map_one' := by
     ext f x
@@ -119,21 +119,21 @@ private noncomputable def implementerMultiplicity :
     simp only [implementerMap_apply, Subgroup.coe_mul, Prod.fst_mul, Prod.snd_mul,
       ← LinearEquiv.coe_inv, mul_inv_rev, _root_.mul_apply_eq_comp]
     exact congrArg (fun l : Module.End k W =>
-      l (f.hom.hom.hom (q.1.2.symm (p.1.2.symm x)))) (map_mul W.ρ p.1.1 q.1.1)
+      l (f.hom.hom.hom (q.val.2.symm (p.val.2.symm x)))) (map_mul W.ρ p.val.1 q.val.1)
 
 /-- The action of an implementing pair, evaluated on an underlying vector. -/
 @[simp]
 private theorem implementerMultiplicity_apply (p : implementers A)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) (x : A) :
     (implementerMultiplicity A W p f).hom.hom.hom x =
-      W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x)) := (rfl)
+      W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x)) := (rfl)
 
 /-- The diagonal copy of `N` acts trivially on multiplicities. -/
 @[simp]
 private theorem implementerMultiplicity_diagonal (n : N) :
     implementerMultiplicity A W (diagonal A n) = 1 := by
   ext f x
-  have hi : (diagonal A n).1.2.symm = (diagonal A n⁻¹).1.2 := by
+  have hi : (diagonal A n).val.2.symm = (diagonal A n⁻¹).val.2 := by
     rw [map_inv, implementers_inv_snd]
   have hf : f.hom.hom.hom (A.ρ n⁻¹ x) =
       W.ρ (Subgroup.inclusion (le_inertia A) n⁻¹) (f.hom.hom.hom x) :=
@@ -157,7 +157,7 @@ theorem cliffordMultiplicityRepresentation_mk_apply (p : implementers A)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W)
     (x : A) :
     (cliffordMultiplicityRepresentation A W (QuotientGroup.mk p) f).hom.hom.hom x =
-      W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x)) := (rfl)
+      W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x)) := (rfl)
 
 /-- A kernel unit acts on `Hom_N(A,W)` by precomposition with its inverse. -/
 theorem cliffordMultiplicityRepresentation_mk_kernelLift (d : (End A)ˣ)
@@ -165,7 +165,7 @@ theorem cliffordMultiplicityRepresentation_mk_kernelLift (d : (End A)ˣ)
     cliffordMultiplicityRepresentation A W (QuotientGroup.mk (kernelLift A d)) f =
       op (↑d⁻¹ : End A) • f := by
   ext x
-  have hi : (kernelLift A d).1.2.symm = (kernelLift A d⁻¹).1.2 := by
+  have hi : (kernelLift A d).val.2.symm = (kernelLift A d⁻¹).val.2 := by
     rw [map_inv, implementers_inv_snd]
   simp only [cliffordMultiplicityRepresentation_mk_apply, op_smul_apply,
     kernelLift_fst, hi, kernelLift_snd_apply, map_one]
@@ -192,9 +192,9 @@ theorem cliffordMultiplicityRepresentation_naturality {W' : FDRep k (inertia A)}
   refine QuotientGroup.induction_on c fun p => ?_
   ext x
   -- Restriction leaves the underlying linear map of `g` unchanged.
-  change g.hom.hom.hom (W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x))) =
-    W'.ρ p.1.1 (g.hom.hom.hom (f.hom.hom.hom (p.1.2.symm x)))
-  exact LinearMap.congr_fun (FDRep.hom_hom_hom_comm g p.1.1) _
+  change g.hom.hom.hom (W.ρ p.val.1 (f.hom.hom.hom (p.val.2.symm x))) =
+    W'.ρ p.val.1 (g.hom.hom.hom (f.hom.hom.hom (p.val.2.symm x)))
+  exact LinearMap.congr_fun (FDRep.hom_hom_hom_comm g p.val.1) _
 
 end CommRing
 
