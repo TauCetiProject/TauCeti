@@ -13,10 +13,10 @@ public import TauCeti.Geometry.Diffeomorphism.HomologyAction
 # The factor swap of `S² × S²` on integral homology
 
 For the product of two area forms of equal area on `S² × S²`, the homologically trivial
-stabilizer `TauCeti.SmoothForm.homologicallyTrivialStabilizer σ ℤ 2` is the group `G₀` in Gromov's
-description of the symplectomorphism group of `S² × S²`. The factor swap is never in it: it
-exchanges the classes `A = [S² × pt]` and `B = [pt × S²]` of the two rulings in
-`H₂(S² × S²; ℤ)`.
+stabilizer `TauCeti.SmoothForm.homologicallyTrivialStabilizer σ (ModuleCat.of ℤ (ULift ℤ)) 2`, for
+`H₂(·; ℤ)`, is the group `G₀` in Gromov's description of the symplectomorphism group of
+`S² × S²`. The factor swap is never in it: it exchanges the classes `A = [S² × pt]` and
+`B = [pt × S²]` of the two rulings in `H₂(S² × S²; ℤ)`.
 
 ## Main results
 

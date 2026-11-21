@@ -54,8 +54,8 @@ which differ in `Hₙ(M × M; ℤ)`
 * `Diffeomorph.singularHomologyAction_toHomeomorphHom_prodComm_ne_one`,
   `Diffeomorph.not_joined_one_prodComm`: the factor swap of `M × M` acts nontrivially on
   homology, so it is not joined to the identity.
-* `TauCeti.SmoothForm.coe_mem_homologicallyTrivialStabilizer_of_joined`: the identity component
-  of the stabilizer of `σ` acts trivially on homology.
+* `TauCeti.SmoothForm.coe_mem_homologicallyTrivialStabilizer_of_joined`: the identity path
+  component of the stabilizer of `σ` acts trivially on homology.
 * `TauCeti.SmoothForm.prodComm_notMem_homologicallyTrivialStabilizer`,
   `TauCeti.HomologicalOrientation.prodComm_notMem_homologicallyTrivialStabilizer`: the factor swap
   acts nontrivially on homology.
@@ -177,9 +177,9 @@ theorem prodComm_notMem_homologicallyTrivialStabilizer [Nonempty M] (hm : m ≠ 
 
 variable [LocallyCompactSpace E] [CompactSpace M]
 
-/-- **The identity component of the stabilizer acts trivially on homology.** On a compact manifold,
-a diffeomorphism joined to the identity by a path of diffeomorphisms preserving `σ`, for the weak
-Whitney topology, lies in the homologically trivial stabilizer of `σ`. -/
+/-- **The identity path component of the stabilizer acts trivially on homology.** On a compact
+manifold, a diffeomorphism joined to the identity by a path of diffeomorphisms preserving `σ`, for
+the weak Whitney topology, lies in the homologically trivial stabilizer of `σ`. -/
 theorem coe_mem_homologicallyTrivialStabilizer_of_joined {φ : diffeomorphStabilizer σ}
     (h : Joined 1 φ) : (φ : M ≃ₘ⟮I, I⟯ M) ∈ σ.homologicallyTrivialStabilizer R m :=
   ⟨φ.property, singularHomologyAction_toHomeomorphHom_eq_one_of_joined
