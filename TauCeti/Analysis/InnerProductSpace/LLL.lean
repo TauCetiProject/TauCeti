@@ -57,6 +57,24 @@ theorem lllCoefficient_def {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot 
     (b : ι → E) (i j : ι) :
     lllCoefficient b i j = inner ℝ (b i) (gramSchmidt ℝ b j) / ‖gramSchmidt ℝ b j‖ ^ 2 := (rfl)
 
+/-- An input vector is the sum of its Gram–Schmidt residual and its earlier components. -/
+theorem gramSchmidt_add_sum_lllCoefficient {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
+    (b : ι → E) (i : ι) :
+    gramSchmidt ℝ b i + ∑ j ∈ Iio i, lllCoefficient b i j • gramSchmidt ℝ b j = b i := by
+  simp_rw [lllCoefficient_def, ← real_inner_comm (b i)]
+  simpa only [RCLike.ofReal_real_eq_id, id_eq] using (gramSchmidt_def'' ℝ b i).symm
+
+/-- The coefficient of a nonzero residual in its own input vector is one. -/
+theorem lllCoefficient_self {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
+    {b : ι → E} {i : ι} (hi : gramSchmidt ℝ b i ≠ 0) : lllCoefficient b i i = 1 := by
+  rw [lllCoefficient_def, real_inner_comm, inner_gramSchmidt_eq_norm_sq, RCLike.ofReal_real_eq_id,
+    id_eq, div_self (pow_ne_zero 2 (norm_ne_zero_iff.mpr hi))]
+
+/-- The residual at a later index has coefficient zero in an earlier input vector. -/
+theorem lllCoefficient_eq_zero_of_lt {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
+    (b : ι → E) {i j : ι} (hij : i < j) : lllCoefficient b i j = 0 := by
+  rw [lllCoefficient_def, real_inner_comm, gramSchmidt_inv_triangular ℝ b hij, zero_div]
+
 /-- For an orthogonal family, every off-diagonal Gram–Schmidt coefficient vanishes. -/
 theorem lllCoefficient_eq_zero_of_orthogonal {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
     {b : ι → E} (hb : Pairwise fun i j ↦ inner ℝ (b i) (b j) = 0)
@@ -178,15 +196,12 @@ private theorem planar_coefficient (a c d : ℝ) :
 
 private theorem planar_gramSchmidt_one {a c d : ℝ} (ha : a ≠ 0) :
     gramSchmidt ℝ (planar a c d) 1 = d • e 1 := by
-  have h := gramSchmidt_def'' ℝ (planar a c d) (1 : Fin 2)
-  simp only [show Iio (1 : Fin 2) = {0} by decide, Finset.sum_singleton, RCLike.ofReal_real_eq_id,
-    id_eq] at h
+  have h := gramSchmidt_add_sum_lllCoefficient (planar a c d) (1 : Fin 2)
   have hzero := gramSchmidt_bot ℝ (planar a c d)
   rw [bot_eq_zero, planar_zero] at hzero
-  rw [real_inner_comm, ← lllCoefficient_def, planar_coefficient a c d, hzero, smul_smul,
-    div_mul_cancel₀ _ ha, planar_one] at h
-  rw [add_comm (c • e 0)] at h
-  exact (add_right_cancel h).symm
+  rw [show Iio (1 : Fin 2) = {0} by decide, Finset.sum_singleton, planar_coefficient, hzero,
+    smul_smul, div_mul_cancel₀ _ ha, planar_one, add_comm (c • e 0)] at h
+  exact add_right_cancel h
 
 private theorem planar_linearIndependent {a c d : ℝ} (ha : a ≠ 0) (hd : d ≠ 0) :
     LinearIndependent ℝ (planar a c d) := by
@@ -261,13 +276,16 @@ example : IsLLLReduced (planar 1 (1 / 2) (Real.sqrt (1 / 2))) ∧
 
 private theorem line_gramSchmidt_one (c : ℝ) :
     gramSchmidt ℝ (![1, c] : Fin 2 → ℝ) 1 = 0 := by
-  rw [gramSchmidt_def, show Iio (1 : Fin 2) = {0} by decide, Finset.sum_singleton,
-    show (0 : Fin 2) = ⊥ from rfl, gramSchmidt_bot, bot_eq_zero,
+  have hzero := gramSchmidt_bot ℝ (![1, c] : Fin 2 → ℝ)
+  rw [bot_eq_zero] at hzero
+  rw [gramSchmidt_def, show Iio (1 : Fin 2) = {0} by decide, Finset.sum_singleton, hzero,
     Submodule.starProjection_singleton]
   simp [RCLike.ofReal_real_eq_id]
 
 example : lllCoefficient (![1, 1 / 2] : Fin 2 → ℝ) 1 0 = 1 / 2 := by
-  rw [lllCoefficient_def, show (0 : Fin 2) = ⊥ from rfl, gramSchmidt_bot, bot_eq_zero]
+  have hzero := gramSchmidt_bot ℝ (![1, 1 / 2] : Fin 2 → ℝ)
+  rw [bot_eq_zero] at hzero
+  rw [lllCoefficient_def, hzero]
   norm_num [Real.inner_apply]
 
 example :
@@ -284,7 +302,7 @@ example {b : Fin 1 → E} {x : E} (hx : x ∈ Submodule.span ℤ (Set.range b)) 
     ‖b 0‖ ≤ ‖x‖ := by
   have hb : b 0 ≠ 0 := by
     intro hb
-    rw [Set.range_unique, show b default = b 0 from rfl, hb,
+    rw [Set.range_unique, Fin.default_eq_zero, hb,
       Submodule.span_singleton_eq_bot.mpr rfl] at hx
     exact hx0 (by simpa using hx)
   have noLt : ∀ i j : Fin 1, ¬ j < i := by decide
