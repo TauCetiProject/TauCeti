@@ -91,14 +91,28 @@ private lemma isZero_singularHomology_mooreLoopSpace_sphere_of_mod_ne_zero (R : 
   isZero_singularHomology_mooreLoopSpace_sphere (finrank_piLp_quaternion_fin_succ 2 n)
     (by omega) v R (by rwa [show 4 * n + 3 - 1 = 4 * n + 2 by omega, Nat.dvd_iff_mod_eq_zero])
 
+/-- The homology of `ΩS⁴ⁿ⁺³` in the degrees divisible by `4n + 2`, in the degree normal form
+`(4n + 2)j` of this file: `H_{(4n+2)j}(ΩS⁴ⁿ⁺³; R) ≅ R`. -/
+private def singularHomologyMooreLoopSpaceSphereMulIso (R : Type) [Ring R] (j : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{0} R) ((4 * n + 2) * j)).obj (ModuleCat.of R R)).obj
+        (TopCat.of (MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v)) ≅
+      ModuleCat.of R R :=
+  eqToIso (by rw [show 4 * n + 3 - 1 = 4 * n + 2 by omega, mul_comm]) ≪≫
+    singularHomologyMooreLoopSpaceSphereIso (finrank_piLp_quaternion_fin_succ 2 n) (by omega) v
+      R j
+
+/-- For `n ≥ 1`, the degree `(4n + 2)j + 3` is `3` modulo `4n + 2`. -/
+private lemma mul_add_three_mod (hn : n ≠ 0) (j : ℕ) :
+    ((4 * n + 2) * j + 3) % (4 * n + 2) = 3 := by
+  rw [Nat.mul_add_mod, Nat.mod_eq_of_lt (show 3 < 4 * n + 2 by omega)]
+
 /-- For `n ≥ 1`, a degree `k ≥ 3` which is not `3` modulo `4n + 2` has `k - 3` not divisible by
 `4n + 2`. -/
 private lemma sub_three_mod_ne_zero (hn : n ≠ 0) {k : ℕ} (hk : 3 ≤ k)
     (hk₃ : k % (4 * n + 2) ≠ 3) :
     (k - 3) % (4 * n + 2) ≠ 0 := fun h ↦ hk₃ <| by
   obtain ⟨c, hc⟩ := Nat.dvd_of_mod_eq_zero h
-  rw [show k = (4 * n + 2) * c + 3 by omega, Nat.mul_add_mod,
-    Nat.mod_eq_of_lt (show 3 < 4 * n + 2 by omega)]
+  rw [show k = (4 * n + 2) * c + 3 by omega, mul_add_three_mod hn]
 
 /-- **The homology of `ΩHPⁿ` vanishes in the degrees that are not `0` or `3` modulo `4n + 2`**,
 with coefficients in any ring, for `n ≥ 1`. -/
@@ -157,9 +171,7 @@ def singularHomologyMooreLoopSpaceIso (hn : n ≠ 0) (R : Type) [Ring R] (j : �
   (asIso (((singularHomologyFunctor (ModuleCat.{0} R) ((4 * n + 2) * j)).obj
       (ModuleCat.of R R)).map (TopCat.ofHom
         (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap))).symm ≪≫
-    eqToIso (by rw [show 4 * n + 3 - 1 = 4 * n + 2 by omega, mul_comm]) ≪≫
-    singularHomologyMooreLoopSpaceSphereIso (finrank_piLp_quaternion_fin_succ 2 n) (by omega) v
-      R j
+    singularHomologyMooreLoopSpaceSphereMulIso v R j
 
 /-- **The homology of `ΩHPⁿ` in the degrees `3` modulo `4n + 2`**: `H_{(4n+2)j+3}(ΩHPⁿ; R) ≅ R`
 for every `j`, with coefficients in any ring, for `n ≥ 1`. Through the weak homotopy equivalence
@@ -177,14 +189,9 @@ def singularHomologyMooreLoopSpaceAddThreeIso (hn : n ≠ 0) (R : Type) [Ring R]
       (ModuleCat.of R R)).map (TopCat.ofHom (hopfProduct v
         (exists_isWeakHomotopyEquivalence_hopfProduct v hn).choose)))).symm ≪≫
     singularHomologySphereProdIso _ Quaternion.finrank_eq_four rfl
-      (isZero_singularHomology_mooreLoopSpace_sphere_of_mod_ne_zero v R (by
-        -- `(4n + 2)j + 3` is `3` modulo `4n + 2 ≥ 6`.
-        rw [Nat.mul_add_mod,
-    Nat.mod_eq_of_lt (show 3 < 4 * n + 2 by omega)]
-        omega)) ≪≫
-    eqToIso (by rw [show 4 * n + 3 - 1 = 4 * n + 2 by omega, mul_comm]) ≪≫
-    singularHomologyMooreLoopSpaceSphereIso (finrank_piLp_quaternion_fin_succ 2 n) (by omega) v
-      R j
+      (isZero_singularHomology_mooreLoopSpace_sphere_of_mod_ne_zero v R
+        (by rw [mul_add_three_mod hn]; omega)) ≪≫
+    singularHomologyMooreLoopSpaceSphereMulIso v R j
 
 /-! ### The integral generator -/
 
