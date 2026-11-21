@@ -290,7 +290,7 @@ private lemma rangeStableFrom_of_isRegularAt_of_rangeStableFrom {n s' s b : ℤ}
   have hm₁ := hml.le
   have hsb := hml.le_bound
   -- The regularity at `s'` is the stabilization of the images in `H^n(s' ≤ s' + 1 = s)`.
-  have hreg' : X.RangeStableFrom n s' (s' + 1) i₁ := hreg
+  have hreg' : X.RangeStableFrom n s' (s' + 1) i₁ := isRegularAt_iff.1 hreg
   rw [hs] at hreg'
   refine ⟨by lia, by lia, fun i hi ↦ ?_⟩
   rintro _ ⟨a, rfl⟩
@@ -331,7 +331,7 @@ private lemma exists_rangeStableFrom_of_isRegularAt_aux {n q : ℤ} (k : ℕ)
   | zero =>
     obtain ⟨i₀, h⟩ := hreg q (by lia) le_rfl
     rw [Nat.cast_zero, sub_zero]
-    exact ⟨i₀, h⟩
+    exact ⟨i₀, isRegularAt_iff.1 h⟩
   | succ k ih =>
     obtain ⟨m₁, hml⟩ := ih fun t ht ht' ↦ hreg t (by lia) ht'
     obtain ⟨i₁, h₁⟩ := hreg (q - (k + 1 : ℕ)) le_rfl (by lia)

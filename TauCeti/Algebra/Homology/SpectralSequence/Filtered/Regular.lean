@@ -222,7 +222,7 @@ private theorem exists_homologyMap_cokernelMap_eq {a n : ℤ}
     exact (seq k).property.1
   rw [homologyMap_cokernelMap_moduleCatKerHomologyClass G _ _ u v w n L hL₀ hLk',
     ← (seq k).property.2]
-  congr 2
+  exact congrArg _ (Subtype.ext hLk)
 
 variable [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)]
 
