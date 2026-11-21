@@ -249,6 +249,18 @@ theorem ofWeightedBlocksCLM_weightedBlocks (u : BesovSpace F φ s p q) :
         (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
   exact tendsto_nhds_unique hsum.tendsto_sum_nat (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
 
+/-- **Unconditional reconstruction.** The tempered distribution of an element of `B^s_{p,q}` is the
+unconditional sum in `𝓢'(E, F)` of its Littlewood–Paley blocks. -/
+theorem hasSum_littlewoodPaleyBlock_toDistr (u : BesovSpace F φ s p q) :
+    HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr) u.toDistr := by
+  have hsum := hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM (φ := φ) (s := s)
+    u.weightedBlocks
+  rw [ofWeightedBlocksCLM_weightedBlocks] at hsum
+  refine hsum.congr_fun fun j ↦ ?_
+  rw [inv_weight_smul_weightedBlocks_apply, u.coe_block,
+    enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+      (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
+
 theorem leftInverse_ofWeightedBlocksCLM :
     Function.LeftInverse (ofWeightedBlocksCLM F φ s p q) (weightedBlocksₗᵢ F φ s p q) :=
   fun u ↦ by rw [weightedBlocksₗᵢ_apply, ofWeightedBlocksCLM_weightedBlocks]

@@ -147,6 +147,14 @@ theorem _root_.MeasureTheory.MemLp.toTemperedDistribution_toLp [SecondCountableT
   rw [Lp.toTemperedDistribution_apply]
   exact integral_congr_ae <| hmem.coeFn_toLp.mono fun x hx ↦ by simp [hx]
 
+/-- The `L^∞` class of the constant function `c` is, as a tempered distribution, `c` times
+integration against `μ`. -/
+theorem toTemperedDistribution_toLp_const [SecondCountableTopology E] (c : ℂ) :
+    (((memLp_top_const c).toLp _ : Lp ℂ ⊤ μ) : 𝓢'(E, ℂ)) = c • μ.toTemperedDistribution := by
+  rw [MemLp.toTemperedDistribution_toLp _ (Function.HasTemperateGrowth.const c)]
+  ext g
+  simp [mul_comm, integral_const_mul]
+
 end Linear
 
 section NormedSpace

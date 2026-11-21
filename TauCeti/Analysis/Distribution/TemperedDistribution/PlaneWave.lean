@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 public import TauCeti.Analysis.Fourier.FourierCharDeriv
+public import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -161,6 +162,23 @@ theorem toTemperedDistribution_toLp_fourierChar_inner (ξ : E) :
       𝓕⁻ (delta ξ) := by
   rw [MemLp.toTemperedDistribution_toLp _ (hasTemperateGrowth_fourierChar_inner ξ),
     fourierInv_delta]
+
+/-- **The product of two plane waves.** In `L^∞`, the product of the plane waves `x ↦ 𝐞 ⟪x, ξ⟫`
+and `x ↦ 𝐞 ⟪x, η⟫` is the plane wave `x ↦ 𝐞 ⟪x, ξ + η⟫`. -/
+theorem toLp_fourierChar_inner_smul_toLp_fourierChar_inner (ξ η : E) :
+    (((memLp_top_fourierChar_inner ξ).toLp _ : Lp ℂ ∞ (volume : Measure E)) •
+        ((memLp_top_fourierChar_inner η).toLp _ : Lp ℂ ∞ (volume : Measure E)) :
+        Lp ℂ ∞ (volume : Measure E)) =
+      (memLp_top_fourierChar_inner (ξ + η)).toLp _ := by
+  refine Lp.ext ?_
+  set μ : Measure E := volume
+  filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_top_fourierChar_inner (μ := μ) ξ).toLp _)
+      ((memLp_top_fourierChar_inner (μ := μ) η).toLp _),
+    (memLp_top_fourierChar_inner (μ := μ) ξ).coeFn_toLp,
+    (memLp_top_fourierChar_inner (μ := μ) η).coeFn_toLp,
+    (memLp_top_fourierChar_inner (μ := μ) (ξ + η)).coeFn_toLp] with x h h₁ h₂ h₃
+  rw [h, Pi.smul_apply', h₁, h₂, h₃, smul_eq_mul, inner_add_right, AddChar.map_add_eq_mul,
+    Circle.coe_mul]
 
 /-- **The constant of Bernstein's inequality is at least `2π`.** Suppose that `C` is a constant in
 Bernstein's inequality for one derivative in `L^∞` at a radius `R > 0`: every `f ∈ L^∞` whose

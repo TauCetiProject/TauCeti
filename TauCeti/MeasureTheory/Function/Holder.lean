@@ -173,6 +173,16 @@ protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q
   | empty => simp
   | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
 
+omit [p.HolderTriple q r] in
+/-- Multiplying an `Lᵖ` function by the constant function `c` of `L^∞` is the scalar multiplication
+by `c`. -/
+theorem toLp_top_const_smul (c : 𝕜) (g : Lp E q μ) :
+    (((memLp_top_const c).toLp _ : Lp 𝕜 ∞ μ) • g : Lp E q μ) = c • g := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_lpSMul (r := q) ((memLp_top_const (μ := μ) c).toLp _) g,
+    (memLp_top_const (μ := μ) c).coeFn_toLp, Lp.coeFn_smul c g] with x h h₁ h₂
+  rw [h, Pi.smul_apply', h₁, h₂, Pi.smul_apply]
+
 end MeasureTheory.Lp
 
 namespace TauCeti
