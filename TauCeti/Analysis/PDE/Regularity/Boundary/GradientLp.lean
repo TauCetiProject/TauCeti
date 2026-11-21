@@ -121,8 +121,9 @@ vanishing off `H` solves `-∂ᵢ(a'ⁱʲ ∂ⱼw) = -div G'` on the whole space
 functions, where `a'` is the reflected coefficient and `G' = 1_H G - 1_H (R G) ∘ ρ`. -/
 private theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_top_eq {H : Opens E}
     {ν : E} {c₀ : ℝ} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ} (hν : ν ≠ 0)
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (ham : AEStronglyMeasurable a (volume.restrict H))
-    (hbd : ∀ x, c₀ ≤ ⟪x, ν⟫_ℝ → ‖matrixBilinearForm (a x)‖ ≤ Lam)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
+    (hãm : AEStronglyMeasurable (reflectPrincipal ν c₀ a) volume)
+    (hãbd : ∀ x, ‖matrixBilinearForm (reflectPrincipal ν c₀ a x)‖ ≤ Lam)
     {u : W1p volume (⊤ : Opens E) 2} {G : E → E} (hu0 : ∀ᵐ x, x ∉ H → W1p.value u x = 0)
     (hu : ∀ v : W1p0 volume H 2,
       energyFormH1 a 0 0 (W1p.restrictL (le_top : H ≤ ⊤) u) (v : W1p volume H 2) =
@@ -142,17 +143,13 @@ private theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_top_
     rw [hu v]
     simp only [Pi.zero_apply, zero_mul, integral_zero, Pi.neg_apply, inner_neg_left, integral_neg,
       zero_sub, neg_neg]
-  -- The reflected coefficient is measurable and bounded.
-  have hãm := aestronglyMeasurable_reflectPrincipal hν hH (mapsTo_hyperplaneReflection_top ν c₀)
-    (by simpa only [Opens.coe_inf, Opens.coe_top, univ_inter] using ham)
-  have hãbd := norm_matrixBilinearForm_reflectPrincipal_le hν hbd
   have hcoeff : MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x)
       (reflectDrift ν c₀ 0 x) (reflectDensity ν c₀ 0 x)) ⊤
       (volume.restrict ((⊤ : Opens E) : Set E)) := by
     rw [reflectDrift_zero, reflectDensity_zero]
     refine memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
       ((by positivity : (0 : ℝ) ≤ ‖matrixBilinearForm (reflectPrincipal ν c₀ a 0)‖).trans
-        (hãbd 0)) hãm aestronglyMeasurable_const aestronglyMeasurable_const
+        (hãbd 0)) hãm.restrict aestronglyMeasurable_const aestronglyMeasurable_const
       (fun x _ η ξ => ?_) (fun _ _ => by simp) (fun _ _ => by simp)
     rw [← matrixBilinearForm_apply, ← Real.norm_eq_abs]
     exact (ContinuousLinearMap.le_opNorm₂ _ _ _).trans (by gcongr; exact hãbd x)
@@ -258,14 +255,16 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le {p : ℝ≥
   intro H ν c₀ a hν hH ham hbd hosc u G hu0 hu hint hgp hG2 hGp
   obtain ⟨hG'p, hG'le⟩ := memLp_reflectDatum (one_le_two.trans hp.le) ν c₀ hGp
   obtain ⟨hwint, hwgp⟩ := integrable_and_memLp_gradient_sub_compHyperplaneReflectionL ν c₀ hint hgp
-  -- The whole-space estimate for the odd reflection `w = u - u ∘ ρ`, whose gradient dominates.
+  -- The reflected coefficient is measurable and bounded.
   have hãm : AEStronglyMeasurable (reflectPrincipal ν c₀ a) volume := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using
       aestronglyMeasurable_reflectPrincipal (mu := volume) hν hH
         (mapsTo_hyperplaneReflection_top ν c₀)
         (by simpa only [Opens.coe_inf, Opens.coe_top, univ_inter] using ham)
-  have hw := h hãm (norm_matrixBilinearForm_reflectPrincipal_le hν hbd) hosc _ _
-    (energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_top_eq hν hH ham hbd hu0 hu hG2)
+  have hãbd := norm_matrixBilinearForm_reflectPrincipal_le hν hbd
+  -- The whole-space estimate for the odd reflection `w = u - u ∘ ρ`, whose gradient dominates.
+  have hw := h hãm hãbd hosc _ _
+    (energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_top_eq hν hH hãm hãbd hu0 hu hG2)
     hwint hwgp hG'p
   calc eLpNorm (W1p.gradient u : E → E) p volume
       ≤ eLpNorm (W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀

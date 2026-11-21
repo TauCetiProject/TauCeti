@@ -245,8 +245,8 @@ theorem matrixBilinearForm_reflectPrincipal_of_lt (hx : ⟪x, ν⟫_ℝ < c₀) 
     simp
   rw [reflectPrincipal_of_lt hx, matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a hR,
     abs_det_fderiv_hyperplaneReflection, one_smul,
-    (Submodule.isSelfAdjoint_reflection _).adjoint_eq]
-  rfl
+    (Submodule.isSelfAdjoint_reflection _).adjoint_eq, ContinuousLinearMap.bilinearComp_apply,
+    LinearIsometryEquiv.coe_coe'']
 
 /-- **The reflected coefficient stays close to a reflection-invariant matrix.** Let `A` be a
 constant matrix invariant under the reflection, `A = R A R` with `R` the linear part of `ρ`. If
