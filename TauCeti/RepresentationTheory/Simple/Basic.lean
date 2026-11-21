@@ -13,6 +13,7 @@ public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Rep.Subrepresentation
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.FDRep.Basic
 import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -75,6 +76,8 @@ drag in the semisimple isotypic-component theory that only the comparison needs.
   theorem for `FDRep`.
 * `FDRep.isSimpleModule_asModule_of_simple`: the instance making Mathlib's simple-module API on
   `X.ρ.asModule` available from `Simple X` alone.
+* `FDRep.finrank_hom_tensor_self_eq_zero_of_central`: vanishing of `dim_k Hom_G(X, V ⊗ X)` for
+  simple `X` when a central group element has no eigenvalue `1` on `V`.
 * `TauCeti.SimpleFDRepClasses`: the isomorphism classes of simple objects of `FDRep k G`.
 * `TauCeti.SimpleFDRepClasses.mk_eq_mk_iff`: two simple objects have the same class exactly when
   they are isomorphic in `FDRep k G`.
@@ -200,6 +203,61 @@ instance FDRep.simple_tensorUnit : Simple (𝟙_ (FDRep k G)) :=
   FDRep.of_trivial k G ▸ FDRep.simple_of_trivial
 
 end FDRep
+
+section FDRepCentral
+
+open MonoidalCategory
+open scoped TensorProduct
+
+variable {k : Type u} {G : Type v} [Field k] [Group G]
+
+/-- Over an algebraically closed field, if a central group element `g₀` has no eigenvalue `1` on
+`V` (witnessed by `(V.ρ g₀ - c₁ • 1) ∘ (V.ρ g₀ - c₂ • 1) = 0` with `c₁, c₂ ≠ 1`), then
+`dim_k Hom_G(X, V ⊗ X) = 0` for every simple object `X : FDRep k G`. -/
+theorem FDRep.finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k G}
+    {g₀ : G} (hcomm : ∀ h : G, g₀ * h = h * g₀) {c₁ c₂ : k} (hc₁ : c₁ ≠ 1) (hc₂ : c₂ ≠ 1)
+    (hann : (V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id) = 0)
+    (X : FDRep k G) [Simple X] :
+    Module.finrank k (X ⟶ V ⊗ X) = 0 := by
+  have hX : Representation.IsIrreducible X.ρ := FDRep.isIrreducible_of_simple X
+  obtain ⟨μ, hμ⟩ := hX.exists_forall_apply_eq_smul (X.ρ g₀) fun h x ↦ by
+    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, hcomm h]
+  have hμ0 : μ ≠ 0 := by
+    have : Nontrivial X := hX.nontrivial
+    obtain ⟨x₀, hx₀⟩ := exists_ne (0 : X)
+    rintro rfl; apply hx₀
+    calc x₀ = X.ρ (g₀⁻¹ * g₀) x₀ := by simp
+      _ = X.ρ g₀⁻¹ (X.ρ g₀ x₀) := by rw [map_mul, mul_apply_eq_comp]
+      _ = 0 := by rw [hμ x₀, zero_smul, map_zero]
+  suffices Subsingleton (X ⟶ V ⊗ X) from Module.finrank_zero_of_subsingleton
+  refine ⟨fun φ ψ ↦ sub_eq_zero.mp ?_⟩
+  set f : X ⟶ V ⊗ X := φ - ψ
+  apply Action.hom_ext; apply FGModuleCat.hom_ext
+  refine LinearMap.ext fun x ↦ ?_
+  set z : V ⊗[k] X := f.hom.hom.hom x
+  have heq : (V ⊗ X : FDRep k G).ρ g₀ z = μ • z := by
+    simpa only [LinearMap.comp_apply, hμ x, map_smul] using
+      (LinearMap.congr_fun (FDRep.hom_hom_hom_comm f g₀) x).symm
+  have htens : (V ⊗ X : FDRep k G).ρ g₀ = μ • (V.ρ g₀).rTensor X := by
+    rw [FDRep.tensor_ρ, show X.ρ g₀ = μ • LinearMap.id from LinearMap.ext hμ]
+    exact TensorProduct.ext' fun v y ↦ by simp [TensorProduct.tmul_smul]
+  rw [htens, LinearMap.smul_apply] at heq
+  have hz : (V.ρ g₀).rTensor X z = z := smul_right_injective _ hμ0 heq
+  have hz_sub (c : k) : ((V.ρ g₀ - c • LinearMap.id).rTensor X) z = (1 - c) • z := by
+    simp [hz, sub_smul]
+  have hzero : ((1 - c₁) * (1 - c₂)) • z = 0 := by
+    rw [← smul_smul]
+    calc
+      (1 - c₁) • ((1 - c₂) • z) =
+          ((V.ρ g₀ - c₁ • LinearMap.id).rTensor X) ((1 - c₂) • z) := by
+        rw [map_smul, hz_sub c₁, smul_comm]
+      _ = (((V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id)).rTensor X) z := by
+        rw [LinearMap.rTensor_comp, LinearMap.comp_apply, hz_sub c₂]
+      _ = 0 := by rw [hann, LinearMap.rTensor_zero, LinearMap.zero_apply]
+  simpa [z] using (smul_eq_zero.mp hzero).resolve_left
+    (mul_ne_zero (sub_ne_zero.mpr hc₁.symm) (sub_ne_zero.mpr hc₂.symm))
+
+end FDRepCentral
 
 namespace TauCeti
 

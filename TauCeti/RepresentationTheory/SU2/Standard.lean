@@ -46,6 +46,8 @@ theorem stdRep_apply_apply (H : Subgroup SU2) (h : H) (v : Fin 2 → ℂ) :
 theorem stdRep_injective (H : Subgroup SU2) : Function.Injective (stdRep H) :=
   (TauCeti.stdRep_injective ℂ 2).comp (toGL_injective.comp H.subtype_injective)
 
+-- Match before `stdRep_apply` unfolds `stdRep H h`.
+@[simp↓]
 theorem det_stdRep (H : Subgroup SU2) (h : H) : LinearMap.det (stdRep H h) = 1 := by
   rw [stdRep_apply, ← Matrix.toLin'_apply', LinearMap.det_toLin']
   exact (Matrix.mem_specialUnitaryGroup_iff.mp h.val.property).right
@@ -59,15 +61,21 @@ theorem char_stdRep (H : Subgroup SU2) (h : H) :
 /-- The tautological two-dimensional complex representation of `H : Subgroup SU2` in `FDRep ℂ H`. -/
 noncomputable abbrev stdFDRep (H : Subgroup SU2) : FDRep ℂ H := FDRep.of (stdRep H)
 
+-- Match before `FDRep.finrank_of` unfolds `FDRep.of (stdRep H)`.
+@[simp↓]
 theorem finrank_stdFDRep (H : Subgroup SU2) : Module.finrank ℂ (stdFDRep H) = 2 := by
   rw [FDRep.finrank_of (stdRep H)]; simp
 
 theorem ρ_stdFDRep_injective (H : Subgroup SU2) : Function.Injective (stdFDRep H).ρ := by
   rw [FDRep.of_ρ' (stdRep H)]; exact stdRep_injective H
 
+-- Match before `FDRep.of_ρ'` and `stdRep_apply` unfold `(stdFDRep H).ρ h`.
+@[simp↓]
 theorem det_ρ_stdFDRep (H : Subgroup SU2) (h : H) : LinearMap.det ((stdFDRep H).ρ h) = 1 := by
   rw [FDRep.of_ρ' (stdRep H)]; exact det_stdRep H h
 
+-- Match before `FDRep.character_of` and `char_stdRep` unfold `(stdFDRep H).character h`.
+@[simp↓]
 theorem character_stdFDRep (H : Subgroup SU2) (h : H) :
     (stdFDRep H).character h = Matrix.trace (h.val : Matrix (Fin 2) (Fin 2) ℂ) := by
   rw [FDRep.character_of (stdRep H), char_stdRep]

@@ -112,6 +112,16 @@ theorem mckayMatrix_apply (h : IsMcKayLabelling V t e) (c₁ c₂ : SimpleFDRepC
   induction c₂ using SimpleFDRepClasses.ind with | h Y hY =>
     rw [mckayMatrix_mk_mk]; exact h.1 X Y
 
+/-- Under a McKay labelling, reindexing the integer-cast McKay matrix along `e` gives
+`2 • 1 - t.cartanMatrix`. -/
+theorem reindex_mckayMatrix (h : IsMcKayLabelling V t e) :
+    Matrix.reindex e e ((mckayMatrix V).map (Nat.cast : ℕ → ℤ)) = 2 • 1 - t.cartanMatrix := by
+  ext i j
+  simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.map_apply,
+    h.mckayMatrix_apply, Equiv.apply_symm_apply, Matrix.sub_apply, Matrix.smul_apply,
+    Matrix.one_apply]
+  split_ifs <;> ring
+
 /-- Under a McKay labelling, `(c.finrank : ℤ) = t.marks (e c)` for every simple class `c`. -/
 theorem finrank_eq_marks (h : IsMcKayLabelling V t e) (c : SimpleFDRepClasses ℂ G) :
     (c.finrank : ℤ) = t.marks (e c) := by

@@ -28,7 +28,7 @@ on the intersection matrix of a numerical type.
 ## Main results
 
 * `Matrix.reflTransGen_ne_and_pos_of_pow_pos`: a positive entry in a matrix power `A ^ n` over a
-  canonically ordered domain semiring yields an off-diagonal positive-entry walk.
+  canonically ordered semiring yields an off-diagonal positive-entry walk.
 * `Matrix.forall_reflTransGen_ne_and_pos_iff`: for a matrix with nonnegative off-diagonal
   entries, strong connectivity of its directed graph is the absence of a disconnecting cut.
 * `Matrix.eq_smul_of_mulVec_eq_zero`: if a matrix over a linear ordered field has nonnegative
@@ -40,11 +40,11 @@ public section
 
 namespace Matrix
 
-/-- A positive `(i, j)`-entry in `A ^ n` over a canonically ordered domain semiring yields a
+/-- A positive `(i, j)`-entry in `A ^ n` over a canonically ordered semiring yields a
 reflexive-transitive path in the off-diagonal positive-entry relation `x ≠ y ∧ 0 < A x y`,
 dropping any diagonal steps automatically. -/
 theorem reflTransGen_ne_and_pos_of_pow_pos {C R : Type*} [Fintype C] [DecidableEq C]
-    [Semiring R] [PartialOrder R] [CanonicallyOrderedAdd R] [NoZeroDivisors R]
+    [Semiring R] [PartialOrder R] [CanonicallyOrderedAdd R]
     (A : Matrix C C R) :
     ∀ {n : ℕ} {i j : C}, 0 < (A ^ n) i j →
       Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < A x y) i j

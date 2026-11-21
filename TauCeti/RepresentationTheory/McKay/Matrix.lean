@@ -30,7 +30,8 @@ self-duality, the dimension null-vector equation `M δ = (dim V) δ`, and the id
 ## Main definitions and results
 
 * `TauCeti.mckayMatrix`: the matrix `(c₁, c₂) ↦ dim_k Hom_G(X, V ⊗ Y)` on `SimpleFDRepClasses k G`,
-  with `TauCeti.mckayMatrix_apply_trivial`.
+  with `TauCeti.mckayMatrix_apply_trivial`, `TauCeti.mckayMatrix_zero`,
+  `TauCeti.mckayMatrix_biprod`, `TauCeti.mckayMatrix_tensorUnit`, and `TauCeti.mckayMatrix_tensor`.
 * `FDRep.finrank_hom_tensor_self_eq_zero` and `TauCeti.mckayMatrix_apply_self_eq_zero`:
   loop-freeness for faithful two-dimensional representations of determinant `1`.
 * `TauCeti.mckayMatrix_transpose`, `TauCeti.isSymm_mckayMatrix_of_equiv_dual`, and
@@ -60,49 +61,6 @@ namespace FDRep
 section LoopFree
 
 variable {k : Type u} {G : Type v} [Field k] [Group G]
-
-private theorem finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k G}
-    {g₀ : G} (hcomm : ∀ h : G, g₀ * h = h * g₀) {c₁ c₂ : k} (hc₁ : c₁ ≠ 1) (hc₂ : c₂ ≠ 1)
-    (hann : (V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id) = 0)
-    (X : FDRep k G) [Simple X] :
-    Module.finrank k (X ⟶ V ⊗ X) = 0 := by
-  have hX : Representation.IsIrreducible X.ρ := FDRep.isIrreducible_of_simple X
-  obtain ⟨μ, hμ⟩ := hX.exists_forall_apply_eq_smul (X.ρ g₀) fun h x ↦ by
-    rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, hcomm h]
-  have hμ0 : μ ≠ 0 := by
-    have : Nontrivial X := hX.nontrivial
-    obtain ⟨x₀, hx₀⟩ := exists_ne (0 : X)
-    rintro rfl; apply hx₀
-    calc x₀ = X.ρ (g₀⁻¹ * g₀) x₀ := by simp
-      _ = X.ρ g₀⁻¹ (X.ρ g₀ x₀) := by rw [map_mul, mul_apply_eq_comp]
-      _ = 0 := by rw [hμ x₀, zero_smul, map_zero]
-  suffices Subsingleton (X ⟶ V ⊗ X) from Module.finrank_zero_of_subsingleton
-  refine ⟨fun φ ψ ↦ sub_eq_zero.mp ?_⟩
-  set f : X ⟶ V ⊗ X := φ - ψ
-  apply Action.hom_ext; apply FGModuleCat.hom_ext
-  refine LinearMap.ext fun x ↦ ?_
-  set z : V ⊗[k] X := f.hom.hom.hom x
-  have heq : (V ⊗ X : FDRep k G).ρ g₀ z = μ • z := by
-    simpa only [LinearMap.comp_apply, hμ x, map_smul] using
-      (LinearMap.congr_fun (FDRep.hom_hom_hom_comm f g₀) x).symm
-  have htens : (V ⊗ X : FDRep k G).ρ g₀ = μ • (V.ρ g₀).rTensor X := by
-    rw [FDRep.tensor_ρ, show X.ρ g₀ = μ • LinearMap.id from LinearMap.ext hμ]
-    exact TensorProduct.ext' fun v y ↦ by simp [TensorProduct.tmul_smul]
-  rw [htens, LinearMap.smul_apply] at heq
-  have hz : (V.ρ g₀).rTensor X z = z := smul_right_injective _ hμ0 heq
-  have hz_sub (c : k) : ((V.ρ g₀ - c • LinearMap.id).rTensor X) z = (1 - c) • z := by
-    simp [hz, sub_smul]
-  have hzero : ((1 - c₁) * (1 - c₂)) • z = 0 := by
-    rw [← smul_smul]
-    calc
-      (1 - c₁) • ((1 - c₂) • z) =
-          ((V.ρ g₀ - c₁ • LinearMap.id).rTensor X) ((1 - c₂) • z) := by
-        rw [map_smul, hz_sub c₁, smul_comm]
-      _ = (((V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id)).rTensor X) z := by
-        rw [LinearMap.rTensor_comp, LinearMap.comp_apply, hz_sub c₂]
-      _ = 0 := by rw [hann, LinearMap.rTensor_zero, LinearMap.zero_apply]
-  simpa [z] using (smul_eq_zero.mp hzero).resolve_left
-    (mul_ne_zero (sub_ne_zero.mpr hc₁.symm) (sub_ne_zero.mpr hc₂.symm))
 
 private theorem exists_central_annihilator_of_not_simple [Nontrivial G]
     [NeZero (Nat.card G : k)] {V : FDRep k G} (hdim : Module.finrank k V = 2)
@@ -222,6 +180,43 @@ theorem mckayMatrix_congr [Monoid G] {V₁ V₂ : FDRep k G} (iso : V₁ ≅ V�
     rw [mckayMatrix_apply_mk, mckayMatrix_apply_mk]
     exact c₁.multiplicity_congr (whiskerRightIso iso Y)
 
+open scoped ZeroObject in
+/-- **Zero law for the McKay matrix.** -/
+@[simp]
+theorem mckayMatrix_zero [Monoid G] : mckayMatrix (0 : FDRep k G) = 0 := by
+  ext c₁ c₂
+  induction c₂ using SimpleFDRepClasses.ind with
+  | h Y hY =>
+    rw [mckayMatrix_apply_mk, Matrix.zero_apply]
+    have hzero : Limits.IsZero ((0 : FDRep k G) ⊗ Y) :=
+      (CategoryTheory.MonoidalCategory.tensorRight Y).map_isZero
+        (Limits.isZero_zero (FDRep k G))
+    rw [c₁.multiplicity_congr hzero.isoZero, SimpleFDRepClasses.multiplicity_zero]
+
+/-- **Additivity on biproducts for the McKay matrix.** -/
+@[simp]
+theorem mckayMatrix_biprod [Monoid G] (V₁ V₂ : FDRep k G) :
+    mckayMatrix (V₁ ⊞ V₂) = mckayMatrix V₁ + mckayMatrix V₂ := by
+  ext c₁ c₂
+  induction c₂ using SimpleFDRepClasses.ind with
+  | h Y hY =>
+    let _ := Limits.preservesBinaryBiproducts_of_preservesBiproducts
+      (CategoryTheory.MonoidalCategory.tensorRight Y)
+    rw [mckayMatrix_apply_mk, Matrix.add_apply, mckayMatrix_apply_mk, mckayMatrix_apply_mk]
+    exact (c₁.multiplicity_congr
+      ((CategoryTheory.MonoidalCategory.tensorRight Y).mapBiprod V₁ V₂)).trans
+      (c₁.multiplicity_biprod (V₁ ⊗ Y) (V₂ ⊗ Y))
+
+/-- **Identity law for the McKay matrix** over an algebraically closed field. -/
+@[simp]
+theorem mckayMatrix_tensorUnit [IsAlgClosed k] [Monoid G] [DecidableEq (SimpleFDRepClasses k G)] :
+    mckayMatrix (𝟙_ (FDRep k G)) = 1 := by
+  ext c₁ c₂
+  induction c₂ using SimpleFDRepClasses.ind with
+  | h Y hY =>
+    rw [mckayMatrix_apply_mk, c₁.multiplicity_congr (λ_ Y), c₁.multiplicity_simple Y,
+      Matrix.one_apply]
+
 /-- **Transpose of the McKay matrix.** When `|G|` is invertible in `k`, `(mckayMatrix V)ᵀ` is the
 McKay matrix of the categorical left dual `ᘁV`. -/
 @[simp]
@@ -328,6 +323,18 @@ theorem multiplicity_tensor_eq_sum [Fintype (SimpleFDRepClasses k G)] (V W : FDR
     _root_.Representation.intrinsicMultiplicity_congr
       (FDRep.tensorEquivTprod V (FDRep.of (irreducibleRepresentation k i))),
     FDRep.of_ρ', mul_comm]
+
+/-- **Multiplicativity on tensor products for the McKay matrix.** -/
+@[simp]
+theorem mckayMatrix_tensor [Fintype (SimpleFDRepClasses k G)] (V W : FDRep k G) :
+    mckayMatrix (V ⊗ W) = mckayMatrix V * mckayMatrix W := by
+  ext c₁ c₂
+  induction c₂ using SimpleFDRepClasses.ind with
+  | h Y hY =>
+    rw [mckayMatrix_apply_mk, c₁.multiplicity_congr (α_ V W Y),
+      multiplicity_tensor_eq_sum V (W ⊗ Y) c₁, Matrix.mul_apply]
+    refine Finset.sum_congr rfl fun c₃ _ ↦ ?_
+    rw [mckayMatrix_apply_mk]
 
 /-- **Powers of the McKay matrix count tensor-power multiplicities.** -/
 theorem mckayMatrix_pow_apply [Fintype (SimpleFDRepClasses k G)]

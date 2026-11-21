@@ -25,7 +25,7 @@ neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are
 * `TauCeti.cycleGraph_adj_add_one`: on at least three vertices a vertex is adjacent to its
   successor.
 * `TauCeti.cycleGraph_sub_adj_iff`: subtracting a fixed residue `i : Fin m` preserves adjacency in
-  `cycleGraph m`.
+  `cycleGraph m`, bundled as `TauCeti.cycleGraphSubIso`.
 -/
 
 public section
@@ -33,6 +33,8 @@ public section
 namespace TauCeti
 
 open SimpleGraph
+
+section NeZero
 
 variable {m : ℕ} [NeZero m]
 
@@ -75,7 +77,12 @@ theorem cycleGraph_adj_add_one (hm : 3 ≤ m) (v : Fin m) : (cycleGraph m).Adj v
     exact Set.mem_insert_of_mem _ rfl
   exact hv
 
-omit [NeZero m] in
+end NeZero
+
+section Translation
+
+variable {m : ℕ}
+
 /-- **Translation by `-i` preserves adjacency in `cycleGraph m`.** -/
 @[simp]
 theorem cycleGraph_sub_adj_iff (i u v : Fin m) :
@@ -84,5 +91,23 @@ theorem cycleGraph_sub_adj_iff (i u v : Fin m) :
   | zero => exact i.elim0
   | succ n =>
     rw [cycleGraph_adj', cycleGraph_adj', sub_sub_sub_cancel_right, sub_sub_sub_cancel_right]
+
+/-- **Translation by `-i` as an automorphism of `cycleGraph m`.** -/
+def cycleGraphSubIso (i : Fin m) : cycleGraph m ≃g cycleGraph m where
+  toEquiv :=
+    { toFun := (· - i)
+      invFun := (· + i)
+      left_inv u := by cases m with | zero => exact u.elim0 | succ _ => exact sub_add_cancel u i
+      right_inv u := by
+        cases m with | zero => exact u.elim0 | succ _ => exact add_sub_cancel_right u i }
+  map_rel_iff' := cycleGraph_sub_adj_iff i _ _
+
+@[simp]
+theorem cycleGraphSubIso_apply (i u : Fin m) : cycleGraphSubIso i u = u - i := (rfl)
+
+@[simp]
+theorem cycleGraphSubIso_symm_apply (i u : Fin m) : (cycleGraphSubIso i).symm u = u + i := (rfl)
+
+end Translation
 
 end TauCeti

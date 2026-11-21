@@ -99,11 +99,6 @@ theorem marks_comp_graph_iso {t : AffineDynkinType} (σ : t.graph ≃g t.graph) 
     t.marks ∘ σ = t.marks :=
   funext (marks_graph_iso_apply σ)
 
-/-- Translation by `-i` as an automorphism of `(A n).graph`, sending `i` to `0`. -/
-private def isoSubRightA (n : ℕ) (i : Fin (A n).nodes) : (A n).graph ≃g (A n).graph where
-  toEquiv := Equiv.subRight i
-  map_rel_iff' {u v} := by rw [graph_A]; exact TauCeti.cycleGraph_sub_adj_iff i u v
-
 private lemma dSwap_adj {n : ℕ} (hn : 4 ≤ n) {a b : Fin (D n).nodes}
     (h : (D n).graph.Adj a b) :
     (D n).graph.Adj
@@ -195,7 +190,10 @@ theorem exists_graph_iso_apply_eq_affineNode {t : AffineDynkinType} (ht : t.Vali
     {i : Fin t.nodes} (hi : t.marks i = 1) :
     ∃ σ : t.graph ≃g t.graph, σ i = t.affineNode := by
   cases t with
-  | A n => exact ⟨isoSubRightA n i, by rw [affineNode_A]; exact sub_self i⟩
+  | A n =>
+      refine ⟨⟨(TauCeti.cycleGraphSubIso i).toEquiv, fun {u v} ↦ ?_⟩, ?_⟩
+      · rw [graph_A]; exact (TauCeti.cycleGraphSubIso i).map_rel_iff
+      · rw [affineNode_A]; exact (TauCeti.cycleGraphSubIso_apply i i).trans (sub_self i)
   | D n =>
       rw [valid_D] at ht; rw [marks_D_apply] at hi; rw [affineNode_D]
       have hi_lt : (i : ℕ) < n + 1 := by simpa [nodes_D] using i.isLt
