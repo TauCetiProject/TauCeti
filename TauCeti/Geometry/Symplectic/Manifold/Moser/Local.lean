@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Moser
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # Moser's lemma for families over an open set of times
@@ -34,7 +32,7 @@ flow is complete, and the time maps form an isotopy `ψ_t` with `ψ_t^* σ_t = �
 The proof reduces to Moser's principle for families on `ℝ × M`
 (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem`). A
 smooth map `g : ℝ → J` which is the identity near the interval of times
-(`Convex.exists_contDiff_mem_eventuallyEq_id`) turns `σ` into the form `(g × id)^* σ` on `ℝ × M`,
+(`TauCeti.exists_contMDiff_eventuallyEq_id`) turns `σ` into the form `(g × id)^* σ` on `ℝ × M`,
 whose slices are `σ_{g t}` and whose time derivative near the interval is that of `σ`
 (`TauCeti.mpullback_prodMk_mlieDerivForm_mpullback_prodMap`). Along the trajectory the rate
 `ι_t^* L_{∂_t} σ + L_{X_t} σ_t = dα_t + d(ι_{X_t} σ_t)` then vanishes by Cartan's formula for the
@@ -75,20 +73,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M] {J : Opens ℝ}
 
-/-- A smooth map `ℝ → J` which is the identity near every time of `[[a, b]] ⊆ J`. -/
-private theorem exists_contMDiff_eventuallyEq_id {a b : ℝ} (hab : uIcc a b ⊆ J) :
-    ∃ g : ℝ → J, ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ g ∧
-      ∀ u ∈ uIcc a b, (fun v ↦ (g v : ℝ)) =ᶠ[𝓝 u] id := by
-  obtain ⟨κ, hκ, hκJ, hκid⟩ := (convex_uIcc a b).exists_contDiff_mem_eventuallyEq_id
-    isCompact_uIcc nonempty_uIcc J.isOpen hab
-  refine ⟨fun v ↦ ⟨κ v, hκJ v⟩, ?_, hκid⟩
-  rw [← TauCeti.ContMDiff.subtypeVal_comp_iff]
-  exact hκ.contMDiff
-
 /-- **Moser's lemma along the domain of the flow**, for a family over an open set `J` of times.
 Let `σ` be a smooth two-form on `J × M` and `α` a smooth one-form on `J × M` whose slices are
-primitives of the velocity of the slices of `σ`, `ι_t^* L_{∂_t} σ = dα_t`, at the times `t` between
-`s` and `t`, all in `J`, where the slices `σ_t` are moreover closed. Let `X` be a jointly `C²`
+primitives of the velocity of the slices of `σ`, `ι_u^* L_{∂_t} σ = dα_u`, at the times `u` between
+`s` and `t`, all in `J`, where the slices `σ_u` are moreover closed. Let `X` be a jointly `C²`
 time-dependent vector field solving Moser's equation `ι_{X_u} σ_u = -α_u` at these times. If the
 flow `φ` of `X` from `(s, x)` is defined up to time `t`, then `(φ_{s,t}^* σ_t)ₓ = (σ_s)ₓ`. -/
 theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
@@ -117,7 +105,8 @@ theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
         (contMDiff_const.prodMk contMDiff_id) σ).val x := by
   -- Read the family through a smooth map `g : ℝ → J` which is the identity near the times
   -- between `s` and `t`, so as to obtain the family `σ' = (g × id)^* σ` on `ℝ × M`.
-  obtain ⟨g, hg, hgid⟩ := exists_contMDiff_eventuallyEq_id hst
+  obtain ⟨g, hg, hgid⟩ :=
+    exists_contMDiff_eventuallyEq_id (convex_uIcc s t) isCompact_uIcc nonempty_uIcc hst
   have hgu {u : ℝ} (hu : u ∈ uIcc s t) : g u = ⟨u, hst hu⟩ :=
     Subtype.ext (hgid u hu).self_of_nhds
   set σ' := SmoothForm.mpullback (Prod.map g id) (hg.prodMap contMDiff_id) σ
@@ -125,12 +114,8 @@ theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
       TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) σ'.val =
         (SmoothForm.mpullback (Prod.mk (⟨u, hst hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
           σ).val := by
-    have h := mpullback_comp (F := ℝ) (I := I) (I' := 𝓘(ℝ, ℝ).prod I) (I'' := 𝓘(ℝ, ℝ).prod I)
-      (f := Prod.mk u) (g := Prod.map g id)
-      ((contMDiff_const.prodMk contMDiff_id).mdifferentiable one_ne_zero)
-      ((hg.prodMap contMDiff_id).mdifferentiable (by simp)) σ.val
-    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, ← h, ← hgu hu]
-    rfl
+    rw [← hgu hu, ← SmoothForm.mpullback_prodMk_mpullback_prodMap_id σ hg u]
+    simp only [σ', SmoothForm.coe_mpullback]
   -- Along the trajectory, the rate `ι_u^* L_{∂_t} σ' + L_{X_u} σ'_u = dα_u - dα_u` vanishes.
   have hL (u : ℝ) (hu : u ∈ uIcc s t) :
       (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u)
@@ -141,8 +126,7 @@ theorem mpullback_timeDependentFlowOf_apply_eq_of_mem
       (hX.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable (by norm_num)
     rw [mpullback_prodMk_mlieDerivForm_mpullback_prodMap σ hg (hgid u hu), hgu hu, hα u hu,
       hslice hu, SmoothForm.mlieDerivForm_eq_mextDeriv_interior hXu (hσ u hu), hXeq u hu,
-      mextDeriv_neg, add_neg_cancel]
-    rfl
+      mextDeriv_neg, add_neg_cancel, Pi.zero_apply]
   have hP := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem hX
     hx (fun u _ ↦ σ'.contMDiff.contMDiffAt.of_le (by simp)) hL
   rwa [hslice left_mem_uIcc, hslice right_mem_uIcc] at hP
@@ -151,8 +135,9 @@ omit [I.Boundaryless] [T2Space M] in
 /-- **Solutions of Moser's equation over a compact interval of times.** Let `σ` be a smooth
 two-form on `J × M` with nondegenerate slices and `α` a smooth one-form on `J × M`. For every
 compact interval `[[a, b]] ⊆ J` there is a smooth time-dependent vector field `X` on `ℝ × M` with
-`ι_{X_u} σ_u = -α_u` at every time `u` of the interval. It is the Moser field `(σ_t♭)⁻¹ (-α_t)` read
-through a smooth map `ℝ → J` which is the identity near the interval. -/
+`ι_{X_u} σ_u = -α_u` at every time `u` of the interval. For instance, the Moser field
+`(σ_t♭)⁻¹ (-α_t)` read through a smooth map `ℝ → J` which is the identity near the interval is
+such a field. -/
 theorem exists_contMDiff_interior_eq_neg (σ : SmoothForm (𝓘(ℝ, ℝ).prod I) (J × M) ℝ 2)
     (hσ : ∀ t : J, IsNondegenerate
       (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
@@ -165,7 +150,8 @@ theorem exists_contMDiff_interior_eq_neg (σ : SmoothForm (𝓘(ℝ, ℝ).prod I
             σ).val =
         -(SmoothForm.mpullback (Prod.mk (⟨u, hab hu⟩ : J)) (contMDiff_const.prodMk contMDiff_id)
             α).val := by
-  obtain ⟨g, hg, hgid⟩ := exists_contMDiff_eventuallyEq_id hab
+  obtain ⟨g, hg, hgid⟩ :=
+    exists_contMDiff_eventuallyEq_id (convex_uIcc a b) isCompact_uIcc nonempty_uIcc hab
   refine ⟨fun u ↦ (hσ (g u)).interiorEquiv.symm
     (SmoothForm.mpullback (Prod.mk (g u)) (contMDiff_const.prodMk contMDiff_id) (-α)),
     (contMDiff_interiorEquiv_symm_mpullback_prodMk σ hσ (-α)).comp (hg.prodMap contMDiff_id),

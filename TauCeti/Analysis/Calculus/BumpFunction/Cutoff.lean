@@ -174,9 +174,10 @@ theorem _root_.IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one [Norm
 /-- **A smooth map into an open set which is the identity near a convex compact set.** A nonempty
 convex compact set `K` contained in an open set `U` of a finite-dimensional real normed space
 admits a smooth map `κ` with values in `U` which agrees with the identity near every point of `K`.
-It is `x ↦ ψ x • x + (1 - ψ x) • c` for a point `c` of `K` and a smooth cutoff `ψ` equal to one near
-`K` and supported in a convex thickening of `K` inside `U`. Composing with `κ` turns a family
-indexed by `U` into a family indexed by the whole space, without changing it near `K`. -/
+For instance, `x ↦ ψ x • x + (1 - ψ x) • c` is such a map, for a point `c` of `K` and a smooth
+cutoff `ψ` equal to one near `K` and supported in a convex thickening of `K` inside `U`. Composing
+with `κ` turns a family indexed by `U` into a family indexed by the whole space, without changing it
+near `K`. -/
 theorem _root_.Convex.exists_contDiff_mem_eventuallyEq_id [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     {K U : Set E} (hKc : Convex ℝ K) (hK : IsCompact K) (hKne : K.Nonempty) (hU : IsOpen U)
     (hKU : K ⊆ U) :

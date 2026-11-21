@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.ODE.ScalarLinear
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
@@ -72,6 +73,10 @@ how Moser's argument runs with a field cut off away from a region of interest.
   same velocity for a smooth form, as a smooth form on `ℝ × M`.
 * `TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap`: the time derivative of the
   pullback of a family along `id × f` is the pullback of its time derivative.
+* `TauCeti.exists_contMDiff_eventuallyEq_id`: a smooth map `g : ℝ → J` into an open set `J` of
+  times which is the identity near a convex compact set of times in `J`.
+* `TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap_id`: the slices of `(g × id)^* β` are
+  `ι_u^* (g × id)^* β = ι_{g u}^* β`.
 * `TauCeti.hasDerivAt_mpullback_prodMk_comp`: the same velocity for a form on `J × M`, for an open
   set `J` of times, with the slices read through a map `g : ℝ → J` which is the identity near the
   time considered.
@@ -124,6 +129,31 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
 
 /-! ### Slices of Lie derivatives -/
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I 2 M] in
+/-- The slices `ι_v^* β` of a form `β` on `N` have velocity `ι_u^* η` at `x` at time `u` when the
+inclusions are `ι_v = ψ_{v - u} ∘ ι_u` for maps `ψ_r` of `N` along which `β` has velocity `η` at
+`ι_u x` at time `0`. -/
+private theorem hasDerivAt_mpullback_of_comp_sub {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {β η : RoughForm I' N F k} {ι : ℝ → M → N}
+    {ψ : ℝ → N → N} {u : ℝ} (x : M) (hι : MDifferentiableAt I I' (ι u) x)
+    (hψ : ∀ r, MDifferentiableAt I' I' (ψ r) (ι u x)) (hcomp : ∀ v, ι v = ψ (v - u) ∘ ι u)
+    (hτ : HasDerivAt (F := E' [⋀^Fin k]→L[ℝ] F) (fun r ↦ mpullback I' I' (ψ r) β (ι u x))
+      (η (ι u x)) 0) :
+    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun v ↦ mpullback I I' (ι v) β x)
+      (mpullback I I' (ι u) η x) u := by
+  set L : E →L[ℝ] E' := mfderiv I I' (ι u) x
+  have hslice (v : ℝ) : mpullback I I' (ι v) β x =
+      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
+        (mpullback I' I' (ψ (v - u)) β (ι u x)) := by
+    rw [hcomp v, mpullback_comp_at hι (hψ _)]
+    exact mpullback_apply_eq_compContinuousLinearMapCLM _ _ x
+  have h0 := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
+    (0 : ℝ) hτ
+  have h := HasDerivAt.comp_sub_const (x := u) (a := u) (by rwa [sub_self])
+  refine (h.congr_of_eventuallyEq (Eventually.of_forall hslice)).congr_deriv ?_
+  exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
+
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **Time derivatives of slices.** For a form `α` on `ℝ × M` differentiable at `(t, x)`, the
 slices `ι_u^* α`, pulled back along the inclusions `ι_u : y ↦ (u, y)`, have velocity
@@ -137,7 +167,6 @@ theorem hasDerivAt_mpullback_prodMk (t : ℝ) (x : M)
       (fun u ↦ mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α x)
       (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
         (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α) x) t := by
-  set L : E →L[ℝ] ℝ × E := mfderiv I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) x
   -- The translations `τ_r (u, y) = (u + r, y)` move the points with velocity `∂_t`.
   have hτsmooth : ContMDiff (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ).prod I)) (𝓘(ℝ, ℝ).prod I) 2
       (fun q : ℝ × (ℝ × M) ↦ (q.2.1 + q.1, q.2.2)) :=
@@ -154,32 +183,48 @@ theorem hasDerivAt_mpullback_prodMk (t : ℝ) (x : M)
     (Eventually.of_forall fun p ↦ by simp) hτsmooth.contMDiffAt
     (Eventually.of_forall hτvel) hα
   -- Since `ι_u = τ_{u - t} ∘ ι_t`, the slice at time `u` is `ι_t^* τ_{u - t}^* α`.
-  have hslice (u : ℝ) : mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
-        (mpullback (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I) (fun p : ℝ × M ↦ (p.1 + (u - t), p.2))
-          α (t, x)) := by
-    have hcomp : Prod.mk u = (fun p : ℝ × M ↦ (p.1 + (u - t), p.2)) ∘ Prod.mk t := by
-      funext y
-      simp
-    have hτr : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I) 2
-        (fun p : ℝ × M ↦ (p.1 + (u - t), p.2)) :=
-      (contMDiff_fst.add contMDiff_const).prodMk contMDiff_snd
-    rw [hcomp, mpullback_comp_at
-      ((contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) 1
-        (Prod.mk t : M → ℝ × M)).mdifferentiableAt one_ne_zero)
-      (hτr.mdifferentiableAt (by norm_num))]
-    exact mpullback_apply_eq_compContinuousLinearMapCLM _ _ x
-  have h0 := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
-    (0 : ℝ) hτ
-  have h := HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall hslice)).congr_deriv ?_
-  exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
+  refine hasDerivAt_mpullback_of_comp_sub x
+    ((contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) 1
+      (Prod.mk t : M → ℝ × M)).mdifferentiableAt one_ne_zero)
+    (fun r ↦ ((contMDiff_fst.add contMDiff_const).prodMk contMDiff_snd :
+      ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I) 2
+        (fun p : ℝ × M ↦ (p.1 + r, p.2))).mdifferentiableAt (by norm_num))
+    (fun u ↦ ?_) hτ
+  funext y
+  simp
 
 /-! ### Families over an open set of times -/
 
 section Opens
 
 variable {J : TopologicalSpace.Opens ℝ}
+
+/-- **A smooth map `ℝ → J` which is the identity near a convex compact set of times.** For a
+nonempty convex compact set `K` of times contained in an open set `J` of times, there is a smooth
+map `g : ℝ → J` which agrees with the identity near every time of `K`. Reading a family indexed by
+`J` through `g` gives a family indexed by `ℝ` which agrees with it near `K`. -/
+theorem exists_contMDiff_eventuallyEq_id {K : Set ℝ} (hKc : Convex ℝ K) (hK : IsCompact K)
+    (hKne : K.Nonempty) (hKJ : K ⊆ J) :
+    ∃ g : ℝ → J, ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ g ∧ ∀ u ∈ K, (fun v ↦ (g v : ℝ)) =ᶠ[𝓝 u] id := by
+  obtain ⟨κ, hκ, hκJ, hκid⟩ := hKc.exists_contDiff_mem_eventuallyEq_id hK hKne J.isOpen hKJ
+  refine ⟨fun v ↦ ⟨κ v, hκJ v⟩, ?_, hκid⟩
+  rw [← ContMDiff.subtypeVal_comp_iff]
+  exact hκ.contMDiff
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- The slices of the pullback of a family over `J` along `g × id`, for a map `g : ℝ → J`, are
+the slices at the times `g u`: `ι_u^* (g × id)^* β = ι_{g u}^* β`. -/
+theorem SmoothForm.mpullback_prodMk_mpullback_prodMap_id
+    (β : SmoothForm (𝓘(ℝ, ℝ).prod I) (J × M) F k) {g : ℝ → J}
+    (hg : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ g) (u : ℝ) :
+    SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
+        (SmoothForm.mpullback (Prod.map g id) (hg.prodMap contMDiff_id) β) =
+      SmoothForm.mpullback (Prod.mk (g u)) (contMDiff_const.prodMk contMDiff_id) β := by
+  have hcomp : Prod.map g id ∘ Prod.mk u = (Prod.mk (g u) : M → J × M) := by
+    funext y
+    simp
+  rw [SmoothForm.mpullback_mpullback]
+  simp only [hcomp]
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I 2 M] in
 /-- A `C²` map `g : ℝ → J` which is the identity near `a`, translated to start at `a` and paired
@@ -250,23 +295,12 @@ theorem hasDerivAt_mpullback_prodMk_comp {β : RoughForm (𝓘(ℝ, ℝ).prod I)
   have hτ := hasDerivAt_mpullback_of_eq_id (I := 𝓘(ℝ, ℝ).prod I) (ψ := ψ)
     (V := fun _ ↦ ((1 : ℝ), (0 : E))) (t := 0) p₀ hid hsmooth hvel hβ
   -- Since `ι_{g v} = ψ_{v - u} ∘ ι_{g u}`, the slice at time `g v` is `ι_{g u}^* ψ_{v - u}^* β`.
-  set L : E →L[ℝ] ℝ × E := mfderiv I (𝓘(ℝ, ℝ).prod I) (Prod.mk (g u)) x
-  have hslice (v : ℝ) : mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk (g v)) β x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
-        (mpullback (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I) (ψ (v - u)) β p₀) := by
-    have hcomp : Prod.mk (g v) = ψ (v - u) ∘ Prod.mk (g u) := by
-      funext y
-      simp [ψ, hgu]
-    rw [hcomp, mpullback_comp_at
-      ((contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) 1
-        (Prod.mk (g u) : M → J × M)).mdifferentiableAt one_ne_zero)
-      ((hψs (v - u)).mdifferentiableAt (by norm_num))]
-    exact mpullback_apply_eq_compContinuousLinearMapCLM _ _ x
-  have h0 := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
-    (0 : ℝ) hτ
-  have h := HasDerivAt.comp_sub_const (x := u) (a := u) (by rwa [sub_self])
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall hslice)).congr_deriv ?_
-  exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
+  refine hasDerivAt_mpullback_of_comp_sub (ι := fun v ↦ Prod.mk (g v)) x
+    ((contMDiff_const.prodMk contMDiff_id : ContMDiff I (𝓘(ℝ, ℝ).prod I) 1
+      (Prod.mk (g u) : M → J × M)).mdifferentiableAt one_ne_zero)
+    (fun r ↦ (hψs r).mdifferentiableAt (by norm_num)) (fun v ↦ ?_) hτ
+  funext y
+  simp [ψ, hgu]
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **Reading a family over an open set of times through a map of `ℝ`.** For a smooth map
@@ -287,12 +321,9 @@ theorem mpullback_prodMk_mlieDerivForm_mpullback_prodMap
   refine (hasDerivAt_mpullback_prodMk_comp (hg.of_le (by simp)) hu x
     (β.mdifferentiableAt _)).congr_of_eventuallyEq (Eventually.of_forall fun v ↦ ?_)
   -- The slices of `(g × id)^* β` are the slices of `β` at the times `g v`.
-  have h := mpullback_comp (F := F) (I := I) (I' := 𝓘(ℝ, ℝ).prod I) (I'' := 𝓘(ℝ, ℝ).prod I)
-    (f := Prod.mk v) (g := Prod.map g id)
-    ((contMDiff_const.prodMk contMDiff_id).mdifferentiable one_ne_zero)
-    ((hg.prodMap contMDiff_id).mdifferentiable (by simp)) β.val
-  simp only [SmoothForm.coe_mpullback]
-  exact (congrFun h x).symm
+  have h := congrArg Subtype.val (SmoothForm.mpullback_prodMk_mpullback_prodMap_id β hg v)
+  simp only [SmoothForm.coe_mpullback] at h ⊢
+  exact congrFun h x
 
 end Opens
 
