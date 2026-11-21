@@ -216,16 +216,20 @@ theorem injective_torsionByMap_of_injective_smul (hfg : Exact f g) (hf : Injecti
     have hy : y = 0 := Subtype.ext (hr (by simp))
     rw [hy, map_zero]
 
-/-- Along a short exact sequence `0 → M₁ → M₂ → M₃ → 0`, if multiplication by `r` is surjective
-on `M₁`, then `M₂[r] → M₃[r]` is surjective, since `M₁ ⧸ rM₁` vanishes. -/
-theorem surjective_torsionByMap_of_surjective_smul (hfg : Exact f g) (hf : Injective f)
-    (hg : Surjective g) (hr : Surjective fun x : M₁ ↦ r • x) :
-    Surjective (torsionByMap r g) := fun x ↦
-  (exact_torsionByMap_torsionByδ hfg hf hg x).1 <| by
-    obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _ (torsionByδ r hfg hf hg x)
-    obtain ⟨w, rfl⟩ := hr z
-    rw [← hz, Submodule.Quotient.mk_eq_zero]
-    exact Submodule.smul_mem_pointwise_smul w r ⊤ trivial
+/-- Along an exact sequence `M₁ → M₂ → M₃ → 0`, if multiplication by `r` is surjective on `M₁`,
+then `M₂[r] → M₃[r]` is surjective. The map `M₁ → M₂` need not be injective. -/
+theorem surjective_torsionByMap_of_surjective_smul (hfg : Exact f g) (hg : Surjective g)
+    (hr : Surjective fun x : M₁ ↦ r • x) : Surjective (torsionByMap r g) := fun x ↦ by
+  -- lift `x` to `y ∈ M₂`; then `g (r • y) = r • x = 0`, so `r • y = f (r • w)` for some `w ∈ M₁`,
+  -- and `y - f w` is an `r`-torsion lift of `x`
+  obtain ⟨y, hy⟩ := hg x
+  obtain ⟨z, hz⟩ := (hfg (r • y)).1 <| by
+    rw [map_smul, hy]
+    exact (mem_torsionBy_iff _ _).1 x.property
+  obtain ⟨w, rfl⟩ := hr z
+  refine ⟨⟨y - f w, (mem_torsionBy_iff _ _).2 ?_⟩, Subtype.ext ?_⟩
+  · rw [smul_sub, ← map_smul, hz, sub_self]
+  · rw [coe_torsionByMap_apply, map_sub, hfg.apply_apply_eq_zero, sub_zero, hy]
 
 /-- **Injectivity of the connecting map**: when multiplication by `r` is injective on `M₂`, the
 connecting map `M₃[r] → M₁ ⧸ rM₁` is injective, since its kernel is the image of `M₂[r] = 0`. -/
@@ -339,8 +343,7 @@ theorem bijective_torsionByMap_of_bijective_ker_smul (f : M →ₗ[R] N)
     Bijective (torsionByMap r f) :=
   ⟨injective_torsionByMap_of_injective_smul (LinearMap.exact_subtype_ker_map f)
     (LinearMap.ker f).injective_subtype hr.1,
-    surjective_torsionByMap_of_surjective_smul (LinearMap.exact_subtype_ker_map f)
-      (LinearMap.ker f).injective_subtype hf hr.2⟩
+    surjective_torsionByMap_of_surjective_smul (LinearMap.exact_subtype_ker_map f) hf hr.2⟩
 
 /-- A surjective linear map whose kernel is uniquely divisible by `r` lifts every
 `r`-torsion point uniquely to an `r`-torsion point. -/
