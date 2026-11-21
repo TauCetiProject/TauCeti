@@ -121,8 +121,12 @@ theorem mfderiv_torusRotation_zero (z : EuclideanSpace ℝ ι × EuclideanSpace 
       𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) F
         (fun j ↦ ((0 : ι → ℝ) j : AddCircle (2 * π))) τ = weightGenerator (-τ) z := by
     rw [← hline.unique hrot]
-    -- The derivative of the covering map is the identity of `ℝ^ι`, so `id ∘L L` is `L`.
-    exact (congrArg (fun L ↦ L τ) hmf).symm.trans rfl
+    -- The derivative of the covering map is the identity of `ℝ^ι`.
+    exact congrArg (fun L ↦ L τ) (hmf.trans (ContinuousLinearMap.comp_id
+      (mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+        𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) F
+        (fun j ↦ ((0 : ι → ℝ) j : AddCircle (2 * π))) :
+        (ι → ℝ) →L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))).symm
   rwa [hc0] at h
 
 end TauCeti

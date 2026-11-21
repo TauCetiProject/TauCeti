@@ -17,6 +17,7 @@ public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import Mathlib.Topology.DiscreteSubset
 
 /-!
 # Integral lattices in a real vector space
@@ -67,8 +68,8 @@ forcing the integral and real ranks to agree.
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_range_smul`: in a normed space every rescaling
   `p i(N)` of the image of an integral lattice is closed.
-* `TauCeti.Toric.IsIntegralLattice.eventually_eq_of_eventually_mem_range_smul`: a map continuous
-  at a point, with values near it in `p i(N)`, is constant near it.
+* `TauCeti.Toric.IsIntegralLattice.isDiscrete_range_smul`: every rescaling `p i(N)` of the image of
+  an integral lattice is discrete.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
 
@@ -396,43 +397,19 @@ theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : �
   rw [hrange]
   exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
 
-/-- **Lattice-valued maps are locally constant.** For an integral lattice `i`, a map into `V`
-which is continuous at `x₀` and takes its values near `x₀` in the rescaled lattice `p i(N)` is
-constant near `x₀`, since that lattice is discrete. -/
-theorem IsIntegralLattice.eventually_eq_of_eventually_mem_range_smul (hi : IsIntegralLattice i)
-    {X : Type*} [TopologicalSpace X] {f : X → V} {x₀ : X} (hf : ContinuousAt f x₀) (p : ℝ)
-    (hmem : ∀ᶠ x in nhds x₀, f x ∈ (p • i).range) : ∀ᶠ x in nhds x₀, f x = f x₀ := by
+/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is discrete in `V`: it is the image
+of the discrete lattice `i(N)` under a homeomorphism for `p ≠ 0`, and zero for `p = 0`. -/
+theorem IsIntegralLattice.isDiscrete_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
+    IsDiscrete ((p • i).range : Set V) := by
   rcases eq_or_ne p 0 with rfl | hp
-  · have h0 (v : V) (hv : v ∈ ((0 : ℝ) • i).range) : v = 0 := by
-      obtain ⟨n, rfl⟩ := AddMonoidHom.mem_range.1 hv
-      simp
-    filter_upwards [hmem] with x hx
-    rw [h0 _ hx, h0 _ hmem.self_of_nhds]
-  -- An open neighbourhood `W` of `0` meets the discrete lattice `i(N)` only in `0`.
+  · exact Set.Subsingleton.isDiscrete (by simp)
   have := hi.discreteTopology
-  obtain ⟨W, hW, hWeq⟩ := isOpen_induced_iff.1
-    (isOpen_discrete ({0} : Set (LinearMap.range i.toIntLinearMap)))
-  have hW0 : (0 : V) ∈ W := by
-    have : (0 : LinearMap.range i.toIntLinearMap) ∈ Subtype.val ⁻¹' W := by rw [hWeq]; rfl
-    exact this
-  have hd : ContinuousAt (fun x ↦ p⁻¹ • (f x - f x₀)) x₀ :=
-    continuousAt_const.smul (hf.sub continuousAt_const)
-  have hWx : ∀ᶠ x in nhds x₀, p⁻¹ • (f x - f x₀) ∈ W :=
-    hd.preimage_mem_nhds (by simpa using hW.mem_nhds hW0)
-  filter_upwards [hWx, hmem] with x hx hx'
-  obtain ⟨n, hn⟩ := AddMonoidHom.mem_range.1 hx'
-  obtain ⟨m, hm⟩ := AddMonoidHom.mem_range.1 hmem.self_of_nhds
-  -- `p⁻¹ • (f x - f x₀) = i (n - m)` lies in `W ∩ i(N) = {0}`.
-  have hS : p⁻¹ • (f x - f x₀) ∈ LinearMap.range i.toIntLinearMap :=
-    ⟨n - m, by
-      simp only [map_sub, ← hn, ← hm, AddMonoidHom.smul_apply, ← smul_sub, smul_smul,
-        inv_mul_cancel₀ hp, one_smul]
-      rfl⟩
-  have h0 : (⟨_, hS⟩ : LinearMap.range i.toIntLinearMap) ∈ Subtype.val ⁻¹' W := hx
-  rw [hWeq, Set.mem_singleton_iff, Subtype.ext_iff] at h0
-  have h0' := congrArg (p • ·) h0
-  simp only [smul_smul, mul_inv_cancel₀ hp, one_smul, ZeroMemClass.coe_zero, smul_zero] at h0'
-  exact sub_eq_zero.1 h0'
+  have hrange : ((p • i).range : Set V) =
+      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
+    ext v
+    simp [eq_comm]
+  rw [hrange]
+  exact (isDiscrete_iff_discreteTopology.2 ‹_›).image (Homeomorph.smulOfNeZero p hp).isInducing
 
 /-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
 space, is an integral lattice for its inclusion: the space is the real scalar extension of the
