@@ -348,6 +348,12 @@ theorem arithmeticGenus_add_card_vertex :
   rw [arithmeticGenus]
   omega
 
+/-- A graph of arithmetic genus `g` has at most `g + #vertices - 1` edges. -/
+theorem card_edge_add_one_le_arithmeticGenus_add_card_vertex :
+    Fintype.card G.Edge + 1 ≤ G.arithmeticGenus + Fintype.card G.Vertex := by
+  have := G.arithmeticGenus_add_card_vertex
+  omega
+
 /-- If every edge at `v` is a loop, the graph has the single vertex `v`, and twice its arithmetic
 genus is `2 g(v) + val(v)`. -/
 theorem two_mul_arithmeticGenus_of_forall_endpoint_zero_eq_iff {v : G.Vertex}
@@ -439,12 +445,9 @@ theorem IsStable.card_vertex_le [Fintype ι] (hG : G.IsStable) :
 /-- A stable graph of genus `g` with `n` markings has at most `3g - 3 + n` edges. -/
 theorem IsStable.card_edge_le [Fintype ι] (hG : G.IsStable) :
     (Fintype.card G.Edge : ℤ) ≤ 3 * G.arithmeticGenus - 3 + Fintype.card ι := by
-  have hV := hG.card_vertex_le
-  have hgenus : (G.arithmeticGenus + Fintype.card G.Vertex : ℤ) =
-      ∑ v, (G.genus v : ℤ) + Fintype.card G.Edge + 1 := by
-    exact_mod_cast G.arithmeticGenus_add_card_vertex
-  have hpos : (0 : ℤ) ≤ ∑ v, (G.genus v : ℤ) := sum_nonneg fun _ _ ↦ Int.natCast_nonneg _
-  linarith
+  have := hG.card_vertex_le
+  have := G.card_edge_add_one_le_arithmeticGenus_add_card_vertex
+  omega
 
 /-- The stable range: a stable graph of genus `g` with `n` markings has `2g - 2 + n > 0`. -/
 theorem IsStable.two_mul_arithmeticGenus_sub_two_add_card_pos [Fintype ι] (hG : G.IsStable) :
