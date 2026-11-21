@@ -246,6 +246,16 @@ theorem washnitzerBasis_repr_d (g : W) (i : σ) :
     (washnitzerBasis σ K).repr (d K W g) i = pderiv σ K i g := by
   simp [washnitzerBasis, pderivPi_apply]
 
+/-- On `W = K⟨X_σ⟩†`, `d g = ω` iff all partial derivatives of `g` equal the coordinates of `ω`. -/
+theorem d_eq_iff_forall_pderiv_eq (g : W) (ω : Omega K W) :
+    d K W g = ω ↔ ∀ i, pderiv σ K i g = (washnitzerBasis σ K).repr ω i := by
+  rw [← (washnitzerBasis σ K).repr.injective.eq_iff, Finsupp.ext_iff]; simp [washnitzerBasis_repr_d]
+
+/-- On `W = K⟨X_σ⟩†` in any characteristic, `d g = 0` iff all partial derivatives vanish. -/
+theorem d_eq_zero_iff_forall_pderiv_eq_zero (g : W) :
+    d K W g = 0 ↔ ∀ i, pderiv σ K i g = 0 := by
+  simpa using d_eq_iff_forall_pderiv_eq g 0
+
 /-- The basis vectors are the differentials of the variables. -/
 @[simp]
 theorem washnitzerBasis_apply (i : σ) : washnitzerBasis σ K i = d K W (X σ K i) := by

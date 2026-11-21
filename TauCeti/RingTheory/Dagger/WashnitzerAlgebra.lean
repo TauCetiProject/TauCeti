@@ -241,6 +241,17 @@ theorem X_ne_zero [Nontrivial R] (i : σ) : X σ R i ≠ 0 := by
     coeff (Finsupp.single i 1) (f : MvPowerSeries σ R)) h
   simp at hc
 
+/-- For every `m > 0`, a positive power `Xᵢ ^ m` in `R⟨X_σ⟩†` over a nontrivial ring does not
+lie in the image of `algebraMap R _`. -/
+theorem X_pow_notMem_range_algebraMap [Nontrivial R] (i : σ) {m : ℕ} (hm : 0 < m) :
+    X σ R i ^ m ∉ Set.range (algebraMap R (washnitzerAlgebra σ R)) := by
+  classical
+  rintro ⟨c, hc⟩
+  have h := congrArg (fun f : washnitzerAlgebra σ R ↦
+    coeff (Finsupp.single i m) (f : MvPowerSeries σ R)) hc
+  simp [MvPowerSeries.algebraMap_apply, MvPowerSeries.coeff_C, SubmonoidClass.coe_pow,
+    Finsupp.single_ne_zero.mpr hm.ne', MvPowerSeries.coeff_X_pow] at h
+
 /-- A variable in the Monsky–Washnitzer algebra over a nontrivial ring is not a unit. -/
 @[simp]
 theorem not_isUnit_X [Nontrivial R] (i : σ) : ¬ IsUnit (X σ R i) := by

@@ -19,7 +19,7 @@ For `f : A →ₐ[R] B` where `R` and `B` are noetherian and every maximal ideal
 `B ⧸ m` module-finite over `R` (in particular any `K`-dagger algebra `B`), any `f`-semilinear map
 `Ω[A⁄R] →ₛₗ[f] M` into a finite `B`-module factors through `Omega R A`: for each maximal `m` and
 `n > 0`, `M ⧸ (m ^ n • ⊤)` is `R`-finite (hence `A`-noetherian), so Krull intersection over maximal
-ideals forces `Omega.finiteKer R A` to vanish.
+ideals forces every such `g` to kill `Omega.finiteKer R A` and therefore descend to `Omega R A`.
 
 ## References
 
@@ -148,8 +148,8 @@ theorem mapSemilinear_surjective [IsDaggerAlgebra K B] {f : A →ₐ[K] B}
     (hf : Function.Surjective f) : Function.Surjective (mapSemilinear f) := by
   have : RingHomSurjective f.toRingHom := ⟨hf⟩
   have h : Submodule.span B (Set.range (d K B)) ≤ LinearMap.range (mapSemilinear f) := by
-    rw [Submodule.span_le]; rintro _ ⟨b, rfl⟩; obtain ⟨a, rfl⟩ := hf b
-    exact ⟨d K A a, mapSemilinear_d f a⟩
+    rw [Submodule.span_le]; rintro _ ⟨b, rfl⟩
+    obtain ⟨a, rfl⟩ := hf b; exact ⟨d K A a, mapSemilinear_d f a⟩
   exact fun y ↦ h (span_range_d K B ▸ Submodule.mem_top)
 
 /-- Any algebra homomorphism `A →ₐ[K] K` induces the zero map on `Omega`. -/

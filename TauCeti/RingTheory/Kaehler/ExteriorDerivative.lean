@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Derivation.ExteriorDerivative
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 
@@ -65,12 +64,13 @@ theorem mapSemilinear_exteriorDeriv_of_derivation {B N : Type*} [CommRing B] [Al
     exteriorPower.mapSemilinear (q + 1) g (exteriorDeriv R A q ω) =
       D'.exteriorDeriv u' hspan' hu' q (exteriorPower.mapSemilinear q g ω) :=
   Derivation.mapSemilinear_exteriorDeriv _ _ _ _ D' u' hspan' hu' f g hg q ω
+/-- An `R`-algebra homomorphism `f : A →ₐ[R] B` induces maps on Kähler `q`-forms via
+`KaehlerDifferential.mapSemilinear f` that commute with the algebraic exterior derivative. -/
 theorem mapSemilinear_exteriorDeriv {B : Type*} [CommRing B] [Algebra R B]
     (f : A →ₐ[R] B) (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
     exteriorPower.mapSemilinear (q + 1) (KaehlerDifferential.mapSemilinear f)
         (exteriorDeriv R A q ω) =
-      exteriorDeriv R B q
-        (exteriorPower.mapSemilinear q (KaehlerDifferential.mapSemilinear f) ω) :=
+      exteriorDeriv R B q (exteriorPower.mapSemilinear q (KaehlerDifferential.mapSemilinear f) ω) :=
   mapSemilinear_exteriorDeriv_of_derivation _ _ _ _ f (KaehlerDifferential.mapSemilinear f)
     (KaehlerDifferential.mapSemilinear_D f) q ω
 

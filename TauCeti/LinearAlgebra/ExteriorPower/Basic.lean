@@ -101,6 +101,14 @@ namespace exteriorPower
 section Vanishing
 
 variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Every positive exterior power of a subsingleton module is subsingleton. -/
+theorem subsingleton_succ_of_subsingleton [Subsingleton M] (n : ℕ) :
+    Subsingleton (⋀[R]^(n + 1) M) :=
+  subsingleton_of_span_eq_top_of_card_lt
+    (IsEmpty.elim (α := Empty) inferInstance)
+    (eq_top_iff.mpr fun x _ ↦ Subsingleton.elim x 0 ▸ zero_mem _) (n + 1) (by simp)
+
 variable [Module.Free R M] [Module.Finite R M]
 
 /-- An exterior power above the rank of a finite free module is zero. -/
@@ -301,6 +309,13 @@ end Bijective
 section OfEq
 
 variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Coercing `u ∧ v` into the exterior algebra gives `ι R u * ι R v`. -/
+theorem coe_ιMulti_two (u v : M) :
+    (ιMulti R 2 ![u, v] : ExteriorAlgebra R M) =
+      ExteriorAlgebra.ι R u * ExteriorAlgebra.ι R v := by
+  simp [ιMulti_apply_coe, ExteriorAlgebra.ιMulti_succ_apply,
+    ExteriorAlgebra.ιMulti_zero_apply, Matrix.vecTail]
 
 /-- Exterior powers of equal degree are equal, and the identification renumbers the factors of an
 exterior product. -/

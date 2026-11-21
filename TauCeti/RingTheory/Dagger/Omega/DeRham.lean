@@ -8,9 +8,7 @@ module
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.RingTheory.Dagger.Omega.Kaehler
 public import TauCeti.RingTheory.Dagger.Omega.Map
-public import TauCeti.RingTheory.Derivation.ExteriorDerivative
 public import TauCeti.RingTheory.Kaehler.ExteriorDerivative
-import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # The overconvergent de Rham complex and its functoriality
@@ -65,6 +63,8 @@ variable {R A}
 @[simp] theorem exteriorAlgebraDeriv_exteriorAlgebraDeriv (x : ExteriorAlgebra A (Omega R A)) :
     exteriorAlgebraDeriv R A (exteriorAlgebraDeriv R A x) = 0 :=
   Derivation.exteriorAlgebraDeriv_exteriorAlgebraDeriv _ _ _ _ x
+/-- Graded Leibniz rule on `ExteriorAlgebra A (Omega R A)` for a left factor in
+`⋀[A]^p (Omega R A)`, with sign `(-1) ^ p` determined by the left factor's degree. -/
 theorem exteriorAlgebraDeriv_mul_of_mem_exteriorPower {p : ℕ} {x : ExteriorAlgebra A (Omega R A)}
     (hx : x ∈ ⋀[A]^p (Omega R A)) (y : ExteriorAlgebra A (Omega R A)) :
     exteriorAlgebraDeriv R A (x * y) =
@@ -95,6 +95,8 @@ theorem exteriorDeriv_smul_ιMulti_comp_d {q : ℕ} (a : A) (b : Fin q → A) :
     exteriorDeriv R A q (a • exteriorPower.ιMulti A q (d R A ∘ b)) =
       exteriorPower.ιMulti A (q + 1) (Fin.cons (d R A a) (d R A ∘ b)) :=
   Derivation.exteriorDeriv_smul_ιMulti_comp_D _ _ _ _ a b
+/-- **Graded Leibniz rule for `exteriorPower.wedge`** of a `p`-form and a `q`-form, with sign
+`(-1) ^ p` determined by the left factor's degree. -/
 theorem exteriorDeriv_wedge (p q : ℕ) (ω : ⋀[A]^p (Omega R A)) (η : ⋀[A]^q (Omega R A)) :
     exteriorDeriv R A (p + q) (exteriorPower.wedge A (Omega R A) p q ω η) =
       LinearEquiv.ofEq _ _ (congrArg (⋀[A]^· (Omega R A)) (Nat.add_right_comm p 1 q))
@@ -131,9 +133,8 @@ def deRhamComplex : CochainComplex (ModuleCat R) ℕ :=
     (fun q ↦ ModuleCat.hom_ext (exteriorDeriv_comp_exteriorDeriv q))
 
 /-- Canonical identification of `(deRhamComplex R A).X q` with `⋀[A]^q (Omega R A)`. -/
-def deRhamComplexXIso (q : ℕ) :
-    (deRhamComplex R A).X q ≅ ModuleCat.of R (⋀[A]^q (Omega R A)) := by
-  unfold deRhamComplex; exact Iso.refl _
+def deRhamComplexXIso (q : ℕ) : (deRhamComplex R A).X q ≅ ModuleCat.of R (⋀[A]^q (Omega R A)) :=
+  by unfold deRhamComplex; exact Iso.refl _
 
 @[reassoc] theorem deRhamComplex_d (q : ℕ) :
     (deRhamComplex R A).d q (q + 1) ≫ (deRhamComplexXIso R A (q + 1)).hom =
@@ -143,8 +144,8 @@ theorem deRhamComplex_d_apply (q : ℕ) (x : (deRhamComplex R A).X q) :
     (deRhamComplex R A).d q (q + 1) x =
       (deRhamComplexXIso R A (q + 1)).inv
         (exteriorDeriv R A q ((deRhamComplexXIso R A q).hom x)) := by
-  rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d R A q), ModuleCat.comp_apply,
-    ModuleCat.comp_apply, ConcreteCategory.hom_ofHom]
+  rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d R A q), ModuleCat.comp_apply, ModuleCat.comp_apply,
+    ConcreteCategory.hom_ofHom]
 
 /-- The `R`-submodule of closed `q`-forms `ker (d : Ω^q → Ω^{q+1})`. -/
 def closedForms (q : ℕ) : Submodule R (⋀[A]^q (Omega R A)) := LinearMap.ker (exteriorDeriv R A q)
@@ -183,14 +184,11 @@ def mk (q : ℕ) : closedForms R A q →ₗ[R] deRhamCohomology R A q :=
       (HomologicalComplex.moduleCat_d_inv_eq_zero_iff _ _ (deRhamComplex_d R A) z).symm) q
 
 theorem mk_eq_moduleCatHomologyClass (q : ℕ) :
-    mk R A q =
-      (deRhamComplex R A).moduleCatHomologyClass (Z := closedForms R A q)
-        (CochainComplex.next ℕ q)
-        ((deRhamComplexXIso R A q).inv.hom ∘ₗ (closedForms R A q).subtype)
-        (fun ω ↦ deRhamComplex_d_eq_zero_of_mem_closedForms R A q ω.2) :=
-  LinearMap.ext fun _ ↦ by
-    rw [mk, HomologicalComplex.moduleCatCohomologyClassOfIso_apply,
-      HomologicalComplex.moduleCatHomologyClass_apply]; rfl
+    mk R A q = (deRhamComplex R A).moduleCatHomologyClass (Z := closedForms R A q)
+        (CochainComplex.next ℕ q) ((deRhamComplexXIso R A q).inv.hom ∘ₗ (closedForms R A q).subtype)
+        (fun ω ↦ deRhamComplex_d_eq_zero_of_mem_closedForms R A q ω.2) := LinearMap.ext fun _ ↦ by
+  rw [mk, HomologicalComplex.moduleCatCohomologyClassOfIso_apply,
+    HomologicalComplex.moduleCatHomologyClass_apply]; rfl
 
 theorem mk_surjective (q : ℕ) : Function.Surjective (mk R A q) :=
   (deRhamComplex R A).moduleCatCohomologyClassOfIso_surjective _ _ _ _ q
@@ -224,8 +222,7 @@ theorem subsingleton_deRhamCohomology_of_closedForms_le_exactForms {q : ℕ}
 
 /-- `deRhamComplex R A` is exact in degree `q + 1` iff every closed `(q + 1)`-form is exact. -/
 theorem exactAt_deRhamComplex_succ_iff (q : ℕ) :
-    (deRhamComplex R A).ExactAt (q + 1) ↔
-      exactForms R A (q + 1) = closedForms R A (q + 1) := by
+    (deRhamComplex R A).ExactAt (q + 1) ↔ exactForms R A (q + 1) = closedForms R A (q + 1) := by
   rw [HomologicalComplex.exactAt_iff_isZero_homology, ModuleCat.isZero_iff_subsingleton]
   exact ⟨fun _ ↦ le_antisymm (exactForms_le_closedForms R A (q + 1)) fun ω hω ↦
       (deRhamCohomology.mk_eq_zero_iff R A (q + 1) ⟨ω, hω⟩).mp (Subsingleton.elim _ 0),
@@ -334,8 +331,8 @@ namespace deRhamComplex
 /-- The cochain map `deRhamComplex K A ⟶ deRhamComplex K B` induced by `f : A →ₐ[K] B`. -/
 def map (f : A →ₐ[K] B) : deRhamComplex K A ⟶ deRhamComplex K B :=
   CochainComplex.ofHom
-    (fun q ↦ (deRhamComplexXIso K A q).hom ≫
-      ModuleCat.ofHom (formsMap f q) ≫ (deRhamComplexXIso K B q).inv)
+    (fun q ↦ (deRhamComplexXIso K A q).hom ≫ ModuleCat.ofHom (formsMap f q) ≫
+      (deRhamComplexXIso K B q).inv)
     fun q ↦ by
       have hcomm : ModuleCat.ofHom (formsMap f q) ≫ ModuleCat.ofHom (exteriorDeriv K B q) =
           ModuleCat.ofHom (exteriorDeriv K A q) ≫ ModuleCat.ofHom (formsMap f (q + 1)) :=
@@ -351,6 +348,7 @@ def map (f : A →ₐ[K] B) : deRhamComplex K A ⟶ deRhamComplex K B :=
 theorem map_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) : map (g.comp f) = map f ≫ map g := by
   ext q : 2; simp [map, formsMap_comp g f q]
 
+/-- The map induced on cohomology by `deRhamComplex.map f` is `deRhamCohomology.map f`. -/
 theorem homologyMap_map (f : A →ₐ[K] B) (q : ℕ) :
     HomologicalComplex.homologyMap (map f) q = ModuleCat.ofHom (deRhamCohomology.map f q) := by
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
@@ -366,18 +364,11 @@ end ComplexFunctoriality
 
 /-! ### Vanishing above the number of variables and explicit calculations -/
 
-/-- When `Omega R A` is subsingleton, all positive-degree forms vanish. -/
-theorem subsingleton_forms_succ_of_subsingleton {R A : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] [Subsingleton (Omega R A)] (q : ℕ) : Subsingleton (⋀[A]^(q + 1) (Omega R A)) :=
-  exteriorPower.subsingleton_of_span_eq_top_of_card_lt
-    (IsEmpty.elim (α := Empty) inferInstance)
-    (eq_top_iff.mpr fun x _ ↦ Subsingleton.elim x 0 ▸ zero_mem _) (q + 1) (by simp)
-
 /-- When `Omega R A` is subsingleton, all positive-degree de Rham cohomology groups vanish. -/
 theorem subsingleton_deRhamCohomology_succ_of_subsingleton {R A : Type*} [CommRing R] [CommRing A]
     [Algebra R A] [Subsingleton (Omega R A)] (q : ℕ) :
     Subsingleton (deRhamCohomology R A (q + 1)) :=
-  have := subsingleton_forms_succ_of_subsingleton (R := R) (A := A) q
+  have := exteriorPower.subsingleton_succ_of_subsingleton (R := A) (M := Omega R A) q
   subsingleton_deRhamCohomology_of_closedForms_le_exactForms R A (q := q + 1)
     fun ω _ ↦ Subsingleton.elim ω 0 ▸ zero_mem _
 
@@ -414,8 +405,7 @@ theorem exteriorDeriv_X_zero_smul_d_X_one :
 theorem d_X_zero_wedge_d_X_one_ne_zero :
     let W := washnitzerAlgebra (Fin 2) K
     exteriorPower.ιMulti W 2 ![d K W (X (Fin 2) K 0), d K W (X (Fin 2) K 1)] ≠ 0 := by
-  intro W h0
-  have : Nontrivial W := (FaithfulSMul.algebraMap_injective K W).nontrivial
+  intro W h0; have : Nontrivial W := (FaithfulSMul.algebraMap_injective K W).nontrivial
   let s : Set.powersetCard (Fin 2) 2 := ⟨Finset.univ, by simp⟩
   let e : Fin 2 ↪o Fin 2 := Set.powersetCard.ofFinEmbEquiv.symm s
   have hlt : (e 0 : ℕ) < (e 1 : ℕ) := e.strictMono (by decide)

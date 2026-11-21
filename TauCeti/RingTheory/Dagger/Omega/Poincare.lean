@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.RingTheory.Dagger.Omega.DeRham
 public import TauCeti.RingTheory.Dagger.Poincare
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
 # The Poincaré lemma on a dagger polydisc
@@ -17,8 +18,8 @@ complex of `W = K⟨X_σ⟩†` (`[Finite σ]`) has `H⁰_dR(W/K) ≃ₗ[K] K` a
 degree `q + 1`, so `deRhamCohomology K W (q + 1)` is subsingleton.
 
 We prove the coordinate formula `washnitzerBasis_exteriorPower_repr_exteriorDeriv` (valid in any
-characteristic), deduce the curl-free characterization of closed `1`-forms and unique normalized
-potentials, establish positive-degree exactness by induction over `σ` via
+characteristic), deduce the curl-free characterization of closed `1`-forms and unique potentials
+with prescribed constant coefficient, establish positive-degree exactness by induction over `σ` via
 `washnitzerAlgebra.primitive`, and prove failure in degrees `0` and `1` on `K⟨X₀⟩†` in prime
 characteristic `p`.
 
@@ -42,13 +43,7 @@ open TauCeti.Dagger.washnitzerAlgebra TauCeti.ExteriorAlgebra
 section DegreeZero
 
 variable {σ K : Type*} [Finite σ] [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-/-- On `W = K⟨X_σ⟩†` in any characteristic, `d f = 0` iff all partial derivatives vanish. -/
-theorem d_eq_zero_iff_forall_pderiv_eq_zero (f : washnitzerAlgebra σ K) :
-    d K (washnitzerAlgebra σ K) f = 0 ↔ ∀ i, pderiv σ K i f = 0 := by
-  rw [← (washnitzerBasis σ K).repr.map_eq_zero_iff, Finsupp.ext_iff]; simp [washnitzerBasis_repr_d]
-
-variable [CharZero K]
+  [CharZero K]
 
 /-- In characteristic zero, `d f = 0` in `Ω¹_{W/K}` iff `f ∈ range (algebraMap K W)`. -/
 theorem d_eq_zero_iff_mem_range_algebraMap (f : washnitzerAlgebra σ K) :
@@ -99,9 +94,8 @@ noncomputable def deRhamCohomologyZeroWashnitzerEquiv :
 
 @[simp] theorem deRhamCohomologyZeroWashnitzerEquiv_apply (c : K) :
     deRhamCohomologyZeroWashnitzerEquiv σ K c =
-      deRhamCohomology.mk K (washnitzerAlgebra σ K) 0 (closedFormsZeroWashnitzerEquiv σ K c) := by
-  rw [deRhamCohomologyZeroWashnitzerEquiv, LinearEquiv.trans_apply,
-    deRhamCohomology.zeroEquivClosedForms_apply]
+      deRhamCohomology.mk K (washnitzerAlgebra σ K) 0 (closedFormsZeroWashnitzerEquiv σ K c) :=
+  deRhamCohomology.zeroEquivClosedForms_apply _ _ _
 @[simp] theorem deRhamCohomologyZeroWashnitzerEquiv_symm_mk
     (ω : closedForms K (washnitzerAlgebra σ K) 0) :
     (deRhamCohomologyZeroWashnitzerEquiv σ K).symm
@@ -117,21 +111,6 @@ end DegreeZero
 section CoordinateFormula
 
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-private theorem exteriorAlgebra_repr_coe_eq [Finite σ] [LinearOrder σ]
-    (r : ℕ) (ω : ⋀[washnitzerAlgebra σ K]^r (Omega K (washnitzerAlgebra σ K)))
-    (u : Set.powersetCard σ r) :
-    (washnitzerBasis σ K).ExteriorAlgebra.repr ω.1 u.1 =
-      ((washnitzerBasis σ K).exteriorPower r).repr ω u := by
-  classical
-  let : Fintype σ := Fintype.ofFinite σ; let : Fintype (Set.powersetCard σ r) := Fintype.ofFinite _
-  rw [← Module.Basis.coord_apply]
-  conv_lhs => rw [← ((washnitzerBasis σ K).exteriorPower r).sum_repr ω]
-  simp only [Submodule.coe_sum, Submodule.coe_smul, ← ExteriorAlgebra.basis_eq_coe_basis,
-    map_sum, map_smul, Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply,
-    smul_eq_mul, mul_boole]
-  rw [Finset.sum_eq_single u (fun _ _ h ↦ by simp [Subtype.ext_iff.not.mp h])
-    (fun h ↦ absurd (Finset.mem_univ u) h), ite_eq_left rfl]
 
 /-- Basis monomials `dX_{i₀} ∧ ⋯ ∧ dX_{i_{r-1}}` are killed by `exteriorDeriv`. -/
 theorem exteriorDeriv_washnitzerBasis_exteriorPower [Finite σ] [LinearOrder σ] (r : ℕ)
@@ -151,9 +130,9 @@ private theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv_smul
           (c • (washnitzerBasis σ K).exteriorPower r t)) u =
       ∑ k : σ, if k ∉ t.1 ∧ insert k t.1 = u.1 then
         basisEraseSign k u.1 • pderiv σ K k c else 0 := by
-  rw [← exteriorAlgebra_repr_coe_eq, ← Module.Basis.coord_apply, exteriorDeriv_smul,
-    exteriorDeriv_washnitzerBasis_exteriorPower, smul_zero, add_zero, coe_wedgeLeft_apply,
-    ← ExteriorAlgebra.basis_eq_coe_basis]
+  rw [← (washnitzerBasis σ K).exteriorAlgebra_repr_coe_eq, ← Module.Basis.coord_apply,
+    exteriorDeriv_smul, exteriorDeriv_washnitzerBasis_exteriorPower, smul_zero, add_zero,
+    coe_wedgeLeft_apply, ← ExteriorAlgebra.basis_eq_coe_basis]
   conv_lhs => rw [← (washnitzerBasis σ K).sum_repr (d K (washnitzerAlgebra σ K) c)]
   rw [map_sum, Finset.sum_mul, map_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -195,23 +174,6 @@ theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv [Finite σ] [LinearOrde
   · exact fun k _ hku ↦ Finset.sum_eq_zero fun t _ ↦ by
       rw [ite_eq_right]; rintro ⟨_, hins⟩; exact hku (hins ▸ Finset.mem_insert_self k t.1)
 
-private theorem washnitzerBasis_exteriorPower_one_repr [Finite σ] [LinearOrder σ]
-    (ω : Omega K (washnitzerAlgebra σ K)) (k : σ) :
-    ((washnitzerBasis σ K).exteriorPower 1).repr
-        ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω)
-        (Set.powersetCard.ofCard (Finset.card_singleton k)) =
-      (washnitzerBasis σ K).repr ω k := by
-  let : Fintype σ := Fintype.ofFinite σ
-  have hcoe : ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω).1 =
-      ExteriorAlgebra.ι _ ω := by
-    simp [exteriorPower.oneEquiv_symm_apply, ExteriorAlgebra.ιMulti_succ_apply]
-  rw [← exteriorAlgebra_repr_coe_eq, hcoe, ← Module.Basis.coord_apply]
-  conv_lhs => rw [← (washnitzerBasis σ K).sum_repr ω]
-  simp only [Set.powersetCard.ofCard, map_sum, LinearMap.map_smul,
-    ← basis_singleton (washnitzerBasis σ K), Module.Basis.coord_apply, Module.Basis.repr_self,
-    Finsupp.single_apply, Finset.singleton_inj, smul_eq_mul, mul_boole, Finset.sum_ite_eq',
-    Finset.mem_univ, ↓reduceIte]
-
 /-- For `i < j`, the `{i, j}`-coordinate of `dω` for a `1`-form `ω` is `∂ᵢ ωⱼ - ∂ⱼ ωᵢ`. -/
 private theorem washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one [Finite σ] [LinearOrder σ]
     (ω : Omega K (washnitzerAlgebra σ K)) {i j : σ} (hij : i < j) :
@@ -238,7 +200,8 @@ private theorem washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one [Finite
     simp [u, Set.powersetCard.val_ofCard, Finset.filter_insert, hij.le]
   have hfj : u.1.filter (· < j) = {i} := by
     simp [u, Set.powersetCard.val_ofCard, Finset.filter_insert, Finset.filter_singleton, hij]
-  rw [hei, hej, washnitzerBasis_exteriorPower_one_repr, washnitzerBasis_exteriorPower_one_repr,
+  rw [hei, hej, (washnitzerBasis σ K).exteriorPower_one_repr_oneEquiv_symm,
+    (washnitzerBasis σ K).exteriorPower_one_repr_oneEquiv_symm,
     basisEraseSign_eq_neg_one_pow_card_filter_lt, basisEraseSign_eq_neg_one_pow_card_filter_lt,
     hfi, hfj]; simp [sub_eq_add_neg]
 
@@ -257,19 +220,13 @@ theorem exteriorDeriv_one_eq_zero_iff [Finite σ] (ω : Omega K (washnitzerAlgeb
         pderiv σ K b ((washnitzerBasis σ K).repr ω a) := sub_eq_zero.mp <| by
       simpa [washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one ω hab] using
         h (Set.powersetCard.ofCard (Finset.card_pair hab.ne))
-    rcases lt_trichotomy i j with hij | rfl | hji
-    exacts [hlt hij, rfl, (hlt hji).symm]
+    rcases lt_trichotomy i j with hij | rfl | hji; exacts [hlt hij, rfl, (hlt hji).symm]
   · obtain ⟨i, j, hij, hu⟩ := Finset.card_eq_two.mp (Set.powersetCard.card_eq u)
     wlog hlt : i < j generalizing i j
     · exact this j i hij.symm (hu.trans (Finset.pair_comm i j))
         (lt_of_le_of_ne (le_of_not_gt hlt) hij.symm)
     have hu' : u = Set.powersetCard.ofCard (Finset.card_pair hlt.ne) := Subtype.ext hu
     rw [hu', washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one ω hlt, h i j, sub_self]; rfl
-
-private theorem d_eq_iff_forall_pderiv_eq [Finite σ] (g : washnitzerAlgebra σ K)
-    (ω : Omega K (washnitzerAlgebra σ K)) :
-    d K (washnitzerAlgebra σ K) g = ω ↔ ∀ i, pderiv σ K i g = (washnitzerBasis σ K).repr ω i := by
-  rw [← (washnitzerBasis σ K).repr.injective.eq_iff, Finsupp.ext_iff]; simp [washnitzerBasis_repr_d]
 
 /-- **Degree-one Poincaré lemma on `W = K⟨X_σ⟩†` in characteristic zero**: `ω ∈ Ω¹_{W/K}` is
 `d g` for some `g ∈ W` iff `dω = 0`. -/
@@ -281,7 +238,9 @@ theorem exists_d_eq_iff_exteriorDeriv_one_eq_zero [Finite σ] [CharZero K]
   rw [exteriorDeriv_one_eq_zero_iff, ← exists_pderiv_eq_iff]
   exact exists_congr fun g ↦ d_eq_iff_forall_pderiv_eq g ω
 
-/-- **Unique normalized potential of a closed `1`-form** on `W = K⟨X_σ⟩†` in characteristic zero. -/
+/-- **Unique potential with prescribed constant coefficient**: for every closed `1`-form `ω` on
+`W = K⟨X_σ⟩†` in characteristic zero and every `c : K`, there is a unique `g ∈ W` with
+`d g = ω` and constant coefficient `c`. -/
 theorem existsUnique_d_eq_of_exteriorDeriv_one_eq_zero [Finite σ] [CharZero K]
     {ω : Omega K (washnitzerAlgebra σ K)}
     (hω : exteriorDeriv K (washnitzerAlgebra σ K) 1
@@ -518,21 +477,12 @@ theorem d_X_pow_charP (p : ℕ) [CharP K p] :
   rw [(d K (washnitzerAlgebra (Fin 1) K)).leibniz_pow, ← Nat.cast_smul_eq_nsmul K,
     CharP.cast_eq_zero, zero_smul]
 omit [CompleteSpace K] in
-/-- For every `m > 0`, `X₀ ^ m` in `K⟨X₀⟩†` does not lie in the image of `algebraMap K _`. -/
-theorem X_pow_notMem_range_algebraMap {m : ℕ} (hm : 0 < m) :
-    X (Fin 1) K 0 ^ m ∉ Set.range (algebraMap K (washnitzerAlgebra (Fin 1) K)) := by
-  rintro ⟨c, hc⟩
-  have h := congrArg (fun f : washnitzerAlgebra (Fin 1) K ↦
-    MvPowerSeries.coeff (Finsupp.single (0 : Fin 1) m) f.1) hc
-  simp [MvPowerSeries.algebraMap_apply, MvPowerSeries.coeff_C, SubmonoidClass.coe_pow, coe_X,
-    Finsupp.single_ne_zero.mpr hm.ne', MvPowerSeries.coeff_X_pow] at h
-omit [CompleteSpace K] in
 /-- **Failure of the degree-zero Poincaré lemma in characteristic `p > 0`.** -/
 theorem exists_d_eq_zero_and_notMem_range_algebraMap_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
     ∃ f : washnitzerAlgebra (Fin 1) K,
       d K (washnitzerAlgebra (Fin 1) K) f = 0 ∧
         f ∉ Set.range (algebraMap K (washnitzerAlgebra (Fin 1) K)) :=
-  ⟨X (Fin 1) K 0 ^ p, d_X_pow_charP p, X_pow_notMem_range_algebraMap (Fact.out : p.Prime).pos⟩
+  ⟨X (Fin 1) K 0 ^ p, d_X_pow_charP p, X_pow_notMem_range_algebraMap 0 (Fact.out : p.Prime).pos⟩
 
 /-- **Failure of the degree-one Poincaré lemma in characteristic `p > 0`**: `X₀ ^ (p - 1) • d X₀`
 has no potential `g ∈ K⟨X₀⟩†`. -/

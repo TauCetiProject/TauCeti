@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Order.Hom.PowersetCard
@@ -206,6 +207,51 @@ end Top
 end exteriorPower
 
 namespace Module.Basis
+
+section Repr
+
+variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] [LinearOrder I]
+
+/-- The exterior-algebra coordinate of `ω : ⋀[R]^r M` at `u.1` equals its `exteriorPower r`
+coordinate at `u`. -/
+theorem exteriorAlgebra_repr_coe_eq (b : Basis I R M) {r : ℕ} (ω : ⋀[R]^r M)
+    (u : Set.powersetCard I r) :
+    b.ExteriorAlgebra.repr ω.1 u.1 = (b.exteriorPower r).repr ω u := by
+  classical
+  rw [← Basis.coord_apply]
+  conv_lhs => rw [← (b.exteriorPower r).linearCombination_repr ω, Finsupp.linearCombination_apply]
+  simp only [Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul,
+    ← ExteriorAlgebra.basis_eq_coe_basis, map_sum, map_smul, Basis.coord_apply, Basis.repr_self,
+    Finsupp.single_apply, smul_eq_mul, mul_boole, ← Subtype.ext_iff, Finset.sum_ite_eq']
+  split_ifs with hu
+  · rfl
+  · exact (Finsupp.notMem_support_iff.mp hu).symm
+
+/-- The `{k}`-coordinate of `(exteriorPower.oneEquiv R M).symm m` in `b.exteriorPower 1` equals
+the `k`-th coordinate of `m` in `b`. -/
+theorem exteriorPower_one_repr_oneEquiv_symm (b : Basis I R M) (m : M) (k : I) :
+    (b.exteriorPower 1).repr ((exteriorPower.oneEquiv R M).symm m)
+        (Set.powersetCard.ofCard (Finset.card_singleton k)) = b.repr m k := by
+  classical
+  rw [← Basis.coord_apply]
+  conv_lhs => rw [← b.linearCombination_repr m, Finsupp.linearCombination_apply]
+  have hsingle (i : I) : (exteriorPower.oneEquiv R M).symm (b i) =
+      b.exteriorPower 1 (Set.powersetCard.ofCard (Finset.card_singleton i)) := by
+    rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family, exteriorPower.oneEquiv_symm_apply]
+    congr 1; funext j
+    have hmem : (Set.powersetCard.ofFinEmbEquiv.symm
+        (Set.powersetCard.ofCard (Finset.card_singleton i))) j ∈ ({i} : Finset I) := by
+      rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
+      exact Finset.orderEmbOfFin_mem _ _ j
+    exact congrArg b (Finset.mem_singleton.mp hmem).symm
+  simp only [Finsupp.sum, map_sum, map_smul, hsingle, Basis.coord_apply, Basis.repr_self,
+    Finsupp.single_apply, Subtype.ext_iff, Set.powersetCard.val_ofCard, Finset.singleton_inj,
+    smul_eq_mul, mul_boole, Finset.sum_ite_eq']
+  split_ifs with hk
+  · rfl
+  · exact (Finsupp.notMem_support_iff.mp hk).symm
+
+end Repr
 
 variable {R M N I J : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] [LinearOrder I] [Fintype I] [LinearOrder J] [Finite J]

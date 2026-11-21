@@ -67,25 +67,19 @@ noncomputable instance : SMul A (TwistedExt D) :=
 @[simp] theorem snd_smul (a : A) (x : TwistedExt D) :
     (a • x).snd = exteriorPower.ιMulti A 2 ![D a, x.fst] + a • x.snd := (rfl)
 
-theorem coe_ιMulti_two (u v : M) :
-    (exteriorPower.ιMulti A 2 ![u, v] : ExteriorAlgebra A M) =
-      ExteriorAlgebra.ι A u * ExteriorAlgebra.ι A v := by
-  simp [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_succ_apply,
-    ExteriorAlgebra.ιMulti_zero_apply, Matrix.vecTail]
-
 noncomputable instance : Module A (TwistedExt D) where
   one_smul x := TwistedExt.ext (one_smul A x.fst) <| Subtype.ext <| by simp
   mul_smul a b x := TwistedExt.ext (mul_smul a b x.fst) <| Subtype.ext <| by
-    simp only [snd_smul, fst_smul, Submodule.coe_add, SetLike.val_smul, coe_ιMulti_two,
-      D.leibniz, map_add, LinearMap.map_smul, add_mul, smul_mul_assoc, mul_smul_comm,
-      smul_add, mul_smul]; abel
+    simp only [snd_smul, fst_smul, Submodule.coe_add, SetLike.val_smul,
+      exteriorPower.coe_ιMulti_two, D.leibniz, map_add, LinearMap.map_smul, add_mul,
+      smul_mul_assoc, mul_smul_comm, smul_add, mul_smul]; abel
   smul_zero a := TwistedExt.ext (smul_zero a) <| Subtype.ext <| by simp
   smul_add a x y := TwistedExt.ext (smul_add a x.fst y.fst) <| Subtype.ext <| by
-    simp only [snd_smul, fst_add, snd_add, Submodule.coe_add, SetLike.val_smul, coe_ιMulti_two,
-      map_add, mul_add, smul_add]; abel
+    simp only [snd_smul, fst_add, snd_add, Submodule.coe_add, SetLike.val_smul,
+      exteriorPower.coe_ιMulti_two, map_add, mul_add, smul_add]; abel
   add_smul a b x := TwistedExt.ext (add_smul a b x.fst) <| Subtype.ext <| by
-    simp only [snd_smul, snd_add, Submodule.coe_add, SetLike.val_smul, coe_ιMulti_two,
-      map_add, add_mul, add_smul]; abel
+    simp only [snd_smul, snd_add, Submodule.coe_add, SetLike.val_smul,
+      exteriorPower.coe_ιMulti_two, map_add, add_mul, add_smul]; abel
   zero_smul x := TwistedExt.ext (zero_smul A x.fst) <| Subtype.ext <| by simp
 
 /-- The `A`-linear inclusion `⋀[A]^2 M →ₗ[A] TwistedExt D`, `ω ↦ (0, ω)`. -/
@@ -239,10 +233,9 @@ variable (D : Derivation R A M) (u : M →ₗ[A] TwistedExt D)
   (hspan : Submodule.span A (Set.range D) = ⊤) (hu : ∀ a, u (D a) = D.derTwistedExt a)
 
 include hspan hu in
-private theorem fst_lift_eq_id (m : M) : (u m).fst = m :=
-  DFunLike.congr_fun
-    (LinearMap.ext_on_range hspan fun a ↦ congrArg TwistedExt.fst (hu a) :
-      TwistedExt.fstLinear D ∘ₗ u = LinearMap.id) m
+private theorem fst_lift_eq_id (m : M) : (u m).fst = m := DFunLike.congr_fun
+  (LinearMap.ext_on_range hspan fun a ↦ congrArg TwistedExt.fst (hu a) :
+    TwistedExt.fstLinear D ∘ₗ u = LinearMap.id) m
 
 include hspan hu in
 private noncomputable def twistedLift : ExteriorAlgebra A M →ₐ[A] TwistedAlg D :=
@@ -252,11 +245,10 @@ private noncomputable def twistedLift : ExteriorAlgebra A M →ₐ[A] TwistedAlg
       map_smul' := fun a m ↦ TwistedAlg.ext (by simp [Algebra.smul_def]) <| by
         rw [RingHom.id_apply, Algebra.smul_def, u.map_smul, TwistedExt.snd_smul,
           fst_lift_eq_id D u hspan hu m, Submodule.coe_add, SetLike.val_smul,
-          TwistedExt.coe_ιMulti_two, TwistedAlg.snd_mul, TwistedAlg.snd_algebraMap,
+          exteriorPower.coe_ιMulti_two, TwistedAlg.snd_mul, TwistedAlg.snd_algebraMap,
           TwistedAlg.fst_algebraMap, CliffordAlgebra.involute.commutes, ← Algebra.smul_def] }
   ExteriorAlgebra.lift A ⟨L, fun m ↦ TwistedAlg.ext (ExteriorAlgebra.ι_sq_zero m) <| by
-    rw [TwistedAlg.snd_mul, TwistedAlg.snd_zero]
-    dsimp only [L, LinearMap.coe_mk, AddHom.coe_mk]
+    rw [TwistedAlg.snd_mul, TwistedAlg.snd_zero]; dsimp only [L, LinearMap.coe_mk, AddHom.coe_mk]
     rw [CliffordAlgebra.involute_ι, neg_mul,
       ExteriorAlgebra.ι_mul_eq_involute_mul m ((u m).snd : ExteriorAlgebra A M),
       TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower (u m).snd.2]; simp⟩
@@ -276,14 +268,12 @@ noncomputable def exteriorAlgebraDeriv : ExteriorAlgebra A M →ₗ[R] ExteriorA
   toFun x := (twistedLift D u hspan hu x).snd
   map_add' x y := congrArg TwistedAlg.snd (map_add (twistedLift D u hspan hu) x y)
   map_smul' r x := by
-    have hmul : r • x = algebraMap A (ExteriorAlgebra A M) (algebraMap R A r) * x := by
-      rw [← IsScalarTower.algebraMap_apply R A, Algebra.smul_def]
     have halg : (twistedLift D u hspan hu
         (algebraMap A (ExteriorAlgebra A M) (algebraMap R A r))).snd = 0 := by
       rw [(twistedLift D u hspan hu).commutes]; simp
-    rw [hmul, map_mul, TwistedAlg.snd_mul, halg, zero_mul, zero_add, fst_twistedLift,
-      CliffordAlgebra.involute.commutes, ← IsScalarTower.algebraMap_apply R A, ← Algebra.smul_def]
-    rfl
+    rw [Algebra.smul_def, IsScalarTower.algebraMap_apply R A, map_mul, TwistedAlg.snd_mul, halg,
+      zero_mul, zero_add, fst_twistedLift, CliffordAlgebra.involute.commutes,
+      ← IsScalarTower.algebraMap_apply R A, ← Algebra.smul_def]; rfl
 
 private theorem exteriorAlgebraDeriv_apply (x : ExteriorAlgebra A M) :
     D.exteriorAlgebraDeriv u hspan hu x = (twistedLift D u hspan hu x).snd := (rfl)
@@ -304,18 +294,16 @@ theorem exteriorAlgebraDeriv_ι (m : M) :
 
 /-- **Graded Leibniz rule on `ExteriorAlgebra A M`.** -/
 theorem exteriorAlgebraDeriv_mul (x y : ExteriorAlgebra A M) :
-    D.exteriorAlgebraDeriv u hspan hu (x * y) =
-      D.exteriorAlgebraDeriv u hspan hu x * y +
-        CliffordAlgebra.involute (Q := (0 : QuadraticForm A M)) x *
-          D.exteriorAlgebraDeriv u hspan hu y := by
+    D.exteriorAlgebraDeriv u hspan hu (x * y) = D.exteriorAlgebraDeriv u hspan hu x * y +
+      CliffordAlgebra.involute (Q := (0 : QuadraticForm A M)) x *
+        D.exteriorAlgebraDeriv u hspan hu y := by
   simp only [exteriorAlgebraDeriv_apply, map_mul, TwistedAlg.snd_mul, fst_twistedLift]
 
 /-- Graded Leibniz rule when the left factor lies in `⋀[A]^p M`. -/
 theorem exteriorAlgebraDeriv_mul_of_mem_exteriorPower {p : ℕ} {x : ExteriorAlgebra A M}
     (hx : x ∈ ⋀[A]^p M) (y : ExteriorAlgebra A M) :
-    D.exteriorAlgebraDeriv u hspan hu (x * y) =
-      D.exteriorAlgebraDeriv u hspan hu x * y +
-        (-1 : A) ^ p • (x * D.exteriorAlgebraDeriv u hspan hu y) := by
+    D.exteriorAlgebraDeriv u hspan hu (x * y) = D.exteriorAlgebraDeriv u hspan hu x * y +
+      (-1 : A) ^ p • (x * D.exteriorAlgebraDeriv u hspan hu y) := by
   rw [exteriorAlgebraDeriv_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
     smul_mul_assoc]
 
@@ -327,8 +315,7 @@ theorem exteriorAlgebraDeriv_smul (a : A) (x : ExteriorAlgebra A M) :
 
 /-- The exterior derivative anticommutes with the grade involution on `ExteriorAlgebra A M`. -/
 theorem exteriorAlgebraDeriv_involute (x : ExteriorAlgebra A M) :
-    D.exteriorAlgebraDeriv u hspan hu
-        (CliffordAlgebra.involute (Q := (0 : QuadraticForm A M)) x) =
+    D.exteriorAlgebraDeriv u hspan hu (CliffordAlgebra.involute (Q := (0 : QuadraticForm A M)) x) =
       -CliffordAlgebra.involute (Q := (0 : QuadraticForm A M))
         (D.exteriorAlgebraDeriv u hspan hu x) := by
   induction x using ExteriorAlgebra.induction with
@@ -356,8 +343,8 @@ theorem exteriorAlgebraDeriv_involute (x : ExteriorAlgebra A M) :
 theorem exteriorAlgebraDeriv_unique (δ' : ExteriorAlgebra A M →ₗ[R] ExteriorAlgebra A M)
     (halg : ∀ a, δ' (algebraMap A _ a) = ExteriorAlgebra.ι A (D a))
     (hd : ∀ a, δ' (ExteriorAlgebra.ι A (D a)) = 0)
-    (hmul : ∀ x y, δ' (x * y) = δ' x * y +
-      CliffordAlgebra.involute (Q := (0 : QuadraticForm A M)) x * δ' y) :
+    (hmul : ∀ x y, δ' (x * y) =
+      δ' x * y + CliffordAlgebra.involute (Q := (0 : QuadraticForm A M)) x * δ' y) :
     δ' = D.exteriorAlgebraDeriv u hspan hu := by
   let δ := D.exteriorAlgebraDeriv u hspan hu
   exact LinearMap.ext fun x ↦ sub_eq_zero.mp <| eq_zero_of_gradedDeriv D hspan id
@@ -380,9 +367,7 @@ theorem mapSemilinear_exteriorAlgebraDeriv {B N : Type*} [CommRing B] [Algebra R
   let δ := D.exteriorAlgebraDeriv u hspan hu
   let δ' := D'.exteriorAlgebraDeriv u' hspan' hu'
   let Δ := Φ.toAddMonoidHom.comp δ.toAddMonoidHom - δ'.toAddMonoidHom.comp Φ.toAddMonoidHom
-  have hΔ (z) : Δ z = Φ (δ z) - δ' (Φ z) := by
-    simp only [Δ, AddMonoidHom.sub_apply, AddMonoidHom.comp_apply, RingHom.toAddMonoidHom_eq_coe,
-      AddMonoidHom.coe_ofClass, LinearMap.toAddMonoidHom_coe]
+  have hΔ (z) : Δ z = Φ (δ z) - δ' (Φ z) := rfl
   refine sub_eq_zero.mp <| eq_zero_of_gradedDeriv D hspan Φ
     (CliffordAlgebra.involute (Q := (0 : QuadraticForm B N)) ∘ Φ) Δ
     (fun y z ↦ by
@@ -431,8 +416,7 @@ noncomputable def exteriorDeriv (q : ℕ) : ⋀[A]^q M →ₗ[R] ⋀[A]^(q + 1) 
 theorem oneEquiv_exteriorDeriv_zero (ω : ⋀[A]^0 M) :
     exteriorPower.oneEquiv A M (D.exteriorDeriv u hspan hu 0 ω) =
       D (exteriorPower.zeroEquiv A M ω) := by
-  conv_lhs =>
-    rw [← (exteriorPower.zeroEquiv A M).symm_apply_apply ω, exteriorDeriv_zero_symm]
+  conv_lhs => rw [← (exteriorPower.zeroEquiv A M).symm_apply_apply ω, exteriorDeriv_zero_symm]
   exact LinearEquiv.apply_symm_apply _ _
 @[simp] theorem exteriorDeriv_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q M) :
     D.exteriorDeriv u hspan hu (q + 1) (D.exteriorDeriv u hspan hu q ω) = 0 :=
@@ -476,10 +460,9 @@ theorem mapSemilinear_exteriorDeriv {B N : Type*} [CommRing B] [Algebra R B]
     (f : A →ₐ[R] B) (g : M →ₛₗ[f.toRingHom] N) (hg : ∀ a, g (D a) = D' (f a))
     (q : ℕ) (ω : ⋀[A]^q M) :
     exteriorPower.mapSemilinear (q + 1) g (D.exteriorDeriv u hspan hu q ω) =
-      D'.exteriorDeriv u' hspan' hu' q (exteriorPower.mapSemilinear q g ω) :=
-  Subtype.ext <| by
-    simp only [exteriorPower.coe_mapSemilinear_apply, coe_exteriorDeriv_apply]
-    exact mapSemilinear_exteriorAlgebraDeriv D u hspan hu D' u' hspan' hu' f g hg ω.1
+      D'.exteriorDeriv u' hspan' hu' q (exteriorPower.mapSemilinear q g ω) := Subtype.ext <| by
+  simp only [exteriorPower.coe_mapSemilinear_apply, coe_exteriorDeriv_apply]
+  exact mapSemilinear_exteriorAlgebraDeriv D u hspan hu D' u' hspan' hu' f g hg ω.1
 
 end ExteriorDeriv
 end Derivation
