@@ -206,40 +206,29 @@ theorem isEtaleLocalDescription_iff_of_jointly_surjective {f : Y ⟶ X} (hX : X.
 `Y`, and the restriction of `f : Y ⟶ X` to each `U k` satisfies `IsEtaleLocalDescription`, then `f`
 satisfies `IsEtaleLocalDescription`. -/
 theorem IsEtaleLocalDescription.of_iSup_eq_top_source {f : Y ⟶ X} (hX : X.IsAnalytic) {ι : Type*}
-    (U : ι → Opens Y.obj) (hU : iSup U = ⊤) (hf : ∀ k, IsEtaleLocalDescription
-      ((ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
-        (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ :
-          AdicSpace.{u}) ⟶ Y) ≫ f)) : IsEtaleLocalDescription f := by
-  let u : ∀ k, (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ :
-      AdicSpace.{u}) ⟶ Y := fun k ↦ ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding)
-  have _ (k) : PreAdicSpace.IsOpenImmersion (u k).hom := inferInstance
-  exact .of_jointly_surjective hX u
-    (fun y ↦ let ⟨k, hk⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : y ∈ iSup U); ⟨k, ⟨y, hk⟩, rfl⟩)
+    (U : ι → Opens Y.obj) (hU : iSup U = ⊤)
+    (hf : ∀ k, IsEtaleLocalDescription (Y.ofRestrict (U k) ≫ f)) :
+    IsEtaleLocalDescription f :=
+  .of_jointly_surjective hX (fun k ↦ Y.ofRestrict (U k))
+    (fun y ↦ let ⟨k, hk⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : y ∈ iSup U)
+      ⟨k, ⟨y, hk⟩, Y.ofRestrict_base_apply (U k) ⟨y, hk⟩⟩)
     hf
 
 /-- Being étale (`IsEtaleLocalDescription`) is local on the source for morphisms into an analytic
 target `X`. -/
 theorem isEtaleLocalDescription_iff_of_iSup_eq_top_source {f : Y ⟶ X} (hX : X.IsAnalytic)
     {ι : Type*} (U : ι → Opens Y.obj) (hU : iSup U = ⊤) :
-    IsEtaleLocalDescription f ↔ ∀ k, IsEtaleLocalDescription
-      ((ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
-        (⟨Y.obj.restrict (U k).isOpenEmbedding, isAdic_restrict _ Y.property⟩ :
-          AdicSpace.{u}) ⟶ Y) ≫ f) :=
+    IsEtaleLocalDescription f ↔ ∀ k, IsEtaleLocalDescription (Y.ofRestrict (U k) ≫ f) :=
   ⟨fun hf _ ↦ hf.isOpenImmersion_comp _, .of_iSup_eq_top_source hX U hU⟩
 
 /-- **Target-cover descent for étale morphisms.** If `V : ι → Opens X.obj` covers `X` and the
 preimage restriction of `f : Y ⟶ X` over every `V k` satisfies `IsEtaleLocalDescription`, then `f`
 satisfies `IsEtaleLocalDescription`. -/
 theorem IsEtaleLocalDescription.of_iSup_eq_top {f : Y ⟶ X} {ι : Type*} (V : ι → Opens X.obj)
-    (hV : iSup V = ⊤) (hf : ∀ k, IsEtaleLocalDescription
-      (ObjectProperty.homMk (f.hom.restrictPreimage (V k)) :
-        (⟨Y.obj.restrict ((Opens.map f.hom.base).obj (V k)).isOpenEmbedding,
-          isAdic_restrict _ Y.property⟩ : AdicSpace.{u}) ⟶
-        ⟨X.obj.restrict (V k).isOpenEmbedding, isAdic_restrict _ X.property⟩)) :
+    (hV : iSup V = ⊤) (hf : ∀ k, IsEtaleLocalDescription (AdicSpace.restrictPreimage f (V k))) :
     IsEtaleLocalDescription f := by
-  let v : ∀ k, X.restrict (V k) ⟶ X := fun k ↦ X.ofRestrict (V k)
-  have _ (k) : PreAdicSpace.IsOpenImmersion (v k).hom := inferInstance
-  have hX : X.IsAnalytic := .of_jointly_surjective v (fun k ↦ (hf k).isAnalytic_target)
+  have hX : X.IsAnalytic := .of_jointly_surjective (fun k ↦ X.ofRestrict (V k))
+    (fun k ↦ (hf k).isAnalytic_target)
     fun x ↦ let ⟨k, hx⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : x ∈ iSup V)
       ⟨k, ⟨x, hx⟩, X.ofRestrict_base_apply (V k) ⟨x, hx⟩⟩
   let U : ι → Opens Y.obj := fun k ↦ (Opens.map f.hom.base).obj (V k)
@@ -247,14 +236,8 @@ theorem IsEtaleLocalDescription.of_iSup_eq_top {f : Y ⟶ X} {ι : Type*} (V : �
     let ⟨k, hk⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : f.hom.base y ∈ iSup V)
     Opens.mem_iSup.mpr ⟨k, hk⟩
   refine .of_iSup_eq_top_source hX U hU fun k ↦ ?_
-  have hu_eq : (ObjectProperty.homMk (Y.obj.ofRestrict (U k).isOpenEmbedding) :
-      Y.restrict (U k) ⟶ Y) = Y.ofRestrict (U k) :=
-    InducedCategory.Hom.ext (Y.ofRestrict_hom (U k)).symm
-  have hres_eq : (ObjectProperty.homMk (f.hom.restrictPreimage (V k)) :
-      Y.restrict (U k) ⟶ X.restrict (V k)) = AdicSpace.restrictPreimage f (V k) :=
-    InducedCategory.Hom.ext (AdicSpace.restrictPreimage_hom f (V k)).symm
-  rw [hu_eq, ← AdicSpace.restrictPreimage_ofRestrict f (V k), ← hres_eq]
-  exact (hf k).comp_isOpenImmersion (v k) hX
+  rw [← AdicSpace.restrictPreimage_ofRestrict f (V k)]
+  exact (hf k).comp_isOpenImmersion (X.ofRestrict (V k)) hX
 
 /-! ### Refinement to affinoid middle factors and finiteness properties -/
 
