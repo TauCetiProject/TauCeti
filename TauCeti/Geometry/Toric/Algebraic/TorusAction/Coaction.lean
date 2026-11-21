@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import TauCeti.Algebra.MonoidAlgebra.Coaction
 public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
 
 /-!
@@ -21,8 +21,8 @@ and equivariance of face restriction. These identities are the coordinate-ring f
 unit and associativity laws for the affine torus action. Face equivariance allows the actions
 to descend along the affine open immersions used to glue a fan scheme.
 
-The construction uses Mathlib's monoid-algebra comultiplication and tensor-product algebra
-maps. No rationality, salience, or regularity hypothesis on the cone is needed.
+The construction specializes `MonoidAlgebra.gradedCoaction` to the dual semigroup inclusion into
+the character lattice. No rationality, salience, or regularity hypothesis on the cone is needed.
 
 ## References
 
@@ -45,11 +45,8 @@ chart. -/
 noncomputable def affineCoordinateRingCoaction (hi : IsIntegralLattice i)
     (σ : PointedCone ℝ V) : affineCoordinateRing hi σ →ₐ[ℂ]
       affineCoordinateRing hi (⊥ : PointedCone ℝ V) ⊗[ℂ] affineCoordinateRing hi σ :=
-  (Algebra.TensorProduct.map
-    (MonoidAlgebra.mapDomainAlgHom ℂ ℂ (AddMonoidHom.toMultiplicative
-      (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le))))
-    (AlgHom.id ℂ (affineCoordinateRing hi σ))).comp
-      (Bialgebra.comulAlgHom ℂ (affineCoordinateRing hi σ))
+  MonoidAlgebra.gradedCoaction ℂ (AddMonoidHom.toMultiplicative
+    (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)))
 
 /-- The torus coaction records the character of a monomial in its first factor and retains the
 monomial, including its coefficient, in its second factor. -/
@@ -70,12 +67,9 @@ theorem affineCoordinateRingCoaction_counit (hi : IsIntegralLattice i)
         (Bialgebra.counitAlgHom ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
         (AlgHom.id ℂ (affineCoordinateRing hi σ)))).comp
           (affineCoordinateRingCoaction hi σ) = AlgHom.id ℂ (affineCoordinateRing hi σ) := by
-  apply MonoidAlgebra.algHom_ext
-  · intro m
-    simp only [AlgHom.comp_apply]
-    rw [← ofAdd_toAdd m, affineCoordinateRingCoaction_single]
-    simp
-  · exact Subsingleton.elim _ _
+  rw [AlgHom.comp_assoc]
+  exact MonoidAlgebra.lid_comp_map_counit_gradedCoaction ℂ (AddMonoidHom.toMultiplicative
+    (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)))
 
 /-- The two ways of coacting twice agree, after the canonical reassociation of the tensor
 product. This is the coordinate-ring associativity law of the torus action. -/
@@ -92,14 +86,9 @@ theorem affineCoordinateRingCoaction_coassoc (hi : IsIntegralLattice i)
       (Algebra.TensorProduct.map
         (AlgHom.id ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
         (affineCoordinateRingCoaction hi σ)).comp (affineCoordinateRingCoaction hi σ) := by
-  apply MonoidAlgebra.algHom_ext
-  · intro m
-    simp only [AlgHom.comp_apply]
-    rw [← ofAdd_toAdd m, affineCoordinateRingCoaction_single]
-    simp only [Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-      affineCoordinateRingCoaction_single]
-    simp
-  · exact Subsingleton.elim _ _
+  rw [AlgHom.comp_assoc]
+  exact MonoidAlgebra.assoc_comp_map_gradedCoaction ℂ (AddMonoidHom.toMultiplicative
+    (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)))
 
 /-- Restriction to a face is equivariant for the affine torus coactions. In particular, the
 coactions agree on the coordinate rings of chart overlaps. -/
@@ -124,11 +113,12 @@ theorem affineCoordinateRingCoaction_comp_face (hi : IsIntegralLattice i)
 theorem affineCoordinateRingCoaction_bot (hi : IsIntegralLattice i) :
     affineCoordinateRingCoaction hi (⊥ : PointedCone ℝ V) =
       Bialgebra.comulAlgHom ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)) := by
-  apply MonoidAlgebra.algHom_ext
-  · intro m
-    rw [← ofAdd_toAdd m, affineCoordinateRingCoaction_single]
-    simp
-  · exact Subsingleton.elim _ _
+  have hid :
+      AddMonoidHom.toMultiplicative (AddSubmonoid.inclusion (dualSemigroup_anti hi (le_refl ⊥))) =
+        MonoidHom.id (Multiplicative (dualSemigroup hi ⊥)) := by
+    ext m
+    rfl
+  rw [affineCoordinateRingCoaction, hid, MonoidAlgebra.gradedCoaction_id]
 
 /-- A map of lattice cones intertwines their coactions and the induced map of dense tori.
 This is the coordinate-ring equivariance law for affine toric morphisms. -/

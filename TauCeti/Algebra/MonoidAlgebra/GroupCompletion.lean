@@ -8,9 +8,11 @@ module
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Localization.LocalizationLocalization
+import TauCeti.Algebra.MonoidAlgebra.Localization
 
 /-!
 # Localizing a semigroup algebra to its generated group
@@ -19,7 +21,9 @@ For an additive submonoid `S` of an abelian group, inverting all coefficient-one
 monomials in `R[S]` gives `R[L_S]`, where `L_S = AddSubgroup.closure (S : Set G)`.
 The algebra map is induced by `S.toGroupClosure`, so the target uses the generated
 group rather than the ambient group. No saturation, finite generation, or domain
-assumption on the coefficient semiring is needed.
+assumption on the coefficient semiring is needed. When `S` is finitely generated, `R[L_S]` is a
+principal localization away from a single interior monomial
+(`AddSubmonoid.FG.exists_isLocalization_away_addMonoidAlgebra_groupClosure`).
 
 The denominators are the native multiplicative range of `AddMonoidAlgebra.of R S`.
 Every finite sum has a common monomial denominator, giving the native
@@ -33,6 +37,8 @@ induces an injective ring homomorphism `AddMonoidAlgebra.groupClosureToFractionR
 
 * `AddSubmonoid.isLocalization_addMonoidAlgebra_groupClosure`: `R[L_S]` is the localization of
   `R[S]` at `MonoidHom.mrange (of R S)`.
+* `AddSubmonoid.FG.exists_isLocalization_away_addMonoidAlgebra_groupClosure`: when `S.FG`, `R[L_S]`
+  is a localization away from a single monomial `single u 1`.
 * `AddMonoidAlgebra.groupClosureToFractionRing`: canonical injective embedding of `R[L_S]` into
   any fraction ring `K` of `R[S]`.
 * `AddMonoidAlgebra.isFractionRing_groupClosure`: any fraction ring `K` of `R[S]` is also a
@@ -61,40 +67,28 @@ coefficient-one monomials. The algebra structure is induced by the canonical inc
 theorem isLocalization_addMonoidAlgebra_groupClosure :
     letI := (mapDomainRingHom R S.toGroupClosure).toAlgebra
     IsLocalization (MonoidHom.mrange (of R S))
-      (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) := by
-  let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  have halg (a : AddMonoidAlgebra R S) :
-      algebraMap _ (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) a =
-        mapDomain S.toGroupClosure a := by
-    rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply]
-  refine ⟨⟨?_, ?_, ?_⟩⟩
-  · intro s
-    obtain ⟨m, hm⟩ := s.property
-    rw [halg, ← hm, of_apply, mapDomain_single]
-    exact (Group.isUnit (Multiplicative.ofAdd (S.toGroupClosure m.toAdd))).map
-      (of R (AddSubgroup.closure (S : Set G)))
-  · intro p
-    induction p using AddMonoidAlgebra.induction_on with
-    | of g =>
+      (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) :=
+  isLocalization_mapDomain_of_single S.toGroupClosure_injective
+    (fun s ↦ by
+      obtain ⟨m, hm⟩ := s.property
+      rw [← hm, of_apply, mapDomain_single]
+      exact (Group.isUnit (Multiplicative.ofAdd (S.toGroupClosure m.toAdd))).map
+        (of R (AddSubgroup.closure (S : Set G))))
+    (fun g ↦ by
       obtain ⟨a, b, hab⟩ := S.exists_add_toGroupClosure_eq g
-      refine ⟨⟨single a 1, ⟨of R S (Multiplicative.ofAdd b), ⟨_, rfl⟩⟩⟩, ?_⟩
-      simp [halg, of_apply, hab]
-    | add p q hp hq =>
-      obtain ⟨⟨a, s⟩, ha⟩ := hp
-      obtain ⟨⟨b, t⟩, hb⟩ := hq
-      refine ⟨⟨a * t + b * s, s * t⟩, ?_⟩
-      simp only [map_add, map_mul, Submonoid.coe_mul]
-      rw [← ha, ← hb]
-      ring
-    | smul r p hp =>
-      obtain ⟨⟨a, s⟩, ha⟩ := hp
-      refine ⟨⟨r • a, s⟩, ?_⟩
-      rw [smul_mul_assoc, ha]
-      exact ((mapDomainAlgHom R R S.toGroupClosure).toLinearMap.map_smul r a).symm
-  · intro a b hab
-    refine ⟨1, ?_⟩
-    rw [halg, halg] at hab
-    simp [mapDomain_injective S.toGroupClosure_injective hab]
+      exact ⟨a, ⟨of R S (Multiplicative.ofAdd b), _, rfl⟩, by simp [of_apply, hab]⟩)
+
+/-- When `S` is finitely generated, `R[AddSubgroup.closure S]` is the localization of `R[S]` away
+from a single interior monomial `single u 1`. -/
+theorem FG.exists_isLocalization_away_addMonoidAlgebra_groupClosure {S : AddSubmonoid G}
+    (hS : S.FG) (R : Type*) [CommSemiring R] :
+    ∃ u : S,
+      letI := (mapDomainRingHom R S.toGroupClosure).toAlgebra
+      IsLocalization.Away (single u (1 : R))
+        (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) := by
+  have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
+  exact exists_isLocalization_away_of_exists_add_eq S.toGroupClosure_injective
+    S.exists_add_toGroupClosure_eq R
 
 end AddSubmonoid
 

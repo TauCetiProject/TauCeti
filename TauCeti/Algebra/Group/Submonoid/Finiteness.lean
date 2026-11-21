@@ -49,6 +49,9 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
   generated when the source monoid is finitely generated and the target is cancellative.
 * `Submonoid.exists_finset_inclusion_mul` and `AddSubmonoid.exists_finset_inclusion_add`:
   restricting an ambient finite translate covering of `T` over `S ≤ T` to the subtype `T`.
+* `Submonoid.FG.exists_forall_exists_mul_eq_pow` and
+  `AddSubmonoid.FG.exists_forall_exists_add_eq_nsmul`: interior element whose powers/multiples
+  absorb every element of a finitely generated submonoid.
 * `Submonoid.FG.exists_finset_subset_forall_exists_mul` and
   `AddSubmonoid.FG.exists_finset_subset_forall_exists_add`: finite set of remainders for
   `T ≤ S.powSaturation` when `T` is finitely generated.
@@ -104,6 +107,31 @@ theorem exists_finset_inclusion_mul {M : Type*} [MulOneClass M] {S T : Submonoid
   refine ⟨F.subtype (· ∈ T), fun x => ?_⟩
   obtain ⟨z, hz, s, hs, hxz⟩ := hF_mul x.val x.property
   exact ⟨⟨z, hF_sub hz⟩, Finset.mem_subtype.mpr hz, ⟨s, hs⟩, Subtype.ext hxz⟩
+
+/-- Every finitely generated commutative submonoid `S` possesses an element `u : S` whose powers
+absorb every element of `S` by multiplication. -/
+@[to_additive
+/-- Every finitely generated additive submonoid `S` possesses an element `u : S` whose multiples
+absorb every element of `S` by addition. -/]
+theorem FG.exists_forall_exists_mul_eq_pow {M : Type*} [CommMonoid M] {S : Submonoid M}
+    (hS : S.FG) :
+    ∃ u : S, ∀ b : S, ∃ (n : ℕ) (c : S), b * c = u ^ n := by
+  classical
+  obtain ⟨t, ht⟩ := isMulFG_iff.1 hS
+  let gen : t → S := fun a ↦ ⟨a.val, ht ▸ subset_closure a.property⟩
+  refine ⟨∏ a : t, gen a, fun ⟨y, hyS⟩ ↦ ?_⟩
+  have hy : y ∈ closure (t : Set M) := ht.symm ▸ hyS
+  induction hy using closure_induction with
+  | mem z hz =>
+    exact ⟨1, ∏ a ∈ Finset.univ.erase ⟨z, hz⟩, gen a, by
+      rw [pow_one]; exact Finset.mul_prod_erase Finset.univ gen (Finset.mem_univ ⟨z, hz⟩)⟩
+  | one => exact ⟨0, 1, by simp⟩
+  | mul x w hx hw ihx ihw =>
+    obtain ⟨n₁, c₁, hc₁⟩ := ihx (ht ▸ hx)
+    obtain ⟨n₂, c₂, hc₂⟩ := ihw (ht ▸ hw)
+    have hcomm : (⟨x * w, hyS⟩ : S) * (c₁ * c₂) = (⟨x, ht ▸ hx⟩ * c₁) * (⟨w, ht ▸ hw⟩ * c₂) :=
+      Subtype.ext (by simp only [coe_mul]; ac_rfl)
+    exact ⟨n₁ + n₂, c₁ * c₂, by rw [hcomm, hc₁, hc₂, pow_add]⟩
 
 /-- If `T` is a finitely generated submonoid contained in `S.powSaturation`, there is a finite
 subset `F ⊆ T` such that every element of `T` factors as `z * y` with `z ∈ F` and `y ∈ S`. -/
