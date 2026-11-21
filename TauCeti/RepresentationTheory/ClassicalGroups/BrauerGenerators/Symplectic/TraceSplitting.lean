@@ -279,7 +279,7 @@ theorem isCompl_symplecticHarmonicTensors_iSup_range_symplecticCupCapAt :
       (⨆ (i : Fin d) (j : Fin d) (_ : i ≠ j), LinearMap.range (symplecticCupCapAt k n d i j)) := by
   have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
     (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
-    (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => symplecticCupCapAt k n d p.1.1 p.1.2)
+    (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => symplecticCupCapAt k n d p.val.1 p.val.2)
     fun _ => isHermitian_toMatrix_symplecticCupCapAt
   simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod,
     ← symplecticHarmonicTensors_eq_iInf_ker_symplecticCupCapAt] using h
@@ -354,7 +354,7 @@ theorem finrank_symplecticHarmonicTensors_add_finrank_symplecticTraceTensors :
   -- of the monomial basis, for which every arc is self-adjoint.
   let b := Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)
   let B := Matrix.toBilin b (1 : Matrix (Fin d → Fin n ⊕ Fin n) (Fin d → Fin n ⊕ Fin n) k)
-  have hB : B.Nondegenerate := (Matrix.nondegenerate_of_det_ne_zero (by simp)).toBilin b
+  have hB : B.Nondegenerate := (Matrix.Nondegenerate.of_det_ne_zero (by simp)).toBilin b
   have hBapply (x y) : B x y = ⇑(b.repr x) ⬝ᵥ ⇑(b.repr y) := by
     simp [B, Matrix.toBilin_apply, dotProduct, Matrix.one_apply]
   have hadj (i j : Fin d) (x y) :

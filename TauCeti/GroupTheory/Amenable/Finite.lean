@@ -45,8 +45,7 @@ mean is evaluation at that element.
   uniform mean, for any choice of `Fintype` instance.
 * `TauCeti.Mean.isLeftInvariant_uniform`: the uniform mean is left invariant.
 * `TauCeti.Mean.isLeftInvariant_iff_eq_uniform`: it is the unique left-invariant mean.
-* `TauCeti.Amenable.of_finite`, `TauCeti.AddAmenable.of_finite`: finite topological groups are
-  amenable.
+* `TauCeti.Amenable.of_finite`: finite topological groups are amenable.
 
 ## References
 
@@ -157,11 +156,5 @@ end Mean
 /-- A finite topological group is amenable, for any group topology. -/
 instance (priority := 100) Amenable.of_finite [Finite G] : Amenable G :=
   ⟨⟨Mean.uniform G, Mean.isLeftInvariant_uniform⟩⟩
-
-/-- A finite additive topological group is amenable, for any additive group topology. -/
-instance (priority := 100) AddAmenable.of_finite {A : Type*} [AddGroup A] [TopologicalSpace A]
-    [IsTopologicalAddGroup A] [Finite A] : AddAmenable A :=
-  have : Finite (Multiplicative A) := .of_equiv A Multiplicative.ofAdd
-  amenable_multiplicative_iff.1 inferInstance
 
 end TauCeti

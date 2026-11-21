@@ -36,7 +36,11 @@ reflection of equality of Hopf ideals. The same reflection descends the triviali
 smooth unipotent closed subgroups, which is how the generated Chevalley subgroups over a field are
 reduced to an algebraic closure.
 
-Equality requires descent of an arbitrary radical candidate over `K` and is not asserted here.
+Equality along separable algebraic extensions is proved in
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent`
+(`TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`), whereas it
+can fail along inseparable extensions
+(`WeilRestriction.not_pseudoReductive_baseChange_multiplicativeGroup_of_isPurelyInseparable`).
 
 ## Main declarations
 

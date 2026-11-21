@@ -26,10 +26,8 @@ be dropped.
 
 ## Main results
 
-* `TauCeti.Amenable.of_injective`, `TauCeti.AddAmenable.of_injective`: a group embedding in an
-  amenable discrete group is amenable.
-* `TauCeti.Amenable.subgroup`, `TauCeti.AddAmenable.addSubgroup`: every subgroup of an amenable
-  discrete group is amenable.
+* `TauCeti.Amenable.of_injective`: a group embedding in an amenable discrete group is amenable.
+* `TauCeti.Amenable.subgroup`: every subgroup of an amenable discrete group is amenable.
 
 ## References
 
@@ -39,8 +37,6 @@ be dropped.
 public section
 
 namespace TauCeti
-
-section Multiplicative
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
@@ -60,27 +56,5 @@ theorem Amenable.of_injective [Amenable G] (φ : H →* G) (hφ : Function.Injec
 /-- Every subgroup of an amenable discrete group is amenable. -/
 instance Amenable.subgroup [Amenable G] (K : Subgroup G) : Amenable K :=
   .of_injective K.subtype K.subtype_injective
-
-end Multiplicative
-
-section Additive
-
-variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
-  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
-
-/-- An additive group `B` embedding by an injective homomorphism into an amenable discrete additive
-group is amenable, for every additive group topology on `B`. -/
-theorem AddAmenable.of_injective [AddAmenable A] (φ : B →+ A) (hφ : Function.Injective φ) :
-    AddAmenable B := by
-  have : DiscreteTopology (Multiplicative A) := Homeomorph.ofAdd.symm.discreteTopology
-  exact amenable_multiplicative_iff.1 <|
-    Amenable.of_injective (G := Multiplicative A) φ.toMultiplicative fun x y hxy =>
-      Multiplicative.toAdd.injective <| hφ <| Multiplicative.ofAdd.injective hxy
-
-/-- Every additive subgroup of an amenable discrete additive group is amenable. -/
-instance AddAmenable.addSubgroup [AddAmenable A] (K : AddSubgroup A) : AddAmenable K :=
-  .of_injective K.subtype K.subtype_injective
-
-end Additive
 
 end TauCeti

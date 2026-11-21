@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.OneParameter
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -35,8 +36,11 @@ conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, as the stabilizers are
 
 The action is **locally free** at `x` when `G_x` is discrete. Since `G_x` is an embedded Lie
 subgroup modelled on its Lie algebra `𝔤_x`, this happens exactly when `𝔤_x = 0`, that is, when
-`ξ ↦ ξ_M(x)` is injective. In particular a free action has trivial isotropy algebras
-(`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`). Through
+`ξ ↦ ξ_M(x)` is injective. In particular, at any point with trivial stabilizer the isotropy
+algebra vanishes (`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`), and at any locally free (or
+free) point on a finite-dimensional manifold we have `dim G ≤ dim M`
+(`TauCeti.Lie.finrank_le_of_discreteTopology_stabilizer`,
+`TauCeti.Lie.finrank_le_of_stabilizer_eq_bot`). Through
 `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff` this is what makes every point
 with discrete stabilizer, at which the form is nondegenerate, a regular point of a moment map.
 
@@ -52,6 +56,9 @@ with discrete stabilizer, at which the form is nondegenerate, a regular point of
   exactly when the isotropy algebra is trivial.
 * `TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`: a point with trivial stabilizer has
   trivial isotropy algebra.
+* `TauCeti.Lie.finrank_le_of_discreteTopology_stabilizer`,
+  `TauCeti.Lie.finrank_le_of_stabilizer_eq_bot`: where the stabilizer is discrete (or trivial),
+  `dim G ≤ dim M`.
 
 ## References
 
@@ -153,14 +160,43 @@ theorem discreteTopology_stabilizer_iff_isotropy_eq_bot [CompleteSpace E'] {x : 
     simpa using congrArg e this
   · exact (LinearEquiv.map_eq_zero_iff e.toLinearEquiv).1 (h _ hX)
 
+omit [T2Space G] in
 /-- **Free points are locally free.** Where the stabilizer of `x` is trivial, so is the isotropy
 algebra `𝔤_x`. -/
 theorem isotropy_eq_bot_of_stabilizer_eq_bot [CompleteSpace E'] {x : M}
     (hx : MulAction.stabilizer G x = ⊥) :
     (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
   have : Subsingleton (MulAction.stabilizer G x) := by
     rw [hx]
     infer_instance
-  exact discreteTopology_stabilizer_iff_isotropy_eq_bot.1 inferInstance
+  exact (discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 inferInstance
+
+include I I' in
+variable (I G I') in
+omit [T2Space G] in
+/-- **Locally free points satisfy `dim G ≤ dim M`.** At any point `x` with discrete stabilizer of a
+smooth action of a finite-dimensional real Lie group `G` on a Hausdorff boundaryless manifold `M`,
+we have `dim G ≤ dim M`. -/
+theorem finrank_le_of_discreteTopology_stabilizer [FiniteDimensional ℝ E'] (x : M)
+    [DiscreteTopology (MulAction.stabilizer G x)] :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have hle := (InfinitesimalAction.fundamental I G I' M).finrank_le_of_isotropy_eq_bot
+    ((discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 ‹_›)
+  rwa [finrank_tangentSpace] at hle
+
+include I I' in
+variable (I I') in
+omit [T2Space G] in
+/-- At any point `x` with trivial stabilizer of a smooth action of a finite-dimensional real Lie
+group `G` on a Hausdorff boundaryless manifold `M`, we have `dim G ≤ dim M`. -/
+theorem finrank_le_of_stabilizer_eq_bot [FiniteDimensional ℝ E'] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' := by
+  have : Subsingleton (MulAction.stabilizer G x) := by
+    rw [hx]
+    infer_instance
+  exact finrank_le_of_discreteTopology_stabilizer I G I' x
 
 end TauCeti.Lie

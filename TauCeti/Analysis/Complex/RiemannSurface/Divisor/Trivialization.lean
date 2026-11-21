@@ -67,7 +67,7 @@ private def multiplySection {D E : WeilDivisor X} {U : Opens X} (h : X → ℂ)
     (hh : ∀ x ∈ U, MeromorphicAt h x)
     (ho : ∀ x ∈ U, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ))
     (f : divisorSections D U) : divisorSections E U :=
-  ⟨toDivisorSection E (h * Subtype.val.extend f.1 0) ∘ Subtype.val,
+  ⟨toDivisorSection E (h * Subtype.val.extend f.val 0) ∘ Subtype.val,
     comp_val_mem_divisorSections fun x hx ↦ isDivisorSectionAt_toDivisorSection_mul
       (hh x hx) (ho x hx) (isDivisorSectionAt_extend f.property ⟨x, hx⟩)⟩
 
@@ -75,14 +75,14 @@ private theorem multiplySection_eventuallyEq {D E : WeilDivisor X} {U : Opens X}
     (h : X → ℂ) (hh : ∀ x ∈ U, MeromorphicAt h x)
     (ho : ∀ x ∈ U, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ))
     (f : divisorSections D U) (x : U) :
-    (multiplySection h hh ho f).1 =ᶠ[𝓝[≠] x] fun y ↦ h y * f.1 y := by
-  filter_upwards [(toDivisorSection_eventuallyEq E ((hh x x.2).mul
+    (multiplySection h hh ho f).val =ᶠ[𝓝[≠] x] fun y ↦ h y * f.val y := by
+  filter_upwards [(toDivisorSection_eventuallyEq E ((hh x x.property).mul
     (isDivisorSectionAt_extend f.property x).meromorphicAt)).comp_tendsto
       (tendsto_subtype_val_nhdsNE x)] with y hy
   simpa [multiplySection, Subtype.val_injective.extend_apply] using hy
 
 private theorem section_ext_nhdsNE {D : WeilDivisor X} {U : Opens X}
-    {f g : divisorSections D U} (h : ∀ x : U, f.1 =ᶠ[𝓝[≠] x] g.1) : f = g := by
+    {f g : divisorSections D U} (h : ∀ x : U, f.val =ᶠ[𝓝[≠] x] g.val) : f = g := by
   apply Subtype.ext
   apply eq_of_eventuallyEq_codiscrete f.property g.property
   exact eventually_codiscrete_iff_forall_eventually_nhdsNE.2 h
@@ -120,7 +120,8 @@ private def multiplySectionEquiv {D E : WeilDivisor X} {U : Opens X} (h : X → 
       ext f : 1
       apply section_ext_nhdsNE
       intro x
-      have hn := (hh x x.2).eventually_ne_zero (by rw [ho x x.2]; exact WithTop.coe_ne_top)
+      have hn := (hh x x.property).eventually_ne_zero
+          (by rw [ho x x.property]; exact WithTop.coe_ne_top)
       filter_upwards [multiplySection_eventuallyEq h hh ho _ x,
         multiplySection_eventuallyEq h⁻¹ (fun x hx ↦ (hh x hx).inv)
           (fun x hx ↦ inverse_order (ho x hx)) f x, (tendsto_subtype_val_nhdsNE x).eventually hn]
@@ -128,21 +129,22 @@ private def multiplySectionEquiv {D E : WeilDivisor X} {U : Opens X} (h : X → 
       -- The linear maps have the explicitly constructed section functions as their values.
       change (multiplySection h hh ho
         (multiplySection h⁻¹ (fun x hx ↦ (hh x hx).inv)
-          (fun x hx ↦ inverse_order (ho x hx)) f)).1 y = f.1 y
+          (fun x hx ↦ inverse_order (ho x hx)) f)).val y = f.val y
       rw [hy, hy']
       exact mul_inv_cancel_left₀ hn _)
     (by
       ext f : 1
       apply section_ext_nhdsNE
       intro x
-      have hn := (hh x x.2).eventually_ne_zero (by rw [ho x x.2]; exact WithTop.coe_ne_top)
+      have hn := (hh x x.property).eventually_ne_zero
+          (by rw [ho x x.property]; exact WithTop.coe_ne_top)
       filter_upwards [multiplySection_eventuallyEq h⁻¹ (fun x hx ↦ (hh x hx).inv)
           (fun x hx ↦ inverse_order (ho x hx)) _ x,
         multiplySection_eventuallyEq h hh ho f x, (tendsto_subtype_val_nhdsNE x).eventually hn]
         with y hy hy' hn
       -- The linear maps have the explicitly constructed section functions as their values.
       change (multiplySection h⁻¹ (fun x hx ↦ (hh x hx).inv)
-        (fun x hx ↦ inverse_order (ho x hx)) (multiplySection h hh ho f)).1 y = f.1 y
+        (fun x hx ↦ inverse_order (ho x hx)) (multiplySection h hh ho f)).val y = f.val y
       rw [hy, hy']
       exact inv_mul_cancel_left₀ hn _)
 
@@ -182,9 +184,9 @@ private theorem multiplyComponent_hom_apply_val {D E : WeilDivisor X} {U : Opens
     (h : X → ℂ) (hh : ∀ x ∈ U, MeromorphicAt h x)
     (ho : ∀ x ∈ U, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ))
     (f : (divisorSheaf D).obj.obj (op U)) :
-    (divisorSheafSectionsEquiv E U ((multiplyComponent h hh ho).hom f)).1 =
+    (divisorSheafSectionsEquiv E U ((multiplyComponent h hh ho).hom f)).val =
       fun y : U ↦ if E y ≤ 0 then affineChart (sphereMap
-        (h * Subtype.val.extend (divisorSheafSectionsEquiv D U f).1 0) y) else 0 := by
+        (h * Subtype.val.extend (divisorSheafSectionsEquiv D U f).val 0) y) else 0 := by
   rw [multiplyComponent_hom_apply]
   funext y
   simp [multiplySection, toDivisorSection_apply]
@@ -193,9 +195,9 @@ private theorem multiplyComponent_inv_apply_val {D E : WeilDivisor X} {U : Opens
     (h : X → ℂ) (hh : ∀ x ∈ U, MeromorphicAt h x)
     (ho : ∀ x ∈ U, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ))
     (f : (divisorSheaf E).obj.obj (op U)) :
-    (divisorSheafSectionsEquiv D U ((multiplyComponent h hh ho).inv f)).1 =
+    (divisorSheafSectionsEquiv D U ((multiplyComponent h hh ho).inv f)).val =
       fun y : U ↦ if D y ≤ 0 then affineChart (sphereMap
-        (h⁻¹ * Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y) else 0 := by
+        (h⁻¹ * Subtype.val.extend (divisorSheafSectionsEquiv E U f).val 0) y) else 0 := by
   rw [multiplyComponent_inv_apply]
   funext y
   simp [multiplySection, toDivisorSection_apply]
@@ -268,10 +270,10 @@ theorem divisorSheafMulIso_hom_app {D E : WeilDivisor X} (U : Opens X) (h : X �
     (f : (divisorSheaf D).obj.obj
       (op ((Opens.isOpenEmbedding (X := TopCat.of X) U).functor.obj V))) :
     (divisorSheafSectionsEquiv E _
-      ((divisorSheafMulIso D E U h hh ho).hom.hom.app (op V) f)).1 =
+      ((divisorSheafMulIso D E U h hh ho).hom.hom.app (op V) f)).val =
       fun y : (Opens.isOpenEmbedding (X := TopCat.of X) U).functor.obj V ↦
         if E y ≤ 0 then affineChart (sphereMap
-        (h * Subtype.val.extend (divisorSheafSectionsEquiv D _ f).1 0) y) else 0 := by
+        (h * Subtype.val.extend (divisorSheafSectionsEquiv D _ f).val 0) y) else 0 := by
   -- The pullback component is the multiplication component at the image open.
   exact multiplyComponent_hom_apply_val h _ _ f
 
@@ -284,10 +286,10 @@ theorem divisorSheafMulIso_inv_app {D E : WeilDivisor X} (U : Opens X) (h : X �
     (f : (divisorSheaf E).obj.obj
       (op ((Opens.isOpenEmbedding (X := TopCat.of X) U).functor.obj V))) :
     (divisorSheafSectionsEquiv D _
-      ((divisorSheafMulIso D E U h hh ho).inv.hom.app (op V) f)).1 =
+      ((divisorSheafMulIso D E U h hh ho).inv.hom.app (op V) f)).val =
       fun y : (Opens.isOpenEmbedding (X := TopCat.of X) U).functor.obj V ↦
         if D y ≤ 0 then affineChart (sphereMap
-        (h⁻¹ * Subtype.val.extend (divisorSheafSectionsEquiv E _ f).1 0) y) else 0 := by
+        (h⁻¹ * Subtype.val.extend (divisorSheafSectionsEquiv E _ f).val 0) y) else 0 := by
   -- The pullback component is the multiplication component at the image open.
   exact multiplyComponent_inv_apply_val h _ _ f
 
@@ -329,9 +331,9 @@ theorem divisorSheafGlobalMulIso_hom_app {D E : WeilDivisor X} (h : X → ℂ)
     (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) (U : Opens X)
     (f : (divisorSheaf D).obj.obj (op U)) :
     (divisorSheafSectionsEquiv E U
-      ((divisorSheafGlobalMulIso D E h hh ho).hom.hom.app (op U) f)).1 =
+      ((divisorSheafGlobalMulIso D E h hh ho).hom.hom.app (op U) f)).val =
       fun y : U ↦ if E y ≤ 0 then affineChart (sphereMap
-        (h * Subtype.val.extend (divisorSheafSectionsEquiv D U f).1 0) y) else 0 := by
+        (h * Subtype.val.extend (divisorSheafSectionsEquiv D U f).val 0) y) else 0 := by
   rw [divisorSheafGlobalMulIso_hom_hom_app]
   exact multiplyComponent_hom_apply_val h _ _ f
 
@@ -342,9 +344,9 @@ theorem divisorSheafGlobalMulIso_inv_app {D E : WeilDivisor X} (h : X → ℂ)
     (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) (U : Opens X)
     (f : (divisorSheaf E).obj.obj (op U)) :
     (divisorSheafSectionsEquiv D U
-      ((divisorSheafGlobalMulIso D E h hh ho).inv.hom.app (op U) f)).1 =
+      ((divisorSheafGlobalMulIso D E h hh ho).inv.hom.app (op U) f)).val =
       fun y : U ↦ if D y ≤ 0 then affineChart (sphereMap
-        (h⁻¹ * Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y) else 0 := by
+        (h⁻¹ * Subtype.val.extend (divisorSheafSectionsEquiv E U f).val 0) y) else 0 := by
   rw [divisorSheafGlobalMulIso_inv_hom_app]
   exact multiplyComponent_inv_apply_val h _ _ f
 
@@ -355,8 +357,8 @@ theorem divisorSheafGlobalMulIso_hom_app_eventuallyEq {D E : WeilDivisor X} (h :
     (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) (U : Opens X)
     (f : (divisorSheaf D).obj.obj (op U)) (x : U) :
     (divisorSheafSectionsEquiv E U
-        ((divisorSheafGlobalMulIso D E h hh ho).hom.hom.app (op U) f)).1 =ᶠ[𝓝[≠] x]
-      fun y ↦ h y * (divisorSheafSectionsEquiv D U f).1 y := by
+        ((divisorSheafGlobalMulIso D E h hh ho).hom.hom.app (op U) f)).val =ᶠ[𝓝[≠] x]
+      fun y ↦ h y * (divisorSheafSectionsEquiv D U f).val y := by
   rw [divisorSheafGlobalMulIso_hom_hom_app, multiplyComponent_hom_apply]
   exact multiplySection_eventuallyEq h _ _ _ x
 
@@ -367,8 +369,8 @@ theorem divisorSheafGlobalMulIso_inv_app_eventuallyEq {D E : WeilDivisor X} (h :
     (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) (U : Opens X)
     (f : (divisorSheaf E).obj.obj (op U)) (x : U) :
     (divisorSheafSectionsEquiv D U
-        ((divisorSheafGlobalMulIso D E h hh ho).inv.hom.app (op U) f)).1 =ᶠ[𝓝[≠] x]
-      fun y ↦ (h y)⁻¹ * (divisorSheafSectionsEquiv E U f).1 y := by
+        ((divisorSheafGlobalMulIso D E h hh ho).inv.hom.app (op U) f)).val =ᶠ[𝓝[≠] x]
+      fun y ↦ (h y)⁻¹ * (divisorSheafSectionsEquiv E U f).val y := by
   rw [divisorSheafGlobalMulIso_inv_hom_app, multiplyComponent_inv_apply]
   exact multiplySection_eventuallyEq h⁻¹ _ _ _ x
 
@@ -377,8 +379,8 @@ punctured neighbourhood of each point. -/
 private theorem divisorSheaf_hom_ext_nhdsNE {D E : WeilDivisor X}
     {φ ψ : divisorSheaf D ⟶ divisorSheaf E}
     (h : ∀ (U : Opens X) (f : (divisorSheaf D).obj.obj (op U)) (x : U),
-      (divisorSheafSectionsEquiv E U (φ.hom.app (op U) f)).1 =ᶠ[𝓝[≠] x]
-        (divisorSheafSectionsEquiv E U (ψ.hom.app (op U) f)).1) :
+      (divisorSheafSectionsEquiv E U (φ.hom.app (op U) f)).val =ᶠ[𝓝[≠] x]
+        (divisorSheafSectionsEquiv E U (ψ.hom.app (op U) f)).val) :
     φ = ψ := by
   apply Sheaf.hom_ext
   apply NatTrans.ext
@@ -490,7 +492,7 @@ theorem divisorSheafCoordinateIso_hom_app_apply (D : WeilDivisor Y)
       ((divisorSheafCoordinateIso D e he x U hx hU hD).hom.hom.app (op V) f) y =
       affineChart (sphereMap
         ((fun z ↦ (e z - e x) ^ D x) *
-          Subtype.val.extend (divisorSheafSectionsEquiv D _ f).1 0) y) := by
+          Subtype.val.extend (divisorSheafSectionsEquiv D _ f).val 0) y) := by
   -- The composite is the multiplication component followed by the existing zero-divisor
   -- identification; retain the native section carriers at this boundary.
   change holomorphicStructureSheafModules.sectionsLinearEquiv 𝓘(ℂ) Y _
@@ -510,7 +512,7 @@ theorem divisorSheafCoordinateIso_inv_app (D : WeilDivisor Y)
     (f : (holomorphicStructureSheafModules 𝓘(ℂ) Y).obj.obj
       (op ((Opens.isOpenEmbedding (X := TopCat.of Y) U).functor.obj V))) :
     (divisorSheafSectionsEquiv D _
-      ((divisorSheafCoordinateIso D e he x U hx hU hD).inv.hom.app (op V) f)).1 =
+      ((divisorSheafCoordinateIso D e he x U hx hU hD).inv.hom.app (op V) f)).val =
       fun y : (Opens.isOpenEmbedding (X := TopCat.of Y) U).functor.obj V ↦
         if D y ≤ 0 then affineChart (sphereMap
           ((fun z ↦ ((e z - e x) ^ D x)⁻¹) * Subtype.val.extend (fun z ↦ f z) 0) y)
@@ -518,7 +520,7 @@ theorem divisorSheafCoordinateIso_inv_app (D : WeilDivisor Y)
   -- The inverse first identifies holomorphic and zero-divisor sections on the same open.
   change (divisorSheafSectionsEquiv D _
     ((multiplyComponent (fun z ↦ (e z - e x) ^ D x) _ _).inv
-      ((divisorSheafZeroIso Y).inv.hom.app _ f))).1 = _
+      ((divisorSheafZeroIso Y).inv.hom.app _ f))).val = _
   rw [multiplyComponent_inv_apply]
   funext y
   simp only [multiplySection, toDivisorSection_apply, Function.comp_apply,

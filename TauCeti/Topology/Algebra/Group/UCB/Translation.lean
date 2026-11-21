@@ -33,21 +33,21 @@ of `UCB G`; no continuity statement is made for right translations.
   `L_g f = f (g⁻¹ * ·)`.
 * `TauCeti.UCB.leftTranslation`: its case `𝕜 = ℝ`, on `UCB G`.
 * `TauCeti.UCB.rightTranslation`: `g ↦ R_g`, with `R_g f = f (· * g)`.
-* `TauCeti.AddUCB.leftTranslation`, `TauCeti.AddUCB.rightTranslation`: left and right translations
-  `L_a f = f (-a + ·)` and `R_a f = f (· + a)` on `AddUCB A`.
+* `TauCeti.AddUCB.leftTranslation`: additive left translation `a ↦ L_a` on `AddUCB A`, with
+  `(L_a f)(x) = f (-a + x)`.
+* `TauCeti.AddUCB.rightTranslation`: additive right translation `a ↦ R_a` on `AddUCB A`, with
+  `(R_a f)(x) = f (x + a)`.
 
 ## Main results
 
 * `TauCeti.compContinuous_mulLeft_mem_ucbSubalgebra`,
-  `TauCeti.compContinuous_mulRight_mem_ucbSubalgebra`: `ucbSubalgebra 𝕜 G`, and in particular
-  `ucb G`, is closed under left and right translation.
+  `TauCeti.compContinuous_mulRight_mem_ucbSubalgebra` (and additive counterparts): `ucbSubalgebra`
+  and `ucb` are closed under left and right translation.
 * `TauCeti.UCB.leftTranslation_le_leftTranslation_iff`,
-  `TauCeti.UCB.leftTranslation_apply_algebraMap`,
-  `TauCeti.AddUCB.leftTranslation_le_leftTranslation_iff`,
-  `TauCeti.AddUCB.rightTranslation_le_rightTranslation_iff`: left and right translations preserve
-  the order and the constant functions.
+  `TauCeti.UCB.leftTranslation_apply_algebraMap` (and additive counterparts): left translation
+  preserves the order and the constant functions; likewise for right translation.
 * `TauCeti.UCB.continuous_leftTranslation_apply`,
-  `TauCeti.AddUCB.continuous_leftTranslation_apply`: the orbit map of left translation is
+  `TauCeti.AddUCB.continuous_leftTranslation_apply`: the orbit map `g ↦ L_g f` (or `a ↦ L_a f`) is
   continuous for the supremum norm.
 * `TauCeti.UCB.commute_leftTranslation_rightTranslation`,
   `TauCeti.AddUCB.commute_leftTranslation_rightTranslation`: left and right translations commute.
@@ -72,6 +72,9 @@ variable {𝕜 G : Type*} [NormedField 𝕜] [Group G] [TopologicalSpace G] [IsT
 
 /-- A left translate `x ↦ f (g * x)` of a function in `ucbSubalgebra 𝕜 G` lies in
 `ucbSubalgebra 𝕜 G`. -/
+@[to_additive (dont_translate := 𝕜) compContinuous_addLeft_mem_addUcbSubalgebra
+  /-- A left translate `x ↦ f (g + x)` of a function in `addUcbSubalgebra 𝕜 G` lies in
+  `addUcbSubalgebra 𝕜 G`. -/]
 theorem compContinuous_mulLeft_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G)
     (g : G) : f.compContinuous (ContinuousMap.mulLeft g) ∈ ucbSubalgebra 𝕜 G := by
   -- `g * u * x = (g * u * g⁻¹) * (g * x)`, and `g * u * g⁻¹ → 1` as `u → 1`.
@@ -84,6 +87,9 @@ theorem compContinuous_mulLeft_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈
 
 /-- A right translate `x ↦ f (x * g)` of a function in `ucbSubalgebra 𝕜 G` lies in
 `ucbSubalgebra 𝕜 G`. -/
+@[to_additive (dont_translate := 𝕜) compContinuous_addRight_mem_addUcbSubalgebra
+  /-- A right translate `x ↦ f (x + g)` of a function in `addUcbSubalgebra 𝕜 G` lies in
+  `addUcbSubalgebra 𝕜 G`. -/]
 theorem compContinuous_mulRight_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G)
     (g : G) : f.compContinuous (ContinuousMap.mulRight g) ∈ ucbSubalgebra 𝕜 G := by
   rw [mem_ucbSubalgebra_iff] at hf ⊢
@@ -92,12 +98,16 @@ theorem compContinuous_mulRight_mem_ucbSubalgebra {f : G →ᵇ 𝕜} (hf : f �
   simpa [mul_assoc] using hu (x * g)
 
 /-- A left translate `x ↦ f (g * x)` of a function in `ucb G` lies in `ucb G`. -/
+@[to_additive compContinuous_addLeft_mem_addUcb
+  /-- A left translate `x ↦ f (g + x)` of a function in `addUcb G` lies in `addUcb G`. -/]
 theorem compContinuous_mulLeft_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
     f.compContinuous (ContinuousMap.mulLeft g) ∈ ucb G := by
   rw [ucb_eq_ucbSubalgebra] at hf ⊢
   exact compContinuous_mulLeft_mem_ucbSubalgebra hf g
 
 /-- A right translate `x ↦ f (x * g)` of a function in `ucb G` lies in `ucb G`. -/
+@[to_additive compContinuous_addRight_mem_addUcb
+  /-- A right translate `x ↦ f (x + g)` of a function in `addUcb G` lies in `addUcb G`. -/]
 theorem compContinuous_mulRight_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) (g : G) :
     f.compContinuous (ContinuousMap.mulRight g) ∈ ucb G := by
   rw [ucb_eq_ucbSubalgebra] at hf ⊢
@@ -226,7 +236,7 @@ theorem rightTranslation_apply_algebraMap (g : G) (c : ℝ) :
 theorem tendsto_leftTranslation_apply_nhds_one (f : UCB G) :
     Tendsto (fun u : G => leftTranslation u f) (𝓝 1) (𝓝 f) := by
   simp only [tendsto_subtype_rng, coe_leftTranslation]
-  exact (mem_ucb_iff_tendsto.1 f.2).comp (by simpa using tendsto_inv (1 : G))
+  exact (mem_ucb_iff_tendsto.1 f.property).comp (by simpa using tendsto_inv (1 : G))
 
 /-- The orbit map `g ↦ L_g f` of a function `f` in `UCB G` is continuous for the supremum norm. -/
 theorem continuous_leftTranslation_apply (f : UCB G) :
@@ -264,89 +274,67 @@ theorem sum_leftTranslation [Fintype G] (f : UCB G) :
 
 end UCB
 
-section Additive
+namespace AddUCB
 
 variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
 
-namespace AddUCB
+-- Unlike `UCB.leftTranslation : G →* (UCB G ≃ₗᵢ[ℝ] UCB G)`, the codomain
+-- `AddUCB A ≃ₗᵢ[ℝ] AddUCB A` is a multiplicative group under composition rather than an additive
+-- group, so `leftTranslation` is defined directly on `A` rather than via `@[to_additive]`.
 
-/-- Left translation `L_a` on `AddUCB A`, sending `f` to `x ↦ f (-a + x)`, as a linear isometry
-equivalence. -/
+/-- Left translation `L_a`, where `(L_a f)(x) = f (-a + x)`, as a linear isometry equivalence of
+`AddUCB A`. -/
 def leftTranslation (a : A) : AddUCB A ≃ₗᵢ[ℝ] AddUCB A :=
-  (toMultiplicativeLinearIsometryEquiv A).trans
-    ((UCB.leftTranslation (Multiplicative.ofAdd a)).trans
-      (toMultiplicativeLinearIsometryEquiv A).symm)
+  BoundedContinuousFunction.compContinuousₗᵢ (addUcb A)
+    (ContinuousMap.addLeft (-a)) (ContinuousMap.addLeft a) (by simp) (by simp)
+    (fun _ hf => compContinuous_addLeft_mem_addUcb hf _)
+    (fun _ hf => compContinuous_addLeft_mem_addUcb hf _)
 
-/-- Right translation `R_a` on `AddUCB A`, sending `f` to `x ↦ f (x + a)`, as a linear isometry
-equivalence. -/
-def rightTranslation (a : A) : AddUCB A ≃ₗᵢ[ℝ] AddUCB A :=
-  (toMultiplicativeLinearIsometryEquiv A).trans
-    ((UCB.rightTranslation (Multiplicative.ofAdd a)).trans
-      (toMultiplicativeLinearIsometryEquiv A).symm)
+/-- The left translate `L_a f` is the precomposition of `f` with `x ↦ -a + x`. -/
+theorem coe_leftTranslation (a : A) (f : AddUCB A) :
+    (leftTranslation a f : A →ᵇ ℝ) =
+      (f : A →ᵇ ℝ).compContinuous (ContinuousMap.addLeft (-a)) :=
+  BoundedContinuousFunction.compContinuousₗᵢ_apply ..
 
 @[simp]
 theorem leftTranslation_apply (a : A) (f : AddUCB A) (x : A) :
-    (leftTranslation a f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (-a + x) := by
-  simp [leftTranslation]
+    (leftTranslation a f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (-a + x) :=
+  DFunLike.congr_fun (coe_leftTranslation a f) x
 
-@[simp]
-theorem rightTranslation_apply (a : A) (f : AddUCB A) (x : A) :
-    (rightTranslation a f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (x + a) := by
-  simp [rightTranslation]
+/-- The inverse of `L_a` is precomposition with `x ↦ a + x`. -/
+theorem coe_leftTranslation_symm (a : A) (f : AddUCB A) :
+    ((leftTranslation a).symm f : A →ᵇ ℝ) =
+      (f : A →ᵇ ℝ).compContinuous (ContinuousMap.addLeft a) :=
+  BoundedContinuousFunction.compContinuousₗᵢ_symm_apply ..
 
-@[simp]
-theorem toMultiplicativeAlgEquiv_leftTranslation (a : A) (f : AddUCB A) :
-    toMultiplicativeAlgEquiv A (leftTranslation a f) =
-      UCB.leftTranslation (Multiplicative.ofAdd a) (toMultiplicativeAlgEquiv A f) := by
-  simp [leftTranslation]
+theorem leftTranslation_symm_apply (a : A) (f : AddUCB A) (x : A) :
+    ((leftTranslation a).symm f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (a + x) :=
+  DFunLike.congr_fun (coe_leftTranslation_symm a f) x
 
-@[simp]
-theorem toMultiplicativeAlgEquiv_symm_leftTranslation (g : Multiplicative A)
-    (f : UCB (Multiplicative A)) :
-    (toMultiplicativeAlgEquiv A).symm (UCB.leftTranslation g f) =
-      leftTranslation g.toAdd ((toMultiplicativeAlgEquiv A).symm f) := by
-  apply (toMultiplicativeAlgEquiv A).injective
-  simp
-
-@[simp]
-theorem toMultiplicativeAlgEquiv_rightTranslation (a : A) (f : AddUCB A) :
-    toMultiplicativeAlgEquiv A (rightTranslation a f) =
-      UCB.rightTranslation (Multiplicative.ofAdd a) (toMultiplicativeAlgEquiv A f) := by
-  simp [rightTranslation]
-
-@[simp]
-theorem toMultiplicativeAlgEquiv_symm_rightTranslation (g : Multiplicative A)
-    (f : UCB (Multiplicative A)) :
-    (toMultiplicativeAlgEquiv A).symm (UCB.rightTranslation g f) =
-      rightTranslation g.toAdd ((toMultiplicativeAlgEquiv A).symm f) := by
-  apply (toMultiplicativeAlgEquiv A).injective
-  simp
-
-/-- Left translation by `0` is the identity. -/
-@[simp]
-theorem leftTranslation_zero : leftTranslation (0 : A) = 1 := by
-  ext
-  simp
-
-/-- Left translations compose according to addition in `A`. -/
-theorem leftTranslation_add (a b : A) :
-    leftTranslation (a + b) = leftTranslation a * leftTranslation b := by
-  ext
-  simp [neg_add_rev, add_assoc]
-
-/-- The inverse of left translation by `a` is left translation by `-a`. -/
 @[simp]
 theorem leftTranslation_symm (a : A) : (leftTranslation a).symm = leftTranslation (-a) := by
   ext
-  simp [leftTranslation]
+  simp [leftTranslation_symm_apply]
+
+@[simp]
+theorem leftTranslation_zero : leftTranslation (0 : A) = LinearIsometryEquiv.refl ℝ (AddUCB A) := by
+  ext
+  simp
+
+theorem leftTranslation_add (a b : A) :
+    leftTranslation (a + b) = leftTranslation a * leftTranslation b := by
+  ext
+  simp [add_assoc]
+
+theorem leftTranslation_neg (a : A) : leftTranslation (-a) = (leftTranslation a).symm :=
+  (leftTranslation_symm a).symm
 
 /-- Left translation preserves and reflects the pointwise order. -/
 @[simp]
 theorem leftTranslation_le_leftTranslation_iff {a : A} {f f' : AddUCB A} :
     leftTranslation a f ≤ leftTranslation a f' ↔ f ≤ f' := by
-  rw [← toMultiplicativeAlgEquiv_le_iff (A := A), toMultiplicativeAlgEquiv_leftTranslation,
-    toMultiplicativeAlgEquiv_leftTranslation, UCB.leftTranslation_le_leftTranslation_iff,
-    toMultiplicativeAlgEquiv_le_iff]
+  refine ⟨fun h => le_def.2 fun x => ?_, fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
+  simpa using le_def.1 h (a + x)
 
 /-- Left translation fixes the constant function `1`. -/
 @[simp]
@@ -360,31 +348,81 @@ theorem leftTranslation_apply_algebraMap (a : A) (c : ℝ) :
     leftTranslation a (algebraMap ℝ (AddUCB A) c) = algebraMap ℝ (AddUCB A) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
-/-- Right translation by `0` is the identity. -/
-@[simp]
-theorem rightTranslation_zero : rightTranslation (0 : A) = 1 := by
+/-- The left translates `L_u f` of a function `f` in `AddUCB A` tend to `f` in supremum norm as
+`u → 0`. -/
+theorem tendsto_leftTranslation_apply_nhds_zero (f : AddUCB A) :
+    Tendsto (fun u : A => leftTranslation u f) (𝓝 0) (𝓝 f) := by
+  simp only [tendsto_subtype_rng, coe_leftTranslation]
+  exact (mem_addUcb_iff_tendsto.1 f.property).comp (by simpa using tendsto_neg (0 : A))
+
+/-- The orbit map `a ↦ L_a f` of a function `f` in `AddUCB A` is continuous for the supremum
+norm. -/
+theorem continuous_leftTranslation_apply (f : AddUCB A) :
+    Continuous fun a : A => leftTranslation a f := by
+  refine continuous_iff_continuousAt.2 fun a => ?_
+  -- Near `a`, write `L_b f = L_a (L_(-a + b) f)`, where `-a + b → 0`.
+  have h₁ : Tendsto (fun b : A => -a + b) (𝓝 a) (𝓝 0) := by
+    simpa using (continuous_const_add (-a)).tendsto a
+  have h₂ := ((leftTranslation a).continuous.tendsto f).comp
+    ((tendsto_leftTranslation_apply_nhds_zero f).comp h₁)
+  refine h₂.congr fun b => ?_
   ext
   simp
 
-/-- Right translations compose according to addition in `A`. -/
+/-- Right translation `R_a`, where `(R_a f)(x) = f (x + a)`, as a linear isometry equivalence of
+`AddUCB A`. -/
+def rightTranslation (a : A) : AddUCB A ≃ₗᵢ[ℝ] AddUCB A :=
+  BoundedContinuousFunction.compContinuousₗᵢ (addUcb A)
+    (ContinuousMap.addRight a) (ContinuousMap.addRight (-a)) (by simp) (by simp)
+    (fun _ hf => compContinuous_addRight_mem_addUcb hf _)
+    (fun _ hf => compContinuous_addRight_mem_addUcb hf _)
+
+/-- The right translate `R_a f` is the precomposition of `f` with `x ↦ x + a`. -/
+theorem coe_rightTranslation (a : A) (f : AddUCB A) :
+    (rightTranslation a f : A →ᵇ ℝ) =
+      (f : A →ᵇ ℝ).compContinuous (ContinuousMap.addRight a) :=
+  BoundedContinuousFunction.compContinuousₗᵢ_apply ..
+
+@[simp]
+theorem rightTranslation_apply (a : A) (f : AddUCB A) (x : A) :
+    (rightTranslation a f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (x + a) :=
+  DFunLike.congr_fun (coe_rightTranslation a f) x
+
+/-- The inverse of `R_a` is precomposition with `x ↦ x + (-a)`. -/
+theorem coe_rightTranslation_symm (a : A) (f : AddUCB A) :
+    ((rightTranslation a).symm f : A →ᵇ ℝ) =
+      (f : A →ᵇ ℝ).compContinuous (ContinuousMap.addRight (-a)) :=
+  BoundedContinuousFunction.compContinuousₗᵢ_symm_apply ..
+
+theorem rightTranslation_symm_apply (a : A) (f : AddUCB A) (x : A) :
+    ((rightTranslation a).symm f : A →ᵇ ℝ) x = (f : A →ᵇ ℝ) (x + -a) :=
+  DFunLike.congr_fun (coe_rightTranslation_symm a f) x
+
+@[simp]
+theorem rightTranslation_symm (a : A) : (rightTranslation a).symm = rightTranslation (-a) := by
+  ext
+  simp [rightTranslation_symm_apply]
+
+@[simp]
+theorem rightTranslation_zero :
+    rightTranslation (0 : A) = LinearIsometryEquiv.refl ℝ (AddUCB A) := by
+  ext
+  simp
+
 theorem rightTranslation_add (a b : A) :
     rightTranslation (a + b) = rightTranslation a * rightTranslation b := by
   ext
   simp [add_assoc]
 
-/-- The inverse of right translation by `a` is right translation by `-a`. -/
-@[simp]
-theorem rightTranslation_symm (a : A) : (rightTranslation a).symm = rightTranslation (-a) := by
-  ext
-  simp [rightTranslation]
+theorem rightTranslation_neg (a : A) : rightTranslation (-a) = (rightTranslation a).symm :=
+  (rightTranslation_symm a).symm
 
 /-- Right translation preserves and reflects the pointwise order. -/
 @[simp]
 theorem rightTranslation_le_rightTranslation_iff {a : A} {f f' : AddUCB A} :
     rightTranslation a f ≤ rightTranslation a f' ↔ f ≤ f' := by
-  rw [← toMultiplicativeAlgEquiv_le_iff (A := A), toMultiplicativeAlgEquiv_rightTranslation,
-    toMultiplicativeAlgEquiv_rightTranslation, UCB.rightTranslation_le_rightTranslation_iff,
-    toMultiplicativeAlgEquiv_le_iff]
+  refine ⟨fun h => le_def.2 fun x => ?_, fun h => le_def.2 fun x => by simpa using le_def.1 h _⟩
+  simpa using le_def.1 h (x + -a)
 
 /-- Right translation fixes the constant function `1`. -/
 @[simp]
@@ -398,19 +436,6 @@ theorem rightTranslation_apply_algebraMap (a : A) (c : ℝ) :
     rightTranslation a (algebraMap ℝ (AddUCB A) c) = algebraMap ℝ (AddUCB A) c := by
   simp [Algebra.algebraMap_eq_smul_one]
 
-/-- The orbit map `a ↦ L_a f` of a function `f` in `AddUCB A` is continuous for the supremum
-norm. -/
-theorem continuous_leftTranslation_apply (f : AddUCB A) :
-    Continuous fun a : A => leftTranslation a f := by
-  have h : (fun a : A => leftTranslation a f) = fun a : A =>
-      (toMultiplicativeLinearIsometryEquiv A).symm
-        (UCB.leftTranslation (Multiplicative.ofAdd a) (toMultiplicativeAlgEquiv A f)) := by
-    ext a x
-    simp
-  rw [h]
-  exact (toMultiplicativeLinearIsometryEquiv A).symm.continuous.comp
-    ((UCB.continuous_leftTranslation_apply _).comp continuous_ofAdd)
-
 /-- Left and right translations of `AddUCB A` commute. -/
 theorem commute_leftTranslation_rightTranslation (a b : A) :
     Commute (leftTranslation a) (rightTranslation b) := by
@@ -423,25 +448,5 @@ theorem leftTranslation_rightTranslation (a b : A) (f : AddUCB A) :
   congr($(commute_leftTranslation_rightTranslation a b) f)
 
 end AddUCB
-
-end Additive
-
-namespace UCB
-
-@[simp]
-theorem toAdditiveAlgEquiv_leftTranslation (g : G) (f : UCB G) :
-    toAdditiveAlgEquiv G (leftTranslation g f) =
-      AddUCB.leftTranslation (Additive.ofMul g) (toAdditiveAlgEquiv G f) := by
-  ext
-  simp [toAdditiveAlgEquiv_apply]
-
-@[simp]
-theorem toAdditiveAlgEquiv_rightTranslation (g : G) (f : UCB G) :
-    toAdditiveAlgEquiv G (rightTranslation g f) =
-      AddUCB.rightTranslation (Additive.ofMul g) (toAdditiveAlgEquiv G f) := by
-  ext
-  simp [toAdditiveAlgEquiv_apply]
-
-end UCB
 
 end TauCeti
