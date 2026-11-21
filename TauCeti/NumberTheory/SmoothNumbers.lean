@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.SmoothNumbers
 public import TauCeti.NumberTheory.Padics.PadicValRat
 
@@ -18,9 +19,13 @@ in the finite set `S`. This file describes these numbers through `p`-adic valuat
   `p`-adic valuation zero at every prime `p ∉ S` exactly when its numerator (in absolute value)
   and its denominator are `S`-factored;
 * `TauCeti.prod_pow_padicValNat_eq_self_of_mem_factoredNumbers`: if `S` consists of primes, an
-  `S`-factored number is the product of the powers `p ^ v_p(n)` over `p ∈ S`.
+  `S`-factored number is the product of the powers `p ^ v_p(n)` over `p ∈ S`;
+* `TauCeti.hasSum_inv_factoredNumbers`: the reciprocals of the `S`-factored numbers sum to the
+  finite Euler product `∏_{p ∈ S prime} (1 - 1/p)⁻¹`.
 
-These are the arithmetic inputs for describing the rational `S`-units.
+The valuation results are the arithmetic inputs for describing the rational `S`-units. The
+reciprocal sum bounds harmonic sums over integers whose prime factors are restricted, as in the
+denominators of Selberg's sieve.
 -/
 
 public section
@@ -57,5 +62,25 @@ theorem prod_pow_padicValNat_eq_self_of_mem_factoredNumbers {S : Finset ℕ}
   rw [Finsupp.prod_of_support_subset _ (by simpa using hn.2) _ (fun _ _ ↦ pow_zero _)]
   exact Finset.prod_congr rfl fun p hp ↦ by
     rw [Nat.padicValNat_def, Nat.factorization_def n (hS p hp)]
+
+/-- The reciprocals of the `S`-factored numbers sum to the finite Euler product
+`∏_{p ∈ S prime} (1 - 1/p)⁻¹`. -/
+theorem hasSum_inv_factoredNumbers (S : Finset ℕ) :
+    HasSum (fun n : Nat.factoredNumbers S ↦ ((n : ℕ) : ℝ)⁻¹)
+      (∏ p ∈ S with p.Prime, (1 - (p : ℝ)⁻¹)⁻¹) := by
+  have hgeom (p n : ℕ) : (((p ^ n : ℕ) : ℝ))⁻¹ = (p : ℝ)⁻¹ ^ n := by
+    rw [Nat.cast_pow, inv_pow]
+  have hlt {p : ℕ} (hp : p.Prime) : (p : ℝ)⁻¹ < 1 :=
+    inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.one_lt)
+  obtain ⟨-, hsum⟩ := EulerProduct.summable_and_hasSum_factoredNumbers_prod_filter_prime_tsum
+    (f := fun n : ℕ ↦ (n : ℝ)⁻¹) (by simp) (fun {m n} _ ↦ by simp [mul_comm])
+    (fun {p} hp ↦ by
+      simpa only [hgeom p, norm_pow, norm_inv, Real.norm_natCast] using
+        summable_geometric_of_lt_one (by positivity) (hlt hp)) S
+  convert hsum using 1
+  refine Finset.prod_congr rfl fun p hp ↦ ?_
+  have hp := (Finset.mem_filter.mp hp).2
+  simp only [hgeom p]
+  exact (tsum_geometric_of_lt_one (by positivity) (hlt hp)).symm
 
 end TauCeti
