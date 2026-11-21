@@ -11,6 +11,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Integral.Pi
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The Hermite beta ensemble
@@ -50,6 +51,8 @@ ensemble is the centred Gaussian of variance `2 / β`.
 * `TauCeti.Probability.integrable_hermiteBetaWeight` and
   `TauCeti.Probability.hermiteBetaPartition_pos`: the partition function is finite and positive.
 * `TauCeti.Probability.isProbabilityMeasure_hermiteBetaEnsemble`.
+* `TauCeti.Probability.integral_hermiteBetaEnsemble_eq_integral_smul`: integrals against the
+  ensemble are integrals against its real density.
 * `TauCeti.Probability.measurePreserving_comp_perm_hermiteBetaEnsemble`: permutation invariance.
 * `TauCeti.Probability.hermiteBetaEnsemble_one_map_eval_zero`: for `n = 1` the ensemble is
   `gaussianReal 0 (2 / β)`.
@@ -224,7 +227,7 @@ theorem hermiteBetaWeight_one (β : ℝ) (x : Fin 1 → ℝ) :
 theorem hermiteBetaPartition_one (β : ℝ) : hermiteBetaPartition β 1 = √(4 * π / β) := by
   have h := (volume_preserving_funUnique (Fin 1) ℝ).integral_comp'
     (g := fun y ↦ rexp (-(β / 4) * y ^ 2))
-  rw [integral_gaussian, div_div_eq_mul_div, mul_comm] at h
+  rw [integral_gaussian, div_div_eq_mul_div, mul_comm π 4] at h
   rw [hermiteBetaPartition_def, funext (hermiteBetaWeight_one β)]
   exact h
 
@@ -250,12 +253,26 @@ theorem hermiteBetaPDFReal_nonneg (β : ℝ) (n : ℕ) (x : Fin n → ℝ) :
   mul_nonneg (inv_nonneg.2 (integral_nonneg (hermiteBetaWeight_nonneg β n)))
     (hermiteBetaWeight_nonneg β n x)
 
+/-- The normalized Hermite beta density is measurable. -/
+theorem measurable_hermiteBetaPDFReal (β : ℝ) (n : ℕ) : Measurable (hermiteBetaPDFReal β n) :=
+  (measurable_hermiteBetaWeight β n).const_mul _
+
+/-- The `ℝ≥0∞`-valued normalized Hermite beta density is measurable. -/
+theorem measurable_hermiteBetaPDF (β : ℝ) (n : ℕ) : Measurable (hermiteBetaPDF β n) :=
+  (measurable_hermiteBetaPDFReal β n).ennreal_ofReal
+
+/-- The real normalized Hermite beta density is invariant under permutations of the
+coordinates. -/
+@[simp]
+theorem hermiteBetaPDFReal_comp_perm (β : ℝ) (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (x : Fin n → ℝ) : hermiteBetaPDFReal β n (x ∘ σ) = hermiteBetaPDFReal β n x := by
+  rw [hermiteBetaPDFReal_def, hermiteBetaWeight_comp_perm, hermiteBetaPDFReal_def]
+
 /-- The normalized Hermite beta density is invariant under permutations of the coordinates. -/
 @[simp]
 theorem hermiteBetaPDF_comp_perm (β : ℝ) (n : ℕ) (σ : Equiv.Perm (Fin n)) (x : Fin n → ℝ) :
     hermiteBetaPDF β n (x ∘ σ) = hermiteBetaPDF β n x := by
-  rw [hermiteBetaPDF_def, hermiteBetaPDFReal_def, hermiteBetaWeight_comp_perm,
-    ← hermiteBetaPDFReal_def, ← hermiteBetaPDF_def]
+  rw [hermiteBetaPDF_def, hermiteBetaPDFReal_comp_perm, hermiteBetaPDF_def]
 
 /-- For `β > 0` the normalized Hermite beta density is integrable. -/
 theorem integrable_hermiteBetaPDFReal (hβ : 0 < β) (n : ℕ) :
@@ -295,21 +312,34 @@ theorem isProbabilityMeasure_hermiteBetaEnsemble (hβ : 0 < β) (n : ℕ) :
   ⟨by rw [hermiteBetaEnsemble_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
     lintegral_hermiteBetaPDF hβ n]⟩
 
+/-- Integrating against the Hermite beta ensemble is integrating against its real density with
+respect to Lebesgue measure. -/
+theorem integral_hermiteBetaEnsemble_eq_integral_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (β : ℝ) (n : ℕ) (f : (Fin n → ℝ) → E) :
+    ∫ x, f x ∂hermiteBetaEnsemble β n = ∫ x, hermiteBetaPDFReal β n x • f x := by
+  rw [hermiteBetaEnsemble_def, integral_withDensity_eq_integral_toReal_smul
+    (measurable_hermiteBetaPDF β n) (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp_rw [hermiteBetaPDF_def, ENNReal.toReal_ofReal (hermiteBetaPDFReal_nonneg β n _)]
+
 /-- The Hermite beta ensemble is invariant under permutations of the coordinates. -/
 theorem measurePreserving_comp_perm_hermiteBetaEnsemble (β : ℝ) (n : ℕ)
     (σ : Equiv.Perm (Fin n)) :
     MeasurePreserving (fun x : Fin n → ℝ ↦ x ∘ σ) (hermiteBetaEnsemble β n)
       (hermiteBetaEnsemble β n) := by
   let e : (Fin n → ℝ) ≃ᵐ (Fin n → ℝ) := MeasurableEquiv.arrowCongr' σ.symm (.refl ℝ)
-  have he : ⇑e = fun x ↦ x ∘ σ := rfl
+  have he : ⇑e = fun x ↦ x ∘ σ := by
+    ext x i
+    rw [← MeasurableEquiv.coe_toEquiv]
+    simp [e, MeasurableEquiv.arrowCongr']
   have hvol : MeasurePreserving e volume volume :=
     volume_preserving_arrowCongr' σ.symm (.refl ℝ) (.id volume)
+  have hpdf : hermiteBetaPDF β n ∘ e = hermiteBetaPDF β n := by
+    funext x
+    simp [he]
   rw [← he]
-  refine ⟨e.measurable, Measure.ext fun s hs ↦ ?_⟩
-  rw [Measure.map_apply e.measurable hs, hermiteBetaEnsemble_def,
-    withDensity_apply _ (e.measurable hs), withDensity_apply _ hs,
-    ← hvol.setLIntegral_comp_preimage_emb e.measurableEmbedding (hermiteBetaPDF β n) s]
-  simp only [he, hermiteBetaPDF_comp_perm]
+  refine ⟨e.measurable, ?_⟩
+  conv_lhs => rw [hermiteBetaEnsemble_def, ← hpdf]
+  rw [e.measurableEmbedding.map_withDensity_comp, hvol.map_eq, hermiteBetaEnsemble_def]
 
 /-- **The one-point Hermite beta ensemble is Gaussian**: for `β > 0` and `n = 1` the ensemble is
 the centred Gaussian of variance `2 / β`, whose density is proportional to `exp (-β x² / 4)`. -/
@@ -319,19 +349,16 @@ theorem hermiteBetaEnsemble_one_map_eval_zero (hβ : 0 < β) :
   have he : ⇑e = fun x ↦ x 0 := rfl
   have hvol : MeasurePreserving e volume volume := volume_preserving_funUnique (Fin 1) ℝ
   have hv : (2 / β).toNNReal ≠ 0 := by simpa using hβ
-  have hpdf (x : Fin 1 → ℝ) : hermiteBetaPDF β 1 x = gaussianPDF 0 (2 / β).toNNReal (e x) := by
-    rw [hermiteBetaPDF_def, gaussianPDF, hermiteBetaPDFReal_def, hermiteBetaPartition_one,
-      hermiteBetaWeight_one, gaussianPDFReal, Real.coe_toNNReal _ (by positivity), he, sub_zero]
-    congr 3
-    · congr 1
+  have hpdf : hermiteBetaPDF β 1 = gaussianPDF 0 (2 / β).toNNReal ∘ e := by
+    funext x
+    have hvar : 4 * π / β = 2 * π * (2 / β) := by ring
+    have hexp : -(β / 4) * x 0 ^ 2 = -x 0 ^ 2 / (2 * (2 / β)) := by
+      field_simp
       ring
-    · field_simp
-      ring
-  rw [← he]
-  refine Measure.ext fun s hs ↦ ?_
-  rw [Measure.map_apply e.measurable hs, hermiteBetaEnsemble_def,
-    withDensity_apply _ (e.measurable hs), gaussianReal_of_var_ne_zero 0 hv,
-    withDensity_apply _ hs, ← hvol.setLIntegral_comp_preimage_emb e.measurableEmbedding _ s]
-  simp only [hpdf]
+    rw [Function.comp_apply, hermiteBetaPDF_def, gaussianPDF, hermiteBetaPDFReal_def,
+      hermiteBetaPartition_one, hermiteBetaWeight_one, gaussianPDFReal,
+      Real.coe_toNNReal _ (by positivity), he, sub_zero, hvar, hexp]
+  rw [← he, hermiteBetaEnsemble_def, hpdf, e.measurableEmbedding.map_withDensity_comp,
+    hvol.map_eq, gaussianReal_of_var_ne_zero 0 hv]
 
 end TauCeti.Probability
