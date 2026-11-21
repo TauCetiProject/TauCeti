@@ -120,7 +120,7 @@ On a finite product `ι → R`, a nonzero continuous linear map is nonzero at so
 every value (`ContinuousLinearMap.norm_apply_le_card_mul_norm`). Replacing one coordinate by a
 functional is injective over a semiring with cancellative addition if its coefficient there is
 right-regular (`ContinuousLinearMap.pi_update_injective`), and a continuous linear equivalence over
-a topological ring if that coefficient is a unit (`ContinuousLinearMap.exists_pi_update_equiv`).
+a semitopological ring if that coefficient is a unit (`ContinuousLinearMap.exists_pi_update_equiv`).
 The coordinate arguments are adapted from
 [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
@@ -662,7 +662,7 @@ theorem pi_update_injective [Semiring R] [IsLeftCancelAdd R] [TopologicalSpace R
 
 /-- Replacing one coordinate by a functional whose coefficient at that coordinate is a unit
 is a continuous linear equivalence. -/
-theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
+theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [IsSemitopologicalRing R]
     (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1))) :
     ∃ e : (ι → R) ≃L[R] (ι → R),
       (e : (ι → R) →L[R] (ι → R)) = pi fun m : ι ↦ if m = i then α else proj m := by
@@ -671,7 +671,8 @@ theorem exists_pi_update_equiv [Ring R] [TopologicalSpace R] [IsTopologicalRing 
   set β : (ι → R) →L[R] R := α - proj i
   have h : IsUnit (1 + (β : Module.Dual R (ι → R)) (Pi.single i 1)) := by simpa [β] using hα
   have hcont (w : ι → R) : Continuous (LinearMap.transvection (β : Module.Dual R (ι → R)) w) := by
-    have : Continuous fun v ↦ v + β v • w := continuous_id.add (β.continuous.smul continuous_const)
+    have : Continuous fun v ↦ v + β v • w :=
+      continuous_id.add <| continuous_pi fun m ↦ β.continuous.mul_const (w m)
     exact this.congr fun v ↦ (LinearMap.transvection.apply _ _ v).symm
   refine ⟨⟨LinearEquiv.dilatransvection h, hcont _, hcont _⟩, ?_⟩
   ext v m
