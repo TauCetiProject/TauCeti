@@ -18,7 +18,7 @@ On a finite-dimensional real inner product space `E`, `TauCeti.bilinFormToEnd` i
 equivalence `BilinForm ℝ E ≃ₗ[ℝ] Module.End ℝ E` identifying each bilinear form `B` with the
 endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowering
 `A ↦ (innerₗ E).comp A`. It carries `innerₗ E` to `LinearMap.id`, converts `B.IsSymm` to
-`(B♯).IsSymmetric`, identifies `LinearMap.trace` with `TauCeti.bilinFormTrace`, pulls back
+`(B♯).IsSymmetric`, identifies `LinearMap.trace` with `LinearMap.BilinMap.metricTrace`, pulls back
 `B.compl₁₂ f g` via `LinearMap.adjoint g`, and is equivariant under linear isometric equivalences.
 
 ## Main definitions
@@ -87,11 +87,12 @@ open TauCeti
     (innerₗ E).comp (bilinFormToEnd B) = B := by
   rw [← (bilinFormToEnd B).bilinFormToEnd_symm_apply, LinearEquiv.symm_apply_apply]
 
-/-- The operator trace of `bilinFormToEnd B` equals the metric trace `bilinFormTrace B`. -/
+/-- The operator trace of `bilinFormToEnd B` equals the metric trace
+`LinearMap.BilinMap.metricTrace B`. -/
 @[simp] theorem trace_bilinFormToEnd (B : BilinForm ℝ E) :
-    LinearMap.trace ℝ E (bilinFormToEnd B) = bilinFormTrace B := by
+    LinearMap.trace ℝ E (bilinFormToEnd B) = LinearMap.BilinMap.metricTrace B := by
   let b := stdOrthonormalBasis ℝ E
-  rw [LinearMap.trace_eq_sum_inner _ b, bilinFormTrace_eq_sum B b]
+  rw [LinearMap.trace_eq_sum_inner _ b, LinearMap.BilinMap.metricTrace_eq_sum B b]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm, B.inner_bilinFormToEnd_left]
 
 /-- Metric index raising pulls back `B.compl₁₂ f g` via `LinearMap.adjoint g`. -/

@@ -62,7 +62,7 @@ theorem scalarCurvature_eq_trace_inverse_ricciTensor
   have hRic : cov.ricciTensor x = (CovariantDerivative.leviCivitaConnection I M).ricciTensor x := by
     ext u v
     simp only [CovariantDerivative.ricciTensor_apply, hcurv]
-  have htr := TauCeti.traceCLM_inverse_comp_eq_bilinFormTrace
+  have htr := ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace
     (g.toNondegenerateMetric x) (hg x) (cov.ricciTensor x).toContinuousBilinearMap
   -- Read the trace in the tangent fibre to apply the intrinsic metric contraction law.
   change g.scalarCurvature x = TauCeti.traceCLM ℝ (TangentSpace I x)

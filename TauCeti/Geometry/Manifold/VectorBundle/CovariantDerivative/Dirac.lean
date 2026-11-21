@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
@@ -20,8 +20,9 @@ Let `V` be a vector bundle over a Riemannian manifold `M`, with a connection `�
 `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ`,
 
 for any orthonormal basis `eᵢ` of the tangent space (`CovariantDerivative.diracOperator_eq_sum`).
-The contraction is against the canonical covariant tensor
-`InnerProductSpace.canonicalCovariantTensor`, so the definition involves no choice of frame.
+The contraction is the metric trace `LinearMap.BilinMap.metricTrace`, against the canonical
+covariant tensor `InnerProductSpace.canonicalCovariantTensor`, so the definition involves no
+choice of frame.
 
 When `V` is a Hermitian Clifford module, so that `c(v)² = -‖v‖²` and each `c(v)` is
 skew-adjoint, and `∇` is compatible with `c` and the Levi-Civita connection, this is the Dirac
@@ -86,13 +87,12 @@ multiplication `c` at `x`: the metric contraction of the bilinear map `(u, w) �
 on the tangent space. In an orthonormal basis it is the sum `∑ᵢ c(eᵢ) ∇_{eᵢ} σ`
 (`diracOperator_eq_sum`). -/
 def diracOperator (σ : Π y : M, V y) (x : M) : V x :=
-  TensorProduct.lift.equiv (.id ℝ) (TangentSpace I x) (TangentSpace I x) (V x)
+  LinearMap.BilinMap.metricTrace
     (LinearMap.mk₂ ℝ (fun u w ↦ c x u (cov σ x w))
       (fun u u' w ↦ by simp only [map_add, add_apply])
       (fun a u w ↦ by simp only [map_smul, smul_apply])
       (fun u w w' ↦ by simp only [map_add])
       (fun a u w ↦ by simp only [map_smul]))
-    (InnerProductSpace.canonicalCovariantTensor (TangentSpace I x))
 
 /-- **The Dirac operator in an orthonormal frame.** For every orthonormal basis `eᵢ` of the
 tangent space at `x`, `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ`. In particular the sum does not depend on the
@@ -100,8 +100,8 @@ basis. -/
 theorem diracOperator_eq_sum (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     cov.diracOperator c σ x = ∑ i, c x (b i) (cov σ x (b i)) := by
-  rw [diracOperator, InnerProductSpace.canonicalCovariantTensor_eq_sum _ b, map_sum]
-  simp only [TensorProduct.lift.equiv_apply, LinearMap.mk₂_apply]
+  rw [diracOperator, LinearMap.BilinMap.metricTrace_eq_sum _ b]
+  simp only [LinearMap.mk₂_apply]
 
 /-- The Dirac operator of a section whose covariant derivative vanishes at `x` vanishes at `x`.
 In particular `D 0 = 0`. -/

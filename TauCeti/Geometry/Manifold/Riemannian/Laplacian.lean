@@ -10,12 +10,14 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
@@ -34,7 +36,9 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
 covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
 and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
-trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
+trace formula makes the relationship between the Laplacian and the Hessian explicit, and
+`laplaceBeltrami_eq_metricTrace_hessianForm` identifies the Laplacian with the metric trace of the
+Hessian as a continuous bilinear form `hessianForm`. The operator
 laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
 real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
 finite-dimensional normed space whose metric is a field of bilinear forms `g`, the Hessian in
@@ -173,6 +177,24 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
+
+/-- The scalar Hessian of `f` at `x` as a continuous bilinear form on the tangent space,
+`(v, w) ↦ ⟪∇_v grad f, w⟫`; its values are `TauCeti.Manifold.hessian` (`hessianForm_apply`). -/
+noncomputable def hessianForm (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
+  (innerSL ℝ).comp (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x)
+
+@[simp]
+theorem hessianForm_apply (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
+    hessianForm I f x v w = hessian I f x v w := by
+  rw [hessianForm, ContinuousLinearMap.comp_apply, innerSL_apply_apply, hessian_def]
 
 section HessianSymmetry
 
@@ -770,6 +792,23 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     hessian I f x v 0 = 0 := by
   simp only [hessian, inner_zero_right]
 
+/-- The Laplace–Beltrami operator is the metric trace of the Hessian form. -/
+theorem laplaceBeltrami_eq_metricTrace_hessianForm (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (x : M) :
+    laplaceBeltrami I f x =
+      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (hessianForm I f x)) := by
+  -- The Hessian form is the metric lowering of the covariant derivative of the gradient.
+  have h : ContinuousLinearMap.toLinearMap₁₂ (hessianForm I f x) =
+      (innerₗ (TangentSpace I x)).comp
+        (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x).toLinearMap :=
+    LinearMap.ext₂ fun v w ↦ by
+      rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hessianForm_apply, hessian_def,
+        LinearMap.comp_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
+  rw [laplaceBeltrami_def, divergence_def, h, ← LinearMap.BilinForm.trace_bilinFormToEnd,
+    LinearMap.bilinFormToEnd_innerₗ_comp]
+
 /-- The Laplace–Beltrami operator is the trace of the scalar Hessian in every orthonormal basis. -/
 theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -778,9 +817,8 @@ theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*
     {ι : Type*} [Fintype ι] (f : M → ℝ) (x : M)
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     laplaceBeltrami I f x = ∑ i, hessian I f x (b i) (b i) := by
-  rw [laplaceBeltrami, divergence, LinearMap.trace_eq_sum_inner _ b]
-  simp only [hessian, real_inner_comm]
-  rfl
+  rw [laplaceBeltrami_eq_metricTrace_hessianForm, LinearMap.BilinMap.metricTrace_eq_sum _ b]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hessianForm_apply]
 
 /-- The squared trace of the Hessian is at most the dimension times its squared norm,
 expressed in any orthonormal basis. This includes dimension zero. -/

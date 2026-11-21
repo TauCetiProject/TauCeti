@@ -905,7 +905,7 @@ the squared Hilbert-Schmidt norm of `ricci r` in any orthonormal basis `b`:
 theorem IsAlgebraicCurvature.scalar_reactionTensor_apply_orthonormalBasis {ι : Type*} [Fintype ι]
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (b : OrthonormalBasis ι ℝ V) :
     scalar (FourTensor.reactionTensor r) = 2 * ∑ p, ∑ q, ricci r (b p) (b q) ^ 2 := by
-  rw [scalar_apply, bilinFormTrace_eq_sum _ b]
+  rw [scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b]
   simp_rw [hr.ricci_reactionTensor_apply_orthonormalBasis b, ← Finset.mul_sum]
   congr 1
   rw [Finset.sum_comm]

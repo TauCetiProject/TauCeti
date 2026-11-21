@@ -36,7 +36,7 @@ second covariant derivative `∇²G(u, v) = ∇_u ∇_V G - ∇_{∇_u V} G`
   the third covariant derivative of `f` is symmetric in its last two slots.
 * The Ricci identity `∇²G(u, v) - ∇²G(v, u) = R(u, v) G` moves the traced direction past the
   free one, and the trace of `∇_w Hess f` is `d(Δ f)(w)`
-  (`CovariantDerivative.IsMetricCompatible.mvfderiv_bilinFormTrace`). Together they give the
+  (`CovariantDerivative.IsMetricCompatible.mvfderiv_metricTrace`). Together they give the
   contracted identity `∑ᵢ ⟨∇²G(eᵢ, eᵢ), w⟩ = d(Δ f)(w) + Ric(w, G)`, which says that the rough
   Laplacian of `grad f` is `grad Δ f + Ric(grad f)`.
 
@@ -79,23 +79,12 @@ section Gradient
 
 variable {f : M → ℝ}
 
-/-- The Hessian of `f` at `y` as a continuous bilinear form, `(v, w) ↦ ⟪∇_v grad f, w⟫`. -/
-private def hessianForm (f : M → ℝ) (y : M) :
-    TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ :=
-  (innerSL ℝ : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ).comp
-    (CovariantDerivative.leviCivitaConnection I M (mgradient I f) y)
-
-omit [T2Space M] in
-private theorem hessianForm_apply (f : M → ℝ) (y : M) (v w : TangentSpace I y) :
-    hessianForm f y v w = hessian I f y v w := by
-  simp [hessianForm, hessian_def]
-
 omit [T2Space M] in
 /-- The Hessian of a smooth function pairs vector fields differentiable at `x` to a function
 differentiable at `x`. -/
 private theorem mdifferentiableAt_hessianForm_apply (hf : ContMDiff I 𝓘(ℝ) ∞ f) {x : M}
     {σ τ : Π y : M, TangentSpace I y} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
-    MDiffAt (fun y ↦ hessianForm f y (σ y) (τ y)) x := by
+    MDiffAt (fun y ↦ hessianForm I f y (σ y) (τ y)) x := by
   let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   set cov := CovariantDerivative.leviCivitaConnection I M
   have hG : CMDiff ∞ (T% (mgradient I f)) := contMDiff_mgradient hf
@@ -105,7 +94,7 @@ private theorem mdifferentiableAt_hessianForm_apply (hf : ContMDiff I 𝓘(ℝ) 
       hG.contMDiffOn
   have hGσ : MDiffAt (T% (fun y ↦ cov (mgradient I f) y (σ y))) x :=
     ((hhom.contMDiffAt Filter.univ_mem).mdifferentiableAt (by simp)).clm_bundle_apply hσ
-  simp only [hessianForm, ContinuousLinearMap.coe_comp, Function.comp_apply, innerSL_apply_apply]
+  simp only [hessianForm_apply, hessian_def]
   exact mdifferentiableAt_inner hGσ hτ
 
 /-- Pairing the second covariant derivative of `grad f` with a vector is the covariant derivative
@@ -114,7 +103,7 @@ private theorem inner_secondCovariantDerivative_mgradient_eq (hf : ContMDiff I �
     (x : M) (u v w : TangentSpace I x) :
     letI cov := CovariantDerivative.leviCivitaConnection I M
     ⟪cov.secondCovariantDerivative cov (mgradient I f) x u v, w⟫_ℝ =
-      cov.derivBilinearTensor (hessianForm f) x v w u := by
+      cov.derivBilinearTensor (hessianForm I f) x v w u := by
   obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
   obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   have hWd : MDiffAt (T% W) x := hW.mdifferentiable (by simp) x
@@ -143,7 +132,7 @@ theorem sum_inner_secondCovariantDerivative_mgradient_self (hf : ContMDiff I �
   -- Move the traced direction past `w` by symmetry and the Ricci identity.
   have hswap (i : ι) :
       ⟪cov.secondCovariantDerivative cov (mgradient I f) x (b i) (b i), w⟫_ℝ =
-        cov.derivBilinearTensor (hessianForm f) x (b i) (b i) w +
+        cov.derivBilinearTensor (hessianForm I f) x (b i) (b i) w +
           ⟪b i, cov.curvatureTensor x (b i) w (mgradient I f x)⟫_ℝ := by
     have hR := cov.secondCovariantDerivative_sub_swap_of_isTorsionFree cov ht hG x (b i) w
     simp only [cov] at hR ⊢
@@ -152,13 +141,10 @@ theorem sum_inner_secondCovariantDerivative_mgradient_self (hf : ContMDiff I �
       real_inner_comm (b i), real_inner_comm (b i)]
     ring
   -- The trace of `∇_w Hess f` is `d(Δ f)(w)`.
-  have hlap : (fun y ↦ TauCeti.bilinFormTrace
-      (ContinuousLinearMap.toLinearMap₁₂ (hessianForm (I := I) f y))) = laplaceBeltrami I f := by
-    funext y
-    rw [TauCeti.bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I y)),
-      laplaceBeltrami_eq_sum_hessian I f y (stdOrthonormalBasis ℝ (TangentSpace I y))]
-    simp [hessianForm_apply]
-  have htr := hcov.mvfderiv_bilinFormTrace
+  have hlap : (fun y ↦ LinearMap.BilinMap.metricTrace
+      (ContinuousLinearMap.toLinearMap₁₂ (hessianForm I f y))) = laplaceBeltrami I f :=
+    funext fun y ↦ (laplaceBeltrami_eq_metricTrace_hessianForm I f y).symm
+  have htr := hcov.mvfderiv_metricTrace
     (fun _ _ hσ hτ ↦ mdifferentiableAt_hessianForm_apply hf hσ hτ) b w
   rw [hlap] at htr
   rw [Finset.sum_congr rfl fun i _ ↦ hswap i, Finset.sum_add_distrib, ← htr,
