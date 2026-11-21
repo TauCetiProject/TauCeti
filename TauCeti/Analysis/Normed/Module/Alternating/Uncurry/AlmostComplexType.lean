@@ -37,7 +37,8 @@ of type `(p,q)` has components of these four types only, and `N` is the Nijenhui
 Alternating the interior products `v ↦ ι_{A v} ω` of a form `ω` gives the derivation of `A` on
 `ω`. For `A = id` and `A = J` this yields the Euler identities: the alternation of
 `v ↦ ι_v ω ∓ I • ι_{J v} ω` is `2 p • ω`, respectively `2 q • ω`, for `ω` of type `(p,q)`. They
-recover a form from its contractions with `(1,0)`-, respectively `(0,1)`-vectors.
+recover a form from its contractions with `(1,0)`-vectors when `p > 0`, respectively
+`(0,1)`-vectors when `q > 0`.
 
 ## Main declarations
 

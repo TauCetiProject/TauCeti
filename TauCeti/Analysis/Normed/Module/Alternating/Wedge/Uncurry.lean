@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
+public import TauCeti.Analysis.Normed.Module.Alternating.Basic
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -34,7 +35,7 @@ alternatization is absorbed into the outer one
 * `ContinuousAlternatingMap.alternatizeUncurryFin_pairedWedgeCLM_comp_apply`: the identity for
   `v ↦ φ ∧ g v`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply`: alternatizing `v ↦ a v • ψ`
-  for a real or complex covector `a` gives the wedge `a ∧ ψ`.
+  for a covector `a` valued in a normed real algebra gives the wedge `a ∧ ψ`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply_eq_wedge`: the same identity
   for a real-valued form `ψ`, stated with the real wedge.
 -/
@@ -181,13 +182,14 @@ theorem alternatizeUncurryFin_pairedWedgeCLM_comp_apply (μ : F₁ →L[ℝ] F�
   exacts [(hcast₁ i).symm, (hcast₂ i).symm]
 
 /-- Alternatizing the linear family `v ↦ a v • ψ` for a covector `a` with values in a normed
-algebra `𝕜` over `ℝ` acting on the coefficients of `ψ` gives the wedge `a ∧ ψ` of `a`, regarded as
-a one-form, with `ψ`, paired by scalar multiplication. For `𝕜 = ℝ` this identifies the term
-`dc ∧ ω` in the Leibniz rule `TauCeti.extDerivWithin_function_smul` with the paired wedge; for
-`𝕜 = ℂ` it covers complex covectors such as the coordinate forms `dz_j` acting on
+algebra `𝕜` over `ℝ` with a bounded action on the coefficients of `ψ` gives the wedge `a ∧ ψ` of
+`a`, regarded as a one-form, with `ψ`, paired by scalar multiplication. For `𝕜 = ℝ` this identifies
+the term `dc ∧ ω` in the Leibniz rule `TauCeti.extDerivWithin_function_smul` with the paired wedge;
+for `𝕜 = ℂ` it covers complex covectors such as the coordinate forms `dz_j` acting on
 complex-valued forms. The degree `1 + l` is identified with `l + 1` by `Fin.cast`. -/
-theorem alternatizeUncurryFin_smulRight_apply {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedSpace 𝕜 F₂] [IsScalarTower ℝ 𝕜 F₂] (a : E →L[ℝ] 𝕜) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
+theorem alternatizeUncurryFin_smulRight_apply {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜]
+    [Module 𝕜 F₂] [IsBoundedSMul 𝕜 F₂] [IsScalarTower ℝ 𝕜 F₂]
+    (a : E →L[ℝ] 𝕜) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
     (v : Fin (l + 1) → E) :
     alternatizeUncurryFin (a.smulRight ψ) v =
       pairedWedge (ContinuousLinearMap.lsmul ℝ 𝕜) (ContinuousLinearMap.lsmul ℝ 𝕜).continuous₂
