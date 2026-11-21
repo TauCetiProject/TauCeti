@@ -99,6 +99,18 @@ theorem comap_affineBlowupι_eq_ofIdealTop {a : R} (S : Type u) [CommRing S] [Al
     ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.hom_comp, ← Ideal.map_map, CommRingCat.hom_ofHom,
     Ideal.map_algebraMap_affineBlowup (S := S) ha, Ideal.map_span, Set.image_singleton]
 
+/-- **Pullback of an ideal along an affine blowup chart.** For an ideal `J` of `R` and `a ∈ I`,
+the inverse image of `V(J)` along `Spec R[I/a] ⟶ Proj R[It] ⟶ Spec R` is the zero scheme of the
+extended ideal `J · R[I/a]`. -/
+theorem comap_affineBlowupι_toSpecCoeff {a : R} (S : Type u) [CommRing S] [Algebra R S]
+    [IsLocalization.Away a S] (ha : a ∈ I) (J : Ideal R) :
+    ((ofIdealTop (J.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
+        (Proj.toSpecCoeff (grade I))).comap (affineBlowupι S ha) =
+      ofIdealTop ((J.map (algebraMap R (I.affineBlowup a S))).map
+        (Scheme.ΓSpecIso (.of (I.affineBlowup a S))).inv.hom) := by
+  rw [← comap_comp, toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero,
+    comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom]
+
 variable (I) in
 /-- **The exceptional divisor is an effective Cartier divisor.** The inverse image of the centre
 `V(I)` under the blowup `Proj R[It] ⟶ Spec R` is an effective Cartier divisor on `Proj R[It]`. -/
@@ -154,11 +166,36 @@ theorem isIso_toSpecZero_reesAlgebra_span_singleton {a : R} (ha : IsSMulRegular 
     IsIso (Proj.toSpecZero (grade (Ideal.span {a})) ≫
       Spec.map (gradeZeroEquiv (Ideal.span {a})).toCommRingCatIso.hom) := by
   rw [isIso_toSpecZero_reesAlgebra_iff, Ideal.map_span, Set.image_singleton]
-  have h := Scheme.Hom.isEffectiveCartier_ofIdealTop_span_appTop (𝟙 (Spec (.of R)))
-    ((isSMulRegular_map_iff (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv a).mpr ha)
-  rwa [Scheme.Hom.id_appTop] at h
+  exact isEffectiveCartier_ofIdealTop_span_ΓSpecIso_inv ha
 
 end TauCeti.AlgebraicGeometry
+
+namespace Ideal
+
+open AlgebraicGeometry AlgebraicGeometry.Scheme.IdealSheafData TauCeti TauCeti.AlgebraicGeometry
+
+/-- On the affine blowup `Proj R[It] ⟶ Spec R` along an arbitrary ideal `I`, the inverse image of
+any principal effective Cartier divisor `V(d)` (with `d` regular in `R`) is again an effective
+Cartier divisor, with equation `d` on every affine blowup chart `Spec R[I/a]`. -/
+theorem isEffectiveCartier_comap_toSpecCoeff_span_singleton {R : Type u} [CommRing R]
+    (I : Ideal R) {d : R} (hd : IsSMulRegular R d) :
+    ((ofIdealTop (Ideal.span {(Scheme.ΓSpecIso (.of R)).inv d})).comap
+      (Proj.toSpecCoeff (grade I))).IsEffectiveCartier := by
+  have hs : Ideal.span (Set.range ((↑) : I → R)) = I := by
+    rw [Subtype.range_coe, Ideal.span_eq]
+  rw [isEffectiveCartier_iff_exists_isOpenImmersion]
+  intro x
+  obtain ⟨⟨a, ha⟩, hx⟩ := TopologicalSpace.Opens.mem_iSup.mp
+    ((iSup_opensRange_affineBlowupι hs).ge (Set.mem_univ x))
+  let B := I.affineBlowup a (Localization.Away a)
+  refine ⟨_, inferInstance, affineBlowupι (Localization.Away a) ha, inferInstance, hx,
+    (Scheme.ΓSpecIso (.of B)).inv (algebraMap R B d),
+    Scheme.isSMulRegular_ΓSpecIso_inv (Ideal.isSMulRegular_algebraMap_affineBlowup hd), ?_⟩
+  rw [← Set.image_singleton, ← Ideal.map_span,
+    comap_affineBlowupι_toSpecCoeff (Localization.Away a) ha (Ideal.span {d})]
+  simp only [Ideal.map_span, Set.image_singleton, B]
+
+end Ideal
 
 /-! ### The blowup of a scheme along an ideal sheaf -/
 
@@ -178,6 +215,20 @@ theorem comap_blowupChart_comap_blowupToBase {U : X.Opens} (hU : IsAffineOpen U)
         (Proj.toSpecCoeff (grade (I.ideal ⟨U, hU⟩))) := by
   rw [← comap_comp, blowupChart_blowupToBase, comap_comp, comap_fromSpec_eq_ofIdealTop]
 
+/-- **Pullback of an ideal sheaf to an affine blowup chart.** Over an affine open `U` of `X` and
+`a ∈ I(U)`, pulling back an arbitrary ideal sheaf `L` on `X` to the chart `Spec Γ(X, U)[I(U)/a]`
+extends `L(U)` along `Γ(X, U) → Γ(X, U)[I(U)/a]`. -/
+theorem comap_affineBlowupι_blowupChart {I L : X.IdealSheafData} {U : X.Opens}
+    (hU : IsAffineOpen U) {a : Γ(X, U)} (S : Type u) [CommRing S] [Algebra Γ(X, U) S]
+    [IsLocalization.Away a S] (ha : a ∈ I.ideal ⟨U, hU⟩) :
+    (L.comap I.blowupToBase).comap (affineBlowupι S ha ≫ I.blowupChart hU) =
+      ofIdealTop (((L.ideal ⟨U, hU⟩).map (algebraMap Γ(X, U)
+          ((I.ideal ⟨U, hU⟩).affineBlowup a S))).map
+        (Scheme.ΓSpecIso (.of ((I.ideal ⟨U, hU⟩).affineBlowup a S))).inv.hom) := by
+  rw [comap_comp, ← comap_comp L (I.blowupChart hU) I.blowupToBase, blowupChart_blowupToBase,
+    comap_comp, comap_fromSpec_eq_ofIdealTop]
+  exact comap_affineBlowupι_toSpecCoeff S ha (L.ideal ⟨U, hU⟩)
+
 /-- **The exceptional divisor is an effective Cartier divisor.** The inverse image of the centre
 `V(I)` under the blowup `Bl_I X ⟶ X` along an arbitrary ideal sheaf `I` is an effective Cartier
 divisor on `Bl_I X`. -/
@@ -190,6 +241,22 @@ theorem isEffectiveCartier_comap_blowupToBase : (I.comap I.blowupToBase).IsEffec
     exact hxU
   · rw [comap_blowupChart_comap_blowupToBase, toSpecCoeff_reesAlgebra]
     exact isEffectiveCartier_comap_toSpecZero_reesAlgebra (I.ideal ⟨U, hU⟩)
+
+/-- **Pullback of an effective Cartier divisor along an arbitrary blowup.** For any scheme `X`,
+any ideal sheaf `I`, and any effective Cartier divisor `D` on `X`, the inverse image
+`D.comap I.blowupToBase` on `Bl_I X` is again an effective Cartier divisor. No flatness,
+integrality, reducedness, or Noetherian assumption is needed. -/
+theorem IsEffectiveCartier.comap_blowupToBase {D : X.IdealSheafData} (hD : D.IsEffectiveCartier)
+    (I : X.IdealSheafData) : (D.comap I.blowupToBase).IsEffectiveCartier := by
+  refine isEffectiveCartier_of_forall_exists_isOpenImmersion _ fun x ↦ ?_
+  obtain ⟨U, hxU, d, hd, hDd⟩ := (isEffectiveCartier_iff D).mp hD (I.blowupToBase x)
+  have hU : IsAffineOpen U.val := U.property
+  refine ⟨_, I.blowupChart hU, inferInstance, ?_, ?_⟩
+  · rw [← Scheme.Hom.coe_opensRange, opensRange_blowupChart]
+    exact hxU
+  · rw [← comap_comp, blowupChart_blowupToBase, comap_comp, comap_fromSpec_eq_ofIdealTop, hDd,
+      Ideal.map_span, Set.image_singleton]
+    exact Ideal.isEffectiveCartier_comap_toSpecCoeff_span_singleton (I.ideal ⟨U.val, hU⟩) hd
 
 /-- **The blowup is its own lift.** The lift of the blowup morphism `Bl_I X ⟶ X` through itself,
 given by the universal property, is the identity. -/
@@ -214,5 +281,12 @@ theorem isIso_blowupToBase_iff : IsIso I.blowupToBase ↔ I.IsEffectiveCartier :
     · rw [Category.assoc, blowupLift_blowupToBase, Category.comp_id, Category.id_comp]
     · rw [Category.assoc, blowupLift_blowupToBase, Category.comp_id]
       exact I.isEffectiveCartier_comap_blowupToBase
+
+/-- If `D₁` is effective Cartier and `D₂ ≤ D₁`, the blowup along `D₁ ⊔ D₂ = D₁` is an
+isomorphism. -/
+theorem IsEffectiveCartier.isIso_blowupToBase_sup_of_le {D₁ D₂ : X.IdealSheafData}
+    (hD₁ : D₁.IsEffectiveCartier) (h : D₂ ≤ D₁) : IsIso (D₁ ⊔ D₂).blowupToBase := by
+  rw [isIso_blowupToBase_iff, sup_eq_left.mpr h]
+  exact hD₁
 
 end AlgebraicGeometry.Scheme.IdealSheafData

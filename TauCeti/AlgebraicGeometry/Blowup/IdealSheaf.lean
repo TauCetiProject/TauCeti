@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 
 /-!
 # The blowup of a scheme along an ideal sheaf
@@ -205,6 +207,13 @@ instance isProper_blowupToBase_of_isLocallyNoetherian [IsLocallyNoetherian X] :
   I.isProper_blowupToBase fun U ↦
     have := IsLocallyNoetherian.component_noetherian U
     IsNoetherian.noetherian _
+
+/-- The blowup of the sum of two effective Cartier divisors is proper over `X`, without any
+Noetherian assumption. -/
+theorem IsEffectiveCartier.isProper_blowupToBase_sup {D₁ D₂ : X.IdealSheafData}
+    (hD₁ : D₁.IsEffectiveCartier) (hD₂ : D₂.IsEffectiveCartier) :
+    IsProper (D₁ ⊔ D₂).blowupToBase :=
+  (D₁ ⊔ D₂).isProper_blowupToBase fun U ↦ Submodule.FG.sup (hD₁.fg_ideal U) (hD₂.fg_ideal U)
 
 end Blowup
 

@@ -11,15 +11,13 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 /-!
 # Picard-group classes of differences of effective Cartier divisors
 
-This file supplements `TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Subtraction` with
-uniqueness of division (`IsEffectiveCartier.eq_colon_of_mul_eq`) and the Picard-group identity
-`[(I : J)] = [I] * [J]⁻¹` (`TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_colon`)
-for nested effective Cartier divisors `I ≤ J`.
+This file supplements `TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Subtraction` with the
+Picard-group identity `[(I : J)] = [I] * [J]⁻¹`
+(`TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_colon`) for nested effective
+Cartier divisors `I ≤ J`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.IdealSheafData.IsEffectiveCartier.eq_colon_of_mul_eq`:
-  if `J * K = I`, then `K = I.colon J`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_colon`:
   `[(I : J)] = [I] * [J]⁻¹` in the Picard group.
 
@@ -34,22 +32,6 @@ public section
 open CategoryTheory
 
 universe u
-
-namespace AlgebraicGeometry.Scheme.IdealSheafData
-
-noncomputable section
-
-variable {X : Scheme.{u}}
-
-/-- **Uniqueness of division by an effective Cartier divisor.** If `J * K = I` and `J` is an
-effective Cartier divisor, then `K = I.colon J`. -/
-theorem IsEffectiveCartier.eq_colon_of_mul_eq {I J K : X.IdealSheafData} (hJ : J.IsEffectiveCartier)
-    (h : J * K = I) : K = I.colon J := by
-  rw [← h, hJ.mul_colon_cancel_left]
-
-end
-
-end AlgebraicGeometry.Scheme.IdealSheafData
 
 namespace TauCeti.AlgebraicGeometry.LineBundleClass
 

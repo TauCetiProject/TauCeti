@@ -110,6 +110,22 @@ theorem iSup_opensRange_affineBlowupι {ι : Type*} {s : ι → R}
   simp_rw [opensRange_affineBlowupι]
   exact Proj.iSup_basicOpen_eq_top _ _ (irrelevant_eq_span_monomialDegreeOne hs).le
 
+/-- The two standard opens `D₊(x₁ t)` and `D₊(x₂ t)` cover the blowup `Proj R[(x₁, x₂)t]`. -/
+theorem sup_basicOpen_monomialDegreeOne_span_pair (x₁ x₂ : R) :
+    Proj.basicOpen (grade (Ideal.span ({x₁, x₂} : Set R)))
+        (monomialDegreeOne (Ideal.subset_span (Set.mem_insert x₁ {x₂}))) ⊔
+      Proj.basicOpen (grade (Ideal.span ({x₁, x₂} : Set R)))
+        (monomialDegreeOne (Ideal.subset_span (Set.mem_insert_of_mem x₁ (Set.mem_singleton x₂)))) =
+      ⊤ := by
+  have hspan : Ideal.span (Set.range ![x₁, x₂]) = Ideal.span ({x₁, x₂} : Set R) := by
+    rw [Matrix.range_cons_cons_empty]
+  have htop := Proj.iSup_basicOpen_eq_top (grade (Ideal.span ({x₁, x₂} : Set R)))
+    (fun i : Fin 2 ↦ monomialDegreeOne (I := Ideal.span ({x₁, x₂} : Set R))
+      (hspan ▸ Ideal.subset_span ⟨i, rfl⟩))
+    (irrelevant_eq_span_monomialDegreeOne hspan).le
+  rw [← htop, ← finTwoEquiv.symm.iSup_comp, iSup_bool_eq, sup_comm]
+  simp [finTwoEquiv]
+
 /-- **A single chart covers the blowup.** If `I = (a, s)` and `s² ∈ a I`, then the chart
 `Spec R[I/a] ⟶ Proj R[It]` of `a` is an isomorphism: since `(s t)² = (a t)(c t)` with `c ∈ I`, the
 standard open `D₊(s t)` lies in `D₊(a t)`. -/

@@ -172,21 +172,24 @@ theorem epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top {ι : Type u} (f 
   change @Epi X.Modules _ _ _ _
   refine ⟨fun {N : X.Modules} p q hpq ↦
     hom_ext_of_iSup_nonvanishingLocus_eq_top hcover p q fun i ↦ ?_⟩
-  -- Compute the free-sheaf universal property through its public evaluation equations.
   have heval (r : M ⟶ N) :
-      SheafOfModules.freeHomEquiv N
-        ((SheafOfModules.freeHomEquiv M).symm (fun j ↦ M.sectionsEquivTop.symm (f j)) ≫ r) i =
-        SheafOfModules.sectionsMap r (M.sectionsEquivTop.symm (f i)) :=
-    (SheafOfModules.freeHomEquiv_comp_apply _ r i).trans
-      (congrArg (fun t ↦ SheafOfModules.sectionsMap r (t i))
-        ((SheafOfModules.freeHomEquiv M).apply_symm_apply _))
-  have hsec : SheafOfModules.sectionsMap p (M.sectionsEquivTop.symm (f i)) =
-      SheafOfModules.sectionsMap q (M.sectionsEquivTop.symm (f i)) :=
-    (heval p).symm.trans
-      ((congrArg (fun r ↦ SheafOfModules.freeHomEquiv N r i) hpq).trans (heval q))
-  have h' := congrArg N.sectionsEquivTop hsec
-  rwa [Scheme.Modules.sectionsEquivTop_sectionsMap,
-    Scheme.Modules.sectionsEquivTop_sectionsMap, Equiv.apply_symm_apply] at h'
+      Hom.app (M := SheafOfModules.free ι)
+        (((M.freeHomEquiv.symm fun i ↦ M.sectionsEquivTop.symm (f i)) :
+          (SheafOfModules.free ι : X.Modules) ⟶ M) ≫ r) ⊤
+        (sectionsEquivTop (SheafOfModules.free ι) (SheafOfModules.freeSection i)) =
+      r.app ⊤ (f i) := by
+    have hcomp :
+        Hom.app (M := SheafOfModules.free ι)
+          (((M.freeHomEquiv.symm fun i ↦ M.sectionsEquivTop.symm (f i)) :
+            (SheafOfModules.free ι : X.Modules) ⟶ M) ≫ r) ⊤ =
+        Hom.app (M := SheafOfModules.free ι)
+            (M.freeHomEquiv.symm fun i ↦ M.sectionsEquivTop.symm (f i)) ⊤ ≫ r.app ⊤ :=
+      Scheme.Modules.Hom.comp_app (M := SheafOfModules.free ι) _ r
+    rw [hcomp, ConcreteCategory.comp_apply, app_freeHomEquiv_symm_freeSection]
+  exact (heval p).symm.trans ((congrArg (fun r : (SheafOfModules.free ι : X.Modules) ⟶ N ↦
+    Hom.app (M := SheafOfModules.free ι) r ⊤
+      (sectionsEquivTop (SheafOfModules.free ι) (SheafOfModules.freeSection i)))
+    hpq).trans (heval q))
 
 end TauCeti.AlgebraicGeometry
 

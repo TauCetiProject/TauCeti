@@ -311,6 +311,14 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isEffectiveCartier_ofIdealTop_span_a
     (ofIdealTop (Ideal.span {f.appTop b})).IsEffectiveCartier :=
   isEffectiveCartier_ofIdealTop_span_singleton _ (f.isSMulRegular_map_appTop hb)
 
+/-- On `Spec R`, a nonzerodivisor `a : R` defines a principal effective Cartier divisor. -/
+theorem isEffectiveCartier_ofIdealTop_span_ΓSpecIso_inv {R : Type u} [CommRing R] {a : R}
+    (ha : IsSMulRegular R a) :
+    (ofIdealTop (Ideal.span {(Scheme.ΓSpecIso (.of R)).inv a})).IsEffectiveCartier := by
+  have h := Scheme.Hom.isEffectiveCartier_ofIdealTop_span_appTop (𝟙 (Spec (.of R)))
+    (Scheme.isSMulRegular_ΓSpecIso_inv ha)
+  rwa [Scheme.Hom.id_appTop] at h
+
 /-- **Effective Cartier divisors are cancellative**: if `D + E = D + E'` for an effective Cartier
 divisor `D`, with sums represented by products of ideal sheaves, then `E = E'`. The ideal
 sheaves `J` and `K` are arbitrary. -/
