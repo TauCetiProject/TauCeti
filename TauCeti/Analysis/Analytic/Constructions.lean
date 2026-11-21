@@ -23,9 +23,10 @@ Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analy
 (`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`), as is the slice
 `ζ ↦ Sum.elim x (fun _ ↦ ζ)` fixing the first block (`TauCeti.analyticAt_sumElim_const`).
 An updated finite family is analytic within a set exactly when its replacement and its retained
-components are analytic there (`TauCeti.analyticWithinAt_update_iff`). In particular, replacing one
-component of an analytic family by another analytic function preserves analyticity
-(`AnalyticAt.update`).
+components are analytic there (`TauCeti.analyticWithinAt_update_iff`), with the analogous pointwise
+criterion `TauCeti.analyticAt_update_iff`. In particular, replacing one component of an analytic
+family by another analytic function preserves analyticity within a set, at a point, or near a set
+(`AnalyticWithinAt.update`, `AnalyticAt.update`, `AnalyticOnNhd.update`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`), and
@@ -106,12 +107,35 @@ theorem TauCeti.analyticWithinAt_update_iff {s : Set E} :
   simp_rw [analyticWithinAt_pi_iff, h]
   exact Function.forall_update_iff (fun j z ↦ f z j) fun _ h ↦ AnalyticWithinAt 𝕜 h s x
 
+/-- Updating one component of a finite family analytic within `s` by a function analytic within
+`s` preserves analyticity within `s`. -/
+theorem AnalyticWithinAt.update {s : Set E} (hf : AnalyticWithinAt 𝕜 f s x)
+    (hg : AnalyticWithinAt 𝕜 g s x) :
+    AnalyticWithinAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) s x :=
+  TauCeti.analyticWithinAt_update_iff.2 ⟨hg, fun j _ ↦ analyticWithinAt_pi_iff.mp hf j⟩
+
+/-- An updated family is analytic at `x` exactly when the replacement and all retained
+components are analytic at `x`. -/
+theorem TauCeti.analyticAt_update_iff :
+    AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x ↔
+      AnalyticAt 𝕜 g x ∧ ∀ j ≠ i, AnalyticAt 𝕜 (fun z ↦ f z j) x := by
+  simpa only [analyticWithinAt_univ] using
+    (analyticWithinAt_update_iff (f := f) (g := g) (s := Set.univ) (x := x))
+
 /-- Updating one component of a finite analytic family by an analytic function is analytic. -/
 @[fun_prop]
 theorem AnalyticAt.update (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) :
     AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x := by
-  rw [← analyticWithinAt_univ, TauCeti.analyticWithinAt_update_iff]
-  exact ⟨hg.analyticWithinAt, fun j _ ↦ (analyticAt_pi_iff.mp hf j).analyticWithinAt⟩
+  simpa only [analyticWithinAt_univ] using
+    (hf.analyticWithinAt (s := Set.univ)).update hg.analyticWithinAt
+
+/-- Updating one component of a finite family analytic near `s` by a function analytic near `s`
+preserves analyticity near `s`. -/
+@[fun_prop]
+protected theorem AnalyticOnNhd.update {s : Set E} (hf : AnalyticOnNhd 𝕜 f s)
+    (hg : AnalyticOnNhd 𝕜 g s) :
+    AnalyticOnNhd 𝕜 (fun z ↦ Function.update (f z) i (g z)) s :=
+  fun z hz ↦ (hf z hz).update (hg z hz)
 
 end Update
 

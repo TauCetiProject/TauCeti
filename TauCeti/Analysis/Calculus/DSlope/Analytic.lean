@@ -69,7 +69,7 @@ analytically across the hyperplane through `x`. On the hyperplane its value is t
 the corresponding coordinate slice. -/
 theorem AnalyticAt.dslope_update_same [CompleteSpace F] (hf : AnalyticAt 𝕜 f x) (i : ι) :
     AnalyticAt 𝕜 (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) (x i) (z i)) x := by
-  obtain ⟨g, hg, hfg⟩ := hf.exists_eventuallyEq_coord_sub_smul i
+  obtain ⟨g, hg, hfg⟩ := hf.exists_sub_update_eventuallyEq_coord_sub_smul i
   apply hg.congr
   apply (TauCeti.eventuallyEq_dslope_update_of_factorization ?_ hfg).symm
   filter_upwards [hg.eventually_analyticAt] with z hgz hzi

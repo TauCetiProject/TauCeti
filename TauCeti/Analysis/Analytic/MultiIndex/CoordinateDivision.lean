@@ -22,8 +22,8 @@ open polydisc of radius `r`, with `f (x + y) = y i ^ m • g y` there. The radiu
 * `AnalyticAt.exists_eventuallyEq_coord_sub_pow_smul`: for a function analytic at `x` with
   complete target, local coordinate division when Taylor coefficients vanish below the
   specified degree in that coordinate.
-* `AnalyticAt.exists_eventuallyEq_coord_sub_smul`: for a function analytic at `x` with complete
-  target, local division after subtracting the restriction to the coordinate hyperplane
+* `AnalyticAt.exists_sub_update_eventuallyEq_coord_sub_smul`: for a function analytic at `x` with
+  complete target, local division after subtracting the restriction to the coordinate hyperplane
   through the centre.
 
 ## References
@@ -104,7 +104,7 @@ theorem AnalyticAt.exists_eventuallyEq_coord_sub_pow_smul [CompleteSpace F]
 /-- For a complete target and a function analytic at `x`, subtracting the restriction to the
 coordinate hyperplane through `x` gives a function divisible near `x` by the corresponding
 coordinate difference, with analytic quotient. -/
-theorem AnalyticAt.exists_eventuallyEq_coord_sub_smul [CompleteSpace F] [DecidableEq ι]
+theorem AnalyticAt.exists_sub_update_eventuallyEq_coord_sub_smul [CompleteSpace F] [DecidableEq ι]
     {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x) (i : ι) :
     ∃ g : (ι → 𝕜) → F, AnalyticAt 𝕜 g x ∧
       (fun z ↦ f z - f (Function.update z i (x i))) =ᶠ[𝓝 x]
