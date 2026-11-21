@@ -15,6 +15,7 @@ public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
 import TauCeti.AlgebraicTopology.Sphere.Puncture
+import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.UnitInterval.OpenSquare
 
@@ -84,8 +85,6 @@ instance contractibleSpace_disk (n : ℕ) :
     ContractibleSpace (TopCat.disk n) := by
   -- `TopCat.disk` stores its metric closed ball inside a `ULift`; the lift of the contractible
   -- closed ball is contractible by `ULift.contractibleSpace`.
-  have : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
-    Metric.contractibleSpace_closedBall (x := 0) (r := 1) (by norm_num)
   exact inferInstanceAs
     (ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
@@ -363,6 +362,11 @@ instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
   have : IsEmpty (Metric.sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin 0))) 1) :=
     Set.isEmpty_coe_sort.mpr (Metric.sphere_eq_empty_of_subsingleton one_ne_zero)
   (diskBoundaryHomeomorph 0).toEquiv.isEmpty
+
+/-- The `0`-disk is a single point, the origin of the zero space. -/
+instance uniqueDiskZero : Unique (TopCat.disk.{u} 0) where
+  default := diskCenter 0
+  uniq _ := ULift.ext (Subtype.ext (Subsingleton.elim _ _))
 
 /-- A point of the boundary `S⁰` of the `1`-disk is determined by its coordinate. -/
 lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{u} 1}

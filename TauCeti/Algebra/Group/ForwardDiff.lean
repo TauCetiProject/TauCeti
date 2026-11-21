@@ -47,6 +47,8 @@ these natural numbers is zero.
 * `TauCeti.sum_neg_one_pow_mul_choose_succ`: the successor step for alternating binomial sums.
 * `TauCeti.fwdDiff_iter_smul`: the discrete Leibniz rule, with the second factor shifted by
   the order of the difference on the first factor.
+* `TauCeti.fwdDiff_iter_smul_eq_sum_range_sum_range`: the unshifted discrete Leibniz rule, using
+  differences at the input point only.
 * `TauCeti.fwdDiff_iter_pow_apply_zero`: `Δᵏ (t ↦ t ^ m) (0) = k! S(m, k)`.
 * `TauCeti.fwdDiff_iter_pow_eq_sum`: the `k`-th difference of `y ↦ y ^ m` with step `h` at `x`
   as `∑ₗ C(m, l) x ^ (m - l) h ^ l k! S(l, k)`.
@@ -74,13 +76,14 @@ theorem neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum (n : ℕ) (F : M → G)
     (-1 : ℤ) ^ n • Δ_[s]^[n] F x
       = ∑ k ∈ Finset.range (n + 1), ((-1 : ℤ) ^ k * n.choose k) • F (x + k • s) := by
   rw [fwdDiff_iter_eq_sum_shift, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun k hk => ?_
-  have hk' : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-  have hexp : n + (n - k) = 2 * (n - k) + k := by omega
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  -- the signs agree because `n + (n - k)` and `k` have the same parity
   have hsign : (-1 : ℤ) ^ n * (-1 : ℤ) ^ (n - k) = (-1 : ℤ) ^ k := by
-    rw [← pow_add, hexp, pow_add, pow_mul]
+    rw [← pow_add, show n + (n - k) = 2 * (n - k) + k by grind, pow_add, pow_mul]
     simp
   rw [smul_smul, ← mul_assoc, hsign]
+
+section Ring
 
 variable {R : Type*} [Ring R]
 
@@ -90,20 +93,16 @@ theorem neg_one_pow_mul_fwdDiff_iter_succ (n : ℕ) (F : M → R) (s : M) :
     (fun x : M => (-1 : R) ^ n * Δ_[s]^[n] (-Δ_[s] F) x)
       = fun x : M => (-1 : R) ^ (n + 1) * Δ_[s]^[n + 1] F x := by
   funext x
-  have h := congrFun (neg_one_pow_smul_fwdDiff_iter_succ n F s) x
-  simp only [Pi.smul_apply, zsmul_eq_mul] at h
-  push_cast at h
-  exact h
+  simpa only [Pi.smul_apply, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+    congrFun (neg_one_pow_smul_fwdDiff_iter_succ n F s) x
 
 /-- The alternating iterated forward difference of a ring-valued function as an explicit
 alternating binomial sum. -/
 theorem neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum (n : ℕ) (F : M → R) (s x : M) :
     (-1 : R) ^ n * Δ_[s]^[n] F x
       = ∑ k ∈ Finset.range (n + 1), (-1 : R) ^ k * n.choose k * F (x + k • s) := by
-  have h := neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum n F s x
-  simp only [zsmul_eq_mul] at h
-  push_cast at h
-  exact h
+  simpa only [zsmul_eq_mul, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one,
+    Int.cast_natCast] using neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum n F s x
 
 /-- An alternating binomial sum of successor order is the alternating binomial sum of the
 negative forward differences of consecutive values. -/
@@ -128,13 +127,10 @@ theorem fwdDiff_iter_smul [Module R G] (h : M) (f : M → R) (g : M → G) (n : 
     rw [Finset.sum_antidiagonal_choose_succ_nsmul (M := G)
       (fun i j ↦ Δ_[h]^[i] f x • Δ_[h]^[j] g (x + i • h)) n]
     simp only [fwdDiff, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    apply Finset.sum_congr rfl
-    intro ij hij
-    have hc := Nat.choose_symm_of_eq_add (Finset.mem_antidiagonal.mp hij).symm
-    rw [← hc]
-    simp only [Function.iterate_succ_apply', fwdDiff, add_nsmul, one_nsmul,
-      add_assoc]
-    simp only [smul_sub, sub_smul]
+    refine Finset.sum_congr rfl fun ij hij ↦ ?_
+    rw [← Nat.choose_symm_of_eq_add (Finset.mem_antidiagonal.mp hij).symm]
+    simp only [Function.iterate_succ_apply', fwdDiff, add_nsmul, one_nsmul, add_assoc,
+      smul_sub, sub_smul]
     abel_nf
 
 /-- Range-indexed discrete Leibniz rule for a scalar product. -/
@@ -159,6 +155,8 @@ theorem fwdDiff_iter_smul_eq_sum_range_sum_range [Module R G] (h : M) (f : M →
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Function.iterate_add_apply, Nat.add_comm j (n - i), smul_comm, smul_smul,
     smul_comm]
+
+end Ring
 
 section Pow
 
