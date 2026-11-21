@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
 # Multiplication of first-order Sobolev fields by smooth functions
@@ -58,22 +59,20 @@ private theorem memLp_top_of_contDiffOn (hψ : ContDiffOn ℝ ∞ ψ Omega)
     (hψ.continuousOn.aestronglyMeasurable Omega.isOpen.measurableSet) C
     ((ae_restrict_iff' Omega.isOpen.measurableSet).2 (Filter.Eventually.of_forall hC))
 
-/-- Multiplication by `ψ` on `Lᵖ(Ω, G)`, through the `L∞` class of `ψ`. -/
-private def smulLp (G : Type*) [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) :
-    Lp G p (mu.restrict Omega) →L[ℝ] Lp G p (mu.restrict Omega) :=
-  (ContinuousLinearMap.lsmul ℝ ℝ).holderL (mu.restrict Omega) ∞ p p
-    ((memLp_top_of_contDiffOn hψ h₀).toLp ψ)
+/-- The `L∞` class of `ψ` on `Ω`. -/
+private def linftyClass (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) :
+    Lp ℝ ∞ (mu.restrict Omega) :=
+  (memLp_top_of_contDiffOn hψ h₀).toLp ψ
 
-private theorem smulLp_ae (G : Type*) [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C)
+/-- Multiplication by the `L∞` class of `ψ` acts by `x ↦ ψ x • g x`. -/
+private theorem multiplicationOperator_linftyClass_ae (G : Type*) [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C)
     (g : Lp G p (mu.restrict Omega)) :
-    ⇑(smulLp G hψ h₀ g) =ᵐ[mu.restrict Omega] fun x ↦ ψ x • g x := by
-  filter_upwards [(ContinuousLinearMap.lsmul ℝ ℝ).coeFn_holder (r := p)
-    ((memLp_top_of_contDiffOn hψ h₀).toLp ψ) g,
+    ⇑(Lp.multiplicationOperator (linftyClass hψ h₀) g)
+      =ᵐ[mu.restrict Omega] fun x ↦ ψ x • g x := by
+  filter_upwards [Lp.multiplicationOperator_ae (linftyClass hψ h₀) g,
     (memLp_top_of_contDiffOn (mu := mu) hψ h₀).coeFn_toLp] with x hx hψx
-  rw [smulLp, ContinuousLinearMap.holderL_apply_apply, hx, hψx,
-    ContinuousLinearMap.lsmul_apply]
+  rw [hx, linftyClass, hψx]
 
 variable [FiniteDimensional ℝ E]
 
@@ -113,34 +112,39 @@ def smulLeftCLM (ψ : E → ℝ) (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃
       WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) :=
   ContinuousLinearMap.codRestrict
     ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
-      (((smulLp F hψ h₀).comp (prevL _)).prod
-        ((smulLp (E →L[ℝ] F) hψ h₀).comp (weakFDerivL _) +
+      (((Lp.multiplicationOperator (E := F) (p := p) (linftyClass hψ h₀)).comp (prevL _)).prod
+        ((Lp.multiplicationOperator (E := E →L[ℝ] F) (p := p) (linftyClass hψ h₀)).comp
+            (weakFDerivL _) +
           (smulRightLp hψ h₁).comp (prevL _))))
     _ fun u ↦ (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr <| by
       have h := (hasWeakFDerivOn_base_prev _ u).contDiffOn_smul hψ
       refine (h.congr_ae ?_).congr_ae_deriv ?_
-      · simpa using (smulLp_ae F hψ h₀ (prev _ u)).symm
+      · simpa using (multiplicationOperator_linftyClass_ae F hψ h₀ (prev _ u)).symm
       · simp only [ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
           Function.comp_apply, ContinuousLinearMap.prod_apply, prevL_apply, weakFDerivL_apply,
           add_apply, WithLp.prodContinuousLinearEquiv_symm_apply,
           WithLp.toLp_snd]
-        filter_upwards [Lp.coeFn_add ((smulLp (E →L[ℝ] F) hψ h₀) (weakFDeriv _ u))
-            ((smulRightLp hψ h₁) (prev _ u)),
-          smulLp_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u), smulRightLp_ae hψ h₁ (prev _ u)]
+        filter_upwards [Lp.coeFn_add
+            (Lp.multiplicationOperator (linftyClass hψ h₀) (weakFDeriv _ u))
+            (smulRightLp hψ h₁ (prev _ u)),
+          multiplicationOperator_linftyClass_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u),
+          smulRightLp_ae hψ h₁ (prev _ u)]
           with x hx h₂ h₃
         rw [hx, Pi.add_apply, h₂, h₃, ContinuousLinearMap.id_apply]
 
 private theorem prev_smulLeftCLM (hψ : ContDiffOn ℝ ∞ ψ Omega)
     (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
-    prev _ (smulLeftCLM ψ hψ h₀ h₁ u) = smulLp F hψ h₀ (prev _ u) := by
+    prev _ (smulLeftCLM ψ hψ h₀ h₁ u) =
+      Lp.multiplicationOperator (linftyClass hψ h₀) (prev _ u) := by
   simp [prev_coe, smulLeftCLM]
 
 private theorem weakFDeriv_smulLeftCLM (hψ : ContDiffOn ℝ ∞ ψ Omega)
     (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
     weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u) =
-      smulLp (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u) + smulRightLp hψ h₁ (prev _ u) := by
+      Lp.multiplicationOperator (linftyClass hψ h₀) (weakFDeriv _ u) +
+        smulRightLp hψ h₁ (prev _ u) := by
   simp [weakFDeriv_coe, smulLeftCLM]
 
 /-- The field of `ψ u` is represented almost everywhere by `x ↦ ψ x • u x`. -/
@@ -149,7 +153,7 @@ theorem prev_smulLeftCLM_ae (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, �
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
     ⇑(prev _ (smulLeftCLM ψ hψ h₀ h₁ u)) =ᵐ[mu.restrict Omega] fun x ↦ ψ x • prev _ u x := by
   rw [prev_smulLeftCLM]
-  exact smulLp_ae F hψ h₀ (prev _ u)
+  exact multiplicationOperator_linftyClass_ae F hψ h₀ (prev _ u)
 
 /-- **The Leibniz rule.** The weak derivative of `ψ u` is represented almost everywhere by
 `x ↦ ψ x • Du x + Dψ x ⊗ u x`. -/
@@ -159,9 +163,10 @@ theorem weakFDeriv_smulLeftCLM_ae (hψ : ContDiffOn ℝ ∞ ψ Omega)
     ⇑(weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u)) =ᵐ[mu.restrict Omega]
       fun x ↦ ψ x • weakFDeriv _ u x + (fderiv ℝ ψ x).smulRight (prev _ u x) := by
   rw [weakFDeriv_smulLeftCLM]
-  filter_upwards [Lp.coeFn_add ((smulLp (E →L[ℝ] F) hψ h₀) (weakFDeriv _ u))
-      ((smulRightLp hψ h₁) (prev _ u)),
-    smulLp_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u), smulRightLp_ae hψ h₁ (prev _ u)]
+  filter_upwards [Lp.coeFn_add (Lp.multiplicationOperator (linftyClass hψ h₀) (weakFDeriv _ u))
+      (smulRightLp hψ h₁ (prev _ u)),
+    multiplicationOperator_linftyClass_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u),
+    smulRightLp_ae hψ h₁ (prev _ u)]
     with x hx h₂ h₃
   rw [hx, Pi.add_apply, h₂, h₃]
 
@@ -185,7 +190,8 @@ private theorem norm_weakFDeriv_smulLeftCLM_le (hψ : ContDiffOn ℝ ∞ ψ Omeg
   rw [weakFDeriv_smulLeftCLM]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
   · refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-    filter_upwards [smulLp_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u), ae_restrict_mem hΩ]
+    filter_upwards [multiplicationOperator_linftyClass_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u),
+      ae_restrict_mem hΩ]
       with x hx hxΩ
     rw [hx, norm_smul]
     exact mul_le_mul_of_nonneg_right (hC₀ x hxΩ) (norm_nonneg _)

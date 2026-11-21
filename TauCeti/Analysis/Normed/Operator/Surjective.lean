@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.MetricSpace.Contracting
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
-import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # Stability of surjectivity under small perturbations
@@ -180,14 +180,12 @@ theorem exists_rightInverse_of_norm_comp_sub_id_lt [CompleteSpace F] (T : E →L
   set U := Units.oneSub t ht
   have hU : (U : F →L[𝕜] F) = T.comp Q₀ := by
     rw [Units.val_oneSub, one_def, sub_sub_cancel]
-  have hinv : ((U⁻¹ : (F →L[𝕜] F)ˣ) : F →L[𝕜] F) = ∑' n, t ^ n := by
-    rw [← Ring.inverse_unit, Units.val_oneSub, geom_series_eq_inverse t ht]
   refine ⟨Q₀.comp ((U⁻¹ : (F →L[𝕜] F)ˣ) : F →L[𝕜] F), ?_, ?_⟩
   · rw [← comp_assoc, ← hU, ← mul_def, Units.mul_inv, one_def]
   · rw [norm_sub_rev]
     refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg Q₀))
-    rw [hinv]
-    refine (tsum_geometric_le_of_norm_lt_one t ht).trans ?_
+    rw [← Ring.inverse_unit, Units.val_oneSub]
+    refine (NormedRing.norm_inverse_one_sub_le ht).trans ?_
     have h1 : ‖(1 : F →L[𝕜] F)‖ ≤ 1 := by
       rw [one_def]
       exact norm_id_le
