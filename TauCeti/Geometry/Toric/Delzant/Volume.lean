@@ -270,8 +270,7 @@ theorem dualMeasure_facetPolyhedron_interval (a : ℝ) :
     rw [mem_facetPolyhedron_interval_iff, mem_preimage, mem_univ_pi]
     simp only [IsIntegralLattice.dualBasis_equivFun]
     simp [b]
-  rw [hpre, (isIntegralLattice_castAddHom.measurePreserving_dualBasis_equivFun b).measure_preimage
-    (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc).nullMeasurableSet, volume_pi_pi]
+  rw [hpre, isIntegralLattice_castAddHom.dualMeasure_preimage_dualBasis_equivFun, volume_pi_pi]
   simp
 
 /-- **The area of a Hirzebruch trapezoid.** For `0 ≤ a` and `k b ≤ a`, the trapezoid
