@@ -32,6 +32,8 @@ therefore a compatible system of residues modulo `𝔪ⁿ`, that is, an element 
 * `TauCeti.IsInjectiveEnvelope.adicCompletionEquivEnd`: the `R`-algebra isomorphism
   `R̂ ≃ End_R(E)` given by the completion action, with `adicCompletionEquivEnd_apply_of_mem` and
   `evalₐ_adicCompletionEquivEnd_symm` computing it and its inverse through residues modulo `𝔪ⁿ`.
+* `TauCeti.IsInjectiveEnvelope.adicCompletionLinearEquivEnd`: the same identification upgraded to
+  an `R̂`-linear equivalence `R̂ ≃ₗ[R̂] End_R(E)`.
 
 ## References
 
@@ -135,6 +137,35 @@ theorem adicCompletionEquivEnd_apply (hι : IsInjectiveEnvelope ι)
   obtain ⟨n, hn⟩ := ((maximalIdeal R).primaryComponent_mem E x).mp (hM x)
   obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ (maximalIdeal R) n a)
   rw [hι.adicCompletionEquivEnd_apply_of_mem a hn hr.symm, a.torsion_smul_eq hM x r hn hr.symm]
+
+/-- The `R`-algebra isomorphism `R̂ ≃ End_R(E)` upgraded to an `R̂`-linear equivalence for the
+canonical completion action on `E`. -/
+def adicCompletionLinearEquivEnd (hι : IsInjectiveEnvelope ι) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    _root_.AdicCompletion (maximalIdeal R) R ≃ₗ[_root_.AdicCompletion (maximalIdeal R) R]
+      Module.End R E := by
+  letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+  exact
+    { toFun := hι.adicCompletionEquivEnd
+      invFun := hι.adicCompletionEquivEnd.symm
+      left_inv := hι.adicCompletionEquivEnd.left_inv
+      right_inv := hι.adicCompletionEquivEnd.right_inv
+      map_add' := map_add hι.adicCompletionEquivEnd
+      map_smul' := fun a b ↦ LinearMap.ext fun x ↦ by
+        simp only [smul_eq_mul, RingHom.id_apply, LinearMap.smul_apply]
+        rw [hι.adicCompletionEquivEnd_apply hι.mem_primaryComponent,
+          hι.adicCompletionEquivEnd_apply hι.mem_primaryComponent, mul_smul] }
+
+/-- `adicCompletionLinearEquivEnd` has the same underlying function as `adicCompletionEquivEnd`. -/
+@[simp]
+theorem adicCompletionLinearEquivEnd_apply (hι : IsInjectiveEnvelope ι)
+    (a : _root_.AdicCompletion (maximalIdeal R) R) :
+    hι.adicCompletionLinearEquivEnd a = hι.adicCompletionEquivEnd a := (rfl)
+
+/-- The inverse of `adicCompletionLinearEquivEnd` agrees with that of `adicCompletionEquivEnd`. -/
+@[simp]
+theorem adicCompletionLinearEquivEnd_symm_apply (hι : IsInjectiveEnvelope ι) (f : Module.End R E) :
+    hι.adicCompletionLinearEquivEnd.symm f = hι.adicCompletionEquivEnd.symm f := (rfl)
 
 /-- The image of an element of `R` acts by its scalar multiplication. -/
 @[simp]
