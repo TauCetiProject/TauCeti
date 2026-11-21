@@ -215,9 +215,10 @@ open DiscreteConvolution in
 `DiscreteConvolution.addRingConvolution_assoc`. -/
 theorem summable_sigma_addFiber_mul_mul_of_mem_amiceCoeff (ha : a ∈ amiceCoeff R)
     (hb : b ∈ amiceCoeff R) (hc : c ∈ amiceCoeff R) (n : ℤ) :
-    Summable fun σ : Σ p : addFiber n, addFiber p.1.1 ↦ a σ.2.1.1 * b σ.2.1.2 * c σ.1.1.2 := by
+    Summable fun σ : Σ p : addFiber n, addFiber p.val.1 ↦
+      a σ.2.val.1 * b σ.2.val.2 * c σ.1.val.2 := by
   -- such a pair `((m, k), (i, j))` is determined by `(i, j)`, since `k = n - i - j`
-  have hj : Function.Injective fun σ : Σ p : addFiber n, addFiber p.1.1 ↦ σ.2.1 :=
+  have hj : Function.Injective fun σ : Σ p : addFiber n, addFiber p.val.1 ↦ σ.2.val :=
     fun _ _ _ ↦ by grind
   refine (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
     (tendsto_mul_mul_sub_of_mem_amiceCoeff ha hb hc n).comp hj.tendsto_cofinite).congr fun σ ↦ ?_
@@ -259,13 +260,13 @@ variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 /-- A Robba series with bounded coefficients is an element of the Amice ring. -/
 theorem coe_mem_amiceCoeff {f : RobbaRing R} (hf : f ∈ bounded R) :
     (f : ℤ → R) ∈ amiceCoeff R :=
-  ⟨mem_bounded.1 hf, tendsto_atBot_of_mem_robbaCoeff f.2⟩
+  ⟨mem_bounded.1 hf, tendsto_atBot_of_mem_robbaCoeff f.property⟩
 
 variable (R) in
 /-- **The embedding of the bounded Robba ring `R^bd` into the Amice ring `E`**, the identity on
 coefficients. -/
 noncomputable def boundedToAmice : bounded R →ₐ[R] AmiceRing R where
-  toFun f := ⟨f.1, coe_mem_amiceCoeff f.2⟩
+  toFun f := ⟨f.val, coe_mem_amiceCoeff f.property⟩
   map_one' := Subtype.ext <| by simp
   map_mul' _ _ := Subtype.ext <| by simp
   map_zero' := Subtype.ext <| by simp
@@ -293,7 +294,8 @@ theorem boundedToAmice_monomial (n : ℤ) (c : R) :
 its coefficients converge on some annulus `r < |t| < 1`. -/
 theorem mem_range_boundedToAmice {g : AmiceRing R} :
     g ∈ (boundedToAmice R).range ↔ (g : ℤ → R) ∈ robbaCoeff R := by
-  refine ⟨?_, fun hg ↦ ⟨⟨⟨g, hg⟩, mem_bounded.2 (mem_amiceCoeff.1 g.2).1⟩, Subtype.ext (by simp)⟩⟩
+  refine ⟨?_, fun hg ↦
+    ⟨⟨⟨g, hg⟩, mem_bounded.2 (mem_amiceCoeff.1 g.property).1⟩, Subtype.ext (by simp)⟩⟩
   rintro ⟨f, rfl⟩
   simp
 

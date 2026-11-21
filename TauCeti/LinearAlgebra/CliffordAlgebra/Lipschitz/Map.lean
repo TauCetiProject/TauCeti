@@ -68,7 +68,7 @@ theorem map_mem_lipschitzGroup_of_map_ι (F : CliffordAlgebra Q →+* CliffordAl
 /-- Restrict a generator-preserving Clifford ring homomorphism to the Lipschitz groups. -/
 def lipschitzGroupMapOf (F : CliffordAlgebra Q →+* CliffordAlgebra Q') (f : M → N)
     (hF : ∀ m, F (ι Q m) = ι Q' (f m)) : lipschitzGroup Q →* lipschitzGroup Q' where
-  toFun x := ⟨Units.map F.toMonoidHom x.1, map_mem_lipschitzGroup_of_map_ι F f hF x.2⟩
+  toFun x := ⟨Units.map F.toMonoidHom x.val, map_mem_lipschitzGroup_of_map_ι F f hF x.property⟩
   map_one' := by simp
   map_mul' x y := by simp
 

@@ -113,7 +113,7 @@ passing along an inclusion of submonoids `S₁ ≤ S₂` commutes with the local
 theorem liftOfLE_comp_map (u : M →ₗ[R] N) :
     liftOfLE S₁ S₂ h g₁ g₂ ∘ₗ map S₁ f₁ g₁ u =
       map S₂ f₂ g₂ u ∘ₗ liftOfLE S₁ S₂ h f₁ f₂ := by
-  refine IsLocalizedModule.ext S₁ f₁ (fun s ↦ map_units g₂ ⟨s.1, h s.2⟩) ?_
+  refine IsLocalizedModule.ext S₁ f₁ (fun s ↦ map_units g₂ ⟨s.val, h s.property⟩) ?_
   ext m
   simp
 

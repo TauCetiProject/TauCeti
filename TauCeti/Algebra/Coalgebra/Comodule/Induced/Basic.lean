@@ -163,7 +163,7 @@ noncomputable def inducedEval :
             rw [hsub, ← LinearMap.comp_apply ((f : C →ₗ[R] D).lTensor M),
               LinearMap.lTensor_comp_rTensor, cofree_coact, cofreeCoact_def]
         _ = coact (R := R) (C := D) (M := M) (counitEval (C := C) M (t : M ⊗[R] C)) := by
-            rw [hev, coact_counitEval_of_mem f t.2] }
+            rw [hev, coact_counitEval_of_mem f t.property] }
 
 private theorem inducedEval_toLinearMap :
     letI := Corestrict (M := induced f M) f
@@ -246,6 +246,18 @@ theorem inducedEquiv_symm_apply (g : letI := Corestrict (M := N) f; Hom R D N M)
     (inducedEquiv f).symm g = inducedLift f g :=
   (rfl)
 
+/-- Coacting on an induced element and evaluating the first factor recovers its ambient
+tensor. -/
+theorem rTensor_inducedEval_coact (t : induced f M) :
+    letI := Corestrict (M := induced f M) f
+    (inducedEval f).toLinearMap.rTensor C (coact (R := R) (C := C) t) =
+      (t : M ⊗[R] C) := by
+  have ht := congrArg (fun k ↦ (k t : M ⊗[R] C))
+    ((inducedEquiv f).symm_apply_apply (Hom.id R C (induced f M)))
+  simpa only [inducedEquiv_symm_apply, coe_inducedLift_apply, inducedEquiv_apply,
+    Hom.comp_toLinearMap, corestrictHom_toLinearMap, Hom.id_toLinearMap,
+    LinearMap.comp_id, Hom.id_apply] using ht
+
 /-- **Naturality of Frobenius reciprocity in the source.** -/
 theorem inducedEquiv_comp {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (φ : Hom R C N (induced f M)) (g : Hom R C P N) :
@@ -300,6 +312,15 @@ theorem inducedEquiv_inducedMap_comp (h : Hom R D M M') (φ : Hom R C N (induced
     (φ n : M ⊗[R] C)
   simp only [LinearMap.comp_apply] at key
   simpa using key
+
+/-- Counit evaluation is natural in the coefficient comodule. -/
+theorem inducedEval_inducedMap (h : Hom R D M M') (t : induced f M) :
+    letI := Corestrict (M := induced f M) f
+    letI := Corestrict (M := induced f M') f
+    inducedEval f (inducedMap f h t) = h (inducedEval f t) := by
+  have ht := congrArg (fun k ↦ k t)
+    (inducedEquiv_inducedMap_comp f h (Hom.id R C (induced f M)))
+  simpa only [inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply, Hom.id_apply] using ht
 
 end Comodule
 

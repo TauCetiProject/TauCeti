@@ -71,7 +71,7 @@ class IsConvolutionRing [Semiring R] [TopologicalSpace R] (S : Submodule R (ℤ 
   addRingConvolution_mem {a b : ℤ → R} : a ∈ S → b ∈ S → a ⋆ᵣ₊ b ∈ S
   addConvolutionExists {a b : ℤ → R} : a ∈ S → b ∈ S → AddConvolutionExists (.mul ℕ R) a b
   summable_sigma_addFiber_mul_mul {a b c : ℤ → R} : a ∈ S → b ∈ S → c ∈ S → ∀ n : ℤ,
-    Summable fun σ : Σ p : addFiber n, addFiber p.1.1 ↦ a σ.2.1.1 * b σ.2.1.2 * c σ.1.1.2
+    Summable fun σ : Σ p : addFiber n, addFiber p.val.1 ↦ a σ.2.val.1 * b σ.2.val.2 * c σ.1.val.2
 
 namespace IsConvolutionRing
 
@@ -121,7 +121,7 @@ theorem smul_monomial (c : R) (n : ℤ) (a : R) : c • (monomial n a : S) = mon
   Subtype.ext <| by simp [← smul_eq_mul, Pi.single_smul']
 
 noncomputable instance instMul : Mul S where
-  mul f g := ⟨f ⋆ᵣ₊ g, addRingConvolution_mem f.2 g.2⟩
+  mul f g := ⟨f ⋆ᵣ₊ g, addRingConvolution_mem f.property g.property⟩
 
 /-- The coefficient family of a product is the convolution of the coefficient families. -/
 @[simp, norm_cast]
@@ -139,7 +139,7 @@ theorem monomial_mul_monomial (m n : ℤ) (a b : R) :
 `f g` is the sum of the convergent series `∑_{y ∈ ℤ} fₙ₋ᵧ gᵧ`. -/
 theorem hasSum_coeff_mul (f g : S) (n : ℤ) :
     HasSum (fun y ↦ (f : ℤ → R) (n - y) * (g : ℤ → R) y) (((f * g : S) : ℤ → R) n) :=
-  (addConvolutionExists f.2 g.2 n).hasSum_sub
+  (addConvolutionExists f.property g.property n).hasSum_sub
 
 end Semiring
 
@@ -156,20 +156,22 @@ variable [Ring R] [TopologicalSpace R] [IsTopologicalRing R] [T3Space R]
 
 /-- **A convolution ring is a ring.** -/
 noncomputable instance instRing : Ring S where
-  mul_assoc f g h := Subtype.ext <| addRingConvolution_assoc (addConvolutionExists f.2 g.2)
-    (addConvolutionExists g.2 h.2) (summable_sigma_addFiber_mul_mul f.2 g.2 h.2)
+  mul_assoc f g h := Subtype.ext <|
+    addRingConvolution_assoc (addConvolutionExists f.property g.property)
+      (addConvolutionExists g.property h.property)
+      (summable_sigma_addFiber_mul_mul f.property g.property h.property)
   one_mul f := Subtype.ext <| by rw [coe_mul, coe_one, single_addRingConvolution]
   mul_one f := Subtype.ext <| by rw [coe_mul, coe_one, addRingConvolution_single]
   zero_mul f := Subtype.ext <| by rw [coe_mul, Submodule.coe_zero, zero_addRingConvolution]
   mul_zero f := Subtype.ext <| by rw [coe_mul, Submodule.coe_zero, addRingConvolution_zero]
   left_distrib f g h := Subtype.ext <| by
     rw [coe_mul, Submodule.coe_add, Submodule.coe_add, coe_mul, coe_mul]
-    exact addRingConvolution_add _ _ _ (addConvolutionExists f.2 g.2)
-      (addConvolutionExists f.2 h.2)
+    exact addRingConvolution_add _ _ _ (addConvolutionExists f.property g.property)
+      (addConvolutionExists f.property h.property)
   right_distrib f g h := Subtype.ext <| by
     rw [coe_mul, Submodule.coe_add, Submodule.coe_add, coe_mul, coe_mul]
-    exact add_addRingConvolution _ _ _ (addConvolutionExists f.2 h.2)
-      (addConvolutionExists g.2 h.2)
+    exact add_addRingConvolution _ _ _ (addConvolutionExists f.property h.property)
+      (addConvolutionExists g.property h.property)
 
 /-- **A monomial with a unit coefficient is a unit**: the inverse of `a tⁿ` is `a⁻¹ t⁻ⁿ`. In
 particular the variable `t = monomial 1 1` is a unit. -/
@@ -193,10 +195,10 @@ noncomputable instance instAlgebra : Algebra R S :=
   .ofModule
     (fun c f g ↦ Subtype.ext <| by
       rw [Submodule.coe_smul, coe_mul, coe_mul, Submodule.coe_smul]
-      exact smul_addRingConvolution c _ _ (addConvolutionExists f.2 g.2))
+      exact smul_addRingConvolution c _ _ (addConvolutionExists f.property g.property))
     (fun c f g ↦ Subtype.ext <| by
       rw [Submodule.coe_smul, coe_mul, coe_mul, Submodule.coe_smul]
-      exact addRingConvolution_smul c _ _ (addConvolutionExists f.2 g.2))
+      exact addRingConvolution_smul c _ _ (addConvolutionExists f.property g.property))
 
 /-- The structure map sends `c` to the constant series `c = c t⁰`. -/
 @[simp, norm_cast]

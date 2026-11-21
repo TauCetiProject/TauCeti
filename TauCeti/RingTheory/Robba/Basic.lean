@@ -317,9 +317,10 @@ in `DiscreteConvolution.addRingConvolution_assoc`. -/
 theorem LaurentConvergesAt.summable_sigma_addFiber_mul_mul [CompleteSpace R] (hρ : 0 < ρ)
     (ha : LaurentConvergesAt ρ a) (hb : LaurentConvergesAt ρ b) (hc : LaurentConvergesAt ρ c)
     (n : ℤ) :
-    Summable fun σ : Σ p : addFiber n, addFiber p.1.1 ↦ a σ.2.1.1 * b σ.2.1.2 * c σ.1.1.2 := by
+    Summable fun σ : Σ p : addFiber n, addFiber p.val.1 ↦
+      a σ.2.val.1 * b σ.2.val.2 * c σ.1.val.2 := by
   -- `σ ↦ ((i, j), k)` is injective, and the weighted triple products tend to zero
-  have hj : Function.Injective fun σ : Σ p : addFiber n, addFiber p.1.1 ↦ (σ.2.1, σ.1.1.2) :=
+  have hj : Function.Injective fun σ : Σ p : addFiber n, addFiber p.val.1 ↦ (σ.2.val, σ.1.val.2) :=
     fun _ _ _ ↦ by grind
   have hP := ((tendsto_mul_cofinite_nhds_zero (tendsto_mul_cofinite_nhds_zero ha hb) hc).comp
     hj.tendsto_cofinite).div_const (ρ ^ n)
@@ -387,7 +388,7 @@ theorem annularCoeff_le_robbaCoeff {r : ℝ} (hr : r < 1) : annularCoeff R r ≤
 /-- The Robba coefficient module is the union of the annular coefficient modules over the inner
 radii `r < 1`. -/
 theorem iSup_annularCoeff : ⨆ r : Set.Iio (1 : ℝ), annularCoeff R r = robbaCoeff R :=
-  le_antisymm (iSup_le fun r ↦ annularCoeff_le_robbaCoeff r.2) fun _ ⟨r, hr, ha⟩ ↦
+  le_antisymm (iSup_le fun r ↦ annularCoeff_le_robbaCoeff r.property) fun _ ⟨r, hr, ha⟩ ↦
     Submodule.mem_iSup_of_mem (⟨r, hr⟩ : Set.Iio (1 : ℝ)) ha
 
 /-- **A Robba coefficient family is one converging at every radius `ρ < 1` close enough to `1`.** -/
@@ -513,7 +514,7 @@ theorem monomial_mem_annulus (r : ℝ) (n : ℤ) (c : R) : monomial n c ∈ annu
 `r < 1`. -/
 theorem iSup_annulus : ⨆ r : Set.Iio (1 : ℝ), annulus R r = ⊤ :=
   eq_top_iff.2 fun f _ ↦ by
-    obtain ⟨r, hr, hf⟩ := f.2
+    obtain ⟨r, hr, hf⟩ := f.property
     exact Algebra.mem_iSup_of_mem (⟨r, hr⟩ : Set.Iio (1 : ℝ)) hf
 
 variable (R) in
