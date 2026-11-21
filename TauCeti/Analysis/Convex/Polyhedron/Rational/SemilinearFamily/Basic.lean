@@ -5,7 +5,8 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Analysis.Convex.Polyhedron.Rational.LocallyClosed
+public import TauCeti.Analysis.Convex.Polyhedron.Rational.PiecewiseAffine
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Finite semilinear families and finite branches
@@ -14,22 +15,20 @@ A finite semilinear family is a finite collection of charts. Each chart has a ra
 semilinear domain in a real vector space `V` with an integral lattice and an evaluation map
 to a real vector space `W` with its own integral lattice. The evaluation is piecewise
 affine: finitely many rational semilinear pieces cover the domain, and on each piece the
-evaluation is an affine map whose linear part is rational. Charts need not be proper and
-fibers need not be finite. The fiber over a point of `W` records the chart together with
+evaluation is an affine map whose linear part is rational and whose offset is unrestricted.
+Charts need not be proper and fibers need not be finite. The fiber over a point of `W`
+records the chart together with
 the preimage point, so overlapping images in different charts are not identified.
 
 The evaluation of a chart is a map on its domain, so families with the same domains and the same
 values are equal. A family consists of finite branches when on every chart the domain is a finite
-union of locally closed rational-normal polyhedra, and the evaluation restricts to an injective
-affine map on each of them. Such domains need not be closed, and a finite branch has finite
+union of locally closed rational-normal polyhedra. Its evaluation agrees on each piece with
+an affine map whose linear part is rational and which is injective on that piece.
+Such domains need not be closed, and a finite branch has finite
 fibers.
 
 ## Main definitions
 
-* `IsRationalPiecewiseAffine`: a map on a rational semilinear domain that is piecewise affine
-  with rational linear parts.
-* `IsFiniteBranchOn`: a map on a domain that restricts to affine embeddings, with rational
-  linear parts, of finitely many locally closed polyhedra covering the domain.
 * `FiniteSemilinearFamily`: finitely many charts with rational piecewise-affine evaluation.
 * `FiniteSemilinearFamily.fiber`: the fiber over a point, indexed by chart and preimage.
 * `FiniteSemilinearFamily.IsFiniteBranch`: every chart is a finite branch.
@@ -37,8 +36,8 @@ fibers.
 ## Main results
 
 * `FiniteSemilinearFamily.sum`, `FiniteSemilinearFamily.restrict` and
-  `FiniteSemilinearFamily.postcomp`: disjoint union, restriction of the charts to a rational
-  semilinear set and post-composition of the evaluation with a rational affine map, with their
+  `FiniteSemilinearFamily.postcomp`: disjoint union, restriction to chartwise rational semilinear
+  sets and post-composition with an affine map with rational linear part, with their
   fibers (`fiberSumEquiv`, `fiberRestrictEquiv`, `fiberPostcompEquiv`).
 * `FiniteSemilinearFamily.isFiniteBranch_sum_iff`, `FiniteSemilinearFamily.IsFiniteBranch.restrict`:
   finite branches are stable under disjoint union and restriction to rational semilinear sets.
@@ -62,108 +61,6 @@ variable {N V N' W N'' X : Type*} [AddCommGroup N] [NormedAddCommGroup V] [Norme
   [Module ℝ X] {i : N →+ V} {i' : N' →+ W} {i'' : N'' →+ X}
   {h : TauCeti.Toric.IsIntegralLattice i} {h' : TauCeti.Toric.IsIntegralLattice i'}
   {h'' : TauCeti.Toric.IsIntegralLattice i''}
-
-/-- A map `f` on `D` is piecewise affine with rational linear parts: finitely many rational
-semilinear pieces cover `D`, and on each piece `f` is an affine map, with arbitrary real
-offset, whose linear part is rational for the two lattices. -/
-def IsRationalPiecewiseAffine (h : TauCeti.Toric.IsIntegralLattice i)
-    (h' : TauCeti.Toric.IsIntegralLattice i') (D : Set V) (f : D → W) : Prop :=
-  ∃ (κ : Type) (_ : Finite κ) (S : κ → Set V) (g : κ → (V →ᵃ[ℝ] W)),
-    (⋃ k, S k) = D ∧ ∀ k, IsRationalSemilinear h (S k) ∧
-      TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧ ∀ x : D, x.val ∈ S k → f x = g k x
-
-/-- A map `f` on `D` is a finite branch: finitely many locally closed rational-normal
-polyhedra cover `D`, and on each of them `f` agrees with an affine map, with rational
-linear part, that is injective on the polyhedron. The domain need not be closed. -/
-def IsFiniteBranchOn (h : TauCeti.Toric.IsIntegralLattice i)
-    (h' : TauCeti.Toric.IsIntegralLattice i') (D : Set V) (f : D → W) : Prop :=
-  ∃ (κ : Type) (_ : Finite κ) (S : κ → Set V) (g : κ → (V →ᵃ[ℝ] W)),
-    (⋃ k, S k) = D ∧ ∀ k, IsLocallyClosedPolyhedron h (S k) ∧
-      TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧ Set.InjOn (g k) (S k) ∧
-        ∀ x : D, x.val ∈ S k → f x = g k x
-
-/-- A rational piecewise-affine map is characterized by a finite rational semilinear cover
-and rational affine representatives for the values on each piece. -/
-theorem isRationalPiecewiseAffine_iff {D : Set V} {f : D → W} :
-    IsRationalPiecewiseAffine h h' D f ↔
-      ∃ (κ : Type) (_ : Finite κ) (S : κ → Set V) (g : κ → (V →ᵃ[ℝ] W)),
-        (⋃ k, S k) = D ∧ ∀ k, IsRationalSemilinear h (S k) ∧
-          TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧
-            ∀ x : D, x.val ∈ S k → f x = g k x := (Iff.rfl)
-
-/-- A finite branch is characterized by a finite locally closed polyhedral cover and rational
-affine representatives that are injective on their respective pieces. -/
-theorem isFiniteBranchOn_iff {D : Set V} {f : D → W} :
-    IsFiniteBranchOn h h' D f ↔
-      ∃ (κ : Type) (_ : Finite κ) (S : κ → Set V) (g : κ → (V →ᵃ[ℝ] W)),
-        (⋃ k, S k) = D ∧ ∀ k, IsLocallyClosedPolyhedron h (S k) ∧
-          TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧ Set.InjOn (g k) (S k) ∧
-            ∀ x : D, x.val ∈ S k → f x = g k x := (Iff.rfl)
-
-namespace IsRationalPiecewiseAffine
-
-/-- The domain of a rational piecewise-affine map is rational semilinear. -/
-theorem isRationalSemilinear {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f) :
-    IsRationalSemilinear h D := by
-  obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
-  exact IsRationalSemilinear.iUnion fun k => (hS k).1
-
-/-- Restricting to a rational semilinear set keeps the map piecewise affine. -/
-theorem inter {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f) {P : Set V}
-    (hP : IsRationalSemilinear h P) :
-    IsRationalPiecewiseAffine h h' (D ∩ P) fun x => f ⟨x.val, x.property.1⟩ := by
-  obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
-  refine ⟨κ, ‹_›, fun k => S k ∩ P, g, (Set.iUnion_inter ..).symm, fun k =>
-    ⟨(hS k).1.inter hP, (hS k).2.1, fun x hx => (hS k).2.2 ⟨x.val, x.property.1⟩ hx.1⟩⟩
-
-/-- Composing the values with a rational affine map keeps the map piecewise affine. -/
-theorem postcomp {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f)
-    (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear) :
-    IsRationalPiecewiseAffine h h'' D fun x => φ (f x) := by
-  obtain ⟨κ, _, S, g, hD, hS⟩ := hf
-  refine ⟨κ, ‹_›, S, fun k => φ.comp (g k), hD, fun k => ⟨(hS k).1, ?_, fun x hx => ?_⟩⟩
-  · rw [AffineMap.comp_linear]
-    exact hφ.comp (hS k).2.1
-  · simp only [AffineMap.comp_apply, (hS k).2.2 x hx]
-
-end IsRationalPiecewiseAffine
-
-namespace IsFiniteBranchOn
-
-/-- A finite branch is piecewise affine with rational linear parts. -/
-theorem isRationalPiecewiseAffine {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) :
-    IsRationalPiecewiseAffine h h' D f := by
-  obtain ⟨κ, _, S, g, hD, hS⟩ := hf
-  exact ⟨κ, ‹_›, S, g, hD, fun k =>
-    ⟨(hS k).1.isRationalSemilinear, (hS k).2.1, (hS k).2.2.2⟩⟩
-
-/-- Restricting a finite branch to a rational semilinear set gives a finite branch. -/
-theorem inter {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) {P : Set V}
-    (hP : IsRationalSemilinear h P) :
-    IsFiniteBranchOn h h' (D ∩ P) fun x => f ⟨x.val, x.property.1⟩ := by
-  obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
-  obtain ⟨μ, _, C, hC, -, rfl⟩ := TauCeti.isRationalSemilinear_iff_exists_pairwise_disjoint.mp hP
-  refine ⟨κ × μ, inferInstance, fun p => S p.1 ∩ C p.2, fun p => g p.1, ?_, fun p =>
-    ⟨(hS p.1).1.inter (hC p.2), (hS p.1).2.1, (hS p.1).2.2.1.mono Set.inter_subset_left,
-      fun x hx => (hS p.1).2.2.2 ⟨x.val, x.property.1⟩ hx.1⟩⟩
-  ext x
-  simp only [Set.mem_iUnion, Set.mem_inter_iff, Prod.exists]
-  tauto
-
-/-- A finite branch has finite fibers: on each piece the affine map is injective. -/
-theorem finite_fiber {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) (w : W) :
-    Finite {x : D // f x = w} := by
-  obtain ⟨κ, _, S, g, hD, hS⟩ := hf
-  have hpiece : ∀ x : D, ∃ k, x.val ∈ S k := fun x => by
-    simpa only [Set.mem_iUnion, ← hD] using x.property
-  choose k hk using hpiece
-  refine Finite.of_injective (fun x : {x : D // f x = w} => k x.val) fun x y hxy => ?_
-  have hxy : k x.val = k y.val := hxy
-  refine Subtype.ext (Subtype.ext ((hS (k x.val)).2.2.1 (hk x.val) (hxy ▸ hk y.val) ?_))
-  rw [← (hS (k x.val)).2.2.2 x.val (hk x.val), hxy, ← (hS (k y.val)).2.2.2 y.val (hk y.val)]
-  exact x.property.trans y.property.symm
-
-end IsFiniteBranchOn
 
 variable (h h') in
 /-- A finite semilinear family: finitely many charts, each with a rational semilinear domain
@@ -217,7 +114,7 @@ theorem IsFiniteBranch.finite_fiber {F : FiniteSemilinearFamily h h' ι} (hF : F
   exact inferInstanceAs (Finite (Σ c, {x : F.domain c // F.eval c x = w}))
 
 /-- The family with a single chart. -/
-@[expose] def single {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f) :
+def single {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f) :
     FiniteSemilinearFamily h h' Unit where
   domain _ := D
   eval _ := f
@@ -231,17 +128,24 @@ theorem single_domain {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine 
 /-- A single-chart family has the specified domain-indexed evaluation. -/
 @[simp]
 theorem single_eval {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f)
-    (c : Unit) : (single hf).eval c = f := (rfl)
+    (c : Unit) (x : (single hf).domain c) :
+    (single hf).eval c x = f ⟨x.val, by simpa only [single_domain] using x.property⟩ := (rfl)
 
 /-- A single-chart family consists of finite branches exactly when its chart is a finite
 branch. -/
+@[simp]
 theorem isFiniteBranch_single_iff {D : Set V} {f : D → W}
     (hf : IsRationalPiecewiseAffine h h' D f) :
     (single hf).IsFiniteBranch ↔ IsFiniteBranchOn h h' D f :=
-  ⟨fun H => H (), fun H _ => H⟩
+  Unique.forall_iff
+
+/-- The fiber of a single chart is the fiber of its evaluation map. -/
+def fiberSingleEquiv {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f)
+    (w : W) : (single hf).fiber w ≃ {x : D // f x = w} :=
+  Equiv.uniqueSigma _
 
 /-- The disjoint union of two families, with the charts of both. -/
-@[expose] def sum : FiniteSemilinearFamily h h' (ι ⊕ κ) where
+def sum : FiniteSemilinearFamily h h' (ι ⊕ κ) where
   domain := Sum.elim F.domain G.domain
   eval := fun
     | .inl c => F.eval c
@@ -260,11 +164,13 @@ theorem sum_domain_inr (c : κ) : (F.sum G).domain (.inr c) = G.domain c := (rfl
 
 /-- The left charts of a disjoint union retain their original evaluations. -/
 @[simp]
-theorem sum_eval_inl (c : ι) : (F.sum G).eval (.inl c) = F.eval c := (rfl)
+theorem sum_eval_inl (c : ι) (x : (F.sum G).domain (.inl c)) :
+    (F.sum G).eval (.inl c) x = F.eval c ⟨x.val, F.sum_domain_inl G c ▸ x.property⟩ := (rfl)
 
 /-- The right charts of a disjoint union retain their original evaluations. -/
 @[simp]
-theorem sum_eval_inr (c : κ) : (F.sum G).eval (.inr c) = G.eval c := (rfl)
+theorem sum_eval_inr (c : κ) (x : (F.sum G).domain (.inr c)) :
+    (F.sum G).eval (.inr c) x = G.eval c ⟨x.val, F.sum_domain_inr G c ▸ x.property⟩ := (rfl)
 
 /-- The fiber of a disjoint union is the disjoint union of the fibers. -/
 def fiberSumEquiv (w : W) : (F.sum G).fiber w ≃ F.fiber w ⊕ G.fiber w :=
@@ -275,6 +181,28 @@ def fiberSumEquiv (w : W) : (F.sum G).fiber w ≃ F.fiber w ⊕ G.fiber w :=
 theorem fiberSumEquiv_symm_apply_fst (w : W) (z : F.fiber w ⊕ G.fiber w) :
     ((F.fiberSumEquiv G w).symm z).1 = Sum.map Sigma.fst Sigma.fst z := by
   cases z <;> rfl
+
+/-- The inverse fiber comparison retains the ambient point on the left summand. -/
+@[simp]
+theorem fiberSumEquiv_symm_apply_inl_point (w : W) (z : F.fiber w) :
+    (((F.fiberSumEquiv G w).symm (.inl z)).2.val : V) = z.2.val := (rfl)
+
+/-- The inverse fiber comparison retains the ambient point on the right summand. -/
+@[simp]
+theorem fiberSumEquiv_symm_apply_inr_point (w : W) (z : G.fiber w) :
+    (((F.fiberSumEquiv G w).symm (.inr z)).2.val : V) = z.2.val := (rfl)
+
+/-- The fiber comparison retains the ambient point regardless of the summand. -/
+@[simp]
+theorem fiberSumEquiv_apply_point (w : W) (z : (F.sum G).fiber w) :
+    Sum.elim (fun x => (x.2.val : V)) (fun x => (x.2.val : V))
+      (F.fiberSumEquiv G w z) = z.2.val := by
+  obtain ⟨(c | c), x⟩ := z <;> rfl
+
+/-- Extended fiber cardinalities add under disjoint union, including infinite fibers. -/
+theorem enat_card_fiber_sum (w : W) :
+    ENat.card ((F.sum G).fiber w) = ENat.card (F.fiber w) + ENat.card (G.fiber w) := by
+  rw [ENat.card_congr (F.fiberSumEquiv G w), ENat.card_sum]
 
 /-- A disjoint union of families with finite fibers has finite fibers. -/
 instance (w : W) [Finite (F.fiber w)] [Finite (G.fiber w)] :
@@ -287,33 +215,35 @@ theorem nat_card_fiber_sum (w : W) [Finite (F.fiber w)] [Finite (G.fiber w)] :
   rw [Nat.card_congr (F.fiberSumEquiv G w), Nat.card_sum]
 
 /-- A disjoint union consists of finite branches exactly when both families do. -/
+@[simp]
 theorem isFiniteBranch_sum_iff :
     (F.sum G).IsFiniteBranch ↔ F.IsFiniteBranch ∧ G.IsFiniteBranch :=
-  ⟨fun H => ⟨fun c => H (.inl c), fun c => H (.inr c)⟩, fun H => by
-    rintro (c | c)
-    exacts [H.1 c, H.2 c]⟩
+  Sum.forall
 
-/-- Restriction of all charts to a rational semilinear set. -/
-@[expose] def restrict {P : Set V} (hP : IsRationalSemilinear h P) :
+/-- Restriction of each chart to its own rational semilinear set. -/
+def restrict (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) :
     FiniteSemilinearFamily h h' ι where
-  domain c := F.domain c ∩ P
+  domain c := F.domain c ∩ P c
   eval c x := F.eval c ⟨x.val, x.property.1⟩
-  isRationalPiecewiseAffine c := (F.isRationalPiecewiseAffine c).inter hP
+  isRationalPiecewiseAffine c := (F.isRationalPiecewiseAffine c).inter (hP c)
 
 /-- Restricting a family intersects each domain with the restricting set. -/
 @[simp]
-theorem restrict_domain {P : Set V} (hP : IsRationalSemilinear h P) (c : ι) :
-    (F.restrict hP).domain c = F.domain c ∩ P := (rfl)
+theorem restrict_domain (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (c : ι) :
+    (F.restrict P hP).domain c = F.domain c ∩ P c := (rfl)
 
 /-- Restriction evaluates a point using its original domain membership. -/
 @[simp]
-theorem restrict_eval {P : Set V} (hP : IsRationalSemilinear h P) (c : ι)
-    (x : ↥(F.domain c ∩ P)) : (F.restrict hP).eval c x = F.eval c ⟨x.val, x.property.1⟩ := (rfl)
+theorem restrict_eval (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (c : ι)
+    (x : (F.restrict P hP).domain c) :
+    (F.restrict P hP).eval c x =
+      F.eval c ⟨x.val, (F.restrict_domain P hP c ▸ x.property :
+        x.val ∈ F.domain c ∩ P c).1⟩ := (rfl)
 
 /-- The fiber of a restriction consists of the points of the original fiber lying in the
 restricting set. -/
-def fiberRestrictEquiv {P : Set V} (hP : IsRationalSemilinear h P) (w : W) :
-    (F.restrict hP).fiber w ≃ {p : F.fiber w // (p.2.val : V) ∈ P} where
+def fiberRestrictEquiv (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W) :
+    (F.restrict P hP).fiber w ≃ {p : F.fiber w // (p.2.val : V) ∈ P p.1} where
   toFun p := ⟨⟨p.1, ⟨p.2.val.val, p.2.val.property.1⟩, p.2.property⟩, p.2.val.property.2⟩
   invFun p := ⟨p.val.1, ⟨p.val.2.val.val, p.val.2.val.property, p.property⟩, p.val.2.property⟩
   left_inv _ := rfl
@@ -321,25 +251,39 @@ def fiberRestrictEquiv {P : Set V} (hP : IsRationalSemilinear h P) (w : W) :
 
 /-- Restriction of chart domains preserves each point's original chart label. -/
 @[simp]
-theorem fiberRestrictEquiv_apply_val_fst {P : Set V} (hP : IsRationalSemilinear h P)
-    (w : W) (z : (F.restrict hP).fiber w) :
-    (F.fiberRestrictEquiv hP w z).val.1 = z.1 := (rfl)
+theorem fiberRestrictEquiv_apply_val_fst (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c))
+    (w : W) (z : (F.restrict P hP).fiber w) :
+    (F.fiberRestrictEquiv P hP w z).val.1 = z.1 := (rfl)
+
+/-- The restricted fiber comparison retains the ambient point. -/
+@[simp]
+theorem fiberRestrictEquiv_apply_point (P : ι → Set V)
+    (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W) (z : (F.restrict P hP).fiber w) :
+    ((F.fiberRestrictEquiv P hP w z).val.2.val : V) = z.2.val := (rfl)
+
+/-- The inverse restricted fiber comparison retains the chart label and ambient point. -/
+@[simp]
+theorem fiberRestrictEquiv_symm_apply_chart_point (P : ι → Set V)
+    (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W)
+    (z : {p : F.fiber w // (p.2.val : V) ∈ P p.1}) :
+    (((F.fiberRestrictEquiv P hP w).symm z).1,
+      ((F.fiberRestrictEquiv P hP w).symm z).2.val.val) = (z.val.1, z.val.2.val.val) := (rfl)
 
 /-- Restricting chart domains preserves finiteness of the fibers. -/
-instance {P : Set V} (hP : IsRationalSemilinear h P) (w : W) [Finite (F.fiber w)] :
-    Finite ((F.restrict hP).fiber w) :=
-  Finite.of_equiv _ (F.fiberRestrictEquiv hP w).symm
+instance (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W) [Finite (F.fiber w)] :
+    Finite ((F.restrict P hP).fiber w) :=
+  Finite.of_equiv _ (F.fiberRestrictEquiv P hP w).symm
 
 /-- Restricting a family of finite branches to a rational semilinear set gives a family of
 finite branches. -/
-theorem IsFiniteBranch.restrict {F : FiniteSemilinearFamily h h' ι} {P : Set V}
-    (hP : IsRationalSemilinear h P) (hF : F.IsFiniteBranch) :
-    (F.restrict hP).IsFiniteBranch :=
-  fun c => (hF c).inter hP
+theorem IsFiniteBranch.restrict {F : FiniteSemilinearFamily h h' ι} (P : ι → Set V)
+    (hP : ∀ c, IsRationalSemilinear h (P c)) (hF : F.IsFiniteBranch) :
+    (F.restrict P hP).IsFiniteBranch :=
+  fun c => (hF c).inter (hP c)
 
-/-- Post-composition of all evaluations with a rational affine map. This need not
+/-- Post-composition with an affine map whose linear part is rational. This need not
 preserve finite branches when the affine map is not injective on their images. -/
-@[expose] def postcomp (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear) :
+def postcomp (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear) :
     FiniteSemilinearFamily h h'' ι where
   domain := F.domain
   eval c x := φ (F.eval c x)
@@ -353,19 +297,49 @@ theorem postcomp_domain (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLi
 /-- Post-composition applies the affine map to each evaluation. -/
 @[simp]
 theorem postcomp_eval (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear)
-    (c : ι) (x : F.domain c) : (F.postcomp φ hφ).eval c x = φ (F.eval c x) := (rfl)
+    (c : ι) (x : (F.postcomp φ hφ).domain c) :
+    (F.postcomp φ hφ).eval c x =
+      φ (F.eval c ⟨x.val, congrFun (F.postcomp_domain φ hφ) c ▸ x.property⟩) := (rfl)
 
 /-- The fiber of a post-composition over `w'` is the union of the original fibers over the
 points of `φ ⁻¹' {w'}`. -/
 def fiberPostcompEquiv (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear)
-    (w' : X) : (F.postcomp φ hφ).fiber w' ≃ Σ w : {w : W // φ w = w'}, F.fiber w where
-  toFun p := ⟨⟨F.eval p.1 p.2.val, p.2.property⟩, p.1, p.2.val, rfl⟩
-  invFun p := ⟨p.2.1, p.2.2.val, (congrArg φ p.2.2.property).trans p.1.property⟩
-  left_inv _ := rfl
-  right_inv := by
-    rintro ⟨⟨w, hw⟩, c, x, hx⟩
-    cases hx
-    rfl
+    (w' : X) : (F.postcomp φ hφ).fiber w' ≃ Σ w : {w : W // φ w = w'}, F.fiber w :=
+  let Y := {w : W // φ w = w'}
+  calc
+    _ ≃ Σ c : ι, Σ w : Y, {x : F.domain c // F.eval c x = w} :=
+      Equiv.sigmaCongrRight fun c =>
+        (Equiv.sigmaSubtypeFiberEquivSubtype (F.eval c) (fun _ => Iff.rfl)).symm
+    _ ≃ Σ p : ι × Y, {x : F.domain p.1 // F.eval p.1 x = p.2} := Equiv.sigmaAssocProd.symm
+    _ ≃ Σ p : Y × ι, {x : F.domain p.2 // F.eval p.2 x = p.1} :=
+      Equiv.sigmaCongrLeft' (Equiv.prodComm ι Y)
+    _ ≃ Σ w : Y, Σ c : ι, {x : F.domain c // F.eval c x = w} :=
+      Equiv.sigmaAssocProd (α := Y) (β := ι)
+        (γ := fun w c => {x : F.domain c // F.eval c x = (w : W)})
+
+/-- Post-composition preserves the original chart label. -/
+@[simp]
+theorem fiberPostcompEquiv_apply_chart (φ : W →ᵃ[ℝ] X)
+    (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear) (w' : X)
+    (z : (F.postcomp φ hφ).fiber w') :
+    (F.fiberPostcompEquiv φ hφ w' z).2.1 = z.1 := (rfl)
+
+/-- Post-composition retains the ambient point and records the intermediate value. -/
+@[simp]
+theorem fiberPostcompEquiv_apply_value_point (φ : W →ᵃ[ℝ] X)
+    (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear) (w' : X)
+    (z : (F.postcomp φ hφ).fiber w') :
+    ((F.fiberPostcompEquiv φ hφ w' z).1.val, (F.fiberPostcompEquiv φ hφ w' z).2.2.val.val) =
+      (F.eval z.1 ⟨z.2.val.val,
+        congrFun (F.postcomp_domain φ hφ) z.1 ▸ z.2.val.property⟩, z.2.val.val) := (rfl)
+
+/-- The inverse post-composition comparison retains the chart label and ambient point. -/
+@[simp]
+theorem fiberPostcompEquiv_symm_apply_chart_point (φ : W →ᵃ[ℝ] X)
+    (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear) (w' : X)
+    (z : Σ w : {w : W // φ w = w'}, F.fiber w) :
+    (((F.fiberPostcompEquiv φ hφ w').symm z).1,
+      ((F.fiberPostcompEquiv φ hφ w').symm z).2.val.val) = (z.2.1, z.2.2.val.val) := (rfl)
 
 end FiniteSemilinearFamily
 
