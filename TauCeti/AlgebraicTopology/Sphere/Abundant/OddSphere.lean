@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Action
 public import TauCeti.AlgebraicTopology.Sphere.DoubleTangentCircle
 public import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
+import TauCeti.AlgebraicTopology.Singular.Homotopy.BasedMapStabilizer
 import TauCeti.Topology.Grassmannian.SphereBundle.Action
 
 /-!
@@ -103,10 +104,11 @@ theorem isAbundantWithTwoSpheres_sphere_of_odd {n : ℕ} (hn : Odd n) (h3 : 3 �
   obtain ⟨α, hα⟩ := exists_not_isOfFinAddOrder_homology_basedMap_sphere
     (E := EuclideanSpace ℝ (Fin (m + 2 + 1 + 1))) (m := m) (by simp) b
   refine o.isAbundantWithTwoSpheres_of_smul_ne_zero finrank_euclideanSpace_fin π (fun _ ↦ rfl)
-    (exists_continuousOn_smul_eq_sphere (by omega) b)
-    (isPathConnected_stabilizer_specialOrthogonalGroup_sphere b) (ℓ := 2)
+    (exists_continuousOn_smul_eq_sphere (by omega) b) (ℓ := 2)
     (A := o'.mapFundamentalClass hdim (sphereRotationMatrix b)) ?_ (k := m + 1) (by omega)
-    (α := α) fun h ↦ hα (isOfFinAddOrder_iff_zsmul_eq_zero.2 ⟨2, two_ne_zero, h⟩)
+    (α := α) (fun h ↦ hα (isOfFinAddOrder_iff_zsmul_eq_zero.2 ⟨2, two_ne_zero, h⟩)) fun h ↦
+      ((isPathConnected_stabilizer_specialOrthogonalGroup_sphere b).joinedIn 1 (one_mem _) h
+        h.property).homologyMap_stabilizer_smul_apply _ _ α
   -- The class of the rotations evaluates at `b` to `(1 + (-1) ^ (m + 2)) • [Sᵐ⁺³] = 2 • [Sᵐ⁺³]`.
   refine (o'.mapFundamentalClass_comp hdim π (sphereRotationMatrix b)).symm.trans ?_
   rw [hπ, oF.mapFundamentalClass_sphereRotationFamily b hdim, hm.neg_one_pow, one_add_one_eq_two]
