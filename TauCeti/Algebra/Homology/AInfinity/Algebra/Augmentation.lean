@@ -231,6 +231,11 @@ noncomputable def reducedPart (ε : 𝒜.Augmentation) : A →ₗ[R] ε.augmenta
 theorem coe_reducedPart (ε : 𝒜.Augmentation) (x : A) :
     (ε.reducedPart x : A) = x - ε x • ε.unit := (rfl)
 
+/-- Recovering an element from its reduced part and scalar part. -/
+theorem coe_reducedPart_add_smul_unit (ε : 𝒜.Augmentation) (x : A) :
+    (ε.reducedPart x : A) + ε x • ε.unit = x := by
+  rw [coe_reducedPart, sub_add_cancel]
+
 /-- The reduced-part projection fixes the augmentation ideal pointwise. -/
 @[simp]
 theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
@@ -401,20 +406,25 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
   · rw [coe_reducedPart]
     simp [hx]
 
+/-- The reduced-part projection commutes with any Koszul twist. -/
+@[simp]
+theorem reducedPart_koszulTwist (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
+    ε.reducedPart (𝒜.grading.koszulTwist q x) =
+      ε.reducedGrading.koszulTwist q (ε.reducedPart x) := by
+  have h := ε.isHomogeneous_reducedPart.koszulTwist_apply q x
+  simpa only [reducedAlgebra_grading, mul_zero, Int.negOnePow_zero, Units.val_one,
+    Int.cast_one, one_smul] using h.symm
+
 /-- The reduced-part projection intertwines the differential with that of the reduced `A∞`
 algebra. -/
 theorem reducedPart_differential (ε : 𝒜.Augmentation) (x : A) :
     ε.reducedPart (𝒜.differential x) = ε.reducedAlgebra.differential (ε.reducedPart x) := by
-  have hx : x = ε x • ε.unit + (ε.reducedPart x : A) := by
-    rw [coe_reducedPart, add_sub_cancel]
   have hd : 𝒜.differential x = (ε.reducedAlgebra.differential (ε.reducedPart x) : A) := by
-    conv_lhs => rw [hx]
-    rw [map_add, map_smul, ε.isStrictUnit.differential_eq_zero, smul_zero, zero_add,
+    conv_lhs => rw [← ε.coe_reducedPart_add_smul_unit x]
+    rw [map_add, map_smul, ε.isStrictUnit.differential_eq_zero, smul_zero, add_zero,
       differential_apply, differential_apply, reducedAlgebra_m, coe_reducedOperation]
     congr 1
-    funext i
-    fin_cases i
-    rfl
+    exact funext <| Fin.forall_fin_one.2 (by simp)
   rw [hd, ε.reducedPart_coe]
 
 end Augmentation
