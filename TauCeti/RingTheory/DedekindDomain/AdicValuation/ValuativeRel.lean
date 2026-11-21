@@ -346,8 +346,42 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
         TauCeti.unitFiltration (v.adicCompletion K) 0 ↔
       v.valuation K a = 1 := by
   rw [mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
-    algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-    Algebra.algebraMap_self_apply]
+    valued_algebraMap_adicCompletion]
+
+/-- **Units of `K` in the `k`-th unit filtration of the completion.** The image in `K_v` of a
+unit `a` of `K` lies in the depth-`k` step `U(K_v, k)` of the unit filtration exactly when `a` has
+`v`-adic valuation one and `v.valuation K (a - 1) ≤ exp (-k)`. -/
+theorem unitsMap_algebraMap_mem_unitFiltration_iff
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] (k : ℕ) (a : Kˣ) :
+    Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a ∈
+        TauCeti.unitFiltration (v.adicCompletion K) k ↔
+      v.valuation K (a : K) = 1 ∧ v.valuation K ((a : K) - 1) ≤ WithZero.exp (-(k : ℤ)) := by
+  rw [mem_unitFiltration_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
+    ← map_one (algebraMap K (v.adicCompletion K)), ← map_sub,
+    valued_algebraMap_adicCompletion, valued_algebraMap_adicCompletion]
+
+/-- If `u` approximates a local unit `z` of valuation `1` strictly within `exp (-n)`, then
+`u * z⁻¹` lies in the `n`-th step of the unit filtration. -/
+theorem mul_inv_mem_unitFiltration_of_sub_lt
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] {n : ℕ} {u z : (v.adicCompletion K)ˣ}
+    (hz1 : Valued.v (z : v.adicCompletion K) = 1)
+    (huz : Valued.v ((u : v.adicCompletion K) - (z : v.adicCompletion K)) <
+      WithZero.exp (-(n : ℤ))) :
+    u * z⁻¹ ∈ TauCeti.unitFiltration (v.adicCompletion K) n := by
+  have hsub : ((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1 =
+      ((u : v.adicCompletion K) - (z : v.adicCompletion K)) * ((z : v.adicCompletion K))⁻¹ := by
+    simp only [Units.val_mul, Units.val_inv_eq_inv_val, sub_mul, mul_inv_cancel₀ z.ne_zero]
+  have hlt : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
+      WithZero.exp (-(n : ℤ)) := by
+    rw [hsub, map_mul, map_inv₀, hz1, inv_one, mul_one]
+    exact huz
+  have hle1 : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
+      Valued.v (1 : v.adicCompletion K) := by
+    rw [map_one]
+    exact hlt.trans_le (WithZero.exp_le_exp.mpr (by omega))
+  exact (mem_unitFiltration_adicCompletion_iff v).mpr
+    ⟨(Valuation.map_eq_of_sub_lt (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰) hle1).trans
+      (map_one _), hlt.le⟩
 
 /-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
 image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/

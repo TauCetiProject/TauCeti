@@ -7,8 +7,10 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Congruence
 
+import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 import TauCeti.RingTheory.Ideal.Quotient.DedekindDomain
 
 /-!
@@ -56,6 +58,10 @@ class.
   modulus.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_surjective`: every residue unit lifts to a larger
   finite modulus.
+* `TauCeti.GlobalNumberFields.exists_primeToSubgroup_div_eq`: every fraction prime to `𝔪` is a
+  quotient of two algebraic integers prime to `𝔪`.
+* `TauCeti.GlobalNumberFields.exists_primeToSubgroup_approx_localUnit`: weak approximation in
+  `primeToSubgroup 𝔪` for a local unit at a place of `𝔪`.
 
 ## References
 
@@ -268,5 +274,123 @@ theorem finiteUnitsMap_residueHom {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart �
     Ideal.Quotient.factor_mk,
     residue_eq (x := Subgroup.inclusion (primeToSubgroup_le_of_dvd h) x)
       (a := a) (b := b) hbm habm]
+
+/-! ### Quotients and weak approximation in `primeToSubgroup` -/
+
+/-- Every element of `primeToSubgroup 𝔪` is a quotient of two algebraic integers in
+`primeToSubgroup 𝔪`. -/
+theorem exists_primeToSubgroup_div_eq {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
+    ∃ (a b : 𝓞 K) (xa xb : primeToSubgroup 𝔪),
+      algebraMap (𝓞 K) K a = ((xa : Kˣ) : K) ∧ algebraMap (𝓞 K) K b = ((xb : Kˣ) : K) ∧
+        xa = xb * x := by
+  obtain ⟨a, b, hb, hab⟩ :=
+    𝔪.finitePart.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
+      (fun v hv ↦ (mem_primeToSubgroup.mp x.property v hv).le)
+  by_cases hb0 : b = 0
+  · have htop : 𝔪.finitePart = ⊤ := by
+      rw [hb0, zero_sub] at hb
+      exact Ideal.eq_top_of_isUnit_mem _ (by simpa using 𝔪.finitePart.neg_mem hb) isUnit_one
+    obtain ⟨p, q, hq, hpq⟩ := IsFractionRing.div_surjective (A := 𝓞 K) ((x : Kˣ) : K)
+    have hq0 : algebraMap (𝓞 K) K q ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr (nonZeroDivisors.ne_zero hq)
+    have hpqx : algebraMap (𝓞 K) K p = algebraMap (𝓞 K) K q * ((x : Kˣ) : K) := by
+      rw [← hpq, mul_div_cancel₀ _ hq0]
+    have hp0 : algebraMap (𝓞 K) K p ≠ 0 := by
+      rw [hpqx]
+      exact mul_ne_zero hq0 (x : Kˣ).ne_zero
+    have hmem_all (y : Kˣ) : y ∈ primeToSubgroup 𝔪 :=
+      mem_primeToSubgroup.mpr fun v hv ↦
+        absurd (top_le_iff.mp (Ideal.le_of_dvd (htop ▸ hv))) v.isPrime.ne_top
+    refine ⟨p, q, ⟨Units.mk0 _ hp0, hmem_all _⟩, ⟨Units.mk0 _ hq0, hmem_all _⟩, rfl, rfl,
+      Subtype.ext (Units.ext hpqx)⟩
+  · have hxb0 : algebraMap (𝓞 K) K b ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr hb0
+    let xb_u : Kˣ := Units.mk0 (algebraMap (𝓞 K) K b) hxb0
+    have hxb : xb_u ∈ primeToSubgroup 𝔪 := by
+      refine mem_primeToSubgroup.mpr fun v hv ↦ ?_
+      rw [Units.val_mk0, v.valuation_of_algebraMap]
+      refine v.intValuation_eq_one_iff.mpr fun hbv ↦ v.isPrime.ne_top ?_
+      have h1 : (1 : 𝓞 K) ∈ v.asIdeal := by
+        have hsub : b - 1 ∈ v.asIdeal := Ideal.le_of_dvd hv hb
+        simpa using v.asIdeal.sub_mem hbv hsub
+      exact Ideal.eq_top_of_isUnit_mem _ h1 isUnit_one
+    have hxa0 : algebraMap (𝓞 K) K a ≠ 0 := by
+      rw [hab]
+      exact mul_ne_zero hxb0 (x : Kˣ).ne_zero
+    let xa_u : Kˣ := Units.mk0 (algebraMap (𝓞 K) K a) hxa0
+    have hxeq : xa_u = xb_u * (x : Kˣ) := Units.ext hab
+    exact ⟨a, b, ⟨xa_u, hxeq ▸ mul_mem hxb x.property⟩, ⟨xb_u, hxb⟩, rfl, rfl, Subtype.ext hxeq⟩
+
+/-- Given a prime `v₀ ∈ 𝔪.support` and a local unit `z ∈ U(K_{v₀}, k)` with `k ≤ 𝔪.exponent v₀`,
+there is a nonzero global element `x ∈ primeToSubgroup 𝔪`, a local unit at every prime dividing
+`𝔪`, approximating `z` to level `𝔪.exponent v₀` at `v₀` and `1` to level `𝔪.exponent v` at every
+other `v ∈ 𝔪.support`. -/
+theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : HeightOneSpectrum (𝓞 K)}
+    (hv₀ : v₀ ∈ 𝔪.support) {k : ℕ} (hk : k ≤ 𝔪.exponent v₀)
+    (z : (v₀.adicCompletion K)ˣ)
+    (hz : z ∈ TauCeti.unitFiltration (v₀.adicCompletion K) k) :
+    ∃ x : primeToSubgroup 𝔪,
+      Units.map (algebraMap K (v₀.adicCompletion K)).toMonoidHom (x : Kˣ) * z⁻¹ ∈
+          TauCeti.unitFiltration (v₀.adicCompletion K) (𝔪.exponent v₀) ∧
+        (∀ v ∈ 𝔪.support, v ≠ v₀ →
+          Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) ∈
+            TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v)) ∧
+        v₀.valuation K (((x : Kˣ) : K) - 1) ≤ WithZero.exp (-(k : ℤ)) := by
+  classical
+  obtain ⟨a₀, ha₀⟩ := v₀.exists_algebraMap_adicCompletion_sub_lt (z : v₀.adicCompletion K)
+    (𝔪.exponent v₀)
+  obtain ⟨x, hxf, -⟩ := exists_fieldUnit_valuation_sub_lt_and_signHom_eq (S := 𝔪.support)
+    (fun v ↦ if v = v₀ then a₀ else 1)
+    (fun v ↦ WithZero.exp (-(𝔪.exponent v : ℤ)))
+    (fun _ _ ↦ WithZero.exp_ne_zero) 1
+  have hvpos (v : HeightOneSpectrum (𝓞 K)) (hv : v ∈ 𝔪.support) :
+      WithZero.exp (-(𝔪.exponent v : ℤ)) < (1 : WithZero (Multiplicative ℤ)) := by
+    have hne : 𝔪.exponent v ≠ 0 := (Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).mp hv
+    rw [← WithZero.exp_zero, WithZero.exp_lt_exp]
+    omega
+  have hxz : Valued.v (algebraMap K (v₀.adicCompletion K) (x : K) - (z : v₀.adicCompletion K)) <
+      WithZero.exp (-(𝔪.exponent v₀ : ℤ)) := by
+    have hxa : Valued.v (algebraMap K (v₀.adicCompletion K) (x : K) -
+        algebraMap K (v₀.adicCompletion K) a₀) < WithZero.exp (-(𝔪.exponent v₀ : ℤ)) := by
+      rw [← map_sub, valued_algebraMap_adicCompletion]
+      simpa using hxf v₀ hv₀
+    have heq : algebraMap K (v₀.adicCompletion K) (x : K) - (z : v₀.adicCompletion K) =
+        (algebraMap K (v₀.adicCompletion K) (x : K) - algebraMap K (v₀.adicCompletion K) a₀) +
+          (algebraMap K (v₀.adicCompletion K) a₀ - (z : v₀.adicCompletion K)) := by ring
+    rw [heq]
+    exact (Valuation.map_add _ _ _).trans_lt (max_lt hxa ha₀)
+  have hz_mem := (v₀.mem_unitFiltration_adicCompletion_iff (K := K)).mp hz
+  have hx0_val : Valued.v (algebraMap K (v₀.adicCompletion K) (x : K)) = 1 := by
+    have hlt : Valued.v (algebraMap K (v₀.adicCompletion K) (x : K) -
+        (z : v₀.adicCompletion K)) < Valued.v (z : v₀.adicCompletion K) :=
+      hxz.trans ((hvpos v₀ hv₀).trans_eq hz_mem.1.symm)
+    rw [Valuation.map_eq_of_sub_lt _ hlt, hz_mem.1]
+  have hx_mem : x ∈ primeToSubgroup 𝔪 := by
+    refine mem_primeToSubgroup.mpr fun v hv ↦ ?_
+    have hv' : v ∈ 𝔪.support := (𝔪.mem_support_iff v).mpr hv
+    by_cases heq : v = v₀
+    · subst heq
+      simpa only [valued_algebraMap_adicCompletion] using hx0_val
+    · have hlt : v.valuation K ((x : K) - 1) < v.valuation K 1 := by
+        rw [map_one]
+        exact (by simpa [heq] using hxf v hv' : _ < _).trans (hvpos v hv')
+      rw [Valuation.map_eq_of_sub_lt _ hlt, map_one]
+  refine ⟨⟨x, hx_mem⟩,
+    v₀.mul_inv_mem_unitFiltration_of_sub_lt hz_mem.1 (by simpa using hxz),
+    fun v hv hne ↦ (v.unitsMap_algebraMap_mem_unitFiltration_iff (𝔪.exponent v) x).mpr
+      ⟨mem_primeToSubgroup.mp hx_mem v ((𝔪.mem_support_iff v).mp hv),
+        (by simpa [hne] using hxf v hv : _ < _).le⟩,
+    ?_⟩
+  have hle : WithZero.exp (-(𝔪.exponent v₀ : ℤ)) ≤ WithZero.exp (-(k : ℤ)) :=
+    WithZero.exp_le_exp.mpr (by omega)
+  have hsub : Valued.v (algebraMap K (v₀.adicCompletion K) ((x : K) - 1)) ≤
+      WithZero.exp (-(k : ℤ)) := by
+    have heq : algebraMap K (v₀.adicCompletion K) ((x : K) - 1) =
+        (algebraMap K (v₀.adicCompletion K) (x : K) - (z : v₀.adicCompletion K)) +
+          ((z : v₀.adicCompletion K) - 1) := by
+      rw [map_sub, map_one]; ring
+    rw [heq]
+    exact (Valuation.map_add _ _ _).trans (max_le (hxz.le.trans hle) hz_mem.2)
+  simpa only [valued_algebraMap_adicCompletion] using hsub
 
 end TauCeti.GlobalNumberFields

@@ -28,7 +28,9 @@ Everything here concerns one completion. The comparison of two completions along
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletion_charZero`: a completion of a field of
   characteristic zero has characteristic zero.
 * `algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers` (in the same namespace): an
-  element of `R` maps to `K_v` through `K` as it does through `𝒪_v`.
+  element of `R` maps to `K_v` through `K` as it does through `𝒪_v`;
+  `IsDedekindDomain.HeightOneSpectrum.valued_algebraMap_adicCompletion` identifies the
+  completion valuation of an image of `K` with `v.valuation K`.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.isUnit_algebraMap_adicCompletionIntegers_iff`: an element
@@ -46,7 +48,9 @@ Everything here concerns one completion. The comparison of two completions along
 * `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
   ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
 * `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
-  around the origin is open.
+  around the origin is open;
+  `IsDedekindDomain.HeightOneSpectrum.exists_algebraMap_adicCompletion_sub_lt` approximates any
+  element of `K_v` by an element of `K` within `exp (-n)`.
 * `IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`: the subspace
   topology on `𝒪_v` is the `𝔪`-adic one. The instances
   `isLinearTopology_adicCompletionIntegers` and `fact_isAdic_maximalIdeal_adicCompletionIntegers`
@@ -198,6 +202,14 @@ theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (r : R) :
         (algebraMap R (v.adicCompletionIntegers K) r) := by
   rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
     algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
+
+/-- The valuation on the `v`-adic completion of `K` restricts along `algebraMap` to
+`v.valuation K`. -/
+theorem valued_algebraMap_adicCompletion (x : K) :
+    Valued.v (algebraMap K (v.adicCompletion K) x) = v.valuation K x := by
+  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    Algebra.algebraMap_self_apply]
+
 /-- An element of `K` with valuation one is the image of a unit in the ring of integers of its
 completion at `v`. -/
 theorem exists_isUnit_adicCompletionIntegers_of_valuation_eq_one {c : K}
@@ -376,6 +388,19 @@ theorem isOpen_setOf_valued_le {γ : ℤᵐ⁰} (hγ : γ ≠ 0) :
     rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, Valuation.restrict_le_iff, hz]
   rw [h]
   exact Valued.isOpen_closedBall _ hr0
+
+/-- Density of `K` in `K_v` produces a global element strictly within `exp (-n)` of any local
+element `z : K_v`. -/
+theorem exists_algebraMap_adicCompletion_sub_lt (z : v.adicCompletion K) (n : ℕ) :
+    ∃ a : K, Valued.v (algebraMap K (v.adicCompletion K) a - z) < WithZero.exp (-(n : ℤ)) := by
+  let r₀ : WithZero (Multiplicative ℤ) := WithZero.exp (-(n : ℤ) - 1)
+  have hball : {y : v.adicCompletion K | Valued.v (y - z) ≤ r₀} ∈ nhds z := by
+    have hopen : IsOpen ((fun y : v.adicCompletion K ↦ y - z) ⁻¹'
+        {y : v.adicCompletion K | Valued.v y ≤ r₀}) :=
+      (v.isOpen_setOf_valued_le WithZero.exp_ne_zero).preimage (continuous_sub_right _)
+    exact hopen.mem_nhds (by simp [r₀])
+  obtain ⟨-, ⟨a, rfl⟩, ha⟩ := (v.denseRange_algebraMap K).inter_nhds_nonempty hball
+  exact ⟨a, lt_of_le_of_lt ha (WithZero.exp_lt_exp.mpr (by omega))⟩
 
 /-- **Each power of the maximal ideal of `𝒪_v` is open**: `𝔪 ^ n` is the preimage under the
 inclusion `𝒪_v → K_v` of a closed valuation ball, and those are open. -/

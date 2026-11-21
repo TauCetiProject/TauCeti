@@ -241,6 +241,25 @@ theorem conductorExponent_eq_zero_iff (χ : HeckeCharacter K) (v : HeightOneSpec
       ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) 0, χ.finiteComponent v u = 1 := by
   rw [← Nat.le_zero, conductorExponent_le_iff]
 
+/-- Shrinking a product of local finite components along `S ⊆ T` when `χ` is unramified outside
+`S` and `x` is a local unit at all primes of `T`. -/
+theorem prod_finiteComponent_eq_of_subset (χ : HeckeCharacter K)
+    {S T : Finset (HeightOneSpectrum (𝓞 K))} (hST : S ⊆ T)
+    (hzero : ∀ v ∈ T, v ∉ S → χ.conductorExponent v = 0)
+    {x : Kˣ} (hx : ∀ v ∈ T, v.valuation K (x : K) = 1) :
+    (∏ v ∈ T,
+        χ.finiteComponent v
+          (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x)) =
+      ∏ v ∈ S,
+        χ.finiteComponent v
+          (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x) := by
+  refine (Finset.prod_subset hST fun v hvT hvS ↦ ?_).symm
+  have hmem : Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
+      TauCeti.unitFiltration (v.adicCompletion K) (χ.conductorExponent v) := by
+    rw [hzero v hvT hvS]
+    exact (v.unitsMap_algebraMap_mem_unitFiltration_zero_iff x).mpr (hx v hvT)
+  exact χ.finiteComponent_eq_one_of_mem_unitFiltration hmem
+
 /-- **One modulus bounds every conductor exponent.** -/
 theorem exists_modulus_conductorExponent_le (χ : HeckeCharacter K) :
     ∃ 𝔪 : Modulus K, ∀ v : HeightOneSpectrum (𝓞 K), χ.conductorExponent v ≤ 𝔪.exponent v :=
