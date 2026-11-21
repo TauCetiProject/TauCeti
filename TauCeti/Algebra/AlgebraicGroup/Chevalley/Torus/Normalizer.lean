@@ -17,10 +17,11 @@ actual character-lattice torus `T(K)` is precisely the Weyl subgroup `D.weylSubg
 its centralizer is `T(K)` itself.
 
 The normalizer proof combines the sharp Bruhat normal form (`u * n * b`) with torus invariance
-of `U_w(K)` (`ChevalleyDatum.torus_conj_inversionPoints_mem`) and self-normalization of `T(K)`
-in `B(K)` (`ChevalleyDatum.borelSubgroup_inf_normalizer_range_torusPoints`). The centralizer
-calculation then reduces to `D.weylSubgroup K` and identifies trivial Weyl projection with
-torus membership via `ChevalleyDatum.weylProjection_eq_one_iff_mem_range_torusPoints`.
+of `U_w(K)` (`ChevalleyDatum.range_torusPoints_le_normalizer_inversionPoints`) and
+self-normalization of `T(K)` in `B(K)`
+(`ChevalleyDatum.borelSubgroup_inf_normalizer_range_torusPoints`). The centralizer calculation
+then reduces to `D.weylSubgroup K` and identifies trivial Weyl projection with torus membership
+via `ChevalleyDatum.weylProjection_eq_one_iff_mem_range_torusPoints`.
 
 ## Main results
 
@@ -46,6 +47,54 @@ noncomputable section
 universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht) (K : Type v) [Field K]
+
+private theorem mem_centralizer_range_torusPoints_of_mul_mul_eq_of_mem_normalizer
+    (n : D.weylSubgroup K) (u : D.inversionPoints K (D.weylProjection K n))
+    (b : D.borelSubgroup K) {g : D.points K}
+    (hg : (u : D.points K) * (n : D.points K) * b = g)
+    (hgN : g ∈ Subgroup.normalizer (Set.range (D.torusPoints K))) :
+    (u : D.points K) ∈ Subgroup.centralizer (Set.range (D.torusPoints K)) := by
+  rw [Subgroup.mem_centralizer_iff]
+  rintro _ ⟨r, rfl⟩
+  let tr := D.torusPoints K r
+  have htr' : g⁻¹ * tr * g ∈ (D.torusPoints K).range := by
+    have hgNinv : g⁻¹ ∈ Subgroup.normalizer (Set.range (D.torusPoints K)) :=
+      Subgroup.inv_mem _ hgN
+    have h := (Subgroup.mem_normalizer_iff (H := (D.torusPoints K).range).mp hgNinv tr).mp
+      ⟨r, rfl⟩
+    simpa only [inv_inv] using h
+  have hu' : tr * (u : D.points K) * tr⁻¹ ∈
+      D.inversionPoints K (D.weylProjection K n) :=
+    (Subgroup.mem_normalizer_iff.mp
+      (D.range_torusPoints_le_normalizer_inversionPoints K (D.weylProjection K n) ⟨r, rfl⟩)
+      u).mp u.property
+  have hnt : (n : D.points K)⁻¹ * tr * (n : D.points K) ∈ (D.torusPoints K).range := by
+    have h := (Subgroup.mem_normalizer_iff.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints K ((D.weylSubgroup K).inv_mem n.property))
+      tr).mp ⟨r, rfl⟩
+    simpa only [inv_inv] using h
+  have hb' : (n : D.points K)⁻¹ * tr * (n : D.points K) * (b : D.points K) *
+      (g⁻¹ * tr * g)⁻¹ ∈ D.borelSubgroup K :=
+    (D.borelSubgroup K).mul_mem
+      ((D.borelSubgroup K).mul_mem (D.range_torusPoints_le_borelSubgroup K hnt) b.property)
+      ((D.borelSubgroup K).inv_mem (D.range_torusPoints_le_borelSubgroup K htr'))
+  have hprod : (tr * (u : D.points K) * tr⁻¹) * (n : D.points K) *
+      ((n : D.points K)⁻¹ * tr * (n : D.points K) * (b : D.points K) *
+        (g⁻¹ * tr * g)⁻¹) = (u : D.points K) * (n : D.points K) * b := by
+    calc
+      (tr * (u : D.points K) * tr⁻¹) * (n : D.points K) *
+          ((n : D.points K)⁻¹ * tr * (n : D.points K) * (b : D.points K) *
+            (g⁻¹ * tr * g)⁻¹)
+        = tr * ((u : D.points K) * (n : D.points K) * b) * (g⁻¹ * tr * g)⁻¹ := by group
+      _ = tr * g * (g⁻¹ * tr * g)⁻¹ := by rw [hg]
+      _ = g := by group
+      _ = (u : D.points K) * (n : D.points K) * b := hg.symm
+  have heq := (D.eq_and_eq_of_mem_map_negativePoints_conj_of_mul_eq K
+    (D.inversionPoints_le_map_negativePoints_conj K n hu')
+    (D.inversionPoints_le_map_negativePoints_conj K n u.property)
+    hb' b.property hprod).1
+  exact mul_inv_eq_iff_eq_mul.mp heq
+
 variable [Infinite K]
 
 private theorem torus_conj_bruhat_eq_of_mem_normalizer (n : D.weylSubgroup K)
@@ -53,47 +102,9 @@ private theorem torus_conj_bruhat_eq_of_mem_normalizer (n : D.weylSubgroup K)
     {g : D.points K} (hg : (u : D.points K) * (n : D.points K) * b = g)
     (hgN : g ∈ Subgroup.normalizer (Set.range (D.torusPoints K))) :
     (u : D.points K) = 1 := by
-  have huC : (u : D.points K) ∈ Subgroup.centralizer (Set.range (D.torusPoints K)) := by
-    rw [Subgroup.mem_centralizer_iff]
-    rintro _ ⟨r, rfl⟩
-    let tr := D.torusPoints K r
-    have htr' : g⁻¹ * tr * g ∈ (D.torusPoints K).range := by
-      have hgNinv : g⁻¹ ∈ Subgroup.normalizer (Set.range (D.torusPoints K)) :=
-        Subgroup.inv_mem _ hgN
-      have h := (Subgroup.mem_normalizer_iff (H := (D.torusPoints K).range).mp hgNinv tr).mp
-        ⟨r, rfl⟩
-      simpa only [inv_inv] using h
-    have hu' : tr * (u : D.points K) * tr⁻¹ ∈
-        D.inversionPoints K (D.weylProjection K n) :=
-      D.torus_conj_inversionPoints_mem K (D.weylProjection K n) r u.property
-    have hnt : (n : D.points K)⁻¹ * tr * (n : D.points K) ∈ (D.torusPoints K).range := by
-      have h := (Subgroup.mem_normalizer_iff.mp
-        (D.weylSubgroup_le_normalizer_range_torusPoints K ((D.weylSubgroup K).inv_mem n.property))
-        tr).mp ⟨r, rfl⟩
-      simpa only [inv_inv] using h
-    have hb' : (n : D.points K)⁻¹ * tr * (n : D.points K) * (b : D.points K) *
-        (g⁻¹ * tr * g)⁻¹ ∈ D.borelSubgroup K :=
-      (D.borelSubgroup K).mul_mem
-        ((D.borelSubgroup K).mul_mem (D.range_torusPoints_le_borelSubgroup K hnt) b.property)
-        ((D.borelSubgroup K).inv_mem (D.range_torusPoints_le_borelSubgroup K htr'))
-    have hprod : (tr * (u : D.points K) * tr⁻¹) * (n : D.points K) *
-        ((n : D.points K)⁻¹ * tr * (n : D.points K) * (b : D.points K) *
-          (g⁻¹ * tr * g)⁻¹) = (u : D.points K) * (n : D.points K) * b := by
-      calc
-        (tr * (u : D.points K) * tr⁻¹) * (n : D.points K) *
-            ((n : D.points K)⁻¹ * tr * (n : D.points K) * (b : D.points K) *
-              (g⁻¹ * tr * g)⁻¹)
-          = tr * ((u : D.points K) * (n : D.points K) * b) * (g⁻¹ * tr * g)⁻¹ := by group
-        _ = tr * g * (g⁻¹ * tr * g)⁻¹ := by rw [hg]
-        _ = g := by group
-        _ = (u : D.points K) * (n : D.points K) * b := hg.symm
-    have heq := (D.eq_and_eq_of_mem_map_negativePoints_conj_of_mul_eq K
-      (D.inversionPoints_le_map_negativePoints_conj K n hu')
-      (D.inversionPoints_le_map_negativePoints_conj K n u.property)
-      hb' b.property hprod).1
-    exact mul_inv_eq_iff_eq_mul.mp heq
   rw [← Subgroup.mem_bot, ← D.positivePoints_inf_centralizer_range_torusPoints K]
-  exact ⟨D.inversionPoints_le_positivePoints K _ u.property, huC⟩
+  exact ⟨D.inversionPoints_le_positivePoints K _ u.property,
+    D.mem_centralizer_range_torusPoints_of_mul_mul_eq_of_mem_normalizer K n u b hg hgN⟩
 
 /-- **Torus normalizer in the extended elementary Chevalley group.** Over an infinite field,
 the normalizer of the actual character-lattice torus inside `D.extendedElementarySubgroup K`

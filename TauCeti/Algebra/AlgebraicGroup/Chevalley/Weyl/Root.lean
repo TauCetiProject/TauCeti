@@ -141,50 +141,47 @@ theorem map_iSup_rootSubgroupPoints_conj (g : D.weylSubgroup K)
         (D.rootSubgroupPoints γ K).range := by
   simp only [Subgroup.map_iSup, D.map_range_rootSubgroupPoints_conj, iSup_image]
 
+private theorem map_iSup_rootSubgroupPoints_conj_longestElement (n₀ : D.weylSubgroup K)
+    (hn₀ : D.weylProjection K n₀ =
+      let _ := t.isReduced_simplyConnectedRootDatum ht
+      longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht))
+    {S T : Set (Fin t.numRoots)}
+    (hST : (t.simplyConnectedRootDatum ht).weylGroupToPerm
+        (let _ := t.isReduced_simplyConnectedRootDatum ht
+        longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) '' S = T) :
+    (⨆ γ ∈ S, (D.rootSubgroupPoints γ K).range).map
+        (MulAut.conj (n₀ : D.points K) : D.points K →* D.points K) =
+      ⨆ γ ∈ T, (D.rootSubgroupPoints γ K).range := by
+  rw [← MulEquiv.toMonoidHom_eq_coe, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀, hST]
+
 /-- Conjugation by a Weyl lift of the longest element sends the positive unipotent subgroup onto
 the negative unipotent subgroup. -/
+@[simp]
 theorem map_positivePoints_conj_longestElement (n₀ : D.weylSubgroup K)
     (hn₀ : D.weylProjection K n₀ =
       let _ := t.isReduced_simplyConnectedRootDatum ht
       longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) :
-    (D.positivePoints K).map (MulAut.conj (n₀ : D.points K)).toMonoidHom =
+    (D.positivePoints K).map (MulAut.conj (n₀ : D.points K) : D.points K →* D.points K) =
       D.negativePoints K := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
-  rw [D.positivePoints_eq_iSup K, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀,
-    D.negativePoints_eq_iSup K]
-  have himage : (t.simplyConnectedRootDatum ht).weylGroupToPerm
-        (longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) ''
-        posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
-      negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
-    refine Set.Subset.antisymm
-      (mapsTo_posRoots_negRoots_longestElement _ _).image_subset ?_
-    intro γ hγ
-    exact ⟨_, mapsTo_negRoots_posRoots_longestElement _ _ hγ,
-      weylGroupToPerm_longestElement_involutive _ _ γ⟩
-  rw [himage]
+  rw [D.positivePoints_eq_iSup K, D.negativePoints_eq_iSup K]
+  refine D.map_iSup_rootSubgroupPoints_conj_longestElement K n₀ hn₀ ?_
+  rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
+  exact image_weylGroupToPerm_longestElement_posRoots _ _
 
 /-- Conjugation by a Weyl lift of the longest element sends the negative unipotent subgroup onto
 the positive unipotent subgroup. -/
+@[simp]
 theorem map_negativePoints_conj_longestElement (n₀ : D.weylSubgroup K)
     (hn₀ : D.weylProjection K n₀ =
       let _ := t.isReduced_simplyConnectedRootDatum ht
       longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) :
-    (D.negativePoints K).map (MulAut.conj (n₀ : D.points K)).toMonoidHom =
+    (D.negativePoints K).map (MulAut.conj (n₀ : D.points K) : D.points K →* D.points K) =
       D.positivePoints K := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
-  rw [D.negativePoints_eq_iSup K, D.map_iSup_rootSubgroupPoints_conj K n₀, hn₀,
-    D.positivePoints_eq_iSup K]
-  have himage : (t.simplyConnectedRootDatum ht).weylGroupToPerm
-        (longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)) ''
-        negRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
-      posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
-    refine Set.Subset.antisymm
-      (mapsTo_negRoots_posRoots_longestElement _ _).image_subset ?_
-    intro γ hγ
-    exact ⟨_, mapsTo_posRoots_negRoots_longestElement _ _ hγ,
-      weylGroupToPerm_longestElement_involutive _ _ γ⟩
-  rw [himage]
+  rw [D.negativePoints_eq_iSup K, D.positivePoints_eq_iSup K]
+  refine D.map_iSup_rootSubgroupPoints_conj_longestElement K n₀ hn₀ ?_
+  rw [t.posRoots_rationalRootSystem ht, t.negRoots_rationalRootSystem ht]
+  exact image_weylGroupToPerm_longestElement_negRoots _ _
 
 end TauCeti.DynkinType.ChevalleyDatum

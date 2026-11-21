@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
+public import TauCeti.LinearAlgebra.RootSystem.LongestElement
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -324,6 +327,46 @@ theorem weylProjection_eq_one_of_mem_borelSubgroup {g : D.weylSubgroup K}
     g.property).mp hg
   have hg' : g = ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := Subtype.ext hs.symm
   rw [hg', D.weylProjection_torusPoints]
+
+/-- Any point of `D.borelSubgroup K` that commutes with a lift of the longest Weyl element lies
+in the actual character-lattice torus `(D.torusPoints K).range`. -/
+theorem mem_range_torusPoints_of_mem_borelSubgroup_of_commute_longestElement
+    {g : D.points K} (hgB : g ∈ D.borelSubgroup K) (n₀ : D.weylSubgroup K)
+    (hn₀w : D.weylProjection K n₀ =
+      let _ := t.isReduced_simplyConnectedRootDatum ht
+      longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht))
+    (hcomm : Commute (n₀ : D.points K) g) :
+    g ∈ (D.torusPoints K).range := by
+  obtain ⟨u, huU, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hgB
+  have hconj_u : (n₀ : D.points K) * u * (n₀ : D.points K)⁻¹ ∈ D.negativePoints K := by
+    rw [← D.map_positivePoints_conj_longestElement K n₀ hn₀w]
+    exact ⟨u, huU, rfl⟩
+  have hconj_t : (n₀ : D.points K) * D.torusPoints K s * (n₀ : D.points K)⁻¹ ∈
+      (D.torusPoints K).range :=
+    (Subgroup.mem_normalizer_iff.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints K n₀.property) (D.torusPoints K s)).mp
+        ⟨s, rfl⟩
+  have hu_eq : u = ((n₀ : D.points K) * u * (n₀ : D.points K)⁻¹) *
+      (((n₀ : D.points K) * D.torusPoints K s * (n₀ : D.points K)⁻¹) *
+        (D.torusPoints K s)⁻¹) := by
+    have h := congrArg (fun x => x * (D.torusPoints K s)⁻¹)
+      (mul_inv_eq_iff_eq_mul.mpr hcomm.eq)
+    calc
+      u = u * D.torusPoints K s * (D.torusPoints K s)⁻¹ := by group
+      _ = (n₀ : D.points K) * (u * D.torusPoints K s) * (n₀ : D.points K)⁻¹ *
+            (D.torusPoints K s)⁻¹ := h.symm
+      _ = ((n₀ : D.points K) * u * (n₀ : D.points K)⁻¹) *
+            (((n₀ : D.points K) * D.torusPoints K s * (n₀ : D.points K)⁻¹) *
+              (D.torusPoints K s)⁻¹) := by group
+  have hu1 : u = 1 := by
+    rw [← Subgroup.mem_bot,
+      ← D.positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot K]
+    refine ⟨huU, ?_⟩
+    rw [hu_eq]
+    exact Subgroup.mul_mem _ (Subgroup.mem_sup_left hconj_u)
+      (Subgroup.mem_sup_right
+        ((D.torusPoints K).range.mul_mem hconj_t ((D.torusPoints K).range.inv_mem ⟨s, rfl⟩)))
+  simp [hu1]
 
 end Field
 

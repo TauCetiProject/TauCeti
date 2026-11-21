@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -28,6 +29,8 @@ elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
 ## Main results
 
 * `Subgroup.comap_centralizer_image_of_injective`: `f⁻¹(C_{G'}(f(s))) = C_G(s)` for injective `f`.
+* `Subgroup.map_center_subtype`: the centre of a subgroup `H ≤ G` embeds into `G` as
+  `H ⊓ C_G(H)`.
 * `MulEquiv.map_centralizer`: a group isomorphism carries the centralizer of a set onto the
   centralizer of its image.
 -/
@@ -73,6 +76,17 @@ theorem comap_centralizer_image_of_injective {f : G →* G'} (hf : Function.Inje
     (s : Set G) : (centralizer (f '' s)).comap f = centralizer s := by
   ext g
   simp [mem_centralizer_iff, ← map_mul, hf.eq_iff]
+
+/-- The image of the centre of a subgroup `H ≤ G` under `H.subtype` is
+`H ⊓ Subgroup.centralizer H`. -/
+@[to_additive /-- The image of the centre of an additive subgroup `H ≤ G` under `H.subtype` is
+`H ⊓ AddSubgroup.centralizer H`. -/]
+theorem map_center_subtype (H : Subgroup G) :
+    (Subgroup.center H).map H.subtype = H ⊓ centralizer (H : Set G) := by
+  have him : H.subtype '' Set.univ = (H : Set G) := by
+    rw [Set.image_univ, ← MonoidHom.coe_range, range_subtype]
+  rw [← centralizer_univ, ← comap_centralizer_image_of_injective H.subtype_injective Set.univ, him,
+    map_comap_eq, range_subtype]
 
 end Subgroup
 

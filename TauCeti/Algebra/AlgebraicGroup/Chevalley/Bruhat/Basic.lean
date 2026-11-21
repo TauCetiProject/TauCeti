@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.GroupTheory.DoubleCoset.Map
+import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -343,5 +344,54 @@ theorem wordLength_titsSimpleReflection_mul_gt_iff_mem_posRoots
       exact hunion
     exact (D.titsSystem K).bruhatCell_mul_ne_union_of_ne_one
       ((D.titsSystem K).simple_ne_one (D.titsSimpleReflection_mem_simple K i)) q hunionT
+
+/-- Any point in a Bruhat cell `B n B` whose conjugation preserves `D.positivePoints K` forces
+the Weyl projection `D.weylProjection K n` to be `1` (so the point lies in `D.borelSubgroup K`).
+-/
+theorem weylProjection_eq_one_of_mem_bruhatCell_of_conj_positivePoints
+    {g : D.points K} {n : D.weylSubgroup K}
+    (hg : g ∈ D.bruhatCell K (D.weylProjection K n))
+    (hconj : ∀ y ∈ D.positivePoints K, g * y * g⁻¹ ∈ D.positivePoints K) :
+    D.weylProjection K n = 1 := by
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  rw [D.bruhatCell_weylProjection K n] at hg
+  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
+  by_contra hw
+  obtain ⟨γ, hγ⟩ := inversions_nonempty_of_ne_one
+    (P := t.simplyConnectedRootDatum ht) (b := t.simplyConnectedBase ht) hw
+  have hγpos : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [t.posRoots_rationalRootSystem ht]
+    exact inversions_subset_posRoots _ _ _ hγ
+  set δ := (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K n) γ
+  have hδneg : δ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [t.negRoots_rationalRootSystem ht]
+    exact mapsTo_inversions_negRoots _ _ _ hγ
+  obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints K n γ
+  let x := D.rootSubgroupPoints γ K (Multiplicative.ofAdd ((c⁻¹ : Kˣ) : K))
+  let y := b₂⁻¹ * x * b₂
+  have hyU : y ∈ D.positivePoints K := by
+    have hxU : x ∈ D.positivePoints K := D.rootSubgroupPoints_mem_positivePoints K hγpos _
+    have h := (Subgroup.mem_normalizer_iff.mp
+      (D.borelSubgroup_le_normalizer_positivePoints K ((D.borelSubgroup K).inv_mem hb₂))
+      x).mp hxU
+    simpa only [y, inv_inv] using h
+  have hgyU : (b₁ * (n : D.points K) * b₂) * y * (b₁ * (n : D.points K) * b₂)⁻¹ ∈
+      D.positivePoints K := hconj y hyU
+  have hnx_eq : (n : D.points K) * x * (n : D.points K)⁻¹ =
+      b₁⁻¹ * ((b₁ * (n : D.points K) * b₂) * y * (b₁ * (n : D.points K) * b₂)⁻¹) * b₁ := by
+    dsimp only [y]
+    group
+  have hnxB : D.rootSubgroupPoints δ K (Multiplicative.ofAdd 1) ∈ D.borelSubgroup K := by
+    have hconj' : (n : D.points K) * x * (n : D.points K)⁻¹ =
+        D.rootSubgroupPoints δ K (Multiplicative.ofAdd 1) := by
+      simpa only [x, MulAut.conj_apply, Units.val_inv_eq_inv_val,
+        mul_inv_cancel₀ (Units.ne_zero c)] using hc ((c⁻¹ : Kˣ) : K)
+    rw [← hconj', hnx_eq]
+    exact (D.borelSubgroup K).mul_mem
+      ((D.borelSubgroup K).mul_mem ((D.borelSubgroup K).inv_mem hb₁)
+        (D.positivePoints_le_borelSubgroup K hgyU))
+      hb₁
+  exact D.rootSubgroupPoints_ofAdd_one_ne_one K δ
+    ((D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots K hδneg _).mp hnxB)
 
 end TauCeti.DynkinType.ChevalleyDatum
