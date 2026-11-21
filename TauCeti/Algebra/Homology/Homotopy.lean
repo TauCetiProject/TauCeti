@@ -21,6 +21,10 @@ transport and iteration of homotopies, and assembly of null-homotopies from comp
 `Homotopy.compSquare` composes specified square homotopies by postcomposing the first
 and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
+`Homotopy.restrict` restricts a homotopy to subcomplexes: when its components, restricted to a
+complex mapping into the source, lift through a degreewise monomorphism into the target, the lifts
+form a homotopy between the restricted maps.
+
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
 complexes.  A chain homotopy between morphisms `L ⟶ L'` whose components send the image of `u`
@@ -47,6 +51,9 @@ recursion of their own rather than one degree at a time from the previous two.
 null-homotopy of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy
 identities `e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`, stated in every degree `n + 1` so that no
 index is a difference.
+
+`Homotopy.ofIsColimit` glues homotopies along a coproduct of complexes computed degreewise: two
+maps out of the coproduct are homotopic as soon as their restrictions to every summand are.
 
 `Homotopy.comm_zero_apply` and `Homotopy.comm_succ_apply` are the homotopy identities of a
 homotopy between maps of `ℕ`-indexed chain complexes of modules, evaluated on elements.
@@ -80,7 +87,7 @@ noncomputable section
 
 open CategoryTheory Limits
 
-universe v u
+universe w v u
 
 namespace Homotopy
 
@@ -109,6 +116,38 @@ lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
   simp [compSquare]
 
 end Squares
+
+section Restrict
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {K L A B : HomologicalComplex C c} {f g : K ⟶ L} {f' g' : A ⟶ B}
+
+/-- **The restriction of a homotopy to subcomplexes.** Let `h` be a homotopy between
+`f g : K ⟶ L`, let `e : A ⟶ K` be a morphism and `m : B ⟶ L` a degreewise monomorphism, and let
+`f' g' : A ⟶ B` lift `e ≫ f` and `e ≫ g` through `m`. If the components of `h` precomposed with
+`e` lift through `m`, as `k i j : Aⁱ ⟶ Bʲ`, then these lifts form a homotopy between `f'` and
+`g'`. -/
+@[no_expose]
+def restrict (h : Homotopy f g) (e : A ⟶ K) (m : B ⟶ L) [∀ i, Mono (m.f i)]
+    (hf : f' ≫ m = e ≫ f) (hg : g' ≫ m = e ≫ g) (k : ∀ i j, A.X i ⟶ B.X j)
+    (hk : ∀ i j, k i j ≫ m.f j = e.f i ≫ h.hom i j) : Homotopy f' g' where
+  hom := k
+  zero i j hij := by rw [← cancel_mono (m.f j), hk, h.zero i j hij, comp_zero, zero_comp]
+  comm i := by
+    have hk' : (fun i j ↦ k i j ≫ m.f j) = fun i j ↦ e.f i ≫ h.hom i j :=
+      funext fun i ↦ funext fun j ↦ hk i j
+    rw [← cancel_mono (m.f i), Preadditive.add_comp, Preadditive.add_comp,
+      ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, hf, hg, ← dNext_comp_right,
+      ← prevD_comp_right, hk', dNext_comp_left, prevD_comp_left, HomologicalComplex.comp_f,
+      HomologicalComplex.comp_f, ← Preadditive.comp_add, ← Preadditive.comp_add, ← h.comm i]
+
+@[simp]
+lemma restrict_hom (h : Homotopy f g) (e : A ⟶ K) (m : B ⟶ L) [∀ i, Mono (m.f i)]
+    (hf : f' ≫ m = e ≫ f) (hg : g' ≫ m = e ≫ g) (k : ∀ i j, A.X i ⟶ B.X j)
+    (hk : ∀ i j, k i j ≫ m.f j = e.f i ≫ h.hom i j) : (h.restrict e m hf hg k hk).hom = k :=
+  (rfl)
+
+end Restrict
 
 /-- On cycles, the difference of homotopic maps factors through the preceding target term.
 This identity does not require exactness of either complex. -/
@@ -315,6 +354,42 @@ lemma mkCochainComplexInt_hom (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
 end Homotopy
 
 end MkCochainComplexInt
+
+section OfIsColimit
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {J : Type w} {K : Discrete J ⥤ HomologicalComplex C c} {s : Cocone K}
+
+namespace Homotopy
+
+/-- Homotopies glue along a coproduct of complexes which is computed degreewise: two maps out of
+the coproduct are homotopic as soon as their restrictions to every summand are. -/
+def ofIsColimit (hs : ∀ i, IsColimit ((HomologicalComplex.eval C c i).mapCocone s))
+    {L : HomologicalComplex C c} {f g : s.pt ⟶ L}
+    (h : ∀ j, Homotopy (s.ι.app j ≫ f) (s.ι.app j ≫ g)) : Homotopy f g :=
+  let H (i i' : ι) : s.pt.X i ⟶ L.X i' :=
+    (hs i).desc (Cocone.mk _ (Discrete.natTrans fun j ↦ (h j).hom i i'))
+  have hH (j : Discrete J) : (fun i i' ↦ (s.ι.app j).f i ≫ H i i') = (h j).hom :=
+    funext₂ fun i _ ↦ (hs i).fac _ j
+  { hom := H
+    zero i i' hii' := (hs i).hom_ext fun j ↦ by
+      rw [comp_zero]
+      exact ((hs i).fac _ j).trans ((h j).zero i i' hii')
+    comm i := (hs i).hom_ext fun j ↦ by
+      simp only [Functor.mapCocone_ι_app, HomologicalComplex.eval_map]
+      rw [Preadditive.comp_add, Preadditive.comp_add, ← dNext_comp_left, ← prevD_comp_left,
+        hH, ← HomologicalComplex.comp_f, (h j).comm i, HomologicalComplex.comp_f] }
+
+@[simp]
+lemma ofIsColimit_hom (hs : ∀ i, IsColimit ((HomologicalComplex.eval C c i).mapCocone s))
+    {L : HomologicalComplex C c} {f g : s.pt ⟶ L}
+    (h : ∀ j, Homotopy (s.ι.app j ≫ f) (s.ι.app j ≫ g)) (j : Discrete J) (i i' : ι) :
+    (s.ι.app j).f i ≫ (ofIsColimit hs h).hom i i' = (h j).hom i i' :=
+  (hs i).fac _ j
+
+end Homotopy
+
+end OfIsColimit
 
 section ModuleCat
 

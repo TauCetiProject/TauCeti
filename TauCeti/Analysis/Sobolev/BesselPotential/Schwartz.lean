@@ -8,9 +8,12 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Fourier.LpSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Schwartz functions in the Bessel-potential spaces
@@ -37,8 +40,12 @@ normed complex `F`.
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
   the `Lᵖ` norm.
+* `SchwartzMap.eLpNorm_le_of_toBesselPotentialSpaceCLM_eq`: the `Lᵖ` bound of an operator on
+  `H^{0,p}` that sends one Schwartz function to another.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
-  `p < ∞`, are determined by their values on Schwartz functions.
+  `p < ∞`, are determined by their values on Schwartz functions, and
+  `BesselPotentialSpace.continuousLinearMap_ext_real` for complex-linear maps out of
+  `H^{s,p}(E, ℂ)` on real Schwartz functions.
 * `BesselPotentialSpace.toTemperedDistribution_fourier_toLp`,
   `BesselPotentialSpace.fourier_toLp_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the
   `L²` Fourier transform of the `L²` part of `u ∈ H^s` is the weighted Fourier transform
@@ -46,6 +53,10 @@ normed complex `F`.
   function.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
   norm is the `L²` norm of the weighted Fourier transform.
+* `BesselPotentialSpace.fourier_toLp_ae_eq`: for `h ∈ H^{s,2}` whose tempered distribution has the
+  Fourier transform `v ∈ L^q`, the `L²` Fourier transform of `J^s h` is `(1 + ‖ξ‖²)^{s/2} v`.
+* `BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq`: Plancherel's identity
+  `‖h‖²_{H^{1,2}} = ‖h‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢh‖²_{L²}` along an orthonormal basis.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
   Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`.
 * `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
@@ -62,6 +73,8 @@ normed complex `F`.
   and
   `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_cutoffExponential_smul_le`: hence the `H^s`
   norms of the wave packets of frequency `t ξ` are `O(t ^ s)` as `t → ∞`.
+* `SchwartzMap.inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le`: the `H¹` norm of a Schwartz
+  function bounds the `L²` norm of each of its first derivatives.
 
 ## References
 
@@ -78,6 +91,13 @@ open scoped ENNReal SchwartzMap BesselPotentialSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- An order `s` above half the dimension of `E` is nonnegative, so that `H^{s,p}(E, F)` embeds
+in `Lᵖ` (`BesselPotentialSpace.inclusionLp`). -/
+theorem TauCeti.nonneg_of_finrank_lt_two_mul {s : ℝ} (hs : Module.finrank ℝ E < 2 * s) :
+    0 ≤ s := by
+  linarith [(Module.finrank ℝ E).cast_nonneg (α := ℝ)]
 
 namespace SchwartzMap
 
@@ -127,6 +147,22 @@ theorem toLp_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
 theorem norm_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
     ‖toBesselPotentialSpaceCLM 0 p u‖ = (eLpNorm u p volume).toReal := by
   rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM_zero, norm_toLp]
+
+/-- If a bounded operator `A` on `H^{0,p} = Lᵖ` sends the Schwartz function `u` to the Schwartz
+function `w`, then `‖w‖_{Lᵖ} ≤ ‖A‖ ‖u‖_{Lᵖ}`. -/
+theorem eLpNorm_le_of_toBesselPotentialSpaceCLM_eq {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] [CompleteSpace G] {A : H^{0, p}(E, F) →L[ℂ] H^{0, p}(E, G)} {u : 𝓢(E, F)}
+    {w : 𝓢(E, G)} (h : A (toBesselPotentialSpaceCLM 0 p u) = toBesselPotentialSpaceCLM 0 p w) :
+    eLpNorm w p volume ≤ ENNReal.ofReal ‖A‖ * eLpNorm u p volume := by
+  have hle := A.le_opNorm (toBesselPotentialSpaceCLM 0 p u)
+  rw [h, norm_toBesselPotentialSpaceCLM_zero, norm_toBesselPotentialSpaceCLM_zero] at hle
+  calc eLpNorm w p volume = ENNReal.ofReal (eLpNorm w p volume).toReal :=
+        (ENNReal.ofReal_toReal (w.memLp p).eLpNorm_ne_top).symm
+    _ ≤ ENNReal.ofReal (‖A‖ * (eLpNorm u p volume).toReal) := ENNReal.ofReal_le_ofReal hle
+    _ ≤ ENNReal.ofReal ‖A‖ * eLpNorm u p volume := by
+        rw [ENNReal.ofReal_mul (norm_nonneg A)]
+        gcongr
+        exact ENNReal.ofReal_toReal_le
 
 /-- **Schwartz functions are dense in `H^{s,p}`** for `p < ∞`. -/
 theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :
@@ -358,6 +394,19 @@ theorem continuousLinearMap_ext {G : Type*} [AddCommMonoid G] [Module ℂ G] [To
     ((SchwartzMap.denseRange_toBesselPotentialSpaceCLM s hp).equalizer T.continuous T'.continuous
       (funext h)) f
 
+/-- Continuous complex-linear maps out of `H^{s,p}(E, ℂ)`, `p < ∞`, into a Hausdorff space are
+determined by their values on real Schwartz functions, embedded by `Complex.ofRealCLM`. -/
+theorem continuousLinearMap_ext_real {G : Type*} [AddCommMonoid G] [Module ℂ G]
+    [TopologicalSpace G] [T2Space G] {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {T T' : H^{s, p}(E, ℂ) →L[ℂ] G}
+    (h : ∀ u : 𝓢(E, ℝ),
+      T (SchwartzMap.toBesselPotentialSpaceCLM s p (u.postcompCLM Complex.ofRealCLM)) =
+        T' (SchwartzMap.toBesselPotentialSpaceCLM s p (u.postcompCLM Complex.ofRealCLM))) :
+    T = T' := by
+  refine continuousLinearMap_ext hp fun φ ↦ ?_
+  rw [← SchwartzMap.postcompCLM_re_add_I_smul_im φ]
+  simp only [map_add, map_smul, h]
+
 /-- In `H^{0,p} = Lᵖ` the element with `Lᵖ` part `f` is the tempered distribution of `f`. -/
 theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp F p (volume : Measure E)) :
@@ -376,6 +425,15 @@ theorem toTemperedDistribution_fourier_toLp (u : H^{s}(E, F)) :
   rw [← Lp.fourier_toTemperedDistribution_eq, ← u.bessel_toDistr_eq_toLp,
     fourier_besselPotential_eq_smulLeftCLM_fourier_apply]
 
+/-- **The Fourier transform of the Bessel potential.** If `h ∈ H^{s,2}` has a tempered distribution
+whose Fourier transform is an `L^q` function `v`, for any `1 ≤ q ≤ ∞`, then the Fourier transform of
+the `L²` function `J^s h` is `(1 + ‖ξ‖²)^{s/2} v(ξ)` almost everywhere. -/
+theorem fourier_toLp_ae_eq (h : H^{s}(E, F)) {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {v : Lp F q (volume : Measure E)} (hv : 𝓕 h.toDistr = v) :
+    𝓕 h.toLp =ᵐ[volume] fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • v ξ := by
+  rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
+    toTemperedDistribution_fourier_toLp, hv]
+
 /-- If the weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` of `u ∈ H^s` is the tempered distribution of
 `G ∈ L²`, then `G` is the `L²` Fourier transform of the `L²` part of `u`. -/
 theorem fourier_toLp_eq_of_smulLeftCLM_fourier_eq {u : H^{s}(E, F)}
@@ -393,6 +451,36 @@ theorem norm_eq_of_smulLeftCLM_fourier_eq {u : H^{s}(E, F)} {G : Lp F 2 (volume 
     (h : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G) :
     ‖u‖ = ‖G‖ := by
   rw [← norm_fourier_toLp_eq, fourier_toLp_eq_of_smulLeftCLM_fourier_eq h]
+
+open scoped LineDeriv Real in
+/-- **Plancherel's identity for `H^{1,2}`.** Let `b` be an orthonormal basis of `E` and let
+`h ∈ H^{1,2}(E, F)` be the `L²` function `g`, with derivatives `∂_{bᵢ} h` the `L²` functions `dᵢ`.
+Then `‖h‖² = ‖g‖² + (2π)⁻² ∑ᵢ ‖dᵢ‖²`. The factor `(2π)⁻²` comes from Mathlib's normalisation of the
+Fourier transform, under which `∂_{bᵢ}` has symbol `2πi⟪ξ, bᵢ⟫` and `J¹` has symbol
+`(1 + ‖ξ‖²)^{1/2}`. -/
+theorem norm_sq_eq_norm_sq_add_mul_sum_norm_sq {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    (h : H^{1}(E, F)) {g : Lp F 2 (volume : Measure E)} (hg : h.toDistr = g)
+    {d : ι → Lp F 2 (volume : Measure E)} (hd : ∀ i, ∂_{b i} h.toDistr = d i) :
+    ‖h‖ ^ 2 = ‖g‖ ^ 2 + (2 * π)⁻¹ ^ 2 * ∑ i, ‖d i‖ ^ 2 := by
+  have hv : 𝓕 h.toDistr = 𝓕 g := by rw [hg, Lp.fourier_toTemperedDistribution_eq]
+  have hint (f : Lp F 2 (volume : Measure E)) : Integrable (fun ξ ↦ ‖f ξ‖ ^ 2) :=
+    (Lp.memLp f).integrable_norm_pow two_ne_zero
+  -- On the Fourier side, `‖𝓕 (J¹ h)‖² = (1 + ‖ξ‖²) ‖𝓕 g‖²` and `‖𝓕 dᵢ‖² = 4π² ⟪ξ, bᵢ⟫² ‖𝓕 g‖²`.
+  have hpt : (fun ξ ↦ ‖𝓕 h.toLp ξ‖ ^ 2) =ᵐ[volume]
+      fun ξ ↦ ‖𝓕 g ξ‖ ^ 2 + (2 * π)⁻¹ ^ 2 * ∑ i, ‖𝓕 (d i) ξ‖ ^ 2 := by
+    filter_upwards [fourier_toLp_ae_eq h hv,
+      ae_all_iff.2 fun i ↦ Lp.fourier_ae_eq_of_lineDerivOp_eq hv (hd i)] with ξ hξ hξd
+    have hsum : ∑ i, ‖𝓕 (d i) ξ‖ ^ 2 = (2 * π) ^ 2 * ‖ξ‖ ^ 2 * ‖𝓕 g ξ‖ ^ 2 := by
+      simp only [hξd, norm_smul, Complex.norm_mul, Complex.norm_ofNat, Complex.norm_real,
+        Complex.norm_I, Real.norm_eq_abs, abs_of_pos Real.pi_pos, mul_one, mul_pow, sq_abs,
+        ← Finset.sum_mul, ← Finset.mul_sum, b.sum_sq_inner_left]
+    rw [hξ, hsum, norm_smul, mul_pow, Complex.norm_real, Real.norm_eq_abs, sq_abs,
+      ← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity)]
+    field_simp
+  rw [← norm_fourier_toLp_eq h, ← Lp.integral_norm_sq_eq_norm_sq, integral_congr_ae hpt,
+    integral_add (hint _) ((integrable_finsetSum _ fun i _ ↦ hint _).const_mul _),
+    integral_const_mul, integral_finsetSum _ fun i _ ↦ hint _]
+  simp only [Lp.integral_norm_sq_eq_norm_sq, Lp.norm_fourier_eq]
 
 end Fourier
 

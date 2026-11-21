@@ -37,6 +37,7 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
 ## Main results
 
 * `Complex.cot_neg`, `Complex.cot_zero`: the cotangent is odd, with junk value `0` at `0`.
+* `Complex.cot_pi_sub`: reflection about `π/2` negates the cotangent.
 * `Complex.cot_mul_I`: the cotangent at an imaginary argument is a hyperbolic cotangent.
 * `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast`: the expansion over `ℤ`.
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`: the `q`-expansion in the upper half-plane.
@@ -64,6 +65,11 @@ open Complex
 open scoped Real
 
 namespace Complex
+
+/-- Reflection about `π/2` negates the complex cotangent, including its values at poles. -/
+@[simp]
+theorem cot_pi_sub (z : ℂ) : cot (π - z) = -cot z := by
+  rw [cot_eq_cos_div_sin, cos_pi_sub, sin_pi_sub, neg_div, ← cot_eq_cos_div_sin]
 
 /-- The cotangent is odd. -/
 @[simp]
