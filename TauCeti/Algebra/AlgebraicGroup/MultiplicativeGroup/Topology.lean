@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 public import TauCeti.Topology.Algebra.PointTopology.Localization
 import TauCeti.Analysis.Normed.Field.ZPowers
+import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Algebra.PointTopology.Separation
 
 /-!
@@ -106,22 +107,15 @@ theorem isCompact_closure_zpowers_iff_norm_eq_one {K : Type*} [NormedField K] [P
       ‖(pointsMulEquiv x : K)‖ = 1 := by
   let e := pointsContinuousMulEquiv R K
   rw [← TauCeti.isCompact_closure_zpowers_iff_norm_eq_one, ← pointsContinuousMulEquiv_apply]
-  -- The topological group isomorphism `e` and its inverse carry cyclic subgroups to cyclic
-  -- subgroups, and the closure of the image of a relatively compact set is the image of its
-  -- closure.
-  constructor
-  · intro h
-    have hs : e '' Subgroup.zpowers x = Subgroup.zpowers (e x) := by
-      ext y
-      simp [Subgroup.mem_zpowers_iff]
-    rw [← hs, ← image_closure_of_isCompact h (map_continuous e).continuousOn]
-    exact h.image (map_continuous e)
-  · intro h
-    have hs : e.symm '' Subgroup.zpowers (e x) = Subgroup.zpowers x := by
-      ext y
-      simp [Subgroup.mem_zpowers_iff]
-    rw [← hs, ← image_closure_of_isCompact h (map_continuous e.symm).continuousOn]
-    exact h.image (map_continuous e.symm)
+  -- The topological group isomorphism `e` and its inverse carry cyclic subgroups with compact
+  -- closure to cyclic subgroups with compact closure.
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have := Subgroup.isCompact_closure_map h e.toMulEquiv.toMonoidHom e.continuous
+    rwa [MonoidHom.map_zpowers] at this
+  · have := Subgroup.isCompact_closure_map h e.symm.toMulEquiv.toMonoidHom e.symm.continuous
+    rw [MonoidHom.map_zpowers] at this
+    change IsCompact (closure (SetLike.coe (Subgroup.zpowers (e.symm (e x))))) at this
+    rwa [e.symm_apply_apply] at this
 
 /-- The real points of the multiplicative group, with the point topology, are not totally
 disconnected: they contain the connected image of the path `r ↦ exp r`. -/

@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Group
+import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Algebra.PointTopology.Separation
 
 /-!
@@ -80,6 +81,7 @@ theorem isPrimeUnit_iff {γ : WithConv (H →ₐ[ℚ] ℚ)} :
   Iff.rfl
 
 /-- The identity is an `l`-unit. -/
+@[simp]
 theorem isPrimeUnit_one (l : ℕ) : IsPrimeUnit l (1 : WithConv (H →ₐ[ℚ] ℚ)) := by
   intro v _ _
   rw [map_one, Subgroup.zpowers_one_eq_bot, Subgroup.coe_bot, closure_singleton]
@@ -136,9 +138,8 @@ theorem IsPrimeUnit.conj {γ : WithConv (H →ₐ[ℚ] ℚ)} (hγ : IsPrimeUnit 
     rw [MulEquiv.coe_toMonoidHom]
     exact (IsTopologicalGroup.continuous_conj (ψ g)).congr fun x ↦ (MulAut.conj_apply _ _).symm
   have hψ : ψ (g * γ * g⁻¹) = (MulAut.conj (ψ g)).toMonoidHom (ψ γ) := by simp
-  rw [hψ, ← MonoidHom.map_zpowers, Subgroup.coe_map,
-    ← image_closure_of_isCompact hc hcont.continuousOn]
-  exact hc.image hcont
+  rw [hψ, ← MonoidHom.map_zpowers]
+  exact Subgroup.isCompact_closure_map hc _ hcont
 
 /-- Conjugation preserves and reflects `l`-units. -/
 @[simp]
@@ -158,11 +159,9 @@ variable {H' : Type*} [Ring H'] [HopfAlgebra ℚ H']
 theorem IsPrimeUnit.mapDomain {γ : WithConv (H →ₐ[ℚ] ℚ)} (hγ : IsPrimeUnit l γ)
     (φ : H' →ₐc[ℚ] H) : IsPrimeUnit l (BialgHom.mapDomain φ γ) := by
   intro v _ hv
-  have hc := hγ v hv
   rw [← MonoidHom.comp_apply, ← BialgHom.mapValue_mapDomain, MonoidHom.comp_apply,
-    ← MonoidHom.map_zpowers, Subgroup.coe_map,
-    ← image_closure_of_isCompact hc (BialgHom.continuous_mapDomain φ).continuousOn]
-  exact hc.image (BialgHom.continuous_mapDomain φ)
+    ← MonoidHom.map_zpowers]
+  exact Subgroup.isCompact_closure_map (hγ v hv) _ (BialgHom.continuous_mapDomain φ)
 
 /-- A closed immersion of affine groups, given by a surjective bialgebra map `φ` of coordinate
 algebras, preserves and reflects `l`-units. So the `l`-unit condition can be tested after a

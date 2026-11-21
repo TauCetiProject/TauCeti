@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.Algebra.AddCircle
+import TauCeti.NumberTheory.SmoothNumbers
 
 /-!
 # Rational numbers at almost every prime
@@ -110,37 +111,23 @@ theorem forall_norm_rat_eq_one_iff_exists_zpow {l : ℕ} [Fact l.Prime] {q : ℚ
       obtain ⟨p, hlp, hp⟩ := Nat.exists_infinite_primes (l + 1)
       rintro rfl
       simpa using h ⟨p, hp⟩ (show p ≠ l by omega)
-    -- Dividing by the `l`-part leaves a rational number `r` of norm one at every prime.
-    set n := padicValRat l q
-    have hl0 : (l : ℚ) ^ n ≠ 0 := zpow_ne_zero _ (Nat.cast_ne_zero.mpr hl.ne_zero)
-    set r := q / (l : ℚ) ^ n with hr_def
-    have hr (p : Nat.Primes) : ‖(r : ℚ_[p])‖ = 1 := by
-      rw [hr_def, Rat.cast_div, norm_div, Rat.cast_zpow, norm_zpow]
-      by_cases hp : (p : ℕ) = l
-      · obtain ⟨p, hp'⟩ := p
-        subst hp
-        rw [eq_padicNorm, padicNorm.eq_zpow_of_ne_zero hq, Rat.cast_natCast, ← norm_zpow,
-          norm_p_zpow]
-        push_cast
-        exact div_self (zpow_ne_zero _ (Nat.cast_ne_zero.mpr hl.ne_zero))
-      · rw [h p hp, hnorm_l hp, one_zpow, div_one]
-    have hden : r.den = 1 := forall_norm_rat_le_one_iff_den_eq_one.mp fun p ↦ (hr p).le
-    have hden' : r⁻¹.den = 1 := forall_norm_rat_le_one_iff_den_eq_one.mp fun p ↦ by
-      rw [Rat.cast_inv, norm_inv, hr p, inv_one]
-    -- Both `r` and `r⁻¹` are integers, so `r = ±1`.
-    have hmul : r.num * r⁻¹.num = 1 := by
-      have h1 : (r.num : ℚ) * (r⁻¹.num : ℚ) = 1 := by
-        rw [(Rat.den_eq_one_iff r).mp hden, (Rat.den_eq_one_iff _).mp hden',
-          mul_inv_cancel₀ (div_ne_zero hq hl0)]
-      exact_mod_cast h1
-    have hq_eq : q = r.num * (l : ℚ) ^ n := by
-      rw [(Rat.den_eq_one_iff r).mp hden, hr_def, div_mul_cancel₀ q hl0]
-    refine ⟨n, ?_⟩
-    rcases Int.eq_one_or_neg_one_of_mul_eq_one hmul with h1 | h1
-    · left
-      rw [hq_eq, h1, Int.cast_one, one_mul]
-    · right
-      rw [hq_eq, h1, Int.cast_neg, Int.cast_one, neg_one_mul]
+    -- Away from `l` the valuations of `q` vanish, so `|num q|` and `den q` are powers of `l`.
+    have hv (p : ℕ) (hp : p.Prime) (hpl : p ∉ ({l} : Finset ℕ)) : padicValRat p q = 0 := by
+      have : Fact p.Prime := ⟨hp⟩
+      have hpq := h ⟨p, hp⟩ (by simpa using hpl)
+      rw [eq_padicNorm, padicNorm.eq_zpow_of_ne_zero hq, Rat.cast_zpow, Rat.cast_natCast,
+        zpow_eq_one_iff_right₀ (Nat.cast_nonneg p) (mod_cast hp.ne_one)] at hpq
+      exact neg_eq_zero.mp hpq
+    obtain ⟨hnum, hden⟩ := (TauCeti.forall_padicValRat_eq_zero_iff_mem_factoredNumbers hq).mp hv
+    have hS : ∀ p ∈ ({l} : Finset ℕ), p.Prime := by simpa using hl
+    have hnum' := TauCeti.prod_pow_padicValNat_eq_self_of_mem_factoredNumbers hS hnum
+    have hden' := TauCeti.prod_pow_padicValNat_eq_self_of_mem_factoredNumbers hS hden
+    rw [Finset.prod_singleton] at hnum' hden'
+    refine ⟨padicValNat l q.num.natAbs - padicValNat l q.den,
+      (abs_eq (zpow_nonneg (Nat.cast_nonneg l) _)).mp ?_⟩
+    rw [zpow_sub₀ (mod_cast hl.ne_zero), zpow_natCast, zpow_natCast, ← Nat.cast_pow,
+      ← Nat.cast_pow, hnum', hden', Rat.abs_def, Rat.divInt_eq_div]
+    simp [Nat.cast_natAbs]
   · rintro ⟨n, rfl | rfl⟩ p hp
     · rw [Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
     · rw [Rat.cast_neg, norm_neg, Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
