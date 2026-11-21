@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Module.Injective
-public import TauCeti.Algebra.Category.ModuleCat.End
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.Cube.Dual.Complex
-public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Action
+public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
 public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Resolution.Mirror
@@ -37,8 +36,8 @@ counts (`TauCeti.OrientedPDCode.khovanovComplexShiftIso`). The resulting isomorp
 differentials with all their signs; it is not merely an identification of ranks.
 
 Passing to cohomology (`TauCeti.OrientedPDCode.khovanovHomologyMirrorIso`) and applying the cochain
-universal coefficient theorem (`TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic` and
-`Action`) yields mirror duality on Khovanov cohomology:
+universal coefficient theorem (`TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic`) yields
+mirror duality on Khovanov cohomology:
 
 * Over any commutative ring `R`, `khovanovMirrorKronecker` evaluates `Khⁱʲ(D.mirror; R)` on
   `Kh⁻ⁱ,⁻ʲ(D; R)`, and is an isomorphism whenever `R` is self-injective
@@ -50,9 +49,7 @@ universal coefficient theorem (`TauCeti.Algebra.Homology.UniversalCoefficient.Co
   such as `ℤ`, via `ModuleCat.hasProjectiveDimensionLE_one_of_isPrincipalIdealRing`), there is a
   split short exact sequence
   `0 ⟶ Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R) ⟶ Khⁱʲ(D.mirror; R) ⟶ Dual_R(Kh⁻ⁱ,⁻ʲ(D; R)) ⟶ 0`
-  (`khovanovMirrorUniversalCoefficientEquiv`, `khovanovMirrorUniversalCoefficientSplitting`), and
-  for any semiring `S` acting `R`-linearly on an `R`-module `M`, dualizing into `M` splits
-  `S`-linearly (`khovanovDualUniversalCoefficientEquivWithAction`).
+  (`khovanovMirrorUniversalCoefficientEquiv`, `khovanovMirrorUniversalCoefficientSplitting`).
 
 ## Main definitions and results
 
@@ -62,10 +59,9 @@ universal coefficient theorem (`TauCeti.Algebra.Homology.UniversalCoefficient.Co
   `khovanovHomologyMirrorDualEquiv`, `khovanovHomologyMirrorDualIso`, and
   `finrank_khovanovHomology_mirror`: cohomology isomorphism, Kronecker pairing, and field duality.
 * `TauCeti.OrientedPDCode.khovanovMirrorExtToHomology`, `khovanovMirrorKroneckerSection`,
-  `khovanovMirrorUniversalCoefficientEquiv`, `khovanovMirrorUniversalCoefficientShortComplex`,
-  `khovanovMirrorUniversalCoefficientSplitting`, and
-  `khovanovDualUniversalCoefficientEquivWithAction`: universal coefficient sequence and splittings
-  over a hereditary commutative ring.
+  `khovanovMirrorUniversalCoefficientEquiv`, `khovanovMirrorUniversalCoefficientShortComplex`, and
+  `khovanovMirrorUniversalCoefficientSplitting`: universal coefficient sequence and splitting over
+  a hereditary commutative ring.
 
 ## References
 
@@ -662,49 +658,6 @@ theorem isZero_khovanovHomology_mirror_of_projective (i j : ℤ)
   (TauCeti.isZero_homology_linearHomComplex_of_projective_homology
     (k := R) (K := D.khovanovComplex hD R (-j)) (Y := ModuleCat.of R R)
     (show i + (1 - i) = 1 by omega) h0).of_iso (D.khovanovHomologyMirrorIso hD hD' R i j)
-
-/-- **The `S`-linear Hom/Ext decomposition for the `M`-valued dual of `C(D; R)_{-j}`** over a
-hereditary commutative ring `R`, for any `R`-module `M` with a commuting action of a semiring `S`
-(in particular any `R`-algebra `S` at `M := ModuleCat.of R S`): decomposes `S`-linearly into
-`Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), M) × (Kh⁻ⁱ,⁻ʲ(D; R) →ₗ[R] M)`. -/
-def khovanovDualUniversalCoefficientEquivWithAction (S : Type*) [Semiring S]
-    (M : ModuleCat.{u} R) [Module S M] [SMulCommClass R S M] (i j : ℤ) :
-    TauCeti.HomologySingle₀WithAction R (D.khovanovComplex hD R (-j))
-      (M.endRingHomOfModule S) i ≃ₗ[S]
-      TauCeti.Abelian.ExtWithAction.{u}
-        (M.endRingHomOfModule S) (D.khovanovHomology hD R (1 - i) (-j)) 1 ×
-      (D.khovanovHomology hD R (-i) (-j) →ₗ[R] M) :=
-  (TauCeti.cochainUniversalCoefficientEquivWithAction.{u} R
-    (D.khovanovComplex hD R (-j)) (M.endRingHomOfModule S)
-    (show i + (1 - i) = 1 by omega)).trans <|
-      LinearEquiv.prodCongr (LinearEquiv.refl S _)
-        (TauCeti.HomWithAction.moduleCatLinearEquiv
-          (D.khovanovHomology hD R (-i) (-j)) M)
-
-@[simp]
-lemma khovanovDualUniversalCoefficientEquivWithAction_symm_apply (S : Type*) [Semiring S]
-    (M : ModuleCat.{u} R) [Module S M] [SMulCommClass R S M] (i j : ℤ)
-    (e : TauCeti.Abelian.ExtWithAction.{u}
-      (M.endRingHomOfModule S) (D.khovanovHomology hD R (1 - i) (-j)) 1)
-    (g : D.khovanovHomology hD R (-i) (-j) →ₗ[R] M) :
-    (D.khovanovDualUniversalCoefficientEquivWithAction hD R S M i j).symm (e, g) =
-      TauCeti.cochainExtToHomologyWithAction.{u} R (D.khovanovComplex hD R (-j))
-        (M.endRingHomOfModule S) (show i + (1 - i) = 1 by omega) e +
-      TauCeti.cochainKroneckerSectionWithAction R (D.khovanovComplex hD R (-j))
-        (M.endRingHomOfModule S) i
-        ((TauCeti.HomWithAction.moduleCatLinearEquiv
-          (D.khovanovHomology hD R (-i) (-j)) M).symm g) := by
-  simp [khovanovDualUniversalCoefficientEquivWithAction]
-
-@[simp]
-lemma khovanovDualUniversalCoefficientEquivWithAction_apply_snd (S : Type*) [Semiring S]
-    (M : ModuleCat.{u} R) [Module S M] [SMulCommClass R S M] (i j : ℤ)
-    (x : TauCeti.HomologySingle₀WithAction R (D.khovanovComplex hD R (-j))
-      (M.endRingHomOfModule S) i) :
-    (D.khovanovDualUniversalCoefficientEquivWithAction hD R S M i j x).2 =
-      (TauCeti.cochainKronecker R (D.khovanovComplex hD R (-j)) M i
-        (TauCeti.HomologySingle₀WithAction.toHomology (M.endRingHomOfModule S) x)).hom := by
-  simp [khovanovDualUniversalCoefficientEquivWithAction]
 
 end Hereditary
 

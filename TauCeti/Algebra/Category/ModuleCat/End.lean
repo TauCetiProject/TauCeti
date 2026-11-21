@@ -9,21 +9,15 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
-public import TauCeti.CategoryTheory.Preadditive.HomWithAction
 
 /-!
-# Endomorphisms and commuting actions in `ModuleCat`
+# Units from automorphisms of the rank-one free module
 
 An automorphism of a ring as a module over itself sends one to a unit. Consequently,
 the scalar comparing the images of one under two isomorphisms is a unit as well.
 
 A natural number `e` kills a module `M` exactly when the endomorphism `e • 𝟙 M` vanishes
 (`ModuleCat.nsmul_id_eq_zero_iff`).
-
-A commuting `R`-module structure on `Y : ModuleCat k` induces a ring homomorphism
-`Y.endRingHomOfModule R : R →+* End Y` (`ModuleCat.endRingHomOfModule`), under which
-`TauCeti.HomWithAction` identifies `R`-linearly with `X →ₗ[k] Y`
-(`TauCeti.HomWithAction.moduleCatLinearEquiv`).
 -/
 
 public noncomputable section
@@ -32,7 +26,7 @@ open CategoryTheory
 
 namespace ModuleCat
 
-universe v u
+universe u
 
 variable {R : Type u} [Ring R]
 
@@ -55,44 +49,4 @@ theorem isUnit_of_apply_one_eq_smul {M : ModuleCat R}
 theorem nsmul_id_eq_zero_iff {M : ModuleCat R} {e : ℕ} : e • 𝟙 M = 0 ↔ ∀ x : M, e • x = 0 :=
   ⟨fun h x ↦ by simpa using congr($h x), fun h ↦ by ext x; simpa using h x⟩
 
-/-- A commuting `R`-module structure on `Y : ModuleCat k` induces `R →+* End Y` sending `r` to
-scalar multiplication by `r`. -/
-def endRingHomOfModule {k : Type*} [Ring k] (Y : ModuleCat.{v} k) (R : Type*) [Semiring R]
-    [Module R Y] [SMulCommClass k R Y] : R →+* End Y :=
-  letI := SMulCommClass.symm k R Y
-  (ModuleCat.endRingEquiv Y).symm.toRingHom.comp (Module.toModuleEnd k Y)
-
-@[simp]
-lemma endRingHomOfModule_apply_asHom_apply {k : Type*} [Ring k] (Y : ModuleCat.{v} k)
-    (R : Type*) [Semiring R] [Module R Y] [SMulCommClass k R Y] (r : R) (y : Y) :
-    (Y.endRingHomOfModule R r).asHom.hom y = r • y := (rfl)
-
 end ModuleCat
-
-namespace TauCeti.HomWithAction
-
-universe v
-
-variable {k R : Type*} [Ring k] [Semiring R]
-
-/-- For `X Y : ModuleCat k` with a commuting `R`-action on `Y`, `HomWithAction` for
-`Y.endRingHomOfModule R` agrees `R`-linearly with `X →ₗ[k] Y` equipped with its pointwise
-`R`-action. -/
-def moduleCatLinearEquiv (X Y : ModuleCat.{v} k) [Module R Y] [SMulCommClass k R Y] :
-    HomWithAction (Y.endRingHomOfModule R) X ≃ₗ[R] (X →ₗ[k] Y) where
-  toAddEquiv := (toHom (Y.endRingHomOfModule R)).trans
-    (ModuleCat.homLinearEquiv (S := R)).toAddEquiv
-  map_smul' _ _ := by ext x; simp
-
-@[simp]
-lemma moduleCatLinearEquiv_apply {X Y : ModuleCat.{v} k} [Module R Y] [SMulCommClass k R Y]
-    (f : HomWithAction (Y.endRingHomOfModule R) X) :
-    moduleCatLinearEquiv X Y f = (toHom (Y.endRingHomOfModule R) f).hom := (rfl)
-
-@[simp]
-lemma toHom_moduleCatLinearEquiv_symm {X Y : ModuleCat.{v} k} [Module R Y] [SMulCommClass k R Y]
-    (f : X →ₗ[k] Y) :
-    toHom (Y.endRingHomOfModule R) ((moduleCatLinearEquiv X Y).symm f) = ModuleCat.ofHom f := by
-  simp [moduleCatLinearEquiv, ModuleCat.homAddEquiv, ModuleCat.homEquiv]
-
-end TauCeti.HomWithAction
