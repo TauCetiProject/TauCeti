@@ -268,10 +268,18 @@ theorem cohomologyGRingOfCounts_of_mk_mul_of_mk {i j : ℤ}
             (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ
               hL) a.property b.property⟩) := by
   let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc
-  exact (of_mul_of _ _).trans <| congrArg _ <|
-    LinearMap.cohomologyMul_mk (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
+  rw [of_mul_of, LinearMap.cohomologyGRing_gMul
+      (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
       (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
-      (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL) a b
+      (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
+      _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+      (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+        hone_mul)
+      (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
+        hmul_one)
+      (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
+        hnQ hassoc),
+    LinearMap.cohomologyMul_mk]
 
 /-- The unit of the cohomology ring of class-indexed counts is the class of the combination of
 the counts of PSS planes, in degree zero. -/
@@ -287,7 +295,17 @@ theorem cohomologyGRingOfCounts_one :
             coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE
               hED⟩) := by
   let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc
-  exact DirectSum.one_def _
+  rw [DirectSum.one_def, LinearMap.cohomologyGRing_gOne
+      (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
+      (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+      (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
+      _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+      (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+        hone_mul)
+      (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
+        hmul_one)
+      (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
+        hnQ hassoc)]
 
 /-- **The cohomology algebra of class-indexed counts.** The graded ring
 `TauCeti.Floer.cohomologyGRingOfCounts` is a graded algebra over the ground ring, with structure
