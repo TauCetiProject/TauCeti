@@ -449,8 +449,8 @@ theorem standardAugmentation_apply (z : standardVertexTerm k Q M) :
 /-- **The differential of the standard resolution is injective.** -/
 theorem standardDifferential_injective : Function.Injective (standardDifferential k Q M) := by
   intro y y' h
-  have h' : standardArrowDifferential k Q M y = standardArrowDifferential k Q M y' :=
-    congrArg Subtype.val h
+  have h' : standardArrowDifferential k Q M y = standardArrowDifferential k Q M y' := by
+    simpa only [coe_standardDifferential] using congrArg Subtype.val h
   rw [Subtype.ext_iff, ← mem_standardArrowTerm_iff.1 y.property,
     ← mem_standardArrowTerm_iff.1 y'.property, ← homotopy_standardArrowDifferential,
     ← homotopy_standardArrowDifferential, h']
@@ -470,8 +470,9 @@ theorem exact_standardDifferential_standardAugmentation :
         (standardArrowProjection k Q M (homotopy (z : 𝒜 ⊗[k] M))) = z := by
       rw [← homotopy_standardArrowDifferential, hd, hd]
     exact ⟨⟨_, standardArrowProjection_mem_standardArrowTerm (homotopy (z : 𝒜 ⊗[k] M))⟩,
-      Subtype.ext key⟩
+      Subtype.ext (by rw [coe_standardDifferential]; exact key)⟩
   · rintro ⟨y, rfl⟩
+    rw [standardAugmentation_apply, coe_standardDifferential]
     exact tensorSMul_standardArrowDifferential (y : 𝓕)
 
 /-- **The augmentation of the standard resolution is surjective**: `m` is the image of
