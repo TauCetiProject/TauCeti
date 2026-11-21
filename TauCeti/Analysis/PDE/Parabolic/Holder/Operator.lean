@@ -37,6 +37,9 @@ trace. This is the whole-space comparison principle applied to the Hölder class
 * `TauCeti.ParabolicC2HolderSpace.norm_parabolicOperatorL_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_parabolicOperatorL_sub_le`: the operator bound and the
   Lipschitz dependence on the coefficients.
+* `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_restrictL` and
+  `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_restrictL`: the operators commute
+  with restriction to a smaller slab.
 * `TauCeti.ParabolicC2HolderSpace.euclideanSecondOrderCoeff`,
   `TauCeti.ParabolicC2HolderSpace.euclideanFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanZerothOrderCoeff`: the coefficient fields assembled
@@ -192,6 +195,19 @@ theorem norm_parabolicOperatorL_sub_le :
   rw [parabolicOperatorL_sub_parabolicOperatorL, norm_sub_rev A, norm_sub_rev B,
     norm_sub_rev C]
   exact norm_spatialOperatorL_le hα
+
+/-- The parabolic operator commutes with restriction to a smaller slab: restricting `u` and the
+coefficients `A`, `B`, `C` to `E × [t₀', t₁']` restricts `P u`. -/
+theorem parabolicOperatorL_restrictL {t₀' t₁' : ℝ} (h₀ : t₀ ≤ t₀') (h₁ : t₁' ≤ t₁)
+    (ht' : t₀' < t₁') (u : ParabolicC2HolderSpace α E F ht) :
+    parabolicOperatorL hα
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) A)
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) B)
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) C)
+        (restrictL h₀ h₁ ht' u) =
+      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
+        (parabolicOperatorL hα A B C u) :=
+  HolderSpace.ext fun p ↦ by simp [HolderSpace.compLipschitzL_apply]
 
 end General
 
@@ -357,6 +373,21 @@ theorem euclideanParabolicOperatorL_apply
         (EuclideanSpace.single j 1) + ∑ i, b i p * spatialFDerivL u p (EuclideanSpace.single i 1) +
         c p * u p) := by
   simp [euclideanParabolicOperatorL]
+
+/-- The Euclidean operator commutes with restriction to a smaller slab: restricting `u` and the
+coefficients `a`, `b`, `c` to `ℝⁿ × [t₀', t₁']` restricts `P u`. -/
+theorem euclideanParabolicOperatorL_restrictL {t₀' t₁' : ℝ} (h₀ : t₀ ≤ t₀') (h₁ : t₁' ≤ t₁)
+    (ht' : t₀' < t₁') (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanParabolicOperatorL hα
+        (fun i j ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (b i))
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) c)
+        (restrictL h₀ h₁ ht' u) =
+      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
+        (euclideanParabolicOperatorL hα a b c u) :=
+  HolderSpace.ext fun p ↦ by simp [HolderSpace.compLipschitzL_apply]
 
 open Laplacian in
 /-- With the identity coefficient matrix and no lower-order terms, the Euclidean operator is the
