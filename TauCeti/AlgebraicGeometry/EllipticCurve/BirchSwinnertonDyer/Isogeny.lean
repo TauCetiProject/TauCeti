@@ -351,31 +351,23 @@ theorem bsdQuotient_div_bsdQuotient (ψ : Isogeny E₁.toAffine E₂.toAffine)
           (Nat.card (ofIsogeny ψ).pointMapHom.ker / Nat.card (ofIsogeny ψ.dual).pointMapHom.ker) *
         (E₁.minimalRealPeriod * E₁.tamagawaProduct (R := ℤ) /
           (E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ))) := by
-  have h :=
-    regulator_mul_card_shafarevichTateGroup_div_card_torsion_sq_mul_card_selmerGroup_dual_eq
-      τ ψ h₁ h₂
-  rw [← E₁.sha_eq_shafarevichTateGroup τ, ← E₂.sha_eq_shafarevichTateGroup τ] at h
-  -- every factor is positive, so the identity can be cleared of denominators
-  have := ψ.finite_selmerGroup_place τ
+  have h := ψ.bsdQuotient_mul_card_selmerGroup_dual τ
+  have hr₁ : Nat.card (ofIsogeny ψ).shaMap.range = 1 := by
+    rw [(ofIsogeny ψ).card_range_shaMap τ, h₁, AddMonoidHom.range_zero, AddSubgroup.card_bot]
+  have hr₂ : Nat.card (ofIsogeny ψ.dual).shaMap.range = 1 := by
+    rw [(ofIsogeny ψ.dual).card_range_shaMap τ, h₂, AddMonoidHom.range_zero, AddSubgroup.card_bot]
+  rw [hr₁, hr₂, Nat.cast_one, mul_one, mul_one, kummerRatioProduct_eq_div] at h
   have := ψ.dual.finite_selmerGroup_place τ
   have := (ofIsogeny ψ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero ψ)
   have := (ofIsogeny ψ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero ψ.dual)
-  have := finite_torsion (W := E₁.toAffine)
-  have := finite_torsion (W := E₂.toAffine)
   have := E₁.minimalRealPeriod_pos
   have := E₂.minimalRealPeriod_pos
   have := E₁.tamagawaProduct_pos (R := ℤ)
   have := E₂.tamagawaProduct_pos (R := ℤ)
-  have := E₂.toAffine.regulator_pos
-  have : 0 < Nat.card E₁.sha := Nat.card_pos
-  have : 0 < Nat.card E₂.sha := Nat.card_pos
-  have : 0 < Nat.card (ψ.selmerGroup τ) := Nat.card_pos
+  have := E₂.bsdQuotient_pos
   have : 0 < Nat.card (ψ.dual.selmerGroup τ) := Nat.card_pos
   have : 0 < Nat.card (ofIsogeny ψ).pointMapHom.ker := Nat.card_pos
   have : 0 < Nat.card (ofIsogeny ψ.dual).pointMapHom.ker := Nat.card_pos
-  have : 0 < Nat.card (AddCommGroup.torsion E₁.toAffine.Point) := Nat.card_pos
-  have : 0 < Nat.card (AddCommGroup.torsion E₂.toAffine.Point) := Nat.card_pos
-  rw [bsdQuotient_def, bsdQuotient_def, div_eq_iff (by positivity)]
   field_simp at h ⊢
   linear_combination h
 

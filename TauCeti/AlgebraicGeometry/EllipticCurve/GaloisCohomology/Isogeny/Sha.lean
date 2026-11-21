@@ -311,8 +311,8 @@ theorem exists_isogeny_shafarevichTateMap_eq_zero {f : Hom W₁.toAffine W₂.to
 
 section NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {W₁ W₂ : WeierstrassCurve K}
-  [W₁.IsElliptic] [W₂.IsElliptic]
+variable {K : Type*} [Field K] [NumberField K] {W₁ W₂ W₃ : WeierstrassCurve K}
+  [W₁.IsElliptic] [W₂.IsElliptic] [W₃.IsElliptic]
 
 /-- A morphism over a number field `K` sends classes of `Sha(W₁/K)` into `Sha(W₂/K)`. -/
 theorem pointH1Map_mem_sha (f : Hom W₁.toAffine W₂.toAffine)
@@ -334,6 +334,77 @@ def shaMap (f : Hom W₁.toAffine W₂.toAffine) : W₁.sha →+ W₂.sha :=
 theorem coe_shaMap (f : Hom W₁.toAffine W₂.toAffine) (c : W₁.sha) :
     (f.shaMap c : H1 (AbsoluteGaloisGroup K) W₂.PointCoeff) = f.pointH1Map c :=
   (rfl)
+
+/-- The identity morphism acts identically on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_id : (id W₁.toAffine).shaMap = AddMonoidHom.id _ := by
+  ext c
+  simp
+
+/-- Composition of morphisms induces composition on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_comp (g : Hom W₂.toAffine W₃.toAffine) (f : Hom W₁.toAffine W₂.toAffine) :
+    (g.comp f).shaMap = g.shaMap.comp f.shaMap := by
+  ext c
+  simp
+
+/-- Addition of morphisms adds their induced maps on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_add (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f + g).shaMap = f.shaMap + g.shaMap := by
+  ext c
+  simp
+
+/-- Negating a morphism negates its induced map on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_neg (f : Hom W₁.toAffine W₂.toAffine) :
+    (-f).shaMap = -f.shaMap := by
+  ext c
+  simp
+
+/-- Subtraction of morphisms subtracts their induced maps on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_sub (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f - g).shaMap = f.shaMap - g.shaMap := by
+  ext c
+  simp
+
+/-- The zero morphism induces zero on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_zero : (0 : Hom W₁.toAffine W₂.toAffine).shaMap = 0 := by
+  ext c
+  simp
+
+/-- Multiplication by `n` on the curve induces multiplication by `n` on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_natCast (n : ℕ) (c : W₁.sha) :
+    (n : Hom W₁.toAffine W₁.toAffine).shaMap c = n • c := by
+  ext
+  simp
+
+/-- Multiplying a morphism by `n` multiplies its induced map on `Sha(E/K)` by `n`. -/
+@[simp]
+theorem shaMap_nsmul (n : ℕ) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).shaMap = n • f.shaMap := by
+  have hf : n • f = (n : Hom W₂.toAffine W₂.toAffine).comp f := by
+    rw [← nsmul_one, one_def, nsmul_comp, id_comp]
+  refine AddMonoidHom.ext fun c ↦ ?_
+  rw [hf, shaMap_comp, AddMonoidHom.comp_apply, shaMap_natCast, AddMonoidHom.nsmul_apply]
+
+/-- **A morphism followed by its dual is multiplication by the degree** on `Sha(E/K)`. -/
+@[simp]
+theorem dual_shaMap_shaMap (f : Hom W₁.toAffine W₂.toAffine) (c : W₁.sha) :
+    f.dual.shaMap (f.shaMap c) = f.degree • c := by
+  rw [← AddMonoidHom.comp_apply, ← shaMap_comp, dual_comp_self, ← one_def, nsmul_one,
+    shaMap_natCast]
+
+/-- **The dual of a morphism followed by the morphism is multiplication by the degree** on
+`Sha(E/K)`. -/
+@[simp]
+theorem shaMap_dual_shaMap (f : Hom W₁.toAffine W₂.toAffine) (c : W₂.sha) :
+    f.shaMap (f.dual.shaMap c) = f.degree • c := by
+  rw [← AddMonoidHom.comp_apply, ← shaMap_comp, comp_dual_self, ← one_def, nsmul_one,
+    shaMap_natCast]
 
 /-- Along any family `τ` of embeddings of separable closures over the places of `K`, `f.shaMap`
 agrees with `f.shafarevichTateMap τ` under the canonical identifications of `Sha` with
