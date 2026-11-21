@@ -107,7 +107,7 @@ def IsUnitGaussPoint (K : Type*) [SeminormedCommRing K] [NonarchimedeanRing K] (
     (η : closedPolydisc n K) : Prop :=
   ∀ f g : weightedRestrictedSubring
       (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
-    η.1.toValuativeRel.vle f g ↔
+    η.val.toValuativeRel.vle f g ↔
       MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
         (f : MvPowerSeries (Fin n) K) ≤
       MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
@@ -119,7 +119,7 @@ theorem isUnitGaussPoint_def {K : Type*} [SeminormedCommRing K] [NonarchimedeanR
     IsUnitGaussPoint K n η ↔
       ∀ f g : weightedRestrictedSubring
           (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
-        η.1.toValuativeRel.vle f g ↔
+        η.val.toValuativeRel.vle f g ↔
           MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
             (f : MvPowerSeries (Fin n) K) ≤
           MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ))
@@ -149,7 +149,7 @@ noncomputable def unitGaussPoint (n : ℕ) (K : Type*) [NormedField K] [IsUltram
 /-- The underlying point of `unitGaussPoint n K` in `Spv K⟨T⟩` is the valuation spectrum point of
 the unit-radius Gauss valuation. -/
 theorem unitGaussPoint_val (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
-    (unitGaussPoint n K).1 =
+    (unitGaussPoint n K).val =
       ofValuation (weightedGaussValuation n (Valued.isContinuous_v (R := K))) :=
   (rfl)
 
@@ -157,7 +157,7 @@ theorem unitGaussPoint_val (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricD
 @[simp]
 theorem unitGaussPoint_vle_iff (n : ℕ)
     (f g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (unitGaussPoint n K).1.toValuativeRel.vle f g ↔
+    (unitGaussPoint n K).val.toValuativeRel.vle f g ↔
       MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (f : MvPowerSeries (Fin n) K) ≤
         MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (g : MvPowerSeries (Fin n) K) := by
   rw [unitGaussPoint_val, vle_ofValuation, ← NNReal.coe_le_coe,
@@ -167,7 +167,7 @@ theorem unitGaussPoint_vle_iff (n : ℕ)
 `restrictedMvPowerSeriesGaussEquiv`. -/
 theorem unitGaussPoint_vle_iff_norm (n : ℕ)
     (f g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (unitGaussPoint n K).1.toValuativeRel.vle f g ↔
+    (unitGaussPoint n K).val.toValuativeRel.vle f g ↔
       ‖restrictedMvPowerSeriesGaussEquiv f‖ ≤ ‖restrictedMvPowerSeriesGaussEquiv g‖ := by
   rw [unitGaussPoint_vle_iff, MvPowerSeries.norm_eq_gaussNorm, MvPowerSeries.norm_eq_gaussNorm,
     coe_restrictedMvPowerSeriesGaussEquiv, coe_restrictedMvPowerSeriesGaussEquiv]
@@ -175,14 +175,14 @@ theorem unitGaussPoint_vle_iff_norm (n : ℕ)
 /-- The unit Gauss point sends a series to `0` if and only if the series is `0`. -/
 theorem unitGaussPoint_vle_zero_iff (n : ℕ)
     (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (unitGaussPoint n K).1.toValuativeRel.vle f 0 ↔ f = 0 := by
+    (unitGaussPoint n K).val.toValuativeRel.vle f 0 ↔ f = 0 := by
   rw [unitGaussPoint_vle_iff_norm, map_zero, norm_zero, norm_le_zero_iff,
     map_eq_zero_iff _ restrictedMvPowerSeriesGaussEquiv.injective]
 
 /-- The support of the unit Gauss point is trivial. -/
 @[simp]
 theorem supp_unitGaussPoint (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
-    (unitGaussPoint n K).1.supp = ⊥ := by
+    (unitGaussPoint n K).val.supp = ⊥ := by
   ext f
   rw [mem_supp_iff, unitGaussPoint_vle_zero_iff, Ideal.mem_bot]
 
@@ -216,7 +216,8 @@ unconditionally**, without any hypothesis on the residue field. -/
 theorem unitGaussPoint_zero_mem_closure_range_classicalPoint [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) :
     unitGaussPoint 0 K ∈ closure (Set.range
-      (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦ classicalPoint x a.1 a.2)) :=
+      (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦
+        classicalPoint x a.val a.property)) :=
   subset_closure ⟨⟨Fin.elim0, fun i ↦ i.elim0⟩, (unitGaussPoint_zero_eq_classicalPoint x).symm⟩
 
 end UnitGaussPoint
@@ -297,12 +298,12 @@ theorem classicalPoint_mem_rationalSubset_of_eval_restrictedReduction_ne_zero
       (TauCeti.MvPowerSeries.restrictedReduction
         ⟨restrictedMvPowerSeriesGaussEquiv g, Subring.mem_unitClosedBall.mpr hg.le⟩) ≠ 0) :
     classicalPoint x (fun i ↦ (a i : K))
-        (fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).2)) ∈
+        (fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).property)) ∈
       Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T g := by
   set a' : Fin n → K := fun i ↦ (a i : K)
   set ha' : ∀ i, IsPowerBounded (a' i) :=
-    fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).2)
-  have ha_norm : ∀ i, ‖a' i‖ ≤ 1 := fun i ↦ Valued.integer.mem_iff.mp (a i).2
+    fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).property)
+  have ha_norm : ∀ i, ‖a' i‖ ≤ 1 := fun i ↦ Valued.integer.mem_iff.mp (a i).property
   set gball : Subring.unitClosedBall
       (MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :=
     ⟨restrictedMvPowerSeriesGaussEquiv g, Subring.mem_unitClosedBall.mpr hg.le⟩
@@ -315,10 +316,10 @@ theorem classicalPoint_mem_rationalSubset_of_eval_restrictedReduction_ne_zero
     exact hiff.not.mpr heval
   have hg_ge : 1 ≤ ‖evalAtHom a' ha' g‖ := le_of_not_gt hg_not_lt
   rw [Set.mem_preimage, mem_rationalSubset_iff, ← closedPolydisc_def]
-  refine ⟨(classicalPoint x a' ha').2, fun f hf ↦ ?_, ?_⟩
-  · rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.2]
+  refine ⟨(classicalPoint x a' ha').property, fun f hf ↦ ?_, ?_⟩
+  · rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.property]
     exact (norm_evalAtHom_le a' ha' ha_norm f).trans ((hT f hf).trans hg_ge)
-  · rw [classicalPoint_vle, map_zero, vle_iff_norm_le_of_mem_spa x.2, norm_zero, not_le]
+  · rw [classicalPoint_vle, map_zero, vle_iff_norm_le_of_mem_spa x.property, norm_zero, not_le]
     exact zero_lt_one.trans_le hg_ge
 
 open scoped Classical in
@@ -333,7 +334,8 @@ theorem exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem
     (s : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
     (hs : unitGaussPoint n K ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s) :
     ∃ a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)},
-      classicalPoint x a.1 a.2 ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s := by
+      classicalPoint x a.val a.property ∈
+        Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s := by
   rw [Set.mem_preimage, mem_rationalSubset_iff] at hs
   obtain ⟨-, hTle, hs_ne⟩ := hs
   have hs0 : s ≠ 0 := fun h ↦ hs_ne (by simp [h])
@@ -351,7 +353,7 @@ theorem exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem
   have hred_ne : TauCeti.MvPowerSeries.restrictedReduction gball ≠ 0 :=
     TauCeti.MvPowerSeries.restrictedReduction_ne_zero_iff.mpr hg_norm
   have : Infinite (Valued.ResidueField K) :=
-    (canonicalReductionEquivResidueField K).toEquiv.infinite_iff.mp ‹_›
+    (canonicalReductionRingEquivResidueField (K := K)).toEquiv.infinite_iff.mp ‹_›
   have hex : ∃ ā : Fin n → Valued.ResidueField K,
       MvPolynomial.eval ā (TauCeti.MvPowerSeries.restrictedReduction gball) ≠ 0 := by
     by_contra! hall
@@ -365,7 +367,7 @@ theorem exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem
     convert rationalSubset_image_mul_right (powerBoundedSubring _) T s u hu_unit
   rw [hrat] at hmem
   exact ⟨⟨fun i ↦ (a i : K),
-    fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).2)⟩, hmem⟩
+    fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).property)⟩, hmem⟩
 
 /-- **Gauss-point closure.** Over a complete nontrivially normed ultrametric field `K` whose
 canonical reduction `K° / K°°` is infinite, the unit Gauss point `unitGaussPoint n K` lies in the
@@ -373,7 +375,8 @@ closure of the `K`-rational evaluation points of `closedPolydisc n K`. -/
 theorem unitGaussPoint_mem_closure_range_classicalPoint [Infinite (CanonicalReduction K)]
     (x : spa (powerBoundedSubring K)) :
     unitGaussPoint n K ∈ closure (Set.range
-      (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦ classicalPoint x a.1 a.2)) := by
+      (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
+        classicalPoint x a.val a.property)) := by
   rw [mem_closure_iff]
   intro U hU hηU
   have : IsHuberRing (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
@@ -389,10 +392,10 @@ theorem unitGaussPoint_mem_closure_range_classicalPoint [Infinite (CanonicalRedu
   have hηV' : unitGaussPoint n K ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s :=
     hηV
   obtain ⟨a, ha⟩ := exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem x T s hηV'
-  have haU : classicalPoint x a.1 a.2 ∈ U := by
-    have : e (classicalPoint x a.1 a.2) ∈ e.symm ⁻¹' U := hVU ha
+  have haU : classicalPoint x a.val a.property ∈ U := by
+    have : e (classicalPoint x a.val a.property) ∈ e.symm ⁻¹' U := hVU ha
     simpa [e] using this
-  exact ⟨classicalPoint x a.1 a.2, haU, ⟨a, rfl⟩⟩
+  exact ⟨classicalPoint x a.val a.property, haU, ⟨a, rfl⟩⟩
 
 /-- **A closed subset of `closedPolydisc n K` containing all `K`-rational points contains the unit
 Gauss point**, when the residue field `K° / K°°` is infinite. -/
@@ -402,7 +405,8 @@ theorem unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem
     (hmem : ∀ (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i)), classicalPoint x a ha ∈ Z) :
     unitGaussPoint n K ∈ Z :=
   hZ.closure_subset_iff.mpr
-    (Set.range_subset_iff.mpr fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦ hmem a.1 a.2)
+    (Set.range_subset_iff.mpr fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
+      hmem a.val a.property)
     (unitGaussPoint_mem_closure_range_classicalPoint x)
 
 /-- **Closed-set propagation along a continuous map from a closed polydisc.** If `φ` maps
@@ -423,9 +427,9 @@ point. -/
 theorem not_isClosed_range_classicalPoint [Infinite (CanonicalReduction K)] [NeZero n]
     (x : spa (powerBoundedSubring K)) :
     ¬ IsClosed (Set.range (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2)) := fun hclosed ↦ by
+      classicalPoint x a.val a.property)) := fun hclosed ↦ by
   obtain ⟨a, ha⟩ := hclosed.closure_eq ▸ unitGaussPoint_mem_closure_range_classicalPoint (n := n) x
-  exact unitGaussPoint_ne_classicalPoint x a.1 a.2 ha.symm
+  exact unitGaussPoint_ne_classicalPoint x a.val a.property ha.symm
 
 end InfiniteResidueField
 
@@ -472,9 +476,10 @@ the residue field and therefore has norm strictly less than `1`. -/
 theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
     [Finite (CanonicalReduction K)] [NeZero n] (x : spa (powerBoundedSubring K)) :
     unitGaussPoint n K ∉ closure (Set.range
-      (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦ classicalPoint x a.1 a.2)) := by
+      (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
+        classicalPoint x a.val a.property)) := by
   have hfin_res : Finite (Valued.ResidueField K) :=
-    (canonicalReductionEquivResidueField K).toEquiv.finite_iff.mp ‹_›
+    (canonicalReductionRingEquivResidueField (K := K)).toEquiv.finite_iff.mp ‹_›
   let : Fintype (Valued.ResidueField K) := Fintype.ofFinite (Valued.ResidueField K)
   set q : ℕ := Fintype.card (Valued.ResidueField K)
   set T₀ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight :=
@@ -492,7 +497,7 @@ theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
     one_le_norm_weightedX_pow_sub_weightedX Fintype.one_lt_card
   have hηU : unitGaussPoint n K ∈ U := by
     rw [Set.mem_preimage, mem_rationalSubset_iff, ← closedPolydisc_def]
-    refine ⟨(unitGaussPoint n K).2, ?_, ?_⟩
+    refine ⟨(unitGaussPoint n K).property, ?_, ?_⟩
     · intro f hf
       rw [Finset.mem_singleton.mp hf, unitGaussPoint_vle_iff_norm, map_one, norm_one]
       exact hs_norm_ge
@@ -503,15 +508,15 @@ theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
   intro hcl
   obtain ⟨_, hpU, ⟨a, rfl⟩⟩ := mem_closure_iff.mp hcl U hUopen hηU
   rw [Set.mem_preimage, mem_rationalSubset_iff] at hpU
-  have h1le := hpU.2.1 1 (Finset.mem_singleton_self 1)
-  rw [classicalPoint_vle, map_one, vle_iff_norm_le_of_mem_spa x.2, norm_one] at h1le
+  have h1le := hpU.right.left 1 (Finset.mem_singleton_self 1)
+  rw [classicalPoint_vle, map_one, vle_iff_norm_le_of_mem_spa x.property, norm_one] at h1le
   -- Every `a₀ ∈ 𝒪[K]` satisfies `a₀^q - a₀ ∈ 𝓂[K]`, so `‖a₀^q - a₀‖ < 1`.
-  have heval_s : evalAtHom a.1 a.2 s = a.1 0 ^ q - a.1 0 := by simp [s, T₀]
+  have heval_s : evalAtHom a.val a.property s = a.val 0 ^ q - a.val 0 := by simp [s, T₀]
   let b : Valued.integer K :=
-    powerBoundedSubringEquivInteger K ⟨a.1 0, mem_powerBoundedSubring.mpr (a.2 0)⟩
+    powerBoundedSubringEquivInteger ⟨a.val 0, mem_powerBoundedSubring.mpr (a.property 0)⟩
   have hres : IsLocalRing.residue (Valued.integer K) (b ^ q - b) = 0 := by
     rw [map_sub, map_pow, FiniteField.pow_card, sub_self]
-  have hlt : ‖evalAtHom a.1 a.2 s‖ < 1 := by
+  have hlt : ‖evalAtHom a.val a.property s‖ < 1 := by
     simpa only [heval_s, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, b,
       coe_powerBoundedSubringEquivInteger] using
       Valued.integer.residue_eq_zero_iff_norm_lt_one.mp hres
@@ -529,7 +534,8 @@ theorem unitGaussPoint_mem_closure_range_classicalPoint_iff {n : ℕ} [NeZero n]
     {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) :
     unitGaussPoint n K ∈ closure (Set.range
-        (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦ classicalPoint x a.1 a.2)) ↔
+        (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
+          classicalPoint x a.val a.property)) ↔
       Infinite (CanonicalReduction K) := by
   refine ⟨fun h ↦ ?_, fun h ↦ unitGaussPoint_mem_closure_range_classicalPoint x⟩
   by_contra hnot
@@ -546,7 +552,7 @@ theorem gaussPoint_mem_closure_rationalPoints
     ∃ η : closedPolydisc n K,
       IsUnitGaussPoint K n η ∧ η ∈ closure (Set.range
         (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-          classicalPoint x a.1 a.2)) :=
+          classicalPoint x a.val a.property)) :=
   ⟨unitGaussPoint n K, isUnitGaussPoint_unitGaussPoint n K,
     unitGaussPoint_mem_closure_range_classicalPoint x⟩
 

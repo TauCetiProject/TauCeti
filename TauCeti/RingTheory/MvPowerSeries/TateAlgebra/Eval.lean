@@ -117,12 +117,12 @@ noncomputable def restrictedEval₂ (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : 
     have : NonarchimedeanRing S :=
       { toIsTopologicalRing := inferInstance
         is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean }
-    have hf := f.2.summable_weightedEvalTerm φ a hφ ha
-    have hg := g.2.summable_weightedEvalTerm φ a hφ ha
+    have hf := f.property.summable_weightedEvalTerm φ a hφ ha
+    have hg := g.property.summable_weightedEvalTerm φ a hφ ha
     exact weightedEval_mul_of_summable hf hg (hf.mul_of_nonarchimedean hg)
   map_zero' := weightedEval_zero φ a
-  map_add' f g := weightedEval_add_of_summable (f.2.summable_weightedEvalTerm φ a hφ ha)
-    (g.2.summable_weightedEvalTerm φ a hφ ha)
+  map_add' f g := weightedEval_add_of_summable (f.property.summable_weightedEvalTerm φ a hφ ha)
+    (g.property.summable_weightedEvalTerm φ a hφ ha)
 
 variable (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : ∀ i, ‖a i‖ ≤ c i)
 
@@ -134,7 +134,7 @@ theorem restrictedEval₂_apply (f : IsRestricted.subring (R := R) c) :
 theorem hasSum_restrictedEval₂ (f : IsRestricted.subring (R := R) c) :
     HasSum (weightedEvalTerm φ a f) (restrictedEval₂ φ a hφ ha f) := by
   rw [restrictedEval₂_apply, weightedEval_def]
-  exact (f.2.summable_weightedEvalTerm φ a hφ ha).hasSum
+  exact (f.property.summable_weightedEvalTerm φ a hφ ha).hasSum
 
 /-- The evaluation of a monomial `r Xᵗ` is `φ(r) aᵗ`. -/
 @[simp]
@@ -245,32 +245,33 @@ polydisc `{a | ∀ i, ‖a i‖ ≤ c i}`. -/
 theorem lipschitzWith_restrictedEval₂_arg (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
     (f : IsRestricted.subring (R := R) c) :
     LipschitzWith ((Finset.univ.sup fun i : Fin k ↦ Real.toNNReal (c i)⁻¹) * ‖f‖₊)
-      (fun a : {a : Fin k → S // ∀ i, ‖a i‖ ≤ c i} ↦ restrictedEval₂ φ a.1 hφ a.2 f) := by
+      (fun a : {a : Fin k → S // ∀ i, ‖a i‖ ≤ c i} ↦
+        restrictedEval₂ φ a.val hφ a.property f) := by
   refine LipschitzWith.of_dist_le_mul fun a b ↦ ?_
   set M : NNReal := Finset.univ.sup fun i : Fin k ↦ Real.toNNReal (c i)⁻¹
-  have hle : ∀ i : Fin k, ‖a.1 i - b.1 i‖ ≤ ((M : ℝ) * dist a b) * c i := fun i ↦ by
+  have hle : ∀ i : Fin k, ‖a.val i - b.val i‖ ≤ ((M : ℝ) * dist a b) * c i := fun i ↦ by
     have hci : 0 < c i := Fact.out
     have hMi : (c i)⁻¹ ≤ (M : ℝ) := by
       have h1 : Real.toNNReal (c i)⁻¹ ≤ M :=
         Finset.le_sup (f := fun i : Fin k ↦ Real.toNNReal (c i)⁻¹) (Finset.mem_univ i)
       exact (Real.coe_toNNReal (c i)⁻¹ (inv_nonneg.mpr hci.le)).symm.trans_le
         (NNReal.coe_le_coe.mpr h1)
-    have hdist : ‖a.1 i - b.1 i‖ ≤ dist a b := by
+    have hdist : ‖a.val i - b.val i‖ ≤ dist a b := by
       rw [← dist_eq_norm]
-      exact dist_le_pi_dist a.1 b.1 i
-    calc ‖a.1 i - b.1 i‖ ≤ dist a b := hdist
+      exact dist_le_pi_dist a.val b.val i
+    calc ‖a.val i - b.val i‖ ≤ dist a b := hdist
       _ = (c i)⁻¹ * dist a b * c i := by field_simp [hci.ne']
       _ ≤ (M : ℝ) * dist a b * c i := by gcongr
   rw [dist_eq_norm, NNReal.coe_mul, coe_nnNorm]
-  exact (norm_restrictedEval₂_sub_le φ hφ a.2 b.2 (mul_nonneg M.coe_nonneg dist_nonneg) hle f).trans
-    (by ring_nf; rfl)
+  exact (norm_restrictedEval₂_sub_le φ hφ a.property b.property
+    (mul_nonneg M.coe_nonneg dist_nonneg) hle f).trans (by ring_nf; rfl)
 
 /-- **Evaluation of a fixed restricted series is continuous in its argument** on the closed
 polydisc `{a | ∀ i, ‖a i‖ ≤ c i}`. -/
 theorem continuous_restrictedEval₂_arg (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
     (f : IsRestricted.subring (R := R) c) :
     Continuous fun a : {a : Fin k → S // ∀ i, ‖a i‖ ≤ c i} ↦
-      restrictedEval₂ φ a.1 hφ a.2 f :=
+      restrictedEval₂ φ a.val hφ a.property f :=
   (lipschitzWith_restrictedEval₂_arg φ hφ f).continuous
 
 end MvPowerSeries

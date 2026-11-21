@@ -144,7 +144,7 @@ theorem isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) {h : M → 
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap I
         (liouvilleForm I M)
         (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) h ↔
-      ContMDiff I 𝓘(ℝ) ∞ h ∧ α.1 = mextDeriv (RoughForm.ofFunction I h) := by
+      ContMDiff I 𝓘(ℝ) ∞ h ∧ α.val = mextDeriv (RoughForm.ofFunction I h) := by
   -- The Liouville form is tautological: `s_α^*λ = α`.
   have hpull := congrArg Subtype.val (mpullback_liouvilleForm α)
   rw [SmoothForm.coe_mpullback] at hpull
@@ -166,7 +166,7 @@ theorem exists_isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) :
   simp only [isExactLagrangianMap_section_iff, exactForms_succ, LinearMap.mem_range]
   refine ⟨fun ⟨h, hh, hα⟩ ↦ ⟨⟨RoughForm.ofFunction I h,
     (isSmoothForm_ofFunction_iff.mpr hh).mem_smoothBundleForms⟩, Subtype.ext ?_⟩,
-    fun ⟨g, hg⟩ ↦ ⟨fun x ↦ g.1 x 0, ?_, ?_⟩⟩
+    fun ⟨g, hg⟩ ↦ ⟨fun x ↦ g.val x 0, ?_, ?_⟩⟩
   · rw [mextDerivₗ_apply, hα]
   · rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction, isSmoothForm_def]
     exact g.contMDiff

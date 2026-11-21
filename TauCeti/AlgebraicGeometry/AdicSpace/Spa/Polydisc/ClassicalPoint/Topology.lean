@@ -145,17 +145,19 @@ variable {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSp
 /-- **Evaluation of a fixed restricted series is continuous in its argument** on `(K°)ᵏ`. -/
 theorem continuous_evalAtHom_arg
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    Continuous fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦ evalAtHom a.1 a.2 f := by
+    Continuous fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+      evalAtHom a.val a.property f := by
   let e : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} →
       {a : Fin k → K // ∀ i, ‖a i‖ ≤ (1 : ℝ)} :=
-    fun a ↦ ⟨a.1, fun i ↦ isPowerBounded_iff_norm_le_one.mp (a.2 i)⟩
-  have he : Continuous e := continuous_subtype_val.subtype_mk _
-  have hfun : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦ evalAtHom a.1 a.2 f) =
+    fun a ↦ ⟨a.val, fun i ↦ isPowerBounded_iff_norm_le_one.mp (a.property i)⟩
+  have he : Continuous e := continuous_subtypeVal.subtype_mk _
+  have hfun : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+        evalAtHom a.val a.property f) =
       (fun a : {a : Fin k → K // ∀ i, ‖a i‖ ≤ (1 : ℝ)} ↦
-        MvPowerSeries.restrictedEval₂ (RingHom.id K) a.1 (fun _ ↦ le_rfl) a.2
+        MvPowerSeries.restrictedEval₂ (RingHom.id K) a.val (fun _ ↦ le_rfl) a.property
           (restrictedMvPowerSeriesGaussEquiv f)) ∘ e :=
-    funext fun a ↦ evalAtHom_eq_restrictedEval₂ a.1 a.2 (fun i ↦
-      isPowerBounded_iff_norm_le_one.mp (a.2 i)) f
+    funext fun a ↦ evalAtHom_eq_restrictedEval₂ a.val a.property (fun i ↦
+      isPowerBounded_iff_norm_le_one.mp (a.property i)) f
   rw [hfun]
   exact (MvPowerSeries.continuous_restrictedEval₂_arg (RingHom.id K) (fun _ ↦ le_rfl)
     (restrictedMvPowerSeriesGaussEquiv f)).comp he
@@ -166,32 +168,34 @@ and the ultrametric inequality, if `a₀` satisfies these conditions then they p
 neighbourhood where `f` and `g` each vary by strictly less than `‖g(a₀)‖`. -/
 theorem continuous_classicalPoint (x : spa (powerBoundedSubring K)) :
     Continuous fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2 := by
+      classicalPoint x a.val a.property := by
   refine continuous_induced_rng.mpr ?_
   rw [instTopologicalSpace_eq_generateFrom, continuous_generateFrom_iff]
   rintro _ ⟨f, g, rfl⟩
   rw [isOpen_iff_mem_nhds]
   intro a₀ ha₀
   rw [Set.mem_preimage, mem_basicOpen_iff, classicalPoint_vle, classicalPoint_vle, map_zero,
-    vle_iff_norm_le_of_mem_spa x.2, vle_iff_norm_le_of_mem_spa x.2, norm_zero, not_le] at ha₀
+    vle_iff_norm_le_of_mem_spa x.property, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
+    not_le] at ha₀
   obtain ⟨hfg, hgpos⟩ := ha₀
-  set r : ℝ := ‖evalAtHom a₀.1 a₀.2 g‖
+  set r : ℝ := ‖evalAtHom a₀.val a₀.property g‖
   have hopen : IsOpen ({a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} |
-        ‖evalAtHom a.1 a.2 f - evalAtHom a₀.1 a₀.2 f‖ < r} ∩
+        ‖evalAtHom a.val a.property f - evalAtHom a₀.val a₀.property f‖ < r} ∩
       {a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} |
-        ‖evalAtHom a.1 a.2 g - evalAtHom a₀.1 a₀.2 g‖ < r}) :=
+        ‖evalAtHom a.val a.property g - evalAtHom a₀.val a₀.property g‖ < r}) :=
     (isOpen_lt ((continuous_evalAtHom_arg f).sub continuous_const).norm continuous_const).inter
       (isOpen_lt ((continuous_evalAtHom_arg g).sub continuous_const).norm continuous_const)
   refine mem_nhds_iff.mpr ⟨_, fun a ha ↦ ?_, hopen, by simp [hgpos]⟩
   obtain ⟨hf_lt, hg_lt⟩ := ha
-  have hga : ‖evalAtHom a.1 a.2 g‖ = r := by
-    rw [← sub_add_cancel (evalAtHom a.1 a.2 g) (evalAtHom a₀.1 a₀.2 g),
+  have hga : ‖evalAtHom a.val a.property g‖ = r := by
+    rw [← sub_add_cancel (evalAtHom a.val a.property g) (evalAtHom a₀.val a₀.property g),
       IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hg_lt.ne, max_eq_right hg_lt.le]
-  have hfa : ‖evalAtHom a.1 a.2 f‖ ≤ r := by
-    rw [← sub_add_cancel (evalAtHom a.1 a.2 f) (evalAtHom a₀.1 a₀.2 f)]
+  have hfa : ‖evalAtHom a.val a.property f‖ ≤ r := by
+    rw [← sub_add_cancel (evalAtHom a.val a.property f) (evalAtHom a₀.val a₀.property f)]
     exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hf_lt.le hfg)
   rw [Set.mem_preimage, mem_basicOpen_iff, classicalPoint_vle, classicalPoint_vle, map_zero,
-    vle_iff_norm_le_of_mem_spa x.2, vle_iff_norm_le_of_mem_spa x.2, norm_zero, not_le, hga]
+    vle_iff_norm_le_of_mem_spa x.property, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
+    not_le, hga]
   exact ⟨hfa, hgpos⟩
 
 open scoped Classical in
@@ -200,18 +204,19 @@ and any nonzero `c ∈ K`, the preimage of the rational subset `R({T₁ - a₀,�
 under the classical-point map is the closed ball of radius `‖c‖` about `a₀`. -/
 theorem preimage_rationalSubset_classicalPoint_closedBall (x : spa (powerBoundedSubring K))
     (a₀ : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) {c : K} (hc : c ≠ 0) :
-    (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦ classicalPoint x a.1 a.2) ⁻¹'
+    (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
+        classicalPoint x a.val a.property) ⁻¹'
       (Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _)
         (Finset.univ.image fun i : Fin k ↦
           weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
-            weightedC _ isWeightFamily_one_weight (a₀.1 i))
+            weightedC _ isWeightFamily_one_weight (a₀.val i))
         (weightedC _ isWeightFamily_one_weight c)) =
       Metric.closedBall a₀ ‖c‖ := by
   ext a
   simp only [Set.mem_preimage, mem_rationalSubset_iff, ← closedPolydisc_def,
-    (classicalPoint x a.1 a.2).2, true_and, Finset.mem_image, Finset.mem_univ, true_and,
-    forall_exists_index, forall_apply_eq_imp_iff, classicalPoint_vle, map_sub, map_zero,
-    evalAtHom_weightedX, evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.2, norm_zero,
+    (classicalPoint x a.val a.property).property, true_and, Finset.mem_image, Finset.mem_univ,
+    true_and, forall_exists_index, forall_apply_eq_imp_iff, classicalPoint_vle, map_sub, map_zero,
+    evalAtHom_weightedX, evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
     not_le, norm_pos_iff.mpr hc, and_true, Metric.mem_closedBall, Subtype.dist_eq, dist_eq_norm,
     pi_norm_le_iff_of_nonneg (norm_nonneg c), Pi.sub_apply]
 
@@ -230,7 +235,7 @@ theorem eq_classicalPoint_zero (x : spa (powerBoundedSubring K)) (v : closedPoly
   refine Subtype.ext (ext' fun f g ↦ ?_)
   rw [← e.symm_apply_apply f, ← e.symm_apply_apply g, he, he,
     closedPolydisc_vle_weightedC_iff, classicalPoint_vle, evalAtHom_weightedC,
-    evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.2]
+    evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.property]
 
 /-- In dimension `0`, `closedPolydisc 0 K` has at most one point (indeed exactly one whenever
 `Spa (K, K°)` is nonempty). -/
@@ -242,7 +247,7 @@ theorem subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) whe
 /-- **In dimension `0`, the classical points exhaust `closedPolydisc 0 K`.** -/
 theorem range_classicalPoint_zero_eq_univ (x : spa (powerBoundedSubring K)) :
     Set.range (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2) = Set.univ := by
+      classicalPoint x a.val a.property) = Set.univ := by
   ext v
   simp only [Set.mem_range, Set.mem_univ, iff_true]
   exact ⟨⟨Fin.elim0, fun i ↦ i.elim0⟩, (eq_classicalPoint_zero x v).symm⟩
@@ -259,7 +264,7 @@ Continuity holds by `continuous_classicalPoint`, injectivity by
 `‖c‖` arise as preimages of rational subsets `R({Tᵢ - a₀,ᵢ} / c)`. -/
 theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
     Topology.IsEmbedding fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2 := by
+      classicalPoint x a.val a.property := by
   classical
   refine Topology.IsEmbedding.mk (Topology.isInducing_iff_nhds.mpr fun a₀ ↦ ?_)
     (classicalPoint_injective_of_isField (Field.toIsField K) x)
@@ -272,11 +277,11 @@ theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
       isWeightFamily_one_weight) :=
     Finset.univ.image fun i : Fin k ↦
       weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
-        weightedC _ isWeightFamily_one_weight (a₀.1 i)
+        weightedC _ isWeightFamily_one_weight (a₀.val i)
   set V : Set (closedPolydisc k K) :=
     Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T (weightedC _ _ c)
   have hpre : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2) ⁻¹' V = Metric.closedBall a₀ ‖c‖ :=
+      classicalPoint x a.val a.property) ⁻¹' V = Metric.closedBall a₀ ‖c‖ :=
     preimage_rationalSubset_classicalPoint_closedBall x a₀ hc
   have hVopen : IsOpen V := by
     have h := isOpen_val_preimage_rationalSubset
@@ -284,7 +289,7 @@ theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
         isWeightFamily_one_weight)) T (weightedC _ _ c)
     rw [← closedPolydisc_def] at h
     exact h
-  have ha₀V : classicalPoint x a₀.1 a₀.2 ∈ V :=
+  have ha₀V : classicalPoint x a₀.val a₀.property ∈ V :=
     (Set.ext_iff.mp hpre a₀).mpr (Metric.mem_closedBall_self (norm_nonneg c))
   refine Filter.mem_comap.mpr ⟨V, hVopen.mem_nhds ha₀V, ?_⟩
   rw [hpre]
@@ -296,25 +301,26 @@ to `(K°)ᵏ` with its valuation topology. -/
 noncomputable def classicalPointRangeHomeomorph (x : spa (powerBoundedSubring K)) :
     {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ≃ₜ
       Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.1 a.2) :=
+        classicalPoint x a.val a.property) :=
   (isEmbedding_classicalPoint x).toHomeomorph
 
 @[simp]
 theorem classicalPointRangeHomeomorph_apply_coe (x : spa (powerBoundedSubring K))
     (a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) :
-    (classicalPointRangeHomeomorph x a : closedPolydisc k K) = classicalPoint x a.1 a.2 := (rfl)
+    (classicalPointRangeHomeomorph x a : closedPolydisc k K) =
+      classicalPoint x a.val a.property := (rfl)
 
 @[simp]
 theorem classicalPointRangeHomeomorph_symm_apply (x : spa (powerBoundedSubring K))
     (a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) :
-    (classicalPointRangeHomeomorph x).symm ⟨classicalPoint x a.1 a.2, ⟨a, rfl⟩⟩ = a :=
+    (classicalPointRangeHomeomorph x).symm ⟨classicalPoint x a.val a.property, ⟨a, rfl⟩⟩ = a :=
   (isEmbedding_classicalPoint x).toHomeomorph_symm_apply a
 
 /-- **The `K`-rational points of a closed polydisc form a completely metrizable space.** -/
 theorem isCompletelyMetrizableSpace_range_classicalPoint (x : spa (powerBoundedSubring K)) :
     TopologicalSpace.IsCompletelyMetrizableSpace
       (Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.1 a.2)) := by
+        classicalPoint x a.val a.property)) := by
   have : CompleteSpace {a : Fin k → K // ∀ i, IsPowerBounded (a i)} :=
     completeSpace_subtype_forall_isPowerBounded
   exact (classicalPointRangeHomeomorph x).symm.isClosedEmbedding.IsCompletelyMetrizableSpace
@@ -323,7 +329,7 @@ theorem isCompletelyMetrizableSpace_range_classicalPoint (x : spa (powerBoundedS
 theorem baireSpace_range_classicalPoint (x : spa (powerBoundedSubring K)) :
     BaireSpace
       (Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.1 a.2)) := by
+        classicalPoint x a.val a.property)) := by
   have := isCompletelyMetrizableSpace_range_classicalPoint (k := k) x
   exact BaireSpace.of_completelyPseudoMetrizable
 

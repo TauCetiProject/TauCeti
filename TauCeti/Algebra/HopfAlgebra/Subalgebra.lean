@@ -341,6 +341,6 @@ theorem exists_comp_hopfSubalgebraι_iff (hA : A.IsHopfSubalgebra) (f : K ⟶ H)
   refine ⟨?_, fun hf ↦ ⟨_, liftHopfSubalgebra_comp_hopfSubalgebraι hA f hf⟩⟩
   rintro ⟨g, rfl⟩ x
   simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-  exact (hopfSubalgebraι_apply hA _).symm ▸ (g.hom x : A).2
+  exact (hopfSubalgebraι_apply hA _).symm ▸ (g.hom x : A).property
 
 end TauCeti.CommHopfAlgCat
