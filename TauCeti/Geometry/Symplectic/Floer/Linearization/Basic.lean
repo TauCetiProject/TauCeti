@@ -28,10 +28,13 @@ complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
 `β D ξ + β' ξ` (`floerLinearization_smul_fst`), a case of the same rule for any operator
 `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_smul_fst` in
 `TauCeti.Geometry.Symplectic.JHolomorphic.Line`); in particular, conjugated by an exponential
-weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). Its value at
+weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). On a
+direction multiplied by a function `β(z)` of both coordinates it acts as
+`β D ξ + (∂s β) ξ + J(z, u z) ((∂t β) ξ)` (`floerLinearization_fun_smul`). Its value at
 a point depends only on the germ of the direction there
-(`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only through their values at
-that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
+(`floerLinearization_congr_of_eventuallyEq`), so its support lies in that of the direction
+(`tsupport_floerLinearization_subset`), and it depends on the Floer data only through their values
+at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
 (`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
@@ -240,6 +243,15 @@ theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
   rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
 
+/-- The linearization vanishes wherever the direction vanishes near the point, so its support is
+contained in the support of the direction. -/
+theorem tsupport_floerLinearization_subset (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) :
+    tsupport (ω.floerLinearization J Ks Kt u ξ) ⊆ tsupport ξ := by
+  refine closure_minimal (fun z hz ↦ by_contra fun h ↦ hz ?_) (isClosed_tsupport ξ)
+  rw [← ω.floerLinearization_zero J Ks Kt u z]
+  exact ω.floerLinearization_congr_of_eventuallyEq _ _ _ u (notMem_tsupport_iff_eventuallyEq.1 h)
+
 /-- **The linearized operator of a translate.** The linearized Floer operator of the data
 `w ↦ (J, K_s, K_t, u) (w + v)` in the direction `w ↦ ξ (w + v)` at `z` is the linearized operator of
 the data `(J, K_s, K_t, u)` in the direction `ξ` at `z + v`. -/
@@ -314,6 +326,20 @@ theorem floerLinearization_smul_fst (ω : SymplecticForm V)
       β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
   simp only [floerLinearization_eq_add]
   exact cauchyRiemann_smul_fst (fun z ↦ J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u) hβ hξ
+
+/-- **Multiplying by a function.** If `β : ℝ × ℝ → ℝ` and `ξ` are differentiable at `z`, the
+linearization at `z` sends `β ξ` to `β D ξ + (∂s β) ξ + J(z, u z) ((∂t β) ξ)`: the leading terms
+`∂s + J(z, u z) ∂t` differentiate the factor, and the zeroth-order part does not. -/
+theorem floerLinearization_fun_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ × ℝ → ℝ} (hβ : DifferentiableAt ℝ β z)
+    (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ β w • ξ w) z =
+      β z • ω.floerLinearization J Ks Kt u ξ z + fderiv ℝ β z stdComplexLineReal • ξ z +
+        J z (u z) (fderiv ℝ β z stdComplexLineImag • ξ z) := by
+  simp only [floerLinearization_eq_add, fderiv_fun_smul hβ hξ, add_apply, smul_apply,
+    smulRight_apply, map_add, map_smul]
+  module
 
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case
