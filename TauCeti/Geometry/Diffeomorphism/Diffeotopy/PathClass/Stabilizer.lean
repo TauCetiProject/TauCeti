@@ -51,6 +51,6 @@ stabilizer of `σ`. -/
 theorem Diffeotopy.PathClass.final_mem_isotopyStabilizer
     (γ : PathClass (diffeomorphStabilizer σ) le_rfl) :
     PathClass.final _ _ γ ∈ isotopyStabilizer σ :=
-  (range_pathClass_final (σ := σ)) ▸ ⟨γ, rfl⟩
+  (range_pathClass_final (σ := σ)) ▸ MonoidHom.mem_range.2 ⟨γ, rfl⟩
 
 end TauCeti

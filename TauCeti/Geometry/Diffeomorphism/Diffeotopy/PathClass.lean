@@ -202,8 +202,9 @@ def final : PathClass S hn →* M ≃ₘ^n⟮J, J⟯ M :=
 
 /-- The final diffeomorphism of the class of a diffeotopy is its final diffeomorphism. -/
 @[simp]
-theorem final_mk (Φ : sliceSubgroup S) : final S hn (mk S hn Φ) = (Φ : Diffeotopy J n M).final :=
-  finalHom_apply _
+theorem final_mk (Φ : sliceSubgroup S) : final S hn (mk S hn Φ) = (Φ : Diffeotopy J n M).final := by
+  rw [mk_def, final, Con.lift_mk']
+  exact finalHom_apply _
 
 /-- The final diffeomorphism of a path class lies in `S`. -/
 theorem final_mem (γ : PathClass S hn) : final S hn γ ∈ S := by
