@@ -34,8 +34,6 @@ power product `z^{−c} (1 − z)^{c−a−b−1}`, and two Wronskians with each
 ## Main results
 
 * `TauCeti.hasDerivAt_wronskian_of_hypergeometricEquation`: Abel's identity.
-* `TauCeti.hasDerivAt_cpow_mul_one_sub_cpow`: the power product `z^{−c} (1 − z)^{c−a−b−1}`
-  solves the same first-order equation as the Wronskian.
 * `TauCeti.exists_wronskian_eq_mul_cpow_of_hypergeometricEquation`: the Wronskian is a constant
   multiple of `z^{−c} (1 − z)^{c−a−b−1}` on a connected open set in the cut plane.
 * `TauCeti.exists_eq_add_of_hypergeometricEquation`: the span criterion.
@@ -81,7 +79,7 @@ theorem hasDerivAt_wronskian_of_hypergeometricEquation {f g : ℂ → ℂ} (hU :
 
 /-- The power product `z^{−c} (1 − z)^{c−a−b−1}` satisfies `y′ = −p y` with the coefficient
 `p = (c − (a + b + 1) z)/(z (1 − z))` of 15.10.1, where `z` and `1 − z` lie in the slit plane. -/
-theorem hasDerivAt_cpow_mul_one_sub_cpow {z : ℂ} (hz : z ∈ slitPlane)
+private theorem hasDerivAt_cpow_mul_one_sub_cpow {z : ℂ} (hz : z ∈ slitPlane)
     (hz' : 1 - z ∈ slitPlane) :
     HasDerivAt (fun ζ => ζ ^ (-c) * (1 - ζ) ^ (c - a - b - 1))
       (-((c - (a + b + 1) * z) / (z * (1 - z))) * (z ^ (-c) * (1 - z) ^ (c - a - b - 1))) z := by
