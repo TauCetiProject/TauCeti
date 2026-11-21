@@ -221,9 +221,9 @@ theorem continuousOn_normalizedDet_trans_symm [VectorBundle ℂ F E] {s : Set B}
   rw [continuousOn_iff_continuous_domRestrict]
   -- Restrict both frames to the subspace `s`, where `ψ` is continuous.
   have hval : Continuous fun q : s × F ↦ ((q.1 : B), q.2) :=
-    (continuous_subtype_val.comp continuous_fst).prodMk continuous_snd
+    (continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd
   exact continuous_normalizedDet_trans_symm (f := fun y : s ↦ f y) (hφ.comp hval)
-    (hψ.comp_continuous hval fun q ↦ ⟨q.1.2, mem_univ _⟩)
+    (hψ.comp_continuous hval fun q ↦ ⟨q.1.property, mem_univ _⟩)
 
 end ClutchingFunction
 

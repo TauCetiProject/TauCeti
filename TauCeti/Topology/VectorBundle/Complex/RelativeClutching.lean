@@ -246,12 +246,12 @@ theorem clutchingNumber_eq_relativeClutchingNumber_add {x : X} (p : Ω^ (Fin 2) 
       (Cube.boundary (Fin 2) ×ˢ univ))
     (e : Trivialization F (π F E)) [e.IsLinear ℂ] (hx : x ∈ e.baseSet) :
     clutchingNumber F E p =
-      relativeClutchingNumber p.1 τ + squareBoundaryDegree (clutchingFunction p τ e) := by
+      relativeClutchingNumber p.val τ + squareBoundaryDegree (clutchingFunction p τ e) := by
   obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
   rw [clutchingNumber_eq_squareBoundaryDegree p e hx hφ,
-    relativeClutchingNumber_eq_sub p.1 hτ hφ e fun y hy ↦
+    relativeClutchingNumber_eq_sub p.val hτ hφ e fun y hy ↦
       mem_of_eq_of_mem (GenLoop.boundary p y hy) hx]
-  -- The coercions `⇑p` and `⇑p.1` agree by definition (`GenLoop.coe_coe`).
+  -- The coercions `⇑p` and `⇑p.val` agree by definition (`GenLoop.coe_coe`).
   exact (sub_add_cancel _ _).symm
 
 /-- **The clutching number as a relative clutching number.** If the boundary frame `τ` along a
@@ -262,7 +262,7 @@ theorem clutchingNumber_eq_relativeClutchingNumber {x : X} (p : Ω^ (Fin 2) X x)
     {τ : ∀ y, F ≃L[ℂ] E (p y)} (e : Trivialization F (π F E)) [e.IsLinear ℂ]
     (hx : x ∈ e.baseSet)
     (hτe : ∀ y ∈ Cube.boundary (Fin 2), ∀ v, (e (TotalSpace.mk' F (p y) (τ y v))).2 = v) :
-    clutchingNumber F E p = relativeClutchingNumber p.1 τ := by
+    clutchingNumber F E p = relativeClutchingNumber p.val τ := by
   -- On the boundary, `τ y v` is the point of `E` over `x` with coordinate `v` in `e`, which
   -- depends continuously on `v`.
   have hτ : ContinuousOn (fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (p q.1) (τ q.1 q.2))
