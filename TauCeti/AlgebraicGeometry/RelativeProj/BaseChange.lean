@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.BaseChange
 public import TauCeti.AlgebraicGeometry.RelativeProj.Basic
+public import TauCeti.AlgebraicGeometry.Sites.SmallAffineZariski
 
 /-!
 # Base change of relative Proj
@@ -138,8 +139,7 @@ theorem proj_map_comp_relativeProjGluingData_functor_map {U' U : Y.AffineZariski
 /-- The morphisms `Proj (⨁ n, Γ(g^* Aₙ, V)) ⟶ Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj_Y(A)` induced by pullback
 of sections, over the pairs of affine opens `V ≤ g⁻¹ U`, commute with the transition maps of the
 relative `Proj` of `g^* A`. -/
-@[reassoc]
-theorem relativeProjGluingData_functor_map_comp_proj_map_comp_relativeProjCover_f
+private theorem relativeProjGluingData_functor_map_comp_proj_map_comp_relativeProjCover_f
     {V V' : X.AffineZariskiSite} {U U' : Y.AffineZariskiSite} (hVV' : V ≤ V') (hUU' : U ≤ U')
     (hV : V.toOpens ≤ g ⁻¹ᵁ U.toOpens) (hV' : V'.toOpens ≤ g ⁻¹ᵁ U'.toOpens) :
     ((pullback g).obj A).obj.relativeProjGluingData.functor.map (homOfLE hVV') ≫
@@ -155,27 +155,19 @@ theorem relativeProjGluingData_functor_map_comp_proj_map_comp_relativeProjCover_
     ((proj_map_comp_relativeProjGluingData_functor_map_assoc A g (homOfLE hUU')
       V.property hV _).symm.trans (congrArg (_ ≫ ·) hw))
 
-private noncomputable def affinePairCover : X.OpenCover :=
-  .mkOfCovers {p : X.AffineZariskiSite × Y.AffineZariskiSite // p.1.toOpens ≤ g ⁻¹ᵁ p.2.toOpens}
-    (fun p ↦ Spec Γ(X, p.val.1.toOpens)) (fun p ↦ p.val.1.property.fromSpec) fun x ↦ by
-      obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (x := g x) (U := ⊤) trivial
-      obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset (g.mem_preimage.mpr hxU)
-      obtain ⟨z, hz⟩ : x ∈ Set.range hV.fromSpec := by
-        rw [hV.range_fromSpec]
-        exact hxV
-      exact ⟨⟨(⟨V, hV⟩, ⟨U, hU⟩), hVU⟩, z, hz⟩
-
 private noncomputable def relativeProjPullbackCover :
     ((pullback g).obj A).obj.relativeProj.OpenCover :=
-  Scheme.Cover.copy ((affinePairCover g).pullback₁ ((pullback g).obj A).obj.relativeProjToBase)
+  Scheme.Cover.copy ((Scheme.AffineZariskiSite.affinePairCover g).pullback₁
+      ((pullback g).obj A).obj.relativeProjToBase)
     {p : X.AffineZariskiSite × Y.AffineZariskiSite // p.1.toOpens ≤ g ⁻¹ᵁ p.2.toOpens}
     (fun p ↦ ((pullback g).obj A).obj.relativeProjCover.X p.val.1)
     (fun p ↦ ((pullback g).obj A).obj.relativeProjCover.f p.val.1) (Equiv.refl _)
     (fun p ↦
       (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec p.val.1).flip.isoPullback)
-    (fun p ↦ by
-      exact (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec p.val.1).flip
-        |>.isoPullback_hom_fst.symm)
+    (fun p ↦ (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec p.val.1).flip
+      |>.isoPullback_hom_fst.symm.trans <| congrArg (_ ≫ ·) <|
+        (PreZeroHypercover.pullback₁_f ((pullback g).obj A).obj.relativeProjToBase
+          (Scheme.AffineZariskiSite.affinePairCover g).toPreZeroHypercover p).symm)
 
 private instance : Preorder (relativeProjPullbackCover A g).I₀ :=
   inferInstanceAs <| Preorder
@@ -228,18 +220,19 @@ private theorem exists_relativeProjPullbackCover_refinement
         Limits.colimit.w _ _
       rw [← hz, ← hw]
       exact (Scheme.Hom.comp_apply _ _ _).symm)
-  refine (congrArg (fun f : ((pullback g).obj A).obj.relativeProjCover.X (k.basicOpen h) ⟶
-    Limits.pullback ((relativeProjPullbackCover A g).f i)
-      ((relativeProjPullbackCover A g).f j) ↦ f z) ?_).trans (Scheme.Hom.comp_apply _ _ z)
-  exact Limits.pullback.hom_ext
-    ((Limits.pullback.lift_fst _ _ _).trans
-      ((((pullback g).obj A).obj.relativeProjGluingData.functor.map_comp hlk hki).trans
-        ((congrArg (_ ≫ ·) (Limits.pullback.lift_fst _ _ _).symm).trans
-          (Category.assoc _ _ _).symm)))
-    ((Limits.pullback.lift_snd _ _ _).trans
-      ((((pullback g).obj A).obj.relativeProjGluingData.functor.map_comp hlk hkj).trans
-        ((congrArg (_ ≫ ·) (Limits.pullback.lift_snd _ _ _).symm).trans
-          (Category.assoc _ _ _).symm)))
+  -- the lift at the refined pair is the lift at `k` precomposed with the transition map
+  have hlift : Limits.pullback.lift
+      (((pullback g).obj A).obj.relativeProjGluingData.functor.map (hlk ≫ hki))
+      (((pullback g).obj A).obj.relativeProjGluingData.functor.map (hlk ≫ hkj))
+      ((Limits.colimit.w _ _).trans (Limits.colimit.w _ _).symm) =
+        ((pullback g).obj A).obj.relativeProjGluingData.functor.map hlk ≫
+          Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map hki)
+            (((pullback g).obj A).obj.relativeProjGluingData.functor.map hkj)
+            ((Limits.colimit.w _ _).trans (Limits.colimit.w _ _).symm) := by
+    refine Limits.pullback.hom_ext ?_ ?_ <;>
+      simp only [Limits.pullback.lift_fst, Limits.pullback.lift_snd, Category.assoc,
+        Functor.map_comp]
+  exact (congrArg (fun f ↦ f z) hlift).trans (Scheme.Hom.comp_apply _ _ z)
 
 private noncomputable instance : (relativeProjPullbackCover A g).LocallyDirected where
   trans {i j} hij := ((pullback g).obj A).obj.relativeProjGluingData.functor.map
@@ -288,21 +281,18 @@ cartesian. -/
 theorem isPullback_relativeProjPullbackHom :
     IsPullback ((pullback g).obj A).obj.relativeProjToBase (relativeProjPullbackHom A g) g
       A.obj.relativeProjToBase := by
-  refine Scheme.isPullback_of_openCover _ _ _ _ (affinePairCover g) fun i ↦ ?_
+  refine Scheme.isPullback_of_openCover _ _ _ _ (Scheme.AffineZariskiSite.affinePairCover g)
+    fun i ↦ ?_
   obtain ⟨⟨V, U⟩, hV⟩ := i
   have hchart := (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec V).flip
   have hQ := ((A.isPullback_proj_pullbackGradedSections g hV U.property V.property).paste_horiz
     (A.obj.isPullback_relativeProjCover_fromSpec U).flip).flip
   rw [← relativeProjCover_f_relativeProjPullbackHom A g V U hV,
     IsAffineOpen.SpecMap_appLE_fromSpec g U.property V.property hV] at hQ
-  -- The cover API leaves its pulled-back maps opaque to rewriting; identify them with the
-  -- pullback projections to apply the cartesian chart comparison.
-  change IsPullback
-    (Limits.pullback.snd ((pullback g).obj A).obj.relativeProjToBase V.property.fromSpec)
-    (Limits.pullback.fst _ _ ≫ relativeProjPullbackHom A g) (V.property.fromSpec ≫ g)
-    A.obj.relativeProjToBase
+  dsimp only [Scheme.Cover.pullbackHom, Precoverage.ZeroHypercover.pullback₁_toPreZeroHypercover,
+    PreZeroHypercover.pullback₁_f, Scheme.AffineZariskiSite.affinePairCover_f]
   exact hQ.of_iso hchart.isoPullback (.refl _) (.refl _) (.refl _)
-    (by simpa only [Iso.refl_hom, Category.comp_id] using hchart.isoPullback_hom_snd.symm)
+    ((Category.comp_id _).trans hchart.isoPullback_hom_snd.symm)
     ((Category.comp_id _).trans (hchart.isoPullback_hom_fst_assoc _).symm) (by simp) (by simp)
 
 /-- The projection `relativeProjPullbackHom` lies over `g`. -/
