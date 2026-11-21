@@ -24,9 +24,6 @@ Replacing a set by a volume-a.e. equal representative changes almost every secti
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
 The length of a line section is independent of its base point along the line, in any real module.
-On `ι → ℝ`, Lebesgue integrals split along the diagonal lines `u ↦ z - u·1`, weighted by the
-indicator of a slab of unit width across them
-(`TauCeti.lintegral_eq_lintegral_indicator_mul_lintegral_sub_const`).
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
@@ -69,50 +66,6 @@ theorem volume_lineSection_add_smul {E : Type*} [AddCommMonoid E] [Module ℝ E]
     ext t
     simp [add_smul, add_assoc, add_comm (t • e)]
   rw [h, measure_preimage_add_right]
-
-/-- **Decomposition of Lebesgue measure on `ι → ℝ` along the diagonal lines.** The lower
-integral of an a.e. measurable `H` over `ι → ℝ` is the integral, against the indicator of
-`z i₀ ∈ [0, 1]`, of the integrals of `H` along the lines `u ↦ z - u·1`: the slab
-`{z | z i₀ ∈ [0, 1]}` meets each such line in a segment of length one.
-
-The proof is adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
-`CKSD/Inference/Families.lean` (`lintegral_eq_lintegral_indicator_mul_lintegral_sub_const`, for
-`ι = Fin n` and measurable `H`). -/
-theorem lintegral_eq_lintegral_indicator_mul_lintegral_sub_const {ι : Type*} [Fintype ι]
-    (i₀ : ι) {H : (ι → ℝ) → ℝ≥0∞} (hH : AEMeasurable H) :
-    ∫⁻ x, H x =
-      ∫⁻ z : ι → ℝ, (Icc (0 : ℝ) 1).indicator 1 (z i₀) * ∫⁻ u : ℝ, H fun i ↦ z i - u := by
-  set k : ℝ → ℝ≥0∞ := (Icc (0 : ℝ) 1).indicator 1 with hkdef
-  have hk : Measurable k := measurable_one.indicator measurableSet_Icc
-  have hk1 : ∀ t : ℝ, ∫⁻ u, k (t + u) = 1 := fun t ↦ by
-    rw [lintegral_add_left_eq_self k t, hkdef, lintegral_indicator_one measurableSet_Icc,
-      Real.volume_Icc, sub_zero, ENNReal.ofReal_one]
-  -- The shear `(u, z) ↦ z - u·1` is quasi-measure-preserving.
-  have hsub : QuasiMeasurePreserving (fun p : ℝ × (ι → ℝ) ↦ fun i ↦ p.2 i - p.1)
-      (volume.prod volume) volume :=
-    .prod_of_right (by fun_prop) (ae_of_all _ fun u ↦
-      (measurePreserving_sub_right volume fun _ : ι ↦ u).quasiMeasurePreserving)
-  calc ∫⁻ x, H x = ∫⁻ x, ∫⁻ u : ℝ, k (x i₀ + u) * H x := by
-        refine lintegral_congr fun x ↦ ?_
-        rw [lintegral_mul_const (f := fun u ↦ k (x i₀ + u)) _ (hk.comp (measurable_const_add _)),
-          hk1, one_mul]
-    _ = ∫⁻ u : ℝ, ∫⁻ x, k (x i₀ + u) * H x :=
-        lintegral_lintegral_swap ((hk.comp (((measurable_pi_apply i₀).comp measurable_fst).add
-          measurable_snd)).aemeasurable.mul
-          (hH.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst))
-    _ = ∫⁻ u : ℝ, ∫⁻ z : ι → ℝ, k (z i₀) * H fun i ↦ z i - u := by
-        refine lintegral_congr fun u ↦ ?_
-        rw [← lintegral_sub_right_eq_self _ fun _ ↦ u]
-        simp only [Pi.sub_apply, sub_add_cancel]
-        -- `z - fun _ ↦ u` is `fun i ↦ z i - u` by definition.
-        rfl
-    _ = ∫⁻ z : ι → ℝ, ∫⁻ u : ℝ, k (z i₀) * H fun i ↦ z i - u :=
-        lintegral_lintegral_swap ((hk.comp ((measurable_pi_apply i₀).comp
-          measurable_snd)).aemeasurable.mul (hH.comp_quasiMeasurePreserving hsub))
-    _ = ∫⁻ z : ι → ℝ, k (z i₀) * ∫⁻ u : ℝ, H fun i ↦ z i - u :=
-        lintegral_congr fun z ↦ lintegral_const_mul' _ _ (by
-          simp only [hkdef, indicator_apply]
-          split_ifs <;> simp)
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]

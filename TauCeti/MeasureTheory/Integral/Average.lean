@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -122,8 +123,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
-* `TauCeti.lintegral_ofReal_sub_sq_mul_le`: for a nonnegative integrable weight `w` on `ℝ`, the
-  weighted mean `(∫ u w) / (∫ w)` minimizes the weighted squared deviation `∫⁻ (c - u)² w`.
+* `TauCeti.lintegral_ofReal_sub_sq_mul_le`: for a nonnegative integrable weight `w`, the
+  weighted mean `(∫ X w) / (∫ w)` minimizes the weighted squared deviation `∫⁻ (c - X)² w`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
@@ -931,63 +932,62 @@ end InnerProduct
 
 section WeightedMean
 
-variable {μ : Measure ℝ} {w : ℝ → ℝ}
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X w : Ω → ℝ}
 
-/-- **The weighted mean minimizes the weighted squared deviation.** For an integrable a.e.
-nonnegative weight `w` on `ℝ`, the weighted squared deviation
-`∫⁻ u, ofReal ((c - u)² w(u)) ∂μ`, which may be infinite, is smallest at the weighted mean
-`c = (∫ u w(u) ∂μ) / (∫ w ∂μ)`. When `w` has zero mass, it vanishes a.e. and every center `c`
-has zero deviation. No first moment is assumed: if the deviation about `c` is finite, the first
-moment is integrable.
+/-- **The weighted mean minimizes the weighted squared deviation.** For an a.e. strongly
+measurable `X` and an integrable a.e. nonnegative weight `w`, the weighted squared deviation
+`∫⁻ ω, ofReal ((c - X ω)² w ω) ∂μ`, which may be infinite, is smallest at the weighted mean
+`c = (∫ X w ∂μ) / (∫ w ∂μ)`. When `w` has zero mass, it vanishes a.e. and every center `c`
+has zero deviation. No first moment is assumed: if the deviation about `c` is finite, `X` is
+square integrable for the weighted measure.
 
-The proof is adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
-`CKSD/Inference/Families.lean` (`lintegral_ofReal_sq_sub_mul_le`). -/
-theorem lintegral_ofReal_sub_sq_mul_le (hw0 : 0 ≤ᵐ[μ] w) (hwi : Integrable w μ) (c : ℝ) :
-    ∫⁻ u, ENNReal.ofReal (((∫ u, u * w u ∂μ) / (∫ u, w u ∂μ) - u) ^ 2 * w u) ∂μ ≤
-      ∫⁻ u, ENNReal.ofReal ((c - u) ^ 2 * w u) ∂μ := by
-  set W := ∫ u, w u ∂μ
-  set m := (∫ u, u * w u ∂μ) / W
-  have hnn : ∀ d : ℝ, 0 ≤ᵐ[μ] fun u ↦ (d - u) ^ 2 * w u := fun d ↦
-    hw0.mono fun u hu ↦ mul_nonneg (sq_nonneg _) hu
-  have hsm : ∀ d : ℝ, AEStronglyMeasurable (fun u ↦ (d - u) ^ 2 * w u) μ := fun d ↦
-    (((continuous_const.sub continuous_id).pow 2).aestronglyMeasurable).mul
-      hwi.aestronglyMeasurable
-  by_cases hW : W = 0
-  · -- A weight of mass zero vanishes almost everywhere.
-    have hw : w =ᵐ[μ] 0 := (integral_eq_zero_iff_of_nonneg_ae hw0 hwi).1 hW
-    rw [lintegral_congr_ae (g := fun _ ↦ 0) (hw.mono fun u hu ↦ by simp [hu]), lintegral_zero]
-    exact zero_le
-  have hpos : 0 < W := (integral_nonneg_of_ae hw0).lt_of_ne (Ne.symm hW)
-  by_cases hfin : ∫⁻ u, ENNReal.ofReal ((c - u) ^ 2 * w u) ∂μ = ∞
+The proof applies `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq` to the
+weighted measure `μ.withDensity (ofReal ∘ w)`. The statement is adapted from the lean-CKSD project
+(<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Inference/Families.lean`
+(`lintegral_ofReal_sq_sub_mul_le`, for `X = id` on `ℝ`). -/
+theorem lintegral_ofReal_sub_sq_mul_le (hX : AEStronglyMeasurable X μ) (hw0 : 0 ≤ᵐ[μ] w)
+    (hwi : Integrable w μ) (c : ℝ) :
+    ∫⁻ ω, ENNReal.ofReal (((∫ ω, X ω * w ω ∂μ) / (∫ ω, w ω ∂μ) - X ω) ^ 2 * w ω) ∂μ ≤
+      ∫⁻ ω, ENNReal.ofReal ((c - X ω) ^ 2 * w ω) ∂μ := by
+  set ν := μ.withDensity fun ω ↦ ENNReal.ofReal (w ω)
+  have : IsFiniteMeasure ν := isFiniteMeasure_withDensity_ofReal hwi.2
+  have hXν : AEStronglyMeasurable X ν := hX.mono_ac (withDensity_absolutelyContinuous _ _)
+  -- The weighted lower integrals are lower integrals against `ν`.
+  have hlin (d : ℝ) : ∫⁻ ω, ENNReal.ofReal ((d - X ω) ^ 2 * w ω) ∂μ =
+      ∫⁻ ω, ENNReal.ofReal (‖X ω - d‖ ^ 2) ∂ν := by
+    rw [lintegral_withDensity_eq_lintegral_mul₀' hwi.aemeasurable.ennreal_ofReal
+      ((hXν.aemeasurable.sub_const d).norm.pow_const 2).ennreal_ofReal]
+    refine lintegral_congr_ae ?_
+    filter_upwards [hw0] with ω hω
+    rw [Pi.mul_apply, ← ENNReal.ofReal_mul hω, Real.norm_eq_abs, sq_abs, ← neg_sub, neg_sq,
+      mul_comm]
+  -- The weighted mean is the average of `X` under `ν`.
+  have hmean : ⨍ ω, X ω ∂ν = (∫ ω, X ω * w ω ∂μ) / (∫ ω, w ω ∂μ) := by
+    have hν : ν.real Set.univ = ∫ ω, w ω ∂μ := by
+      rw [measureReal_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+        ← ofReal_integral_eq_lintegral_ofReal hwi hw0,
+        ENNReal.toReal_ofReal (integral_nonneg_of_ae hw0)]
+    rw [average_eq, hν,
+      TauCeti.MeasureTheory.integral_withDensity_ofReal hwi.aemeasurable hw0, smul_eq_mul,
+      inv_mul_eq_div]
+    simp_rw [smul_eq_mul, mul_comm (w _)]
+  rw [hlin, hlin, ← hmean]
+  by_cases hfin : ∫⁻ ω, ENNReal.ofReal (‖X ω - c‖ ^ 2) ∂ν = ∞
   · exact hfin ▸ le_top
-  have hc : Integrable (fun u ↦ (c - u) ^ 2 * w u) μ :=
-    (lintegral_ofReal_ne_top_iff_integrable (hsm c) (hnn c)).1 hfin
-  -- The first moment is dominated by `(|c| + 1) w + (c - u)² w`.
-  have hmi : Integrable (fun u ↦ u * w u) μ := by
-    refine ((hwi.const_mul (|c| + 1)).add hc).mono'
-      (continuous_id.aestronglyMeasurable.mul hwi.aestronglyMeasurable) ?_
-    filter_upwards [hw0] with u hu
-    have h1 : |u| ≤ |c| + |c - u| := by linarith [abs_sub_abs_le_abs_sub u c, abs_sub_comm u c]
-    have h2 : |c - u| ≤ 1 + (c - u) ^ 2 := by nlinarith [sq_abs (c - u), abs_nonneg (c - u)]
-    rw [norm_mul, Real.norm_of_nonneg hu, Real.norm_eq_abs, Pi.add_apply]
-    nlinarith [mul_le_mul_of_nonneg_right (h1.trans (add_le_add_right h2 _)) hu]
-  -- `(m - u)² w = (c - u)² w - (c - m) ((c + m) w - 2 u w)`.
-  have hexp : ∀ u, (m - u) ^ 2 * w u =
-      (c - u) ^ 2 * w u - (c - m) * ((c + m) * w u - 2 * (u * w u)) := fun u ↦ by ring
-  have hlin : Integrable (fun u ↦ (c - m) * ((c + m) * w u - 2 * (u * w u))) μ :=
-    ((hwi.const_mul _).sub (hmi.const_mul _)).const_mul _
-  have hm : Integrable (fun u ↦ (m - u) ^ 2 * w u) μ :=
-    (hc.sub hlin).congr (ae_of_all _ fun u ↦ (hexp u).symm)
-  -- The correction term integrates to `(c - m)² W`, because `∫ u w = m W`.
-  have hcorr : ∫ u, (c - m) * ((c + m) * w u - 2 * (u * w u)) ∂μ = (c - m) ^ 2 * W := by
-    rw [integral_const_mul, integral_sub (hwi.const_mul _) (hmi.const_mul _), integral_const_mul,
-      integral_const_mul, ← div_mul_cancel₀ (∫ u, u * w u ∂μ) hpos.ne']
-    ring
-  have hint : ∫ u, (m - u) ^ 2 * w u ∂μ = (∫ u, (c - u) ^ 2 * w u ∂μ) - (c - m) ^ 2 * W := by
-    rw [integral_congr_ae (ae_of_all _ hexp), integral_sub hc hlin, hcorr]
-  rw [← ofReal_integral_eq_lintegral_ofReal hm (hnn m),
-    ← ofReal_integral_eq_lintegral_ofReal hc (hnn c), hint]
-  exact ENNReal.ofReal_le_ofReal (sub_le_self _ (mul_nonneg (sq_nonneg _) hpos.le))
+  have hc : Integrable (fun ω ↦ ‖X ω - c‖ ^ 2) ν :=
+    (lintegral_ofReal_ne_top_iff_integrable ((hXν.sub aestronglyMeasurable_const).norm.pow 2)
+      (ae_of_all _ fun _ ↦ sq_nonneg _)).1 hfin
+  have h2 : MemLp X 2 ν := by
+    simpa using ((memLp_two_iff_integrable_sq_norm (hXν.sub aestronglyMeasurable_const)).2
+      hc).add (memLp_const c)
+  have hm : Integrable (fun ω ↦ ‖X ω - ⨍ ω, X ω ∂ν‖ ^ 2) ν :=
+    (h2.sub (memLp_const (⨍ ω, X ω ∂ν))).integrable_norm_pow two_ne_zero
+  have key := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq
+    (measure_ne_top ν Set.univ) (h2.integrable one_le_two).integrableOn hc.integrableOn
+  rw [Measure.restrict_univ] at key
+  rw [← ofReal_integral_eq_lintegral_ofReal hm (ae_of_all _ fun _ ↦ sq_nonneg _),
+    ← ofReal_integral_eq_lintegral_ofReal hc (ae_of_all _ fun _ ↦ sq_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal key
 
 end WeightedMean
 

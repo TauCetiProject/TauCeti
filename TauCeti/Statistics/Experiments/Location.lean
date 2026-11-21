@@ -5,25 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # The likelihood of a location family
 
 For a density `f` on `ℝ`, the location family has the densities `f (· - θ)`, and a sample
-`x : ι → ℝ` indexed by a finite type has the likelihood `u ↦ ∏ i, f (x i - u)` at the location
-`u`. This file records the elementary facts about this likelihood used by location-equivariant
-estimation: it is jointly measurable in the sample and the location; shifting the sample by `a`
-shifts the likelihood by `a`, and its first moment correspondingly; it changes only on a
-Lebesgue-null set of locations when `f` is changed on a null set; and it is almost everywhere
-nonnegative when `f` is.
+`x : ι → ℝ` indexed by a finite type has the likelihood `L(x, u) = ∏ i, f (x i - u)` at the
+location `u`. This file records the elementary facts about this likelihood used by
+location-equivariant estimation: it is jointly measurable in the sample and the location;
+shifting the sample by `a` shifts the likelihood by `a`, and the first-moment integrand
+`u * L(x, u)` correspondingly (pointwise identities, not identities between integrals); it changes
+only on a Lebesgue-null set of locations when `f` is changed on a null set; and it is almost
+everywhere nonnegative when `f` is.
 
 ## Main results
 
 * `TauCeti.measurable_prod_apply_sub`: `(x, u) ↦ ∏ i, f (x i - u)` is measurable.
-* `TauCeti.prod_apply_add_sub`, `TauCeti.mul_prod_apply_add_sub`: the likelihood and its first
-  moment at a shifted sample.
+* `TauCeti.prod_apply_add_sub`, `TauCeti.mul_prod_apply_add_sub`: the likelihood and the
+  first-moment integrand `u * L(x, u)` at a shifted sample, pointwise in `u`.
 * `TauCeti.prod_apply_sub_ae_eq`, `TauCeti.prod_apply_sub_ae_nonneg`: the likelihood of a.e.
   equal, resp. a.e. nonnegative, densities.
 
@@ -54,8 +54,9 @@ theorem prod_apply_add_sub (x : ι → ℝ) (a u : ℝ) :
     ∏ i, f (x i + a - u) = ∏ i, f (x i - (u - a)) :=
   Finset.prod_congr rfl fun i _ ↦ by rw [sub_sub_eq_add_sub]
 
-/-- The first moment of the likelihood of the sample shifted by `a`, at the location `u`: it is
-the first moment of the likelihood of the sample at `u - a` plus `a` times that likelihood. -/
+/-- The first-moment integrand `u * L(x + a·1, u)` of the likelihood of the sample shifted by `a`,
+at the location `u`: pointwise, it is the first-moment integrand of the likelihood of the sample
+at `u - a` plus `a` times that likelihood. -/
 theorem mul_prod_apply_add_sub (x : ι → ℝ) (a u : ℝ) :
     u * ∏ i, f (x i + a - u) =
       (u - a) * ∏ i, f (x i - (u - a)) + a * ∏ i, f (x i - (u - a)) := by
