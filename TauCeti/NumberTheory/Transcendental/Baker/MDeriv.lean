@@ -37,10 +37,12 @@ derivative is `z ↦ ∏ᵢ gᵢ^{(σᵢ)}(zᵢ)`.
 
 * `TauCeti.Baker.mDeriv_zero`, `TauCeti.Baker.mDeriv_add_single`: `D⁰ f = f` and
   `D^{σ + eᵢ} f = ∂ᵢ (D^σ f)` for entire `f`; these two characterize `D^σ` on entire functions.
-* `TauCeti.Baker.mDeriv_mDeriv`: `D^σ (D^τ f) = D^{σ + τ} f` for entire `f`.
-* `TauCeti.Baker.differentiable_mDeriv`, `TauCeti.Baker.mDeriv_add`,
-  `TauCeti.Baker.mDeriv_const_mul`, `TauCeti.Baker.mDeriv_sum`: `D^σ` preserves entire functions
-  and is linear on them.
+* `TauCeti.Baker.mDeriv_single`, `TauCeti.Baker.mDeriv_mDeriv`: `D^{k eᵢ} f = ∂ᵢ^k f`, and
+  `D^σ (D^τ f) = D^{σ + τ} f` for entire `f`.
+* `TauCeti.Baker.differentiable_mDeriv`, `TauCeti.Baker.mDeriv_add`, `TauCeti.Baker.mDeriv_sub`,
+  `TauCeti.Baker.mDeriv_const_mul`, `TauCeti.Baker.mDeriv_sum`,
+  `TauCeti.Baker.mDeriv_mul_of_update_eq`: `D^σ` preserves entire functions, is linear on them, and
+  commutes with multiplication by entire factors independent of the differentiated coordinates.
 * `TauCeti.Baker.mDeriv_prod`: `D^σ (z ↦ ∏ᵢ gᵢ(zᵢ)) = z ↦ ∏ᵢ gᵢ^{(σᵢ)}(zᵢ)`.
 * `TauCeti.Baker.mDeriv_exp_dotProduct`: `D^σ (z ↦ e^{w · z}) = z ↦ w^σ e^{w · z}`.
 * `TauCeti.Baker.mDeriv_monomial_mul_exp`: the Leibniz expansion of `D^σ (z ↦ z^τ e^{w · z})`.
@@ -130,9 +132,9 @@ private theorem listDeriv_const_mul (c : ℂ) (l : List (Fin n)) (σ : Fin n →
   | nil => rfl
   | cons i l ih => rw [listDeriv_cons, listDeriv_cons, ih, iterate_partialDeriv_const_mul]
 
-private theorem listDeriv_single_one {l : List (Fin n)} (hl : l.Nodup) (i : Fin n)
+private theorem listDeriv_single {l : List (Fin n)} (hl : l.Nodup) (i : Fin n) (k : ℕ)
     (f : (Fin n → ℂ) → ℂ) :
-    listDeriv l (Pi.single i 1) f = if i ∈ l then partialDeriv i f else f := by
+    listDeriv l (Pi.single i k) f = if i ∈ l then (partialDeriv i)^[k] f else f := by
   induction l with
   | nil => rfl
   | cons j l ih =>
@@ -142,6 +144,19 @@ private theorem listDeriv_single_one {l : List (Fin n)} (hl : l.Nodup) (i : Fin 
     · subst hij
       simp [hjl]
     · simp [hij]
+
+private theorem listDeriv_mul_of_update_eq {φ : (Fin n → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
+    (hf : Differentiable ℂ f) (l : List (Fin n)) {σ : Fin n → ℕ}
+    (hφσ : ∀ j ∈ l, σ j ≠ 0 → ∀ z s, φ (update z j s) = φ z) :
+    listDeriv l σ (fun z ↦ φ z * f z) = fun z ↦ φ z * listDeriv l σ f z := by
+  induction l with
+  | nil => rfl
+  | cons i l ih =>
+    rw [listDeriv_cons, listDeriv_cons, ih fun j hj ↦ hφσ j (List.mem_cons_of_mem i hj)]
+    rcases eq_or_ne (σ i) 0 with h0 | hne
+    · simp [h0]
+    · exact iterate_partialDeriv_mul_of_update_eq hφ (differentiable_listDeriv hf l σ)
+        (hφσ i List.mem_cons_self hne) (σ i)
 
 private theorem listDeriv_partialDeriv (hf : Differentiable ℂ f) (l : List (Fin n))
     (σ : Fin n → ℕ) (i : Fin n) :
@@ -210,12 +225,25 @@ theorem mDeriv_mDeriv {f : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) 
     mDeriv σ (mDeriv τ f) = mDeriv (σ + τ) f :=
   listDeriv_listDeriv hf _ σ τ
 
-/-- The mixed partial derivative of multi-order `eᵢ` is `∂ᵢ`. -/
+/-- The mixed partial derivative of multi-order `k eᵢ` is `∂ᵢ^k`. -/
 @[simp]
-theorem mDeriv_single_one (f : (Fin n → ℂ) → ℂ) (i : Fin n) :
-    mDeriv (Pi.single i 1) f = partialDeriv i f := by
-  rw [mDeriv_eq_listDeriv, listDeriv_single_one (List.nodup_finRange n)]
+theorem mDeriv_single (f : (Fin n → ℂ) → ℂ) (i : Fin n) (k : ℕ) :
+    mDeriv (Pi.single i k) f = (partialDeriv i)^[k] f := by
+  rw [mDeriv_eq_listDeriv, listDeriv_single (List.nodup_finRange n)]
   simp
+
+/-- Splitting off the `i`-th coordinate of a mixed partial derivative of an entire function:
+`D^σ f = ∂ᵢ^{σᵢ} (D^{update σ i 0} f)`. -/
+theorem mDeriv_eq_iterate_partialDeriv_mDeriv_update_zero {f : (Fin n → ℂ) → ℂ}
+    (hf : Differentiable ℂ f) (σ : Fin n → ℕ) (i : Fin n) :
+    mDeriv σ f = (partialDeriv i)^[σ i] (mDeriv (update σ i 0) f) := by
+  have hσ : σ = Pi.single i (σ i) + update σ i 0 := by
+    ext j
+    by_cases hj : j = i
+    · subst hj; simp
+    · simp [hj]
+  conv_lhs => rw [hσ]
+  rw [← mDeriv_mDeriv hf, mDeriv_single]
 
 /-- `D^σ` is additive on entire functions. -/
 theorem mDeriv_add {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
@@ -227,6 +255,21 @@ theorem mDeriv_add {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (
 theorem mDeriv_const_mul {f : (Fin n → ℂ) → ℂ} (c : ℂ) (σ : Fin n → ℕ) :
     mDeriv σ (fun z ↦ c * f z) = fun z ↦ c * mDeriv σ f z :=
   listDeriv_const_mul c _ σ
+
+/-- `D^σ` commutes with subtraction on entire functions. -/
+theorem mDeriv_sub {f g : (Fin n → ℂ) → ℂ} (hf : Differentiable ℂ f) (hg : Differentiable ℂ g)
+    (σ : Fin n → ℕ) : mDeriv σ (f - g) = mDeriv σ f - mDeriv σ g := by
+  have hsub : f - g = f + fun z ↦ (-1 : ℂ) * g z := by ext z; simp [sub_eq_add_neg]
+  rw [hsub, mDeriv_add hf (hg.const_mul (-1)), mDeriv_const_mul]
+  ext z
+  simp [sub_eq_add_neg]
+
+/-- An entire factor independent of every coordinate differentiated by `σ` pulls out of `D^σ`. -/
+theorem mDeriv_mul_of_update_eq {φ f : (Fin n → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
+    (hf : Differentiable ℂ f) {σ : Fin n → ℕ}
+    (hφσ : ∀ j, σ j ≠ 0 → ∀ z s, φ (update z j s) = φ z) :
+    mDeriv σ (fun z ↦ φ z * f z) = fun z ↦ φ z * mDeriv σ f z :=
+  listDeriv_mul_of_update_eq hφ hf _ fun j _ ↦ hφσ j
 
 /-- `D^σ` commutes with finite sums of entire functions. -/
 theorem mDeriv_sum {ι : Type*} (s : Finset ι) {f : ι → (Fin n → ℂ) → ℂ}

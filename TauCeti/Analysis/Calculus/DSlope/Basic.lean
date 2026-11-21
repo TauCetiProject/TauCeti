@@ -12,8 +12,11 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 # Elementary facts about `dslope`
 
 Elementary divided-slope facts. Away from its base point `dslope` is the plain difference quotient,
-so most of these are statements about a normed field and its norm; only the product rule and the
-germ congruence also involve the value `deriv f a` of `dslope f a` at its base point.
+so symmetry, the unit-quotient lemma, and Taylor's formula are purely statements about a normed
+field and its norm; the linearity lemmas (`dslope_const`, `dslope_zero`, `dslope_const_smul`,
+`dslope_const_mul`, and — assuming differentiability at `a` — `dslope_add` and `dslope_sum`), the
+product rule, and the germ congruence also involve the value `deriv f a` of `dslope f a` at its
+base point.
 
 ## Main results
 
@@ -28,6 +31,9 @@ germ congruence also involve the value `deriv f a` of `dslope f a` at its base p
   remainder, `f b = Σ_{j<n} (b - a)^j • c_j + (b - a)^n • q_n b`, where `c_j` is the value at `a`
   of the `j`-th iterated divided difference `(swap dslope a)^[j] f` and `q_n` is the `n`-th one.
   For an analytic `f` the `c_j` are its Taylor coefficients at `a` and `q_n` is analytic.
+* `TauCeti.dslope_const`, `TauCeti.dslope_zero`, `TauCeti.dslope_const_smul`,
+  `TauCeti.dslope_const_mul`, `TauCeti.dslope_add`, `TauCeti.dslope_sum`: linearity of divided
+  differences.
 * `TauCeti.dslope_mul`: the product rule for divided differences.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
@@ -102,5 +108,64 @@ theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedFi
   · rw [dslope_same, dslope_same, h.deriv_eq]
   · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
       h.eq_of_nhds]
+
+/-- The divided difference of a constant function is zero. -/
+@[simp]
+theorem dslope_const {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (c : E) (a : 𝕜) : dslope (fun _ : 𝕜 ↦ c) a = 0 := by
+  ext b
+  rcases eq_or_ne b a with rfl | hb
+  · simp
+  · simp [dslope_of_ne _ hb, slope_def_module]
+
+/-- The divided difference of the zero function is zero. -/
+@[simp]
+theorem dslope_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (a : 𝕜) : dslope (0 : 𝕜 → E) a = 0 :=
+  dslope_const 0 a
+
+/-- Divided differences commute with scalar multiplication by a constant. -/
+@[simp]
+theorem dslope_const_smul {𝕜 𝕝 E : Type*} [NontriviallyNormedField 𝕜] [DivisionSemiring 𝕝]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Module 𝕝 E] [SMulCommClass 𝕜 𝕝 E]
+    [ContinuousConstSMul 𝕝 E] (c : 𝕝) (f : 𝕜 → E) (a : 𝕜) :
+    dslope (c • f) a = c • dslope f a := by
+  ext b
+  rcases eq_or_ne b a with rfl | hb
+  · simp [deriv_const_smul_field]
+  · simp [dslope_of_ne _ hb, slope_def_module, smul_sub, smul_comm _ c]
+
+/-- Divided differences commute with left multiplication by a constant. -/
+@[simp]
+theorem dslope_const_mul {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NormedDivisionRing 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] (c : 𝕜') (f : 𝕜 → 𝕜') (a : 𝕜) :
+    dslope (fun x ↦ c * f x) a = fun x ↦ c * dslope f a x := by
+  simpa only [Pi.smul_def, smul_eq_mul] using dslope_const_smul c f a
+
+/-- Divided differences at `a` are additive on functions differentiable at `a`. -/
+theorem dslope_add {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f g : 𝕜 → E} {a : 𝕜} (hf : DifferentiableAt 𝕜 f a)
+    (hg : DifferentiableAt 𝕜 g a) : dslope (f + g) a = dslope f a + dslope g a := by
+  ext b
+  rcases eq_or_ne b a with rfl | hb
+  · simp [deriv_add hf hg]
+  · simp [dslope_of_ne _ hb, slope_def_module, add_sub_add_comm, smul_add]
+
+/-- Divided differences at `a` commute with finite sums of functions differentiable at `a`. -/
+theorem dslope_sum {ι 𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (s : Finset ι) {f : ι → 𝕜 → E} {a : 𝕜}
+    (hf : ∀ i ∈ s, DifferentiableAt 𝕜 (f i) a) :
+    dslope (fun x ↦ ∑ i ∈ s, f i x) a = fun x ↦ ∑ i ∈ s, dslope (f i) a x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => ext; simp
+  | insert i s hi ih =>
+    have hsum : (fun x ↦ ∑ j ∈ insert i s, f j x) = f i + fun x ↦ ∑ j ∈ s, f j x := by
+      ext x; exact Finset.sum_insert hi
+    rw [hsum, dslope_add (hf i (Finset.mem_insert_self i s))
+      (DifferentiableAt.fun_sum fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)),
+      ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
+    ext x
+    simp [Finset.sum_insert hi]
 
 end TauCeti

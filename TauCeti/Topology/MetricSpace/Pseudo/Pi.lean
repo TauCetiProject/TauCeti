@@ -9,7 +9,7 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Pi
 import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
-# The sup distance on finite products
+# Closed balls and the sup distance on finite products
 
 For a product of pseudometric spaces over a one-point index type, the sup distance is the
 distance of the only coordinates (`Pi.dist_unique`), so balls, closed balls and spheres are
@@ -17,6 +17,10 @@ detected on that coordinate (`Pi.mem_ball_unique`, `Pi.mem_closedBall_unique` an
 `Pi.mem_sphere_unique`), and balls and closed balls are preimages under evaluation at that
 coordinate (`Pi.ball_unique` and `Pi.closedBall_unique`). This is the pointwise form of
 `IsometryEquiv.funUnique`, stated for dependent families.
+
+Over any finite index type, replacing one coordinate of a point in a closed ball by a point in the
+corresponding coordinate closed ball stays in the product closed ball
+(`TauCeti.update_mem_closedBall`).
 
 On `ι → ℝ` with `ι` finite, the sup distance controls weighted sums of squares
 `∑ᵢ wᵢ (xᵢ - pᵢ)²` with nonnegative weights: outside the ball of radius `ρ` around `p` such a sum
@@ -68,6 +72,16 @@ lemma Pi.mem_sphere_unique {f g : ∀ i, X i} {r : ℝ} :
 end Unique
 
 namespace TauCeti
+
+/-- Replacing the `i`-th coordinate of `z ∈ closedBall c R` by a point `ζ ∈ closedBall (c i) R`
+stays in `closedBall c R`. -/
+theorem update_mem_closedBall {ι : Type*} [Fintype ι] [DecidableEq ι] {X : ι → Type*}
+    [∀ j, PseudoMetricSpace (X j)] {c z : ∀ j, X j} {R : ℝ} {i : ι} {ζ : X i}
+    (hζ : ζ ∈ closedBall (c i) R) (hz : z ∈ closedBall c R) :
+    Function.update z i ζ ∈ closedBall c R := by
+  have hR : 0 ≤ R := dist_nonneg.trans (mem_closedBall.mp hζ)
+  rw [closedBall_pi c hR] at hz ⊢
+  exact (Set.update_mem_pi_iff_of_mem hz).mpr fun _ ↦ hζ
 
 variable {ι : Type*} [Fintype ι] {w p x : ι → ℝ}
 
