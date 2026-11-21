@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.HasGroupoid
-public import Mathlib.Topology.Category.TopCat.Opens
+public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.Perfect
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
@@ -24,8 +23,6 @@ charted space, second countability.
 
 ## Main results
 
-* `TopologicalSpace.Opens.instChartedSpaceToTopCatObj`: an open subset viewed as a bundled
-  topological space carries its inherited charted-space structure.
 * `TauCeti.tendsto_chartAt_symm_nhdsNE`: the inverse of the chart at `x` maps punctured
   neighbourhoods of `chartAt H x x` into punctured neighbourhoods of `x`.
 * `TauCeti.tendsto_chartAt_nhdsNE`: conversely, the chart at `x` maps punctured neighbourhoods of
@@ -46,13 +43,6 @@ charted space, second countability.
 public section
 
 open Filter Topology
-
-/-- An open subspace viewed as a bundled topological space carries the restricted native atlas. -/
-noncomputable instance TopologicalSpace.Opens.instChartedSpaceToTopCatObj {H : Type*} {M : Type*}
-    [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M]
-    (W : TopologicalSpace.Opens (TopCat.of M)) :
-    ChartedSpace H ((TopologicalSpace.Opens.toTopCat (TopCat.of M)).obj W) :=
-  inferInstanceAs (ChartedSpace H (⟨(W : Set M), W.isOpen⟩ : TopologicalSpace.Opens M))
 
 namespace TauCeti
 

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ChartedSpace
+public import TauCeti.Geometry.Manifold.Opens
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.MayerVietoris.Local
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Compl
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.MayerVietoris
-public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality
+public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Basic
 
 /-! # Poincaré duality and the signed Mayer–Vietoris connecting square
 

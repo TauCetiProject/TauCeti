@@ -45,6 +45,8 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
 
 ## Main results
 
+* `CliffordAlgebra.toProd_tmul`: the inverse map of `CliffordAlgebra.prodEquiv` sends `x ᵍ⊗ₜ y` to
+  the product of the images of `x` and `y` under the two summand inclusions.
 * `AlgHom.cliffordProdTensor_ι`: a vector `(v, w)` acts by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`.
 * `AlgHom.cliffordProdTensor_map_inl`: `CliffordAlgebra Q₁` acts through the first factor.
 * `AlgHom.cliffordProdTensor_map_inr_prod`: a product of `k` vectors of `M₂` acts by
@@ -65,6 +67,22 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
 public section
 
 open TensorProduct
+
+namespace CliffordAlgebra
+
+variable {R M₁ M₂ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+
+/-- `CliffordAlgebra.toProd` sends a pure tensor `x ᵍ⊗ₜ y` to the product of the images of `x`
+and `y` under the two summand inclusions. -/
+@[simp]
+theorem toProd_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) (x : CliffordAlgebra Q₁)
+    (y : CliffordAlgebra Q₂) :
+    toProd Q₁ Q₂ (x ᵍ⊗ₜ y) =
+      map (QuadraticMap.Isometry.inl Q₁ Q₂) x * map (QuadraticMap.Isometry.inr Q₁ Q₂) y := by
+  rw [toProd, GradedTensorProduct.lift_tmul]
+
+end CliffordAlgebra
 
 namespace AlgHom
 
@@ -221,7 +239,7 @@ theorem cliffordProdTensor_toProd_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
     {b : CliffordAlgebra Q₂} (hb : b ∈ evenOdd Q₂ j) :
     cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) =
       map (ρ₁ a * γ ^ j.val) (ρ₂ b) := by
-  rw [toProd, GradedTensorProduct.lift_tmul, map_mul, cliffordProdTensor_map_inl,
+  rw [toProd_tmul, map_mul, cliffordProdTensor_map_inl,
     cliffordProdTensor_map_inr_of_mem_evenOdd ρ₁ γ hγ hγρ ρ₂ hb, LinearMap.rTensor,
     ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
 
