@@ -39,7 +39,9 @@ lost there (`TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescal
 pseudoholomorphic sphere restricts to a plane with the same area. For an inhomogeneous equation
 with a domain-dependent structure `J(z, ·)` the bubbling points vary, and so do the frozen
 structures; the structures frozen at the points of a compact window of the domain form a compact
-family, so the uniform threshold bounds the energy of all bubbles from below at once. The
+family, so the uniform threshold bounds the energy of all bubbles from below at once
+(`TauCeti.ContMDiffAlmostComplexStructureFamily.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`,
+for the structures `J.freezeSmooth z` frozen from a smooth family `J`). The
 vector-space versions, for planes with values in a compact subset of a single chart, are
 `TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne` and its parametric form
 `TauCeti.exists_pos_forall_le_integral_norm_fderiv_one_sq_of_ne_parametric`.
@@ -49,8 +51,8 @@ proof covers `K` by finitely many charts, in each of which the following holds.
 
 * **Comparison with the chart norm.** In the tangent coordinates `ξ` of the chart, the energy form
   `ω(ζ, J p ζ)` of the tangent vectors `ζ` is between `c ‖ξ‖²` and `C ‖ξ‖²`, uniformly for `p ∈ C`
-  (`IsCompact.exists_pos_forall_mul_norm_sq_le`, applied to the coordinate expressions of these
-  bilinear forms over a compact set of parameters and chart coordinates).
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`,
+  over a compact set of parameters and chart coordinates).
 * **Localization.** If the area density of `u` is at most `m²` on a ball of radius `r` with
   `m r` small, the ball is mapped into the chart, since the chart coordinate of `u` moves at speed
   at most a constant times `m` along each segment from the centre.
@@ -72,6 +74,10 @@ The corresponding statement for closed surfaces of higher genus is not treated h
 * `TauCeti.SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric`: for a
   compact family of tame structures, a nonconstant pseudoholomorphic plane for any member of the
   family with values in a compact set has area at least `κ`.
+* `TauCeti.ContMDiffAlmostComplexStructureFamily.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`:
+  for a smooth family `J` of almost complex structures over a normed parameter space, the frozen
+  structures `J.freezeSmooth p`, `p ∈ C` for a compact set `C` on which they are tamed, share one
+  threshold `κ`.
 * `TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`: a
   nonconstant pseudoholomorphic plane with values in a compact set has area at least `κ`.
 
@@ -293,10 +299,9 @@ omit [NormedSpace ℝ P] in
 `ω` for `p ∈ C`, with coordinate expressions in the chart at `α` continuous on `C × Kc`, for a
 compact set `C` of parameters and a compact set `Kc` in the chart target. There are `c, C' > 0` such
 that `c ‖ξ‖² ≤ ω(ζ, J p ζ) ≤ C' ‖ξ‖²` for every `p ∈ C` and the tangent vectors `ζ` with tangent
-coordinate `ξ` at the points with chart coordinate in `Kc`. For a family indexed by the points of
-the domain `ℝ × ℝ` this is
-`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`;
-here the parameters range over a general space `P`. -/
+coordinate `ξ` at the points with chart coordinate in `Kc`. This is
+`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`,
+stated at the points of the chart source and with a positive upper constant. -/
 private theorem exists_pos_forall_mul_norm_sq_le_and_le_of_chart
     {J : P → SmoothAlmostComplexStructure I M} {C : Set P} (hC : IsCompact C)
     (hJt : ∀ p ∈ C, ω.Tames (J p)) (α : M) {Kc : Set E} (hKc : IsCompact Kc)
@@ -309,40 +314,24 @@ private theorem exists_pos_forall_mul_norm_sq_le_and_le_of_chart
           (J p x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ∧
         SmoothBundleForm.eval₂ ω x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)
           (J p x ((trivializationAt E (TangentSpace I) α).symmL ℝ x ξ)) ≤ C' * ‖ξ‖ ^ 2 := by
-  set e := extChartAt I α
-  set T := trivializationAt E (TangentSpace I) α with hT
-  -- In the chart, `ω(·, J p ·)` is the bilinear form `b (p, y)`, continuous on `C × Kc`.
-  set b : P × E → E →L[ℝ] E →L[ℝ] ℝ := fun q ↦
-    ((ContinuousLinearMap.compL ℝ E E ℝ).flip ((J q.1).inChart α q.2)).comp
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α q.2))
-    with hb_def
-  have hb : ∀ q ∈ C ×ˢ Kc, ∀ a, b q a a = SmoothBundleForm.eval₂ ω (e.symm q.2)
-      (T.symmL ℝ (e.symm q.2) a) (J q.1 (e.symm q.2) (T.symmL ℝ (e.symm q.2) a)) := by
-    rintro ⟨p, y⟩ hq a
-    have h := ω.inChartAt_apply_almostComplexInChartAt
-      (J := fun _ ↦ (J p).almostComplexStructureAt) (hK hq.2) 0 a
-    rw [Floer.almostComplexInChartAt_const] at h
-    simpa only [hb_def, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
-      ContinuousLinearMap.compL_apply, ContinuousAlternatingMap.flatL_apply_apply,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using h
-  have hbc : ContinuousOn b (C ×ˢ Kc) :=
-    ((ContinuousLinearMap.compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
-      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
-        ((ω.isSmoothForm.continuousOn_inChartAt α).comp continuousOn_snd
-          fun q hq ↦ hK hq.2))
-  obtain ⟨c, hc, hcb⟩ := (hC.prod hKc).exists_pos_forall_mul_norm_sq_le hbc fun q hq a ha ↦ by
-    rw [hb q hq]
-    have hbase : e.symm q.2 ∈ T.baseSet := by
-      simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-        e.map_target (hK hq.2)
-    refine tames_iff.1 (hJt q.1 hq.1) _ _ fun h0 ↦ ha ?_
-    rw [← Trivialization.continuousLinearMapAt_symmL (R := ℝ) _ hbase a, h0, map_zero]
-  obtain ⟨C', hC'⟩ := (hC.prod hKc).exists_forall_le_mul_norm_sq hbc
+  rcases C.eq_empty_or_nonempty with rfl | ⟨p₀, hp₀⟩
+  · exact ⟨1, one_pos, 1, one_pos, fun p hp ↦ absurd hp (notMem_empty p)⟩
+  have hω := (hJt p₀ hp₀).isNondegenerate
+  -- Read in the chart, the family of structures is the family of coordinate expressions.
+  have hJc (q : P × E) : Floer.almostComplexInChartAt I α
+      (fun p ↦ (J p).almostComplexStructureAt) q = (J q.1).inChart α q.2 := by
+    obtain ⟨p, y⟩ := q
+    rw [← Floer.almostComplexInChartAt_const (J p) α (p, y)]
+    ext v
+    rw [Floer.almostComplexInChartAt_apply, Floer.almostComplexInChartAt_apply]
+  obtain ⟨c, hc, C', hcC⟩ := hω.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq α hC hKc hK
+    (hJ.congr fun q _ ↦ hJc q) fun p hp _ _ ↦ hω.tames_iff.1 (hJt p hp) _
   refine ⟨c, hc, max C' 1, by positivity, fun p hp x hx hy ξ ↦ ?_⟩
-  have h := hb (p, e x) ⟨hp, hy⟩ ξ
-  rw [e.left_inv hx] at h
-  exact ⟨h ▸ hcb _ ⟨hp, hy⟩ ξ, (h ▸ hC' _ ⟨hp, hy⟩ ξ).trans
-    (mul_le_mul_of_nonneg_right (le_max_left _ _) (sq_nonneg _))⟩
+  have h := hcC p hp (extChartAt I α x) hy ξ
+  rw [(extChartAt I α).left_inv hx] at h
+  simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+    ContinuousLinearMap.coe_coe] at h
+  exact ⟨h.1, h.2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (sq_nonneg _))⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- The comparison of `exists_pos_forall_mul_norm_sq_le_and_le_of_chart` for `ζ = ∂ₛu` at
@@ -653,15 +642,7 @@ theorem exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryless] [T2
       ENNReal.ofReal κ ≤ ∫⁻ z, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (u z)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)) := by
-  refine SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric isOpen_univ
-    (subset_univ C) hC (fun α ↦ ?_) hJt hK
-  -- In the product chart at `(0, α)`, the coordinate expression of the family is that of the
-  -- frozen structures, since the chart of the parameter space is the identity.
-  have h := (J.contDiffOn_inChart ((0 : P), α)).of_le (m := 2) (by simp)
-  rw [extChartAt_prod_target, extChartAt_model_space_eq_id, PartialEquiv.refl_target] at h
-  refine h.congr fun ⟨w, y⟩ _ ↦ ?_
-  rw [J.inChart_mk, extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
-    id_eq, SmoothAlmostComplexStructure.inChart_def, ContMDiffAlmostComplexStructure.inChart_def,
-    freezeSmooth_toEndomorphism]
+  exact SmoothTwoForm.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne_parametric isOpen_univ
+    (subset_univ C) hC (fun α ↦ (J.contDiffOn_inChart_freezeSmooth α).of_le (by simp)) hJt hK
 
 end TauCeti.ContMDiffAlmostComplexStructureFamily

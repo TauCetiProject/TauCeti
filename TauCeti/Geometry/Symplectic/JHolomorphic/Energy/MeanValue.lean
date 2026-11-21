@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
@@ -492,29 +493,6 @@ section FiniteDimensional
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 
-omit [FiniteDimensional ℝ F] in
-/-- The energy `∫ ‖∂ₛ(L ∘ u)‖²` of the image of a curve `u` under a continuous linear equivalence
-`L` is at most `‖L‖²` times the energy of `u`, over a disc on whose closure `∂ₛu` is continuous. -/
-private theorem setIntegral_norm_fderiv_comp_one_sq_le {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (L : F ≃L[ℝ] G) {u : ℂ → F} {z₀ : ℂ} {r : ℝ}
-    (hu' : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r)) :
-    ∫ y in ball z₀ r, ‖fderiv ℝ (L ∘ u) y 1‖ ^ 2 ≤
-      ‖(L : F →L[ℝ] G)‖ ^ 2 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-  have hd (y : ℂ) : fderiv ℝ (L ∘ u) y 1 = L (fderiv ℝ u y 1) := by
-    rw [L.comp_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-  have hint : IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z₀ r) :=
-    (hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r) |>.mono_set
-      ball_subset_closedBall
-  have hintL : IntegrableOn (fun y ↦ ‖fderiv ℝ (L ∘ u) y 1‖ ^ 2) (ball z₀ r) := by
-    simp only [hd]
-    exact ((L.continuous.comp_continuousOn hu').norm.pow 2).integrableOn_compact
-      (isCompact_closedBall z₀ r) |>.mono_set ball_subset_closedBall
-  rw [← integral_const_mul]
-  refine setIntegral_mono_on hintL (hint.const_mul _) measurableSet_ball fun y _ ↦ ?_
-  rw [hd, ← mul_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _)
-    (by simpa using L.toContinuousLinearMap.le_opNorm (fderiv ℝ u y 1)) 2
-
 /-- **The mean-value inequality in a finite-dimensional normed space, for a compact family of
 structures.** This is
 `exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball_parametric`
@@ -566,7 +544,12 @@ theorem
     simpa [Function.comp_def] using
       L.toContinuousLinearMap.lipschitzWith.continuous.comp_continuousOn hu'
   -- The Euclidean energy is at most `a²` times the energy in `F`.
-  have hEL := setIntegral_norm_fderiv_comp_one_sq_le L hu'
+  have hEL : ∫ y in ball z₀ r, ‖fderiv ℝ (L ∘ u) y 1‖ ^ 2 ≤
+      a ^ 2 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+    simpa only [hd, ContinuousLinearEquiv.coe_coe] using
+      (L : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F))).integral_norm_apply_sq_le
+        ((hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r)
+          |>.mono_set ball_subset_closedBall)
   have h := hmean hp (u := L ∘ u) hr (L.contDiff.comp_contDiffOn hu)
     (by simpa only [hd] using hLc)
     (fun y hy ↦ by simp [hd, hCR y hy])
