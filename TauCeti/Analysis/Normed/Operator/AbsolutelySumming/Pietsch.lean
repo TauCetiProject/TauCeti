@@ -72,10 +72,11 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 
 variable (𝕜 E) in
 /-- The closed unit ball of the dual, as a set in the weak-star dual. -/
-private abbrev dualBall : Set (WeakDual 𝕜 E) :=
+abbrev dualBall : Set (WeakDual 𝕜 E) :=
   WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1
 
-private theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
+/-- Elements of the weak-star dual unit ball have operator norm at most `1`. -/
+theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
     ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E)‖ ≤ 1 :=
   mem_closedBall_zero_iff.mp f.property
 

@@ -14,11 +14,14 @@ import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Topology.Instances.RealVectorSpace
+import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.Analysis.Normed.Module.GaussianSum.Comparison
 import TauCeti.Analysis.Normed.Module.RademacherSum.Contraction
 import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Pietsch
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.Distributions.Gaussian.Multivariate
+import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 
 /-!
 # Cotype-2 summing bounds and Gaussian–Rademacher comparison
@@ -86,17 +89,6 @@ open scoped BigOperators ENNReal NNReal RealInnerProductSpace
 
 namespace ContinuousLinearMap
 
-/-- Parseval's identity for a continuous linear functional on a finite-dimensional inner product
-space over an `RCLike` field. -/
-private theorem norm_sq_eq_sum_norm_apply_sq {𝕜 ι E : Type*} [RCLike 𝕜] [Fintype ι]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-    (b : OrthonormalBasis ι 𝕜 E) (L : StrongDual 𝕜 E) :
-    ‖L‖ ^ 2 = ∑ i, ‖L (b i)‖ ^ 2 := by
-  have := b.toBasis.finiteDimensional_of_finite
-  have := FiniteDimensional.completeSpace 𝕜 E
-  simp_rw [← (InnerProductSpace.toDual 𝕜 E).symm.norm_map, ← b.sum_sq_norm_inner_left,
-    InnerProductSpace.toDual_symm_apply]
-
 /-- Every real continuous linear functional on `Y` is weakly square-dominated on `U ∘ x` by the
 scaled basis image `(W • U (b i), W • (I • U (b i)))ᵢ`, where `W = weakLpNorm 2 x`. -/
 private theorem weakTwo_dom_of_orthonormalBasis {𝕜 ι E Y : Type*} [RCLike 𝕜] [Fintype ι]
@@ -122,7 +114,7 @@ private theorem weakTwo_dom_of_orthonormalBasis {𝕜 ι E Y : Type*} [RCLike �
     ∑ j, |f (U (x j))| ^ 2 ≤ ∑ j, ‖g (U (x j))‖ ^ 2 := Finset.sum_le_sum fun j _ ↦ hre _
     _ ≤ (W * ‖g.comp U‖) ^ 2 := hweak
     _ = W ^ 2 * ∑ i, ‖g (U (b i))‖ ^ 2 := by
-      rw [mul_pow, norm_sq_eq_sum_norm_apply_sq b (g.comp U)]
+      rw [mul_pow, ← b.sum_sq_norm_apply_eq_norm_sq (g.comp U)]
       rfl
     _ = ∑ k, |f (Sum.elim (fun i ↦ W • (U ∘ b) i)
           (fun i ↦ W • ((RCLike.I : 𝕜) • (U ∘ b) i)) k)| ^ 2 := by
@@ -197,36 +189,6 @@ namespace TauCeti
 
 section TailHelpers
 
-/-- Fourth-moment bound on the quadratic tail of a standard real Gaussian. -/
-private theorem setIntegral_sq_tail_gaussianReal_le {t : ℝ} (ht : 0 < t) :
-    ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 ≤ 3 / t ^ 2 := by
-  have hs : MeasurableSet {r : ℝ | t < |r|} :=
-    measurableSet_lt measurable_const continuous_abs.measurable
-  have hint4 : Integrable (fun r : ℝ ↦ r ^ 4) (gaussianReal 0 1) := by
-    have h4 := (memLp_id_gaussianReal' (μ := 0) (v := 1) 4 (by simp)).integrable_norm_pow
-      (by norm_num)
-    simpa [Real.norm_eq_abs, (by decide : Even 4).pow_abs] using h4
-  have hint_dom : Integrable (fun r : ℝ ↦ r ^ 4 / t ^ 2) (gaussianReal 0 1) :=
-    hint4.div_const _
-  calc
-    ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1
-        ≤ ∫ r in {r : ℝ | t < |r|}, r ^ 4 / t ^ 2 ∂gaussianReal 0 1 := by
-      refine setIntegral_mono_on ?_ hint_dom.integrableOn hs fun r hr ↦ ?_
-      · exact ((memLp_id_gaussianReal' (μ := 0) (v := 1) 2 (by simp)).integrable_norm_pow
-          (by norm_num)).integrableOn.congr_fun (fun _ _ ↦ by simp) hs
-      · have hsq : t ^ 2 ≤ r ^ 2 := by
-          rw [← sq_abs r]
-          exact pow_le_pow_left₀ ht.le (le_of_lt hr) 2
-        rw [le_div_iff₀ (pow_pos ht 2)]
-        nlinarith [sq_nonneg r]
-    _ ≤ ∫ r, r ^ 4 / t ^ 2 ∂gaussianReal 0 1 :=
-      setIntegral_le_integral hint_dom (Filter.Eventually.of_forall fun _ ↦ by positivity)
-    _ = 3 / t ^ 2 := by
-      rw [integral_div]
-      have h4 := TauCeti.Probability.integral_sub_pow_four_gaussianReal 0 1
-      simp only [sub_zero, NNReal.coe_one, one_pow, mul_one] at h4
-      rw [h4]
-
 section Truncation
 
 variable {ι : Type*}
@@ -275,19 +237,6 @@ end Truncation
 
 variable {ι : Type*} [Fintype ι]
 
-/-- Each coordinate of a standard Gaussian vector on `EuclideanSpace ℝ ι` has law
-`gaussianReal 0 1`. -/
-private theorem stdGaussian_map_proj (i : ι) :
-    (stdGaussian (EuclideanSpace ℝ ι)).map (EuclideanSpace.proj i) = gaussianReal 0 1 := by
-  classical
-  have hproj : EuclideanSpace.proj (𝕜 := ℝ) i =
-      innerSL ℝ (EuclideanSpace.single i (1 : ℝ)) := by
-    ext g
-    simp [EuclideanSpace.inner_single_left]
-  rw [IsGaussian.map_eq_gaussianReal, integral_strongDual_stdGaussian, variance_dual_stdGaussian,
-    hproj, innerSL_apply_norm]
-  simp
-
 private theorem norm_truncVec_le (t : ℝ) (g : EuclideanSpace ℝ ι) : ‖truncVec t g‖ ≤ ‖g‖ := by
   refine PiLp.norm_mono fun i ↦ ?_
   simp only [truncVec, WithLp.ofLp_toLp]
@@ -297,23 +246,6 @@ private theorem norm_tailVec_le (t : ℝ) (g : EuclideanSpace ℝ ι) : ‖tailV
   refine PiLp.norm_mono fun i ↦ ?_
   simp only [tailVec, WithLp.ofLp_toLp]
   split_ifs <;> simp
-
-/-- The canonical linear map sending a coordinate vector `g` to `∑ i, g i • y i`. -/
-private def gaussianMap {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y] (y : ι → Y) :
-    EuclideanSpace ℝ ι →L[ℝ] Y :=
-  ∑ i, (EuclideanSpace.proj i).smulRight (y i)
-
-private theorem gaussianMap_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    (y : ι → Y) (v : EuclideanSpace ℝ ι) :
-    gaussianMap y v = ∑ i, v i • y i := by
-  simp [gaussianMap]
-
-private theorem gaussianMap_comp_basisFun {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    (y : ι → Y) :
-    gaussianMap y ∘ EuclideanSpace.basisFun ι ℝ = y := by
-  classical
-  ext i
-  simp [gaussianMap, EuclideanSpace.basisFun_apply]
 
 private theorem memLp_apply_truncVec {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (U : EuclideanSpace ℝ ι →L[ℝ] Y) (t : ℝ) :
@@ -337,44 +269,48 @@ private theorem memLp_apply_tailVec {Y : Type*} [NormedAddCommGroup Y] [NormedSp
     (Filter.Eventually.of_forall fun g ↦ ?_)
   exact (U.le_opNorm _).trans (mul_le_mul_of_nonneg_left (norm_tailVec_le t g) (norm_nonneg U))
 
-/-- Sign-flip invariance of the squared norm of `gaussianMap y ∘ truncVec t`. -/
+/-- Sign-flip invariance of the squared norm of `(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y ∘
+truncVec t`. -/
 private theorem integral_norm_sq_truncVec_units_smul {Y : Type*}
     [NormedAddCommGroup Y] [NormedSpace ℝ Y] (y : ι → Y) (t : ℝ) (ε : ι → ℤˣ) :
-    ∫ g, ‖gaussianMap y (truncVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) =
+    ∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (truncVec t g)‖ ^ 2
+        ∂stdGaussian (EuclideanSpace ℝ ι) =
       ∫ g, ‖∑ i, ε i • (truncVec t g i • y i)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) := by
-  have hmeas : StronglyMeasurable fun g : EuclideanSpace ℝ ι ↦
-      ‖gaussianMap y (truncVec t g)‖ ^ 2 :=
-    ((gaussianMap y).continuous.comp_stronglyMeasurable
+  let U := (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
+  have hmeas : StronglyMeasurable fun g : EuclideanSpace ℝ ι ↦ ‖U (truncVec t g)‖ ^ 2 :=
+    (U.continuous.comp_stronglyMeasurable
       (measurable_truncVec t).stronglyMeasurable).norm.pow 2
   conv_lhs =>
-    rw [← stdGaussian_map_units_smul ε,
+    rw [← Probability.stdGaussian_map_units_smul ε,
       integral_map (μ := stdGaussian (EuclideanSpace ℝ ι)) (by fun_prop)
         hmeas.aestronglyMeasurable]
   refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
   dsimp only
-  rw [gaussianMap_apply]
-  congr 2
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [truncVec_units_smul]
-  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
+  simp only [U, Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+  simp [truncVec_units_smul]
 
 /-- Sign-flip invariance and Rademacher contraction bound the truncated Gaussian sum by
 `t * R₂(y)`. -/
 private theorem integral_norm_sq_truncVec_le [DecidableEq ι] {Y : Type*}
     [NormedAddCommGroup Y] [NormedSpace ℝ Y] (y : ι → Y) {t : ℝ} (ht : 0 ≤ t) :
-    ∫ g, ‖gaussianMap y (truncVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) ≤
+    ∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (truncVec t g)‖ ^ 2
+        ∂stdGaussian (EuclideanSpace ℝ ι) ≤
       (t * rademacherSecondMoment y) ^ 2 := by
   have hint_ε (ε : ι → ℤˣ) :
       Integrable (fun g : EuclideanSpace ℝ ι ↦ ‖∑ i, ε i • (truncVec t g i • y i)‖ ^ 2)
         (stdGaussian (EuclideanSpace ℝ ι)) := by
     have heq (g : EuclideanSpace ℝ ι) :
-        ∑ i, ε i • (truncVec t g i • y i) = gaussianMap (fun i ↦ ε i • y i) (truncVec t g) := by
-      rw [gaussianMap_apply]
+        ∑ i, ε i • (truncVec t g i • y i) =
+          (EuclideanSpace.basisFun ι ℝ).toBasis.constrL (fun i ↦ ε i • y i) (truncVec t g) := by
+      simp only [Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis,
+        PiLp.basisFun_equivFun]
       exact Finset.sum_congr rfl fun i _ ↦ smul_comm _ _ _
     simp_rw [heq]
-    exact (memLp_apply_truncVec (gaussianMap fun i ↦ ε i • y i) t).integrable_norm_pow
+    exact (memLp_apply_truncVec
+      ((EuclideanSpace.basisFun ι ℝ).toBasis.constrL fun i ↦ ε i • y i) t).integrable_norm_pow
       (by norm_num)
-  have havg : ∫ g, ‖gaussianMap y (truncVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) =
+  have havg : ∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (truncVec t g)‖ ^ 2
+        ∂stdGaussian (EuclideanSpace ℝ ι) =
       ∫ g, 𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • (truncVec t g i • y i)‖ ^ 2
         ∂stdGaussian (EuclideanSpace ℝ ι) := by
     simp_rw [Fintype.expect_eq_sum_div_card]
@@ -426,7 +362,7 @@ private theorem integral_tailVec_mul_of_ne (t : ℝ) {i j : ι} (hij : i ≠ j) 
       -(∫ g, tailVec t g i * tailVec t g j ∂stdGaussian (EuclideanSpace ℝ ι)) := by
     rw [← integral_neg]
     conv_lhs =>
-      rw [← stdGaussian_map_units_smul ε,
+      rw [← Probability.stdGaussian_map_units_smul ε,
         integral_map (μ := stdGaussian (EuclideanSpace ℝ ι)) (by fun_prop)
           hmeas.aestronglyMeasurable]
     refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
@@ -438,17 +374,19 @@ private theorem integral_tailVec_mul_of_ne (t : ℝ) {i j : ι} (hij : i ≠ j) 
 private theorem integral_tailVec_sq (t : ℝ) (i : ι) :
     ∫ g, tailVec t g i * tailVec t g i ∂stdGaussian (EuclideanSpace ℝ ι) =
       ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
+  classical
   have hs : MeasurableSet {r : ℝ | t < |r|} :=
     measurableSet_lt measurable_const continuous_abs.measurable
+  have hnorm : ‖EuclideanSpace.single i (1 : ℝ)‖ = 1 := by simp
   have hfun : (fun g : EuclideanSpace ℝ ι ↦ tailVec t g i * tailVec t g i) =
-      fun g ↦ Set.indicator {r : ℝ | t < |r|} (fun r ↦ r ^ 2) (EuclideanSpace.proj i g) := by
+      fun g ↦ Set.indicator {r : ℝ | t < |r|} (fun r ↦ r ^ 2)
+        ⟪g, EuclideanSpace.single i (1 : ℝ)⟫ := by
     ext g
-    simp only [tailVec, WithLp.ofLp_toLp, EuclideanSpace.coe_proj, Set.indicator_apply,
-      Set.mem_ofPred_eq]
+    simp [tailVec, EuclideanSpace.inner_single_right, Set.indicator_apply]
     split_ifs <;> ring
   rw [hfun, ← integral_map (by fun_prop)
       (Measurable.indicator (by fun_prop) hs).aestronglyMeasurable,
-    stdGaussian_map_proj i, integral_indicator hs]
+    Probability.map_inner_stdGaussian_of_norm_eq_one hnorm, integral_indicator hs]
 
 /-- On a real continuous linear functional `f`, the expected squared value on `tailVec t g`
 equals `‖f‖²` times the one-dimensional Gaussian tail second moment. -/
@@ -458,11 +396,8 @@ private theorem integral_sq_apply_tailVec (f : StrongDual ℝ (EuclideanSpace �
   classical
   have hexpand (v : EuclideanSpace ℝ ι) :
       f v = ∑ i, v i * f (EuclideanSpace.basisFun ι ℝ i) := by
-    have hv : v = ∑ i, v i • EuclideanSpace.basisFun ι ℝ i := by
-      ext i
-      simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
-    conv_lhs => rw [hv, map_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by simp
+    conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr v]
+    simp only [map_sum, map_smul, smul_eq_mul, EuclideanSpace.basisFun_repr]
   have hsq (g : EuclideanSpace ℝ ι) : |f (tailVec t g)| ^ 2 =
       ∑ i, ∑ j, (f (EuclideanSpace.basisFun ι ℝ i) * f (EuclideanSpace.basisFun ι ℝ j)) *
         (tailVec t g i * tailVec t g j) := by
@@ -486,26 +421,21 @@ private theorem integral_sq_apply_tailVec (f : StrongDual ℝ (EuclideanSpace �
       integral_tailVec_sq t i, sq]
   simp_rw [hinner, ← Finset.sum_mul, ← (EuclideanSpace.basisFun ι ℝ).norm_dual f]
 
-/-- The weak-* closed unit ball of the dual of `EuclideanSpace ℝ ι`. -/
-private abbrev dualBall (ι : Type*) [Fintype ι] : Set (WeakDual ℝ (EuclideanSpace ℝ ι)) :=
-  WeakDual.toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual ℝ (EuclideanSpace ℝ ι)) 1
-
 private theorem measurable_eval_tailVec_sq [MeasurableSpace (WeakDual ℝ (EuclideanSpace ℝ ι))]
     [BorelSpace (WeakDual ℝ (EuclideanSpace ℝ ι))] (t : ℝ) :
-    Measurable fun p : EuclideanSpace ℝ ι × dualBall ι ↦
+    Measurable fun p : EuclideanSpace ℝ ι ×
+        ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι) ↦
       |(p.snd : WeakDual ℝ (EuclideanSpace ℝ ι)) (tailVec t p.fst)| ^ 2 := by
   classical
-  have heval : Measurable fun p : EuclideanSpace ℝ ι × dualBall ι ↦
+  have heval : Measurable fun p : EuclideanSpace ℝ ι ×
+        ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι) ↦
       (p.snd : WeakDual ℝ (EuclideanSpace ℝ ι)) (tailVec t p.fst) := by
-    have hexp (p : EuclideanSpace ℝ ι × dualBall ι) :
+    have hexp (p : EuclideanSpace ℝ ι × ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι)) :
         (p.snd : WeakDual ℝ (EuclideanSpace ℝ ι)) (tailVec t p.fst) =
           ∑ i, tailVec t p.fst i *
             (p.snd : WeakDual ℝ (EuclideanSpace ℝ ι)) (EuclideanSpace.basisFun ι ℝ i) := by
-      have hv : tailVec t p.fst = ∑ i, tailVec t p.fst i • EuclideanSpace.basisFun ι ℝ i := by
-        ext i
-        simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
-      conv_lhs => rw [hv, map_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ by simp
+      conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr (tailVec t p.fst)]
+      simp only [map_sum, map_smul, smul_eq_mul, EuclideanSpace.basisFun_repr]
     simp_rw [hexp]
     refine Finset.measurable_sum _ fun i _ ↦ Measurable.mul ?_ ?_
     · exact (PiLp.continuous_apply 2 _ i).measurable.comp
@@ -516,17 +446,19 @@ private theorem measurable_eval_tailVec_sq [MeasurableSpace (WeakDual ℝ (Eucli
 
 private theorem integrable_eval_tailVec_sq [MeasurableSpace (WeakDual ℝ (EuclideanSpace ℝ ι))]
     [BorelSpace (WeakDual ℝ (EuclideanSpace ℝ ι))] (t : ℝ)
-    (ν : Measure (dualBall ι)) [IsFiniteMeasure ν] :
-    Integrable (fun p : EuclideanSpace ℝ ι × dualBall ι ↦
+    (ν : Measure (ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι))) [IsFiniteMeasure ν] :
+    Integrable (fun p : EuclideanSpace ℝ ι ×
+          ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι) ↦
         |(p.snd : WeakDual ℝ (EuclideanSpace ℝ ι)) (tailVec t p.fst)| ^ 2)
       ((stdGaussian (EuclideanSpace ℝ ι)).prod ν) := by
-  have hdom : Integrable (fun p : EuclideanSpace ℝ ι × dualBall ι ↦ ‖p.fst‖ ^ 2)
+  have hdom : Integrable (fun p : EuclideanSpace ℝ ι ×
+        ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι) ↦ ‖p.fst‖ ^ 2)
       ((stdGaussian (EuclideanSpace ℝ ι)).prod ν) := by
     simpa using (IsGaussian.memLp_two_id.integrable_norm_pow (by norm_num)).comp_fst ν
   refine hdom.mono' (measurable_eval_tailVec_sq t).aestronglyMeasurable
     (Filter.Eventually.of_forall fun p ↦ ?_)
   have hf1 : ‖WeakDual.toStrongDual (p.snd : WeakDual ℝ (EuclideanSpace ℝ ι))‖ ≤ 1 :=
-    mem_closedBall_zero_iff.1 p.snd.property
+    ContinuousLinearMap.norm_le_one_of_mem_dualBall p.snd
   rw [Real.norm_of_nonneg (sq_nonneg _)]
   have hle : |(p.snd : WeakDual ℝ (EuclideanSpace ℝ ι)) (tailVec t p.fst)| ≤ ‖p.fst‖ := by
     rw [← WeakDual.toStrongDual_apply]
@@ -535,14 +467,15 @@ private theorem integrable_eval_tailVec_sq [MeasurableSpace (WeakDual ℝ (Eucli
         (norm_tailVec_le t p.fst))
   exact pow_le_pow_left₀ (abs_nonneg _) hle 2
 
-private theorem integral_sq_apply_tailVec_le_of_mem_dualBall (f : dualBall ι) (t : ℝ) :
+private theorem integral_sq_apply_tailVec_le_of_mem_dualBall
+    (f : ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι)) (t : ℝ) :
     ∫ g, |(f : WeakDual ℝ (EuclideanSpace ℝ ι)) (tailVec t g)| ^ 2
         ∂stdGaussian (EuclideanSpace ℝ ι) ≤
       ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
   simp_rw [← WeakDual.toStrongDual_apply]
   rw [integral_sq_apply_tailVec (WeakDual.toStrongDual (f : WeakDual ℝ (EuclideanSpace ℝ ι))) t]
   have hf1 : ‖WeakDual.toStrongDual (f : WeakDual ℝ (EuclideanSpace ℝ ι))‖ ≤ 1 :=
-    mem_closedBall_zero_iff.1 f.property
+    ContinuousLinearMap.norm_le_one_of_mem_dualBall f
   exact mul_le_of_le_one_left (setIntegral_nonneg
     (measurableSet_lt measurable_const continuous_abs.measurable) fun _ _ ↦ sq_nonneg _)
     (by nlinarith [norm_nonneg (WeakDual.toStrongDual (f : WeakDual ℝ (EuclideanSpace ℝ ι)))])
@@ -551,35 +484,40 @@ private theorem integral_sq_apply_tailVec_le_of_mem_dualBall (f : dualBall ι) (
 private theorem integral_norm_sq_tailVec_le {Y : Type*}
     [NormedAddCommGroup Y] [NormedSpace ℝ Y] {C : ℝ≥0} (hY : HasGaussianCotype Y 2 C)
     (y : ι → Y) (t : ℝ) :
-    ∫ g, ‖gaussianMap y (tailVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) ≤
+    ∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (tailVec t g)‖ ^ 2
+        ∂stdGaussian (EuclideanSpace ℝ ι) ≤
       ((C : ℝ) * gaussianSecondMoment y) ^ 2 *
         ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
   let : MeasurableSpace (WeakDual ℝ (EuclideanSpace ℝ ι)) := borel _
   let : BorelSpace (WeakDual ℝ (EuclideanSpace ℝ ι)) := ⟨rfl⟩
-  have hsum : (gaussianMap y).summingENorm 2 ≤ ENNReal.ofReal (C * gaussianSecondMoment y) := by
-    simpa only [← Function.comp_def, gaussianMap_comp_basisFun] using
-      (gaussianMap y).summingENorm_two_le_of_hasGaussianCotype (EuclideanSpace.basisFun ι ℝ) hY
+  let U : EuclideanSpace ℝ ι →L[ℝ] Y := (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
+  have hU_basis : U ∘ EuclideanSpace.basisFun ι ℝ = y := by
+    ext i
+    exact Module.Basis.constrL_basis (EuclideanSpace.basisFun ι ℝ).toBasis y i
+  have hsum : U.summingENorm 2 ≤ ENNReal.ofReal (C * gaussianSecondMoment y) := by
+    simpa only [← Function.comp_def, hU_basis] using
+      U.summingENorm_two_le_of_hasGaussianCotype (EuclideanSpace.basisFun ι ℝ) hY
   have hCG : 0 ≤ (C : ℝ) * gaussianSecondMoment y :=
     mul_nonneg C.property (gaussianSecondMoment_nonneg y)
   obtain ⟨ν, _, _, hν⟩ :=
-    (gaussianMap y).exists_isProbabilityMeasure_of_summingENorm_le_ofReal (p := 2)
+    U.exists_isProbabilityMeasure_of_summingENorm_le_ofReal (p := 2)
       (by simp) hCG hsum
-  let Φ : EuclideanSpace ℝ ι × dualBall ι → ℝ :=
+  let Φ : EuclideanSpace ℝ ι × ContinuousLinearMap.dualBall ℝ (EuclideanSpace ℝ ι) → ℝ :=
     fun p ↦ |(p.snd : WeakDual ℝ (EuclideanSpace ℝ ι)) (tailVec t p.fst)| ^ 2
   have hΦ_int : Integrable Φ ((stdGaussian (EuclideanSpace ℝ ι)).prod ν) :=
     integrable_eval_tailVec_sq t ν
   have hpt (g : EuclideanSpace ℝ ι) :
-      ‖gaussianMap y (tailVec t g)‖ ^ 2 ≤
+      ‖U (tailVec t g)‖ ^ 2 ≤
         ((C : ℝ) * gaussianSecondMoment y) ^ 2 * ∫ f, Φ (g, f) ∂ν := by
     have h2 := pow_le_pow_left₀ (norm_nonneg _) (hν (tailVec t g)) 2
     rw [mul_pow, ENNReal.toReal_ofNat, ← Real.rpow_mul_natCast
       (integral_nonneg fun _ ↦ by positivity)] at h2
     simpa [Φ, Real.norm_eq_abs] using h2
   calc
-    ∫ g, ‖gaussianMap y (tailVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι)
+    ∫ g, ‖U (tailVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι)
         ≤ ∫ g, ((C : ℝ) * gaussianSecondMoment y) ^ 2 * ∫ f, Φ (g, f) ∂ν
             ∂stdGaussian (EuclideanSpace ℝ ι) :=
-      integral_mono ((memLp_apply_tailVec (gaussianMap y) t).integrable_norm_pow (by norm_num))
+      integral_mono ((memLp_apply_tailVec U t).integrable_norm_pow (by norm_num))
         (hΦ_int.integral_prod_left.const_mul _) hpt
     _ = ((C : ℝ) * gaussianSecondMoment y) ^ 2 *
           ∫ g, ∫ f, Φ (g, f) ∂ν ∂stdGaussian (EuclideanSpace ℝ ι) :=
@@ -598,27 +536,33 @@ private theorem integral_norm_sq_tailVec_le {Y : Type*}
 private theorem gaussianSecondMoment_le_trunc_add_tail {Y : Type*}
     [NormedAddCommGroup Y] [NormedSpace ℝ Y] (y : ι → Y) (t : ℝ) :
     gaussianSecondMoment y ≤
-      √(∫ g, ‖gaussianMap y (truncVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι)) +
-        √(∫ g, ‖gaussianMap y (tailVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι)) := by
-  have hsplit : (fun g : EuclideanSpace ℝ ι ↦ gaussianMap y g) =
-      (fun g ↦ gaussianMap y (truncVec t g)) + (fun g ↦ gaussianMap y (tailVec t g)) := by
+      √(∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (truncVec t g)‖ ^ 2
+          ∂stdGaussian (EuclideanSpace ℝ ι)) +
+        √(∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (tailVec t g)‖ ^ 2
+          ∂stdGaussian (EuclideanSpace ℝ ι)) := by
+  let U : EuclideanSpace ℝ ι →L[ℝ] Y := (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
+  have hU (g : EuclideanSpace ℝ ι) : U g = ∑ i, g i • y i := by
+    simp [U, Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+  have hsplit : (fun g : EuclideanSpace ℝ ι ↦ U g) =
+      (fun g ↦ U (truncVec t g)) + (fun g ↦ U (tailVec t g)) := by
     ext g
     simp only [Pi.add_apply, ← map_add, truncVec_add_tailVec]
-  have h1 := memLp_apply_truncVec (gaussianMap y) t
-  have h2 := memLp_apply_tailVec (gaussianMap y) t
-  have hsum_mem : MemLp (fun g : EuclideanSpace ℝ ι ↦ gaussianMap y g) 2
+  have h1 := memLp_apply_truncVec U t
+  have h2 := memLp_apply_tailVec U t
+  have hsum_mem : MemLp (fun g : EuclideanSpace ℝ ι ↦ U g) 2
       (stdGaussian (EuclideanSpace ℝ ι)) := by
-    simpa only [gaussianMap_apply] using memLp_gaussianSum y 2 (by simp)
-  have htri : eLpNorm (fun g ↦ gaussianMap y g) 2 (stdGaussian (EuclideanSpace ℝ ι)) ≤
-      eLpNorm (fun g ↦ gaussianMap y (truncVec t g)) 2 (stdGaussian (EuclideanSpace ℝ ι)) +
-        eLpNorm (fun g ↦ gaussianMap y (tailVec t g)) 2 (stdGaussian (EuclideanSpace ℝ ι)) := by
+    simpa only [hU] using memLp_gaussianSum y 2 (by simp)
+  have htri : eLpNorm (fun g ↦ U g) 2 (stdGaussian (EuclideanSpace ℝ ι)) ≤
+      eLpNorm (fun g ↦ U (truncVec t g)) 2 (stdGaussian (EuclideanSpace ℝ ι)) +
+        eLpNorm (fun g ↦ U (tailVec t g)) 2 (stdGaussian (EuclideanSpace ℝ ι)) := by
     rw [hsplit]
     exact eLpNorm_add_le one_le_two
   rw [hsum_mem.eLpNorm_two_eq_ofReal_sqrt_integral, h1.eLpNorm_two_eq_ofReal_sqrt_integral,
     h2.eLpNorm_two_eq_ofReal_sqrt_integral,
     ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _),
     ENNReal.ofReal_le_ofReal_iff (add_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))] at htri
-  simpa only [gaussianSecondMoment_def, gaussianMap_apply] using htri
+  rw [gaussianSecondMoment_def]
+  simpa only [← hU] using htri
 
 end TailHelpers
 
@@ -644,14 +588,17 @@ theorem gaussianSecondMoment_le_two_mul_rademacherSecondMoment
     simp [hy]
   · have htri := gaussianSecondMoment_le_trunc_add_tail y t
     have htrunc :
-        √(∫ g, ‖gaussianMap y (truncVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι)) ≤
+        √(∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (truncVec t g)‖ ^ 2
+            ∂stdGaussian (EuclideanSpace ℝ ι)) ≤
           t * rademacherSecondMoment y :=
       Real.sqrt_le_iff.2 ⟨mul_nonneg ht0 (rademacherSecondMoment_nonneg y),
         integral_norm_sq_truncVec_le y ht0⟩
     have htail :
-        √(∫ g, ‖gaussianMap y (tailVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι)) ≤
+        √(∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (tailVec t g)‖ ^ 2
+            ∂stdGaussian (EuclideanSpace ℝ ι)) ≤
           (1 / 2) * gaussianSecondMoment y := calc
-      √(∫ g, ‖gaussianMap y (tailVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι))
+      √(∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (tailVec t g)‖ ^ 2
+            ∂stdGaussian (EuclideanSpace ℝ ι))
           ≤ √(((C : ℝ) * gaussianSecondMoment y) ^ 2 *
               ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) :=
         Real.sqrt_le_sqrt (integral_norm_sq_tailVec_le hY y t)
@@ -684,7 +631,7 @@ theorem gaussianSecondMoment_le_eight_mul_rademacherSecondMoment
       (C : ℝ) * √(∫ r in {r : ℝ | 4 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1)
           ≤ (C : ℝ) * √(3 / (4 * (C : ℝ)) ^ 2) := by
         gcongr
-        exact setIntegral_sq_tail_gaussianReal_le htpos
+        exact Probability.setIntegral_sq_tail_gaussianReal_le htpos
       _ = √3 / 4 := by
         rw [Real.sqrt_div (by norm_num), Real.sqrt_sq htpos.le]
         field_simp [hCpos.ne']
@@ -712,60 +659,6 @@ end TauCeti
 
 namespace ContinuousLinearMap
 
-section SeparationReduction
-
-/-- Rademacher cotype passes from a seminormed space to its separation quotient with the same
-constant. -/
-private theorem hasCotype_separationQuotient {Y : Type*} [SeminormedAddCommGroup Y]
-    {q : ℝ≥0∞} {C : ℝ≥0} (hY : HasCotype Y q C) :
-    HasCotype (SeparationQuotient Y) q C := by
-  rw [hasCotype_iff]
-  intro n z
-  choose y hy using fun i ↦ SeparationQuotient.surjective_mk (z i)
-  have hnorm_eq : ‖WithLp.toLp q z‖ = ‖WithLp.toLp q y‖ :=
-    le_antisymm
-      (PiLp.norm_mono fun i ↦ by simp [← hy i, SeparationQuotient.norm_mk])
-      (PiLp.norm_mono fun i ↦ by simp [← hy i, SeparationQuotient.norm_mk])
-  have hz : z = fun i ↦ SeparationQuotient.mkAddMonoidHom (M := Y) (y i) :=
-    funext fun i ↦ (hy i).symm
-  have hrad_eq : rademacherSecondMoment z = rademacherSecondMoment y := by
-    rw [hz]
-    exact le_antisymm
-      (by simpa using (rademacherSecondMoment_map_le (M := 1)
-        (SeparationQuotient.mkAddMonoidHom (M := Y))
-        (fun x ↦ by simp [SeparationQuotient.norm_mk]) y))
-      (by simpa using (rademacherSecondMoment_le_mul_map (K := 1)
-        (SeparationQuotient.mkAddMonoidHom (M := Y))
-        (fun x ↦ by simp [SeparationQuotient.norm_mk]) y))
-  rw [hnorm_eq, hrad_eq]
-  exact hY.norm_toLp_le y
-
-variable {𝕜 Y : Type*} [RCLike 𝕜] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-
-/-- Composing an operator with `SeparationQuotient.mkCLM` preserves its `p`-summing gauge. -/
-private theorem summingENorm_comp_separationQuotient {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (U : E →L[𝕜] Y) :
-    ((SeparationQuotient.mkCLM 𝕜 Y).comp U).summingENorm p = U.summingENorm p := by
-  simp only [summingENorm_def]
-  refine iSup_congr fun n ↦ iSup_congr fun x ↦ congrArg (· / _) ?_
-  rw [← ofReal_norm, ← ofReal_norm]
-  exact congrArg _ <| le_antisymm
-    (PiLp.norm_mono fun i ↦ by simp [SeparationQuotient.norm_mk])
-    (PiLp.norm_mono fun i ↦ by simp [SeparationQuotient.norm_mk])
-
-/-- Composing a family with `SeparationQuotient.mkCLM` preserves its Rademacher second moment. -/
-private theorem rademacherSecondMoment_comp_separationQuotient {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (y : ι → Y) :
-    rademacherSecondMoment (fun i ↦ SeparationQuotient.mkCLM 𝕜 Y (y i)) =
-      rademacherSecondMoment y :=
-  le_antisymm
-    (by simpa using (rademacherSecondMoment_map_le (M := 1) (SeparationQuotient.mkCLM 𝕜 Y)
-      (fun x ↦ by simp [SeparationQuotient.norm_mk]) y))
-    (by simpa using (rademacherSecondMoment_le_mul_map (K := 1) (SeparationQuotient.mkCLM 𝕜 Y)
-      (fun x ↦ by simp [SeparationQuotient.norm_mk]) y))
-
-end SeparationReduction
-
 /-- **Pisier's cotype-`2` summing bound (real case, threshold form).** If `Y` has Rademacher cotype
 `2` with constant `C` and `C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2`, then every bounded real-linear
 operator `U : E →L[ℝ] Y` from an inner product space with a finite orthonormal basis `b` satisfies
@@ -780,9 +673,10 @@ theorem summingENorm_two_le_ofReal_two_mul_rademacherSecondMoment
     U.summingENorm 2 ≤ ENNReal.ofReal (2 * C * t * rademacherSecondMoment (U ∘ b)) := by
   let Uq : E →L[ℝ] SeparationQuotient Y := (SeparationQuotient.mkCLM ℝ Y).comp U
   have hYq : HasGaussianCotype (SeparationQuotient Y) 2 C :=
-    (hasCotype_separationQuotient hY).hasGaussianCotype_two
-  rw [← summingENorm_comp_separationQuotient U,
-    ← rademacherSecondMoment_comp_separationQuotient (𝕜 := ℝ) (U ∘ b)]
+    hY.separationQuotient.hasGaussianCotype_two
+  have hrad : rademacherSecondMoment (Uq ∘ b) = rademacherSecondMoment (U ∘ b) := by
+    simp [Uq, Function.comp_def]
+  rw [← summingENorm_comp_separationQuotient U, ← hrad]
   refine (Uq.summingENorm_two_le_of_hasGaussianCotype b hYq).trans ?_
   apply ENNReal.ofReal_le_ofReal
   have hG := gaussianSecondMoment_le_two_mul_rademacherSecondMoment hYq ht (Uq ∘ b)
@@ -807,9 +701,10 @@ theorem summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment
     NormedSpace.restrictScalars ℝ 𝕜 (SeparationQuotient Y)
   let Uq : E →L[𝕜] SeparationQuotient Y := (SeparationQuotient.mkCLM 𝕜 Y).comp U
   have hYq : HasGaussianCotype (SeparationQuotient Y) 2 C :=
-    (hasCotype_separationQuotient hY).hasGaussianCotype_two
-  rw [← summingENorm_comp_separationQuotient U,
-    ← rademacherSecondMoment_comp_separationQuotient (𝕜 := 𝕜) (U ∘ b)]
+    hY.separationQuotient.hasGaussianCotype_two
+  have hrad : rademacherSecondMoment (Uq ∘ b) = rademacherSecondMoment (U ∘ b) := by
+    simp [Uq, Function.comp_def]
+  rw [← summingENorm_comp_separationQuotient U, ← hrad]
   refine (Uq.summingENorm_two_le_ofReal_two_mul_gaussianSecondMoment hYq b).trans ?_
   apply ENNReal.ofReal_le_ofReal
   have hG := gaussianSecondMoment_le_two_mul_rademacherSecondMoment hYq ht (Uq ∘ b)
@@ -831,9 +726,10 @@ theorem summingENorm_two_le_ofReal_eight_mul_sq_mul_rademacherSecondMoment
     U.summingENorm 2 ≤ ENNReal.ofReal (8 * (C : ℝ) ^ 2 * rademacherSecondMoment (U ∘ b)) := by
   let Uq : E →L[ℝ] SeparationQuotient Y := (SeparationQuotient.mkCLM ℝ Y).comp U
   have hYq : HasGaussianCotype (SeparationQuotient Y) 2 C :=
-    (hasCotype_separationQuotient hY).hasGaussianCotype_two
-  rw [← summingENorm_comp_separationQuotient U,
-    ← rademacherSecondMoment_comp_separationQuotient (𝕜 := ℝ) (U ∘ b)]
+    hY.separationQuotient.hasGaussianCotype_two
+  have hrad : rademacherSecondMoment (Uq ∘ b) = rademacherSecondMoment (U ∘ b) := by
+    simp [Uq, Function.comp_def]
+  rw [← summingENorm_comp_separationQuotient U, ← hrad]
   refine (Uq.summingENorm_two_le_of_hasGaussianCotype b hYq).trans ?_
   apply ENNReal.ofReal_le_ofReal
   have hG := gaussianSecondMoment_le_eight_mul_rademacherSecondMoment hYq (Uq ∘ b)
@@ -856,9 +752,10 @@ theorem summingENorm_two_le_ofReal_sixteen_mul_sq_mul_rademacherSecondMoment
     NormedSpace.restrictScalars ℝ 𝕜 (SeparationQuotient Y)
   let Uq : E →L[𝕜] SeparationQuotient Y := (SeparationQuotient.mkCLM 𝕜 Y).comp U
   have hYq : HasGaussianCotype (SeparationQuotient Y) 2 C :=
-    (hasCotype_separationQuotient hY).hasGaussianCotype_two
-  rw [← summingENorm_comp_separationQuotient U,
-    ← rademacherSecondMoment_comp_separationQuotient (𝕜 := 𝕜) (U ∘ b)]
+    hY.separationQuotient.hasGaussianCotype_two
+  have hrad : rademacherSecondMoment (Uq ∘ b) = rademacherSecondMoment (U ∘ b) := by
+    simp [Uq, Function.comp_def]
+  rw [← summingENorm_comp_separationQuotient U, ← hrad]
   refine (Uq.summingENorm_two_le_ofReal_two_mul_gaussianSecondMoment hYq b).trans ?_
   apply ENNReal.ofReal_le_ofReal
   have hG := gaussianSecondMoment_le_eight_mul_rademacherSecondMoment hYq (Uq ∘ b)

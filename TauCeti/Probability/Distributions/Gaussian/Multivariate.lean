@@ -55,6 +55,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covariance_inner_stdGaussian`,
   `ProbabilityTheory.HasLaw.covariance_inner_map_smul_stdGaussian`: inner-product covariance under
   `stdGaussian E` and its scaled pushforwards.
+* `TauCeti.Probability.stdGaussian_map_units_smul`: coordinatewise sign-flip invariance of the
+  standard Gaussian measure on `EuclideanSpace ℝ ι`.
 -/
 
 public section
@@ -339,5 +341,20 @@ theorem _root_.ProbabilityTheory.HasLaw.covariance_inner_map_smul_stdGaussian
   simp_rw [real_inner_smul_right]
   rw [covariance_const_mul_left, covariance_const_mul_right, covariance_inner_stdGaussian,
     ← mul_assoc, ← sq]
+
+/-- Coordinatewise sign changes preserve the standard Gaussian measure on `EuclideanSpace ℝ ι`. -/
+theorem stdGaussian_map_units_smul [Fintype ι] (ε : ι → ℤˣ) :
+    (stdGaussian (EuclideanSpace ℝ ι)).map
+        (fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i) =
+      stdGaussian (EuclideanSpace ℝ ι) := by
+  let L : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
+    LinearIsometryEquiv.piLpCongrRight 2 fun i ↦
+      if ε i = 1 then LinearIsometryEquiv.refl ℝ ℝ else LinearIsometryEquiv.neg ℝ
+  have hL : (L : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
+      fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i := by
+    ext g i
+    simp only [L, LinearIsometryEquiv.piLpCongrRight_apply, WithLp.ofLp_toLp]
+    rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
+  simpa only [hL] using stdGaussian_map L
 
 end TauCeti.Probability

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Topology.Instances.RealVectorSpace
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -21,8 +22,7 @@ The coefficient space is the native Euclidean space with its standard Gaussian m
 In particular the definition works for empty families and does not require completeness
 of the target space.
 
-We also record the basic invariance and structural properties used to compare Gaussian sums:
-coordinatewise sign-flip invariance of `stdGaussian`, invariance under zero-padding,
+We also record the basic structural properties of Gaussian sums: absolute homogeneity,
 subadditivity (the `L²` triangle inequality), comparison along bounded additive maps, and the
 exact value on constant and single-element families.
 
@@ -48,9 +48,10 @@ theorem memLp_gaussianSum (x : ι → Y) (p : ℝ≥0∞) (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • x i) p
       (stdGaussian (EuclideanSpace ℝ ι)) := by
   let T : EuclideanSpace ℝ ι →L[ℝ] Y :=
-    ∑ i, (EuclideanSpace.proj i).smulRight (x i)
-  simpa only [T, Function.comp_def, id_eq, sum_apply,
-    ContinuousLinearMap.smulRight_apply, EuclideanSpace.coe_proj] using
+    (EuclideanSpace.basisFun ι ℝ).toBasis.constrL x
+  have hT (g : EuclideanSpace ℝ ι) : T g = ∑ i, g i • x i := by
+    simp [T, Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
+  simpa only [Function.comp_def, id_eq, hT] using
     T.comp_memLp' (IsGaussian.memLp_id (stdGaussian (EuclideanSpace ℝ ι)) p hp)
 
 /-- The squared norm of a finite Gaussian sum is integrable. -/
@@ -82,13 +83,6 @@ theorem gaussianSecondMoment_sq (x : ι → Y) :
         ∂stdGaussian (EuclideanSpace ℝ ι) :=
   Real.sq_sqrt (integral_nonneg fun _ ↦ sq_nonneg _)
 
-/-- A bound on the expected squared norm bounds the Gaussian second moment. -/
-theorem gaussianSecondMoment_le_of_sq_le {x : ι → Y} {c : ℝ} (hc : 0 ≤ c)
-    (h : ∫ g : EuclideanSpace ℝ ι, ‖∑ i, g i • x i‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) ≤
-      c ^ 2) :
-    gaussianSecondMoment x ≤ c :=
-  Real.sqrt_le_iff.2 ⟨hc, h⟩
-
 /-- Multiplying a family by a real scalar multiplies its Gaussian second moment by the
 absolute value of that scalar. -/
 theorem gaussianSecondMoment_smul (x : ι → Y) (c : ℝ) :
@@ -113,21 +107,6 @@ theorem gaussianSecondMoment_of_isEmpty [IsEmpty ι] (x : ι → Y) :
     gaussianSecondMoment x = 0 := by
   simp [gaussianSecondMoment]
 
-/-- Coordinatewise sign changes preserve the standard Gaussian measure on `EuclideanSpace ℝ ι`. -/
-theorem stdGaussian_map_units_smul (ε : ι → ℤˣ) :
-    (stdGaussian (EuclideanSpace ℝ ι)).map
-        (fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i) =
-      stdGaussian (EuclideanSpace ℝ ι) := by
-  let L : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
-    LinearIsometryEquiv.piLpCongrRight 2 fun i ↦
-      if ε i = 1 then LinearIsometryEquiv.refl ℝ ℝ else LinearIsometryEquiv.neg ℝ
-  have hL : (L : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
-      fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i := by
-    ext g i
-    simp only [L, LinearIsometryEquiv.piLpCongrRight_apply, WithLp.ofLp_toLp]
-    rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h]
-  simpa only [hL] using stdGaussian_map L
-
 /-- The Gaussian second moment satisfies the triangle inequality. -/
 theorem gaussianSecondMoment_add_le (x y : ι → Y) :
     gaussianSecondMoment (x + y) ≤ gaussianSecondMoment x + gaussianSecondMoment y := by
@@ -148,82 +127,6 @@ theorem gaussianSecondMoment_add_le (x y : ι → Y) :
     ENNReal.ofReal_le_ofReal_iff (add_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))] at hle
   exact hle
 
-/-- Projecting a standard Gaussian vector on `ι ⊕ κ` onto its left coordinates yields a standard
-Gaussian vector on `ι`. -/
-private theorem stdGaussian_map_inl {κ : Type*} [Fintype κ] :
-    (stdGaussian (EuclideanSpace ℝ (ι ⊕ κ))).map
-        (fun g : EuclideanSpace ℝ (ι ⊕ κ) ↦ WithLp.toLp 2 (g ∘ Sum.inl)) =
-      stdGaussian (EuclideanSpace ℝ ι) := by
-  let P : EuclideanSpace ℝ (ι ⊕ κ) →L[ℝ] EuclideanSpace ℝ ι :=
-    LinearMap.mkContinuous
-      { toFun g := WithLp.toLp 2 (g ∘ Sum.inl)
-        map_add' _ _ := by ext; simp
-        map_smul' _ _ := by ext; simp }
-      1 fun g ↦ by
-        rw [one_mul, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
-        exact Real.sqrt_le_sqrt (by
-          rw [Fintype.sum_sum_type]
-          exact le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _))
-  let I : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ (ι ⊕ κ) :=
-    LinearMap.mkContinuous
-      { toFun h := WithLp.toLp 2 (Sum.elim h 0)
-        map_add' _ _ := by ext k; cases k <;> simp
-        map_smul' _ _ := by ext k; cases k <;> simp }
-      1 fun h ↦ by
-        rw [one_mul, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
-        exact Real.sqrt_le_sqrt (by simp [Fintype.sum_sum_type])
-  have hP : ‖P‖ ≤ 1 := LinearMap.mkContinuous_norm_le _ zero_le_one _
-  have hI : ‖I‖ ≤ 1 := LinearMap.mkContinuous_norm_le _ zero_le_one _
-  have hPI : P ∘L I = ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι) := by
-    ext h i; simp [P, I]
-  apply Measure.ext_of_charFunDual
-  ext L
-  have hnorm : ‖L ∘L P‖ = ‖L‖ := by
-    refine le_antisymm ((L.opNorm_comp_le P).trans (mul_le_of_le_one_right (norm_nonneg L) hP)) ?_
-    have hL : L = (L ∘L P) ∘L I := by
-      rw [ContinuousLinearMap.comp_assoc, hPI, ContinuousLinearMap.comp_id]
-    conv_lhs => rw [hL]
-    exact ((L ∘L P).opNorm_comp_le I).trans (mul_le_of_le_one_right (norm_nonneg _) hI)
-  calc
-    charFunDual ((stdGaussian (EuclideanSpace ℝ (ι ⊕ κ))).map P) L
-        = charFunDual (stdGaussian (EuclideanSpace ℝ (ι ⊕ κ))) (L ∘L P) := by
-      rw [charFunDual_apply, charFunDual_apply, integral_map (by fun_prop) (by fun_prop)]
-      rfl
-    _ = charFunDual (stdGaussian (EuclideanSpace ℝ ι)) L := by
-      rw [charFunDual_stdGaussian, charFunDual_stdGaussian, hnorm]
-
-/-- Padding a finite family with zeros does not change its Gaussian second moment. -/
-theorem gaussianSecondMoment_sumElim_zero {κ : Type*} [Fintype κ] (x : ι → Y) :
-    gaussianSecondMoment (Sum.elim x (0 : κ → Y)) = gaussianSecondMoment x := by
-  rw [gaussianSecondMoment_def, gaussianSecondMoment_def]
-  congr 1
-  conv_rhs => rw [← stdGaussian_map_inl (ι := ι) (κ := κ), integral_map (by fun_prop) (by fun_prop)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
-  simp [Fintype.sum_sum_type]
-
-/-- The Gaussian second moment of a concatenated family is at most the sum of the Gaussian second
-moments of its two parts. -/
-theorem gaussianSecondMoment_sumElim_le {κ : Type*} [Fintype κ] (x : ι → Y) (y : κ → Y) :
-    gaussianSecondMoment (Sum.elim x y) ≤ gaussianSecondMoment x + gaussianSecondMoment y := by
-  have hsplit : Sum.elim x y = Sum.elim x (0 : κ → Y) + Sum.elim (0 : ι → Y) y := by
-    ext k; cases k <;> simp
-  have hright : gaussianSecondMoment (Sum.elim (0 : ι → Y) y) = gaussianSecondMoment y := by
-    let L : EuclideanSpace ℝ (ι ⊕ κ) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (κ ⊕ ι) :=
-      LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.sumComm ι κ)
-    rw [← gaussianSecondMoment_sumElim_zero (ι := κ) (κ := ι) y,
-      gaussianSecondMoment_def, gaussianSecondMoment_def]
-    congr 1
-    conv_rhs => rw [← stdGaussian_map L, integral_map (by fun_prop) (by fun_prop)]
-    refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
-    dsimp only
-    congr 2
-    rw [← Equiv.sum_comp (Equiv.sumComm ι κ)]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    cases k <;> simp [L, LinearIsometryEquiv.piLpCongrLeft_apply]
-  rw [hsplit]
-  exact (gaussianSecondMoment_add_le _ _).trans_eq
-    (by rw [gaussianSecondMoment_sumElim_zero, hright])
-
 /-- A bounded additive map `f` with `‖f y‖ ≤ M * ‖y‖` multiplies Gaussian second moments by at most
 `M`. -/
 theorem gaussianSecondMoment_map_le {F 𝓕 : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -239,7 +142,8 @@ theorem gaussianSecondMoment_map_le {F 𝓕 : Type*} [NormedAddCommGroup F] [Nor
     have h0 := (norm_nonneg (f y₀)).trans (hM y₀)
     exact nonneg_of_mul_nonneg_left h0 (norm_pos_iff.2 hy₀)
   have hf_cont : Continuous f := AddMonoidHomClass.continuous_of_bound f M hM
-  refine gaussianSecondMoment_le_of_sq_le (mul_nonneg hM0 (gaussianSecondMoment_nonneg x)) ?_
+  rw [gaussianSecondMoment_def, Real.sqrt_le_iff]
+  refine ⟨mul_nonneg hM0 (gaussianSecondMoment_nonneg x), ?_⟩
   rw [mul_pow, gaussianSecondMoment_sq, ← integral_const_mul]
   refine integral_mono (integrable_norm_sq_gaussianSum _)
     ((integrable_norm_sq_gaussianSum x).const_mul _) fun g ↦ ?_

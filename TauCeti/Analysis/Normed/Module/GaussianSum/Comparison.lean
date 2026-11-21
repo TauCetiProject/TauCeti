@@ -23,7 +23,8 @@ of a normed-space-valued Gaussian sum. Consequently, domination of all scalar sq
 functions implies domination of the Gaussian second moments. The target need not be
 complete: integration of vector-valued functions is performed only in the finite-dimensional
 coefficient space. In particular the Gaussian second moment of a family does not change when the
-family is reindexed or when the signs of its members are changed.
+family is reindexed, padded with zeros, or when the signs of its members are changed, and the
+moment of a concatenated family is at most the sum of the two moments.
 
 ## References
 
@@ -103,11 +104,12 @@ theorem gaussianSecondMoment_le_of_weakTwo_le (x : ι → Y) (y : κ → Y)
     gaussianSecondMoment x ≤ gaussianSecondMoment y := by
   obtain ⟨D, hD, hxy⟩ := exists_contraction_of_weakTwo_le x y h
   let U : EuclideanSpace ℝ κ →L[ℝ] Y :=
-    ∑ j, (EuclideanSpace.proj j).smulRight (y j)
+    (EuclideanSpace.basisFun κ ℝ).toBasis.constrL y
+  have hU (g : EuclideanSpace ℝ κ) : U g = ∑ j, g j • y j := by
+    simp [U, Module.Basis.constrL_apply, EuclideanSpace.basisFun_toBasis]
   rw [gaussianSecondMoment_def, gaussianSecondMoment_def]
   apply Real.sqrt_le_sqrt
-  simpa only [U, sum_apply, ContinuousLinearMap.smulRight_apply,
-    EuclideanSpace.coe_proj, ← hxy] using
+  simpa only [hU, ← hxy] using
     U.integral_norm_sq_comp_le_stdGaussian D.adjoint (ContinuousLinearMap.adjoint.norm_map D ▸ hD)
 
 /-- Families with the same square sums against every real continuous functional have the same
@@ -131,5 +133,24 @@ theorem gaussianSecondMoment_units_smul (ε : ι → ℤˣ) (x : ι → Y) :
   refine gaussianSecondMoment_eq_of_weakTwo_eq _ _ fun f ↦ Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Units.smul_def, map_zsmul, ← Units.smul_def, ← Real.norm_eq_abs, ← Real.norm_eq_abs,
     norm_units_zsmul]
+
+/-- Padding a finite family with zeros does not change its Gaussian second moment. -/
+theorem gaussianSecondMoment_sumElim_zero (x : ι → Y) :
+    gaussianSecondMoment (Sum.elim x (0 : κ → Y)) = gaussianSecondMoment x :=
+  gaussianSecondMoment_eq_of_weakTwo_eq _ _ fun f ↦ by simp [Fintype.sum_sum_type]
+
+/-- The Gaussian second moment of a concatenated family is at most the sum of the Gaussian second
+moments of its two parts. -/
+theorem gaussianSecondMoment_sumElim_le (x : ι → Y) (y : κ → Y) :
+    gaussianSecondMoment (Sum.elim x y) ≤ gaussianSecondMoment x + gaussianSecondMoment y := by
+  have hsplit : Sum.elim x y = Sum.elim x (0 : κ → Y) + Sum.elim (0 : ι → Y) y := by
+    ext k; cases k <;> simp
+  have hright : gaussianSecondMoment (Sum.elim (0 : ι → Y) y) = gaussianSecondMoment y := by
+    have heq : Sum.elim (0 : ι → Y) y = Sum.elim y (0 : ι → Y) ∘ Equiv.sumComm ι κ := by
+      ext k; cases k <;> simp
+    rw [heq, gaussianSecondMoment_comp_equiv, gaussianSecondMoment_sumElim_zero]
+  rw [hsplit]
+  exact (gaussianSecondMoment_add_le _ _).trans_eq
+    (by rw [gaussianSecondMoment_sumElim_zero, hright])
 
 end TauCeti
