@@ -43,7 +43,9 @@ where `p = 1` and Frobenius is the identity, they hold trivially.
 
 Frobenius is a local homomorphism by `TauCeti.isLocalHom_frobenius`, and regularity cannot be
 dropped: a ring of exponential characteristic `p > 1` with flat Frobenius is reduced
-(`TauCeti.isReduced_of_flat_frobenius`).
+(`TauCeti.isReduced_of_flat_frobenius`). Conversely, a Noetherian ring of prime characteristic
+`p` with flat Frobenius is regular (`TauCeti.IsRegularRing.of_flat_frobenius`, in
+`TauCeti.RingTheory.RegularLocalRing.Kunz`).
 
 ## References
 
