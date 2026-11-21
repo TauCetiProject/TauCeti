@@ -594,10 +594,12 @@ theorem cycleData_monodromyTriple_superellipticProj :
   obtain rfl := eq_four_of_superellipticProj_preimage_equiv ν
   set t := isCoveringMap_superellipticProj.monodromyTriple ν
   have h0 : fullCycleType t.σ0 = {4} :=
-    (fullCycleType_of_forall_sameCycle _ (sameCycle_monodromyTriple_superellipticProj_σ0 ν 0)).trans
+    ((fullCycleType_eq_singleton_card_iff _).mpr
+      ⟨_, sameCycle_monodromyTriple_superellipticProj_σ0 ν 0⟩).trans
       (by rw [Fintype.card_fin])
   have h1 : fullCycleType t.σ1 = {4} :=
-    (fullCycleType_of_forall_sameCycle _ (sameCycle_monodromyTriple_superellipticProj_σ1 ν 0)).trans
+    ((fullCycleType_eq_singleton_card_iff _).mpr
+      ⟨_, sameCycle_monodromyTriple_superellipticProj_σ1 ν 0⟩).trans
       (by rw [Fintype.card_fin])
   have hle : orbitCount t.σinf ≤ 2 := orbitCount_monodromyTriple_superellipticProj_σinf_le ν
   -- `σinf` moves every point: it is not the identity, which has four cycles, and the monodromy

@@ -79,8 +79,8 @@ theorem charpoly_ofMulAction_wordProd_permCoxeterSystem (R : Type*) [CommRing R]
       (permCoxeterSystem n).wordProd ω :=
     Equiv.ext fun _ ↦ rfl
   rw [Representation.charpoly_ofMulAction, hperm,
-    Equiv.Perm.fullCycleType_of_forall_sameCycle _
-      (sameCycle_wordProd_permCoxeterSystem hω ⟨0, Nat.pos_of_ne_zero hn⟩),
+    (Equiv.Perm.fullCycleType_eq_singleton_card_iff _).mpr
+      ⟨_, sameCycle_wordProd_permCoxeterSystem hω ⟨0, Nat.pos_of_ne_zero hn⟩⟩,
     Multiset.map_singleton, Multiset.prod_singleton, Fintype.card_fin]
 
 /-- **A Coxeter element of `S_n` on the reflection representation.** A product of all the
