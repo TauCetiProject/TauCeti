@@ -67,9 +67,8 @@ theorem graph_coxeterMatrixOfBase :
 
 /-- **The Coxeter graph of a base with finite-type Cartan matrix is a forest.** -/
 theorem isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType (hft : IsFiniteType b.cartanMatrix) :
-    (coxeterMatrixOfBase P b).graph.IsAcyclic := by
-  rw [graph_coxeterMatrixOfBase]
-  exact hft.isAcyclic_diagramGraph
+    (coxeterMatrixOfBase P b).graph.IsAcyclic :=
+  graph_coxeterMatrixOfBase P b ▸ hft.isAcyclic_diagramGraph
 
 /-- **The Coxeter graph of a base with finite-type Cartan matrix has a two-colouring**: its simple
 roots can be coloured by `Bool` so that simple roots of the same colour are orthogonal. -/
@@ -93,9 +92,8 @@ theorem nonempty_coloring_graph_coxeterMatrixOfBase [P.IsRootSystem] :
 /-- **The Coxeter graph of a base of an irreducible reduced root pairing is connected**, so its
 two-colourings agree up to exchanging the colours. -/
 theorem preconnected_graph_coxeterMatrixOfBase [P.IsReduced] [P.IsIrreducible] :
-    (coxeterMatrixOfBase P b).graph.Preconnected := by
-  rw [graph_coxeterMatrixOfBase]
-  exact preconnected_diagramGraph_cartanMatrix b
+    (coxeterMatrixOfBase P b).graph.Preconnected :=
+  graph_coxeterMatrixOfBase P b ▸ preconnected_diagramGraph_cartanMatrix b
 
 /-- Distinct simple roots of the same colour in a two-colouring of the Coxeter graph are
 orthogonal. -/
@@ -131,12 +129,8 @@ theorem noncommProd_ofIdx_smul (s : Finset b.support) (f : b.support → P.weylG
 
 /-- Distinct simple roots of the same colour are orthogonal. -/
 theorem pairingIn_eq_zero_of_color_eq (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {i j : b.support} (hij : i ≠ j) (h : c i = c j) : P.pairingIn ℤ i j = 0 := by
-  have hadj : ¬ (coxeterMatrixOfBase P b).graph.Adj i j := fun hadj ↦ c.valid hadj h
-  rw [graph_coxeterMatrixOfBase, diagramGraph_adj] at hadj
-  rw [← Base.cartanMatrixIn_def]
-  by_contra hne
-  exact hadj ⟨hij, hne, fun h' ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')⟩
+    {i j : b.support} (hij : i ≠ j) (h : c i = c j) : P.pairingIn ℤ i j = 0 :=
+  (b.cartanMatrixIn_def ℤ i j).symm ▸ b.cartanMatrix_eq_zero_of_color_eq c hij h
 
 /-- The product of the simple reflections of colour `x` subtracts from `m` its components along
 the simple roots of colour `x`. -/

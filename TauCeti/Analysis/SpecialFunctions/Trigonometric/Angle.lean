@@ -154,15 +154,13 @@ theorem coprime_of_mul_eq_mul_pi {h : ℕ} (hh : 0 < h) {θ : ℝ} {m : ℤ}
     (hmin : ∀ h' : ℕ, 0 < h' → h' < h → Real.cos (2 * (h' : ℝ) * θ) ≠ 1) :
     m.natAbs.Coprime h := by
   rw [Nat.coprime_iff_gcd_eq_one]; by_contra hne1; set d := m.natAbs.gcd h
-  have hd_h : d ∣ h := Nat.gcd_dvd_right _ _
-  have hd_m : (d : ℤ) ∣ m := Int.natCast_dvd.mpr (Nat.gcd_dvd_left _ _)
-  have h1 : (d : ℝ) * ((h / d : ℕ) : ℝ) = h := by exact_mod_cast Nat.mul_div_cancel' hd_h
-  have h2 : (d : ℝ) * ((m / (d : ℤ) : ℤ) : ℝ) = m := by exact_mod_cast Int.mul_ediv_cancel' hd_m
-  have hd0 : 0 < d := Nat.gcd_pos_of_pos_right _ hh
+  have hd_h : d ∣ h := Nat.gcd_dvd_right _ _; have hd0 : 0 < d := Nat.gcd_pos_of_pos_right _ hh
   exact hmin (h / d) (Nat.div_pos (Nat.le_of_dvd hh hd_h) hd0)
     (Nat.div_lt_self hh (Nat.lt_of_le_of_ne hd0 (Ne.symm hne1))) ((Real.cos_eq_one_iff _).mpr
-      ⟨m / (d : ℤ), mul_left_cancel₀ (by positivity : (d : ℝ) ≠ 0)
-        (by linear_combination -2 * hmθ - 2 * θ * h1 + 2 * Real.pi * h2)⟩)
+      ⟨m / (d : ℤ), mul_left_cancel₀ (by positivity : (d : ℝ) ≠ 0) (by linear_combination -2 * hmθ -
+        2 * θ * (by exact_mod_cast Nat.mul_div_cancel' hd_h : (d : ℝ) * ((h / d : ℕ) : ℝ) = h) +
+        2 * Real.pi * (by exact_mod_cast Int.mul_ediv_cancel' (Int.natCast_dvd.mpr
+          (Nat.gcd_dvd_left m.natAbs h)) : (d : ℝ) * ((m / (d : ℤ) : ℤ) : ℝ) = m))⟩)
 
 /-- If `θ > 0` has `h > 0` as the least positive natural with `cos (2 h θ) = 1`, and no angle
 `2 n θ + q π` (`n : ℕ`, `q : ℤ`) falls inside `(0, θ)`, then `θ = π / h`. -/
@@ -177,13 +175,13 @@ theorem eq_pi_div_of_cos_two_mul_eq_one {h : ℕ} (hh : 0 < h) {θ : ℝ} (hθpo
   have hmθ : (h : ℝ) * θ = (m : ℝ) * Real.pi := by linarith
   have hmpos : 0 < m :=
     Int.cast_pos.mp (pos_of_mul_pos_left (hmθ ▸ mul_pos hhpos hθpos) Real.pi_pos.le)
-  have hcop : m.natAbs.Coprime h := coprime_of_mul_eq_mul_pi hh hmθ hmin
+  have hcop := coprime_of_mul_eq_mul_pi hh hmθ hmin
   suffices m = 1 by rw [this, Int.cast_one, one_mul] at hmθ; rw [eq_div_iff hhpos.ne']; linarith
   by_contra hm1; set g : ℕ := (2 * m).gcd (h : ℤ)
   have hg_h : g ∣ h := by simpa [g] using Int.natAbs_dvd_natAbs.mpr (Int.gcd_dvd_right (2 * m) h)
-  have hg_2 : g ∣ 2 := (hcop.coprime_dvd_right hg_h).symm.dvd_of_dvd_mul_right
-    (by exact_mod_cast (by simpa [Int.natAbs_of_nonneg hmpos.le] using Int.gcd_dvd_left (2 * m) h :
-      (g : ℤ) ∣ (2 * m.natAbs : ℤ)))
+  have hg_2 : g ∣ 2 := (hcop.coprime_dvd_right hg_h).symm.dvd_of_dvd_mul_right <| by
+    exact_mod_cast (by simpa [g, Int.natAbs_of_nonneg hmpos.le] using Int.gcd_dvd_left (2 * m) h :
+      (g : ℤ) ∣ 2 * (m.natAbs : ℤ))
   have hg_lt_m : (g : ℤ) < m := by
     have := Nat.le_of_dvd (by norm_num) hg_2
     have : m = 2 → g ≠ 2 := fun hm2 hg2 ↦ Nat.not_coprime_of_dvd_of_dvd one_lt_two (dvd_refl 2)
@@ -191,17 +189,17 @@ theorem eq_pi_div_of_cos_two_mul_eq_one {h : ℕ} (hh : 0 < h) {θ : ℝ} (hθpo
     omega
   set a := Int.gcdA (2 * m) (h : ℤ); set n : ℕ := (a % (h : ℤ)).toNat
   set q : ℤ := Int.gcdB (2 * m) (h : ℤ) + 2 * m * (a / (h : ℤ))
-  have hcr : 2 * (m : ℝ) * n + h * q = g := by
-    exact_mod_cast (by linear_combination -Int.gcd_eq_gcd_ab (2 * m) (h : ℤ) +
-      2 * m * Int.mul_ediv_add_emod a h +
+  have hcr : 2 * (m : ℝ) * n + h * q = g := by exact_mod_cast (by
+    linear_combination -Int.gcd_eq_gcd_ab (2 * m) (h : ℤ) + 2 * m * Int.mul_ediv_add_emod a h +
       2 * m * Int.toNat_of_nonneg (Int.emod_nonneg a (by omega : (h : ℤ) ≠ 0)) :
         2 * m * (n : ℤ) + (h : ℤ) * q = (g : ℤ))
-  have hcomb_real : (h : ℝ) * (2 * (n : ℝ) * θ + (q : ℝ) * Real.pi) = (g : ℝ) * Real.pi := by
+  have hcomb : (h : ℝ) * (2 * (n : ℝ) * θ + (q : ℝ) * Real.pi) = (g : ℝ) * Real.pi := by
     linear_combination 2 * (n : ℝ) * hmθ + Real.pi * hcr
-  refine hwall n q ⟨pos_of_mul_pos_right ?_ hhpos.le, lt_of_mul_lt_mul_left ?_ hhpos.le⟩
-  · rw [hcomb_real]
-    exact mul_pos (by exact_mod_cast Int.gcd_pos_of_ne_zero_right (2 * m) (by omega)) Real.pi_pos
-  · rw [hcomb_real, hmθ]; exact mul_lt_mul_of_pos_right (by exact_mod_cast hg_lt_m) Real.pi_pos
+  exact hwall n q ⟨pos_of_mul_pos_right (hcomb ▸ mul_pos (by
+      exact_mod_cast Int.gcd_pos_of_ne_zero_right (2 * m) (by omega)) Real.pi_pos) hhpos.le,
+    lt_of_mul_lt_mul_left (by
+      rw [hcomb, hmθ]
+      exact mul_lt_mul_of_pos_right (by exact_mod_cast hg_lt_m) Real.pi_pos) hhpos.le⟩
 
 /-- If `0 ≤ δ`, `0 < cos α`, and `cos (α + δ) ≤ 0`, then the `[-π, π)` representative
 `toIcoMod Real.two_pi_pos (-π) α` lies in `[π / 2 - δ, π / 2)`. -/
@@ -212,15 +210,13 @@ theorem toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
   have hmem := toIcoMod_mem_Ico Real.two_pi_pos (-Real.pi) α
   have hshift : β = α - m * (2 * Real.pi) := (self_sub_toIcoDiv_mul ..).symm
   have hcosβ : 0 < Real.cos β := by rwa [hshift, Real.cos_sub_int_mul_two_pi]
-  have hβ_gt : -(Real.pi / 2) < β := by
-    by_contra! hle
-    linarith [Real.cos_neg β ▸ Real.cos_nonpos_of_pi_div_two_le_of_le (x := -β)
-      (by linarith) (by linarith [hmem.1])]
+  have hβ_gt : -(Real.pi / 2) < β := by by_contra! hle; linarith [Real.cos_neg β ▸
+    Real.cos_nonpos_of_pi_div_two_le_of_le (x := -β) (by linarith) (by linarith [hmem.1])]
   have hβ_lt : β < Real.pi / 2 := by
     by_contra! hge; linarith [Real.cos_nonpos_of_pi_div_two_le_of_le hge (by linarith [hmem.2])]
   refine ⟨?_, hβ_lt⟩; by_contra! hlt
-  have hadd : β + δ = α + δ - m * (2 * Real.pi) := by rw [hshift]; ring
-  have hca : Real.cos (β + δ) = Real.cos (α + δ) := by rw [hadd, Real.cos_sub_int_mul_two_pi]
+  have hca : Real.cos (β + δ) = Real.cos (α + δ) := by
+    rw [show β + δ = α + δ - m * (2 * Real.pi) by rw [hshift]; ring, Real.cos_sub_int_mul_two_pi]
   linarith [Real.cos_pos_of_mem_Ioo (x := β + δ) ⟨by linarith, by linarith⟩]
 
 /-- A sampled sinusoid `cos (α₀ + 2π k / h)` passes from strictly positive at `k` to nonpositive at
@@ -231,15 +227,12 @@ theorem eq_of_cos_pos_of_cos_add_one_nonpos {h : ℕ} {α₀ : ℝ} {k₁ k₂ :
     (hpos₂ : 0 < Real.cos (α₀ + 2 * Real.pi * (k₂ : ℝ) / h))
     (hneg₂ : Real.cos (α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h) ≤ 0) : k₁ = k₂ := by
   have hh_pos : (0 : ℝ) < h := Nat.cast_pos.mpr k₁.pos
-  set δ : ℝ := 2 * Real.pi / h; have hδ0 : 0 < δ := div_pos Real.two_pi_pos hh_pos
-  let α : Fin h → ℝ := fun k ↦ α₀ + 2 * Real.pi * (k : ℝ) / h
-  have hmem (k : Fin h) (hpos : 0 < Real.cos (α k))
-      (hneg : Real.cos (α₀ + 2 * Real.pi * ((k : ℝ) + 1) / h) ≤ 0) :
-      toIcoMod Real.two_pi_pos (-Real.pi) (α k) ∈ Set.Ico (Real.pi / 2 - δ) (Real.pi / 2) := by
-    have hstep : α k + δ = α₀ + 2 * Real.pi * ((k : ℝ) + 1) / h := by simp only [α, δ]; ring
-    exact toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos hδ0.le hpos (hstep ▸ hneg)
-  obtain ⟨hlo₁, hhi₁⟩ := hmem k₁ hpos₁ hneg₁
-  obtain ⟨hlo₂, hhi₂⟩ := hmem k₂ hpos₂ hneg₂
+  set δ : ℝ := 2 * Real.pi / h; let α : Fin h → ℝ := fun k ↦ α₀ + 2 * Real.pi * (k : ℝ) / h
+  have hmem (k : Fin h) (hp : 0 < Real.cos (α k))
+      (hn : Real.cos (α₀ + 2 * Real.pi * ((k : ℝ) + 1) / h) ≤ 0) :=
+    toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos (div_pos Real.two_pi_pos hh_pos).le hp
+      ((by simp only [α, δ]; ring : α k + δ = α₀ + 2 * Real.pi * ((k : ℝ) + 1) / h) ▸ hn)
+  obtain ⟨hlo₁, hhi₁⟩ := hmem k₁ hpos₁ hneg₁; obtain ⟨hlo₂, hhi₂⟩ := hmem k₂ hpos₂ hneg₂
   set m₁ := toIcoDiv Real.two_pi_pos (-Real.pi) (α k₁)
   set m₂ := toIcoDiv Real.two_pi_pos (-Real.pi) (α k₂)
   rw [← self_sub_toIcoDiv_mul Real.two_pi_pos (-Real.pi)] at hlo₁ hhi₁ hlo₂ hhi₂
@@ -248,10 +241,9 @@ theorem eq_of_cos_pos_of_cos_add_one_nonpos {h : ℕ} {α₀ : ℝ} {k₁ k₂ :
     simp only [n, α, δ]; push_cast; field_simp; ring
   have h0 : (-1 : ℤ) < n ∧ n < 1 := by
     simp only [← Int.cast_lt (R := ℝ)]; push_cast; exact ⟨by nlinarith, by nlinarith⟩
-  have := Nat.eq_zero_of_dvd_of_lt (by
-    simpa using Int.natAbs_dvd_natAbs.mpr
-      (⟨m₂ - m₁, by rw [mul_comm]; omega⟩ : (h : ℤ) ∣ (k₂ : ℤ) - k₁)) (by omega)
-  exact Fin.ext (by omega)
+  have hdvd : h ∣ ((k₂ : ℤ) - k₁).natAbs := by
+    simpa using Int.natAbs_dvd_natAbs.mpr (⟨m₂ - m₁, by rw [mul_comm]; omega⟩ : (h : ℤ) ∣ k₂ - k₁)
+  have := Nat.eq_zero_of_dvd_of_lt hdvd (by omega); exact Fin.ext (by omega)
 
 /-- If the oriented angles `θ` and `α` add up to `β ∈ (0, π)`, where `|θ| = α`,
 then `β = 2α`: the other possibility `θ = -α` would force `β = 0`. -/

@@ -16,16 +16,12 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 Given a two-colouring `col` of the Coxeter graph of a base `b`, we construct the integer matrices
 `b.colorClassMatrix col s` and `b.bipartiteCoxeterMatrix col` and prove their `ActsBy` relations.
 
-## Main definitions
+## Main definitions and results
 * `RootPairing.Base.colorClassMatrix`, `RootPairing.Base.bipartiteCoxeterMatrix`: integer matrices
-  for the colour-class involutions and bipartite Coxeter element.
-
-## Main results
-* `RootPairing.Base.colorClassMatrix_apply`, `RootPairing.Base.colorClassMatrix_mul_self`:
-  explicit entries and involutivity of `b.colorClassMatrix col s`.
-* `RootPairing.Base.actsBy_colorClassProd`, `RootPairing.Base.actsBy_bipartiteCoxeterElement`,
-  `RootPairing.Base.actsBy_bipartiteCoxeterElement_inv`: `ActsBy` relations for colour-class
-  involutions and the bipartite Coxeter element and its inverse.
+  for the colour-class involutions and bipartite Coxeter element, with entries
+  (`colorClassMatrix_apply`), involutivity (`colorClassMatrix_mul_self`), colour-part actions
+  (`corootEval_ite_color`, `colorClassMatrix_mulVec_ite_color`), and `ActsBy` relations
+  (`actsBy_colorClassProd`, `actsBy_bipartiteCoxeterElement`, `actsBy_bipartiteCoxeterElement_inv`).
 
 ## References
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, no. 2;
@@ -52,12 +48,9 @@ noncomputable def colorClassMatrix (s : Bool) : Matrix b.support b.support ℤ :
 theorem colorClassMatrix_apply (s : Bool) (k j : b.support) :
     b.colorClassMatrix col s k j =
       (if k = j then 1 else 0) - (if col k = s then b.cartanMatrix j k else 0) := by
-  let fs := Finset.univ.filter fun i : b.support ↦ col i = s
-  simpa [colorClassMatrix, fs] using
-    prod_map_reflMatrix_apply_of_orthogonal b.cartanMatrix (Finset.nodup_toList fs)
-      (fun p hp q hq hpq ↦ b.cartanMatrix_eq_zero_of_color_eq col hpq
-        ((Finset.mem_filter.mp (Finset.mem_toList.mp hp)).2.trans
-          (Finset.mem_filter.mp (Finset.mem_toList.mp hq)).2.symm)) k j
+  rw [colorClassMatrix, prod_map_reflMatrix_apply_of_orthogonal b.cartanMatrix
+    (Finset.nodup_toList _) (fun p hp q hq hpq ↦
+      b.cartanMatrix_eq_zero_of_color_eq col hpq (by simp_all)) k j]; simp
 
 /-- `b.colorClassMatrix col s` is an involution (`M * M = 1`). -/
 @[simp]
@@ -83,6 +76,52 @@ omit [CharZero R] [IsDomain R] [Finite ι] in
 theorem bipartiteCoxeterMatrix_def :
     b.bipartiteCoxeterMatrix col = b.colorClassMatrix col true * b.colorClassMatrix col false :=
   (rfl)
+
+omit [DecidableEq ι] in
+/-- On a left `κ`-eigenvector `y` of `b.cartanMatrix`, a simple coroot `k` evaluates on the
+colour-`z` part of `y` to `2 * y k` when `col k = z` and `(κ - 2) * y k` otherwise. -/
+theorem corootEval_ite_color {S : Type*} [CommRing S] {y : b.support → S} {κ : S}
+    (hy : y ᵥ* b.cartanMatrix.map (Int.castRingHom S) = κ • y) (z : Bool) (k : b.support) :
+    b.corootEval S (k : ι) (fun i ↦ if col i = z then y i else 0) =
+      (if col k = z then 2 else κ - 2) * y k := by
+  classical
+  have hsame (t : Bool) (ht : col k = t) :
+      b.corootEval S (k : ι) (fun i ↦ if col i = t then y i else 0) = 2 * y k := by
+    rw [corootEval_coe_support, Finset.sum_eq_single k (fun i _ hik ↦ by
+      split_ifs with hi
+      · simp [b.cartanMatrix_eq_zero_of_color_eq col hik (hi.trans ht.symm)]
+      · simp) (by simp)]
+    simp [ht]
+  split_ifs with hkz
+  · exact hsame z hkz
+  · have htot : b.corootEval S (k : ι) (fun i ↦ if col i = z then y i else 0) +
+        b.corootEval S (k : ι) (fun i ↦ if col i = !z then y i else 0) = κ * y k := by
+      rw [← map_add, show ((fun i ↦ if col i = z then y i else 0) +
+          fun i ↦ if col i = !z then y i else 0) = y from funext fun i ↦ by
+          by_cases hci : col i = z <;> simp [hci], corootEval_coe_support]
+      simpa [vecMul, dotProduct, mul_comm] using congrFun hy k
+    rw [hsame (!z) (by cases hck : col k <;> cases z <;> simp_all)] at htot
+    exact (eq_sub_of_add_eq htot).trans (by ring)
+
+/-- On a left `κ`-eigenvector `y` of `b.cartanMatrix`, the colour-`s` matrix
+`b.colorClassMatrix col s` sends the colour-`z` part of `y` to itself minus
+`(if z = s then 2 else κ - 2)` times the colour-`s` part of `y`. -/
+theorem colorClassMatrix_mulVec_ite_color {S : Type*} [CommRing S] {y : b.support → S} {κ : S}
+    (hy : y ᵥ* b.cartanMatrix.map (Int.castRingHom S) = κ • y) (s z : Bool) :
+    (b.colorClassMatrix col s).map (Int.castRingHom S) *ᵥ
+        (fun i ↦ if col i = z then y i else 0) =
+      (fun i ↦ if col i = z then y i else 0) -
+        (if z = s then 2 else κ - 2) • (fun i ↦ if col i = s then y i else 0) := by
+  ext k
+  simp only [mulVec, dotProduct, map_apply, Int.coe_castRingHom, colorClassMatrix_apply,
+    Int.cast_sub, Int.cast_ite, Int.cast_one, Int.cast_zero, sub_mul, Finset.sum_sub_distrib,
+    ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+  by_cases hck : col k = s
+  · rw [show (∑ x, if col k = s then (b.cartanMatrix x k : S) * if col x = z then y x else 0
+        else 0) = (if col k = z then 2 else κ - 2) * y k by
+      rw [← b.corootEval_ite_color col hy z k, b.corootEval_coe_support]; simp [hck]]
+    rcases eq_or_ne z s with rfl | hzs <;> [simp [hck]; simp [hck, hzs, hzs.symm]]
+  · rcases eq_or_ne z s with rfl | hzs <;> simp [*]
 
 variable [P.IsReduced]
 

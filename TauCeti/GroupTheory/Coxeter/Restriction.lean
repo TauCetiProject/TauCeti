@@ -100,14 +100,13 @@ theorem isReduced_of_nodup (cs : CoxeterSystem M W) {l : List B} (hl : l.Nodup) 
   obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hi
   obtain ⟨-, hl₂', hdisj⟩ := List.nodup_append.mp hl; rw [List.nodup_cons] at hl₂'
   let J : Set B := {j | j ≠ i}
-  have hl₁J := cs.wordProd_mem_parabolic (J := J) fun j hj hji ↦ hdisj j hj i List.mem_cons_self hji
-  have hl₂J := cs.wordProd_mem_parabolic (J := J) fun j hj hji ↦ hl₂'.1 (hji ▸ hj)
-  have hσJ : cs.wordProd (l₁ ++ i :: l₂) ∈ cs.parabolic J :=
-    hprod ▸ cs.wordProd_mem_parabolic fun j hj hji ↦ hiσ (hji ▸ hj)
-  have hsi : cs.simple i = (cs.wordProd l₁)⁻¹ * cs.wordProd (l₁ ++ i :: l₂) * (cs.wordProd l₂)⁻¹ :=
-    by simp [wordProd_append, wordProd_cons, mul_assoc]
-  exact (cs.simple_mem_parabolic_iff (J := J)).mp
-    (hsi ▸ mul_mem (mul_mem (inv_mem hl₁J) hσJ) (inv_mem hl₂J)) rfl
+  exact (cs.simple_mem_parabolic_iff (J := J)).mp (by
+    rw [show cs.simple i = (cs.wordProd l₁)⁻¹ * cs.wordProd (l₁ ++ i :: l₂) *
+        (cs.wordProd l₂)⁻¹ by simp [wordProd_append, wordProd_cons, mul_assoc]]
+    exact mul_mem (mul_mem (inv_mem <| cs.wordProd_mem_parabolic (J := J) fun j hj hji ↦
+      hdisj j hj i List.mem_cons_self hji) (hprod ▸ cs.wordProd_mem_parabolic
+        fun j hj hji ↦ hiσ (hji ▸ hj))) (inv_mem <| cs.wordProd_mem_parabolic (J := J)
+          fun j hj hji ↦ hl₂'.1 (hji ▸ hj))) rfl
 
 /-- The Coxeter length of the product of a duplicate-free word is the length of the word. -/
 theorem length_wordProd_of_nodup (cs : CoxeterSystem M W) {l : List B} (hl : l.Nodup) :

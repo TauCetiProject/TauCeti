@@ -97,13 +97,11 @@ theorem isIrreducible_of_preconnected {m R : Type*} [Ring R] [LinearOrder R] [No
     induction w with
     | nil => simp at hw
     | @cons a c b hadj w ih =>
-      rcases Nat.eq_zero_or_pos w.length with h0 | h0
-      · obtain rfl := w.eq_of_length_eq_zero h0
-        exact .single (hG hadj)
-      · exact .head (hG hadj) (ih h0)
+      by_cases h0 : w.length = 0
+      · obtain rfl := w.eq_of_length_eq_zero h0; exact .single (hG hadj)
+      · exact .head (hG hadj) (ih (Nat.pos_of_ne_zero h0))
   rcases eq_or_ne i j with rfl | hij
-  · obtain ⟨k, hki⟩ := exists_ne i
-    obtain ⟨w⟩ := hconn i k
+  · obtain ⟨k, hki⟩ := exists_ne i; obtain ⟨w⟩ := hconn i k
     have hw : 0 < w.length := Nat.pos_of_ne_zero fun h0 ↦ hki.symm (w.eq_of_length_eq_zero h0)
     exact (hwalk w hw).trans (hwalk w.reverse (by simpa using hw))
   · obtain ⟨w⟩ := hconn i j

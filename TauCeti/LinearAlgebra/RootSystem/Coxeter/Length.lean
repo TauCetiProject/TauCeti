@@ -168,8 +168,7 @@ theorem ncard_inversions_wordProd_of_nodup {l : List b.support} (hl : l.Nodup) :
 
 /-- **Every Coxeter element has `b.support.card` inversions.** -/
 theorem ncard_inversions_wordProd_eq_card_support {l : List b.support} (hl : l.Nodup)
-    (hall : ∀ i, i ∈ l) :
-    (inversions P b (wordProd P b l)).ncard = b.support.card := by
+    (hall : ∀ i, i ∈ l) : (inversions P b (wordProd P b l)).ncard = b.support.card := by
   rw [← length_weylCoxeterSystem_eq, ← weylCoxeterSystem_wordProd,
     (weylCoxeterSystem P b).length_wordProd_eq_card hl hall, Fintype.card_coe]
 

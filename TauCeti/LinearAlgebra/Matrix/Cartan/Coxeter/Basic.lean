@@ -67,10 +67,9 @@ theorem prod_map_reflMatrix_apply_of_orthogonal {κ : Type*} [Fintype κ] [Decid
     rcases eq_or_ne k p with rfl | hkp
     · simp only [↓reduceIte, hl.1, sub_zero, List.mem_cons, true_or, mul_sub, mul_ite, mul_one,
         mul_zero, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ]
-      rw [Finset.sum_eq_zero fun m _ ↦ ?_, sub_zero]
-      split_ifs with hm
-      · rw [horth m (.tail k hm) k List.mem_cons_self (ne_of_mem_of_not_mem hm hl.1), zero_mul]
-      · rfl
+      rw [Finset.sum_eq_zero fun m _ ↦ by
+        split_ifs with hm <;> [rw [horth m (.tail k hm) k List.mem_cons_self
+          (ne_of_mem_of_not_mem hm hl.1), zero_mul]; rfl], sub_zero]
     · simp [hkp, List.mem_cons]
 
 /-- The Coxeter element `s₁ s₂ ⋯ sₙ` of a Cartan matrix, in the simple-root basis. -/

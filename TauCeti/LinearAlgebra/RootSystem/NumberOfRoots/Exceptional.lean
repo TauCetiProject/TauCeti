@@ -36,16 +36,11 @@ pairing matching `TauCeti.HasCartanType`.
 
 ## Main results
 
-* `RootPairing.natCard_eq_of_hasCartanType_E6`, `RootPairing.ncard_posRoots_of_hasCartanType_E6`:
-  type `E₆` has `72` roots and `36` positive roots.
-* `RootPairing.natCard_eq_of_hasCartanType_E7`, `RootPairing.ncard_posRoots_of_hasCartanType_E7`:
-  type `E₇` has `126` roots and `63` positive roots.
-* `RootPairing.natCard_eq_of_hasCartanType_E8`, `RootPairing.ncard_posRoots_of_hasCartanType_E8`:
-  type `E₈` has `240` roots and `120` positive roots.
-* `RootPairing.natCard_eq_of_hasCartanType_F4`, `RootPairing.ncard_posRoots_of_hasCartanType_F4`:
-  type `F₄` has `48` roots and `24` positive roots.
-* `RootPairing.natCard_eq_of_hasCartanType_G2`, `RootPairing.ncard_posRoots_of_hasCartanType_G2`:
-  type `G₂` has `12` roots and `6` positive roots.
+* `RootPairing.natCard_eq_of_hasCartanType_E6` / `ncard_posRoots_of_hasCartanType_E6`: 72, 36
+* `RootPairing.natCard_eq_of_hasCartanType_E7` / `ncard_posRoots_of_hasCartanType_E7`: 126, 63
+* `RootPairing.natCard_eq_of_hasCartanType_E8` / `ncard_posRoots_of_hasCartanType_E8`: 240, 120
+* `RootPairing.natCard_eq_of_hasCartanType_F4` / `ncard_posRoots_of_hasCartanType_F4`: 48, 24
+* `RootPairing.natCard_eq_of_hasCartanType_G2` / `ncard_posRoots_of_hasCartanType_G2`: 12, 6
 
 ## References
 
@@ -73,12 +68,11 @@ private theorem natCard_eq_of_hasCartanType_aux {t : DynkinType} {h₀ n : ℕ}
     (hn : t.rank * h₀ = n) : Nat.card ι = n := by
   classical
   obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
-  have hnd := Finset.nodup_toList (Finset.univ : Finset b.support)
-  have hall : ∀ i, i ∈ (Finset.univ : Finset b.support).toList := fun _ ↦ by simp
   rw [b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType
       ((Matrix.ext he) ▸ hft.submatrix e.injective)
-      (h.connected_diagramGraph_cartanMatrix ht).preconnected hnd hall,
-    h.card_support, hord hnd hall, hn]
+      (h.connected_diagramGraph_cartanMatrix ht).preconnected
+      (Finset.nodup_toList Finset.univ) (fun _ ↦ by simp),
+    h.card_support, hord (Finset.nodup_toList Finset.univ) (fun _ ↦ by simp), hn]
 
 /-- **A root pairing with a base of Cartan type `E₆` has `72` roots.** -/
 theorem natCard_eq_of_hasCartanType_E6 (h : HasCartanType P b .E6) : Nat.card ι = 72 :=

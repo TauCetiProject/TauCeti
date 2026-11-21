@@ -95,8 +95,8 @@ theorem length_wordProd_eq_card [Fintype B] {l : List B} (hl : l.Nodup) (hl' : �
 /-- The Coxeter length of a bipartite Coxeter element is the rank `Fintype.card B`. -/
 @[simp] theorem length_bipartiteCoxeterElement [Fintype B] (c : M.graph.Coloring Bool) :
     cs.length (cs.bipartiteCoxeterElement c) = Fintype.card B := by
-  obtain ⟨_, _, -, -, hnd, hmem, heq⟩ := cs.exists_wordProd_eq_bipartiteCoxeterElement c
-  rw [← heq, cs.length_wordProd_eq_card hnd hmem]
+  obtain ⟨_, _, -, -, hnd, hmem, heq⟩ := cs.exists_wordProd_eq_bipartiteCoxeterElement c; rw [← heq]
+  exact cs.length_wordProd_eq_card hnd hmem
 
 /-- On a nonempty index type, a bipartite Coxeter element is nontrivial. -/
 @[simp]

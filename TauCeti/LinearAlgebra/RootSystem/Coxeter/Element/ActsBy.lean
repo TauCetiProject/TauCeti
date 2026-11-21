@@ -93,9 +93,20 @@ theorem ActsBy.baseChange_weylGroupRootRep_sum_tmul_root {S : Type*} [Ring S] [A
   rw [map_sum]
   simp only [LinearMap.baseChange_tmul, RootPairing.weylGroupRootRep_apply,
     actsBy_iff.mp hW, tmul_sum, mulVec, dotProduct, map_apply, Int.coe_castRingHom, sum_tmul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [Finset.sum_comm]; refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Int.cast_smul_eq_zsmul R (W i j), tmul_smul, smul_tmul', Algebra.smul_def, map_intCast]
+
+omit [DecidableEq ι] in
+/-- If `w` acts on the simple roots by `W` and `f : S →+* R` is a ring homomorphism, then `w` acts
+on simple-root combinations `∑ i, f (y i) • P.root i` in `M` by `W.map (Int.castRingHom S)`. -/
+theorem ActsBy.smul_sum_map_smul_root {S : Type*} [Ring S] (f : S →+* R) {b : P.Base}
+    {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (hW : b.ActsBy w W) (y : b.support → S) :
+    w • ∑ i : b.support, f (y i) • P.root i =
+      ∑ i : b.support, f (((W.map (Int.castRingHom S)) *ᵥ y) i) • P.root i := by
+  simp only [Finset.smul_sum, smul_comm w, actsBy_iff.mp hW, mulVec, dotProduct, Matrix.map_apply,
+    Int.coe_castRingHom, map_sum, Finset.sum_smul]
+  rw [Finset.sum_comm]; exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by
+    rw [← Int.cast_smul_eq_zsmul R (W i j), smul_smul, mul_comm, map_mul, map_intCast]
 
 /-- The simple reflection `sᵢ` acts by `reflMatrix b.cartanMatrix i`. -/
 theorem actsBy_ofIdx [P.IsCrystallographic] (b : P.Base) (i : b.support) :

@@ -370,26 +370,23 @@ theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self {O : Finse
   have hnot_all_pos {S : Finset ι} (hSne : S.Nonempty)
       (hS : w₀ • ∑ y ∈ S, P.root y = ∑ y ∈ S, P.root y) : ∃ y ∈ S, ¬ b.IsPos y := by
     by_contra! hall_pos
-    have hneg_sum : -(∑ y ∈ S, P.root y) =
-        ∑ y ∈ S, P.root (P.reflectionPerm (P.weylGroupToPerm w₀ y) (P.weylGroupToPerm w₀ y)) := by
-      rw [← hS]
-      simp only [Finset.smul_sum, P.weylGroup_apply_root, ← Finset.sum_neg_distrib,
-        P.root_reflectionPerm, P.reflection_apply_self]
-    have hns_cone : -(∑ y ∈ S, P.root y) ∈ posRootCone P b :=
-      hneg_sum ▸ AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
-        ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b _).mpr
-          (mapsTo_posRoots_negRoots_longestElement P b ((mem_posRoots P b y).mpr (hall_pos y hy))))
     exact sum_root_ne_zero_of_mem_posRoots P b hSne (f := id)
       (fun y hy ↦ (mem_posRoots P b y).mpr (hall_pos y hy))
-      ((isPointed_posRootCone P b).eq_zero_of_mem_of_neg_mem
-        (AddSubmonoid.sum_mem _ fun y hy ↦
-          root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b y).mpr (hall_pos y hy)))
-        hns_cone)
+      ((isPointed_posRootCone P b).eq_zero_of_mem_of_neg_mem (AddSubmonoid.sum_mem _ fun y hy ↦
+        root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b y).mpr (hall_pos y hy))) <| by
+        dsimp only [id_eq]; rw [← hS, Finset.smul_sum, ← Finset.sum_neg_distrib]
+        exact AddSubmonoid.sum_mem _ fun y hy ↦ by
+          rw [P.weylGroup_apply_root, ← P.reflection_apply_self (P.weylGroupToPerm w₀ y),
+            ← P.root_reflectionPerm]
+          exact root_mem_posRootCone_of_mem_posRoots P b
+            ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b _).mpr
+              (mapsTo_posRoots_negRoots_longestElement P b
+                ((mem_posRoots P b y).mpr (hall_pos y hy)))))
   refine ⟨?_, hnot_all_pos hOne hw₀⟩
-  have himg_sum : ∑ z ∈ O.map (P.weylGroupToPerm w₀).toEmbedding, P.root z = ∑ y ∈ O, P.root y := by
-    simpa only [Finset.sum_map, Equiv.coe_toEmbedding, Finset.smul_sum, P.weylGroup_apply_root]
-      using hw₀
-  obtain ⟨_, hz, hnot_pos⟩ := hnot_all_pos hOne.map (by rwa [himg_sum])
+  obtain ⟨_, hz, hnot_pos⟩ := hnot_all_pos (hOne.map (f := (P.weylGroupToPerm w₀).toEmbedding)) (by
+    rw [show ∑ z ∈ O.map (P.weylGroupToPerm w₀).toEmbedding, P.root z = ∑ y ∈ O, P.root y by
+      simpa only [Finset.sum_map, Equiv.coe_toEmbedding, Finset.smul_sum, P.weylGroup_apply_root]
+        using hw₀]; exact hw₀)
   obtain ⟨y, hyO, rfl⟩ := Finset.mem_map.mp hz
   exact ⟨y, hyO, by_contra fun hy_neg ↦ hnot_pos ((mem_posRoots P b _).mp
     (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b y).mpr hy_neg)))⟩

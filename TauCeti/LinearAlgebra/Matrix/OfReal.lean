@@ -31,6 +31,8 @@ congruence.
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
+* `Matrix.map_ofReal_mulVec`: multiplying `A.map (↑)` by a coerced real vector gives the coerced
+  product `(A *ᵥ u)`.
 * `Matrix.map_ofReal_mulVec_of_rotation`: for a real rotation pair `(e₁, e₂)`,
   `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (an `exp (α I)`-eigenvector when
   `(e₁, e₂) ≠ 0`).
@@ -74,6 +76,13 @@ theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
 
+/-- Multiplying the complex image `A.map (↑)` of a real matrix `A` by a real vector coerced
+entrywise to `ℂ` yields the entrywise coercion of `A *ᵥ u`. -/
+theorem map_ofReal_mulVec [Fintype n] (A : Matrix m n ℝ) (u : n → ℝ) :
+    (A.map ((↑) : ℝ → ℂ)) *ᵥ (fun i ↦ (u i : ℂ)) = fun i ↦ ((A *ᵥ u) i : ℂ) := funext fun i ↦ by
+  simpa [funext Complex.ofRealHom_eq_coe, Function.comp_def] using
+    (Complex.ofRealHom.map_mulVec A u i).symm
+
 /-- If a real matrix `A` rotates `(e₁, e₂)` by `-α` (`A *ᵥ e₁ = cos α • e₁ - sin α • e₂` and
 `A *ᵥ e₂ = sin α • e₁ + cos α • e₂`), then `e₁ + I • e₂` satisfies the eigenspace identity
 `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (and is an `exp (α I)`-eigenvector
@@ -83,16 +92,12 @@ theorem map_ofReal_mulVec_of_rotation [Fintype n] {A : Matrix n n ℝ} {e₁ e�
     (he₂ : A *ᵥ e₂ = Real.sin α • e₁ + Real.cos α • e₂) :
     (A.map ((↑) : ℝ → ℂ)) *ᵥ (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
       Complex.exp ((α : ℂ) * Complex.I) • (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) := by
-  change (A.map Complex.ofRealHom) *ᵥ
-      (Complex.ofRealHom ∘ e₁ + Complex.I • (Complex.ofRealHom ∘ e₂)) = _
-  have hcast (u : n → ℝ) :
-      (A.map Complex.ofRealHom) *ᵥ (Complex.ofRealHom ∘ u) = Complex.ofRealHom ∘ (A *ᵥ u) :=
-    funext fun i ↦ (Complex.ofRealHom.map_mulVec A u i).symm
-  rw [mulVec_add, mulVec_smul, hcast e₁, hcast e₂, he₁, he₂, Complex.exp_mul_I]
+  rw [show (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
+      (fun i ↦ (e₁ i : ℂ)) + Complex.I • (fun i ↦ (e₂ i : ℂ)) from rfl,
+    mulVec_add, mulVec_smul, map_ofReal_mulVec, map_ofReal_mulVec, he₁, he₂, Complex.exp_mul_I]
   ext i
-  simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, Function.comp_apply,
-    Complex.ofRealHom_eq_coe, smul_eq_mul, Complex.ofReal_sub, Complex.ofReal_add,
-    Complex.ofReal_mul, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
+  simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Complex.ofReal_sub,
+    Complex.ofReal_add, Complex.ofReal_mul, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   linear_combination -↑(Real.sin α) * (e₂ i : ℂ) * Complex.I_sq
 
 /-- The determinant of the complex image of a real matrix is the image of its determinant. -/
