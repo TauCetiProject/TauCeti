@@ -61,6 +61,9 @@ For constant coefficients the corresponding statements are in
 * `TauCeti.thomPairOverTwistedMayerVietorisToBiprod`,
   `TauCeti.thomPairOverTwistedMayerVietorisFromBiprod`,
   `TauCeti.thomPairOverTwistedMayerVietorisδ`: the maps of the Mayer–Vietoris sequence.
+* `TauCeti.thomPairOverTwistedHomologyInterIso`, `TauCeti.thomPairOverTwistedHomologyUnionIso`:
+  the homology over `U ∩ V` and over `U ∪ V` is that of the intersection and of the union of the
+  pairs over `U` and over `V`.
 
 ## Main results
 
@@ -98,7 +101,7 @@ namespace TauCeti
 
 section MayerVietoris
 
-variable {R : Type u} [Ring R] {B : Type w} {F : Type w} {E : B → Type w}
+variable {R : Type u} [Ring R] {B : Type w} {F : Type*} {E : B → Type w}
   [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
   (L : LocalCoefficientSystem.{u, w, max w w'} R (TopCat.of (TotalSpace F E)))
 
@@ -157,8 +160,10 @@ theorem isZero_thomPairOverTwistedHomology_empty (n : ℕ) :
 
 variable (U V : Set B)
 
-/-- The pair over `U ∩ V` is the intersection of the pairs over `U` and over `V`. -/
-private def interIso (n : ℕ) :
+/-- The pair over `U ∩ V` is the intersection of the pairs over `U` and over `V`: the twisted
+homology of the Thom pair over `U ∩ V` is that of the intersection of the pairs `(E|_U, E₀|_U)` and
+`(E|_V, E₀|_V)` of subspaces of `E`. -/
+def thomPairOverTwistedHomologyInterIso (n : ℕ) :
     thomPairOverTwistedHomology L (U ∩ V) n ≅
       (TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
         (inter_subset_inter (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
@@ -169,8 +174,10 @@ private def interIso (n : ℕ) :
     (inter_subset_inter inter_subset_left inter_subset_left) preimage_inter
     (by rw [preimage_inter, inter_inter_distrib_right])) n
 
-/-- The pair over `U ∪ V` is the union of the pairs over `U` and over `V`. -/
-private def unionIso (n : ℕ) :
+/-- The pair over `U ∪ V` is the union of the pairs over `U` and over `V`: the twisted homology of
+the Thom pair over `U ∪ V` is that of the union of the pairs `(E|_U, E₀|_U)` and `(E|_V, E₀|_V)` of
+subspaces of `E`. -/
+def thomPairOverTwistedHomologyUnionIso (n : ℕ) :
     thomPairOverTwistedHomology L (U ∪ V) n ≅
       (TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
         (union_subset_union (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
@@ -232,36 +239,39 @@ theorem thomPairOverTwistedMayerVietorisToBiprod_fromBiprod (n : ℕ) :
 
 /-- The first map of the Mayer–Vietoris sequence of the Thom pairs is that of the pairs over `U`
 and over `V`, read on the pair over `U ∩ V`. -/
-private theorem interIso_hom_pairTwistedMayerVietorisToBiprod (n : ℕ) :
-    (interIso L U V n).hom ≫ pairTwistedMayerVietorisToBiprod L inter_subset_left
-      inter_subset_left n = thomPairOverTwistedMayerVietorisToBiprod L U V n := by
+@[reassoc]
+theorem thomPairOverTwistedHomologyInterIso_hom_pairTwistedMayerVietorisToBiprod (n : ℕ) :
+    (thomPairOverTwistedHomologyInterIso L U V n).hom ≫ pairTwistedMayerVietorisToBiprod L
+      inter_subset_left inter_subset_left n = thomPairOverTwistedMayerVietorisToBiprod L U V n := by
   refine biprod.hom_ext _ _ ?_ ?_
-  · rw [interIso, Category.assoc, pairTwistedMayerVietorisToBiprod_fst,
+  · rw [thomPairOverTwistedHomologyInterIso, Category.assoc, pairTwistedMayerVietorisToBiprod_fst,
       thomPairOverTwistedMayerVietorisToBiprod_fst, HomologicalComplex.homologyMapIso_hom,
-      ← HomologicalComplex.homologyMap_comp, subsetPairTwistedChainComplexIsoOfEq_hom,
-      subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
-    rfl
-  · rw [interIso, Category.assoc, pairTwistedMayerVietorisToBiprod_snd,
-      thomPairOverTwistedMayerVietorisToBiprod_snd, Preadditive.comp_neg,
-      HomologicalComplex.homologyMapIso_hom, ← HomologicalComplex.homologyMap_comp,
+      thomPairOverTwistedHomologyMap_def, ← HomologicalComplex.homologyMap_comp,
       subsetPairTwistedChainComplexIsoOfEq_hom,
       subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
-    rfl
+  · rw [thomPairOverTwistedHomologyInterIso, Category.assoc, pairTwistedMayerVietorisToBiprod_snd,
+      thomPairOverTwistedMayerVietorisToBiprod_snd, Preadditive.comp_neg,
+      HomologicalComplex.homologyMapIso_hom, thomPairOverTwistedHomologyMap_def,
+      ← HomologicalComplex.homologyMap_comp, subsetPairTwistedChainComplexIsoOfEq_hom,
+      subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
 
-/-- The second map of the Mayer–Vietoris sequence of the pairs over `U` and over `V` is that of the
-Thom pairs, read on the pair over `U ∪ V`. -/
-private theorem pairTwistedMayerVietorisFromBiprod_eq (n : ℕ) :
-    pairTwistedMayerVietorisFromBiprod L inter_subset_left inter_subset_left n =
-      thomPairOverTwistedMayerVietorisFromBiprod L U V n ≫ (unionIso L U V n).hom := by
-  refine biprod.hom_ext' _ _ ?_ ?_
+/-- The second map of the Mayer–Vietoris sequence of the Thom pairs is that of the pairs over `U`
+and over `V`, read on the pair over `U ∪ V`. -/
+@[reassoc]
+theorem thomPairOverTwistedMayerVietorisFromBiprod_thomPairOverTwistedHomologyUnionIso_hom
+    (n : ℕ) :
+    thomPairOverTwistedMayerVietorisFromBiprod L U V n ≫
+        (thomPairOverTwistedHomologyUnionIso L U V n).hom =
+      pairTwistedMayerVietorisFromBiprod L inter_subset_left inter_subset_left n := by
+  refine (biprod.hom_ext' _ _ ?_ ?_).symm
   · rw [inl_pairTwistedMayerVietorisFromBiprod,
-      inl_thomPairOverTwistedMayerVietorisFromBiprod_assoc, unionIso,
+      inl_thomPairOverTwistedMayerVietorisFromBiprod_assoc, thomPairOverTwistedHomologyUnionIso,
       HomologicalComplex.homologyMapIso_hom,
       thomPairOverTwistedHomologyMap, ← HomologicalComplex.homologyMap_comp,
       subsetPairTwistedChainComplexIsoOfEq_hom,
       subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap]
   · rw [inr_pairTwistedMayerVietorisFromBiprod,
-      inr_thomPairOverTwistedMayerVietorisFromBiprod_assoc, unionIso,
+      inr_thomPairOverTwistedMayerVietorisFromBiprod_assoc, thomPairOverTwistedHomologyUnionIso,
       HomologicalComplex.homologyMapIso_hom,
       thomPairOverTwistedHomologyMap, ← HomologicalComplex.homologyMap_comp,
       subsetPairTwistedChainComplexIsoOfEq_hom,
@@ -278,12 +288,25 @@ read on the pairs over `U ∪ V` and over `U ∩ V`. -/
 def thomPairOverTwistedMayerVietorisδ (hU : IsOpen U) (hV : IsOpen V) (n m : ℕ)
     (h : m + 1 = n := by lia) :
     thomPairOverTwistedHomology L (U ∪ V) n ⟶ thomPairOverTwistedHomology L (U ∩ V) m :=
-  (unionIso L U V n).hom ≫
+  (thomPairOverTwistedHomologyUnionIso L U V n).hom ≫
     pairTwistedMayerVietorisδ L inter_subset_left inter_subset_left
       (isOpen_thomPairOver_mayerVietoris hU hV).1 (isOpen_thomPairOver_mayerVietoris hU hV).2.1
       (isOpen_thomPairOver_mayerVietoris hU hV).2.2.1
       (isOpen_thomPairOver_mayerVietoris hU hV).2.2.2 n m h ≫
-    (interIso L U V m).inv
+    (thomPairOverTwistedHomologyInterIso L U V m).inv
+
+/-- The connecting morphism of the Mayer–Vietoris sequence of the Thom pairs is that of the pairs
+`(E|_U, E₀|_U)` and `(E|_V, E₀|_V)`, read on the pairs over `U ∪ V` and over `U ∩ V`. -/
+theorem thomPairOverTwistedMayerVietorisδ_def (hU : IsOpen U) (hV : IsOpen V) (n m : ℕ)
+    (h : m + 1 = n) :
+    thomPairOverTwistedMayerVietorisδ L hU hV n m h =
+      (thomPairOverTwistedHomologyUnionIso L U V n).hom ≫
+        pairTwistedMayerVietorisδ L inter_subset_left inter_subset_left
+          (isOpen_thomPairOver_mayerVietoris hU hV).1 (isOpen_thomPairOver_mayerVietoris hU hV).2.1
+          (isOpen_thomPairOver_mayerVietoris hU hV).2.2.1
+          (isOpen_thomPairOver_mayerVietoris hU hV).2.2.2 n m h ≫
+        (thomPairOverTwistedHomologyInterIso L U V m).inv :=
+  (rfl)
 
 /-- The connecting morphism followed by the first map vanishes. -/
 @[reassoc (attr := simp)]
@@ -291,7 +314,8 @@ theorem thomPairOverTwistedMayerVietorisδ_toBiprod (hU : IsOpen U) (hV : IsOpen
     (h : m + 1 = n := by lia) :
     thomPairOverTwistedMayerVietorisδ L hU hV n m h ≫
       thomPairOverTwistedMayerVietorisToBiprod L U V m = 0 := by
-  rw [thomPairOverTwistedMayerVietorisδ, ← interIso_hom_pairTwistedMayerVietorisToBiprod,
+  rw [thomPairOverTwistedMayerVietorisδ_def,
+    ← thomPairOverTwistedHomologyInterIso_hom_pairTwistedMayerVietorisToBiprod,
     Category.assoc, Category.assoc, Iso.inv_hom_id_assoc,
     pairTwistedMayerVietorisδ_toBiprod L _ _ _ _ _ _ n m h, comp_zero]
 
@@ -301,8 +325,8 @@ theorem thomPairOverTwistedMayerVietorisFromBiprod_δ (hU : IsOpen U) (hV : IsOp
     (h : m + 1 = n := by lia) :
     thomPairOverTwistedMayerVietorisFromBiprod L U V n ≫
       thomPairOverTwistedMayerVietorisδ L hU hV n m h = 0 := by
-  rw [thomPairOverTwistedMayerVietorisδ, ← Category.assoc,
-    ← pairTwistedMayerVietorisFromBiprod_eq,
+  rw [thomPairOverTwistedMayerVietorisδ_def,
+    thomPairOverTwistedMayerVietorisFromBiprod_thomPairOverTwistedHomologyUnionIso_hom_assoc,
     pairTwistedMayerVietorisFromBiprod_δ_assoc L _ _ _ _ _ _ n m h, zero_comp]
 
 /-- **Exactness of the Mayer–Vietoris sequence of Thom pairs with local coefficients at
@@ -316,14 +340,16 @@ theorem thomPairOverTwistedMayerVietoris_exact₁ (hU : IsOpen U) (hV : IsOpen V
     (isOpen_thomPairOver_mayerVietoris hU hV).2.2.2 n m h)
   -- The commutativity goals are stated on the projections of `ShortComplex.mk`, which
   -- `dsimp only` reduces so that the defining equations can be rewritten.
-  exact ShortComplex.isoMk (unionIso L U V n) (interIso L U V m) (Iso.refl _)
+  exact ShortComplex.isoMk (thomPairOverTwistedHomologyUnionIso L U V n)
+    (thomPairOverTwistedHomologyInterIso L U V m) (Iso.refl _)
     (by
       dsimp only
-      rw [thomPairOverTwistedMayerVietorisδ, Category.assoc, Category.assoc, Iso.inv_hom_id,
+      rw [thomPairOverTwistedMayerVietorisδ_def, Category.assoc, Category.assoc, Iso.inv_hom_id,
         Category.comp_id])
     (by
       dsimp only
-      rw [Iso.refl_hom, Category.comp_id, interIso_hom_pairTwistedMayerVietorisToBiprod])
+      rw [Iso.refl_hom, Category.comp_id,
+        thomPairOverTwistedHomologyInterIso_hom_pairTwistedMayerVietorisToBiprod])
 
 /-- **Exactness of the Mayer–Vietoris sequence of Thom pairs with local coefficients at
 `Hₙ(E|_U, E₀|_U; L) ⊞ Hₙ(E|_V, E₀|_V; L)`**, for open sets `U` and `V` of the base. -/
@@ -332,13 +358,16 @@ theorem thomPairOverTwistedMayerVietoris_exact₂ (hU : IsOpen U) (hV : IsOpen V
   obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
   refine (ShortComplex.exact_iff_of_iso ?_).2 (pairTwistedMayerVietoris_exact₂ L
     inter_subset_left inter_subset_left hA hB hC hD n)
-  exact ShortComplex.isoMk (interIso L U V n) (Iso.refl _) (unionIso L U V n)
+  exact ShortComplex.isoMk (thomPairOverTwistedHomologyInterIso L U V n) (Iso.refl _)
+    (thomPairOverTwistedHomologyUnionIso L U V n)
     (by
       dsimp only
-      rw [Iso.refl_hom, Category.comp_id, interIso_hom_pairTwistedMayerVietorisToBiprod])
+      rw [Iso.refl_hom, Category.comp_id,
+        thomPairOverTwistedHomologyInterIso_hom_pairTwistedMayerVietorisToBiprod])
     (by
       dsimp only
-      rw [Iso.refl_hom, Category.id_comp, pairTwistedMayerVietorisFromBiprod_eq])
+      rw [Iso.refl_hom, Category.id_comp,
+        thomPairOverTwistedMayerVietorisFromBiprod_thomPairOverTwistedHomologyUnionIso_hom])
 
 /-- **Exactness of the Mayer–Vietoris sequence of Thom pairs with local coefficients at
 `Hₙ(E|_{U ∪ V}, E₀|_{U ∪ V}; L)`**, for open sets `U` and `V` of the base. -/
@@ -349,13 +378,15 @@ theorem thomPairOverTwistedMayerVietoris_exact₃ (hU : IsOpen U) (hV : IsOpen V
     inter_subset_left inter_subset_left (isOpen_thomPairOver_mayerVietoris hU hV).1
     (isOpen_thomPairOver_mayerVietoris hU hV).2.1 (isOpen_thomPairOver_mayerVietoris hU hV).2.2.1
     (isOpen_thomPairOver_mayerVietoris hU hV).2.2.2 n m h)
-  exact ShortComplex.isoMk (Iso.refl _) (unionIso L U V n) (interIso L U V m)
+  exact ShortComplex.isoMk (Iso.refl _) (thomPairOverTwistedHomologyUnionIso L U V n)
+    (thomPairOverTwistedHomologyInterIso L U V m)
     (by
       dsimp only
-      rw [Iso.refl_hom, Category.id_comp, pairTwistedMayerVietorisFromBiprod_eq])
+      rw [Iso.refl_hom, Category.id_comp,
+        thomPairOverTwistedMayerVietorisFromBiprod_thomPairOverTwistedHomologyUnionIso_hom])
     (by
       dsimp only
-      rw [thomPairOverTwistedMayerVietorisδ, Category.assoc, Category.assoc, Iso.inv_hom_id,
+      rw [thomPairOverTwistedMayerVietorisδ_def, Category.assoc, Category.assoc, Iso.inv_hom_id,
         Category.comp_id])
 
 /-- **The end of the Mayer–Vietoris sequence of Thom pairs with local coefficients**: for open sets
@@ -369,7 +400,8 @@ theorem epi_thomPairOverTwistedMayerVietorisFromBiprod_of_isZero (hU : IsOpen U)
     obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
     have := epi_pairTwistedMayerVietorisFromBiprod_zero L inter_subset_left inter_subset_left
       hA hB hC hD
-    rw [← (Iso.comp_inv_eq _).2 (pairTwistedMayerVietorisFromBiprod_eq L U V 0)]
+    rw [(Iso.eq_comp_inv _).2
+      (thomPairOverTwistedMayerVietorisFromBiprod_thomPairOverTwistedHomologyUnionIso_hom L U V 0)]
     infer_instance
   | succ m =>
     exact (thomPairOverTwistedMayerVietoris_exact₃ L hU hV (m + 1) m).epi_f
