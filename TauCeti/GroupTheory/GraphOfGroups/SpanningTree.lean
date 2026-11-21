@@ -175,7 +175,7 @@ theorem π₁Equiv_apply (g : π₁ 𝔸 v₀) : π₁Equiv 𝔸 v₀ T g = π�
 /-- For a set of darts `S` equal to the darts of `T`, the isomorphism `π₁Equiv`, read in
 `π₁(𝔸, S)` through the cast along `T.darts = S`, reads the letters of a closed path into
 `π₁(𝔸, S)`. -/
-theorem cast_π₁Equiv_apply {S : Set Γ.E} (h : T.darts = S) (g : π₁ 𝔸 v₀) :
+@[simp↓] theorem cast_π₁Equiv_apply {S : Set Γ.E} (h : T.darts = S) (g : π₁ 𝔸 v₀) :
     MulEquiv.cast (M := π₁Tree 𝔸) h (π₁Equiv 𝔸 v₀ T g) = π₁.toπ₁Tree 𝔸 v₀ S g := by
   subst h
   rfl
