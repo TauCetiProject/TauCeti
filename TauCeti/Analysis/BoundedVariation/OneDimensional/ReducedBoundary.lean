@@ -77,7 +77,7 @@ private theorem exists_ball_subset_and_perimeter_sdiff_singleton_lt_one
     (ball_subset_ball (div_le_div_of_nonneg_left hδ.le (by positivity) (by gcongr))))
   have hAmeas (n : ℕ) : NullMeasurableSet (A n) lam :=
     ((isOpen_ball.sdiff isClosed_singleton).measurableSet.preimage
-      continuous_subtype_val.measurable).nullMeasurableSet
+      continuous_subtypeVal.measurable).nullMeasurableSet
   have hK : IsCompact (((↑) : Ω → E) ⁻¹' closedBall x δ) :=
     Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x δ)
       (by rwa [Subtype.range_coe])
@@ -105,7 +105,7 @@ private theorem exists_ball_subset_and_perimeter_sdiff_singleton_lt_one
       (U := ⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩)
       (sdiff_subset.trans hrΩ)).trans <| by
       rw [← perimeter_def, Measure.isAddLeftInvariant_eq_smul μ volume,
-        perimeter_smul_nnreal_measure]
+        perimeter_smul_measure]
   refine ⟨r, hr, hrΩ, ?_⟩
   rw [← ENNReal.mul_lt_mul_iff_left ha0 ENNReal.coe_ne_top, one_mul, mul_comm, ← hP]
   exact hn
@@ -268,7 +268,7 @@ private theorem mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one
           perimeter volume ⟨ball x r, isOpen_ball⟩ {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
       rw [perimeter_congr_ae (Ω := ⟨ball x r, isOpen_ball⟩) hsH]
       conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
-      exact perimeter_smul_nnreal_measure _
+      exact perimeter_smul_measure _
     rw [hval, hper, perimeter_ball_setOf_inner_lt hν x hr, hn]
     exact mul_ne_zero (ENNReal.coe_ne_zero.2
         (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne')

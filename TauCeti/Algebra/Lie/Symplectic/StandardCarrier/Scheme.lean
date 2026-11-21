@@ -39,6 +39,8 @@ it is the separately constructed symplectic group scheme.
 * `TauCeti.SpStd.groupScheme_hom_ext`: a morphism from the carrier to the affine group scheme of
   a commutative Hopf algebra is determined by its restrictions to the numbered root subgroups and
   the weight torus.
+* `TauCeti.SpStd.rootSubgroupPoints_injective`: every numbered root subgroup is injective on points
+  over any commutative ring.
 * `TauCeti.SpStd.weightTorus_conj_rootSubgroup`: the pinning equation, conjugation by the weight
   torus rescales each numbered root subgroup by its root character.
 -/
@@ -262,7 +264,9 @@ noncomputable def rootSubgroupPoints (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type
     (latticeBasis n) (basisWeight n) k A
 
 /-- A numbered root-subgroup point is the corresponding divided-power exponential matrix. -/
-@[simp] theorem coe_rootSubgroupPoints (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type v) [CommRing A]
+-- Not `@[simp]`: its right-hand side is raw generic Kostant data that simp cannot reduce further,
+-- and would pre-empt the explicit matrix forms stated for `rootSubgroupPoints`.
+theorem coe_rootSubgroupPoints (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type v) [CommRing A]
     (u : Multiplicative A) :
     (rootSubgroupPoints n k A u :
         _root_.Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
@@ -274,6 +278,24 @@ noncomputable def rootSubgroupPoints (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) := by
   exact TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints
     _ _ _ _ _ _ _ _ k A u
+
+/-- **Every numbered root subgroup of the type-`C_(n+1)` carrier is injective**, over every
+commutative ring `A`. -/
+theorem rootSubgroupPoints_injective (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type v) [CommRing A] :
+    Function.Injective (rootSubgroupPoints n k A) := by
+  intro u v huv
+  have hmat := congrArg Subtype.val huv
+  simp only [coe_rootSubgroupPoints,
+    TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_def,
+    MonoidHom.comp_apply] at hmat
+  exact (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm.injective
+    (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_injective
+      (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
+      (rep_kostantForm_mem_lattice n) k (isNilpotent_rep_rootGenerator n k) (latticeBasis n)
+      isUnit_one (rep_rootGenerator_latticeBasis n k)
+      (rep_rootGenerator_rep_rootGenerator_eq_zero n k _)
+      (Units.map_injective
+        (LinearMap.toMatrixAlgEquiv ((latticeBasis n).baseChange A)).injective hmat))
 
 /-- **The split weight torus inside the type-`C_(n+1)` carrier points.** -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] :

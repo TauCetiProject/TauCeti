@@ -171,9 +171,9 @@ private theorem hausdorffMeasure_inter_essentialBoundary_sdiff_reducedBoundary_o
   have himg : ((↑) : Ω → E) '' A =
       ((Ω : Set E) ∩ essentialBoundary μ s) \ reducedBoundary μ Ω s := by
     ext x
-    exact ⟨fun ⟨y, hy, hyx⟩ => hyx ▸ ⟨⟨y.2, hy.1⟩, hy.2⟩,
+    exact ⟨fun ⟨y, hy, hyx⟩ => hyx ▸ ⟨⟨y.property, hy.1⟩, hy.2⟩,
       fun ⟨⟨hxΩ, hxeb⟩, hxrb⟩ => ⟨⟨x, hxΩ⟩, ⟨hxeb, hxrb⟩, rfl⟩⟩
-  rw [← himg, isometry_subtype_coe.hausdorffMeasure_image (Or.inl (Nat.cast_nonneg d)),
+  rw [← himg, isometry_subtypeVal.hausdorffMeasure_image (Or.inl (Nat.cast_nonneg d)),
     measure_eq_zero_iff_ae_notMem]
   have hlamA : lam A = 0 :=
     measure_mono_null (fun _ hy => hy.2) (ae_iff.1 ae_mem_reducedBoundary)
@@ -181,8 +181,7 @@ private theorem hausdorffMeasure_inter_essentialBoundary_sdiff_reducedBoundary_o
     (aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable
   have h20 : (2 : ℝ≥0∞) ^ d ≠ 0 := by simp
   have h2t : (2 : ℝ≥0∞) ^ d ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
-  filter_upwards [lam.ae_tendsto_measure_closedBall_div_of_measure_eq_zero
-    (Nat.cast_nonneg d) hlamA] with y hy hyA
+  filter_upwards [lam.ae_tendsto_measure_closedBall_div_of_measure_eq_zero hlamA] with y hy hyA
   have hlam0 : Tendsto (fun r => lam (closedBall y r) / ENNReal.ofReal r ^ d) (𝓝[>] 0) (𝓝 0) := by
     have hmul : Tendsto (fun r => (lam (closedBall y r) / ENNReal.ofReal (2 * r) ^ (d : ℝ)) *
         (2 : ℝ≥0∞) ^ d) (𝓝[>] 0) (𝓝 0) := by
@@ -196,10 +195,11 @@ private theorem hausdorffMeasure_inter_essentialBoundary_sdiff_reducedBoundary_o
       ENNReal.ofReal r ^ d) (𝓝[>] 0) (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlam0
       (.of_forall fun _ => zero_le)
-      ((eventually_perimeter_ball_le_variationMeasure_closedBall hu hfin y.2).mono fun r hr => by
+      ((eventually_perimeter_ball_le_variationMeasure_closedBall hu hfin y.property).mono
+        fun r hr => by
         rw [Subtype.preimage_closedBall] at hr
         exact ENNReal.div_le_div_right hr _)
-  exact notMem_essentialBoundary_of_tendsto_perimeter_ball_div hn hs y.2 hP0 hyA.1
+  exact notMem_essentialBoundary_of_tendsto_perimeter_ball_div hn hs y.property hP0 hyA.1
 
 /-- **The perimeter measure is concentrated on the essential boundary.** Against an additive Haar
 measure on a finite-dimensional real inner product space, `|Dχ_s|`-almost every point of `Ω` lies in

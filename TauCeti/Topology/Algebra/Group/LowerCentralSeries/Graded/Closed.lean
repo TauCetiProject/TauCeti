@@ -55,7 +55,7 @@ abbrev lcsGradedPiece (G : Type u) [Group G] [TopologicalSpace G] [IsTopological
 /-- The class in `γ_n(G) / γ_{n+1}(G)` of an element of `γ_n(G)`. -/
 abbrev lcsGradedMk (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     (n : ℕ) (x : closedLowerCentralSeries G n) : lcsGradedPiece G n :=
-  gradedMk 0 G n ⟨x, by rw [← closedLowerCentralSeries_def]; exact x.2⟩
+  gradedMk 0 G n ⟨x, by rw [← closedLowerCentralSeries_def]; exact x.property⟩
 
 /-- Every class in a closed lower-central-series graded piece has a representative in that
 term of the closed lower central series. -/
@@ -63,18 +63,18 @@ theorem lcsGradedMk_surjective (n : ℕ) : Function.Surjective (lcsGradedMk G n)
   obtain ⟨y, rfl⟩ := gradedMk_surjective n x
   have hy : (y : G) ∈ closedLowerCentralSeries G n := by
     rw [closedLowerCentralSeries_def]
-    exact y.2
+    exact y.property
   exact ⟨⟨y, hy⟩, rfl⟩
 
 /-- Conjugation acts trivially on every graded piece of the closed lower central series. -/
 @[simp]
 theorem lcsGradedMk_conj (n : ℕ) (g : G) (x : closedLowerCentralSeries G n) :
     lcsGradedMk G n
-        ⟨g * x * g⁻¹, (closedLowerCentralSeries_normal (G := G) n).conj_mem x x.2 g⟩ =
+        ⟨g * x * g⁻¹, (closedLowerCentralSeries_normal (G := G) n).conj_mem x x.property g⟩ =
       lcsGradedMk G n x := by
   rw [gradedMk_eq_gradedMk_iff]
   exact mk_conj_of_mem_pLowerCentralSeries
-    (closedLowerCentralSeries_def G n ▸ x.2) g
+    (closedLowerCentralSeries_def G n ▸ x.property) g
 
 /-- The bracket on the graded pieces of the closed lower central series. Its degree is
 `j + k + 1` because the series is indexed from zero. -/
@@ -90,7 +90,7 @@ theorem lcsBracket_lcsGradedMk {j k : ℕ} (x : closedLowerCentralSeries G j)
       lcsGradedMk G (j + k + 1)
         ⟨⁅(x : G), (y : G)⁆,
           (commutator_closedLowerCentralSeries_le j k)
-            (Subgroup.commutator_mem_commutator x.2 y.2)⟩ := by
+            (Subgroup.commutator_mem_commutator x.property y.property)⟩ := by
   rw [lcsBracket, lcsGradedMk, lcsGradedMk, gradedBracket_gradedMk]
 
 end TauCeti

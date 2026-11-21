@@ -30,9 +30,9 @@ variable [∀ i, Zero (β i)]
 /-- The extension by zero of a dependent finitely supported function on `Subtype p`. -/
 def extendDomain (f : Π₀ i : Subtype p, β i) : Π₀ i, β i where
   toFun i := if h : p i then f ⟨i, h⟩ else 0
-  support' := f.support'.map fun s ↦ ⟨s.1.map Subtype.val, fun i ↦ by
+  support' := f.support'.map fun s ↦ ⟨s.val.map Subtype.val, fun i ↦ by
     by_cases h : p i
-    · exact (s.2 ⟨i, h⟩).imp (Multiset.mem_map_of_mem _) (by simp [h])
+    · exact (s.property ⟨i, h⟩).imp (Multiset.mem_map_of_mem _) (by simp [h])
     · exact Or.inr (by simp [h])⟩
 
 /-- The extension by zero is `f` on indices satisfying `p` and zero elsewhere. -/
@@ -43,7 +43,7 @@ theorem extendDomain_apply (f : Π₀ i : Subtype p, β i) (i : ι) :
 @[simp]
 theorem extendDomain_apply_subtype (f : Π₀ i : Subtype p, β i) (i : Subtype p) :
     f.extendDomain i = f i := by
-  simp [extendDomain_apply, i.2]
+  simp [extendDomain_apply, i.property]
 
 /-- Off `p`, the extension by zero vanishes. -/
 @[simp]
@@ -75,14 +75,14 @@ theorem extendDomain_zero : (0 : Π₀ i : Subtype p, β i).extendDomain = 0 := 
 /-- The extension by zero of a single function is a single function. -/
 @[simp]
 theorem extendDomain_single [DecidableEq ι] (i : Subtype p) (x : β i) :
-    (single i x).extendDomain = single i.1 x := by
+    (single i x).extendDomain = single i.val x := by
   ext j
   by_cases h : p j
-  · rcases eq_or_ne j i.1 with rfl | hj
+  · rcases eq_or_ne j i.val with rfl | hj
     · simp [extendDomain_apply, h]
     · simp only [extendDomain_apply, h, ↓reduceDIte]
       rw [single_eq_of_ne hj, single_eq_of_ne fun h' ↦ hj (congrArg Subtype.val h')]
-  · rw [extendDomain_apply_of_not _ h, single_eq_of_ne fun h' ↦ h (by rw [h']; exact i.2)]
+  · rw [extendDomain_apply_of_not _ h, single_eq_of_ne fun h' ↦ h (by rw [h']; exact i.property)]
 
 end Zero
 
