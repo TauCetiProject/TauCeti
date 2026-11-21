@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 public import TauCeti.Topology.MappingSpace.Action
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.TensorMk
 import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 
@@ -31,8 +32,9 @@ This is the argument of Propositions 6.29 and 6.33 of Barraud–Damian–Humili�
 classes of diffeomorphisms coming from a group action. There the group is the identity component
 of `Diff(M)`, and the source uses that its stabilizer acts trivially on the homology of `Ω²M`; the
 hypothesis here asks this only of the class `α`. It holds when the stabilizer is path connected
-(`IsPathConnected.homologyMap_stabilizer_smul_apply`). It can fail for the identity component of
-`Diff(M)` when `π₁(M)` acts nontrivially on `π₂(M)`: an isotopy from the identity to a
+(`IsPathConnected.homologyMap_stabilizer_smul_apply`, in
+`TauCeti.AlgebraicTopology.Singular.Homotopy.BasedMapStabilizer`). It can fail for the identity
+component of `Diff(M)` when `π₁(M)` acts nontrivially on `π₂(M)`: an isotopy from the identity to a
 diffeomorphism fixing `x₀` moves `x₀` around a loop, and the diffeomorphism acts on
 `π₀(Ω²M) = π₂(M)` through that loop.
 
@@ -68,8 +70,6 @@ localization of `A` with `α` (`TauCeti.fiberLocalization_singularHomologyCross_
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero`: a manifold with such
   an action, a class `A` with `π_* A = ℓ • [M]` and a class `α` of positive degree of
   `Map_*(S², M)` with `ℓ • α ≠ 0`, fixed by the stabilizer, is abundant with 2-spheres.
-* `IsPathConnected.homologyMap_stabilizer_smul_apply`: a path-connected stabilizer fixes every
-  class of the based mapping space.
 
 ## References
 
@@ -92,13 +92,6 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   (o : HomologicalOrientation M V d) (hd : finrank ℝ V = d)
   {G : Type} [TopologicalSpace G] [Group G] [IsTopologicalGroup G] [MulAction G M]
   [ContinuousSMul G M]
-
-omit [T2Space M] [CompactSpace M] [ChartedSpace V M] [ContinuousSMul G M] in
-/-- Right translation by an element of the stabilizer of `x₀` does not change the orbit map
-`g ↦ g • x₀`. -/
-private theorem comp_mulRight_eq_of_mem_stabilizer {x₀ : M} (π : C(G, M)) (hπ : ∀ g, π g = g • x₀)
-    {h : G} (hh : h ∈ MulAction.stabilizer G x₀) : π.comp (ContinuousMap.mulRight h) = π :=
-  ContinuousMap.ext fun g ↦ by simp [hπ, mul_smul, MulAction.mem_stabilizer_iff.1 hh]
 
 omit [CompactSpace M] [ContinuousSMul G M] in
 /-- **Right translation along the stabilizer, on the fibre.** The orbit map `π`, `g ↦ g • x₀`, is
@@ -127,7 +120,7 @@ private theorem singularHomology₀Section_comp_singularHomologyComplFiberIso_in
     hp 0 d h0
   let one : p ⁻¹' {x₀} := ⟨1, by simp [p, hπ]⟩
   let f : TopCat.of G ⟶ TopCat.of G := TopCat.ofHom (ContinuousMap.mulRight (y : G))
-  have hf : f ≫ p = p := TopCat.hom_ext (comp_mulRight_eq_of_mem_stabilizer π hπ hy)
+  have hf : f ≫ p = p := TopCat.hom_ext (π.comp_mulRight_eq_of_mem_stabilizer hπ hy)
   -- Right translation by `y` on the fibre carries the point `1` to `y`.
   have hsec : singularHomology₀Section R y = singularHomology₀Section R one ≫
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 0).obj R).map
@@ -199,7 +192,7 @@ private theorem exists_forall_apply_eq_zsmul {x₀ : M} (π : C(G, M)) (hπ : �
       rw [Set.mem_preimage, Set.mem_singleton_iff] at h
       exact MulAction.mem_stabilizer_iff.2 ((hπ _).symm.trans h)
     have hyS : ContinuousMap.mulRight (y : G) ⁻¹' (π ⁻¹' {x₀}) ⊆ π ⁻¹' {x₀} := by
-      rw [← preimage_comp, ← ContinuousMap.coe_comp, comp_mulRight_eq_of_mem_stabilizer π hπ hy]
+      rw [← preimage_comp, ← ContinuousMap.coe_comp, π.comp_mulRight_eq_of_mem_stabilizer hπ hy]
     have hsec : singularHomology₀Section R y ≫ fib.inv = singularHomology₀Section R one ≫
         fib.inv ≫ localHomologyMap R (ContinuousMap.mulRight (y : G)) hyS d :=
       singularHomology₀Section_comp_singularHomologyComplFiberIso_inv π hπ hp hε hε₀
@@ -352,15 +345,6 @@ private theorem localHomologyMap_actionMap_singularHomologyCrossRel_mulRight {B 
       ((congrArg Φloc.hom (singularHomologyCrossRel_tmul_homologyMap R R act rfl c α)).symm.trans
         (congrArg (fun a ↦ Φloc.hom (cross.hom (c ⊗ₜ a))) hfix)))
 
-/-- Tensoring on the right with a fixed element `α`, `c ↦ c ⊗ₜ α`, is the inverse right unitor
-followed by whiskering with the map `ℤ → Y`, `n ↦ n • α`. -/
-private theorem rightUnitor_inv_whiskerLeft_toSpanSingleton_apply {X Y : ModuleCat.{0} ℤ} (α : Y)
-    (c : X) :
-    ((ρ_ X).inv ≫ (X ◁ ModuleCat.ofHom (LinearMap.toSpanSingleton ℤ Y α))) c = c ⊗ₜ α := by
-  rw [ConcreteCategory.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
-    ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.ofHom_apply,
-    LinearMap.toSpanSingleton_apply_one]
-
 omit [CompactSpace M] in
 include o hd in
 /-- **The image of `c × α` for a class `c` of the stabilizer covering `ℓ • [M]`.** Let `s : U → G`
@@ -412,12 +396,13 @@ private theorem localHomologyMap_actionMap_singularHomologyCrossRel_eq_zsmul {B 
     ((ρ_ _).inv ≫ (_ ◁ αmap)) ≫ cross ≫ Φloc
   have hPapply : ∀ c, P c = Φloc.hom (cross.hom (c ⊗ₜ α)) := fun c ↦
     (ConcreteCategory.comp_apply _ (cross ≫ Φloc) c).trans
-      ((congrArg (cross ≫ Φloc) (rightUnitor_inv_whiskerLeft_toSpanSingleton_apply α c)).trans
-        (ConcreteCategory.comp_apply cross Φloc _))
+      ((congrArg (cross ≫ Φloc)
+        (ModuleCat.rightUnitor_inv_whiskerLeft_toSpanSingleton_apply α c)).trans
+          (ConcreteCategory.comp_apply cross Φloc _))
   have hLπ : ∀ (h : MulAction.stabilizer G (x₀ : M)) hh,
       localHomologyMap R (ContinuousMap.mulRight (h : G)) hh d ≫ Lπ = Lπ :=
     fun h hh ↦ (localHomologyMap_comp R _ π hh _ d).trans
-      (localHomologyMap_congr R (comp_mulRight_eq_of_mem_stabilizer π hπ h.property) _ d)
+      (localHomologyMap_congr R (π.comp_mulRight_eq_of_mem_stabilizer hπ h.property) _ d)
   have hP : ∀ (h : MulAction.stabilizer G (x₀ : M)) hh,
       localHomologyMap R (ContinuousMap.mulRight (h : G)) hh d ≫ P = P := by
     intro h hh
@@ -582,34 +567,3 @@ theorem isAbundantWithTwoSpheres_of_smul_ne_zero {x₀ : M} (π : C(G, M))
 end HomologicalOrientation
 
 end TauCeti
-
-/-- **A path-connected stabilizer fixes the homology of based maps.** If the stabilizer of `x` is
-path connected, each of its elements `h` acts on the based mapping space `Map_*(B, X)` by a map
-homotopic to the identity, through a path from `1` to `h` in the stabilizer, and therefore fixes
-every class of its singular homology. This supplies the hypothesis of
-`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero` for a group action with
-path-connected stabilizer. -/
-theorem IsPathConnected.homologyMap_stabilizer_smul_apply {G X B : Type} [Group G]
-    [TopologicalSpace G] [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X]
-    [TopologicalSpace B] {b₀ : B} {x : X}
-    (hstab : IsPathConnected (MulAction.stabilizer G x : Set G))
-    (h : MulAction.stabilizer G x) {Λ : Type} [Ring Λ] (R : ModuleCat.{0} Λ) (k : ℕ)
-    (α : ((TopCat.toSSet.obj (TopCat.of (TauCeti.BasedMap B X b₀ x))).homology R k :
-      ModuleCat.{0} Λ)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ⟨(h • · : TauCeti.BasedMap B X b₀ x →
-      TauCeti.BasedMap B X b₀ x), continuous_const_smul h⟩)) R k).hom α = α := by
-  let γ := (hstab.joinedIn 1 (one_mem _) h h.property).joined_subtype.somePath
-  let H : ContinuousMap.Homotopy (ContinuousMap.id (TauCeti.BasedMap B X b₀ x))
-      ⟨(h • · : TauCeti.BasedMap B X b₀ x → TauCeti.BasedMap B X b₀ x), continuous_const_smul h⟩ :=
-    { toFun := fun p ↦ (⟨(γ p.1 : G), (γ p.1).property⟩ : MulAction.stabilizer G x) • p.2
-      continuous_toFun := continuous_smul.comp
-        (((continuous_subtypeVal.comp (γ.continuous.comp continuous_fst)).subtype_mk _).prodMk
-          continuous_snd)
-      map_zero_left := fun u ↦ by
-        simp only [Path.source, ContinuousMap.id_apply]
-        exact one_smul _ u
-      map_one_left := fun u ↦ by simp }
-  have hH := TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-    (f := TopCat.ofHom (ContinuousMap.id _)) (g := TopCat.ofHom _) H R k
-  rw [TopCat.ofHom_id, CategoryTheory.Functor.map_id, HomologicalComplex.homologyMap_id] at hH
-  exact (ConcreteCategory.congr_hom hH.symm α).trans (ConcreteCategory.id_apply α)
