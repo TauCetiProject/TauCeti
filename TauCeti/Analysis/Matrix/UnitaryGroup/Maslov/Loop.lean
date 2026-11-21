@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Lagrangian
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.RealImage
+public import TauCeti.Topology.Algebra.Star.Unitary
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Orthogonal.Unitary
 
 /-!
@@ -53,7 +55,10 @@ read off the same loop `t ↦ det (γ t γ tᵀ)` of the circle:
 
 In particular the Robbin–Salamon index of a closed path of Lagrangians, as given by Souriau's
 formula, has the sign and normalization of the native loop invariant, which counts half-turns of
-the determinant of a frame.
+the determinant of a frame. Through the loop comparison, Souriau's index of paths whose Lagrangians
+close up inherits the invariance of the native index under free homotopies, along which the
+endpoints move (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`); for a general
+path it is only invariant under homotopies fixing the endpoints.
 
 ## Main declarations
 
@@ -65,6 +70,8 @@ the determinant of a frame.
   the loop `t ↦ γ t ℝⁿ` of Lagrangians framed by a path `γ` of unitary frames.
 * `Matrix.UnitaryGroup.maslovIndex_realImageLoop`: the loop comparison.
 * `Matrix.UnitaryGroup.relativeMaslovIndex_realImagePath`: the path comparison.
+* `Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`: free homotopy invariance of
+  Souriau's index of paths whose Lagrangians close up.
 * `TauCeti.TotallyRealLoop.exists_maslovIndex_eq_unitaryGroup_maslovIndex`: the native Maslov
   index of every loop of maximal totally real subspaces of `ℂⁿ` equals Souriau's index of some
   path `γ : Path U V` of unitary frames with `U Uᵀ = V Vᵀ`.
@@ -99,7 +106,8 @@ theorem realImage_eq_realImage_iff_souriau_eq {U V : unitaryGroup n ℂ} :
     have hgram (W : unitaryGroup n ℂ) :
         (((Unitary.toUnits W : GL n ℂ) : Matrix n n ℂ)ᴴ * (Unitary.toUnits W : GL n ℂ)).map
           Complex.re = 1 := by
-      rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
+      rw [Unitary.val_toUnits_apply, ← star_eq_conjTranspose,
+          Unitary.star_mul_self_of_mem W.property,
         Matrix.map_one _ Complex.zero_re Complex.one_re]
     obtain ⟨N, hN, hVN⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
       (M := Unitary.toUnits U) (M' := Unitary.toUnits V)
@@ -153,7 +161,7 @@ noncomputable def realImagePath {U V : unitaryGroup n ℂ} (γ : Path U V) :
   exists_frame := ⟨TauCeti.realSubspace n, TauCeti.isMaximalTotallyReal_realSubspace,
     fun t ↦ (γ t : Matrix n n ℂ).toEuclideanCLE (det_isUnit (γ t)).ne_zero,
     by simpa only [coe_toEuclideanCLE, Function.comp_def] using
-      continuous_toEuclideanCLM.comp (continuous_subtype_val.comp γ.continuous),
+      continuous_toEuclideanCLM.comp (continuous_subtypeVal.comp γ.continuous),
     fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
 
 @[simp]
@@ -243,6 +251,28 @@ theorem relativeMaslovIndex_realImagePath {U V U' V' : unitaryGroup n ℂ} (γ :
   simp only [hs₀, hs₁]
   rw [(eq_div_iff (by positivity : (2 * Real.pi) ≠ 0)).2 hdeg.symm]
   ring
+
+/-- **Free homotopy invariance.** Let `F` be a continuous two-parameter family of unitary frames
+such that for every `s` the path of Lagrangians `t ↦ F (s, t) ℝⁿ` closes up, that is, the endpoint
+frames of `t ↦ F (s, t)` have the same Souriau map. If `t ↦ F (0, t)` and `t ↦ F (1, t)` frame the
+same paths of Lagrangians as `γ₀` and `γ₁`, that is, have the same Souriau maps, then `γ₀` and
+`γ₁` have the same Robbin–Salamon index, although the endpoints move along the homotopy. -/
+theorem maslovIndex_eq_of_homotopy_of_souriau_eq {U₀ V₀ U₁ V₁ : unitaryGroup n ℂ}
+    (γ₀ : Path U₀ V₀) (γ₁ : Path U₁ V₁) (F : I × I → unitaryGroup n ℂ) (hF : Continuous F)
+    (h₀ : ∀ t, souriau (F (0, t)) = souriau (γ₀ t)) (h₁ : ∀ t, souriau (F (1, t)) = souriau (γ₁ t))
+    (hF01 : ∀ s, souriau (F (s, 0)) = souriau (F (s, 1))) :
+    maslovIndex γ₀ = maslovIndex γ₁ := by
+  have hγ₀ : souriau U₀ = souriau V₀ := by
+    simpa using (h₀ 0).symm.trans ((hF01 0).trans (h₀ 1))
+  have hγ₁ : souriau U₁ = souriau V₁ := by
+    simpa using (h₁ 0).symm.trans ((hF01 1).trans (h₁ 1))
+  rw [← maslovIndex_realImageLoop γ₀ hγ₀,
+    ← maslovIndex_realImageLoop γ₁ hγ₁]
+  exact congrArg _ <| TauCeti.TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy _ _
+    (fun p ↦ Unitary.toUnits (F p)) (Unitary.continuous_toUnits.comp hF)
+    (fun t ↦ by simpa using (realImage_eq_realImage_iff_souriau_eq.2 (h₀ t)).symm)
+    (fun t ↦ by simpa using (realImage_eq_realImage_iff_souriau_eq.2 (h₁ t)).symm)
+    fun s ↦ realImage_eq_realImage_iff_souriau_eq.2 (hF01 s)
 
 end Matrix.UnitaryGroup
 

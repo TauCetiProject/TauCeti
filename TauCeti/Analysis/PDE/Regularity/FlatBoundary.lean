@@ -123,7 +123,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
   -- On `Ω ∩ W`, the restriction of `u` solves the equation with the principal coefficient `a'`,
   -- and the lower-order terms move to the right-hand side.
   set u₁ := W1p.restrictL hΩ₁ u
-  obtain ⟨g, hg⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
+  obtain ⟨g, hg, -⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
     (fun x hx => haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩)
     (memLp_energyIntegrand_of_continuous hM' hK'.continuous _) hb hc hu
   -- A cutoff equal to one near `closure V` and supported in `W`.
@@ -137,7 +137,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
   have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value (v : W1p mu Omega 2) x = 0 := by
     filter_upwards [hv] with x hx hxψ
     rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
-  have hmem := W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.2 hv0
+  have hmem := W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.property hv0
   have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁ =
       W1p.restrictL hΩ₁ (v : W1p mu Omega 2) := by
     refine W1p.ext_value (Lp.ext ?_)
@@ -167,8 +167,10 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     rw [h1, h3, indicator_of_mem (hΩVΩ₁ hx), hxV.1, hxV.2, one_smul, smul_zero, add_zero, h2]
   -- The global theorem on `H` gives the second derivatives.
   exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn
-    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j =>
-      ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
+    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j => by
+      obtain ⟨G, -, hG⟩ :=
+        ha'.exists_norm_le_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
+      exact ⟨G, hG⟩
 
 /-- **Local `H²` regularity near the boundary of a half-space.** Let `H = {x | c₀ < ⟪x, ν⟫}` with
 `ν ≠ 0`, and let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`, so that `∂Ω ∩ U` is a piece of the

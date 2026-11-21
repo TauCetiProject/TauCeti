@@ -153,7 +153,7 @@ theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
   refine ⟨1, one_pos, fun x hx ↦ ?_⟩
   have hx1 : ‖(x : E)‖ < 1 := by simpa using hx
   by_contra hx0
-  obtain ⟨m, hm⟩ := isIntegral_iff.1 h x.1 x.2 x.1 x.2
+  obtain ⟨m, hm⟩ := isIntegral_iff.1 h x.val x.property x.val x.property
   rw [real_inner_self_eq_norm_sq] at hm
   have hpos : (0 : ℝ) < ‖(x : E)‖ := norm_pos_iff.2 fun h0 ↦ hx0 (Subtype.ext h0)
   have hm0 : (0 : ℤ) < m := by exact_mod_cast hm ▸ pow_pos hpos 2

@@ -121,9 +121,9 @@ theorem Theoryω.craig_interpolation {T : L.Theoryω} (hT : T.Countable) (ψ : L
     hrel.trans (Set.inter_subset_inter_left _ ?_),
     (Theoryω.entails_iff_conjunction_entails hT).2 hTθ, hθψ⟩
   · rw [Theoryω.conjunction_def, functionsIn_iInfAlong]
-    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.property
   · rw [Theoryω.conjunction_def, relationsIn_iInfAlong]
-    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.property
 
 /-- **Projective-class separation from mutual inconsistency.** If `ψ₁ ⊨ ¬ψ₂`, some sentence `θ` of
 the shared symbol sublanguage

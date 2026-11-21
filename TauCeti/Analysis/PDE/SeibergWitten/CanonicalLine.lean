@@ -112,7 +112,7 @@ private theorem two_smul_ι_apply_apply_of_bivectorExterior_apply {ψ : positive
   -- `c(v) ψ` is a negative half-spinor.
   have hneg : ρ (chirality Q o) (ρ (ι Q v) ψ) = -ρ (ι Q v) ψ := by
     simpa using map_ι_apply_mem_eigenspace_chirality_neg o (ε := 1)
-      (by simpa using mem_positiveHalfSpinors.1 ψ.2) v
+      (by simpa using mem_positiveHalfSpinors.1 ψ.property) v
   -- The self-dual form `ω` annihilates it, for the Clifford action on `W` through `ρ`.
   have hzero : ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q v) ψ) = 0 :=
     letI := Module.compHom W ρ.toRingHom

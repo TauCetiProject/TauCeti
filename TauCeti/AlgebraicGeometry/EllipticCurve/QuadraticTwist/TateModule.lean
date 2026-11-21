@@ -112,7 +112,7 @@ def quadraticTwistTateModuleRepresentationEquiv (H : Subgroup (M ≃ₐ[K] M))
   .mk (W.quadraticTwistTateModuleEquiv L M ℓ) fun σ ↦ by
     apply LinearMap.ext
     intro x
-    simpa [hH σ σ.2] using W.quadraticTwistTateModuleEquiv_galois L M ℓ σ x
+    simpa [hH σ σ.property] using W.quadraticTwistTateModuleEquiv_galois L M ℓ σ x
 
 /-- The restricted representation equivalence has the original twist isomorphism as
 its underlying map. -/
