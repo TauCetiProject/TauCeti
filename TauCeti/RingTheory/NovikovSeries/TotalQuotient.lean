@@ -11,7 +11,7 @@ import Mathlib.GroupTheory.FiniteAbelian.Basic
 import TauCeti.Algebra.Regular.NatCast
 import TauCeti.GroupTheory.Finiteness
 import TauCeti.RingTheory.Localization.FiniteFree
-import TauCeti.RingTheory.Localization.FractionRing
+import TauCeti.RingTheory.Localization.Ideal
 import TauCeti.RingTheory.NovikovSeries.LeadingTerm
 
 /-!
@@ -87,7 +87,7 @@ total ring of fractions of the Novikov series by a proper ideal has characterist
 theorem charZero_quotient_of_isFractionRing (R : Type*) [CommRing R] [IsAddTorsionFree R]
     (N : H →+ ℝ) (T : Type*) [CommRing T] [Algebra (NovikovSeries R H N) T]
     [IsFractionRing (NovikovSeries R H N) T] {I : Ideal T} (hI : I ≠ ⊤) : CharZero (T ⧸ I) :=
-  IsFractionRing.charZero_quotient (NovikovSeries R H N) T
+  IsLocalization.charZero_quotient (NovikovSeries R H N) T
     (fun _ hn ↦ natCast_mem_nonZeroDivisors hn) hI
 
 /-- Over a domain, the total ring of fractions of the Novikov series on a finitely generated

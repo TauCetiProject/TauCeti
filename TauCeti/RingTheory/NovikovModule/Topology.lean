@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.NovikovModule.Bilinear
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
 public import Mathlib.Topology.Algebra.Module.TransferInstance
+public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
 # The potential-cutoff topology on completed combinations
@@ -65,6 +66,8 @@ between them can be checked on their coefficients at single generators.
 * `TauCeti.NovikovModule.continuous_of_mem_potentialFiltration_add`: an additive map sending
   each `U_D` into `U_(D + C)` is continuous.
 * `TauCeti.NovikovModule.denseRange_ofFinsupp`: finite combinations are dense.
+* `TauCeti.NovikovModule.summable_iff_finite_setOf_notMem_potentialFiltration`: a family is
+  summable exactly when only finitely many members are nonzero above each potential cutoff.
 * `TauCeti.NovikovModule.addHom_ext`, `TauCeti.NovikovModule.lhom_ext`: continuous additive or
   linear maps agreeing on single generators are equal.
 * `TauCeti.NovikovModule.continuousSMul_module`: the Novikov scalar action is continuous.
@@ -352,6 +355,15 @@ theorem tendsto_ofFinsupp_trunc (a : NovikovModule R F) :
 theorem denseRange_ofFinsupp : DenseRange (ofFinsupp (R := R) F) :=
   fun a => mem_closure_of_tendsto (tendsto_ofFinsupp_trunc a)
     (Eventually.of_forall fun _ => mem_range_self _)
+
+/-- A family of completed combinations is summable exactly when, above every potential cutoff,
+only finitely many of its members have a nonzero coefficient. -/
+theorem summable_iff_finite_setOf_notMem_potentialFiltration {ι : Type*}
+    {f : ι → NovikovModule R F} :
+    Summable f ↔ ∀ C, {i | f i ∉ potentialFiltration R F C}.Finite := by
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    hasBasis_nhds_zero.tendsto_right_iff]
+  simp [eventually_cofinite]
 
 /-- Continuous additive maps from completed combinations to a Hausdorff space are equal if they
 agree on all finite combinations supported at one generator. -/
