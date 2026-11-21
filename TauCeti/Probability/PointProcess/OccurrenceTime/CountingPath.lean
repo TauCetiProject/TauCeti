@@ -143,8 +143,8 @@ theorem countingPathMeasure_Ioc {N : ℝ≥0 → ℕ} (hmono : Monotone N) (hrc 
 /-- The counting measure of a nondecreasing right-continuous path is locally finite. -/
 theorem isLocallyFiniteMeasure_countingPathMeasure {N : ℝ≥0 → ℕ} (hmono : Monotone N)
     (hrc : IsRightContinuous N) : IsLocallyFiniteMeasure (countingPathMeasure N) :=
-  ⟨fun x ↦ ⟨Iio (x + 1), Iio_mem_nhds (lt_add_one x), (measure_mono Iio_subset_Iic_self).trans_lt
-    (by simp [countingPathMeasure_Iic hmono hrc])⟩⟩
+  (countingPathMeasure N).isLocallyFiniteMeasure_of_measure_Iic_lt_top fun t ↦ by
+    simp [countingPathMeasure_Iic hmono hrc]
 
 /-- **Characterization of the counting measure of a path.** For a nondecreasing
 right-continuous path, a measure is its counting measure exactly when its mass on each `[0,t]`
@@ -163,9 +163,7 @@ theorem countingPathMeasure_nat_count {μ : Measure ℝ≥0} [IsLocallyFiniteMea
     countingPathMeasure (fun t ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊) = μ := by
   refine ((eq_countingPathMeasure_iff Measure.monotone_nat_count
     hμ.isRightContinuous_nat_count).2 fun t ↦ ?_).symm
-  have hIic : Iic (0 : ℝ≥0) = {0} := by
-    ext s
-    simp only [mem_Iic, mem_singleton_iff, nonpos_iff_eq_zero]
-  rw [hμ.natCast_nat_count_Ioc, ← Iic_sdiff_Iic, measure_sdiff_null (by rwa [hIic])]
+  rw [hμ.natCast_nat_count_Ioc, ← Iic_sdiff_Iic,
+    measure_sdiff_null (by rwa [show Iic (0 : ℝ≥0) = {0} from Iic_bot])]
 
 end TauCeti.Probability

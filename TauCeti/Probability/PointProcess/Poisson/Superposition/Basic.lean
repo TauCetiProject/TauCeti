@@ -56,13 +56,10 @@ theorem isPoissonRandomMeasure_add {Ω X : Type*} [MeasurableSpace Ω] [Measurab
     (hN : IsPoissonRandomMeasure P N Λ) (hM : IsPoissonRandomMeasure P M Λ')
     (hind : IndepFun N M P) :
     IsPoissonRandomMeasure P (fun ω => N ω + M ω) (Λ + Λ') := by
-  refine isPoissonRandomMeasure_of_laplaceFunctional
-    (Measure.measurable_of_measurable_coe _ fun A hA => ?_) fun f hf => ?_
-  · simp only [add_apply]
-    exact ((Measure.measurable_coe hA).comp hN.measurable).add
-      ((Measure.measurable_coe hA).comp hM.measurable)
-  · rw [hind.laplaceFunctional_add hN.measurable hM.measurable hf,
-      hN.laplaceFunctional_eq_expNeg hf, hM.laplaceFunctional_eq_expNeg hf,
-      lintegral_add_measure, ENNReal.expNeg_add, ENNReal.coe_mul]
+  refine isPoissonRandomMeasure_of_laplaceFunctional (hN.measurable.add hM.measurable)
+    fun f hf => ?_
+  rw [hind.laplaceFunctional_add hN.measurable hM.measurable hf,
+    hN.laplaceFunctional_eq_expNeg hf, hM.laplaceFunctional_eq_expNeg hf,
+    lintegral_add_measure, ENNReal.expNeg_add, ENNReal.coe_mul]
 
 end TauCeti.Probability
