@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Curves.Normalization
 public import TauCeti.AlgebraicGeometry.Fibers
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.FieldTower
 public import TauCeti.AlgebraicGeometry.LineBundle.ProjectiveLine
-public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 public import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -238,17 +237,11 @@ section Relative
 
 variable {X Y S : Scheme.{u}}
 
-/-- The scheme-theoretic fibre `X_s` of `f : X ⟶ S` is a scheme over `κ(s)` through
-`f.fiberToSpecResidueField s`. This is `Scheme.Hom.fiberOverSpecResidueField` with the base
-written as `Spec (.of κ(s))`, the form numerical triviality over `κ(s)` takes. -/
-noncomputable local instance (f : X ⟶ S) (s : S) :
-    (f.fiber s).Over (Spec (.of (S.residueField s))) :=
-  f.fiberOverSpecResidueField s
-
 /-- **Relative numerical triviality** `a ≡_f 0` for a morphism `f : X ⟶ S`: for every point `s`
 of `S`, the pullback of `a` to the scheme-theoretic fibre `X_s` is numerically trivial over the
 residue field `κ(s)`, the fibre being a scheme over `κ(s)` through
-`f.fiberToSpecResidueField s`. Degrees of curves in `X_s` are taken over `κ(s)`. -/
+`f.fiberToSpecResidueField s` (`Scheme.Hom.fiberOverSpecOfResidueField`). Degrees of curves in
+`X_s` are taken over `κ(s)`. -/
 def IsRelNumericallyTrivial (f : X ⟶ S) (a : LineBundleClass X) : Prop :=
   ∀ s : S, (pullback (f.fiberι s) a).IsNumericallyTrivial (S.residueField s)
 
