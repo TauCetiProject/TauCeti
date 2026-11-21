@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
+import TauCeti.AlgebraicTopology.Singular.FiniteUnionInduction
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 import TauCeti.Topology.Connected.PathConnected
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
@@ -68,9 +69,10 @@ point by a unit that is constant along paths is an automorphism of `H₀(W; K)`,
 isomorphism over `W`. The Mayer–Vietoris sequence of the Thom pairs over two open sets
 (`TauCeti.singularHomology_thomPairOver_mayerVietoris_exact`) ends in degree `r`, since the
 homology vanishes below the rank, so the map is an isomorphism over a finite union of trivializing
-open sets by induction on their number. Singular homology has compact supports, so the homology of
-the base and of the Thom pair are the filtered colimits of their homology over these finite unions,
-and the map is an isomorphism over the whole base.
+open sets by induction on their number (`TauCeti.isIso_biUnion_of_subsetMayerVietoris`). Singular
+homology has compact supports, so the homology of the base and of the Thom pair are the filtered
+colimits of their homology over these finite unions, and the map is an isomorphism over the whole
+base.
 
 ## Main results
 
@@ -367,145 +369,30 @@ private theorem isIso_thomPairOverSingularHomologyFinrankInv_empty
     (isZero_singularHomology_of_isEmpty _ _ _).isoZero
     (isZero_singularHomology_thomPairOver_empty _ _).isoZero
 
-/-- Over `W ⊆ W'`, with the map over `W'` an isomorphism, the restriction from `W` to `W'` read
-through the maps over `W` and `W'` is the map induced by the inclusion. -/
-@[reassoc]
-private theorem thomPairOverSingularHomologyFinrankInv_comp_singularHomologyMap_comp_inv
-    (hg : IsLocalFiberGenerator K F E g ε) {W W' : Set B} (h : W ⊆ W')
-    [IsIso (thomPairOverSingularHomologyFinrankInv hg W')] :
-    thomPairOverSingularHomologyFinrankInv hg W ≫
-        TopPair.singularHomologyMap (thomPairOverMap F E h) (ModuleCat.of K K) (finrank ℝ F) ≫
-          inv (thomPairOverSingularHomologyFinrankInv hg W') =
-      ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).map
-        (TopCat.ofHom (ContinuousMap.inclusion h)) := by
-  rw [← Category.assoc, ← thomPairOverSingularHomologyFinrankInv_naturality, Category.assoc,
-    IsIso.hom_inv_id, Category.comp_id]
-
-/-- In the Mayer–Vietoris step, a candidate inverse `Φ` of the map over `W'` is built which on the
-classes over a subset `W` is the inverse of the map over `W` followed by the inclusion. Such a `Φ`
-inverts the map over `W'` on the classes of points of `W`. -/
-private theorem singularHomology₀Section_thomPairOverSingularHomologyFinrankInv_comp_of_comp_eq
-    (hg : IsLocalFiberGenerator K F E g ε) {W W' : Set B} (h : W ⊆ W')
-    [IsIso (thomPairOverSingularHomologyFinrankInv hg W)]
-    {Φ : (thomPairOver F E W').singularHomology (ModuleCat.of K K) (finrank ℝ F) ⟶
-      ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj (TopCat.of W')}
-    (hΦ : TopPair.singularHomologyMap (thomPairOverMap F E h) (ModuleCat.of K K) (finrank ℝ F) ≫
-      Φ = inv (thomPairOverSingularHomologyFinrankInv hg W) ≫
-        ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).map
-          (TopCat.ofHom (ContinuousMap.inclusion h)))
-    (x : W) :
-    singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W')
-          (TopCat.ofHom (ContinuousMap.inclusion h) x) ≫
-        thomPairOverSingularHomologyFinrankInv hg W' ≫ Φ =
-      singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W')
-        (TopCat.ofHom (ContinuousMap.inclusion h) x) := by
-  rw [← singularHomology₀Section_naturality, Category.assoc,
-    reassoc_of% (thomPairOverSingularHomologyFinrankInv_naturality hg h), hΦ,
-    IsIso.hom_inv_id_assoc]
-
-/-- Such a `Φ` also inverts the map over `W'` on the classes over `W`. -/
-private theorem singularHomologyMap_thomPairOverMap_comp_comp_of_comp_eq
-    (hg : IsLocalFiberGenerator K F E g ε) {W W' : Set B} (h : W ⊆ W')
-    [IsIso (thomPairOverSingularHomologyFinrankInv hg W)]
-    {Φ : (thomPairOver F E W').singularHomology (ModuleCat.of K K) (finrank ℝ F) ⟶
-      ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj (TopCat.of W')}
-    (hΦ : TopPair.singularHomologyMap (thomPairOverMap F E h) (ModuleCat.of K K) (finrank ℝ F) ≫
-      Φ = inv (thomPairOverSingularHomologyFinrankInv hg W) ≫
-        ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).map
-          (TopCat.ofHom (ContinuousMap.inclusion h))) :
-    TopPair.singularHomologyMap (thomPairOverMap F E h) (ModuleCat.of K K) (finrank ℝ F) ≫ Φ ≫
-        thomPairOverSingularHomologyFinrankInv hg W' =
-      TopPair.singularHomologyMap (thomPairOverMap F E h) (ModuleCat.of K K) (finrank ℝ F) := by
-  rw [reassoc_of% hΦ, thomPairOverSingularHomologyFinrankInv_naturality, IsIso.inv_hom_id_assoc]
-
-/-- **The Mayer–Vietoris step**: if the maps over the open sets `U` and `V` are isomorphisms, the
-map over `U ∩ V` is surjective and the homology of the Thom pair over `U ∩ V` vanishes in degree
-`r - 1`, the map over `U ∪ V` is an isomorphism. -/
-private theorem isIso_thomPairOverSingularHomologyFinrankInv_union
-    (hg : IsLocalFiberGenerator K F E g ε) {U V : Set B} (hU : IsOpen U)
-    (hV : IsOpen V) [IsIso (thomPairOverSingularHomologyFinrankInv hg U)]
-    [IsIso (thomPairOverSingularHomologyFinrankInv hg V)]
-    [Epi (thomPairOverSingularHomologyFinrankInv hg (U ∩ V))]
-    (hUV : ∀ m, m + 1 = finrank ℝ F →
-      IsZero ((thomPairOver F E (U ∩ V)).singularHomology (ModuleCat.of K K) m)) :
-    IsIso (thomPairOverSingularHomologyFinrankInv hg (U ∪ V)) := by
-  let ψ := thomPairOverSingularHomologyFinrankInv hg
-  let H₀ := (singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)
-  let S := ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_comp_eq_zero
-    (F := F) (E := E) (U := U) (V := V) (ModuleCat.of K K) (finrank ℝ F))
-  have hS : S.Exact :=
-    singularHomology_thomPairOver_mayerVietoris_exact (ModuleCat.of K K) hU hV _
-  have : Epi S.g := epi_singularHomology_thomPairOver_union (ModuleCat.of K K) hU hV hUV
-  -- The inverse map, on the middle term of the Mayer–Vietoris sequence.
-  let φ : S.X₂ ⟶ H₀.obj (TopCat.of ↥(U ∪ V)) :=
-    biprod.desc (inv (ψ U) ≫ H₀.map (TopCat.ofHom (ContinuousMap.inclusion subset_union_left)))
-      (inv (ψ V) ≫ H₀.map (TopCat.ofHom (ContinuousMap.inclusion subset_union_right)))
-  -- It vanishes on the image of the first map, since both restrictions of a class over `U ∩ V`
-  -- give the same class over `U ∪ V`.
-  have hφ : S.f ≫ φ = 0 := by
-    rw [← cancel_epi (ψ (U ∩ V)), comp_zero]
-    simp only [S, φ, ψ, H₀, biprod.lift_desc, Preadditive.neg_comp, Preadditive.comp_add,
-      Preadditive.comp_neg,
-      thomPairOverSingularHomologyFinrankInv_comp_singularHomologyMap_comp_inv_assoc,
-      ← Functor.map_comp, ← TopCat.ofHom_comp, ContinuousMap.inclusion_comp_inclusion,
-      add_neg_eq_zero]
-  let Φ := (hS.gIsCokernel).desc (CokernelCofork.ofπ φ hφ)
-  have hgΦ : S.g ≫ Φ = φ := (hS.gIsCokernel).fac (CokernelCofork.ofπ φ hφ) WalkingParallelPair.one
-  -- On the classes over `U` and over `V`, `Φ` is the inverse of the map over `U` or `V`.
-  have hΦ {W : Set B} (hW : W ⊆ U ∪ V) [IsIso (ψ W)]
-      (j : (thomPairOver F E W).singularHomology (ModuleCat.of K K) (finrank ℝ F) ⟶ S.X₂)
-      (hj : j ≫ S.g = TopPair.singularHomologyMap (thomPairOverMap F E hW) (ModuleCat.of K K)
-        (finrank ℝ F))
-      (hjφ : j ≫ φ = inv (ψ W) ≫ H₀.map (TopCat.ofHom (ContinuousMap.inclusion hW))) :
-      TopPair.singularHomologyMap (thomPairOverMap F E hW) (ModuleCat.of K K) (finrank ℝ F) ≫ Φ =
-        inv (ψ W) ≫ H₀.map (TopCat.ofHom (ContinuousMap.inclusion hW)) := by
-    rw [← hj, Category.assoc, hgΦ, hjφ]
-  have hΦU := hΦ subset_union_left biprod.inl (biprod.inl_desc _ _) (biprod.inl_desc _ _)
-  have hΦV := hΦ subset_union_right biprod.inr (biprod.inr_desc _ _) (biprod.inr_desc _ _)
-  refine ⟨Φ, singularHomology₀_hom_ext _ fun x ↦ ?_, (cancel_epi S.g).1 (biprod.hom_ext' _ _ ?_ ?_)⟩
-  · -- A point of `U ∪ V` lies in `U` or in `V`, where the composite is computed.
-    rw [Category.comp_id]
-    obtain ⟨x, hx | hx⟩ := x
-    · exact singularHomology₀Section_thomPairOverSingularHomologyFinrankInv_comp_of_comp_eq hg _
-        hΦU ⟨x, hx⟩
-    · exact singularHomology₀Section_thomPairOverSingularHomologyFinrankInv_comp_of_comp_eq hg _
-        hΦV ⟨x, hx⟩
-  -- The second map of the Mayer–Vietoris sequence is an epimorphism.
-  · simpa [S] using singularHomologyMap_thomPairOverMap_comp_comp_of_comp_eq hg _ hΦU
-  · simpa [S] using singularHomologyMap_thomPairOverMap_comp_comp_of_comp_eq hg _ hΦV
-
 /-- **Finite unions of trivializing open sets**: the map is an isomorphism over a finite union of
-open sets each lying in the base set of a chosen trivialization. -/
+open sets each lying in the base set of a chosen trivialization. The Mayer–Vietoris sequence of the
+Thom pairs over two open sets ends in degree `r`, since the homology vanishes below the rank over a
+trivializing set, so this is a Mayer–Vietoris induction on the number of open sets. -/
 private theorem isIso_thomPairOverSingularHomologyFinrankInv_biUnion
     (hg : IsLocalFiberGenerator K F E g ε) {ι : Type*} (s : Finset ι)
     {W : ι → Set B} (hWo : ∀ i ∈ s, IsOpen (W i))
     (hWe : ∀ i ∈ s, ∃ c, W i ⊆ (trivializationAt F E c).baseSet) :
-    IsIso (thomPairOverSingularHomologyFinrankInv hg (⋃ i ∈ s, W i)) := by
-  classical
-  induction s using Finset.induction_on generalizing W with
-  | empty =>
-    rw [show (⋃ i ∈ (∅ : Finset ι), W i) = ∅ by simp]
-    exact isIso_thomPairOverSingularHomologyFinrankInv_empty hg
-  | insert a s _ ih =>
-    rw [Finset.set_biUnion_insert]
-    obtain ⟨c, hc⟩ := hWe a (Finset.mem_insert_self a s)
-    have : IsIso (thomPairOverSingularHomologyFinrankInv hg (W a)) :=
-      isIso_thomPairOverSingularHomologyFinrankInv_of_subset hg c hc
-    have : IsIso (thomPairOverSingularHomologyFinrankInv hg (⋃ i ∈ s, W i)) :=
-      ih (fun i hi ↦ hWo i (Finset.mem_insert_of_mem hi))
-        (fun i hi ↦ hWe i (Finset.mem_insert_of_mem hi))
-    -- `W a ∩ ⋃ i ∈ s, W i` is the union of the trivializing open sets `W a ∩ W i`, `i ∈ s`.
-    have : IsIso (thomPairOverSingularHomologyFinrankInv hg (W a ∩ ⋃ i ∈ s, W i)) := by
-      rw [inter_iUnion₂]
-      refine ih (fun i hi ↦ (hWo a (Finset.mem_insert_self a s)).inter
-        (hWo i (Finset.mem_insert_of_mem hi))) fun i hi ↦ ?_
-      obtain ⟨c', hi'⟩ := hWe i (Finset.mem_insert_of_mem hi)
-      exact ⟨c', inter_subset_right.trans hi'⟩
-    exact isIso_thomPairOverSingularHomologyFinrankInv_union hg
-      (hWo a (Finset.mem_insert_self a s))
-      (isOpen_iUnion fun i ↦ isOpen_iUnion fun hi ↦ hWo i (Finset.mem_insert_of_mem hi))
-      fun m hm ↦ (trivializationAt F E c).isZero_singularHomology_thomPairOver
-        (inter_subset_left.trans hc) _ (by omega)
+    IsIso (thomPairOverSingularHomologyFinrankInv hg (⋃ i ∈ s, W i)) :=
+  isIso_biUnion_of_subsetMayerVietoris
+    (H := fun W ↦ (thomPairOver F E W).singularHomology (ModuleCat.of K K) (finrank ℝ F))
+    (fun h ↦ TopPair.singularHomologyMap (thomPairOverMap F E h) (ModuleCat.of K K) (finrank ℝ F))
+    (fun h h' ↦ by rw [← TopPair.singularHomologyMap_comp, thomPairOverMap_comp_thomPairOverMap])
+    (ModuleCat.of K K) (ψ := thomPairOverSingularHomologyFinrankInv hg)
+    (fun h ↦ thomPairOverSingularHomologyFinrankInv_naturality hg h)
+    (P := fun W ↦ ∃ c, W ⊆ (trivializationAt F E c).baseSet)
+    (fun h ⟨c, hc⟩ ↦ ⟨c, h.trans hc⟩)
+    (fun _ ⟨c, hc⟩ ↦ isIso_thomPairOverSingularHomologyFinrankInv_of_subset hg c hc)
+    (isIso_thomPairOverSingularHomologyFinrankInv_empty hg)
+    (fun hU hV ⟨c, hc⟩ ↦ ⟨singularHomology_thomPairOver_mayerVietoris_exact _ hU hV _,
+      epi_singularHomology_thomPairOver_union _ hU hV fun m hm ↦
+        (trivializationAt F E c).isZero_singularHomology_thomPairOver
+          (inter_subset_left.trans hc) _ (by omega)⟩)
+    s hWo hWe
 
 /-! ### The passage to the whole base -/
 
