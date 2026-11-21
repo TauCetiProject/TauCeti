@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.RingTheory.Finiteness.Ideal
@@ -46,8 +47,9 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
 * `IsAdic.isTopologicallyNilpotent_iff_mem_radical` : conversely, a topologically nilpotent
   element has a power in `I`, so the topologically nilpotent elements are exactly the radical
   of `I`.
-* `IsAdic.isLinearTopology` : a ring whose topology is `I`-adic is linearly topologized, the
-  `IsAdic` counterpart of `Ideal.isLinearTopology`.
+* `IsAdic.nonarchimedeanRing`, `IsAdic.totallyDisconnectedSpace`, and
+  `IsAdic.isLinearTopology` : a ring whose topology is `I`-adic is nonarchimedean, linearly
+  topologized, and (when Hausdorff) totally disconnected.
 * `IsAdic.map_of_isOpenQuotientMap` : an open quotient ring map transports an adic
   topology to the adic topology of the extended ideal, without finite generation or completeness.
 * `IsAdic.isOpenQuotientMap_of_surjective` : conversely, a surjection onto a ring with the adic
@@ -233,6 +235,15 @@ theorem radical (hI : IsAdic I) (hfg : I.radical.FG) : IsAdic I.radical := by
   apply hI.isAdic_iff_isOpen_and_exists_pow_le.mpr
   exact ⟨Submodule.isOpen_mono Ideal.le_radical (by simpa using hI.isOpen_pow 1),
     Ideal.exists_pow_le_of_le_radical_of_fg le_rfl hfg⟩
+
+/-- A ring whose topology is `I`-adic is a nonarchimedean topological ring. -/
+theorem nonarchimedeanRing (hI : IsAdic I) : NonarchimedeanRing R :=
+  hI ▸ I.nonarchimedean
+
+/-- A Hausdorff ring whose topology is `I`-adic is totally disconnected. -/
+theorem totallyDisconnectedSpace [T2Space R] (hI : IsAdic I) : TotallyDisconnectedSpace R :=
+  have := hI.nonarchimedeanRing
+  inferInstance
 
 /-- A ring whose topology is the `I`-adic one is linearly topologized: the powers of `I` form a
 neighbourhood basis of zero consisting of ideals. This is the `IsAdic` counterpart of

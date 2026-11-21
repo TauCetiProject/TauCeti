@@ -5,15 +5,22 @@ Authors: The Tau Ceti contributors, Andrew Yang
 -/
 module
 
+public import Mathlib.Algebra.Regular.SMul
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.Topology.Algebra.LinearTopology
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
+public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
+import Mathlib.Topology.Algebra.Group.Pointwise
+import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Topology.Algebra.Module.Nakayama
 
 /-!
 # Compact modules over a compact ring
@@ -38,8 +45,10 @@ to the closed cosets it describes. Together these are the inverse-limit descript
 
 The predicate `IsCompactModule R M` packages the four topological hypotheses so that they can be
 carried as a single hypothesis on a module whose topology is given by hand; its API restates the
-two facts above for it, shows that it passes to quotients by closed submodules, and records the
-witness that a compact totally disconnected topological ring is a compact module over itself.
+two facts above for it, shows that it passes to closed submodules, quotients by closed submodules,
+products, and continuous linear equivalences, records that open submodules have finite index, and
+provides the witness that a compact totally disconnected topological ring is a compact module over
+itself.
 
 ## Main definitions
 
@@ -47,6 +56,8 @@ witness that a compact totally disconnected topological ring is a compact module
 
 ## Main results
 
+* `Ideal.FG.isCompact_smul`: for a finitely generated ideal `I` and a compact submodule `P`, the
+  submodule `I • P` is compact under `ContinuousConstSMul R M`.
 * `Submodule.FG.isCompact`: over a compact semiring, a finitely generated submodule of a
   topological module is compact.
 * `Submodule.span_eq_top_of_dense_closure`: over a compact ring, a finite set spans a Hausdorff
@@ -66,9 +77,18 @@ witness that a compact totally disconnected topological ring is a compact module
   inverse limit of its quotients by open submodules.
 * `TauCeti.IsCompactModule.isLinearTopology`,
   `TauCeti.IsCompactModule.eq_zero_of_forall_mem_of_isOpen`,
-  `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.quotient`,
+  `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.submodule`,
+  `TauCeti.IsCompactModule.quotient`, `TauCeti.IsCompactModule.finite_quotient_of_isOpen`,
+  `TauCeti.IsCompactModule.isClosed_smul_top`,
+  `TauCeti.IsCompactModule.pi`, `TauCeti.IsCompactModule.prod`,
+  `TauCeti.IsCompactModule.of_subsingleton`, `TauCeti.IsCompactModule.of_continuousLinearEquiv`,
   `TauCeti.IsCompactModule.self`: the same statements for the predicate, its stability under
-  quotients by closed submodules, and the self-module witness.
+  closed submodules, quotients, products, and continuous linear equivalences, finite index of open
+  submodules, closedness of `I • ⊤` for finitely generated ideals, and the self-module witness.
+* `TauCeti.IsCompactModule.continuousLinearEquivOfBijectiveMapQ`: topological Nakayama isomorphism
+  criterion upgrading a continuous linear map between compact modules whose reduction modulo a
+  principal topologically nilpotent ideal `I = (a)` with `a` regular on the target is bijective to
+  a continuous linear equivalence.
 
 ## References
 
@@ -79,6 +99,28 @@ witness that a compact totally disconnected topological ring is a compact module
 public section
 
 open Filter Topology
+
+section ContinuousConstSMul
+
+open Pointwise
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul R M]
+
+/-- **Action of a finitely generated ideal preserves compact submodules.** If `I` is a finitely
+generated ideal and `P` is a compact submodule, then `I • P` is compact. -/
+theorem Ideal.FG.isCompact_smul {I : Ideal R} (hI : I.FG) {P : Submodule R M}
+    (hP : IsCompact (P : Set M)) : IsCompact ((I • P : Submodule R M) : Set M) := by
+  classical
+  obtain ⟨s, rfl⟩ := hI
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s _ ih =>
+    rw [Finset.coe_insert, Ideal.span_insert, Submodule.sup_smul, Submodule.coe_sup,
+      Submodule.ideal_span_singleton_smul, Submodule.coe_pointwise_smul]
+    exact (hP.smul a).add ih
+
+end ContinuousConstSMul
 
 section CompactSemiring
 
@@ -306,6 +348,23 @@ theorem self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R]
     IsCompactModule R R :=
   ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
 
+/-- Every subsingleton module is a compact module, with no continuity assumptions on `M`. -/
+theorem of_subsingleton [Subsingleton M] : IsCompactModule R M :=
+  have : IsTopologicalAddGroup M :=
+    { continuous_add := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+      continuous_neg := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _ }
+  ⟨this, ⟨continuous_of_const fun _ _ ↦ Subsingleton.elim _ _⟩, inferInstance, inferInstance⟩
+
+/-- An arbitrary product of compact modules is a compact module for the product topology. -/
+theorem pi {ι : Type*} {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+    [∀ i, TopologicalSpace (N i)] (h : ∀ i, IsCompactModule R (N i)) :
+    IsCompactModule R (∀ i, N i) :=
+  have := fun i ↦ (h i).isTopologicalAddGroup
+  have := fun i ↦ (h i).continuousSMul
+  have := fun i ↦ (h i).compactSpace
+  have := fun i ↦ (h i).totallyDisconnectedSpace
+  ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
+
 variable (hM : IsCompactModule R M)
 include hM
 
@@ -353,6 +412,16 @@ theorem existsUnique_forall_mkQ_eq [CompactSpace R]
   have := hM.isLinearTopology
   TauCeti.existsUnique_forall_mkQ_eq x hx
 
+/-- **Closed submodules stay compact.** A closed submodule of a compact module is a compact
+module for the subspace topology. -/
+theorem submodule (N : Submodule R M) (hN : IsClosed (N : Set M)) : IsCompactModule R N :=
+  have := hM.isTopologicalAddGroup
+  have := hM.continuousSMul
+  have := hM.compactSpace
+  have := hM.totallyDisconnectedSpace
+  have : CompactSpace N := isCompact_iff_compactSpace.mp hN.isCompact
+  ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
+
 /-- **Quotients stay compact.** The quotient of a compact module by a closed submodule is a
 compact module. Closedness is what makes the quotient Hausdorff, and with the nonarchimedean
 property it gives total disconnectedness. -/
@@ -366,6 +435,128 @@ theorem quotient (N : Submodule R M) (hN : IsClosed (N : Set M)) : IsCompactModu
   rw [← Set.image_univ_of_surjective N.mkQ_surjective]
   exact isCompact_univ.image N.continuous_mkQ
 
+/-- **Open submodules have finite index.** The quotient of a compact module by an open submodule
+is finite. -/
+theorem finite_quotient_of_isOpen (N : Submodule R M) (hN : IsOpen (N : Set M)) :
+    Finite (M ⧸ N) := by
+  have := hM.isTopologicalAddGroup
+  have := hM.compactSpace
+  exact N.toAddSubgroup.quotient_finite_of_isOpen hN
+
+/-- The binary product of compact modules is a compact module. -/
+theorem prod {N : Type*} [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (hN : IsCompactModule R N) : IsCompactModule R (M × N) :=
+  have := hM.isTopologicalAddGroup
+  have := hN.isTopologicalAddGroup
+  have := hM.continuousSMul
+  have := hN.continuousSMul
+  have := hM.compactSpace
+  have := hN.compactSpace
+  have := hM.totallyDisconnectedSpace
+  have := hN.totallyDisconnectedSpace
+  ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
+
+/-- A continuous linear equivalence transports `IsCompactModule`, without separate topological
+group or scalar-continuity assumptions on the target. -/
+theorem of_continuousLinearEquiv {N : Type*} [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (e : M ≃L[R] N) : IsCompactModule R N := by
+  have := hM.isTopologicalAddGroup
+  have := hM.continuousSMul
+  have := hM.compactSpace
+  have := hM.totallyDisconnectedSpace
+  have he := e.symm.toHomeomorph.isInducing
+  exact ⟨he.isTopologicalAddGroup e.symm.toAddMonoidHom,
+    he.continuousSMul continuous_id fun {c x} ↦ map_smul e.symm c x,
+    e.toHomeomorph.compactSpace, e.toHomeomorph.totallyDisconnectedSpace⟩
+
 end IsCompactModule
 
 end TauCeti
+
+namespace TauCeti.IsCompactModule
+
+/-- In a compact module over a commutative ring, `I • ⊤` is closed for every finitely generated
+ideal `I`. -/
+theorem isClosed_smul_top {R M : Type*} [CommRing R] [TopologicalSpace R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] (hM : IsCompactModule R M) {I : Ideal R} (hI : I.FG) :
+    IsClosed ((I • (⊤ : Submodule R M) : Submodule R M) : Set M) := by
+  have := hM.isTopologicalAddGroup
+  have := hM.continuousSMul
+  have := hM.compactSpace
+  have := hM.t2Space
+  exact (hI.isCompact_smul (by simpa using isCompact_univ)).isClosed
+
+/-- **Topological Nakayama isomorphism criterion for compact modules.** A continuous `R`-linear
+map `Φ : M →L[R] N` between compact `R`-modules whose reduction modulo a principal ideal
+`I = Ideal.span {a}` generated by a topologically nilpotent element `a` that is regular on `N` is
+bijective upgrades to a continuous `R`-linear equivalence `M ≃L[R] N`. -/
+noncomputable def continuousLinearEquivOfBijectiveMapQ {R M N : Type*}
+    [CommRing R] [TopologicalSpace R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (hM : IsCompactModule R M) (hN : IsCompactModule R N)
+    {I : Ideal R} {a : R} (hI : I = Ideal.span {a})
+    (ha : IsTopologicallyNilpotent a) (hreg : IsSMulRegular N a)
+    (Φ : M →L[R] N)
+    (hbij : Function.Bijective
+      (Submodule.mapQ (I • ⊤) (I • ⊤) Φ.toLinearMap
+        (Submodule.smul_top_le_comap_smul_top I Φ.toLinearMap))) :
+    M ≃L[R] N := by
+  have := hM.isTopologicalAddGroup
+  have := hM.continuousSMul
+  have := hM.compactSpace
+  have := hM.t2Space
+  have := hN.isTopologicalAddGroup
+  have := hN.continuousSMul
+  have := hN.compactSpace
+  have := hN.t2Space
+  have hbij_Φ : Function.Bijective Φ.toLinearMap :=
+    LinearMap.bijective_of_bijective_mapQ_of_compactSpace hI ha hreg Φ.toLinearMap Φ.continuous hbij
+  let e := LinearEquiv.ofBijective Φ.toLinearMap hbij_Φ
+  exact { toLinearEquiv := e
+          continuous_toFun := Φ.continuous
+          continuous_invFun :=
+            Φ.continuous.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv) }
+
+@[simp, grind =]
+theorem continuousLinearEquivOfBijectiveMapQ_apply {R M N : Type*}
+    [CommRing R] [TopologicalSpace R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (hM : IsCompactModule R M) (hN : IsCompactModule R N)
+    {I : Ideal R} {a : R} (hI : I = Ideal.span {a})
+    (ha : IsTopologicallyNilpotent a) (hreg : IsSMulRegular N a)
+    (Φ : M →L[R] N)
+    (hbij : Function.Bijective
+      (Submodule.mapQ (I • ⊤) (I • ⊤) Φ.toLinearMap
+        (Submodule.smul_top_le_comap_smul_top I Φ.toLinearMap))) (m : M) :
+    hM.continuousLinearEquivOfBijectiveMapQ hN hI ha hreg Φ hbij m = Φ m :=
+  (rfl)
+
+@[simp, grind =]
+theorem apply_continuousLinearEquivOfBijectiveMapQ_symm {R M N : Type*}
+    [CommRing R] [TopologicalSpace R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M]
+    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (hM : IsCompactModule R M) (hN : IsCompactModule R N)
+    {I : Ideal R} {a : R} (hI : I = Ideal.span {a})
+    (ha : IsTopologicallyNilpotent a) (hreg : IsSMulRegular N a)
+    (Φ : M →L[R] N)
+    (hbij : Function.Bijective
+      (Submodule.mapQ (I • ⊤) (I • ⊤) Φ.toLinearMap
+        (Submodule.smul_top_le_comap_smul_top I Φ.toLinearMap))) (y : N) :
+    Φ ((hM.continuousLinearEquivOfBijectiveMapQ hN hI ha hreg Φ hbij).symm y) = y := by
+  rw [← continuousLinearEquivOfBijectiveMapQ_apply hM hN hI ha hreg Φ hbij,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+end TauCeti.IsCompactModule
+
+namespace ContinuousLinearEquiv
+
+/-- A continuous linear equivalence preserves `TauCeti.IsCompactModule`. -/
+theorem isCompactModule_iff {R M N : Type*} [Ring R] [TopologicalSpace R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    (e : M ≃L[R] N) : TauCeti.IsCompactModule R M ↔ TauCeti.IsCompactModule R N :=
+  ⟨fun h ↦ h.of_continuousLinearEquiv e, fun h ↦ h.of_continuousLinearEquiv e.symm⟩
+
+end ContinuousLinearEquiv
