@@ -42,6 +42,7 @@ variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
 
 /-- An element of `A_i` vanishes in the cokernel of `φ` exactly when it lies in the range of
 `φ.f i`. -/
+@[simp]
 lemma cokernel_π_f_apply_eq_zero_iff (i : ι) (y : A.X i) :
     (cokernel.π φ).f i y = 0 ↔ y ∈ LinearMap.range (φ.f i).hom := by
   constructor
@@ -51,7 +52,7 @@ lemma cokernel_π_f_apply_eq_zero_iff (i : ι) (y : A.X i) :
     exact hS y h
   · rintro ⟨u, rfl⟩
     rw [← ConcreteCategory.comp_apply, ← comp_f, cokernel.condition, zero_f]
-    rfl
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- The projection onto the cokernel of `φ` is surjective in each degree. -/
 lemma cokernel_π_f_surjective (i : ι) : Function.Surjective ((cokernel.π φ).f i) :=
