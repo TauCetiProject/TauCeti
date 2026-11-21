@@ -20,6 +20,10 @@ If `p` has smaller degree than `q`, then the largest degree at which the coeffic
 `q` differ is the degree of `q`, where `p` has coefficient `0`.
 `Polynomial.exists_coeff_iff_of_degree_lt` records this in the form in which it decides a
 lexicographic comparison of coefficient sequences, starting from the top degree.
+
+Over an ordered semiring, products of polynomials with nonnegative coefficients retain
+nonnegative coefficients (`Polynomial.coeff_mul_nonneg`), and multiplying by `1 + C a * X ^ k`
+(`0 ≤ a`) does not decrease any coefficient (`Polynomial.coeff_le_coeff_mul_one_add_C_mul_X_pow`).
 -/
 
 public section
@@ -60,5 +64,25 @@ theorem exists_coeff_iff_of_degree_lt {R : Type*} [Semiring R] {r : R → R → 
   · rwa [hp, coeff_natDegree] at hpqi
   · rw [hpq i hgt] at hpqi
     exact absurd hpqi (hr _)
+
+/-- The product of two polynomials with nonnegative coefficients has nonnegative coefficients. -/
+theorem coeff_mul_nonneg {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {p q : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (hq : ∀ d, 0 ≤ q.coeff d) (d : ℕ) :
+    0 ≤ (p * q).coeff d := by
+  rw [coeff_mul]
+  exact Finset.sum_nonneg fun _ _ ↦ mul_nonneg (hp _) (hq _)
+
+/-- Multiplying a polynomial with nonnegative coefficients by `1 + C a * X ^ k` (`0 ≤ a`) does not
+decrease any coefficient. -/
+theorem coeff_le_coeff_mul_one_add_C_mul_X_pow {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) {a : R} (ha : 0 ≤ a) (k d : ℕ) :
+    p.coeff d ≤ (p * (1 + C a * X ^ k)).coeff d := by
+  rw [mul_add, mul_one, coeff_add]
+  refine le_add_of_nonneg_right ?_
+  rw [← mul_assoc, coeff_mul_X_pow']
+  split_ifs with hd
+  · rw [coeff_mul_C]
+    exact mul_nonneg (hp (d - k)) ha
+  · exact le_rfl
 
 end Polynomial

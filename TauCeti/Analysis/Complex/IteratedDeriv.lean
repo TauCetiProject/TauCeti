@@ -16,8 +16,9 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 # Iterated derivatives of holomorphic functions of one complex variable
 
 This file records that every iterated derivative of a complex differentiable function
-`g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
-Mathlib's `Differentiable.deriv`. It also computes the norms of the real iterated derivatives
+`g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`,
+`DifferentiableOn.iteratedDeriv`), the iterated forms of Mathlib's `Differentiable.deriv` and
+`DifferentiableOn.deriv`. It also computes the norms of the real iterated derivatives
 of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
@@ -51,6 +52,16 @@ theorem DifferentiableOn.iteratedFDeriv_eq_restrictScalars (𝕜 : Type*)
   rw [← ((hf.contDiffOn (n := k) hU).contDiffAt (hU.mem_nhds hz)).restrictScalars_iteratedFDeriv,
     iteratedFDeriv_eq_equiv_comp]
   rfl
+
+/-- An iterated derivative of a function complex differentiable on an open set `U ⊆ ℂ` is complex
+differentiable on `U`. -/
+theorem DifferentiableOn.iteratedDeriv {g : ℂ → E} {U : Set ℂ} (hg : DifferentiableOn ℂ g U)
+    (hU : IsOpen U) (k : ℕ) : DifferentiableOn ℂ (iteratedDeriv k g) U := by
+  induction k with
+  | zero => simpa only [iteratedDeriv_zero] using hg
+  | succ k ih =>
+    rw [iteratedDeriv_succ]
+    exact ih.deriv hU
 
 /-- **Weierstrass's theorem for iterated derivatives.** If holomorphic maps `F n` converge to `f`
 locally uniformly on an open set `U ⊆ ℂ`, then so do their iterated derivatives. This is the

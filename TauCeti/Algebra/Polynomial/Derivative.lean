@@ -54,6 +54,10 @@ Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the de
 (`Polynomial.derivative_surjective`): every polynomial has an antiderivative. In positive
 characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
 has no antiderivative.
+
+Over an ordered semiring, iterated formal derivatives preserve nonnegativity of coefficients and
+hence take nonnegative values at nonnegative points (`Polynomial.coeff_iterate_derivative_nonneg`,
+`Polynomial.eval_iterate_derivative_nonneg`).
 -/
 
 public section
@@ -298,5 +302,22 @@ theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial 
   rw [← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne p)),
     CharP.cast_eq_zero, mul_zero] at this
   exact zero_ne_one this
+
+/-- Every iterated formal derivative of a polynomial with nonnegative coefficients also has
+nonnegative coefficients. -/
+theorem coeff_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k d : ℕ) :
+    0 ≤ (derivative^[k] p).coeff d := by
+  rw [coeff_iterate_derivative]
+  exact nsmul_nonneg (hp (d + k)) _
+
+/-- Evaluating any iterated formal derivative of a polynomial with nonnegative coefficients at a
+nonnegative element yields a nonnegative value. -/
+theorem eval_iterate_derivative_nonneg {R : Type*} [CommSemiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k : ℕ) {x : R} (hx : 0 ≤ x) :
+    0 ≤ (derivative^[k] p).eval x := by
+  rw [eval_eq_sum]
+  exact Finset.sum_nonneg fun d _ ↦
+    mul_nonneg (coeff_iterate_derivative_nonneg hp k d) (pow_nonneg hx d)
 
 end Polynomial

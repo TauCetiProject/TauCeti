@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.Calculus.Deriv.Shift
 
@@ -13,13 +14,15 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 
 The derivative of a function that is odd near `x` takes the same value at `-x` and `x`, and the
 derivative of a function that is even near `x` takes opposite values there. Consequently the
-second derivative at `0` of a function that is odd near `0` vanishes, provided the codomain has no
+first derivative at `0` of an even function vanishes (in characteristic zero), and the second
+derivative at `0` of a function that is odd near `0` vanishes, provided the codomain has no
 additive torsion.
 
 ## Main results
 
 * `TauCeti.deriv_neg_eq_of_eventually_odd`: `f'(-x) = f'(x)` for `f` odd near `x`.
 * `TauCeti.deriv_neg_eq_neg_of_eventually_even`: `f'(-x) = -f'(x)` for `f` even near `x`.
+* `Function.Even.deriv_zero`: `f'(0) = 0` for `f` even.
 * `TauCeti.iteratedDeriv_two_eq_zero_of_eventually_odd`: `f''(0) = 0` for `f` odd near `0`.
 -/
 
@@ -56,3 +59,13 @@ theorem iteratedDeriv_two_eq_zero_of_eventually_odd [IsAddTorsionFree F]
   exact self_eq_neg.1 h₂
 
 end TauCeti
+
+/-- The derivative of an even function vanishes at `0` over a field of characteristic zero,
+with no differentiability assumption (by totalization of `deriv`). -/
+theorem Function.Even.deriv_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : f.Even) : deriv f 0 = 0 := by
+  have hneg := TauCeti.deriv_neg_eq_neg_of_eventually_even (x := (0 : 𝕜))
+    (Filter.Eventually.of_forall hf)
+  rw [neg_zero] at hneg
+  have : HasUniqueDiv E := .of_isTorsionFree 𝕜 E
+  exact self_eq_neg.1 hneg

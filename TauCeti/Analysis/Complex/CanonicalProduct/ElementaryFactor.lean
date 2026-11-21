@@ -31,8 +31,9 @@ minimum-modulus estimates for canonical products: on the whole plane, `log ‖1 
 size of the exponent, and on the closed half disk, `-2 * ‖z‖ ^ (p + 1)`.
 
 At genus one the factor is `(1 - z) * exp z`; its global logarithmic bounds supply the
-reciprocal Gamma estimates. The paired rational logarithmic derivative retains this genus-one
-specialization.
+reciprocal Gamma estimates. Pairing opposite arguments at genus one cancels the exponential
+factor, giving `weierstrassFactor 1 z * weierstrassFactor 1 (-z) = 1 - z ^ 2`. The paired
+rational logarithmic derivative retains this genus-one specialization.
 
 ## Provenance
 
@@ -97,6 +98,19 @@ theorem weierstrassFactor_eq_zero_iff (p : ℕ) {z : ℂ} :
     weierstrassFactor p z = 0 ↔ z = 1 := by
   rw [weierstrassFactor_def, mul_eq_zero, or_iff_left (exp_ne_zero _), sub_eq_zero]
   exact eq_comm
+
+/-- Pairing opposite arguments at genus one cancels the exponential factor:
+`E₁(z) E₁(-z) = 1 - z²`. -/
+@[simp]
+theorem weierstrassFactor_one_mul_neg (z : ℂ) :
+    weierstrassFactor 1 z * weierstrassFactor 1 (-z) = 1 - z ^ 2 := by
+  calc weierstrassFactor 1 z * weierstrassFactor 1 (-z)
+      = (1 - z) * (1 + z) * (exp z * exp (-z)) := by
+        rw [weierstrassFactor_one_left, weierstrassFactor_one_left, sub_neg_eq_add]
+        ring
+    _ = 1 - z ^ 2 := by
+        rw [← exp_add, add_neg_cancel, exp_zero, mul_one]
+        ring
 
 /-- The derivative of `E_p` is `-z ^ p * exp (-logTaylor (p + 1) (-z))`. -/
 theorem hasDerivAt_weierstrassFactor (p : ℕ) (z : ℂ) :
