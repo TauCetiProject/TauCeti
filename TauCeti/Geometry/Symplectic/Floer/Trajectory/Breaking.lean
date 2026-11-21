@@ -319,10 +319,8 @@ theorem exists_subseq_forall_hamiltonianAction_eq_of_floer (hH : ContDiff ℝ 1 
       ∃ σ, ω.hamiltonianAction H (fun t ↦ u (φ n) (σ, t)) = b i := by
     have hbi₀ : a₀ (φ n) < b i := (hends n).1 ▸ hb0.trans_le (hb.monotone (Fin.zero_le i))
     have hbi₁ : b i < a₁ (φ n) := (hends n).2 ▸ (hb.monotone (Fin.le_last i)).trans_lt hbm
-    exact mem_range_of_exists_le_of_exists_ge
-      (ω.continuous_hamiltonianAction_slice hH.continuous ((hu (φ n)).of_le one_le_two))
-      (((hbot (φ n)).eventually (gt_mem_nhds hbi₀)).exists.imp fun _ h ↦ h.le)
-      (((htop (φ n)).eventually (lt_mem_nhds hbi₁)).exists.imp fun _ h ↦ h.le)
+    exact exists_hamiltonianAction_slice_eq_of_tendsto hH.continuous
+      ((hu (φ n)).of_le one_le_two) (hbot (φ n)) (htop (φ n)) ⟨hbi₀, hbi₁⟩
   choose σ hσ using hσ
   exact ⟨φ, hφ, A₀, A₁, hA, fun n ↦ ⟨(hends n).1 ▸ hbot (φ n), (hends n).2 ▸ htop (φ n)⟩,
     m, b, hb, hbC, h0, h1, hgaps, σ, hσ⟩

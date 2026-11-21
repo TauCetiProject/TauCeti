@@ -143,8 +143,7 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_tend
     exact hx.continuous (Frequently.of_forall hcx)
   have hAm (s : ℝ) : AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega) :=
     aestronglyMeasurable_of_tendsto_ae (f := fun k x => An k x s) (g := fun x => A x s) atTop
-      (fun k => hAnm k s) (hAlim.mono fun _ hx => hx.tendstoLocallyUniformlyOn.tendsto_at
-        (mem_univ s))
+      (fun k => hAnm k s) (hAlim.mono fun _ hx => hx.tendsto_at s)
   -- By the energy bound and Rellich, a subsequence of the values converges in `L²(Ω)` and almost
   -- everywhere.
   have hsub := W1p.exists_tendsto_value_subseq_of_sub_mem_w1p0Submodule ENNReal.ofNat_ne_top hΩ hg

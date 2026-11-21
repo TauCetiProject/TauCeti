@@ -56,8 +56,8 @@ orbit in `K`.
   (`TauCeti.SymplecticForm.exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity`). Choosing a
   regular action value `b` between them, the shift `σ` puts the loop of action `b` at `s = 0`, by
   the continuity of the action along the trajectory
-  (`TauCeti.SymplecticForm.continuous_hamiltonianAction_slice`). The chosen values range over a
-  finite set, so along a subsequence they converge to a regular action value, and the
+  (`TauCeti.SymplecticForm.exists_hamiltonianAction_slice_eq_of_tendsto`). The chosen values range
+  over a finite set, so along a subsequence they converge to a regular action value, and the
   Arzelà–Ascoli theorem for translates
   (`TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith`) gives a convergent
   subsequence of the translates. No energy bound is assumed: the actions of loops in `K` of
@@ -318,10 +318,8 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_floer
       (x := fun k ↦ m (a₀ k, a₁ k)) fun k ↦ ⟨_, ⟨⟨ha₀ k, ha₁ k⟩, hlt k⟩, rfl⟩
   -- Normalize each trajectory so that its loop at `s = 0` has the action `m (a₀ k, a₁ k)`.
   have hσ (k : ℕ) : ∃ σ, ω.hamiltonianAction H (fun t ↦ u k (σ, t)) = m (a₀ k, a₁ k) :=
-    mem_range_of_exists_le_of_exists_ge
-      (ω.continuous_hamiltonianAction_slice hH.continuous ((hu k).of_le one_le_two))
-      (((hbot k).eventually (gt_mem_nhds (hm (a₀ k, a₁ k) (hlt k)).1)).exists.imp fun _ h ↦ h.le)
-      (((htop k).eventually (lt_mem_nhds (hm (a₀ k, a₁ k) (hlt k)).2)).exists.imp fun _ h ↦ h.le)
+    exists_hamiltonianAction_slice_eq_of_tendsto hH.continuous ((hu k).of_le one_le_two) (hbot k)
+      (htop k) (hm (a₀ k, a₁ k) (hlt k))
   choose σ hσ using hσ
   -- The translates are uniformly Lipschitz with values in `K`, so a subsequence converges.
   obtain ⟨φ₂, hφ₂, g, hg⟩ := exists_subseq_tendstoLocallyUniformly_comp_add_of_lipschitzWith hK

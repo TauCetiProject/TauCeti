@@ -25,13 +25,14 @@ bands each contain at most one critical value; the sublevels at these values fil
 its critical levels.
 
 The remaining two results hold for a finite set `C` in any linear order, respectively in any
-linearly ordered field. Between two points `a₀ < a₁` of `C`, the points of `C ∩ [a₀, a₁]` can be
-listed in increasing order `a₀ = d 0 < ⋯ < d (m + 1) = a₁`, with no point of `C` between two
-consecutive ones (`Set.Finite.exists_strictMono_fin_consecutive`). There is also a finite version
-with exactly one point of `C` in each band: the midpoints `b 0 < ⋯ < b m` of consecutive points of
-`C ∩ [a₀, a₁]` avoid `C`, and `[a₀, b 0]`, each `[b i, b (i + 1)]` and `[b m, a₁]` contain exactly
-one point of `C` (`Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton`). For the actions of
-the periodic orbits of a Hamiltonian, these are the values at which a breaking sequence of Floer
+densely ordered linear order. Between two points `a₀ < a₁` of `C`, the points of `C ∩ [a₀, a₁]`
+can be listed in increasing order `a₀ = d 0 < ⋯ < d (m + 1) = a₁`, with no point of `C` between
+two consecutive ones (`Set.Finite.exists_strictMono_fin_consecutive`). There is also a finite
+version with exactly one point of `C` in each band: points `b 0 < ⋯ < b m` chosen strictly between
+consecutive points of `C ∩ [a₀, a₁]` avoid `C`, and `[a₀, b 0]`, each `[b i, b (i + 1)]` and
+`[b m, a₁]` contain exactly one point of `C`
+(`Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton`). For the actions of the periodic
+orbits of a Hamiltonian, these are the values at which a breaking sequence of Floer
 trajectories is normalized, one between each pair of consecutive orbit actions.
 -/
 
@@ -115,23 +116,20 @@ theorem Set.Finite.exists_strictMono_fin_consecutive {α : Type*} [LinearOrder �
     omega
 
 /-- **Finitely many points separating a finite set between two of its points.** Let `C` be a
-finite subset of a linearly ordered field and let `a₀ < a₁` be two of its points. There are
+finite subset of a densely ordered linear order and let `a₀ < a₁` be two of its points. There are
 strictly increasing points `b 0 < ⋯ < b m` in `(a₀, a₁)`, none of them in `C`, such that `a₀`
 is the only point of `C` in `[a₀, b 0]`, `a₁` is the only point of `C` in `[b m, a₁]`, and each
 `[b i, b (i + 1)]` contains exactly one point of `C`. -/
-theorem Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton {α : Type*} [Field α]
-    [LinearOrder α] [IsStrictOrderedRing α] {C : Set α} (hC : C.Finite) {a₀ a₁ : α} (h₀ : a₀ ∈ C)
-    (h₁ : a₁ ∈ C) (h : a₀ < a₁) :
+theorem Set.Finite.exists_strictMono_notMem_inter_Icc_eq_singleton {α : Type*} [LinearOrder α]
+    [DenselyOrdered α] {C : Set α} (hC : C.Finite) {a₀ a₁ : α} (h₀ : a₀ ∈ C) (h₁ : a₁ ∈ C)
+    (h : a₀ < a₁) :
     ∃ m : ℕ, ∃ b : Fin (m + 1) → α, StrictMono b ∧ (∀ i, b i ∉ C) ∧ a₀ < b 0 ∧
       b (Fin.last m) < a₁ ∧ C ∩ Icc a₀ (b 0) = {a₀} ∧ C ∩ Icc (b (Fin.last m)) a₁ = {a₁} ∧
       ∀ i : Fin m, ∃ c, C ∩ Icc (b i.castSucc) (b i.succ) = {c} := by
   -- The points of `C` in `[a₀, a₁]`, in increasing order `a₀ = d 0 < d 1 < ⋯ < d (m + 1) = a₁`.
   obtain ⟨m, d, hdm, hdC, hd0, hdl, hgap⟩ := hC.exists_strictMono_fin_consecutive h₀ h₁ h
-  have hlt (i : Fin (m + 1)) : d i.castSucc < d i.succ := hdm Fin.castSucc_lt_succ
-  -- `b i` is the midpoint of `d i` and `d (i + 1)`.
-  set b : Fin (m + 1) → α := fun i ↦ (d i.castSucc + d i.succ) / 2 with hb
-  have hbl (i : Fin (m + 1)) : d i.castSucc < b i := by simp only [hb]; linarith [hlt i]
-  have hbu (i : Fin (m + 1)) : b i < d i.succ := by simp only [hb]; linarith [hlt i]
+  -- `b i` lies strictly between `d i` and `d (i + 1)`.
+  choose b hbl hbu using fun i : Fin (m + 1) ↦ exists_between (hdm (Fin.castSucc_lt_succ (i := i)))
   have hb0 : a₀ < b 0 := by simpa [hd0] using hbl 0
   have hbm : b (Fin.last m) < a₁ := by simpa [hdl] using hbu (Fin.last m)
   -- `d (i + 1)` lies strictly between `b i` and `b (i + 1)`.
