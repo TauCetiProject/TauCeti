@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.WittVector.Compare
 public import Mathlib.RingTheory.WittVector.Frobenius
-public import TauCeti.NumberTheory.Padics.FractionField
 
 /-!
 # The map `ℤ_p → 𝕎 R` for a ring `R` of characteristic `p`
@@ -20,9 +19,10 @@ structure map `ℤ_p → A_inf`, the ring map underlying the projection of `Spa(
 the period domain of the Fargues–Fontaine curve inside it, to `Spa(ℤ_p, ℤ_p)`.
 
 The map is natural in `R`, so the Witt-vector Frobenius, which in characteristic `p` is the map
-induced by the Frobenius of `R`, fixes it: Frobenius is a map over `ℤ_p`. It sends `p` to `p`, so
-it is continuous for every adic topology on `𝕎 R` defined by an ideal containing `p`, such as the
-`(p, [ϖ])`-adic topology of `A_inf`.
+induced by the Frobenius of `R`, fixes it: Frobenius is a map over `ℤ_p`. Like every ring
+homomorphism out of `ℤ_[p]`, the map is continuous for every adic topology on `𝕎 R` defined by an
+ideal containing `p`, such as the `(p, [ϖ])`-adic topology of `A_inf`
+(`PadicInt.continuous_of_isAdic`, in `TauCeti.NumberTheory.Padics.FractionField`).
 
 ## Main definitions
 
@@ -33,8 +33,6 @@ it is continuous for every adic topology on `𝕎 R` defined by an ideal contain
 * `TauCeti.WittVector.padicIntHom_zmod`: for `R = ZMod p` it is `WittVector.fromPadicInt`.
 * `TauCeti.WittVector.map_comp_padicIntHom`: it is natural in `R`.
 * `TauCeti.WittVector.frobenius_comp_padicIntHom`: Frobenius fixes it.
-* `TauCeti.WittVector.continuous_padicIntHom`: it is continuous for every `J`-adic topology on
-  `𝕎 R` with `p ∈ J`.
 -/
 
 public section
@@ -79,12 +77,5 @@ Frobenius of `R`, fixes the structure map `ℤ_[p] → 𝕎 R`. -/
 @[simp]
 theorem frobenius_comp_padicIntHom : frobenius.comp (padicIntHom p R) = padicIntHom p R := by
   rw [frobenius_eq_map_frobenius, map_comp_padicIntHom]
-
-/-- **The structure map `ℤ_[p] → 𝕎 R` is continuous** for the `J`-adic topology on `𝕎 R`, for every
-ideal `J` containing `p`, like every ring homomorphism out of `ℤ_[p]`. This applies to the
-`(p, [ϖ])`-adic topology of `A_inf`. -/
-theorem continuous_padicIntHom [TopologicalSpace (𝕎 R)] {J : Ideal (𝕎 R)} (hJ : IsAdic J)
-    (hp : (p : 𝕎 R) ∈ J) : Continuous (padicIntHom p R) :=
-  PadicInt.continuous_of_isAdic hJ hp _
 
 end TauCeti.WittVector

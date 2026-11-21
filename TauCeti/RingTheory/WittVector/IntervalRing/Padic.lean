@@ -119,7 +119,7 @@ theorem continuous_algebraMap_padic_intervalRing :
   have hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ}) := rfl
   rw [Padic.continuous_iff_continuous_comp_coe]
   have h := (continuous_algebraMap_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ hI).comp
-    (continuous_padicIntHom p O hI (Ideal.subset_span (by simp)))
+    (PadicInt.continuous_of_isAdic hI (Ideal.subset_span (by simp)) (padicIntHom p O))
   exact h.congr fun x ↦ (algebraMap_padic_coe_intervalRing x).symm
 
 /-- **The structure map is the unique continuous ring homomorphism `ℚ_[p] → B^I`.** -/
