@@ -8,42 +8,45 @@ module
 public import Mathlib.Probability.Process.Indistinguishable
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Bases
-import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Sample-path continuity and stopping for indistinguishable processes
+# Indistinguishability of continuous and stopped stochastic processes
 
-Modifications with almost surely continuous paths over a separable time index into a Hausdorff
-target are indistinguishable (`ProbabilityTheory.Indistinguishable.of_ae_eq`): equality at each
-fixed time upgrades to simultaneous equality on a countable dense time set and then everywhere by
-continuity. Conversely, indistinguishability transports almost-sure sample-path continuity,
-sample-event indicators, stopped values, and stopped processes without measurability or filtration
-assumptions.
+Two stochastic processes on a separable topological index space taking values in a Hausdorff space
+that are modifications of each other and have almost surely continuous sample paths are
+indistinguishable (`TauCeti.indist_of_ae_continuous`). Neither finiteness of the measure nor
+measurability of the processes is needed.
 
-## References
-
-* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  Springer, 1991, §1.1, Problem 1.5.
+Conversely, indistinguishability transports almost-sure sample-path continuity, sample-event
+indicators, stopped values, and stopped processes without measurability or filtration assumptions.
 -/
 
 public section
 
-open Filter MeasureTheory Set TopologicalSpace
+open MeasureTheory ProbabilityTheory TopologicalSpace
+
+namespace TauCeti
+
+/-- Two modifications on a separable index space with almost surely continuous paths into a `T₂`
+space are indistinguishable. Neither finiteness of `P` nor measurability of the processes is
+needed. -/
+theorem indist_of_ae_continuous {ι Ω E : Type*} [TopologicalSpace ι] [SeparableSpace ι]
+    [TopologicalSpace E] [T2Space E] {_ : MeasurableSpace Ω} {P : Measure Ω}
+    {X Y : ι → Ω → E} (hX : ∀ᵐ ω ∂P, Continuous (X · ω))
+    (hY : ∀ᵐ ω ∂P, Continuous (Y · ω)) (hXY : ∀ t, X t =ᵐ[P] Y t) :
+    X ≡ᵐ[P] Y := by
+  obtain ⟨D, hDc, hDd⟩ := exists_countable_dense ι
+  have hD : ∀ᵐ ω ∂P, ∀ t ∈ D, X t ω = Y t ω := (ae_ball_iff hDc).2 fun t _ ↦ hXY t
+  filter_upwards [hX, hY, hD] with ω hXω hYω hDω
+  exact fun t ↦ congr_fun (Continuous.ext_on hDd hXω hYω hDω) t
+
+end TauCeti
 
 namespace ProbabilityTheory.Indistinguishable
 
-variable {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
+open Filter Set
 
-/-- Modifications with almost surely continuous paths over a separable index set into a Hausdorff
-space are indistinguishable. -/
-theorem of_ae_eq [TopologicalSpace ι] [SeparableSpace ι] [TopologicalSpace E] [T2Space E]
-    (hX : ∀ᵐ ω ∂P, Continuous (X · ω)) (hY : ∀ᵐ ω ∂P, Continuous (Y · ω))
-    (h : ∀ t, X t =ᵐ[P] Y t) :
-    X ≡ᵐ[P] Y := by
-  obtain ⟨d, hd_count, hd_dense⟩ := TopologicalSpace.exists_countable_dense ι
-  have hd : ∀ᵐ ω ∂P, ∀ t ∈ d, X t ω = Y t ω := (ae_ball_iff hd_count).2 fun t _ ↦ h t
-  filter_upwards [hX, hY, hd] with ω hcX hcY hdω
-  exact congrFun (hcX.ext_on hd_dense hcY hdω)
+variable {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
 
 /-- Indistinguishability transports almost-sure sample-path continuity. -/
 theorem ae_continuous [TopologicalSpace ι] [TopologicalSpace E]

@@ -41,13 +41,13 @@ variable {ι : Type*}
 
 /-- The `n`-dimensional cells of `K`: its faces with `n + 1` vertices. -/
 abbrev RealizationCell (K : AbstractSimplicialComplex ι) (n : ℕ) :=
-  {σ : TauCeti.SetLike.Face K // σ.1.card = n + 1}
+  {σ : TauCeti.SetLike.Face K // σ.val.card = n + 1}
 
 namespace RealizationCell
 
 /-- Cells with the same vertex set are equal. -/
 theorem ext {K : AbstractSimplicialComplex ι} {n : ℕ} {c d : RealizationCell K n}
-    (h : c.1.1 = d.1.1) : c = d :=
+    (h : c.val.val = d.val.val) : c = d :=
   Subtype.ext (Subtype.ext h)
 
 section Vertex
@@ -60,7 +60,7 @@ def vertex (v : ι) : RealizationCell K 0 :=
 
 /-- The vertex set of the `0`-cell of a vertex is that vertex. -/
 @[simp]
-theorem vertex_val (v : ι) : (vertex K v).1.1 = {v} :=
+theorem vertex_val (v : ι) : (vertex K v).val.val = {v} :=
   (rfl)
 
 end Vertex
@@ -70,23 +70,23 @@ variable {K : AbstractSimplicialComplex ι} {n : ℕ}
 
 /-- The increasing enumeration of the vertices of a simplicial cell. -/
 def vertexEmbedding (c : RealizationCell K n) : Fin (n + 1) ↪ ι :=
-  (c.1.1.orderEmbOfFin c.2).toEmbedding
+  (c.val.val.orderEmbOfFin c.property).toEmbedding
 
 /-- The chosen vertex enumeration is strictly increasing. -/
 theorem strictMono_vertexEmbedding (c : RealizationCell K n) : StrictMono c.vertexEmbedding :=
-  (c.1.1.orderEmbOfFin c.2).strictMono
+  (c.val.val.orderEmbOfFin c.property).strictMono
 
 /-- Every enumerated vertex belongs to the cell's face. -/
 @[simp]
 theorem vertexEmbedding_mem (c : RealizationCell K n) (i : Fin (n + 1)) :
-    c.vertexEmbedding i ∈ c.1.1 :=
-  Finset.orderEmbOfFin_mem c.1.1 c.2 i
+    c.vertexEmbedding i ∈ c.val.val :=
+  Finset.orderEmbOfFin_mem c.val.val c.property i
 
 /-- The increasing enumeration has the cell's face as its image. -/
 @[simp]
 theorem image_vertexEmbedding (c : RealizationCell K n) :
-    Finset.univ.image c.vertexEmbedding = c.1.1 :=
-  Finset.image_orderEmbOfFin_univ c.1.1 c.2
+    Finset.univ.image c.vertexEmbedding = c.val.val :=
+  Finset.image_orderEmbOfFin_univ c.val.val c.property
 
 /-- The only enumerated vertex of the `0`-cell of a vertex is that vertex. -/
 @[simp]
@@ -96,7 +96,7 @@ theorem vertexEmbedding_vertex (v : ι) (i : Fin 1) : (vertex K v).vertexEmbeddi
 /-- Every `0`-cell is the `0`-cell of its only vertex. -/
 theorem eq_vertex (c : RealizationCell K 0) : c = vertex K (c.vertexEmbedding 0) :=
   ext (Finset.eq_singleton_iff_unique_mem.mpr ⟨c.vertexEmbedding_mem 0,
-    fun _ hw ↦ Finset.card_le_one.mp c.2.le _ hw _ (c.vertexEmbedding_mem 0)⟩)
+    fun _ hw ↦ Finset.card_le_one.mp c.property.le _ hw _ (c.vertexEmbedding_mem 0)⟩)
 
 /-- A tuple of distinct vertices spanning a face is a permuted increasing enumeration of the
 cell it spans. -/
@@ -114,33 +114,33 @@ theorem exists_eq_vertexEmbedding_comp {g : Fin (n + 1) → ι} (hg : Function.I
 /-- The codimension-one face obtained by deleting the `j`-th vertex in the increasing
 enumeration of a simplicial cell. -/
 def face (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) : RealizationCell K n := by
-  let σ := c.1.1.erase (c.vertexEmbedding j)
+  let σ := c.val.val.erase (c.vertexEmbedding j)
   have hcard : σ.card = n + 1 := by
     dsimp only [σ]
-    rw [Finset.card_erase_of_mem (c.vertexEmbedding_mem j), c.2]
+    rw [Finset.card_erase_of_mem (c.vertexEmbedding_mem j), c.property]
     omega
-  refine ⟨⟨σ, K.isRelLowerSet_faces.mem_of_le c.1.2 (Finset.erase_subset _ _) ?_⟩, hcard⟩
+  refine ⟨⟨σ, K.isRelLowerSet_faces.mem_of_le c.val.property (Finset.erase_subset _ _) ?_⟩, hcard⟩
   exact Finset.card_pos.mp (hcard.trans_gt (Nat.zero_lt_succ n))
 
 /-- The finite set underlying a deleted-vertex face is obtained by erasing that vertex. -/
 @[simp]
 theorem face_val (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
-    (c.face j).1.1 = c.1.1.erase (c.vertexEmbedding j) :=
+    (c.face j).val.val = c.val.val.erase (c.vertexEmbedding j) :=
   (rfl)
 
 /-- The codimension-one faces obtained by deleting vertices are pairwise distinct. -/
 theorem face_injective (c : RealizationCell K (n + 1)) : Function.Injective c.face := by
   intro i j hij
-  have herase : c.1.1.erase (c.vertexEmbedding i) =
-      c.1.1.erase (c.vertexEmbedding j) := by
-    simpa only [face_val] using congrArg (fun d => d.1.1) hij
+  have herase : c.val.val.erase (c.vertexEmbedding i) =
+      c.val.val.erase (c.vertexEmbedding j) := by
+    simpa only [face_val] using congrArg (fun d => d.val.val) hij
   exact c.vertexEmbedding.injective
-    ((Finset.erase_inj c.1.1 (c.vertexEmbedding_mem i)).mp herase)
+    ((Finset.erase_inj c.val.val (c.vertexEmbedding_mem i)).mp herase)
 
 /-- A finite set lies in a codimension-one face exactly when it is a proper subset of the
 original face. -/
 theorem exists_subset_face_iff_ssubset (c : RealizationCell K (n + 1)) (s : Finset ι) :
-    (∃ j, s ⊆ (c.face j).1.1) ↔ s ⊂ c.1.1 := by
+    (∃ j, s ⊆ (c.face j).val.val) ↔ s ⊂ c.val.val := by
   constructor
   · rintro ⟨j, hs⟩
     exact hs.trans_lt (Finset.erase_ssubset (c.vertexEmbedding_mem j))
@@ -153,20 +153,20 @@ theorem exists_subset_face_iff_ssubset (c : RealizationCell K (n + 1)) (s : Fins
 
 /-- The codimension-one cells of a cell are exactly its subfaces of the appropriate dimension. -/
 theorem exists_face_eq_iff_subset (c : RealizationCell K (n + 1)) (d : RealizationCell K n) :
-    (∃ j, c.face j = d) ↔ d.1.1 ⊆ c.1.1 := by
+    (∃ j, c.face j = d) ↔ d.val.val ⊆ c.val.val := by
   constructor
   · rintro ⟨j, rfl⟩
     exact Finset.erase_subset _ _
   · intro hdc
-    have hdc' : d.1.1 ⊂ c.1.1 := Finset.ssubset_iff_subset_ne.mpr ⟨hdc, by
+    have hdc' : d.val.val ⊂ c.val.val := Finset.ssubset_iff_subset_ne.mpr ⟨hdc, by
         intro h
         have hcard := congrArg Finset.card h
-        simp only [d.2, c.2] at hcard
+        simp only [d.property, c.property] at hcard
         omega⟩
-    obtain ⟨j, hdj⟩ := (c.exists_subset_face_iff_ssubset d.1.1).mpr hdc'
+    obtain ⟨j, hdj⟩ := (c.exists_subset_face_iff_ssubset d.val.val).mpr hdc'
     refine ⟨j, ext ?_⟩
     exact (Finset.eq_of_subset_of_card_le hdj (by
-      simp only [d.2, (c.face j).2]
+      simp only [d.property, (c.face j).property]
       omega)).symm
 
 /-- The increasing enumeration of a deleted-vertex face skips exactly the deleted position. -/
@@ -174,7 +174,7 @@ theorem exists_face_eq_iff_subset (c : RealizationCell K (n + 1)) (d : Realizati
 theorem vertexEmbedding_face (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
     ⇑(c.face j).vertexEmbedding = c.vertexEmbedding ∘ j.succAbove := by
   symm
-  apply Finset.orderEmbOfFin_unique (c.face j).2
+  apply Finset.orderEmbOfFin_unique (c.face j).property
   · intro i
     rw [face_val, Finset.mem_erase]
     exact ⟨fun h ↦ j.succAbove_ne i (c.vertexEmbedding.injective h),
@@ -196,24 +196,24 @@ section Cone
 
 /-- The cone on a cell `c` with a vertex `v` larger than all vertices of `c`, when adjoining `v`
 to `c` gives a face: the cell with vertex set `c ∪ {v}`. -/
-def cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) : RealizationCell K (n + 1) :=
-  ⟨⟨insert v c.1.1, hK⟩, by
-    rw [Finset.card_insert_of_notMem fun hv ↦ (hlt v hv).false, c.2]⟩
+def cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) : RealizationCell K (n + 1) :=
+  ⟨⟨insert v c.val.val, hK⟩, by
+    rw [Finset.card_insert_of_notMem fun hv ↦ (hlt v hv).false, c.property]⟩
 
 /-- The vertex set of a cone is obtained by adjoining the cone vertex. -/
 @[simp]
-theorem cone_val (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).1.1 = insert v c.1.1 :=
+theorem cone_val (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) : (c.cone v hlt hK).val.val = insert v c.val.val :=
   (rfl)
 
 /-- The increasing enumeration of a cone enumerates the original cell and then the cone
 vertex. -/
-theorem vertexEmbedding_cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) :
+theorem vertexEmbedding_cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) :
     ⇑(c.cone v hlt hK).vertexEmbedding = Fin.lastCases v c.vertexEmbedding := by
   symm
-  apply Finset.orderEmbOfFin_unique (c.cone v hlt hK).2
+  apply Finset.orderEmbOfFin_unique (c.cone v hlt hK).property
   · intro i
     rw [cone_val]
     induction i using Fin.lastCases with
@@ -230,30 +230,36 @@ theorem vertexEmbedding_cone (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈
 
 /-- Deleting the cone vertex from a cone recovers the original cell. -/
 @[simp]
-theorem face_cone_last (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face (Fin.last (n + 1)) = c := by
+theorem face_cone_last (c : RealizationCell K n) (v : ι) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) : (c.cone v hlt hK).face (Fin.last (n + 1)) = c := by
   refine ext ?_
   rw [face_val, congrFun (vertexEmbedding_cone c v hlt hK), Fin.lastCases_last, cone_val,
     Finset.erase_insert fun hv ↦ (hlt v hv).false]
 
 /-- The vertex set of a deleted-vertex face of a cell lies in the original cell. -/
 theorem face_val_subset (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
-    (c.face j).1.1 ⊆ c.1.1 := by
+    (c.face j).val.val ⊆ c.val.val := by
   rw [face_val]
   exact Finset.erase_subset _ _
+
+/-- The vertex set of a deleted-vertex face of a cell is a proper subset of the original cell. -/
+theorem face_val_ssubset (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
+    (c.face j).val.val ⊂ c.val.val := by
+  rw [face_val]
+  exact Finset.erase_ssubset (c.vertexEmbedding_mem j)
 
 /-- Adjoining `v` to a deleted-vertex face of a cell gives a face of `K` when adjoining it to the
 cell does. -/
 theorem insert_face_mem (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) {v : ι}
-    (hK : insert v c.1.1 ∈ K) : insert v (c.face j).1.1 ∈ K :=
+    (hK : insert v c.val.val ∈ K) : insert v (c.face j).val.val ∈ K :=
   K.isRelLowerSet_faces.mem_of_le hK (Finset.insert_subset_insert v (c.face_val_subset j))
     (Finset.insert_nonempty _ _)
 
 /-- Deleting a vertex of the original cell from a cone gives the cone on the corresponding
 face. -/
 @[simp]
-theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) (j : Fin (n + 2)) :
+theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) (j : Fin (n + 2)) :
     (c.cone v hlt hK).face j.castSucc =
       (c.face j).cone v (fun w hw ↦ hlt w (c.face_val_subset j hw)) (c.insert_face_mem j hK) := by
   refine ext ?_
@@ -262,10 +268,10 @@ theorem face_cone_castSucc (c : RealizationCell K (n + 1)) (v : ι) (hlt : ∀ w
 
 /-- Deleting the first vertex of the cone on a `0`-cell leaves the cone vertex. -/
 @[simp]
-theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) : (c.cone v hlt hK).face 0 = vertex K v := by
+theorem face_cone_zero (c : RealizationCell K 0) (v : ι) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) : (c.cone v hlt hK).face 0 = vertex K v := by
   refine ext ?_
-  have hc : c.1.1 = {c.vertexEmbedding 0} := congrArg (fun d ↦ d.1.1) c.eq_vertex
+  have hc : c.val.val = {c.vertexEmbedding 0} := congrArg (fun d ↦ d.val.val) c.eq_vertex
   rw [face_val, ← Fin.castSucc_zero, congrFun (vertexEmbedding_cone c v hlt hK),
     Fin.lastCases_castSucc, cone_val, hc]
   simp [Finset.erase_insert_of_ne (hlt _ (c.vertexEmbedding_mem 0)).ne']
