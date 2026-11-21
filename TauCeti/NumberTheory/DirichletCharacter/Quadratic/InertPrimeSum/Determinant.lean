@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
+import Mathlib.Algebra.Polynomial.Bivariate
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.NumberTheory.LegendreSymbol.Basic
+import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.Squarefree
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
@@ -67,39 +69,72 @@ private theorem quadGrid_snd_injective {d : ℤ} (hd : Squarefree d) (hd1 : d �
 
 /-- Linear change of variables `z ↦ X₀ + s X₁`, `z' ↦ X₀ - s X₁` from `ℂ[X][X]` to
 `MvPolynomial (Fin 2) ℂ`. -/
-private noncomputable def toMvQuad (s : ℂ) : ℂ[X][X] →+* MvPolynomial (Fin 2) ℂ :=
-  Polynomial.eval₂RingHom
-    (Polynomial.aeval (MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1)).toRingHom
-    (MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1)
+private noncomputable def toMvQuad (s : ℂ) : ℂ[X][X] →ₐ[ℂ] MvPolynomial (Fin 2) ℂ :=
+  (MvPolynomial.aeval ![MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1,
+    MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1]).comp
+    (Polynomial.Bivariate.equivMvPolynomial ℂ).toAlgHom
 
 private theorem eval_toMvQuad (s x y : ℂ) (g : ℂ[X][X]) :
     MvPolynomial.eval ![x, y] (toMvQuad s g) =
       (g.map (Polynomial.evalRingHom (x - y * s))).eval (x + y * s) := by
-  let lhs : ℂ[X][X] →+* ℂ := (MvPolynomial.eval ![x, y]).comp (toMvQuad s)
-  let rhs : ℂ[X][X] →+* ℂ :=
-    (Polynomial.evalRingHom (x + y * s)).comp
-      (Polynomial.mapRingHom (Polynomial.evalRingHom (x - y * s)))
-  have hcomp : lhs = rhs := by
-    refine Polynomial.ringHom_ext' ?_ (by simp [lhs, rhs, toMvQuad, mul_comm])
-    exact Polynomial.ringHom_ext (fun c ↦ by simp [lhs, rhs, toMvQuad])
-      (by simp [lhs, rhs, toMvQuad, mul_comm])
-  exact congrArg (fun f ↦ f g) hcomp
+  rw [Polynomial.map_evalRingHom_eval, ← Polynomial.coe_aevalAeval_eq_evalEval,
+    ← MvPolynomial.aeval_eq_eval]
+  change (MvPolynomial.aeval ![x, y])
+    ((MvPolynomial.aeval ![MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1,
+      MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1])
+      (Polynomial.Bivariate.equivMvPolynomial ℂ g)) = _
+  rw [MvPolynomial.comp_aeval_apply]
+  have hcomp : (MvPolynomial.aeval fun i : Fin 2 ↦ (MvPolynomial.aeval ![x, y])
+      (![MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1,
+        MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1] i)).comp
+      (Polynomial.Bivariate.equivMvPolynomial ℂ).toAlgHom =
+      Polynomial.aevalAeval (x - y * s) (x + y * s) := by
+    have h := (Polynomial.aevalAevalEquiv ℂ ℂ).apply_symm_apply
+      ((MvPolynomial.aeval fun i : Fin 2 ↦ (MvPolynomial.aeval ![x, y])
+        (![MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1,
+          MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1] i)).comp
+        (Polynomial.Bivariate.equivMvPolynomial ℂ).toAlgHom)
+    simpa [Polynomial.aevalAevalEquiv_apply, mul_comm] using h.symm
+  exact congrArg (· g) hcomp
 
 private theorem toMvQuad_ne_zero {s : ℂ} (hs : s ≠ 0) {g : ℂ[X][X]} (hg : g ≠ 0) :
     toMvQuad s g ≠ 0 := by
+  let inv : MvPolynomial (Fin 2) ℂ →ₐ[ℂ] MvPolynomial (Fin 2) ℂ :=
+    MvPolynomial.aeval
+      ![MvPolynomial.C (1 / 2 : ℂ) * (MvPolynomial.X 0 + MvPolynomial.X 1),
+        MvPolynomial.C (1 / (2 * s)) * (MvPolynomial.X 1 - MvPolynomial.X 0)]
+  have hinv : inv.comp (MvPolynomial.aeval
+      ![MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1,
+        MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1]) = AlgHom.id _ _ := by
+    have hss : (MvPolynomial.C (σ := Fin 2) s) * MvPolynomial.C s⁻¹ = 1 := by
+      rw [← map_mul, mul_inv_cancel₀ hs, map_one]
+    have h2 : (MvPolynomial.C (σ := Fin 2) (2⁻¹ : ℂ)) + MvPolynomial.C 2⁻¹ = 1 := by
+      rw [← map_add]; norm_num
+    refine MvPolynomial.algHom_ext fun i ↦ ?_
+    fin_cases i
+    · have ha : inv (MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1) =
+          MvPolynomial.C (2⁻¹ : ℂ) * (MvPolynomial.X 0 + MvPolynomial.X 1) -
+            MvPolynomial.C s * (MvPolynomial.C s⁻¹ * MvPolynomial.C 2⁻¹ *
+              (MvPolynomial.X 1 - MvPolynomial.X 0)) := by simp [inv]
+      simp only [Fin.isValue, Fin.zero_eta, AlgHom.comp_apply, MvPolynomial.aeval_X,
+        Matrix.cons_val_zero, AlgHom.id_apply]
+      rw [ha, ← mul_assoc (MvPolynomial.C s), ← mul_assoc (MvPolynomial.C s), hss, one_mul]
+      linear_combination (MvPolynomial.X 0) * h2
+    · have hb : inv (MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1) =
+          MvPolynomial.C (2⁻¹ : ℂ) * (MvPolynomial.X 0 + MvPolynomial.X 1) +
+            MvPolynomial.C s * (MvPolynomial.C s⁻¹ * MvPolynomial.C 2⁻¹ *
+              (MvPolynomial.X 1 - MvPolynomial.X 0)) := by simp [inv]
+      simp only [Fin.isValue, Fin.mk_one, AlgHom.comp_apply, MvPolynomial.aeval_X,
+        Matrix.cons_val_one, Matrix.cons_val_fin_one, AlgHom.id_apply]
+      rw [hb, ← mul_assoc (MvPolynomial.C s), ← mul_assoc (MvPolynomial.C s), hss, one_mul]
+      linear_combination (MvPolynomial.X 1) * h2
   intro h0
-  have hspec (v : ℂ) : g.map (Polynomial.evalRingHom v) = 0 := by
-    refine Polynomial.funext fun u ↦ ?_
-    have hev := eval_toMvQuad s ((u + v) / 2) ((u - v) / (2 * s)) g
-    have h1 : (u + v) / 2 + (u - v) / (2 * s) * s = u := by field_simp; ring
-    have h2 : (u + v) / 2 - (u - v) / (2 * s) * s = v := by field_simp; ring
-    rw [h0, map_zero, h1, h2] at hev
-    simpa using hev.symm
-  apply hg
-  ext k j
-  have hj : g.coeff k = 0 := Polynomial.funext fun v ↦ by
-    simpa [Polynomial.coeff_map] using congrArg (fun p : ℂ[X] ↦ p.coeff k) (hspec v)
-  simp [hj]
+  have h1 := congrArg inv h0
+  change inv ((MvPolynomial.aeval ![MvPolynomial.X 0 - MvPolynomial.C s * MvPolynomial.X 1,
+    MvPolynomial.X 0 + MvPolynomial.C s * MvPolynomial.X 1])
+    (Polynomial.Bivariate.equivMvPolynomial ℂ g)) = inv 0 at h1
+  rw [← AlgHom.comp_apply, hinv, AlgHom.id_apply, map_zero] at h1
+  exact hg ((Polynomial.Bivariate.equivMvPolynomial ℂ).injective (h1.trans (map_zero _).symm))
 
 private theorem totalDegree_toMvQuad_le (s : ℂ) (g : ℂ[X][X]) :
     (toMvQuad s g).totalDegree ≤
@@ -121,8 +156,20 @@ private theorem totalDegree_toMvQuad_le (s : ℂ) (g : ℂ[X][X]) :
     rw [MvPolynomial.totalDegree_C, zero_add]
     exact (MvPolynomial.totalDegree_pow _ _).trans
       ((Nat.mul_le_mul_left j hlin_sub).trans (by simpa using hj'))
-  rw [toMvQuad, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_eq_sum_range]
+  have hC (p : ℂ[X]) : toMvQuad s (Polynomial.C p) =
+      Polynomial.aeval (MvPolynomial.X (0 : Fin 2) -
+        MvPolynomial.C s * MvPolynomial.X (1 : Fin 2)) p := by
+    induction p using Polynomial.induction_on' with
+    | add p q hp hq => simp [map_add, hp, hq]
+    | monomial j a =>
+      simp [← Polynomial.C_mul_X_pow_eq_monomial, toMvQuad, MvPolynomial.algebraMap_eq]
+  have hX : toMvQuad s Polynomial.X =
+      MvPolynomial.X (0 : Fin 2) + MvPolynomial.C s * MvPolynomial.X (1 : Fin 2) := by
+    simp [toMvQuad]
+  conv_lhs => rw [g.as_sum_range_C_mul_X_pow]
+  rw [map_sum]
   refine MvPolynomial.totalDegree_finsetSum_le fun k hk ↦ ?_
+  rw [map_mul, map_pow, hC, hX]
   refine (MvPolynomial.totalDegree_mul _ _).trans ?_
   have hk' : k ≤ g.natDegree := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
   have hcoeff : (g.coeff k).natDegree ≤ g.support.sup fun j ↦ (g.coeff j).natDegree := by
@@ -385,19 +432,11 @@ private theorem re_sq_add_abs_mul_im_sq (d : ℤ) (α : QuadraticAlgebra ℤ d 0
       (‖QuadraticAlgebra.sqrtEmbedding (d : ℚ) (toRatQA d α)‖ ^ 2 +
         ‖QuadraticAlgebra.negSqrtEmbedding (d : ℚ) (toRatQA d α)‖ ^ 2) / 2 := by
   rw [sqrtEmbedding_toRatQA, negSqrtEmbedding_toRatQA]
-  rcases le_total 0 d with hd | hd
-  · have hdr : (0 : ℝ) ≤ (d : ℝ) := by exact_mod_cast hd
-    rw [QuadraticAlgebra.sqrtRadicand_of_nonneg (by exact_mod_cast hd), abs_of_nonneg hdr]
-    simp only [Rat.cast_intCast, ← Complex.ofReal_intCast, ← Complex.ofReal_mul,
-      ← Complex.ofReal_add, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, sq_abs]
-    nlinarith [Real.sq_sqrt hdr]
-  · have hdr : (d : ℝ) ≤ 0 := by exact_mod_cast hd
-    rw [QuadraticAlgebra.sqrtRadicand_of_nonpos (by exact_mod_cast hd), abs_of_nonpos hdr]
-    simp only [Rat.cast_intCast, ← Complex.ofReal_intCast, ← mul_assoc, ← Complex.ofReal_mul,
-      ← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.add_re, Complex.add_im,
-      Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, Complex.mul_re,
-      Complex.mul_im, Complex.I_re, Complex.I_im]
-    nlinarith [Real.sq_sqrt (neg_nonneg.mpr hdr)]
+  have hpar := parallelogram_law_with_norm ℝ (α.re : ℂ)
+    ((α.im : ℂ) * QuadraticAlgebra.sqrtRadicand (d : ℚ))
+  simp only [norm_mul, Complex.norm_intCast, QuadraticAlgebra.norm_sqrtRadicand,
+    Rat.cast_intCast, mul_pow, sq_abs, Real.sq_sqrt (abs_nonneg (d : ℝ))] at hpar
+  linarith
 
 /-- Complex-embedding norm bound for each entry of `gridVec`. -/
 private theorem norm_embedding_gridVec_le {d : ℤ} (hd0 : d ≠ 0) {R S N : ℕ} (hR : 1 ≤ R)
@@ -465,13 +504,8 @@ private theorem norm_sq_realGridVec_le {d : ℤ} (hd0 : d ≠ 0) {R S N : ℕ} (
 
 private theorem sum_fin_val_le (m : ℕ) :
     ∑ i : Fin m, (i.val : ℝ) ≤ (m : ℝ) ^ 2 / 2 := by
-  rw [Fin.sum_univ_eq_sum_range (fun i : ℕ ↦ (i : ℝ))]
-  have h2 : 2 * ∑ i ∈ Finset.range m, i ≤ m ^ 2 := by
-    rw [Finset.sum_range_id, Nat.mul_div_cancel' (Nat.even_mul_pred_self m).two_dvd, sq]
-    exact Nat.mul_le_mul_left m (Nat.sub_le m 1)
-  have h2R : (2 : ℝ) * ∑ i ∈ Finset.range m, (i : ℝ) ≤ (m : ℝ) ^ 2 := by
-    have h := Nat.cast_le (α := ℝ).mpr h2; push_cast at h; exact h
-  linarith
+  rw [Fin.sum_univ_eq_sum_range (fun i : ℕ ↦ (i : ℝ)), Finset.sum_range_natCast]
+  nlinarith [Nat.cast_nonneg (α := ℝ) m]
 
 private theorem sum_fin_prod_add_le (R S : ℕ) :
     ∑ rs : Fin R × Fin S, 2 * ((rs.1.val : ℝ) + rs.2.val) ≤ (R : ℝ) * S * ((R : ℝ) + S) := by
@@ -786,16 +820,17 @@ private theorem pow_two_mul_sum_padicExp_dvd_det_intGram {d : ℤ} {R S N p : �
     refine dvd_add (mul_dvd_mul hu.1 hv.1) ?_
     rw [mul_assoc]
     exact dvd_mul_of_dvd_right (mul_dvd_mul hu.2 hv.2) |d|
-  rw [Matrix.det_apply]
-  refine Finset.dvd_sum fun σ _ ↦ ?_
-  rw [Units.smul_def, zsmul_eq_mul]
-  refine dvd_mul_of_dvd_right ?_ _
-  have hprod_pow : (p : ℤ) ^ (2 * ∑ u : Fin R × Fin S, padicExp S p u) =
-      ∏ u : Fin R × Fin S, (p : ℤ) ^ (padicExp S p (σ u) + padicExp S p u) := by
-    simp_rw [pow_add, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum,
-      Equiv.sum_comp σ (padicExp S p), ← pow_add, two_mul]
-  rw [hprod_pow]
-  exact Finset.prod_dvd_prod_of_dvd _ _ fun u _ ↦ hGw_dvd (σ u) u
+  choose Q hQ using hGw_dvd
+  let D : Matrix (Fin R × Fin S) (Fin R × Fin S) ℤ :=
+    Matrix.diagonal fun u ↦ (p : ℤ) ^ padicExp S p u
+  have hGw_fac : Gw = D * Matrix.of Q * D := by
+    ext u v
+    simp only [Matrix.mul_apply, D, Matrix.diagonal_apply, ite_mul, zero_mul, mul_ite, mul_zero,
+      Finset.sum_ite_eq, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, Matrix.of_apply]
+    rw [hQ u v, pow_add]
+    ring
+  rw [hGw_fac, Matrix.det_mul, Matrix.det_mul, Matrix.det_diagonal, Finset.prod_pow_eq_pow_sum]
+  exact ⟨(Matrix.of Q).det, by rw [two_mul, pow_add]; ring⟩
 
 /-- Lower bound on `log (det (intGram d R S N))` from all odd inert primes in a finite set `P'`. -/
 private theorem sum_padicExp_log_le_log_det_intGram {d : ℤ} {R S N : ℕ}

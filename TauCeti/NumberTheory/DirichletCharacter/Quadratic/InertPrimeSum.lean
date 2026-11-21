@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.NumberTheory.MulChar.Basic
 import Mathlib.NumberTheory.Chebyshev
+import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.Chebyshev.Mertens
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
@@ -49,18 +50,6 @@ namespace TauCeti
 
 section Assembly
 
-private def padicExp (S p : ℕ) (r s : ℕ) : ℕ := min (r / p) (S - 1 - s)
-
-private theorem sum_fin_val_eq (m : ℕ) :
-    ∑ i : Fin m, (i.val : ℝ) = (m : ℝ) * ((m : ℝ) - 1) / 2 := by
-  rw [Fin.sum_univ_eq_sum_range (fun i : ℕ ↦ (i : ℝ))]
-  rcases eq_or_ne m 0 with rfl | hm0
-  · simp
-  · have h2 : 2 * ∑ i ∈ Finset.range m, i = m * (m - 1) := by
-      rw [Finset.sum_range_id]; exact Nat.mul_div_cancel' (Nat.even_mul_pred_self m).two_dvd
-    have := congrArg (Nat.cast (R := ℝ)) h2
-    push_cast [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hm0)] at this; linarith
-
 private theorem sum_min_sub_ge (S k : ℕ) :
     (S : ℝ) * k - (k : ℝ) ^ 2 ≤ ∑ s : Fin S, ((min k (S - 1 - s.val) : ℕ) : ℝ) := by
   rcases le_or_gt S k with hSk | hkS
@@ -69,11 +58,7 @@ private theorem sum_min_sub_ge (S k : ℕ) :
       (Finset.sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
   · let T : Finset (Fin S) := Finset.univ.filter fun s : Fin S ↦ s.val < S - k
     have hcard : T.card = S - k := by
-      rw [← Finset.card_range (S - k)]
-      exact Finset.card_nbij (fun s ↦ s.val)
-        (fun _ hs ↦ Finset.mem_range.mpr (Finset.mem_filter.mp hs).2) (fun _ _ _ _ h ↦ Fin.ext h)
-        fun x hx ↦ ⟨⟨x, (Finset.mem_range.mp hx).trans_le (Nat.sub_le S k)⟩,
-          Finset.mem_filter.mpr ⟨Finset.mem_univ _, Finset.mem_range.mp hx⟩, rfl⟩
+      rw [Fin.card_filter_val_lt, min_eq_right (Nat.sub_le S k)]
     have hsumT : (S : ℝ) * k - (k : ℝ) ^ 2 = ∑ s ∈ T, ((min k (S - 1 - s.val) : ℕ) : ℝ) := by
       rw [Finset.sum_congr rfl (fun s hs ↦ by
           rw [min_eq_left (by have := (Finset.mem_filter.mp hs).2; omega)]),
@@ -82,13 +67,13 @@ private theorem sum_min_sub_ge (S k : ℕ) :
     exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
       fun _ _ _ ↦ Nat.cast_nonneg _
 
-private theorem two_mul_sum_padicExp_ge (R S p : ℕ) (hp : 0 < p) :
+private theorem two_mul_sum_min_div_ge (R S p : ℕ) (hp : 0 < p) :
     (R : ℝ) ^ 2 * S / p - (R : ℝ) * S / p - 2 * R * S - 2 * (R : ℝ) ^ 3 / (p : ℝ) ^ 2 ≤
-      2 * (∑ u : Fin R × Fin S, (padicExp S p u.1.val u.2.val : ℝ)) := by
+      2 * (∑ u : Fin R × Fin S, ((min (u.1.val / p) (S - 1 - u.2.val) : ℕ) : ℝ)) := by
   have hpR : (0 : ℝ) < p := Nat.cast_pos.mpr hp
   have hrow (r : Fin R) :
       (S : ℝ) * ((r.val : ℝ) / p - 1) - ((r.val : ℝ) / p) ^ 2 ≤
-        ∑ s : Fin S, (padicExp S p r.val s.val : ℝ) := by
+        ∑ s : Fin S, ((min (r.val / p) (S - 1 - s.val) : ℕ) : ℝ) := by
     refine le_trans ?_ (sum_min_sub_ge S (r.val / p))
     have hdiv_le : ((r.val / p : ℕ) : ℝ) ≤ (r.val : ℝ) / p := Nat.cast_div_le
     have hdiv_ge : (r.val : ℝ) / p - 1 ≤ ((r.val / p : ℕ) : ℝ) := by
@@ -105,14 +90,15 @@ private theorem two_mul_sum_padicExp_ge (R S p : ℕ) (hp : 0 < p) :
           pow_le_pow_left₀ (Nat.cast_nonneg _) (by exact_mod_cast r.isLt.le) 2
       _ = (R : ℝ) ^ 3 := by simp [pow_succ, mul_assoc]
   have htot := Finset.sum_le_sum fun r (_ : r ∈ Finset.univ) ↦ hrow r
-  rw [← Fintype.sum_prod_type (fun u : Fin R × Fin S ↦ (padicExp S p u.1.val u.2.val : ℝ))] at htot
+  rw [← Fintype.sum_prod_type
+    (fun u : Fin R × Fin S ↦ ((min (u.1.val / p) (S - 1 - u.2.val) : ℕ) : ℝ))] at htot
   have hsimp : ∑ r : Fin R, ((S : ℝ) * ((r.val : ℝ) / p - 1) - ((r.val : ℝ) / p) ^ 2) =
       (S : ℝ) / p * (∑ r : Fin R, (r.val : ℝ)) - R * S -
         (1 / (p : ℝ) ^ 2) * ∑ r : Fin R, (r.val : ℝ) ^ 2 := by
     simp_rw [mul_sub, mul_one, div_pow, Finset.sum_sub_distrib, Finset.sum_const,
       Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, div_eq_mul_inv]
     rw [← Finset.mul_sum, ← Finset.sum_mul, ← Finset.sum_mul]; ring
-  rw [hsimp, sum_fin_val_eq R] at htot
+  rw [hsimp, Fin.sum_univ_eq_sum_range (fun i : ℕ ↦ (i : ℝ)), Finset.sum_range_natCast] at htot
   have hmul2 : (1 / (p : ℝ) ^ 2) * ∑ r : Fin R, (r.val : ℝ) ^ 2 ≤ (R : ℝ) ^ 3 / (p : ℝ) ^ 2 := by
     rw [one_div_mul_eq_div]; exact div_le_div_of_nonneg_right hsum_r2 (sq_nonneg _)
   have hmain : (S : ℝ) / p * ((R : ℝ) * ((R : ℝ) - 1) / 2) =
@@ -217,10 +203,7 @@ private theorem inert_sum_master_bound {d : ℤ} (hd : Squarefree d) (hd1 : d �
       ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
     refine Finset.sum_le_sum fun p hp ↦ ?_
     have hlogp : 0 ≤ Real.log p := Real.log_nonneg (by exact_mod_cast (hP' p hp).1.one_lt.le)
-    have hmul := mul_le_mul_of_nonneg_right (two_mul_sum_padicExp_ge R S p (hP' p hp).1.pos) hlogp
-    have hsum_eq : (∑ u : Fin R × Fin S, (padicExp S p u.1.val u.2.val : ℝ)) =
-        ∑ u : Fin R × Fin S, ((min (u.1.val / p) (S - 1 - u.2.val) : ℕ) : ℝ) := rfl
-    rw [hsum_eq] at hmul
+    have hmul := mul_le_mul_of_nonneg_right (two_mul_sum_min_div_ge R S p (hP' p hp).1.pos) hlogp
     linarith [show ((R : ℝ) ^ 2 * S / p - (R : ℝ) * S / p - 2 * R * S -
         2 * (R : ℝ) ^ 3 / (p : ℝ) ^ 2) * Real.log p =
         (R : ℝ) ^ 2 * S * (Real.log p / p) - (R : ℝ) * S * (Real.log p / p) -

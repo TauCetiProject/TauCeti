@@ -7,12 +7,15 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.Algebra.Polynomial.BigOperators
+import Mathlib.Algebra.Polynomial.Bivariate
 import Mathlib.Algebra.Polynomial.FieldDivision
+import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Polynomial.Content
 import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.Roots
+import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
@@ -72,99 +75,47 @@ section Translate
 
 variable {R : Type*} [CommRing R]
 
-private theorem natDegree_comp_X_add_C_le (p : R[X]) (c : R) :
-    (p.comp (X + C c)).natDegree ≤ p.natDegree := by
-  nontriviality R
-  exact natDegree_comp_le.trans (by rw [natDegree_X_add_C, mul_one])
-
-private theorem comp_X_add_C_mem_degreeLT {p : R[X]} {k : ℕ} (c : R) (hp : p ∈ degreeLT R k) :
-    p.comp (X + C c) ∈ degreeLT R k := by
-  rw [mem_degreeLT] at hp ⊢
-  rcases eq_or_ne p 0 with rfl | hp0
-  · simp at hp ⊢
-  have h0 : p.comp (X + C c) ≠ 0 := comp_X_add_C_ne_zero_iff.mpr hp0
-  rw [degree_eq_natDegree hp0] at hp
-  rw [degree_eq_natDegree h0]
-  exact (Nat.cast_le.mpr (natDegree_comp_X_add_C_le p c)).trans_lt hp
-
-/-- Translation `p ↦ p.comp (X + C c)` as an `R`-linear equivalence on `degreeLT R k`. -/
-private noncomputable def translateDegreeLT (c : R) (k : ℕ) :
-    degreeLT R k ≃ₗ[R] degreeLT R k where
-  toFun p := ⟨p.val.comp (X + C c), comp_X_add_C_mem_degreeLT c p.property⟩
-  map_add' p q := by ext1; simp [add_comp]
-  map_smul' r p := by ext1; simp [smul_eq_C_mul, mul_comp]
-  invFun p := ⟨p.val.comp (X + C (-c)), comp_X_add_C_mem_degreeLT (-c) p.property⟩
-  left_inv p := by ext1; simp [comp_assoc]
-  right_inv p := by ext1; simp [comp_assoc]
-
-/-- The matrix of `translateDegreeLT c k` in the monomial basis of `degreeLT R k` is upper
-triangular with `1`s on the diagonal, hence has determinant `1`. -/
-private theorem det_toMatrix_translateDegreeLT (c : R) (k : ℕ) :
-    (LinearMap.toMatrix (degreeLT.basis R k) (degreeLT.basis R k)
-      (translateDegreeLT c k).toLinearMap).det = 1 := by
-  set M := LinearMap.toMatrix (degreeLT.basis R k) (degreeLT.basis R k)
-    (translateDegreeLT c k).toLinearMap
-  have hM (i j : Fin k) : M i j = c ^ ((j : ℕ) - i) * (j : ℕ).choose i := by
-    simp only [M, LinearMap.toMatrix_apply, degreeLT.basis_repr, LinearEquiv.coe_coe]
-    change (((degreeLT.basis R k j : R[X])).comp (X + C c)).coeff i = _
-    rw [degreeLT.basis_val, X_pow_comp, coeff_X_add_C_pow]
-  have htri : M.BlockTriangular id := by
-    intro i j hij
-    have hlt : (j : ℕ) < i := hij
-    rw [hM, Nat.choose_eq_zero_of_lt hlt, Nat.cast_zero, mul_zero]
-  rw [Matrix.det_of_isUpperTriangular htri]
-  refine Finset.prod_eq_one fun i _ ↦ ?_
-  rw [hM, Nat.sub_self, pow_zero, Nat.choose_self, Nat.cast_one, mul_one]
-
-/-- The block-diagonal translation automorphism on `R[X]_m × R[X]_n` has determinant `1`. -/
-private theorem det_toMatrix_prodMap_translateDegreeLT (c : R) (m n : ℕ) :
-    (LinearMap.toMatrix
-      (((degreeLT.basis R m).prod (degreeLT.basis R n)).reindex finSumFinEquiv)
-      (((degreeLT.basis R m).prod (degreeLT.basis R n)).reindex finSumFinEquiv)
-      ((translateDegreeLT c m).toLinearMap.prodMap (translateDegreeLT c n).toLinearMap)).det =
-        1 := by
-  let bm := degreeLT.basis R m
-  let bn := degreeLT.basis R n
-  let Tm := (translateDegreeLT c m).toLinearMap
-  let Tn := (translateDegreeLT c n).toLinearMap
-  have hre : LinearMap.toMatrix ((bm.prod bn).reindex finSumFinEquiv)
-      ((bm.prod bn).reindex finSumFinEquiv) (Tm.prodMap Tn) =
-      (LinearMap.toMatrix (bm.prod bn) (bm.prod bn) (Tm.prodMap Tn)).reindex
-        finSumFinEquiv finSumFinEquiv := by
-    ext i j
-    simp [LinearMap.toMatrix_apply, Matrix.reindex_apply]
-  rw [hre, Matrix.det_reindex_self]
-  have hblk : LinearMap.toMatrix (bm.prod bn) (bm.prod bn) (Tm.prodMap Tn) =
-      Matrix.fromBlocks (LinearMap.toMatrix bm bm Tm) 0 0 (LinearMap.toMatrix bn bn Tn) := by
-    ext (i | i) (j | j) <;>
-      simp [LinearMap.toMatrix_apply, Module.Basis.prod_apply]
-  rw [hblk, Matrix.det_fromBlocks_zero₂₁, det_toMatrix_translateDegreeLT c m,
-    det_toMatrix_translateDegreeLT c n, mul_one]
-
 /-- **Translation invariance of the resultant.** Translating both polynomials by `X ↦ X + C c`
 preserves their resultant at any valid degree bounds `f.natDegree ≤ m` and `g.natDegree ≤ n`. -/
 theorem resultant_comp_X_add_C (f g : R[X]) (c : R) {m n : ℕ}
     (hf : f.natDegree ≤ m) (hg : g.natDegree ≤ n) :
     (f.comp (X + C c)).resultant (g.comp (X + C c)) m n = f.resultant g m n := by
-  have hf' : (f.comp (X + C c)).natDegree ≤ m := (natDegree_comp_X_add_C_le f c).trans hf
-  have hg' : (g.comp (X + C c)).natDegree ≤ n := (natDegree_comp_X_add_C_le g c).trans hg
-  let b₁ := ((degreeLT.basis R m).prod (degreeLT.basis R n)).reindex finSumFinEquiv
+  have hf' : (f.comp (X + C c)).natDegree ≤ m := by
+    rw [← taylor_apply]; exact (natDegree_taylor f c).le.trans hf
+  have hg' : (g.comp (X + C c)).natDegree ≤ n := by
+    rw [← taylor_apply]; exact (natDegree_taylor g c).le.trans hg
+  let bm := degreeLT.basis R m
+  let bn := degreeLT.basis R n
+  let b₁ := (bm.prod bn).reindex finSumFinEquiv
   let bmn := degreeLT.basis R (m + n)
-  let Tm := (translateDegreeLT c m).toLinearMap
-  let Tn := (translateDegreeLT c n).toLinearMap
-  let Tmn := (translateDegreeLT c (m + n)).toLinearMap
+  let Tm := (taylorLinearEquiv c m).toLinearMap
+  let Tn := (taylorLinearEquiv c n).toLinearMap
+  let Tmn := (taylorLinearEquiv c (m + n)).toLinearMap
   have hcomm :
       sylvesterMap (f.comp (X + C c)) (g.comp (X + C c)) hf' hg' ∘ₗ Tm.prodMap Tn =
         Tmn ∘ₗ sylvesterMap f g hf hg :=
     LinearMap.ext fun ⟨p, q⟩ ↦ Subtype.ext <| by
-      simp [Tm, Tn, Tmn, translateDegreeLT, add_comp, mul_comp]
+      simp only [LinearMap.comp_apply, LinearMap.prodMap_apply, Tm, Tn, Tmn,
+        LinearEquiv.coe_coe, taylorLinearEquiv_apply_coe, sylvesterMap_apply_coe, ← taylor_apply]
+      change taylor c f * (taylorEquiv c : R[X] →ₗ[R] R[X]) ↑q +
+          taylor c g * (taylorEquiv c : R[X] →ₗ[R] R[X]) ↑p =
+        (taylorEquiv c : R[X] →ₗ[R] R[X]) (f * ↑q + g * ↑p)
+      simp [coe_taylorEquiv, taylor_apply, add_comp, mul_comp]
   have hmat := congrArg (LinearMap.toMatrix b₁ bmn) hcomm
   rw [LinearMap.toMatrix_comp b₁ b₁ bmn, LinearMap.toMatrix_comp b₁ bmn bmn,
     toMatrix_sylvesterMap', toMatrix_sylvesterMap'] at hmat
   have hdet := congrArg Matrix.det hmat
-  rw [Matrix.det_mul, Matrix.det_mul, ← resultant, ← resultant,
-    det_toMatrix_translateDegreeLT c (m + n),
-    det_toMatrix_prodMap_translateDegreeLT c m n, one_mul, mul_one] at hdet
+  have hre : LinearMap.toMatrix b₁ b₁ (Tm.prodMap Tn) =
+      (LinearMap.toMatrix (bm.prod bn) (bm.prod bn) (Tm.prodMap Tn)).reindex
+        finSumFinEquiv finSumFinEquiv := by
+    ext i j
+    simp [b₁, LinearMap.toMatrix_apply, Matrix.reindex_apply]
+  have hprod_det : (LinearMap.toMatrix b₁ b₁ (Tm.prodMap Tn)).det = 1 := by
+    rw [hre, Matrix.det_reindex_self, LinearMap.toMatrix_prodMap, Matrix.det_fromBlocks_zero₂₁,
+      LinearMap.det_toMatrix, LinearMap.det_toMatrix, det_taylorLinearEquiv_toLinearMap,
+      det_taylorLinearEquiv_toLinearMap, mul_one]
+  rw [Matrix.det_mul, Matrix.det_mul, hprod_det, mul_one, ← resultant, ← resultant,
+    LinearMap.det_toMatrix, det_taylorLinearEquiv_toLinearMap, one_mul] at hdet
   exact hdet
 
 end Translate
@@ -230,32 +181,13 @@ end DegreeBound
 
 section Divisibility
 
-/-- If an element `c` divides every entry in the first `r` rows of a `k × k` matrix `M` (with
-`r ≤ k`), then `c ^ r` divides `M.det`. -/
 private theorem pow_dvd_det_of_forall_lt_dvd {S : Type*} [CommRing S] {k r : ℕ}
     {M : Matrix (Fin k) (Fin k) S} {c : S} (hr : r ≤ k)
     (hM : ∀ i : Fin k, (i : ℕ) < r → ∀ j, c ∣ M i j) : c ^ r ∣ M.det := by
-  rw [← Matrix.det_transpose, Matrix.det_apply]
-  refine Finset.dvd_sum fun σ _ ↦ ?_
-  rw [Units.smul_def, zsmul_eq_mul]
-  refine dvd_mul_of_dvd_right ?_ _
-  let s : Finset (Fin k) := Finset.univ.filter fun i : Fin k ↦ (i : ℕ) < r
-  have hcard : s.card = r := by
-    have heq : s = (Finset.range r).attach.map
-        ⟨fun x ↦ ⟨x.val, (Finset.mem_range.mp x.property).trans_le hr⟩,
-          fun x y h ↦ Subtype.ext (by simpa using congrArg Fin.val h)⟩ := by
-      ext i
-      simp only [s, Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
-        Finset.mem_attach, true_and]
-      exact ⟨fun hi ↦ ⟨⟨i.val, Finset.mem_range.mpr hi⟩, rfl⟩,
-        fun ⟨⟨x, hx⟩, h⟩ ↦ h ▸ Finset.mem_range.mp hx⟩
-    rw [heq, Finset.card_map, Finset.card_attach, Finset.card_range]
-  have hprod : ∏ i : Fin k, M i (σ i) = (∏ i ∈ s, M i (σ i)) * ∏ i ∈ sᶜ, M i (σ i) := by
-    rw [Finset.prod_mul_prod_compl]
-  rw [show (∏ i : Fin k, M.transpose (σ i) i) = ∏ i : Fin k, M i (σ i) by rfl, hprod]
-  refine dvd_mul_of_dvd_left ?_ _
-  rw [← hcard, ← Finset.prod_const]
-  exact Finset.prod_dvd_prod_of_dvd _ _ fun i hi ↦ hM i (Finset.mem_filter.mp hi).2 (σ i)
+  have hdvd := Matrix.prod_dvd_det_of_dvd_row M (fun i ↦ if (i : ℕ) < r then c else 1)
+    fun i j ↦ by split_ifs with hi <;> [exact hM i hi j; exact one_dvd _]
+  rwa [Finset.prod_ite, Finset.prod_const_one, mul_one, Finset.prod_const,
+    Fin.card_filter_val_lt, min_eq_right hr] at hdvd
 
 /-- **Resultant divisibility from a multiple root.** If `f : R[X][X]` over a commutative ring `R`
 satisfies `f.natDegree ≤ d`, and `x` is a root of the specialization `f(·, y)` of multiplicity `m`,
@@ -275,11 +207,12 @@ theorem pow_rootMultiplicity_sub_one_dvd_resultant_derivative
       have hm_eq : m = (fy.comp (X + C x)).natTrailingDegree :=
         rootMultiplicity_eq_natTrailingDegree
       exact hm_eq ▸ natTrailingDegree_le_natDegree _
-    exact ((hle.trans (natDegree_comp_X_add_C_le fy x)).trans natDegree_map_le).trans hf
+    rw [← taylor_apply, natDegree_taylor] at hle
+    exact (hle.trans natDegree_map_le).trans hf
   -- Translate `x` to `0`, preserving the resultant while making low coefficients vanish at `y`.
   set h := f.comp (X + C (C x))
   have hhderiv : h.derivative = f.derivative.comp (X + C (C x)) := by
-    simp [h, derivative_comp]
+    simp only [h, ← taylor_apply, taylor_derivative]
   have hres : h.resultant h.derivative d (d - 1) = f.resultant f.derivative d (d - 1) := by
     rw [hhderiv]
     exact resultant_comp_X_add_C f f.derivative (C x) hf
@@ -321,88 +254,39 @@ section BivariateMultiplicity
 
 variable {K : Type*} [Field K]
 
-/-- The parameter degree of a bivariate polynomial `F : K[X][X]`, defined as the maximum `natDegree`
-of its coefficients. -/
-private noncomputable def paramNatDegree (F : K[X][X]) : ℕ :=
-  F.support.sup fun k ↦ (F.coeff k).natDegree
+private theorem coeff_coeff_swap (F : K[X][X]) (m n : ℕ) :
+    ((Bivariate.swap F).coeff m).coeff n = (F.coeff n).coeff m := by
+  induction F using Polynomial.induction_on' with
+  | add p q hp hq => simp [hp, hq]
+  | monomial k a =>
+    induction a using Polynomial.induction_on' with
+    | add p q hp hq => simp [map_add, hp, hq]
+    | monomial l r =>
+      rw [Bivariate.swap_monomial_monomial, coeff_monomial_apply, coeff_monomial_apply]
+      split_ifs with hm hn
+      · subst hm hn; simp
+      · simp [Ne.symm hn]
+      · simp [Ne.symm hm]
+      · simp
 
-private theorem coeff_natDegree_le_paramNatDegree (F : K[X][X]) (k : ℕ) :
-    (F.coeff k).natDegree ≤ paramNatDegree F := by
-  by_cases hk : k ∈ F.support
-  · exact Finset.le_sup (f := fun j ↦ (F.coeff j).natDegree) hk
-  · rw [notMem_support_iff.mp hk, natDegree_zero]
-    exact Nat.zero_le _
+private theorem swap_natDegree_eq_sup (F : K[X][X]) :
+    (Bivariate.swap F).natDegree = F.support.sup fun k ↦ (F.coeff k).natDegree := by
+  refine le_antisymm ?_ (Finset.sup_le fun k _ ↦ natDegree_le_iff_coeff_eq_zero.mpr fun m hm ↦ ?_)
+  · by_cases hF : F = 0
+    · simp [hF]
+    have hsw : Bivariate.swap F ≠ 0 := (map_ne_zero_iff _ (EquivLike.injective _)).mpr hF
+    have hlc : (Bivariate.swap F).coeff (Bivariate.swap F).natDegree ≠ 0 :=
+      leadingCoeff_ne_zero.mpr hsw
+    obtain ⟨n, hn⟩ := support_nonempty.mpr hlc
+    rw [mem_support_iff, coeff_coeff_swap] at hn
+    have hk : n ∈ F.support := mem_support_iff.mpr fun h0 ↦ hn (by simp [h0])
+    exact (le_natDegree_of_ne_zero hn).trans (Finset.le_sup (f := fun k ↦ (F.coeff k).natDegree) hk)
+  · rw [← coeff_coeff_swap, coeff_eq_zero_of_natDegree_lt hm, coeff_zero]
 
-private theorem paramNatDegree_C (c : K[X]) : paramNatDegree (C c) = c.natDegree := by
-  by_cases hc : c = 0
-  · simp [paramNatDegree, hc]
-  · simp [paramNatDegree, support_C hc]
-
-private theorem paramNatDegree_mul_le (A B : K[X][X]) :
-    paramNatDegree (A * B) ≤ paramNatDegree A + paramNatDegree B := by
-  refine Finset.sup_le fun k _ ↦ ?_
-  rw [coeff_mul]
-  refine (natDegree_sum_le _ _).trans (Finset.sup_le fun pq _ ↦ ?_)
-  exact natDegree_mul_le.trans
-    (Nat.add_le_add (coeff_natDegree_le_paramNatDegree A pq.1)
-      (coeff_natDegree_le_paramNatDegree B pq.2))
-
-/-- Every nonzero `A : K[X][X]` has a largest `z`-index attaining `paramNatDegree A`. -/
-private theorem exists_max_paramNatDegree {A : K[X][X]} (hA : A ≠ 0) :
-    ∃ i₀, A.coeff i₀ ≠ 0 ∧ (A.coeff i₀).natDegree = paramNatDegree A ∧
-      ∀ p, i₀ < p → (A.coeff p).natDegree < paramNatDegree A ∨ A.coeff p = 0 := by
-  classical
-  set s := A.support.filter fun i ↦ (A.coeff i).natDegree = paramNatDegree A
-  have hs : s.Nonempty := by
-    obtain ⟨i, hi, heq⟩ := Finset.exists_mem_eq_sup A.support (support_nonempty.mpr hA)
-      (fun k ↦ (A.coeff k).natDegree)
-    exact ⟨i, Finset.mem_filter.mpr ⟨hi, heq.symm⟩⟩
-  refine ⟨s.max' hs, mem_support_iff.mp (Finset.mem_filter.mp (s.max'_mem hs)).1,
-    (Finset.mem_filter.mp (s.max'_mem hs)).2, fun p hp ↦ ?_⟩
-  by_cases h0 : A.coeff p = 0
-  · exact Or.inr h0
-  · left
-    refine lt_of_le_of_ne (coeff_natDegree_le_paramNatDegree A p) fun heq ↦
-      not_lt_of_ge (s.le_max' p (Finset.mem_filter.mpr ⟨mem_support_iff.mpr h0, heq⟩)) hp
-
-/-- For nonzero `A, B : K[X][X]`, the parameter degree is at least the sum of the parameter degrees
-of the factors: the highest `z`-index attaining `paramNatDegree` in each factor contributes an
-uncancelled leading term to `A * B`. -/
-private theorem add_paramNatDegree_le_mul {A B : K[X][X]} (hA : A ≠ 0) (hB : B ≠ 0) :
-    paramNatDegree A + paramNatDegree B ≤ paramNatDegree (A * B) := by
-  obtain ⟨i₀, hi₀_ne, hi₀_deg, hvanA⟩ := exists_max_paramNatDegree hA
-  obtain ⟨j₀, hj₀_ne, hj₀_deg, hvanB⟩ := exists_max_paramNatDegree hB
-  have hcoeff_top : ((A * B).coeff (i₀ + j₀)).coeff (paramNatDegree A + paramNatDegree B) =
-      (A.coeff i₀).leadingCoeff * (B.coeff j₀).leadingCoeff := by
-    rw [coeff_mul, show (∑ x ∈ Finset.antidiagonal (i₀ + j₀), A.coeff x.1 * B.coeff x.2).coeff
-        (paramNatDegree A + paramNatDegree B) =
-        ∑ x ∈ Finset.antidiagonal (i₀ + j₀),
-          (A.coeff x.1 * B.coeff x.2).coeff (paramNatDegree A + paramNatDegree B) from
-        map_sum (lcoeff K (paramNatDegree A + paramNatDegree B)) _ _,
-      Finset.sum_eq_single (i₀, j₀)]
-    · dsimp only
-      rw [← hi₀_deg, ← hj₀_deg, ← natDegree_mul hi₀_ne hj₀_ne, ← leadingCoeff, leadingCoeff_mul]
-    · intro pq hpq hne
-      have hsum : pq.1 + pq.2 = i₀ + j₀ := Finset.mem_antidiagonal.mp hpq
-      rcases lt_or_gt_of_ne (fun h1 ↦ hne (Prod.ext h1 (by omega))) with h1 | h1
-      · rcases hvanB pq.2 (by omega) with hdegB | hb0
-        · exact coeff_eq_zero_of_natDegree_lt <| natDegree_mul_le.trans_lt
-            (Nat.add_lt_add_of_le_of_lt (coeff_natDegree_le_paramNatDegree A pq.1) hdegB)
-        · rw [hb0, mul_zero, coeff_zero]
-      · rcases hvanA pq.1 h1 with hdegA | ha0
-        · exact coeff_eq_zero_of_natDegree_lt <| natDegree_mul_le.trans_lt
-            (Nat.add_lt_add_of_lt_of_le hdegA (coeff_natDegree_le_paramNatDegree B pq.2))
-        · rw [ha0, zero_mul, coeff_zero]
-    · intro h
-      exact absurd (Finset.mem_antidiagonal.mpr (rfl : i₀ + j₀ = i₀ + j₀)) h
-  have hne : ((A * B).coeff (i₀ + j₀)).coeff (paramNatDegree A + paramNatDegree B) ≠ 0 := by
-    rw [hcoeff_top]
-    exact mul_ne_zero (leadingCoeff_ne_zero.mpr hi₀_ne) (leadingCoeff_ne_zero.mpr hj₀_ne)
-  exact (le_natDegree_of_ne_zero hne).trans (coeff_natDegree_le_paramNatDegree (A * B) (i₀ + j₀))
-
-private theorem paramNatDegree_mul {A B : K[X][X]} (hA : A ≠ 0) (hB : B ≠ 0) :
-    paramNatDegree (A * B) = paramNatDegree A + paramNatDegree B :=
-  le_antisymm (paramNatDegree_mul_le A B) (add_paramNatDegree_le_mul hA hB)
+private theorem coeff_natDegree_le_swap_natDegree (F : K[X][X]) (k : ℕ) :
+    (F.coeff k).natDegree ≤ (Bivariate.swap F).natDegree :=
+  natDegree_le_iff_coeff_eq_zero.mpr fun m hm ↦ by
+    rw [← coeff_coeff_swap, coeff_eq_zero_of_natDegree_lt hm, coeff_zero]
 
 /-- A primitive polynomial over `K[X]` does not vanish identically under any specialization
 `evalRingHom y`. -/
@@ -429,52 +313,38 @@ irreducible polynomial `F : K[X][X]` of positive `z`-degree is nonzero. -/
 private theorem resultant_derivative_ne_zero_of_irreducible [CharZero K] {F : K[X][X]}
     (hF : Irreducible F) (hpos : 0 < F.natDegree) :
     F.resultant F.derivative F.natDegree (F.natDegree - 1) ≠ 0 := by
-  have hprim : F.IsPrimitive := by
-    intro r ⟨Q, hQ⟩
-    rcases hF.isUnit_or_isUnit hQ with hC | hQu
-    · exact isUnit_C.mp hC
-    · have hQ0 : Q.natDegree = 0 := natDegree_eq_zero_of_isUnit hQu
-      have hF0 : F.natDegree = 0 :=
-        Nat.eq_zero_of_le_zero ((hQ ▸ natDegree_mul_le).trans (by simp [hQ0]))
-      omega
+  have hprim : F.IsPrimitive := hF.isPrimitive hpos.ne'
   set L := FractionRing K[X]
   let φ : K[X] →+* L := algebraMap K[X] L
   have hφ : Function.Injective φ := IsFractionRing.injective K[X] L
   have hF_irr : Irreducible (F.map φ) :=
     hprim.irreducible_iff_irreducible_map_fraction_map.mp hF
   have hF_deg : (F.map φ).natDegree = F.natDegree := natDegree_map_eq_of_injective hφ F
-  have hFd_ne : F.derivative ≠ 0 := by
-    intro h0
-    have := derivative_eq_zero.mp h0
-    omega
-  have hFd_deg : F.derivative.natDegree = F.natDegree - 1 := natDegree_derivative F
-  have hFd_map_deg : (F.derivative.map φ).natDegree = F.natDegree - 1 := by
-    rw [natDegree_map_eq_of_injective hφ, hFd_deg]
+  have hFd_deg : (F.derivative.map φ).natDegree = F.natDegree - 1 := by
+    rw [natDegree_map_eq_of_injective hφ, natDegree_derivative]
   have hcop : IsCoprime (F.map φ) (F.derivative.map φ) := by
-    refine (hF_irr.isCoprime_or_dvd _).resolve_right fun hdvd ↦ ?_
-    have hle := natDegree_le_of_dvd hdvd ((Polynomial.map_ne_zero_iff hφ).mpr hFd_ne)
-    rw [hF_deg, hFd_map_deg] at hle
-    omega
-  have hresL : (F.map φ).resultant (F.derivative.map φ) ≠ 0 := by
-    rw [ne_eq, resultant_eq_zero_iff]
-    exact fun h ↦ h.2 hcop
+    rw [← derivative_map]
+    exact (separable_def _).mp hF_irr.separable
+  have hresL : (F.map φ).resultant (F.derivative.map φ) ≠ 0 :=
+    Polynomial.resultant_ne_zero _ _ hcop
   intro h0
   apply hresL
-  rw [hF_deg, hFd_map_deg, resultant_map_map, h0, map_zero]
+  rw [hF_deg, hFd_deg, resultant_map_map, h0, map_zero]
 
 /-- Base case of `sum_rootMultiplicity_le_of_isPrimitive` for an irreducible factor. -/
 private theorem sum_rootMultiplicity_le_of_irreducible [CharZero K] [DecidableEq K]
     {ι : Type*} [Fintype ι] {P : ι → K × K} (hP_snd : Function.Injective fun i ↦ (P i).2) {N : ℕ}
     (hSZ : ∀ g : K[X][X], g ≠ 0 →
       (Finset.univ.filter fun i ↦ (g.map (evalRingHom (P i).2)).eval (P i).1 = 0).card ≤
-        N * (g.natDegree + paramNatDegree g))
+        N * (g.natDegree + (Bivariate.swap g).natDegree))
     {F : K[X][X]} (hF : Irreducible F) (hpos : 0 < F.natDegree) :
     ∑ i : ι, (F.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
-      N * F.natDegree + N * paramNatDegree F + 2 * F.natDegree * paramNatDegree F := by
+      N * F.natDegree + N * (Bivariate.swap F).natDegree +
+        2 * F.natDegree * (Bivariate.swap F).natDegree := by
   set R := F.resultant F.derivative F.natDegree (F.natDegree - 1) with hRdef
   have hR0 : R ≠ 0 := resultant_derivative_ne_zero_of_irreducible hF hpos
-  have hRdeg : R.natDegree ≤ 2 * F.natDegree * paramNatDegree F :=
-    (natDegree_resultant_derivative_le fun i _ ↦ coeff_natDegree_le_paramNatDegree F i).trans
+  have hRdeg : R.natDegree ≤ 2 * F.natDegree * (Bivariate.swap F).natDegree :=
+    (natDegree_resultant_derivative_le fun i _ ↦ coeff_natDegree_le_swap_natDegree F i).trans
       (Nat.mul_le_mul_right _ (Nat.sub_le _ _))
   have hpt (i : ι) :
       (F.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
@@ -497,9 +367,10 @@ private theorem sum_rootMultiplicity_le_of_irreducible [CharZero K] [DecidableEq
     _ = (Finset.univ.filter fun i ↦ (F.map (evalRingHom (P i).2)).eval (P i).1 = 0).card +
           ∑ i : ι, R.rootMultiplicity (P i).2 := by
         rw [Finset.sum_add_distrib, Finset.sum_boole, Nat.cast_id]
-    _ ≤ N * (F.natDegree + paramNatDegree F) + R.natDegree :=
+    _ ≤ N * (F.natDegree + (Bivariate.swap F).natDegree) + R.natDegree :=
         Nat.add_le_add (hSZ F hF.ne_zero) (sum_rootMultiplicity_comp_le_natDegree hP_snd)
-    _ ≤ N * F.natDegree + N * paramNatDegree F + 2 * F.natDegree * paramNatDegree F := by
+    _ ≤ N * F.natDegree + N * (Bivariate.swap F).natDegree +
+          2 * F.natDegree * (Bivariate.swap F).natDegree := by
         rw [Nat.mul_add]
         exact Nat.add_le_add_left hRdeg _
 
@@ -527,13 +398,11 @@ private theorem sum_rootMultiplicity_le_of_isPrimitive [CharZero K] [DecidableEq
     (hP_snd : Function.Injective fun i ↦ (P i).2) {N : ℕ}
     (hSZ : ∀ g : K[X][X], g ≠ 0 →
       (Finset.univ.filter fun i ↦ (g.map (evalRingHom (P i).2)).eval (P i).1 = 0).card ≤
-        N * (g.natDegree + g.support.sup fun k ↦ (g.coeff k).natDegree))
+        N * (g.natDegree + (Bivariate.swap g).natDegree))
     {F : K[X][X]} (hF : F.IsPrimitive) :
     ∑ i : ι, (F.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
-      N * F.natDegree + N * (F.support.sup fun k ↦ (F.coeff k).natDegree) +
-        2 * F.natDegree * (F.support.sup fun k ↦ (F.coeff k).natDegree) := by
-  change ∑ i : ι, (F.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
-    N * F.natDegree + N * paramNatDegree F + 2 * F.natDegree * paramNatDegree F
+      N * F.natDegree + N * (Bivariate.swap F).natDegree +
+        2 * F.natDegree * (Bivariate.swap F).natDegree := by
   induction hd : F.natDegree using Nat.strong_induction_on generalizing F with
   | ind d ih =>
     rcases eq_or_ne d 0 with rfl | hd0
@@ -551,8 +420,11 @@ private theorem sum_rootMultiplicity_le_of_isPrimitive [CharZero K] [DecidableEq
           exists_mul_of_not_irreducible_of_isPrimitive hF (hd ▸ Nat.pos_of_ne_zero hd0) hirr
         have hdeg : d = A.natDegree + B.natDegree := by
           rw [← hd, hFAB, natDegree_mul hAp.ne_zero hBp.ne_zero]
-        have hpdeg : paramNatDegree F = paramNatDegree A + paramNatDegree B := by
-          rw [hFAB, paramNatDegree_mul hAp.ne_zero hBp.ne_zero]
+        have hpdeg : (Bivariate.swap F).natDegree =
+            (Bivariate.swap A).natDegree + (Bivariate.swap B).natDegree := by
+          rw [hFAB, map_mul,
+            natDegree_mul ((map_ne_zero_iff _ (EquivLike.injective _)).mpr hAp.ne_zero)
+              ((map_ne_zero_iff _ (EquivLike.injective _)).mpr hBp.ne_zero)]
         have hihA := ih A.natDegree (by omega) hAp rfl
         have hihB := ih B.natDegree (by omega) hBp rfl
         have hsplit : ∑ i : ι, (F.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 =
@@ -582,14 +454,17 @@ theorem sum_rootMultiplicity_le [CharZero K] [DecidableEq K]
     ∑ i : ι, (F.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
       N * F.natDegree + N * (F.support.sup fun k ↦ (F.coeff k).natDegree) +
         2 * F.natDegree * (F.support.sup fun k ↦ (F.coeff k).natDegree) := by
+  simp_rw [← swap_natDegree_eq_sup] at hSZ ⊢
   rcases eq_or_ne F 0 with rfl | hF
   · simp
   set c := F.content
   set G := F.primPart
   have hc0 : c ≠ 0 := content_eq_zero_iff.not.mpr hF
-  have hpdeg : paramNatDegree F = c.natDegree + paramNatDegree G := by
+  have hpdeg : (Bivariate.swap F).natDegree = c.natDegree + (Bivariate.swap G).natDegree := by
     conv_lhs => rw [F.eq_C_content_mul_primPart]
-    rw [paramNatDegree_mul (C_ne_zero.mpr hc0) F.isPrimitive_primPart.ne_zero, paramNatDegree_C]
+    rw [map_mul, natDegree_mul ((map_ne_zero_iff _ (EquivLike.injective _)).mpr (C_ne_zero.mpr hc0))
+        ((map_ne_zero_iff _ (EquivLike.injective _)).mpr F.isPrimitive_primPart.ne_zero),
+      Bivariate.swap_C, natDegree_map_eq_of_injective C_injective]
   have hsum_le : ∑ i : ι, (F.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
       ∑ i : ι, (G.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 := by
     refine Finset.sum_le_sum fun i _ ↦ ?_
@@ -601,10 +476,7 @@ theorem sum_rootMultiplicity_le [CharZero K] [DecidableEq K]
     by_cases hcy : c.eval (P i).2 = 0
     · simp [hcy]
     · rw [rootMultiplicity_C_mul hcy]
-  have hG : ∑ i : ι, (G.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
-      N * G.natDegree + N * paramNatDegree G + 2 * G.natDegree * paramNatDegree G :=
-    sum_rootMultiplicity_le_of_isPrimitive hP_snd hSZ F.isPrimitive_primPart
-  change _ ≤ N * F.natDegree + N * paramNatDegree F + 2 * F.natDegree * paramNatDegree F
+  have hG := sum_rootMultiplicity_le_of_isPrimitive hP_snd hSZ F.isPrimitive_primPart
   rw [hpdeg, ← F.natDegree_primPart]
   nlinarith
 
@@ -645,14 +517,17 @@ theorem mul_card_le_of_forall_iterate_derivative_eval_eq_zero [CharZero K] [Deci
     N * Fintype.card ι ≤
       N * F.natDegree + N * (F.support.sup fun k ↦ (F.coeff k).natDegree) +
         2 * F.natDegree * (F.support.sup fun k ↦ (F.coeff k).natDegree) := by
+  simp_rw [← swap_natDegree_eq_sup] at hSZ ⊢
   rcases eq_or_ne N 0 with rfl | hN0
   · simp
   set c := F.content
   set G := F.primPart
   have hc0 : c ≠ 0 := content_eq_zero_iff.not.mpr hF
-  have hpdeg : paramNatDegree F = c.natDegree + paramNatDegree G := by
+  have hpdeg : (Bivariate.swap F).natDegree = c.natDegree + (Bivariate.swap G).natDegree := by
     conv_lhs => rw [F.eq_C_content_mul_primPart]
-    rw [paramNatDegree_mul (C_ne_zero.mpr hc0) F.isPrimitive_primPart.ne_zero, paramNatDegree_C]
+    rw [map_mul, natDegree_mul ((map_ne_zero_iff _ (EquivLike.injective _)).mpr (C_ne_zero.mpr hc0))
+        ((map_ne_zero_iff _ (EquivLike.injective _)).mpr F.isPrimitive_primPart.ne_zero),
+      Bivariate.swap_C, natDegree_map_eq_of_injective C_injective]
   let sGood := Finset.univ.filter fun i : ι ↦ c.eval (P i).2 ≠ 0
   let sBad := Finset.univ.filter fun i : ι ↦ c.eval (P i).2 = 0
   have hcard : Fintype.card ι = sGood.card + sBad.card := by
@@ -674,11 +549,7 @@ theorem mul_card_le_of_forall_iterate_derivative_eval_eq_zero [CharZero K] [Deci
             le_rootMultiplicity_primPart hN0 (Finset.mem_filter.mp hi).2 (hvan i)
       _ ≤ ∑ i : ι, (G.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 :=
           Finset.sum_le_univ_sum_of_nonneg fun _ ↦ Nat.zero_le _
-  have hGsum : ∑ i : ι, (G.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 ≤
-      N * G.natDegree + N * paramNatDegree G + 2 * G.natDegree * paramNatDegree G :=
-    sum_rootMultiplicity_le_of_isPrimitive hP_snd hSZ F.isPrimitive_primPart
-  change N * Fintype.card ι ≤
-    N * F.natDegree + N * paramNatDegree F + 2 * F.natDegree * paramNatDegree F
+  have hGsum := sum_rootMultiplicity_le_of_isPrimitive hP_snd hSZ F.isPrimitive_primPart
   rw [hcard, Nat.mul_add, hpdeg, ← F.natDegree_primPart]
   nlinarith
 
