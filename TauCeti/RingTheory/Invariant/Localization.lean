@@ -18,17 +18,19 @@ a group), and write `Aᴳ` for the invariants, as the subsemiring `FixedPoints.s
 when `A` is a ring, the subring `FixedPoints.subring A G`. This file compares invariants with
 localization.
 
-For a submonoid `M` of invariant elements, the action extends to the localization `M⁻¹A`
-(`Localization (Algebra.algebraMapSubmonoid A M)`), compatibly with `A → M⁻¹A`. Here `M` may be a
-submonoid of any commutative semiring `R` such that `A` is an `R`-algebra on which `G` acts by
-`R`-algebra endomorphisms (`SMulCommClass G R A`), such as `Aᴳ` itself. When `G` is finite, taking
-invariants commutes with this localization: `(M⁻¹A)ᴳ` is the localization of `Aᴳ` at `M`. A
-fraction `a / s` fixed by every `g` satisfies `t_g (g • a) = t_g a` for some `t_g ∈ M`, which can
-be replaced by the product `t` of the `t_g` because `G` is finite, and then `a / s = t a / (s t)`
-with `t a` invariant. Taking `M` to be the powers of an invariant `r` gives the localization
-`A[1/r]` of `A` at `r`. The argument only uses finitely many ring endomorphisms compatible with the
-localization map, and is stated in that form: an arbitrary localization `S` of `A`, whose fixed
-elements are described by an arbitrary semiring `R'` mapping injectively to `S`
+For a `G`-stable submonoid `S` of `A`, the action extends to any localization of `A` at `S`,
+compatibly with the localization map (`TauCeti.FixedPoints.localizationRingEnd`). The denominators
+need not be invariant: for a group `G`, `S` may be the non-zero-divisors of `A`. When `G` acts on
+the `R`-algebra `A` by `R`-algebra endomorphisms (`SMulCommClass G R A`), for instance when `R` is
+`Aᴳ`, it fixes the image of every submonoid `M` of `R`, and the action on the localization `M⁻¹A`
+(`Localization (Algebra.algebraMapSubmonoid A M)`) is an instance. When `G` is finite, taking
+invariants commutes with this localization: `(M⁻¹A)ᴳ` is the localization of `Aᴳ` at `M`. A fraction
+`a / s` fixed by every `g` satisfies `t_g (g • a) = t_g a` for some `t_g ∈ M`, which can be replaced
+by the product `t` of the `t_g` because `G` is finite, and then `a / s = t a / (s t)` with `t a`
+invariant. Taking `M` to be the powers of an invariant `r` gives the localization `A[1/r]` of `A` at
+`r`. The argument only uses finitely many ring endomorphisms compatible with the localization map,
+and is stated in that form: an arbitrary localization `B` of `A`, whose fixed elements are described
+by an arbitrary semiring `R'` mapping injectively to `B`
 (`TauCeti.FixedPoints.isLocalization_of_mem_range_iff`).
 
 Also for a finite group `G` acting on a commutative ring `A`, the local homomorphism
@@ -42,9 +44,11 @@ quotient `Spec A ⟶ Spec Aᴳ` for arbitrary target schemes.
 
 ## Main definitions
 
-* `TauCeti.FixedPoints.localizationRingEnd G A M`: the action of `G` on `M⁻¹A` for a submonoid
-  `M` of `R`, by the ring endomorphisms `IsLocalization.map` induced by the action on `A`, which
-  provides the instance `MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M))`.
+* `TauCeti.FixedPoints.localizationRingEnd B hS`: the action of `G` on a localization `B` of `A`
+  at a `G`-stable submonoid, by the ring endomorphisms `IsLocalization.map` induced by the action
+  on `A`. It provides the instance
+  `MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M))` for a submonoid `M` of
+  `R`.
 * The instances `Algebra (FixedPoints.subsemiring A G)
   (FixedPoints.subsemiring (Localization (Algebra.algebraMapSubmonoid A M)) G)` and, for a ring
   `A`, `Algebra (FixedPoints.subring A G)
@@ -52,8 +56,11 @@ quotient `Spec A ⟶ Spec Aᴳ` for arbitrary target schemes.
 
 ## Main results
 
-* `TauCeti.FixedPoints.smul_algebraMap_localization`: `A → M⁻¹A` is `G`-equivariant.
-* `TauCeti.FixedPoints.smul_mk'`: `G` acts on a fraction `a / s` through its numerator.
+* `TauCeti.FixedPoints.localizationRingEnd_algebraMap` and
+  `TauCeti.FixedPoints.smul_algebraMap_localization`: the localization map is `G`-equivariant.
+* `TauCeti.FixedPoints.localizationRingEnd_mk'`: `G` acts on a fraction `a / s` through its
+  numerator and denominator, and `TauCeti.FixedPoints.smul_mk'`: on `M⁻¹A`, through its
+  numerator.
 * `TauCeti.FixedPoints.isLocalization_of_mem_range_iff`: the elements of a localization fixed by
   finitely many compatible ring endomorphisms are the localization of the fixed elements.
 * `TauCeti.FixedPoints.isLocalization_subsemiring` and, for a ring `A`,
@@ -144,38 +151,67 @@ variable {G A : Type*} [Monoid G] [CommSemiring A] [MulSemiringAction G A]
 
 section Localization
 
+variable {S : Submonoid A} (B : Type*) [CommSemiring B] [Algebra A B] [IsLocalization S B]
+
+/-- An element of `G` maps a `G`-stable submonoid of `A` into itself. This is the stability
+hypothesis in the form taken by `IsLocalization.map`. -/
+private theorem le_comap_toRingHom (hS : ∀ g : G, ∀ s ∈ S, g • s ∈ S) (g : G) :
+    S ≤ S.comap (MulSemiringAction.toRingHom G A g) :=
+  hS g
+
+/-- The action of `G` on a localization `B` of `A` at a `G`-stable submonoid `S`, induced by its
+action on `A`: `g` acts by the ring endomorphism `IsLocalization.map` of `g : A →+* A`, which is
+defined because `g` maps the denominators into `S`. -/
+noncomputable def localizationRingEnd (hS : ∀ g : G, ∀ s ∈ S, g • s ∈ S) : G →* B →+* B where
+  toFun g := IsLocalization.map (S := B) B (MulSemiringAction.toRingHom G A g)
+    (le_comap_toRingHom hS g)
+  map_one' := IsLocalization.ringHom_ext S <| RingHom.ext fun a ↦ by simp
+  map_mul' g h := IsLocalization.ringHom_ext S <| RingHom.ext fun a ↦ by simp [mul_smul]
+
+variable (hS : ∀ g : G, ∀ s ∈ S, g • s ∈ S)
+
+/-- `localizationRingEnd B hS g` extends the action of `g` on `A`. -/
+@[simp]
+theorem localizationRingEnd_algebraMap (g : G) (a : A) :
+    localizationRingEnd B hS g (algebraMap A B a) = algebraMap A B (g • a) :=
+  IsLocalization.map_eq (S := B) (le_comap_toRingHom hS g) a
+
+/-- `localizationRingEnd B hS g` acts on a fraction `a / s` by acting on numerator and
+denominator. -/
+@[simp]
+theorem localizationRingEnd_mk' (g : G) (a : A) (s : S) :
+    localizationRingEnd B hS g (IsLocalization.mk' B a s) =
+      IsLocalization.mk' B (g • a) ⟨g • s, hS g s s.property⟩ :=
+  IsLocalization.map_mk' (S := B) (le_comap_toRingHom hS g) a s
+
 variable {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] (M : Submonoid R)
 
-/-- An element of `G` maps the image in `A` of a submonoid of `R` into itself. -/
-private theorem algebraMapSubmonoid_le_comap_toRingHom (g : G) :
-    Algebra.algebraMapSubmonoid A M ≤
-      (Algebra.algebraMapSubmonoid A M).comap (MulSemiringAction.toRingHom G A g) := by
-  rintro _ ⟨m, hm, rfl⟩
-  exact ⟨m, hm, (smul_algebraMap g m).symm⟩
+/-- If `G` acts on the `R`-algebra `A` by `R`-algebra endomorphisms, it fixes the image in `A` of a
+submonoid of `R`. -/
+private theorem smul_eq_of_mem_algebraMapSubmonoid (g : G) {a : A}
+    (ha : a ∈ Algebra.algebraMapSubmonoid A M) : g • a = a := by
+  obtain ⟨m, -, rfl⟩ := ha
+  exact smul_algebraMap g m
 
-variable (G A) in
-/-- The action of `G` on the localization `M⁻¹A` at the image of a submonoid `M` of `R`, where
-`G` acts on the `R`-algebra `A` by `R`-algebra endomorphisms, induced by its action on `A`: `g` acts
-by the ring endomorphism `IsLocalization.map` of `g : A →+* A`, which is defined because `g` fixes
-the denominators. -/
-noncomputable def localizationRingEnd :
-    G →* Localization (Algebra.algebraMapSubmonoid A M) →+*
-      Localization (Algebra.algebraMapSubmonoid A M) where
-  toFun g := IsLocalization.map _ (MulSemiringAction.toRingHom G A g)
-    (algebraMapSubmonoid_le_comap_toRingHom M g)
-  map_one' := IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M) <|
-    RingHom.ext fun a ↦ by simp
-  map_mul' g h := IsLocalization.ringHom_ext (Algebra.algebraMapSubmonoid A M) <|
-    RingHom.ext fun a ↦ by simp [mul_smul]
+/-- If `G` acts on the `R`-algebra `A` by `R`-algebra endomorphisms, the image in `A` of a
+submonoid of `R` is `G`-stable. -/
+private theorem smul_mem_algebraMapSubmonoid (g : G) (a : A)
+    (ha : a ∈ Algebra.algebraMapSubmonoid A M) : g • a ∈ Algebra.algebraMapSubmonoid A M :=
+  (smul_eq_of_mem_algebraMapSubmonoid M g ha).symm ▸ ha
 
-/-- The action of `G` on `M⁻¹A` given by `localizationRingEnd`. -/
+/-- The action of `G` on the localization `M⁻¹A` at the image of a submonoid `M` of `R`, where `G`
+acts on the `R`-algebra `A` by `R`-algebra endomorphisms, given by `localizationRingEnd`. -/
 noncomputable instance instMulSemiringActionLocalization :
     MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M)) :=
-  MulSemiringAction.compHom _ (localizationRingEnd G A M)
+  MulSemiringAction.compHom _ <| localizationRingEnd (S := Algebra.algebraMapSubmonoid A M)
+    (Localization (Algebra.algebraMapSubmonoid A M)) fun g _ ⟨m, hm, ha⟩ ↦
+      ⟨m, hm, ha ▸ (smul_algebraMap g m).symm⟩
 
-/-- `localizationRingEnd G A M g` is the action of `g` on `M⁻¹A`. -/
-theorem localizationRingEnd_apply (g : G) (x : Localization (Algebra.algebraMapSubmonoid A M)) :
-    localizationRingEnd G A M g x = g • x :=
+/-- The action of `G` on `M⁻¹A` is `localizationRingEnd`. -/
+theorem localizationRingEnd_apply
+    (hM : ∀ g : G, ∀ a ∈ Algebra.algebraMapSubmonoid A M, g • a ∈ Algebra.algebraMapSubmonoid A M)
+    (g : G) (x : Localization (Algebra.algebraMapSubmonoid A M)) :
+    localizationRingEnd _ hM g x = g • x :=
   rfl
 
 /-- The action of `G` on `M⁻¹A` extends the action on `A`. -/
@@ -183,18 +219,18 @@ theorem localizationRingEnd_apply (g : G) (x : Localization (Algebra.algebraMapS
 theorem smul_algebraMap_localization (g : G) (a : A) :
     g • algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a =
       algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) (g • a) :=
-  IsLocalization.map_eq (algebraMapSubmonoid_le_comap_toRingHom M g) a
+  localizationRingEnd_algebraMap (Localization (Algebra.algebraMapSubmonoid A M))
+    (smul_mem_algebraMapSubmonoid M) g a
 
 /-- The action of `G` on `M⁻¹A` on fractions: `g • (a / s) = (g • a) / s`, since the
 denominator `s` is invariant. -/
 @[simp]
 theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
     g • IsLocalization.mk' (Localization (Algebra.algebraMapSubmonoid A M)) a s =
-      IsLocalization.mk' _ (g • a) s := by
-  obtain ⟨m, -, hm⟩ := s.property
-  have hs : g • (s : A) = s := hm ▸ smul_algebraMap g m
-  rw [IsLocalization.eq_mk'_iff_mul_eq, ← hs, ← smul_algebraMap_localization,
-    ← smul_algebraMap_localization, ← smul_mul', IsLocalization.mk'_spec]
+      IsLocalization.mk' _ (g • a) s :=
+  (localizationRingEnd_mk' (Localization (Algebra.algebraMapSubmonoid A M))
+    (smul_mem_algebraMapSubmonoid M) g a s).trans <| congrArg _ <|
+    Subtype.ext <| smul_eq_of_mem_algebraMapSubmonoid M g s.property
 
 /-- The localization map `A → M⁻¹A` sends invariants to invariants. -/
 theorem algebraMap_mem_fixedPoints {a : A} (ha : a ∈ FixedPoints.submonoid G A) :
