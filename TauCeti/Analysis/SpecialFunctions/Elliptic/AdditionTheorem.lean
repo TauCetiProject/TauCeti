@@ -440,6 +440,35 @@ lemma weierstrassPoint_eq_weierstrassPoint_iff {z w : ℂ} :
   rw [← sub_eq_zero, ← L.weierstrassPointHom_apply, ← L.weierstrassPointHom_apply, ← map_sub,
     L.weierstrassPointHom_apply, L.weierstrassPoint_eq_zero_iff]
 
+/-- Division points depend only on their coordinates modulo `N`: if `m ≡ m'` and `n ≡ n'`
+modulo `N`, then `(m ω₁ + n ω₂) / N` and `(m' ω₁ + n' ω₂) / N` give the same point. At `N = 0`,
+both arguments are `0` by Lean’s division-by-zero convention. -/
+theorem weierstrassPoint_div_eq_of_intCast_eq (N : ℕ) {m n m' n' : ℤ}
+    (hm : (m : ZMod N) = m') (hn : (n : ZMod N) = n') :
+    L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) =
+      L.weierstrassPoint ((m' * L.ω₁ + n' * L.ω₂) / N) := by
+  rw [weierstrassPoint_eq_weierstrassPoint_iff]
+  have h := L.div_mem_lattice_of_intCast_eq_zero
+    (N := N) (m := m - m') (n := n - n')
+    (by simp only [Int.cast_sub, hm, sub_self]) (by simp only [Int.cast_sub, hn, sub_self])
+  convert h using 1
+  push_cast
+  ring
+
+/-- At positive level, two division points `(m ω₁ + n ω₂) / N` and `(m' ω₁ + n' ω₂) / N` give
+the same point exactly when their coordinates agree modulo `N`. -/
+@[simp]
+theorem weierstrassPoint_div_eq_weierstrassPoint_div_iff {N : ℕ} [NeZero N] {m n m' n' : ℤ} :
+    L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) =
+        L.weierstrassPoint ((m' * L.ω₁ + n' * L.ω₂) / N) ↔
+      (m : ZMod N) = m' ∧ (n : ZMod N) = n' := by
+  have h : (m * L.ω₁ + n * L.ω₂) / N - (m' * L.ω₁ + n' * L.ω₂) / N =
+      ((m - m' : ℤ) * L.ω₁ + (n - n' : ℤ) * L.ω₂) / N := by
+    push_cast
+    ring
+  rw [weierstrassPoint_eq_weierstrassPoint_iff, h, div_mem_lattice_iff_intCast_eq_zero,
+    Int.cast_sub, Int.cast_sub, sub_eq_zero, sub_eq_zero]
+
 /-- The point map commutes with multiplication by a natural number. -/
 lemma nsmul_weierstrassPoint (n : ℕ) (z : ℂ) :
     n • L.weierstrassPoint z = L.weierstrassPoint (n * z) := by

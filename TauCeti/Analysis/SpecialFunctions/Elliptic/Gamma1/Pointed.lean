@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion
 
 /-!
 # The marked lattice curve of an upper-half-plane point
@@ -45,18 +45,7 @@ theorem pointedWeierstrassCurve_curve (z : ℍ) :
 /-- The point of `1 / N` on `E_z` has exact order `N`. -/
 theorem addOrderOf_weierstrassPoint_one_div [NeZero N] (z : ℍ) :
     addOrderOf (z.periodPair.weierstrassPoint (1 / N)) = N := by
-  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  refine (addOrderOf_eq_iff (Nat.pos_of_neZero N)).mpr ⟨?_, fun m hm hm₀ ↦ ?_⟩
-  · rw [PeriodPair.nsmul_weierstrassPoint, mul_one_div_cancel hN,
-      PeriodPair.weierstrassPoint_eq_zero_iff]
-    simpa using z.periodPair.ω₂_mem_lattice
-  · rw [PeriodPair.nsmul_weierstrassPoint, Ne, PeriodPair.weierstrassPoint_eq_zero_iff]
-    intro hmem
-    have h := congrFun (intCast_comp_eq_zero_of_div_mem_lattice_periodPair (N := N) (b := ![0, m])
-      (z := z) (by convert hmem using 1; simp [div_eq_mul_inv])) 1
-    simp only [Function.comp_apply, Matrix.cons_val_one, Matrix.cons_val_fin_one, Int.cast_natCast,
-      Pi.zero_apply, ZMod.natCast_eq_zero_iff] at h
-    exact absurd (Nat.le_of_dvd hm₀ h) (not_le.mpr hm)
+  simpa using z.periodPair.addOrderOf_weierstrassPoint_latticeBasis_div N 1
 
 /-- The pair `(E_z, P_z)` is an elliptic curve with a point of exact order `N`. -/
 theorem pointedWeierstrassCurve_mem_exactOrder [NeZero N] (z : ℍ) :

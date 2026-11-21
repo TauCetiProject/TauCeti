@@ -26,8 +26,10 @@ isomorphism, so they also preserve the order of the marked point. The pointed el
 marked point has exact order `N` therefore form a sub-action
 (`TauCeti.PointedWeierstrassCurve.exactOrder`); its orbits are the isomorphism classes of elliptic
 curves with a point of exact order `N`. Here `exactOrder F 0` marks points of infinite order.
-For `N > 0`, these points specify constant cyclic markings, the point-marked moduli problem
-of the congruence subgroup `Γ₁(N)`.
+For `N > 0`, such a point is a constant cyclic marking `ℤ/Nℤ ↪ E[N]`, sending `1` to the point.
+This differs from the μ-markings `μ_N ↪ E[N]` of the moduli problem of `Γ₁(N)`; over ℂ, choosing
+a primitive `N`-th root of unity `ζ_N` identifies the two, the marking `α` corresponding to the
+point `α(ζ_N)`.
 Multiplying the marked point by an integer commutes with changes of variables.
 For `M ≠ 0`, the map `P ↦ M • P` lowers exact order from `N * M`
 to `N`; at `N = 0` it preserves infinite order. At positive levels over ℂ, level lowering
@@ -211,10 +213,10 @@ variable (N) in
 /-- **Lowering the level**: for `M ≠ 0`, multiplying the marked point by `M` sends an elliptic
 curve with a point of exact order `N * M` to one with a point of exact order `N`. For `N > 0`,
 these points specify constant cyclic markings. Over ℂ at positive levels, the map corresponds to
-`Γ₁(N M) ≤ Γ₁(N)`, and choosing compatible primitive roots
-`ζ_N = ζ_{NM}^M` identifies them with embeddings `α : μ_{NM} ↪ E[NM]`; the map then restricts
-`α` to `μ_N`. The point operation commutes with changes of variables also at `N = 0`,
-where it preserves infinite order. -/
+`Γ₁(N M) ≤ Γ₁(N)`. Choosing compatible primitive roots `ζ_N = ζ_{NM}^M` identifies the source
+marking `P` with the embedding `α : μ_{NM} ↪ E[NM]` with `α(ζ_{NM}) = P`, and the target
+marking `M • P` with its restriction `μ_N ↪ E[N]`, since `α(ζ_N) = M • P`. The point operation
+commutes with changes of variables also at `N = 0`, where it preserves infinite order. -/
 def nsmulExactOrder (M : ℕ) [NeZero M] :
     exactOrder F (N * M) →[VariableChange F] exactOrder F N where
   toFun X := ⟨⟨X.val.curve, M • X.val.point⟩,

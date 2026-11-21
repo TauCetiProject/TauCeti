@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Quoti
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Pointed
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.LatticeClassification
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Diamond
-import TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
 
 /-!
@@ -192,16 +191,13 @@ theorem exists_smul_pointedWeierstrassCurve_eq_iff [NeZero N] {z z' : ℍ} :
       PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff] at hC
     obtain ⟨σ, hσ, hden⟩ := exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq hlat
     -- `u / N - 1 / N = (c z' + (d - 1)) / N` is a period, so `c ≡ 0` and `d ≡ 1 mod N`.
-    have hmod := intCast_comp_eq_zero_of_div_mem_lattice_periodPair (N := N)
-      (b := ![σ 1 0, σ 1 1 - 1]) (z := z') (by
+    obtain ⟨h₀, h₁⟩ := (z'.periodPair.div_mem_lattice_iff_intCast_eq_zero (N := N)
+      (m := σ 1 0) (n := σ 1 1 - 1)).mp (by
         convert hC using 1
-        rw [← hden, ModularGroup.denom_apply]
-        simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+        rw [← hden, ModularGroup.denom_apply, periodPair_ω₁, periodPair_ω₂]
         push_cast
         ring)
-    have h₀ : ((σ 1 0 : ℤ) : ZMod N) = 0 := by simpa using congrFun hmod 0
-    have h₁ : ((σ 1 1 : ℤ) : ZMod N) = 1 := by
-      simpa [sub_eq_zero] using congrFun hmod 1
+    replace h₁ : ((σ 1 1 : ℤ) : ZMod N) = 1 := by simpa [sub_eq_zero] using h₁
     have hσ₁ : σ ∈ Gamma1 N := by
       refine (Gamma1_mem N σ).mpr ⟨?_, h₁, h₀⟩
       simpa [h₀, h₁] using Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one
@@ -290,6 +286,9 @@ theorem gamma1QuotientEquivExactOrder_mk_smul (γ : Gamma0 N) (z : ℍ) :
     ⟨⟨(Units.mk0 _ (denom_ne_zero (γ : SL(2, ℤ)) z))⁻¹, 0, 0, 0⟩, Subtype.ext ?_⟩))
   rw [SubMulAction.val_smul, PointedWeierstrassCurve.val_units_smul_of_intCast_eq
     (n := (γ : SL(2, ℤ)) 1 1) _ _ (by rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply])]
+  -- The goal still projects out of the subtype `⟨z.pointedWeierstrassCurve N, _⟩`, whose
+  -- membership proof mentions `z.pointedWeierstrassCurve N`, so rewriting with its defining
+  -- equation would give an ill-typed motive. `change` reduces these projections first.
   change _ • (⟨(z.pointedWeierstrassCurve N).curve,
     (γ : SL(2, ℤ)) 1 1 • (z.pointedWeierstrassCurve N).point⟩ : PointedWeierstrassCurve ℂ) =
       (γ • z).pointedWeierstrassCurve N
@@ -326,13 +325,12 @@ theorem gamma1QuotientEquivExactOrder_map_of_le (M : ℕ) [NeZero M]
       MulActionHom.orbitRelQuotientMap_mk]
     refine congrArg _ (Subtype.ext ?_)
     rw [PointedWeierstrassCurve.val_nsmulExactOrder_apply]
+    -- As in `gamma1QuotientEquivExactOrder_mk_smul`, reduce the projections out of the subtype
+    -- `⟨z.pointedWeierstrassCurve (N * M), _⟩` so that its defining equation can be rewritten.
     change z.pointedWeierstrassCurve N =
       ⟨(z.pointedWeierstrassCurve (N * M)).curve, M • (z.pointedWeierstrassCurve (N * M)).point⟩
-    rw [UpperHalfPlane.pointedWeierstrassCurve_def, UpperHalfPlane.pointedWeierstrassCurve_def]
-    apply PointedWeierstrassCurve.mk_inj.mpr
-    change z.periodPair.weierstrassPoint (1 / N) =
-      M • z.periodPair.weierstrassPoint (1 / (N * M : ℕ))
-    rw [PeriodPair.nsmul_weierstrassPoint]
+    rw [UpperHalfPlane.pointedWeierstrassCurve_def, UpperHalfPlane.pointedWeierstrassCurve_def,
+      PointedWeierstrassCurve.mk_inj, PeriodPair.nsmul_weierstrassPoint]
     congr 1
     push_cast
     field_simp [Nat.cast_ne_zero.mpr (NeZero.ne M)]

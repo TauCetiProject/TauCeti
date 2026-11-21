@@ -47,39 +47,44 @@ theorem weightedG2_single_apply_eq_iff {a b : Fin 2 → ZMod N} (ha : a ≠ 0) (
   have hnot (c : Fin 2 → ZMod N) (hc : c ≠ 0) :
       ((c 0).val * (z : ℂ) + (c 1).val) / N ∉ z.periodPair.lattice := by
     intro h
-    have he := intCast_comp_eq_zero_of_div_mem_lattice_periodPair
-      (b := fun i ↦ ((c i).val : ℤ)) h
+    obtain ⟨h₀, h₁⟩ := (z.periodPair.div_mem_lattice_iff_intCast_eq_zero
+      (m := (c 0).val) (n := (c 1).val)).mp
+        (by simpa only [periodPair_ω₁, periodPair_ω₂, mul_one, Int.cast_natCast] using h)
     apply hc
     ext i
-    simpa using congrFun he i
+    fin_cases i
+    · simpa using h₀
+    · simpa using h₁
   constructor
   · intro h
     rw [weightedG2_single_apply, weightedG2_single_apply,
       mul_right_inj' (inv_ne_zero (pow_ne_zero 2 hN)),
       z.periodPair.weierstrassP_eq_weierstrassP_iff (hnot a ha) (hnot b hb)] at h
     rcases h with h | h
-    · have hdiv : (((((a 0).val : ℤ) - (b 0).val : ℤ) : ℂ) * z +
-          (((a 1).val : ℤ) - (b 1).val : ℤ)) / N ∈ z.periodPair.lattice := by
+    · have hdiv : (((((a 0).val : ℤ) - (b 0).val : ℤ) : ℂ) * z.periodPair.ω₁ +
+          (((a 1).val : ℤ) - (b 1).val : ℤ) * z.periodPair.ω₂) / N ∈ z.periodPair.lattice := by
         convert h using 1
         push_cast
+        simp only [periodPair_ω₁, periodPair_ω₂]
         ring
-      have he := intCast_comp_eq_zero_of_div_mem_lattice_periodPair
-        (b := fun i ↦ ((a i).val : ℤ) - (b i).val) hdiv
+      obtain ⟨h₀, h₁⟩ := z.periodPair.div_mem_lattice_iff_intCast_eq_zero.mp hdiv
       left
       ext i
-      have hi : a i - b i = 0 := by simpa using congrFun he i
-      exact sub_eq_zero.mp hi
-    · have hdiv : (((((a 0).val : ℤ) + (b 0).val : ℤ) : ℂ) * z +
-          (((a 1).val : ℤ) + (b 1).val : ℤ)) / N ∈ z.periodPair.lattice := by
+      fin_cases i
+      · exact sub_eq_zero.mp (by simpa using h₀)
+      · exact sub_eq_zero.mp (by simpa using h₁)
+    · have hdiv : (((((a 0).val : ℤ) + (b 0).val : ℤ) : ℂ) * z.periodPair.ω₁ +
+          (((a 1).val : ℤ) + (b 1).val : ℤ) * z.periodPair.ω₂) / N ∈ z.periodPair.lattice := by
         convert h using 1
         push_cast
+        simp only [periodPair_ω₁, periodPair_ω₂]
         ring
-      have he := intCast_comp_eq_zero_of_div_mem_lattice_periodPair
-        (b := fun i ↦ ((a i).val : ℤ) + (b i).val) hdiv
+      obtain ⟨h₀, h₁⟩ := z.periodPair.div_mem_lattice_iff_intCast_eq_zero.mp hdiv
       right
       ext i
-      have hi : a i + b i = 0 := by simpa using congrFun he i
-      exact eq_neg_of_add_eq_zero_left hi
+      fin_cases i
+      · exact eq_neg_of_add_eq_zero_left (by simpa using h₀)
+      · exact eq_neg_of_add_eq_zero_left (by simpa using h₁)
   · rintro (rfl | rfl)
     · rfl
     · simp

@@ -44,22 +44,6 @@ theorem nsmul_weierstrassPoint_eq_zero_iff (n : ℕ) (z : ℂ) :
     n • L.weierstrassPoint z = 0 ↔ n • z ∈ L.lattice := by
   rw [← L.weierstrassPoint_nsmul, L.weierstrassPoint_eq_zero_iff]
 
-omit [NeZero N] in
-/-- Division points depend only on their coordinates modulo `N`: if `m ≡ m'` and `n ≡ n'`
-modulo `N`, then `(m ω₁ + n ω₂) / N` and `(m' ω₁ + n' ω₂) / N` give the same point. At `N = 0`,
-both arguments are `0` by Lean’s division-by-zero convention. -/
-theorem weierstrassPoint_div_eq_of_intCast_eq {m n m' n' : ℤ} (hm : (m : ZMod N) = m')
-    (hn : (n : ZMod N) = n') :
-    L.weierstrassPoint ((m * L.ω₁ + n * L.ω₂) / N) =
-      L.weierstrassPoint ((m' * L.ω₁ + n' * L.ω₂) / N) := by
-  rw [weierstrassPoint_eq_weierstrassPoint_iff]
-  have h := L.div_mem_lattice_of_intCast_eq_zero
-    (N := N) (m := m - m') (n := n - n')
-    (by simp only [Int.cast_sub, hm, sub_self]) (by simp only [Int.cast_sub, hn, sub_self])
-  convert h using 1
-  push_cast
-  ring
-
 /-- **The zeros of `℘'` are the half-periods**: `℘'(z) = 0` exactly when `2 z ∈ Λ`. This includes
 the periods themselves, where Mathlib's `℘'` takes the value `0`. -/
 theorem derivWeierstrassP_eq_zero_iff (z : ℂ) : ℘'[L] z = 0 ↔ 2 * z ∈ L.lattice := by

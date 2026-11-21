@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Coordinates
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Pointed
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
