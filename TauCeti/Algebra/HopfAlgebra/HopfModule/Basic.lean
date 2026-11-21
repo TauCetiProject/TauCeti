@@ -42,8 +42,7 @@ sending `n ⊗ h` to `n ◃ h`, and intertwining both the right `H`-actions and 
 
 * `TauCeti.RightHopfModule.opSMulTensor`: the right `H`-action bundled as `M ⊗[R] H →ₗ[R] M`.
 * `TauCeti.IsRightHopfModule`: Prop-valued compatibility class making `M` a right `H`-Hopf module.
-* `TauCeti.RightHopfModule.instSelf`, `TauCeti.RightHopfModule.mem_fixedSubcomodule_self`: the
-  regular right `H`-Hopf module structure on `H` and its coinvariants.
+* `TauCeti.RightHopfModule.instSelf`: the regular right `H`-Hopf module structure on `H`.
 * `TauCeti.Comodule.cofreeRightModule`, `TauCeti.Comodule.isRightHopfModule_cofree`: the model
   right `H`-Hopf module structure on `N ⊗[R] H`.
 * `TauCeti.RightHopfModule.coinvariantProj` and `TauCeti.RightHopfModule.toFixedSubcomodule`: the
@@ -214,18 +213,6 @@ instance instSelf : IsRightHopfModule R H H where
         | tmul h₁ h₂ =>
           simp [Algebra.TensorProduct.tmul_mul_tmul]
     simpa [Comodule.instSelf_coact, Bialgebra.comul_mul] using hmul.symm
-
-/-- The coinvariants of the regular right comodule `H` over itself are the scalar multiples of
-`1`. -/
-theorem mem_fixedSubcomodule_self {x : H} :
-    x ∈ Comodule.fixedSubcomodule R H H ↔ x = algebraMap R H (Coalgebra.counit (R := R) x) := by
-  rw [Comodule.mem_fixedSubcomodule, Comodule.instSelf_coact]
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · have h := congrArg
-      ((TensorProduct.lid R H).toLinearMap ∘ₗ (Coalgebra.counit (R := R)).rTensor H) hx
-    simpa [Coalgebra.rTensor_counit_comul, Algebra.algebraMap_eq_smul_one] using h
-  · rw [hx, Algebra.algebraMap_eq_smul_one, map_smul, Bialgebra.comul_one,
-      Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']
 
 end Self
 

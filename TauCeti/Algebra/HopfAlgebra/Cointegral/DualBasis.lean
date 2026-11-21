@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 public import TauCeti.Algebra.HopfAlgebra.Integral
 public import TauCeti.Algebra.HopfAlgebra.InverseAntipode
-import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Dual.Reconstruction
 
 /-!
 # Basis-free Frobenius dual-basis reconstruction from integrals and cointegrals
@@ -25,11 +24,16 @@ dual-basis reconstruction formulas without assuming finite-dimensionality or a b
   `∑ φ (t₂ * x) • S(t₁) = x` for a left cointegral `φ` and normalized right integral `t`.
 * `TauCeti.IsRightCointegral.sum_apply_mul_smul_eq_antipode`:
   `∑ φ (t₁ * x) • t₂ = S(x)` for a right cointegral `φ` and normalized right integral `t`.
+* `TauCeti.IsLeftCointegral.sum_apply_mul_smul_eq_antipode`:
+  `∑ φ (x * t₂) • t₁ = S(x)` for a left cointegral `φ` and normalized left integral `t`.
 * `TauCeti.IsRightCointegral.sum_apply_mul_smul_inverseAntipode`:
   `∑ φ (t₁ * x) • S⁻¹(t₂) = x` when `S` is bijective.
+* `TauCeti.IsLeftCointegral.sum_apply_mul_smul_inverseAntipode`:
+  `∑ φ (x * t₂) • S⁻¹(t₁) = x` when `S` is bijective.
 * `TauCeti.IsRightCointegral.sum_apply_antipode_mul_smul`,
   `TauCeti.IsLeftCointegral.sum_apply_mul_antipode_smul`,
-  `TauCeti.IsRightCointegral.sum_apply_mul_inverseAntipode_smul`: dual-basis partner formulas over
+  `TauCeti.IsRightCointegral.sum_apply_mul_inverseAntipode_smul`,
+  `TauCeti.IsLeftCointegral.sum_apply_inverseAntipode_mul_smul`: dual-basis partner formulas over
   a commutative ring via `LinearMap.BilinForm.sum_apply_smul_eq_of_forall`.
 
 ## References
@@ -58,9 +62,13 @@ variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [HopfAlgebra R 
 theorem IsRightCointegral.sum_apply_mul_smul_antipode {φ : Module.Dual R H}
     (hφ : IsRightCointegral φ) {t : H} (ht : t ∈ leftIntegral R H) (htφ : φ t = 1)
     {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
-    ∑ i ∈ r.index, φ (x * r.left i) • HopfAlgebra.antipode R (r.right i) = x :=
-  (LinearMap.isRightInvariantIntegral_iff_isRightCointegral.mpr hφ).sum_apply_mul_smul_antipode
-    ht htφ r x
+    ∑ i ∈ r.index, φ (x * r.left i) • HopfAlgebra.antipode R (r.right i) = x := by
+  classical
+  have hxt (y : H) : φ (y * t) = Coalgebra.counit (R := R) y := by
+    simp [(mem_leftIntegral_iff.mp ht) y, htφ]
+  rw [← (LinearMap.isRightInvariantIntegral_iff_isRightCointegral.mpr hφ).strong_invariance
+    (ℛ R x) r]
+  simpa only [hxt] using Coalgebra.sum_counit_smul (ℛ R x)
 
 /-- Reconstruction from a left cointegral and a normalized right integral:
 `∑ φ (t₂ * x) • S(t₁) = x`. -/
@@ -89,6 +97,20 @@ theorem IsRightCointegral.sum_apply_mul_smul_eq_antipode {φ : Module.Dual R H}
   simpa only [htx, ← map_smul, ← map_sum] using
     congrArg (HopfAlgebra.antipode R) (Coalgebra.sum_counit_smul (ℛ R x))
 
+/-- Applying strong left invariance to a normalized left integral yields the antipode:
+`∑ φ (x * t₂) • t₁ = S(x)`. -/
+theorem IsLeftCointegral.sum_apply_mul_smul_eq_antipode {φ : Module.Dual R H}
+    (hφ : IsLeftCointegral φ) {t : H} (ht : t ∈ leftIntegral R H) (htφ : φ t = 1)
+    {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
+    ∑ i ∈ r.index, φ (x * r.right i) • r.left i = HopfAlgebra.antipode R x := by
+  classical
+  have hxt (y : H) : φ (y * t) = Coalgebra.counit (R := R) y := by
+    simp [(mem_leftIntegral_iff.mp ht) y, htφ]
+  rw [(LinearMap.isLeftInvariantIntegral_iff_isLeftCointegral.mpr hφ).strong_invariance
+    r (ℛ R x)]
+  simpa only [hxt, ← map_smul, ← map_sum] using
+    congrArg (HopfAlgebra.antipode R) (Coalgebra.sum_smul_counit (ℛ R x))
+
 /-- Reconstruction from a right cointegral and a normalized right integral using the inverse
 antipode: `∑ φ (t₁ * x) • S⁻¹(t₂) = x`. -/
 theorem IsRightCointegral.sum_apply_mul_smul_inverseAntipode {φ : Module.Dual R H}
@@ -96,6 +118,17 @@ theorem IsRightCointegral.sum_apply_mul_smul_inverseAntipode {φ : Module.Dual R
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H))
     {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
     ∑ i ∈ r.index, φ (r.left i * x) • TauCeti.HopfAlgebra.inverseAntipode hS (r.right i) = x := by
+  have h := congrArg (TauCeti.HopfAlgebra.inverseAntipode hS)
+    (hφ.sum_apply_mul_smul_eq_antipode ht htφ r x)
+  simpa only [map_sum, map_smul, TauCeti.HopfAlgebra.inverseAntipode_antipode] using h
+
+/-- Reconstruction from a left cointegral and a normalized left integral using the inverse
+antipode: `∑ φ (x * t₂) • S⁻¹(t₁) = x`. -/
+theorem IsLeftCointegral.sum_apply_mul_smul_inverseAntipode {φ : Module.Dual R H}
+    (hφ : IsLeftCointegral φ) {t : H} (ht : t ∈ leftIntegral R H) (htφ : φ t = 1)
+    (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H))
+    {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
+    ∑ i ∈ r.index, φ (x * r.right i) • TauCeti.HopfAlgebra.inverseAntipode hS (r.left i) = x := by
   have h := congrArg (TauCeti.HopfAlgebra.inverseAntipode hS)
     (hφ.sum_apply_mul_smul_eq_antipode ht htφ r x)
   simpa only [map_sum, map_smul, TauCeti.HopfAlgebra.inverseAntipode_antipode] using h
@@ -135,6 +168,17 @@ theorem IsRightCointegral.sum_apply_mul_inverseAntipode_smul {φ : Module.Dual R
     ∑ i ∈ r.index, φ (x * TauCeti.HopfAlgebra.inverseAntipode hS (r.right i)) • r.left i = x :=
   LinearMap.BilinForm.sum_apply_smul_eq_of_forall ((LinearMap.mul R H).compr₂ φ)
     r.index r.left (fun i ↦ TauCeti.HopfAlgebra.inverseAntipode hS (r.right i))
+    (hφ.sum_apply_mul_smul_inverseAntipode ht htφ hS r) x
+
+/-- Dual-basis partner of `IsLeftCointegral.sum_apply_mul_smul_inverseAntipode`: for a left
+cointegral `φ` and a left integral `t` with `φ t = 1`, `∑ φ (S⁻¹(t₁) * x) • t₂ = x`. -/
+theorem IsLeftCointegral.sum_apply_inverseAntipode_mul_smul {φ : Module.Dual R H}
+    (hφ : IsLeftCointegral φ) {t : H} (ht : t ∈ leftIntegral R H) (htφ : φ t = 1)
+    (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H))
+    {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
+    ∑ i ∈ r.index, φ (TauCeti.HopfAlgebra.inverseAntipode hS (r.left i) * x) • r.right i = x :=
+  LinearMap.BilinForm.sum_apply_smul_eq_of_forall ((LinearMap.mul R H).flip.compr₂ φ)
+    r.index r.right (fun i ↦ TauCeti.HopfAlgebra.inverseAntipode hS (r.left i))
     (hφ.sum_apply_mul_smul_inverseAntipode ht htφ hS r) x
 
 end CommRing

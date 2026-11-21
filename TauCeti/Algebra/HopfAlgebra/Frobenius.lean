@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.HopfAlgebra.Integral
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Algebra.HopfAlgebra.Cointegral.DualBasis
 import TauCeti.Algebra.HopfAlgebra.HopfModule.Dual
 import TauCeti.Algebra.Module.Injective.Frobenius
 
@@ -169,7 +170,8 @@ theorem IsRightInvariantIntegral.antipode_surjective [FiniteDimensional k H]
   intro x
   refine ⟨∑ i ∈ r.index, φ (x * r.left i) • r.right i, ?_⟩
   simpa only [map_sum, map_smul] using
-    hφ.sum_apply_mul_smul_antipode t.property ht r x
+    (LinearMap.isRightInvariantIntegral_iff_isRightCointegral.mp hφ).sum_apply_mul_smul_antipode
+      t.property ht r x
 
 /-- The antipode is bijective whenever a finite-dimensional Hopf algebra admits
 a nonzero right invariant functional. -/
@@ -218,11 +220,6 @@ theorem finrank_rightCointegrals : Module.finrank k (rightCointegrals k H) = 1 :
 cointegrals. -/
 theorem rightCointegrals_ne_bot : rightCointegrals k H ≠ ⊥ :=
   Submodule.one_le_finrank_iff.mp (finrank_rightCointegrals k H).ge
-
-/-- Every finite-dimensional Hopf algebra over a field admits a nonzero right cointegral. -/
-theorem exists_isRightCointegral_ne_zero :
-    ∃ φ : Module.Dual k H, IsRightCointegral φ ∧ φ ≠ 0 := by
-  simpa [Submodule.ne_bot_iff] using rightCointegrals_ne_bot k H
 
 /-- **Larson–Sweedler Frobenius Theorem**: every finite-dimensional Hopf algebra over a field
 admits a Frobenius functional. -/

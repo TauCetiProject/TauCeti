@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.EqLocus
 public import Mathlib.LinearAlgebra.TensorProduct.Decomposition
+public import Mathlib.RingTheory.Bialgebra.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
@@ -30,6 +31,9 @@ is proved in `TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Fixed`.
 * `TauCeti.Comodule.fixedSubcomodule`: the subcomodule of vectors with coaction `v ↦ v ⊗ 1`.
 * `TauCeti.Comodule.mem_fixedSubcomodule` and `TauCeti.Comodule.fixedSubcomodule_eq_top_iff`: its
   membership and triviality characterizations.
+* `TauCeti.Comodule.mem_fixedSubcomodule_self` and
+  `TauCeti.Comodule.algebraMap_mem_fixedSubcomodule_self`: coinvariants of the regular right
+  comodule of a bialgebra are the scalar multiples of `1`.
 * `TauCeti.Comodule.Hom.fixedMap`: the induced linear map on invariant vectors.
 * `TauCeti.Comodule.Hom.mem_fixedSubcomodule_iff_of_injective`: reflection of invariance along
   injective comodule morphisms over a flat coalgebra.
@@ -188,3 +192,31 @@ theorem mem_fixedSubcomodule_iff_of_injective (f : Hom R C M N)
   simpa [LinearMap.rTensor_def] using hm
 
 end TauCeti.Comodule.Hom
+
+namespace TauCeti.Comodule
+
+section Bialgebra
+
+variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- The coinvariants of the regular right comodule `H` over itself are the scalar multiples of
+`1`. -/
+theorem mem_fixedSubcomodule_self {x : H} :
+    x ∈ fixedSubcomodule R H H ↔ x = algebraMap R H (Coalgebra.counit (R := R) x) := by
+  rw [mem_fixedSubcomodule, instSelf_coact]
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · have h := congrArg
+      ((TensorProduct.lid R H).toLinearMap ∘ₗ (Coalgebra.counit (R := R)).rTensor H) hx
+    simpa [Coalgebra.rTensor_counit_comul, Algebra.algebraMap_eq_smul_one] using h
+  · rw [hx, Algebra.algebraMap_eq_smul_one, map_smul, Bialgebra.comul_one,
+      Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']
+
+/-- Every scalar multiple `algebraMap R H r` is fixed in the regular right comodule `H`. -/
+@[simp high]
+theorem algebraMap_mem_fixedSubcomodule_self (r : R) :
+    algebraMap R H r ∈ fixedSubcomodule R H H := by
+  rw [mem_fixedSubcomodule_self, Bialgebra.counit_algebraMap]
+
+end Bialgebra
+
+end TauCeti.Comodule
