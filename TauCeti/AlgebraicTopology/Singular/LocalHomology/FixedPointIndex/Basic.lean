@@ -84,6 +84,10 @@ degenerate fixed point `0` of `x ↦ x + x³` on `ℝ`, where `det (1 - f') = 0`
   finite fixed set.
 * `ContinuousMap.fixedPointIndex_eq_of_homotopy`: invariance under homotopies with compact fixed
   set.
+* `ContinuousMap.Homotopy.isCompact_setOf_apply_eq_of_isCompact`: a homotopy on an open set `W`
+  has compact fixed set when its fixed points, read in `[0, 1] × X`, form a compact set.
+* `ContinuousMap.Homotopy.isCompact_setOf_apply_one_eq`: the end map of a homotopy with compact
+  fixed set has compact fixed set.
 * `ContinuousMap.fixedPointIndex_eq_sign_det_of_forall_eq`: a linear map `A` with `1 - A`
   invertible has index `sign det (1 - A)` on every open set containing `0`.
 * `ContinuousMap.localFixedPointIndex_eq_of_hasStrictFDerivAt`: the local index is invariant
@@ -454,6 +458,43 @@ theorem fixedPointIndex_eq_of_homotopy {f₀ f₁ : C(U, E)} (H : f₀.Homotopy 
     -- `D p` is `p.2 - H p` by construction.
     exact sub_eq_zero.trans eq_comm
   exact HomologicalOrientation.localDegree_eq_of_homotopy_of_isCompact _ _ rfl rfl D (hD ▸ hH)
+
+/-- A homotopy `H` of maps `W → X` of an open set `W` of `X` has a compact fixed set
+`{(t, z) | H (t, z) = z}` when its fixed points `(t, z)`, read in `[0, 1] × X`, form a compact
+set `F`. This turns a fixed set computed from an ambient formula on `[0, 1] × X` into the
+hypothesis of `ContinuousMap.fixedPointIndex_eq_of_homotopy`. -/
+theorem Homotopy.isCompact_setOf_apply_eq_of_isCompact {X : Type*} [TopologicalSpace X]
+    {W : Opens X} {f₀ f₁ : C(W, X)} (H : f₀.Homotopy f₁) {F : Set (unitInterval × X)}
+    (hF : IsCompact F) (hFW : ∀ p ∈ F, p.2 ∈ (W : Set X))
+    (hHF : ∀ (t : unitInterval) (z : W), H (t, z) = z ↔ (t, (z : X)) ∈ F) :
+    IsCompact {p : unitInterval × W | H p = p.2} := by
+  rw [(IsEmbedding.id.prodMap IsEmbedding.subtypeVal).isCompact_iff]
+  convert hF using 1
+  ext ⟨t, x⟩
+  constructor
+  · rintro ⟨⟨t', z⟩, hp, he⟩
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj he
+    exact (hHF t' z).1 hp
+  · intro hx
+    exact ⟨(t, ⟨x, hFW _ hx⟩), (hHF t ⟨x, hFW _ hx⟩).2 hx, rfl⟩
+
+/-- The end map `f₁` of a homotopy `H` of maps `W → X` of an open set `W` of `X` whose fixed set
+`{(t, z) | H (t, z) = z}` is compact has a compact fixed set. With
+`ContinuousMap.fixedPointIndex_eq_of_homotopy`, this lets the index of `f₁` be computed further. -/
+theorem Homotopy.isCompact_setOf_apply_one_eq {X : Type*} [TopologicalSpace X]
+    {W : Opens X} {f₀ f₁ : C(W, X)} (H : f₀.Homotopy f₁)
+    (hH : IsCompact {p : unitInterval × W | H p = p.2}) : IsCompact {z | f₁ z = z} := by
+  have h := (hH.inter_right ((isClosed_singleton (x := (1 : unitInterval))).prod
+    isClosed_univ)).image continuous_snd
+  convert h using 1
+  ext z
+  constructor
+  · intro hz
+    exact ⟨(1, z), ⟨by simpa using hz, by simp⟩, rfl⟩
+  · rintro ⟨⟨t, z⟩, ⟨hp, ht, -⟩, rfl⟩
+    rw [mem_singleton_iff] at ht
+    subst ht
+    simpa using hp
 
 /-- **The fixed-point index of a linear map**: if `f : U → E` is the restriction of a linear map
 `A` to an open set containing `0`, and `1 - A` is invertible, then the fixed-point index of `f` is
