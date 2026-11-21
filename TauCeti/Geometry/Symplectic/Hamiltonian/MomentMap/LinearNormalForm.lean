@@ -260,20 +260,6 @@ section Equivariant
 
 variable {K : Type*} [Group K] {πT : Representation ℝ K T}
 
-/-- The model `(V × V*) × V'`, for a symplectic vector space `(V', ω')`, contains the symplectic
-complement of `V × {0} × V'`, which is `V × {0} × {0}`. -/
-private theorem isCoisotropic_range_prodMap_inl {V V' : Type*} [AddCommGroup V] [Module ℝ V]
-    [AddCommGroup V'] [Module ℝ V'] (ω' : SymplecticForm V') :
-    (cotangentSymplecticForm.prod ω').IsCoisotropic
-      (LinearMap.range ((LinearMap.inl ℝ V (Dual ℝ V)).prodMap (LinearMap.id : V' →ₗ[ℝ] V'))) := by
-  refine isCoisotropic_iff.2 fun ⟨⟨ξ, a⟩, w⟩ h ↦ ?_
-  rw [mem_orthogonal_iff] at h
-  have ha : a = 0 := LinearMap.ext fun ξ' ↦ by
-    simpa [prod_apply] using h ((ξ', 0), 0) ⟨(ξ', 0), rfl⟩
-  have hw : w = 0 := ω'.separatingRight w fun w' ↦ by
-    simpa [prod_apply] using h ((0, 0), w') ⟨(0, w'), rfl⟩
-  exact ⟨(ξ, w), by simp [ha, hw]⟩
-
 section Model
 
 variable {π𝔤 : Representation ℝ K 𝔤} (hπT : Representation.IsInvariantForm πT ω.toBilinForm)
@@ -415,7 +401,13 @@ theorem exists_equivariant_isSymplectomorphism_cotangent_prod_kirillov_prod_redu
     (fun ⟨a, b, v⟩ ⟨a', b', v'⟩ ↦ by
       rw [hF, hF, apply_add_add_apply_add_add hρ h𝔪' s hs]
       simp [G, prod_apply])
-    (isCoisotropic_range_prodMap_inl _) (isCoisotropic_range_coprod_coprod h𝔪' h𝔮 s hs)
+    -- `V × {0} × V'` is the product of the Lagrangian zero section of `V × V*` with `V'`.
+    (by
+      have h : LinearMap.range G = cotangentZeroSection.prod ⊤ := by
+        ext; simp [G, LinearMap.range_prodMap, LinearMap.range_inl]
+      rw [h]
+      exact IsCoisotropic.prod isLagrangian_cotangentZeroSection.isCoisotropic isCoisotropic_top)
+    (isCoisotropic_range_coprod_coprod h𝔪' h𝔮 s hs)
     (fun k ⟨a, b, v⟩ ↦ by simp [G])
     (fun k ⟨a, b, v⟩ ↦ by simp [hF, hρπ, hsπ])
   refine ⟨e, he, fun ξ ↦ ?_, fun ζ ↦ ?_, fun u ↦ ?_, heπ⟩

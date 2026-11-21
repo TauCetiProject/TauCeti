@@ -438,8 +438,7 @@ theorem exists_equivariant_lift_reducedSpace {K : Type*} [Group K] {πT : Repres
       ∀ k v, (s (πV k v) : V) = πT k (s v) := by
   let SU : Subrepresentation πT := ⟨U, fun k _ hu ↦ hU k _ hu⟩
   have : SU.toRepresentation.IsSemisimpleRepresentation :=
-    (U.subtype.intertwiningMap_of_isIntertwiningMap SU.toRepresentation πT
-      fun _ _ ↦ rfl).isSemisimpleRepresentation_of_injective U.injective_subtype
+    SU.subtype.isSemisimpleRepresentation_of_injective SU.subtype_injective
   -- The radical `U ∩ U^ω` is a subrepresentation, with an equivariant projection `P`.
   let N : Subrepresentation SU.toRepresentation :=
     ⟨LinearMap.ker (ω.toBilinForm.restrict U), fun k u hu ↦ by
