@@ -133,23 +133,23 @@ private def closedUnitPathHomeomorphPullback :
     ClosedUnitPath Q ≃ₜ
       {x : Q × C(I, Q) // ContinuousMap.const' (X := ({0, 1} : Set I)) x.1 =
         x.2.restrict ({0, 1} : Set I)} where
-  toFun γ := ⟨(γ.1 0, γ.1), ContinuousMap.ext fun t ↦ by
+  toFun γ := ⟨(γ.val 0, γ.val), ContinuousMap.ext fun t ↦ by
     obtain ⟨t, rfl | rfl⟩ := t
     · rfl
-    · exact γ.2⟩
-  invFun x := ⟨x.1.2, by
-    have h₀ : x.1.1 = x.1.2 0 := ContinuousMap.congr_fun x.2 ⟨0, Or.inl rfl⟩
-    have h₁ : x.1.1 = x.1.2 1 := ContinuousMap.congr_fun x.2 ⟨1, Or.inr rfl⟩
+    · exact γ.property⟩
+  invFun x := ⟨x.val.2, by
+    have h₀ : x.val.1 = x.val.2 0 := ContinuousMap.congr_fun x.property ⟨0, Or.inl rfl⟩
+    have h₁ : x.val.1 = x.val.2 1 := ContinuousMap.congr_fun x.property ⟨1, Or.inr rfl⟩
     exact h₀.symm.trans h₁⟩
   left_inv _ := rfl
   right_inv x := by
-    have h₀ : x.1.1 = x.1.2 0 := ContinuousMap.congr_fun x.2 ⟨0, Or.inl rfl⟩
+    have h₀ : x.val.1 = x.val.2 0 := ContinuousMap.congr_fun x.property ⟨0, Or.inl rfl⟩
     exact Subtype.ext (Prod.ext h₀.symm rfl)
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
 private theorem coe_closedUnitPathHomeomorphPullback (γ : ClosedUnitPath Q) :
-    (closedUnitPathHomeomorphPullback γ : Q × C(I, Q)) = (γ.1 0, γ.1) :=
+    (closedUnitPathHomeomorphPullback γ : Q × C(I, Q)) = (γ.val 0, γ.val) :=
   rfl
 
 /-- **Evaluation of free loops is a Hurewicz fibration.** Evaluation `C(S¹, Q) → Q` at

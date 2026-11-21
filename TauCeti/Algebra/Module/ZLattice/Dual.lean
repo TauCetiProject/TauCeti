@@ -407,14 +407,15 @@ theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional 
     Submodule.nontrivial_iff_ne_bot.mpr (by rwa [Ne, Submodule.orthogonal_eq_bot_iff])
   have : Infinite Kᗮ := Module.Free.infinite ℝ _
   have : Infinite (dual L ⧸ (c • L).submoduleOf (dual L)) := Infinite.of_injective
-    (fun w : Kᗮ ↦ Submodule.Quotient.mk ⟨w, mem_dual_of_mem_orthogonal_span w.2⟩) fun a b hab ↦ by
+    (fun w : Kᗮ ↦ Submodule.Quotient.mk ⟨w, mem_dual_of_mem_orthogonal_span w.property⟩) fun a b hab
+        ↦ by
     rw [Submodule.Quotient.eq, submoduleOf, Submodule.mem_comap, subtype_apply,
       mem_smul_pointwise_iff_exists] at hab
     obtain ⟨l, hl, hlab⟩ := hab
     -- `a - b = c • l` lies both in `K` and in `Kᗮ`, so it vanishes.
     have hK : (a : E) - b ∈ K := by
       simpa [hlab] using K.smul_mem c (subset_span hl : l ∈ K)
-    have h0 := Submodule.inner_right_of_mem_orthogonal hK (sub_mem a.2 b.2)
+    have h0 := Submodule.inner_right_of_mem_orthogonal hK (sub_mem a.property b.property)
     rw [inner_self_eq_zero, sub_eq_zero] at h0
     exact Subtype.ext h0
   exact not_finite (dual L ⧸ (c • L).submoduleOf (dual L))

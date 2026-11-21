@@ -126,7 +126,7 @@ theorem twistedHomology₀EquivQuotientTwo_ιTwistedHomology₀ [ConnectedSpace 
   -- The lift of `γ⁻¹` starting at `o` ends at `o'` or at `-o'`.
   set e := (isCoveringMap_proj hι).monodromy (inv γ)
     (⟨⟨b, o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι)))
-  rcases eq_or_eq_deck hι (p := ⟨b', o'⟩) (q := e.1) e.2 with he | he
+  rcases eq_or_eq_deck hι (p := ⟨b', o'⟩) (q := e.val) e.property with he | he
   · rw [show e = ⟨⟨b', o'⟩, rfl⟩ from Subtype.ext he, ← signLocalSystemFiberEquiv_apply]
   · rw [show e = ⟨⟨b', -o'⟩, rfl⟩ from Subtype.ext (he.trans (deck_apply _)),
       ← signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_neg, Ideal.Quotient.eq]

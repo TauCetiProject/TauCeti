@@ -123,13 +123,13 @@ theorem map_link_stellarSubdivision_insert_eq_join {ρ : Finset ι}
   have hs : ρ ∩ σ = ∅ ∨ ρ ∩ σ ∈ simplexBoundary σ := by
     by_cases he : ρ ∩ σ = ∅
     · exact Or.inl he
-    · refine Or.inr (mem_simplexBoundary.mpr ⟨nonempty_iff_ne_empty.mpr he, ?_⟩)
+    · refine Or.inr (mem_simplexBoundary.mpr ⟨ne_empty_iff_nonempty.mp he, ?_⟩)
       exact Finset.ssubset_iff_subset_ne.mpr
         ⟨inter_subset_right, fun h => havoid (h ▸ inter_subset_left)⟩
   have ht : ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ := by
     by_cases he : ρ \ σ = ∅
     · exact Or.inl he
-    · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr he,
+    · exact Or.inr (mem_link_nonempty.mpr ⟨ne_empty_iff_nonempty.mp he,
         sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
   have hstellar :
       (link (stellarSubdivision K σ v) (insert v ρ)).map (partitionEmbedding (· ∈ σ)) =

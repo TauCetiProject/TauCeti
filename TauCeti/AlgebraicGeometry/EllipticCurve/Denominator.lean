@@ -120,8 +120,8 @@ private lemma num_den_equation
         + W.a₃ * num R y * (den R x : R) ^ 3 * (den R y : R) =
       (den R y : R) ^ 2 * (num R x ^ 3 + W.a₂ * num R x ^ 2 * (den R x : R)
         + W.a₄ * num R x * (den R x : R) ^ 2 + W.a₆ * (den R x : R) ^ 3) := by
-  have hd := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (K := K) (den R x).2
-  have he := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (K := K) (den R y).2
+  have hd := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (K := K) (den R x).property
+  have he := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (K := K) (den R y).property
   apply IsFractionRing.injective R K
   rw [Affine.equation_iff, ← mk'_num_den' R x, ← mk'_num_den' R y] at h
   simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at h

@@ -657,7 +657,7 @@ private theorem coe_mem_closure_image_weightSubst
   obtain ⟨V, -, hV⟩ := (hasBasis_nhds_zero_weightedTopology hT).mem_iff.mp
     (hc.continuousAt.preimage_mem_nhds (by simpa using hN))
   obtain ⟨p, hp⟩ := exists_mvPolynomial_forall_coeff_sub_mem
-    (mem_weightedRestrictedSubring.mp h.2) (V ⊓ U)
+    (mem_weightedRestrictedSubring.mp h.property) (V ⊓ U)
   have hx : h - weightedPolynomialHom T hT p ∈ weightedNhd T hT (V ⊓ U).toAddSubgroup :=
     mem_weightedNhd.mpr fun ν ↦ by simpa using hp ν
   have hpU : ∀ ν, p.coeff ν ∈ weightMul T ν U.toAddSubgroup := fun ν ↦ by

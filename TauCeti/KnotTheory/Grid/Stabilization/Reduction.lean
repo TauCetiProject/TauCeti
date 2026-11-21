@@ -168,7 +168,8 @@ rectangles of the stabilization between off-center states. -/
 theorem constantCoeffReduction_stabilizeXOffCenterDifferential_single_apply
     (y z : G.StabilizeXOffCenterState s) (c : R) :
     (G.stabilizeXOffCenterDifferential s R).constantCoeffReduction (Finsupp.single y c) z =
-      c * ((G.stabilizeX s.castSucc (G.X s).castSucc s).fullyBlockedRectangles y.1 z.1).card := by
+      c * ((G.stabilizeX s.castSucc (G.X s).castSucc s).fullyBlockedRectangles y.val z.val).card
+          := by
   rw [LinearMap.constantCoeffReduction_single_apply, stabilizeXOffCenterDifferential_single_apply,
     constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles]
 
@@ -178,7 +179,7 @@ the southeast `X`-marking `X₂` of the new block. -/
 theorem constantCoeffReduction_stabilizeXOffCenterToCenter_single_apply
     (y : G.StabilizeXOffCenterState s) (x : GridState n) (c : R) :
     (G.stabilizeXOffCenterToCenter s R).constantCoeffReduction (Finsupp.single y c) x =
-      c * (((G.stabilizeX s.castSucc (G.X s).castSucc s).XHomotopyRectangles s.succ y.1
+      c * (((G.stabilizeX s.castSucc (G.X s).castSucc s).XHomotopyRectangles s.succ y.val
         (x.insertPoint s.succ (G.X s).succ)).filter fun r =>
           (G.stabilizeX s.castSucc (G.X s).castSucc s).OColumns r.toGridRectangle = ∅).card := by
   rw [LinearMap.constantCoeffReduction_single_apply, stabilizeXOffCenterToCenter_single_apply,
@@ -296,7 +297,7 @@ theorem quasiIso_stabilizeXOffCenterToCenterHom_of_bijective
     HomologicalComplex.quasiIso_iff_bijective_homologyMap]
   exact LinearMap.homologyMap_bijective_of_mapRange_constantCoeff
     (G.stabilizeXOffCenterToCenter s R) (w := fun _ ↦ (-2 : ℤ))
-    (g := fun y ↦ (G.stabilizeX s.castSucc (G.X s).castSucc s).maslovOℤ y.1)
+    (g := fun y ↦ (G.stabilizeX s.castSucc (G.X s).castSucc s).maslovOℤ y.val)
     (g' := fun x ↦ (G.stabilizeX s.castSucc (G.X s).castSucc s).maslovOℤ
       (x.insertPoint s.succ (G.X s).succ)) (r := -1) (δ := -1)
     (fun _ ↦ by decide) (Set.finite_range _).bddAbove (Set.finite_range _).bddAbove

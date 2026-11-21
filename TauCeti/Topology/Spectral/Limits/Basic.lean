@@ -85,14 +85,14 @@ theorem spectralSpace_set_prod {X Y : Type*} [TopologicalSpace X] [TopologicalSp
 spectral map. -/
 theorem IsProConstructible.isSpectralMap_fst {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [SpectralSpace X] [SpectralSpace Y] {R : Set (X × Y)} (hR : IsProConstructible R) :
-    IsSpectralMap (fun q : R ↦ q.1.1) :=
+    IsSpectralMap (fun q : R ↦ q.val.1) :=
   isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal
 
 /-- The second projection from a pro-constructible subset of a product of two spectral spaces is a
 spectral map. -/
 theorem IsProConstructible.isSpectralMap_snd {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [SpectralSpace X] [SpectralSpace Y] {R : Set (X × Y)} (hR : IsProConstructible R) :
-    IsSpectralMap (fun q : R ↦ q.1.2) :=
+    IsSpectralMap (fun q : R ↦ q.val.2) :=
   isProperMap_snd_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal
 
 end TauCeti

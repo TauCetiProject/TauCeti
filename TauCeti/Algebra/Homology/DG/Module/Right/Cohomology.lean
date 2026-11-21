@@ -107,7 +107,7 @@ namespace IsDGRightModule
 def cycles (hM : IsDGRightModule h ℳ dM) : Submodule (h.cycles)ᵐᵒᵖ M :=
   { (LinearMap.ker dM).toAddSubmonoid with
     smul_mem' := fun z _ hx =>
-      hM.map_op_smul_eq_zero_of_map_eq_zero (h.mem_cycles.mp z.unop.2) hx }
+      hM.map_op_smul_eq_zero_of_map_eq_zero (h.mem_cycles.mp z.unop.property) hx }
 
 /-- An element is a module cycle exactly when its differential vanishes. -/
 @[simp]
@@ -124,7 +124,7 @@ noncomputable def boundaries (hM : IsDGRightModule h ℳ dM) :
     Submodule (h.cycles)ᵐᵒᵖ hM.cycles :=
   { (LinearMap.range dM).toAddSubmonoid.comap hM.cycles.subtype.toAddMonoidHom with
     smul_mem' := fun z _ hx =>
-      hM.op_smul_mem_range_of_map_eq_zero (h.mem_cycles.mp z.unop.2) hx }
+      hM.op_smul_mem_range_of_map_eq_zero (h.mem_cycles.mp z.unop.property) hx }
 
 /-- A module cycle is a boundary exactly when its underlying element lies in the differential's
 range. -/
@@ -159,9 +159,9 @@ theorem isTorsionBySet_boundaries (hM : IsDGRightModule h ℳ dM) :
   intro x a
   refine Submodule.Quotient.induction_on _ x fun z => ?_
   rw [← Submodule.Quotient.mk_smul, hM.quotientMk_eq_zero_iff, mem_boundaries]
-  have ha : a.1.unop ∈ h.boundaries := TwoSidedIdeal.mem_asIdealOpposite.mp a.2
+  have ha : a.val.unop ∈ h.boundaries := TwoSidedIdeal.mem_asIdealOpposite.mp a.property
   obtain ⟨b, hb⟩ := h.mem_boundaries.mp ha
-  have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.2
+  have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.property
   have hrange := hM.op_map_smul_mem_range_of_map_eq_zero b hz
   rw [hb] at hrange
   exact hrange
@@ -238,7 +238,7 @@ noncomputable instance instDecompositionCyclesDeg (hM : IsDGRightModule h ℳ dM
   DirectSum.Decomposition.restrict ℳ hM.cyclesDeg
     ((hM.cycles.subtype).restrictScalars R) Subtype.val_injective
     (fun _ _ => hM.mem_cyclesDeg) fun p z =>
-      ⟨⟨(decompose ℳ (z : M) p : M), hM.isHomogeneous_cycles p z.2⟩, rfl⟩
+      ⟨⟨(decompose ℳ (z : M) p : M), hM.isHomogeneous_cycles p z.property⟩, rfl⟩
 
 /-- Every module cycle is a sum of homogeneous module cycles. -/
 theorem iSup_cyclesDeg_eq_top (hM : IsDGRightModule h ℳ dM) :

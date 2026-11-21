@@ -44,7 +44,10 @@ For a Morse function the first page is then free on the critical points
 the `q`th band, by Milnor's cell attachment theorem in homology
 (`TauCeti.IsMorse.nonempty_singularHomology_sublevelPair_iso_sigma`). In particular it vanishes when
 the band has no critical point of index `n`, and over a division ring its dimension is the number
-of these critical points times the dimension of the coefficients.
+of these critical points times the dimension of the coefficients. For a Morse–Bott function the
+object at `(p, q)` is instead the relative homology of the lower sublevel with the negative disc
+bundles of the critical submanifolds in the band attached, by Bott's theorem
+(`TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
 The spectral sequence does not depend on where exactly the bands are cut. If `a ≤ a'` and each
 band `f⁻¹[a q, a' q]` is compact and free of critical points, the identity of `M` induces a
@@ -251,7 +254,8 @@ theorem IsMorse.isZero_filteredSpaceSpectralSequence_page_two_X (hf : IsMorse I 
   obtain ⟨e⟩ := hf.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma R ha hband pq hq n
     hn
   have : IsEmpty {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a q) (a (q + 1))) //
-      manifoldMorseIndex I f x = n} := ⟨fun x ↦ hindex x.1 x.1.2.1 x.1.2.2 x.2⟩
+      manifoldMorseIndex I f x = n} := ⟨fun x ↦ hindex x.val x.val.property.1 x.val.property.2
+          x.property⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso e
 
 /-- **The dimensions of the first page.** Under the hypotheses of
@@ -340,10 +344,8 @@ in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
 theorem IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one
     {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁) (pq : ℤ × ℤ) (n : ℕ)
     (hn : pq.1 + pq.2 = -n) :
-    Nonempty (cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration (Y := TopCat.of M)
-          ((AlgebraicTopology.singularChainComplexFunctor _).obj R)
-          ((sublevel_mono f).comp ha.monotone)))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
+    Nonempty (cokernel ((filteredSpaceSpectralObject (Y := TopCat.of M) R
+        ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
       ∐ fun _ : {x : ↥(criticalPoints I f ∩ f ⁻¹' Ioc (a pq.2) (a (pq.2 + 1))) //
         manifoldMorseIndex I f x = n} ↦ R) := by
   set E :=

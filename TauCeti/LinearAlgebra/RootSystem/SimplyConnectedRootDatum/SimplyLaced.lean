@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Gram
+public import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!
@@ -66,7 +66,7 @@ theorem root_eq_coroot_vecMul_cartanMatrix (k : Fin t.numRoots) :
   have := t.isReduced_simplyConnectedRootDatum ht
   set P := t.simplyConnectedRootDatum ht
   have hpairing (i j : Fin t.numRoots) : P.pairing i j = P.root i ⬝ᵥ P.coroot j := by
-    rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum]
+    rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply]
   have hsimple (s : Fin t.rank) :
       P.root (t.simpleIndex ht s) = P.coroot (t.simpleIndex ht s) ᵥ* t.cartanMatrix := by
     rw [root_simpleIndex, coroot_simpleIndex, single_one_vecMul]
@@ -78,10 +78,10 @@ theorem root_eq_coroot_vecMul_cartanMatrix (k : Fin t.numRoots) :
   · rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
       RootPairing.coroot_reflectionPerm, RootPairing.coreflection_apply_self, hi, neg_vecMul]
   · obtain ⟨s, rfl⟩ : ∃ s, t.simpleIndex ht s = i :=
-      ⟨⟨i, (mem_support_simplyConnectedBase t ht).mp hi⟩, Fin.ext (simpleIndex_val t ht _)⟩
+      ⟨⟨i, (mem_support_simplyConnectedBase t ht).mp hi⟩, Fin.ext (val_simpleIndex t ht _)⟩
     exact hsimple s
   · obtain ⟨s, rfl⟩ : ∃ s, t.simpleIndex ht s = j :=
-      ⟨⟨j, (mem_support_simplyConnectedBase t ht).mp hj⟩, Fin.ext (simpleIndex_val t ht _)⟩
+      ⟨⟨j, (mem_support_simplyConnectedBase t ht).mp hj⟩, Fin.ext (val_simpleIndex t ht _)⟩
     rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_root,
       RootPairing.coroot_reflectionPerm, RootPairing.coreflection_apply_coroot, sub_vecMul,
       smul_vecMul, hpairing, hpairing, hi, hsimple, vecMul_dotProduct_comm hs.isSymm_cartanMatrix]
@@ -106,7 +106,7 @@ theorem pairing_eq_coroot_vecMul_dotProduct (k l : Fin t.numRoots) :
     (t.simplyConnectedRootDatum ht).pairing k l =
       ((t.simplyConnectedRootDatum ht).coroot k ᵥ* t.cartanMatrix) ⬝ᵥ
         (t.simplyConnectedRootDatum ht).coroot l := by
-  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum,
+  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply,
     t.root_eq_coroot_vecMul_cartanMatrix ht hs]
 
 include hs in

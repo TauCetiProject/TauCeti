@@ -10,10 +10,9 @@ public import Mathlib.Analysis.Calculus.MeanValue
 /-!
 # The Wronskian of a scalar second-order linear equation
 
-For two solutions `φ`, `ψ` of the equation `f'' = q f` without a first-order term, over `ℝ` or
-`ℂ` (any `RCLike` field), the Wronskian `ψ φ' - φ ψ'` has derivative `ψ q φ - φ q ψ = 0`, so it
-is constant. For the fundamental pair with `φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1` it is
-identically one.
+For two solutions `φ`, `ψ` of the equation `f'' = q f` over `ℝ` or `ℂ`, without a first-order
+term, the Wronskian `ψ φ' - φ ψ'` has derivative `ψ q φ - φ q ψ = 0`, so it is constant. For the
+fundamental pair with `φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1` it is identically one.
 
 ## Main results
 

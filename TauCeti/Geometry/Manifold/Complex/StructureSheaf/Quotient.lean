@@ -105,13 +105,13 @@ private def quotientPresheaf : TopCat.Presheaf CommRingCat (TopCat.of (Quotient 
     apply RingHom.ext
     intro f
     apply Subtype.ext
-    exact (holomorphicStructureSheaf I X).obj.map_id_apply _ f.1
+    exact (holomorphicStructureSheaf I X).obj.map_id_apply _ f.val
   map_comp h k := by
     apply CommRingCat.hom_ext
     apply RingHom.ext
     intro f
     apply Subtype.ext
-    exact (holomorphicStructureSheaf I X).obj.map_comp_apply _ _ f.1
+    exact (holomorphicStructureSheaf I X).obj.map_comp_apply _ _ f.val
 
 private def quotientInclusion : quotientPresheaf I s ⟶
     (TopCat.Presheaf.pushforward CommRingCat (TopCat.quotientMk s)).obj
@@ -123,25 +123,25 @@ private theorem quotientPresheaf_isSheaf : (quotientPresheaf I s).IsSheaf := by
   intro ι U f hf
   let F := (TopCat.Presheaf.pushforward CommRingCat (TopCat.quotientMk s)).obj
     (holomorphicStructureSheaf I X).obj
-  have hc : F.IsCompatible U (fun i ↦ (f i).1) := by
+  have hc : F.IsCompatible U (fun i ↦ (f i).val) := by
     intro i j
     exact congrArg Subtype.val (hf i j)
   obtain ⟨g, hg, hu⟩ := TopCat.Presheaf.IsSheaf.isSheafUniqueGluing
     (TopCat.Sheaf.pushforward_sheaf_of_sheaf (TopCat.quotientMk s)
-      (holomorphicStructureSheaf I X).property) U (fun i ↦ (f i).1) hc
+      (holomorphicStructureSheaf I X).property) U (fun i ↦ (f i).val) hc
   have hmem : g ∈ quotientSectionSubring I s (iSup U) := by
     intro x y hx hy hxy
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
     have hj : Quotient.mk s y ∈ U i := Quotient.sound hxy ▸ hi
     have hgi : (holomorphicStructureSheaf I X).obj.map
-        ((Opens.map (TopCat.quotientMk s)).map (Opens.leSupr U i)).op g = (f i).1 := hg i
+        ((Opens.map (TopCat.quotientMk s)).map (Opens.leSupr U i)).op g = (f i).val := hg i
     have hxi := congrArg (fun t ↦ t ⟨x, hi⟩) hgi
     have hyi := congrArg (fun t ↦ t ⟨y, hj⟩) hgi
     simp only [map_apply] at hxi hyi
-    exact hxi.trans (((f i).2 x y hi hj hxy).trans hyi.symm)
+    exact hxi.trans (((f i).property x y hi hj hxy).trans hyi.symm)
   refine ⟨⟨g, hmem⟩, fun i ↦ Subtype.ext (hg i), ?_⟩
   intro t ht
-  exact Subtype.ext (hu t.1 fun i ↦ congrArg Subtype.val (ht i))
+  exact Subtype.ext (hu t.val fun i ↦ congrArg Subtype.val (ht i))
 
 /-- The sheaf of holomorphic functions on the normalization which have matching values on each
 fibre of the quotient map. For paired node flags this is the normalization construction of the
@@ -158,8 +158,8 @@ def quotientSheafSectionsEquiv (U : Opens (Quotient s)) :
 @[ext]
 theorem quotientSheaf_ext {U : Opens (Quotient s)}
     {f g : (quotientSheaf I s).obj.obj (op U)}
-    (h : ∀ x, (quotientSheafSectionsEquiv I s U f).1 x =
-      (quotientSheafSectionsEquiv I s U g).1 x) : f = g := by
+    (h : ∀ x, (quotientSheafSectionsEquiv I s U f).val x =
+      (quotientSheafSectionsEquiv I s U g).val x) : f = g := by
   apply (quotientSheafSectionsEquiv I s U).injective
   exact Subtype.ext (holomorphicStructureSheaf.ext h)
 
@@ -175,7 +175,7 @@ instance (U : (Opens (Quotient s))ᵒᵖ) : Algebra ℂ ((quotientSheaf I s).obj
 @[simp]
 theorem quotientSheafSectionsEquiv_algebraMap (U : Opens (Quotient s)) (c : ℂ)
     (x : (Opens.map (TopCat.quotientMk s)).obj U) :
-    (quotientSheafSectionsEquiv I s U (algebraMap ℂ ((quotientSheaf I s).obj.obj (op U)) c)).1 x =
+    (quotientSheafSectionsEquiv I s U (algebraMap ℂ ((quotientSheaf I s).obj.obj (op U)) c)).val x =
       c :=
   algebraMap_apply _ c x
 
@@ -193,7 +193,7 @@ theorem quotientSheafι_app_apply (U : Opens (Quotient s))
     (@CommRingCat.Hom.hom _
       ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map (TopCat.quotientMk s)).obj U)))
       ((quotientSheafι I s).hom.app (op U))) f =
-      (quotientSheafSectionsEquiv I s U f).1 := (rfl)
+      (quotientSheafSectionsEquiv I s U f).val := (rfl)
 
 /-- The quotient sheaf is a subobject of the direct image of the normalization sheaf. -/
 instance quotientSheafι_mono : Mono (quotientSheafι I s) := by
@@ -208,9 +208,10 @@ instance quotientSheafι_mono : Mono (quotientSheafι I s) := by
 @[simp]
 theorem quotientSheaf_map_val {U V : Opens (Quotient s)} (h : V ⟶ U)
     (f : (quotientSheaf I s).obj.obj (op U)) :
-    (quotientSheafSectionsEquiv I s V ((quotientSheaf I s).obj.map h.op f)).1 =
+    (quotientSheafSectionsEquiv I s V ((quotientSheaf I s).obj.map h.op f)).val =
       (holomorphicStructureSheaf I X).obj.map
-        ((Opens.map (TopCat.quotientMk s)).map h).op (quotientSheafSectionsEquiv I s U f).1 := (rfl)
+        ((Opens.map (TopCat.quotientMk s)).map h).op (quotientSheafSectionsEquiv I s U f).val :=
+            (rfl)
 
 /-- A quotient germ restricts to a holomorphic germ at any point over its base point. -/
 def quotientStalkBranch (z : Quotient s) (x : X) (hx : Quotient.mk s x = z) :
@@ -230,7 +231,7 @@ theorem quotientStalkBranch_germ (z : Quotient s) (x : X) (hx : Quotient.mk s x 
       (holomorphicStructureSheaf I X).presheaf.germ
         ((Opens.map (TopCat.quotientMk s)).obj U) x
         (by rw [Opens.mem_map, TopCat.quotientMk_apply, hx]; exact hz)
-        (quotientSheafSectionsEquiv I s U f).1 := by
+        (quotientSheafSectionsEquiv I s U f).val := by
   subst z
   exact (congrArg
     ((holomorphicStructureSheaf I X).presheaf.stalkPushforward CommRingCat (TopCat.quotientMk s) x)
@@ -238,7 +239,7 @@ theorem quotientStalkBranch_germ (z : Quotient s) (x : X) (hx : Quotient.mk s x 
       (quotientSheafι I s).hom f)).trans
     (TopCat.Presheaf.stalkPushforward_germ_apply CommRingCat (TopCat.quotientMk s)
       (holomorphicStructureSheaf I X).presheaf U x hz
-      (quotientSheafSectionsEquiv I s U f).1)
+      (quotientSheafSectionsEquiv I s U f).val)
 
 /-- Evaluating a quotient germ through a branch over its base point evaluates the section. -/
 @[simp]
@@ -246,7 +247,7 @@ theorem eval_quotientStalkBranch_germ (z : Quotient s) (x : X) (hx : Quotient.mk
     (U : Opens (Quotient s)) (hz : z ∈ U) (f : (quotientSheaf I s).obj.obj (op U)) :
     eval I X x (quotientStalkBranch I s z x hx
       (ConcreteCategory.hom ((quotientSheaf I s).presheaf.germ U z hz) f)) =
-      (quotientSheafSectionsEquiv I s U f).1
+      (quotientSheafSectionsEquiv I s U f).val
         ⟨x, by rw [Opens.mem_map, TopCat.quotientMk_apply, hx]; exact hz⟩ :=
   (congrArg _ (quotientStalkBranch_germ I s z x hx U hz f)).trans (eval_germ _ _ _ _ _ _)
 
@@ -267,7 +268,7 @@ theorem eval_quotientStalkBranch_eq (z : Quotient s) (x y : X)
   obtain ⟨U, hz, g, rfl⟩ := (quotientSheaf I s).presheaf.exists_germ_eq f
   rw [quotientStalkBranch_germ, quotientStalkBranch_germ]
   rw [eval_germ, eval_germ]
-  exact (quotientSheafSectionsEquiv I s U g).2 x y (hx.symm ▸ hz) (hy.symm ▸ hz)
+  exact (quotientSheafSectionsEquiv I s U g).property x y (hx.symm ▸ hz) (hy.symm ▸ hz)
     (Quotient.exact (hx.trans hy.symm))
 
 /-- At two identified normalization points, restriction gives a homomorphism from the quotient
@@ -392,7 +393,7 @@ private theorem eq_zero_of_quotientStalkBranch {x y : X} (hxy : s x y) {N : Open
   have h0 : (quotientSheaf I s).presheaf.map (homOfLE hWU).op σ = 0 := by
     ext w
     rw [quotientSheaf_map_val, map_zero]
-    obtain hw | hw := (Opens.mem_map_imageQuotientMk V hV).mp w.2
+    obtain hw | hw := (Opens.mem_map_imageQuotientMk V hV).mp w.property
     · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hA
     · simpa using congrArg (fun t ↦ t ⟨w, hw.1⟩) hB
   rw [← TopCat.Presheaf.germ_res_apply _ (homOfLE hWU) _ hxW, h0, map_zero]
