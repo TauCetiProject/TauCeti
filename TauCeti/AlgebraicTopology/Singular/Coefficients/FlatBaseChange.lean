@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-public import TauCeti.Algebra.Module.Torsion.Localization
+public import TauCeti.Algebra.Module.Torsion.BaseChange
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 
@@ -42,6 +42,9 @@ of a space vanishes in a degree exactly when its integral homology is a torsion 
   `R = ℤ`.
 * `TauCeti.isAddTorsion_singularChains_homology_iff`: `Hₙ(X; ℤ)` is a torsion group exactly when
   `Hₙ(X; ℚ)` vanishes.
+* `TauCeti.bijective_singularHomologyMap_baseChange_iff_isIso`,
+  `TauCeti.isIso_singularHomologyMap_localization_iff`: characterization of when a continuous map
+  induces an isomorphism on homology with localized coefficients.
 
 ## References
 
@@ -150,5 +153,33 @@ theorem isAddTorsion_singularChains_homology_iff (X : TopCat.{0}) (n : ℕ) :
       Subsingleton (((singularChains ℚ).obj X).homology n) :=
   isAddTorsion_iff_isTorsion_int.trans
     (isTorsion'_singularChains_int_homology_iff (nonZeroDivisors ℤ) ℚ X n)
+
+/-- The base-changed homology map `Hₙ(f; R).baseChange S` is bijective if and only if `Hₙ(f; S)`
+is an isomorphism. -/
+theorem bijective_singularHomologyMap_baseChange_iff_isIso [Module.Flat R S] {X Y : TopCat.{u}}
+    (f : X ⟶ Y) (n : ℕ) :
+    Function.Bijective
+        ((HomologicalComplex.homologyMap ((singularChains R).map f) n).hom.baseChange S) ↔
+      IsIso (HomologicalComplex.homologyMap ((singularChains S).map f) n) := by
+  let g := (HomologicalComplex.homologyMap ((singularChains R).map f) n).hom.baseChange S
+  refine (ConcreteCategory.isIso_iff_bijective (ModuleCat.ofHom g)).symm.trans ?_
+  rw [← isIso_comp_right_iff _ (singularHomologyTensorIso R S Y n).hom,
+    singularHomologyTensorIso_hom_naturality, isIso_comp_left_iff]
+
+/-- A continuous map `f : X ⟶ Y` induces an isomorphism on `Hₙ(-; A)`, for a localization `A` of
+`R` at `M`, if and only if the kernel and cokernel of `Hₙ(f; R)` are `M`-torsion. -/
+theorem isIso_singularHomologyMap_localization_iff {R : Type u} [CommRing R] (M : Submonoid R)
+    (A : Type u) [CommRing A] [Algebra R A] [IsLocalization M A] {X Y : TopCat.{u}} (f : X ⟶ Y)
+    (n : ℕ) :
+    IsIso (HomologicalComplex.homologyMap ((singularChains A).map f) n) ↔
+      Module.IsTorsion'
+          (LinearMap.ker (HomologicalComplex.homologyMap ((singularChains R).map f) n).hom) M ∧
+        Module.IsTorsion'
+          ((((singularChains R).obj Y).homology n) ⧸
+            LinearMap.range (HomologicalComplex.homologyMap ((singularChains R).map f) n).hom)
+          M := by
+  have := IsLocalization.flat A M
+  rw [← bijective_singularHomologyMap_baseChange_iff_isIso R A f n,
+    LinearMap.bijective_baseChange_iff _ M A]
 
 end TauCeti

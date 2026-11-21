@@ -18,7 +18,8 @@ import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 
 An annihilator of either factor annihilates its tensor product with an arbitrary module.
 Similarly, the tensor product of commutative additive monoids is torsion if either factor is
-torsion.
+torsion, and the tensor product of an `S`-torsion module on the left with any module over a
+commuting base semiring is `S`-torsion (`Module.IsTorsion'.tensorProduct_left`).
 No flatness or finite generation is required. These facts supply the tensor closure properties
 used in Hurewicz theorems modulo a class of abelian groups.
 
@@ -213,3 +214,25 @@ theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [DivisionRing A] [
     exact S.smul_mem r (hcl hy)
 
 end TauCeti
+
+namespace Module.IsTorsion'
+
+/-- Tensoring an `S`-torsion module on the left with any module over a commuting base semiring
+yields an `S`-torsion module. -/
+theorem tensorProduct_left {R R₀ M N : Type*} [CommSemiring R] [CommSemiring R₀]
+    [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N] [Module R₀ M]
+    [SMulCommClass R R₀ M] {S : Submonoid R₀} (hM : Module.IsTorsion' M S) :
+    Module.IsTorsion' (M ⊗[R] N) S := fun t ↦ by
+  induction t using TensorProduct.inductionOn with
+  | tmul x y =>
+    obtain ⟨s, hs⟩ := @hM x
+    exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
+      TensorProduct.zero_tmul]⟩
+  | add x y hx hy =>
+    obtain ⟨s₁, hs₁⟩ := hx
+    obtain ⟨s₂, hs₂⟩ := hy
+    have h₁ : (s₁ * s₂) • x = 0 := by rw [mul_comm, mul_smul, hs₁, smul_zero]
+    have h₂ : (s₁ * s₂) • y = 0 := by rw [mul_smul, hs₂, smul_zero]
+    exact ⟨s₁ * s₂, by simp [smul_add, h₁, h₂]⟩
+
+end Module.IsTorsion'

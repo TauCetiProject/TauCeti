@@ -11,12 +11,14 @@ public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.AlgebraicTopology.SerreClass.Torsion
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
+import TauCeti.AlgebraicTopology.SerreClass.SubmonoidTorsion
 
 /-!
 # Tensor and Tor closure of torsion classes
 
-The torsion abelian groups and the groups annihilated by some power of a fixed natural number
-are closed under tensor products and Tor with arbitrary abelian groups. More generally, these
+The torsion abelian groups, the `S`-torsion abelian groups for any submonoid `S` of `ℤ`, and
+the groups annihilated by some power of a fixed natural number are closed under tensor products
+and Tor with arbitrary abelian groups (`Module.IsTorsion'.tor_left`). More generally, these
 properties hold for the underlying abelian groups of modules over any commutative ring. For
 bounded power torsion, the tensor product retains the same annihilating power.
 For tensor closure, the scalars may be a commutative semiring and the other factor need only
@@ -84,3 +86,22 @@ theorem isKilledBySomePower_Tor_left (d : ℕ)
   exact isKilledBySomePower_tensorProduct_left (R := R) d h
 
 end TauCeti
+
+namespace Module.IsTorsion'
+
+open CategoryTheory
+
+/-- Every Tor group of a module whose underlying abelian group is `S`-torsion on the left and an
+arbitrary module on the right is `S`-torsion as an abelian group. -/
+theorem tor_left {R : Type u} [CommRing R] {M N : ModuleCat.{u} R}
+    {S : Submonoid ℤ} (h : Module.IsTorsion' M S) (n : ℕ) :
+    Module.IsTorsion' (((Tor (ModuleCat.{u} R) n).obj M).obj N) S := by
+  let P := (AddCommGrpCat.isSubmonoidTorsion S).inverseImage
+    (forget₂ (ModuleCat.{u} R) AddCommGrpCat)
+  apply (AddCommGrpCat.prop_isSubmonoidTorsion_iff S
+    (AddCommGrpCat.of (((Tor (ModuleCat.{u} R) n).obj M).obj N))).1
+  exact P.prop_leftDerived_obj ((tensoringLeft (ModuleCat.{u} R)).obj M)
+    (fun Y _ ↦ (AddCommGrpCat.prop_isSubmonoidTorsion_iff S _).2
+      (h.tensorProduct_left (R := R) (R₀ := ℤ))) N n
+
+end Module.IsTorsion'

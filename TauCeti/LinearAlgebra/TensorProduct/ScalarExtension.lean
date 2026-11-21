@@ -49,6 +49,10 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
   whose image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
+* `LinearMap.bijective_baseChange_of_bijective`: base change of a bijective linear map is
+  bijective.
+* `TensorProduct.congrIntModule`: `A`-linear equivalence between tensor products `A ⊗[ℤ] M`
+  built from any two `ℤ`-module structures on a commutative ring `A`.
 -/
 
 public section
@@ -212,6 +216,12 @@ theorem injective_lTensor_iff_injective_lTensor_restrictScalars (f : N →ₗ[B]
     simp [cancelBaseChangeLeft_lTensor]
   rw [this, EquivLike.comp_injective, EquivLike.injective_comp]
 
+/-- Base change of a bijective linear map is bijective. -/
+theorem bijective_baseChange_of_bijective {R A M N : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {f : M →ₗ[R] N} (hf : Function.Bijective f) : Function.Bijective (f.baseChange A) :=
+  ((LinearEquiv.ofBijective f hf).baseChange R A M N).bijective
+
 end LinearMap
 
 namespace TensorProduct
@@ -318,5 +328,39 @@ theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommMonoid P] [Module R P]
   | add x y hx hy => simp_all
 
 end Invertible
+
+section IntModule
+
+/-- Any two `ℤ`-module structures on a commutative ring `A` (such as `AddCommGroup.toIntModule A`
+and `Algebra.toModule` from an `Algebra ℤ A` instance) yield `A`-linearly isomorphic tensor
+products `A ⊗[ℤ] M`. -/
+def congrIntModule (A M : Type*) [CommRing A] [AddCommGroup M] [Module ℤ M]
+    (m₁ m₂ : Module ℤ A) [@SMulCommClass ℤ A A m₁.toSMul _]
+    [@SMulCommClass ℤ A A m₂.toSMul _] :
+    (@TensorProduct ℤ _ A M _ _ m₁ _) ≃ₗ[A] (@TensorProduct ℤ _ A M _ _ m₂ _) := by
+  obtain rfl : m₁ = m₂ := Subsingleton.elim m₁ m₂
+  exact LinearEquiv.refl A _
+
+/-- `TensorProduct.congrIntModule` sends a pure tensor `a ⊗ₜ[ℤ] x` to the corresponding pure
+tensor for the target `ℤ`-module structure. -/
+@[simp]
+theorem congrIntModule_tmul (A M : Type*) [CommRing A] [AddCommGroup M] [Module ℤ M]
+    (m₁ m₂ : Module ℤ A) [@SMulCommClass ℤ A A m₁.toSMul _]
+    [@SMulCommClass ℤ A A m₂.toSMul _] (a : A) (x : M) :
+    congrIntModule A M m₁ m₂ (@TensorProduct.tmul ℤ _ A M _ _ m₁ _ a x) =
+      @TensorProduct.tmul ℤ _ A M _ _ m₂ _ a x := by
+  obtain rfl : m₁ = m₂ := Subsingleton.elim m₁ m₂
+  rfl
+
+/-- The inverse of `TensorProduct.congrIntModule` swaps the two `ℤ`-module structures. -/
+@[simp]
+theorem congrIntModule_symm (A M : Type*) [CommRing A] [AddCommGroup M] [Module ℤ M]
+    (m₁ m₂ : Module ℤ A) [@SMulCommClass ℤ A A m₁.toSMul _]
+    [@SMulCommClass ℤ A A m₂.toSMul _] :
+    (congrIntModule A M m₁ m₂).symm = congrIntModule A M m₂ m₁ := by
+  obtain rfl : m₁ = m₂ := Subsingleton.elim m₁ m₂
+  rfl
+
+end IntModule
 
 end TensorProduct
