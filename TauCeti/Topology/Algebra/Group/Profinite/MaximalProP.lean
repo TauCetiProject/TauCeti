@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Extension
+import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # The maximal pro-`p` quotient of a profinite group
@@ -55,7 +56,9 @@ hold there. Compactness of `G` is assumed exactly where it is used.
 
 ## Main results
 
-* `TauCeti.isClosed_proPKernel`: the pro-`p` kernel is closed, so `G(p)` is profinite again.
+* `TauCeti.isClosed_proPKernel`: the pro-`p` kernel is closed.
+* `TauCeti.maximalProPQuotient.totallyDisconnectedSpace`: `G(p)` is totally disconnected even
+  when `G` is not.
 * `TauCeti.proPKernel_eq_top_iff`: the pro-`p` kernel is the whole group exactly when every
   relevant `p`-group quotient is trivial.
 * `TauCeti.exists_openNormalSubgroup_isPGroup_subset`: a set with compact complement containing
@@ -149,6 +152,20 @@ instance isClosed_proPKernel [SeparatelyContinuousMul G] :
     IsClosed ((proPKernel p G : Subgroup G) : Set G) := by
   rw [proPKernel, Subgroup.coe_iInf]
   exact isClosed_iInter fun U ↦ U.val.toOpenSubgroup.isClosed
+
+/-- The maximal pro-`p` quotient is totally disconnected: the discrete quotients defining the
+pro-`p` kernel separate its points. No compactness or total disconnectedness of `G` is needed. -/
+theorem maximalProPQuotient.totallyDisconnectedSpace [IsTopologicalGroup G] :
+    TotallyDisconnectedSpace (maximalProPQuotient p G) := by
+  refine totallyDisconnectedSpace_iff_connectedComponent_one.mpr
+    (Set.Subset.antisymm ?_ (Set.singleton_subset_iff.mpr mem_connectedComponent))
+  intro x hx
+  obtain ⟨g, rfl⟩ := maximalProPQuotient.mk_surjective p G x
+  refine Set.mem_singleton_iff.mpr ((QuotientGroup.eq_one_iff g).mpr ?_)
+  refine mem_proPKernel_iff.mpr fun U hU ↦ ?_
+  have h := (TauCeti.QuotientGroup.continuous_mapOfLE (proPKernel_le hU)).mapsTo_connectedComponent
+    1 hx
+  simpa [QuotientGroup.eq_one_iff] using h
 
 /-! ### Trivial maximal quotients -/
 

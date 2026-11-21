@@ -37,7 +37,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 ## Main declarations
 
 * `Circle.homeomorphSphere`: `Circle ≃ₜ sphere (0 : ℂ) 1`, the identity on underlying complex
-  numbers.
+  numbers, with `Circle.coe_homeomorphSphere_exp_re` and `Circle.coe_homeomorphSphere_exp_im`
+  computing the real and imaginary parts of `exp (i x)` on the sphere.
 * `Circle.expContinuousMonoidHom`: `t ↦ exp (i t)` as a continuous homomorphism
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
@@ -92,6 +93,16 @@ theorem coe_homeomorphSphere_apply (z : Circle) : (homeomorphSphere z : ℂ) = z
 theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
+
+/-- The real part of `exp (i x)`, read on the unit sphere of `ℂ`, is `cos x`. -/
+theorem coe_homeomorphSphere_exp_re (x : ℝ) : (homeomorphSphere (exp x) : ℂ).re = Real.cos x := by
+  rw [coe_homeomorphSphere_apply, coe_exp]
+  exact Complex.exp_ofReal_mul_I_re x
+
+/-- The imaginary part of `exp (i x)`, read on the unit sphere of `ℂ`, is `sin x`. -/
+theorem coe_homeomorphSphere_exp_im (x : ℝ) : (homeomorphSphere (exp x) : ℂ).im = Real.sin x := by
+  rw [coe_homeomorphSphere_apply, coe_exp]
+  exact Complex.exp_ofReal_mul_I_im x
 
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
@@ -230,6 +241,11 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   rw [mul_left_comm, ← Complex.exp_add]
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
+
+/-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
+theorem coe_inv_mul_sub_one (a b : Circle) :
+    ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
+  rw [mul_sub, ← coe_mul, ← coe_mul, inv_mul_cancel, coe_one]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/

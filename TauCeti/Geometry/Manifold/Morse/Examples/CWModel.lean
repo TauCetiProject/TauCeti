@@ -18,8 +18,8 @@ A manifold `M` with a proper Morse function `f` bounded below is homotopy equiva
 CW complex whose `m`-cells correspond to the critical points of `f` of index `m`
 (`TauCeti.IsMorse.exists_cwComplex_homotopyEquiv`); for compact `M` the complex is finite
 (`TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv`). This file reads off the cells of the
-model in three cases: a compact manifold, a noncompact one, and one with infinitely many critical
-points.
+model in four cases: a compact manifold, a noncompact one, one with infinitely many critical
+points, and the empty manifold.
 
 * **The sphere.** The height function on `Sⁿ`, `n ≥ 1`, has a minimum of index `0` and a maximum
   of index `n` and no other critical point, so `Sⁿ` is homotopy equivalent to a finite CW complex
@@ -34,6 +34,10 @@ points.
   proper function `n ↦ n` the model therefore has one `0`-cell for each natural number and no
   other cells (`TauCeti.exists_cwComplex_homotopyEquiv_nat`): infinitely many critical points of
   one index give infinitely many cells of that dimension.
+* **The empty manifold.** On an empty manifold every function is a proper Morse function, bounded
+  below, with no critical points, so its CW model is empty and has no cells in any dimension
+  (`TauCeti.exists_cwComplex_homotopyEquiv_empty`): in particular no `0`-cell, so the
+  model is not a point.
 
 ## References
 
@@ -151,5 +155,20 @@ theorem exists_cwComplex_homotopyEquiv_nat :
         manifoldMorseIndex 𝓘(ℝ, Fin 0 → ℝ) ((↑) : ℕ → ℝ) x = m + 1} :=
       ⟨fun ⟨x, _, h⟩ ↦ by simp at h⟩
     exact c.isEmpty
+
+/-! ### The empty manifold -/
+
+attribute [local instance] ChartedSpace.empty in
+/-- **The CW model of the empty manifold.** The empty type is a manifold modelled on `ℝ`, and every
+function on it is a proper Morse function, bounded below, with no critical points. So its CW model
+is an empty CW complex with no cells in any dimension; in particular it has no `0`-cell, so it is
+not a point. -/
+theorem exists_cwComplex_homotopyEquiv_empty :
+    ∃ (X : Type) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
+      IsEmpty X ∧ Nonempty (Empty ≃ₕ X) ∧ ∀ m, IsEmpty (cell (univ : Set X) m) := by
+  have hf : IsMorse 𝓘(ℝ, ℝ) (Empty.elim : Empty → ℝ) := isMorse_iff.2 ⟨isEmptyElim, isEmptyElim⟩
+  obtain ⟨X, _, _, _, ⟨e⟩, hcell⟩ :=
+    hf.exists_cwComplex_homotopyEquiv continuous_of_discreteTopology.isProperMap (by simp)
+  exact ⟨X, _, ‹_›, ‹_›, ⟨fun x ↦ (e.invFun x).elim⟩, ⟨e⟩, fun m ↦ (hcell m).some.isEmpty⟩
 
 end TauCeti
