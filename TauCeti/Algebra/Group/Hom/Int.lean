@@ -86,7 +86,7 @@ theorem ker_zsmul_sub_zsmul_le_of_inf_ker_le (f g m : A →+ ℤ) (v : A)
     have hx' : f v * g x - g v * f x = 0 := by
       simpa only [AddMonoidHom.mem_ker, sub_apply, zsmul_apply, Int.zsmul_eq_mul] using hx
     have hz : f v • x - f x • v ∈ f.ker ⊓ g.ker := by
-      constructor
+      refine AddSubgroup.mem_inf.mpr ⟨?_, ?_⟩
       · exact AddMonoidHom.mem_ker.mpr (by simp [mul_comm])
       · apply AddMonoidHom.mem_ker.mpr
         simpa only [map_sub, map_zsmul, Int.zsmul_eq_mul, mul_comm (f x)] using hx'
@@ -94,7 +94,8 @@ theorem ker_zsmul_sub_zsmul_le_of_inf_ker_le (f g m : A →+ ℤ) (v : A)
       simpa [hmv] using AddMonoidHom.mem_ker.mp (hm hz)
     exact AddMonoidHom.mem_ker.mpr ((Int.mul_eq_zero.mp hprod).resolve_left hf)
   by_cases hf : f v = 0
-  · have hg : g v ≠ 0 := fun hg => hv ⟨hf, hg⟩
+  · have hg : g v ≠ 0 := fun hg =>
+      hv (AddSubgroup.mem_inf.mpr ⟨AddMonoidHom.mem_ker.mpr hf, AddMonoidHom.mem_ker.mpr hg⟩)
     intro x hx
     apply step g f hg (by simpa only [inf_comm] using hm)
     apply AddMonoidHom.mem_ker.mpr
