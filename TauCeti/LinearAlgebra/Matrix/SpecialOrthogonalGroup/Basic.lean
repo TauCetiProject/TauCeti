@@ -76,6 +76,6 @@ orthogonal matrix is in particular a special linear one. -/
 instance subsingleton_of_subsingleton [Subsingleton n] :
     Subsingleton (specialOrthogonalGroup n R) :=
   ⟨fun A B ↦ Subtype.ext <| congrArg (fun M : SpecialLinearGroup n R ↦ (M : Matrix n n R))
-    (Subsingleton.elim ⟨A, A.2.2⟩ ⟨B, B.2.2⟩)⟩
+    (Subsingleton.elim ⟨A, A.property.2⟩ ⟨B, B.property.2⟩)⟩
 
 end Matrix.SpecialOrthogonalGroup

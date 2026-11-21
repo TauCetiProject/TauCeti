@@ -99,7 +99,7 @@ theorem isPathConnected_stabilizer_specialOrthogonalGroup_sphere
   have h₀ : IsPathConnected (MulAction.stabilizer (specialOrthogonalGroup (Fin (1 + n)) ℝ) e₀ :
       Set (specialOrthogonalGroup (Fin (1 + n)) ℝ)) := by
     have h := isPathConnected_range
-      (continuous_subtype_val.comp (specialOrthogonalSphereFiberHomeomorph n).continuous)
+      (continuous_subtypeVal.comp (specialOrthogonalSphereFiberHomeomorph n).continuous)
     rw [range_comp, Homeomorph.range_coe, image_univ, Subtype.range_coe_subtype] at h
     convert h using 1
     ext B

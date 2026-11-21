@@ -312,9 +312,9 @@ def sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ ι) 1) :
     C(sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1,
       specialOrthogonalGroup ι ℝ) where
   toFun x := ⟨UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p x),
-    mem_specialOrthogonalGroup_iff.2 ⟨(UnitaryGroup.ofLinearIsometryEquiv _).2,
+    mem_specialOrthogonalGroup_iff.2 ⟨(UnitaryGroup.ofLinearIsometryEquiv _).property,
       det_ofLinearIsometryEquiv_sphereRotationIsometry p x⟩⟩
-  continuous_toFun := (continuous_subtype_val.comp (UnitaryGroup.continuous_ofLinearIsometryEquiv
+  continuous_toFun := (continuous_subtypeVal.comp (UnitaryGroup.continuous_ofLinearIsometryEquiv
     (continuous_sphereRotationIsometry p))).subtype_mk _
 
 /-- The matrix `TauCeti.sphereRotationMatrix p x` is the unitary matrix of the rotation

@@ -281,7 +281,7 @@ theorem coe_smul_sphere (A : specialOrthogonalGroup ι ℝ)
 instance : ContinuousSMul (specialOrthogonalGroup ι ℝ)
     (sphere (0 : EuclideanSpace ℝ ι) 1) :=
   ⟨UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere.comp
-    (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+    (((continuous_subtypeVal.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
 
 end Matrix.SpecialOrthogonalGroup
 
