@@ -36,6 +36,8 @@ an edge from `h` to `g ∘ f` in a mapping simplicial set, not an equality.
   small simplicial categories to simplicial sets.
 * `CategoryTheory.SimplicialNerve.fromNerve`: the comparison map from the ordinary nerve of the
   underlying category, with `bijective_fromNerve_app` in degrees at most one.
+* `CategoryTheory.SimplicialNerve.map_apply`, `CategoryTheory.SimplicialNerve.map_apply_obj`:
+  restriction in `SimplicialNerve C` as precomposition with `SimplicialThickening.functor`.
 * `CategoryTheory.SimplicialNerve.vertexEquiv`: vertices of `SimplicialNerve C` are objects of `C`.
 * `CategoryTheory.SimplicialNerve.homEquiv`: edges of `SimplicialNerve C` are morphisms of `C`.
 
@@ -168,6 +170,19 @@ lemma vertexEquiv_apply (x : SimplicialNerve C _⦋0⦌) : vertexEquiv C x = x.o
 lemma vertexEquiv_symm_apply (x : C) :
     (vertexEquiv C).symm x = (fromNerve C).app (op ⦋0⦌) (nerveEquiv.symm x) :=
   (rfl)
+
+/-- Restriction of simplices in `SimplicialNerve C` is precomposition with
+`SimplicialThickening.functor`. -/
+lemma map_apply {m n : SimplexCategoryᵒᵖ} (f : m ⟶ n) (G : (SimplicialNerve C).obj m) :
+    (SimplicialNerve C).map f G =
+      (SimplicialThickening.functor f.unop.toOrderHom.uliftMap).comp SSet G :=
+  (rfl)
+
+/-- Object projection of restriction in `SimplicialNerve C`. -/
+lemma map_apply_obj {m n : SimplexCategoryᵒᵖ} (f : m ⟶ n) (G : (SimplicialNerve C).obj m)
+    (i : SimplicialThickening (ULift.{v} (Fin (n.unop.len + 1)))) :
+    ((SimplicialNerve C).map f G).obj i = G.obj ⟨⟨f.unop i.as.down⟩⟩ :=
+  (congrArg (·.obj i) (map_apply C f G)).trans (EnrichedFunctor.comp_obj _ _ _ _)
 
 variable {C}
 

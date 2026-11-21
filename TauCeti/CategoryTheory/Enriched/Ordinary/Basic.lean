@@ -9,15 +9,23 @@ public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 
 /-!
-# Constant maps into enriched hom-objects
+# Enriched ordinary categories: basic lemmas
 
-Let `C` be an ordinary category enriched over a Cartesian monoidal category `V`. A morphism
-`f : a ⟶ b` of `C` gives, for every object `X` of `V`, the map `X ⟶ (a ⟶[V] b)` which is constant
-at `f`, namely `toUnit X ≫ eHomEquiv V f`. This file shows that enriched composition of two such
-constant maps is the constant map at the composite.
+Let `C` be an ordinary category enriched over a monoidal category `V`.
+
+* For a full subcategory `ObjectProperty.FullSubcategory P` of `C`, enriched identities and
+  composition agree with those of `C` (`ObjectProperty.FullSubcategory.eId_eq`,
+  `ObjectProperty.FullSubcategory.eComp_eq`).
+* When `V` is Cartesian monoidal, a morphism `f : a ⟶ b` of `C` gives, for every object `X` of `V`,
+  the map `X ⟶ (a ⟶[V] b)` which is constant at `f`, namely `toUnit X ≫ eHomEquiv V f`. Enriched
+  composition of two such constant maps is the constant map at the composite
+  (`CategoryTheory.toUnit_eHomEquiv_tensorHom_comp_eComp`).
 
 ## Main declarations
 
+* `CategoryTheory.ObjectProperty.FullSubcategory.eId_eq`,
+  `CategoryTheory.ObjectProperty.FullSubcategory.eComp_eq`: enriched identities and composition in a
+  full subcategory are those of the underlying objects.
 * `CategoryTheory.toUnit_eHomEquiv_tensorHom_comp_eComp`: enriched composition of the constant
   maps at `f` and `g` is the constant map at `f ≫ g`.
 -/
@@ -29,6 +37,31 @@ universe v' v u' u
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory
 
 namespace CategoryTheory
+
+namespace ObjectProperty.FullSubcategory
+
+section
+
+variable (V : Type u') [Category.{v'} V] [MonoidalCategory V]
+  {C : Type u} [Category.{v} C] [EnrichedOrdinaryCategory V C] {P : ObjectProperty C}
+
+/-- Enriched identities in a full subcategory are the enriched identities of the underlying
+objects. -/
+@[reassoc]
+lemma eId_eq (X : P.FullSubcategory) :
+    eId V X = eId V X.obj :=
+  rfl
+
+/-- Enriched composition in a full subcategory is the enriched composition of the underlying
+objects. -/
+@[reassoc]
+lemma eComp_eq (X Y Z : P.FullSubcategory) :
+    eComp V X Y Z = eComp V X.obj Y.obj Z.obj :=
+  rfl
+
+end
+
+end ObjectProperty.FullSubcategory
 
 variable {V : Type u'} [Category.{v'} V] [CartesianMonoidalCategory V] {C : Type u}
   [Category.{v} C] [EnrichedOrdinaryCategory V C]

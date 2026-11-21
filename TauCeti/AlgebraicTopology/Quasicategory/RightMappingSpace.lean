@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
+public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
@@ -74,6 +75,8 @@ those of `X` and `Y`, and right mapping spaces commute with universe lifts
   an isomorphism of right mapping spaces exactly when it is bijective on edges.
 * `SSet.rightMappingSpace.isIso_map_ι`: a subcomplex containing all simplices of a right mapping
   space has the same right mapping space.
+* `SSet.rightMappingSpace.isIso_map_fullEnhancedSubcategory_ι`: the inclusion of a full enhanced
+  subcategory induces isomorphisms on right mapping spaces.
 
 ## References
 
@@ -530,6 +533,22 @@ theorem isIso_map_ι {A : X.Subcomplex} (x y : (A : SSet.{u}) _⦋0⦌)
   obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff _).1 s.property
   refine ⟨⟨⟨s.val, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
   exact Subtype.ext (map_app_coe A.ι _)
+
+/-- The inclusion of a full enhanced subcategory induces an isomorphism on right mapping spaces:
+every vertex of a simplex of `Hom^R_X(x, y)` is either `x` or `y`, so the whole simplex already
+lies in the full enhanced subcategory. -/
+instance isIso_map_fullEnhancedSubcategory_ι (P : X _⦋0⦌ → Prop)
+    (x y : (X.fullEnhancedSubcategory P : SSet.{u}) _⦋0⦌) :
+    IsIso (map x y (X.fullEnhancedSubcategory P).ι) :=
+  isIso_map_ι x y fun n s ↦
+    (mem_fullEnhancedSubcategory_obj_iff_forall_fin P (s.val : X _⦋n + 1⦌)).2 fun i ↦ by
+      cases i using Fin.lastCases with
+      | last =>
+        rw [map_const_last s]
+        exact (mem_fullEnhancedSubcategory_obj_zero_iff P y.val).1 y.property
+      | cast j =>
+        rw [map_const_castSucc s j]
+        exact (mem_fullEnhancedSubcategory_obj_zero_iff P x.val).1 x.property
 
 end map
 

@@ -23,6 +23,10 @@ small Kan model in universe `u` (`TauCeti.HasSmallSpaceModel`), and `SSet.smallM
 is a chosen such model, a Kan complex in universe `u`, with comparison maps inverse up to
 simplicial homotopy (`SSet.smallMappingSpaceModel X x y`).
 
+For a quasicategory `X` in universe `u`, every right mapping space is already a `u`-small Kan
+complex (`SSet.rightMappingSpace.kanComplex`), so both `X` and any universe lift of `X` are
+locally `u`-small (`SSet.isLocallySmall_self`, `SSet.isLocallySmall_uliftFunctor_obj_iff`).
+
 For a strict Segal simplicial set, such as the nerve of a category, the right mapping spaces
 are discrete on the edges (`SSet.rightMappingSpace.constEdgeIso`), and a discrete simplicial set
 has a small model exactly when its set of vertices is small. Hence a strict Segal simplicial set
@@ -47,6 +51,8 @@ do not form a `u`-small type is not.
 * `SSet.isLocallySmall_uliftFunctor_obj_iff`: local `u`-smallness is invariant under universe
   lifting; in particular, the universe lift `SSet.uliftFunctor.{v, u}.obj X` of a `u`-small
   quasicategory is locally `u`-small.
+* `SSet.isLocallySmall_iff_of_iso`, `SSet.isLocallySmall_fullEnhancedSubcategory`: local smallness
+  is invariant under isomorphism and inherited by full enhanced subcategories.
 * `SSet.isLocallySmall_iff_of_isStrictSegal`: a strict Segal simplicial set is locally `u`-small
   exactly when its sets of edges are `u`-small.
 * `CategoryTheory.nerve.isLocallySmall_iff`: the nerve of a category is locally `u`-small exactly
@@ -128,6 +134,25 @@ theorem isLocallySmall_uliftFunctor_obj_iff {X : SSet.{v}} :
 particular, so is the universe lift of any `u`-small quasicategory. -/
 instance {X : SSet.{v}} [IsLocallySmall.{u} X] : IsLocallySmall.{u} (uliftFunctor.{w, v}.obj X) :=
   isLocallySmall_uliftFunctor_obj_iff.2 inferInstance
+
+/-- Local smallness is invariant under isomorphism of simplicial sets. -/
+theorem isLocallySmall_iff_of_iso {X Y : SSet.{v}} (e : X ≅ Y) :
+    IsLocallySmall.{u} X ↔ IsLocallySmall.{u} Y :=
+  ⟨fun _ ↦ ⟨fun x y ↦
+      (TauCeti.hasSmallSpaceModel_iff_of_iso
+        (asIso (rightMappingSpace.map x y e.inv))).2 (IsLocallySmall.hasSmallSpaceModel _ _)⟩,
+   fun _ ↦ ⟨fun x y ↦
+      (TauCeti.hasSmallSpaceModel_iff_of_iso
+        (asIso (rightMappingSpace.map x y e.hom))).2 (IsLocallySmall.hasSmallSpaceModel _ _)⟩⟩
+
+/-- Every full enhanced subcategory of a locally `u`-small simplicial set is locally `u`-small, as
+the inclusion induces isomorphisms on right mapping spaces. -/
+instance isLocallySmall_fullEnhancedSubcategory [IsLocallySmall.{u} X] (P : X _⦋0⦌ → Prop) :
+    IsLocallySmall.{u} (X.fullEnhancedSubcategory P : SSet.{v}) where
+  hasSmallSpaceModel x y :=
+    (TauCeti.hasSmallSpaceModel_iff_of_iso
+      (asIso (rightMappingSpace.map x y (X.fullEnhancedSubcategory P).ι))).2
+      (IsLocallySmall.hasSmallSpaceModel x.val y.val)
 
 /-- A strict Segal simplicial set, such as the nerve of a category, is locally `u`-small exactly
 when the edges between any two of its vertices form a `u`-small type: its right mapping spaces
