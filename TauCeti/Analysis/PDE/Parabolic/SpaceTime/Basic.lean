@@ -450,6 +450,22 @@ theorem iccTimeReverse_symm (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : 
     (iccTimeReverse T ha hb).symm =
       iccTimeReverse T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := (rfl)
 
+/-- Time reversal between intervals sends the left endpoint `a'` of `[a', b']` to the right
+endpoint `b` of `[a, b]`. -/
+theorem iccTimeReverse_left (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (h : a ≤ b) :
+    iccTimeReverse T ha hb ⟨a', left_mem_Icc.2 (by rw [ha, hb]; exact sub_le_sub_left h T)⟩ =
+      ⟨b, right_mem_Icc.2 h⟩ :=
+  Subtype.ext (by simp [ha])
+
+/-- Time reversal between intervals sends the right endpoint `b'` of `[a', b']` to the left
+endpoint `a` of `[a, b]`. -/
+theorem iccTimeReverse_right (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (h : a ≤ b) :
+    iccTimeReverse T ha hb ⟨b', right_mem_Icc.2 (by rw [ha, hb]; exact sub_le_sub_left h T)⟩ =
+      ⟨a, left_mem_Icc.2 h⟩ :=
+  Subtype.ext (by simp [hb])
+
 /-- Time reversal `t ↦ T - t`, as an isometry from the slab `E × [a', b']` onto the slab
 `E × [a, b]`, where `a' = T - b` and `b' = T - a`. -/
 def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
@@ -481,6 +497,19 @@ theorem slabTime_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (
 theorem coe_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
     (p : slab (E := E) a' b') :
     (slabTimeReverse T ha hb p : ParabolicSpaceTime E) = timeReverse T p := (rfl)
+
+/-- The time coordinate of the time reversal of `p` between slabs is `T` minus that of `p`. -/
+theorem coe_slabTime_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b)
+    (hb : b' = T - a) (p : slab (E := E) a' b') :
+    (slabTime (slabTimeReverse T ha hb p) : ℝ) = T - slabTime p := (rfl)
+
+/-- Time reversal between slabs followed by time reversal in the opposite direction is the
+identity. -/
+@[simp]
+theorem slabTimeReverse_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b)
+    (hb : b' = T - a) (ha' : a = T - b') (hb' : b = T - a') (p : slab (E := E) a' b') :
+    slabTimeReverse T ha' hb' (slabTimeReverse T ha hb p) = p :=
+  Subtype.ext (timeReverse_timeReverse T (p : ParabolicSpaceTime E))
 
 /-- The inverse of time reversal between slabs is time reversal in the opposite direction. -/
 @[simp]

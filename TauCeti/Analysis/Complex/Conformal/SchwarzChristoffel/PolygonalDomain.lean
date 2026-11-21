@@ -101,7 +101,9 @@ private theorem exists_ball_im_div_of_image_eq (hfc : ContinuousOn f {z : ℂ | 
   refine ⟨r, hr, fun z hz hz0 => ?_, fun z hz hz0 => ?_⟩
   · exact im_div_eq_zero_of_mem_frontier hU (hball hz0.symm.le hz)
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-        (hfc _ hz0.symm.le) hz0 (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
+        ((hfc _ hz0.symm.le).mono
+          (fun w (hw : 0 < w.im) ↦ hw.le)) hz0
+        (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
   · exact (hU _ (hball hz0.le hz)).mp (hfU ▸ mem_image_of_mem f hz0)
 
 /-- **Corner condition.**  Near a real point `x` whose image is a vertex of `U`, the nearby upper
@@ -120,7 +122,9 @@ private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : �
     exact (hU _ (hball hz0.le hz) hzx).mp (hfU ▸ mem_image_of_mem f hz0)
   · exact abs_arg_div_eq_of_mem_frontier isOpen_ball hU (hball hz0.symm.le hz) hzx
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-        (hfc _ hz0.symm.le) hz0 (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
+        ((hfc _ hz0.symm.le).mono
+          (fun w (hw : 0 < w.im) ↦ hw.le)) hz0
+        (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
 
 /-- **Condition at infinity.**  If `f` tends at infinity to a point `p` on a side of `U` which is
 not a value of `f`, then in the coordinate `w ↦ -w⁻¹` at infinity, and after normalizing that side
@@ -167,7 +171,7 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     · rw [update_of_ne h0]
       exact im_div_eq_zero_of_mem_frontier hU (hball w hw hw0.symm.le h0)
         (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-          (hfc _ (by simp [hw0])) (by simp [hw0])
+          ((hfc _ (by simp [hw0])).mono (fun w (hw : 0 < w.im) ↦ hw.le)) (by simp [hw0])
           (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi (by simp [hw0])))
   · rw [update_of_ne (hne w hw.2)]
     exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2))).mp
@@ -256,7 +260,9 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded {β ρ : ℝ} {c
       (fun y hy _ => hU y hy) ((le_max_left ρ 0).trans_lt (hfar w hw hwim.ge hw0))
       (sub_ne_zero.mp (hne w hw hwim.ge hw0))
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-        (hfc _ him.ge) him (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
+        ((hfc _ him.ge).mono
+          (fun w (hw : 0 < w.im) ↦ hw.le)) him
+        (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
 
 /-- Let `f` map the upper half-plane onto `U`, continuously and injectively up to the real axis,
 and tend to infinity at infinity, and let `U` coincide far from `c` with the open half-strip
@@ -288,7 +294,9 @@ private theorem exists_ball_mem_halfStrip_of_tendsto_cobounded {ρ : ℝ} {c b :
       ((le_max_left _ _).trans_lt (hfar w hw hwim.ge hw0))
       ((le_max_right _ _).trans_lt (hfar w hw hwim.ge hw0))
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-        (hfc _ him.ge) him (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
+        ((hfc _ him.ge).mono
+          (fun w (hw : 0 < w.im) ↦ hw.le)) him
+        (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
 
 /-- **Condition at a parallel-sided end at infinity.**  If `f` tends to infinity at infinity, and
 far from `c` the domain `U` coincides with the open half-strip
@@ -367,7 +375,7 @@ private theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_doma
       hx i (by exact_mod_cast hfi (by simp) (by simp) ((hfv i).trans h.symm))
     obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
       hside _ (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-        (hfc _ (by simp)) (ofReal_im x)
+        ((hfc _ (by simp)).mono (fun w (hw : 0 < w.im) ↦ hw.le)) (ofReal_im x)
         (notMem_image_upperHalfPlaneSet_of_im_eq_zero hfi (ofReal_im x))) hxv
     obtain ⟨r, hr, hreal, hupper⟩ := exists_ball_im_div_of_image_eq hfc hfi hfU (ofReal_im x) hρ hU
     exact ⟨r, hr, q, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hreal,

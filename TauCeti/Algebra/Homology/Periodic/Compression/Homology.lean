@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.Compression.Acyclic
@@ -25,7 +26,12 @@ The summand inclusions `TauCeti.PeriodicComplex.ιCompressionHomology` and proje
 and projections of the summands of `Δₙ K`. Over the degrees of the residue class `r` in an
 interval `[a, b]` containing the support of `K`, they form a biproduct bicone
 (`TauCeti.PeriodicComplex.isBilimitCompressionHomologyBicone`), which gives the isomorphism
-`TauCeti.PeriodicComplex.compressionHomologyIso`.
+`TauCeti.PeriodicComplex.compressionHomologyIso`. In particular, `H^r(Δₙ K)` vanishes when the
+homology of `K` vanishes in every degree congruent to `r`
+(`TauCeti.PeriodicComplex.isZero_homology_compression`), and it is the homology of `K` in degree
+`p` when that is the only degree of the class of `r` where the homology of `K` may be nonzero
+(`TauCeti.PeriodicComplex.compressionHomologyIsoOfIsZero`). These two cases compute the
+compression of complexes whose homology is spread out more sparsely than the period.
 
 For complexes of vector spaces with finite-dimensional homology this computes dimensions. The
 dimension of `H^r(Δₙ K)` is the sum of the dimensions of the `H^i(K)` with `i ≡ r`
@@ -168,12 +174,8 @@ lemma sum_πCompressionHomology_ιCompressionHomology (r : ZMod n) :
       rw [← Preadditive.sum_comp, hsum, Category.id_comp]
     simp only [πCompressionHomology, ιCompressionHomology, Category.assoc, Iso.inv_hom_id_assoc]
     rw [← Preadditive.comp_sum, hsum', Iso.hom_inv_id]
-  · have hZ : IsZero (K.homology i) := by
-      rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hi
-      rcases hi with h | h
-      · exact K.isZero_of_isGE a i h
-      · exact K.isZero_of_isLE b i h
-    rw [hZ.eq_of_tgt (πCompressionHomology n K r i) 0, zero_comp]
+  · rw [(K.isZero_homology_of_notMem_Icc a b hi).eq_of_tgt (πCompressionHomology n K r i) 0,
+      zero_comp]
 
 /-- For a complex supported in `[a, b]`, the homology of the compression in residue `r` is the
 biproduct of the homology objects of `K` in the degrees of `[a, b]` congruent to `r`. -/
@@ -183,6 +185,60 @@ noncomputable def isBilimitCompressionHomologyBicone (r : ZMod n) :
     simp only [compressionHomologyBicone_π, compressionHomologyBicone_ι]
     exact (Finset.sum_coe_sort _ fun i ↦ πCompressionHomology n K r i ≫
       ιCompressionHomology n K r i).trans (sum_πCompressionHomology_ιCompressionHomology n K a b r)
+
+include a b in
+/-- For a complex supported in `[a, b]` whose homology vanishes in every degree of the residue
+class `r`, the homology of its `n`-periodic compression in residue `r` vanishes. -/
+lemma isZero_homology_compression (r : ZMod n)
+    (h : ∀ i : ℤ, (i : ZMod n) = r → IsZero (K.homology i)) :
+    IsZero ((compression n K).homology r) := by
+  rw [IsZero.iff_id_eq_zero, ← sum_πCompressionHomology_ιCompressionHomology n K a b r]
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  rw [(h i (Finset.mem_filter.1 hi).2).eq_of_tgt (πCompressionHomology n K r i) 0, zero_comp]
+
+include a b in
+/-- For a complex supported in `[a, b]` whose homology vanishes in the degrees of the residue
+class `r` other than `p`, the projection of the homology of the compression in residue `r` onto
+the homology of `K` in degree `p`, followed by the inclusion back, is the identity. -/
+@[reassoc]
+lemma πCompressionHomology_ιCompressionHomology_of_isZero (r : ZMod n) (p : ℤ)
+    (h : ∀ i : ℤ, (i : ZMod n) = r → i ≠ p → IsZero (K.homology i)) :
+    πCompressionHomology n K r p ≫ ιCompressionHomology n K r p = 𝟙 _ := by
+  rw [← sum_πCompressionHomology_ιCompressionHomology n K a b r, Finset.sum_eq_single p]
+  · intro i hi hip
+    rw [(h i (Finset.mem_filter.1 hi).2 hip).eq_of_tgt (πCompressionHomology n K r i) 0,
+      zero_comp]
+  · intro hp
+    by_cases hpr : (p : ZMod n) = r
+    · have hp' : p ∉ Finset.Icc a b := fun h' ↦ hp (Finset.mem_filter.2 ⟨h', hpr⟩)
+      rw [(K.isZero_homology_of_notMem_Icc a b hp').eq_of_tgt (πCompressionHomology n K r p) 0,
+        zero_comp]
+    · rw [πCompressionHomology_eq_zero n K r p hpr, zero_comp]
+
+/-- For a complex supported in `[a, b]` whose homology vanishes in the degrees of the residue
+class `r` other than `p`, the homology of its `n`-periodic compression in residue `r` is the
+homology of `K` in degree `p`: `H^r(Δₙ K) ≅ H^p(K)`. The isomorphism is the projection
+`πCompressionHomology` onto the summand of degree `p`, with inverse the inclusion
+`ιCompressionHomology`. -/
+noncomputable def compressionHomologyIsoOfIsZero (r : ZMod n) (p : ℤ) (hp : (p : ZMod n) = r)
+    (h : ∀ i : ℤ, (i : ZMod n) = r → i ≠ p → IsZero (K.homology i)) :
+    (compression n K).homology r ≅ K.homology p where
+  hom := πCompressionHomology n K r p
+  inv := ιCompressionHomology n K r p
+  hom_inv_id := πCompressionHomology_ιCompressionHomology_of_isZero n K a b r p h
+  inv_hom_id := ιCompressionHomology_πCompressionHomology n K r p hp
+
+@[simp]
+lemma compressionHomologyIsoOfIsZero_hom (r : ZMod n) (p : ℤ) (hp : (p : ZMod n) = r)
+    (h : ∀ i : ℤ, (i : ZMod n) = r → i ≠ p → IsZero (K.homology i)) :
+    (compressionHomologyIsoOfIsZero n K a b r p hp h).hom = πCompressionHomology n K r p :=
+  (rfl)
+
+@[simp]
+lemma compressionHomologyIsoOfIsZero_inv (r : ZMod n) (p : ℤ) (hp : (p : ZMod n) = r)
+    (h : ∀ i : ℤ, (i : ZMod n) = r → i ≠ p → IsZero (K.homology i)) :
+    (compressionHomologyIsoOfIsZero n K a b r p hp h).inv = ιCompressionHomology n K r p :=
+  (rfl)
 
 /-- For a complex supported in `[a, b]`, the homology of its `n`-periodic compression in residue
 `r` is isomorphic to the biproduct of the homology objects of `K` in the degrees of `[a, b]`

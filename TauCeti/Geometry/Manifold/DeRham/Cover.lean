@@ -34,6 +34,10 @@ the deck transformation labelled by the period `c` sends `f y` to `f y + c`
 (`PeriodCover.apply_deck_apply`). This is the equivariance `f (h • y) = f y + P h` of a primitive
 under the deck group, with `P` the period homomorphism on the deck group.
 
+The same holds on the universal cover itself: a primitive of the pulled-back form takes the value
+`f (mk x refl) + ∫_q θ` at the point represented by a path class `q`
+(`UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral`).
+
 The construction uses the subgroup-cover classification and the period exactness criterion.
 Our universal-cover action prepends inverse loops; consequently the deck transformation labelled
 by the period of a loop is the transformation represented by its inverse.
@@ -139,6 +143,36 @@ theorem SubgroupQuotient.apply_mk_eq_apply_basepoint_add_pathClassIntegral
     ((isLocalDiffeomorph_subgroupQuotientProj (I := I) (n := 2) x K).contMDiff) hθ hclosed] at h
   simp only [← Path.Homotopic.Quotient.mk_map, hΓ, Path.Homotopic.Quotient.mk_cast,
     pathClassIntegral_cast] at h
+  exact eq_add_of_sub_eq' h.symm
+
+/-- **Primitives on the universal cover.** Let `f` be a `C²` primitive of the pullback of a
+closed `C¹` form `θ` to the universal cover based at `x`. At the point represented by a path class
+`q` from `x` to `y`, `f` is its value at the constant-path point plus the integral of `θ` along
+`q`. In particular `f` is determined by that value. -/
+theorem apply_mk_eq_apply_mk_refl_add_pathClassIntegral
+    (hθ : IsSmoothForm I 1 θ) (hclosed : mextDeriv θ = 0) {f : UniversalCover x → F}
+    (hf : ContMDiff I 𝓘(ℝ, F) 2 f)
+    (hdf : mextDeriv (RoughForm.ofFunction I f) = mpullback I I proj θ)
+    {y : M} (q : Path.Homotopic.Quotient x y) :
+    f (mk y q) = f (mk x (Path.Homotopic.Quotient.refl x)) + pathClassIntegral θ q := by
+  have : T2Space (UniversalCover x) := (isCoveringMap x).t2Space
+  induction q with | mk γ =>
+  -- The initial segments of `γ` give a path `Γ` in the cover from the constant-path point,
+  -- lying over `γ`.
+  let Γ : Path (mk x (Path.Homotopic.Quotient.refl x)) (mk y (.mk γ)) :=
+    { toFun t := ofBasedPath x ((BasedPath.ofPath γ).initialSegmentFamily t)
+      continuous_toFun := by fun_prop
+      source' := by
+        simp [← BasedPath.ofPath_refl, Path.Homotopic.Quotient.mk_refl]
+      target' := by simp }
+  have hΓ : Γ.map (continuous_proj x) = γ := by
+    ext t
+    simp [Γ, proj_ofBasedPath]
+  -- Integrate `df` along `Γ` in two ways: downstairs, `Γ` projects to `γ`.
+  have h := pathClassIntegral_mextDeriv_ofFunction hf (.mk Γ)
+  rw [hdf, pathClassIntegral_mpullback
+    ((isLocalDiffeomorph_proj (I := I) (n := 2) x).contMDiff) hθ hclosed] at h
+  simp only [← Path.Homotopic.Quotient.mk_map, hΓ] at h
   exact eq_add_of_sub_eq' h.symm
 
 /-- **Deck transformations shift primitives by periods.** For a normal subgroup `K` of the

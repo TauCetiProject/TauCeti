@@ -65,23 +65,21 @@ section Curve
 variable [IsLocallyNoetherian X]
 
 /-- **Rational functions with the same orders agree as Cartier divisors.** If two nonzero rational
-functions have the same order at every codimension-one point of a nonempty open subset `U` of a
-curve, then they have the same class in `𝒦_X^× / 𝒪_X^×` over `U`.
+functions have the same order at every codimension-one point of a nonempty open subset `U` whose
+local rings are integrally closed, then they have the same class in `𝒦_X^× / 𝒪_X^×` over `U`.
 
 Their ratio has order zero at every codimension-one point of `U`, hence is a regular unit on `U`
-by the one-dimensional algebraic Hartogs' principle, and regular units have zero class. -/
+by algebraic Hartogs' principle, and regular units have zero class. -/
 theorem rationalUnitClass_eq_of_forall_orderAt_eq {U : X.Opens} [Nonempty U]
-    (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
-    (hU : ∀ y ∈ U, coheight y ≤ 1) {g h : Additive X.functionFieldˣ}
+    (hU : ∀ y ∈ U, IsIntegrallyClosed (X.presheaf.stalk y)) {g h : Additive X.functionFieldˣ}
     (hord : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → orderAt y g = orderAt y h) :
     Scheme.rationalUnitClass X U g = Scheme.rationalUnitClass X U h := by
   have hquotient : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
       X.ord ((Additive.toMul (g - h) : X.functionFieldˣ) : X.functionField) (y : X) = 0 := by
     intro y hy
     rw [← orderAt_apply y (g - h), map_sub, hord y hy, sub_self]
-  obtain ⟨u, hu⟩ := Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero
-    (U := U) hDVR hU hquotient
+  obtain ⟨u, hu⟩ := Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed
+    (U := U) hU hquotient
   have hunit : Units.map (X.germToFunctionField U).hom u = Additive.toMul (g - h) :=
     Units.ext hu
   have hzero := Scheme.rationalUnitClass_germToFunctionField_eq_zero X U u
@@ -100,7 +98,9 @@ theorem rationalUnitClass_eq_of_forall_coeff_eq {D : SchemeWeilDivisor X}
     (hg : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y g)
     (hh : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y h) :
     Scheme.rationalUnitClass X U g = Scheme.rationalUnitClass X U h :=
-  rationalUnitClass_eq_of_forall_orderAt_eq hDVR hU fun y hy ↦ (hg y hy).symm.trans (hh y hy)
+  rationalUnitClass_eq_of_forall_orderAt_eq
+    (Scheme.isIntegrallyClosed_stalk_of_coheight_le_one hDVR hU) fun y hy ↦
+      (hg y hy).symm.trans (hh y hy)
 
 /-- **The local criterion for the Cartier divisor of `D`.** If a Cartier divisor `E` restricts,
 near every point, to the class of a local equation of `D`, then it does so over *every* nonempty

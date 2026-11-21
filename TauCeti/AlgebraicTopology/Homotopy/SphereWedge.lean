@@ -306,6 +306,11 @@ section Lift
 
 variable {ι n} {Z : TopCat.{0}} {z : Z}
 
+/-- A wedge of `(n + 1)`-spheres is path connected. -/
+instance : PathConnectedSpace (sphereWedge ι (n + 1)) :=
+  (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (sphereWedgeBase ι (n + 1))).2
+    (subsingleton_homotopyGroup_sphereWedge ι n (Nat.zero_le n))
+
 /-- **The map out of a wedge of spheres with prescribed spheres.** For generalized loops
 `γ i : Ω^ (Fin n) Z z`, the map `⋁ᵢ Sⁿ ⟶ Z` sending the base point to `z` and the `i`-th sphere
 onto `γ i` (`TauCeti.genLoopMap_sphereWedgeLift_sphereWedgeLoop`): on the `i`-th cell it is

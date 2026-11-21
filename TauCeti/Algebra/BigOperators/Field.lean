@@ -16,18 +16,24 @@ import TauCeti.Algebra.BigOperators.Intervals
 /-!
 # Finite products and sums in a field
 
-## Factoring the leading power out of a product of `q ^ k - 1`
+## Factoring the leading power out of a product
 
 For `q ≠ 0` in a field,
 `∏ i ∈ s, (q ^ f i - 1) = q ^ (∑ i ∈ s, f i) * ∏ i ∈ s, (1 - (q ^ f i)⁻¹)`. This is how the orders
 of the finite classical groups, which are products of factors `q ^ k - 1`, become the normalized
 values `∏ (1 - q^{-k})` of local densities.
 
+Likewise, for `w ≠ 0` a product of powers of `w - z` is `w` to the total exponent times the
+product of the corresponding powers of `1 - z * w⁻¹`; in a normed field the latter product tends to
+one as `w` tends to infinity (`Finset.tendsto_prod_one_sub_mul_inv_pow`).
+
 ## Main results
 
 * `Finset.sum_range_natCast`, `Finset.sum_range_natCast_sq`: sums of naturals and their squares in
   a division ring where `2 ≠ 0` (and, for the squares, also `3 ≠ 0`).
 * `Finset.prod_pow_sub_one`: factoring `q ^ (∑ i ∈ s, f i)` out of `∏ i ∈ s, (q ^ f i - 1)`.
+* `Finset.prod_sub_pow_eq_pow_sum_mul_prod_one_sub_mul_inv_pow`: factoring `w ^ (∑ z ∈ s, n z)`
+  out of `∏ z ∈ s, (w - z) ^ n z`.
 * `Finset.sum_range_add_mul_add_div_two`: the increments of a quadratic along a uniform grid sum to
   the increment of the quadratic from `0` to the end of the grid.
 * `Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero`: cyclic cancellation of off-diagonal
@@ -47,6 +53,17 @@ theorem prod_pow_sub_one {K ι : Type*} [Field K] {q : K} (hq : q ≠ 0) (s : Fi
   rw [← prod_pow_eq_pow_sum, ← prod_mul_distrib]
   refine prod_congr rfl fun i _ => ?_
   rw [mul_sub, mul_one, mul_inv_cancel₀ (pow_ne_zero _ hq)]
+
+/-- **Factoring the leading power out of a product of powers of `w - z`.** For `w ≠ 0` in a field,
+`∏ z ∈ s, (w - z) ^ n z = w ^ (∑ z ∈ s, n z) * ∏ z ∈ s, (1 - z * w⁻¹) ^ n z`. -/
+theorem prod_sub_pow_eq_pow_sum_mul_prod_one_sub_mul_inv_pow {K : Type*} [Field K] (s : Finset K)
+    (n : K → ℕ) {w : K} (hw : w ≠ 0) :
+    ∏ z ∈ s, (w - z) ^ n z = w ^ (∑ z ∈ s, n z) * ∏ z ∈ s, (1 - z * w⁻¹) ^ n z := by
+  rw [← prod_pow_eq_pow_sum, ← prod_mul_distrib]
+  refine prod_congr rfl fun z _ ↦ ?_
+  rw [← mul_pow]
+  congr 1
+  field_simp
 
 /-- The expected increments `a * u + (k * a + a / 2) * a * X` of the quadratic
 `t ↦ t * u + t ^ 2 * X / 2` along the grid `k * a` sum, over `k < n`, to the increment
