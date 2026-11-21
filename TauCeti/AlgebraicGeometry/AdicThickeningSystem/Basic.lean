@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
-import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 
 /-!
 # Adic thickening systems

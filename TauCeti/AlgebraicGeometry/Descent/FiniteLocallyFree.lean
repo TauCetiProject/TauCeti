@@ -30,19 +30,6 @@ descended scheme. Finiteness, flatness and local finite presentation each satisf
 so they pass to it (`TauCeti.DescentDatum.Hom.mem_of_descendsAlong`), and the rank of a base
 change is the pulled-back rank (`AlgebraicGeometry.Scheme.Hom.finrank_pullback_snd`).
 
-Finiteness, flatness and local finite presentation also satisfy fppf descent, without a
-quasi-compactness hypothesis on the cover
-(`AlgebraicGeometry.IsFinite.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation`,
-`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation` and
-its namesake in the namespace `AlgebraicGeometry.LocallyOfFinitePresentation`):
-each is local on the target, so Mathlib's fpqc-to-fppf descent instance in
-`Mathlib.AlgebraicGeometry.Morphisms.FlatDescent` applies to the fpqc descent instances
-`AlgebraicGeometry.IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact`,
-`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat_inf_quasicompact` and Mathlib's fpqc
-descent of local finite presentation in `Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent`.
-Their conjunction is fppf descent of finite locally free morphisms
-(`AlgebraicGeometry.descendsAlong_isFinite_inf_flat_inf_locallyOfFinitePresentation`).
-
 ## References
 
 * A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé VIII,
@@ -53,68 +40,6 @@ Their conjunction is fppf descent of finite locally free morphisms
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
-
-namespace AlgebraicGeometry
-
-universe u
-
-/-! Mathlib's fpqc-to-fppf descent instance is stated for a bundled `MorphismProperty`, and
-instance search does not unify that with `@IsFinite`, `@Flat` or `@LocallyOfFinitePresentation`
-here, nor does it find their target-locality. So each property is named as a `MorphismProperty`
-and its two inputs are supplied as local instances. -/
-
-/-- **Finite morphisms satisfy fppf descent.** A morphism whose base change along a surjective,
-flat morphism locally of finite presentation is finite is itself finite. -/
-instance IsFinite.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation :
-    MorphismProperty.DescendsAlong @IsFinite.{u}
-      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
-  let P : MorphismProperty Scheme.{u} := @IsFinite
-  observe hP : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget P := @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hP
-  have : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
-    IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact
-  exact (inferInstance : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation))
-
-/-- **Flat morphisms satisfy fppf descent.** A morphism whose base change along a surjective, flat
-morphism locally of finite presentation is flat is itself flat. -/
-instance Flat.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation :
-    MorphismProperty.DescendsAlong @Flat.{u}
-      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
-  let P : MorphismProperty Scheme.{u} := @Flat
-  have : IsZariskiLocalAtTarget P := HasRingHomProperty.instIsZariskiLocalAtTarget @Flat
-  have : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
-    Flat.descendsAlong_surjective_inf_flat_inf_quasicompact
-  exact (inferInstance : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation))
-
-namespace LocallyOfFinitePresentation
-
-/-- **Morphisms locally of finite presentation satisfy fppf descent.** A morphism whose base change
-along a surjective, flat morphism locally of finite presentation is locally of finite presentation
-is itself locally of finite presentation. -/
-instance descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation :
-    MorphismProperty.DescendsAlong @LocallyOfFinitePresentation.{u}
-      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
-  let P : MorphismProperty Scheme.{u} := @LocallyOfFinitePresentation
-  have : IsZariskiLocalAtTarget P :=
-    HasRingHomProperty.instIsZariskiLocalAtTarget @LocallyOfFinitePresentation
-  have : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := inferInstance
-  exact (inferInstance : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation))
-
-end LocallyOfFinitePresentation
-
-/-- **Finite locally free morphisms satisfy fppf descent.** A morphism whose base change along a
-surjective, flat morphism locally of finite presentation is finite, flat and locally of finite
-presentation is itself so. -/
-instance descendsAlong_isFinite_inf_flat_inf_locallyOfFinitePresentation :
-    (@IsFinite ⊓ @Flat ⊓ @LocallyOfFinitePresentation : MorphismProperty Scheme.{u}).DescendsAlong
-      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
-  have : (@IsFinite ⊓ @Flat : MorphismProperty Scheme.{u}).DescendsAlong
-      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
-    MorphismProperty.DescendsAlong.inf
-  MorphismProperty.DescendsAlong.inf
-
-end AlgebraicGeometry
 
 namespace TauCeti.DescentDatum
 

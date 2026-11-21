@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
-import TauCeti.AlgebraicGeometry.IdealSheaf.FaithfullyFlat
-import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.RingHom.Injective
+import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 
 /-!
 # Schematic density and separated targets
@@ -34,14 +38,26 @@ scheme-theoretically dominant morphism stays so after corestriction along an ope
 containing its image
 (`AlgebraicGeometry.IsOpenImmersion.isSchemeTheoreticallyDominant_lift`). The scheme-theoretic
 image of a scheme-theoretically dominant morphism is its whole target
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`). A flat surjective morphism is
-scheme-theoretically dominant
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`), because the inverse
-image of an ideal sheaf along it vanishes only if the ideal sheaf does
-(`AlgebraicGeometry.Scheme.IdealSheafData.comap_eq_bot_iff_of_flat_of_surjective`). For a
-commutative square whose side `p` is scheme-theoretically dominant, factorization through a closed
-subscheme can be checked after precomposition with `p`
-(`AlgebraicGeometry.Scheme.IdealSheafData.comap_le_ker_iff_of_isSchemeTheoreticallyDominant`).
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`).
+
+A flat surjective morphism is scheme-theoretically dominant
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`), and so are all its base
+changes (`AlgebraicGeometry.IsSchemeTheoreticallyDominant.universally_of_flat_of_surjective`). The
+proof is stalkwise: a flat local homomorphism of stalks is faithfully flat, and extension of ideals
+along a faithfully flat ring map is injective.
+
+For a commutative square whose side `p` is scheme-theoretically dominant, factorization through a
+closed subscheme can be checked after precomposition with `p`
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_le_ker_iff_of_isSchemeTheoreticallyDominant`). In
+particular an ideal sheaf vanishes exactly when its inverse image along a scheme-theoretically
+dominant morphism does
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_eq_bot_iff_of_isSchemeTheoreticallyDominant`).
+If moreover every base change of `g` is scheme-theoretically dominant, then taking inverse images
+along `g` reflects inclusion of ideal sheaves
+(`comap_le_comap_iff_of_universally_isSchemeTheoreticallyDominant` in the namespace
+`AlgebraicGeometry.Scheme.IdealSheafData`), so it is injective. This is how equalities of closed
+subschemes descend along flat surjective morphisms, see
+`TauCeti.AlgebraicGeometry.IdealSheaf.FaithfullyFlat`.
 -/
 
 public section
@@ -166,10 +182,66 @@ theorem Scheme.IdealSheafData.comap_le_ker_iff_of_isSchemeTheoreticallyDominant
   rw [← Scheme.IdealSheafData.le_map_iff_comap_le, Scheme.IdealSheafData.map_ker, w,
     p.ker_comp_of_isSchemeTheoreticallyDominant]
 
+/-- **A closed subscheme is everything as soon as its inverse image along a scheme-theoretically
+dominant morphism is.** For `g` scheme-theoretically dominant, `I.comap g = ⊥` exactly when
+`I = ⊥`. -/
+@[simp]
+theorem Scheme.IdealSheafData.comap_eq_bot_iff_of_isSchemeTheoreticallyDominant (g : X ⟶ Y)
+    [IsSchemeTheoreticallyDominant g] {I : Y.IdealSheafData} : I.comap g = ⊥ ↔ I = ⊥ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ comap_bot g⟩
+  rw [← le_bot_iff, ← g.ker_eq_bot, ← map_bot, le_map_iff_comap_le, h]
+
+/-- **Inverse images along a universally scheme-theoretically dominant morphism reflect
+inclusion.** If every base change of `g : X ⟶ Y` is scheme-theoretically dominant, then
+`I.comap g ≤ J.comap g` exactly when `I ≤ J`. -/
+theorem Scheme.IdealSheafData.comap_le_comap_iff_of_universally_isSchemeTheoreticallyDominant
+    (g : X ⟶ Y) (hg : MorphismProperty.universally @IsSchemeTheoreticallyDominant g)
+    {I J : Y.IdealSheafData} : I.comap g ≤ J.comap g ↔ I ≤ J := by
+  refine ⟨fun h ↦ ?_, fun h ↦ comap_mono g h⟩
+  -- The base change of `g` to `V(J)` is scheme-theoretically dominant, and its composite with `g`
+  -- factors through `V(J.comap g)`, hence through `V(I.comap g)`.
+  have hJ := IsPullback.of_hasPullback g J.subschemeι
+  have : IsSchemeTheoreticallyDominant (pullback.snd g J.subschemeι) := hg _ _ _ hJ.flip
+  have := (comap_le_ker_iff_of_isSchemeTheoreticallyDominant I _ pullback.condition).mp
+    (by rwa [ker_eq_comap_of_isPullback J.subschemeι hJ, ker_subschemeι])
+  rwa [ker_subschemeι] at this
+
+/-- **Inverse images along a universally scheme-theoretically dominant morphism are injective.**
+If every base change of `g` is scheme-theoretically dominant, then two ideal sheaves with the same
+inverse image along `g` are equal. -/
+theorem Scheme.IdealSheafData.comap_injective_of_universally_isSchemeTheoreticallyDominant
+    (g : X ⟶ Y) (hg : MorphismProperty.universally @IsSchemeTheoreticallyDominant g) :
+    Function.Injective (comap · g) := fun _ _ h ↦
+  le_antisymm ((comap_le_comap_iff_of_universally_isSchemeTheoreticallyDominant g hg).mp h.le)
+    ((comap_le_comap_iff_of_universally_isSchemeTheoreticallyDominant g hg).mp h.ge)
+
 /-- **A flat surjective morphism is scheme-theoretically dominant**: its scheme-theoretic image is
 the whole target. -/
 instance IsSchemeTheoreticallyDominant.of_flat_of_surjective (f : X ⟶ Y) [Flat f]
     [Surjective f] : IsSchemeTheoreticallyDominant f where
-  ker_eq_bot := (Scheme.IdealSheafData.comap_eq_bot_iff_of_flat_of_surjective f).mp f.comap_ker_self
+  ker_eq_bot := by
+    -- `f.ker` and `⊥` have the same inverse image along `f`, and at each point the extension of
+    -- stalk ideals along the faithfully flat stalk map of `f` is injective.
+    refine le_bot_iff.mp (Scheme.IdealSheafData.le_iff_forall_stalkIdeal_le.mpr fun x ↦ ?_)
+    obtain ⟨y, rfl⟩ := f.surjective x
+    let _ := (f.stalkMap y).hom.toAlgebra
+    have : Module.FaithfullyFlat (Y.presheaf.stalk (f y)) (X.presheaf.stalk y) :=
+      f.faithfullyFlat_stalkMap y (Flat.stalkMap f y)
+    have hy := congr(Scheme.IdealSheafData.stalkIdeal
+      $(f.comap_ker_self.trans (Scheme.IdealSheafData.comap_bot f).symm) y)
+    rw [Scheme.IdealSheafData.stalkIdeal_comap, Scheme.IdealSheafData.stalkIdeal_comap] at hy
+    rw [← Ideal.comap_map_eq_self_of_faithfullyFlat (B := X.presheaf.stalk y) (f.ker.stalkIdeal _),
+      ← Ideal.comap_map_eq_self_of_faithfullyFlat (B := X.presheaf.stalk y)
+        ((⊥ : Y.IdealSheafData).stalkIdeal (f y))]
+    exact Ideal.comap_mono hy.le
+
+/-- **Flat surjective morphisms are universally scheme-theoretically dominant**, since flatness and
+surjectivity are stable under base change. -/
+theorem IsSchemeTheoreticallyDominant.universally_of_flat_of_surjective (f : X ⟶ Y) [Flat f]
+    [Surjective f] : MorphismProperty.universally @IsSchemeTheoreticallyDominant f :=
+  fun _ _ _ _ f' (h : IsPullback f' _ _ f) ↦
+    have : Flat f' := MorphismProperty.of_isPullback h.flip ‹_›
+    have : Surjective f' := MorphismProperty.of_isPullback h.flip ‹_›
+    inferInstance
 
 end AlgebraicGeometry

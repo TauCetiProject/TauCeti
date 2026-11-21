@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
 public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
 public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback
-import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 
 /-!
 # The conormal sheaf and the normal cone

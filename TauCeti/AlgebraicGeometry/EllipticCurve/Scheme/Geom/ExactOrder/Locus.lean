@@ -41,12 +41,14 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 (`EllipticCurveGeom.isOfExactOrder_iff_exactOrderLocus_le_ker_comp`). No hypothesis is placed on
 `S`, which may be nonreduced, and `N` need not be invertible on it.
 
-A scheme-theoretically dominant morphism, for instance a flat surjective one
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`), factors through a
+A scheme-theoretically dominant morphism, for instance a flat surjective one, factors through a
 closed subscheme only if that subscheme is everything. A point therefore has exact order `N`
 exactly when its base change along such a morphism does
 (`EllipticCurveGeom.isOfExactOrder_pointsPullback_iff_of_isSchemeTheoreticallyDominant`), so
-having exact order `N` descends in particular along fpqc and fppf covers.
+having exact order `N` descends in particular along fpqc and fppf covers. For flat surjective
+morphisms the dominance hypothesis is the instance
+`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`, supplied by importing
+`TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant`.
 
 ## Main definitions
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
-import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 
 /-!
 # Thickenings of schemes

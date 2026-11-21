@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.CyclicSubgroup.Basic
-import TauCeti.AlgebraicGeometry.Descent.FiniteLocallyFree
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup
+import TauCeti.AlgebraicGeometry.Descent.Fppf
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroupDescent
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 
 /-!
@@ -17,11 +17,12 @@ Cyclic subgroups of an elliptic curve (`EllipticCurveGeom.IsCyclicSubgroup`) are
 arbitrary base change (`EllipticCurveGeom.IsCyclicSubgroup.comap`). Conversely, being a cyclic
 subgroup of order `N` descends along surjective fppf base changes
 (`EllipticCurveGeom.isCyclicSubgroup_comap_iff`). Finiteness, flatness and finite presentation
-descend by fppf descent. Being a subgroup scheme is reflected by flat surjective base change, with
-no finiteness hypothesis on the subscheme
-(`EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`). A generating fppf
-covering of the new base composes with the base change to a generating fppf covering of the old
-one.
+descend by fppf descent of finite locally free morphisms
+(`AlgebraicGeometry.descendsAlong_isFinite_inf_flat_inf_locallyOfFinitePresentation`). Being a
+subgroup scheme is reflected by flat surjective base change, with no finiteness hypothesis on the
+subscheme (`EllipticCurveGeom.exists_grpObj_isMonHom_comap_iff_of_flat_of_surjective`). A
+generating fppf covering of the new base composes with the base change to a generating fppf
+covering of the old one.
 
 ## Main results
 
@@ -49,24 +50,11 @@ variable {S S' : Scheme.{u}} {E : EllipticCurveGeom S} {E' : EllipticCurveGeom S
 
 include hg h0 in
 /-- **Cyclic subgroups descend along surjective fppf morphisms** (Katz–Mazur, §3.4). Let
-`g : E' ⟶ E` be a morphism of elliptic curves lying over a surjective, flat
-morphism `f : S' ⟶ S` locally of finite presentation, forming a pullback square with the structure
+`g : E' ⟶ E` be a morphism of elliptic curves lying over a surjective, flat morphism
+`f : S' ⟶ S` locally of finite presentation, forming a pullback square with the structure
 morphisms and carrying the zero section of `E'` to that of `E`. Then the ideal sheaf `I` cuts out a
 cyclic subgroup of `E` of order `N` exactly when its inverse image along `g` cuts out a cyclic
-subgroup of `E'` of order `N`.
-
-Finiteness, flatness and finite presentation of the subgroup descend along `f` by fppf descent of
-finite locally free morphisms
-(`AlgebraicGeometry.descendsAlong_isFinite_inf_flat_inf_locallyOfFinitePresentation`), assembled
-from the fppf descent instances
-`AlgebraicGeometry.IsFinite.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation`
-and its namesakes for `Flat` and `LocallyOfFinitePresentation`. These come from the fpqc descent
-of finiteness (`AlgebraicGeometry.IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact`),
-of flatness (`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat_inf_quasicompact`) and
-Mathlib's fpqc descent of local finite presentation in
-`Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent`, through Mathlib's fpqc-to-fppf descent
-instance in `Mathlib.AlgebraicGeometry.Morphisms.FlatDescent`, which removes the
-quasi-compactness hypothesis of fpqc descent for Zariski-local properties. -/
+subgroup of `E'` of order `N`. -/
 theorem isCyclicSubgroup_comap_iff [Surjective f] [Flat f]
     [LocallyOfFinitePresentation f] {I : E.carrier.IdealSheafData} {N : ℕ} :
     E'.IsCyclicSubgroup (I.comap g) N ↔ E.IsCyclicSubgroup I N := by

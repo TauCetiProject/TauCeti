@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.RingTheory.Flat.Localization
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import TauCeti.RingTheory.Flat.Tower
 
@@ -38,6 +39,7 @@ the generic fibre.
   flat iff the localization of `Γ(X, V)` at the prime of `x` is flat over `Γ(Y, U)`.
 * `AlgebraicGeometry.flat_stalkMap_specMap_iff`: the stalk map of `Spec S ⟶ Spec R` at `q` is flat
   iff `S_q` is flat over `R`.
+* `AlgebraicGeometry.Scheme.Hom.faithfullyFlat_stalkMap`: a flat stalk map is faithfully flat.
 * `AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_comp`: flatness of stalk maps descends along
   morphisms with flat stalk maps.
 * `AlgebraicGeometry.Flat.of_comp_surjective`: if `g` is flat and surjective and `g ≫ f` is flat,
@@ -86,6 +88,14 @@ theorem flat_restrict_iff {X Y : Scheme.{u}} (f : X ⟶ Y) (U : Y.Opens) :
     exact (CommRingCat.flat.arrow_mk_iso_iff
       (morphismRestrictStalkMap f U x)).mpr (h x.val x.property)
 
+/-- **A flat stalk map is faithfully flat**, being a local homomorphism of local rings. -/
+theorem faithfullyFlat_stalkMap {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
+    (hf : (f.stalkMap x).hom.Flat) : (f.stalkMap x).hom.FaithfullyFlat := by
+  algebraize [(f.stalkMap x).hom]
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
+  exact .of_flat_of_isLocalHom
+
 /-- Flatness of stalk maps descends along flat morphisms: if `g` has flat stalk map at `x'` and
 `g ≫ f` has flat stalk map at `x'`, then `f` has flat stalk map at `g x'`. -/
 theorem flat_stalkMap_of_comp {X X' Y : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) (x' : X')
@@ -97,11 +107,8 @@ theorem flat_stalkMap_of_comp {X X' Y : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y)
     exact h
   algebraize [(f.stalkMap (g x')).hom, (g.stalkMap x').hom,
     (g.stalkMap x').hom.comp (f.stalkMap (g x')).hom]
-  -- The algebra structure is that of the stalk map, which is a local homomorphism.
-  have : IsLocalHom (algebraMap (X.presheaf.stalk (g x')) (X'.presheaf.stalk x')) :=
-    inferInstanceAs (IsLocalHom (g.stalkMap x').hom)
   have : Module.FaithfullyFlat (X.presheaf.stalk (g x')) (X'.presheaf.stalk x') :=
-    .of_flat_of_isLocalHom
+    g.faithfullyFlat_stalkMap x' hg
   exact Module.Flat.of_faithfullyFlat_of_flat _ _ (X'.presheaf.stalk x')
 
 end AlgebraicGeometry.Scheme.Hom

@@ -36,9 +36,11 @@ condition is scheme-theoretic, not a condition on geometric fibres.
 
 Being a Drinfeld basis descends along scheme-theoretically dominant morphisms
 (`EllipticCurveGeom.isDrinfeldBasis_pointsPullback_iff_of_isSchemeTheoreticallyDominant`), in
-particular along flat surjective ones
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`) such as fpqc and fppf
-covers: such a morphism factors through a closed subscheme only if that subscheme is everything.
+particular along flat surjective ones such as fpqc and fppf covers: such a morphism factors
+through a closed subscheme only if that subscheme is everything. For flat surjective morphisms the
+dominance hypothesis is the instance
+`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_flat_of_surjective`, supplied by importing
+`TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant`.
 
 Applied to a universal homomorphism `(ℤ/Nℤ)² →* E_H(H)`, of which every homomorphism
 `(ℤ/Nℤ)² →* E_T(T)` is the base change along a unique morphism `T ⟶ H` (for instance the one

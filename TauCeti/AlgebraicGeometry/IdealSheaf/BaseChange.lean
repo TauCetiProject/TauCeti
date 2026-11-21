@@ -46,8 +46,9 @@ for two closed-immersion sections `δ` and `x₀` of the same morphism, pulling 
 (`AlgebraicGeometry.Scheme.Hom.comap_ker_comm_of_comp_eq_id`).
 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
-closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
-change over `S` of the closed subscheme of `I`
+closed subscheme of `I` along `g`. For any commutative square `g ≫ q = q' ≫ f` it lies over the
+closed subscheme of `I` (`AlgebraicGeometry.Scheme.IdealSheafData.comap_subschemeι_comp_comp`);
+when the square is a pullback square, it is the base change over `S` of the closed subscheme of `I`
 (`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`, preserving finiteness,
 flatness, and finite presentation over the base), and sections of `V(I)` base-change to sections of
 `V(I.comap g)` via `AlgebraicGeometry.Scheme.IdealSheafData.pullbackSubschemeSection`. Hence, if
@@ -176,6 +177,16 @@ theorem ker_eq_comap_of_isPullback_of_isOpenImmersion {U V Y : Scheme.{u}} {f : 
     (H : IsPullback f' iU iV f) : f'.ker = f.ker.comap iV := by
   ext W : 2
   rw [ideal_comap_of_isOpenImmersion, ker_ideal_of_isPullback_of_isOpenImmersion f f' iU iV H]
+
+/-- **The inclusion of an inverse image lies over the inclusion of the closed subscheme.** For a
+commutative square `g ≫ q = q' ≫ f`, the closed subscheme of the inverse image `I.comap g`, as a
+scheme over `S'` through `q'`, maps to the closed subscheme of `I`, as a scheme over `S` through
+`q`, over `f`. The square need not be a pullback square. -/
+theorem comap_subschemeι_comp_comp {X' S' : Scheme.{u}} (I : X.IdealSheafData) {g : X' ⟶ X}
+    {q : X ⟶ S} {q' : X' ⟶ S'} {f : S' ⟶ S} (w : g ≫ q = q' ≫ f) :
+    ((I.comap g).subschemeι ≫ q') ≫ f =
+      subschemeMap (I.comap g) I g (I.le_map_comap g) ≫ I.subschemeι ≫ q := by
+  rw [subschemeMap_subschemeι_assoc, w, Category.assoc]
 
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
 `X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme

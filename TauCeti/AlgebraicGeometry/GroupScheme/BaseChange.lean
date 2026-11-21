@@ -22,6 +22,11 @@ adjunction, and shows that this identification is multiplicative. On underlying 
 identity, product and inverse of points of the base change project to those of `G`. Base change
 of group schemes preserves finite limits.
 
+More generally, let `g : G' ⟶ G` be a morphism of group schemes lying over `f : S' ⟶ S`, not
+necessarily exhibiting `G'` as a base change of `G`. If `g` is compatible with multiplication, it
+carries products of points of `G'` to products of points of `G`, and hence also preserves the
+identity and inversion.
+
 ## Main declarations
 
 * `TauCeti.GroupScheme.baseChangePointMulEquiv`: the multiplicative point-group identification
@@ -32,6 +37,11 @@ of group schemes preserves finite limits.
   law of a base change projects to the group law of the original group scheme.
 * `TauCeti.GroupScheme.pullbackMapGrp_preservesFiniteLimits`: base change of group schemes
   preserves finite limits.
+* `TauCeti.GroupScheme.mul_left_comp_of_mul_left_comp`,
+  `TauCeti.GroupScheme.one_left_comp_of_mul_left_comp` and
+  `TauCeti.GroupScheme.inv_left_comp_of_mul_left_comp`: a morphism `g : G' ⟶ G` of group schemes
+  over a morphism of bases which is compatible with multiplication preserves products of points,
+  the identity and inversion.
 
 The naturality lemma in the test scheme is adapted from Axel Delaval, Jie Xu, and Shitan Xu's
 Jacobian library, release `baef7723da528551b7d2f93bd9a9a53303b04dbc`,
@@ -224,5 +234,57 @@ noncomputable instance pullbackMapGrp_preservesFiniteLimits (s : Y ⟶ X) :
       (Limits.PreservesLimitsOfShape J (Grp.forget (Over X) ⋙ Over.pullback s))⟩
   have : Limits.ReflectsFiniteLimits (Grp.forget (Over Y)) := ⟨fun _ _ _ ↦ inferInstance⟩
   Limits.preservesFiniteLimits_of_reflects_of_preserves _ (Grp.forget (Over Y))
+
+/-! ### Multiplicative morphisms of group schemes over different bases -/
+
+section MulLeftComp
+
+open MonoidalCategory
+
+variable {S S' : Scheme.{u}} {f : S' ⟶ S} {G : Over S} {G' : Over S'} [GrpObj G] [GrpObj G']
+  {g : G'.left ⟶ G.left} (w : g ≫ G.hom = G'.hom ≫ f)
+  (hμ : μ[G'].left ≫ g = Limits.pullback.map _ _ _ _ g g f w.symm w.symm ≫ μ[G].left)
+include hμ
+
+/-- **A multiplicative morphism of group schemes preserves products of points.** If `g : G' ⟶ G`
+lies over `f : S' ⟶ S` and is compatible with multiplication, then it carries the product of two
+points of `G'` with values in an `S'`-scheme `T` to the product of their images, as points of `G`
+with values in `T` over `f`. -/
+theorem mul_left_comp_of_mul_left_comp {T : Over S'} (a b : T ⟶ G') :
+    (a * b).left ≫ g =
+      Limits.pullback.lift (a.left ≫ g) (b.left ≫ g) (by simp [w]) ≫ μ[G].left := by
+  rw [Hom.mul_def, Over.comp_left, Category.assoc, hμ, ← Category.assoc]
+  congr 1
+  apply Limits.pullback.hom_ext <;> simp
+
+/-- **A multiplicative morphism of group schemes preserves the identity.** If `g : G' ⟶ G` lies
+over `f : S' ⟶ S` and is compatible with multiplication, then it carries the identity section of
+`G'` to the base change along `f` of that of `G`. -/
+theorem one_left_comp_of_mul_left_comp : η[G'].left ≫ g = f ≫ η[G].left := by
+  -- `e = η ≫ g` is an idempotent in the group of `S'`-points of `G` over `f`
+  let e : Over.mk f ⟶ G := Over.homMk (η[G'].left ≫ g) (by simp [w])
+  have he : e * e = e := by
+    ext
+    have h := mul_left_comp_of_mul_left_comp w hμ (1 : 𝟙_ (Over S') ⟶ G') 1
+    rw [mul_one] at h
+    simpa [Hom.mul_def, Hom.one_def, e] using h.symm
+  simpa [e, Hom.one_def] using congr($(mul_eq_left.mp he).left)
+
+/-- **A multiplicative morphism of group schemes preserves inversion.** If `g : G' ⟶ G` lies over
+`f : S' ⟶ S` and is compatible with multiplication, then it intertwines the inversions of `G'` and
+`G`. -/
+theorem inv_left_comp_of_mul_left_comp : ι[G'].left ≫ g = g ≫ ι[G].left := by
+  -- `g` and `ι ≫ g` are mutually inverse points of `G` with values in `G'` over `G'.hom ≫ f`
+  let a : Over.mk (G'.hom ≫ f) ⟶ G := Over.homMk g w
+  let b : Over.mk (G'.hom ≫ f) ⟶ G := Over.homMk (ι[G'].left ≫ g) (by simp [w])
+  have hab : a * b = 1 := by
+    ext
+    have h := mul_left_comp_of_mul_left_comp w hμ (𝟙 G') ι[G']
+    rw [Hom.mul_def, GrpObj.right_inv, Over.comp_left, Category.assoc,
+      one_left_comp_of_mul_left_comp w hμ] at h
+    simpa [Hom.mul_def, Hom.one_def, a, b] using h.symm
+  simpa [a, b, Hom.inv_def] using congr($(eq_inv_of_mul_eq_one_right hab).left)
+
+end MulLeftComp
 
 end TauCeti.GroupScheme
