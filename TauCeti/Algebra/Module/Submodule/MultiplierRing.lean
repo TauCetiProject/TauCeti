@@ -52,6 +52,7 @@ section Ring
 variable {B : Type*} [Ring B] [Algebra R B]
 
 /-- The image of `R` lies in the multiplier ring of an `R`-submodule. -/
+@[simp high]
 theorem algebraMap_mem_multiplierRing (M : Submodule R B) (a : R) :
     algebraMap R B a ∈ M.toAddSubgroup.multiplierRing := by
   refine AddSubgroup.mem_multiplierRing.mpr fun m hm ↦ ?_
