@@ -53,7 +53,8 @@ completions of `A_𝔪` and `𝒪_{Sp A,x}` through their quotients by powers of
 
 ## References
 
-* [Bosch, *Lectures on Formal and Rigid Geometry*][bosch2014], §4.1, Propositions 1 and 2.
+* S. Bosch, *Lectures on Formal and Rigid Geometry*, Lecture Notes in Mathematics 2105,
+  Springer, 2014, §4.1, Propositions 1 and 2.
 -/
 
 public section
@@ -133,6 +134,12 @@ theorem germ_eq_germ_iff {U V : AffinoidSubdomain K A} (hU : x ∈ U) (hV : x �
   -- The fibre maps of `ringPresheaf` are `germ` and its restriction maps are `restrict`.
   exact this
 
+/-- The germ of a section in `J 𝒪(U)` lies in `J 𝒪_{Sp A,x}`. -/
+theorem germ_mem_map_toStalk {U : AffinoidSubdomain K A} (hx : x ∈ U) {J : Ideal A}
+    {f : U.sections} (hf : f ∈ J.map U.toSections) : germ U hx f ∈ J.map (toStalk K x) := by
+  rw [← germ_comp_toSections hx, ← Ideal.map_map]
+  exact Ideal.mem_map_of_mem _ hf
+
 /-- **Membership in an extended ideal is local.** The germ of `f` lies in `J 𝒪_{Sp A,x}` iff some
 restriction of `f` to an affinoid neighbourhood `W` of `x` lies in `J 𝒪(W)`. -/
 theorem germ_mem_map_toStalk_iff {U : AffinoidSubdomain K A} (hx : x ∈ U) (f : U.sections)
@@ -162,10 +169,7 @@ theorem germ_mem_map_toStalk_iff {U : AffinoidSubdomain K A} (hx : x ∈ U) (f :
     obtain ⟨W, hWV, hWU, hxW, hW⟩ := (germ_eq_germ_iff hxV hx g f).mp hgf
     exact ⟨W, hWU, hxW, hW ▸ restrict_mem_map hWV hg⟩
   · rw [← germ_restrict hWU hxW]
-    refine (Ideal.map_le_iff_le_comap.mpr (fun a ha ↦ ?_) hW :
-      restrict hWU f ∈ (J.map (toStalk K x)).comap (germ W hxW))
-    rw [Ideal.mem_comap, Ideal.mem_comap, germ_toSections]
-    exact Ideal.mem_map_of_mem _ ha
+    exact germ_mem_map_toStalk hxW hW
 
 /-- A section that does not vanish at `x` is invertible on a smaller affinoid neighbourhood of
 `x`, namely on a rational subdomain `{y ∈ U : |ϖ|ⁿ ≤ |f(y)|}`. -/
@@ -214,8 +218,7 @@ theorem isUnit_germ_iff {U : AffinoidSubdomain K A} (hx : x ∈ U) {f : U.sectio
     have h1 : germ ⊤ (mem_top x) 1 ∈ x.asIdeal.map (toStalk K x) := by
       obtain ⟨c, hc⟩ := hu.exists_right_inv
       rw [map_one, ← hc]
-      refine Ideal.mul_mem_right _ _ ((germ_mem_map_toStalk_iff hx f _).mpr ?_)
-      exact ⟨U, le_rfl, hx, by rwa [restrict_refl]⟩
+      exact Ideal.mul_mem_right _ _ (germ_mem_map_toStalk hx hf)
     obtain ⟨W, hWU, hxW, hW⟩ := (germ_mem_map_toStalk_iff _ _ _).mp h1
     rw [map_one] at hW
     exact (W.isAffinoidSubdomainMap.isMaximal_map hA.out hxW).ne_top
@@ -247,7 +250,7 @@ theorem maximalIdeal_stalk : maximalIdeal (stalk K x) = x.asIdeal.map (toStalk K
   · obtain ⟨U, hx, f, rfl⟩ := exists_germ_eq s
     have hf : f ∈ x.asIdeal.map U.toSections := by
       simpa [isUnit_germ_iff] using (mem_maximalIdeal _).mp hs
-    exact (germ_mem_map_toStalk_iff hx f _).mpr ⟨U, le_rfl, hx, by rwa [restrict_refl]⟩
+    exact germ_mem_map_toStalk hx hf
   · exact (mem_maximalIdeal _).mpr (by simpa [isUnit_toStalk_iff] using ha)
 
 /-- The germ map `A → 𝒪_{Sp A,x}` pulls the maximal ideal back to `𝔪ₓ`. -/
@@ -265,9 +268,10 @@ theorem localizationToStalk_algebraMap (a : A) :
     localizationToStalk K x (algebraMap A _ a) = toStalk K x a :=
   IsLocalization.lift_eq _ a
 
-/-- **The germ map from the local ring is injective**, by Krull's intersection theorem in
-`A_𝔪`: an element of `A` with zero germ lies in every power of `𝔪ₓ`. -/
+/-- **The germ map from the local ring is injective.** -/
 theorem localizationToStalk_injective : Function.Injective (localizationToStalk K x) := by
+  -- By Krull's intersection theorem in `A_𝔪`: an element of `A` with zero germ lies in every
+  -- power of `𝔪ₓ`.
   have := hA.out.isNoetherianRing
   rw [injective_iff_map_eq_zero]
   intro z hz
@@ -335,8 +339,8 @@ noncomputable def quotientPowEquiv (n : ℕ) :
     rw [IsAffinoidSubdomainMap.quotientPowAlgEquiv_mk, Ideal.Quotient.eq] at ha
     refine ⟨Ideal.Quotient.mk _ a, ?_⟩
     rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, maximalIdeal_stalk_pow, ← germ_toSections hx,
-      ← map_sub, germ_mem_map_toStalk_iff]
-    exact ⟨U, le_rfl, hx, by rwa [restrict_refl]⟩
+      ← map_sub]
+    exact germ_mem_map_toStalk hx ha
 
 /-- The comparison `A ⧸ 𝔪ₓⁿ ≃ 𝒪_{Sp A,x} ⧸ 𝔪ⁿ` sends the class of `a` to the class of its
 germ. -/
