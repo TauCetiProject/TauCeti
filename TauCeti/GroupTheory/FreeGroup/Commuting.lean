@@ -14,8 +14,8 @@ import TauCeti.Algebra.Group.Even
 Two elements of a free group commute exactly when they are integer powers of a common element
 (Mathlib's `IsFreeGroup.commute_iff_exists_zpow`). Consequently, for commuting elements `x` and
 `y`, one of `x`, `y` and `x * y` is a square (`IsFreeGroup.exists_eq_sq_of_commute`), by the
-parity argument `isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow` for powers of a common
-element.
+parity argument `TauCeti.isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow` for powers of
+a common element.
 -/
 
 public section
@@ -30,6 +30,6 @@ theorem exists_eq_sq_of_commute {x y : G} (h : Commute x y) :
     ∃ z : G, x = z ^ 2 ∨ y = z ^ 2 ∨ x * y = z ^ 2 := by
   obtain ⟨r, m, n, rfl, rfl⟩ := commute_iff_exists_zpow.1 h
   simpa only [exists_or, ← isSquare_iff_exists_sq] using
-    isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow r m n
+    TauCeti.isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow r m n
 
 end IsFreeGroup
