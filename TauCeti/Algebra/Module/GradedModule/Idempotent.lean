@@ -102,21 +102,9 @@ private noncomputable def rangeEquivRangeObj {I : Type uI} [Fintype I] (s : I �
     LinearMap.range p ≃ₗ[A] rangeObjOfPiEnd s p hhom :=
   let eF := DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
   let p' := freeEndOfPiEnd s p hhom
-  LinearEquiv.ofLinearMap
-    (LinearMap.codRestrict (LinearMap.range p'.hom)
-      (eF.symm.toLinearMap.comp (LinearMap.range p).subtype) fun y ↦ by
-        obtain ⟨v, hv⟩ := y.2
-        refine ⟨eF.symm v, ?_⟩
-        dsimp [p', freeEndOfPiEnd, eF]
-        rw [LinearEquiv.apply_symm_apply, hv])
-    (LinearMap.codRestrict (LinearMap.range p)
-      (eF.toLinearMap.comp (LinearMap.range p'.hom).subtype) fun z ↦ by
-        obtain ⟨x, hx⟩ := z.2
-        have h := congrArg eF hx
-        dsimp [p', freeEndOfPiEnd] at h
-        exact ⟨eF x, by rwa [eF.apply_symm_apply] at h⟩)
-    (LinearMap.ext fun z ↦ Subtype.ext (eF.symm_apply_apply z.1))
-    (LinearMap.ext fun y ↦ Subtype.ext (eF.apply_symm_apply y.1))
+  eF.symm.ofSubmodules (LinearMap.range p) (LinearMap.range p'.hom) <| by
+    dsimp [p', freeEndOfPiEnd]
+    rw [← LinearMap.range_comp, ← LinearMap.comp_assoc, LinearEquiv.range_comp]
 
 /-- A degree-zero idempotent `p` on `I → A` exhibits `rangeObjOfPiEnd s p hhom` as a graded retract
 of `GradedModuleCat.free 𝒜 s`. -/
@@ -236,16 +224,12 @@ theorem exists_homogeneous_basis_range_idempotent_of_connected
   classical
   obtain ⟨n, d, ι, π, hπι, hιπ, hι_hom, -⟩ :=
     exists_homogeneous_splitting_of_idempotent_of_connected hneg hzero s p hp hhom
+  have hrange : LinearMap.range ι = LinearMap.range p := by
+    rw [← hιπ, LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top.mpr (Function.LeftInverse.surjective (f := π) (g := ι)
+        (LinearMap.congr_fun hπι)))]
   let equivRange : (Fin n → A) ≃ₗ[A] LinearMap.range p :=
-    LinearEquiv.ofLinearMap
-      (LinearMap.codRestrict (LinearMap.range p) ι fun u ↦
-        ⟨ι u, (LinearMap.congr_fun hιπ (ι u)).symm.trans
-          (congrArg ι (LinearMap.congr_fun hπι u))⟩)
-      (π.comp (LinearMap.range p).subtype)
-      (LinearMap.ext fun y ↦ Subtype.ext <| by
-        obtain ⟨v, hv⟩ := y.2
-        exact (LinearMap.congr_fun hιπ y.1).trans (hv ▸ LinearMap.congr_fun hp v))
-      (LinearMap.ext fun u ↦ LinearMap.congr_fun hπι u)
+    (LinearEquiv.ofLeftInverse (LinearMap.congr_fun hπι)).trans (LinearEquiv.ofEq _ _ hrange)
   let b : Module.Basis (Fin n) A (LinearMap.range p) :=
     (Pi.basisFun A (Fin n)).map equivRange
   refine ⟨n, b, d, fun i j ↦ ?_⟩
@@ -285,9 +269,8 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent
       (InternalGrading.mem_submodule_piece _ _ _).mpr <| by
         have hval : (((b.reindex Equiv.ulift.symm).map equivRange) i).1 =
             (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm (b i.down).val := by
-          simp only [equivRange, rangeEquivRangeObj, Module.Basis.map_apply,
-            Module.Basis.reindex_apply]
-          rfl
+          rw [Module.Basis.map_apply, Module.Basis.reindex_apply]
+          exact LinearEquiv.ofSubmodules_apply _ _ (b i.down)
         rw [hval]
         exact (GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff
           𝒜 s (d i.down) (b i.down).val).mpr (hb i.down)
@@ -331,27 +314,26 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
     {n : ℕ} (b : Module.Basis (Fin n) A (LinearMap.range p))
     (d : Fin n → ℤ) (hb : ∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) :
     Multiset.map d Finset.univ.val = {s i₀} := by
+  let ι : (Fin 1 → A) →ₗ[A] (I → A) :=
+    (LinearMap.proj (R := A) (φ := fun _ : Fin 1 ↦ A) 0).smulRight w
+  have hleft : Function.LeftInverse (fun (v : I → A) (_ : Fin 1) ↦ v i₀) ι := fun u ↦
+    funext fun t ↦ by
+      rw [Fin.eq_zero t]
+      simp [ι, hw₀]
+  have hrange : LinearMap.range ι = LinearMap.range p := by
+    ext x
+    simp only [LinearMap.mem_range, ι, LinearMap.smulRight_apply, LinearMap.proj_apply, hp]
+    exact ⟨fun ⟨u, hu⟩ ↦ ⟨Function.const I (u 0), hu⟩, fun ⟨v, hv⟩ ↦ ⟨fun _ ↦ v i₀, hv⟩⟩
   let e₁ : (Fin 1 → A) ≃ₗ[A] LinearMap.range p :=
-    { toFun := fun u ↦ ⟨u 0 • w, Function.const I (u 0), by rw [hp]; rfl⟩
-      map_add' := fun u₁ u₂ ↦ Subtype.ext (add_smul (u₁ 0) (u₂ 0) w)
-      map_smul' := fun a u ↦ Subtype.ext (mul_smul a (u 0) w)
-      invFun := fun y _ ↦ y.1 i₀
-      left_inv := fun u ↦ funext fun t ↦ by
-        rw [Fin.eq_zero t]
-        dsimp only
-        rw [Pi.smul_apply, smul_eq_mul, hw₀, mul_one]
-      right_inv := fun y ↦ Subtype.ext <| by
-        obtain ⟨v, hv⟩ := y.2
-        dsimp only
-        rw [← hv, hp v, Pi.smul_apply, smul_eq_mul, hw₀, mul_one] }
+    (LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ hrange)
   let b₀ : Module.Basis (Fin 1) A (LinearMap.range p) := (Pi.basisFun A (Fin 1)).map e₁
   have hb₀ : ∀ (i : Fin 1) (j : I), (b₀ i).val j ∈ 𝒜 (s i₀ - s j) := fun i j ↦ by
     rw [Fin.eq_zero i]
     have hval : (b₀ 0).val = w := by
       dsimp only [b₀]
       rw [Module.Basis.map_apply, Pi.basisFun_apply]
-      dsimp [e₁]
-      rw [Pi.single_eq_same, one_smul]
+      change ι (Pi.single 0 1) = w
+      simp [ι]
     rw [hval]
     exact hw j
   have h := multiset_map_eq_of_homogeneous_basis_range_idempotent hneg hzero s p
