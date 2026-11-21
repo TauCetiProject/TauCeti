@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+import TauCeti.Data.Int.MulPred
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.Modular.Reduction
@@ -54,38 +56,21 @@ namespace TauCeti.ModularForm
 
 /-! ### The Kronecker-symbol formula -/
 
-/-- Shifting an integer multiple of `2 π i / 24` by `12 k` multiplies the exponential by
-`(-1) ^ k`. -/
-private theorem cexp_twentyFour_add_twelve_mul (n k : ℤ) :
-    cexp (2 * π * I * ((n + 12 * k : ℤ) : ℂ) / 24) =
-      ((k.negOnePow : ℤ) : ℂ) * cexp (2 * π * I * (n : ℂ) / 24) := by
-  have harg : 2 * π * I * ((n + 12 * k : ℤ) : ℂ) / 24 =
-      (k : ℂ) * (π * I) + 2 * π * I * (n : ℂ) / 24 := by
-    push_cast
-    ring
-  rw [harg, Complex.exp_add, Complex.exp_intCast_mul, Complex.exp_pi_mul_I]
-  congr 1
-  rcases Int.even_or_odd k with hk | hk
-  · rw [hk.neg_one_zpow, Int.negOnePow_even _ hk, Units.val_one, Int.cast_one]
-  · rw [hk.neg_one_zpow, Int.negOnePow_odd _ hk, Units.val_neg, Units.val_one, Int.cast_neg,
-      Int.cast_one]
-
-/-- Shifting an integer multiple of `2 π i / 24` by `24 k` leaves the exponential unchanged. -/
-private theorem cexp_twentyFour_add_twentyFour_mul (n k : ℤ) :
-    cexp (2 * π * I * ((n + 24 * k : ℤ) : ℂ) / 24) = cexp (2 * π * I * (n : ℂ) / 24) := by
-  have h : n + 24 * k = n + 12 * (2 * k) := by ring
-  rw [h, cexp_twentyFour_add_twelve_mul, Int.negOnePow_two_mul, Units.val_one, Int.cast_one,
-    one_mul]
-
 /-- Multiplying `cexp (2 π i (n + 12 k) / 24)` by `(-1) ^ k` cancels the shift. -/
 private theorem negOnePow_mul_cexp_twentyFour_add_twelve_mul (n k : ℤ) :
     ((k.negOnePow : ℤ) : ℂ) * cexp (2 * π * I * ((n + 12 * k : ℤ) : ℂ) / 24) =
       cexp (2 * π * I * (n : ℂ) / 24) := by
-  rw [cexp_twentyFour_add_twelve_mul, ← mul_assoc]
-  have hsq : ((k.negOnePow : ℤ) : ℂ) * ((k.negOnePow : ℤ) : ℂ) = 1 := by
-    norm_cast
-    rw [Int.units_mul_self, Units.val_one]
-  rw [hsq, one_mul]
+  rw [show 2 * π * I * ((n + 12 * k : ℤ) : ℂ) / 24 =
+      2 * π * I * (n : ℂ) / 24 + k * (π * I) by push_cast; ring,
+    Complex.exp_add_int_mul_pi_mul_I, Int.cast_negOnePow, ← mul_assoc, ← mul_zpow,
+    neg_one_mul, neg_neg, one_zpow, one_mul]
+
+/-- An even lower-left entry in `SL(2, ℤ)` forces an odd lower-right entry by bottom-row
+coprimality. -/
+private theorem odd_d_of_even_c (γ : SL(2, ℤ)) (hc : Even (γ 1 0)) : Odd (γ 1 1) := by
+  by_contra h
+  exact absurd ((ModularGroup.bottom_row_coprime γ).isUnit_of_dvd'
+    (even_iff_two_dvd.mp hc) (even_iff_two_dvd.mp (Int.not_odd_iff_even.mp h))) (by decide)
 
 /-- The 24th-root exponent in Strömberg's Kronecker formula for odd `c`. -/
 private def kroneckerExpOdd (γ : SL(2, ℤ)) : ℤ :=
@@ -123,11 +108,8 @@ private theorem kroneckerExpOdd_mul_T (γ : SL(2, ℤ)) (hodd : Odd (γ 1 0)) :
     rw [kroneckerExpOdd, kroneckerExpOdd, coe_mul_T]
     simp
     linear_combination -(γ 1 0 ^ 2 - 1) * hdet
-  have h3 : (3 : ℤ) ∣ γ 1 0 * (γ 1 0 ^ 2 - 1) :=
-    (ZMod.intCast_zmod_eq_zero_iff_dvd _ 3).mp
-      (by push_cast; generalize (γ 1 0 : ZMod 3) = x; revert x; decide)
   have h24 : (24 : ℤ) ∣ γ 1 0 * (γ 1 0 ^ 2 - 1) :=
-    (by decide : IsCoprime (3 : ℤ) 8).mul_dvd h3
+    (by decide : IsCoprime (3 : ℤ) 8).mul_dvd (Int.three_dvd_mul_sq_sub_one (γ 1 0))
       (dvd_mul_of_dvd_right (Int.eight_dvd_sq_sub_one_of_odd hodd) _)
   obtain ⟨t, ht⟩ := h24
   refine ⟨-(γ 0 0 + 2 * γ 0 1) * t, ?_⟩
@@ -148,10 +130,14 @@ by `3`. -/
 private theorem three_dvd_kroneckerExpEven_mul_T_sub (γ : SL(2, ℤ)) :
     (3 : ℤ) ∣ kroneckerExpEven (γ * T) - (kroneckerExpEven γ + 1) := by
   rw [kroneckerExpEven_mul_T_sub]
-  have h3 : (3 : ℤ) ∣ γ 1 0 * (γ 1 0 ^ 2 - 1) :=
-    (ZMod.intCast_zmod_eq_zero_iff_dvd _ 3).mp
-      (by push_cast; generalize (γ 1 0 : ZMod 3) = x; revert x; decide)
-  exact dvd_sub ⟨-γ 1 0 * (γ 1 0 - 1), by ring⟩ (dvd_mul_of_dvd_right h3 _)
+  exact dvd_sub ⟨-γ 1 0 * (γ 1 0 - 1), by ring⟩
+    (dvd_mul_of_dvd_right (Int.three_dvd_mul_sq_sub_one (γ 1 0)) _)
+
+/-- An integer product `a * b` with `2 ∣ a` and `4 ∣ b` vanishes in `ZMod 8`. -/
+private theorem zmod8_mul_eq_zero_of_dvd {a b : ℤ} (ha : 2 ∣ a) (hb : 4 ∣ b) :
+    ((a * b : ℤ) : ZMod 8) = 0 :=
+  (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mpr
+    (by simpa [show ((8 : ℕ) : ℤ) = 2 * 4 by norm_num] using mul_dvd_mul ha hb)
 
 /-- Exponent change in `kroneckerExpEven` under `γ ↦ γ * T` when `4 ∣ c`: it increases by
 `1 (mod 24)`. -/
@@ -167,14 +153,20 @@ private theorem kroneckerExpEven_mul_T_of_emod_four_eq_zero (γ : SL(2, ℤ))
     have h1 : (2 : ℤ) ∣ 1 :=
       hdet ▸ dvd_sub (dvd_mul_of_dvd_left ha2 _) (dvd_mul_of_dvd_right hc2 _)
     omega
-  obtain ⟨a', ha'⟩ := ha_odd
-  set m : ℤ := γ 1 0 / 4
-  have hcm : γ 1 0 = 4 * m := by omega
+  have hc4_dvd : (4 : ℤ) ∣ γ 1 0 := Int.dvd_of_emod_eq_zero hc4
+  have hc_sq8 : ((γ 1 0 : ZMod 8) ^ 2) = 0 := by
+    simpa [sq] using zmod8_mul_eq_zero_of_dvd
+      (dvd_trans (by norm_num) hc4_dvd) hc4_dvd
+  have hc_mul_odd8 : ((γ 1 0 * (3 + γ 0 0 + 2 * γ 0 1) : ℤ) : ZMod 8) = 0 := by
+    obtain ⟨a', ha'⟩ := ha_odd
+    have h2 : (2 : ℤ) ∣ 3 + γ 0 0 + 2 * γ 0 1 := ⟨2 + a' + γ 0 1, by rw [ha']; ring⟩
+    simpa [mul_comm] using zmod8_mul_eq_zero_of_dvd h2 hc4_dvd
   have h8 : (8 : ℤ) ∣ kroneckerExpEven (γ * T) - (kroneckerExpEven γ + 1) := by
-    rw [kroneckerExpEven_mul_T_sub, hcm, ha']
-    refine ⟨m * (2 + a' + γ 0 1 - 6 * m - 8 * m ^ 2 - 16 * m ^ 2 * a' -
-      16 * m ^ 2 * γ 0 1), ?_⟩
-    ring
+    refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mp ?_
+    rw [kroneckerExpEven_mul_T_sub]
+    push_cast
+    push_cast at hc_mul_odd8
+    linear_combination (-3 - (γ 0 0 + 2 * γ 0 1) * γ 1 0 : ZMod 8) * hc_sq8 + hc_mul_odd8
   obtain ⟨k, hk⟩ := (by decide : IsCoprime (3 : ℤ) 8).mul_dvd
     (three_dvd_kroneckerExpEven_mul_T_sub γ) h8
   exact ⟨k, by linarith⟩
@@ -187,40 +179,69 @@ private theorem kroneckerExpEven_mul_T_of_emod_four_eq_two (γ : SL(2, ℤ))
       (k.negOnePow : ℤ) = -χ₄ (γ 1 1) := by
   have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
     simpa only [Matrix.det_fin_two] using γ.det_coe
-  have hd_odd : Odd (γ 1 1) := by
-    by_contra h
-    exact absurd ((ModularGroup.bottom_row_coprime γ).isUnit_of_dvd'
-      (Int.dvd_iff_emod_eq_zero.mpr (by omega))
-      (even_iff_two_dvd.mp (Int.not_odd_iff_even.mp h))) (by decide)
-  set m : ℤ := (γ 1 0 - 2) / 4
-  have hcm : γ 1 0 = 4 * m + 2 := by omega
+  have hd_odd : Odd (γ 1 1) := odd_d_of_even_c γ (Int.even_iff.mpr (by omega))
+  have hd2_mod : γ 1 1 % 2 = 1 := Int.odd_iff.mp hd_odd
   have h3 := three_dvd_kroneckerExpEven_mul_T_sub γ
-  -- From `a d - b (4 m + 2) = 1` and odd `d`, we have `a + 2 b ≡ d (mod 4)`.
-  obtain ⟨q, hq⟩ := hd_odd
-  have ⟨t, ht⟩ : ∃ t : ℤ, γ 0 0 + 2 * γ 0 1 = γ 1 1 + 4 * t := by
-    refine ⟨γ 0 1 * (2 * m * q + m + q + 1) - γ 0 0 * (q ^ 2 + q), ?_⟩
-    rw [hcm, hq] at hdet
-    rw [hq]
-    linear_combination (2 * q + 1) * hdet
+  have hc_even : (2 : ℤ) ∣ γ 1 0 := Int.dvd_of_emod_eq_zero (by omega)
+  have hc_sub2 : (4 : ℤ) ∣ γ 1 0 - 2 := Int.dvd_of_emod_eq_zero (by omega)
+  -- From `a d - b c = 1`, `c ≡ 2 (mod 4)`, and odd `d`, we have `a + 2 b ≡ d (mod 4)`.
+  have had_dvd : (4 : ℤ) ∣ γ 0 0 + 2 * γ 0 1 - γ 1 1 := by
+    refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 4).mp ?_
+    have hd2 : ((γ 1 1 : ZMod 4) ^ 2 - 1) = 0 := by
+      simpa using (ZMod.intCast_zmod_eq_zero_iff_dvd _ 4).mpr
+        (dvd_trans (by norm_num) (Int.eight_dvd_sq_sub_one_of_odd hd_odd))
+    have hc2 : ((γ 1 0 : ZMod 4) - 2) = 0 := by
+      simpa using (ZMod.intCast_zmod_eq_zero_iff_dvd _ 4).mpr hc_sub2
+    have h2d : (2 : ZMod 4) * γ 1 1 - 2 = 0 := by
+      obtain ⟨q, hq⟩ := hd_odd
+      rw [hq]
+      push_cast
+      have h4 : (4 : ZMod 4) = 0 := by decide
+      linear_combination q * h4
+    have hdet_z4 : (γ 0 0 : ZMod 4) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
+      have h := congrArg (Int.cast : ℤ → ZMod 4) hdet
+      push_cast at h
+      exact h
+    have h4 : (4 : ZMod 4) = 0 := by decide
+    push_cast
+    linear_combination (γ 1 1 : ZMod 4) * hdet_z4 - (γ 0 0 : ZMod 4) * hd2 +
+      (γ 0 1 * γ 1 1 : ZMod 4) * hc2 + (γ 0 1 : ZMod 4) * h2d + (γ 0 1 : ZMod 4) * h4
+  have had_c8 : ((γ 1 0 * (γ 0 0 + 2 * γ 0 1 - γ 1 1) : ℤ) : ZMod 8) = 0 :=
+    zmod8_mul_eq_zero_of_dvd hc_even had_dvd
+  have hc_sub2_8 : ((γ 1 0 * (γ 1 0 - 2) : ℤ) : ZMod 8) = 0 :=
+    zmod8_mul_eq_zero_of_dvd hc_even hc_sub2
+  have hc_sq_sub4_8 : ((γ 1 0 ^ 2 - 4 : ℤ) : ZMod 8) = 0 := by
+    rw [show γ 1 0 ^ 2 - 4 = (γ 1 0 + 2) * (γ 1 0 - 2) by ring]
+    exact zmod8_mul_eq_zero_of_dvd (Int.dvd_of_emod_eq_zero (by omega)) hc_sub2
+  have hmod8 : ((kroneckerExpEven (γ * T) - (kroneckerExpEven γ + 1) : ℤ) : ZMod 8) =
+      -3 * γ 1 0 * (1 + γ 1 1) := by
+    rw [kroneckerExpEven_mul_T_sub]
+    push_cast
+    push_cast at had_c8 hc_sub2_8 hc_sq_sub4_8
+    linear_combination -3 * hc_sub2_8 - 3 * had_c8 - (γ 0 0 + 2 * γ 0 1 : ZMod 8) *
+      (γ 1 0 : ZMod 8) * hc_sq_sub4_8
   rcases (by omega : γ 1 1 % 4 = 1 ∨ γ 1 1 % 4 = 3) with h1 | h3d
-  · set r : ℤ := (γ 1 1 - 1) / 4
-    have hdr : γ 1 1 = 4 * r + 1 := by omega
-    have h8' : (8 : ℤ) ∣ kroneckerExpEven (γ * T) - (kroneckerExpEven γ + 1) - 12 := by
-      rw [kroneckerExpEven_mul_T_sub, ht, hcm, hdr]
-      refine ⟨-3 - 10 * m - 22 * m * r - 22 * m * t - 18 * m ^ 2 - 48 * m ^ 2 * r -
-        48 * m ^ 2 * t - 8 * m ^ 3 - 32 * m ^ 3 * r - 32 * m ^ 3 * t - 3 * r - 3 * t, ?_⟩
-      ring
+  · have h8' : (8 : ℤ) ∣ kroneckerExpEven (γ * T) - (kroneckerExpEven γ + 1) - 12 := by
+      refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mp ?_
+      rw [Int.cast_sub, hmod8]
+      have hcd8 : ((γ 1 0 * (γ 1 1 - 1) : ℤ) : ZMod 8) = 0 :=
+        zmod8_mul_eq_zero_of_dvd hc_even (Int.dvd_of_emod_eq_zero (by omega))
+      have h6c8 : ((6 * (γ 1 0 - 2) : ℤ) : ZMod 8) = 0 :=
+        zmod8_mul_eq_zero_of_dvd (by norm_num : (2 : ℤ) ∣ 6) hc_sub2
+      have h24 : (24 : ZMod 8) = 0 := by decide
+      push_cast at hcd8 h6c8 ⊢
+      linear_combination -3 * hcd8 - h6c8 - h24
     obtain ⟨u, hu⟩ := (by decide : IsCoprime (3 : ℤ) 8).mul_dvd
       (dvd_sub h3 ⟨4, by norm_num⟩) h8'
     refine ⟨2 * u + 1, by linarith, ?_⟩
     rw [Int.negOnePow_two_mul_add_one, Units.val_neg, Units.val_one, χ₄_int_one_mod_four h1]
-  · set r : ℤ := (γ 1 1 - 3) / 4
-    have hdr : γ 1 1 = 4 * r + 3 := by omega
-    have h8 : (8 : ℤ) ∣ kroneckerExpEven (γ * T) - (kroneckerExpEven γ + 1) := by
-      rw [kroneckerExpEven_mul_T_sub, ht, hcm, hdr]
-      refine ⟨-(2 * m + 1) * (3 * m + (r + t) * (16 * m ^ 2 + 16 * m + 3) +
-        12 * m ^ 2 + 12 * m + 3), ?_⟩
-      ring
+  · have h8 : (8 : ℤ) ∣ kroneckerExpEven (γ * T) - (kroneckerExpEven γ + 1) := by
+      refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mp ?_
+      rw [hmod8]
+      have hcd8 : ((γ 1 0 * (1 + γ 1 1) : ℤ) : ZMod 8) = 0 :=
+        zmod8_mul_eq_zero_of_dvd hc_even (Int.dvd_of_emod_eq_zero (by omega))
+      push_cast at hcd8
+      linear_combination -3 * hcd8
     obtain ⟨u, hu⟩ := (by decide : IsCoprime (3 : ℤ) 8).mul_dvd h3 h8
     refine ⟨2 * u, by linarith, ?_⟩
     rw [Int.negOnePow_two_mul, Units.val_one, χ₄_int_three_mod_four h3d, neg_neg]
@@ -233,12 +254,18 @@ private theorem kroneckerMultiplier_mul_T (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
   have hshift (n : ℤ) : cexp (π * I / 12) * cexp (2 * π * I * (n : ℂ) / 24) =
       cexp (2 * π * I * ((n + 1 : ℤ) : ℂ) / 24) := by
     rw [← Complex.exp_add]; congr 1; push_cast; ring
+  have h24 (n k : ℤ) : cexp (2 * π * I * ((n + 24 * k : ℤ) : ℂ) / 24) =
+      cexp (2 * π * I * (n : ℂ) / 24) := by
+    rw [show 2 * π * I * ((n + 24 * k : ℤ) : ℂ) / 24 =
+        2 * π * I * ((n : ℂ) / 24 + k) by push_cast; ring,
+      Complex.exp_two_pi_mul_I_mul_add_intCast]
+    ring_nf
   by_cases hodd : Odd (γ 1 0)
   · simp only [kroneckerMultiplier, hcT, hdT, ite_eq_left hodd]
     obtain ⟨k, hk⟩ := kroneckerExpOdd_mul_T γ hodd
     have hsym : kroneckerSym (γ 1 0 + γ 1 1) (γ 1 0) = kroneckerSym (γ 1 1) (γ 1 0) :=
       kroneckerSym_mod_left' hodd hc (Int.add_emod_left (γ 1 0) (γ 1 1))
-    rw [hsym, hk, cexp_twentyFour_add_twentyFour_mul, ← hshift]
+    rw [hsym, hk, h24, ← hshift]
     ring
   · simp only [kroneckerMultiplier, hcT, hdT, ite_eq_right hodd]
     have hc_even : γ 1 0 % 4 = 0 ∨ γ 1 0 % 4 = 2 := by
@@ -250,22 +277,20 @@ private theorem kroneckerMultiplier_mul_T (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
         rw [add_comm]
         exact kroneckerSym_mod_right' (.inl (Int.modEq_zero_iff_dvd.mpr
           (Int.dvd_of_emod_eq_zero hc0))) (Int.add_emod_right (γ 1 1) (γ 1 0))
-      rw [hsym, hk, cexp_twentyFour_add_twentyFour_mul, ← hshift]
+      rw [hsym, hk, h24, ← hshift]
       ring
     · obtain ⟨k, hk, hk_sign⟩ := kroneckerExpEven_mul_T_of_emod_four_eq_two γ hc2
       have hsym : kroneckerSym (γ 1 0) (γ 1 0 + γ 1 1) =
           -χ₄ (γ 1 1) * kroneckerSym (γ 1 0) (γ 1 1) := by
         rw [add_comm]
         exact kroneckerSym_add_self_right_of_emod_four_eq_two hc2 (γ 1 1)
-      have hd_odd : Odd (γ 1 1) := by
-        by_contra h
-        exact absurd ((ModularGroup.bottom_row_coprime γ).isUnit_of_dvd'
-          (Int.dvd_iff_emod_eq_zero.mpr (by omega))
-          (even_iff_two_dvd.mp (Int.not_odd_iff_even.mp h))) (by decide)
+      have hd_odd : Odd (γ 1 1) := odd_d_of_even_c γ (Int.not_odd_iff_even.mp hodd)
       have hχ4_sqC : ((χ₄ (γ 1 1) : ℤ) : ℂ) * ((χ₄ (γ 1 1) : ℤ) : ℂ) = 1 := by
         norm_cast
-        rw [χ₄_intCast_eq_negOnePow hd_odd, ← Units.val_mul, Int.units_mul_self, Units.val_one]
-      rw [hsym, hk, cexp_twentyFour_add_twelve_mul, hk_sign, ← hshift]
+        exact χ₄_intCast_mul_self hd_odd
+      rw [hsym, hk, show 2 * π * I * ((kroneckerExpEven γ + 1 + 12 * k : ℤ) : ℂ) / 24 =
+          2 * π * I * ((kroneckerExpEven γ + 1 : ℤ) : ℂ) / 24 + k * (π * I) by push_cast; ring,
+        Complex.exp_add_int_mul_pi_mul_I, ← Int.cast_negOnePow ℂ k, hk_sign, ← hshift]
       push_cast
       linear_combination (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
         cexp (π * I / 12) * cexp (2 * π * I * (kroneckerExpEven γ : ℂ) / 24) * hχ4_sqC
@@ -332,10 +357,7 @@ private theorem kroneckerMultiplier_mul_S (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) (h
         kroneckerSym_neg_one_left hd_odd, χ₄_intCast_eq_negOnePow hd_odd]
     rw [hexp, hsym, Int.cast_mul, mul_comm (((-k).negOnePow : ℤ) : ℂ), mul_assoc,
       negOnePow_mul_cexp_twentyFour_add_twelve_mul]
-  · exfalso
-    exact absurd ((ModularGroup.bottom_row_coprime γ).isUnit_of_dvd'
-      (even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hc_odd))
-      (even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hd_odd))) (by decide)
+  · exact absurd (odd_d_of_even_c γ (Int.not_odd_iff_even.mp hc_odd)) hd_odd
 
 /-- Combined Kronecker formula for `ε(γ)` when `c > 0`, by Euclidean induction. -/
 private theorem etaMultiplier_eq_kroneckerMultiplier (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :

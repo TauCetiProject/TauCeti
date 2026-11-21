@@ -17,7 +17,6 @@ entry:
 
 * `Matrix.SpecialLinearGroup.exists_pos_odd_T_zpow_mul`: translating on the left by a nonnegative
   multiple of any natural divisor of the lower-left entry produces a positive odd upper-left entry.
-* `Matrix.SpecialLinearGroup.coe_mul_T`: explicit matrix entries of `γ * T`.
 * `Matrix.SpecialLinearGroup.induction_on_of_c_pos`: Euclidean induction on
   `{γ ∈ SL₂(ℤ) | 0 < γ 1 0}` from the base case `γ 1 0 = 1`, right translation `γ ↦ γ T`, and
   right inversion `γ ↦ γ S` when `0 < γ 1 1`.
@@ -64,12 +63,6 @@ theorem exists_pos_odd_T_zpow_mul (A : SL(2, ℤ)) {m : ℕ}
   refine ⟨j, ?_⟩
   simpa [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two,
     mul_assoc] using And.intro hj hjodd
-
-/-- Explicit matrix entries of `γ * T` for `γ ∈ SL(2, ℤ)`. -/
-theorem coe_mul_T (γ : SL(2, ℤ)) :
-    (↑(γ * T) : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 0 0, γ 0 0 + γ 0 1; γ 1 0, γ 1 0 + γ 1 1] := by
-  simpa using coe_mul_T_zpow γ 1
 
 /-- **Euclidean induction on `SL(2, ℤ)` with positive lower-left entry.** A property of matrices
 `γ ∈ SL(2, ℤ)` with `0 < γ 1 0` holds whenever it holds at `γ 1 0 = 1`, is invariant under right

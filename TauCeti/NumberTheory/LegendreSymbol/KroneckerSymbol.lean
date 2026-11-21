@@ -439,6 +439,7 @@ theorem kroneckerSym_mod_right {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMO
 
 /-- `(-1 / b) = χ₄ b` for every odd integer `b`, of either sign: at negative odd `b`, the sign
 factor `-1` cancels the oddness of `χ₄`. -/
+@[simp]
 theorem kroneckerSym_neg_one_left {b : ℤ} (hb : Odd b) : kroneckerSym (-1) b = χ₄ b := by
   have hb0 : b ≠ 0 := by rintro rfl; exact Int.not_odd_zero hb
   rw [kroneckerSym_of_odd (-1) hb, jacobiSym.at_neg_one (Int.natAbs_odd.mpr hb)]
@@ -467,6 +468,7 @@ theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
     rw [kroneckerSym_eq_zero_of_two_dvd dvd_rfl h2, (χ₈_intCast_eq_zero_iff b).mpr h2]
 
 /-- For a nonnegative numerator `a`, negating the denominator leaves `(a / b)` unchanged. -/
+@[simp]
 theorem kroneckerSym_neg_right_of_nonneg {a : ℤ} (ha : 0 ≤ a) (b : ℤ) :
     kroneckerSym a (-b) = kroneckerSym a b := by
   rcases eq_or_ne b 0 with rfl | hb
@@ -488,6 +490,12 @@ theorem kroneckerSym_mod_left (a : ℤ) {b : ℤ} (hb : Odd b) (hb₀ : 0 < b) :
     kroneckerSym a b = kroneckerSym (a % b) b :=
   kroneckerSym_mod_left' hb hb₀ (Int.emod_emod a b).symm
 
+/-- Negating the numerator of a Jacobi symbol with odd denominator `b` multiplies by
+`(-1) ^ (b / 2)`. -/
+private theorem jacobiSym_neg_left_eq_negOnePow (a : ℤ) {b : ℕ} (hb : Odd b) :
+    jacobiSym (-a) b = (((b / 2 : ℕ) : ℤ).negOnePow : ℤ) * jacobiSym a b := by
+  rw [jacobiSym.neg _ hb, χ₄_eq_neg_one_pow (Nat.odd_iff.mp hb), ← Int.coe_negOnePow_natCast]
+
 /-- **Quadratic reciprocity for the Kronecker symbol**: for odd integers `a` and `b` of either
 sign, `(a / b) = s * (-1) ^ (((a - 1) / 2) * ((b - 1) / 2)) * (b / a)`, where `s = -1` when
 both `a < 0` and `b < 0` and `s = 1` otherwise. -/
@@ -504,6 +512,12 @@ theorem kroneckerSym_quadratic_reciprocity {a b : ℤ} (ha : Odd a) (hb : Odd b)
       (((u : ℤ) * v).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs := by
     rw [jacobiSym.quadratic_reciprocity haN hbN, hu2, hv2, ← Int.coe_negOnePow_natCast,
       Nat.cast_mul]
+  have hneg_a : jacobiSym (-a.natAbs) b.natAbs =
+      ((v : ℤ).negOnePow : ℤ) * jacobiSym a.natAbs b.natAbs := by
+    rw [jacobiSym_neg_left_eq_negOnePow _ hbN, hv2]
+  have hneg_b : jacobiSym (-b.natAbs) a.natAbs =
+      ((u : ℤ).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs := by
+    rw [jacobiSym_neg_left_eq_negOnePow _ haN, hu2]
   rw [kroneckerSym_of_odd a hb, kroneckerSym_of_odd b ha]
   rcases Int.natAbs_eq a with ha_eq | ha_eq <;> rcases Int.natAbs_eq b with hb_eq | hb_eq
   · have ha' : (a - 1) / 2 = u := by omega
@@ -514,37 +528,43 @@ theorem kroneckerSym_quadratic_reciprocity {a b : ℤ} (ha : Odd a) (hb : Odd b)
     exact hqr
   · have ha' : (a - 1) / 2 = u := by omega
     have hb' : (b - 1) / 2 = -((v : ℤ) + 1) := by omega
-    have hexp : (u : ℤ) * -((v : ℤ) + 1) + u = -((u : ℤ) * v) := by ring
-    rw [ha', hb', ite_eq_right (by omega), ite_eq_right (by omega), one_mul, one_mul, one_mul]
+    have hpar : ((u : ℤ) * v).negOnePow = ((a - 1) / 2 * ((b - 1) / 2) + u).negOnePow := by
+      rw [ha', hb', Int.negOnePow_eq_iff]
+      exact ⟨u * v, by ring⟩
+    rw [ite_eq_right (by omega), ite_eq_right (by omega), one_mul, one_mul, one_mul]
     conv_lhs => rw [ha_eq]
-    conv_rhs => rw [hb_eq]
-    rw [jacobiSym.neg _ haN, hqr, χ₄_eq_neg_one_pow (Nat.odd_iff.mp haN), hu2,
-      ← Int.coe_negOnePow_natCast, ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add, hexp,
-      Int.negOnePow_neg]
+    conv_rhs => arg 2; rw [hb_eq]
+    rw [hneg_b, hqr, ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add, hpar]
   · have ha' : (a - 1) / 2 = -((u : ℤ) + 1) := by omega
     have hb' : (b - 1) / 2 = v := by omega
-    have hexp : -((u : ℤ) + 1) * v = -((v : ℤ) + u * v) := by ring
-    rw [ha', hb', ite_eq_right (by omega), ite_eq_right (by omega), one_mul, one_mul, one_mul]
+    have hpar : ((v : ℤ) + u * v).negOnePow = ((a - 1) / 2 * ((b - 1) / 2)).negOnePow := by
+      rw [ha', hb', Int.negOnePow_eq_iff]
+      exact ⟨v + u * v, by ring⟩
+    rw [ite_eq_right (by omega), ite_eq_right (by omega), one_mul, one_mul, one_mul]
     conv_lhs => rw [ha_eq]
-    conv_rhs => rw [hb_eq]
-    rw [jacobiSym.neg _ hbN, hqr, χ₄_eq_neg_one_pow (Nat.odd_iff.mp hbN), hv2,
-      ← Int.coe_negOnePow_natCast, ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add, hexp,
-      Int.negOnePow_neg]
+    conv_rhs => arg 2; rw [hb_eq]
+    rw [hneg_a, hqr, ← mul_assoc, ← Units.val_mul, ← Int.negOnePow_add, hpar]
   · have ha' : (a - 1) / 2 = -((u : ℤ) + 1) := by omega
     have hb' : (b - 1) / 2 = -((v : ℤ) + 1) := by omega
-    rw [ha', hb', ite_eq_left ⟨by omega, by omega⟩, ite_eq_left ⟨by omega, by omega⟩]
+    have hpar : (1 + (v : ℤ) + u * v).negOnePow =
+        ((a - 1) / 2 * ((b - 1) / 2) + u).negOnePow := by
+      rw [ha', hb', Int.negOnePow_eq_iff]
+      exact ⟨-u, by ring⟩
+    rw [ite_eq_left ⟨by omega, by omega⟩, ite_eq_left ⟨by omega, by omega⟩]
     conv_lhs => rw [ha_eq]
-    conv_rhs => rw [hb_eq]
-    rw [jacobiSym.neg _ hbN, jacobiSym.neg _ haN, hqr,
-      χ₄_eq_neg_one_pow (Nat.odd_iff.mp hbN), χ₄_eq_neg_one_pow (Nat.odd_iff.mp haN),
-      hu2, hv2, ← Int.coe_negOnePow_natCast, ← Int.coe_negOnePow_natCast]
-    have hexp : -((u : ℤ) + 1) * -((v : ℤ) + 1) + u = (v + u * v) + (2 * u + 1) := by ring
-    have hsign : ((-((u : ℤ) + 1) * -((v : ℤ) + 1)).negOnePow : ℤ) * ((u : ℤ).negOnePow : ℤ) =
-        -(((v : ℤ).negOnePow : ℤ) * (((u : ℤ) * v).negOnePow : ℤ)) := by
-      rw [← Units.val_mul, ← Int.negOnePow_add, hexp, Int.negOnePow_add,
-        Int.negOnePow_two_mul_add_one, Units.val_mul, Units.val_neg, Units.val_one, mul_neg_one,
-        Int.negOnePow_add, Units.val_mul]
-    linear_combination -jacobiSym b.natAbs a.natAbs * hsign
+    conv_rhs => arg 2; rw [hb_eq]
+    rw [hneg_a, hneg_b, hqr]
+    calc (-1 : ℤ) * (((v : ℤ).negOnePow : ℤ) * ((((u : ℤ) * v).negOnePow : ℤ) *
+            jacobiSym b.natAbs a.natAbs))
+        = (((1 + (v : ℤ) + u * v).negOnePow : ℤ)) * jacobiSym b.natAbs a.natAbs := by
+          rw [← mul_assoc, ← mul_assoc, show (-1 : ℤ) = ((1 : ℤ).negOnePow : ℤ) by simp]
+          simp only [← Units.val_mul, ← Int.negOnePow_add, add_assoc]
+      _ = (((((a - 1) / 2 * ((b - 1) / 2) + u).negOnePow : ℤ))) * jacobiSym b.natAbs a.natAbs := by
+          rw [hpar]
+      _ = (-1) * ((((a - 1) / 2 * ((b - 1) / 2)).negOnePow : ℤ)) *
+            ((-1) * (((u : ℤ).negOnePow : ℤ) * jacobiSym b.natAbs a.natAbs)) := by
+          rw [Int.negOnePow_add, Units.val_mul]
+          ring
 
 /-- When `c ≡ 2 (mod 4)`, shifting the denominator by `c` multiplies the Kronecker symbol by
 `-χ₄ d`: `(c / (d + c)) = -χ₄ d * (c / d)` for every integer `d`. -/

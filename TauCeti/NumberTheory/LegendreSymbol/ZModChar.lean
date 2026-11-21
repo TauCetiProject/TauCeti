@@ -57,6 +57,13 @@ theorem χ₄_natCast_mul_self {a : ℕ} (ha : Odd a) : χ₄ a * χ₄ a = 1 :=
   · rw [χ₄_nat_one_mod_four h, one_mul]
   · rw [χ₄_nat_three_mod_four h, neg_one_mul, neg_neg]
 
+/-- For odd `a : ℤ`, `χ₄ a * χ₄ a = 1`. -/
+theorem χ₄_intCast_mul_self {a : ℤ} (ha : Odd a) : χ₄ a * χ₄ a = 1 := by
+  have ha2 := Int.odd_iff.mp ha
+  rcases (by omega : a % 4 = 1 ∨ a % 4 = 3) with h | h
+  · rw [χ₄_int_one_mod_four h, one_mul]
+  · rw [χ₄_int_three_mod_four h, neg_one_mul, neg_neg]
+
 /-- Multiplying an odd integer by its `χ₄` value gives its unique sign choice congruent to
 `1` modulo `4`. -/
 theorem int_mul_χ₄_modEq_one {m : ℤ} (hm : Odd m) : m * χ₄ m ≡ 1 [ZMOD 4] := by
