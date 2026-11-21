@@ -16,8 +16,10 @@ public import Mathlib.GroupTheory.NoncommCoprod
 -- `Matrix.GeneralLinearGroup.transvection` occurs in the bridge statement below.
 public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 -- Non-public: the diagonal-matrix-unit product law is used only in a proof below.
+import TauCeti.Data.Matrix.Basis
 import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
 # Transvections in the general linear group
@@ -51,10 +53,11 @@ The opposite root subgroups nevertheless build the standard Weyl representative
 the other transvections; this is the normalizer half of the data pinning the elementary matrices
 against the torus.
 
-Conjugating a transvection by an invertible diagonal matrix rescales its parameter by the value of
-the corresponding root: `TauCeti.diagGL_mul_transvectionUnit_mul_inv` says that `t xᵢⱼ(c) t⁻¹` is
-`xᵢⱼ(tᵢ c tⱼ⁻¹)`. Together with the two relations above these are the equations that pin the
-elementary matrices against the diagonal torus.
+Conjugating a transvection by an invertible diagonal matrix sends its parameter `c` to
+`tᵢ c tⱼ⁻¹` (over a commutative ring, rescaling by the value `tᵢ tⱼ⁻¹` of the corresponding root):
+`TauCeti.diagGL_mul_transvectionUnit_mul_inv` says that `t xᵢⱼ(c) t⁻¹` is `xᵢⱼ(tᵢ c tⱼ⁻¹)`.
+Together with the two relations above these are the equations that pin the elementary matrices
+against the diagonal torus.
 
 ## Main definitions
 
@@ -70,6 +73,8 @@ elementary matrices against the diagonal torus.
 
 * `TauCeti.toGL_transvection_eq_transvectionUnit`: over a commutative ring,
   `TauCeti.transvectionUnit` is Mathlib's special-linear transvection viewed in `GL n A`.
+* `TauCeti.transvectionUnit_mul_apply`: left multiplication by a transvection adds a scalar
+  multiple of one row to another.
 * `TauCeti.transvectionUnit_mem_of_adjacent`: a subgroup containing the adjacent transvections
   in both orientations contains every transvection.
 * `TauCeti.commute_transvectionUnit`: transvections at index pairs that do not chain commute.
@@ -86,6 +91,8 @@ elementary matrices against the diagonal torus.
 * `TauCeti.map_transvectionUnit` and `TauCeti.map_transvectionWeylElement`: transvections and their
   Weyl representatives are natural in the base ring.
 * `TauCeti.transvectionWeylElement_inv`: the representative for the opposite root is the inverse.
+* `TauCeti.diagGL_mul_transvectionWeylElement_eq_permutationGL_swap`: scaling row `j` of the Weyl
+  representative `nᵢⱼ` by `-1` yields the permutation matrix of the transposition.
 * `TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_self` and
   `TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_symm`: the reflection exchanges
   its two root subgroups and negates their parameters.
@@ -161,6 +168,15 @@ higher-priority `TauCeti.coe_transvectionUnit` fires first and rewrites to Mathl
 theorem coe_transvectionUnit_eq_one_add_single (hij : i ≠ j) (c : A) :
     (transvectionUnit hij c : Matrix n n A) = 1 + single i j c :=
   (rfl)
+
+/-- Left multiplication by `transvectionUnit hij c` adds `c` times row `j` to row `i`. -/
+theorem transvectionUnit_mul_apply (hij : i ≠ j) (c : A) (g : GL n A) (r s : n) :
+    (transvectionUnit hij c * g : GL n A) r s =
+      g r s + if r = i then c * g j s else 0 := by
+  have hmat : ((transvectionUnit hij c * g : GL n A) : Matrix n n A) =
+      (1 + single i j c) * (g : Matrix n n A) := by
+    rw [Units.val_mul, coe_transvectionUnit_eq_one_add_single]
+  exact (congrFun (congrFun hmat r) s).trans (one_add_single_mul_apply i j c g r s)
 
 /-- A transvection acts on column vectors by the elementary row operation adding `c` times the
 `j`-th coordinate to the `i`-th one. -/
@@ -300,6 +316,49 @@ theorem commute_transvectionUnit_transvectionWeylElement (hij : i ≠ j) (hkl : 
   have hneg : Commute (transvectionUnit hkl c) (transvectionUnit hij.symm (-1 : A)) :=
     commute_transvectionUnit hkl hij.symm hlj hik c (-1)
   exact (hpos.mul_right hneg).mul_right hpos
+
+/-- Scaling row `j` of the Weyl representative `nᵢⱼ = xᵢⱼ(1) xⱼᵢ(-1) xᵢⱼ(1)` by `-1` produces the
+permutation matrix of `Equiv.swap i j`. -/
+theorem diagGL_mul_transvectionWeylElement_eq_permutationGL_swap (hij : i ≠ j) :
+    diagGL (Pi.mulSingle j (-1 : Aˣ)) * transvectionWeylElement hij =
+      permutationGL (k := A) (Equiv.swap i j) := by
+  apply Units.ext
+  have h1 : (transvectionWeylElement (A := A) hij : Matrix n n A) =
+      (1 + single i j 1) * ((1 + single j i (-1)) * ((1 + single i j 1) * 1)) := by
+    rw [transvectionWeylElement_def, Units.val_mul, Units.val_mul,
+      coe_transvectionUnit_eq_one_add_single, coe_transvectionUnit_eq_one_add_single,
+      mul_assoc, Matrix.mul_one]
+  rw [Units.val_mul, diagGL_coe, h1, permutationGL_coe, Equiv.swap_inv,
+    ← Matrix.mul_one ((Equiv.swap i j).permMatrix A)]
+  ext a b
+  simp only [permMatrix_mul_apply, Matrix.diagonal_mul, one_add_single_mul_apply, Matrix.one_apply,
+    one_mul, neg_one_mul]
+  by_cases hai : a = i
+  · subst a
+    simp only [Pi.mulSingle_eq_of_ne hij, Units.val_one, one_mul, Equiv.swap_apply_left,
+      hij, hij.symm, ite_true, ite_false, add_zero]; abel
+  · by_cases haj : a = j
+    · subst a
+      simp only [Pi.mulSingle_eq_same, Units.val_neg, Units.val_one, neg_one_mul,
+        Equiv.swap_apply_right, hij.symm, ite_true, ite_false, add_zero]; abel
+    · simp only [Pi.mulSingle_eq_of_ne haj, Units.val_one, one_mul,
+        Equiv.swap_apply_of_ne_of_ne hai haj, hai, haj, ite_false, add_zero]
+
+/-! ## Conjugation by the diagonal torus -/
+
+/-- Conjugating the root subgroup element `xᵢⱼ(c)` by the diagonal matrix with entries `t`
+sends the parameter `c` to `tᵢ c tⱼ⁻¹` (reducing over a commutative ring to rescaling `c` by
+`tᵢ tⱼ⁻¹`, the value at `t` of the root `εᵢ - εⱼ`). This is the equation pinning the root
+subgroup against the diagonal torus. -/
+theorem diagGL_mul_transvectionUnit_mul_inv (hij : i ≠ j) (t : n → Aˣ) (c : A) :
+    diagGL t * transvectionUnit hij c * (diagGL t)⁻¹ =
+      transvectionUnit hij ((t i : A) * c * ((t j)⁻¹ : Aˣ)) := by
+  have hd : diagonal (fun a ↦ (t a : A)) * diagonal (fun a ↦ (((t a)⁻¹ : Aˣ) : A)) = 1 := by
+    rw [Matrix.diagonal_mul_diagonal]
+    exact Matrix.diagonal_eq_one.2 (by ext a; exact (t a).mul_inv)
+  rw [← map_inv diagGL t]
+  refine Units.ext ?_
+  simp [-map_inv, coe_transvectionUnit_eq_one_add_single, mul_add, add_mul, hd]
 
 end Ring
 
@@ -600,25 +659,11 @@ theorem map_transvectionWeylElement (f : A →+* B) (hij : i ≠ j) :
 
 end Map
 
-/-! ## Conjugation by the diagonal torus -/
+/-! ## Conjugation of the diagonal torus by Weyl elements -/
 
 section Torus
 
 variable {N : ℕ} {i j : Fin N}
-
-/-- Conjugating the root subgroup element `xᵢⱼ(c)` by the diagonal matrix with entries `t`
-rescales the parameter by `tᵢ tⱼ⁻¹`, the value at `t` of the root `εᵢ - εⱼ`. This is the equation
-pinning the root subgroup against the diagonal torus. -/
-theorem diagGL_mul_transvectionUnit_mul_inv (hij : i ≠ j) (t : Fin N → Aˣ) (c : A) :
-    diagGL t * transvectionUnit hij c * (diagGL t)⁻¹ =
-      transvectionUnit hij ((t i : A) * c * ((t j)⁻¹ : Aˣ)) := by
-  have hval : ((((diagGL t)⁻¹ : GL (Fin N) A)) : Matrix (Fin N) (Fin N) A) =
-      diagonal fun a => (((t a)⁻¹ : Aˣ) : A) := by
-    rw [← map_inv diagGL t, diagGL_coe]
-    simp
-  refine Units.ext ?_
-  rw [Units.val_mul, Units.val_mul, coe_transvectionUnit, coe_transvectionUnit, diagGL_coe, hval,
-    diagonal_mul_transvection_mul_diagonal (fun a => (t a).mul_inv)]
 
 /-- Conjugating an invertible diagonal matrix by the Weyl representative for `εᵢ - εⱼ`
 exchanges its `i`-th and `j`-th diagonal entries. -/

@@ -199,6 +199,12 @@ theorem detEquiv_symm_apply (h : specialAlgebraicK1 R = ⊥) (u : Rˣ) :
     (detEquiv h).symm u = ofUnits R u :=
   (detEquiv h).symm_apply_eq.2 (det_ofUnits u).symm
 
+/-- Naturality of `detEquiv` with respect to ring homomorphisms. -/
+theorem detEquiv_map {S : Type*} [CommRing S] (hR : specialAlgebraicK1 R = ⊥)
+    (hS : specialAlgebraicK1 S = ⊥) (f : R →+* S) (x : AlgebraicK1 R) :
+    detEquiv hS (map f x) = Units.map (f : R →* S) (detEquiv hR x) :=
+  det_map f x
+
 end AlgebraicK1
 
 end CommRing

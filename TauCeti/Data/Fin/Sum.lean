@@ -36,6 +36,8 @@ two- or three-variable object can rewrite rather than unfold them.
   summand to `0` and the right to `1`.
 * `TauCeti.unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`,
   sending the outer left summand to `0` and the two inner ones to `1` and `2`.
+* `TauCeti.finOneSumEquiv`: the equivalence `Fin 1 ⊕ Fin m ≃ Fin (m + 1)`, sending the left
+  summand to `0` and `Sum.inr i` to `i.succ`.
 * `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
   equivalence from the sum with a finite complement.
 * `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
@@ -119,6 +121,35 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_one :
 @[simp]
 theorem unitSumUnitSumUnitEquivFinThree_symm_two :
     unitSumUnitSumUnitEquivFinThree.symm 2 = Sum.inr (Sum.inr ()) := by decide
+
+/-- The equivalence `Fin 1 ⊕ Fin m ≃ Fin (m + 1)` sending `Sum.inl 0` to `0` and `Sum.inr i` to
+`i.succ`. -/
+def finOneSumEquiv (m : ℕ) : Fin 1 ⊕ Fin m ≃ Fin (m + 1) :=
+  finSumFinEquiv.trans (finCongr (Nat.one_add m))
+
+/-- `TauCeti.finOneSumEquiv` sends the single element of the left summand `Fin 1` to `0`. -/
+@[simp]
+theorem finOneSumEquiv_inl (m : ℕ) (i : Fin 1) :
+    finOneSumEquiv m (Sum.inl i) = 0 := by
+  ext; simp [finOneSumEquiv, Fin.eq_zero i]
+
+/-- `TauCeti.finOneSumEquiv` sends `Sum.inr i` to `i.succ`. -/
+@[simp]
+theorem finOneSumEquiv_inr (m : ℕ) (i : Fin m) :
+    finOneSumEquiv m (Sum.inr i) = i.succ := by
+  ext; simp [finOneSumEquiv]
+
+/-- The inverse of `TauCeti.finOneSumEquiv` sends `0` to `Sum.inl 0`. -/
+@[simp]
+theorem finOneSumEquiv_symm_zero (m : ℕ) :
+    (finOneSumEquiv m).symm 0 = Sum.inl 0 :=
+  (finOneSumEquiv m).symm_apply_eq.2 (finOneSumEquiv_inl m 0).symm
+
+/-- The inverse of `TauCeti.finOneSumEquiv` sends `i.succ` to `Sum.inr i`. -/
+@[simp]
+theorem finOneSumEquiv_symm_succ (m : ℕ) (i : Fin m) :
+    (finOneSumEquiv m).symm i.succ = Sum.inr i :=
+  (finOneSumEquiv m).symm_apply_eq.2 (finOneSumEquiv_inr m i).symm
 
 /-- A sigma type of finite sets whose cardinalities add up to `n` is equivalent to `Fin n`. -/
 theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
 # The normalizer of the diagonal torus
@@ -26,10 +27,12 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 ## Main declarations
 
 * `TauCeti.permutationGL`: the permutation-matrix embedding in `GL`.
+* `TauCeti.coe_permutationGL_mul_apply`: left multiplication by a permutation matrix permutes rows.
 * `TauCeti.coe_permutationGL_inv_mul_mul_permutationGL_apply`: conjugation by a permutation matrix
   relabels both matrix indices.
 * `TauCeti.permutationGL_mul_mul_inv`: conjugation by a permutation matrix is reindexing along
   the permutation, `Equiv.reindexGL`.
+* `Equiv.reindexGL_diagGL`: reindexing an invertible diagonal matrix relabels its diagonal entries.
 * `TauCeti.map_permutationGL`: a ring homomorphism maps permutation matrices to permutation
   matrices.
 * `TauCeti.diagGL_mul_permutationGL`: moving a permutation matrix past a diagonal one relabels
@@ -79,6 +82,13 @@ theorem permutationGL_coe {ι : Type*} [Fintype ι] [DecidableEq ι] (σ : Equiv
   by
     rw [permutationGL, MonoidHom.coe_toHomUnits]
     rfl
+
+/-- Left multiplication by the matrix underlying `permutationGL σ` permutes the rows along `σ⁻¹`:
+the `(i, j)` entry of `(permutationGL σ : Matrix ι ι k) * M` is `M (σ.symm i) j`. -/
+theorem coe_permutationGL_mul_apply {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    (σ : Equiv.Perm ι) (M : Matrix ι κ k) (i : ι) (j : κ) :
+    ((permutationGL (k := k) σ : Matrix ι ι k) * M) i j = M (σ.symm i) j := by
+  rw [permutationGL_coe, permMatrix_mul_apply, Equiv.Perm.inv_def]
 
 /-- Right multiplication by `permutationGL σ` permutes the columns: the `(i, j)` entry of
 `g * permutationGL σ` is the `(i, σ j)` entry of `g`. -/
@@ -498,3 +508,17 @@ end IsCancelMulZero
 end
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti
+
+/-- Reindexing an invertible diagonal matrix relabels its diagonal entries along `e.symm`. -/
+@[simp]
+theorem reindexGL_diagGL {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+    {k : Type*} [Semiring k] (e : ι ≃ κ) (d : ι → kˣ) :
+    e.reindexGL k (diagGL d) = diagGL (d ∘ e.symm) := by
+  ext a b
+  simp [Matrix.diagonal_apply, e.symm.apply_eq_iff_eq]
+
+end Equiv

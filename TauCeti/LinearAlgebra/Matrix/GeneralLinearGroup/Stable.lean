@@ -62,6 +62,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.centralizer_elementarySubgroup`,
   `TauCeti.StableGeneralLinearGroup.center_eq_bot`: the centralizer of `E_∞(A)` in `GL_∞(A)`,
   and hence the center of `GL_∞(A)`, is trivial.
+* `TauCeti.AlgebraicK1.mk_diagGL_mulSingle`: a single-entry diagonal matrix represents the same
+  class in `K₁(A)` as `TauCeti.AlgebraicK1.ofUnits`.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`, `TauCeti.AlgebraicK1.ker_mk`,
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
@@ -594,6 +596,33 @@ def ofUnits : Aˣ →* AlgebraicK1 A :=
 /-- `ofUnits` sends a unit `u` to the class of the `1 × 1` matrix `(u)`. -/
 theorem ofUnits_apply (u : Aˣ) : ofUnits A u = mk A 1 (GeneralLinearGroup.scalar (Fin 1) u) :=
   (rfl)
+
+/-- A diagonal matrix whose only possibly non-identity diagonal entry is `d` at coordinate `i`
+represents the same class in algebraic `K₁` as `ofUnits A d`. -/
+@[simp]
+theorem mk_diagGL_mulSingle {n : ℕ} (i : Fin n) (d : Aˣ) :
+    mk A n (diagGL (Pi.mulSingle i d)) = ofUnits A d := by
+  rcases n with _ | m
+  · exact i.elim0
+  · have h1 : stabilizeGL A (Nat.succ_le_succ (Nat.zero_le m))
+        (GeneralLinearGroup.scalar (Fin 1) d) = diagGL (Pi.mulSingle 0 d) := by
+      ext a b
+      rw [coe_stabilizeGL_apply, diagGL_apply]
+      rcases Fin.eq_zero_or_eq_succ a with rfl | ⟨a', rfl⟩ <;>
+        rcases Fin.eq_zero_or_eq_succ b with rfl | ⟨b', rfl⟩
+      · simp [GeneralLinearGroup.coe_scalar]
+      · simp [(Fin.succ_ne_zero b').symm]
+      · simp
+      · simp [Matrix.one_apply]
+    let σ : Equiv.Perm (Fin (m + 1)) := Equiv.swap 0 i
+    have hconj : permutationGL σ * diagGL (Pi.mulSingle 0 d) * (permutationGL σ)⁻¹ =
+        diagGL (Pi.mulSingle i d) := by
+      rw [permutationGL_mul_diagGL_mul_inv]
+      congr 1
+      simpa [σ, Function.comp_def, Equiv.swap_inv, Equiv.symm_swap] using
+        Pi.mulSingle_comp_equiv (Equiv.swap 0 i) 0 d
+    rw [← hconj, ← h1, map_mul, map_mul, map_inv, mk_stabilizeGL, mul_inv_cancel_comm,
+      ofUnits_apply]
 
 end AlgebraicK1
 

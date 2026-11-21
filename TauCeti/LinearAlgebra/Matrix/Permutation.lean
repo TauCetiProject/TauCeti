@@ -9,12 +9,15 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
-# Nonnegative sums of permutation matrices
+# Permutation matrices and nonnegative sums
 
-Each permutation's weight bounds the entries on its diagonal in a nonnegative weighted
-sum of permutation matrices. This lets support arguments recover a whole permutation
-diagonal from a positive weight. A positively weighted combination of permutations, each
-lying in the support of a matrix `K` and together covering it, has the zero pattern of `K`.
+`Matrix.permMatrix_mul_apply` evaluates left multiplication by a permutation matrix as row
+permutation over any non-associative semiring.
+
+Over an ordered semiring, each permutation's weight bounds the entries on its diagonal in a
+nonnegative weighted sum of permutation matrices. This lets support arguments recover a whole
+permutation diagonal from a positive weight. A positively weighted combination of permutations,
+each lying in the support of a matrix `K` and together covering it, has the zero pattern of `K`.
 -/
 
 public section
@@ -31,6 +34,14 @@ theorem permMatrix_nonneg {n R : Type*} [DecidableEq n]
 end Equiv.Perm
 
 namespace Matrix
+
+/-- Left multiplication by `σ.permMatrix R` permutes the rows: the `(i, j)` entry of
+`σ.permMatrix R * M` is `M (σ i) j`. -/
+@[simp]
+theorem permMatrix_mul_apply {R : Type*} [NonAssocSemiring R] {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] {σ : Equiv.Perm ι} (M : Matrix ι κ R) (i : ι) (j : κ) :
+    (σ.permMatrix R * M) i j = M (σ i) j := by
+  rw [Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, id]
 
 variable {n R : Type*} [DecidableEq n]
   [Semiring R] [PartialOrder R] [IsOrderedRing R]

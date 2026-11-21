@@ -170,8 +170,7 @@ theorem conj_geckTorusMatrix_eq_ordered (s : Fin t.rank → Aˣ) :
         (t.geckOrderedWeightBasis ht) (t.geckOrderedWeight ht) s := by
   rw [map_geckWeightOrderingMatrix, permutationGL_mul_mul_inv]
   ext r c
-  simp [Equiv.coe_reindexGL, geckTorusMatrix, kostantTorusMatrix_apply, diagGL_apply,
-    geckOrderedWeight, Matrix.submatrix_apply, Matrix.diagonal_apply]
+  simp [geckTorusMatrix, kostantTorusMatrix_apply, diagGL_apply, geckOrderedWeight]
 
 /-- The conjugated torus has the ordered weight characters on its diagonal. -/
 theorem coe_conj_geckTorusMatrix_eq_diagonal (s : Fin t.rank → Aˣ) :
