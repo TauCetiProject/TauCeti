@@ -38,6 +38,8 @@ constant indicator classes it intersects the supporting sets.
 * `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
   the set has measure zero or the constant is zero.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
+* `TauCeti.indicatorConstLpL`: the indicator class `c ↦ indicatorConstLp p hs hμs c` as a
+  continuous linear map.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
@@ -95,6 +97,24 @@ theorem indicatorConstLp_smul (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (a : 
     indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := c)] with x h₁ h₂ h₃
   rw [h₁, h₂, Pi.smul_apply, h₃]
   by_cases hx : x ∈ s <;> simp [hx]
+
+/-- The indicator class `c ↦ indicatorConstLp p hs hμs c` as a continuous linear map from the
+constants to `Lᵖ`. Its norm is at most `μ(s) ^ (1 / p)`, by
+`MeasureTheory.norm_indicatorConstLp_le`. -/
+noncomputable def indicatorConstLpL [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) :
+    E →L[𝕜] Lp E p μ :=
+  LinearMap.mkContinuous
+    { toFun := indicatorConstLp p hs hμs
+      map_add' := fun _ _ ↦ indicatorConstLp_add.symm
+      map_smul' := indicatorConstLp_smul hs hμs }
+    (μ.real s ^ (1 / p.toReal)) fun c ↦
+      (norm_indicatorConstLp_le (hs := hs) (hμs := hμs) (c := c)).trans_eq (mul_comm _ _)
+
+/-- `TauCeti.indicatorConstLpL` sends a constant to its indicator class. -/
+@[simp]
+theorem indicatorConstLpL_apply [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E) :
+    indicatorConstLpL (𝕜 := 𝕜) hs hμs c = indicatorConstLp p hs hμs c := by
+  simp [indicatorConstLpL]
 
 section Disjoint
 
