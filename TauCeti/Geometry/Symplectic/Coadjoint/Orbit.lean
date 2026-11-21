@@ -98,18 +98,8 @@ algebraic tangent model `𝔤 ⧸ 𝔤_ν`, which carries the nondegenerate alte
 theorem even_finrank_quotientModelSpace :
     Even (finrank ℝ
       (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))) := by
-  have h := ν.finrank_quotientModelSpace_add_finrank_lieAnnihilator
-  have hq := Submodule.finrank_quotient_add_finrank
-    (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule
-  have he := even_finrank_quotient_lieAnnihilator ν
-  -- `𝔤 = GroupLieAlgebra I G` is the model space `E`, and a Lie subalgebra has the dimension of
-  -- its underlying submodule.
-  have hE : finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E := rfl
-  have hS : finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule =
-      finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν) := rfl
-  rwa [show finrank ℝ (GroupLieAlgebra I G ⧸ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule)
-    = finrank ℝ (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-    by omega] at he
+  rw [finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator]
+  exact even_finrank_quotient_lieAnnihilator ν
 
 variable {ν}
 

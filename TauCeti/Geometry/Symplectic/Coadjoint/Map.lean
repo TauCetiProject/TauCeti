@@ -93,6 +93,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 /-- **The left-invariant one-form along a homomorphism.** A smooth homomorphism `φ : K → G` pulls
 the left-invariant one-form of `ν ∈ 𝔤*` back to the left-invariant one-form of `ν ∘ dφ ∈ 𝔨*`. -/
+@[simp]
 theorem mpullback_leftInvariantForm (ν : Dual ℝ (GroupLieAlgebra I G)) :
     SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantForm =
       Dual.leftInvariantForm (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) := by
@@ -108,6 +109,7 @@ theorem mpullback_leftInvariantForm (ν : Dual ℝ (GroupLieAlgebra I G)) :
 /-- **The left-invariant Kirillov form along a homomorphism.** A smooth homomorphism `φ : K → G`
 pulls the left-invariant Kirillov form `σ_ν` of `ν ∈ 𝔤*` back to the left-invariant Kirillov form
 `σ_{ν ∘ dφ}` of `ν ∘ dφ ∈ 𝔨*`. -/
+@[simp]
 theorem mpullback_leftInvariantKirillovForm (ν : Dual ℝ (GroupLieAlgebra I G)) :
     SmoothForm.mpullback φ φ.contMDiff_toFun ν.leftInvariantKirillovForm =
       Dual.leftInvariantKirillovForm
@@ -158,24 +160,11 @@ private theorem finrank_quotientModelSpace_eq :
     finrank ℝ (Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
         (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap))) =
       finrank ℝ (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν)) := by
-  have hK := Dual.finrank_quotientModelSpace_add_finrank_lieAnnihilator
-    (I := J) (G := K) (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)
-  have hG := Dual.finrank_quotientModelSpace_add_finrank_lieAnnihilator ν
-  have hK' := Submodule.finrank_quotient_add_finrank (lieAnnihilator ℝ (GroupLieAlgebra J K)
-    (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)).toSubmodule
-  have hG' := Submodule.finrank_quotient_add_finrank
-    (lieAnnihilator ℝ (GroupLieAlgebra I G) ν).toSubmodule
-  have he := (Dual.quotientLieAnnihilatorEquiv (f := φ.groupLieAlgebraLieHom)
+  rw [Dual.finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator,
+    Dual.finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator]
+  exact (Dual.quotientLieAnnihilatorEquiv (f := φ.groupLieAlgebraLieHom)
     (ν := ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap) ν
     (by rwa [coe_groupLieAlgebraLieHom]) (by rw [toLinearMap_groupLieAlgebraLieHom])).finrank_eq
-  -- The Lie algebras are the model spaces, and Lie subalgebras have the dimension of their
-  -- underlying submodules.
-  change _ + _ = finrank ℝ F at hK'
-  change _ + _ = finrank ℝ E at hG'
-  change _ + finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra J K)
-    (ν.comp (φ.toMonoidHom.groupLieAlgebraMap J I).toLinearMap)) = _ at hK'
-  change _ + finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra I G) ν) = _ at hG'
-  omega
 
 /-- The differentials of the map `[k] ↦ [φ k]` of coadjoint orbits are surjective. -/
 private theorem surjective_mfderiv_orbitQuotientMap
