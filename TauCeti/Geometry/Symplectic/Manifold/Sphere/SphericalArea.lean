@@ -10,13 +10,14 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
-import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.HalfSqRadius
 
 /-!
 # The symplectic area of spheres in the two-sphere
@@ -45,16 +46,18 @@ and let
 This is a smooth map of the plane into `S²`. It sends the outside of the open unit disc to the
 north pole, and the open disc bijectively onto the rest of the sphere: there it is the inverse
 stereographic projection of `p / G(a)`. Writing `Φ(p) = (A(a) p, B(a))`, the identity
-`A² a + B² = 1` and its derivative show that `Φ` pulls `σ` back to `-2 B'(a) dp₁ ∧ dp₂`. In polar
-coordinates its integral is `-2π (B(1) - B(0)) = -4π`. Precomposed with `z ↦ 2 z - 1` it gives a
-generalized loop of the unit square, of area `-4π`.
+`A² a + B² = 1` and its derivative show that `Φ` pulls `σ` back to `-2 B'(a) dp₁ ∧ dp₂`. Pushing
+planar Lebesgue measure forward along `a / 2` (`TauCeti.map_volume_half_sq_add_sq`), its integral
+is `-2π (B(1) - B(0)) = -4π`. Precomposed with `z ↦ 2 z - 1` it gives a generalized loop of the
+unit square, of area `-4π`.
 
-Its class generates `π₂(S²)`. Composing `Φ` with the radial map that takes the square
-`max(|p₁|, |p₂|) ≤ 1` onto the closed unit disc gives a generalized loop identifying only points of
-the boundary of the cube, which therefore has a generating Hurewicz class
-(`GenLoop.isIso_hurewicz_of_bijective_toSphere`). The straight-line homotopy between the two maps
-keeps the boundary of the cube at the north pole. By the Hurewicz theorem every class of
-`π₂(S²)` is an integer multiple of this one, and its area is the corresponding multiple of `-4π`.
+Its class generates `π₂(S²)`. Composing `Φ` with the radial homeomorphism that takes the square
+`max(|p₁|, |p₂|) ≤ 1` onto the closed unit disc (`ContinuousLinearEquiv.unitBallHomeomorph`) gives
+a generalized loop identifying only points of the boundary of the cube, which therefore has a
+generating Hurewicz class (`GenLoop.isIso_hurewicz_of_bijective_toSphere`). The straight-line
+homotopy between the two maps keeps the boundary of the cube at the north pole. By the Hurewicz
+theorem every class of `π₂(S²)` is an integer multiple of this one, and its area is the
+corresponding multiple of `-4π`.
 
 ## Main definitions
 
@@ -255,13 +258,16 @@ private theorem fderiv_collapseVec_apply (p v : ℝ × ℝ) :
   ext i
   fin_cases i
   · refine (key 0 _ (hA.mul hasFDerivAt_fst)).trans ?_
-    simp
+    simp only [Function.comp_apply, smul_add, add_apply, smul_apply, ContinuousLinearMap.coe_fst',
+      smul_eq_mul, ContinuousLinearMap.coe_snd', Fin.zero_eta, cons_val_zero]
     ring
   · refine (key 1 _ (hA.mul hasFDerivAt_snd)).trans ?_
-    simp
+    simp only [Function.comp_apply, smul_add, add_apply, smul_apply, ContinuousLinearMap.coe_snd',
+      smul_eq_mul, ContinuousLinearMap.coe_fst', Fin.mk_one, cons_val_one, cons_val_zero]
     ring
   · refine (key 2 _ hB).trans ?_
-    simp
+    simp only [smul_add, add_apply, smul_apply, ContinuousLinearMap.coe_fst', smul_eq_mul,
+      ContinuousLinearMap.coe_snd', Fin.reduceFinMk, cons_val]
     ring
 
 /-- The triple product of the collapse map with two of its derivatives: `Φ` pulls the area form
@@ -297,13 +303,12 @@ private theorem collapse_eq_sphereNorthPole_iff {p : ℝ × ℝ} :
     fin_cases i <;> simp [collapseVec, horizontalFactor_of_one_le h, heightProfile_of_one_le h]
 
 private theorem collapse_injOn : InjOn collapse {p | radSq p < 1} := by
-  intro p hp q hq h
+  intro p (hp : radSq p < 1) q (hq : radSq q < 1) h
   have h' (i : Fin 3) := congrArg (fun x : S² ↦ (x : ℝ³) i) h
   simp only [coe_collapse, collapseVec, PiLp.toLp_apply] at h'
   have hr : radSq p = radSq q := strictMonoOn_heightProfile.injOn
-    ⟨radSq_nonneg p, (show radSq p < 1 from hp).le⟩
-    ⟨radSq_nonneg q, (show radSq q < 1 from hq).le⟩ (by simpa using h' 2)
-  have hA := horizontalFactor_pos (neg_one_lt_radSq p) (show radSq p < 1 from hp)
+    ⟨radSq_nonneg p, hp.le⟩ ⟨radSq_nonneg q, hq.le⟩ (by simpa using h' 2)
+  have hA := horizontalFactor_pos (neg_one_lt_radSq p) hp
   have h0 : horizontalFactor (radSq p) * p.1 = horizontalFactor (radSq p) * q.1 := by
     simpa [hr] using h' 0
   have h1 : horizontalFactor (radSq p) * p.2 = horizontalFactor (radSq p) * q.2 := by
@@ -342,12 +347,6 @@ private theorem exists_collapse_eq {s : S²} (hs : s ≠ sphereNorthPole 2) :
   fin_cases i <;> simp [collapseVec, hrad, hta, mul_div_cancel₀ _ hA.ne']
 
 /-! ### The smooth sphere and its area -/
-
-private theorem isSmoothForm_sphereAreaForm : IsSmoothForm (𝓡 2) 1 sphereAreaForm.val :=
-  sphereAreaForm.isSmoothForm.of_le (by simp)
-
-private theorem mextDeriv_sphereAreaForm : mextDeriv sphereAreaForm.val = 0 :=
-  (SmoothForm.isClosed_def _).1 isSymplectic_sphereAreaForm.isClosed
 
 /-- The affine map `z ↦ 2 z - 1`, carrying the unit square onto `[-1, 1]²`. -/
 private def squareCoord (z : ℝ × ℝ) : ℝ × ℝ := (2 * z.1 - 1, 2 * z.2 - 1)
@@ -411,48 +410,45 @@ private theorem integral_comp_squareCoord (f : ℝ × ℝ → ℝ) :
     Module.finrank_prod, Module.finrank_self, smul_eq_mul]
   norm_num
 
-/-- `∫₀^∞ r B'(r²) dr = (B(1) - B(0)) / 2 = 1`. -/
-private theorem integral_mul_deriv_heightProfile :
-    ∫ r in Ioi (0 : ℝ), r * deriv heightProfile (r ^ 2) = 1 := by
-  have hsplit : ∫ r in Ioi (0 : ℝ), r * deriv heightProfile (r ^ 2) =
-      ∫ r in Ioc (0 : ℝ) 1, r * deriv heightProfile (r ^ 2) :=
-    setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioi Ioc_subset_Ioi_self
-      fun r hr ↦ by
-        have : 1 < r := by
-          simp only [mem_sdiff, mem_Ioi, mem_Ioc, not_and, not_le] at hr
-          exact hr.2 hr.1
-        rw [deriv_heightProfile_of_one_lt (by nlinarith), mul_zero]
-  rw [hsplit, ← intervalIntegral.integral_of_le zero_le_one]
-  have hderiv : ∀ r ∈ uIcc (0 : ℝ) 1,
-      HasDerivAt (fun r ↦ heightProfile (r ^ 2) / 2) (r * deriv heightProfile (r ^ 2)) r :=
-    fun r _ ↦ by
-      refine ((((contDiffAt_heightProfile (by nlinarith [sq_nonneg r])).differentiableAt
-        (by simp)).hasDerivAt.comp r (hasDerivAt_pow 2 r)).div_const 2).congr_deriv ?_
-      simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
+/-- `∫₀^∞ B'(2 s) ds = (B(1) - B(0)) / 2 = 1`. -/
+private theorem integral_deriv_heightProfile_two_mul :
+    ∫ s in Ici (0 : ℝ), deriv heightProfile (2 * s) = 1 := by
+  have hsplit : ∫ s in Ici (0 : ℝ), deriv heightProfile (2 * s) =
+      ∫ s in Ioc (0 : ℝ) (1 / 2), deriv heightProfile (2 * s) := by
+    rw [integral_Ici_eq_integral_Ioi]
+    refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioi Ioc_subset_Ioi_self
+      fun s hs ↦ deriv_heightProfile_of_one_lt ?_
+    simp only [mem_sdiff, mem_Ioi, mem_Ioc, not_and, not_le] at hs
+    linarith [hs.2 hs.1]
+  rw [hsplit, ← intervalIntegral.integral_of_le (by norm_num)]
+  have hderiv : ∀ s ∈ uIcc (0 : ℝ) (1 / 2),
+      HasDerivAt (fun s ↦ heightProfile (2 * s) / 2) (deriv heightProfile (2 * s)) s :=
+    fun s hs ↦ by
+      rw [uIcc_of_le (by norm_num)] at hs
+      refine ((((contDiffAt_heightProfile (a := 2 * s) (by linarith [hs.1])).differentiableAt
+        (by simp)).hasDerivAt.comp s ((hasDerivAt_id' s).const_mul 2)).div_const 2).congr_deriv ?_
       ring
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv, one_pow,
-    heightProfile_of_one_le le_rfl, zero_pow two_ne_zero, heightProfile_zero]
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv, mul_zero, heightProfile_zero,
+    show (2 : ℝ) * (1 / 2) = 1 by norm_num, heightProfile_of_one_le le_rfl]
   · norm_num
-  · refine ContinuousOn.intervalIntegrable fun r _ ↦ ?_
-    exact (continuousAt_id.mul ((continuousAt_deriv_heightProfile
-      (by nlinarith [sq_nonneg r])).comp (continuous_pow 2).continuousAt)).continuousWithinAt
+  · refine ContinuousOn.intervalIntegrable fun s hs ↦ ?_
+    rw [uIcc_of_le (by norm_num)] at hs
+    exact ((continuousAt_deriv_heightProfile (a := 2 * s) (by linarith [hs.1])).comp
+      (continuous_const_mul 2).continuousAt).continuousWithinAt
 
-/-- In polar coordinates, `∫ B'(p₁² + p₂²) dp = 2π ∫₀^∞ r B'(r²) dr = 2π`. -/
+/-- `∫ B'(p₁² + p₂²) dp = 2π ∫₀^∞ B'(2 s) ds = 2π`: half the squared radius pushes planar Lebesgue
+measure forward to `2π` times Lebesgue measure on `[0, ∞)`. -/
 private theorem integral_deriv_heightProfile_radSq :
     ∫ p, deriv heightProfile (radSq p) = 2 * π := by
-  rw [← integral_comp_polarCoord_symm, polarCoord_target, Measure.volume_eq_prod]
-  have h (q : ℝ × ℝ) : q.1 • deriv heightProfile (radSq (polarCoord.symm q)) =
-      q.1 * deriv heightProfile (q.1 ^ 2) * (fun _ ↦ (1 : ℝ)) q.2 := by
-    simp only [polarCoord_symm_apply, radSq, smul_eq_mul, mul_one]
-    congr 2
-    linear_combination q.1 ^ 2 * sin_sq_add_cos_sq q.2
+  have h (p : ℝ × ℝ) : deriv heightProfile (radSq p) =
+      deriv heightProfile (2 * ((p.1 ^ 2 + p.2 ^ 2) / 2)) := by
+    rw [radSq, mul_div_cancel₀ _ two_ne_zero]
   simp_rw [h]
-  rw [setIntegral_prod_mul (fun r ↦ r * deriv heightProfile (r ^ 2)) (fun _ ↦ (1 : ℝ)),
-    integral_mul_deriv_heightProfile]
-  simp only [integral_const, MeasurableSet.univ, measureReal_restrict_apply, subset_univ,
-    inf_of_le_right, volume_real_Ioo, sub_neg_eq_add, smul_eq_mul, mul_one, one_mul]
-  rw [max_eq_left (by positivity)]
-  ring
+  rw [← integral_map (f := fun s ↦ deriv heightProfile (2 * s))
+      (by fun_prop : Measurable fun p : ℝ × ℝ ↦ (p.1 ^ 2 + p.2 ^ 2) / 2).aemeasurable
+      ((measurable_deriv heightProfile).comp (measurable_const_mul 2)).aestronglyMeasurable,
+    map_volume_half_sq_add_sq, integral_smul_measure, ENNReal.toReal_ofReal (by positivity),
+    integral_deriv_heightProfile_two_mul, smul_eq_mul, mul_one]
 
 /-- **The smooth sphere has area `-4π`.** -/
 private theorem rectangleIntegral_collapseSphere :
@@ -468,10 +464,6 @@ private theorem rectangleIntegral_collapseSphere :
 
 /-! ### From the square to the disc -/
 
-/-- The radial map `p ↦ (‖p‖ / |p|) p` taking the square `‖p‖ ≤ 1` of the sup norm onto the closed
-unit disc, with `|p| = √(p₁² + p₂²)` the Euclidean norm. -/
-private def squareToDisc (p : ℝ × ℝ) : ℝ × ℝ := (‖p‖ / √(radSq p)) • p
-
 private theorem norm_sq_le_radSq (p : ℝ × ℝ) : ‖p‖ ^ 2 ≤ radSq p := by
   rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, radSq]
   rcases le_total |p.1| |p.2| with h | h
@@ -480,81 +472,38 @@ private theorem norm_sq_le_radSq (p : ℝ × ℝ) : ‖p‖ ^ 2 ≤ radSq p := b
   · rw [max_eq_left h, sq_abs]
     nlinarith [sq_nonneg p.2]
 
-private theorem sqrt_radSq_pos {p : ℝ × ℝ} (hp : p ≠ 0) : 0 < √(radSq p) := by
-  refine Real.sqrt_pos.2 (lt_of_lt_of_le (pow_pos (norm_pos_iff.2 hp) 2) (norm_sq_le_radSq p))
-
 private theorem radSq_smul (c : ℝ) (p : ℝ × ℝ) : radSq (c • p) = c ^ 2 * radSq p := by
   simp only [radSq, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
   ring
 
-private theorem radSq_squareToDisc (p : ℝ × ℝ) : radSq (squareToDisc p) = ‖p‖ ^ 2 := by
-  rcases eq_or_ne p 0 with rfl | hp
-  · simp [squareToDisc, radSq]
-  have hr : radSq p ≠ 0 := (Real.sqrt_pos.1 (sqrt_radSq_pos hp)).ne'
-  rw [squareToDisc, radSq_smul, div_pow, Real.sq_sqrt (radSq_nonneg p), div_mul_cancel₀ _ hr]
+/-- The identity of `ℝ × ℝ`, from the sup norm to the Euclidean norm. -/
+private def euclideanPlane : (ℝ × ℝ) ≃L[ℝ] WithLp 2 (ℝ × ℝ) :=
+  (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ ℝ).symm
 
-private theorem norm_squareToDisc_le (p : ℝ × ℝ) : ‖squareToDisc p‖ ≤ ‖p‖ := by
-  rcases eq_or_ne p 0 with rfl | hp
-  · simp [squareToDisc]
-  have hr := sqrt_radSq_pos hp
-  rw [squareToDisc, norm_smul, Real.norm_of_nonneg (by positivity)]
-  calc ‖p‖ / √(radSq p) * ‖p‖ ≤ 1 * ‖p‖ := by
-        gcongr
-        exact (div_le_one hr).2 (Real.le_sqrt_of_sq_le (norm_sq_le_radSq p))
-    _ = ‖p‖ := one_mul _
+/-- The radial homeomorphism of the plane taking the square `‖p‖ ≤ 1` of the sup norm onto the
+closed unit disc. -/
+private def squareToDisc : ℝ × ℝ ≃ₜ ℝ × ℝ :=
+  euclideanPlane.unitBallHomeomorph.trans euclideanPlane.symm.toHomeomorph
 
-private theorem continuous_squareToDisc : Continuous squareToDisc := by
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rcases eq_or_ne p 0 with rfl | hp
-  · rw [ContinuousAt, show squareToDisc 0 = 0 by simp [squareToDisc]]
-    exact tendsto_zero_iff_norm_tendsto_zero.2
-      (squeeze_zero (fun q ↦ norm_nonneg _) norm_squareToDisc_le tendsto_norm_zero)
-  · have hcr : Continuous radSq := (continuous_fst.pow 2).add (continuous_snd.pow 2)
-    exact (continuous_norm.continuousAt.div hcr.sqrt.continuousAt
-      (sqrt_radSq_pos hp).ne').smul continuousAt_id
+private theorem radSq_squareToDisc (p : ℝ × ℝ) :
+    radSq (squareToDisc p) = ‖euclideanPlane.unitBallHomeomorph p‖ ^ 2 := by
+  rw [WithLp.prod_norm_sq_eq_of_L2]
+  simp only [radSq, squareToDisc, euclideanPlane, ContinuousLinearEquiv.symm_symm,
+    Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
+    WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_fst, WithLp.ofLp_snd, norm_eq_abs, sq_abs]
 
-private theorem squareToDisc_injective : Function.Injective squareToDisc := by
-  intro p q h
-  have hn : ‖p‖ = ‖q‖ := by
-    have := congrArg radSq h
-    rw [radSq_squareToDisc, radSq_squareToDisc] at this
-    exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 this
-  rcases eq_or_ne p 0 with rfl | hp
-  · rw [norm_zero, eq_comm, norm_eq_zero] at hn
-    exact hn.symm
-  have hq : q ≠ 0 := by
-    rintro rfl
-    exact hp (norm_eq_zero.1 (hn.trans norm_zero))
-  have hrp := sqrt_radSq_pos hp
-  have hrq := sqrt_radSq_pos hq
-  have hnq : 0 < ‖q‖ := norm_pos_iff.2 hq
-  -- `p` is a positive multiple of `q`, and both have the same sup norm.
-  have hpq : p = (√(radSq p) / √(radSq q)) • q := by
-    rw [squareToDisc, squareToDisc, hn] at h
-    have := congrArg (fun r ↦ (√(radSq p) / ‖q‖) • r) h
-    simp only [smul_smul] at this
-    rwa [show √(radSq p) / ‖q‖ * (‖q‖ / √(radSq p)) = 1 by field_simp, one_smul,
-      show √(radSq p) / ‖q‖ * (‖q‖ / √(radSq q)) = √(radSq p) / √(radSq q) by field_simp] at this
-  have hc : √(radSq p) / √(radSq q) = 1 := by
-    have := congrArg norm hpq
-    rw [norm_smul, Real.norm_of_nonneg (by positivity), hn] at this
-    field_simp at this ⊢
-    nlinarith
-  rw [hpq, hc, one_smul]
+private theorem one_le_radSq_squareToDisc_iff {p : ℝ × ℝ} :
+    1 ≤ radSq (squareToDisc p) ↔ 1 ≤ ‖p‖ := by
+  rw [radSq_squareToDisc, one_le_sq_iff_one_le_abs, abs_norm, ← not_lt, ← not_lt,
+    ContinuousLinearEquiv.norm_unitBallHomeomorph_lt_one_iff]
 
-private theorem exists_squareToDisc_eq (q : ℝ × ℝ) :
-    ∃ p, ‖p‖ ^ 2 = radSq q ∧ squareToDisc p = q := by
-  rcases eq_or_ne q 0 with rfl | hq
-  · exact ⟨0, by simp [radSq], by simp [squareToDisc]⟩
-  have hr := sqrt_radSq_pos hq
-  have hnp : ‖(√(radSq q) / ‖q‖) • q‖ = √(radSq q) := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    field_simp
-  refine ⟨(√(radSq q) / ‖q‖) • q, by rw [hnp, Real.sq_sqrt (radSq_nonneg q)], ?_⟩
-  rw [squareToDisc, hnp, radSq_smul, smul_smul, Real.sqrt_mul (by positivity),
-    Real.sqrt_sq (by positivity),
-    show √(radSq q) / (√(radSq q) / ‖q‖ * √(radSq q)) * (√(radSq q) / ‖q‖) = 1 by field_simp,
-    one_smul]
+/-- `squareToDisc` rescales each point of the plane by a nonnegative factor. -/
+private theorem exists_squareToDisc_eq_smul (p : ℝ × ℝ) :
+    ∃ c : ℝ, 0 ≤ c ∧ squareToDisc p = c • p := by
+  rw [squareToDisc, Homeomorph.trans_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply,
+    gaugeRescale_def, ContinuousLinearEquiv.coe_toHomeomorph, map_smul,
+    ContinuousLinearEquiv.symm_apply_apply]
+  exact ⟨_, div_nonneg (gauge_nonneg _) (gauge_nonneg _), rfl⟩
 
 /-! ### The two generalized loops -/
 
@@ -608,9 +557,13 @@ private def collapseLoop : Ω^ (Fin 2) S² (sphereNorthPole 2) :=
 boundary of the cube. -/
 private def discLoop : Ω^ (Fin 2) S² (sphereNorthPole 2) :=
   ⟨⟨fun y ↦ collapse (squareToDisc (squareCoord (cubePoint y))), continuous_collapse.comp
-      (continuous_squareToDisc.comp (contDiff_squareCoord.continuous.comp continuous_cubePoint))⟩,
-    fun y hy ↦ collapse_eq_sphereNorthPole_iff.2 (by
-      rw [radSq_squareToDisc, norm_squareCoord_cubePoint_of_mem_boundary hy, one_pow])⟩
+      (squareToDisc.continuous.comp (contDiff_squareCoord.continuous.comp continuous_cubePoint))⟩,
+    fun _ hy ↦ collapse_eq_sphereNorthPole_iff.2
+      (one_le_radSq_squareToDisc_iff.2 (norm_squareCoord_cubePoint_of_mem_boundary hy).ge)⟩
+
+private theorem discLoop_apply (y : Fin 2 → I) :
+    discLoop y = collapse (squareToDisc (squareCoord (cubePoint y))) :=
+  (rfl)
 
 /-- The straight-line homotopy from the plane map to its composite with `squareToDisc` keeps the
 boundary of the cube at the north pole. -/
@@ -623,60 +576,59 @@ private theorem homotopic_collapseLoop_discLoop : GenLoop.Homotopic collapseLoop
         contDiff_squareCoord.continuous.comp (continuous_cubePoint.comp continuous_snd)
       exact continuous_collapse.comp
         (((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul hP).add
-          ((continuous_subtypeVal.comp continuous_fst).smul (continuous_squareToDisc.comp hP)))
+          ((continuous_subtypeVal.comp continuous_fst).smul (squareToDisc.continuous.comp hP)))
     map_zero_left := fun y ↦ by simp [collapseLoop, collapseSphere]
-    map_one_left := fun y ↦ by simp [discLoop]
+    map_one_left := fun y ↦ by simp [discLoop_apply]
     prop' := fun t y hy ↦ ?_ }⟩
   simp only [ContinuousMap.coe_mk]
   rw [collapseLoop.property y hy, collapse_eq_sphereNorthPole_iff]
-  -- On the boundary `‖P‖ = 1`, and the segment from `P` to `P / |P|` stays outside the open disc.
+  -- On the boundary `‖P‖ = 1`, and `squareToDisc P = c • P` lies on the unit circle with
+  -- `0 ≤ c ≤ 1`, so the segment from `P` to it stays outside the open disc.
   set P := squareCoord (cubePoint y)
   have hP : ‖P‖ = 1 := norm_squareCoord_cubePoint_of_mem_boundary hy
   have hrP : 1 ≤ radSq P := by nlinarith [norm_sq_le_radSq P]
-  have hsq : 0 < √(radSq P) := Real.sqrt_pos.2 (by linarith)
-  have hc : ‖P‖ / √(radSq P) ≤ 1 := by
-    rw [hP, div_le_one hsq]
-    exact Real.one_le_sqrt.2 hrP
-  have hk : ‖P‖ / √(radSq P) ≤ 1 - t + t * (‖P‖ / √(radSq P)) := by
-    nlinarith [t.property.1, t.property.2]
-  have hk2 : (‖P‖ / √(radSq P)) ^ 2 * radSq P = 1 := by
-    rw [div_pow, Real.sq_sqrt (by linarith), hP]
-    field_simp
-  rw [squareToDisc, smul_smul, ← add_smul, radSq_smul]
-  calc 1 = (‖P‖ / √(radSq P)) ^ 2 * radSq P := hk2.symm
-    _ ≤ (1 - t + t * (‖P‖ / √(radSq P))) ^ 2 * radSq P := by gcongr
+  obtain ⟨c, hc0, hc⟩ := exists_squareToDisc_eq_smul P
+  have hcP : c ^ 2 * radSq P = 1 := by
+    rw [← radSq_smul, ← hc, radSq_squareToDisc,
+      euclideanPlane.norm_unitBallHomeomorph_eq_one_iff.2 hP, one_pow]
+  have hc1 : c ≤ 1 := by nlinarith
+  have hk : c ≤ 1 - t + t * c := by nlinarith [t.property.1, t.property.2]
+  rw [hc, smul_smul, ← add_smul, radSq_smul]
+  calc 1 = c ^ 2 * radSq P := hcP.symm
+    _ ≤ (1 - t + t * c) ^ 2 * radSq P := by gcongr
 
 private theorem bijective_toSphere_discLoop : Function.Bijective (GenLoop.toSphere discLoop) := by
   refine ⟨(GenLoop.injective_toSphere_iff _).2 fun y z hyz ↦ ?_,
     (GenLoop.surjective_toSphere_iff _).2 fun s ↦ ?_⟩
   · -- Points sent to the north pole lie on the boundary; elsewhere `collapse` and `squareToDisc`
     -- are injective.
-    change collapse (squareToDisc (squareCoord (cubePoint y))) =
-      collapse (squareToDisc (squareCoord (cubePoint z))) at hyz
+    rw [discLoop_apply, discLoop_apply] at hyz
     by_cases hN : collapse (squareToDisc (squareCoord (cubePoint y))) = sphereNorthPole 2
     · have hN' := hyz ▸ hN
-      rw [collapse_eq_sphereNorthPole_iff, radSq_squareToDisc] at hN hN'
-      have hy := norm_nonneg (squareCoord (cubePoint y))
-      have hz := norm_nonneg (squareCoord (cubePoint z))
-      exact Or.inr ⟨one_le_norm_squareCoord_cubePoint_iff.1 (by nlinarith),
-        one_le_norm_squareCoord_cubePoint_iff.1 (by nlinarith)⟩
+      rw [collapse_eq_sphereNorthPole_iff, one_le_radSq_squareToDisc_iff] at hN hN'
+      exact Or.inr ⟨one_le_norm_squareCoord_cubePoint_iff.1 hN,
+        one_le_norm_squareCoord_cubePoint_iff.1 hN'⟩
     · have hN' : ¬ collapse (squareToDisc (squareCoord (cubePoint z))) = sphereNorthPole 2 :=
         hyz ▸ hN
       rw [collapse_eq_sphereNorthPole_iff, not_le] at hN hN'
       exact Or.inl (squareCoord_cubePoint_injective
-        (squareToDisc_injective (collapse_injOn hN hN' hyz)))
+        (squareToDisc.injective (collapse_injOn hN hN' hyz)))
   · by_cases hs : s = sphereNorthPole 2
     · exact ⟨0, hs ▸ discLoop.property 0 ⟨0, Or.inl rfl⟩⟩
     obtain ⟨q, hq, rfl⟩ := exists_collapse_eq hs
-    obtain ⟨p, hp, rfl⟩ := exists_squareToDisc_eq q
-    have hp1 : ‖p‖ < 1 := by nlinarith [norm_nonneg p]
+    obtain ⟨p, rfl⟩ := squareToDisc.surjective q
+    have hp1 : ‖p‖ < 1 := not_le.1 fun h ↦ hq.not_ge (one_le_radSq_squareToDisc_iff.2 h)
     have h1 := abs_lt.1 ((norm_fst_le p).trans_lt hp1)
     have h2 := abs_lt.1 ((norm_snd_le p).trans_lt hp1)
     refine ⟨![⟨(p.1 + 1) / 2, by constructor <;> linarith⟩,
       ⟨(p.2 + 1) / 2, by constructor <;> linarith⟩], ?_⟩
-    change collapse (squareToDisc (squareCoord (cubePoint _))) = _
+    rw [discLoop_apply]
     congr 2
-    ext <;> simp [squareCoord, cubePoint] <;> ring
+    ext
+    · simp only [squareCoord, cubePoint, Matrix.cons_val_zero]
+      ring
+    · simp only [squareCoord, cubePoint, Matrix.cons_val_one, Matrix.cons_val_zero]
+      ring
 
 /-! ### A generator of `π₂(S²)` and its area -/
 
@@ -772,10 +724,10 @@ theorem abs_sphereIntegral_sphereAreaForm_sphereGenLoop :
     apply bijective_zmultiplesHom_discClass.1
     simp only [zmultiplesHom_apply]
     rw [mul_comm, mul_smul, hk, hm, one_smul]
-  have hS : sphereIntegral sphereAreaForm.val (sphereNorthPole 2) ⟦sphereGenLoop 2⟧ =
-      -4 * π * k := by
+  have hS : sphereIntegral sphereAreaForm.val (sphereNorthPole 2)
+      (⟦sphereGenLoop 2⟧ : HomotopyGroup (Fin 2) S² (sphereNorthPole 2)) = -4 * π * k := by
     rw [← sphereIntegral_zsmul_discClass, hk]
-    rfl
+    exact congrArg (sphereIntegral sphereAreaForm.val (sphereNorthPole 2)) (toMul_ofMul _).symm
   rw [hS, abs_mul, abs_mul, abs_neg, abs_of_pos Real.pi_pos]
   rcases Int.eq_one_or_neg_one_of_mul_eq_one hkm with rfl | rfl <;> norm_num
 
@@ -793,11 +745,13 @@ def sphereAreaHom :
 /-- **The area homomorphism of the two-sphere is the sphere integral on Hurewicz classes**, at
 every base point. This is the hypothesis under which the capped action of the area form descends to
 cap classes (`TauCeti.Floer.SphericalCapClass.action`). -/
-theorem sphereAreaHom_hurewiczIntHom (x : S²) (hσ : IsSmoothForm (𝓡 2) 1 sphereAreaForm.val)
-    (hdσ : mextDeriv sphereAreaForm.val = 0) (a : Additive (HomotopyGroup (Fin 2) S² x)) :
-    sphereAreaHom (hurewiczIntHom S² x 1 a) = sphereIntegralHom x hσ hdσ a := by
+@[simp]
+theorem sphereAreaHom_hurewiczIntHom (x : S²) (a : Additive (HomotopyGroup (Fin 2) S² x)) :
+    sphereAreaHom (hurewiczIntHom S² x 1 a) =
+      sphereIntegralHom x isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm a := by
   let γ : Path x (sphereNorthPole 2) := PathConnectedSpace.somePath _ _
-  rw [sphereIntegralHom_apply, ← sphereIntegral_homotopyGroupTransport hσ hdσ γ,
+  rw [sphereIntegralHom_apply, ← sphereIntegral_homotopyGroupTransport isSmoothForm_sphereAreaForm
+    mextDeriv_sphereAreaForm γ,
     ← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
     ← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0) subsingleton_homotopyGroup_of_lt,
     sphereAreaHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
@@ -811,8 +765,7 @@ theorem abs_sphereAreaHom_hurewicz_sphereGenLoop :
         (Additive.ofMul (⟦sphereGenLoop 2⟧ : HomotopyGroup (Fin 2) S² (sphereNorthPole 2))) :=
     (hurewiczAddEquiv_ofMul_mk (n := 0) subsingleton_homotopyGroup_of_lt _).symm.trans
       (hurewiczAddEquiv_apply_eq_hurewiczIntHom _ _)
-  rw [h, sphereAreaHom_hurewiczIntHom _ isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm,
-    sphereIntegralHom_apply]
+  rw [h, sphereAreaHom_hurewiczIntHom, sphereIntegralHom_apply]
   exact abs_sphereIntegral_sphereAreaForm_sphereGenLoop
 
 end TauCeti

@@ -35,8 +35,9 @@ these are `a` and `χ(S²) = 2`, up to the orientation of the generator.
   simply connected, so any two caps differ by recapping with a unique element of `Γ`, which is a
   multiple `k • σ` of the sphere. When `ω [S²] ≠ 0` or `c [S²] ≠ 0` the integer `k` is unique too
   (`SphericalCapClass.existsUnique_zsmul_sphereGenerator_vadd_eq`); when both vanish, `Γ` is
-  trivial and every `k` works. Recapping with `k • σ` raises the action by `k ω [S²]` and the
-  grading by `2 k c [S²]`. When `ω [S²] ≠ 0` the area is injective on `Γ`
+  trivial and every `k` works. Recapping with `k • σ` lowers the action by `k ω [S²]`
+  (`SphericalCapClass.action_vadd`) and shifts the grading by `2 k c [S²]`. When `ω [S²] ≠ 0`
+  the area is injective on `Γ`
   (`SphericalPeriodGroup.area_injective_of_area_sphereGenerator_ne_zero`), so a cap class is
   determined by its action alone (`TauCeti.Floer.eq_iff_action_eq_of_area_injective`); when
   `c [S²] ≠ 0` it is determined by its grading alone
@@ -65,10 +66,10 @@ also give the corresponding statements on complex projective space
 (`TauCeti.Geometry.Symplectic.Floer.Examples.ComplexProjectiveSpace`).
 
 The homomorphisms `ω` and `c` are arbitrary in the results above. For the area form
-`σ_x(v, w) = x ⬝ (v × w)` of the unit sphere (`TauCeti.sphereAreaForm`), the area homomorphism is
-`TauCeti.sphereAreaHom`, which agrees with the integral of `σ` on the Hurewicz class of every
-sphere (`TauCeti.sphereAreaHom_hurewiczIntHom`), the hypothesis under which the capped action
-descends to cap classes.
+`TauCeti.sphereAreaForm`, `(v, w) ↦ x ⬝ (v × w)` at `x ∈ S²`, the area homomorphism is
+`TauCeti.sphereAreaHom`, which agrees with the integral of `TauCeti.sphereAreaForm` on the
+Hurewicz class of every sphere (`TauCeti.sphereAreaHom_hurewiczIntHom`), the hypothesis under which
+the capped action descends to cap classes. In the bullets below, `σ` is the sphere class as above.
 
 * **The actual area.** The sphere class has area `±4π`
   (`SphericalPeriodGroup.abs_area_sphereGenerator_sphereAreaHom`). So for every Chern
@@ -77,8 +78,8 @@ descends to cap classes.
   (`SphericalPeriodGroup.area_injective_sphereAreaHom`): recapping by `k • σ` changes the action
   by `∓4πk`.
 * **Cap classes are determined by their action.** For every time-dependent Hamiltonian, the
-  capped action of `σ` is injective on the cap classes of every loop with a smooth based cap
-  (`SphericalCapClass.action_injective_sphereAreaHom`).
+  capped action of `TauCeti.sphereAreaForm` is injective on the cap classes of every loop with a
+  smooth based cap (`SphericalCapClass.action_injective_sphereAreaHom`).
 
 Identifying `c` with the first Chern number of an actual almost complex structure on `S²` is not
 done here.
@@ -356,14 +357,14 @@ namespace SphericalCapClass
 
 variable {x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1}
   {γ : Ω (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) x}
-  {hσ : IsSmoothForm (𝓡 2) 1 sphereAreaForm.val} {hdσ : mextDeriv sphereAreaForm.val = 0}
 
 /-- **On the round sphere a cap class is determined by its action.** For the area form of the
 unit sphere, any Chern homomorphism `c` and any time-dependent Hamiltonian, the capped action is
 injective on the cap classes of a loop with a smooth based cap. -/
 theorem action_injective_sphereAreaHom (Ham : ℝ → sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 → ℝ)
     (h : ∃ u, IsSmoothBasedCap (𝓡 2) γ u) :
-    Function.Injective (action (c := c) hσ hdσ (sphereAreaHom_hurewiczIntHom x hσ hdσ) Ham h) :=
+    Function.Injective (action (c := c) isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm
+      (sphereAreaHom_hurewiczIntHom x) Ham h) :=
   action_injective _ Ham h (SphericalPeriodGroup.area_injective_sphereAreaHom c)
 
 end SphericalCapClass
