@@ -123,13 +123,22 @@ theorem soThreeForm_lie_lie_smul_soThreeZ (r a : R) {u w : Fin 3 → R} (hu : u 
 
 /-! ### The root-plane decomposition and the Morse index of the height -/
 
+/-- `B(Z, Z) = 1` for the generator `Z = soThreeZ`. -/
+theorem soThreeForm_soThreeZ_soThreeZ : soThreeForm R (soThreeZ R) (soThreeZ R) = 1 := by
+  simp [dotProduct, Fin.sum_univ_three]
+
+/-- The plane `Z^⊥` of `so(3)` has dimension two. -/
+theorem finrank_ker_soThreeForm_soThreeZ {K : Type*} [Field K] [NeZero (2 : K)] :
+    Module.finrank K (LinearMap.ker (soThreeForm K (soThreeZ K))) = 2 := by
+  have hne : soThreeForm K (soThreeZ K) ≠ 0 := fun h ↦ by
+    simpa [h] using (soThreeForm_soThreeZ_soThreeZ (R := K))
+  have h := Module.Dual.finrank_ker_add_one_of_ne_zero hne
+  rw [finrank_so_three] at h
+  omega
+
 section Ordered
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-
-/-- `B(Z, Z) = 1` for the generator `Z = soThreeZ`. -/
-private theorem soThreeForm_soThreeZ_soThreeZ : soThreeForm K (soThreeZ K) (soThreeZ K) = 1 := by
-  simp [dotProduct, Fin.sum_univ_three]
 
 /-- **The root-plane decomposition of `so(3)`.** For the dot product, the line `t = K Z` and its
 orthogonal plane `Z^⊥`, with rotation `ad Z` and root `α(c Z) = c`, form a root-plane
@@ -158,15 +167,6 @@ theorem isRootPlaneDecomposition_soThree :
         x - soThreeForm K (soThreeZ K) x • soThreeZ K, ?_, add_sub_cancel _ _⟩
     rw [iSup_const, LinearMap.mem_ker, map_sub, map_smul, soThreeForm_soThreeZ_soThreeZ,
       smul_eq_mul, mul_one, sub_self]
-
-/-- The plane `Z^⊥` of `so(3)` has dimension two. -/
-theorem finrank_ker_soThreeForm_soThreeZ :
-    Module.finrank K (LinearMap.ker (soThreeForm K (soThreeZ K))) = 2 := by
-  have hne : soThreeForm K (soThreeZ K) ≠ 0 := fun h ↦ by
-    simpa [h] using (soThreeForm_soThreeZ_soThreeZ (K := K))
-  have h := Module.Dual.finrank_ker_add_one_of_ne_zero hne
-  rw [finrank_so_three] at h
-  omega
 
 /-- **The Morse index of the height on a coadjoint sphere of `so(3)`.** For `p = r Z` and
 `X = a Z`, the Hessian at `p` of the height `B(·, X)` on the orbit of `p` has negative index two

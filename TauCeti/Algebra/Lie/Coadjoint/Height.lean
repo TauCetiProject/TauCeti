@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
-public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
 /-!
 # Critical points and Hessians of heights on coadjoint orbits
@@ -115,6 +115,12 @@ theorem heightHessian_apply (A C : L) : B.heightHessian p X A C = -B ⁅A, p⁆ 
   rw [← lie_skew A p, ← lie_skew C X]
   simp only [map_neg, LinearMap.neg_apply, neg_neg]
 
+/-- The Hessian of the height `f_(-X)` is the negative of that of `f_X`. -/
+@[simp]
+theorem heightHessian_neg_right : B.heightHessian p (-X) = -B.heightHessian p X := by
+  ext A C
+  simp only [heightHessian_apply, lie_neg, map_neg, LinearMap.neg_apply]
+
 /-- **The critical points of a height.** For an invariant form `B` which is separating, the
 derivative `B(⁅A, p⁆, X)` of the height `f_X` at `p` in the direction of the tangent vector
 `⁅A, p⁆` of the orbit vanishes for every `A` exactly when `⁅X, p⁆ = 0`. -/
@@ -141,8 +147,7 @@ theorem isSymm_heightHessian (hB : B.lieInvariant L) (hBs : B.IsSymm) (hXp : ⁅
   refine ⟨fun A C ↦ ?_⟩
   -- `B(p, ⁅Y, X⁆) = -B(⁅X, Y⁆, p) = B(Y, ⁅X, p⁆)` vanishes for every `Y`.
   have hp (Y : L) : B p ⁅Y, X⁆ = 0 := by
-    rw [hBs.eq, ← lie_skew Y X, map_neg, LinearMap.neg_apply, hB X Y p, hXp, map_zero,
-      neg_zero, neg_zero]
+    simp [hBs.eq p, ← lie_skew Y X, -lie_skew, hB X Y p, hXp]
   -- The Jacobi identity turns `B(p, ⁅⁅A, C⁆, X⁆) = 0` into the symmetry.
   have hJ := hp ⁅A, C⁆
   rw [lie_lie, map_sub, sub_eq_zero] at hJ
@@ -186,6 +191,35 @@ theorem apply_eq_zero (hD : IsRootPlaneDecomposition B t α E J) {i j : ι} (hij
     {v w : L} (hv : v ∈ E i) (hw : w ∈ E j) : B v w = 0 :=
   hD.le_orthogonal hij hw v hv
 
+/-- The form is nonnegative on each plane of a root-plane decomposition. -/
+theorem apply_self_nonneg (hD : IsRootPlaneDecomposition B t α E J) {i : ι} {v : L}
+    (hv : v ∈ E i) : 0 ≤ B v v := by
+  rcases eq_or_ne v 0 with rfl | hv0
+  · simp
+  · exact (hD.pos i hv hv0).le
+
+/-- A vector of a plane of a root-plane decomposition with `B(v, v) = 0` is zero. -/
+theorem eq_zero_of_apply_self_eq_zero (hD : IsRootPlaneDecomposition B t α E J) {i : ι}
+    {v : L} (hv : v ∈ E i) (h : B v v = 0) : v = 0 := by
+  by_contra hv0
+  exact (hD.pos i hv hv0).ne' h
+
+/-- The planes of a root-plane decomposition are independent. -/
+theorem iSupIndep (hD : IsRootPlaneDecomposition B t α E J) : iSupIndep E :=
+  B.iSupIndep_of_restrict_separatingRight (fun _ _ hij _ hv _ hw ↦ hD.apply_eq_zero hij hv hw)
+    fun _ v hv ↦ Subtype.ext (hD.eq_zero_of_apply_self_eq_zero v.property (hv v))
+
+/-- For `p, X ∈ t` and vectors `v ∈ E_i`, `w ∈ E_j` of a root-plane decomposition,
+`B(⁅v, p⁆, ⁅w, X⁆)` is `α_i(p) α_i(X) B(v, w)` when `i = j` and zero otherwise. -/
+theorem apply_lie_lie_of_mem [DecidableEq ι] (hD : IsRootPlaneDecomposition B t α E J)
+    (p X : t) {i j : ι} {v w : L} (hv : v ∈ E i) (hw : w ∈ E j) :
+    B ⁅v, (p : L)⁆ ⁅w, (X : L)⁆ = if i = j then α i p * α i X * B v w else 0 := by
+  split_ifs with hij
+  · subst hij
+    exact (hD.isRootPlane i).apply_lie_lie p X ⟨v, hv⟩ ⟨w, hw⟩
+  · exact (hD.isRootPlane i).apply_lie_lie_eq_zero_of_le_orthogonal (hD.isRootPlane j)
+      (hD.le_orthogonal hij) p X ⟨v, hv⟩ ⟨w, hw⟩
+
 /-- Every vector is the sum of a vector of `t` and one vector of each plane. -/
 theorem exists_eq_add_sum [Fintype ι] (hD : IsRootPlaneDecomposition B t α E J) (x : L) :
     ∃ H ∈ t, ∃ a : ∀ i, E i, x = H + ∑ i, (a i : L) := by
@@ -207,13 +241,8 @@ theorem heightHessian_add_sum_add_sum (hD : IsRootPlaneDecomposition B t α E J)
   have hH'X : ⁅H', (X : L)⁆ = 0 := hD.lie_eq_zero hH' X.property
   rw [LinearMap.BilinForm.heightHessian_apply, add_lie, hHp, zero_add, add_lie, hH'X, zero_add,
     sum_lie, sum_lie, neg_inj]
-  simp only [map_sum, LinearMap.sum_apply]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  -- Only the plane of `b i` contributes.
-  rw [Finset.sum_eq_single_of_mem i hi fun j _ hji ↦
-      (hD.isRootPlane j).apply_lie_lie_eq_zero_of_le_orthogonal (hD.isRootPlane i)
-        (hD.le_orthogonal hji) p X (a j) (b i),
-    (hD.isRootPlane i).apply_lie_lie]
+  -- Only the pairs of vectors in the same plane contribute.
+  simp [hD.apply_lie_lie_of_mem p X (a _).property (b _).property]
 
 /-- The value of the Hessian quadratic form of a height on `H + Σ a_i` in a root-plane
 decomposition: `h_(p,X)(H + Σ a_i, H + Σ a_i) = -Σ α_i(p) α_i(X) B(a_i, a_i)`. -/
@@ -228,22 +257,18 @@ theorem toQuadraticMap_heightHessian_add_sum (hD : IsRootPlaneDecomposition B t 
 private theorem heightHessian_add_sum_apply [Fintype ι] (hD : IsRootPlaneDecomposition B t α E J)
     (p X : t) {H : L} (hH : H ∈ t) (a : ∀ i, E i) (j : ι) (b : E j) :
     B.heightHessian p X (H + ∑ i, (a i : L)) b = -(α j p * α j X * B (a j) b) := by
-  rw [LinearMap.BilinForm.heightHessian_apply, add_lie, hD.lie_eq_zero hH p.property, zero_add,
-    sum_lie, map_sum, LinearMap.sum_apply, Finset.sum_eq_single_of_mem j (Finset.mem_univ j)
-      fun i _ hij ↦ (hD.isRootPlane i).apply_lie_lie_eq_zero_of_le_orthogonal (hD.isRootPlane j)
-        (hD.le_orthogonal hij) p X (a i) b,
-    (hD.isRootPlane j).apply_lie_lie]
+  classical
+  rw [LinearMap.BilinForm.heightHessian_apply, add_lie, hD.lie_eq_zero hH p.property, zero_add]
+  simp [sum_lie, hD.apply_lie_lie_of_mem p X (a _).property b.property]
 
 /-- The Hessian `h_(p,X)` pairs a vector `a` of the plane `E_i` with a vector `H + Σ b_j` to
 `-α_i(p) α_i(X) B(a, b_i)`. -/
 private theorem heightHessian_apply_add_sum [Fintype ι] (hD : IsRootPlaneDecomposition B t α E J)
     (p X : t) {H : L} (hH : H ∈ t) (i : ι) (a : E i) (b : ∀ j, E j) :
     B.heightHessian p X a (H + ∑ j, (b j : L)) = -(α i p * α i X * B a (b i)) := by
-  rw [LinearMap.BilinForm.heightHessian_apply, add_lie, hD.lie_eq_zero hH X.property, zero_add,
-    sum_lie, map_sum, Finset.sum_eq_single_of_mem i (Finset.mem_univ i)
-      fun j _ hji ↦ (hD.isRootPlane i).apply_lie_lie_eq_zero_of_le_orthogonal (hD.isRootPlane j)
-        (hD.le_orthogonal hji.symm) p X a (b j),
-    (hD.isRootPlane i).apply_lie_lie]
+  classical
+  rw [LinearMap.BilinForm.heightHessian_apply, add_lie, hD.lie_eq_zero hH X.property, zero_add]
+  simp [sum_lie, hD.apply_lie_lie_of_mem p X a.property (b _).property]
 
 end IsRootPlaneDecomposition
 
@@ -254,14 +279,6 @@ namespace IsRootPlaneDecomposition
 variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
   [LieAlgebra K L] {ι : Type*} [Fintype ι] {B : LinearMap.BilinForm K L} {t : Submodule K L}
   {α : ι → Dual K t} {E : ι → Submodule K L} {J : ∀ i, Module.End K (E i)}
-
-omit [IsStrictOrderedRing K] [Fintype ι] in
-/-- The planes of a root-plane decomposition are independent. -/
-theorem iSupIndep (hD : IsRootPlaneDecomposition B t α E J) : iSupIndep E :=
-  B.iSupIndep_of_restrict_separatingRight (fun _ _ hij _ hv _ hw ↦ hD.apply_eq_zero hij hv hw)
-    fun i v hv ↦ by
-      by_contra hv0
-      exact (hD.pos i v.property fun h ↦ hv0 (Subtype.ext h)).ne' (hv v)
 
 omit [IsStrictOrderedRing K] [Fintype ι] in
 /-- The dimension of the sum of the planes indexed by `s` is the sum of their dimensions. -/
@@ -283,10 +300,8 @@ private theorem toQuadraticMap_heightHessian_neg (hD : IsRootPlaneDecomposition 
   obtain ⟨i, hi, hai⟩ : ∃ i ∈ s, (a i : L) ≠ 0 := by
     by_contra! h
     exact hx0 (Finset.sum_eq_zero h)
-  refine Finset.sum_pos' (fun j hj ↦ ?_) ⟨i, hi, mul_pos (hs i hi) (hD.pos i (a i).property hai)⟩
-  rcases eq_or_ne (a j : L) 0 with h | h
-  · simp [h]
-  · exact (mul_pos (hs j hj) (hD.pos j (a j).property h)).le
+  exact Finset.sum_pos' (fun j hj ↦ mul_nonneg (hs j hj).le (hD.apply_self_nonneg (a j).property))
+    ⟨i, hi, mul_pos (hs i hi) (hD.pos i (a i).property hai)⟩
 
 omit [Fintype ι] in
 /-- The Hessian `h_(p,X)` is nonnegative on `t` and the planes `E_i` with `α_i(p) α_i(X) ≤ 0`. -/
@@ -296,10 +311,8 @@ private theorem toQuadraticMap_heightHessian_nonneg (hD : IsRootPlaneDecompositi
   obtain ⟨H, hH, y, hy, rfl⟩ := Submodule.mem_sup.mp hx
   obtain ⟨a, rfl⟩ := (Submodule.mem_iSup_finset_iff_exists_sum E y).mp hy
   rw [hD.toQuadraticMap_heightHessian_add_sum p X hH, neg_nonneg]
-  refine Finset.sum_nonpos fun i hi ↦ ?_
-  rcases eq_or_ne (a i : L) 0 with h | h
-  · simp [h]
-  · exact mul_nonpos_of_nonpos_of_nonneg (hs i hi) (hD.pos i (a i).property h).le
+  exact Finset.sum_nonpos fun i hi ↦
+    mul_nonpos_of_nonpos_of_nonneg (hs i hi) (hD.apply_self_nonneg (a i).property)
 
 omit [Fintype ι] in
 /-- **Sylvester's law of inertia for a root-plane decomposition.** Let `s` be a set of planes. If
@@ -317,9 +330,8 @@ private theorem sigNeg_toQuadraticMap_heightHessian_of_forall [Finite ι] [Finit
   have hA : ((-Q).restrict A).PosDef := fun x hx0 ↦ by
     rw [QuadraticMap.restrict_apply, neg_apply, neg_pos]
     exact hD.toQuadraticMap_heightHessian_neg p X hs x.property fun h ↦ hx0 (Subtype.ext h)
-  have hW : ∀ x ∈ W, (-Q) x ≤ 0 := fun x hx ↦ by
-    rw [neg_apply, neg_nonpos]
-    exact hD.toQuadraticMap_heightHessian_nonneg p X (fun i hi ↦ hsc i (Finset.mem_compl.mp hi)) hx
+  have hW : ∀ x ∈ W, 0 ≤ Q x := fun x hx ↦
+    hD.toQuadraticMap_heightHessian_nonneg p X (fun i hi ↦ hsc i (Finset.mem_compl.mp hi)) hx
   -- The two subspaces span `L`.
   have hsup : A ⊔ W = ⊤ := by
     refine eq_top_iff.mpr (hD.sup_eq_top.symm.le.trans (sup_le ?_ (iSup_le fun i ↦ ?_)))
@@ -327,15 +339,13 @@ private theorem sigNeg_toQuadraticMap_heightHessian_of_forall [Finite ι] [Finit
     · by_cases hi : i ∈ s
       · exact le_sup_of_le_left (le_biSup E hi)
       · exact le_sup_of_le_right (le_sup_of_le_right (le_biSup E (Finset.mem_compl.mpr hi)))
-  -- Sylvester: `dim A ≤ sigNeg Q` and `sigNeg Q + dim W ≤ dim L ≤ dim A + dim W`. No complement
-  -- of `A` inside `W` is needed, since `t` need not be independent of the planes.
-  have hle := le_sigNeg_of_negDef Q hA
-  have hge := QuadraticForm.sigPos_add_finrank_le_of_nonpos hW
-  have hdim := Submodule.finrank_sup_add_finrank_inf_eq A W
-  have hfin : finrank K A = ∑ i ∈ s, finrank K (E i) := hD.finrank_biSup s
-  rw [hsup, finrank_top] at hdim
-  rw [sigPos_neg] at hge
-  omega
+  -- They are complementary, since `Q` is negative on nonzero vectors of `A` and nonnegative on `W`.
+  have hAW : IsCompl A W := by
+    refine ⟨Submodule.disjoint_def.mpr fun x hxA hxW ↦ ?_, codisjoint_iff.mpr hsup⟩
+    by_contra hx0
+    exact (hD.toQuadraticMap_heightHessian_neg p X hs hxA hx0).not_ge (hW x hxW)
+  exact (QuadraticForm.sigNeg_eq_finrank_of_isCompl_of_negDef Q hAW hA hW).trans
+    (hD.finrank_biSup s)
 
 /-- **The Morse index of a height at a torus point.** In a root-plane decomposition, the negative
 index of the Hessian `h_(p,X)` of the height `f_X` at `p ∈ t`, for `X ∈ t`, is the sum of the
@@ -357,9 +367,8 @@ theorem sigPos_toQuadraticMap_heightHessian [FiniteDimensional K L]
   -- The Hessian of `f_(-X)` is the negative of that of `f_X`.
   have hneg : (B.heightHessian p (-X : t)).toQuadraticMap =
       -(B.heightHessian p X).toQuadraticMap := by
-    ext A
-    simp only [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinForm.heightHessian_apply,
-      neg_apply, Submodule.coe_neg, lie_neg, map_neg]
+    rw [Submodule.coe_neg, LinearMap.BilinForm.heightHessian_neg_right,
+      LinearMap.BilinMap.toQuadraticMap_neg]
   rw [← sigNeg_neg, ← hneg, hD.sigNeg_toQuadraticMap_heightHessian]
   simp only [map_neg, mul_neg, Left.neg_pos_iff]
 
