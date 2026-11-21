@@ -82,4 +82,14 @@ theorem isSmooth_comap_isoSetoid_iff_exists_sentenceTheory [∀ n, Countable (L.
     ⟨fun h => by rw [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩, h],
       fun h => by rwa [hθ ⟨c, hc⟩, hθ ⟨d, hd⟩] at h⟩⟩
 
+omit [Countable V] in
+/-- A measurable complete isomorphism invariant on `C` taking values in a countably separated
+measurable space makes isomorphism restricted to `C` smooth. -/
+theorem isSmooth_comap_isoSetoid_of_countablySeparated
+    {C : Set (RelationalConfiguration L V)} {Y : Type*} [MeasurableSpace Y]
+    [MeasurableSpace.CountablySeparated Y] {g : C → Y} (hg : Measurable g)
+    (hsep : ∀ c d : C, isoSetoid L V c.val d.val ↔ g c = g d) :
+    ((isoSetoid L V).comap (Subtype.val : C → _)).IsSmooth :=
+  Setoid.isSmooth_of_countablySeparated hg hsep
+
 end TauCeti.RelationalConfiguration

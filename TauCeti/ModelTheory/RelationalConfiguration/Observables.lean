@@ -77,6 +77,17 @@ theorem exists_sentenceTheory_comp_eq {X : Type*} [MeasurableSpace X] [StandardB
   refine ⟨θ, fun x => funext fun i => Bool.eq_iff_iff.2 ?_⟩
   simpa only [sentenceTheory_eq_true_iff] using hθ i x
 
+/-- **Borel observables on a Borel set of configurations.** On a Borel subset `C` of
+configurations over a countable carrier in a countable relational vocabulary, any measurable
+isomorphism-invariant map `g : C → ι → Bool` is realized by `sentenceTheory θ` for some family
+`θ : ι → L.Sentenceω`. -/
+theorem exists_sentenceTheory_eq_on {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C)
+    {g : C → ι → Bool} (hg : Measurable g)
+    (hinv : ∀ ⦃x y : C⦄, isoSetoid L V x.val y.val → g x = g y) :
+    ∃ θ : ι → L.Sentenceω, ∀ x : C, sentenceTheory θ x.val = g x := by
+  have := hC.standardBorel
+  exact exists_sentenceTheory_comp_eq measurable_subtypeVal hg fun x y hxy => hinv hxy
+
 /-- **Borel observables into countably separated spaces.** If `Z` is a countably separated
 measurable space and `g : X → Z` is an isomorphism-invariant measurable map along a standard Borel
 family `f : X → RelationalConfiguration L V`, there are a measurable injection `e : Z → ℕ → Bool`

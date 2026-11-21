@@ -61,6 +61,13 @@ the ambient space and for any finer relation `R`.
 * `Setoid.countable_or_hasCantorAntichainOn_of_measurableSet`: the relative form, for a Borel
   equivalence relation `F` on a Borel subset `A` of a Polish space and any relation `R` on the
   ambient space refining `F`, countably many `F`-classes or a Cantor antichain on `A` for `R`.
+* `Setoid.IsThinOn.countable_quotient_of_measurableSet`,
+  `Setoid.IsThinOn.countable_quotient_comap_of_measurableSet`,
+  `Setoid.IsThinOn.countable_quotient_comap_of_isSmooth`, and
+  `Setoid.IsThinOn.countable_quotient_comap_of_countablySeparated`: on a thin Borel subset of a
+  Polish space, any coarsening Borel relation — in particular the restriction of `R` when its graph
+  is measurable, smooth, or classified into a countably separated space — has countably many
+  classes.
 * `Setoid.borelReducible_bot_iff_not_countable_quotient`: the reducibility form, equality on
   Cantor space Borel reduces to a Borel equivalence relation on a standard Borel space exactly
   when the latter has uncountably many classes.
@@ -177,6 +184,44 @@ theorem countable_or_hasCantorAntichainOn_of_measurableSet [TopologicalSpace X] 
     univ).2 hid).mono <| by
     rintro _ ⟨a, -, rfl⟩
     exact (f a).property
+
+/-- **Relative Silver for thin Borel sets.** Let `A` be a Borel subset of a Polish space `X` that is
+thin for `R`, and let `F` be a Borel equivalence relation on `A` coarsening the restriction of `R`.
+Then `F` has countably many classes. -/
+theorem IsThinOn.countable_quotient_of_measurableSet [TopologicalSpace X] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] {R : Setoid X} {A : Set X} (hR : R.IsThinOn A)
+    (hA : MeasurableSet A) (F : Setoid A) (hRF : ∀ x y : A, R x y → F x y)
+    (hF : MeasurableSet {p : A × A | F p.1 p.2}) :
+    Countable (Quotient F) :=
+  (countable_or_hasCantorAntichainOn_of_measurableSet hA R F hRF hF).resolve_right
+    (isThinOn_iff_not_hasCantorAntichainOn.1 hR)
+
+/-- **Thin Borel sets on which `R` has a Borel graph meet countably many classes.** If `A` is a
+Borel subset of a Polish space `X` that is thin for `R` and the restriction of `R` to `A` has a
+measurable graph, then `R` restricts to countably many classes on `A`. -/
+theorem IsThinOn.countable_quotient_comap_of_measurableSet [TopologicalSpace X] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] {R : Setoid X} {A : Set X} (hR : R.IsThinOn A)
+    (hA : MeasurableSet A) (hgraph : MeasurableSet {p : A × A | R p.1 p.2}) :
+    Countable (Quotient (R.comap (Subtype.val : A → X))) :=
+  hR.countable_quotient_of_measurableSet hA (R.comap Subtype.val) (fun _ _ h => h) hgraph
+
+/-- **Thin Borel sets with smooth restriction meet countably many classes.** If `A` is a Borel
+subset of a Polish space `X` that is thin for `R` and the restriction of `R` to `A` is smooth, then
+`R` restricts to countably many classes on `A`. -/
+theorem IsThinOn.countable_quotient_comap_of_isSmooth [TopologicalSpace X] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] {R : Setoid X} {A : Set X} (hR : R.IsThinOn A)
+    (hA : MeasurableSet A) (hsmooth : (R.comap (Subtype.val : A → X)).IsSmooth) :
+    Countable (Quotient (R.comap (Subtype.val : A → X))) :=
+  hR.countable_quotient_comap_of_measurableSet hA hsmooth.measurableSet_setOf
+
+/-- A thin Borel subset of a Polish space admitting a measurable complete invariant into a
+countably separated measurable space meets only countably many classes. -/
+theorem IsThinOn.countable_quotient_comap_of_countablySeparated [TopologicalSpace X] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] {R : Setoid X} {A : Set X} (hR : R.IsThinOn A)
+    (hA : MeasurableSet A) {Y : Type*} [MeasurableSpace Y] [MeasurableSpace.CountablySeparated Y]
+    {g : A → Y} (hg : Measurable g) (hsep : ∀ x y : A, R x y ↔ g x = g y) :
+    Countable (Quotient (R.comap (Subtype.val : A → X))) :=
+  hR.countable_quotient_comap_of_isSmooth hA (isSmooth_of_countablySeparated hg hsep)
 
 /-- **Silver's theorem in reducibility form.** Equality on Cantor space is Borel reducible to a
 Borel equivalence relation on a standard Borel space exactly when the latter has uncountably many

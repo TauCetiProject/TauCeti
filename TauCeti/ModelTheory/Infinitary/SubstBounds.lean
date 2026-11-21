@@ -441,7 +441,7 @@ open BoundedFormulaInf
 theorem realize_inst_of_realize_all {φ : L.BoundedFormulaInf ι Empty 1}
     (h : SentenceInf.Realize φ.all M) (t : L.Term (Empty ⊕ Fin 0)) :
     SentenceInf.Realize (φ.inst t) M := by
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_all] at h
+  rw [realize_all] at h
   simp only [SentenceInf.realize_def, realize_inst]
   simpa only [Fin.snoc_zero] using h _
 
@@ -450,7 +450,7 @@ of `φ` at `t'` holds whenever the instance at `t` does. -/
 theorem realize_inst_of_realize_equal {t t' : L.Term (Empty ⊕ Fin 0)}
     {φ : L.BoundedFormulaInf ι Empty 1} (ht : SentenceInf.Realize (equal t t' : L.SentenceInf ι) M)
     (hφ : SentenceInf.Realize (φ.inst t) M) : SentenceInf.Realize (φ.inst t') M := by
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_equal] at ht
+  rw [realize_equal] at ht
   simp only [SentenceInf.realize_def, realize_inst] at hφ ⊢
   rwa [← ht]
 

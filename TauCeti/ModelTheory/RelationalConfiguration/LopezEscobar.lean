@@ -622,6 +622,64 @@ theorem exists_sentence_mem_modelsOf_iff {X : Type*} [MeasurableSpace X] [Standa
   refine ⟨θ, fun x => ⟨fun hθ => by_contra fun hx => ?_, fun hx => hsub ⟨x, hx, rfl⟩⟩⟩
   exact disjoint_left.1 hdisj ⟨x, mem_compl hx, rfl⟩ hθ
 
+/-- On a subsingleton carrier, every measurable set of configurations is the model class of an
+`L_{ω₁ω}` sentence, for relational languages of arbitrary cardinality. -/
+theorem exists_modelsOf_eq_of_subsingleton [Subsingleton V]
+    {B : Set (RelationalConfiguration L V)} (hB : MeasurableSet B) :
+    ∃ θ : L.Sentenceω, modelsOf (V := V) θ = B :=
+  exists_modelsOf_eq_iff.2 ⟨hB, isomorphismInvariant_of_subsingleton B⟩
+
+/-- **López–Escobar separation via quotient disjointness.** On a countable carrier, in a
+relational language of arbitrary cardinality, if `A` and `B` are analytic sets of configurations
+and no isomorphism class meets both `A` and `B`, there is an `L_{ω₁ω}` sentence `θ` with
+`A ⊆ modelsOf θ` and `Disjoint B (modelsOf θ)`. -/
+theorem exists_sentence_separating_of_disjoint_image_quotientMk [Countable V]
+    {A B : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hB : AnalyticSet B)
+    (hAB : Disjoint (Quotient.mk (isoSetoid L V) '' A) (Quotient.mk (isoSetoid L V) '' B)) :
+    ∃ θ : L.Sentenceω, A ⊆ modelsOf θ ∧ Disjoint B (modelsOf θ) :=
+  exists_sentence_separating_of_forall_not_isoSetoid hA hB fun _ ha _ hb hab =>
+    hAB.le_bot ⟨mem_image_of_mem _ ha, Quotient.sound hab ▸ mem_image_of_mem _ hb⟩
+
+/-- **Suslin–López–Escobar theorem.** On a countable carrier, in a relational language of arbitrary
+cardinality, an isomorphism-invariant bi-analytic set of configurations is the model class of a
+single `L_{ω₁ω}` sentence. -/
+theorem exists_modelsOf_eq_of_analyticSet_compl [Countable V]
+    {A : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hAc : AnalyticSet Aᶜ)
+    (hinv : IsomorphismInvariant A) :
+    ∃ θ : L.Sentenceω, modelsOf (V := V) θ = A := by
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating hA hAc hinv.compl disjoint_compl_right
+  exact ⟨θ, (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub⟩
+
+/-- **Relative sentence separation along a Borel map.** Let `X` be a standard Borel space and
+`f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
+in a countable relational vocabulary. If `U` and `W` are measurable subsets of `X` whose `f`-images
+contain no isomorphic pair, then some `L_{ω₁ω}` sentence `θ` satisfies `U ⊆ f ⁻¹' modelsOf θ` and
+`Disjoint W (f ⁻¹' modelsOf θ)`. -/
+theorem exists_sentence_separating_preimage {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+    [∀ n, Countable (L.Relations n)] [Countable V]
+    {f : X → RelationalConfiguration L V} (hf : Measurable f) {U W : Set X}
+    (hU : MeasurableSet U) (hW : MeasurableSet W)
+    (hUW : ∀ x ∈ U, ∀ y ∈ W, ¬ isoSetoid L V (f x) (f y)) :
+    ∃ θ : L.Sentenceω, U ⊆ f ⁻¹' modelsOf θ ∧ Disjoint W (f ⁻¹' modelsOf θ) := by
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_of_forall_not_isoSetoid
+    (hU.analyticSet_image hf) (hW.analyticSet_image hf) (by
+      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+      exact hUW x hx y hy hxy)
+  exact ⟨θ, image_subset_iff.1 hsub, disjoint_image_left.1 hdisj⟩
+
+/-- **Relative López–Escobar in preimage form.** Let `X` be a standard Borel space and
+`f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
+in a countable relational vocabulary. Every measurable set `U ⊆ X` closed under `f`-isomorphism is
+the preimage `f ⁻¹' modelsOf θ` of a single `L_{ω₁ω}` sentence `θ`. -/
+theorem exists_modelsOf_preimage_eq {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+    [∀ n, Countable (L.Relations n)] [Countable V]
+    {f : X → RelationalConfiguration L V} (hf : Measurable f) {U : Set X}
+    (hU : MeasurableSet U) (hinv : ∀ ⦃x y⦄, isoSetoid L V (f x) (f y) → x ∈ U → y ∈ U) :
+    ∃ θ : L.Sentenceω, f ⁻¹' modelsOf θ = U := by
+  obtain ⟨θ, hθ⟩ := exists_sentence_mem_modelsOf_iff hf hU
+    fun x y hxy => ⟨hinv hxy, hinv ((isoSetoid L V).symm hxy)⟩
+  exact ⟨θ, Set.ext hθ⟩
+
 end Main
 
 end TauCeti.RelationalConfiguration

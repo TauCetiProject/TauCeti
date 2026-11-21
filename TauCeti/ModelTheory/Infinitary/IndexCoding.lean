@@ -17,8 +17,9 @@ indices. Padding extends an `ι`-indexed family to `κ` with a chosen default. I
 true padding preserves universal quantification and false padding preserves existence; these
 are the neutral extensions used for coded infinitary conjunctions and disjunctions.
 
-The API provides identity and composition, codings from equivalences and explicit or inferred
-`Encodable` data, sum codings, the underlying embedding, and the padding composition laws.
+The API provides identity and composition, codings from equivalences, `Countable` types, and
+explicit or inferred `Encodable` data, sum codings, the underlying embedding, and the padding
+composition laws.
 
 Adapted from Cameron Freer's `Mathlib/ModelTheory/Infinitary/IndexCoding.lean` in
 [cameronfreer/mathlib4](https://github.com/cameronfreer/mathlib4/blob/346a4bd3f95e8591976c91259badc6d2c300f638/Mathlib/ModelTheory/Infinitary/IndexCoding.lean).
@@ -142,9 +143,13 @@ def ofEncodableWith (e : Encodable ι) : IndexCoding ι ℕ :=
   ⟨Encodable.encode, Encodable.decode, Encodable.encodek⟩
 
 /-- The canonical coding of an encodable type into `ℕ`. No choice is involved; a `Countable`
-carrier can be upgraded noncomputably via `Encodable.ofCountable` at the call site. -/
+carrier can be upgraded noncomputably via `ofCountable` or `Encodable.ofCountable`. -/
 def ofEncodable (ι : Type uι) [Encodable ι] : IndexCoding ι ℕ :=
   ofEncodableWith inferInstance
+
+/-- A noncomputable coding of any countable type into `ℕ`, obtained via `Encodable.ofCountable`. -/
+noncomputable def ofCountable (ι : Type uι) [Countable ι] : IndexCoding ι ℕ :=
+  ofEncodableWith (Encodable.ofCountable ι)
 
 @[simp]
 theorem ofEncodableWith_encode (e : Encodable ι) (i : ι) :
