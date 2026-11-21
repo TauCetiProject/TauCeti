@@ -14,7 +14,8 @@ import Mathlib.LinearAlgebra.Matrix.StdBasis
 The Choi matrix uses `Matrix.comp` to flatten the block matrix of images of the
 input matrix units. Its indices agree with the column stacking of `Matrix.vec`,
 with the input index first. Choi matrices respect pointwise finite sums and
-determine linear maps on finite matrices.
+determine linear maps with finite input index types and arbitrary output index types.
+`choiMatrixAddEquiv` reconstructs such a linear map from the blocks of its Choi matrix.
 
 For a map `X ↦ A * X * B`, the Choi matrix is the outer product of `A.vec`
 and `(Bᵀ).vec`. For a Kraus summand, the second factor is the entrywise conjugate
@@ -59,7 +60,8 @@ theorem choiMatrix_sum {ι m n R : Type*} [DecidableEq n] [AddCommMonoid R] [One
   ext p q
   simp only [choiMatrix_apply, Matrix.sum_apply]
 
-/-- A linear map on finite matrices is determined by its Choi matrix. -/
+/-- A linear map with a finite input index type is determined by its Choi matrix.
+The output index type is arbitrary. -/
 theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R] :
     Function.Injective (fun Φ : Matrix n n R →ₗ[R] Matrix m m R => choiMatrix Φ) := by
   let := Fintype.ofFinite n
@@ -69,6 +71,36 @@ theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semirin
   rw [Matrix.stdBasis_eq_single]
   ext a b
   simpa only [choiMatrix_apply] using congrFun (congrFun h (i, a)) (j, b)
+
+/-- The additive equivalence sending a linear map with a finite input index type to its
+Choi matrix. The output index type is arbitrary. The inverse reconstructs the linear map
+that sends each matrix unit to the corresponding block. -/
+noncomputable def choiMatrixAddEquiv {m n R : Type*} [Finite n] [Semiring R] :
+    (Matrix n n R →ₗ[R] Matrix m m R) ≃+ Matrix (n × m) (n × m) R :=
+  let := Fintype.ofFinite n
+  ((Matrix.stdBasis R n n).constr ℕ).symm.toAddEquiv.trans <|
+    (AddEquiv.curry n n (Matrix m m R)).trans <|
+      Matrix.ofAddEquiv.trans (Matrix.compAddEquiv n n m m R)
+
+/-- The forward direction of `choiMatrixAddEquiv` forms the Choi matrix. -/
+@[simp]
+theorem choiMatrixAddEquiv_apply {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R]
+    (Φ : Matrix n n R →ₗ[R] Matrix m m R) : choiMatrixAddEquiv Φ = choiMatrix Φ := by
+  let := Fintype.ofFinite n
+  apply Matrix.ext
+  rintro ⟨i, a⟩ ⟨j, b⟩
+  simp [choiMatrixAddEquiv, Function.curry, Matrix.stdBasis_eq_single]
+
+/-- The reconstructed linear map sends the `(i, j)` matrix unit to the `(i, j)` block. -/
+@[simp]
+theorem choiMatrixAddEquiv_symm_apply_single {m n R : Type*} [Finite n] [DecidableEq n]
+    [Semiring R] (C : Matrix (n × m) (n × m) R) (i j : n) :
+    choiMatrixAddEquiv.symm C (Matrix.single i j 1) =
+      C.submatrix (fun a => (i, a)) (fun b => (j, b)) := by
+  ext a b
+  simpa only [choiMatrixAddEquiv_apply, choiMatrix_apply, Matrix.submatrix_apply] using
+    congrArg (fun M : Matrix (n × m) (n × m) R => M (i, a) (j, b))
+      (choiMatrixAddEquiv.apply_symm_apply C)
 
 end TauCeti
 
