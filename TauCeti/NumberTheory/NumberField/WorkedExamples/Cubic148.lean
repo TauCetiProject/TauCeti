@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import TauCeti.NumberTheory.NumberField.Minpoly
-import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 import Mathlib.NumberTheory.NumberField.Norm
