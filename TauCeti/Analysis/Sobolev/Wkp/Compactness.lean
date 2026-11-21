@@ -168,9 +168,7 @@ theorem exists_norm_toOrderL_le_of_isCompactOperator {j k : ℕ} (h : j ≤ k)
     (hK : IsCompactOperator (toOrderL (mu := mu) (Omega := Omega) (p := p) h)) {ε : ℝ}
     (hε : 0 < ε) :
     ∃ C, 0 ≤ C ∧ ∀ u : Wkp mu Omega p k, ‖toOrderL h u‖ ≤ ε * ‖u‖ + C * ‖value k u‖ := by
-  have hinj : Function.Injective (valueL (mu := mu) (Omega := Omega) (p := p) j) :=
-    fun u v huv ↦ ext j (by simpa only [valueL_apply] using huv)
-  obtain ⟨C, hC, hle⟩ := hK.exists_norm_le_mul_norm_add_mul_norm hinj hε
+  obtain ⟨C, hC, hle⟩ := hK.exists_norm_le_mul_norm_add_mul_norm (valueL_injective j) hε
   refine ⟨C, hC, fun u ↦ ?_⟩
   simpa only [ContinuousLinearMap.coe_coe, valueL_apply, value_toOrderL] using hle u
 
@@ -222,8 +220,6 @@ theorem exists_norm_le_of_norm_iteratedGradient_le_of_isCompactOperator {k : ℕ
   -- The hypothesis also holds with the nonnegative constant `C = max C₀ 0`.
   set C := max C₀ 0
   have hC : 0 ≤ C := le_max_right _ _
-  have hinj : Function.Injective (valueL (mu := mu) (Omega := Omega) (p := p) k) :=
-    fun u v huv ↦ ext k (by simpa only [valueL_apply] using huv)
   -- `‖u‖ ≤ C ‖T u‖ + (C + 1) ‖u‖_{W^{k,p}}`, where the last term is a compact operator applied to
   -- `u`, so its norm may be weakened to `‖u‖_{Lᵖ}`.
   have hnorm (u : Wkp mu Omega p (k + 1)) :
@@ -234,8 +230,8 @@ theorem exists_norm_le_of_norm_iteratedGradient_le_of_isCompactOperator {k : ℕ
       ‖valueL k (((C + 1) • lowerOrderL k) u)‖ = (C + 1) * ‖value (k + 1) u‖ := by
     rw [smul_apply, map_smul, norm_smul, Real.norm_of_nonneg (by positivity),
       valueL_apply, ← toOrderL_le_succ k (Nat.le_succ k), value_toOrderL]
-  obtain ⟨A, hA, hle⟩ := (hK.smul (C + 1)).exists_norm_le_of_compact_estimate hinj (T := T)
-    (C := C) fun u ↦ by
+  obtain ⟨A, hA, hle⟩ := (hK.smul (C + 1)).exists_norm_le_of_compact_estimate
+    (valueL_injective k) (T := T) (C := C) fun u ↦ by
       have h2 := (hT u).trans (mul_le_mul_of_nonneg_right (le_max_left C₀ 0)
         (add_nonneg (norm_nonneg (T u)) (norm_nonneg (lowerOrder k u))))
       rw [ContinuousLinearMap.coe_coe, hnorm]
