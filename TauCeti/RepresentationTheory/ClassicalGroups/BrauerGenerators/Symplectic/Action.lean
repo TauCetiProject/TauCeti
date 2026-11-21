@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BrauerAlgebra.Generation
-public import TauCeti.Combinatorics.Brauer.Congr
 public import TauCeti.Combinatorics.Brauer.SkewWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
 -- Non-public: `Equiv.Perm.sign_sumComm` evaluates the reflection sign, `Matrix.Congruence` expands

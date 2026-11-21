@@ -9,7 +9,6 @@ public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Fintype.Prod
 
 /-!

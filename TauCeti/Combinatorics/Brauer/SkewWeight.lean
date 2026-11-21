@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.GroupTheory.Perm.Sign
 public import TauCeti.Combinatorics.Brauer.Generator
-import Mathlib.Data.Fintype.EquivFin
 
 /-!
-# Framings and skew-symmetric arc products of Brauer diagrams
+# Skew-symmetric arc products of Brauer diagrams
 
 When a Brauer diagram acts on the tensor power of a module carrying a symmetric bilinear form, an
 arc carries no sign: the matrix entry of a diagram `D` at a boundary labelling is `1` when the
@@ -27,9 +25,10 @@ skew-symmetric matrix `W` on the `2 * k` boundary points `Fin k ⊕ Fin k`.
 Every Brauer diagram `D` on `k` strands is obtained from the identity diagram `permToBrauer 1` by
 some permutation `π` of the boundary points `Fin k ⊕ Fin k`: `π` sends the `r`-th identity strand
 `(Sum.inl r, Sum.inr r)` to an oriented arc `(π (Sum.inl r), π (Sum.inr r))` of `D`. Such a
-permutation is an **arc framing** of `D` (`TauCeti.BrauerDiagram.IsFraming`). Two framings of the
-same diagram differ on the right by an element of the centralizer of `Sum.swap`, the
-hyperoctahedral group permuting the `k` pairs and reversing individual pairs:
+permutation is an **arc framing** of `D` (`TauCeti.BrauerDiagram.IsFraming`, defined together with
+the chosen framing `TauCeti.BrauerDiagram.framing` in `TauCeti/Combinatorics/Brauer/Congr.lean`).
+Two framings of the same diagram differ on the right by an element of the centralizer of
+`Sum.swap`, the hyperoctahedral group permuting the `k` pairs and reversing individual pairs:
 
 * permuting the `k` pairs by `Equiv.Perm.sumCongr σ σ` has sign `(sign σ)² = 1` and reindexes the
   product over the `k` arcs;
@@ -42,8 +41,6 @@ Hence for any skew-symmetric matrix `W` (`∀ x y, W y x = -W x y`), the quantit
 
 ## Main definitions
 
-* `TauCeti.BrauerDiagram.IsFraming`: a boundary permutation carrying `permToBrauer 1` to `D`.
-* `TauCeti.BrauerDiagram.framing`: a chosen framing of a Brauer diagram.
 * `TauCeti.BrauerDiagram.skewArcProd`: the signed product of the entries of a skew-symmetric
   boundary matrix `W` over the arcs of `D`.
 
@@ -70,157 +67,6 @@ namespace TauCeti
 variable {k : ℕ}
 
 namespace BrauerDiagram
-
-/-! ### Arc framings of a Brauer diagram -/
-
-/-- An **arc framing** of a Brauer diagram `D` on `k` strands is a permutation `π` of the boundary
-points `Fin k ⊕ Fin k` carrying the identity diagram `permToBrauer 1` to `D`, so that the `k`
-ordered pairs `(π (Sum.inl r), π (Sum.inr r))` list the `k` arcs of `D`. -/
-def IsFraming (D : BrauerDiagram k) (π : Equiv.Perm (Fin k ⊕ Fin k)) : Prop :=
-  PerfectMatching.congr π (permToBrauer 1) = D
-
-/-- Being a framing means transporting `permToBrauer 1` to `D`. -/
-theorem isFraming_def (D : BrauerDiagram k) (π : Equiv.Perm (Fin k ⊕ Fin k)) :
-    D.IsFraming π ↔ PerfectMatching.congr π (permToBrauer 1) = D := Iff.rfl
-
-/-- **Characterisation of an arc framing**: `π` frames `D` precisely when `D` matches
-`π (Sum.inl r)` with `π (Sum.inr r)` for every `r : Fin k`. -/
-theorem isFraming_iff (D : BrauerDiagram k) (π : Equiv.Perm (Fin k ⊕ Fin k)) :
-    D.IsFraming π ↔ ∀ r : Fin k, D.val (π (Sum.inl r)) = π (Sum.inr r) := by
-  refine ⟨fun h r => ?_, fun h => Subtype.ext (Equiv.ext fun x => ?_)⟩
-  · rw [← h, PerfectMatching.congr_val_apply_apply, permToBrauer_val_inl, Equiv.Perm.one_apply]
-  · rw [PerfectMatching.congr_val_apply]
-    rcases hx : π.symm x with r | r
-    · rw [permToBrauer_val_inl, Equiv.Perm.one_apply, ← h r, ← hx, π.apply_symm_apply]
-    · simp only [permToBrauer_val_inr, Equiv.Perm.one_def, Equiv.refl_symm, Equiv.refl_apply]
-      rw [← D.apply_eq_of_apply_eq (h r), ← hx, π.apply_symm_apply]
-
-/-- A framing sends `Sum.inl r` and `Sum.inr r` to partners under `D`. -/
-theorem IsFraming.val_inl {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hπ : D.IsFraming π) (r : Fin k) : D.val (π (Sum.inl r)) = π (Sum.inr r) :=
-  (D.isFraming_iff π).mp hπ r
-
-/-- A framing sends `Sum.inr r` and `Sum.inl r` to partners under `D`. -/
-theorem IsFraming.val_inr {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hπ : D.IsFraming π) (r : Fin k) : D.val (π (Sum.inr r)) = π (Sum.inl r) :=
-  D.apply_eq_of_apply_eq (hπ.val_inl r)
-
-/-- The identity permutation frames the identity diagram. -/
-theorem isFraming_permToBrauer_one : (permToBrauer (1 : Equiv.Perm (Fin k))).IsFraming 1 :=
-  PerfectMatching.congr_refl _
-
-/-- `Equiv.Perm.sumCongr 1 σ` frames `permToBrauer σ`. -/
-theorem isFraming_permToBrauer (σ : Equiv.Perm (Fin k)) :
-    (permToBrauer σ).IsFraming (Equiv.Perm.sumCongr 1 σ) := by
-  simp [IsFraming, ← relabel_def]
-
-/-- The transposition `Equiv.swap (Sum.inr a) (Sum.inl b)` frames `capCup a b`. -/
-theorem isFraming_capCup (a b : Fin k) :
-    (capCup a b).IsFraming (Equiv.swap (Sum.inr a) (Sum.inl b)) := by
-  rw [isFraming_iff]
-  intro r
-  rcases eq_or_ne a b with rfl | hab
-  · rw [capCup_self]
-    rcases eq_or_ne r a with rfl | hra
-    · simp [Equiv.Perm.one_def]
-    · simp [Equiv.swap_apply_of_ne_of_ne, Sum.inl_injective.ne hra, Sum.inr_injective.ne hra]
-  · rcases eq_or_ne r b with rfl | hrb
-    · simp [hab, Equiv.swap_apply_of_ne_of_ne, Sum.inr_injective.ne hab.symm]
-    rcases eq_or_ne r a with rfl | hra
-    · simp [hab, Equiv.swap_apply_of_ne_of_ne, Sum.inl_injective.ne hab]
-    · simp [hra, hrb, Equiv.swap_apply_of_ne_of_ne, Sum.inl_injective.ne hrb,
-        Sum.inr_injective.ne hra]
-
-/-- Transporting a diagram along `ρ` multiplies its framings on the left by `ρ`. -/
-theorem IsFraming.congr {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hπ : D.IsFraming π) (ρ : Equiv.Perm (Fin k ⊕ Fin k)) :
-    IsFraming (PerfectMatching.congr ρ D) (ρ * π) :=
-  (PerfectMatching.congr_trans π ρ (permToBrauer 1)).symm.trans (congrArg _ hπ)
-
-/-- Relabelling a diagram multiplies its framings on the left by `Equiv.Perm.sumCongr σ τ`. -/
-theorem IsFraming.relabel {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hπ : D.IsFraming π) (σ τ : Equiv.Perm (Fin k)) :
-    (D.relabel σ τ).IsFraming (Equiv.Perm.sumCongr σ τ * π) := by
-  rw [relabel_def]
-  exact hπ.congr (Equiv.Perm.sumCongr σ τ)
-
-/-- Reconnecting two arcs multiplies framings on the left by the reconnecting transposition. -/
-theorem IsFraming.reconnect {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hπ : D.IsFraming π) (x y : Fin k ⊕ Fin k) :
-    IsFraming (D.reconnect x y) (Equiv.swap (D.val x) y * π) := by
-  have hrec : D.reconnect x y = PerfectMatching.congr (Equiv.swap (D.val x) y) D :=
-    Subtype.ext ((PerfectMatching.reconnect_val D x y).trans (PerfectMatching.congr_val _ D).symm)
-  rw [hrec]
-  exact hπ.congr (Equiv.swap (D.val x) y)
-
-/-- Reversing the orientation of the `r`-th arc in a framing leaves it a framing of `D`. -/
-theorem IsFraming.mul_swap_inl_inr {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hπ : D.IsFraming π) (r : Fin k) :
-    D.IsFraming (π * Equiv.swap (Sum.inl r) (Sum.inr r)) := by
-  rw [isFraming_iff]
-  intro s
-  rcases eq_or_ne s r with rfl | hsr
-  · simp [hπ.val_inr s]
-  · have h1 : Sum.inl s ≠ (Sum.inl r : Fin k ⊕ Fin k) := Sum.inl_injective.ne hsr
-    have h2 : Sum.inr s ≠ (Sum.inr r : Fin k ⊕ Fin k) := Sum.inr_injective.ne hsr
-    simp [Equiv.swap_apply_of_ne_of_ne, h1, h2, hπ.val_inl s]
-
-/-- A framing intertwines `D.val` with `Sum.swap`. -/
-theorem IsFraming.val_apply {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hπ : D.IsFraming π) (x : Fin k ⊕ Fin k) : D.val (π x) = π x.swap := by
-  cases x
-  · exact hπ.val_inl _
-  · exact hπ.val_inr _
-
-/-- **A chosen arc framing of `D`**: enumerate the `k` lower ends of `D` and send `Sum.inl r` to
-the `r`-th lower end and `Sum.inr r` to its partner. -/
-noncomputable def framing (D : BrauerDiagram k) : Equiv.Perm (Fin k ⊕ Fin k) :=
-  let g : Fin k ≃ {x // D.IsLowerEnd x} :=
-    (Fintype.equivFinOfCardEq D.card_isLowerEnd).symm
-  (g.sumCongr (g.trans D.notLowerEndEquiv.symm)).trans (Equiv.sumCompl D.IsLowerEnd)
-
-/-- `D.framing` frames `D`. -/
-theorem isFraming_framing (D : BrauerDiagram k) : D.IsFraming D.framing := by
-  rw [isFraming_iff]
-  intro r
-  simp [framing]
-
-/-- **Orienting one chosen arc in a framing**: for any boundary point `x`, some framing of `D`
-lists the arc through `x` in the orientation `(x, D.val x)`. -/
-theorem exists_isFraming_apply_eq (D : BrauerDiagram k) (x : Fin k ⊕ Fin k) :
-    ∃ (π : Equiv.Perm (Fin k ⊕ Fin k)) (r : Fin k),
-      D.IsFraming π ∧ π (Sum.inl r) = x ∧ π (Sum.inr r) = D.val x := by
-  set π₀ := D.framing
-  have h₀ : D.IsFraming π₀ := D.isFraming_framing
-  rcases hx : π₀.symm x with r | r
-  · have hxr : π₀ (Sum.inl r) = x := by rw [← hx, π₀.apply_symm_apply]
-    exact ⟨π₀, r, h₀, hxr, (hxr ▸ h₀.val_inl r).symm⟩
-  · have hxr : π₀ (Sum.inr r) = x := by rw [← hx, π₀.apply_symm_apply]
-    refine ⟨π₀ * Equiv.swap (Sum.inl r) (Sum.inr r), r, h₀.mul_swap_inl_inr r, ?_, ?_⟩
-    · simp [hxr]
-    · simp [← hxr, h₀.val_inr r]
-
-/-- **Orienting two distinct arcs in a framing**: when `x` and `y` lie on distinct arcs of `D`,
-some framing of `D` lists the arc at `x` as `(x, D.val x)` at index `r₁` and the arc at `y` as
-`(D.val y, y)` at index `r₂ ≠ r₁`. -/
-theorem exists_isFraming_apply_pair_eq (D : BrauerDiagram k) {x y : Fin k ⊕ Fin k}
-    (hxy : x ≠ y) (hDx : D.val x ≠ y) :
-    ∃ (π : Equiv.Perm (Fin k ⊕ Fin k)) (r₁ r₂ : Fin k), r₁ ≠ r₂ ∧ D.IsFraming π ∧
-      π (Sum.inl r₁) = x ∧ π (Sum.inr r₁) = D.val x ∧
-      π (Sum.inl r₂) = D.val y ∧ π (Sum.inr r₂) = y := by
-  obtain ⟨π₁, r₁, hπ₁, hx₁, hx₂⟩ := D.exists_isFraming_apply_eq x
-  rcases hy : π₁.symm y with r₂ | r₂
-  · have hyr : π₁ (Sum.inl r₂) = y := by rw [← hy, π₁.apply_symm_apply]
-    have hr : r₁ ≠ r₂ := fun h => hxy (hx₁.symm.trans (h ▸ hyr))
-    refine ⟨π₁ * Equiv.swap (Sum.inl r₂) (Sum.inr r₂), r₁, r₂, hr,
-      hπ₁.mul_swap_inl_inr r₂, ?_, ?_, ?_, ?_⟩
-    · simp [Equiv.swap_apply_of_ne_of_ne (Sum.inl_injective.ne hr) Sum.inl_ne_inr, hx₁]
-    · simp [Equiv.swap_apply_of_ne_of_ne Sum.inr_ne_inl (Sum.inr_injective.ne hr), hx₂]
-    · simp [← hyr, hπ₁.val_inl r₂]
-    · simp [hyr]
-  · have hyr : π₁ (Sum.inr r₂) = y := by rw [← hy, π₁.apply_symm_apply]
-    have hr : r₁ ≠ r₂ := fun h => hDx (hx₂.symm.trans (h ▸ hyr))
-    exact ⟨π₁, r₁, r₂, hr, hπ₁, hx₁, hx₂, (hyr ▸ hπ₁.val_inr r₂).symm, hyr⟩
 
 /-! ### Skew-symmetric arc products and framing independence -/
 

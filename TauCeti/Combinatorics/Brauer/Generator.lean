@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Brauer.Congr
 -- `TauCeti.Combinatorics.Brauer.Flip` is imported for the reflection of a Brauer diagram, whose
 -- fixed point `TauCeti.BrauerDiagram.flip_capCup` below is; it re-exports
 -- `TauCeti.Combinatorics.Brauer.LoopCount`, which supplies the middle-loop count the relations
@@ -71,6 +72,8 @@ restated here.
 
 * `TauCeti.eq_capCup_iff`: a diagram is `capCup a b` exactly when it caps `a` to `b`, cups `a` to
   `b` and sends every other point through.
+* `TauCeti.BrauerDiagram.isFraming_capCup`: the transposition `Equiv.swap (Sum.inr a) (Sum.inl b)`
+  frames `capCup a b`.
 * `TauCeti.capCup_comm`, `TauCeti.capCup_eq_capCup_iff`: a cap-cup diagram depends exactly on the
   unordered pair it caps.
 * `TauCeti.BrauerDiagram.bottomCap_capCup`, `TauCeti.BrauerDiagram.topCup_capCup`: its cap and its
@@ -127,6 +130,15 @@ transposition exchanging `Sum.inr a` with `Sum.inl b`. -/
 theorem capCup_def (a b : Fin k) :
     capCup a b = PerfectMatching.congr (Equiv.swap (Sum.inr a) (Sum.inl b)) (permToBrauer 1) :=
   (rfl)
+
+namespace BrauerDiagram
+
+/-- The transposition `Equiv.swap (Sum.inr a) (Sum.inl b)` frames `capCup a b`. -/
+theorem isFraming_capCup (a b : Fin k) :
+    (capCup a b).IsFraming (Equiv.swap (Sum.inr a) (Sum.inl b)) := by
+  rw [isFraming_def, capCup_def]
+
+end BrauerDiagram
 
 /-- The arcs of a cap-cup diagram, read off the transported identity diagram. -/
 private theorem capCup_val_apply (a b : Fin k) (x : Fin k ⊕ Fin k) :
