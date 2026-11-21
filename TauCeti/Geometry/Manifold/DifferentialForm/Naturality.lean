@@ -77,7 +77,7 @@ theorem mpullback_mextDeriv_ofFunction {f : M → M'} (hf : MDifferentiable I I'
 /-- The pullback of the coordinate one-form `dz` of the real line along a real function `h` is
 the differential `dh`. -/
 theorem SmoothForm.mpullback_realLineCoordForm (h : M → ℝ) :
-    TauCeti.mpullback I 𝓘(ℝ) h realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction I h) := by
+    TauCeti.mpullback I 𝓘(ℝ) h realLineCoordForm.val = mextDeriv (RoughForm.ofFunction I h) := by
   ext x v
   rw [TauCeti.mpullback_apply, realLineCoordForm_apply, mextDeriv_ofFunction,
     ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply]
@@ -286,8 +286,8 @@ theorem mextDerivₗ_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : �
   apply Subtype.ext
   rw [coe_mpullback, mextDerivₗ_apply, mextDerivₗ_apply]
   rw [coe_mpullback]
-  have hφ : IsSmoothBundleForm (I := I') (F := F) (V := Trivial M' F) 1 φ.1 :=
-    (isSmoothBundleForm_def 1 φ.1).mpr (φ.contMDiff.of_le (by simp))
+  have hφ : IsSmoothBundleForm (I := I') (F := F) (V := Trivial M' F) 1 φ.val :=
+    (isSmoothBundleForm_def 1 φ.val).mpr (φ.contMDiff.of_le (by simp))
   exact (TauCeti.mpullback_mextDeriv (hf.of_le (by simp)) hφ).symm
 
 /-- The exterior derivative of the smooth pullback of a one-form, evaluated on tangent vectors
@@ -295,8 +295,8 @@ theorem mextDerivₗ_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (k : �
 differential. -/
 theorem mextDeriv_mpullback_apply_two (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 1) (x : M) (v w : TangentSpace I x) :
-    mextDeriv (mpullback f hf φ).1 x ![v, w] =
-      mextDeriv φ.1 (f x) ![mfderiv I I' f x v, mfderiv I I' f x w] := by
+    mextDeriv (mpullback f hf φ).val x ![v, w] =
+      mextDeriv φ.val (f x) ![mfderiv I I' f x v, mfderiv I I' f x w] := by
   rw [coe_mpullback, ← mpullback_mextDeriv_at ((hf x).of_le (by simp))
     ((φ.contMDiff (f x)).of_le (by simp)), TauCeti.mpullback_apply]
   congr 1

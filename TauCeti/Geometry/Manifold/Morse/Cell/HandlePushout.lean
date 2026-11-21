@@ -110,7 +110,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
   have hbd (i : ι) (s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (n - k i)) :
       f ((e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2) : M) ≤ c - ε := by
     rw [he, Homeomorph.apply_symm_apply, TopCat.coe_diskBoundaryInclusion_apply_down]
-    exact mem_sphere_zero_iff_norm.1 s.1.down.2
+    exact mem_sphere_zero_iff_norm.1 s.1.down.property
   have hmem (i : ι) (x : H i) (hx : f x ≤ c - ε) :
       ∃ s : TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (n - k i),
         (TopCat.diskBoundaryInclusion (k i) s.1, s.2) = e i x := by
@@ -121,16 +121,16 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
   let α (i : ι) : TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (n - k i)) ⟶
       TopCat.of {x | f x ≤ c - ε} :=
     TopCat.ofHom ⟨fun s ↦ ⟨(e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2), hbd i s⟩,
-      (continuous_subtype_val.comp ((e i).symm.continuous.comp
+      (continuous_subtypeVal.comp ((e i).symm.continuous.comp
         ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.prodMap continuous_id))).subtype_mk _⟩
   let χ (i : ι) : TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (n - k i)) ⟶
       TopCat.of {x | f x ≤ c + ε} :=
     TopCat.ofHom ⟨fun w ↦ ⟨Φ.symm ((e i).symm w),
-        hup _ (Or.inr (mem_iUnion.2 ⟨i, ((e i).symm w).2⟩))⟩,
-      (Φ.symm.continuous.comp (continuous_subtype_val.comp (e i).symm.continuous)).subtype_mk _⟩
+        hup _ (Or.inr (mem_iUnion.2 ⟨i, ((e i).symm w).property⟩))⟩,
+      (Φ.symm.continuous.comp (continuous_subtypeVal.comp (e i).symm.continuous)).subtype_mk _⟩
   let j : TopCat.of {x | f x ≤ c - ε} ⟶ TopCat.of {x | f x ≤ c + ε} :=
-    TopCat.ofHom ⟨fun x ↦ ⟨Φ.symm x, hup _ (Or.inl x.2)⟩,
-      (Φ.symm.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    TopCat.ofHom ⟨fun x ↦ ⟨Φ.symm x, hup _ (Or.inl x.property)⟩,
+      (Φ.symm.continuous.comp continuous_subtypeVal).subtype_mk _⟩
   have hα (i : ι) (s) : (α i s : M) = (e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2) :=
     rfl
   have hχ (i : ι) (w) : (χ i w : M) = Φ.symm ((e i).symm w) := rfl
@@ -151,7 +151,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     exact Subtype.ext (Φ.symm.injective (congrArg Subtype.val h))
   · -- `Φ` carries every point of `{f ≤ c + ε}` into the lower sublevel or into a handle.
     refine eq_univ_of_forall fun y ↦ ?_
-    obtain hy | hy := (hΦ y).2 y.2
+    obtain hy | hy := (hΦ y).2 y.property
     · exact Or.inl ⟨⟨Φ y, hy⟩, Subtype.ext (Φ.symm_apply_apply y)⟩
     · obtain ⟨i, hi⟩ := mem_iUnion.1 hy
       refine Or.inr (mem_iUnion.2 ⟨i, e i ⟨Φ y, hi⟩, Subtype.ext ?_⟩)
@@ -160,11 +160,11 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     rintro i l hil y ⟨⟨w, rfl⟩, ⟨w', hw'⟩⟩
     have h : ((e i).symm w : M) = (e l).symm w' :=
       Φ.symm.injective ((congrArg Subtype.val hw').symm)
-    exact absurd h ((hH hil).ne_of_mem ((e i).symm w).2 ((e l).symm w').2)
+    exact absurd h ((hH hil).ne_of_mem ((e i).symm w).property ((e l).symm w').property)
   · -- A handle meets the lower sublevel in its attaching region.
     intro i a b hab
     have h : (a : M) = (e i).symm b := Φ.symm.injective (congrArg Subtype.val hab)
-    obtain ⟨s, hs⟩ := hmem i ((e i).symm b) (h ▸ a.2)
+    obtain ⟨s, hs⟩ := hmem i ((e i).symm b) (h ▸ a.property)
     rw [Homeomorph.apply_symm_apply] at hs
     exact ⟨s, Subtype.ext (by rw [hα, hs, h]), hs⟩
   · -- The attaching maps are injective on compact spaces, with disjoint images.
@@ -178,11 +178,12 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     exact ⟨(TopCat.isClosedEmbedding_diskBoundaryInclusion (k i)).injective h'.1, h'.2⟩
   · rw [Function.onFun, disjoint_iff_forall_ne]
     rintro _ ⟨s, rfl⟩ _ ⟨s', rfl⟩ h
-    exact (hH hil).ne_of_mem ((e i).symm _).2 ((e l).symm _).2 (congrArg Subtype.val h)
+    exact (hH hil).ne_of_mem ((e i).symm _).property ((e l).symm _).property
+        (congrArg Subtype.val h)
   · -- The attaching regions lie in the level `f⁻¹(c - ε)`.
-    exact le_antisymm (α i s).2 (hge i _)
+    exact le_antisymm (α i s).property (hge i _)
   · -- `Φ` carries this point into the handle `H i` only, at the point `w` of the handle.
-    have hw : Φ (χ i w) ∈ H i := by rw [hχ, Φ.apply_symm_apply]; exact ((e i).symm w).2
+    have hw : Φ (χ i w) ∈ H i := by rw [hχ, Φ.apply_symm_apply]; exact ((e i).symm w).property
     have hwi (hw : Φ (χ i w) ∈ H i) : (⟨Φ (χ i w), hw⟩ : H i) = (e i).symm w :=
       Subtype.ext ((congrArg Φ (hχ i w)).trans (Φ.apply_symm_apply _))
     rw [hΦtop, mem_range_diskBoundaryInclusion_iff]
@@ -197,7 +198,7 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
     have hH' : (x : M) ∉ ⋃ i, H i := by
       rw [mem_iUnion]
       rintro ⟨i, hi⟩
-      obtain ⟨s, hs⟩ := hrange i ⟨x, hi⟩ x.2
+      obtain ⟨s, hs⟩ := hrange i ⟨x, hi⟩ x.property
       exact hx i ⟨s, Subtype.ext hs⟩
     have hΦx : Φ (j x) = x := by rw [hj, Φ.apply_symm_apply]
     rw [hΦtop, hΦx]

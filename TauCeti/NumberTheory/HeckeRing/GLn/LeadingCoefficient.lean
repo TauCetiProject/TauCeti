@@ -128,8 +128,8 @@ private lemma multiplicity_diagCoset_mul_le_one {a b : Fin n → ℕ} (ha : ∀ 
       (natDiagGL n a)⁻¹ * (g₁⁻¹ * i.out * h₁) * natDiagGL n a ∈ SLnZ n := by
     rw [QuotientGroup.eq] at hp
     -- forget the coset representatives, on whose types `δa` and `δb` enter
-    have hu : (i.out : GL (Fin n) ℚ) ∈ SLnZ n := i.out.2
-    have hv : (j.out : GL (Fin n) ℚ) ∈ SLnZ n := j.out.2
+    have hu : (i.out : GL (Fin n) ℚ) ∈ SLnZ n := i.out.property
+    have hv : (j.out : GL (Fin n) ℚ) ∈ SLnZ n := j.out.property
     generalize (i.out : GL (Fin n) ℚ) = u at hp hu ⊢
     generalize (j.out : GL (Fin n) ℚ) = v at hp hv
     set κ := (u * δa * (v * δb))⁻¹ * δc

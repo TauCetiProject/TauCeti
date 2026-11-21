@@ -492,7 +492,8 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_of_forall_translate (hp : p ≠ (
   have hpiece (t : Ioo (-r) r) : ∀ᵐ s ∂volume.restrict (Ioo (c t - ρ t) (c t + ρ t)),
       W1p.halfDiscFlatTrace hp r u (WithLp.toLp 2 ((0 : ℝ), s)) = 0 := by
     refine ae_restrict_of_ae_restrict_of_subset Ioo_subset_Icc_self ?_
-    exact (W1p.translate_mem_halfDiscFlatTraceZeroSubmodule_iff hp (hc t t.2)).1 (hmem t t.2)
+    exact (W1p.translate_mem_halfDiscFlatTraceZeroSubmodule_iff hp (hc t t.property)).1
+      (hmem t t.property)
   -- Countably many of the subsegments cover `(-r, r)`.
   obtain ⟨T, hT, hTU⟩ := isOpen_iUnion_countable
     (fun t : Ioo (-r) r => Ioo (c t - ρ t) (c t + ρ t)) fun _ => isOpen_Ioo

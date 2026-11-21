@@ -38,13 +38,13 @@ example {ϖ : P.ringOfDefinition} (hϖ : IsPseudoUniformizer (ϖ : C))
       (MvPowerSeries.X i + MvPowerSeries.C (-(a i : C))) ∈ P.ringOfDefinition := by
     rw [map_add, MvPowerSeries.coeff_X, MvPowerSeries.coeff_C]
     refine add_mem ?_ ?_ <;> split_ifs
-    exacts [one_mem _, zero_mem _, neg_mem (a i).2, zero_mem _]
+    exacts [one_mem _, zero_mem _, neg_mem (a i).property, zero_mem _]
   -- The value at a point `x ∈ A₀^N` is `xᵢ - aᵢ`.
   have heval (x : Fin N → P.ringOfDefinition) (i : Fin N) :
       weightedEval (RingHom.id C) (fun l ↦ (x l : C))
         (MvPowerSeries.X i + MvPowerSeries.C (-(a i : C))) = x i - a i := by
     rw [weightedEval_add_of_forall_isPowerBounded continuous_id.continuousAt
-      (fun l ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (x l).2)
+      (fun l ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (x l).property)
       (isWeightedRestricted_X _ i) (isWeightedRestricted_C _ _), weightedEval_X, weightedEval_C]
     simp [sub_eq_add_neg]
   -- The Jacobian matrix is the identity.
@@ -60,7 +60,7 @@ example {ϖ : P.ringOfDefinition} (hϖ : IsPseudoUniformizer (ϖ : C))
       (MvPowerSeries.X i + MvPowerSeries.C (-(a i : C))) ∈
         (ϖ : C) ^ (2 * 0 + 1) • (P.ringOfDefinition : Set C) := by
     obtain ⟨r, hr⟩ := ht i
-    refine ⟨r, r.2, ?_⟩
+    refine ⟨r, r.property, ?_⟩
     rw [heval]
     simpa using congrArg ((↑) : P.ringOfDefinition → C) hr.symm
   simpa using existsUnique_weightedEval_eq_zero P hϖ hF hF₀ t hJ hFt
