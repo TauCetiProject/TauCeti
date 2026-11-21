@@ -6,19 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
+public import Mathlib.GroupTheory.Coxeter.Length
+public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.Coxeter.Bipartite
 
 import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.Combinatorics.SimpleGraph.Acyclic
 import TauCeti.Data.List.OneDegenerateOrder
 import TauCeti.GroupTheory.Coxeter.Basic
+import TauCeti.GroupTheory.Coxeter.Restriction
 
 /-!
-# Conjugacy of Coxeter elements on a forest
+# Lengths and conjugacy of Coxeter elements
 
-Let `cs` be a Coxeter system with Coxeter matrix `M`. A *Coxeter element* is a product of all the
-simple reflections, each exactly once, in some order. Different orders usually give different
-elements, but two moves on the word preserve the conjugacy class of the product:
+Let `cs` be a Coxeter system with Coxeter matrix `M`. Since every duplicate-free word in the simple
+reflections is reduced (`CoxeterSystem.isReduced_of_nodup`), every *Coxeter element*—a product of
+all the simple reflections, each taken once—has Coxeter length `Fintype.card B`
+(`CoxeterSystem.length_wordProd_eq_card`, `CoxeterSystem.length_bipartiteCoxeterElement`), and each
+colour-class product has length equal to the size of its colour class
+(`CoxeterSystem.length_colorClassProd`).
+
+Different orders of the simple reflections usually give different Coxeter elements, but two moves on
+the word preserve the conjugacy class of the product:
 
 * moving the first letter to the end conjugates the product by that simple reflection, and more
   generally rotating a word `l₁ ++ l₂` to `l₂ ++ l₁` conjugates the product
@@ -44,6 +53,10 @@ conjugate.
 
 ## Main results
 
+* `CoxeterSystem.length_wordProd_eq_card`, `CoxeterSystem.length_colorClassProd`,
+  `CoxeterSystem.length_bipartiteCoxeterElement`, `CoxeterSystem.bipartiteCoxeterElement_ne_one`,
+  and `CoxeterSystem.one_lt_orderOf_bipartiteCoxeterElement`: lengths of Coxeter words,
+  colour-class products, and bipartite Coxeter elements, and nontriviality on a nonempty index type.
 * `CoxeterSystem.isConj_wordProd_of_perm`: if the Coxeter graph induced on the letters of a word
   without repeated letters is a forest, every rearrangement of the word spells a conjugate element.
 * `CoxeterSystem.isConj_wordProd_bipartiteCoxeterElement`: on a forest, every Coxeter element is
@@ -61,6 +74,44 @@ public section
 namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
+
+/-! ### Lengths of Coxeter elements and colour-class products -/
+
+/-- **Every Coxeter element has Coxeter length equal to the rank `Fintype.card B`.** -/
+theorem length_wordProd_eq_card [Fintype B] {l : List B} (hl : l.Nodup) (hl' : ∀ i, i ∈ l) :
+    cs.length (cs.wordProd l) = Fintype.card B := by
+  classical
+  rw [cs.length_wordProd_of_nodup hl, ← List.toFinset_card_of_nodup hl]
+  exact congrArg Finset.card (Finset.ext fun i ↦ by simp [hl' i])
+
+/-- The Coxeter length of a colour-class product is the cardinality of that colour class. -/
+@[simp] theorem length_colorClassProd [Fintype B] (c : M.graph.Coloring Bool) (x : Bool) :
+    cs.length (cs.colorClassProd c x) = (Finset.univ.filter fun i ↦ c i = x).card := by
+  classical
+  let s := Finset.univ.filter fun i ↦ c i = x
+  rw [← cs.wordProd_eq_colorClassProd c (Finset.nodup_toList s) (by simp [s]),
+    cs.length_wordProd_of_nodup (Finset.nodup_toList s), Finset.length_toList]
+
+/-- The Coxeter length of a bipartite Coxeter element is the rank `Fintype.card B`. -/
+@[simp] theorem length_bipartiteCoxeterElement [Fintype B] (c : M.graph.Coloring Bool) :
+    cs.length (cs.bipartiteCoxeterElement c) = Fintype.card B := by
+  obtain ⟨_, _, -, -, hnd, hmem, heq⟩ := cs.exists_wordProd_eq_bipartiteCoxeterElement c
+  rw [← heq, cs.length_wordProd_eq_card hnd hmem]
+
+/-- On a nonempty index type, a bipartite Coxeter element is nontrivial. -/
+@[simp]
+theorem bipartiteCoxeterElement_ne_one [Fintype B] [Nonempty B] (c : M.graph.Coloring Bool) :
+    cs.bipartiteCoxeterElement c ≠ 1 := fun h1 ↦
+  Fintype.card_ne_zero ((cs.length_bipartiteCoxeterElement c).symm.trans (by simp [h1]))
+
+/-- In a finite Coxeter group on a nonempty index type, every bipartite Coxeter element has order
+strictly greater than `1`. -/
+theorem one_lt_orderOf_bipartiteCoxeterElement [Finite W] [Fintype B] [Nonempty B]
+    (c : M.graph.Coloring Bool) : 1 < orderOf (cs.bipartiteCoxeterElement c) :=
+  Nat.lt_of_le_of_ne (isOfFinOrder_of_finite _).orderOf_pos
+    (Ne.symm (orderOf_eq_one_iff.not.mpr (cs.bipartiteCoxeterElement_ne_one c)))
+
+/-! ### Conjugacy of Coxeter elements on a forest -/
 
 /-- **Coxeter elements on a forest are conjugate.** If the Coxeter graph induces a forest on the
 letters of a word with no repeated letter, then every rearrangement of the word spells an element

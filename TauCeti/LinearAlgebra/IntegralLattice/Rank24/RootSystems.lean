@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.ComponentList
-public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
+public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots.Basic
 import Mathlib.Tactic.DeriveFintype
 
 /-!

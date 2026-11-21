@@ -38,6 +38,8 @@ simple roots of a base, so that it also applies to a family known to span before
   reflections and containing no simple root is trivial.
 * `TauCeti.DynkinType.connected_diagramGraph_cartanMatrix`: every valid standard Dynkin diagram is
   connected.
+* `TauCeti.HasCartanType.connected_diagramGraph_cartanMatrix`: the Dynkin diagram of a base of
+  valid standard Cartan type is connected.
 * `TauCeti.HasCartanType.isIrreducible`: a root system of valid Cartan type is irreducible.
 -/
 
@@ -218,25 +220,26 @@ end
 
 namespace HasCartanType
 
+/-- The Dynkin diagram of a base of valid standard Cartan type is connected. -/
+theorem connected_diagramGraph_cartanMatrix {R M N ι : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
+    {b : P.Base} {t : DynkinType} (h : HasCartanType P b t) (ht : t.Valid) :
+    (diagramGraph b.cartanMatrix).Connected := by
+  obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
+  have hsub : b.cartanMatrix = t.cartanMatrix.submatrix e e := Matrix.ext he
+  rw [hsub, diagramGraph_submatrix e.injective]
+  exact (_root_.SimpleGraph.Iso.comap e _).connected_iff.mpr
+    (DynkinType.connected_diagramGraph_cartanMatrix ht)
+
 variable {K M N ι : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [P.IsCrystallographic]
 
 /-- A root system whose base has a valid standard Cartan type is irreducible. -/
 theorem isIrreducible [P.IsRootSystem] {b : P.Base} {t : DynkinType}
     (h : HasCartanType P b t) (ht : t.Valid) :
-    P.IsIrreducible := by
-  obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
-  let graphIso : diagramGraph b.cartanMatrix ≃g diagramGraph t.cartanMatrix := by
-    refine ⟨e, ?_⟩
-    intro i j
-    simp only [diagramGraph_adj, he]
-    constructor
-    · rintro ⟨hij, h₁, h₂⟩
-      exact ⟨fun h ↦ hij (congrArg e h), h₁, h₂⟩
-    · rintro ⟨hij, h₁, h₂⟩
-      exact ⟨fun h ↦ hij (e.injective h), h₁, h₂⟩
-  exact RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix (P := P) b
-    (graphIso.connected_iff.mpr (DynkinType.connected_diagramGraph_cartanMatrix ht))
+    P.IsIrreducible :=
+  RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix (P := P) b
+    (h.connected_diagramGraph_cartanMatrix ht)
 
 end HasCartanType
 

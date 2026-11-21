@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
 public import Mathlib.LinearAlgebra.Matrix.Irreducible.Defs
@@ -37,6 +38,8 @@ of the transpose (simplicity as a root of the characteristic polynomial, and the
 
 * `Matrix.isIrreducible_iff_forall_transGen`: a nonnegative matrix is irreducible exactly when
   nonempty chains of positive entries join every index to every index.
+* `Matrix.isIrreducible_of_preconnected`: a nonnegative matrix on a nontrivial index type
+  dominating a preconnected simple graph is irreducible.
 * `Matrix.IsIrreducible.isPrimitive_one_add`: if `A` is irreducible, then `1 + A` is primitive.
 * `Matrix.IsIrreducible.exists_mulVec_eq_smul`: an irreducible real matrix has an eigenvector with
   strictly positive entries, for a strictly positive eigenvalue.
@@ -82,6 +85,29 @@ theorem isIrreducible_iff_forall_transGen {n R : Type*} [Ring R] [LinearOrder R]
     | tail _ hbc ih =>
       obtain ⟨p, -⟩ := ih
       exact ⟨p.cons ⟨hbc⟩, by simp⟩
+
+/-- A nonnegative matrix on a nontrivial index type whose strictly positive entries contain the
+adjacency relation of a preconnected simple graph is irreducible. -/
+theorem isIrreducible_of_preconnected {m R : Type*} [Ring R] [LinearOrder R] [Nontrivial m]
+    {A : Matrix m m R} (hnonneg : ∀ i j, 0 ≤ A i j) {G : SimpleGraph m}
+    (hconn : G.Preconnected) (hG : ∀ {i j}, G.Adj i j → 0 < A i j) : A.IsIrreducible := by
+  refine (isIrreducible_iff_forall_transGen hnonneg).2 fun i j ↦ ?_
+  have hwalk {a b : m} (w : G.Walk a b) (hw : 0 < w.length) :
+      Relation.TransGen (fun x y ↦ 0 < A x y) a b := by
+    induction w with
+    | nil => simp at hw
+    | @cons a c b hadj w ih =>
+      rcases Nat.eq_zero_or_pos w.length with h0 | h0
+      · obtain rfl := w.eq_of_length_eq_zero h0
+        exact .single (hG hadj)
+      · exact .head (hG hadj) (ih h0)
+  rcases eq_or_ne i j with rfl | hij
+  · obtain ⟨k, hki⟩ := exists_ne i
+    obtain ⟨w⟩ := hconn i k
+    have hw : 0 < w.length := Nat.pos_of_ne_zero fun h0 ↦ hki.symm (w.eq_of_length_eq_zero h0)
+    exact (hwalk w hw).trans (hwalk w.reverse (by simpa using hw))
+  · obtain ⟨w⟩ := hconn i j
+    exact hwalk w (Nat.pos_of_ne_zero fun h0 ↦ hij (w.eq_of_length_eq_zero h0))
 
 variable {n : Type*} [Fintype n]
 

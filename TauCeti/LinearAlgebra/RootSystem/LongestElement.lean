@@ -57,6 +57,8 @@ spelled throughout as `(inversions P b w).ncard`.
 * `TauCeti.longestElement_smul_dominantChamber` and
   `TauCeti.longestElement_smul_openDominantChamber`: `w₀` carries the dominant chamber, and its
   interior, onto its negative, the antidominant chamber.
+* `TauCeti.exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self`: any nonempty set of
+  roots whose sum is fixed by `w₀` contains both a positive root and a negative root.
 
 ## Implementation notes
 
@@ -357,6 +359,39 @@ theorem coroot'_smul_longestElement (i : ι) (x : M) :
       P.coroot' (P.weylGroupToPerm (longestElement P b) i) x := by
   conv_lhs => rw [← weylGroupToPerm_longestElement_involutive P b i]
   exact RootPairing.coroot'_weylGroupToPerm_smul P _ _ x
+
+variable {P b} in
+/-- **A nonempty set of roots whose sum is fixed by the longest element contains both a positive
+root and a negative root.** -/
+theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self {O : Finset ι}
+    (hOne : O.Nonempty) (hw₀ : longestElement P b • ∑ y ∈ O, P.root y = ∑ y ∈ O, P.root y) :
+    (∃ y ∈ O, b.IsPos y) ∧ (∃ y ∈ O, ¬ b.IsPos y) := by
+  set w₀ := longestElement P b
+  have hnot_all_pos {S : Finset ι} (hSne : S.Nonempty)
+      (hS : w₀ • ∑ y ∈ S, P.root y = ∑ y ∈ S, P.root y) : ∃ y ∈ S, ¬ b.IsPos y := by
+    by_contra! hall_pos
+    have hns_cone : -(∑ y ∈ S, P.root y) ∈ posRootCone P b := by
+      rw [← hS, show -(w₀ • ∑ y ∈ S, P.root y) = ∑ y ∈ S, P.root
+          (P.reflectionPerm (P.weylGroupToPerm w₀ y) (P.weylGroupToPerm w₀ y)) by
+        simp only [Finset.smul_sum, P.weylGroup_apply_root, ← Finset.sum_neg_distrib,
+          P.root_reflectionPerm, P.reflection_apply_self]]
+      exact AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
+        ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b _).mpr
+          (mapsTo_posRoots_negRoots_longestElement P b ((mem_posRoots P b y).mpr (hall_pos y hy))))
+    exact sum_root_ne_zero_of_mem_posRoots P b hSne (f := id)
+      (fun y hy ↦ (mem_posRoots P b y).mpr (hall_pos y hy))
+      ((isPointed_posRootCone P b).eq_zero_of_mem_of_neg_mem
+        (AddSubmonoid.sum_mem _ fun y hy ↦
+          root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b y).mpr (hall_pos y hy)))
+        hns_cone)
+  refine ⟨?_, hnot_all_pos hOne hw₀⟩
+  have himg_sum : ∑ z ∈ O.map (P.weylGroupToPerm w₀).toEmbedding, P.root z = ∑ y ∈ O, P.root y := by
+    simpa only [Finset.sum_map, Equiv.coe_toEmbedding, Finset.smul_sum, P.weylGroup_apply_root]
+      using hw₀
+  obtain ⟨_, hz, hnot_pos⟩ := hnot_all_pos hOne.map (by rwa [himg_sum])
+  obtain ⟨y, hyO, rfl⟩ := Finset.mem_map.mp hz
+  exact ⟨y, hyO, by_contra fun hy_neg ↦ hnot_pos ((mem_posRoots P b _).mp
+    (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b y).mpr hy_neg)))⟩
 
 end Combinatorics
 

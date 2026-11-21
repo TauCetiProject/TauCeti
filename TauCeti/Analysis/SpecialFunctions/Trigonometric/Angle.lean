@@ -33,6 +33,12 @@ order of the rank-two rotations in the geometric representation of a Coxeter gro
   differ by an integer.
 * `TauCeti.dvd_of_cos_two_mul_pi_div_eq_one`: if `cos (2 n (π / m)) = 1` for a nonzero natural `m`,
   then `m ∣ n`.
+* `TauCeti.coprime_of_mul_eq_mul_pi` and `TauCeti.eq_pi_div_of_cos_two_mul_eq_one`: a positive
+  angle `θ` whose `2h`-th multiple is a multiple of `2π` minimally, with no `2nθ + qπ` in `(0, θ)`,
+  equals `π / h`.
+* `TauCeti.toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos` and
+  `TauCeti.eq_of_cos_pos_of_cos_add_one_nonpos`: a sampled sinusoid `cos (α₀ + 2π k / h)` passes
+  from strictly positive to nonpositive at most once on `Fin h`.
 * `Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq`: two reals have the same `[0, 2π)` representative
   exactly when they are equal in `Real.Angle`.
 * `Real.Angle.toReal_sub_of_sign_eq`: for angles of the same sign, the subtracted one not `π`,
@@ -140,6 +146,110 @@ theorem dvd_of_cos_two_mul_pi_div_eq_one {m n : ℕ} (hm : m ≠ 0)
     have : (n : ℤ) = j * (m : ℤ) := by exact_mod_cast hcancel.symm
     linarith⟩
   exact Int.ofNat_dvd.1 (by simpa using hint)
+
+/-- If `h > 0` satisfies `h * θ = m * π` while `cos (2 h' θ) ≠ 1` for all `0 < h' < h`, then
+`|m|` and `h` are coprime. -/
+theorem coprime_of_mul_eq_mul_pi {h : ℕ} (hh : 0 < h) {θ : ℝ} {m : ℤ}
+    (hmθ : (h : ℝ) * θ = (m : ℝ) * Real.pi)
+    (hmin : ∀ h' : ℕ, 0 < h' → h' < h → Real.cos (2 * (h' : ℝ) * θ) ≠ 1) :
+    m.natAbs.Coprime h := by
+  rw [Nat.coprime_iff_gcd_eq_one]; by_contra hne1; set d := m.natAbs.gcd h
+  have hd_h : d ∣ h := Nat.gcd_dvd_right _ _
+  have hd_m : (d : ℤ) ∣ m := Int.natCast_dvd.mpr (Nat.gcd_dvd_left _ _)
+  have h1 : (d : ℝ) * ((h / d : ℕ) : ℝ) = h := by exact_mod_cast Nat.mul_div_cancel' hd_h
+  have h2 : (d : ℝ) * ((m / (d : ℤ) : ℤ) : ℝ) = m := by exact_mod_cast Int.mul_ediv_cancel' hd_m
+  have hd0 : 0 < d := Nat.gcd_pos_of_pos_right _ hh
+  exact hmin (h / d) (Nat.div_pos (Nat.le_of_dvd hh hd_h) hd0)
+    (Nat.div_lt_self hh (Nat.lt_of_le_of_ne hd0 (Ne.symm hne1))) ((Real.cos_eq_one_iff _).mpr
+      ⟨m / (d : ℤ), mul_left_cancel₀ (by positivity : (d : ℝ) ≠ 0)
+        (by linear_combination -2 * hmθ - 2 * θ * h1 + 2 * Real.pi * h2)⟩)
+
+/-- If `θ > 0` has `h > 0` as the least positive natural with `cos (2 h θ) = 1`, and no angle
+`2 n θ + q π` (`n : ℕ`, `q : ℤ`) falls inside `(0, θ)`, then `θ = π / h`. -/
+theorem eq_pi_div_of_cos_two_mul_eq_one {h : ℕ} (hh : 0 < h) {θ : ℝ} (hθpos : 0 < θ)
+    (hcos : Real.cos (2 * (h : ℝ) * θ) = 1)
+    (hmin : ∀ h' : ℕ, 0 < h' → h' < h → Real.cos (2 * (h' : ℝ) * θ) ≠ 1)
+    (hwall : ∀ (n : ℕ) (q : ℤ),
+      ¬ (0 < 2 * (n : ℝ) * θ + (q : ℝ) * Real.pi ∧ 2 * (n : ℝ) * θ + (q : ℝ) * Real.pi < θ)) :
+    θ = Real.pi / (h : ℝ) := by
+  have hhpos : (0 : ℝ) < h := by positivity
+  obtain ⟨m, hm⟩ := (Real.cos_eq_one_iff (2 * (h : ℝ) * θ)).mp hcos
+  have hmθ : (h : ℝ) * θ = (m : ℝ) * Real.pi := by linarith
+  have hmpos : 0 < m :=
+    Int.cast_pos.mp (pos_of_mul_pos_left (hmθ ▸ mul_pos hhpos hθpos) Real.pi_pos.le)
+  have hcop : m.natAbs.Coprime h := coprime_of_mul_eq_mul_pi hh hmθ hmin
+  suffices m = 1 by rw [this, Int.cast_one, one_mul] at hmθ; rw [eq_div_iff hhpos.ne']; linarith
+  by_contra hm1; set g : ℕ := (2 * m).gcd (h : ℤ)
+  have hg_h : g ∣ h := by simpa [g] using Int.natAbs_dvd_natAbs.mpr (Int.gcd_dvd_right (2 * m) h)
+  have hg_2 : g ∣ 2 := (hcop.coprime_dvd_right hg_h).symm.dvd_of_dvd_mul_right
+    (by exact_mod_cast (by simpa [Int.natAbs_of_nonneg hmpos.le] using Int.gcd_dvd_left (2 * m) h :
+      (g : ℤ) ∣ (2 * m.natAbs : ℤ)))
+  have hg_lt_m : (g : ℤ) < m := by
+    have := Nat.le_of_dvd (by norm_num) hg_2
+    have : m = 2 → g ≠ 2 := fun hm2 hg2 ↦ Nat.not_coprime_of_dvd_of_dvd one_lt_two (dvd_refl 2)
+      (hg2 ▸ hg_h) (by simpa [hm2] using hcop)
+    omega
+  set a := Int.gcdA (2 * m) (h : ℤ); set n : ℕ := (a % (h : ℤ)).toNat
+  set q : ℤ := Int.gcdB (2 * m) (h : ℤ) + 2 * m * (a / (h : ℤ))
+  have hcr : 2 * (m : ℝ) * n + h * q = g := by
+    exact_mod_cast (by linear_combination -Int.gcd_eq_gcd_ab (2 * m) (h : ℤ) +
+      2 * m * Int.mul_ediv_add_emod a h +
+      2 * m * Int.toNat_of_nonneg (Int.emod_nonneg a (by omega : (h : ℤ) ≠ 0)) :
+        2 * m * (n : ℤ) + (h : ℤ) * q = (g : ℤ))
+  have hcomb_real : (h : ℝ) * (2 * (n : ℝ) * θ + (q : ℝ) * Real.pi) = (g : ℝ) * Real.pi := by
+    linear_combination 2 * (n : ℝ) * hmθ + Real.pi * hcr
+  refine hwall n q ⟨pos_of_mul_pos_right ?_ hhpos.le, lt_of_mul_lt_mul_left ?_ hhpos.le⟩
+  · rw [hcomb_real]
+    exact mul_pos (by exact_mod_cast Int.gcd_pos_of_ne_zero_right (2 * m) (by omega)) Real.pi_pos
+  · rw [hcomb_real, hmθ]; exact mul_lt_mul_of_pos_right (by exact_mod_cast hg_lt_m) Real.pi_pos
+
+/-- If `0 ≤ δ`, `0 < cos α`, and `cos (α + δ) ≤ 0`, then the `[-π, π)` representative
+`toIcoMod Real.two_pi_pos (-π) α` lies in `[π / 2 - δ, π / 2)`. -/
+theorem toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
+    (hδ0 : 0 ≤ δ) (hcos : 0 < Real.cos α) (hcos_add : Real.cos (α + δ) ≤ 0) :
+    toIcoMod Real.two_pi_pos (-Real.pi) α ∈ Set.Ico (Real.pi / 2 - δ) (Real.pi / 2) := by
+  set β := toIcoMod Real.two_pi_pos (-Real.pi) α; set m := toIcoDiv Real.two_pi_pos (-Real.pi) α
+  have hmem := toIcoMod_mem_Ico Real.two_pi_pos (-Real.pi) α
+  have hshift : β = α - m * (2 * Real.pi) := (self_sub_toIcoDiv_mul ..).symm
+  have hcosβ : 0 < Real.cos β := by rwa [hshift, Real.cos_sub_int_mul_two_pi]
+  have hβ_gt : -(Real.pi / 2) < β := by
+    by_contra! hle
+    linarith [Real.cos_neg β ▸ Real.cos_nonpos_of_pi_div_two_le_of_le (x := -β)
+      (by linarith) (by linarith [hmem.1])]
+  have hβ_lt : β < Real.pi / 2 := by
+    by_contra! hge; linarith [Real.cos_nonpos_of_pi_div_two_le_of_le hge (by linarith [hmem.2])]
+  refine ⟨?_, hβ_lt⟩; by_contra! hlt
+  have hca : Real.cos (β + δ) = Real.cos (α + δ) := by
+    rw [hshift, show α - m * (2 * Real.pi) + δ = α + δ - m * (2 * Real.pi) by ring,
+      Real.cos_sub_int_mul_two_pi]
+  linarith [Real.cos_pos_of_mem_Ioo (x := β + δ) ⟨by linarith, by linarith⟩]
+
+/-- A sampled sinusoid `cos (α₀ + 2π k / h)` passes from strictly positive at `k` to nonpositive at
+`k + 1` at most once as `k` ranges over `Fin h`. -/
+theorem eq_of_cos_pos_of_cos_add_one_nonpos {h : ℕ} {α₀ : ℝ} {k₁ k₂ : Fin h}
+    (hpos₁ : 0 < Real.cos (α₀ + 2 * Real.pi * (k₁ : ℝ) / h))
+    (hneg₁ : Real.cos (α₀ + 2 * Real.pi * ((k₁ : ℝ) + 1) / h) ≤ 0)
+    (hpos₂ : 0 < Real.cos (α₀ + 2 * Real.pi * (k₂ : ℝ) / h))
+    (hneg₂ : Real.cos (α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h) ≤ 0) : k₁ = k₂ := by
+  have hh_pos : (0 : ℝ) < h := Nat.cast_pos.mpr k₁.pos
+  set δ : ℝ := 2 * Real.pi / h; have hδ0 : 0 < δ := div_pos Real.two_pi_pos hh_pos
+  set α₁ := α₀ + 2 * Real.pi * (k₁ : ℝ) / h; set α₂ := α₀ + 2 * Real.pi * (k₂ : ℝ) / h
+  obtain ⟨hlo₁, hhi₁⟩ := toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos hδ0.le hpos₁
+    (by rwa [show α₁ + δ = α₀ + 2 * Real.pi * ((k₁ : ℝ) + 1) / h by simp only [α₁, δ]; ring])
+  obtain ⟨hlo₂, hhi₂⟩ := toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos hδ0.le hpos₂
+    (by rwa [show α₂ + δ = α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h by simp only [α₂, δ]; ring])
+  set m₁ := toIcoDiv Real.two_pi_pos (-Real.pi) α₁; set m₂ := toIcoDiv Real.two_pi_pos (-Real.pi) α₂
+  rw [← self_sub_toIcoDiv_mul Real.two_pi_pos (-Real.pi)] at hlo₁ hhi₁ hlo₂ hhi₂
+  set n : ℤ := (k₂ : ℤ) - (k₁ : ℤ) - (m₂ - m₁) * (h : ℤ)
+  have hdiff : (n : ℝ) * δ = (α₂ - m₂ * (2 * Real.pi)) - (α₁ - m₁ * (2 * Real.pi)) := by
+    simp only [n, α₁, α₂, δ]; push_cast; field_simp; ring
+  have h0 : (-1 : ℤ) < n ∧ n < 1 := ⟨(Int.cast_lt (R := ℝ)).mp (lt_of_mul_lt_mul_right
+      (a := δ) (by push_cast; linarith) hδ0.le),
+    (Int.cast_lt (R := ℝ)).mp (lt_of_mul_lt_mul_right (a := δ) (by push_cast; linarith) hδ0.le)⟩
+  have := Nat.eq_zero_of_dvd_of_lt (by
+    simpa using Int.natAbs_dvd_natAbs.mpr
+      (⟨m₂ - m₁, by rw [mul_comm]; omega⟩ : (h : ℤ) ∣ (k₂ : ℤ) - k₁)) (by omega)
+  exact Fin.ext (by omega)
 
 /-- If the oriented angles `θ` and `α` add up to `β ∈ (0, π)`, where `|θ| = α`,
 then `β = 2α`: the other possibility `θ = -α` would force `β = 0`. -/

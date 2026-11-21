@@ -42,6 +42,9 @@ of the Coxeter matrix (`CoxeterSystem.orderOf_simple_mul_simple`).
 
 * `CoxeterSystem.simple_mem_parabolic_iff`: a simple reflection lies in the standard parabolic
   subgroup of `J` exactly when its index lies in `J`.
+* `CoxeterSystem.isReduced_of_nodup`, `CoxeterSystem.length_wordProd_of_nodup`, and
+  `CoxeterSystem.wordProd_ne_one_of_nodup`: a word without repeated letters is reduced, so its
+  product has Coxeter length equal to the word length and is nontrivial when the word is nonempty.
 * `CoxeterSystem.parabolicHom_wordProd`: the homomorphism sends the product of a word to the
   product of its image.
 * `CoxeterSystem.parabolicHom_id`, `CoxeterSystem.parabolicHom_comp`: the homomorphisms are
@@ -83,6 +86,38 @@ theorem simple_mem_parabolic_iff (cs : CoxeterSystem M W) {J : Set B} {i : B} :
   obtain ⟨j, rfl⟩ := List.length_eq_one_iff.mp hlen
   rw [wordProd_singleton] at hω
   exact cs.simple_injective hω ▸ hωJ j (List.mem_singleton_self j)
+
+/-- **Every word without repeated letters in a Coxeter system is reduced.** -/
+theorem isReduced_of_nodup (cs : CoxeterSystem M W) {l : List B} (hl : l.Nodup) :
+    cs.IsReduced l := by
+  classical
+  obtain ⟨σ, hsub, hred, hprod⟩ := cs.exists_isReduced_sublist l
+  suffices σ = l by rwa [this] at hred
+  refine hsub.eq_of_length_le ?_
+  rw [← List.toFinset_card_of_nodup hl, ← List.toFinset_card_of_nodup (hsub.nodup hl)]
+  refine Finset.card_le_card fun i hi ↦ ?_
+  rw [List.mem_toFinset] at hi ⊢; by_contra hiσ
+  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hi
+  obtain ⟨-, hl₂', hdisj⟩ := List.nodup_append.mp hl; rw [List.nodup_cons] at hl₂'
+  let J : Set B := {j | j ≠ i}
+  have hl₁J := cs.wordProd_mem_parabolic (J := J) fun j hj hji ↦ hdisj j hj i List.mem_cons_self hji
+  have hl₂J := cs.wordProd_mem_parabolic (J := J) fun j hj hji ↦ hl₂'.1 (hji ▸ hj)
+  have hσJ : cs.wordProd (l₁ ++ i :: l₂) ∈ cs.parabolic J :=
+    hprod ▸ cs.wordProd_mem_parabolic fun j hj hji ↦ hiσ (hji ▸ hj)
+  have hsi : cs.simple i = (cs.wordProd l₁)⁻¹ * cs.wordProd (l₁ ++ i :: l₂) * (cs.wordProd l₂)⁻¹ :=
+    by simp [wordProd_append, wordProd_cons, mul_assoc]
+  exact (cs.simple_mem_parabolic_iff (J := J)).mp
+    (hsi ▸ mul_mem (mul_mem (inv_mem hl₁J) hσJ) (inv_mem hl₂J)) rfl
+
+/-- The Coxeter length of the product of a duplicate-free word is the length of the word. -/
+theorem length_wordProd_of_nodup (cs : CoxeterSystem M W) {l : List B} (hl : l.Nodup) :
+    cs.length (cs.wordProd l) = l.length :=
+  (cs.isReduced_of_nodup hl).eq
+
+/-- A nonempty word without repeated letters spells a nontrivial element of the Coxeter group. -/
+theorem wordProd_ne_one_of_nodup (cs : CoxeterSystem M W) {l : List B} (hl : l.Nodup)
+    (hlne : l ≠ []) : cs.wordProd l ≠ 1 := fun h1 ↦
+  hlne (List.eq_nil_of_length_eq_zero ((cs.length_wordProd_of_nodup hl).symm.trans (by simp [h1])))
 
 variable (cs : CoxeterSystem M W) (cs' : CoxeterSystem M' W') {f : B → B'}
 

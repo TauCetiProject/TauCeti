@@ -20,6 +20,8 @@ element of an exceptional type are computed by the kernel on explicit integer ma
 ## Main definitions
 
 * `Matrix.reflMatrix`: the matrix of a simple reflection on the simple roots.
+* `Matrix.prod_map_reflMatrix_apply_of_orthogonal`: entry formula for the product of reflection
+  matrices over a duplicate-free list of pairwise orthogonal letters.
 * `Matrix.coxeterElement`: the product of the simple reflections in the numbering order.
 -/
 
@@ -43,6 +45,33 @@ theorem reflMatrix_submatrix {κ : Type*} [DecidableEq κ] {n : ℕ} (A : Matrix
     reflMatrix (A.submatrix e e) i = (reflMatrix A (e i)).submatrix e e := by
   ext k j
   simp [reflMatrix, e.injective.eq_iff]
+
+/-- Entry formula for a product of reflection matrices over a duplicate-free list of pairwise
+orthogonal letters (`A p q = 0` for distinct `p, q ∈ l`). -/
+theorem prod_map_reflMatrix_apply_of_orthogonal {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (A : Matrix κ κ ℤ) {l : List κ} (hl : l.Nodup)
+    (horth : ∀ p ∈ l, ∀ q ∈ l, p ≠ q → A p q = 0) (k j : κ) :
+    (l.map (reflMatrix A)).prod k j =
+      (if k = j then 1 else 0) - if k ∈ l then A j k else 0 := by
+  induction l generalizing k j with
+  | nil => simp [Matrix.one_apply]
+  | cons p l ih =>
+    rw [List.nodup_cons] at hl
+    have hrow (M : Matrix κ κ ℤ) :
+        (reflMatrix A p * M) k j = M k j - if k = p then ∑ m, A m p * M m j else 0 := by
+      simp only [Matrix.mul_apply, reflMatrix_apply, sub_mul, Finset.sum_sub_distrib, ite_mul,
+        one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+      by_cases hkp : k = p <;> simp [hkp]
+    rw [List.map_cons, List.prod_cons, hrow]
+    simp only [ih hl.2 fun a ha b hb ↦ horth a (.tail p ha) b (.tail p hb)]
+    rcases eq_or_ne k p with rfl | hkp
+    · simp only [↓reduceIte, hl.1, sub_zero, List.mem_cons, true_or, mul_sub, mul_ite, mul_one,
+        mul_zero, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ]
+      rw [Finset.sum_eq_zero fun m _ ↦ ?_, sub_zero]
+      split_ifs with hm
+      · rw [horth m (.tail k hm) k List.mem_cons_self (ne_of_mem_of_not_mem hm hl.1), zero_mul]
+      · rfl
+    · simp [hkp, List.mem_cons]
 
 /-- The Coxeter element `s₁ s₂ ⋯ sₙ` of a Cartan matrix, in the simple-root basis. -/
 @[expose] def coxeterElement {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ) : Matrix (Fin n) (Fin n) ℤ :=

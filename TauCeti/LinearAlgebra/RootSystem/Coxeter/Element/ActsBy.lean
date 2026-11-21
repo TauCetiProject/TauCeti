@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
+public import TauCeti.LinearAlgebra.RootSystem.CorootEval
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
-public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 
 /-!
 # From Weyl-group elements to integer matrices on the simple roots
@@ -22,6 +22,10 @@ the roots need not span), so the order of `w` is the order of `W`.
 
 ## Main results
 
+* `RootPairing.Base.ActsBy.baseChange_weylGroupRootRep_sum_tmul_root`: after scalar extension along
+  `R → S`, `w` acts on simple-root coordinate combinations in `S ⊗[R] M` by the matrix `W` cast to
+  `S`.
+* `RootPairing.Base.corootEval_weylGroupToPerm_inv`: equivariance of `corootEval` under `ActsBy`.
 * `RootPairing.Base.actsBy_wordProd`: a word in the simple reflections acts by the product of the
   corresponding reflection matrices.
 * `RootPairing.Base.ActsBy.orderOf_eq`: if `w` acts by `W`, then `orderOf w = orderOf W`.
@@ -76,6 +80,24 @@ theorem ActsBy.pow {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.suppor
   | zero => simpa using actsBy_one b
   | succ k ih => rw [pow_succ, pow_succ]; exact ih.mul h
 
+omit [DecidableEq ι] in
+open TensorProduct in
+/-- If `w` acts on the simple roots by `W`, then the scalar extension
+`(P.weylGroupRootRep w).baseChange S` acts on simple-root coordinate combinations in `S ⊗[R] M` by
+`W.map (Int.castRingHom S)`. -/
+theorem ActsBy.baseChange_weylGroupRootRep_sum_tmul_root {S : Type*} [Ring S] [Algebra R S]
+    {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (hW : b.ActsBy w W)
+    (y : b.support → S) :
+    (P.weylGroupRootRep w).baseChange S (∑ i : b.support, y i ⊗ₜ[R] P.root i) =
+      ∑ i : b.support, ((W.map (Int.castRingHom S)) *ᵥ y) i ⊗ₜ[R] P.root i := by
+  rw [map_sum]
+  simp only [LinearMap.baseChange_tmul, RootPairing.weylGroupRootRep,
+    Representation.ofDistribMulAction_apply_apply, actsBy_iff.mp hW, tmul_sum, mulVec, dotProduct,
+    map_apply, Int.coe_castRingHom, sum_tmul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [← Int.cast_smul_eq_zsmul R (W i j), tmul_smul, smul_tmul', Algebra.smul_def, map_intCast]
+
 /-- The simple reflection `sᵢ` acts by `reflMatrix b.cartanMatrix i`. -/
 theorem actsBy_ofIdx [P.IsCrystallographic] (b : P.Base) (i : b.support) :
     ActsBy b (weylGroup.ofIdx P i) (reflMatrix b.cartanMatrix i) := by
@@ -88,6 +110,27 @@ theorem actsBy_ofIdx [P.IsCrystallographic] (b : P.Base) (i : b.support) :
     b.algebraMap_cartanMatrixIn_apply (S := ℤ)]
 
 variable [P.IsCrystallographic]
+
+omit [DecidableEq ι] in
+/-- Equivariance of `corootEval` under a Weyl-group element `w` acting on the simple roots by an
+integer matrix `W`. -/
+theorem corootEval_weylGroupToPerm_inv (b : P.Base) [CharZero R] {w : P.weylGroup}
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy w W) (S : Type*) [CommRing S]
+    (j : ι) (y : b.support → S) :
+    b.corootEval S (P.weylGroupToPerm w⁻¹ j) y =
+      b.corootEval S j ((W.map (Int.castRingHom S)) *ᵥ y) := by
+  have hint (i : b.support) : P.pairingIn ℤ (i : ι) (P.weylGroupToPerm w⁻¹ j) =
+      ∑ l : b.support, W l i * P.pairingIn ℤ (l : ι) j := by
+    apply FaithfulSMul.algebraMap_injective ℤ R
+    rw [P.algebraMap_pairingIn ℤ, ← root_coroot'_eq_pairing,
+      ← P.coroot'_weylGroupToPerm_smul w (P.weylGroupToPerm w⁻¹ j) (P.root i),
+      map_inv, Equiv.Perm.coe_inv, Equiv.apply_symm_apply, actsBy_iff.mp hW i, map_sum, map_sum]
+    exact Finset.sum_congr rfl fun l _ ↦ by
+      rw [map_zsmul, zsmul_eq_mul, root_coroot'_eq_pairing, map_mul, P.algebraMap_pairingIn ℤ,
+        eq_intCast]
+  simp only [corootEval_apply, mulVec, dotProduct, map_apply, Int.coe_castRingHom, hint,
+    Int.cast_sum, Int.cast_mul, Finset.sum_mul, Finset.mul_sum]
+  rw [Finset.sum_comm]; exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
 
 /-- A word in the simple reflections acts by the product of the corresponding reflection
 matrices. -/

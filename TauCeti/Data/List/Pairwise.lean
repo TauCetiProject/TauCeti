@@ -21,6 +21,9 @@ distinct, do not occur in the list, and the list is duplicate-free
 For lists of signed letters, that is of pairs `(z, b)` with `b : Bool`: if both signed letters of
 `y` occur in a duplicate-free list, then `y` occurs nowhere else
 (`List.notMem_map_fst_of_nodup_append_cons_append_cons`).
+
+Over a subsingleton type, any member of a duplicate-free list is its sole entry
+(`List.Nodup.eq_singleton_of_mem`).
 -/
 
 public section
@@ -75,5 +78,12 @@ theorem notMem_map_fst_of_nodup_append_cons_append_cons {L₁ L₂ L₃ : List (
   intro hy
   obtain ⟨⟨_, d⟩, hd, rfl⟩ := List.mem_map.1 hy
   cases d <;> cases c <;> simp_all
+
+/-- In a duplicate-free list over a subsingleton type, any member is the sole entry. -/
+theorem Nodup.eq_singleton_of_mem [Subsingleton α] {l : List α} (hl : l.Nodup) {a : α}
+    (ha : a ∈ l) : l = [a] :=
+  not_ne_iff.mp fun h ↦
+    ((hl.ne_singleton_iff a).mp h).elim (ne_nil_of_mem ha) fun ⟨b, _, hba⟩ ↦
+      hba (Subsingleton.elim b a)
 
 end List
