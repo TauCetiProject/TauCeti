@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Segment
 public import TauCeti.Geometry.Symplectic.Volume
 public import TauCeti.LinearAlgebra.Orientation.Basis
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # The four-dimensional mixed-wedge lemma
@@ -55,6 +56,9 @@ compactness or compact support of the deformation.
   `(e₁, f₁, e₂, f₂)` for a product form `ω₀`.
 * `ContinuousAlternatingMap.pairedWedge_mul_apply_pos_of_cross_eq_zero`: the mixed-wedge lemma,
   `ω₀ ∧ β > 0`.
+* `ContinuousAlternatingMap.apply_add_apply_eq_of_cross_eq_zero`: the Kähler component
+  `β(e₁, f₁) + β(e₂, f₂)` of a two-form is the same in every quadruple on which `ω₀` takes the
+  standard values `ω₀(e₁, f₁) = ω₀(e₂, f₂) = 1`, in dimension four.
 * `ContinuousAlternatingMap.wedgePow_two_apply_of_cross_eq_zero`: the value of `ω₀²`.
 * `ContinuousAlternatingMap.wedgePow_two_apply_pos_of_mem_segment`: positivity of the squares
   along the segment from `ω₀` to `β`.
@@ -89,6 +93,37 @@ theorem pairedWedge_mul_apply_of_cross_eq_zero (h₁ : ω₀ ![e₁, e₂] = 0) 
       ω₀ ![e₁, f₁] * β ![e₂, f₂] + ω₀ ![e₂, f₂] * β ![e₁, f₁] := by
   rw [pairedWedge_mul_apply_two_two, h₁, h₂, h₃, h₄]
   ring
+
+/-- **The Kähler component in a symplectic frame.** On a four-dimensional space, let a two-form
+`ω₀` take the standard values on the two quadruples `(e₁, f₁, e₂, f₂)` and `(e₁', f₁', e₂', f₂')`:
+`ω₀(e₁, f₁) = ω₀(e₂, f₂) = 1` and `ω₀` vanishes on the four pairs across the two planes, and
+likewise for the primed vectors. Then every two-form `β` has the same Kähler component
+`β(e₁, f₁) + β(e₂, f₂)` on both quadruples: it is the ratio of `ω₀ ∧ β` to `ω₀² / 2`, two
+four-forms whose values on the two quadruples differ by the same determinant. -/
+theorem apply_add_apply_eq_of_cross_eq_zero (hE : finrank ℝ E = 4)
+    (h₁ : ω₀ ![e₁, e₂] = 0) (h₂ : ω₀ ![e₁, f₂] = 0) (h₃ : ω₀ ![f₁, e₂] = 0)
+    (h₄ : ω₀ ![f₁, f₂] = 0) (hω₁ : ω₀ ![e₁, f₁] = 1) (hω₂ : ω₀ ![e₂, f₂] = 1)
+    {e₁' f₁' e₂' f₂' : E} (h₁' : ω₀ ![e₁', e₂'] = 0) (h₂' : ω₀ ![e₁', f₂'] = 0)
+    (h₃' : ω₀ ![f₁', e₂'] = 0) (h₄' : ω₀ ![f₁', f₂'] = 0) (hω₁' : ω₀ ![e₁', f₁'] = 1)
+    (hω₂' : ω₀ ![e₂', f₂'] = 1) (β : E [⋀^Fin 2]→L[ℝ] ℝ) :
+    β ![e₁', f₁'] + β ![e₂', f₂'] = β ![e₁, f₁] + β ![e₂, f₂] := by
+  have : Module.Finite ℝ E := Module.finite_of_finrank_eq_succ hE
+  let b := finBasisOfFinrankEq ℝ E hE
+  -- The values of `ω₀ ∧ β` and `ω₀ ∧ ω₀` on both quadruples, as multiples of their values on `b`.
+  have hβ := pairedWedge_mul_apply_of_cross_eq_zero h₁ h₂ h₃ h₄ β
+  have hβ' := pairedWedge_mul_apply_of_cross_eq_zero h₁' h₂' h₃' h₄' β
+  have hω := pairedWedge_mul_apply_of_cross_eq_zero h₁ h₂ h₃ h₄ ω₀
+  have hω' := pairedWedge_mul_apply_of_cross_eq_zero h₁' h₂' h₃' h₄' ω₀
+  rw [apply_eq_det_mul _ b] at hβ hβ' hω hω'
+  rw [hω₁, hω₂] at hβ hω
+  rw [hω₁', hω₂'] at hβ' hω'
+  -- The squares are both `2`, so the two quadruples have the same determinant on `b`.
+  have hne : pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+      ω₀ ω₀ b ≠ 0 := fun h ↦ by norm_num [h] at hω
+  have hdet : b.det ![e₁', f₁', e₂', f₂'] = b.det ![e₁, f₁, e₂, f₂] :=
+    mul_right_cancel₀ hne (by linarith)
+  rw [hdet] at hβ'
+  linarith
 
 /-- **The mixed-wedge lemma.** Let `ω₀` pair the planes spanned by `e₁, f₁` and by `e₂, f₂`
 trivially and be positive on both, `ω₀(eᵢ, fᵢ) > 0`. If a two-form `β` is positive on both planes

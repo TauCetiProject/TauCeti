@@ -337,8 +337,8 @@ theorem _root_.Path.exists_range_subset_homotopic {V : Set X} {W : ι → Set X}
     rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
     rintro ⟨⟨c⟩, ⟨d⟩, g⟩ -
     induction g using Path.Homotopic.Quotient.ind with | mk δ =>
-    have hδ : IsArrowIn (U o) (Path.Homotopic.Quotient.mk (δ.map continuous_subtype_val) :
-        mk c.1 ⟶ mk d.1) := ⟨_, by rintro _ ⟨t, rfl⟩; exact (δ t).2, rfl⟩
+    have hδ : IsArrowIn (U o) (Path.Homotopic.Quotient.mk (δ.map continuous_subtypeVal) :
+        mk c.val ⟶ mk d.val) := ⟨_, by rintro _ ⟨t, rfl⟩; exact (δ t).property, rfl⟩
     intro u v e e' he he'
     cases o with
     | none => exact IsArrowIn.conj_of_isAdmissible hW hWV hδ he he'

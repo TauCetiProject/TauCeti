@@ -42,6 +42,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.reflection_indexNeg_neg` says the reflection in `-β` is the reflection in `β`.
 * `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
   sums of two roots.
+* `RootPairing.weylGroup.mk_reflection_eq_ofIdx` identifies the Weyl-group subtype element
+  constructed from `Equiv.reflection P i` with `weylGroup.ofIdx P i`.
 * `RootPairing.weylGroup.ofIdx_mul_self` says a simple reflection is an involution.
 * `RootPairing.weylGroup.ofIdx_ne_one` says a simple reflection is not the identity over a
   ring with no zero divisors in which `2 ≠ 0`.
@@ -51,7 +53,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   on the weight space is the identity.
 * `RootPairing.weylGroup.ext` says two Weyl-group elements agreeing on the weight space are
   equal.
-* `RootPairing.weylGroupRootRep_apply` and `RootPairing.weylGroupRootRep_injective` identify the
+* `RootPairing.weylGroupRootRep_apply`, `RootPairing.weylGroupRootRep_ofIdx_apply`,
+  `RootPairing.weylGroupRootRep_injective`, and `RootPairing.ker_weylGroupRootRep` identify the
   action of `P.weylGroupRootRep` with scalar multiplication and record its faithfulness.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
@@ -62,6 +65,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   index sends `w x` to `w (s_β x)`.
 * `RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal` says orthogonal roots have
   commuting reflections.
+* `RootPairing.weylGroup.ofIdx_reflectionPerm_self` and `RootPairing.weylGroup.ofIdx_neg` say
+  negating a root index does not change the associated Weyl-group reflection.
 * `RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` realizes each coweight action of the
   Weyl group as a weight action of the flipped Weyl group.
 * `RootPairing.mem_corootSpan_of_mem_closure_range_coreflection` and
@@ -259,6 +264,13 @@ lemma weylGroup.coe_ofIdx (i : ι) :
       Equiv.reflection P i :=
   rfl
 
+/-- The Weyl-group subtype element constructed from `Equiv.reflection P i` equals
+`weylGroup.ofIdx P i`. -/
+@[simp]
+lemma weylGroup.mk_reflection_eq_ofIdx (i : ι) {h : Equiv.reflection P i ∈ P.weylGroup} :
+    (⟨Equiv.reflection P i, h⟩ : P.weylGroup) = weylGroup.ofIdx P i :=
+  Subtype.ext (weylGroup.coe_ofIdx P i).symm
+
 /-- A simple reflection of the Weyl group is its own inverse. -/
 @[simp]
 lemma weylGroup.ofIdx_inv_eq (i : ι) :
@@ -351,6 +363,16 @@ theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) :
 theorem weylGroupRootRep_injective : Function.Injective P.weylGroupRootRep :=
   fun _ _ h ↦ weylGroup.ext fun x ↦ congr($h x)
 
+/-- On the weight space, the Weyl-group generator `weylGroup.ofIdx P i` acts as `P.reflection i`. -/
+theorem weylGroupRootRep_ofIdx_apply (i : ι) (x : M) :
+    P.weylGroupRootRep (weylGroup.ofIdx P i) x = P.reflection i x :=
+  rfl
+
+/-- The kernel of `P.weylGroupRootRep` is trivial. -/
+@[simp]
+theorem ker_weylGroupRootRep : P.weylGroupRootRep.ker = ⊥ :=
+  eq_bot_iff.mpr fun _ hw ↦ P.weylGroupRootRep_injective (by simpa using hw)
+
 /-- **Conjugating a simple reflection transports it along the permutation action**: the reflection
 in the image of a root index is the conjugate of the reflection in that root index. -/
 theorem weylGroup.ofIdx_weylGroupToPerm_eq_conj (w : P.weylGroup) (i : ι) :
@@ -390,11 +412,25 @@ theorem weylGroup.commute_ofIdx_of_isOrthogonal
     Equiv.reflection_weightEquiv] using
     (isOrthogonal_comm P i j h).eq
 
+/-- Reflecting a root index across itself does not change the associated Weyl-group reflection. -/
+@[simp]
+theorem weylGroup.ofIdx_reflectionPerm_self (i : ι) :
+    weylGroup.ofIdx P (P.reflectionPerm i i) = weylGroup.ofIdx P i := by
+  rw [← weylGroupToPerm_ofIdx_apply, weylGroup.ofIdx_weylGroupToPerm_eq_conj,
+    weylGroup.ofIdx_mul_self, one_mul, weylGroup.ofIdx_inv_eq]
+
+/-- The Weyl-group reflection attached to the negative of a root index is the same reflection. -/
+theorem weylGroup.ofIdx_neg (i : ι) :
+    letI := P.indexNeg
+    weylGroup.ofIdx P (-i) = weylGroup.ofIdx P i := by
+  let := P.indexNeg
+  simp [indexNeg_neg]
+
 /-- Every coweight action of `P.weylGroup` is realized as a weight action of `P.flip.weylGroup`. -/
 theorem exists_flip_weylGroup_smul_eq_coweightEquiv (w : P.weylGroup) :
     ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = (w : P.Aut).coweightEquiv z := by
   suffices ∀ u ∈ P.weylGroup, ∃ w' : P.flip.weylGroup, ∀ z : N, w' • z = u.coweightEquiv z from
-    this w w.2
+    this w w.property
   intro u hu
   induction hu using weylGroup.induction with
   | mem i =>

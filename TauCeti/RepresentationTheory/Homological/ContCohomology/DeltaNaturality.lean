@@ -140,7 +140,7 @@ theorem explicitDelta0_naturality
     explicitMap1 G A H A' φ fA continuous_of_discreteTopology hfA (S.explicitDelta0 c) =
       S'.explicitDelta0 c' := by
   obtain ⟨b, hb⟩ := S.proj_surjective (c : C)
-  have hbmem : S.proj b ∈ H0 G C := hb ▸ c.2
+  have hbmem : S.proj b ∈ H0 G C := hb ▸ c.property
   obtain ⟨a, -, hai⟩ :=
     S.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b) (proj_d0_eq_zero hbmem)
   have hai' : ∀ g : G, S.incl (a g) = g • b - b := fun g => (hai g).trans (d0_apply b g)
@@ -167,8 +167,8 @@ theorem explicitDelta1_naturality [ContinuousMul G] [ContinuousMul H]
         (explicitMap1 G C H C' φ fC continuous_of_discreteTopology hfC x) := by
   induction x using QuotientAddGroup.induction_on with
   | _ f =>
-    obtain ⟨e, hecont, he⟩ := exists_continuous_lift S.proj_surjective (mem_Z1_iff.1 f.2).1
-    have hf1 : groupCohomology.IsCocycle₁ (f : G → C) := (mem_Z1_iff.1 f.2).2
+    obtain ⟨e, hecont, he⟩ := exists_continuous_lift S.proj_surjective (mem_Z1_iff.1 f.property).1
+    have hf1 : groupCohomology.IsCocycle₁ (f : G → C) := (mem_Z1_iff.1 f.property).2
     obtain ⟨a, -, hai⟩ := S.exists_continuous_incl_comp_eq (X := G × G)
       (continuous_d1_apply hecont) (proj_d1_eq_zero he hf1)
     have hai' : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g := fun g h => by
@@ -302,7 +302,7 @@ theorem explicitCor_delta0 [ContinuousMul G] (x : H0 U C) :
       S.explicitDelta0 (explicitCor0 G C U x) := by
   obtain ⟨b, hb⟩ := (S.restrict U).proj_surjective (x : C)
   obtain ⟨a, -, hai⟩ := (S.restrict U).exists_continuous_incl_comp_eq
-    (continuous_d0_apply (G := U) b) (proj_d0_eq_zero (hb ▸ x.2))
+    (continuous_d0_apply (G := U) b) (proj_d0_eq_zero (hb ▸ x.property))
   have hai' : ∀ u : U, (S.restrict U).incl (a u) = u • b - b := fun u =>
     (hai u).trans (d0_apply b u)
   have ha : a ∈ Z1 U A := mem_Z1_of_injective_comp_eq_d0 (S.restrict U).incl_injective
@@ -333,9 +333,9 @@ theorem explicitCor_delta1 [IsTopologicalGroup G] [ContinuousSMul G C] (y : H1 U
   induction y using QuotientAddGroup.induction_on with
   | _ f =>
     obtain ⟨e, hecont, he⟩ :=
-      exists_continuous_lift (S.restrict U).proj_surjective (mem_Z1_iff.1 f.2).1
+      exists_continuous_lift (S.restrict U).proj_surjective (mem_Z1_iff.1 f.property).1
     obtain ⟨a, -, hai⟩ := (S.restrict U).exists_continuous_incl_comp_eq (X := U × U)
-      (continuous_d1_apply hecont) (proj_d1_eq_zero he (mem_Z1_iff.1 f.2).2)
+      (continuous_d1_apply hecont) (proj_d1_eq_zero he (mem_Z1_iff.1 f.property).2)
     have hai' : ∀ g h : U, (S.restrict U).incl (a (g, h)) = g • e h - e (g * h) + e g :=
       fun g h => by rw [hai (g, h), d1_apply]
     have ha : a ∈ Z2 U A := mem_Z2_of_injective_comp_eq_d1 (S.restrict U).incl_injective

@@ -220,7 +220,7 @@ theorem exists_linearEquiv_directSum_quotient_span_op_root_X_pow_pow
     exists_linearEquiv_directSum_isIndecomposableModule (A := (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ)
       (M := M)
   choose e he hen g using fun N : s ↦
-    exists_linearEquiv_quotient_span_op_root_X_pow_pow_of_isIndecomposableModule (hs N N.2)
+    exists_linearEquiv_quotient_span_op_root_X_pow_pow_of_isIndecomposableModule (hs N N.property)
   exact ⟨_, e ∘ (Fintype.equivFin s).symm, fun j ↦ ⟨he _, hen _⟩,
     ⟨f ≪≫ₗ DFinsupp.mapRange.linearEquiv (fun N ↦ (g N).some) ≪≫ₗ
       DirectSum.lequivCongrLeft _ (Fintype.equivFin s)⟩⟩

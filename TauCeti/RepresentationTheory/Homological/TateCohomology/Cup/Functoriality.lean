@@ -183,8 +183,8 @@ private theorem map_res_cup_add_one (N₂ : Rep k H) {p q r : ℤ} (h : p + q = 
         (map (Rep.isIntertwiningMap_res N₂ (e : G →* H)) (q + 1) y) := by
   let D := ShortComplex.mk (coindBotUnit N₂) (dimensionShiftUpπ N₂)
     (coindBotUnit_comp_dimensionShiftUpπ N₂)
-  have hD : D.ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N₂
+  have hD : D.ShortExact :=
+    dimensionShiftUpSES_shortExact N₂
   -- Write `y` as the connecting image of a class `y'` of the restricted upward shift: transport
   -- is an isomorphism commuting with the connecting maps, and the connecting map of `D` is one.
   obtain ⟨y', rfl⟩ :
@@ -219,8 +219,8 @@ private theorem map_res_cup_of_add_one (N₂ : Rep k H) {p q r : ℤ} (h : p + q
         (map (Rep.isIntertwiningMap_res N₂ (e : G →* H)) q y) := by
   let D := ShortComplex.mk (dimensionShiftDownι N₂) (indBotCounit N₂)
     (dimensionShiftDownι_comp_indBotCounit N₂)
-  have hD : D.ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N₂
+  have hD : D.ShortExact :=
+    dimensionShiftDownSES_shortExact N₂
   have := hD.mono_f
   obtain ⟨s, hs⟩ := exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N₂)
   -- The connecting map of `N₁ ⊗ D` in degree `r` is the tensored downward shift, an isomorphism.

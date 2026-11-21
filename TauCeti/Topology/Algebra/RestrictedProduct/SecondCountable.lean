@@ -105,7 +105,7 @@ theorem secondCountableTopology_of_cofinite (hA : ∀ᶠ i in cofinite, IsOpen (
     (hemb F).isEmbedding.toHomeomorph.symm.isEmbedding.secondCountableTopology
   refine TopologicalSpace.secondCountableTopology_of_countable_cover
     (U := U) (fun F ↦ (hemb F).isOpen_range) (eq_univ_iff_forall.mpr fun x ↦ ?_)
-  have hx : {i | x i ∉ A i}.Finite := mem_cofinite.mp x.2
+  have hx : {i | x i ∉ A i}.Finite := mem_cofinite.mp x.property
   refine mem_iUnion.mpr ⟨hx.toFinset, ?_⟩
   dsimp only [U]
   rw [range_inclusion, mem_ofPred_eq, eventually_principal]

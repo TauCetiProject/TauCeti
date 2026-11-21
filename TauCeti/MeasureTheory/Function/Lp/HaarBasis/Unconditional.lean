@@ -638,7 +638,6 @@ theorem norm_proj_haarBasis_real_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
     ‖GeneralSchauderBasis.proj (haarBasis ℝ p hp) A‖ ≤
       max p.toReal (p.toReal / (p.toReal - 1)) - 1 :=
   (haarBasis ℝ p hp).norm_proj_finset_le_of_range_signed
-    (zero_le_one.trans (one_le_haarRealBound hp1 hp))
     (fun N _ hδ g => by
       simpa using norm_sum_signed_coord_haarBasis_real_le hp1 hp (Finset.range N) hδ g) A
 
@@ -671,7 +670,6 @@ theorem norm_proj_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fa
     ‖GeneralSchauderBasis.proj (haarBasis 𝕜 p hp) A‖ ≤
       2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) :=
   (haarBasis 𝕜 p hp).norm_proj_finset_le_of_range_signed
-    (mul_nonneg zero_le_two (zero_le_one.trans (one_le_haarRealBound hp1 hp)))
     (fun N _ hδ g => norm_sum_signed_coord_haarBasis_le hp1 hp (Finset.range N) hδ g) A
 
 /-- **Unconditional convergence of the Haar expansion in `Lᵖ([0, 1]; 𝕜)`**, `1 < p < ∞`. -/
@@ -732,7 +730,7 @@ most `max p.toReal (p.toReal / (p.toReal - 1)) - 1`. -/
 theorem nnNormProjBound_haarUnconditionalBasis_real_le (hp1 : 1 < p) (hp : p ≠ ∞) :
     ((haarUnconditionalBasis ℝ p hp1 hp).nnNormProjBound : ℝ) ≤
       max p.toReal (p.toReal / (p.toReal - 1)) - 1 := by
-  refine (haarUnconditionalBasis ℝ p hp1 hp).nnNormProjBound_le fun A => ?_
+  refine (haarUnconditionalBasis ℝ p hp1 hp).coe_nnNormProjBound_le fun A => ?_
   rw [haarUnconditionalBasis_proj]
   exact norm_proj_haarBasis_real_le hp1 hp A
 
@@ -741,7 +739,7 @@ theorem nnNormProjBound_haarUnconditionalBasis_real_le (hp1 : 1 < p) (hp : p ≠
 theorem nnNormProjBound_haarUnconditionalBasis_le (hp1 : 1 < p) (hp : p ≠ ∞) :
     ((haarUnconditionalBasis 𝕜 p hp1 hp).nnNormProjBound : ℝ) ≤
       2 * (max p.toReal (p.toReal / (p.toReal - 1)) - 1) := by
-  refine (haarUnconditionalBasis 𝕜 p hp1 hp).nnNormProjBound_le fun A => ?_
+  refine (haarUnconditionalBasis 𝕜 p hp1 hp).coe_nnNormProjBound_le fun A => ?_
   rw [haarUnconditionalBasis_proj]
   exact norm_proj_haarBasis_le hp1 hp A
 
@@ -753,10 +751,10 @@ theorem nnNormProjBound_haarUnconditionalBasis_two :
   let b := haarUnconditionalBasis 𝕜 2 ENNReal.one_lt_two ENNReal.ofNat_ne_top
   refine le_antisymm ?_ ?_
   · rw [← NNReal.coe_le_coe, NNReal.coe_one]
-    refine b.nnNormProjBound_le fun A => ?_
+    refine b.coe_nnNormProjBound_le fun A => ?_
     dsimp only [b]
     rw [haarUnconditionalBasis_proj]
-    refine (haarBasis 𝕜 2 ENNReal.ofNat_ne_top).norm_proj_finset_le_of_range_signed zero_le_one
+    refine (haarBasis 𝕜 2 ENNReal.ofNat_ne_top).norm_proj_finset_le_of_range_signed
       (fun N δ hδ g => ?_) A
     simp only [smul_smul, one_mul]
     rw [norm_sum_unimodular_haarBasis_two 𝕜 _ (Finset.range N)

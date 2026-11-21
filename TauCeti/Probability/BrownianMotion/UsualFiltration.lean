@@ -73,10 +73,7 @@ theorem ambientNullAugmentation (hW : IsFilteredPreBrownianReal ℱ W P) :
     IsFilteredPreBrownianReal (ℱ.ambientNullAugmentation P) W P where
   toIsPreBrownianReal := hW.toIsPreBrownianReal
   adapted t := (hW.adapted t).mono (ℱ.le_ambientNullAugmentation P t) le_rfl
-  indep_sub s t hst := by
-    apply indep_of_indep_of_le_right (hW.indep_sub hst).eventuallyMeasurableSpace_right
-    rw [Filtration.ambientNullAugmentation_apply, Filtration.nullAugment_apply]
-    exact inf_le_right
+  indep_sub _ _ hst := (hW.indep_sub hst).ambientNullAugmentation_right
 
 /-- Completing the probability space and adjoining all ambient null events to the
 filtration preserves the filtered pre-Brownian property. -/
@@ -85,14 +82,7 @@ theorem nullAugment (hW : IsFilteredPreBrownianReal ℱ W P) :
       (fun t (ω : NullMeasurableSpace Ω P) => W t ω) P.completion where
   toIsPreBrownianReal.hasLaw I := (hW.hasLaw I).completion
   adapted t := (hW.adapted t).mono (ℱ.le_nullAugment P t) le_rfl
-  indep_sub s t hst := by
-    have hind : Indep (.comap (W t - W s) inferInstance) (ℱ.nullAugment P s) P := by
-      rw [Filtration.nullAugment_apply]
-      exact (hW.indep_sub hst).eventuallyMeasurableSpace_right
-    -- `NullMeasurableSpace` changes only the source sigma-algebra, not the increment function.
-    change @Indep (NullMeasurableSpace Ω P) (.comap (W t - W s) inferInstance)
-      (ℱ.nullAugment P s) inferInstance P.completion
-    exact indep_completion_iff.mpr hind
+  indep_sub _ _ hst := (hW.indep_sub hst).nullAugment_right
 
 /-- On the completed space, a filtered pre-Brownian motion with almost surely
 right-continuous paths at each fixed time is filtered pre-Brownian on the usual augmentation. -/

@@ -48,13 +48,13 @@ group is read from the duality of the group itself.
 ## Main results
 
 * `TauCeti.ContCohomology.explicitShapiro0_explicitCup00`,
-  `explicitShapiroMap1_explicitCup01`, `explicitShapiroMap1_explicitCup10`,
-  `explicitShapiroMap2_explicitCup02`, `explicitShapiroMap2_explicitCup11` and
-  `explicitShapiroMap2_explicitCup20`: **the Shapiro maps are multiplicative**, in each bidegree
+  `explicitShapiroMap1_explicitCup01`, `explicitShapiroMap2_explicitCup02`,
+  `explicitShapiroMap1_explicitCup10`, `explicitShapiroMap2_explicitCup20` and
+  `explicitShapiroMap2_explicitCup11`: **the Shapiro maps are multiplicative**, in each bidegree
   `(p, q)` with `p + q ≤ 2`.
 * `TauCeti.ContCohomology.explicitCor0_explicitCup00`, `explicitCor1_explicitCup01`,
-  `explicitCor1_explicitCup10`, `explicitCor2_explicitCup02`, `explicitCor2_explicitCup11` and
-  `explicitCor2_explicitCup20`: **the corestriction of a cup product of an open subgroup** is the
+  `explicitCor2_explicitCup02`, `explicitCor1_explicitCup10`, `explicitCor2_explicitCup20` and
+  `explicitCor2_explicitCup11`: **the corestriction of a cup product of an open subgroup** is the
   trace of the cup product over `G` of the inverse Shapiro images.
 
 ## References
@@ -110,15 +110,20 @@ section PositiveDegree
 
 variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   (U : Subgroup G)
-  (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
-    [DistribMulAction U A] [ContinuousSMul U A]
-  (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
-    [DistribMulAction U B] [ContinuousSMul U B]
+  (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction U A]
+  (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction U B]
   (C : Type uC) [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
     [DistribMulAction U C] [ContinuousSMul U C]
   (μ : A →+ B →+ C) (hμ : ∀ (u : U) (a : A) (b : B), μ (u • a) (u • b) = u • μ a b)
 
-omit [ContinuousSMul U A] in
+/-! A factor in degree zero needs no continuity of its action, so the statements are grouped by
+the position of that factor: `(0,q)` asks only for a continuous action on `B`, `(p,0)` only for one
+on `A`, and `(1,1)` for both. -/
+
+section ZeroLeft
+
+variable [ContinuousSMul U B]
+
 /-- **The Shapiro maps are multiplicative** for the `(0,1)` cup product. -/
 @[simp]
 theorem explicitShapiroMap1_explicitCup01 (a : H0 G (DiscreteCoind G U A))
@@ -138,7 +143,31 @@ theorem explicitShapiroMap1_explicitCup01 (a : H0 G (DiscreteCoind G U A))
     (eval_subgroupSubtype_smul G U A) (eval_subgroupSubtype_smul G U B)
     (eval_subgroupSubtype_smul G U C) (DiscreteCoind.eval_pointwisePairing U μ hμ) a b
 
-omit [ContinuousSMul U B] in
+/-- **The Shapiro maps are multiplicative** for the `(0,2)` cup product. -/
+@[simp]
+theorem explicitShapiroMap2_explicitCup02 (a : H0 G (DiscreteCoind G U A))
+    (b : H2 G (DiscreteCoind G U B)) :
+    explicitShapiroMap2 G U C
+        (explicitCup02 G (DiscreteCoind G U A) (DiscreteCoind G U B) (DiscreteCoind G U C)
+          (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
+          (DiscreteCoind.pointwisePairing_smul U μ hμ) a b) =
+      explicitCup02 U A B C μ continuous_of_discreteTopology hμ
+        (explicitShapiro0 G U A a) (explicitShapiroMap2 G U B b) := by
+  rw [explicitShapiro0_eq_explicitMap0, explicitShapiroMap2_def, explicitShapiroMap2_def]
+  exact explicitMap2_explicitCup02 G (DiscreteCoind G U A) (DiscreteCoind G U B)
+    (DiscreteCoind G U C) (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
+    (DiscreteCoind.pointwisePairing_smul U μ hμ) U A B C μ continuous_of_discreteTopology hμ
+    (ContinuousMonoidHom.subgroupSubtype U) (DiscreteCoind.eval G U A) (DiscreteCoind.eval G U B)
+    (DiscreteCoind.eval G U C) DiscreteCoind.continuous_eval DiscreteCoind.continuous_eval
+    (eval_subgroupSubtype_smul G U A) (eval_subgroupSubtype_smul G U B)
+    (eval_subgroupSubtype_smul G U C) (DiscreteCoind.eval_pointwisePairing U μ hμ) a b
+
+end ZeroLeft
+
+section ZeroRight
+
+variable [ContinuousSMul U A]
+
 /-- **The Shapiro maps are multiplicative** for the `(1,0)` cup product. -/
 @[simp]
 theorem explicitShapiroMap1_explicitCup10 (a : H1 G (DiscreteCoind G U A))
@@ -158,25 +187,28 @@ theorem explicitShapiroMap1_explicitCup10 (a : H1 G (DiscreteCoind G U A))
     (eval_subgroupSubtype_smul G U A) (eval_subgroupSubtype_smul G U B)
     (eval_subgroupSubtype_smul G U C) (DiscreteCoind.eval_pointwisePairing U μ hμ) a b
 
-omit [ContinuousSMul U A] in
-/-- **The Shapiro maps are multiplicative** for the `(0,2)` cup product. -/
+/-- **The Shapiro maps are multiplicative** for the `(2,0)` cup product. -/
 @[simp]
-theorem explicitShapiroMap2_explicitCup02 (a : H0 G (DiscreteCoind G U A))
-    (b : H2 G (DiscreteCoind G U B)) :
+theorem explicitShapiroMap2_explicitCup20 (a : H2 G (DiscreteCoind G U A))
+    (b : H0 G (DiscreteCoind G U B)) :
     explicitShapiroMap2 G U C
-        (explicitCup02 G (DiscreteCoind G U A) (DiscreteCoind G U B) (DiscreteCoind G U C)
+        (explicitCup20 G (DiscreteCoind G U A) (DiscreteCoind G U B) (DiscreteCoind G U C)
           (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
           (DiscreteCoind.pointwisePairing_smul U μ hμ) a b) =
-      explicitCup02 U A B C μ continuous_of_discreteTopology hμ
-        (explicitShapiro0 G U A a) (explicitShapiroMap2 G U B b) := by
+      explicitCup20 U A B C μ continuous_of_discreteTopology hμ
+        (explicitShapiroMap2 G U A a) (explicitShapiro0 G U B b) := by
   rw [explicitShapiro0_eq_explicitMap0, explicitShapiroMap2_def, explicitShapiroMap2_def]
-  exact explicitMap2_explicitCup02 G (DiscreteCoind G U A) (DiscreteCoind G U B)
+  exact explicitMap2_explicitCup20 G (DiscreteCoind G U A) (DiscreteCoind G U B)
     (DiscreteCoind G U C) (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
     (DiscreteCoind.pointwisePairing_smul U μ hμ) U A B C μ continuous_of_discreteTopology hμ
     (ContinuousMonoidHom.subgroupSubtype U) (DiscreteCoind.eval G U A) (DiscreteCoind.eval G U B)
     (DiscreteCoind.eval G U C) DiscreteCoind.continuous_eval DiscreteCoind.continuous_eval
     (eval_subgroupSubtype_smul G U A) (eval_subgroupSubtype_smul G U B)
     (eval_subgroupSubtype_smul G U C) (DiscreteCoind.eval_pointwisePairing U μ hμ) a b
+
+end ZeroRight
+
+variable [ContinuousSMul U A] [ContinuousSMul U B]
 
 /-- **The Shapiro maps are multiplicative** for the `(1,1)` cup product: `sh (a ⌣ b) = sh a ⌣ sh b`,
 with the cup over `G` taken along the pointwise pairing of the coinduced modules. -/
@@ -198,26 +230,6 @@ theorem explicitShapiroMap2_explicitCup11 (a : H1 G (DiscreteCoind G U A))
     DiscreteCoind.continuous_eval (eval_subgroupSubtype_smul G U A)
     (eval_subgroupSubtype_smul G U B) (eval_subgroupSubtype_smul G U C)
     (DiscreteCoind.eval_pointwisePairing U μ hμ) a b
-
-omit [ContinuousSMul U B] in
-/-- **The Shapiro maps are multiplicative** for the `(2,0)` cup product. -/
-@[simp]
-theorem explicitShapiroMap2_explicitCup20 (a : H2 G (DiscreteCoind G U A))
-    (b : H0 G (DiscreteCoind G U B)) :
-    explicitShapiroMap2 G U C
-        (explicitCup20 G (DiscreteCoind G U A) (DiscreteCoind G U B) (DiscreteCoind G U C)
-          (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
-          (DiscreteCoind.pointwisePairing_smul U μ hμ) a b) =
-      explicitCup20 U A B C μ continuous_of_discreteTopology hμ
-        (explicitShapiroMap2 G U A a) (explicitShapiro0 G U B b) := by
-  rw [explicitShapiro0_eq_explicitMap0, explicitShapiroMap2_def, explicitShapiroMap2_def]
-  exact explicitMap2_explicitCup20 G (DiscreteCoind G U A) (DiscreteCoind G U B)
-    (DiscreteCoind G U C) (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
-    (DiscreteCoind.pointwisePairing_smul U μ hμ) U A B C μ continuous_of_discreteTopology hμ
-    (ContinuousMonoidHom.subgroupSubtype U) (DiscreteCoind.eval G U A) (DiscreteCoind.eval G U B)
-    (DiscreteCoind.eval G U C) DiscreteCoind.continuous_eval DiscreteCoind.continuous_eval
-    (eval_subgroupSubtype_smul G U A) (eval_subgroupSubtype_smul G U B)
-    (eval_subgroupSubtype_smul G U C) (DiscreteCoind.eval_pointwisePairing U μ hμ) a b
 
 end PositiveDegree
 
@@ -265,15 +277,20 @@ section PositiveDegree
 
 variable (G : Type uG) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G] (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
-  (M : Type uA) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction U M] [ContinuousSMul U M]
-  (N : Type uB) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-    [DistribMulAction U N] [ContinuousSMul U N]
+  (M : Type uA) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction U M]
+  (N : Type uB) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction U N]
   (P : Type uC) [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P]
     [DistribMulAction G P] [ContinuousSMul G P]
   (μ : M →+ N →+ P) (hμ : ∀ (u : U) (m : M) (n : N), μ (u • m) (u • n) = u • μ m n)
 
-omit [ContinuousSMul U M] in
+/-! As for the multiplicativity, the statements are grouped by the position of the degree-zero
+factor: `(0,q)` asks only for a continuous action on `N`, `(p,0)` only for one on `M`, and `(1,1)`
+for both. -/
+
+section ZeroLeft
+
+variable [ContinuousSMul U N]
+
 /-- **The corestriction of a `(0,1)` cup product of `U`** is the trace of the `(0,1)` cup product
 over `G` of the inverse Shapiro images, along the pointwise pairing of the coinduced modules. -/
 theorem explicitCor1_explicitCup01 (a : H0 U M) (b : H1 U N) :
@@ -294,7 +311,32 @@ theorem explicitCor1_explicitCup01 (a : H0 U M) (b : H1 U N) :
     AddEquiv.apply_symm_apply, ← explicitShapiro1_apply G U N (U.isClosed_of_isOpen hU),
     AddEquiv.apply_symm_apply]
 
-omit [ContinuousSMul U N] in
+/-- **The corestriction of a `(0,2)` cup product of `U`** is the trace of the `(0,2)` cup product
+over `G` of the inverse Shapiro images, along the pointwise pairing of the coinduced modules. -/
+theorem explicitCor2_explicitCup02 (a : H0 U M) (b : H2 U N) :
+    explicitCor2 G P U hU
+        (explicitCup02 U M N P μ continuous_of_discreteTopology hμ a b) =
+      explicitCoeff2 G (DiscreteCoind G U P) (DiscreteCoind.trace G U P)
+        DiscreteCoind.continuous_trace
+        (explicitCup02 G (DiscreteCoind G U M) (DiscreteCoind G U N) (DiscreteCoind G U P)
+          (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
+          (DiscreteCoind.pointwisePairing_smul U μ hμ)
+          ((explicitShapiro0 G U M).symm a)
+          ((explicitShapiro2 G U N (U.isClosed_of_isOpen hU)).symm b)) := by
+  rw [explicitCor2_eq_explicitCoeff2_trace hU, AddMonoidHom.comp_apply,
+    AddEquiv.coe_toAddMonoidHom]
+  congr 1
+  apply (explicitShapiro2 G U P (U.isClosed_of_isOpen hU)).injective
+  rw [AddEquiv.apply_symm_apply, explicitShapiro2_apply, explicitShapiroMap2_explicitCup02,
+    AddEquiv.apply_symm_apply, ← explicitShapiro2_apply G U N (U.isClosed_of_isOpen hU),
+    AddEquiv.apply_symm_apply]
+
+end ZeroLeft
+
+section ZeroRight
+
+variable [ContinuousSMul U M]
+
 /-- **The corestriction of a `(1,0)` cup product of `U`** is the trace of the `(1,0)` cup product
 over `G` of the inverse Shapiro images, along the pointwise pairing of the coinduced modules. -/
 theorem explicitCor1_explicitCup10 (a : H1 U M) (b : H0 U N) :
@@ -315,26 +357,29 @@ theorem explicitCor1_explicitCup10 (a : H1 U M) (b : H0 U N) :
     AddEquiv.apply_symm_apply, ← explicitShapiro1_apply G U M (U.isClosed_of_isOpen hU),
     AddEquiv.apply_symm_apply]
 
-omit [ContinuousSMul U M] in
-/-- **The corestriction of a `(0,2)` cup product of `U`** is the trace of the `(0,2)` cup product
+/-- **The corestriction of a `(2,0)` cup product of `U`** is the trace of the `(2,0)` cup product
 over `G` of the inverse Shapiro images, along the pointwise pairing of the coinduced modules. -/
-theorem explicitCor2_explicitCup02 (a : H0 U M) (b : H2 U N) :
+theorem explicitCor2_explicitCup20 (a : H2 U M) (b : H0 U N) :
     explicitCor2 G P U hU
-        (explicitCup02 U M N P μ continuous_of_discreteTopology hμ a b) =
+        (explicitCup20 U M N P μ continuous_of_discreteTopology hμ a b) =
       explicitCoeff2 G (DiscreteCoind G U P) (DiscreteCoind.trace G U P)
         DiscreteCoind.continuous_trace
-        (explicitCup02 G (DiscreteCoind G U M) (DiscreteCoind G U N) (DiscreteCoind G U P)
+        (explicitCup20 G (DiscreteCoind G U M) (DiscreteCoind G U N) (DiscreteCoind G U P)
           (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
           (DiscreteCoind.pointwisePairing_smul U μ hμ)
-          ((explicitShapiro0 G U M).symm a)
-          ((explicitShapiro2 G U N (U.isClosed_of_isOpen hU)).symm b)) := by
+          ((explicitShapiro2 G U M (U.isClosed_of_isOpen hU)).symm a)
+          ((explicitShapiro0 G U N).symm b)) := by
   rw [explicitCor2_eq_explicitCoeff2_trace hU, AddMonoidHom.comp_apply,
     AddEquiv.coe_toAddMonoidHom]
   congr 1
   apply (explicitShapiro2 G U P (U.isClosed_of_isOpen hU)).injective
-  rw [AddEquiv.apply_symm_apply, explicitShapiro2_apply, explicitShapiroMap2_explicitCup02,
-    AddEquiv.apply_symm_apply, ← explicitShapiro2_apply G U N (U.isClosed_of_isOpen hU),
+  rw [AddEquiv.apply_symm_apply, explicitShapiro2_apply, explicitShapiroMap2_explicitCup20,
+    AddEquiv.apply_symm_apply, ← explicitShapiro2_apply G U M (U.isClosed_of_isOpen hU),
     AddEquiv.apply_symm_apply]
+
+end ZeroRight
+
+variable [ContinuousSMul U M] [ContinuousSMul U N]
 
 /-- **The corestriction of a `(1,1)` cup product of `U`** is the trace of the `(1,1)` cup product
 over `G` of the inverse Shapiro images, along the pointwise pairing of the coinduced modules:
@@ -356,27 +401,6 @@ theorem explicitCor2_explicitCup11 (a : H1 U M) (b : H1 U N) :
   rw [AddEquiv.apply_symm_apply, explicitShapiro2_apply, explicitShapiroMap2_explicitCup11,
     ← explicitShapiro1_apply G U M (U.isClosed_of_isOpen hU),
     ← explicitShapiro1_apply G U N (U.isClosed_of_isOpen hU), AddEquiv.apply_symm_apply,
-    AddEquiv.apply_symm_apply]
-
-omit [ContinuousSMul U N] in
-/-- **The corestriction of a `(2,0)` cup product of `U`** is the trace of the `(2,0)` cup product
-over `G` of the inverse Shapiro images, along the pointwise pairing of the coinduced modules. -/
-theorem explicitCor2_explicitCup20 (a : H2 U M) (b : H0 U N) :
-    explicitCor2 G P U hU
-        (explicitCup20 U M N P μ continuous_of_discreteTopology hμ a b) =
-      explicitCoeff2 G (DiscreteCoind G U P) (DiscreteCoind.trace G U P)
-        DiscreteCoind.continuous_trace
-        (explicitCup20 G (DiscreteCoind G U M) (DiscreteCoind G U N) (DiscreteCoind G U P)
-          (DiscreteCoind.pointwisePairing U μ hμ) continuous_of_discreteTopology
-          (DiscreteCoind.pointwisePairing_smul U μ hμ)
-          ((explicitShapiro2 G U M (U.isClosed_of_isOpen hU)).symm a)
-          ((explicitShapiro0 G U N).symm b)) := by
-  rw [explicitCor2_eq_explicitCoeff2_trace hU, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom]
-  congr 1
-  apply (explicitShapiro2 G U P (U.isClosed_of_isOpen hU)).injective
-  rw [AddEquiv.apply_symm_apply, explicitShapiro2_apply, explicitShapiroMap2_explicitCup20,
-    AddEquiv.apply_symm_apply, ← explicitShapiro2_apply G U M (U.isClosed_of_isOpen hU),
     AddEquiv.apply_symm_apply]
 
 end PositiveDegree

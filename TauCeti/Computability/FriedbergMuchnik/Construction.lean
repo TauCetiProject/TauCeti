@@ -172,7 +172,8 @@ theorem requiresAttention_iff {st : State} {s k : ℕ} {d : Code.Halt} :
     RequiresAttention st s k d ↔
       st.witness k ∉ st.set (side k) ∧ st.witness k ∈ k.pairColumn ∧
         stageRun (st.set (monitoredSide k)) s (k / 2) (st.witness k) = some d ∧ d.output = 0 :=
-  ⟨fun h => ⟨h.1, h.2, h.3, h.4⟩, fun ⟨h₁, h₂, h₃, h₄⟩ => ⟨h₁, h₂, h₃, h₄⟩⟩
+  ⟨fun h => ⟨h.witness_notMem, h.witness_mem_pairColumn, h.stageRun_eq_some, h.output_eq_zero⟩, fun
+      ⟨h₁, h₂, h₃, h₄⟩ => ⟨h₁, h₂, h₃, h₄⟩⟩
 
 /-- Any requirement requiring attention at stage `s` has priority `k < s`. -/
 theorem RequiresAttention.lt_stage {st : State} {s k : ℕ} {d : Code.Halt}

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.ComplexTorus
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedAnnulus
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Topology.Constructions.DoubleAlong.EulerCharacteristic
 
@@ -151,7 +151,7 @@ def doubleFirstSheet (r₁ r₂ : ℝ) [Fact (0 < r₁)] [Fact (r₁ < r₂)] :
       exact ⟨1, 0, by simp⟩
     have hc := (doublePeriodLattice r₁ r₂).continuousOn_orbitRelQuotient_mk_neg_I_mul_log hperiod
     have hf : Continuous (fun z : closedAnnulus r₁ r₂ ↦ (z : ℂ) / (r₁ : ℂ)) :=
-      continuous_subtype_val.div_const _
+      continuous_subtypeVal.div_const _
     exact hc.comp_continuous hf fun z ↦ by
       simpa using div_ne_zero
         (norm_pos_iff.mp ((Fact.out : 0 < r₁).trans_le (closedAnnulus.le_norm_coe z)))
@@ -517,7 +517,7 @@ private theorem doubleLog_eq_arg_sub_log_norm (z : closedAnnulus r₁ r₂) :
     doubleLog z = (arg (z : ℂ) : ℂ) - I * Real.log (‖(z : ℂ)‖ / r₁) := by
   apply Complex.ext
   · simp [doubleLog, mul_re, log_im, div_eq_mul_inv, ← ofReal_inv,
-      arg_mul_real (inv_pos.mpr hr₁.out)]
+      arg_mul_ofReal (z : ℂ) (inv_pos.mpr hr₁.out)]
   · simp [doubleLog_im, mul_im]
 
 /-- The first-sheet formula with the usual polar argument and radial logarithm. -/
@@ -571,7 +571,7 @@ theorem doubleTorusCircle_apply (ρ : Icc r₁ r₂) (ζ : Circle) :
   simp only [doubleTorusCircle, ContinuousMap.coe_mk]
   rw [doubleTorusDiffeomorph_inl, coe_closedAnnulusHomeomorph_symm_apply]
   have hρ : 0 < (ρ : ℝ) := hr₁.out.trans_le ρ.property.1
-  simp [Complex.real_smul, arg_real_mul _ hρ, Circle.norm_coe, abs_of_pos hρ]
+  simp [Complex.real_smul, arg_ofReal_mul hρ (ζ : ℂ), Circle.norm_coe, abs_of_pos hρ]
 
 private theorem range_doubleTorusCircle (ρ : Icc r₁ r₂) :
     range (doubleTorusCircle (r₁ := r₁) (r₂ := r₂) ρ) =

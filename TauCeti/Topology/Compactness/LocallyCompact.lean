@@ -55,7 +55,7 @@ theorem locallyCompactSpace_of_forall_exists_mem_nhds {X : Type*} [TopologicalSp
   rw [← hmap] at hW ⊢
   obtain ⟨K, hKx, hKW, hKc⟩ := local_compact_nhds hW
   exact ⟨(↑) '' K, Filter.image_mem_map hKx, image_subset_iff.mpr hKW,
-    hKc.image continuous_subtype_val⟩
+    hKc.image continuous_subtypeVal⟩
 
 /-- Let `q` be a continuous function which is above `a` off a compact set `Z`, and suppose every
 point `x` lies in a preconnected set meeting `Z` on which `q ≤ q x`. Then for every open
@@ -129,7 +129,7 @@ theorem Continuous.exists_opens_isEmbedding_restrict {X Y : Type*} [TopologicalS
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
   have : CompactSpace L := isCompact_iff_compactSpace.mp hL
   have h : IsEmbedding fun q : L => f q :=
-    ((hf.comp continuous_subtype_val).isClosedEmbedding
+    ((hf.comp continuous_subtypeVal).isClosedEmbedding
       (hinj.comp Subtype.val_injective)).isEmbedding
   exact ⟨⟨interior L, isOpen_interior⟩, hKL, h.comp (IsEmbedding.inclusion interior_subset)⟩
 
