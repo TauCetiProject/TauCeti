@@ -58,15 +58,6 @@ theorem tricomiIncompleteGamma_zero_right_eq_zero_iff {a : ℂ} :
   rw [tricomiIncompleteGamma_zero_right, inv_eq_zero, Gamma_eq_zero_iff]
   exact exists_congr fun n => ⟨fun h => by linear_combination h, fun h => by linear_combination h⟩
 
-/-- A real number strictly between `−(k + 1)` and `−k` is not a nonpositive integer. -/
-private theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Ioo (-(k + 1 : ℝ)) (-k)) :
-    ∀ n : ℕ, a ≠ -n := by
-  rintro n rfl
-  have h₁ : (n : ℝ) < k + 1 := by linarith [ha.1]
-  have h₂ : (k : ℝ) < n := by linarith [ha.2]
-  norm_cast at h₁ h₂
-  omega
-
 /-- At a nonpositive integer `a = −n`, `γ*(a, x) = xⁿ` (DLMF 8.4.12) does not vanish for real
 `x ≠ 0`. -/
 private theorem tricomiIncompleteGamma_ofReal_ne_zero_of_eq_neg_natCast {x : ℝ} (hx : x ≠ 0)
@@ -136,7 +127,7 @@ private theorem eq_of_tricomiIncompleteGamma_eq_zero_of_mem_Ioo {x : ℝ} (hx : 
   have hsum : ∀ c ∈ Ioo (-(k + 1 : ℝ)) (-k), tricomiIncompleteGamma c x = 0 →
       HasSum (fun j : ℕ => (-x) ^ j / (j ! * (c + j))) 0 := fun c hc hc0 => by
     have h :=
-      hasSum_Gamma_mul_re_tricomiIncompleteGamma_ofReal (ne_neg_natCast_of_mem_Ioo hc) x
+      hasSum_Gamma_mul_re_tricomiIncompleteGamma_ofReal (Real.ne_neg_natCast_of_mem_Ioo hc) x
     rwa [hc0, zero_re, mul_zero] at h
   rcases lt_trichotomy a b with h | h | h
   · exact absurd (hasSum_lt_of_mem_Ioo hx ha hb h (hsum a ha ha0) (hsum b hb hb0)) (lt_irrefl 0)

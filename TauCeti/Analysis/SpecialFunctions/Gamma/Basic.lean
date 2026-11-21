@@ -58,6 +58,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero`,
   `Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero` — a nonzero parameter strictly to the right of
   `-1` avoids `−ℕ`.
+* `Real.ne_neg_natCast_of_mem_Ioo` — a real number strictly between `-(k + 1)` and `-k` avoids
+  `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -310,6 +312,15 @@ theorem ne_neg_natCast_of_neg_one_lt_of_ne_zero {σ : ℝ} (hσ₀ : -1 < σ) (h
     σ ≠ -(n : ℝ) := fun hn ↦
   Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (z := σ) (by simpa using hσ₀)
     (Complex.ofReal_ne_zero.mpr hσ) n (by exact_mod_cast hn)
+
+/-- A real number strictly between `-(k + 1)` and `-k` is not a nonpositive integer. -/
+theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Set.Ioo (-(k + 1 : ℝ)) (-k))
+    (n : ℕ) : a ≠ -n := by
+  rintro rfl
+  have h₁ : (n : ℝ) < k + 1 := by linarith [ha.1]
+  have h₂ : (k : ℝ) < n := by linarith [ha.2]
+  norm_cast at h₁ h₂
+  omega
 
 /-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
 `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of
