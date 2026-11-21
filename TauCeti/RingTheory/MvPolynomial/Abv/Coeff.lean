@@ -28,6 +28,10 @@ while the other product estimates need only a partial order.
 A polynomial whose partial degrees are `d j` has at most `∏ j, (d j + 1) ≤ 2 ^ ∑ j, d j`
 monomials, which turns the support counts into powers of two.
 
+For a finite sum of monomials with distinct exponents (in particular, a finite linear combination
+of distinct variables), each coefficient is either one of the summands or zero, so a uniform
+nonnegative bound on the summands transfers directly to all coefficients.
+
 These are the local estimates behind height bounds for products of polynomials and for
 determinants of matrices of polynomials, such as the generalized Wronskians in the proof of
 Roth's lemma.
@@ -35,6 +39,9 @@ Roth's lemma.
 ## Main results
 
 * `MvPolynomial.card_support_le_two_pow`: `#p.support ≤ 2 ^ ∑ j, p.degreeOf j`.
+* `MvPolynomial.abv_coeff_sum_monomial_le`, `MvPolynomial.abv_coeff_sum_C_mul_X_le`: coefficient
+  bounds for finite sums of monomials with distinct exponents and for finite linear combinations of
+  distinct variables.
 * `MvPolynomial.abv_coeff_prod_le`, `MvPolynomial.abv_coeff_prod_le_of_isNonarchimedean`:
   coefficient bounds for finite products.
 * `MvPolynomial.abv_coeff_prod_le_two_pow`: without zero divisors,
@@ -86,6 +93,36 @@ end Support
 section AbsoluteValue
 
 variable {σ R S : Type*} [CommSemiring R]
+
+/-- If distinct indices in `s` map to distinct exponents under `a` and every coefficient satisfies
+`v (w j) ≤ B` with `0 ≤ B`, then every coefficient of `∑ j ∈ s, monomial (a j) (w j)` has
+absolute value at most `B`. -/
+theorem abv_coeff_sum_monomial_le [Semiring S] [PartialOrder S] {v : AbsoluteValue R S}
+    {ι : Type*} {s : Finset ι} {a : ι → σ →₀ ℕ} {w : ι → R} (ha : Set.InjOn a s)
+    {B : S} (hB0 : 0 ≤ B) (hw : ∀ j ∈ s, v (w j) ≤ B) (m : σ →₀ ℕ) :
+    v ((∑ j ∈ s, monomial (a j) (w j)).coeff m) ≤ B := by
+  classical
+  rw [coeff_sum]
+  simp_rw [coeff_monomial]
+  by_cases hm : ∃ j ∈ s, a j = m
+  · obtain ⟨j₀, hj₀, rfl⟩ := hm
+    rw [sum_eq_single_of_mem j₀ hj₀
+      fun j hj hne ↦ ite_eq_right fun h ↦ hne (ha (mem_coe.2 hj) (mem_coe.2 hj₀) h)]
+    simpa only [↓reduceIte] using hw j₀ hj₀
+  · push Not at hm
+    rw [sum_eq_zero fun j hj ↦ ite_eq_right (hm j hj), map_zero]
+    exact hB0
+
+/-- If `g` is injective on `s` and every coefficient satisfies `v (w j) ≤ B` with `0 ≤ B`, then
+every coefficient of the linear combination `∑ j ∈ s, C (w j) * X (g j)` has absolute value at
+most `B`. -/
+theorem abv_coeff_sum_C_mul_X_le [Semiring S] [PartialOrder S] {v : AbsoluteValue R S}
+    {ι : Type*} {s : Finset ι} {w : ι → R} {g : ι → σ} (hg : Set.InjOn g s)
+    {B : S} (hB0 : 0 ≤ B) (hw : ∀ j ∈ s, v (w j) ≤ B) (m : σ →₀ ℕ) :
+    v ((∑ j ∈ s, C (w j) * X (g j) : MvPolynomial σ R).coeff m) ≤ B := by
+  simp_rw [C_mul_X_eq_monomial]
+  exact abv_coeff_sum_monomial_le
+    (fun _ hi _ hj h ↦ hg hi hj (Finsupp.single_left_injective one_ne_zero h)) hB0 hw m
 
 /-- If the coefficients of `p` and `q` are bounded by `r` and `s` under an absolute value `v`,
 then each coefficient of `p * q` is bounded by `#p.support * (r * s)`. -/
