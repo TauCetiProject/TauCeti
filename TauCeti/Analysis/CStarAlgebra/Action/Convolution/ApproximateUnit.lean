@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Integral.PeakFunction
 import Mathlib.Topology.UniformSpace.HeineCantor
@@ -95,23 +96,9 @@ private theorem norm_sub_le_of_forall_mem_tsupport [OpensMeasurableSpace G]
     {C : Set G} (hC : IsCompact C) (hsupp : ∀ s ∉ C, u.ofConv s = f.ofConv s) {ε : ℝ}
     (hε : ∀ s, ∀ r ∈ tsupport φ, ‖X s r - f.ofConv s‖ ≤ ε) :
     ‖u - f‖ ≤ ε * μ.real C := by
-  have hφi : Integrable φ μ := φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport
-  have hae := hφi.coeFn_toL1
-  have hnorm : ‖hφi.toL1 φ‖ = 1 := by
-    rw [L1.norm_eq_integral_norm, ← hφ1]
-    exact integral_congr_ae (hae.mono fun r hr => (congrArg norm hr).trans
-      (Real.norm_of_nonneg (hφ r)))
   -- Pointwise, `u s` is a `φ`-average of values within `ε` of `f s`.
-  have hpt (s : G) : ‖u.ofConv s - f.ofConv s‖ ≤ ε := by
-    have hint : ∫ r, (hφi.toL1 φ) r • X s r ∂μ = ∫ r, φ r • X s r ∂μ :=
-      integral_congr_ae (hae.mono fun r hr => by simp only [hr])
-    have h := norm_integral_smul_sub_le (𝕜 := ℝ) (f := hφi.toL1 φ) (U := tsupport φ)
-      (φ := X s) (y := f.ofConv s) ((integral_congr_ae hae).trans hφ1)
-      (hae.mono fun r hr hrU => hr.trans (image_eq_zero_of_notMem_tsupport hrU))
-      ((((map_continuous φ).smul (hX s)).integrable_of_hasCompactSupport
-        φ.hasCompactSupport.smul_right).aestronglyMeasurable.congr
-          (hae.mono fun r hr => by simp only [hr, Pi.smul_apply'])) (ae_of_all _ (hε s))
-    rwa [hint, hnorm, mul_one, ← hu] at h
+  have hpt (s : G) : ‖u.ofConv s - f.ofConv s‖ ≤ ε :=
+    hu s ▸ φ.norm_integral_smul_sub_le hφ hφ1 (hX s) (hε s)
   -- Outside `C` the difference vanishes, and on `C` it is at most `ε`.
   rw [norm_eq_integral_norm, ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := C)
     fun s hs => by simp [hsupp s hs]]
@@ -180,16 +167,11 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
     obtain ⟨r, hr, t, ht, rfl⟩ := support_convolution_subset α μ _ g h
     refine ⟨r, (hiV (subset_tsupport _ fun h0 => hr (by simp [h0]))).2, t, subset_tsupport _ ht,
       rfl⟩
-  · -- `e * α r (g (r⁻¹ * s)) - g s = e * (α r (g (r⁻¹ * s)) - g s) + (e * g s - g s)`.
-    have h1 : ‖e * (α r (g (r⁻¹ * s)) - g s)‖ ≤ δ :=
-      (norm_mul_le _ _).trans (by
-        simpa using mul_le_mul hien (hunif r (hiV hr) s) (norm_nonneg _) zero_le_one)
-    have h2 : ‖e * g s - g s‖ ≤ δ := by
+  · -- Both `α r (g (r⁻¹ * s))` and `e * g s` are `δ`-close to `g s`, and `‖e‖ ≤ 1`.
+    have h₂ : ‖e * g s - g s‖ ≤ δ := by
       simpa [dist_eq_norm, norm_sub_rev] using (hie (g s) (mem_range_self s)).le
-    calc ‖e * α r (g (r⁻¹ * s)) - g s‖ = ‖e * (α r (g (r⁻¹ * s)) - g s) + (e * g s - g s)‖ := by
-          rw [mul_sub, sub_add_sub_cancel]
-      _ ≤ δ + δ := (norm_add_le _ _).trans (add_le_add h1 h2)
-      _ = 2 * δ := by ring
+    linarith [norm_mul_sub_le_left e (α r (g (r⁻¹ * s))) (g s) (g s),
+      mul_le_mul hien (hunif r (hiV hr) s) (norm_nonneg _) zero_le_one]
 
 /-- **Right approximation.** Let `φ i` be eventually nonnegative real functions of unit integral
 whose supports shrink to the identity, and let `lA` be an increasing approximate unit of `A`.
@@ -282,7 +264,7 @@ theorem exists_isApproximateUnit_norm_le_one [StarOrderedRing A] [BorelSpace G]
     ∃ l : Filter (ConvolutionAlgebra α μ), l.IsApproximateUnit ∧ ∀ᶠ u in l, ‖u‖ ≤ 1 := by
   -- One normalized bump inside each neighbourhood of `1`, indexed as a net shrinking to `1`.
   choose φ hφ using fun U : {U : Set G // U ∈ 𝓝 (1 : G)} =>
-    exists_nonneg_tsupport_subset_integral_eq_one μ U.2
+    exists_nonneg_tsupport_subset_integral_eq_one μ U.property
   set l := comap Subtype.val (𝓝 (1 : G)).smallSets
   have : l.NeBot := comap_neBot fun t ht => by
     obtain ⟨V, hV, hVt⟩ := eventually_smallSets.1 ht

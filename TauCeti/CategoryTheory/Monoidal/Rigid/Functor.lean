@@ -27,6 +27,7 @@ canonically isomorphic to the right dual `(F.obj X)ᘁ` of its image
 mates, are identities for the identity functor, and compose along a composite of functors. They
 are the comparisons against which a monoidal functor between pivotal categories is required to
 preserve the pivotal structure. They are also natural in the functor: a monoidal natural
+<<<<<<< HEAD
 transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`, and dually for left
 duals. Moreover, for any exact pairing `(X, Y)` in `C`, the explicit mate of `τ_X` is a two-sided
 inverse to `τ_Y`, so every monoidal natural transformation between strong monoidal functors out of
@@ -36,6 +37,11 @@ a left or right rigid category is an isomorphism
 the component of a monoidal natural transformation `F ⟶ G` at one member of an exact pairing
 determines its component at the other (`CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
 `CategoryTheory.NatTrans.app_left_eq_of_exactPairing`).
+=======
+transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`. Likewise the image
+`F.obj (ᘁY)` of a left dual of `Y` is canonically isomorphic to the left dual `ᘁ(F.obj Y)`
+(`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations.
+>>>>>>> origin/main
 
 Between right rigid categories, applying the comparison twice gives the bidual comparison
 `κ_X = δ_{Xᘁ} ≫ ((δ_X)ᘁ)⁻¹ : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`
@@ -83,8 +89,9 @@ equivalence.
 * `CategoryTheory.Functor.mapRightDualIso` and `CategoryTheory.Functor.mapLeftDualIso`: the
   comparisons `F.obj Xᘁ ≅ (F.obj X)ᘁ` and `F.obj (ᘁY) ≅ ᘁ(F.obj Y)`, characterized by
   `CategoryTheory.Functor.mapRightDualIso_hom_whiskerRight_evaluation` and
-  `CategoryTheory.Functor.whiskerLeft_mapLeftDualIso_hom_evaluation`, natural with respect to
-  mates, and computed for identities and composites;
+  `CategoryTheory.Functor.whiskerLeft_mapLeftDualIso_hom_evaluation` (with inverse compatible with
+  coevaluation by `CategoryTheory.Functor.coevaluation_mapLeftDualIso_inv_whiskerRight`), natural
+  with respect to mates, and computed for identities and composites;
 * `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate`,
   `CategoryTheory.NatTrans.app_comp_mapLeftDualIso_hom_comp_leftAdjointMate`,
   `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom` and
@@ -295,8 +302,8 @@ theorem mapRightDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
 variable (F)
 
 /-- The canonical isomorphism `F.obj (ᘁY) ≅ ᘁ(F.obj Y)` between the image of the left dual of `Y`
-under a strong monoidal functor and the left dual of `F.obj Y`: both are left duals of `F.obj Y`,
-the first through the image pairing `F.mapExactPairing (ᘁY) Y`. -/
+under a strong monoidal functor and the left dual of `F.obj Y`: both are left duals of
+`F.obj Y`, the first through the image pairing `F.mapExactPairing (ᘁY) Y`. -/
 noncomputable def mapLeftDualIso (Y : C) [HasLeftDual Y] [_hFY : HasLeftDual (F.obj Y)] :
     F.obj (ᘁY) ≅ ᘁ(F.obj Y) :=
   leftDualIso (F.mapExactPairing (ᘁY) Y) HasLeftDual.exact
@@ -310,14 +317,15 @@ evaluation of `(ᘁY, Y)`. This characterizes `F.mapLeftDualIso Y`, by
 theorem whiskerLeft_mapLeftDualIso_hom_evaluation (Y : C) [HasLeftDual Y]
     [_hFY : HasLeftDual (F.obj Y)] :
     F.obj Y ◁ (F.mapLeftDualIso Y).hom ≫ ε_ (ᘁ(F.obj Y)) (F.obj Y) =
-      μ F Y (ᘁY) ≫ F.map (ε_ (ᘁY) Y) ≫ η F :=
-  ExactPairing.whiskerLeft_leftDualIso_hom_evaluation _ _
+      μ F Y (ᘁY) ≫ F.map (ε_ (ᘁY) Y) ≫ η F := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_hom, ExactPairing.leftMate_comp_evaluation,
+    id_whiskerRight, Category.id_comp, mapExactPairing_evaluation]
 
 /-- Through the inverse of `F.mapLeftDualIso Y`, the coevaluation of `(ᘁ(F.obj Y), F.obj Y)` is
 the image of the coevaluation of `(ᘁY, Y)`. -/
 @[reassoc]
 theorem coevaluation_mapLeftDualIso_inv_whiskerRight (Y : C) [HasLeftDual Y]
-    [HasLeftDual (F.obj Y)] :
+    [_hFY : HasLeftDual (F.obj Y)] :
     η_ (ᘁ(F.obj Y)) (F.obj Y) ≫ (F.mapLeftDualIso Y).inv ▷ F.obj Y =
       ε F ≫ F.map (η_ (ᘁY) Y) ≫ δ F (ᘁY) Y := by
   rw [mapLeftDualIso, ExactPairing.leftDualIso_inv, ExactPairing.coevaluation_comp_leftMate]
@@ -451,6 +459,39 @@ structure SendsSelfDuality {g : D} [ExactPairing g g] (F : D ⥤ C) [F.Monoidal]
   coevaluation : ε F ≫ F.map (η_ g g) = η_ V V ≫ (e.inv ⊗ₘ e.inv) ≫ μ F g g
   /-- The evaluation of `g` is sent to the evaluation of `V`. -/
   evaluation : (e.inv ⊗ₘ e.inv) ≫ μ F g g ≫ F.map (ε_ g g) ≫ η F = ε_ V V
+
+/-- A functor sending a self-duality along an isomorphism preserves its closed circle,
+using the unit comparisons to view its image as a scalar. -/
+@[reassoc]
+theorem SendsSelfDuality.coevaluation_comp_evaluation {g : D} [ExactPairing g g]
+    {F : D ⥤ C} [F.Monoidal] {V : C} [ExactPairing V V] {e : F.obj g ≅ V}
+    (h : SendsSelfDuality F V e) :
+    ε F ≫ F.map (η_ g g ≫ ε_ g g) ≫ η F = η_ V V ≫ ε_ V V := by
+  rw [Functor.map_comp_assoc, reassoc_of% h.coevaluation, h.evaluation]
+
+/-- Sending a self-duality along an isomorphism is preserved by composition of strong
+monoidal functors. The composite identification is the mapped first identification followed
+by the second. -/
+theorem SendsSelfDuality.comp {E : Type*} [Category* E] [MonoidalCategory E]
+    {g : C} [ExactPairing g g] {W : D} [ExactPairing W W] {V : E} [ExactPairing V V]
+    {F : C ⥤ D} [F.Monoidal] {G : D ⥤ E} [G.Monoidal]
+    {eF : F.obj g ≅ W} {eG : G.obj W ≅ V}
+    (hF : SendsSelfDuality F W eF) (hG : SendsSelfDuality G V eG) :
+    SendsSelfDuality (F ⋙ G) V (G.mapIso eF ≪≫ eG) where
+  coevaluation := by
+    simp only [comp_ε, comp_μ, Functor.comp_map, Iso.trans_inv, Functor.mapIso_inv,
+      ← tensorHom_comp_tensorHom, Category.assoc]
+    rw [← G.map_comp, hF.coevaluation]
+    simp only [Functor.map_comp, map_tensor, Category.assoc]
+    rw [← Category.assoc, hG.coevaluation]
+    simp
+  evaluation := by
+    simp only [comp_η, comp_μ, Functor.comp_map, Iso.trans_inv, Functor.mapIso_inv,
+      ← tensorHom_comp_tensorHom, Category.assoc]
+    rw [μ_natural_assoc, ← G.map_comp_assoc, ← G.map_comp_assoc, ← G.map_comp_assoc]
+    simp only [Category.assoc]
+    rw [hF.evaluation]
+    exact hG.evaluation
 
 end TauCeti
 

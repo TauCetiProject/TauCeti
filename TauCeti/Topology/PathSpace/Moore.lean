@@ -47,6 +47,7 @@ parametrized by the unit interval: when `X` is a point, the Moore loops at it fo
 * `TauCeti.MooreLoopSpace X x`: the Moore loops at `x`, a monoid under concatenation with unit
   the constant loop of length zero.
 * `TauCeti.MooreLoopSpace.map`: the continuous monoid homomorphism induced by a based map.
+* `TauCeti.MooreLoopSpace.symm`: the reversal of a Moore loop, which reverses products.
 * `TauCeti.MooreLoopSpace.lengthHom`: the length, a continuous monoid homomorphism to `[0, ∞)`,
   with the constant loops `TauCeti.MooreLoopSpace.constOfLengthHom` as a section.
 
@@ -475,14 +476,40 @@ theorem rescale_zero (γ : MoorePath X) : γ.rescale 0 = refl γ.source :=
   ext (by rw [length_rescale, length_refl]) fun t ↦ by
     rw [rescale_apply, div_zero, refl_apply, source_def]
 
+/-- Rescaling is continuous in the path and in the length, also where the length vanishes,
+provided the paths rescaled to length zero are constant. -/
+theorem _root_.Continuous.moorePath_rescale_of_forall_eq_source {f : Y → MoorePath X}
+    {g : Y → ℝ≥0} (hf : Continuous f) (hg : Continuous g)
+    (h0 : ∀ y, g y = 0 → ∀ t, f y t = (f y).source) :
+    Continuous fun y ↦ (f y).rescale (g y) := by
+  refine continuous_iff.2 ⟨hg, continuous_iff_continuousAt.2 fun p ↦ ?_⟩
+  simp only [rescale_apply]
+  rcases eq_or_ne (g p.1) 0 with hp | hp
+  · -- Near a constant path, the nearby paths stay close to the constant on a compact time
+    -- interval longer than all their lengths, so all their values are close to it.
+    refine (nhds_basis_opens _).tendsto_right_iff.2 fun V ⟨hxV, hV⟩ ↦ ?_
+    have hx : (f p.1).source ∈ V := h0 p.1 hp _ ▸ hxV
+    have hlen : ∀ᶠ y in nhds p.1, (f y).length < (f p.1).length + 1 :=
+      (continuous_length.comp hf).continuousAt.eventually_lt continuousAt_const (lt_add_one _)
+    have hmaps : ∀ᶠ y in nhds p.1, Set.MapsTo (f y).toContinuousMap
+        (Set.Icc 0 ((f p.1).length + 1)) V :=
+      (continuous_toContinuousMap.comp hf).continuousAt.eventually
+        (ContinuousMap.eventually_mapsTo isCompact_Icc hV fun t _ ↦ (h0 p.1 hp t).symm ▸ hx)
+    filter_upwards [continuous_fst.continuousAt.eventually (hlen.and hmaps)] with q ⟨hq, hqV⟩
+    rw [← apply_min_length]
+    exact hqV ⟨zero_le, (min_le_right _ _).trans hq.le⟩
+  · exact continuous_eval.continuousAt.comp (f := fun q : Y × ℝ≥0 ↦
+      (f q.1, (f q.1).length * q.2 / g q.1))
+      ((hf.comp continuous_fst).continuousAt.prodMk
+        (((continuous_length.comp (hf.comp continuous_fst)).mul continuous_snd).continuousAt.div
+          (hg.comp continuous_fst).continuousAt hp))
+
 /-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
 @[fun_prop]
 theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → ℝ≥0}
     (hf : Continuous f) (hg : Continuous g) (h0 : ∀ y, g y ≠ 0) :
-    Continuous fun y ↦ (f y).rescale (g y) := by
-  refine continuous_iff.2 ⟨hg, ?_⟩
-  simp only [rescale_apply]
-  fun_prop (disch := exact fun p ↦ h0 p.1)
+    Continuous fun y ↦ (f y).rescale (g y) :=
+  hf.moorePath_rescale_of_forall_eq_source hg fun y hy ↦ absurd hy (h0 y)
 
 end MoorePath
 
@@ -549,6 +576,11 @@ theorem map_map (g : C(Y, Z)) (f : C(X, Y)) (γ : MoorePath X) :
 @[simp]
 theorem map_const (y : Y) (γ : MoorePath X) :
     γ.map (.const X y) = constOfLength y γ.length :=
+  (rfl)
+
+/-- The image of a reversed path is the reversed image. -/
+@[simp]
+theorem map_symm (f : C(X, Y)) (γ : MoorePath X) : γ.symm.map f = (γ.map f).symm :=
   (rfl)
 
 @[fun_prop]
@@ -716,6 +748,13 @@ theorem length_eq_zero_iff {γ : MooreLoopSpace X x} : γ.length = 0 ↔ γ = 1 
 theorem length_mul (γ δ : MooreLoopSpace X x) : (γ * δ).length = γ.length + δ.length :=
   (rfl)
 
+/-- The length of a product of Moore loops is the sum of their lengths. -/
+@[simp]
+theorem length_list_prod (l : List (MooreLoopSpace X x)) : l.prod.length = (l.map length).sum := by
+  induction l with
+  | nil => simp
+  | cons γ l ih => simp [ih]
+
 @[fun_prop]
 theorem continuous_length : Continuous (length : MooreLoopSpace X x → ℝ≥0) :=
   MoorePath.continuous_length.comp continuous_toMoorePath
@@ -834,6 +873,45 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (f : C(X
     (hg : g y = z) (hf : f x = y) :
     map (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) = (map g hg).comp (map f hf) :=
   ContinuousMonoidHom.ext fun _ ↦ ext <| by simp
+
+/-! ### Reversal of Moore loops -/
+
+/-- The **reversal** of a Moore loop: the same loop run backwards, `t ↦ γ (γ.length - t)`. It is
+an involution reversing products (`MooreLoopSpace.symm_mul`), but not an inverse for the strict
+concatenation: `γ * γ.symm` has length `2 * γ.length`. -/
+def symm (γ : MooreLoopSpace X x) : MooreLoopSpace X x :=
+  ⟨γ.toMoorePath.symm, by simp, by simp⟩
+
+@[simp]
+theorem toMoorePath_symm (γ : MooreLoopSpace X x) : γ.symm.toMoorePath = γ.toMoorePath.symm :=
+  (rfl)
+
+@[simp]
+theorem length_symm (γ : MooreLoopSpace X x) : γ.symm.length = γ.length :=
+  (rfl)
+
+@[simp]
+theorem symm_symm (γ : MooreLoopSpace X x) : γ.symm.symm = γ :=
+  ext (MoorePath.symm_symm _)
+
+@[simp]
+theorem symm_one : (1 : MooreLoopSpace X x).symm = 1 :=
+  ext (MoorePath.symm_refl x)
+
+/-- Reversal exchanges the order of a product of Moore loops. -/
+@[simp]
+theorem symm_mul (γ δ : MooreLoopSpace X x) : (γ * δ).symm = δ.symm * γ.symm :=
+  ext (MoorePath.symm_trans _ _ (by simp))
+
+@[fun_prop]
+theorem continuous_symm : Continuous (symm : MooreLoopSpace X x → MooreLoopSpace X x) :=
+  isEmbedding_toMoorePath.continuous_iff.2 continuous_toMoorePath.moorePath_symm
+
+/-- The Moore loop map of a based map commutes with reversal. -/
+@[simp]
+theorem map_symm (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
+    map f hf γ.symm = (map f hf γ).symm :=
+  (rfl)
 
 end MooreLoopSpace
 

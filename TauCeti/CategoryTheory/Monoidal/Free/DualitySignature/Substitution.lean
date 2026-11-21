@@ -103,77 +103,61 @@ noncomputable def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
   | _, _, .whiskerRight f X => (f.subst σ).whiskerRight (RigidObject.projectObj σ.obj X).as
   | _, _, .tensor f g => (f.subst σ).tensor (g.subst σ)
 
-@[simp]
-theorem Hom.subst_id (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_id (σ : Substitution S T) (X) :
     (Hom.id X).subst σ = .id (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_coupon (σ : Substitution S T) (g : S.Coupon) :
+@[simp] theorem Hom.subst_coupon (σ : Substitution S T) (g : S.Coupon) :
     (Hom.coupon g).subst σ = σ.coupon g := by rfl
 
-@[simp]
-theorem Hom.subst_comp (σ : Substitution S T) {X Y Z} (f : Hom X Y) (g : Hom Y Z) :
+@[simp] theorem Hom.subst_comp (σ : Substitution S T) {X Y Z} (f : Hom X Y) (g : Hom Y Z) :
     (f.comp g).subst σ = (f.subst σ).comp (g.subst σ) := by rfl
 
-@[simp]
-theorem Hom.subst_tensor (σ : Substitution S T) {W X Y Z} (f : Hom W X) (g : Hom Y Z) :
+@[simp] theorem Hom.subst_tensor (σ : Substitution S T) {W X Y Z} (f : Hom W X) (g : Hom Y Z) :
     (f.tensor g).subst σ = (f.subst σ).tensor (g.subst σ) := by rfl
 
-@[simp]
-theorem Hom.subst_whiskerLeft (σ : Substitution S T) (X) {Y Z} (f : Hom Y Z) :
-    (f.whiskerLeft X).subst σ = (f.subst σ).whiskerLeft (RigidObject.projectObj σ.obj X).as := by
-  rfl
+@[simp] theorem Hom.subst_whiskerLeft (σ : Substitution S T) (X) {Y Z} (f : Hom Y Z) :
+    (f.whiskerLeft X).subst σ =
+      (f.subst σ).whiskerLeft (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_whiskerRight (σ : Substitution S T) {Y Z} (f : Hom Y Z) (X) :
-    (f.whiskerRight X).subst σ = (f.subst σ).whiskerRight (RigidObject.projectObj σ.obj X).as := by
-  rfl
+@[simp] theorem Hom.subst_whiskerRight (σ : Substitution S T) {Y Z} (f : Hom Y Z) (X) :
+    (f.whiskerRight X).subst σ =
+      (f.subst σ).whiskerRight (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_α_hom (σ : Substitution S T) (X Y Z) :
+@[simp] theorem Hom.subst_α_hom (σ : Substitution S T) (X Y Z) :
     (Hom.α_hom X Y Z).subst σ =
       .α_hom (RigidObject.projectObj σ.obj X).as (RigidObject.projectObj σ.obj Y).as
         (RigidObject.projectObj σ.obj Z).as := by rfl
 
-@[simp]
-theorem Hom.subst_α_inv (σ : Substitution S T) (X Y Z) :
+@[simp] theorem Hom.subst_α_inv (σ : Substitution S T) (X Y Z) :
     (Hom.α_inv X Y Z).subst σ =
       .α_inv (RigidObject.projectObj σ.obj X).as (RigidObject.projectObj σ.obj Y).as
         (RigidObject.projectObj σ.obj Z).as := by rfl
 
-@[simp]
-theorem Hom.subst_l_hom (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_l_hom (σ : Substitution S T) (X) :
     (Hom.l_hom X).subst σ = .l_hom (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_l_inv (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_l_inv (σ : Substitution S T) (X) :
     (Hom.l_inv X).subst σ = .l_inv (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_ρ_hom (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_ρ_hom (σ : Substitution S T) (X) :
     (Hom.ρ_hom X).subst σ = .ρ_hom (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_ρ_inv (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_ρ_inv (σ : Substitution S T) (X) :
     (Hom.ρ_inv X).subst σ = .ρ_inv (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_rightCoevaluation (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_rightCoevaluation (σ : Substitution S T) (X) :
     (Hom.rightCoevaluation X).subst σ =
       .rightCoevaluation (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_rightEvaluation (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_rightEvaluation (σ : Substitution S T) (X) :
     (Hom.rightEvaluation X).subst σ =
       .rightEvaluation (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_leftCoevaluation (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_leftCoevaluation (σ : Substitution S T) (X) :
     (Hom.leftCoevaluation X).subst σ =
       .leftCoevaluation (RigidObject.projectObj σ.obj X).as := by rfl
 
-@[simp]
-theorem Hom.subst_leftEvaluation (σ : Substitution S T) (X) :
+@[simp] theorem Hom.subst_leftEvaluation (σ : Substitution S T) (X) :
     (Hom.leftEvaluation X).subst σ =
       .leftEvaluation (RigidObject.projectObj σ.obj X).as := by rfl
 
@@ -194,38 +178,27 @@ that dependent morphism types over substituted endpoints reduce on constructors.
 noncomputable instance : σ.toFunctor.Monoidal :=
   inferInstanceAs (FreeRigid.lift σ.obj (fun g ↦ FreeRigid.homMk (σ.coupon g))).Monoidal
 
-@[simp]
-theorem toFunctor_ε : Functor.LaxMonoidal.ε σ.toFunctor = 𝟙 _ :=
-  FreeRigid.lift_ε _ _
+@[simp] theorem toFunctor_ε : Functor.LaxMonoidal.ε σ.toFunctor = 𝟙 _ := FreeRigid.lift_ε _ _
 
-@[simp]
-theorem toFunctor_η : Functor.OplaxMonoidal.η σ.toFunctor = 𝟙 _ :=
-  FreeRigid.lift_η _ _
+@[simp] theorem toFunctor_η : Functor.OplaxMonoidal.η σ.toFunctor = 𝟙 _ := FreeRigid.lift_η _ _
 
-@[simp]
-theorem toFunctor_μ (X Y : S.FreeRigid) :
-    Functor.LaxMonoidal.μ σ.toFunctor X Y = 𝟙 _ :=
-  FreeRigid.lift_μ _ _ X Y
+@[simp] theorem toFunctor_μ (X Y : S.FreeRigid) :
+    Functor.LaxMonoidal.μ σ.toFunctor X Y = 𝟙 _ := FreeRigid.lift_μ _ _ X Y
 
-@[simp]
-theorem toFunctor_δ (X Y : S.FreeRigid) :
-    Functor.OplaxMonoidal.δ σ.toFunctor X Y = 𝟙 _ :=
-  FreeRigid.lift_δ _ _ X Y
+@[simp] theorem toFunctor_δ (X Y : S.FreeRigid) :
+    Functor.OplaxMonoidal.δ σ.toFunctor X Y = 𝟙 _ := FreeRigid.lift_δ _ _ X Y
 
-@[simp]
-theorem toFunctor_mapRightDualIso (X : S.FreeRigid) :
+@[simp] theorem toFunctor_mapRightDualIso (X : S.FreeRigid) :
     σ.toFunctor.mapRightDualIso X (_hFX := RightRigidCategory.rightDual (σ.toFunctor.obj X)) =
       Iso.refl _ :=
   FreeRigid.lift_mapRightDualIso _ _ X
 
-@[simp]
-theorem toFunctor_mapLeftDualIso (X : S.FreeRigid) :
+@[simp] theorem toFunctor_mapLeftDualIso (X : S.FreeRigid) :
     σ.toFunctor.mapLeftDualIso X (_hFY := LeftRigidCategory.leftDual (σ.toFunctor.obj X)) =
       Iso.refl _ :=
   FreeRigid.lift_mapLeftDualIso _ _ X
 
-@[simp]
-theorem toFunctor_obj (X : S.FreeRigid) :
+@[simp] theorem toFunctor_obj (X : S.FreeRigid) :
     σ.toFunctor.obj X = RigidObject.projectObj σ.obj X.as := by rfl
 
 theorem toFunctor_obj_as (X : S.FreeRigid) :

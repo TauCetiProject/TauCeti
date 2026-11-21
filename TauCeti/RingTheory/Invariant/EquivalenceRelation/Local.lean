@@ -100,7 +100,7 @@ theorem finite_maximalSpectrum [Module.Finite A B] [Module.Projective A B]
     exact ⟨r.asIdeal, ⟨r.isPrime, ⟨congr(($hr).asIdeal).symm⟩⟩, congr(($hr').asIdeal)⟩
   have := hF.to_subtype
   exact Finite.of_injective (fun q ↦ (⟨q.asIdeal, hsub q⟩ : Ideal.comap t '' _))
-    fun q q' hqq' ↦ MaximalSpectrum.ext congr(($hqq').1)
+    fun q q' hqq' ↦ MaximalSpectrum.ext congr(($hqq').val)
 
 variable {ι : Type*} (b : Module.Basis ι A B)
 
@@ -126,7 +126,7 @@ private noncomputable def preimageSubmodule (q : Ideal A) [q.IsPrime]
   smul_mem' c x hx := by
     -- `t (c x) = s c * t x`, since `c` is an invariant
     have hc : t (c • x) = (c : A) • t x := by
-      rw [Subring.smul_def, smul_eq_mul, map_mul, ← mem_eqLocus.mp c.2, Algebra.smul_def]
+      rw [Subring.smul_def, smul_eq_mul, map_mul, ← mem_eqLocus.mp c.property, Algebra.smul_def]
     simpa [hc] using U.smul_of_tower_mem (c : A) hx
 
 omit h in
@@ -258,7 +258,8 @@ theorem exists_basis_eq_apply [Module.Finite A B] [Module.Free A B]
     rintro _ ⟨x, rfl⟩
     rw [← c.sum_repr x, map_sum]
     refine Submodule.sum_mem _ fun i _ ↦ ?_
-    rw [Subring.smul_def, smul_eq_mul, map_mul, ← mem_eqLocus.mp (c.repr x i).2, ← Algebra.smul_def]
+    rw [Subring.smul_def, smul_eq_mul, map_mul, ← mem_eqLocus.mp (c.repr x i).property,
+        ← Algebra.smul_def]
     exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
   exact ⟨basisOfTopLeSpanOfCardEqFinrank _ hspan (Fintype.card_fin _), c, fun i ↦ by simp⟩
 

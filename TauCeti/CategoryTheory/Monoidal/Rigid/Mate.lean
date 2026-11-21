@@ -187,16 +187,12 @@ def rightMateIso {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y
   inv_hom_id := by rw [← comp_rightMate, e.hom_inv_id, rightMate_id]
 
 /-- The forward morphism of `rightMateIso pX pY e` is the right mate of `e.hom`. -/
-@[simp]
-theorem rightMateIso_hom {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y')
-    (e : X ≅ Y) : (rightMateIso pX pY e).hom = rightMate pX pY e.hom :=
-  (rfl)
+@[simp] theorem rightMateIso_hom {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y')
+    (e : X ≅ Y) : (rightMateIso pX pY e).hom = rightMate pX pY e.hom := (rfl)
 
 /-- The inverse morphism of `rightMateIso pX pY e` is the right mate of `e.inv`. -/
-@[simp]
-theorem rightMateIso_inv {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y')
-    (e : X ≅ Y) : (rightMateIso pX pY e).inv = rightMate pY pX e.inv :=
-  (rfl)
+@[simp] theorem rightMateIso_inv {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y')
+    (e : X ≅ Y) : (rightMateIso pX pY e).inv = rightMate pY pX e.inv := (rfl)
 
 /-- Pairing `e.inv` with the right mate of `e.hom` transports the coevaluation of `pY` to the
 coevaluation of `pX`. -/
@@ -416,16 +412,12 @@ def leftMateIso {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y
   inv_hom_id := by rw [← comp_leftMate, e.hom_inv_id, leftMate_id]
 
 /-- The forward morphism of `leftMateIso pX pY e` is the left mate of `e.hom`. -/
-@[simp]
-theorem leftMateIso_hom {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y)
-    (e : X ≅ Y) : (leftMateIso pX pY e).hom = leftMate pX pY e.hom :=
-  (rfl)
+@[simp] theorem leftMateIso_hom {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y)
+    (e : X ≅ Y) : (leftMateIso pX pY e).hom = leftMate pX pY e.hom := (rfl)
 
 /-- The inverse morphism of `leftMateIso pX pY e` is the left mate of `e.inv`. -/
-@[simp]
-theorem leftMateIso_inv {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y)
-    (e : X ≅ Y) : (leftMateIso pX pY e).inv = leftMate pY pX e.inv :=
-  (rfl)
+@[simp] theorem leftMateIso_inv {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y)
+    (e : X ≅ Y) : (leftMateIso pX pY e).inv = leftMate pY pX e.inv := (rfl)
 
 /-- Pairing the left mate of `e.hom` with `e.inv` transports the coevaluation of `pY` to the
 coevaluation of `pX`. -/
@@ -663,16 +655,12 @@ def Iso.leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) 
   inv_hom_id := by rw [← comp_leftAdjointMate, e.hom_inv_id, leftAdjointMate_id]
 
 /-- The component of `Iso.leftAdjointMate e` is the left adjoint mate of that of `e`. -/
-@[simp]
-theorem Iso.leftAdjointMate_hom {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
-    e.leftAdjointMate.hom = ᘁe.hom :=
-  (rfl)
+@[simp] theorem Iso.leftAdjointMate_hom {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    e.leftAdjointMate.hom = ᘁe.hom := (rfl)
 
 /-- The inverse of `Iso.leftAdjointMate e` is the left adjoint mate of the inverse of `e`. -/
-@[simp]
-theorem Iso.leftAdjointMate_inv {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
-    e.leftAdjointMate.inv = ᘁe.inv :=
-  (rfl)
+@[simp] theorem Iso.leftAdjointMate_inv {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    e.leftAdjointMate.inv = ᘁe.inv := (rfl)
 
 end CategoryTheory
 

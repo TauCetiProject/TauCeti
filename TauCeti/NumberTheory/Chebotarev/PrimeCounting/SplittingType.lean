@@ -56,7 +56,7 @@ theorem hasNaturalDensity_setOf_map_inertiaDeg_eq
     NumberField.Set.HasNaturalDensity
       {𝔭 : HeightOneSpectrum (𝓞 K) |
         (Finset.univ : Finset (𝔭.asIdeal.primesOver (𝓞 E))).val.map
-          (fun P => P.1.inertiaDeg (𝓞 K)) = μ}
+          (fun P => P.val.inertiaDeg (𝓞 K)) = μ}
       (∑ C ∈ Finset.univ.filter (fun C : ConjClasses (L ≃ₐ[K] L) =>
         (toPerm C.out : Equiv.Perm ((L ≃ₐ[K] L) ⧸ E.fixingSubgroup)).fullCycleType = μ),
           (Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) := by
