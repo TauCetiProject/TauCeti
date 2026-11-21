@@ -168,6 +168,12 @@ theorem preimage_range (h : IsBicollar f b) : b ⁻¹' range f = univ ×ˢ ({0} 
   have hb : b (z, 0) = b (y, t) := by rw [h.apply_zero z, ← hz]
   exact ((Prod.ext_iff.1 (h.isOpenEmbedding.injective hb)).2).symm
 
+/-- A point of a bicollar lies in the collared image exactly at depth zero. -/
+theorem apply_mem_range_iff (h : IsBicollar f b) {p : N × ℝ} :
+    b p ∈ range f ↔ p.2 = 0 := by
+  simpa only [mem_preimage, mem_prod, mem_univ, true_and, mem_singleton_iff] using
+    Set.ext_iff.mp h.preimage_range p
+
 /-- Inside a bicollar the complement of the collared image splits into the two sides `t > 0` and
 `t < 0` of the collar. This is what makes the collar two-sided, and it is exactly what fails for
 a wild embedding. -/
@@ -342,13 +348,13 @@ theorem restrict (h : IsLocallyBicollared f) {U : Set N} (hU : IsOpen U) :
   obtain ⟨V, hV, hxV, hb⟩ := h x
   let W : Set U := ((↑) : U → N) ⁻¹' V
   let R : Set V := ((↑) : V → N) ⁻¹' U
-  have hW : IsOpen W := hV.preimage continuous_subtype_val
-  have hR : IsOpen R := hU.preimage continuous_subtype_val
+  have hW : IsOpen W := hV.preimage continuous_subtypeVal
+  have hR : IsOpen R := hU.preimage continuous_subtypeVal
   -- `W` and `R` are the two readings of `U ∩ V`, one as a subset of `U` and one as a subset of
   -- `V`; the homeomorphism between them only re-brackets the pair of membership proofs.
   let e : W ≃ₜ R := {
-    toFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
-    invFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
+    toFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
+    invFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
     left_inv _ := rfl
     right_inv _ := rfl
     continuous_toFun := by fun_prop

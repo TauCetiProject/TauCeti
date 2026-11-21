@@ -13,6 +13,8 @@ import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.LinearAlgebra.Multilinear.CompSplit
+import TauCeti.LinearAlgebra.Multilinear.ContractNth
 
 /-!
 # Ungraded `A∞` right modules over a differential algebra
@@ -33,6 +35,10 @@ relations of a right module over the differential algebra `A`: every Koszul sign
 module `CFA` of a bordered three-manifold. Tau Ceti's `A∞` right modules
 (`TauCeti.AInfinityRightModule`) are `ℤ`-graded with operations of degree `1 - n`, which an ungraded
 differential cannot carry, for the reason recorded in `TauCeti.Algebra.Homology.DG.Ungraded`.
+Each of the three kinds of terms of the relation is multilinear in the algebra inputs
+(`TauCeti.ungradedStasheffCompMultilinear`, `TauCeti.ungradedStasheffDiffMultilinear`,
+`TauCeti.ungradedStasheffMulMultilinear`), so an identity between relations can be checked on
+tuples drawn from spanning sets.
 
 A differential right module (`TauCeti.IsUngradedDGRightModule`) is an `A∞` module whose
 operations `m_{n+1}` vanish for `n ≥ 2`, over a ring of characteristic two
@@ -83,11 +89,14 @@ Two constructions are developed, together with strict units.
   `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`.
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
-product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
+product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA.Basic`.
 
 ## Main definitions
 
 * `TauCeti.UngradedAInfinityRightModule`: an ungraded `A∞` right module.
+* `TauCeti.ungradedStasheffCompMultilinear`, `TauCeti.ungradedStasheffDiffMultilinear`,
+  `TauCeti.ungradedStasheffMulMultilinear`: the terms of the `A∞` relations as multilinear maps
+  in the algebra inputs.
 * `TauCeti.UngradedAInfinityRightModule.twistedDifferential`: the differential twisted by an
   element of the algebra.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct` and
@@ -231,6 +240,64 @@ theorem ungradedStasheffMul_add
   | succ n => simp [ungradedStasheffMul_succ, Finset.sum_add_distrib]
 
 end StasheffTermsApply
+
+/-! ### The relations as multilinear maps -/
+
+section StasheffMultilinear
+
+variable (act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M))
+  (d : A →ₗ[R] A)
+
+/-- The **composite terms** of the `A∞` relation of length `n`,
+`∑_{i + j = n} m_{j+1}(m_{i+1}(·, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, as a multilinear map in the algebra
+inputs (`TauCeti.ungradedStasheffCompMultilinear_apply`). -/
+noncomputable def ungradedStasheffCompMultilinear (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
+  ∑ k : Fin (n + 1), (act (n - k)).compSplit (act k) (by omega)
+
+@[simp]
+theorem ungradedStasheffCompMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffCompMultilinear act n a m = ungradedStasheffComp act n a m := by
+  simp only [ungradedStasheffCompMultilinear, _root_.sum_apply, LinearMap.sum_apply,
+    MultilinearMap.compSplit_apply, ungradedStasheffComp_def]
+
+/-- The **differential terms** of the `A∞` relation of length `n`,
+`∑_l m_{n+1}(·, a₁, …, d aₗ, …, aₙ)`, as a multilinear map in the algebra inputs
+(`TauCeti.ungradedStasheffDiffMultilinear_apply`). -/
+noncomputable def ungradedStasheffDiffMultilinear (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
+  ∑ l : Fin n, (act n).compLinearMap (Function.update (fun _ => LinearMap.id) l d)
+
+@[simp]
+theorem ungradedStasheffDiffMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiffMultilinear act d n a m = ungradedStasheffDiff act d n a m := by
+  simp only [ungradedStasheffDiffMultilinear, _root_.sum_apply, LinearMap.sum_apply,
+    MultilinearMap.compLinearMap_apply, ungradedStasheffDiff_def]
+  refine Finset.sum_congr rfl fun l _ => ?_
+  congr 2
+  funext i
+  by_cases h : i = l
+  · subst h; simp
+  · simp [h]
+
+/-- The **product terms** of the `A∞` relation of length `n`,
+`∑_l m_n(·, a₁, …, aₗ aₗ₊₁, …, aₙ)`, as a multilinear map in the algebra inputs
+(`TauCeti.ungradedStasheffMulMultilinear_apply`). -/
+noncomputable def ungradedStasheffMulMultilinear : (n : ℕ) →
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M)
+  | 0 => 0
+  | n + 1 => ∑ l : Fin n, (act n).compContractNth l
+
+@[simp]
+theorem ungradedStasheffMulMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMulMultilinear act n a m = ungradedStasheffMul act n a m := by
+  cases n with
+  | zero => simp [ungradedStasheffMulMultilinear]
+  | succ n =>
+    simp [ungradedStasheffMulMultilinear, ungradedStasheffMul_succ, _root_.sum_apply,
+      LinearMap.sum_apply]
+
+end StasheffMultilinear
 
 /-- An **ungraded `A∞` right module** over the algebra `A` with differential `d`. The operation
 `act n` is `m_{n+1} : M ⊗ A^{⊗ n} → M`, multilinear in the algebra inputs and linear in the module
@@ -591,23 +658,8 @@ theorem matrixAct_matrixAct_apply {i j n : ℕ} (h : i + j = n) (G : Fin j → M
           (Mm.act i (fun l => F l (w ⟨l, by have := l.isLt; omega⟩)
             (w ⟨l + 1, by have := l.isLt; omega⟩)) (φ (w 0)))
       else 0 := by
-  have hy (y : Fin (j + 1) → X) :
-      (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-        (Mm.matrixAct X i F φ (y 0)) else 0) =
-      ∑ x : Fin (i + 1) → X, if x (Fin.last i) = y 0 then
-        (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-          (Mm.act i (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))) else 0) else 0 := by
-    split_ifs with hyz
-    · simp only [matrixAct_apply, map_sum]
-      exact sum_congr rfl fun x _ => by split_ifs <;> simp
-    · simp
-  rw [matrixAct_apply, sum_congr rfl fun y _ => hy y, sum_comm,
-    Fin.sum_sum_ite_apply_last_eq_apply_zero h]
-  refine sum_congr rfl fun w _ => ?_
-  have hlast : w ⟨i + (Fin.last j : ℕ), by simp; omega⟩ = w (Fin.last n) :=
-    congrArg w (Fin.ext (by simp [h]))
-  have hzero : w ⟨((0 : Fin (i + 1)) : ℕ), by simp⟩ = w 0 := congrArg w (Fin.ext (by simp))
-  simp only [hlast, hzero, Fin.val_castSucc, Fin.val_succ, Nat.add_assoc]
+  simp only [matrixAct_apply]
+  exact MultilinearMap.sum_ite_apply_sum_ite_eq_sum h (Mm.act j) (Mm.act i) G F φ z
 
 /-- The composite terms of the matrix module are sums over paths. -/
 private theorem stasheffComp_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :

@@ -19,7 +19,9 @@ import TauCeti.Analysis.Analytic.IteratedFDeriv
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Quaternion.Analytic
 import TauCeti.Analysis.Quaternion.Cauchy.CutoffField
+import TauCeti.Analysis.Quaternion.Cauchy.Representation
 import TauCeti.Analysis.Quaternion.Reflection
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Real analyticity, smoothness, and uniqueness of Fueter regular functions
@@ -48,6 +50,13 @@ follow with the exact same radii and canonical Taylor series through the reflect
 `q ↦ star (f (star q))` (`RightFueterOn.star_star`), the reflected coordinate boxes
 (`image_star_image_dq_pi_Ioo`), and the real linear isometry `starₗᵢ ℝ`.
 
+The same radius holds on a positively oriented affine parallelepiped `C = p + L([0, 1]⁴)` when `f`
+is continuous on `C`, Fueter regular on its open interior, and the eight boundary faces lie at
+Euclidean distance at least `δ > 0` from `dq x₀`: the ball `eball (dq x₀) ((√2 - 1) * δ)` lies
+inside the open parallelepiped, where `left_cauchyFueter_affine` and `right_cauchyFueter_affine`
+identify `f` with its boundary integral, whose eight face potentials expand into power series
+(`LeftFueterOn.hasFPowerSeriesOnBall_affine`, `RightFueterOn.hasFPowerSeriesOnBall_affine`).
+
 Combining real analyticity with the analytic identity principle yields the uniqueness principle on
 preconnected open sets: two left (or right) Fueter regular functions that agree on `s ∩ t` for an
 open set `t` meeting `s`, or share all iterated real Fréchet derivatives at one point, coincide
@@ -55,7 +64,8 @@ throughout the preconnected open domain `s`. Unlike in one complex variable, agr
 with accumulation points does not suffice in four real dimensions:
 `q ↦ ((⟨q.re, q.imI⟩ : ℂ) : ℍ)` is both left and right Fueter regular on `ℍ` and vanishes on the
 two-dimensional subspace `{q | q.re = 0 ∧ q.imI = 0}`, every point of which is an accumulation
-point, without vanishing identically.
+point, without vanishing identically
+(`exists_leftFueterOn_and_rightFueterOn_univ_eqOn_zero_accPt`).
 
 ## Main declarations
 
@@ -64,6 +74,9 @@ point, without vanishing identically.
   `TauCeti.LeftFueterOn.hasFPowerSeriesOnBall_of_ball`,
   `TauCeti.RightFueterOn.hasFPowerSeriesOnBall_of_ball`: quantitative canonical Taylor power-series
   expansions of Fueter regular functions on open boxes and open balls.
+* `TauCeti.LeftFueterOn.hasFPowerSeriesOnBall_affine`,
+  `TauCeti.RightFueterOn.hasFPowerSeriesOnBall_affine`: the same expansions on positively oriented
+  affine parallelepipeds whose boundary faces stay at Euclidean distance `δ` from the centre.
 * `TauCeti.LeftFueterOn.analyticAt`, `TauCeti.RightFueterOn.analyticAt`,
   `TauCeti.LeftFueterOn.analyticOnNhd`, `TauCeti.RightFueterOn.analyticOnNhd`: real analyticity of
   left and right Fueter regular functions.
@@ -79,6 +92,8 @@ point, without vanishing identically.
   `TauCeti.LeftFueterOn.eqOn_of_isPreconnected_of_forall_iteratedFDeriv_eq`,
   `TauCeti.RightFueterOn.eqOn_of_isPreconnected_of_forall_iteratedFDeriv_eq`: uniqueness principles
   for left and right Fueter regular functions on preconnected open sets.
+* `TauCeti.exists_leftFueterOn_and_rightFueterOn_univ_eqOn_zero_accPt`: a nonzero globally left
+  and right Fueter regular function vanishing on a nonempty set of accumulation points.
 
 ## References
 
@@ -261,6 +276,212 @@ theorem RightFueterOn.hasFPowerSeriesOnBall_of_ball
   exact hasFPowerSeriesOnBall_iteratedFDeriv_of_star_star
     (hf'.hasFPowerSeriesOnBall_of_ball hR)
 
+/-! ### Private helpers for affine parallelepipeds -/
+
+/-- If `u₀` lies in the open box `∏ i, Ioo (a i) (b i)` and every facet image under
+`v ↦ dq (p + M v)` sits at distance at least `δ` from `dq (p + M u₀)`, then any `u` with
+`‖dq (p + M u) - dq (p + M u₀)‖ < δ` also lies in `∏ i, Ioo (a i) (b i)` (otherwise the segment
+`[u₀, u]` meets a facet at distance `t * ‖dq (p + M u) - dq (p + M u₀)‖ < δ`). -/
+private theorem mem_pi_Ioo_of_norm_dq_sub_lt {a b p u₀ u : Fin 4 → ℝ}
+    (M : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ)
+    (ha : ∀ i, a i < u₀ i) (hb : ∀ i, u₀ i < b i)
+    {δ : ℝ} (hδ : ∀ (j : Fin 4) {c : ℝ}, (c = a j ∨ c = b j) →
+      ∀ w ∈ Icc (a ∘ j.succAbove) (b ∘ j.succAbove),
+        δ ≤ ‖dq (p + M (j.insertNth c w)) - dq (p + M u₀)‖)
+    (hu_lt : ‖dq (p + M u) - dq (p + M u₀)‖ < δ) :
+    u ∈ pi univ fun i ↦ Ioo (a i) (b i) := by
+  by_contra hu
+  -- Apply `IsOpen.exists_first_exit` to the segment `[u₀, u]` leaving the open box `V`.
+  let V : Set (Fin 4 → ℝ) := pi univ fun i ↦ Ioo (a i) (b i)
+  have hV_open : IsOpen V := isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo
+  have hV_sub : V ⊆ Icc a b := fun x hx ↦
+    ⟨fun i ↦ (hx i (mem_univ i)).1.le, fun i ↦ (hx i (mem_univ i)).2.le⟩
+  obtain ⟨t, ht, -, hv_not, hv_cl, -⟩ :=
+    hV_open.exists_first_exit (γ := fun t : ℝ ↦ (1 - t) • u₀ + t • u) (a := 0) (b := 1)
+      (by fun_prop) (by simp [V, ha, hb])
+      ⟨1, right_mem_Icc.2 zero_le_one, by simpa [V] using hu⟩
+  set v := (1 - t) • u₀ + t • u
+  have hv_icc : v ∈ Icc a b := isClosed_Icc.closure_subset_iff.2 hV_sub hv_cl
+  -- Identify the facet coordinate `j` where `v` meets `a j` or `b j`.
+  have hv_ex : ∃ j : Fin 4, v j ∉ Ioo (a j) (b j) := by
+    by_contra! hall
+    exact hv_not fun j _ ↦ hall j
+  obtain ⟨j, hj⟩ := hv_ex
+  have hc : v j = a j ∨ v j = b j := by
+    by_cases h1 : v j = a j
+    · exact Or.inl h1
+    · exact Or.inr (le_antisymm (hv_icc.2 j)
+        (not_lt.1 fun hlt ↦ hj ⟨lt_of_le_of_ne' (hv_icc.1 j) h1, hlt⟩))
+  have hseg : (1 - t) • u₀ + t • u = j.insertNth (v j) (j.removeNth v) :=
+    (j.insertNth_self_removeNth v).symm
+  have hw : j.removeNth v ∈ Icc (a ∘ j.succAbove) (b ∘ j.succAbove) :=
+    ⟨fun r ↦ hv_icc.1 (j.succAbove r), fun r ↦ hv_icc.2 (j.succAbove r)⟩
+  -- Linearity scales the displacement from `dq (p + M u₀)` by `t ≤ 1`, contradicting `hδ`.
+  have hlin : dq (p + M (j.insertNth (v j) (j.removeNth v))) - dq (p + M u₀) =
+      t • (dq (p + M u) - dq (p + M u₀)) := by
+    rw [← hseg, M.map_add, M.map_smul, M.map_smul]
+    have hp_id : p + ((1 - t) • M u₀ + t • M u) = (1 - t) • (p + M u₀) + t • (p + M u) := by
+      ext i; simp [Pi.add_apply, Pi.smul_apply]; ring
+    rw [hp_id, map_add, map_smul, map_smul]
+    module
+  have hle : δ ≤ ‖t • (dq (p + M u) - dq (p + M u₀))‖ := hlin ▸ hδ j hc _ hw
+  rw [norm_smul, Real.norm_of_nonneg ht.1] at hle
+  have hlt : t * ‖dq (p + M u) - dq (p + M u₀)‖ < δ :=
+    (mul_le_mul_of_nonneg_right ht.2 (norm_nonneg _)).trans_lt (by simpa using hu_lt)
+  exact not_lt_of_ge hle hlt
+
+/-- Power-series expansion on `eball q₀ ((√2 - 1) δ)` of a single compact `Icc` face Cauchy–Fueter
+potential paired through `F` (left or right multiplication). -/
+private theorem exists_hasFPowerSeriesOnBall_setIntegral_Icc
+    {a b : Fin 3 → ℝ} {γ g : (Fin 3 → ℝ) → ℍ} {F : ℍ → ℍ → ℍ} {q₀ : ℍ} {δ : ℝ}
+    (hF : ∀ (γ' : C(Icc a b, ℍ)) (_ : ∀ z, γ' z ≠ q₀) (_ : ∀ z, δ ≤ ‖γ' z - q₀‖)
+        {g' : Icc a b → ℍ} (_ : Integrable g' (volume.comap Subtype.val)),
+      ∃ P : FormalMultilinearSeries ℝ ℍ ℍ,
+        HasFPowerSeriesOnBall
+          (fun q ↦ ∫ z, F (cauchyFueterKernel (γ' z) q) (g' z) ∂volume.comap Subtype.val)
+          P q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)))
+    (hγ : ContinuousOn γ (Icc a b)) (hg : ContinuousOn g (Icc a b))
+    (hδ₀ : 0 < δ) (hδ : ∀ u ∈ Icc a b, δ ≤ ‖γ u - q₀‖) :
+    ∃ P : FormalMultilinearSeries ℝ ℍ ℍ,
+      HasFPowerSeriesOnBall (fun q ↦ ∫ u in Icc a b, F (cauchyFueterKernel (γ u) q) (g u))
+        P q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  let γ' : C(Icc a b, ℍ) := ⟨fun z ↦ γ z.val, hγ.domRestrict⟩
+  have hne : ∀ z : Icc a b, γ' z ≠ q₀ :=
+    fun z ↦ sub_ne_zero.1 (norm_pos_iff.1 (hδ₀.trans_le (hδ z.val z.property)))
+  obtain ⟨P, hP⟩ := hF γ' hne (fun z ↦ hδ z.val z.property)
+    ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp
+      (hg.integrableOn_compact (μ := volume) isCompact_Icc))
+  exact ⟨P, hP.congr fun q _ ↦
+    integral_subtype_comap measurableSet_Icc fun u ↦ F (cauchyFueterKernel (γ u) q) (g u)⟩
+
+/-- If `f` agrees on `eball q₀ ((√2 - 1) δ)` (`δ > 0`) with `(1 / (2π²))` times a finite sum of
+upper-minus-lower compact `Icc` Cauchy–Fueter face potentials, then `f` admits its canonical
+symmetric Taylor series on that ball. -/
+private theorem hasFPowerSeriesOnBall_of_eq_smul_sum_sub_Icc
+    {ι : Type*} [Fintype ι] {lo hi : ι → Fin 3 → ℝ}
+    {γ₁ γ₀ g₁ g₀ : ι → (Fin 3 → ℝ) → ℍ} {F : ℍ → ℍ → ℍ} {f : ℍ → ℍ} {q₀ : ℍ} {δ : ℝ}
+    (hF : ∀ (i : ι) (γ' : C(Icc (lo i) (hi i), ℍ))
+        (_ : ∀ z, γ' z ≠ q₀) (_ : ∀ z, δ ≤ ‖γ' z - q₀‖)
+        {g' : Icc (lo i) (hi i) → ℍ} (_ : Integrable g' (volume.comap Subtype.val)),
+      ∃ P : FormalMultilinearSeries ℝ ℍ ℍ,
+        HasFPowerSeriesOnBall
+          (fun q ↦ ∫ z, F (cauchyFueterKernel (γ' z) q) (g' z) ∂volume.comap Subtype.val)
+          P q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)))
+    (hγ₁ : ∀ i, ContinuousOn (γ₁ i) (Icc (lo i) (hi i)))
+    (hγ₀ : ∀ i, ContinuousOn (γ₀ i) (Icc (lo i) (hi i)))
+    (hg₁ : ∀ i, ContinuousOn (g₁ i) (Icc (lo i) (hi i)))
+    (hg₀ : ∀ i, ContinuousOn (g₀ i) (Icc (lo i) (hi i)))
+    (hδ₀ : 0 < δ)
+    (hδ₁ : ∀ i, ∀ u ∈ Icc (lo i) (hi i), δ ≤ ‖γ₁ i u - q₀‖)
+    (hδ₀' : ∀ i, ∀ u ∈ Icc (lo i) (hi i), δ ≤ ‖γ₀ i u - q₀‖)
+    (heq : ∀ q ∈ Metric.eball q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)),
+      f q = (1 / (2 * Real.pi ^ 2)) • ∑ i : ι,
+        ((∫ u in Icc (lo i) (hi i), F (cauchyFueterKernel (γ₁ i u) q) (g₁ i u)) -
+          ∫ u in Icc (lo i) (hi i), F (cauchyFueterKernel (γ₀ i u) q) (g₀ i u))) :
+    HasFPowerSeriesOnBall f (fun n ↦ (n ! : ℝ)⁻¹ • iteratedFDeriv ℝ n f q₀)
+      q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  choose P₁ hP₁ using fun i : ι ↦
+    exists_hasFPowerSeriesOnBall_setIntegral_Icc (hF i) (hγ₁ i) (hg₁ i) hδ₀ (hδ₁ i)
+  choose P₀ hP₀ using fun i : ι ↦
+    exists_hasFPowerSeriesOnBall_setIntegral_Icc (hF i) (hγ₀ i) (hg₀ i) hδ₀ (hδ₀' i)
+  have hsum := Finset.univ.hasFPowerSeriesOnBall_fun_sum
+    (ENNReal.ofReal_pos.2 (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀))
+    fun i _ ↦ (hP₁ i).sub (hP₀ i)
+  exact ((hsum.const_smul (c := (1 / (2 * Real.pi ^ 2) : ℝ))).congr fun q hq ↦ by
+    simpa [Pi.smul_apply, Pi.sub_apply] using (heq q hq).symm).inv_factorial_smul_iteratedFDeriv
+
+/-- Any quaternion `q ∈ eball (dq x₀) ((√2 - 1) δ)` (`δ > 0`) is of the form `dq x` with
+`‖dq x - dq x₀‖ < δ`. -/
+private theorem exists_dq_eq_and_norm_sub_lt_of_mem_eball {x₀ : Fin 4 → ℝ} {q : ℍ} {δ : ℝ}
+    (hδ₀ : 0 < δ)
+    (hq : q ∈ Metric.eball (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ))) :
+    ∃ x : Fin 4 → ℝ, dq x = q ∧ ‖dq x - dq x₀‖ < δ := by
+  let x := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q
+  have hqx : dq x = q := by simp [x, coe_dq]
+  refine ⟨x, hqx, ?_⟩
+  have h1 : ‖q - dq x₀‖ < (Real.sqrt 2 - 1) * δ := by
+    rwa [Metric.mem_eball, edist_dist, dist_eq_norm,
+      ENNReal.ofReal_lt_ofReal_iff (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀)] at hq
+  rw [hqx]
+  nlinarith [Real.sqrt_two_lt_three_halves]
+
+/-! ### Quantitative power-series expansions on affine parallelepipeds -/
+
+/-- Quantitative Taylor power-series expansion on `eball (dq x₀) ((√2 - 1) δ)` of a function
+continuous on a positively oriented affine parallelepiped and left Fueter regular on its interior,
+whose eight boundary faces all lie at Euclidean distance at least `δ > 0` from `dq x₀`. -/
+theorem LeftFueterOn.hasFPowerSeriesOnBall_affine
+    {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p x₀ : Fin 4 → ℝ}
+    (hL : 0 < LinearMap.det (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ))
+    {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
+    (hf : LeftFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)))
+    (hx₀ : L.symm (x₀ - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)
+    {δ : ℝ} (hδ₀ : 0 < δ)
+    (hδ : ∀ (j : Fin 4) {c : ℝ}, (c = 0 ∨ c = 1) →
+      ∀ u ∈ Icc (0 : Fin 3 → ℝ) 1, δ ≤ ‖dq (p + L (j.insertNth c u)) - dq x₀‖) :
+    HasFPowerSeriesOnBall f (fun n ↦ (n ! : ℝ)⁻¹ • iteratedFDeriv ℝ n f (dq x₀))
+      (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  have hface_cont (j : Fin 4) (c : ℝ) (hc' : c ∈ Icc (0 : ℝ) 1) :
+      ContinuousOn (fun u : Fin 3 → ℝ ↦
+        ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
+          f (dq (p + L (j.insertNth c u)))) (Icc 0 1) :=
+    continuousOn_const.mul (hc.comp (by fun_prop) fun _ hu ↦
+      mem_image_of_mem _ (mem_image_of_mem _ (Fin.insertNth_mem_Icc.mpr ⟨hc', hu⟩)))
+  refine hasFPowerSeriesOnBall_of_eq_smul_sum_sub_Icc (F := (· * ·))
+    (lo := fun _ ↦ 0) (hi := fun _ ↦ 1)
+    (fun _ γ' hne hδ' {_} hg' ↦ ⟨_, hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul γ' hne
+      hδ₀ hδ' hg'⟩)
+    (fun _ ↦ by fun_prop) (fun _ ↦ by fun_prop)
+    (fun j ↦ hface_cont j 1 (right_mem_Icc.2 zero_le_one))
+    (fun j ↦ hface_cont j 0 (left_mem_Icc.2 zero_le_one))
+    hδ₀ (fun j ↦ hδ j (Or.inr rfl)) (fun j ↦ hδ j (Or.inl rfl)) fun q hq ↦ ?_
+  obtain ⟨x, rfl, hlt⟩ := exists_dq_eq_and_norm_sub_lt_of_mem_eball hδ₀ hq
+  have hmem : L.symm (x - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1 :=
+    mem_pi_Ioo_of_norm_dq_sub_lt (a := 0) (b := 1) (p := p) L.toLinearMap
+      (fun i ↦ (hx₀ i (mem_univ i)).1) (fun i ↦ (hx₀ i (mem_univ i)).2)
+      (by simpa using hδ) (by simpa using hlt)
+  rw [left_cauchyFueter_affine (x₀ := x) hL hc (hf.mono sdiff_subset) hmem]
+  simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
+    mul_assoc, ContinuousLinearEquiv.coe_coe]
+
+/-- Quantitative Taylor power-series expansion on `eball (dq x₀) ((√2 - 1) δ)` of a function
+continuous on a positively oriented affine parallelepiped and right Fueter regular on its
+interior. -/
+theorem RightFueterOn.hasFPowerSeriesOnBall_affine
+    {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p x₀ : Fin 4 → ℝ}
+    (hL : 0 < LinearMap.det (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ))
+    {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
+    (hf : RightFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)))
+    (hx₀ : L.symm (x₀ - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)
+    {δ : ℝ} (hδ₀ : 0 < δ)
+    (hδ : ∀ (j : Fin 4) {c : ℝ}, (c = 0 ∨ c = 1) →
+      ∀ u ∈ Icc (0 : Fin 3 → ℝ) 1, δ ≤ ‖dq (p + L (j.insertNth c u)) - dq x₀‖) :
+    HasFPowerSeriesOnBall f (fun n ↦ (n ! : ℝ)⁻¹ • iteratedFDeriv ℝ n f (dq x₀))
+      (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  have hface_cont (j : Fin 4) (c : ℝ) (hc' : c ∈ Icc (0 : ℝ) 1) :
+      ContinuousOn (fun u : Fin 3 → ℝ ↦
+        f (dq (p + L (j.insertNth c u))) *
+          ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j) (Icc 0 1) :=
+    (hc.comp (by fun_prop) fun _ hu ↦
+      mem_image_of_mem _ (mem_image_of_mem _ (Fin.insertNth_mem_Icc.mpr ⟨hc', hu⟩))).mul
+      continuousOn_const
+  refine hasFPowerSeriesOnBall_of_eq_smul_sum_sub_Icc (F := fun k w ↦ w * k)
+    (lo := fun _ ↦ 0) (hi := fun _ ↦ 1)
+    (fun _ γ' hne hδ' {_} hg' ↦ ⟨_, hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel γ' hne
+      hδ₀ hδ' hg'⟩)
+    (fun _ ↦ by fun_prop) (fun _ ↦ by fun_prop)
+    (fun j ↦ hface_cont j 1 (right_mem_Icc.2 zero_le_one))
+    (fun j ↦ hface_cont j 0 (left_mem_Icc.2 zero_le_one))
+    hδ₀ (fun j ↦ hδ j (Or.inr rfl)) (fun j ↦ hδ j (Or.inl rfl)) fun q hq ↦ ?_
+  obtain ⟨x, rfl, hlt⟩ := exists_dq_eq_and_norm_sub_lt_of_mem_eball hδ₀ hq
+  have hmem : L.symm (x - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1 :=
+    mem_pi_Ioo_of_norm_dq_sub_lt (a := 0) (b := 1) (p := p) L.toLinearMap
+      (fun i ↦ (hx₀ i (mem_univ i)).1) (fun i ↦ (hx₀ i (mem_univ i)).2)
+      (by simpa using hδ) (by simpa using hlt)
+  rw [right_cauchyFueter_affine (x₀ := x) hL hc (hf.mono sdiff_subset) hmem]
+  simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
+    ContinuousLinearEquiv.coe_coe]
+
 /-! ### Real analyticity and smoothness -/
 
 namespace LeftFueterOn
@@ -383,5 +604,44 @@ theorem eqOn_of_preconnected_of_eventuallyEq (hf : RightFueterOn f s) (hg : Righ
   (hf.analyticOnNhd hs).eqOn_of_preconnected_of_eventuallyEq (hg.analyticOnNhd hs) hc h₀ hfg
 
 end RightFueterOn
+
+/-- Unlike one-variable holomorphic functions, a Fueter regular function on all of `ℍ` is not
+determined by vanishing on a nonempty set whose every point is an accumulation point of that set:
+there exist a nonzero globally left- and right-regular function `f` and such a zero set `Z`.
+(The proof witnesses this with `q ↦ t + i x` on `{q | q.re = 0 ∧ q.imI = 0}`.) -/
+theorem exists_leftFueterOn_and_rightFueterOn_univ_eqOn_zero_accPt :
+    ∃ (f : ℍ → ℍ) (Z : Set ℍ),
+      LeftFueterOn f univ ∧ RightFueterOn f univ ∧ Z.Nonempty ∧
+      (∀ z ∈ Z, AccPt z (𝓟 Z)) ∧ EqOn f 0 Z ∧ f ≠ 0 := by
+  refine ⟨fun q : ℍ ↦ ((⟨q.re, q.imI⟩ : ℂ) : ℍ), {q : ℍ | q.re = 0 ∧ q.imI = 0},
+    ?_, ?_, ⟨0, by simp⟩, ?_, ?_, ?_⟩
+  · simpa using leftFueterOn_coeComplex_comp (U := univ) isOpen_univ differentiableOn_id
+  · simpa using rightFueterOn_coeComplex_comp (U := univ) isOpen_univ differentiableOn_id
+  · intro z hz
+    rw [accPt_iff_nhds]
+    intro U hU
+    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hU
+    set w : ℍ := z + ⟨0, 0, ε / 2, 0⟩
+    have hw_ne : w ≠ z := by
+      intro heq
+      have h := congrArg QuaternionAlgebra.imJ heq
+      simp [w] at h
+      linarith
+    have hw_mem : w ∈ U := hball (by
+      rw [Metric.mem_ball, dist_eq_norm]
+      have hsub : w - z = dq ![0, 0, ε / 2, 0] := by ext <;> simp [w, dq_apply]
+      rw [hsub]
+      have hsq : ‖dq ![0, 0, ε / 2, 0]‖ ^ 2 = (ε / 2) ^ 2 := by
+        rw [norm_dq_sq, Fin.sum_univ_four]
+        simp
+      have hnorm : ‖dq ![0, 0, ε / 2, 0]‖ = ε / 2 :=
+        (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 hsq
+      linarith)
+    exact ⟨w, ⟨hw_mem, by simp [w, hz.1], by simp [w, hz.2]⟩, hw_ne⟩
+  · rintro z ⟨hre, him⟩
+    ext <;> simp [hre, him]
+  · intro hf0
+    have h1 := congrFun hf0 1
+    simpa using congrArg QuaternionAlgebra.re h1
 
 end TauCeti

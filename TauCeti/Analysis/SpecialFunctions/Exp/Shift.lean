@@ -27,6 +27,8 @@ is `O` of a slower one, so a decay estimate at one rate gives one at every slowe
 
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
 * `TauCeti.tendsto_exp_neg_mul_norm_cocompact`: for `c > 0`, `exp (-c ‖x‖) → 0` at infinity.
+* `TauCeti.nonpos_of_forall_le_mul_exp`: a value at most `M exp (-b ρ)` for every `ρ`, with
+  `b > 0`, is nonpositive.
 * `TauCeti.isBigO_exp_neg_mul_norm_of_le`: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` for `c ≤ c'`, so a
   decay estimate at a rate `c'` gives one at every slower rate `c`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
@@ -53,6 +55,13 @@ theorem tendsto_exp_neg_mul_norm_cocompact {E : Type*} [NormedAddCommGroup E] [P
     {c : ℝ} (hc : 0 < c) : Tendsto (fun x : E ↦ Real.exp (-(c * ‖x‖))) (cocompact E) (𝓝 0) :=
   Real.tendsto_exp_neg_atTop_nhds_zero.comp
     ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)
+
+/-- A value bounded by `M exp (-(b ρ))` for every `ρ`, with `0 < b`, is nonpositive. -/
+theorem nonpos_of_forall_le_mul_exp {y M b : ℝ} (hb : 0 < b)
+    (h : ∀ ρ, y ≤ M * Real.exp (-(b * ρ))) : y ≤ 0 := by
+  refine ge_of_tendsto (x := Filter.atTop) ?_ (Filter.Eventually.of_forall h)
+  simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    (Filter.tendsto_id.const_mul_atTop hb)).const_mul M
 
 open Asymptotics in
 /-- A faster exponential decay is a stronger bound: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` along any

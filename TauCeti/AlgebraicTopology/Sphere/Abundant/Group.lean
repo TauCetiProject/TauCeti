@@ -11,6 +11,7 @@ public import TauCeti.Topology.MappingSpace.Group
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import Mathlib.Analysis.Quaternion
 import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.AlgebraicTopology.Singular.Reduced
@@ -146,7 +147,7 @@ private theorem livesOverFundamentalClass_sphereClass_iff (b : G) {k : ℕ}
       ContinuousMap.id _ :=
     Ψ.symm_comp_toContinuousMap
   have h : mappingSpaceEval Sphere2.north ∘ Ψ = id ∘ Prod.fst := funext fun x ↦ by
-    simp [Ψ, x.2.2]
+    simp [Ψ, x.2.property]
   have h' : (id ∘ Prod.fst) ∘ Ψ.symm = mappingSpaceEval Sphere2.north := funext fun f ↦ by
     simp [Ψ]
   -- Carry the class back along the homeomorphism over `G`, identify the coefficients `ℤ ⊗ ℤ`
@@ -225,7 +226,7 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
     simp only [Ψ, γ, c, ContinuousMap.comp_apply, ContinuousMap.prodMap_apply,
       ContinuousMap.coe_ofClass]
     rw [mappingSpaceGroupHomeomorph_apply, mappingSpaceGroupHomeomorph_apply]
-    simp [y.2]
+    simp [y.property]
   -- The identification of coefficients is natural in the space.
   have hcoeff : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
       coefficientIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) ≫

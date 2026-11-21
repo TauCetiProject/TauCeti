@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Pi.Interval
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.GroupTheory.Perm.DomMulAct
 import TauCeti.Algebra.MvPolynomial.Funext
+import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Algebra.Order.Antidiag.Prod
+import TauCeti.Algebra.Order.Antidiag.Tendsto
 import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 
@@ -34,13 +38,23 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 ## Main definitions and results
 
 * `FormalMultilinearSeries.mvCoeff`: the multi-index coefficient of a formal multilinear series,
-  together with `ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries` and
+  together with `FormalMultilinearSeries.mvCoeff_sum`,
+  `ContinuousLinearMap.mvCoeff_compFormalMultilinearSeries` and
   `FormalMultilinearSeries.mvCoeff_constFormalMultilinearSeries`.
 * `FormalMultilinearSeries.apply_eq_sum_mvCoeff`: the degree-`k` term is
   `∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α`.
-* `FormalMultilinearSeries.sum_norm_mvCoeff_le`: the coefficients of total degree `k` have norms
-  summing to at most `(card ι) ^ k * ‖p k‖`.
-* `TauCeti.summable_norm_prod_pow_smul_of_le`,
+* `FormalMultilinearSeries.prod_factorial_smul_mvCoeff`: factorial permutation-counting formula
+  relating `(∏ i, (α i)!) • p.mvCoeff α` to the sum over `Equiv.Perm (Fin k)`.
+* `FormalMultilinearSeries.norm_partialSum_le_sum_mvCoeff`: on `‖z‖ ≤ r`, `‖p.partialSum T z‖` is
+  at most `∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`.
+* `FormalMultilinearSeries.sum_norm_mvCoeff_le` and
+  `FormalMultilinearSeries.exists_mvCoeff_eq_and_norm_le`: the coefficients of total degree `k`
+  have norms summing to at most `(card ι) ^ k * ‖p k‖`, and conversely any coefficient family `c`
+  is realized by a formal multilinear series with `‖p k‖ ≤ ∑ α ∈ univ.piAntidiag k, ‖c α‖`.
+* `FormalMultilinearSeries.mvCoeff_compContinuousLinearMap_eq_zero`: vanishing of all
+  coefficients of a fixed total degree is preserved under precomposition by a continuous linear
+  map.
+* `TauCeti.norm_prod_pow_smul_le`, `TauCeti.summable_norm_prod_pow_smul_of_le`,
   `FormalMultilinearSeries.summable_norm_mvCoeff_mul_pow`, and
   `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: normal summability at radius `ρ`
   implies absolute summability on `‖y‖ ≤ ρ`, and the multi-index series converges
@@ -56,9 +70,10 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
   `TauCeti.exists_hasFPowerSeriesOnBall_tsum`: conversely, a normally convergent multi-index
   series has a formal multilinear power series on the polydisc whose multi-index coefficients are
   the given ones.
-* `HasFPowerSeriesAt.mvCoeff_eq_zero_of_eventuallyEq_zero` and
-  `TauCeti.eq_zero_of_tsum_prod_pow_smul_eventuallyEq_zero`: the identity theorem in coefficient
-  form, so that the coefficients only depend on the function
+* `HasFPowerSeriesAt.mvCoeff_eq_zero_of_eventuallyEq_zero`,
+  `TauCeti.eq_zero_of_tsum_prod_pow_smul_eventuallyEq_zero`, and
+  `TauCeti.eq_zero_of_forall_mem_ball_tsum_prod_pow_smul_eq_zero`: the identity theorem in
+  coefficient form, so that the coefficients only depend on the function
   (`HasFPowerSeriesAt.mvCoeff_eq_of_eventuallyEq`).
 
 ## References
@@ -71,7 +86,7 @@ commit `1d51891b5b`, `Mathlib/NumberTheory/Transcendental/Baker/MultiIndex.lean`
 public section
 
 open Filter Finset Topology
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal Nat
 
 namespace FormalMultilinearSeries
 
@@ -129,6 +144,16 @@ theorem mvCoeff_sub (p q : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (α : �
   classical
   simp [mvCoeff_eq_sum _ rfl, sum_sub_distrib]
 
+/-- Multi-index coefficients distribute over finite sums of formal multilinear series. -/
+@[simp]
+theorem mvCoeff_sum {κ : Type*} (s : Finset κ)
+    (p : κ → FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (α : ι → ℕ) :
+    (∑ j ∈ s, p j).mvCoeff α = ∑ j ∈ s, (p j).mvCoeff α := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert _ _ h ih => simp [sum_insert h, ih]
+
 /-- The coefficient of the zero multi-index is the constant term `p 0`, evaluated at the empty
 tuple. -/
 theorem mvCoeff_zero_eq_apply (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
@@ -173,11 +198,80 @@ theorem apply_eq_sum_mvCoeff [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 
   congr 1
   simpa using (Fintype.prod_fiberwise' a z).symm
 
+/-- **Factorial counting formula for multi-index coefficients**: for any tuple of coordinate
+indices `v : Fin k → ι` whose coordinate counts are `α`, `(∏ i, (α i)!) • p.mvCoeff α` equals
+the sum of `p k` over all permutations of the basis tuple `fun j ↦ Pi.single (v j) 1`. -/
+theorem prod_factorial_smul_mvCoeff [DecidableEq ι]
+    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) {k : ℕ} {α : ι → ℕ}
+    (v : Fin k → ι) (hv : ∀ i, Fintype.card {j // v j = i} = α i) :
+    (∏ i, (α i)!) • p.mvCoeff α =
+      ∑ σ : Equiv.Perm (Fin k), p k (fun j ↦ Pi.single (v (σ j)) 1) := by
+  have hk : ∑ i, α i = k := by
+    simpa [hv] using Fintype.sum_fiberwise' v (fun _ ↦ (1 : ℕ))
+  rw [p.mvCoeff_eq_sum hk]
+  let S : Finset (Fin k → ι) :=
+    univ.filter fun a : Fin k → ι ↦ ∀ i, Fintype.card {j // a j = i} = α i
+  have hmaps (σ : Equiv.Perm (Fin k)) : v ∘ σ ∈ S := by
+    simp only [S, mem_filter, mem_univ, true_and]
+    intro i
+    rw [← hv i]
+    exact Fintype.card_congr (Equiv.subtypeEquiv σ fun _ ↦ Iff.rfl)
+  rw [← sum_fiberwise_of_maps_to (fun σ _ ↦ hmaps σ), smul_sum]
+  refine sum_congr rfl fun a ha ↦ ?_
+  have ha' : ∀ i, Fintype.card {j // a j = i} = α i := (mem_filter.1 ha).2
+  have hterm : ∑ σ ∈ univ.filter (fun σ : Equiv.Perm (Fin k) ↦ v ∘ σ = a),
+        p k (fun j ↦ Pi.single (v (σ j)) 1) =
+      (#(univ.filter fun σ : Equiv.Perm (Fin k) ↦ v ∘ σ = a)) •
+        p k (fun j ↦ Pi.single (a j) 1) := by
+    rw [← sum_const]
+    refine sum_congr rfl fun σ hσ ↦ ?_
+    have hσ' : v ∘ σ = a := (mem_filter.1 hσ).2
+    simp_rw [← Function.comp_apply (f := v) (g := σ), hσ']
+  rw [hterm]
+  congr 1
+  -- Right-multiplying by a permutation sending `a` to `v` bijects the fiber with the stabilizer.
+  let σ₀ : Equiv.Perm (Fin k) :=
+    Equiv.ofFiberEquiv fun i ↦ Fintype.equivOfCardEq ((ha' i).trans (hv i).symm)
+  have hσ₀ : v ∘ σ₀ = a := funext fun j ↦ Equiv.ofFiberEquiv_map _ j
+  have hbij : {σ : Equiv.Perm (Fin k) // v ∘ σ = a} ≃ {τ : Equiv.Perm (Fin k) // v ∘ τ = v} :=
+    Equiv.subtypeEquiv (Equiv.mulRight σ₀⁻¹) fun σ ↦ by
+      constructor <;> intro h <;> ext j
+      · simpa [Equiv.Perm.coe_mul, ← hσ₀] using congrFun h (σ₀⁻¹ j)
+      · have hj := congrFun h (σ₀ j)
+        simpa [Equiv.Perm.coe_mul, ← congrFun hσ₀ j] using hj
+  rw [← Fintype.card_subtype, Fintype.card_congr hbij, DomMulAct.stabilizer_card v]
+  exact prod_congr rfl fun i _ ↦ by rw [hv i]
+
+/-- On a closed polydisc `‖z‖ ≤ r`, the partial sum of degree `< T` is bounded in norm by
+`∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`. -/
+theorem norm_partialSum_le_sum_mvCoeff [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
+    (T : ℕ) {r : ℝ} {z : ι → 𝕜} (hz : ‖z‖ ≤ r) :
+    ‖p.partialSum T z‖ ≤
+      ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k := by
+  refine (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ ?_)
+  rw [p.apply_eq_sum_mvCoeff k z]
+  refine (norm_sum_le _ _).trans (sum_le_sum fun α hα ↦ ?_)
+  rw [norm_smul, norm_prod, mul_comm, ← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  rw [norm_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm z i).trans hz) _
+
 end NormedField
 
 end FormalMultilinearSeries
 
 namespace TauCeti
+
+/-- If `‖y‖ ≤ ρ`, then the multi-index monomial `(∏ i, y i ^ α i) • v` has norm at most
+`‖v‖ * ρ ^ (∑ i, α i)`. -/
+theorem norm_prod_pow_smul_le {𝕜 : Type*} [NormedField 𝕜] {ι : Type*} [Fintype ι]
+    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {y : ι → 𝕜} {ρ : ℝ}
+    (hy : ‖y‖ ≤ ρ) (α : ι → ℕ) (v : F) :
+    ‖(∏ i, y i ^ α i) • v‖ ≤ ‖v‖ * ρ ^ (∑ i, α i) := by
+  rw [norm_smul, norm_prod, mul_comm, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  rw [norm_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm y i).trans hy) _
 
 /-- On the closed polydisc `‖y‖ ≤ ρ`, normal summability of a multi-index family `d` at radius `ρ`
 implies absolute summability of `(∏ i, y i ^ β i) • d β`. -/
@@ -185,12 +279,8 @@ theorem summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι 
     [Fintype ι] {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     {d : (ι → ℕ) → F} {ρ : ℝ} {y : ι → 𝕜}
     (hd : Summable fun β : ι → ℕ ↦ ‖d β‖ * ρ ^ (∑ i, β i)) (hy : ‖y‖ ≤ ρ) :
-    Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • d β‖ := by
-  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun β ↦ ?_) hd
-  rw [norm_smul, norm_prod, mul_comm, ← prod_pow_eq_pow_sum]
-  gcongr with i
-  rw [norm_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm y i).trans hy) _
+    Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • d β‖ :=
+  hd.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun β ↦ norm_prod_pow_smul_le hy β (d β)
 
 /-- Normal summability at radius `ρ` is preserved under Cauchy convolution over `Finset.Iic`. -/
 theorem summable_norm_sum_Iic_smul_mul_pow {ι A G : Type*} [Fintype ι] [DecidableEq ι]
@@ -198,28 +288,10 @@ theorem summable_norm_sum_Iic_smul_mul_pow {ι A G : Type*} [Fintype ι] [Decida
     {a : (ι → ℕ) → A} {b : (ι → ℕ) → G} {ρ : ℝ} (hρ : 0 ≤ ρ)
     (ha : Summable fun β : ι → ℕ ↦ ‖a β‖ * ρ ^ (∑ i, β i))
     (hb : Summable fun γ : ι → ℕ ↦ ‖b γ‖ * ρ ^ (∑ i, γ i)) :
-    Summable fun ν : ι → ℕ ↦ ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i) := by
-  have hprod := ha.mul_of_nonneg hb (fun _ ↦ by positivity) (fun _ ↦ by positivity)
-  have hsig := (sigmaIicEquivProd.summable_iff.2 hprod).sigma
-  simp only [Function.comp_apply, sigmaIicEquivProd_apply] at hsig
-  refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun ν ↦ ?_) hsig
-  calc ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i)
-      ≤ (∑ β ∈ Iic ν, ‖a β‖ * ‖b (ν - β)‖) * ρ ^ (∑ i, ν i) := by
-        gcongr
-        exact (norm_sum_le _ _).trans (sum_le_sum fun _ _ ↦ norm_smul_le _ _)
-    _ = ∑ β ∈ Iic ν, (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (ν - β)‖ * ρ ^ (∑ i, (ν - β) i)) := by
-        rw [sum_mul]
-        refine sum_congr rfl fun β hβ ↦ ?_
-        have hdeg : ∑ i, β i + ∑ i, (ν - β) i = ∑ i, ν i := by
-          rw [← sum_add_distrib]
-          exact sum_congr rfl fun i _ ↦ add_tsub_cancel_of_le (mem_Iic.1 hβ i)
-        rw [← hdeg, pow_add]
-        ring
-    _ = ∑ x : Iic ν,
-          (‖a x.1‖ * ρ ^ (∑ i, x.1 i)) * (‖b (ν - x.1)‖ * ρ ^ (∑ i, (ν - x.1) i)) :=
-        (sum_coe_sort (Iic ν) fun β ↦
-          (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (ν - β)‖ * ρ ^ (∑ i, (ν - β) i))).symm
-    _ = _ := (tsum_fintype _).symm
+    Summable fun ν : ι → ℕ ↦ ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i) :=
+  summable_norm_sum_smul_Iic_mul ha hb (fun _ ↦ by positivity) fun β γ ↦ by
+    simp_rw [Pi.add_apply, sum_add_distrib, pow_add]
+    exact le_rfl
 
 /-- **Cauchy product of absolutely summable multi-index power series**: if `(∏ i, y i ^ β i) • a β`
 and `(∏ i, y i ^ γ i) • b γ` are summable in norm and have sums `u` and `v`, then the convolved
@@ -235,23 +307,16 @@ theorem hasSum_prod_pow_smul_sum_Iic_smul {𝕜 ι A F : Type*} [CommMonoid 𝕜
     (hu_norm : Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • a β‖)
     (hv_norm : Summable fun γ : ι → ℕ ↦ ‖(∏ i, y i ^ γ i) • b γ‖) :
     HasSum (fun ν : ι → ℕ ↦ (∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β)) (u • v) := by
-  have hprod := hu.smul_of_summable_norm hv hu_norm hv_norm
-  refine (sigmaIicEquivProd.hasSum_iff.2 hprod).sigma fun ν ↦ ?_
-  have hfib : (∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β) =
-      ∑ β : Iic ν,
-        ((∏ i, y i ^ β.1 i) • a β.1) • ((∏ i, y i ^ (ν - β.1) i) • b (ν - β.1)) := by
-    rw [sum_coe_sort (Iic ν) fun β ↦
-      ((∏ i, y i ^ β i) • a β) • ((∏ i, y i ^ (ν - β) i) • b (ν - β)), smul_sum]
-    refine sum_congr rfl fun β hβ ↦ ?_
-    have hpow : (∏ i, y i ^ β i) * (∏ i, y i ^ (ν - β) i) = ∏ i, y i ^ ν i := by
-      rw [← prod_mul_distrib]
-      exact prod_congr rfl fun i _ ↦ by
-        rw [← pow_add, Pi.sub_apply, add_tsub_cancel_of_le (mem_Iic.1 hβ i)]
-    rw [smul_assoc (∏ i, y i ^ β i) (a β), ← smul_comm (∏ i, y i ^ (ν - β) i) (a β),
-      smul_smul, hpow]
-  rw [hfib]
-  simp only [Function.comp_apply, sigmaIicEquivProd_apply]
-  exact hasSum_fintype _
+  convert hu.sum_smul_Iic_of_summable_norm hv hu_norm hv_norm using 1
+  funext ν
+  rw [smul_sum]
+  refine sum_congr rfl fun β hβ ↦ ?_
+  have hpow : (∏ i, y i ^ β i) * (∏ i, y i ^ (ν - β) i) = ∏ i, y i ^ ν i := by
+    rw [← prod_mul_distrib]
+    exact prod_congr rfl fun i _ ↦ by
+      rw [← pow_add, Pi.sub_apply, add_tsub_cancel_of_le (mem_Iic.1 hβ i)]
+  rw [smul_assoc (∏ i, y i ^ β i) (a β), ← smul_comm (∏ i, y i ^ (ν - β) i) (a β),
+    smul_smul, hpow]
 
 end TauCeti
 
@@ -402,6 +467,28 @@ private theorem mvCoeff_ofMvCoeff (c : (ι → ℕ) → F) (β : ι → ℕ) :
   have hβ : β ∈ univ.piAntidiag k := mem_piAntidiag.2 ⟨hk_def.symm, by simp⟩
   simp [hβ]
 
+/-- Any family of multi-index coefficients `c : (ι → ℕ) → F` is realized by a formal multilinear
+series `p` with `p.mvCoeff = c` and degree-`k` operator norm bounded by
+`∑ α ∈ univ.piAntidiag k, ‖c α‖`. -/
+theorem exists_mvCoeff_eq_and_norm_le [DecidableEq ι] (c : (ι → ℕ) → F) :
+    ∃ p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F,
+      (∀ α, p.mvCoeff α = c α) ∧ ∀ k, ‖p k‖ ≤ ∑ α ∈ univ.piAntidiag k, ‖c α‖ :=
+  ⟨ofMvCoeff c, mvCoeff_ofMvCoeff c, fun k ↦ by convert norm_ofMvCoeff_le (𝕜 := 𝕜) c k⟩
+
+/-- Composing a formal multilinear series on the right with a continuous linear map preserves
+vanishing of all multi-index coefficients in any fixed total degree `k`. -/
+theorem mvCoeff_compContinuousLinearMap_eq_zero {κ : Type*} [Fintype κ]
+    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (A : (κ → 𝕜) →L[𝕜] (ι → 𝕜)) {k : ℕ}
+    (h : ∀ α : ι → ℕ, ∑ i, α i = k → p.mvCoeff α = 0) :
+    ∀ β : κ → ℕ, ∑ j, β j = k → (p.compContinuousLinearMap A).mvCoeff β = 0 := by
+  classical
+  intro β hβ
+  refine TauCeti.eq_zero_of_forall_sum_prod_pow_smul_eq_zero (fun z : κ → 𝕜 ↦ ?_)
+    (mem_piAntidiag.2 ⟨hβ, by simp⟩)
+  rw [← apply_eq_sum_mvCoeff, compContinuousLinearMap_apply, Function.comp_def,
+    apply_eq_sum_mvCoeff]
+  exact sum_eq_zero fun α hα ↦ by simp [h α (mem_piAntidiag.1 hα).1]
+
 end FormalMultilinearSeries
 
 namespace HasFPowerSeriesOnBall
@@ -421,20 +508,10 @@ theorem hasSum_mvCoeff {f : (ι → 𝕜) → F} {p : FormalMultilinearSeries �
   classical
   -- The multi-indices of total degree `< K` exhaust all multi-indices as `K` grows, and a sum
   -- over them can be taken degree by degree.
-  let S : ℕ → Finset (ι → ℕ) := fun K ↦ (range K).biUnion (univ.piAntidiag ·)
-  have hS (s : Finset (ι → ℕ)) (K : ℕ) (hK : s.sup (fun α ↦ ∑ i, α i) < K) : s ⊆ S K :=
-    fun α hα ↦ by
-      simp only [S, mem_biUnion, mem_range, mem_piAntidiag]
-      exact ⟨∑ i, α i, (le_sup (f := fun α ↦ ∑ i, α i) hα).trans_lt hK, by simp⟩
-  have hdisj (K : ℕ) : (range K : Set ℕ).PairwiseDisjoint (univ.piAntidiag (ι := ι) ·) :=
-    fun k _ l _ hkl ↦ disjoint_left.2 fun α hk hl ↦
-      hkl ((mem_piAntidiag.1 hk).1.symm.trans (mem_piAntidiag.1 hl).1)
-  refine hasSum_of_subseq_of_summable (p.summable_norm_prod_pow_smul_mvCoeff h) (s := S)
-    (p := atTop) ?_ ?_
-  · exact tendsto_atTop_atTop.2 fun s ↦ ⟨s.sup (fun α ↦ ∑ i, α i) + 1,
-      fun K hK ↦ hS s K ((lt_add_one _).trans_le hK)⟩
-  · simp_rw [S, sum_biUnion (hdisj _), ← apply_eq_sum_mvCoeff]
-    exact (hf.hasSum hz).tendsto_sum_nat
+  refine hasSum_of_subseq_of_summable (p.summable_norm_prod_pow_smul_mvCoeff h)
+    TauCeti.tendsto_biUnion_range_piAntidiag ?_
+  simp_rw [sum_biUnion (univ.pairwiseDisjoint_piAntidiag _), ← apply_eq_sum_mvCoeff]
+  exact (hf.hasSum hz).tendsto_sum_nat
 
 end HasFPowerSeriesOnBall
 
@@ -481,9 +558,6 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
   classical
   let p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F := ofMvCoeff c
   have hpc : ∀ α, p.mvCoeff α = c α := mvCoeff_ofMvCoeff c
-  have hdisj (s : Set ℕ) : s.PairwiseDisjoint (univ.piAntidiag (ι := ι) ·) :=
-    fun k _ l _ hkl ↦ disjoint_left.2 fun α hk hl ↦
-      hkl ((mem_piAntidiag.1 hk).1.symm.trans (mem_piAntidiag.1 hl).1)
   -- Group the weighted coefficient norms by total degree to bound `p.radius` below by `r`.
   have hrad : (r : ℝ≥0∞) ≤ p.radius := by
     apply p.le_radius_of_summable
@@ -498,7 +572,7 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
         _ = ∑ α ∈ univ.piAntidiag k, ‖c α‖ * (r : ℝ) ^ (∑ i, α i) := by
             rw [sum_mul]
             exact sum_congr rfl fun α hα ↦ by rw [(mem_piAntidiag.1 hα).1]
-    rw [← sum_biUnion (hdisj t)] at ht
+    rw [← sum_biUnion (univ.pairwiseDisjoint_piAntidiag _)] at ht
     exact ht.trans (hsum.sum_le_tsum _ fun _ _ ↦ by positivity)
   refine ⟨p, ⟨hrad, ENNReal.coe_pos.2 hr, fun {y} hy ↦ ?_⟩, hpc⟩
   have hynorm : ‖y‖ < (r : ℝ) := by
@@ -507,7 +581,7 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
     exact_mod_cast h
   -- Sum the given expansion fiberwise by total degree; each fiber is finite.
   let e : (Σ k : ℕ, {α // α ∈ univ.piAntidiag k}) ≃ (ι → ℕ) :=
-    { toFun := fun x ↦ x.2.1
+    { toFun := fun x ↦ x.2.val
       invFun := fun α ↦ ⟨∑ i, α i, ⟨α, mem_piAntidiag.2 ⟨rfl, by simp⟩⟩⟩
       left_inv := by rintro ⟨_, α, hα⟩; obtain ⟨rfl, -⟩ := mem_piAntidiag.1 hα; rfl
       right_inv := fun _ ↦ rfl }
@@ -537,5 +611,16 @@ theorem eq_zero_of_tsum_prod_pow_smul_eventuallyEq_zero [CompleteSpace F]
   obtain ⟨p, hp, hpc⟩ := exists_hasFPowerSeriesOnBall_tsum (𝕜 := 𝕜) c hr hsum
   rw [← hpc α]
   exact hp.hasFPowerSeriesAt.mvCoeff_eq_zero_of_eventuallyEq_zero h0 α
+
+/-- **Identity theorem on a polydisc**: if `‖c α‖ * r ^ (∑ i, α i)` is summable for some `r > 0`
+and `∑' α, (∏ i, z i ^ α i) • c α = 0` for all `z` in the open polydisc `Metric.ball 0 r`, then
+every coefficient `c α` is zero. -/
+theorem eq_zero_of_forall_mem_ball_tsum_prod_pow_smul_eq_zero [CompleteSpace F]
+    {c : (ι → ℕ) → F} {r : ℝ≥0} (hr : 0 < r)
+    (hsum : Summable fun α : ι → ℕ ↦ ‖c α‖ * (r : ℝ) ^ (∑ i, α i))
+    (h0 : ∀ z ∈ Metric.ball (0 : ι → 𝕜) r, ∑' α : ι → ℕ, (∏ i, z i ^ α i) • c α = 0)
+    (α : ι → ℕ) : c α = 0 :=
+  eq_zero_of_tsum_prod_pow_smul_eventuallyEq_zero hr hsum
+    (eventually_of_mem (Metric.ball_mem_nhds 0 hr) h0) α
 
 end TauCeti
