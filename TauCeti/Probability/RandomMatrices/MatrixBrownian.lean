@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.BrownianMotion.Basic
-public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
+public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Conjugation
 import Mathlib.Probability.Independence.Process.Basic
+import TauCeti.Probability.BrownianMotion.Vector.Basic
 import TauCeti.Probability.Independence.Pi
 
 /-!
@@ -41,6 +42,13 @@ independent pre-Brownian motions, with independence of the coordinates as random
   `√(t - s)` times the GOE or GUE.
 * `TauCeti.Probability.indepFun_matrixBrownian_shift`: the increments after `t₀` are independent
   of the path up to `t₀`.
+* `TauCeti.Probability.mul_matrixBrownian_one_mul_conjTranspose` and
+  `TauCeti.Probability.mul_matrixBrownian_mul_conjTranspose_of_ne_one`: conjugating by an
+  orthogonal (`β = 1`) or unitary (`β ≠ 1`) matrix `U` gives matrix Brownian motion started at the
+  conjugate of `H₀` and driven by an orthogonal transform of the coordinates;
+  `TauCeti.Probability.exists_mul_matrixBrownian_one_mul_conjTranspose` and
+  `TauCeti.Probability.exists_mul_matrixBrownian_mul_conjTranspose_of_ne_one`: for independent
+  Brownian coordinates the transformed coordinates are again independent Brownian motions.
 
 ## References
 
@@ -113,6 +121,31 @@ theorem smul_matrixBrownian_mul (c t : ℝ≥0) (ω : Ω) :
       matrixBrownian β n ((√c)⁻¹ • H₀) (fun ij t ω ↦ (√c)⁻¹ * B ij (c * t) ω) t ω := by
   rw [matrixBrownian_def, matrixBrownian_def, smul_add, ← gaussianEnsemble_smul, Pi.smul_def]
   simp_rw [smul_eq_mul]
+
+/-- **Orthogonal conjugation** (`β = 1`). Conjugating matrix Brownian motion by a real orthogonal
+matrix `U` gives matrix Brownian motion started at the conjugate of `H₀` and driven by the
+coordinates transformed by the orthogonal matrix `goeConjMatrix n U`. -/
+theorem mul_matrixBrownian_one_mul_conjTranspose (U : orthogonalGroup (Fin n) ℝ) (t : ℝ≥0)
+    (ω : Ω) :
+    (U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * matrixBrownian 1 n H₀ B t ω *
+        ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ =
+      matrixBrownian 1 n ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H₀ *
+          ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ)
+        (fun ij t ω ↦ (goeConjMatrix n U *ᵥ (B · t ω)) ij) t ω := by
+  rw [matrixBrownian_def, matrixBrownian_def, mul_add, add_mul,
+    gaussianEnsemble_one_goeConjMatrix_mulVec]
+
+/-- **Unitary conjugation** (`β ≠ 1`). Conjugating matrix Brownian motion by a unitary matrix `U`
+gives matrix Brownian motion started at the conjugate of `H₀` and driven by the coordinates
+transformed by the orthogonal matrix `gueConjMatrix n U`. -/
+theorem mul_matrixBrownian_mul_conjTranspose_of_ne_one (hβ : β ≠ 1)
+    (U : unitaryGroup (Fin n) ℂ) (t : ℝ≥0) (ω : Ω) :
+    (U : Matrix (Fin n) (Fin n) ℂ) * matrixBrownian β n H₀ B t ω *
+        (U : Matrix (Fin n) (Fin n) ℂ)ᴴ =
+      matrixBrownian β n ((U : Matrix (Fin n) (Fin n) ℂ) * H₀ * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ)
+        (fun ij t ω ↦ (gueConjMatrix n U *ᵥ (B · t ω)) ij) t ω := by
+  rw [matrixBrownian_def, matrixBrownian_def, mul_add, add_mul,
+    gaussianEnsemble_gueConjMatrix_mulVec hβ]
 
 /-- If every coordinate starts at `0`, matrix Brownian motion starts at `H₀`. -/
 theorem matrixBrownian_zero {ω : Ω} (h : ∀ ij, B ij 0 ω = 0) :
@@ -235,6 +268,38 @@ theorem indepFun_matrixBrownian_shift (hB : ∀ ij, IsPreBrownianReal (B ij) P)
   convert h using 1 <;> funext ω t
   · exact matrixBrownian_sub_matrixBrownian _ _ ω
   · exact matrixBrownian_def _ ω
+
+/-- **Conjugation invariance** (`β = 1`). For independent Brownian coordinates and a real
+orthogonal matrix `U`, conjugating matrix Brownian motion by `U` gives matrix Brownian motion
+started at the conjugate of `H₀`, driven by independent Brownian coordinates on the same
+probability space. -/
+theorem exists_mul_matrixBrownian_one_mul_conjTranspose (hB : ∀ ij, IsBrownianReal (B ij) P)
+    (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P) (U : orthogonalGroup (Fin n) ℝ) :
+    ∃ B' : Fin n × Fin n → ℝ≥0 → Ω → ℝ, (∀ ij, IsBrownianReal (B' ij) P) ∧
+      iIndepFun (fun ij ω t ↦ B' ij t ω) P ∧ ∀ t ω,
+        (U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * matrixBrownian 1 n H₀ B t ω *
+            ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ =
+          matrixBrownian 1 n ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H₀ *
+            ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ) B' t ω := by
+  have h := (IsBrownianVector.of_isBrownianReal hB hindep).mulVec_of_mem_orthogonalGroup
+    (goeConjMatrix_mem_orthogonalGroup U)
+  exact ⟨_, h.isBrownianReal, h.iIndepFun, mul_matrixBrownian_one_mul_conjTranspose U⟩
+
+/-- **Conjugation invariance** (`β ≠ 1`). For independent Brownian coordinates and a unitary
+matrix `U`, conjugating matrix Brownian motion by `U` gives matrix Brownian motion started at the
+conjugate of `H₀`, driven by independent Brownian coordinates on the same probability space. -/
+theorem exists_mul_matrixBrownian_mul_conjTranspose_of_ne_one (hβ : β ≠ 1)
+    (hB : ∀ ij, IsBrownianReal (B ij) P) (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P)
+    (U : unitaryGroup (Fin n) ℂ) :
+    ∃ B' : Fin n × Fin n → ℝ≥0 → Ω → ℝ, (∀ ij, IsBrownianReal (B' ij) P) ∧
+      iIndepFun (fun ij ω t ↦ B' ij t ω) P ∧ ∀ t ω,
+        (U : Matrix (Fin n) (Fin n) ℂ) * matrixBrownian β n H₀ B t ω *
+            (U : Matrix (Fin n) (Fin n) ℂ)ᴴ =
+          matrixBrownian β n
+            ((U : Matrix (Fin n) (Fin n) ℂ) * H₀ * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ) B' t ω := by
+  have h := (IsBrownianVector.of_isBrownianReal hB hindep).mulVec_of_mem_orthogonalGroup
+    (gueConjMatrix_mem_orthogonalGroup U)
+  exact ⟨_, h.isBrownianReal, h.iIndepFun, mul_matrixBrownian_mul_conjTranspose_of_ne_one hβ U⟩
 
 end Law
 
