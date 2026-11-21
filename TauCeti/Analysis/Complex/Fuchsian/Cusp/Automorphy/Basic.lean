@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
-public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Automorphy
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Automorphy.Basic
 public import TauCeti.Analysis.Complex.RootsOfUnity.TwistedDescent
 public import TauCeti.Analysis.Complex.UpperHalfPlane.AutomorphyExtension
 import TauCeti.Algebra.Group.Subgroup.Pointwise

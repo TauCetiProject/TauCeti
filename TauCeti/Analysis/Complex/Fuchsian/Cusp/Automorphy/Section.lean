@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Automorphy
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Automorphy.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
 
 /-!
@@ -13,7 +13,7 @@ import TauCeti.NumberTheory.ModularForms.Basic
 
 Let `D` be a normalized cusp datum of `Γ ≤ PSL(2, ℝ)`, and let `s, g ∈ SL(2, ℝ)` lift its scaling
 and generator, with `ε ^ k = (-1) ^ r` for the sign `ε` of `s * g * s⁻¹`. The file
-`TauCeti.Analysis.Complex.Fuchsian.Cusp.Automorphy` writes every local section `f` of the
+`TauCeti.Analysis.Complex.Fuchsian.Cusp.Automorphy.Basic` writes every local section `f` of the
 weight-`k` automorphy sheaf on a horodisc as the frame
 `TauCeti.Subgroup.CuspDatum.automorphyFrame D s k r` times a function of the cusp coordinate `q`,
 its coefficient `TauCeti.Subgroup.CuspDatum.automorphyDescent D s k r f`. This file proves the
@@ -24,6 +24,9 @@ coordinate, in the width parameter and with the errata order convention built in
 this is the local description at the cusp of the invertible sheaf on the compact quotient that the
 weight-`k` transformation data induces (Diamond–Shurman §§3.5–3.6).
 
+* The section is additive and `ℂ`-linear in `G`
+  (`TauCeti.Subgroup.CuspDatum.automorphySection_add`,
+  `TauCeti.Subgroup.CuspDatum.automorphySection_const_smul`).
 * If `G` is holomorphic on the disc of cusp-coordinate values of the horodisc of height `A`, the
   section is holomorphic on that horodisc
   (`TauCeti.Subgroup.CuspDatum.mdifferentiableOn_automorphySection`).
@@ -64,6 +67,27 @@ def automorphySection (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (G : ℂ → ℂ) (τ
 theorem automorphySection_def (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (G : ℂ → ℂ) (τ : ℍ) :
     automorphySection D s k r G τ = automorphyFrame D s k r τ * G (coordinate D τ) :=
   (rfl)
+
+/-- The local section with zero coefficient is zero. -/
+@[simp]
+theorem automorphySection_zero (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) :
+    automorphySection D s k r 0 = 0 := by
+  ext τ
+  simp [automorphySection_def]
+
+/-- The local section is additive in its coefficient. -/
+theorem automorphySection_add (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (G H : ℂ → ℂ) :
+    automorphySection D s k r (G + H) =
+      automorphySection D s k r G + automorphySection D s k r H := by
+  ext τ
+  simp [automorphySection_def, mul_add]
+
+/-- The local section commutes with scaling its coefficient by a constant. -/
+theorem automorphySection_const_smul (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (c : ℂ) (G : ℂ → ℂ) :
+    automorphySection D s k r (c • G) = c • automorphySection D s k r G := by
+  ext τ
+  simp only [automorphySection_def, Pi.smul_apply, smul_eq_mul]
+  ring
 
 variable {D} {s g : SL(2, ℝ)} {k : ℤ} {r : ℕ} {A : ℝ} {G : ℂ → ℂ}
 
