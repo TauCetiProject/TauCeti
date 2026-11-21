@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.Topology.Separation.TypeTags
 import Mathlib.Analysis.CStarAlgebra.Spectrum
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 
 /-!
@@ -415,12 +416,9 @@ theorem integratedOperatorBochnerL1_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) 
         fun x : Additive G => φ (Additive.toMul x) • P.group (Additive.toMul x) v)
     filter_upwards [Lp.coeFn_compMeasurePreserving φ hmp] with x hx
     rw [hx, Function.comp_apply]
-  have hi : Integrable (fun g => φ g • P.group g v) μ := by
-    refine ((L1.integrable_coeFn φ).norm.mul_const ‖v‖).mono'
-      ((L1.integrable_coeFn φ).aefinStronglyMeasurable.aestronglyMeasurable_smul
-        (P.continuous_orbit v))
-      (.of_forall fun g => ?_)
-    rw [norm_smul, P.isUnitary.norm_map]
+  have hi : Integrable (fun g => φ g • P.group g v) μ :=
+    (L1.integrable_coeFn φ).smul_continuous_of_norm_le (P.continuous_orbit v) fun g =>
+      (P.isUnitary.norm_map g v).le
   calc
     P.integratedOperatorBochnerL1 μ
         ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).compLp φ) v =

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.GroupTheory.Amenable.Basic
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
@@ -84,11 +83,9 @@ variable [BorelSpace G] [μ.InnerRegularCompactLTTop]
 
 /-- For an integrable `h`, the orbit integrand `y ↦ h y • L_y f` is integrable in `UCB G`. -/
 theorem integrable_smul_leftTranslation (hh : Integrable h μ) (f : UCB G) :
-    Integrable (fun y => h y • leftTranslation y f) μ := by
-  refine (hh.norm.mul_const ‖f‖).mono'
-    (hh.aefinStronglyMeasurable.aestronglyMeasurable_smul (continuous_leftTranslation_apply f))
-    (.of_forall fun y => ?_)
-  rw [norm_smul, LinearIsometryEquiv.norm_map]
+    Integrable (fun y => h y • leftTranslation y f) μ :=
+  hh.smul_continuous_of_norm_le (continuous_leftTranslation_apply f) fun _ =>
+    (LinearIsometryEquiv.norm_map _ _).le
 
 end UCB
 

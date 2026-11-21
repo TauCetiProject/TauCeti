@@ -115,12 +115,8 @@ omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
 /-- The integrand of the integrated form is integrable. -/
 private theorem integrable_smul_apply (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
     {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C) {f : G → 𝕜} (hf : Integrable f μ) (v : E) :
-    Integrable (fun g ↦ f g • π (.ofAdd g) v) μ := by
-  refine (hf.norm.mul_const (C * ‖v‖)).mono'
-    (hf.aefinStronglyMeasurable.aestronglyMeasurable_smul (hcont v)) (.of_forall fun g ↦ ?_)
-  rw [norm_smul]
-  gcongr
-  exact (π _).le_of_opNorm_le (hC _) v
+    Integrable (fun g ↦ f g • π (.ofAdd g) v) μ :=
+  hf.smul_continuous_of_norm_le (hcont v) fun _ ↦ (π _).le_of_opNorm_le (hC _) v
 
 omit [TopologicalSpace G] [R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]
   [SMulCommClass ℝ 𝕜 E] in

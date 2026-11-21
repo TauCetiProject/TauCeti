@@ -162,16 +162,22 @@ theorem norm_convolutionL_sub_le_of_rightTranslation {h k : Lp ℝ 1 μ} (hk : 0
   simpa only [(L1.norm_eq_integral_of_nonneg hk).trans hk₁, mul_one] using
     norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one hk₁ hkU hC
 
-/-- **Right approximate identity**, quantitatively. For `h ∈ L¹(G, μ)` and `ε > 0` there is a
-neighbourhood `U` of `1` such that `‖h ⋆ k - h‖₁ ≤ ε` for every nonnegative `k ∈ L¹(G, μ)` of
-integral one vanishing almost everywhere outside `U`. -/
-theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le (h : Lp ℝ 1 μ) {ε : ℝ}
-    (hε : 0 < ε) : ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp ℝ 1 μ, 0 ≤ k → ∫ z, k z ∂μ = 1 →
+/-- **Right approximate identity**, quantitatively. Over an `RCLike` scalar field, for
+`h ∈ L¹(G, μ; 𝕜)`, `C : ℝ`, and `ε > 0`, there is a neighbourhood `U` of `1` such that
+`‖h ⋆ k - h‖₁ ≤ ε` for every `k ∈ L¹(G, μ; 𝕜)` with `‖k‖₁ ≤ C` and `∫ k = 1` vanishing almost
+everywhere outside `U`. -/
+theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le {𝕜 : Type*} [RCLike 𝕜]
+    (h : Lp 𝕜 1 μ) (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp 𝕜 1 μ, ‖k‖ ≤ C → ∫ z, k z ∂μ = 1 →
       (∀ᵐ z ∂μ, z ∉ U → k z = 0) → ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ ε := by
+  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
   refine ⟨_, Metric.tendsto_nhds.1
-    (tendsto_rightTranslation_inv (𝕜 := ℝ) ENNReal.one_ne_top h) ε hε, fun k hk hk₁ hkU => ?_⟩
-  exact norm_convolutionL_sub_le_of_rightTranslation hk hk₁ hkU fun z hz =>
-    le_of_lt (by rw [← dist_eq_norm_sub]; exact hz)
+    (tendsto_rightTranslation_inv (𝕜 := 𝕜) ENNReal.one_ne_top h) δ hδpos, fun k hkC hk₁ hkU => ?_⟩
+  refine (norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one hk₁ hkU fun z hz =>
+    le_of_lt (by rw [← dist_eq_norm_sub]; exact hz)).trans ?_
+  calc δ * ‖k‖ ≤ δ * C := mul_le_mul_of_nonneg_left hkC hδpos.le
+    _ = C * δ := mul_comm _ _
+    _ ≤ ε := hδC.le
 
 /-- **Right approximate identity** over an `RCLike` scalar field. Convolution on the right with a
 norm-bounded net of `L¹` kernels of integral one concentrating at the identity converges strongly

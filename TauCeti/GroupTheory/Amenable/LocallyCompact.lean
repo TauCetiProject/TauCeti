@@ -89,9 +89,9 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
   -- values of `m` by at most `δ * ‖φ‖`, and turns them into `a * m (e ⋆ φ)` and `b * m (e ⋆ φ)`.
   have key (δ : ℝ) (hδ : 0 < δ) : |b * m (Lp.convolutionUCB h φ) - a * m (Lp.convolutionUCB k φ)|
       ≤ (|a| + |b|) * ‖φ‖ * δ := by
-    obtain ⟨U₁, hU₁, hh⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) h hδ
-    obtain ⟨U₂, hU₂, hk⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) k hδ
-    obtain ⟨e, he, he₁, -, heU⟩ :=
+    obtain ⟨U₁, hU₁, hh⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) h 1 hδ
+    obtain ⟨U₂, hU₂, hk⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) k 1 hδ
+    obtain ⟨e, -, he₁, hen, heU⟩ :=
       exists_nonneg_integral_eq_one_norm_eq_one μ (x₀ := 1) (inter_mem hU₁ hU₂)
     have hU (U : Set G) (hU : U₁ ∩ U₂ ⊆ U) : ∀ᵐ z ∂μ, z ∉ U → e z = 0 := by
       filter_upwards [heU] with z hz hzU using hz fun hz' => hzU (hU hz')
@@ -103,8 +103,8 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
       rw [← sub_apply, ← Lp.convolutionUCB_sub]
       exact (Lp.norm_convolutionUCB_apply_le _ _).trans
         (mul_le_mul_of_nonneg_right hu (norm_nonneg _))
-    have h₁ := close h (hh e he he₁ (hU _ Set.inter_subset_left))
-    have h₂ := close k (hk e he he₁ (hU _ Set.inter_subset_right))
+    have h₁ := close h (hh e hen.le he₁ (hU _ Set.inter_subset_left))
+    have h₂ := close k (hk e hen.le he₁ (hU _ Set.inter_subset_right))
     calc |b * m (Lp.convolutionUCB h φ) - a * m (Lp.convolutionUCB k φ)|
         = |b * (m (Lp.convolutionUCB h φ) - a * m (Lp.convolutionUCB e φ)) -
             a * (m (Lp.convolutionUCB k φ) - b * m (Lp.convolutionUCB e φ))| := by
