@@ -10,6 +10,9 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 
 /-!
 # Sobolev spaces of sections of a vector bundle
@@ -72,6 +75,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 * `TauCeti.SobolevSection A μ p k`: the Banach space `W^{k,p}(V)`.
 
 ## Main results
+
+* `TauCeti.FiniteBundleAtlas.chartDerivL_ae_overlap`: the native weak derivatives of order-one
+  chart data satisfy the chain and coefficient-product rules on overlaps of a real C¹ bundle.
 
 * `TauCeti.SectionChartData.lowerOrdersL_lowerOrdersL`: order inclusions compose.
 * `TauCeti.SectionChartData.chartValueL_eqRec`, `TauCeti.SectionChartData.value_eqRec`:
@@ -1243,6 +1249,48 @@ theorem FiniteBundleAtlas.aeTransition_sectionChartData [IsManifold 𝓘(ℝ, E)
     exact A.transition_transition hy
 
 variable [FiniteDimensional ℝ F]
+
+variable [IsManifold 𝓘(ℝ, E) 1 M] [ContMDiffVectorBundle 1 F V 𝓘(ℝ, E)] in
+/-- On the overlap of charts `i` and `i'`, the weak derivative of the chart data in chart `i'` of an
+order-one Sobolev section is that of `y ↦ g y (uᵢ (τ y))`, by the weak chain and Leibniz rules. -/
+theorem FiniteBundleAtlas.chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections μ p 1)
+    (i i' : Fin A.n) :
+    ∀ᵐ y ∂μ.restrict (A.overlap i i'),
+      A.sectionChartData.chartDerivL μ p i' w y =
+        ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+          ((A.sectionChartData.chartDerivL μ p i w (A.transition i i' y)).comp
+            (fderiv ℝ (A.transition i i') y)) +
+        (fderiv ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) :
+          F →L[ℝ] F)) y).flip
+          (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) := by
+  let O : Opens E := ⟨A.overlap i i', A.isOpen_overlap i i'⟩
+  have hC := A.aeTransition_sectionChartData μ
+  have hτ := (A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i w).comp_contDiffOn_diffeo
+    (U := O) (A.contDiffOn_transition i i')
+    (fun y hy y' hy' h ↦ by rw [← A.transition_transition hy, h, A.transition_transition hy'])
+    (fun y hy ↦ by
+      rw [A.fderiv_transition hy]
+      exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)
+    fun y hy ↦ A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  have hcoord := (A.contDiffOn_coordChangeL_transferDomain (n := 1) i i').mono
+    (A.overlap_subset_transferDomain i i')
+  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero hcoord one_ne_zero
+  have hcompat : ∀ᵐ y ∂μ.restrict O, ((A.triv i).coordChangeL ℝ (A.triv i')
+      ((A.chart i').symm y) : F →L[ℝ] F)
+        (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) =
+      A.sectionChartData.chartValueL μ p 1 i' w y := by
+    filter_upwards [(A.sectionChartData.compatible_iff μ p 1).1
+      (SectionChartData.compatible_of_mem hC w.property i i'),
+      ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h hy
+    rw [A.sectionChartData_coordChange_of_mem hy, A.sectionChartData_transition_of_mem hy] at h
+    exact h.symm
+  -- `O` is the overlap as an open set and `A.sectionChartData.image i'` is the image of chart `i'`
+  -- as an open set; the type ascription states the inclusion of overlap into image as one of
+  -- `Opens E`, which `A.overlap_subset_image` proves for the underlying sets.
+  have hO : O ≤ A.sectionChartData.image i' := A.overlap_subset_image i i'
+  exact ((A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i' w).mono hO).ae_eq
+      (hprod.congr_ae hcompat)
+
 
 /-- The Sobolev space `W^{k,p}(V)` of sections of `V` with respect to the finite bundle atlas `A`:
 the tuples of chartwise Sobolev components of sections, with the maximum of the component norms. -/

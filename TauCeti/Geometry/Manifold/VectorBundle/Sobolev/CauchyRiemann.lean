@@ -11,9 +11,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Analysis.Sobolev.Leibniz
-import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
-import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Smooth real Cauchy–Riemann operators on Sobolev sections
@@ -109,29 +106,17 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
 namespace IsRealCauchyRiemannOperator
 
 include hD hDs in
-/-- The matrix entries of the zeroth-order term of chart `i` are smooth near the closure of the
-chart image. -/
-private theorem contDiffOn_coeff (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F)))
-    (j : Fin (finrank ℝ F)) :
-    ContDiffOn ℝ ∞ (fun y ↦ (finBasis ℝ (ℂ →L[ℝ] F)).coord c
-      (A.chartZeroOrder D i y (finBasis ℝ F j)))
-      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
-  have h := A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i
-  rw [inter_univ] at h
-  exact ((LinearMap.toContinuousLinearMap ((finBasis ℝ (ℂ →L[ℝ] F)).coord c)).comp
-    (ContinuousLinearMap.apply ℝ (ℂ →L[ℝ] F) (finBasis ℝ F j))).contDiff.comp_contDiffOn h
-
-include hD hDs in
-/-- The zeroth-order matrix in chart `i`, applied to the value components of an order-one tuple.
-The native smooth matrix multiplier is used at order zero. -/
+/-- The zeroth-order operator coefficient in chart `i`, applied to the value components of an
+order-one tuple. The native smooth operator multiplier is used at order zero. -/
 private def zeroOrderL (i : Fin A.n) :
     A.sectionChartData.SobolevData μ p 1 →L[ℝ]
       (Fin (finrank ℝ (ℂ →L[ℝ] F)) → Lp ℝ p (μ.restrict (A.sectionChartData.image i))) :=
-  (Wkp.contDiffOnMulVecL (Omega := A.sectionChartData.image i)
+  (Wkp.contDiffOnCLMApplyL (Omega := A.sectionChartData.image i)
     ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).uniqueDiffOn
     (A.isCompact_closure_image i)
     ((A.closure_image_subset_chart_image_closure_dom i).trans
-      (A.chart_image_closure_dom_subset i)) 0 (contDiffOn_coeff A hD hDs i)).comp
+      (A.chart_image_closure_dom_subset i)) 0 (finBasis ℝ F) (finBasis ℝ (ℂ →L[ℝ] F))
+    (by simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i)).comp
     ((ContinuousLinearMap.piMap fun _ : Fin (finrank ℝ F) ↦ Wkp.lowerOrderL 0).comp
       (ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
         ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p 1) i))
@@ -153,26 +138,27 @@ private def dataL :
   ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun c ↦
     (Wkp.restrictL (sectionChartData_image_tangentHom A i).le 0).comp (chartL A hD hDs μ p i c)
 
-/-- The `c`th component in chart `i` of the realization is, almost everywhere on the image of the
-chart, the `c`th coordinate of `∂bar uᵢ` plus the matrix of the zeroth-order term applied to the
-components of `uᵢ`. -/
+/-- The `c`th component of the realization is, almost everywhere on the chart image, the
+coordinate of the complex antilinear weak derivative plus the operator coefficient applied to
+the actual chart value. -/
 private theorem chartL_ae (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F)))
     (w : A.sectionChartData.SobolevData μ p 1) :
     (chartL A hD hDs μ p i c w : ℂ → ℝ) =ᵐ[μ.restrict (A.image i)] fun y ↦
       (finBasis ℝ (ℂ →L[ℝ] F)).coord c
           (complexAntilinearPartL (A.sectionChartData.chartDerivL μ p i w y)) +
-        ∑ j, (finBasis ℝ (ℂ →L[ℝ] F)).coord c (A.chartZeroOrder D i y (finBasis ℝ F j)) *
-          Wkp.value 1 (w i j) y := by
-  have hz : (zeroOrderL A hD hDs μ p i w c : ℂ → ℝ)
-      =ᵐ[μ.restrict (A.sectionChartData.image i)] fun y ↦ ∑ j,
         (finBasis ℝ (ℂ →L[ℝ] F)).coord c
-          (A.chartZeroOrder D i y (finBasis ℝ F j)) * Wkp.lowerOrderL 0 (w i j) y := by
-    have h := Wkp.value_contDiffOnMulVecL_ae (mu := μ) (p := p)
+          (A.chartZeroOrder D i y (A.sectionChartData.chartValueL μ p 1 i w y)) := by
+  have hz : (zeroOrderL A hD hDs μ p i w c : ℂ → ℝ)
+      =ᵐ[μ.restrict (A.sectionChartData.image i)] fun y ↦
+        (finBasis ℝ (ℂ →L[ℝ] F)).coord c (A.chartZeroOrder D i y
+          (∑ j, Wkp.lowerOrderL 0 (w i j) y • finBasis ℝ F j)) := by
+    have h := Wkp.value_contDiffOnCLMApplyL_ae (mu := μ) (p := p)
       (Omega := A.sectionChartData.image i)
       ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).uniqueDiffOn
       (A.isCompact_closure_image i)
       ((A.closure_image_subset_chart_image_closure_dom i).trans
-        (A.chart_image_closure_dom_subset i)) 0 (contDiffOn_coeff A hD hDs i)
+        (A.chart_image_closure_dom_subset i)) 0 (finBasis ℝ F) (finBasis ℝ (ℂ →L[ℝ] F))
+      (by simpa only [inter_univ] using A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i)
       (fun j ↦ Wkp.lowerOrderL 0 (w i j)) c
     have hvalues :
         (ContinuousLinearMap.piMap fun _ : Fin (finrank ℝ F) ↦ Wkp.lowerOrderL
@@ -189,16 +175,19 @@ private theorem chartL_ae (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))
             ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p 1) i w)
     simp only [zeroOrderL, ContinuousLinearMap.comp_apply]
     rw [hvalues]
-    simpa only [Wkp.value_zero] using h
+    simpa only [Wkp.value_zero, Basis.coord_apply] using h
   filter_upwards [Lp.coeFn_add ((((LinearMap.toContinuousLinearMap
       ((finBasis ℝ (ℂ →L[ℝ] F)).coord c)).comp complexAntilinearPartL).compLpL p _)
         (A.sectionChartData.chartDerivL μ p i w)) (zeroOrderL A hD hDs μ p i w c),
     ContinuousLinearMap.coeFn_compLpL (p := p) (μ := μ.restrict (A.sectionChartData.image i))
       ((LinearMap.toContinuousLinearMap ((finBasis ℝ (ℂ →L[ℝ] F)).coord c)).comp
-        complexAntilinearPartL) (A.sectionChartData.chartDerivL μ p i w), hz] with y h₁ h₂ h₃
+        complexAntilinearPartL) (A.sectionChartData.chartDerivL μ p i w), hz,
+    A.sectionChartData.chartValueL_apply_ae μ p 1 i w] with y h₁ h₂ h₃ h₄
   simp only [chartL, add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply]
   rw [h₁, Pi.add_apply, h₂]
   refine congrArg₂ (· + ·) rfl (h₃.trans ?_)
+  rw [h₄]
+  apply congrArg (fun v ↦ (finBasis ℝ (ℂ →L[ℝ] F)).coord c (A.chartZeroOrder D i y v))
   exact Finset.sum_congr rfl fun j _ ↦ by
     rw [Wkp.value_succ, Wkp.value_zero, ← Wkp.lowerOrderL_apply]
 
@@ -214,57 +203,21 @@ private theorem chartValueL_dataL_ae (w : A.sectionChartData.SobolevData μ p 1)
     (A.tangentHom.sectionChartData.chartValueL_apply_ae μ p 0 i (dataL A hD hDs μ p w))
   have hres := (ae_image_tangentHom_iff A μ i).1 <| ae_all_iff.2 fun c ↦
     Wkp.value_restrictL_ae (sectionChartData_image_tangentHom A i).le 0 (chartL A hD hDs μ p i c w)
-  filter_upwards [h₀, hres, ae_all_iff.2 fun c ↦ chartL_ae A hD hDs μ p i c w,
-    A.sectionChartData.chartValueL_apply_ae μ p 1 i w] with y h₁ h₂ h₃ h₄
-  rw [h₁, h₄]
-  refine (Finset.sum_congr rfl fun c _ ↦ ?_).trans (Module.Basis.sum_coord_add_smul (finBasis ℝ F)
-    (finBasis ℝ (ℂ →L[ℝ] F)) _ (A.chartZeroOrder D i y : F →ₗ[ℝ] ℂ →L[ℝ] F)
-    fun j ↦ Wkp.value 1 (w i j) y)
-  exact congrArg (· • _) ((h₂ c).trans ((congrArg
-    (fun f : Lp ℝ p (μ.restrict (A.sectionChartData.image i)) ↦ (f : ℂ → ℝ) y)
-    (Wkp.value_zero (chartL A hD hDs μ p i c w))).trans (h₃ c)))
-
-
-omit [T2Space M] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
-/-- On the overlap of charts `i` and `i'`, the weak derivative of the chart data in chart `i'` of an
-order-one Sobolev section is that of `y ↦ g y (uᵢ (τ y))`, by the weak chain and Leibniz rules. -/
-private theorem chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections μ p 1)
-    (i i' : Fin A.n) :
-    ∀ᵐ y ∂μ.restrict (A.overlap i i'),
-      A.sectionChartData.chartDerivL μ p i' w y =
-        ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
-          ((A.sectionChartData.chartDerivL μ p i w (A.transition i i' y)).comp
-            (fderiv ℝ (A.transition i i') y)) +
-        (fderiv ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) :
-          F →L[ℝ] F)) y).flip
-          (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) := by
-  let O : Opens ℂ := ⟨A.overlap i i', A.isOpen_overlap i i'⟩
-  have hC := A.aeTransition_sectionChartData μ
-  have hτ := (A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i w).comp_contDiffOn_diffeo
-    (U := O) (A.contDiffOn_transition i i')
-    (fun y hy y' hy' h ↦ by rw [← A.transition_transition hy, h, A.transition_transition hy'])
-    (fun y hy ↦ by
-      rw [A.fderiv_transition hy]
-      exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)
-    fun y hy ↦ A.overlap_subset_image i' i (A.transition_mem_overlap hy)
-  have hcoord := (A.contDiffOn_coordChangeL_transferDomain (n := 1) i i').mono
-    (A.overlap_subset_transferDomain i i')
-  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero hcoord one_ne_zero
-  have hcompat : ∀ᵐ y ∂μ.restrict O, ((A.triv i).coordChangeL ℝ (A.triv i')
-      ((A.chart i').symm y) : F →L[ℝ] F)
-        (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) =
-      A.sectionChartData.chartValueL μ p 1 i' w y := by
-    filter_upwards [(A.sectionChartData.compatible_iff μ p 1).1
-      (SectionChartData.compatible_of_mem hC w.property i i'),
-      ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h hy
-    rw [A.sectionChartData_coordChange_of_mem hy, A.sectionChartData_transition_of_mem hy] at h
-    exact h.symm
-  -- `O` is the overlap as an open set and `A.sectionChartData.image i'` is the image of chart `i'`
-  -- as an open set; the type ascription states the inclusion of overlap into image as one of
-  -- `Opens ℂ`, which `A.overlap_subset_image` proves for the underlying sets.
-  have hO : O ≤ A.sectionChartData.image i' := A.overlap_subset_image i i'
-  exact ((A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i' w).mono hO).ae_eq
-      (hprod.congr_ae hcompat)
+  filter_upwards [h₀, hres, ae_all_iff.2 fun c ↦ chartL_ae A hD hDs μ p i c w]
+    with y h₁ h₂ h₃
+  rw [h₁]
+  calc
+    _ = ∑ c, ((finBasis ℝ (ℂ →L[ℝ] F)).coord c
+          (complexAntilinearPartL (A.sectionChartData.chartDerivL μ p i w y)) +
+        (finBasis ℝ (ℂ →L[ℝ] F)).coord c
+          (A.chartZeroOrder D i y (A.sectionChartData.chartValueL μ p 1 i w y))) •
+        finBasis ℝ (ℂ →L[ℝ] F) c := by
+      refine Finset.sum_congr rfl fun c _ ↦ ?_
+      exact congrArg (· • _) ((h₂ c).trans ((congrArg
+        (fun f : Lp ℝ p (μ.restrict (A.sectionChartData.image i)) ↦ (f : ℂ → ℝ) y)
+        (Wkp.value_zero (chartL A hD hDs μ p i c w))).trans (h₃ c)))
+    _ = _ := by
+      simp only [add_smul, Finset.sum_add_distrib, Basis.coord_apply, Basis.sum_repr]
 
 include hD in
 omit [T2Space M] in
@@ -319,7 +272,7 @@ private theorem compatible_dataL (w : A.sectionChartData.sobolevSections μ p 1)
     (SectionChartData.compatible_of_mem hC w.property i i')
   refine (A.tangentHom.sectionChartData.compatible_iff μ p 0).2 ?_
   refine (ae_overlap_tangentHom_iff A μ i i').2 ?_
-  filter_upwards [h₁, h₂, h₃, chartDerivL_ae_overlap A μ p w i i',
+  filter_upwards [h₁, h₂, h₃, A.chartDerivL_ae_overlap μ p w i i',
     ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h₁ h₂ h₃ h₄ hy
   rw [A.sectionChartData_transition_of_mem hy] at h₂
   rw [A.sectionChartData_coordChange_of_mem hy, A.sectionChartData_transition_of_mem hy] at h₃
