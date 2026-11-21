@@ -84,7 +84,7 @@ private lemma cexp_sub_intCast_mul (z : ℍ) {x : ℂ} {q t : ℂˣ}
     (m : ℤ) : cexp (2 * π * Complex.I * (x - m * z)) = (q : ℂ) ^ (-m) * t := by
   rw [show 2 * π * Complex.I * (x - m * z) =
       2 * π * Complex.I * x - m * (2 * π * Complex.I * z) by ring,
-    Complex.exp_sub, Complex.exp_int_mul, ← hq, ← ht, zpow_neg, div_eq_inv_mul]
+    Complex.exp_sub, Complex.exp_intCast_mul, ← hq, ← ht, zpow_neg, div_eq_inv_mul]
 
 /-- **The complex Tate uniformisation, first coordinate.** For `z ∈ ℍ`, `q = e^(2π i z)`, a point
 `x ∉ ℤ z + ℤ` and its multiplicative parameter `t = e^(2π i x)`, the first Tate coordinate is

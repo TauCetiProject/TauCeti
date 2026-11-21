@@ -35,7 +35,7 @@ noncomputable def lcsGradedPieceZeroEquiv :
       ((pLowerCentralSeries 0 G 1).subgroupOf (pLowerCentralSeries 0 G 0))).continuous_iff.mpr
     have h : Continuous (fun x : pLowerCentralSeries 0 G 0 =>
         Additive.ofMul ((x : G) : TopologicalAbelianization G)) := by
-      exact continuous_quotient_mk'.comp continuous_subtype_val
+      exact continuous_quotient_mk'.comp continuous_subtypeVal
     convert h using 1
     funext x
     -- The source quotient is written additively, while its quotient map is multiplicative.

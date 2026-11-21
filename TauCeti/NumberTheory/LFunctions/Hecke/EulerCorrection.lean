@@ -41,7 +41,7 @@ theorem re_eq_zero_of_eulerCorrection_eq_zero (χ : RayClassCharacter 𝔪)
   have hane : χ.toMultiplicativeIdealWeight P.asIdeal ≠ 0 := by
     intro ha
     simp [ha] at hP
-  have hgood : χ.toUnitaryIdealWeight.1.IsGood P.asIdeal := by
+  have hgood : χ.toUnitaryIdealWeight.val.IsGood P.asIdeal := by
     apply (MultiplicativeIdealWeight.apply_ne_zero_iff_isGood _ _).mp
     simpa using hane
   have hnorm : ‖χ.toMultiplicativeIdealWeight P.asIdeal‖ = 1 := by

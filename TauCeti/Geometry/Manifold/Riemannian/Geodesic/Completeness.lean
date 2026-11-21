@@ -158,7 +158,7 @@ private theorem isCompact_closure_image_maximalGeodesic [CompleteSpace M] {a b :
   have htb : TotallyBounded (maximalGeodesic I M p v '' Ioo a b) := by
     have huniv : TotallyBounded (univ : Set (Ioo a b)) := by
       simpa using totallyBounded_preimage
-        (f := (Subtype.val : Ioo a b → ℝ)) isUniformEmbedding_subtype_val.isUniformInducing
+        (f := (Subtype.val : Ioo a b → ℝ)) isUniformEmbedding_subtypeVal.isUniformInducing
         ((isCompact_Icc (a := a) (b := b)).totallyBounded.subset Ioo_subset_Icc_self)
     have hlip : LipschitzWith ‖v‖₊ ((Ioo a b).domRestrict (maximalGeodesic I M p v)) :=
       ((lipschitzOnWith_maximalGeodesic (p := p) (v := v)).mono hab).to_restrict

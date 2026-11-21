@@ -361,7 +361,7 @@ theorem adjoin_invSelf_eq_top :
   rw [eq_top_iff]
   rintro x -
   obtain ⟨⟨a, m⟩, hx⟩ := IsLocalization.surj (Submonoid.powers s) x
-  obtain ⟨n, hn⟩ := m.2
+  obtain ⟨n, hn⟩ := m.property
   have hx' : x = algebraMap A S a * (IsLocalization.Away.invSelf s : S) ^ n := by
     rw [← hx, ← hn, map_pow, mul_assoc, ← mul_pow, IsLocalization.Away.mul_invSelf, one_pow,
       mul_one]
@@ -438,9 +438,9 @@ theorem map_adjoin_divBy_le (hT : ∀ t ∈ T, f t ∈ T') (hR : ∀ a ∈ R, f 
   rintro _ (⟨a, rfl⟩ | ⟨t, rfl⟩)
   · rw [SetLike.mem_coe, Subring.mem_comap, IsScalarTower.algebraMap_apply R A S,
       Algebra.algebraMap_ofSubsemiring_apply, IsLocalization.Away.map, IsLocalization.map_eq]
-    exact Subalgebra.algebraMap_mem _ (⟨_, hR a a.2⟩ : R')
+    exact Subalgebra.algebraMap_mem _ (⟨_, hR a a.property⟩ : R')
   · rw [SetLike.mem_coe, Subring.mem_comap, RingHom.awayMap_divBy]
-    exact Algebra.subset_adjoin ⟨⟨_, hT t t.2⟩, rfl⟩
+    exact Algebra.subset_adjoin ⟨⟨_, hT t t.property⟩, rfl⟩
 
 /-- **The induced map carries the integral closure of `R[T/s]` into that of `R'[T'/f(s)]`**, the
 integral closures taken in the localisations, under the hypotheses of `map_adjoin_divBy_le`. -/

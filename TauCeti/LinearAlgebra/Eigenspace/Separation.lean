@@ -89,8 +89,9 @@ theorem isCompl_eigenspace_one_neg_one (h2 : IsUnit (2 : K)) {T : Module.End K V
     intro x _
     let := h2.invertible
     exact Submodule.mem_sup.mpr
-      ⟨_, (Module.End.eigenProjOfInvolutive hT (one_mul 1) x).2, _,
-        (Module.End.eigenProjOfInvolutive hT ((neg_mul_neg (1 : K) 1).trans (one_mul 1)) x).2,
+      ⟨_, (Module.End.eigenProjOfInvolutive hT (one_mul 1) x).property, _,
+        (Module.End.eigenProjOfInvolutive hT ((neg_mul_neg (1 : K) 1).trans
+            (one_mul 1)) x).property,
         Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hT _ _ x⟩
 
 end TauCeti

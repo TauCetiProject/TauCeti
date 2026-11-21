@@ -55,7 +55,10 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   from the chart-`i` Sobolev components of a tuple.
 * `TauCeti.SectionChartData.sobolevSections`: the tuples of chartwise Sobolev components of
   sections.
-* `TauCeti.SectionChartData.lowerOrderL`: the continuous inclusion of order `k + 1` into order `k`.
+* `TauCeti.SectionChartData.lowerOrderL`: the continuous inclusion of order `k + 1` into order `k`,
+  and `TauCeti.SectionChartData.lowerOrdersL` that of order `k + d` into order `k`.
+* `TauCeti.SectionChartData.chartValuesL`: the chart data of a Sobolev section, forgetting all its
+  weak derivatives; it is injective (`TauCeti.SectionChartData.chartValuesL_injective`).
 * `TauCeti.SectionChartData.constMapL`: a fibrewise map of sections read in every chart as a
   constant linear map `L` of the model fibre, applied to the Sobolev sections by the matrix of `L`
   (`TauCeti.SectionChartData.chartValueL_constMapL_ae`), which lifts the fibre map on the readings
@@ -86,8 +89,13 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   section whose coordinates its chart data are.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
+* `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
+  into the chartwise Sobolev spaces whose values are those of the components of a Sobolev section
+  assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
 * `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
   tuple by a scalar function multiplies its chart data by that function.
+* `TauCeti.SectionChartData.chartValueL_ae_congr`: tuples whose chart-`i` components have the same
+  values have the same chart data in chart `i`.
 
 ## References
 
@@ -326,6 +334,18 @@ theorem chartValueL_ae_eq_smul {w w' : C.SobolevData μ p k} {i : Fin C.n} {ψ :
   exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
 
 variable {C μ p k} in
+/-- Tuples, of any exponents and orders, whose chart-`i` components have the same values almost
+everywhere have the same chart data in chart `i` almost everywhere. -/
+theorem chartValueL_ae_congr {q : ℝ≥0∞} [Fact (1 ≤ q)] {k' : ℕ} {w : C.SobolevData μ p k}
+    {v : C.SobolevData μ q k'} {i : Fin C.n}
+    (h : ∀ j, (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)] Wkp.value k' (v i j)) :
+    C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ q k' i v := by
+  filter_upwards [C.chartValueL_apply_ae μ p k i w, C.chartValueL_apply_ae μ q k' i v,
+    ae_all_iff.2 h] with y hw hv hj
+  rw [hw, hv]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j]
+
+variable {C μ p k} in
 /-- The components of the chart data of a tuple of Sobolev functions are the values of its
 entries: if the chart data in chart `i` agree with the reading of a section `s`, then the `j`th
 component of that reading in the basis `Module.finBasis ℝ F` is the value of the entry `w i j`,
@@ -462,7 +482,7 @@ variable (C μ p k)
 /-- An element of the Sobolev sections consists of the chartwise components of a section. -/
 theorem exists_section (w : C.sobolevSections μ p k) :
     ∃ s : S, ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s :=
-  w.2
+  w.property
 
 /-- Two elements of the Sobolev sections are equal when their components have equal values. -/
 theorem sobolevSections_ext {w w' : C.sobolevSections μ p k}
@@ -488,6 +508,29 @@ theorem eq_of_chartValueL_ae_eq {w w' : C.sobolevSections μ p k}
   obtain ⟨s, hs⟩ := C.exists_section μ p k w'
   exact eq_of_ae_eq_coord (fun i ↦ (h i).trans (hs i)) hs
 
+variable {C μ p k} {q : ℝ≥0∞} [Fact (1 ≤ q)] {k' : ℕ} in
+/-- **Maps into Sobolev sections from their components.** If continuous linear maps `Φ i m` from
+the Sobolev sections of order `k` and exponent `p` to `W^{k',q}(C.image i)` have, almost everywhere,
+the values of the components `w i m`, then there is a continuous linear map into the Sobolev
+sections of order `k'` and exponent `q` whose chart data are those of `w`: it keeps the underlying
+section. -/
+theorem exists_continuousLinearMap_chartValueL_ae_eq
+    (Φ : ∀ (i : Fin C.n) (_ : Fin (finrank ℝ F)),
+      C.sobolevSections μ p k →L[ℝ] Wkp μ (C.image i) q k')
+    (hΦ : ∀ i m w, Wkp.value k' (Φ i m w) =ᵐ[μ.restrict (C.image i)]
+      Wkp.value k ((w : C.SobolevData μ p k) i m)) :
+    ∃ T : C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ q k',
+      ∀ w i, C.chartValueL μ q k' i (T w) =ᵐ[μ.restrict (C.image i)] C.chartValueL μ p k i w := by
+  -- The chart data of the assembled tuple are those of `w`, component by component.
+  have hchart (w : C.sobolevSections μ p k) (i : Fin C.n) :
+      C.chartValueL μ q k' i (fun i m ↦ Φ i m w) =ᵐ[μ.restrict (C.image i)]
+        C.chartValueL μ p k i w :=
+    chartValueL_ae_congr (hΦ i · w)
+  refine ⟨(ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi (Φ i)).codRestrict
+    (C.sobolevSections μ q k') fun w ↦ ?_, fun w i ↦ hchart w i⟩
+  obtain ⟨s, hs⟩ := C.exists_section μ p k w
+  exact (C.mem_sobolevSections_iff μ q k').2 ⟨s, fun i ↦ (hchart w i).trans (hs i)⟩
+
 /-- The norm of an element of the Sobolev sections, the maximum of its component norms, is at most
 any sum of bounds for the component norms. -/
 theorem norm_le_sum_of_norm_le {w : C.sobolevSections μ p k}
@@ -506,7 +549,7 @@ forgetting the highest derivative of every component. -/
 def lowerOrderL : C.sobolevSections μ p (k + 1) →L[ℝ] C.sobolevSections μ p k :=
   ((SobolevData.mapL fun _ ↦ Wkp.lowerOrderL k).comp
     (C.sobolevSections μ p (k + 1)).subtypeL).codRestrict (C.sobolevSections μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := w.2
+      obtain ⟨s, hs⟩ := w.property
       refine ⟨s, fun i ↦ ?_⟩
       convert hs i using 2
       rw [← C.chartValueL_lowerOrderL μ p k i w]
@@ -527,6 +570,63 @@ theorem chartValueL_coe_lowerOrderL (w : C.sobolevSections μ p (k + 1)) (i : Fi
   rw [← C.chartValueL_lowerOrderL μ p k i w]
   refine congrArg (C.chartValueL μ p k i) (funext fun i' ↦ funext fun j ↦ ?_)
   rw [lowerOrderL_apply, Wkp.lowerOrderL_apply]
+
+/-- The chart data of the Sobolev sections: in every chart, the `F`-valued `Lᵖ` function on the
+chart image that reads the section there. This forgets all weak derivatives; its norm, the maximum
+over the charts of the `Lᵖ` norms of the chart data, is the `Lᵖ` norm of the section measured in
+the charts. -/
+def chartValuesL : C.sobolevSections μ p k →L[ℝ] ∀ i, Lp F p (μ.restrict (C.image i)) :=
+  ContinuousLinearMap.pi fun i ↦ (C.chartValueL μ p k i).comp (C.sobolevSections μ p k).subtypeL
+
+@[simp]
+theorem chartValuesL_apply (w : C.sobolevSections μ p k) (i : Fin C.n) :
+    C.chartValuesL μ p k w i = C.chartValueL μ p k i w :=
+  (rfl)
+
+/-- An element of the Sobolev sections is determined by its chart data. -/
+theorem chartValuesL_injective : Function.Injective (C.chartValuesL μ p k) := fun w w' h ↦
+  eq_of_chartValueL_ae_eq fun i ↦ by rw [← chartValuesL_apply, ← chartValuesL_apply, h]
+
+/-- Forgetting the highest derivative does not change the chart data. -/
+@[simp]
+theorem chartValuesL_lowerOrderL (w : C.sobolevSections μ p (k + 1)) :
+    C.chartValuesL μ p k (C.lowerOrderL μ p k w) = C.chartValuesL μ p (k + 1) w :=
+  funext fun i ↦ C.chartValueL_coe_lowerOrderL μ p k w i
+
+/-- The continuous inclusion of the Sobolev sections of order `k + d` into those of order `k`,
+forgetting the `d` highest derivatives of every component. -/
+def lowerOrdersL : (d : ℕ) → C.sobolevSections μ p (k + d) →L[ℝ] C.sobolevSections μ p k
+  | 0 => ContinuousLinearMap.id ℝ _
+  | d + 1 => (lowerOrdersL d).comp (C.lowerOrderL μ p (k + d))
+
+@[simp]
+theorem lowerOrdersL_zero (w : C.sobolevSections μ p k) : C.lowerOrdersL μ p k 0 w = w :=
+  (rfl)
+
+theorem lowerOrdersL_succ (d : ℕ) :
+    C.lowerOrdersL μ p k (d + 1) = (C.lowerOrdersL μ p k d).comp (C.lowerOrderL μ p (k + d)) :=
+  (rfl)
+
+@[simp]
+theorem lowerOrdersL_one (w : C.sobolevSections μ p (k + 1)) :
+    C.lowerOrdersL μ p k 1 w = C.lowerOrderL μ p k w :=
+  (rfl)
+
+/-- Forgetting the highest derivatives does not change the chart data. -/
+@[simp]
+theorem chartValuesL_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d)) :
+    C.chartValuesL μ p k (C.lowerOrdersL μ p k d w) = C.chartValuesL μ p (k + d) w := by
+  induction d with
+  | zero => rfl
+  | succ d ih =>
+    rw [lowerOrdersL_succ, ContinuousLinearMap.comp_apply, ih, chartValuesL_lowerOrderL]
+    -- The orders `k + d + 1` and `k + (d + 1)` agree by the definition of `Nat.add`.
+    rfl
+
+/-- The inclusion of the Sobolev sections of order `k + d` into those of order `k` is injective. -/
+theorem lowerOrdersL_injective (d : ℕ) : Function.Injective (C.lowerOrdersL μ p k d) :=
+  fun w w' h ↦ C.chartValuesL_injective μ p (k + d) <| by
+    simpa using congrArg (C.chartValuesL μ p k) h
 
 section ConstMap
 
@@ -597,7 +697,7 @@ def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
     (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y)) :
     C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k :=
   ((constMapData C μ p k L).comp (C.sobolevSections μ p k).subtypeL).codRestrict _ fun w ↦ by
-    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
+    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.property
     exact (C.mem_sobolevSections_iff μ p k).2
       ⟨Ψ s, fun i ↦ chartValueL_constMapData_ae_coord (hΨ i s) (hs i)⟩
 

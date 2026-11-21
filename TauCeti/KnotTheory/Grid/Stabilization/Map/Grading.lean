@@ -75,14 +75,15 @@ bidegree of some monomial `V^d · y` of `c`. -/
 private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R (n + 1)}
     {x : GridState n} {e : Fin n →₀ ℕ}
     (he : e ∈ (Finsupp.mapRange (rename s.predAbove) (map_zero _)
-      (G.1.stabilizeXOffCenterToCenter s R (G.1.stabilizeXOffCenterProjection s R c)) x).support) :
+      (G.val.stabilizeXOffCenterToCenter s R (G.val.stabilizeXOffCenterProjection s R c))
+          x).support) :
     ∃ y : GridState (n + 1), ∃ d ∈ (c y).support,
       G.monomialBidegree x e = (G.stabilizeX s).monomialBidegree y d := by
   classical
   rw [Finsupp.mapRange_apply] at he
   -- The monomial `e` is the renaming of a monomial `u` of the coefficient before renaming.
-  obtain ⟨u, hu, rfl⟩ : ∃ u ∈ (G.1.stabilizeXOffCenterToCenter s R
-      (G.1.stabilizeXOffCenterProjection s R c) x).support, u.mapDomain s.predAbove = e := by
+  obtain ⟨u, hu, rfl⟩ : ∃ u ∈ (G.val.stabilizeXOffCenterToCenter s R
+      (G.val.stabilizeXOffCenterProjection s R c) x).support, u.mapDomain s.predAbove = e := by
     by_contra! h
     exact (MvPolynomial.mem_support_iff.mp he) (coeff_rename_eq_zero _ _ _ fun u hu =>
       MvPolynomial.notMem_support_iff.mp fun hu' => h u hu' hu)
@@ -94,13 +95,13 @@ private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R 
   obtain ⟨r, hr, rfl⟩ :=
     GridDiagram.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient _ R hd'
   rw [GridDiagram.stabilizeXOffCenterProjection_apply] at hd
-  refine ⟨y.1, d, hd, ?_⟩
-  have hM := G.1.maslovOℤ_stabilizeX_eq_of_isEmpty s x
+  refine ⟨y.val, d, hd, ?_⟩
+  have hM := G.val.maslovOℤ_stabilizeX_eq_of_isEmpty s x
     ((GridDiagram.mem_XHomotopyRectangles _ _ r).mp hr).1
-  have hA := G.1.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
+  have hA := G.val.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
   rw [← val_stabilizeX, alexander_eq_intCast, G.alexander_eq_intCast] at hA
-  have hA' : (G.stabilizeX s).alexanderℤ y.1 = G.alexanderℤ x -
-      ((G.stabilizeX s).1.OColumns r.toGridRectangle).card := by
+  have hA' : (G.stabilizeX s).alexanderℤ y.val = G.alexanderℤ x -
+      ((G.stabilizeX s).val.OColumns r.toGridRectangle).card := by
     exact_mod_cast hA
   rw [val_stabilizeX] at hA'
   refine Prod.ext ?_ ?_ <;>
@@ -116,7 +117,7 @@ theorem stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece
     {g : ℤ × ℤ} {c : GridChainMinus R (n + 1)}
     (hc : c ∈ (G.stabilizeX s).bigradedChainMinusPiece R g) :
     Finsupp.mapRange (rename s.predAbove) (map_zero _)
-      (G.1.stabilizeXOffCenterToCenter s R (G.1.stabilizeXOffCenterProjection s R c)) ∈
+      (G.val.stabilizeXOffCenterToCenter s R (G.val.stabilizeXOffCenterProjection s R c)) ∈
       G.bigradedChainMinusPiece R g := by
   rw [mem_bigradedChainMinusPiece] at hc ⊢
   intro x e he
@@ -133,8 +134,8 @@ theorem stabilizeXMap_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus
     ((ModuleCat.restrictScalars
         (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
           (eqToHom
-            ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
-        (G.1.stabilizeXMap s R).f () ≫ eqToHom (G.1.unblockedComplex_X R ())).hom c ∈
+            ((G.val.stabilizeX s.castSucc (G.val.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
+        (G.val.stabilizeXMap s R).f () ≫ eqToHom (G.val.unblockedComplex_X R ())).hom c ∈
       G.alexanderChainMinusPiece R a := by
   rw [mem_alexanderChainMinusPiece] at hc ⊢
   intro x e he
