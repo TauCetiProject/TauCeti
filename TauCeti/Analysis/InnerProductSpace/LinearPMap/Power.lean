@@ -44,10 +44,10 @@ The same powers are integrals of the resolvent. For `t ≥ 0`, `(A + t)⁻¹ = G
 
 `A^{-σ} = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) (A + t)⁻¹ dt`,
 
-the contour integral `(i / 2π) ∫_Γ λ ^ (-σ) (A - λ)⁻¹ dλ` around the spectrum collapsed onto the
-negative real axis. This identifies the contour (Seeley) powers of `A` with its spectral powers;
-it is the form in which a parametrix for `A - λ` describes `A^{-σ}` as a pseudodifferential
-operator.
+Balakrishnan's real-axis form of the resolvent integral. Classically it is the contour integral
+`(i / 2π) ∫_Γ λ ^ (-σ) (A - λ)⁻¹ dλ` around the spectrum collapsed onto the negative real axis, the
+form in which a parametrix for `A - λ` describes `A^{-σ}` as a pseudodifferential operator; the
+contour integral itself is not formalized here.
 
 ## Main definitions and results
 
@@ -64,7 +64,8 @@ operator.
   (`LinearPMap.posPow_apply_of_apply_eq_smul`). Its domains decrease in `s`
   (`LinearPMap.posPow_domain_antitone`), and `A^s A^t = A^{s + t}` on the domain of `A^{s + t}`
   (`LinearPMap.posPow_posPow`).
-* `LinearPMap.resolvent_neg_eq_neg_cfc`: for `t ≥ 0`, the resolvent at `-t` is
+* `LinearPMap.neg_ofReal_mem_resolventSet`: for `t ≥ 0`, `-t` is a resolvent point, and
+  `LinearPMap.resolvent_neg_eq_neg_cfc`: the resolvent at `-t` is
   `-(A + t)⁻¹ = -G (1 + t G)⁻¹`.
 * `LinearPMap.negPow_eq_integral_resolvent`: the resolvent integral of `A^{-σ}` for `0 < σ < 1`,
   and `LinearPMap.posPow_apply_eq_integral_resolvent`: on the domain of `A`,
@@ -389,8 +390,14 @@ theorem isResolventAt_neg_neg_cfc {t : ℝ} (ht : 0 ≤ t) :
     have hx : G (A x) = x := A.greenOperator_apply_apply_of_ker_eq_bot hA h hker x
     have := congr($(hKG.2) (A x))
     rw [_root_.add_apply, _root_.smul_apply, mul_apply_eq_comp, hx] at this
-    rw [_root_.neg_apply, K.map_sub, neg_smul, K.map_neg, Complex.coe_smul, K.map_smul_of_tower,
-      neg_sub, sub_neg_eq_add, this]
+    rw [_root_.neg_apply, K.map_sub, K.map_smul]
+    linear_combination (norm := module) this
+
+variable (hA h) in
+include hA h in
+/-- For `t ≥ 0`, the point `-t` lies in the resolvent set of a strictly positive operator. -/
+theorem neg_ofReal_mem_resolventSet {t : ℝ} (ht : 0 ≤ t) : -(t : ℂ) ∈ A.resolventSet :=
+  (isResolventAt_neg_neg_cfc (hA := hA) (h := h) hpos hker ht).mem_resolventSet
 
 /-- For `t ≥ 0`, the resolvent `(-t - A)⁻¹ = -(A + t)⁻¹` of a strictly positive operator is
 `-G (1 + t G)⁻¹`, for the Green operator `G = A⁻¹`. -/
@@ -413,9 +420,9 @@ compact resolvent and `0 < σ < 1`,
 
 `A^{-σ} = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) (A + t)⁻¹ dt`,
 
-a Bochner integral in operator norm; here `(A + t)⁻¹ = -LinearPMap.resolvent A (-t)`. This is the
-contour integral `(i / 2π) ∫_Γ λ ^ (-σ) (A - λ)⁻¹ dλ` around the spectrum, collapsed onto the
-negative real axis, so it identifies the contour powers of `A` with its spectral powers. Other
+a Bochner integral in operator norm; here `(A + t)⁻¹ = -LinearPMap.resolvent A (-t)`. Classically
+this real-axis integral is the contour integral `(i / 2π) ∫_Γ λ ^ (-σ) (A - λ)⁻¹ dλ` around the
+spectrum collapsed onto the negative real axis; only the real-axis form is proved here. Other
 powers follow from the semigroup law `LinearPMap.negPow_add`. -/
 theorem negPow_eq_integral_resolvent {σ : ℝ≥0} (hσ : 0 < σ) (hσ1 : σ < 1) :
     A.negPow hA h σ = (Real.sin (Real.pi * σ) / Real.pi) •
@@ -448,17 +455,18 @@ theorem posPow_apply_eq_integral_resolvent {σ : ℝ≥0} (hσ : 0 < σ) (hσ1 :
   refine ⟨hu, ?_⟩
   have h1σ : 0 < 1 - σ := tsub_pos_of_lt hσ1
   have h1σ1 : 1 - σ < 1 := tsub_lt_self one_pos hσ
+  have hcoe : ((1 - σ : ℝ≥0) : ℝ) = 1 - σ := by rw [NNReal.coe_sub hσ1.le, NNReal.coe_one]
+  have hsin : Real.sin (Real.pi * (1 - σ)) = Real.sin (Real.pi * σ) := by
+    rw [mul_one_sub, Real.sin_pi_sub]
   rw [hAu, negPow_eq_integral_resolvent hpos hker h1σ h1σ1, _root_.smul_apply,
     ContinuousLinearMap.integral_apply (integrableOn_rpow_neg_smul_neg_resolvent hA h hpos hker
-      (NNReal.coe_pos.2 h1σ) (NNReal.coe_lt_one.2 h1σ1)),
-    NNReal.coe_sub hσ1.le, NNReal.coe_one, show Real.pi * (1 - (σ : ℝ)) =
-      Real.pi - Real.pi * σ by ring, Real.sin_pi_sub]
+      (NNReal.coe_pos.2 h1σ) (NNReal.coe_lt_one.2 h1σ1)), hcoe, hsin]
   congr 1
   refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
   -- `-(-t - A)⁻¹ A u = -A (-t - A)⁻¹ u = u + t (-t - A)⁻¹ u`.
-  have hmem := (isResolventAt_neg_neg_cfc (hA := hA) (h := h) hpos hker ht.le).mem_resolventSet
+  have hmem := neg_ofReal_mem_resolventSet hA h hpos hker ht.le
   rw [_root_.smul_apply, _root_.neg_apply, resolvent_apply_comm hmem, apply_resolvent hmem,
-    show -(1 - (σ : ℝ)) = (σ : ℝ) - 1 by ring]
+    neg_sub]
   congr 1
   module
 

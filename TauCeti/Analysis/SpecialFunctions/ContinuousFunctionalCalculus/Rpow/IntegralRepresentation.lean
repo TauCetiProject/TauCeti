@@ -79,10 +79,6 @@ private theorem norm_rpow_neg_mul_div_one_add_mul_le [CompleteSpace A] (ha : 0 �
   rw [div_le_div_iff₀ (by positivity) (by nlinarith)]
   nlinarith
 
-/-- The largest spectral value of a nonnegative element is nonnegative. -/
-private theorem sSup_spectrum_nonneg (ha : 0 ≤ a) : 0 ≤ sSup (spectrum ℝ a) :=
-  Real.sSup_nonneg fun _ hx ↦ spectrum_nonneg_of_nonneg ha hx
-
 /-- The function `x ↦ x / (1 + t x)` is continuous on the spectrum of a nonnegative element, for
 `t ≥ 0`. -/
 private theorem continuousOn_div_one_add_mul (ha : 0 ≤ a) {t : ℝ} (ht : 0 ≤ t) :
@@ -111,16 +107,10 @@ theorem one_add_smul_mul_cfc_div_one_add_mul (ha : 0 ≤ a) {t : ℝ} (ht : 0 �
 `a (1 + t a)⁻¹`: multiplied on the right by `1 + t a` it gives `a`. -/
 theorem cfc_div_one_add_mul_mul_one_add_smul (ha : 0 ≤ a) {t : ℝ} (ht : 0 ≤ t) :
     cfc (fun x : ℝ ↦ x / (1 + t * x)) a * (1 + t • a) = a := by
-  have hc := continuousOn_div_one_add_mul ha ht
-  have := cfc_congr (a := a) (f := fun x : ℝ ↦ x / (1 + t * x) + t * (x / (1 + t * x) * x))
-    (g := fun x ↦ x) fun x hx ↦ by
-      have : 0 < 1 + t * x := by have := spectrum_nonneg_of_nonneg ha hx; positivity
-      linear_combination div_mul_cancel₀ x this.ne'
-  rwa [cfc_add a _ (fun x ↦ t * (x / (1 + t * x) * x)) hc
-    (continuousOn_const.mul (hc.mul continuousOn_id)),
-    cfc_const_mul t (fun x ↦ x / (1 + t * x) * x) a (hc.mul continuousOn_id),
-    cfc_mul _ (fun x : ℝ ↦ x) a hc continuousOn_id,
-    cfc_id' ℝ a, ← mul_smul_comm, ← mul_one_add] at this
+  have hc : Commute (cfc (fun x : ℝ ↦ x / (1 + t * x)) a) a := by
+    simpa only [cfc_id' ℝ a] using cfc_commute_cfc (fun x : ℝ ↦ x / (1 + t * x)) (fun x ↦ x) a
+  rw [((Commute.one_right _).add_right (hc.smul_right t)).eq,
+    one_add_smul_mul_cfc_div_one_add_mul ha ht]
 
 /-- For a nonnegative element `a` and `0 < σ < 1`, the integrand `t ^ (-σ) a (1 + t a)⁻¹` of the
 resolvent integral of `a ^ σ` is integrable on `(0, ∞)`. -/
@@ -131,7 +121,8 @@ theorem integrableOn_rpow_neg_smul_cfc_div_one_add_mul [CompleteSpace A] (ha : 0
     (continuousOn_rpow_neg_mul_div_one_add_mul ha)
     (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht _ hx ↦
       norm_rpow_neg_mul_div_one_add_mul_le ha ht hx)
-    (TauCeti.integrableOn_rpow_neg_mul_div_one_add_mul σ _ hσ hσ1 (sSup_spectrum_nonneg ha)).2
+    (TauCeti.integrableOn_rpow_neg_mul_div_one_add_mul σ _ hσ hσ1
+      (Real.sSup_nonneg fun _ hx ↦ spectrum_nonneg_of_nonneg ha hx)).2
     ha.isSelfAdjoint
   exact hint.congr_fun (fun t (ht : 0 < t) ↦
     cfc_const_mul _ _ a (continuousOn_div_one_add_mul ha ht.le)) measurableSet_Ioi
@@ -152,7 +143,8 @@ theorem rpow_eq_integral_cfc_div_one_add_mul [CompleteSpace A] (ha : 0 ≤ a) (h
     (continuousOn_rpow_neg_mul_div_one_add_mul ha)
     (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht _ hx ↦
       norm_rpow_neg_mul_div_one_add_mul_le ha ht hx)
-    (TauCeti.integrableOn_rpow_neg_mul_div_one_add_mul σ _ hσ hσ1 (sSup_spectrum_nonneg ha)).2
+    (TauCeti.integrableOn_rpow_neg_mul_div_one_add_mul σ _ hσ hσ1
+      (Real.sSup_nonneg fun _ hx ↦ spectrum_nonneg_of_nonneg ha hx)).2
     ha.isSelfAdjoint
   -- On the spectrum, the scalar integral is `π / sin (π σ) * x ^ σ`.
   rw [cfc_congr (g := fun x : ℝ ↦ Real.pi / Real.sin (Real.pi * σ) * x ^ σ)
