@@ -287,42 +287,6 @@ theorem ofEq_apply {A' : FiniteQuadraticModule.{u}} (h : A = A') (x : A) :
 theorem ofEq_rfl : ofEq (rfl : A = A) = QuadraticMap.IsometryEquiv.refl A.quadratic :=
   (rfl)
 
-/-- Composing two identity isometries of equal finite quadratic modules gives the identity isometry
-of the composite equality. -/
-@[simp]
-theorem ofEq_trans {A₁ A₂ A₃ : FiniteQuadraticModule.{u}} (h₁ : A₁ = A₂) (h₂ : A₂ = A₃) :
-    (ofEq h₁).trans (ofEq h₂) = ofEq (h₁.trans h₂) := by
-  subst h₁ h₂
-  -- `ofEq rfl` is `QuadraticMap.IsometryEquiv.refl`, whose self-composition is itself.
-  rfl
-
-/-- Applying two identity isometries of equal finite quadratic modules in succession agrees with
-applying the composite identity isometry. -/
-@[simp]
-theorem ofEq_ofEq {A₁ A₂ A₃ : FiniteQuadraticModule.{u}} (h₁ : A₁ = A₂) (h₂ : A₂ = A₃) (x : A₁) :
-    ofEq h₂ (ofEq h₁ x) = ofEq (h₁.trans h₂) x := by
-  subst h₁ h₂
-  -- `ofEq rfl` is the identity isometry, which acts as the identity function.
-  rfl
-
-/-- The inverse of the identity isometry along an equality is the identity isometry along the
-symmetric equality. -/
-@[simp]
-theorem symm_ofEq {A' : FiniteQuadraticModule.{u}} (h : A = A') :
-    (ofEq h).symm = ofEq h.symm := by
-  subst h
-  -- The inverse of `QuadraticMap.IsometryEquiv.refl` is definitionally itself.
-  rfl
-
-/-- Identifying the modules of a dependent family at equal indices with the same target module
-produces the same element. -/
-theorem ofEq_apply_eq {ι : Sort*} {F : ι → FiniteQuadraticModule.{u}} (w : ∀ i, F i)
-    {a b : ι} (hab : a = b) {C : FiniteQuadraticModule.{u}} (ha : F a = C) (hb : F b = C) :
-    ofEq ha (w a) = ofEq hb (w b) := by
-  subst hab
-  -- `ha` and `hb` now have the same source and target, so they coincide by proof irrelevance.
-  rfl
-
 /-- The isometry between two finite quadratic modules with at most one element. -/
 def ofSubsingleton [Subsingleton A] [Subsingleton B] : Isometry A B where
   toLinearEquiv := LinearEquiv.ofSubsingleton _ _

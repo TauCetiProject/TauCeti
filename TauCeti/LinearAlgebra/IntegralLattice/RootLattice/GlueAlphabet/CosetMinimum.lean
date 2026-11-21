@@ -78,8 +78,6 @@ Reindexing the components along an equivalence to an equal family, through
   is two thirds of the Hamming weight of `w`.
 * `TauCeti.DynkinType.sum_glueMinimum_A_one_eq_hammingNorm_div_two`: for a word in copies of the
   `A₁` glue alphabet, `μ(w)` is half its Hamming weight.
-* `TauCeti.DynkinType.glueMinimum_ofEq`: identifying the glue alphabets of equal types preserves
-  shortest norms.
 * `TauCeti.DynkinType.sum_glueMinimum_piGlueAlphabetCongr`: `μ(w)` is unchanged by reindexing
   the components along an equivalence to an equal family.
 
@@ -573,15 +571,6 @@ theorem sum_glueMinimum_A_one_eq_hammingNorm_div_two {ι : Type*} [Fintype ι]
   rw [typeA1GlueAlphabetZModStandardIsometry_apply]
   exact (glueMinimum_A 1 _ (w j)).trans (h (w j))
 
-/-- Identifying the glue alphabets of equal simply-laced Dynkin types preserves shortest norms. -/
-@[simp]
-theorem glueMinimum_ofEq {t s : DynkinType} (h : t = s) (ht : t.IsSimplyLaced)
-    (hs : s.IsSimplyLaced) (x : t.glueAlphabet ht) :
-    s.glueMinimum hs (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr h ht hs) x) =
-      t.glueMinimum ht x := by
-  subst h
-  simp
-
 /-- **Shortest norms are unchanged by passing to an equal family of components**: if the
 components `s k` are the components `t (σ k)` for an equivalence `σ : κ ≃ ι`, a glue word and its
 image under `piGlueAlphabetCongr` have the same shortest norm `μ(w)`. -/
@@ -591,8 +580,16 @@ theorem sum_glueMinimum_piGlueAlphabetCongr {ι κ : Type*} [Fintype ι] [Fintyp
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     ∑ k, (s k).glueMinimum (hs k) (piGlueAlphabetCongr t ht σ h w k) =
       ∑ i, (t i).glueMinimum (ht i) (w i) := by
+  have hofEq {a b : DynkinType} (hab : a = b) (ha : a.IsSimplyLaced) (hb : b.IsSimplyLaced)
+      (x : a.glueAlphabet ha) :
+      b.glueMinimum hb
+          (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr hab ha hb) x) =
+        a.glueMinimum ha x := by
+    subst hab
+    rw [FiniteQuadraticModule.Isometry.ofEq_rfl]
+    rfl
   refine (Finset.sum_congr rfl fun k _ ↦ ?_).trans
     (σ.sum_comp fun i ↦ (t i).glueMinimum (ht i) (w i))
-  rw [piGlueAlphabetCongr_apply, glueMinimum_ofEq (h k)]
+  rw [piGlueAlphabetCongr_apply, hofEq (h k)]
 
 end TauCeti.DynkinType

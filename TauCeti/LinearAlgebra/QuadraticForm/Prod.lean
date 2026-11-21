@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.LinearAlgebra.Pi
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
@@ -345,9 +346,8 @@ theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fin
 theorem IsometryEquiv.piCongrLeft_symm_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
     {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
     (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (y : ∀ i, M i) (i' : ι') :
-    (IsometryEquiv.piCongrLeft Q e).symm y i' = y (e i') := by
-  conv_rhs => rw [← (IsometryEquiv.piCongrLeft Q e).apply_symm_apply y]
-  exact (IsometryEquiv.piCongrLeft_apply_apply Q e _ i').symm
+    (IsometryEquiv.piCongrLeft Q e).symm y i' = y (e i') :=
+  LinearEquiv.piCongrLeft_symm_apply M e y i'
 
 /-- Restriction to the summands indexed by `{i // S i}` is isometric when every other summand is
 carried by a trivial module: such summands may be deleted from an orthogonal sum. -/
