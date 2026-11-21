@@ -67,11 +67,15 @@ order `8` as a closed instance of everything here.
 
 ## Main results
 
+* `TauCeti.ClassData.classOf_bijective`: `d.classOf` is a bijection onto `ConjClasses G` without
+  assuming decidable conjugacy.
 * `TauCeti.ClassData.numClasses_eq_card_conjClasses`: the numbering has the expected length.
 * `TauCeti.ClassData.sum_index_centralizer_reps`: the class equation, read on the representatives.
 * `TauCeti.ClassData.index_map`, `TauCeti.ClassData.equivConjClasses_map`,
-  `TauCeti.ClassData.classFinset_map`: transported class data numbers the image of an element, and
-  of a class, as the original numbers the element and the class.
+  `TauCeti.ClassData.classFinset_map`, `TauCeti.ClassData.orderOf_rep_map`,
+  `TauCeti.ClassData.index_centralizer_rep_map`: transported class data numbers the image of an
+  element, and of a class, as the original numbers the element and the class, and preserves
+  representative orders and centralizer indices.
 * `TauCeti.ClassData.exists_mem_classes`, `TauCeti.ClassData.pairwise_disjoint_classes`: the
   executable list covers the group and its entries are pairwise disjoint.
 * `TauCeti.ClassData.sum_card_classFinset`: the numbered classes partition the group.
@@ -212,6 +216,42 @@ theorem not_isConj_rep {i j : Fin d.numClasses} (hij : i ≠ j) : ¬ IsConj (d.r
   · exact key h
   · exact fun hc => key h hc.symm
 
+/-- **Distinct indices name distinct conjugacy classes**, without assuming decidable conjugacy. -/
+@[simp]
+theorem classOf_inj {i j : Fin d.numClasses} : d.classOf i = d.classOf j ↔ i = j := by
+  refine ⟨fun h => by_contra fun hne => d.not_isConj_rep hne ?_, congrArg _⟩
+  rwa [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj] at h
+
+/-- `TauCeti.ClassData.classOf` is injective without assuming decidable conjugacy. -/
+theorem classOf_injective : Function.Injective d.classOf :=
+  fun _ _ => d.classOf_inj.mp
+
+/-- `TauCeti.ClassData.classOf` is surjective without assuming decidable conjugacy. -/
+theorem classOf_surjective : Function.Surjective d.classOf := by
+  refine ConjClasses.forall_isConj.mpr fun g => ?_
+  obtain ⟨x, hx, hxg⟩ := d.exists_isConj g
+  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
+  refine ⟨⟨i, hi⟩, ?_⟩
+  rw [d.classOf_eq_mk]
+  exact ConjClasses.mk_eq_mk_iff_isConj.mpr hxg
+
+/-- **The class numbering is a bijection** onto `ConjClasses G`, without assuming decidable
+conjugacy or finiteness. -/
+theorem classOf_bijective : Function.Bijective d.classOf :=
+  ⟨d.classOf_injective, d.classOf_surjective⟩
+
+/-- The `Set.ncard` of the `i`-th conjugacy class is the centralizer index of its
+representative. -/
+@[simp]
+theorem ncard_carrier_classOf (i : Fin d.numClasses) :
+    (d.classOf i).carrier.ncard = (Subgroup.centralizer {d.rep i}).index := by
+  rw [d.classOf_eq_mk, ConjClasses.ncard_carrier_mk]
+
+/-- The `Nat.card` of the `i`-th conjugacy class is the centralizer index of its representative. -/
+theorem card_carrier_classOf (i : Fin d.numClasses) :
+    Nat.card (d.classOf i).carrier = (Subgroup.centralizer {d.rep i}).index := by
+  rw [d.classOf_eq_mk, ConjClasses.card_carrier_mk]
+
 /-- The representatives are distinct, conjugacy being reflexive. -/
 theorem nodup_reps : d.reps.Nodup := by
   refine d.pairwise_not_isConj.imp fun {a b} h => ?_
@@ -275,6 +315,22 @@ theorem index_eq_index_iff {g h : G} : d.index g = d.index h ↔ IsConj g h := b
 @[simp]
 theorem classOf_index (g : G) : d.classOf (d.index g) = ConjClasses.mk g :=
   ConjClasses.mk_eq_mk_iff_isConj.mpr (d.isConj_rep_index g)
+
+/-- Every element has the same order as the chosen representative of its conjugacy class. -/
+@[simp]
+theorem orderOf_rep_index (g : G) :
+    orderOf (d.rep (d.index g)) = orderOf g := by
+  by_contra hne
+  exact ConjClasses.mk_ne_mk_of_orderOf_ne hne
+    (ConjClasses.mk_eq_mk_iff_isConj.mpr (d.isConj_rep_index g))
+
+/-- Every element has the same centralizer index as the chosen representative of its conjugacy
+class. -/
+@[simp]
+theorem index_centralizer_rep_index (g : G) :
+    (Subgroup.centralizer {d.rep (d.index g)}).index = (Subgroup.centralizer {g}).index := by
+  rw [← ConjClasses.card_carrier_mk, ← ConjClasses.card_carrier_mk, ← d.classOf_eq_mk,
+    d.classOf_index]
 
 /-- The number of a conjugacy class: `TauCeti.ClassData.index` is constant on classes, so it
 descends to `ConjClasses G`. -/
@@ -382,6 +438,12 @@ theorem card_classFinset (i : Fin d.numClasses) :
   rw [← Nat.card_eq_finsetCard]
   exact Nat.card_congr
     (Equiv.subtypeEquivRight fun x => by rw [← Finset.mem_coe, d.coe_classFinset i])
+
+/-- In a finite group, the size of the `i`-th class `Finset` is the centralizer index of its
+representative. -/
+theorem card_classFinset_eq_index_centralizer (i : Fin d.numClasses) :
+    (d.classFinset i).card = (Subgroup.centralizer {d.rep i}).index := by
+  rw [d.card_classFinset, d.card_carrier_classOf]
 
 /-- **Distinct numbered classes are disjoint.** -/
 theorem disjoint_classFinset {i j : Fin d.numClasses} (hij : i ≠ j) :
@@ -592,6 +654,46 @@ theorem map_refl : d.map (MulEquiv.refl G) = d :=
 @[simp]
 theorem map_map (f : H ≃* K) : (d.map e).map f = d.map (e.trans f) :=
   ClassData.ext (List.map_map ..)
+
+/-- Transporting class data along a multiplicative equivalence preserves the order of each
+representative. -/
+theorem orderOf_rep_map (i : Fin (d.map e).numClasses) :
+    orderOf ((d.map e).rep i) = orderOf (d.rep (Fin.cast (d.numClasses_map e) i)) := by
+  rw [rep_map, e.orderOf_eq]
+
+/-- Transporting class data along a multiplicative equivalence preserves the centralizer index of
+each representative. -/
+theorem index_centralizer_rep_map (i : Fin (d.map e).numClasses) :
+    (Subgroup.centralizer {(d.map e).rep i}).index =
+      (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}).index := by
+  have hcomap :
+      Subgroup.centralizer {(d.map e).rep i} =
+        (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}).comap
+          e.symm.toMonoidHom := by
+    ext y
+    simp only [rep_map, Subgroup.mem_centralizer_singleton_iff, Subgroup.mem_comap,
+      MulEquiv.coe_toMonoidHom]
+    exact ⟨fun h => by simpa using congrArg e.symm h, fun h => by simpa using congrArg e h⟩
+  rw [hcomap]
+  exact Subgroup.index_comap_of_surjective _ e.symm.surjective
+
+/-- Transporting class data along a multiplicative equivalence preserves the centralizer order of
+each representative. -/
+theorem card_centralizer_rep_map (i : Fin (d.map e).numClasses) :
+    Nat.card (Subgroup.centralizer {(d.map e).rep i}) =
+      Nat.card (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) := by
+  refine Nat.card_congr
+    { toFun := fun ⟨y, hy⟩ => ⟨e.symm y, ?_⟩
+      invFun := fun ⟨x, hx⟩ => ⟨e x, ?_⟩
+      left_inv := fun ⟨y, _⟩ => Subtype.ext (e.apply_symm_apply y)
+      right_inv := fun ⟨x, _⟩ => Subtype.ext (e.symm_apply_apply x) }
+  · have hy' : y * e (d.rep (Fin.cast (d.numClasses_map e) i)) =
+        e (d.rep (Fin.cast (d.numClasses_map e) i)) * y := by
+      simpa only [rep_map] using Subgroup.mem_centralizer_singleton_iff.mp hy
+    exact Subgroup.mem_centralizer_singleton_iff.mpr (by simpa using congrArg e.symm hy')
+  · have hx' := Subgroup.mem_centralizer_singleton_iff.mp hx
+    rw [Subgroup.mem_centralizer_singleton_iff, rep_map]
+    simpa using congrArg e hx'
 
 section Executable
 
