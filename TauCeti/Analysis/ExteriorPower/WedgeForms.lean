@@ -5,11 +5,10 @@ Authors: Ralf Stephan, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import TauCeti.Algebra.Order.BigOperators.Min
 public import TauCeti.LinearAlgebra.ExteriorPower.LinearForms
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Local bounds for wedge forms
@@ -34,6 +33,14 @@ put Plücker vectors into an approximation domain for the wedge forms.
 * `TauCeti.wedgeGain`: the minima attached to a set of forms, with the gain on the top block.
 
 ## Main results
+
+* `TauCeti.wedgeGain_const_mul_rpow`: the gain of minima `b · f ^ a` is `b ^ #T` times the
+  `a`-th power of the gain of `f`.
+* `TauCeti.wedgeGain_eq_prod_update`: for `μ k ≠ 0` and a set of forms in the top block
+  containing the form `σ k`, the gain cancels `μ k`, leaving the product of the minima with `μ k`
+  replaced by `μ (k - 1)`.
+* `TauCeti.prod_wedgeGain`: the product of the gains over all `p`-subsets, for `0 < p` and
+  `k + p = card κ`.
 
 * `AbsoluteValue.apply_wedgeForms_plucker_le`: the refined local wedge bound.
 * `AbsoluteValue.apply_wedgeForms_plucker_le_prod`: the wedge bound at a nonarchimedean absolute
@@ -60,28 +67,104 @@ variable {κ : Type*} {n : ℕ}
 /-- **The minima attached to a set of forms, with the gain on the top block.** Given a jump index
 `k`, minima `μ` and a bijection `σ` from the indices of the minima to the forms, this is the
 product of the `μ (σ.symm t)` over `t ∈ T`, multiplied by the gain `μ (k - 1) / μ k` when every
-`σ.symm t` is at least `k`, that is, when `T` lies in the top block of `σ`. -/
-@[expose] noncomputable def wedgeGain (k : ℕ) (μ : ℕ → ℝ) (σ : Fin n ≃ κ) (T : Finset κ) : ℝ :=
+`σ.symm t` is at least `k`, that is, when `T` lies in the top block of `σ`. Use `wedgeGain_def`,
+`wedgeGain_of_forall_le` and `wedgeGain_of_not_forall_le` to evaluate it. -/
+noncomputable def wedgeGain (k : ℕ) (μ : ℕ → ℝ) (σ : Fin n ≃ κ) (T : Finset κ) : ℝ :=
   (if ∀ t ∈ T, k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) * ∏ t ∈ T, μ (σ.symm t)
+
+/-- The definition of `wedgeGain`, as a rewrite rule. -/
+theorem wedgeGain_def (k : ℕ) (μ : ℕ → ℝ) (σ : Fin n ≃ κ) (T : Finset κ) :
+    wedgeGain k μ σ T =
+      (if ∀ t ∈ T, k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) * ∏ t ∈ T, μ (σ.symm t) :=
+  (rfl)
+
+/-- On the top block, the minima attached to `T` carry the gain `μ (k - 1) / μ k`. -/
+@[simp]
+theorem wedgeGain_of_forall_le {k : ℕ} {μ : ℕ → ℝ} {σ : Fin n ≃ κ} {T : Finset κ}
+    (hT : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)) :
+    wedgeGain k μ σ T = μ (k - 1) / μ k * ∏ t ∈ T, μ (σ.symm t) := by
+  rw [wedgeGain_def, ite_eq_left hT]
+
+/-- Off the top block, the minima attached to `T` are the product of the `μ (σ.symm t)`. -/
+@[simp]
+theorem wedgeGain_of_not_forall_le {k : ℕ} {μ : ℕ → ℝ} {σ : Fin n ≃ κ} {T : Finset κ}
+    (hT : ¬∀ t ∈ T, k ≤ (σ.symm t : ℕ)) :
+    wedgeGain k μ σ T = ∏ t ∈ T, μ (σ.symm t) := by
+  rw [wedgeGain_def, ite_eq_right hT, one_mul]
 
 /-- The minima attached to a set of forms, with the gain, are nonnegative for nonnegative
 minima. -/
 theorem wedgeGain_nonneg {k : ℕ} {μ : ℕ → ℝ} (hμ : ∀ l, 0 ≤ μ l) (σ : Fin n ≃ κ)
     (T : Finset κ) : 0 ≤ wedgeGain k μ σ T := by
-  refine mul_nonneg ?_ (prod_nonneg fun _ _ ↦ hμ _)
-  split_ifs
-  exacts [div_nonneg (hμ _) (hμ _), zero_le_one]
+  by_cases hT : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)
+  · rw [wedgeGain_of_forall_le hT]
+    exact mul_nonneg (div_nonneg (hμ _) (hμ _)) (prod_nonneg fun _ _ ↦ hμ _)
+  · rw [wedgeGain_of_not_forall_le hT]
+    exact prod_nonneg fun _ _ ↦ hμ _
 
 /-- The minima attached to a nonempty set of forms, with the gain, are positive when the first
 `n` minima are. -/
 theorem wedgeGain_pos {k : ℕ} {μ : ℕ → ℝ} (hμ : ∀ l < n, 0 < μ l) (σ : Fin n ≃ κ)
     {T : Finset κ} (hT : T.Nonempty) : 0 < wedgeGain k μ σ T := by
-  refine mul_pos ?_ (prod_pos fun t _ ↦ hμ _ (σ.symm t).isLt)
-  split_ifs with h
+  have hP : 0 < ∏ t ∈ T, μ (σ.symm t) := prod_pos fun t _ ↦ hμ _ (σ.symm t).isLt
+  by_cases h : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)
   · obtain ⟨t, ht⟩ := hT
     have hk : k < n := (h t ht).trans_lt (σ.symm t).isLt
-    exact div_pos (hμ _ (by omega)) (hμ _ hk)
-  · exact one_pos
+    rw [wedgeGain_of_forall_le h]
+    exact mul_pos (div_pos (hμ _ (by omega)) (hμ _ hk)) hP
+  · rwa [wedgeGain_of_not_forall_le h]
+
+/-- Replacing nonnegative minima `f` by `b · f ^ a`, for `b ≠ 0`, turns the minima attached to
+`T`, with the gain on the top block, into `b ^ #T` times their `a`-th power. -/
+theorem wedgeGain_const_mul_rpow {k : ℕ} {b : ℝ} (hb : b ≠ 0) {f : ℕ → ℝ} (hf : ∀ l, 0 ≤ f l)
+    {a : ℝ} (σ : Fin n ≃ κ) (T : Finset κ) :
+    wedgeGain k (fun l ↦ b * f l ^ a) σ T = b ^ T.card * wedgeGain k f σ T ^ a := by
+  have hP : 0 ≤ ∏ t ∈ T, f (σ.symm t) := prod_nonneg fun _ _ ↦ hf _
+  by_cases hT : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)
+  · rw [wedgeGain_of_forall_le hT, wedgeGain_of_forall_le hT, prod_mul_distrib, prod_const,
+      mul_div_mul_left _ _ hb, Real.mul_rpow (div_nonneg (hf _) (hf _)) hP,
+      Real.finsetProd_rpow _ _ fun _ _ ↦ hf _, Real.div_rpow (hf _) (hf _)]
+    ring
+  · rw [wedgeGain_of_not_forall_le hT, wedgeGain_of_not_forall_le hT, prod_mul_distrib,
+      prod_const, Real.finsetProd_rpow _ _ fun _ _ ↦ hf _]
+
+/-- **The minima attached to the top block, without the quotient.** Let `k < n` and `μ k ≠ 0`.
+For a set `T` of forms in the top block of `σ` that contains the form `σ k`, the gain
+`μ (k - 1) / μ k` cancels the minimum `μ k`: the minima attached to `T` with the gain are the
+product of the minima attached to `T` with `μ k` replaced by `μ (k - 1)`. -/
+theorem wedgeGain_eq_prod_update {k : ℕ} {μ : ℕ → ℝ} (hμ : μ k ≠ 0) (σ : Fin n ≃ κ)
+    (hk : k < n) {T : Finset κ} (hkT : σ ⟨k, hk⟩ ∈ T) (hT : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)) :
+    wedgeGain k μ σ T = ∏ t ∈ T, Function.update μ k (μ (k - 1)) (σ.symm t) := by
+  classical
+  have hinj : Function.Injective fun t ↦ (σ.symm t : ℕ) := Fin.val_injective.comp σ.symm.injective
+  have hupd (t : κ) : Function.update μ k (μ (k - 1)) (σ.symm t) =
+      Function.update (fun t ↦ μ (σ.symm t)) (σ ⟨k, hk⟩) (μ (k - 1)) t := by
+    simpa only [Equiv.symm_apply_apply] using
+      Function.update_apply_of_injective μ hinj (σ ⟨k, hk⟩) (μ (k - 1)) t
+  rw [prod_congr rfl fun t _ ↦ hupd t, prod_update_of_mem hkT, sdiff_singleton_eq_erase,
+    wedgeGain_of_forall_le hT, ← mul_prod_erase _ _ hkT, Equiv.symm_apply_apply, ← mul_assoc,
+    div_mul_cancel₀ _ hμ]
+
+/-- The product over the `p`-subsets `T` of the constant times the minima attached to `T` is
+`C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k`, for `0 < p` and `k + p = card κ`, with
+`M = (card κ).choose p` and `e = (card κ - 1).choose (p - 1)`: each index lies in `e` subsets and
+exactly one subset is the top block. -/
+theorem prod_wedgeGain [Fintype κ] (σ : Fin (Fintype.card κ) ≃ κ) {k p : ℕ} (hp : 0 < p)
+    (hkp : k + p = Fintype.card κ) (μ : ℕ → ℝ) (C : ℝ) :
+    ∏ T : Set.powersetCard κ p, C * wedgeGain k μ σ T =
+      C ^ (Fintype.card κ).choose p *
+        (∏ l : Fin (Fintype.card κ), μ l) ^ (Fintype.card κ - 1).choose (p - 1) *
+          (μ (k - 1) / μ k) := by
+  simp only [wedgeGain_def]
+  rw [prod_mul_distrib, prod_mul_distrib, prod_const, card_univ, Set.powersetCard.fintypeCard,
+    Set.powersetCard.prod_prod hp fun t ↦ μ (σ.symm t), Equiv.prod_comp σ.symm fun l ↦ μ l]
+  have hite : ∏ T : Set.powersetCard κ p, (if ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ) then
+      μ (k - 1) / μ k else 1) = μ (k - 1) / μ k := by
+    classical
+    simp_rw [forall_le_symm_iff_eq_map_topBlock σ hkp]
+    simp
+  rw [hite]
+  ring
 
 end TauCeti
 
@@ -114,13 +197,13 @@ private theorem prod_apply_le_ite_div_mul_prod [Fintype κ] (v : AbsoluteValue R
   have hm0 (b) : 0 ≤ min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) :=
     le_min (hμp _ (Fin.is_lt _)).le (hμp _ (Fin.is_lt _)).le
   have hmin : ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) ≤ wedgeGain k μ σ T := by
-    rw [wedgeGain, ← hperm (fun t ↦ μ (σ.symm t))]
-    split_ifs with hT
-    · exact prod_min_le_div_mul_prod hμm hμp
+    by_cases hT : ∀ t ∈ (T : Finset κ), k ≤ (σ.symm t : ℕ)
+    · rw [wedgeGain_of_forall_le hT, ← hperm (fun t ↦ μ (σ.symm t))]
+      exact prod_min_le_div_mul_prod hμm hμp
         (fun _ ↦ Fin.is_lt _) (fun _ ↦ Fin.is_lt _)
         (fun b ↦ hT _ ((mem_range_ofFinEmbEquiv_symm_iff_mem T _).1 ⟨τ b, rfl⟩))
         ⟨b₀, by simpa [eJ, hb₀] using hj₀k⟩
-    · rw [one_mul]
+    · rw [wedgeGain_of_not_forall_le hT, ← hperm (fun t ↦ μ (σ.symm t))]
       exact prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _
   have hmin0 : 0 ≤ ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) :=
     prod_nonneg fun b _ ↦ hm0 b

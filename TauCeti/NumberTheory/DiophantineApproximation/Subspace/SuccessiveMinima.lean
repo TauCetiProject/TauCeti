@@ -90,19 +90,38 @@ theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
   obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLInf c hQ
   simpa only [hcoe] using (approxModule S₀ L c Q).successiveMinimum_pos hB hl
 
-/-- Below `card ι`, the successive minima over `K` of an approximation domain of positive level,
-with forms independent at the infinite places and at `S₀`, are nondecreasing. -/
-theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
+/-- Below `card ι`, the successive minima over `K` of an approximation domain of positive level
+are nondecreasing, for any forms. The module `approxModule S₀ L c Q` spans `Kⁱ`
+(`span_approxModule_eq_top`) and the body is a neighbourhood of `0`, so some dilate of the body
+contains `card ι` independent vectors of the module. Restricting an independent family to an
+initial segment then shows that the admissible dilations only shrink as the index grows. -/
+theorem monotoneOn_successiveMinimum_approx (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
     (hQ : 0 < Q) :
     MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
       (Set.Iio (Fintype.card ι)) := by
-  let _ := discreteTopology_mixedImage_approxModule hLFin c Q
-  let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
-  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLInf c hQ
-  simpa only [hcoe] using (approxModule S₀ L c Q).monotoneOn_successiveMinimum hB
+  intro i _ j hj hij
+  have hj' : j < Fintype.card ι := hj
+  -- `j + 1` vectors of the module, independent over `K`.
+  obtain ⟨s, hsΛ, hspan, hli⟩ := exists_linearIndependent K (approxModule S₀ L c Q : Set (ι → K))
+  rw [span_approxModule_eq_top S₀ L c hQ.ne'] at hspan
+  let b := Basis.mk hli (by rw [Subtype.range_coe, hspan])
+  let _ := FiniteDimensional.fintypeBasisIndex b
+  have hcard : j + 1 ≤ Fintype.card s := by
+    rw [← Module.finrank_eq_card_basis b, Module.finrank_pi]
+    omega
+  let e : Fin (j + 1) → s := (Fintype.equivFin s).symm ∘ Fin.castLE hcard
+  have he : Function.Injective e :=
+    (Fintype.equivFin s).symm.injective.comp (Fin.castLE_injective hcard)
+  -- They lie in a common dilate of the body, since the body is a neighbourhood of `0`.
+  have hB := absorbent_nhds_zero (𝕜 := ℝ) (approxBody_mem_nhds_zero L c hQ)
+  obtain ⟨r, hr, hrB⟩ :=
+    (hB.absorbs_finite (Set.finite_range fun m l ↦ mixedEmbedding K ((e m : ι → K) l))).exists_pos
+  rw [Submodule.successiveMinimum_def, Submodule.successiveMinimum_def]
+  refine csInf_le_csInf ⟨0, fun _ ht ↦ ht.1.le⟩ ⟨r, hr, fun m ↦ e m, hli.comp e he, fun m ↦
+    ⟨hsΛ (e m).property, hrB r (Real.le_norm_self r) ⟨m, rfl⟩⟩⟩ ?_
+  rintro t ⟨ht, y, hy, hyB⟩
+  exact ⟨ht, y ∘ Fin.castLE (by omega), hy.comp _ (Fin.castLE_injective _), fun m ↦ hyB _⟩
 
 /-- **The successive minima of an approximation domain, lower bound** (Bombieri–Gubler, Theorem
 C.2.11 with Corollary 7.5.8): for `0 < Q` and linearly independent forms at the infinite places and
