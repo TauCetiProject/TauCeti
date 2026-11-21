@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -31,10 +32,18 @@ the case `φ = p.subtype`.
 Two surjective linear maps with the same kernel identify their codomains, by the first
 isomorphism theorem; `LinearMap.equivOfSurjectiveOfKerEq` packages this equivalence.
 
+For linear maps `f : M₁ → M₂` and `g : M₂ → M₃` with `g ∘ f = 0`, the homology of
+`M₁ → M₂ → M₃` can be described either as `ker g` modulo the image of `f`, or as the image of
+`ker g` in the cokernel of `f`; `LinearMap.mapMkQKerEquiv` identifies the two.
+
 If an ideal `I` annihilates `S`, every linear map `M → S` kills `I • M`, so maps out of
 `M ⧸ I • M` into `S` are the same as maps out of `M`; `TauCeti.linearMapQuotientSMulTopEquiv`
 packages this as an additive equivalence. For `I = Ring.jacobson R` it applies to every semisimple
 `S`, by `IsSemisimpleModule.jacobson_le_annihilator`.
+
+The images of a set `S` span `M ⧸ p` exactly when `p ⊔ span S = ⊤`
+(`Submodule.span_image_mkQ_eq_top_iff`). When the quotient is finitely generated, finitely many
+vectors of `S` already suffice (`Submodule.exists_finset_subset_sup_span_eq_top`).
 -/
 
 public section
@@ -125,6 +134,24 @@ theorem quotientComapEquivSupQuotient_apply_mk {P : Type*} [AddCommGroup P] [Mod
   simp [quotientComapEquivSupQuotient]
   rfl
 
+/-- The images of a set `S` span the quotient `M ⧸ p` exactly when `p` and the span of `S`
+together span `M`. -/
+theorem span_image_mkQ_eq_top_iff {p : Submodule R M} {S : Set M} :
+    span R (p.mkQ '' S) = ⊤ ↔ p ⊔ span R S = ⊤ := by
+  rw [← map_span, map_mkQ_eq_top]
+
+/-- **Finitely many vectors complete a submodule with finitely generated quotient.** If `M ⧸ p`
+is finitely generated and `p ⊔ span R S = ⊤`, then some finite subset `t ⊆ S` already gives
+`p ⊔ span R t = ⊤`. -/
+theorem exists_finset_subset_sup_span_eq_top {p : Submodule R M} [Module.Finite R (M ⧸ p)]
+    {S : Set M} (h : p ⊔ span R S = ⊤) : ∃ t : Finset M, ↑t ⊆ S ∧ p ⊔ span R t = ⊤ := by
+  classical
+  rw [← span_image_mkQ_eq_top_iff] at h
+  obtain ⟨b, hbS, hbspan⟩ := (fg_span_iff_fg_span_finset_subset _).1 (h ▸ Module.Finite.fg_top)
+  obtain ⟨t, htS, rfl⟩ := Finset.subset_set_image_iff.1 hbS
+  refine ⟨t, htS, ?_⟩
+  rw [← span_image_mkQ_eq_top_iff, ← Finset.coe_image, ← hbspan, h]
+
 end Submodule
 
 namespace LinearMap
@@ -152,6 +179,32 @@ under the first map. -/
 theorem equivOfSurjectiveOfKerEq_symm_apply (x : M) :
     (g.equivOfSurjectiveOfKerEq h hg hh hk).symm (h x) = g x :=
   (LinearEquiv.symm_apply_eq _).mpr (equivOfSurjectiveOfKerEq_apply g h hg hh hk x).symm
+
+section MapMkQKer
+
+variable {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  [AddCommGroup M₃] [Module R M₃]
+
+/-- For linear maps `f : M₁ → M₂` and `g : M₂ → M₃` with `g ∘ f = 0`, the image of `ker g` in the
+cokernel of `f` is the quotient of `ker g` by the image of `f`, that is by the range of the
+corestriction of `f` to `ker g`. Both describe the homology of `M₁ → M₂ → M₃`. -/
+noncomputable def mapMkQKerEquiv (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃)
+    (hfg : ∀ x, f x ∈ ker g) :
+    (ker g ⧸ range (f.codRestrict (ker g) hfg)) ≃ₗ[R] (ker g).map (range f).mkQ :=
+  Submodule.quotEquivOfEq _ _ (by
+      rw [range_codRestrict, ker_comp, Submodule.ker_mkQ]) ≪≫ₗ
+    ((range f).mkQ ∘ₗ (ker g).subtype).quotKerEquivRange ≪≫ₗ
+      LinearEquiv.ofEq _ _ (by rw [range_comp, Submodule.range_subtype])
+
+/-- `mapMkQKerEquiv` sends the class of `x ∈ ker g` to the class of `x` modulo the image of `f`. -/
+@[simp]
+theorem coe_mapMkQKerEquiv_mk (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃) (hfg : ∀ x, f x ∈ ker g)
+    (x : ker g) :
+    (f.mapMkQKerEquiv g hfg (Submodule.Quotient.mk x) : M₂ ⧸ range f) =
+      Submodule.Quotient.mk (x : M₂) := by
+  simp [mapMkQKerEquiv]
+
+end MapMkQKer
 
 end LinearMap
 

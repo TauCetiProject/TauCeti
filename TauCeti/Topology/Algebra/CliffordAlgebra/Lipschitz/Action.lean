@@ -63,7 +63,7 @@ theorem continuous_lipschitzVectorAction :
     Continuous (fun p : lipschitzGroup Q × V => lipschitzVectorAction Q p.1 p.2) := by
   have hunits : Continuous (fun p : lipschitzGroup Q × V =>
       ((p.1 : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ)) :=
-    continuous_subtype_val.comp continuous_fst
+    continuous_subtypeVal.comp continuous_fst
   have hval : Continuous (fun p : lipschitzGroup Q × V =>
       (((p.1 : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) :=
     Units.continuous_val.comp hunits

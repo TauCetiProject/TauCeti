@@ -643,21 +643,21 @@ composite**: the composite joins the bottom endpoint of a through strand of `D�
 endpoint of the through strand of `D₁` that continues it. -/
 theorem composeDiagram_val_inl_eq_inr_throughEquiv
     (i : {i : Fin k // D₂.IsThrough (Sum.inl i)})
-    (h : D₁.IsThrough (Sum.inl (D₂.throughEquiv i).1)) :
-    (composeDiagram D₁ D₂).val (Sum.inl i.1) = Sum.inr (D₁.throughEquiv ⟨_, h⟩).1 :=
+    (h : D₁.IsThrough (Sum.inl (D₂.throughEquiv i).val)) :
+    (composeDiagram D₁ D₂).val (Sum.inl i.val) = Sum.inr (D₁.throughEquiv ⟨_, h⟩).val :=
   composeDiagram_val_inl_eq_inr_of_through D₁ D₂ (D₂.inr_throughEquiv i).symm
     (D₁.inr_throughEquiv ⟨_, h⟩).symm
 
 /-- **The caps of `D₂` are caps of the composite**: the composite matches a capped bottom point
 of `D₂` with the other end of that cap. -/
 theorem composeDiagram_val_inl_eq_inl_capMatching (i : {i : Fin k // D₂.IsCap (Sum.inl i)}) :
-    (composeDiagram D₁ D₂).val (Sum.inl i.1) = Sum.inl (D₂.capMatching.val i).1 :=
+    (composeDiagram D₁ D₂).val (Sum.inl i.val) = Sum.inl (D₂.capMatching.val i).val :=
   composeDiagram_val_inl_eq_inl_of_cap_lower D₁ D₂ (D₂.inl_capMatching i).symm
 
 /-- **The cups of `D₁` are cups of the composite**: the composite matches a cupped top point of
 `D₁` with the other end of that cup. -/
 theorem composeDiagram_val_inr_eq_inr_cupMatching (j : {j : Fin k // D₁.IsCup (Sum.inr j)}) :
-    (composeDiagram D₁ D₂).val (Sum.inr j.1) = Sum.inr (D₁.cupMatching.val j).1 :=
+    (composeDiagram D₁ D₂).val (Sum.inr j.val) = Sum.inr (D₁.cupMatching.val j).val :=
   composeDiagram_val_inr_eq_inr_of_cup_upper D₁ D₂ (D₁.inr_cupMatching j).symm
 
 /-- Every capped bottom point of `D₂` is a capped bottom point of the composite. -/
