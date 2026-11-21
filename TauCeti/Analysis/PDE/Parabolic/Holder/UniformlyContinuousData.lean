@@ -623,7 +623,7 @@ end Extension
 
 section Modulus
 
-variable [DecidableEq ι] (hT : (0 : ℝ) < T)
+variable [DecidableEq ι]
 
 /-- **The rate of attainment of a uniformly continuous initial datum.** There is a constant `C`,
 depending only on the dimension, `T`, `Λ`, `β` and `γ`, with the following property. Let
@@ -637,7 +637,7 @@ over distances at most `√t`, then
 For a nondecreasing modulus of continuity `ω` of `g` this is
 `‖u(·, t) - g‖_∞ ≤ C (ω(√t) + t (‖g‖_∞ + ‖f‖_∞))`: the rate depends on `g` only through `ω` and
 its supremum, so it is uniform over a bounded family of data with a common modulus. -/
-theorem exists_abs_euclideanCauchySolutionBUC_sub_le (Λ β γ : ℝ) :
+theorem exists_abs_euclideanCauchySolutionBUC_sub_le (hT : (0 : ℝ) < T) (Λ β γ : ℝ) :
     ∃ C ≥ 0, ∀ {α : ℝ≥0} (hα₀ : 0 < α) (hα₁ : α < 1)
       {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
       {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
@@ -699,7 +699,8 @@ theorem exists_abs_euclideanCauchySolutionBUC_sub_le (Λ β γ : ℝ) :
 `P uₖ = f`, `uₖ(·, 0) = gₖ` attain them uniformly in the family:
 `sup_{k, x} |uₖ(x, t) - gₖ(x)| → 0` as `t → 0⁺`. -/
 theorem tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous (hα₀ : 0 < α)
-    (hα₁ : α < 1) (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
@@ -739,7 +740,7 @@ theorem tendstoUniformly_euclideanCauchySolutionBUC (hα₀ : 0 < α) (hα₁ : 
     TendstoUniformly (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦
       euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) (slabMk x t))
       (fun x ↦ (w : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) :=
-  (tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous hT hα₀ hα₁ a b c ha f
+  (tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous hα₀ hα₁ hT a b c ha f
     (fun _ : Unit ↦ w)
     (uniformEquicontinuous_unique.2 ((mem_uniformContinuousSubmodule _).1 w.property))
     (M := ‖(w : EuclideanSpace ℝ ι →ᵇ ℝ)‖)

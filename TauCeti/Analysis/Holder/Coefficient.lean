@@ -22,9 +22,8 @@ coefficient entrywise in the same way.
 
 * `TauCeti.HolderSpace.trace_le_sum_norm`: `tr (aⁱʲ(p)) ≤ ∑ᵢ ‖aⁱⁱ‖`.
 * `TauCeti.HolderSpace.norm_sum_apply_smul_single_le_sum_norm`: `‖∑ᵢ bⁱ(p) eᵢ‖ ≤ ∑ᵢ ‖bⁱ‖`.
-* `TauCeti.HolderSpace.abs_apply_le_sum_sum_norm`, `TauCeti.HolderSpace.abs_apply_le_sum_norm`,
-  `TauCeti.HolderSpace.abs_apply_le_norm`: the entrywise bounds `|aⁱʲ(p)| ≤ ∑ᵢ ∑ⱼ ‖aⁱʲ‖`,
-  `|bⁱ(p)| ≤ ∑ᵢ ‖bⁱ‖` and `|c(p)| ≤ ‖c‖`.
+* `TauCeti.HolderSpace.abs_apply_le_sum_sum_norm`, `TauCeti.HolderSpace.abs_apply_le_sum_norm`:
+  the entrywise bounds `|aⁱʲ(p)| ≤ ∑ᵢ ∑ⱼ ‖aⁱʲ‖` and `|bⁱ(p)| ≤ ∑ᵢ ‖bⁱ‖`.
 -/
 
 public section
@@ -45,10 +44,6 @@ theorem norm_sum_apply_smul_single_le_sum_norm [DecidableEq ι] (b : ι → Hold
     (p : X) : ‖∑ i, b i p • EuclideanSpace.single i (1 : ℝ)‖ ≤ ∑ i, ‖b i‖ :=
   (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ by
     simpa [norm_smul] using norm_apply_le (b i) _)
-
-/-- A scalar Hölder function is bounded pointwise by its norm: `|c(p)| ≤ ‖c‖`. -/
-theorem abs_apply_le_norm (c : HolderSpace α X ℝ) (p : X) : |c p| ≤ ‖c‖ :=
-  (Real.norm_eq_abs _).symm.trans_le (norm_apply_le c p)
 
 /-- Each drift coefficient is bounded pointwise by the sum of their norms:
 `|bⁱ(p)| ≤ ∑ᵢ ‖bⁱ‖`. -/
