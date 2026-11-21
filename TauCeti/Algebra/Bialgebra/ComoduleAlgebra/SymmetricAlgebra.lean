@@ -13,9 +13,10 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 /-!
 # Symmetric algebras of comodules as comodule algebras
 
-This file equips the symmetric algebra of a comodule with its natural comodule-algebra structure.
-It also records that homogeneous components of coinvariants remain coinvariant and constructs the
-equivariant algebra map induced by the inclusion of a subcomodule into a comodule algebra.
+This file equips the symmetric algebra of a comodule over a commutative bialgebra with its natural
+comodule-algebra structure. It also records that homogeneous components of coinvariants remain
+coinvariant and constructs the equivariant algebra map induced by the inclusion of a subcomodule
+into a comodule algebra.
 
 ## Main declarations
 

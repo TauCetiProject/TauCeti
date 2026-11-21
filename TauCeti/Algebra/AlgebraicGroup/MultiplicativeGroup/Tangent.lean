@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
-import TauCeti.Algebra.DualNumber.Basic
-import TauCeti.Algebra.Polynomial.Laurent.Basic
+public import TauCeti.Algebra.DualNumber.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # The tangent Lie algebra of the multiplicative group
@@ -26,6 +26,10 @@ even when `B` is noncommutative. For commutative `B`, the tangent Lie bracket va
   Laurent monomial by its exponent times their value on `T`.
 * `TauCeti.MultiplicativeGroup.tangentLinearEquiv`: the tangent space of `𝔾ₘ` is linearly
   equivalent to `B`.
+* `TauCeti.MultiplicativeGroup.derivationToTrivSqZeroExtEquivLift_tangentLinearEquiv_symm` and
+  `TauCeti.MultiplicativeGroup.derivationMulEquivTangentKer_tangentLinearEquiv_symm`: the
+  dual-number point attached to `tangentLinearEquiv.symm b` is Laurent evaluation at the
+  dual-number unit `1 + ε b`.
 * `TauCeti.MultiplicativeGroup.tangent_bracket_eq_zero`: the tangent Lie bracket of `𝔾ₘ`
   vanishes.
 * `TauCeti.MultiplicativeGroup.mapValue_derivationComp_tangentLinearEquiv_symm_one`:
@@ -167,6 +171,22 @@ theorem tangentLinearEquiv_symm_apply_T (b : B) (n : ℤ) :
       (tangentLinearEquiv (R := R) (B := B)).apply_symm_apply b
   rw [derivation_T_zsmul, map_zsmul, h]
 
+/-- The dual-number algebra homomorphism corresponding to the tangent derivation
+`tangentLinearEquiv.symm b` of `𝔾ₘ` is Laurent evaluation at the dual-number unit `1 + ε b`. -/
+theorem derivationToTrivSqZeroExtEquivLift_tangentLinearEquiv_symm (b : B) :
+    (derivationToTrivSqZeroExtEquivLift R H C
+        ((tangentLinearEquiv (R := R) (B := B)).symm b)).val =
+      laurentEval (R := R) (dualNumberUnit ((CounitAlgebra.algEquivSelf R H B).symm b)) := by
+  apply laurentEval_unique
+  refine TrivSqZeroExt.ext ?_ ?_
+  · rw [derivationToTrivSqZeroExtEquivLift_apply_fst, CounitAlgebra.algebraMap_apply,
+      LaurentPolynomial.counit_T, ← CounitAlgebra.algebraMap_base R H B, map_one,
+      coe_dualNumberUnit, fst_add, fst_one, fst_inr, add_zero]
+  · rw [derivationToTrivSqZeroExtEquivLift_apply_snd, coe_dualNumberUnit, snd_add, snd_one,
+      snd_inr, zero_add]
+    apply (CounitAlgebra.algEquivSelf R H B).injective
+    rw [tangentLinearEquiv_symm_apply_T, one_zsmul, AlgEquiv.apply_symm_apply]
+
 /-- Coefficient change preserves the image of the multiplicative unit tangent vector under
 any cocharacter's differential. -/
 theorem mapValue_derivationComp_tangentLinearEquiv_symm_one
@@ -192,6 +212,17 @@ end Ring
 section Lie
 
 variable [CommRing B] [Algebra R B]
+
+/-- The dual-number tangent point corresponding to `tangentLinearEquiv.symm b` on `𝔾ₘ` is
+Laurent evaluation at the dual-number unit `1 + ε b`. -/
+theorem derivationMulEquivTangentKer_tangentLinearEquiv_symm (b : B) :
+    (derivationMulEquivTangentKer R H B
+        (Multiplicative.ofAdd ((tangentLinearEquiv (R := R) (B := B)).symm b))).val =
+      WithConv.toConv
+        (laurentEval (R := R) (dualNumberUnit ((CounitAlgebra.algEquivSelf R H B).symm b))) :=
+  WithConv.ofConv_injective <| by
+    rw [derivationMulEquivTangentKer_apply_ofConv, WithConv.ofConv_toConv, toAdd_ofAdd]
+    exact derivationToTrivSqZeroExtEquivLift_tangentLinearEquiv_symm b
 
 /-- **The tangent Lie algebra of `𝔾ₘ` is abelian.** -/
 @[simp]
