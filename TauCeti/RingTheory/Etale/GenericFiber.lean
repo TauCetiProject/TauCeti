@@ -66,9 +66,14 @@ variable {P B : Type*} [CommRing P] [CommRing B] [Algebra P B]
 /-- A reduced `P`-algebra `B` is torsion-free as soon as `P` maps injectively to `B ⧸ p` for every
 minimal prime `p` of `B`: an element killed by a nonzero scalar vanishes on every irreducible
 component of `Spec B`, so it is nilpotent. -/
-theorem isTorsionFree_of_forall_mem_minimalPrimes [Nontrivial P] [IsReduced B]
+theorem isTorsionFree_of_forall_mem_minimalPrimes [IsReduced B]
     (h : ∀ p ∈ minimalPrimes B, Function.Injective (algebraMap P (B ⧸ p))) :
     Module.IsTorsionFree P B := by
+  cases subsingleton_or_nontrivial P with
+  | inl _ =>
+    have := Module.subsingleton P B
+    exact ⟨fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
+  | inr _ => ?_
   refine .of_smul_eq_zero fun a b hab ↦ or_iff_not_imp_left.mpr fun ha ↦ ?_
   suffices hb : b ∈ sInf (minimalPrimes B) by
     rw [minimalPrimes, Ideal.sInf_minimalPrimes] at hb
@@ -152,7 +157,7 @@ private lemma algebraMap_residueField_eq_aeval (p : Ideal B) [p.IsPrime] (f : R[
 /-- **A coordinate transcendental on every component makes a reduced algebra torsion-free.** Let
 `B` be a reduced `R[X]`-algebra. If the image of `X` in the residue field of every minimal prime of
 `B` is transcendental over `R`, then `B` is torsion-free over `R[X]`. -/
-theorem isTorsionFree_polynomial_of_forall_transcendental [Nontrivial R] [IsReduced B]
+theorem isTorsionFree_polynomial_of_forall_transcendental [IsReduced B]
     (h : ∀ (p : Ideal B) [p.IsPrime], p ∈ minimalPrimes B →
       Transcendental R (algebraMap R[X] p.ResidueField X)) :
     Module.IsTorsionFree R[X] B := by

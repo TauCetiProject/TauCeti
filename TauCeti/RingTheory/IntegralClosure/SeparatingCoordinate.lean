@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Localization.Finiteness
 
 Let `R` be an integrally closed Noetherian domain with fraction field `K`, for instance a possibly
 non-excellent discrete valuation ring, let `A` be a finite type `R`-algebra, and let
-`B = A[1/π]` for a nonzero `π : R`, viewed as a `K`-algebra. Suppose that `B` is reduced, that
+`B = A[1/π]` for some `π : R`, viewed as a `K`-algebra. Suppose that `B` is reduced, that
 the residue field of every minimal prime of `B` is a transcendental extension of `K` with
 one-dimensional Kähler differentials, and that the special fibre `A ⧸ πA` has dimension at most
 one. This is the situation of an affine chart of a model of a smooth curve over a discrete
@@ -94,20 +94,25 @@ private lemma exists_notMem_finite_of_quasiFiniteAt_of_forall_isSeparable [IsNoe
 
 /-- **Finite normalization in a generically smooth curve.** Let `R` be an integrally closed
 Noetherian domain with fraction field `K`, for instance a discrete valuation ring, let `A` be a
-finite type `R`-algebra, and let `B = A[1/π]` for a nonzero `π : R`, carrying a compatible
+finite type `R`-algebra, and let `B = A[1/π]` for some `π : R`, carrying a compatible
 `K`-algebra structure. Suppose that `A ⧸ πA` has dimension at most one, that `B` is reduced, and
 that the residue field of every minimal prime of `B` is a transcendental extension of `K` with
 one-dimensional Kähler differentials. Then the integral closure of `A` in `B` is a finite
 `A`-module. No excellence or Japanese hypothesis on `R` is needed. -/
 theorem finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one [IsNoetherianRing R]
     [IsIntegrallyClosed R] [IsFractionRing R K] [Algebra.FiniteType R A]
-    {π : R} (hπ : π ≠ 0) [IsLocalization.Away (algebraMap R A π) B]
+    {π : R} [IsLocalization.Away (algebraMap R A π) B]
     [Ring.KrullDimLE 1 (A ⧸ Ideal.span {algebraMap R A π})] [IsReduced B]
     (h : ∀ (p : Ideal B) [p.IsPrime], p ∈ minimalPrimes B →
       Algebra.Transcendental K p.ResidueField ∧
         Module.finrank p.ResidueField Ω[p.ResidueField⁄K] = 1) :
     Module.Finite A (integralClosure A B) := by
   have := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  -- For `π = 0` the ring `B = A[1/0]` is zero.
+  rcases eq_or_ne π 0 with rfl | hπ
+  · have : Subsingleton B :=
+      IsLocalization.subsingleton (M := .powers (algebraMap R A 0)) ⟨1, by simp⟩
+    infer_instance
   refine .of_forall_isMaximal_exists_notMem fun q hq ↦ ?_
   by_cases hπq : algebraMap R A π ∉ q
   · exact ⟨_, hπq, IsLocalization.Away.finite_localizedModule_integralClosure _⟩
