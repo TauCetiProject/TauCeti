@@ -288,11 +288,10 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     (A : E →ₗ[ℂ] E') (hA : Set.MapsTo A (f.range : Set E) (g.range : Set E')) (v : E) :
     g.conjugationOfMaximalTotallyReal hg hmax' (A v) =
       A (f.conjugationOfMaximalTotallyReal hf hmax v) := by
-  unfold LinearMap.conjugationOfMaximalTotallyReal
-  apply LinearEquiv.conjugationOfComplexification_natural _ _ A
-  intro w
-  obtain ⟨w', hw'⟩ := hA (f.mem_range_self w)
-  exact ⟨w', by simpa only [IsBaseChange.equiv_tmul, one_smul] using hw'.symm⟩
+  have h := comp_eq_comp_of_mapsTo_realPoints (f.conjugationOfMaximalTotallyReal_involutive hf hmax)
+    A fun u hu ↦ mem_realPoints.mpr ((g.conjugationOfMaximalTotallyReal_eq_self_iff hg hmax' _).mpr
+      (hA ((f.conjugationOfMaximalTotallyReal_eq_self_iff hf hmax u).mp (mem_realPoints.mp hu))))
+  simpa only [LinearMap.comp_apply] using LinearMap.congr_fun h v
 
 namespace IsMaximalTotallyReal
 

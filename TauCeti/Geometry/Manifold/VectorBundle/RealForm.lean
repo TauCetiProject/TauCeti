@@ -39,9 +39,8 @@ is defined on a neighbourhood.
 * `TauCeti.maximalRealFormConjugationDiffeomorph`: the smooth fiber conjugation, with
   `TauCeti.maximalRealFormConjugationDiffeomorph_apply` (its fiber action),
   `TauCeti.maximalRealFormConjugationDiffeomorph_eq_self_iff` (its fixed locus is the given real
-  range), `TauCeti.maximalRealFormConjugationDiffeomorph_unique`,
-  `TauCeti.maximalRealFormConjugationDiffeomorph_congr_range` and
-  `TauCeti.maximalRealFormConjugationDiffeomorph_natural`.
+  range), `TauCeti.maximalRealFormConjugationDiffeomorph_unique` and
+  `TauCeti.maximalRealFormConjugationDiffeomorph_congr_range`.
 * `TauCeti.maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff`: the case of a subbundle
   given by submodules.
 * `TauCeti.contMDiffAt_totallyRealProjection`, `TauCeti.contMDiff_totallyRealProjection`: the
@@ -319,42 +318,6 @@ theorem maximalRealFormConjugationDiffeomorph_congr_range
   rw [(i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_congr_range
     (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
     (hrange p.proj)]
-
-variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedSpace ℂ G']
-  [IsScalarTower ℝ ℂ G'] {V' : B → Type*}
-  [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)] [∀ x, Module ℂ (V' x)]
-  [∀ x, IsScalarTower ℝ ℂ (V' x)] [∀ x, TopologicalSpace (V' x)]
-  [TopologicalSpace (TotalSpace G' V')] [FiberBundle G' V'] [VectorBundle ℂ G' V']
-  [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousConstSMul ℂ (V' x)]
-  [∀ x, ContinuousSMul ℝ (V' x)]
-
-local instance realFormAmbientVectorBundleReal' : VectorBundle ℝ G' V' :=
-  VectorBundle.restrictScalars ℝ ℂ G' V'
-
-omit [∀ x, TopologicalSpace (ℂ ⊗[ℝ] W x)] [∀ x, IsComplexificationTopology (W x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousConstSMul ℂ (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
-  [∀ x, ContinuousSMul ℝ (V x)] in
-/-- A complex-linear map `A` between the fibers over one base point `x` intertwines the fiber
-conjugation of the source real form with the actual smooth conjugation of the target one, even
-for different source and ambient bundles, as soon as it carries the range of one real inclusion
-into the range of the other. No map on the other fibers, no map between the real carriers and no
-smoothness of the source inclusion is needed. -/
-theorem maximalRealFormConjugationDiffeomorph_natural
-    (j : ∀ x, W' x →L[ℝ] V' x)
-    (hj : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, G')) n
-      (fun p : TotalSpace F' W' ↦ (⟨p.proj, j p.proj p.snd⟩ : TotalSpace G' V')))
-    (hjinj : ∀ x, Injective (j x))
-    (hjmax : ∀ x, IsMaximalTotallyReal
-      ((LinearMap.lsmul ℂ (V' x) Complex.I).restrictScalars ℝ) (j x).toLinearMap.range)
-    (x : B) (A : V x →ₗ[ℂ] V' x)
-    (hA : Set.MapsTo A ((i x).toLinearMap.range : Set (V x)) ((j x).toLinearMap.range : Set (V' x)))
-    (v : V x) :
-    maximalRealFormConjugationDiffeomorph j hj hjinj hjmax ⟨x, A v⟩ =
-      ⟨x, A ((i x).toLinearMap.conjugationOfMaximalTotallyReal (hinj x) (hmax x) v)⟩ := by
-  rw [maximalRealFormConjugationDiffeomorph_apply,
-    (i x).toLinearMap.conjugationOfMaximalTotallyReal_natural
-      (hinj x) (hmax x) (j x).toLinearMap (hjinj x) (hjmax x) A hA]
 
 end SmoothEquivalence
 
