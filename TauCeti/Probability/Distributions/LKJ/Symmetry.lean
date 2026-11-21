@@ -221,7 +221,7 @@ theorem integral_id_lkjMeasure (hη : 0 < η) :
   funext ij
   rw [← (symmetricCoordinates p).integral_comp_comm, eval_integral fun ij ↦ hcoords.eval ij]
   simp only [symmetricCoordinates_apply]
-  exact integral_coe_apply_lkjMeasure hη ij.1.1 ij.1.2
+  exact integral_coe_apply_lkjMeasure hη ij.val.1 ij.val.2
 
 /-! ### Sign symmetry and moments of partial-correlation Gram laws -/
 
@@ -234,23 +234,23 @@ theorem map_signChange_map_partialCorrelationGram_pi
         (fun R : Matrix (Fin p) (Fin p) ℝ ↦ Matrix.of fun i j ↦ s i * R i j * s j) =
       (Measure.pi μ).map partialCorrelationGram := by
   have hmap (ij : strictLowerTriangle p) :
-      (μ ij).map (fun x ↦ s ij.1.1 * s ij.1.2 * x) = μ ij := by
-    have habs : |s ij.1.1 * s ij.1.2| = 1 := by simp [abs_mul, hs]
+      (μ ij).map (fun x ↦ s ij.val.1 * s ij.val.2 * x) = μ ij := by
+    have habs : |s ij.val.1 * s ij.val.2| = 1 := by simp [abs_mul, hs]
     rcases (abs_eq (by norm_num : (0 : ℝ) ≤ 1)).1 habs with h | h
     · simp [h]
     · simp [h]
   have (ij : strictLowerTriangle p) : SigmaFinite
-      ((μ ij).map (fun x ↦ s ij.1.1 * s ij.1.2 * x)) := by
+      ((μ ij).map (fun x ↦ s ij.val.1 * s ij.val.2 * x)) := by
     rw [hmap]
     infer_instance
   have hpi : (Measure.pi μ).map
-      (fun z ij ↦ s ij.1.1 * s ij.1.2 * z ij) = Measure.pi μ := by
+      (fun z ij ↦ s ij.val.1 * s ij.val.2 * z ij) = Measure.pi μ := by
     rw [Measure.pi_map_pi (fun _ ↦ by fun_prop)]
     simp_rw [hmap]
   have hcomp :
       (fun R : Matrix (Fin p) (Fin p) ℝ ↦ Matrix.of fun i j ↦ s i * R i j * s j) ∘
         partialCorrelationGram = partialCorrelationGram ∘
-          (fun z ij ↦ s ij.1.1 * s ij.1.2 * z ij) := by
+          (fun z ij ↦ s ij.val.1 * s ij.val.2 * z ij) := by
     funext z i j
     exact (partialCorrelationGram_signChange z hs i j).symm
   rw [Measure.map_map (by fun_prop) continuous_partialCorrelationGram.measurable, hcomp,
@@ -285,31 +285,31 @@ theorem covariance_apply_map_partialCorrelationGram_pi
     (μ : strictLowerTriangle p → Measure ℝ) [∀ ij, SigmaFinite (μ ij)]
     [∀ ij, (μ ij).IsNegInvariant]
     {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
-    cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.1.1 ij.1.2,
-        fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.1.1 kl.1.2;
+    cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.val.1 ij.val.2,
+        fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.val.1 kl.val.2;
       (Measure.pi μ).map partialCorrelationGram] = 0 := by
-  have hij := ij.2
-  have hkl := kl.2
+  have hij := ij.property
+  have hkl := kl.property
   obtain ⟨v, hv, hvk, hvl⟩ := strictLowerTriangle.exists_index_ne_ne_of_ne hne
   let s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
   have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
-  have hsign : s ij.1.1 * s ij.1.2 = -1 := by
+  have hsign : s ij.val.1 * s ij.val.2 = -1 := by
     rcases hv with rfl | rfl <;> simp [s, hij.ne, hij.ne']
   have h := congrArg (fun ν : Measure (Matrix (Fin p) (Fin p) ℝ) ↦
-      ∫ R, R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2 ∂ν)
+      ∫ R, R ij.val.1 ij.val.2 * R kl.val.1 kl.val.2 ∂ν)
     (map_signChange_map_partialCorrelationGram_pi μ hs)
   rw [integral_map (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦
-      R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2)
+      R ij.val.1 ij.val.2 * R kl.val.1 kl.val.2)
     (by fun_prop : Measurable (fun R : Matrix (Fin p) (Fin p) ℝ ↦
       Matrix.of fun i j ↦ s i * R i j * s j)).aemeasurable
     (Matrix.measurable_apply.mul Matrix.measurable_apply).aestronglyMeasurable] at h
   simp only [Matrix.of_apply] at h
   have he : ∀ R : Matrix (Fin p) (Fin p) ℝ,
-      (s ij.1.1 * R ij.1.1 ij.1.2 * s ij.1.2) *
-        (s kl.1.1 * R kl.1.1 kl.1.2 * s kl.1.2) =
-          -(R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2) := by
+      (s ij.val.1 * R ij.val.1 ij.val.2 * s ij.val.2) *
+        (s kl.val.1 * R kl.val.1 kl.val.2 * s kl.val.2) =
+          -(R ij.val.1 ij.val.2 * R kl.val.1 kl.val.2) := by
     intro R
-    rw [mul_right_comm (s ij.1.1), hsign]
+    rw [mul_right_comm (s ij.val.1), hsign]
     simp [s, Ne.symm hvk, Ne.symm hvl]
   simp_rw [he, integral_neg] at h
   simp only [covariance, integral_apply_map_partialCorrelationGram_pi_of_ne μ hij.ne',

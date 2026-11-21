@@ -243,7 +243,7 @@ are right-regular over a commutative ring satisfying the strong rank condition. 
 theorem rank_degreePrincipalExtension [Fintype K] {R : Type*} [CommRing R] [StrongRankCondition R]
     (hr : ∀ i, IsRightRegular (r i : R)) :
     ((B.degreePrincipalExtension r).matrix.map (Int.castRingHom R)).rank = Fintype.card K := by
-  rw [Matrix.rank_eq_finrank_span_cols,
+  rw [← Matrix.finrank_span_range_col,
     finrank_span_eq_card (B.linearIndependent_degreePrincipalExtension r hr)]
 
 /-! ### Relabelling and degree one -/

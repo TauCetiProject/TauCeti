@@ -122,8 +122,8 @@ private theorem norm_fibreCoord_eq_one_iff {z : Fin (Module.finrank ℝ F) → �
 /-- The splitting of the coordinates of an `n`-cell of the disc bundle into the coordinates of the
 cell of `C` and the fibre coordinates. -/
 private abbrev cellSplit {n : ℕ} (c : DiscCell F C n) :
-    (Fin n → ℝ) ≃ᵢ (Fin c.1.1 → ℝ) × (Fin (Module.finrank ℝ F) → ℝ) :=
-  (Fin.appendIsometryOfEq c.1.2).symm
+    (Fin n → ℝ) ≃ᵢ (Fin c.1.val → ℝ) × (Fin (Module.finrank ℝ F) → ℝ) :=
+  (Fin.appendIsometryOfEq c.1.property).symm
 
 variable [FiniteDimensional ℝ F]
 
@@ -154,24 +154,24 @@ private theorem continuous_discCellFun {n : ℕ} (c : DiscCell F C n) :
 
 private theorem proj_discCellFun {n : ℕ} (c : DiscCell F C n) {x : Fin n → ℝ}
     (hx : x ∈ closedBall 0 1) :
-    (discCellFun (E := E) c x).proj = map c.1.1 c.2 (cellSplit c x).1 :=
+    (discCellFun (E := E) c x).proj = map c.1.val c.2 (cellSplit c x).1 :=
   (proj_cellFrame c.2 _).trans
-    (cellRetractMap_of_mem c.1.1 c.2
-      ((Fin.mem_closedBall_iff_appendIsometryOfEq_symm c.1.2).1 hx).1)
+    (cellRetractMap_of_mem c.1.val c.2
+      ((Fin.mem_closedBall_iff_appendIsometryOfEq_symm c.1.property).1 hx).1)
 
 private theorem norm_discCellFun {n : ℕ} (c : DiscCell F C n) (x : Fin n → ℝ) :
-    ‖(discCellFun (E := E) c x).2‖ = ‖fibreCoord F (cellSplit c x).2‖ :=
+    ‖(discCellFun (E := E) c x).snd‖ = ‖fibreCoord F (cellSplit c x).2‖ :=
   (cellFrame F E c.2 (cellSplit c x).1).frame.norm_map _
 
 /-- A vector over the image of a point `y` of the closed unit ball under the characteristic map of
 `c.2` is the value of `discCellFun c` at a point with base coordinates `y`. -/
-private theorem exists_discCellFun_eq {n : ℕ} (c : DiscCell F C n) {y : Fin c.1.1 → ℝ}
-    (hy : y ∈ closedBall 0 1) {v : TotalSpace F E} (hv : v.proj = map c.1.1 c.2 y) :
-    ∃ z, ‖fibreCoord F z‖ = ‖v.2‖ ∧ discCellFun c ((cellSplit c).symm (y, z)) = v := by
+private theorem exists_discCellFun_eq {n : ℕ} (c : DiscCell F C n) {y : Fin c.1.val → ℝ}
+    (hy : y ∈ closedBall 0 1) {v : TotalSpace F E} (hv : v.proj = map c.1.val c.2 y) :
+    ∃ z, ‖fibreCoord F z‖ = ‖v.snd‖ ∧ discCellFun c ((cellSplit c).symm (y, z)) = v := by
   have hp : v.proj = (cellFrame F E c.2 y).proj := by
-    rw [proj_cellFrame, cellRetractMap_of_mem c.1.1 c.2 hy, hv]
+    rw [proj_cellFrame, cellRetractMap_of_mem c.1.val c.2 hy, hv]
   -- Read `v` in the frame over `y`.
-  obtain ⟨w, hw, hwv⟩ : ∃ w, ‖w‖ = ‖v.2‖ ∧
+  obtain ⟨w, hw, hwv⟩ : ∃ w, ‖w‖ = ‖v.snd‖ ∧
       (⟨(cellFrame F E c.2 y).proj, (cellFrame F E c.2 y).frame w⟩ : TotalSpace F E) = v := by
     generalize cellFrame F E c.2 y = p at hp
     obtain ⟨b', φ⟩ := p
@@ -188,11 +188,11 @@ private theorem exists_discCellFun_eq {n : ℕ} (c : DiscCell F C n) {y : Fin c.
 
 private theorem image_closedBall_discCellFun {n : ℕ} (c : DiscCell F C n) :
     discCellFun (E := E) c '' closedBall 0 1 =
-      discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.1 c.2 := by
+      discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 := by
   ext v
   constructor
   · rintro ⟨x, hx, rfl⟩
-    obtain ⟨h₁, h₂⟩ := (Fin.mem_closedBall_iff_appendIsometryOfEq_symm c.1.2).1 hx
+    obtain ⟨h₁, h₂⟩ := (Fin.mem_closedBall_iff_appendIsometryOfEq_symm c.1.property).1 hx
     refine ⟨?_, ?_⟩
     · rw [mem_discBundle, norm_discCellFun, norm_fibreCoord_le_one_iff]
       exact mem_closedBall_zero_iff.1 h₂
@@ -201,40 +201,41 @@ private theorem image_closedBall_discCellFun {n : ℕ} (c : DiscCell F C n) :
   · rintro ⟨hv, y, hy, hyv⟩
     obtain ⟨z, hz, hzv⟩ := exists_discCellFun_eq c hy hyv.symm
     refine ⟨(cellSplit c).symm (y, z),
-      (Fin.mem_closedBall_iff_appendIsometryOfEq_symm c.1.2).2 ?_, hzv⟩
+      (Fin.mem_closedBall_iff_appendIsometryOfEq_symm c.1.property).2 ?_, hzv⟩
     rw [IsometryEquiv.apply_symm_apply]
     exact ⟨hy, mem_closedBall_zero_iff.2
       (norm_fibreCoord_le_one_iff.1 (hz ▸ mem_discBundle.1 hv))⟩
 
 private theorem image_ball_discCellFun {n : ℕ} (c : DiscCell F C n) :
     discCellFun (E := E) c '' ball 0 1 =
-      {v : TotalSpace F E | ‖v.2‖ < 1} ∩ TotalSpace.proj ⁻¹' openCell c.1.1 c.2 := by
+      {v : TotalSpace F E | ‖v.snd‖ < 1} ∩ TotalSpace.proj ⁻¹' openCell c.1.val c.2 := by
   ext v
   constructor
   · rintro ⟨x, hx, rfl⟩
-    obtain ⟨h₁, h₂⟩ := (Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.2).1 hx
+    obtain ⟨h₁, h₂⟩ := (Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.property).1 hx
     refine ⟨(norm_discCellFun c x).trans_lt
       (norm_fibreCoord_lt_one_iff.2 (mem_ball_zero_iff.1 h₂)), ?_⟩
     rw [mem_preimage, proj_discCellFun c (ball_subset_closedBall hx)]
     exact mem_image_of_mem _ h₁
   · rintro ⟨hv, y, hy, hyv⟩
     obtain ⟨z, hz, hzv⟩ := exists_discCellFun_eq c (ball_subset_closedBall hy) hyv.symm
-    refine ⟨(cellSplit c).symm (y, z), (Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.2).2 ?_, hzv⟩
+    refine ⟨(cellSplit c).symm (y, z), (Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.property).2 ?_,
+        hzv⟩
     rw [IsometryEquiv.apply_symm_apply]
     exact ⟨hy, mem_ball_zero_iff.2 (norm_fibreCoord_lt_one_iff.1 (hz ▸ hv))⟩
 
 private theorem image_sphere_discCellFun {n : ℕ} (c : DiscCell F C n) :
     discCellFun (E := E) c '' sphere 0 1 =
-      sphereBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.1 c.2 ∪
-        discBundle F E ∩ TotalSpace.proj ⁻¹' cellFrontier c.1.1 c.2 := by
+      sphereBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 ∪
+        discBundle F E ∩ TotalSpace.proj ⁻¹' cellFrontier c.1.val c.2 := by
   ext v
   constructor
   · rintro ⟨x, hx, rfl⟩
     have hx' := sphere_subset_closedBall hx
-    have hv : discCellFun c x ∈ discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.1 c.2 := by
+    have hv : discCellFun c x ∈ discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 := by
       rw [← image_closedBall_discCellFun (E := E) c]
       exact mem_image_of_mem _ hx'
-    rcases (Fin.mem_sphere_iff_appendIsometryOfEq_symm c.1.2).1 hx with ⟨h₁, -⟩ | ⟨-, h₂⟩
+    rcases (Fin.mem_sphere_iff_appendIsometryOfEq_symm c.1.property).1 hx with ⟨h₁, -⟩ | ⟨-, h₂⟩
     · refine Or.inr ⟨hv.1, ?_⟩
       rw [mem_preimage, proj_discCellFun c hx']
       exact mem_image_of_mem _ h₁
@@ -244,13 +245,13 @@ private theorem image_sphere_discCellFun {n : ℕ} (c : DiscCell F C n) :
   · rintro (⟨hv, y, hy, hyv⟩ | ⟨hv, y, hy, hyv⟩)
     · obtain ⟨z, hz, hzv⟩ := exists_discCellFun_eq c hy hyv.symm
       refine ⟨(cellSplit c).symm (y, z),
-        (Fin.mem_sphere_iff_appendIsometryOfEq_symm c.1.2).2 (Or.inr ?_), hzv⟩
+        (Fin.mem_sphere_iff_appendIsometryOfEq_symm c.1.property).2 (Or.inr ?_), hzv⟩
       rw [IsometryEquiv.apply_symm_apply]
       exact ⟨hy, mem_sphere_zero_iff_norm.2
         (norm_fibreCoord_eq_one_iff.1 (hz ▸ mem_sphereBundle.1 hv))⟩
     · obtain ⟨z, hz, hzv⟩ := exists_discCellFun_eq c (sphere_subset_closedBall hy) hyv.symm
       refine ⟨(cellSplit c).symm (y, z),
-        (Fin.mem_sphere_iff_appendIsometryOfEq_symm c.1.2).2 (Or.inl ?_), hzv⟩
+        (Fin.mem_sphere_iff_appendIsometryOfEq_symm c.1.property).2 (Or.inl ?_), hzv⟩
       rw [IsometryEquiv.apply_symm_apply]
       exact ⟨hy, mem_closedBall_zero_iff.2
         (norm_fibreCoord_le_one_iff.1 (hz ▸ mem_discBundle.1 hv))⟩
@@ -265,9 +266,10 @@ private theorem injOn_discCellFun {n : ℕ} (c : DiscCell F C n) :
     have hproj := congrArg TotalSpace.proj h
     rw [proj_discCellFun c (ball_subset_closedBall hx),
       proj_discCellFun c (ball_subset_closedBall hx')] at hproj
-    exact (map c.1.1 c.2).injOn
-      (by rw [source_eq]; exact ((Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.2).1 hx).1)
-      (by rw [source_eq]; exact ((Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.2).1 hx').1) hproj
+    exact (map c.1.val c.2).injOn
+      (by rw [source_eq]; exact ((Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.property).1 hx).1)
+      (by rw [source_eq]; exact ((Fin.mem_ball_iff_appendIsometryOfEq_symm c.1.property).1 hx').1)
+          hproj
   have h₂ : (cellSplit c x).2 = (cellSplit c x').2 := by
     unfold discCellFun at h
     rw [h₁] at h
@@ -314,17 +316,17 @@ private theorem mapsTo_discCellMap {n : ℕ} (c : DiscCell F C n) :
     ∃ I : Π k, Finset (DiscCell F C k), MapsTo (discCellMap (E := E) c) (sphere 0 1)
       (sphereBundle F E ∩ TotalSpace.proj ⁻¹' C ∪ discBundle F E ∩ TotalSpace.proj ⁻¹' D ∪
         ⋃ (k < n) (c' ∈ I k), discCellMap c' '' closedBall 0 1) := by
-  obtain ⟨I, hI⟩ := cellFrontier_subset_base_union_finite_closedCell c.1.1 c.2
+  obtain ⟨I, hI⟩ := cellFrontier_subset_base_union_finite_closedCell c.1.val c.2
   refine ⟨fun k ↦ ((Finset.range (k + 1)).subtype (· + Module.finrank ℝ F = k)).sigma
-    fun m ↦ I m.1, ?_⟩
+    fun m ↦ I m.val, ?_⟩
   rw [mapsTo_iff_image_subset, coe_discCellMap, image_sphere_discCellFun]
   rintro v (⟨hv, hvC⟩ | ⟨hv, hvC⟩)
-  · exact Or.inl (Or.inl ⟨hv, closedCell_subset_complex (C := C) c.1.1 c.2 hvC⟩)
+  · exact Or.inl (Or.inl ⟨hv, closedCell_subset_complex (C := C) c.1.val c.2 hvC⟩)
   rcases hI hvC with hvD | hvC
   · exact Or.inl (Or.inr ⟨hv, hvD⟩)
-  obtain ⟨m, hm, j, hj, hvj⟩ : ∃ m < c.1.1, ∃ j ∈ I m, v.proj ∈ closedCell m j := by
+  obtain ⟨m, hm, j, hj, hvj⟩ : ∃ m < c.1.val, ∃ j ∈ I m, v.proj ∈ closedCell m j := by
     simpa using hvC
-  have hn := c.1.2
+  have hn := c.1.property
   refine Or.inr (mem_iUnion₂.2 ⟨m + Module.finrank ℝ F, by omega, mem_iUnion₂.2
     ⟨⟨⟨m, rfl⟩, j⟩, Finset.mem_sigma.2 ⟨Finset.mem_subtype.2
       (Finset.mem_range.2 (Nat.lt_succ_of_le (Nat.le_add_right _ _))), hj⟩, ?_⟩⟩)
@@ -363,7 +365,7 @@ private theorem continuousOn_symm_discCellMap {n : ℕ} (c : DiscCell F C n) :
   refine disjoint_union_left.2 ⟨Disjoint.mono inter_subset_left inter_subset_left ?_,
     Disjoint.mono inter_subset_right inter_subset_right
       ((((disjoint_skeletonLT_openCell le_rfl).mono_left
-        (cellFrontier_subset_skeletonLT c.1.1 c.2))).preimage _)⟩
+        (cellFrontier_subset_skeletonLT c.1.val c.2))).preimage _)⟩
   exact disjoint_norm_lt_one_sphereBundle.symm
 
 /-- **The disc bundle over `C` has the weak topology.** A set `A` in the disc bundle over `C`
@@ -464,7 +466,7 @@ theorem isEmpty_cell_relCWComplexDiscBundle_of_lt {n : ℕ} (hn : n < Module.fin
     letI := relCWComplexDiscBundle F E C
     IsEmpty (cell (discBundle F E ∩ TotalSpace.proj ⁻¹' C) n) := by
   let := relCWComplexDiscBundle F E C
-  exact ⟨fun c ↦ by have := ((cellDiscBundleEquiv F E C n) c).1.2; omega⟩
+  exact ⟨fun c ↦ by have := ((cellDiscBundleEquiv F E C n) c).1.property; omega⟩
 
 variable {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell C m)
 
@@ -482,7 +484,7 @@ applied to the first `m` coordinates. -/
 theorem proj_map_relCWComplexDiscBundle {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
     letI := relCWComplexDiscBundle F E C
     (map n ((cellDiscBundleEquiv F E C n).symm c) x).proj =
-      map c.1.1 c.2 ((Fin.appendIsometryOfEq c.1.2).symm x).1 := by
+      map c.1.val c.2 ((Fin.appendIsometryOfEq c.1.property).symm x).1 := by
   rw [coe_map_relCWComplexDiscBundle]
   exact proj_discCellFun c hx
 
@@ -492,7 +494,7 @@ over the closed cell of `j`. -/
 theorem closedCell_relCWComplexDiscBundle :
     letI := relCWComplexDiscBundle F E C
     closedCell n ((cellDiscBundleEquiv F E C n).symm c) =
-      discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.1 c.2 := by
+      discBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 := by
   let := relCWComplexDiscBundle F E C
   rw [closedCell, coe_map_relCWComplexDiscBundle]
   exact image_closedBall_discCellFun c
@@ -503,7 +505,7 @@ less than one over the open cell of `j`. -/
 theorem openCell_relCWComplexDiscBundle :
     letI := relCWComplexDiscBundle F E C
     openCell n ((cellDiscBundleEquiv F E C n).symm c) =
-      {v : TotalSpace F E | ‖v.2‖ < 1} ∩ TotalSpace.proj ⁻¹' openCell c.1.1 c.2 := by
+      {v : TotalSpace F E | ‖v.snd‖ < 1} ∩ TotalSpace.proj ⁻¹' openCell c.1.val c.2 := by
   let := relCWComplexDiscBundle F E C
   rw [openCell, coe_map_relCWComplexDiscBundle]
   exact image_ball_discCellFun c
@@ -515,8 +517,8 @@ boundary of `j`. -/
 theorem cellFrontier_relCWComplexDiscBundle :
     letI := relCWComplexDiscBundle F E C
     cellFrontier n ((cellDiscBundleEquiv F E C n).symm c) =
-      sphereBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.1 c.2 ∪
-        discBundle F E ∩ TotalSpace.proj ⁻¹' cellFrontier c.1.1 c.2 := by
+      sphereBundle F E ∩ TotalSpace.proj ⁻¹' closedCell c.1.val c.2 ∪
+        discBundle F E ∩ TotalSpace.proj ⁻¹' cellFrontier c.1.val c.2 := by
   let := relCWComplexDiscBundle F E C
   rw [cellFrontier, coe_map_relCWComplexDiscBundle]
   exact image_sphere_discCellFun c
@@ -528,7 +530,7 @@ theorem finite_relCWComplexDiscBundle [RelCWComplex.Finite C] :
   let := relCWComplexDiscBundle F E C
   have (m : ℕ) : _root_.Finite (cell C m) := FiniteType.finite_cell m
   have (k : ℕ) : Subsingleton {m : ℕ // m + Module.finrank ℝ F = k} :=
-    ⟨fun a b ↦ Subtype.ext (by have := a.2; have := b.2; omega)⟩
+    ⟨fun a b ↦ Subtype.ext (by have := a.property; have := b.property; omega)⟩
   have : RelCWComplex.FiniteDimensional (discBundle F E ∩ TotalSpace.proj ⁻¹' C) := by
     refine ⟨?_⟩
     obtain ⟨N, hN⟩ := Filter.eventually_atTop.1

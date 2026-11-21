@@ -139,7 +139,7 @@ theorem thetaCosetClass_intCast_vadd_of_level_dvd (hL : IsEven L) (γ : Discrimi
     {N : ℤ} (hN : (level L : ℤ) ∣ N) (τ : ℍ) :
     thetaCosetClass L γ ((N : ℝ) +ᵥ τ) = thetaCosetClass L γ τ := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.thetaCoset_intCast_vadd_of_level_dvd x.2 hN τ
+  | H x => exact hL.thetaCoset_intCast_vadd_of_level_dvd x.property hN τ
 
 /-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` has period `level L`. -/
 @[simp]
@@ -153,7 +153,7 @@ theorem thetaCosetClass_slash_T_zpow_of_level_dvd (hL : IsEven L) (γ : Discrimi
     (k : ℤ) {N : ℤ} (hN : (level L : ℤ) ∣ N) :
     thetaCosetClass L γ ∣[k] (ModularGroup.T ^ N) = thetaCosetClass L γ := by
   induction γ using Submodule.Quotient.induction_on with
-  | H x => exact hL.thetaCoset_slash_T_zpow_of_level_dvd x.2 k hN
+  | H x => exact hL.thetaCoset_slash_T_zpow_of_level_dvd x.property k hN
 
 /-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` is invariant under
 `T ^ (level L : ℤ)` in every weight. -/
@@ -208,9 +208,9 @@ theorem thetaSeries_sup_dual_eq_sum [DiscreteTopology L] [Fintype (DiscriminantG
     rw [LinearEquiv.coe_toEquiv, discriminantGroupEquivQuotientSup_mk, thetaCosetClass_mk]
     refine congrFun (thetaCoset_eq_of_sub_mem L ?_) τ
     have hq : Submodule.Quotient.mk
-        (Quotient.out (Submodule.Quotient.mk (⟨x, mem_sup_right x.2⟩ : ↥(L ⊔ dual L)) :
+        (Quotient.out (Submodule.Quotient.mk (⟨x, mem_sup_right x.property⟩ : ↥(L ⊔ dual L)) :
           ↥(L ⊔ dual L) ⧸ L.submoduleOf (L ⊔ dual L))) =
-        Submodule.Quotient.mk (⟨x, mem_sup_right x.2⟩ : ↥(L ⊔ dual L)) :=
+        Submodule.Quotient.mk (⟨x, mem_sup_right x.property⟩ : ↥(L ⊔ dual L)) :=
       Submodule.Quotient.mk_out _
     simpa [submoduleOf] using (Submodule.Quotient.eq _).mp hq
 
@@ -292,8 +292,8 @@ theorem thetaCosetClass_intCast_vadd (hL : IsEven L) (γ : DiscriminantGroup L) 
       hL.discriminantQuadraticChar γ ^ n * thetaCosetClass L γ τ := by
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
-    rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.2, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+    rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.property, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 
@@ -311,8 +311,8 @@ theorem thetaCosetClass_slash_T_zpow (hL : IsEven L) (γ : DiscriminantGroup L) 
       (hL.discriminantQuadraticChar γ ^ n) • thetaCosetClass L γ := by
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
-    rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.2, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+    rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.property, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 
