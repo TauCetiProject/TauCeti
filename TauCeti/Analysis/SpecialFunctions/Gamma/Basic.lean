@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.RingTheory.Binomial
 
 /-!
 # Measurability, reciprocal bounds, and ratio asymptotics of the Gamma function
@@ -73,9 +72,6 @@ valid including at positive integers where both sides vanish.
   for all `s` and `n`, including at the nonpositive integer poles of `Γ`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
-* `Complex.sum_antidiagonal_inv_factorial_mul_Gamma` — the Vandermonde convolution
-  `∑_{i + j = m} 1 / (i! Γ(b + i) j! Γ(c + j)) = (b + c + m − 1)_m / (m! Γ(b + m) Γ(c + m))`
-  for all complex `b` and `c`.
 * `Complex.Gamma_mul_sin_pi_mul` — Euler's reflection formula in reciprocal form:
   `Γ(s) * sin (π * s) = π / Γ(1 - s)` for `s ∉ -ℕ`, including at positive integers where both
   sides vanish.
@@ -399,47 +395,6 @@ theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : �
     have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
     field_simp
     ring
-
-open Finset in
-/-- The Chu–Vandermonde convolution of reciprocal Gamma-factorial weights: for all complex `b` and
-`c` and every `m : ℕ`,
-`∑_{i + j = m} 1 / (i! Γ(b + i) j! Γ(c + j)) = (b + c + m − 1)_m / (m! Γ(b + m) Γ(c + m))`.
-No pole exclusions are needed, because `1 / Γ` vanishes at nonpositive integers. -/
-theorem sum_antidiagonal_inv_factorial_mul_Gamma (b c : ℂ) (m : ℕ) :
-    ∑ p ∈ antidiagonal m,
-        (p.1 ! * Gamma (b + p.1))⁻¹ * (p.2 ! * Gamma (c + p.2))⁻¹ =
-      (ascPochhammer ℂ m).eval (b + c + m - 1) / (m ! * Gamma (b + m) * Gamma (c + m)) := by
-  have hchoose (w : ℂ) (k : ℕ) :
-      (k ! : ℂ)⁻¹ * (ascPochhammer ℂ k).eval w = Ring.choose (w + k - 1) k := by
-    rw [Ring.choose_eq_smul, Polynomial.descPochhammer_smeval_eq_ascPochhammer,
-      Polynomial.ascPochhammer_smeval_eq_eval, smul_eq_mul]
-    congr 2
-    ring
-  have hterm : ∀ p ∈ antidiagonal m,
-      (p.1 ! * Gamma (b + p.1))⁻¹ * (p.2 ! * Gamma (c + p.2))⁻¹ =
-        Ring.choose (c + m - 1) p.1 * Ring.choose (b + m - 1) p.2 *
-          (Gamma (b + m) * Gamma (c + m))⁻¹ := fun p hp => by
-    have hp' : (p.1 : ℂ) + (p.2 : ℂ) = m := by exact_mod_cast mem_antidiagonal.mp hp
-    have hb := inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (b + p.1) p.2
-    have hc := inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + p.2) p.1
-    have hbm : b + (p.1 : ℂ) + (p.2 : ℂ) = b + m := by linear_combination hp'
-    have hcm : c + (p.2 : ℂ) + (p.1 : ℂ) = c + m := by linear_combination hp'
-    rw [hbm] at hb
-    rw [hcm] at hc
-    rw [mul_inv, mul_inv, hb, hc, mul_inv]
-    calc ((p.1 ! : ℂ)⁻¹ * ((ascPochhammer ℂ p.2).eval (b + p.1) * (Gamma (b + m))⁻¹)) *
-          ((p.2 ! : ℂ)⁻¹ * ((ascPochhammer ℂ p.1).eval (c + p.2) * (Gamma (c + m))⁻¹))
-        = ((p.1 ! : ℂ)⁻¹ * (ascPochhammer ℂ p.1).eval (c + p.2)) *
-            ((p.2 ! : ℂ)⁻¹ * (ascPochhammer ℂ p.2).eval (b + p.1)) *
-            ((Gamma (b + m))⁻¹ * (Gamma (c + m))⁻¹) := by ring
-      _ = Ring.choose (c + (p.2 : ℂ) + p.1 - 1) p.1 *
-            Ring.choose (b + (p.1 : ℂ) + p.2 - 1) p.2 *
-            ((Gamma (b + m))⁻¹ * (Gamma (c + m))⁻¹) := by rw [hchoose, hchoose]
-      _ = _ := by rw [hcm, hbm]
-  rw [sum_congr rfl hterm, ← sum_mul, ← Ring.add_choose_eq m (Commute.all _ _)]
-  have harg : (c + m - 1) + (b + m - 1) = (b + c + m - 1) + m - 1 := by ring
-  rw [harg, ← hchoose (b + c + m - 1) m, div_eq_mul_inv, mul_inv, mul_inv]
-  ring
 
 open scoped Real in
 /-- Euler's reflection formula in reciprocal form: for `s ∉ -ℕ`,

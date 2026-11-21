@@ -10,11 +10,10 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Gamma.Multiplication
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.PowerLaplace
 
 /-!
 # Integral representation and Maclaurin series of `Ai(z)² + Bi(z)²`
@@ -143,23 +142,21 @@ theorem integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n : ℕ) (z : �
     IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
       (Ioi 0) := by
-  have hmajor := integrableOn_rpow_mul_exp_mul_sub_mul_rpow
-    (p := 3) (q := (n : ℝ) - 1 / 2) (b := 1 / 12)
-    (by norm_num) (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z.re
-  have hmeas : AEStronglyMeasurable
-      (fun t : ℝ => (t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
-      (volume.restrict (Ioi 0)) := by
-    refine ContinuousOn.aestronglyMeasurable ?_ measurableSet_Ioi
-    intro t (ht : 0 < t)
-    refine ContinuousAt.continuousWithinAt ?_
-    exact (((continuous_ofReal.pow n).mul
-      (Complex.continuous_exp.comp
-        ((continuous_const.mul continuous_ofReal).sub
-          ((continuous_ofReal.pow 3).div_const 12)))).continuousAt).mul
-      (continuousAt_ofReal_cpow_const t (-1 / 2) (Or.inr ht.ne'))
-  refine hmajor.mono' hmeas ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-  rw [norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow ht]
+  have hs : -1 < ((n : ℂ) - 1 / 2).re := by
+    rw [sub_re, natCast_re]
+    have hhalf : (1 / 2 : ℂ).re = 1 / 2 := by norm_num
+    rw [hhalf]
+    linarith [n.cast_nonneg (α := ℝ)]
+  refine (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 12)
+    (s := (n : ℂ) - 1 / 2) (by norm_num) (by norm_num) hs z).congr_fun
+    (fun t (ht : 0 < t) => ?_) measurableSet_Ioi
+  dsimp only
+  have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
+  have h3 : ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) := by norm_num
+  have hpow : (t : ℂ) ^ ((n : ℂ) - 1 / 2) = (t : ℂ) ^ n * (t : ℂ) ^ (-1 / 2 : ℂ) := by
+    rw [sub_eq_add_neg, cpow_add _ _ ht0, cpow_natCast, neg_div]
+  rw [hpow, h3, cpow_natCast, show (1 / 12 : ℂ) * (t : ℂ) ^ 3 = (t : ℂ) ^ 3 / 12 by ring]
+  ring
 
 /-- The integrand `t ↦ exp(z t − t³ / 12) t^{−1/2}` of DLMF 9.11.4 is Bochner integrable on
 `(0, ∞)` for every complex `z`. -/
@@ -169,40 +166,6 @@ theorem integrableOn_cexp_sub_cube_div_twelve_mul_cpow (z : ℂ) :
       (Ioi 0) := by
   simpa only [pow_zero, one_mul] using integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow 0 z
 
-private theorem integral_pow_mul_cexp_neg_cube_div_twelve_mul_cpow (m : ℕ) :
-    ∫ t in Ioi (0 : ℝ),
-        (t : ℂ) ^ m * cexp (-((t : ℂ) ^ 3 / 12)) * (t : ℂ) ^ (-1 / 2 : ℂ) =
-      (12 : ℂ) ^ (((m : ℂ) + 1 / 2) / 3) * Gamma (((m : ℂ) + 1 / 2) / 3) / 3 := by
-  have hcongr : EqOn
-      (fun t : ℝ => (t : ℂ) ^ m * cexp (-((t : ℂ) ^ 3 / 12)) * (t : ℂ) ^ (-1 / 2 : ℂ))
-      (fun t : ℝ => ((t ^ ((m : ℝ) - 1 / 2) * Real.exp (-(1 / 12) * t ^ (3 : ℝ)) : ℝ) : ℂ))
-      (Ioi 0) := by
-    intro t (ht : 0 < t)
-    dsimp only
-    have hnh : (-1 / 2 : ℂ) = ((-1 / 2 : ℝ) : ℂ) := by push_cast; ring
-    have hexp : -((t : ℂ) ^ 3 / 12) = ((-(1 / 12) * t ^ (3 : ℝ) : ℝ) : ℂ) := by
-      rw [Real.rpow_ofNat]; push_cast; ring
-    rw [hnh, ← ofReal_cpow ht.le, hexp, ← ofReal_exp, ← ofReal_pow, ← ofReal_mul, ← ofReal_mul]
-    congr 1
-    rw [← Real.rpow_natCast t m, mul_right_comm, ← Real.rpow_add ht]
-    congr 2
-    ring
-  have hreal := _root_.integral_rpow_mul_exp_neg_mul_rpow
-    (p := 3) (q := (m : ℝ) - 1 / 2) (b := 1 / 12)
-    (by norm_num) (by linarith [m.cast_nonneg (α := ℝ)]) (by norm_num)
-  have hs : ((m : ℝ) - 1 / 2 + 1) / 3 = ((m : ℝ) + 1 / 2) / 3 := by ring
-  have h12 : (1 / 12 : ℝ) ^ (-((m : ℝ) - 1 / 2 + 1) / 3) =
-      (12 : ℝ) ^ (((m : ℝ) + 1 / 2) / 3) := by
-    have hinv : (1 / 12 : ℝ) = (12 : ℝ)⁻¹ := one_div 12
-    rw [hinv, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num)]
-    congr 1; ring
-  rw [setIntegral_congr_fun measurableSet_Ioi hcongr, integral_complex_ofReal, hreal, hs, h12]
-  have hcast : ((((m : ℝ) + 1 / 2) / 3 : ℝ) : ℂ) = ((m : ℂ) + 1 / 2) / 3 := by push_cast; ring
-  push_cast
-  rw [ofReal_cpow (by norm_num : (0 : ℝ) ≤ 12), ← Gamma_ofReal, hcast]
-  push_cast
-  ring
-
 private theorem hasSum_integral_airy_product_series (z : ℂ) :
     HasSum
       (fun m : ℕ =>
@@ -211,52 +174,34 @@ private theorem hasSum_integral_airy_product_series (z : ℂ) :
       ((π : ℂ) ^ (-3 / 2 : ℂ) *
         ∫ t in Ioi (0 : ℝ),
           cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)) := by
-  let F : ℕ → ℝ → ℂ := fun m t =>
-    (z ^ m / m !) * ((t : ℂ) ^ m * cexp (-((t : ℂ) ^ 3 / 12)) * (t : ℂ) ^ (-1 / 2 : ℂ))
-  let bound : ℕ → ℝ → ℝ := fun m t =>
-    (‖z‖ * t) ^ m / m ! * (t ^ (-1 / 2 : ℝ) * Real.exp (-(1 / 12 * t ^ (3 : ℝ))))
-  have hmeas (m : ℕ) : AEStronglyMeasurable (F m) (volume.restrict (Ioi 0)) := by
-    have hint := (integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow m 0).const_mul
-      (z ^ m / m !)
-    refine hint.aestronglyMeasurable.congr ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _
-    simp [F]
-  have hbound (m : ℕ) : ∀ᵐ t ∂volume.restrict (Ioi 0), ‖F m t‖ ≤ bound m t := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-    have h0 := norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow ht m 0
-    simp only [zero_re, zero_mul, zero_sub] at h0
-    have hexp : (m : ℝ) - 1 / 2 = (m : ℝ) + (-1 / 2 : ℝ) := by ring
-    rw [norm_mul, h0, norm_div, norm_pow, Complex.norm_natCast, hexp, Real.rpow_add ht,
-      Real.rpow_natCast]
-    dsimp only [bound]
-    rw [mul_pow]
-    exact le_of_eq (by ring)
-  have hsum_bound : ∀ᵐ t ∂volume.restrict (Ioi 0), Summable fun m => bound m t := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _
-    exact (Real.summable_pow_div_factorial (‖z‖ * t)).mul_right _
-  have hint_bound : Integrable (fun t => ∑' m, bound m t) (volume.restrict (Ioi 0)) := by
-    have hmajor := integrableOn_rpow_mul_exp_mul_sub_mul_rpow
-      (p := 3) (q := -1 / 2) (b := 1 / 12) (by norm_num) (by norm_num) (by norm_num) ‖z‖
-    refine hmajor.congr ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _
-    have hexp := NormedSpace.expSeries_div_hasSum_exp (‖z‖ * t)
-    rw [← Real.exp_eq_exp_ℝ] at hexp
-    rw [(hexp.mul_right _).tsum_eq, mul_left_comm, ← Real.exp_add, sub_eq_add_neg]
-  have hlim : ∀ᵐ t ∂volume.restrict (Ioi 0),
-      HasSum (fun m => F m t)
-        (cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _
-    have hexp := (NormedSpace.expSeries_div_hasSum_exp (z * t)).mul_right
-      (cexp (-((t : ℂ) ^ 3 / 12)) * (t : ℂ) ^ (-1 / 2 : ℂ))
-    rw [← Complex.exp_eq_exp_ℂ, ← mul_assoc, ← Complex.exp_add, ← sub_eq_add_neg] at hexp
-    refine hexp.congr_fun fun m => ?_
-    simp only [F, mul_pow]
-    ring
-  have hdc := (hasSum_integral_of_dominated_convergence bound hmeas hbound hsum_bound
-    hint_bound hlim).mul_left ((π : ℂ) ^ (-3 / 2 : ℂ))
-  refine hdc.congr_fun fun m => ?_
-  dsimp only [F]
-  rw [integral_const_mul, integral_pow_mul_cexp_neg_cube_div_twelve_mul_cpow]
+  have hsum := (hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi
+    (p := 3) (b := 1 / 12) (s := -1 / 2) (by norm_num) (by norm_num) (by norm_num) z).mul_left
+    ((π : ℂ) ^ (-3 / 2 : ℂ))
+  have hint :
+      ∫ t in Ioi (0 : ℝ),
+          (t : ℂ) ^ (-1 / 2 : ℂ) * cexp (z * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) =
+        ∫ t in Ioi (0 : ℝ), cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) := by
+    refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+    have h3 : ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) := by norm_num
+    rw [h3, cpow_natCast, show (1 / 12 : ℂ) * (t : ℂ) ^ 3 = (t : ℂ) ^ 3 / 12 by ring, mul_comm]
+  rw [hint] at hsum
+  refine hsum.congr_fun fun m => ?_
+  have h12 : (1 / 12 : ℂ) ^ (-((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ)) =
+      (12 : ℂ) ^ (((m : ℂ) + 1 / 2) / 3) := by
+    have h12_real : ((1 / 12 : ℝ) : ℂ) = (1 / 12 : ℂ) := by push_cast; rfl
+    have hexp_real : ((-(((m : ℝ) + 1 / 2) / 3) : ℝ) : ℂ) =
+        -((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ) := by
+      push_cast; ring
+    have hexp_pos : ((((m : ℝ) + 1 / 2) / 3 : ℝ) : ℂ) = ((m : ℂ) + 1 / 2) / 3 := by
+      push_cast; ring
+    rw [← h12_real, ← hexp_real, ← ofReal_cpow (by norm_num),
+      show (1 / 12 : ℝ) = (12 : ℝ)⁻¹ by norm_num, Real.inv_rpow (by norm_num),
+      ← Real.rpow_neg (by norm_num), neg_neg, ofReal_cpow (by norm_num), hexp_pos]
+    norm_num
+  have harg : ((-1 / 2 : ℂ) + m + 1) / ((3 : ℝ) : ℂ) = ((m : ℂ) + 1 / 2) / 3 := by
+    push_cast; ring
+  have h3c : ((3 : ℝ) : ℂ) = (3 : ℂ) := by norm_num
+  rw [h12, harg, h3c]
   ring
 
 /-! ### Duplication–triplication identification of the Maclaurin coefficients -/
