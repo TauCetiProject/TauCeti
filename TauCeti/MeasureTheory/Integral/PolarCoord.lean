@@ -9,8 +9,10 @@ public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -28,7 +30,9 @@ This form of Mathlib's `Complex.integral_comp_polarCoord_symm` is suitable for c
 integration with Green's formula on a rectangle, without extending a map across the inner disc.
 For a continuous density in a real normed space,
 `TauCeti.integral_annulus_eq_integral_circleMap` expresses the same integral as an iterated
-integral with the radial variable outermost.
+integral with the radial variable outermost. For a radial function,
+`TauCeti.integral_fun_norm_complex` reduces the integral over `ℂ` to `2π` times its radial
+integral against `r`.
 
 The derivative formulas describe the radial and angular vectors of the inverse complex polar
 map. Evaluating the alternating part of a bilinear pairing on those vectors gives its value on
@@ -220,5 +224,14 @@ theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b
   simp_rw [integral_smul, integral_Icc_eq_integral_Ioc]
   rw [← intervalIntegral.integral_of_le hab]
   simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
+
+/-- Polar coordinates on `ℂ` for a radial function: the integral of a function of `‖z‖` is `2π`,
+the length of the unit circle, times its radial integral against `r`. No integrability is
+assumed: when one side is not integrable, neither is the other and both are `0`. -/
+theorem integral_fun_norm_complex (f : ℝ → F) :
+    ∫ z : ℂ, f ‖z‖ = (2 * π) • ∫ r in Ioi (0 : ℝ), r • f r := by
+  rw [integral_fun_norm_addHaar volume f, Complex.finrank_real_complex, measureReal_def,
+    Complex.volume_ball, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+  norm_num
 
 end TauCeti

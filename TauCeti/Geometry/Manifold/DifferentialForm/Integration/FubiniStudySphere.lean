@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Clutching
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
 # The Fubini–Study area of the standard sphere of the Riemann sphere
@@ -434,14 +435,9 @@ private theorem integral_Ioi_mul_areaDensity :
 /-- The integrand integrates to `1` over `ℂ`, in polar coordinates. -/
 private theorem integral_areaDensity_norm_sq :
     ∫ z : ℂ, Real.pi⁻¹ * areaDensity (‖z‖ ^ 2) = 1 := by
-  have h := integral_fun_norm_addHaar (volume : Measure ℂ)
-    (fun r : ℝ ↦ Real.pi⁻¹ * areaDensity (r ^ 2))
-  simp only [Complex.finrank_real_complex, Measure.real, Complex.volume_ball] at h
-  rw [h]
-  simp only [Nat.add_one_sub_one, pow_one, smul_eq_mul, integral_Ioi_mul_areaDensity]
-  simp only [ENNReal.ofReal_one, one_pow, one_mul, ENNReal.coe_toReal, NNReal.coe_real_pi]
+  rw [integral_fun_norm_complex fun r ↦ Real.pi⁻¹ * areaDensity (r ^ 2)]
+  simp only [smul_eq_mul, integral_Ioi_mul_areaDensity]
   field_simp
-  norm_num
 
 /-- The integrand integrates to `1` over the plane `ℝ × ℝ`. -/
 private theorem integral_areaDensity_radiusSq :
@@ -504,10 +500,8 @@ private def squareScale (y : Fin 2 → unitInterval) : ℝ :=
   √(1 - cubeRadius y ^ 2) / 2
 
 private theorem squareScale_pos {y : Fin 2 → unitInterval} (hy : y ∉ Cube.boundary (Fin 2)) :
-    0 < squareScale y := by
-  have h := (cubeRadius_le_one y).lt_of_ne (mt (cubeRadius_eq_one_iff y).1 hy)
-  have h0 := cubeRadius_nonneg y
-  exact half_pos (Real.sqrt_pos.2 (by nlinarith))
+    0 < squareScale y :=
+  half_pos (Real.sqrt_pos.2 (one_sub_cubeRadius_sq_pos hy))
 
 private theorem squareScale_of_mem {y : Fin 2 → unitInterval} (hy : y ∈ Cube.boundary (Fin 2)) :
     squareScale y = 0 := by
