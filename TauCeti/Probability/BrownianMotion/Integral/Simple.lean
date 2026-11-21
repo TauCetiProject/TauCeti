@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
+public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
 # Elementary values of the completed Brownian integral
@@ -18,7 +20,9 @@ The predictable L² integral agrees with finite-grid gains for random left-endpo
 holdings. Unlike the defining rectangle formula, the holdings need not take finitely many
 values or be bounded. Both results only require square integrability of the actual
 predictable time-product integrand, so they also cover empty intervals and intervals beyond
-the horizon without moment assumptions on their unused heights.
+the horizon without moment assumptions on their unused heights. Finite-grid holdings with
+square-integrable left-measurable heights belong to `TauCeti.BrownianIntegrable`
+(`TauCeti.BrownianIntegrable.simpleHolding`).
 
 These identities connect completion in predictable L² with elementary stochastic integrals.
 They concern terminal L² values and almost-everywhere equality at each fixed observation time,
@@ -180,3 +184,18 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
     simp [min_eq_right hTj, min_eq_right (hTj.trans hle), max_eq_left hTj]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
+
+namespace TauCeti.BrownianIntegrable
+
+/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
+`BrownianIntegrable`. -/
+theorem simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+    {P : Measure Ω} [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
+  ⟨Finance.isStronglyPredictable_simpleHolding ha, fun T ↦ by
+    simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using
+      (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
+        (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
+
+end TauCeti.BrownianIntegrable

@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.Predictable.Measure
-public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
 # Expected and pathwise square-energy domains
@@ -29,9 +27,8 @@ domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-meas
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
 
 Each `BrownianIntegrable` process embeds into `Lp ℝ 2 (ℱ.predictableMeasure P T)` via
-`TauCeti.BrownianIntegrable.toPredictableLp`, compatible with zero, addition, scaling, and
-product-a.e. congruence; elementary holdings belong to `BrownianIntegrable`
-(`TauCeti.BrownianIntegrable.simpleHolding`).
+`TauCeti.BrownianIntegrable.toPredictableLp`, compatible with zero, addition, negation,
+subtraction, scaling, and product-a.e. equality.
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
@@ -324,34 +321,38 @@ theorem coeFn_toPredictableLp_prod (hH : BrownianIntegrable ℱ P H) (T : ℝ≥
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_zero _
 
 /-- `BrownianIntegrable.toPredictableLp` commutes with pointwise addition of integrands. -/
-theorem toPredictableLp_add (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (T : ℝ≥0) : (hH.add hK).toPredictableLp T = hH.toPredictableLp T + hK.toPredictableLp T := by
+@[simp] theorem toPredictableLp_add (hH : BrownianIntegrable ℱ P H)
+    (hK : BrownianIntegrable ℱ P K) (T : ℝ≥0) :
+    (hH.add hK).toPredictableLp T = hH.toPredictableLp T + hK.toPredictableLp T := by
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_add _ _
 
 /-- `BrownianIntegrable.toPredictableLp` commutes with multiplication by a real constant. -/
-theorem toPredictableLp_const_mul (hH : BrownianIntegrable ℱ P H) (c : ℝ) (T : ℝ≥0) :
+@[simp] theorem toPredictableLp_const_mul (hH : BrownianIntegrable ℱ P H) (c : ℝ) (T : ℝ≥0) :
     (hH.const_mul c).toPredictableLp T = c • hH.toPredictableLp T := by
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_const_smul c _
 
-/-- Two `BrownianIntegrable` integrands that agree almost everywhere under `(timeMeasure T).prod P`
-have equal predictable `L²` embeddings on `[0, T]`. -/
-theorem toPredictableLp_congr (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    {T : ℝ≥0}
-    (hHK : Function.uncurry H =ᵐ[(Probability.timeMeasure T).prod P] Function.uncurry K) :
-    hH.toPredictableLp T = hK.toPredictableLp T := by
-  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  exact MemLp.toLp_congr _ _ ((ℱ.ae_eq_predictableMeasure_iff P
-    hH.isStronglyPredictable.measurable hK.isStronglyPredictable.measurable T).mpr hHK)
+/-- `BrownianIntegrable.toPredictableLp` commutes with pointwise negation of integrands. -/
+@[simp] theorem toPredictableLp_neg (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    hH.neg.toPredictableLp T = -hH.toPredictableLp T := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_neg _
 
-/-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
-`BrownianIntegrable`. -/
-theorem simpleHolding [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
-    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
-  ⟨Finance.isStronglyPredictable_simpleHolding ha, fun T ↦ by
-    simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using
-      (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
-        (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)⟩
+/-- `BrownianIntegrable.toPredictableLp` commutes with pointwise subtraction of integrands. -/
+@[simp] theorem toPredictableLp_sub (hH : BrownianIntegrable ℱ P H)
+    (hK : BrownianIntegrable ℱ P K) (T : ℝ≥0) :
+    (hH.sub hK).toPredictableLp T = hH.toPredictableLp T - hK.toPredictableLp T := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable; exact MemLp.toLp_sub _ _
+
+/-- Two `BrownianIntegrable` integrands have equal predictable `L²` embeddings on `[0, T]` if
+and only if they agree almost everywhere under `(timeMeasure T).prod P`. -/
+theorem toPredictableLp_eq_iff (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
+    {T : ℝ≥0} :
+    hH.toPredictableLp T = hK.toPredictableLp T ↔
+      Function.uncurry H =ᵐ[(Probability.timeMeasure T).prod P] Function.uncurry K := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  refine ⟨fun h ↦ (hH.coeFn_toPredictableLp_prod T).symm.trans
+    (h ▸ hK.coeFn_toPredictableLp_prod T), fun hHK ↦ MemLp.toLp_congr _ _ ?_⟩
+  exact (ℱ.ae_eq_predictableMeasure_iff P
+    hH.isStronglyPredictable.measurable hK.isStronglyPredictable.measurable T).mpr hHK
 
 end BrownianIntegrable
 

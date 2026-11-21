@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.L2
+public import TauCeti.Probability.BrownianMotion.Integral.Integrable
+import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.Process.ElementaryDensity
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 
@@ -16,7 +18,10 @@ An event known at time `s` can be pulled out of an integral over `(s,t]`, at any
 ambient horizon `T`. Consequently, if two integrands agree on that event after `s`,
 their future integrals agree there too. These identities provide the eventwise gluing
 used to compare stopped integrals. Representative-based forms also apply directly to
-L² classes, without requiring a particular `MemLp.toLp` cutoff expression.
+L² classes, without requiring a particular `MemLp.toLp` cutoff expression; for a
+`BrownianIntegrable` integrand within the horizon `T`, restricting to `(u, v] × E`
+gives the `E`-gated increment `hW.l2Integral v - hW.l2Integral u`
+(`coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub`).
 
 The statements concern the constructed terminal L² integral on the original filtration.
 They require neither continuous Brownian paths nor usual filtration conditions, and make
@@ -230,5 +235,64 @@ theorem ae_l2Integral_eq_of_mem_of_measurableSet_zero (hW : IsFilteredPreBrownia
   filter_upwards [hfg, hzero] with p hp hzero h
   exact hp (h.resolve_left (by simpa only [mem_prod, mem_singleton_iff, mem_univ,
     and_true, not_le, pos_iff_ne_zero, ne_eq] using hzero))
+
+/-- Restricting a `BrownianIntegrable` integrand to a predictable rectangle `(u, v] × E` within
+the horizon `T` evaluates to the `E`-gated increment of `l2Integral` from `u` to `v`. -/
+theorem coeFn_l2Integral_indicator_Ioc_prod_eq_indicator_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H)
+    {u v T : ℝ≥0} (huv : u ≤ v) (hvT : v ≤ T) {E : Set Ω} (hE : MeasurableSet[ℱ u] E) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    hW.l2Integral T ((hH.indicator_Ioc_prod u v hE).toPredictableLp T) =ᵐ[P]
+      E.indicator (fun ω ↦ hW.l2Integral v (hH.toPredictableLp v) ω -
+        hW.l2Integral u (hH.toPredictableLp u) ω) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  let f := hH.toPredictableLp T
+  have hL : ((Lp.memLp f).indicator
+      (measurableSet_predictable_Ioc_prod u v hE).nullMeasurableSet).toLp
+        ((Ioc u v ×ˢ E).indicator f) = (hH.indicator_Ioc_prod u v hE).toPredictableLp T := by
+    apply Lp.ext
+    filter_upwards [((Lp.memLp f).indicator
+        (measurableSet_predictable_Ioc_prod u v hE).nullMeasurableSet).coeFn_toLp,
+      hH.coeFn_toPredictableLp T, (hH.indicator_Ioc_prod u v hE).coeFn_toPredictableLp T]
+      with ⟨t, ω⟩ h1 h2 h3
+    rw [h1, h3]
+    by_cases ht : t ∈ Ioc u v <;> by_cases hω : ω ∈ E <;> simp [ht, hω, f, h2]
+  have hR : ((Lp.memLp f).indicator
+      (measurableSet_predictable_Ioc_prod u v (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).toLp
+        ((Ioc u v ×ˢ univ).indicator f) =
+      ℱ.predictableMeasureExtendLp P ℝ hvT (hH.toPredictableLp v) -
+        ℱ.predictableMeasureExtendLp P ℝ (huv.trans hvT) (hH.toPredictableLp u) := by
+    apply Lp.ext
+    filter_upwards [((Lp.memLp f).indicator (measurableSet_predictable_Ioc_prod u v
+        (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).coeFn_toLp,
+      Lp.coeFn_sub (ℱ.predictableMeasureExtendLp P ℝ hvT (hH.toPredictableLp v))
+        (ℱ.predictableMeasureExtendLp P ℝ (huv.trans hvT) (hH.toPredictableLp u)),
+      hH.coeFn_toPredictableLp T,
+      ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := ℝ) hvT (hH.coeFn_toPredictableLp v),
+      ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := ℝ) (huv.trans hvT)
+        (hH.coeFn_toPredictableLp u)] with ⟨t, ω⟩ h1 hsub hf hv hu
+    rw [h1, hsub]
+    dsimp only [f, Pi.sub_apply]
+    rw [hv, hu]
+    simp only [Function.uncurry_apply_pair, Set.indicator, Set.mem_prod,
+      Set.mem_Ioc, Set.mem_univ, and_true] at hf ⊢
+    by_cases hut : u < t <;> by_cases htv : t ≤ v
+    · have ht0 : 0 < t := bot_le.trans_lt hut
+      simp [hut, htv, ht0, not_le_of_gt hut, hf]
+    · simp [hut, htv, not_le_of_gt hut]
+    · have htu : t ≤ u := not_lt.mp hut
+      by_cases ht0 : 0 < t <;> simp [hut, htv, ht0, htu]
+    · exact False.elim (htv ((not_lt.mp hut).trans huv))
+  have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T u v hE f
+  rw [hL, hR, map_sub, hW.l2Integral_predictableMeasureExtendLp hvT,
+    hW.l2Integral_predictableMeasureExtendLp (huv.trans hvT)] at hloc
+  filter_upwards [hloc, Lp.coeFn_sub (hW.l2Integral v (hH.toPredictableLp v))
+    (hW.l2Integral u (hH.toPredictableLp u))] with ω hω hsub
+  rw [hω]
+  by_cases hωE : ω ∈ E
+  · simpa only [Set.indicator_of_mem hωE, Pi.sub_apply] using hsub
+  · simp only [Set.indicator_of_notMem hωE]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

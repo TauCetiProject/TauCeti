@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.Predictable.Measure
+import TauCeti.Analysis.Normed.Group.Real
 
 /-!
 # Square energy of elementary holdings
 
 The lower square-energy integral of an elementary holding is the sum of the squared
 heights times the masses of its trading intervals. For Lebesgue time on a finite
-horizon these masses are the clipped interval lengths. The formulas are pathwise,
+horizon these masses are the clipped interval lengths (both as a lower integral and, in
+`integral_sq_simpleHolding_timeMeasure`, as a Bochner integral). The formulas are pathwise,
 allow repeated dates and empty grids, and impose no moment or filtration hypotheses.
 
 These identities connect finite-grid stochastic-integral estimates to the actual
@@ -76,6 +78,28 @@ theorem lintegral_enorm_sq_simpleHolding_timeMeasure {τ : ℕ → ℝ≥0}
         ENNReal.ofReal ((min (τ (j + 1)) T : ℝ≥0) - (τ j : ℝ)) := by
   rw [Measure.lintegral_enorm_sq_simpleHolding _ hτ (fun _ _ ↦ measurableSet_Ioc)]
   simp only [TauCeti.Probability.timeMeasure_Ioc]
+
+/-- Under finite-horizon Lebesgue time, the Bochner square energy of a simple holding uses
+the interval lengths clipped at the horizon. -/
+theorem integral_sq_simpleHolding_timeMeasure {τ : ℕ → ℝ≥0}
+    (hτ : MonotoneOn τ (Set.Iic n)) (T : ℝ≥0) (ω : Ω) :
+    ∫ s, simpleHolding τ n a s ω ^ 2 ∂TauCeti.Probability.timeMeasure T =
+      ∑ i ∈ range n, a i ω ^ 2 * (↑(min (τ (i + 1)) T) - ↑(min (τ i) T)) := by
+  have hm : AEStronglyMeasurable (fun s ↦ simpleHolding τ n a s ω ^ 2)
+      (TauCeti.Probability.timeMeasure T) := by
+    simp only [simpleHolding_def]
+    exact ((Finset.measurable_sum (range n) fun _ _ ↦
+      measurable_const.indicator measurableSet_Ioc).pow_const 2).aestronglyMeasurable
+  rw [integral_eq_lintegral_of_nonneg_ae (.of_forall fun _ ↦ sq_nonneg _) hm]
+  simp_rw [← Real.enorm_sq_eq_ofReal_sq]
+  rw [lintegral_enorm_sq_simpleHolding_timeMeasure hτ T ω,
+    ENNReal.toReal_sum fun _ _ ↦ ENNReal.mul_ne_top (by simp) ENNReal.ofReal_ne_top]
+  refine sum_congr rfl fun i hi ↦ ?_
+  have hstep : (τ i : ℝ) ≤ τ (i + 1) :=
+    hτ (Set.mem_Iic.mpr (mem_range.mp hi).le) (Set.mem_Iic.mpr (mem_range.mp hi)) i.le_succ
+  rw [ENNReal.toReal_mul, Real.enorm_sq_eq_ofReal_sq, ENNReal.toReal_ofReal (sq_nonneg _),
+    ENNReal.toReal_ofReal']
+  congr 1; simp only [NNReal.coe_min]; grind only [min_def, max_def]
 
 /-- Left-measurable `Lᵖ` heights give predictable `Lᵖ` holdings on every finite horizon.
 No order condition on the grid, boundedness, or finiteness of the sample measure is needed. -/

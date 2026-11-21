@@ -10,6 +10,7 @@ public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
+import TauCeti.Order.Interval.Set.Subdivision
 import TauCeti.Probability.Process.StoppedValue
 
 /-!
@@ -29,6 +30,11 @@ Borel values is almost-everywhere measurable at any stopping time when its paths
 right-continuous at the finite stopped time
 (`MeasureTheory.IsStoppingTime.aemeasurable_stoppedValue`), without adaptation or a
 finite-measure assumption.
+
+For any process and random time, `TauCeti.ite_le_dyadicCeilTime_eq_sum_indicator` decomposes
+the stopped indicator `(t ≤ dyadicCeilTime k (τ ω))` on `(0, T]` into dyadic grid strips, and
+`TauCeti.sum_indicator_dyadicCeilTime_eq_stoppedProcess` telescopes the corresponding stopped
+increments back into `stoppedProcess I (dyadicCeilTime k ∘ τ) T`.
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit.
@@ -219,6 +225,106 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
       (σ := fun n ω => min (t : WithTop ℝ≥0) (dyadicCeilTime n (τ ω)))
       (τ := fun ω => min (t : WithTop ℝ≥0) (τ ω)) (ω := ω) hfinite hmin
       (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
+
+/-- Splitting a dyadically stopped process at `t ∈ (0, T]` into dyadic grid strips on `(0, T]`.
+Holds for any additive commutative monoid-valued process without measurability hypotheses. -/
+theorem ite_le_dyadicCeilTime_eq_sum_indicator {Ω E : Type*} [AddCommMonoid E]
+    (H : ℝ≥0 → Ω → E) (k : ℕ) (T : ℝ≥0) (τ : Ω → WithTop ℝ≥0)
+    {t : ℝ≥0} (ht : t ∈ Ioc 0 T) (ω : Ω) :
+    (if (t : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ ω) then H t ω else 0) =
+      ∑ j ∈ Finset.range ⌈T * 2 ^ k⌉₊,
+        (Ioc (min ((j : ℝ≥0) / 2 ^ k) T) (min (((j + 1 : ℕ) : ℝ≥0) / 2 ^ k) T)).indicator
+          (fun _ ↦ {ω' | ¬ dyadicCeilTime k (τ ω') ≤
+            min ((j : ℝ≥0) / 2 ^ k) T}.indicator (H t) ω) t := by
+  let d (j : ℕ) : ℝ≥0 := min ((j : ℝ≥0) / 2 ^ k) T
+  have hd_mono : Monotone d := fun i j hij ↦ min_le_min_right T
+    (div_le_div_of_nonneg_right (by exact_mod_cast hij) (by positivity))
+  let j₀ : ℕ := ⌈t * 2 ^ k⌉₊ - 1
+  have hj₀_ceil : 1 ≤ ⌈t * 2 ^ k⌉₊ := Nat.one_le_ceil_iff.mpr (mul_pos ht.1 (by positivity))
+  have hj₀_lt : j₀ < ⌈T * 2 ^ k⌉₊ := by
+    have := Nat.ceil_mono (mul_le_mul_of_nonneg_right ht.2 (by positivity : (0 : ℝ≥0) ≤ 2 ^ k))
+    omega
+  have hh := (Nat.ceil_eq_iff (by omega : ⌈t * 2 ^ k⌉₊ ≠ 0)).mp rfl
+  have hmem : t ∈ Ioc (d j₀) (d (j₀ + 1)) := by
+    refine ⟨(min_le_left _ _).trans_lt ((div_lt_iff₀ (by positivity)).mpr hh.1), le_min ?_ ht.2⟩
+    have hj₀_add : j₀ + 1 = ⌈t * 2 ^ k⌉₊ := by omega
+    rw [hj₀_add]
+    exact (le_div_iff₀ (by positivity)).mpr hh.2
+  rw [Finset.sum_eq_single_of_mem j₀ (Finset.mem_range.mpr hj₀_lt), indicator_of_mem hmem]
+  · have hd_eq : d j₀ = (j₀ : ℝ≥0) / 2 ^ k :=
+      min_eq_left (((div_lt_iff₀ (by positivity)).mpr hh.1).le.trans ht.2)
+    have hiff : ((t : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ ω)) ↔
+        ¬ dyadicCeilTime k (τ ω) ≤ d j₀ := by
+      rw [hd_eq, not_le]
+      cases hτ : τ ω with
+      | top => rw [dyadicCeilTime_top]; exact ⟨fun _ ↦ WithTop.coe_lt_top _, fun _ ↦ le_top⟩
+      | coe s =>
+        rw [dyadicCeilTime_coe, WithTop.coe_le_coe, WithTop.coe_lt_coe]
+        refine ⟨fun hts ↦ ((div_lt_iff₀ (by positivity)).mpr hh.1).trans_le hts, fun hlt ↦ ?_⟩
+        have hceil : j₀ + 1 ≤ ⌈s * 2 ^ k⌉₊ := by
+          exact_mod_cast (div_lt_div_iff_of_pos_right (by positivity : (0 : ℝ≥0) < 2 ^ k)).mp hlt
+        exact (le_min_iff.mp hmem.2).1.trans
+          (div_le_div_of_nonneg_right (by exact_mod_cast hceil) (by positivity))
+    by_cases hc : (t : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ ω)
+    · rw [ite_eq_left hc, indicator_of_mem]; rw [mem_ofPred_eq]; exact hiff.mp hc
+    · rw [ite_eq_right hc, indicator_of_notMem]; rw [mem_ofPred_eq]; exact mt hiff.mpr hc
+  · intro i hi_mem hij
+    exact indicator_of_notMem ((hd_mono.monotoneOn (Iic ⌈T * 2 ^ k⌉₊)).notMem_Ioc_of_mem_Ioc_of_ne
+      (Finset.mem_range.mp hi_mem) hj₀_lt hij hmem) _
+
+/-- Telescoping dyadically gated increments of a process vanishing at `0` recovers the
+dyadically stopped process at `T`. Holds for any additive commutative group-valued process
+without measurability hypotheses. -/
+theorem sum_indicator_dyadicCeilTime_eq_stoppedProcess {Ω E : Type*} [AddCommGroup E]
+    (I : ℝ≥0 → Ω → E) (k : ℕ) (T : ℝ≥0) (τ : Ω → WithTop ℝ≥0) (ω : Ω) (hI0 : I 0 ω = 0) :
+    (∑ j ∈ Finset.range ⌈T * 2 ^ k⌉₊,
+      {ω' | ¬ dyadicCeilTime k (τ ω') ≤ min ((j : ℝ≥0) / 2 ^ k) T}.indicator
+        (fun ω' ↦ I (min (((j + 1 : ℕ) : ℝ≥0) / 2 ^ k) T) ω' -
+          I (min ((j : ℝ≥0) / 2 ^ k) T) ω') ω) =
+      stoppedProcess I (fun ω' ↦ dyadicCeilTime k (τ ω')) T ω := by
+  let N := ⌈T * 2 ^ k⌉₊
+  let d (j : ℕ) : ℝ≥0 := min ((j : ℝ≥0) / 2 ^ k) T
+  let term (j : ℕ) : E := {ω' | ¬ dyadicCeilTime k (τ ω') ≤ d j}.indicator
+    (fun ω' ↦ I (d (j + 1)) ω' - I (d j) ω') ω
+  have hd0 : d 0 = 0 := by simp [d]
+  by_cases hT : (T : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ ω)
+  · rw [stoppedProcess_eq_of_le (τ := fun ω' ↦ dyadicCeilTime k (τ ω')) hT]
+    have hterm (j : ℕ) (_ : j ∈ Finset.range N) : term j = I (d (j + 1)) ω - I (d j) ω := by
+      by_cases hdj : d j < T
+      · exact indicator_of_mem (not_le.mpr ((WithTop.coe_lt_coe.mpr hdj).trans_le hT)) _
+      · have hjeq : d j = T := le_antisymm (min_le_right _ _) (not_lt.mp hdj)
+        have hj1eq : d (j + 1) = T := le_antisymm (min_le_right _ _) (hjeq ▸ min_le_min_right T
+          (div_le_div_of_nonneg_right (by exact_mod_cast j.le_succ) (by positivity)))
+        simp [term, hjeq, hj1eq]
+    have hdN : d N = T := min_eq_right ((le_div_iff₀ (by positivity)).mpr (Nat.le_ceil _))
+    rw [Finset.sum_congr rfl hterm, Finset.sum_range_sub (fun j ↦ I (d j) ω), hdN, hd0, hI0,
+      sub_zero]
+  · have hlt : dyadicCeilTime k (τ ω) < T := not_le.mp hT
+    cases hτ : τ ω with
+    | top => rw [hτ, dyadicCeilTime_top] at hlt; exact (not_top_lt hlt).elim
+    | coe s =>
+      let m := ⌈s * 2 ^ k⌉₊
+      have hm_lt_T : (m : ℝ≥0) / 2 ^ k < T := by
+        rw [hτ, dyadicCeilTime_coe, WithTop.coe_lt_coe] at hlt; exact hlt
+      have hm_le_N : m ≤ N := (Nat.cast_le (α := ℝ≥0)).mp
+        (((div_lt_iff₀ (by positivity : (0 : ℝ≥0) < 2 ^ k)).mp hm_lt_T).le.trans
+          (Nat.le_ceil (T * 2 ^ k)))
+      have hhead (j : ℕ) (hj : j ∈ Finset.range m) : term j = I (d (j + 1)) ω - I (d j) ω := by
+        refine indicator_of_mem ?_ _
+        rw [mem_ofPred_eq, hτ, dyadicCeilTime_coe, WithTop.coe_le_coe]
+        exact not_le.mpr ((min_le_left _ _).trans_lt
+          (div_lt_div_of_pos_right (Nat.cast_lt.mpr (Finset.mem_range.mp hj)) (by positivity)))
+      have htail : ∑ j ∈ Finset.Ico m N, term j = 0 :=
+        Finset.sum_eq_zero fun j hj ↦ indicator_of_notMem (by
+          rw [mem_ofPred_eq, not_not, hτ, dyadicCeilTime_coe, WithTop.coe_le_coe]
+          exact le_min (div_le_div_of_nonneg_right
+            (Nat.cast_le.mpr (Finset.mem_Ico.mp hj).1) (by positivity)) hm_lt_T.le) _
+      have hdm : d m = (m : ℝ≥0) / 2 ^ k := min_eq_left hm_lt_T.le
+      rw [← Finset.sum_range_add_sum_Ico term hm_le_N, htail, add_zero, Finset.sum_congr rfl hhead,
+        Finset.sum_range_sub (fun j ↦ I (d j) ω), hd0, hI0, sub_zero, hdm,
+        stoppedProcess_eq_of_ge (τ := fun ω' ↦ dyadicCeilTime k (τ ω')) hlt.le,
+        hτ, dyadicCeilTime_coe]
+      rfl
 
 end TauCeti
 

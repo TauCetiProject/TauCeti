@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.Probability.Process.Indistinguishable
+import Mathlib.Topology.ContinuousOn
 
 /-!
 # Continuous processes and time-product almost-everywhere identities
@@ -19,10 +19,6 @@ endpoint is needed.
 For continuous fields evaluated along a process with a deterministic starting point, this
 recovers equality of the fields at that point. This is useful when an identity first obtained
 almost everywhere along trajectories must be evaluated at the initial state.
-
-Over a separable time domain, processes with almost surely continuous paths which agree
-almost surely at each fixed time are indistinguishable. This identifies continuous versions,
-for instance of stochastic integrals determined separately at each time.
 
 The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
 `Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
@@ -70,17 +66,5 @@ theorem eq_of_ae_eq_along_process [TopologicalSpace E] [NeZero P]
     exact hG.comp (hS.prodMk continuousOn_id) hD
   obtain ⟨ω, heq, hstart⟩ := ((ae_eqOn_Ico_of_ae_eq_prod hf hg hfg).and hstart).exists
   simpa only [hstart] using heq (left_mem_Ico.mpr hab)
-
-omit [SFinite P] in
-/-- Processes with almost surely continuous paths over a separable time domain are
-indistinguishable once they agree almost surely at each fixed time. Only a countable dense
-set of times is used, so no measurability of the paths is required. -/
-theorem indist_of_forall_ae_eq {ι : Type*} [TopologicalSpace ι] [TopologicalSpace.SeparableSpace ι]
-    {X X' : ι → Ω → Y} (hX : ∀ᵐ ω ∂P, Continuous fun t ↦ X t ω)
-    (hX' : ∀ᵐ ω ∂P, Continuous fun t ↦ X' t ω) (h : ∀ t, X t =ᵐ[P] X' t) :
-    ProbabilityTheory.Indistinguishable P X X' := by
-  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense ι
-  filter_upwards [hX, hX', (ae_ball_iff hDc).2 fun t _ ↦ h t] with ω hω hω' hD
-  exact congr_fun (Continuous.ext_on hDd hω hω' fun t ht ↦ hD t ht)
 
 end TauCeti
