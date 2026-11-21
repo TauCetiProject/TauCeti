@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent
 
+import TauCeti.Algebra.MonoidAlgebra.Eigenvector
+
 /-!
 # Coefficients of Laurent polynomials
 
@@ -18,6 +20,10 @@ every coefficient of nonnegative exponent. These hold over an arbitrary semiring
 ## Main results
 
 * `LaurentPolynomial.coeff_T_mul`: `(T n * f).coeff d = f.coeff (d - n)`.
+* `LaurentPolynomial.T_mul_eq_self_iff`: a nonzero Laurent polynomial is fixed by multiplication
+  by `T n` only for `n = 0`.
+* `LaurentPolynomial.invert_T_mul_eq_self_iff`: if a nonzero Laurent polynomial `f` is fixed by
+  `invert`, then `T n * f` is fixed by `invert` only for `n = 0`.
 * `LaurentPolynomial.coeff_C_mul` and `LaurentPolynomial.coeff_natCast_mul`: constants scale
   coefficients.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
@@ -39,6 +45,16 @@ moves `T n` to the right with `LaurentPolynomial.T_mul`. -/
 theorem coeff_T_mul (n : ℤ) (f : R[T;T⁻¹]) (d : ℤ) : (T n * f).coeff d = f.coeff (d - n) := by
   simpa only [T, one_mul, sub_eq_add_neg, add_comm] using
     AddMonoidAlgebra.coeff_single_mul_apply f (1 : R) n d
+
+/-- A Laurent polynomial is fixed by left multiplication by `T n` only when `n = 0` or it is
+zero: otherwise its coefficients repeat with period `n`, and its support would be infinite. -/
+theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 ∨ f = 0 := by
+  refine ⟨fun h => or_iff_not_imp_left.mpr fun hn => ?_, ?_⟩
+  · -- `R[T;T⁻¹]` is `AddMonoidAlgebra R ℤ`, in which `T n` is the monomial `single n 1`.
+    have h' : f * .single n 1 = f := by rwa [single_eq_C_mul_T, map_one, one_mul, ← T_mul]
+    exact TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder
+      (mt (isOfFinAddOrder_iff_eq_zero n).mp hn) h'
+  · rintro (rfl | rfl) <;> simp [T_zero]
 
 /-- Left multiplication by a constant scales every coefficient. -/
 @[simp]
@@ -62,6 +78,26 @@ theorem coeff_one (d : ℤ) : (1 : R[T;T⁻¹]).coeff d = if d = 0 then 1 else 0
 theorem coeff_trunc (f : R[T;T⁻¹]) (n : ℕ) : (trunc f).coeff n = f.coeff (n : ℤ) := (rfl)
 
 end Semiring
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- A Laurent polynomial fixed by `invert` stays fixed by `invert` after multiplication by `T n`
+only when `n = 0` or it is zero: `invert (T n * f) = T (-n) * f`, so `T (n + n)` fixes `f`. -/
+theorem invert_T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} (hf : invert f = f) :
+    invert (T n * f) = T n * f ↔ n = 0 ∨ f = 0 := by
+  rw [map_mul, invert_T, hf]
+  constructor
+  · intro h
+    have h2 : T (n + n) * f = f := by
+      rw [T_add, mul_assoc, ← h, ← mul_assoc, ← T_add, add_neg_cancel, T_zero, one_mul]
+    rcases T_mul_eq_self_iff.mp h2 with h0 | h0
+    · exact .inl (by omega)
+    · exact .inr h0
+  · rintro (rfl | rfl) <;> simp
+
+end CommSemiring
 
 section LeadingCoeff
 

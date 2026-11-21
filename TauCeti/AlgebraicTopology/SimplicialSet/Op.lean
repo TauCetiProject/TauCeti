@@ -153,7 +153,7 @@ def opIso (n : ℕ) : opFunctor.obj (∂Δ[n] : SSet.{u}) ≅ (∂Δ[n] : SSet.{
     ext x
     apply Subtype.ext
     exact NatTrans.naturality_apply (stdSimplex.opIso ⦋n⦌).hom f
-      (opObjEquiv.symm (opObjEquiv x).1))
+      (opObjEquiv.symm (opObjEquiv x).val))
 
 /-- Boundary reversal is the restriction of standard-simplex reversal. -/
 @[reassoc (attr := simp)]
@@ -203,8 +203,8 @@ variable {X : SSet.{u}}
 /-- Restriction of the simplex-wise opposite equivalence to a subcomplex `A` of `X`. -/
 private def opObjEquiv' (A : X.Subcomplex) (d : SimplexCategoryᵒᵖ) :
     ((A : SSet.{u}).op).obj d ≃ (A.op : SSet.{u}).obj d where
-  toFun x := ⟨X.opObjEquiv.symm (opObjEquiv x).1, (opObjEquiv x).2⟩
-  invFun y := opObjEquiv.symm ⟨X.opObjEquiv y.1, y.2⟩
+  toFun x := ⟨X.opObjEquiv.symm (opObjEquiv x).val, (opObjEquiv x).property⟩
+  invFun y := opObjEquiv.symm ⟨X.opObjEquiv y.val, y.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -249,7 +249,7 @@ def opIso (n : ℕ) (i : Fin (n + 1)) :
     ext x
     apply Subtype.ext
     exact NatTrans.naturality_apply (stdSimplex.opIso ⦋n⦌).hom f
-      (opObjEquiv.symm (opObjEquiv x).1))
+      (opObjEquiv.symm (opObjEquiv x).val))
 
 /-- Horn reversal is the restriction of standard-simplex reversal. -/
 @[reassoc (attr := simp)]
