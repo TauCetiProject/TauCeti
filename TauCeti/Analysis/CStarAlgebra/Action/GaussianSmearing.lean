@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Concentration
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Deriv
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 
 /-!
