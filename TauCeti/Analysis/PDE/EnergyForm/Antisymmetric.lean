@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.Inner
@@ -30,9 +31,10 @@ ellipticity sees, does not change at all. When `K` and `g` are bounded the ident
 `v ∈ H¹₀(Ω)` (`TauCeti.PDE.energyFormH1_eq_of_transpose_eq_neg`), and adding `K` to a bounded
 principal coefficient `a` is the same as adding `g` to the drift
 (`TauCeti.PDE.energyFormH1_add_eq_of_transpose_eq_neg`). A constant antisymmetric matrix has
-`g = 0`, so on `H¹(Ω) × H¹₀(Ω)` a constant principal coefficient enters the energy form only
-through its symmetric part (`TauCeti.PDE.energyFormH1_const_eq_coefficientSymmetricPart`). The
-test functions must vanish on the boundary: on `H¹(Ω) × H¹(Ω)` the antisymmetric part contributes
+`g = 0`, so adding it to the principal coefficient does not change the energy form on
+`H¹(Ω) × H¹₀(Ω)` (`TauCeti.PDE.energyFormH1_add_const_eq_of_transpose_eq_neg`); without
+lower-order terms this is `TauCeti.PDE.energyFormH1_const_coefficientSymmetricPart`. The test
+functions must vanish on the boundary: on `H¹(Ω) × H¹(Ω)` the antisymmetric part contributes
 boundary terms.
 
 In the plane, with `J = !![0, -1; 1, 0]`, the constant coefficient `1 + k J` has the energy form
@@ -65,8 +67,6 @@ All in the `TauCeti.PDE` namespace.
   principal coefficient adds its row divergence to the drift.
 * `energyFormH1_add_const_eq_of_transpose_eq_neg`: adding a constant antisymmetric matrix to the
   principal coefficient does not change the energy form on `H¹(Ω) × H¹₀(Ω)`.
-* `energyFormH1_const_eq_coefficientSymmetricPart`: a constant principal coefficient may be
-  replaced by its symmetric part.
 * `energyFormH1_one_add_const_smul_skew` and `energyFormH1_one_add_coord_smul_skew`: the planar
   witnesses `1 + k J` and `1 + x₀ J`.
 
@@ -285,24 +285,6 @@ theorem energyFormH1_add_const_eq_of_transpose_eq_neg {a : EuclideanSpace ℝ ι
     (fun _ _ ↦ contDiffOn_const) (fun _ _ ↦ hA) (fun _ _ _ ↦ by simp) (fun _ _ ↦ le_rfl)
     (fun _ _ ↦ (norm_zero (E := EuclideanSpace ℝ ι)).le) u v
   rwa [add_zero] at h
-
-omit [DecidableEq ι] in
-/-- **Only the symmetric part of a constant principal coefficient matters.** On
-`H¹(Ω) × H¹₀(Ω)`, the energy form of a constant principal coefficient `A`, with bounded lower-order
-coefficients, is that of its symmetric part `(A + Aᵀ)/2`. -/
-theorem energyFormH1_const_eq_coefficientSymmetricPart
-    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (A : Matrix ι ι ℝ)
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (coefficientSymmetricPart A) (b x) (c x)) ⊤
-      (mu.restrict Ω)) (u : W1p mu Ω 2) (v : W1p0 mu Ω 2) :
-    energyFormH1 (fun _ ↦ A) b c u v =
-      energyFormH1 (fun _ ↦ coefficientSymmetricPart A) b c u v := by
-  have hA : (A - coefficientSymmetricPart A)ᵀ = -(A - coefficientSymmetricPart A) := by
-    ext i j
-    simp only [Matrix.transpose_apply, Matrix.sub_apply, Matrix.neg_apply,
-      coefficientSymmetricPart_apply]
-    ring
-  simpa using energyFormH1_add_const_eq_of_transpose_eq_neg
-    (a := fun _ ↦ coefficientSymmetricPart A) hcoeff hA u v
 
 /-! ### Witnesses in the plane -/
 

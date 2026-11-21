@@ -49,8 +49,6 @@ total variation of a function and the perimeter of a set are suprema of the pair
   scalar function.
 * `TauCeti.trace_fderiv_eq_sum_fderiv_apply_single`: on `EuclideanSpace ℝ ι`, the divergence
   `tr (D f)` is the sum `∑ⱼ ∂ⱼ fⱼ` of the coordinate derivatives.
-* `TauCeti.gradient_apply_eq_fderiv_apply_single`: on `EuclideanSpace ℝ ι`, the `i`-th coordinate
-  of the gradient `∇ f` is the partial derivative `∂ᵢ f`.
 * `TauCeti.trace_fderiv_exp_neg_smul`: the weighted divergence
   `div (e^{−W} φ) = (div φ − DW φ) e^{−W}`.
 * `TauCeti.exists_testFunction_sum_smul_comp_add`: weighting translates of a test vector field
@@ -186,16 +184,6 @@ theorem trace_fderiv_eq_sum_fderiv_apply_single {ι : Type*} [Fintype ι] [Decid
     (EuclideanSpace.proj (𝕜 := ℝ) j).hasFDerivAt.comp x hf.hasFDerivAt
   rw [hd.fderiv]
   simp [EuclideanSpace.inner_single_left]
-
-open scoped Gradient in
-/-- **The gradient in Euclidean coordinates**: the `i`-th coordinate of the gradient of a real
-function on `ℝⁿ` is its derivative in the `i`-th coordinate direction. No differentiability is
-needed. -/
-theorem gradient_apply_eq_fderiv_apply_single {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (f : EuclideanSpace ℝ ι → ℝ) (x : EuclideanSpace ℝ ι) (i : ι) :
-    ∇ f x i = fderiv ℝ f x (EuclideanSpace.single i 1) := by
-  rw [← inner_gradient_left, EuclideanSpace.inner_single_right]
-  simp
 
 open scoped Gradient InnerProductSpace in
 /-- On `Ω`, the divergence of `φ b` is `φ div b + ⟪∇φ, b⟫`. -/
