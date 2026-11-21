@@ -45,13 +45,16 @@ subextensions of `A / F` unramified outside `S`
 * `TauCeti.maximalUnramifiedOutside A S`: the compositum of the subextensions of `A / F`
   unramified outside `S`.
 * `TauCeti.maximalUnramifiedOutside.openNormalSubgroupEquiv`: the open normal subgroups of its
-  Galois group, matched with the finite Galois subextensions of `A / F` unramified outside `S`.
+  Galois group, matched with the finite Galois subextensions of `A / F`
+  (`FiniteGaloisIntermediateField`) unramified outside `S`.
 
 ## Main results
 
 * `IntermediateField.IsUnramifiedOutside.sup`, `IntermediateField.IsUnramifiedOutside.mono`,
   `IntermediateField.IsUnramifiedOutside.map` and `IntermediateField.isUnramifiedOutside_bot`:
   the family is closed under composita, smaller fields and embeddings, and contains `F`.
+* `IntermediateField.IsUnramifiedOutside.mono_set` and `TauCeti.maximalUnramifiedOutside_mono`:
+  enlarging `S` keeps a subextension unramified outside it and enlarges the maximal one.
 * `TauCeti.le_maximalUnramifiedOutside_iff`: a finite subextension lies in the maximal one
   exactly when it is unramified outside `S`.
 * `TauCeti.mem_maximalUnramifiedOutside_iff`: an element lies in the maximal subextension exactly
@@ -150,6 +153,11 @@ theorem IsUnramifiedOutside.mono (hF : TauCeti.IsFunctionField k F)
     exact ((TauCeti.Place.isUnramified_tower_iff (k₁ := k) (F₁ := restrict hEL) hL P).mp
       (h.isUnramified P hP)).left
 
+/-- **A subextension unramified outside `S` is unramified outside every larger set of places.** -/
+theorem IsUnramifiedOutside.mono_set {T : Set (TauCeti.Place k F)} (h : E.IsUnramifiedOutside S)
+    (hST : S ⊆ T) : E.IsUnramifiedOutside T :=
+  ⟨h.finiteDimensional, h.isSeparable, fun P hP ↦ h.isUnramified P fun hPS ↦ hP (hST hPS)⟩
+
 end Algebraic
 
 end IntermediateField
@@ -185,6 +193,13 @@ theorem _root_.IntermediateField.IsUnramifiedOutside.le_maximalUnramifiedOutside
   (maximalUnramifiedOutside_def A S).symm ▸
     le_iSup (fun E : {E : IntermediateField F A // E.IsUnramifiedOutside S} ↦
       (E : IntermediateField F A)) ⟨E, h⟩
+
+/-- **The maximal subextension unramified outside `S` grows with `S`.** -/
+@[gcongr]
+theorem maximalUnramifiedOutside_mono {T : Set (Place k F)} (hST : S ⊆ T) :
+    maximalUnramifiedOutside A S ≤ maximalUnramifiedOutside A T := by
+  rw [maximalUnramifiedOutside_def A S]
+  exact iSup_le fun E ↦ (E.property.mono_set hST).le_maximalUnramifiedOutside
 
 /-- A finite compositum of subextensions unramified outside `S` is unramified outside `S`. -/
 private theorem isUnramifiedOutside_finsetSup (hF : IsFunctionField k F)
@@ -273,24 +288,25 @@ group of the maximal subextension unramified outside `S`: the fixed field of the
 regarded as a subextension of `A`. -/
 private def fixedFieldLift (hF : IsFunctionField k F)
     (U : OpenNormalSubgroup Gal(maximalUnramifiedOutside A S/F)) :
-    {E : IntermediateField F A // E.IsUnramifiedOutside S ∧ IsGalois F E} :=
+    {L : FiniteGaloisIntermediateField F A // L.toIntermediateField.IsUnramifiedOutside S} :=
   have hU : (fixedField U.toSubgroup).fixingSubgroup = U.toSubgroup :=
     InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.toOpenSubgroup.isClosed⟩
   have h := (InfiniteGalois.isOpen_and_normal_iff_finite_and_isGalois
     (fixedField U.toSubgroup)).mp ⟨by rw [hU]; exact U.isOpen', by rw [hU]; exact U.isNormal'⟩
   have := h.left
   have := h.right
-  ⟨lift (fixedField U.toSubgroup), (isUnramifiedOutside_lift_iff hF _).mpr h.left,
-    IsGalois.of_algEquiv (liftAlgEquiv _)⟩
+  have : FiniteDimensional F (lift (fixedField U.toSubgroup)) :=
+    (liftAlgEquiv _).toLinearEquiv.finiteDimensional
+  have : IsGalois F (lift (fixedField U.toSubgroup)) := IsGalois.of_algEquiv (liftAlgEquiv _)
+  ⟨{ toIntermediateField := lift (fixedField U.toSubgroup) },
+    (isUnramifiedOutside_lift_iff hF _).mpr h.left⟩
 
 /-- The open normal subgroup of the Galois group of the maximal subextension unramified outside
 `S` fixing a finite Galois subextension of `A / F` unramified outside `S`. -/
 private def fixingOpenNormalSubgroup
-    (E : {E : IntermediateField F A // E.IsUnramifiedOutside S ∧ IsGalois F E}) :
+    (E : {L : FiniteGaloisIntermediateField F A // L.toIntermediateField.IsUnramifiedOutside S}) :
     OpenNormalSubgroup Gal(maximalUnramifiedOutside A S/F) :=
-  have hE := E.property.left.le_maximalUnramifiedOutside
-  have := E.property.left.finiteDimensional
-  have := E.property.right
+  have hE := E.property.le_maximalUnramifiedOutside
   have : FiniteDimensional F (restrict hE) := (restrictAlgEquiv hE).toLinearEquiv.finiteDimensional
   have : IsGalois F (restrict hE) := IsGalois.of_algEquiv (restrictAlgEquiv hE)
   { toSubgroup := (restrict hE).fixingSubgroup
@@ -305,7 +321,7 @@ unramified outside `S` correspond to the finite Galois subextensions of `A / F` 
 `S`**: a subgroup is sent to its fixed field and a subextension to the subgroup fixing it. -/
 def openNormalSubgroupEquiv (hF : IsFunctionField k F) :
     OpenNormalSubgroup Gal(maximalUnramifiedOutside A S/F) ≃
-      {E : IntermediateField F A // E.IsUnramifiedOutside S ∧ IsGalois F E} where
+      {L : FiniteGaloisIntermediateField F A // L.toIntermediateField.IsUnramifiedOutside S} where
   toFun := fixedFieldLift hF
   invFun := fixingOpenNormalSubgroup
   left_inv U := by
@@ -314,24 +330,24 @@ def openNormalSubgroupEquiv (hF : IsFunctionField k F) :
     change (restrict (lift_le (fixedField U.toSubgroup))).fixingSubgroup = U.toSubgroup
     rw [lift_injective _ (lift_restrict (lift_le (fixedField U.toSubgroup)))]
     exact InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.toOpenSubgroup.isClosed⟩
-  right_inv E := Subtype.ext <| by
+  right_inv E := Subtype.ext <| FiniteGaloisIntermediateField.val_injective <| by
     -- Unfold the two file-private constructions to the underlying fixing subgroup and field.
     change lift (fixedField
-      (restrict E.property.left.le_maximalUnramifiedOutside).fixingSubgroup) = E.val
+      (restrict E.property.le_maximalUnramifiedOutside).fixingSubgroup) = E.val.toIntermediateField
     rw [InfiniteGalois.fixedField_fixingSubgroup, lift_restrict]
 
 @[simp]
 theorem coe_openNormalSubgroupEquiv_apply (hF : IsFunctionField k F)
     (U : OpenNormalSubgroup Gal(maximalUnramifiedOutside A S/F)) :
-    (openNormalSubgroupEquiv (A := A) (S := S) hF U : IntermediateField F A) =
+    (openNormalSubgroupEquiv (A := A) (S := S) hF U).val.toIntermediateField =
       lift (fixedField U.toSubgroup) :=
   (rfl)
 
 @[simp]
 theorem openNormalSubgroupEquiv_symm_apply_toSubgroup (hF : IsFunctionField k F)
-    (E : {E : IntermediateField F A // E.IsUnramifiedOutside S ∧ IsGalois F E}) :
+    (E : {L : FiniteGaloisIntermediateField F A // L.toIntermediateField.IsUnramifiedOutside S}) :
     ((openNormalSubgroupEquiv (A := A) (S := S) hF).symm E).toSubgroup =
-      (restrict E.property.left.le_maximalUnramifiedOutside).fixingSubgroup :=
+      (restrict E.property.le_maximalUnramifiedOutside).fixingSubgroup :=
   (rfl)
 
 end maximalUnramifiedOutside
