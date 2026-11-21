@@ -37,15 +37,18 @@ This file develops the coordinate structure of `C₀(I, E)`:
   equal to its maximum on that set (`ZeroAtInftyContinuousMap.norm_eq_sup_of_forall_eq_zero`);
 * `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
   map;
-* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals
-  `evalCLM R i` of `C₀(I, R)` are weak-star null along the cofinite filter;
+* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite` and
+  `ZeroAtInftyContinuousMap.opNorm_evalCLM`: the coordinate functionals `evalCLM R i` of
+  `C₀(I, R)` are weak-star null along the cofinite filter, and over a nontrivially normed field and
+  nontrivial normed space have operator norm `1`;
 * `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
   `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
   coordinate when `I` is nonempty;
 * `ZeroAtInftyContinuousMap.hasSum_single`: every `f` is the unconditional sum of its coordinate
-  vectors `single i (f i)`, and for scalar families `f = ∑ i, f i • single i 1`
-  (`ZeroAtInftyContinuousMap.hasSum_smul_single_one`);
+  vectors `single i (f i)`, every continuous linear map out of `C₀(I, E)` is given by its
+  coordinate-map series (`ZeroAtInftyContinuousMap.hasSum_comp_singleCLM`), and for scalar families
+  `f = ∑ i, f i • single i 1` (`ZeroAtInftyContinuousMap.hasSum_smul_single_one`);
 * `ZeroAtInftyContinuousMap.dense_setOf_finite_support` and
   `ZeroAtInftyContinuousMap.dense_span_single_one`: finitely supported families are dense, and
   the coordinate vectors `single i 1` span a dense submodule of `C₀(I, R)`;
@@ -53,10 +56,8 @@ This file develops the coordinate structure of `C₀(I, E)`:
   are linearly independent, so over a ring with the strong rank condition a finitely generated
   submodule contains only finitely many of them
   (`ZeroAtInftyContinuousMap.finite_setOf_single_one_mem`);
-* `ZeroAtInftyContinuousMap.continuousLinearMap_ext` and
-  `ZeroAtInftyContinuousMap.continuousLinearMap_ext_compLeft_toSpanSingleton`: continuous linear
-  maps out of `C₀(I, E)` are determined by their values on coordinate vectors, or on the images
-  of `single i 1` under `compLeft (toSpanSingleton R e)`;
+* `ZeroAtInftyContinuousMap.continuousLinearMap_ext`: continuous linear maps out of `C₀(I, E)`
+  are determined by their values on coordinate vectors;
 * `ZeroAtInftyContinuousMap.indicatorCLM R S`: the coordinate projection `f ↦ S.indicator f`
   onto a set `S` of indices, of norm at most one; it has finite rank when `S` is finite and the
   coefficients form a finitely generated module, as on `C₀(I, R)`
@@ -442,6 +443,14 @@ theorem hasSum_single (f : C₀(I, β)) : HasSum (fun i ↦ single i (f i)) f :=
     tendsto_indicatorCLM ℕ (s := fun s : Finset I ↦ (s : Set I))
       eventually_finset_mem_atTop f
 
+/-- Every continuous linear map out of `C₀(I, β)` is given by the series of its coordinate maps
+`φ ∘ singleCLM R i`. -/
+theorem hasSum_comp_singleCLM {R M : Type*} [Semiring R] [Module R β] [ContinuousConstSMul R β]
+    [AddCommMonoid M] [TopologicalSpace M] [Module R M]
+    (φ : C₀(I, β) →L[R] M) (f : C₀(I, β)) :
+    HasSum (fun i ↦ φ.comp (singleCLM R i) (f i)) (φ f) := by
+  simpa using (hasSum_single f).mapL φ
+
 /-- Continuous linear maps out of `C₀(I, β)` agreeing on all coordinate vectors are equal. -/
 theorem continuousLinearMap_ext {R M : Type*} [Semiring R] [Module R β] [ContinuousConstSMul R β]
     [AddCommMonoid M] [Module R M] [TopologicalSpace M] [T2Space M]
@@ -481,6 +490,20 @@ theorem tendsto_toWeakDual_evalCLM_cofinite :
     -- `topDualPairing R _ (StrongDual.toWeakDual g) f` is `g f` by definition of the pairing.
     exact this
 
+/-- Over a nontrivially normed field and a nontrivial normed space, evaluation at a point of a
+discrete index has operator norm `1`. -/
+@[simp]
+theorem opNorm_evalCLM {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [Nontrivial E] (i : I) :
+    ‖(evalCLM 𝕜 i : C₀(I, E) →L[𝕜] E)‖ = 1 := by
+  classical
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa only [evalCLM_apply, one_mul] using f.norm_coe_le_norm i) ?_
+  obtain ⟨e, he⟩ := exists_ne (0 : E)
+  have hle := (evalCLM 𝕜 i : C₀(I, E) →L[𝕜] E).le_opNorm (single i e)
+  rw [evalCLM_apply, single_eq_same, norm_single] at hle
+  exact le_of_mul_le_mul_right (by simpa only [one_mul] using hle) (norm_pos_iff.mpr he)
+
 section Ring
 
 variable {R : Type*} [SeminormedRing R] [DecidableEq I]
@@ -511,7 +534,7 @@ theorem finite_setOf_single_one_mem [StrongRankCondition R] {Q : Submodule R C�
   obtain ⟨s, rfl⟩ := hQ
   have := (linearIndependent_single_one.comp _ Subtype.val_injective).finite_of_le_span_finite _
     (s : Set C₀(I, R)) <| Set.range_subset_iff.2
-      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.2
+      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.property
   exact Set.toFinite _
 
 /-- Continuous linear maps out of `C₀(I, R)` agreeing on the unit vectors `single i 1` are
@@ -520,31 +543,6 @@ theorem continuousLinearMap_ext_single_one {M : Type*} [AddCommMonoid M] [Module
     [TopologicalSpace M] [T2Space M] {φ ψ : C₀(I, R) →L[R] M}
     (h : ∀ i, φ (single i 1) = ψ (single i 1)) : φ = ψ :=
   continuousLinearMap_ext fun i r ↦ by rw [← smul_single_one, map_smul, map_smul, h]
-
-/-- Every coordinate vector `single i e` in `C₀(I, E)` is the coordinatewise image of the unit
-vector `single i 1` under `ContinuousLinearMap.toSpanSingleton R e`. -/
-theorem single_eq_compLeft_toSpanSingleton {E : Type*} [SeminormedAddCommGroup E] [Module R E]
-    [IsBoundedSMul R E] (i : I) (e : E)
-    (hu : ∃ C, ∀ r : R, ‖ContinuousLinearMap.toSpanSingleton R e r‖ ≤ C * ‖r‖) :
-    single i e = compLeft (ContinuousLinearMap.toSpanSingleton R e) hu (single i (1 : R)) := by
-  ext j
-  by_cases h : j = i <;> simp [h]
-
-/-- Continuous linear maps out of `C₀(I, E)` that agree on every image
-`compLeft (toSpanSingleton R e) _ (single i 1)` are equal. In particular, maps natural under
-`compLeft` are determined by their restriction to scalar coefficients `C₀(I, R)`. -/
-theorem continuousLinearMap_ext_compLeft_toSpanSingleton {E M : Type*} [SeminormedAddCommGroup E]
-    [Module R E] [IsBoundedSMul R E] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
-    [T2Space M] {φ ψ : C₀(I, E) →L[R] M}
-    (h : ∀ (e : E) (hu : ∃ C, ∀ r : R, ‖ContinuousLinearMap.toSpanSingleton R e r‖ ≤ C * ‖r‖)
-      (i : I), φ (compLeft (ContinuousLinearMap.toSpanSingleton R e) hu (single i (1 : R))) =
-        ψ (compLeft (ContinuousLinearMap.toSpanSingleton R e) hu (single i (1 : R)))) :
-    φ = ψ :=
-  continuousLinearMap_ext fun i e ↦ by
-    have hu : ∃ C, ∀ r : R, ‖ContinuousLinearMap.toSpanSingleton R e r‖ ≤ C * ‖r‖ :=
-      ⟨‖e‖, fun r ↦ by simpa [mul_comm] using norm_smul_le r e⟩
-    rw [single_eq_compLeft_toSpanSingleton i e hu]
-    exact h e hu i
 
 end Ring
 

@@ -31,7 +31,7 @@ For `h : ℕ`, the residue classes `a ∈ ZMod (p ^ h)` cut `ℤ_p` into the dis
 * `PadicInt.discHomeomorph_symm_natCast_val_add_mul`: the inverse decomposition of `a.val + pʰ w`
   is `(a, w)`.
 * `PadicInt.discHomeomorph_symm_cast_add_mul`: the same statement in simp normal form.
-* `PadicInt.discHomeomorph_add_discHomeomorph`: addition of two points in disc coordinates.
+* `PadicInt.discHomeomorph_add`: carry decomposition of `x + y` in level-`h` disc coordinates.
 -/
 
 public section
@@ -105,26 +105,17 @@ theorem discHomeomorph_symm_cast_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[
     (discHomeomorph p h).symm ((a.cast : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = (a, w) := by
   rw [← ZMod.natCast_val, discHomeomorph_symm_natCast_val_add_mul]
 
-/-- Adding two points in disc coordinates `(a, u)` and `(b, v)` lands in the disc of `a + b` with
-coordinate `⌊(a.val + b.val) / pʰ⌋ + u + v`. -/
-theorem discHomeomorph_add_discHomeomorph (h : ℕ) (a b : ZMod (p ^ h)) (u v : ℤ_[p]) :
+/-- Carry decomposition of `x + y` in level-`h` disc coordinates: adding `a.val + pʰ u` and
+`b.val + pʰ v` lands in the disc of `a + b` with coordinate `⌊(a.val + b.val) / pʰ⌋ + u + v`. -/
+theorem discHomeomorph_add (h : ℕ) (a b : ZMod (p ^ h)) (u v : ℤ_[p]) :
     discHomeomorph p h (a, u) + discHomeomorph p h (b, v) =
       discHomeomorph p h (a + b, (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) + u + v) := by
-  have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
-  have hval : a.val + b.val = (a + b).val + p ^ h * ((a.val + b.val) / p ^ h) := by
+  have hnat : a.val + b.val = (a + b).val + p ^ h * ((a.val + b.val) / p ^ h) := by
     rw [ZMod.val_add, Nat.mod_add_div]
+  simp only [discHomeomorph_apply]
   have hcast : (a.val : ℤ_[p]) + (b.val : ℤ_[p]) =
       ((a + b).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) := by
-    have hc := congrArg (Nat.cast (R := ℤ_[p])) hval
-    push_cast at hc
-    exact hc
-  simp only [discHomeomorph_apply]
-  calc
-    ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * u) + ((b.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * v)
-        = ((a.val : ℤ_[p]) + (b.val : ℤ_[p])) + (p : ℤ_[p]) ^ h * (u + v) := by ring
-    _ = ((a + b).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) +
-          (p : ℤ_[p]) ^ h * (u + v) := by rw [hcast]
-    _ = ((a + b).val : ℤ_[p]) +
-          (p : ℤ_[p]) ^ h * ((((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) + u + v) := by ring
+    exact_mod_cast hnat
+  linear_combination hcast
 
 end PadicInt

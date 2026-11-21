@@ -200,6 +200,22 @@ theorem subsingleton_iff :
     induction γ' using QuotientAddGroup.induction_on with
     | H t => exact mk_eq_mk_iff.2 ⟨by rw [(h s).1, (h t).1], by rw [(h s).2, (h t).2]⟩
 
+variable {ω c} in
+/-- The area vanishes on the period group exactly when `ω` vanishes on every spherical class. -/
+theorem area_eq_zero_iff : area ω c = 0 ↔ ω = 0 := by
+  refine ⟨fun h => AddMonoidHom.ext fun s => by
+    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
+  induction γ using QuotientAddGroup.induction_on with
+  | H s => simp [h]
+
+variable {ω c} in
+/-- The degree vanishes on the period group exactly when `c` vanishes on every spherical class. -/
+theorem degree_eq_zero_iff : degree ω c = 0 ↔ c = 0 := by
+  refine ⟨fun h => AddMonoidHom.ext fun s => by
+    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
+  induction γ using QuotientAddGroup.induction_on with
+  | H s => simp [h]
+
 section Injective
 
 variable {ω c}

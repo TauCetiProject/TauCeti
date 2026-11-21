@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Levi
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -36,8 +37,10 @@ at that point is a contact structure
 comparison `α_x (L_ξ (u, v)) = dα_x (u, v)` for a local defining form `α`
 (`TauCeti.RoughForm.isContactFormAt_iff_bijective_distributionLeviForm`). For a global smooth
 one-form `α`, the kernel `ker α` is a contact structure exactly when `α` is a contact form
-(`TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`); for instance the
-standard distribution `ker (dz - x dy)` on `ℝ³` is a contact structure
+(`TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`), and `dα` restricts
+to a linear symplectic form on each contact hyperplane `ker α_x`
+(`TauCeti.SmoothForm.IsContactForm.kerSymplecticForm`); for instance the standard distribution
+`ker (dz - x dy)` on `ℝ³` is a contact structure
 (`TauCeti.isContactDistribution_standardContactDistribution`, in
 `TauCeti.Geometry.Contact.Standard`).
 
@@ -51,6 +54,8 @@ has no integral hypersurfaces.
 
 * `TauCeti.IsContactDistribution I n ξ`: `ξ` is a `C^n` hyperplane field with nondegenerate Levi
   form.
+* `TauCeti.SmoothForm.IsContactForm.kerSymplecticForm`: the linear symplectic form on `ker α_x`
+  induced by `dα_x`.
 
 ## Main results
 
@@ -208,7 +213,7 @@ theorem SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution [ENat
     [IsManifold I (n + 1) M] {α : SmoothForm I M ℝ 1} :
     α.IsContactForm ↔ IsContactDistribution I n α.kerDistribution := by
   -- The kernel of `α` at `x` is all of `T_x M` exactly when `α_x = 0`.
-  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.1 x ≠ 0 := by
+  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.val x ≠ 0 := by
     rw [SmoothForm.kerDistribution_eq_ker, Ne, RoughForm.ker_eq_top_iff]
   rw [isContactForm_iff_forall_bijective_distributionLeviForm]
   exact ⟨fun h ↦ ⟨isContMDiffDistribution_kerDistribution fun x ↦ (h x).1,
@@ -220,5 +225,36 @@ theorem SmoothForm.IsContactForm.isContactDistribution_kerDistribution [ENat.LEI
     [IsManifold I (n + 1) M] {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) :
     IsContactDistribution I n α.kerDistribution :=
   isContactForm_iff_isContactDistribution_kerDistribution.1 hα
+
+omit [CompleteSpace E] [FiniteDimensional ℝ E] in
+/-- The linear symplectic form on the contact hyperplane `α.kerDistribution x` induced by `dα_x`:
+`(v, w) ↦ dα_x(v, w)`. -/
+def SmoothForm.IsContactForm.kerSymplecticForm {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm)
+    (x : M) : SymplecticForm (α.kerDistribution x) :=
+  let B : LinearMap.BilinForm ℝ (α.kerDistribution x) :=
+    ((mextDerivₗ I 1 α).bilinFormAt x).domRestrict₁₂
+      (α.kerDistribution x) (α.kerDistribution x)
+  have hAlt : B.IsAlt := fun v ↦ by
+    rw [LinearMap.domRestrict₁₂_apply]
+    exact (SmoothForm.isAlt_bilinFormAt _ x).self_eq_zero v.val
+  have hsep : B.SeparatingLeft := fun v hv ↦ Subtype.ext <|
+    (SmoothForm.isContactForm_iff.1 hα x).2 v.val (SmoothForm.mem_kerDistribution.1 v.property)
+      fun w hw ↦ by
+        have h := hv ⟨w, SmoothForm.mem_kerDistribution.2 hw⟩
+        rwa [LinearMap.domRestrict₁₂_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt] at h
+  { toBilinForm := B
+    isAlt := hAlt
+    nondegenerate := ⟨hsep, fun w hw ↦ hsep w fun v ↦ by
+      rw [← hAlt.neg_eq v w, hw v, neg_zero]⟩ }
+
+omit [CompleteSpace E] [FiniteDimensional ℝ E] in
+/-- Evaluating `kerSymplecticForm` on two vectors in `ker α_x` evaluates `dα_x` on them. -/
+@[simp]
+theorem SmoothForm.IsContactForm.kerSymplecticForm_apply {α : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (x : M) (v w : α.kerDistribution x) :
+    hα.kerSymplecticForm x v w = mextDeriv α.val x ![v.val, w.val] := by
+  unfold SmoothForm.IsContactForm.kerSymplecticForm
+  dsimp only
+  rw [LinearMap.domRestrict₁₂_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt]
 
 end TauCeti

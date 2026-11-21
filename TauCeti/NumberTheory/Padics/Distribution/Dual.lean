@@ -32,9 +32,7 @@ distributions here.
 A measure, a continuous linear functional on `C(ℤ_p, K)`, defines a distribution by integrating
 evaluated coefficient vectors (`LocallyAnalyticDistribution.ofMeasure`). Its stage seminorms are
 bounded by the norm of the measure, and a measure is determined by the distribution it defines,
-since locally analytic functions are dense in `C(ℤ_p, K)`. Specializing to a Dirac measure gives
-the Dirac distribution `LocallyAnalyticDistribution.dirac K x`, whose stage seminorms all equal
-`1`.
+since locally analytic functions are dense in `C(ℤ_p, K)`.
 
 ## Main definitions
 
@@ -46,8 +44,6 @@ the Dirac distribution `LocallyAnalyticDistribution.dirac K x`, whose stage semi
 * `TauCeti.LocallyAnalyticDistribution.stagesEquiv`: distributions are compatible families.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm h`: the operator norm on `LA_h(K)`.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure`: measures as distributions.
-* `TauCeti.LocallyAnalyticDistribution.dirac K x`: the Dirac distribution evaluating locally
-  analytic functions at `x : ℤ_p`.
 
 ## Main results
 
@@ -60,9 +56,6 @@ the Dirac distribution `LocallyAnalyticDistribution.dirac K x`, whose stage semi
   measure are bounded by its norm.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure_injective`: a measure is determined by its
   restriction to locally analytic functions.
-* `TauCeti.LocallyAnalyticDistribution.stageSeminorm_dirac`,
-  `TauCeti.LocallyAnalyticDistribution.dirac_injective`: every stage seminorm of a Dirac
-  distribution equals `1`, and distinct points define distinct Dirac distributions.
 
 ## References
 
@@ -103,7 +96,7 @@ theorem mem_iff {μ : Module.Dual K (LocallyAnalytic p K K)} :
 /-- The restriction of a distribution to the analytic stage `LA_h(K)`. -/
 noncomputable def stage (h : ℕ) :
     LocallyAnalyticDistribution p K →ₗ[K] AnalyticStage p h K →L[K] K where
-  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ ofStage K h, μ.2 h⟩
+  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ ofStage K h, μ.property h⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -162,12 +155,13 @@ theorem comp_transitionLE_of_mem_compatibleStageFunctionals
 /-- The functional on the direct limit induced by a compatible family. -/
 private noncomputable def liftFamily (μ : compatibleStageFunctionals p K) :
     Module.Dual K (LocallyAnalytic p K K) :=
-  Module.DirectLimit.lift K ℕ _ _ (fun h ↦ (μ.1 h : AnalyticStage p h K →ₗ[K] K))
-    fun _ _ hhk ↦ DFunLike.congr_fun (comp_transitionLE_of_mem_compatibleStageFunctionals μ.2 hhk)
+  Module.DirectLimit.lift K ℕ _ _ (fun h ↦ (μ.val h : AnalyticStage p h K →ₗ[K] K))
+    fun _ _ hhk ↦ DFunLike.congr_fun (comp_transitionLE_of_mem_compatibleStageFunctionals μ.property
+        hhk)
 
 /-- The functional induced by a compatible family restricts to the members of the family. -/
 private theorem liftFamily_ofStage (μ : compatibleStageFunctionals p K) (h : ℕ)
-    (c : AnalyticStage p h K) : liftFamily μ (ofStage K h c) = μ.1 h c :=
+    (c : AnalyticStage p h K) : liftFamily μ (ofStage K h c) = μ.val h c :=
   lift_ofStage K _ _ h c
 
 /-- Distributions are the compatible families of continuous linear functionals on the analytic
@@ -178,7 +172,7 @@ noncomputable def stagesEquiv :
   toFun μ := ⟨fun h ↦ stage h μ, stage_comp_transition μ⟩
   invFun μ :=
     ⟨liftFamily μ, fun h ↦ by
-      convert (μ.1 h).continuous using 1
+      convert (μ.val h).continuous using 1
       ext c
       exact liftFamily_ofStage μ h c⟩
   left_inv μ := by
@@ -199,14 +193,14 @@ theorem stagesEquiv_apply (μ : LocallyAnalyticDistribution p K) (h : ℕ) :
 /-- The distribution of a compatible family restricts to the members of the family. -/
 @[simp]
 theorem stage_stagesEquiv_symm (μ : compatibleStageFunctionals p K) (h : ℕ) :
-    stage h (stagesEquiv.symm μ) = μ.1 h := by
+    stage h (stagesEquiv.symm μ) = μ.val h := by
   rw [← stagesEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- The distribution of a compatible family applies the members of the family on the stages. -/
 @[simp]
 theorem coe_stagesEquiv_symm_apply_ofStage (μ : compatibleStageFunctionals p K) (h : ℕ)
     (c : AnalyticStage p h K) :
-    (stagesEquiv.symm μ : Module.Dual K (LocallyAnalytic p K K)) (ofStage K h c) = μ.1 h c := by
+    (stagesEquiv.symm μ : Module.Dual K (LocallyAnalytic p K K)) (ofStage K h c) = μ.val h c := by
   rw [← stage_apply, stage_stagesEquiv_symm]
 
 /-- The stage seminorm of level `h`: the operator norm of the restriction of a distribution to
@@ -281,58 +275,6 @@ theorem ofMeasure_injective : Function.Injective (ofMeasure (p := p) (K := K)) :
   exact AbstractMeasure.ext fun f ↦ congrFun
     ((denseRange_eval (p := p) (E := K) K).equalizer (map_continuous μ) (map_continuous ν)
       hcomp) f
-
-/-! ### Dirac distributions -/
-
-variable (K) in
-/-- The **Dirac distribution** at `x : ℤ_p`, evaluating locally analytic functions at `x`. -/
-noncomputable def dirac (x : ℤ_[p]) : LocallyAnalyticDistribution p K :=
-  ofMeasure (AbstractMeasure.dirac K x)
-
-/-- The distribution of the Dirac measure at `x` is the Dirac distribution at `x`. -/
-@[simp]
-theorem ofMeasure_dirac (x : ℤ_[p]) :
-    ofMeasure (AbstractMeasure.dirac K x) = dirac K x :=
-  (rfl)
-
-/-- Applying the Dirac distribution at `x` evaluates the function at `x`. -/
-@[simp]
-theorem coe_dirac_apply (x : ℤ_[p]) (f : LocallyAnalytic p K K) :
-    (dirac K x : Module.Dual K (LocallyAnalytic p K K)) f = LocallyAnalytic.eval K f x := by
-  rw [← ofMeasure_dirac, coe_ofMeasure_apply, AbstractMeasure.dirac_apply]
-
-/-- Restricting the Dirac distribution at `x` to stage `h` evaluates coefficient vectors at `x`. -/
-theorem stage_dirac_apply (x : ℤ_[p]) (h : ℕ) (c : AnalyticStage p h K) :
-    stage h (dirac K x) c = AnalyticStage.eval K c x := by
-  simp
-
-/-- The operator norm of a Dirac distribution on stage `h` equals `1`. -/
-@[simp]
-theorem norm_stage_dirac (x : ℤ_[p]) (h : ℕ) :
-    ‖stage h (dirac K x)‖ = 1 := by
-  refine le_antisymm ?_ ?_
-  · refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ ?_
-    rw [stage_dirac_apply, one_mul]
-    exact (ContinuousMap.norm_coe_le_norm _ x).trans (AnalyticStage.norm_eval_le K c)
-  · let c : AnalyticStage p h K := ZeroAtInftyContinuousMap.single (PadicInt.toZModPow h x, 0) 1
-    have hle := ContinuousLinearMap.le_opNorm (stage h (dirac K x)) c
-    simpa [c] using hle
-
-/-- Every stage seminorm of a Dirac distribution equals `1`. -/
-theorem stageSeminorm_dirac (x : ℤ_[p]) (h : ℕ) :
-    stageSeminorm h (dirac K x) = 1 := by
-  rw [stageSeminorm_apply]
-  exact norm_stage_dirac x h
-
-/-- Distinct points of `ℤ_p` define distinct Dirac distributions. -/
-theorem dirac_injective : Function.Injective (dirac (p := p) K) := by
-  intro x y hxy
-  refine PadicInt.ext_of_toZModPow.mp fun h ↦ ?_
-  let c : AnalyticStage p h K := ZeroAtInftyContinuousMap.single (PadicInt.toZModPow h x, 0) 1
-  have h1 := DFunLike.congr_fun (congrArg (stage h) hxy) c
-  simp only [stage_dirac_apply, c, AnalyticStage.eval_single_zero, ↓reduceIte] at h1
-  by_contra hne
-  simp [Ne.symm hne] at h1
 
 end LocallyAnalyticDistribution
 
