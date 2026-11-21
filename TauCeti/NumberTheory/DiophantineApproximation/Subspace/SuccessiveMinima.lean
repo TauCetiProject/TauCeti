@@ -54,9 +54,13 @@ bound. The uniformity in `c` is what lets exponent families that move with `Q` b
 
 ## Main results
 
+* `TauCeti.NumberField.exists_linearIndependent_mem_smul_successiveMinimum_approx`: a family of
+  `card ι` independent vectors of the module realizing the minima.
+* `TauCeti.NumberField.successiveMinimum_approx_pos` and
+  `TauCeti.NumberField.monotoneOn_successiveMinimum_approx`: below `card ι` the minima are
+  positive and nondecreasing.
 * `TauCeti.NumberField.le_prod_successiveMinimum_approx`: the lower bound on `∏ l, μ l ^ d`.
 * `TauCeti.NumberField.prod_successiveMinimum_approx_le`: the upper bound on `∏ l, μ l ^ d`.
-* `TauCeti.NumberField.successiveMinimum_approx_pos`: the minima below `card ι` are positive.
 * `TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum`: every minimum is at least
   `Q ^ (-B)` for `Q ≥ Q₀`, uniformly in the exponents of absolute weight at most `A`.
 * `TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum_le`: every minimum lies
@@ -78,6 +82,57 @@ open MeasureTheory Module NumberField NumberField.mixedEmbedding
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
+
+open scoped Pointwise in
+/-- **A family realizing the successive minima of an approximation domain.** For forms
+independent at the infinite places and at `S₀` and a level `Q > 0`, there are `card ι` linearly
+independent vectors `x l` of the lattice `approxModule S₀ L c Q` whose mixed embeddings lie in the
+dilate of `approxBody L c Q` by the `l`-th successive minimum over `K`. Read at the infinite places
+with `TauCeti.NumberField.mixedEmbedding_mem_smul_approxBody_iff`, this is
+`v (L v i (x l)) ≤ μ l · Q ^ c v i`. -/
+theorem exists_linearIndependent_mem_smul_successiveMinimum_approx
+    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
+    ∃ x : Fin (Fintype.card ι) → ι → K, LinearIndependent K x ∧
+      ∀ l, x l ∈ approxModule S₀ L c Q ∧ (fun j ↦ mixedEmbedding K (x l j)) ∈
+        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q := by
+  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
+  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  obtain ⟨x, hx, hxB⟩ :=
+    (approxModule S₀ L c Q).exists_linearIndependent_mem_smul_successiveMinimum hB
+  rw [hcoe] at hxB
+  exact ⟨x, hx, hxB⟩
+
+/-- Below `card ι`, the successive minima over `K` of an approximation domain of positive level,
+with forms independent at the infinite places and at `S₀`, are positive. -/
+theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
+    (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
+    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l := by
+  let _ := discreteTopology_mixedImage_approxModule hLFin c Q
+  let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLInf c hQ
+  simpa only [hcoe] using (approxModule S₀ L c Q).successiveMinimum_pos hB hl
+
+/-- Below `card ι`, the successive minima over `K` of an approximation domain of positive level,
+with forms independent at the infinite places and at `S₀`, are nondecreasing
+(`Submodule.monotoneOn_successiveMinimum`). -/
+theorem monotoneOn_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
+    (hQ : 0 < Q) :
+    MonotoneOn ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q))
+      (Set.Iio (Fintype.card ι)) := by
+  let _ := discreteTopology_mixedImage_approxModule hLFin c Q
+  let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLInf c hQ
+  simpa only [hcoe] using (approxModule S₀ L c Q).monotoneOn_successiveMinimum hB
 
 /-- **The constant of the lower Minkowski bound for an approximation domain**:
 `2 ^ N / (N! · c_K ^ N · approxConst S₀ L)`, where `N = [K : ℚ] · card ι` and
@@ -312,42 +367,6 @@ private theorem exists_pos_forall_mul_rpow_le_pow {S₀ : Finset (FinitePlace K)
     inv_le_iff_one_le_mul₀' (mul_pos hC' (Real.rpow_pos_of_pos (zero_lt_one.trans_le hQ) _))]
   exact one_le_mul_rpow_approxAbsWeight_mul_pow hLInf hLFin D hD c hQ ht.le hxΛ hx hxB
 
-open scoped Classical Pointwise in
-/-- Below `#ι`, the `l`-th successive minimum over `K` of an approximation domain of positive level
-is positive, and its dilate of the body contains the mixed embedding of a nonzero point of the
-module. -/
-private theorem exists_ne_zero_mem_smul_approxBody {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
-    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ∧
-      ∃ x ∈ approxModule S₀ L c Q, x ≠ 0 ∧ (fun j ↦ mixedEmbedding K (x j)) ∈
-        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q := by
-  let _ := discreteTopology_mixedImage_approxModule hLFin c Q
-  let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLInf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q := ConvexBody.coe_mk _ _ _ _
-  have hB : 0 ∈ interior (B : Set (ι → mixedSpace K)) := by
-    rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
-  have hpos := Submodule.successiveMinimum_pos (Λ := approxModule S₀ L c Q) hB hl
-  obtain ⟨x, hx, hxB⟩ := (Submodule.successiveMinimum_le_iff hB hl hpos).1 le_rfl
-  rw [hcoe] at hpos hxB
-  exact ⟨hpos, x 0, (hxB 0).1, hx.ne_zero 0, (hxB 0).2⟩
-
-/-- The successive minima over `K` of an approximation domain of positive level, with forms
-independent at the infinite places and at `S₀`, are positive below the ambient dimension. -/
-theorem successiveMinimum_approx_pos {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
-    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l :=
-  (exists_ne_zero_mem_smul_approxBody hLInf hLFin c hQ hl).1
-
 /-- Each successive minimum over `K` of an approximation domain has `d`-th power at least
 `C * Q ^ (-approxAbsWeight S₀ c)`, with `C > 0` independent of `c` and of `Q ≥ 1`. -/
 private theorem exists_pos_forall_mul_rpow_le_successiveMinimum_pow
@@ -359,9 +378,12 @@ private theorem exists_pos_forall_mul_rpow_le_successiveMinimum_pow
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^ finrank ℚ K := by
   obtain ⟨C, hC, h⟩ := exists_pos_forall_mul_rpow_le_pow hLInf hLFin
   refine ⟨C, hC, fun c Q hQ l hl ↦ ?_⟩
-  obtain ⟨hpos, x, hxΛ, hx, hxB⟩ :=
-    exists_ne_zero_mem_smul_approxBody hLInf hLFin c (zero_lt_one.trans_le hQ) hl
-  exact h c hQ hpos x hxΛ hx ((mixedEmbedding_mem_smul_approxBody_iff hpos).1 hxB)
+  have hQ₀ : 0 < Q := zero_lt_one.trans_le hQ
+  have hpos := successiveMinimum_approx_pos hLInf hLFin c hQ₀ hl
+  obtain ⟨x, hx, hxB⟩ :=
+    exists_linearIndependent_mem_smul_successiveMinimum_approx hLInf hLFin c hQ₀
+  exact h c hQ hpos (x ⟨l, hl⟩) (hxB _).1 (hx.ne_zero _)
+    ((mixedEmbedding_mem_smul_approxBody_iff hpos).1 (hxB ⟨l, hl⟩).2)
 
 /-- Each successive minimum over `K` of an approximation domain has `d`-th power at most
 `C * Q ^ (#ι * approxAbsWeight S₀ c)`, with `C > 0` independent of `c` and of `Q ≥ 1`: Minkowski's

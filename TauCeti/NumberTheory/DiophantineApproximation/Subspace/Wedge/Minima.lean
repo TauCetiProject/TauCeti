@@ -111,7 +111,8 @@ theorem choose_sub_one_le_finrank_approxSpan_of_forall_plucker_mem {p k : ℕ}
     exact wedgeSpan_le_iff.2 fun J hJ ↦ Submodule.subset_span (hyD J hJ)
   have hrank := finrank_wedgeSpan_add_one hy hkp
   rw [Set.powersetCard.fintypeCard] at hrank
-  exact (show _ ≤ finrank K (wedgeSpan k p y) by omega).trans (Submodule.finrank_mono hW)
+  have hle : (Fintype.card ι).choose p - 1 ≤ finrank K (wedgeSpan k p y) := by omega
+  exact hle.trans (Submodule.finrank_mono hW)
 
 /-- **The first `M - 1` minima of a domain of `⋀^p` containing the wedges of a basis** (toward
 Bombieri–Gubler, Lemma 7.5.31). Let `y` be a basis of `ι → K` and `k + p = card ι`. If an
@@ -132,11 +133,11 @@ theorem successiveMinimum_le_one_of_forall_plucker_mem {p k : ℕ} {S₀ : Finse
   exact successiveMinimum_le_one_of_lt_finrank_approxSpan (by omega)
 
 /-- **The product of the minima of the wedge domain is large after a large jump**: Minkowski's
-second theorem for the wedge domain, with its weight bounded by Minkowski's second theorem for the
-original domain. For a fixed degree `0 < p` and a fixed constant `0 < C` in the wedge exponents,
-there is `A > 0` such that `A · (μ k / μ (k - 1)) ^ [K : ℚ]` is at most the product of the
-`[K : ℚ]`-th powers of the successive minima of the wedge domain, for all exponents, levels
-`0 < Q ≠ 1`, `k + p = card ι` and bijections. -/
+second theorem for the wedge domain, with `Q` raised to its weight bounded above by Minkowski's
+second theorem for the original domain. For a fixed degree `0 < p` and a fixed constant `0 < C`
+in the wedge exponents, there is `A > 0` such that `A · (μ k / μ (k - 1)) ^ [K : ℚ]` is at most
+the product of the `[K : ℚ]`-th powers of the successive minima of the wedge domain, for all
+exponents, levels `0 < Q ≠ 1`, `k + p = card ι` and bijections. -/
 private theorem exists_pos_forall_mul_div_pow_le_prod_successiveMinimum_wedge
     {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
@@ -291,18 +292,14 @@ theorem exists_successiveMinimum_wedge :
     fun p ↦ hA p (mem_Icc.1 p.property).1
   refine ⟨ε, hε, fun p c Q k hp hQ hQ₁ hkp ↦ ?_⟩
   have hεp : ε ≤ A p := by simpa using (hεA ⟨p, mem_Icc.2 ⟨hp, by omega⟩⟩).le
-  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) with hμ_def
+  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
   -- A family realizing the minima satisfies the hypotheses of the wedge-domain construction.
   obtain ⟨x, hx, hxB⟩ :=
     exists_linearIndependent_mem_smul_successiveMinimum_approx hLinf hLfin c hQ
   have hμ (l : ℕ) (hl : l < Fintype.card ι) : 0 < μ l :=
     successiveMinimum_approx_pos hLinf hLfin c hQ hl
-  have hμm : MonotoneOn μ (Set.Iio (Fintype.card ι)) := by
-    let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-    let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-    obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-    rw [hμ_def, ← hcoe]
-    exact Submodule.monotoneOn_successiveMinimum hB
+  have hμm : MonotoneOn μ (Set.Iio (Fintype.card ι)) :=
+    monotoneOn_successiveMinimum_approx hLinf hLfin c hQ
   obtain ⟨y, σ, hspan, hmem⟩ := hplucker S₀ L c Q x μ hLinf hLfin hQ hQ₁ hx hμm hμ
     (fun l ↦ (hxB l).1) fun v i l ↦ (mixedEmbedding_mem_smul_approxBody_iff (hμ l l.isLt)).1
       (hxB l).2 v i

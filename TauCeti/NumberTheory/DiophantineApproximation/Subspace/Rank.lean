@@ -13,14 +13,15 @@ import TauCeti.LinearAlgebra.Dimension.Submodule
 /-!
 # The rank of an approximation domain
 
-The rank of the span of an approximation domain is the number of its successive minima over
-`K` that are at most one. Any family realizing those minima spans the domain with its first
-`r` vectors, where `r` is this rank. These statements let arguments about the dimensions and
-spans of domains use the geometry of their successive minima without choosing a new basis.
-In one direction no hypothesis is needed: every minimum below the rank is at most one, for all
-forms and every real level. For a positive level and forms independent at the infinite places
-and at `S₀`, a family realizing the minima exists
-(`TauCeti.NumberField.exists_linearIndependent_mem_smul_successiveMinimum_approx`).
+In one direction no hypothesis is needed: for all forms and every real level, every successive
+minimum over `K` of an approximation domain below the rank of its span is at most one. For a
+positive level and forms linearly independent at the infinite places and at the places of `S₀`,
+the converse holds as well: the rank of the span is exactly the number of minima at most one, and
+any family realizing the minima (one exists by
+`TauCeti.NumberField.exists_linearIndependent_mem_smul_successiveMinimum_approx`) spans the domain
+with its first `r` vectors, where `r` is this rank. These statements let arguments about the
+dimensions and spans of domains use the geometry of their successive minima without choosing a
+new basis.
 
 The threshold is non-strict: vectors on the boundary of the closed approximation body belong
 to the domain. Only indices below the ambient dimension are counted, since later successive
@@ -54,37 +55,9 @@ theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
       0 ∈ interior (B : Set (ι → mixedSpace K)) ∧
       approxSpan S₀ L c Q = Submodule.span K {x | x ∈ approxModule S₀ L c Q ∧
         (fun j ↦ mixedEmbedding K (x j)) ∈ (1 : ℝ) • (B : Set (ι → mixedSpace K))} := by
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLinf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q :=
-    ConvexBody.coe_mk _ _ _ _
-  refine ⟨B, hcoe, ?_, ?_⟩
-  · rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
-  · rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
-
-/-- **A family realizing the successive minima of an approximation domain.** For forms
-independent at the infinite places and at `S₀` and a level `Q > 0`, there are `card ι` linearly
-independent vectors `x l` of the lattice `approxModule S₀ L c Q` whose mixed embeddings lie in the
-dilate of `approxBody L c Q` by the `l`-th successive minimum over `K`. Read at the infinite places
-with `TauCeti.NumberField.mixedEmbedding_mem_smul_approxBody_iff`, this is
-`v (L v i (x l)) ≤ μ l · Q ^ c v i`. -/
-theorem exists_linearIndependent_mem_smul_successiveMinimum_approx
-    {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
-    ∃ x : Fin (Fintype.card ι) → ι → K, LinearIndependent K x ∧
-      ∀ l, x l ∈ approxModule S₀ L c Q ∧ (fun j ↦ mixedEmbedding K (x l j)) ∈
-        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q := by
-  let _ := discreteTopology_mixedImage_approxModule hLfin c Q
-  let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
-  obtain ⟨B, hcoe, hB, -⟩ := exists_convexBody_approxSpan (S₀ := S₀) hLinf c hQ
-  obtain ⟨x, hx, hxB⟩ :=
-    (approxModule S₀ L c Q).exists_linearIndependent_mem_smul_successiveMinimum hB
-  rw [hcoe] at hxB
-  exact ⟨x, hx, hxB⟩
+  obtain ⟨B, hcoe, hB⟩ := exists_convexBody_eq_approxBody hLinf c hQ
+  refine ⟨B, hcoe, hB, ?_⟩
+  rw [hcoe, one_smul, approxSpan_eq_span, approxDomain_eq S₀ L c hQ.le]
 
 /-- **The minima below the rank of an approximation domain are at most one**: if `l` is less
 than the rank of the span of `approxDomain S₀ L c Q`, then its `l`-th successive minimum over `K`

@@ -60,8 +60,9 @@ large jump between consecutive minima makes the wedge domain small.
   corrected minimal vectors lie in the wedge domain.
 * `TauCeti.NumberField.approxWeight_wedgeExponent` and
   `TauCeti.NumberField.rpow_approxWeight_wedgeExponent`: the exact weight of the wedge domain.
-* `TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`: for the successive minima, the
-  wedge domain has weight at most a constant times `(μ (k - 1) / μ k) ^ [K : ℚ]`.
+* `TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`: for the successive minima,
+  `Q ^ approxWeight S₀ e`, where `e` is the wedge exponent family, is at most a constant times
+  `(μ (k - 1) / μ k) ^ [K : ℚ]`.
 
 ## References
 

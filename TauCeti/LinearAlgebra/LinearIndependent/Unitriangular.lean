@@ -68,7 +68,7 @@ theorem LinearIndependent.of_eq_add_mem_span_image_Iio {x z : ι → M}
   obtain ⟨-, hj⟩ := Finset.mem_filter.1 hjmax.prop
   have hsum (h : ι →₀ R) (hs : h.support ⊆ s) :
       Finsupp.linearCombination R d h j = ∑ l ∈ s, h l * d l j := by
-    rw [Finsupp.linearCombination_apply, Finsupp.sum_of_support_subset _ hs _ (by simp),
+    rw [Finsupp.linearCombination_apply_of_mem_supported R (Finset.coe_subset.2 hs),
       Finsupp.finsetSum_apply]
     simp
   -- The changes of `f` and `g` agree at `j`: above `j` the coefficients agree, and `d l` vanishes
@@ -79,8 +79,7 @@ theorem LinearIndependent.of_eq_add_mem_span_image_Iio {x z : ι → M}
     by_cases hjl : j < l
     · by_contra hfl
       exact hjmax.not_gt (Finset.mem_filter.2 ⟨hl, fun h ↦ hfl (by rw [h])⟩) hjl
-    · rw [Finsupp.notMem_support_iff.1 fun hjd ↦ hjl ((Finsupp.mem_supported _ _).1 (hd l) hjd),
-        mul_zero, mul_zero]
+    · rw [(Finsupp.mem_supported' _ _).1 (hd l) j hjl, mul_zero, mul_zero]
   have hj' := DFunLike.congr_fun hfg' j
   rw [Finsupp.add_apply, Finsupp.add_apply, hd_eq] at hj'
   exact hj (add_right_cancel hj')
