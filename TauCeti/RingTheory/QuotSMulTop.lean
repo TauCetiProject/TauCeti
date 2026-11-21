@@ -65,6 +65,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 * `Ideal.isSMulRegular_quotient_smul_top_congr` and
   `Ideal.isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem`: regularity of a scalar on `M ⧸ I • M`
   depends only on its class modulo `I`, up to multiplication by units.
+* `Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk`: a scalar that is a unit modulo `I` is
+  regular on `M ⧸ I • M`.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
@@ -349,6 +351,14 @@ theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u�
   rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
     I.isSMulRegular_quotient_smul_top_congr hab,
     (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
+
+/-- A scalar that is a unit modulo `I` is regular on `M ⧸ I • M`. -/
+theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided] {a : R}
+    (ha : IsUnit (Ideal.Quotient.mk I a)) : IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a := by
+  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective ha.unit⁻¹.val
+  have hmem : y * a - 1 ∈ I := by
+    rw [← Ideal.Quotient.eq, map_mul, hy, map_one, IsUnit.val_inv_mul]
+  exact ((I.isSMulRegular_quotient_smul_top_congr hmem).mpr (IsSMulRegular.one _)).of_mul
 
 end Ring
 
