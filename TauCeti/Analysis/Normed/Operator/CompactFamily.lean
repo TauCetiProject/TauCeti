@@ -128,11 +128,7 @@ theorem IsCompact.exists_pos_forall_isInvertible_of_norm_le {𝕜 X F E G : Type
       simpa [φ, h₀] using hx'
     · exact add_pos_of_pos_of_nonneg (norm_pos_iff.2 h₀) infDist_nonneg
   -- By compactness, `φ` has a positive lower bound `m` on `K`.
-  obtain ⟨m, hm, hmK⟩ : ∃ m > 0, ∀ x ∈ K, m ≤ φ x := by
-    rcases K.eq_empty_or_nonempty with rfl | hne
-    · exact ⟨1, one_pos, by simp⟩
-    obtain ⟨x₀, hx₀, hmin⟩ := hK.exists_isMinOn hne hφ
-    exact ⟨φ x₀, hpos x₀ hx₀, fun x hx ↦ hmin hx⟩
+  obtain ⟨m, hm, hmK⟩ := hK.exists_forall_le' hφ hpos
   -- If `‖d x‖ ≤ m / 3`, then `A x` is at distance at least `2m / 3` from `S`, so an operator in
   -- `S` cannot lie within `m / 3` of it.
   refine ⟨m / 3, by positivity, fun x hx T hdx hT ↦ ?_⟩

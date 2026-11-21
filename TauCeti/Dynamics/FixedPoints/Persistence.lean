@@ -293,15 +293,11 @@ private theorem exists_pos_forall_le_norm_sub (hK : IsCompact K) (hf₀ : Contin
     ∃ m > 0, ∀ y ∈ K, (∀ x ∈ fixedPoints f ∩ K, y ∉ ball x r) → m ≤ ‖y - f y‖ := by
   set K' := K ∩ ⋂ x ∈ fixedPoints f ∩ K, (ball x r)ᶜ
   have hK' : IsCompact K' := hK.inter_right (isClosed_biInter fun x _ ↦ isOpen_ball.isClosed_compl)
-  rcases K'.eq_empty_or_nonempty with hK'e | hne
-  · refine ⟨1, one_pos, fun y hy hball ↦ ?_⟩
-    exact absurd (show y ∈ K' from ⟨hy, mem_iInter₂.2 hball⟩) (hK'e ▸ notMem_empty y)
-  obtain ⟨y₀, hy₀, hmin⟩ := hK'.exists_isMinOn hne
-    ((continuousOn_id.sub hf₀).norm.mono inter_subset_left)
-  refine ⟨‖y₀ - f y₀‖, norm_pos_iff.2 fun h ↦ ?_, fun y hy hball ↦ hmin ⟨hy, mem_iInter₂.2 hball⟩⟩
-  -- A fixed point `y₀` of `f` in `K` lies in its own ball.
-  have hfix : y₀ ∈ fixedPoints f ∩ K := ⟨(sub_eq_zero.1 h).symm, hy₀.1⟩
-  exact mem_iInter₂.1 hy₀.2 y₀ hfix (mem_ball_self hr)
+  -- `‖y - f y‖` is positive on `K'`, since a fixed point of `f` in `K` lies in its own ball.
+  obtain ⟨m, hm, hmK'⟩ := hK'.exists_forall_le'
+    ((continuousOn_id.sub hf₀).norm.mono inter_subset_left) fun y hy ↦ norm_pos_iff.2 fun h ↦
+      mem_iInter₂.1 hy.2 y ⟨(sub_eq_zero.1 h).symm, hy.1⟩ (mem_ball_self hr)
+  exact ⟨m, hm, fun y hy hball ↦ hmK' y ⟨hy, mem_iInter₂.2 hball⟩⟩
 
 /-- **The fixed points in a compact set persist under small `C¹` perturbations, with their
 signs.**
@@ -329,11 +325,9 @@ theorem exists_pos_forall_exists_bijOn_fixedPoints_inter [FiniteDimensional ℝ 
   -- The fixed points of `f` in `K` form a compact set of nondegenerate fixed points, so finitely
   -- many.
   have hFc : IsCompact F := by
-    have hFeq : F = K ∩ (fun y ↦ f y - y) ⁻¹' {0} := by
-      ext y; simp [F, mem_fixedPoints, IsFixedPt, sub_eq_zero, and_comm]
+    have hFeq : F = {y ∈ K | f y = y} := Set.ext fun _ ↦ and_comm
     rw [hFeq]
-    exact hK.of_isClosed_subset ((hf₀.sub continuousOn_id).preimage_isClosed_of_isClosed
-      hK.isClosed isClosed_singleton) inter_subset_left
+    exact hK.of_isClosed_subset (hK.isClosed.isClosed_eq hf₀ continuousOn_id) fun y hy ↦ hy.1
   have hFfin : F.Finite := hFc.finite_of_isNondegenerateFixedPt fun x hx ↦ hnd x hx.2 hx.1
   -- The local persistence theorem at each point of `F`, for a common radius `r` and thresholds
   -- `δx x`, and a common threshold `δ < m` below them.
