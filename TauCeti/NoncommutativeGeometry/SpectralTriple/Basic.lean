@@ -64,7 +64,7 @@ structure SpectralTriple where
   rep_mem_domain (a : A) {x : H} (hx : x ∈ operator.domain) : rep a x ∈ operator.domain
   exists_bounded_commutator (a : A) :
     ∃ C : H →L[ℂ] H, ∀ x : operator.domain,
-      operator ⟨rep a x, rep_mem_domain a x.2⟩ - rep a (operator x) = C x
+      operator ⟨rep a x, rep_mem_domain a x.property⟩ - rep a (operator x) = C x
 
 /-- An **even spectral triple** over `A` on `H`: a spectral triple together with a grading `γ`, a
 self-adjoint unitary involution of `H` that commutes with the representation `π`, preserves the
@@ -78,7 +78,7 @@ structure EvenSpectralTriple extends SpectralTriple A H where
   commute_grading_rep (a : A) : Commute grading (rep a)
   grading_mem_domain {x : H} (hx : x ∈ operator.domain) : grading x ∈ operator.domain
   grading_apply_operator (x : operator.domain) :
-    grading (operator x) = -operator ⟨grading x, grading_mem_domain x.2⟩
+    grading (operator x) = -operator ⟨grading x, grading_mem_domain x.property⟩
 
 variable {A H}
 
@@ -100,14 +100,14 @@ private def commutatorFun (a : A) : H →L[ℂ] H :=
   Classical.choose (S.exists_bounded_commutator a)
 
 private theorem commutatorFun_spec (a : A) (x : S.operator.domain) :
-    S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) =
+    S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩ - S.rep a (S.operator x) =
       S.commutatorFun a x :=
   Classical.choose_spec (S.exists_bounded_commutator a) x
 
 /-- Any bounded operator agreeing with `[D, π(a)]` on `D(D)` equals the chosen extension. -/
 private theorem eq_commutatorFun_of_domain {a : A} {C : H →L[ℂ] H}
     (hC : ∀ x : S.operator.domain,
-      S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) = C x) :
+      S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩ - S.rep a (S.operator x) = C x) :
     C = S.commutatorFun a := by
   ext x
   exact congrFun (Continuous.ext_on S.dense_domain C.continuous (S.commutatorFun a).continuous
@@ -119,28 +119,29 @@ def commutator : A →ₗ[ℂ] (H →L[ℂ] H) where
   toFun := S.commutatorFun
   map_add' a b := by
     refine (S.eq_commutatorFun_of_domain fun x ↦ ?_).symm
-    have hsum : (⟨S.rep (a + b) x, S.rep_mem_domain (a + b) x.2⟩ : S.operator.domain) =
-        ⟨S.rep a x, S.rep_mem_domain a x.2⟩ + ⟨S.rep b x, S.rep_mem_domain b x.2⟩ :=
+    have hsum : (⟨S.rep (a + b) x, S.rep_mem_domain (a + b) x.property⟩ : S.operator.domain) =
+        ⟨S.rep a x, S.rep_mem_domain a x.property⟩ + ⟨S.rep b x, S.rep_mem_domain b x.property⟩ :=
       Subtype.ext (by simp [map_add])
     rw [hsum, LinearPMap.map_add, map_add, add_apply, add_apply,
       ← S.commutatorFun_spec a x, ← S.commutatorFun_spec b x]
     abel
   map_smul' c a := by
     refine (S.eq_commutatorFun_of_domain fun x ↦ ?_).symm
-    have hsm : (⟨S.rep (c • a) x, S.rep_mem_domain (c • a) x.2⟩ : S.operator.domain) =
-        c • ⟨S.rep a x, S.rep_mem_domain a x.2⟩ :=
+    have hsm : (⟨S.rep (c • a) x, S.rep_mem_domain (c • a) x.property⟩ : S.operator.domain) =
+        c • ⟨S.rep a x, S.rep_mem_domain a x.property⟩ :=
       Subtype.ext (by simp [map_smul])
     rw [hsm, LinearPMap.map_smul, map_smul, smul_apply, smul_apply, RingHom.id_apply,
       ← S.commutatorFun_spec a x, smul_sub]
 
 /-- On the domain of `D`, `S.commutator a` agrees with `D (π(a) x) - π(a) (D x)`. -/
 theorem commutator_apply_domain (a : A) (x : S.operator.domain) :
-    S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) = S.commutator a x :=
+    S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩ - S.rep a (S.operator x) =
+      S.commutator a x :=
   S.commutatorFun_spec a x
 
 /-- Rewritten form of `commutator_apply_domain`: `D (π(a) x) = π(a) (D x) + [D, π(a)] x`. -/
 theorem operator_rep_apply (a : A) (x : S.operator.domain) :
-    S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ =
+    S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩ =
       S.rep a (S.operator x) + S.commutator a x :=
   eq_add_of_sub_eq' (S.commutator_apply_domain a x)
 
@@ -148,7 +149,7 @@ theorem operator_rep_apply (a : A) (x : S.operator.domain) :
 on `D(D)` equals `S.commutator a`. -/
 theorem eq_commutator_of_domain {a : A} {C : H →L[ℂ] H}
     (hC : ∀ x : S.operator.domain,
-      S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩ - S.rep a (S.operator x) = C x) :
+      S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩ - S.rep a (S.operator x) = C x) :
     C = S.commutator a :=
   S.eq_commutatorFun_of_domain hC
 
@@ -156,7 +157,7 @@ theorem eq_commutator_of_domain {a : A} {C : H →L[ℂ] H}
 @[simp]
 theorem commutator_one : S.commutator 1 = 0 := by
   refine (S.eq_commutator_of_domain fun x ↦ ?_).symm
-  have h1 : (⟨S.rep 1 x, S.rep_mem_domain 1 x.2⟩ : S.operator.domain) = x :=
+  have h1 : (⟨S.rep 1 x, S.rep_mem_domain 1 x.property⟩ : S.operator.domain) = x :=
     Subtype.ext (by simp)
   rw [h1, map_one, one_apply_eq_self, sub_self, zero_apply]
 
@@ -165,7 +166,7 @@ theorem commutator_one : S.commutator 1 = 0 := by
 theorem commutator_mul (a b : A) :
     S.commutator (a * b) = S.commutator a * S.rep b + S.rep a * S.commutator b := by
   refine (S.eq_commutator_of_domain fun x ↦ ?_).symm
-  have h1 := S.commutator_apply_domain a ⟨S.rep b x, S.rep_mem_domain b x.2⟩
+  have h1 := S.commutator_apply_domain a ⟨S.rep b x, S.rep_mem_domain b x.property⟩
   have h2 := S.commutator_apply_domain b x
   simp only [add_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, map_mul]
   dsimp only at h1
@@ -180,10 +181,10 @@ theorem commutator_star (a : A) :
     (continuous_id.inner continuous_const) (continuous_id.inner continuous_const) fun y hy ↦ ?_
   have hπ_adj : S.rep (star a) = (S.rep a).adjoint := by
     rw [map_star, ContinuousLinearMap.star_eq_adjoint]
-  have h1 : ⟪y, S.operator ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.2⟩⟫_ℂ =
+  have h1 : ⟪y, S.operator ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.property⟩⟫_ℂ =
       ⟪S.rep a (S.operator ⟨y, hy⟩), (x : H)⟫_ℂ := by
     rw [← S.isSelfAdjoint_operator.isFormalAdjoint ⟨y, hy⟩
-      ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.2⟩]
+      ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.property⟩]
     dsimp only
     rw [hπ_adj, ContinuousLinearMap.adjoint_inner_right]
   have h2 : ⟪y, S.rep (star a) (S.operator x)⟫_ℂ =
@@ -204,7 +205,7 @@ theorem norm_commutator_star (a : A) : ‖S.commutator (star a)‖ = ‖S.commut
 
 /-- Pointwise bound on `‖D (π(a) x)‖` in terms of `‖D x‖` and `‖x‖`. -/
 theorem norm_operator_rep_le (a : A) (x : S.operator.domain) :
-    ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ≤
+    ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩‖ ≤
       ‖S.rep a‖ * ‖S.operator x‖ + ‖S.commutator a‖ * ‖(x : H)‖ := by
   rw [S.operator_rep_apply a x]
   exact (norm_add_le _ _).trans
@@ -213,7 +214,7 @@ theorem norm_operator_rep_le (a : A) (x : S.operator.domain) :
 /-- `ℓ¹` graph-norm bound: `π(a)` acts boundedly on `D(D)` with norm at most
 `‖π(a)‖ + ‖[D, π(a)]‖`. -/
 theorem norm_rep_add_norm_operator_rep_le (a : A) (x : S.operator.domain) :
-    ‖S.rep a x‖ + ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ≤
+    ‖S.rep a x‖ + ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩‖ ≤
       (‖S.rep a‖ + ‖S.commutator a‖) * (‖(x : H)‖ + ‖S.operator x‖) := by
   have h1 : ‖S.rep a x‖ ≤ ‖S.rep a‖ * ‖(x : H)‖ := (S.rep a).le_opNorm _
   have h2 := S.norm_operator_rep_le a x
@@ -223,13 +224,13 @@ theorem norm_rep_add_norm_operator_rep_le (a : A) (x : S.operator.domain) :
 /-- Hilbert graph-norm bound:
 `‖π(a) x‖² + ‖D (π(a) x)‖² ≤ 2 (‖π(a)‖² + ‖[D, π(a)]‖²) (‖x‖² + ‖D x‖²)`. -/
 theorem norm_sq_add_norm_operator_sq_rep_le (a : A) (x : S.operator.domain) :
-    ‖S.rep a x‖ ^ 2 + ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ^ 2 ≤
+    ‖S.rep a x‖ ^ 2 + ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩‖ ^ 2 ≤
       2 * (‖S.rep a‖ ^ 2 + ‖S.commutator a‖ ^ 2) * (‖(x : H)‖ ^ 2 + ‖S.operator x‖ ^ 2) := by
   have h1 : ‖S.rep a x‖ ≤ ‖S.rep a‖ * ‖(x : H)‖ := (S.rep a).le_opNorm _
   have h2 := S.norm_operator_rep_le a x
   have h1sq : ‖S.rep a x‖ ^ 2 ≤ (‖S.rep a‖ * ‖(x : H)‖) ^ 2 :=
     pow_le_pow_left₀ (norm_nonneg _) h1 2
-  have h2sq : ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.2⟩‖ ^ 2 ≤
+  have h2sq : ‖S.operator ⟨S.rep a x, S.rep_mem_domain a x.property⟩‖ ^ 2 ≤
       (‖S.rep a‖ * ‖S.operator x‖ + ‖S.commutator a‖ * ‖(x : H)‖) ^ 2 :=
     pow_le_pow_left₀ (norm_nonneg _) h2 2
   nlinarith [sq_nonneg (‖S.rep a‖ * ‖S.operator x‖ - ‖S.commutator a‖ * ‖(x : H)‖),
@@ -252,12 +253,13 @@ private theorem conj_commutator_apply_domain (U : H ≃ₗᵢ[ℂ] H') (a : A)
     (y : (LinearPMap.unitaryConj U S.operator).domain) :
     LinearPMap.unitaryConj U S.operator
         ⟨U.conjStarAlgEquiv (S.rep a) y,
-          conj_mem_domain U (S.rep_mem_domain a) y.2⟩ -
+          conj_mem_domain U (S.rep_mem_domain a) y.property⟩ -
       U.conjStarAlgEquiv (S.rep a) (LinearPMap.unitaryConj U S.operator y) =
     U.conjStarAlgEquiv (S.commutator a) y := by
   let x : S.operator.domain :=
-    ⟨U.symm (y : H'), (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.2⟩
-  let x' : S.operator.domain := ⟨S.rep a x, S.rep_mem_domain a x.2⟩
+    ⟨U.symm (y : H'),
+      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.property⟩
+  let x' : S.operator.domain := ⟨S.rep a x, S.rep_mem_domain a x.property⟩
   rw [LinearPMap.unitaryConj_apply_of_eq (y := x')
       (by simp [x, x', LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]),
     LinearPMap.unitaryConj_apply_of_eq (y := x) (U.apply_symm_apply _).symm,
@@ -448,10 +450,11 @@ private theorem conj_grading_apply_operator (U : H ≃ₗᵢ[ℂ] H')
     (U.conjStarAlgEquiv S.grading) (LinearPMap.unitaryConj U S.operator y) =
       -LinearPMap.unitaryConj U S.operator
         ⟨U.conjStarAlgEquiv S.grading y,
-          SpectralTriple.conj_mem_domain U S.grading_mem_domain y.2⟩ := by
+          SpectralTriple.conj_mem_domain U S.grading_mem_domain y.property⟩ := by
   let x : S.operator.domain :=
-    ⟨U.symm (y : H'), (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.2⟩
-  let x' : S.operator.domain := ⟨S.grading x, S.grading_mem_domain x.2⟩
+    ⟨U.symm (y : H'),
+      (LinearPMap.mem_unitaryConj_domain_iff (U := U) (A := S.operator)).1 y.property⟩
+  let x' : S.operator.domain := ⟨S.grading x, S.grading_mem_domain x.property⟩
   rw [LinearPMap.unitaryConj_apply_of_eq (y := x) (U.apply_symm_apply _).symm,
     LinearPMap.unitaryConj_apply_of_eq (y := x')
       (by simp [x, x', LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]),

@@ -66,7 +66,8 @@ theorem _root_.LinearPMap.IsResolventAt.unitaryConj (h : IsResolventAt A z R) (U
       ContinuousLinearEquiv.coe_coe]
     rw [← _root_.map_smul, ← _root_.map_sub, h.smul_sub_apply (U.symm y), U.apply_symm_apply]
   apply_smul_sub x := by
-    let x' : A.domain := ⟨U.symm (x : F), (mem_unitaryConj_domain_iff (U := U) (A := A)).1 x.2⟩
+    let x' : A.domain :=
+      ⟨U.symm (x : F), (mem_unitaryConj_domain_iff (U := U) (A := A)).1 x.property⟩
     rw [unitaryConj_apply_of_eq (y := x') (U.apply_symm_apply _).symm]
     simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       ContinuousLinearEquiv.coe_coe]

@@ -52,7 +52,8 @@ section BoundedTransform
 
 private theorem norm_div_sqrt_one_add_sq_le_one (t : ℝ) :
     ‖((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ)‖ ≤ 1 := by
-  simpa only [Complex.norm_real, Real.norm_eq_abs] using Real.abs_div_sqrt_one_add_sq_le_one t
+  simpa only [Complex.norm_real, Real.norm_eq_abs, add_comm 1 (t ^ 2)] using
+    Real.abs_div_sqrt_sq_add_le_one zero_le_one t
 
 /-- The **bounded transform** (or Woronowicz–Baaj–Julg transform) `F_A = A (1 + A²)⁻¹/²` of a
 self-adjoint operator `A` with compact resolvent, defined via the bounded eigenbasis functional
@@ -144,7 +145,7 @@ theorem boundedTransform_unitaryConj {H' : Type*} [NormedAddCommGroup H']
 /-- Any bounded operator preserving `D(A)` and anticommuting with `A` anticommutes with `F_A`. -/
 theorem mul_boundedTransform_of_anticommute {γ : H →L[ℂ] H}
     (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
-    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.2⟩) :
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩) :
     γ * A.boundedTransform hA h = -(A.boundedTransform hA h * γ) :=
   A.mul_boundedEigenCalculus_of_anticommute hA h hγdom hγA _ fun t ↦ by simp [neg_div]
 
@@ -246,7 +247,7 @@ private theorem continuous_bjMulRes : Continuous (bjMulRes hA h) := by
 private theorem inner_commutator_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : HilbertBasis ι ℂ H}
     {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i)
     {T C : H →L[ℂ] H} (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) (i j : ι) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) (i j : ι) :
     ⟪b i, C (b j)⟫_ℂ = ((lam i - lam j : ℝ) : ℂ) * ⟪b i, T (b j)⟫_ℂ := by
   obtain ⟨hi, hAi⟩ := hb i
   obtain ⟨hj, hAj⟩ := hb j
@@ -277,7 +278,7 @@ private theorem inner_selfAdjoint_diag_sandwich {ι : Type*} (b : HilbertBasis �
 
 private theorem bjMulRes_commutator {T C : H →L[ℂ] H}
     (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) {r : ℝ} (hr : 0 ≤ r) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) {r : ℝ} (hr : 0 ≤ r) :
     bjMulRes hA h r * T - T * bjMulRes hA h r =
       ((1 + r : ℝ) : ℂ) • (bjRes hA h r * C * bjRes hA h r) -
         bjMulRes hA h r * C * bjMulRes hA h r := by
@@ -307,7 +308,7 @@ private theorem bjMulRes_commutator {T C : H →L[ℂ] H}
 
 private theorem norm_bjMulRes_commutator_le {T C : H →L[ℂ] H}
     (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) {r : ℝ} (hr : 0 ≤ r) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) {r : ℝ} (hr : 0 ≤ r) :
     ‖bjMulRes hA h r * T - T * bjMulRes hA h r‖ ≤ (5 / 4 : ℝ) * ‖C‖ * (1 + r)⁻¹ := by
   rw [bjMulRes_commutator hA h hTdom hC hr]
   have h1r : 0 < 1 + r := by linarith
@@ -350,7 +351,7 @@ private theorem continuousOn_bjIntegrand (T : H →L[ℂ] H) :
 
 private theorem norm_bjIntegrand_le {T C : H →L[ℂ] H}
     (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) {r : ℝ} (hr : 0 < r) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) {r : ℝ} (hr : 0 < r) :
     ‖bjIntegrand hA h T r‖ ≤ (5 / 4 * Real.pi⁻¹ * ‖C‖) * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹) := by
   rw [bjIntegrand, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
   calc Real.pi⁻¹ * (Real.sqrt r)⁻¹ * ‖bjMulRes hA h r * T - T * bjMulRes hA h r‖
@@ -360,7 +361,7 @@ private theorem norm_bjIntegrand_le {T C : H →L[ℂ] H}
 
 private theorem integrableOn_bjIntegrand {T C : H →L[ℂ] H}
     (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
     IntegrableOn (bjIntegrand hA h T) (Ioi 0) := by
   have hdom : IntegrableOn
       (fun r : ℝ ↦ (5 / 4 * Real.pi⁻¹ * ‖C‖) * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹)) (Ioi 0) :=
@@ -393,7 +394,7 @@ private theorem integral_bjKernel (μ : ℝ) :
 
 private theorem commutator_boundedTransform_eq_integral {T C : H →L[ℂ] H}
     (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
     A.boundedTransform hA h * T - T * A.boundedTransform hA h =
       ∫ r in Ioi (0 : ℝ), bjIntegrand hA h T r := by
   obtain ⟨_, b, lam, hb⟩ := hA.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent h
@@ -438,7 +439,7 @@ private theorem integral_mem_of_isClosed {E : Type*} [NormedAddCommGroup E] [Nor
 has bounded commutator `[A, T]` on `D(A)`, then `[F_A, T]` is a compact operator. -/
 theorem isCompactOperator_commutator_boundedTransform {T C : H →L[ℂ] H}
     (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
     IsCompactOperator ⇑(A.boundedTransform hA h * T - T * A.boundedTransform hA h) := by
   rw [commutator_boundedTransform_eq_integral hA h hTdom hC]
   refine integral_mem_of_isClosed (K := compactOperator (RingHom.id ℂ) H H)
@@ -455,7 +456,7 @@ theorem isCompactOperator_commutator_boundedTransform {T C : H →L[ℂ] H}
 `[A, T] = C` on `D(A)` for a bounded operator `C`, then `‖[F_A, T]‖ ≤ (5 / 4) ‖C‖`. -/
 theorem norm_commutator_boundedTransform_le {T C : H →L[ℂ] H}
     (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.2⟩ - T (A x) = C x) :
+    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
     ‖A.boundedTransform hA h * T - T * A.boundedTransform hA h‖ ≤ 5 / 4 * ‖C‖ := by
   rw [commutator_boundedTransform_eq_integral hA h hTdom hC]
   have hint := integrableOn_bjIntegrand hA h hTdom hC

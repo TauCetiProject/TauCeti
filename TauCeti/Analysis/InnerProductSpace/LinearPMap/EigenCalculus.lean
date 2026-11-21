@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Diagonal.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Map
-import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
@@ -296,7 +296,7 @@ and anticommutes with `A` on `D(A)`, then `γ` anticommutes with `f(A)` for ever
 function `f`. -/
 theorem mul_boundedEigenCalculus_of_anticommute {γ : H →L[ℂ] H}
     (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
-    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.2⟩)
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩)
     {f : ℝ → ℂ} (hf : ∃ C, ∀ t, ‖f t‖ ≤ C) (hodd : ∀ t, f (-t) = -f t) :
     γ * A.boundedEigenCalculus hA h f hf = -(A.boundedEigenCalculus hA h f hf * γ) := by
   refine (chosenBasis hA h).ext_inner_apply (chosenBasis hA h) fun i j ↦ ?_
@@ -313,7 +313,7 @@ anticommutes with `A` on `D(A)`, then `γ` commutes with `f(A)` for every bounde
 `f`. -/
 theorem commute_boundedEigenCalculus_of_anticommute {γ : H →L[ℂ] H}
     (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
-    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.2⟩)
+    (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩)
     {f : ℝ → ℂ} (hf : ∃ C, ∀ t, ‖f t‖ ≤ C) (heven : ∀ t, f (-t) = f t) :
     Commute γ (A.boundedEigenCalculus hA h f hf) := by
   refine (chosenBasis hA h).ext_inner_apply (chosenBasis hA h) fun i j ↦ ?_

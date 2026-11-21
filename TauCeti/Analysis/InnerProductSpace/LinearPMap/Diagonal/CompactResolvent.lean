@@ -9,7 +9,7 @@ public import Mathlib.Order.Northcott
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Diagonal.Basic
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
-import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 
 /-!
 # Reed–Simon compact-resolvent criterion for diagonal operators

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
-import TauCeti.Analysis.InnerProductSpace.LinearPMap.SpectralCutoff
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 
 /-!
 # Orthonormal eigenbases of self-adjoint operators with compact resolvent
