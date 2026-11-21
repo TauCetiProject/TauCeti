@@ -311,9 +311,17 @@ theorem coe_cyclicDiscreteEnergyRepeatFirst_apply (τ : Fin (n + 1) → ℝ) (s 
 /-- Repeating the base vertex is an embedding of energy carriers: forgetting the first vertex is a
 continuous left inverse on tuples. -/
 theorem isEmbedding_cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
-    Topology.IsEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) :=
-  isEmbedding_cons_apply_zero.restrict fun q hq ↦
-    (cyclicDiscreteEnergyRepeatFirst τ s c ⟨q, hq⟩).property
+    Topology.IsEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) := by
+  have hmaps : MapsTo (fun q : Fin (n + 1) → X ↦ (Fin.cons (q 0) q : Fin (n + 2) → X))
+      (cyclicDiscreteEnergyStrictSublevel τ c)
+      (cyclicDiscreteEnergyStrictSublevel (Fin.cons (τ 0) (Fin.cons s (Fin.tail τ))) c) :=
+    fun q hq ↦ (cyclicDiscreteEnergyRepeatFirst τ s c ⟨q, hq⟩).property
+  -- the carrier map is the restriction of the tuple map to the carriers
+  have hfun : ⇑(cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) = hmaps.restrict := by
+    ext q : 2
+    rw [coe_cyclicDiscreteEnergyRepeatFirst_apply, MapsTo.val_restrict_apply]
+  rw [hfun]
+  exact isEmbedding_cons_apply_zero.restrict hmaps
 
 /-- The range of the map repeating the base vertex: the closed chains of the target carrier whose
 first two vertices agree. Their tails automatically lie in the source carrier, since repeating the

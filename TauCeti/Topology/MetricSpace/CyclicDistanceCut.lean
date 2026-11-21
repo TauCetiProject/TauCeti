@@ -175,8 +175,15 @@ continuous left inverse on tuples. -/
 theorem isEmbedding_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
     (h₀ : δ 0 ≤ δ' 0) (h₁ : 0 ≤ δ' 1)
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
-    IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) :=
-  isEmbedding_cons_apply_zero.restrict fun _ ↦ cons_mem_cyclicDistanceCut h₀ h₁ h
+    IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) := by
+  have hmaps : MapsTo (fun q : Fin (n + 1) → X ↦ (Fin.cons (q 0) q : Fin (n + 2) → X))
+      (cyclicDistanceCut δ) (cyclicDistanceCut δ') := fun _ ↦ cons_mem_cyclicDistanceCut h₀ h₁ h
+  -- the carrier map is the restriction of the tuple map to the cuts
+  have hfun : ⇑(cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) = hmaps.restrict := by
+    ext q : 2
+    rw [coe_cyclicDistanceCutRepeatFirst_apply, MapsTo.val_restrict_apply]
+  rw [hfun]
+  exact isEmbedding_cons_apply_zero.restrict hmaps
 
 /-- The range of the map repeating the first vertex: the tuples of the target cut whose first two
 vertices agree and whose tail lies in the source cut. -/
