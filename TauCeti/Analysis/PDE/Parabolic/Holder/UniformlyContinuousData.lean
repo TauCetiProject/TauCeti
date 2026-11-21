@@ -755,32 +755,8 @@ theorem exists_forall_abs_euclideanCauchySolutionBUC_sub_lt_of_uniformEquicontin
     (by simpa using HolderSpace.norm_apply_le (b i) p : |b i p| ≤ ‖b i‖).trans
       (norm_le_pi_norm b i)
   have hγ : ∀ p, |c p| ≤ ‖c‖ := fun p ↦ by simpa using HolderSpace.norm_apply_le c p
-  -- Choose `η` with `C η < ε / 2`, then `δ` so small that `√δ` is an equicontinuity radius for
-  -- `η` and `C δ |M + K| < ε / 2`.
-  obtain ⟨η, hη, hCη⟩ : ∃ η > 0, C * η < ε / 2 :=
-    ⟨ε / (2 * (C + 1)), by positivity, by
-      rw [mul_div_assoc', div_lt_div_iff₀ (by positivity) two_pos]; nlinarith⟩
-  obtain ⟨δ₁, hδ₁, hδ₁η⟩ := Metric.uniformEquicontinuous_iff.1 hu η hη
-  obtain ⟨δ₂, hδ₂, hRδ₂⟩ : ∃ δ₂ > 0, C * |M + K| * δ₂ < ε / 2 :=
-    ⟨ε / (2 * (C * |M + K| + 1)), by positivity, by
-      rw [mul_div_assoc', div_lt_div_iff₀ (by positivity) two_pos]
-      nlinarith [mul_nonneg hC0 (abs_nonneg (M + K))]⟩
-  refine ⟨min (δ₁ ^ 2) δ₂, by positivity, fun k p hp ↦ ?_⟩
-  have hs0 : (0 : ℝ) ≤ slabTime p := (slabTime p).property.1
-  have hsδ : √(slabTime p) < δ₁ := by
-    rw [← Real.sqrt_sq hδ₁.le]
-    exact Real.sqrt_lt_sqrt hs0 (hp.trans_le (min_le_left _ _))
-  have key := hC hα₀ hα₁ ha (f k) (w k) hΛ hβ hγ (hf k) (hw k) p fun x y hxy ↦ by
-    simpa [Real.dist_eq] using (hδ₁η x y (hxy.trans_lt hsδ) k).le
-  have hR : C * (slabTime p * (M + K)) ≤ C * |M + K| * δ₂ := by
-    calc C * (slabTime p * (M + K)) ≤ C * (slabTime p * |M + K|) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (le_abs_self _) hs0) hC0
-      _ = C * |M + K| * slabTime p := by ring
-      _ ≤ C * |M + K| * δ₂ := mul_le_mul_of_nonneg_left (hp.le.trans (min_le_right _ _))
-          (mul_nonneg hC0 (abs_nonneg _))
-  calc _ ≤ C * (η + slabTime p * (M + K)) := key
-    _ = C * η + C * (slabTime p * (M + K)) := by ring
-    _ < ε := by linarith
+  exact hu.exists_forall_lt_of_le_mul_add_mul (fun p ↦ (slabTime p).property.1) hC0
+    (fun η k p ↦ hC hα₀ hα₁ ha (f k) (w k) hΛ hβ hγ (hf k) (hw k) p) hε
 
 end Rate
 
