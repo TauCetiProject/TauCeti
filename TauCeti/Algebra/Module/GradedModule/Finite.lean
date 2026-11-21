@@ -44,6 +44,8 @@ generated `ℤ`-graded `B`-module (allowing generators of negative degree).
   module over an `ℕ`-graded semiring with finite pieces is finite over the base.
 * `TauCeti.GradedModule.moduleFinite_piece_mvPolynomial`: specialization to modules over
   `MvPolynomial σ A` with `σ` finite.
+* `TauCeti.GradedModule.exists_degree_ge_le_span_piece`: for a finitely generated `ℤ`-graded
+  `MvPolynomial σ A`-module, every sufficiently high graded piece generates the subsequent tail.
 * `TauCeti.GradedModule.length_piece_ne_top`: over an Artinian ring, every graded piece has finite
   length.
 -/
@@ -193,6 +195,53 @@ theorem moduleFinite_piece_mvPolynomial {A σ M : Type*} [CommSemiring A] [Finit
   let := MvPolynomial.gradedAlgebra (σ := σ) (R := A)
   exact moduleFinite_piece (MvPolynomial.homogeneousSubmodule σ A)
     (fun i ↦ TauCeti.homogeneousSubmodule_moduleFinite i) ℳ hgraded d
+
+/-- For a finitely generated `ℤ`-graded `MvPolynomial σ A`-module, all pieces from some degree `N₀`
+onward are generated over `MvPolynomial σ A` by any single piece `ℳ N₁` with `N₁ ≥ N₀`. -/
+theorem exists_degree_ge_le_span_piece {A σ M : Type*} [CommSemiring A]
+    [AddCommMonoid M] [Module A M] [Module (MvPolynomial σ A) M]
+    [IsScalarTower A (MvPolynomial σ A) M] [Module.Finite (MvPolynomial σ A) M]
+    (ℳ : ℤ → Submodule A M) [DirectSum.Decomposition ℳ]
+    (hgraded : ∀ (i : ℕ) (j : ℤ) (p : MvPolynomial σ A),
+      p ∈ MvPolynomial.homogeneousSubmodule σ A i → ∀ m ∈ ℳ j, p • m ∈ ℳ (j + i)) :
+    ∃ N₀ : ℤ, ∀ N₁ ≥ N₀, ∀ d ≥ N₁,
+      ℳ d ≤ (Submodule.span (MvPolynomial σ A) (ℳ N₁ : Set M)).restrictScalars A := by
+  classical
+  let := MvPolynomial.gradedAlgebra (σ := σ) (R := A)
+  obtain ⟨G, hGmem, hGspan⟩ := exists_finset_homogeneous_span (B := MvPolynomial σ A) ℳ
+  let N₀ : ℤ := if h : G.Nonempty then (G.image Prod.fst).max' (h.image _) else 0
+  refine ⟨N₀, fun N₁ hN₁ d hd m hm ↦ ?_⟩
+  have hm_span : m ∈ Submodule.span (MvPolynomial σ A) (Set.range fun p : G ↦ p.1.2) :=
+    hGspan ▸ Submodule.mem_top
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun (MvPolynomial σ A)).mp hm_span
+  rw [← decompose_of_mem_same ℳ hm, decompose_sum, DFinsupp.finsetSum_apply, Submodule.coe_sum]
+  refine Submodule.sum_mem _ fun p _ ↦ ?_
+  have hp_le : p.1.1 ≤ N₁ := le_trans (by
+    have hne : G.Nonempty := ⟨p.1, p.2⟩
+    simp only [N₀, hne, ↓reduceDIte]
+    exact Finset.le_max' _ _ (Finset.mem_image.mpr ⟨p.1, p.2, rfl⟩)) hN₁
+  rw [decompose_smul_of_le (MvPolynomial.homogeneousSubmodule σ A) ℳ hgraded
+    (hp_le.trans hd) (c p) (hGmem p.1 p.2)]
+  set q := decompose (MvPolynomial.homogeneousSubmodule σ A) (c p) (d - p.1.1).toNat
+  have hdeg : (d - p.1.1).toNat = (d - N₁).toNat + (N₁ - p.1.1).toNat := by omega
+  have hq : (q : MvPolynomial σ A) ∈
+      MvPolynomial.homogeneousSubmodule σ A (d - N₁).toNat *
+        MvPolynomial.homogeneousSubmodule σ A (N₁ - p.1.1).toNat := by
+    have hpow1 : MvPolynomial.homogeneousSubmodule σ A (d - N₁).toNat =
+        MvPolynomial.homogeneousSubmodule σ A 1 ^ (d - N₁).toNat :=
+      (MvPolynomial.homogeneousSubmodule_one_pow A _).symm
+    have hpow2 : MvPolynomial.homogeneousSubmodule σ A (N₁ - p.1.1).toNat =
+        MvPolynomial.homogeneousSubmodule σ A 1 ^ (N₁ - p.1.1).toNat :=
+      (MvPolynomial.homogeneousSubmodule_one_pow A _).symm
+    rw [hpow1, hpow2, ← pow_add, MvPolynomial.homogeneousSubmodule_one_pow, ← hdeg]
+    exact q.2
+  refine Submodule.mul_induction_on hq (fun r₁ _ r₂ hr₂ ↦ ?_) (fun u v hu hv ↦ by
+    rw [add_smul]; exact add_mem hu hv)
+  rw [mul_smul]
+  have hr₂m : r₂ • p.1.2 ∈ ℳ N₁ := by
+    have h1 := hgraded (N₁ - p.1.1).toNat p.1.1 r₂ hr₂ p.1.2 (hGmem p.1 p.2)
+    rwa [Int.toNat_of_nonneg (sub_nonneg.mpr hp_le), add_sub_cancel] at h1
+  exact Submodule.smul_mem _ r₁ (Submodule.subset_span hr₂m)
 
 /-- Over an Artinian ring `A`, every graded piece of a finitely generated `ℤ`-graded module over an
 `ℕ`-graded semiring with finite pieces has finite `A`-length. -/
