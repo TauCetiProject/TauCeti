@@ -48,6 +48,11 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
   target.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_apply_eq_sqrt_sum_sq_singularValues`:
   `‖A‖_F = √(∑ᵢ σᵢ(A)²)`.
+* `TauCeti.UnitarilyInvariantSeminorm.frobenius_rankOne`: `‖u ⊗ v‖_F = ‖u‖ ‖v‖`.
+* `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_add` and
+  `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_add_of_re_trace_adjoint_comp_eq_zero`:
+  expansion of `‖A + B‖_F²` via the trace pairing `re tr(A† B)` and the Frobenius Pythagorean
+  identity.
 * `TauCeti.UnitarilyInvariantSeminorm.nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply`:
   `‖A‖₁ ≤ √(rank A) ‖A‖_F`.
 
@@ -145,6 +150,22 @@ theorem sq_frobenius_apply_eq_sum_norm_inner_sq (b : OrthonormalBasis ι 𝕜 E)
     frobenius 𝕜 E F A ^ 2 = ∑ i, ∑ j, ‖⟪c j, A (b i)⟫_𝕜‖ ^ 2 := by
   simp_rw [sq_frobenius_apply b, c.sum_sq_norm_inner_right]
 
+open scoped InnerProductSpace in
+/-- The Frobenius seminorm of a rank-one map `x ↦ ⟪v, x⟫ u` is `‖u‖ * ‖v‖`. -/
+@[simp]
+theorem frobenius_rankOne (u : F) (v : E) :
+    frobenius 𝕜 E F (InnerProductSpace.rankOne 𝕜 u v).toLinearMap = ‖u‖ * ‖v‖ := by
+  let b := stdOrthonormalBasis 𝕜 E
+  rw [frobenius_apply b]
+  have hsum : ∑ i, ‖(InnerProductSpace.rankOne 𝕜 u v) (b i)‖ ^ 2 = ‖u‖ ^ 2 * ‖v‖ ^ 2 := by
+    simp only [InnerProductSpace.rankOne_apply, norm_smul, mul_pow, ← Finset.sum_mul]
+    rw [mul_comm, ← b.sum_sq_norm_inner_right v]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [norm_inner_symm]
+  simp only [ContinuousLinearMap.coe_coe, hsum, ← mul_pow,
+    Real.sqrt_sq (mul_nonneg (norm_nonneg u) (norm_nonneg v))]
+
 end TauCeti.UnitarilyInvariantSeminorm
 
 namespace LinearMap
@@ -212,6 +233,29 @@ theorem sq_frobenius_apply_eq_sum_sq_singularValues (A : E →ₗ[𝕜] F) :
 end LinearMap
 
 namespace TauCeti.UnitarilyInvariantSeminorm
+
+open scoped InnerProductSpace in
+/-- Expansion of the squared Frobenius seminorm of a sum through the Hilbert–Schmidt trace pairing:
+`‖A + B‖_F² = ‖A‖_F² + 2 re tr(A† B) + ‖B‖_F²`. -/
+theorem sq_frobenius_add (A B : E →ₗ[𝕜] F) :
+    frobenius 𝕜 E F (A + B) ^ 2 =
+      frobenius 𝕜 E F A ^ 2 +
+        2 * RCLike.re (LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)) +
+        frobenius 𝕜 E F B ^ 2 := by
+  let b := stdOrthonormalBasis 𝕜 E
+  rw [sq_frobenius_apply b, sq_frobenius_apply b, sq_frobenius_apply b,
+    LinearMap.trace_eq_sum_inner _ b, map_sum, Finset.mul_sum, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [LinearMap.add_apply, norm_add_sq (𝕜 := 𝕜), LinearMap.comp_apply,
+    LinearMap.adjoint_inner_right]
+
+/-- **Frobenius Pythagorean identity**: if `re tr(A† B) = 0`, then
+`‖A + B‖_F² = ‖A‖_F² + ‖B‖_F²`. -/
+theorem sq_frobenius_add_of_re_trace_adjoint_comp_eq_zero {A B : E →ₗ[𝕜] F}
+    (h : RCLike.re (LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)) = 0) :
+    frobenius 𝕜 E F (A + B) ^ 2 = frobenius 𝕜 E F A ^ 2 + frobenius 𝕜 E F B ^ 2 := by
+  rw [sq_frobenius_add, h, mul_zero, add_zero]
 
 /-- **Rank-sharp comparison of the nuclear and Frobenius seminorms**:
 `‖A‖₁ ≤ √(rank A) ‖A‖_F`. -/
