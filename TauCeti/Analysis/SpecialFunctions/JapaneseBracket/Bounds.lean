@@ -21,8 +21,9 @@ condition.
 
 For `t ≥ 1` and an exponent `r` of either sign, `t ^ r` and `(1 + t ^ 2) ^ (r / 2)` are
 comparable: each is at most `2 ^ (|r| / 2)` times the other. For `|t| ≤ R`, the Japanese bracket
-power `(1 + t ^ 2) ^ (r / 2)` is at least `(1 + R ^ 2) ^ (-|r| / 2)`. These turn homogeneous
-estimates at large frequencies, and bounds on compact sets, into symbol estimates.
+power `(1 + t ^ 2) ^ (r / 2)` is at least `(1 + R ^ 2) ^ (-|r| / 2)`, so on a ball of a
+seminormed group every constant is at most a multiple of `(1 + ‖ξ‖ ^ 2) ^ (r / 2)`. These turn
+homogeneous estimates at large frequencies, and bounds on compact sets, into symbol estimates.
 
 ## Main results
 
@@ -32,6 +33,8 @@ estimates at large frequencies, and bounds on compact sets, into symbol estimate
   for `1 ≤ t`.
 * `Real.one_add_sq_rpow_neg_abs_le_one_add_sq_rpow`:
   `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + t ^ 2) ^ (r / 2)` for `|t| ≤ R`.
+* `TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le`: on a ball, every constant is at most
+  a multiple of `(1 + ‖ξ‖ ^ 2) ^ (r / 2)`.
 -/
 
 public section
@@ -98,3 +101,18 @@ theorem one_add_sq_rpow_neg_abs_le_one_add_sq_rpow (t : ℝ) {R : ℝ} (ht : |t|
     exact rpow_le_rpow_of_nonpos (by positivity) hR (by linarith)
 
 end Real
+
+namespace TauCeti
+
+/-- On a ball, every constant is at most a multiple of each power of the Japanese bracket: for
+`‖ξ‖ ≤ R`, `M ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
+theorem exists_le_mul_one_add_norm_sq_rpow_of_norm_le {E : Type*} [SeminormedAddGroup E]
+    (M R r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ : E, ‖ξ‖ ≤ R → M ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  refine ⟨max M 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun ξ hξ ↦ ?_⟩
+  calc M ≤ max M 0 := le_max_left _ _
+    _ = max M 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ _ := by
+      gcongr
+      exact Real.one_add_sq_rpow_neg_abs_le_one_add_sq_rpow ‖ξ‖ ((abs_norm ξ).trans_le hξ) r
+
+end TauCeti

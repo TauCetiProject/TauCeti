@@ -28,9 +28,9 @@ with minimal unboundedness for every isolating rank
 (`TauCeti.IsIsolatingRank.minimallyUncountableOn_iff_minimallyUnboundedOn`), and minimal
 unboundedness does not depend on the choice of isolating rank
 (`TauCeti.IsIsolatingRank.minimallyUnboundedOn_iff`). Combining sentence-cut class selection
-(`TauCeti.concentratedAtBFLevels_of_bfScattered_of_sentence_splits`) with analytic splits of
+(`TauCeti.concentratedAtBFLevels_of_bfScattered_of_sentence_splits`) with sentence splits of
 concentrated classes (`TauCeti.ConcentratedAtBFLevels.countable_isoClasses_inter_modelsOf_or_sdiff`)
-identifies scattered minimally uncountable analytic classes with uncountable classes concentrated at
+identifies scattered minimally uncountable classes with uncountable classes concentrated at
 back-and-forth levels (`TauCeti.bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels`).
 
 The main result is the **Harnik–Makkai reduction**
@@ -392,15 +392,15 @@ theorem minimallyUnboundedOn_iff (hρ : IsIsolatingRank ρ) (hσ : IsIsolatingRa
 
 end IsIsolatingRank
 
-/-- An analytic concentrated class meeting uncountably many isomorphism classes is minimally
-uncountable. -/
-theorem ConcentratedAtBFLevels.minimallyUncountableOn_of_analyticSet
-    [∀ n, Countable (L.Relations n)] (hC : ConcentratedAtBFLevels C) (hCan : AnalyticSet C)
+/-- A concentrated class meeting uncountably many isomorphism classes is minimally uncountable,
+since every sentence cut of a concentrated class has a side meeting countably many isomorphism
+classes. -/
+theorem ConcentratedAtBFLevels.minimallyUncountableOn (hC : ConcentratedAtBFLevels C)
     (hunc : ¬ (Quotient.mk (isoSetoid L ℕ) '' C).Countable) :
     MinimallyUncountableOn C := by
   refine ⟨hunc, fun θ => ?_⟩
   simpa only [Setoid.countable_quotient_comap_val_iff] using
-    hC.countable_isoClasses_inter_modelsOf_or_sdiff hCan θ
+    hC.countable_isoClasses_inter_modelsOf_or_sdiff θ
 
 /-- A back-and-forth scattered minimally uncountable class is concentrated at back-and-forth
 levels. -/
@@ -408,52 +408,50 @@ theorem MinimallyUncountableOn.concentratedAtBFLevels [Countable (Σ n, L.Relati
     (h : MinimallyUncountableOn K) (hK : BFScattered K) : ConcentratedAtBFLevels K :=
   concentratedAtBFLevels_of_bfScattered_of_sentence_splits hK h.2
 
-/-- **Characterization of scattered minimally uncountable analytic classes.** For an analytic set
-`K` of configurations on `ℕ` in a countable relational vocabulary, `K` is back-and-forth scattered
-and minimally uncountable precisely when `K` is concentrated at back-and-forth levels and meets
-uncountably many isomorphism classes. -/
+/-- **Characterization of scattered minimally uncountable classes.** In a countable relational
+vocabulary, a set `K` of configurations on `ℕ` is back-and-forth scattered and minimally
+uncountable precisely when `K` is concentrated at back-and-forth levels and meets uncountably many
+isomorphism classes. -/
 theorem bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels
-    [Countable (Σ n, L.Relations n)] (hCan : AnalyticSet K) :
+    [Countable (Σ n, L.Relations n)] :
     BFScattered K ∧ MinimallyUncountableOn K ↔
       ConcentratedAtBFLevels K ∧ ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable :=
   ⟨fun ⟨hscat, hmin⟩ => ⟨hmin.concentratedAtBFLevels hscat, hmin.1⟩,
-    fun ⟨hconc, hunc⟩ => ⟨hconc.bfScattered, hconc.minimallyUncountableOn_of_analyticSet hCan hunc⟩⟩
+    fun ⟨hconc, hunc⟩ => ⟨hconc.bfScattered, hconc.minimallyUncountableOn hunc⟩⟩
 
-/-- **Characterization of scattered minimally unbounded analytic classes.** For an analytic set `K`
-and any isolating rank `ρ`, `K` is back-and-forth scattered and minimally unbounded for `ρ`
+/-- **Characterization of scattered minimally unbounded classes.** For a set `K` of configurations
+on `ℕ` and any isolating rank `ρ`, `K` is back-and-forth scattered and minimally unbounded for `ρ`
 precisely when `K` is concentrated at back-and-forth levels and meets uncountably many isomorphism
 classes. -/
 theorem bfScattered_and_minimallyUnboundedOn_iff_concentratedAtBFLevels
     [Countable (Σ n, L.Relations n)] {ρ : RelationalConfiguration L ℕ → Ordinal.{0}}
-    (hρ : IsIsolatingRank ρ) (hCan : AnalyticSet K) :
+    (hρ : IsIsolatingRank ρ) :
     BFScattered K ∧ MinimallyUnboundedOn ρ K ↔
       ConcentratedAtBFLevels K ∧ ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable := by
-  rw [← bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels hCan]
+  rw [← bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels]
   exact and_congr_right fun hK => (hρ.minimallyUncountableOn_iff_minimallyUnboundedOn hK).symm
 
-/-- For an infinitary sentence `φ` with countable branching in a countable relational vocabulary,
-`φ` has scattered minimally uncountable models on `ℕ` precisely when its models on `ℕ` are
-concentrated at back-and-forth levels and uncountably many up to isomorphism. -/
+/-- For an infinitary sentence `φ` in a countable relational vocabulary, `φ` has scattered
+minimally uncountable models on `ℕ` precisely when its models on `ℕ` are concentrated at
+back-and-forth levels and uncountably many up to isomorphism. -/
 theorem bfScattered_modelsOf_and_minimallyUncountable_iff [Countable (Σ n, L.Relations n)]
-    [Countable ι] (φ : L.SentenceInf ι) :
+    (φ : L.SentenceInf ι) :
     BFScattered (modelsOf (V := ℕ) φ) ∧ MinimallyUncountable φ ↔
       ConcentratedAtBFLevels (modelsOf (V := ℕ) φ) ∧ ¬ Countable (Quotient (isoSetoidOn ℕ φ)) := by
   rw [minimallyUncountable_def,
-    bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels
-      (measurableSet_modelsOf φ).analyticSet,
+    bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels,
     isoSetoidOn, Setoid.countable_quotient_comap_val_iff]
 
-/-- For an infinitary sentence `φ` with countable branching and isolating rank `ρ`, `φ` has
-scattered minimally unbounded models on `ℕ` precisely when its models on `ℕ` are concentrated at
-back-and-forth levels and uncountably many up to isomorphism. -/
+/-- For an infinitary sentence `φ` and isolating rank `ρ`, `φ` has scattered minimally unbounded
+models on `ℕ` precisely when its models on `ℕ` are concentrated at back-and-forth levels and
+uncountably many up to isomorphism. -/
 theorem bfScattered_modelsOf_and_minimallyUnbounded_iff [Countable (Σ n, L.Relations n)]
-    [Countable ι] {ρ : RelationalConfiguration L ℕ → Ordinal.{0}} (hρ : IsIsolatingRank ρ)
+    {ρ : RelationalConfiguration L ℕ → Ordinal.{0}} (hρ : IsIsolatingRank ρ)
     (φ : L.SentenceInf ι) :
     BFScattered (modelsOf (V := ℕ) φ) ∧ MinimallyUnbounded ρ φ ↔
       ConcentratedAtBFLevels (modelsOf (V := ℕ) φ) ∧ ¬ Countable (Quotient (isoSetoidOn ℕ φ)) := by
   rw [minimallyUnbounded_def,
-    bfScattered_and_minimallyUnboundedOn_iff_concentratedAtBFLevels hρ
-      (measurableSet_modelsOf φ).analyticSet,
+    bfScattered_and_minimallyUnboundedOn_iff_concentratedAtBFLevels hρ,
     isoSetoidOn, Setoid.countable_quotient_comap_val_iff]
 
 /-- A thin sentence on `ℕ` with countable branching is minimally uncountable precisely when its

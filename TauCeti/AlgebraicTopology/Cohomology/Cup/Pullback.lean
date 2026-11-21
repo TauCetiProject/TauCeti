@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
+public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 import TauCeti.AlgebraicTopology.Cohomology.Point
 
@@ -22,9 +23,12 @@ relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients 
 it is natural in maps of pairs (`TopPair.pullbackCup_naturality`). It sends the unit `1 ∈ H⁰(Z; K)`
 to `u` (`TopPair.pullbackCup_one`), the map of a class `g^*c ⌣ v` is that of `v` composed with the
 cup product with `c` (`TopPair.pullbackCup_pullbackCup`), and its bijectivity is invariant under
-isomorphisms (`TopPair.bijective_pullbackCup_iff_of_isIso`). For the Thom pair `(E, E₀)` of a vector
-bundle and its projection, it is the Thom map `TauCeti.thomMap`, which the Thom isomorphism asserts
-to be bijective when `u` is a Thom class.
+isomorphisms (`TopPair.bijective_pullbackCup_iff_of_isIso`). When the subspace `A` is empty and `g`
+is an isomorphism, it is bijective for every class `u ∈ H⁰(X, ∅; K)` whose image in `H⁰(X; K)` has
+a unit value at every point (`TopPair.bijective_pullbackCup_of_isEmpty`): this is the Thom
+isomorphism in rank zero, where a vector bundle has no nonzero vectors. For the Thom pair `(E, E₀)`
+of a vector bundle and its projection, it is the Thom map `TauCeti.thomMap`, which the Thom
+isomorphism asserts to be bijective when `u` is a Thom class.
 
 For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, restricting `u ∈ Hⁿ(X, Z)` to the pair
 `(π⁻¹ S, π⁻¹ S ∩ Z)` and `π` to `π⁻¹ S ⟶ S` gives the map over `S` (`TopCat.pullbackCupRestrict`).
@@ -41,6 +45,8 @@ restriction of the bundle to `S`.
 * `TopPair.pullbackCup_one`: `1 ↦ u`.
 * `TopPair.pullbackCup_pullbackCup`: the map of `g^*c ⌣ v` is that of `v` after `a ↦ a ⌣ c`.
 * `TopPair.bijective_pullbackCup_iff_of_isIso`: invariance of bijectivity under isomorphisms.
+* `TopPair.bijective_pullbackCup_of_isEmpty`: bijectivity for an empty subspace, an isomorphism
+  `g` and a degree-zero class with unit values.
 * `TopCat.pullbackCupRestrict`: the map over a subset of the base.
 * `TopCat.pullbackCupRestrict_naturality`: its naturality in the subset.
 * `TopCat.bijective_pullbackCupRestrict_empty`: over the empty subset it is bijective.
@@ -159,6 +165,35 @@ theorem bijective_pullbackCup_iff_of_isIso {P P' : TopPair.{w}} (φ : P ⟶ P') 
     have := hφ.comp h'
     rw [← hc] at this
     exact (Function.Bijective.of_comp_iff _ hf).1 this
+
+/-- **`a ↦ g^*a ⌣ u` for a pair with empty subspace.** Let `P = (X, ∅)`, let `g : X ⟶ Z` be an
+isomorphism, and let the image of `u ∈ H⁰(X, ∅; K)` in `H⁰(X; K)` have a unit value at every point.
+Then `a ↦ g^*a ⌣ u` is a bijection `Hᵖ(Z; M) ≅ Hᵖ(X, ∅; M)` for every `K`-module `M` and every
+degree `p`. -/
+theorem bijective_pullbackCup_of_isEmpty (P : TopPair.{w}) [IsEmpty P.snd] {Z : TopCat.{w}}
+    (g : P.fst ⟶ Z) [IsIso g] (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) 0)
+    (hu : ∀ x, IsUnit (TauCeti.singularCohomologyZeroEval x
+      (P.singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0 u)))
+    (M : ModuleCat.{w} K) {p m : ℕ} (h : p + 0 = m) :
+    Function.Bijective (P.pullbackCup M g 0 p m h u) := by
+  obtain rfl : p = m := h
+  -- After `Hᵖ(X, ∅) ≅ Hᵖ(X)`, the map is the pull-back along the isomorphism `g` followed by the
+  -- cup product with the image of `u`, whose values are units.
+  have hcup := TauCeti.bijective_singularCup_left_of_forall_isUnit M
+    (P.singularCohomologyπ _ K _ 0 u) hu p
+  have hπ := ConcreteCategory.bijective_of_isIso (P.singularCohomologyπ (ModuleCat.of K K) K M p)
+  have hpull := ConcreteCategory.bijective_of_isIso
+    ((TauCeti.singularCohomologyFunctor (ModuleCat.of K K) K M p).map g.op)
+  have e : ⇑(P.singularCohomologyπ (ModuleCat.of K K) K M p) ∘
+      ⇑(P.pullbackCup M g 0 p p (add_zero p) u) =
+      (fun a ↦ P.fst.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p rfl a
+        (P.singularCohomologyπ _ K _ 0 u)) ∘ ⇑(TopCat.singularCohomologyMap g p) := by
+    funext a
+    rw [Function.comp_apply, pullbackCup_apply, singularCohomologyπ_singularCup]
+    -- The two sides differ only in the proof of `p + 0 = p`.
+    rfl
+  rw [← Function.Bijective.of_comp_iff' hπ, e]
+  exact hcup.comp hpull
 
 end TopPair
 
