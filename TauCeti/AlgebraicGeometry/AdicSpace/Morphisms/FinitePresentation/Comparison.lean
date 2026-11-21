@@ -266,11 +266,7 @@ theorem LocallyOfFinitePresentation.finitePresentation_of_discreteTopology {A B 
   have hsheafA := hS.isSheaf P hP
   have hq := (locallyOfFinitePresentation_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP'
     φ).mp hf
-  let _ : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
-  have : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
-  have : DiscreteUniformity A := IsRightUniformAddGroup.discreteUniformity
-  let CA : CompleteAffinoidOpen (ofPresentation S P hP hsheafA).obj :=
-    { Ring := A, pair := S, pairOfDefinition := P, le_plus := hP, isSheaf := hsheafA, hom := 𝟙 _ }
+  let CA := ofDiscrete S P hP hsheafA
   refine PreAdicSpace.ringHom_prop_of_forall_rational_chart_discrete
     RingHom.finitePresentation_stableUnderComposition RingHom.finitePresentation_respectsIso
     RingHom.finitePresentation_holdsForLocalizationAway

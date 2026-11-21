@@ -365,14 +365,8 @@ theorem LocallyOfFinitePresentation.exists_openImmersion_over_rationalLocalizati
     .of_comp (hα₁α₀ ▸ CY.isTopologicallyFiniteType_rationalLocalizationHom TA sA hTA)
   let ψ₀ := α₁.comp (CY'.rationalLocalizationHom TA' sA' hTA')
   have hψ₀_tft := hα₁_tft.comp (CY'.isTopologicallyFiniteType_rationalLocalizationHom TA' sA' hTA')
-  have hsq_ψ₀ : CY'.pairComap CY₁ ψ₀ ≫ CY'.hom = CY₁.hom ≫ 𝟙 Y.obj := by
-    calc
-      CY'.pairComap CY₁ ψ₀ ≫ CY'.hom
-        = CY'₁.pairComap CY₁ α₁ ≫
-            (CY'.pairComap CY'₁ (CY'.rationalLocalizationHom TA' sA' hTA') ≫ CY'.hom) := by
-            simp only [ψ₀, CY'.pairComap_comp CY'₁ CY₁, Category.assoc]
-      _ = CY'₁.pairComap CY₁ α₁ ≫ CY'₁.hom := by rw [← rationalLocalization_hom]
-      _ = CY₁.hom ≫ 𝟙 Y.obj := hsq_α₁
+  have hsq_ψ₀ : CY'.pairComap CY₁ ψ₀ ≫ CY'.hom = CY₁.hom ≫ 𝟙 Y.obj :=
+    (CY'.pairComap_comp_rationalLocalizationHom_comp_hom CY₁ α₁).trans hsq_α₁
   obtain ⟨TC, sC, hTC, β, c₁, hc₁, hsq, hβψ₀⟩ :=
     exists_rationalLocalization_lift_sq CY' CY₁ CX₀ ψ₀ φ'
       (ha₁.trans ha₀) hc₀₀ hsq_ψ₀ (by simpa using hsq')

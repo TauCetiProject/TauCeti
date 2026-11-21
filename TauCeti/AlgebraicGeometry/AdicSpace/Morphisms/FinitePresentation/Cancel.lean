@@ -66,18 +66,12 @@ theorem LocallyOfFinitePresentation.of_comp {f : X ⟶ Y} {g : Y ⟶ Z}
     simpa [hc₀₀] using congrArg (fun m ↦ m.base c₀₀) hsq_fg
   obtain ⟨TA, sA, hTA, -, CY, ψ, hψ, b₀, hb₀, hsq_g⟩ :=
     hg.exists_openImmersion_over_rationalLocalization CZ (f.hom.base x) ha₀
-  let CZ₁ := CZ.rationalLocalization TA sA hTA; let ιA := CZ.rationalLocalizationHom TA sA hTA
-  let ψ₀ := ψ.comp ιA
+  let ψ₀ := ψ.comp (CZ.rationalLocalizationHom TA sA hTA)
   have hψ₀_tft := hψ.comp (CZ.isTopologicallyFiniteType_rationalLocalizationHom TA sA hTA)
   have : IsHuberStandard CY.Ring :=
     .of_isTopologicallyFiniteType hψ₀_tft.isTopologicallyFiniteType_toRingHom
-  have hsq_g₀ : CZ.pairComap CY ψ₀ ≫ CZ.hom = CY.hom ≫ g.hom := by
-    calc
-      CZ.pairComap CY ψ₀ ≫ CZ.hom
-        = CZ₁.pairComap CY ψ ≫ (CZ.pairComap CZ₁ ιA ≫ CZ.hom) := by
-            simp only [ψ₀, ιA, CZ.pairComap_comp CZ₁ CY, Category.assoc]
-      _ = CZ₁.pairComap CY ψ ≫ CZ₁.hom := by rw [← rationalLocalization_hom]
-      _ = CY.hom ≫ g.hom := hsq_g
+  have hsq_g₀ : CZ.pairComap CY ψ₀ ≫ CZ.hom = CY.hom ≫ g.hom :=
+    (CZ.pairComap_comp_rationalLocalizationHom_comp_hom CY ψ).trans hsq_g
   obtain ⟨TC, sC, hTC, φ, c₁, hc₁, hsq_f, hφψ₀⟩ :=
     exists_rationalLocalization_lift_sq CZ CY CX₀ ψ₀ χ hb₀ hc₀₀ hsq_g₀ hsq_fg
   obtain ⟨hφ_tft, hφ_fp⟩ :=

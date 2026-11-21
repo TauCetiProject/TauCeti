@@ -362,12 +362,7 @@ theorem LocallyOfFiniteType.finiteType_of_discreteTopology {A B : Type u} [CommR
   obtain ⟨P, hP, _⟩ := hS.exists_compatible_isSheaf
   obtain ⟨P', hP', _⟩ := hT.exists_compatible_isSheaf
   have hq := (locallyOfFiniteType_comapOfPair_iff_comapOfPresentation hS hT P hP P' hP' φ).mp hf
-  let _ : UniformSpace A := IsTopologicalAddGroup.rightUniformSpace A
-  have : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
-  have : DiscreteUniformity A := IsRightUniformAddGroup.discreteUniformity
-  let CA : CompleteAffinoidOpen (ofPresentation S P hP (hS.isSheaf P hP)).obj :=
-    { Ring := A, pair := S, pairOfDefinition := P, le_plus := hP, isSheaf := hS.isSheaf P hP,
-      hom := 𝟙 _ }
+  let CA := ofDiscrete S P hP (hS.isSheaf P hP)
   refine PreAdicSpace.ringHom_prop_of_forall_rational_chart_discrete
     RingHom.finiteType_stableUnderComposition RingHom.finiteType_respectsIso
     RingHom.finiteType_holdsForLocalizationAway RingHom.finiteType_ofLocalizationSpanTarget
