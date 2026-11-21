@@ -48,7 +48,9 @@ With this atlas:
 * the smooth structure is independent of the order of iteration: splitting `k₁ + k₂` factors
   (`k₁ = m₁ + 1`, `k₂ = m₂ + 1`) gives a canonical `C^n` diffeomorphism with the transverse fibre
   product of `Y^[k₁]` and `Y^[k₂]` over `M`
-  (`TauCeti.iteratedFiberProductSplitDiffeomorph`), covering both left and right iteration;
+  (`TauCeti.iteratedFiberProductSplitDiffeomorph`), covering both left and right iteration, and any
+  manifold smoothly embedded onto the carrier of `Y^[m + 1]` is canonically `C^n`-diffeomorphic
+  to `Y^[m + 1]` (`TauCeti.iteratedFiberProductDiffeomorphOfRangeEq`);
 * the common projection `IteratedFiberProduct.baseProj` to `M` is a `C^n` submersion (surjective
   if and only if `π` is surjective), and every factor projection `IteratedFiberProduct.eval i` to
   `Y` is a surjective `C^n` submersion (`TauCeti.isSubmersion_baseProj`,
@@ -962,6 +964,60 @@ theorem eval_iteratedFiberProductSplitDiffeomorph_symm (m₁ m₂ : ℕ)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     IteratedFiberProduct.eval k ((iteratedFiberProductSplitDiffeomorph hn hπ m₁ m₂).symm p) =
       Fin.append p.val.1.val p.val.2.val ((finCongr (by omega)).symm k) := (rfl)
+
+/-- **Uniqueness of the embedded submanifold structure.** Any manifold `P` admitting a `C^n`
+smooth embedding `ι : P → (Fin (m + 1) → Y)` onto the carrier of `IteratedFiberProduct π (m + 1)`
+is canonically `C^n`-diffeomorphic to `IteratedFiberProduct π (m + 1)`, independently of how `P`
+was constructed or parenthesised.
+
+This applies `Manifold.IsSmoothEmbedding.diffeomorphOfRangeEq` to `hι` and
+`isSmoothEmbedding_coe_iteratedFiberProduct`, identifying the ranges via
+`range_coe_iteratedFiberProduct`. -/
+noncomputable def iteratedFiberProductDiffeomorphOfRangeEq {EP HP P : Type*}
+    [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+    {m : ℕ} {ι : P → Fin (m + 1) → Y}
+    (hι : Manifold.IsSmoothEmbedding IP (ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY) n ι)
+    (hrange : range ι = {y : Fin (m + 1) → Y | ∀ i j, π (y i) = π (y j)}) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    P ≃ₘ^n⟮IP, 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)⟯
+      IteratedFiberProduct π (m + 1) :=
+  letI := iteratedFiberProductChartedSpace hn hπ m
+  hι.diffeomorphOfRangeEq (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
+    (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm)
+
+/-- `iteratedFiberProductDiffeomorphOfRangeEq` sends `x : P` to `ι x` viewed in
+`IteratedFiberProduct π (m + 1)`. -/
+@[simp]
+theorem coe_iteratedFiberProductDiffeomorphOfRangeEq_apply {EP HP P : Type*}
+    [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+    {m : ℕ} {ι : P → Fin (m + 1) → Y}
+    (hι : Manifold.IsSmoothEmbedding IP (ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY) n ι)
+    (hrange : range ι = {y : Fin (m + 1) → Y | ∀ i j, π (y i) = π (y j)}) (x : P) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    (iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange x : Fin (m + 1) → Y) = ι x :=
+  letI := iteratedFiberProductChartedSpace hn hπ m
+  hι.apply_diffeomorphOfRangeEq (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
+    (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm) x
+
+/-- Applying `ι` to the inverse of `iteratedFiberProductDiffeomorphOfRangeEq` recovers the
+underlying tuple.
+
+Not a `simp` lemma: the left-hand side has the bare function variable `ι` at the head (for bundled
+`TauCeti.SmoothEmbedding`, see `TauCeti.SmoothEmbedding.apply_diffeomorphOfRangeEq_symm`). -/
+theorem apply_iteratedFiberProductDiffeomorphOfRangeEq_symm {EP HP P : Type*}
+    [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+    {m : ℕ} {ι : P → Fin (m + 1) → Y}
+    (hι : Manifold.IsSmoothEmbedding IP (ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY) n ι)
+    (hrange : range ι = {y : Fin (m + 1) → Y | ∀ i j, π (y i) = π (y j)})
+    (y : IteratedFiberProduct π (m + 1)) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    ι ((iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange).symm y) = y.val :=
+  letI := iteratedFiberProductChartedSpace hn hπ m
+  hι.apply_diffeomorphOfRangeEq_symm (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
+    (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm) y
 
 end ChosenAtlas
 
