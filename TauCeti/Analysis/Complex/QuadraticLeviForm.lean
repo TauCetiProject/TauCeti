@@ -254,7 +254,8 @@ theorem _root_.OrthonormalBasis.hessianQuadraticForm_mul_norm_sq_add_re_sum_mul_
     (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x v : E) :
     hessianQuadraticForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x v =
       2 * (a * ‖v‖ ^ 2 + (∑ j, c j * ⟪b j, v⟫_ℂ ^ 2).re) := by
-  obtain ⟨Q, hQ⟩ := b.exists_apply_self_eq_sum_mul_inner_sq c
+  obtain ⟨Q, hQ⟩ := exists_apply_self_eq_sum_mul_sq (fun j ↦ innerSL ℂ (b j)) c
+  simp only [innerSL_apply_apply] at hQ
   simp_rw [← hQ]
   rw [Q.hessianQuadraticForm_mul_norm_sq_add_re_apply_self]
   ring
@@ -266,7 +267,8 @@ theorem _root_.OrthonormalBasis.leviForm_mul_norm_sq_add_re_sum_mul_inner_sq
     (b : OrthonormalBasis ι ℂ E) (a : ℝ) (c : ι → ℂ) (x : E) :
     leviForm (fun z ↦ a * ‖z‖ ^ 2 + (∑ j, c j * ⟪b j, z⟫_ℂ ^ 2).re) x =
       (a : ℂ) • innerₛₗ ℂ := by
-  obtain ⟨Q, hQ⟩ := b.exists_apply_self_eq_sum_mul_inner_sq c
+  obtain ⟨Q, hQ⟩ := exists_apply_self_eq_sum_mul_sq (fun j ↦ innerSL ℂ (b j)) c
+  simp only [innerSL_apply_apply] at hQ
   simp_rw [← hQ]
   exact Q.leviForm_mul_norm_sq_add_re_apply_self a x
 

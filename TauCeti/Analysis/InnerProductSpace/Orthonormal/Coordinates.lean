@@ -15,15 +15,15 @@ This module describes coordinates in an orthonormal basis of an inner product sp
 inner product space.
 
 For an orthonormal basis `b`, the `i`-th coordinate functional of the underlying basis is the
-inner product with `b i`. A quadratic expression `∑ⱼ c j ⟪b j, v⟫²` in these coordinates (over
-`ℂ`, a holomorphic quadratic form) is `v ↦ Q v v` for a continuous bilinear form `Q`.
+inner product with `b i`.
 
 In a finite-dimensional inner product space, an orthonormal coordinate system can be chosen so
 that the inner product with a given vector is its norm times any prescribed coordinate.
 
 For an orthonormal basis `b` of a complex inner product space `E`, indexed by a finite type `ι`,
-and units `ω j`, the real and imaginary parts of the rotated coordinates `conj (ω j) ⟪b j, v⟫`
-are real coordinates on `E`: they form a real linear equivalence `E ≃ₗ[ℝ] (ι ⊕ ι → ℝ)`.
+and complex scalars `ω j` of modulus one, the real and imaginary parts of the rotated
+coordinates `conj (ω j) ⟪b j, v⟫` are real coordinates on `E`: they form a real linear
+equivalence `E ≃ₗ[ℝ] (ι ⊕ ι → ℝ)`.
 Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quadratic form
 `Re (∑ⱼ c j ⟪b j, v⟫²)` in these real coordinates.
 
@@ -47,8 +47,6 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
-* `OrthonormalBasis.exists_apply_self_eq_sum_mul_inner_sq`: `∑ⱼ c j ⟪b j, v⟫²` is `Q v v` for a
-  continuous bilinear form `Q`.
 -/
 
 public section
@@ -58,7 +56,9 @@ open scoped InnerProductSpace
 namespace TauCeti
 
 /-- Choose orthonormal coordinates in which the inner product with `v` is its norm times the
-prescribed coordinate. This also holds for `v = 0`. -/
+prescribed coordinate. This also holds for `v = 0`. For `v ≠ 0` the coordinates are those of an
+orthonormal basis whose `i`-th vector is `‖v‖⁻¹ • v`, obtained by extending this unit vector with
+Mathlib's `Orthonormal.exists_orthonormalBasis_extension_of_card_eq`. -/
 theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (v : E) (i : Fin (Module.finrank 𝕜 E)) :
     ∃ f : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)),
@@ -72,9 +72,9 @@ theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {𝕜 E : Type*} [RCLi
   -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis whose `i`-th vector it is.
   obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq
     (Fintype.card_fin _).symm (v := fun _ ↦ (‖v‖⁻¹ : 𝕜) • v) (s := {i})
-    (orthonormal_subsingleton_iff.mpr fun _ ↦ by simp [norm_smul, hv])
+    (orthonormal_subsingleton_iff.mpr fun _ ↦ norm_smul_inv_norm (𝕜 := 𝕜) hv)
   refine ⟨b.repr, fun x ↦ ?_⟩
-  rw [b.repr_apply_apply, hb i rfl, inner_smul_left, ← mul_assoc]
+  rw [b.repr_apply_apply, hb i (Set.mem_singleton i), inner_smul_left, ← mul_assoc]
   simp [hv]
 
 end TauCeti
@@ -131,13 +131,6 @@ theorem toBasis_equiv_refl {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
   rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
   simp
 
-/-- The quadratic expression `∑ⱼ c j ⟪b j, v⟫²` in orthonormal coordinates (over `ℂ`, a
-holomorphic quadratic form) is `v ↦ Q v v` for a continuous bilinear form `Q`. -/
-theorem exists_apply_self_eq_sum_mul_inner_sq (b : OrthonormalBasis ι 𝕜 E) (c : ι → 𝕜) :
-    ∃ Q : E →L[𝕜] E →L[𝕜] 𝕜, ∀ v, Q v v = ∑ j, c j * ⟪b j, v⟫_𝕜 ^ 2 :=
-  ⟨∑ j, c j • (ContinuousLinearMap.mul 𝕜 𝕜).bilinearComp (innerSL 𝕜 (b j)) (innerSL 𝕜 (b j)),
-    fun v ↦ by simp [sq]⟩
-
 end OrthonormalBasis
 
 open Complex ComplexConjugate
@@ -147,7 +140,7 @@ namespace OrthonormalBasis
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [Fintype ι]
 
 /-- The real and imaginary parts of the coordinates `conj (ω j) ⟪b j, v⟫` in an orthonormal
-basis `b`, rotated by units `ω j`, as a real linear equivalence. -/
+basis `b`, rotated by complex scalars `ω j` of modulus one, as a real linear equivalence. -/
 noncomputable def rotatedRealCoords (b : OrthonormalBasis ι ℂ E) (ω : ι → ℂ)
     (hω : ∀ j, ω j * conj (ω j) = 1) : E ≃ₗ[ℝ] (ι ⊕ ι → ℝ) where
   toFun v := Sum.elim (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).re) (fun j ↦ (conj (ω j) * ⟪b j, v⟫_ℂ).im)
