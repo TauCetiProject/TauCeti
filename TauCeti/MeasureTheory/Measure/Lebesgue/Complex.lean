@@ -185,4 +185,13 @@ theorem volume_preserving_complexToRealEuclidean {ι : Type*} [Fintype ι] :
     cases j <;> simp [Function.comp_def, MeasurableEquiv.sumPiEquivProdPi,
       MeasurableEquiv.arrowProdEquivProdArrow])
 
+/-- Splitting complex coordinates into plain functions on real and imaginary blocks preserves
+volume. -/
+theorem volume_preserving_complexToRealPi {ι : Type*} [Fintype ι] :
+    MeasurePreserving (complexToRealPi ι) volume volume := by
+  convert (PiLp.volume_preserving_ofLp (ι ⊕ ι)).comp
+    (volume_preserving_complexToRealEuclidean (ι := ι)) using 1
+  ext z k
+  simp
+
 end TauCeti
