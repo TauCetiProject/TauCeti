@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Basic
+public import Mathlib.Algebra.Module.Equiv.Defs
+public import Mathlib.Algebra.Star.Module
+public import Mathlib.Algebra.Star.SelfAdjoint
+public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.CategoryTheory.Linear.Basic
 
 /-!
@@ -17,7 +20,10 @@ none of these interfaces imposes norm, completeness, or positivity assumptions.
 
 Unitary arrows have their dagger as a two-sided inverse. They compose, and define native
 categorical isomorphisms. Endomorphisms inherit the usual algebraic star structures, with
-Mathlib's operator-order multiplication on `CategoryTheory.End`.
+Mathlib's operator-order multiplication on `CategoryTheory.End`, so that unitary and
+self-adjoint endomorphisms are those of Mathlib's star theory (`CategoryTheory.End.mem_unitary_iff`,
+`CategoryTheory.End.isSelfAdjoint_iff`). Over a commutative star semiring, an additive and
+conjugate-linear dagger is a semilinear equivalence of Hom modules (`TauCeti.daggerLinearEquiv`).
 -/
 
 public section
@@ -179,6 +185,31 @@ class DaggerLinear (R : Type w) [Semiring R] [Star R]
 export DaggerLinear (dagger_smul)
 attribute [simp, grind =] dagger_smul
 
+section Linear
+
+variable [Preadditive C] [DaggerPreadditive C]
+variable (R : Type w) [CommSemiring R] [StarRing R] [Linear R C] [DaggerLinear R C]
+
+/-- The additive and conjugate-linear dagger, as a semilinear equivalence
+`(X ⟶ Y) ≃ₗ⋆[R] (Y ⟶ X)` with respect to `starRingEnd R`. -/
+def daggerLinearEquiv (X Y : C) : (X ⟶ Y) ≃ₗ⋆[R] (Y ⟶ X) where
+  __ := daggerAddEquiv X Y
+  map_smul' := dagger_smul
+
+/-- Evaluation of the semilinear dagger equivalence. -/
+@[simp] theorem daggerLinearEquiv_apply (f : X ⟶ Y) :
+    daggerLinearEquiv R X Y f = dagger f := (rfl)
+
+/-- The inverse semilinear dagger equivalence reverses its endpoints. -/
+@[simp] theorem daggerLinearEquiv_symm :
+    (daggerLinearEquiv R X Y).symm = daggerLinearEquiv R Y X := (rfl)
+
+/-- Forgetting scalars recovers the additive dagger equivalence. -/
+@[simp] theorem daggerLinearEquiv_toAddEquiv :
+    (daggerLinearEquiv R X Y).toAddEquiv = daggerAddEquiv X Y := (rfl)
+
+end Linear
+
 /-- An arrow is unitary when its dagger is its two-sided inverse. -/
 def IsUnitary (f : X ⟶ Y) : Prop :=
   f ≫ dagger f = 𝟙 X ∧ dagger f ≫ f = 𝟙 Y
@@ -303,5 +334,14 @@ instance [Preadditive C] [DaggerPreadditive C] : StarRing (End X) where
 instance {R : Type w} [Semiring R] [Star R] [Preadditive C] [Linear R C]
     [DaggerLinear R C] : StarModule R (End X) where
   star_smul r f := by ext; simp
+
+/-- An endomorphism is unitary in the star monoid `End X` exactly when it is a unitary arrow. -/
+theorem mem_unitary_iff (f : End X) : f ∈ unitary (End X) ↔ IsUnitary f.asHom := by
+  simp [Unitary.mem_iff, End.ext_iff, isUnitary_iff]
+
+/-- An endomorphism is self-adjoint in the star monoid `End X` exactly when it equals its
+dagger. -/
+theorem isSelfAdjoint_iff (f : End X) : IsSelfAdjoint f ↔ dagger f.asHom = f.asHom := by
+  rw [IsSelfAdjoint, End.ext_iff, star_asHom]
 
 end CategoryTheory.End
