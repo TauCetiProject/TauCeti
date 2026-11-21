@@ -38,6 +38,9 @@ unique factorisation from `𝒪_{E, x₀}` to `𝒪_{E × ℂ, (x₀, w₀)}`
 
 ## Main declarations
 
+* `TauCeti.holomorphicStructureSheaf.exists_ringEquiv_mul_eq_evalVertical`: a nonzero germ becomes
+  a unit multiple of the vertical evaluation of a distinguished polynomial after an affine change
+  of coordinates fixing the base point, acting on function germs by composition.
 * `TauCeti.holomorphicStructureSheaf.isRueckert_evalVertical`: vertical polynomial evaluation at
   `(x₀, w₀)` satisfies the Rückert hypotheses for distinguished polynomials.
 
@@ -57,12 +60,20 @@ namespace TauCeti.holomorphicStructureSheaf
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
 
-private theorem exists_aut_mul_eq_evalVertical (x₀ : E) (w₀ : ℂ)
+/-- **Vertical regularity after a change of coordinates.** Every nonzero holomorphic germ `b` at
+`(x₀, w₀)` becomes a unit multiple of `evalVertical x₀ w₀ P`, for a distinguished polynomial `P`,
+after an affine change of coordinates fixing `(x₀, w₀)`. The change of coordinates is a ring
+automorphism `α` of the stalk acting on function germs by composition with a map `φ` that tends
+to `(x₀, w₀)`. -/
+theorem exists_ringEquiv_mul_eq_evalVertical (x₀ : E) (w₀ : ℂ)
     {b : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)} (hb : b ≠ 0) :
-    ∃ (α : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀) ≃+*
+    ∃ (φ : E × ℂ → E × ℂ) (hφ : Tendsto φ (𝓝 (x₀, w₀)) (𝓝 (x₀, w₀)))
+      (α : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀) ≃+*
         (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀))
       (u : ((holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀))ˣ)
       (P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]),
+      (∀ c, toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (α c) =
+        (toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl c).compTendsto φ hφ) ∧
       P.IsDistinguishedAt
           (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ∧
         (u : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)) * α b =
@@ -87,11 +98,18 @@ private theorem exists_aut_mul_eq_evalVertical (x₀ : E) (w₀ : ℂ)
     (RingEquiv.cast (R := fun p ↦
       (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk p) hφ0.symm).trans
       (RingEquiv.ofBijective f hbij)
+  have hφt : Tendsto φ (𝓝 (x₀, w₀)) (𝓝 (x₀, w₀)) := by
+    simpa only [hφ0] using hφ.continuous.tendsto (x₀, w₀)
+  have hα (c : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)) :
+      toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (α c) =
+        (toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl c).compTendsto φ hφt := by
+    obtain ⟨C, -, hC⟩ := exists_toFilterGerm_eq (x₀, w₀) c
+    simp only [α, RingEquiv.trans_apply, RingEquiv.ofBijective_apply, f,
+      toFilterGerm_stalkPullback, toFilterGerm_ringEquivCast hφ0.symm (hC _ le_rfl), hC _ le_rfl,
+      Germ.coe_compTendsto]
   have hαb : toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (x₀, w₀) (𝓝 (x₀, w₀)) le_rfl (α b) =
       fun p ↦ F (φ p) := by
-    simp only [α, RingEquiv.trans_apply, RingEquiv.ofBijective_apply, f,
-      toFilterGerm_stalkPullback, toFilterGerm_ringEquivCast hφ0.symm (hbF _ le_rfl),
-      Germ.coe_compTendsto]
+    rw [hα, hbF _ le_rfl, Germ.coe_compTendsto]
     rfl
   have hφ_slice : ∀ w : ℂ, φ (x₀, w) = L (q.1, q.2 + (w - w₀)) := fun w ↦ by
     have hsub : (x₀, w) - (x₀, w₀) = ((0 : E), w - w₀) := by ext <;> simp
@@ -110,7 +128,7 @@ private theorem exists_aut_mul_eq_evalVertical (x₀ : E) (w₀ : ℂ)
     simpa [hφ_slice] using ht
   obtain ⟨⟨P, u⟩, ⟨hP, hu, hfac⟩, _⟩ := existsUnique_weierstrassPreparation
     ((map_residue_verticalPowerSeries_ne_zero_iff hαb).2 hslice')
-  refine ⟨α, hu.unit⁻¹, P, hP, ?_⟩
+  refine ⟨φ, hφt, α, hu.unit⁻¹, P, hα, hP, ?_⟩
   rw [hfac, mul_left_comm, hu.val_inv_mul, mul_one]
 
 /-- Vertical polynomial evaluation `evalVertical x₀ w₀ : (𝒪_{E, x₀})[X] →+* 𝒪_{E × ℂ, (x₀, w₀)}`
@@ -127,6 +145,8 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
   exists_dvd_sub {w} hw b := by
     obtain ⟨⟨q, r⟩, ⟨_, hdiv⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hw b
     exact ⟨r, ⟨q, by linear_combination hdiv⟩⟩
-  exists_mul_eq hb := exists_aut_mul_eq_evalVertical x₀ w₀ hb
+  exists_mul_eq hb :=
+    let ⟨_, _, α, u, P, _, hP, hu⟩ := exists_ringEquiv_mul_eq_evalVertical x₀ w₀ hb
+    ⟨α, u, P, hP, hu⟩
 
 end TauCeti.holomorphicStructureSheaf
