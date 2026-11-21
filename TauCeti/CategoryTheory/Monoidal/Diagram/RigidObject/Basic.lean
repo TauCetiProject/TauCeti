@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Free.Basic
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 public import Mathlib.Algebra.Group.Int.Defs
 public import Mathlib.Algebra.Group.Basic
 public import Mathlib.Data.List.Basic
@@ -24,7 +25,8 @@ pivotal identification.
 `RigidObject.normalize_ofWord` proves that normalization is surjective. These are
 combinatorial object constructions, not categorical comparison isomorphisms or a
 coherence theorem. `CategoryTheory.FreeMonoidalCategory.toRigidObject` includes Mathlib's
-structural object syntax.
+structural object syntax, and `RigidObject.projectObj` evaluates a formal rigid object in
+any rigid monoidal category using its chosen right and left duals.
 
 The integer-level convention is that of Joyal and Street, *Planar diagrams and tensor
 algebra*, §2: the right dual of a letter at level n is at level n + 1.
@@ -331,6 +333,64 @@ theorem normalize_surjective : Function.Surjective (normalize : RigidObject α �
 theorem normalize_rightDual_rightDual_ne (a : α) :
     normalize (RigidObject.of a).rightDual.rightDual ≠ normalize (.of a) := by
   simp
+
+section ProjectObj
+
+open CategoryTheory MonoidalCategory
+
+variable {D : Type v} [Category.{w} D] [MonoidalCategory D] [RigidCategory D]
+
+/-- Evaluate a formal rigid object expression in a rigid monoidal category `D` using its chosen
+right and left duals. The explicit `RightRigidCategory.rightDual` and `LeftRigidCategory.leftDual`
+projections are used so that formal duals of the unit or of another dual do not collapse through
+Mathlib's higher-priority `hasRightDualUnit` or `hasRightDualLeftDual` instances. Exposed so that
+functor interpretations out of a free rigid category have definitional endpoint types on structural
+morphisms. -/
+@[expose] def projectObj (f : α → D) : RigidObject α → D
+  | .of a => f a
+  | .unit => 𝟙_ D
+  | .tensor X Y => projectObj f X ⊗ projectObj f Y
+  | .rightDual X => (RightRigidCategory.rightDual (projectObj f X)).rightDual
+  | .leftDual X => (LeftRigidCategory.leftDual (projectObj f X)).leftDual
+
+@[simp] theorem projectObj_of (f : α → D) (a : α) : projectObj f (.of a) = f a := by rfl
+
+@[simp] theorem projectObj_unit (f : α → D) : projectObj f .unit = 𝟙_ D := by rfl
+
+@[simp] theorem projectObj_tensor (f : α → D) (X Y : RigidObject α) :
+    projectObj f (X.tensor Y) = projectObj f X ⊗ projectObj f Y := by rfl
+
+@[simp] theorem projectObj_rightDual (f : α → D) (X : RigidObject α) :
+    projectObj f X.rightDual = (RightRigidCategory.rightDual (projectObj f X)).rightDual := by rfl
+
+@[simp] theorem projectObj_leftDual (f : α → D) (X : RigidObject α) :
+    projectObj f X.leftDual = (LeftRigidCategory.leftDual (projectObj f X)).leftDual := by rfl
+
+/-- Evaluating an included monoidal object expression agrees with Mathlib's
+`CategoryTheory.FreeMonoidalCategory.projectObj`. -/
+@[simp] theorem projectObj_toRigidObject (f : α → D) (X : FreeMonoidalCategory α) :
+    projectObj f X.toRigidObject = FreeMonoidalCategory.projectObj f X := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y ihX ihY => exact congrArg₂ (· ⊗ ·) ihX ihY
+
+/-- Evaluation commutes with object substitution. -/
+@[simp] theorem projectObj_subst {β : Type*} (g : β → D) (f : α → RigidObject β)
+    (X : RigidObject α) :
+    projectObj g (X.subst f) = projectObj (fun a ↦ projectObj g (f a)) X := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y ihX ihY => exact congrArg₂ (· ⊗ ·) ihX ihY
+  | rightDual X ih =>
+    simp only [subst_rightDual, projectObj_rightDual]
+    rw [ih]
+  | leftDual X ih =>
+    simp only [subst_leftDual, projectObj_leftDual]
+    rw [ih]
+
+end ProjectObj
 
 end RigidObject
 
