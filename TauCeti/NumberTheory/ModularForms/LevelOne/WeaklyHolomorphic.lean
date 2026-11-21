@@ -43,6 +43,9 @@ constant term stay in the image of `R` because those of `jᴺ` are integers.
 
 * `Polynomial.laurentQExpansion_aeval_j`: the Laurent `q`-expansion of `P(j)` is `P`
   evaluated at the Laurent `q`-expansion of `j`.
+* `Polynomial.orderTop_laurentQExpansion_aeval_j` and
+  `Polynomial.leadingCoeff_laurentQExpansion_aeval_j`: the order and leading coefficient of the
+  Laurent `q`-expansion of `P(j)`.
 * `Polynomial.laurentQExpansion_aeval_j_coeff_mem`: the Laurent `q`-coefficients of
   `P(j)` lie in the image of `R`.
 * `TauCeti.ModularForm.exists_natDegree_le_and_aeval_j_eq`: a weakly holomorphic modular function
@@ -94,6 +97,28 @@ private theorem exists_laurentQExpansion_j_pow_coeff_eq_intCast (k : ℕ) (n : �
       exact ⟨m, hm.symm⟩
   obtain ⟨m, hm⟩ := HahnSeries.mem_map_rangeS.mp (pow_mem hj k) n
   exact ⟨m, hm.symm⟩
+
+/-! ### The leading term of `jᴺ` -/
+
+/-- The Laurent `q`-expansion of `jᴺ` is `q⁻ᴺ` times a power series with constant term `1`. -/
+private theorem laurentQExpansion_j_pow_coeff (N : ℕ) (n : ℤ) :
+    (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff n =
+      if n + N < 0 then 0
+      else ((qExpansion 1 fun τ : ℍ ↦ 𝕢 1 τ * j τ) ^ N).coeff (n + N).natAbs := by
+  simp [laurentQExpansion_j, mul_pow, HahnSeries.single_pow, HahnSeries.coeff_single_mul,
+    ← map_pow, PowerSeries.coeff_coe, sub_eq_add_neg]
+
+/-- The Laurent `q`-expansion of `jᴺ` vanishes below `q⁻ᴺ`. -/
+private theorem laurentQExpansion_j_pow_coeff_of_lt (N : ℕ) {n : ℤ} (hn : n < -N) :
+    (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff n = 0 := by
+  simp [laurentQExpansion_j_pow_coeff, show n + N < 0 by omega]
+
+/-- The leading Laurent `q`-coefficient of `jᴺ` is `1`, the coefficient of `q⁻ᴺ`. -/
+private theorem laurentQExpansion_j_pow_coeff_neg (N : ℕ) :
+    (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff (-N) = 1 := by
+  have h := qExpansion_qParam_mul_j_coeff_zero
+  rw [PowerSeries.coeff_zero_eq_constantCoeff_apply] at h
+  simp [laurentQExpansion_j_pow_coeff, PowerSeries.coeff_zero_eq_constantCoeff_apply, h]
 
 end TauCeti.ModularForm
 
@@ -152,31 +177,85 @@ theorem laurentQExpansion_aeval_j_coeff_mem (P : R[X]) (n : ℤ) :
     refine ⟨a * m, ?_⟩
     simp [← C_mul_X_pow_eq_monomial, Algebra.smul_def, hm]
 
+private theorem laurentQExpansion_aeval_j_coeff_of_lt_neg (P : R[X]) {n : ℤ}
+    (hn : n < -((P.map (algebraMap R ℂ)).natDegree : ℤ)) :
+    (UpperHalfPlane.laurentQExpansion 1 (fun τ ↦ aeval (j τ) P)).coeff n = 0 := by
+  rw [laurentQExpansion_aeval_j, ← eval₂_map, eval₂_eq_sum_range, HahnSeries.coeff_sum]
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  have hi' : (i : ℤ) ≤ (P.map (algebraMap R ℂ)).natDegree :=
+    Int.ofNat_le.mpr (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))
+  rw [HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul,
+    laurentQExpansion_j_pow_coeff_of_lt i (by omega), smul_zero]
+
+private theorem laurentQExpansion_aeval_j_coeff_neg_natDegree (P : R[X]) :
+    (UpperHalfPlane.laurentQExpansion 1 (fun τ ↦ aeval (j τ) P)).coeff
+      (-((P.map (algebraMap R ℂ)).natDegree : ℤ)) = (P.map (algebraMap R ℂ)).leadingCoeff := by
+  rw [laurentQExpansion_aeval_j, ← eval₂_map, eval₂_eq_sum_range, HahnSeries.coeff_sum,
+    Finset.sum_range_succ]
+  have hzero : ∑ x ∈ Finset.range (P.map (algebraMap R ℂ)).natDegree,
+      (HahnSeries.C ((P.map (algebraMap R ℂ)).coeff x) *
+        UpperHalfPlane.laurentQExpansion 1 j ^ x).coeff
+        (-((P.map (algebraMap R ℂ)).natDegree : ℤ)) = 0 := by
+    refine Finset.sum_eq_zero fun i hi ↦ ?_
+    have hi' : (i : ℤ) < (P.map (algebraMap R ℂ)).natDegree :=
+      Int.ofNat_lt.mpr (Finset.mem_range.mp hi)
+    rw [HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul,
+      laurentQExpansion_j_pow_coeff_of_lt i (by omega), smul_zero]
+  rw [hzero, zero_add, HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul,
+    laurentQExpansion_j_pow_coeff_neg, smul_eq_mul, mul_one, leadingCoeff]
+
+private theorem orderTop_laurentQExpansion_aeval_j_of_commRing {P : R[X]}
+    (hP : P.map (algebraMap R ℂ) ≠ 0) :
+    (UpperHalfPlane.laurentQExpansion 1 (fun τ ↦ aeval (j τ) P)).orderTop =
+      -((P.map (algebraMap R ℂ)).natDegree : ℤ) := by
+  refine HahnSeries.orderTop_eq_of_le ?_ fun n hn ↦ by
+    contrapose! hn
+    rw [HahnSeries.mem_support, not_not]
+    exact laurentQExpansion_aeval_j_coeff_of_lt_neg P hn
+  rw [HahnSeries.mem_support, laurentQExpansion_aeval_j_coeff_neg_natDegree P]
+  exact leadingCoeff_ne_zero.mpr hP
+
+/-- When the image of `P` in `ℂ[X]` is nonzero, the Laurent `q`-expansion of `P(j)` has order
+equal to minus the degree of that image. -/
+theorem orderTop_laurentQExpansion_aeval_j {S : Type*} [CommSemiring S] [Algebra S ℂ] {P : S[X]}
+    (hP : P.map (algebraMap S ℂ) ≠ 0) :
+    (UpperHalfPlane.laurentQExpansion 1 (fun τ ↦ aeval (j τ) P)).orderTop =
+      -((P.map (algebraMap S ℂ)).natDegree : ℤ) := by
+  have hEq : (fun τ : ℍ ↦ aeval (j τ) P) =
+      fun τ ↦ aeval (R := ℂ) (j τ) (P.map (algebraMap S ℂ)) :=
+    _root_.funext fun τ ↦ (aeval_map_algebraMap ℂ (j τ) P).symm
+  have hid : (P.map (algebraMap S ℂ)).map (algebraMap ℂ ℂ) = P.map (algebraMap S ℂ) :=
+    Polynomial.map_id
+  rw [hEq, orderTop_laurentQExpansion_aeval_j_of_commRing (hid.symm ▸ hP), hid]
+
+/-- The leading coefficient of the Laurent `q`-expansion of `P(j)` is the leading coefficient of
+the image of `P` in `ℂ[X]`. -/
+theorem leadingCoeff_laurentQExpansion_aeval_j {S : Type*} [CommSemiring S] [Algebra S ℂ]
+    (P : S[X]) :
+    (UpperHalfPlane.laurentQExpansion 1 (fun τ ↦ aeval (j τ) P)).leadingCoeff =
+      (P.map (algebraMap S ℂ)).leadingCoeff := by
+  have hEq : (fun τ : ℍ ↦ aeval (j τ) P) =
+      fun τ ↦ aeval (R := ℂ) (j τ) (P.map (algebraMap S ℂ)) :=
+    _root_.funext fun τ ↦ (aeval_map_algebraMap ℂ (j τ) P).symm
+  set Q : ℂ[X] := P.map (algebraMap S ℂ)
+  have hid : Q.map (algebraMap ℂ ℂ) = Q := Polynomial.map_id
+  rw [hEq]
+  rcases eq_or_ne Q 0 with hQ | hQ
+  · simp [hQ]
+  · have hord := orderTop_laurentQExpansion_aeval_j_of_commRing (P := Q) (hid.symm ▸ hQ)
+    have hne : UpperHalfPlane.laurentQExpansion 1 (fun τ ↦ aeval (j τ) Q) ≠ 0 := by
+      rw [← HahnSeries.orderTop_ne_top, hord]
+      exact WithTop.coe_ne_top
+    have hord' : (UpperHalfPlane.laurentQExpansion 1 (fun τ ↦ aeval (j τ) Q)).order =
+        -(Q.natDegree : ℤ) :=
+      WithTop.coe_injective
+        (by rw [HahnSeries.order_eq_orderTop_of_ne_zero hne, hord, hid]; rfl)
+    rw [HahnSeries.leadingCoeff_eq, hord']
+    simpa only [hid] using laurentQExpansion_aeval_j_coeff_neg_natDegree Q
+
 end Polynomial
 
 namespace TauCeti.ModularForm
-
-/-! ### The leading term of `jᴺ` -/
-
-/-- The Laurent `q`-expansion of `jᴺ` is `q⁻ᴺ` times a power series with constant term `1`. -/
-private theorem laurentQExpansion_j_pow_coeff (N : ℕ) (n : ℤ) :
-    (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff n =
-      if n + N < 0 then 0
-      else ((qExpansion 1 fun τ : ℍ ↦ 𝕢 1 τ * j τ) ^ N).coeff (n + N).natAbs := by
-  simp [laurentQExpansion_j, mul_pow, HahnSeries.single_pow, HahnSeries.coeff_single_mul,
-    ← map_pow, PowerSeries.coeff_coe, sub_eq_add_neg]
-
-/-- The Laurent `q`-expansion of `jᴺ` vanishes below `q⁻ᴺ`. -/
-private theorem laurentQExpansion_j_pow_coeff_of_lt (N : ℕ) {n : ℤ} (hn : n < -N) :
-    (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff n = 0 := by
-  simp [laurentQExpansion_j_pow_coeff, show n + N < 0 by omega]
-
-/-- The leading Laurent `q`-coefficient of `jᴺ` is `1`, the coefficient of `q⁻ᴺ`. -/
-private theorem laurentQExpansion_j_pow_coeff_neg (N : ℕ) :
-    (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff (-N) = 1 := by
-  have h := qExpansion_qParam_mul_j_coeff_zero
-  rw [PowerSeries.coeff_zero_eq_constantCoeff_apply] at h
-  simp [laurentQExpansion_j_pow_coeff, PowerSeries.coeff_zero_eq_constantCoeff_apply, h]
 
 /-! ### Weakly holomorphic modular functions -/
 
