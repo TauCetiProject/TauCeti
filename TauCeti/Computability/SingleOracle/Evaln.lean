@@ -226,6 +226,21 @@ theorem evaln_succ_prec_succ_eq_some {cf cg : Code} {a y : ℕ} :
     Option.guard_eq_some', exists_const]
   grind
 
+/-- One bounded search step checks the paired input against the fuel and probes `cf`. A zero
+result returns `m` with the probe's use. A nonzero result continues the search at `m + 1` with
+one less fuel and takes the maximum of the two uses. -/
+theorem evaln_succ_rfind' {cf : Code} {a m : ℕ} :
+    evaln σ (k + 1) (rfind' cf) (Nat.pair a m) = (do
+      guard (Nat.pair a m ≤ k)
+      let probe ← evaln σ (k + 1) cf (Nat.pair a m)
+      if probe.output = 0 then
+        return ⟨m, probe.use⟩
+      else
+        let next ← evaln σ k (rfind' cf) (Nat.pair a (m + 1))
+        return ⟨next.output, max probe.use next.use⟩) := by
+  rw [evaln]
+  simp only [Nat.unpaired, Nat.unpair_pair]
+
 /-- `rfind' cf` at `m` runs `cf` at `m`. On output `0` it returns `m`; otherwise it continues the
 search at `m + 1` with one less fuel. Its use is the largest use of the runs of `cf` it makes. -/
 @[simp]
@@ -235,8 +250,7 @@ theorem evaln_succ_rfind'_eq_some {cf : Code} {a m : ℕ} :
         (dx.output = 0 ∧ d = ⟨m, dx.use⟩ ∨ dx.output ≠ 0 ∧
           ∃ d', evaln σ k (rfind' cf) (Nat.pair a (m + 1)) = some d' ∧
             d = ⟨d'.output, max dx.use d'.use⟩) := by
-  simp only [evaln, Nat.unpaired, Nat.unpair_pair, bind, Option.bind_eq_some_iff,
-    Option.guard_eq_some', exists_const]
+  simp only [evaln_succ_rfind', bind, Option.bind_eq_some_iff, Option.guard_eq_some', exists_const]
   refine and_congr_right fun _ => exists_congr fun dx => and_congr_right fun _ => ?_
   split_ifs with h <;>
     simp only [h, Option.pure_def, Option.some.injEq, Option.bind_eq_some_iff] <;> grind

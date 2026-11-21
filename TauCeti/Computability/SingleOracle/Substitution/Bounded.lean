@@ -104,27 +104,17 @@ private theorem evaln_search_boundedAnswers :
     have hrun : evaln searchAnswers 3 shiftQuery x = some ⟨y, x + 2⟩ := by
       simp [shiftQuery, evaln_comp_oracle_succ, hx, hy]
     exact boundedAnswers_eq_some_iff.2 ⟨_, hrun, evaln_use_le hrun, rfl⟩
-  refine evaln_succ_rfind'_eq_some.2
-    ⟨by decide, ⟨1, 1⟩, ?_, .inr ⟨by decide, ⟨1, 2⟩, ?_, rfl⟩⟩
-  · exact evaln_succ_oracle_eq_some.2 ⟨by decide, 1, hanswer (by decide) rfl, rfl⟩
-  · exact evaln_succ_rfind'_eq_some.2 ⟨by decide, ⟨0, 2⟩,
-      evaln_succ_oracle_eq_some.2 ⟨by decide, 0, hanswer (by decide) rfl, rfl⟩, .inl ⟨rfl, rfl⟩⟩
+  have hfirst : evaln (shiftQuery.boundedAnswers searchAnswers 3 3) 3 oracle (Nat.pair 0 0) =
+      some ⟨1, 1⟩ := evaln_succ_oracle_eq_some.2 ⟨by decide, 1, hanswer (by decide) rfl, rfl⟩
+  have hsecond : evaln (shiftQuery.boundedAnswers searchAnswers 3 3) 2 oracle (Nat.pair 0 1) =
+      some ⟨0, 2⟩ := evaln_succ_oracle_eq_some.2 ⟨by decide, 0, hanswer (by decide) rfl, rfl⟩
+  rw [evaln_succ_rfind', hfirst, evaln_succ_rfind', hsecond]
+  rfl
 
 private theorem evaln_search_subst_fuel_three :
     evaln searchAnswers 3 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) = none := by
-  rw [rfind'_subst, oracle_subst]
-  apply Option.eq_none_iff_forall_ne_some.2
-  intro t ht
-  obtain ⟨-, first, hfirst, hnext⟩ := evaln_succ_rfind'_eq_some.1 ht
-  have hfirst' : evaln searchAnswers 3 shiftQuery (Nat.pair 0 0) = some ⟨1, 2⟩ := by
-    rw [shiftQuery, evaln_comp_oracle_succ, ite_eq_left (by decide)]
-    rfl
-  rw [evaln_unique hfirst hfirst'] at hnext
-  rcases hnext with ⟨hzero, -⟩ | ⟨-, next, hnext, -⟩
-  · exact (by decide : (1 : ℕ) ≠ 0) hzero
-  · obtain ⟨-, _, hshift, -⟩ := evaln_succ_rfind'_eq_some.1 hnext
-    rw [shiftQuery, evaln_comp_oracle_succ, ite_eq_right (by decide)] at hshift
-    contradiction
+  simp only [rfind'_subst, oracle_subst, shiftQuery, evaln_succ_rfind', evaln_comp_oracle_succ]
+  rfl
 
 /-- The maximum of the two separate fuels can be too small for inlining.
 In the concrete witness, each intermediate answer is computed by one base-oracle query. -/

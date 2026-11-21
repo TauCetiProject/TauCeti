@@ -22,14 +22,8 @@ example : ¬ ∃ j k t, evaln ((comp oracle succ).boundedAnswers (fun x => [0, 1
       (rfind' oracle) (Nat.pair 0 0) = some t := by
   have h : evaln (fun x => [0, 1, 0][x]?) 4 ((rfind' oracle).subst (comp oracle succ))
       (Nat.pair 0 0) = some ⟨1, 3⟩ := by
-    rw [rfind'_subst, oracle_subst]
-    refine evaln_succ_rfind'_eq_some.2
-      ⟨by decide, ⟨1, 2⟩, ?_, .inr ⟨by decide, ⟨1, 3⟩, ?_, rfl⟩⟩
-    · rw [evaln_comp_oracle_succ, ite_eq_left (by decide)]
-      rfl
-    · refine evaln_succ_rfind'_eq_some.2 ⟨by decide, ⟨0, 3⟩, ?_, .inl ⟨rfl, rfl⟩⟩
-      rw [evaln_comp_oracle_succ, ite_eq_left (by decide)]
-      rfl
+    simp only [rfind'_subst, oracle_subst, evaln_succ_rfind', evaln_comp_oracle_succ]
+    rfl
   rw [exists_evaln_boundedAnswers_iff_use_le h]
   decide
 
