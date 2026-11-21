@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
@@ -294,7 +294,7 @@ theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
     (p.endCoord w).im =
       -p.endSign * (ThricePuncturedSphere.Puncture.zero.endCoord w).im := by
   simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
-    Complex.arg_mul_real]
+    Complex.arg_mul_ofReal]
   ring
 
 /-- The angular coordinate of the negative plane is the negative of that of the positive plane. -/
@@ -540,6 +540,18 @@ theorem contDiff_uncurry_perturbation {V : Type*} [NormedAddCommGroup V] [Normed
       (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))).contDiff.comp
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
     contDiff_const
+
+/-- In the end coordinates of the plane, the component of the perturbation of a PSS plane along a
+tangent vector `v` is `C^n` jointly in the domain point and the target point, for a period-one
+`C^n` Hamiltonian. -/
+theorem contDiff_uncurry_endComponent {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} {n : ℕ∞} (hH : Function.Periodic H 1)
+    (hHs : ContDiff ℝ n (Function.uncurry H)) (v : ℂ) :
+    ContDiff ℝ n (Function.uncurry (p.endComponent H v)) := by
+  rw [endComponent_eq hH]
+  exact contDiff_const.mul ((smoothTransition.contDiff.comp
+    ((contDiff_const.mul (contDiff_fst.comp contDiff_fst)).sub contDiff_const)).mul
+    (hHs.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)))
 
 /-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
 plane along a tangent vector `v` is `C^n` jointly in the domain point and the point of the

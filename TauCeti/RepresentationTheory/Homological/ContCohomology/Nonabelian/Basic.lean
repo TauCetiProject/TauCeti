@@ -211,6 +211,17 @@ theorem mk_eq_mk_iff {f f' : Cocycle G A} :
     mk f = mk f' ↔ ∃ a : A, ∀ g, f' g = a⁻¹ * f g * g • a :=
   Quotient.eq
 
+/-- Define a function on continuous nonabelian cohomology by a function on cocycles that is
+constant on gauge classes. -/
+def lift {B : Sort*} (f : Cocycle G A → B) (hf : ∀ c d, c ≈ d → f c = f d) :
+    NonabelianH1 G A → B :=
+  Quotient.lift f hf
+
+@[simp]
+theorem lift_mk {B : Sort*} (f : Cocycle G A → B) (hf : ∀ c d, c ≈ d → f c = f d)
+    (c : Cocycle G A) : lift f hf (mk c) = f c :=
+  (rfl)
+
 /-- The base point of `H¹(G, A)`, the class of the trivial cocycle. -/
 instance : One (NonabelianH1 G A) :=
   ⟨mk 1⟩

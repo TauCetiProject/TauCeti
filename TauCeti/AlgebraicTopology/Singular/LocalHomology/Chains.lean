@@ -225,9 +225,9 @@ def isColimitMapCoconeSingularChainComplexComplPairCocone :
   · refine ⟨Classical.arbitrary ι, fun x _ ↦ ⟨x, ?_⟩⟩
     rw [hfst]
     rfl
-  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtype_val)
-      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.2)
-    exact ⟨i, fun x hx ↦ ⟨⟨x.1, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
+  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtypeVal)
+      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.property)
+    exact ⟨i, fun x hx ↦ ⟨⟨x.val, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
       Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩⟩
 
 end Family

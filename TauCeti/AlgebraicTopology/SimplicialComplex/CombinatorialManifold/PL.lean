@@ -49,7 +49,7 @@ theorem exists_chartedSpace_hasGroupoid_of_isCombinatorialSphere_link
   let C := K.starChartedSpace c hs
   let := C
   refine ⟨C, hasGroupoid_PLGroupoid_of_coordinateFormulas
-    (fun x : Realization K => (x.1 : ι → ℝ)) ?_⟩
+    (fun x : Realization K => (x.val : ι → ℝ)) ?_⟩
   intro d hd
   rw [starChartedSpace_atlas] at hd
   obtain ⟨v, rfl⟩ := hd
@@ -78,11 +78,11 @@ theorem IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid
       {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2},
       c.source = openStarRealization K v ∧
       ∃ f : (ι → ℝ) → (Fin n → ℝ) × ℝ, ∃ g : ((Fin n → ℝ) × ℝ) → (ι → ℝ),
-        IsPLOn f (range fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ)) ∧
+        IsPLOn f (range fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ)) ∧
         IsPLOn g ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' c.target ∩
           range (modelWithCornersHalfSpace (Fin n → ℝ))) ∧
-        (∀ x ∈ c.source, f (x.1 : ι → ℝ) = (c x).1) ∧
-        ∀ y ∈ c.target, g y.1 = ((c.symm y).1 : ι → ℝ) := by
+        (∀ x ∈ c.source, f (x.val : ι → ℝ) = (c x).val) ∧
+        ∀ y ∈ c.target, g y.val = ((c.symm y).val : ι → ℝ) := by
     rcases isCombinatorialManifold_succ_iff.mp h (K.singleton_mem v) with hs | hb
     · obtain ⟨c, hcs, -, hrest⟩ := hs.exists_openPartialHomeomorph_openStar_halfSpace_isPL
       exact ⟨c, hcs, hrest⟩
@@ -92,7 +92,7 @@ theorem IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid
   let C := K.starChartedSpace c hs
   let := C
   refine ⟨C, hasGroupoid_PLGroupoid_of_coordinateFormulas
-    (fun x : Realization K => (x.1 : ι → ℝ)) ?_⟩
+    (fun x : Realization K => (x.val : ι → ℝ)) ?_⟩
   intro d hd
   rw [starChartedSpace_atlas] at hd
   obtain ⟨v, rfl⟩ := hd

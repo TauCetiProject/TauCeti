@@ -54,7 +54,7 @@ theorem norm_apply_le_of_forall_norm_le (μ : D(X, ℤ_[p])) {f : C(X, ℤ_[p])}
       inv_pow, ← zpow_natCast, ← zpow_neg]
     exact hf x
   let g : C(X, ℤ_[p]) := ⟨fun x ↦ Padic.lift _ (hmem x),
-    ((continuous_subtype_val.comp f.continuous).div_const _).subtype_mk hmem⟩
+    ((continuous_subtypeVal.comp f.continuous).div_const _).subtype_mk hmem⟩
   have hg : ∀ x, (g x : ℚ_[p]) = f x / (p : ℚ_[p]) ^ k := fun _ ↦ rfl
   have hfg : f = (p : ℤ_[p]) ^ k • g := by
     ext x

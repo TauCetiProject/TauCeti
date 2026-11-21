@@ -348,13 +348,13 @@ theorem EquidecomposableLE.antisymm (hAB : EquidecomposableLE G A B)
   -- Schröder–Bernstein for the induced injections `f.source → g.source → f.source`, keeping track
   -- of the group element moving each point.
   obtain ⟨h, hh, hR⟩ := Embedding.schroeder_bernstein_of_rel
-    (f := fun a : f.source => (⟨f a, hB' (f.apply_mem_target a.2)⟩ : g.source))
-    (g := fun b : g.source => (⟨g b, hA' (g.apply_mem_target b.2)⟩ : f.source))
-    (fun a b hab => Subtype.ext (f.injOn a.2 b.2 (congrArg Subtype.val hab)))
-    (fun a b hab => Subtype.ext (g.injOn a.2 b.2 (congrArg Subtype.val hab)))
+    (f := fun a : f.source => (⟨f a, hB' (f.apply_mem_target a.property)⟩ : g.source))
+    (g := fun b : g.source => (⟨g b, hA' (g.apply_mem_target b.property)⟩ : f.source))
+    (fun a b hab => Subtype.ext (f.injOn a.property b.property (congrArg Subtype.val hab)))
+    (fun a b hab => Subtype.ext (g.injOn a.property b.property (congrArg Subtype.val hab)))
     (fun a b => ∃ k ∈ f.witness ∪ g.witness⁻¹, (b : X) = k • (a : X))
-    (fun a => let ⟨k, hk, e⟩ := f.isDecompOn a a.2; ⟨k, Finset.mem_union_left _ hk, e⟩)
-    (fun b => let ⟨k, hk, e⟩ := g.isDecompOn b b.2
+    (fun a => let ⟨k, hk, e⟩ := f.isDecompOn a a.property; ⟨k, Finset.mem_union_left _ hk, e⟩)
+    (fun b => let ⟨k, hk, e⟩ := g.isDecompOn b b.property
       ⟨k⁻¹, Finset.mem_union_right _ (Finset.inv_mem_inv hk), by simp [e]⟩)
   let F : X → X := fun x => if hx : x ∈ f.source then h ⟨x, hx⟩ else x
   have hF : BijOn F f.source g.source := by
@@ -362,7 +362,7 @@ theorem EquidecomposableLE.antisymm (hAB : EquidecomposableLE G A B)
     · exact congrArg Subtype.val (hh.1 (Subtype.ext (by simpa [F, hx, hy] using hxy)) :
         (⟨x, hx⟩ : f.source) = ⟨y, hy⟩)
     · obtain ⟨a, ha⟩ := hh.2 ⟨y, hy⟩
-      exact ⟨a, a.2, by simp [F, ha]⟩
+      exact ⟨a, a.property, by simp [F, ha]⟩
   refine ⟨⟨hF.toPartialEquiv F _ _, f.witness ∪ g.witness⁻¹, fun a ha => ?_⟩, rfl, rfl⟩
   obtain ⟨k, hk, e⟩ := hR ⟨a, ha⟩
   exact ⟨k, hk, (dite_eq_left_of_eq_true (eq_true ha)).trans e⟩

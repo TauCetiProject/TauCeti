@@ -211,7 +211,7 @@ noncomputable def oneFormWedgeCLM (hα : ContDiff ℝ n α) :
     𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) :=
   bilinLeftCLM
     ((ContinuousLinearMap.compL ℝ (E →L[ℝ] ℝ) _ _ (alternatizeUncurryFinCLM ℝ E F)) ∘L
-      (ContinuousLinearMap.smulRightL ℝ E (E [⋀^Fin k]→L[ℝ] F)).flip) hα
+      (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E (E [⋀^Fin k]→L[ℝ] F)).flip) hα
 
 @[simp]
 theorem oneFormWedgeCLM_apply (hα : ContDiff ℝ n α) (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :

@@ -70,9 +70,9 @@ theorem prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one
     ∏ η ∈ (toBase.finite_setOf_base_eq_closedPoint
         (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
       (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-        hX η.2).toInvertibleSheaf)⁻¹ ^ toBase.specialFiberMultiplicity π η = 1 := by
+        hX η.property).toInvertibleSheaf)⁻¹ ^ toBase.specialFiberMultiplicity π η = 1 := by
   have hC (η : CodimensionOnePoint X) :=
-    isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX η.2
+    isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX η.property
   -- The ideal sheaf `𝒪_X(-X_s) = ∏ᵢ 𝒪_X(-Cᵢ) ^ mᵢ` has trivial class.
   have h := mk_toInvertibleSheaf_ker_specialFiberι toBase hπ hreg
     (isEffectiveCartier_ker_specialFiberι toBase hπ hreg)

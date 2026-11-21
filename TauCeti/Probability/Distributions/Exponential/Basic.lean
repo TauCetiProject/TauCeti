@@ -496,7 +496,7 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
   rw [cdf_min_iid hindep hlaw x, cdf_expMeasure_eq hr x,
     cdf_expMeasure_eq (mul_pos hd hr) x]
   by_cases hx : 0 ≤ x
-  · rw [ite_eq_left hx, ite_eq_left hx, sub_sub_cancel, ← Real.exp_nat_mul]
+  · rw [ite_eq_left hx, ite_eq_left hx, sub_sub_cancel, ← Real.exp_natCast_mul]
     congr 2
     ring
   · rw [ite_eq_right hx, ite_eq_right hx, sub_zero, one_pow, sub_self]

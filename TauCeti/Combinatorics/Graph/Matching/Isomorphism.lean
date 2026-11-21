@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.Graph.Matching.Basic
 
 /-!
@@ -95,37 +95,38 @@ private theorem mem_of_mem_edgeSet_matchingSubgraph {M : Set E(G)} {e : β}
 def matchingSubgraph (f : Iso G H) (M : Set E(G)) :
     Iso (G.matchingSubgraph M) (H.matchingSubgraph (f.edgeEquiv '' M)) where
   vertexEquiv :=
-    { toFun x := ⟨f.vertexEquiv ⟨x, (G.matchingSubgraph_le M).vertexSet_mono x.2⟩, by
+    { toFun x := ⟨f.vertexEquiv ⟨x, (G.matchingSubgraph_le M).vertexSet_mono x.property⟩, by
         rw [vertexSet_matchingSubgraph, f.vertexEquiv_mem_matchingSupport_image_iff]
-        simpa only [vertexSet_matchingSubgraph] using x.2⟩
-      invFun y := ⟨f.vertexEquiv.symm ⟨y, (H.matchingSubgraph_le _).vertexSet_mono y.2⟩, by
+        simpa only [vertexSet_matchingSubgraph] using x.property⟩
+      invFun y := ⟨f.vertexEquiv.symm ⟨y, (H.matchingSubgraph_le _).vertexSet_mono y.property⟩, by
         rw [vertexSet_matchingSubgraph, ← f.vertexEquiv_mem_matchingSupport_image_iff,
           Equiv.apply_symm_apply]
-        simpa only [vertexSet_matchingSubgraph] using y.2⟩
+        simpa only [vertexSet_matchingSubgraph] using y.property⟩
       left_inv x := by simp
       right_inv y := by simp }
   edgeEquiv :=
-    { toFun e := ⟨f.edgeEquiv ⟨e, (G.matchingSubgraph_le M).edgeSet_mono e.2⟩, by
+    { toFun e := ⟨f.edgeEquiv ⟨e, (G.matchingSubgraph_le M).edgeSet_mono e.property⟩, by
         rw [edgeSet_matchingSubgraph]
-        exact ⟨_, ⟨_, mem_of_mem_edgeSet_matchingSubgraph e.2, rfl⟩, rfl⟩⟩
-      invFun e := ⟨f.edgeEquiv.symm ⟨e, (H.matchingSubgraph_le _).edgeSet_mono e.2⟩, by
-        obtain ⟨e', he', hee⟩ := mem_of_mem_edgeSet_matchingSubgraph e.2
+        exact ⟨_, ⟨_, mem_of_mem_edgeSet_matchingSubgraph e.property, rfl⟩, rfl⟩⟩
+      invFun e := ⟨f.edgeEquiv.symm ⟨e, (H.matchingSubgraph_le _).edgeSet_mono e.property⟩, by
+        obtain ⟨e', he', hee⟩ := mem_of_mem_edgeSet_matchingSubgraph e.property
         rw [edgeSet_matchingSubgraph]
         refine ⟨e', he', ?_⟩
         rw [← hee, Equiv.symm_apply_apply]⟩
       left_inv e := by simp
       right_inv e := by simp }
   map_isLink_iff e x y := by
-    have heM := mem_of_mem_edgeSet_matchingSubgraph e.2
-    have hx := (G.matchingSubgraph_le M).vertexSet_mono x.2
-    have hy := (G.matchingSubgraph_le M).vertexSet_mono y.2
-    have hlink := f.map_isLink_iff ⟨e, (G.matchingSubgraph_le M).edgeSet_mono e.2⟩ ⟨x, hx⟩ ⟨y, hy⟩
+    have heM := mem_of_mem_edgeSet_matchingSubgraph e.property
+    have hx := (G.matchingSubgraph_le M).vertexSet_mono x.property
+    have hy := (G.matchingSubgraph_le M).vertexSet_mono y.property
+    have hlink := f.map_isLink_iff ⟨e, (G.matchingSubgraph_le M).edgeSet_mono e.property⟩ ⟨x, hx⟩
+        ⟨y, hy⟩
     simp only [Equiv.coe_fn_mk, matchingSubgraph_isLink]
     constructor
     · rintro ⟨-, -, h⟩
       exact ⟨_, heM, hlink.1 h⟩
     · rintro ⟨-, -, h⟩
-      exact ⟨(f.edgeEquiv _).2, ⟨_, heM, rfl⟩, hlink.2 h⟩
+      exact ⟨(f.edgeEquiv _).property, ⟨_, heM, rfl⟩, hlink.2 h⟩
 
 /-- The vertex equivalence of `Graph.Iso.matchingSubgraph` is the vertex equivalence of the
 ambient isomorphism. -/
@@ -133,7 +134,7 @@ ambient isomorphism. -/
 theorem coe_matchingSubgraph_vertexEquiv_apply (f : Iso G H) (M : Set E(G))
     (x : V(G.matchingSubgraph M)) :
     ((f.matchingSubgraph M).vertexEquiv x : α') =
-      f.vertexEquiv ⟨x, (G.matchingSubgraph_le M).vertexSet_mono x.2⟩ :=
+      f.vertexEquiv ⟨x, (G.matchingSubgraph_le M).vertexSet_mono x.property⟩ :=
   (rfl)
 
 /-- The inverse vertex equivalence of `Graph.Iso.matchingSubgraph` is the inverse vertex
@@ -142,7 +143,7 @@ equivalence of the ambient isomorphism. -/
 theorem coe_matchingSubgraph_vertexEquiv_symm_apply (f : Iso G H) (M : Set E(G))
     (y : V(H.matchingSubgraph (f.edgeEquiv '' M))) :
     ((f.matchingSubgraph M).vertexEquiv.symm y : α) =
-      f.vertexEquiv.symm ⟨y, (H.matchingSubgraph_le _).vertexSet_mono y.2⟩ :=
+      f.vertexEquiv.symm ⟨y, (H.matchingSubgraph_le _).vertexSet_mono y.property⟩ :=
   (rfl)
 
 /-- The edge equivalence of `Graph.Iso.matchingSubgraph` is the edge equivalence of the ambient
@@ -151,7 +152,7 @@ isomorphism. -/
 theorem coe_matchingSubgraph_edgeEquiv_apply (f : Iso G H) (M : Set E(G))
     (e : E(G.matchingSubgraph M)) :
     ((f.matchingSubgraph M).edgeEquiv e : β') =
-      f.edgeEquiv ⟨e, (G.matchingSubgraph_le M).edgeSet_mono e.2⟩ :=
+      f.edgeEquiv ⟨e, (G.matchingSubgraph_le M).edgeSet_mono e.property⟩ :=
   (rfl)
 
 /-- The inverse edge equivalence of `Graph.Iso.matchingSubgraph` is the inverse edge equivalence
@@ -160,7 +161,7 @@ of the ambient isomorphism. -/
 theorem coe_matchingSubgraph_edgeEquiv_symm_apply (f : Iso G H) (M : Set E(G))
     (e : E(H.matchingSubgraph (f.edgeEquiv '' M))) :
     ((f.matchingSubgraph M).edgeEquiv.symm e : β) =
-      f.edgeEquiv.symm ⟨e, (H.matchingSubgraph_le _).edgeSet_mono e.2⟩ :=
+      f.edgeEquiv.symm ⟨e, (H.matchingSubgraph_le _).edgeSet_mono e.property⟩ :=
   (rfl)
 
 end Iso
