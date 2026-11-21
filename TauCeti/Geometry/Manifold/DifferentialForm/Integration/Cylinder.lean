@@ -33,7 +33,8 @@ coordinate `s`, the coordinate along which a cylinder `u` joins its boundary loo
   `Integration.Homotopy` (`TauCeti.rectangleIntegral_comp_prodMap` and
   `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff`), it is invariant under an affine change of
   the first coordinate (`TauCeti.rectangleIntegral_comp_prodMap_affine`), and reversing the first
-  coordinate changes its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`);
+  coordinate changes its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`); so does
+  reversing the second coordinate (`TauCeti.rectangleIntegral_comp_prodMap_id_one_sub`);
 * it is likewise additive under subdivision of `[a.2, b.2]`
   (`TauCeti.rectangleIntegral_add_adjacent_snd`) and invariant under a `C¹` change of the second
   coordinate (`TauCeti.rectangleIntegral_comp_prodMap_snd`).
@@ -259,6 +260,24 @@ theorem rectangleIntegral_comp_prodMap_snd_of_contDiff {φ : RoughForm I M F 2}
     (hτ.continuous_deriv le_rfl).continuousOn
 
 end Continuous
+
+/-- Reversing the second coordinate of a differentiable map changes the sign of its integral over
+`[a₁, b₁] × [0, 1]`. -/
+theorem rectangleIntegral_comp_prodMap_id_one_sub (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) (a₁ b₁ : ℝ) :
+    rectangleIntegral φ (u ∘ Prod.map id (fun t ↦ 1 - t)) (a₁, 0) (b₁, 1) =
+      -rectangleIntegral φ u (a₁, 0) (b₁, 1) := by
+  rw [rectangleIntegral_def, rectangleIntegral_def, ← intervalIntegral.integral_neg]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  -- The derivative of `Prod.map id (1 - ·)` sends `(0, 1)` to `-(0, 1)`, so the integrand at
+  -- `(s, t)` is minus the integrand of `u` at `(s, 1 - t)`.
+  have hpt (t : ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ Prod.map id fun t ↦ 1 - t) φ (s, t)
+      ![(1, 0), (0, 1)] = -mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, 1 - t) ![(1, 0), (0, 1)] := by
+    simpa using mpullback_comp_prodMap_apply φ (hasDerivAt_id s)
+      ((hasDerivAt_id t).const_sub 1) (hu _)
+  simp_rw [hpt, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_sub_left (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t)
+      ![(1, 0), (0, 1)]) 1, sub_self, sub_zero]
 
 /-! ### Concatenation along the first coordinate -/
 

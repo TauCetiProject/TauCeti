@@ -19,7 +19,7 @@ with a common mean `m`. Their sample mean `S = r⁻¹ ∑ₖ Xₖ` has mean-squa
 `∫ ‖S - m‖² dP = r⁻² ∑ₖ ∫ ‖Xₖ - m‖² dP`,
 
 so that averaging `r` samples with a common per-sample error `γ` divides it by `r`. Together with
-Chebyshev's inequality for the second moment, `TauCeti.meas_ge_le_integral_norm_sq_div_sq` in
+Chebyshev's inequality for the second moment, `TauCeti.meas_ge_le_integral_sq_div_sq` in
 `TauCeti.Probability.Moments.Chebyshev`, this is the scale `1 / r` behind the elementary
 concentration of empirical moments.
 

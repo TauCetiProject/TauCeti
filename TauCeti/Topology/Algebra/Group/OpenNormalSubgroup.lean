@@ -36,6 +36,7 @@ the group operations is required.
   on open normal subgroups are those of the underlying subgroups.
 * `OpenNormalSubgroup.mem_top`, `OpenNormalSubgroup.mem_bot`: the top open normal subgroup
   contains every element, and the bottom one only the identity.
+* `OpenNormalSubgroup.comap_mono`: taking preimages preserves inclusions.
 -/
 
 public section
@@ -143,6 +144,12 @@ theorem toSubgroup_comap (U : OpenNormalSubgroup H) (f : G →* H)
 theorem mem_comap {U : OpenNormalSubgroup H} {f : G →* H} {hf : Continuous f} {g : G} :
     g ∈ comap U f hf ↔ f g ∈ U :=
   Iff.rfl
+
+/-- Taking preimages under a continuous group homomorphism preserves inclusions of open normal
+subgroups. -/
+theorem comap_mono (f : G →* H) (hf : Continuous f) {U V : OpenNormalSubgroup H}
+    (h : U ≤ V) : U.comap f hf ≤ V.comap f hf :=
+  Subgroup.comap_mono h
 
 /-- Taking the preimage of an open normal subgroup twice is the preimage under the composite. -/
 theorem comap_comap {K : Type*} [Group K] [TopologicalSpace K] (U : OpenNormalSubgroup K)

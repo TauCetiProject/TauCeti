@@ -95,6 +95,14 @@ instance projective_pullback_obj_obj {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f 
     Projective (((pullback (R := R) f).obj L).obj x) :=
   inferInstanceAs (Projective (L.obj _))
 
+/-- The fibres of a pulled-back local coefficient system are fibres of the original system, so
+they are finitely generated when those are. -/
+instance finite_pullback_obj_obj {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) [∀ y, Module.Finite R (L.obj y)]
+    (x : FundamentalGroupoid X) :
+    Module.Finite R (((pullback (R := R) f).obj L).obj x) :=
+  inferInstanceAs (Module.Finite R (L.obj _))
+
 @[simp]
 theorem pullback_obj_map {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (L : LocalCoefficientSystem.{u, v₂, w} R Y)

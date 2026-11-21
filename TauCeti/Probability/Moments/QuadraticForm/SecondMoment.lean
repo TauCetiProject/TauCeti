@@ -79,9 +79,8 @@ theorem integral_real_inner_star_mul_eq_zero_of_distinct_unordered_pairs {i j k 
   have hexpand (ω : Ω) : (∏ d : Fin 4, f d (X (e' d) ω)) =
       X i ω * star (X j ω) * (star (X k ω) * X l ω) := by
     simp [e', e, f, Fin.prod_univ_succ, mul_assoc]
-  have hprod := hX.integral_fun_prod_comp_eq_zero_of_singleton_fiber univ e'
-    (fun d _ ↦ hm (e' d) (e' d).property) (fun k _ ↦ (hf k).aestronglyMeasurable) (mem_univ c)
-    (fun b _ h ↦ hc' b (congrArg Subtype.val h)) hzero
+  have hprod := hX.integral_fun_prod_comp_eq_zero (fun d ↦ hm d d.property) (e := e') (t := c) hf
+    (fun b h ↦ hc' b (congrArg Subtype.val h)) hzero
   simp_rw [hexpand] at hprod
   have heq (ω : Ω) :
       ⟪a * (star (X i ω) * X j ω), b * (star (X k ω) * X l ω)⟫_𝕜 =

@@ -69,6 +69,10 @@ for set and probability integrals.
   integral at most `E`.
 * `setIntegral_le_of_lintegral_ofReal_le` bounds every set integral of a real-valued function
   by a bound `E` on the integral of its pointwise positive part over the whole space.
+* `ofReal_le_withDensity_of_le_setIntegral` and `le_setIntegral_of_ofReal_le_withDensity` compare
+  the integral of `f` over a part of a set `S` with the measure `(μ.restrict S).withDensity` of
+  density `ofReal ∘ f`, in both directions; `le_withDensity_of_le_setLIntegral` is the lower bound
+  for a lower integral and an `ℝ≥0∞`-valued density.
 * `ofReal_integral_sq_div_le_lintegral_enorm` bounds `∫ h² / C` by the `L¹` norm `∫⁻ ‖h‖ₑ` of
   a real-valued function `h` with `|h| ≤ C` almost everywhere.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
@@ -653,6 +657,37 @@ theorem setIntegral_le_of_lintegral_ofReal_le {α : Type*} [MeasurableSpace α]
     ∫ x in s, f x ∂μ ≤ E :=
   (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
     ((setLIntegral_le_lintegral _ _).trans (hE.trans_eq ENNReal.ofReal_coe_nnreal.symm)))
+
+/-- Lower integral at least `δ` over a measurable part `s` of `S ∩ N` makes the measure of `N`
+with density `f` on `S` at least `δ`. -/
+theorem le_withDensity_of_le_setLIntegral {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {f : Ω → ℝ≥0∞} {S s N : Set Ω} {δ : ℝ≥0∞} (hs : MeasurableSet s) (hsS : s ⊆ S)
+    (hsN : s ⊆ N) (h : δ ≤ ∫⁻ y in s, f y ∂μ) : δ ≤ (μ.restrict S).withDensity f N :=
+  calc δ ≤ ∫⁻ y in s, f y ∂μ := h
+    _ = _ := by rw [withDensity_apply _ hs, Measure.restrict_restrict hs, Set.inter_eq_left.2 hsS]
+    _ ≤ _ := measure_mono hsN
+
+/-- Integral at least `δ` over a measurable part `s` of `S ∩ N` makes the measure of `N` with
+density `ofReal ∘ f` on `S` at least `δ`. No integrability or sign assumption on `f` is needed. -/
+theorem ofReal_le_withDensity_of_le_setIntegral {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {f : Ω → ℝ} {S s N : Set Ω} {δ : ℝ} (hs : MeasurableSet s) (hsS : s ⊆ S)
+    (hsN : s ⊆ N) (h : δ ≤ ∫ y in s, f y ∂μ) :
+    ENNReal.ofReal δ ≤ (μ.restrict S).withDensity (fun y ↦ ENNReal.ofReal (f y)) N :=
+  le_withDensity_of_le_setLIntegral hs hsS hsN
+    ((ENNReal.ofReal_le_ofReal h).trans ofReal_integral_le_lintegral_ofReal)
+
+/-- The measure of a measurable set `N` with density `ofReal ∘ f` on a measurable set `S`, if at
+least `δ`, makes the integral of `f` over `N ∩ S` at least `δ`, for `f` integrable and nonnegative
+on `N ∩ S`. -/
+theorem le_setIntegral_of_ofReal_le_withDensity {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {f : Ω → ℝ} {S N : Set Ω} {δ : ℝ} (hN : MeasurableSet N)
+    (hS : MeasurableSet S) (hint : IntegrableOn f (N ∩ S) μ) (h0 : ∀ y ∈ N ∩ S, 0 ≤ f y)
+    (h : ENNReal.ofReal δ ≤ (μ.restrict S).withDensity (fun y ↦ ENNReal.ofReal (f y)) N) :
+    δ ≤ ∫ y in N ∩ S, f y ∂μ := by
+  have hs := hN.inter hS
+  rw [withDensity_apply _ hN, Measure.restrict_restrict hN,
+    ← ofReal_integral_eq_lintegral_ofReal hint (ae_restrict_of_forall_mem hs h0)] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (setIntegral_nonneg hs h0)).1 h
 
 /-- For a real-valued function bounded by `C` almost everywhere, the integral of its square
 divided by `C` is at most its `L¹` norm. No integrability, measurability or sign assumption is
