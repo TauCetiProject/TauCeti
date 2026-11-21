@@ -49,6 +49,8 @@ use.
   the dual is symmetric if and only if the map takes symmetric values.
 * `ContinuousLinearMap.ker_toBilinForm`: the kernel of the bilinear form of a continuous linear
   map into the dual is the kernel of the map.
+* `ContinuousLinearMap.exists_apply_self_eq_sum_mul_sq`: a weighted sum of squares of finitely
+  many continuous linear functionals is the diagonal `x ↦ Q x x` of a continuous bilinear form.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
@@ -144,6 +146,14 @@ the map takes symmetric values. -/
 theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
     L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
   LinearMap.BilinForm.isSymm_def
+
+/-- A weighted sum of squares `∑ⱼ c j (ℓ j x)²` of finitely many continuous linear functionals
+`ℓ j` is the diagonal `x ↦ Q x x` of a continuous bilinear form `Q`, namely
+`Q x y = ∑ⱼ c j * ℓ j x * ℓ j y`. -/
+theorem _root_.ContinuousLinearMap.exists_apply_self_eq_sum_mul_sq {ι : Type*} [Fintype ι]
+    (ℓ : ι → E →L[𝕜] 𝕜) (c : ι → 𝕜) :
+    ∃ Q : E →L[𝕜] E →L[𝕜] 𝕜, ∀ x, Q x x = ∑ j, c j * ℓ j x ^ 2 :=
+  ⟨∑ j, c j • (ℓ j).smulRight (ℓ j), fun x ↦ by simp [sq]⟩
 
 end
 
