@@ -15,6 +15,7 @@ import Mathlib.Algebra.MvPolynomial.Variables
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Derivation.BaseChange
 
 /-!
@@ -118,18 +119,9 @@ private theorem tensorBaseEquiv_symm_X (v : α × (ι →₀ ℕ)) :
 /-- Coefficient-wise lift of a base derivation `d : Derivation R B B` to `RelJetAlgebra B ι α`,
 obtained from `Derivation.baseChange` along `MvPolynomial _ R`. -/
 private def coeffDeriv (d : Derivation R B B) :
-    Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α) where
-  toLinearMap :=
-    (tensorBaseEquiv R B (α × (ι →₀ ℕ))).toLinearMap.comp
-      (((d.baseChange (MvPolynomial (α × (ι →₀ ℕ)) R)).toLinearMap.restrictScalars R).comp
-        (tensorBaseEquiv R B (α × (ι →₀ ℕ))).symm.toLinearMap)
-  map_one_eq_zero' := by
-    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one,
-      LinearMap.coe_restrictScalars, Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero]
-  leibniz' p q := by
-    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearMap.coe_restrictScalars,
-      Derivation.coeFn_coe, map_mul, Derivation.leibniz, smul_eq_mul, map_add,
-      AlgEquiv.apply_symm_apply]
+    Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α) :=
+  ((d.baseChange (MvPolynomial (α × (ι →₀ ℕ)) R)).restrictScalars R).conjAlgEquiv
+    (tensorBaseEquiv R B (α × (ι →₀ ℕ)))
 
 private theorem coeffDeriv_C (d : Derivation R B B) (b : B) :
     coeffDeriv (ι := ι) (α := α) d (C b) = C (d b) := by
@@ -288,19 +280,11 @@ theorem X_mem_stage_iff [Nontrivial B] {r : ℕ} {a : α} {I : ι →₀ ℕ} :
   simp
 
 /-- Every relative jet polynomial belongs to some finite stage. -/
-theorem exists_mem_stage (p : RelJetAlgebra B ι α) : ∃ r, p ∈ stage B ι α r := by
-  induction p using MvPolynomial.induction_on with
-  | C b => exact ⟨0, (stage B ι α 0).algebraMap_mem b⟩
-  | add p q hp hq =>
-    obtain ⟨r, hr⟩ := hp
-    obtain ⟨s, hs⟩ := hq
-    exact ⟨max r s, add_mem (stage_mono (le_max_left r s) hr)
-      (stage_mono (le_max_right r s) hs)⟩
-  | mul_X p v hp =>
-    obtain ⟨r, hr⟩ := hp
-    rcases v with ⟨a, I⟩
-    exact ⟨max r I.degree, mul_mem (stage_mono (le_max_left _ _) hr)
-      (X_mem_stage (le_max_right _ _))⟩
+theorem exists_mem_stage (p : RelJetAlgebra B ι α) : ∃ r, p ∈ stage B ι α r :=
+  ⟨p.vars.sup (fun v ↦ v.2.degree),
+    MvPolynomial.supported_mono
+      (fun _ hv ↦ Finset.le_sup (f := fun v : α × (ι →₀ ℕ) ↦ v.2.degree) hv)
+      p.mem_supported_vars⟩
 
 /-- Total differentiation raises the jet-order stage by at most one. -/
 theorem totalDeriv_mem_stage {R : Type*} [CommSemiring R] [Algebra R B]
@@ -378,11 +362,12 @@ theorem polyJetEquivRel_C (r : R) :
 theorem polyJetEquivRel_symm_C (b : MvPolynomial ι R) :
     (polyJetEquivRel R ι α).symm (C b) = MvPolynomial.rename Sum.inl b := by
   apply (polyJetEquivRel R ι α).injective
-  rw [AlgEquiv.apply_symm_apply]
-  induction b using MvPolynomial.induction_on with
-  | C r => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p j hp => simp [hp]
+  rw [AlgEquiv.apply_symm_apply, polyJetEquivRel, AlgEquiv.trans_apply,
+    MvPolynomial.renameEquiv_apply, MvPolynomial.rename_rename]
+  change (C b : RelJetAlgebra (MvPolynomial ι R) ι α) =
+    MvPolynomial.sumAlgEquiv R (α × (ι →₀ ℕ)) ι (MvPolynomial.rename Sum.inr b)
+  simpa using (AlgHom.congr_fun
+    (MvPolynomial.sumAlgEquiv_comp_rename_inr R (α × (ι →₀ ℕ)) ι) b).symm
 
 /-- The inverse comparison sends a field-jet coordinate `X (a, I)` to `X (Sum.inr (a, I))`. -/
 @[simp]
@@ -613,9 +598,11 @@ theorem dAlgTensor_tmul (ω : VertForms B ι α) (β : ExteriorAlgebra R (ι →
 @[simp]
 theorem dAlgTensor_dAlgTensor (x : VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :
     dAlgTensor R B ι α (dAlgTensor R B ι α x) = 0 := by
-  induction x using TensorProduct.inductionOn with
-  | tmul ω β => simp [KaehlerDeRham.extDeriv_extDeriv]
-  | add x y hx hy => simp [hx, hy]
+  have hcomp : ((dAlg B ι α).restrictScalars R).comp ((dAlg B ι α).restrictScalars R) = 0 := by
+    rw [← LinearMap.restrictScalars_comp, dAlg, KaehlerDeRham.extDeriv_comp_extDeriv,
+      LinearMap.restrictScalars_zero]
+  rw [← LinearMap.comp_apply, dAlgTensor, ← LinearMap.rTensor_comp, hcomp, LinearMap.rTensor_zero,
+    LinearMap.zero_apply]
 
 /-- The unsigned horizontal differential `D_H⁰(ω ⊗ₜ β) = ∑ μ, (D_μ ω) ⊗ₜ (dx^μ ∧ β)` on
 `VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)`. -/

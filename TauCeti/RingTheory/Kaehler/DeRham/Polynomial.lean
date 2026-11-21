@@ -6,16 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
-public import Mathlib.RingTheory.Kaehler.Polynomial
 public import TauCeti.RingTheory.Kaehler.DeRham.Basic
 public import TauCeti.RingTheory.Kaehler.DeRham.LieDerivative
-import Mathlib.LinearAlgebra.DirectSum.Finsupp
-import Mathlib.LinearAlgebra.ExteriorAlgebra.BaseChange
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import Mathlib.RingTheory.Kaehler.Polynomial
 import TauCeti.RingTheory.Kaehler.MvPolynomial
 
 /-!
-# Algebraic de Rham coordinate formulas, trivialization, and support over multivariate polynomials
+# Algebraic de Rham coordinate formulas and support over multivariate polynomial algebras
 
 Over a multivariate polynomial ring `MvPolynomial σ R` (for an arbitrary, possibly infinite
 variable set `σ`), the universal Kähler differential `D R (MvPolynomial σ R) p` expands in terms
@@ -23,18 +20,12 @@ of formal partial derivatives (`KaehlerDifferential.mvPolynomial_D_apply_eq_sum_
 transfers those coordinate formulas to the algebraic exterior derivative
 `TauCeti.KaehlerDeRham.extDeriv` on `ExteriorAlgebra (MvPolynomial σ R) Ω[MvPolynomial σ R⁄R]`.
 
-In addition, for any commutative algebra tower `R → B → MvPolynomial σ B`, base change of the
-exterior algebra identifies `ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])` with
-`MvPolynomial σ B ⊗[R] ExteriorAlgebra R (σ →₀ R)` (`TauCeti.KaehlerDeRham.tensorEquiv`), and
-`TauCeti.KaehlerDeRham.supportedForms B s` defines the `B`-subalgebra of forms supported on a set
-`s : Set σ` of variables, preserved by `extDeriv`, grade involution, and
-`Derivation.deRhamLieDeriv`.
+In addition, for any commutative ring `B`, `TauCeti.KaehlerDeRham.supportedForms B s` defines the
+`B`-subalgebra of forms supported on a set `s : Set σ` of variables, preserved by `extDeriv`,
+grade involution, and `Derivation.deRhamLieDeriv`.
 
 ## Main definitions
 
-* `TauCeti.KaehlerDeRham.tensorEquiv`: algebra isomorphism
-  `MvPolynomial σ B ⊗[R] ExteriorAlgebra R (σ →₀ R) ≃ₐ[MvPolynomial σ B]
-    ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])`.
 * `TauCeti.KaehlerDeRham.supportedForms`: the subalgebra of polynomial forms supported on a set of
   variables.
 
@@ -47,7 +38,6 @@ exterior algebra identifies `ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomia
 * `TauCeti.KaehlerDeRham.extDeriv_smul_eq_sum_vars_of_extDeriv_eq_zero`:
   for any closed form `x` (`extDeriv R (MvPolynomial σ R) x = 0`),
   `d (p • x) = ∑ j ∈ p.vars, MvPolynomial.pderiv j p • (ι (D (X j)) * x)`.
-* `TauCeti.KaehlerDeRham.extDeriv_tensorEquiv_tmul`: action of `extDeriv` on a pure tensor.
 * `TauCeti.KaehlerDeRham.extDeriv_mem_supportedForms`,
   `TauCeti.KaehlerDeRham.deRhamLieDeriv_mem_supportedForms`, and
   `TauCeti.KaehlerDeRham.exists_mem_supportedForms_finset`: variable-support preservation and
@@ -105,219 +95,6 @@ theorem extDeriv_smul_eq_sum_vars_of_extDeriv_eq_zero (p : MvPolynomial σ R)
   simp only [smul_mul_assoc]
 
 end CoordinateFormulas
-
-section TensorEquiv
-
-open _root_.ExteriorAlgebra _root_.KaehlerDifferential MvPolynomial TensorProduct
-
-noncomputable section
-
-variable (R B σ : Type*) [CommRing R] [CommRing B] [Algebra R B]
-
-/-- The `MvPolynomial σ B`-linear equivalence `P ⊗[R] (σ →₀ R) ≃ₗ[P] Ω[P⁄B]`. -/
-private def mvModuleEquiv :
-    MvPolynomial σ B ⊗[R] (σ →₀ R) ≃ₗ[MvPolynomial σ B] Ω[MvPolynomial σ B⁄B] := by
-  classical
-  exact (TensorProduct.finsuppScalarRight R (MvPolynomial σ B) (MvPolynomial σ B) σ).trans
-    (KaehlerDifferential.mvPolynomialEquiv B σ).symm
-
-/-- Algebra equivalence on exterior algebras induced by a linear equivalence of modules. -/
-private def exteriorMapEquiv {A M N : Type*} [CommRing A] [AddCommGroup M] [Module A M]
-    [AddCommGroup N] [Module A N] (e : M ≃ₗ[A] N) :
-    ExteriorAlgebra A M ≃ₐ[A] ExteriorAlgebra A N :=
-  AlgEquiv.ofAlgHom (ExteriorAlgebra.map e.toLinearMap) (ExteriorAlgebra.map e.symm.toLinearMap)
-    (by ext m; simp) (by ext m; simp)
-
-/-- **Tensor-product trivialization of polynomial forms**: for any commutative algebra tower
-`R → B → MvPolynomial σ B`, the exterior algebra of Kähler differentials `Ω[MvPolynomial σ B⁄B]`
-is isomorphic as an `MvPolynomial σ B`-algebra to
-`MvPolynomial σ B ⊗[R] ExteriorAlgebra R (σ →₀ R)`. -/
-def tensorEquiv :
-    MvPolynomial σ B ⊗[R] ExteriorAlgebra R (σ →₀ R) ≃ₐ[MvPolynomial σ B]
-      ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B]) :=
-  (ExteriorAlgebra.baseChangeEquiv R (σ →₀ R) (MvPolynomial σ B)).trans
-    (exteriorMapEquiv (mvModuleEquiv R B σ))
-
-variable {R B σ}
-
-private theorem mvModuleEquiv_tmul_single (p : MvPolynomial σ B) (i : σ) :
-    mvModuleEquiv R B σ (p ⊗ₜ[R] Finsupp.single i (1 : R)) =
-      p • KaehlerDifferential.D B (MvPolynomial σ B) (X i) := by
-  classical
-  have hsingle : TensorProduct.finsuppScalarRight R (MvPolynomial σ B) (MvPolynomial σ B) σ
-      (p ⊗ₜ[R] Finsupp.single i (1 : R)) = Finsupp.single i p := by
-    rw [← TensorProduct.finsuppScalarRight_symm_apply_single (R := R) (S := MvPolynomial σ B)
-      (M := MvPolynomial σ B) (ι := σ) i p, LinearEquiv.apply_symm_apply]
-  rw [mvModuleEquiv, LinearEquiv.trans_apply, hsingle]
-  exact KaehlerDifferential.mvPolynomialBasis_repr_symm_single B σ i p
-
-/-- Under `tensorEquiv`, `p ⊗ₜ 1` corresponds to the zero-form `algebraMap p`. -/
-@[simp]
-theorem tensorEquiv_tmul_one (p : MvPolynomial σ B) :
-    tensorEquiv R B σ (p ⊗ₜ[R] (1 : ExteriorAlgebra R (σ →₀ R))) =
-      algebraMap (MvPolynomial σ B) _ p := by
-  have h1 : p ⊗ₜ[R] (1 : ExteriorAlgebra R (σ →₀ R)) =
-      algebraMap (MvPolynomial σ B) (MvPolynomial σ B ⊗[R] ExteriorAlgebra R (σ →₀ R)) p := by
-    simp [Algebra.TensorProduct.algebraMap_apply]
-  rw [h1, AlgEquiv.commutes]
-
-/-- Under `tensorEquiv`, `1 ⊗ₜ ι (single i 1)` corresponds to the coordinate one-form `dXᵢ`. -/
-theorem tensorEquiv_one_tmul_ι_single (i : σ) :
-    tensorEquiv R B σ (1 ⊗ₜ[R] ι R (Finsupp.single i (1 : R))) =
-      ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) (X i)) := by
-  simp only [tensorEquiv, AlgEquiv.trans_apply, ExteriorAlgebra.baseChangeEquiv_apply,
-    exteriorMapEquiv, AlgEquiv.ofAlgHom_apply, ExteriorAlgebra.map_apply_ι,
-    LinearEquiv.coe_coe, mvModuleEquiv_tmul_single, one_smul]
-
-/-- Under `tensorEquiv`, `p ⊗ₜ ι (single i 1)` corresponds to `p • dXᵢ`. -/
-@[simp]
-theorem tensorEquiv_tmul_ι_single (p : MvPolynomial σ B) (i : σ) :
-    tensorEquiv R B σ (p ⊗ₜ[R] ι R (Finsupp.single i (1 : R))) =
-      p • ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) (X i)) := by
-  have hp : p ⊗ₜ[R] ι R (Finsupp.single i (1 : R)) =
-      p • ((1 : MvPolynomial σ B) ⊗ₜ[R] ι R (Finsupp.single i (1 : R))) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [hp, _root_.map_smul, tensorEquiv_one_tmul_ι_single]
-
-/-- The inverse trivialization sends a zero-form `algebraMap p` to `p ⊗ₜ 1`. -/
-theorem tensorEquiv_symm_algebraMap (p : MvPolynomial σ B) :
-    (tensorEquiv R B σ).symm (algebraMap (MvPolynomial σ B) _ p) = p ⊗ₜ[R] 1 := by
-  apply (tensorEquiv R B σ).injective
-  rw [AlgEquiv.apply_symm_apply, tensorEquiv_tmul_one]
-
-/-- The inverse trivialization sends `dXᵢ` to `1 ⊗ₜ ι (single i 1)`. -/
-@[simp]
-theorem tensorEquiv_symm_ι_D_X (i : σ) :
-    (tensorEquiv R B σ).symm
-        (ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) (X i))) =
-      1 ⊗ₜ[R] ι R (Finsupp.single i (1 : R)) := by
-  apply (tensorEquiv R B σ).injective
-  rw [AlgEquiv.apply_symm_apply, tensorEquiv_one_tmul_ι_single]
-
-/-- The trivialization `tensorEquiv` commutes with the grade involution on the exterior factor. -/
-theorem tensorEquiv_involute (p : MvPolynomial σ B) (ω : ExteriorAlgebra R (σ →₀ R)) :
-    CliffordAlgebra.involute (Q := (0 : QuadraticForm (MvPolynomial σ B) _))
-        (tensorEquiv R B σ (p ⊗ₜ[R] ω)) =
-      tensorEquiv R B σ (p ⊗ₜ[R] CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) ω) := by
-  have h1 : ∀ η : ExteriorAlgebra R (σ →₀ R),
-      CliffordAlgebra.involute (Q := (0 : QuadraticForm (MvPolynomial σ B) _))
-          (tensorEquiv R B σ (1 ⊗ₜ[R] η)) =
-        tensorEquiv R B σ
-          (1 ⊗ₜ[R] CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) η) := by
-    intro η
-    induction η using CliffordAlgebra.induction with
-    | algebraMap r =>
-      have hrm : (1 : MvPolynomial σ B) ⊗ₜ[R] algebraMap R (ExteriorAlgebra R (σ →₀ R)) r =
-          algebraMap R (MvPolynomial σ B) r ⊗ₜ[R] 1 := by
-        rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, TensorProduct.tmul_smul,
-          TensorProduct.smul_tmul']
-      rw [AlgHom.commutes, hrm, tensorEquiv_tmul_one, AlgHom.commutes]
-    | ι m =>
-      simp only [CliffordAlgebra.involute_ι, TensorProduct.tmul_neg, map_neg]
-      simp only [tensorEquiv, AlgEquiv.trans_apply, ExteriorAlgebra.baseChangeEquiv_apply,
-        exteriorMapEquiv, AlgEquiv.ofAlgHom_apply, ExteriorAlgebra.map_apply_ι,
-        LinearEquiv.coe_coe, CliffordAlgebra.involute_ι]
-    | mul a b ha hb =>
-      have hmul : (1 : MvPolynomial σ B) ⊗ₜ[R] (a * b) =
-          (1 ⊗ₜ[R] a) * (1 ⊗ₜ[R] b) := by
-        rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-      have hmul' : (1 : MvPolynomial σ B) ⊗ₜ[R]
-          (CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) a *
-            CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) b) =
-          (1 ⊗ₜ[R] CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) a) *
-            (1 ⊗ₜ[R] CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) b) := by
-        rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-      rw [hmul, map_mul, map_mul, ha, hb, map_mul, hmul', map_mul]
-    | add a b ha hb =>
-      rw [TensorProduct.tmul_add, map_add, map_add, ha, hb, map_add, TensorProduct.tmul_add,
-        map_add]
-  have hp : p ⊗ₜ[R] ω = p • ((1 : MvPolynomial σ B) ⊗ₜ[R] ω) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  have hp' : p ⊗ₜ[R] CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) ω =
-      p • ((1 : MvPolynomial σ B) ⊗ₜ[R]
-        CliffordAlgebra.involute (Q := (0 : QuadraticForm R _)) ω) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [hp, hp', _root_.map_smul, _root_.map_smul, _root_.map_smul, h1]
-
-/-- `tensorEquiv` sends pure tensors of degree `n` into the `n`-th exterior power of
-`Ω[MvPolynomial σ B⁄B]`. -/
-theorem tensorEquiv_tmul_mem_exteriorPower {n : ℕ} (p : MvPolynomial σ B)
-    {ω : ExteriorAlgebra R (σ →₀ R)} (hω : ω ∈ ⋀[R]^n (σ →₀ R)) :
-    tensorEquiv R B σ (p ⊗ₜ[R] ω) ∈
-      ⋀[MvPolynomial σ B]^n (Ω[MvPolynomial σ B⁄B]) := by
-  have hp : p ⊗ₜ[R] ω = p • ((1 : MvPolynomial σ B) ⊗ₜ[R] ω) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [hp, _root_.map_smul]
-  refine Submodule.smul_mem _ p ?_
-  clear hp
-  induction hω using Submodule.pow_induction_on_left' with
-  | algebraMap r =>
-    have hrm : (1 : MvPolynomial σ B) ⊗ₜ[R] algebraMap R (ExteriorAlgebra R (σ →₀ R)) r =
-        algebraMap R (MvPolynomial σ B) r ⊗ₜ[R] 1 := by
-      rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, TensorProduct.tmul_smul,
-        TensorProduct.smul_tmul']
-    rw [hrm, tensorEquiv_tmul_one]
-    exact Submodule.algebraMap_mem _
-  | add x y i _ _ ihx ihy =>
-    rw [TensorProduct.tmul_add, map_add]
-    exact add_mem ihx ihy
-  | mem_mul m hm i x _ ih =>
-    obtain ⟨v, rfl⟩ := hm
-    have hmul : (1 : MvPolynomial σ B) ⊗ₜ[R] (ι R v * x) =
-        (1 ⊗ₜ[R] ι R v) * (1 ⊗ₜ[R] x) := by
-      rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-    rw [hmul, map_mul]
-    have hι : tensorEquiv R B σ (1 ⊗ₜ[R] ι R v) =
-        ι (MvPolynomial σ B) (mvModuleEquiv R B σ (1 ⊗ₜ[R] v)) := by
-      simp [tensorEquiv, exteriorMapEquiv, ExteriorAlgebra.baseChangeEquiv_apply]
-    rw [hι]
-    exact TauCeti.ExteriorAlgebra.ι_mul_mem_exteriorPower _ ih
-
-/-- Action of `extDeriv` on a pure tensor in any scalar-tower trivialization
-`tensorEquiv R B σ`. -/
-theorem extDeriv_tensorEquiv_tmul
-    (p : MvPolynomial σ B) (ω : ExteriorAlgebra R (σ →₀ R)) :
-    extDeriv B (MvPolynomial σ B) (tensorEquiv R B σ (p ⊗ₜ[R] ω)) =
-      ι (MvPolynomial σ B) (KaehlerDifferential.D B (MvPolynomial σ B) p) *
-        tensorEquiv R B σ (1 ⊗ₜ[R] ω) := by
-  have h1 : ∀ η : ExteriorAlgebra R (σ →₀ R),
-      extDeriv B (MvPolynomial σ B) (tensorEquiv R B σ (1 ⊗ₜ[R] η)) = 0 := by
-    intro η
-    induction η using CliffordAlgebra.induction with
-    | algebraMap r =>
-      have hrm : (1 : MvPolynomial σ B) ⊗ₜ[R] algebraMap R (ExteriorAlgebra R (σ →₀ R)) r =
-          algebraMap R (MvPolynomial σ B) r ⊗ₜ[R] 1 := by
-        rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, TensorProduct.tmul_smul,
-          TensorProduct.smul_tmul']
-      rw [hrm, tensorEquiv_tmul_one, extDeriv_algebraMap]
-      have hC : algebraMap R (MvPolynomial σ B) r = C (algebraMap R B r) :=
-        IsScalarTower.algebraMap_apply R B (MvPolynomial σ B) r
-      rw [hC, MvPolynomial.derivation_C, map_zero]
-    | ι m =>
-      induction m using Finsupp.induction_linear with
-      | zero => simp
-      | add m₁ m₂ h₁ h₂ => simp only [map_add, TensorProduct.tmul_add, h₁, h₂, add_zero]
-      | single i r =>
-        have hsingle : Finsupp.single i r = r • Finsupp.single i (1 : R) := by
-          rw [Finsupp.smul_single, smul_eq_mul, mul_one]
-        rw [hsingle, _root_.map_smul, TensorProduct.tmul_smul,
-          ← IsScalarTower.algebraMap_smul B r, ← IsScalarTower.algebraMap_smul (MvPolynomial σ B),
-          _root_.map_smul, IsScalarTower.algebraMap_smul, _root_.map_smul,
-          tensorEquiv_one_tmul_ι_single, extDeriv_ι_D, smul_zero]
-    | mul a b ha hb =>
-      have hmul : (1 : MvPolynomial σ B) ⊗ₜ[R] (a * b) =
-          (1 ⊗ₜ[R] a) * (1 ⊗ₜ[R] b) := by
-        rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-      rw [hmul, map_mul, extDeriv_mul, ha, hb, zero_mul, mul_zero, add_zero]
-    | add a b ha hb =>
-      rw [TensorProduct.tmul_add, map_add, map_add, ha, hb, add_zero]
-  have hp : p ⊗ₜ[R] ω = p • ((1 : MvPolynomial σ B) ⊗ₜ[R] ω) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [hp, _root_.map_smul, extDeriv_smul, h1, smul_zero, add_zero]
-
-end
-
-end TensorEquiv
 
 section SupportedForms
 
