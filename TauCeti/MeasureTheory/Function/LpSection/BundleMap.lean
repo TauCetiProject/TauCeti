@@ -391,6 +391,20 @@ theorem compBundleMapₗᵢ_id :
 
 variable {ψ' : M → N} {B : ∀ x, E' (ψ' x) →ₗᵢ[𝕜] E x}
 
+/-- Transport along `A` followed by transport along `B` is the identity when `B` undoes `A`
+fibrewise. -/
+private theorem compBundleMapₗᵢ_compBundleMapₗᵢ (hψ : MeasurePreserving ψ ν μ)
+    (hψ' : MeasurePreserving ψ' μ ν)
+    (hA : IsContinuousBundleMap 𝕜 F F' ψ fun y ↦ (A y).toContinuousLinearMap)
+    (hB : IsContinuousBundleMap 𝕜 F' F ψ' fun x ↦ (B x).toContinuousLinearMap)
+    (hBA : ∀ (s : ∀ x, E x) x, B x (A (ψ' x) (s (ψ (ψ' x)))) = s x) (f : LpSection 𝕜 F E p μ) :
+    compBundleMapₗᵢ p hψ' B hB (compBundleMapₗᵢ p hψ A hA f) = f :=
+  (ext_iff _ _).2 <| by
+    filter_upwards [coeFn_compBundleMapₗᵢ hψ' hB (compBundleMapₗᵢ p hψ A hA f),
+      hψ'.quasiMeasurePreserving.ae (coeFn_compBundleMapₗᵢ hψ hA f)] with x h₁ h₂
+    rw [h₁, h₂]
+    exact hBA f x
+
 variable (p) in
 /-- **The unitary of a bundle isomorphism.** Let `A y : E (ψ y) →ₗᵢ[𝕜] E' y` cover a
 measure-preserving map `ψ` from `ν` to `μ` and `B x : E' (ψ' x) →ₗᵢ[𝕜] E x` cover a
@@ -407,18 +421,8 @@ def compBundleMapEquiv (hψ : MeasurePreserving ψ ν μ) (hψ' : MeasurePreserv
     LpSection 𝕜 F E p μ ≃ₗᵢ[𝕜] LpSection 𝕜 F' E' p ν where
   toLinearEquiv := LinearEquiv.ofLinearMap (compBundleMapₗᵢ p hψ A hA).toLinearMap
     (compBundleMapₗᵢ p hψ' B hB).toLinearMap
-    (LinearMap.ext fun t ↦ (ext_iff _ _).2 <| by
-      filter_upwards [coeFn_compBundleMapₗᵢ hψ hA (compBundleMapₗᵢ p hψ' B hB t),
-        hψ.quasiMeasurePreserving.ae (coeFn_compBundleMapₗᵢ hψ' hB t)] with y h₁ h₂
-      simp only [LinearMap.coe_comp, Function.comp_apply, LinearIsometry.coe_toLinearMap,
-        LinearMap.id_coe, id_eq, h₁, h₂]
-      exact hAB t y)
-    (LinearMap.ext fun f ↦ (ext_iff _ _).2 <| by
-      filter_upwards [coeFn_compBundleMapₗᵢ hψ' hB (compBundleMapₗᵢ p hψ A hA f),
-        hψ'.quasiMeasurePreserving.ae (coeFn_compBundleMapₗᵢ hψ hA f)] with x h₁ h₂
-      simp only [LinearMap.coe_comp, Function.comp_apply, LinearIsometry.coe_toLinearMap,
-        LinearMap.id_coe, id_eq, h₁, h₂]
-      exact hBA f x)
+    (LinearMap.ext <| compBundleMapₗᵢ_compBundleMapₗᵢ hψ' hψ hB hA hAB)
+    (LinearMap.ext <| compBundleMapₗᵢ_compBundleMapₗᵢ hψ hψ' hA hB hBA)
   norm_map' := (compBundleMapₗᵢ p hψ A hA).norm_map
 
 variable (hψ : MeasurePreserving ψ ν μ) (hψ' : MeasurePreserving ψ' μ ν)
@@ -450,7 +454,7 @@ theorem coeFn_compBundleMapEquiv_symm (t : LpSection 𝕜 F' E' p ν) :
 theorem compBundleMapEquiv_symm :
     (compBundleMapEquiv p hψ hψ' A B hA hB hBA hAB).symm =
       compBundleMapEquiv p hψ' hψ B A hB hA hAB hBA :=
-  LinearIsometryEquiv.ext fun _ ↦ rfl
+  LinearIsometryEquiv.ext fun _ ↦ by rw [coe_compBundleMapEquiv_symm, coe_compBundleMapEquiv]
 
 /-- The isometric equivalence of the identity bundle isomorphism is the identity. -/
 @[simp]

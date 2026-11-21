@@ -82,13 +82,14 @@ theorem isContinuousBundleMap_id :
 
 /-- The composite `z ↦ A₂ z ∘ A (ψ₂ z)` of a bundle map `A` covering `ψ` and a bundle map `A₂`
 covering a continuous map `ψ₂`, both continuous in charts, is continuous in charts when the middle
-bundle has finite rank. Near a point, insert the chart of the middle bundle at its image under
-`ψ₂`: the chart expressions of `A₂` are then a family of linear maps on a finite-dimensional space,
-continuous in the point, applied to the continuous chart coordinates of `A`. -/
+bundle has finite rank. -/
 theorem IsContinuousBundleMap.comp [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F'] {ψ₂ : P → N}
     (hψ₂ : Continuous ψ₂) {A : ∀ y, E (ψ y) →L[𝕜] E' y} {A₂ : ∀ z, E' (ψ₂ z) →L[𝕜] E'' z}
     (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hA₂ : IsContinuousBundleMap 𝕜 F' F'' ψ₂ A₂) :
     IsContinuousBundleMap 𝕜 F F'' (ψ ∘ ψ₂) fun z ↦ (A₂ z).comp (A (ψ₂ z)) := by
+  -- Near a point, insert the chart of the middle bundle at its image under `ψ₂`: the chart
+  -- expressions of `A₂` are then a family of linear maps on a finite-dimensional space, continuous
+  -- in the point, applied to the continuous chart coordinates of `A`.
   intro e _ e'' _ v
   refine continuousOn_of_locally_continuousOn fun z₀ _ ↦ ?_
   set e' := trivializationAt F' E' (ψ₂ z₀)
