@@ -333,11 +333,7 @@ abbrev liftFunctor (b : B) : K.obj b ⥤ (twoFiberProduct f g).obj b where
   obj k :=
     { fst := (a.app b).toFunctor.obj k
       snd := (c.app b).toFunctor.obj k
-      iso :=
-        { hom := (e.hom.as.app b).toNatTrans.app k
-          inv := (e.inv.as.app b).toNatTrans.app k
-          hom_inv_id := congrArg (fun m ↦ (m.as.app b).toNatTrans.app k) e.hom_inv_id
-          inv_hom_id := congrArg (fun m ↦ (m.as.app b).toNatTrans.app k) e.inv_hom_id } }
+      iso := isoAppApp e b k }
   map u :=
     { fst := (a.app b).toFunctor.map u
       snd := (c.app b).toFunctor.map u
@@ -352,7 +348,9 @@ def liftNaturality {b b' : B} (φ : b ⟶ b') :
       ((Cat.Hom.toNatIso (c.naturality φ)).app k) (by
         have h := (naturality_app_iff φ _ _).1 (e.hom.as.naturality φ) k
         rw [comp_naturality_hom_app, comp_naturality_hom_app] at h
-        dsimp
+        -- `isoAppApp e b k` is unfolded: its type mentions `((a ≫ f).app b).toFunctor.obj k`,
+        -- which matches the objects in `Functor.mapIso_hom` only up to unfolding the composite.
+        dsimp [isoAppApp]
         simp only [Cat.Hom.toNatIso_hom, Cat.Hom.toNatIso_inv]
         rw [← cancel_mono ((g.naturality φ).hom.toNatTrans.app ((c.app b).toFunctor.obj k))]
         simp only [Category.assoc, Cat.Hom.inv_hom_id_toNatTrans_app]
@@ -471,12 +469,17 @@ lemma lift_whiskerLeft_iso_hom :
       (α_ _ _ _).inv ≫ (liftFstIso f g a c e).hom ▷ f ≫ e.hom ≫
         (liftSndIso f g a c e).inv ▷ g ≫ (α_ _ _ _).hom := by
   ext b k
-  refine (Cat.whiskerLeft_app _ _ _).trans ?_
-  -- On `k`, the right-hand side is definitionally `e` composed with identities.
-  refine Eq.symm <| (Category.id_comp _).trans <|
-    (congrArg (· ≫ _) ((f.app b).toFunctor.map_id _)).trans <| (Category.id_comp _).trans <|
-      (congrArg (_ ≫ ·) <| (congrArg (· ≫ _) ((g.app b).toFunctor.map_id _)).trans
-        (Category.id_comp _)).trans (Category.comp_id _)
+  simp only [comp_app, Cat.Hom.comp_toFunctor, Functor.comp_obj, whiskerLeft_as_app,
+    homCategory_comp_as_app, associator_inv_as_app, whiskerRight_as_app, associator_hom_as_app,
+    Cat.Hom.toNatTrans_comp, Cat.associator_inv_toNatTrans, NatTrans.comp_app,
+    Functor.associator_inv_app, Category.id_comp]
+  -- `simp` cannot apply `Cat.whiskerLeft_app`, `Cat.Hom₂.comp_app` and `Cat.whiskerRight_app`
+  -- here: the `1`-morphisms of these `2`-cells are components of composite strong
+  -- transformations, such as `(lift f g a c e ≫ fst f g).app b`, which match the composites in
+  -- those lemmas only up to unfolding `StrongTrans` composition.
+  erw [Cat.whiskerLeft_app, Cat.Hom₂.comp_app, Cat.Hom₂.comp_app, Cat.whiskerRight_app,
+    Cat.whiskerRight_app]
+  simp
 
 end lift
 
@@ -541,15 +544,7 @@ def isoMk (α : l₁ ≫ fst f g ≅ l₂ ≫ fst f g) (β : l₁ ≫ snd f g �
           (g.app b).toFunctor.map ((β.hom.as.app b).toNatTrans.app k)) :
     l₁ ≅ l₂ :=
   StrongTrans.isoMk (fun b ↦ Cat.Hom.isoMk (NatIso.ofComponents
-    (fun k ↦ mkIso
-      { hom := (α.hom.as.app b).toNatTrans.app k
-        inv := (α.inv.as.app b).toNatTrans.app k
-        hom_inv_id := congrArg (fun m ↦ (m.as.app b).toNatTrans.app k) α.hom_inv_id
-        inv_hom_id := congrArg (fun m ↦ (m.as.app b).toNatTrans.app k) α.inv_hom_id }
-      { hom := (β.hom.as.app b).toNatTrans.app k
-        inv := (β.inv.as.app b).toNatTrans.app k
-        hom_inv_id := congrArg (fun m ↦ (m.as.app b).toNatTrans.app k) β.hom_inv_id
-        inv_hom_id := congrArg (fun m ↦ (m.as.app b).toNatTrans.app k) β.inv_hom_id } (w b k))
+    (fun k ↦ mkIso (isoAppApp α b k) (isoAppApp β b k) (w b k))
     fun u ↦ ((homMk f g α.hom β.hom w).as.app b).toNatTrans.naturality u))
     fun φ ↦ (homMk f g α.hom β.hom w).as.naturality φ
 

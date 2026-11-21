@@ -27,10 +27,10 @@ arbitrary `1`-morphisms, so that they apply by unification to goals whose `1`-mo
 of composite pseudofunctors, which `simp` and `rw` do not see through. The same reduction
 handles identity and composite transport cells. The file also evaluates the naturality cell
 of a composite strong transformation on objects, with the Cat endpoints made explicit,
-packages the components of a naturality isomorphism at an object
-(`Pseudofunctor.StrongTrans.naturalityObjIso`), and reduces
-`StrongTrans.naturality_naturality` and the naturality condition of a modification into `Cat` to
-their components on objects (`StrongTrans.naturality_naturality_app`,
+packages the components of a naturality isomorphism and of an invertible modification at an
+object (`Pseudofunctor.StrongTrans.naturalityObjIso`, `Pseudofunctor.StrongTrans.isoAppApp`),
+and reduces `StrongTrans.naturality_naturality` and the naturality condition of a modification
+into `Cat` to their components on objects (`StrongTrans.naturality_naturality_app`,
 `StrongTrans.naturality_app_iff`, `StrongTrans.comp_naturality_app_iff`).
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
@@ -174,6 +174,18 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
+
+/-- The component at an object `X` of the component at `a` of an invertible modification
+`e : η ≅ θ` between strong transformations into `Cat`. Its `hom` and `inv` are the components of
+`e.hom` and `e.inv` themselves, so that they are reducibly equal to them. -/
+@[simps]
+abbrev isoAppApp {B : Type u₁} [Bicategory.{w₁, v₁} B] {F G : B ⥤ᵖ Cat.{v, w}} {η θ : F ⟶ G}
+    (e : η ≅ θ) (a : B) (X : F.obj a) :
+    (η.app a).toFunctor.obj X ≅ (θ.app a).toFunctor.obj X where
+  hom := (e.hom.as.app a).toNatTrans.app X
+  inv := (e.inv.as.app a).toNatTrans.app X
+  hom_inv_id := congrArg (fun m => (m.as.app a).toNatTrans.app X) e.hom_inv_id
+  inv_hom_id := congrArg (fun m => (m.as.app a).toNatTrans.app X) e.inv_hom_id
 
 /-- The condition `StrongTrans.naturality_naturality` for a strong transformation into `Cat`, on
 objects. -/
