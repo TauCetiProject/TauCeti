@@ -47,7 +47,7 @@ A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th po
 (`MulChar.pow_eq_one_iff_forall_mem_range_apply_eq_one`). At a unit `v`, the inverse character
 takes the value `χ⁻¹ v = χ v⁻¹` (`MulChar.inv_apply_units`). With values in a domain, the sum of a
 character over a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character and
-zero otherwise (`MulChar.sum_apply_eq_ite`).
+zero otherwise (`MulChar.sum_eq_ite`).
 -/
 
 public section
@@ -175,7 +175,7 @@ theorem inv_apply_units {M R : Type*} [CommMonoid M] [CommMonoidWithZero R] (χ 
 units of `M` for the trivial character and zero otherwise. This puts Mathlib's
 `MulChar.sum_eq_zero_of_ne_one` and `MulChar.sum_one_eq_card_units` into one statement. -/
 @[simp]
-theorem sum_apply_eq_ite {M R : Type*} [CommMonoid M] [Fintype M] [CommRing R] [IsDomain R]
+theorem sum_eq_ite {M R : Type*} [CommMonoid M] [Fintype M] [CommRing R] [IsDomain R]
     (χ : MulChar M R) [Decidable (χ = 1)] :
     ∑ a, χ a = if χ = 1 then (Nat.card Mˣ : R) else 0 := by
   classical

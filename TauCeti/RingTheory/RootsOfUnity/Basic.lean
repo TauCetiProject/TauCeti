@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 import TauCeti.Algebra.Group.Hom.Instances
+import Mathlib.RingTheory.Localization.FractionRing
 import TauCeti.GroupTheory.OrderOfElement.Cauchy
 
 /-!
@@ -74,7 +75,7 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
   `HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective`: with enough `n`-th roots of unity,
   `primitiveRoots n R` is nonempty, also after an injective homomorphism into a domain.
-* `TauCeti.natCast_card_ne_zero_of_hasEnoughRootsOfUnity`: a field with enough roots of unity
+* `TauCeti.natCast_card_ne_zero_of_hasEnoughRootsOfUnity`: a domain with enough roots of unity
   for the exponent of a finite group `G` has `#G ≠ 0`.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
@@ -319,15 +320,20 @@ theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective {M : T
   have := HasEnoughRootsOfUnity.of_injective (n := n) hf
   HasEnoughRootsOfUnity.primitiveRoots_nonempty R n
 
-variable (K : Type*) [Field K] in
-/-- A field with enough roots of unity for the exponent of a finite group `G` has `#G ≠ 0`: a
-primitive root of unity of that order makes the exponent nonzero in `K`, so `#G` is a unit
+/-- A domain with enough roots of unity for the exponent of a finite group `G` has `#G ≠ 0`: in its
+fraction field, a primitive root of unity of that order makes the exponent a unit, so `#G` is a unit
 (`TauCeti.isUnit_natCard_of_isUnit_exponent`). -/
-theorem natCast_card_ne_zero_of_hasEnoughRootsOfUnity {G : Type*} [Group G] [Finite G]
-    [HasEnoughRootsOfUnity K (Monoid.exponent G)] : (Nat.card G : K) ≠ 0 := by
+theorem natCast_card_ne_zero_of_hasEnoughRootsOfUnity (R : Type*) [CommRing R] [IsDomain R]
+    {G : Type*} [Group G] [Finite G] [HasEnoughRootsOfUnity R (Monoid.exponent G)] :
+    (Nat.card G : R) ≠ 0 := by
   have : NeZero (Monoid.exponent G) := ⟨Monoid.exponent_ne_zero_of_finite⟩
-  exact (isUnit_natCard_of_isUnit_exponent (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K
-    (Monoid.exponent G)).choose_spec.neZero'.out.isUnit).ne_zero
+  let K := FractionRing R
+  have : HasEnoughRootsOfUnity K (Monoid.exponent G) :=
+    HasEnoughRootsOfUnity.of_injective (f := (algebraMap R K).toMonoidHom)
+      (IsFractionRing.injective R K)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K (Monoid.exponent G)
+  have h := (isUnit_natCard_of_isUnit_exponent (G := G) hζ.neZero'.out.isUnit).ne_zero
+  exact fun h0 ↦ h (by rw [← map_natCast (algebraMap R K), h0, map_zero])
 
 /-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
 has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/

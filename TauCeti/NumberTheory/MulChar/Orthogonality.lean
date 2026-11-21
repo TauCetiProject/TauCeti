@@ -16,7 +16,7 @@ import TauCeti.RingTheory.RootsOfUnity.Basic
 
 Let `M` be a commutative monoid with finitely many units and `R` a domain with enough roots of
 unity, such as `ℂ`. Mathlib's `MulChar.sum_eq_zero_of_ne_one` and `MulChar.sum_one_eq_card_units`
-sum one character over a finite `M` (Tau Ceti's `MulChar.sum_apply_eq_ite` joins them), and
+sum one character over a finite `M` (Tau Ceti's `MulChar.sum_eq_ite` joins them), and
 Mathlib's `DirichletCharacter.sum_characters_eq` sums all Dirichlet characters at one point. Tau
 Ceti's `CommGroup.sum_monoidHom_apply_eq_ite`, `CommGroup.sum_inv_mul_monoidHom_apply_eq_ite` and
 `CommGroup.sum_inv_smul_sum_smul` sum the characters `G →* Rˣ` of a finite commutative group. This

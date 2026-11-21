@@ -63,6 +63,13 @@ theorem mulEquivRootsOfUnityOfGenerator_apply {g : Mˣ} (hg : ∀ x, x ∈ Subgr
   simp [mulEquivRootsOfUnityOfGenerator, IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator,
     rootsOfUnityUnitsMulEquiv]
 
+/-- The character attached to a root of unity `ζ` takes the value `ζ` at the generator. -/
+@[simp]
+theorem mulEquivRootsOfUnityOfGenerator_symm_apply {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g)
+    (ζ : rootsOfUnity (Nat.card Mˣ) R) :
+    (mulEquivRootsOfUnityOfGenerator hg).symm ζ g = ((ζ : Rˣ) : R) := by
+  rw [← mulEquivRootsOfUnityOfGenerator_apply hg, MulEquiv.apply_symm_apply]
+
 /-- If `g` generates `Mˣ`, then the value of a character at `g` has the order of the
 character. -/
 theorem orderOf_apply_eq_orderOf (χ : MulChar M R) {g : Mˣ}
