@@ -64,10 +64,14 @@ multipliable, even when its factors are not units.
   convergent product `∏' i, (1 ± f i)` vanishes if and only if one factor vanishes.
 * `TauCeti.prod_mul_tprod_compl_one_add`: finite-head times cofinite-tail factorization of an
   absolutely convergent product `∏' i, (1 + f i)` in any complete normed commutative ring.
-* `HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one` and `HasProd.norm_sub_one_lt`: strict
-  ultrametric perturbation bounds near `1` for a supplied convergent product.
-* `IsUltrametricDist.multipliable_of_tendsto_cofinite_one`: unconditional multipliability of
-  families tending to `1` cofinitely in complete ultrametric seminormed commutative rings.
+* `HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one`, `HasProd.norm_sub_one_le` and
+  `HasProd.norm_sub_one_lt`: closed and strict ultrametric perturbation bounds near `1` for a
+  supplied convergent product.
+* `IsUltrametricDist.multipliable_of_tendsto_cofinite_one`,
+  `IsUltrametricDist.multipliable_iff_tendsto_cofinite_one_of_norm_sub_one_lt_one` and
+  `Filter.Tendsto.tprod_one_add_eq_tsum_prod`: unconditional multipliability and symmetric-sum
+  expansion of families tending to `1` cofinitely in complete ultrametric seminormed commutative
+  rings.
 
 ## References
 
@@ -288,6 +292,14 @@ theorem HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one {ι R : Type*}
   exact hi (by simpa only [dist_eq_norm] using hdist)
 
 /-- In an ultrametric seminormed commutative ring, if `f` has product `a` and every factor lies
+within `B ≤ 1` of `1` (`0 ≤ B`), then `‖a - 1‖ ≤ B`. -/
+theorem HasProd.norm_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {f : ι → R} {a : R} (hf : HasProd f a) {B : ℝ} (hB0 : 0 ≤ B) (hB1 : B ≤ 1)
+    (h : ∀ i, ‖f i - 1‖ ≤ B) : ‖a - 1‖ ≤ B :=
+  le_of_tendsto' (hf.sub_const 1).norm fun s ↦
+    TauCeti.norm_prod_sub_one_le s f hB0 hB1 fun i _ ↦ h i
+
+/-- In an ultrametric seminormed commutative ring, if `f` has product `a` and every factor lies
 strictly within `ε ≤ 1` of `1`, then `‖a - 1‖ < ε`. This is the `HasProd` form of
 `TauCeti.norm_tprod_sub_one_lt`, which needs no Hausdorff hypothesis. -/
 theorem HasProd.norm_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
@@ -310,6 +322,22 @@ theorem IsUltrametricDist.multipliable_of_tendsto_cofinite_one {ι R : Type*}
     simpa only [sub_self] using hf.sub_const 1
   simpa only [add_sub_cancel] using
     IsUltrametricDist.multipliable_one_add_of_tendsto_cofinite_zero h0
+
+/-- In a complete ultrametric seminormed commutative ring, a family whose factors all satisfy
+`‖f i - 1‖ < 1` is unconditionally multipliable if and only if it tends to `1` along `cofinite`. -/
+theorem IsUltrametricDist.multipliable_iff_tendsto_cofinite_one_of_norm_sub_one_lt_one {ι R : Type*}
+    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {f : ι → R}
+    (h : ∀ i, ‖f i - 1‖ < 1) : Multipliable f ↔ Tendsto f cofinite (𝓝 1) :=
+  ⟨fun hf ↦ hf.hasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one h,
+    IsUltrametricDist.multipliable_of_tendsto_cofinite_one⟩
+
+/-- In a complete Hausdorff ultrametric seminormed commutative ring, if `f → 0` along `cofinite`,
+then `∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i`. -/
+theorem Filter.Tendsto.tprod_one_add_eq_tsum_prod {ι R : Type*}
+    [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] [T2Space R] {f : ι → R}
+    (hf : Tendsto f cofinite (𝓝 0)) :
+    ∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i :=
+  tprod_one_add (IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero hf)
 
 end Ultrametric
 

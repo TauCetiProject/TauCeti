@@ -61,6 +61,8 @@ of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
   `1`-Lipschitz on the unit circle of an ultrametric field.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
+* `TauCeti.norm_mul_sub_one_le` and `TauCeti.norm_prod_sub_one_le`: finite products of elements
+  within `B ≤ 1` of `1` remain within `B` of `1`.
 * `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
   `TauCeti.norm_tprod_sub_one_lt`: finite and infinite products of elements strictly within `ε ≤ 1`
   of `1` remain strictly within `ε` of `1`.
@@ -342,6 +344,19 @@ theorem norm_one_sub_cube_div_sub_one_sub_cube_div_le {v w : K} (hv : ‖v‖ = 
 
 end Field
 
+/-- In an ultrametric seminormed ring, if `a` and `b` are within `B ≤ 1` of `1`, so is `a * b`. -/
+theorem norm_mul_sub_one_le {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {B : ℝ} (hB : B ≤ 1) (ha : ‖a - 1‖ ≤ B) (hb : ‖b - 1‖ ≤ B) : ‖a * b - 1‖ ≤ B := by
+  calc ‖a * b - 1‖ = ‖(a - 1) * (b - 1) + (a - 1) + (b - 1)‖ := by
+        congr 1
+        simp only [mul_sub, sub_mul, mul_one, one_mul]
+        abel
+    _ ≤ max (max ‖(a - 1) * (b - 1)‖ ‖a - 1‖) ‖b - 1‖ :=
+      (IsUltrametricDist.norm_add_le_max _ _).trans
+        (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
+    _ ≤ B := max_le (max_le ((norm_mul_le _ _).trans
+      ((mul_le_of_le_one_right (norm_nonneg _) (hb.trans hB)).trans ha)) ha) hb
+
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/
 theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
@@ -368,6 +383,19 @@ theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [IsUltra
       _ ≤ max ‖x * (x ^ n - 1)‖ ‖x - 1‖ := IsUltrametricDist.norm_add_le_max _ _
       _ ≤ ‖x - 1‖ := max_le ((norm_mul_le _ _).trans
         ((mul_le_of_le_one_left (norm_nonneg _) hx).trans ih)) le_rfl
+
+/-- In an ultrametric seminormed commutative ring, a finite product of elements within `B ≤ 1` of
+`1` is again within `B` of `1` (for `0 ≤ B`). -/
+theorem norm_prod_sub_one_le {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    (s : Finset ι) (f : ι → R) {B : ℝ} (hB0 : 0 ≤ B) (hB1 : B ≤ 1)
+    (hf : ∀ i ∈ s, ‖f i - 1‖ ≤ B) : ‖∏ i ∈ s, f i - 1‖ ≤ B := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hB0
+  | insert j s hj ih =>
+    rw [Finset.prod_insert hj]
+    exact norm_mul_sub_one_le hB1 (hf j (Finset.mem_insert_self j s))
+      (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
 
 /-- In an ultrametric normed commutative ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1` (for `0 < ε`). -/
