@@ -113,11 +113,10 @@ lemma ιTwistedChainComplex_capChain (p q n : ℕ) (h : p + q = n)
   rw [TauCeti.ChainComplex.capChain_apply,
     ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f_comp_of_ne_left L K p q n h σ _
       (fun _ _ hij hi ↦ TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_left _ _ _ hij hi),
-    TauCeti.ChainComplex.ιTensorObj_tensorCochain, tensorHom_comp_tensorHom_assoc,
-    Category.comp_id, Category.assoc, tensorHom_def_assoc, whiskerLeft_comp_assoc,
-    ← tensorHom_def_assoc]
-  exact congrArg (_ ≫ ·)
-    (whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f M K _ _)
+    TauCeti.ChainComplex.ιTensorObj_tensorCochain, tensorHom_comp_tensorHom_assoc, Category.assoc,
+    Category.comp_id, ← tensorHom_comp_whiskerLeft_assoc,
+    -- `M` acts on the summand of the back face.
+    whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f]
 
 /-- **The cap product of twisted cohomology and twisted homology**,
 `Hᵖ(X; L, M) ⟶ (Hₙ(X; L ⊗ K) ⟶ H_q(X; M ⊗ K))` for `p + q = n`: the cap product along the twisted

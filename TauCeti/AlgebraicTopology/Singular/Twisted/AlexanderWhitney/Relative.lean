@@ -86,12 +86,8 @@ lemma twistedAlexanderWhitneyDiagonal_naturality (η : L ⟶ L') (θ : K ⟶ K')
         (P.twistedChainComplexCoefficientMap η ⊗ₘ
           LocalCoefficientSystem.twistedChainComplexCoefficientMap θ) := by
   ext : 1
-  rw [twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal,
-    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal_assoc,
+  simp [twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
     LocalCoefficientSystem.twistedAlexanderWhitneyDiagonal_naturality_assoc,
-    tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
-    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, Category.id_comp,
-    Category.comp_id]
+    tensorHom_comp_tensorHom, -tensorHom_id]
 
 end TopPair
