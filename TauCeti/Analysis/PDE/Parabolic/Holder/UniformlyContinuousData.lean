@@ -49,7 +49,8 @@ that pass to the limit from smooth data:
   for the coefficients, and not on their Hölder norms, the ellipticity constant or `α`
   (`exists_abs_euclideanCauchySolutionBUC_sub_le`). Hence `u(·, t) → g` uniformly over a uniformly
   bounded family of data whose initial data are uniformly equicontinuous
-  (`exists_forall_abs_euclideanCauchySolutionBUC_sub_lt_of_uniformEquicontinuous`).
+  (`exists_forall_abs_euclideanCauchySolutionBUC_sub_lt_of_uniformEquicontinuous`,
+  `tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous`).
 * any bounded solution that is classical for `0 < t < T` is the extended solution: a bounded
   function `v` on `[0, T] × ℝⁿ`, continuous there, `C²` in space and differentiable in time for
   `0 < t < T`, with `P v = f` there and `v(·, 0) = g`, is the extended solution
@@ -59,7 +60,10 @@ that pass to the limit from smooth data:
   `euclideanCauchySolutionBUC_apply_le_of_le_deriv_sub`).
 
 The uniform attainment of the initial datum is where uniform continuity is needed: for merely
-bounded continuous data the heat flow does not converge uniformly at `t = 0`.
+bounded continuous data the heat flow does not converge uniformly at `t = 0`. The rate passes to
+the limit from the classical rate for `C_b^{2,α}` data
+(`exists_abs_sub_le_of_abs_euclideanParabolicOperatorL_le`), since an approximant within `δ` of
+`g` moves by at most `η + 2 δ` over the same distances.
 
 At positive times the extended solution is a classical solution. The Schauder estimate at positive
 times
@@ -439,42 +443,6 @@ theorem euclideanCauchySolutionBUC_apply_slabMk_zero
       (euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha).continuous)
       ((continuous_eval_const x).comp (continuous_subtypeVal.comp continuous_snd))
   · simp
-
-/-- **Uniform attainment of the initial datum.** As `t → 0⁺`, the extended solution converges to
-the initial datum uniformly on `ℝⁿ`: `sup_x |u(x, t) - g(x)| → 0`. -/
-theorem tendstoUniformly_euclideanCauchySolutionBUC
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
-    TendstoUniformly (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦
-      euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) (slabMk x t))
-      (fun x ↦ (w : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) := by
-  rw [Metric.tendstoUniformly_iff]
-  intro ε hε
-  obtain ⟨A, hA, hAdef⟩ : ∃ A, 0 ≤ A ∧ A = Real.exp (‖c‖ * T) * (1 + T) := ⟨_, by positivity, rfl⟩
-  -- Approximate `w` within `δ` by a `C^{2,α}` datum `g`; the classical solution `u` with datum `g`
-  -- is Lipschitz in time, uniformly in space, with the `C^{α,α/2}` norm of `∂ₜu` as constant.
-  obtain ⟨δ, hδ, hAδ⟩ : ∃ δ, 0 < δ ∧ (A + 1) * δ = ε / 2 :=
-    ⟨ε / (2 * (A + 1)), by positivity, by field_simp⟩
-  obtain ⟨g, hg, hu⟩ := exists_ckHolderSpace_approx hα₀ hα₁ hT ha f w hδ
-  rw [← hAdef] at hu
-  set u := (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)
-  obtain ⟨τ, hτ, hDτ⟩ : ∃ τ, 0 < τ ∧ ‖timeDerivL u‖ * τ ≤ ε / 2 :=
-    ⟨ε / (2 * (‖timeDerivL u‖ + 1)), by positivity, by
-      rw [mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
-      nlinarith [norm_nonneg (timeDerivL u)]⟩
-  have hev : ∀ᶠ t : Icc (0 : ℝ) T in 𝓝 ⟨0, left_mem_Icc.2 hT.le⟩, (t : ℝ) < τ :=
-    (continuous_subtypeVal.tendsto _).eventually (gt_mem_nhds hτ)
-  filter_upwards [hev] with t ht x
-  have h1 := abs_le.1 (hu (slabMk x t))
-  have h2 := abs_lt.1 (hg x)
-  have h3 := u.norm_apply_slabMk_sub_le x t ⟨0, left_mem_Icc.2 hT.le⟩
-  rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, Real.norm_eq_abs, sub_zero,
-    abs_of_nonneg t.property.1] at h3
-  have hDt : ‖timeDerivL u‖ * t ≤ ε / 2 :=
-    (mul_le_mul_of_nonneg_left ht.le (norm_nonneg _)).trans hDτ
-  have h3' := abs_le.1 (h3.trans hDt)
-  rw [dist_eq_norm, Real.norm_eq_abs, abs_lt]
-  constructor <;> linarith [h1.1, h1.2, h2.1, h2.2, h3'.1, h3'.2]
 
 /-! ### Bounded classical solutions -/
 
@@ -1021,6 +989,66 @@ theorem exists_forall_abs_euclideanCauchySolutionBUC_sub_lt_of_uniformEquicontin
     (fun η k p ↦ hC hα₀ hα₁ ha (f k) (w k) hΛ hβ hγ (hf k) (hw k) p) hε
 
 end Rate
+
+/-! ### Uniform attainment of the initial datum -/
+
+section Uniform
+
+variable [DecidableEq ι]
+
+/-- **Uniform attainment for an equicontinuous family of initial data.** If the initial data
+`gₖ ∈ BUC` are uniformly bounded and uniformly equicontinuous, the extended solutions `uₖ` of
+`P uₖ = f`, `uₖ(·, 0) = gₖ` attain them uniformly in the family:
+`sup_{k, x} |uₖ(x, t) - gₖ(x)| → 0` as `t → 0⁺`. -/
+theorem tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous (hα₀ : 0 < α)
+    (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) {κ : Type*}
+    (w : κ → uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ)
+    (hw : UniformEquicontinuous fun k ↦ ⇑(w k : EuclideanSpace ℝ ι →ᵇ ℝ)) {M : ℝ}
+    (hM : ∀ k x, |(w k : EuclideanSpace ℝ ι →ᵇ ℝ) x| ≤ M) :
+    TendstoUniformly (fun (t : Icc (0 : ℝ) T) (q : κ × EuclideanSpace ℝ ι) ↦
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w q.1) (slabMk q.2 t))
+      (fun q ↦ (w q.1 : EuclideanSpace ℝ ι →ᵇ ℝ) q.2) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) := by
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  obtain ⟨δ, hδ, hδε⟩ :=
+    exists_forall_abs_euclideanCauchySolutionBUC_sub_lt_of_uniformEquicontinuous hT hα₀ hα₁ ha
+      (fun _ : κ ↦ f) w (fun _ ↦ HolderSpace.abs_apply_le_norm f) hM hw hε
+  have hev : ∀ᶠ t : Icc (0 : ℝ) T in 𝓝 ⟨0, left_mem_Icc.2 hT.le⟩, (t : ℝ) < δ :=
+    (continuous_subtypeVal.tendsto _).eventually (gt_mem_nhds hδ)
+  filter_upwards [hev] with t ht q
+  have h := hδε q.1 (slabMk q.2 t) (by rwa [slabTime_slabMk])
+  rw [space_slabMk] at h
+  rwa [Real.dist_eq, abs_sub_comm]
+
+/-- **Uniform attainment of the initial datum.** As `t → 0⁺`, the extended solution converges to
+the initial datum uniformly on `ℝⁿ`: `sup_x |u(x, t) - g(x)| → 0`. This is the one-member case of
+`tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous`. -/
+theorem tendstoUniformly_euclideanCauchySolutionBUC (hα₀ : 0 < α) (hα₁ : α < 1)
+    (hT : (0 : ℝ) < T) {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
+    TendstoUniformly (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) (slabMk x t))
+      (fun x ↦ (w : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) :=
+  (tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous hα₀ hα₁ hT a b c ha f
+    (fun _ : Unit ↦ w)
+    (uniformEquicontinuous_unique.2 ((mem_uniformContinuousSubmodule _).1 w.property))
+    (M := ‖(w : EuclideanSpace ℝ ι →ᵇ ℝ)‖)
+    fun _ x ↦ (Real.norm_eq_abs _).symm.trans_le
+      ((w : EuclideanSpace ℝ ι →ᵇ ℝ).norm_coe_le_norm x)).comp
+    fun x ↦ ((), x)
+
+end Uniform
 
 /-! ### The terminal-value problem -/
 
