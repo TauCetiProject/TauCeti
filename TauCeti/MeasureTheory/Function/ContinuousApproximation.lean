@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
-public import TauCeti.MeasureTheory.Function.BoundedBorel
+public import TauCeti.MeasureTheory.Function.BoundedBorel.Basic
 public import TauCeti.MeasureTheory.Measure.Regular
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 

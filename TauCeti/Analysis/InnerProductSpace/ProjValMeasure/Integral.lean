@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
-public import TauCeti.MeasureTheory.Function.BoundedBorel
+public import TauCeti.MeasureTheory.Function.BoundedBorel.Basic
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Spectrum

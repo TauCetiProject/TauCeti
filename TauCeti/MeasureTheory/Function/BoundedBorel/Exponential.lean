@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
-public import TauCeti.MeasureTheory.Function.BoundedBorel
+public import TauCeti.MeasureTheory.Function.BoundedBorel.Basic
 import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-!

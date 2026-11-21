@@ -12,7 +12,6 @@ public import TauCeti.Topology.Algebra.Star.Unitary
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.Normed.Ring.Units
-import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 
 /-!
 # Polar paths and path-connectedness of groups of units via the continuous functional calculus
@@ -20,7 +19,8 @@ import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 In an algebra `A` with a real continuous functional calculus and compatible star order, the set
 `{p : A | IsStrictlyPositive p}` of strictly positive elements is convex
 (`IsStrictlyPositive.convex_setOf`) and contains `1`: for any strictly positive `p` and
-`t ∈ [0, 1]`, the affine interpolation `(1 - t) • 1 + t • p` remains strictly positive.
+`t ∈ [0, 1]`, the affine interpolation `(1 - t) • 1 + t • p` remains strictly positive
+(`IsStrictlyPositive.one_sub_smul_add_smul`).
 
 When `A` is a complete normed `ℝ`-algebra, `Units.val : Aˣ → A` is an open embedding onto
 `{a : A | IsUnit a}`, so this straight line lifts to an explicit path
@@ -41,8 +41,6 @@ so `Aˣ` is path-connected if and only if `unitary A` is (`Units.pathConnectedSp
 
 ## Main declarations
 
-* `IsStrictlyPositive.one_sub_smul_add_smul`: `(1 - t) • 1 + t • p` is strictly positive for
-  `t ∈ [0, 1]`.
 * `IsStrictlyPositive.isPathConnected_setOf`: `{p : A | IsStrictlyPositive p}` is path-connected.
 * `IsStrictlyPositive.linePathToOne`: the straight-line path `t ↦ (1 - t) • 1 + t • p` from `1` to
   `hp.isUnit.unit` in `Aˣ`.
@@ -73,14 +71,6 @@ section Convex
 variable {A : Type*} [Ring A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
   [TopologicalSpace A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
   [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A] [T2Space A]
-
-/-- Affine interpolation `(1 - t) • 1 + t • p` between `1` and a strictly positive element `p`
-remains strictly positive for every `t ∈ [0, 1]`. -/
-theorem IsStrictlyPositive.one_sub_smul_add_smul {p : A} (hp : IsStrictlyPositive p) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) :
-    IsStrictlyPositive ((1 - t) • (1 : A) + t • p) :=
-  IsStrictlyPositive.convex_setOf isStrictlyPositive_one hp (sub_nonneg.2 ht.2) ht.1
-    (sub_add_cancel 1 t)
 
 /-- The set of strictly positive elements in `A` is path-connected. -/
 theorem IsStrictlyPositive.isPathConnected_setOf [ContinuousSMul ℝ A] :
