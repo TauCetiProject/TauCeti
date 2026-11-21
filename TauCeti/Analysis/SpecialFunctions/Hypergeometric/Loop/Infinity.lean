@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral
+import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Algebra.Field.LinearFractional
 import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Calculus.RealCharts
@@ -21,8 +23,9 @@ image of `u = ρ exp (iθ)`, and its power of `v` uses continuation of the logar
 At `θ = π` the image lies at `-ρ / (1 + ρ)` between `-1` and `0`. The continued
 argument of `v` there is `π`, and the argument of `1 + v` is zero.
 
-The contour equals the `(0+)` loop for `0 < ρ < 1` and `‖z‖ * ρ < 1`. With an integrable
-tail its value is independent of the admissible radius. The multiplied evaluations give Euler's
+The Möbius substitution maps the `(0+)` contour to the contour based at infinity; their
+integral values agree for `0 < ρ < 1` and `‖z‖ * ρ < 1`. With an integrable tail the value
+is independent of the admissible radius. The multiplied evaluations give Euler's
 integral in its cut-plane convergence region and the regularized Gauss series on the open
 unit disk. The reciprocal evaluations additionally exclude positive integral `b`.
 
@@ -46,10 +49,11 @@ def hypergeometricLoopInfinityRay (a b c z : ℂ) (v : ℝ) : ℂ :=
 
 /-- The circular kernel with the continued logarithm of the Möbius coordinate. -/
 def hypergeometricLoopInfinityCircle (a b c z : ℂ) (ρ θ : ℝ) : ℂ :=
-  let u : ℂ := ρ * exp (θ * I)
+  let u := circleMap 0 ρ θ
   let v := u / (1 - u)
   exp (((Real.log ρ : ℂ) + θ * I - log (1 - u)) * (b - 1)) *
-    (1 + v) ^ (a - c) * (1 + v - z * v) ^ (-a) * (I * u / (1 - u) ^ 2)
+    (1 + v) ^ (a - c) * (1 + v - z * v) ^ (-a) *
+      (deriv (circleMap 0 ρ) θ / (1 - u) ^ 2)
 
 /-- Evaluation of the real-ray kernel. -/
 theorem hypergeometricLoopInfinityRay_def (a b c z : ℂ) (v : ℝ) :
@@ -62,7 +66,8 @@ theorem hypergeometricLoopInfinityCircle_def (a b c z : ℂ) (ρ θ : ℝ) :
       let u : ℂ := ρ * exp (θ * I)
       let v := u / (1 - u)
       exp (((Real.log ρ : ℂ) + θ * I - log (1 - u)) * (b - 1)) *
-        (1 + v) ^ (a - c) * (1 + v - z * v) ^ (-a) * (I * u / (1 - u) ^ 2) := (rfl)
+        (1 + v) ^ (a - c) * (1 + v - z * v) ^ (-a) * (I * u / (1 - u) ^ 2) := by
+  simp only [hypergeometricLoopInfinityCircle, deriv_circleMap, circleMap_zero, mul_comm I]
 
 /-- The loop based at infinity in DLMF 15.6.3, obtained from the `(0+)` loop by
 `v = u / (1 - u)`. For `0 < ρ < 1` and `‖z‖ * ρ < 1`, this is the intended
@@ -80,36 +85,15 @@ theorem hypergeometricLoopInfinity_def (a b c z : ℂ) (ρ : ℝ) :
         (∫ v : ℝ in Ioi (ρ / (1 - ρ)), hypergeometricLoopInfinityRay a b c z v) +
       ∫ θ : ℝ in 0..(2 * π), hypergeometricLoopInfinityCircle a b c z ρ θ := (rfl)
 
-/-- Collect powers of a common denominator in a product with a continued logarithm.
-The inverse uses the principal branch away from the negative real axis, and `hpow`
-specifies that the product power splits without a branch change. -/
-private theorem exp_sub_log_mul_mul_inv_cpow (p r t : ℂ) {s q : ℂ} (hs : s ≠ 0)
-    (harg : s.arg ≠ Real.pi) (hpow : (q * s⁻¹) ^ t = q ^ t * s⁻¹ ^ t) (l D : ℂ) :
-    exp ((l - log s) * p) * s⁻¹ ^ r * (q * s⁻¹) ^ t * (D / s ^ 2) =
-      exp (l * p) * s ^ (-p - r - t - 2) * q ^ t * D := by
-  have hinv (e : ℂ) : s⁻¹ ^ e = s ^ (-e) := by
-    rw [inv_cpow s e harg, cpow_neg]
-  have he : exp ((l - log s) * p) = exp (l * p) * s ^ (-p) := by
-    rw [cpow_def_of_ne_zero hs, ← exp_add]
-    congr 1
-    ring
-  have hsq : (s ^ 2)⁻¹ = s ^ (-2 : ℂ) := by rw [cpow_neg]; norm_num
-  calc
-    _ = exp (l * p) * (s ^ (-p) * s ^ (-r) * s ^ (-t) * s ^ (-2 : ℂ)) * q ^ t * D := by
-      rw [he, hpow, hinv r, hinv t, div_eq_mul_inv, hsq]
-      ring
-    _ = _ := by
-      rw [← cpow_add (-p) (-r) hs, ← cpow_add (-p + -r) (-t) hs,
-        ← cpow_add (-p + -r + -t) (-2) hs]
-      simp only [sub_eq_add_neg]
-
-private theorem ray_pullback (a b c z : ℂ) {u : ℝ} (hu : 0 < u) (hu1 : u < 1) :
+/-- Under the Möbius substitution, the infinity-ray kernel times its real Jacobian
+is the Euler kernel on `0 < u < 1`. No convergence or cut-plane assumption is needed. -/
+theorem hypergeometricLoopInfinityRay_pullback (a b c z : ℂ) {u : ℝ} (hu : 0 < u) (hu1 : u < 1) :
     (((1 - u) ^ 2)⁻¹ : ℝ) • hypergeometricLoopInfinityRay a b c z (u / (1 - u)) =
-      affineSegIntegrand a b (c - b) 1 z u := by
-  rw [affineSegIntegrand_unit]
+      (u : ℂ) ^ (b - 1) * (1 - (u : ℂ)) ^ (c - b - 1) * (1 - z * u) ^ (-a) := by
   have hs : 0 < 1 - u := sub_pos.mpr hu1
   have hs0 : (1 : ℂ) - u ≠ 0 := by exact_mod_cast hs.ne'
-  obtain ⟨h1, hq⟩ := TauCeti.div_one_sub_factors hs0 z
+  have h1 := TauCeti.one_add_div_one_sub hs0
+  have hq := TauCeti.one_add_div_one_sub_sub_mul_div_one_sub hs0 z
   have hp : ((u / (1 - u) : ℝ) : ℂ) ^ (b - 1) =
       exp ((log (u : ℂ) - log (1 - (u : ℂ))) * (b - 1)) := by
     rw [cpow_def_of_ne_zero (ofReal_ne_zero.mpr (div_pos hu hs).ne'),
@@ -135,64 +119,93 @@ private theorem ray_pullback (a b c z : ℂ) {u : ℝ} (hu : 0 < u) (hu1 : u < 1
 
 private theorem infinityCircle_bounds {z : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
     (hzρ : ‖z‖ * ρ < 1) (θ : ℝ) :
-    0 < (1 - ρ * exp (θ * I)).re ∧ 0 < (1 - z * (ρ * exp (θ * I))).re := by
-  have hun : ‖(ρ : ℂ) * exp (θ * I)‖ = ρ := by
-    simp [norm_exp_ofReal_mul_I, Real.norm_of_nonneg hρ.le]
-  constructor <;> apply TauCeti.re_pos_of_norm_sub_one_lt_one
-  · simpa only [sub_sub_cancel_left, norm_neg, hun] using hρ1
-  · simpa only [sub_sub_cancel_left, norm_neg, norm_mul, hun] using hzρ
+    0 < (1 - circleMap 0 ρ θ).re ∧ 0 < (1 - z * circleMap 0 ρ θ).re := by
+  have hρnorm : ‖(ρ : ℂ)‖ < 1 := by
+    calc
+      ‖(ρ : ℂ)‖ = ‖circleMap 0 ρ 0‖ := by simp
+      _ = ρ := by rw [norm_circleMap_zero, abs_of_pos hρ]
+      _ < 1 := hρ1
+  constructor
+  · simpa only [circleMap_zero] using re_one_sub_mul_exp_mul_I_pos hρnorm θ
+  · have hzρnorm : ‖z * (ρ : ℂ)‖ < 1 := by
+      simpa only [norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos hρ] using hzρ
+    simpa only [circleMap_zero, mul_assoc] using re_one_sub_mul_exp_mul_I_pos hzρnorm θ
 
-private theorem circle_pullback (a b c z : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
+private theorem exp_log_radius_add_mul_I_mul {ρ : ℝ} (hρ : 0 < ρ) (θ : ℝ) (e : ℂ) :
+    exp (((Real.log ρ : ℂ) + θ * I) * e) = (ρ : ℂ) ^ e * exp (θ * I * e) := by
+  rw [cpow_def_of_ne_zero (ofReal_ne_zero.mpr hρ.ne'),
+    ← ofReal_log hρ.le, ← exp_add]
+  congr 1
+  ring
+
+/-- The continued circular kernel pulls back to the circular kernel of the `(0+)` loop.
+The bounds `0 < ρ < 1` and `‖z‖ * ρ < 1` keep both remaining factors in the right half-plane,
+so the principal powers agree with the continued logarithm. -/
+theorem hypergeometricLoopInfinityCircle_pullback (a b c z : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
     (hzρ : ‖z‖ * ρ < 1) (θ : ℝ) :
     hypergeometricLoopInfinityCircle a b c z ρ θ =
-      affineCircIntegrand a b (c - b) 1 z ρ θ := by
+      ((ρ : ℂ) ^ (b - 1) * exp (θ * I * (b - 1))) *
+        (1 - ρ * exp (θ * I)) ^ (c - b - 1) *
+        (1 - z * (ρ * exp (θ * I))) ^ (-a) * (I * ρ * exp (θ * I)) := by
   rw [hypergeometricLoopInfinityCircle_def]
-  unfold affineCircIntegrand
-  let u : ℂ := ρ * exp (θ * I)
   dsimp only
-  rw [show (ρ : ℂ) * exp (θ * I) = u from rfl]
+  set u : ℂ := ρ * exp (θ * I)
   obtain ⟨hs, hq⟩ := infinityCircle_bounds hρ hρ1 hzρ θ
+  simp only [circleMap_zero] at hs hq
   have hs0 : 1 - u ≠ 0 := ne_zero_of_re_pos hs
-  obtain ⟨h1, h2⟩ := TauCeti.div_one_sub_factors hs0 z
+  have h1 := TauCeti.one_add_div_one_sub hs0
+  have h2 := TauCeti.one_add_div_one_sub_sub_mul_div_one_sub hs0 z
   have hi : 0 < ((1 - u)⁻¹).re := inv_re_pos.mpr hs
   have ht := exp_sub_log_mul_mul_inv_cpow (b - 1) (a - c) (-a) hs0
     (slitPlane_arg_ne_pi (mem_slitPlane_iff.mpr (Or.inl hs)))
     (TauCeti.mul_cpow_of_re_pos hq hi (-a)) ((Real.log ρ : ℂ) + θ * I) (I * u)
   have hexponent : -(b - 1) - (a - c) - -a - 2 = c - b - 1 := by ring
   rw [hexponent] at ht
-  have he : exp (((Real.log ρ : ℂ) + θ * I) * (b - 1)) =
-      (ρ : ℂ) ^ (b - 1) * exp (θ * I * (b - 1)) := by
-    rw [cpow_def_of_ne_zero (ofReal_ne_zero.mpr hρ.ne'),
-      ← ofReal_log hρ.le, ← exp_add]
-    congr 1; ring
+  have he := exp_log_radius_add_mul_I_mul hρ θ (b - 1)
   rw [h2, h1]
   simpa only [he, u, mul_assoc] using ht
 
 private theorem ray_pullback_eqOn (a b c z : ℂ) {ρ : ℝ} (hρ : 0 < ρ) :
     EqOn (fun u : ℝ => (((1 - u) ^ 2)⁻¹ : ℝ) • hypergeometricLoopInfinityRay a b c z (u / (1 - u)))
       (affineSegIntegrand a b (c - b) 1 z) (Ioo ρ 1) :=
-  fun _ hu => ray_pullback a b c z (hρ.trans hu.1) hu.2
+  fun _ hu => hypergeometricLoopInfinityRay_pullback a b c z (hρ.trans hu.1) hu.2
 
-private theorem integral_infinityRay (a b c z : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
+private theorem infinityRay_hasDerivWithinAt {ρ : ℝ} (u : ℝ) (hu : u ∈ Ioo ρ 1) :
+    HasDerivWithinAt (fun t : ℝ => t / (1 - t)) ((1 - u) ^ 2)⁻¹ (Ioo ρ 1) u :=
+  (TauCeti.hasDerivAt_div_one_sub hu.2.ne).hasDerivWithinAt
+
+private theorem infinityRay_monotoneOn (ρ : ℝ) :
+    MonotoneOn (fun u : ℝ => u / (1 - u)) (Ioo ρ 1) :=
+  TauCeti.strictMonoOn_div_one_sub.monotoneOn.mono Ioo_subset_Iio_self
+
+/-- The Möbius substitution identifies the infinity-ray integral with the Euler tail.
+The identity holds for `0 < ρ < 1`, including totalized integrals without convergence. -/
+theorem integral_hypergeometricLoopInfinityRay_eq (a b c z : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     (∫ v : ℝ in Ioi (ρ / (1 - ρ)), hypergeometricLoopInfinityRay a b c z v) =
-      ∫ u : ℝ in ρ..1, affineSegIntegrand a b (c - b) 1 z u := by
-  obtain ⟨himage, hd, hm⟩ := TauCeti.div_one_sub_Ioo_chart hρ1
-  rw [intervalIntegral.integral_of_le hρ1.le, integral_Ioc_eq_integral_Ioo, ← himage]
-  rw [integral_image_eq_integral_deriv_smul_of_monotoneOn measurableSet_Ioo hd hm]
+      ∫ u : ℝ in ρ..1,
+        (u : ℂ) ^ (b - 1) * (1 - (u : ℂ)) ^ (c - b - 1) * (1 - z * u) ^ (-a) := by
+  rw [intervalIntegral.integral_of_le hρ1.le, integral_Ioc_eq_integral_Ioo,
+    ← TauCeti.image_div_one_sub_Ioo hρ1]
+  rw [integral_image_eq_integral_deriv_smul_of_monotoneOn measurableSet_Ioo
+    infinityRay_hasDerivWithinAt (infinityRay_monotoneOn ρ)]
   exact setIntegral_congr_fun measurableSet_Ioo (ray_pullback_eqOn a b c z hρ)
 
-private theorem integrableOn_infinityRay_iff (a b c z : ℂ) {ρ : ℝ}
+/-- Absolute integrability on the infinity ray is equivalent to Euler-tail integrability
+for `0 < ρ < 1`. This transfers arbitrary tail hypotheses without a cut-plane condition. -/
+theorem integrableOn_hypergeometricLoopInfinityRay_iff (a b c z : ℂ) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     IntegrableOn (hypergeometricLoopInfinityRay a b c z) (Ioi (ρ / (1 - ρ))) ↔
-      IntegrableOn (affineSegIntegrand a b (c - b) 1 z) (Ioo ρ 1) := by
-  obtain ⟨himage, hd, hm⟩ := TauCeti.div_one_sub_Ioo_chart hρ1
-  rw [← himage,
-    integrableOn_image_iff_integrableOn_deriv_smul_of_monotoneOn measurableSet_Ioo hd hm]
+      IntegrableOn (fun u : ℝ =>
+        (u : ℂ) ^ (b - 1) * (1 - (u : ℂ)) ^ (c - b - 1) * (1 - z * u) ^ (-a))
+        (Ioo ρ 1) := by
+  rw [← TauCeti.image_div_one_sub_Ioo hρ1,
+    integrableOn_image_iff_integrableOn_deriv_smul_of_monotoneOn measurableSet_Ioo
+      infinityRay_hasDerivWithinAt (infinityRay_monotoneOn ρ)]
   exact integrableOn_congr_fun (ray_pullback_eqOn a b c z hρ) measurableSet_Ioo
 
 /-- On the cut plane, the ray kernel is absolutely integrable from every positive
 cutoff when `b.re < c.re`; positivity of `b.re` is not required. -/
-theorem integrableOn_hypergeometricLoopInfinity_ray (a b c z : ℂ) (hbc : b.re < c.re)
+theorem integrableOn_hypergeometricLoopInfinityRay (a b c z : ℂ) (hbc : b.re < c.re)
     (hz : 1 - z ∈ slitPlane) {R : ℝ} (hR : 0 < R) :
     IntegrableOn (hypergeometricLoopInfinityRay a b c z) (Ioi R) := by
   let ρ := R / (1 + R)
@@ -200,14 +213,14 @@ theorem integrableOn_hypergeometricLoopInfinity_ray (a b c z : ℂ) (hbc : b.re 
   have hρ : 0 < ρ := div_pos hR hd
   have hρ1 : ρ < 1 := (div_lt_one hd).mpr (by linarith)
   have hcut : ρ / (1 - ρ) = R := by dsimp [ρ]; field_simp; ring
-  rw [← hcut, integrableOn_infinityRay_iff a b c z hρ hρ1, affineSegIntegrand_unit]
+  rw [← hcut, integrableOn_hypergeometricLoopInfinityRay_iff a b c z hρ hρ1]
   exact (intervalIntegrable_iff_integrableOn_Ioo_of_le hρ1.le).mp
     (intervalIntegrable_eulerIntegrand_right a hbc hz hρ hρ1.le)
 
 /-- The continued circular piece of the loop at infinity is integrable for every
 complex parameter under `0 < ρ < 1` and `‖z‖ * ρ < 1`. These bounds keep
 the remaining complex powers on the intended branches. -/
-theorem intervalIntegrable_hypergeometricLoopInfinity_circle (a b c z : ℂ) {ρ : ℝ}
+theorem intervalIntegrable_hypergeometricLoopInfinityCircle (a b c z : ℂ) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ < 1) :
     IntervalIntegrable (hypergeometricLoopInfinityCircle a b c z ρ)
       volume 0 (2 * π) := by
@@ -219,8 +232,9 @@ theorem intervalIntegrable_hypergeometricLoopInfinity_circle (a b c z : ℂ) {ρ
     refine continuous_iff_continuousAt.mpr fun θ => ?_
     have hw : (((Real.log ρ : ℂ) + θ * I) : ℂ).re < 0 := by
       simpa using Real.log_neg hρ hρ1
-    have hexp : exp ((Real.log ρ : ℂ) + θ * I) = ρ * exp (θ * I) := by
-      rw [exp_add, ← ofReal_exp, Real.exp_log hρ]
+    have hexp : exp ((Real.log ρ : ℂ) + θ * I) = circleMap 0 ρ θ := by
+      simpa only [mul_one, cpow_one, circleMap_zero] using
+        exp_log_radius_add_mul_I_mul hρ θ 1
     have hslit : 1 - z * exp ((Real.log ρ : ℂ) + θ * I) ∈ slitPlane := by
       rw [hexp]
       exact mem_slitPlane_iff.mpr (Or.inl (infinityCircle_bounds hρ hρ1 hzρ θ).2)
@@ -228,7 +242,9 @@ theorem intervalIntegrable_hypergeometricLoopInfinity_circle (a b c z : ℂ) {ρ
       ((differentiableAt_affineLogIntegrand a b (c - b) 1 z hw hslit).continuousAt.comp
         (f := fun θ : ℝ => (Real.log ρ : ℂ) + θ * I)
         (by fun_prop : ContinuousAt (fun θ : ℝ => (Real.log ρ : ℂ) + θ * I) θ))
-  have heq := funext (circle_pullback a b c z hρ hρ1 hzρ)
+  have heq : hypergeometricLoopInfinityCircle a b c z ρ =
+      affineCircIntegrand a b (c - b) 1 z ρ :=
+    funext (hypergeometricLoopInfinityCircle_pullback a b c z hρ hρ1 hzρ)
   rw [heq]
   exact hc.intervalIntegrable _ _
 
@@ -238,11 +254,12 @@ and branches. Totalization removes the need for ray convergence, while retaining
 theorem hypergeometricLoopInfinity_eq_hypergeometricLoopZero (a b c z : ℂ) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ < 1) :
     hypergeometricLoopInfinity a b c z ρ = hypergeometricLoopZero a b c z ρ := by
-  rw [hypergeometricLoopZero_eq_affineLoopZero]
-  unfold hypergeometricLoopInfinity affineLoopZero
-  rw [integral_infinityRay a b c z hρ hρ1]
+  rw [hypergeometricLoopInfinity_def, hypergeometricLoopZero_eq_affineLoopZero,
+    affineLoopZero, integral_hypergeometricLoopInfinityRay_eq a b c z hρ hρ1,
+    ← affineSegIntegrand_unit]
   congr 1
-  exact intervalIntegral.integral_congr fun θ _ => circle_pullback a b c z hρ hρ1 hzρ θ
+  exact intervalIntegral.integral_congr fun θ _ =>
+    hypergeometricLoopInfinityCircle_pullback a b c z hρ hρ1 hzρ θ
 
 /-- Radius independence under integrability of the tail starting at the smaller radius.
 The radius and norm bounds ensure that both continued contours use the intended branches. -/
@@ -255,8 +272,8 @@ theorem hypergeometricLoopInfinity_eq_of_integrableOn (a b c z : ℂ) {ρ₁ ρ�
   rw [hypergeometricLoopInfinity_eq_hypergeometricLoopZero a b c z hρ₁ hρ₁1 hz₁,
     hypergeometricLoopInfinity_eq_hypergeometricLoopZero a b c z hρ₂ hρ₂1 hz₂]
   apply hypergeometricLoopZero_eq_of_integrableOn a b c z hρ₁ hρ₁1 hρ₂ hρ₂1 hz₁ hz₂
-  rw [integrableOn_infinityRay_iff a b c z (lt_min hρ₁ hρ₂)
-    (min_lt_iff.mpr (Or.inl hρ₁1)), affineSegIntegrand_unit] at hint
+  rw [integrableOn_hypergeometricLoopInfinityRay_iff a b c z (lt_min hρ₁ hρ₂)
+    (min_lt_iff.mpr (Or.inl hρ₁1))] at hint
   exact hint
 
 /-- On the cut plane `1 - z ∈ slitPlane`, under `b.re < c.re`, the half-line loop is
@@ -269,26 +286,26 @@ theorem hypergeometricLoopInfinity_eq (a b c z : ℂ) (hbc : b.re < c.re)
     hypergeometricLoopInfinity_eq_hypergeometricLoopZero a b c z hρ₂ hρ₂1 hz₂]
   exact hypergeometricLoopZero_eq a b c z hbc hz hρ₁ hρ₁1 hρ₂ hρ₂1 hz₁ hz₂
 
-/-- Joint holomorphy of the half-line loop along fixed `c - b`, on the open domain
-where `1 - z ∈ slitPlane` and `‖z‖ * ρ < 1`, with `0 < ρ < 1`. -/
+/-- Joint holomorphy in `(a, b, z)` for fixed `d = c - b` with `0 < d.re`, on the open
+domain where `1 - z ∈ slitPlane` and `‖z‖ * ρ < 1`, with `0 < ρ < 1`. -/
 theorem analyticOnNhd_hypergeometricLoopInfinity {d : ℂ} (hd : 0 < d.re) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ × ℂ =>
       hypergeometricLoopInfinity p.1 p.2.1 (p.2.1 + d) p.2.2 ρ)
       {p | 1 - p.2.2 ∈ slitPlane ∧ ‖p.2.2‖ * ρ < 1} := by
-  intro p hp
   have hproj : Continuous (fun q : ℂ × ℂ × ℂ => q.2.2) :=
     continuous_snd.comp continuous_snd
   have hnorm : Continuous (fun q : ℂ × ℂ × ℂ => ‖q.2.2‖ * ρ) := by fun_prop
   have hopen : IsOpen {q : ℂ × ℂ × ℂ | 1 - q.2.2 ∈ slitPlane ∧ ‖q.2.2‖ * ρ < 1} :=
     (isOpen_setOf_one_sub_mem_slitPlane.preimage hproj).inter
       (isOpen_lt hnorm continuous_const)
-  exact (analyticOnNhd_hypergeometricLoopZero hd hρ hρ1 p hp).congr (by
-    filter_upwards [hopen.mem_nhds hp] with q hq
-    exact (hypergeometricLoopInfinity_eq_hypergeometricLoopZero _ _ _ _ hρ hρ1 hq.2).symm)
+  exact AnalyticOnNhd.congr hopen (analyticOnNhd_hypergeometricLoopZero hd hρ hρ1)
+    (fun _ hq =>
+      (hypergeometricLoopInfinity_eq_hypergeometricLoopZero _ _ _ _ hρ hρ1 hq.2).symm)
 
 /-- On the cut plane with `0 < b.re < c.re`, the half-line loop equals a Gamma and
-phase prefactor times the normalized Euler integral. At positive integral `b`, the loop vanishes. -/
+phase prefactor times the normalized Euler integral for `0 < ρ < 1` and `‖z‖ * ρ < 1`.
+At positive integral `b`, the loop vanishes. -/
 theorem hypergeometricLoopInfinity_eq_mul_eulerIntegral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (hz : 1 - z ∈ slitPlane) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ < 1) :
@@ -298,7 +315,8 @@ theorem hypergeometricLoopInfinity_eq_mul_eulerIntegral (a : ℂ) {b c z : ℂ} 
   exact hypergeometricLoopZero_eq_eulerIntegral a hb hbc hz hρ hρ1 hzρ
 
 /-- Euler's integral in the region `0 < b.re < c.re` on the cut plane, with positive
-integral `b` excluded so that the reciprocal DLMF 15.6.3 prefactor is valid. -/
+integral `b` excluded so that the reciprocal DLMF 15.6.3 prefactor is valid. The radius
+satisfies `0 < ρ < 1` and `‖z‖ * ρ < 1`. -/
 theorem eulerIntegral_eq_mul_hypergeometricLoopInfinity (a : ℂ) {b c z : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (hb_int : ∀ n : ℕ, b ≠ n + 1) (hz : 1 - z ∈ slitPlane) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ < 1) :
@@ -320,7 +338,8 @@ theorem hypergeometricLoopInfinity_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z
   rw [hypergeometricLoopInfinity_eq_hypergeometricLoopZero a b c z hρ hρ1 hzρ]
   exact hypergeometricLoopZero_eq_mul_regularizedGaussHGFun a hbc hz hρ hρ1
 
-/-- DLMF 15.6.3 on the open unit disk, under `b.re < c.re`, excluding positive integral `b`. -/
+/-- DLMF 15.6.3 on the open unit disk, under `b.re < c.re` and `0 < ρ < 1`,
+excluding positive integral `b`. -/
 theorem regularizedGaussHGFun_eq_mul_hypergeometricLoopInfinity (a : ℂ) {b c z : ℂ}
     (hbc : b.re < c.re) (hb_int : ∀ n : ℕ, b ≠ n + 1) (hz : ‖z‖ < 1) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
@@ -331,7 +350,8 @@ theorem regularizedGaussHGFun_eq_mul_hypergeometricLoopInfinity (a : ℂ) {b c z
   exact eq_mul_of_eq_mul_hypergeometricLoopZeroFactor hbc hb_int
     (hypergeometricLoopInfinity_eq_mul_regularizedGaussHGFun a hbc hz hρ hρ1)
 
-/-- At zero argument the half-line loop has the same Gamma evaluation as the `(0+)` loop. -/
+/-- At zero argument, under `b.re < c.re` and `0 < ρ < 1`, the half-line loop has
+the same Gamma evaluation as the `(0+)` loop. -/
 @[simp]
 theorem hypergeometricLoopInfinity_zero (a : ℂ) {b c : ℂ} (hbc : b.re < c.re) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
@@ -341,7 +361,7 @@ theorem hypergeometricLoopInfinity_zero (a : ℂ) {b c : ℂ} (hbc : b.re < c.re
   exact hypergeometricLoopZero_zero a hbc hρ hρ1
 
 /-- With first parameter zero the half-line loop is independent of `z`; its evaluation
-requires no bound on `‖z‖ * ρ`. -/
+requires `b.re < c.re` and `0 < ρ < 1`, with no bound on `‖z‖ * ρ`. -/
 @[simp]
 theorem hypergeometricLoopInfinity_zero_left {b c : ℂ} (hbc : b.re < c.re) (z : ℂ) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :

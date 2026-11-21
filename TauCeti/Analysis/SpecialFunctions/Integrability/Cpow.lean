@@ -27,16 +27,15 @@ theorem intervalIntegrable_one_sub_ofReal_cpow {s : ℂ} (hs : -1 < s.re) (ρ : 
   simpa only [ofReal_sub, ofReal_one, sub_zero, sub_sub_cancel] using
     ((intervalIntegral.intervalIntegrable_cpow' (a := 0) (b := 1 - ρ) hs).comp_sub_left 1).symm
 
-/-- On `[ρ, 1]` with `ρ > 0`, a complex power of `t` times a continuous kernel preserves
+/-- Between `ρ > 0` and `1`, a complex power of `t` times a continuous kernel preserves
 integrability of the endpoint weight `(1 - t) ^ s` when `-1 < s.re`. -/
 theorem intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul {p s : ℂ} {K : ℝ → ℂ} {ρ : ℝ}
-    (hρ : 0 < ρ) (hρ1 : ρ ≤ 1) (hs : -1 < s.re) (hK : ContinuousOn K (uIcc ρ 1)) :
+    (hρ : 0 < ρ) (hs : -1 < s.re) (hK : ContinuousOn K (uIcc ρ 1)) :
     IntervalIntegrable (fun t : ℝ => (t : ℂ) ^ p * (1 - (t : ℂ)) ^ s * K t) volume ρ 1 := by
   have hpow : ContinuousOn (fun t : ℝ => (t : ℂ) ^ p) (uIcc ρ 1) := by
-    rw [uIcc_of_le hρ1]
     exact continuousOn_of_forall_continuousAt fun t ht =>
       continuous_ofReal.continuousAt.cpow continuousAt_const
-        (ofReal_mem_slitPlane.mpr (hρ.trans_le ht.1))
+        (ofReal_mem_slitPlane.mpr ((lt_min hρ zero_lt_one).trans_le ht.1))
   simpa only [Pi.mul_apply, mul_left_comm, mul_comm, mul_assoc] using
     (intervalIntegrable_one_sub_ofReal_cpow hs ρ).mul_continuousOn (hpow.mul hK)
 

@@ -529,18 +529,26 @@ private theorem hypergeometricLoopOne_eq_affineLoopZero (a b c z : ℂ) (ρ : �
     loopOne_circ_eq_affineCircIntegrand, he1, he2, affineLoopZero]
   ring
 
+/-- Reflecting the Euler segment by `t = 1 - u` preserves its slit-plane condition. -/
+private theorem reflected_eulerKernel_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {u : ℝ} (hu : u ∈ Icc 0 1) : (1 - z) - (-z) * (u : ℂ) ∈ slitPlane := by
+  have hreflect : (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) := by
+    push_cast
+    ring
+  rw [hreflect]
+  exact one_sub_mul_ofReal_mem_slitPlane hz
+    ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩
+
 private theorem intervalIntegrable_loopOne_seg (a b c z : ℂ) (hb : 0 < b.re) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hz : 1 - z ∈ slitPlane) :
     IntervalIntegrable (affineSegIntegrand a (c - b) b (1 - z) (-z)) volume ρ 1 := by
   unfold affineSegIntegrand
-  apply TauCeti.intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul hρ hρ1.le
+  apply TauCeti.intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul hρ
     (by simpa using hb)
   rw [uIcc_of_le hρ1.le]
   refine continuousOn_of_forall_continuousAt fun u hu => ?_
-  exact ContinuousAt.cpow (by fun_prop) continuousAt_const (by
-    rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
-    exact one_sub_mul_ofReal_mem_slitPlane hz
-      ⟨sub_nonneg.mpr hu.2, sub_le_self _ (hρ.le.trans hu.1)⟩)
+  exact ContinuousAt.cpow (by fun_prop) continuousAt_const
+    (reflected_eulerKernel_mem_slitPlane hz ⟨hρ.le.trans hu.1, hu.2⟩)
 
 /-- **Radius independence of the `(1+)` loop integral.** Whenever `0 < re b` and the closed disks
 around `1` of radii `ρ₁, ρ₂ ∈ (0, 1)` map into the slit plane under `u ↦ 1 - z u`, the loop
@@ -567,10 +575,8 @@ theorem analyticOnNhd_hypergeometricLoopOne {b : ℂ} (hb : 0 < b.re) {ρ : ℝ}
       {p | closedBall (1 - p.2.2) (‖p.2.2‖ * ρ) ⊆ slitPlane} := by
   intro p hp
   have hz : 1 - p.2.2 ∈ slitPlane := hp (mem_closedBall_self (by positivity))
-  have hslit : ∀ u ∈ Icc ρ 1, (1 - p.2.2) - (-p.2.2) * (u : ℂ) ∈ slitPlane := fun u hu => by
-    rw [show (1 - p.2.2) - (-p.2.2) * (u : ℂ) = 1 - p.2.2 * ((1 - u : ℝ) : ℂ) by push_cast; ring]
-    exact one_sub_mul_ofReal_mem_slitPlane hz
-      ⟨sub_nonneg.mpr hu.2, sub_le_self _ (hρ.le.trans hu.1)⟩
+  have hslit : ∀ u ∈ Icc ρ 1, (1 - p.2.2) - (-p.2.2) * (u : ℂ) ∈ slitPlane := fun u hu =>
+    reflected_eulerKernel_mem_slitPlane hz ⟨hρ.le.trans hu.1, hu.2⟩
   have ha : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ => q.1) p := analyticAt_fst
   have hc : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ => q.2.1) p := analyticAt_fst.comp analyticAt_snd
   have hz_an : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ => q.2.2) p := analyticAt_snd.comp analyticAt_snd
@@ -604,9 +610,8 @@ theorem hypergeometricLoopOne_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.re
     (betaIntegral_convergent hcb hb).mul_continuousOn (by
       rw [uIcc_of_le zero_le_one]
       exact continuousOn_of_forall_continuousAt fun u hu =>
-        ContinuousAt.cpow (by fun_prop) continuousAt_const (by
-          rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
-          exact one_sub_mul_ofReal_mem_slitPlane hz_slit ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩))
+        ContinuousAt.cpow (by fun_prop) continuousAt_const
+          (reflected_eulerKernel_mem_slitPlane hz_slit hu))
   rw [hypergeometricLoopOne_eq_affineLoopZero,
     affineLoopZero_eq_integral a (c - b) b (1 - z) (-z) hcb hρ hρ1 hρ1.le
       (by simpa only [norm_neg] using hz) hint]
@@ -753,8 +758,9 @@ private theorem hypergeometricLoopZero_eq_affineLoopZero (a b c z : ℂ) (ρ : �
   rw [hypergeometricLoopZero_def, h1, h2, affineLoopZero]
   dsimp only [affineCircIntegrand]; ring
 
-/-- The `(0+)` loop is independent of admissible radii when its Euler tail is integrable
-from the smaller radius. The singularity at `1` need not satisfy a cut-plane hypothesis. -/
+/-- The `(0+)` loop is independent of the radius when `0 < ρᵢ < 1` and `‖z‖ * ρᵢ < 1`
+for both radii. Explicit Euler-tail integrability from the smaller radius replaces the
+global cut-plane condition `1 - z ∈ slitPlane`. -/
 theorem hypergeometricLoopZero_eq_of_integrableOn (a b c z : ℂ)
     {ρ₁ ρ₂ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₁1 : ρ₁ < 1) (hρ₂ : 0 < ρ₂) (hρ₂1 : ρ₂ < 1)
     (hz₁ : ‖z‖ * ρ₁ < 1) (hz₂ : ‖z‖ * ρ₂ < 1)

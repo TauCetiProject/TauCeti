@@ -112,7 +112,7 @@ theorem intervalIntegrable_eulerIntegrand_right (a : ℂ) {b c z : ℂ} (hbc : b
   have hsub : uIcc ρ 1 ⊆ Icc 0 1 := by
     rw [uIcc_of_le hρ1]
     exact Icc_subset_Icc_left hρ.le
-  apply TauCeti.intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul hρ hρ1
+  apply TauCeti.intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul hρ
   · simp only [sub_re, one_re]
     linarith
   · exact (continuousOn_eulerKernel a hz).mono hsub
