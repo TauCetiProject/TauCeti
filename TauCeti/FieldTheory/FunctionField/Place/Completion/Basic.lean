@@ -163,7 +163,7 @@ instance isAdicComplete_completionIntegers :
         simpa using (P.completionPlace.filtration m).neg_mem (hf hmn)
     have hx0 : x ∈ P.completionPlace.integers := by
       have h := (P.completionPlace.filtration 0).add_mem (hx 0)
-        (P.completionPlace.mem_filtration_zero_iff.mpr (f 0).2)
+        (P.completionPlace.mem_filtration_zero_iff.mpr (f 0).property)
       simpa [P.completionPlace.mem_filtration_zero_iff] using h
     refine ⟨⟨x, hx0⟩, fun n ↦ ?_⟩
     simpa using (P.completionPlace.filtration n).neg_mem (hx n)
@@ -192,10 +192,10 @@ theorem exists_filtration_sub_completionEmbedding_mem {a : ℤ} (b : ℤ)
       (x : P.Completion) - P.completionEmbedding y ∈ P.completionPlace.filtration b := by
   by_cases hab : a ≤ b
   swap
-  · exact ⟨0, by simpa using P.completionPlace.filtration_antitone (not_le.mp hab).le x.2⟩
+  · exact ⟨0, by simpa using P.completionPlace.filtration_antitone (not_le.mp hab).le x.property⟩
   obtain ⟨y, hy⟩ := P.exists_sub_completionEmbedding_mem_filtration x b
   have hya : P.completionEmbedding y ∈ P.completionPlace.filtration a := by
-    have h := (P.completionPlace.filtration a).sub_mem x.2
+    have h := (P.completionPlace.filtration a).sub_mem x.property
       (P.completionPlace.filtration_antitone hab hy)
     simpa using h
   exact ⟨⟨y, P.completionEmbedding_mem_filtration_iff.mp hya⟩, hy⟩
@@ -204,7 +204,8 @@ theorem exists_filtration_sub_completionEmbedding_mem {a : ℤ} (b : ℤ)
 noncomputable def completionFiltrationMap (a : ℤ) :
     P.filtration a →ₗ[k] P.completionPlace.filtration a :=
   (P.completionEmbedding.toLinearMap.domRestrict (P.filtration a)).codRestrict
-    (P.completionPlace.filtration a) (fun x ↦ P.completionEmbedding_mem_filtration_iff.mpr x.2)
+    (P.completionPlace.filtration a) (fun x ↦ P.completionEmbedding_mem_filtration_iff.mpr
+        x.property)
 
 @[simp]
 theorem completionFiltrationMap_apply (a : ℤ) (x : P.filtration a) :
@@ -253,7 +254,7 @@ theorem completionFiltrationQuotientEquiv_apply_mk (a b : ℤ) (x : P.filtration
 noncomputable def completionIntegersEmbedding : P.integers →ₐ[k] P.completionPlace.integers where
   toFun x := ⟨P.completionEmbedding x, by
     simpa only [mem_integers_iff, completionPlace_valuation, valuation_completionEmbedding]
-      using x.2⟩
+      using x.property⟩
   map_zero' := Subtype.ext (map_zero P.completionEmbedding)
   map_one' := Subtype.ext (map_one P.completionEmbedding)
   map_add' x y := Subtype.ext (map_add P.completionEmbedding (x : F) (y : F))
@@ -279,9 +280,9 @@ noncomputable def residueFieldEquivCompletion : P.ResidueField ≃ₐ[k]
   intro x
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.completionPlace.integers) x
   have hx : (x : P.Completion) ∈ P.completionPlace.filtration 0 :=
-    P.completionPlace.mem_filtration_zero_iff.mpr x.2
+    P.completionPlace.mem_filtration_zero_iff.mpr x.property
   obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem 1 ⟨x, hx⟩
-  let y' : P.integers := ⟨y, P.mem_filtration_zero_iff.mp y.2⟩
+  let y' : P.integers := ⟨y, P.mem_filtration_zero_iff.mp y.property⟩
   refine ⟨IsLocalRing.residue P.integers y', ?_⟩
   rw [IsLocalRing.ResidueField.mapAlgHom_residue]
   apply (P.completionPlace.residue_eq_iff_sub_mem_filtration_one).mpr

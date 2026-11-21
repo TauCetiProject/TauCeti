@@ -298,7 +298,7 @@ theorem map_connecting_of_comp_eq {A B Q A' B' Q' : Sheaf J GrpCat.{w}}
     (α : A ⟶ A') (β : B ⟶ B') (γ : Q ⟶ Q')
     (hα : i ≫ β = α ≫ i') (hγ : β ≫ π' = π ≫ γ)
     (q : (Q.obj ⋙ forget GrpCat).sections) (q' : (Q'.obj ⋙ forget GrpCat).sections)
-    (hq : ∀ U, γ.hom.app U (q.1 U) = q'.1 U) :
+    (hq : ∀ U, γ.hom.app U (q.val U) = q'.val U) :
     map α (connecting hE q) = connecting hE' q' := by
   rw [connecting_def, connecting_def]
   exact map_mk_eq_mk (hE.liftsMap q hE' β γ hγ q' hq)
@@ -312,7 +312,7 @@ lemma map_connecting {A B Q : Sheaf J GrpCat.{w}} {i : A ⟶ B} {π : B ⟶ Q}
     map i (connecting hE q) = 1 := by
   rw [connecting_def, ← mk_trivial]
   exact map_mk_eq_mk (R := Torsor.trivial B) (ObjectProperty.homMk
-    { app U := ↾fun b ↦ (hE.liftsObjEquiv q U b).1
+    { app U := ↾fun b ↦ (hE.liftsObjEquiv q U b).val
       naturality U V f := by
         ext b
         exact hE.liftsObjEquiv_map q f b })

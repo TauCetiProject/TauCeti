@@ -101,7 +101,7 @@ theorem resolutionMap_subgroupSubtype_eq_zero_iff (S : Subgroup G) :
     -- at a point `s : S` the restriction is, by definition, the restriction of `F s`, so both
     -- sides are the degree-`n` statement at the values of `F` on `S`
     exact ⟨fun h g hg ↦ (resolutionMap_subgroupSubtype_eq_zero_iff S n _).1 (h ⟨g, hg⟩),
-      fun h s ↦ (resolutionMap_subgroupSubtype_eq_zero_iff S n _).2 (h s s.2)⟩
+      fun h s ↦ (resolutionMap_subgroupSubtype_eq_zero_iff S n _).2 (h s s.property)⟩
 
 variable [CompactSpace G] [DiscreteTopology X.V] [TotallyDisconnectedSpace G]
 
@@ -235,7 +235,7 @@ theorem exists_openSubgroup_le_res_eq_zero (hX : IsSmoothDiscrete k X) {H : Subg
   obtain ⟨w, hw⟩ := (KH.homologyπ_eq_zero_iff n hm).1 hz
   -- extend the primitive `w` to an invariant cochain `W` of `G`
   obtain ⟨W, hWinv, hW⟩ :=
-    exists_mem_invariants_resolutionMap_subgroupSubtype_eq hX hH m w.2
+    exists_mem_invariants_resolutionMap_subgroupSubtype_eq hX hH m w.property
   let Wc : K.X m := ⟨W, hWinv⟩
   have hWc : φH.f m Wc = w := Subtype.ext hW
   -- `F = z - d W` restricts to zero on `H`
@@ -249,11 +249,11 @@ theorem exists_openSubgroup_le_res_eq_zero (hX : IsSmoothDiscrete k X) {H : Subg
     rw [← hWc]
     exact (KH.iCycles_toCycles_apply m _).trans h₂
   have hF' : (resolutionMap (ContinuousMonoidHom.subgroupSubtype H)
-      (𝟙 (TopRep.res (H.subtype : H →* G) X)) (n + 1)).hom F.1 = 0 :=
+      (𝟙 (TopRep.res (H.subtype : H →* G) X)) (n + 1)).hom F.val = 0 :=
     congrArg Subtype.val hF
   -- so it restricts to zero on some open subgroup `V ⊇ H`
   obtain ⟨V, hHV, hV⟩ := exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero (X := X)
-    (n := n + 1) (F := F.1) hF'
+    (n := n + 1) (F := F.val) hF'
   set KV := TopRep.homogeneousCochains (TopRep.res ((V : Subgroup G).subtype : V →* G) X)
   set φV := cochainsMap (ContinuousMonoidHom.subgroupSubtype (V : Subgroup G))
     (𝟙 (TopRep.res ((V : Subgroup G).subtype : V →* G) X))
@@ -304,7 +304,7 @@ theorem exists_openSubgroup_le_resLE_eq (hX : IsSmoothDiscrete k X) {H : Subgrou
   obtain ⟨z, rfl⟩ := KH.homologyπ_surjective n y
   -- extend the cocycle `z` to an invariant cochain `C` of `G`
   obtain ⟨C, hCinv, hC⟩ :=
-    exists_mem_invariants_resolutionMap_subgroupSubtype_eq hX hH n (KH.iCycles n z).2
+    exists_mem_invariants_resolutionMap_subgroupSubtype_eq hX hH n (KH.iCycles n z).property
   let Cc : K.X n := ⟨C, hCinv⟩
   have hCc : φH.f n Cc = KH.iCycles n z := Subtype.ext hC
   -- the differential of `C` restricts to zero on `H`, hence on some open subgroup `V ⊇ H`
@@ -314,10 +314,10 @@ theorem exists_openSubgroup_le_resLE_eq (hX : IsSmoothDiscrete k X) {H : Subgrou
     rw [← h₀, hCc]
     exact KH.d_iCycles_apply (n + 1) z
   have hD : (resolutionMap (ContinuousMonoidHom.subgroupSubtype H)
-      (𝟙 (TopRep.res (H.subtype : H →* G) X)) (n + 1 + 1)).hom (K.d n (n + 1) Cc).1 = 0 :=
+      (𝟙 (TopRep.res (H.subtype : H →* G) X)) (n + 1 + 1)).hom (K.d n (n + 1) Cc).val = 0 :=
     congrArg Subtype.val hD₀
   obtain ⟨V, hHV, hV⟩ := exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero (X := X)
-    (n := n + 1 + 1) (F := (K.d n (n + 1) Cc).1) hD
+    (n := n + 1 + 1) (F := (K.d n (n + 1) Cc).val) hD
   set KV := TopRep.homogeneousCochains (TopRep.res ((V : Subgroup G).subtype : V →* G) X)
   set φV := cochainsMap (ContinuousMonoidHom.subgroupSubtype (V : Subgroup G))
     (𝟙 (TopRep.res ((V : Subgroup G).subtype : V →* G) X))

@@ -243,8 +243,8 @@ theorem isDixmierMeasurable_of_parts {T : E →L[ℂ] E}
     (him_pos : IsDixmierMeasurable (ℑ T : E →L[ℂ] E)⁺)
     (him_neg : IsDixmierMeasurable (ℑ T : E →L[ℂ] E)⁻) : IsDixmierMeasurable T := by
   rw [← realPart_add_I_smul_imaginaryPart T,
-    ← CFC.posPart_sub_negPart (ℜ T : E →L[ℂ] E) (ℜ T).2,
-    ← CFC.posPart_sub_negPart (ℑ T : E →L[ℂ] E) (ℑ T).2]
+    ← CFC.posPart_sub_negPart (ℜ T : E →L[ℂ] E) (ℜ T).property,
+    ← CFC.posPart_sub_negPart (ℑ T : E →L[ℂ] E) (ℑ T).property]
   exact (hre_pos.sub hre_neg).add ((him_pos.sub him_neg).smul Complex.I)
 
 /-- Conjugation by a linear isometric equivalence preserves Dixmier measurability. -/

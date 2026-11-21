@@ -142,8 +142,9 @@ theorem map_apply_map_neg_apply (U : StronglyContinuousGroup X) (t : ℝ) (x : X
 /-- The group operator at time `t`, packaged as a continuous linear equivalence whose inverse is
 the operator at time `-t`. -/
 def toContinuousLinearEquiv (U : StronglyContinuousGroup X) (t : ℝ) : X ≃L[ℝ] X :=
-  ContinuousLinearEquiv.equivOfInverse (U t) (U (-t)) (U.map_neg_apply_map_apply t)
-    (U.map_apply_map_neg_apply t)
+  ContinuousLinearEquiv.ofContinuousLinearMap (U t) (U (-t))
+    (ContinuousLinearMap.ext (U.map_apply_map_neg_apply t))
+    (ContinuousLinearMap.ext (U.map_neg_apply_map_apply t))
 
 @[simp]
 theorem toContinuousLinearEquiv_apply (U : StronglyContinuousGroup X) (t : ℝ) (x : X) :

@@ -65,7 +65,7 @@ end Partition
 
 /-- A point of the unit interval has absolute value at most one. -/
 theorem abs_coe_le_one (t : I) : |(t : ℝ)| ≤ 1 :=
-  (abs_of_nonneg t.2.1).trans_le t.2.2
+  (abs_of_nonneg t.property.1).trans_le t.property.2
 
 end unitInterval
 
@@ -76,7 +76,7 @@ namespace Set
 /-- The projection onto a symmetric interval `[-a, a]` has absolute value at most `a`. -/
 theorem abs_projIcc_le {α : Type*} [AddCommGroup α] [LinearOrder α] [IsOrderedAddMonoid α]
     {a : α} (h : -a ≤ a) (x : α) : |(projIcc (-a) a h x : α)| ≤ a :=
-  abs_le.2 (projIcc (-a) a h x).2
+  abs_le.2 (projIcc (-a) a h x).property
 
 end Set
 
@@ -131,7 +131,7 @@ theorem coe_arcPoint {r i : ℕ} (hi : i < r) (a : I) : (arcPoint r i a : ℝ) =
   have hr : (0 : ℝ) < r := by exact_mod_cast (Nat.zero_le i).trans_lt hi
   have hir : (i : ℝ) + 1 ≤ r := by exact_mod_cast hi
   rw [arcPoint, projIcc_of_mem]
-  exact ⟨by have := a.2.1; positivity, (div_le_one hr).2 (by linarith [a.2.2])⟩
+  exact ⟨by have := a.property.1; positivity, (div_le_one hr).2 (by linarith [a.property.2])⟩
 
 @[fun_prop]
 theorem continuous_arcPoint (r i : ℕ) : Continuous (arcPoint r i) := by
@@ -174,7 +174,7 @@ theorem arcIndex_lt {r : ℕ} (hr : 0 < r) (s : I) : arcIndex r s < r :=
   (min_le_right _ _).trans_lt (Nat.sub_lt hr one_pos)
 
 theorem arcIndex_le_mul (r : ℕ) (s : I) : (arcIndex r s : ℝ) ≤ r * s :=
-  (Nat.cast_le.2 (min_le_left _ _)).trans (Nat.floor_le (by have := s.2.1; positivity))
+  (Nat.cast_le.2 (min_le_left _ _)).trans (Nat.floor_le (by have := s.property.1; positivity))
 
 theorem mul_le_arcIndex_add_one {r : ℕ} (hr : 0 < r) (s : I) :
     (r : ℝ) * s ≤ arcIndex r s + 1 := by
@@ -183,7 +183,7 @@ theorem mul_le_arcIndex_add_one {r : ℕ} (hr : 0 < r) (s : I) :
     exact (Nat.lt_floor_add_one _).le
   · rw [arcIndex, min_eq_right h]
     push_cast [Nat.cast_sub hr]
-    simpa using mul_le_of_le_one_right (Nat.cast_nonneg r) s.2.2
+    simpa using mul_le_of_le_one_right (Nat.cast_nonneg r) s.property.2
 
 theorem coe_arcParam {r : ℕ} (hr : 0 < r) (s : I) :
     (arcParam r s : ℝ) = r * s - arcIndex r s := by
@@ -202,7 +202,7 @@ and the `(i+1)`-th arcs and is counted in the latter. -/
 theorem arcIndex_eq_or {r i : ℕ} (hi : i < r) {s : I} (h₀ : (i : ℝ) ≤ r * s)
     (h₁ : (r : ℝ) * s ≤ i + 1) :
     arcIndex r s = i ∨ arcIndex r s = i + 1 ∧ (r : ℝ) * s = i + 1 := by
-  have hs : (0 : ℝ) ≤ r * s := by have := s.2.1; positivity
+  have hs : (0 : ℝ) ≤ r * s := by have := s.property.1; positivity
   have hle : i ≤ ⌊(r : ℝ) * s⌋₊ := Nat.le_floor h₀
   have hge : ⌊(r : ℝ) * s⌋₊ ≤ i + 1 := Nat.floor_le_of_le (by exact_mod_cast h₁)
   rcases (show ⌊(r : ℝ) * s⌋₊ = i ∨ ⌊(r : ℝ) * s⌋₊ = i + 1 by omega) with h | h
@@ -223,7 +223,8 @@ theorem arcIndex_arcPoint {r i : ℕ} (hi : i < r) {a : I} (ha : a < 1) :
   have hr : (r : ℝ) ≠ 0 := by exact_mod_cast ((Nat.zero_le i).trans_lt hi).ne'
   have ha' : (a : ℝ) < 1 := ha
   have hfloor : ⌊(i : ℝ) + a⌋₊ = i :=
-    (Nat.floor_eq_iff (by have := a.2.1; positivity)).2 ⟨le_add_of_nonneg_right a.2.1, by linarith⟩
+    (Nat.floor_eq_iff (by have := a.property.1; positivity)).2 ⟨le_add_of_nonneg_right a.property.1,
+        by linarith⟩
   rw [arcIndex, coe_arcPoint hi, mul_div_cancel₀ _ hr, hfloor]
   omega
 

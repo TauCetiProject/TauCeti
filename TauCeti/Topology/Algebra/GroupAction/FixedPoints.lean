@@ -73,7 +73,7 @@ theorem continuous_fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ 
   refine continuous_induced_rng.2 ?_
   simpa only [Function.comp_def, coe_fixedPointsAddSubmonoidPairing,
     Prod.map_fst, Prod.map_snd] using
-    hμ.comp (continuous_subtype_val.prodMap continuous_subtype_val)
+    hμ.comp (continuous_subtypeVal.prodMap continuous_subtypeVal)
 
 end Pairing
 
@@ -155,7 +155,7 @@ variable [TopologicalSpace M]
 /-- The inclusion `M ^ H ↪ M` of the invariants is continuous for the subspace topology. -/
 theorem continuous_fixedPoints_addSubgroup_subtype (H : Subgroup G) :
     Continuous ⇑(FixedPoints.addSubgroup H M).subtype :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 end Subtype
 
