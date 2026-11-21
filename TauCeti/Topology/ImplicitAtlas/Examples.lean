@@ -282,12 +282,12 @@ private noncomputable def unitIntervalChart :
   target := {p | (p.1.2 : ℝ) < 1}
   map_source' _ ht := ht
   map_target' p (hp : (p.1.2 : ℝ) < 1) :=
-    (congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨p.1.2.2, hp.le⟩)).trans_lt hp
+    (congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨p.1.2.property, hp.le⟩)).trans_lt hp
   left_inv' t _ := Set.projIcc_val _ _
   right_inv' p (hp : (p.1.2 : ℝ) < 1) := Prod.ext (Prod.ext (Subsingleton.elim _ _)
-    (NNReal.eq (congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨p.1.2.2, hp.le⟩) :)))
+    (NNReal.eq (congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨p.1.2.property, hp.le⟩) :)))
     (Subsingleton.elim _ _)
-  open_source := isOpen_lt continuous_subtype_val continuous_const
+  open_source := isOpen_lt continuous_subtypeVal continuous_const
   open_target := isOpen_lt (by fun_prop) continuous_const
   continuousOn_toFun := by fun_prop
   continuousOn_invFun := by fun_prop
@@ -326,18 +326,18 @@ noncomputable def unitIntervalAtlas :
     ImplicitAtlasWithBoundary Γ E ρ (fun _ ↦ unitInterval) (fun _ ↦ 1)
       unitInterval {0, 1} 1 where
   baseHomeomorph := Homeomorph.refl unitInterval
-  kuranishi _ α _ := (IsEmpty.false α.1).elim
-  continuous_kuranishi _ α := (IsEmpty.false α.1).elim
-  kuranishi_act _ α := (IsEmpty.false α.1).elim
+  kuranishi _ α _ := (IsEmpty.false α.val).elim
+  continuous_kuranishi _ α := (IsEmpty.false α.val).elim
+  kuranishi_act _ α := (IsEmpty.false α.val).elim
   regLocus _ := univ
   isOpen_regLocus _ := isOpen_univ
   act_mem_regLocus _ _ _ _ := mem_univ _
-  footprintMap _ _ _ x := x.1
-  continuous_footprintMap _ _ _ := continuous_subtype_val
+  footprintMap _ _ _ x := x.val
+  continuous_footprintMap _ _ _ := continuous_subtypeVal
   footprintMap_act _ _ _ _ _ _ := rfl
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
-  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.1).elim
+  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.val).elim
   isOpen_range_footprintMap _ _ _ := by
     rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
     exact isOpen_univ
@@ -347,28 +347,29 @@ noncomputable def unitIntervalAtlas :
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp
   isQuotientMap_footprintMap I J _ :=
     IsQuotientMap.of_inverse
-      (f := fun y ↦ ⟨y.1, by simp⟩)
-      (continuous_subtype_val.subtype_mk _) continuous_subtype_val.rangeFactorization
+      (f := fun y ↦ ⟨y.val, by simp⟩)
+      (continuous_subtypeVal.subtype_mk _) continuous_subtypeVal.rangeFactorization
       fun _ ↦ rfl
   footprintMap_eq_footprintMap_iff _ _ _ x y :=
     ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
   mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
-  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.1).elim
+  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.val).elim
   boundary _ := {0, 1}
   isClosed_boundary _ := (toFinite _).isClosed
   act_mem_boundary _ _ _ h := h
   baseHomeomorph_mem_iff _ := Iff.rfl
   footprintMap_mem_boundary_iff _ _ _ _ := Iff.rfl
   exists_openPartialHomeomorph I J _ x _ := by
-    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
     refine Or.inr ⟨0, by simp [Finset.eq_empty_of_isEmpty I], ?_⟩
-    by_cases hx : (x.1 : ℝ) < 1
+    by_cases hx : (x.val : ℝ) < 1
     · exact ⟨unitIntervalChart _, by simpa [unitIntervalChart_source] using hx,
         fun y hy ↦ ⟨mem_boundary_iff_unitIntervalChart _ hy, Subsingleton.elim _ _⟩⟩
     -- Near `1`, the chart at `0` composed with the reflection `t ↦ 1 - t`.
     refine ⟨unitInterval.symmHomeomorph.toOpenPartialHomeomorph.trans (unitIntervalChart _), ?_,
       fun y hy ↦ ⟨?_, Subsingleton.elim _ _⟩⟩
-    · have hx1 : (x.1 : unitInterval) = 1 := Subtype.ext (le_antisymm x.1.2.2 (not_lt.1 hx))
+    · have hx1 : (x.val : unitInterval) = 1 :=
+        Subtype.ext (le_antisymm x.val.property.2 (not_lt.1 hx))
       simp [unitInterval.symmHomeomorph_apply, hx1]
     · simp only [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
         univ_inter, mem_preimage, Homeomorph.toOpenPartialHomeomorph_apply] at hy

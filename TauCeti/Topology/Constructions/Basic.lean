@@ -102,7 +102,7 @@ theorem Topology.IsQuotientMap.isOpen_image_of_saturated {X Y : Type*} [Topologi
   have hopen : IsOpen (rangeFactorization f '' W) := hf.isOpen_preimage.1 (by rwa [hpre])
   have himage : f '' W = Subtype.val '' (rangeFactorization f '' W) := by
     simp only [image_image, rangeFactorization_coe]
-  exact himage ▸ hrange.isOpenMap_subtype_val _ hopen
+  exact himage ▸ hrange.isOpenMap_subtypeVal _ hopen
 
 section Pullback
 
