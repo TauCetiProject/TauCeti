@@ -474,7 +474,8 @@ theorem Base.mem_support_pi (b : ∀ c, (P c).Base) (s : Σ c, ι c) :
 theorem Base.cartanMatrixIn_pi_same (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
     [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) (c : κ)
     (i j : (b c).support) :
-    (Base.pi b).cartanMatrixIn S ⟨⟨c, i.1⟩, by simp [i.2]⟩ ⟨⟨c, j.1⟩, by simp [j.2]⟩ =
+    (Base.pi b).cartanMatrixIn S ⟨⟨c, i.val⟩, by simp [i.property]⟩
+        ⟨⟨c, j.val⟩, by simp [j.property]⟩ =
       (b c).cartanMatrixIn S i j := by
   simp [Base.cartanMatrixIn_def]
 
@@ -482,7 +483,8 @@ theorem Base.cartanMatrixIn_pi_same (S : Type*) [CommRing S] [Algebra S R] [Fait
 theorem Base.cartanMatrixIn_pi_ne (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
     [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) {c d : κ} (hcd : c ≠ d)
     (i : (b c).support) (j : (b d).support) :
-    (Base.pi b).cartanMatrixIn S ⟨⟨c, i.1⟩, by simp [i.2]⟩ ⟨⟨d, j.1⟩, by simp [j.2]⟩ = 0 := by
+    (Base.pi b).cartanMatrixIn S ⟨⟨c, i.val⟩, by simp [i.property]⟩
+        ⟨⟨d, j.val⟩, by simp [j.property]⟩ = 0 := by
   simp [Base.cartanMatrixIn_def, pi_pairingIn_ne P S hcd]
 
 /-- The height of a root in a finite direct sum is its height in its own summand. -/
@@ -745,7 +747,7 @@ private theorem piAut_mem_weylGroup (w : ∀ c, (P c).weylGroup) :
         simp [ha]
       · simp [hc]
     rw [hsplit, map_mul]
-    exact (pi P).weylGroup.mul_mem (piAut_mulSingle_mem_weylGroup P a (w a).2) ih
+    exact (pi P).weylGroup.mul_mem (piAut_mulSingle_mem_weylGroup P a (w a).property) ih
 
 /-- The homomorphism `(∀ c, (P c).weylGroup) →* (pi P).weylGroup` induced by `piAut`. -/
 private noncomputable def piWeylGroupHom : (∀ c, (P c).weylGroup) →* (pi P).weylGroup where

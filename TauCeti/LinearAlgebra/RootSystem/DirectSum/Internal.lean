@@ -542,7 +542,7 @@ theorem Base.cartanMatrixIn_internalDirectSum_same (S : Type*) [CommRing S] [Alg
     [FaithfulSMul S R] [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) (c : κ)
     (i j : (b c).support) :
     (Base.internalDirectSum hEi hEt b).cartanMatrixIn S
-        ⟨⟨c, i.1⟩, by simp [i.2]⟩ ⟨⟨c, j.1⟩, by simp [j.2]⟩ =
+        ⟨⟨c, i.val⟩, by simp [i.property]⟩ ⟨⟨c, j.val⟩, by simp [j.property]⟩ =
       (b c).cartanMatrixIn S i j := by
   simp [Base.cartanMatrixIn_def]
 
@@ -551,7 +551,7 @@ theorem Base.cartanMatrixIn_internalDirectSum_ne (S : Type*) [CommRing S] [Algeb
     [FaithfulSMul S R] [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) {c d : κ} (hcd : c ≠ d)
     (i : (b c).support) (j : (b d).support) :
     (Base.internalDirectSum hEi hEt b).cartanMatrixIn S
-        ⟨⟨c, i.1⟩, by simp [i.2]⟩ ⟨⟨d, j.1⟩, by simp [j.2]⟩ = 0 := by
+        ⟨⟨c, i.val⟩, by simp [i.property]⟩ ⟨⟨d, j.val⟩, by simp [j.property]⟩ = 0 := by
   simp [Base.cartanMatrixIn_def, internalDirectSum_pairingIn_ne hEi hEt P S hcd]
 
 /-- The height of a root in a finite internal direct sum is its height in its own summand. -/

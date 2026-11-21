@@ -104,9 +104,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_linearHomotopy_le (hω : ω.
     (hB : IntegrableOn B (Icc 0 1))
     (hHB : ∀ z ∈ Icc a b ×ˢ Icc 0 1, H₀ z.2 (u z) - H₁ z.2 (u z) ≤ B z.2) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (linearHomotopy β H₀ H₁) u z ≤
-      cylinderAction ω.1 (fun t ↦ linearHomotopy β H₀ H₁ (a, t))
+      cylinderAction ω.val (fun t ↦ linearHomotopy β H₀ H₁ (a, t))
           (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
-        cylinderAction ω.1 (fun t ↦ linearHomotopy β H₀ H₁ (b, t)) v +
+        cylinderAction ω.val (fun t ↦ linearHomotopy β H₀ H₁ (b, t)) v +
         (β b - β a) * ∫ t in Icc 0 1, B t := by
   rw [hω.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral
     (contMDiff_uncurry_linearHomotopy hβ hH₀ hH₁) hu hab hv hv₀]
@@ -131,8 +131,8 @@ theorem IsNondegenerate.cylinderAction_le_cylinderAction_add_of_linearHomotopy
         ω.hamiltonianVectorField (linearHomotopy β H₀ H₁ z) (u z)) = 0)
     {B : ℝ → ℝ} (hB : IntegrableOn B (Icc 0 1))
     (hHB : ∀ z ∈ Icc a b ×ˢ Icc 0 1, H₀ z.2 (u z) - H₁ z.2 (u z) ≤ B z.2) :
-    cylinderAction ω.1 (fun t ↦ linearHomotopy β H₀ H₁ (b, t)) v ≤
-      cylinderAction ω.1 (fun t ↦ linearHomotopy β H₀ H₁ (a, t))
+    cylinderAction ω.val (fun t ↦ linearHomotopy β H₀ H₁ (b, t)) v ≤
+      cylinderAction ω.val (fun t ↦ linearHomotopy β H₀ H₁ (a, t))
           (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
         (β b - β a) * ∫ t in Icc 0 1, B t := by
   have h := hω.integral_floerEnergyDensity_linearHomotopy_le hH₀ hH₁ hβ hβm hu hab hv hv₀ hB hHB
@@ -155,8 +155,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_continuationHomotopy_le
     (hh : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, H₀ t x - H₁ t x ≤ h t) (hhi : IntegrableOn h (Icc 0 1)) :
     ∫ z in Icc a b ×ˢ Icc 0 1,
         ω.floerEnergyDensity (fun _ _ ↦ 0) (continuationHomotopy H₀ H₁) u z ≤
-      cylinderAction ω.1 H₀ (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
-        cylinderAction ω.1 H₁ v + ∫ t in Icc 0 1, h t := by
+      cylinderAction ω.val H₀ (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
+        cylinderAction ω.val H₁ v + ∫ t in Icc 0 1, h t := by
   have hE := hω.integral_floerEnergyDensity_linearHomotopy_le hH₀ hH₁
     (smoothTransition.contDiff (n := 1)) smoothTransition.monotone hu
     (ha.trans (zero_le_one.trans hb)) hv hv₀ hhi fun z hz ↦ hh z.2 hz.2 (u z)
@@ -181,8 +181,8 @@ theorem IsNondegenerate.cylinderAction_le_cylinderAction_add_of_continuationHomo
         ω.hamiltonianVectorField (continuationHomotopy H₀ H₁ z) (u z)) = 0)
     {h : ℝ → ℝ} (hh : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, H₀ t x - H₁ t x ≤ h t)
     (hhi : IntegrableOn h (Icc 0 1)) :
-    cylinderAction ω.1 H₁ v ≤
-      cylinderAction ω.1 H₀ (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
+    cylinderAction ω.val H₁ v ≤
+      cylinderAction ω.val H₀ (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
         ∫ t in Icc 0 1, h t := by
   have hE := hω.integral_floerEnergyDensity_continuationHomotopy_le hH₀ hH₁ hu ha hb hv hv₀ hh hhi
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)

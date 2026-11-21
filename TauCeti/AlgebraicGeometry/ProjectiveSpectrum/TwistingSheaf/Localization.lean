@@ -186,42 +186,45 @@ include hf in
 maps of localizations, form a local fraction of degree `n` on `U` when `t` is one on `V`. -/
 private theorem isLocallyFraction_localizationsInv (hM : ∀ m ∈ M, m ∈ 𝒜 0) {n : ℤ}
     {U : Opens (ProjectiveSpectrum.top 𝒜)} {V : Opens (ProjectiveSpectrum.top ℬ)}
-    (hU : ∀ x : U, Disjoint (M : Set A) x.1.asHomogeneousIdeal.toIdeal)
-    (hUV : ∀ x : U, x.1.extendOfIsLocalization hloc (hU x) ∈ V)
-    {t : ∀ y : V, Localizations ℬ y.1} (ht : (isLocallyFraction ℬ n).pred t) :
+    (hU : ∀ x : U, Disjoint (M : Set A) x.val.asHomogeneousIdeal.toIdeal)
+    (hUV : ∀ x : U, x.val.extendOfIsLocalization hloc (hU x) ∈ V)
+    {t : ∀ y : V, Localizations ℬ y.val} (ht : (isLocallyFraction ℬ n).pred t) :
     (isLocallyFraction 𝒜 n).pred fun x : U ↦
-      localizationsInv hloc hf x.1 (hU x) (t ⟨_, hUV x⟩) := by
+      localizationsInv hloc hf x.val (hU x) (t ⟨_, hUV x⟩) := by
   intro x
   -- near the point over `x`, `t` is a fraction `r / s` on `V'`, and `V'` contains a basic open
   -- `D(b)` around that point, where `b f(m₀) = f(e)`
   obtain ⟨V', hV', iV', i, j, h, r, s, hs, w⟩ := ht ⟨_, hUV x⟩
   obtain ⟨_, ⟨b, rfl⟩, hb, hbV'⟩ :=
-    (ProjectiveSpectrum.isTopologicalBasis_basic_opens ℬ).exists_subset_of_mem_open hV' V'.2
+    (ProjectiveSpectrum.isTopologicalBasis_basic_opens ℬ).exists_subset_of_mem_open hV' V'.is_open'
   let := f.toRingHom.toAlgebra
   have := hloc
   -- the algebra map of `f.toRingHom.toAlgebra` is `f`
   have hu (m : M) : IsUnit (f m) := IsLocalization.map_units B m
   obtain ⟨⟨e, m₀⟩, he : b * f m₀ = f e⟩ := IsLocalization.surj M b
   -- `r` and `s` are images of homogeneous elements of `A` of the same degrees, up to units
-  obtain ⟨a, ha, m₁, h₁⟩ := f.exists_mem_mul_eq_of_isLocalization hloc hM r.2
-  obtain ⟨c, hc, m₂, h₂⟩ := f.exists_mem_mul_eq_of_isLocalization hloc hM s.2
+  obtain ⟨a, ha, m₁, h₁⟩ := f.exists_mem_mul_eq_of_isLocalization hloc hM r.property
+  obtain ⟨c, hc, m₂, h₂⟩ := f.exists_mem_mul_eq_of_isLocalization hloc hM s.property
   -- the point over `z` lies in `D(b)` exactly when `z` lies in `D(e)`
-  have hV' (z : U) (hz : e ∉ z.1.asHomogeneousIdeal.toIdeal) :
-      z.1.extendOfIsLocalization hloc (hU z) ∈ V' :=
+  have hV' (z : U) (hz : e ∉ z.val.asHomogeneousIdeal.toIdeal) :
+      z.val.extendOfIsLocalization hloc (hU z) ∈ V' :=
     hbV' fun hbz ↦ hz <| (ProjectiveSpectrum.map_mem_extendOfIsLocalization_iff hloc _ _ e).mp <|
       he ▸ Ideal.mul_mem_right _ _ (HomogeneousIdeal.mem_iff.mpr hbz)
-  refine ⟨U ⊓ ProjectiveSpectrum.basicOpen 𝒜 e, ⟨x.2, fun hex ↦ hb ?_⟩, homOfLE inf_le_left, i, j,
-    h, ⟨a * m₂, by simpa using SetLike.mul_mem_graded ha (hM _ m₂.2)⟩,
-    ⟨c * m₁, by simpa using SetLike.mul_mem_graded hc (hM _ m₁.2)⟩, fun z hcz ↦ ?_, fun z ↦ ?_⟩
+  refine ⟨U ⊓ ProjectiveSpectrum.basicOpen 𝒜 e, ⟨x.property, fun hex ↦ hb ?_⟩, homOfLE inf_le_left,
+      i, j,
+    h, ⟨a * m₂, by simpa using SetLike.mul_mem_graded ha (hM _ m₂.property)⟩,
+    ⟨c * m₁, by simpa using SetLike.mul_mem_graded hc (hM _ m₁.property)⟩, fun z hcz ↦ ?_,
+        fun z ↦ ?_⟩
   · rw [← HomogeneousIdeal.mem_iff, ← Ideal.mul_unit_mem_iff_mem _ (hu m₀), he]
     exact (ProjectiveSpectrum.map_mem_extendOfIsLocalization_iff hloc _ (hU x) e).mpr hex
   · -- the denominator `c m₁` lies outside `z`, as `s` lies outside the point over `z`
-    refine hs ⟨_, hV' ⟨z.1, z.2.1⟩ z.2.2⟩ ?_
+    refine hs ⟨_, hV' ⟨z.val, z.property.1⟩ z.property.2⟩ ?_
     rw [← Ideal.mul_unit_mem_iff_mem _ (hu m₂), h₂, ← Ideal.mul_unit_mem_iff_mem _ (hu m₁),
       ← map_mul]
     exact (ProjectiveSpectrum.map_mem_extendOfIsLocalization_iff hloc _ (hU _) _).mpr hcz
-  · exact (congrArg (localizationsInv hloc hf z.1 (hU ⟨z.1, z.2.1⟩))
-      (w ⟨_, hV' ⟨z.1, z.2.1⟩ z.2.2⟩)).trans (localizationsInv_mk hloc hf _ _ _ h₁ h₂ _)
+  · exact (congrArg (localizationsInv hloc hf z.val (hU ⟨z.val, z.property.1⟩))
+      (w ⟨_, hV' ⟨z.val, z.property.1⟩ z.property.2⟩)).trans (localizationsInv_mk hloc hf _ _ _ h₁
+          h₂ _)
 
 end ProjectiveSpectrum.TwistingSheaf
 
@@ -246,40 +249,42 @@ as the localization of `A` at a submonoid `M` of degree-zero elements, then over
 `Γ(U, 𝒪_{Proj 𝒜}(n)) → Γ((Proj.map f hf)⁻¹ U, 𝒪_{Proj ℬ}(n))` is bijective. -/
 theorem bijective_comap (hloc : letI := f.toRingHom.toAlgebra; IsLocalization M B)
     (hM : ∀ m ∈ M, m ∈ 𝒜 0) {U : (Proj 𝒜).Opens}
-    (hU : ∀ x : U, Disjoint (M : Set A) x.1.asHomogeneousIdeal.toIdeal) :
+    (hU : ∀ x : U, Disjoint (M : Set A) x.val.asHomogeneousIdeal.toIdeal) :
     Function.Bijective (comap f hf (n := n) (U := U) (V := map f hf ⁻¹ᵁ U) Set.Subset.rfl) := by
   -- the point over `x` lies in the preimage of `U`, as its image under `Proj.map f hf` is `x`
-  have hy (x : U) : ProjectiveSpectrum.extendOfIsLocalization hloc x.1 (hU x) ∈ map f hf ⁻¹ᵁ U :=
+  have hy (x : U) : ProjectiveSpectrum.extendOfIsLocalization hloc x.val (hU x) ∈ map f hf ⁻¹ᵁ U :=
     Set.mem_of_eq_of_mem (s := (U : Set (Proj 𝒜)))
-      (ProjectiveSpectrum.comap_extendOfIsLocalization hloc hf x.1 (hU x)) x.2
+      (ProjectiveSpectrum.comap_extendOfIsLocalization hloc hf x.val (hU x)) x.property
   refine ⟨(injective_iff_map_eq_zero _).mpr fun s hs ↦ ext fun (x : U) ↦ ?_, fun t ↦ ?_⟩
   · -- the pullback of `s` vanishes at the point over `x`, and the map of localizations there is
     -- injective
-    have h0 : localizationsMap f hf _ (s.1 ⟨_, hy x⟩) = 0 :=
+    have h0 : localizationsMap f hf _ (s.val ⟨_, hy x⟩) = 0 :=
       (comap_apply f hf _ s ⟨_, hy x⟩).symm.trans
-      ((congrArg (fun t : Γ(twistingSheaf ℬ n, map f hf ⁻¹ᵁ U) ↦ t.1 ⟨_, hy x⟩) hs).trans
+      ((congrArg (fun t : Γ(twistingSheaf ℬ n, map f hf ⁻¹ᵁ U) ↦ t.val ⟨_, hy x⟩) hs).trans
         (zero_apply _))
     replace h0 := (localizationsMap_bijective hloc hf _).1 (h0.trans (map_zero _).symm)
     have e : (⟨_, hy x⟩ : U) = x :=
-      Subtype.ext (ProjectiveSpectrum.comap_extendOfIsLocalization hloc hf x.1 _)
-    exact ((congrArg (fun z : U ↦ s.1 z = 0) e).mp h0).trans (zero_apply x).symm
+      Subtype.ext (ProjectiveSpectrum.comap_extendOfIsLocalization hloc hf x.val _)
+    exact ((congrArg (fun z : U ↦ s.val z = 0) e).mp h0).trans (zero_apply x).symm
   -- the value at `x` is the value of `t` at the point over `x`, carried back to `A_x`
-  refine ⟨⟨fun x ↦ localizationsInv hloc hf x.1 (hU x) (t.1 ⟨_, hy x⟩),
-    isLocallyFraction_localizationsInv hloc hf hM hU hy t.2⟩, ext fun (y : map f hf ⁻¹ᵁ U) ↦ ?_⟩
+  refine ⟨⟨fun x ↦ localizationsInv hloc hf x.val (hU x) (t.val ⟨_, hy x⟩),
+    isLocallyFraction_localizationsInv hloc hf hM hU hy t.property⟩, ext fun
+        (y : map f hf ⁻¹ᵁ U) ↦ ?_⟩
   -- at `y`, the composite `B_{y'} → A_{f⁻¹ y} → B_y` through the point `y'` over `f⁻¹ y = y` is
   -- the identity
   have key (y' y₀ : ProjectiveSpectrum ℬ) (hy' : y' ∈ map f hf ⁻¹ᵁ U)
       (hy₀ : y₀ ∈ map f hf ⁻¹ᵁ U) (g : Localizations ℬ y' →+* Localizations ℬ y₀)
       (hg : ∀ b, g (algebraMap B _ b) = algebraMap B _ b) (hyy : y' = y₀) :
-      g (t.1 ⟨y', hy'⟩) = t.1 ⟨y₀, hy₀⟩ := by
+      g (t.val ⟨y', hy'⟩) = t.val ⟨y₀, hy₀⟩ := by
     subst hyy
     rw [IsLocalization.ringHom_ext y'.asHomogeneousIdeal.toIdeal.primeCompl
       (j := g) (k := RingHom.id _) (RingHom.ext hg)]
     rfl
-  exact (comap_apply f hf _ _ y).trans (key _ y.1 _ y.2 ((localizationsMap f hf y.1).comp
-    (localizationsInv hloc hf _ (ProjectiveSpectrum.disjoint_comap_of_isLocalization hloc hf y.1)))
-    (localizationsMap_localizationsInv_algebraMap hloc hf y.1)
-    (ProjectiveSpectrum.extendOfIsLocalization_comap hloc hf y.1))
+  exact (comap_apply f hf _ _ y).trans (key _ y.val _ y.property ((localizationsMap f hf y.val).comp
+    (localizationsInv hloc hf _ (ProjectiveSpectrum.disjoint_comap_of_isLocalization hloc hf
+        y.val)))
+    (localizationsMap_localizationsInv_algebraMap hloc hf y.val)
+    (ProjectiveSpectrum.extendOfIsLocalization_comap hloc hf y.val))
 
 /-- **The twisting sheaves are compatible with localization away from a degree-zero element.** If
 `f` exhibits `B` as the localization of `A` away from `g ∈ A₀`, then over every open `U ⊆ D(g)` of
@@ -291,7 +296,7 @@ theorem bijective_comap_of_isLocalizationAway {g : A} (hg : g ∈ 𝒜 0)
     Function.Bijective (comap f hf (n := n) (U := U) (V := map f hf ⁻¹ᵁ U) Set.Subset.rfl) :=
   bijective_comap f hf hloc (by rintro _ ⟨k, rfl⟩; simpa using SetLike.pow_mem_graded k hg)
     fun x ↦ (Ideal.disjoint_powers_iff_notMem g
-      (x.1 : ProjectiveSpectrum 𝒜).isPrime.isRadical).mpr (hU x.2)
+      (x.val : ProjectiveSpectrum 𝒜).isPrime.isRadical).mpr (hU x.property)
 
 end AlgebraicGeometry.Proj.twistingSheaf
 

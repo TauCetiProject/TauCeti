@@ -186,14 +186,14 @@ private def algebraBimoduleMul :
         induction x using DirectSum.Decomposition.inductionOn Γ with
         | zero => simp
         | @homogeneous p x =>
-            rw [DGBimoduleCat.tensorObj_differential_tmul x.2, map_add, map_zsmul_unit,
+            rw [DGBimoduleCat.tensorObj_differential_tmul x.property, map_add, map_zsmul_unit,
               mulLinearMap_tmul, mulLinearMap_tmul, mulLinearMap_tmul]
             apply (E).injective
             simp only [RestrictScalars.linearEquiv_apply,
               IsDGRightModule.val_restrictScalarsDifferential,
               RestrictScalars.linearEquiv_symm_apply, RestrictScalars.val_add, Units.smul_def,
               RestrictScalars.val_zsmul]
-            have hx := (IsDGRightModule.mem_restrictScalarsGrading_iff f).1 x.2
+            have hx := (IsDGRightModule.mem_restrictScalarsGrading_iff f).1 x.property
             rw [RestrictScalars.linearEquiv_apply] at hx
             exact hB.leibniz hx y.val
         | add x x' hx hx' => simp only [add_tmul, map_add, hx, hx']

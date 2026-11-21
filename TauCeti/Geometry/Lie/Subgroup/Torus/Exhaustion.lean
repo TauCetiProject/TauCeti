@@ -72,7 +72,7 @@ theorem exists_isMaximalTorus_mem (g : G) :
     exact Set.mem_range.mpr (hexp k)
   obtain ⟨a, ha⟩ := Set.mem_iUnion.mp hk
   -- Its image in the original group is a torus containing the original element.
-  have hmap := (hT.map_conj a).isTorus.map K.subtype continuous_subtype_val
+  have hmap := (hT.map_conj a).isTorus.map K.subtype continuous_subtypeVal
   obtain ⟨S, hS, hle⟩ := hmap.exists_isMaximalTorus_le I
   exact ⟨S, hS, hle ⟨k, ha, rfl⟩⟩
 
