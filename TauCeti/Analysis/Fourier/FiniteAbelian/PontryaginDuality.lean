@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
-public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 
 /-!
 # The standard pairing on `ℤ/n` and the shifts of a primitive character
