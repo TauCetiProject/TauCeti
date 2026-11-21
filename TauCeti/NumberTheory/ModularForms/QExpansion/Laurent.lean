@@ -633,16 +633,16 @@ theorem mem_meromorphicAtCuspSubring {h : ℝ} {f : ℍ → ℂ} :
 /-- The period-`h` Laurent `q`-expansion bundled as a ring homomorphism on
 `meromorphicAtCuspSubring h`. -/
 def laurentQExpansionRingHom (h : ℝ) : meromorphicAtCuspSubring h →+* LaurentSeries ℂ where
-  toFun f := laurentQExpansion h f.1
+  toFun f := laurentQExpansion h f.val
   map_one' := laurentQExpansion_one h
-  map_mul' f g := laurentQExpansion_mul f.2 g.2
+  map_mul' f g := laurentQExpansion_mul f.property g.property
   map_zero' := laurentQExpansion_zero h
-  map_add' f g := laurentQExpansion_add f.2 g.2
+  map_add' f g := laurentQExpansion_add f.property g.property
 
 /-- Evaluation of `laurentQExpansionRingHom h` on an element of `meromorphicAtCuspSubring h`. -/
 @[simp]
 theorem laurentQExpansionRingHom_apply (h : ℝ) (f : meromorphicAtCuspSubring h) :
-    laurentQExpansionRingHom h f = laurentQExpansion h f.1 := (rfl)
+    laurentQExpansionRingHom h f = laurentQExpansion h f.val := (rfl)
 
 end TauCeti.UpperHalfPlane
 

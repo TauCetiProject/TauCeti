@@ -220,20 +220,20 @@ private theorem siegelFunction_zmod_pow_twelve_mul_eq {N : ℕ} [NeZero N] (v : 
       (TauCeti.Periodic.qParam_nat_mul_pow (h := 1) hN.ne' (τ : ℂ)).symm
   have hw : cexp (2 * π * I * ((((v 0).val : ℝ) / N : ℝ) * (τ : ℂ) +
       (((v 1).val : ℝ) / N : ℝ))) = ω * 𝕢 N τ ^ (v 0).val := by
-    simp only [ω, Function.Periodic.qParam, ← Complex.exp_nat_mul, ← Complex.exp_add]
+    simp only [ω, Function.Periodic.qParam, ← Complex.exp_natCast_mul, ← Complex.exp_add]
     congr 1; push_cast; field_simp; ring
   have hB : cexp (π * I * bernoulliFun 2 (((v 0).val : ℝ) / N) * (τ : ℂ)) ^ (12 * N) =
       𝕢 N τ ^ siegelCuspOrder N v := by
-    rw [Function.Periodic.qParam, ← Complex.exp_nat_mul, ← Complex.exp_int_mul, bernoulliFun_two,
-      siegelCuspOrder]; congr 1; push_cast; field_simp; ring
+    rw [Function.Periodic.qParam, ← Complex.exp_natCast_mul, ← Complex.exp_intCast_mul,
+      bernoulliFun_two, siegelCuspOrder]; congr 1; push_cast; field_simp; ring
   have hph : cexp (π * I * ((((v 1).val : ℝ) / N : ℝ) : ℂ) *
       ((((v 0).val : ℝ) / N : ℝ) - 1)) ^ (12 * N) = ω ^ (6 * (v 0).val) := by
     have hexp : ((12 * N : ℕ) : ℂ) * (π * I * ((((v 1).val : ℝ) / N : ℝ) : ℂ) *
         ((((v 0).val : ℝ) / N : ℝ) - 1)) =
         ((6 * (v 0).val * (v 1).val : ℕ) : ℂ) * (2 * π * I / N) +
           (-(6 * ((v 1).val : ℤ)) : ℤ) * (2 * π * I) := by push_cast; field_simp; ring
-    rw [← Complex.exp_nat_mul, hexp, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I,
-      mul_one, Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul, hexp, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I,
+      mul_one, Complex.exp_natCast_mul]
     simp only [ω, ← pow_mul, mul_comm (6 * (v 0).val) (v 1).val, mul_assoc]
   rw [siegelFunction_eq_mul_tprod_mul_tprod _ τ.im_pos, Complex.exp_neg, hq1, hw,
     tprod_one_sub_pow_succ_mul_eq_qPochhammerFun,
@@ -573,12 +573,13 @@ theorem natCast_twelve_mul_mul_meromorphicOrderAt_cuspFunction_prod_siegelFuncti
         (meromorphicAt_cuspFunction_siegelFunction_div_pow_twelve_mul N (a i) γ) (m i)⟩
   have hcoe : ((∏ i ∈ s', g i : meromorphicAtCuspSubring N) : ℍ → ℂ) = ∏ i ∈ s', (g i : ℍ → ℂ) :=
     map_prod (meromorphicAtCuspSubring N).subtype g s'
-  rw [← hcoe, ← orderTop_laurentQExpansion (mem_meromorphicAtCuspSubring.mp (∏ i ∈ s', g i).2),
+  rw [← hcoe,
+    ← orderTop_laurentQExpansion (mem_meromorphicAtCuspSubring.mp (∏ i ∈ s', g i).property),
     ← laurentQExpansionRingHom_apply, map_prod, HahnSeries.orderTop_prod, WithTop.coe_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   have hi' := Finset.mem_filter.mp hi
   rw [laurentQExpansionRingHom_apply,
-    orderTop_laurentQExpansion (mem_meromorphicAtCuspSubring.mp (g i).2)]
+    orderTop_laurentQExpansion (mem_meromorphicAtCuspSubring.mp (g i).property)]
   dsimp only [g]
   rw [Pi.pow_def, meromorphicOrderAt_congr (cuspFunction_map_eventuallyEq (· ^ m i) _),
     fun_meromorphicOrderAt_zpow

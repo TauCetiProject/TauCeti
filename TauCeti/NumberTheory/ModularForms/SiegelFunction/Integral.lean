@@ -154,14 +154,15 @@ private theorem prod_leadingCoeff_ne_zero_first {N : ℕ} [NeZero N] :
 
 private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] :
     AnalyticAt ℂ (cuspFunction N
-      (∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, siegelPowerMem N v).1) 0 ∧
+      (∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, siegelPowerMem N v).val) 0 ∧
       (laurentQExpansion N
-        (∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, siegelPowerMem N v).1).coeff 0 =
+        (∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0, siegelPowerMem N v).val).coeff 0 =
         (N : ℂ) ^ (12 * N) := by
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
   set FM : meromorphicAtCuspSubring N := ∏ v ∈ S, siegelPowerMem N v
-  have hFM_mer : MeromorphicAt (cuspFunction N FM.1) 0 := mem_meromorphicAtCuspSubring.mp FM.2
-  have hL : laurentQExpansion N FM.1 =
+  have hFM_mer : MeromorphicAt (cuspFunction N FM.val) 0 :=
+    mem_meromorphicAtCuspSubring.mp FM.property
+  have hL : laurentQExpansion N FM.val =
       ∏ v ∈ S, laurentQExpansionRingHom N (siegelPowerMem N v) := by
     rw [← laurentQExpansionRingHom_apply]
     exact map_prod (laurentQExpansionRingHom N) (siegelPowerMem N) S
@@ -174,8 +175,8 @@ private theorem analyticAt_and_coeff_zero_prod_siegelPower {N : ℕ} [NeZero N] 
       ZMod.natCast_zmod_val, Int.cast_natCast] at hm
     rw [laurentQExpansionRingHom_apply]
     exact (orderTop_laurentQExpansion
-      (mem_meromorphicAtCuspSubring.mp (siegelPowerMem N v).2)).trans hm
-  have hord : meromorphicOrderAt (cuspFunction N FM.1) 0 = 0 := by
+      (mem_meromorphicAtCuspSubring.mp (siegelPowerMem N v).property)).trans hm
+  have hord : meromorphicOrderAt (cuspFunction N FM.val) 0 = 0 := by
     rw [← orderTop_laurentQExpansion hFM_mer, hL, HahnSeries.orderTop_prod,
       Finset.sum_congr rfl hfactor_ord, ← WithTop.coe_sum, sum_siegelCuspOrder_erase_zero N,
       WithTop.coe_zero]
@@ -205,12 +206,13 @@ theorem prod_siegelFunction_div_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : ℍ
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
   set FM : meromorphicAtCuspSubring N := ∏ v ∈ S, siegelPowerMem N v
   have hFM_val (z : ℍ) :
-      FM.1 z = ∏ v ∈ S, siegelFunction (fun i ↦ ((v i).val : ℝ) / N) z ^ (12 * N) := by simp [FM]
-  have hFM_mdiff : MDiff FM.1 := by
-    have hfun : FM.1 = ∏ v ∈ S, fun z : ℍ ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) z ^
+      FM.val z = ∏ v ∈ S, siegelFunction (fun i ↦ ((v i).val : ℝ) / N) z ^ (12 * N) := by
+    simp [FM]
+  have hFM_mdiff : MDiff FM.val := by
+    have hfun : FM.val = ∏ v ∈ S, fun z : ℍ ↦ siegelFunction (fun i ↦ ((v i).val : ℝ) / N) z ^
         (12 * N) := funext fun z ↦ by simpa [Finset.prod_apply] using hFM_val z
     rw [hfun]; exact MDifferentiable.prod fun v _ ↦ (mdifferentiable_siegelFunction _).pow (12 * N)
-  have hinv (γ : SL(2, ℤ)) (z : ℍ) : FM.1 (γ • z) = FM.1 z := by
+  have hinv (γ : SL(2, ℤ)) (z : ℍ) : FM.val (γ • z) = FM.val z := by
     rw [hFM_val, hFM_val]
     set e := (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv
     have h0 : e 0 = 0 := Matrix.SpecialLinearGroup.vecMulEquiv_zero _
@@ -218,11 +220,11 @@ theorem prod_siegelFunction_div_pow_twelve_mul_eq (N : ℕ) [NeZero N] (τ : ℍ
       (fun v ↦ by simpa [S, h0] using (e.injective.ne_iff (x := v) (y := 0)).symm)
       fun v _ ↦ siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6) v γ z
   obtain ⟨han, hlead⟩ := analyticAt_and_coeff_zero_prod_siegelPower (N := N)
-  have hper1 : Function.Periodic (FM.1 ∘ ofComplex) 1 :=
+  have hper1 : Function.Periodic (FM.val ∘ ofComplex) 1 :=
     UpperHalfPlane.periodic_comp_ofComplex fun z ↦ by rw [← modular_T_smul]; exact hinv _ z
-  have hperN : Function.Periodic (FM.1 ∘ ofComplex) N := by simpa using hper1.nat_mul N
+  have hperN : Function.Periodic (FM.val ∘ ofComplex) N := by simpa using hper1.nat_mul N
   have hNpos : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
-  have htend : Tendsto FM.1 atImInfty (𝓝 ((N : ℂ) ^ (12 * N))) := by
+  have htend : Tendsto FM.val atImInfty (𝓝 ((N : ℂ) ^ (12 * N))) := by
     rw [← hlead, laurentQExpansion_coeff_zero_of_analyticAt han,
       _root_.UpperHalfPlane.cuspFunction_apply_zero hNpos han hperN]
     exact tendsto_valueAtInfty hNpos hperN han
@@ -247,7 +249,7 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
     (laurentQExpansion N
       (((∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
         (Polynomial.X - Polynomial.C (siegelPowerMem N v))) :
-          (meromorphicAtCuspSubring N)[X]).coeff k).1).coeff m ∈
+          (meromorphicAtCuspSubring N)[X]).coeff k).val).coeff m ∈
       (Int.castRingHom ℂ).range := by
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
   set Ω : (HahnSeries ℤ ℤ[X])[X] :=
@@ -268,7 +270,7 @@ private theorem laurentQExpansion_siegelPolyCoeff_mem_range_intCast {N : ℕ} [N
       fun v ↦ by ext i; fin_cases i <;> rfl] using hmap 1
   have heq : (laurentQExpansion N
       (((∏ v ∈ S, (Polynomial.X - Polynomial.C (siegelPowerMem N v))) :
-        (meromorphicAtCuspSubring N)[X]).coeff k).1).coeff m =
+        (meromorphicAtCuspSubring N)[X]).coeff k).val).coeff m =
       Polynomial.aeval ζ ((Ω.coeff k).coeff m) := by
     rw [← laurentQExpansionRingHom_apply, ← Polynomial.coeff_map, ← hmap1,
       Polynomial.coeff_map, HahnSeries.coeff_mapRingHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
@@ -292,7 +294,7 @@ private theorem exists_aeval_j_siegelPolyCoeff {N : ℕ} [NeZero N] (k : ℕ) :
     ∃ P : ℤ[X], ∀ τ : ℍ, Polynomial.aeval (j τ) P =
       (((∏ v ∈ (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0,
         (Polynomial.X - Polynomial.C (siegelPowerMem N v))) :
-          (meromorphicAtCuspSubring N)[X]).coeff k).1 τ := by
+          (meromorphicAtCuspSubring N)[X]).coeff k).val τ := by
   set S := (Finset.univ : Finset (Fin 2 → ZMod N)).erase 0
   set Ψ : (meromorphicAtCuspSubring N)[X] :=
     ∏ v ∈ S, (Polynomial.X - Polynomial.C (siegelPowerMem N v))
@@ -301,13 +303,13 @@ private theorem exists_aeval_j_siegelPolyCoeff {N : ℕ} [NeZero N] (k : ℕ) :
         ∏ v ∈ S, (Polynomial.X - Polynomial.C
           (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N))) := by
     simp [Ψ, Polynomial.map_prod]
-  have hΨ_mdiff : MDiff (Ψ.coeff k).1 := by
-    rw [show (Ψ.coeff k).1 = fun τ : ℍ ↦ (∏ v ∈ S, (Polynomial.X - Polynomial.C
+  have hΨ_mdiff : MDiff (Ψ.coeff k).val := by
+    rw [show (Ψ.coeff k).val = fun τ : ℍ ↦ (∏ v ∈ S, (Polynomial.X - Polynomial.C
         (siegelFunction (fun i ↦ ((v i).val : ℝ) / N) τ ^ (12 * N)))).coeff k from funext fun τ ↦
       by simpa using congrArg (fun Q : ℂ[X] ↦ Q.coeff k) (hΨ_eval τ)]
     exact mdifferentiable_coeff_prod_X_sub_C S
       (fun v _ ↦ (mdifferentiable_siegelFunction _).pow (12 * N)) k
-  have hinv (γ : SL(2, ℤ)) (τ : ℍ) : (Ψ.coeff k).1 (γ • τ) = (Ψ.coeff k).1 τ := by
+  have hinv (γ : SL(2, ℤ)) (τ : ℍ) : (Ψ.coeff k).val (γ • τ) = (Ψ.coeff k).val τ := by
     have hpoly :
         Ψ.map ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) (γ • τ)).comp (meromorphicAtCuspSubring N).subtype) =
           Ψ.map ((Pi.evalRingHom (fun _ : ℍ ↦ ℂ) τ).comp (meromorphicAtCuspSubring N).subtype) := by
@@ -318,11 +320,11 @@ private theorem exists_aeval_j_siegelPolyCoeff {N : ℕ} [NeZero N] (k : ℕ) :
         (fun v ↦ by simpa [S, h0] using (e.injective.ne_iff (x := v) (y := 0)).symm)
         fun v _ ↦ by rw [siegelFunction_zmod_pow_twelve_mul_smul (dvd_mul_left N 6)]
     simpa using congrArg (fun Q : ℂ[X] ↦ Q.coeff k) hpoly
-  have hper : Function.Periodic ((Ψ.coeff k).1 ∘ ofComplex) 1 :=
+  have hper : Function.Periodic ((Ψ.coeff k).val ∘ ofComplex) 1 :=
     UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by rw [← modular_T_smul]; exact hinv _ τ
-  have hmer1 : MeromorphicAt (cuspFunction 1 (Ψ.coeff k).1) 0 :=
+  have hmer1 : MeromorphicAt (cuspFunction 1 (Ψ.coeff k).val) 0 :=
     meromorphicAt_cuspFunction_of_nat_mul one_pos hΨ_mdiff hper (d := N)
-      (by simpa only [mul_one] using mem_meromorphicAtCuspSubring.mp (Ψ.coeff k).2)
+      (by simpa only [mul_one] using mem_meromorphicAtCuspSubring.mp (Ψ.coeff k).property)
   refine exists_aeval_j_eq (R := ℤ) hΨ_mdiff hinv hmer1 fun n _ ↦ ?_
   rw [laurentQExpansion_coeff_eq_nat_mul hper hmer1 (d := N) n, mul_one, algebraMap_int_eq]
   exact laurentQExpansion_siegelPolyCoeff_mem_range_intCast k ((N : ℤ) * n)

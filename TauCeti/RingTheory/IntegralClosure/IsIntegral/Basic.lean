@@ -231,14 +231,14 @@ theorem isIntegral_map_of_isIntegral_adjoin_singleton {S R A B : Type*} [CommRin
     IsIntegral R (φ f) := by
   let _ : Algebra (Algebra.adjoin S ({g} : Set A)) B :=
     (φ.comp (algebraMap (Algebra.adjoin S ({g} : Set A)) A)).toAlgebra
-  have hmem (y : Algebra.adjoin S ({g} : Set A)) : IsIntegral R (φ y.1) :=
+  have hmem (y : Algebra.adjoin S ({g} : Set A)) : IsIntegral R (φ y.val) :=
     Algebra.adjoin_induction (p := fun a _ ↦ IsIntegral R (φ a))
       (fun _ hx ↦ by rwa [Set.mem_singleton_iff.mp hx])
       (fun s ↦ by
         rw [← RingHom.comp_apply, hφ, IsScalarTower.algebraMap_apply S R B]
         exact isIntegral_algebraMap)
       (fun _ _ _ _ ha hb ↦ by rw [map_add]; exact ha.add hb)
-      (fun _ _ _ _ ha hb ↦ by rw [map_mul]; exact ha.mul hb) y.2
+      (fun _ _ _ _ ha hb ↦ by rw [map_mul]; exact ha.mul hb) y.property
   obtain ⟨p, hp, hpf⟩ := hf
   exact isIntegral_trans_common (P := Algebra.adjoin S ({g} : Set A))
     (fun y ↦ by simpa [RingHom.algebraMap_toAlgebra] using hmem y)

@@ -338,7 +338,7 @@ theorem siegelFunction_intCast (s : Fin 2 → ℤ) (τ : ℂ) :
   · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt (neg_pos.mpr hs)
     rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
     have h1 : cexp (2 * π * I * τ) ^ (m + 1) * cexp (2 * π * I * ((s 0 : ℂ) * τ + s 1)) = 1 := by
-      rw [← Complex.exp_nat_mul, ← Complex.exp_add, show s 0 = -((m + 1 : ℕ) : ℤ) by omega,
+      rw [← Complex.exp_natCast_mul, ← Complex.exp_add, show s 0 = -((m + 1 : ℕ) : ℤ) by omega,
         ← Complex.exp_int_mul_two_pi_mul_I (s 1)]
       congr 1; push_cast; ring
     simp [h1]
@@ -346,7 +346,8 @@ theorem siegelFunction_intCast (s : Fin 2 → ℤ) (τ : ℂ) :
   · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hs
     rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
     have h1 : cexp (2 * π * I * τ) ^ (m + 1) * cexp (-(2 * π * I * ((s 0 : ℂ) * τ + s 1))) = 1 := by
-      rw [← Complex.exp_nat_mul, ← Complex.exp_add, hm, ← Complex.exp_int_mul_two_pi_mul_I (-s 1)]
+      rw [← Complex.exp_natCast_mul, ← Complex.exp_add, hm,
+        ← Complex.exp_int_mul_two_pi_mul_I (-s 1)]
       congr 1; push_cast; ring
     simp [h1]
 
