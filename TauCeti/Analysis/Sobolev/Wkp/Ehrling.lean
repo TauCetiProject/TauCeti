@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
-import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.Topology.Sets.Opens
 
 /-!
