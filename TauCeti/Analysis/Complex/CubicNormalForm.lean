@@ -25,8 +25,10 @@ import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 import TauCeti.Analysis.Analytic.Inverse
 import TauCeti.Analysis.Analytic.IteratedDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import TauCeti.Analysis.Calculus.JointImplicitFunction
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.HolomorphicFunctions.DiscAlgebra
 import TauCeti.Analysis.Complex.LocalNormalForm
@@ -44,8 +46,9 @@ integration variable `t ↦ w(α, t)` near `(α₀, t₀)` together with holomor
 
 This reduction is the geometric heart of uniform Airy asymptotic approximations for contour
 integrals with two coalescing saddle points: under `u = w(α, t)` with local inverse `t = T(α, u)`
-(see `TauCeti.exists_analyticAt_mul_deriv_eq` in `TauCeti.Analysis.Complex.ImplicitFunction`), an
-oscillatory integral `∫ exp(-z p(α, t)) q(α, t) dt` becomes
+(see `AnalyticAt.exists_analyticAt_mul_deriv_eq` in
+`TauCeti.Analysis.Calculus.JointImplicitFunction`), an oscillatory integral
+`∫ exp(-z p(α, t)) q(α, t) dt` becomes
 `exp(-z η(α)) ∫ exp(-z (u ^ 3 / 3 - ζ(α) u)) f(α, u) du` with holomorphic transformed amplitude
 `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)`, and the critical points `∂p/∂t = 0` near `(α₀, t₀)` map
 bijectively to the two square roots `w ^ 2 = ζ(α)`.
@@ -67,20 +70,17 @@ square-root rate `√(α - α₀)`.
   equivalence with the translated cubic normal form `u ^ 3 / 3 + a(α) u ^ 2 + b(α) u + c(α)`.
 * `TauCeti.CubicNormalForm.deriv_eq_sq_sub_mul_deriv`,
   `TauCeti.CubicNormalForm.deriv_eq_zero_iff_sq_eq`,
-  `TauCeti.CubicNormalForm.eventually_deriv_eq_zero_iff_sq_eq`: derivative factorization
-  `∂p/∂t = (w ^ 2 - ζ) ∂w/∂t` and critical-point correspondence
-  `∂p/∂t (α, t) = 0 ↔ w(α, t) ^ 2 = ζ(α)`.
+  `TauCeti.CubicNormalForm.eventually_deriv_eq_zero_iff_sq_eq`,
+  `TauCeti.CubicNormalForm.exists_bijOn_deriv_eq_zero_sq_eq`: derivative factorization
+  `∂p/∂t = (w ^ 2 - ζ) ∂w/∂t`, critical-point correspondence
+  `∂p/∂t (α, t) = 0 ↔ w(α, t) ^ 2 = ζ(α)`, and local bijection between the critical and root
+  loci.
 * `TauCeti.CubicNormalForm.deriv_deriv_deriv_eq_two_mul_deriv_pow_three`,
   `TauCeti.CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv`,
   `TauCeti.CubicNormalForm.deriv_ne_zero_iff_deriv_deriv_ne_zero`: jet identities
   `∂³p/∂t³ = 2 (∂w/∂t) ^ 3` (under `C²` regularity over any normed field of characteristic `≠ 3`)
   and `∂²p/∂α∂t = -ζ'(α₀) ∂w/∂t`, characterizing nondegenerate square-root coalescence
   `ζ'(α₀) ≠ 0`.
-* `TauCeti.deriv_pow_three_div_three_sub_mul_eq_zero_iff`,
-  `TauCeti.deriv_deriv_pow_three_div_three_sub_mul_zero`,
-  `TauCeti.deriv_deriv_pow_three_div_three_add_sq_mul_zero`,
-  `TauCeti.deriv_pow_three_div_three_add_sq_mul_eq_zero_iff`: canonical `t ^ 3 / 3 - α t` and
-  degenerate `t ^ 3 / 3 + α ^ 2 t` coalescing critical-point models.
 
 ## References
 
@@ -244,10 +244,8 @@ private noncomputable def cubicLinearEquiv {R : ℝ} (hR : 0 < R) :
     refine ⟨(u₂, (-deriv (DiscAlgebra.extend u) 0, DiscAlgebra.extend u 0)), ?_⟩
     have h1 := DiscAlgebra.coord_sub_algebraMap_mul_dslope_add h0 u
     have h2 := DiscAlgebra.coord_sub_algebraMap_mul_dslope_add h0 u₁
-    have hu10 : DiscAlgebra.extend u₁ 0 = deriv (DiscAlgebra.extend u) 0 := by
-      rw [DiscAlgebra.extend_apply u₁ ⟨0, ball_subset_closedBall h0⟩,
-        DiscAlgebra.dslope_apply, dslope_same]
-    simp only [map_zero, sub_zero, hu10] at h1 h2
+    dsimp only [u₁] at h2
+    simp only [map_zero, sub_zero, DiscAlgebra.extend_dslope_self] at h1 h2
     apply Subtype.ext
     ext z
     have h1z := congrArg (fun f : discAlgebra 0 R => (f : C(closedBall (0 : ℂ) R, ℂ)) z) h1
@@ -403,21 +401,19 @@ private theorem analyticOrderAt_three_mul_sub_eq_three {g : ℂ → ℂ} {t₀ :
     (hg : AnalyticAt ℂ g t₀) (h₁ : deriv g t₀ = 0) (h₂ : deriv (deriv g) t₀ = 0)
     (h₃ : deriv (deriv (deriv g)) t₀ ≠ 0) :
     analyticOrderAt (fun z => 3 * (g z - g t₀)) t₀ = 3 := by
-  have ho₂ : analyticOrderAt (deriv (deriv g)) t₀ = 1 :=
-    hg.deriv.deriv.analyticOrderAt_eq_one_of_zero_deriv_ne_zero h₂ h₃
-  have ho₁ : analyticOrderAt (deriv g) t₀ = 2 := by
-    have h := hg.deriv.analyticOrderAt_deriv_add_one
-    rw [h₁, ho₂] at h
-    norm_num at h
-    exact h.symm
+  have hsub : AnalyticAt ℂ (fun z => g z - g t₀) t₀ := hg.sub analyticAt_const
   have ho₀ : analyticOrderAt (fun z => g z - g t₀) t₀ = 3 := by
-    have h := hg.analyticOrderAt_deriv_add_one
-    rw [ho₁] at h
-    norm_num at h
-    exact h.symm
+    refine (analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero hsub).2 ⟨?_, ?_⟩
+    · intro k hk
+      interval_cases k
+      · simp
+      · simp [iteratedDeriv_one, h₁]
+      · rw [iteratedDeriv_succ', iteratedDeriv_one]
+        simp [deriv_sub_const_fun, h₂]
+    · rw [iteratedDeriv_succ', iteratedDeriv_succ', iteratedDeriv_one]
+      simpa [deriv_sub_const_fun] using h₃
   classical
-  simpa [ho₀] using
-    analyticOrderAt_fun_const_mul (hg.fun_sub (analyticAt_const (v := g t₀))) (3 : ℂ)
+  simpa [ho₀] using analyticOrderAt_fun_const_mul hsub (3 : ℂ)
 
 /-- Local coordinate `e` in `t` at `t₀` normalizing the slice `p(α₀, t) - p(α₀, t₀)` to
 `s ^ 3 / 3`. -/
@@ -440,13 +436,10 @@ private theorem exists_slice_cubic_coord {E : Type*} [NormedAddCommGroup E] [Nor
       (by norm_num : 0 < 3) hord univ_mem
   have h0_tgt : (0 : ℂ) ∈ e.target := he_t₀ ▸ e.map_source ht₀_src
   have he_deriv_ne : deriv e t₀ ≠ 0 := by
-    intro hzero
-    have hcomp := ((he_t₀ ▸ (he_symm_an 0 h0_tgt).differentiableAt.hasDerivAt).comp t₀
-      (he_an t₀ ht₀_src).differentiableAt.hasDerivAt).deriv
-    have hid : (e.symm ∘ e) =ᶠ[𝓝 t₀] id := by
-      filter_upwards [e.open_source.mem_nhds ht₀_src] with z hz using e.left_inv hz
-    have h1 : deriv (e.symm ∘ e) t₀ = 1 := by rw [hid.deriv_eq, deriv_id]
-    exact one_ne_zero (h1.symm.trans (by simpa [hzero] using hcomp))
+    have hinv := e.isInvertible_fderiv ht₀_src (he_an t₀ ht₀_src).differentiableAt
+      (he_t₀ ▸ (he_symm_an 0 h0_tgt).differentiableAt)
+    rw [← fderiv_apply_one_eq_deriv]
+    exact fun h => one_ne_zero (hinv.injective (h.trans (map_zero _).symm))
   refine ⟨e, ht₀_src, he_t₀, he_an t₀ ht₀_src, he_symm_an 0 h0_tgt, he_deriv_ne, ?_⟩
   filter_upwards [e.open_target.mem_nhds h0_tgt] with s hs
   have h := he_pow (e.symm s) (e.map_target hs)
@@ -630,6 +623,74 @@ theorem eventually_deriv_eq_zero_iff_sq_eq {X 𝕜 : Type*} [TopologicalSpace X]
   exact deriv_eq_zero_iff_sq_eq hq_ne
     (by simpa using (Continuous.prodMk_right q.1).continuousAt.eventually hq_eq)
 
+/-- **Local bijection between critical points and square roots.** Near `(α₀, t₀)` where `w` is
+analytic with `∂w/∂t (α₀, t₀) ≠ 0` and `p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)`,
+there is an analytic local inverse `T` of `w` at `(α₀, w (α₀, t₀))` with `T (α₀, w (α₀, t₀)) = t₀`,
+together with neighbourhoods `U ∈ 𝓝 (α₀, t₀)` and `V ∈ 𝓝 (α₀, w (α₀, t₀))` on which
+`(α, t) ↦ (α, w (α, t))` and `(α, u) ↦ (α, T (α, u))` are two-sided inverses restricting to
+bijections between the critical locus `{q ∈ U | ∂p/∂t q = 0}` and the root locus
+`{u ∈ V | u.2 ^ 2 = ζ u.1}`. -/
+theorem exists_bijOn_deriv_eq_zero_sq_eq {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [NeZero (3 : 𝕜)] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [CompleteSpace E] {p w : E × 𝕜 → 𝕜} {ζ η : E → 𝕜} {α₀ : E} {t₀ : 𝕜}
+    (hw : AnalyticAt 𝕜 w (α₀, t₀)) (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
+    (hpw : ∀ᶠ q in 𝓝 (α₀, t₀), p q = w q ^ 3 / 3 - ζ q.1 * w q + η q.1) :
+    ∃ T : E × 𝕜 → 𝕜, ∃ U ∈ 𝓝 (α₀, t₀), ∃ V ∈ 𝓝 (α₀, w (α₀, t₀)),
+      AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) ∧ T (α₀, w (α₀, t₀)) = t₀ ∧
+      (∀ q ∈ U, (q.1, w q) ∈ V ∧ T (q.1, w q) = q.2) ∧
+      (∀ u ∈ V, (u.1, T u) ∈ U ∧ w (u.1, T u) = u.2) ∧
+      Set.BijOn (fun q : E × 𝕜 => (q.1, w q))
+        (U ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) (V ∩ {u | u.2 ^ 2 = ζ u.1}) ∧
+      Set.BijOn (fun u : E × 𝕜 => (u.1, T u))
+        (V ∩ {u | u.2 ^ 2 = ζ u.1}) (U ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) := by
+  have df : HasStrictFDerivAt w (fderiv 𝕜 w (α₀, t₀)) (α₀, t₀) := hw.hasStrictFDerivAt
+  have hinv : (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜).IsInvertible := by
+    refine ⟨ContinuousLinearEquiv.unitsEquivAut 𝕜 (.mk0 _ hdw), ?_⟩
+    have hd : HasFDerivAt (fun t => w (α₀, t))
+        (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜) t₀ :=
+      df.hasFDerivAt.comp t₀ (hasFDerivAt_prodMk_right α₀ t₀)
+    ext
+    simp [hd.hasDerivAt.deriv]
+  let T : E × 𝕜 → 𝕜 := df.jointImplicitFunctionOfProdDomain hinv
+  have hTa : AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) :=
+    df.analyticAt_jointImplicitFunctionOfProdDomain hinv hw
+  have hT0 : T (α₀, w (α₀, t₀)) = t₀ := df.jointImplicitFunctionOfProdDomain_apply_self hinv
+  have hcrit : ∀ᶠ q in 𝓝 (α₀, t₀),
+      T (q.1, w q) = q.2 ∧ (deriv (fun t => p (q.1, t)) q.2 = 0 ↔ w q ^ 2 = ζ q.1) :=
+    (df.eventually_jointImplicitFunctionOfProdDomain_apply hinv).and
+      (eventually_deriv_eq_zero_iff_sq_eq hw.deriv_snd.continuousAt hdw hpw)
+  set S₁ : Set (E × 𝕜) :=
+    {q | T (q.1, w q) = q.2 ∧ (deriv (fun t => p (q.1, t)) q.2 = 0 ↔ w q ^ 2 = ζ q.1)}
+  have hS₁ : S₁ ∈ 𝓝 (α₀, t₀) := hcrit
+  have hmapT : ContinuousAt (fun u : E × 𝕜 => (u.1, T u)) (α₀, w (α₀, t₀)) :=
+    continuousAt_fst.prodMk hTa.continuousAt
+  set V : Set (E × 𝕜) := {u | w (u.1, T u) = u.2 ∧ (u.1, T u) ∈ S₁}
+  have hV : V ∈ 𝓝 (α₀, w (α₀, t₀)) :=
+    (df.eventually_apply_jointImplicitFunctionOfProdDomain hinv).and
+      (hmapT.preimage_mem_nhds (by simpa [hT0] using hS₁))
+  have hmapw : ContinuousAt (fun q : E × 𝕜 => (q.1, w q)) (α₀, t₀) :=
+    continuousAt_fst.prodMk hw.continuousAt
+  set U : Set (E × 𝕜) := S₁ ∩ (fun q : E × 𝕜 => (q.1, w q)) ⁻¹' V
+  have hU : U ∈ 𝓝 (α₀, t₀) := inter_mem hS₁ (hmapw.preimage_mem_nhds hV)
+  have hU_mem : ∀ q ∈ U, (q.1, w q) ∈ V ∧ T (q.1, w q) = q.2 := fun q hq => ⟨hq.2, hq.1.1⟩
+  have hV_mem : ∀ u ∈ V, (u.1, T u) ∈ U ∧ w (u.1, T u) = u.2 := fun u hu =>
+    ⟨⟨hu.2, by simpa [hu.1] using hu⟩, hu.1⟩
+  have hinvOn : Set.InvOn (fun u : E × 𝕜 => (u.1, T u)) (fun q : E × 𝕜 => (q.1, w q))
+      (U ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) (V ∩ {u | u.2 ^ 2 = ζ u.1}) :=
+    ⟨fun q hq => Prod.ext rfl (hU_mem q hq.1).2, fun u hu => Prod.ext rfl (hV_mem u hu.1).2⟩
+  have hmaps₁ : Set.MapsTo (fun q : E × 𝕜 => (q.1, w q))
+      (U ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) (V ∩ {u | u.2 ^ 2 = ζ u.1}) := by
+    rintro q ⟨hqU, hq0⟩
+    exact ⟨(hU_mem q hqU).1, (hqU.1.2).1 hq0⟩
+  have hmaps₂ : Set.MapsTo (fun u : E × 𝕜 => (u.1, T u))
+      (V ∩ {u | u.2 ^ 2 = ζ u.1}) (U ∩ {q | deriv (fun t => p (q.1, t)) q.2 = 0}) := by
+    rintro u ⟨huV, hu2⟩
+    have hTu := (hV_mem u huV).1
+    refine ⟨hTu, (hTu.1.2).2 ?_⟩
+    simpa [(hV_mem u huV).2] using hu2
+  exact ⟨T, U, hU, V, hV, hTa, hT0, hU_mem, hV_mem,
+    hinvOn.bijOn hmaps₁ hmaps₂, hinvOn.symm.bijOn hmaps₂ hmaps₁⟩
+
 /-- For a one-variable germ `g(t) = u(t) ^ 3 / 3 + c` with `u` twice continuously differentiable at
 `t₀` and `u(t₀) = 0`, the third derivative of `g` at `t₀` is `2 * u'(t₀) ^ 3`, over any nontrivially
 normed field of characteristic `≠ 3`. -/
@@ -768,30 +829,26 @@ theorem deriv_ne_zero_iff_deriv_deriv_ne_zero {p w : ℂ × ℂ → ℂ} {ζ η 
 
 end CubicNormalForm
 
-/-! ### Canonical and degenerate coalescing critical-point models -/
+/-! ### Canonical and degenerate coalescing critical-point examples -/
 
-/-- For the canonical Airy potential `p(α, t) = t ^ 3 / 3 - α * t`, the critical points satisfy
-`t ^ 2 = α`, coalescing at rate `√α` as `α → 0`. -/
-theorem deriv_pow_three_div_three_sub_mul_eq_zero_iff {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    [NeZero (3 : 𝕜)] (α t : 𝕜) :
+-- For the canonical Airy potential `p(α, t) = t ^ 3 / 3 - α * t`, the critical points satisfy
+-- `t ^ 2 = α`, coalescing at rate `√α` as `α → 0`.
+example {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NeZero (3 : 𝕜)] (α t : 𝕜) :
     deriv (fun s : 𝕜 => s ^ 3 / 3 - α * s) t = 0 ↔ t ^ 2 = α :=
   CubicNormalForm.deriv_eq_zero_iff_sq_eq (u := id) (c := 0) (by simp) (.of_forall fun _ => by simp)
 
-/-- The canonical Airy potential `p(α, t) = t ^ 3 / 3 - α * t` has nonvanishing mixed derivative
-`∂²p/∂α∂t (0, 0) = -1`. -/
-theorem deriv_deriv_pow_three_div_three_sub_mul_zero :
-    deriv (fun α : ℂ => deriv (fun t : ℂ => t ^ 3 / 3 - α * t) 0) 0 = -1 := by
+-- The canonical Airy potential `p(α, t) = t ^ 3 / 3 - α * t` has nonvanishing mixed derivative
+-- `∂²p/∂α∂t (0, 0) = -1`.
+example : deriv (fun α : ℂ => deriv (fun t : ℂ => t ^ 3 / 3 - α * t) 0) 0 = -1 := by
   have h := CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv
     (p := fun q : ℂ × ℂ => q.2 ^ 3 / 3 - q.1 * q.2) (w := Prod.snd) (ζ := id) (η := 0)
     rfl rfl continuousAt_id (.of_forall fun _ => differentiableAt_snd)
     (.of_forall fun _ => by simp)
   simpa using h
 
-/-- For `p(α, t) = t ^ 3 / 3 + α ^ 2 * t`, the mixed derivative `∂²p/∂α∂t` vanishes at `(0, 0)`,
-so any cubic normal form has `ζ'(0) = 0` by
-`TauCeti.CubicNormalForm.deriv_ne_zero_iff_deriv_deriv_ne_zero`. -/
-theorem deriv_deriv_pow_three_div_three_add_sq_mul_zero :
-    deriv (fun α : ℂ => deriv (fun t : ℂ => t ^ 3 / 3 + α ^ 2 * t) 0) 0 = 0 := by
+-- For `p(α, t) = t ^ 3 / 3 + α ^ 2 * t`, the mixed derivative `∂²p/∂α∂t` vanishes at `(0, 0)`,
+-- so any cubic normal form has `ζ'(0) = 0`.
+example : deriv (fun α : ℂ => deriv (fun t : ℂ => t ^ 3 / 3 + α ^ 2 * t) 0) 0 = 0 := by
   have h := CubicNormalForm.deriv_deriv_eq_neg_deriv_mul_deriv
     (p := fun q : ℂ × ℂ => q.2 ^ 3 / 3 + q.1 ^ 2 * q.2) (w := Prod.snd)
     (ζ := fun α => -(α ^ 2)) (η := 0) (α₀ := 0) (t₀ := 0)
@@ -799,9 +856,9 @@ theorem deriv_deriv_pow_three_div_three_add_sq_mul_zero :
     (.of_forall fun _ => by simp)
   simpa using h
 
-/-- For `p(α, t) = t ^ 3 / 3 + α ^ 2 * t`, the critical points are `t = ±i * α`, coalescing
-linearly in `α` rather than at rate `√α`. -/
-theorem deriv_pow_three_div_three_add_sq_mul_eq_zero_iff (α t : ℂ) :
+-- For `p(α, t) = t ^ 3 / 3 + α ^ 2 * t`, the critical points are `t = ±i * α`, coalescing
+-- linearly in `α` rather than at rate `√α`.
+example (α t : ℂ) :
     deriv (fun s : ℂ => s ^ 3 / 3 + α ^ 2 * s) t = 0 ↔
       t = Complex.I * α ∨ t = -(Complex.I * α) := by
   have h := CubicNormalForm.deriv_eq_zero_iff_sq_eq (u := id) (ζ := -(α ^ 2)) (c := 0)

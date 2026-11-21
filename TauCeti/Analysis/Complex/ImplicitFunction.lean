@@ -28,9 +28,6 @@ formula), and the map `ψ` is then the joint implicit function
 
 * `TauCeti.exists_jointImplicitFunction_of_eventually_differentiableAt`: the **joint holomorphic
   implicit function theorem**.
-* `TauCeti.exists_analyticAt_mul_deriv_eq`: holomorphic local inverse `T(α, u)` and transformed
-  amplitude `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` satisfying
-  `f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)`.
 
 ## References
 
@@ -82,28 +79,5 @@ theorem exists_jointImplicitFunction_of_eventually_differentiableAt {G : E₁ ×
     dfu.eventually_apply_eq_iff_jointImplicitFunctionOfProdDomain hinv⟩
 
 end Joint
-
-/-- **Holomorphic inverse coordinate and transformed amplitude** (DLMF 2.4.20). Given a coordinate
-`w : E × ℂ → ℂ` (with `E` finite-dimensional over `ℂ`) holomorphic near `(α₀, t₀)` with
-`∂w/∂t (α₀, t₀) ≠ 0`, and an amplitude `q(α, t)` holomorphic on `V ∈ 𝓝 (α₀, t₀)`, there exist
-analytic functions `T` and `f` at `(α₀, w (α₀, t₀))` such that `T(α₀, w(α₀, t₀)) = t₀`,
-`w(α, T(α, u)) = u` and `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` near `(α₀, w (α₀, t₀))`, while
-`T(α, w(α, t)) = t` and `f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)` near `(α₀, t₀)`. -/
-theorem exists_analyticAt_mul_deriv_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [FiniteDimensional ℂ E] {w q : E × ℂ → ℂ} {V : Set (E × ℂ)} {α₀ : E} {t₀ : ℂ}
-    (hw : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt ℂ w x)
-    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
-    (hV : V ∈ 𝓝 (α₀, t₀)) (hq : DifferentiableOn ℂ q V) :
-    ∃ T f : E × ℂ → ℂ,
-      AnalyticAt ℂ T (α₀, w (α₀, t₀)) ∧ AnalyticAt ℂ f (α₀, w (α₀, t₀)) ∧
-      T (α₀, w (α₀, t₀)) = t₀ ∧
-      (∀ᶠ u in 𝓝 (α₀, w (α₀, t₀)),
-        w (u.1, T u) = u.2 ∧ f u = q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2) ∧
-      ∀ᶠ x in 𝓝 (α₀, t₀),
-        T (x.1, w x) = x.2 ∧ f (x.1, w x) * deriv (fun t => w (x.1, t)) x.2 = q x := by
-  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
-  have hwa : AnalyticAt ℂ w (α₀, t₀) :=
-    analyticAt_iff_eventually_differentiableAt_of_finiteDimensional.2 hw
-  exact hwa.exists_analyticAt_mul_deriv_eq hdw (hq.analyticAt_of_finiteDimensional hV)
 
 end TauCeti

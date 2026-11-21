@@ -12,10 +12,10 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.Analytic.Constructions
-import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Algebra.Algebra
+import Mathlib.Topology.ContinuousMap.Units
 import TauCeti.Analysis.Analytic.ContinuousMap
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
@@ -109,16 +109,11 @@ theorem isClosed_discAlgebra (c : ℂ) (R : ℝ) :
   refine mem_discAlgebra_iff_extend.mpr ?_
   have hunif : TendstoUniformlyOn
       (fun n => Function.extend Subtype.val (u n) (fun _ => 0))
-      (Function.extend Subtype.val u₀ (fun _ => 0)) atTop (ball c R) := by
-    rw [Metric.tendstoUniformlyOn_iff]
-    intro ε hε
-    filter_upwards [Metric.tendsto_nhds.1 hut ε hε] with n hn z hz
-    have hzc : z ∈ closedBall c R := ball_subset_closedBall hz
-    rw [Subtype.val_injective.extend_apply (u n) (fun _ => 0) ⟨z, hzc⟩,
-      Subtype.val_injective.extend_apply u₀ (fun _ => 0) ⟨z, hzc⟩]
-    exact (ContinuousMap.dist_apply_le_dist (f := u₀) (g := u n) ⟨z, hzc⟩).trans_lt
-      (by rwa [dist_comm])
-  exact hunif.tendstoLocallyUniformlyOn.differentiableOn
+      (Function.extend Subtype.val u₀ (fun _ => 0)) atTop (closedBall c R) := by
+    rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
+    simpa only [Function.comp_def, Subtype.val_injective.extend_apply] using
+      ContinuousMap.tendsto_iff_tendstoUniformly.mp hut
+  exact (hunif.mono ball_subset_closedBall).tendstoLocallyUniformlyOn.differentiableOn
     (Eventually.of_forall fun n => mem_discAlgebra_iff_extend.mp (hu n)) isOpen_ball
 
 /-- The disc algebra is a Banach algebra with the supremum norm. -/
@@ -158,6 +153,66 @@ theorem extend_apply_of_notMem (f : discAlgebra c R) {z : ℂ} (hz : z ∉ close
   rw [extend, Function.extend_apply']
   rintro ⟨w, rfl⟩
   exact hz w.property
+
+/-- The zero extension is injective on `discAlgebra c R`. -/
+theorem extend_injective : Function.Injective (extend (c := c) (R := R)) := by
+  intro f g h
+  apply Subtype.ext
+  ext z
+  simpa only [extend_apply] using congrFun h z.val
+
+/-- Two elements of `discAlgebra c R` have equal zero extensions if and only if they are equal. -/
+@[simp]
+theorem extend_inj {f g : discAlgebra c R} : extend f = extend g ↔ f = g :=
+  extend_injective.eq_iff
+
+/-- The zero extension of `0` is `0`. -/
+@[simp]
+theorem extend_zero : extend (0 : discAlgebra c R) = 0 := by
+  ext z
+  by_cases hz : z ∈ closedBall c R
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
+
+/-- Zero extension commutes with addition. -/
+@[simp]
+theorem extend_add (f g : discAlgebra c R) : extend (f + g) = extend f + extend g := by
+  ext z
+  by_cases hz : z ∈ closedBall c R
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
+
+/-- Zero extension commutes with negation. -/
+@[simp]
+theorem extend_neg (f : discAlgebra c R) : extend (-f) = -extend f := by
+  ext z
+  by_cases hz : z ∈ closedBall c R
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
+
+/-- Zero extension commutes with subtraction. -/
+@[simp]
+theorem extend_sub (f g : discAlgebra c R) : extend (f - g) = extend f - extend g := by
+  ext z
+  by_cases hz : z ∈ closedBall c R
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
+
+/-- Zero extension commutes with complex scalar multiplication. -/
+@[simp]
+theorem extend_smul (a : ℂ) (f : discAlgebra c R) : extend (a • f) = a • extend f := by
+  ext z
+  by_cases hz : z ∈ closedBall c R
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
+
+/-- Zero extension commutes with multiplication. -/
+@[simp]
+theorem extend_mul (f g : discAlgebra c R) : extend (f * g) = extend f * extend g := by
+  ext z
+  by_cases hz : z ∈ closedBall c R
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
 
 /-- The zero extension is continuous on `closedBall c R`. -/
 theorem continuousOn_extend (f : discAlgebra c R) :
@@ -216,6 +271,19 @@ noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
 theorem dslope_apply {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) (z : closedBall c R) :
     (dslope ha f : C(closedBall c R, ℂ)) z = _root_.dslope (extend f) a z := (rfl)
 
+/-- Evaluating `dslope ha f` at the division center `a` returns `deriv (extend f) a`. -/
+theorem dslope_apply_self {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
+    (dslope ha f : C(closedBall c R, ℂ)) ⟨a, ball_subset_closedBall ha⟩ =
+      deriv (extend f) a := by
+  rw [dslope_apply, dslope_same]
+
+/-- Evaluating the zero extension of `dslope ha f` at the division center `a` returns
+`deriv (extend f) a`. -/
+@[simp]
+theorem extend_dslope_self {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
+    extend (dslope ha f) a = deriv (extend f) a := by
+  rw [extend_apply (dslope ha f) ⟨a, ball_subset_closedBall ha⟩, dslope_apply_self]
+
 /-- Dividing off the value at an interior point `a ∈ ball c R` recovers `f`:
 `(coord c R - a) * dslope ha f + f(a) = f`. -/
 theorem coord_sub_algebraMap_mul_dslope_add {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
@@ -231,6 +299,56 @@ theorem coord_sub_algebraMap_mul_dslope_add {a : ℂ} (ha : a ∈ ball c R) (f :
     ContinuousMap.smul_apply, ContinuousMap.one_apply, smul_eq_mul, mul_one,
     coord_apply, dslope_apply]
   linear_combination h
+
+/-- Uniqueness of the divided-difference quotient in `discAlgebra c R`: if
+`(coord c R - a) * q + c₀ = f`, then `q = dslope ha f`. -/
+theorem eq_dslope_of_coord_sub_algebraMap_mul_add {a : ℂ} (ha : a ∈ ball c R)
+    {f q : discAlgebra c R} {c₀ : ℂ}
+    (h : (coord c R - algebraMap ℂ (discAlgebra c R) a) * q +
+      algebraMap ℂ (discAlgebra c R) c₀ = f) :
+    q = dslope ha f := by
+  have heval (z : closedBall c R) :
+      (z.val - a) * (q : C(closedBall c R, ℂ)) z + c₀ = (f : C(closedBall c R, ℂ)) z := by
+    have hz := congrArg (fun g : discAlgebra c R => (g : C(closedBall c R, ℂ)) z) h
+    simpa [Algebra.algebraMap_eq_smul_one, mul_one] using hz
+  have hc₀ : c₀ = extend f a := by
+    have h0 := heval ⟨a, ball_subset_closedBall ha⟩
+    simpa [extend_apply f ⟨a, ball_subset_closedBall ha⟩] using h0
+  have hne : ∀ z : closedBall c R, z.val ≠ a →
+      (q : C(closedBall c R, ℂ)) z = (dslope ha f : C(closedBall c R, ℂ)) z := by
+    intro z hza
+    rw [dslope_apply, dslope_of_ne _ hza, slope_def_module, smul_eq_mul, extend_apply f z]
+    have hz := heval z
+    rw [hc₀] at hz
+    rw [eq_inv_mul_iff_mul_eq₀ (sub_ne_zero.2 hza)]
+    linear_combination hz
+  have hev : extend q =ᶠ[𝓝[≠] a] extend (dslope ha f) := by
+    filter_upwards [inter_mem_nhdsWithin _ (closedBall_mem_nhds_of_mem ha)] with w ⟨hw_ne, hw_cb⟩
+    rw [extend_apply q ⟨w, hw_cb⟩, extend_apply (dslope ha f) ⟨w, hw_cb⟩]
+    exact hne ⟨w, hw_cb⟩ hw_ne
+  have ha_eq : extend q a = extend (dslope ha f) a :=
+    tendsto_nhds_unique
+      ((continuousOn_extend q).continuousAt (closedBall_mem_nhds_of_mem ha) |>.mono_left
+        nhdsWithin_le_nhds)
+      (((continuousOn_extend (dslope ha f)).continuousAt
+        (closedBall_mem_nhds_of_mem ha) |>.mono_left nhdsWithin_le_nhds).congr' hev.symm)
+  apply Subtype.ext
+  ext z
+  by_cases hza : z.val = a
+  · have hz_eq : z = ⟨a, ball_subset_closedBall ha⟩ := Subtype.ext hza
+    subst hz_eq
+    rw [← extend_apply q ⟨a, ball_subset_closedBall ha⟩,
+      ← extend_apply (dslope ha f) ⟨a, ball_subset_closedBall ha⟩, ha_eq]
+  · exact hne z hza
+
+/-- Characterization of `dslope ha f` via the division identity
+`(coord c R - a) * q + f(a) = f`. -/
+theorem eq_dslope_iff {a : ℂ} (ha : a ∈ ball c R) {f q : discAlgebra c R} :
+    q = dslope ha f ↔
+      (coord c R - algebraMap ℂ (discAlgebra c R) a) * q +
+        algebraMap ℂ (discAlgebra c R) (extend f a) = f :=
+  ⟨fun hq => hq ▸ coord_sub_algebraMap_mul_dslope_add ha f,
+    eq_dslope_of_coord_sub_algebraMap_mul_add ha⟩
 
 /-- Construct an element of `discAlgebra c R` from an ambient function `g : ℂ → ℂ`, returning a
 default element `d` if `g` is not continuous on `closedBall c R` and holomorphic on `ball c R`. -/
@@ -277,23 +395,6 @@ theorem mkD_extend (f d : discAlgebra c R) : mkD c R (extend f) d = f := by
   rw [mkD_of_continuousOn_differentiableOn (continuousOn_extend f) (differentiableOn_extend f),
     of_extend]
 
-/-- A map into `discAlgebra c R` is complex differentiable at `a` if and only if its coercion to
-`C(closedBall c R, ℂ)` is complex differentiable at `a`. -/
-theorem differentiableAt_iff_coe {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {f : E → discAlgebra c R} {a : E} :
-    DifferentiableAt ℂ f a ↔ DifferentiableAt ℂ (fun x => (f x : C(closedBall c R, ℂ))) a := by
-  refine ⟨fun hf => ((discAlgebra c R).valA.toContinuousLinearMap.differentiableAt).comp a hf,
-    fun hg => ?_⟩
-  let S : Submodule ℂ C(closedBall c R, ℂ) := (discAlgebra c R).toSubmodule
-  have hfg := hg.hasFDerivAt
-  have hmem : ∀ v, fderiv ℂ (fun x => (f x : C(closedBall c R, ℂ))) a v ∈ S :=
-    hfg.apply_mem_of_eventually_sub_mem (isClosed_discAlgebra c R)
-      (Eventually.of_forall fun y => (discAlgebra c R).sub_mem (f y).property (f a).property)
-  let L : E →L[ℂ] S := (fderiv ℂ (fun x => (f x : C(closedBall c R, ℂ))) a).codRestrict S hmem
-  exact (HasFDerivAt.of_comp_of_isEmbedding (f := S.subtypeL) (f' := S.subtypeL) (g := f) (g' := L)
-    (Topology.IsEmbedding.subtypeVal.continuousAt_iff.2 hg.continuousAt)
-    S.subtypeL.hasFDerivAt Topology.IsEmbedding.subtypeVal hfg EventuallyEq.rfl).differentiableAt
-
 /-- A jointly analytic family `F : E × ℂ → ℂ` on `{a} × closedBall c R`, with `E`
 finite-dimensional over `ℂ`, induces an analytic map `x ↦ mkD c R (fun z => F (x, z)) d` into
 `discAlgebra c R` at `a`. -/
@@ -320,7 +421,8 @@ theorem analyticAt_mkD_of_analyticAt {E : Type*} [NormedAddCommGroup E] [NormedS
         (han.continuousOn.comp_continuous continuous_subtypeVal fun w => w.property)]
   refine DifferentiableOn.analyticAt_of_finiteDimensional (s := U) (fun x hx => ?_)
     (hopen.mem_nhds haU)
-  refine (differentiableAt_iff_coe.2 ?_).differentiableWithinAt
+  refine ((isClosed_discAlgebra c R).differentiableAt_submodule_iff
+    (S := (discAlgebra c R).toSubmodule).2 ?_).differentiableWithinAt
   exact (hU x hx).2.differentiableAt.congr_of_eventuallyEq
     (Filter.eventually_of_mem (hopen.mem_nhds hx) fun y hy => hcoe y hy)
 
@@ -340,20 +442,19 @@ theorem analyticAt_extend_of_analyticAt {E : Type*} [NormedAddCommGroup E] [Norm
   -- The Cauchy kernel `z ↦ (ζ ↦ ζ - z)⁻¹` as a `C(sphere c |R|, ℂ)`-valued analytic map near `z₀`.
   let ζId : C(sphere c |R|, ℂ) := ContinuousMap.subtypeVal (sphere c |R|)
   let κ : ℂ → C(sphere c |R|, ℂ) := fun z => ζId - z • (1 : C(sphere c |R|, ℂ))
-  have hne {z : ℂ} (hz : z ∈ ball c R) (ζ : sphere c |R|) : ζ.val - z ≠ 0 := by
+  have hne {z : ℂ} (hz : z ∈ ball c R) (ζ : sphere c |R|) : κ z ζ ≠ 0 := by
     intro h
-    have hdz : dist ζ.val c = dist z c := by rw [sub_eq_zero.1 h]
+    have hdz : dist ζ.val c = dist z c := by
+      rw [(sub_eq_zero.1 (by simpa [κ, ζId] using h) : ζ.val = z)]
     rw [mem_sphere.1 ζ.property, abs_of_pos hR] at hdz
     exact (mem_ball.1 hz).ne hdz.symm
-  let κUnit (z : ℂ) (hz : z ∈ ball c R) : C(sphere c |R|, ℂ)ˣ :=
-    { val := κ z
-      inv := ⟨fun ζ => (ζ.val - z)⁻¹,
-        (continuous_subtypeVal.sub continuous_const).inv₀ (hne hz)⟩
-      val_inv := ContinuousMap.ext fun ζ => by simp [κ, ζId, mul_inv_cancel₀ (hne hz ζ)]
-      inv_val := ContinuousMap.ext fun ζ => by simp [κ, ζId, inv_mul_cancel₀ (hne hz ζ)] }
+  have hunit {z : ℂ} (hz : z ∈ ball c R) : IsUnit (κ z) :=
+    (ContinuousMap.isUnit_iff_forall_ne_zero _).2 (hne hz)
   have hκ : AnalyticAt ℂ κ z₀ :=
     analyticAt_const.sub (analyticAt_id.smul analyticAt_const)
-  have hinv_at : AnalyticAt ℂ Ring.inverse (κ z₀) := analyticAt_inverse (𝕜 := ℂ) (κUnit z₀ hz₀)
+  have hinv_at : AnalyticAt ℂ Ring.inverse (κ z₀) := by
+    have h := analyticAt_inverse (𝕜 := ℂ) (hunit hz₀).unit
+    rwa [(hunit hz₀).unit_spec] at h
   have hinv : AnalyticAt ℂ (fun z => Ring.inverse (κ z)) z₀ := hinv_at.comp hκ
   -- Represent `extend (W x) z` on `E × ball c R` via Cauchy's integral formula.
   let Φ : E × ℂ → ℂ := fun q =>
@@ -367,12 +468,14 @@ theorem analyticAt_extend_of_analyticAt {E : Type*} [NormedAddCommGroup E] [Norm
   have hΦ : AnalyticAt ℂ Φ (a, z₀) := analyticAt_const.fun_mul hci
   refine hΦ.congr ?_
   filter_upwards [prod_mem_nhds univ_mem (isOpen_ball.mem_nhds hz₀)] with q hq
-  have hinv_eq : Ring.inverse (κ q.2) = ↑(κUnit q.2 hq.2)⁻¹ :=
-    Ring.inverse_unit (κUnit q.2 hq.2)
+  have hinv_eq : Ring.inverse (κ q.2) = ↑(hunit hq.2).unit⁻¹ := by
+    conv_lhs => rw [← (hunit hq.2).unit_spec]
+    exact Ring.inverse_unit (hunit hq.2).unit
   have hint : circleIntegralCLM c R (Ring.inverse (κ q.2) * res (W q.1)) =
       ∮ ζ in C(c, R), (ζ - q.2)⁻¹ • extend (W q.1) ζ := by
     refine circleIntegralCLM_eq_circleIntegral c R _ _ fun ζ => ?_
-    simp [hinv_eq, κUnit, res, ← extend_apply (W q.1) (ContinuousMap.inclusion hsphere_sub ζ)]
+    simp [hinv_eq, ← ContinuousMap.unitsLift_symm_apply_apply_inv', κ, ζId, res,
+      ← extend_apply (W q.1) (ContinuousMap.inclusion hsphere_sub ζ)]
   have hdiff : DiffContOnCl ℂ (extend (W q.1)) (ball c R) :=
     ⟨differentiableOn_extend (W q.1),
       (continuousOn_extend (W q.1)).mono closure_ball_subset_closedBall⟩
