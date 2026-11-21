@@ -43,6 +43,8 @@ form of Riemann–Hurwitz. The ramification divisor of a composite satisfies the
   divisor.
 * `TauCeti.RiemannSurface.ramificationDegree_eq_zero_iff`: the ramification degree vanishes
   exactly when the map is unramified.
+* `TauCeti.RiemannSurface.ramificationDegree_eq_zero_of_degree_eq_one`: a map of degree one is
+  unramified.
 * `TauCeti.RiemannSurface.card_fiber_add_sum_localMultiplicity_sub_one` and
   `TauCeti.RiemannSurface.coeff_pushforward_ramificationDivisor`: the fibre count.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.ncard_preimage_add_finsum_localMultiplicity_sub_one`:
@@ -211,6 +213,14 @@ theorem ramificationDegree_eq_zero_iff (f : FiniteHolomorphicMap X Y) :
 section Fiber
 
 variable [T2Space X] [T2Space Y] [PreconnectedSpace Y]
+
+omit [PreconnectedSpace Y] in
+/-- A finite holomorphic map of degree one from a compact Riemann surface is unramified: every
+local multiplicity is at most the degree. -/
+theorem ramificationDegree_eq_zero_of_degree_eq_one (f : FiniteHolomorphicMap X Y)
+    (hf : degree f = 1) : ramificationDegree f = 0 :=
+  (ramificationDegree_eq_zero_iff f).2 fun x ↦
+    le_antisymm (hf ▸ localMultiplicity_le_degree f x) (localMultiplicity_pos f x)
 
 /-- **The fibre count.** Over every point `y` of a connected target, the number of points of the
 fibre plus the sum of `e_x - 1` over the fibre is the degree of a finite holomorphic map from a
