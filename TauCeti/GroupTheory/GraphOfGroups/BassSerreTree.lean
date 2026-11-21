@@ -619,13 +619,17 @@ theorem vertexHom_cons_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Pat
   rw [← mem_stabilizer_iff, ← GTree.stabilizer_rev, rev_bassSerreDart, stabilizer_bassSerreDart,
     range_αArrow_reverse, Subgroup.mem_map_iff_mem (π₁.vertexHom_injective _)]
 
+/-- The class of `q p⁻¹` carries the vertex `p A_b` to the vertex `q A_b`. -/
+theorem mk_comp_reverse_smul_bassSerreVertex {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    π₁.mk (q.comp p.reverse) • bassSerreVertex p = bassSerreVertex q := by
+  rw [smul_bassSerreVertex]
+  exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp q p)
+
 /-- `π₁(𝔸, a)` acts transitively on the vertices `p A_b` over a vertex `b` of `Γ`: the class of
 `q p⁻¹` carries `p A_b` to `q A_b`. -/
 theorem exists_smul_bassSerreVertex_eq {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     ∃ g : π₁ 𝔸 a, g • bassSerreVertex p = bassSerreVertex q :=
-  ⟨π₁.mk (q.comp p.reverse), by
-    rw [smul_bassSerreVertex]
-    exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp q p)⟩
+  ⟨_, mk_comp_reverse_smul_bassSerreVertex p q⟩
 
 /-- `π₁(𝔸, a)` acts transitively on the darts `p α_e(A_e)` over a dart `e` of `Γ`. -/
 theorem exists_smul_bassSerreDart_eq {b c : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :

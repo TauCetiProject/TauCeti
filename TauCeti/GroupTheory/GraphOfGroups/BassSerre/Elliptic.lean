@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree
 public import TauCeti.GroupTheory.GTree.FixedPoint
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Elliptic and hyperbolic elements of Bass–Serre trees
@@ -42,6 +43,14 @@ tree: the action is not trivial, and the one-vertex tree does not dominate the B
 * `TauCeti.GraphOfGroups.bassSerreTree_isEllipticSubgroup_iff`,
   `TauCeti.GraphOfGroups.bassSerreTree_isElliptic_iff`: the elliptic subgroups and elements are
   those contained in conjugates of vertex groups.
+* `TauCeti.GraphOfGroups.map_stabilizer_smul_bassSerreVertex`,
+  `TauCeti.GraphOfGroups.map_stabilizer_bassSerreVertex`,
+  `TauCeti.GraphOfGroups.exists_map_stabilizer_eq_map_conj`,
+  `TauCeti.GraphOfGroups.bassSerreTree_isEllipticSubgroup_comap_iff`: under a homomorphism `e`
+  out of `π₁(𝔸, a)`, the image of each vertex stabilizer is the conjugate of the image of a vertex
+  group by an element of the range of `e`; for an injective `e`, the subgroups of the range whose
+  preimage is elliptic are those contained in such a conjugate. Only the vertices joined to `a` by
+  an `𝔸`-path occur, so the graph need not be connected.
 * `TauCeti.GraphOfGroups.bassSerreTree_dominates_iff`,
   `TauCeti.GraphOfGroups.bassSerreTree_dominates_iff_of_paths`: domination by the Bass–Serre tree.
 * `TauCeti.GraphOfGroups.bassSerreTree_isHyperbolic_vertexHom_mul_vertexHom_iff`: hyperbolic
@@ -104,6 +113,71 @@ theorem isEllipticSubgroup_map_vertexHom_iff {T : GTree.{u', v'} (π₁ 𝔸 a)}
     T.IsEllipticSubgroup (H.map (π₁.vertexHom p)) ↔
       T.IsEllipticSubgroup (H.map (π₁.vertexHom q)) := by
   rw [π₁.map_vertexHom_eq_map_conj q p, GTree.isEllipticSubgroup_map_conj_iff]
+
+/-! ### Images of the vertex stabilizers -/
+
+section Image
+
+variable {P : Type*} [Group P]
+
+/-- The image of the stabilizer of the vertex `g • q A_b` under a homomorphism `e` out of
+`π₁(𝔸, a)` is the conjugate of the image of `q A_b q⁻¹` by `e g`. -/
+theorem map_stabilizer_smul_bassSerreVertex (e : π₁ 𝔸 a →* P) (g : π₁ 𝔸 a) {b : Γ.V}
+    (q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    (stabilizer (π₁ 𝔸 a) (g • bassSerreVertex q)).map e =
+      ((π₁.vertexHom q).range.map e).map (MulAut.conj (e g) : P →* P) := by
+  rw [stabilizer_smul_eq_stabilizer_map_conj, stabilizer_bassSerreVertex, Subgroup.map_map_conj,
+    MulEquiv.toMonoidHom_eq_coe]
+
+/-- The image of the stabilizer of the vertex `p A_b` under a homomorphism `e` out of `π₁(𝔸, a)`:
+for any other path `q` from `a` to `b`, it is the conjugate of the image of `q A_b q⁻¹` by the
+element `e [p q⁻¹]` of the range of `e`. -/
+theorem map_stabilizer_bassSerreVertex (e : π₁ 𝔸 a →* P) {b : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    (stabilizer (π₁ 𝔸 a) (bassSerreVertex p)).map e =
+      ((π₁.vertexHom q).range.map e).map (MulAut.conj (e (π₁.mk (p.comp q.reverse))) : P →* P) := by
+  -- The vertex `p A_b` is the translate of `q A_b` by the class of `p q⁻¹`.
+  rw [← map_stabilizer_smul_bassSerreVertex, mk_comp_reverse_smul_bassSerreVertex]
+
+/-- Let `e` be a homomorphism out of `π₁(𝔸, a)` and, for each vertex `b` joined to `a` by an
+`𝔸`-path, let `K b` be the image under `e` of a conjugate `q A_b q⁻¹` of the vertex group `A_b`
+along some path `q` from `a` to `b`. Then the image under `e` of each vertex stabilizer of the
+Bass–Serre tree is the conjugate of some `K b` by an element of the range of `e`. -/
+theorem exists_map_stabilizer_eq_map_conj (e : π₁ 𝔸 a →* P) {K : Γ.V → Subgroup P}
+    (hK : ∀ b, Nonempty (𝔸.Path ⟨a⟩ ⟨b⟩) →
+      ∃ q : 𝔸.Path ⟨a⟩ ⟨b⟩, (π₁.vertexHom q).range.map e = K b)
+    (y : (bassSerreTree 𝔸 a).V) :
+    ∃ b, Nonempty (𝔸.Path ⟨a⟩ ⟨b⟩) ∧ ∃ w ∈ e.range,
+      (stabilizer (π₁ 𝔸 a) y).map e = (K b).map (MulAut.conj w : P →* P) := by
+  obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective y
+  obtain ⟨q, hq⟩ := hK b ⟨p⟩
+  exact ⟨b, ⟨p⟩, _, ⟨_, rfl⟩, hq ▸ map_stabilizer_bassSerreVertex e p q⟩
+
+/-- Let `e` be an injective homomorphism out of `π₁(𝔸, a)` and, for each vertex `b` joined to `a`
+by an `𝔸`-path, let `K b` be the image under `e` of a conjugate `q A_b q⁻¹` of the vertex group
+`A_b` along some path `q` from `a` to `b`. A subgroup `H` of the range of `e` is elliptic in the
+Bass–Serre tree, read through `e`, exactly when it lies in the conjugate of some `K b` by an
+element of the range of `e`. -/
+theorem bassSerreTree_isEllipticSubgroup_comap_iff (e : π₁ 𝔸 a →* P) (he : Function.Injective e)
+    {K : Γ.V → Subgroup P}
+    (hK : ∀ b, Nonempty (𝔸.Path ⟨a⟩ ⟨b⟩) →
+      ∃ q : 𝔸.Path ⟨a⟩ ⟨b⟩, (π₁.vertexHom q).range.map e = K b)
+    {H : Subgroup P} (hH : H ≤ e.range) :
+    (bassSerreTree 𝔸 a).IsEllipticSubgroup (H.comap e) ↔
+      ∃ b, Nonempty (𝔸.Path ⟨a⟩ ⟨b⟩) ∧ ∃ w ∈ e.range,
+        H ≤ (K b).map (MulAut.conj w : P →* P) := by
+  -- `H.comap e ≤ L` exactly when `H ≤ L.map e`, since `e` is injective and `H ≤ e.range`.
+  have hle (L : Subgroup (π₁ 𝔸 a)) : H.comap e ≤ L ↔ H ≤ L.map e := by
+    rw [← Subgroup.comap_le_comap_of_le_range hH, Subgroup.comap_map_eq_self_of_injective he]
+  simp only [GTree.isEllipticSubgroup_iff, hle]
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨b, hb, _, ⟨g, rfl⟩, hw⟩ ↦ ?_⟩
+  · obtain ⟨b, hb, w, hw, hbw⟩ := exists_map_stabilizer_eq_map_conj e hK y
+    exact ⟨b, hb, w, hw, hbw ▸ hy⟩
+  · obtain ⟨q, hq⟩ := hK b hb
+    -- The translate of `q A_b` by `g`, whose stabilizer `e` carries to the conjugate of `K b`
+    -- by `e g`.
+    exact ⟨g • bassSerreVertex q, by rwa [map_stabilizer_smul_bassSerreVertex, hq]⟩
+
+end Image
 
 /-! ### Domination -/
 
