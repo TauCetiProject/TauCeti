@@ -181,6 +181,15 @@ theorem annihilatorInclusion_injective : Injective (annihilatorInclusion I D P) 
   injective_totalSpace_subbundle (E →L[𝕜] 𝕜) P (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)
     (annihilatorSpace I D)
 
+variable {I D P} in
+/-- Two covectors annihilating `D` are equal if they have the same base point and take the same
+values. -/
+theorem totalSpace_annihilatorSpace_ext {z w : TotalSpace P fun x ↦ annihilatorSpace I D x}
+    (hproj : z.proj = w.proj)
+    (h : ∀ v : TangentSpace I z.proj, (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) v =
+      (w.snd : TangentSpace I w.proj →L[𝕜] 𝕜) v) : z = w :=
+  annihilatorInclusion_injective I D P (CotangentBundle.ext hproj h)
+
 variable [IsManifold I 1 M]
 
 /-- The total space of the annihilators of `D` carries the subspace topology
