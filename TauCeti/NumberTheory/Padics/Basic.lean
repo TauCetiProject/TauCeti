@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.MulAction
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-import Mathlib.Topology.Algebra.Algebra
 
 /-!
 # Basic instances for the `p`-adic numbers
@@ -32,12 +31,14 @@ degrees over `ℤ_[p]` are compared.
 
 For a `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
-when the scalar action of `ℚ_[p]` on `K` is. For a normed `ℚ_[p]`-algebra `K` with `‖1‖ = 1` it is
-an isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and the norm of a natural number
-in `K` is its `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`). A continuous ring homomorphism
-between `ℚ_[p]`-algebras with continuous scalar actions and Hausdorff target is automatically
-`ℚ_[p]`-linear (`RingHom.map_algebraMap_padic_of_continuous`), since it fixes the dense subfield
-`ℚ`; for instance a continuous Frobenius lift on a `p`-adic field fixes `ℚ_[p]`.
+when the structure map `ℚ_[p] → K` is. For a normed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1` it maps
+`ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it is an isometry, and the norm of a
+natural number in `K` is its `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`).
+
+A ring homomorphism `σ : K →+* L` between `ℚ_[p]`-algebras is `ℚ_[p]`-linear when
+`σ ∘ algebraMap ℚ_[p] K` and `algebraMap ℚ_[p] L` are continuous and `L` is Hausdorff
+(`RingHom.map_algebraMap_padic_of_continuous`), since both maps agree on the dense subfield `ℚ`;
+for instance a continuous Frobenius lift on a `p`-adic field fixes `ℚ_[p]`.
 -/
 
 public section
@@ -115,27 +116,31 @@ theorem padicIntAlgebraMap_apply (a : ℤ_[p]) :
 theorem padicIntAlgebraMap_injective [Nontrivial K] : Function.Injective (padicIntAlgebraMap p K) :=
   (algebraMap ℚ_[p] K).injective.comp PadicInt.isEmbedding_coe_ringHom.injective
 
-/-- The structure map `ℤ_p → K` is continuous when the scalar action of `ℚ_p` on `K` is. -/
-theorem continuous_padicIntAlgebraMap [TopologicalSpace K] [ContinuousSMul ℚ_[p] K] :
+/-- The structure map `ℤ_p → K` is continuous when the structure map `ℚ_p → K` is. -/
+theorem continuous_padicIntAlgebraMap [TopologicalSpace K] (h : Continuous (algebraMap ℚ_[p] K)) :
     Continuous (padicIntAlgebraMap p K) :=
-  (continuous_algebraMap ℚ_[p] K).comp PadicInt.isEmbedding_coe_ringHom.continuous
+  h.comp PadicInt.isEmbedding_coe_ringHom.continuous
 
 end Algebra
 
 section NormedAlgebra
 
 variable {p : ℕ} [Fact (Nat.Prime p)] {K : Type*} [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
-  [NormOneClass K]
 
 /-- In a normed `ℚ_p`-algebra with `‖1‖ = 1`, the structure map `ℤ_p → K` preserves norms. -/
-theorem norm_padicIntAlgebraMap (a : ℤ_[p]) : ‖padicIntAlgebraMap p K a‖ = ‖a‖ := by
+theorem norm_padicIntAlgebraMap [NormOneClass K] (a : ℤ_[p]) :
+    ‖padicIntAlgebraMap p K a‖ = ‖a‖ := by
   simp [norm_algebraMap']
 
-theorem norm_padicIntAlgebraMap_le_one (a : ℤ_[p]) : ‖padicIntAlgebraMap p K a‖ ≤ 1 :=
-  (norm_padicIntAlgebraMap a).trans_le a.norm_le_one
+/-- In a normed `ℚ_p`-algebra with `‖1‖ ≤ 1`, the structure map `ℤ_p → K` takes values in the
+closed unit ball. -/
+theorem norm_padicIntAlgebraMap_le_one (h : ‖(1 : K)‖ ≤ 1) (a : ℤ_[p]) :
+    ‖padicIntAlgebraMap p K a‖ ≤ 1 := by
+  rw [padicIntAlgebraMap_apply, norm_algebraMap, PadicInt.norm_coe]
+  exact (mul_le_mul a.norm_le_one h (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
 
 /-- The norm of a natural number in a normed `ℚ_p`-algebra with `‖1‖ = 1` is its `p`-adic norm. -/
-theorem norm_natCast_eq_norm_padic (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
+theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
   rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
 
 end NormedAlgebra
@@ -144,17 +149,16 @@ end TauCeti
 
 namespace RingHom
 
-variable {p : ℕ} [Fact (Nat.Prime p)] {K L : Type*} [Semiring K] [TopologicalSpace K]
-  [Algebra ℚ_[p] K] [ContinuousSMul ℚ_[p] K] [Semiring L] [TopologicalSpace L] [T2Space L]
-  [Algebra ℚ_[p] L] [ContinuousSMul ℚ_[p] L]
+variable {p : ℕ} [Fact (Nat.Prime p)] {K L : Type*} [Semiring K] [Algebra ℚ_[p] K] [Semiring L]
+  [TopologicalSpace L] [T2Space L] [Algebra ℚ_[p] L]
 
-/-- A continuous ring homomorphism between `ℚ_[p]`-algebras, with continuous scalar actions of
-`ℚ_[p]` and Hausdorff target, is `ℚ_[p]`-linear: it agrees with the structure maps on the dense
+/-- A ring homomorphism `σ` between `ℚ_[p]`-algebras is `ℚ_[p]`-linear when `σ ∘ algebraMap ℚ_[p] K`
+and `algebraMap ℚ_[p] L` are continuous and the target is Hausdorff: both maps agree on the dense
 subfield `ℚ`. -/
-theorem map_algebraMap_padic_of_continuous (σ : K →+* L) (hσ : Continuous σ) (a : ℚ_[p]) :
+theorem map_algebraMap_padic_of_continuous (σ : K →+* L)
+    (hσ : Continuous (σ ∘ algebraMap ℚ_[p] K)) (hL : Continuous (algebraMap ℚ_[p] L)) (a : ℚ_[p]) :
     σ (algebraMap ℚ_[p] K a) = algebraMap ℚ_[p] L a :=
-  congrFun ((Padic.denseRange_ratCast p).equalizer
-    (hσ.comp (continuous_algebraMap ℚ_[p] K)) (continuous_algebraMap ℚ_[p] L)
+  congrFun ((Padic.denseRange_ratCast p).equalizer hσ hL
     (funext fun r ↦ DFunLike.congr_fun (RingHom.ext_rat
       ((σ.comp (algebraMap ℚ_[p] K)).comp (Rat.castHom ℚ_[p]))
       ((algebraMap ℚ_[p] L).comp (Rat.castHom ℚ_[p]))) r)) a
