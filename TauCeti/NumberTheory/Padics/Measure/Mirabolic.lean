@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SpecificGroups.Affine.Topology
 public import TauCeti.NumberTheory.Padics.MirabolicPsiModule
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
 
@@ -22,7 +23,6 @@ the Dirac measure at `x ∈ ℚ_p` has coordinates the Dirac measures at `p^n x`
 
 ## Main definitions
 
-* `TauCeti.AffineGroup.toContinuousMap`: the affine map `x ↦ b + a x` of a topological ring.
 * `AbstractMeasure.affineRep`: the representation of `P(ℤ_p)` on measures by pushforward.
 * `AbstractMeasure.mirabolicPsiModule`: measures on `ℤ_p` as a `(P(ℤ_p), ψ)`-module.
 * `AbstractMeasure.diracQp`: the Dirac measure at a point of `ℚ_p`, as an element of
@@ -46,24 +46,6 @@ open ContinuousMap TauCeti
 open scoped AbstractMeasure
 
 variable {p : ℕ} [Fact p.Prime]
-
-namespace TauCeti.AffineGroup
-
-/-- The affine map `x ↦ b + a x` of a topological ring attached to `(b, a)`, as a continuous
-map. -/
-def toContinuousMap {F : Type*} [Ring F] [TopologicalSpace F] [IsTopologicalSemiring F]
-    (g : AffineGroup F) : C(F, F) where
-  toFun x := g • x
-  continuous_toFun := by
-    simp_rw [AffineGroup.smul_def]
-    fun_prop
-
-@[simp]
-theorem toContinuousMap_apply {F : Type*} [Ring F] [TopologicalSpace F] [IsTopologicalSemiring F]
-    (g : AffineGroup F) (x : F) : g.toContinuousMap x = g • x :=
-  (rfl)
-
-end TauCeti.AffineGroup
 
 namespace AbstractMeasure
 
@@ -95,8 +77,8 @@ theorem affineRep_apply (g : AffineGroup ℤ_[p]) (μ : D(ℤ_[p], R)) :
 /-- `(b, a) ∈ P(ℤ_p)` sends the Dirac measure at `x` to the Dirac measure at `b + a x`. -/
 @[simp]
 theorem affineRep_dirac (g : AffineGroup ℤ_[p]) (x : ℤ_[p]) :
-    affineRep p R g (dirac R x) = dirac R (g • x) :=
-  map_dirac _ x
+    affineRep p R g (dirac R x) = dirac R (g • x) := by
+  rw [affineRep_apply, map_dirac, AffineGroup.toContinuousMap_apply]
 
 local instance : ContinuousMul C(ℤ_[p], R) :=
   ContinuousMap.instContinuousMulOfLocallyCompactSpace
@@ -138,10 +120,6 @@ theorem mirabolicPsiModule_ρ : (mirabolicPsiModule p R).ρ = affineRep p R :=
 @[simp]
 theorem mirabolicPsiModule_ψ : (mirabolicPsiModule p R).ψ = psiMeasure :=
   (rfl)
-
-/-- `ψ` is surjective on measures on `ℤ_p`, since `ψ φ = id`. -/
-theorem surjective_psiMeasure : Function.Surjective (psiMeasure : D(ℤ_[p], R) → D(ℤ_[p], R)) :=
-  fun μ ↦ ⟨phiMeasure μ, psiMeasure_phiMeasure μ⟩
 
 /-! ### Dirac measures on `ℚ_p` -/
 

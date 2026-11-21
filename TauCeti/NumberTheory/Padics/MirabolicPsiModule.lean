@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RepresentationTheory.Basic
-public import Mathlib.Topology.Algebra.Module.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Affine.Basic
 
 /-!
@@ -53,7 +52,7 @@ statements that use them.
   of `diag(p⁻¹, 1) x` is `ψ (x_0)`.
 * `TauCeti.MirabolicPsiModule.boxtimesRep_map_apply_coe`: `h ∈ P(ℤ_p)` acts on `x_n` through
   `φ^n h φ^{-n}`; in particular the zeroth coordinate is `P(ℤ_p)`-equivariant.
-* `TauCeti.MirabolicPsiModule.surjective_boxtimesQp_coe_zero`: if `ψ` is surjective, every
+* `TauCeti.MirabolicPsiModule.boxtimesQp_coe_zero_surjective`: if `ψ` is surjective, every
   element of `M` is the zeroth coordinate of an element of `M ⊠ ℚ_p`.
 * `TauCeti.MirabolicPsiModule.continuous_boxtimesRep`: for continuous `ψ` and a continuous
   `P(ℤ_p)`-action, each element of `P(ℚ_p)` acts continuously on `M ⊠ ℚ_p` with the inverse-limit
@@ -251,7 +250,7 @@ theorem boxtimesQp_ext {x y : D.boxtimesQp} (N : ℕ)
 
 /-- If `ψ` is surjective, every element of `M` is the zeroth coordinate of an element of
 `M ⊠ ℚ_p`. -/
-theorem surjective_boxtimesQp_coe_zero (hψ : Function.Surjective D.ψ) :
+theorem boxtimesQp_coe_zero_surjective (hψ : Function.Surjective D.ψ) :
     Function.Surjective fun x : D.boxtimesQp ↦ (x : ℕ → M) 0 := by
   intro z
   refine ⟨⟨fun n ↦ (Function.surjInv hψ)^[n] z, fun n ↦ ?_⟩, rfl⟩
@@ -264,16 +263,29 @@ theorem surjective_boxtimesQp_coe_zero (hψ : Function.Surjective D.ψ) :
 private def raise (h : AffineGroup ℤ_[p]) : AffineGroup ℤ_[p] :=
   ⟨.ofAdd ((p : ℤ_[p]) * h.left.toAdd), h.right⟩
 
+/-- An element of `P(ℤ_p)` is the pair of its translation and linear parts. -/
+private theorem mk_left_right (h : AffineGroup ℤ_[p]) :
+    (⟨.ofAdd h.left.toAdd, h.right⟩ : AffineGroup ℤ_[p]) = h :=
+  SemidirectProduct.ext (toAdd_ofAdd _) rfl
+
 private theorem map_raise_iterate (h : AffineGroup ℤ_[p]) (k : ℕ) :
     map PadicInt.Coe.ringHom ((raise^[k]) h) =
       padicPhi p ^ k * map PadicInt.Coe.ringHom h * (padicPhi p ^ k)⁻¹ := by
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [Function.iterate_succ_apply', raise, ← padicPhi_mul_map_mul_inv,
-      show (⟨.ofAdd ((raise^[k]) h).left.toAdd, ((raise^[k]) h).right⟩ : AffineGroup ℤ_[p]) =
-        (raise^[k]) h from rfl, ih]
+    rw [Function.iterate_succ_apply', raise, ← padicPhi_mul_map_mul_inv, mk_left_right, ih]
     group
+
+/-- Raising the level `k` times turns `φ^m g φ^{-l} = h` into
+`φ^(m + k) g φ^(-(l + k)) = raise^[k] h`. -/
+private theorem map_raise_iterate_of_eq {g : AffineGroup ℚ_[p]} {m l : ℕ}
+    {h : AffineGroup ℤ_[p]}
+    (hh : map PadicInt.Coe.ringHom h = padicPhi p ^ m * g * (padicPhi p ^ l)⁻¹) (k : ℕ) :
+    map PadicInt.Coe.ringHom ((raise^[k]) h) =
+      padicPhi p ^ (m + k) * g * (padicPhi p ^ (l + k))⁻¹ := by
+  rw [map_raise_iterate, hh]
+  group
 
 private theorem ψ_ρ_raise_apply (h : AffineGroup ℤ_[p]) (z : M) :
     D.ψ (D.ρ (raise h) z) = D.ρ h (D.ψ z) :=
@@ -304,7 +316,7 @@ private theorem eq_of_map_eq {g : AffineGroup ℚ_[p]} {m l l' : ℕ} {h h' : Af
     rw [map_mul, map_inv, hh, hh']
     group
   subst hl
-  exact ⟨rfl, map_injective (fun _ _ ↦ Subtype.ext) (hh.trans hh'.symm)⟩
+  exact ⟨rfl, map_injective (fun _ _ ↦ PadicInt.ext) (hh.trans hh'.symm)⟩
 
 /-- The candidate coordinates agree at all admissible levels. -/
 private theorem coordAt_eq (x : D.boxtimesQp) {g : AffineGroup ℚ_[p]} {n m l m' l' : ℕ}
@@ -313,15 +325,9 @@ private theorem coordAt_eq (x : D.boxtimesQp) {g : AffineGroup ℚ_[p]} {n m l m
     (hh' : map PadicInt.Coe.ringHom h' = padicPhi p ^ m' * g * (padicPhi p ^ l')⁻¹) :
     coordAt (D := D) x n m l h = coordAt (D := D) x n m' l' h' := by
   rw [← coordAt_raise_iterate x hnm l h m', ← coordAt_raise_iterate x hnm' l' h' m]
-  have h₁ : map PadicInt.Coe.ringHom ((raise^[m']) h) =
-      padicPhi p ^ (m + m') * g * (padicPhi p ^ (l + m'))⁻¹ := by
-    rw [map_raise_iterate, hh]
-    group
-  have h₂ : map PadicInt.Coe.ringHom ((raise^[m]) h') =
-      padicPhi p ^ (m + m') * g * (padicPhi p ^ (l' + m))⁻¹ := by
-    rw [map_raise_iterate, hh', add_comm m m']
-    group
-  obtain ⟨hl, hh⟩ := eq_of_map_eq h₁ h₂
+  have h₂ := map_raise_iterate_of_eq hh' m
+  rw [add_comm m' m] at h₂
+  obtain ⟨hl, hh⟩ := eq_of_map_eq (map_raise_iterate_of_eq hh m') h₂
   rw [hl, hh, add_comm m m']
 
 /-- A choice of admissible level for `g` at least `n`. -/
@@ -343,6 +349,12 @@ private theorem actSeq_eq (g : AffineGroup ℚ_[p]) (x : D.boxtimesQp) {n m l : 
     (hh : map PadicInt.Coe.ringHom h = padicPhi p ^ m * g * (padicPhi p ^ l)⁻¹) :
     actSeq g x n = (D.ψ ^ (m - n)) (D.ρ h ((x : ℕ → M) l)) :=
   coordAt_eq x (level_spec g n).1 hnm (level_spec g n).2 hh
+
+private theorem actSeq_eq_of_eq (g : AffineGroup ℚ_[p]) (x : D.boxtimesQp) {n l : ℕ}
+    {h : AffineGroup ℤ_[p]}
+    (hh : map PadicInt.Coe.ringHom h = padicPhi p ^ n * g * (padicPhi p ^ l)⁻¹) :
+    actSeq g x n = D.ρ h ((x : ℕ → M) l) := by
+  rw [actSeq_eq g x le_rfl hh, Nat.sub_self, pow_zero, one_apply_eq_self]
 
 private theorem actSeq_mem (g : AffineGroup ℚ_[p]) (x : D.boxtimesQp) :
     actSeq g x ∈ D.boxtimesQp := by
@@ -367,30 +379,23 @@ private theorem actLinear_one : actLinear (D := D) 1 = 1 := by
   ext x n : 3
   have h1 : map PadicInt.Coe.ringHom (1 : AffineGroup ℤ_[p]) =
       padicPhi p ^ n * 1 * (padicPhi p ^ n)⁻¹ := by group; simp
-  rw [one_apply_eq_self, coe_actLinear, actSeq_eq 1 x le_rfl h1, Nat.sub_self, pow_zero, map_one,
-    one_apply_eq_self, one_apply_eq_self]
+  rw [one_apply_eq_self, coe_actLinear, actSeq_eq_of_eq 1 x h1, map_one, one_apply_eq_self]
 
 private theorem actLinear_mul (g g' : AffineGroup ℚ_[p]) :
     actLinear (D := D) (g * g') = actLinear g * actLinear g' := by
   ext x n : 3
   obtain ⟨m, l, h, hnm, hh⟩ := exists_map_eq_padicPhi_pow_mul_mul_inv_pow g n
   obtain ⟨m', l', h', -, hh'⟩ := exists_map_eq_padicPhi_pow_mul_mul_inv_pow g' 0
-  have hg : map PadicInt.Coe.ringHom ((raise^[m']) h) =
-      padicPhi p ^ (m + m') * g * (padicPhi p ^ (l + m'))⁻¹ := by
-    rw [map_raise_iterate, hh]
-    group
-  have hg' : map PadicInt.Coe.ringHom ((raise^[l]) h') =
-      padicPhi p ^ (l + m') * g' * (padicPhi p ^ (l' + l))⁻¹ := by
-    rw [map_raise_iterate, hh', add_comm l m']
-    group
+  have hg := map_raise_iterate_of_eq hh m'
+  have hg' := map_raise_iterate_of_eq hh' l
+  rw [add_comm m' l] at hg'
   have hgg' : map PadicInt.Coe.ringHom ((raise^[m']) h * (raise^[l]) h') =
       padicPhi p ^ (m + m') * (g * g') * (padicPhi p ^ (l' + l))⁻¹ := by
     rw [map_mul, hg, hg']
     group
   rw [mul_apply_eq_comp, coe_actLinear, coe_actLinear,
     actSeq_eq _ x (by omega : n ≤ m + m') hgg', actSeq_eq g _ (by omega : n ≤ m + m') hg,
-    coe_actLinear, actSeq_eq g' x (le_refl (l + m')) hg', Nat.sub_self, pow_zero,
-    one_apply_eq_self, map_mul, mul_apply_eq_comp]
+    coe_actLinear, actSeq_eq_of_eq g' x hg', map_mul, mul_apply_eq_comp]
 
 variable (D) in
 /-- The representation of `P(ℚ_p)` on `M ⊠ ℚ_p`: if `φ^m g φ^{-l} = h` lies in `P(ℤ_p)`, the
@@ -408,13 +413,21 @@ theorem boxtimesRep_apply_coe (g : AffineGroup ℚ_[p]) (x : D.boxtimesQp) {n m 
     (D.boxtimesRep g x : ℕ → M) n = (D.ψ ^ (m - n)) (D.ρ h ((x : ℕ → M) l)) :=
   actSeq_eq g x hnm hh
 
+/-- If `φ^n g φ^{-l} = h` for some `h ∈ P(ℤ_p)`, then the `n`-th coordinate of `g x` is
+`h x_l`. -/
+theorem boxtimesRep_apply_coe_of_eq (g : AffineGroup ℚ_[p]) (x : D.boxtimesQp) {n l : ℕ}
+    {h : AffineGroup ℤ_[p]}
+    (hh : map PadicInt.Coe.ringHom h = padicPhi p ^ n * g * (padicPhi p ^ l)⁻¹) :
+    (D.boxtimesRep g x : ℕ → M) n = D.ρ h ((x : ℕ → M) l) :=
+  actSeq_eq_of_eq g x hh
+
 /-- **`diag(p^k, 1)` acts by the shift** `x_n ↦ x_{n + k}`. -/
 @[simp]
 theorem boxtimesRep_padicPhi_pow_apply_coe (k : ℕ) (x : D.boxtimesQp) (n : ℕ) :
     ((D.boxtimesRep (padicPhi p) ^ k) x : ℕ → M) n = (x : ℕ → M) (n + k) := by
   rw [← map_pow,
-    boxtimesRep_apply_coe _ x le_rfl (h := 1) (l := n + k) (by rw [pow_add]; group; simp),
-    Nat.sub_self, pow_zero, map_one, one_apply_eq_self, one_apply_eq_self]
+    boxtimesRep_apply_coe_of_eq _ x (h := 1) (l := n + k) (by rw [pow_add]; group; simp), map_one,
+    one_apply_eq_self]
 
 /-- `diag(p, 1)` acts by the shift `x_n ↦ x_{n + 1}`. -/
 @[simp]
@@ -427,8 +440,8 @@ theorem boxtimesRep_padicPhi_apply_coe (x : D.boxtimesQp) (n : ℕ) :
 @[simp]
 theorem boxtimesRep_padicPhi_inv_apply_coe_succ (x : D.boxtimesQp) (n : ℕ) :
     (D.boxtimesRep (padicPhi p)⁻¹ x : ℕ → M) (n + 1) = (x : ℕ → M) n := by
-  rw [boxtimesRep_apply_coe _ x le_rfl (h := 1) (l := n) (by rw [pow_succ]; group; simp),
-    Nat.sub_self, pow_zero, map_one, one_apply_eq_self, one_apply_eq_self]
+  rw [boxtimesRep_apply_coe_of_eq _ x (h := 1) (l := n) (by rw [pow_succ]; group; simp), map_one,
+    one_apply_eq_self]
 
 /-- The zeroth coordinate of `diag(p⁻¹, 1) x` is `ψ (x_0)`. -/
 @[simp]
@@ -449,8 +462,7 @@ theorem boxtimesRep_map_apply_coe (b : ℤ_[p]) (a : ℤ_[p]ˣ) (x : D.boxtimesQ
     | succ n ih =>
       rw [Function.iterate_succ_apply', ih, raise]
       simp [pow_succ', mul_assoc]
-  rw [boxtimesRep_apply_coe _ x le_rfl (map_raise_iterate _ n), hraise, Nat.sub_self, pow_zero,
-    one_apply_eq_self]
+  rw [boxtimesRep_apply_coe_of_eq _ x (map_raise_iterate _ n), hraise]
 
 /-- The zeroth coordinate `M ⊠ ℚ_p → M` is `P(ℤ_p)`-equivariant. -/
 @[simp]
@@ -471,7 +483,7 @@ theorem boxtimesRep_inl_apply_coe (b : ℚ_[p]) (x : D.boxtimesQp) (n : ℕ) (c 
       simpa using hc
     · rw [coe_padicPhi_pow_mul_mul_inv_pow_right]
       simp [(Fact.out : p.Prime).ne_zero]
-  rw [boxtimesRep_apply_coe _ x le_rfl hh, Nat.sub_self, pow_zero, one_apply_eq_self]
+  exact boxtimesRep_apply_coe_of_eq _ x hh
 
 /-- If `ψ` and the action of `P(ℤ_p)` are continuous, every element of `P(ℚ_p)` acts continuously
 on `M ⊠ ℚ_p`, with the topology induced from the product topology on sequences. -/
