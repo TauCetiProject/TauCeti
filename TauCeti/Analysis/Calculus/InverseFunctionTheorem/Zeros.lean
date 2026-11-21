@@ -199,8 +199,9 @@ private theorem nondegenerate_and_exists_equiv_of_closedBall {g : E → F} {r : 
 Let `f` be continuous on the compact set `K`, and let every zero of `f` in `K` be an interior point
 of `K` at which the derivative of `f` is continuous and invertible. Then for every `ε > 0` there
 is `δ > 0` such that every `g` differentiable on `K` with `‖g x - f x‖ ≤ δ` and
-`‖fderiv 𝕜 g x - fderiv 𝕜 f x‖ ≤ δ` on `K` again has only such zeros in `K`, and there is a
-bijection between the zeros of `f` and those of `g` in `K` moving each zero by at most `ε`. -/
+`‖fderiv 𝕜 g x - fderiv 𝕜 f x‖ ≤ δ` on `K` again has only zeros in the interior of `K` at which
+the derivative of `g` is invertible, and there is a bijection between the zeros of `f` and those
+of `g` in `K` moving each zero by at most `ε`. -/
 theorem exists_pos_forall_exists_equiv_sep_eq_zero (hK : IsCompact K) (hf : ContinuousOn f K)
     (hz : ∀ x ∈ K, f x = 0 →
       x ∈ interior K ∧ ContinuousAt (fderiv 𝕜 f) x ∧ (fderiv 𝕜 f x).IsInvertible)
