@@ -81,6 +81,16 @@ theorem Ad_apply_eq_self_of_mem_center {g : G} (hg : g ∈ Subgroup.center G)
   rw [← Subgroup.centralizer_univ, ← Subgroup.coe_top] at hg
   exact Ad_apply_eq_self_of_mem_centralizer hg (by simp)
 
+/-- Multiplying on the right by a central element does not change the group adjoint action. -/
+theorem Ad_mul_right_of_mem_center (g : G) {z : G} (hz : z ∈ Subgroup.center G)
+    (X : LeftInvariantDerivation I G) : Ad (I := I) (g * z) X = Ad (I := I) g X := by
+  rw [Ad_mul, LieEquiv.trans_apply, Ad_apply_eq_self_of_mem_center hz]
+
+/-- Multiplying on the left by a central element does not change the group adjoint action. -/
+theorem Ad_mul_left_of_mem_center {z : G} (hz : z ∈ Subgroup.center G) (g : G)
+    (X : LeftInvariantDerivation I G) : Ad (I := I) (z * g) X = Ad (I := I) g X := by
+  rw [Ad_mul, LieEquiv.trans_apply, Ad_apply_eq_self_of_mem_center hz]
+
 /-- **The centre of a connected Lie group is the kernel of the adjoint representation**: an element
 is central exactly when its adjoint action fixes every derivation. -/
 theorem mem_center_iff_forall_Ad_apply_eq_self [PreconnectedSpace G] (g : G) :

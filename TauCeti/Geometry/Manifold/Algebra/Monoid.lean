@@ -5,19 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Smooth monoid morphisms
 
 Identity, composition, product projections, and their laws for bundled smooth multiplicative and
-additive monoid morphisms. It also propagates the regularity of multiplicative and additive maps
-from a group at any one point to the whole group.
+additive monoid morphisms. It also lifts `C^n` monoid morphisms from a group into a complete normed
+ring to its group of units, and propagates the regularity of multiplicative and additive maps from
+a group at any one point to the whole group.
 
 The projections `ContMDiffMonoidMorphism.fst` and `ContMDiffMonoidMorphism.snd` have coercion
 formulas `ContMDiffMonoidMorphism.coe_fst` and `ContMDiffMonoidMorphism.coe_snd`. The corresponding
 additive declarations are `ContMDiffAddMonoidMorphism.fst`, `ContMDiffAddMonoidMorphism.snd`,
 `ContMDiffAddMonoidMorphism.coe_fst`, and `ContMDiffAddMonoidMorphism.coe_snd`.
+`ContMDiffMonoidMorphism.toHomUnits` lifts a `C^n` morphism from a group `G` into a complete normed
+ring `A` (over any nontrivially normed field `𝕜` and regularity `n : ℕ∞ω`) to a `C^n` morphism into
+`Aˣ`, with coercion formula `ContMDiffMonoidMorphism.coe_toHomUnits`.
 -/
 
 public section
@@ -116,6 +121,36 @@ theorem comp_assoc
     (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := by
   apply DFunLike.coe_injective
   rfl
+
+end ContMDiffMonoidMorphism
+
+namespace ContMDiffMonoidMorphism
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  {A : Type*} [NormedRing A] [NormedSpace 𝕜 A] [CompleteSpace A]
+
+/-- Any `C^n` monoid morphism from a group `G` into a complete normed ring `A` lifts to a `C^n`
+monoid morphism into the group of units `Aˣ`. -/
+def toHomUnits (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G A) :
+    ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G Aˣ where
+  toMonoidHom := f.toMonoidHom.toHomUnits
+  contMDiff_toFun :=
+    ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val f.contMDiff_toFun
+
+/-- The underlying monoid homomorphism of `f.toHomUnits` is `f.toMonoidHom.toHomUnits`. -/
+@[simp]
+theorem toMonoidHom_toHomUnits (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G A) :
+    f.toHomUnits.toMonoidHom = f.toMonoidHom.toHomUnits :=
+  (rfl)
+
+/-- Coercing `f.toHomUnits g` back to `A` recovers `f g`. -/
+@[simp]
+theorem coe_toHomUnits (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G A) (g : G) :
+    ((f.toHomUnits g : Aˣ) : A) = f g :=
+  (rfl)
 
 end ContMDiffMonoidMorphism
 

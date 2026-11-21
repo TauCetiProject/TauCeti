@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Functor
+public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import Mathlib.Algebra.Lie.Prod
 
 /-!
@@ -21,6 +21,11 @@ arbitrary models with corners and independent model and carrier universes.
 * `TauCeti.Lie.prodLieEquiv_apply`: its two components are the native Lie maps of the projections.
 * `TauCeti.Lie.lieMap_fst_prodLieEquiv_symm` and
   `TauCeti.Lie.lieMap_snd_prodLieEquiv_symm`: the projections recover the two input derivations.
+* `TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_prod`,
+  `TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_inl`,
+  `TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_inr`, and
+  `TauCeti.Lie.prodLieEquiv_symm_eq_add`: evaluation on product homomorphisms and factor
+  inclusions, and the additive formula for the inverse equivalence.
 
 ## References
 
@@ -127,5 +132,149 @@ theorem lieMap_snd_prodLieEquiv_symm
   have h := congrArg Prod.snd
     ((prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).apply_symm_apply p)
   simpa only [prodLieEquiv_apply] using h
+
+/-- In product Lie-algebra coordinates, the Lie map of a product of continuous homomorphisms
+evaluates componentwise. -/
+theorem prodLieEquiv_continuousMonoidHom_lieMap_prod
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {K : Type*} [TopologicalSpace K] [ChartedSpace H'' K] [Group K] [LieGroup I'' ∞ K]
+    (f : K →ₜ* G) (g : K →ₜ* G') (D : LeftInvariantDerivation I'' K) :
+    prodLieEquiv (ContinuousMonoidHom.lieMap (I := I'') (I' := I.prod I') (f.prod g) D) =
+      (ContinuousMonoidHom.lieMap (I := I'') (I' := I) f D,
+        ContinuousMonoidHom.lieMap (I := I'') (I' := I') g D) := by
+  rw [prodLieEquiv_apply,
+    ← ContinuousMonoidHom.toContMDiffMonoidMorphism_fst (I := I) (I' := I') (G := G) (G' := G'),
+    ← ContinuousMonoidHom.toContMDiffMonoidMorphism_snd (I := I) (I' := I') (G := G) (G' := G'),
+    ← ContinuousMonoidHom.lieMap_def, ← ContinuousMonoidHom.lieMap_def]
+  have hfst : (ContinuousMonoidHom.fst G G').comp (f.prod g) = f := by
+    apply ContinuousMonoidHom.ext; intro x; rfl
+  have hsnd : (ContinuousMonoidHom.snd G G').comp (f.prod g) = g := by
+    apply ContinuousMonoidHom.ext; intro x; rfl
+  have h1 := LieHom.congr_fun
+    (ContinuousMonoidHom.lieMap_comp (I := I'') (I' := I.prod I') (I'' := I)
+      (f.prod g) (ContinuousMonoidHom.fst G G')) D
+  have h2 := LieHom.congr_fun
+    (ContinuousMonoidHom.lieMap_comp (I := I'') (I' := I.prod I') (I'' := I')
+      (f.prod g) (ContinuousMonoidHom.snd G G')) D
+  rw [hfst, LieHom.comp_apply] at h1
+  rw [hsnd, LieHom.comp_apply] at h2
+  exact Prod.ext h1.symm h2.symm
+
+/-- The left factor inclusion maps a derivation to the first summand of the product Lie algebra. -/
+theorem prodLieEquiv_continuousMonoidHom_lieMap_inl (X : LeftInvariantDerivation I G) :
+    prodLieEquiv
+        (ContinuousMonoidHom.lieMap (I := I) (I' := I.prod I')
+          (ContinuousMonoidHom.inl G G') X) =
+      (X, 0) := by
+  have hinl : ContinuousMonoidHom.inl G G' = (ContinuousMonoidHom.id G).prod 1 := by
+    apply ContinuousMonoidHom.ext; intro x; rfl
+  rw [hinl, prodLieEquiv_continuousMonoidHom_lieMap_prod, ContinuousMonoidHom.lieMap_id,
+    ContinuousMonoidHom.lieMap_one, one_apply_eq_self, zero_apply]
+
+/-- The right factor inclusion maps a derivation to the second summand of the product Lie
+algebra. -/
+theorem prodLieEquiv_continuousMonoidHom_lieMap_inr (Y : LeftInvariantDerivation I' G') :
+    prodLieEquiv
+        (ContinuousMonoidHom.lieMap (I := I') (I' := I.prod I')
+          (ContinuousMonoidHom.inr G G') Y) =
+      (0, Y) := by
+  have hinr : ContinuousMonoidHom.inr G G' =
+      (1 : G' →ₜ* G).prod (ContinuousMonoidHom.id G') := by
+    apply ContinuousMonoidHom.ext; intro y; rfl
+  rw [hinr, prodLieEquiv_continuousMonoidHom_lieMap_prod, ContinuousMonoidHom.lieMap_one,
+    ContinuousMonoidHom.lieMap_id, zero_apply, one_apply_eq_self]
+
+/-- The inverse product Lie equivalence reconstructs a pair of derivations as the sum of their
+images under the two factor inclusions. -/
+theorem prodLieEquiv_symm_eq_add
+    (p : LeftInvariantDerivation I G × LeftInvariantDerivation I' G') :
+    prodLieEquiv.symm p =
+      ContinuousMonoidHom.lieMap (I := I) (I' := I.prod I')
+          (ContinuousMonoidHom.inl G G') p.1 +
+        ContinuousMonoidHom.lieMap (I := I') (I' := I.prod I')
+          (ContinuousMonoidHom.inr G G') p.2 := by
+  apply EquivLike.injective prodLieEquiv
+  rw [prodLieEquiv.apply_symm_apply, map_add, prodLieEquiv_continuousMonoidHom_lieMap_inl,
+    prodLieEquiv_continuousMonoidHom_lieMap_inr]
+  ext <;> simp
+
+/-- Pushing the inverse product Lie equivalence forward along a continuous homomorphism out of
+`G × G'` evaluates by adding the Lie maps of its restrictions to the two factors. -/
+theorem lieMap_prodLieEquiv_symm
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {K : Type*} [TopologicalSpace K] [ChartedSpace H'' K] [Group K] [LieGroup I'' ∞ K]
+    (f : G × G' →ₜ* K)
+    (p : LeftInvariantDerivation I G × LeftInvariantDerivation I' G') :
+    ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm p) =
+      ContinuousMonoidHom.lieMap (I := I) (I' := I'')
+          (f.comp (ContinuousMonoidHom.inl G G')) p.1 +
+        ContinuousMonoidHom.lieMap (I := I') (I' := I'')
+          (f.comp (ContinuousMonoidHom.inr G G')) p.2 := by
+  rw [prodLieEquiv_symm_eq_add, map_add]
+  have h1 := LieHom.congr_fun
+    (ContinuousMonoidHom.lieMap_comp (I := I) (I' := I.prod I') (I'' := I'')
+      (ContinuousMonoidHom.inl G G') f) p.1
+  have h2 := LieHom.congr_fun
+    (ContinuousMonoidHom.lieMap_comp (I := I') (I' := I.prod I') (I'' := I'')
+      (ContinuousMonoidHom.inr G G') f) p.2
+  rw [LieHom.comp_apply] at h1 h2
+  rw [← h1, ← h2]
+
+/-- If a continuous homomorphism out of `G × G'` has injective Lie map, so does its restriction to
+the first factor. -/
+theorem lieMap_comp_inl_injective
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {K : Type*} [TopologicalSpace K] [ChartedSpace H'' K] [Group K] [LieGroup I'' ∞ K]
+    {f : G × G' →ₜ* K}
+    (hf : Function.Injective (ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f)) :
+    Function.Injective
+      (ContinuousMonoidHom.lieMap (I := I) (I' := I'')
+        (f.comp (ContinuousMonoidHom.inl G G'))) := by
+  intro X Y hXY
+  have h : ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (X, 0)) =
+      ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (Y, 0)) := by
+    rw [lieMap_prodLieEquiv_symm, lieMap_prodLieEquiv_symm, map_zero, add_zero, add_zero, hXY]
+  exact (Prod.mk.inj (EquivLike.injective prodLieEquiv.symm (hf h))).1
+
+/-- If a continuous homomorphism out of `G × G'` has injective Lie map, so does its restriction to
+the second factor. -/
+theorem lieMap_comp_inr_injective
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {K : Type*} [TopologicalSpace K] [ChartedSpace H'' K] [Group K] [LieGroup I'' ∞ K]
+    {f : G × G' →ₜ* K}
+    (hf : Function.Injective (ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f)) :
+    Function.Injective
+      (ContinuousMonoidHom.lieMap (I := I') (I' := I'')
+        (f.comp (ContinuousMonoidHom.inr G G'))) := by
+  intro X Y hXY
+  have h : ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (0, X)) =
+      ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (0, Y)) := by
+    rw [lieMap_prodLieEquiv_symm, lieMap_prodLieEquiv_symm, map_zero, zero_add, zero_add, hXY]
+  exact (Prod.mk.inj (EquivLike.injective prodLieEquiv.symm (hf h))).2
+
+/-- The Lie map of a product homomorphism `f.prod g : K →ₜ* G × G'` is bijective if and only if the
+paired Lie map `D ↦ (f.lieMap D, g.lieMap D)` is bijective. -/
+theorem bijective_lieMap_prod_iff
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {K : Type*} [TopologicalSpace K] [ChartedSpace H'' K] [Group K] [LieGroup I'' ∞ K]
+    (f : K →ₜ* G) (g : K →ₜ* G') :
+    Function.Bijective (ContinuousMonoidHom.lieMap (I := I'') (I' := I.prod I') (f.prod g)) ↔
+      Function.Bijective (fun D : LeftInvariantDerivation I'' K ↦
+        (ContinuousMonoidHom.lieMap (I := I'') (I' := I) f D,
+          ContinuousMonoidHom.lieMap (I := I'') (I' := I') g D)) := by
+  have hcomp :
+      (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G') ∘
+        ContinuousMonoidHom.lieMap (I := I'') (I' := I.prod I') (f.prod g)) =
+        fun D ↦ (ContinuousMonoidHom.lieMap (I := I'') (I' := I) f D,
+          ContinuousMonoidHom.lieMap (I := I'') (I' := I') g D) := by
+    funext D
+    exact prodLieEquiv_continuousMonoidHom_lieMap_prod f g D
+  rw [← hcomp]
+  exact ((prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).bijective.of_comp_iff' _).symm
 
 end TauCeti.Lie

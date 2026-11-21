@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Determinant
+public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Projection
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Geometry.Lie.Exponential.Units.Functor
 
 /-!
-# Smooth half-spin representations of the Spinᶜ quotient
+# Smooth half-spin representations of the Spinᶜ quotient and their differentials
 
 An orthonormal frame compares compact coordinate Spin with the negative-metric geometric
 Clifford model. The weight-one half-spin action is already smooth on the covering group.
@@ -19,10 +20,18 @@ chirality eigenspaces rather than on separately chosen matrix spaces.
 
 The descended actions preserve the Hermitian inner product when Clifford generators are
 skew-adjoint. In complex rank two their determinant is the weight-two character `[s,z] ↦ z²`.
-The central determinant half-parameter path has operator-norm derivative `(ia/2) Id` at the
-identity. No choice of orientation of the frame is needed to descend the action on a fixed
-eigenspace; identifying the two coordinate SU(2) factors with positive and negative chirality
-requires a positively oriented frame separately.
+Lifting the descended action to the Lie group `(S →L[ℂ] S)ˣ` of invertible continuous endomorphisms
+yields its Lie-algebra differential on the whole `Spinᶜ(4)` Lie algebra:
+
+* on the Spin summand `ofSpin_* X`, it agrees with the framed even Clifford action on the
+  quadratic Clifford coordinate of `X`;
+* on the central determinant lift `realDetLieLift 4 hpos a`, it acts as `(i a / 2) Id`;
+* in Spin–determinant, quadratic Clifford–determinant, and `𝔰𝔬(4) × ℝ` coordinates, it acts as the
+  sum of the lifted Spin/Clifford action and `(i a / 2) Id`.
+
+No choice of orientation of the frame is needed to descend the action on a fixed eigenspace;
+identifying the two coordinate SU(2) factors with positive and negative chirality requires a
+positively oriented frame separately.
 
 ## References
 
@@ -48,7 +57,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 local notation "hpos" => QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm 4 0)
 local notation "hQ₀" => b.ne_zero_of_neg_norm_sq hQ
 local notation "SpinC" => spinCGroup (realCliffordForm 4 0) hpos
-local notation "I" => ModelWithCorners.prod 𝓘(ℝ, realSpinLieModel 4) (𝓡 1)
+local notation "IC" => ModelWithCorners.prod 𝓘(ℝ, realSpinLieModel 4) (𝓡 1)
 
 section Normed
 
@@ -59,7 +68,7 @@ local notation "S" => eigenspace (ρ (chirality Q o)) ε
 
 /-- The smooth weight-one half-spin representation of compact Spinᶜ(4), after comparison
 with the negative-metric Clifford model in the frame `b`. -/
-def realSpinCHalfSpinSmoothHom : ContMDiffMonoidMorphism I 𝓘(ℝ, S →L[ℂ] S) ∞
+def realSpinCHalfSpinSmoothHom : ContMDiffMonoidMorphism IC 𝓘(ℝ, S →L[ℂ] S) ∞
     SpinC (S →L[ℂ] S) where
   toMonoidHom := (Module.End.toContinuousLinearMap S).toMonoidHom.comp
     ((spinCGroupHalfSpinRep o ρ ε hQ₀).comp (b.realSpinCGroupHom hQ hpos hQ₀))
@@ -103,7 +112,18 @@ theorem realSpinCHalfSpinSmoothHom_ofCircle (z : Circle) :
     OrthonormalBasis.realSpinCGroupHom_ofCircle, spinCGroupHalfSpinRep_ofCircle]
   exact map_smul (Module.End.toContinuousLinearMap S) (z : ℂ) 1
 
+/-- Restriction to Spin is the half-spin action in the selected frame. -/
+@[simp]
+theorem realSpinCHalfSpinSmoothHom_ofSpin (s : spinGroup (realCliffordForm 4 0)) :
+    realSpinCHalfSpinSmoothHom o hQ b ρ ε (spinCGroup.ofSpin _ hpos s) =
+      (halfSpinRep o ρ ε (b.realSpinGroupEquiv hQ s)).toContinuousLinearMap := by
+  rw [realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀,
+    OrthonormalBasis.realSpinCGroupHom_ofSpin, spinCGroupHalfSpinRep_ofSpin]
+
 section DeterminantDerivative
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+attribute [local instance] finrank_real_complex_fact'
 
 -- Match the normed-algebra parent structures used by the framed smooth representation.
 /-- Operator-norm ring structure on half-spin endomorphisms. -/
@@ -115,6 +135,9 @@ local instance : NormedAlgebra ℝ (S →L[ℂ] S) := NormedAlgebra.complexToRea
 /-- The real scalar action selected by the normed-algebra structure. -/
 local instance : NormedSpace ℝ (S →L[ℂ] S) :=
   NormedAlgebra.toNormedSpace (𝕜 := ℝ) (S →L[ℂ] S)
+
+local instance : CompleteSpace S := FiniteDimensional.completeSpace ℂ S
+local instance : CompleteSpace (S →L[ℂ] S) := FiniteDimensional.completeSpace ℂ _
 
 /-- Along a determinant parameter with velocity `a`, the half-spin action has operator-norm
 derivative `(ia/2) Id` times the phase at time `t`. Differentiation is over `ℝ`. -/
@@ -143,19 +166,213 @@ theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero (a
   simpa using
     hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift o hQ b ρ ε a 0
 
-end DeterminantDerivative
+/-- The smooth weight-one half-spin representation of compact `Spinᶜ(4)` lifted to the Lie group
+`(S →L[ℂ] S)ˣ` of invertible continuous endomorphisms. -/
+def realSpinCHalfSpinUnitsSmoothHom :
+    ContMDiffMonoidMorphism IC 𝓘(ℝ, S →L[ℂ] S) ∞ SpinC (S →L[ℂ] S)ˣ :=
+  (realSpinCHalfSpinSmoothHom o hQ b ρ ε).toHomUnits
 
-/-- Restriction to Spin is the half-spin action in the selected frame. -/
+/-- Coercing `realSpinCHalfSpinUnitsSmoothHom` back to `S →L[ℂ] S` recovers
+`realSpinCHalfSpinSmoothHom`. -/
 @[simp]
-theorem realSpinCHalfSpinSmoothHom_ofSpin (s : spinGroup (realCliffordForm 4 0)) :
-    realSpinCHalfSpinSmoothHom o hQ b ρ ε (spinCGroup.ofSpin _ hpos s) =
-      (halfSpinRep o ρ ε (b.realSpinGroupEquiv hQ s)).toContinuousLinearMap := by
-  rw [realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hQ₀,
-    OrthonormalBasis.realSpinCGroupHom_ofSpin, spinCGroupHalfSpinRep_ofSpin]
+theorem coe_realSpinCHalfSpinUnitsSmoothHom_apply (x : SpinC) :
+    (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε x : S →L[ℂ] S) =
+      realSpinCHalfSpinSmoothHom o hQ b ρ ε x :=
+  (realSpinCHalfSpinSmoothHom o hQ b ρ ε).coe_toHomUnits x
+
+/-- Along any Lie-algebra ray `s ↦ exp(s • Z)` in `Spinᶜ(4)`, the smooth half-spin action has
+initial velocity equal to its Lie differential in canonical endomorphism coordinates. -/
+theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_zero
+    (Z : LeftInvariantDerivation IC SpinC) :
+    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε (lieExp (s • Z)))
+      (unitsLieAlgebraEquiv (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε) Z)) 0 := by
+  let _ : T2Space SpinC := ModelWithCorners.t2Space_of_lieGroup IC ∞
+  exact ((realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε).hasDerivAt_lieExp_smul_val_zero
+    Z).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun s ↦
+        (coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε (lieExp (s • Z))).symm)
+
+/-- On the central determinant lift `realDetLieLift 4 hpos a`, the differentiated half-spin
+representation acts by `(ia/2) Id`, reflecting weight `1` of the spinor action versus weight `2` of
+the determinant character. -/
+@[simp↓ high]
+theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realDetLieLift (a : ℝ) :
+    unitsLieAlgebraEquiv
+        (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
+          (spinCGroup.realDetLieLift 4 hpos a)) =
+      (Complex.I * (a / 2)) • (1 : S →L[ℂ] S) := by
+  let _ : T2Space SpinC := ModelWithCorners.t2Space_of_lieGroup IC ∞
+  let Z := spinCGroup.realDetLieLift 4 hpos a
+  exact (hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_zero o hQ b ρ ε Z).unique
+    (hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero o hQ b ρ ε a)
+
+/-- Restricting the smooth `Spinᶜ(4)` half-spin units homomorphism to `Spin(4)` along `ofSpin`
+agrees with `realHalfSpinSmoothHom` transported via
+`realCliffordSpinContinuousMulEquivUnitsRange`. -/
+theorem realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin :
+    (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε).comp
+        ((spinCGroup.ofSpinContinuousMonoidHom _ hpos).toContMDiffMonoidMorphism
+          𝓘(ℝ, realSpinLieModel 4) IC) =
+      (realHalfSpinSmoothHom o hQ b ρ ε).comp
+        ((realCliffordSpinContinuousMulEquivUnitsRange 4 :
+          spinGroup (realCliffordForm 4 0) →ₜ*
+            MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 4 0)))
+          |>.toContMDiffMonoidMorphism
+            𝓘(ℝ, realSpinLieModel 4) 𝓘(ℝ, realSpinLieModel 4)) := by
+  apply DFunLike.coe_injective
+  funext s
+  apply Units.ext
+  simp only [ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
+    coe_realSpinCHalfSpinUnitsSmoothHom_apply,
+    ContinuousMonoidHom.coe_toContMDiffMonoidMorphism,
+    spinCGroup.ofSpinContinuousMonoidHom_apply, realSpinCHalfSpinSmoothHom_ofSpin,
+    realHalfSpinSmoothHom_apply, ContinuousMonoidHom.coe_coe,
+    ContinuousMulEquiv.symm_apply_apply]
+
+/-- On the Spin summand `ofSpin_* X`, the differentiated `Spinᶜ(4)` half-spin representation agrees
+with the framed even Clifford action evaluated on the quadratic Clifford coordinate of `X`. -/
+@[simp↓ high]
+theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_ofSpin
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel 4) (spinGroup (realCliffordForm 4 0))) :
+    unitsLieAlgebraEquiv
+        (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
+          (ContinuousMonoidHom.lieMap (I := 𝓘(ℝ, realSpinLieModel 4)) (I' := IC)
+            (spinCGroup.ofSpinContinuousMonoidHom _ hpos) X)) =
+      LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ
+        ⟨realSpinLieEquivQuadratic 4 X,
+          quadraticLieSubalgebra_le_even _ (realSpinLieEquivQuadratic 4 X).property⟩)) := by
+  let IS := 𝓘(ℝ, realSpinLieModel 4)
+  let φ := realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε
+  let ψ := realHalfSpinSmoothHom o hQ b ρ ε
+  let f := spinCGroup.ofSpinContinuousMonoidHom (realCliffordForm 4 0) hpos
+  let g : spinGroup (realCliffordForm 4 0) →ₜ*
+      MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 4 0)) :=
+    realCliffordSpinContinuousMulEquivUnitsRange 4
+  have hlieHom :
+      (lieMap φ).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f) =
+        (lieMap ψ).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IS) g) := by
+    simpa only [lieMap_comp, ← ContinuousMonoidHom.lieMap_def] using
+      congrArg lieMap (realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin o hQ b ρ ε)
+  have hlie :
+      lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X) =
+        lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
+    simpa only [LieHom.comp_apply, realSpinLieEquivUnitsRange_apply] using
+      LieHom.congr_fun hlieHom X
+  calc
+    unitsLieAlgebraEquiv (lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X))
+        = unitsLieAlgebraEquiv (lieMap ψ (realSpinLieEquivUnitsRange 4 X)) :=
+          congrArg unitsLieAlgebraEquiv hlie
+    _ = TauCeti.Lie.unitsLieAlgebraLieEquiv (R := S →L[ℂ] S)
+          (lieMap ψ (realSpinLieEquivUnitsRange 4 X)) :=
+          (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply (R := S →L[ℂ] S) _).symm
+    _ = LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ
+          ⟨realCliffordSpinLieEquivQuadratic 4 (realSpinLieEquivUnitsRange 4 X),
+            quadraticLieSubalgebra_le_even _
+              (realCliffordSpinLieEquivQuadratic 4
+                (realSpinLieEquivUnitsRange 4 X)).property⟩)) :=
+          unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom o hQ b ρ ε
+            (realSpinLieEquivUnitsRange 4 X)
+    _ = LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ
+          ⟨realSpinLieEquivQuadratic 4 X,
+            quadraticLieSubalgebra_le_even _
+              (realSpinLieEquivQuadratic 4 X).property⟩)) := by
+          simp only [realSpinLieEquivQuadratic_apply]
+
+/-- In Spin–determinant coordinates `(X, a)`, the differentiated `Spinᶜ(4)` half-spin
+representation acts by the sum of the framed even Clifford action of `X` and `(ia/2) Id`. -/
+@[simp↓ high]
+theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSpinProdDetLinearEquiv
+    (p : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel 4) (spinGroup (realCliffordForm 4 0)) × ℝ) :
+    unitsLieAlgebraEquiv
+        (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
+          (spinCGroup.realSpinProdDetLinearEquiv 4 hpos p)) =
+      LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ
+        ⟨realSpinLieEquivQuadratic 4 p.1,
+          quadraticLieSubalgebra_le_even _ (realSpinLieEquivQuadratic 4 p.1).property⟩)) +
+        (Complex.I * (p.2 / 2)) • (1 : S →L[ℂ] S) :=
+  let φ := realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε
+  (congrArg (fun Z ↦ unitsLieAlgebraEquiv (lieMap φ Z))
+      (spinCGroup.realSpinProdDetLinearEquiv_apply 4 hpos p)).trans <|
+    (congrArg unitsLieAlgebraEquiv ((lieMap φ).map_add _ _)).trans <|
+    (unitsLieAlgebraEquiv.map_add _ _).trans <|
+    congrArg₂ (· + ·)
+      (unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_ofSpin o hQ b ρ ε p.1)
+      (unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realDetLieLift o hQ b ρ ε p.2)
+
+/-- In quadratic Clifford–determinant coordinates `(q, a)`, the differentiated `Spinᶜ(4)` half-spin
+representation acts by the framed even Clifford action of `q` plus `(ia/2) Id`. -/
+@[simp↓ high]
+theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realQuadraticProdDetLinearEquiv
+    (p : quadraticLieSubalgebra (realCliffordForm 4 0) × ℝ) :
+    unitsLieAlgebraEquiv
+        (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
+          (spinCGroup.realQuadraticProdDetLinearEquiv 4 hpos p)) =
+      LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ
+        ⟨p.1, quadraticLieSubalgebra_le_even _ p.1.property⟩)) +
+        (Complex.I * (p.2 / 2)) • (1 : S →L[ℂ] S) :=
+  (congrArg (fun Z ↦ unitsLieAlgebraEquiv (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε) Z))
+      (spinCGroup.realQuadraticProdDetLinearEquiv_apply 4 hpos p)).trans <|
+    (unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSpinProdDetLinearEquiv
+        o hQ b ρ ε ((realSpinLieEquivQuadratic 4).symm p.1, p.2)).trans <|
+      congrArg (fun u : even (realCliffordForm 4 0) ↦
+        LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε)
+          (b.realEvenCliffordEquiv hQ u)) +
+          (Complex.I * (p.2 / 2)) • (1 : S →L[ℂ] S))
+        (Subtype.ext (congrArg (Subtype.val : quadraticLieSubalgebra (realCliffordForm 4 0) → _)
+          ((realSpinLieEquivQuadratic 4).apply_symm_apply p.1)))
+
+/-- In `𝔰𝔬(4) × ℝ` coordinates, the differentiated `Spinᶜ(4)` half-spin representation acts by the
+framed even Clifford action of the lifted quadratic Clifford coordinate of `A ∈ 𝔰𝔬(4)` plus
+`(ia/2) Id`. -/
+@[simp↓ high]
+theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv
+    (p : LieAlgebra.Orthogonal.so (Fin 4) ℝ × ℝ) :
+    let q := (realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv 4).symm p.1
+    unitsLieAlgebraEquiv
+        (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
+          (spinCGroup.realSoProdDetLinearEquiv 4 hpos p)) =
+      LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ
+        ⟨q, quadraticLieSubalgebra_le_even _ q.property⟩)) +
+        (Complex.I * (p.2 / 2)) • (1 : S →L[ℂ] S) :=
+  (congrArg (fun Z ↦ unitsLieAlgebraEquiv (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε) Z))
+      (spinCGroup.realSoProdDetLinearEquiv_eq_realQuadraticProdDetLinearEquiv 4 hpos p)).trans
+    (unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realQuadraticProdDetLinearEquiv
+      o hQ b ρ ε (_, p.2))
+
+/-- **Differentiated `Spinᶜ(4)` half-spin action in `𝔰𝔬(4) × ℝ` coordinates**: a skew-symmetric
+matrix `A ∈ 𝔰𝔬(4)` and real determinant parameter `a ∈ ℝ` act on half-spinors as the framed even
+Clifford action of the normalized bivector of `A` plus `(ia/2) Id`. -/
+theorem
+    unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv_bivector
+    (p : LieAlgebra.Orthogonal.so (Fin 4) ℝ × ℝ) :
+    let Q₀ := QuadraticMap.weightedSumSquares ℝ (1 : Fin 4 → ℝ)
+    letI := bivectorLieRing Q₀
+    letI := bivectorLieAlgebra Q₀
+    unitsLieAlgebraEquiv
+        (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
+          (spinCGroup.realSoProdDetLinearEquiv 4 hpos p)) =
+      LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ
+        ⟨bivectorExterior (realCliffordForm 4 0) ((bivectorEquivSo 4 ℝ).symm p.1),
+          quadraticLieSubalgebra_le_even _
+            ((quadraticLieSubalgebra_toSubmodule_eq_range _).symm.le ⟨_, rfl⟩)⟩)) +
+        (Complex.I * (p.2 / 2)) • (1 : S →L[ℂ] S) := by
+  let Q₀ := QuadraticMap.weightedSumSquares ℝ (1 : Fin 4 → ℝ)
+  let _ := bivectorLieRing Q₀
+  let _ := bivectorLieAlgebra Q₀
+  exact (unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv
+      o hQ b ρ ε p).trans <|
+    congrArg (fun u : even (realCliffordForm 4 0) ↦
+      LinearMap.toContinuousLinearMap ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ u)) +
+        (Complex.I * (p.2 / 2)) • (1 : S →L[ℂ] S))
+      (Subtype.ext <| (congrArg Subtype.val
+        (realCliffordSpinToSpecialOrthogonalCoordinateLieEquiv_symm_eq_bivector 4 p.1)).trans
+        (coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply (realCliffordForm 4 0) _))
+
+end DeterminantDerivative
 
 /-- The half-spin action is smooth jointly in the Spinᶜ element and spinor. -/
 theorem contMDiff_realSpinCHalfSpinSmoothHom_apply :
-    ContMDiff (ModelWithCorners.prod I 𝓘(ℝ, S)) 𝓘(ℝ, S) ∞
+    ContMDiff (ModelWithCorners.prod IC 𝓘(ℝ, S)) 𝓘(ℝ, S) ∞
       (fun p : SpinC × S ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε p.1 p.2) :=
   (((ContinuousLinearMap.restrictScalarsL ℂ S S ℝ ℝ).contDiff.contMDiff.comp
     (realSpinCHalfSpinSmoothHom o hQ b ρ ε).contMDiff_toFun).comp
