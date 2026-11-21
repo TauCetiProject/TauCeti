@@ -124,6 +124,24 @@ theorem evalStage_eq_some_of_eqOn (h : evalStage σ s c n = some d)
   exact evalStage_eq_some_of_evaln (evaln_eq_some_of_eqOn h hστ) hst
     (hc.trans_le hst) (hd.trans_le hst)
 
+/-- Agreement of oracle answers below `s` preserves stage evaluation at stage `s`, including
+failure as well as output and use. -/
+theorem evalStage_eq_of_eqOn (hστ : Set.EqOn σ τ (Set.Iio s)) :
+    evalStage σ s c n = evalStage τ s c n := by
+  apply Option.ext
+  intro d
+  constructor <;> intro hd
+  · exact evalStage_eq_some_of_eqOn hd
+      (hστ.mono fun _ hz => hz.trans_le (evalStage_use_le hd)) le_rfl
+  · exact evalStage_eq_some_of_eqOn hd
+      (hστ.symm.mono fun _ hz => hz.trans_le (evalStage_use_le hd)) le_rfl
+
+/-- Stage evaluation at stage `s` against a total oracle depends only on its first `s` answers. -/
+theorem evalStage_range_map (O : ℕ → ℕ) (s : ℕ) (c : Code) (n : ℕ) :
+    evalStage (fun z => ((List.range s).map O)[z]?) s c n =
+      evalStage (fun z => some (O z)) s c n :=
+  evalStage_eq_of_eqOn fun z hz => by simp [Set.mem_Iio.1 hz]
+
 /-- Every successful raw run is eventually retained at all normalized stages. The output and
 recorded use are those of the original run, not merely some run with the same output. -/
 theorem exists_forall_evalStage_eq_some (h : evaln σ k c n = some d) :
