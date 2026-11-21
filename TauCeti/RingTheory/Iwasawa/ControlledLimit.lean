@@ -538,18 +538,92 @@ theorem controlledSquarePresentation_of_isLocalRing [IsLocalRing O] {M : Type*} 
   exact TauCeti.IsQuadraticallyPresented.of_exact (Pi.basisFun O⟦X⟧ _) (Pi.basisFun O⟦X⟧ _)
     (LinearMap.exact_iff.2 hrange.symm) hπ
 
+private theorem isLocalRing_quotient_span_one_sub_C {O : Type*} [CommRing O] {e : O}
+    (hloc : IsLocalRing (O ⧸ Ideal.span {1 - e})) :
+    IsLocalRing (O⟦X⟧ ⧸ Ideal.span {1 - C e}) := by
+  have hspan : Ideal.span {1 - C e} = Ideal.span {C (1 - e)} := by simp [map_sub, map_one]
+  exact ((Ideal.quotEquivOfEq hspan).trans
+    (PowerSeries.quotientSpanCRingEquiv (1 - e))).symm.isLocalRing
+
+private theorem finrank_residueField_tensorProduct_eq_of_minimalCover {A N : Type*}
+    [CommRing A] [IsLocalRing A] [AddCommGroup N] [Module A N] {r : ℕ}
+    (π : (Fin r → A) →ₗ[A] N) (hπ : Function.Surjective π)
+    (hmin : LinearMap.ker π ≤ maximalIdeal A • (⊤ : Submodule A (Fin r → A))) :
+    Module.finrank (ResidueField A) (ResidueField A ⊗[A] N) = r := by
+  let κ := ResidueField A
+  let b : Fin r → κ ⊗[A] N := fun j ↦ 1 ⊗ₜ[A] π (Pi.single j 1)
+  have hspan : Submodule.span κ (Set.range b) = ⊤ := by
+    rw [eq_top_iff]
+    intro y _
+    refine TensorProduct.inductionOn y (fun c n ↦ ?_) fun _ _ hx hy ↦ add_mem hx hy
+    obtain ⟨x, rfl⟩ := hπ n
+    have hx : x = ∑ j : Fin r, x j • Pi.single j (1 : A) := by
+      ext l; simp [Finset.sum_apply, Pi.single_apply]
+    have hcm : c ⊗ₜ[A] π x = ∑ j : Fin r, (c * residue A (x j)) • b j := by
+      conv_lhs => rw [hx, map_sum]
+      simp only [map_smul, TensorProduct.tmul_sum, b]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      rw [← TensorProduct.smul_tmul, TensorProduct.smul_tmul', smul_eq_mul, mul_one,
+        Algebra.smul_def, IsLocalRing.ResidueField.algebraMap_eq, mul_comm]
+    rw [hcm]
+    exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, rfl⟩)
+  have hli : LinearIndependent κ b := by
+    rw [Fintype.linearIndependent_iff]
+    intro c hc j
+    choose x hx using fun i ↦ IsLocalRing.residue_surjective (c i)
+    have htmul : (1 : κ) ⊗ₜ[A] π x = 0 := by
+      have hx' : x = ∑ i : Fin r, x i • Pi.single i (1 : A) := by
+        ext l; simp [Finset.sum_apply, Pi.single_apply]
+      conv_lhs => rw [hx', map_sum]
+      simp only [map_smul, TensorProduct.tmul_sum]
+      rw [← hc]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      dsimp only [b]
+      rw [← TensorProduct.smul_tmul, TensorProduct.smul_tmul', Algebra.smul_def,
+        IsLocalRing.ResidueField.algebraMap_eq, smul_eq_mul, mul_one, mul_one, hx i]
+    have hmem : π x ∈ maximalIdeal A • (⊤ : Submodule A N) := by
+      have h0 := congrArg (TauCeti.quotTensorEquivQuotSMulQuot (maximalIdeal A))
+        (show (1 : A ⧸ maximalIdeal A) ⊗ₜ[A] π x = 0 from htmul)
+      rw [TauCeti.quotTensorEquivQuotSMulQuot_one_tmul, map_zero,
+        Submodule.Quotient.mk_eq_zero] at h0
+      exact h0
+    have hmem' : π x ∈ (maximalIdeal A • (⊤ : Submodule A (Fin r → A))).map π := by
+      rwa [Submodule.map_smul'', Submodule.map_top, LinearMap.range_eq_top.mpr hπ]
+    obtain ⟨w, hw, hwx⟩ := hmem'
+    have hx_mem : x ∈ maximalIdeal A • (⊤ : Submodule A (Fin r → A)) := by
+      rw [show x = w + (x - w) by abel]
+      exact add_mem hw (hmin (by rw [LinearMap.mem_ker, map_sub, hwx, sub_self]))
+    have hxj : x j ∈ maximalIdeal A := by
+      refine Submodule.smul_induction_on hx_mem (fun a ha y _ ↦ ?_) fun _ _ hy hz ↦ ?_
+      · exact (maximalIdeal A).mul_mem_right (y j) ha
+      · exact (maximalIdeal A).add_mem hy hz
+    rw [← hx j, IsLocalRing.residue_eq_zero_iff]
+    exact hxj
+  exact (Module.finrank_eq_card_basis (Module.Basis.mk hli hspan.ge)).trans (Fintype.card_fin r)
+
 /-- Transport a minimal lifted square presentation from `(O ⧸ (1 - e))⟦X⟧` to
-`O⟦X⟧ ⧸ (1 - C e)` for a local factor `O ⧸ (1 - e)`. -/
+`O⟦X⟧ ⧸ (1 - C e)` for a local factor `O ⧸ (1 - e)`, preserving locality, the minimal
+residue-field generator rank, and the minimal-cover kernel bound. -/
 private theorem controlledSquarePresentation_local_factor {M : Type*} [AddCommGroup M]
     [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
     (hcof : ∀ N : ℕ, ∃ n : ℕ, N ≤ n ∧
       TauCeti.IsQuadraticallyPresented (O⟦X⟧ ⧸ towerIdeal p O n)
         (M ⧸ (towerIdeal p O n • (⊤ : Submodule O⟦X⟧ M))))
     (e : O) (hloc : IsLocalRing (O ⧸ Ideal.span {1 - e})) :
-    ∃ (r : ℕ) (A : Matrix (Fin r) (Fin r) (O⟦X⟧ ⧸ Ideal.span {1 - C e}))
-      (π : (Fin r → O⟦X⟧ ⧸ Ideal.span {1 - C e}) →ₗ[O⟦X⟧ ⧸ Ideal.span {1 - C e}]
-        ((O⟦X⟧ ⧸ Ideal.span {1 - C e}) ⊗[O⟦X⟧] M)),
-      Function.Surjective π ∧ LinearMap.range (Matrix.toLin' A) = LinearMap.ker π := by
+    letI : IsLocalRing (O⟦X⟧ ⧸ Ideal.span {1 - C e}) :=
+      isLocalRing_quotient_span_one_sub_C hloc
+    ∃ (r : ℕ),
+      r = Module.finrank (ResidueField (O⟦X⟧ ⧸ Ideal.span {1 - C e}))
+        (ResidueField (O⟦X⟧ ⧸ Ideal.span {1 - C e}) ⊗[O⟦X⟧ ⧸ Ideal.span {1 - C e}]
+          ((O⟦X⟧ ⧸ Ideal.span {1 - C e}) ⊗[O⟦X⟧] M)) ∧
+      ∃ (A : Matrix (Fin r) (Fin r) (O⟦X⟧ ⧸ Ideal.span {1 - C e}))
+        (π : (Fin r → O⟦X⟧ ⧸ Ideal.span {1 - C e}) →ₗ[O⟦X⟧ ⧸ Ideal.span {1 - C e}]
+          ((O⟦X⟧ ⧸ Ideal.span {1 - C e}) ⊗[O⟦X⟧] M)),
+        Function.Surjective π ∧
+        LinearMap.ker π ≤ maximalIdeal (O⟦X⟧ ⧸ Ideal.span {1 - C e}) •
+          (⊤ : Submodule (O⟦X⟧ ⧸ Ideal.span {1 - C e})
+            (Fin r → (O⟦X⟧ ⧸ Ideal.span {1 - C e}))) ∧
+        LinearMap.range (Matrix.toLin' A) = LinearMap.ker π := by
   let Oᵢ := O ⧸ Ideal.span {1 - e}
   let qᵢ : O →+* Oᵢ := Ideal.Quotient.mk (Ideal.span {1 - e})
   have : IsLocalRing Oᵢ := hloc
@@ -557,7 +631,8 @@ private theorem controlledSquarePresentation_local_factor {M : Type*} [AddCommGr
     Module.Finite.of_surjective (Ideal.Quotient.mkₐ ℤ_[p] _).toLinearMap
       Ideal.Quotient.mk_surjective
   let : Algebra O⟦X⟧ Oᵢ⟦X⟧ := (PowerSeries.map qᵢ).toAlgebra
-  obtain ⟨πᵢ, Bᵢ, hπᵢ, _, hrangeᵢ⟩ :=
+  set r := Module.finrank (ResidueField Oᵢ⟦X⟧) (ResidueField Oᵢ⟦X⟧ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M))
+  obtain ⟨πᵢ, Bᵢ, hπᵢ, hminᵢ, hrangeᵢ⟩ :=
     controlledSquarePresentation_local_minimal (p := p) (O := Oᵢ) (M := Oᵢ⟦X⟧ ⊗[O⟦X⟧] M)
       fun N ↦ by
         obtain ⟨n, hn, hQP⟩ := hcof N
@@ -574,19 +649,88 @@ private theorem controlledSquarePresentation_local_factor {M : Type*} [AddCommGr
       dsimp only [eqR, RingEquiv.trans_apply]
       rw [Ideal.quotEquivOfEq_mk, PowerSeries.quotientSpanCRingEquiv_mk]
   let eMod := AlgebraTensorModule.cancelBaseChange O⟦X⟧ Oᵢ⟦X⟧ Rᵢ Rᵢ M
-  set r := Module.finrank (ResidueField Oᵢ⟦X⟧) (ResidueField Oᵢ⟦X⟧ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M))
-  rcases Nat.eq_zero_or_pos r with hr0 | hrpos
-  · have : Subsingleton (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) := subsingleton_of_forall_eq 0 fun x ↦ by
-      obtain ⟨v, rfl⟩ := hπᵢ x
-      rw [show v = 0 from funext fun j ↦ (Fin.cast hr0 j).elim0, map_zero]
-    have : Subsingleton (Rᵢ ⊗[O⟦X⟧] M) := eMod.symm.injective.subsingleton
-    refine ⟨0, 0, 0, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩, ?_⟩
+  let unbase : Rᵢ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) →ₗ[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) :=
+    TensorProduct.lift <|
+      LinearMap.mk₂ Oᵢ⟦X⟧ (fun c y ↦ eqR c • y)
+        (fun _ _ _ ↦ by simp [add_smul])
+        (fun a c y ↦ by
+          simp [Algebra.smul_def, mul_smul, RingHom.algebraMap_toAlgebra])
+        (fun _ _ _ ↦ smul_add _ _ _)
+        (fun _ _ _ ↦ smul_comm _ _ _)
+  have hunbase_tmul (y : Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) : unbase (1 ⊗ₜ[Oᵢ⟦X⟧] y) = y := by
+    simp [unbase]
+  have htmul_unbase (w : Rᵢ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M)) : 1 ⊗ₜ[Oᵢ⟦X⟧] unbase w = w := by
+    refine TensorProduct.inductionOn w (fun c y ↦ ?_) fun x y hx hy ↦ by
+      rw [map_add, TensorProduct.tmul_add, hx, hy]
+    dsimp only [unbase]
+    rw [TensorProduct.lift.tmul, LinearMap.mk₂_apply, ← TensorProduct.smul_tmul,
+      Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra]
+    exact congrArg (· ⊗ₜ[Oᵢ⟦X⟧] y) (eqR.symm_apply_apply c)
+  let A : Matrix (Fin r) (Fin r) Rᵢ := Bᵢ.map eqR.symm
+  let π : (Fin r → Rᵢ) →ₗ[Rᵢ] (Rᵢ ⊗[O⟦X⟧] M) :=
+    { toFun := fun v ↦ eMod (1 ⊗ₜ[Oᵢ⟦X⟧] πᵢ (fun j ↦ eqR (v j)))
+      map_add' := fun u v ↦ by
+        have hadd : (fun j ↦ eqR ((u + v) j)) = (fun j ↦ eqR (u j)) + (fun j ↦ eqR (v j)) :=
+          funext fun j ↦ map_add eqR (u j) (v j)
+        rw [hadd, map_add, TensorProduct.tmul_add, map_add]
+      map_smul' := fun c v ↦ by
+        have hsmul : (fun j ↦ eqR ((c • v) j)) = eqR c • (fun j ↦ eqR (v j)) :=
+          funext fun j ↦ map_mul eqR c (v j)
+        rw [hsmul, map_smul, ← TensorProduct.smul_tmul,
+          show eqR c • (1 : Rᵢ) = c by
+            rw [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra]
+            exact eqR.symm_apply_apply c,
+          TensorProduct.tmul_eq_smul_one_tmul]
+        exact eMod.map_smul c (1 ⊗ₜ[Oᵢ⟦X⟧] πᵢ (fun j ↦ eqR (v j))) }
+  have hπ : Function.Surjective π := fun z ↦ by
+    obtain ⟨w, hw⟩ := hπᵢ (unbase (eMod.symm z))
+    refine ⟨fun j ↦ eqR.symm (w j), ?_⟩
+    change eMod (1 ⊗ₜ[Oᵢ⟦X⟧] πᵢ (fun j ↦ eqR (eqR.symm (w j)))) = z
+    simp_rw [eqR.apply_symm_apply]
+    rw [hw, htmul_unbase, eMod.apply_symm_apply]
+  have hker_iff (v : Fin r → Rᵢ) :
+      v ∈ LinearMap.ker π ↔ (fun j ↦ eqR (v j)) ∈ LinearMap.ker πᵢ := by
+    simp only [LinearMap.mem_ker, π, LinearMap.coe_mk, AddHom.coe_mk]
+    constructor
+    · intro hv
+      have h0 := congrArg unbase (eMod.injective (hv.trans eMod.map_zero.symm))
+      simpa only [hunbase_tmul, map_zero] using h0
+    · intro hv
+      rw [hv, TensorProduct.tmul_zero, map_zero]
+  let : IsLocalRing Rᵢ := isLocalRing_quotient_span_one_sub_C hloc
+  have hmin : LinearMap.ker π ≤ maximalIdeal Rᵢ • (⊤ : Submodule Rᵢ (Fin r → Rᵢ)) := by
+    intro v hv
+    have hv' := hminᵢ ((hker_iff v).mp hv)
+    have hmem_coord : ∀ w ∈ maximalIdeal Oᵢ⟦X⟧ • (⊤ : Submodule Oᵢ⟦X⟧ (Fin r → Oᵢ⟦X⟧)),
+        ∀ j : Fin r, w j ∈ maximalIdeal Oᵢ⟦X⟧ := fun w hw j ↦ by
+      refine Submodule.smul_induction_on hw (fun a ha y _ ↦ ?_) fun _ _ hy hz ↦ ?_
+      · exact (maximalIdeal Oᵢ⟦X⟧).mul_mem_right (y j) ha
+      · exact (maximalIdeal Oᵢ⟦X⟧).add_mem hy hz
+    have hcoord : ∀ j : Fin r, v j ∈ maximalIdeal Rᵢ := fun j ↦ by
+      have hj : eqR (v j) ∈ maximalIdeal Oᵢ⟦X⟧ := hmem_coord _ hv' j
+      rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff] at hj ⊢
+      exact fun hu ↦ hj (eqR.toRingHom.isUnit_map hu)
+    rw [show v = ∑ j : Fin r, v j • Pi.single j (1 : Rᵢ) by
+      ext l; simp [Finset.sum_apply, Pi.single_apply]]
+    exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem_smul (hcoord j) Submodule.mem_top
+  have hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π := by
     ext v
-    exact ⟨fun _ ↦ by simp [Subsingleton.elim v 0], fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-  · let Qᵢ := (TauCeti.QuadraticPresentation.ofExact hrpos (Pi.basisFun Oᵢ⟦X⟧ (Fin r))
-      (Pi.basisFun Oᵢ⟦X⟧ (Fin r)) (LinearMap.exact_iff.2 hrangeᵢ.symm) hπᵢ).baseChange Rᵢ
-    exact ⟨Qᵢ.size, Qᵢ.rel, eMod.toLinearMap ∘ₗ Qᵢ.gen, eMod.surjective.comp Qᵢ.gen_surjective,
-      Qᵢ.range_rel_eq_ker.trans (LinearMap.ker_comp_of_ker_eq_bot _ eMod.ker).symm⟩
+    rw [hker_iff, ← hrangeᵢ, LinearMap.mem_range, LinearMap.mem_range]
+    have hmulVec (w : Fin r → Rᵢ) :
+        (fun j ↦ eqR (Matrix.toLin' A w j)) = Matrix.toLin' Bᵢ (fun j ↦ eqR (w j)) := by
+      funext j
+      simp only [A, Matrix.toLin'_apply, Matrix.mulVec, dotProduct, map_sum]
+      exact Finset.sum_congr rfl fun k _ ↦ by
+        simp [map_mul, eqR.apply_symm_apply]
+    constructor
+    · rintro ⟨w, rfl⟩
+      exact ⟨fun j ↦ eqR (w j), (hmulVec w).symm⟩
+    · rintro ⟨w, hw⟩
+      refine ⟨fun j ↦ eqR.symm (w j), funext fun j ↦ eqR.injective ?_⟩
+      have h1 := congrFun (hmulVec (fun k ↦ eqR.symm (w k))) j
+      simpa only [eqR.apply_symm_apply, hw] using h1
+  exact ⟨r, (finrank_residueField_tensorProduct_eq_of_minimalCover π hπ hmin).symm,
+    A, π, hπ, hmin, hrange⟩
 
 /-- **Lifting a quadratic presentation over any commutative finite `ℤ_[p]`-algebra (cofinal form).**
 Let `O` be a commutative module-finite `ℤ_[p]`-algebra (not necessarily local, free, or reduced)
@@ -603,7 +747,7 @@ theorem controlledSquarePresentation_cofinal {M : Type*} [AddCommGroup M] [Modul
   obtain ⟨m, e, he, hloc⟩ :=
     TauCeti.IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_quotient O
   refine TauCeti.IsQuadraticallyPresented.of_completeOrthogonalIdempotents (he.map C) fun i ↦ ?_
-  obtain ⟨r, A, π, hπ, hrange⟩ :=
+  obtain ⟨r, _, A, π, hπ, _, hrange⟩ :=
     controlledSquarePresentation_local_factor (p := p) hcof (e i) (hloc i)
   exact TauCeti.IsQuadraticallyPresented.of_exact (Pi.basisFun _ (Fin r)) (Pi.basisFun _ (Fin r))
     (LinearMap.exact_iff.2 hrange.symm) hπ
@@ -624,25 +768,43 @@ theorem controlledSquarePresentation {M : Type*} [AddCommGroup M] [Module O⟦X�
 /-- **Componentwise projective square presentation retaining locally constant ranks.** Under the
 cofinal tower-quotient hypothesis, decomposing `O` via a complete orthogonal idempotent family
 into local factors yields a finite projective square presentation `P →Φ P →g M → 0` whose
-component ranks `rᵢ` are the minimal numbers of generators on each local factor. -/
+component factors `O ⧸ (1 - eᵢ)` and `O⟦X⟧ ⧸ (1 - C eᵢ)` are local rings, whose component
+ranks `rᵢ` equal the minimal numbers of generators `dim_κ (κ ⊗ (O⟦X⟧ ⧸ (1 - C eᵢ)) ⊗ M)` on each
+local factor, and whose surjection `g` is a minimal cover on each component. -/
 theorem controlledSquarePresentation_projective_cofinal {M : Type*} [AddCommGroup M]
     [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
     (hcof : ∀ N : ℕ, ∃ n : ℕ, N ≤ n ∧
       TauCeti.IsQuadraticallyPresented (O⟦X⟧ ⧸ towerIdeal p O n)
         (M ⧸ (towerIdeal p O n • (⊤ : Submodule O⟦X⟧ M)))) :
-    ∃ (m : ℕ) (e : Fin m → O) (_ : CompleteOrthogonalIdempotents e) (r : Fin m → ℕ),
+    ∃ (m : ℕ) (e : Fin m → O) (_ : CompleteOrthogonalIdempotents e)
+      (_ : ∀ i, IsLocalRing (O ⧸ Ideal.span {1 - e i}))
+      (hlocR : ∀ i, IsLocalRing (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}))
+      (r : Fin m → ℕ),
+      (∀ i, letI := hlocR i
+        r i = Module.finrank (ResidueField (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}))
+          (ResidueField (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}) ⊗[O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}]
+            ((O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}) ⊗[O⟦X⟧] M))) ∧
       let P := ∀ i : Fin m, Fin (r i) → (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)})
       Module.Finite O⟦X⟧ P ∧ Module.Projective O⟦X⟧ P ∧
       ∃ (Φ : P →ₗ[O⟦X⟧] P) (g : P →ₗ[O⟦X⟧] M),
-        Function.Surjective g ∧ LinearMap.range Φ = LinearMap.ker g := by
+        Function.Surjective g ∧ LinearMap.range Φ = LinearMap.ker g ∧
+        ∀ i, letI := hlocR i
+          ∀ x ∈ LinearMap.ker g,
+            x i ∈ maximalIdeal (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}) •
+              (⊤ : Submodule (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)})
+                (Fin (r i) → (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}))) := by
   have : TauCeti.IsSemiperfectRing O := TauCeti.IsSemiperfectRing.of_henselianRing ℤ_[p] O
   obtain ⟨m, e, he, hloc⟩ :=
     TauCeti.IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_quotient O
-  choose r A π hπ hrange using fun i ↦
+  let hlocR : ∀ i, IsLocalRing (O⟦X⟧ ⧸ Ideal.span {1 - C (e i)}) :=
+    fun i ↦ isLocalRing_quotient_span_one_sub_C (hloc i)
+  choose r hr A π hπ hmin hrange using fun i ↦
     controlledSquarePresentation_local_factor (p := p) hcof (e i) (hloc i)
-  exact ⟨m, e, he, r,
+  obtain ⟨hfin, hproj, Φ, g, hg_surj, hrange_eq, hker_g⟩ :=
     TauCeti.exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents (he.map C) r
-      fun i ↦ ⟨A i, π i, hπ i, hrange i⟩⟩
+      A π hπ hrange
+  exact ⟨m, e, he, hloc, hlocR, r, hr, hfin, hproj, Φ, g, hg_surj, hrange_eq,
+    fun i x hx ↦ hmin i ((hker_g x).mp hx i)⟩
 
 /-- **Determinant Fitting identity for lifted square presentations.** Under the cofinal
 tower-quotient hypothesis, `M` admits a quadratic presentation `P` over `O⟦X⟧` with

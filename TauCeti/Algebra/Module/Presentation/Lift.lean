@@ -543,14 +543,16 @@ each factor `(R ⧸ (1 - eᵢ)) ⊗[R] M`, assemble a square presentation `P →
 finitely generated projective `R`-module `P` retaining the locally constant ranks `rᵢ`. -/
 theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι : Type*}
     [Fintype ι] {e : ι → R} (he : CompleteOrthogonalIdempotents e) (r : ι → ℕ)
-    (hcomp : ∀ i, ∃ (A : Matrix (Fin (r i)) (Fin (r i)) (R ⧸ Ideal.span {1 - e i}))
-      (π : (Fin (r i) → R ⧸ Ideal.span {1 - e i}) →ₗ[R ⧸ Ideal.span {1 - e i}]
-        ((R ⧸ Ideal.span {1 - e i}) ⊗[R] M)),
-      Function.Surjective π ∧ LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) :
+    (A : ∀ i, Matrix (Fin (r i)) (Fin (r i)) (R ⧸ Ideal.span {1 - e i}))
+    (π : ∀ i, (Fin (r i) → R ⧸ Ideal.span {1 - e i}) →ₗ[R ⧸ Ideal.span {1 - e i}]
+      ((R ⧸ Ideal.span {1 - e i}) ⊗[R] M))
+    (hπ : ∀ i, Function.Surjective (π i))
+    (hrange : ∀ i, LinearMap.range (Matrix.toLin' (A i)) = LinearMap.ker (π i)) :
     let P := ∀ i : ι, (Fin (r i) → R ⧸ Ideal.span {1 - e i})
     Module.Finite R P ∧ Module.Projective R P ∧
     ∃ (Φ : P →ₗ[R] P) (g : P →ₗ[R] M),
-      Function.Surjective g ∧ LinearMap.range Φ = LinearMap.ker g := by
+      Function.Surjective g ∧ LinearMap.range Φ = LinearMap.ker g ∧
+      ∀ x : P, x ∈ LinearMap.ker g ↔ ∀ i, x i ∈ LinearMap.ker (π i) := by
   classical
   let Rᵢ : ι → Type _ := fun i ↦ R ⧸ Ideal.span {1 - e i}
   let P := ∀ i : ι, (Fin (r i) → Rᵢ i)
@@ -576,7 +578,6 @@ theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι
     Module.Projective.of_split (eFree.symm.toLinearMap ∘ₗ incl) (proj ∘ₗ eFree.toLinearMap) <|
       LinearMap.ext fun f ↦ by
         simpa [LinearMap.comp_apply, eFree.apply_symm_apply] using LinearMap.congr_fun hpi f
-  choose A π hπ hrange using hcomp
   let Φ : P →ₗ[R] P :=
     { toFun := fun x i ↦ Matrix.toLin' (A i) (x i)
       map_add' := fun x y ↦ funext fun i ↦ map_add _ (x i) (y i)
@@ -591,10 +592,14 @@ theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι
   have hg_surj : Function.Surjective g := eM.symm.surjective.comp fun y ↦ by
     choose x hx using fun i ↦ hπ i (y i)
     exact ⟨x, funext hx⟩
+  have hker_g : ∀ x : P, x ∈ LinearMap.ker g ↔ ∀ i, x i ∈ LinearMap.ker (π i) := fun x ↦ by
+    simp only [LinearMap.mem_ker, g, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      map_eq_zero_iff _ eM.symm.injective, funext_iff, Pi.zero_apply]
+    rfl
   have hrange_eq : LinearMap.range Φ = LinearMap.ker g := by
     ext x
-    simp only [LinearMap.mem_range, LinearMap.mem_ker, g, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, map_eq_zero_iff _ eM.symm.injective, funext_iff, Pi.zero_apply]
+    rw [hker_g]
+    simp only [LinearMap.mem_range]
     constructor
     · rintro ⟨y, rfl⟩ i
       exact LinearMap.mem_ker.mp (hrange i ▸ LinearMap.mem_range_self _ (y i))
@@ -602,7 +607,7 @@ theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι
       choose y hy using fun i ↦ show x i ∈ LinearMap.range (Matrix.toLin' (A i)) by
         rw [hrange i]; exact hx i
       exact ⟨y, funext hy⟩
-  exact ⟨hfin, hproj, Φ, g, hg_surj, hrange_eq⟩
+  exact ⟨hfin, hproj, Φ, g, hg_surj, hrange_eq, hker_g⟩
 
 /-- **Assembling a uniform `QuadraticPresentation` across a complete orthogonal family of
 idempotents.** Each component presentation is padded by an identity block to the maximum size
@@ -617,9 +622,10 @@ theorem IsQuadraticallyPresented.of_completeOrthogonalIdempotents {ι : Type*} [
   let Q (i : ι) := (hcomp i).nonempty.some.pad (m := m)
     ((Finset.le_sup (f := fun i ↦ (hcomp i).nonempty.some.size) (Finset.mem_univ i)).trans
       (le_max_right 1 _))
-  obtain ⟨_, _, Φ, g, hg_surj, hrange_eq⟩ :=
+  obtain ⟨_, _, Φ, g, hg_surj, hrange_eq, _⟩ :=
     exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents (M := M) he (fun _ ↦ m)
-      fun i ↦ ⟨(Q i).rel, (Q i).gen, (Q i).gen_surjective, (Q i).range_rel_eq_ker⟩
+      (fun i ↦ (Q i).rel) (fun i ↦ (Q i).gen) (fun i ↦ (Q i).gen_surjective)
+      (fun i ↦ (Q i).range_rel_eq_ker)
   let eFree := freeEquivPiOfCompleteOrthogonalIdempotents he m
   refine IsQuadraticallyPresented.of_exact (Pi.basisFun R (Fin m)) (Pi.basisFun R (Fin m))
     (f := eFree.symm.toLinearMap ∘ₗ Φ ∘ₗ eFree.toLinearMap) (π := g ∘ₗ eFree.toLinearMap)
