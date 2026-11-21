@@ -27,8 +27,7 @@ laws of a winding number:
 * **products:** for `Γ` and `Γ'` continuous on the boundary,
   `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`), and hence
   `deg (Γ ^ n) = n deg Γ` (`TauCeti.squareBoundaryDegree_pow`);
-* **inverses:** for `Γ` continuous on the boundary, `deg Γ⁻¹ = -deg Γ`
-  (`TauCeti.squareBoundaryDegree_inv`);
+* **inverses:** `deg Γ⁻¹ = -deg Γ` (`TauCeti.squareBoundaryDegree_inv`);
 * **maps defined on the whole square:** if `Γ` is continuous on all of `I²`, its boundary loop is
   null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`), and
   multiplying any map by `Γ` does not change its degree
@@ -205,12 +204,15 @@ theorem squareBoundaryDegree_pow (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
     ring
 
 /-- **Inverses.** The degree around the boundary of the square of the pointwise inverse of a map
-continuous on the boundary is the negative of its degree. -/
-theorem squareBoundaryDegree_inv (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) :
-    squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
-  have h := squareBoundaryDegree_mul hΓ hΓ.inv
-  rw [mul_inv_cancel, Pi.one_def, squareBoundaryDegree_const] at h
-  omega
+is the negative of its degree. No continuity is assumed: if `Γ` is not continuous on the boundary,
+neither is `Γ⁻¹`, and both degrees are `0`. -/
+theorem squareBoundaryDegree_inv : squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
+  by_cases hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))
+  · have h := squareBoundaryDegree_mul hΓ hΓ.inv
+    rw [mul_inv_cancel, Pi.one_def, squareBoundaryDegree_const] at h
+    omega
+  · rw [squareBoundaryDegree_of_not_continuousOn hΓ,
+      squareBoundaryDegree_of_not_continuousOn fun h ↦ hΓ (by simpa using h.inv), neg_zero]
 
 /-- **Homotopy invariance.** If `H` is continuous on `I × ∂I²`, the maps `H (0, ·)` and
 `H (1, ·)` have the same degree around the boundary of the square. -/

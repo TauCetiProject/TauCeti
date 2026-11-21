@@ -125,10 +125,9 @@ theorem relativeClutchingNumber_eq_squareBoundaryDegree (u : C(Fin 2 → I, X))
   -- The transitions to `φ` and to `φ₀` differ by a factor continuous on the whole square.
   have h : (fun y ↦ ((τ y).trans (φ y).symm).normalizedDet) =
       (fun y ↦ ((τ y).trans (φ₀ y).symm).normalizedDet) *
-        fun y ↦ ((φ₀ y).trans (φ y).symm).normalizedDet := by
-    ext1 y
-    rw [Pi.mul_apply, ← ContinuousLinearEquiv.normalizedDet_trans]
-    exact congrArg _ (ContinuousLinearEquiv.ext <| funext fun v ↦ by simp)
+        fun y ↦ ((φ₀ y).trans (φ y).symm).normalizedDet :=
+    funext fun y ↦
+      (ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans (τ y) (φ₀ y) (φ y).symm).symm
   rw [h, squareBoundaryDegree_mul_of_continuous (continuous_normalizedDet_trans_symm hφ hφ₀),
     relativeClutchingNumber]
 
@@ -159,10 +158,10 @@ theorem relativeClutchingNumber_trans (u : C(Fin 2 → I, X)) {τ : ∀ y, F ≃
       relativeClutchingNumber u τ + squareBoundaryDegree fun y ↦ (g y).normalizedDet := by
   obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous u)
   have h : (fun y ↦ (((g y).trans (τ y)).trans (φ y).symm).normalizedDet) =
-      (fun y ↦ (g y).normalizedDet) * fun y ↦ ((τ y).trans (φ y).symm).normalizedDet := by
-    ext1 y
-    rw [Pi.mul_apply, ← ContinuousLinearEquiv.normalizedDet_trans]
-    exact congrArg _ (ContinuousLinearEquiv.ext <| funext fun v ↦ by simp)
+      (fun y ↦ (g y).normalizedDet) * fun y ↦ ((τ y).trans (φ y).symm).normalizedDet :=
+    -- `((g y).trans (τ y)).trans (φ y).symm` is `(g y).trans ((τ y).trans (φ y).symm)` by
+    -- definition: both compose the same three maps.
+    funext fun y ↦ ContinuousLinearEquiv.normalizedDet_trans (g y) ((τ y).trans (φ y).symm)
   rw [relativeClutchingNumber_eq_squareBoundaryDegree u _ hφ,
     relativeClutchingNumber_eq_squareBoundaryDegree u _ hφ, h,
     squareBoundaryDegree_mul hg.normalizedDet (continuousOn_normalizedDet_trans_symm hφ hτ),
@@ -233,7 +232,7 @@ theorem relativeClutchingNumber_eq_sub (u : C(Fin 2 → I, X)) {τ φ : ∀ y, F
       (Cube.boundary (Fin 2)) := fun y hy ↦
     clutchingFunction_eq_mul_normalizedDet_inv (he y hy)
   rw [squareBoundaryDegree_congr heq, squareBoundaryDegree_mul hc hΓ.inv,
-    squareBoundaryDegree_inv hΓ, relativeClutchingNumber_eq_squareBoundaryDegree u τ hφ]
+    squareBoundaryDegree_inv, relativeClutchingNumber_eq_squareBoundaryDegree u τ hφ]
   ring
 
 /-- **Comparison with the clutching number of a sphere.** For a sphere `p` based at `x` and a
@@ -263,22 +262,22 @@ theorem clutchingNumber_eq_relativeClutchingNumber {x : X} (p : Ω^ (Fin 2) X x)
     (hx : x ∈ e.baseSet)
     (hτe : ∀ y ∈ Cube.boundary (Fin 2), ∀ v, (e (TotalSpace.mk' F (p y) (τ y v))).2 = v) :
     clutchingNumber F E p = relativeClutchingNumber p.val τ := by
-  -- On the boundary, `τ y v` is the point of `E` over `x` with coordinate `v` in `e`, which
-  -- depends continuously on `v`.
+  have hbase (y) (hy : y ∈ Cube.boundary (Fin 2)) : p y ∈ e.baseSet :=
+    mem_of_eq_of_mem (GenLoop.boundary p y hy) hx
+  -- On the boundary, `τ y v` is the point `e⁻¹ (x, v)` of `E` over `x`, which depends continuously
+  -- on `v`.
   have hτ : ContinuousOn (fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (p q.1) (τ q.1 q.2))
       (Cube.boundary (Fin 2) ×ˢ univ) := by
     refine (e.toPartialHomeomorph.continuousOn_symm.comp_continuous
       (continuous_const.prodMk continuous_snd) fun q ↦ e.mem_target.2 hx).continuousOn.congr ?_
     rintro ⟨y, v⟩ ⟨hy, -⟩
-    have hy' : p y ∈ e.baseSet := mem_of_eq_of_mem (GenLoop.boundary p y hy) hx
-    have hmem : ((x, v) : X × F) ∈ e.target := e.mem_target.2 hx
-    refine e.toPartialHomeomorph.injOn (e.mem_source.2 hy') (e.map_target hmem)
-      ((?_ : e (TotalSpace.mk' F (p y) (τ y v)) = (x, v)).trans (e.apply_symm_apply hmem).symm)
-    exact Prod.ext ((e.coe_fst (e.mem_source.2 hy')).trans (GenLoop.boundary p y hy)) (hτe y hy v)
+    exact (e.toPartialHomeomorph.eq_symm_apply (e.mem_source.2 (hbase y hy))
+      (e.mem_target.2 hx)).2 <|
+        Prod.ext ((e.coe_fst' (hbase y hy)).trans (GenLoop.boundary p y hy)) (hτe y hy v)
   -- The clutching function of `τ` in `e` is `1` on the boundary.
   have h1 : EqOn (clutchingFunction p τ e) (fun _ ↦ 1) (Cube.boundary (Fin 2)) := by
     intro y hy
-    have hy' : p y ∈ e.baseSet := by rwa [GenLoop.boundary p y hy]
+    have hy' := hbase y hy
     have hid : (τ y).trans (e.continuousLinearEquivAt ℂ (p y) hy') =
         ContinuousLinearEquiv.refl ℂ F := by
       ext v

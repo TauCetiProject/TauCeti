@@ -155,12 +155,8 @@ in a trivialization differ by the inverse normalized determinant of the automorp
 theorem clutchingFunction_eq_mul_normalizedDet_inv {y : B} (hy : f y ∈ e.baseSet) :
     clutchingFunction f ψ e y =
       clutchingFunction f φ e y * ((ψ y).trans (φ y).symm).normalizedDet⁻¹ := by
-  have h : (ψ y).trans (e.continuousLinearEquivAt ℂ (f y) hy) =
-      ((ψ y).trans (φ y).symm).trans ((φ y).trans (e.continuousLinearEquivAt ℂ (f y) hy)) := by
-    ext v
-    simp
-  rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy, h,
-    ContinuousLinearEquiv.normalizedDet_trans, mul_inv, mul_comm]
+  rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy,
+    ← ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans (ψ y) (φ y), mul_inv, mul_comm]
 
 omit [TopologicalSpace B] in
 /-- **Change of trivialization.** At a point where two trivializations `e` and `e'` are both
