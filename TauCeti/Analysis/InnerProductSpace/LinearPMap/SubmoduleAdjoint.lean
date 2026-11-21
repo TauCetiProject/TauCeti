@@ -6,6 +6,7 @@ Authors: Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # Double adjoints of submodules and densely defined operators
@@ -20,7 +21,6 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
 * `Submodule.adjoint_adjoint_eq_topologicalClosure`: the double adjoint is the
   topological closure.
 * `Submodule.adjoint_adjoint`: equality for complete submodules.
-* `LinearPMap.IsClosed.closure_eq`: a closed partial linear map is its own closure.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
 * `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
@@ -117,21 +117,6 @@ theorem adjoint_adjoint (g : Submodule 𝕜 (E × F)) (hg : IsComplete (g : Set 
 end Submodule
 
 namespace LinearPMap
-
-section Closed
-
-variable {R E F : Type*} [CommRing R] [AddCommGroup E] [AddCommGroup F] [Module R E] [Module R F]
-  [TopologicalSpace E] [TopologicalSpace F] [ContinuousAdd E] [ContinuousAdd F]
-  [TopologicalSpace R] [ContinuousSMul R E] [ContinuousSMul R F]
-
-/-- A closed partial linear map is its own closure: its graph is already topologically closed. -/
-theorem IsClosed.closure_eq {f : E →ₗ.[R] F} (hf : f.IsClosed) : f.closure = f := by
-  refine eq_of_eq_graph ?_
-  rw [← hf.isClosable.graph_closure_eq_closure_graph]
-  rw [IsClosed] at hf
-  exact hf.submodule_topologicalClosure_eq
-
-end Closed
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
