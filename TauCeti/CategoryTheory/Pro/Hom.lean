@@ -275,13 +275,14 @@ theorem homEquiv_naturality (a : Y' ⟶ Y) (f : mk Y ⟶ mk Z) (b : Z ⟶ Z') :
     homEquiv Y' Z' (lim.map a ≫ f ≫ lim.map b) =
       limMap (Functor.whiskerRight (homStageMap a b) colim) (homEquiv Y Z f) := by
   refine Types.limit_ext _ _ _ fun j ↦ ?_
-  obtain ⟨i, g, hg⟩ := exists_π_comp_const_map_eq Y (f ≫ π Z j)
-  have h : lim.map a ≫ f ≫ lim.map b ≫ π Z' j = π Y' i ≫ const.map (a.app i ≫ g ≫ b.app j) := by
-    rw [lim_map_π, ← Category.assoc f, ← hg]
-    simp
-  rw [limMap_π_apply, homEquiv_π_apply, homEquiv_π_apply, Category.assoc, Category.assoc, h, ← hg,
-    homConstEquiv_π_comp_const_map, homConstEquiv_π_comp_const_map]
-  exact (ConcreteCategory.congr_hom (ι_colimMap ((homStageMap a b).app j) (op i)) g).symm
+  rw [limMap_π_apply, homEquiv_π_apply, homEquiv_π_apply, Category.assoc, Category.assoc,
+    lim_map_π, ← Category.assoc f, ← Category.assoc, homConstEquiv_comp_const_map,
+    homConstEquiv_lim_map_comp, ← ConcreteCategory.comp_apply, Functor.whiskerRight_app,
+    ← colim_map, ← colim_map, ← Functor.map_comp]
+  congr 3
+  ext i h
+  -- Stagewise the two sides are `(a.app i ≫ h) ≫ b.app j` and `a.app i ≫ h ≫ b.app j`.
+  exact Category.assoc _ _ _
 
 end Naturality
 
