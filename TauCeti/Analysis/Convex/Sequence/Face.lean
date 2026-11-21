@@ -32,9 +32,7 @@ unbounded domain. Finite unit slopes before a finite face are strictly less than
 on the face they equal its slope, and after it they are strictly greater. Consequently, on a
 domain with a first finite index, a finite face's left and right endpoints count the unit
 slopes respectively below and at most the face slope, and the unit edges of the face slope are
-exactly those inside the face, so their number is its width. Through the left endpoint the lines of
-all slopes slightly below the face slope also support the sequence, and through the right endpoint
-those of all slopes slightly above it. These absolute endpoints are the
+exactly those inside the face, so their number is its width. These absolute endpoints are the
 geometric interface later used to identify extremal coefficients and count slope multiplicities.
 A sequence lying above a line of slope `τ` meets every line of smaller slope only finitely often,
 which bounds the supporting faces of smaller slope.
@@ -393,42 +391,6 @@ theorem lt_unitSlope (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
   push_cast at hs
   have hui_real : (u : ℝ) ≤ i := Nat.cast_le.mpr hui
   nlinarith
-
-/-- Through the left endpoint of a finite face of a convex sequence, the lines of every slope
-slightly below the face slope, and of the face slope itself, support the sequence. -/
-theorem exists_pos_isSupportingLine_left (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h) :
-    ∃ ε > (0 : ℝ), ∀ τ ∈ Set.Icc (σ - ε) σ, IsSupportingLine h τ ((h l).untop₀ - τ * l) := by
-  have hbounds := (hh.isSupportingLine_iff_unitSlope hf.left_ne_top σ).mp
-    (hf.isSupportingLine_untop₀_sub ⟨le_rfl, hf.left_le_right⟩)
-  -- The finite edge entering the face, if any, has slope strictly below the face slope.
-  have hgap : ∃ ε > (0 : ℝ), ∀ i, i + 1 = l → h i ≠ ⊤ → unitSlope h i ≤ σ - ε := by
-    by_cases hp : ∃ i, i + 1 = l ∧ h i ≠ ⊤
-    · obtain ⟨i, hi, hif⟩ := hp
-      have hs := hf.unitSlope_lt hh (i := i)
-        (mem_finiteEdges.mpr ⟨hif, hi ▸ hf.left_ne_top⟩) (by omega)
-      refine ⟨σ - unitSlope h i, sub_pos.mpr hs, fun j hj _ => ?_⟩
-      obtain rfl : j = i := by omega
-      linarith
-    · exact ⟨1, zero_lt_one, fun i hi hif => (hp ⟨i, hi, hif⟩).elim⟩
-  obtain ⟨ε, hε, hgap⟩ := hgap
-  exact ⟨ε, hε, fun τ hτ => (hh.isSupportingLine_iff_unitSlope hf.left_ne_top τ).mpr
-    ⟨fun i hi hif => (hgap i hi hif).trans hτ.1, fun hn => hτ.2.trans (hbounds.2 hn)⟩⟩
-
-/-- Through the right endpoint of a finite face of a convex sequence, the lines of every slope
-slightly above the face slope, and of the face slope itself, support the sequence. -/
-theorem exists_pos_isSupportingLine_right (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h) :
-    ∃ ε > (0 : ℝ), ∀ τ ∈ Set.Icc σ (σ + ε), IsSupportingLine h τ ((h u).untop₀ - τ * u) := by
-  have hbounds := (hh.isSupportingLine_iff_unitSlope hf.right_ne_top σ).mp
-    (hf.isSupportingLine_untop₀_sub ⟨hf.left_le_right, le_rfl⟩)
-  -- The finite edge leaving the face, if any, has slope strictly above the face slope.
-  have hgap : ∃ ε > (0 : ℝ), h (u + 1) ≠ ⊤ → σ + ε ≤ unitSlope h u := by
-    by_cases hn : h (u + 1) ≠ ⊤
-    · have hs := hf.lt_unitSlope hh (i := u) (mem_finiteEdges.mpr ⟨hf.right_ne_top, hn⟩) le_rfl
-      exact ⟨unitSlope h u - σ, sub_pos.mpr hs, fun _ => by linarith⟩
-    · exact ⟨1, zero_lt_one, fun h => (hn h).elim⟩
-  obtain ⟨ε, hε, hgap⟩ := hgap
-  exact ⟨ε, hε, fun τ hτ => (hh.isSupportingLine_iff_unitSlope hf.right_ne_top τ).mpr
-    ⟨fun i hi hif => (hbounds.1 i hi hif).trans hτ.1, fun hn => hτ.2.trans (hgap hn)⟩⟩
 
 /-- A finite face's left endpoint is the first finite index plus the number of finite unit
 slopes strictly below the face slope. The finite domain may be bounded or unbounded. -/

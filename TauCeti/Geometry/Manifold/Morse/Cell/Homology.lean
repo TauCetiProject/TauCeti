@@ -179,7 +179,7 @@ theorem IsMorse.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseInde
   refine ⟨ε, hε, hεδ, fun R n hn ↦ ?_⟩
   -- No critical point of the level has index `n`, so the coproduct is empty.
   have : IsEmpty {p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) // manifoldMorseIndex I f p = n} :=
-    ⟨fun p ↦ by have := hd p.1 p.1.2; omega⟩
+    ⟨fun p ↦ by have := hd p.val p.val.property; omega⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso (hiso R n).some
 
 /-! ### Bands with a single critical value -/

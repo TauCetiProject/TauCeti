@@ -16,7 +16,8 @@ At a finite face of a convex height sequence, the supporting value is affine on
 each side of the face slope in a sufficiently small interval. Its left derivative
 is minus the absolute left endpoint, and its right derivative is minus the absolute
 right endpoint. The supporting value is differentiable exactly when the face is a
-singleton.
+singleton. In particular the endpoints of a finite face are determined by the supporting values
+near its slope.
 
 The statements allow unbounded finite domains. Finiteness of the face provides a
 strict gap to each adjacent finite slope; no conclusion is asserted at an infinite
@@ -45,9 +46,26 @@ theorem exists_pos_supportingValue_eq_left (hf : IsFiniteFace h σ l u)
     (hh : IsConvexSeq h) :
     ∃ ε > (0 : ℝ), ∀ τ ∈ Icc (σ - ε) σ,
       supportingValue h τ = (((h l).untop₀ - τ * l : ℝ) : EReal) := by
-  obtain ⟨ε, hε, ht⟩ := hf.exists_pos_isSupportingLine_left hh
+  have hthrough := hf.isSupportingLine_untop₀_sub ⟨le_rfl, hf.left_le_right⟩
+  have hbounds := (hh.isSupportingLine_iff_unitSlope hf.left_ne_top σ).mp hthrough
+  have hgap : ∃ ε > (0 : ℝ), ∀ i, i + 1 = l → h i ≠ ⊤ →
+      unitSlope h i ≤ σ - ε := by
+    by_cases hp : ∃ i, i + 1 = l ∧ h i ≠ ⊤
+    · obtain ⟨i, hi, hif⟩ := hp
+      have hs := hf.unitSlope_lt hh (i := i)
+        (mem_finiteEdges.mpr ⟨hif, hi ▸ hf.left_ne_top⟩) (by omega)
+      refine ⟨σ - unitSlope h i, sub_pos.mpr hs, fun j hj _ => ?_⟩
+      have : j = i := by omega
+      subst j
+      linarith
+    · exact ⟨1, zero_lt_one, fun i hi hif => (hp ⟨i, hi, hif⟩).elim⟩
+  obtain ⟨ε, hε, hgap⟩ := hgap
   refine ⟨ε, hε, fun τ hτ => ?_⟩
-  apply supportingValue_eq_coe_of_mem_supportingFace (ht τ hτ) (n := l)
+  have ht : IsSupportingLine h τ ((h l).untop₀ - τ * l) :=
+    (hh.isSupportingLine_iff_unitSlope hf.left_ne_top τ).mpr
+      ⟨fun i hi hif => (hgap i hi hif).trans hτ.1,
+        fun hn => hτ.2.trans (hbounds.2 hn)⟩
+  apply supportingValue_eq_coe_of_mem_supportingFace ht (n := l)
   simp [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hf.left_ne_top]
 
 /-- Immediately to the right of a finite face slope, the supporting value is computed
@@ -56,9 +74,20 @@ theorem exists_pos_supportingValue_eq_right (hf : IsFiniteFace h σ l u)
     (hh : IsConvexSeq h) :
     ∃ ε > (0 : ℝ), ∀ τ ∈ Icc σ (σ + ε),
       supportingValue h τ = (((h u).untop₀ - τ * u : ℝ) : EReal) := by
-  obtain ⟨ε, hε, ht⟩ := hf.exists_pos_isSupportingLine_right hh
+  have hthrough := hf.isSupportingLine_untop₀_sub ⟨hf.left_le_right, le_rfl⟩
+  have hbounds := (hh.isSupportingLine_iff_unitSlope hf.right_ne_top σ).mp hthrough
+  have hgap : ∃ ε > (0 : ℝ), h (u + 1) ≠ ⊤ → σ + ε ≤ unitSlope h u := by
+    by_cases hn : h (u + 1) ≠ ⊤
+    · have hs := hf.lt_unitSlope hh (i := u) (mem_finiteEdges.mpr ⟨hf.right_ne_top, hn⟩) le_rfl
+      exact ⟨unitSlope h u - σ, sub_pos.mpr hs, fun _ => by linarith⟩
+    · exact ⟨1, zero_lt_one, fun h => (hn h).elim⟩
+  obtain ⟨ε, hε, hgap⟩ := hgap
   refine ⟨ε, hε, fun τ hτ => ?_⟩
-  apply supportingValue_eq_coe_of_mem_supportingFace (ht τ hτ) (n := u)
+  have ht : IsSupportingLine h τ ((h u).untop₀ - τ * u) :=
+    (hh.isSupportingLine_iff_unitSlope hf.right_ne_top τ).mpr
+      ⟨fun i hi hif => (hbounds.1 i hi hif).trans hτ.1,
+        fun hn => hτ.2.trans (hgap hn)⟩
+  apply supportingValue_eq_coe_of_mem_supportingFace ht (n := u)
   simp [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hf.right_ne_top]
 
 /-- The left derivative of the real supporting value at a finite face is minus
@@ -110,6 +139,26 @@ theorem differentiableAt_supportingValue_toReal_iff (hf : IsFiniteFace h σ l u)
     exact_mod_cast neg_injective (hleft.trans hright.symm)
   · rintro rfl
     exact (hf.hasDerivAt_supportingValue_toReal hh).differentiableAt
+
+/-- The endpoints of a finite face are determined by the supporting values near its slope: if
+two convex height sequences have the same supporting values near `σ`, their finite faces of
+slope `σ` have the same endpoints. -/
+theorem eq_of_eventuallyEq_supportingValue {h' : ℕ → WithTop ℝ} {l' u' : ℕ}
+    (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h) (hf' : IsFiniteFace h' σ l' u')
+    (hh' : IsConvexSeq h') (heq : supportingValue h' =ᶠ[𝓝 σ] supportingValue h) :
+    l' = l ∧ u' = u := by
+  have hreal : (fun τ => (supportingValue h' τ).toReal) =ᶠ[𝓝 σ]
+      fun τ => (supportingValue h τ).toReal :=
+    heq.mono fun τ hτ => congrArg EReal.toReal hτ
+  have hl := (uniqueDiffWithinAt_Iic σ).eq_deriv _
+    (hf'.hasDerivWithinAt_supportingValue_toReal_left hh')
+    ((hf.hasDerivWithinAt_supportingValue_toReal_left hh).congr_of_eventuallyEq
+      (hreal.filter_mono nhdsWithin_le_nhds) hreal.self_of_nhds)
+  have hu := (uniqueDiffWithinAt_Ici σ).eq_deriv _
+    (hf'.hasDerivWithinAt_supportingValue_toReal_right hh')
+    ((hf.hasDerivWithinAt_supportingValue_toReal_right hh).congr_of_eventuallyEq
+      (hreal.filter_mono nhdsWithin_le_nhds) hreal.self_of_nhds)
+  exact ⟨by exact_mod_cast neg_injective hl, by exact_mod_cast neg_injective hu⟩
 
 end IsFiniteFace
 end TauCeti

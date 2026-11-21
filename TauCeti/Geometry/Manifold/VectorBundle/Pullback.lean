@@ -139,11 +139,11 @@ theorem contMDiff_fiberwise {F' : Type*} [NormedAddCommGroup F'] [NormedSpace �
     {E' : B → Type*} [∀ x, Nonempty (E' x)] [∀ x, TopologicalSpace (E' x)]
     [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E'] (φ : ∀ b, E b → E' b)
     (hφ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
-      fun p : TotalSpace F E ↦ TotalSpace.mk' F' p.proj (φ p.proj p.2))
+      fun p : TotalSpace F E ↦ TotalSpace.mk' F' p.proj (φ p.proj p.snd))
     (f : K) (hf : ContMDiff I' I n f) :
     ContMDiff (I'.prod 𝓘(𝕜, F)) (I'.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F ((f : B' → B) *ᵖ E) ↦
-        TotalSpace.mk' F' (E := (f : B' → B) *ᵖ E') p.proj (φ (f p.proj) p.2) :=
+        TotalSpace.mk' F' (E := (f : B' → B) *ᵖ E') p.proj (φ (f p.proj) p.snd) :=
   (contMDiff_iff f hf).2 ⟨contMDiff_proj _, hφ.comp (contMDiff_lift f hf)⟩
 
 variable (E) in
@@ -154,7 +154,7 @@ def idDiffeomorph :
     TotalSpace F ((ContMDiffMap.id : C^m⟮I, B; I, B⟯) *ᵖ E) ≃ₘ^n⟮I.prod 𝓘(𝕜, F), I.prod 𝓘(𝕜, F)⟯
       TotalSpace F E where
   toFun := Pullback.lift ContMDiffMap.id
-  invFun p := ⟨p.proj, p.2⟩
+  invFun p := ⟨p.proj, p.snd⟩
   left_inv _ := rfl
   right_inv _ := rfl
   contMDiff_toFun := contMDiff_lift _ contMDiff_id
@@ -163,12 +163,12 @@ def idDiffeomorph :
 @[simp]
 theorem idDiffeomorph_apply
     (p : TotalSpace F ((ContMDiffMap.id : C^m⟮I, B; I, B⟯) *ᵖ E)) :
-    idDiffeomorph (I := I) (n := n) E p = ⟨p.proj, p.2⟩ :=
+    idDiffeomorph (I := I) (n := n) E p = ⟨p.proj, p.snd⟩ :=
   (rfl)
 
 @[simp]
 theorem idDiffeomorph_symm_apply (p : TotalSpace F E) :
-    (idDiffeomorph (I := I) (m := m) (n := n) E).symm p = ⟨p.proj, p.2⟩ :=
+    (idDiffeomorph (I := I) (m := m) (n := n) E).symm p = ⟨p.proj, p.snd⟩ :=
   (rfl)
 
 variable {EM'' H'' B'' : Type*} [NormedAddCommGroup EM''] [NormedSpace 𝕜 EM'']
@@ -182,8 +182,8 @@ variable (E) in
 def compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯) :
     TotalSpace F ((g.comp f : B'' → B) *ᵖ E) ≃ₘ^n⟮I''.prod 𝓘(𝕜, F), I''.prod 𝓘(𝕜, F)⟯
       TotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) where
-  toFun p := ⟨p.proj, p.2⟩
-  invFun p := ⟨p.proj, p.2⟩
+  toFun p := ⟨p.proj, p.snd⟩
+  invFun p := ⟨p.proj, p.snd⟩
   left_inv _ := rfl
   right_inv _ := rfl
   -- Both total spaces are charted at `p` by the trivialization of `E` at `g (f p.proj)`, so in
@@ -196,13 +196,13 @@ def compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯) 
 @[simp]
 theorem compDiffeomorph_apply (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯)
     (p : TotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
-    compDiffeomorph (n := n) E g f p = ⟨p.proj, p.2⟩ :=
+    compDiffeomorph (n := n) E g f p = ⟨p.proj, p.snd⟩ :=
   (rfl)
 
 @[simp]
 theorem compDiffeomorph_symm_apply (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯)
     (p : TotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) :
-    (compDiffeomorph (n := n) E g f).symm p = ⟨p.proj, p.2⟩ :=
+    (compDiffeomorph (n := n) E g f).symm p = ⟨p.proj, p.snd⟩ :=
   (rfl)
 
 /-- Under `compDiffeomorph`, the canonical map of the composite pullback is the composite of the

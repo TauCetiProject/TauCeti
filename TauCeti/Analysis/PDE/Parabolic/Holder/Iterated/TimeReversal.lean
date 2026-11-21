@@ -92,10 +92,10 @@ private theorem hasDerivWithinAt_reverseField (f : ParabolicCkHolderSpace k α E
         (ha ▸ hb ▸ sub_lt_sub_left hab T).le (reverseField T ha hb f r m) x)
       (reverseField T ha hb f (r + 1) m (slabMk x t)) (Icc a' b') t := by
   have hd := (HasDerivWithinAt.scomp (t : ℝ)
-    (f.hasDerivWithinAt_mixedDerivL h x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩)
+    (f.hasDerivWithinAt_mixedDerivL h x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩)
     ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
     fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs).const_smul ((-1 : ℝ) ^ r)
-  refine (hd.congr_of_mem (fun s hs ↦ ?_) t.2).congr_deriv ?_
+  refine (hd.congr_of_mem (fun s hs ↦ ?_) t.property).congr_deriv ?_
   · simp [ParabolicC2HolderSpace.timeExtension_def, reverseField_apply, iccTimeReverse_apply,
       projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
       projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)]

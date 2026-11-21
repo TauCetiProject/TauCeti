@@ -483,7 +483,7 @@ variable (R A M) in
 and multiplication by `m : M`, with `δ` and `m = D 1` determined by `D`. -/
 def differentialOperatorsOneEquiv :
     differentialOperators R A A M 1 ≃ₗ[R] Derivation R A M × M where
-  toFun D := (D.1.derivationOfMemDifferentialOperatorsOne D.2, D.1 1)
+  toFun D := (D.val.derivationOfMemDifferentialOperatorsOne D.property, D.val 1)
   invFun p := ⟨p.1 + (LinearMap.toSpanSingleton A M p.2).restrictScalars R,
     add_mem p.1.mem_differentialOperators_one <| differentialOperators_le_succ 0 <|
       LinearMap.restrictScalars_mem_differentialOperators_zero _⟩
@@ -569,9 +569,9 @@ between the differential operators of order at most `m` on `A` and on `B`. -/
 def _root_.AlgEquiv.conjDifferentialOperators (m : ℕ) :
     differentialOperators R A A A m ≃ₗ[R] differentialOperators R B B B m where
   toFun D := ⟨e.toLinearMap ∘ₗ (D : A →ₗ[R] A) ∘ₗ e.symm.toLinearMap,
-    e.conj_mem_differentialOperators D.2⟩
+    e.conj_mem_differentialOperators D.property⟩
   invFun D := ⟨e.symm.toLinearMap ∘ₗ (D : B →ₗ[R] B) ∘ₗ e.toLinearMap,
-    by simpa using e.symm.conj_mem_differentialOperators D.2⟩
+    by simpa using e.symm.conj_mem_differentialOperators D.property⟩
   map_add' D₁ D₂ := by ext; simp
   map_smul' c D := by ext; simp
   left_inv D := by ext; simp

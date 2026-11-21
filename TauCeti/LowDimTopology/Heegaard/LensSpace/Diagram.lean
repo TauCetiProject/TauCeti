@@ -295,7 +295,7 @@ noncomputable def lensSpaceCurveHomologyEquiv : (lensSpace p q r).CurveHomology 
     ⟨(injective_iff_map_eq_zero _).mpr fun x hx => by
       obtain ⟨c, rfl⟩ := CurveHomology.mk_surjective _ x
       exact (CurveHomology.mk_eq_zero_iff _).mpr
-        (mem_arcRelations_of_betaWinding_eq_zero c.2
+        (mem_arcRelations_of_betaWinding_eq_zero c.property
           (by rwa [windingHom_mk, ← betaWinding_apply] at hx)),
     fun a => ⟨_, (windingHom_epsilon 0 a).trans (sub_zero a)⟩⟩
 

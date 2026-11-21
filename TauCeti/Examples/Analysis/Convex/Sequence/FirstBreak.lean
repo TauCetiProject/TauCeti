@@ -6,103 +6,90 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.FirstBreak
+public import TauCeti.Analysis.Convex.Sequence.Envelope
 
 /-!
-# First breaks: a genuine break and a near miss
+# Pointwise strict inequalities do not force a first break
 
-Two infinite height sequences through the points `(0, 0)` and `(1, 1)`, on which the line of slope
-`1` through the origin supports the points.
+For a sequence with finitely many finite points, such as the coefficient heights of a
+polynomial, the lower convex envelope has its first break at `j` with slope `m` as soon as `j` lies
+strictly after the first finite point `a`, and a line of slope `m` supports the points, passes
+through the points at `a` and `j`, and lies strictly below every later point
+(`TauCeti.IsLowerConvexEnvelope.isFirstBreak_iff_of_finite`). This example shows that the
+finiteness cannot be dropped.
 
-* The points `(n, 2 n - 1)` for `n ≥ 1` also lie on the line of slope `2` through `(1, 1)`, so the
-  lower convex envelope has a first break at `1` of slope `1`
-  (`TauCeti.FirstBreakExample.isFirstBreak_steep`).
-* The points `(n, n + 1 / n)` for `n ≥ 2` lie strictly above the line of slope `1`, which touches
-  the points exactly at `0` and `1` (`TauCeti.FirstBreakExample.supportingFace_approaching`). They
-  approach that line, so no line of larger slope through `(1, 1)` supports them, and the lower
-  convex envelope has no first break at `1`
-  (`TauCeti.FirstBreakExample.not_isFirstBreak_approaching`). Pointwise strict inequalities beyond
-  the candidate break therefore do not imply a break for an infinite sequence.
+The heights `0, 0, 1/2, 1/3, 1/4, …` lie on the horizontal line of height `0` at `0` and `1`, and
+strictly above it after `1`. Since they tend to `0`, their lower convex envelope is the
+horizontal ray of height `0`, which has no first break at all.
 -/
 
 public section
 
 namespace TauCeti.FirstBreakExample
 
-/-- The points `(0, 0)` and `(n, 2 n - 1)` for `n ≥ 1`. -/
-noncomputable def steep (n : ℕ) : WithTop ℝ :=
-  ((if n = 0 then 0 else 2 * n - 1 : ℝ) : WithTop ℝ)
+/-- The heights `0, 0, 1/2, 1/3, 1/4, …`: zero at `0` and `1`, and `1 / n` at every `n ≥ 2`. -/
+noncomputable def heights (n : ℕ) : WithTop ℝ :=
+  if n ≤ 1 then 0 else (((n : ℝ)⁻¹ : ℝ) : WithTop ℝ)
 
-/-- The line of slope `1` through the origin supports `steep`. -/
-theorem isSupportingLine_steep : IsSupportingLine steep 1 0 :=
-  isSupportingLine_iff_forall.mpr fun n => by
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp [steep]
-    · have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-      simp only [steep, hn.ne', ↓reduceIte, WithTop.coe_le_coe]
-      linarith
+/-- The defining formula for the example heights. -/
+theorem heights_def (n : ℕ) :
+    heights n = if n ≤ 1 then 0 else (((n : ℝ)⁻¹ : ℝ) : WithTop ℝ) := by rfl
 
-/-- The lower convex envelope of `steep` has a first break at `1` of slope `1`. -/
-theorem isFirstBreak_steep : IsFirstBreak (lowerConvexEnvelope steep) 1 0 1 := by
-  refine ((isLowerConvexEnvelope_lowerConvexEnvelope
-    isSupportingLine_steep.isAdmissible).isFirstBreak_iff).mpr
-    ⟨zero_lt_one, fun n hn => absurd hn (Nat.not_lt_zero n), 0, isSupportingLine_steep,
-      mem_supportingFace.mpr (by simp [steep]), mem_supportingFace.mpr (by norm_num [steep]), 2,
-      by norm_num, isSupportingLine_iff_forall.mpr fun n => ?_⟩
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp only [steep, ↓reduceIte, WithTop.coe_le_coe]
-    norm_num
-  · simp only [steep, hn.ne', ↓reduceIte, WithTop.coe_le_coe]
-    norm_num
+/-- The initial height is zero. -/
+@[simp] theorem heights_zero : heights 0 = 0 := by simp [heights_def]
 
-/-- The points `(0, 0)`, `(1, 1)` and `(n, n + 1 / n)` for `n ≥ 2`. -/
-noncomputable def approaching (n : ℕ) : WithTop ℝ :=
-  ((n + if n ≤ 1 then 0 else (n : ℝ)⁻¹ : ℝ) : WithTop ℝ)
+/-- The height at index one is zero. -/
+@[simp] theorem heights_one : heights 1 = 0 := by simp [heights_def]
 
-/-- The line of slope `1` through the origin supports `approaching`. -/
-theorem isSupportingLine_approaching : IsSupportingLine approaching 1 0 :=
-  isSupportingLine_iff_forall.mpr fun n => by
-    simp only [approaching, zero_add, one_mul, WithTop.coe_le_coe, le_add_iff_nonneg_right]
-    split_ifs
-    · exact le_rfl
-    · positivity
+/-- Every point after `1` lies strictly above the horizontal line through the points at `0` and
+`1`. -/
+theorem zero_lt_heights {n : ℕ} (hn : 1 < n) : (0 : WithTop ℝ) < heights n := by
+  rw [heights, ite_eq_right (not_le.mpr hn), ← WithTop.coe_zero, WithTop.coe_lt_coe]
+  exact inv_pos.mpr (Nat.cast_pos.mpr (by omega))
 
-/-- The line of slope `1` through the origin touches `approaching` exactly at `0` and `1`: every
-later point lies strictly above it. -/
-theorem supportingFace_approaching : supportingFace approaching 1 0 = {0, 1} := by
-  ext n
-  simp only [mem_supportingFace, approaching, zero_add, one_mul, WithTop.coe_eq_coe,
-    add_eq_left, Set.mem_insert_iff, Set.mem_singleton_iff]
-  split_ifs with hn
-  · simp only [true_iff]
-    omega
-  · simp only [inv_eq_zero, Nat.cast_eq_zero]
-    omega
+/-- The horizontal line of height `0` supports the heights. -/
+theorem isSupportingLine_heights : IsSupportingLine heights 0 0 := by
+  refine isSupportingLine_iff_forall.mpr fun n ↦ ?_
+  rw [zero_mul, add_zero, WithTop.coe_zero]
+  rcases le_or_gt n 1 with hn | hn
+  · rw [heights, ite_eq_left hn]
+  · exact (zero_lt_heights hn).le
 
-/-- The lower convex envelope of `approaching` has no first break at `1`: although its points
-beyond `1` lie strictly above the line of slope `1` through the first two points, no line of
-larger slope through `(1, 1)` lies below all of them. -/
-theorem not_isFirstBreak_approaching : ¬IsFirstBreak (lowerConvexEnvelope approaching) 1 0 1 := by
-  rw [(isLowerConvexEnvelope_lowerConvexEnvelope
-    isSupportingLine_approaching.isAdmissible).isFirstBreak_iff]
-  rintro ⟨-, -, c, -, -, h1, τ, hτ, hc⟩
-  have hc0 : c = 0 := by
-    have := WithTop.coe_injective (mem_supportingFace.mp h1)
-    norm_num at this
-    linarith
+/-- The lower convex envelope of the heights `0, 0, 1/2, 1/3, …` has no first break, although
+the horizontal line through its first two points lies strictly below all later points. -/
+theorem not_isFirstBreak_lowerConvexEnvelope_heights (m : ℝ) (j : ℕ) :
+    ¬IsFirstBreak (lowerConvexEnvelope heights) m j := by
+  have hh := isLowerConvexEnvelope_lowerConvexEnvelope isSupportingLine_heights.isAdmissible
+  rw [hh.isFirstBreak_iff (a := 0) (by simp)
+    fun n hn ↦ absurd hn (Nat.not_lt_zero n)]
+  rintro ⟨hj, c, hc, hc0, hcj, τ, hτ, hτc⟩
+  have hc0 : c = 0 := by simpa [mem_supportingFace] using hc0
   subst hc0
-  -- A point far enough out lies below the steeper line through `(1, 1)`.
-  obtain ⟨n, hn⟩ := exists_nat_gt (1 / (τ - 1) + 1)
-  have hτ1 : 0 < τ - 1 := sub_pos.mpr hτ
-  have hpos : 0 < 1 / (τ - 1) := one_div_pos.mpr hτ1
-  have hn2 : ¬n ≤ 1 := fun h => by
-    have : (n : ℝ) ≤ 1 := by exact_mod_cast h
+  -- The supporting line through `(0, 0)` cannot rise, as it lies below the point `(1, 0)`.
+  have hm : m ≤ 0 := by
+    simpa using isSupportingLine_iff_forall.mp hc 1
+  rw [mem_supportingFace] at hcj
+  rcases (Nat.one_le_iff_ne_zero.mpr hj.ne').eq_or_lt with rfl | hj2
+  · -- At `j = 1` the slope is `0`, and no steeper line stays below the heights `1 / n`.
+    have hcj : m = 0 := by simpa using hcj
+    subst hcj
+    set n := ⌈τ⁻¹⌉₊ + 1
+    have hτn := isSupportingLine_iff_forall.mp hτc n
+    rw [heights, ite_eq_right (by omega), WithTop.coe_le_coe] at hτn
+    have hn : τ⁻¹ < n := by
+      simp only [n, Nat.cast_add, Nat.cast_one]
+      linarith [Nat.le_ceil τ⁻¹]
+    have h1n : ((1 + n : ℕ) : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ (by
+      push_cast
+      linarith [(inv_pos.mpr hτ).trans hn])
+    have : 1 < τ * n := by
+      rwa [inv_lt_iff_one_lt_mul₀ hτ, mul_comm] at hn
     linarith
-  have hle := isSupportingLine_iff_forall.mp hc n
-  simp only [approaching, hn2, ↓reduceIte, WithTop.coe_le_coe, Nat.cast_one] at hle
-  have hinv : (n : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by linarith)
-  have hbig : 1 < (τ - 1) * (n - 1) := by
-    have := mul_lt_mul_of_pos_left (show 1 / (τ - 1) < n - 1 by linarith) hτ1
-    rwa [mul_one_div_cancel hτ1.ne'] at this
-  nlinarith
+  · -- For `j ≥ 2` the point `(j, 1 / j)` lies above every line of nonpositive slope through
+    -- `(0, 0)`.
+    rw [heights, ite_eq_right (by omega), WithTop.coe_eq_coe, zero_add] at hcj
+    have hjpos : (0 : ℝ) < j := Nat.cast_pos.mpr hj
+    have : (0 : ℝ) < (j : ℝ)⁻¹ := inv_pos.mpr hjpos
+    nlinarith
 
 end TauCeti.FirstBreakExample
