@@ -107,19 +107,21 @@ private theorem foxMap_orientableRelator_eq (i : Fin g) (v : OrientableGenerator
     conv_lhs => rw [← List.take_append_drop i (List.ofFn handle)]
     rw [List.prod_append, List.drop_eq_getElem_cons (by omega), List.prod_cons,
       List.getElem_ofFn]
-  have htake : c ((List.ofFn handle).take i).prod = 0 :=
+  -- The cocycle vanishes on any product of handles other than the `i`-th.
+  have hzero (l : List (FreeGroup (OrientableGenerator g 0)))
+      (hl : ∀ x ∈ l, ∃ (j : ℕ) (hj : j < g), j ≠ i ∧ handle ⟨j, hj⟩ = x) : c l.prod = 0 :=
     cocycles₁_list_prod_eq_zero c fun x hx ↦ by
-      obtain ⟨j, hj, rfl⟩ := List.mem_take_iff_getElem.1 hx
-      rw [List.getElem_ofFn]
-      exact hK _ fun h ↦ by simp [Fin.ext_iff] at h; omega
-  have hdrop : c ((List.ofFn handle).drop (i + 1)).prod = 0 :=
-    cocycles₁_list_prod_eq_zero c fun x hx ↦ by
-      obtain ⟨j, hj, rfl⟩ := List.mem_drop_iff_getElem.1 hx
-      rw [List.getElem_ofFn]
-      exact hK _ fun h ↦ by simp [Fin.ext_iff] at h; omega
+      obtain ⟨j, hj, hji, rfl⟩ := hl x hx
+      exact hK _ fun h ↦ hji (congrArg Fin.val h)
+  have htake : c ((List.ofFn handle).take i).prod = 0 := hzero _ fun x hx ↦ by
+    obtain ⟨j, hj, rfl⟩ := List.mem_take_iff_getElem.1 hx
+    exact ⟨j, by omega, by omega, (List.getElem_ofFn ..).symm⟩
+  have hdrop : c ((List.ofFn handle).drop (i + 1)).prod = 0 := hzero _ fun x hx ↦ by
+    obtain ⟨j, hj, rfl⟩ := List.mem_drop_iff_getElem.1 hx
+    exact ⟨i + 1 + j, by omega, by omega, (List.getElem_ofFn ..).symm⟩
   rw [foxMap_apply, ← hc, congrArg (⇑c) orientableRelator_eq_prod, hsplit, cocycles₁_map_mul,
-    cocycles₁_map_mul, hdrop, htake, map_zero, zero_add, add_zero, hc, Rep.of_ρ,
-    MonoidHom.comp_apply]
+    cocycles₁_map_mul, hdrop, htake]
+  simp [hc, σ]
 
 /-- The value at the `i`-th commutator `a_i⁻¹ b_i⁻¹ a_i b_i` of the free cocycle with values `v`
 at the generators: Fox's formula `(ρ (a_i⁻¹ b_i⁻¹) - ρ a_i⁻¹) (v a_i) +

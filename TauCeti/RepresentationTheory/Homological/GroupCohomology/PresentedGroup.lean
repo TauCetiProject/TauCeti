@@ -152,6 +152,16 @@ theorem foxMap_mul (r s : FreeGroup X) (v : X → V) :
     foxMap ρ (r * s) v = ρ r (foxMap ρ s v) + foxMap ρ r v :=
   freeCocycle_mul ρ v r s
 
+/-- The Fox map of the empty word vanishes. -/
+@[simp]
+theorem foxMap_one : foxMap ρ 1 = 0 :=
+  LinearMap.ext fun v ↦ cocycles₁_map_one ((freeCocycleEquiv ρ).symm v)
+
+/-- **The inverse rule for Fox maps**, `∂(r⁻¹) = -r⁻¹ ∂r`. -/
+theorem foxMap_inv (r : FreeGroup X) (v : X → V) :
+    foxMap ρ r⁻¹ v = -ρ r⁻¹ (foxMap ρ r v) :=
+  cocycles₁_apply_inv ((freeCocycleEquiv ρ).symm v) r
+
 /-- **The Fox map of a product of commutators lands in the coinvariant kernel.** If the word `r`
 lies in the commutator subgroup of the free group, every value of its Fox map lies in the span of
 the `ρ g y - y`. -/
