@@ -66,6 +66,11 @@ def mappingConeSubalgebra (φ : A →⋆ₙₐ[ℂ] B) : NonUnitalStarSubalgebra
   star_mem' {p} (hp : φ p.1 = CStarCone.evalOne p.2) := by
     rw [mem_ofPred_eq, Prod.fst_star, Prod.snd_star, map_star, map_star, hp]
 
+@[simp]
+theorem mem_mappingConeSubalgebra_iff (φ : A →⋆ₙₐ[ℂ] B) (p : A × CStarCone B) :
+    p ∈ mappingConeSubalgebra φ ↔ φ p.1 = CStarCone.evalOne p.2 :=
+  Iff.rfl
+
 instance isClosed_mappingConeSubalgebra (φ : A →⋆ₙₐ[ℂ] B) :
     IsClosed (mappingConeSubalgebra φ : Set (A × CStarCone B)) :=
   isClosed_eq ((map_continuous φ).comp continuous_fst)
@@ -395,6 +400,9 @@ theorem norm_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) : ‖sectionC
 theorem isometry_sectionCLM (φ : A →⋆ₙₐ[ℂ] B) : Isometry (sectionCLM φ) :=
   isometry_sectionLinearMap φ
 
+theorem norm_sectionCLM_le (φ : A →⋆ₙₐ[ℂ] B) : ‖sectionCLM φ‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by simp
+
 theorem fstHom_surjective (φ : A →⋆ₙₐ[ℂ] B) : Function.Surjective (fstHom φ) :=
   fun a => ⟨sectionCLM φ a, rfl⟩
 
@@ -464,6 +472,10 @@ def sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) 
       exact (map_star_mul_self_sectionLinearMap φ R).symm ▸ star_mul_self_nonneg _
     · rw [map_zero]
     · intro X Y _ _ hX hY; rw [map_add]; exact add_nonneg hX hY
+
+@[simp]
+theorem toLinearMap_sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) :
+    (sectionCP φ).toLinearMap = (sectionCLM φ).toLinearMap := (rfl)
 
 @[simp]
 theorem sectionCP_apply [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) (a : A) :

@@ -188,6 +188,11 @@ theorem compRight_toHom_apply {C : Type*} [NonUnitalNonAssocSemiring C] [Distrib
     [Star C] (H : Homotopy φ₀ φ₁) (ψ : C →⋆ₙₐ[𝕜] A) (c : C) :
     (H.compRight ψ).toHom c = H.toHom (ψ c) := (rfl)
 
+@[simp]
+theorem eval_compRight {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction 𝕜 C] [Star C]
+    (H : Homotopy φ₀ φ₁) (ψ : C →⋆ₙₐ[𝕜] A) (t : I) :
+    (H.compRight ψ).eval t = (H.eval t).comp ψ := (rfl)
+
 /-- Postcompose a homotopy `H : Homotopy φ₀ φ₁` on the left with a continuous `ψ : B →⋆ₙₐ[𝕜] C`. -/
 def compLeft {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
     [IsTopologicalSemiring C] [DistribMulAction 𝕜 C] [ContinuousConstSMul 𝕜 C]
@@ -205,6 +210,14 @@ theorem compLeft_toHom_apply {C : Type*} [TopologicalSpace C] [NonUnitalNonAssoc
     (H : Homotopy φ₀ φ₁) (ψ : B →⋆ₙₐ[𝕜] C) (hψ : Continuous ψ) (a : A) (t : I) :
     (H.compLeft ψ hψ).toHom a t = ψ (H.toHom a t) := by
   simp [compLeft]
+
+@[simp]
+theorem eval_compLeft {C : Type*} [TopologicalSpace C] [NonUnitalNonAssocSemiring C]
+    [IsTopologicalSemiring C] [DistribMulAction 𝕜 C] [ContinuousConstSMul 𝕜 C]
+    [Star C] [ContinuousStar C]
+    (H : Homotopy φ₀ φ₁) (ψ : B →⋆ₙₐ[𝕜] C) (hψ : Continuous ψ) (t : I) :
+    (H.compLeft ψ hψ).eval t = ψ.comp (H.eval t) := by
+  ext a; simp
 
 theorem homotopic (H : Homotopy φ₀ φ₁) : Homotopic φ₀ φ₁ := ⟨H⟩
 

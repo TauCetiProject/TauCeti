@@ -55,6 +55,16 @@ theorem fst_evalZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x
 theorem snd_evalZeroMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
     (s : Ioc (0 : ℝ) 1) : (evalZeroMap Φ x).snd s = x.snd s 0 := by simp [evalZeroMap]
 
+@[simp]
+theorem fstHom_comp_evalZeroMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+    (fstHom φ₀).comp (evalZeroMap Φ) = fstHom Φ.toHom :=
+  (fstHom_comp_map _ _ _ _ _).trans (NonUnitalStarAlgHom.id_comp _)
+
+theorem evalZeroMap_comp_inl (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+    (evalZeroMap Φ).comp (inl Φ.toHom) =
+      (inl φ₀).comp (CStarSuspension.map (ContinuousMap.evalNonUnitalStarAlgHom ℂ B 0)) :=
+  map_comp_inl _
+
 /-- Endpoint evaluation `MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone φ₁` at `t = 1`. -/
 def evalOneMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
     MappingCone Φ.toHom →⋆ₙₐ[ℂ] MappingCone φ₁ :=
@@ -67,6 +77,16 @@ theorem fst_evalOneMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x 
 @[simp]
 theorem snd_evalOneMap_apply (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) (x : MappingCone Φ.toHom)
     (s : Ioc (0 : ℝ) 1) : (evalOneMap Φ x).snd s = x.snd s 1 := by simp [evalOneMap]
+
+@[simp]
+theorem fstHom_comp_evalOneMap (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+    (fstHom φ₁).comp (evalOneMap Φ) = fstHom Φ.toHom :=
+  (fstHom_comp_map _ _ _ _ _).trans (NonUnitalStarAlgHom.id_comp _)
+
+theorem evalOneMap_comp_inl (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁) :
+    (evalOneMap Φ).comp (inl Φ.toHom) =
+      (inl φ₁).comp (CStarSuspension.map (ContinuousMap.evalNonUnitalStarAlgHom ℂ B 1)) :=
+  map_comp_inl _
 
 /-- Two-parameter continuous family `(s, t) ↦ f(s(1 + t))` for `s(1 + t) ≤ 1` and
 `Φ_a(s(1 + t) - 1)` for `s(1 + t) ≥ 1`, defining the homotopy inverse to `evalZeroMap`. -/
