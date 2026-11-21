@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
@@ -28,8 +29,16 @@ trivial class, and the class `[v]` of a height one prime.
 * `ClassGroup.mk_toPrincipalIdeal`: a principal fractional ideal has trivial class. This is the
   `simp` form of `ClassGroup.mk_eq_one_iff` for the one witness that arises in practice, and it
   holds over any domain.
+* `ClassGroup.mk_mul_mk_eq_one_iff`: the product of the classes of two invertible fractional
+  ideals is trivial if and only if their product is principal as an `R`-submodule of `K`.
 * `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
   same class, over any domain and any choice of fraction field.
+* `FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul`: over a Dedekind domain with finite
+  quotients and a characteristic-zero fraction field `K`, every invertible fractional ideal `I` can
+  be scaled by a nonzero natural number `m` into a nonzero integral ideal `J` with `J = (m) * I`.
+* `ClassGroup.isPrincipal_mul_iff_of_mk0_eq`: if a nonzero integral ideal `J` and an invertible
+  fractional ideal `I` share the same class in `ClassGroup R`, then `𝔟 * J` is principal if and
+  only if `𝔟 * I` is principal.
 * `TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup`: a Dedekind domain is a principal
   ideal ring exactly when its class group is trivial, with no finiteness of the class group
   assumed.
@@ -42,9 +51,9 @@ trivial class, and the class `[v]` of a height one prime.
 * `ClassGroup.mk0_eq_inv_mk_iff`: a nonzero ideal `J` has class `[I]⁻¹` exactly when `J * I` is
   principal, with the generator delivered as a unit of `K`.
 
-The two class-triviality results use `[IsDomain R]`, since neither is Dedekind-specific. None
-of them needs the factorization of a fractional ideal into primes, so this file does not import
-it; the results that do live in
+The class-triviality and numerator results use `[IsDomain R]`, since none of them is
+Dedekind-specific. None of them needs the factorization of a fractional ideal into primes, so this
+file does not import it; the results that do live in
 `TauCeti.RingTheory.ClassGroup.HeightOneSpectrum`, which every consumer of *those* pays for and
 consumers of these do not.
 
@@ -78,6 +87,15 @@ lemma ClassGroup.mk_toPrincipalIdeal {R : Type*} [CommRing R] [IsDomain R] {K : 
     ClassGroup.mk K (toPrincipalIdeal R K x) = 1 :=
   ClassGroup.mk_eq_one_iff_exists.mpr ⟨x, rfl⟩
 
+/-- The product of the ideal classes of two invertible fractional ideals is trivial if and only if
+their product is principal as an `R`-submodule of `K`. -/
+theorem ClassGroup.mk_mul_mk_eq_one_iff {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Field K]
+    [Algebra R K] [IsFractionRing R K] {I J : (FractionalIdeal R⁰ K)ˣ} :
+    ClassGroup.mk K I * ClassGroup.mk K J = 1 ↔
+      Submodule.IsPrincipal ((I : FractionalIdeal R⁰ K) * (J : FractionalIdeal R⁰ K) :
+        Submodule R K) := by
+  rw [← map_mul, ClassGroup.mk_eq_one_iff, Units.val_mul, FractionalIdeal.coeToSubmodule_mul]
+
 -- Extracted from the point-to-class surjectivity argument, adapted from Chris Birkbeck's
 -- AINTLIB (`github.com/CBirkbeck/AINTLIB`), `HasseWeil/Pic0/ToClassSurjective.lean`
 -- (`dev/hasse-weil @ 513e83879e2f`, Apache-2.0).
@@ -99,6 +117,56 @@ theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Fie
   rw [hnum, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul]
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- For every invertible fractional ideal `I` of a Dedekind domain with finite quotients and
+characteristic-zero fraction field `K`, there exist a nonzero `m : ℕ` and a nonzero integral ideal
+`J` such that `J = (m) * I`. -/
+theorem FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul [Ring.HasFiniteQuotients R]
+    {K : Type*} [Field K] [CharZero K] [Algebra R K] [IsFractionRing R K]
+    (I : (FractionalIdeal R⁰ K)ˣ) :
+    ∃ (m : ℕ) (hm : m ≠ 0) (J : (Ideal R)⁰),
+      FractionalIdeal.mk0 K J =
+        toPrincipalIdeal R K (Units.mk0 (m : K) (Nat.cast_ne_zero.mpr hm)) * I := by
+  set d : R⁰ := (I : FractionalIdeal R⁰ K).den
+  have hfin : Finite (R ⧸ Ideal.span {(d : R)}) :=
+    Ring.HasFiniteQuotients.finiteQuotient
+      (Ideal.span_singleton_eq_bot.not.mpr (nonZeroDivisors.coe_ne_zero d))
+  set m : ℕ := Nat.card (R ⧸ Ideal.span {(d : R)})
+  have hm : m ≠ 0 := Nat.card_pos.ne'
+  have hm_mem : (m : R) ∈ Ideal.span {(d : R)} := by
+    rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast, ← nsmul_one]
+    exact card_nsmul_eq_zero'
+  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton.mp hm_mem
+  have hmK : (m : K) ≠ 0 := Nat.cast_ne_zero.mpr hm
+  have hm_eq : (m : K) = algebraMap R K q * algebraMap R K (d : R) := by
+    rw [← map_mul, mul_comm, ← hq, map_natCast]
+  have hmul : FractionalIdeal.spanSingleton R⁰ (m : K) * (I : FractionalIdeal R⁰ K) =
+      ((Ideal.span {q} * (I : FractionalIdeal R⁰ K).num : Ideal R) : FractionalIdeal R⁰ K) := by
+    rw [hm_eq, map_mul (FractionalIdeal.spanSingleton R⁰), mul_assoc,
+      FractionalIdeal.den_mul_self_eq_num', ← FractionalIdeal.coeIdeal_span_singleton,
+      ← FractionalIdeal.coeIdeal_mul]
+  have hJ0 : Ideal.span {q} * (I : FractionalIdeal R⁰ K).num ≠ 0 := fun h0 ↦
+    mul_ne_zero (FractionalIdeal.spanSingleton_eq_zero_iff.not.mpr hmK) I.ne_zero
+      (by simp [hmul, h0])
+  refine ⟨m, hm, ⟨Ideal.span {q} * (I : FractionalIdeal R⁰ K).num,
+    mem_nonZeroDivisors_of_ne_zero hJ0⟩, Units.ext ?_⟩
+  rw [FractionalIdeal.coe_mk0, Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0, hmul]
+
+/-- If a nonzero integral ideal `J` and an invertible fractional ideal `I` have the same class in
+`ClassGroup R`, then a nonzero integral ideal `𝔟` has principal product `𝔟 * J` if and only if
+`𝔟 * I` is principal as an `R`-submodule of `K`. -/
+theorem ClassGroup.isPrincipal_mul_iff_of_mk0_eq {K : Type*} [Field K] [Algebra R K]
+    [IsFractionRing R K] {I : (FractionalIdeal R⁰ K)ˣ} {J : (Ideal R)⁰}
+    (hJ : ClassGroup.mk0 J = ClassGroup.mk K I) (𝔟 : (Ideal R)⁰) :
+    Submodule.IsPrincipal ((𝔟 : Ideal R) * (J : Ideal R)) ↔
+      Submodule.IsPrincipal (((𝔟 : Ideal R) : FractionalIdeal R⁰ K) *
+        (I : FractionalIdeal R⁰ K) : Submodule R K) := by
+  have hclass : ClassGroup.mk0 (𝔟 * J) =
+      ClassGroup.mk K (FractionalIdeal.mk0 K 𝔟) * ClassGroup.mk K I := by
+    simp [hJ]
+  rw [← Submonoid.coe_mul, ← ClassGroup.mk0_eq_one_iff (𝔟 * J).property, hclass,
+    ClassGroup.mk_mul_mk_eq_one_iff]
+  simp
 
 /-- **A Dedekind domain is a principal ideal ring exactly when its class group is trivial.**
 Mathlib's `card_classGroup_eq_one_iff` is the same statement with the class number, and needs a

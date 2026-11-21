@@ -50,6 +50,9 @@ on the whole space.
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
+* `TauCeti.integrable_tsum`, `TauCeti.integrable_tsum_of_summable_integral_norm`: a countable
+  series of a.e.-strongly measurable functions with finite total `L¹` `eNorm` (or of integrable
+  functions into a complete normed group with summable `L¹` norms) has integrable pointwise `tsum`.
 -/
 
 public section
@@ -293,6 +296,32 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
     · refine tendsto_const_nhds.congr fun k => ?_
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
+
+/-- **Integrability of a series with finite total `L¹` `eNorm`.** If a countable family `F` of
+a.e.-strongly measurable functions into a complete pseudometrizable `ESeminormedAddCommMonoid`
+has `∑' i, ∫⁻ a, ‖F i a‖ₑ ∂μ ≠ ⊤`, then its pointwise `tsum` is integrable. This complements
+`MeasureTheory.integral_tsum`. -/
+theorem integrable_tsum {ι E : Type*} [Countable ι] [TopologicalSpace E]
+    [ESeminormedAddCommMonoid E] [ContinuousAdd E]
+    [TopologicalSpace.IsCompletelyPseudoMetrizableSpace E] {F : ι → α → E}
+    (hF_meas : ∀ i, AEStronglyMeasurable (F i) μ) (hF_sum : ∑' i, ∫⁻ a, ‖F i a‖ₑ ∂μ ≠ ⊤) :
+    Integrable (fun a ↦ ∑' i, F i a) μ := by
+  refine ⟨AEStronglyMeasurable.tsum hF_meas, ?_⟩
+  refine (lintegral_mono fun a ↦ eNorm_tsum_le_tsum_eNorm).trans_lt ?_
+  rwa [lintegral_tsum fun i ↦ (hF_meas i).eNorm, lt_top_iff_ne_top]
+
+/-- **Integrability of a series with summable `L¹` norms.** If a countable family `F` of integrable
+functions into a complete normed group has `Summable fun i ↦ ∫ a, ‖F i a‖ ∂μ`, then its pointwise
+`tsum` is integrable. This complements `MeasureTheory.hasSum_integral_of_summable_integral_norm`,
+from whose proof the `eNorm` finiteness step is adapted. -/
+theorem integrable_tsum_of_summable_integral_norm {ι E : Type*} [Countable ι]
+    [NormedAddCommGroup E] [CompleteSpace E] {F : ι → α → E}
+    (hF_int : ∀ i, Integrable (F i) μ) (hF_sum : Summable fun i ↦ ∫ a, ‖F i a‖ ∂μ) :
+    Integrable (fun a ↦ ∑' i, F i a) μ := by
+  refine integrable_tsum (fun i ↦ (hF_int i).aestronglyMeasurable) ?_
+  simp_rw [← eNorm_integral_norm_eq_lintegral_eNorm (hF_int _),
+    tsum_eNorm_ne_top_iff_summable_norm, Real.norm_eq_abs]
+  exact hF_sum.abs
 
 end TauCeti
 

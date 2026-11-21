@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
+public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
 import Mathlib.MeasureTheory.Group.FundamentalDomain
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
@@ -34,6 +35,9 @@ multiplicity `w`:
 * `hasMellin_mellinKernel_sub`: the radial Mellin substitution identifying the Mellin transform of
   `mellinKernel D L` minus its constant term with the norm-weighted integral of `latticeTheta L - 1`
   over `unitCone D`.
+* `mellinKernelFEPair_Λ_eq_integral_unitCone`: for a unit fundamental domain `D`, equates
+  `(mellinKernelFEPair hD L).Λ s` on `Re s > 1/2` with that cone integral, provided that cone
+  integral is absolutely integrable.
 
 The unfolding of one unit orbit is recorded separately: for a point `x` of nonzero norm, the
 cone integrals of the Gaussians of the unit multiples `u x` against `N(y)^(s/2)` sum to `w` times
@@ -94,7 +98,7 @@ private theorem unitScale_symm_torsionProd (ζ : Units.torsion K)
 
 /-- The cone over a unit fundamental domain is a fundamental domain for the free part of `(𝓞 K)ˣ`
 with respect to `archHaar K`. -/
-private theorem isFundamentalDomain_unitCone {D : Set (realSpace K)}
+private theorem isFundamentalDomain_unitCone_freeUnits {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) :
     IsFundamentalDomain (Multiplicative (Fin (Units.rank K) → ℤ)) (unitCone D) (archHaar K) := by
   refine IsFundamentalDomain.mk'' (measurableSet_unitCone hD.measurableSet).nullMeasurableSet
@@ -129,8 +133,9 @@ theorem torsionOrder_mul_lintegral_archHaar_eq_tsum_unitCone {D : Set (realSpace
   have := Fintype.ofFinite (Units.torsion K)
   rw [← (unitsMulEquivTorsionProdMultiplicative K).symm.toEquiv.tsum_eq, tsum_prod']
   simp_rw [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, unitScale_symm_torsionProd]
-  rw [← (isFundamentalDomain_unitCone hD).lintegral_eq_tsum'' f, tsum_fintype, Finset.sum_const,
-    Finset.card_univ, ← Nat.card_eq_fintype_card, ← Units.torsionOrder, nsmul_eq_mul]
+  rw [← (isFundamentalDomain_unitCone_freeUnits hD).lintegral_eq_tsum'' f, tsum_fintype,
+    Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, ← Units.torsionOrder,
+    nsmul_eq_mul]
 
 /-- As measures on `realSpace K`, the images under `unitScale u` (`u : (𝓞 K)ˣ`) of `archHaar K`
 restricted to `unitCone D` sum to `w • archHaar K`. -/
@@ -212,7 +217,8 @@ theorem setLIntegral_unitCone_eq {D₁ D₂ : Set (realSpace K)}
         setLIntegral_congr_fun (measurableSet_unitCone hD₁.measurableSet) fun y hy ↦
           (indicator_of_mem (mem_unitCone.mp hy).1 _).symm
     _ = ∫⁻ y in unitCone D₂, P.indicator f y ∂archHaar K :=
-        (isFundamentalDomain_unitCone hD₁).setLIntegral_eq (isFundamentalDomain_unitCone hD₂)
+        (isFundamentalDomain_unitCone_freeUnits hD₁).setLIntegral_eq
+          (isFundamentalDomain_unitCone_freeUnits hD₂)
           (P.indicator f) (indicator_posOrthant_smul_eq hf)
     _ = ∫⁻ y in unitCone D₂, f y ∂archHaar K :=
         setLIntegral_congr_fun (measurableSet_unitCone hD₂.measurableSet) fun y hy ↦
@@ -232,7 +238,8 @@ theorem setIntegral_unitCone_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace 
         setIntegral_congr_fun (measurableSet_unitCone hD₁.measurableSet) fun y hy ↦
           (indicator_of_mem (mem_unitCone.mp hy).1 _).symm
     _ = ∫ y in unitCone D₂, P.indicator f y ∂archHaar K :=
-        (isFundamentalDomain_unitCone hD₁).setIntegral_eq (isFundamentalDomain_unitCone hD₂)
+        (isFundamentalDomain_unitCone_freeUnits hD₁).setIntegral_eq
+          (isFundamentalDomain_unitCone_freeUnits hD₂)
           (indicator_posOrthant_smul_eq hf)
     _ = ∫ y in unitCone D₂, f y ∂archHaar K :=
         setIntegral_congr_fun (measurableSet_unitCone hD₂.measurableSet) fun y hy ↦
@@ -277,6 +284,27 @@ theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet 
   rw [hscaled.2, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (sq_nonneg _),
     Complex.cpow_neg, inv_inv] at hc
   simpa only [c, smul_eq_mul, Complex.ofReal_pow, mul_assoc] using hc
+
+open scoped Classical in
+/-- For a unit fundamental domain `D`, on `Re s > 1 / 2` the completed function
+`(mellinKernelFEPair hD L).Λ s` equals `(2^r₂ / w) (V_L²)^s` times the norm-weighted cone integral
+of `θ_L - 1`, provided that cone integral is absolutely integrable. -/
+theorem mellinKernelFEPair_Λ_eq_integral_unitCone {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] {s : ℂ} (hs : 1 / 2 < s.re)
+    (h : IntegrableOn (fun y ↦ (archNorm y : ℂ) ^ s * (latticeTheta L y - 1))
+      (unitCone D) (archHaar K)) :
+    (mellinKernelFEPair hD L).Λ s =
+      (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        (ZLattice.covolume L ^ 2 : ℂ) ^ s *
+          ∫ y in unitCone D, (archNorm y : ℂ) ^ s * (latticeTheta L y - 1) ∂archHaar K := by
+  have hm1 := hasMellin_mellinKernel_sub_mellinConstant hD L hs
+  have hm2 := hasMellin_mellinKernel_sub hD.measurableSet hD.isBounded L (2 * s)
+    (by simpa [mul_div_cancel_left₀ _ (two_ne_zero' ℂ)] using h)
+  rw [mul_div_cancel_left₀ _ (two_ne_zero' ℂ)] at hm2
+  rw [mellinConstant_eq_mul_surfaceHaar_real hD] at hm1
+  push_cast at hm1
+  exact hm1.2.symm.trans hm2.2
 
 /-! ### The unit orbit of one point -/
 

@@ -44,6 +44,12 @@ Mathlib's `idealSet K J` for a nonzero integral ideal `J`:
 * `NumberField.mixedEmbedding.fundamentalCone.natCard_unitSMul_eq_torsionOrder`: a point of
   nonzero norm is `u • a`, with `a` a point of the cone and `u` a unit, for exactly `w` pairs
   `(a, u)`.
+* `NumberField.mixedEmbedding.fundamentalCone.interIdealLatticeEquiv`: scaling by a nonzero
+  rational `q` with `I₂ = (q) * I₁` maps `fundamentalCone K ∩ idealLattice K I₁` bijectively onto
+  `fundamentalCone K ∩ idealLattice K I₂`.
+* `NumberField.mixedEmbedding.fundamentalCone.coneOrbitEquiv`: choosing coset representatives
+  identifies `(fundamentalCone K ∩ idealLattice K I) × ((𝓞 K)ˣ ⧸ torsion K)` bijectively with the
+  nonzero points of `idealLattice K I`.
 
 ## References
 
@@ -275,5 +281,105 @@ theorem natCard_unitSMul_eq_torsionOrder {x : mixedSpace K} (hx : mixedEmbedding
       exact a.property
     refine ⟨⟨_, hζ⟩, Subtype.ext (Prod.ext (Subtype.ext ?_) ?_)⟩ <;>
       simp only [inv_mul_cancel_right, ← hp, inv_smul_smul, inv_inv]
+
+/-- Scaling by a nonzero rational `q` with `I₂ = (q) * I₁` maps the fundamental-cone points of
+`idealLattice K I₁` bijectively onto those of `idealLattice K I₂`. -/
+noncomputable def interIdealLatticeEquiv {I₁ I₂ : (FractionalIdeal (𝓞 K)⁰ K)ˣ} {q : ℚ}
+    (hq : q ≠ 0)
+    (hI : (I₂ : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.spanSingleton (𝓞 K)⁰ (q : K) * (I₁ : FractionalIdeal (𝓞 K)⁰ K)) :
+    (fundamentalCone K ∩ idealLattice K I₁ : Set (mixedSpace K)) ≃
+      (fundamentalCone K ∩ idealLattice K I₂ : Set (mixedSpace K)) :=
+  Equiv.subtypeEquiv (MulAction.toPerm (Units.mk0 (q : ℝ) (Rat.cast_ne_zero.mpr hq))) fun x ↦ by
+    have hqR : (q : ℝ) ≠ 0 := Rat.cast_ne_zero.mpr hq
+    have hq_emb (z : K) : mixedEmbedding K ((q : K) * z) = (q : ℝ) • mixedEmbedding K z := by
+      ext w <;> simp [mixedEmbedding, Complex.real_smul]
+    simp only [Set.mem_inter_iff, SetLike.mem_coe, MulAction.toPerm_apply,
+      Units.smul_def, Units.val_mk0, mem_idealLattice]
+    refine and_congr (smul_mem_iff_mem hqR).symm
+      ⟨fun ⟨b, hb, hbx⟩ ↦ ⟨(q : K) * b, ?_, ?_⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+    · rw [hI]
+      exact FractionalIdeal.mem_singleton_mul.mpr ⟨b, hb, rfl⟩
+    · rw [hq_emb, hbx]
+    · rw [hI, FractionalIdeal.mem_singleton_mul] at hy
+      obtain ⟨b, hb, rfl⟩ := hy
+      refine ⟨b, hb, smul_right_injective (mixedSpace K) hqR ?_⟩
+      rwa [hq_emb] at hyx
+
+/-- Underlying mixed-space point of `interIdealLatticeEquiv`. -/
+@[simp]
+theorem interIdealLatticeEquiv_apply_coe {I₁ I₂ : (FractionalIdeal (𝓞 K)⁰ K)ˣ} {q : ℚ}
+    (hq : q ≠ 0)
+    (hI : (I₂ : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.spanSingleton (𝓞 K)⁰ (q : K) * (I₁ : FractionalIdeal (𝓞 K)⁰ K))
+    (a : (fundamentalCone K ∩ idealLattice K I₁ : Set (mixedSpace K))) :
+    (interIdealLatticeEquiv hq hI a : mixedSpace K) = (q : ℝ) • (a : mixedSpace K) := by
+  simp [interIdealLatticeEquiv]
+
+/-- Underlying mixed-space point of `(interIdealLatticeEquiv hq hI).symm`. -/
+@[simp]
+theorem interIdealLatticeEquiv_symm_apply_coe {I₁ I₂ : (FractionalIdeal (𝓞 K)⁰ K)ˣ} {q : ℚ}
+    (hq : q ≠ 0)
+    (hI : (I₂ : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.spanSingleton (𝓞 K)⁰ (q : K) * (I₁ : FractionalIdeal (𝓞 K)⁰ K))
+    (b : (fundamentalCone K ∩ idealLattice K I₂ : Set (mixedSpace K))) :
+    ((interIdealLatticeEquiv hq hI).symm b : mixedSpace K) = (q : ℝ)⁻¹ • (b : mixedSpace K) := by
+  simp [interIdealLatticeEquiv, Units.smul_def]
+
+/-- Choosing coset representatives `Quotient.out g` identifies
+`(fundamentalCone K ∩ idealLattice K I) × ((𝓞 K)ˣ ⧸ Units.torsion K)` bijectively with the nonzero
+points of `idealLattice K I`. -/
+noncomputable def coneOrbitEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)) × ((𝓞 K)ˣ ⧸ Units.torsion K) ≃
+      {x : idealLattice K I // x ≠ 0} := by
+  refine Equiv.ofBijective
+    (fun p ↦ ⟨(Quotient.out p.2).unitSMulIdealLatticeEquiv I ⟨p.1.val, p.1.property.2⟩,
+      fun h ↦ ?_⟩)
+    ⟨?_, ?_⟩
+  · have hnorm : mixedEmbedding.norm ((Quotient.out p.2 : (𝓞 K)ˣ) • (p.1 : mixedSpace K)) = 0 := by
+      simpa using congrArg (fun z : idealLattice K I ↦ mixedEmbedding.norm (z : mixedSpace K)) h
+    rw [norm_unit_smul] at hnorm
+    exact (norm_pos_of_mem p.1.property.1).ne' hnorm
+  · rintro ⟨a₁, g₁⟩ ⟨a₂, g₂⟩ h
+    have hsmul : (Quotient.out g₁ : (𝓞 K)ˣ) • (a₁ : mixedSpace K) =
+        (Quotient.out g₂ : (𝓞 K)ˣ) • (a₂ : mixedSpace K) := by
+      simpa using congrArg (fun z : {x : idealLattice K I // x ≠ 0} ↦ (z.val : mixedSpace K)) h
+    have ha₁ : (a₁ : mixedSpace K) =
+        ((Quotient.out g₁)⁻¹ * Quotient.out g₂) • (a₂ : mixedSpace K) := by
+      rw [mul_smul, ← hsmul, inv_smul_smul]
+    have htor : (Quotient.out g₁)⁻¹ * Quotient.out g₂ ∈ Units.torsion K :=
+      (unit_smul_mem_iff_mem_torsion a₂.property.1 _).mp (ha₁ ▸ a₁.property.1)
+    have hg : g₁ = g₂ := by
+      rw [← Quotient.out_eq g₁, ← Quotient.out_eq g₂]
+      exact QuotientGroup.eq.mpr htor
+    subst hg
+    exact Prod.ext (Subtype.ext (MulAction.injective (Quotient.out g₁) hsmul)) rfl
+  · rintro ⟨⟨x, hxI⟩, hx0⟩
+    have hx0' : x ≠ 0 := fun h ↦ hx0 (Subtype.ext h)
+    obtain ⟨b, -, hb⟩ := (mem_idealLattice K I).mp hxI
+    obtain ⟨v, hv⟩ := exists_unit_smul_mem ((norm_eq_zero_iff' ⟨b, hb⟩).not.mpr hx0')
+    set g : (𝓞 K)ˣ ⧸ Units.torsion K := QuotientGroup.mk v⁻¹
+    set u : (𝓞 K)ˣ := Quotient.out g
+    have htor : (v⁻¹)⁻¹ * u ∈ Units.torsion K :=
+      QuotientGroup.eq.mp (Quotient.out_eq g).symm
+    have htor' : u⁻¹ * v⁻¹ ∈ Units.torsion K := by
+      simpa [mul_inv_rev] using Subgroup.inv_mem (Units.torsion K) htor
+    have ha_cone : u⁻¹ • x ∈ fundamentalCone K := by
+      have heq : u⁻¹ • x = (u⁻¹ * v⁻¹) • (v • x) := by rw [mul_smul, inv_smul_smul]
+      rw [heq]
+      exact (unit_smul_mem_iff_mem_torsion hv _).mpr htor'
+    have haI : u⁻¹ • x ∈ idealLattice K I := (u⁻¹.unitSMul_mem_idealLattice_iff I x).mpr hxI
+    refine ⟨(⟨u⁻¹ • x, ha_cone, haI⟩, g), Subtype.ext (Subtype.ext ?_)⟩
+    rw [Units.unitSMulIdealLatticeEquiv_apply]
+    exact smul_inv_smul u x
+
+/-- Underlying mixed-space point of `coneOrbitEquiv`. -/
+@[simp]
+theorem coneOrbitEquiv_apply_coe (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    (a : (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)))
+    (g : (𝓞 K)ˣ ⧸ Units.torsion K) :
+    ((coneOrbitEquiv I (a, g) : {x : idealLattice K I // x ≠ 0}) : mixedSpace K) =
+      (Quotient.out g : (𝓞 K)ˣ) • (a : mixedSpace K) :=
+  Units.unitSMulIdealLatticeEquiv_apply _ _ _
 
 end NumberField.mixedEmbedding.fundamentalCone
