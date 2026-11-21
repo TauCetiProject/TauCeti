@@ -180,24 +180,20 @@ theorem coarseTSupport_eq_empty_iff {φ : SmoothForm I C V k} : φ.coarseTSuppor
 /-- Coarse topological support of a sum of smooth forms lies in the union of their supports. -/
 theorem coarseTSupport_add_subset (φ ψ : SmoothForm I C V k) :
     (φ + ψ).coarseTSupport ⊆ φ.coarseTSupport ∪ ψ.coarseTSupport := by
-  have h : ((φ + ψ : SmoothForm I C V k) : RoughForm I C V k) =
-      (φ.val : RoughForm I C V k) + ψ.val :=
-    funext fun _ ↦ ContinuousAlternatingMap.ext fun _ ↦ rfl
-  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_add_subset (F := V) φ.val ψ.val
+  simpa only [coarseTSupport_def, Submodule.coe_add φ ψ] using
+    RoughForm.coarseTSupport_add_subset (F := V) φ.val ψ.val
 
 /-- Scalar multiplication does not enlarge the coarse topological support of a smooth form. -/
 theorem coarseTSupport_smul_subset (c : ℝ) (φ : SmoothForm I C V k) :
     (c • φ).coarseTSupport ⊆ φ.coarseTSupport := by
-  have h : ((c • φ : SmoothForm I C V k) : RoughForm I C V k) = c • (φ.val : RoughForm I C V k) :=
-    funext fun _ ↦ ContinuousAlternatingMap.ext fun _ ↦ rfl
-  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_smul_subset (F := V) c φ.val
+  simpa only [coarseTSupport_def, Submodule.coe_smul c φ] using
+    RoughForm.coarseTSupport_smul_subset (F := V) c φ.val
 
 /-- Multiplication by a nonzero scalar preserves the coarse support of a smooth form. -/
 theorem coarseTSupport_smul (c : ℝ) (φ : SmoothForm I C V k) (hc : c ≠ 0) :
     (c • φ).coarseTSupport = φ.coarseTSupport := by
-  have h : ((c • φ : SmoothForm I C V k) : RoughForm I C V k) = c • (φ.val : RoughForm I C V k) :=
-    funext fun _ ↦ ContinuousAlternatingMap.ext fun _ ↦ rfl
-  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_smul (F := V) c φ.val hc
+  simpa only [coarseTSupport_def, Submodule.coe_smul c φ] using
+    RoughForm.coarseTSupport_smul (F := V) c φ.val hc
 
 /-- Exterior differentiation does not enlarge the coarse support of a smooth form. -/
 theorem coarseTSupport_mextDerivₗ_subset [IsManifold I 2 C] (φ : SmoothForm I C V k) :
@@ -571,7 +567,11 @@ end SingleProper
 @[simp]
 theorem compactlySupportedInvariantFormsPullback_id :
     (𝟭 C).compactlySupportedInvariantFormsPullback (hs := hs) (ht := ht) (hs' := hs) (ht' := ht)
-        (V := V) (k := k) contMDiff_id contMDiff_id isProperMap_isomorphismClasses_map_id =
+        (V := V) (k := k) contMDiff_id contMDiff_id (by
+          change IsProperMap (X := Quotient (isIsomorphicSetoid C))
+            (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟙 (Cat.of C)))
+          rw [isomorphismClasses.map_id]
+          exact isProperMap_id) =
       LinearMap.id :=
   LinearMap.ext fun φ ↦ Subtype.ext (LinearMap.congr_fun SmoothForm.mpullback_id φ.val)
 
@@ -819,7 +819,12 @@ theorem compactlySupportedInvariantFormsPullback_comp
     (Φ ⋙ Ψ).compactlySupportedInvariantFormsPullback (hs := hs) (ht := ht)
         (hs' := hs'') (ht' := ht'') (V := V) (k := k) (hΨ.comp hΦ)
         (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸ hΨ₁.comp hΦ₁)
-        (isProperMap_isomorphismClasses_map_comp Φ Ψ hpΦ hpΨ) =
+        (by
+          change IsProperMap (X := Quotient (isIsomorphicSetoid C))
+            (Y := Quotient (isIsomorphicSetoid B))
+            (isomorphismClasses.map (Φ.toCatHom ≫ Ψ.toCatHom))
+          rw [isomorphismClasses.map_comp]
+          exact hpΨ.comp hpΦ) =
       (Φ.compactlySupportedInvariantFormsPullback (hs' := hs') (ht' := ht') hΦ hΦ₁ hpΦ).comp
         (Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ) :=
   LinearMap.ext fun φ ↦ Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.val).symm
@@ -842,14 +847,21 @@ theorem compactlySupportedInvariantFormsEquiv_comp [IsGroupoid D] [TauCeti.IsTop
         (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸ hΨ₁.comp hΦ₁) =
       (Ψ.compactlySupportedInvariantFormsEquiv hs' ht'.contMDiff hs'' ht'' hΨ hΨ₁).trans
         (Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁) :=
-  LinearEquiv.ext fun φ ↦ Subtype.ext <| by
+  LinearEquiv.ext fun φ ↦ by
     rw [(Φ ⋙ Ψ).compactlySupportedInvariantFormsEquiv_apply hs ht hs'' ht''
         (fun x ↦ (hΦ x).comp I'' B (hΨ (Φ.obj x)))
         (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸ hΨ₁.comp hΦ₁),
       LinearEquiv.trans_apply,
       Ψ.compactlySupportedInvariantFormsEquiv_apply hs' ht'.contMDiff hs'' ht'' hΨ hΨ₁,
       Φ.compactlySupportedInvariantFormsEquiv_apply hs ht hs' ht' hΦ hΦ₁]
-    exact (SmoothForm.mpullback_mpullback _ _ hΦ.contMDiff hΨ.contMDiff φ.val).symm
+    exact LinearMap.congr_fun
+      (compactlySupportedInvariantFormsPullback_comp Φ Ψ hΦ.contMDiff hΦ₁ hΨ.contMDiff hΨ₁
+        (Φ.isProperMap_isomorphismClasses_map_of_essSurj hΦ.contMDiff.continuous hΦ.isOpenMap
+          (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
+            hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap)
+        (Ψ.isProperMap_isomorphismClasses_map_of_essSurj hΨ.contMDiff.continuous hΨ.isOpenMap
+          (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
+            hs''.contMDiff.continuous ht''.isOpenMap).isOpenMap)) φ
 
 end Comp
 
@@ -894,10 +906,10 @@ theorem compactlySupportedInvariantFormsEquiv_eq [IsGroupoid D] [TauCeti.IsTopol
     (hη : ContMDiff I J' ∞ fun x ↦ (⟨Φ.obj x, Ψ.obj x, η.app x⟩ : Quiver.Total D)) :
     Φ.compactlySupportedInvariantFormsEquiv (V := V) (k := k) hs ht hs' ht' hΦ hΦ₁ =
       Ψ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΨ hΨ₁ :=
-  LinearEquiv.ext fun φ ↦ Subtype.ext <| by
-    simp only [Functor.compactlySupportedInvariantFormsEquiv_apply,
-      Functor.coe_compactlySupportedInvariantFormsPullback]
-    exact η.mpullback_eq_of_mem_invariantForms hΦ.contMDiff hΨ.contMDiff hη φ.property.1
+  LinearEquiv.ext fun φ ↦ by
+    simp only [Functor.compactlySupportedInvariantFormsEquiv_apply]
+    exact LinearMap.congr_fun
+      (η.compactlySupportedInvariantFormsPullback_eq hΦ.contMDiff hΨ.contMDiff hΦ₁ hΨ₁ _ _ hη) φ
 
 end CategoryTheory.NatTrans
 

@@ -74,43 +74,6 @@ theorem isQuotientMap_isomorphismClasses_map (F : C ⥤ D) (hF : IsQuotientMap F
     (F.isomorphismClasses_map_comp_mk.symm ▸
       (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF)
 
-/-- Composing functors whose induced maps on isomorphism classes are quotient maps gives a
-quotient map on isomorphism classes. -/
-theorem isQuotientMap_isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E)
-    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
-    (hG : IsQuotientMap (X := Quotient (isIsomorphicSetoid D))
-      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
-    IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F ⋙ G).toCatHom) := by
-  change IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
-    (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F.toCatHom ≫ G.toCatHom))
-  rw [isomorphismClasses.map_comp]
-  exact hG.comp hF
-
-/-- The identity functor induces a proper map on isomorphism classes. -/
-theorem isProperMap_isomorphismClasses_map_id :
-    IsProperMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟭 C).toCatHom) := by
-  change IsProperMap (X := Quotient (isIsomorphicSetoid C))
-    (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟙 (Cat.of C)))
-  rw [isomorphismClasses.map_id]
-  exact isProperMap_id
-
-/-- Composing functors whose induced maps on isomorphism classes are proper gives a proper map on
-isomorphism classes. -/
-theorem isProperMap_isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E)
-    (hF : IsProperMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
-    (hG : IsProperMap (X := Quotient (isIsomorphicSetoid D))
-      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
-    IsProperMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F ⋙ G).toCatHom) := by
-  change IsProperMap (X := Quotient (isIsomorphicSetoid C))
-    (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F.toCatHom ≫ G.toCatHom))
-  rw [isomorphismClasses.map_comp]
-  exact hG.comp hF
-
 /-- A full functor reflecting isomorphisms, for instance a fully faithful functor, whose object
 map is continuous and closed, with range closed under isomorphisms, induces a closed embedding on
 isomorphism classes. The object map need not be injective. For groupoids this identifies the
@@ -204,7 +167,11 @@ theorem isomorphismClassesHomeomorph_comp (F : C ⥤ D) (G : D ⥤ E)
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
     (hG : IsQuotientMap (X := Quotient (isIsomorphicSetoid D))
       (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
-    (F ⋙ G).isomorphismClassesHomeomorph (isQuotientMap_isomorphismClasses_map_comp F G hF hG) =
+    (F ⋙ G).isomorphismClassesHomeomorph (by
+      change IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+        (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F.toCatHom ≫ G.toCatHom))
+      rw [isomorphismClasses.map_comp]
+      exact hG.comp hF) =
       (F.isomorphismClassesHomeomorph hF).trans (G.isomorphismClassesHomeomorph hG) := by
   ext q
   induction q using Quotient.inductionOn with

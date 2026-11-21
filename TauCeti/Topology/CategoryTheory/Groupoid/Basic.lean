@@ -130,26 +130,22 @@ theorem exists_continuousAt_comp {C : Type*} [Category C] [IsGroupoid C] [Topolo
     (heq : ∀ᶠ x in 𝓝 x₀, (α x).right = (β x).left) :
     ∃ γ : X → Quiver.Total C, ContinuousAt γ x₀ ∧
       ∀ᶠ x in 𝓝 x₀, ∀ h : (α x).right = (β x).left, γ x = (α x).comp (β x) h := by
-  classical
   obtain ⟨U, hUsub, hUo, hx₀U⟩ := mem_nhds_iff.mp heq
   let pair : U → {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} :=
     fun z ↦ ⟨(α z, β z), hUsub z.property⟩
-  let γ : X → Quiver.Total C := fun x ↦
-    if hx : x ∈ U then (pair ⟨x, hx⟩).val.1.comp (pair ⟨x, hx⟩).val.2 (pair ⟨x, hx⟩).property
-    else α x₀
+  let compU : U → Quiver.Total C :=
+    fun z ↦ (pair z).val.1.comp (pair z).val.2 (pair z).property
+  let γ : X → Quiver.Total C := Function.extend Subtype.val compU fun _ ↦ α x₀
   have hpair : ContinuousAt pair ⟨x₀, hx₀U⟩ := by
     rw [ContinuousAt, tendsto_subtype_rng]
     exact (hα.comp continuous_subtypeVal.continuousAt).prodMk
       (hβ.comp continuous_subtypeVal.continuousAt)
   have hγ_sub : ContinuousAt (γ ∘ (Subtype.val : U → X)) ⟨x₀, hx₀U⟩ := by
-    have hcomp : γ ∘ (Subtype.val : U → X) =
-        fun z : U ↦ (pair z).val.1.comp (pair z).val.2 (pair z).property :=
-      funext fun z ↦ by simp only [Function.comp_apply, γ, z.property, ↓reduceDIte]
-    rw [hcomp]
+    rw [Function.extend_comp Subtype.val_injective]
     exact IsTopologicalGroupoid.continuous_comp.continuousAt.comp hpair
   refine ⟨γ, hUo.isOpenEmbedding_subtypeVal.continuousAt_iff.mp hγ_sub,
-    Filter.eventually_of_mem (hUo.mem_nhds hx₀U) fun x hx h ↦ by
-      simp only [γ, hx, ↓reduceDIte, pair]⟩
+    Filter.eventually_of_mem (hUo.mem_nhds hx₀U) fun x hx _ ↦ ?_⟩
+  exact congrFun (Function.extend_comp Subtype.val_injective compU fun _ ↦ α x₀) ⟨x, hx⟩
 
 end IsTopologicalGroupoid
 
