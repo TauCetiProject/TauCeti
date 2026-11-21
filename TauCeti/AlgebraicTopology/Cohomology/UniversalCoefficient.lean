@@ -294,10 +294,7 @@ def singularUniversalCoefficientEquiv (n : ℕ) :
     X.singularCohomology R k M (n + 1) ≃ₗ[k]
       Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1 ×
         (((singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj R).obj X ⟶ M) :=
-  ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-    (X.singularExtToCohomology_injective R M n)
-    ⟨X.singularKroneckerSection R M (n + 1),
-      LinearMap.ext (X.singularKronecker_singularKroneckerSection R M (n + 1))⟩).val
+  TauCeti.ChainComplex.universalCoefficientEquiv k ((toSSet.obj X).chainComplex R) M rfl
 
 /-- The inverse of the splitting `TopCat.singularUniversalCoefficientEquiv` restricts to the
 inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor. -/
@@ -305,19 +302,17 @@ inclusion `TopCat.singularExtToCohomology` of the `Ext` term on the first factor
 lemma singularUniversalCoefficientEquiv_symm_inl (n : ℕ)
     (e : Ext.{w} (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) M 1) :
     (X.singularUniversalCoefficientEquiv R M n).symm (e, 0) = X.singularExtToCohomology R M n e :=
-  (LinearMap.congr_fun
-    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-      (X.singularExtToCohomology_injective R M n) _).property.left e).symm
+  TauCeti.ChainComplex.universalCoefficientEquiv_symm_inl (X := (toSSet.obj X).chainComplex R) rfl e
 
 /-- The second component of the splitting `TopCat.singularUniversalCoefficientEquiv` is the
 Kronecker map. -/
 @[simp]
 lemma singularUniversalCoefficientEquiv_apply_snd (n : ℕ)
     (x : X.singularCohomology R k M (n + 1)) :
-    (X.singularUniversalCoefficientEquiv R M n x).2 = X.singularKronecker k (n + 1) x :=
-  (LinearMap.congr_fun
-    ((X.exact_singularExtToCohomology_singularKronecker R M n).splitSurjectiveEquiv
-      (X.singularExtToCohomology_injective R M n) _).property.right x).symm
+    (X.singularUniversalCoefficientEquiv R M n x).2 = X.singularKronecker k (n + 1) x := by
+  rw [singularKronecker_def]
+  exact TauCeti.ChainComplex.universalCoefficientEquiv_apply_snd
+    (X := (toSSet.obj X).chainComplex R) rfl x
 
 variable {X} in
 /-- **Naturality of the universal coefficient sequence** in the space: for a continuous map
