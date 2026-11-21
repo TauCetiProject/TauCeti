@@ -297,20 +297,20 @@ variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] {R : Type} [Ring R] [Module R F]
 
 /-- **Stokes' theorem for smooth singular chains.** Integrating a `C¹` form over the boundary of a
-smooth singular chain is integrating its exterior derivative over the chain: the integration
-cochain of `φ`, precomposed with the differential of the smooth singular chain complex, is the
-integration cochain of `dφ`. -/
+smooth singular chain with coefficients in `R` is integrating its exterior derivative over the
+chain: the integration cochain of `φ`, precomposed with the differential of the smooth singular
+chain complex, is the integration cochain of `dφ`. -/
 @[reassoc]
 theorem d_comp_integrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ) :
     ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).d (p + 1) p ≫
       integrationCochain φ = integrationCochain (mextDeriv φ) := by
   refine SSet.chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext_ring ?_)
-  simp only [SSet.ιChainComplex_d_assoc, Preadditive.sum_comp, Preadditive.zsmul_comp,
-    ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_sum, LinearMap.sum_apply,
-    ModuleCat.hom_zsmul, LinearMap.smul_apply, LinearMap.comp_apply]
+  simp only [SSet.ιChainComplex_d_assoc, Preadditive.sum_comp, ModuleCat.hom_comp,
+    LinearMap.comp_apply, ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_smul]
   rw [integrationCochain_ιChainComplex, one_smul, SmoothSimplex.integral_mextDeriv σ hφ]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [integrationCochain_ιChainComplex, one_smul, ← Int.cast_smul_eq_zsmul ℝ]
+  rw [LinearMap.smul_apply, map_zsmul, integrationCochain_ιChainComplex, one_smul,
+    ← Int.cast_smul_eq_zsmul ℝ]
   simp
 
 /-- Element form of `TauCeti.d_comp_integrationCochain`: integrating a `C¹` form over the boundary

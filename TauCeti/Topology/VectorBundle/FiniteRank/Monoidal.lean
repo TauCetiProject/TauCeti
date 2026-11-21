@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Tensor
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
@@ -26,7 +27,9 @@ coordinate matrix on every fibre:
 Each of these coordinate isomorphisms intertwines the Kronecker products of the transition
 maps, so it defines an isomorphism of cores by `FiniteRankBundleCore.constIso`. The same
 intertwining relations, applied to the fibre maps of bundle morphisms, give naturality, and the
-coherence laws hold fibrewise as identities between coordinate permutations.
+coherence laws hold fibrewise as identities between coordinate permutations. Tensor powers are
+provided by the generic monoidal construction `TauCeti.tensorPow`, with rank computed by
+`FiniteRankBundleCore.rank_tensorPow`.
 
 Together with the Whitney biproducts of `TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`,
 this is the structure of a symmetric monoidal preadditive category with binary biproducts, which
@@ -43,7 +46,7 @@ For the tensor product of vector bundles and its transition functions see Milnor
 
 public section
 
-open CategoryTheory VectorBundleCore
+open CategoryTheory MonoidalCategory VectorBundleCore
 open scoped MonoidalCategory
 
 namespace TauCeti.FiniteRankBundleCore
@@ -77,6 +80,22 @@ variable {A A' D D' C : FiniteRankBundleCore 𝕜 B}
     (A ⊗ D).rank = A.rank * D.rank := (rfl)
 
 @[simp] theorem rank_tensorUnit : (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank = 1 := (rfl)
+
+@[simp] theorem localTriv_baseSet_tensorObj (A D : FiniteRankBundleCore 𝕜 B) (i : B) :
+    ((A ⊗ D).core.localTriv i).baseSet = A.core.baseSet i ∩ D.core.baseSet i :=
+  localTriv_baseSet_tensor A D i
+
+@[simp] theorem coordChange_tensorObj (A D : FiniteRankBundleCore 𝕜 B) (i j x : B) :
+    (A ⊗ D).core.coordChange i j x =
+      (A.core.coordChange i j x).kronecker (D.core.coordChange i j x) :=
+  coordChange_tensor A D i j x
+
+@[simp] theorem localTriv_baseSet_tensorUnit (i : B) :
+    ((𝟙_ (FiniteRankBundleCore 𝕜 B)).core.localTriv i).baseSet = Set.univ := (rfl)
+
+@[simp] theorem coordChange_tensorUnit (i j x : B) :
+    (𝟙_ (FiniteRankBundleCore 𝕜 B)).core.coordChange i j x =
+      ContinuousLinearMap.id 𝕜 (Fin (𝟙_ (FiniteRankBundleCore 𝕜 B)).rank → 𝕜) := (rfl)
 
 /-- The monoidal tensor product of bundle maps is the Kronecker product on every fibre. -/
 @[simp] theorem fiberMap_tensorHom_monoidal (f : A ⟶ A') (g : D ⟶ D') (x : B) :
@@ -206,6 +225,18 @@ theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
 @[simp] theorem fiberMap_braiding_inv (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
     (β_ A D).inv.fiberMap x = (kroneckerComm 𝕜 D.rank A.rank).toContinuousLinearMap :=
   fiberMap_tensorComm_inv A D x
+
+/-- The `m`-th tensor power of a core of rank `r` has rank `r ^ m`. -/
+@[simp] theorem rank_tensorPow (A : FiniteRankBundleCore 𝕜 B) :
+    ∀ m : ℕ, (tensorPow A m).rank = A.rank ^ m
+  | 0 => rfl
+  | m + 1 => by rw [tensorPow_succ, rank_tensorObj, rank_tensorPow A m, pow_succ']
+
+/-- Over a nonempty base, any left factor in a tensor-product isomorphism with the monoidal unit
+has rank one. -/
+theorem rank_eq_one_of_tensor_iso_tensorUnit [Nonempty B] {A D : FiniteRankBundleCore 𝕜 B}
+    (e : A ⊗ D ≅ 𝟙_ (FiniteRankBundleCore 𝕜 B)) : A.rank = 1 :=
+  Nat.eq_one_of_mul_eq_one_right (rank_eq_of_iso e)
 
 section Pullback
 
