@@ -165,10 +165,12 @@ theorem hasDerivWithinAt_inner_prodTangentSpace_neg_two_mul_ricciTensor_iff
   refine ⟨fun h ↦ ⟨fun u v ↦ ?_, fun u v ↦ ?_⟩, fun h u v ↦
     hasDerivWithinAt_inner_prodTangentSpace_of_ricciFlow g₁ g₂ p u v (h.1 _ _) (h.2 _ _)⟩
   -- Test the product equation on vectors tangent to a single factor.
-  on_goal 1 => have hp := h ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (u, 0))
-    ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (v, 0))
-  on_goal 2 => have hp := h ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (0, u))
-    ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (0, v))
+  on_goal 1 =>
+    have hp := h ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (u, 0))
+      ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (v, 0))
+  on_goal 2 =>
+    have hp := h ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (0, u))
+      ((TauCeti.Manifold.tangentSpaceProdEquiv p).symm (0, v))
   all_goals
     rw [ricciTensor_prodTangentSpace] at hp
     simpa only [prodTangentSpace_inner, ContinuousLinearEquiv.apply_symm_apply, map_zero,
