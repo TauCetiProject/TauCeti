@@ -9,9 +9,8 @@ public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Schur
-public import Mathlib.CategoryTheory.Simple
 public import TauCeti.CategoryTheory.Abelian.Injective.Basic
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Simple.Basic
 
 /-!
 # Finite semisimple categories
@@ -39,10 +38,8 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
   epimorphism).
 * `TauCeti.exists_nonzero_from_simple_iff_exists_nonzero_to_simple`: a simple object maps
   nontrivially to an object exactly when the object maps nontrivially to it.
-* `TauCeti.biproduct_ι_comp_inv_ne_zero`: the inclusion of a simple summand is nonzero.
-* `TauCeti.exists_simple_hom_ne_zero_of_iso_biproduct` and `TauCeti.exists_simple_hom_ne_zero`: a
-  nonzero object that decomposes into simple objects, in particular any nonzero object of a finite
-  semisimple category, receives a nonzero morphism from a simple object.
+* `TauCeti.exists_simple_hom_ne_zero`: a nonzero object of a finite semisimple category receives
+  a nonzero morphism from a simple object.
 * `TauCeti.IsFiniteSemisimpleCategory.injective`: every object of a finite semisimple category is
   injective.
 * `TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`: every monomorphism of a finite
@@ -181,24 +178,6 @@ theorem exists_nonzero_from_simple_iff_exists_nonzero_to_simple {C : Type u} [Ca
     have := isSplitEpi_of_nonzero_to_simple hg
     exact ⟨section_ g, fun h ↦ CategoryTheory.id_ne_zero S (by rw [← IsSplitEpi.id g, h,
       zero_comp])⟩
-
-/-- The inclusion of a simple summand into an object decomposed as a biproduct is nonzero. -/
-theorem biproduct_ι_comp_inv_ne_zero {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
-    {ι : Type*} {a : ι → C} [HasBiproduct a] {Y : C} (e : Y ≅ ⨁ a) (i : ι) [Simple (a i)] :
-    biproduct.ι a i ≫ e.inv ≠ 0 := fun h ↦
-  CategoryTheory.id_ne_zero (a i) (by simpa using h =≫ (e.hom ≫ biproduct.π a i))
-
-/-- A nonzero object isomorphic to a biproduct of simple objects receives a nonzero morphism from
-a simple object: the inclusion of a summand. -/
-theorem exists_simple_hom_ne_zero_of_iso_biproduct {C : Type u} [Category.{v} C]
-    [HasZeroMorphisms C] {Y : C} (hY : ¬IsZero Y) {ι : Type*} {a : ι → C} [HasBiproduct a]
-    (ha : ∀ i, Simple (a i)) (e : Y ≅ ⨁ a) :
-    ∃ (S : C) (_ : Simple S) (f : S ⟶ Y), f ≠ 0 := by
-  -- The decomposition of `Y` has a summand, since a biproduct over an empty type is zero.
-  obtain ⟨i⟩ : Nonempty ι := by
-    by_contra! h
-    exact hY ((isZero_biproduct_of_isEmpty a).of_iso e)
-  exact ⟨a i, ha i, _, biproduct_ι_comp_inv_ne_zero e i⟩
 
 /-- In a finite semisimple category, a nonzero object receives a nonzero morphism from a simple
 object: the inclusion of a summand of a decomposition into simple objects. -/
