@@ -28,8 +28,10 @@ and to be compared with the Witt vector Frobenius.
   whose zeroth coordinate is the identity.
 * `TauCeti.DeltaRing.equivWittSection`: `δ`-structures on `A` are equivalent to ring
   homomorphisms `A →+* W₂(A)` whose zeroth coordinate is the identity.
+* `TauCeti.DeltaRing.wittSection_coeff_zero_pow_add_mul_coeff_one`: the Frobenius is
+  `s(x)₀ ^ p + p * s(x)₁` for the Witt section `s`.
 * `TauCeti.DeltaRing.ghostComponent_one_eq_frobenius`: the Frobenius is the first ghost
-  component of the Witt section.
+  component of any Witt vector lifting the Witt section.
 
 ## References
 
@@ -87,16 +89,19 @@ theorem wittSection_coeff_zero (x : A) : (wittSection p A x).coeff 0 = x := by
 theorem wittSection_coeff_one (x : A) : (wittSection p A x).coeff 1 = delta p x := by
   simp [wittSection_apply, TruncatedWittVector.coeff_mk]
 
+/-- The Frobenius is `s(x)₀ ^ p + p * s(x)₁` for the Witt section `s(x) = (x, δ x)`. -/
+theorem wittSection_coeff_zero_pow_add_mul_coeff_one (x : A) :
+    (wittSection p A x).coeff 0 ^ p + p * (wittSection p A x).coeff 1 = frobenius p A x := by
+  rw [wittSection_coeff_zero, wittSection_coeff_one, frobenius_apply]
+
 /-- The Frobenius `φ x = x ^ p + p * δ x` is the first ghost component of any Witt vector lifting
 the Witt section `(x, δ x)`. -/
 theorem ghostComponent_one_eq_frobenius {x : A} {w : WittVector p A}
     (hw : WittVector.truncate 2 w = wittSection p A x) :
     WittVector.ghostComponent 1 w = frobenius p A x := by
-  have h₀ := congrArg (TruncatedWittVector.coeff 0) hw
-  have h₁ := congrArg (TruncatedWittVector.coeff 1) hw
-  simp only [WittVector.coeff_truncate, Fin.val_zero, Fin.val_one, wittSection_coeff_zero,
-    wittSection_coeff_one] at h₀ h₁
-  rw [WittVector.ghostComponent_one, h₀, h₁, frobenius_apply]
+  rw [← wittSection_coeff_zero_pow_add_mul_coeff_one, ← hw, WittVector.coeff_truncate,
+    WittVector.coeff_truncate, WittVector.ghostComponent_one]
+  rfl
 
 end WittSection
 
