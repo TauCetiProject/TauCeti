@@ -293,18 +293,18 @@ theorem properSharp_add (b₁ b₂ : Symbol n V W m) :
   have hb₁ := hasCompactSpatialSupport_localize ε x b₁
   have hb₂ := hasCompactSpatialSupport_localize ε x b₂
   rw [coefficient_properSharp_eq_sharp ha (hb₁.add hb₂) fun y hy η ↦ by
-      simp [coefficient_localize_of_mem_ball hy], sharp_add, coefficient_add, coefficient_add,
-    Pi.add_apply, Pi.add_apply, coefficient_properSharp_eq_sharp_localize ha b₁,
-    coefficient_properSharp_eq_sharp_localize ha b₂]
+      simp [coefficient_localize_of_mem_ball hy], sharp_add a hb₁ hb₂]
+  simp [coefficient_properSharp_eq_sharp_localize ha]
 
+@[simp]
 theorem properSharp_smul (b : Symbol n V W m) (c : ℂ) :
     a.properSharp ha (c • b) = c • a.properSharp ha b := by
   ext1
   funext ⟨x, ξ⟩
   have hb := hasCompactSpatialSupport_localize ε x b
   rw [coefficient_properSharp_eq_sharp ha (hb.smul c) fun y hy η ↦ by
-      simp [coefficient_localize_of_mem_ball hy], sharp_smul, coefficient_smul, coefficient_smul,
-    Pi.smul_apply, Pi.smul_apply, coefficient_properSharp_eq_sharp_localize ha b]
+      simp [coefficient_localize_of_mem_ball hy], sharp_smul a hb]
+  simp [coefficient_properSharp_eq_sharp_localize ha]
 
 @[simp]
 theorem properSharp_zero : a.properSharp ha (0 : Symbol n V W m) = 0 := by
@@ -324,42 +324,31 @@ theorem add_properSharp {a₁ a₂ : Symbol n W U m'} (ha₁ : a₁.HasPropagati
     (a₁ + a₂).properSharp (ha₁.add ha₂) b = a₁.properSharp ha₁ b + a₂.properSharp ha₂ b := by
   ext1
   funext ⟨x, ξ⟩
-  rw [coefficient_properSharp_eq_sharp_localize, add_sharp, coefficient_add, coefficient_add,
-    Pi.add_apply, Pi.add_apply, coefficient_properSharp_eq_sharp_localize ha₁,
-    coefficient_properSharp_eq_sharp_localize ha₂]
+  simp [coefficient_properSharp_eq_sharp_localize, add_sharp]
 
+@[simp]
 theorem smul_properSharp (c : ℂ) (b : Symbol n V W m) :
     (c • a).properSharp (ha.smul c) b = c • a.properSharp ha b := by
   ext1
   funext ⟨x, ξ⟩
-  rw [coefficient_properSharp_eq_sharp_localize, smul_sharp, coefficient_smul, coefficient_smul,
-    Pi.smul_apply, Pi.smul_apply, coefficient_properSharp_eq_sharp_localize ha]
+  simp [coefficient_properSharp_eq_sharp_localize]
 
 omit ha in
 @[simp]
 theorem zero_properSharp (b : Symbol n V W m) :
     (0 : Symbol n W U m').properSharp (hasPropagationLE_zero ε) b = 0 := by
-  ext1
-  funext ⟨x, ξ⟩
-  rw [coefficient_properSharp_eq_sharp_localize, zero_sharp, coefficient_zero]
+  simpa using smul_properSharp (hasPropagationLE_zero ε) (0 : ℂ) b
 
 @[simp]
 theorem neg_properSharp (b : Symbol n V W m) :
     (-a).properSharp ha.neg b = -a.properSharp ha b := by
-  ext1
-  funext ⟨x, ξ⟩
-  rw [coefficient_properSharp_eq_sharp_localize, neg_sharp, coefficient_neg, coefficient_neg,
-    Pi.neg_apply, Pi.neg_apply, coefficient_properSharp_eq_sharp_localize ha]
+  simpa using smul_properSharp ha (-1 : ℂ) b
 
 omit ha in
 theorem sub_properSharp {a₁ a₂ : Symbol n W U m'} (ha₁ : a₁.HasPropagationLE ε)
     (ha₂ : a₂.HasPropagationLE ε) (b : Symbol n V W m) :
     (a₁ - a₂).properSharp (ha₁.sub ha₂) b = a₁.properSharp ha₁ b - a₂.properSharp ha₂ b := by
-  ext1
-  funext ⟨x, ξ⟩
-  rw [coefficient_properSharp_eq_sharp_localize, sub_sharp, coefficient_sub, coefficient_sub,
-    Pi.sub_apply, Pi.sub_apply, coefficient_properSharp_eq_sharp_localize ha₁,
-    coefficient_properSharp_eq_sharp_localize ha₂]
+  simpa [sub_eq_add_neg, neg_properSharp ha₂] using add_properSharp ha₁ ha₂.neg b
 
 end Symbol
 
@@ -452,7 +441,7 @@ theorem properSharp_add (b₁ b₂ : ClassicalSymbol n V W m) :
 
 @[simp]
 theorem properSharp_smul (c : ℂ) : a.properSharp ha (c • b) = c • a.properSharp ha b :=
-  ext (by simp [Symbol.properSharp_smul])
+  ext (by simp)
 
 @[simp]
 theorem properSharp_neg : a.properSharp ha (-b) = -a.properSharp ha b :=
