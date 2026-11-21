@@ -611,25 +611,6 @@ section Braided
 
 variable [BraidedCategory C]
 
-/-- Flipping a bifunctor commutes with postcomposition in the target. -/
-private def flipPostcompIso {A B D E : Type*} [Category* A] [Category* B] [Category* D]
-    [Category* E] (T : A ⥤ B ⥤ D) (Q : D ⥤ E) :
-    (T ⋙ (whiskeringRight _ _ _).obj Q).flip ≅ T.flip ⋙ (whiskeringRight _ _ _).obj Q :=
-  NatIso.ofComponents (fun _ ↦ NatIso.ofComponents (fun _ ↦ Iso.refl _))
-
-@[simp]
-private lemma flipPostcompIso_hom_app_app {A B D E : Type*} [Category* A] [Category* B]
-    [Category* D] [Category* E] (T : A ⥤ B ⥤ D) (Q : D ⥤ E) (Y : B) (X : A) :
-    ((flipPostcompIso T Q).hom.app Y).app X = 𝟙 _ := by
-  simp only [flipPostcompIso, NatIso.ofComponents_hom_app, Iso.refl_hom]
-
-@[simp]
-private lemma flipPostcompIso_inv_app_app {A B D E : Type*} [Category* A] [Category* B]
-    [Category* D] [Category* E] (T : A ⥤ B ⥤ D) (Q : D ⥤ E) (Y : B) (X : A) :
-    ((flipPostcompIso T Q).inv.app Y).app X = 𝟙 _ := by
-  simp only [flipPostcompIso, NatIso.ofComponents_inv_app, Iso.refl_inv]
-  rfl
-
 /-- The Koszul braiding transported to a flip isomorphism on the postcomposed total tensor
 bifunctor. -/
 def koszulDerivedFlipIso :
@@ -637,14 +618,12 @@ def koszulDerivedFlipIso :
         (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C))).flip ≅
       MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
         (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)) :=
-  flipPostcompIso (MonoidalCategory.curriedTensor (CochainComplex C ℤ))
-      (DerivedCategory.Q (C := C)) ≪≫
-    Functor.isoWhiskerRight
-      ((flipFunctor _ _ _).mapIso
-          (BraidedCategory.curriedBraidingNatIso (CochainComplex C ℤ)) ≪≫
-        (flipping (C := CochainComplex C ℤ) (D := CochainComplex C ℤ)
-          (E := CochainComplex C ℤ)).counitIso.app _)
-      ((whiskeringRight _ _ _).obj DerivedCategory.Q)
+  Functor.isoWhiskerRight
+    ((flipFunctor _ _ _).mapIso
+        (BraidedCategory.curriedBraidingNatIso (CochainComplex C ℤ)) ≪≫
+      (flipping (C := CochainComplex C ℤ) (D := CochainComplex C ℤ)
+        (E := CochainComplex C ℤ)).counitIso.app _)
+    ((whiskeringRight _ _ _).obj DerivedCategory.Q)
 
 /-- Forward component of `koszulDerivedFlipIso` on complexes `(K, L)`. -/
 @[simp]
@@ -712,22 +691,25 @@ section Symmetric
 variable [SymmetricCategory C]
 
 /-- Over symmetric coefficients, `koszulDerivedFlipIso` is involutive. -/
+@[reassoc (attr := simp)]
 lemma koszulDerivedFlipIso_involutive :
     (flipFunctor _ _ _).map (koszulDerivedFlipIso (C := C)).hom ≫
         (koszulDerivedFlipIso (C := C)).hom =
-      𝟙 _ := by
+      (flipping (C := CochainComplex C ℤ) (D := CochainComplex C ℤ)
+        (E := DerivedCategory C)).counitIso.hom.app
+          (MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+            (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C))) := by
   ext K L
-  simp only [NatTrans.comp_app, NatTrans.id_app, flipFunctor_obj, flipFunctor_map_app_app,
-    koszulDerivedFlipIso_hom_app_app, ← DerivedCategory.Q.map_comp, SymmetricCategory.symmetry,
-    DerivedCategory.Q.map_id, Functor.flip_obj_obj, Functor.comp_obj,
-    Functor.whiskeringRight_obj_obj, MonoidalCategory.curriedTensor_obj_obj]
+  simp [← DerivedCategory.Q.map_comp]
 
 /-- Over symmetric coefficients, `leftDerivedTensorFlipIso` is involutive as a natural
 transformation. -/
+@[reassoc (attr := simp)]
 lemma flip_leftDerivedTensorFlipIso_hom_comp :
     (flipFunctor _ _ _).map (leftDerivedTensorFlipIso LF α).hom ≫
         (leftDerivedTensorFlipIso LF α).hom =
-      𝟙 LF :=
+      (flipping (C := DerivedCategory C) (D := DerivedCategory C)
+        (E := DerivedCategory C)).counitIso.hom.app LF :=
   flip_leftDerived₂FlipIso_hom_comp LF α (quasiIso C (.up ℤ))
     (koszulDerivedFlipIso (C := C)) (koszulDerivedFlipIso_involutive (C := C))
 

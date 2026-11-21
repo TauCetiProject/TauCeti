@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.Derived.LeftDerivedTwo
+public import TauCeti.CategoryTheory.Whiskering
 
 /-!
 # Flip symmetry transport for left derived bifunctors
@@ -23,7 +24,8 @@ as natural transformations (`CategoryTheory.Functor.leftDerived₂FlipIso_hom_fa
 localization functor `L : C ⥤ D` (`CategoryTheory.Functor.leftDerived₂FlipIso_hom_app_app_L` and
 `CategoryTheory.Functor.leftDerived₂FlipIso_inv_app_app_L`).
 
-Moreover, when `e` is involutive (`(flipFunctor _ _ _).map e.hom ≫ e.hom = 𝟙 F`), the induced
+Moreover, when `e` is involutive
+(`(flipFunctor _ _ _).map e.hom ≫ e.hom = (flipping _).counitIso.hom.app F`), the induced
 isomorphism `LF.flip ≅ LF` is also involutive
 (`CategoryTheory.Functor.flip_leftDerived₂FlipIso_hom_comp`,
 `CategoryTheory.Functor.leftDerived₂FlipIso_inv_app_app`, and
@@ -35,42 +37,6 @@ public section
 noncomputable section
 
 namespace CategoryTheory.Functor
-
-section Whiskering
-
-variable {C₁ C₂ D₁ D₂ H : Type*} [Category* C₁] [Category* C₂] [Category* D₁]
-  [Category* D₂] [Category* H] (L₁ : C₁ ⥤ D₁) (L₂ : C₂ ⥤ D₂)
-
-/-- Flipping a bifunctor commutes with precomposition on both variables. -/
-def whiskeringLeft₂FlipIso (G : D₁ ⥤ D₂ ⥤ H) :
-    (((whiskeringLeft₂ H).obj L₂).obj L₁).obj G.flip ≅
-      ((((whiskeringLeft₂ H).obj L₁).obj L₂).obj G).flip :=
-  NatIso.ofComponents (fun _ ↦ NatIso.ofComponents (fun _ ↦ Iso.refl _))
-
-/-- The forward component of `whiskeringLeft₂FlipIso` at `(X₂, X₁)` is the identity. -/
-@[simp]
-lemma whiskeringLeft₂FlipIso_hom_app_app (G : D₁ ⥤ D₂ ⥤ H) (X₂ : C₂) (X₁ : C₁) :
-    (((L₁.whiskeringLeft₂FlipIso L₂ G).hom).app X₂).app X₁ = 𝟙 _ := by
-  simp only [whiskeringLeft₂FlipIso, NatIso.ofComponents_hom_app, Iso.refl_hom]
-
-/-- The inverse component of `whiskeringLeft₂FlipIso` at `(X₂, X₁)` is the identity. -/
-@[simp]
-lemma whiskeringLeft₂FlipIso_inv_app_app (G : D₁ ⥤ D₂ ⥤ H) (X₂ : C₂) (X₁ : C₁) :
-    (((L₁.whiskeringLeft₂FlipIso L₂ G).inv).app X₂).app X₁ = 𝟙 _ := by
-  simp only [whiskeringLeft₂FlipIso, NatIso.ofComponents_inv_app, Iso.refl_inv]
-  rfl
-
-/-- Naturality of `whiskeringLeft₂FlipIso` in the bifunctor argument. -/
-@[reassoc]
-lemma whiskeringLeft₂FlipIso_naturality {G₁ G₂ : D₁ ⥤ D₂ ⥤ H} (f : G₁ ⟶ G₂) :
-    (((whiskeringLeft₂ H).obj L₂).obj L₁).map ((flipFunctor _ _ _).map f) ≫
-        (L₁.whiskeringLeft₂FlipIso L₂ G₂).hom =
-      (L₁.whiskeringLeft₂FlipIso L₂ G₁).hom ≫
-        (flipFunctor _ _ _).map ((((whiskeringLeft₂ H).obj L₁).obj L₂).map f) := by
-  ext X₂ X₁
-  simp
-
-end Whiskering
 
 variable {C D H : Type*} [Category* C] [Category* D] [Category* H]
   (LF : D ⥤ D ⥤ H) {F : C ⥤ C ⥤ H} {L : C ⥤ D}
@@ -164,9 +130,17 @@ lemma leftDerived₂FlipIso_inv_fac (e : F.flip ≅ F) :
     (((whiskeringLeft₂ H).obj L).obj L).map (leftDerived₂FlipIso LF α W e).inv ≫
         (L.whiskeringLeft₂FlipIso L LF).hom ≫ (flipFunctor _ _ _).map α =
       α ≫ e.inv := by
-  rw [← cancel_mono e.hom, Category.assoc, Category.assoc, Category.assoc, e.inv_hom_id,
-    Category.comp_id, ← leftDerived₂FlipIso_hom_fac LF α W e,
-    ← Functor.map_comp_assoc, Iso.inv_hom_id, Functor.map_id, Category.id_comp]
+  rw [← cancel_mono e.hom]
+  calc
+    ((((whiskeringLeft₂ H).obj L).obj L).map (leftDerived₂FlipIso LF α W e).inv ≫
+          (L.whiskeringLeft₂FlipIso L LF).hom ≫ (flipFunctor _ _ _).map α) ≫ e.hom
+      = (((whiskeringLeft₂ H).obj L).obj L).map (leftDerived₂FlipIso LF α W e).inv ≫
+          (((whiskeringLeft₂ H).obj L).obj L).map
+            (leftDerived₂FlipIso LF α W e).hom ≫ α := by
+        simp only [Category.assoc, leftDerived₂FlipIso_hom_fac]
+    _ = (α ≫ e.inv) ≫ e.hom := by
+        rw [← Functor.map_comp_assoc, Iso.inv_hom_id, Functor.map_id, Category.id_comp]
+        simp
 
 /-- Compatibility of `(leftDerived₂FlipIso LF α W e).hom` with `α` and `e.hom` on images of
 `L`. -/
@@ -188,25 +162,25 @@ lemma leftDerived₂FlipIso_inv_app_app_L (e : F.flip ≅ F) (X Y : C) :
 
 /-- If `e : F.flip ≅ F` is involutive, then `leftDerived₂FlipIso LF α W e` is involutive as a
 natural transformation. -/
+@[reassoc (attr := simp)]
 lemma flip_leftDerived₂FlipIso_hom_comp (e : F.flip ≅ F)
-    (he : (flipFunctor _ _ _).map e.hom ≫ e.hom = 𝟙 F) :
+    (he : (flipFunctor _ _ _).map e.hom ≫ e.hom =
+      (flipping (C := C) (D := C) (E := H)).counitIso.hom.app F) :
     (flipFunctor _ _ _).map (leftDerived₂FlipIso LF α W e).hom ≫
         (leftDerived₂FlipIso LF α W e).hom =
-      𝟙 LF := by
-  have h := flip_leftDerived₂FlipLift_comp LF α W e.hom e.hom (by
-    rw [he]
-    ext X Y
-    simp)
-  simpa only [leftDerived₂FlipIso] using h.trans (by ext X Y; simp)
+      (flipping (C := D) (D := D) (E := H)).counitIso.hom.app LF :=
+  flip_leftDerived₂FlipLift_comp LF α W e.hom e.hom he
 
 /-- If `e : F.flip ≅ F` is involutive, then `(leftDerived₂FlipIso LF α W e).inv` at `(X, Y)`
 equals `(leftDerived₂FlipIso LF α W e).hom` at `(Y, X)`. -/
 lemma leftDerived₂FlipIso_inv_app_app (e : F.flip ≅ F)
-    (he : (flipFunctor _ _ _).map e.hom ≫ e.hom = 𝟙 F) (X Y : D) :
+    (he : (flipFunctor _ _ _).map e.hom ≫ e.hom =
+      (flipping (C := C) (D := C) (E := H)).counitIso.hom.app F) (X Y : D) :
     ((leftDerived₂FlipIso LF α W e).inv.app X).app Y =
       ((leftDerived₂FlipIso LF α W e).hom.app Y).app X := by
   have h := congr_app (congr_app (flip_leftDerived₂FlipIso_hom_comp LF α W e he) X) Y
-  simp only [NatTrans.comp_app, NatTrans.id_app, flipFunctor_obj, flipFunctor_map_app_app] at h
+  simp only [NatTrans.comp_app, flipFunctor_obj, flipFunctor_map_app_app,
+    flipping_counitIso_hom_app_app_app] at h
   rw [← cancel_mono (((leftDerived₂FlipIso LF α W e).hom.app X).app Y), h]
   simpa only [NatTrans.comp_app, NatTrans.id_app] using
     congr_app (congr_app (leftDerived₂FlipIso LF α W e).inv_hom_id X) Y
@@ -214,10 +188,12 @@ lemma leftDerived₂FlipIso_inv_app_app (e : F.flip ≅ F)
 /-- If `e : F.flip ≅ F` is involutive, then `leftDerived₂FlipIso LF α W e` is involutive. -/
 @[reassoc (attr := simp)]
 lemma leftDerived₂FlipIso_hom_app_app_comp (e : F.flip ≅ F)
-    (he : (flipFunctor _ _ _).map e.hom ≫ e.hom = 𝟙 F) (X Y : D) :
+    (he : (flipFunctor _ _ _).map e.hom ≫ e.hom =
+      (flipping (C := C) (D := C) (E := H)).counitIso.hom.app F) (X Y : D) :
     ((leftDerived₂FlipIso LF α W e).hom.app X).app Y ≫
       ((leftDerived₂FlipIso LF α W e).hom.app Y).app X = 𝟙 ((LF.obj Y).obj X) := by
-  simpa only [NatTrans.comp_app, NatTrans.id_app, flipFunctor_obj, flipFunctor_map_app_app] using
+  simpa only [NatTrans.comp_app, flipFunctor_obj, flipFunctor_map_app_app,
+    flipping_counitIso_hom_app_app_app] using
     congr_app (congr_app (flip_leftDerived₂FlipIso_hom_comp LF α W e he) Y) X
 
 end CategoryTheory.Functor
