@@ -141,18 +141,18 @@ def ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) 
   fun k ↦ by
     haveI : CompactSpace K := isCompact_iff_compactSpace.1 hK
     have hk : ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := by
-      exact_mod_cast Nat.le_of_lt_succ k.2
+      exact_mod_cast Nat.le_of_lt_succ k.isLt
     have hcont : ContinuousOn (iteratedFDeriv ℝ (k : ℕ) g) U :=
       (hg.continuousOn_iteratedFDerivWithin hk hU.uniqueDiffOn).congr fun y hy ↦
         (iteratedFDerivWithin_of_isOpen (k : ℕ) hU hy).symm
     exact BoundedContinuousFunction.mkOfCompact
-      ⟨fun x : K ↦ iteratedFDeriv ℝ (k : ℕ) g x.1,
-        (hcont.mono hKU).comp_continuous continuous_subtype_val fun x ↦ x.2⟩
+      ⟨fun x : K ↦ iteratedFDeriv ℝ (k : ℕ) g x.val,
+        (hcont.mono hKU).comp_continuous continuous_subtypeVal fun x ↦ x.property⟩
 
 @[simp]
 theorem eval_ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
     {g : E → F} (hg : ContDiffOn ℝ m g U) (k : Fin (m + 1)) (x : K) :
-    (ofContDiffOn hK hU hKU m hg).eval k x = iteratedFDeriv ℝ (k : ℕ) g x.1 := by
+    (ofContDiffOn hK hU hKU m hg).eval k x = iteratedFDeriv ℝ (k : ℕ) g x.val := by
   rfl
 
 /-- The `m`-jet of the zero function vanishes. -/
@@ -167,11 +167,11 @@ theorem ofContDiffOn_add {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K
       ofContDiffOn hK hU hKU m hg₁ + ofContDiffOn hK hU hKU m hg₂ :=
   ext fun k x ↦ by
     have hk : ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := by
-      exact_mod_cast Nat.le_of_lt_succ k.2
+      exact_mod_cast Nat.le_of_lt_succ k.isLt
     simp only [eval_ofContDiffOn, eval_add, FunLike.coe_add, Pi.add_apply]
     exact iteratedFDeriv_add_apply
-      ((hg₁ x.1 (hKU x.2)).contDiffAt (hU.mem_nhds (hKU x.2)) |>.of_le hk)
-      ((hg₂ x.1 (hKU x.2)).contDiffAt (hU.mem_nhds (hKU x.2)) |>.of_le hk)
+      ((hg₁ x.val (hKU x.property)).contDiffAt (hU.mem_nhds (hKU x.property)) |>.of_le hk)
+      ((hg₂ x.val (hKU x.property)).contDiffAt (hU.mem_nhds (hKU x.property)) |>.of_le hk)
 
 /-- Taking `m`-jets commutes with scalar multiplication on `C^m` functions. -/
 theorem ofContDiffOn_smul {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
@@ -179,10 +179,10 @@ theorem ofContDiffOn_smul {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : 
     ofContDiffOn hK hU hKU m (hg.const_smul c) = c • ofContDiffOn hK hU hKU m hg :=
   ext fun k x ↦ by
     have hk : ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := by
-      exact_mod_cast Nat.le_of_lt_succ k.2
+      exact_mod_cast Nat.le_of_lt_succ k.isLt
     simp only [eval_ofContDiffOn, eval_smul, FunLike.coe_smul, Pi.smul_apply]
     exact iteratedFDeriv_const_smul_apply
-      ((hg x.1 (hKU x.2)).contDiffAt (hU.mem_nhds (hKU x.2)) |>.of_le hk)
+      ((hg x.val (hKU x.property)).contDiffAt (hU.mem_nhds (hKU x.property)) |>.of_le hk)
 
 /-- Two `C^m` functions that agree on a neighbourhood of `K` have the same `m`-jet on `K`. -/
 theorem ofContDiffOn_eq_of_eventuallyEq {U₁ U₂ : Set E} (hK : IsCompact K) (hU₁ : IsOpen U₁)
@@ -191,7 +191,7 @@ theorem ofContDiffOn_eq_of_eventuallyEq {U₁ U₂ : Set E} (hK : IsCompact K) (
     ofContDiffOn hK hU₁ hKU₁ m hg₁ = ofContDiffOn hK hU₂ hKU₂ m hg₂ :=
   ext fun k x ↦ by
     simp only [eval_ofContDiffOn]
-    exact ((h.filter_mono (nhds_le_nhdsSet x.2)).iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
+    exact ((h.filter_mono (nhds_le_nhdsSet x.property)).iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
 
 end JetSpace
 
@@ -208,13 +208,13 @@ def jetRestrictionCLM (K : Set E) (m : ℕ) {n : ℕ∞} (_hm : (m : ℕ∞) ≤
     𝓓^{n}_{L}(E, F) →L[ℝ] TauCeti.JetSpace E F K m :=
   TauCeti.JetSpace.piCLM fun k : Fin (m + 1) ↦
     BoundedContinuousFunction.compContinuousCLM (E [×(k : ℕ)]→L[ℝ] F) ℝ
-      ⟨Subtype.val, continuous_subtype_val⟩ ∘L ContDiffMapSupportedIn.structureMapCLM ℝ n k
+      ⟨Subtype.val, continuous_subtypeVal⟩ ∘L ContDiffMapSupportedIn.structureMapCLM ℝ n k
 
 @[simp]
 theorem eval_jetRestrictionCLM (K : Set E) (m : ℕ) {n : ℕ∞} (hm : (m : ℕ∞) ≤ n) (L : Compacts E)
     (φ : 𝓓^{n}_{L}(E, F)) (k : Fin (m + 1)) (x : K) :
-    (jetRestrictionCLM K m hm L φ).eval k x = iteratedFDeriv ℝ (k : ℕ) (φ : E → F) x.1 := by
-  have hk : ((k : ℕ) : ℕ∞) ≤ n := (Nat.cast_le.2 (Nat.le_of_lt_succ k.2)).trans hm
+    (jetRestrictionCLM K m hm L φ).eval k x = iteratedFDeriv ℝ (k : ℕ) (φ : E → F) x.val := by
+  have hk : ((k : ℕ) : ℕ∞) ≤ n := (Nat.cast_le.2 (Nat.le_of_lt_succ k.isLt)).trans hm
   simp [jetRestrictionCLM, structureMapCLM_apply, hk]
 
 end ContDiffMapSupportedIn
@@ -241,7 +241,7 @@ def jetRestrictionCLM (Ω : Opens E) (K : Set E) (m : ℕ) {n : ℕ∞} (hm : (m
 @[simp]
 theorem eval_jetRestrictionCLM (Ω : Opens E) (K : Set E) (m : ℕ) {n : ℕ∞} (hm : (m : ℕ∞) ≤ n)
     (φ : 𝓓^{n}(Ω, F)) (k : Fin (m + 1)) (x : K) :
-    (jetRestrictionCLM Ω K m hm φ).eval k x = iteratedFDeriv ℝ (k : ℕ) (φ : E → F) x.1 := by
+    (jetRestrictionCLM Ω K m hm φ).eval k x = iteratedFDeriv ℝ (k : ℕ) (φ : E → F) x.val := by
   rw [jetRestrictionCLM, TestFunction.limitCLM_apply, ContDiffMapSupportedIn.eval_jetRestrictionCLM,
     funext (ContDiffMapSupportedIn.coe_of_support_subset _ _)]
 
@@ -254,7 +254,7 @@ theorem jetRestrictionCLM_eq_ofContDiffOn {Ω : Opens E} {K U : Set E} (hK : IsC
     jetRestrictionCLM Ω K m hm φ = TauCeti.JetSpace.ofContDiffOn hK hU hKU m hg :=
   TauCeti.JetSpace.ext fun k x ↦ by
     simp only [eval_jetRestrictionCLM, TauCeti.JetSpace.eval_ofContDiffOn]
-    exact ((hφ.filter_mono (nhds_le_nhdsSet x.2)).iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
+    exact ((hφ.filter_mono (nhds_le_nhdsSet x.property)).iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
 
 /-- A test function supported away from `K` has zero `m`-jet on `K`. -/
 theorem jetRestrictionCLM_eq_zero_of_tsupport_subset_compl {Ω : Opens E} {K : Set E} (m : ℕ)
@@ -262,8 +262,8 @@ theorem jetRestrictionCLM_eq_zero_of_tsupport_subset_compl {Ω : Opens E} {K : S
     jetRestrictionCLM Ω K m hm φ = 0 :=
   TauCeti.JetSpace.ext fun k x ↦ by
     simp only [eval_jetRestrictionCLM, TauCeti.JetSpace.eval_zero, FunLike.coe_zero, Pi.zero_apply]
-    have hx : x.1 ∉ tsupport (φ : E → F) := fun hmem ↦ hφ hmem x.2
-    have hev : (φ : E → F) =ᶠ[𝓝 x.1] (0 : E → F) := notMem_tsupport_iff_eventuallyEq.1 hx
+    have hx : x.val ∉ tsupport (φ : E → F) := fun hmem ↦ hφ hmem x.property
+    have hev : (φ : E → F) =ᶠ[𝓝 x.val] (0 : E → F) := notMem_tsupport_iff_eventuallyEq.1 hx
     simpa using (hev.iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
 
 end TestFunction

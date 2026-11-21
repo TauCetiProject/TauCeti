@@ -251,7 +251,7 @@ tensors carrying at each slot the basis vector of the label of its arc. -/
 theorem matchingTensor_eq_sum_tprod (D : BrauerDiagram k) :
     D.matchingTensor R n =
       ∑ g : {x // D.IsLowerEnd x} → Fin n, PiTensorProduct.tprod R fun x =>
-        Pi.single ((D.isConstantOnArcsEquiv.symm g).1 x) (1 : R) := by
+        Pi.single ((D.isConstantOnArcsEquiv.symm g).val x) (1 : R) := by
   rw [matchingTensor, Finset.sum_subtype (p := D.IsConstantOnArcs) _ (fun m => by simp),
     ← (D.isConstantOnArcsEquiv (ι := Fin n)).symm.sum_comp]
   exact Fintype.sum_congr _ _ fun g => boundaryTensorBasis_apply R n k _
@@ -352,12 +352,9 @@ theorem boundaryTensorEquiv_tensorPower_mul_mul (g : Matrix.orthogonalGroup (Fin
         ((stdOrthogonalRep R n).tensorPower k g * f * (stdOrthogonalRep R n).tensorPower k g⁻¹) =
       Representation.piTensorProduct (fun _ : Fin k ⊕ Fin k => stdOrthogonalRep R n) g
         (boundaryTensorEquiv R n k f) := by
-  have hinv : ((g⁻¹ : Matrix.orthogonalGroup (Fin n) R) : Matrix (Fin n) (Fin n) R) =
-      (g : Matrix (Fin n) (Fin n) R)ᵀ :=
-    left_inv_eq_right_inv (congrArg Subtype.val (inv_mul_cancel g))
-      ((Matrix.mem_orthogonalGroup_iff (Fin n) R).mp g.2)
   simp only [Representation.piTensorProduct_apply, Representation.tensorPower_apply,
-    stdOrthogonalRep_apply, hinv, Module.End.mul_eq_comp, LinearMap.comp_assoc]
+    stdOrthogonalRep_apply, Matrix.coe_orthogonalGroup_inv g, Module.End.mul_eq_comp,
+    LinearMap.comp_assoc]
   exact boundaryTensorEquiv_piTensorProductMap_comp_comp _ f
 
 /-- **The commutant is the invariant tensors.** An endomorphism of `(Rⁿ)^{⊗k}` commutes with the
@@ -385,7 +382,8 @@ theorem BrauerDiagram.matchingTensor_mem_invariants (D : BrauerDiagram k) :
       (Representation.piTensorProduct fun _ : Fin k ⊕ Fin k => stdOrthogonalRep R n).invariants :=
   (Representation.mem_invariants _ _).mpr fun g => by
     simp only [Representation.piTensorProduct_apply, stdOrthogonalRep_apply]
-    exact D.piTensorProductMap_matchingTensor ((Matrix.mem_orthogonalGroup_iff (Fin n) R).mp g.2)
+    exact D.piTensorProductMap_matchingTensor ((Matrix.mem_orthogonalGroup_iff
+        (Fin n) R).mp g.property)
 
 variable (R n k) in
 /-- **The commutant corresponds to the invariant tensors**, as submodules: the image under

@@ -105,7 +105,7 @@ private theorem eval_harmonicJetOn
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     {K : Set E} (hK : IsCompact K) {f : E → ℝ} (hf : HarmonicOnNhd f K) (m : ℕ)
     (k : Fin (m + 1)) (x : K) :
-    (harmonicJetOn hK hf m).eval k x = iteratedFDeriv ℝ (k : ℕ) f x.1 :=
+    (harmonicJetOn hK hf m).eval k x = iteratedFDeriv ℝ (k : ℕ) f x.val :=
   JetSpace.eval_ofContDiffOn ..
 
 /-- A continuous linear functional on `TauCeti.JetSpace E ℝ K m` vanishing on all harmonic `m`-jets

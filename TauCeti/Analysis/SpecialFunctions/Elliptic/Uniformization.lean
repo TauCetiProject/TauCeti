@@ -73,6 +73,9 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
 * `PeriodPair.weierstrassCurve_smul`: rescaling the lattice by `c` changes the curve by the
   variable change with `u = c`.
 * `UpperHalfPlane.G_periodPair`: `G k (ℤ τ + ℤ) = 2 ζ(k) E_k(τ)` for `k ≥ 3`.
+* `UpperHalfPlane.mdifferentiable_G_periodPair`: `G k (ℤ τ + ℤ)` is holomorphic in `τ` for `k ≥ 3`;
+  hence so are `g₂(ℤ τ + ℤ)` and `g₃(ℤ τ + ℤ)` (`UpperHalfPlane.mdifferentiable_g₂_periodPair`,
+  `UpperHalfPlane.mdifferentiable_g₃_periodPair`).
 * `UpperHalfPlane.weierstrassCurve_Δ_periodPair`: the discriminant of the curve of `ℤ τ + ℤ` is
   `(2 π)¹² Δ(τ)`.
 * `PeriodPair.weierstrassCurve_Δ`, `PeriodPair.weierstrassCurve_Δ_ne_zero`: the discriminant is
@@ -155,6 +158,24 @@ lemma g₃_periodPair (τ : ℍ) : τ.periodPair.g₃ = 8 * π ^ 6 / 27 * E₆ �
     ring
   rw [PeriodPair.g₃, G_periodPair τ (by norm_num), Nat.cast_ofNat, hζ]
   ring
+
+open scoped Manifold in
+/-- For `k ≥ 3`, the lattice Eisenstein series `G_k(ℤ τ + ℤ)` is holomorphic in `τ`. -/
+lemma mdifferentiable_G_periodPair {k : ℕ} (hk : 3 ≤ k) : MDiff fun τ : ℍ ↦ τ.periodPair.G k := by
+  simp only [fun τ : ℍ ↦ G_periodPair τ hk]
+  exact mdifferentiable_const.mul (ModularFormClass.holo (E hk))
+
+open scoped Manifold in
+/-- The lattice invariant `g₂(ℤ τ + ℤ)` is holomorphic in `τ`. -/
+lemma mdifferentiable_g₂_periodPair : MDiff fun τ : ℍ ↦ τ.periodPair.g₂ := by
+  simp only [PeriodPair.g₂]
+  exact mdifferentiable_const.mul (mdifferentiable_G_periodPair (by norm_num))
+
+open scoped Manifold in
+/-- The lattice invariant `g₃(ℤ τ + ℤ)` is holomorphic in `τ`. -/
+lemma mdifferentiable_g₃_periodPair : MDiff fun τ : ℍ ↦ τ.periodPair.g₃ := by
+  simp only [PeriodPair.g₃]
+  exact mdifferentiable_const.mul (mdifferentiable_G_periodPair (by norm_num))
 
 end UpperHalfPlane
 
@@ -305,7 +326,7 @@ lemma weierstrassPoint_of_notMem (hz : z ∉ L.lattice) :
 
 @[simp]
 lemma weierstrassPoint_coe (l : L.lattice) : L.weierstrassPoint l = 0 :=
-  L.weierstrassPoint_of_mem l.2
+  L.weierstrassPoint_of_mem l.property
 
 @[simp]
 lemma weierstrassPoint_zero : L.weierstrassPoint 0 = 0 :=
@@ -321,8 +342,8 @@ lemma weierstrassPoint_eq_zero_iff : L.weierstrassPoint z = 0 ↔ z ∈ L.lattic
 lemma weierstrassPoint_add_coe (z : ℂ) (l : L.lattice) :
     L.weierstrassPoint (z + l) = L.weierstrassPoint z := by
   by_cases hz : z ∈ L.lattice
-  · rw [L.weierstrassPoint_of_mem hz, L.weierstrassPoint_of_mem (add_mem hz l.2)]
-  · have hzl : z + l ∉ L.lattice := fun h ↦ hz (by simpa using sub_mem h l.2)
+  · rw [L.weierstrassPoint_of_mem hz, L.weierstrassPoint_of_mem (add_mem hz l.property)]
+  · have hzl : z + l ∉ L.lattice := fun h ↦ hz (by simpa using sub_mem h l.property)
     rw [L.weierstrassPoint_of_notMem hz, L.weierstrassPoint_of_notMem hzl]
     simp [weierstrassP_add_coe, derivWeierstrassP_add_coe]
 
@@ -561,7 +582,7 @@ theorem exists_weierstrassP_eq (x : ℂ) : ∃ z ∉ L.lattice, ℘[L] z = x := 
       simp [f, show z ∉ L.lattice from hz]
   have hper : ∀ z w, w ∈ L.lattice → f (z + w) = f z := fun z w hw ↦ by
     lift w to L.lattice using hw
-    simp [f, L.lattice.add_mem_iff_left w.2, weierstrassP_add_coe]
+    simp [f, L.lattice.add_mem_iff_left w.property, weierstrassP_add_coe]
   have h0 := hdiff.apply_eq_apply_of_bounded
     (IsZLattice.isCompact_range_of_periodic L.lattice f hdiff.continuous hper).isBounded
     (L.ω₁ / 2) 0

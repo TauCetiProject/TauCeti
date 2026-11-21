@@ -391,7 +391,7 @@ theorem harmonicOnNhd_kernelPotentialPairing (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, �
       have hΔ : ∑ i, iteratedFDerivAlong ℝ [b i, b i] G (x - y) = Δ G (x - y) := by
         rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
         refine Finset.sum_congr rfl fun i _ ↦ ?_
-        simpa using hGx.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv ![b i, b i]
+        simpa using hGx.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl ![b i, b i]
       rw [hΔ, (hG (x - y) hxy).2.self_of_nhds, Pi.zero_apply, mul_zero]
     · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul]
   rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
@@ -399,7 +399,7 @@ theorem harmonicOnNhd_kernelPotentialPairing (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, �
       = ∑ i, iteratedFDerivAlong ℝ [b i, b i] (T.kernelPotentialPairing χ hG) x := by
         refine Finset.sum_congr rfl fun i _ ↦ ?_
         simpa using ((hcx.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)
-          ).iteratedFDerivAlong_ofFn_eq_iteratedFDeriv ![b i, b i]).symm
+          ).iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl ![b i, b i]).symm
     _ = ∑ i, T (φ i) := Finset.sum_congr rfl fun i _ ↦
         iteratedFDerivAlong_kernelPotentialPairing T hG hG_symm hx [b i, b i] (fun y ↦ by
           simp [φ])
@@ -700,7 +700,7 @@ private theorem eventuallyEq_zero_kernelPotentialOfSupport_of_notMem
   have hcx : ContDiffAt ℝ k (T.kernelPotentialOfSupport hG) x₀ :=
     ((contDiffOn_kernelPotentialOfSupport hcT (hTK.trans hKΩ) hG hG_symm).contDiffAt
       (isClosed_dsupport.isOpen_compl.mem_nhds hx₀T)).of_le (by simp)
-  rw [← hcx.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv m]
+  rw [← hcx.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl m]
   let H : E → ℝ := fun y ↦ iteratedFDerivAlong ℝ (List.ofFn m) G (x₀ - y)
   have hH : HarmonicOnNhd H {x₀}ᶜ := hG.iteratedFDerivAlong_sub_right (List.ofFn m) x₀
   let ψ : 𝓓(Ω, ℝ) := χ.smulOfContDiffOn isOpen_compl_singleton
@@ -1130,7 +1130,11 @@ private theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_real
           planarNewtonianKernel_sub_comm
           (fun φ ↦ laplacian_planarNewtonianKernel_convolution (φ.contDiff.of_le (by simp))
             φ.hasCompactSupport)
-          exists_harmonicAt_tendstoUniformlyOn_iteratedFDeriv_planarNewtonianKernel_sub
+          ⟨1 / 2, by norm_num, by norm_num, fun x hx ↦
+            ⟨(planarMultipoleSeries x).partialSum,
+              fun N z ↦ harmonicAt_planarMultipoleSeries_partialSum x N z,
+              fun k ↦ tendstoUniformlyOn_iteratedFDeriv_planarMultipoleSeries_partialSum
+                (by linarith [norm_pos_iff.2 hx]) k⟩⟩
           hT' hh' hψ'
   | d + 3 =>
     let e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (d + 3)) :=
@@ -1149,8 +1153,8 @@ private theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_real
         apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution hK' hK'Ω' hfill'
           hT'K' (locallyIntegrable_newtonianKernel (d + 3))
           (harmonicOnNhd_newtonianKernel (d + 3)) (newtonianKernel_sub_comm (d + 3))
-          (fun φ ↦ laplacian_newtonianKernel_convolution (by omega) (φ.contDiff.of_le (by simp))
-            φ.hasCompactSupport)
+          (fun φ ↦ laplacian_newtonianKernel_convolution (by omega) (by omega)
+            (φ.contDiff.of_le (by simp)) φ.hasCompactSupport)
           hmp hT' hh' hψ'
 
 /-- **Lax–Malgrange harmonic orthogonality.** Let `E` be any finite-dimensional real inner product

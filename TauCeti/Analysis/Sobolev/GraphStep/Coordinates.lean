@@ -118,14 +118,15 @@ def coordinatesEquiv (b : Module.Basis ι ℝ F) :
     WeakDerivStep μ Ω p (ContinuousLinearMap.id ℝ (Lp F p (μ.restrict Ω))) ≃L[ℝ]
       (ι → W1p μ Ω p) := by
   classical
-  refine ContinuousLinearEquiv.equivOfInverse (coordinatesL b)
-    (∑ i, (smulRightW1pL (b i)).comp (ContinuousLinearMap.proj i)) ?_ ?_
+  refine ContinuousLinearEquiv.ofContinuousLinearMap (coordinatesL b)
+    (∑ i, (smulRightW1pL (b i)).comp (ContinuousLinearMap.proj i))
+    (ContinuousLinearMap.ext ?_) (ContinuousLinearMap.ext ?_)
   · intro u
-    simpa only [sum_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.proj_apply, coordinatesL_apply] using sum_smulRightW1pL_toW1pL b u
-  · intro u
-    simpa only [sum_apply, ContinuousLinearMap.comp_apply,
+    simpa only [sum_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.proj_apply] using coordinatesL_sum_smulRightW1pL b u
+  · intro u
+    simpa only [sum_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearMap.proj_apply, coordinatesL_apply] using sum_smulRightW1pL_toW1pL b u
 
 /-- The coordinate equivalence applies the native scalar projections. -/
 @[simp]
@@ -138,8 +139,8 @@ theorem coordinatesEquiv_apply (b : Module.Basis ι ℝ F)
 @[simp]
 theorem coordinatesEquiv_symm_apply (b : Module.Basis ι ℝ F) (u : ι → W1p μ Ω p) :
     (coordinatesEquiv b).symm u = ∑ i, smulRightW1pL (b i) (u i) := by
-  simp only [coordinatesEquiv, ContinuousLinearEquiv.symm_equivOfInverse,
-    ContinuousLinearEquiv.equivOfInverse_apply, sum_apply, ContinuousLinearMap.comp_apply,
+  simp only [coordinatesEquiv, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap, sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.proj_apply]
 
 /-- The inverse coordinate equivalence has the expected almost-everywhere value formula. -/

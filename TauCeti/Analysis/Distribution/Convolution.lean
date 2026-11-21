@@ -32,8 +32,8 @@ convolution `K₀ ⋆ (χ T)` on `Ω'`.
   `Distribution.cutoffConvolutionCLM_smul`: linearity in the cutoff `χ`.
 * `Distribution.mapCLM_cutoffConvolutionCLM`: cutoff convolution commutes with applying a continuous
   linear map to the values of `T`.
-* `Distribution.cutoffConvolutionCLM_congr`: in finite dimensions, cutoff convolution depends on
-  `χ` only through its germ along `dsupport T`.
+* `Distribution.cutoffConvolutionCLM_congr`: cutoff convolution depends on `χ` only through its
+  germ along `dsupport T`.
 
 ## References
 
@@ -122,7 +122,7 @@ theorem mapCLM_cutoffConvolutionCLM {F' : Type*} [AddCommGroup F'] [Module ℝ F
   simp
 
 /-- Two cutoffs that agree on a neighbourhood of `dsupport T` define the same cutoff convolution. -/
-theorem cutoffConvolutionCLM_congr [FiniteDimensional ℝ E] {χ₁ χ₂ : 𝓓(Ω, ℝ)}
+theorem cutoffConvolutionCLM_congr {χ₁ χ₂ : 𝓓(Ω, ℝ)}
     (hK₀ : LocallyIntegrable K₀ μ) {T : 𝓓'(Ω, F)}
     (hχ : (χ₁ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] χ₂) :
     cutoffConvolutionCLM (Ω' := Ω') χ₁ hK₀ T = cutoffConvolutionCLM χ₂ hK₀ T := by

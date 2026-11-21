@@ -148,9 +148,9 @@ theorem apply_sublevelNDRPair_deformation_le (t : I) (x : X) :
   · rw [← h, mul_zero, hφ0]
   obtain ⟨hle, hb⟩ := le_sub_of_collarTime_pos h
   have hs : (t : ℝ) * max 0 (min (f x - a) (b - f x)) ≤ max 0 (min (f x - a) (b - f x)) :=
-    mul_le_of_le_one_left h.le t.2.2
-  rw [hφf x _ (mul_nonneg t.2.1 h.le) (by linarith) hb]
-  linarith [mul_nonneg t.2.1 h.le]
+    mul_le_of_le_one_left h.le t.property.2
+  rw [hφf x _ (mul_nonneg t.property.1 h.le) (by linarith) hb]
+  linarith [mul_nonneg t.property.1 h.le]
 
 /-- **A sublevel with a collar is a closed cofibration.** If a continuous motion `φ` of `X`, with
 `φ 0` the identity, lowers the continuous function `f` at unit speed through the band

@@ -58,14 +58,14 @@ At an `S`-scheme `T`, its elements are relative effective Cartier divisors on
 Arbitrary base change preserves this condition. -/
 def relativeEffectiveCartierDegreeSubfunctor (d : ℕ) :
     Subfunctor (relativeEffectiveCartierSubfunctor f).toFunctor where
-  obj T := {D | (D.1.subschemeι ≫ pullback.fst T.unop.hom f).finrank = fun _ ↦ d}
+  obj T := {D | (D.val.subschemeι ≫ pullback.fst T.unop.hom f).finrank = fun _ ↦ d}
   map {T T'} φ D hD := by
-    have hrel : D.1.IsRelativeEffectiveCartier (pullback.fst T.unop.hom f) :=
-      (mem_relativeEffectiveCartierSubfunctor_obj_iff (f := f)).mp D.2
-    have : Flat (D.1.subschemeι ≫ pullback.fst T.unop.hom f) := hrel.flat
-    have : IsFinite (D.1.subschemeι ≫ pullback.fst T.unop.hom f) := hrel.isFinite
+    have hrel : D.val.IsRelativeEffectiveCartier (pullback.fst T.unop.hom f) :=
+      (mem_relativeEffectiveCartierSubfunctor_obj_iff (f := f)).mp D.property
+    have : Flat (D.val.subschemeι ≫ pullback.fst T.unop.hom f) := hrel.flat
+    have : IsFinite (D.val.subschemeι ≫ pullback.fst T.unop.hom f) := hrel.isFinite
     ext t
-    exact (D.1.finrank_comap_of_isPullback _ _ _ _
+    exact (D.val.finrank_comap_of_isPullback _ _ _ _
       (Over.isPullback_pullback_map_left f φ.unop) t).trans
       (congrFun hD (φ.unop.left t))
 
@@ -75,7 +75,7 @@ closed subscheme over the base is constantly `d`. -/
 lemma mem_relativeEffectiveCartierDegreeSubfunctor_obj_iff
     {d : ℕ} {T : (Over S)ᵒᵖ} {D : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T} :
     D ∈ (relativeEffectiveCartierDegreeSubfunctor f d).obj T ↔
-      (D.1.subschemeι ≫ pullback.fst T.unop.hom f).finrank = fun _ ↦ d :=
+      (D.val.subschemeι ≫ pullback.fst T.unop.hom f).finrank = fun _ ↦ d :=
   Iff.rfl
 
 variable [SmoothOfRelativeDimension 1 f]
@@ -101,7 +101,7 @@ base-changed section. -/
 @[simp]
 lemma relativeEffectiveCartierDegreeOneSection_val (x₀ : S ⟶ X) (hx₀ : x₀ ≫ f = 𝟙 S)
     (T : (Over S)ᵒᵖ) :
-    (relativeEffectiveCartierDegreeOneSection f x₀ hx₀ T).1.1 =
+    (relativeEffectiveCartierDegreeOneSection f x₀ hx₀ T).val.val =
       (baseChangeSection f x₀ hx₀ T.unop).ker :=
   (rfl)
 
