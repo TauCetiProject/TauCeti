@@ -137,10 +137,7 @@ private theorem contDiff_dilate (x ξ : CoordinateSpace n) (t : ℝ) :
 private theorem japaneseBracket_pow_mul_rpow (ξ : CoordinateSpace n) (i : ℕ) (d : ℝ) :
     ((1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ i * (1 + ‖ξ‖ ^ 2) ^ ((d - i) / 2) =
       (1 + ‖ξ‖ ^ 2) ^ (d / 2) := by
-  have hu : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  rw [← Real.rpow_natCast, ← Real.rpow_mul hu.le, ← Real.rpow_add hu]
-  congr 1
-  ring
+  rw [one_add_norm_sq_rpow_one_div_two_pow, ← one_add_norm_sq_rpow_add, add_sub_cancel]
 
 omit [CompleteSpace V] in
 /-- **Dilated symbol estimates.** With `t = ⟨ξ⟩`, the derivatives of order at most `k` at `(0, 0)`
@@ -410,13 +407,7 @@ theorem isParameterElliptic_of_coefficient_eq_smul {d : ℝ} {p : Symbol n V V d
   have hw₀ : 0 ≤ w₀ := hw (x, ξ)
   have hcoef : 1 - r • p.coefficient (x, ξ) = (1 - r * w₀) • ContinuousLinearMap.id ℂ V := by
     rw [hpw, smul_smul, sub_smul, one_smul, ContinuousLinearMap.one_def]
-  have hlow : (1 - max c (-1)) / 2 * (1 + ‖r‖ * w₀) ≤ ‖1 - r * w₀‖ := by
-    have hnorm : ‖r * (w₀ : ℂ)‖ = ‖r‖ * w₀ := by
-      rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg hw₀]
-    have h := Complex.mul_add_norm_le_norm_ofReal_sub (z := r * w₀) (c := c) zero_le_one (by
-      rw [hnorm, Complex.re_mul_ofReal]
-      nlinarith [mul_le_mul_of_nonneg_right (hR r hr) hw₀])
-    rwa [hnorm, Complex.ofReal_one] at h
+  have hlow := Complex.mul_one_add_le_norm_one_sub_mul (hR r hr) hw₀
   have hpos : 0 < ‖1 - r * w₀‖ := (mul_pos hκ (by positivity)).trans_le hlow
   rw [hcoef]
   refine ⟨(ContinuousLinearMap.isInvertible_smul_iff (norm_pos_iff.1 hpos)).2

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Algebra.Ring.Invertible
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -58,8 +59,7 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   is `C^n`; `ContinuousAt.ringInverse` is the continuous version, on any topological domain.
 * `TauCeti.iteratedDeriv_ringInverse_add_smul`: all derivatives of the ring inverse of an
   affine pencil, at any parameter where the pencil is a unit;
-  `TauCeti.iteratedDeriv_ringInverse_one_sub_smul` is the commutative form for `1 - r • P`, using
-  `TauCeti.commute_ringInverse_one_sub_smul`.
+  `TauCeti.iteratedDeriv_ringInverse_one_sub_smul` is the commutative form for `1 - r • P`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
   and `P` of velocity `Z` through `1` has velocity `Z * C - C * Z` at that point.
 
@@ -402,19 +402,6 @@ theorem TauCeti.iteratedDeriv_ringInverse_add_smul (a b : R) (k : ℕ) {t : 𝕜
     simp only [pow_succ, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
     ring
 
-omit [HasSummableGeomSeries R] in
-/-- An element `P` commutes with the ring inverse of `1 - r • P`. -/
-theorem TauCeti.commute_ringInverse_one_sub_smul (P : R) (r : 𝕜) :
-    Commute P (Ring.inverse (1 - r • P)) := by
-  by_cases hr : IsUnit (1 - r • P)
-  · obtain ⟨u, hu⟩ := hr
-    have hc : Commute P (u : R) :=
-      hu ▸ (Commute.one_right P).sub_right ((Commute.refl P).smul_right r)
-    rw [← hu, Ring.inverse_unit]
-    exact hc.units_inv_right
-  · rw [Ring.inverse_non_unit _ hr]
-    exact Commute.zero_right P
-
 /-- `∂_r^j (1 - r P)⁻¹ = j! P ^ j ((1 - r P)⁻¹) ^ (j + 1)` where `1 - r P` is a unit: the
 commutative form of `TauCeti.iteratedDeriv_ringInverse_add_smul`, as `P` commutes with
 `(1 - r P)⁻¹`. -/
@@ -423,7 +410,7 @@ theorem TauCeti.iteratedDeriv_ringInverse_one_sub_smul (P : R) (j : ℕ) {r : �
     iteratedDeriv j (fun s : 𝕜 => Ring.inverse (1 - s • P)) r =
       (Nat.factorial j : 𝕜) • (P ^ j * Ring.inverse (1 - r • P) ^ (j + 1)) := by
   have h1 (s : 𝕜) : 1 - s • P = 1 + s • -P := by rw [smul_neg, sub_eq_add_neg]
-  have hc := commute_ringInverse_one_sub_smul P r
+  have hc := ((Commute.one_right P).sub_right ((Commute.refl P).smul_right r)).ringInverse_right
   simp only [h1] at hr hc ⊢
   have hI : Ring.inverse (1 + r • -P) * (P * Ring.inverse (1 + r • -P)) ^ j =
       P ^ j * Ring.inverse (1 + r • -P) ^ (j + 1) := by

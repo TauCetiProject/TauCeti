@@ -63,6 +63,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `a ≤ b + N`.
 * `TauCeti.one_add_norm_sq_rpow_add`: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`.
 * `TauCeti.one_add_norm_sq_rpow_neg_mul_rpow`: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`.
+* `TauCeti.one_add_norm_sq_rpow_one_div_two_pow`: `⟨x⟩ ^ i = (1 + ‖x‖ ^ 2) ^ (i / 2)` for
+  natural `i`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub`: if `c ‖x‖ ≤ ‖x - y‖`, then
   `⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|`; this separates frequencies outside a cone
   from those inside it.
@@ -355,6 +357,13 @@ theorem one_add_norm_sq_rpow_add (x : E) (s t : ℝ) :
 theorem one_add_norm_sq_rpow_neg_mul_rpow (x : E) (s : ℝ) :
     (1 + ‖x‖ ^ 2) ^ (-s / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) = 1 := by
   rw [← one_add_norm_sq_rpow_add, neg_add_cancel, zero_div, Real.rpow_zero]
+
+/-- A natural power of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)` is the matching
+real power: `⟨x⟩ ^ i = (1 + ‖x‖ ^ 2) ^ (i / 2)`. -/
+theorem one_add_norm_sq_rpow_one_div_two_pow (x : E) (i : ℕ) :
+    ((1 + ‖x‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ i = (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
+  rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+  ring_nf
 
 /-- **The bracket away from a cone.** If `y` lies outside the open ball of radius `c ‖x‖` about
 `x`, `c > 0`, then `‖y‖` is controlled by `‖x - y‖`, and so is the bracket at `y`:
