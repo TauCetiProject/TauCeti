@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.GTree.Axis
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+import TauCeti.Data.Int.Isometry
 
 /-!
 # Centralizers of hyperbolic elements of a tree
@@ -48,29 +49,25 @@ every `h` commuting with `g` acts on `c` as a translation `c n ↦ c (n + k)`. -
 theorem exists_smul_eq_add_of_commute {g h : G} {c : ℤ → T.V}
     (hc : ∀ m n, T.dist (c m) (c n) = (m - n).natAbs) {t : ℤ} (ht : t ≠ 0)
     (hgc : ∀ n, g • c n = c (n + t)) (hgh : Commute g h) : ∃ k : ℤ, ∀ n, h • c n = c (n + k) := by
-  have hinj := SerreGraph.injective_of_dist_eq_natAbs hc
   have hrange := (axis_eq_range_of_smul_eq_add hc ht hgc).symm
   -- `h` maps the axis `Set.range c` of `g` into itself, so `h • c n = c (φ n)` for an isometry
-  -- `φ` of `ℤ`.
+  -- `φ` of `ℤ`: a translation or a reflection.
   have hmem (n : ℤ) : h • c n ∈ Set.range c := by
     rw [hrange, smul_mem_axis_iff_of_commute hgh, ← hrange]
     exact Set.mem_range_self n
   choose φ hφ using hmem
   have hiso (m n : ℤ) : (φ m - φ n).natAbs = (m - n).natAbs := by
-    rw [← hc, hφ, hφ, dist_smul, hc]
-  -- Since `h` commutes with `g`, the isometry `φ` commutes with the translation by `t`, which
+    rw [← hc (φ m) (φ n), hφ m, hφ n, dist_smul, hc]
+  -- Since `h` commutes with `g`, the isometry `φ` commutes with the translation by `t ≠ 0`, which
   -- rules out a reflection.
-  have hcomm : g • h • c 0 = h • g • c 0 := by rw [smul_smul, hgh.eq, mul_smul]
-  simp only [← hφ, hgc, zero_add] at hcomm
-  have hper := hinj hcomm
-  refine ⟨φ 0, fun n => ?_⟩
-  have h₁ := hiso 1 0
-  have ht₁ := hiso t 1
-  have hn₀ := hiso n 0
-  have hn₁ := hiso n 1
-  rw [← hφ]
-  congr 1
-  omega
+  have hper : φ 0 + t = φ t := SerreGraph.injective_of_dist_eq_natAbs hc <|
+    calc c (φ 0 + t) = g • h • c 0 := by rw [← hφ 0, hgc (φ 0)]
+      _ = h • g • c 0 := by rw [smul_smul, hgh.eq, mul_smul]
+      _ = c (φ t) := by rw [hgc 0, zero_add, hφ t]
+  rcases Int.forall_eq_add_or_forall_eq_sub_of_natAbs_sub_eq hiso with hφ' | hφ'
+  · exact ⟨φ 0, fun n => by rw [← hφ n, hφ' n, add_comm (φ 0) n]⟩
+  · have := hφ' t
+    omega
 
 /-- **Centralizers of hyperbolic elements.** If only the identity fixes every vertex of the axis
 of a hyperbolic element `g`, then the centralizer of `g` is cyclic: it acts faithfully on the axis
@@ -87,7 +84,7 @@ theorem IsHyperbolic.isCyclic_centralizer {g : G} (hg : T.IsHyperbolic g)
       (Subgroup.mem_centralizer_singleton_iff.1 h.property).symm
   have hmul (x y : Subgroup.centralizer {g}) : k (x * y) = k x + k y := by
     have h := hk (x * y) 0
-    rw [Subgroup.coe_mul, mul_smul, hk, hk] at h
+    rw [Subgroup.coe_mul, mul_smul, hk y 0, hk x (0 + k y)] at h
     have := hinj h
     omega
   refine isCyclic_of_injective (MonoidHom.mk' (fun y => Multiplicative.ofAdd (k y)) fun y z => by

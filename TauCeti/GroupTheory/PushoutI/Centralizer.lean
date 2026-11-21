@@ -30,10 +30,12 @@ Let now `E = A ∗_C B` be an amalgamated product of two groups, indexed by `Boo
 either fixes a vertex, and is then conjugate into one of the factors, or is hyperbolic: it
 translates a line, its axis. Suppose that `C` is malnormal in one factor, and let `x ∈ E` be
 conjugate into neither factor. Then `x` is hyperbolic, and an element commuting with `x`
-translates the axis of `x` (`TauCeti.GTree.IsHyperbolic.isCyclic_centralizer`). At a vertex of
-the malnormal factor, the stabilizer of the two edges of the axis is `C ∩ a C a⁻¹ = 1` for an
-`a ∉ C` (`TauCeti.GraphOfGroups.bassSerreTree_segment_fixingSubgroup_range_eq_bot`), so the
-centralizer of `x` acts faithfully on the axis by translations: it embeds in `ℤ` and is cyclic.
+translates the axis of `x` (`TauCeti.GTree.exists_smul_eq_add_of_commute`). At a vertex of the
+malnormal factor, the stabilizer of the two edges of the axis is `C ∩ a C a⁻¹ = 1` for an `a ∉ C`,
+so only the identity fixes the axis pointwise
+(`TauCeti.GraphOfGroups.bassSerreTree_segment_fixingSubgroup_range_eq_bot`). Hence the centralizer
+of `x` acts faithfully on the axis by translations: it embeds in `ℤ` and is cyclic
+(`TauCeti.GTree.IsHyperbolic.isCyclic_centralizer`).
 
 ## Main results
 
@@ -131,9 +133,9 @@ private theorem exists_mul_segmentEquiv_vertexHom_mul_inv_mem (hφ : ∀ b, Inje
   refine ⟨(segmentEquiv hφ v₀ (π₁.mk (p.comp ((dartPrefunctor _).mapPath q).reverse)))⁻¹, ?_⟩
   simp only [map_mul, map_inv, inv_inv, mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one]
   have h : segmentEquiv hφ v₀ (π₁.vertexHom ((dartPrefunctor _).mapPath q) y) =
-      segmentPushoutIEquiv φ hφ (of b y) :=
-    congrArg _ ((congrArg _ (π₁Equiv_segment_vertexHom_mapPath q y)).trans
-      (π₁Tree.equivPushoutI_of ..))
+      segmentPushoutIEquiv φ hφ (of b y) := by
+    rw [segmentEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
+      π₁Equiv_segment_vertexHom_mapPath, π₁Tree.equivPushoutI_of]
   cases b
   · exact ⟨y, (h.trans (segmentPushoutIEquiv_of_false φ hφ y)).symm⟩
   · exact ⟨y, (h.trans (segmentPushoutIEquiv_of_true φ hφ y)).symm⟩

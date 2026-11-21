@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Convex.Basic
 public import TauCeti.Combinatorics.Graph.Serre.Dist
+import TauCeti.Data.Int.Isometry
 
 /-!
 # Geodesic lines in Serre graphs
@@ -118,18 +119,13 @@ theorem range_eq_of_range_subset_of_dist_eq_natAbs {c c' : ℤ → Γ.V}
     (h : Set.range c ⊆ Set.range c') : Set.range c = Set.range c' := by
   choose φ hφ using fun n => h (Set.mem_range_self n)
   -- The reparametrization `φ` is an isometry of the integers, so a translation or a reflection.
-  have hiso : ∀ m n, (φ m - φ n).natAbs = (m - n).natAbs := fun m n => by
-    rw [← hc', hφ, hφ, hc]
+  have hiso (m n : ℤ) : (φ m - φ n).natAbs = (m - n).natAbs := by
+    rw [← hc' (φ m) (φ n), hφ m, hφ n, hc]
   refine h.antisymm ?_
   rintro _ ⟨k, rfl⟩
-  have h₁₀ := hiso 1 0
-  obtain h₁ | h₁ : φ 1 - φ 0 = 1 ∨ φ 1 - φ 0 = -1 := by omega
-  · have h₀ := hiso (k - φ 0) 0
-    have h₂ := hiso (k - φ 0) 1
-    exact ⟨k - φ 0, by rw [← hφ]; congr 1; omega⟩
-  · have h₀ := hiso (φ 0 - k) 0
-    have h₂ := hiso (φ 0 - k) 1
-    exact ⟨φ 0 - k, by rw [← hφ]; congr 1; omega⟩
+  rcases Int.forall_eq_add_or_forall_eq_sub_of_natAbs_sub_eq hiso with hφ' | hφ'
+  · exact ⟨k - φ 0, by rw [← hφ, hφ' (k - φ 0)]; congr 1; omega⟩
+  · exact ⟨φ 0 - k, by rw [← hφ, hφ' (φ 0 - k)]; congr 1; omega⟩
 
 end SerreGraph
 end TauCeti

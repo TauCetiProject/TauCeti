@@ -71,15 +71,15 @@ theorem stabilizer_bassSerreDart_inf_stabilizer_smul_eq_bot {b c : Γ.V} (p : �
     (hg : g ∉ (𝔸.αArrow e).range) :
     stabilizer (π₁ 𝔸 a) (bassSerreDart p e) ⊓
       stabilizer (π₁ 𝔸 a) (π₁.vertexHom p g • bassSerreDart p e) = ⊥ := by
-  refine (Subgroup.eq_bot_iff_forall _).2 fun k hk => ?_
-  obtain ⟨hk, hk'⟩ := Subgroup.mem_inf.1 hk
-  rw [stabilizer_bassSerreDart] at hk
-  obtain ⟨y, hy, rfl⟩ := hk
-  -- Translating back by `p g⁻¹ p⁻¹`, the element `p g⁻¹ y g p⁻¹` fixes the dart `p α_e(A_e)`.
-  have h := congrArg ((π₁.vertexHom p g)⁻¹ • ·) (mem_stabilizer_iff.1 hk')
-  simp only [smul_smul, ← map_inv, ← map_mul, ← mul_assoc, inv_mul_cancel, map_one, one_smul] at h
-  rw [vertexHom_smul_bassSerreDart_eq_self_iff] at h
-  rw [hT.eq_one (inv_mem_iff.not.2 hg) hy (by rwa [inv_inv]), map_one]
+  -- The two stabilizers are the images of `α_e(A_e)` and `g α_e(A_e) g⁻¹` in `π₁(𝔸, a)` under the
+  -- injective homomorphism `π₁.vertexHom p`.
+  have hconj : (MulAut.conj (π₁.vertexHom p g)).toMonoidHom.comp (π₁.vertexHom p) =
+      (π₁.vertexHom p).comp (MulAut.conj g).toMonoidHom := MonoidHom.ext fun _ => by simp
+  rw [stabilizer_smul_eq_stabilizer_map_conj, stabilizer_bassSerreDart, Subgroup.map_map, hconj,
+    ← Subgroup.map_map, ← Subgroup.map_inf _ _ _ (π₁.vertexHom_injective p)]
+  -- The pointwise conjugate `MulAut.conj g • H` is by definition the image of `H` under
+  -- `MulAut.conj g` (`Subgroup.pointwise_smul_def`).
+  exact (congrArg _ (isTISubgroup_iff_inf_conj_smul_eq_bot.1 hT g hg)).trans (Subgroup.map_bot _)
 
 /-- Let `e : b ⟶ c` be a dart whose edge group `α_e(A_e)` is malnormal in `A_b`. In the Bass–Serre
 tree, two distinct darts `p α_e(A_e)` and `q α_e(A_e)` over `e` leaving the same vertex
