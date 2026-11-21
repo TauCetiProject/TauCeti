@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.BaseChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 
 /-!
 # Localization of the Weil cup product
@@ -31,9 +30,6 @@ stated for the Brauer-valued pairings, in which the level of the roots of unity 
 
 * `WeierstrassCurve.brBaseChange_torsionWeilBrauerPairing`: the Brauer class of the Weil cup
   product on `H¹(K, E[m])` localizes to the Weil cup product of the restricted classes.
-* `TauCeti.Isogeny.dualKerRes`: restriction `H¹(G_K, E₂[φ̂]) → H¹(G_L, E₂[(φ_L)^])`.
-* `TauCeti.Isogeny.explicitCoeff1_kerCoeffIncl_dualKerRes`: `dualKerRes` and the restriction
-  `TauCeti.Isogeny.kerRes` of `φ̂` agree after inclusion into `H¹(G_L, E₂)`.
 * `TauCeti.Isogeny.brBaseChange_kerWeilBrauerPairing`: the Brauer class of the isogeny Weil cup
   product localizes to the isogeny Weil cup product of `φ_L` on the restricted classes.
 
@@ -106,75 +102,6 @@ variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic
   (φ : Isogeny W₁.toAffine W₂.toAffine)
   {L : Type*} [Field L] [Algebra K L] (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
-/-! ### Restriction to the kernel of the dual of the base change -/
-
-/-- **The coordinate map along `τ` carries `E₂(Kˢ)[φ̂]` into `E₂(Lˢ)[(φ_L)^]`**, the kernel of the
-dual of the base change of `φ`. -/
-theorem pointCoeffBaseChange_mem_kerCoeff_dual {Q : W₂.PointCoeff}
-    (hQ : Q ∈ ((ofIsogeny φ.dual).pointCoeffMap : W₂.PointCoeff →+ W₁.PointCoeff).ker) :
-    W₂.pointCoeffBaseChange τ Q ∈
-      ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
-        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
-  have h := φ.dual.pointCoeffBaseChange_mem_kerCoeff τ hQ
-  rwa [baseChange, dual_map φ (algebraMap K L)] at h
-
-/-- **The map `E₂(Kˢ)[φ̂] → E₂(Lˢ)[(φ_L)^]`** along `τ`, the restriction of
-`pointCoeffBaseChange τ` to the kernel of `φ̂`. -/
-def dualKerCoeffBaseChange :
-    (ofIsogeny φ.dual).KerCoeff →+ (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
-  ((W₂.pointCoeffBaseChange τ).comp
-      ((ofIsogeny φ.dual).pointCoeffMap : W₂.PointCoeff →+ W₁.PointCoeff).ker.subtype).codRestrict
-    _ fun Q ↦ φ.pointCoeffBaseChange_mem_kerCoeff_dual τ Q.property
-
-@[simp]
-theorem coe_dualKerCoeffBaseChange (Q : (ofIsogeny φ.dual).KerCoeff) :
-    (φ.dualKerCoeffBaseChange τ Q : (W₂⁄L).PointCoeff) = W₂.pointCoeffBaseChange τ Q :=
-  (rfl)
-
-/-- **`dualKerCoeffBaseChange τ` is equivariant** along `absoluteGaloisGroupMap τ : G_L → G_K`. -/
-@[simp]
-theorem dualKerCoeffBaseChange_smul (g : AbsoluteGaloisGroup L)
-    (Q : (ofIsogeny φ.dual).KerCoeff) :
-    φ.dualKerCoeffBaseChange τ (absoluteGaloisGroupMap τ g • Q) =
-      g • φ.dualKerCoeffBaseChange τ Q :=
-  Subtype.ext <| by
-    rw [coe_dualKerCoeffBaseChange, Hom.coe_smul_kerCoeff, Hom.coe_smul_kerCoeff,
-      coe_dualKerCoeffBaseChange, pointCoeffBaseChange_smul]
-
-/-- **Restriction `H¹(G_K, E₂[φ̂]) → H¹(G_L, E₂[(φ_L)^])`** along `τ`: pullback along the
-compatible pair `(absoluteGaloisGroupMap τ, dualKerCoeffBaseChange τ)`. Its target is the first
-cohomology of the kernel of the dual of `φ_L`, on which the local Tate pairings of `φ_L` are
-defined. -/
-def dualKerRes :
-    H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff →+
-      H1 (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
-  explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ) (φ.dualKerCoeffBaseChange τ)
-    continuous_of_discreteTopology (φ.dualKerCoeffBaseChange_smul τ)
-
-/-- `dualKerRes τ` is the pullback along `(absoluteGaloisGroupMap τ, dualKerCoeffBaseChange τ)`. -/
-theorem dualKerRes_eq_explicitMap1 :
-    φ.dualKerRes τ = explicitMap1 _ _ _ _ (absoluteGaloisGroupMap τ)
-      (φ.dualKerCoeffBaseChange τ) continuous_of_discreteTopology
-      (φ.dualKerCoeffBaseChange_smul τ) :=
-  (rfl)
-
-/-- **`dualKerRes τ` agrees with the restriction of `φ̂` in `H¹(G_L, E₂)`**: after inclusion of the
-kernels into the points, the restriction `dualKerRes τ c` into `E₂(Lˢ)[(φ_L)^]` and the
-restriction `kerRes τ c` of `φ̂` into `E₂(Lˢ)[φ̂_L]` have the same image. In particular
-`dualKerRes τ` carries a class satisfying the local condition of the `φ̂`-Selmer structure at `L`
-to a class that is trivial in `H¹(G_L, E₂)`. -/
-@[simp]
-theorem explicitCoeff1_kerCoeffIncl_dualKerRes
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
-    explicitCoeff1 _ _ (ofIsogeny (φ.baseChange L).dual).kerCoeffIncl
-        continuous_of_discreteTopology (φ.dualKerRes τ c) =
-      explicitCoeff1 _ _ (ofIsogeny (φ.dual.baseChange L)).kerCoeffIncl
-        continuous_of_discreteTopology (φ.dual.kerRes τ c) := by
-  rw [← pointRes_kerCoeffIncl, explicitCoeff1_eq_explicitMap1, explicitCoeff1_eq_explicitMap1,
-    pointRes_eq_explicitMap1, dualKerRes_eq_explicitMap1]
-  exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-    (by ext; rfl) (by ext; simp) c
-
 /-! ### Localization of the isogeny Weil cup product -/
 
 variable (hn : IsUnit (φ.degree : K))
@@ -231,7 +158,7 @@ private theorem unitsCoeffBaseChange_kerCoeffUnitsPairing
     kummerCoeffInclHom_apply, kummerCoeffInclHom_apply, toMul_kummerCoeffIncl,
     toMul_kummerCoeffIncl, Units.coe_map, MonoidHom.coe_ofClass]
   exact (φ.coe_kerCoeffWeilPairing_baseChange hn τ hnL P Q _ _ (coe_kerCoeffBaseChange τ φ P)
-    (coe_dualKerCoeffBaseChange φ τ Q)).symm
+    (coe_dualKerCoeffBaseChange τ φ Q)).symm
 
 /-- **The Brauer class of the isogeny Weil cup product localizes to the isogeny Weil cup product
 of the base change**: for classes `a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])`, the base change to
