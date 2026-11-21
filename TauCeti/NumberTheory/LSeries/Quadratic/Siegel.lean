@@ -28,10 +28,11 @@ product `χ.mul ψ`, and write `F(s) = ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)`.
 of `TauCeti.NumberTheory.LSeries.Quadratic.Pair.SmoothedShift` shows that whenever `F(β) ≤ 0` at a
 real `β < 1` close to `1`, the residue `L(1, χ) L(1, ψ) L(1, χ.mul ψ)` of `F` at `1` is at least a
 constant multiple of `(1 - β) (M N) ^ (-8 (1 - β))`
-(`DirichletCharacter.le_re_LFunction_one_mul_of_re_pair_nonpos`). The upper bound
-`L(1, φ) ≤ 1 + log n` for the two other factors turns this into a lower bound for `L(1, ψ)`
-(`DirichletCharacter.exists_pos_mul_rpow_le_LFunction_one_re_of_re_pair_nonpos`). The sign
-condition `F(β) ≤ 0` holds in two situations:
+(`DirichletCharacter.le_re_LFunction_one_mul_of_re_pair_nonpos`). The upper bounds
+`L(1, χ) ≤ 1 + log M` and `L(1, χ.mul ψ) ≤ (1 + t⁻¹) (M N) ^ t`
+(`DirichletCharacter.norm_LFunction_one_le_mul_rpow`, `t = 8 (1 - β)`) turn this into a lower bound
+for `L(1, ψ)` (`DirichletCharacter.exists_pos_mul_rpow_le_LFunction_one_re_of_re_pair_nonpos`). The
+sign condition `F(β) ≤ 0` holds in two situations:
 
 * `χ` has a real zero at `β` (`exists_pos_mul_rpow_le_LFunction_one_re_of_LFunction_eq_zero`);
 * no nonprincipal quadratic character has a real zero in `(β, 1)`, and then every factor of `F` is
