@@ -36,8 +36,9 @@ contribution to every additive invariant.
 * `TauCeti.Contour.Cycle.integral_comp_comm`: continuous linear maps commute with the integral
   of a vector-valued function over a cycle, when its contour integrand is integrable.
 * `TauCeti.Contour.Cycle.integral_congr`, `TauCeti.Contour.Cycle.integral_add`,
-  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_smul`: the integral depends
-  only on the integrand on the trace, and is linear in integrands continuous there.
+  `TauCeti.Contour.Cycle.integral_sub`, `TauCeti.Contour.Cycle.integral_finsetSum`,
+  `TauCeti.Contour.Cycle.integral_smul`: the integral depends only on the integrand on the trace,
+  and is linear in integrands continuous there.
 * `TauCeti.Contour.Cycle.integral_smul_const`: the integral of a scalar function times a constant
   vector.
 * `TauCeti.Contour.Cycle.norm_integral_le_of_norm_le_const`: a bound for the integrand on the
@@ -405,6 +406,17 @@ theorem integral_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g
   rw [← smul_sub, ← intervalIntegral.integral_sub (intervalIntegrable_of_mem_support hf hγ)
     (intervalIntegrable_of_mem_support hg hγ)]
   simp only [smul_sub]
+
+/-- The integral over a cycle commutes with finite sums of integrands continuous on its trace. -/
+theorem integral_finsetSum {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {s : Finset ι} {f : ι → ℂ → E} {C : Cycle} (hf : ∀ i ∈ s, ContinuousOn (f i) (trace C)) :
+    integral (fun z ↦ ∑ i ∈ s, f i z) C = ∑ i ∈ s, integral (f i) C := by
+  simp only [integral_eq_sum_support]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
+  rw [← Finset.smul_sum, ← intervalIntegral.integral_finsetSum fun i hi ↦
+    intervalIntegrable_of_mem_support (hf i hi) hγ]
+  simp only [Finset.smul_sum]
 
 /-- Scalar multiples can be taken out of the integral over a cycle. -/
 @[simp]
