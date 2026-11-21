@@ -58,7 +58,7 @@ theorem exists_isLocalizingSequence_countable_range_bounded_inv (hX : StronglyAd
     hpair.exists_isLocalizingSequence_countable_range_bounded hcPair
   refine ⟨ρ, hρ, hcount, hmono, ?_⟩
   filter_upwards [hb] with ω hω n t
-  have h := hω n t
+  have h := (hω n t).2
   simp only [stoppedProcess_indicator_comm] at h ⊢
   by_cases hp : 0 < ρ n ω
   · simp only [indicator_apply, mem_ofPred_eq, hp, ↓reduceIte,

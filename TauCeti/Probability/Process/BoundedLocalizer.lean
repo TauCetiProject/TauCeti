@@ -15,6 +15,11 @@ An adapted process with almost-surely continuous paths admits countable-range lo
 bounding its full native stopped stages, without any moment assumption on its initial value.
 The initial-value cutoff is essential: stopping a process does not change its initial value,
 whereas native localization multiplies by the indicator that the stopping time is positive.
+The cutoff generalizes the original construction from
+`ProbabilityTheory.Locally.exists_isLocalizingSequence_bounded_martingale`
+(`TauCeti/Probability/Martingale/Local/Bounded.lean`), using
+`MeasureTheory.StronglyAdapted.exists_isLocalizingSequence_countable_range_level` and
+`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`.
 
 Countable ranges allow optional sampling on the original raw filtration. No completeness,
 right continuity, or martingale hypothesis is imposed. Applying this construction to a process
@@ -40,12 +45,14 @@ variable {Ω E : Type*} {m : MeasurableSpace Ω} {P : Measure Ω} [SFinite P]
 
 /-- Every strongly adapted, almost-surely continuous process has countable-range localizers
 whose native stopped stages are bounded by `2 * n + 1`, simultaneously for all stages and times.
-The localizers are pointwise increasing. No integrability of the initial value is required. -/
+Where the stopping time is positive, the stopped value differs from the initial value by at most
+`n + 1` in norm. The localizers are pointwise increasing. No initial integrability is required. -/
 theorem exists_isLocalizingSequence_countable_range_bounded (hX : StronglyAdapted ℱ X)
     (hc : ∀ᵐ ω ∂P, Continuous (X · ω)) :
     ∃ ρ : ℕ → Ω → WithTop ℝ≥0, IsLocalizingSequence ℱ ρ P ∧
       (∀ n, (range (ρ n)).Countable) ∧ (∀ ω, Monotone (ρ · ω)) ∧
       ∀ᵐ ω ∂P, ∀ n t,
+        (0 < ρ n ω → ‖MeasureTheory.stoppedProcess X (ρ n) t ω - X 0 ω‖ ≤ (n : ℝ) + 1) ∧
         ‖MeasureTheory.stoppedProcess (fun t ↦ {ω | 0 < ρ n ω}.indicator (X t)) (ρ n) t ω‖ ≤
           2 * (n : ℝ) + 1 := by
   classical
@@ -77,21 +84,15 @@ theorem exists_isLocalizingSequence_countable_range_bounded (hX : StronglyAdapte
     rw [stoppedProcess_indicator_comm]
     by_cases hn : ω ∈ A n
     · have heq : ρ n ω = η n ω := piecewise_eq_of_mem _ _ _ hn
+      have hcenter : ‖MeasureTheory.stoppedProcess X (ρ n) t ω - X 0 ω‖ ≤ (n : ℝ) + 1 := by
+        simpa only [MeasureTheory.stoppedProcess, heq] using (hω n).2 t
+      refine ⟨fun _ ↦ hcenter, (norm_indicator_le_norm_self _ _).trans ?_⟩
       have hinit : ‖X 0 ω‖ ≤ (n : ℝ) := hn
-      -- Stopped values inspect only the stopping time at this particular sample point.
-      have hstop : MeasureTheory.stoppedProcess X (ρ n) t ω =
-          MeasureTheory.stoppedProcess X (η n) t ω := by
-        simp only [MeasureTheory.stoppedProcess, heq]
-      have hbound : ‖MeasureTheory.stoppedProcess X (ρ n) t ω‖ ≤ 2 * (n : ℝ) + 1 := by
-        have htriangle := norm_add_le (MeasureTheory.stoppedProcess X (η n) t ω - X 0 ω) (X 0 ω)
-        rw [sub_add_cancel] at htriangle
-        rw [hstop]
-        linarith [(hω n).2 t]
-      by_cases hpos : 0 < ρ n ω
-      · simpa only [indicator_apply, mem_ofPred_eq, hpos, ↓reduceIte] using hbound
-      · simp only [indicator_apply, mem_ofPred_eq, hpos, ↓reduceIte, norm_zero]
-        positivity
+      have htriangle := norm_add_le (MeasureTheory.stoppedProcess X (ρ n) t ω - X 0 ω) (X 0 ω)
+      rw [sub_add_cancel] at htriangle
+      linarith
     · have heq : ρ n ω = 0 := piecewise_eq_of_notMem _ _ _ hn
+      refine ⟨fun h ↦ ((not_lt_of_ge heq.le) h).elim, ?_⟩
       simp only [indicator_apply, mem_ofPred_eq, heq, lt_self_iff_false, ↓reduceIte, norm_zero]
       positivity
 
