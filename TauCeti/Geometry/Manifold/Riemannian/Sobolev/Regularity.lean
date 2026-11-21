@@ -16,6 +16,7 @@ import TauCeti.Analysis.PDE.Regularity.Smooth
 import TauCeti.Geometry.Manifold.ContMDiff.LocalRepresentative
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
+import TauCeti.Geometry.Manifold.Riemannian.Poisson
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -43,10 +44,11 @@ transfers Euclidean interior regularity to `H¹(M)`:
   every weak solution `w ∈ H¹(M)` of `Δ⁺w = f` agrees almost everywhere with a continuous function
   on `M`.
 * **Semilinear `C^∞` bootstrap**
-  (`TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear`): in dimension at most
-  three, if the metric, `A`, `C` on `M`, and `Φ : ℝ → ℝ` are smooth, then any continuous function
-  `u` representing a weak solution `w ∈ H¹(M)` of `Δ⁺w = A Φ(u) + C` is smooth on `M` and solves
-  `Δ⁺u = A Φ(u) + C` classically everywhere.
+  (`TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear` and
+  `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletForm_eq`):
+  in dimension at most three, if the metric, `A`, `C` on `M`, and `Φ : ℝ → ℝ` are smooth, then a
+  weak solution `w ∈ H¹(M)` of `Δ⁺w = A Φ(w) + C` with `A Φ(w) + C ∈ L²(M)` is smooth on `M` and
+  solves `Δ⁺u = A Φ(u) + C` classically everywhere.
 * **Linear `C^∞` regularity in every dimension**
   (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq`):
   if the metric, a potential `V` and a forcing `f` are smooth, every weak solution `w ∈ H¹(M)` of
@@ -55,7 +57,9 @@ transfers Euclidean interior regularity to `H¹(M)`:
   Euclidean interior smoothness
   (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`) applies. In particular
   weak eigenfunctions of `Δ⁺` are smooth
-  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`).
+  (`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`), and for
+  every smooth `f` with `∫ f dV = 0` there is a unique smooth `u` with `∫ u dV = 0` and `Δ⁺u = f`
+  (`TauCeti.Manifold.existsUnique_contMDiff_neg_laplaceBeltrami_eq`).
 
 Local continuous or smooth representatives constructed in charts are glued to a global one by
 `TauCeti.exists_contMDiff_ae_eq_of_locally`, since the Riemannian volume charges every nonempty
@@ -72,11 +76,18 @@ hence zero (`ae_eq_zero_of_integral_contMDiff_smul_eq_zero`).
   `Δ⁺u = f` everywhere.
 * `TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear`: smoothness and classical
   equation `Δ⁺u = A Φ(u) + C` for continuous weak solutions in dimension at most three.
+* `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletForm_eq`:
+  smoothness and classical equation `Δ⁺u = A Φ(u) + C` for weak solutions in dimension at most
+  three without an a priori continuity assumption.
 * `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq`:
   a weak solution of `Δ⁺w + V w = f` with smooth `V` and `f` is a smooth classical solution, in
   every dimension.
+* `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq`:
+  a weak solution of `Δ⁺w = f` with smooth `f` is a smooth classical solution, in every dimension.
 * `SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mul`:
   a weak solution of `Δ⁺w = μ w` is a smooth classical eigenfunction.
+* `TauCeti.Manifold.existsUnique_contMDiff_neg_laplaceBeltrami_eq`: smooth solvability and
+  uniqueness of the Poisson equation `Δ⁺u = f` on a closed connected smooth manifold.
 
 ## References
 
@@ -1093,8 +1104,99 @@ theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_of_dirichletForm_eq_mu
   simp only [Pi.zero_apply] at h
   linarith
 
+/-- **Weak solutions of `Δ⁺w = f` are smooth.** Let `M` be a closed smooth Riemannian manifold, of
+any dimension, and let the forcing `f` be smooth on `M`. If `w ∈ H¹(M)` solves `D(w, φ) = ∫ f φ dV`
+against every smooth function `φ`, then `w = ofSmooth u` for a smooth function `u` satisfying
+`-laplaceBeltrami I u x = f x` everywhere on `M`. -/
+theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) {w : SobolevH1 I M}
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth φ) = ∫ x, f x * φ x ∂riemannianVolume I M) :
+    ∃ u : C^∞⟮I, M; ℝ⟯, w = ofSmooth u ∧ ∀ x, -laplaceBeltrami I u x = f x := by
+  simpa using exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_add_eq
+    (V := 0) contMDiff_const hf fun φ ↦ by simpa using hw φ
+
+/-- **Smoothness of weak solutions of semilinear elliptic equations on a closed manifold.** On a
+closed smooth Riemannian manifold of dimension at most three, let `A`, `C` and `Φ` be smooth.
+If `w ∈ H¹(M)` solves `Δ⁺w = A Φ(w) + C` weakly against smooth test functions and the nonlinear
+forcing `A Φ(w) + C` is square integrable on `M`, then `w = ofSmooth u` for a smooth function `u`
+satisfying `-laplaceBeltrami I u x = A x * Φ (u x) + C x` everywhere on `M`. -/
+theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletForm_eq
+    (hE : finrank ℝ E < 4)
+    {A C : M → ℝ} (hA : ContMDiff I 𝓘(ℝ) ∞ A) (hC : ContMDiff I 𝓘(ℝ) ∞ C)
+    {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {w : SobolevH1 I M}
+    (hF : MemLp (fun x ↦ A x * Φ (toLp w x) + C x) 2 (riemannianVolume I M))
+    (hw : ∀ φ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth φ) =
+        ∫ x, (A x * Φ (toLp w x) + C x) * φ x ∂riemannianVolume I M) :
+    ∃ u : C^∞⟮I, M; ℝ⟯, w = ofSmooth u ∧
+      ∀ x, -laplaceBeltrami I u x = A x * Φ (u x) + C x := by
+  obtain ⟨u, hu_cont, hwu⟩ := exists_continuous_ae_eq_of_dirichletForm_eq (r := 2) le_rfl
+    (by exact_mod_cast (by omega : finrank ℝ E < 4)) hF hw
+  have hw_u : ∀ φ : C^∞⟮I, M; ℝ⟯,
+      dirichletForm w (ofSmooth φ) =
+        ∫ x, (A x * Φ (u x) + C x) * φ x ∂riemannianVolume I M := fun φ ↦ by
+    rw [hw φ]
+    exact integral_congr_ae (hwu.mono fun x hx ↦ by dsimp only; rw [hx])
+  obtain ⟨hu_smooth, hΔ⟩ :=
+    contMDiff_of_dirichletForm_eq_semilinear hE hA hC hΦ hu_cont hwu hw_u
+  exact ⟨⟨u, hu_smooth⟩,
+    toLp_injective (Lp.ext (hwu.trans (toLp_ofSmooth_ae_eq ⟨u, hu_smooth⟩).symm)), hΔ⟩
+
 end SmoothRegularity
 
 end SobolevH1
+
+section SmoothPoisson
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M] [T2Space M]
+  [PreconnectedSpace M] [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+local instance instIsContinuousRiemannianBundlePoisson :
+    IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+
+/-- **The smooth Poisson equation on a closed manifold.** On a closed connected smooth Riemannian
+manifold of any dimension, for every smooth function `f` with `∫ f dV = 0`, there is a unique
+smooth function `u` with `∫ u dV = 0` and `Δ⁺u = f`, where `Δ⁺ = -div grad` is the nonnegative
+Laplacian. -/
+theorem existsUnique_contMDiff_neg_laplaceBeltrami_eq
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf0 : ∫ x, f x ∂riemannianVolume I M = 0) :
+    ∃! u : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ u ∧
+      ∫ x, u x ∂riemannianVolume I M = 0 ∧ ∀ x, -laplaceBeltrami I u x = f x := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  set F : Lp ℝ 2 (riemannianVolume I M) :=
+    ContinuousMap.toLp 2 (riemannianVolume I M) ℝ ⟨f, hf.continuous⟩
+  have hF_ae : (F : M → ℝ) =ᵐ[riemannianVolume I M] f :=
+    ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I M) ⟨f, hf.continuous⟩
+  have hF0 : ∫ x, F x ∂riemannianVolume I M = 0 := (integral_congr_ae hF_ae).trans hf0
+  obtain ⟨w, ⟨hw0, hw⟩, huniq⟩ := SobolevH1.existsUnique_dirichletForm_eq F hF0
+  obtain ⟨u, rfl, hu⟩ :=
+    SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq hf fun v ↦ by
+      rw [hw (SobolevH1.ofSmooth v)]
+      refine integral_congr_ae ?_
+      filter_upwards [hF_ae, SobolevH1.toLp_ofSmooth_ae_eq v] with x hFx hvx
+      rw [hFx, hvx]
+  refine ⟨u, ⟨u.contMDiff, (integral_congr_ae (SobolevH1.toLp_ofSmooth_ae_eq u)).symm.trans hw0,
+    hu⟩, fun u' ⟨hu'_smooth, hu'0, hu'⟩ ↦ ?_⟩
+  set u'm : C^∞⟮I, M; ℝ⟯ := ⟨u', hu'_smooth⟩
+  have hofSmooth : SobolevH1.ofSmooth u'm = SobolevH1.ofSmooth u := by
+    refine huniq (SobolevH1.ofSmooth u'm) ⟨?_, fun v ↦ ?_⟩
+    · exact (integral_congr_ae (SobolevH1.toLp_ofSmooth_ae_eq u'm)).trans hu'0
+    · rw [SobolevH1.dirichletForm_comm, SobolevH1.dirichletForm_ofSmooth_right]
+      refine integral_congr_ae ?_
+      filter_upwards [hF_ae] with x hFx
+      simp only [u'm, ContMDiffMap.coeFn_mk, hFx, ← hu' x, mul_comm]
+  have hae : u' =ᵐ[riemannianVolume I M] u :=
+    (SobolevH1.toLp_ofSmooth_ae_eq u'm).symm.trans
+      (hofSmooth ▸ SobolevH1.toLp_ofSmooth_ae_eq u)
+  exact (hu'_smooth.continuous.ae_eq_iff_eq (riemannianVolume I M) (map_continuous u)).1 hae
+
+end SmoothPoisson
 
 end TauCeti.Manifold
