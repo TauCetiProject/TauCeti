@@ -76,7 +76,7 @@ variable {X : Type*} [TopologicalSpace X]
 conjugate-linear automorphism of each fibre `E x`, continuous as a map of total spaces, then the
 clutching number of `E` vanishes on every sphere. -/
 theorem clutchingNumber_eq_zero_of_conjugateLinear (κ : ∀ x, E x ≃L⋆[ℂ] E x)
-    (hκ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (κ v.proj v.2))
+    (hκ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (κ v.proj v.snd))
     (p : Ω^ (Fin 2) X x) : clutchingNumber F E p = 0 := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
@@ -114,7 +114,7 @@ theorem clutchingNumber_eq_zero_of_conjugateLinear (κ : ∀ x, E x ≃L⋆[ℂ]
 /-- The clutching number homomorphism `π₂(X, x) → ℤ` of a complex vector bundle with a real
 structure is zero. -/
 theorem clutchingNumberHom_eq_zero_of_conjugateLinear (κ : ∀ x, E x ≃L⋆[ℂ] E x)
-    (hκ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (κ v.proj v.2)) (x : X) :
+    (hκ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj (κ v.proj v.snd)) (x : X) :
     clutchingNumberHom F E x = 0 := by
   refine AddMonoidHom.ext fun a ↦ ?_
   obtain ⟨p, hp⟩ := Quotient.exists_rep a.toMul
