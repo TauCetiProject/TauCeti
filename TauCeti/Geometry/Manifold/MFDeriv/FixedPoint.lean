@@ -470,7 +470,7 @@ theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub [Compl
     (hx : IsFixedPt f x) :
     IsNondegenerateFixedPt 𝓘(𝕜, E) f x ↔ (ContinuousLinearMap.id 𝕜 E - D).IsInvertible := by
   rw [hD.isNondegenerateFixedPt_iff_injective_id_sub hx]
-  refine ⟨fun h ↦ ⟨(LinearEquiv.ofInjectiveEndo _ h).toContinuousLinearEquiv, rfl⟩, ?_⟩
+  refine ⟨fun h ↦ ⟨(LinearEquiv.ofInjectiveEndo _ h).toContinuousLinearEquiv, by ext; simp⟩, ?_⟩
   rintro ⟨e, he⟩
   exact he ▸ e.injective
 
