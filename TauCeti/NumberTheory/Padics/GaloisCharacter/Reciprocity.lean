@@ -412,17 +412,11 @@ theorem lift_artinMap_eq_inv_of_weilToAbsolute {Λ : Type*} [CommMonoid Λ] [Top
   rw [geometricArtinMap_apply, map_inv] at h
   exact inv_eq_iff_eq_inv.mp h
 
-/-- Continuous inversion homomorphism on the abelian profinite group `ℤ̂`. -/
-private def zHatInvHom : zHat.{0} →ₜ* zHat.{0} where
-  toFun := Inv.inv
-  map_one' := inv_one
-  map_mul' a b := by rw [mul_inv_rev, mul_comm']
-  continuous_toFun := continuous_inv
-
 section CommMonoid
 
 variable {Λ : Type*} [CommMonoid Λ] [TopologicalSpace Λ] [ContinuousMul Λ]
 
+open scoped IsMulCommutative in
 /-- Given `δ : PadicUnitsChar p Λ` and a continuous homomorphism `φ : ℤ̂ →ₜ* Λˣ`, construct the
 continuous Galois character `σ ↦ φ((unramifiedCoordinate σ)⁻¹) * δ(χ_cyc(σ))`. When
 `φ zHat.gen = δ(p)`, this extends `δ.toWeilChar` (`toGaloisCharOfZHat_weilToAbsolute`). -/
@@ -430,7 +424,7 @@ def PadicUnitsChar.toGaloisCharOfZHat (δ : PadicUnitsChar p Λ) (φ : zHat.{0} 
     Field.absoluteGaloisGroup ℚ_[p] →ₜ* Λˣ where
   toMonoidHom :=
     (φ.toMonoidHom.comp
-      (zHatInvHom.toMonoidHom.comp
+      ((ContinuousMonoidHom.inv zHat.{0}).toMonoidHom.comp
         ((unramifiedCoordinate ℚ_[p]).toMonoidHom.comp
           (QuotientGroup.mk'
             (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure)))) *
@@ -463,6 +457,7 @@ theorem PadicUnitsChar.toGaloisCharOfZHat_weilToAbsolute (δ : PadicUnitsChar p 
   conv_lhs => rw [← ofAdd_toAdd (weilDegree ℚ_[p] w), zHat.ofInt_ofAdd]
   rw [← zpow_neg, map_zpow, hφ]
 
+open scoped IsMulCommutative in
 /-- **Exact extension criterion to `G_{ℚ_p}`.** For a commutative `T1` topological monoid `Λ` with
 continuous multiplication, a continuous character `δ : ℚ_[p]ˣ →ₜ* Λˣ` extends continuously to
 `G_{ℚ_p} →ₜ* Λˣ` if and only if there is a continuous homomorphism `φ : ℤ̂ →ₜ* Λˣ` with
@@ -474,7 +469,7 @@ theorem PadicUnitsChar.exists_galoisChar_iff_exists_zHat [T1Space Λ] (δ : Padi
   constructor
   · rintro ⟨χ, hχ⟩
     let invMap : zHat.{0} →ₜ* zHat.{0} × ℤ_[p]ˣ :=
-      { toMonoidHom := zHatInvHom.toMonoidHom.prod 1
+      { toMonoidHom := (ContinuousMonoidHom.inv zHat.{0}).toMonoidHom.prod 1
         continuous_toFun := continuous_inv.prodMk continuous_const }
     let φ : zHat.{0} →ₜ* Λˣ :=
       ((TopologicalAbelianization.lift χ).comp
@@ -486,10 +481,9 @@ theorem PadicUnitsChar.exists_galoisChar_iff_exists_zHat [T1Space Λ] (δ : Padi
       apply (padicAbelianizationEquiv p).injective
       rw [ContinuousMulEquiv.apply_symm_apply, padicAbelianizationEquiv_geometricArtinMap]
       simp
-    simp only [φ, invMap, zHatInvHom, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.coe_mk, MonoidHom.prod_apply,
-      MonoidHom.one_apply]
-    -- Unfold `zHatInvHom.toMonoidHom` on `zHat.gen`.
+    simp only [φ, invMap, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      ContinuousMonoidHom.coe_coe]
+    -- Unfold `(ContinuousMonoidHom.inv zHat.{0}).toMonoidHom` on `zHat.gen`.
     change TopologicalAbelianization.lift χ ((padicAbelianizationEquiv p).symm (zHat.gen⁻¹, 1)) =
       δ (padicUniformizer p)
     rw [hgen, lift_geometricArtinMap_eq_of_weilToAbsolute hχ]
