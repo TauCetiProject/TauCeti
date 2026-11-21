@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -59,6 +60,10 @@ needs no closedness of `ω` and no inner product on `E`, and for a symplectic ch
   uniformly off a finite set `Z` of bubbling points, with derivatives bounded on compact subsets
   of the complement and Floer energy at least a fixed `δ > 0` concentrating at each point of `Z`.
   The solutions themselves converge pointwise off `Z` in `M`.
+* **The energy over a window** (in the namespace `TauCeti.SmoothTwoForm`,
+  `integrableOn_and_setIntegral_floerEnergyDensity_le`): a bound on the energy over an open set
+  `S` bounds the Bochner integral of a nonnegative energy density over every measurable `Ω ⊆ S`,
+  which is the form of an energy bound the compactness theorems take.
 
 The coordinate compactness theorem for a finite-dimensional normed target (in the namespace
 `TauCeti.Floer`,
@@ -480,6 +485,28 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_s
   refine h.congr fun n ↦ ?_
   simp only [Function.comp_apply]
   exact e.left_inv (hus (φ n) hz.1)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The Floer energy over a subdomain as a Bochner integral, for a manifold target.** Let `u` be
+`C¹` on an open set `S ⊆ ℝ × ℝ`, let the Hamiltonian vector fields of `K = K_s ds + K_t dt` be
+continuous on `S × M` as maps into the tangent bundle, and let `Ω ⊆ S` be measurable with Floer
+energy density nonnegative on `Ω`. If the energy of `u` over `S` is at most `E ≥ 0`, then the
+density is integrable on `Ω` and its integral over `Ω` is at most `E`. The vector-space case is
+`SymplecticForm.integrableOn_and_setIntegral_floerEnergyDensity_le`. -/
+theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SmoothTwoForm I M)
+    {S Ω : Set (ℝ × ℝ)} (hS : IsOpen S) (hΩ : MeasurableSet Ω) (hΩS : Ω ⊆ S)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u S)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
+    (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E :=
+  integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ)
+    (ae_restrict_of_forall_mem hΩ hf0) hΩS hE0 hE
 
 end SmoothTwoForm
 

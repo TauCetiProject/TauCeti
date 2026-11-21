@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Compactness of the capping family over compact windows of neck lengths
@@ -147,17 +148,14 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       (fun z _ ↦ hfl k z) (h₀ k) (hinf k) (hΩD.trans hDN)).trans
       (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (by linarith [hA k])
         (Nat.cast_nonneg N)))
-  have hint (k : ℕ) : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb (L k) 1)
-      (cappedCylinderComponent Hb (L k) I) (u k)) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_univ ((hu k).contDiffOn.of_le (by norm_num))
+  have h (k : ℕ) := integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity isOpen_univ ((hu k).contDiffOn.of_le (by norm_num))
       (contDiff_uncurry_cappedCylinderComponent hHb hHbs₁ (hL k) 1).contDiffOn
       (contDiff_uncurry_cappedCylinderComponent hHb hHbs₁ (hL k) I).contDiffOn).mono
-        (subset_univ Ω)).aestronglyMeasurable hΩm,
-      (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem hΩm fun z _ ↦ hf0 k z)).2
-        ((hlin k).trans_lt ENNReal.ofReal_lt_top)⟩
-  exact hconv hΩ hΩD hLC (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK hint fun k ↦ by
-    rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hΩm fun z _ ↦ hf0 k z)
-      (hint k).aestronglyMeasurable]
-    exact ENNReal.toReal_le_of_le_ofReal (mul_nonneg (Nat.cast_nonneg N) hE0) (hlin k)
+        (subset_univ Ω)).aestronglyMeasurable hΩm)
+    (ae_restrict_of_forall_mem hΩm fun z _ ↦ hf0 k z) subset_rfl
+    (mul_nonneg (Nat.cast_nonneg N) hE0) (hlin k)
+  exact hconv hΩ hΩD hLC (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK
+    (fun k ↦ (h k).1) fun k ↦ (h k).2
 
 end TauCeti.SymplecticForm

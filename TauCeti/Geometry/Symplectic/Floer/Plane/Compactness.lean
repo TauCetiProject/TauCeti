@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 public import TauCeti.Geometry.Symplectic.Floer.Plane.CappedAction
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Compactness of PSS planes with bounded end action
@@ -134,9 +136,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
       ((hu₂ k).of_le one_le_two).contDiffOn ((hK₃ 1).of_le (by norm_num)).contDiffOn
       ((hK₃ I).of_le (by norm_num)).contDiffOn)).continuousOn.integrableOn_compact hD).mono_set
       hΩD
-  exact hconv hΩ hΩD (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK hint fun k ↦ by
-    rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hf0 k)) (hint k).aestronglyMeasurable]
-    exact ENNReal.toReal_le_of_le_ofReal hE0 ((setLIntegral_le_lintegral _ _).trans (hlin k))
+  exact hconv hΩ hΩD (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK hint fun k ↦
+    (integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le (hint k).aestronglyMeasurable
+      (ae_of_all _ (hf0 k)) (subset_univ Ω) hE0 ((setLIntegral_univ _).trans_le (hlin k))).2
 
 end SymplecticForm
 
@@ -159,16 +161,8 @@ theorem contDiffOn_perturbation_comp_symm (p : PSSPlane) {n : ℕ∞} {m : WithT
     ContDiffOn ℝ n (fun q : (ℝ × ℝ) × V ↦
         p.perturbation H (equivRealProdCLM.symm q.1) (φ.symm q.2) v) (univ ×ˢ φ.target) := by
   rintro ⟨z, y⟩ ⟨-, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- The point `z` of the plane and the chart inverse `φ⁻¹` are `C^n` into `ℂ × M`.
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod I) n
-      (fun q : (ℝ × ℝ) × V ↦ (equivRealProdCLM.symm q.1, φ.symm q.2)) (z, y) :=
-    ((equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.contMDiffAt).prodMk
-      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  have hK := (contMDiff_perturbation (p := p) hH hHs _).comp (z, y) hpair
-  exact (contMDiffAt_iff_contDiffAt.1 hK).clm_apply contDiffAt_const
+  exact ((φ.contDiffAt_comp_prodMap_symm hnm equivRealProdCLM.symm.contDiff.contDiffAt hy
+    (contMDiff_perturbation (p := p) hH hHs _)).clm_apply contDiffAt_const).contDiffWithinAt
 
 end Floer.PSSPlane
 
@@ -270,9 +264,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
       (equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _))
       (subset_univ _) (ω.integrableOn_hamiltonianCurvature_pssPlanePerturbation_closedBall hH
         hHs₁ (hu₁ k).continuous |r|)).mono_set (hΩD.trans hDR)
-  exact hconv hΩ hΩD (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z) huC hint fun k ↦ by
-    rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hf0 k)) (hint k).aestronglyMeasurable]
-    exact ENNReal.toReal_le_of_le_ofReal hE0 ((setLIntegral_le_lintegral _ _).trans (hlin k))
+  exact hconv hΩ hΩD (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z) huC hint fun k ↦
+    (integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le (hint k).aestronglyMeasurable
+      (ae_of_all _ (hf0 k)) (subset_univ Ω) hE0 ((setLIntegral_univ _).trans_le (hlin k))).2
 
 end SmoothTwoForm.IsNondegenerate
 
